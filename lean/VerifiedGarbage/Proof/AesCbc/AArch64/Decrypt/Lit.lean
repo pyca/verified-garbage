@@ -12,4 +12,5 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 namespace VG.Impl.AesCbc.AArch64.Decrypt
 materialize_code code
+materialize_code codeAes
 end VG.Impl.AesCbc.AArch64.Decrypt

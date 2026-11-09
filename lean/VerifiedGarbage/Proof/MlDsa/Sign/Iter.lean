@@ -246,48 +246,6 @@ theorem signIteration_eqF {p : Params} (hp : ParamsOk p) (b : Bounds) (A : Nat �
   funext c
   rw [iterOut_eq p A S1 S2 T0 ρ'' κ c hp]
 
-/-- Which check rejects an iteration (`signRejectTagC`), polynomial by
-polynomial. -/
-theorem signRejectTagC_eqF {p : Params} (hp : ParamsOk p) (b : Bounds) (A : Nat → Nat → Poly)
-    (S1 S2 T0 : Nat → Poly) (μ ρ'' : List Byte) (κ : Nat) :
-    signRejectTagC p b (amat p A) ((List.range p.ℓ).map S1) ((List.range p.k).map S2) ((List.range p.k).map T0)
-      μ ρ'' κ =
-      match sampleInBall p.τ b.ball (ctF p A μ ρ'' κ) with
-      | none => 0
-      | some c =>
-        if ¬ ∀ r < p.ℓ, normRq [zF p S1 ρ'' κ c r] < p.γ₁ - p.β then 0
-        else if ¬ ∀ i < p.k, normRq [r0F p A S2 ρ'' κ c i] < p.γ₂ - p.β then 2
-        else if ¬ ∀ i < p.k, normRq [ct0F T0 c i] < p.γ₂ then 3 else 4 := by
-  have hγ₂ : 0 < p.γ₂ := by have := hp.pos₂; omega
-  unfold signRejectTagC
-  rw [signCommit_eq]
-  dsimp only
-  cases sampleInBall p.τ b.ball (ctF p A μ ρ'' κ) with
-  | none => rfl
-  | some c =>
-    dsimp only
-    simp only [List.map_map]
-    have ez : addVec ((List.range p.ℓ).map (toRq ∘ yF p ρ'' κ))
-        ((List.range p.ℓ).map ((fun s => nttInv (multiplyNTT (ntt (toRq c)) s)) ∘ S1)) =
-        (List.range p.ℓ).map (zF p S1 ρ'' κ c) := zipWith_range add _ _ _
-    have ew' : subVec ((List.range p.k).map (wF p A ρ'' κ))
-        ((List.range p.k).map ((fun s => nttInv (multiplyNTT (ntt (toRq c)) s)) ∘ S2)) =
-        (List.range p.k).map (w'F p A S2 ρ'' κ c) := zipWith_range sub _ _ _
-    have ect : (List.range p.k).map ((fun t => nttInv (multiplyNTT (ntt (toRq c)) t)) ∘ T0) =
-        (List.range p.k).map (ct0F T0 c) := rfl
-    rw [ez, ew', ect, List.map_map]
-    have c1 : normRq ((List.range p.ℓ).map (zF p S1 ρ'' κ c)) ≥ p.γ₁ - p.β ↔
-        ¬ ∀ r < p.ℓ, normRq [zF p S1 ρ'' κ c r] < p.γ₁ - p.β := by
-      rw [← normRq_range_lt _ hp.pos₁]; omega
-    have c2 : normR ((List.range p.k).map ((fun ri => Vector.map (lowBits p.γ₂) ri) ∘ w'F p A S2 ρ'' κ c)) ≥
-        p.γ₂ - p.β ↔ ¬ ∀ i < p.k, normRq [r0F p A S2 ρ'' κ c i] < p.γ₂ - p.β := by
-      rw [ge_iff_le, ← Nat.not_lt, normR_lt_iff _ hp.pos₂]
-      simp only [List.mem_map, List.mem_range, Function.comp, forall_exists_index, and_imp,
-        forall_apply_eq_imp_iff₂, r0F, normR_lowBits hp.γ₂]
-    have c3 : normRq ((List.range p.k).map (ct0F T0 c)) ≥ p.γ₂ ↔ ¬ ∀ i < p.k, normRq [ct0F T0 c i] < p.γ₂ := by
-      rw [← normRq_range_lt _ hγ₂]; omega
-    simp only [c1, c2, c3]
-
 /-- Below `n`, the predicate `q` is false for all `j < k` exactly when `k`
 is at most the first `j < n` where it is true. -/
 theorem prefix_findIdx (n : Nat) (q : Nat → Bool) {k : Nat} (hk : k ≤ n) :

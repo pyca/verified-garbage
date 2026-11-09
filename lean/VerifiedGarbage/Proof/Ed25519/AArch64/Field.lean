@@ -99,78 +99,6 @@ theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base large) {o a : Nat}
       Op base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base a :=
   WP.mono (sqr_okB hs ho ha) fun _ ⟨h, e, _⟩ => ⟨h, e⟩
 
-theorem movReg_ok (s : State) (d n : Reg) :
-    WP isa (.block [mov d n]) s fun t => t.gpr d = s.gpr n ∧ Keeps [d] s t := by
-  refine WP.block_cons_iff.mpr ⟨_, exec_addImm_x (imm := 0) (by decide), WP.block_nil_iff.mpr
-    ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩⟩
-  · rw [RegUpd.gpr_write_self, BitVec.setWidth_eq]
-    simp only [State.read, BitVec.setWidth_eq, BitVec.add_zero]
-  · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa using hr)
-
-/-- `movB`: x4–x7 into x12–x15. -/
-theorem movB_ok (s : State) :
-    WP isa (.block movB) s fun t =>
-      val4 (t.gpr .x12) (t.gpr .x13) (t.gpr .x14) (t.gpr .x15) =
-        val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) ∧
-      Keeps [.x12, .x13, .x14, .x15] s t := by
-  rw [show movB = ([mov .x12 .x4] : List Instr) ++ (([mov .x13 .x5] : List Instr) ++
-    (([mov .x14 .x6] : List Instr) ++ ([mov .x15 .x7] : List Instr))) from rfl,
-    WP.block_append_iff]
-  refine WP.mono (movReg_ok s .x12 .x4) fun s₁ ⟨e1, k1⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (movReg_ok s₁ .x13 .x5) fun s₂ ⟨e2, k2⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (movReg_ok s₂ .x14 .x6) fun s₃ ⟨e3, k3⟩ => ?_
-  refine WP.mono (movReg_ok s₃ .x15 .x7) fun t ⟨e4, k4⟩ => ⟨?_, ?_⟩
-  · rw [e4, k4.gpr .x12 (by decide), k4.gpr .x13 (by decide), k4.gpr .x14 (by decide),
-      k3.gpr .x12 (by decide), k3.gpr .x13 (by decide), e3, k2.gpr .x12 (by decide), e2, e1,
-      k3.gpr .x7 (by decide), k2.gpr .x7 (by decide), k1.gpr .x7 (by decide),
-      k2.gpr .x6 (by decide), k1.gpr .x6 (by decide), k1.gpr .x5 (by decide)]
-  · exact ((k1.mono (by decide)).trans (k2.mono (by decide))).trans
-      ((k3.mono (by decide)).trans (k4.mono (by decide)))
-
-/-- `[o] := [a] · [b]²`, allowing the output to alias either input; the result is
-stored below `2²⁵⁵ + 2¹³⁵`. -/
-theorem sqrMul_okB {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
-    (ho : FieldRange o large) (ha : FieldRange a large) (hb : FieldRange b large) :
-    WP isa (.block (fieldSqrMul o a b)) s fun t =>
-      Op base o s t ∧ F t.mem base o = F s.mem base a * (F s.mem base b * F s.mem base b) ∧
-        fe t.mem base o < 2 ^ 255 + 2 ^ 135 := by
-  have _hcap := workSize_le large
-  have _hmin := workSize_ge large
-  simp only [fieldSqrMul, List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (zeroReg_ok s .x10) fun s₀ ⟨hz, k0⟩ => ?_
-  have hs₀ := hs.of_keeps k0 (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (sqrWide_ok hs₀ hb hz) fun s₁ ⟨e1, k1⟩ => ?_
-  have hs₁ := hs₀.of_keeps k1 (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (reduceWide_ok s₁ ((k1.gpr _ (by decide)).trans hz)) fun s₂ ⟨e2, z2, k2, _⟩ => ?_
-  have hs₂ := hs₁.of_keeps k2 (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (movB_ok s₂) fun s₃ ⟨e3, k3⟩ => ?_
-  have hs₃ := hs₂.of_keeps k3 (by decide)
-  have z3 : s₃.gpr .x10 = 0 := (k3.gpr _ (by decide)).trans z2
-  rw [WP.block_append_iff]
-  refine WP.mono (mulRows_ok hs₃ ha z3 e3) fun s₄ ⟨e4, k4⟩ => ?_
-  refine WP.mono (fieldFinish_ok (hs₃.of_keeps k4 (by decide)) ho
-    ((k4.gpr _ (by decide)).trans z3)
-    ((((k0.mono (by decide)).trans (k1.mono (by decide))).trans (k2.mono (by decide))).trans
-      ((k3.mono (by decide)).trans (k4.mono (by decide)))))
-    fun t ⟨hop, ht, hb⟩ => ⟨hop, ?_, hb⟩
-  have m3 : s₃.mem = s.mem := by rw [k3.mem, k2.mem, k1.mem, k0.mem]
-  rw [ht, e4, m3]
-  rw [toFe_mul rfl, e2, e1, k0.mem]
-  exact congrArg _ (toFe_mul rfl)
-
-/-- `[o] := [a] · [b]²`, allowing the output to alias either input. -/
-theorem sqrMul_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
-    (ho : FieldRange o large) (ha : FieldRange a large) (hb : FieldRange b large) :
-    WP isa (.block (fieldSqrMul o a b)) s fun t =>
-      Op base o s t ∧ F t.mem base o = F s.mem base a * (F s.mem base b * F s.mem base b) :=
-  WP.mono (sqrMul_okB hs ho ha hb) fun _ ⟨h, e, _⟩ => ⟨h, e⟩
-
 end VG.Proof.Ed25519.AArch64
 end
 
@@ -434,11 +362,6 @@ theorem copyField_opB {s : State} {base : Addr} (hs : Scr s base large) (o a : S
   refine ⟨Op.of_store (slot_rangeWith (large := large) o) (hk.mono (by decide)) _ _ _ _, ?_⟩
   rw [fe_st4 _ _ (by have := (slot_rangeWith (large := large) o).2; omega_arith), hv]
 
-theorem copyField_op {s : State} {base : Addr} (hs : Scr s base large) (o a : Slot) :
-    WP isa (.block (copyField o a)) s fun t =>
-      Op base (offset o) s t ∧ F t.mem base (offset o) = F s.mem base (offset a) :=
-  WP.mono (copyField_opB hs o a) fun _ ⟨h, e⟩ => ⟨h, congrArg toFe e⟩
-
 theorem Outside_F {base : Addr} {o n : Nat} {m m' : Mem}
     (h : Outside base o n m m') {d : Nat} (hd : d + 32 < 2 ^ 64)
     (hsep : d + 32 ≤ o ∨ o + n ≤ d) : F m' base d = F m base d :=
@@ -472,18 +395,6 @@ def evalOp (op : FieldOp) (e : Env) : Env :=
   | .sqr o a => Function.update e o (e a * e a)
   | .add o a b => Function.update e o (e a + e b)
   | .sub o a b => Function.update e o (e a - e b)
-
-theorem evalOp_mul_apply (e : Env) (o a b i : Slot) :
-    evalOp (.mul o a b) e i = if i = o then e a * e b else e i := by
-  simp only [evalOp, Function.update_apply]
-
-theorem evalOp_add_apply (e : Env) (o a b i : Slot) :
-    evalOp (.add o a b) e i = if i = o then e a + e b else e i := by
-  simp only [evalOp, Function.update_apply]
-
-theorem evalOp_sub_apply (e : Env) (o a b i : Slot) :
-    evalOp (.sub o a b) e i = if i = o then e a - e b else e i := by
-  simp only [evalOp, Function.update_apply]
 
 def evalOps (ops : List FieldOp) (e : Env) : Env := ops.foldl (fun e op => evalOp op e) e
 
@@ -649,75 +560,7 @@ theorem constField_ok {s : State} {base : Addr} (hs : Scr s base large) (o : Slo
   refine WP.mono (constField_op hs o v) fun t ⟨hk, hv⟩ => ?_
   exact ⟨op_keep hk, by rw [env_update o hk.mem, hv]⟩
 
-theorem copyField_ok {s : State} {base : Addr} (hs : Scr s base large) (o a : Slot) :
-    WP isa (.block (copyField o a)) s fun t =>
-      Keep base s t ∧ env t.mem base = Function.update (env s.mem base) o (env s.mem base a) := by
-  have _hcap := workSize_le large
-  have _hmin := workSize_ge large
-  refine WP.mono (copyField_op hs o a) fun t ⟨hk, hv⟩ => ?_
-  exact ⟨op_keep hk, by rw [env_update o hk.mem, hv]; rfl⟩
-
-/-- `[o] := [a] · [b]²` on slots. -/
-theorem sqrMulField_ok {s : State} {base : Addr} (hs : Scr s base large) (o a b : Slot) :
-    WP isa (.block (fieldSqrMul (offset o) (offset a) (offset b))) s fun t =>
-      Keep base s t ∧ env t.mem base = Function.update (env s.mem base) o
-        (env s.mem base a * (env s.mem base b * env s.mem base b)) := by
-  have _hcap := workSize_le large
-  have _hmin := workSize_ge large
-  refine WP.mono (sqrMul_ok hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a)
-    (slot_rangeWith (large := large) b)) fun t ⟨h, e⟩ => ?_
-  exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl⟩
-
 /-- Coordinates in four consecutive slots. -/
 def point (e : Env) (x y z t : Slot) : Spec.Ed25519.Point := ⟨e x, e y, e z, e t⟩
-
-def addResult (e : Env) (q : Nat) (hq : q + 3 < 22) : Spec.Ed25519.Point :=
-  let x := e ⟨q, by omega_arith⟩
-  let y := e ⟨q + 1, by omega_arith⟩
-  let z := e ⟨q + 2, by omega_arith⟩
-  let t := e ⟨q + 3, by omega_arith⟩
-  let a := (e 1 - e 0) * (y - x)
-  let b := (e 1 + e 0) * (y + x)
-  let c := (e 3 * e 16 + e 3 * e 16) * t
-  let dd := (e 2 + e 2) * z
-  ⟨(b - a) * (dd - c), (dd + c) * (b + a), (dd - c) * (dd + c), (b - a) * (b + a)⟩
-
-theorem pointAdd_formula (e : Env) :
-    point (evalOps pointAddOps e) 0 1 2 3 = addResult e 4 (by decide) := by
-  rfl
-
-/-- What `pointDoubleOps` computes: the addition formula with `p = q`, its
-products of equal factors as squares. -/
-def doubleResult (e : Env) : Spec.Ed25519.Point :=
-  let a := (e 1 - e 0) * (e 1 - e 0)
-  let b := (e 1 + e 0) * (e 1 + e 0)
-  let c := e 3 * e 3 * e 16 + e 3 * e 3 * e 16
-  let dd := e 2 * e 2 + e 2 * e 2
-  ⟨(b - a) * (dd - c), (dd + c) * (b + a), (dd - c) * (dd + c), (b - a) * (b + a)⟩
-
-theorem pointDouble_formula (e : Env) :
-    point (evalOps pointDoubleOps e) 0 1 2 3 = doubleResult e := by
-  rfl
-
-theorem doubleResult_eq (e : Env) (hd : e 16 = Spec.Ed25519.d) :
-    doubleResult e = Spec.Ed25519.pointAdd (point e 0 1 2 3) (point e 0 1 2 3) := by
-  simp only [doubleResult, point, Spec.Ed25519.pointAdd, hd]
-  congr 1 <;> grind
-
-theorem addResult_eq (e : Env) (q : Nat) (hq : q + 3 < 22) (hd : e 16 = Spec.Ed25519.d) :
-    addResult e q hq = Spec.Ed25519.pointAdd (point e 0 1 2 3)
-      (point e ⟨q, by omega_arith⟩ ⟨q + 1, by omega_arith⟩ ⟨q + 2, by omega_arith⟩ ⟨q + 3, hq⟩) := by
-  simp only [addResult, point, Spec.Ed25519.pointAdd, hd]
-  congr 1 <;> grind
-
-theorem pointAdd_eval (e : Env) (hd : e 16 = Spec.Ed25519.d) :
-    point (evalOps pointAddOps e) 0 1 2 3 =
-      Spec.Ed25519.pointAdd (point e 0 1 2 3) (point e 4 5 6 7) :=
-  (pointAdd_formula e).trans (addResult_eq e 4 (by decide) hd)
-
-theorem pointDouble_eval (e : Env) (hd : e 16 = Spec.Ed25519.d) :
-    point (evalOps pointDoubleOps e) 0 1 2 3 =
-      Spec.Ed25519.pointAdd (point e 0 1 2 3) (point e 0 1 2 3) :=
-  (pointDouble_formula e).trans (doubleResult_eq e hd)
 
 end VG.Proof.Ed25519.AArch64

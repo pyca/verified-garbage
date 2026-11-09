@@ -105,7 +105,6 @@ theorem hi_dis_c0 (C : Addr) : (hiR C).Disjoint (pR C) := Offset.disjoint_base C
 
 theorem hi_dis_tab (C : Addr) : (hiR C).Disjoint (tabR C) := Offset.disjoint C (.inl (by omega)) (by omega) (by omega)
 
-
 theorem sub_hi {C : Addr} {d n : Nat} (h3 : 3072 ≤ d) (h8 : d + n ≤ 3328) :
     Region.Sub ⟨C + BitVec.ofNat 64 d, n⟩ (hiR C) :=
   Offset.sub C h3 (by omega)
@@ -252,7 +251,6 @@ theorem dYC : (yR (yP s₀)).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.2.2.2.1
 theorem rU : (retR s₀).Disjoint (vR (uP s₀) (k + 1)) := hp.2.2.2.2.2.2.2.2.2.1
 theorem rA : (retR s₀).Disjoint (aR (aP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.1
 theorem rT : (retR s₀).Disjoint (vR (tP s₀) k) := hp.2.2.2.2.2.2.2.2.2.2.2.1
-theorem rY : (retR s₀).Disjoint (yR (yP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.2.2.1
 theorem rC : (retR s₀).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 
 omit hp in
@@ -270,7 +268,6 @@ theorem in_frame {m : Mem} (hf : Frame [vR (uP s₀) (k + 1), cR (cP s₀)] s₀
 theorem t_frame {m : Mem} (hf : Frame [vR (uP s₀) (k + 1), cR (cP s₀)] s₀.mem m) {e : Nat} (he : e < k) :
     PolyIs m (tP s₀ + BitVec.ofNat 64 (1024 * e)) (polyAt s₀.mem (tP s₀ + BitVec.ofNat 64 (1024 * e))) :=
   in_frame hf he hp.2.2.2.1 (dTC hp :) hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-
 
 omit hp in
 include hk in
@@ -312,11 +309,6 @@ theorem in_vec (p : Addr) {n j : Nat} (hn : n ≤ 64) (hj : j < n) :
     (vR p n).Contains (p + BitVec.ofNat 64 (1024 * j)) 1024 :=
   Offset.contains_base p (by have := Nat.mul_le_mul_left 1024 (show j + 1 ≤ n by omega); rw [Nat.mul_succ] at this; omega)
     (by omega)
-
-theorem hi_read {m m' : Mem} {C : Addr} {rs : List Region} (hf : Frame rs m m') (hhi : ∀ r ∈ rs, (hiR C).Disjoint r)
-    {d : Nat} (h3 : 3072 ≤ d) (h8 : d + 8 ≤ 3328) : m'.readW (C + BitVec.ofNat 64 d) 64 = m.readW (C + BitVec.ofNat 64 d) 64 :=
-  hf.readW (r := ⟨C + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => (hhi r hr).sub_left (sub_hi h3 h8))
-    (by decide)
 
 theorem Base.step {k : Nat} {s₀ s s' : State} (hb : Base k s₀ s) {rs : List Region} (hf : Frame rs s.mem s'.mem)
     (hsub : ∀ r ∈ rs, Region.Sub r (vR (uP s₀) (k + 1)) ∨ Region.Sub r (cR (cP s₀)))

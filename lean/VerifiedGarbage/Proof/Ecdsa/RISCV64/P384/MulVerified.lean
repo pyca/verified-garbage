@@ -33,12 +33,6 @@ restore them. The coordinates the specification decodes are the proofs'
 (`Point.dec_eq`, given Fermat's little theorem from the group law), and
 `Represents` is `Rep`. What the function writes is its own working space or
 the result's (`keeps_of_unch`).
-
-`mul_verified` adds the function's constant time, by taint tracking (only the
-pointer, in `a0`, public: every address is `s0` plus a constant or plus the
-counter's word, and the only branches are on the counter and on the field
-functions' pointers), and a state satisfying the precondition (`satState`:
-the constants and `G` in Montgomery's form at their slots).
 -/
 
 -- `p`, below `2^384`, is evaluated.
@@ -220,71 +214,5 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
     · show _ < W.p; rw [Impl.Weierstrass.Point.Curve.pointAt, x2]; exact lt₅.2.2
     · rw [Impl.Weierstrass.Point.Curve.pointAt, x0, x1, x2, dq, dq, dq]
       exact represents_of_rep R₅
-
-/-! ## Constant time, and a state satisfying the precondition -/
-
-theorem mul_ct : ConstantTime isa mulRVc.pre mulRVc.pub mulP384 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0])
-    (fun _ _ _ _ hp => ⟨hp.1, fun r hr => by
-      simp only [Taint.mem_ofRegs, List.mem_singleton] at hr; subst hr; exact hp.2⟩) (by taint_decide)
-
-/-- Byte `a` of the number `x` at slot `i` of a working space at `0x1000`,
-if `a` is in that slot. -/
-def satByte (a : Addr) (i x : Nat) : Option (BitVec 8) :=
-  if 0x1000 + p384.sl i ≤ a.toNat ∧ a.toNat < 0x1000 + p384.sl i + 48 then
-    some (BitVec.ofNat 8 (x >>> (8 * (a.toNat - (0x1000 + p384.sl i)))))
-  else none
-
-/-- `x R mod p`. -/
-abbrev mont (x : Nat) : Nat := x * 2 ^ 384 % W.p
-
-/-- The memory of `satState`: `p`, and one, `a`, `3 b` and `G`'s coordinates
-in Montgomery's form, at their slots for `ws = 0x1000`, zeros elsewhere. -/
-def satMem : Mem := fun a =>
-  ((satByte a MP W.p).orElse fun _ => (satByte a ONEP (mont 1)).orElse fun _ =>
-    (satByte a AP (mont W.a)).orElse fun _ => (satByte a B3P (mont (3 * W.b))).orElse fun _ =>
-    (satByte a RX (mont W.gx)).orElse fun _ => satByte a RY (mont W.gy)).getD 0
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | _ => 0
-  sp := 0x10000
-  mem := satMem
-  rd := []
-  wr := [⟨0x1000, 8192⟩]
-
-theorem sat_consts : MC.ConstsOk 0x1000 satMem := by
-  unfold Impl.Weierstrass.Mul.Curve.ConstsOk
-  exact ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
-
-theorem sat_x : (MC.qCoords 0x1000 satMem).1 = mont W.gx := by decide +kernel
-
-theorem sat_y : (MC.qCoords 0x1000 satMem).2 = mont W.gy := by decide +kernel
-
-theorem sat_point (hL : VG.Proof.Weierstrass.Law W) : MC.PointOk 0x1000 satMem := by
-  have dq : ∀ x, MC.toPoint.dec x = toM W.p (2 ^ 384) x :=
-    VG.Proof.Weierstrass.Point.dec_eq MC.toPoint hL.one_ne_zero (VG.Proof.Weierstrass.Point.fermat_of_law hL) unit
-  have hp0 : 0 < W.p := by decide
-  refine ⟨by rw [sat_x]; exact Nat.mod_lt _ hp0, by rw [sat_y]; exact Nat.mod_lt _ hp0, ?_⟩
-  have eG : MC.point 0x1000 satMem = Spec.Weierstrass.G W := by
-    unfold Impl.Weierstrass.Mul.Curve.point
-    rw [sat_x, sat_y, dq, dq]
-    exact congrArg₂ Point.affine (toM_mont unit) (toM_mont unit)
-  rw [eG]
-  exact VG.Proof.P384.onCurve_G
-
-theorem mul_verified (hL : VG.Proof.Weierstrass.Law W) :
-    Verified RISCV64.target mulP384 (MC.mulInRangeContract RISCV64.abi) :=
-  Verified.of_correct (mul_rv hL) mul_ct
-    { pre := by sig_implies_pre [Impl.Weierstrass.Mul.Curve.mulInRangeContract, Impl.Weierstrass.MulBase.sig,
-        mulRVc, RISCV64.abi, RISCV64.argRegs]
-      post := by sig_implies_post [Impl.Weierstrass.Mul.Curve.mulInRangeContract, Impl.Weierstrass.MulBase.sig,
-        mulRVc, RISCV64.abi, RISCV64.argRegs]
-      pub := by sig_implies_pub [Impl.Weierstrass.Mul.Curve.mulInRangeContract, Impl.Weierstrass.MulBase.sig,
-        mulRVc, RISCV64.abi, RISCV64.argRegs]
-      sat := ⟨satState, Sig.contract_pre_of_check (by decide +kernel) (by
-        sig_reduce [Sig.wfPre, Impl.Weierstrass.MulBase.sig, RISCV64.abi, RISCV64.argRegs, satState]
-        exact ⟨by decide, sat_consts, sat_point hL⟩)⟩ }
 
 end VG.Proof.Ecdsa.RISCV64.P384

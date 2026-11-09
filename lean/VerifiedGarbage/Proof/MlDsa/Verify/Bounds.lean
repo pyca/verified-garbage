@@ -44,11 +44,6 @@ theorem bmax_left (b b' : Bounds) : BLe b (bmax b b') :=
 theorem bmax_right (b b' : Bounds) : BLe b' (bmax b b') :=
   ⟨Nat.le_max_right _ _, Nat.le_max_right _ _, Nat.le_max_right _ _, Nat.le_max_right _ _⟩
 
-theorem BLe.refl (b : Bounds) : BLe b b := ⟨Nat.le_refl _, Nat.le_refl _, Nat.le_refl _, Nat.le_refl _⟩
-
-theorem BLe.trans {a b c : Bounds} (h₁ : BLe a b) (h₂ : BLe b c) : BLe a c :=
-  ⟨Nat.le_trans h₁.1 h₂.1, Nat.le_trans h₁.2 h₂.2, Nat.le_trans h₁.3 h₂.3, Nat.le_trans h₁.4 h₂.4⟩
-
 /-! ## Prefixes of the outputs of `H` and `G` -/
 
 theorem squeeze_take {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200) (S : Spec.Sha3.State) {d d' : Nat}

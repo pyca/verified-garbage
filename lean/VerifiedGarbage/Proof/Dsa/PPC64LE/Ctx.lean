@@ -187,12 +187,8 @@ abbrev PBody (L : Lay) (m m' : Mem) : Prop := Outside L.S 256 (L.qOff - 256) m m
 /-- Memory changed only in the Q space's arrays. -/
 abbrev QBody (L : Lay) (m m' : Mem) : Prop := Outside L.Q 256 1344 m m'
 
-theorem PBody.refl (L : Lay) (m : Mem) : PBody L m m := Outside.refl _ _ _ _
-
 theorem PBody.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : PBody L m₁ m₂) (h₂ : PBody L m₂ m₃) : PBody L m₁ m₃ :=
   Outside.trans h₁ h₂
-
-theorem QBody.refl (L : Lay) (m : Mem) : QBody L m m := Outside.refl _ _ _ _
 
 theorem QBody.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : QBody L m₁ m₂) (h₂ : QBody L m₂ m₃) : QBody L m₁ m₃ :=
   Outside.trans h₁ h₂
@@ -205,22 +201,11 @@ theorem PBody.body {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PBody L m m') : Body 
 theorem QBody.body {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBody L m m') : Body L m m' :=
   Body.ofQ hL h (by decide)
 
-/-- A change in the P space's arrays keeps the Q space and the buffer. -/
-theorem PBody.outQ {L : Lay} {m m' : Mem} (h : PBody L m m') :
-    Outside L.S 0 L.qOff m m' :=
-  h.mono (Nat.zero_le _) (by simp only [Lay.qOff, Lay.slot_eq]; omega_arith)
-
-/-- A change in the P space's arrays, seen from the Q space: none at its own offsets. -/
-theorem PBody.q {L : Lay} {m m' : Mem} (h : PBody L m m') : ∀ x, L.qOff ≤ ofs L.S x → m' x = m x :=
-  fun x hx => h x (Or.inr (by simp only [Lay.qOff, Lay.slot_eq] at hx ⊢; omega_arith))
-
 /-- Memory changed only in the P space's arrays from array 1 on. -/
 abbrev PArr (L : Lay) (m m' : Mem) : Prop := Outside L.S (slot L.wp 1) (L.qOff - slot L.wp 1) m m'
 
 /-- Memory changed only in the Q space's arrays from array 1 on. -/
 abbrev QArr (L : Lay) (m m' : Mem) : Prop := Outside L.Q (slot 4 1) (1600 - slot 4 1) m m'
-
-theorem PArr.refl (L : Lay) (m : Mem) : PArr L m m := Outside.refl _ _ _ _
 
 theorem PArr.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : PArr L m₁ m₂) (h₂ : PArr L m₂ m₃) : PArr L m₁ m₃ :=
   Outside.trans h₁ h₂
@@ -235,11 +220,6 @@ theorem PArr.pbody {L : Lay} {m m' : Mem} (h : PArr L m m') : PBody L m m' :=
 
 theorem QArr.qbody {L : Lay} {m m' : Mem} (h : QArr L m m') : QBody L m m' :=
   h.mono (by simp only [Lay.slot_eq]; omega_arith) (by simp only [Lay.slot_eq]; omega_arith)
-
-/-- A change in arrays `1 ≤ j < 28` of the P space. -/
-theorem PArr.of {L : Lay} {o n : Nat} {m m' : Mem} (h : Outside L.S o n m m') (ho : slot L.wp 1 ≤ o)
-    (hn : o + n ≤ L.qOff) : PArr L m m' :=
-  h.mono ho (by omega_arith)
 
 /-- A change in arrays `1 ≤ j < 28` of the Q space. -/
 theorem QArr.of {L : Lay} {o n : Nat} {m m' : Mem} (h : Outside L.Q o n m m') (ho : slot 4 1 ≤ o)
@@ -348,28 +328,6 @@ theorem getQ_ok {s : State} {L : Lay} {key sig dig : Addr} (h : Regs s L key sig
   prun [shl_shr_ofNat _ 32 (by decide)]
   rw [← h.ql]
   congr 1
-  omega_arith
-
-/-- `getQb rd`: `rd :=` the 16 bits of `r2` from bit 32. -/
-theorem getQb_ok (s : State) (rd : Reg) :
-    WP isa (.block (getQb rd)) s fun t =>
-      (t.gpr rd = BitVec.ofNat 64 ((s.gpr .r2).toNat / 2 ^ 32 % 2 ^ 16) ∧ t.mem = s.mem) ∧ Keep [rd] s t := by
-  refine WP.keep _ ?_ (by cases rd <;> decide)
-  unfold getQb
-  prun [shl_shr_ofNat _ 16 (by decide)]
-  congr 1
-  omega_arith
-
-/-- `getD rd`: `rd :=` `r2`'s top 16 bits. -/
-theorem getD_ok (s : State) (rd : Reg) :
-    WP isa (.block (getD rd)) s fun t =>
-      (t.gpr rd = BitVec.ofNat 64 ((s.gpr .r2).toNat / 2 ^ 48) ∧ t.mem = s.mem) ∧ Keep [rd] s t := by
-  refine WP.keep _ ?_ (by cases rd <;> decide)
-  unfold getD
-  prun
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
-  have := (s.gpr .r2).isLt
   omega_arith
 
 /-- `scratch` is a working space. -/

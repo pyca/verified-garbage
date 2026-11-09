@@ -30,11 +30,14 @@ call stores, it uses the 24 bytes below `esp`. The callee preserves `ebx`,
 
 The scratch buffer (2176 bytes): `[0, 2048)` is the working space of the
 block function, `[2048, 2064)` the ciphertext block that decryption keeps
-across the call, and `[2064, 2080)` our caller's registers.
+across the call, and `[2064, 2080)` our caller's registers. `encryptZ` and
+`decryptZ` zero `[2048, 2080)` before they return (`zeroSaved`), so that
+of the scratch buffer only the bytes the block function writes are left
+changed.
 
-* `encrypt`, each block: `Pⱼ ⊕ Cⱼ₋₁` in place, enciphered in place, and
+* `encryptZ`, each block: `Pⱼ ⊕ Cⱼ₋₁` in place, enciphered in place, and
   copied to the chaining value.
-* `decrypt`, each block: `Cⱼ` saved in the scratch buffer, deciphered in
+* `decryptZ`, each block: `Cⱼ` saved in the scratch buffer, deciphered in
   place, XORed with the chaining value `Cⱼ₋₁`, and the saved `Cⱼ` copied to
   the chaining value.
 
@@ -69,6 +72,15 @@ block, and the registers restored. -/
 def whole (body : Prog isa) : Prog isa :=
   .seq (.block setup) (.seq (.ite .e (.block []) (.loop body .ne)) (.block (restore 5)))
 
+/-- After the registers are restored: the saved ciphertext block and the
+saved registers, `[2048, 2080)` of the scratch buffer, zeroed. -/
+def zeroSaved : List Instr := [.mov .ecx (argOp 5)] ++ zero4 .ecx cOff ++ zero4 .ecx (cOff + 16)
+
+/-- `whole body`, then `zeroSaved`: of the scratch buffer, only what the
+block function writes is left changed. -/
+def wholeZ (body : Prog isa) : Prog isa :=
+  .seq (.block setup) (.seq (.ite .e (.block []) (.loop body .ne)) (.block (restore 5 ++ zeroSaved)))
+
 /-! ## `vg_aes_cbc_encrypt` -/
 
 /-- `Pⱼ ⊕ Cⱼ₋₁` in place, and the arguments of the call. -/
@@ -80,7 +92,9 @@ def encPost : List Instr := ([.mov .ebx (argOp 2)] : List Instr) ++ zero4 .ebx 0
 /-- One block: `Pⱼ ⊕ Cⱼ₋₁`, enciphered, and the result the chaining value. -/
 def encBody (b : Blocks) : Prog isa := .seq (.block encPre) (.seq (blkCall b) (.block encPost))
 
-def encrypt (b : Blocks) : Prog isa := whole (encBody b)
+/-- `vg_aes_cbc_encrypt` around `b`, leaving of the scratch buffer only what
+`b` writes changed. -/
+def encryptZ (b : Blocks) : Prog isa := wholeZ (encBody b)
 
 /-! ## `vg_aes_cbc_decrypt` -/
 
@@ -97,6 +111,8 @@ def decPost : List Instr :=
 the chaining value. -/
 def decBody (b : Blocks) : Prog isa := .seq (.block decPre) (.seq (blkCall b) (.block decPost))
 
-def decrypt (b : Blocks) : Prog isa := whole (decBody b)
+/-- `vg_aes_cbc_decrypt` around `b`, leaving of the scratch buffer only what
+`b` writes changed. -/
+def decryptZ (b : Blocks) : Prog isa := wholeZ (decBody b)
 
 end VG.Impl.AesCbc.X86

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.TimeTop
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Precomputed public RSA at a run-time width on i686 against its contract
 
@@ -28,7 +29,7 @@ def satState : State where
   rd := [⟨0x2000, 128⟩, ⟨0x3000, 1⟩, ⟨0x4000, 64⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x8000, 1024⟩, ⟨0x20004, 40⟩]
 
-theorem satisfiable : ∃ s, (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pre s := by
+theorem satisfiable : ∃ s, (Proof.Rsa.publicPrecomputedCheckedContract abi 96).pre s := by
   have a0 : arg satState 0 = 4096 := by decide
   have a1 : arg satState 1 = 64 := by decide
   have a2 : arg satState 2 = 8192 := by decide
@@ -41,12 +42,12 @@ theorem satisfiable : ∃ s, (Spec.Rsa.publicPrecomputedCheckedContract abi 96).
   have a9 : arg satState 9 = 128 := by decide
   have e : argAddr satState 0 = 0x20004 := by decide
   have esp : satState.gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
+  sig_implies_sat [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
     argBytes, stackBelow]
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, e, esp, satState, Spec.Rsa.lenValid,
       Spec.Rsa.publicScratchWords, Spec.Rsa.modulusWords, Spec.Rsa.precomputedWords] using satState
 
-theorem verified : Verified target PrecomputedRt.code (Spec.Rsa.publicPrecomputedCheckedContract abi 96) :=
+theorem verified : Verified target PrecomputedRt.code (Proof.Rsa.publicPrecomputedCheckedContract abi 96) :=
   ⟨correct, constantTime, satisfiable⟩
 
 end VG.Proof.Bignum.X86.PrecomputedRt

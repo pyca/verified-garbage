@@ -1,14 +1,12 @@
 module
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
 
-
 /-!
 # ML-KEM-768 on x86-64: the calls of the polynomial primitives, in a layout
 
 Each call of a primitive from a state in a layout whose pointers pass its
-check: what it leaves (`PPost`) and computes (`nttInvAt_ok`, …), and that two
-runs in the layout leak the same (`nttInvAt_tr`, …); and the same for the byte
-stores and copies between them.
+check: what it leaves (`PPost`) and computes (`addAt_ok`, …), and that two
+runs in the layout leak the same (`addAt_tr`, …).
 -/
 
 @[expose] public section
@@ -27,24 +25,6 @@ theorem rdOk_in {bs : List (Reg × Nat)} {p : Ptr} {l : Nat} (h : rdOk bs p l = 
 
 theorem wrOk_in {bs wbs : List (Reg × Nat)} {p : Ptr} {l : Nat} (h : wrOk bs wbs p l = true) : inB bs p l = true := by
   simp only [wrOk, Bool.and_eq_true] at h; exact rdOk_in h.1
-
-/-! ## `NTT` and `NTT⁻¹` -/
-
-theorem ipChk_in {bs wbs : List (Reg × Nat)} {f : Ptr} (hc : ipChk bs wbs f = true) :
-    inB bs f 1024 = true ∧ inB bs (sc oSS) 1024 = true := by
-  simp only [ipChk, Bool.and_eq_true] at hc; exact ⟨wrOk_in hc.1.1, wrOk_in hc.1.2⟩
-
-theorem nttInvAt_ok {A : Arith} (hA : ArithOk A) {s : State} (L : Lay rbs wbs s) {f : Ptr}
-    (hc : ipChk (rbs ++ wbs) wbs f = true) (red : Reduced s.mem (pa s f)) :
-    WP isa (nttInvAt A f) s fun s' => PPost s s' [(f, 1024), (sc oSS, 1024)] ∧
-      PolyIs s'.mem (pa s f) (nttInv (polyAt s.mem (pa s f))) :=
-  ipAt_ok hA.nttInv.ok hA.nttInv.nosp (by rw [hA.nttInv.depth]; decide) (IpH.of L hc red)
-
-theorem nttInvAt_tr {A : Arith} (hA : ArithOk A) {f : Ptr} (hc : ipChk (rbs ++ wbs) wbs f = true) :
-    RelCT isa (fun x y => LRel rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f)) (nttInvAt A f)
-      fun _ _ => True :=
-  RelCT.mono (ipAt_tr hA.nttInv.ok hA.nttInv.ct) (fun _ _ ⟨h, rx, ry⟩ => ⟨IpH.of h.1 hc rx, IpH.of h.2.1 hc ry,
-    h.eq (ipChk_in hc).1, h.eq (ipChk_in hc).2, h.2.2.2⟩) fun _ _ _ => trivial
 
 /-! ## Addition and subtraction -/
 

@@ -19,9 +19,6 @@ structure LoopKeep (base : Addr) (s t : State) : Prop where
   sp : t.sp = s.sp
   mem : Outside base 64 712 s.mem t.mem
 
-theorem LoopKeep.refl (base : Addr) (s : State) : LoopKeep base s s :=
-  ⟨fun _ _ _ => rfl, rfl, rfl, rfl, Outside.refl _ _ _ _⟩
-
 theorem LoopKeep.trans {base : Addr} {s t u : State} (h : LoopKeep base s t)
     (k : LoopKeep base t u) : LoopKeep base s u :=
   ⟨fun r hr hc => (k.gpr r hr hc).trans (h.gpr r hr hc), k.rd.trans h.rd,
@@ -33,9 +30,6 @@ theorem LoopKeep.scratch {base : Addr} {s t : State} (h : LoopKeep base s t)
 
 theorem LoopKeep.of_field {base : Addr} {s t : State} (h : Keep base s t) : LoopKeep base s t :=
   ⟨fun r hr _ => h.gpr r hr, h.rd, h.wr, h.sp, h.mem.mono (by decide) (by decide)⟩
-
-theorem LoopKeep.of_invert {base : Addr} {s t : State} (h : IKeep base s t) : LoopKeep base s t :=
-  ⟨h.gpr, h.rd, h.wr, h.sp, h.mem.mono (by decide) (by decide)⟩
 
 theorem LoopKeep.of_keeps {base : Addr} {s t : State} {rs : List Reg} (h : Keeps rs s t)
     (hr : ∀ r ∈ rs, r ∈ clob ∨ r = .x19) : LoopKeep base s t := by
@@ -57,13 +51,6 @@ theorem LoopKeep.bit {base : Addr} {s t : State} (h : LoopKeep base s t)
   simp [VG.Impl.X25519.AArch64.Word.BITS, VG.Impl.X25519.AArch64.BITS,
     VG.Impl.X25519.AArch64.slot, VG.Impl.X25519.AArch64.NSLOT]
   omega
-
-theorem LoopKeep.saved {base : Addr} {s t : State} (h : LoopKeep base s t)
-    {i : Nat} (hi : i < 6) : word t.mem base (8*i) = word s.mem base (8*i) :=
-  h.mem.word (by omega) (by omega)
-
-theorem LoopKeep.output {base : Addr} {s t : State} (h : LoopKeep base s t) :
-    word t.mem base 48 = word s.mem base 48 := h.mem.word (by decide) (by decide)
 
 theorem env_swap_store (m : Mem) (base : Addr) (v : BitVec 64) :
     env (m.writeW (off base 768) v) base = env m base := by

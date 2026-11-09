@@ -23,9 +23,6 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.W
 
 variable {c : Cfg}
 
-/-- `x` and `y`, `k` and `k'` bytes long, are apart. -/
-abbrev Apart (x k y k' : Nat) : Prop := x + k ≤ y ∨ y + k' ≤ x
-
 /-- Slots away from where the temporary area may be (`sl_apart`). -/
 abbrev Away (l : List Nat) : Prop := ∀ i ∈ l, i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82
 

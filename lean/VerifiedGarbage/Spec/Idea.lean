@@ -141,12 +141,6 @@ def encodeBlock (x : State) : Block :=
 def cryptBlock (z : Schedule) (b : Block) : Block :=
   encodeBlock (crypt z (decodeBlock b))
 
-def encryptBlock (key : Vector Byte 16) (b : Block) : Block :=
-  cryptBlock (expandKey key) b
-
-def decryptBlock (key : Vector Byte 16) (b : Block) : Block :=
-  cryptBlock (invertKey (expandKey key)) b
-
 /-- SP 800-38A §6.1 under the subkeys `z`, including empty input: ECB
 encryption under `expandKey`, decryption under `invertKey` of it. -/
 def ecb (z : Schedule) (input : List Block) : List Block :=

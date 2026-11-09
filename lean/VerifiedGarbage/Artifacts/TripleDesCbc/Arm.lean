@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.Arm.CbcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Triple DES-CBC artifacts on baseline ARMv7 -/
 

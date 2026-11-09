@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Impl.Bignum.Arm.WideMul
 import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Checked public RSA satisfies its shared contract under AAPCS -/
 
@@ -16,14 +17,14 @@ import VerifiedGarbage.TCB.Arm.Target
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem pd_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputedCheckedContract abi 56).pre s) :
+theorem pd_contract_pre (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre s) :
     PdFnInput (stackArg s 4) (s.gpr .r0) (s.gpr .r2) (stackArg s 0) (stackArg s 2)
       (stackArg s 5).toNat (s.gpr .r1).toNat (stackArg s 1).toNat
       (s.mem.read (State.addr (s.gpr .r2)) (8 * Spec.Rsa.modulusWords (s.gpr .r1).toNat)).toNat
       (s.mem.read (VG.Proof.Mont.off (State.addr (s.gpr .r2)) (8 * Spec.Rsa.modulusWords (s.gpr .r1).toNat)) (8 * Spec.Rsa.modulusWords (s.gpr .r1).toNat)).toNat
       (Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat)
       (Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 2)) (s.gpr .r1).toNat) s := by
-  sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
+  sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
   have argAddr : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
   rw [argAddr] at h
   obtain ⟨stackFit, argFit, rd, wr, _, _, _, outWs, _, nWs, eWs, xWs, wsArgs,
@@ -68,9 +69,9 @@ theorem pd_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputedCheckedContr
   · rw [frame]; exact stackOut
   · rw [frame]; exact stackArgs
 
-theorem pd_contract_length (s : State) (h : (Spec.Rsa.publicPrecomputedCheckedContract abi 56).pre s) :
+theorem pd_contract_length (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre s) :
     (s.gpr .r3).toNat = 2 * Spec.Rsa.modulusWords (s.gpr .r1).toNat := by
-  sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
+  sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, preLen, _⟩ := h
   exact preLen
 

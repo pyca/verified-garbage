@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointChecks
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointContract
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
@@ -33,8 +34,8 @@ theorem jointVerify_p224_public_ct :
 
 theorem jointVerify_ct :
     ConstantTime isa
-      (Spec.Ecdsa.P224.inst.verifyContract (X86_64.abi.withConsts p224.combConsts)).pre
-      (Spec.Ecdsa.P224.inst.verifyContract (X86_64.abi.withConsts p224.combConsts)).pub
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst (X86_64.abi.withConsts p224.combConsts)).pre
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst (X86_64.abi.withConsts p224.combConsts)).pub
       Impl.Ecdsa.Verify.X86_64.jointVerifyP224.inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   exact jointVerify_p224_public_ct hL hT hI _ _ _ _ _ _ (pre_of (implies.pre _ pre₁))

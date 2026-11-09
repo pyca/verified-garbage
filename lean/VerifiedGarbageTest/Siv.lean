@@ -15,9 +15,10 @@ both examples of Appendix A, deterministic (A.1: one component of
 associated data, a plaintext shorter than a block, so `pad`) and
 nonce-based (A.2: two components and a nonce, a plaintext of several
 blocks, so `xorend`). Each checks S2V's first step (`CMAC(zero)`), its
-result (`CMAC(final)`, `V`) and the output `IV || C` of `encrypt`; then that
-`decrypt` of the output is the plaintext, and that it fails with the last
-byte of `V` changed. The components, laid out in memory as a list of slices
+result (`CMAC(final)`, `V`) and the output `IV || C` of `encrypt` (SIV-AES:
+`VG.Spec.Siv.encryptWith` under the key's halves, as `decrypt` is
+`VG.Spec.Siv.decryptWith`); then that `decrypt` of the output is the
+plaintext, and that it fails with the last byte of `V` changed. The components, laid out in memory as a list of slices
 with 64- and 32-bit descriptors, read back as themselves (`components`, the
 associated data of `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`).
 -/
@@ -72,6 +73,24 @@ def layout (ptrBits : Nat) (ads : List (List Byte)) : Mem := fun a =>
     (ads.getD (k / 0x1000) []).getD (k % 0x1000) 0
   else 0
 
+/-- §2.6, SIV-AES encryption under the key `key` (32, 48 or 64 bytes,
+`K1 = leftmost(K, len(K)/2)`, `K2 = rightmost(K, len(K)/2)`) of the
+plaintext `p` with the associated data `ads`: `Z = V ‖ C`. -/
+def encrypt (key : List Byte) (ads : List (List Byte)) (p : List Byte) : List Byte :=
+  let k1 := key.take (key.length / 2)
+  let k2 := key.drop (key.length / 2)
+  let (v, c) := Spec.Siv.encryptWith (Spec.Siv.cmac k1) (Spec.Cmac.aes k2) ads p
+  v ++ c
+
+/-- §2.7, SIV-AES decryption under the key `key` (32, 48 or 64 bytes) of
+`Z = V ‖ C` with the associated data `ads`: the plaintext, or `none` (FAIL)
+if `Z` is shorter than `V` or `V` is wrong. -/
+def decrypt (key : List Byte) (ads : List (List Byte)) (z : List Byte) : Option (List Byte) :=
+  let k1 := key.take (key.length / 2)
+  let k2 := key.drop (key.length / 2)
+  if z.length < 16 then none
+  else Spec.Siv.decryptWith (Spec.Siv.cmac k1) (Spec.Cmac.aes k2) ads (z.take 16) (z.drop 16)
+
 run_cmd do
   -- Appendix A itself, not its entry in the table of contents.
   let text := ((← readFile ("rfc5297" / "rfc5297.txt")).splitOn "Appendix A.  Test Vectors")
@@ -94,12 +113,12 @@ run_cmd do
       throwError "RFC 5297 {start}: CMAC(zero) is wrong"
     unless Spec.Siv.s2v mac (ads ++ [pt]) == (← get "CMAC(final)") do
       throwError "RFC 5297 {start}: S2V is wrong"
-    unless Spec.Siv.encrypt key ads pt == z do
+    unless encrypt key ads pt == z do
       throwError "RFC 5297 {start}: encryption is wrong"
-    unless Spec.Siv.decrypt key ads z == some pt do
+    unless decrypt key ads z == some pt do
       throwError "RFC 5297 {start}: decryption is wrong"
     let forged := z.set 15 (z.getD 15 0 ^^^ 1)
-    unless Spec.Siv.decrypt key ads forged == none do
+    unless decrypt key ads forged == none do
       throwError "RFC 5297 {start}: decryption accepts a wrong V"
     for ptrBits in [64, 32] do
       unless Spec.Siv.components ptrBits (layout ptrBits ads) 0x100 ads.length == ads do

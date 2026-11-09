@@ -1,5 +1,5 @@
 name = "DSA parameter generation"
 family = "DSA"
-specs = ["Dsa", "Dsa/Generate"]
+specs = ["Dsa", "Dsa/Generate", "Dsa/ParameterSearch"]
 modules = ["src/dsa.rs", "src/dsa/parameters.rs"]
 asm = ["dsa"]

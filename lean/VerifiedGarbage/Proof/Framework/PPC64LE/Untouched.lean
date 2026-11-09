@@ -32,12 +32,4 @@ theorem nv_of_avoids {c : Prog isa} {rs : List Reg}
   have hm : (RegSet.ofList rs).mem r = true := RegSet.mem_ofList.mpr hr
   simp only [avoids, e, hm, Bool.not_true, Bool.false_eq_true] at hi'
 
-theorem all_of_avoids {l : List Instr} {rs : List Reg}
-    (h : l.all (avoids (RegSet.ofList rs)) = true) :
-    (l.all fun i => rs.all fun r => dstOf i != some r) = true := by
-  refine List.all_eq_true.mpr fun i hi => List.all_eq_true.mpr fun r hr => bne_iff_ne.mpr fun e => ?_
-  have hi' := List.all_eq_true.mp h i hi
-  have hm : (RegSet.ofList rs).mem r = true := RegSet.mem_ofList.mpr hr
-  simp only [avoids, e, hm, Bool.not_true, Bool.false_eq_true] at hi'
-
 end VG.PPC64LE

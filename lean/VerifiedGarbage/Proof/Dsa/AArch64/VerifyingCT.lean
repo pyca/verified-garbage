@@ -42,19 +42,4 @@ theorem verifyFailure_ct : RelCT isa (Two (fun B : Addr => fun s => s.gpr .x0 = 
     subst r
     exact h)) (by taint_decide)
 
-theorem verifyingMain_ct (M : Mont) : RelCT isa (Two VerifyingStart) (SignVerify.verify M.mm) (fun _ _ => True) := by
-  apply RelCT.assoc
-  refine RelCT.seq verifyingShape_ct (RelCT.ite ?_ ?_ ?_)
-  · rintro s₁ s₂ ⟨reference, h₁, h₂, hsp⟩
-    exact h₁.branch.trans h₂.branch.symm
-  · exact ((two_map (fun c : VerifyingCall => c.layout.base) (fun _ _ h => h.x0) verifyFailure_ct).mono
-      (fun _ _ h => h.1) (fun _ _ h => h))
-  · refine (verifyingSuccess_ct M).mono ?_ (fun _ _ h => h)
-    rintro s₁ s₂ ⟨⟨reference, h₁, h₂, hsp⟩, hb⟩
-    have ha : reference.input.accepted = true := by
-      change eval (.zero .x .x3) s₁ = some false at hb
-      rw [h₁.branch] at hb
-      cases h : reference.input.accepted <;> simp_all
-    exact ⟨⟨reference, ha⟩, h₁, h₂, hsp⟩
-
 end VG.Proof.Dsa.AArch64

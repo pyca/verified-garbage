@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Tail
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
@@ -170,7 +171,8 @@ namespace VG.Proof.RsaKeyGen.X86_64.Key
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.RsaKeyGen.X86_64.Key
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 open VG.Spec.Rsa (bytesAt)
-open VG.Spec.RsaKeyGen (keyOp keyStatus keyFromPrimes)
+open VG.Spec.RsaKeyGen (keyFromPrimes)
+open VG.Proof.RsaKeyGen (keyOp keyStatus)
 
 /-- The status and the outputs `keyOp` gives. -/
 def OutsRes (I : KIn) (m : Mem) (rax : BitVec 64) : Prop :=
@@ -220,10 +222,6 @@ theorem outsRes_zeros {I : KIn} {s t : State} {d : Nat}
 
 theorem i2osp_zero (k : Nat) : Spec.Rsa.i2osp 0 k = List.replicate k 0 := by
   simp [Spec.Rsa.i2osp, List.map_const']
-
-theorem i2osp_ite (c : Bool) (x k : Nat) :
-    Spec.Rsa.i2osp (if c then x else 0) k = if c then Spec.Rsa.i2osp x k else List.replicate k 0 := by
-  cases c <;> simp [i2osp_zero]
 
 /-- The outputs and the status of `keyPart`, for `d > 2^(8 pl)` or no `d`. -/
 theorem outsRes_tail {I : KIn} {s t : State} (L : KLens I) {ok : Bool}

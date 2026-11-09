@@ -21,15 +21,6 @@ open VG.Proof.X448.AArch64 (Outside off ofs)
 open VG.Proof.X448.AArch64.Weak (Index)
 open VG.Proof.X448.AArch64.Fast (BEnv)
 
-local notation "EV" => VG.Proof.X448.AArch64.Weak.E
-
-theorem buffer_env {base:Addr} {m m':Mem} {o n:Nat} (h:Outside base o n m m') (ho:2880≤o) :
-    EV m' base=EV m base:=by
-  funext i
-  have hi:=i.isLt
-  exact Window.FV_of_limbs fun j hj => h.limbs (Or.inl (by simp only [slot];omega))
-    (by simp only [slot];omega) (by omega)
-
 theorem buffer_bounds {base:Addr} {m m':Mem} {o n:Nat} (h:Outside base o n m m')
     (ho:2880≤o) (hb:BEnv m base) : BEnv m' base:=by
   intro i j hj

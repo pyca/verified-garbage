@@ -120,7 +120,6 @@ abbrev F3 (σ u : State) : Prop := ∃ X₁ X₂, StD σ X₁ X₂ u
 abbrev F4 (σ u : State) : Prop := ∃ X₁ X₂, StE σ X₁ X₂ u
 abbrev F5 (σ u : State) : Prop :=
   VG.Proof.Rsa.Arm.Div.Context (gQ σ) u ∧ WP isa VG.Impl.Rsa.Arm.Div.code u (fun t => ∃ X₁ X₂, StG σ X₁ X₂ t)
-abbrev F6 (σ u : State) : Prop := ∃ X₁ X₂, StG σ X₁ X₂ u
 abbrev F7 (σ u : State) : Prop := Base σ u ∧ Ws u (cvB σ) (cvZ σ) (cvW σ) nArr ∧
   u.gpr .r10 = σ.gpr .r0 ∧ u.gpr .r12 = σ.gpr .r2 ∧ WP isa stores u (Done σ)
 

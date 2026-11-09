@@ -5,7 +5,6 @@
 // gives.
 
 vg_ghash_with_powers_aes:
-	.arch_extension aes
 	ldr q16, [x5, #16]
 	ext v24.16b, v16.16b, v16.16b, #8
 	ldr q17, [x5, #0]
@@ -396,5 +395,4 @@ vg_ghash_with_powers_aes:
 	rev64 v0.16b, v0.16b
 	str q0, [x1, #0]
 	ret
-	.arch_extension noaes
 	.p2align 6

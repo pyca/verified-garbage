@@ -36,8 +36,6 @@ def G (k : Nat) : List Byte := (List.range k).flatMap fun j => Tb prf salt c (j 
 theorem G_succ (k : Nat) : G prf salt c (k + 1) = G prf salt c k ++ Tb prf salt c (k + 1) := by
   simp only [G, List.range_succ, List.flatMap_append, List.flatMap_singleton]
 
-theorem G_zero : G prf salt c 0 = [] := rfl
-
 /-- The number of blocks of the output. -/
 abbrev nb : Nat := (ol + D - 1) / D
 

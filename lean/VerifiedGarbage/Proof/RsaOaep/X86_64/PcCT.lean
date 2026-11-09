@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcContract
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCT
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfTCT
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcTab
+public import VerifiedGarbage.Proof.HashTable.X86_64
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Spec.RsaPkcs1Sig
@@ -14,7 +18,7 @@ meta import VerifiedGarbage.Spec.RsaPkcs1Sig
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86-64: constant time
 
-The pieces of `vg_rsa_oaep_<H>_mgf1_<G>_encrypt` (`EncCT`), for entry states
+The pieces of `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed` (`EncCT`), for entry states
 related to the anchor by `contract` too (`PP`: the precondition, `pre` and
 its words), and the call of the precomputed public operation, constant time
 for its contract, which makes `pre`'s words public. Nothing follows the
@@ -31,26 +35,36 @@ open VG.Proof.MlKem.X86_64 (Keep)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash Stream)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
 open VG.Proof.Rsa.X86_64 (PublicImpl pdChkContract)
+open VG.Proof.Pbkdf2.Md.X86_64 (MdHash)
+open VG.Impl.Mgf1.X86_64.Table (Fns)
+open VG.Proof.HashTable.X86_64 (tableOf tables fnsOf names Coh tabOK_of held_tableOf hashAt_tableOf fnsGood_of
+  mem_names)
 
-/-- What `contract` adds to `encK`'s precondition and public data. -/
-def PP (H : Spec.Mgf1.Hash) (a s : State) : Prop :=
-  PPre H s ∧ stackArg a 7 = stackArg s 7 ∧ stackArg a 8 = stackArg s 8 ∧
-    Spec.Rsa.wordsAt a.mem (stackArg a 7) (stackArg a 8).toNat =
-      Spec.Rsa.wordsAt s.mem (stackArg s 7) (stackArg s 8).toNat
+/-- What `contract` adds to `encK`'s precondition and public data, with the
+tables `T₁` (the label's hash function's) at the stack argument 10 and `T`
+(MGF1's) at 11. -/
+def PP (H : Spec.Mgf1.Hash) (ts : List FnTable) (T₁ T : FnTable) (a s : State) : Prop :=
+  PPreT H s ∧ stackArg a 8 = stackArg s 8 ∧ stackArg a 9 = stackArg s 9 ∧
+    (Spec.Rsa.wordsAt a.mem (stackArg a 8) (stackArg a 9).toNat =
+      Spec.Rsa.wordsAt s.mem (stackArg s 8) (stackArg s 9).toNat ∧ stackArg a 11 = stackArg s 11 ∧
+      (∀ f ∈ tabFnsE ts, a.syms f = s.syms f) ∧
+      Abi.tableHeld 64 s.mem (stackArg s 11) (FnTable.words isa s T) ∧
+      (tabFnsE ts).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g) ∧ stackArg a 10 = stackArg s 10 ∧
+      Abi.tableHeld 64 s.mem (stackArg s 10) (FnTable.words isa s T₁))
 
 /-- Before the call, with its arguments. -/
 structure EWPP (s t : State) : Prop where
   he : EnvE s t
-  L : Lay t (fb s) (stackArg s 5)
+  L : Lay t (fb s) (stackArg s 6)
   w : ∀ i < 4, t.mem.readW (off (fb s) (8 * i)) 64 = pw s i
   rdi : t.gpr .rdi = s.gpr .rdi
   rsi : t.gpr .rsi = s.gpr .rcx
-  rdx : t.gpr .rdx = stackArg s 7
-  rcx : t.gpr .rcx = stackArg s 8
+  rdx : t.gpr .rdx = stackArg s 8
+  rcx : t.gpr .rcx = stackArg s 9
   r8 : t.gpr .r8 = s.gpr .r8
   r9 : t.gpr .r9 = s.gpr .r9
 
-variable {H G : Spec.Mgf1.Hash}
+variable {H G : Spec.Mgf1.Hash} {ts : List FnTable} {T₁ T : FnTable}
 
 theorem ew_pubArgs' {s t : State} (hp : PPre H s) (h : EW s t) :
     WP isa (.block Impl.RsaOaep.X86_64.Precomputed.pubArgs) t (EWPP s) := by
@@ -63,19 +77,19 @@ theorem ew_pubArgs' {s t : State} (hp : PPre H s) (h : EW s t) :
     (k.gpr (by decide)).trans e.rsi, hdx, hcx, (k.gpr (by decide)).trans e.r8, (k.gpr (by decide)).trans e.r9⟩
 
 /-- What the precomputed public operation's contract makes public, from the anchor. -/
-theorem pub_view {a s t : State} (S : ESib H G (PP H) a s) (h : EWPP s t) :
+theorem pub_view {a s t : State} (S : ESib H G (PP H ts T₁ T) a s) (h : EWPP s t) :
     [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp].map (t.callEntry.withRegions (callRd s) (pubWr s)).gpr =
-      [a.gpr .rdi, a.gpr .rcx, stackArg a 7, stackArg a 8, a.gpr .r8, a.gpr .r9, fb a - 8] ∧
+      [a.gpr .rdi, a.gpr .rcx, stackArg a 8, stackArg a 9, a.gpr .r8, a.gpr .r9, fb a - 8] ∧
     (∀ i < 4, stackArg (t.callEntry.withRegions (callRd s) (pubWr s)) i = pw a i) ∧
     Spec.Rsa.wordsAt (t.callEntry.withRegions (callRd s) (pubWr s)).mem
       ((t.callEntry.withRegions (callRd s) (pubWr s)).gpr .rdx)
       ((t.callEntry.withRegions (callRd s) (pubWr s)).gpr .rcx).toNat =
-      Spec.Rsa.wordsAt a.mem (stackArg a 7) (stackArg a 8).toNat ∧
+      Spec.Rsa.wordsAt a.mem (stackArg a 8) (stackArg a 9).toNat ∧
     Spec.Rsa.bytesAt (t.callEntry.withRegions (callRd s) (pubWr s)).mem
       ((t.callEntry.withRegions (callRd s) (pubWr s)).gpr .r8)
       ((t.callEntry.withRegions (callRd s) (pubWr s)).gpr .r9).toNat =
       Spec.Rsa.bytesAt a.mem (a.gpr .r8) (a.gpr .r9).toNat := by
-  have hp := S.2.2.1
+  have hp := S.2.2.1.toPPre
   have hF := fb_toNat hp.toEPre
   have hfe : Frame [below (fb s) 16] t.mem t.callEntry.mem := by
     rw [State.callEntry_mem, h.he.rsp]
@@ -91,16 +105,17 @@ theorem pub_view {a s t : State} (S : ESib H G (PP H) a s) (h : EWPP s t) :
       (by have := hp.sp2; unfold frameBytes at *; omega), h.w i hi, pw_sib S]
   · simp only [State.withRegions_gpr, State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide), h.rdx, h.rcx]
-    rw [State.withRegions_mem, pre_words hp hfE, S.2.2.2.2.2]
+    rw [State.withRegions_mem, pre_words hp hfE, S.2.2.2.2.2.1]
   · simp only [State.withRegions_gpr, State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), h.r8, h.r9]
     rw [entryBytes h.he _ _ hp.d_stk_e hp.d_out_e hp.d_e_scr.symm (by have := hp.wE; omega)]
     exact S.2.1.2.2.2.symm
 
-theorem call_ct (v : PublicImpl) : RelCT isa (Two (EAt H G (PP H) EWPP)) (.call v.name v.code) fun _ _ => True := by
+theorem call_ct (v : PublicImpl) : RelCT isa (Two (EAt H G (PP H ts T₁ T) EWPP)) (.call v.name v.code)
+    fun _ _ => True := by
   refine RelCT.callEx (k := pdChkContract) v.ok v.ct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
-  have hp₁ := S₁.2.2.1
-  have hp₂ := S₂.2.2.1
+  have hp₁ := S₁.2.2.1.toPPre
+  have hp₂ := S₂.2.2.1.toPPre
   obtain ⟨r₁, g₁, n₁, e₁⟩ := pub_view S₁ j₁
   obtain ⟨r₂, g₂, n₂, e₂⟩ := pub_view S₂ j₂
   obtain ⟨c₁, w₁⟩ := call_covers hp₁ j₁.he.rd j₁.he.wr
@@ -115,40 +130,154 @@ theorem call_ct (v : PublicImpl) : RelCT isa (Two (EAt H G (PP H) EWPP)) (.call 
     n₁.trans n₂.symm, e₁.trans e₂.symm⟩, c₁, w₁, c₂, w₂, by rw [j₁.he.rsp, j₂.he.rsp, S₁.fb, S₂.fb]⟩
 
 section
-variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm) (KG : Callees Gm)
-  (mH : MgfLink Hl hH) (mG : MgfLink Gm hG)
+variable {vs : List MdHash} (hc : Coh vs)
 
-include hH KH hG KG mH mG in
-theorem encMain_ct (v : PublicImpl) : RelCT isa (Two (EAt mH.G mG.G (PP mH.G) (EK Hl.D)))
-    (Impl.RsaOaep.X86_64.Precomputed.encMain Hl.stream Gm.stream v.name v.code) fun _ _ => True := by
+/-- MGF1's public data from the anchor's: its `MQ`, the table, and the
+addresses of `w`'s functions. -/
+def mqtE (w : MdHash) (q : MQ) (a : State) : Table.MQT :=
+  ⟨q, stackArg a 11, a.syms w.H.initN, a.syms w.H.updN, a.syms w.H.finN⟩
+
+include hc in
+/-- Where MGF1 starts, with its table, for the anchor's public data. -/
+theorem met_of {w : MdHash} (hw : w ∈ vs) {src srcLen dst dstLen : Nat → Nat} {a s t : State}
+    (S : ESib H G (PP H (tables vs) T₁ (tableOf w)) a s) (hsy : t.syms = s.syms)
+    (h : EWM s t (src (s.gpr .rcx).toNat) (srcLen (s.gpr .rcx).toNat) (dst (s.gpr .rcx).toNat)
+      (dstLen (s.gpr .rcx).toNat))
+    (hf : MFit (src (s.gpr .rcx).toNat) (srcLen (s.gpr .rcx).toNat) (dst (s.gpr .rcx).toNat)
+      (dstLen (s.gpr .rcx).toNat)) :
+    Table.MET w.H.stream (fnsOf vs) 2 (frameBytes + 8 + 8 * 11)
+      (mqtE w ⟨fb a, stackArg a 6, [outR a, scrR a], src (a.gpr .rcx).toNat, srcLen (a.gpr .rcx).toNat,
+        dst (a.gpr .rcx).toNat, dstLen (a.gpr .rcx).toNat⟩ a) t := by
+  obtain ⟨hp, -, -, -, h9, hsy', hheld, hd, -, -⟩ := S.2.2
+  obtain ⟨hm, -, hDm⟩ := held_tableOf hheld
+  have T := etab hp h.he hsy (tabOK_of hc hd hw) hm hDm
+  have hn := mem_names hw
+  refine ⟨me_of S h hf, ?_, ?_, ?_, ?_⟩
+  · simp only [mqtE]; rw [← S.fb, h9]; exact T
+  · simp only [mqtE]; rw [hsy]; exact (hsy' _ hn.1).symm
+  · simp only [mqtE]; rw [hsy]; exact (hsy' _ hn.2.1).symm
+  · simp only [mqtE]; rw [hsy]; exact (hsy' _ hn.2.2).symm
+
+theorem etabArg_taint : ∃ hc, (taint.check (frT [] [] 2)
+    (.block (Impl.Mgf1.X86_64.Table.tabArg (frameBytes + 8 + 8 * 11) sTab)) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+include hc in
+/-- `EM` built and masked with the table's hash function, then `rest`,
+constant time if `rest` is. -/
+theorem encMask_ct {w₁ w : MdHash} (hw₁ : w₁ ∈ vs) (hw : w ∈ vs) {rest : Prog isa}
+    (hrest : RelCT isa (Two (EAt w₁.mgf.G w₁.mgf.G (PP w₁.mgf.G (tables vs) (tableOf w₁) (tableOf w)) (EK w₁.H.D))) rest fun _ _ => True) :
+    RelCT isa (Two (EAt w₁.mgf.G w₁.mgf.G (PP w₁.mgf.G (tables vs) (tableOf w₁) (tableOf w)) (EK w₁.H.D)))
+      (.seq (encEm w₁.H.stream (fnsOf vs)) (.seq (.block (dbArgs w₁.H.stream)) (.seq (mgfT (fnsOf vs) 11)
+        (.seq (.block (seedArgs w₁.H.stream)) (.seq (mgfT (fnsOf vs) 11) rest))))) fun _ _ => True := by
+  have hz := sizes w₁.ok.stream
+  have hsD : w₁.H.stream.D = w₁.H.D := rfl
+  have hD65 : w₁.H.D < 65 := by omega
+  have hD0 := w₁.ok.hD0
+  obtain ⟨hgi, hgu, hgf⟩ := fnsGood_of vs
+  refine RelCT.seq (encEm_ct (hH := w₁.ok) (hG := w₁.ok) (mH := w₁.mgf) (mG := w₁.mgf) hgi hgu hgf
+    (fun a s t S he sy => by
+      obtain ⟨hp, -, -, -, -, -, -, hd, -, hheld₁⟩ := S.2.2
+      obtain ⟨hmL, -, hDmL⟩ := held_tableOf hheld₁
+      exact etabL hp he sy (tabOK_of hc hd hw₁) hmL hDmL)
+    (fun a s S => (S.2.2.2.2.2.2.2.2.2.2.1).symm)
+    (fun a s S => by
+      have hn := mem_names hw₁
+      have hsy' := S.2.2.2.2.2.2.2.1
+      exact ⟨(hsy' _ hn.1).symm, (hsy' _ hn.2.1).symm, (hsy' _ hn.2.2).symm⟩)) ?_
+  -- `DB` masked.
+  refine RelCT.seq (e_post (J' := fun s t => EWM s t (oEm + 1) w₁.H.D (oEm + 1 + w₁.H.D)
+      ((s.gpr .rcx).toNat - (w₁.H.D + 1)) ∧ 2 * w₁.H.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat ∧
+      t.syms = s.syms)
+    (e_taintF (fun _ _ _ h => h.1) [] [] (by decide) nopin ⟨_, dbArgs_taint w₁.H.D hD65⟩)
+    fun s t hs h => WP.mono_syms (ew_dbArgs (Hm := w₁.H.stream) (by omega) (by have := h.2.1; omega) h.1)
+      fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
+  refine RelCT.seq (e_postS (J' := EK w₁.H.D) (two_map (fun a => mqtE w ⟨fb a, stackArg a 6, [outR a, scrR a],
+      oEm + 1, w₁.H.D, oEm + 1 + w₁.H.D, (a.gpr .rcx).toNat - (w₁.H.D + 1)⟩ a)
+      (fun a t ⟨s, S, e, hk, sy⟩ => met_of hc hw (src := fun _ => oEm + 1) (srcLen := fun _ => w₁.H.D)
+        (dst := fun _ => oEm + 1 + w₁.H.D) (dstLen := fun k => k - (w₁.H.D + 1)) S sy e (fit_db S.1 hk))
+      (Table.mgfT_ct w.ok.stream hgi hgu hgf w.mgf.hash w.mgf.len (valid_of_link w.ok w.mgf) (.inl rfl)
+        etabArg_taint))
+    fun a s t S h => by
+      obtain ⟨hp, -, -, -, -, -, hheld, hd, -, -⟩ := S.2.2
+      obtain ⟨hm, -, hDm⟩ := held_tableOf hheld
+      exact WP.mono_syms (ew_mgfT w.ok w.mgf hgi hgu hgf (fit_db S.1 h.2.1) h.1
+        (etab hp h.1.he h.2.2 (tabOK_of hc hd hw) hm hDm)) fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
+  -- The seed masked.
+  refine RelCT.seq (e_post (J' := fun s t => EWM s t (oEm + 1 + w₁.H.D) ((s.gpr .rcx).toNat - (w₁.H.D + 1)) (oEm + 1)
+      w₁.H.D ∧ 2 * w₁.H.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat ∧ t.syms = s.syms)
+    (e_taintF (fun _ _ _ h => h.1) [] [] (by decide) nopin ⟨_, seedArgs_taint w₁.H.D hD65⟩)
+    fun s t hs h => WP.mono_syms (ew_seedArgs (Hm := w₁.H.stream) (by omega) (by have := h.2.1; omega) h.1)
+      fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
+  refine RelCT.seq (e_postS (J' := EK w₁.H.D) (two_map (fun a => mqtE w ⟨fb a, stackArg a 6, [outR a, scrR a],
+      oEm + 1 + w₁.H.D, (a.gpr .rcx).toNat - (w₁.H.D + 1), oEm + 1, w₁.H.D⟩ a)
+      (fun a t ⟨s, S, e, hk, sy⟩ => met_of hc hw (src := fun _ => oEm + 1 + w₁.H.D) (srcLen := fun k => k - (w₁.H.D + 1))
+        (dst := fun _ => oEm + 1) (dstLen := fun _ => w₁.H.D) S sy e (fit_seed S.1 hk hD0))
+      (Table.mgfT_ct w.ok.stream hgi hgu hgf w.mgf.hash w.mgf.len (valid_of_link w.ok w.mgf) (.inl rfl)
+        etabArg_taint))
+    fun a s t S h => by
+      obtain ⟨hp, -, -, -, -, -, hheld, hd, -, -⟩ := S.2.2
+      obtain ⟨hm, -, hDm⟩ := held_tableOf hheld
+      exact WP.mono_syms (ew_mgfT w.ok w.mgf hgi hgu hgf (fit_seed S.1 h.2.1 hD0) h.1
+        (etab hp h.1.he h.2.2 (tabOK_of hc hd hw) hm hDm)) fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
+  exact hrest
+
+include hc in
+theorem encMain_ct (v : PublicImpl) {w₁ w : MdHash} (hw₁ : w₁ ∈ vs) (hw : w ∈ vs) :
+    RelCT isa (Two (EAt w₁.mgf.G w₁.mgf.G (PP w₁.mgf.G (tables vs) (tableOf w₁) (tableOf w)) (EK w₁.H.D)))
+      (Impl.RsaOaep.X86_64.Precomputed.encMain w₁.H.stream (fnsOf vs) v.name v.code) fun _ _ => True := by
   unfold Impl.RsaOaep.X86_64.Precomputed.encMain seqs seqs seqs seqs seqs seqs
-  refine encMask_ct hH KH hG KG mH mG ?_
-  refine RelCT.seq (two_post (Ψ := EAt mH.G mG.G (PP mH.G) EWPP) (e_taintF (fun _ _ _ h => h.1) [] [] (by decide) nopin ⟨_, by taint_decide⟩)
-    fun _ t ⟨s, S, h⟩ => WP.mono (ew_pubArgs' S.2.2.1 h.1) fun _ e => ⟨s, S, e⟩) ?_
+  refine encMask_ct hc hw₁ hw ?_
+  refine RelCT.seq (two_post (Ψ := EAt w₁.mgf.G w₁.mgf.G (PP w₁.mgf.G (tables vs) (tableOf w₁) (tableOf w)) EWPP)
+    (e_taintF (fun _ _ _ h => h.1) [] [] (by decide) nopin ⟨_, by taint_decide⟩)
+    fun _ t ⟨s, S, h⟩ => WP.mono (ew_pubArgs' S.2.2.1.toPPre h.1) fun _ e => ⟨s, S, e⟩) ?_
   exact call_ct v
 
-include hH KH hG KG mH mG in
+include hc in
 theorem code_constantTime (v : PublicImpl) :
-    ConstantTime isa (contract mH.G mG.G).pre (contract mH.G mG.G).pub
-      (Impl.RsaOaep.X86_64.Precomputed.encrypt Hl.stream Gm.stream v.name v.code) := by
-  refine RelCT.constantTime (Q := fun _ _ => True) (relCT_alloc ((encBodyWith_ct (P := PP mH.G) (hH := hH)
-    (hG := hG) (mH := mH) (mG := mG) (hmain := encMain_ct hH KH hG KG mH mG v)).mono ?_ fun _ _ h => h))
-  rintro _ _ ⟨s₁, s₂, ⟨h₁, h₂, hpub⟩, rfl, rfl⟩
-  have p₁ := pre_of (G := mG.G) h₁
-  have p₂ := pre_of (G := mG.G) h₂
-  exact ⟨s₁, ⟨s₁, ⟨p₁.toEPre, encPub_refl _ _ s₁, p₁, rfl, rfl, rfl⟩, rfl⟩,
-    ⟨s₂, ⟨p₂.toEPre, hpub.1, p₂, hpub.2⟩, rfl⟩⟩
+    ConstantTime isa (contract (tables vs)).pre (contract (tables vs)).pub
+      (Impl.RsaOaep.X86_64.Precomputed.encrypt (fnsOf vs) v.name v.code) := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂
+  obtain ⟨⟨T₁, hT₁, hheld₁⟩, ⟨T, hT, hheld⟩, -⟩ := tabs_of h₁
+  obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT₁
+  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
+  have hm : RelCT isa (Two (EAt w₁.mgf.G w₁.mgf.G (PP w₁.mgf.G (tables vs) (tableOf w₁) (tableOf w)) (EK w₁.H.D)))
+      ((fun d => Impl.RsaOaep.X86_64.Precomputed.encMain (ofLen d) (fnsOf vs) v.name v.code) w₁.H.D)
+      fun _ _ => True := by
+    dsimp only
+    rw [encMain_D (G := ofLen w₁.H.D) (G' := w₁.H.stream) rfl]
+    exact encMain_ct hc v hw₁ hw
+  have key := relCT_alloc (P := fun x y => (contract (tables vs)).pre x ∧ (contract (tables vs)).pre y ∧
+      (contract (tables vs)).pub x y ∧
+      Abi.tableHeld 64 x.mem (stackArg x 10) (FnTable.words isa x (tableOf w₁)) ∧
+      Abi.tableHeld 64 x.mem (stackArg x 11) (FnTable.words isa x (tableOf w)))
+    ((encBodyWith_ct (P := PP w₁.mgf.G (tables vs) (tableOf w₁) (tableOf w)) (hH := w₁.ok) (hG := w₁.ok)
+      (mH := w₁.mgf) (mG := w₁.mgf) (f := fnsOf vs)
+      (main := fun d => Impl.RsaOaep.X86_64.Precomputed.encMain (ofLen d) (fnsOf vs) v.name v.code)
+      (fun a s t S he sy => by
+        obtain ⟨hp, -, -, -, -, -, -, hd, -, hheld₁⟩ := S.2.2
+        obtain ⟨hmL, -, hDmL⟩ := held_tableOf hheld₁
+        exact etabL hp he sy (tabOK_of hc hd hw₁) hmL hDmL)
+      (fun a s S => (S.2.2.2.2.2.2.2.2.2.2.1).symm) hm).mono
+      (fun _ _ ⟨x, y, ⟨hx, hy, hxy, hh₁, hh⟩, ex, ey⟩ => by
+        have hh₁' := (hxy.2.2.2.2.2.2.2.1 _ hT₁).mp hh₁
+        have px := preT_of hx (hashAt_tableOf (held_tableOf hh₁).2.1)
+        have py := preT_of hy (hashAt_tableOf (held_tableOf hh₁').2.1)
+        obtain ⟨-, -, dx⟩ := tabs_of hx
+        obtain ⟨-, -, dy⟩ := tabs_of hy
+        exact ⟨x, ⟨x, ⟨px.toEPre, encPub_refl _ _ x, px, rfl, rfl, rfl, rfl, fun _ _ => rfl, hh, dx, rfl, hh₁⟩, ex⟩,
+          ⟨y, ⟨py.toEPre, hxy.1, py, hxy.2.1, hxy.2.2.1, hxy.2.2.2.1, hxy.2.2.2.2.2.1, hxy.2.2.2.2.2.2.1,
+            (hxy.2.2.2.2.2.2.2.2 _ hT).mp hh, dy, hxy.2.2.2.2.1, hh₁'⟩, ey⟩⟩) fun _ _ h => h)
+  exact (key _ _ _ _ _ _ ⟨h₁, h₂, hpub, hheld₁, hheld⟩ e₁ e₂).1
 
-include hH KH hG KG mH mG in
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`, calling the
-implementation `v` of `vg_rsa_public_precomputed_checked`, meets the shared
-contract. -/
-theorem code_verified (v : PublicImpl)
-    (hsat : ∃ s, (Spec.RsaOaep.encryptPrecomputedContract mH.G mG.G abi encStack).pre s) :
-    Verified target (Impl.RsaOaep.X86_64.Precomputed.encrypt Hl.stream Gm.stream v.name v.code)
-      (Spec.RsaOaep.encryptPrecomputedContract mH.G mG.G abi encStack) :=
-  Verified.of_correct (k := contract mH.G mG.G) (code_correct hH KH hG KG mH mG v)
-    (code_constantTime hH KH hG KG mH mG v) (implies mH.G mG.G hsat)
+include hc in
+/-- `vg_rsa_oaep_encrypt_precomputed`, calling the implementation `v` of
+`vg_rsa_public_precomputed_checked`, meets the shared contract, with the
+tables of `vs` for both of its hash functions. -/
+theorem code_verified (v : PublicImpl) (hsat : ∃ s, (encC (tables vs)).pre s) :
+    Verified target (Impl.RsaOaep.X86_64.Precomputed.encrypt (fnsOf vs) v.name v.code) (encC (tables vs)) :=
+  Verified.of_correct (k := contract (tables vs)) (code_correct hc v) (code_constantTime hc v)
+    (implies (tables vs) hsat)
 
 end
 

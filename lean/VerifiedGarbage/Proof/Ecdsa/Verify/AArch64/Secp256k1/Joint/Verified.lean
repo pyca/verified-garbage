@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Public
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Verified
@@ -13,6 +15,16 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash
+public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash
+meta import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
+meta import VerifiedGarbage.Spec.Ecdsa.Secp256k1
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Contract
 
 /-! The joint verifier implements the unchanged public ECDSA contract. -/
 
@@ -23,8 +35,8 @@ open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64.Secp256k1
 open VG.Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint
 
 theorem public_of_spec {s t : State}
-    (pub : (Spec.Ecdsa.Secp256k1.inst.verifyContract AArch64.abi).pub s t) : Public s t := by
-  sig_pub [Spec.Ecdsa.Secp256k1.inst,Spec.Ecdsa.Instance.verifyContract,Spec.Ecdsa.Instance.verifySig,
+    (pub : (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst AArch64.abi).pub s t) : Public s t := by
+  sig_pub [Spec.Ecdsa.Secp256k1.inst,Proof.Ecdsa.verifyContract,Proof.Ecdsa.verifySig,
     Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,AArch64.abi,AArch64.argRegs] at pub
   obtain ⟨hsp,inputs,h0,h1,h2,h3⟩ := pub
   refine ⟨⟨hsp,fun r hr => ?_⟩,?_,?_⟩
@@ -49,7 +61,7 @@ theorem verify_a64 (hL : Weierstrass.Law Spec.Secp256k1.curve)
 
 theorem verify_verified (hL : Weierstrass.Law Spec.Secp256k1.curve)
     (hI : Weierstrass.AArch64.InvSounds) :
-    Verified AArch64.target verify (Spec.Ecdsa.Secp256k1.inst.verifyContract AArch64.abi) := by
+    Verified AArch64.target verify (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst AArch64.abi) := by
   refine ⟨?_,?_,implies.sat⟩
   · intro s hs
     obtain ⟨t,s',he,ha,hp⟩ := verify_a64 hL hI s (implies.pre s hs)
@@ -57,4 +69,24 @@ theorem verify_verified (hL : Weierstrass.Law Spec.Secp256k1.curve)
   · intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
     exact verify_ct (secp256k1_ok hI) hL _ _ _ _ _ _
       (pre_of (implies.pre _ pre₁)) (pre_of (implies.pre _ pre₂)) (public_of_spec pub) e₁ e₂
+
+/-- `Secp256k1.satState` satisfies the precondition of the verification of the `len` bytes. -/
+theorem sat_spec : (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst AArch64.abi).pre Secp256k1.satState := by
+  sig_pre [Spec.Ecdsa.Secp256k1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
+    Spec.Secp256k1.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, Secp256k1.satState]
+  repeat' (first | exact Region.disjoint_of_sep (by decide) | decide | rfl | constructor)
+
+/-- `vg_ecdsa_secp256k1_verify`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash
+(`Hash.verifyHash_verified_nil`). -/
+theorem verifyHash_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.AArch64.InvSounds) :
+    Verified AArch64.target
+      (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false verify)
+      (Spec.Ecdsa.Secp256k1.inst.verifyHashContract AArch64.abi 80) :=
+  Hash.verifyHash_verified_nil Proof.Ecdsa.Verify.secp256k1_len (by decide) (verify_verified hL hI)
+    (by taint_decide) (Hash.hashSat_nil (by decide) sat_spec (by decide) fun r hr => by
+      simp only [Secp256k1.satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+        or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
+
 end VG.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint

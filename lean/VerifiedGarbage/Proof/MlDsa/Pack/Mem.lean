@@ -41,10 +41,6 @@ theorem polyAt_getElem (m : Mem) (p : Addr) {i : Nat} (hi : i < n) :
     (polyAt m p)[i] = Fin.ofNat q (coeffAt m p i).toNat := by
   simp only [polyAt, Vector.getElem_ofFn]
 
-theorem natPolyAt_getElem (m : Mem) (p : Addr) {i : Nat} (hi : i < n) :
-    (natPolyAt m p)[i] = (coeffAt m p i).toNat := by
-  simp only [natPolyAt, Vector.getElem_ofFn]
-
 /-- Coefficient `i` of a reduced polynomial is the stored word. -/
 theorem polyAt_val {m : Mem} {p : Addr} (hr : Reduced m p) {i : Nat} (hi : i < n) :
     ((polyAt m p)[i]).val = (coeffAt m p i).toNat := by

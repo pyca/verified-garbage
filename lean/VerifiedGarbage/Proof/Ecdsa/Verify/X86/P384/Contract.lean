@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 /-!
 # ECDSA verification over P-384 on x86 (32-bit): the contract the proof is written against
 
-The facts of `Spec.Ecdsa.P384.inst.verifyContract` for x86, by name:
+The facts of `Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst` for x86, by name:
 `vg_ecdsa_p384_verify(public, digest, sig, scratch)`, whose arguments are on
 the stack (cdecl), the result in `eax`. Its arguments' slots are readable
 here; the shared contract makes them writable (`Verified.narrowTo`). Only

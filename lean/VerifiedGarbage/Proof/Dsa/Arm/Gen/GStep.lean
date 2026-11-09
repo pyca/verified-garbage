@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on ARMv7: one `h` of the generator search
 
-`gStep` (`gStep_vp`): `h`, the `pLen` bytes at `fH` of the `hs` tape, into
+`gStep` (`gStep_vp`): `h`, the `pLen` bytes at `fH` of `rand`, into
 array `aH`; unless `1 < h < p − 1`, nothing more; else `g = h^((p−1)/q) mod p`
 by the exponentiation, and if `g > 1`, `g` big-endian at `sG` and `fG` := 1.
 -/
@@ -29,31 +29,28 @@ open VG.Proof.Rsa.Arm.Recover (VP)
 open VG.Impl.Mont.Arm.Dynamic (modS baseS expS resS contextBytes)
 open VG.Proof.Rsa (b2n)
 
-/-- The `h` at byte `i` of the tape. -/
-abbrev hAt (G : GP) (i : Nat) : List Byte := (G.hsB.drop i).take G.pLen
+/-- The `h` at byte `i` of `rand`. -/
+abbrev hAt (G : GP) (i : Nat) : List Byte := (G.witB.drop i).take G.pLen
 
 section
 variable {G : GP} {σ s : State} {V : Nat → BitVec 32} {LS : List Nat}
 
-theorem GI.hsFit (h : GI G σ V LS s) : G.hs.toNat + G.hsLen ≤ 2 ^ 32 := by
-  have := h.pre.nH; rw [← h.hG]; exact this
-
 /-- The `h` at byte `i`, as a source of a load. -/
-theorem GI.hSrc (h : GI G σ V LS s) {i : Nat} (hi : i + G.pLen ≤ G.hsLen) (hp : 0 < G.pLen) :
-    Covers [⟨State.addr (G.hs + BitVec.ofNat 32 i), G.pLen⟩] (s.rd ++ s.wr) ∧
-      Region.Disjoint ⟨State.addr (G.hs + BitVec.ofNat 32 i), G.pLen⟩ G.rK ∧
-      (G.hs + BitVec.ofNat 32 i).toNat + G.pLen ≤ 2 ^ 32 ∧
-      Spec.Rsa.bytesAt s.mem (State.addr (G.hs + BitVec.ofNat 32 i)) G.pLen = hAt G i := by
-  have fit := h.hsFit
-  have a : State.addr (G.hs + BitVec.ofNat 32 i) = State.addr G.hs + BitVec.ofNat 64 i := addr_add (by omega_arith)
-  have sub : Region.Sub ⟨State.addr G.hs + BitVec.ofNat 64 i, G.pLen⟩ G.rHs := Offset.sub_base _ hi
-  have hC := h.pre.hC; rw [h.hG] at hC
-  have e : G.hsB = Spec.Rsa.bytesAt σ.mem (State.addr G.hs) G.hsLen := by rw [← h.hG]; rfl
-  refine ⟨Covers.left (Covers.one ⟨G.rHs, by rw [h.rd, h.pre.rd, h.hG]; simp, a ▸ Offset.contains_base _ hi
+theorem GI.hSrc (h : GI G σ V LS s) {i : Nat} (hi : i + G.pLen ≤ G.witLen) (hp : 0 < G.pLen) :
+    Covers [⟨State.addr (G.wit + BitVec.ofNat 32 i), G.pLen⟩] (s.rd ++ s.wr) ∧
+      Region.Disjoint ⟨State.addr (G.wit + BitVec.ofNat 32 i), G.pLen⟩ G.rK ∧
+      (G.wit + BitVec.ofNat 32 i).toNat + G.pLen ≤ 2 ^ 32 ∧
+      Spec.Rsa.bytesAt s.mem (State.addr (G.wit + BitVec.ofNat 32 i)) G.pLen = hAt G i := by
+  have fit := h.witFit
+  have a : State.addr (G.wit + BitVec.ofNat 32 i) = State.addr G.wit + BitVec.ofNat 64 i := addr_add (by omega_arith)
+  have sub : Region.Sub ⟨State.addr G.wit + BitVec.ofNat 64 i, G.pLen⟩ G.rWit := Offset.sub_base _ hi
+  have hC := h.pre.wC; rw [h.hG] at hC
+  have e : G.witB = Spec.Rsa.bytesAt σ.mem (State.addr G.wit) G.witLen := by rw [← h.hG]; rfl
+  refine ⟨Covers.left (Covers.one ⟨G.rWit, by rw [h.rd, h.pre.rd, h.hG]; simp, a ▸ Offset.contains_base _ hi
     (by omega_arith)⟩), a ▸ (hC.sub_left sub).sub_right h.kSub, ?_, ?_⟩
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 32 by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
     omega_arith
-  · rw [h.keeps fit h.hs_apart hi, hAt, e]
+  · rw [h.keeps fit h.wit_apart hi, hAt, e]
 
 end
 
@@ -222,8 +219,8 @@ theorem gStep_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
     (hHl : aH ∉ c.live) (hTl : aTmp ∉ c.live) (hGl : aG ∉ c.live) (hkls : c.kls = [])
     (hpodd : pv % 2 = 1) (hp1 : 1 < pv) (hplt : pv < 2 ^ (8 * G.pLen)) (hev : ev < 2 ^ (32 * g.e))
     (hcl : ∀ x ∈ c.cl, x.1 + x.2.length ≤ sG)
-    (hH : fH ∈ c.LS) (hHv : c.V fH = G.hs + BitVec.ofNat 32 i) (hi : i + G.pLen ≤ G.hsLen)
-    (hhsb : G.hsB.length = G.hsLen) :
+    (hH : fH ∈ c.LS) (hHv : c.V fH = G.wit + BitVec.ofNat 32 i) (hi : i + G.pLen ≤ G.witLen)
+    (hwl : G.witB.length = G.witLen) :
     VP (St G c X) g.gStep (St G (gOut c G (Spec.Dsa.decodeBE (hAt G i)) pv ev) X) := by
   have w4 : 4 * G.w = G.pLen := by simp only [GP.w]; omega_arith
   have hsG : sG = 1728 := rfl
@@ -231,7 +228,7 @@ theorem gStep_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
   have hpL : 0 < G.pLen := by omega_arith
   generalize hhv : Spec.Dsa.decodeBE (hAt G i) = hv
   have hal : (hAt G i).length = G.pLen := by
-    simp only [hAt, List.length_take, List.length_drop, hhsb]; omega_arith
+    simp only [hAt, List.length_take, List.length_drop, hwl]; omega_arith
   have hvlt : hv < 2 ^ (8 * G.pLen) := by
     rw [← hhv]; have := VG.Proof.Dsa.decodeBE_lt (hAt G i)
     rwa [hal, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
@@ -242,16 +239,16 @@ theorem gStep_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
   unfold Geo.gStep
   rw [hp]
   -- h.
-  refine VP.seq (G := fun σ s => St G c X σ s ∧ s.gpr .r4 = G.hs + BitVec.ofNat 32 i)
+  refine VP.seq (G := fun σ s => St G c X σ s ∧ s.gpr .r4 = G.wit + BitVec.ofNat 32 i)
     (ld_vp (c := fun _ => c) (fun σ s h => h.1) (by decide) (by decide) (fun σ s h => (h.1.slotV hH).trans hHv)
       fun σ s t ⟨h, x⟩ u => ⟨⟨h.of_rest (u.rest (ws := [.r4]) (by simp)) u.mem, x⟩, u.gpr⟩) ?_
-  refine VP.seq (G := fun σ s => (St G c X σ s ∧ s.gpr .r4 = G.hs + BitVec.ofNat 32 i) ∧
+  refine VP.seq (G := fun σ s => (St G c X σ s ∧ s.gpr .r4 = G.wit + BitVec.ofNat 32 i) ∧
       s.gpr .r6 = BitVec.ofNat 32 G.pLen)
     (VP.taint [] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs []) (.block [.movw .r6 (BitVec.ofNat 16 1)]),
       by kernel_rfl⟩ (fun _ _ _ _ _ _ r hr => absurd hr (by simp)) fun σ s ⟨⟨h, x⟩, r4⟩ => wp_movw fun t u => WP.block_nil
         ⟨⟨⟨h.of_rest (u.rest (ws := [.r6]) (by simp)) u.mem, x⟩, by rw [u.other _ (by decide), r4]⟩,
           by rw [u.gpr, setWidth_ofNat16 (by omega_arith)]⟩) ?_
-  refine VP.seq ((loadAt_vp (c := c) (X := X) (src := G.hs + BitVec.ofNat 32 i) (bs := hAt G i)
+  refine VP.seq ((loadAt_vp (c := c) (X := X) (src := G.wit + BitVec.ofNat 32 i) (bs := hAt G i)
     ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r4, .r6, .r7, .r8, .r9])
       (VG.Impl.Rsa.Arm.CrtValues.load aH), by kernel_rfl⟩ (by decide) hal hpL (by omega_arith)
     fun σ s ⟨h, _⟩ => h.gi.hSrc hi hpL).mono (fun σ s ⟨⟨h, r4⟩, r6⟩ => ⟨h, r4, r6⟩) fun _ _ h => h.1) ?_

@@ -100,21 +100,4 @@ theorem codeAt_trace {mont round : Prog isa} {montName roundName : String}
       fit far lengthFar) fun _ R => R.1.ready.context
   exact ⟨trace, wp_result (post H.2.1) E, wp_result (post H.2.2) G, agree⟩
 
-theorem code_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
-    {g : Geometry} (v : g.Valid) {capacity used randLen : Nat} {p rand : BitVec 32}
-    (length : g.L = 8 * capacity)
-    (randFit : rand.toNat + randLen ≤ 2 ^ 32) (randLenFit : randLen < 2 ^ 32)
-    (enough : used + 8 * g.w ≤ randLen)
-    (separate : (⟨rand.setWidth 64, randLen⟩ : Region).Disjoint ⟨g.W, g.L⟩)
-    (fit : 108 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108))
-    (lengthFar : (lengthRegion p).Disjoint (below p 108)) :
-    RelCT isa (InitialPair g capacity p rand used randLen) (code g.w montName mont roundName round) (Pair g [.edi]) :=
-  codeAt_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v
-    (by have := v.minWidth; omega) (by omega) (by omega) (by omega) length randFit randLenFit enough separate
-    fit far lengthFar
-
 end VG.Proof.RsaKeyGen.X86.WitnessStep

@@ -36,7 +36,7 @@ namespace VG.Proof.Sm4Gcm.X86_64
 
 open VG VG.X86_64 VG.Impl.Sm4Gcm.X86_64
 open VG.Impl.AesGcm.X86_64 (cryptHead absorb absorbPad lens j0 recv cmp tagOut tagLenOk partWith
-  firstFlush streamLoad oneAad xorLoop flush absorbHead absorbWhole absorbTail padTail ghash1 j0hash
+  firstFlush streamLoad oneAad xorLoop xorLoopG flush absorbHead absorbWhole absorbTail padTail ghash1 j0hash
   minLen copyLoop headPart)
 open VG.Proof.AesGcm.X86_64 (GcmImpl)
 
@@ -109,7 +109,7 @@ theorem streamEncrypt_mx : (streamEncrypt v.callees).allInstrs (fun i => !loadsM
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
   rw [ctrFn_mx]
   decide +kernel
 
@@ -117,7 +117,7 @@ theorem streamEncrypt_spSafe : (streamEncrypt v.callees).all (fun i => !X86_64.i
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
   rw [ctrFn_spSafe]
   decide +kernel
 
@@ -126,7 +126,7 @@ theorem streamEncrypt_xdepth : (streamEncrypt v.callees).x86_64Depth ≤ stkN :=
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
   omega
 
 theorem streamEncrypt_correct (s : State) (hs : Proof.Sm4Gcm.streamEncryptX86_64.pre s) :
@@ -138,7 +138,7 @@ theorem streamDecrypt_mx : (streamDecrypt v.callees).allInstrs (fun i => !loadsM
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
   rw [ctrFn_mx]
   decide +kernel
 
@@ -146,7 +146,7 @@ theorem streamDecrypt_spSafe : (streamDecrypt v.callees).all (fun i => !X86_64.i
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
   rw [ctrFn_spSafe]
   decide +kernel
 
@@ -155,7 +155,7 @@ theorem streamDecrypt_xdepth : (streamDecrypt v.callees).x86_64Depth ≤ stkN :=
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
   omega
 
 theorem streamDecrypt_correct (s : State) (hs : Proof.Sm4Gcm.streamDecryptX86_64.pre s) :
@@ -167,7 +167,7 @@ theorem streamFinish_mx : (streamFinish v.callees).allInstrs (fun i => !loadsMxc
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
   rw [ctrFn_mx]
   decide +kernel
 
@@ -175,7 +175,7 @@ theorem streamFinish_spSafe : (streamFinish v.callees).all (fun i => !X86_64.isa
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
   rw [ctrFn_spSafe]
   decide +kernel
 
@@ -184,7 +184,7 @@ theorem streamFinish_xdepth : (streamFinish v.callees).x86_64Depth ≤ stkN := b
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
   omega
 
 theorem streamFinish_correct (s : State) (hs : Proof.Sm4Gcm.streamFinishX86_64.pre s) :
@@ -196,7 +196,7 @@ theorem streamVerify_mx : (streamVerify v.callees).allInstrs (fun i => !loadsMxc
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
   rw [ctrFn_mx]
   decide +kernel
 
@@ -204,7 +204,7 @@ theorem streamVerify_spSafe : (streamVerify v.callees).all (fun i => !X86_64.isa
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
   rw [ctrFn_spSafe]
   decide +kernel
 
@@ -213,7 +213,7 @@ theorem streamVerify_xdepth : (streamVerify v.callees).x86_64Depth ≤ stkN := b
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
   omega
 
 theorem streamVerify_correct (s : State) (hs : Proof.Sm4Gcm.streamVerifyX86_64.pre s) :
@@ -225,7 +225,7 @@ theorem seal_mx : («seal» v.callees).allInstrs (fun i => !loadsMxcsr i) = true
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
   rw [ctrFn_mx]
   decide +kernel
 
@@ -233,7 +233,7 @@ theorem seal_spSafe : («seal» v.callees).all (fun i => !X86_64.isa.writesSp i)
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
   rw [ctrFn_spSafe]
   decide +kernel
 
@@ -242,7 +242,7 @@ theorem seal_xdepth : («seal» v.callees).x86_64Depth ≤ stkN := by
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
   omega
 
 theorem seal_correct (s : State) (hs : Proof.Sm4Gcm.sealX86_64.pre s) :
@@ -254,7 +254,7 @@ theorem open_mx : («open» v.callees).allInstrs (fun i => !loadsMxcsr i) = true
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
   rw [ctrFn_mx]
   decide +kernel
 
@@ -262,7 +262,7 @@ theorem open_spSafe : («open» v.callees).all (fun i => !X86_64.isa.writesSp i)
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
   rw [ctrFn_spSafe]
   decide +kernel
 
@@ -271,7 +271,7 @@ theorem open_xdepth : («open» v.callees).x86_64Depth ≤ stkN := by
   simp only [streamEncrypt, streamDecrypt, streamText, streamFinish, streamVerify, «seal», «open», cryptWhole,
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
-    firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
+    firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
   omega
 
 theorem open_correct (s : State) (hs : Proof.Sm4Gcm.openX86_64.pre s) :

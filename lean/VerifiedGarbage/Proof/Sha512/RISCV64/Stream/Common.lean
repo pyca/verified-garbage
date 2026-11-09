@@ -234,9 +234,6 @@ theorem compressAt_ok {s : State} {st scr src : Addr}
 
 /-! ## Arithmetic -/
 
-theorem ofNat_succ (k : Nat) : BitVec.ofNat 64 (k + 1) = BitVec.ofNat 64 k + 1 := by
-  rw [BitVec.ofNat_add]; rfl
-
 theorem ofNat_beq_zero {k : Nat} (h : k < 2 ^ 64) : (BitVec.ofNat 64 k == 0) = decide (k = 0) := by
   by_cases hk : k = 0
   · simp [hk]
@@ -500,12 +497,7 @@ theorem keepsN_all (l : List Instr) (h : (l.all fun i => keepsN (dstOf i)) = tru
 theorem allocd_wr (n : Nat) (s : State) :
     (allocd n s).wr = ⟨s.sp - BitVec.ofNat 64 n, n⟩ :: s.wr := rfl
 
-theorem allocd_sp (n : Nat) (s : State) : (allocd n s).sp = s.sp - BitVec.ofNat 64 n := rfl
-
 theorem allocd_gpr (n : Nat) (s : State) : (allocd n s).gpr = s.gpr := rfl
-theorem allocd_mem (n : Nat) (s : State) : (allocd n s).mem = s.mem := rfl
-theorem allocd_rd (n : Nat) (s : State) : (allocd n s).rd = s.rd := rfl
-
 /-- The frame is 16-byte aligned. -/
 theorem frame_aligned {sp : Addr} (h : sp.toNat % 16 = 0) (h' : 208 ≤ sp.toNat) :
     (sp - BitVec.ofNat 64 208).toNat % 16 = 0 := by

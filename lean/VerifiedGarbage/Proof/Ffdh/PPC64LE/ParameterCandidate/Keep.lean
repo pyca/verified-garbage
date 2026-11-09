@@ -25,9 +25,9 @@ open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.Pa
 open VG.Proof.Bignum VG.Proof.Bignum.PPC64LE
 open VG.Impl.MillerRabin.PPC64LE.Search VG.Proof.MillerRabin.PPC64LE.Search
 
-structure MSt (p : PP) (mb N : Nat) (s : State) : Prop where
+structure MSt (p : PP) (mb N C : Nat) (s : State) : Prop where
   st : St p s
-  ph : Ph p mb s
+  ph : Ph p mb C s
   prep : Prep s p.B p.n (wOf mb) N
   mb1 : 511 ≤ mb
   mb2 : mb ≤ p.bits
@@ -40,14 +40,14 @@ def Read (w d : Nat) : Prop :=
 theorem Read.arr {w j : Nat} (hj : j < 8) : Read w (8 * (8 + j)) := by
   unfold Read; right; right; right; right; right; right; right; right; left; exact ⟨j, hj, rfl⟩
 
-theorem Ph.keep {p : PP} {mb : Nat} {s t : State} (h : Ph p mb s)
+theorem Ph.keep {C : Nat} {p : PP} {mb : Nat} {s t : State} (h : Ph p mb C s)
     (r10 : t.gpr .r10 = s.gpr .r10) (r11 : t.gpr .r11 = s.gpr .r11) (r29 : t.gpr .r29 = s.gpr .r29)
-    (hw : ∀ d, Read (wOf mb) d → word t.mem p.B d = word s.mem p.B d) : Ph p mb t :=
+    (hw : ∀ d, Read (wOf mb) d → word t.mem p.B d = word s.mem p.B d) : Ph p mb C t :=
   ⟨r10.trans h.r10, r11.trans h.r11, r29.trans h.r29, (hw 248 (by simp [Read])).trans h.mbW,
     (hw 216 (by simp [Read])).trans h.kW, (hw 48 (by simp [Read])).trans h.wW,
     (hw 224 (by simp [Read])).trans h.strideW,
     fun j hj => (hw _ (Read.arr hj)).trans (h.arrW j hj),
-    (hw 168 (by simp [Read])).trans h.checksW, (hw 192 (by simp [Read])).trans h.topW⟩
+    (hw 168 (by simp [Read])).trans h.checksW, h.k1, h.k2, (hw 192 (by simp [Read])).trans h.topW⟩
 
 /-- A range the draw or the round's bookkeeping changes: the header words
 `hUsed`, `hStat`, `hIdx` and `hBad`, or arrays 2 to 6. -/
@@ -77,7 +77,7 @@ theorem Free.arr {w j : Nat} {r : Nat × Nat} (h : Free w r) (hj : j = 0 ∨ j =
     have b := Nat.mul_le_mul_right (8 * (w + 2)) hk1
     rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [es] <;> omega_arith
 
-theorem MSt.w {p : PP} {mb N : Nat} {s : State} (h : MSt p mb N s) :
+theorem MSt.w {C : Nat} {p : PP} {mb N : Nat} {s : State} (h : MSt p mb N C s) :
     2 ≤ wOf mb ∧ wOf mb ≤ 128 ∧ slot (wOf mb) 28 + saveBytes ≤ p.Z := by
   have hn := h.st.dims.n
   have hb := h.st.dims.b2
@@ -85,7 +85,7 @@ theorem MSt.w {p : PP} {mb N : Nat} {s : State} (h : MSt p mb N s) :
   simp only [wOf, slot, hdrBytes, saveBytes, PP.Z, PP.L] at hn ⊢
   omega_arith
 
-theorem Free.mut {p : PP} {mb N : Nat} {s : State} (h : MSt p mb N s) {r : Nat × Nat} (hr : Free (wOf mb) r) :
+theorem Free.mut {C : Nat} {p : PP} {mb N : Nat} {s : State} (h : MSt p mb N C s) {r : Nat × Nat} (hr : Free (wOf mb) r) :
     InMut p.n r := by
   obtain ⟨hw2, -, hZ⟩ := h.w
   have es : ∀ j, slot (wOf mb) j = 256 + j * (8 * (wOf mb + 2)) := fun _ => rfl
@@ -104,10 +104,10 @@ theorem Read.le {w d : Nat} (hd : Read w d) : d + 8 ≤ slot w 28 := by
   unfold Read at hd
   rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨k, hk, rfl⟩ | rfl | rfl <;> omega_arith
 
-theorem MSt.frm {p : PP} {mb N : Nat} {s t : State} (h : MSt p mb N s) {rs : List (Nat × Nat)}
+theorem MSt.frm {C : Nat} {p : PP} {mb N : Nat} {s t : State} (h : MSt p mb N C s) {rs : List (Nat × Nat)}
     (hf : Frm p.B rs s.mem t.mem) (hr : ∀ r ∈ rs, Free (wOf mb) r) {regs : List Reg} (k : Keep regs s t)
     (h31 : Reg.r31 ∉ regs) (r10 : t.gpr .r10 = s.gpr .r10) (r11 : t.gpr .r11 = s.gpr .r11)
-    (r29 : t.gpr .r29 = s.gpr .r29) (h2 : Reg.r2 ∉ regs := by decide) : MSt p mb N t := by
+    (r29 : t.gpr .r29 = s.gpr .r29) (h2 : Reg.r2 ∉ regs := by decide) : MSt p mb N C t := by
   obtain ⟨hw2, hw128, hZ⟩ := h.w
   have hnw := h.st.scr.nowrap
   have es : ∀ j, slot (wOf mb) j = 256 + j * (8 * (wOf mb + 2)) := fun _ => rfl
@@ -149,16 +149,16 @@ theorem Read.kept {w d : Nat} (hd : Read w d) : ∀ i, d ≤ i → i < d + 8 →
   · rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨k, hk, rfl⟩ | rfl | rfl <;> omega_arith
 
 /-- `MSt` survives a witness's round. -/
-theorem MSt.round {p : PP} {mb N a i K : Nat} {s t : State} (h : MSt p mb N s)
-    (hR : RdPost s p.B p.n (wOf mb) N a i K t) : MSt p mb N t := by
+theorem MSt.round {C : Nat} {p : PP} {mb N a i K : Nat} {s t : State} (h : MSt p mb N C s)
+    (hR : RdPost s p.B p.n (wOf mb) N a i K t) : MSt p mb N C t := by
   obtain ⟨u, hu, tm, kt⟩ := hR
   obtain ⟨hw2, -, hZ⟩ := h.w
   have stu : St p u := h.st.call hu.keeps (by have := hu.frame; rw [h.st.sp] at this; exact this) hu.rd hu.wr
     hu.sp hu.prep.env.h31 hZ (hu.cs .r2 (by decide) (by decide))
-  have phu : Ph p mb u := h.ph.keep (hu.prep.env.h10.trans h.ph.r10.symm) (hu.prep.env.h11.trans h.ph.r11.symm)
+  have phu : Ph p mb C u := h.ph.keep (hu.prep.env.h10.trans h.ph.r10.symm) (hu.prep.env.h11.trans h.ph.r11.symm)
     (hu.prep.env.h29.trans h.ph.r29.symm) fun d hd => keeps_word hu.keeps (by
       have := hd.le; simp only [PP.Z, saveBytes] at hZ; omega_arith) hd.kept
-  have mu : MSt p mb N u := ⟨stu, phu, hu.prep, h.mb1, h.mb2⟩
+  have mu : MSt p mb N C u := ⟨stu, phu, hu.prep, h.mb1, h.mb2⟩
   have hf : Frm p.B [(176, 8), (160, 8)] u.mem t.mem := by
     rw [tm]
     split

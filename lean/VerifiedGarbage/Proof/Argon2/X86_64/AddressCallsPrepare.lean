@@ -164,18 +164,6 @@ theorem input_spec (p : Params) (pass lane slice counter : Nat) (s : State)
     h.passWord, h.laneWord, h.sliceWord, h.blocksWord,
     h.passesWord, h.variantWord, h.counterWord, Proof.Argon2.addressInput]
 
-theorem code_spec_ok (p : Params) (pass lane slice counter : Nat) (s : State)
-    (reads : ∀ d ∈ [0, 8, 72, 112, 240], InRegions (s.rd ++ s.wr) (off (s.gpr .rbp) d) 8)
-    (write : Covers [⟨s.gpr .rdi, 1024⟩] s.wr)
-    (sep : (⟨s.gpr .rbp, 272⟩ : Region).Disjoint ⟨s.gpr .rdi, 1024⟩)
-    (zero : blockAt s.mem (s.gpr .rdi) = zeroBlock)
-    (words : Words p pass lane slice counter s) :
-    WP isa code s fun t =>
-      blockAt t.mem (s.gpr .rdi) = Proof.Argon2.addressInput p pass lane slice counter ∧
-      Frame [⟨s.gpr .rdi, 1024⟩] s.mem t.mem ∧ CopyKeeps s t ∧ t.mxcsr = s.mxcsr :=
-  (code_ok s reads write sep zero).mono (fun _ h =>
-    ⟨h.1.trans (input_spec p pass lane slice counter s words), h.2⟩)
-
 end VG.Proof.Argon2.X86_64.AddressHeader
 end
 

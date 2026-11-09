@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Impl.Rsa.Arm.MulMod
 public import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
 public import VerifiedGarbage.Impl.Bignum.Arm.PcFn
-public import VerifiedGarbage.Impl.Bignum.Arm.MontSelected
+public import VerifiedGarbage.Impl.Bignum.Arm.MontOp
+public import VerifiedGarbage.Impl.Bignum.Arm.Square
 
 /-! # A function in the key working space on ARMv7: its frame and wrapper
 

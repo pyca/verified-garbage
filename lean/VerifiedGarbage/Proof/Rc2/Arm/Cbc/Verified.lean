@@ -118,10 +118,10 @@ structure LoopPost (d : Spec.Rc2.Direction) (s : State) (n : Nat) (s' : State) :
   wr : s'.wr = s.wr
   mem : Frame (loopWrites s n) s.mem s'.mem
   data : Spec.Rc2.blocksAt s'.mem (State.addr (s.gpr .r1)) n =
-    (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
       (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r4))) (Spec.Rc2.blocksAt s.mem (State.addr (s.gpr .r1)) n)).1
   iv : Spec.Rc2.blockAt s'.mem (State.addr (s.gpr .r4)) =
-    (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
       (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r4))) (Spec.Rc2.blocksAt s.mem (State.addr (s.gpr .r1)) n)).2
 
 theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
@@ -138,10 +138,10 @@ theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
       · simp only [eval_nonzeroCount, h₁.flag, decide_true, Option.map_some, Bool.not_true]
       · refine ⟨h₁.ptr, h₁.count, h₁.reg, h₁.callee, h₁.rd, h₁.wr, h₁.frame (by decide), ?_, ?_⟩
         · rw [blocksAt_cons, blocksAt_cons]
-          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Spec.Rc2.cbc]
+          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Proof.Rc2.cbcBlocks]
           exact congrArg (· :: []) h₁.data
         · rw [blocksAt_cons]
-          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Spec.Rc2.cbc]
+          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Proof.Rc2.cbcBlocks]
           exact h₁.iv
     · have hp₁ := h₁.tail hp (by omega_arith)
       obtain ⟨t₂, s₂, exec₂, h₂⟩ := ih s₁ (by omega_arith) (by omega_arith) hp₁ (by simpa using h₁.count)
@@ -436,7 +436,7 @@ def contract (d : Spec.Rc2.Direction) : Contract isa where
       (stackArg s 0).toNat + 512 ≤ 2 ^ 32 ∧ s.sp.toNat + 4 ≤ 2 ^ 32 ∧
       (s.gpr .r2).toNat + 8 * (s.gpr .r3).toNat ≤ 2 ^ 32
   post s s' :=
-    let out := Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
+    let out := Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
       (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r1))) (Spec.Rc2.blocksAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
     Spec.Rc2.blocksAt s'.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat = out.1 ∧
       Spec.Rc2.blockAt s'.mem (State.addr (s.gpr .r1)) = out.2
@@ -741,43 +741,5 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
     constructor
     · rw [keep₄.mem]; exact out
     · rw [keep₄.mem]; exact iv
-
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | _ => 0
-  sp := 0x6000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem a := if a = 0x6001 then 0x40 else 0
-  rd := [⟨0x1000, 128⟩, ⟨0x6000, 4⟩]
-  wr := [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 512⟩]
-
-theorem encrypt_correct (s : State) (hs : (contract .encrypt).pre s) :
-    ∃ t s', Exec isa Impl.Rc2.Arm.Cbc.encrypt s t s' ∧ abiPreserved s s' ∧
-      (contract .encrypt).post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := cbc_body_correct .encrypt s hs
-  change Exec isa Impl.Rc2.Arm.Cbc.encrypt s t s' at he
-  exact ⟨t, s', he, ⟨ha, VG.Arm.Exec.sp he⟩, hp⟩
-
-theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
-    ∃ t s', Exec isa Impl.Rc2.Arm.Cbc.decrypt s t s' ∧ abiPreserved s s' ∧
-      (contract .decrypt).post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := cbc_body_correct .decrypt s hs
-  change Exec isa Impl.Rc2.Arm.Cbc.decrypt s t s' at he
-  exact ⟨t, s', he, ⟨ha, VG.Arm.Exec.sp he⟩, hp⟩
-
-theorem encrypt_verified : Verified target Impl.Rc2.Arm.Cbc.encrypt (Proof.Rc2.cbcEncryptContract abi 0) := by
-  refine Verified.of_correct encrypt_correct (cbc_constantTime .encrypt) ?_
-  sig_implies [Proof.Rc2.cbcEncryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs,
-    Arm.reduceClassify, Arm.Loc.val, State.addr, contract]
-    [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
-
-theorem decrypt_verified : Verified target Impl.Rc2.Arm.Cbc.decrypt (Proof.Rc2.cbcDecryptContract abi 0) := by
-  refine Verified.of_correct decrypt_correct (cbc_constantTime .decrypt) ?_
-  sig_implies [Proof.Rc2.cbcDecryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs,
-    Arm.reduceClassify, Arm.Loc.val, State.addr, contract]
-    [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
 
 end VG.Proof.Rc2.Arm.Cbc

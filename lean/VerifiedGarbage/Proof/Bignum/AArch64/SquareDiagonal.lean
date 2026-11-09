@@ -78,44 +78,4 @@ theorem diagonal_pair_val (al ah x y p : BitVec 64) :
   dsimp only [lo1, hi1, c1, lo0, hi0, c0] at h1 h2
   omega_arith
 
-/-- Double a cross-product pair, add the diagonal, then the preceding carry. -/
-theorem diagonal_val (a x y p : BitVec 64) :
-    let c0 := decide (2 ^ 64 ≤ x.toNat + x.toNat)
-    let lo0 := x + x
-    let hi0 := y + y + BitVec.ofNat 64 c0.toNat
-    let e0 := decide (2 ^ 64 ≤ y.toNat + y.toNat + c0.toNat)
-    let al := a*a
-    let ah := BitVec.ofNat 64 (a.toNat*a.toNat / 2 ^ 64)
-    let c1 := decide (2 ^ 64 ≤ lo0.toNat + al.toNat)
-    let lo1 := lo0 + al
-    let hi1 := hi0 + ah + BitVec.ofNat 64 c1.toNat
-    let e1 := decide (2 ^ 64 ≤ hi0.toNat + ah.toNat + c1.toNat)
-    let c2 := decide (2 ^ 64 ≤ lo1.toNat + p.toNat)
-    let lo2 := lo1 + p
-    let hi2 := hi1 + BitVec.ofNat 64 c2.toNat
-    let e2 := decide (2 ^ 64 ≤ hi1.toNat + (decide (2 ^ 64 ≤ lo1.toNat + p.toNat)).toNat)
-    lo2.toNat + 2 ^ 64 * hi2.toNat +
-        2 ^ 128 * (e0.toNat + e1.toNat + e2.toNat) =
-      2 * (x.toNat + 2 ^ 64 * y.toNat) + a.toNat*a.toNat + p.toNat := by
-  dsimp only
-  let c0 := decide (2 ^ 64 ≤ x.toNat + x.toNat)
-  let lo0 := x + x
-  let hi0 := y + y + BitVec.ofNat 64 c0.toNat
-  let al := a*a
-  let ah := BitVec.ofNat 64 (a.toNat*a.toNat / 2 ^ 64)
-  let c1 := decide (2 ^ 64 ≤ lo0.toNat + al.toNat)
-  let lo1 := lo0 + al
-  let hi1 := hi0 + ah + BitVec.ofNat 64 c1.toNat
-  have h0 := pair_add_val x y x y
-  have h1 := pair_add_val lo0 hi0 al ah
-  have h2 := pair_add_val lo1 hi1 p 0
-  have hp := square_halves a
-  dsimp only at h0 h1 h2
-  simp only [VG.Proof.Bignum.AArch64.add_zero64] at h2
-  change _ + 2 ^ 64 * _ + 2 ^ 128 *
-    (decide (2 ^ 64 ≤ hi1.toNat + (decide (2 ^ 64 ≤ lo1.toNat + p.toNat)).toNat)).toNat =
-    lo1.toNat + 2 ^ 64 * hi1.toNat + p.toNat at h2
-  dsimp only [lo1, hi1, c1, lo0, hi0, c0, al, ah] at h1 h2
-  omega_arith
-
 end VG.Proof.Bignum.AArch64.Square

@@ -11,21 +11,18 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.MlDsa.Arith.Zq
 
 /-!
-# ML-DSA on x86-64: reduction modulo `q`, and the contracts
+# ML-DSA on x86-64: the contracts
 
 It uses the symbolic execution of ML-KEM's x86-64 proofs (`xrun`, `Keep`,
 `WP.keep`, the counted loops, `Proof/MlKem/X86_64/Wp.lean`), which are about
 the ISA, not ML-KEM.
 
-* `csubQ` leaves `csubD v` of `v`, `v mod q` for `v < 2q` (`csubD_toNat`);
-* `reduce` leaves `redD x` in `r10` of any `x` in `rax`, which is `x mod q`
-  (`reduce_ok`, `redD_toNat`): `barrett` of `Arith/Zq.lean` then `csubQ`;
-* for each function, a contract with the facts of its shared contract
-  (`Proof/MlDsa/Contract.lean`) spelled out for x86-64: the arguments in their
-  registers, the permitted regions, their disjointness, and the
-  postcondition. The proofs are written against these, and
-  `Verified.of_correct` moves them to the shared contracts, which imply them
-  (`mldsa_implies`).
+For each function, a contract with the facts of its shared contract
+(`Proof/MlDsa/Contract.lean`) spelled out for x86-64: the arguments in their
+registers, the permitted regions, their disjointness, and the
+postcondition. The proofs are written against these, and
+`Verified.of_correct` moves them to the shared contracts, which imply them
+(`mldsa_implies`).
 -/
 
 @[expose] public section
@@ -40,8 +37,6 @@ open VG.Spec.MlDsa (q n Poly Zq)
 open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 
 /-! ## Immediates -/
-
-theorem qImm_toNat : qImm.toNat = 8380417 := rfl
 
 theorem sxQD : BitVec.signExtend 64 qImm = 8380417 := by decide
 
@@ -61,104 +56,6 @@ theorem ea_atD (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = s.gpr b + BitV
 and immediates. -/
 tactic_template "xrund" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
   `(tactic| xrun [ea_atD, sxQD, $ls,*])
-
-/-! ## `csubQ` -/
-
-/-- What `csubQ` leaves of `v`. -/
-def csubD (v : BitVec 32) : BitVec 32 :=
-  v - qImm + (0#32 - BitVec.setWidth 32 (BitVec.ofBool (decide (v.toNat < qImm.toNat))) &&& qImm)
-
-theorem csubD_toNat (v : BitVec 32) : (csubD v).toNat = condSub v.toNat := by
-  unfold csubD condSub
-  rw [qImm_toNat]
-  by_cases h : 8380417 ≤ v.toNat
-  · have e : (0#32 - BitVec.setWidth 32 (BitVec.ofBool (decide (v.toNat < 8380417))) &&& qImm) = 0 := by
-      rw [decide_eq_false (by omega)]; decide
-    rw [e, ifp (by rw [q_eq]; exact h)]
-    unfold qImm
-    rw [q_eq]
-    bv_omega
-  · have e : (0#32 - BitVec.setWidth 32 (BitVec.ofBool (decide (v.toNat < 8380417))) &&& qImm) = qImm := by
-      rw [decide_eq_true (by omega)]; decide
-    rw [e, ifn (by rw [q_eq]; exact h)]
-    unfold qImm
-    bv_omega
-
-theorem csubD_add {a b : BitVec 32} (ha : a.toNat < q) (hb : b.toNat < q) :
-    (csubD (a + b)).toNat = condSub (a.toNat + b.toNat) := by
-  have e : (a + b).toNat = a.toNat + b.toNat := by rw [BitVec.toNat_add]; rw [q_eq] at *; omega
-  rw [csubD_toNat, e]
-
-theorem csubD_sub {a b : BitVec 32} (ha : a.toNat < q) (hb : b.toNat < q) :
-    (csubD (a + qImm - b)).toNat = condSub (a.toNat + q - b.toNat) := by
-  have e : (a + qImm - b).toNat = a.toNat + q - b.toNat := by
-    rw [BitVec.toNat_sub, BitVec.toNat_add, qImm_toNat]; rw [q_eq] at *; omega
-  rw [csubD_toNat, e]
-
-/-- `csubQ` after adding two words of values `x` and `y`. -/
-theorem csubD_add_val {a b : BitVec 32} {x y : Zq} (ha : a.toNat = x.val) (hb : b.toNat = y.val) :
-    (csubD (a + b)).toNat = (x + y).val := by
-  rw [csubD_add (by rw [ha]; exact x.isLt) (by rw [hb]; exact y.isLt), ha, hb, val_add]
-
-/-- `csubQ` after subtracting a word of value `y` from one of value `x`. -/
-theorem csubD_sub_val {a b : BitVec 32} {x y : Zq} (ha : a.toNat = x.val) (hb : b.toNat = y.val) :
-    (csubD (a + qImm - b)).toNat = (x - y).val := by
-  rw [csubD_sub (by rw [ha]; exact x.isLt) (by rw [hb]; exact y.isLt), ha, hb, val_sub]
-
-/-! ## `reduce` -/
-
-/-- What `reduce` leaves in `r10`, of `x`. -/
-def redD (x : BitVec 64) : BitVec 64 :=
-  BitVec.setWidth 64 (csubD (BitVec.setWidth 32 (x - BitVec.ofNat 64
-    ((BitVec.ofNat 64 (x.toNat * barrettImm.toNat / 2 ^ 64)).toNat * BitVec.toNat (8380417 : BitVec 64)))))
-
-theorem redD_toNat (x : BitVec 64) : (redD x).toNat = x.toNat % q := by
-  have hx := x.isLt
-  have hb := barrett_bounds hx
-  have e1 : (BitVec.ofNat 64 (x.toNat * barrettImm.toNat / 2 ^ 64)).toNat = barrettQuot x.toNat := by
-    rw [BitVec.toNat_ofNat, show barrettImm.toNat = barrettM from rfl, Nat.mod_eq_of_lt]; rfl
-    unfold barrettM; omega
-  have e2 : (BitVec.ofNat 64 ((BitVec.ofNat 64 (x.toNat * barrettImm.toNat / 2 ^ 64)).toNat *
-      BitVec.toNat (8380417 : BitVec 64))).toNat = barrettQuot x.toNat * q := by
-    rw [e1, show BitVec.toNat (8380417 : BitVec 64) = q from rfl, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega)]
-  have e3 : (x - BitVec.ofNat 64 ((BitVec.ofNat 64 (x.toNat * barrettImm.toNat / 2 ^ 64)).toNat *
-      BitVec.toNat (8380417 : BitVec 64))).toNat = barrett x.toNat := by
-    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, e2]; exact hb.1), e2]; rfl
-  have hl : barrett x.toNat < 2 * q := barrett_lt hx
-  have e4 := toNat_setWidth32_64 (show (x - BitVec.ofNat 64 ((BitVec.ofNat 64 (x.toNat * barrettImm.toNat /
-    2 ^ 64)).toNat * BitVec.toNat (8380417 : BitVec 64))).toNat < 2 ^ 32 by rw [e3]; rw [q_eq] at hl; omega)
-  rw [e3] at e4
-  rw [redD, toNat_setWidth64, csubD_toNat, e4, reduce_barrett hx]
-
-/-- The low half of `redD x`, whose value is `x mod q`. -/
-theorem redD32_toNat (x : BitVec 64) : (BitVec.setWidth 32 (redD x)).toNat = x.toNat % q := by
-  have h := redD_toNat x
-  have : x.toNat % q < q := Nat.mod_lt _ (by decide)
-  rw [toNat_setWidth32_64 (by rw [h]; exact Nat.lt_of_lt_of_le this (by decide)), h]
-
-theorem reduce_ok (s : State) :
-    WP isa (.block reduce) s fun s' => (s'.gpr .r10 = redD (s.gpr .rax) ∧ s'.mem = s.mem) ∧
-      Keep [.rax, .rdx, .r10, .r11] s s' := by
-  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
-  unfold reduce csubQ
-  xrund [List.cons_append, List.nil_append, csubD, redD]
-
-/-- The product of a word and `r`, as `mul` leaves it. -/
-abbrev prodW (a : BitVec 32) (r : BitVec 64) : BitVec 64 :=
-  BitVec.ofNat 64 ((BitVec.setWidth 64 a).toNat * r.toNat)
-
-/-- The product of a word of value `x` and a register of value `z`, reduced:
-the value of `z · x`. -/
-theorem redD_prodW {u : BitVec 32} {x z : Zq} (hu : u.toNat = x.val) :
-    (BitVec.setWidth 32 (redD (prodW u (BitVec.ofNat 64 z.val)))).toNat = (z * x).val := by
-  have hz := val_lt z
-  have hx := val_lt x
-  have e : (prodW u (BitVec.ofNat 64 z.val)).toNat = x.val * z.val := by
-    rw [prodW, BitVec.toNat_ofNat, toNat_setWidth64, hu, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (a := z.val) (by omega)]
-    exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (mul_lt_q2 hx hz) (by decide))
-  rw [redD32_toNat, e, val_mul, Nat.mul_comm]
 
 /-! ## The contracts -/
 

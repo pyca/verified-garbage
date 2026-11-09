@@ -126,8 +126,6 @@ structure LInv (s₀ : State) (B : Addr) (w i0 : Nat) (x : BitVec 64) (i : Nat) 
   s1 : t.gpr .s1 = BitVec.ofNat 64 (if i = 0 then 1 else 0)
   s0 : t.gpr .s0 = if i ≤ i0 then 0 else x
 
-theorem li1_eq : (BitVec.ofNat 64 1 : BitVec 64) = 1#64 := rfl
-
 /-- `lowWord`: the lowest nonzero word of `c − 1` into `s0`. -/
 theorem lowWord_ok {s : State} {B : Addr} {Z w c : Nat} (h : Env s B Z w) (hn : A s.mem B w 0 = c)
     (hodd : c % 2 = 1) (hc1 : 1 < c) :

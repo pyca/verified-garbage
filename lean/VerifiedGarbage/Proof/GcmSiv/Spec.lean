@@ -67,12 +67,6 @@ theorem halves_succ (ciph : Spec.GcmSiv.Cipher) (nonce : List Byte) (k : Nat) :
     halves ciph nonce (k + 1) = halves ciph nonce k ++ (ciph (Spec.GcmSiv.le32 k ++ nonce)).take 8 := by
   simp [halves, List.range_succ, List.flatMap_append]
 
-theorem length_halves {ciph : Spec.GcmSiv.Cipher} (h : ∀ x, (ciph x).length = 16) (nonce : List Byte) (k : Nat) :
-    (halves ciph nonce k).length = 8 * k := by
-  induction k with
-  | zero => rfl
-  | succ k ih => rw [halves_succ, List.length_append, ih, List.length_take, h]; omega
-
 /-- `derive_keys`: the first 16 bytes of the halves, and the rest. -/
 theorem deriveKeys_eq {ciph : Spec.GcmSiv.Cipher} (h : ∀ x, (ciph x).length = 16) (keyLen : Nat)
     (nonce : List Byte) :
@@ -258,8 +252,6 @@ theorem setWidth_byte_hi (w : BitVec 32) {j : Nat} (hj : 4 ≤ j) :
   simp [BitVec.getLsbD_of_ge w (8 * j + k) (by omega)]
 
 theorem mask_bytes : ∀ j < 7, (0x7FFFFFFFFFFFFFFF#64).extractLsb' (8 * j) 8 = BitVec.allOnes 8 := by decide
-theorem mask_byte7 : (0x7FFFFFFFFFFFFFFF#64).extractLsb' (8 * 7) 8 = 0x7F#8 := by decide
-
 theorem and_255 (x : BitVec 8) : x &&& 255#8 = x := by
   rw [show (255#8) = BitVec.allOnes 8 from rfl, BitVec.and_allOnes]
 

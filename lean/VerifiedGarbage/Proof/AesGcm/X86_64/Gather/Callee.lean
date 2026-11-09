@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.AesGcm.X86_64
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -183,11 +184,11 @@ def finK : Contract isa where
   post := Proof.AesGcm.streamFinishX86_64.post
   pub := finPub
 
-theorem finSpec_pre {s : State} (h : finPre s) : (Spec.Gcm.streamFinishContract X86_64.abi 2584).pre s := by
+theorem finSpec_pre {s : State} (h : finPre s) : (Proof.AesGcm.streamFinishRoundsContract X86_64.abi 2584).pre s := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇⟩ := h
-  sig_pre [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre, X86_64.abi,
+  sig_pre [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre, X86_64.abi,
     X86_64.argRegs]
-  sig_reduce [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre, X86_64.abi,
+  sig_reduce [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre, X86_64.abi,
     X86_64.argRegs, Proof.AesGcm.ret, VG.X86_64.below, List.getD, List.range, List.range.loop]
   sig_and_intros
   all_goals simp only [Proof.AesGcm.ret, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds] at *
@@ -196,18 +197,18 @@ theorem finSpec_pre {s : State} (h : finPre s) : (Spec.Gcm.streamFinishContract 
     | trivial
     | omega
 
-theorem finSpec_post {s s' : State} (hR : rounds s) (h : (Spec.Gcm.streamFinishContract X86_64.abi 2584).post s s') :
+theorem finSpec_post {s s' : State} (hR : rounds s) (h : (Proof.AesGcm.streamFinishRoundsContract X86_64.abi 2584).post s s') :
     Proof.AesGcm.streamFinishX86_64.post s s' := by
-  sig_post [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre, X86_64.abi,
-    X86_64.argRegs, Spec.Gcm.streamFinishPost] at h
-  sig_reduce [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, X86_64.abi, X86_64.argRegs] at h
+  sig_post [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre, X86_64.abi,
+    X86_64.argRegs, Proof.AesGcm.streamFinishRoundsPost] at h
+  sig_reduce [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, X86_64.abi, X86_64.argRegs] at h
   exact h hR
 
 theorem finSpec_pub {s₁ s₂ : State} (h : finPub s₁ s₂) :
-    (Spec.Gcm.streamFinishContract X86_64.abi 2584).pub s₁ s₂ := by
+    (Proof.AesGcm.streamFinishRoundsContract X86_64.abi 2584).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇⟩ := h
-  sig_pub [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, X86_64.abi, X86_64.argRegs]
-  sig_reduce [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, X86_64.abi, X86_64.argRegs]
+  sig_pub [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, X86_64.abi, X86_64.argRegs]
+  sig_reduce [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, X86_64.abi, X86_64.argRegs]
   sig_and_intros
   all_goals first | with_reducible assumption | trivial
 
@@ -340,7 +341,7 @@ def AadFn.ofSpec (f : Fn) (hv : Verified X86_64.target f.code (Spec.Gcm.streamAa
     sp xd mx
 
 /-- `vg_aes_gcm_stream_finish` from its shared contract. -/
-def FinFn.ofSpec (f : Fn) (hv : Verified X86_64.target f.code (Spec.Gcm.streamFinishContract X86_64.abi 2584))
+def FinFn.ofSpec (f : Fn) (hv : Verified X86_64.target f.code (Proof.AesGcm.streamFinishRoundsContract X86_64.abi 2584))
     (sp : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (xd : f.code.x86_64Depth ≤ 2584)
     (mx : f.code.allInstrs (fun i => !loadsMxcsr i) = true) : FinFn :=
   CallFn.ofSpec f hv (fun _ h => finSpec_pre h)

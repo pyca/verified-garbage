@@ -6,12 +6,14 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 /-!
 # Complete point addition and doubling as functions, on 32-bit ARM: correctness
 
-`fn S dbl` (`Impl/Weierstrass/Arm/Point.lean`), from a state that its
-precondition describes (`PrePt`: the working space at `r0`, writable, and
+`fnOps S dbl ops` (`Impl/Weierstrass/Arm/Point.lean`), for field operations
+`ops` that write only the result and the temporaries (`OpsOk`), from a state
+that its precondition describes (`PrePt`: the working space at `r0`, writable, and
 every coordinate it reads below the prime), returns with the callee-saved
 registers and `sp` kept, `r12 = ws`, the memory changed only at `O` and in
 the own working space, and `O`'s coordinates below the prime, standing for
-`rcbAdd` of what the constants and the operands stand for (`fn_ok`).
+what `ops` computes from what the constants and the operands stand for
+(`fnOps_ok`).
 -/
 
 @[expose] public section
@@ -161,23 +163,5 @@ theorem fnOps_ok {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.
   · rw [M₃]; exact I₂.lt j (hO.outs j hj)
   · rw [M₃, I₂.val 0 (hO.outs 0 (by decide)), I₂.val 1 (hO.outs 1 (by decide)),
       I₂.val 2 (hO.outs 2 (by decide))]
-
-/-- `fnOps_ok` for the complete addition: `O`'s coordinates stand for
-`rcbAdd` of what the constants and the operands stand for. -/
-theorem fn_ok {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m) (hodd : S.m % 2 = 1)
-    {dbl : Bool} {s : State} (hp : PrePt S.k S.m dbl s) {u : Bool} :
-    WP isa (Impl.Weierstrass.Arm.Point.fn S dbl u) s fun s' => abiPreserved s s' ∧
-      Outs (State.addr (s.gpr .r0)) [(Impl.Weierstrass.Point.oAt S.k, 3 * Impl.Weierstrass.Point.elemBytes S.k),
-        (Impl.Weierstrass.Point.ownAt S.k, 4096 - Impl.Weierstrass.Point.ownAt S.k)] s.mem s'.mem ∧
-      s'.gpr .r12 = s.gpr .r0 ∧
-      (∀ j < 3, wordsVal s'.mem (State.addr (s.gpr .r0)) (enc S.k dbl j) S.k < S.m) ∧
-      (toM S.m (2 ^ (64 * S.k)) (wordsVal s'.mem (State.addr (s.gpr .r0)) (enc S.k dbl 0) S.k),
-        toM S.m (2 ^ (64 * S.k)) (wordsVal s'.mem (State.addr (s.gpr .r0)) (enc S.k dbl 1) S.k),
-        toM S.m (2 ^ (64 * S.k)) (wordsVal s'.mem (State.addr (s.gpr .r0)) (enc S.k dbl 2) S.k)) =
-        VG.Proof.Weierstrass.rcbAdd (E₀ S.k S.m dbl s 9) (E₀ S.k S.m dbl s 10) (E₀ S.k S.m dbl s 3)
-          (E₀ S.k S.m dbl s 4) (E₀ S.k S.m dbl s 5) (E₀ S.k S.m dbl s 6) (E₀ S.k S.m dbl s 7)
-          (E₀ S.k S.m dbl s 8) :=
-  WP.mono (fnOps_ok hM hodd rcbIds_opsOk hp) fun _ ⟨A, O, R, L, V⟩ =>
-    ⟨A, O, R, L, V.trans (rcb_run rcbIds_apart _)⟩
 
 end VG.Proof.Weierstrass.Arm.Point

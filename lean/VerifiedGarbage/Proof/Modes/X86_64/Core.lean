@@ -152,11 +152,6 @@ structure Layout (c : Core) : Prop where
 (`rax`, `rbx`, `rcx`, `rbp`, `r10`) and the two the core keeps for them. -/
 def modeRegs (c : Core) : List Reg := [.rax, .rbx, .rcx, .rbp, .r10, c.dataReg, c.leftReg]
 
-theorem not_modeRegs {c : Core} {r : Reg} (h1 : r ≠ .rax) (h2 : r ≠ .rbx) (h3 : r ≠ .rcx) (h4 : r ≠ .rbp)
-    (h5 : r ≠ .r10) (h6 : r ≠ c.dataReg) (h7 : r ≠ c.leftReg) : r ∉ modeRegs c := by
-  simp only [modeRegs, List.mem_cons, List.not_mem_nil, or_false]
-  rintro (h | h | h | h | h | h | h) <;> contradiction
-
 theorem of_not_modeRegs {c : Core} {r : Reg} (h : r ∉ modeRegs c) :
     r ≠ .rax ∧ r ≠ .rbx ∧ r ≠ .rcx ∧ r ≠ .rbp ∧ r ≠ .r10 ∧ r ≠ c.dataReg ∧ r ≠ c.leftReg := by
   simp only [modeRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at h

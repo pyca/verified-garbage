@@ -5,7 +5,6 @@
 // gives.
 
 vg_cmac_aes_finalize_aes:
-	.arch_extension aes
 	sub x9, x4, #16
 	cbz x9, 20f
 	movz x9, #0, lsl #0
@@ -67,5 +66,4 @@ vg_cmac_aes_finalize_aes:
 	ldr x30, [x19, #2072]
 	ldr x19, [x19, #2064]
 	ret
-	.arch_extension noaes
 	.p2align 6

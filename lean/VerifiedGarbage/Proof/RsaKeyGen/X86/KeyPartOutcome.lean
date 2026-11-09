@@ -10,7 +10,7 @@ namespace VG.Proof.RsaKeyGen.X86.Key
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
 open VG.Impl.RsaKeyGen.X86.Key
 
-/-- `KeyReady.part`, from what the key part leaves of the factors, `d` and `e`. -/
+/-- The key part's outcome (`CoreOutcome`), from what it leaves of the factors, `d` and `e`. -/
 theorem KeyReady.part_of {s t : State} {B : Addr} {n e p q : Nat}
     (lower : 16 ≤ n) (upper : n ≤ 256)
     (boundP : p < 2 ^ (16 * n)) (boundQ : q < 2 ^ (16 * n))
@@ -70,17 +70,5 @@ theorem KeyReady.part_of {s t : State} {B : Addr} {n e p q : Nat}
     · rw [ite_eq_right shape]
       have rejected : slot t.mem B kOk = 0 := by rw [M, ite_eq_right shape]
       exact ⟨K.status.trans rejected, rejected⟩
-
-theorem KeyReady.part {s t : State} {B : Addr} {Z n e p q : Nat}
-    (h : Ws s B Z n 32) (lower : 16 ≤ n) (upper : n ≤ 256)
-    (boundP : p < 2 ^ (16 * n)) (boundQ : q < 2 ^ (16 * n))
-    (R : KeyReady B n e p q s.mem)
-    (notSmall : ¬(slot s.mem B kOk = 1 ∧ num s.mem B n aD ≤ 2 ^ (16 * n)))
-    (F : Outs B (stageRanges n keyPartArrays) s.mem t.mem) (K : KeyPartResult B n s.mem t) :
-    CoreOutcome B n e p q t.mem :=
-  KeyReady.part_of lower upper boundP boundQ R notSmall
-    (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) F)
-    (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) F)
-    (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) F) (stage_preserves_e F) K
 
 end VG.Proof.RsaKeyGen.X86.Key

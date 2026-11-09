@@ -44,10 +44,6 @@ def ctr32ScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Co
     (post := fun schedule counter data len _scratch => ctr32Post A.ptrBits schedule counter data len)
     (writeArgs := true) (stack := stack)
 
-theorem ctr32Contract_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    ctr32Contract A stack = ctr32Sig.contract A (post := ctr32Post A.ptrBits) (writeArgs := true)
-      (stack := stack) := rfl
-
 /-! ## Locality -/
 
 section

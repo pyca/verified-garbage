@@ -40,9 +40,4 @@ theorem localReady {s : State} {base : Addr} {size offset len n : Nat}
   · rw [ptr]
     exact Offset.disjoint_base base hfar (by omega)
 
-theorem local_bytes {s : State} {base : Addr} {size offset len : Nat}
-    (hs : Scr s base size) (hlen : 0 < len) (hb : offset + len ≤ size) :
-    Spec.Rsa.bytesAt s.mem ((pointerValue base s (.local offset)).setWidth 64) len =
-      Spec.Rsa.bytesAt s.mem (off base offset) len := by rw [local_pointer hs hlen hb]
-
 end VG.Proof.Dsa.X86

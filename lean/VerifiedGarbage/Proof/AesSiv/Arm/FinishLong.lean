@@ -70,8 +70,6 @@ theorem xorend_mem4 (m : Mem) {B Q : Addr} {T : Nat} (hT : 16 ≤ T) (hw : B.toN
     Proof.Cmac.xor4Mem_bytes _ (Proof.Cmac.Sep4.self _) (Proof.Cmac.Sep4.of_disjoint (hd.sub_left hc)),
     Siv.xor_eq]
 
-theorem shl4' {n : Nat} (hn : 16 * n < 2 ^ 32) : BitVec.ofNat 32 n <<< 4 = BitVec.ofNat 32 (16 * n) := shl4 hn
-
 /-- `kBlock`: `16 k` in `r4`. -/
 theorem kBlock_ok {s : State} {n : Nat} (h16 : 16 ≤ n) (hn : n < 2 ^ 32) (h5 : s.gpr .r5 = BitVec.ofNat 32 n) :
     WP isa kBlock s fun s' => s'.gpr .r4 = BitVec.ofNat 32 (16 * kOf n) ∧

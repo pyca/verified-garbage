@@ -211,9 +211,6 @@ namespace Lay.Ok
 variable {L : Lay} (h : L.Ok)
 include h
 
-/-- The stack and the stack arguments do not wrap around. -/
-theorem nB' : L.B.toNat + 152 ≤ 2 ^ 64 := h.nB
-
 /-- A range in the stack is disjoint from one in a writable buffer. -/
 theorem stk_buf {d n : Nat} (h₁ : d + n ≤ 88) {R : Region}
     (hR : R = L.BB ∨ R = L.VV ∨ R = L.SC ∨ R = L.OUT) {r : Region} (hr : Region.Sub r R) :

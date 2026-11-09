@@ -76,26 +76,6 @@ theorem prepCounter_ok (s : State) (i : Nat)
   · simp only [State.setMem_rd, rd_setReg, rd_arithFlags]
   · simp only [State.setMem_wr, wr_setReg, wr_arithFlags]
 
-/-- The memory effect of preparing any collection of next-counter slots. -/
-def prepCountersMem (m : Mem) (p : Addr) (v : BitVec 32) (is : List Nat) : Mem :=
-  is.foldl (fun m i => m.writeW (p + BitVec.ofNat 64 (652 + 16 * i))
-    (bswap32 (v + BitVec.ofNat 32 i))) m
-
-theorem prepCounters_ok (is : List Nat) (s : State)
-    (hw : ∀ i ∈ is, InRegions s.wr (s.gpr .r11 + BitVec.ofNat 64 (652 + 16 * i)) 4) :
-    WP isa (.block (is.flatMap prepCounter)) s fun t =>
-      t.mem = prepCountersMem s.mem (s.gpr .r11) ((s.gpr .r8).setWidth 32) is ∧ BufferFrame s t := by
-  induction is generalizing s with
-  | nil => exact WP.block_nil ⟨rfl, BufferFrame.refl _⟩
-  | cons i is ih =>
-    rw [List.flatMap_cons, WP.block_append_iff]
-    refine WP.mono (prepCounter_ok s i (hw i List.mem_cons_self)) fun t ⟨hm, hf⟩ => ?_
-    refine WP.mono (ih t (fun j hj => by
-      rw [hf.wr, hf.gpr .r11 (by decide)]
-      exact hw j (List.mem_cons_of_mem _ hj))) fun u ⟨hm', hf'⟩ => ⟨?_, hf.trans hf'⟩
-    rw [hm', hf.gpr .r11 (by decide), hf.gpr .r8 (by decide), hm]
-    rfl
-
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
 end

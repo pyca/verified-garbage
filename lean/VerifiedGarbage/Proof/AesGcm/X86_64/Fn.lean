@@ -187,15 +187,6 @@ theorem saved_absFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ absFram
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
   · exact (L.stk_w (by decide)).symm
 
-theorem saved_tFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ tFrame St W SP yo, (savedR W).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact (L.st_w (by omega) (.inr ⟨by decide, by decide⟩)).symm
-  · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact (L.stk_w (by decide)).symm
-
 theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame St W SP o, (savedR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -213,16 +204,6 @@ theorem saved_j0Frame : ∀ r ∈ j0Frame St W SP, (savedR W).Disjoint r := by
   · simpa using (L.st_w (a := 0) (n := 80) (by decide) (.inr ⟨by decide, by decide⟩)).symm
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact (L.stk_w (by decide)).symm
-
-theorem saved_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W SP s D n) :
-    ∀ r ∈ crFrame St W SP D n, (savedR W).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact (hd.ok.w.sub_right (Lay.wSub (by decide))).symm
-  · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
   · exact (L.stk_w (by decide)).symm
 

@@ -1,18 +1,12 @@
-//! Finite-field Diffie–Hellman, for the component API used by cryptography.
+//! Finite-field Diffie–Hellman, with the components API of pyca/cryptography:
+//! parameter and key generation, public-key validation and the exchange.
 //!
-//! Public-key validation and exchange call the verified FFDH operations.
-//! Exchange secret exponentiation follows a fixed schedule over the public encoding
-//! length supplied at import, or the public sampling bound for generated keys.
-//! All domain arithmetic and secret exponentiation run in verified code.
-//! Private-key generation samples and validates the scalar in verified code,
-//! which also retries rejected attempts and asks for the random bytes they
-//! need. Rust obtains random bytes and packs inputs and results. Parameter
-//! generation runs entirely in verified code, including its attempt limit
-//! and entropy requests; Rust allocates and fills the random tape it asks
-//! for. Parameter generation is available on every supported architecture.
-//! Imported parameters receive structural and algebraic checks; callers must
-//! establish primality/provenance. Optional q enables subgroup checks.
-//! Exchange returns exactly ceil(bits(p)/8) bytes, without applying a KDF.
+//! Imported parameters are checked for structure and consistency, not
+//! primality: their source must be trusted. With `q` given, public keys are
+//! also checked to be in its subgroup. The exchange returns exactly ⌈bits(p)/8⌉
+//! bytes, not passed through a KDF; its timing depends on the length of the
+//! public encoding the private key was imported with (for a generated key, the
+//! public sampling bound), not on the private key's value.
 
 #![cfg(all(
     any(
@@ -25,17 +19,22 @@
     feature = "alloc"
 ))]
 
+// Every operation, parameter and key generation included (their candidates,
+// retries, attempt limits and requests for random bytes), is verified code;
+// the Rust here lays out and pads the values, allocates the working space,
+// serves the random bytes (`crate::entropy`) and chooses the implementation.
+
 mod arithmetic;
 mod domain;
 mod generation;
-#[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
 mod precomputed;
 #[cfg(test)]
 mod vetted_tests;
 
+use crate::error::InvalidKey;
 use crate::zeroize::zeroize;
 use alloc::vec::Vec;
-use arithmetic::{canonical, scalar};
+use arithmetic::canonical;
 use core::fmt;
 use domain::Domain;
 
@@ -49,8 +48,6 @@ pub const MAX_BITS: usize = 8192;
 pub enum Error {
     /// Invalid modulus, generator, subgroup order or algebraic domain relation.
     InvalidParameters,
-    /// Invalid public/private scalar, subgroup membership or key consistency.
-    InvalidKey,
     /// The peer belongs to a different domain.
     ParametersMismatch,
     /// A shared value of zero, one or p-1 was computed.
@@ -64,7 +61,6 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             Self::InvalidParameters => "invalid FFDH parameters",
-            Self::InvalidKey => "invalid FFDH key",
             Self::ParametersMismatch => "FFDH peer parameters differ",
             Self::InvalidSharedSecret => "invalid FFDH shared secret",
             Self::Randomness => "FFDH random number generator failed",
@@ -105,11 +101,23 @@ impl Parameters {
     /// with q, also odd 2<q<p-1, q|(p-1) and g^q mod p=1. Does not
     /// primality-test imported parameters.
     ///
-    /// On ARMv7 and AArch64, this also initializes reusable public key-generation data
-    /// (about 34 times p's byte length). Clones share that allocation.
+    /// This also initializes reusable public key-generation data (about 34
+    /// times p's byte length). Clones share that allocation.
     pub fn from_components(p: &[u8], g: &[u8], q: Option<&[u8]>) -> Result<Self, Error> {
+        crate::dit::enter!(dit);
+        Self::from_components_with(dit, p, g, q)
+    }
+
+    /// [`from_components`](Self::from_components), with the token of the operation it is part of
+    /// (see `crate::dit`).
+    fn from_components_with(
+        dit: crate::dit::Dit<'_>,
+        p: &[u8],
+        g: &[u8],
+        q: Option<&[u8]>,
+    ) -> Result<Self, Error> {
         let (p, g, q) = (canonical(p), canonical(g), q.map(canonical));
-        let domain = Domain::new(p, g, q).ok_or(Error::InvalidParameters)?;
+        let domain = Domain::new(dit, p, g, q).ok_or(Error::InvalidParameters)?;
         Ok(Self {
             p: p.to_vec(),
             g: g.to_vec(),
@@ -123,7 +131,8 @@ impl Parameters {
     /// Miller–Rabin uses 64 independent uniform witnesses through 2048 bits
     /// and 128 above. There is no primality certificate.
     pub fn generate(bits: usize, generator: u32) -> Result<Self, Error> {
-        generation::parameters(bits, generator, getrandom::fill)
+        crate::dit::enter!(dit);
+        generation::parameters(dit, bits, generator, getrandom::fill)
     }
 
     /// [`generate`](Self::generate), with its random bytes drawn from `fill`
@@ -132,13 +141,15 @@ impl Parameters {
     /// Not part of the API: it lets benchmarks compare implementations on
     /// identical work, from fixed tapes. The parameters are generated as
     /// `generate` documents only if `fill` supplies uniformly random bytes.
+    #[cfg(feature = "internal-bench")]
     #[doc(hidden)]
     pub fn generate_with_rng<E>(
         bits: usize,
         generator: u32,
         fill: impl FnMut(&mut [u8]) -> Result<(), E>,
     ) -> Result<Self, Error> {
-        generation::parameters(bits, generator, fill)
+        crate::dit::enter!(dit);
+        generation::parameters(dit, bits, generator, fill)
     }
 
     /// Borrow canonical unsigned big-endian (p,g,q), preserving q's presence.
@@ -152,25 +163,11 @@ impl Parameters {
     }
 
     /// Generate a private key, rejecting degenerate public values and retrying.
-    /// On ARMv7 and AArch64, exact RFC 3526/7919 safe-prime groups with generator 2 use
-    /// the RFC 7919 shorter-exponent bounds. Other domains and architectures
-    /// sample uniformly in 1..q, or 1..p-1 when q is absent.
+    /// Exact RFC 3526/7919 safe-prime groups with generator 2 use the RFC 7919
+    /// shorter-exponent bounds. Other domains sample uniformly in 1..q, or 1..p-1 when q is absent.
     pub fn generate_private_key(&self) -> Result<PrivateKey, Error> {
-        self.generate_with(getrandom::fill)
-    }
-
-    /// [`generate_private_key`](Self::generate_private_key), with its random
-    /// bytes drawn from `fill` instead of the operating system.
-    ///
-    /// Not part of the API: it lets benchmarks compare implementations on
-    /// identical work, from fixed tapes. The key is secret only if `fill`
-    /// supplies uniformly random bytes.
-    #[doc(hidden)]
-    pub fn generate_private_key_with_rng<E>(
-        &self,
-        fill: impl FnMut(&mut [u8]) -> Result<(), E>,
-    ) -> Result<PrivateKey, Error> {
-        self.generate_with(fill)
+        crate::dit::enter!(dit);
+        self.generate_with(dit, getrandom::fill)
     }
 
     /// Verified code runs the whole search: it draws and checks each scalar
@@ -179,18 +176,17 @@ impl Parameters {
     /// asks for the random bytes each attempt needs.
     fn generate_with<E>(
         &self,
+        dit: crate::dit::Dit<'_>,
         fill: impl FnMut(&mut [u8]) -> Result<(), E>,
     ) -> Result<PrivateKey, Error> {
         let len = self.p.len();
-        #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
         let exponent_len = self.domain.exponent_len();
-        #[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
-        let exponent_len = self.q.as_ref().map_or(len, Vec::len);
         let mut x = alloc::vec![0; len];
         let mut y = alloc::vec![0; len];
-        let mut state = self.domain.key_state();
+        let mut state = self.domain.key_state(dit);
         let result = generation::serve(state[3] as usize, fill, |tape| {
-            self.domain.key_search(&mut state, tape, &mut x, &mut y)
+            self.domain
+                .key_search(dit, &mut state, tape, &mut x, &mut y)
         });
         zeroize(&mut state);
         result.map(|()| PrivateKey {
@@ -212,10 +208,16 @@ pub struct PublicKey {
 }
 impl PublicKey {
     /// Import an unsigned big-endian y, accepting leading zeros.
-    pub fn from_components(params: &Parameters, y: &[u8]) -> Result<Self, Error> {
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidKey`] if `y` is not in `[2, p − 2]`, or, with `q`, not in
+    /// its subgroup.
+    pub fn from_components(params: &Parameters, y: &[u8]) -> Result<Self, InvalidKey> {
+        crate::dit::enter!(dit);
         let y = canonical(y);
-        if !params.domain.check_public(y) {
-            return Err(Error::InvalidKey);
+        if !params.domain.check_public(dit, y) {
+            return Err(InvalidKey);
         }
         Ok(Self {
             params: params.clone(),
@@ -257,16 +259,22 @@ impl PrivateKey {
     /// This accepts private components from PKCS#8, which omits `y`.
     /// Checks the scalar range and the derived public value. Parsing and
     /// the exponentiation schedule follow [`Self::from_components`].
-    pub fn from_private_components(params: &Parameters, x: &[u8]) -> Result<Self, Error> {
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidKey`] if `x` is out of range or the public value it derives
+    /// is not valid (as [`PublicKey::from_components`] checks it).
+    pub fn from_private_components(params: &Parameters, x: &[u8]) -> Result<Self, InvalidKey> {
+        crate::dit::enter!(dit);
         let exponent_len = x.len().min(params.p.len());
         let (zeros, scalar) = x.split_at(x.len() - exponent_len);
-        if scalar.is_empty() || zeros.iter().any(|&b| b != 0) {
-            return Err(Error::InvalidKey);
+        if scalar.is_empty() || !crate::ct::is_zero(dit, zeros) {
+            return Err(InvalidKey);
         }
         let mut y = alloc::vec![0; params.p.len()];
         // One exponentiation checks the scalar range and derives a valid y.
-        if params.domain.derive_public(scalar, &mut y) != 1 {
-            return Err(Error::InvalidKey);
+        if params.domain.derive_public(dit, scalar, &mut y) != 1 {
+            return Err(InvalidKey);
         }
         Ok(Self::assemble(params, canonical(&y), scalar, exponent_len))
     }
@@ -275,30 +283,39 @@ impl PrivateKey {
     /// The encoding length of x is public and determines the fixed
     /// exponentiation schedule, capped at the modulus width. Leading zeros
     /// are retained in that schedule; the scalar value does not set its length.
-    pub fn from_components(params: &Parameters, y: &[u8], x: &[u8]) -> Result<Self, Error> {
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidKey`] if `x` is out of range, `y` is not valid (as
+    /// [`PublicKey::from_components`] checks it) or `y ≠ g^x mod p`.
+    pub fn from_components(params: &Parameters, y: &[u8], x: &[u8]) -> Result<Self, InvalidKey> {
+        crate::dit::enter!(dit);
         // Only zeros may precede the modulus' width. Retain the public
         // encoding length, capped at that width, for secret exponentiation.
         let exponent_len = x.len().min(params.p.len());
         let (zeros, x) = x.split_at(x.len() - exponent_len);
         let y = canonical(y);
-        if zeros.iter().any(|&b| b != 0) {
-            return Err(Error::InvalidKey);
+        if !crate::ct::is_zero(dit, zeros) {
+            return Err(InvalidKey);
         }
-        if !params.domain.check_private(y, x) {
-            return Err(Error::InvalidKey);
+        if !params.domain.check_private(dit, y, x) {
+            return Err(InvalidKey);
         }
         Ok(Self::assemble(params, y, x, exponent_len))
     }
 
-    /// The key of a checked pair: canonical `y`, and `x` without the zeros
-    /// before its `exponent_len` bytes.
+    /// The key of a checked pair: canonical `y`, and `x`, its `exponent_len`
+    /// bytes, padded to the modulus' width. Its leading zero bytes are kept,
+    /// never counted.
     fn assemble(params: &Parameters, y: &[u8], x: &[u8], exponent_len: usize) -> Self {
+        let mut padded = alloc::vec![0; params.p.len()];
+        padded[params.p.len() - x.len()..].copy_from_slice(x);
         Self {
             public: PublicKey {
                 params: params.clone(),
                 y: y.to_vec(),
             },
-            x: scalar(x, params.p.len()),
+            x: padded,
             exponent_len,
         }
     }
@@ -315,13 +332,14 @@ impl PrivateKey {
     /// rejects mismatched domains and degenerate shared values. Caller owns
     /// and is responsible for wiping the returned shared secret.
     pub fn exchange(&self, peer: &PublicKey) -> Result<Vec<u8>, Error> {
+        crate::dit::enter!(dit);
         let params = &self.public.params;
         if params != &peer.params {
             return Err(Error::ParametersMismatch);
         }
         let mut z = alloc::vec![0; params.p.len()];
         let x = &self.x[self.x.len() - self.exponent_len..];
-        if params.domain.exchange(x, &peer.y, &mut z) {
+        if params.domain.exchange(dit, x, &peer.y, &mut z) {
             Ok(z)
         } else {
             Err(Error::InvalidSharedSecret)
@@ -331,7 +349,7 @@ impl PrivateKey {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Error, Parameters, PrivateKey, PublicKey, zeroize};
     use alloc::{format, vec};
     fn composite_domain() -> Parameters {
         // Modulus 2^512-1, generator 2^128: g^4=1 and g^2!=1.
@@ -340,50 +358,6 @@ mod tests {
         let mut g = vec![0; 17];
         g[0] = 1;
         Parameters::from_components(&p, &g, None).unwrap()
-    }
-    #[test]
-    fn key_generation_from_a_fixed_tape_is_deterministic() {
-        // The same tape gives the same key, as the fixed-tape benchmark
-        // relies on.
-        let params = composite_domain();
-        let generate = || {
-            let mut x = 0x9E37_79B9_7F4A_7C15u64;
-            params
-                .generate_private_key_with_rng(|buf: &mut [u8]| {
-                    for b in buf {
-                        x ^= x << 13;
-                        x ^= x >> 7;
-                        x ^= x << 17;
-                        *b = x as u8;
-                    }
-                    Ok::<_, ()>(())
-                })
-                .unwrap()
-        };
-        let (a, b) = (generate(), generate());
-        assert_eq!(a.private_component(), b.private_component());
-        assert_eq!(a.public_key().component(), b.public_key().component());
-    }
-    #[test]
-    fn generation_from_a_fixed_tape_is_deterministic() {
-        // The same tape gives the same safe prime, as the fixed-tape
-        // benchmark relies on.
-        let generate = || {
-            let mut x = 0x9E37_79B9_7F4A_7C15u64;
-            Parameters::generate_with_rng(512, 2, |buf: &mut [u8]| {
-                for b in buf {
-                    x ^= x << 13;
-                    x ^= x >> 7;
-                    x ^= x << 17;
-                    *b = x as u8;
-                }
-                Ok::<_, ()>(())
-            })
-            .unwrap()
-        };
-        let (a, b) = (generate(), generate());
-        assert_eq!(a.components(), b.components());
-        assert_eq!(a.key_size(), 512);
     }
     #[test]
     fn shared_failure_and_key_wiping() {
@@ -407,14 +381,15 @@ mod tests {
     }
     #[test]
     fn random_failures_and_degenerate_key_retry() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         let params = composite_domain();
         assert_eq!(
-            params.generate_with(|_| Err(())).unwrap_err(),
+            params.generate_with(dit, |_| Err(())).unwrap_err(),
             Error::Randomness
         );
         assert_eq!(
             params
-                .generate_with(|out| {
+                .generate_with(dit, |out| {
                     out.fill(0);
                     Ok::<_, ()>(())
                 })
@@ -426,7 +401,7 @@ mod tests {
         for last in [4, 255] {
             assert_eq!(
                 params
-                    .generate_with(|out| {
+                    .generate_with(dit, |out| {
                         out.fill(if last == 255 { 255 } else { 0 });
                         *out.last_mut().unwrap() = last;
                         Ok::<_, ()>(())
@@ -437,7 +412,7 @@ mod tests {
         }
         let mut attempts = 0;
         let key = params
-            .generate_with(|out| {
+            .generate_with(dit, |out| {
                 attempts += 1;
                 out.fill(0);
                 *out.last_mut().unwrap() = if attempts == 1 { 4 } else { 3 };
@@ -453,6 +428,7 @@ mod tests {
     }
     #[test]
     fn key_search_consumes_rejected_attempts() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         let params = composite_domain();
         let domain = &params.domain;
         // Scalars 0 (out of range), 4 (degenerate: g^4 = 1) and 3, one
@@ -462,14 +438,14 @@ mod tests {
         tape[127] = 4;
         tape[191] = 3;
         let (mut x, mut y) = (vec![0xa5; 64], vec![0x5a; 64]);
-        let mut state = domain.key_state();
+        let mut state = domain.key_state(dit);
         assert_eq!(&state[..4], &[128, 128, 64, 64]);
         // Only the budgets and width constrain a call. The incoming
         // request and private controller workspace may hold arbitrary
         // u64 words, including nonzero upper halves on a 32-bit target.
         state[3..].fill(u64::MAX);
         assert_eq!(
-            domain.key_search(&mut state, &tape, &mut x, &mut y),
+            domain.key_search(dit, &mut state, &tape, &mut x, &mut y),
             (1, 192, 0)
         );
         assert_eq!(&state[..4], &[0, 0, 64, 0]);
@@ -478,22 +454,23 @@ mod tests {
         // A tape that ends inside the second attempt: the first is
         // consumed, and the controller asks for one attempt's bytes again,
         // with the scalar budget one smaller.
-        let mut state = domain.key_state();
+        let mut state = domain.key_state(dit);
         state[3..].fill(u64::MAX);
-        let (status, used, request) = domain.key_search(&mut state, &tape[..100], &mut x, &mut y);
+        let (status, used, request) =
+            domain.key_search(dit, &mut state, &tape[..100], &mut x, &mut y);
         assert_eq!((status, used, request), (0, 64, 64));
         assert_eq!(&state[..4], &[128, 127, 64, 64]);
         assert!(x.iter().chain(&y).all(|&b| b == 0));
         // A degenerate value resets the scalar budget.
-        let (status, used, _) = domain.key_search(&mut state, &tape[64..128], &mut x, &mut y);
+        let (status, used, _) = domain.key_search(dit, &mut state, &tape[64..128], &mut x, &mut y);
         assert_eq!((status, used), (0, 64));
         assert_eq!(&state[..2], &[127, 128]);
         // Out-of-range scalars until the scalar budget runs out.
-        let mut state = domain.key_state();
+        let mut state = domain.key_state(dit);
         state[1] = 2;
         let zeros = vec![0; 3 * 64];
         assert_eq!(
-            domain.key_search(&mut state, &zeros, &mut x, &mut y),
+            domain.key_search(dit, &mut state, &zeros, &mut x, &mut y),
             (3, 128, 0)
         );
         assert_eq!(&state[..4], &[0, 0, 64, 0]);
@@ -501,6 +478,7 @@ mod tests {
     }
     #[test]
     fn partial_limb_moduli_and_short_exponents() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         // Algebraic regression fixtures, with no claim of primality:
         // p = leading * 256^(len-1) + 1, g = 2. With x = 3 and
         // peer exponent 7, the public values are 8 and 128 and the
@@ -518,7 +496,7 @@ mod tests {
                 assert!(out[..len - 3].iter().all(|&b| b == 0));
                 assert_eq!(&out[len - 3..], &[32, 0, 0]);
                 let generated = params
-                    .generate_with(|out| {
+                    .generate_with(dit, |out| {
                         out.fill(0);
                         *out.last_mut().unwrap() = 3;
                         Ok::<_, ()>(())

@@ -133,10 +133,6 @@ theorem compress_verified_x86 :
 theorem callee : CalleeOk Spec.Blake2.s Impl.Blake2.X86.CompressS.compress :=
   CalleeOk.of_verified compress_verified_x86 (NoSp.of_all (by lit_decide)) (by lit_decide)
 
-theorem compress_verified :
-    Verified X86.target Impl.Blake2.X86.CompressS.compress (Proof.Blake2.compressSContract X86.abi) :=
-  compress_verified_x86.of_implies compress_implies
-
 theorem init_verified :
     Verified X86.target (Impl.Blake2.X86.Stream.init s) (Spec.Blake2.initSContract X86.abi) :=
   (Stream.init_verified ok init_ct init_implies.sat_left).of_implies init_implies

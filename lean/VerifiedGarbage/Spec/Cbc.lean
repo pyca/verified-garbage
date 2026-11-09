@@ -14,8 +14,8 @@ is a list of whole blocks.
 
 CBC is defined here for any block cipher, given as a function on blocks
 (`Cipher`): the forward function `CIPH_K` for encryption, and the inverse
-function `CIPH⁻¹_K` for decryption. `aesCbcEncrypt` and `aesCbcDecrypt` are
-CBC with AES (FIPS 197, `Spec/Aes.lean`), whose blocks are 16 bytes.
+function `CIPH⁻¹_K` for decryption. `aes` and `aesInv` are those of AES
+(FIPS 197, `Spec/Aes.lean`), whose blocks are 16 bytes.
 
 A message may be encrypted or decrypted in pieces of whole blocks: CBC of
 `P₁ … Pₙ` from `IV` is CBC of `P₁ … Pₖ` from `IV`, followed by CBC of
@@ -79,14 +79,13 @@ the forward cipher's, which the inverse cipher uses in the reverse order). -/
 def aesInvWith (nr : Nat) (w : List Byte) : Cipher := fun x =>
   (Aes.invCipher nr w (Vector.ofFn fun i => x.getD i 0)).toList
 
-/-- AES-CBC encryption of the plaintext `pt` (a multiple of 16 bytes) under
-the key `key` (16, 24 or 32 bytes) with the 16-byte `iv`. -/
-def aesCbcEncrypt (key iv pt : List Byte) : List Byte :=
-  (encrypt (aesWith (Aes.rounds (key.length / 4)) (Aes.expandKey key)) iv (blocks pt)).flatten
+/-- `CIPH_K` for AES with the key `key` (16, 24 or 32 bytes): its number of
+rounds and its key schedule. -/
+def aes (key : List Byte) : Cipher := aesWith (Aes.rounds (key.length / 4)) (Aes.expandKey key)
 
-/-- AES-CBC decryption of the ciphertext `ct` (a multiple of 16 bytes)
-under the key `key` (16, 24 or 32 bytes) with the 16-byte `iv`. -/
-def aesCbcDecrypt (key iv ct : List Byte) : List Byte :=
-  (decrypt (aesInvWith (Aes.rounds (key.length / 4)) (Aes.expandKey key)) iv (blocks ct)).flatten
+/-- `CIPH⁻¹_K` for AES with the key `key` (16, 24 or 32 bytes): its number of
+rounds and its key schedule. -/
+def aesInv (key : List Byte) : Cipher :=
+  aesInvWith (Aes.rounds (key.length / 4)) (Aes.expandKey key)
 
 end VG.Spec.Cbc

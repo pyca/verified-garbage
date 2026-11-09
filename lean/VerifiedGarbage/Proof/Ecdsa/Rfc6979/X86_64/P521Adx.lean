@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P521
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
@@ -8,6 +10,16 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P521
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 
 /-!
 # Deterministic ECDSA on x86-64: P-521 with BMI2 and ADX
@@ -39,12 +51,12 @@ def p521x (hL : Weierstrass.Law Spec.P521.curve)
   E := Impl.Ecdsa.X86_64.p521x
   inst := Spec.Ecdsa.P521.inst
   curve := rfl
-  wide := true
+  big := true
   sizes := ⟨rfl, rfl, Proof.Ecdsa.X86_64.P521.p521_nBits⟩
   n_lt := by decide +kernel
   sh := 7
   sh_eq := Proof.Ecdsa.X86_64.P521.p521x_sh
-  coreN := "vg_ecdsa_p521_sign" ++ "_adx"
+  coreN := "vg_ecdsa_p521_sign_k" ++ "_adx"
   coreC := Impl.Ecdsa.X86_64.signP521Adx
   coreX := by rw [coreK_p521x]; exact Proof.Ecdsa.X86_64.P521.sign_call_x86_adx hL hT hI
   coreCT := by rw [coreK_p521x]; exact Proof.Ecdsa.X86_64.P521.sign_ct_adx
@@ -52,14 +64,26 @@ def p521x (hL : Weierstrass.Law Spec.P521.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := nofun
-  reduceSp := nofun
-  reduceMx := nofun
+  blk := by exact p521_blk
 
 /-- P-521 with BMI2 and ADX (`adx`) or without. -/
 def p521Of (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) : RfcCurve :=
   bif adx then p521x hL hT hI else p521 hL hT hI
+
+
+/-- `vg_ecdsa_p521_sign` (`_adx`, with BMI2 and ADX), with the tables of `vs`. -/
+theorem p521T_verified (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve)
+    (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds)
+    (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_P521_COMB" ∉ Proof.HmacTable.X86_64.names vs) :
+    Verified X86_64.target (signCodeT (p521Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p521 Impl.Ecdsa.X86_64.p521.combConsts vs) := by
+  have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p521) h.1 Proof.Ecdsa.X86_64.P521.satMem h.2
+    (by rw [Proof.Ecdsa.X86_64.P521.p521W_length]; decide) Proof.Ecdsa.X86_64.P521.satMem_held (by decide) rfl
+  cases adx
+  · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
+  · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

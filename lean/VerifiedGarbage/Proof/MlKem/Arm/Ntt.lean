@@ -421,12 +421,6 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Proof.MlKem.nttContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem.nttContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, Arm.abi, Arm.argRegs,
-    Arm.reduceClassify, Arm.Loc.val] at h
-  obtain ⟨-, h1, h2, h3, h4, h5, h6⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6⟩
-
 /-- A state satisfying the precondition. -/
 def satState : State where
   gpr r := match r with
@@ -439,29 +433,5 @@ def satState : State where
   mem _ := 0
   rd := []
   wr := [⟨0x1000, 1024⟩, ⟨0x2000, 1024⟩]
-
-theorem verified : Verified Arm.target Impl.MlKem.Arm.ntt (Proof.MlKem.nttContract Arm.abi) := by
-  refine ⟨fun s hs => ?_, Add.ctRegs [.r0, .r1] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
-  · have hp := pre_of hs
-    obtain ⟨t, s', he, hpres, hsp, h⟩ := correct hp
-    refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
-    sig_post [Proof.MlKem.nttContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, Arm.abi,
-      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-    exact h
-  · sig_pub [Proof.MlKem.nttContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, Arm.abi,
-      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
-    obtain ⟨-, h0, h1⟩ := h
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> with_reducible assumption
-  · refine ⟨satState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.nttContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, Arm.abi,
-        Arm.argRegs, Arm.Loc.val]
-      sig_and_intros
-      all_goals first
-        | trivial
-        | exact reduced_zero _
 
 end VG.Proof.MlKem.Arm.Ntt

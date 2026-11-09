@@ -96,9 +96,6 @@ theorem pins_S3 : Pins S3 [.rsi, .rcx, .rbx] := by
   · rw [h₁.2.2.1, h₂.2.2.1]
   · rw [h₁.2.2.2, h₂.2.2.2]
 
-theorem hdr_fixed {i : Nat} (hi : 8 * i + 8 ≤ 8 * 16 ∧ 6 ≤ i ∨ 22 ≤ i ∧ i < 32) :
-    8 * 22 ≤ 8 * i ∨ (8 * 6 ≤ 8 * i ∧ 8 * i + 8 ≤ 8 * 16) := by omega_arith
-
 theorem arr_fixed (w : Nat) {j : Nat} : 8 * 22 ≤ slot w j ∨ (8 * 6 ≤ slot w j ∧ slot w j + 8 * (w + 2) ≤ 8 * 16) :=
   Or.inl (by unfold slot hdrBytes; omega_arith)
 

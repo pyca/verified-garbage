@@ -188,9 +188,6 @@ theorem setup_eq : setup = .ldrSp .r12 4 :: (saved.map (fun p => Instr.str p.1 .
     ([.mov .r4 (.reg .r1), .mov .r1 (.reg .r12), .mov .r5 (.reg .r2), .mov .r6 (.reg .r3),
       .ldrSp .r7 0, .cmp .r7 (.imm 0)] : List Instr)) := rfl
 
-theorem setup_regs : ∀ r ∈ kept, r ≠ .r12 → r ≠ .r4 → r ≠ .r1 → r ≠ .r5 → r ≠ .r6 → r ≠ .r7 →
-    r = .r0 ∨ r ∈ [Reg.r8, .r9, .r10, .r11] := by decide
-
 theorem prologue_ok {s₀ : State} (hp : Pre s₀) :
     WP isa (.block setup) s₀ fun s => Inv s₀ 0 s ∧ s.z = decide (len s₀ = 0) := by
   have fC := hp.scr_fit

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 
@@ -24,7 +25,7 @@ open VG.Proof.Ffdh.Arm.KeySearch (Controller lowWord)
 theorem request_ok {p : SearchParams} {used remaining : Nat} {s : State}
     (h : SearchLive p used remaining s) :
     WP isa VG.Impl.Ffdh.Arm.ParameterSearch.request s fun t =>
-      t.mem = requestMem s.mem p.control (Spec.Ffdh.parameterRequest p.c.bits (p.c.bytes.length - used)) ∧
+      t.mem = requestMem s.mem p.control (parameterRequest p.c.bits (p.c.bytes.length - used)) ∧
         Rest [.r9, .r10, .r11] s t := by
   let available := p.c.bytes.length - used
   let width := p.c.length
@@ -114,9 +115,9 @@ theorem SearchLive.request {p : SearchParams} {used remaining : Nat} {s : State}
     WP isa VG.Impl.Ffdh.Arm.ParameterSearch.request s fun t =>
       SearchLive p used remaining t ∧ lowWord t.mem p.control 13 = 0 ∧
         t.mem.readW (off (State.addr p.control) 24) 64 =
-          BitVec.ofNat 64 (Spec.Ffdh.parameterRequest p.c.bits (p.c.bytes.length - used)) ∧
+          BitVec.ofNat 64 (parameterRequest p.c.bits (p.c.bytes.length - used)) ∧
         Frame [⟨State.addr p.control, 128⟩] s.mem t.mem ∧ Rest [.r9, .r10, .r11] s t := by
-  let request := Spec.Ffdh.parameterRequest p.c.bits (p.c.bytes.length - used)
+  let request := parameterRequest p.c.bits (p.c.bytes.length - used)
   have fit : request < 2 ^ 32 := Nat.lt_of_le_of_lt p.policy.request_bounds.2 p.entropy_fits
   refine WP.mono (request_ok h) ?_
   rintro t ⟨mem, rest⟩

@@ -170,9 +170,6 @@ theorem Mv_lt (s0 : State) : Mv s0 < 2 ^ (8 * pL s0) ∨ pL s0 = 0 := by
 structure IC (s0 : State) (V X : Nat) : Prop where
   vx : 1 < Mv s0 → V = Nat.gcd (Qv s0) (Mv s0) ∧ (Mv s0 : Int) ∣ (X : Int) * Qv s0 - V ∧ X < Mv s0
 
-/-- The arrays the inverse writes, and those of its start. -/
-abbrev invArrs' : List Nat := setupArrs ++ InvBatch.invArrs
-
 theorem invCore_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
     (ws : Ws s (bOf s0) (zOf s0) (wOf s0) nArr) (is : IS s0 s) :
     WP isa (.seq Impl.Rsa.RISCV64.InvBatch.inverse (eqS sE3 1 aOne)) s fun t => CB s0 s0.mem t ∧

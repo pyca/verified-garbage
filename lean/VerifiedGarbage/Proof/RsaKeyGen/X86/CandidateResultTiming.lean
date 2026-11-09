@@ -35,19 +35,6 @@ theorem primeArgs_ok {s : State} {base : Addr} {size : Nat} (S : Scr s base size
     wp_movS (readSrc_sc (S.of_keeps A.keeps (by decide)) (d := 4) header) fun t T _ => WP.block_nil ?_
   exact ⟨(T.other .ebx (by decide)).trans A.gpr, by rw [T.gpr, A.mem], T.mem.trans A.mem, (A.keeps.mono (by decide)).widen T.keeps⟩
 
-theorem PrimeInput.keepMem {s t : State} {base : Addr} {size w candidate : Nat} {out usedPtr count : BitVec 32}
-    (S : PrimeInput base size w candidate out usedPtr count s) (M : t.mem = s.mem)
-    {regs : List Reg} (K : Keeps regs s t) (baseReg : .edi ∉ regs) (sp : .esp ∉ regs) :
-    PrimeInput base size w candidate out usedPtr count t := by
-  refine ⟨S.scratch.of_keeps K baseReg sp, S.positive, S.space, S.header, ?_, ?_, ?_, ?_, ?_, S.outFit, ?_,
-    S.usedWrite.of_keeps K, S.workspaceFar, S.usedFar⟩
-  · rw [M]; exact S.outEq
-  · rw [M]; exact S.lengthEq
-  · rw [M]; exact S.usedEq
-  · rw [M]; exact S.countEq
-  · rw [M]; exact S.candidateEq
-  · rw [K.2.2]; exact S.outWrite
-
 theorem export_header_ok {s : State} {base : Addr} {size w candidate : Nat} {out usedPtr count : BitVec 32}
     (S : PrimeInput base size w candidate out usedPtr count s)
     (destination : s.gpr .ebx = out) (length : s.gpr .ecx = BitVec.ofNat 32 (8 * w)) :

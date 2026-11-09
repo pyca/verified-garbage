@@ -159,10 +159,6 @@ include hp
 omit hp in
 theorem sub_scr {a n : Nat} (h : a + n ≤ 8192) : Region.Sub ⟨at' σ a, n⟩ (scrR σ) := Offset.sub_base _ h
 
-omit hp in
-theorem sub_a {a n : Nat} (h : a + n ≤ 4 * pBytes w16) : Region.Sub ⟨aP σ + BitVec.ofNat 64 a, n⟩ (aRW w16 σ) :=
-  Offset.sub_base _ h
-
 theorem in_scr {s : State} (hw : s.wr = σ.wr) {a n : Nat} (h : a + n ≤ 8192) : InRegions s.wr (at' σ a) n := by
   rw [hw, hp.wr]; exact ⟨scrR σ, by simp, Offset.contains_base _ h (by omega)⟩
 

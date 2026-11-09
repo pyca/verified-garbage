@@ -58,16 +58,4 @@ theorem groupBytes_ok (n : Nat) {s : State} {src : Addr} {bs : List Byte}
     have := (bs[n]'hnbs).isLt
     omega
 
-/-- The complete group uses five fixed byte addresses, with no
-exponent-dependent memory access or branch. -/
-theorem groupFive_ct :
-    RelCT isa (Two fun (src : Addr) s => s.gpr .x3 = src)
-      (.block (groupBytes 5)) (fun _ _ => True) := by
-  apply two_taint [.x3] (hc := .block [])
-  · intro P s t hs ht r hr
-    simp only [List.mem_singleton] at hr
-    subst r
-    exact hs.trans ht.symm
-  · rfl
-
 end VG.Proof.Bignum.AArch64.WindowFive

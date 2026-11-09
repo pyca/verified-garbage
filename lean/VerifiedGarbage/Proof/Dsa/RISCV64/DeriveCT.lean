@@ -208,8 +208,6 @@ theorem oR0d : ∀ v u, ΦR0d v u → v.out = some (oOf v) := fun _ _ h => at_pu
 theorem oR1d : ∀ v u, ΦR1d v u → v.out = some (oOf v) := fun _ _ h => at_pure oR0d h.1
 theorem oR2d : ∀ v u, ΦR2d v u → v.out = some (oOf v) := fun _ _ h => at_pure oR1d h.1
 theorem oR3d : ∀ v u, ΦR3d v u → v.out = some (oOf v) := fun _ _ h => at_pure oR2d h.1
-theorem oBd : ∀ v u, ΦBd v u → v.out = some (oOf v) := fun _ _ h => at_pure oR3d h.1
-
 /-! ## The levels' relations -/
 
 section Levels

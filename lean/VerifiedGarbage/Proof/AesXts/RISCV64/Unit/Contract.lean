@@ -133,9 +133,6 @@ include hp
 
 theorem UPre.m_pos : 1 ≤ M s := by have := hp.len_lo; simp only [M]; omega
 
-theorem UPre.m_lt : M s < 2 ^ 60 := by
-  have := hp.len_hi; simp only [M, Spec.Xts.maxBlocks] at *; omega
-
 omit hp in
 theorem len_eq (s : State) : Len s = 16 * M s + B s := by simp only [M, B]; omega
 

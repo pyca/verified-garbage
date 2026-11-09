@@ -42,12 +42,6 @@ open VG.Spec.Argon2 (FillState)
 open VG.Impl.Argon2.X86.Derive (sliceOff segLenOff indexOff laneOff laneLenOff argOff passOff counterOff
   divisorOff strideOff j1Off j2Off refLaneOff tmpOff curOff)
 
-/-- Two runs, from any of a family of states each. -/
-theorem RelCT.exists₂ {α β : Sort _} {A : α → State → Prop} {B : β → State → Prop} {c : Prog isa}
-    {Q : State → State → Prop} (h : ∀ a b, RelCT isa (fun s₁ s₂ => A a s₁ ∧ B b s₂) c Q) :
-    RelCT isa (fun s₁ s₂ => (∃ a, A a s₁) ∧ ∃ b, B b s₂) c Q :=
-  fun _ _ _ _ _ _ ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ e₁ e₂ => h a b _ _ _ _ _ _ ⟨ha, hb⟩ e₁ e₂
-
 /-- The slots of the words `ws0` and `ex`. -/
 abbrev slx (ex : List Nat) : List (Nat × Nat × Nat) := sl0 ++ ex.map fun d => (0, d, 4)
 

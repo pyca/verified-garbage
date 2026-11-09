@@ -12,9 +12,12 @@ vg_chacha20_xor_neon:
 	str x20, [x3, #256]
 	str x19, [x3, #264]
 	str x26, [x3, #272]
+	str x27, [x3, #280]
 	add x20, x3, #0
 	str q8, [x3, #128]
 	str q9, [x3, #144]
+	add x27, x1, #0
+	add x1, x4, #0
 22:
 	add x19, x2, #0
 	add x26, x1, #0
@@ -1069,108 +1072,108 @@ vg_chacha20_xor_neon:
 	add w4, w4, #5
 	mov v31.s[0], w4
 	add v9.4s, v9.4s, v31.4s
-	ldr q31, [x1, #0]
+	ldr q31, [x27, #0]
 	eor v31.16b, v31.16b, v0.16b
 	str q31, [x1, #0]
-	ldr q31, [x1, #16]
+	ldr q31, [x27, #16]
 	eor v31.16b, v31.16b, v1.16b
 	str q31, [x1, #16]
-	ldr q31, [x1, #32]
+	ldr q31, [x27, #32]
 	eor v31.16b, v31.16b, v2.16b
 	str q31, [x1, #32]
-	ldr q31, [x1, #48]
+	ldr q31, [x27, #48]
 	eor v31.16b, v31.16b, v3.16b
 	str q31, [x1, #48]
-	ldr q31, [x1, #64]
+	ldr q31, [x27, #64]
 	eor v31.16b, v31.16b, v4.16b
 	str q31, [x1, #64]
-	ldr q31, [x1, #80]
+	ldr q31, [x27, #80]
 	eor v31.16b, v31.16b, v5.16b
 	str q31, [x1, #80]
-	ldr q31, [x1, #96]
+	ldr q31, [x27, #96]
 	eor v31.16b, v31.16b, v6.16b
 	str q31, [x1, #96]
-	ldr q31, [x1, #112]
+	ldr q31, [x27, #112]
 	eor v31.16b, v31.16b, v7.16b
 	str q31, [x1, #112]
-	ldr q31, [x1, #128]
+	ldr q31, [x27, #128]
 	eor v31.16b, v31.16b, v16.16b
 	str q31, [x1, #128]
-	ldr q31, [x1, #144]
+	ldr q31, [x27, #144]
 	eor v31.16b, v31.16b, v17.16b
 	str q31, [x1, #144]
-	ldr q31, [x1, #160]
+	ldr q31, [x27, #160]
 	eor v31.16b, v31.16b, v18.16b
 	str q31, [x1, #160]
-	ldr q31, [x1, #176]
+	ldr q31, [x27, #176]
 	eor v31.16b, v31.16b, v19.16b
 	str q31, [x1, #176]
-	ldr q31, [x1, #192]
+	ldr q31, [x27, #192]
 	eor v31.16b, v31.16b, v20.16b
 	str q31, [x1, #192]
-	ldr q31, [x1, #208]
+	ldr q31, [x27, #208]
 	eor v31.16b, v31.16b, v21.16b
 	str q31, [x1, #208]
-	ldr q31, [x1, #224]
+	ldr q31, [x27, #224]
 	eor v31.16b, v31.16b, v22.16b
 	str q31, [x1, #224]
-	ldr q31, [x1, #240]
+	ldr q31, [x27, #240]
 	eor v31.16b, v31.16b, v23.16b
 	str q31, [x1, #240]
-	ldr q31, [x1, #256]
+	ldr q31, [x27, #256]
 	eor v31.16b, v31.16b, v24.16b
 	str q31, [x1, #256]
-	ldr q31, [x1, #272]
+	ldr q31, [x27, #272]
 	eor v31.16b, v31.16b, v25.16b
 	str q31, [x1, #272]
-	ldr q31, [x1, #288]
+	ldr q31, [x27, #288]
 	eor v31.16b, v31.16b, v26.16b
 	str q31, [x1, #288]
-	ldr q31, [x1, #304]
+	ldr q31, [x27, #304]
 	eor v31.16b, v31.16b, v27.16b
 	str q31, [x1, #304]
-	ldr q31, [x1, #320]
+	ldr q31, [x27, #320]
 	eor v31.16b, v31.16b, v28.16b
 	str q31, [x1, #320]
-	ldr q31, [x1, #336]
+	ldr q31, [x27, #336]
 	eor v31.16b, v31.16b, v29.16b
 	str q31, [x1, #336]
-	ldr q31, [x1, #352]
+	ldr q31, [x27, #352]
 	eor v31.16b, v31.16b, v8.16b
 	str q31, [x1, #352]
-	ldr q31, [x1, #368]
+	ldr q31, [x27, #368]
 	eor v31.16b, v31.16b, v9.16b
 	str q31, [x1, #368]
 	ldr q30, [x3, #0]
-	ldr q31, [x1, #384]
+	ldr q31, [x27, #384]
 	eor v31.16b, v31.16b, v30.16b
 	str q31, [x1, #384]
 	ldr q30, [x3, #16]
-	ldr q31, [x1, #400]
+	ldr q31, [x27, #400]
 	eor v31.16b, v31.16b, v30.16b
 	str q31, [x1, #400]
 	ldr q30, [x3, #32]
-	ldr q31, [x1, #416]
+	ldr q31, [x27, #416]
 	eor v31.16b, v31.16b, v30.16b
 	str q31, [x1, #416]
 	ldr q30, [x3, #48]
-	ldr q31, [x1, #432]
+	ldr q31, [x27, #432]
 	eor v31.16b, v31.16b, v30.16b
 	str q31, [x1, #432]
 	ldr q30, [x3, #64]
-	ldr q31, [x1, #448]
+	ldr q31, [x27, #448]
 	eor v31.16b, v31.16b, v30.16b
 	str q31, [x1, #448]
 	ldr q30, [x3, #80]
-	ldr q31, [x1, #464]
+	ldr q31, [x27, #464]
 	eor v31.16b, v31.16b, v30.16b
 	str q31, [x1, #464]
 	ldr q30, [x3, #96]
-	ldr q31, [x1, #480]
+	ldr q31, [x27, #480]
 	eor v31.16b, v31.16b, v30.16b
 	str q31, [x1, #480]
 	ldr q30, [x3, #112]
-	ldr q31, [x1, #496]
+	ldr q31, [x27, #496]
 	eor v31.16b, v31.16b, v30.16b
 	str q31, [x1, #496]
 	ldr w4, [x0, #48]
@@ -1181,16 +1184,21 @@ vg_chacha20_xor_neon:
 	lsr x5, x2, #6
 	sub x5, x5, #8
 	lsr x5, x5, #63
+	add x27, x27, #512
 	cbz x5, 22b
+	add x4, x1, #0
+	add x1, x27, #0
 	ldr q8, [x3, #128]
 	ldr q9, [x3, #144]
 	ldr x20, [x3, #256]
 	ldr x19, [x3, #264]
 	ldr x26, [x3, #272]
+	ldr x27, [x3, #280]
 	b 21f
 20:
 21:
 	lsr x5, x2, #8
+	add x6, x4, #0
 	cbz x5, 25f
 27:
 	ldr w4, [x0, #0]
@@ -1421,16 +1429,16 @@ vg_chacha20_xor_neon:
 	zip2 v3.2d, v25.2d, v27.2d
 	ldr q31, [x1, #0]
 	eor v31.16b, v31.16b, v0.16b
-	str q31, [x1, #0]
+	str q31, [x6, #0]
 	ldr q31, [x1, #64]
 	eor v31.16b, v31.16b, v1.16b
-	str q31, [x1, #64]
+	str q31, [x6, #64]
 	ldr q31, [x1, #128]
 	eor v31.16b, v31.16b, v2.16b
-	str q31, [x1, #128]
+	str q31, [x6, #128]
 	ldr q31, [x1, #192]
 	eor v31.16b, v31.16b, v3.16b
-	str q31, [x1, #192]
+	str q31, [x6, #192]
 	zip1 v24.4s, v4.4s, v5.4s
 	zip2 v25.4s, v4.4s, v5.4s
 	zip1 v26.4s, v6.4s, v7.4s
@@ -1441,16 +1449,16 @@ vg_chacha20_xor_neon:
 	zip2 v7.2d, v25.2d, v27.2d
 	ldr q31, [x1, #16]
 	eor v31.16b, v31.16b, v4.16b
-	str q31, [x1, #16]
+	str q31, [x6, #16]
 	ldr q31, [x1, #80]
 	eor v31.16b, v31.16b, v5.16b
-	str q31, [x1, #80]
+	str q31, [x6, #80]
 	ldr q31, [x1, #144]
 	eor v31.16b, v31.16b, v6.16b
-	str q31, [x1, #144]
+	str q31, [x6, #144]
 	ldr q31, [x1, #208]
 	eor v31.16b, v31.16b, v7.16b
-	str q31, [x1, #208]
+	str q31, [x6, #208]
 	zip1 v24.4s, v16.4s, v17.4s
 	zip2 v25.4s, v16.4s, v17.4s
 	zip1 v26.4s, v18.4s, v19.4s
@@ -1461,16 +1469,16 @@ vg_chacha20_xor_neon:
 	zip2 v19.2d, v25.2d, v27.2d
 	ldr q31, [x1, #32]
 	eor v31.16b, v31.16b, v16.16b
-	str q31, [x1, #32]
+	str q31, [x6, #32]
 	ldr q31, [x1, #96]
 	eor v31.16b, v31.16b, v17.16b
-	str q31, [x1, #96]
+	str q31, [x6, #96]
 	ldr q31, [x1, #160]
 	eor v31.16b, v31.16b, v18.16b
-	str q31, [x1, #160]
+	str q31, [x6, #160]
 	ldr q31, [x1, #224]
 	eor v31.16b, v31.16b, v19.16b
-	str q31, [x1, #224]
+	str q31, [x6, #224]
 	zip1 v24.4s, v20.4s, v21.4s
 	zip2 v25.4s, v20.4s, v21.4s
 	zip1 v26.4s, v22.4s, v23.4s
@@ -1481,27 +1489,30 @@ vg_chacha20_xor_neon:
 	zip2 v23.2d, v25.2d, v27.2d
 	ldr q31, [x1, #48]
 	eor v31.16b, v31.16b, v20.16b
-	str q31, [x1, #48]
+	str q31, [x6, #48]
 	ldr q31, [x1, #112]
 	eor v31.16b, v31.16b, v21.16b
-	str q31, [x1, #112]
+	str q31, [x6, #112]
 	ldr q31, [x1, #176]
 	eor v31.16b, v31.16b, v22.16b
-	str q31, [x1, #176]
+	str q31, [x6, #176]
 	ldr q31, [x1, #240]
 	eor v31.16b, v31.16b, v23.16b
-	str q31, [x1, #240]
+	str q31, [x6, #240]
 	ldr w4, [x0, #48]
 	add w4, w4, #4
 	str w4, [x0, #48]
 	add x1, x1, #256
+	add x6, x6, #256
 	sub x2, x2, #256
 	lsr x5, x2, #8
+	add x4, x6, #0
 	cbnz x5, 27b
 	b 26f
 25:
 26:
 	lsr x5, x2, #7
+	add x6, x4, #0
 	cbz x5, 29f
 	lsr x5, x2, #6
 	sub x5, x5, #3
@@ -1735,13 +1746,13 @@ vg_chacha20_xor_neon:
 	zip2 v3.2d, v25.2d, v27.2d
 	ldr q31, [x1, #0]
 	eor v31.16b, v31.16b, v0.16b
-	str q31, [x1, #0]
+	str q31, [x6, #0]
 	ldr q31, [x1, #64]
 	eor v31.16b, v31.16b, v1.16b
-	str q31, [x1, #64]
+	str q31, [x6, #64]
 	ldr q31, [x1, #128]
 	eor v31.16b, v31.16b, v2.16b
-	str q31, [x1, #128]
+	str q31, [x6, #128]
 	zip1 v24.4s, v4.4s, v5.4s
 	zip2 v25.4s, v4.4s, v5.4s
 	zip1 v26.4s, v6.4s, v7.4s
@@ -1752,13 +1763,13 @@ vg_chacha20_xor_neon:
 	zip2 v7.2d, v25.2d, v27.2d
 	ldr q31, [x1, #16]
 	eor v31.16b, v31.16b, v4.16b
-	str q31, [x1, #16]
+	str q31, [x6, #16]
 	ldr q31, [x1, #80]
 	eor v31.16b, v31.16b, v5.16b
-	str q31, [x1, #80]
+	str q31, [x6, #80]
 	ldr q31, [x1, #144]
 	eor v31.16b, v31.16b, v6.16b
-	str q31, [x1, #144]
+	str q31, [x6, #144]
 	zip1 v24.4s, v16.4s, v17.4s
 	zip2 v25.4s, v16.4s, v17.4s
 	zip1 v26.4s, v18.4s, v19.4s
@@ -1769,13 +1780,13 @@ vg_chacha20_xor_neon:
 	zip2 v19.2d, v25.2d, v27.2d
 	ldr q31, [x1, #32]
 	eor v31.16b, v31.16b, v16.16b
-	str q31, [x1, #32]
+	str q31, [x6, #32]
 	ldr q31, [x1, #96]
 	eor v31.16b, v31.16b, v17.16b
-	str q31, [x1, #96]
+	str q31, [x6, #96]
 	ldr q31, [x1, #160]
 	eor v31.16b, v31.16b, v18.16b
-	str q31, [x1, #160]
+	str q31, [x6, #160]
 	zip1 v24.4s, v20.4s, v21.4s
 	zip2 v25.4s, v20.4s, v21.4s
 	zip1 v26.4s, v22.4s, v23.4s
@@ -1786,18 +1797,20 @@ vg_chacha20_xor_neon:
 	zip2 v23.2d, v25.2d, v27.2d
 	ldr q31, [x1, #48]
 	eor v31.16b, v31.16b, v20.16b
-	str q31, [x1, #48]
+	str q31, [x6, #48]
 	ldr q31, [x1, #112]
 	eor v31.16b, v31.16b, v21.16b
-	str q31, [x1, #112]
+	str q31, [x6, #112]
 	ldr q31, [x1, #176]
 	eor v31.16b, v31.16b, v22.16b
-	str q31, [x1, #176]
+	str q31, [x6, #176]
 	ldr w4, [x0, #48]
 	add w4, w4, #3
 	str w4, [x0, #48]
 	add x1, x1, #192
+	add x6, x6, #192
 	sub x2, x2, #192
+	add x4, x6, #0
 	b 212f
 211:
 	ldr w4, [x0, #0]
@@ -2028,10 +2041,10 @@ vg_chacha20_xor_neon:
 	zip2 v3.2d, v25.2d, v27.2d
 	ldr q31, [x1, #0]
 	eor v31.16b, v31.16b, v0.16b
-	str q31, [x1, #0]
+	str q31, [x6, #0]
 	ldr q31, [x1, #64]
 	eor v31.16b, v31.16b, v1.16b
-	str q31, [x1, #64]
+	str q31, [x6, #64]
 	zip1 v24.4s, v4.4s, v5.4s
 	zip2 v25.4s, v4.4s, v5.4s
 	zip1 v26.4s, v6.4s, v7.4s
@@ -2042,10 +2055,10 @@ vg_chacha20_xor_neon:
 	zip2 v7.2d, v25.2d, v27.2d
 	ldr q31, [x1, #16]
 	eor v31.16b, v31.16b, v4.16b
-	str q31, [x1, #16]
+	str q31, [x6, #16]
 	ldr q31, [x1, #80]
 	eor v31.16b, v31.16b, v5.16b
-	str q31, [x1, #80]
+	str q31, [x6, #80]
 	zip1 v24.4s, v16.4s, v17.4s
 	zip2 v25.4s, v16.4s, v17.4s
 	zip1 v26.4s, v18.4s, v19.4s
@@ -2056,10 +2069,10 @@ vg_chacha20_xor_neon:
 	zip2 v19.2d, v25.2d, v27.2d
 	ldr q31, [x1, #32]
 	eor v31.16b, v31.16b, v16.16b
-	str q31, [x1, #32]
+	str q31, [x6, #32]
 	ldr q31, [x1, #96]
 	eor v31.16b, v31.16b, v17.16b
-	str q31, [x1, #96]
+	str q31, [x6, #96]
 	zip1 v24.4s, v20.4s, v21.4s
 	zip2 v25.4s, v20.4s, v21.4s
 	zip1 v26.4s, v22.4s, v23.4s
@@ -2070,21 +2083,25 @@ vg_chacha20_xor_neon:
 	zip2 v23.2d, v25.2d, v27.2d
 	ldr q31, [x1, #48]
 	eor v31.16b, v31.16b, v20.16b
-	str q31, [x1, #48]
+	str q31, [x6, #48]
 	ldr q31, [x1, #112]
 	eor v31.16b, v31.16b, v21.16b
-	str q31, [x1, #112]
+	str q31, [x6, #112]
 	ldr w4, [x0, #48]
 	add w4, w4, #2
 	str w4, [x0, #48]
 	add x1, x1, #128
+	add x6, x6, #128
 	sub x2, x2, #128
+	add x4, x6, #0
 212:
 	str x19, [x3, #256]
 	str x20, [x3, #264]
 	str x30, [x3, #272]
+	str x27, [x3, #280]
 	add x19, x1, #0
 	add x20, x2, #0
+	add x27, x4, #0
 	add x1, x3, #0
 	cbz x20, 215f
 217:
@@ -2102,8 +2119,9 @@ vg_chacha20_xor_neon:
 	ldrb w6, [x19, #0]
 	ldrb w8, [x7, #0]
 	eor w6, w6, w8
-	strb w6, [x19, #0]
+	strb w6, [x27, #0]
 	add x19, x19, #1
+	add x27, x27, #1
 	add x7, x7, #1
 	sub x2, x2, #1
 	cbnz x2, 220b
@@ -2117,13 +2135,16 @@ vg_chacha20_xor_neon:
 	ldr x19, [x1, #256]
 	ldr x20, [x1, #264]
 	ldr x30, [x1, #272]
+	ldr x27, [x1, #280]
 	b 210f
 29:
 	str x19, [x3, #256]
 	str x20, [x3, #264]
 	str x30, [x3, #272]
+	str x27, [x3, #280]
 	add x19, x1, #0
 	add x20, x2, #0
+	add x27, x4, #0
 	add x1, x3, #0
 	cbz x20, 221f
 223:
@@ -2141,8 +2162,9 @@ vg_chacha20_xor_neon:
 	ldrb w6, [x19, #0]
 	ldrb w8, [x7, #0]
 	eor w6, w6, w8
-	strb w6, [x19, #0]
+	strb w6, [x27, #0]
 	add x19, x19, #1
+	add x27, x27, #1
 	add x7, x7, #1
 	sub x2, x2, #1
 	cbnz x2, 226b
@@ -2156,6 +2178,7 @@ vg_chacha20_xor_neon:
 	ldr x19, [x1, #256]
 	ldr x20, [x1, #264]
 	ldr x30, [x1, #272]
+	ldr x27, [x1, #280]
 210:
 	ret
 	.p2align 6

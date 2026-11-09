@@ -10,13 +10,13 @@ meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 /-!
 # AES-GCM-SIV on x86: the functions called
 
-Untrusted: everything here is checked by Lean. The calls of `vg_aes_ctr32`,
+Untrusted: everything here is checked by Lean. The calls of `vg_aes_ctr32_to`,
 `vg_ghash` and `vg_aes_expand_key` are AES-GCM's (`Proof.AesGcm.X86`'s
 `ctr_call`, `gh_call`, `key_call`), with `ebp` moved to the callee's working
 space around them (`callCtr_ok`, `callGh_ok`, `callKey_ok`). Their arguments
 are built from the environment:
 
-* `vg_aes_ctr32`: a key schedule (`KeyOk`: the key-generating key's, or the
+* `vg_aes_ctr32_to`: a key schedule (`KeyOk`: the key-generating key's, or the
   encryption key's at `W + 512`), the counter block's copy at `W + 112`,
   `n` blocks at `D` (`Dst`), and the working space at `W + 768`;
 * `vg_ghash`: GHASH's key at `W + 64`, the accumulator at `W + 80`, `n` (at
@@ -41,7 +41,7 @@ open VG.Impl.AesGcm.X86 (imm)
 open VG.Proof.AesGcm.X86 (w64 toNat_ofNat32 toNat_add32 w64_add covers_left covers_cons covers_nil CtrCall CtrPost
   GhCall GhPost KeyCall KeyPost GcmImpl gpr_setMem CT)
 
-/-! ## `vg_aes_ctr32` -/
+/-! ## `vg_aes_ctr32_to` -/
 
 /-- A key schedule of 240 bytes at `Q`, which the code may read, apart from
 the counter block's copy at `W + 112`, the working space at `W + 768` and
@@ -69,7 +69,7 @@ theorem keyS {p : Prm} {s : State} (L : Lay p) (P : Perm p s) : KeyOk p s (p.W +
   ks := by rw [L.aW (by decide)]; exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
   stk := by rw [L.aW (by decide)]; exact L.bw' (by decide)
 
-/-- `k` bytes at `D` that `vg_aes_ctr32` may write: apart from the key
+/-- `k` bytes at `D` that `vg_aes_ctr32_to` may write: apart from the key
 schedule at `Q`, the counter block's copy, the working space and the stack
 the calls use. -/
 structure Dst (p : Prm) (s : State) (Q D : BitVec 32) (k : Nat) : Prop where
@@ -84,7 +84,7 @@ theorem Dst.of_eq {p : Prm} {s s' : State} {Q D : BitVec 32} {k : Nat} (h : Dst 
     Dst p s' Q D k :=
   { h with wr := by rw [hwr]; exact h.wr }
 
-/-- A block of `W` as `vg_aes_ctr32`'s data, with the key schedule `Q`. -/
+/-- A block of `W` as `vg_aes_ctr32_to`'s data, with the key schedule `Q`. -/
 theorem dstW {p : Prm} {s : State} (L : Lay p) (P : Perm p s) {Q : BitVec 32} {q : Nat}
     (hq : q + 16 ≤ 128 ∧ (q + 16 ≤ 112 ∨ 128 ≤ q) ∨ 224 ≤ q ∧ q + 16 ≤ 256)
     (hk : (⟨w64 Q, 240⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 q, 16⟩) :
@@ -96,7 +96,7 @@ theorem dstW {p : Prm} {s : State} (L : Lay p) (P : Perm p s) {Q : BitVec 32} {q
   ds := by rw [L.aW (o := q) (by omega_arith)]; exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
   stk := by rw [L.aW (o := q) (by omega_arith)]; exact L.bw' (by omega_arith)
 
-/-- The arguments of `vg_aes_ctr32`: the key schedule at `Q`, the counter
+/-- The arguments of `vg_aes_ctr32_to`: the key schedule at `Q`, the counter
 block's copy at `W + 112`, `n` blocks at `D`, and the working space at
 `W + 768` (where `ebp` is moved). -/
 theorem cargs {p : Prm} {s : State} (L : Lay p) (esp : s.gpr .esp = p.SP) (P : Perm p s) {Q D : BitVec 32}
@@ -122,7 +122,7 @@ theorem cargs {p : Prm} {s : State} (L : Lay p) (esp : s.gpr .esp = p.SP) (P : P
   · rw [L.aW (by decide), L.aW (by decide)]
     exact covers_cons (P.wC (by decide)) (covers_cons hD.wr (covers_cons (P.wC (by decide)) covers_nil))
 
-/-- What a call of `vg_aes_ctr32` leaves. -/
+/-- What a call of `vg_aes_ctr32_to` leaves. -/
 structure CtrOut (p : Prm) (s : State) (Q D : BitVec 32) (n : Nat) (s' : State) : Prop where
   env : Env p s'
   rd : s'.rd = s.rd
@@ -134,7 +134,7 @@ structure CtrOut (p : Prm) (s : State) (Q D : BitVec 32) (n : Nat) (s' : State) 
     ctr32 (aesWith p.R (bytesAt s.mem (w64 Q) (16 * (p.R + 1)))) (blockAt s.mem (w64 p.W + BitVec.ofNat 64 112))
       (blocksAt s.mem (w64 D) n)
 
-/-- A call of `vg_aes_ctr32` on `n` blocks at `D`, which must lie in `mutR`,
+/-- A call of `vg_aes_ctr32_to` on `n` blocks at `D`, which must lie in `mutR`,
 from the counter block's copy at `W + 112`, under the key schedule `Q`. -/
 theorem callCtr_ok (v : GcmImpl) {p : Prm} {s : State} (L : Lay p) (E : Env p s) {Q D : BitVec 32} {n : Nat}
     (hQ : KeyOk p s Q) (hD : Dst p s Q D (16 * n)) (hm : ∃ r' ∈ mutR p, Region.Sub ⟨w64 D, 16 * n⟩ r')
@@ -165,7 +165,7 @@ theorem callCtr_ok (v : GcmImpl) {p : Prm} {s : State} (L : Lay p) (E : Env p s)
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
     · refine ⟨stk p, by simp, ?_⟩
-      simpa [gpr_setReg_of_ne, E.esp] using L.stkSub (k := 28) (by decide)
+      simpa [gpr_setReg_of_ne, E.esp] using L.stkSub (k := 32) (by decide)
   have fm : Frame (mutR p) s.mem s₂.mem := frame_toMut f fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -184,7 +184,7 @@ theorem callCtr_ok (v : GcmImpl) {p : Prm} {s : State} (L : Lay p) (E : Env p s)
     gmems []
     exact o
 
-/-- Calls of `vg_aes_ctr32` with the same arguments are constant time. -/
+/-- Calls of `vg_aes_ctr32_to` with the same arguments are constant time. -/
 theorem callCtr_ct (v : GcmImpl) {p : Prm} (L : Lay p) {Q D : BitVec 32} {n : Nat} {I : State → Prop}
     (hI : ∀ s, I s → Env p s ∧ KeyOk p s Q ∧ Dst p s Q D (16 * n) ∧ s.gpr .eax = Q ∧
       s.gpr .ecx = BitVec.ofNat 32 p.R ∧ s.gpr .edx = p.W + BitVec.ofNat 32 112 ∧ s.gpr .ebx = D ∧

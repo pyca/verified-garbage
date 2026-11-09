@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 After `X`'s checks: the cuts after each block that loads a word of the header
 (`loadIn`'s, the primes' working spaces', `reduceIn`'s count, the exponents',
-`exportM2`'s, `recombineP`'s, `widen`'s and the output's), with the registers
+`widen`'s, `recombineP`'s and the output's), with the registers
 there from the initial state (`pins*`).
 -/
 
@@ -197,55 +197,50 @@ theorem nm_ok {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ : St
     WP isa (NM c) s₀ Q :=
   WP.seq (WP.mono (front_ok s₀ h.1) fun s F => mid1_ok (pre_facts h.1) F fun t M => hc s t (pre_facts h.1) F M)
 
-/-- `exportM2`'s first block. -/
-abbrev EX1 : List Instr :=
-  PublicChecked.base .t4 4 ++ [.load .d .t5 .s6 oQLen, .add .t4 .t4 .t5, .addi .t4 .t4 (-1)] ++ xb .t3 1
+/-- `m₂` widened into `X`'s array 6, `p`'s working space and the start of `recombineP`, then `c`. -/
+abbrev NR (c : Prog isa) : Prog isa :=
+  NM (.seq (widen oBQ oQLen 6) (.seq (.block (setupP oBP oPLen)) c))
 
-theorem pins248 : Pins (At C0 crtF 248) [.s6, .s11, .t3, .t4, .t5] := by
-  refine pins_at_list (fun s₀ => [cS s₀, BitVec.ofNat 64 (8 * (cwX s₀ + 2)), Mont.off (cS s₀) (slot (cwX s₀) 1),
-      Mont.off (Mont.off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 4 + (cqL s₀ - 1)), BitVec.ofNat 64 (cqL s₀)])
-    (fun _ s₀ h => WP.of_flat (c := NM (.block EX1)) (by decide +kernel) (nm_ok h fun s t hP F M => ?_))
-    fun _ _ _ h h' => ?_
-  · have room := hP.room
-    have hZ : 256 ≤ cZ s₀ := by unfold slot at room; omega_arith
-    refine WP.mono (ex1_ok (L := cqL s₀) (F.scr.congr M.keep.2.2) M.a7 M.s5 M.s6 M.s11
-      ((hdr_mid M.fr hZ (by unfold oQLen oMask; omega_arith)).trans F.hQL) hP.q1 (by omega_arith))
-      fun u ⟨⟨a4, a5, a3⟩, k⟩ => ?_
-    simp only [List.map_cons, List.map_nil, a3, a4, a5, k.gpr (r := .s6) (by decide), k.gpr (r := .s11) (by decide),
-      M.s6, M.s11]
-  · obtain ⟨eS, ek, ep, eq, -⟩ := data_vals h h'
-    simp only [oQa, cwP, cwQ, cwX, eS, ek, ep, eq]
-
-theorem pins250 : Pins (At C0 crtF 250) rsP := by
+theorem pins254 : Pins (At C0 crtF 254) rsP := by
   refine pins_at_list (fun s₀ => valsP s₀ (oPa s₀) (cpL s₀))
-    (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NM (.seq exportM2 (.seq (.block (setupP oBP oPLen)) (.block []))))
-      (by decide +kernel) (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y h2 => wp_nil ?_)))
+    (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NR (.block [])) (by decide +kernel)
+      (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y h2 => wp_nil ?_)))
     fun _ _ _ h h' => ?_
   · simp only [List.map_cons, List.map_nil, Y.R.a7, Y.R.ra, Y.R.s5, Y.R.t0, h2, Y.s6, Y.s11]
   · obtain ⟨eS, ek, ep, -⟩ := data_vals h h'
     simp only [valsP, oPa, cwX, eS, ek, ep]
 
-theorem pins251 : Pins (At C0 crtF 251) [.a7, .ra, .s5, .t0, .s6, .s11, .s10] := by
-  refine pins_at_list (fun s₀ => [Mont.off (Mont.off (cS s₀) (oPa s₀)) (slot (cwP s₀) 0),
-      Mont.off (Mont.off (cS s₀) (oPa s₀)) (slot (cwP s₀) 0), BitVec.ofNat 64 (8 * (cwP s₀ + 2)),
-      BitVec.ofNat 64 (cwP s₀), cS s₀, BitVec.ofNat 64 (8 * (cwX s₀ + 2)), BitVec.ofNat 64 (cqL s₀)])
-    (fun _ s₀ h => WP.of_flat (c := NM (.seq exportM2 (.seq (.block (setupP oBP oPLen))
-      (.block [.load .d .s10 .s6 oQLen])))) (by decide +kernel) (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y _ => ?_))
-    fun _ _ _ h h' => ?_
-  · have room := hP.room
-    have hZ : 256 ≤ cZ s₀ := by unfold slot at room; omega_arith
-    have hs := F.scr.congr Y.wr
-    have hL : u.mem.readW (cS s₀ + BitVec.ofNat 64 56) 64 = BitVec.ofNat 64 (cqL s₀) :=
-      (hdr_mid (d := oQLen) Y.fr hZ (by unfold oQLen oMask; omega_arith)).trans F.hQL
-    refine WP.mono (WP.keep [.s10] (Q := fun v => v.gpr .s10 = BitVec.ofNat 64 (cqL s₀)) ?_ (by rfl) (by rfl))
-      fun v ⟨a10, k⟩ => ?_
-    · brun [Y.s6, oQLen, hs.ld (show 56 + 8 ≤ cZ s₀ by omega_arith), hs.al8 (show 56 + 8 ≤ cZ s₀ by omega_arith) (by decide),
-        hL]
-    · simp only [List.map_cons, List.map_nil, a10, k.gpr (r := .a7) (by decide), k.gpr (r := .ra) (by decide),
-        k.gpr (r := .s5) (by decide), k.gpr (r := .t0) (by decide), k.gpr (r := .s6) (by decide),
-        k.gpr (r := .s11) (by decide), Y.R.a7, Y.R.ra, Y.R.s5, Y.R.t0, Y.s6, Y.s11]
-  · obtain ⟨eS, ek, ep, eq, -⟩ := data_vals h h'
-    simp only [oPa, cwP, cwX, eS, ek, ep, eq]
+theorem pins275 : Pins (At C0 crtF 275) rsC := by
+  refine pins_at_list (fun s₀ => valsC s₀ (oPa s₀) (cpL s₀))
+    (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NR (recPA (Win.reduceInP (.block [])))) (by decide +kernel)
+      (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y _ => ?_))) fun _ _ _ h h' => ?_
+  · have hn := hP.nw
+    have room := hP.room
+    have k64 := hP.k64; have k1024 := hP.k1024; have pk := hP.pk
+    have e : ∀ w j, slot w j = 256 + j * (8 * (w + 2)) := fun _ _ => rfl
+    have eX6 := e (cwX s₀) 6; have eX8 := e (cwX s₀) 8; have eP24 := e (cwP s₀) 24
+    have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl
+    have doP : oPa s₀ = slot (cwX s₀) 8 := rfl
+    have dP : cwP s₀ = wordsOf (cpL s₀) := rfl
+    have room' : oPa s₀ + slot (cwP s₀) 24 + slot (cwQ s₀) 24 ≤ cZ s₀ := room
+    have hwP2 : 2 ≤ cwP s₀ := two_le_wordsOf
+    have hwPK : cwP s₀ ≤ (ck s₀ + 7) / 8 := wordsOf_le_of (Nat.le_of_lt pk) (by omega_arith)
+    have hZ256 : 256 ≤ cZ s₀ := by omega_arith
+    obtain ⟨mP1, mPo, -, -, -, -, -, -⟩ := masked_facts hP
+    have hS2 : Scr u (cS s₀) (cZ s₀) := F.scr.congr Y.wr
+    have hK : 1 ≤ (ck s₀ + 7) / 8 := by omega_arith
+    have n2 := Win.nChunks_mul_lt (K := (ck s₀ + 7) / 8) (w := cwP s₀) (by omega_arith) hK
+    rw [Nat.mul_comm] at n2
+    refine WP.mono (recPC_ok (Pv := mP s₀) (k := ck s₀)
+      (Scr.sub hS2 (show oPa s₀ + slot (cwP s₀) 24 ≤ cZ s₀ by omega_arith) (slot_al _ _) (by omega_arith))
+      (Scr.le hS2 (show slot (cwX s₀) 8 ≤ cZ s₀ by omega_arith))
+      (sepXB (Nat.le_refl _) (by omega_arith) (by omega_arith)) (Nat.le_refl _) (Nat.le_refl _) hwP2
+      (by omega_arith) Y.R.a7 Y.R.ra Y.R.s5 Y.R.t0 Y.s6 Y.s11
+      ((hdr_mid Y.fr hZ256 (by unfold oNLen oMask; omega_arith)).trans F.hNL) (by omega_arith) (by omega_arith)
+      (by omega_arith) Y.p0 mP1 mPo Y.p1) fun v ⟨a7, ra, s5, t0, s6, s11, s9, s10⟩ => ?_
+    simp only [List.map_cons, List.map_nil, a7, ra, s5, t0, s6, s11, s9, s10]
+  · obtain ⟨eS, ek, ep, -⟩ := data_vals h h'
+    simp only [valsC, oPa, cwX, eS, ek, ep]
 
 /-- `widen`'s first block. -/
 abbrev WD1 (oB oLen xj : Nat) : List Instr :=
@@ -280,10 +275,23 @@ theorem valsW_eq {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ s
   obtain ⟨eS, ek, -⟩ := data_vals h h'
   simp only [valsW, cwX, eS, ek, ho, hl]
 
-theorem pins297 : Pins (At C0 crtF 297) rsW := by
+theorem pins248 : Pins (At C0 crtF 248) rsW := by
+  refine pins_at_list (fun s₀ => valsW s₀ (oQa s₀) (cqL s₀) 6)
+    (fun _ s₀ h => WP.of_flat (c := NM (.block (WD1 oBQ oQLen 6))) (by decide +kernel)
+      (nm_ok h fun s t hP F M => ?_)) fun _ _ _ h h' => ?_
+  · have room := hP.room
+    have hZ : 256 ≤ cZ s₀ := by unfold slot at room; omega_arith
+    exact wd1_vals hP (F.scr.congr M.keep.2.2) M.s6 M.s11 (by decide) (by decide)
+      ((hdr_mid M.fr hZ (by unfold oBQ oMask; omega_arith)).trans F.hBQ)
+      ((hdr_mid M.fr hZ (by unfold oQLen oMask; omega_arith)).trans F.hQL) hP.q1
+      (by have := hP.k1024; have := hP.qk; omega_arith)
+  · obtain ⟨eS, ek, ep, eq, -⟩ := data_vals h h'
+    exact valsW_eq h h' 6 (by simp only [oQa, cwP, cwX, ek, ep]) eq
+
+theorem pins305 : Pins (At C0 crtF 305) rsW := by
   refine pins_at_list (fun s₀ => valsW s₀ (oPa s₀) (cpL s₀) 7)
-    (fun _ s₀ h => WP.of_flat (c := NM (.seq exportM2 (.seq (.block (setupP oBP oPLen)) (.seq recombineP
-      (.block (WD1 oBP oPLen 7)))))) (by decide +kernel)
+    (fun _ s₀ h => WP.of_flat (c := NR (.seq recombineP
+      (.block (WD1 oBP oPLen 7)))) (by decide +kernel)
       (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y _ => m2B_ok hP F Y fun v Y3 => ?_))
     fun _ _ _ h h' => ?_
   · have room := hP.room
@@ -295,10 +303,10 @@ theorem pins297 : Pins (At C0 crtF 297) rsW := by
   · obtain ⟨eS, ek, ep, -⟩ := data_vals h h'
     exact valsW_eq h h' 7 (by simp only [oPa, cwX, ek]) ep
 
-theorem pins303 : Pins (At C0 crtF 303) rsW := by
+theorem pins311 : Pins (At C0 crtF 311) rsW := by
   refine pins_at_list (fun s₀ => valsW s₀ (oQa s₀) (cqL s₀) 6)
-    (fun _ s₀ h => WP.of_flat (c := NM (.seq exportM2 (.seq (.block (setupP oBP oPLen)) (.seq recombineP
-      (.seq (widen oBP oPLen 7) (.block (WD1 oBQ oQLen 6))))))) (by decide +kernel)
+    (fun _ s₀ h => WP.of_flat (c := NR (.seq recombineP
+      (.seq (widen oBP oPLen 7) (.block (WD1 oBQ oQLen 6))))) (by decide +kernel)
       (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y _ => m2B_ok hP F Y fun v Y3 => ?_))
     fun _ _ _ h h' => ?_
   · have room := hP.room; have k1024 := hP.k1024; have pk := hP.pk; have qk := hP.qk
@@ -328,11 +336,11 @@ theorem pins303 : Pins (At C0 crtF 303) rsW := by
   · obtain ⟨eS, ek, ep, eq, -⟩ := data_vals h h'
     exact valsW_eq h h' 6 (by simp only [oQa, cwP, cwX, ek, ep]) eq
 
-theorem pins322 : Pins (At C0 crtF 322) [.a7, .s5, .s6, .s10, .s11] := by
+theorem pins330 : Pins (At C0 crtF 330) [.a7, .s5, .s6, .s10, .s11] := by
   refine pins_at_list (fun s₀ => [Mont.off (cS s₀) (slot (cwX s₀) 0), BitVec.ofNat 64 (8 * (cwX s₀ + 2)), cS s₀,
       Mont.off (s₀.gpr .a0) 0, BitVec.ofNat 64 (ck s₀)])
-    (fun _ s₀ h => WP.of_flat (c := NM (.seq exportM2 (.seq (.block (setupP oBP oPLen)) (.seq recombineP
-      (.seq recombineX (.block finBlk)))))) (by decide +kernel)
+    (fun _ s₀ h => WP.of_flat (c := NR (.seq recombineP
+      (.seq recombineX (.block finBlk)))) (by decide +kernel)
       (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y _ => m2B_ok hP F Y fun v Y3 => m2C_ok hP F Y3 fun w Y4 => ?_))
     fun _ _ _ h h' => ?_
   · have room := hP.room

@@ -17,8 +17,8 @@ ladder (`ladder_ok`, `step_rep'`, with the formulas for `a = 0` if the curve's `
 is zero), which reads `p`, `a R` and `3 b R` from
 their slots and writes only its slots, `R`'s, `ACC`'s, `PT`'s and the table
 of bits (`mulBody_ok`). `Cfg.mulFn` runs it between copying the callee-saved
-registers to `xmm0`–`xmm5` and back (`mulFn_ok`), as the inversions do; that
-they come back is a fact of runs (`invFnX_gpr`). `gMulKC_ok`: `R = [k]G` in
+registers to `xmm0`–`xmm5` and back (`mulFn_ok`), as the inversions do.
+`gMulKC_ok`: `R = [k]G` in
 the signature and the public key, by a call of `vg_<curve>_mul_base` or of
 `vg_<curve>_mul` (with `G` copied to `R`'s slots), or inline.
 -/

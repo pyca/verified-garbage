@@ -828,14 +828,6 @@ theorem oiteWith_ok {m : Prog isa} {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat
       (o.dtW.sub_right (Region.sub_prefix (by decide)))) fun s₃' ⟨rt, f, og, sp, rd, wr⟩ => ?_)
     exact hm (o.tagIn f og sp rd wr) (by rw [rt, o.tag]) hok og
 
-/-- `open`'s branch on the tag length. -/
-theorem oite_ok (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat} {s₀ s₃ : State}
-    (o : OpenIn Ctx W SP Np A D Tg nl al n tl s₀ s₃) (x12₃ : s₃.gpr .x12 = Tg)
-    (x9₃ : s₃.gpr .x9 = BitVec.ofNat 64 (if Spec.Gcm.tagLenOk tl then 1 else 0)) :
-    WP isa (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openMain v.callees))) s₃
-      (OpenPost Ctx W SP Np A D Tg nl al n tl s₀) :=
-  oiteWith_ok o x12₃ x9₃ fun o' hT hok _ => openMain_post v o' hT hok
-
 /-- `open` after its entry, with `m` once the received tag is at `W`, from
 the registers `x4` to `x7` of the entry. -/
 theorem openRestWith_wp {m : Prog isa} {s s₂ : State}

@@ -179,11 +179,6 @@ theorem finalizeDigest_verified {o : List Instr} {D : Nat}
     ⟨Stream.dims.1, Stream.dims.2, Stream.dims.3, Stream.dims.4⟩ hs
     (v.callee.withOut o) dk.ct dk.keeps (by rw [dk.depth]; decide)
 
-theorem finalizeDigest_keepsV {o : List Instr} {D : Nat}
-    (hs : ShapeD (P := { Stream.params with out := o }) md D) :
-    (finalizeDigestWith { Stream.params with out := o } v.suffix v.code).allInstrs VG.AArch64.keepsV = true :=
-  MdStream.AArch64.finalize_keepsVD hs v.keepsV
-
 theorem update_keepsV : v.update.allInstrs VG.AArch64.keepsV = true := MdStream.AArch64.update_keepsV v.keepsV
 
 theorem finalize_keepsV : v.finalize.allInstrs VG.AArch64.keepsV = true :=

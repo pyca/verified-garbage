@@ -25,17 +25,17 @@ theorem stackArgs_six (s : State) :
     List.map (stackArg s) (List.range 6) =
       [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4, stackArg s 5] := rfl
 
-theorem implies (P : Nat) (hsat : ∃ s, (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (P + 1088)).pre s) :
-    (contract P).Implies (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (P + 1088)) where
+theorem implies (P : Nat) (hsat : ∃ s, (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (P + 1088)).pre s) :
+    (contract P).Implies (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (P + 1088)) where
   pre := fun _ h => h
   post := by
     rintro s s' - h
-    sig_post [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig,
+    sig_post [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig,
       AArch64.abi, AArch64.argRegs, stackArgs_six, List.append_eq]
     exact h
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig,
+    sig_pub [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig,
       AArch64.abi, AArch64.argRegs, stackArgs_six, List.append_eq] at h
     obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5⟩ := h
     obtain ⟨hb, hq⟩ := List.append_inj hl (by simp [Spec.Rsa.bytesAt, h3, h5])
@@ -58,17 +58,17 @@ def satState : State where
   wr := [⟨0x1000, 64⟩, ⟨0x20000, 8448⟩]
 
 /-- It meets the shared contract with 16 bytes of stack for the callee. -/
-theorem sat : ∃ s, (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (16 + 1088)).pre s := by
-  sig_implies_sat [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig,
+theorem sat : ∃ s, (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (16 + 1088)).pre s := by
+  sig_implies_sat [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig,
     AArch64.abi, AArch64.argRegs, stackArgs_six, List.append_eq] [satState, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using satState
 
 /-- `vg_rsa_pkcs1_encrypt_precomputed`, calling the precomputed public
 operation `c`, meets the shared contract. -/
 theorem code_verified (c : PdChecked)
-    (hsat : ∃ s, (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s) :
+    (hsat : ∃ s, (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s) :
     Verified AArch64.target (Impl.RsaPkcs1Enc.AArch64.Precomputed.code c.name c.code)
-      (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)) :=
+      (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)) :=
   Verified.of_correct (k := contract c.stack) (fun _ h => by
     obtain ⟨t, s', he, hp⟩ := code_ok c h
     exact ⟨t, s', he, hp⟩) (code_constantTime c) (implies c.stack hsat)

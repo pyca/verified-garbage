@@ -43,17 +43,6 @@ theorem movZero_ok (s : State) (r : Reg) :
   simp only [List.mem_singleton] at hr
   rw [RegUpd.gpr_setReg_of_ne _ _ hr]
 
-/-- `d += src` (64-bit, no flags needed). -/
-theorem addReg_ok (s : State) (d src : Reg) :
-    WP isa (.block [.alu .add d (.reg src)]) s fun t =>
-      t.gpr d = s.gpr d + s.gpr src ∧ Keeps [d] s t := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, Option.bind_some,
-    RegUpd.gpr_setReg_self, Option.some.injEq, exists_eq_left']
-  refine ⟨trivial, fun r' hr => ?_, rfl, rfl, rfl⟩
-  simp only [List.mem_singleton] at hr
-  rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]
-
 /-! ## `|m|` and the mask of its sign -/
 
 /-- The mask of a word's sign. -/

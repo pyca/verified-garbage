@@ -52,13 +52,17 @@ structure Backend where
   dotInv4 : Prog isa
   dotInv5 : Prog isa
   dotInv7 : Prog isa
+  /-- What the names of its functions but the samplers (`rej4`, `expandMask4`) end
+  with: `sfx` but for an implementation that differs from another only in its samplers,
+  whose other functions it shares, under that other's names. -/
+  asfx : String
 
 /-- The SSE2 code. -/
 def Backend.sse2 : Backend :=
   ⟨Arith.ntt, Arith.nttInv, Arith.mul, Arith.mulAdd, Arith.add, Arith.sub, Round.highBits,
     Round.lowBits, Round.normLt, Round.makeHint, Round.useHint, Sample.Rej4.rejNTT4,
     Sample.Mask4.expandMask4, "", false, dotInvSse2 4, dotInvSse2 5,
-    dotInvSse2 7⟩
+    dotInvSse2 7, ""⟩
 
 /-- `vg_mldsa_dot_inverse{c}`, for `c` of 4, 5 and 7. -/
 abbrev Backend.dotInv (B : Backend) (c : Nat) : Prog isa :=
@@ -69,6 +73,6 @@ backend never write `rsp` (and load MXCSR only to restore it) evaluate in
 its place. -/
 def Backend.empty : Backend :=
   ⟨.block [], .block [], .block [], .block [], .block [], .block [], .block [], .block [], .block [],
-    .block [], .block [], .block [], .block [], "", false, .block [], .block [], .block []⟩
+    .block [], .block [], .block [], .block [], "", false, .block [], .block [], .block [], ""⟩
 
 end VG.Impl.MlDsa.X86_64.Arith

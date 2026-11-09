@@ -147,9 +147,6 @@ theorem wW {d n : Nat} (h : d + n ≤ 2560) : InRegions s.wr (W + BitVec.ofNat 6
 theorem wR {d n : Nat} (h : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
   in_left (P.wW h)
 
-theorem kC {d n : Nat} (h : d + n ≤ 256) : Covers [⟨K + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
-  covers_off P.k h (by decide)
-
 theorem wC {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.w h (by decide)
 
@@ -255,22 +252,6 @@ theorem in_mutW {W D : Addr} {n d k : Nat} (h : d + k ≤ 128 ∨ (256 ≤ d ∧
 /-- The data, as a part the pieces may write. -/
 theorem in_mutD {W D : Addr} {n : Nat} {r : Region} (h : Region.Sub r ⟨D, n⟩) :
     ∃ r' ∈ mutR W D n, Region.Sub r r' := ⟨_, by simp, h⟩
-
-/-- A frame within a part of `W` the pieces may write. -/
-theorem frame_mutW {W D : Addr} {n d k : Nat} (h : d + k ≤ 128 ∨ (256 ≤ d ∧ d + k ≤ 2560)) {m m' : Mem}
-    (f : Frame [⟨W + BitVec.ofNat 64 d, k⟩] m m') : Frame (mutR W D n) m m' :=
-  f.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact in_mutW h
-
-/-- The part of `W` at `[d, d + k)`, when it misses the parts the pieces write. -/
-theorem kept_mut {K W D : Addr} {n : Nat} (L : Lay K W) (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)
-    {d k : Nat} (hd : 128 ≤ d ∧ d + k ≤ 256) :
-    ∀ r ∈ mutR W D n, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · simpa using L.w_w (a := d) (n := k) (d := 0) (k := 128) (.inr (by omega)) (by omega) (by decide)
-  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (hD.sub_right (Lay.wSub (by omega))).symm
 
 /-- The key context misses the parts the pieces write. -/
 theorem k_mut {K W D : Addr} {n : Nat} (L : Lay K W) (hD : (⟨K, 256⟩ : Region).Disjoint ⟨D, n⟩) :

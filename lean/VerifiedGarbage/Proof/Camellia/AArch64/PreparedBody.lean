@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Camellia.Prepared
 public import VerifiedGarbage.Proof.Camellia.AArch64.Ecb
 import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
 public import VerifiedGarbage.Impl.Camellia.AArch64.Prepared
@@ -10,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # Camellia's prepared subkeys and batches on AArch64: the code
 
 What `vg_camellia_prepare_keys` writes (`layout`,
-`Spec.Camellia.Prepared.Holds`) is the masks and the table that ECB's rounds
+`Proof.Camellia.Prepared.Holds`) is the masks and the table that ECB's rounds
 read (`ReadyAt`), word for word (`TableWordsAt`, `holds_of_words`,
 `readyAt_of_words` and back): each of the table's words is the plane of its
 subkey (`keyPlane`, the only words related to it by `HalfRel`,
@@ -29,6 +30,17 @@ open VG VG.AArch64 VG.AArch64.Straight VG.Impl.Camellia.AArch64
 open VG.Impl.Aes.AArch64 (sb t0 t1 kp movR stS)
 open VG.Impl.Camellia (keyPlane)
 open VG.Proof.Camellia (HalfRel schedWords_getD wordAt_frame dirPerm_lt blockFn)
+
+/-- The masks' slots and the table's, as byte ranges. -/
+def layout : Prepared.Layout where
+  table rounds := [(8 * evenSlot, 40), (8 * keySlot, 64 * (8 * (rounds / 6) + 2))]
+  encode rounds w d i := (preparedWord rounds w (ofSpecDir d) (i / 8)).extractLsb' (8 * (i % 8)) 8
+  buf := 8 * tailSlot
+  blocks := 8
+  prepScratch := [(0, 8 * slots)]
+  cryptScratch := [(0, 8 * evenSlot), (8 * (m3Slot + 1), 8 * (keySlot - m3Slot - 1)),
+    (8 * savedSlot, 8 * (tailSlot + 16 - savedSlot))]
+  size := 8 * slots
 
 /-! ## The encoding -/
 
@@ -58,8 +70,8 @@ theorem specDir_ofSpecDir (d : Spec.Camellia.Direction) : specDir (ofSpecDir d) 
 def dirOf (decrypt : BitVec 64) : Dir := if decrypt = 0 then .encrypt else .decrypt
 
 theorem specDir_dirOf (decrypt : BitVec 64) :
-    specDir (dirOf decrypt) = Spec.Camellia.Prepared.directionOf decrypt.toNat := by
-  unfold dirOf Spec.Camellia.Prepared.directionOf
+    specDir (dirOf decrypt) = Proof.Camellia.Prepared.directionOf decrypt.toNat := by
+  unfold dirOf Proof.Camellia.Prepared.directionOf
   by_cases h : decrypt = 0
   · subst h; rfl
   · have h' : decrypt.toNat ≠ 0 := fun h' => h (BitVec.eq_of_toNat_eq h')
@@ -104,14 +116,14 @@ theorem table_ranges (R o : Nat) :
     · exact ⟨_, .inr rfl, o - 768, by dsimp only; omega_arith, by dsimp only; omega_arith⟩
 
 theorem holds_of_words {R : Nat} {m : Mem} {B : Addr} {w : List (BitVec 64)} {d : Spec.Camellia.Direction}
-    (h : TableWordsAt R m B w (ofSpecDir d)) : Spec.Camellia.Prepared.Holds layout m B R w d := by
+    (h : TableWordsAt R m B w (ofSpecDir d)) : Proof.Camellia.Prepared.Holds layout m B R w d := by
   intro r hr i hi
   have hw := (table_ranges R (r.1 + i)).1 ⟨r, hr, i, hi, rfl⟩
   rw [word_byte_addr, byte_of_readW m _ (by omega_arith), h _ hw]
   rfl
 
 theorem words_of_holds {R : Nat} {m : Mem} {B : Addr} {w : List (BitVec 64)} {d : Spec.Camellia.Direction}
-    (h : Spec.Camellia.Prepared.Holds layout m B R w d) : TableWordsAt R m B w (ofSpecDir d) := by
+    (h : Proof.Camellia.Prepared.Holds layout m B R w d) : TableWordsAt R m B w (ofSpecDir d) := by
   intro k hk
   simp only [Mem.readW, BitVec.setWidth_eq]
   refine Mem.read_eq_of_bytes fun j hj => ?_
@@ -187,7 +199,7 @@ theorem prepareBody_wp {s₀ : State} (hrd : s₀.rd = [⟨s₀.gpr .x0, 272⟩]
     (hR : (s₀.gpr .x1).toNat = 18 ∨ (s₀.gpr .x1).toNat = 24) :
     WP isa prepareKeys s₀ fun s' => (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
       TableWordsAt (s₀.gpr .x1).toNat s'.mem (s₀.gpr .x3)
-        (Spec.Camellia.Prepared.wordsAt s₀.mem (s₀.gpr .x0) (s₀.gpr .x1).toNat) (dirOf (s₀.gpr .x2)) := by
+        (Proof.Camellia.Prepared.wordsAt s₀.mem (s₀.gpr .x0) (s₀.gpr .x1).toNat) (dirOf (s₀.gpr .x2)) := by
   let b := s₀.gpr .x3
   let sched := s₀.gpr .x0
   let R := (s₀.gpr .x1).toNat

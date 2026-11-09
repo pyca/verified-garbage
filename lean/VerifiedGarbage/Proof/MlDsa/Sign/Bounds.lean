@@ -38,8 +38,6 @@ theorem squeeze_take {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200) (S : Spec
 
 theorem H_length (s : List Byte) (d : Nat) : (H s d).length = d := length_squeeze (by decide) (by decide) _ _
 
-theorem G_length (s : List Byte) (d : Nat) : (G s d).length = d := length_squeeze (by decide) (by decide) _ _
-
 theorem H_take (s : List Byte) {d d' : Nat} (h : d ≤ d') : (H s d').take d = H s d :=
   squeeze_take (by decide) (by decide) _ h
 

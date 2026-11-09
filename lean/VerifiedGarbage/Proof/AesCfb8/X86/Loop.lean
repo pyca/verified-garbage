@@ -186,10 +186,6 @@ theorem UPre.arg_keep {m : Mem} (hf : Frame (Big s₀) s₀.mem m) {i : Nat} (hi
 theorem UPre.dataA {k : Nat} (hk : k < N s₀) : addr (Dp s₀) k = byt s₀ k :=
   addr_eq (by have := hp.data_fit; omega)
 
-theorem UPre.dataN {k : Nat} (hk : k < N s₀) : (Dp s₀ + BitVec.ofNat 32 k).toNat = (Dp s₀).toNat + k := by
-  have := hp.data_fit
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (by omega)]
-
 theorem UPre.byt_disjoint {j k : Nat} (hj : j < N s₀) (hk : k < N s₀) (hjk : j ≠ k) :
     (⟨byt s₀ j, 1⟩ : Region).Disjoint ⟨byt s₀ k, 1⟩ := by
   have := hp.data_fit

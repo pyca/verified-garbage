@@ -78,13 +78,6 @@ theorem setupRanges_arith {n : Nat} (hn : n ≤ 48) :
   simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS, contextBytes, slot, stride, List.mem_cons, List.not_mem_nil, or_false] at *
   rintro r (rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only <;> omega
 
-theorem exponentRanges_arith {n k : Nat} (hn : n ≤ 48) (hk : k ≤ 2 * n) :
-    ∀ r ∈ exponentRanges n k, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
-  have := contextBytes_le hn
-  simp only [exponentRanges, productRanges, maskO, contextBytes, slot, stride, List.cons_append, List.nil_append,
-    List.mem_cons, List.not_mem_nil, or_false] at *
-  rintro r (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only <;> omega
-
 theorem streamRanges_arith {n : Nat} (hn : n ≤ 48) :
     ∀ r ∈ streamRanges n, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
   have := contextBytes_le hn

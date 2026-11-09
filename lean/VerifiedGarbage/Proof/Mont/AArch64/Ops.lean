@@ -68,9 +68,6 @@ structure OpKeep (M : Mod) (base : Addr) (o : Nat) (s s' : State) : Prop where
 
 theorem x0_not_clob (n : Nat) : Reg.x0 ∉ clob n := fun h => absurd (mem_clobAll h) (by decide)
 
-theorem acc_not_x7 (n : Nat) (hn : n < 10) : ∀ r ∈ acc n, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6,
-    .x7, .x16, .x17, .x24, .x25] := acc_regs_lt n hn
-
 theorem fresh_low (n : Nat) (hn : n < 10) :
     Fresh (win n n n :: (List.range n).map (win n n)) := by
   have h := fresh_wins hn n
@@ -124,9 +121,6 @@ theorem loadsEach_ok {size : Nat} {rn : Reg} : ∀ (ts : List Reg) {s : State} {
 
 theorem bRegs_take_nodup (n : Nat) : (bRegs.take n).Nodup :=
   (show bRegs.Nodup by decide).sublist (List.take_sublist _ _)
-
-theorem x0_not_bRegs_take (n : Nat) : Reg.x0 ∉ bRegs.take n :=
-  fun h => absurd (List.mem_of_mem_take h) (by decide)
 
 theorem mulSetup_eq (M : Mod) (rb : Reg) (b : Nat) : mulSetup M rb b = ([zero7] : List Instr) ++
     (loadsR rb (bRegs.take M.n) b ++ (mulConst M ++ zeros (accClear M.n))) := by

@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
@@ -47,7 +48,7 @@ def sealGatherScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contrac
     (pre := fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag _scratch =>
       Spec.Gcm.sealGatherPre A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
     (post := fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag _scratch =>
-      Spec.Gcm.sealGatherPost A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
+      Proof.AesGcm.sealGatherRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_seal_gather_precomputed` with `scratch: *mut [u64; 23]`. -/
@@ -63,7 +64,7 @@ def sealGatherPrecomputedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0
     (pre := fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag _scratch =>
       Spec.Gcm.sealGatherPrecomputedPre A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
     (post := fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag _scratch =>
-      Spec.Gcm.sealGatherPost A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
+      Proof.AesGcm.sealGatherRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
     (writeArgs := true) (stack := stack)
 
 /-- The stack the code uses: the frame of the three arguments of

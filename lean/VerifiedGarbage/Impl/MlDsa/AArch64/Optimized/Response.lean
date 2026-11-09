@@ -47,25 +47,6 @@ def subLowNorm : Prog isa :=
  .vop (.logic .and .v6 .v6 .v16),.vop (.sub .s4 .v0 .v0 .v6),
  .strq .v0 .x2 off] : List Instr) ++ testNorm) finish
 -- Signed low -> hints; signed raw ct; canonical high. u64 count | validNorm<<32.
-def hintNorm : Prog isa :=
- .seq (.block (vc .v16 8380417 ++ vc .v25 (2^22) ++
- ([.vop (.dup .s4 .v24 .x3),.vop (.dup .s4 .v17 .x3),
- .vop (.movi0 .v23),.vop (.sub .s4 .v18 .v23 .v17),
- .vop (.movi0 .v30),.vop (.movi0 .v31)] : List Instr) ++ normConstants)) <|
- .seq (loop [.x0,.x1,.x2] fun off =>
- ([.ldrq .v0 .x1 off,.ldrq .v3 .x0 off,.ldrq .v4 .x2 off] : List Instr) ++ reduce .v0 ++ testNorm ++
- ([.vop (.add .s4 .v0 .v0 .v3),
- -- negative masks for gamma-t and t+gamma implement strict outside interval.
- .vop (.sub .s4 .v2 .v17 .v0),.vop (.sub .s4 .v3 .v0 .v18),
- .vop (.logic .orr .v2 .v2 .v3),.vop (.shift .sshr .s4 .v2 .v2 31),
- .vop (.cmeq .s4 .v3 .v0 .v18),.vop (.cmeq .s4 .v4 .v4 .v23),
- .vop (.logic .bic .v3 .v3 .v4),.vop (.logic .orr .v2 .v2 .v3),
- .vop (.shift .ushr .s4 .v2 .v2 31),.strq .v2 .x0 off,.vop (.add .s4 .v30 .v30 .v2)] : List Instr)) <|
- .block [.umov .w .x1 .v31 0,.umov .w .x9 .v31 1,.logic .orr .w .x1 .x1 .x9,
- .umov .w .x9 .v31 2,.logic .orr .w .x1 .x1 .x9,.umov .w .x9 .v31 3,.logic .orr .w .x1 .x1 .x9,.addImm .w .x1 .x1 1,
- .umov .w .x0 .v30 0,.umov .w .x9 .v30 1,.add .w .x0 .x0 .x9,
- .umov .w .x9 .v30 2,.add .w .x0 .x0 .x9,.umov .w .x9 .v30 3,.add .w .x0 .x0 .x9,
- .lsl .x .x1 .x1 32,.logic .orr .x .x0 .x0 .x1]
 -- Called only at accepted output: signed z in (-gamma1,gamma1), to canonical residues.
 def canonicalize : Prog isa := .seq (.block (vc .v16 8380417)) <|
  loop [.x0] fun off => ([.ldrq .v0 .x0 off] : List Instr) ++ cadd .v0 ++ ([.strq .v0 .x0 off] : List Instr)

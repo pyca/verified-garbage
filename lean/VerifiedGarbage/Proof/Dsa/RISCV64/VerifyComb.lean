@@ -110,81 +110,6 @@ theorem PArr.pbody {L : Lay} {m m' : Mem} (h : PArr L m m') : PBody L m m' :=
 /-- The registers `powP` writes. -/
 def powPRegs : List Reg := [.s8] ++ loadRegs ++ copyRegs ++ [.s10] ++ Win.powWRegs
 
-/-- `powP`: the `p_len` octets at `N` (`s7`) to the power of the `q_len`
-octets at `off L.Buf o` (`s9`), modulo p, into array 4. Arrays 1–23 change. -/
-theorem powP_ok {s : State} {L : Lay} {key sig N : Addr} {o p : Nat} (hL : L.Ok) (hs : ScrL s L)
-    (hr : Regs s L key sig) (hin : InP s L) (hi : PInv s L) (hN : Src s L N L.pl) (h7 : s.gpr .s7 = N)
-    (h9 : s.gpr .s9 = off L.Buf o) (ho : o + L.ql ≤ 2 * L.pl)
-    (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 24 = 2 ^ (128 * L.wp) % p) :
-    WP isa powP s fun t =>
-      (arrP t.mem L 4 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem N L.pl) ^
-          Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off L.Buf o) L.ql) % p ∧
-        InP t L ∧ PInv t L ∧ Outside L.S (slot L.wp 1) (23 * (8 * (L.wp + 2))) s.mem t.mem) ∧
-        Keep powPRegs s t := by
-  have hZ := hL.z256
-  have hw := hL.wp_ge
-  have hw8 := hL.wp_eq
-  have hnw := hL.nowrap
-  have hql : 20 ≤ L.ql ∧ L.ql ≤ 32 := by rcases hL.ql with e | e | e <;> omega
-  have hbe := hL.buf_end
-  have hqZ : L.qOff + 1600 ≤ L.Z := by simp only [Lay.bOff] at hbe; omega_arith
-  have hq28 : L.qOff = slot L.wp 28 := rfl
-  have e : ∀ j, slot L.wp j = 256 + j * (8 * (L.wp + 2)) := fun _ => rfl
-  have e0 := e 0; have e1 := e 1; have e4 := e 4; have e5 := e 5; have e24 := e 24; have e25 := e 25
-  have e28 := e 28
-  have en := hin.env
-  unfold powP
-  refine WP.seq (WP.mono (getP_ok hs hL hr .s8) fun s₁ ⟨⟨a8, m1⟩, k1⟩ => ?_)
-  have en1 := en.keep k1
-  refine WP.seq (WP.mono (loadArr_ok en1 (j := 4) (N := N) (by decide)
-      (by rw [k1.gpr (by decide), h7]; exact (BitVec.add_zero _).symm) a8 (by omega) (by omega)
-      (by rw [k1.2.1, k1.2.2]; exact hN.rd) (fun i hi x hx => hN.sep i hi x (by omega_arith)))
-    fun s₂ ⟨⟨v4, _, o2, a7⟩, k2⟩ => ?_)
-  rw [m1] at v4 o2
-  have en2 : Env s₂ L.S L.qOff L.wp := ⟨en.hs.congr (k1.trans k2).2.2, a7, ((k1.trans k2).gpr (by decide)).trans en.s5,
-    ((k1.trans k2).gpr (by decide)).trans en.t0, en.w2, en.w48, en.hZ⟩
-  refine WP.seq (WP.mono (copy_ok en2 (o := 1) (a := 24) (by decide) (by decide) (by decide))
-    fun s₃ ⟨⟨c1, o3⟩, k3⟩ => ?_)
-  have en3 := en2.keep k3
-  have k13 := (k1.trans k2).trans k3
-  have o23 : Outside L.S (slot L.wp 1) (4 * (8 * (L.wp + 2))) s.mem s₃.mem :=
-    (o2.mono (by omega) (by omega)).trans (o3.mono (by omega) (by omega))
-  have hb3 : Body L s.mem s₃.mem := Body.ofP hL o23 (by omega) (by omega)
-  refine WP.seq (WP.mono (getQ_ok (hs.congr k13.2.2) hL (hr.keep k13 hb3) .s10) fun s₄ ⟨⟨a10, m4⟩, k4⟩ => ?_)
-  have en4 := en3.keep k4
-  have k14 := k13.trans k4
-  have A0 : arrP s₄.mem L 0 = p := by
-    rw [arrP, m4, o3.wordsVal (by omega) (by omega_arith), o2.wordsVal (by omega) (by omega_arith)]; exact hp0
-  have W0 : word s₄.mem L.S (slot L.wp 0) = word s.mem L.S (slot L.wp 0) := by
-    rw [m4, o3.word (by omega) (by omega_arith), o2.word (by omega) (by omega_arith)]
-  have A1 : arrP s₄.mem L 1 = 2 ^ (128 * L.wp) % p := by
-    rw [arrP, m4, wordsVal_congr (m := s₂.mem) (d := slot L.wp 24) fun i hi => c1 i (by omega)]
-    rw [← hrr, arrP, o2.wordsVal (by omega) (by omega_arith)]
-  have A4 : arrP s₄.mem L 4 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem N L.pl) := by
-    rw [arrP, m4, o3.wordsVal (by omega) (by omega_arith)]; exact v4
-  have hbuf : Spec.Rsa.bytesAt s₄.mem (off L.Buf o) L.ql = Spec.Rsa.bytesAt s.mem (off L.Buf o) L.ql := by
-    rw [m4]; exact bufBytes hL o23 (by omega) ho
-  refine WP.mono (Win.powWin_ok (D := off L.Buf o) (L := L.ql) en4.hs (by omega) (by omega)
-    (by omega) en4.a7 en4.s5 en4.t0 (by rw [W0, k14.gpr (by decide)]; exact hi)
-    (by show 2 ≤ arrP s₄.mem L 0; rw [A0]; exact hp) (by show arrP s₄.mem L 0 % 2 = 1; rw [A0]; exact hpo)
-    (by show arrP s₄.mem L 1 < arrP s₄.mem L 0; rw [A1, A0]; exact Nat.mod_lt _ (by omega))
-    (by rw [k4.gpr (by decide), k13.gpr (by decide), h9]; exact (BitVec.add_zero _).symm) a10 (by omega)
-    (by omega_arith) (by rw [k14.2.1, k14.2.2]; exact bufRd hL hs (k := L.ql) ho)
-    (fun i hi x hx => bufSepP hL ho i hi x hx)) fun t ⟨⟨r4, o5'⟩, k5⟩ => ?_
-  have o5 : Outside L.S (slot L.wp 1) (23 * (8 * (L.wp + 2))) s₄.mem t.mem := o5'
-  have r4 := r4 (by
-    show arrP s₄.mem L 1 = 2 ^ (64 * L.wp) * 2 ^ (64 * L.wp) % arrP s₄.mem L 0
-    rw [A1, A0, pow_two_mul])
-  refine ⟨⟨?_, ⟨en4.keep k5, ((k14.trans k5).gpr (by decide)).trans hin.s6⟩, ?_, ?_⟩, (k14.trans k5).mono (by decide)⟩
-  · show wordsVal t.mem L.S (slot L.wp 4) L.wp = _
-    rw [r4, hbuf]
-    show arrP s₄.mem L 4 ^ _ % arrP s₄.mem L 0 = _
-    rw [A4, A0]
-  · show ((word t.mem L.S (slot L.wp 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0
-    rw [o5.word (by omega) (by omega_arith), W0, (k14.trans k5).gpr (by decide)]; exact hi
-  · rw [← m4] at o23
-    exact (o23.mono (by omega) (by omega)).trans o5
-
 /-! ## The joint power `g^u1 y^u2 mod p`
 
 `jointTable` builds `T_(i + 4 j) = g^i y^j R mod p` for `i, j < 4` in arrays
@@ -682,9 +607,6 @@ theorem parr_q (L : Lay) : slot L.wp 1 + 27 * (8 * (L.wp + 2)) ≤ L.qOff := by
   simp only [Lay.qOff, Lay.slot_eq]; omega
 
 theorem body_le {L : Lay} (hL : L.Ok) : 256 + (L.Z - 256) ≤ L.Z := by have := hL.z256; omega
-
-theorem ql2_le {L : Lay} (hL : L.Ok) : L.ql + L.ql ≤ 2 * L.pl := by
-  rcases hL.pl with e | e | e <;> rcases hL.ql with f | f | f <;> omega
 
 theorem comb_sub1 {L : Lay} : L.pl + L.ql + L.pl ≤ 3 * L.pl + L.ql := by omega
 theorem comb_sub2 {L : Lay} : 2 * L.pl + L.ql + L.pl ≤ 3 * L.pl + L.ql := by omega

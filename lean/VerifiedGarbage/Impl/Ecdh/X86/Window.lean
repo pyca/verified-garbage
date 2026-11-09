@@ -34,24 +34,5 @@ def windowCfg : WinCfg where
   J := 65
   one := c.mont 1
 
-/-- Pad the scalar to 320 bits, add the signed-window bias, then expand its bits.
-The extra high word retains the carry from the original 256-bit scalar. -/
-def windowPrep (src : Nat) : Prog isa :=
-  .seq (.block (copy 8 3520 src ++ setConst 1 3552 0 ++
-    setConst 5 3560 (WinCfg.offset 65) ++
-    chain { c.MP' with n := 5 } .add .adc 3600 3520 3560))
-    (bits 3600 windowBits 40)
-
-/-- Variable-base multiplication for P-256; `b` is initialized independently
-of the fixed-base comb's choice of implementation. -/
-def windowMul (src : Nat) : Prog isa :=
-  .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) <|
-  .seq (windowPrep c src) (WinCfg.window (windowCfg c) c.SP)
-
-/-- ECDH with signed windows for the variable-base product. -/
-def exchangeWindow : Prog isa :=
-  .seq (prefix' c) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (windowMul c (c.sl K)) <| .seq c.pPow (middle c)
-
 end Cfg
 end VG.Impl.Ecdh.X86

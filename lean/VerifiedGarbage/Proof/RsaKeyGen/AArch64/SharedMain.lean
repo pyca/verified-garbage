@@ -57,7 +57,7 @@ abbrev SharedMrEnd (B : Addr) (Z w : Nat) (c : Nat) (r : List Byte) (s₀ : Stat
   (∀ b rest, res = some (b, rest) → word s.mem B (8 * kStat) = BitVec.ofNat 64 (if b then 1 else 3) ∧
     word s.mem B (8 * kUsed) = BitVec.ofNat 64 (r.length - rest.length)) ∧
   Frm B (sharedRoundRanges w) s₀.mem s.mem ∧ Keep mmRegs s₀ s
-/-- One iteration of `millerRabin`'s loop. -/
+/-- One iteration of `millerRabinWith`'s loop. -/
 theorem sharedIter_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {B : Addr} {Z w c ch : Nat} {rp : Addr} {r : List Byte}
     {s₀ : State} {res : Option (Bool × List Byte)} (hw4 : 4 ≤ w) (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc1 : 1 < c) (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length < 2 ^ 64) (hch : ch < 2 ^ 62)
@@ -197,7 +197,7 @@ theorem sharedIter_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {B : 
           subst h1b
           rw [List.length_drop]; omega_arith
 
-/-- The start of `millerRabin`: `kI := 1`, `kUni := 0`. -/
+/-- The start of `millerRabinWith`: `kI := 1`, `kUni := 0`. -/
 theorem sharedInit_ok {B : Addr} {Z w c ch bm : Nat} {rp : Addr} {r : List Byte} {s : State} {used : Nat}
     (hc : MrCtx s B Z w c bm) (hE : ECtx s.mem B w c) (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hr2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c)
     (hrp : word s.mem B (8 * kRand) = rp) (hlen : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w))
@@ -235,7 +235,7 @@ theorem sharedInit_ok {B : Addr} {Z w c ch bm : Nat} {rp : Addr} {r : List Byte}
   · rw [hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kChecks, kE, sFn]; omega_arith)]; exact hchk
   · rw [hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kUsed, sFn]; omega_arith)]; exact hus
 
-/-- `millerRabin`: the witnesses from offset `used`, as `primalityTest`'s
+/-- `millerRabinWith`: the witnesses from offset `used`, as `primalityTest`'s
 loop from `(1, 0)`. -/
 theorem sharedMillerRabin_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {B : Addr} {Z w c ch bm : Nat} {rp : Addr}
     {r : List Byte} {s : State} {used : Nat} (hw4 : 4 ≤ w) (hw128 : w ≤ 128) (hEZ : slot w aE + 8 * (w + 2) ≤ Z)

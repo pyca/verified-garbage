@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -16,6 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+public import VerifiedGarbage.Spec.Ed448.Contract
 
 /-!
 # Ed448 base-point multiplication on ARMv7: `Verified`
@@ -50,18 +50,6 @@ def scalarBaseLocal : Contract Arm.isa where
 theorem BasePre.of {s : State} (h : scalarBaseLocal.pre s) : BasePre s :=
   ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2⟩
 
-def scalarBaseSat : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | _ => 0
-  sp := 0x8000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := [⟨0x2000, 57⟩]
-  wr := [⟨0x1000, 57⟩, ⟨0x3000, 8192⟩]
-
 theorem scalarBase_ok (hl : BaseLadderOk) (s : State) (hs : scalarBaseLocal.pre s) :
     ∃ t s', Exec isa scalarBase s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' := by
   obtain ⟨t, s', he, h⟩ := scalarBase_ladder (BasePre.of hs)
@@ -81,13 +69,5 @@ theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub
   · exact h1
   · exact h2
   · exact h3
-
-theorem scalarBase_verified (hl : BaseLadderOk) :
-    Verified Arm.target scalarBase (Proof.Ed448.scalarBaseContract Arm.abi) :=
-  Verified.of_correct (scalarBase_ok hl) scalarBase_ct (by
-    sig_implies [Proof.Ed448.scalarBaseContract, Proof.Ed448.scalarBaseSig,
-      Spec.Ed448.scratchWords, scalarBaseLocal, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      [scalarBaseSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scalarBaseSat)
 
 end VG.Proof.Ed448.Arm

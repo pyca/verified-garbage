@@ -45,8 +45,6 @@ theorem blockSave_ok (s : State)
       (savedReg i, 8 * i) (Spill.mem_slots hi)
   · rw [h.mem]; exact Spill.saveMem_frame_base (by decide) (by decide) _ _ _
 
-theorem savedReg_separate : ∀ i < 4, savedReg i ≠ .x2 := by decide +kernel
-
 structure RestorePost (original origin current : State) : Prop where
   saved : ∀ r ∈ savedRegs, current.gpr r = original.gpr r
   keep : VG.Proof.Rc2.AArch64.Keep savedRegs origin current

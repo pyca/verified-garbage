@@ -214,18 +214,6 @@ theorem key_body_correct (s : State) (hs : keyContract.pre (stripConsts piConsts
     rw [h₆.2.2.1, keep₅.mem]
     exact scheduleAt_expanded expanded
 
-def keySatState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 1 | .r2 => 8 | .r3 => 0x2000 | _ => 0
-  sp := 0x4000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem a := if a = 0x4001 then 0x30 else 0
-  rd := [⟨0x1000, 1⟩, ⟨0x4000, 4⟩]
-  wr := [⟨0x2000, 128⟩, ⟨0x3000, 512⟩]
-
 /-- Key expansion's contract with the table, as the proof states it. -/
 def keyContractC : Contract isa where
   pre s := keyContract.pre (stripConsts piConsts s) ∧ ConstsOk piConsts 0 s
@@ -272,71 +260,5 @@ theorem keyTaint_agree {s₁ s₂ : State} (h₁ : keyContract.pre (stripConsts 
 theorem expandKey_constantTime : ConstantTime isa keyContractC.pre keyContractC.pub expandKey :=
   VG.Taint.constantTime (A := taintSym [piSym]) keyTaint (fun _ _ h₁ h₂ hp => ⟨keyTaint_agree h₁.1 h₂.1 hp.1,
     fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hp.2⟩) (by taint_decide)
-
-theorem key_implies : keyContract.Implies (Proof.Rc2.expandKeyContract abi) := by
-  sig_implies [Proof.Rc2.expandKeyContract, Proof.Rc2.expandKeySig, abi, argRegs,
-    Arm.reduceClassify, Arm.Loc.val, State.addr, keyContract, Spec.Rc2.validKey]
-    [keySatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using keySatState
-
-/-- The memory of the witness with the table: the table at `0x100000`, zero
-elsewhere (irreducible: unfolding it in a definitional check would evaluate
-the table). -/
-@[irreducible] def keySatMem : Mem := constMem 0x100000 piQuads
-
-theorem keySatMem_held : ∀ i < piQuads.length,
-    keySatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = piQuads.getD i 0 := by
-  unfold keySatMem
-  exact constMem_held _ _ (by rw [piQuads_length]; decide)
-
-/-- The witness's memory below the table. -/
-theorem keySatMem_readW (a : Addr) (ha : ∀ i < 4, ¬ (a + BitVec.ofNat 64 i - 0x100000).toNat < 256) :
-    keySatMem.readW a 32 = 0 := by
-  have e : keySatMem.readW a 32 = Mem.readW (fun _ => (0 : Byte)) a 32 := by
-    apply Mem.readW_congr
-    intro i hi
-    unfold keySatMem constMem
-    rw [piQuads_length, ite_eq_right (ha i hi)]
-  rw [e, Mem.readW, Mem.read_eq_of_bytes (n := 32 / 8) (v := 0) (fun i _ => by simp)]
-  decide
-
-/-- A state satisfying the precondition with the table: the working space at 0. -/
-def keySatC : State :=
-  { keySatState with
-    mem := keySatMem, rd := [⟨0x1000, 1⟩, ⟨0x4000, 4⟩, ⟨0x100000, 256⟩], wr := [⟨0x2000, 128⟩, ⟨0, 512⟩],
-    syms := fun _ => 0x100000 }
-
-theorem keySatC_arg : stackArg keySatC 0 = 0 :=
-  keySatMem_readW _ (by decide)
-
-theorem key_sat : (Proof.Rc2.expandKeyContract (abi.withConsts piConsts)).pre keySatC := by
-  have hl : piQuads.length = 32 := piQuads_length
-  have held := keySatMem_held
-  have a0 := keySatC_arg
-  rw [piConsts_eq]
-  generalize piQuads = W at hl held ⊢
-  generalize e : keySatC = s at a0
-  sig_pre [Proof.Rc2.expandKeyContract, Proof.Rc2.expandKeySig, abi, argRegs,
-    Arm.reduceClassify, Arm.Loc.val, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
-    Spec.Rc2.validKey]
-  subst e
-  rw [a0, hl]
-  refine ⟨by decide, by decide, fun i hi => held i (by rw [hl]; exact hi), by decide, ?_, ?_⟩
-  · intro r hr
-    change r ∈ ([⟨0x2000, 128⟩, ⟨0, 512⟩] : List Region) at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
-  · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Region.disjoint_of_sep (by decide)
-
-theorem keyC_implies : keyContractC.Implies (Proof.Rc2.expandKeyContract (abi.withConsts piConsts)) where
-  pre _ hs := ⟨key_implies.pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
-  post s s' hs hp := post_consts.mpr (key_implies.post (stripConsts piConsts s) s' (pre_consts.mp hs).1 hp)
-  pub s₁ s₂ h₁ h₂ hp := ⟨key_implies.pub (stripConsts piConsts s₁) (stripConsts piConsts s₂)
-      (pre_consts.mp h₁).1 (pre_consts.mp h₂).1 (pub_consts.mp hp).1,
-    symAddr_eq_iff.mp ((pub_consts.mp hp).2 _ List.mem_cons_self)⟩
-  sat := ⟨keySatC, key_sat⟩
-
-theorem key_verified : Verified target expandKey (Proof.Rc2.expandKeyContract (abi.withConsts piConsts)) :=
-  Verified.of_correct key_correct expandKey_constantTime keyC_implies
 
 end VG.Proof.Rc2.Arm

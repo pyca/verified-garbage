@@ -143,8 +143,6 @@ theorem blockAt_of_ecb {K : Spec.Seed.Schedule} {d : Direction} {m m' : Mem} {D 
   have := congrArg (fun l => l[j]?) h
   cases d <;> simpa [Spec.Seed.blocksAt, Spec.Seed.ecb, cipher, hj] using this
 
-theorem toNat16 : (BitVec.ofNat 64 16).toNat = 16 := rfl
-
 /-- The blocks functions write no `xmm` register. -/
 theorem blockCall_scal (d : Direction) : scalCode (blockCall d) = true := by
   cases d <;> lit_decide

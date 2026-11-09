@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.PPC64LE.Encode
 public import VerifiedGarbage.TCB.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # Printer for the 64-bit little-endian PowerPC model
@@ -52,6 +53,17 @@ def VOp.asm : VOp → String
   | .add dw d n m => s!"{if dw then "vaddudm" else "vadduwm"} {d.name}, {n.name}, {m.name}"
   | .perm d n m c => s!"vperm {d.name}, {n.name}, {m.name}, {c.name}"
   | .sldoi d n m sh => s!"vsldoi {d.name}, {n.name}, {m.name}, {sh}"
+  | .rlw d n m => s!"vrlw {d.name}, {n.name}, {m.name}"
+  | .addh d n m => s!"vadduhm {d.name}, {n.name}, {m.name}"
+  | .sub w d n m => s!"{if w then "vsubuwm" else "vsubuhm"} {d.name}, {n.name}, {m.name}"
+  | .minu w d n m => s!"{if w then "vminuw" else "vminuh"} {d.name}, {n.name}, {m.name}"
+  | .mulu odd w d n m =>
+    s!"vmul{if odd then "o" else "e"}u{if w then "w" else "h"} {d.name}, {n.name}, {m.name}"
+  | .muluwm d n m => s!"vmuluwm {d.name}, {n.name}, {m.name}"
+  | .mladduhm d n m c => s!"vmladduhm {d.name}, {n.name}, {m.name}, {c.name}"
+  | .shifth r d n m => s!"{if r then "vsrh" else "vslh"} {d.name}, {n.name}, {m.name}"
+  | .splat w d n uim => s!"{if w then "vspltw" else "vsplth"} {d.name}, {n.name}, {uim}"
+  | .splatImm w d sim => s!"{if w then "vspltisw" else "vspltish"} {d.name}, {sim}"
 
 def Instr.asm : Instr → List String
   | .vop op => [op.asm]
@@ -139,5 +151,16 @@ def printer : Printer isa where
   unencodable
     | .adrSym .. => none
     | i => if i.encode.isNone then some "an operand does not fit its field" else none
+
+/-- What the emitter needs of the target (`Emitter`): its printer, its Rust `cfg`
+and ABI string, and how documentation names its calling convention's
+argument area and reserved memory (`abi`'s `argArea` and `reserved`). -/
+instance : Emitter isa where
+  printer := printer
+  rustCfg := "all(target_arch = \"powerpc64\", target_endian = \"little\")"
+  rustAbi := "C"
+  argAreaDoc ws := if ws.length - argRegs.length = 0 then none else
+    some ("the arguments on the stack", false)
+  reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
 
 end VG.PPC64LE

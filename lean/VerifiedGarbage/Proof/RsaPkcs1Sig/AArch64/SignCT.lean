@@ -147,8 +147,6 @@ theorem pinsM {K : Nat} {J : State → State → State → Prop} (hJ : ∀ a s t
   rw [List.mem_singleton.mp hr, m₁.x19, m₂.x19, h₁.gpr (by decide), h₂.gpr (by decide)]
 
 theorem pinsA {K : Nat} : Pins (At K JA) [.x19] := pinsM fun _ _ _ ⟨_, j⟩ => j.toMid
-theorem pinsMid {K : Nat} : Pins (At K JM) [.x19] := pinsM fun _ _ _ j => j
-
 /-! ## The call -/
 
 theorem call_ct (c : PrivChecked) :

@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Camellia.Contract
 meta import VerifiedGarbage.Spec.Camellia.Contract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # Camellia specification tests
@@ -148,9 +146,5 @@ run_cmd do
   match result with
   | .ok () => pure ()
   | .error e => throwError "Camellia: {e}"
-
-#assert_standard_axioms VG.Spec.Camellia.expandKeyContract
-#assert_standard_axioms VG.Spec.Camellia.ecbEncryptContract
-#assert_standard_axioms VG.Spec.Camellia.ecbDecryptContract
 
 end VG.Test.Camellia

@@ -31,14 +31,6 @@ theorem iteration_stack (backend : VG.Proof.Ffdh.Arm.ParameterBackend) :
     FrameStack.armStack, Bool.false_eq_true, ite_true, ite_false, Nat.zero_max, Nat.max_zero]
   omega
 
-theorem search_stack (backend : VG.Proof.Ffdh.Arm.ParameterBackend) :
-    FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterSearch.code
-      (.call backend.candidateName backend.candidate)) ≤ 232 := by
-  have bound := iteration_stack backend
-  simp only [VG.Impl.Ffdh.Arm.ParameterSearch.code, VG.Impl.Ffdh.Arm.ParameterSearch.body, FrameStack.armStack,
-    List.length_cons, List.length_nil, Nat.zero_max, Nat.max_zero]
-  omega
-
 end VG.Proof.Ffdh.Arm.ParameterSearch
 end
 

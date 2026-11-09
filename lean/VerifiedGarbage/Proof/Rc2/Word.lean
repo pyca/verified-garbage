@@ -63,10 +63,4 @@ theorem rotateLeft_reverse (x : BitVec 16) (n : Nat) (hn : 1 ≤ n) (hn' : n < 1
     Nat.mod_eq_of_lt hn', Nat.mod_eq_of_lt (show 16 - n < 16 by omega),
     show 16 - (16 - n) = n by omega]
 
-theorem subInputsWord (x k c : BitVec 64) :
-    (x - k - c) &&& 65535 =
-      (x.setWidth 16 - k.setWidth 16 - c.setWidth 16).setWidth 64 := by
-  rw [maskWord]
-  simp [BitVec.sub_eq_add_neg, BitVec.setWidth_add, BitVec.setWidth_neg_of_le]
-
 end VG.Proof.Rc2

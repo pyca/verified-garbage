@@ -191,9 +191,6 @@ theorem bit_and {a b : Prop} [Decidable a] [Decidable b] {x y : BitVec 64} (hx :
   rw [hy]
   by_cases ha : a <;> by_cases hb : b <;> simp [bit, ha, hb]
 
-theorem bit_setWidth {a : Prop} [Decidable a] : (bit a).setWidth 32 = if a then 1 else 0 := by
-  by_cases ha : a <;> simp [bit, ha]
-
 /-- A block that writes `r15` alone, and flags, leaves `PostB` but for `r15`. -/
 theorem postB15 {D : Nat} {s s' : State} (k : Keep [.r15] s s') (hm : s'.mem = s.mem) (W : List Region) :
     PostB D s s' W ∧ ∀ r ∈ calleeSaved, r ≠ .r15 → s'.gpr r = s.gpr r :=

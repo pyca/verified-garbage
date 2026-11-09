@@ -182,20 +182,4 @@ theorem blocks_ok (s : State) (hs : Proof.Poly1305.blocksAArch64.pre s) :
   obtain ⟨t, s', he, h⟩ := blocks_correct (BPre.of s hs)
   exact ⟨t, s', he, ⟨fun r hr => Exec.gpr (blocks_untouched r hr) he, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h⟩
 
-theorem blocks_ct : ConstantTime isa Proof.Poly1305.blocksAArch64.pre
-    Proof.Poly1305.blocksAArch64.pub Impl.Poly1305.AArch64.Radix64.blocks := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ ⟨h1, h2, h3, hsp⟩
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
-
-theorem blocks_verified :
-    Verified AArch64.target Impl.Poly1305.AArch64.Radix64.blocks (Proof.Poly1305.blocksContract AArch64.abi)
-      :=
-  Verified.of_correct blocks_ok blocks_ct (by
-    sig_implies [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig,
-      Proof.Poly1305.blocksAArch64, AArch64.abi, AArch64.argRegs] [Proof.Poly1305.AArch64.blocksSat]
-      using Proof.Poly1305.AArch64.blocksSat)
-
 end VG.Proof.Poly1305.AArch64.Radix64

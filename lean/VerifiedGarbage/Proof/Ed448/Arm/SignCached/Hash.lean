@@ -179,10 +179,6 @@ theorem prune_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
 
 /-! ## The nonce's and the challenge's hashes -/
 
-theorem len_append (msg : List Byte) (m : Mem) (p : Addr) (n : Nat) :
-    (msg ++ Spec.Ed448.bytesAt m p n).length = msg.length + n := by
-  simp [Spec.Ed448.bytesAt]
-
 theorem Lay.Ok.away_hdr (hL : L.Ok) : Away L (L.fr HDR 10) := hL.away_fr (by decide) (by decide)
 theorem Lay.Ok.away_k (hL : L.Ok) : Away L (L.fr K 57) := hL.away_fr (by decide) (by decide)
 theorem Lay.Ok.away_s (hL : L.Ok) : Away L (L.fr S 57) := hL.away_fr (by decide) (by decide)

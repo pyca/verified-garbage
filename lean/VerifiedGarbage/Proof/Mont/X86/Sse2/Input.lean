@@ -79,9 +79,6 @@ theorem Params.of_sk {s t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} 
     {rs : List Reg} (K : Sk rs s t) (hsp : .esp ∉ rs := by decide) : Params t W L V d :=
   h.keep (by rw [K.mem]; exact Outs.refl _ _ _) (K.keep.1 _ hsp) K.keep.2.1 K.keep.2.2
 
-theorem Ws.of_sk {s t : State} {W : Addr} {L : Nat} (h : Ws s W L) {rs : List Reg} (K : Sk rs s t) : Ws t W L :=
-  h.of_keeps K.keep
-
 /-- A parameter read in a state `Sk` from one where it is known. -/
 theorem Params.readSk {s t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {d : Nat} (h : Params s W L V d)
     {rs : List Reg} (K : Sk rs s t) {i : Nat} (hi : i < 7) (hsp : .esp ∉ rs := by decide) :

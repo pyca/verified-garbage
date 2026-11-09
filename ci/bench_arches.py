@@ -28,14 +28,22 @@ files changed:
     for a module no benchmark lists (e.g. `consts`, the tables of
     constants), the modules of `src/asm/<arch>/` that use it (`super::`),
     if no other Rust code does;
-  * `src/<module>.rs` or `src/hashes/<module>.rs`: `<module>`, and
-    `src/hashes/mod.rs` (`streaming_hash!`, `HashFunction`): every hash
-    module in `src/hashes/` (benchmarks of code built on a hash, such as
-    HMAC, list that hash in their `USES`);
-  * `src/<family>/<hash>.rs`: `<family>_<hash>` (as in `src/asm/`), and
-    `src/<family>/mod.rs`: every `<family>_<hash>`, and `<family>` itself
-    if it is a module (e.g. `src/rsa/mod.rs`: `rsa`, and `rsa_pss`, …);
-  * a private submodule of a module, `src/<module>/<name>.rs` with no
+  * `src/<module>.rs` or `src/hashes/<module>.rs`, or the file of a module
+    of a directory that only lists its modules (`src/aead/aes_gcm.rs`, of
+    `src/aead/mod.rs`): `<module>`, and `src/hashes/mod.rs`
+    (`streaming_hash!`, `HashFunction`): every hash module in `src/hashes/`
+    (benchmarks of code built on a hash, such as HMAC, list that hash in
+    their `USES`);
+  * `…/<family>/<hash>.rs`, in a module's directory: `<family>_<hash>` (as
+    in `src/asm/`, e.g. `src/ec/ecdsa/p256.rs`: `ecdsa_p256`), and
+    `…/<family>/mod.rs`: every `<family>_<hash>`, and `<family>` itself if
+    it is a module (e.g. `src/rsa/mod.rs`: `rsa`, and `rsa_pss`, …); where
+    the directory is not named as its generated modules are, `<family>` is
+    the name its files import them by (`src/kdf/pbkdf2_hmac/sha256.rs`
+    imports `crate::arch::pbkdf2_sha256`: `pbkdf2`, see `family_prefix`);
+  * a submodule of a family's member, `…/<family>/<member>/<name>.rs`
+    (e.g. `src/rsa/pss/x86_64.rs`): `<family>_<member>`;
+  * a private submodule of a module, `…/<module>/<name>.rs` with no
     `<module>_<name>` (e.g. `src/rsa/scratch.rs`, declared in
     `src/rsa/mod.rs`): as its parent's `mod.rs`, on the architectures that
     compile its `mod <name>;`;
@@ -50,6 +58,9 @@ files changed:
     `bench/tests/<name>.rs`: the modules in its `USES`, or for a helper
     without one (e.g. `mlkem.rs`, a macro), those of the benchmarks that
     call it;
+  * a directory's `mod.rs` that only lists its modules (`src/aead/mod.rs`),
+    as `src/lib.rs`: the modules it adds or removes, and every benchmark
+    for any other change;
   * any other file a Rust file of `bench/` includes (`#[path = "…"] mod`,
     `include!`, e.g. `bench/support/ffdh.rs` or `tests/cavp/dsa_vectors.rs`),
     at base or now: those of the files including it, on the architectures
@@ -176,9 +187,21 @@ PLATFORMS = {
 # entry's `asm`, which bench.yml checks out.
 ASM_DIRS = {"powerpc64": "powerpc64le"}
 
-# The crate of `Features` and the features' bits, which `src/cpu.rs`
-# re-exports.
+# The crate of `Features`, the features' bits and their detection, which
+# `src/cpu.rs` re-exports.
 CPU_CRATE = "crates/verified-garbage-cpu/"
+# The detection of the features (`CPU_RS`), which was `src/cpu.rs` (`OLD_CPU_RS`)
+# before it moved to the crate the generated dispatchers ask too.
+CPU_RS = CPU_CRATE + "src/detect.rs"
+OLD_CPU_RS = "src/cpu.rs"
+
+
+def read_cpu(revision=None):
+    """The text of the features' detection at `revision` (or in the tree):
+    `CPU_RS`, or `OLD_CPU_RS` at a revision from before it moved; None if
+    there is neither."""
+    return read(CPU_RS, revision) or read(OLD_CPU_RS, revision)
+
 
 
 def asm_dir(arch):
@@ -208,9 +231,8 @@ MANUAL_PLATFORMS = {
 # `_aesni_pclmul_avx` and the instances with VAES or VPCLMULQDQ alone or
 # paired with the other's 128-bit instruction, which a runner with both never
 # chooses, and with both in 256-bit registers alone, which a runner with
-# AVX512BW never chooses; Argon2 with G's AVX-512 code and BLAKE2b's
-# baseline code, which a runner with AVX2 never chooses, and with BLAKE2b's
-# AVX2 code, which a runner with AVX512VL never chooses; ChaCha20's and
+# AVX512BW never chooses; Argon2 with BLAKE2b's AVX2 code and G's AVX-512
+# code, which a runner with AVX512VL never chooses; ChaCha20's and
 # ChaCha20-Poly1305's `_avx512vl` instances, which a runner with AVX512_IFMA
 # never chooses, and `_avx512`, which one with AVX512VL never chooses;
 # RSAES-PKCS1-v1_5
@@ -231,18 +253,20 @@ CPU_FEATURES = {
         "aes,pclmulqdq,ssse3",
         "aes,avx,pclmulqdq,ssse3",
         "aes,avx,avx2,pclmulqdq,ssse3",
+        "avx,avx2",
+        "aes,avx,avx2,ssse3",
+        "avx,avx2,pclmulqdq,ssse3",
         "aes,avx,avx2,ssse3,vaes",
         "avx,avx2,pclmulqdq,ssse3,vpclmulqdq",
         "aes,avx,avx2,pclmulqdq,ssse3,vaes",
         "aes,avx,avx2,pclmulqdq,ssse3,vpclmulqdq",
         "aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq",
-        "avx,avx512f",
         "avx,avx2,avx512f",
         "avx,avx2,avx512f,avx512vl",
         "none",
     ],
     "aarch64": ["neon", "aes", "sha3", "none"],
-    "x86": ["aes", "pclmulqdq,ssse3", "none"],
+    "x86": ["aes,ssse3", "pclmulqdq,ssse3", "none"],
 }
 
 # The benchmarks (`BENCHES` entries of bench/benches/primitives/main.rs) one
@@ -255,7 +279,11 @@ CPU_FEATURES = {
 # of them was split in two. With AES-GCM's groups from copies too, those
 # took about 7.7 minutes of each half (14 runs of about 75 benchmark ids),
 # and the slower runners passed the timeout again, so it is split in three.
-# A targeted run, of fewer, stays one job.
+# A targeted run, of fewer, stays one job. Entries are counted because the
+# planner cannot list benchmarks without building, but one entry can hold
+# many (AES-GCM's held 183): bench_compare.py fails a job whose benchmarks
+# would take longer than its budget, before measuring, and `--groups`
+# narrows such a run.
 BENCHMARKS_PER_JOB = 40
 
 # Changes to this script choose benchmarks but are not measured by any:
@@ -278,7 +306,18 @@ LIB_MOD = re.compile(r"^((?:#\[[^\n]*\]\n)*)(pub(?:\([a-z]+\))? )?mod ([a-z0-9_]
 # External modules, including multiline attributes and renamed `#[path]` files.
 EXTERNAL_MOD = re.compile(
     r"^[ \t]*((?:#\[[^\]]*\]\s*)*)(?:pub(?:\([a-z]+\))?\s+)?mod\s+([a-z0-9_]+)\s*;", re.M)
-FAMILY = re.compile(r"src/(?!asm/|hashes/)([a-z0-9_]+)/([a-z0-9_]+)\.rs$")
+# A file of a module's directory, `…/<family>/<name>.rs`: the directory
+# holding the family's, the family, and the file's name.
+FAMILY = re.compile(r"(src/(?!asm/|hashes/)(?:[a-z0-9_]+/)*?)([a-z0-9_]+)/([a-z0-9_]+)\.rs$")
+# A file of a member's own submodules, `…/<family>/<member>/<name>.rs`
+# (e.g. `src/rsa/pss/x86_64.rs`, of `src/rsa/pss.rs`, the module `rsa_pss`).
+NESTED = re.compile(r"(src/(?!asm/|hashes/)(?:[a-z0-9_]+/)*?)([a-z0-9_]+)/([a-z0-9_]+)/[a-z0-9_]+\.rs$")
+# The name of an external module a file declares (`mod <name>;`).
+MOD_NAME = re.compile(r"^[ \t]*(?:pub(?:\([a-z]+\))?\s+)?mod\s+([a-z0-9_]+)\s*;", re.M)
+# A generated module Rust code imports (`crate::arch::<module>`).
+ARCH_MODULE = re.compile(r"\bcrate::arch::([a-z0-9_]+)\b")
+# A line of a list of modules: a declaration of one, or an attribute.
+LIST_LINE = re.compile(r"(?:pub(?:\([a-z]+\))? )?mod [a-z0-9_]+;|#!?\[[^\n]*\]")
 # One algorithm's benchmark, and the modules it lists in its `USES`.
 BENCH = re.compile(r"bench/benches/primitives/(?!main\.rs$)([a-z0-9_]+)\.rs$")
 # A differential test of one algorithm's benchmark's API, next to it.
@@ -316,7 +355,8 @@ BIT = re.compile(r"\bfeature::([A-Z0-9_]+)")
 # Each architecture's feature detection in `src/cpu.rs`: its `cfg`, and the
 # body, which names each feature in quotes or as a `let`; on x86 and x86-64,
 # `runtime` reads the CPU and `decode` (under the same `cfg`) names them.
-RUNTIME = re.compile(r"(#\[cfg\([^\n]*\)\])\nfn (?:runtime\(\)|decode\([^\n]*\)) -> u32 \{\n(.*?)\n\}\n", re.S)
+RUNTIME = re.compile(r"(#\[cfg\([^\n]*\)\])\n(?:pub )?fn (?:runtime\(\)|decode\([^\n]*\)) -> u32 \{\n(.*?)\n\}\n",
+                     re.S)
 LET = re.compile(r"\blet ([a-z0-9_]+) =")
 # A top-level module only tests compile: from its `#[cfg(test)]` to the `}`
 # closing it, alone in column 0 as rustfmt writes it.
@@ -729,13 +769,42 @@ def members(family, known):
     return {m for m in known if m.startswith(f"{family}_")}
 
 
+def family_prefix(directory, root="."):
+    """The `<family>` the generated modules of the family whose directory is
+    `directory` are named by, `<family>_<name>` for its file `<name>.rs`:
+    the name its files (those its `mod.rs` declares) import them by, if they
+    agree on one (`src/kdf/pbkdf2_hmac/sha256.rs` imports
+    `crate::arch::pbkdf2_sha256`: `pbkdf2`), else the directory's name
+    (`src/ec/ecdsa`: `ecdsa`)."""
+    parent = read(f"{directory}/mod.rs", None, root) or read(f"{directory}.rs", None, root) or ""
+    found = set()
+    for name in code_names(parent, MOD_NAME):
+        imported = code_names(read(f"{directory}/{name}.rs", None, root) or "", ARCH_MODULE)
+        found |= {m[:-len(name) - 1] for m in imported if m.endswith(f"_{name}") and len(m) > len(name) + 1}
+    return found.pop() if len(found) == 1 else posixpath.basename(directory)
+
+
+@functools.lru_cache(None)
+def code_names(text, pattern):
+    """The names `pattern` finds in `text` without its comments (for each
+    text once: `family_prefix` reads a family's files for each file of the
+    library)."""
+    return frozenset(pattern.findall(without_comments(text)))
+
+
+def family_member(match, root="."):
+    """The module `<family>_<name>` of a family's file (a `FAMILY` match of
+    `…/<family>/<name>.rs`), its family named as `family_prefix` says."""
+    return f"{family_prefix(match[1] + match[2], root)}_{match[3]}"
+
+
 def submodule_arches(parent, name, base, root="."):
-    """The benchmarked architectures that compile a `mod <name>;` of
-    `src/<parent>/mod.rs` (or `src/<parent>.rs`), at `base` or now: those its
-    file's and the declaration's `cfg`s allow; empty if neither revision
-    declares it."""
+    """The benchmarked architectures that compile a `mod <name>;` of the
+    module whose directory is `parent` (`src/rsa`: `src/rsa/mod.rs` or
+    `src/rsa.rs`), at `base` or now: those its file's and the
+    declaration's `cfg`s allow; empty if neither revision declares it."""
     declaration = re.compile(rf"^(?:pub(?:\([a-z]+\))? )?mod {name};$")
-    texts = [read(f"src/{parent}{suffix}", revision, root) for suffix in ("/mod.rs", ".rs")
+    texts = [read(f"{parent}{suffix}", revision, root) for suffix in ("/mod.rs", ".rs")
              for revision in ([base, None] if base else [None])]
     arches = []
     for a in PLATFORMS:
@@ -755,6 +824,26 @@ def rust_files(root="."):
     library's layout (`asm_layout.logical`)."""
     files = {p.relative_to(root).as_posix() for p in pathlib.Path(root, "src").glob("**/*.rs")}
     return sorted(files | set(asm_layout.generated_files(root)))
+
+
+def lists_modules(path, root="."):
+    """Whether the library file `path` is a directory's `mod.rs` that only
+    lists its modules (e.g. `src/aead/mod.rs`): declarations of them,
+    attributes and comments, and no code."""
+    text = read(path, None, root) if path.startswith("src/") and path.endswith("/mod.rs") else None
+    lines = [line.strip() for line in without_comments(text or "").splitlines() if line.strip()]
+    return bool(lines) and all(LIST_LINE.fullmatch(line) for line in lines)
+
+
+def module_name(path, root="."):
+    """The module whose own file `path` is, if its name is the file's: a
+    file of `src/` or `src/hashes/` (but `mod.rs`), or of a directory that
+    only lists its modules (`src/aead/aes_gcm.rs`, `aes_gcm`); else None."""
+    if (m := API.match(path)) and m[1] != "mod":
+        return m[1]
+    if (m := FAMILY.match(path)) and m[3] != "mod" and lists_modules(f"{m[1]}{m[2]}/mod.rs", root):
+        return m[3]
+    return None
 
 
 def hashes(root="."):
@@ -827,41 +916,56 @@ def external_test_modules(revision=None, changed=()):
     return declared
 
 
-def parent_code(family, known, root=".", seen=frozenset()):
-    """The modules whose code `src/<family>/mod.rs` (or a private submodule
-    of it) is: its `<family>_<hash>` modules, those using it, and `<family>`
-    itself if it is a module; `<family>`, which no benchmark uses, if none.
-    `seen` are the families whose users are already being found."""
-    found = members(family, known) | ({family} & known)
-    if family not in seen:
-        found |= users(family, known, root, seen)
+def parent_code(directory, known, root=".", seen=frozenset()):
+    """The modules whose code the module whose directory is `directory`
+    (`src/ec/ecdsa`: `src/ec/ecdsa/mod.rs`, or a private submodule of it)
+    is, the family `<family>` its last part names: its `<family>_<hash>`
+    modules, those using it, and `<family>` itself if it is a module;
+    `<family>`, which no benchmark uses, if none. `seen` are the
+    directories whose users are already being found."""
+    family = posixpath.basename(directory)
+    found = members(family_prefix(directory, root), known) | ({family} & known)
+    if directory not in seen:
+        found |= users(directory, known, root, seen)
     return found or {family}
 
 
-def users(family, known, root=".", seen=frozenset()):
-    """The modules whose Rust code (outside the family's) uses the family's
-    shared code, or a private module of the crate; a file that is no
-    module's names itself, which no benchmark uses. Modules only tests
-    compile are left out, and a private submodule counts as its parent."""
-    seen = seen | {family}
+def users(directory, known, root=".", seen=frozenset()):
+    """The modules whose Rust code (outside the module's) uses the code of
+    the module whose directory is `directory` (`src/ec/ecdsa`, the module
+    `crate::ec::ecdsa`): a family's shared code, or a private module of the
+    crate (`src/ct`), and the modules a benchmark uses in its subdirectories
+    (ECDSA's, of `src/ec/`); a file that is no module's names itself, which
+    no benchmark uses. Modules only tests compile, and files' test modules,
+    are left out, and a private submodule counts as its parent."""
+    seen = seen | {directory}
     names = set()
     tests = {m for m, (test, _) in lib_modules(None, root).items() if test}
+    path_in_crate = directory[len("src/"):].replace("/", "::")
     for path in rust_files(root):
-        if path.startswith(("src/asm/", f"src/{family}/")) or path == f"src/{family}.rs" or not re.search(
-                rf"\b(?:crate|super)::{family}::", read(path, None, root) or ""):
+        own = posixpath.dirname(path) == directory or path == f"{directory}.rs"
+        if own or path.startswith("src/asm/") or not re.search(
+                rf"\b(?:crate|super)::{path_in_crate}::", without_tests(read(path, None, root) or "")):
             continue
-        api, other = API.match(path), FAMILY.match(path)
+        api, other, nested = module_name(path, root), FAMILY.match(path), NESTED.match(path)
+        found = set()
         if path == HASHES:
-            names |= hashes(root)
+            found = hashes(root)
         elif api:
-            if api[1] not in tests:
-                names.add(api[1])
-        elif other and other[2] == "mod":
-            names |= members(other[1], known) or {path}
-        elif other and f"{other[1]}_{other[2]}" not in known and submodule_arches(other[1], other[2], None, root):
-            names |= parent_code(other[1], known, root, seen)
+            if api not in tests:
+                found = {api}
+        elif nested and f"{nested[2]}_{nested[3]}" in known:
+            found = {f"{nested[2]}_{nested[3]}"}
+        elif other and other[3] == "mod":
+            found = members(family_prefix(other[1] + other[2], root), known) or {path}
+        elif other and family_member(other, root) not in known and submodule_arches(
+                other[1] + other[2], other[3], None, root):
+            found = parent_code(other[1] + other[2], known, root, seen)
         else:
-            names.add(f"{other[1]}_{other[2]}" if other else path)
+            found = {family_member(other, root) if other else path}
+        # Below the module's own files, only the modules benchmarks use
+        # (not, e.g., a private submodule's tests, `src/dsa/keygen/tests.rs`).
+        names |= found & known if path.startswith(f"{directory}/") else found
     return names
 
 
@@ -911,14 +1015,23 @@ def helper_uses(name, catalog):
 
 
 def sources(module):
-    """The Rust files that can choose among `module`'s implementations: with
-    its private submodules (those its file declares now)."""
-    paths = [f"src/{module}.rs", f"src/{module}/mod.rs", f"src/hashes/{module}.rs", "src/hashes/mod.rs"]
-    family, _, hash_ = module.partition("_")
-    if hash_:
-        paths += [f"src/{family}/{hash_}.rs", f"src/{family}/mod.rs"]
-    return paths + [path for path in rust_files() if (m := FAMILY.match(path)) and m[1] == module
-                    and m[2] != "mod" and path not in paths and submodule_arches(module, m[2], None)]
+    """The Rust files that can choose among `module`'s implementations: its
+    own, its family's shared code (`…/<family>/mod.rs` for
+    `<family>_<hash>`) and the hashes' (`src/hashes/mod.rs`), with its
+    private submodules (those its file declares now)."""
+    paths = [HASHES]
+    for path in rust_files():
+        if path.startswith("src/asm/") or path in paths:
+            continue
+        m, nested = FAMILY.match(path), NESTED.match(path)
+        if (module_name(path) == module
+                or nested and f"{nested[2]}_{nested[3]}" == module
+                or m and m[3] == "mod" and (
+                    m[2] == module or module.startswith(f"{family_prefix(m[1] + m[2])}_"))
+                or m and family_member(m) == module
+                or m and m[2] == module and submodule_arches(m[1] + m[2], m[3], None)):
+            paths.append(path)
+    return paths
 
 
 def detectable(arch, cpu):
@@ -944,7 +1057,7 @@ def requirements(arch, modules, revisions):
     cannot be read."""
     reqs = set()
     for revision in revisions:
-        arch_features = detectable(arch, read("src/cpu.rs", revision) or "")
+        arch_features = detectable(arch, read_cpu(revision) or "")
         if arch_features is None:
             return None if CPU_FEATURES.get(arch) else set()
         quoted = re.compile(r'"(%s)"' % "|".join(map(re.escape, sorted(arch_features))))
@@ -997,7 +1110,7 @@ def arches(changed, base=None):
             need(arch, name)
 
     for path in changed:
-        if path.startswith(CPU_CRATE):
+        if path.startswith(CPU_CRATE) and path != CPU_RS:
             # `Features` and the features' bits, which every architecture
             # compiles, as a change to them in `src/cpu.rs` (`cpu_changes`'s
             # "*"): every module that chooses by a feature.
@@ -1008,7 +1121,7 @@ def arches(changed, base=None):
                 for module in modules or ():
                     need(a, module)
             continue
-        asm, api, family = ASM.match(path), API.match(path), FAMILY.match(path)
+        asm, api, family = ASM.match(path), module_name(path), FAMILY.match(path)
         if path.startswith("src/") and not asm:
             revisions = [base, None] if base else [None]
             if external_tests is None:
@@ -1022,7 +1135,8 @@ def arches(changed, base=None):
         # A change to code only other architectures compile, or to the
         # assembly of one that is not benchmarked, needs nothing.
         targets = [a for a in PLATFORMS if asm_dir(a) == asm[1]] if asm else affected(path, base)
-        if path in ("src/lib.rs", "bench/benches/primitives/main.rs") or (asm and asm[2] == "mod"):
+        if path in ("src/lib.rs", "bench/benches/primitives/main.rs") or lists_modules(path) or (
+                asm and asm[2] == "mod"):
             for arch in targets:
                 names = registrations(path, base, arch)
                 if names is None:
@@ -1038,7 +1152,7 @@ def arches(changed, base=None):
                         need_asm(arch, name)
                     else:
                         need(arch, name)
-        elif path == "src/cpu.rs":
+        elif path in (CPU_RS, OLD_CPU_RS):
             changes = cpu_changes(base)
             for a in targets:
                 if changes is None:
@@ -1059,12 +1173,12 @@ def arches(changed, base=None):
             for a in targets:
                 for name in hashes():
                     need(a, name)
-        elif api and path == f"src/{api[1]}.rs" and test_only(api[1], base):
+        elif api and path == f"src/{api}.rs" and test_only(api, base):
             continue
-        elif (api and path == f"src/{api[1]}.rs" and api[1] not in known
-              and lib_modules().get(api[1], (False, True)) == (False, False)):
+        elif (api and path == f"src/{api}.rs" and api not in known
+              and lib_modules().get(api, (False, True)) == (False, False)):
             # A private helper: only the crate's own modules can use it.
-            names = users(api[1], known)
+            names = users(f"src/{api}", known)
             for a in targets:
                 if not names:
                     needed[a] = ALL
@@ -1072,19 +1186,24 @@ def arches(changed, base=None):
                     need(a, name)
         elif api:
             for a in targets:
-                need(a, api[1])
+                need(a, api)
+        elif (nested := NESTED.match(path)) and f"{nested[2]}_{nested[3]}" in known:
+            # The member's own code, as its file.
+            for a in targets:
+                need(a, f"{nested[2]}_{nested[3]}")
         elif family:
             # A family's `mod.rs` is the code its `<family>_<hash>` modules
             # share, which others may use too, and the code of `<family>`
             # itself if it is a module; with no module, every benchmark runs.
             # A private submodule (no `<family>_<name>`, but declared by
             # the parent) is part of the parent's code, where it is compiled.
-            submodule = family[2] != "mod" and f"{family[1]}_{family[2]}" not in known and (
-                sub_arches := submodule_arches(family[1], family[2], base))
+            directory = family[1] + family[2]
+            submodule = family[3] != "mod" and family_member(family) not in known and (
+                sub_arches := submodule_arches(directory, family[3], base))
             if submodule:
                 targets = [a for a in targets if a in sub_arches]
-            names = (parent_code(family[1], known) if family[2] == "mod" or submodule
-                     else {f"{family[1]}_{family[2]}"})
+            names = (parent_code(directory, known) if family[3] == "mod" or submodule
+                     else {family_member(family)})
             for a in targets:
                 for name in names:
                     need(a, name)
@@ -1135,7 +1254,7 @@ def cpu_changes(base):
     architecture whose own detection changed, the first feature each changed
     line names (ALL if none does); "*" for a change to code every
     architecture compiles; None if either revision cannot be read."""
-    old, new = read("src/cpu.rs", base) if base else None, read("src/cpu.rs")
+    old, new = read_cpu(base) if base else None, read_cpu()
     if old is None or new is None:
         return None
     names = [QUOTED.findall(m[1]) if (m := NAMES.search(t)) else [] for t in (old, new)]
@@ -1279,7 +1398,7 @@ def manual(arch_names="", cpu_features="", modules=""):
 def choices():
     """What `--all` can be given, in words: each architecture's configurations
     and the CPU features it detects, and each module benchmarks use."""
-    cpu = read("src/cpu.rs") or ""
+    cpu = read_cpu() or ""
     lines = ["Architectures (--arches), each with the VG_CPU_FEATURES configurations a run"
              " without --cpu-features uses ('-' is none) and the features src/cpu.rs detects"
              " there, which a configuration may combine (comma-separated; 'none' for the"

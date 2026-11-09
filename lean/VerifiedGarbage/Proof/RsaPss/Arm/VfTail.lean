@@ -26,20 +26,18 @@ variable (h : PssHash)
 
 /-- Away from what `K2` reads. -/
 abbrev Away2 (L : Lay) (scr : BitVec 32) (r : Region) : Prop :=
-  (slotR L sC).Disjoint r ∧ (slotR L sLo).Disjoint r ∧ (slotR L sDb).Disjoint r ∧ (slotR L sAny).Disjoint r ∧
-    (slotR L sPos).Disjoint r ∧ (slotR L sAcc).Disjoint r ∧ (sR scr oEm 1024).Disjoint r
+  (slotR L sLo).Disjoint r ∧ (slotR L sDb).Disjoint r ∧ (slotR L sPos).Disjoint r ∧ (slotR L sAcc).Disjoint r ∧ (sR scr oEm 1024).Disjoint r
 
 theorem K2.keep {P : EP} {τ : State} {m m' : Mem} {rs : List Region} (hk : K2 h P τ m) (hf : Frame rs m m')
     (ha : ∀ r ∈ rs, Away2 (P.lay h.D) P.scr r) : K2 h P τ m' := by
-  obtain ⟨hi, hfi, ⟨b1, b2, b3, b4⟩, hd, hh, hp, hac⟩ := hk
+  obtain ⟨hi, hfi, ⟨b2, b3⟩, hd, hh, hp, hac⟩ := hk
   obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi hfi
   have kb : ∀ x < 1024, m' (sa P.scr (oEm + x)) = m (sa P.scr (oEm + x)) := fun x hx =>
-    sbytes_keep hf (o := oEm) (n := 1024) (fun r hr => (ha r hr).2.2.2.2.2.2) (by decide)
+    sbytes_keep hf (o := oEm) (n := 1024) (fun r hr => (ha r hr).2.2.2.2) (by decide)
       (f := fun i => m (sa P.scr (oEm + i))) (fun _ _ => rfl) x hx
-  refine ⟨hi, hfi, ⟨slot_keep hf (fun r hr => (ha r hr).1) b1, slot_keep hf (fun r hr => (ha r hr).2.1) b2,
-    slot_keep hf (fun r hr => (ha r hr).2.2.1) b3, slot_keep hf (fun r hr => (ha r hr).2.2.2.1) b4⟩,
-    fun i hi' => ?_, fun i hi' => ?_, slot_keep hf (fun r hr => (ha r hr).2.2.2.2.1) hp,
-    slot_keep hf (fun r hr => (ha r hr).2.2.2.2.2.1) hac⟩
+  refine ⟨hi, hfi, ⟨slot_keep hf (fun r hr => (ha r hr).1) b2, slot_keep hf (fun r hr => (ha r hr).2.1) b3⟩,
+    fun i hi' => ?_, fun i hi' => ?_, slot_keep hf (fun r hr => (ha r hr).2.2.1) hp,
+    slot_keep hf (fun r hr => (ha r hr).2.2.2.1) hac⟩
   · have e := kb (lo P + i) (by omega)
     rw [← Nat.add_assoc] at e
     rw [e]; exact hd i hi'
@@ -51,8 +49,7 @@ theorem away2_ctW {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {T : Nat} (hT : T
     ∀ r ∈ ctW h L scr T, Away2 L scr r := fun r hr =>
   ⟨ctW_slot h hg hT (by decide) (by decide) r hr, ctW_slot h hg hT (by decide) (by decide) r hr,
     ctW_slot h hg hT (by decide) (by decide) r hr, ctW_slot h hg hT (by decide) (by decide) r hr,
-    ctW_slot h hg hT (by decide) (by decide) r hr, ctW_slot h hg hT (by decide) (by decide) r hr,
-    ctW_em h hg hT (Nat.le_refl _) (by decide) r hr⟩
+    ctW_em h hg hT (by decide) r hr⟩
 
 /-- What `ctHash` keeps, with `M'`'s length and blocks in their slots. -/
 abbrev Kt (P : EP) (msg : State → List Byte) (nbm : Nat) (τ : State) (m : Mem) : Prop :=
@@ -70,28 +67,29 @@ theorem res_eq (x : BitVec 32) : (x ||| 0 - x) >>> 31 ^^^ 1 = if x = 0 then 1 el
   · rw [ite_eq_right e, ite_eq_right e]; decide
 
 /-- The hash of `M'` compared with `H`, and the result. -/
-theorem tail_vp (P : EP) (hP : ∃ σ, In h.D P σ) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 : 0 < nbm)
+theorem tail_vp {g : RsaOaep.Arm.OHash} {f : MdFns} {fg : Impl.RsaOaep.Arm.Fns} {dn : String} (P : EP)
+    (Q : TF h g f fg dn P) (hP : ∃ σ, In h.D P σ) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 : 0 < nbm)
     {msg : State → List Byte} (hfit : ∀ τ, (msg τ).length + 1 + h.L ≤ nbm * h.B) :
-    VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ Kt h P msg nbm τ s.mem ∧
-        ∀ i < nbm * h.B, s.mem (sa P.scr (oY + i)) = (msg τ).getD i 0)
-      (.seq (ctHash h.H) (cmpH h.H))
-      (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧
-        s.gpr .r0 = if acc2 h P τ = 0 ∧ HOk h P τ (msg τ) then 1 else 0) := by
+    VP (fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ Kt h P msg nbm τ s.mem ∧
+        ∀ i < nbm * h.B, s.mem (sa P.scr (oY + i)) = (msg τ).getD i 0) ∧ s.syms = τ.syms)
+      (.seq (ctHash f h.sh 14) (cmpH h.sh))
+      (fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧
+        s.gpr .r0 = if acc2 h P τ = 0 ∧ HOk h P τ (msg τ) then 1 else 0) ∧ s.syms = τ.syms) := by
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo
   by_cases hf : fits h P
   swap
-  · exact VP.empty fun σ s h' => hf h'.2.1.1.2.1
+  · exact VP.empty fun σ s h' => hf h'.1.2.1.1.2.1
   obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi₀ hf
-  have e1 : oEm = 1024 := rfl
+  have e1 : oEm = 0 := rfl
   have e2 : oRsa = 8192 := rfl
-  have e3 : oDig = 832 := rfl
-  refine (ctHash_vp h hg hnb hnb0 hfit (Inv := Kt h P msg nbm)
+  have e3 : oDig = 4928 := rfl
+  refine (ctHash_vp h hg (j := 14) (by simp) (arg_lt (by decide)) hi₀.htbl Q.fne hnb hnb0 hfit (Inv := Kt h P msg nbm)
     (fun τ m m' hk hf' => ⟨K2.keep h hk.1 hf' (away2_ctW h hg hnb),
       slot_keep hf' (ctW_slot h hg hnb (by decide) (by decide)) hk.2.1,
       slot_keep hf' (ctW_slot h hg hnb (by decide) (by decide)) hk.2.2⟩)
-    (fun τ m hk => hk.2.1) (fun τ m hk => hk.2.2)).seq ?_
-  show VP _ (.seq (.block (cmpSet h.H)) (.seq Impl.Bignum.Arm.compareBytes (.block result))) _
+    (fun τ m hk => hk.2.1) (fun τ m hk => hk.2.2) (fun τ m hk => Q.ht τ hk.1.1.htabT)).seq (VP.syms ?_)
+  show VP _ (.seq (.block (cmpSet h.sh)) (.seq Impl.Bignum.Arm.compareBytes (.block result))) _
   refine VP.seq (G := fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ Kt h P msg nbm τ s.mem ∧
         ∀ i < h.D, s.mem (sa P.scr (oDig + i)) = (h.ok.SH.H.hash (msg τ)).getD i 0) ∧
       s.gpr .r0 = P.scr + BitVec.ofNat 32 oDig ∧ s.gpr .r1 = P.scr + BitVec.ofNat 32 (oEm + lo P + dbN h P) ∧
@@ -105,12 +103,12 @@ theorem tail_vp (P : EP) (hP : ∃ σ, In h.D P σ) {nbm : Nat} (hnb : nbm * h.B
         (fun τ s ⟨⟨hc, hk, hd⟩, r0, r1, lr, r2⟩ => ⟨hc, hk, r0, r1, lr, r2, fun i hi => ?_, fun i hi => ?_⟩)
         fun τ s h' => h')
       (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun τ s ⟨hc, hk, hr⟩ => ?_))
-  · have hw : WP isa (.block (cmpSet h.H)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
+  · have hw : WP isa (.block (cmpSet h.sh)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
         t.gpr .r0 = P.scr + BitVec.ofNat 32 oDig ∧ t.gpr .r1 = P.scr + BitVec.ofNat 32 (oEm + lo P + dbN h P) ∧
         t.gpr .lr = BitVec.ofNat 32 h.D ∧ t.gpr .r2 = 0 := by
-      prun [cmpSet, atDb, atS, addSlot, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, hk.1.2.2.1.2.1,
-        hk.1.2.2.1.2.2.1, movw_val (show oEm < 2 ^ 16 by decide), movw_val (show oDig < 2 ^ 16 by decide),
-        movw_val (show 0 < 2 ^ 16 by decide), movw_val (show dig h.H < 2 ^ 16 by show h.D < 2 ^ 16; omega),
+      prun [cmpSet, atDb, atS, addSlot, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, hk.1.2.2.1.1,
+        hk.1.2.2.1.2, movw_val (show oEm < 2 ^ 16 by decide), movw_val (show oDig < 2 ^ 16 by decide),
+        movw_val (show 0 < 2 ^ 16 by decide), movw_val (show dig h.sh < 2 ^ 16 by show h.D < 2 ^ 16; omega),
         BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       rfl
     exact WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr, r2⟩ =>

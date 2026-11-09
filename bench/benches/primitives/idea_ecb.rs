@@ -25,7 +25,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::nid::Nid;
     use openssl::provider::Provider;
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::idea_ecb::IdeaEcb;
+    use verified_garbage::cipher::idea::IdeaEcb;
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
@@ -34,7 +34,7 @@ pub fn bench(c: &mut Criterion) {
     // this process.
     let _legacy = Provider::try_load(None, "legacy", true).ok();
     let cipher = Cipher::from_nid(Nid::IDEA_ECB);
-    let key: Vec<_> = (0..16).map(|i| (17 * i + 3) as u8).collect();
+    let key: [u8; 16] = core::array::from_fn(|i| (17 * i + 3) as u8);
     for (operation, encrypt, mode) in [
         ("encrypt", true, Mode::Encrypt),
         ("decrypt", false, Mode::Decrypt),
@@ -46,7 +46,7 @@ pub fn bench(c: &mut Criterion) {
             let mut buffer = crate::InPlace::new(size, &data);
             group.bench(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
-                    let ctx = IdeaEcb::new(black_box(&key)).unwrap();
+                    let ctx = IdeaEcb::new(black_box(&key));
                     buffer.copy_from_slice(black_box(&data));
                     if encrypt {
                         ctx.encrypt(black_box(&mut buffer)).unwrap();

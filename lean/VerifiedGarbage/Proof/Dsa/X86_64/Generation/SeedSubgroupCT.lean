@@ -26,7 +26,7 @@ theorem seedArguments_ct (n qLen : Nat) (hlen : qLen = 20 ∨ qLen = 32) :
   all_goals exact two_piece [.rsp] pins (by taint_decide) (fun _ _ h => seedArguments_ready h)
 
 theorem seedSubgroup_ct (H : GenerationHashes) (T : PrimeTest)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (qLen : Nat) (hlen : qLen = 20 ∨ qLen = 32) :
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (qLen : Nat) (hlen : qLen = 20 ∨ qLen = 32) :
     RelCT isa (Two (SeedBefore n qLen))
       (.seq (.block (seedArguments qLen)) (subgroup H.sha1 H.sha256 T.run qLen)) (fun _ _ => True) :=
   RelCT.seq (seedArguments_ct n qLen hlen)

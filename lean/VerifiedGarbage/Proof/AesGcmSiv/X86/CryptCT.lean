@@ -18,7 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 /-!
 # AES-GCM-SIV on x86: the tag and counter mode are constant time
 
-Untrusted: everything here is checked by Lean. `tag o` calls `vg_aes_ctr32`
+Untrusted: everything here is checked by Lean. `tag o` calls `vg_aes_ctr32_to`
 on public pointers (`tag_ct`); counter mode encrypts block after block of
 the data, through the pointer in `esi`, as many as its public length says
 (`crypt_ct`), and XORs the last bytes in a loop from public pointers and

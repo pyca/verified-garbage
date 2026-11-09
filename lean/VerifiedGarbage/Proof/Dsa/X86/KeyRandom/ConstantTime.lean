@@ -79,9 +79,4 @@ theorem generateKeyWith_constantTime {I : State → Mem → Prop} (C : CheckInvo
       have hh := bodyWith_ct C D stable ctC ctD As At' e hk hst htr hab hbb
       simpa only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] using hh
 
-theorem generateKey_constantTime (C : CheckCall.CheckFn) (D : DeriveFn) :
-    ConstantTime isa (Spec.Dsa.generateKeyContract abi 232).pre (Spec.Dsa.generateKeyContract abi 232).pub
-      (code C.name D.name C.code D.code) :=
-  generateKeyWith_constantTime C.invoke D.invoke (fun _ _ _ => trivial) C.invoke_ct D.invoke_ct
-
 end VG.Proof.Dsa.X86.KeyRandom

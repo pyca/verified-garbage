@@ -49,7 +49,7 @@ theorem validate_ok (M : Mont) {s : State} {F S : Addr}
     (hS : (⟨S, oRsa⟩ : Region).Disjoint ⟨p.base, Impl.Dsa.Layout.usedBytes⟩) :
     WP isa (Impl.Dsa.AArch64.Generation.validate M.mm p.pLen p.qLen) s fun t =>
       Lay t F S ∧ Rep t.mem F S V
-        (upd W 19 (BitVec.ofNat 64 (if Spec.Dsa.checkParametersBytes p.pLen p.qLen p.params then 1 else 3))) ∧
+        (upd W 19 (BitVec.ofNat 64 (if Spec.Dsa.checkParametersBytes p.pLen p.qLen p.params then 1 else 2))) ∧
       Frame [⟨p.base, Impl.Dsa.Layout.usedBytes⟩, ⟨F, frameBytes⟩] s.mem t.mem ∧ Keep coreRegs s t := by
   unfold Impl.Dsa.AArch64.Generation.validate
   refine WP.seq (WP.mono (validateCore_ok M p L R hbase hp hq hs src hF hS)
@@ -73,7 +73,7 @@ theorem validate_ok (M : Mont) {s : State} {F S : Addr}
   cases hc : Spec.Dsa.checkParametersBytes p.pLen p.qLen p.params with
   | false =>
     refine WP.ite true (by simp [hz, hc]) (fun _ => ?_) (fun he => Bool.noConfusion he)
-    simpa only [hc, Bool.false_eq_true, ite_false] using finish 3 (by decide)
+    simpa only [hc, Bool.false_eq_true, ite_false] using finish 2 (by decide)
   | true =>
     refine WP.ite false (by simp [hz, hc]) (fun he => Bool.noConfusion he) (fun _ => ?_)
     simpa only [hc, ite_true] using finish 1 (by decide)
@@ -100,6 +100,16 @@ abbrev result (pLen : Nat) (s : State) : Option Spec.Dsa.Params :=
   Proof.Dsa.GeneratorStage.stage (pOf pLen s.mem (s.gpr .x0)) (qOf pLen s.mem (s.gpr .x0))
     (Proof.Dsa.GeneratorStage.candidates pLen (tape s))
 
+/-- How the stage ends (`Proof.Dsa.GeneratorStage.code`). -/
+abbrev endCode (pLen : Nat) (s : State) : Nat :=
+  Proof.Dsa.GeneratorStage.code (pOf pLen s.mem (s.gpr .x0)) (qOf pLen s.mem (s.gpr .x0))
+    (Proof.Dsa.GeneratorStage.candidates pLen (tape s))
+
+/-- The h candidates the search reads. -/
+abbrev readCount (pLen : Nat) (s : State) : Nat :=
+  VG.Proof.Dsa.Generation.generatorCount (pOf pLen s.mem (s.gpr .x0)) (qOf pLen s.mem (s.gpr .x0))
+    (Proof.Dsa.GeneratorStage.candidates pLen (tape s))
+
 /-- The memory the stage writes. -/
 def stageChanged (pLen : Nat) (s : State) : List Region :=
   [⟨off (s.gpr .x0) arithmetic, arithmeticBytes⟩, ⟨s.gpr .x0, Impl.Dsa.Layout.activeBytes⟩,
@@ -110,7 +120,7 @@ def stageChanged (pLen : Nat) (s : State) : List Region :=
 structure Staged (pLen : Nat) (s u t : State) : Prop where
   lay : Lay t (frameBase s) (hashBase s)
   rep : ∃ V W, Rep t.mem (frameBase s) (hashBase s) V W ∧ W 5 = s.gpr .x0 ∧
-    W 19 = BitVec.ofNat 64 (if (result pLen s).isSome then 1 else 3)
+    W 19 = BitVec.ofNat 64 (endCode pLen s) ∧ W 20 = BitVec.ofNat 64 (pLen * readCount pLen s)
   packed : ∀ a, result pLen s = some a →
     Spec.Rsa.bytesAt t.mem (off (s.gpr .x0) packed) (2 * pLen + qLen pLen) = Spec.Dsa.encodeParams pLen (qLen pLen) a
   frame : Frame (stageChanged pLen s) u.mem t.mem
@@ -140,6 +150,12 @@ theorem plan_remaining (hb : Supported pLen) (A : StageABI pLen s) :
     Proof.Dsa.GeneratorStage.candidates]
   rfl
 
+/-- The candidates the search reads are those `count` names. -/
+theorem plan_count (hb : Supported pLen) (A : StageABI pLen s) :
+    (plan hb A).count 0 = readCount pLen s := by
+  simp only [GeneratorSearchPlan.count, plan, Arena.generatorPlan]
+  rfl
+
 theorem StageABI.packed_sep (hb : Supported pLen) (A : StageABI pLen s) {d n : Nat} (hd : d + n ≤ packed) :
     (⟨off (s.gpr .x0) d, n⟩ : Region).Disjoint ⟨off (s.gpr .x0) packed, 2 * pLen + qLen pLen⟩ := by
   have pn : pLen ≤ 384 := by rcases hb with rfl | rfl | rfl <;> decide
@@ -161,7 +177,8 @@ abbrev domainOf (pLen : Nat) (s : State) (pl : GeneratorSearchPlan) : Spec.Dsa.P
 /-- What the generator search leaves. -/
 structure Searched (hb : Supported pLen) (A : StageABI pLen s) (u t : State) : Prop where
   lay : Lay t (frameBase s) (hashBase s)
-  rep : ∃ V W, Rep t.mem (frameBase s) (hashBase s) V W ∧ W 5 = s.gpr .x0 ∧ W 19 = statusOf (plan hb A)
+  rep : ∃ V W, Rep t.mem (frameBase s) (hashBase s) V W ∧ W 5 = s.gpr .x0 ∧ W 19 = statusOf (plan hb A) ∧
+    W 20 = BitVec.ofNat 64 (pLen * (plan hb A).count 0)
   scr : Scr t (s.gpr .x0) (usedBytes pLen)
   bytes : (plan hb A).remaining 0 ≠ none →
     Spec.Rsa.bytesAt t.mem (off (s.gpr .x0) VG.Impl.Dsa.Generation.Layout.p) pLen =
@@ -175,8 +192,8 @@ structure Searched (hb : Supported pLen) (A : StageABI pLen s) (u t : State) : P
 
 theorem Searched.congr {hb : Supported pLen} {A : StageABI pLen s} {u t t' : State} (h : Searched hb A u t)
     (hm : t'.mem = t.mem) (hk : Keep [.x3, .x4] t t') : Searched hb A u t' := by
-  obtain ⟨V, W, R, h5, h19⟩ := h.rep
-  exact ⟨h.lay.congr hk.sp hk.wr (by rw [hm]), ⟨V, W, hm ▸ R, h5, h19⟩, h.scr.congr hk.wr,
+  obtain ⟨V, W, R, h5, h19, h20⟩ := h.rep
+  exact ⟨h.lay.congr hk.sp hk.wr (by rw [hm]), ⟨V, W, hm ▸ R, h5, h19, h20⟩, h.scr.congr hk.wr,
     fun hs => by rw [hm]; exact h.bytes hs, hm ▸ h.frame, hk.rd.trans h.rd, hk.wr.trans h.wr⟩
 
 theorem search_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : State} (E : Entered pLen s u) :
@@ -191,14 +208,14 @@ theorem search_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : St
     have := (arena hb A).gWork_separate h1 h2 r (by simpa [Arena.gWork, arena, Arena.part] using hr)
     simpa [arena, Arena.part] using this
   refine WP.mono (VG.Proof.Dsa.AArch64.Generation.nativeGenerator_ok M (prepared hb A E))
-    fun t ⟨W', mt, outcome, ft, rdt, wrt⟩ => ?_
+    fun t ⟨W', mt, h20, outcome, ft, rdt, wrt⟩ => ?_
   obtain ⟨V, R⟩ := mt.rep
   have bytesT : ∀ {d n : Nat}, VG.Impl.Dsa.Generation.Layout.q ≤ d → d + n ≤ g →
       Spec.Rsa.bytesAt t.mem (off (s.gpr .x0) d) n = Spec.Rsa.bytesAt s.mem (off (s.gpr .x0) d) n := fun h1 h2 => by
     have g0 := used_small hb (d := g) (n := 0) (by decide) (by decide)
     have gl : g ≤ 2 ^ 64 := by decide
     rw [VG.Proof.Dsa.Generation.frame_bytesAt ft (keepPart h1 h2) (by omega), A.bytes_entered hb E (by unfold Impl.Dsa.AArch64.Generator.spill VG.Impl.Dsa.Generation.Layout.control g at *; omega)]
-  refine ⟨mt.layout, ⟨V, W', R, mt.base, ?_⟩, (A.scr E).congr wrt, fun hs => ?_, ft.mono ?_, rdt, wrt⟩
+  refine ⟨mt.layout, ⟨V, W', R, mt.base, ?_, h20⟩, (A.scr E).congr wrt, fun hs => ?_, ft.mono ?_, rdt, wrt⟩
   · rcases outcome with ⟨h3, hn⟩ | ⟨gv, h1, hgv, _⟩
     · rw [h3]; simp [statusOf, ← hn]
     · rw [h1]; simp [statusOf, hgv]
@@ -223,7 +240,8 @@ theorem search_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : St
 /-- What packing leaves. -/
 structure Packed (hb : Supported pLen) (A : StageABI pLen s) (u t : State) : Prop where
   lay : Lay t (frameBase s) (hashBase s)
-  rep : ∃ V W, Rep t.mem (frameBase s) (hashBase s) V W ∧ W 5 = s.gpr .x0
+  rep : ∃ V W, Rep t.mem (frameBase s) (hashBase s) V W ∧ W 5 = s.gpr .x0 ∧
+    W 20 = BitVec.ofNat 64 (pLen * (plan hb A).count 0)
   scr : Scr t (s.gpr .x0) (usedBytes pLen)
   bytes : Spec.Rsa.bytesAt t.mem (off (s.gpr .x0) packed) (2 * pLen + qLen pLen) =
     Spec.Dsa.encodeParams pLen (qLen pLen) (domainOf pLen s (plan hb A))
@@ -248,7 +266,7 @@ theorem pack_stage_ok (hb : Supported pLen) (A : StageABI pLen s) {u t : State} 
   have hs : (plan hb A).remaining 0 ≠ none := by
     intro hn; simp [statusOf, hn] at h19
   obtain ⟨pE, qE, gE⟩ := S.bytes hs
-  obtain ⟨V, W, R, h5, _⟩ := S.rep
+  obtain ⟨V, W, R, h5, _, h20⟩ := S.rep
   have src (d n : Nat) (bs : List Byte) (hl : bs.length = n) (hd : d + n ≤ packed)
       (hbs : Spec.Rsa.bytesAt t.mem (off (s.gpr .x0) d) n = bs) :
       Src t (off (W 5) packed) (2 * pLen + qLen pLen) (off (W 5) d) bs := by
@@ -266,7 +284,7 @@ theorem pack_stage_ok (hb : Supported pLen) (A : StageABI pLen s) {u t : State} 
     (src _ _ _ (VG.Proof.Dsa.encodeBE_length _ _) (by unfold VG.Impl.Dsa.Generation.Layout.q packed; omega) qE)
     (src _ _ _ (VG.Proof.Dsa.encodeBE_length _ _) (by unfold g packed; omega) gE)
     (fun i hi => by rw [h5, off_off]; exact S.scr.region (by omega) (by decide)) hF hS)
-    fun t₁ ⟨bytes₁, L₁, R₁, f₁, k₁⟩ => ⟨L₁, ⟨V, W, R₁, h5⟩, S.scr.congr k₁.wr, by rw [← h5]; exact bytes₁,
+    fun t₁ ⟨bytes₁, L₁, R₁, f₁, k₁⟩ => ⟨L₁, ⟨V, W, R₁, h5, h20⟩, S.scr.congr k₁.wr, by rw [← h5]; exact bytes₁,
       S.frame.trans (f₁.mono (by intro r hr; obtain rfl := List.mem_singleton.mp hr; rw [h5]; simp [stageChanged])),
       k₁.rd.trans S.rd, k₁.wr.trans S.wr⟩
 
@@ -310,9 +328,10 @@ theorem stage_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : Sta
   have hhash := used_small hb (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
   have hpk := used_small hb (d := packed) (n := 2 * pLen + qLen pLen) (by decide) (by unfold arithmeticBytes; omega)
   have rem := plan_remaining hb A
+  have cnt := plan_count hb A
   unfold Impl.Dsa.AArch64.Generator.stage
   refine WP.seq (WP.mono (search_ok M hb A E) fun t S => ?_)
-  obtain ⟨V, W, R, h5, h19⟩ := S.rep
+  obtain ⟨V, W, R, h5, h19, h20⟩ := S.rep
   apply VG.Proof.Dsa.AArch64.Generation.onSuccess_ok S.lay R
   · intro t' hm' kt h1
     have S' := S.congr hm' kt
@@ -323,7 +342,7 @@ theorem stage_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : Sta
       | some gv => exact ⟨gv, rfl⟩
     unfold Impl.Dsa.AArch64.Generation.finishDomain
     refine WP.seq (WP.mono (pack_stage_ok hb A S' hst) fun t₁ P => ?_)
-    obtain ⟨V₁, W₁, R₁, h5₁⟩ := P.rep
+    obtain ⟨V₁, W₁, R₁, h5₁, h20₁⟩ := P.rep
     have pfit := (A.p_bounds hb).2
     have bounds := VG.Proof.Dsa.Generation.generator_bounds (Nat.lt_trans Nat.zero_lt_one (A.positive hb)) _
       (rem ▸ hgv)
@@ -342,9 +361,13 @@ theorem stage_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : Sta
         then some (domainOf pLen s (plan hb A)) else none := by
       rw [rem] at hgv
       simp only [result, Proof.Dsa.GeneratorStage.stage, hgv, Option.bind_eq_bind, Option.bind_some, domainOf, gdef]
-    refine ⟨L₂, ⟨V₁, _, R₂, by simpa [VG.Proof.RsaOaep.AArch64.upd] using h5₁, ?_⟩, fun a' ha' => ?_, ?_, k₂.rd.trans P.rd, k₂.wr.trans P.wr⟩
-    · simp only [VG.Proof.RsaOaep.AArch64.upd, ite_true, checkInput, check, res]
-      by_cases hv : Spec.Dsa.parametersValid (domainOf pLen s (plan hb A)) <;> simp [hv]
+    refine ⟨L₂, ⟨V₁, _, R₂, by simpa [VG.Proof.RsaOaep.AArch64.upd] using h5₁, ?_,
+      by simpa [VG.Proof.RsaOaep.AArch64.upd, cnt] using h20₁⟩, fun a' ha' => ?_, ?_, k₂.rd.trans P.rd, k₂.wr.trans P.wr⟩
+    · rw [rem] at hgv
+      have hd : domainOf pLen s (plan hb A) = ⟨pOf pLen s.mem (s.gpr .x0), qOf pLen s.mem (s.gpr .x0), gv⟩ := by
+        simp only [domainOf, gdef]
+      simp only [VG.Proof.RsaOaep.AArch64.upd, ite_true, checkInput, check]
+      simp only [endCode, Proof.Dsa.GeneratorStage.code, hgv, hd, decide_eq_true_eq]
     · rw [res] at ha'
       split at ha'
       · obtain rfl := Option.some.inj ha'
@@ -369,8 +392,10 @@ theorem stage_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : Sta
     have res : result pLen s = none := by
       rw [rem] at hn
       simp only [result, Proof.Dsa.GeneratorStage.stage, hn, Option.bind_eq_bind, Option.bind_none]
-    obtain ⟨V', W', R', h5', h19'⟩ := S'.rep
-    refine ⟨S'.lay, ⟨V', W', R', h5', by rw [h19', res]; simp [statusOf, hn]⟩, fun a ha => absurd ha (by rw [res]; simp),
+    obtain ⟨V', W', R', h5', h19', h20'⟩ := S'.rep
+    refine ⟨S'.lay, ⟨V', W', R', h5', by
+      rw [h19']; simp only [statusOf, endCode, Proof.Dsa.GeneratorStage.code, ← rem, hn]; rfl,
+      by rw [h20', cnt]⟩, fun a ha => absurd ha (by rw [res]; simp),
       S'.frame, S'.rd, S'.wr⟩
 
 end VG.Proof.Dsa.AArch64.Generator

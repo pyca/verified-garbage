@@ -59,11 +59,6 @@ theorem far_bytes {base p : Addr} {n : Nat} {m m' : Mem} (h : Outside base 0 819
   simp only [bytesAt]
   exact List.map_congr_left fun i hi => h _ (Or.inr (by have := hf i (List.mem_range.mp hi); omega))
 
-theorem far_bytes' {base p : Addr} {n : Nat} {m m' : Mem} (h : Outside base 0 8192 m m')
-    (hf : ∀ i < n, 8192 ≤ ofs base (p + BitVec.ofNat 64 i)) : ∀ i < n,
-      m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i) :=
-  fun i hi => h _ (Or.inr (by have := hf i hi; omega))
-
 theorem outA {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (h1 : ACC ≤ o)
     (h2 : o + n ≤ ACC + 512) : Outside2 base 64 2816 ACC 512 m m' := fun p _ hq => h p (by omega)
 

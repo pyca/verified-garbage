@@ -85,11 +85,6 @@ theorem pair_verified : Verified AArch64.target
     Impl.MlDsa.AArch64.Optimized.ResidentMask.raw (expandMaskPairContract AArch64.abi) :=
   Verified.of_correct (pair_correct Resident.originalCore) raw_ct pair_implies
 
-theorem pair_n2_verified : Verified AArch64.target
-    (Impl.MlDsa.AArch64.Optimized.ResidentMask.rawWith Resident.n2Core.code)
-    (expandMaskPairContract AArch64.abi) :=
-  Verified.of_correct (pair_correct Resident.n2Core) raw_n2_ct pair_implies
-
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentMask
 
 end

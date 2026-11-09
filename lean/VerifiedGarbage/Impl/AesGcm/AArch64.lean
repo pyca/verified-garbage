@@ -84,11 +84,13 @@ structure Fn where
   code : Prog isa
 
 /-- The implementations called: of `vg_aes_ctr32`, `vg_aes_expand_key_scratch` and
-`vg_ghash`. -/
+`vg_ghash`, and of `vg_aes_ctr32`'s out-of-place form, the internal
+`vg_aes_ctr32_to`, which `vg_aes_gcm_open_to` calls. -/
 structure Callees where
   ctr : Fn
   key : Fn
   gh : Fn
+  ctrTo : Fn
 
 /-- `mov d, n`. -/
 def mov (d n : Reg) : Instr := .addImm .x d n 0
@@ -299,6 +301,30 @@ def crypt : Prog isa :=
 /-- `crypt` from the start of a keystream block (`x25 = 0`): no rest of a
 block to use first. -/
 def cryptAl : Prog isa := .seq (.block crArgs) (.seq (ctrCall c) (.seq crSeg2 (.seq (ctrCall c) crTail)))
+
+/-! ### Out of place
+
+`cryptAlG to` is `cryptAl` that, out of place (`to`), reads the text at
+`x23` and writes the output at `x26`: the whole blocks with
+`vg_aes_ctr32_to` (`ctrCallG`), and the last bytes XORed into the new
+keystream block and copied from it to the output (`crTailG`). -/
+
+/-- `crArgs`, and out of place the output (`x26`) as `vg_aes_ctr32_to`'s
+`dst` (`x6`), and `x26` past the whole blocks. -/
+def crArgsG (to : Bool) : List Instr := crArgs ++ cond to [mov .x6 .x26, .add .x .x26 .x26 .x9] []
+
+/-- `ctrCall`, or out of place a call of `vg_aes_ctr32_to`. -/
+def ctrCallG (to : Bool) : Prog isa := cond to (.call c.ctrTo.name c.ctrTo.code) (ctrCall c)
+
+/-- `crTail`, or out of place the last `x24` bytes at `x23` XORed into the
+keystream block (at `x20 + 64`) and copied from it to the output (`x26`). -/
+def crTailG (to : Bool) : Prog isa :=
+  cond to (.seq (.block [ptr .x12 .x20 64, mov .x11 .x23, mov .x13 .x24]) (.seq xor
+      (.seq (.block [mov .x11 .x26, ptr .x12 .x20 64, mov .x13 .x24]) copy))) crTail
+
+/-- `cryptAl`, or out of place to the output at `x26`. -/
+def cryptAlG (to : Bool) : Prog isa :=
+  .seq (.block (crArgsG to)) (.seq (ctrCallG c to) (.seq crSeg2 (.seq (ctrCall c) (crTailG to))))
 
 /-! ## The tag and `J₀` -/
 
@@ -562,5 +588,64 @@ def openRest : Prog isa :=
 /-- `vg_aes_gcm_open`, with `tag = [sp]` (in `x12` until `tagIn`),
 `tag_len = [sp + 8]` (kept at `W + 248`) and `work = [sp + 16]`. -/
 def «open» : Prog isa := .seq (.block openEntry) (openRest c)
+
+/-! ## Out of place
+
+`vg_aes_gcm_open_to` is `open` (`openG c true`) that reads the ciphertext at
+`src`, kept at `W + dataO` as `open`'s data is (which `decAbs` hashes), and
+writes the plaintext to `dst`, kept at `W + dstO`, only if the tag is right
+(`oneCryptG`, with `cryptAlG`); else, and if the tag length is not allowed,
+it zeroes `dst` (`wipeG`). Its stack arguments are `dst`, `dst_len`, `tag`,
+`tag_len`, … (`openEntryG`). `openG c false` is `open`. -/
+
+/-- Where `open_to` keeps `dst`. -/
+def dstO : Nat := 320
+
+/-- `oneCrypt`, or out of place with the output (`W + dstO`) in `x26`. -/
+def oneCryptG (to : Bool) : Prog isa :=
+  .seq (.block ([.ldr .x .x23 .x19 dataO, .ldr .x .x24 .x19 lenO, imm .x25 0] ++
+      cond to [.ldr .x .x26 .x19 dstO] []))
+    (cryptAlG c to)
+
+/-- The `x10` bytes at `x9` zeroed, a byte at a time. -/
+def wipeLoop : Prog isa :=
+  .ite (.zero .x .x10) (.block [])
+    (.loop (.block [.strb .x11 .x9 0, .addImm .x .x9 .x9 1, .subImm .x .x10 .x10 1])
+      (.nonzero .x .x10))
+
+/-- Out of place, the `len` bytes at `dst` zeroed; in place, nothing. -/
+def wipeG (to : Bool) : Prog isa :=
+  cond to (.seq (.block [.ldr .x .x9 .x19 dstO, .ldr .x .x10 .x19 lenO, imm .x11 0]) wipeLoop) (.block [])
+
+/-- `openMain`, or out of place with `oneCryptG` and `wipeG`. -/
+def openMainG (to : Bool) : Prog isa :=
+  .seq (j0 c)
+  (.seq (oneAad c)
+  (.seq (.block encPrep)
+  (.seq (decAbs c)
+  (.seq (.block finPrep)
+  (.seq (finBody c uO)
+  (.seq (.block [.ldr .x .x28 .x19 tlO])
+  (.seq cmp
+  (.seq (.block [imm .x27 1, .sub .x .x27 .x27 .x10])
+  (.seq (.ite (.zero .x .x27) (wipeG to) (oneCryptG c to))
+    (.block [mov .x0 .x27]))))))))))
+
+/-- The entry of `open` and of `open_to` (`to`), with `work` the stack
+argument `w`: `oneEntry`; out of place `dst` (the first stack argument)
+kept at `W + dstO`; `tag_len` stashed and `tag` in `x12` (the next two). -/
+def openEntryG (to : Bool) (w : Nat) : List Instr :=
+  oneEntry (8 * w) ++ cond to [.ldrSp .x10 0, .str .x .x10 .x19 dstO] [] ++ stashArg (cond to 24 8) ++
+    ([.ldrSp .x12 (cond to 16 0)] : List Instr)
+
+/-- `openRest`, or out of place with `openMainG`, and `dst` zeroed if the tag
+length is not allowed. -/
+def openRestG (to : Bool) : Prog isa :=
+  .seq tagLenOk
+  (.seq (.ite (.zero .x .x9) (.seq (.block [imm .x0 0]) (wipeG to)) (.seq tagIn (openMainG c to)))
+    (.block restore))
+
+/-- `vg_aes_gcm_open` (`openG c false 2`) and `vg_aes_gcm_open_to` (`openG c true 4`). -/
+def openG (to : Bool) (w : Nat) : Prog isa := .seq (.block (openEntryG to w)) (openRestG c to)
 
 end VG.Impl.AesGcm.AArch64

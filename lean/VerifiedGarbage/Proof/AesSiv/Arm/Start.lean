@@ -258,7 +258,7 @@ theorem start_ok {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp a 
     have o₇ := h₇.out
     rw [eD, eZ, sch, cK (d := 240) (k := 16) (by decide), cK (d := 256) (k := 16) (by decide), St.zZ, St.zD] at o₇
     rw [o₇, List.take_zero, Spec.Siv.s2vAcc, List.foldl_nil, Spec.Siv.s2vStart, Spec.Siv.ctxMac,
-      Spec.Siv.schedCiph, cmacWith_one _ _ _ _ (by rfl)]
+      Spec.Siv.schedCiph, macWith_one _ _ _ _ (by rfl)]
     rfl
 
 end

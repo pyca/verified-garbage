@@ -20,8 +20,8 @@ Each reads the AES key schedule that `vg_aes_expand_key`
 start of a 240-byte buffer, and transforms `n` whole blocks in place, from
 the block in `iv`, which it replaces with the one to continue from, the
 last ciphertext block (`Cbc.next`): so a caller may encrypt or decrypt a
-message in pieces of whole blocks, keeping `iv` between calls. A partial
-last segment is the caller's.
+message in pieces of whole blocks, keeping `iv` between calls. A partial last
+segment is left to the AES final functions (`Spec/Cfb/Final.lean`).
 
 Each takes CBC's `scratch` buffer: room for the working space of
 `vg_aes_encrypt_blocks` (`[u64; 256]`) and 128 bytes more. `stack` is the
@@ -38,9 +38,9 @@ and `vg_aes_cfb128_decrypt` with the same signature. `rounds` is public;
 `scratch` is working space. -/
 def aesSig : Sig := Cbc.aesSig
 
-/-- For `rounds` of 10, 12 or 14, with the key schedule `w` in the first
-`16 (rounds + 1)` bytes at `schedule`: replaces the `n` blocks at `data`
-with their CFB128 encryption (§6.3) by AES with `w`, from the block at
+/-- For `rounds` of 10, 12 or 14, and every AES key `K` whose key schedule
+is at `schedule` with `rounds` rounds (`Aes.KeySchedule`): replaces the `n` blocks at `data`
+with their CFB128 encryption (§6.3) by AES with `K`, from the block at
 `iv`, and that block with the last ciphertext block (unchanged if
 `n = 0`). -/
 def aesEncryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
@@ -48,14 +48,15 @@ def aesEncryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (pre := fun _schedule rounds _iv _data _n _scratch _ =>
       rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
     (post := fun schedule rounds iv data n _scratch m m' _ =>
-      let ciph := Cbc.aesWith rounds.toNat (Aes.bytesAt m schedule (16 * (rounds.toNat + 1)))
-      let cs := encrypt ciph (Aes.bytesAt m iv 16) (Cbc.blocksAt m data n.toNat)
-      Cbc.blocksAt m' data n.toNat = cs ∧ Aes.bytesAt m' iv 16 = Cbc.next (Aes.bytesAt m iv 16) cs)
+      ∀ key, Aes.KeySchedule m schedule rounds.toNat key →
+        let ciph := Cbc.aes key
+        let cs := encrypt ciph (Aes.bytesAt m iv 16) (Cbc.blocksAt m data n.toNat)
+        Cbc.blocksAt m' data n.toNat = cs ∧ Aes.bytesAt m' iv 16 = Cbc.next (Aes.bytesAt m iv 16) cs)
     (stack := stack)
 
-/-- For `rounds` of 10, 12 or 14, with the key schedule `w` in the first
-`16 (rounds + 1)` bytes at `schedule`: replaces the `n` blocks at `data`
-with their CFB128 decryption (§6.3) by AES with `w`, from the block at
+/-- For `rounds` of 10, 12 or 14, and every AES key `K` whose key schedule
+is at `schedule` with `rounds` rounds (`Aes.KeySchedule`): replaces the `n` blocks at `data`
+with their CFB128 decryption (§6.3) by AES with `K`, from the block at
 `iv`, and that block with the last ciphertext block, the last block at
 `data` on entry (unchanged if `n = 0`). -/
 def aesDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
@@ -63,10 +64,11 @@ def aesDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (pre := fun _schedule rounds _iv _data _n _scratch _ =>
       rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
     (post := fun schedule rounds iv data n _scratch m m' _ =>
-      let ciph := Cbc.aesWith rounds.toNat (Aes.bytesAt m schedule (16 * (rounds.toNat + 1)))
-      let cs := Cbc.blocksAt m data n.toNat
-      Cbc.blocksAt m' data n.toNat = decrypt ciph (Aes.bytesAt m iv 16) cs ∧
-        Aes.bytesAt m' iv 16 = Cbc.next (Aes.bytesAt m iv 16) cs)
+      ∀ key, Aes.KeySchedule m schedule rounds.toNat key →
+        let ciph := Cbc.aes key
+        let cs := Cbc.blocksAt m data n.toNat
+        Cbc.blocksAt m' data n.toNat = decrypt ciph (Aes.bytesAt m iv 16) cs ∧
+          Aes.bytesAt m' iv 16 = Cbc.next (Aes.bytesAt m iv 16) cs)
     (stack := stack)
 
 /-- `vg_aes_cfb128_encrypt` on every target. -/

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesCbc.Rounds
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Encrypt.Verified
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
 
@@ -18,14 +19,14 @@ def written (v : BlocksImpl) : List (String × Nat) :=
   if v.enc.name="vg_aes_encrypt_blocks_aes" then [("scratch",0)] else []
 
 theorem verified (v : BlocksImpl) :
-    Verified AArch64.target (encrypt v) (Spec.Cbc.aesEncryptContract AArch64.abi) := by
+    Verified AArch64.target (encrypt v) (Proof.AesCbc.encryptRoundsContract AArch64.abi) := by
   unfold encrypt
   split
   · exact Encrypt.verified
   · exact encrypt_verified v
 
 theorem written_ok (v : BlocksImpl) (s : State) (tr : List Leak) (t : State)
-    (hp : (Spec.Cbc.aesEncryptContract AArch64.abi).pre s) (he : Exec isa (encrypt v) s tr t) :
+    (hp : (Proof.AesCbc.encryptRoundsContract AArch64.abi).pre s) (he : Exec isa (encrypt v) s tr t) :
     Sig.writtenWithin (AArch64.abi.withConsts []) Spec.Cbc.aesSig (written v) s t := by
   by_cases h : v.enc.name="vg_aes_encrypt_blocks_aes"
   · rw [encrypt,ite_eq_left h] at he

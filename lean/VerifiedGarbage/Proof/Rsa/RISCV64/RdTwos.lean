@@ -16,9 +16,10 @@ import VerifiedGarbage.Proof.Framework.Omega
 # The halvings and the GCD of `vg_rsa_recover_primes_det` on RISC-V
 
 * `twosInit_ok`, `twosBody_ok`, `twos_ok`: from `n` (narrow, `aN`) and `x = d e - 1`
-  (wide, `wX`), `64 w` steps of `RecoverDet.twoStep` with `b = 64 W` on
+  (wide, `wX`), the result of `64 w` steps of `RecoverDet.twoStep` with `b = 64 W` on
   `(u, x, 2^k x)` (`twosSt`: narrow `aU`, narrow `aX2`, wide `wX3`), from
-  `(n - 1, x mod 2^(64 w), x)`;
+  `(n - 1, x mod 2^(64 w), x)`; eight actual steps suffice when the public
+  low byte of `n - 1` is nonzero, as the remaining steps are identities;
 * `gcd_ok`: from `(x, u)`, `u` odd, `gcd(x, u)` by the batched GCD
   (`Proof/Rsa/RISCV64/IbInverse.lean`'s `gcd_ok`), 1 where `u = 1`, copied
   into the low half of the wide `wG`.
@@ -626,6 +627,101 @@ theorem twosInit_ok {s : State} {B : Addr} {Z w N M : Nat} (h : Ws s B Z (W2 w) 
       (Keep.trans' (Keep.mono r3 (by decide)) (Keep.trans' (Keep.mono r4 (by decide))
         (Keep.trans' (Keep.mono r5 (by decide)) (Keep.mono k6 (by decide))))))
 
+/-- Once the public operand is odd, further masked steps are identities. -/
+theorem twoStep_odd {b : Nat} {s : Nat × Nat × Nat} (h : s.1 % 2 = 1) :
+    VG.Proof.Rsa.RecoverDet.twoStep b s = s := by
+  simp only [VG.Proof.Rsa.RecoverDet.twoStep, show ¬s.1 % 2 = 0 by omega, ↓reduceIte]
+
+/-- A nonzero low `k` bits guarantees an odd operand after `k` halvings. -/
+theorem twoStep_odd_bound (b : Nat) : ∀ k (s : Nat × Nat × Nat), s.1 % 2 ^ k ≠ 0 →
+    ((VG.Proof.Rsa.RecoverDet.twoStep b)^[k] s).1 % 2 = 1
+  | 0, s, h => by simp only [Nat.pow_zero, Nat.mod_one] at h; exact (h rfl).elim
+  | k + 1, s, h => by
+    by_cases he : s.1 % 2 = 0
+    · rw [Function.iterate_succ_apply]
+      apply twoStep_odd_bound b k
+      rw [VG.Proof.Rsa.RecoverDet.twoStep_fst, ite_eq_left he]
+      intro hz
+      have hd := Nat.mod_add_div s.1 2
+      have hp := Nat.mod_add_div (s.1 / 2) (2 ^ k)
+      have hv : s.1 % 2 ^ (k + 1) = 0 := by
+        rw [Nat.pow_succ]
+        have eq : s.1 = (2 ^ k * 2) * (s.1 / 2 / 2 ^ k) := by
+          calc s.1 = 2 * (s.1 / 2) := by omega_arith
+               _ = 2 * (2 ^ k * (s.1 / 2 / 2 ^ k)) := congrArg (2 * ·) (by omega_arith)
+               _ = _ := by ac_rfl
+        rw [eq, Nat.mul_mod_right]
+      exact h hv
+    · have ho : s.1 % 2 = 1 := by omega
+      rw [Function.iterate_fixed (twoStep_odd ho)]
+      exact ho
+
+/-- The eight-step result equals the full-width result when the low byte
+of `u` is nonzero. -/
+theorem twos_short_eq {b n : Nat} (s : Nat × Nat × Nat) (hn : 8 ≤ n) (h : s.1 % 256 ≠ 0) :
+    (VG.Proof.Rsa.RecoverDet.twoStep b)^[8] s =
+      (VG.Proof.Rsa.RecoverDet.twoStep b)^[n] s := by
+  have ho := twoStep_odd_bound b 8 s h
+  rw [show n = (n - 8) + 8 by omega_arith, Function.iterate_add_apply]
+  exact (Function.iterate_fixed (twoStep_odd ho) (n - 8)).symm
+
+/-- Read the public operand's low byte without changing the working space. -/
+theorem twosLow_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) (hN : 63 ≤ N) :
+    WP isa (.block VG.Impl.Rsa.RISCV64.RecoverDet.twosLow) s fun t =>
+      (t.gpr .t4 = BitVec.ofNat 64 (num s.mem B w aU % 256) ∧ t.mem = s.mem) ∧
+        Keep [.t0, .t4] s t := by
+  have fit := h.arr_fit (show aU < N by simp only [aU]; omega_arith)
+  have hw := h.wpos
+  have hz := h.hdr_le
+  have hS : S w = 8 * (w + 2) := rfl
+  have ha : (word s.mem B (arr w aU) &&& BitVec.ofNat 64 255) =
+      BitVec.ofNat 64 (num s.mem B w aU % 256) := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_and, BitVec.toNat_ofNat, show 255 % 2 ^ 64 = 255 by decide]
+    rw [
+      ← wordsVal_mod64 s.mem B (by omega_arith : 1 ≤ w)]
+    have low := Nat.and_two_pow_sub_one_eq_mod (num s.mem B w aU % 2 ^ 64) 8
+    simp only [Nat.reducePow, Nat.reduceSub] at low
+    rw [low, Nat.mod_mod_of_dvd (num s.mem B w aU) (show 256 ∣ 2 ^ 64 by decide)]
+    exact (Nat.mod_eq_of_lt (show num s.mem B w aU % 256 < 2 ^ 64 by
+      have := Nat.mod_lt (num s.mem B w aU) (by decide : 0 < 256); omega_arith)).symm
+  unfold VG.Impl.Rsa.RISCV64.RecoverDet.twosLow
+  refine ptr_ok h (by decide) (by decide) (by decide) ?_
+  have hb : WP isa (.block [.load .d .t4 .t0 0, .logicImm .and .t4 .t4 255])
+      (s.write .t0 (off B (arr w aU))) fun t =>
+      (t.gpr .t4 = BitVec.ofNat 64 (num s.mem B w aU % 256) ∧ t.mem = s.mem) ∧
+        Keep [.t4] (s.write .t0 (off B (arr w aU))) t := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [h.scr.ld (d := arr w aU) (n := 8) (by omega_arith),
+      h.scr.al8 (d := arr w aU) (by omega_arith) (arr_al _ _)]
+    exact ha
+  exact WP.mono hb fun t ⟨ht, kt⟩ => ⟨ht, ((Keep.write _ _ _).trans kt).mono (by decide)⟩
+
+/-- Select the short bound only from the public operand's low byte. -/
+theorem twosCount_ok {s : State} {w u : Nat} (hc : s.gpr .s7 = BitVec.ofNat 64 (64 * w))
+    (hu : s.gpr .t4 = BitVec.ofNat 64 (u % 256)) :
+    WP isa VG.Impl.Rsa.RISCV64.RecoverDet.twosCount s fun t =>
+      (t.gpr .s7 = BitVec.ofNat 64 (if u % 256 = 0 then 64 * w else 8) ∧ t.mem = s.mem) ∧
+        Keep [.s7] s t := by
+  unfold VG.Impl.Rsa.RISCV64.RecoverDet.twosCount
+  have hz : (s.gpr .t4 == 0) = decide (u % 256 = 0) := by
+    apply Bool.eq_iff_iff.mpr
+    rw [beq_iff_eq, decide_eq_true_eq, hu]
+    have hl : u % 256 < 2 ^ 64 := by have := Nat.mod_lt u (by decide : 0 < 256); omega_arith
+    constructor
+    · intro he
+      have ht := congrArg BitVec.toNat he
+      change (u % 256) % 2 ^ 64 = 0 at ht
+      rwa [Nat.mod_eq_of_lt hl] at ht
+    · intro he; rw [he]; rfl
+  refine WP.ite _ (VG.RISCV64.Steps.eval_zero s .t4) (fun he => ?_) (fun he => ?_)
+  · have he' : u % 256 = 0 := of_decide_eq_true (hz ▸ he)
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [he', hc]
+  · have he' : u % 256 ≠ 0 := of_decide_eq_false (hz ▸ he)
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [he', exec_li (imm := 8) (by decide)]
+
 /-- The halvings' state after `i` steps from `s0`. -/
 structure TwosI (s0 : State) (B : Addr) (Z w N : Nat) (i : Nat) (t : State) : Prop where
   ws : Ws t B Z w N
@@ -650,18 +746,36 @@ theorem twos_ok {s : State} {B : Addr} {Z w N M : Nat} (h : Ws s B Z (W2 w) M)
   unfold twos
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (twosInit_ok h hw hNZ hN hN' hM hMN h1) fun t0 ⟨h0, k0, o0, e0, c0, r0⟩ => ?_
-  have hK : 64 * w < 2 ^ 64 := by have := h0.wle; omega_arith
-  refine WP.mono (wp_countdown (body := twosBody) (cnt := .s7) (N := 64 * w) hK (by omega_arith)
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (twosLow_ok h0 hN) fun t1 ⟨⟨l1, m1⟩, r1⟩ => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (twosCount_ok (w := w) (by rw [r1.gpr (by decide)]; exact c0) l1) fun t2 ⟨⟨c2, m2⟩, r2⟩ => ?_
+  let steps := if num t0.mem B w aU % 256 = 0 then 64 * w else 8
+  have hsteps : 1 ≤ steps ∧ steps ≤ 64 * w := by unfold steps; split <;> omega_arith
+  have hK : steps < 2 ^ 64 := by have := h0.wle; omega_arith
+  have h2 := (h0.of_keep r1).of_keep r2
+  have r02 : Keep rdRegs t0 t2 := (r1.trans r2).mono (by decide)
+  have m02 : t2.mem = t0.mem := m2.trans m1
+  change WP isa VG.Impl.Rsa.RISCV64.RecoverDet.twosLoop t2 _
+  unfold VG.Impl.Rsa.RISCV64.RecoverDet.twosLoop
+  refine WP.mono (wp_countdown (body := twosBody) (cnt := .s7) (N := steps) hK hsteps.1
     (TwosI t0 B Z w N)
     (fun i _ t inv _ => WP.mono (twosBody_ok inv.ws hN hN' hM hMN hW) fun u ⟨hu, ku, eu, cu, ru⟩ =>
       ⟨⟨hu, inv.keep.trans ku, Keep.trans' inv.regs ru, by
         rw [eu, inv.value, Function.iterate_succ_apply']⟩, cu⟩)
-    ⟨h0, Frame.refl _ _ _ _ _, Keep.refl _ _, rfl⟩ c0) fun t inv => ?_
+    ⟨h2, by rw [m02]; exact Frame.refl _ _ _ _ _, r02, by rw [m02]; rfl⟩ c2) fun t inv => ?_
   have fO := h0.fit64 (j := aOne) (by twidx)
   refine ⟨inv.ws, ?_, ?_, ?_, Keep.trans' r0 inv.regs⟩
   · exact k0.join inv.keep (js := [2 * wX3, 2 * wX3 + 1, aOne, aU, aX2, aT, 2 * wT2, 2 * wT2 + 1])
       (ds := [sU, sX, sEven, sBoth])
   · rw [inv.keep.num (by simp [aOne, aU, aX2, aT, wT2, wX3]) (by decide) fO, o0]
-  · rw [inv.value, e0]
+  · rw [inv.value]
+    have he : (VG.Proof.Rsa.RecoverDet.twoStep (64 * W2 w))^[steps] (twosSt t0.mem B w) =
+        (VG.Proof.Rsa.RecoverDet.twoStep (64 * W2 w))^[64 * w] (twosSt t0.mem B w) := by
+      unfold steps
+      split
+      · rfl
+      · rename_i hn; exact twos_short_eq _ (by omega_arith) hn
+    rw [he, e0]
 
 end VG.Proof.Rsa.RISCV64.Keys

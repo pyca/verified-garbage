@@ -79,15 +79,4 @@ theorem firstPass_bank_bound {m : Mem} {p : Addr} {u : Nat} {bound : Int}
   rw [firstPass_untouched m p (by omega) hk (by omega)]
   exact h _ hk
 
-/-- Earlier strided slices do not expand a later slice's input range. -/
-theorem finalPass_bank_bound {m : Mem} {p : Addr} {u : Nat} {bound : Int} (q : BitVec 128)
-    (hu : u<8) (h : ∀ k<n, -bound≤(coeffAt m p k).toInt ∧ (coeffAt m p k).toInt≤bound)
-    (i : Fin 8) {e : Nat} (he : e<4) :
-    -bound≤(vword (readBank (finalPassMem m p q u) (coeffAddr p (4*u)) 128)[i.val] e).toInt ∧
-      (vword (readBank (finalPassMem m p q u) (coeffAddr p (4*u)) 128)[i.val] e).toInt≤bound := by
-  rw [readBank_coeff _ p (4*u) 32 i he]
-  have hk : 4*u+32*i.val+e<n := by change 4*u+32*i.val+e<256; omega
-  rw [finalPass_untouched m p q (by omega) hk (by omega)]
-  exact h _ hk
-
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse

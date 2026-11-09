@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterInitSpec
+import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Ffdh.Arm.InitCT
@@ -25,8 +26,9 @@ open VG VG.Arm VG.Impl.Ffdh.Arm VG.Proof.Bignum.Arm
 def parameterPost (s t : State) : Prop :=
   match Spec.Ffdh.parameterInit (s.gpr .r1).toNat (s.gpr .r2).toNat with
   | none => (t.gpr .r0).toNat = 0 ∧ Spec.Rsa.wordsAt t.mem (State.addr (s.gpr .r0)) 4 = List.replicate 4 0
-  | some values => (t.gpr .r0).toNat = 1 ∧
-      Spec.Rsa.wordsAt t.mem (State.addr (s.gpr .r0)) 4 = values.map (BitVec.ofNat 64)
+  | some values => (t.gpr .r0).toNat = 1 ∧ ∃ first,
+      Spec.Rsa.wordsAt t.mem (State.addr (s.gpr .r0)) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
+      Spec.Entropy.RequestValid (Spec.Ffdh.parameterEntropy (s.gpr .r1).toNat) 0 first
 
 def parameterPub (s t : State) : Prop :=
   s.sp = t.sp ∧ s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1 ∧ s.gpr .r2 = t.gpr .r2
@@ -49,7 +51,7 @@ theorem parameter_correct (s : State) (h : keyPre s) :
     by_cases valid : 512 ≤ (s.gpr .r1).toNat ∧ (s.gpr .r1).toNat ≤ 8192 ∧ (s.gpr .r2 = 2 ∨ s.gpr .r2 = 5)
     · simp only [parameterInitPost, valid] at post
       simp only [valid]
-      exact ⟨by rw [post.1]; rfl, post.2⟩
+      exact ⟨by rw [post.1]; rfl, _, post.2, Proof.Ffdh.first_valid valid.1⟩
     · simp only [parameterInitPost, valid, ite_false] at post
       simp only [valid, ite_false]
       exact ⟨by rw [post.1]; rfl, post.2⟩

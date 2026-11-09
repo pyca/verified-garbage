@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Last
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.SaveGP
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
@@ -21,10 +20,8 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.RoundLoop
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Transpose
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.CachedAdd
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Chunk
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Finish
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Tail
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Chunk
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Xor
@@ -50,6 +47,9 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
 import VerifiedGarbage.Proof.Poly1305.Limbs64
 import VerifiedGarbage.Proof.Poly1305.Stream
 import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Chunk
+import VerifiedGarbage.Impl.ChaCha20.AArch64.Rows6
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 
 /-!
 # ChaCha20-Poly1305 on AArch64: the branch on the length
@@ -81,22 +81,10 @@ structure Agree (s₀ s₁ : State) : Prop where
   rd : s₁.rd = s₀.rd
   wr : s₁.wr = s₀.wr
 
-theorem APre.agree {s₀ s₁ : State} (h : Agree s₀ s₁) (hp : APre e s₀) : APre e s₁ := by
-  have h0 := h.gpr .x0 (by decide) (by decide)
-  have h1 := h.gpr .x1 (by decide) (by decide)
-  have h2 := h.gpr .x2 (by decide) (by decide)
-  have h3 := h.gpr .x3 (by decide) (by decide)
-  have h4 := h.gpr .x4 (by decide) (by decide)
-  have h5 := h.gpr .x5 (by decide) (by decide)
-  have h6 := h.gpr .x6 (by decide) (by decide)
-  have h7 := h.gpr .x7 (by decide) (by decide)
-  obtain ⟨p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17⟩ := hp
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [kR, nR, aR, dR, tR, ctxR, kp, np, ad, AL, dp, L, tp, cx, h.rd, h.wr, h0, h1, h2, h3, h4, h5,
-      h6, h7] <;>
-    with_reducible assumption
+theorem APre.agree {s₀ s₁ : State} (h : Agree s₀ s₁) (hp : APre e s₀) : APre e s₁ :=
+  hp.congr (fun r hr => h.gpr r (by revert r; decide) (by revert r; decide)) h.rd h.wr
 
-theorem inv0_agree {s₀ s₁ s : State} (h : Agree s₀ s₁) (hi : Inv0 s₁ s) : Inv0 s₀ s := by
+theorem inv0_agree {s₀ s₁ s : State} (h : Agree s₀ s₁) (hi : Inv0 e s₁ s) : Inv0 e s₀ s := by
   have h4 := h.gpr .x4 (by decide) (by decide)
   have h5 := h.gpr .x5 (by decide) (by decide)
   have h7 := h.gpr .x7 (by decide) (by decide)
@@ -109,7 +97,9 @@ theorem inv0_agree {s₀ s₁ s : State} (h : Agree s₀ s₁) (hi : Inv0 s₁ s
     have := sv p hp
     simp only [cx, h7] at this
     rw [cx, this, h.gpr p.1 (hs p hp).1 (hs p hp).2]
-  · simp only [workR, sub, dR, cx, dp, L, h4, h5, h7, h.mem] at fr ⊢
+  · have h28 := h.gpr .x28 (by decide) (by decide)
+    have hop : op e s₁ = op e s₀ := by cases e <;> simp only [op_true, op_false, qp, dp, h4, h28]
+    simp only [workR, sub, oR, hop, cx, L, h5, h7, h.mem] at fr ⊢
     exact fr
 
 theorem MainS.agree {s₀ s₁ s : State} (h : Agree s₀ s₁) (hm : MainS s₁ s) : MainS s₀ s := by
@@ -139,7 +129,8 @@ theorem MainO.agree {s₀ s₁ s : State} (h : Agree s₀ s₁) (hm : MainO s₁
   refine ⟨inv0_agree h i, fun r hr => by rw [v r hr, h.v r hr], ?_, ?_⟩
   · simp only [otk, K, N, A, D, kp, np, ad, AL, dp, L, cx, h0, h1, h2, h3, h4, h5, h7, h.mem] at t ⊢
     exact t
-  · simp only [K, N, D, kp, np, dp, L, h0, h1, h4, h5, h.mem] at p ⊢
+  · have h28 := h.gpr .x28 (by decide) (by decide)
+    simp only [K, N, D, kp, np, dp, L, op_false, qp, h0, h1, h4, h5, h28, h.mem] at p ⊢
     exact p
 
 /-- The value `check sve` leaves in `x9`. -/
@@ -199,31 +190,6 @@ theorem pad_ok (n : Nat) (s : State) :
 /-- The value `route sve enc` leaves in `x9`. -/
 abbrev routeVal (sve enc : Bool) (x : BitVec 64) : BitVec 64 :=
   ((x <<< 55 >>> 55) - BitVec.ofNat 64 (wideLo sve enc)) >>> wideSh sve enc
-
-/-- `x9`, zero iff the length takes the wide code. -/
-theorem route_ok (sve enc : Bool) (s₀ : State) :
-    WP isa (.block (route sve enc)) s₀ fun s₁ => Agree s₀ s₁ ∧ s₁.gpr .x9 = routeVal sve enc (s₀.gpr .x5) := by
-  have hlo : wideLo sve enc < 4096 := by cases sve <;> cases enc <;> decide
-  have hsh : wideSh sve enc < 64 := by cases sve <;> cases enc <;> decide
-  have h : WP isa (.block (route sve enc)) s₀ fun s₁ => (∀ r, r ≠ .x9 → r ≠ .x10 → s₁.gpr r = s₀.gpr r) ∧
-      s₁.gpr .x9 = routeVal sve enc (s₀.gpr .x5) ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr := by
-    have c₄ : WP isa (.block [.lsl .x .x9 .x5 55, .lsr .x .x9 .x9 55, .subImm .x .x9 .x9 (wideLo sve enc),
-        .lsr .x .x9 .x9 (wideSh sve enc)]) s₀ fun s₄ =>
-        (∀ r, r ≠ .x9 → s₄.gpr r = s₀.gpr r) ∧ s₄.gpr .x9 = routeVal sve enc (s₀.gpr .x5) ∧
-          s₄.mem = s₀.mem ∧ s₄.rd = s₀.rd ∧ s₄.wr = s₀.wr :=
-      wp_lsl (by decide) fun s₁ u₁ => wp_lsr (by decide) fun s₂ u₂ =>
-        wp_subImm hlo fun s₃ u₃ => wp_lsr hsh fun s₄ u₄ => WP.block_nil
-          ⟨fun r h9 => by rw [u₄.other r h9, u₃.other r h9, u₂.other r h9, u₁.other r h9],
-            by rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr],
-            by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem], by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd],
-            by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
-    unfold route
-    refine WP.block_append (c₄.mono fun s₄ ⟨g₄, x9₄, m₄, rd₄, wr₄⟩ => ?_)
-    exact (pad_ok 11 s₄).mono fun s' ⟨g, m, rd, wr⟩ =>
-      ⟨fun r h9 h10 => by rw [g r h10, g₄ r h9], by rw [g _ (by decide), x9₄], by rw [m, m₄],
-        by rw [rd, rd₄], by rw [wr, wr₄]⟩
-  exact WP.mono (WP.preservedV (WP.withSp h) (by cases sve <;> cases enc <;> lit_decide))
-    fun s₁ ⟨⟨⟨g, x9, m, rd, wr⟩, sp⟩, v⟩ => ⟨⟨g, m, v, sp, rd, wr⟩, x9⟩
 
 /-- Whether a length takes the wide code: its rest after whole chunks in
 `[wideLo, wideLo + 2 ^ wideSh)`. -/

@@ -298,10 +298,6 @@ theorem countEnd_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size)
       apply BitVec.eq_of_toNat_eq; simp
     rw [u₂.gpr, dpVal, u₁.gpr, u₁.other .r11 (by decide), countValue, e, BitVec.add_comm]
 
-theorem _root_.VG.Proof.Mont.Arm.Dyn.Context.of_rest {n m size : Nat} {base : Addr} {rs : List Reg} {s t : State} (h : Context n m base size s)
-    (R : Rest rs s t) (h12 : .r12 ∉ rs) (hm : t.mem = s.mem) : Context n m base size t :=
-  ⟨h.ws.of_rest R h12, h.size_le, h.small, h.n0, by rw [hm]; exact h.modulus, h.gt_one, by rw [hm]; exact h.inverse⟩
-
 /-- `count` bytes at `input` reduced modulo `q`. -/
 theorem reduce_ok {s : State} {base : Addr} {size len n m output : Nat} {count : Core.Count} {input : Pointer}
     (hs : Ws s base size) (hz : 4960 ≤ size) (w : Width len n) (Rq : Ready s base (.input .q) len)

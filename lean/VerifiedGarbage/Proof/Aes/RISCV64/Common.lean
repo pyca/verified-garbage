@@ -113,12 +113,6 @@ theorem shr2_wp {s : State} {k : Nat} (hk : k < 2 ^ 64) (h7 : s.gpr .a4 = BitVec
   rw [Steps.eval_nonzero_ofNat s' t0 (by omega) u.gpr]
   congr 1; exact decide_eq_decide.mpr (by omega)
 
-/-- `addi t0, a4, -k`, with `a4 = n`, `k ≤ n`. -/
-theorem subA4_eval {s s' : State} {n k : Nat} (hk : k ≤ n)
-    (h7 : s.gpr .a4 = BitVec.ofNat 64 n) (u : Upd s s' t0 (s.gpr .a4 - BitVec.ofNat 64 k)) :
-    s'.gpr t0 = BitVec.ofNat 64 (n - k) := by
-  rw [u.gpr, h7, ofNat_sub_ofNat' hk]
-
 /-! ## What a group keeps -/
 
 theorem keysAt_frame {m m' : Mem} {b : Addr} {R : Nat} {w : List Byte} {rs : List Region}

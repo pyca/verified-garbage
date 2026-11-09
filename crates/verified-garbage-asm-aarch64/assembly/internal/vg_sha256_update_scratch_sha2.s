@@ -5,7 +5,6 @@
 // gives.
 
 vg_sha256_update_scratch_sha2:
-	.arch_extension sha2
 	str x30, [sp, #-16]!
 	str x19, [x4, #112]
 	str x20, [x4, #120]
@@ -154,5 +153,4 @@ vg_sha256_update_scratch_sha2:
 	ldr x20, [x20, #120]
 	ldr x30, [sp], #16
 	ret
-	.arch_extension nosha2
 	.p2align 6

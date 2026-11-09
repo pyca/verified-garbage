@@ -27,17 +27,17 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Proof.Rsa.X86_64 (pubChkContract)
 
-variable {G : Spec.Mgf1.Hash}
+variable {tsH tsG : List FnTable} {Hs Gs : Spec.Mgf1.Hash}
 
 theorem vfail_done {s t : State} {V : Nat → Byte} {W : Nat → BitVec 64}
-    (L : Lay t (fb s) (stackArg s 3)) (R : Rep t.mem (fb s) (stackArg s 3) V W) (hw : t.wr = frR s :: s.wr)
+    (L : Lay t (fb s) (stackArg s 4)) (R : Rep t.mem (fb s) (stackArg s 4) V W) (hw : t.wr = frR s :: s.wr)
     (hcs : ∀ r ∈ [Reg.r13, .r14, .r15], t.gpr r = s.gpr r)
-    (h41 : W 41 = s.gpr .rbx) (h42 : W 42 = s.gpr .rbp) (h43 : W 43 = s.gpr .r12) (hf : verifyOut G s = false) :
-    WP isa verifyFail t (VDone G s) := by
+    (h41 : W 41 = s.gpr .rbx) (h42 : W 42 = s.gpr .rbp) (h43 : W 43 = s.gpr .r12) (hf : verifyOut Hs Gs s = false) :
+    WP isa verifyFail t (VDone Hs Gs s) := by
   refine WP.mono (WP.keep [.rax] (Q := fun t' => t'.mem = t.mem ∧ t'.gpr .rax = 0) ?_ rfl)
     fun t' ⟨⟨hm, hax⟩, k⟩ => ?_
   · xrun [verifyFail]
-  have R' : Rep t'.mem (fb s) (stackArg s 3) V W := hm ▸ R
+  have R' : Rep t'.mem (fb s) (stackArg s 4) V W := hm ▸ R
   refine ⟨L.congr (k.gpr (by decide)) k.2.2 (by rw [hm]), k.2.2.trans hw, fun r hr => ?_, ?_, ?_, ?_, ?_⟩
   · rw [k.gpr (by simp at hr ⊢; rcases hr with rfl | rfl | rfl <;> decide), hcs r hr]
   · rw [R'.rd (d := sRbx) 41 rfl (by decide), h41]
@@ -46,8 +46,8 @@ theorem vfail_done {s t : State} {V : Nat → Byte} {W : Nat → BitVec 64}
   · rw [hax, hf]; rfl
 
 /-- The modulus' first byte. -/
-theorem vn0_ok {s t : State} (hp : VPre G s) (L : Lay t (fb s) (stackArg s 3)) {V : Nat → Byte}
-    {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 3) V W) (h18 : W 18 = s.gpr .rdi) (hrd : t.rd = s.rd)
+theorem vn0_ok {s t : State} (hp : VPre tsH tsG s) (L : Lay t (fb s) (stackArg s 4)) {V : Nat → Byte}
+    {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 4) V W) (h18 : W 18 = s.gpr .rdi) (hrd : t.rd = s.rd)
     (hf : Frame (vwrR s) s.mem t.mem) :
     WP isa (.block n0) t fun t' => Keep [.rsi, .rax] t t' ∧ t'.mem = t.mem ∧
       t'.gpr .rax = BitVec.ofNat 64 (s.mem (s.gpr .rdi)).toNat ∧
@@ -73,6 +73,5 @@ theorem expectedSaltLen_eq (slen : BitVec 64) (any : BitVec 32) :
     Spec.RsaPss.expectedSaltLen slen any = if decide (any = 0) then some slen.toNat else none := by
   unfold Spec.RsaPss.expectedSaltLen; by_cases h : any = 0 <;> simp [h]
 
-variable {H : Impl.Pbkdf2.Md.X86_64.Hash} (hH : Pbkdf2.Md.X86_64.HashOK H) (K : Pbkdf2.Md.X86_64.Callees H)
 
 end VG.Proof.RsaPss.X86_64

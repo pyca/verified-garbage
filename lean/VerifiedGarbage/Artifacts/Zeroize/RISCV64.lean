@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Zeroize.RISCV64
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # Zeroization on RISC-V -/
 

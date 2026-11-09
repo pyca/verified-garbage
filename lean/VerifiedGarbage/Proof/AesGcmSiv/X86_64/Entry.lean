@@ -165,8 +165,6 @@ structure TagBuf (W SP D : Addr) (n : Nat) (T : Addr) : Prop where
   stk : (below SP 8).Disjoint ⟨T, 16⟩
   wrap : T.toNat + 16 ≤ 2 ^ 64
 
-theorem arg_eq (s : State) (i : Nat) : arg s i = s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 (8 * (i + 1))) 64 := rfl
-
 /-- `Args` from the layout, with the buffers covered as each function's
 permissions say. -/
 theorem args_of_lay {s : State} (h : oneLay s)
@@ -301,29 +299,6 @@ theorem saved_mut (L : Lay K W SP) (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 38
   exact hf.readW (r := ⟨W + BitVec.ofNat 64 p.2, 8⟩) (w := 64) (Region.contains_self _ _) (kept_mut L hD (.inl hd))
     (by decide)
 
-theorem ciph_mut (L : Lay K W SP) (hdk : (⟨K, 240⟩ : Region).Disjoint ⟨D, n⟩) (hR : R = 10 ∨ R = 14)
-    (hf : Frame (mutR W SP D n) m m') : Spec.GcmSiv.ctxCiph m' K R = Spec.GcmSiv.ctxCiph m K R :=
-  ctxCiph_frame hf (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact L.k_w.sub_right (Region.sub_prefix (by decide))
-    · exact L.k_w.sub_right (Lay.wSub (by decide))
-    · exact L.k_w.sub_right (Lay.wSub (by decide))
-    · exact L.stk_k.symm
-    · exact hdk) (by rcases hR with h | h <;> subst h <;> decide)
-
-theorem buf_mut {s : State} {P : Addr} {len : Nat} (hP : Buf K W SP s P len)
-    (hPD : (⟨P, len⟩ : Region).Disjoint ⟨D, n⟩) (hf : Frame (mutR W SP D n) m m') :
-    bytesAt m' P len = bytesAt m P len :=
-  bytesAt_frame hf (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact hP.w.sub_right (Region.sub_prefix (by decide))
-    · exact hP.w.sub_right (Lay.wSub (by decide))
-    · exact hP.w.sub_right (Lay.wSub (by decide))
-    · exact hP.stk.symm
-    · exact hPD) (by have := hP.lt; omega)
-
 end
 
 end VG.Proof.AesGcmSiv.X86_64
@@ -334,7 +309,7 @@ end VG.Proof.AesGcmSiv.X86_64
 Untrusted: everything here is checked by Lean. The calls are those of
 AES-GCM (`Proof.AesGcm.X86_64.ctr_call`, `gh_call`, `key_call`); `cargs`,
 `gargs` and `kargs` build their arguments from the environment: the key
-schedule of the key-generating key (`keyK`) or of the encryption key at
+schedule of the key-generating key or of the encryption key at
 `W + 248` (`keyS`), blocks of `W` as counter blocks, states and data, the
 data itself, and the working spaces at `W + 1512` and `W + 1768`.
 -/
@@ -367,10 +342,6 @@ theorem srcW {K W SP : Addr} {s : State} (L : Lay K W SP) (P : Perm K W s) {t k 
   qs := L.w_w (.inl (by omega)) (by omega) (by decide)
   stk := L.stk_w' (by omega)
 
-/-- A buffer as data. -/
-theorem srcBuf {K W SP : Addr} {s : State} {Q : Addr} {k : Nat} (h : Buf K W SP s Q k) : Src W SP s Q k :=
-  ⟨h.rd, h.wrap, h.w.sub_right (Lay.wSub (by decide)), h.stk⟩
-
 /-- A key schedule for `vg_aes_ctr32`, apart from the blocks of `W` below
 248 and the working space at `W + 1768`. -/
 structure Key (W SP : Addr) (s : State) (Kc : Addr) : Prop where
@@ -378,10 +349,6 @@ structure Key (W SP : Addr) (s : State) (Kc : Addr) : Prop where
   stk : (below SP 8).Disjoint ⟨Kc, 240⟩
   lo : (⟨Kc, 240⟩ : Region).Disjoint ⟨W, 248⟩
   hi : (⟨Kc, 240⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 1768, 2048⟩
-
-/-- The key-generating key's schedule. -/
-theorem keyK {K W SP : Addr} {s : State} (L : Lay K W SP) (P : Perm K W s) : Key W SP s K :=
-  ⟨P.k, L.stk_k, L.k_w.sub_right (Region.sub_prefix (by decide)), L.k_w' (by decide)⟩
 
 /-- The encryption key's schedule, at `W + 248`. -/
 theorem keyS {K W SP : Addr} {s : State} (L : Lay K W SP) (P : Perm K W s) : Key W SP s (W + BitVec.ofNat 64 248) :=

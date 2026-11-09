@@ -92,9 +92,6 @@ and `0x80`. -/
 def padBlock (X : List Byte) (d : Byte := BitVec.ofNat 8 6) : List Byte :=
   X ++ [d] ++ List.replicate (134 - X.length) 0 ++ [BitVec.ofNat 8 0x80]
 
-theorem padBlock_length {X : List Byte} {d : Byte} (h : X.length ≤ 134) : (padBlock X d).length = 136 := by
-  simp only [padBlock, List.length_append, List.length_singleton, List.length_replicate]; omega
-
 theorem xorAt_padBlock (A : State) {X : List Byte} {d : Byte} (h : X.length ≤ 134) :
     xorAt A 0 (padBlock X d) = xorByte (xorByte (xorAt A 0 X) X.length d) 135 128 := by
   rw [padBlock, xorAt_append, xorAt_append, xorAt_append, xorAt_zeros, Proof.Sha3.xorAt_single,

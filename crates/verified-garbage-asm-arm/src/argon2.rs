@@ -25,7 +25,7 @@
 /// * `memory`, `scratch` and `out` must not overlap each other, `password`, `salt`, `secret`, `associated_data` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_argon2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_argon2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"push {{r0, r1, r2, r3}}
 push {{r3, r4, r5, r6, r7, r8, r9, r10, r11, lr}}

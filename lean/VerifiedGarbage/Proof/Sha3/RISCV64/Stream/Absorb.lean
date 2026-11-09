@@ -103,15 +103,6 @@ theorem Common.data {s₀ : State} (hp : Pre s₀) {c : Nat} {s : State} (h : Co
     (hi : i < len s₀) : s.mem (dp s₀ + BitVec.ofNat 64 i) = s₀.mem (dp s₀ + BitVec.ofNat 64 i) :=
   h.frame.bytes (R := dR s₀) (by simpa using ⟨hp.d_st, hp.k_d.symm⟩) (Nat.le_of_lt (len_lt s₀)) hi
 
-theorem slots_disjoint {s₀ : State} (hp : Pre s₀) :
-    ∀ d, 512 ≤ d → d + 8 ≤ 560 → ∀ r ∈ [stR s₀, KR s₀], r ≠ KR s₀ →
-      Region.Disjoint ⟨B s₀ + BitVec.ofNat 64 d, 8⟩ r := by
-  intro d h₁ h₂ r hr hne
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact hp.k_st.sub_left (hp.stk.slot_sub h₁ h₂)
-  · exact absurd rfl hne
-
 /-! ## The prologue -/
 
 theorem prologue_ok {s₀ : State} (hp : Pre s₀) :

@@ -12,6 +12,47 @@ import unittest
 WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/lean-cache.yml"
 
 
+class MainCommitTests(unittest.TestCase):
+    """A dispatch publishes only a commit of main."""
+
+    SHA = "0123456789abcdef0123456789abcdef01234567"
+
+    def check_commit(self, sha, status):
+        step = WORKFLOW.read_text().split("      - name: Check the commit is main's\n", 1)[1]
+        script = textwrap.dedent(step.split("        run: |\n", 1)[1].split("\n      - ", 1)[0])
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gh = root / "gh"
+            gh.write_text("#!/bin/sh\necho \"$*\" >> \"$CALLS\"\necho \"$STATUS\"\n")
+            gh.chmod(0o755)
+            calls = root / "calls"
+            calls.touch()
+            env = dict(os.environ, PATH=f"{root}:{os.environ['PATH']}", CALLS=str(calls),
+                       STATUS=status, HEAD_SHA=sha, GH_REPO="pyca/verified-garbage")
+            result = subprocess.run(["bash", "-e", "-c", script], env=env, capture_output=True, text=True)
+            return result, calls.read_text()
+
+    def test_commit_of_main_passes(self):
+        for status in ("ahead", "identical"):
+            with self.subTest(status=status):
+                result, calls = self.check_commit(self.SHA, status)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(calls, f"api repos/pyca/verified-garbage/compare/{self.SHA}...main --jq .status\n")
+
+    def test_other_commit_fails(self):
+        for status in ("behind", "diverged", ""):
+            with self.subTest(status=status):
+                result, _ = self.check_commit(self.SHA, status)
+                self.assertNotEqual(result.returncode, 0)
+
+    def test_not_a_commit_fails_before_the_api(self):
+        for sha in ("main", self.SHA[:7], self.SHA + "; true", self.SHA.upper()):
+            with self.subTest(sha=sha):
+                result, calls = self.check_commit(sha, "identical")
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(calls, "")
+
+
 class CheckedBuildTests(unittest.TestCase):
     def check_build(self, hit, dependency_key=None):
         step = WORKFLOW.read_text().split("      - name: Check the checked build was restored\n", 1)[1]

@@ -131,12 +131,6 @@ theorem low_disj {b n : Nat} (hb : 8 * H.W ≤ b) (hbn : b + n ≤ (H.W + H.S) *
 theorem low_sub : Region.Sub (lowR H s₀) (scR H s₀) :=
   Region.sub_prefix (by show 8 * H.W ≤ (H.W + H.S) * 8; omega_using [])
 
-include hp hz in
-theorem in_sc {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ (H.W + H.S) * 8) :
-    InRegions s.wr (A s₀ o) n := by
-  have := L_lt hz
-  exact ⟨scR H s₀, by rw [hwr, hp.wr]; simp, Offset.contains_base _ h (by omega_using [h, this])⟩
-
 include hp in
 theorem sc_mem : scR H s₀ ∈ s₀.wr := by rw [hp.wr]; simp
 

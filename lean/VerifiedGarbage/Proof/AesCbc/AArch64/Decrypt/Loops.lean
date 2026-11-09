@@ -54,31 +54,35 @@ theorem eval_short {s : State} {m : Nat}
   rw [eval_nonzero h (flag_bound m)]
   by_cases hm : m<7 <;> simp [hm]
 
-theorem batch_ok {s₀ s : State} (hp : UPre s₀) {c : Nat} (hc : c+7 ≤ N s₀)
+theorem batch_ok (sha3 : Bool) {s₀ s : State} (hp : UPre s₀) {c : Nat} (hc : c+7 ≤ N s₀)
     (hI : Inv s₀ c c s) :
-    WP isa (Impl.AesCbc.AArch64.Decrypt.batch (R s₀)) s fun t =>
+    WP isa (Impl.AesCbc.AArch64.Decrypt.batch sha3 (R s₀)) s fun t =>
       Inv s₀ (c+7) (c+7) t ∧
         t.gpr .x13=BitVec.ofNat 64 (if N s₀-(c+7)<7 then 1 else 0) := by
   unfold Impl.AesCbc.AArch64.Decrypt.batch
-  refine group_ok hp Impl.AesCbc.AArch64.Decrypt.regs7 (.inl rfl) hc hI _ fun u hi _ => ?_
+  rw [List.append_assoc]
+  refine group_ok sha3 hp Impl.AesCbc.AArch64.Decrypt.regs7 (.inl rfl) hc hI _ fun u hi _ => ?_
   change WP isa (.block (advance 7 ++ Impl.AesCbc.AArch64.Decrypt.checkEnough)) u _
   rw [WP.block_append_iff]
   exact WP.mono (advance_ok (by decide) hc hi) fun _ ⟨hi',_⟩ => check_ok hp hi'
 
-theorem tail_ok {s₀ s : State} (hp : UPre s₀) {c : Nat} (hc : c+1 ≤ N s₀)
+theorem tail_ok (sha3 : Bool) {s₀ s : State} (hp : UPre s₀) {c : Nat} (hc : c+1 ≤ N s₀)
     (hI : Inv s₀ c c s) :
-    WP isa (Impl.AesCbc.AArch64.Decrypt.tail (R s₀)) s (Inv s₀ (c+1) (c+1)) := by
+    WP isa (Impl.AesCbc.AArch64.Decrypt.tail sha3 (R s₀)) s (Inv s₀ (c+1) (c+1)) := by
   unfold Impl.AesCbc.AArch64.Decrypt.tail
+  rw [show Impl.AesCbc.AArch64.Decrypt.finish sha3 .v0 0 =
+    Impl.AesCbc.AArch64.Decrypt.finishData sha3 [.v0] 0 by
+      simp only [Impl.AesCbc.AArch64.Decrypt.finishData, List.append_nil]]
   change WP isa (.seq (.block (ldData [.v0] 0))
     (.seq (Impl.AesCbc.AArch64.Decrypt.rounds (R s₀) [.v0])
-      (.block (Impl.AesCbc.AArch64.Decrypt.finishData [.v0] 0 ++ advance 1)))) s _
-  exact group_ok hp [.v0] (.inr rfl) hc hI _ fun _ hi _ =>
+      (.block (Impl.AesCbc.AArch64.Decrypt.finishData sha3 [.v0] 0 ++ advance 1)))) s _
+  exact group_ok sha3 hp [.v0] (.inr rfl) hc hI _ fun _ hi _ =>
     WP.mono (advance_ok (by decide) hc hi) fun _ hi' => hi'.1
 
-abbrev loops := Impl.AesCbc.AArch64.Decrypt.loops
+abbrev loops (sha3 : Bool) := Impl.AesCbc.AArch64.Decrypt.loops sha3
 
-theorem loops_ok {s₀ s₁ : State} (hp : UPre s₀) (hI₀ : Inv s₀ 0 0 s₁) :
-    WP isa (loops (R s₀)) s₁ (Inv s₀ (N s₀) (N s₀)) := by
+theorem loops_ok (sha3 : Bool) {s₀ s₁ : State} (hp : UPre s₀) (hI₀ : Inv s₀ 0 0 s₁) :
+    WP isa (loops sha3 (R s₀)) s₁ (Inv s₀ (N s₀) (N s₀)) := by
   have hn : N s₀ < 2^64 := (s₀.gpr .x4).isLt
   unfold loops Impl.AesCbc.AArch64.Decrypt.loops
   refine WP.seq (WP.mono (check_ok hp hI₀) fun s₁ ⟨hI₁,h13⟩ => ?_)
@@ -91,12 +95,12 @@ theorem loops_ok {s₀ s₁ : State} (hp : UPre s₀) (hI₀ : Inv s₀ 0 0 s₁
       rw [WP.block_cons_iff]
       refine ⟨_,rfl,WP.block_nil ?_⟩
       let I7 : Nat → State → Prop := fun m s => ∃ c, m=N s₀-c ∧ c+7≤N s₀ ∧ Inv s₀ c c s
-      have hstep : ∀ m s, I7 m s → WP isa (Impl.AesCbc.AArch64.Decrypt.batch (R s₀)) s
+      have hstep : ∀ m s, I7 m s → WP isa (Impl.AesCbc.AArch64.Decrypt.batch sha3 (R s₀)) s
           (fun t => (AArch64.eval (.zero .x .x13) t=some false ∧
             ∃ c, N s₀-c<7 ∧ Inv s₀ c c t) ∨
           (AArch64.eval (.zero .x .x13) t=some true ∧ ∃ m'<m,I7 m' t)) := by
         rintro m s ⟨c,rfl,hc,hi⟩
-        refine WP.mono (batch_ok hp hc hi) fun t ⟨hi',h13'⟩ => ?_
+        refine WP.mono (batch_ok sha3 hp hc hi) fun t ⟨hi',h13'⟩ => ?_
         rw [eval_zero h13' (flag_bound _)]
         by_cases hlt : N s₀-(c+7)<7
         · exact .inl ⟨by simp [hlt],c+7,hlt,hi'⟩
@@ -109,11 +113,11 @@ theorem loops_ok {s₀ s₁ : State} (hp : UPre s₀) (hI₀ : Inv s₀ 0 0 s₁
     rw [WP.block_cons_iff]
     refine ⟨_,rfl,WP.block_nil ?_⟩
     let I1 : Nat → State → Prop := fun m s => ∃ c, m=N s₀-c ∧ c<N s₀ ∧ Inv s₀ c c s
-    have hstep : ∀ m s, I1 m s → WP isa (Impl.AesCbc.AArch64.Decrypt.tail (R s₀)) s
+    have hstep : ∀ m s, I1 m s → WP isa (Impl.AesCbc.AArch64.Decrypt.tail sha3 (R s₀)) s
         (fun t => (AArch64.eval (.nonzero .x .x3) t=some false ∧ Inv s₀ (N s₀) (N s₀) t) ∨
           (AArch64.eval (.nonzero .x .x3) t=some true ∧ ∃ m'<m,I1 m' t)) := by
       rintro m s ⟨c,rfl,hc,hi⟩
-      refine WP.mono (tail_ok hp (by omega) hi) fun t hi' => ?_
+      refine WP.mono (tail_ok sha3 hp (by omega) hi) fun t hi' => ?_
       rw [eval_nonzero hi'.x3 (by omega)]
       by_cases hlast : N s₀-(c+1)=0
       · have he : c+1=N s₀ := by omega

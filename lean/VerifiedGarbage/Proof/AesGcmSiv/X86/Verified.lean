@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
 import VerifiedGarbage.Proof.AesGcmSiv.X86.FnCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
@@ -11,15 +12,15 @@ import VerifiedGarbage.Proof.AesGcm.X86.Contract
 # AES-GCM-SIV on x86: `Verified`
 
 Untrusted: everything here is checked by Lean. Correctness and constant time
-(for any implementations `v` of `vg_aes_ctr32`, `vg_aes_expand_key` and
+(for any implementations `v` of `vg_aes_ctr32_to`, `vg_aes_expand_key` and
 `vg_ghash`), given that the tag input computed with GHASH is the RFC's
 (`TagInputEq`, which the registration file has from
 `Proof.GcmSiv.Polyval.tagInput_eq_tagInputG`, so that no proof here imports
 its algebra), a state satisfying each
 precondition, and the shared contracts with the working space as a last
-argument (`Proof/AesGcmSiv/Scratch.lean`), with 28 bytes of stack: a call of
-`vg_aes_ctr32` (its six arguments and return address), which makes no
-calls.
+argument (`Proof/AesGcmSiv/Scratch.lean`), with 32 bytes of stack: a call of
+`vg_aes_ctr32_to` in place (its seven arguments and return address), which
+makes no calls.
 -/
 
 @[expose] public section
@@ -89,35 +90,35 @@ theorem openSat_args : arg openSat 0 = 0x1000 ∧ arg openSat 1 = 10 ∧ arg ope
   sealSat_args
 
 theorem seal_verified (v : GcmImpl) (hti : TagInputEq) :
-    Verified X86.target («seal» v.callees) (Proof.AesGcmSiv.sealScratchContract X86.abi 352 28) :=
+    Verified X86.target («seal» v.callees) (Proof.AesGcmSiv.sealScratchContract X86.abi 352 32) :=
   Verified.of_correct (fun _ hs => seal_wp v hti hs) (seal_ct v) (by
     obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, e⟩ := sealSat_args
     have esp : sealSat.gpr .esp = 0x8000 := rfl
     sig_implies [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
-      Spec.GcmSiv.sealPost, sealX86, sealPre, oneLay, onePub, schR, nonceR, aadR, dataR, tagR, workR, argsR', retR,
+      Proof.AesGcmSiv.sealRoundsPost, sealX86, sealPre, oneLay, onePub, schR, nonceR, aadR, dataR, tagR, workR, argsR', retR,
       stackR, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, e, esp] using sealSat)
 
 theorem open_verified (v : GcmImpl) (hti : TagInputEq) :
-    Verified X86.target («open» v.callees) (Proof.AesGcmSiv.openScratchContract X86.abi 352 28) :=
+    Verified X86.target («open» v.callees) (Proof.AesGcmSiv.openScratchContract X86.abi 352 32) :=
   Verified.of_correct (fun _ hs => open_wp v hti hs) (open_ct v)
     { pre := by
         sig_implies_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
-          Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre, oneLay, onePub,
+          Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre, oneLay, onePub,
           schR, nonceR, aadR, dataR, tagR, workR, argsR', retR, stackR, X86.abi, X86.argSlots, X86.argVal,
           X86.argBytes]
       post := by
         intro s s' _ h
         sig_post [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
-          Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre, oneLay, onePub,
+          Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre, oneLay, onePub,
           schR, nonceR, aadR, dataR, tagR, workR, argsR', retR, stackR, X86.abi, X86.argSlots, X86.argVal,
           X86.argBytes, setWidth_ret]
         sig_reduce [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
-          Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre, oneLay, onePub,
+          Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre, oneLay, onePub,
           schR, nonceR, aadR, dataR, tagR, workR, argsR', retR, stackR, X86.abi, X86.argSlots, X86.argVal,
           X86.argBytes, setWidth_ret] at h
         sig_simp [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
-          Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre, oneLay, onePub,
+          Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre, oneLay, onePub,
           schR, nonceR, aadR, dataR, tagR, workR, argsR', retR, stackR, X86.abi, X86.argSlots, X86.argVal,
           X86.argBytes, setWidth_ret] [] at h
         intro _
@@ -125,16 +126,16 @@ theorem open_verified (v : GcmImpl) (hti : TagInputEq) :
       pub := by
         intro s₁ s₂ _ _ h
         sig_pub [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
-          Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre, oneLay, onePub,
+          Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre, oneLay, onePub,
           schR, nonceR, aadR, dataR, tagR, workR, argsR', retR, stackR, X86.abi, X86.argSlots, X86.argVal,
           X86.argBytes] at h
         sig_split h
         sig_reduce [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
-          Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre, oneLay, onePub,
+          Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre, oneLay, onePub,
           schR, nonceR, aadR, dataR, tagR, workR, argsR', retR, stackR, X86.abi, X86.argSlots, X86.argVal,
           X86.argBytes]
         sig_simp [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
-          Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre, oneLay, onePub,
+          Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre, oneLay, onePub,
           schR, nonceR, aadR, dataR, tagR, workR, argsR', retR, stackR, X86.abi, X86.argSlots, X86.argVal,
           X86.argBytes] [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const, true_and]
         sig_and_intros
@@ -143,7 +144,7 @@ theorem open_verified (v : GcmImpl) (hti : TagInputEq) :
         obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, e⟩ := openSat_args
         have esp : openSat.gpr .esp = 0x8000 := rfl
         sig_implies_sat [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-          Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre,
+          Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre,
           oneLay, onePub, schR, nonceR, aadR, dataR, tagR, workR, argsR', retR, stackR, X86.abi, X86.argSlots,
           X86.argVal, X86.argBytes] [a0, a1, a2, a3, a4, a5, a6, a7, a8, e, esp] using openSat }
 

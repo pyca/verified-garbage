@@ -99,9 +99,6 @@ theorem Pub.eω {s₀ s₀' : State} (h : Pub s₀ s₀') : ω s₀ = ω s₀' :
   show (arg s₀ 2).toNat = (arg s₀' 2).toNat; rw [h.a2]
 theorem Pub.eT {s₀ s₀' : State} (h : Pub s₀ s₀') (i j : Nat) : T s₀ i j = T s₀' i j := by
   show hpT (ω s₀) (K s₀) (H s₀) i j = hpT (ω s₀') (K s₀') (H s₀') i j; rw [h.h, h.eω, h.eK]
-theorem Pub.eS {s₀ s₀' : State} (h : Pub s₀ s₀') (i : Nat) : S s₀ i = S s₀' i := by
-  show hpS (ω s₀) (K s₀) (H s₀) i = hpS (ω s₀') (K s₀') (H s₀') i; rw [h.h, h.eω, h.eK]
-
 /-! ## What holds throughout the body -/
 
 structure Base (s₀ s : State) : Prop where

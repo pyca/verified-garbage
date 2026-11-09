@@ -334,14 +334,6 @@ theorem digitLive_slots (K : WinCfg) : ∀ x ∈ digitLive K, x ∈ winSlots K :
   · simp only [winSlots, List.mem_append]; exact Or.inr hx
   · exact winOther_mem (D_other K x (by simpa [jacCoords] using hx))
 
-theorem loopLive_slots (K : WinCfg) : ∀ x ∈ loopLive K, x ∈ winSlots K := by
-  intro x hx
-  simp only [loopLive, List.mem_append] at hx
-  rcases hx with (hx | hx) | hx
-  · exact winRo_slots K x hx
-  · simp only [winSlots, List.mem_append]; exact Or.inr hx
-  · exact winOther_mem (R_other K x (by simpa [jacCoords] using hx))
-
 /-- A digit's step: `R = D + [d_j]P`, or `R = D`. -/
 theorem digit_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k j : Nat}
     (hL : NafLay K size) (hm : UnitMod C.p (2^(64*K.M.n))) (hone : K.one < C.p) (hc : DigitChecks K)

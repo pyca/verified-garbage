@@ -23,27 +23,27 @@ open VG.X86_64
 /-- The x86-64 implementations of the primitives key generation calls. -/
 def prims : Prims where
   ntt := Arith.ntt
-  invNtt := Arith.nttInv
-  mul := Arith.mul
-  mulAdd := Arith.mulAdd
   add := Arith.add
-  rejNtt := Sample.rejNTT
-  rejBounded := Sample.rejBounded
+  rejNtt := Sample.rejNTTShort
+  rejBounded := Sample.rejBoundedShort
   power2Round := Round.power2Round
   simpleBitPack := Pack.simpleBitPack
   bitPack := Pack.bitPack
   rej4 := Sample.Rej4.rejNTT4
+  dotInv4 := Arith.dotInvSse2 4
+  dotInv5 := Arith.dotInvSse2 5
+  dotInv7 := Arith.dotInvSse2 7
 
 /-- The primitives, with the polynomial arithmetic of `B`. -/
 def primsWith (B : Arith.Backend) : Prims :=
   { prims with
     ntt := B.ntt
-    invNtt := B.invNtt
-    mul := B.mul
-    mulAdd := B.mulAdd
     add := B.add
     rej4 := B.rej4
+    dotInv4 := B.dotInv4
+    dotInv5 := B.dotInv5
+    dotInv7 := B.dotInv7
     sfx := B.sfx
-    montgomery := B.montgomery }
+    asfx := B.asfx }
 
 end VG.Impl.MlDsa.X86_64.KeyGen

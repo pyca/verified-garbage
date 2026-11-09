@@ -27,14 +27,6 @@ theorem swap_get (s : Table) (i j k : Byte) :
   have hij (a b : Byte) : a.toNat = b.toNat ↔ a = b := BitVec.toNat_inj
   simp only [hij, eq_comm]
 
-theorem swap_self (s : Table) (i : Byte) : swap s i i = s := by
-  apply Vector.ext
-  intro k hk
-  simp only [swap, get_byte, Vector.getElem_set! hk]
-  by_cases h : i.toNat = k
-  · subst k; simp
-  · simp only [h, ite_false]
-
 theorem swap_i (s : Table) (i j : Byte) :
     (swap s i j).getD i.toNat 0 = s.getD j.toNat 0 := by
   rw [swap_get]

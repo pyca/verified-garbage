@@ -1,6 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Proof.RsaPss.EncBytes
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
 public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
@@ -55,12 +56,13 @@ open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Proof.Bignum (off off_off)
 open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
-open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
+open VG.Impl.Pbkdf2.Md.X86_64 (Hash Stream)
+open VG.Proof.Pbkdf2.Md.X86_64.Calls (StreamOK)
 
-/-- An address that no writable region of `wr` holds, nor the 8 bytes
+/-- An address that no writable region of `wr` holds, nor the 16 bytes
 below `F`. -/
 def Outside (wr : List Region) (F a : Addr) : Prop :=
-  (∀ r ∈ wr, ¬ r.Contains a 1) ∧ ¬ (below F 8).Contains a 1
+  (∀ r ∈ wr, ¬ r.Contains a 1) ∧ ¬ (below F 16).Contains a 1
 
 /-- Bytes outside are not in our working space. -/
 theorem Outside.ne {u : State} {F S : Addr} (L : Lay u F S) {a : Addr} (h : Outside u.wr F a) {x : Nat}
@@ -71,7 +73,7 @@ theorem Outside.ne {u : State} {F S : Addr} (L : Lay u F S) {a : Addr} (h : Outs
 
 theorem chain {u v v' : State} {F : Addr} (hw : v.wr = u.wr) (hsp : v.gpr .rsp = F)
     (hS : ∀ a, Outside u.wr F a → v.mem a = u.mem a)
-    (hk : ∀ a, (∀ r ∈ v.wr, ¬ r.Contains a 1) → ¬ (below (v.gpr .rsp) 8).Contains a 1 → v'.mem a = v.mem a) :
+    (hk : ∀ a, (∀ r ∈ v.wr, ¬ r.Contains a 1) → ¬ (below (v.gpr .rsp) 16).Contains a 1 → v'.mem a = v.mem a) :
     ∀ a, Outside u.wr F a → v'.mem a = u.mem a :=
   fun a ha => (hk a (hw ▸ ha.1) (hsp ▸ ha.2)).trans (hS a ha)
 
@@ -208,8 +210,12 @@ theorem em_bytes {G : Spec.Mgf1.Hash} {V5 V9 sf : Nat → Byte} {k lo db sl D : 
       · simp (disch := omega_arith) only [↓ifp, ↓ifn]
 
 include K in
-theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
-    {W : Nat → BitVec 64} (R : Rep u.mem F S V W) {k lo sl : Nat} {c : Byte} {dig q : Addr}
+theorem signEnc_ok (lk : MgfLink H hH) {G : Stream} (hG : StreamOK G) {Gs : Spec.Mgf1.Hash}
+    (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs) {dn : String}
+    {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns} (hf : MdFnsSafe f) (hdk : DigOK H) {u : State} {F S : Addr}
+    (L : Lay u F S) {V : Nat → Byte}
+    {W : Nat → BitVec 64} (R : Rep u.mem F S V W) (hT : HT H dn f W u.syms) (hGT : GT G g W u.syms)
+    {k lo sl : Nat} {c : Byte} {dig q : Addr}
     (hk : W 17 = BitVec.ofNat 64 k) (hlo : W 26 = BitVec.ofNat 64 lo) (hc : W 25 = BitVec.setWidth 64 c)
     (hdg : W 37 = dig) (hq : W 39 = q) (hsl : W 40 = BitVec.ofNat 64 sl)
     (hk2 : k ≤ 1024) (hlo1 : lo ≤ 1) (hfit : H.D + sl + 2 ≤ k - lo)
@@ -221,10 +227,10 @@ theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) 
     let db := k - lo - H.D - 1
     let saltB := (List.range sl).map (bytesF u.mem q)
     let h := lk.G.hash (Spec.RsaPss.zeros 8 ++ (List.range H.D).map (bytesF u.mem dig) ++ saltB)
-    WP isa (signEnc H) u fun u' => Lay u' F S ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
+    WP isa (signEnc f H g) u fun u' => Lay u' F S ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
       (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], u'.gpr r = u.gpr r) ∧
       ∃ V' W', Rep u'.mem F S V' W' ∧ (∀ j < nW, j < 23 ∨ 32 < j → W' j = W j) ∧
-        ∀ i < k, V' (oEm + i) = RsaPss.emT lo db sl saltB h (Spec.Mgf1.mgf1 lk.G h db) c i := by
+        ∀ i < k, V' (oEm + i) = RsaPss.emT lo db sl saltB h (Spec.Mgf1.mgf1 Gs h db) c i := by
   intro db saltB h
   have hD := hH.hD0
   have hDN := hH.hDN
@@ -237,32 +243,34 @@ theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) 
   rw [signEnc]
   simp only [seqs]
   -- `DB`'s slots.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [dbSlots]) (by exact Nat.zero_le 8)
-    (dbSlots_ok L R hlo hax)) fun u1 ⟨⟨L1, k1, R1⟩, f1⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (WP.keepIn (by safe_by [dbSlots]) (by exact Nat.zero_le 16)
+    (dbSlots_ok L R hlo hax)) fun u1 ⟨⟨L1, k1, R1⟩, f1⟩ s1 => ?_)
   have hS1 := chain (u := u) rfl L.rsp (fun _ _ => rfl) f1
   rw [hdb] at R1
   -- `Y` cleared.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [clearY]) (by exact Nat.zero_le 8)
-    (clearY_ok L1 R1)) fun u2 ⟨⟨L2, k2, hcx2, R2⟩, f2⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (WP.keepIn (by safe_by [clearY]) (by exact Nat.zero_le 16)
+    (clearY_ok L1 R1)) fun u2 ⟨⟨L2, k2, hcx2, R2⟩, f2⟩ s2 => ?_)
   have hS2 := chain (u := u) k1.2.2 L1.rsp hS1 f2
   -- `mHash`.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [copyDigest]) (by exact Nat.zero_le 8)
+  refine WP.seq (X86_64.WP.mono_syms (WP.keepIn (by safe_by [copyDigest]) (by exact Nat.zero_le 16)
     (copyDigest_ok hH L2 R2 (p := dig) (by simp [upd, hdg]) hcx2
       (fun i hi => by rw [k2.2.1, k2.2.2, k1.2.1, k1.2.2]; exact hdR i hi)
       (fun i hi j hj => Outside.ne L2 (by rw [k2.2.2, k1.2.2]; exact hdO i hi) (by omega_using [hDN, hN, c2, c5, hj]))))
-    fun u3 ⟨⟨L3, k3, R3⟩, f3⟩ => ?_)
+    fun u3 ⟨⟨L3, k3, R3⟩, f3⟩ s3 => ?_)
   have hS3 := chain (u := u) (k2.2.2.trans k1.2.2) L2.rsp hS2 f3
   -- The salt.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [copySaltY]) (by exact Nat.zero_le 8)
+  refine WP.seq (X86_64.WP.mono_syms (WP.keepIn (by safe_by [copySaltY]) (by exact Nat.zero_le 16)
     (copySaltY_ok hH L3 R3 (q := q) (sl := sl) (by simp [upd, hq]) (by simp [upd, hsl]) (by omega_using [hk2, hfit])
       ((k3.gpr (by decide)).trans hcx2)
       (fun i hi => by rw [k3.2.1, k3.2.2, k2.2.1, k2.2.2, k1.2.1, k1.2.2]; exact hqR i hi)
       (fun i hi j hj => Outside.ne L3 (by rw [k3.2.2, k2.2.2, k1.2.2]; exact hqO i hi) (by omega_using [hk2, hfit, c2, c5, hj]))))
-    fun u4 ⟨⟨L4, k4, R4⟩, f4⟩ => ?_)
+    fun u4 ⟨⟨L4, k4, R4⟩, f4⟩ s4 => ?_)
   have hS4 := chain (u := u) (k3.2.2.trans (k2.2.2.trans k1.2.2)) L3.rsp hS3 f4
   -- The length of `M'`.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [signLen]) (by exact Nat.zero_le 8)
-    (signLen_ok hH L4 R4 (sl := sl) (by simp [upd, hsl]) (by omega_using [hk2, hfit]))) fun u5 ⟨⟨L5, k5, R5⟩, f5⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (WP.keepIn (by safe_by [signLen]) (by exact Nat.zero_le 16)
+    (signLen_ok hH L4 R4 (sl := sl) (by simp [upd, hsl]) (by omega_using [hk2, hfit])))
+    fun u5 ⟨⟨L5, k5, R5⟩, f5⟩ s5 => ?_)
+  have sy5 : u5.syms = u.syms := s5.trans (s4.trans (s3.trans (s2.trans s1)))
   have hS5 := chain (u := u) (k4.2.2.trans (k3.2.2.trans (k2.2.2.trans k1.2.2))) L4.rsp hS4 f5
   -- `H`.
   set digB := (List.range H.D).map (bytesF u.mem dig) with hdigB
@@ -274,11 +282,12 @@ theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) 
   have hL := hH.dims.L
   have hnb1 := Nat.lt_div_mul_add (a := 8 + H.D + sl + H.P.L) (b := H.P.B) hB0
   have hnb2 := Nat.div_mul_le_self (8 + H.D + sl + H.P.L) H.P.B
-  refine WP.seq (WP.mono (WP.keepIn (ctHash_safe hH K) (by rw [ctHash_xd K])
+  refine WP.seq (X86_64.WP.mono_syms (WP.keepIn (ctHash_safe hH hf) (Nat.le_trans (ctHash_xd hf) (by decide))
     (ctHash_ok hH K L5 R5 (msg := msg) (nbm := (8 + H.D + sl + H.P.L) / H.P.B + 1)
       (by simp [upd, hml]) (by simp [upd]) (by rw [hml, Nat.succ_mul]; omega_using [hnb1])
           (by rw [Nat.succ_mul]; omega_using [hk2, hfit, hBl, hL, hnb2])
-      (fun i hi => ?_))) fun u6 ⟨⟨L6, rd6, wr6, cs6, V5, W3, R6, hout6, hW6, hdig6⟩, f6⟩ => ?_)
+      (fun i hi => ?_) (by rw [sy5]; exact hT.congr rfl (by simp [upd]) (by simp [upd]) (by simp [upd])) hdk))
+    fun u6 ⟨⟨L6, rd6, wr6, cs6, V5, W3, R6, hout6, hW6, hdig6⟩, f6⟩ s6 => ?_)
   · have hi' : i < 2048 := by rw [Nat.succ_mul] at hi; omega_using [hk2, hfit, hBl, hL, hnb2, hi]
     simp only [cpV, clrV, hmsg, getD_app, List.length_append, RsaPss.zeros_length, hdigB, saltB, List.length_map,
       List.length_range, getD_map_range, bytesF]
@@ -310,23 +319,25 @@ theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) 
   have h23 : W3 23 = off S (oEm + lo) := by rw [hW6 23 (by decide) (by decide) (by decide)]; simp [upd]
   have h24 : W3 24 = BitVec.ofNat 64 db := by rw [hW6 24 (by decide) (by decide) (by decide)]; simp [upd]
   -- `EM` cleared.
-  refine WP.seq (WP.mono (WP.keepIn (by decide) (by exact Nat.zero_le 8)
+  refine WP.seq (X86_64.WP.mono_syms (WP.keepIn (by decide) (by exact Nat.zero_le 16)
     (clearEm_ok L6 R6 (k := k) (by rw [hW3' 17 (by decide) (by decide)]; exact hk) (by omega_using [hdb]) hk2))
-    fun u7 ⟨⟨L7, k7, R7⟩, f7⟩ => ?_)
+    fun u7 ⟨⟨L7, k7, R7⟩, f7⟩ s7 => ?_)
   have hS7 := chain (u := u) wr6' L6.rsp hS6 f7
   -- `0x01` and the salt.
-  refine WP.seq (WP.mono (putSalt_ok L7 R7 (e := oEm + lo) (db := db) (q := q) (sl := sl) h23 h24
+  refine WP.seq (X86_64.WP.mono_syms (putSalt_ok L7 R7 (e := oEm + lo) (db := db) (q := q) (sl := sl) h23 h24
     (by rw [hW3' 39 (by decide) (by decide)]; exact hq)
     (by rw [hW3' 40 (by decide) (by decide)]; exact hsl)
     (by omega_using [hfit]) (by omega_using [hk2, c1, c5, hdb]) (fun i hi => by rw [k7.2.1, k7.2.2, rd6', wr6']; exact hqR i hi)
     (fun i hi j hj => Outside.ne L7 (by rw [k7.2.2, wr6']; exact hqO i hi) (by omega_using [hk2, hfit, c1, c5, hj])))
-    fun u8 ⟨L8, k8, R8⟩ => ?_)
+    fun u8 ⟨L8, k8, R8⟩ s8 => ?_)
   -- `H` and `0xbc`.
-  refine WP.seq (WP.mono (putH_ok hH L8 R8 (e := oEm + lo) (db := db) (k := k) h23 h24
+  refine WP.seq (X86_64.WP.mono_syms (putH_ok hH L8 R8 (e := oEm + lo) (db := db) (k := k) h23 h24
     (by rw [hW3' 17 (by decide) (by decide)]; exact hk)
-    (by omega_using []) (by omega_using [hdb]) hk2) fun u9 ⟨L9, k9, R9⟩ => ?_)
+    (by omega_using []) (by omega_using [hdb]) hk2) fun u9 ⟨L9, k9, R9⟩ s9 => ?_)
   -- The mask.
-  refine WP.seq (WP.mono (mgfXor_ok hH K lk.hash lk.len (validG hH lk.hash lk.len) L9 R9 (e := oEm + lo) (db := db)
+  have T9 : GT G g W3 u9.syms := hGT.congr (s9.trans (s8.trans (s7.trans (s6.trans sy5)))) fun j h1 h2 =>
+    hW3' j (by unfold nW frameBytes; omega_using [h2]) (Or.inl (by omega_using [h2]))
+  refine WP.seq (WP.mono (mgfXor_ok hG hGh hGl hGv H L9 R9 T9 (e := oEm + lo) (db := db)
     ⟨by omega_using [], by omega_using [hdb], by omega_using [hk2, hdb]⟩ h23 h24) fun u10 ⟨L10, rd10, wr10, cs10, V9,
         W4, R10, hW10, hV10⟩ => ?_)
   -- The top bits.

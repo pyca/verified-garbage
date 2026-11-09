@@ -71,11 +71,4 @@ theorem keyView_number_low (m : Mem) (base : BitVec 32) (w j : Nat)
   rw [top, Nat.mul_zero, Nat.add_zero] at split
   exact split.symm
 
-theorem keyView_number_zeroTop (m : Mem) (base : BitVec 32) (w j : Nat)
-    (fits : base.toNat + 96 < 2 ^ 32)
-    (top : val32 m (State.addr base) (Proof.Rsa.Mont.arrAt w j + 8 * w) 2 = 0) :
-    VG.Proof.Rsa.Arm.Keys.num m (base + 96#32) (2 * w + 2) j =
-      Proof.Rsa.Mont.numAt m (State.addr base) w j := by
-  rw [keyView_number m base w j fits, top, Nat.mul_zero, Nat.add_zero]
-
 end VG.Proof.Ffdh.Arm.ParameterCandidate

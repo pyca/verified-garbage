@@ -36,8 +36,6 @@ theorem T.pkSlice {p : Params} {σ s : State} (h : T p σ s) {off len : Nat} (hl
     bytesAt s.mem (pa s (.rbp, off)) len = ((vPk p σ).drop off).take len := by
   rw [← h.pk, pa, pa, BitVec.add_zero, Proof.MlKem.bytesAt_slice _ _ hl]
 
-theorem lenZ_eq (p : Params) : VG.Impl.MlDsa.X86_64.Verify.lenZ p = VG.Proof.MlDsa.Verify.lenZ p := rfl
-
 /-! ## The hint -/
 
 /-- After the hint: `r15` whether it is well formed, and the hint. -/

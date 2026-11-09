@@ -1,14 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.RandomCallPre
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Calling the supplied-nonce signer (x86)
 
-`call_ok` runs the call of a verified `vg_dsa_sign` (`SignFn`) with the
-arguments `callArgs` stored: it returns the signer's status, writes its
+`call_ok` runs the call of a verified supplied-nonce signer (`SignFn`), for a
+key it accepts, with the arguments `callArgs` stored: it returns the signer's status, writes its
 result to `out`, and changes memory only in `out`, `scratch`, the frame's
 argument words and the stack below the frame.
 -/
@@ -19,13 +20,43 @@ namespace VG.Proof.Dsa.X86
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86
 open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.Random
 
-/-- A verified `vg_dsa_sign`, for a frame of 20 bytes. -/
+/-- A supplied-nonce signer the randomized wrapper calls, for a frame of 20
+bytes: the fully checked `vg_dsa_sign` (`valid` always true), or
+`vg_dsa_sign_prevalidated` (`valid` is `validatePrivateKeyBytes`). It is
+verified against `signContract` under `valid` of the exact key bytes it is
+called with. -/
 structure SignFn where
   name : String
   code : Prog isa
-  verified : Verified X86.target code (Spec.Dsa.signContract X86.abi 108)
+  valid : Nat → Nat → List Byte → Bool
+  verified : Verified X86.target code (signContractWith valid X86.abi 108)
   noSp : NoSp code
   depth : stackUse code ≤ 108
+
+/-- The signer's validity of the wrapper's key. -/
+def KeyValid (valid : Nat → Nat → List Byte → Bool) (s₀ : State) : Prop :=
+  valid (rInput s₀).pLen (rInput s₀).qLen (rInput s₀).key = true
+
+theorem signWith_pre {valid : Nat → Nat → List Byte → Bool} {s : State}
+    (h : (signContractWith valid abi 108).pre s) :
+    (Spec.Dsa.signContract abi 108).pre s ∧
+      valid (X86.arg s 4).toNat (X86.arg s 6).toNat
+        (Spec.Rsa.bytesAt s.mem (argumentPointer s 2) (X86.arg s 3).toNat) = true := by
+  sig_pre [signContractWith, Spec.Dsa.signSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_split h
+  refine ⟨?_, by assumption⟩
+  sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_and_intros <;> with_reducible assumption
+
+theorem signWith_of_pre {valid : Nat → Nat → List Byte → Bool} {s : State}
+    (h : (Spec.Dsa.signContract abi 108).pre s)
+    (hv : valid (X86.arg s 4).toNat (X86.arg s 6).toNat
+      (Spec.Rsa.bytesAt s.mem (argumentPointer s 2) (X86.arg s 3).toNat) = true) :
+    (signContractWith valid abi 108).pre s := by
+  sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_pre [signContractWith, Spec.Dsa.signSig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_split h
+  sig_and_intros <;> with_reducible assumption
 
 /-- Where the call may write. -/
 def callWrites (s₀ : State) : List Region := callWr s₀ ++ [⟨rCall s₀, 112⟩]
@@ -55,6 +86,17 @@ theorem callEntry_bytes {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s�
   rw [esp_sub4 A h]
   have := Offset.contains_base (off (rLow s₀) 20) (d := 0) (n := 4) (k := 4) (by decide) (by decide)
   rwa [BitVec.add_zero] at this
+
+/-- The key's bytes, while the frame is allocated. -/
+theorem callKey {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) :
+    Spec.Rsa.bytesAt t.mem (argumentPointer s₀ 3) (X86.arg s₀ 4).toNat = (rInput s₀).key := by
+  refine rBytes_frame h.frame (fun r hr => ?_) (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
+  simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact A.stackKeyWide.symm
+  · exact A.outKey.symm
+  · exact A.keyScratch
+  · exact A.usedKey.symm
 
 theorem call_covers {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) :
     Covers (callRd s₀ ++ callWr s₀) (t.rd ++ t.wr) ∧ Covers (callWr s₀) t.wr := by
@@ -86,7 +128,28 @@ theorem call_covers {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t)
   · obtain ⟨r', hr', o, ho⟩ := hw r hr
     exact ⟨r', List.mem_append_right _ hr', o, ho⟩
 
-theorem call_ok (F : SignFn) {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) (C : CallSlots s₀ t) :
+/-- The signer's contract at the wrapper's call boundary, for a key the
+signer accepts. -/
+theorem call_pre_with {valid : Nat → Nat → List Byte → Bool} {s₀ t : State} (A : RandomSignABI s₀)
+    (h : Ready s₀ t) (C : CallSlots s₀ t) (hv : KeyValid valid s₀) :
+    (signContractWith valid abi 108).pre (t.callEntry.withRegions (callRd s₀) (callWr s₀)) := by
+  refine signWith_of_pre (call_pre A h C) ?_
+  have hql := rQBytes_le A
+  have hqn := rQBytes_length A
+  have hp : argumentPointer (t.callEntry.withRegions (callRd s₀) (callWr s₀)) 2 = argumentPointer s₀ 3 := by
+    simp only [argumentPointer, ce_arg A h C (callRd s₀) (callWr s₀) (show 2 < 11 by decide), callVal]
+  have hk : Spec.Rsa.bytesAt (t.callEntry.withRegions (callRd s₀) (callWr s₀)).mem (argumentPointer s₀ 3)
+      (X86.arg s₀ 4).toNat = (rInput s₀).key :=
+    (callEntry_bytes A h (A.stackKeyWide.symm.sub_right (stk_sub s₀ (by decide))) (by omega) _).trans (callKey A h)
+  rw [ce_arg A h C (callRd s₀) (callWr s₀) (show 3 < 11 by decide),
+    ce_arg A h C (callRd s₀) (callWr s₀) (show 4 < 11 by decide),
+    ce_arg A h C (callRd s₀) (callWr s₀) (show 6 < 11 by decide), hp]
+  simp only [callVal]
+  rw [hk]
+  exact hv
+
+theorem call_ok (F : SignFn) {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) (C : CallSlots s₀ t)
+    (hv : KeyValid F.valid s₀) :
     WP isa (.call F.name F.code) t fun u => Ready s₀ u ∧ Frame (callWrites s₀) t.mem u.mem ∧
       (∀ r ∈ calleeSaved, u.gpr r = t.gpr r) ∧
       u.gpr .eax = BitVec.ofNat 32 (Spec.Dsa.signStatus (callResult s₀ t)) ∧
@@ -98,7 +161,7 @@ theorem call_ok (F : SignFn) {s₀ t : State} (A : RandomSignABI s₀) (h : Read
   have hd := F.depth
   have hlo := A.stackLow
   have hrl := rLow_toNat A
-  refine WP.call F.verified.1 F.noSp (by omega) (call_pre A h C) hc hcw
+  refine WP.call F.verified.1 F.noSp (by omega) (call_pre_with A h C hv) hc hcw
     fun u hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ => ?_
   have hesp : u.gpr .esp = t.gpr .esp := hcs .esp (by simp [calleeSaved])
   -- Where the call wrote.
@@ -126,7 +189,7 @@ theorem call_ok (F : SignFn) {s₀ t : State} (A : RandomSignABI s₀) (h : Read
   refine ⟨hu, hf', hcs, ?_⟩
   -- The signer's postcondition.
   have hp := hpost
-  sig_post [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argSlots, argVal, argBytes, stackBelow] at hp
+  sig_post [signContractWith, Spec.Dsa.signSig, abi, argSlots, argVal, argBytes, stackBelow] at hp
   simp only [ce_arg A h C (callRd s₀) (callWr s₀) (show 0 < 11 by decide),
     ce_arg A h C (callRd s₀) (callWr s₀) (show 1 < 11 by decide),
     ce_arg A h C (callRd s₀) (callWr s₀) (show 2 < 11 by decide),

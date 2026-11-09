@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Camellia.X86.Crypt8
 public import VerifiedGarbage.Impl.Camellia.Planes32
-public import VerifiedGarbage.Spec.Camellia.Prepared
+public import VerifiedGarbage.Spec.Camellia
 
 /-!
 # Camellia's batches under prepared subkeys, on x86 (32-bit)
 
-`vg_camellia_crypt_prepared` (`Spec/Camellia/Prepared.lean`): the eight
+`vg_camellia_crypt_prepared` (`Proof/Camellia/Prepared.lean`): the eight
 blocks of the tail buffer (`Crypt8.lean`) as a function of the working
 space, for ECB (`Ecb.lean`) and the modes (`Modes.lean`), which call it.
 
@@ -60,17 +60,6 @@ def keyEntry (w : List (BitVec 64)) (g : Nat) : Dir → Nat → BitVec 64
 def preparedWord (rounds : Nat) (w : List (BitVec 64)) (d : Dir) (k : Nat) : BitVec 32 :=
   keyPlane32 (keyEntry w (rounds / 6) d ((k - keySlot) / 16)) ((k - keySlot) % 16 / 8) ((k - keySlot) % 8)
 
-/-- The table's slots, as a byte range; the function writes the slots below
-the table, the group's end's and its saved registers'. -/
-def layout : Spec.Camellia.Prepared.Layout where
-  table rounds := [(4 * keySlot, 64 * (8 * (rounds / 6) + 2))]
-  encode rounds w d i := (preparedWord rounds w (ofSpecDir d) (i / 4)).extractLsb' (8 * (i % 4)) 8
-  buf := 4 * tailSlot
-  blocks := 8
-  prepScratch := [(0, 4 * slots)]
-  cryptScratch := [(0, 4 * keySlot), (4 * grpSlot, 4 * 5)]
-  size := 4 * slots
-
 /-! ## The call -/
 
 /-- The working space's length, in 64-bit words. -/
@@ -81,7 +70,7 @@ the number of rounds in the caller's second stack argument (ECB's or the
 modes'): the arguments pushed in a frame. The function restores `edi`. -/
 def cryptCall : Prog isa :=
   .seq (.block [.mov .eax (.mem (argOp 1)), movR .ecx sb, movI .edx (BitVec.ofNat 32 wsWords)])
-    (.frame (.push [.edx, .ecx, .eax]) (.call (Spec.Camellia.Prepared.cryptApi layout).name cryptPrepared)
+    (.frame (.push [.edx, .ecx, .eax]) (.call "vg_camellia_crypt_prepared" cryptPrepared)
       (.pop .eax 3))
 
 end VG.Impl.Camellia.X86

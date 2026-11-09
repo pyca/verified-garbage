@@ -916,9 +916,6 @@ theorem sels_ok {O : Addr} (hal : O.toNat % 8 = 0) {s0 : State} (h2 : s0.gpr .t2
       WP isa (.block ((List.range n).flatMap selWord)) s (SelInv O s0 n) :=
   wp_range_flatMap (M := isa) (SelInv O s0) fun _ _ hj h => selStep_ok hal h2 hw hm hj h
 
-theorem colsV_lt' (f : Nat → Nat) (hf : ∀ k, f k < 2 ^ 64) (n : Nat) : colsV f n < (2 ^ 64) ^ n :=
-  colsV_lt_of f hf n
-
 /-- `sumWith ks ++ csubTail`: `x mod m` at `[t2]`, for `x = X + 2³⁸⁴ XC` below
 `2m`, where `ks[j]` puts the words `N j` of `2³⁸⁴ - m` into `t0`. -/
 theorem csubWith_ok {ks : List (List Instr)} {N : Nat → Nat} {M : Nat} (hN : ∀ j, N j < 2 ^ 64)
@@ -1906,7 +1903,6 @@ theorem unpack12_ok {b q : Addr} {s0 : State} (hc : Ctx b s0) {p : Reg}
     · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega)]
       exact h.outs j hj
     · rw [wd_write_self, toNat_lo32, hv]
-
 
 end VG.Proof.Weierstrass.RISCV64.P384Field
 

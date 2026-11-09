@@ -35,10 +35,6 @@ theorem both_map {α β : Type} {Φ : α → State → Prop} {Φ' : β → State
     RelCT isa (Both Φ) c Q :=
   hct.mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨f a, h _ _ h₁, h _ _ h₂⟩) fun _ _ h => h
 
-theorem both_mono {α : Type} {Φ Φ' : α → State → Prop} (h : ∀ a s, Φ a s → Φ' a s) {s t : State}
-    (hp : Both Φ s t) : Both Φ' s t :=
-  let ⟨a, h₁, h₂⟩ := hp; ⟨a, h a _ h₁, h a _ h₂⟩
-
 /-- A fact that every related pair of states gives. -/
 theorem relct_of_fact {P : Prop} {Φ : State → State → Prop} {c : Prog isa} {Q : State → State → Prop}
     (hP : ∀ s t, Φ s t → P) (h : P → RelCT isa Φ c Q) : RelCT isa Φ c Q :=

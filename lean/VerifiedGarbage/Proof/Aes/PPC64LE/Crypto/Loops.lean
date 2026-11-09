@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.PPC64LE.Crypto.Invariant
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.CountedLoop
 import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
@@ -13,19 +14,18 @@ import VerifiedGarbage.Proof.Framework.Offset
 namespace VG.Proof.Aes.PPC64LE.Crypto
 open VG VG.PPC64LE
 
-theorem LoopInv.write12 {inverse ctr : Bool} {base s : State} {nr n k : Nat} {D : Addr} {icb : Spec.Gcm.Block}
-    (h : LoopInv inverse ctr base nr n D icb k s) (x : BitVec 64) :
-    LoopInv inverse ctr base nr n D icb k (s.write .r12 x) := by
+theorem LoopInv.write12 {inverse ctr : Bool} {base s : State} {nr n k : Nat} {D E : Addr} {icb : Spec.Gcm.Block}
+    (h : LoopInv inverse ctr base nr n D E icb k s) (x : BitVec 64) :
+    LoopInv inverse ctr base nr n D E icb k (s.write .r12 x) := by
   have he := Local.write s .r12 x
-  refine ⟨h.bound, (h.keep.trans he.keep).mono (by simp [loopGprs]), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨h.bound, (h.keep.trans he.keep).mono (by simp [loopGprs]), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [he.keep.gpr (by decide)]; exact h.ptr
   · rw [he.keep.gpr (by decide)]; exact h.left
   · rw [he.mem]; exact h.processed
   · rw [he.mem]; exact h.frame
   · rw [he.v _ (by simp)]; exact h.mask
   · intro ht; rw [he.v _ (by simp)]; exact h.control ht
-  · intro ht; rw [he.v _ (by simp)]; exact h.counterPrefix ht
-  · intro ht; rw [he.keep.gpr (by decide)]; exact h.counter ht
+  · intro ht; rw [he.v _ (by simp)]; exact h.counter ht
 
 theorem quotient_ok (s : State) : WP isa (.block [.lsr .d .r12 .r7 3]) s
     (· = s.write .r12 (s.gpr .r7 >>> 3)) := by
@@ -69,48 +69,48 @@ theorem zero_test (r : Reg) (s : State) (b : Bool)
   rw [← hh]
   simp only [bne, Bool.not_not]
 
-theorem LoopInv.left_test {inverse ctr : Bool} {base s : State} {nr n k : Nat} {D : Addr} {icb : Spec.Gcm.Block}
-    (hc : LoopConfig inverse ctr base nr n D) (h : LoopInv inverse ctr base nr n D icb k s) :
-    (n-k < 1 → eval (.nonzero .d .r7) s = some false) ∧
-      (1 ≤ n-k → eval (.nonzero .d .r7) s = some true) := by
-  apply count_test
-  rw [h.left]
-  constructor
-  · intro hz
-    have hh := congrArg BitVec.toNat hz
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hc.size; omega)] at hh
-    change n-k = 0 at hh
-    omega
-  · intro hz
-    rw [show n-k = 0 by omega]
-    rfl
+/-- Bit `c` of a number below `2 c` is set exactly when it is at least `c`. -/
+theorem bit_test {c m : Nat} (hc : c = 1 ∨ c = 2 ∨ c = 4) (hm : m < 2 * c) :
+    (BitVec.ofNat 64 m &&& BitVec.ofNat 64 c == 0) = decide (m < c) := by
+  have h : ∀ c ∈ [1, 2, 4], ∀ m : Fin 8, m.val < 2 * c →
+      (BitVec.ofNat 64 m.val &&& BitVec.ofNat 64 c == 0) = decide (m.val < c) := by decide
+  exact h c (by rcases hc with rfl | rfl | rfl <;> simp) ⟨m, by rcases hc with rfl | rfl | rfl <;> omega⟩ hm
 
-theorem tail_loop_ok {inverse ctr : Bool} {base s : State} {nr n k : Nat} {D : Addr} {icb : Spec.Gcm.Block}
-    (hc : LoopConfig inverse ctr base nr n D) (h : LoopInv inverse ctr base nr n D icb k s)
-    (hk : k < n) :
-    WP isa (.loop (Impl.Aes.PPC64LE.Crypto.group inverse ctr 1) (.nonzero .d .r7)) s
-      (LoopInv inverse ctr base nr n D icb n) := by
-  have htest : ∀ j t, j ≤ n → LoopInv inverse ctr base nr n D icb j t →
-      (n-j < 1 → eval (.nonzero .d .r7) t = some false) ∧
-      (1 ≤ n-j → eval (.nonzero .d .r7) t = some true) := by
-    intro j t hj ht
-    exact ht.left_test hc
-  refine WP.mono (WP.chunk_loop (by decide) (by omega) h
-    (fun _ _ hj ht => loop_group_ok hc ht (by decide) hj) htest) ?_
-  rintro t ⟨j, hj, he, ht⟩
-  have hje : j = n := by omega
-  exact hje ▸ ht
+theorem tail_step_ok {inverse ctr : Bool} {o : Reg} {base s : State} {nr n j c : Nat} {D E : Addr}
+    {icb : Spec.Gcm.Block} (hc4 : c = 1 ∨ c = 2 ∨ c = 4)
+    (hc : LoopConfig inverse ctr o base nr n D E) (h : LoopInv inverse ctr base nr n D E icb j s)
+    (hlt : n - j < 2 * c) :
+    WP isa (Impl.Aes.PPC64LE.Crypto.tailStep inverse ctr c o) s
+      fun t => ∃ j', j' ≤ n ∧ n - j' < c ∧ LoopInv inverse ctr base nr n D E icb j' t := by
+  have hc8 : c < 2 ^ 15 := by rcases hc4 with rfl | rfl | rfl <;> decide
+  have hb : WP isa (.block [.li .r12 c, .logic .and .r12 .r7 .r12]) s
+      (· = (s.write .r12 (BitVec.ofNat 64 c)).write .r12 (s.gpr .r7 &&& BitVec.ofNat 64 c)) := by
+    apply WP.of_runBlock
+    simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, hc8, ite_true, RegUpd.gpr_write,
+      reduceCtorEq, ite_false, Option.some.injEq, exists_eq_left']
+  rw [Impl.Aes.PPC64LE.Crypto.tailStep]
+  refine WP.seq (WP.mono hb fun t ht => ?_)
+  subst t
+  have ht := (h.write12 (BitVec.ofNat 64 c)).write12 (s.gpr .r7 &&& BitVec.ofNat 64 c)
+  have hz : isa.eval (.zero .d .r12) ((s.write .r12 (BitVec.ofNat 64 c)).write .r12 (s.gpr .r7 &&& BitVec.ofNat 64 c))
+      = some (decide (n - j < c)) := by
+    rw [eval_zero, RegUpd.gpr_write_self, h.left, bit_test hc4 hlt]
+  by_cases hl : n - j < c
+  · exact WP.ite true (by rw [hz, decide_eq_true hl]) (fun _ => WP.block_nil ⟨j, h.bound, hl, ht⟩) (by simp)
+  · refine WP.ite false (by rw [hz, decide_eq_false hl]) (by simp) (fun _ => ?_)
+    exact WP.mono (loop_group_ok hc ht (by rcases hc4 with rfl | rfl | rfl <;> decide) (by omega))
+      fun u hu => ⟨j + c, by omega, by omega, hu⟩
 
-theorem batch_loop_ok {inverse ctr : Bool} {base s : State} {nr n k : Nat} {D : Addr} {icb : Spec.Gcm.Block}
-    (hc : LoopConfig inverse ctr base nr n D) (h : LoopInv inverse ctr base nr n D icb k s)
+theorem batch_loop_ok {inverse ctr : Bool} {o : Reg} {base s : State} {nr n k : Nat} {D E : Addr} {icb : Spec.Gcm.Block}
+    (hc : LoopConfig inverse ctr o base nr n D E) (h : LoopInv inverse ctr base nr n D E icb k s)
     (hk : k+8 ≤ n) :
-    WP isa (.loop (.seq (Impl.Aes.PPC64LE.Crypto.group inverse ctr 8)
+    WP isa (.loop (.seq (Impl.Aes.PPC64LE.Crypto.group inverse ctr 8 o)
       (.block [.lsr .d .r12 .r7 3])) (.nonzero .d .r12)) s
-      fun t => ∃ j, j ≤ n ∧ n-j < 8 ∧ LoopInv inverse ctr base nr n D icb j t := by
-  let I : Nat → State → Prop := fun j t => LoopInv inverse ctr base nr n D icb j t ∧
+      fun t => ∃ j, j ≤ n ∧ n-j < 8 ∧ LoopInv inverse ctr base nr n D E icb j t := by
+  let I : Nat → State → Prop := fun j t => LoopInv inverse ctr base nr n D E icb j t ∧
     t.gpr .r12 = BitVec.ofNat 64 (n-j) >>> 3
-  have step : ∀ j t, j+8 ≤ n → LoopInv inverse ctr base nr n D icb j t →
-      WP isa (.seq (Impl.Aes.PPC64LE.Crypto.group inverse ctr 8) (.block [.lsr .d .r12 .r7 3])) t (I (j+8)) := by
+  have step : ∀ j t, j+8 ≤ n → LoopInv inverse ctr base nr n D E icb j t →
+      WP isa (.seq (Impl.Aes.PPC64LE.Crypto.group inverse ctr 8 o) (.block [.lsr .d .r12 .r7 3])) t (I (j+8)) := by
     intro j t hj ht
     refine WP.seq (WP.mono (loop_group_ok hc ht (by decide) hj) fun u hu => ?_)
     refine WP.mono (quotient_ok u) fun v hv => ?_
@@ -124,7 +124,7 @@ theorem batch_loop_ok {inverse ctr : Bool} {base s : State} {nr n k : Nat} {D : 
     rw [ht.2]
     exact quotient_zero (by have := hc.size; omega)
   -- The first iteration computes the quotient before the loop condition is tested.
-  refine WP.loop (M := isa) (fun m t => ∃ j, m = n-j ∧ j+8 ≤ n ∧ LoopInv inverse ctr base nr n D icb j t)
+  refine WP.loop (M := isa) (fun m t => ∃ j, m = n-j ∧ j+8 ≤ n ∧ LoopInv inverse ctr base nr n D E icb j t)
     (fun m t ht => ?_) (n-k) s ⟨k, rfl, hk, h⟩
   obtain ⟨j, rfl, hj, ht⟩ := ht
   refine WP.mono (step j t hj ht) fun u hu => ?_
@@ -133,10 +133,10 @@ theorem batch_loop_ok {inverse ctr : Bool} {base s : State} {nr n k : Nat} {D : 
   · exact Or.inl ⟨he.1 hl, j+8, hj, hl, hu.1⟩
   · exact Or.inr ⟨he.2 (by omega), n-(j+8), by omega, j+8, rfl, by omega, hu.1⟩
 
-theorem batches_ok {inverse ctr : Bool} {base s : State} {nr n k : Nat} {D : Addr} {icb : Spec.Gcm.Block}
-    (hc : LoopConfig inverse ctr base nr n D) (h : LoopInv inverse ctr base nr n D icb k s) :
-    WP isa (Impl.Aes.PPC64LE.Crypto.batches inverse ctr) s
-      (LoopInv inverse ctr base nr n D icb n) := by
+theorem batches_ok {inverse ctr : Bool} {o : Reg} {base s : State} {nr n k : Nat} {D E : Addr} {icb : Spec.Gcm.Block}
+    (hc : LoopConfig inverse ctr o base nr n D E) (h : LoopInv inverse ctr base nr n D E icb k s) :
+    WP isa (Impl.Aes.PPC64LE.Crypto.batches inverse ctr o) s
+      (LoopInv inverse ctr base nr n D E icb n) := by
   rw [Impl.Aes.PPC64LE.Crypto.batches]
   refine WP.seq (WP.mono (quotient_ok s) fun t ht => ?_)
   subst t
@@ -145,22 +145,19 @@ theorem batches_ok {inverse ctr : Bool} {base s : State} {nr n k : Nat} {D : Add
     rw [RegUpd.gpr_write_self, h.left]
     exact quotient_zero (by have := hc.size; omega)
   have full : WP isa (.ite (.zero .d .r12) (.block [])
-      (.loop (.seq (Impl.Aes.PPC64LE.Crypto.group inverse ctr 8) (.block [.lsr .d .r12 .r7 3]))
+      (.loop (.seq (Impl.Aes.PPC64LE.Crypto.group inverse ctr 8 o) (.block [.lsr .d .r12 .r7 3]))
         (.nonzero .d .r12))) (s.write .r12 (s.gpr .r7 >>> 3))
-      (fun t => ∃ j, j ≤ n ∧ n-j < 8 ∧ LoopInv inverse ctr base nr n D icb j t) := by
+      (fun t => ∃ j, j ≤ n ∧ n-j < 8 ∧ LoopInv inverse ctr base nr n D E icb j t) := by
     have he := count_test .r12 (s.write .r12 (s.gpr .r7 >>> 3)) hz
     by_cases hl : n-k < 8
     · refine WP.ite true (by simpa using zero_test _ _ false (he.1 hl)) (fun _ => ?_) (by simp)
       exact WP.block_nil ⟨k, h.bound, hl, hs⟩
     · refine WP.ite false (by simpa using zero_test _ _ true (he.2 (by omega))) (by simp) (fun _ => ?_)
       exact batch_loop_ok hc hs (by omega)
-  refine WP.seq (WP.mono full ?_)
-  rintro t ⟨j, hj, _, ht⟩
-  have he := ht.left_test hc
-  by_cases hl : j = n
-  · refine WP.ite true (by simpa using zero_test _ _ false (he.1 (by omega))) (fun _ => ?_) (by simp)
-    exact WP.block_nil (hl ▸ ht)
-  · refine WP.ite false (by simpa using zero_test _ _ true (he.2 (by omega))) (by simp) (fun _ => ?_)
-    exact tail_loop_ok hc ht (by omega)
+  refine WP.seq (WP.mono full fun t ⟨j, hj, hl, ht⟩ => ?_)
+  refine WP.seq (WP.mono (tail_step_ok (c := 4) (by decide) hc ht (by omega)) fun t ⟨j, hj, hl, ht⟩ => ?_)
+  refine WP.seq (WP.mono (tail_step_ok (c := 2) (by decide) hc ht (by omega)) fun t ⟨j, hj, hl, ht⟩ => ?_)
+  refine WP.mono (tail_step_ok (c := 1) (by decide) hc ht (by omega)) fun t ⟨j, hj, hl, ht⟩ => ?_
+  exact (show j = n by omega) ▸ ht
 
 end VG.Proof.Aes.PPC64LE.Crypto

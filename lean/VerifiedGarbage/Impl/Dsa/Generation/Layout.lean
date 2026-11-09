@@ -31,11 +31,4 @@ def domainCheck : Nat := 40960
 
 def usedBytes (pLen : Nat) : Nat := domainCheck + 128 * pLen
 
-/-- Disjoint persistent buffers and temporary workspaces. -/
-def areas (pLen : Nat) : List (Nat × Nat) :=
-  [(parent, Dsa.Layout.activeBytes), (hash, 8192), (wrappedSeed, 32),
-   (hashes, 384), (shaped, 384), (q, 32), (p, 384), (exponent, 384),
-   (g, 384), (witness, 384), (packed, 800), (control, 512),
-   (arithmetic, arithmeticBytes), (domainCheck, 128 * pLen)]
-
 end VG.Impl.Dsa.Generation.Layout

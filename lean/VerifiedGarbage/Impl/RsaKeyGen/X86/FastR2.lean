@@ -27,11 +27,4 @@ def doublesAt (M : Mod) (e acc out : Nat) : Prog isa :=
 def codeAt (M : Mod) (e acc out : Nat) (square : Prog isa) : Prog isa :=
   .seq (doublesAt M e acc out) (VG.Impl.Rsa.X86.Keys.seqs (List.replicate 6 square))
 
-/-- A full-width modulus: the seed is its top bit. -/
-def seed (n out : Nat) : Prog isa := seedAt n (64 * n - 1) out
-
-def doubles (M : Mod) (acc out : Nat) : Prog isa := doublesAt M (64 * M.n - 1) acc out
-
-def code (M : Mod) (acc out : Nat) (square : Prog isa) : Prog isa := codeAt M (64 * M.n - 1) acc out square
-
 end VG.Impl.RsaKeyGen.X86.FastR2

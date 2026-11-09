@@ -50,15 +50,6 @@ theorem addImm_ok (s : State) (d n : Reg) (v : BitVec 32) (hv : encodable v = tr
       simp [exec, Op2.eval, hv], runStep_some, runBlock_nil],
     RegUpd.gpr_setReg_self _ _ _, fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, rfl, rfl, rfl, rfl⟩
 
-/-- `sub d, n, #v` (`v` encodable). -/
-theorem subImm_ok (s : State) (d n : Reg) (v : BitVec 32) (hv : encodable v = true) :
-    ∃ s', runBlock isa [.dp .sub d n (.imm v)] s = some s' ∧ s'.gpr d = s.gpr n - v ∧
-      (∀ r, r ≠ d → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp :=
-  ⟨s.setReg d (s.gpr n - v), by
-    rw [runBlock_cons, show exec (.dp .sub d n (.imm v)) s = some (s.setReg d (s.gpr n - v)) by
-      simp [exec, Op2.eval, hv], runStep_some, runBlock_nil],
-    RegUpd.gpr_setReg_self _ _ _, fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, rfl, rfl, rfl, rfl⟩
-
 
 theorem ofNat32_sub_beq {x y : Nat} (hx : x < 2 ^ 32) (hy : y < 2 ^ 32) :
     (BitVec.ofNat 32 x - BitVec.ofNat 32 y == 0) = decide (x = y) := by

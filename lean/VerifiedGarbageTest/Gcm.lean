@@ -2,17 +2,18 @@ module
 
 import VerifiedGarbageTest.Aes
 meta import VerifiedGarbageTest.Aes
-import VerifiedGarbage.Spec.Gcm
-meta import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.Spec.Gcm
+public meta import VerifiedGarbage.Spec.Gcm
 
 /-!
 # Known-answer tests for the GCM specification
 
 NIST CAVP AES-GCM vectors, read from the vendored response files under
 `vectors/nist-cavp/gcm/` (see `vectors/sources/`) when this file is
-built and checked against `VG.Spec.Gcm.aesGcmEncrypt` and
-`VG.Spec.Gcm.aesGcmDecrypt`, so that a transcription error in the spec
-fails the build.
+built and checked against GCM-AE with AES (`VG.Spec.Gcm.encrypt`, as
+`VG.Spec.Gcm.aesGcmEncrypt` uses it) and GCM-AD with AES (`decrypt` here:
+§7.2 step 1, then `VG.Spec.Gcm.decryptWith`), so that a transcription error
+in the spec fails the build.
 
 From each encryption file (128-, 192- and 256-bit keys), the first vector
 of every section whose plaintext and additional data are both a partial
@@ -33,6 +34,33 @@ open Lean Elab Command Test.Aes
 -- including the six lengths extending SP 800-38D §5.2.1.2.
 #guard ((List.range 18).filter Spec.Gcm.tagLenOk) =
   [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+/-! GCM-AD with the length checks of its step 1, which `Sm4Gcm.lean` tests
+too. -/
+
+@[expose] public section
+
+/-- Whether the bit lengths of the IV, the ciphertext and the additional
+authenticated data are supported (§5.2.1.1), for byte strings of these
+lengths. -/
+def supported (ivLen cLen aLen : Nat) : Bool :=
+  1 ≤ 8 * ivLen && 8 * ivLen ≤ 2 ^ 64 - 1 && 8 * cLen ≤ 2 ^ 39 - 256 && 8 * aLen ≤ 2 ^ 64 - 1
+
+/-- §7.2, `GCM-AD_K(IV, C, A, T)` (Algorithm 5), for the block cipher `ciph`
+and a tag length of `t` bytes: `none` (FAIL) if a length is not supported
+or `len(T) ≠ t` (step 1), otherwise the plaintext `P = GCTR_K(inc₃₂(J₀), C)`
+if the tag `T' = MSB_t(GCTR_K(J₀, S))` equals `T`, and `none` if not. -/
+def decrypt (ciph : Spec.Gcm.Block → Spec.Gcm.Block) (t : Nat) (iv c a tag : List Byte) :
+    Option (List Byte) :=
+  if !supported iv.length c.length a.length || tag.length ≠ t then none
+  else
+    let h := ciph 0
+    let j := Spec.Gcm.j0 h iv
+    let p := Spec.Gcm.gctr ciph (Spec.Gcm.inc32 j) c
+    let s := Spec.Gcm.ghash h (Spec.Gcm.authBlocks a c)
+    if (Spec.Gcm.gctr ciph j (Spec.Gcm.toBytes s)).take t = tag then some p else none
+
+end
 
 /-- Whether a record is in a section with `PTlen = 408` and `AADlen = 720`
 and a tag length in `tagLens`. -/
@@ -88,7 +116,7 @@ run_cmd do
           match r.bytes "PT" with
           | .ok pt => pure (some pt)
           | .error e => throwError "{name}: {e}"
-        unless Spec.Gcm.decrypt (aesCached key).val tag.length iv ct aad tag == expected do
+        unless decrypt (aesCached key).val tag.length iv ct aad tag == expected do
           throwError "{name}, {r.params}, Count = {(r.get "Count").toOption}: GCM-AD is wrong"
         dec := dec + 1
         if r.fail then fails := fails + 1

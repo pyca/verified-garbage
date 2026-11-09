@@ -13,9 +13,10 @@ meta import VerifiedGarbage.Spec.Ofb
 The NIST CAVP AES-OFB multi-block message tests (`OFBMMT`, for 128-, 192-
 and 256-bit keys), read from the vendored response files under
 `vectors/nist-cavp-aes-mmt/` (see `vectors/sources/`) when this file is
-built and checked against `VG.Spec.Ofb.aesOfb`, so that a transcription
-error in the spec fails the build. Every vector is checked: ten in each
-direction for each key length, of one to ten blocks.
+built and checked against `aesOfb` below, the spec's `VG.Spec.Ofb.outputs`
+with AES, so that a transcription error in the spec fails the build. Every
+vector is checked: ten in each direction for each key length, of one to ten
+blocks.
 
 Each vector is also checked:
 * in two pieces, the first block and the rest, with the second piece
@@ -29,6 +30,14 @@ namespace VG.Test.Ofb
 
 open Lean Elab Command Test.Aes Spec.Ofb
 open Spec.Cbc (Cipher)
+
+/-- AES-OFB encryption or decryption of `x` (of any length) under the key
+`key` (16, 24 or 32 bytes) with the 16-byte `iv`: `x` XORed with the
+output blocks, the last one truncated to what is left of `x` (§6.4,
+`Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`). -/
+def aesOfb (key iv x : List Byte) : List Byte :=
+  let ciph := Spec.Cbc.aes key
+  List.zipWith (· ^^^ ·) x (outputs ciph iv ((x.length + 15) / 16)).flatten
 
 /-- `aesOfb` with the block cipher given: `aesOfb key` is `aesOfbWith` of
 AES under `key` (`aesOfb_eq`). -/

@@ -15,7 +15,7 @@ the stack the frame and the calls use, `decStack`) on the registers and the
 stack (`decrypt_implies`).
 
 `privK` is the contract of `vg_rsa_private_checked` on the registers, using
-`privStack` bytes of stack: that of `Spec.Rsa.privateCheckedContract`. A
+`privStack` bytes of stack: that of `Proof.Rsa.privateCheckedContract`. A
 `PrivImpl` is an implementation of it, which the proof of decryption is
 written for.
 -/
@@ -30,11 +30,6 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- The stack `vg_rsa_private_checked` uses below its return address. -/
 def privStack : Nat := 3256
-
-theorem stackArgs_fourteen (s : State) :
-    List.map (stackArg s) (List.range 14) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
-      stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10,
-      stackArg s 11, stackArg s 12, stackArg s 13] := rfl
 
 /-- `vg_rsa_private_checked(out = rdi, out_len = rsi, n = rdx, n_len = rcx,
 e = r8, e_len = r9, input = [rsp + 8], input_len = [rsp + 16],

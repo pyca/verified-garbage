@@ -222,10 +222,7 @@ theorem ksqz_tr {Φ : Lay → Mem → State → Prop} : RelCT isa (Two I Φ) ksq
 abbrev q1 (_ : Lay) : Nat := (0 + 10) % 136
 abbrev q2 (L : Lay) : Nat := (q1 L + L.ctxLen.toNat) % 136
 abbrev q3 (L : Lay) : Nat := (q2 L + 57) % 136
-abbrev q4 (L : Lay) : Nat := (q3 L + L.len.toNat) % 136
 abbrev q4' (L : Lay) : Nat := (q3 L + 57) % 136
-abbrev q5' (L : Lay) : Nat := (q4' L + L.len.toNat) % 136
-
 /-- Where the pieces are, as `kabs_tr` needs them. -/
 theorem side {L : Lay} (_hL : L.Ok) {q : Nat} (hq : q < 136) {r : Region} (hn : r.len < 2 ^ 64)
     (h : (∃ R ∈ L.rd ++ L.FR :: L.wr, Within r R) ∧ Region.Disjoint r ⟨L.ST, 200⟩ ∧

@@ -24,14 +24,13 @@ meta import VerifiedGarbage.Proof.Sm4.Prepared
 /-!
 # SM4's batches under prepared round keys on x86-64 meet their contract
 
-`crypt_verified`: `vg_sm4_crypt_prepared` against
-`Proof.Sm4.Prepared.cryptContract` with `layout`. The body runs from the
+`crypt_correct`: `vg_sm4_crypt_prepared` meets `cryptX86_64`, with
+`layout`. The body runs from the
 state narrowed to ECB's scratch buffer (`cryptBody_wp`) and then from the
 whole working space (`Exec.widen`), which it changes only where the
 narrowed run may. A batch's blocks are ECB in the direction and under the
 round keys of any table encoding that its working space holds: the run from
-it is the run from the table the precondition gives (`Exec.det`). Constant
-time by the taint analysis: the pointer, `ws_len` and `rsp` are public.
+it is the run from the table the precondition gives (`Exec.det`).
 -/
 
 @[expose] public section
@@ -174,75 +173,5 @@ theorem cryptCall_correct (s : State) (hs : cryptCallX86_64.pre s) :
     (by show (s.gpr .rdi).toNat + 8 * slots ≤ 2 ^ 64; omega) (readyAt_of_words (words_of_holds hH))
   obtain ⟨-, rfl⟩ := Exec.det he (exec_widen hwr hl he₂)
   exact ⟨t, _, he, ha, hp, hsb⟩
-
-/-- The initial taint: the registers of the arguments and the stack pointer
-are public. -/
-def cryptTaint : X86_64.Taint.T := Taint.ofRegs [.rdi, .rsi, .rsp]
-
-theorem cryptTaint_agree (s t : State) (_ : cryptX86_64.pre s) (_ : cryptX86_64.pre t)
-    (hp : cryptX86_64.pub s t) : X86_64.Taint.Agree cryptTaint s t := by
-  obtain ⟨p1, p2, p3⟩ := hp
-  refine Taint.agree_ofRegs fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  exacts [p1, p2, p3]
-
-theorem crypt_ct : ConstantTime isa cryptX86_64.pre cryptX86_64.pub cryptPrepared :=
-  VG.Taint.constantTime (A := taint) cryptTaint cryptTaint_agree (by taint_decide)
-
-/-- Round keys of zeros. -/
-def zeroSchedule : Spec.Sm4.Schedule := Vector.replicate 32 0
-
-/-- A working space at `0x2000` holding the table of `zeroSchedule` for
-encryption. -/
-def cryptSatMem : Mem := fun a =>
-  if 0x2000 ≤ a.toNat ∧ a.toNat < 0x2000 + 3136 then layout.encode zeroSchedule .encrypt (a.toNat - 0x2000) else 0
-
-theorem cryptSat_holds : Holds layout cryptSatMem 0x2000 zeroSchedule .encrypt := by
-  intro r hr i hi
-  have hr' : r.1 + i < 3072 := by
-    rw [layout_table] at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> dsimp only at hi ⊢ <;> omega
-  have ht : ((0x2000 : Addr) + BitVec.ofNat 64 (r.1 + i)).toNat = 0x2000 + (r.1 + i) := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, show (0x2000 : Addr).toNat = 0x2000 from rfl]; omega
-  have hc : 0x2000 ≤ 0x2000 + (r.1 + i) ∧ 0x2000 + (r.1 + i) < 0x2000 + 3136 := ⟨by omega, by omega⟩
-  simp only [cryptSatMem, ht, hc, and_self, ↓reduceIte]
-  rw [show 0x2000 + (r.1 + i) - 0x2000 = r.1 + i by omega]
-
-/-- A state satisfying the batch's precondition. -/
-def cryptSat : State where
-  gpr r := match r with | .rdi => 0x2000 | .rsi => 392 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem := cryptSatMem
-  rd := []
-  wr := [⟨0x2000, 392 * 8⟩]
-
-theorem crypt_implies : cryptX86_64.Implies (Proof.Sm4.Prepared.cryptContract layout X86_64.abi) where
-  pre := by
-    sig_implies_pre [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptX86_64, X86_64.abi,
-      X86_64.argRegs]
-  post := by
-    sig_implies_post [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptX86_64, X86_64.abi,
-      X86_64.argRegs]
-  pub := by
-    sig_implies_pub [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptX86_64, X86_64.abi,
-      X86_64.argRegs]
-  sat := by
-    refine ⟨cryptSat, ?_⟩
-    sig_pre [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, X86_64.abi, X86_64.argRegs]
-    sig_and_intros
-    all_goals first
-      | decide
-      | exact Region.disjoint_of_sep (by decide)
-      | exact ⟨_, _, cryptSat_holds⟩
-      | (rw [size_eq, slots_eq]; decide)
-
-theorem crypt_verified :
-    Verified X86_64.target cryptPrepared (Proof.Sm4.Prepared.cryptContract layout X86_64.abi) :=
-  Verified.of_correct crypt_correct crypt_ct crypt_implies
 
 end VG.Proof.Sm4.X86_64

@@ -12,13 +12,11 @@ public import VerifiedGarbage.Proof.X448.RISCV64.R64.Basic
 /-!
 # X448 on RISC-V, 64-bit limbs: the columns of a product
 
-The columns of `product` and `square` (the cross products): a column's terms
-add into the accumulator `rr k, rr (k + 1), rr (k + 2)` (`terms_ok`, by
-induction on the terms), and its end stores the accumulator's low word at
-`ACC + 8k` (`colEnd_ok`), so that after `k` columns the words below `ACC +
-8k` and the accumulator hold the sum of the first `k` columns (`ColInv`).
-The terms each column adds (`colSum`) are given by a function on the state
-(`TermOk`), which `product` and `square` provide.
+The columns of `product` and `square` (the cross products): a column adds
+into the accumulator `rr k, rr (k + 1), rr (k + 2)`, and its end stores the
+accumulator's low word at `ACC + 8k` (`colEnd_ok`), so that after `k`
+columns the words below `ACC + 8k` and the accumulator hold the sum of the
+first `k` columns (`ColInv`, by induction on the columns: `columns_ok`).
 -/
 
 @[expose] public section
@@ -147,56 +145,6 @@ theorem colEnd_ok {s0 : State} {k : Nat} (hk : k < 14) {s : State} (hc : Ctx b s
     generalize 2 ^ 64 = W
     grind
 
-/-- A column's terms: from a state with the accumulator `acc`, each term `p`
-of `ps` adds `f p` and keeps `Inv`. -/
-def TermOk (b : Addr) (s0 : State) (k : Nat) (Inv : State → Prop) (f : Nat × Nat → Nat)
-    (code : Nat × Nat → List Instr) (p : Nat × Nat) : Prop :=
-  ∀ s, Inv s → Ctx b s → Rest clob64 s0 s → Frame [⟨b + BitVec.ofNat 64 ACC, 112⟩] s0.mem s.mem →
-    WP isa (.block (code p)) s fun s' => Inv s' ∧ Ctx b s' ∧ Rest clob64 s0 s' ∧
-      Frame [⟨b + BitVec.ofNat 64 ACC, 112⟩] s0.mem s'.mem ∧
-      accW s'.mem b k = accW s.mem b k ∧
-      (val3 s (rr k) (rr (k + 1)) (rr (k + 2)) + f p < 2 ^ 192 →
-        val3 s' (rr k) (rr (k + 1)) (rr (k + 2)) = val3 s (rr k) (rr (k + 1)) (rr (k + 2)) + f p)
-
-/-- A column's terms, by induction on them. -/
-theorem terms_ok {s0 : State} {k : Nat} {Inv : State → Prop} {f : Nat × Nat → Nat}
-    {code : Nat × Nat → List Instr} :
-    ∀ (ps : List (Nat × Nat)), (∀ p ∈ ps, TermOk b s0 k Inv f code p) → ∀ s, Inv s → Ctx b s →
-      Rest clob64 s0 s → Frame [⟨b + BitVec.ofNat 64 ACC, 112⟩] s0.mem s.mem →
-      val3 s (rr k) (rr (k + 1)) (rr (k + 2)) + tsum f ps < 2 ^ 192 →
-      WP isa (.block (ps.flatMap code)) s fun s' => Inv s' ∧ Ctx b s' ∧ Rest clob64 s0 s' ∧
-        Frame [⟨b + BitVec.ofNat 64 ACC, 112⟩] s0.mem s'.mem ∧
-        accW s'.mem b k = accW s.mem b k ∧
-        val3 s' (rr k) (rr (k + 1)) (rr (k + 2)) = val3 s (rr k) (rr (k + 1)) (rr (k + 2)) + tsum f ps
-  | [], _, s, hi, hc, hr, hf, _ => WP.block_nil ⟨hi, hc, hr, hf, rfl, by simp [tsum]⟩
-  | p :: ps, hok, s, hi, hc, hr, hf, hb => by
-    rw [List.flatMap_cons]
-    rw [tsum_cons] at hb
-    refine WP.append (hok p (List.mem_cons_self ..) s hi hc hr hf) fun s1 ⟨hi1, hc1, hr1, hf1, ha1, hv1⟩ => ?_
-    have hv1 := hv1 (by omega)
-    refine WP.mono (terms_ok ps (fun q hq => hok q (List.mem_cons_of_mem _ hq)) s1 hi1 hc1 hr1 hf1
-      (by omega)) fun s2 ⟨hi2, hc2, hr2, hf2, ha2, hv2⟩ => ⟨hi2, hc2, hr2, hf2, ha2.trans ha1, ?_⟩
-    rw [hv2, hv1, tsum_cons]; omega
-
-/-- Column `k`: its terms `ps`, which sum to `cs k`, then its end. -/
-theorem column_ok {s0 : State} {k : Nat} (hk : k < 14) {Inv : State → Prop} {f : Nat × Nat → Nat}
-    {code : Nat × Nat → List Instr} {cs : Nat → Nat} (ps : List (Nat × Nat))
-    (hok : ∀ p ∈ ps, TermOk b s0 k Inv f code p) (hcs : cs k = tsum f ps)
-    (hbd : tsum f ps < 7 * 2 ^ 128)
-    (hinv : ∀ s s', Inv s → (∀ r, r ≠ rr k → s'.gpr r = s.gpr r) → Inv s') {s : State}
-    (h : ColInv b s0 cs k s) (hi : Inv s) :
-    WP isa (.block (ps.flatMap code ++ colEnd k)) s fun s' => ColInv b s0 cs (k + 1) s' ∧ Inv s' := by
-  have hv0 : val3 s (rr k) (rr (k + 1)) (rr (k + 2)) =
-      (s.gpr (rr k)).toNat + 2 ^ 64 * (s.gpr (rr (k + 1))).toNat := by
-    simp only [val3, h.top]; rfl
-  have hl := (s.gpr (rr k)).isLt
-  have hh := (s.gpr (rr (k + 1))).isLt
-  refine WP.append (terms_ok ps hok s hi h.ctx h.rest h.frame (by rw [hv0]; omega_arith))
-    fun s1 ⟨hi1, hc1, hr1, hf1, ha1, hv1⟩ => ?_
-  have hwp := colEnd_ok (cs := cs) hk hc1 hr1 hf1 (by
-    rw [ha1, hv1, hv0, colsV, ← h.val, hcs, Nat.mul_add]; omega_arith)
-  exact WP.mono hwp fun s2 ⟨h2, hk2⟩ => ⟨h2, hinv s1 s2 hi1 hk2⟩
-
 theorem w_ne : ∀ i < 7, ∀ j < 7, i ≠ j → w i ≠ w j := by decide
 
 theorem w_clob : ∀ i < 7, w i ∈ clob64 := by decide
@@ -216,12 +164,6 @@ theorem lds_ok {o : Nat} (ho : o + 56 ≤ 2048) (ho8 : o % 8 = 0) :
     by_cases hin : i = n
     · subst hin; rw [u2.gpr, hm1]; rfl
     · rw [u2.other _ (w_ne i (by omega) n (by omega) hin)]; exact h1 i (by omega)
-
-/-- `ld6`. -/
-theorem ld6_ok {o : Nat} (ho : o + 56 ≤ 2048) (ho8 : o % 8 = 0) {s : State} (hc : Ctx b s) :
-    WP isa (.block (ld6 o)) s fun s' =>
-      (∀ i < 6, (s'.gpr (w i)).toNat = dw s.mem b (o + 8 * i)) ∧ Rest clob64 s s' ∧ s'.mem = s.mem :=
-  lds_ok ho ho8 6 (by decide) s hc
 
 /-- `zero3`: the accumulator of column 0 zero. -/
 theorem zero3_ok {s : State} :

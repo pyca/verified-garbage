@@ -18,9 +18,9 @@ theorem nativeGenerator_ok (M : Mont)
     {p : GeneratorSearchPlan} {W : Nat → BitVec 64} {s : State}
     (h : GeneratorSearchMemory p W s) :
     WP isa (Impl.Dsa.AArch64.Generation.generatorSearch M.mm p.core.len) s
-      (GeneratorFinished p (p.remaining 0) s) := by
-  let I := GeneratorInvariant p (p.remaining 0) s
-  let Q := GeneratorFinished p (p.remaining 0) s
+      (GeneratorFinished p (p.remaining 0) (p.core.len * p.count 0) s) := by
+  let I := GeneratorInvariant p (p.remaining 0) (p.core.len * p.count 0) s
+  let Q := GeneratorFinished p (p.remaining 0) (p.core.len * p.count 0) s
   have hw : 0 < p.core.len ∧ p.core.len < 65536 := by
     rcases p.core.width with hh | hh | hh <;> omega
   have driver : TapeDriver generatorTape p.core.F p.core.S p.core.len p.tape.length
@@ -34,10 +34,10 @@ theorem nativeGenerator_ok (M : Mont)
       widthBound := hw.2
       widthPositive := hw.1
       totalFits := p.tapeFits
-      stable := generatorInvariant_stable p (p.remaining 0) s
-      finish := generatorFinished_stable p (p.remaining 0) s
+      stable := generatorInvariant_stable p (p.remaining 0) _ s
+      finish := generatorFinished_stable p (p.remaining 0) _ s
       view := by
-        rintro used t ⟨Wt, ht, h20, _, _, _, _⟩
+        rintro used t ⟨Wt, ht, h20, _, _, _, _, _⟩
         obtain ⟨Vt, Rt⟩ := ht.rep
         exact ⟨Vt, Wt, ht.layout, Rt, h20, ht.tapeLength⟩
       done := by
@@ -59,7 +59,7 @@ theorem nativeGenerator_ok (M : Mont)
     unfold frameBytes at hn
     omega
   refine ⟨upd W 20 0, h.frame Lt ⟨V, Rt⟩ ?_ ff kt.rd kt.wr,
-    by simp [upd], rfl, ff, kt.rd, kt.wr⟩
+    by simp [upd], rfl, (Nat.zero_add _).symm, ff, kt.rd, kt.wr⟩
   intro k hk
   simp only [generatorSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
   rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl

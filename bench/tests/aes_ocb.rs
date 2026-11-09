@@ -5,11 +5,12 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use openssl::{cipher::Cipher, cipher_ctx::CipherCtx};
-use verified_garbage::aes_ocb::AesOcb;
+use verified_garbage::aead::aes_ocb::AesOcb;
 
 fn compare<const T: usize>(key: &[u8], cipher: &openssl::cipher::CipherRef, n: usize) {
     let nonce = vec![0x24; 1 + n % 15];

@@ -81,9 +81,6 @@ theorem bit_and {a b : Prop} [Decidable a] [Decidable b] {x y : BitVec 64} (hx :
   rw [hy]
   by_cases ha : a <;> by_cases hb : b <;> simp [bit, ha, hb]
 
-theorem bit_setWidth {a : Prop} [Decidable a] : (bit a).setWidth 32 = if a then 1 else 0 := by
-  by_cases ha : a <;> simp [bit, ha]
-
 /-- A block that writes only `x24` keeps `PostB`. -/
 theorem postB24 {S : Nat} {s s' : State} (k : Only [.x24] s s') (W : List Region) : PostB S s s' W :=
   postB_of_keep k.keep (by decide) (by rw [k.mem]; exact Frame.refl _ _)

@@ -100,8 +100,6 @@ structure BoundedW (w16 : Bool) (A B : Spec.Sha3.State) (p a b c : Addr) (s u : 
   saveRight : checkpointW w16 (p+1696) b (accepted B 5) u.mem
   flag : (u.gpr .x6).toNat=if (accepted A 5).length=256 ∧ (accepted B 5).length=256 then 1 else 0
 
-abbrev Bounded := BoundedW false
-
 theorem bounded_of_five {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
     (k : Keep retryRegs s u) (f : Frame (resumeWrites p a b) s.mem u.mem) (h : ProgressW w16 A B 5 p a b c u)
     (hf : (u.gpr .x6).toNat=if (accepted A 5).length=256 ∧ (accepted B 5).length=256 then 1 else 0) :

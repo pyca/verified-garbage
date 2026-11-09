@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeySized
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 
 /-! # The native seven-port result is the shared encoded key operation -/
@@ -11,7 +12,7 @@ namespace VG.Proof.RsaKeyGen.X86.Key
 open VG VG.X86
 
 def encodedOperation (E : Environment) (m : Mem) : Except Spec.RsaKeyGen.Failure (List (List Byte)) ⊕ Unit :=
-  Spec.RsaKeyGen.keyOp E.primeLength
+  Proof.RsaKeyGen.keyOp E.primeLength
     (Spec.Rsa.bytesAt m E.exponentRegion.base E.exponentRegion.len)
     (Spec.Rsa.bytesAt m (E.outputRegion 2).base (E.outputRegion 2).len)
     (Spec.Rsa.bytesAt m (E.outputRegion 3).base (E.outputRegion 3).len)
@@ -19,7 +20,7 @@ def encodedOperation (E : Environment) (m : Mem) : Except Spec.RsaKeyGen.Failure
 def EncodedResult (E : Environment) (m : Mem) (t : State) : Prop :=
   let result := encodedOperation E m
   let outs := (List.range 7).map E.outputRegion
-  (t.gpr .eax).toNat = Spec.RsaKeyGen.keyStatus result ∧
+  (t.gpr .eax).toNat = Proof.RsaKeyGen.keyStatus result ∧
     match result with
     | .inl (.ok ys) => outs.map (fun r => Spec.Rsa.bytesAt t.mem r.base r.len) = ys
     | _ => ∀ r ∈ outs, Spec.Rsa.bytesAt t.mem r.base r.len = List.replicate r.len 0
@@ -30,7 +31,7 @@ theorem BodyOutcome.encoded {E : Environment} {m : Mem} {t : State} (v : E.Valid
   have bits : 16 * E.primeLength = 32 * E.n := by omega
   unfold BodyOutcome WrittenCore at R
   rw [show E.outputs.n = E.n from rfl] at R
-  unfold EncodedResult encodedOperation Spec.RsaKeyGen.keyOp
+  unfold EncodedResult encodedOperation Proof.RsaKeyGen.keyOp
   rw [bits]
   cases code : Spec.RsaKeyGen.keyFromPrimes (32 * E.n)
     (Spec.Rsa.os2ip (Spec.Rsa.bytesAt m E.exponentRegion.base E.exponentRegion.len))

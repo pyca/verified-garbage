@@ -74,4 +74,47 @@ theorem setup_ok {s : State} {base p : Addr} (hc : State.addr (s.gpr .r3) = base
   · rw [decodeUCoordinate_eq (length_bytesAt _ _ _)]
     exact v0.trans uv0
 
+theorem valN_five : valN (fun i => if i = 0 then 5 else 0) 28 = 5 := by
+  rw [valN_update (f := fun _ => 0) (k := 0) (v := 5) (by decide) (fun i _ => by
+    simp only [Nat.zero_add]), valN_zero]; rfl
+
+/-- `setupBase`: as `setup_ok`, with the base point's u-coordinate. -/
+theorem setupBase_ok {s : State} {base : Addr} (hc : State.addr (s.gpr .r3) = base)
+    (hw : (⟨base, 8192⟩ : Region) ∈ s.wr) (hn : (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32) :
+    WP isa (.block setupBase) s fun t =>
+      Scr t base ∧ BoundedEnv t.mem base ∧ t.gpr .r8 = s.gpr .r0 ∧ t.gpr .r10 = s.gpr .lr ∧
+      Keeps setupRegs s t ∧
+      Outside base 0 8192 s.mem t.mem ∧ Saved base s.gpr t.mem ∧
+      E t.mem base 0 = toFe (Spec.X448.decodeUCoordinate Spec.X448.basePoint) ∧
+      E t.mem base 1 = 1 ∧ E t.mem base 2 = 0 ∧
+      E t.mem base 3 = E t.mem base 0 ∧ E t.mem base 4 = 1 ∧ word t.mem base SWAP = 0 := by
+  change WP isa (.block (setupHead ++ ((List.range 28).flatMap fiveLimb ++ initSlots))) s _
+  rw [WP.block_append_iff]
+  refine WP.mono (setupHead_ok hc hw hn) fun t ⟨ts, tp, tl, tv, tm, tk⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (fiveAll_ok ts) fun u ⟨ux, uy, um, uk⟩ => ?_
+  have five_lt : ∀ j, fiveV j < radix := fun j => by unfold fiveV; split <;> decide
+  have ub0 : Bounded u.mem base X1 := by intro j hj; rw [ux j hj]; exact five_lt j
+  have ub3 : Bounded u.mem base X3 := by intro j hj; rw [uy j hj]; exact five_lt j
+  have uv0 : E u.mem base 0 = toFe (valN fiveV 28) := congrArg toFe (valN_congr ux)
+  have uv3 : E u.mem base 3 = E u.mem base 0 := congrArg toFe ((valN_congr uy).trans (valN_congr ux).symm)
+  refine WP.mono (initSlots_ok (ts.of_keeps uk (by decide)) ub0 ub3)
+    fun v ⟨vb, v0, v1, v2, v3, v4, vw, vm, vk⟩ => ?_
+  refine ⟨(ts.of_keeps uk (by decide)).of_keeps vk (by decide), vb,
+    (vk.1 _ (by decide)).trans ((uk.1 _ (by decide)).trans tp),
+    (vk.1 _ (by decide)).trans ((uk.1 _ (by decide)).trans tl),
+    (tk.mono ?_).trans ((uk.mono ?_).trans (vk.mono ?_)),
+    (tm.mono (by decide) (by decide)).trans ?_,
+    (tv.outside2 um (by decide) (by decide)).outside vm (by decide),
+    ?_, v1, v2, v3.trans (uv3.trans v0.symm), v4, vw⟩
+  · intro r h; simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+    rcases h with rfl | rfl | rfl | rfl <;> decide
+  · intro r h; simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+    rcases h with rfl | rfl <;> decide
+  · intro r h; simp only [List.mem_singleton] at h; subst r; decide
+  · exact (show Outside base 0 8192 t.mem u.mem from fun q h =>
+      um q (by simp only [X1, slot]; omega) (by simp only [X3, slot]; omega)).trans
+      (vm.mono (by decide) (by decide))
+  · rw [decodeUCoordinate_eq (by rfl), v0, uv0, valN_five]; rfl
+
 end VG.Proof.X448.Arm

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
 import VerifiedGarbage.Proof.AesGcmSiv.Arm.FnCT
 import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -58,14 +59,14 @@ def openSat : State :=
 theorem seal_verified : Verified Arm.target «seal» (Proof.AesGcmSiv.sealScratchContract Arm.abi 470 8) :=
   Verified.of_correct (fun _ hs => seal_wp tagInput_eq hs) seal_ct (by
     sig_implies [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
-      Spec.GcmSiv.sealPost, sealArm, sealPre, oneLay, onePub, rounds, bel, arg, args, Arm.abi, Arm.argRegs,
+      Proof.AesGcmSiv.sealRoundsPost, sealArm, sealPre, oneLay, onePub, rounds, bel, arg, args, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [sealSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using sealSat)
 
 theorem open_verified : Verified Arm.target «open» (Proof.AesGcmSiv.openScratchContract Arm.abi 470 8) :=
   Verified.of_correct (fun _ hs => open_wp tagInput_eq hs) open_ct
     { pre := by sig_implies_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openArm, openResult, openPost,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openArm, openResult, openPost,
         openPre, oneLay, onePub, rounds, bel, arg, args, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
         Arm.State.addr]
       -- `h` and the goal match on the same outcome of `decryptWith` with
@@ -74,11 +75,11 @@ theorem open_verified : Verified Arm.target «open» (Proof.AesGcmSiv.openScratc
       post := by
         intro s s' _ h
         sig_post [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-          Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openArm, openResult, openPost,
+          Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openArm, openResult, openPost,
           openPre, oneLay, onePub, rounds, bel, arg, args, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           Arm.State.addr]
         sig_reduce [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-          Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openArm, openResult, openPost,
+          Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openArm, openResult, openPost,
           openPre, oneLay, onePub, rounds, bel, arg, args, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           Arm.State.addr] at h
         have e : ∀ x y : BitVec 32, (x ++ y).setWidth 32 = y := fun _ _ => BitVec.setWidth_append_eq_right
@@ -86,11 +87,11 @@ theorem open_verified : Verified Arm.target «open» (Proof.AesGcmSiv.openScratc
         intro _
         split at h <;> rename_i heq <;> rw [heq] <;> exact h
       pub := by sig_implies_pub [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openArm, openResult, openPost,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openArm, openResult, openPost,
         openPre, oneLay, onePub, rounds, bel, arg, args, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
         Arm.State.addr]
       sat := by sig_implies_sat [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openArm, openResult, openPost,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openArm, openResult, openPost,
         openPre, oneLay, onePub, rounds, bel, arg, args, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
         Arm.State.addr] [openSat, sealSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using openSat }
 
@@ -113,18 +114,18 @@ def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x8000, 16⟩],
                  wr := [⟨0, 0⟩, ⟨0x4000, 16⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.GcmSiv.sealContract Arm.abi 3800).pre s := by
-  implies_sat [Spec.GcmSiv.sealContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, Spec.GcmSiv.sealPost,
+theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract Arm.abi 3800).pre s := by
+  implies_sat [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost,
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [sealFrameSat, sealSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
 theorem seal_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 3792 4 «seal»)
-      (Spec.GcmSiv.sealContract Arm.abi 3800) :=
+      (Proof.AesGcmSiv.sealRoundsContract Arm.abi 3800) :=
   Arm.Verified.stackScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 470) (pre := Spec.GcmSiv.sealPre Arm.abi.ptrBits)
-    (post := Spec.GcmSiv.sealPost Arm.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.AesGcmSiv.sealRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 4) seal_verified (by decide) (by decide) (by decide) (by decide)
     (sealPre_local _) (sealPost_local _) sealFrameSat_pre
 
@@ -134,18 +135,18 @@ def openFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x4000, 16⟩, ⟨0x8000, 16⟩],
                  wr := [⟨0, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.GcmSiv.openContract Arm.abi 3800).pre s := by
-  implies_sat [Spec.GcmSiv.openContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, Spec.GcmSiv.openPost,
+theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract Arm.abi 3800).pre s := by
+  implies_sat [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost,
     Spec.GcmSiv.openLeak, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [openFrameSat, sealSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using openFrameSat
 
 theorem open_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 3792 4 «open»)
-      (Spec.GcmSiv.openContract Arm.abi 3800) :=
+      (Proof.AesGcmSiv.openRoundsContract Arm.abi 3800) :=
   Arm.Verified.stackScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 470) (pre := Spec.GcmSiv.openPre Arm.abi.ptrBits)
-    (post := Spec.GcmSiv.openPost Arm.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.AesGcmSiv.openRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.GcmSiv.openLeak Arm.abi.ptrBits))
     (m := 4) (Proof.AesGcmSiv.Verified.of_openScratch open_verified) (by decide) (by decide) (by decide) (by decide)
     (openPre_local _) (openPost_local _) openFrameSat_pre

@@ -17,12 +17,6 @@ theorem size_eq (n : Nat) : size n = 448 * n + 288 := by
   unfold size slot stride
   omega
 
-theorem context_fits (n : Nat) : contextBytes n ≤ size n := by
-  have := slot_le (n := n) (i := 9) (j := 28) (by decide)
-  exact Nat.le_trans (Nat.le_add_right _ _) this
-
-theorem slot_bound {n i : Nat} (hi : i < 20) : slot n i + stride n ≤ size n := slot_le (by omega)
-
 theorem shared_scratch {len : Nat} (lo : 64 ≤ len) :
     size (Spec.Rsa.modulusWords len) ≤ 8 * Spec.Rsa.scratchWords len := by
   rw [size_eq]

@@ -21,8 +21,6 @@ def keyTemps : List Reg := [.r12, .r0, .r3, .r9, .r10, .r11, .lr]
 /-- The public zero flag controls the key-expansion loops. -/
 def zeroFlag (s : State) : Option Bool := some s.z
 
-theorem eval_zero (s : State) : eval .eq s = zeroFlag s := rfl
-
 theorem eval_nonzero (s : State) :
     eval .ne s = (zeroFlag s).map (!·) := rfl
 

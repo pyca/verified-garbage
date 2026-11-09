@@ -114,7 +114,8 @@ theorem r15_zero {s : State} (h : s.gpr .r15 = 0 ∨ s.gpr .r15 = 1) (he : (s.gp
   · exact e
   · rw [e] at he; exact absurd he (by decide)
 
-theorem rest_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 p) {σ s : State} (h : IM p D σ s) :
+theorem rest_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 p) {σ s : State}
+    (hpre : (signK p D).pre σ) (h : IM p D σ s) :
     WP isa (rest P p) s (FS p D σ) := by
   have hc := allChk_ok h3
   simp only [allChk, Bool.and_eq_true] at hc
@@ -125,7 +126,7 @@ theorem rest_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 
   have hp := paramsOk h3
   have hA := expandA_max h.ok
   unfold rest
-  refine WP.seq (WP.mono (decode_ok hP hd h) fun s1 h1 => ?_)
+  refine WP.seq (WP.mono (decodeOrCopy_ok hP hd (pkChk_ok h3) hpre h) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (signLoop_ok hP hp hc1 hb hks (ksChk2_ok h3) hl h1) fun s2 h2 => ?_)
   have L2 := h2.k.d.im.st.lay
   unfold ifOk
@@ -155,11 +156,15 @@ theorem entry_st {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3
   simp only [fChk, Bool.and_eq_true, decide_eq_true_eq] at hc
   have hsz := hc.2
   have hpre' := hpre
-  obtain ⟨_, _, d1, d2, d3, d4, d5, d6, d7, _, _, _, _, _, _, _, _, _, _, n1, n2, n3, n4, n5, _⟩ := hpre'
+  obtain ⟨_, hwr, d1, d2, d3, d4, d5, d6, d7, _, _, _, _, _, _, _, _, _, _, n1, n2, n3, n4, n5, _⟩ := hpre'
+  have hsk := skLen_le_skL p σ
   exact ⟨ht, sgLay hpre hP.hD' hsz ht,
-    entry_bytes hf d2 (by omega) (ht.regs (.rbp, .rdi) (by decide)),
+    entry_bytes hf (d2.sub_left (Region.sub_prefix hsk)) (by omega) (ht.regs (.rbp, .rdi) (by decide)),
     entry_bytes hf d4 (by omega) (ht.regs (.r12, .rsi) (by decide)),
-    entry_bytes hf d6 (by omega) (ht.regs (.r13, .rdx) (by decide))⟩
+    entry_bytes hf d6 (by omega) (ht.regs (.r13, .rdx) (by decide)),
+    Frame.sub hf fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_append_left _ (by rw [hwr]; simp), fun _ h => h⟩⟩
 
 theorem sign_correct {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 p)
     (hmx : ctlOk (Impl.MlDsa.X86_64.Sign.sign P p) = true) (σ : State)
@@ -182,7 +187,7 @@ theorem sign_correct {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 :
       refine ifOkElse_ok (D := D) (fun s₃ hP₃ hcs₃ hm₃ hne => ?_) fun s₃ hP₃ hcs₃ hm₃ he => ?_
       · have h1 := r15_one h₂.r01 hne
         obtain ⟨ok, fam⟩ := h₂.ok h1
-        exact rest_ok hP h3 ⟨h₂.st.step hP₃ st0, ok, Fam.keep h₂.st.lay hP₃ fa0 fam⟩
+        exact rest_ok hP h3 hpre ⟨h₂.st.step hP₃ st0, ok, Fam.keep h₂.st.lay hP₃ fa0 fam⟩
       · have h0 := r15_zero h₂.r01 he
         have e15 : s₃.gpr .r15 = 0 := by rw [hcs₃ _ (by decide), h0]
         exact WP.block_nil ⟨h₂.st.step hP₃ st0, .inl e15, fun h1 => absurd (h1.symm.trans e15) (by decide),

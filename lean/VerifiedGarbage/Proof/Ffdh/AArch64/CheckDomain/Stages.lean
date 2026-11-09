@@ -43,9 +43,6 @@ structure CdP where
 def CdP.D (p : CdP) : FD := ⟨p.B, p.Z, p.k, p.dl, p.dp, p.dom, [], []⟩
 
 @[simp] theorem CdP.D_hs (p : CdP) : p.D.hs = [] := rfl
-theorem CdP.D_dom (p : CdP) : p.D.dom = p.dom := rfl
-theorem CdP.D_k (p : CdP) : p.D.k = p.k := rfl
-theorem CdP.D_dl (p : CdP) : p.D.dl = p.dl := rfl
 @[simp] theorem CdP.D_srcs (p : CdP) : p.D.srcs = [] := rfl
 
 /-- A state the contract allows, with the public data `p`. -/

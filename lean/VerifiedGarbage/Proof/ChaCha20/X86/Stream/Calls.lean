@@ -316,75 +316,60 @@ theorem block_call {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (hebx : s.g
 /-! ## `vg_chacha20_xor` -/
 
 /-- The regions of the call of `vg_chacha20_xor`: the copy of the state,
-the data, the working space and its frame. -/
+the data and the working space. -/
 abbrev cpR (s₀ : State) : Region := ⟨st s₀ + BitVec.ofNat 64 192, 64⟩
 abbrev blR (s₀ : State) : Region := ⟨dp s₀ + BitVec.ofNat 64 (H s₀), 64 * NB s₀⟩
 abbrev wkR (s₀ : State) : Region := ⟨st s₀ + BitVec.ofNat 64 256, 320⟩
-abbrev wrXor (s₀ : State) : List Region := [cpR s₀, blR s₀, wkR s₀, below (E s₀) 16]
 
 theorem cpR_sub (s₀ : State) : Region.Sub (cpR s₀) (stR s₀) := Offset.sub_base _ (by omega_arith)
 theorem wkR_sub (s₀ : State) : Region.Sub (wkR s₀) (stR s₀) := Offset.sub_base _ (by omega_arith)
 theorem blR_sub (s₀ : State) : Region.Sub (blR s₀) (dR s₀) := Offset.sub_base _ (HNB_le s₀)
 
-theorem xor_pre {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (hnb : 0 < NB s₀)
+/-- The call of `vg_chacha20_xor(state + 192, data, 64 NB, state + 256)` in
+place: `dst` (in `esi`) is the data too. -/
+theorem xor_args {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (hnb : 0 < NB s₀)
     (hedx : s.gpr .edx = ST s₀ + BitVec.ofNat 32 192) (hesi : s.gpr .esi = DP s₀ + BitVec.ofNat 32 (H s₀))
     (hecx : s.gpr .ecx = BitVec.ofNat 32 (64 * NB s₀)) (heax : s.gpr .eax = ST s₀ + BitVec.ofNat 32 256) :
-    CallPre Proof.ChaCha20.xorX86 [.eax, .ecx, .esi, .edx] [] (wrXor s₀) s := by
-  have hk : [Reg.eax, .ecx, .esi, .edx].length ≤ 4 := by decide
-  have fit := h.fit hp hk
+    XorCall s .eax .ecx .esi .edx (E s₀) (ST s₀ + BitVec.ofNat 32 192) (DP s₀ + BitVec.ofNat 32 (H s₀))
+      (DP s₀ + BitVec.ofNat 32 (H s₀)) (ST s₀ + BitVec.ofNat 32 256) (64 * NB s₀) := by
   have hHNB := HNB_le s₀
   have hL := L_lt s₀
-  have a0 : arg (pushed [.eax, .ecx, .esi, .edx] s).callEntry 0 = ST s₀ + BitVec.ofNat 32 192 := by
-    rw [callEntry_arg fit (by decide) (by decide)]; exact hedx
-  have a1 : arg (pushed [.eax, .ecx, .esi, .edx] s).callEntry 1 = DP s₀ + BitVec.ofNat 32 (H s₀) := by
-    rw [callEntry_arg fit (by decide) (by decide)]; exact hesi
-  have a2 : arg (pushed [.eax, .ecx, .esi, .edx] s).callEntry 2 = BitVec.ofNat 32 (64 * NB s₀) := by
-    rw [callEntry_arg fit (by decide) (by decide)]; exact hecx
-  have a3 : arg (pushed [.eax, .ecx, .esi, .edx] s).callEntry 3 = ST s₀ + BitVec.ofNat 32 256 := by
-    rw [callEntry_arg fit (by decide) (by decide)]; exact heax
-  have e := hp.sp_lo
-  have e₂ := hp.sp_hi
   have e' := hp.st_fit
   have ed := hp.d_fit
-  have es : (E s₀ - BitVec.ofNat 32 20).setWidth 64 - 12 = (E s₀ - BitVec.ofNat 32 32).setWidth 64 := by
-    rw [hp.E64 (by decide), hp.E64 (by decide), BitVec.sub_sub]; rfl
-  have hn : (BitVec.ofNat 32 (64 * NB s₀)).toNat = 64 * NB s₀ := Proof.ChaCha20.X86.Bytes.toNat_ofNat_lt32 (by omega_arith)
-  refine ⟨?_, ?_, ?_⟩
-  · simp only [Proof.ChaCha20.xorX86, State.withRegions_rd, State.withRegions_wr,
-      State.withRegions_gpr, arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, h.argAddr0,
-      h.esp64, h.espNat hp hk, hp.eaS (d := 192) (by decide), hp.eaS (d := 256) (by decide),
-      hp.sNat (d := 192) (by decide), hp.sNat (d := 256) (by decide), hp.eaD (d := H s₀) (by omega_arith),
-      hp.dNat (d := H s₀) (by omega_arith), hn, List.length_cons, List.length_nil, es]
-    have sk : ∀ R, Region.Sub R (stkR s₀) → ∀ R', Region.Sub R' (stR s₀) → R.Disjoint R' :=
-      fun R hR R' hR' => (hp.stk_st.sub_left hR).sub_right hR'
-    have dk : ∀ R, Region.Sub R (stkR s₀) → R.Disjoint (blR s₀) :=
-      fun R hR => (hp.stk_d.sub_left hR).sub_right (blR_sub s₀)
-    refine ⟨trivial, trivial, (hp.st_d.sub_left (cpR_sub s₀)).sub_right (blR_sub s₀),
-      Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith),
-      (hp.st_d.sub_left (wkR_sub s₀)).symm.sub_left (blR_sub s₀),
-      sk _ (hp.stk_part (by decide) (by decide)) _ (cpR_sub s₀), dk _ (hp.stk_part (by decide) (by decide)),
-      sk _ (hp.stk_part (by decide) (by decide)) _ (wkR_sub s₀),
-      sk _ (hp.stk_part (by decide) (by decide)) _ (cpR_sub s₀), dk _ (hp.stk_part (by decide) (by decide)),
-      sk _ (hp.stk_part (by decide) (by decide)) _ (wkR_sub s₀),
-      sk _ (hp.stk_part (by decide) (by decide)) _ (cpR_sub s₀), dk _ (hp.stk_part (by decide) (by decide)),
-      sk _ (hp.stk_part (by decide) (by decide)) _ (wkR_sub s₀), by omega_arith, by omega_arith, by omega_arith, by omega_arith,
-      by omega_arith⟩
-  · rw [h.esp, h.rd, h.wr, hp.rd, hp.wr]
-    refine Covers.of_sub fun r hr => ?_
-    simp only [List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact within (stR s₀) (by simp) 192 rfl (by show 192 + 64 ≤ 768; omega_arith)
-    · exact within (dR s₀) (by simp) (H s₀) rfl hHNB
-    · exact within (stR s₀) (by simp) 256 rfl (by show 256 + 320 ≤ 768; omega_arith)
-    · exact within (below (E s₀) 16) (by simp) 0 (by simp) (by simp)
-  · rw [h.esp, h.wr, hp.wr]
-    refine Covers.of_sub fun r hr => ?_
+  have e192 := hp.eaS (d := 192) (by decide)
+  have e256 := hp.eaS (d := 256) (by decide)
+  have eH := hp.eaD (d := H s₀) (by omega_arith)
+  have sk : ∀ R', Region.Sub R' (stR s₀) → (stkR s₀).Disjoint R' := fun R' hR' => hp.stk_st.sub_right hR'
+  have dS : (cpR s₀).Disjoint (blR s₀) := (hp.st_d.sub_left (cpR_sub s₀)).sub_right (blR_sub s₀)
+  have hcov : ∀ r ∈ [blR s₀, cpR s₀, blR s₀, wkR s₀], ∃ r' ∈ s.rd ++ s.wr, ∃ o,
+      r.base = r'.base + BitVec.ofNat 64 o ∧ o + r.len ≤ r'.len := by
+    intro r hr
+    rw [h.rd, h.wr, hp.rd, hp.wr]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
+    · exact within (dR s₀) (by simp) (H s₀) rfl hHNB
     · exact within (stR s₀) (by simp) 192 rfl (by show 192 + 64 ≤ 768; omega_arith)
     · exact within (dR s₀) (by simp) (H s₀) rfl hHNB
     · exact within (stR s₀) (by simp) 256 rfl (by show 256 + 320 ≤ 768; omega_arith)
-    · exact within (below (E s₀) 16) (by simp) 0 (by simp) (by simp)
+  refine ⟨h.esp, hedx, hesi, hecx, heax, hesi, by decide, hp.sp_lo, by omega_arith,
+    by rw [hp.sNat (by decide)]; omega_arith, by rw [hp.dNat (by omega_arith)]; omega_arith,
+    by rw [hp.dNat (by omega_arith)]; omega_arith, by rw [hp.sNat (by decide)]; omega_arith, ?_, ?_,
+    ?_, ?_, ?_, .inl rfl, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp only [xorRd, List.cons_append, List.nil_append, e192, e256, eH]
+  · exact dS
+  · exact dS
+  · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+  · exact (hp.st_d.sub_left (wkR_sub s₀)).symm.sub_left (blR_sub s₀)
+  · exact (hp.st_d.sub_left (wkR_sub s₀)).symm.sub_left (blR_sub s₀)
+  · exact sk _ (cpR_sub s₀)
+  · exact hp.stk_d.sub_right (blR_sub s₀)
+  · exact hp.stk_d.sub_right (blR_sub s₀)
+  · exact sk _ (wkR_sub s₀)
+  · exact Covers.of_sub hcov
+  · rw [h.wr, hp.wr]
+    exact Covers.of_sub fun r hr => by
+      obtain ⟨r', hr', o, hb, hl⟩ := hcov r (List.mem_cons_of_mem _ hr)
+      rw [h.rd, h.wr, hp.rd, hp.wr, List.nil_append] at hr'
+      exact ⟨r', hr', o, hb, hl⟩
 
 theorem xor_call (v : XorImpl) {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (hnb : 0 < NB s₀)
     (hedx : s.gpr .edx = ST s₀ + BitVec.ofNat 32 192) (hesi : s.gpr .esi = DP s₀ + BitVec.ofNat 32 (H s₀))
@@ -396,38 +381,13 @@ theorem xor_call (v : XorImpl) {s₀ s : State} (hp : APre s₀) (h : At s₀ s)
         List.zipWith (· ^^^ ·) (bytesAt s.mem (dp s₀ + BitVec.ofNat 64 (H s₀)) (64 * NB s₀))
           (keystream (stateAt s.mem (st s₀ + BitVec.ofNat 64 192)) (64 * NB s₀)) → Q s') :
     WP isa (callXor v.callee) s Q := by
-  have hk : [Reg.eax, .ecx, .esi, .edx].length ≤ 4 := by decide
-  have fit := h.fit hp hk
-  have e := hp.sp_lo
   have hHNB := HNB_le s₀
-  have hL := L_lt s₀
-  refine WP.callWith v.ok v.nosp (by simp) (by decide)
-    (by rw [v.stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega_arith)
-    (xor_pre hp h hnb hedx hesi hecx heax) fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
-  rw [v.stack, h.esp] at f'
-  refine hQ s' (h.ret rd' wr' cs') cs' (f'.sub fun r hr => ?_) ?_
-  · simp only [wrXor, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
-      List.length_cons, List.length_nil] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨stkR s₀, by simp, below_sub (by omega_arith) hp.sp_lo⟩
-    · exact ⟨stkR s₀, by simp, below_sub (by omega_arith) hp.sp_lo⟩
-  · have a0 : arg (pushed [.eax, .ecx, .esi, .edx] s).callEntry 0 = ST s₀ + BitVec.ofNat 32 192 := by
-      rw [callEntry_arg fit (by decide) (by decide)]; exact hedx
-    have a1 : arg (pushed [.eax, .ecx, .esi, .edx] s).callEntry 1 = DP s₀ + BitVec.ofNat 32 (H s₀) := by
-      rw [callEntry_arg fit (by decide) (by decide)]; exact hesi
-    have a2 : arg (pushed [.eax, .ecx, .esi, .edx] s).callEntry 2 = BitVec.ofNat 32 (64 * NB s₀) := by
-      rw [callEntry_arg fit (by decide) (by decide)]; exact hecx
-    have hn : (BitVec.ofNat 32 (64 * NB s₀)).toNat = 64 * NB s₀ :=
-      Proof.ChaCha20.X86.Bytes.toNat_ofNat_lt32 (by omega_arith)
-    simp only [Proof.ChaCha20.xorX86, arg_withRegions, State.withRegions_mem, a0, a1, a2,
-      hp.eaS (d := 192) (by decide), hp.eaD (d := H s₀) (by omega_arith), hn, m₂] at post
-    have ef := h.entry_frame hp hk (by decide)
-    rw [post, bytesAt_frame ef (by
-      simp only [List.mem_singleton, forall_eq]; exact (hp.stk_d.sub_right (blR_sub s₀)).symm) (by omega_arith),
-      VG.Proof.ChaCha20.X86.Xor.stateAt_frame ef (by
-        simp only [List.mem_singleton, forall_eq]; exact (hp.stk_st.sub_right (cpR_sub s₀)).symm)]
+  have e192 := hp.eaS (d := 192) (by decide)
+  have e256 := hp.eaS (d := 256) (by decide)
+  have eH := hp.eaD (d := H s₀) (by omega_arith)
+  refine v.call (xor_args hp h hnb hedx hesi hecx heax) fun s' rd' wr' cs' f' x' => ?_
+  rw [e192, e256, eH] at f'
+  rw [e192, eH] at x'
+  exact hQ s' (h.ret rd' wr' cs') cs' f' x'
 
 end VG.Proof.ChaCha20.X86.Stream

@@ -24,10 +24,6 @@ theorem EnvW.transfer {w16 : Bool} {N : Nat} {B : Nat → Byte} {bP aP : Addr} {
   · simpa only [hm,h16] using h.tableData
   · simpa only [h16] using h.tableDisj
 
-theorem Env.transfer {N : Nat} {B : Nat → Byte} {bP aP : Addr} {s u : State}
-    (h : Env N B bP aP s) (hm : u.mem=s.mem) (hr : u.rd=s.rd) (hw : u.wr=s.wr)
-    (h16 : u.gpr .x16=s.gpr .x16) : Env N B bP aP u := EnvW.transfer h hm hr hw h16
-
 structure EntryW (w16 : Bool) (initial : List Zq) (N : Nat) (B : Nat → Byte) (bP aP : Addr) (s : State) :
     Prop where
   env : EnvW w16 N B bP aP s
@@ -41,16 +37,11 @@ structure EntryW (w16 : Bool) (initial : List Zq) (N : Nat) (B : Nat → Byte) (
   x9 : (s.gpr .x9).toNat=q
   x10 : (s.gpr .x10).toNat=15
 
-abbrev Entry := EntryW false
-
 theorem EntryW.inv {w16 : Bool} {initial : List Zq} {N : Nat} {B : Nat → Byte} {bP aP : Addr} {s : State}
     (h : EntryW w16 initial N B bP aP s) : Scalar.InvW w16 initial N B bP aP s 0 s :=
   ⟨⟨rfl,rfl,rfl,h.len,h.x3,h.x4,h.x9,h.coeffs,Frame.refl _ _⟩,Keep.refl _ _,
     by simpa only [Nat.mul_zero,ptr_zero] using h.x2,
     by simpa only [Nat.sub_zero] using h.x5,h.x10⟩
-
-theorem Entry.inv {initial : List Zq} {N : Nat} {B : Nat → Byte} {bP aP : Addr} {s : State}
-    (h : Entry initial N B bP aP s) : Scalar.Inv initial N B bP aP s 0 s := EntryW.inv h
 
 theorem segment_ok {w16 : Bool} {initial : List Zq} {N : Nat} {B : Nat → Byte} {bP aP : Addr} {s : State}
     (h : EntryW w16 initial N B bP aP s) (hN : 0<N) (hm : N%4=0) :

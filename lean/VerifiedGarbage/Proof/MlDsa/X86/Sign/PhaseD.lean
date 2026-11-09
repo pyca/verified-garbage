@@ -36,11 +36,6 @@ variable {p : Params}
 section
 variable (p : Params)
 
-/-- The values of `ŝ₁`, `ŝ₂` and `t̂₀`, from the initial state. -/
-abbrev S1 (s₀ : State) : Nat → Poly := s1F p (skOf p s₀)
-abbrev S2 (s₀ : State) : Nat → Poly := s2F p (skOf p s₀)
-abbrev T0 (s₀ : State) : Nat → Poly := t0F p (skOf p s₀)
-
 /-- `ρ″`, from the initial state. -/
 abbrev rppS (s₀ : State) : List Byte := rppV (skOf p s₀) (muOf s₀) (rndOf s₀)
 
@@ -113,9 +108,9 @@ theorem ps_sLen (ps : PS p) : 0 < sLen p ∧ sLen p < 2 ^ 32 := by rcases ps.hsL
 
 /-- `ŝ₁`. -/
 theorem decS1s_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
-    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ DK p 0 0 0 s₀ s.mem) (fun s₀ s => Ctx (Y p) s₀ s ∧ DK p p.ℓ 0 0 s₀ s.mem)
+    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p 0 0 0 s₀ s.mem) (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ 0 0 s₀ s.mem)
       (seqR (decS1 P p) 0 p.ℓ) := by
-  have := seqR_piece (p := p) (f := decS1 P p) (I := fun r s₀ s => Ctx (Y p) s₀ s ∧ DK p r 0 0 s₀ s.mem) 0 p.ℓ
+  have := seqR_piece (p := p) (f := decS1 P p) (I := fun r s₀ s => Ctx (Y p) s₀ s ∧ DKs p r 0 0 s₀ s.mem) 0 p.ℓ
     fun r _ hr => by
       have hl := ps_sLen ps
       have hk := ps_sk ps
@@ -130,9 +125,9 @@ theorem decS1s_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
 
 /-- `ŝ₂`. -/
 theorem decS2s_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
-    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ DK p p.ℓ 0 0 s₀ s.mem) (fun s₀ s => Ctx (Y p) s₀ s ∧ DK p p.ℓ p.k 0 s₀ s.mem)
+    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ 0 0 s₀ s.mem) (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ p.k 0 s₀ s.mem)
       (seqR (decS2 P p) 0 p.k) := by
-  have := seqR_piece (p := p) (f := decS2 P p) (I := fun r s₀ s => Ctx (Y p) s₀ s ∧ DK p p.ℓ r 0 s₀ s.mem) 0 p.k
+  have := seqR_piece (p := p) (f := decS2 P p) (I := fun r s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ r 0 s₀ s.mem) 0 p.k
     fun r _ hr => by
       have hl := ps_sLen ps
       have hk := ps_sk ps
@@ -154,9 +149,9 @@ theorem t0F_eq (sk : List Byte) (i : Nat) :
 
 /-- `t̂₀`. -/
 theorem decT0s_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
-    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ DK p p.ℓ p.k 0 s₀ s.mem) (fun s₀ s => Ctx (Y p) s₀ s ∧ DK p p.ℓ p.k p.k s₀ s.mem)
+    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ p.k 0 s₀ s.mem) (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ p.k p.k s₀ s.mem)
       (seqR (decT0 P p) 0 p.k) := by
-  have := seqR_piece (p := p) (f := decT0 P p) (I := fun r s₀ s => Ctx (Y p) s₀ s ∧ DK p p.ℓ p.k r s₀ s.mem) 0 p.k
+  have := seqR_piece (p := p) (f := decT0 P p) (I := fun r s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ p.k r s₀ s.mem) 0 p.k
     fun r _ hr => by
       have hk := ps_sk ps
       have hr' : r < p.k := by omega_arith
@@ -173,9 +168,8 @@ theorem decT0s_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
 
 /-- `ρ″ = H(K ‖ rnd ‖ μ, 64)`, with `K ‖ rnd` copied to `HIN` first. -/
 theorem rpp_piece (ps : PS p) :
-    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ DK p p.ℓ p.k p.k s₀ s.mem) (KD p)
-      (.seq (copyW SC (bSk 32 32) (sc oHIN 32) 8) (.seq (copyW SC bRnd (sc (oHIN + 32) 32) 8)
-        (shake2 (sc oHIN 64) bMu (sc oMS 64)))) := by
+    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ DK p p.ℓ p.k p.k s₀ s.mem) (KD p) rpp := by
+  unfold rpp
   have hk := ps_sk ps
   refine Piece.seq (B := fun s₀ s => Ctx (Y p) s₀ s ∧ DK p p.ℓ p.k p.k s₀ s.mem ∧
       bytesAt s.mem (Buf.addr s₀ (sc oHIN 32)) 32 = ((skOf p s₀).drop 32).take 32)
@@ -200,9 +194,10 @@ theorem rpp_piece (ps : PS p) :
   have e : BitVec.setWidth 8 (31#32) = Spec.Sha3.shakeSuffix := by decide
   rw [hb, h.2.2, h.1.roBytes hp (b := bMu) (by ofsd) rfl, e, rppS, rppV, VG.Proof.MlDsa.Sample.H_eq]
 
-/-- The setup after `ExpandA`. -/
-theorem decode_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
-    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ DK p 0 0 0 s₀ s.mem) (KD p) (decode P p) :=
-  (decS1s_piece F ps).seq ((decS2s_piece F ps).seq ((decT0s_piece F ps).seq (rpp_piece ps)))
+/-- The private key's polynomials. -/
+theorem keys_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
+    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p 0 0 0 s₀ s.mem) (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ p.k p.k s₀ s.mem)
+      (keys P p) :=
+  (decS1s_piece F ps).seq ((decS2s_piece F ps).seq (decT0s_piece F ps))
 
 end VG.Proof.MlDsa.X86.Sign

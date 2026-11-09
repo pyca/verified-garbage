@@ -6,15 +6,18 @@ public import VerifiedGarbage.Impl.Rsa.PPC64LE.Priv
 /-!
 # RSASSA-PSS signing (RFC 8017 §8.1.1) on PPC64LE
 
-`vg_rsa_pss_<H>_mgf1_<H>_sign(out = r3, out_len = r4, n = r5, n_len = r6,
-e = r7, e_len = r8, p = r9, p_len = r10, q, q_len, dp, dp_len, dq, dq_len,
-qinv, qinv_len, digest, salt, salt_len, scratch, scratch_len)`, the last
-thirteen on the stack, for a hash function `H` (an
-`Impl.Hmac.Stream.PPC64LE.Hash`, its streaming functions) as both the hash
-function and MGF1's, which it calls, with `vg_rsa_private_checked`.
+`vg_rsa_pss_sign(out = r3, out_len = r4, n = r5, n_len = r6, e = r7,
+e_len = r8, p = r9, p_len = r10, q, q_len, dp, dp_len, dq, dq_len, qinv,
+qinv_len, digest, digest_len, salt, salt_len, scratch, scratch_len, hash,
+mgf1)`, the last sixteen on the stack, with the hash function of the table
+`hash` (of the interface `MdHash`) and MGF1 over that of the table `mgf1`
+(of the interface `Hash`), which it calls through the tables, with
+`vg_rsa_private_checked`. As verification does, the index of `hash`'s hash
+function (its word 5) selects the code for that hash function's digest
+length (`byIdx`).
 
 It runs in the frame of RSAES-OAEP encryption (`Impl/RsaOaep/PPC64LE.lean`),
-with its part of `scratch` and its MGF1 (`mgfXor`), and hashes
+with its part of `scratch` and its MGF1 with a table (`mgfXorT`), and hashes
 `M' = 0⁸ ‖ mHash ‖ salt` at `oY` as verification does for a given salt length
 (`Impl/RsaPss/PPC64LE.lean`, `hashFixed`). The values the code keeps across
 the calls are in `r14`–`r23`, all public: `r14` = `scratch`, `r15` = `k =
@@ -44,8 +47,8 @@ open VG VG.PPC64LE
 open VG.Impl.AesGcm.PPC64LE (mov)
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
 open VG.Impl.RsaOaep.PPC64LE (frameBytes arg save restore copyLoop zeroLoop encFail oEm oSt oDig oW oRsa
-  mgfXor)
-open VG.Impl.RsaPss.PPC64LE (oY hashFixed)
+  Fns tword mgfXorT)
+open VG.Impl.RsaPss.PPC64LE (oY hashFixed MdFns byIdx idxs shapeOf)
 
 /-- `smear(b >> 1)` of the byte in `r9` into `r10`, and `lo` into `r11`. -/
 def smear : List Instr :=
@@ -56,11 +59,15 @@ def smear : List Instr :=
 /-- The arguments into the registers that keep them, with `r12 = r1`; `n₀`
 into `r9` and `lo` into `r23`. -/
 def prologue : List Instr :=
-  [.load .d .r14 .r12 (arg 11), mov .r15 .r6, mov .r16 .r3, mov .r17 .r9, mov .r18 .r10,
-    .load .d .r19 .r12 (arg 10), mov .r20 .r5, mov .r21 .r7, mov .r22 .r8, .lbz .r9 .r5 0] ++ smear ++
+  [.load .d .r14 .r12 (arg 12), mov .r15 .r6, mov .r16 .r3, mov .r17 .r9, mov .r18 .r10,
+    .load .d .r19 .r12 (arg 11), mov .r20 .r5, mov .r21 .r7, mov .r22 .r8, .lbz .r9 .r5 0] ++ smear ++
     [mov .r23 .r11]
 
-variable (H : Hash)
+variable (H : Hash) (f : MdFns) (g : Fns)
+
+/-- Signing's stack arguments `hash` and `mgf1`. -/
+def hArg : Nat := 14
+def gArg : Nat := 15
 
 /-! ## The checks -/
 
@@ -81,7 +88,7 @@ def ldArg (r : Reg) (j : Nat) : List Instr := [.addSp .r12 0, .load .d r .r12 (a
 
 /-- `salt_len` bytes of the salt to `r5`, if it is not empty. -/
 def copySalt : Prog isa :=
-  .seq (.block (ldArg .r4 9 ++ [mov .r6 .r19])) (.ite (.nonzero .d .r6) copyLoop (.block []))
+  .seq (.block (ldArg .r4 10 ++ [mov .r6 .r19])) (.ite (.nonzero .d .r6) copyLoop (.block []))
 
 /-- `M' = 0⁸ ‖ mHash ‖ salt` at `scratch + oY`. -/
 def mPrime : Prog isa :=
@@ -136,7 +143,7 @@ rest of `scratch` from `oRsa` and `scratch_len - 1024`; in the registers
 def privArgs : List Instr :=
   [.addSp .r12 0, .store .d .r17 .r12 96, .store .d .r18 .r12 104] ++
     (List.range 8).flatMap (fun j => [.load .d .r0 .r12 (argP j), .store .d .r0 .r12 (112 + 8 * j)]) ++
-    [.li .r0 oRsa, .add .r0 .r14 .r0, .store .d .r0 .r12 176, .load .d .r11 .r12 (argP 12),
+    [.li .r0 oRsa, .add .r0 .r14 .r0, .store .d .r0 .r12 176, .load .d .r11 .r12 (argP 13),
       .subi .r11 .r11 1024, .store .d .r11 .r12 184, mov .r3 .r16, mov .r4 .r15, mov .r5 .r20, mov .r6 .r15,
       mov .r7 .r21, mov .r8 .r22, .addi .r9 .r14 oEm, mov .r10 .r15]
 
@@ -147,19 +154,25 @@ def priv : Prog isa := .frame (.alloc privBytes) (.seq (.block privArgs) privCal
 
 /-- After the checks: `M'` and `H`, `EM`, and the private operation. -/
 def signMain : Prog isa :=
-  .seq (mPrime H) (.seq (hashFixed H) (.seq clearEm (.seq (putSalt H) (.seq (putH H)
-    (.seq (.block (dbArgs H)) (.seq (mgfXor H) (.seq (.block clearTop) priv)))))))
+  .seq (mPrime H) (.seq (hashFixed H f hArg) (.seq clearEm (.seq (putSalt H) (.seq (putH H)
+    (.seq (.block (dbArgs H)) (.seq (mgfXorT g gArg) (.seq (.block clearTop) priv)))))))
 
 /-- The checks, then `signMain`. -/
 def checks : Prog isa :=
   .ite (.zero .d .r9) encFail
     (.seq (.block (chkEm H)) (.ite (.nonzero .d .r3) encFail
-      (.seq (.block (chkSalt H)) (.ite (.nonzero .d .r3) encFail (signMain H)))))
+      (.seq (.block (chkSalt H)) (.ite (.nonzero .d .r3) encFail (signMain H f g)))))
 
-/-- The frame's body. -/
-def body : Prog isa := .seq (.block (save ++ prologue)) (.seq (checks H) (.block restore))
+/-- The frame's body, for the hash function's sizes. -/
+def body : Prog isa := .seq (.block (save ++ prologue)) (.seq (checks H f g) (.block restore))
 
-/-- `vg_rsa_pss_<H>_mgf1_<H>_sign`. -/
-def sign : Prog isa := .frame (.alloc frameBytes) (body H) (.free frameBytes)
+/-- The index of the table `hash`'s hash function (its word 5) to `r11`,
+then the frame's body for its sizes. -/
+def signBody : Prog isa := .seq (.block (tword .r11 hArg 5)) (byIdx (fun i => body (shapeOf i).1 f g) idxs)
+
+/-- `vg_rsa_pss_sign`, with the hash function the table that is its stack
+argument 14 (`hash`) and MGF1's the table that is its stack argument 15
+(`mgf1`). -/
+def sign : Prog isa := .frame (.alloc frameBytes) (signBody f g) (.free frameBytes)
 
 end VG.Impl.RsaPss.PPC64LE.Sign

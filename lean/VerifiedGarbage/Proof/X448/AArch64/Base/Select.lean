@@ -316,9 +316,6 @@ private theorem entries_getD (j a : Nat) (ha : a < 9) (f : Spec.X448.Fe × Spec.
   simp only [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range ha, Option.map_some,
     Option.getD_some]
 
-/-- The entries' slots, 6–9, are the 512 bytes at `OX`. -/
-theorem entries_span : OY = OX + 128 ∧ EX = OX + 256 ∧ EY = OX + 384 ∧ OX = 832 := by decide
-
 /-- `x9` = table `j`'s address, from the static's and `x19 = j`. -/
 theorem tblAddr_ok (s : State) {T : Addr} (hT : s.syms combSym = T) {j : Nat} (hj : j < 57)
     (hc : s.gpr .x19 = BitVec.ofNat 64 j) :

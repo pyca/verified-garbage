@@ -98,7 +98,6 @@ theorem perm44_1 (lo hi : BitVec 64) :
     (permQwords (0#128 ++ (BitVec.extractLsb' 0 64 (0#64 ++ hi) ++ BitVec.extractLsb' 0 64 (0#64 ++ lo))) 0x44).extractLsb' 128 128 = hi ++ lo :=
   perm44 lo hi (k := 1) (by decide)
 
-
 theorem lane_setReg (s : State) (r : Reg) (v : BitVec 64) (x : XReg) (l : Nat) :
     (s.setReg r v).lane x l = s.lane x l := rfl
 
@@ -277,7 +276,6 @@ theorem save_ok {s : State} {p : Addr} (hs : Scratch s p) :
   refine ⟨trivial, fun r hr => by simp only [hr, ite_false], trivial, trivial, rfl,
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (mx_contains p (by decide))⟩
 
-
 theorem set_ok {s : State} {p : Addr} (hs : Scratch s p) :
     WP isa (.block [.mov32 .rax (.imm 0x1FBF), .store32 (at_ .rcx (mxcsrOff + 4)) .rax,
       .ldmxcsr (at_ .rcx (mxcsrOff + 4)), .lfence]) s fun t =>
@@ -293,7 +291,6 @@ theorem set_ok {s : State} {p : Addr} (hs : Scratch s p) :
     reduceCtorEq, ↓reduceIte, Nat.reduceAdd, hz, Option.some.injEq, exists_eq_left']
   refine ⟨trivial, fun r hr => by simp only [hr, ite_false], trivial, trivial,
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (mx_contains p (by decide))⟩
-
 
 theorem restore_ok {s : State} {p : Addr} (hs : Scratch s p)
     (hz : BitVec.extractLsb' 16 16 ((s.gpr .r11).setWidth 32) = 0) :
@@ -329,7 +326,6 @@ theorem ldmxcsr_ok (v : BitVec 32) :
     Bool.true_and]
   rw [show (0xFFFF : BitVec 32).getLsbD (16 + i) = false by revert i; decide]
   simp
-
 
 /-! ## G -/
 
@@ -404,10 +400,5 @@ theorem compress_ct : ConstantTime isa compressLocal.pre compressLocal.pub
     Impl.Argon2.X86_64.Avx2.compress :=
   VG.Taint.constantTime (A := taint) initialTaint (fun _ _ hs ht hp => initial_agree hs ht hp)
     (by taint_decide)
-
-/-- `vg_argon2_compress_avx2` meets the contract of `vg_argon2_compress`. -/
-theorem compress_verified : Verified X86_64.target Impl.Argon2.X86_64.Avx2.compress
-    (Proof.Argon2.compressContract X86_64.abi) :=
-  Verified.of_correct compress_correct compress_ct compress_implies
 
 end VG.Proof.Argon2.X86_64.Avx2

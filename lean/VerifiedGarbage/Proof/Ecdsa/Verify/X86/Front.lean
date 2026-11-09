@@ -138,11 +138,6 @@ theorem vArgs_disjI {s : State} {extra : List Region} (hp : VPre c s extra) {i :
   · exact hp.args_sc.sub_left (arg_subN h4 hi)
   · exact (below_disjoint_args hp.sp_lo (k := 16) (by omega) (by decide)).symm.sub_left (arg_subN h4 hi)
 
-/-- Ranges of the working space, as one. -/
-theorem unch_whole {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
-    (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) : Unch base [(0, size)] m m' :=
-  (h.outside fun w hw => ⟨Nat.zero_le _, by have := hW w hw; omega_arith⟩).unch
-
 theorem loadS_eq (c : Cfg) : Impl.Ecdsa.Verify.X86.Cfg.loadS c =
     .mov .ebx (.mem (Cfg.argOp 2)) :: .alu .add .ebx (.imm (BitVec.ofNat 32 c.C.len)) ::
       loadBytes c.C.len c.n (c.sl PT) .ebx := by

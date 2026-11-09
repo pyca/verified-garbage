@@ -66,13 +66,6 @@ theorem readW_of_dataInv {σ : Ctx} (hn : 128 * σ.nb < 2 ^ 64) {m : Mem} {k : N
   rw [Offset.add_add, h _ (by omega_arith), ite_eq_left (by omega_arith), Ctx.mDec, Offset.add_sub_cancel_left,
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), ite_eq_left (by omega_arith)]
 
-theorem readW_of_dataInv' {σ : Ctx} {m : Mem} {k : Nat}
-    (h : DataInv σ.m₀ m σ.D (8 * σ.nb) k σ.ks) {i : Nat} (hi : k ≤ i) (hn' : i < 8 * σ.nb) :
-    m.readW (σ.D + BitVec.ofNat 64 (16 * i)) 128 = σ.blockO i := by
-  refine Mem.readW_congr fun t ht => ?_
-  rw [Offset.add_add, h _ (by omega_arith), ite_eq_right (by omega_arith)]
-  exact BitVec.xor_zero
-
 /-! ## The number of rounds -/
 
 theorem byRounds_ok {nr : Nat} (hR : nr = 10 ∨ nr = 12 ∨ nr = 14) {f : Nat → Prog isa} {P Q : State → Prop}

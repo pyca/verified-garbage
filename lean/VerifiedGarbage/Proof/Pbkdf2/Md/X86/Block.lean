@@ -227,7 +227,6 @@ include h
 theorem fit : 4 * cmp4.length + 4 ≤ (s.gpr .esp).toNat := by
   have h_sp48 := h.sp48; simp only [List.length_cons, List.length_nil]; omega_using [h_sp48]
 
-
 theorem a0 : arg (pushed cmp4 s).callEntry 0 = st := by
   rw [callEntry_arg h.fit cmp4_nesp (by simp)]; simpa using h.ebx
 theorem a1 : arg (pushed cmp4 s).callEntry 1 = st + BitVec.ofNat 32 N := by
@@ -388,6 +387,26 @@ theorem cmp_rel (hB : 0 < B) {P : State → State → Prop} {sp st sc : BitVec 3
   · simp only [arg_withRegions, a.a2 x, a'.a2 x']
   · simp only [arg_withRegions, a.a3, a'.a3]
 
+/-- Two runs of the call of the compression function in the frame of its
+arguments, from the same hash value and scratch space, with `ecx = 1`, at
+the same `esp`. -/
+theorem cmpFrame_rel (hB : 0 < B) {P : State → State → Prop} {sp st sc : BitVec 32}
+    (h : ∀ s s', P s s' → (CmpArgs N B so s st sc ∧ s.gpr .ecx = 1) ∧ (CmpArgs N B so s' st sc ∧ s'.gpr .ecx = 1) ∧
+      s.gpr .esp = sp ∧ s'.gpr .esp = sp) :
+    RelCT isa P (.frame (.push cmp4) (.call name code) (.pop .eax cmp4.length)) fun _ _ => True := by
+  refine RelCT.callWith (rs := cmp4) hc.verified.1 hc.verified.2.1 (CmpArgs.rd N B st sp)
+    (CmpArgs.wr N so st sc) fun s s' hp => ?_
+  obtain ⟨⟨a, x⟩, ⟨a', x'⟩, e, e'⟩ := h s s' hp
+  have c := a.callPre x H hB
+  have c' := a'.callPre x' H hB
+  rw [e] at c; rw [e'] at c'
+  refine ⟨c, c', e.trans e'.symm, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [State.withRegions_gpr, callEntry_esp', e, e']
+  · simp only [arg_withRegions, a.a0, a'.a0]
+  · simp only [arg_withRegions, a.a1, a'.a1]
+  · simp only [arg_withRegions, a.a2 x, a'.a2 x']
+  · simp only [arg_withRegions, a.a3, a'.a3]
+
 end
 
 /-! ## The digest -/
@@ -451,13 +470,10 @@ theorem Sizes.ND_le : H.N + H.D ≤ H.N + H.B :=
 theorem Sizes.NDB_le : H.N + H.D + (H.B - H.D) ≤ H.N + H.B := by
   rw [Nat.add_assoc, Nat.add_sub_cancel' (Nat.le_trans (Nat.le_add_right _ _) (Nat.le_trans (Nat.le_add_right _ 4) hz.DL))]
 
-theorem Sizes.D4 : 4 * (H.D / 4) = H.D := Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hz.D.2.2)
-
 theorem Sizes.B_lt64 : H.B < 2 ^ 64 := Nat.lt_of_le_of_lt hz.B4.2.2 (by decide)
 
 theorem Sizes.buf_le64 : 8 * H.st.W + 16 ≤ 2 ^ 64 :=
   Nat.le_trans (Nat.add_le_add_right (Nat.mul_le_mul_left 8 hz.W) 16) (by decide)
-
 
 theorem Sizes.tail_length : H.tailB.length = H.B - H.D := by
   have hz_DL := hz.DL

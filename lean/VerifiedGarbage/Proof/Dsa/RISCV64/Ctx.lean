@@ -225,13 +225,6 @@ abbrev PBody (L : Lay) (m m' : Mem) : Prop := Outside L.S 256 (L.qOff - 256) m m
 /-- Memory changed only in the Q space's arrays. -/
 abbrev QBody (L : Lay) (m m' : Mem) : Prop := Outside L.Q 256 1344 m m'
 
-theorem PBody.refl (L : Lay) (m : Mem) : PBody L m m := Outside.refl _ _ _ _
-
-theorem PBody.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : PBody L m₁ m₂) (h₂ : PBody L m₂ m₃) : PBody L m₁ m₃ :=
-  Outside.trans h₁ h₂
-
-theorem QBody.refl (L : Lay) (m : Mem) : QBody L m m := Outside.refl _ _ _ _
-
 theorem QBody.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : QBody L m₁ m₂) (h₂ : QBody L m₂ m₃) : QBody L m₁ m₃ :=
   Outside.trans h₁ h₂
 
@@ -241,19 +234,10 @@ theorem PBody.body {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PBody L m m') : Body 
 theorem QBody.body {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBody L m m') : Body L m m' :=
   Body.ofQ hL h (by decide)
 
-/-- A change in the P space's arrays keeps the Q space and the buffer. -/
-theorem PBody.q {L : Lay} {m m' : Mem} (h : PBody L m m') : ∀ x, L.qOff ≤ ofs L.S x → m' x = m x :=
-  fun x hx => h x (Or.inr (by simp only [Lay.qOff, Lay.slot_eq] at hx ⊢; omega_arith))
-
 /-- A change in arrays `j < 28` of the P space. -/
 theorem PBody.of {L : Lay} {o n : Nat} {m m' : Mem} (h : Outside L.S o n m m') (ho : 256 ≤ o)
     (hn : o + n ≤ L.qOff) : PBody L m m' :=
   h.mono ho (by simp only [Lay.qOff, Lay.slot_eq] at hn ⊢; omega_arith)
-
-/-- A change in arrays `j < 28` of the Q space. -/
-theorem QBody.of {L : Lay} (hL : L.Ok) {o n : Nat} {m m' : Mem} (h : Outside L.Q o n m m') (ho : 256 ≤ o)
-    (hn : o + n ≤ slot L.wq 28) : QBody L m m' :=
-  h.mono ho (by have := hL.qslot; simp only [Lay.slot_eq] at this hn; omega_arith)
 
 /-! ## The values kept -/
 

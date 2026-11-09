@@ -93,11 +93,6 @@ theorem w_w {a n d m : Nat} (h : a + n ≤ d ∨ d + m ≤ a) (ha : a + n ≤ 25
     (⟨State.addr w + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 d, m⟩ :=
   Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
 
-theorem w0_w {n d m : Nat} (h : n ≤ d) (hd : d + m ≤ 2560) :
-    (⟨State.addr w, n⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 d, m⟩ := by
-  have := L.w_w (a := 0) (n := n) (d := d) (m := m) (.inl (by omega)) (by omega) hd
-  simpa using this
-
 theorem wN {d : Nat} (hd : d < 2560) : (w + BitVec.ofNat 32 d).toNat = w.toNat + d := by
   have := L.ww
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
@@ -141,8 +136,6 @@ namespace Buf
 
 variable {w sp : BitVec 32} {s : State} {D : BitVec 32} {n : Nat} (h : Buf w sp s D n)
 include h
-
-theorem lt32 : n ≤ 2 ^ 32 := by have := h.fit; omega
 
 theorem lt : n < 2 ^ 64 := by have := h.fit; omega
 

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Camellia.Prepared
 public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.State
 public import VerifiedGarbage.Impl.Camellia.AArch64.Serial.Prepared
 public import VerifiedGarbage.Proof.Camellia.Bytes
@@ -9,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
-# The serial core's working space as `Spec.Camellia.Prepared`'s layout
+# The serial core's working space as `Proof.Camellia.Prepared`'s layout
 
 The table of `layout` holds the words `w` (`Holds`) exactly when the serial
 core's table is ready for them (`Ready`): the S-box's bytes, then the
@@ -23,7 +24,20 @@ one range keeps every byte outside it.
 namespace VG.Proof.Camellia.AArch64.Serial
 
 open VG VG.AArch64 VG.Impl.Camellia.AArch64.Serial
-open VG.Spec.Camellia.Prepared (Holds Keeps)
+open VG.Proof.Camellia.Prepared (Holds Keeps)
+
+/-- The S-box's table, then the schedule's words as stored (the most
+significant byte first), then the block at byte 768. -/
+def layout : Prepared.Layout where
+  table rounds := [(0, 256), (256, 8 * Spec.Camellia.scheduleLength rounds)]
+  encode _ w _ i :=
+    if i < 256 then Spec.Camellia.sbox1Table.getD i 0
+    else (Spec.Camellia.wordBytes (w.getD ((i - 256) / 8) 0)).getD ((i - 256) % 8) 0
+  buf := 768
+  blocks := 1
+  prepScratch := [(0, 528)]
+  cryptScratch := [(768, 16)]
+  size := 8 * core.total
 
 theorem wordBytes_getD (w : BitVec 64) {j : Nat} (hj : j < 8) :
     (Spec.Camellia.wordBytes w).getD j 0 = Proof.Camellia.byteOf w j := by

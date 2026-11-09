@@ -89,15 +89,6 @@ theorem sel_ok {o q r : Nat} (ho : o + 56 ≤ 2048) (hq : q + 56 ≤ 2048) (hr :
     · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega_using [ho, hk])]; exact h.lo j hj
     · rw [wd_write_self, vo]
 
-/-- An element above the field area is kept by code writing only there. -/
-theorem fs_above {m m' : Mem} (hf : Frame [FA b] m m') {q : Nat} (hq : ACC + 112 ≤ q)
-    (hq' : q + 56 ≤ 2048) : FS m' b q = FS m b q := by
-  have e : ∀ k < 14, limb m' b q k = limb m b q k :=
-    limb_frame hf fun r hr k hk => by
-      rw [List.mem_singleton.mp hr]
-      exact Offset.disjoint_base b (by omega_using [hq]) (by omega_using [hq', hk])
-  rw [FS, V, val32_congr e]; rfl
-
 /-- So is a byte above it. -/
 theorem byte_above {m m' : Mem} (hf : Frame [FA b] m m') {d : Nat} (hd : ACC + 112 ≤ d)
     (hd' : d < 2048) : m' (b + BitVec.ofNat 64 d) = m (b + BitVec.ofNat 64 d) :=
@@ -105,33 +96,6 @@ theorem byte_above {m m' : Mem} (hf : Frame [FA b] m m') {d : Nat} (hd : ACC + 1
     rw [List.mem_singleton.mp hr]
     exact fun h => Offset.disjoint_base b (d := d) (n := 1) (k := ACC + 112) hd (by omega_using [hd'])
       _ (Region.contains_self _ _) h
-
-/-- `sel o q r` as an update of the slots: `o` gets `x`, the element at `q`
-above the field area, or `r`'s if `sw = 1`. -/
-theorem selS {o q r : Nat} {qs : List Nat} {v : Nat → Fe} {x : Fe} (hq : Sep1 o qs = true)
-    (ho : o + 56 ≤ ACC) (hq4 : ACC + 112 ≤ q) (hq5 : q + 56 ≤ 2048) (hqa : q % 4 = 0) (hr : r ∈ qs) (hro : r ≠ o)
-    {s : State} (hc : Ctx b s) {sw : Nat} (hsw : sw ≤ 1) (h11 : s.gpr .t0 = 0 - BitVec.ofNat 64 sw)
-    (hS : SlotsOk s.mem b qs v) (hx : FS s.mem b q = x) :
-    WP isa (.block (sel o q r)) s fun s' => Rest [.a2, .a4] s s' ∧ Frame [FA b] s.mem s'.mem ∧
-      SlotsOk s'.mem b (o :: qs) (upd v o (VG.Proof.X25519.sel sw x (v r))) := by
-  have hr' := sep1_get hq hr
-  have hA := ACC_eq
-  refine WP.mono (sel_ok (b := b) (o := o) (q := q) (r := r) (by omega_using [hA, ho]) hq5
-    (by omega_using [hA, hr']) (.inl (by omega_using [ho, hq4]))
-    (by omega_using [hr', hro]) (sep1_o hq) hqa hr'.2.2 hc hsw h11) fun s' h => ⟨h.rest, ?_, fun q' hq' => ?_⟩
-  · exact h.frame.sub fun x hx => ⟨_, List.mem_singleton_self _, by
-      rw [List.mem_singleton.mp hx]; exact Offset.sub_base _ (by omega_using [ho])⟩
-  · by_cases hqo : q' = o
-    · subst hqo
-      rw [upd_self]
-      rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hsw with rfl | rfl
-      · have e : ∀ k < 14, limb s'.mem b q' k = limb s.mem b q k := fun k hk => by rw [h.lo k hk]; rfl
-        rw [FS, V, val32_congr e]; exact hx
-      · have e : ∀ k < 14, limb s'.mem b q' k = limb s.mem b r k := fun k hk => by rw [h.lo k hk]; rfl
-        rw [FS, V, val32_congr e]; exact hS r hr
-    · rw [upd_of_ne _ _ hqo]
-      exact slots_after hq ho (frame_o (h.frame : Frame [⟨b + BitVec.ofNat 64 o, 56⟩] _ _)) hS
-        ((List.mem_cons.mp hq').resolve_left hqo) hqo
 
 end
 

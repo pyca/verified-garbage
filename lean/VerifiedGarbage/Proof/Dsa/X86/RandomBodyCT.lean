@@ -43,12 +43,14 @@ open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86
 open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.Random VG.Impl.Dsa.X86.RandomSign
 open VG.Proof.Dsa (randomSignRemaining randomSamplingTrace randomSigningTrace)
 
+variable {V : Nat → Nat → List Byte → Bool}
+
 /-! ## The attempts -/
 
 /-- Whether another attempt follows: a retry, with attempts left. -/
-def AttPub.cont (a : AttPub) : Bool := ((randomSigningTrace a.tr).head? == some 6) && decide (2 ≤ a.fuel)
+def AttPub.cont (a : AttPub V) : Bool := ((randomSigningTrace a.tr).head? == some 6) && decide (2 ≤ a.fuel)
 
-def AttPub.next (a : AttPub) : AttPub :=
+def AttPub.next (a : AttPub V) : AttPub V :=
   ⟨a.pub, a.leak, a.used + a.pub.width * (randomSamplingTrace a.tr).countP (· ≤ 1), a.fuel - 1,
     (randomSigningTrace a.tr).tail, a.status⟩
 
@@ -61,16 +63,16 @@ theorem AttemptOut.ready {s₀ u : State} {used f : Nat} (h : AttemptOut s₀ us
   · obtain ⟨_, S⟩ := D.smp; exact S.ready
 
 /-- After an attempt and its test. -/
-def AStep (a : AttPub) (s₀ t : State) : Prop :=
+def AStep (a : AttPub V) (s₀ t : State) : Prop :=
   Ready s₀ t ∧ t.zf = some a.cont ∧ (a.cont = true → AttAt a.next s₀ t) ∧ (a.cont = false → Fin s₀ t)
 
-theorem astep_ok (F : SignFn) {a : AttPub} {s₀ t : State} (A : RandomSignABI s₀) (e : pubOf s₀ = a.pub)
+theorem astep_ok (F : SignFn) {a : AttPub F.valid} {s₀ t : State} (A : RandomSignABI s₀) (e : pubOf s₀ = a.pub)
     (L : AttAt a s₀ t) : WP isa (.seq (attempt F.name F.code) attTest) t (AStep a s₀) := by
   obtain ⟨Fa, T⟩ := L
   obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by have := Fa.pos; omega⟩
   have hf8 : f + 1 ≤ 8 := hf ▸ Fa.le
   rw [hf] at T
-  refine WP.seq (WP.mono (attempt_ok F A T hf8 Fa.q) fun v hv => ?_)
+  refine WP.seq (WP.mono (attempt_ok F A T hf8 Fa.q Fa.valid) fun v hv => ?_)
   have hrv := hv.ready
   refine wp_movS (hrv.rf.readSlot (by decide)) fun v₁ uv₁ _ => wp_cmpi fun v₂ fv₂ _ zv₂ => WP.block_nil ?_
   have hv₂ := (hrv.upd uv₁ (by decide)).fupd fv₂
@@ -86,7 +88,7 @@ theorem astep_ok (F : SignFn) {a : AttPub} {s₀ t : State} (A : RandomSignABI s
     refine ⟨hv₂, by rw [zv₂, st', hc]; rfl, fun _ => ?_, fun h => Bool.noConfusion (hc.symm.trans h)⟩
     have hu : a.pub.width * (randomSamplingTrace a.tr).countP (· ≤ 1) = (spl s₀ 128 a.used).used := by
       rw [(VG.Proof.Dsa.Random.sample_trace_result _ _ _).1, Fa.spl_trace, pub_width e, rWidth_eq]
-    refine ⟨⟨Fa.q, by show 1 ≤ a.fuel - 1; omega, by show a.fuel - 1 ≤ 8; omega, Fa.leak, ?_⟩, ?_⟩
+    refine ⟨⟨Fa.q, by show 1 ≤ a.fuel - 1; omega, by show a.fuel - 1 ≤ 8; omega, Fa.leak, ?_, Fa.valid⟩, ?_⟩
     · show (randomSignRemaining (rInput s₀) (a.used + a.pub.width * _) (a.fuel - 1)).trace =
         (randomSigningTrace a.tr).tail
       rw [hu, hf, Nat.add_sub_cancel, ← htr, hs]; rfl
@@ -105,13 +107,16 @@ theorem astep_ok (F : SignFn) {a : AttPub} {s₀ t : State} (A : RandomSignABI s
 def FinAt (p : Pub × Nat) : State → Prop := At (fun s₀ t => Fin s₀ t ∧ (rResult s₀).status = p.2) p.1
 
 /-- Before an attempt, with the overall status. -/
-def LoopAt' (a : AttPub) : State → Prop := At (fun s₀ t => AttAt a s₀ t ∧ (rResult s₀).status = a.status) a.pub
+def LoopAt' (a : AttPub V) : State → Prop := At (fun s₀ t => AttAt a s₀ t ∧ (rResult s₀).status = a.status) a.pub
 
 theorem attemptLoop_ct (F : SignFn) (n : Nat) :
-    RelCT isa (Two fun a t => a.fuel = n ∧ LoopAt' a t) (.loop (.seq (attempt F.name F.code) attTest) .e)
+    RelCT isa (Two fun (a : AttPub F.valid) t => a.fuel = n ∧ LoopAt' a t)
+      (.loop (.seq (attempt F.name F.code) attTest) .e)
       (Two FinAt) := by
-  refine RelCT.loop (M := isa) (fun n => Two fun a t => a.fuel = n ∧ LoopAt' a t) (fun n => ?_) n
-  have hct : RelCT isa (Two fun a t => a.fuel = n ∧ LoopAt' a t) (.seq (attempt F.name F.code) attTest)
+  refine RelCT.loop (M := isa) (fun n => Two fun (a : AttPub F.valid) t => a.fuel = n ∧ LoopAt' a t)
+    (fun n => ?_) n
+  have hct : RelCT isa (Two fun (a : AttPub F.valid) t => a.fuel = n ∧ LoopAt' a t)
+      (.seq (attempt F.name F.code) attTest)
       fun _ _ => True := by
     refine RelCT.seq (two_post (Ψ := fun a => At (fun s₀ t => Ready s₀ t) a.pub)
       (two_map id (fun a t ⟨_, s₀, A, e, L, _⟩ => ⟨s₀, A, e, L⟩) (attempt_ct F))
@@ -119,7 +124,7 @@ theorem attemptLoop_ct (F : SignFn) (n : Nat) :
     · obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by have := Fa.pos; omega⟩
       have hf8 : f + 1 ≤ 8 := hf ▸ Fa.le
       rw [hf] at T
-      exact WP.mono (attempt_ok F A T hf8 Fa.q) fun u h => ⟨s₀, A, e, h.ready⟩
+      exact WP.mono (attempt_ok F A T hf8 Fa.q Fa.valid) fun u h => ⟨s₀, A, e, h.ready⟩
     · exact two_taint [.esp] (pins_at (P := fun _ s₀ t => Ready s₀ t) AttPub.pub fun _ _ _ h => h)
         (by taint_decide)
   have hp := two_post (Ψ := fun a t => a.fuel = n ∧ At (fun s₀ t => AStep a s₀ t ∧
@@ -227,27 +232,28 @@ theorem finish_ct : RelCT isa (Two FinAt) finish fun _ _ => True := by
 
 /-- What two runs of the body share: the public data and key bytes, and
 the overall status and trace. -/
-structure BodyPub where
+structure BodyPub (V : Nat → Nat → List Byte → Bool) where
   pub : Pub
   leak : List Nat
   status : Nat
   tr : List Nat
 
-structure BodyFacts (b : BodyPub) (s₀ : State) : Prop where
+structure BodyFacts (b : BodyPub V) (s₀ : State) : Prop where
   leak : keyLeak s₀ = b.leak
   status : (rResult s₀).status = b.status
   tr : (rResult s₀).trace = b.tr
+  valid : KeyValid V s₀
 
 /-- The body's entry, after the frame's allocation. -/
-def BodyEntry (b : BodyPub) (s₀ t : State) : Prop := BodyFacts b s₀ ∧ t = allocated Random.frameBytes s₀
+def BodyEntry (b : BodyPub V) (s₀ t : State) : Prop := BodyFacts b s₀ ∧ t = allocated Random.frameBytes s₀
 
 /-- After the entry block. -/
-def Entered (b : BodyPub) (s₀ t : State) : Prop :=
+def Entered (b : BodyPub V) (s₀ t : State) : Prop :=
   BodyFacts b s₀ ∧ Ready s₀ t ∧ Saved s₀ t.mem ∧ slot t.mem (rBase s₀) oUsed = 0 ∧
     slot t.mem (rBase s₀) oAttempts = 8
 
 /-- After `prepare`. -/
-structure Prepped (b : BodyPub) (s₀ t : State) : Prop where
+structure Prepped (b : BodyPub V) (s₀ t : State) : Prop where
   facts : BodyFacts b s₀
   ready : Ready s₀ t
   eax : t.gpr .eax = if 1 < rq s₀ then 1 else 0
@@ -256,7 +262,7 @@ structure Prepped (b : BodyPub) (s₀ t : State) : Prop where
   used : slot t.mem (rBase s₀) oUsed = 0
   attempts : slot t.mem (rBase s₀) oAttempts = 8
 
-theorem Prepped.fupd {b : BodyPub} {s₀ t u : State} (h : Prepped b s₀ t) (f : Fupd t u) : Prepped b s₀ u := by
+theorem Prepped.fupd {b : BodyPub V} {s₀ t u : State} (h : Prepped b s₀ t) (f : Fupd t u) : Prepped b s₀ u := by
   have hr := h.ready.fupd f
   have hm : u.mem = t.mem := f.mem
   refine ⟨h.facts, hr, by rw [f.gpr]; exact h.eax, fun hq => ?_, by rw [hm]; exact h.saved,
@@ -265,7 +271,7 @@ theorem Prepped.fupd {b : BodyPub} {s₀ t u : State} (h : Prepped b s₀ t) (f 
   exact ⟨hr, by rw [hm]; exact P.q, by rw [hm]; exact P.width, by rw [hm]; exact P.mask,
     by rw [hm]; exact P.nonce⟩
 
-theorem prepped_ok {b : BodyPub} {s₀ t : State} (A : RandomSignABI s₀) (E : Entered b s₀ t) :
+theorem prepped_ok {b : BodyPub V} {s₀ t : State} (A : RandomSignABI s₀) (E : Entered b s₀ t) :
     WP isa prepare t (Prepped b s₀) := by
   obtain ⟨Fb, h₁, sv₁, us₁, at₁⟩ := E
   refine WP.mono (prepare_ok A h₁) fun t₂ ⟨ax₂, P₂, h₂, o₂, _⟩ => ?_
@@ -275,10 +281,10 @@ theorem prepped_ok {b : BodyPub} {s₀ t : State} (A : RandomSignABI s₀) (E : 
     by rw [lo₂ _ (by decide)]; exact us₁, by rw [lo₂ _ (by decide)]; exact at₁⟩
 
 /-- After the test of q. -/
-def Checked (b : BodyPub) (s₀ t : State) : Prop := Prepped b s₀ t ∧ t.zf = some (!decide (1 < rq s₀))
+def Checked (b : BodyPub V) (s₀ t : State) : Prop := Prepped b s₀ t ∧ t.zf = some (!decide (1 < rq s₀))
 
 /-- q ≤ 1: the status, and the end. -/
-theorem small_fin {b : BodyPub} {s₀ t : State} (A : RandomSignABI s₀) (C : Checked b s₀ t) (hq : ¬ 1 < rq s₀) :
+theorem small_fin {b : BodyPub V} {s₀ t : State} (A : RandomSignABI s₀) (C : Checked b s₀ t) (hq : ¬ 1 < rq s₀) :
     WP isa (.block [.store (sp oStatus) .eax]) t fun u => Fin s₀ u ∧ (rResult s₀).status = b.status := by
   obtain ⟨Pp, _⟩ := C
   have hR := rResult_small A hq
@@ -293,7 +299,8 @@ theorem small_fin {b : BodyPub} {s₀ t : State} (A : RandomSignABI s₀) (C : C
   rw [m₄, slot_write_ne _ _ _ (by decide) (by decide) (by decide), Pp.used, hR]; rfl
 
 theorem body_ct (F : SignFn) :
-    RelCT isa (Two fun b => At (BodyEntry b) b.pub) (body F.name F.code) fun _ _ => True := by
+    RelCT isa (Two fun (b : BodyPub F.valid) => At (BodyEntry b) b.pub) (body F.name F.code)
+      fun _ _ => True := by
   unfold body
   refine RelCT.seq (two_piece (Ψ := fun b => At (Entered b) b.pub) [.esp]
     (fun b t₁ t₂ ⟨s₁, _, e₁, _, h₁⟩ ⟨s₂, _, e₂, _, h₂⟩ r hr => by
@@ -314,13 +321,13 @@ theorem body_ct (F : SignFn) :
     by_cases hq : 1 < rq s₀ <;> simp [hq]
   refine RelCT.seq (R := Two FinAt) (two_ite (fun b t₁ t₂ ⟨s₁, _, e₁, _, z₁⟩ ⟨s₂, _, e₂, _, z₂⟩ => by
     simp only [eval, z₁, z₂, pub_rq (e₁.trans e₂.symm)]) ?_ ?_) finish_ct
-  · refine (two_post (Ψ := fun (b : BodyPub) => At (fun s₀ t => Fin s₀ t ∧ (rResult s₀).status = b.status) b.pub)
+  · refine (two_post (Ψ := fun (b : BodyPub F.valid) => At (fun s₀ t => Fin s₀ t ∧ (rResult s₀).status = b.status) b.pub)
       (two_taint [.esp] (pins_at' BodyPub.pub fun _ _ _ h => h.1.ready) (by taint_decide))
       fun b t ⟨⟨s₀, A, e, C⟩, hb⟩ => WP.mono (small_fin A C (by
         have := C.2; simp only [eval, this, Option.some.injEq, Bool.not_eq_true', decide_eq_false_iff_not] at hb
         exact hb)) fun u hu => ⟨s₀, A, e, hu⟩).mono (fun _ _ h => h)
       fun _ _ ⟨b, h₁, h₂⟩ => ⟨(b.pub, b.status), h₁, h₂⟩
-  · refine two_map (fun b => (⟨b.pub, b.leak, 0, 8, b.tr, b.status⟩ : AttPub))
+  · refine two_map (fun b => (⟨b.pub, b.leak, 0, 8, b.tr, b.status⟩ : AttPub F.valid))
       (fun b t ⟨⟨s₀, A, e, Pp, z⟩, hb⟩ => ⟨rfl, s₀, A, e, ?_, Pp.facts.status⟩) (attemptLoop_ct F 8)
     have hq : 1 < rq s₀ := by
       simp only [eval, z, Option.some.injEq, Bool.not_eq_false', decide_eq_true_eq] at hb
@@ -329,7 +336,7 @@ theorem body_ct (F : SignFn) :
     have hql := rQBytes_le A
     have er : randomSignRemaining (rInput s₀) 0 8 = rResult s₀ := by rw [rResult_loop A]; rfl
     refine ⟨⟨hq, (by decide : 1 ≤ 8), (by decide : 8 ≤ 8), Pp.facts.leak, by
-      show (randomSignRemaining (rInput s₀) 0 8).trace = b.tr; rw [er]; exact Pp.facts.tr⟩, ?_⟩
+      show (randomSignRemaining (rInput s₀) 0 8).trace = b.tr; rw [er]; exact Pp.facts.tr, Pp.facts.valid⟩, ?_⟩
     refine ⟨⟨(slot t.mem (rBase s₀) oDraws).toNat, ⟨Pp.ready, P.q, P.width, P.mask, Pp.used,
       by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq], fun i hi => P.nonce i (by omega), Nat.zero_le _⟩⟩,
       Pp.attempts, Pp.saved, ?_⟩

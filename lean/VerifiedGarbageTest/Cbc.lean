@@ -11,8 +11,9 @@ public meta import VerifiedGarbage.Spec.Cbc
 The NIST CAVP AES-CBC multi-block message tests (`CBCMMT`, for 128-, 192-
 and 256-bit keys), read from the vendored response files under
 `vectors/nist-cavp-aes-mmt/` (see `vectors/sources/`) when this file is
-built and checked against `VG.Spec.Cbc.aesCbcEncrypt` (the `ENCRYPT`
-vectors) and `VG.Spec.Cbc.aesCbcDecrypt` (the `DECRYPT` vectors), so that a
+built and checked against `aesCbcEncrypt` (the `ENCRYPT` vectors) and
+`aesCbcDecrypt` (the `DECRYPT` vectors) below, the spec's
+`VG.Spec.Cbc.encrypt` and `VG.Spec.Cbc.decrypt` with AES, so that a
 transcription error in the spec fails the build. Every vector is checked:
 ten in each direction for each key length, of one to ten blocks.
 
@@ -34,6 +35,16 @@ def readMmt (name : String) : CommandElabM String := do
   let some root := file.parent >>= (·.parent) >>= (·.parent)
     | throwError "no repository root above {file}"
   IO.FS.readFile (root / "vectors" / "nist-cavp-aes-mmt" / name)
+
+/-- AES-CBC encryption of the plaintext `pt` (a multiple of 16 bytes) under
+the key `key` (16, 24 or 32 bytes) with the 16-byte `iv`. -/
+def aesCbcEncrypt (key iv pt : List Byte) : List Byte :=
+  (encrypt (aes key) iv (blocks pt)).flatten
+
+/-- AES-CBC decryption of the ciphertext `ct` (a multiple of 16 bytes)
+under the key `key` (16, 24 or 32 bytes) with the 16-byte `iv`. -/
+def aesCbcDecrypt (key iv ct : List Byte) : List Byte :=
+  (decrypt (aesInv key) iv (blocks ct)).flatten
 
 run_cmd do
   let mut n : Nat := 0

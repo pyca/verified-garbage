@@ -285,12 +285,4 @@ theorem WP.withFrame {c : Prog isa} (hc : NoSp c) {s : State} (hd : stackUse c �
   let ⟨tr, t, ex, q⟩ := h
   ⟨tr, t, ex, q, VG.X86.Exec.frameSp ex hc hd⟩
 
-/-- Two postconditions of the same (deterministic) run. -/
-theorem WP.and {c : Prog isa} {s : State} {P Q : State → Prop} (hp : WP isa c s P)
-    (hq : WP isa c s Q) : WP isa c s fun t => P t ∧ Q t := by
-  obtain ⟨tr, t, e, p⟩ := hp
-  obtain ⟨tr', t', e', q⟩ := hq
-  obtain ⟨-, rfl⟩ := Exec.det e e'
-  exact ⟨tr, t, e, p, q⟩
-
 end VG.Proof.X448.X86

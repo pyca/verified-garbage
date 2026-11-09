@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Contract
@@ -16,6 +18,14 @@ meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P224.AArch64
 meta import Batteries.Data.List.Lemmas
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash
+public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash
+meta import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Contract
 
 /-!
 # ECDSA verification over P-224 on AArch64: `Verified`
@@ -70,9 +80,9 @@ theorem verify_checks : VerifyChecks p224 where
 
 /-- The contract's public inputs: the pointers, the table, and the key, digest and signature. -/
 theorem verifyPublic_of_spec {s₁ s₂ : State}
-    (pub : (Spec.Ecdsa.P224.inst.verifyContract (AArch64.abi.withConsts p224.combConsts)).pub s₁ s₂) :
+    (pub : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst (AArch64.abi.withConsts p224.combConsts)).pub s₁ s₂) :
     VerifyPublic p224 s₁ s₂ := by
-  sig_pub [Spec.Ecdsa.P224.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+  sig_pub [Spec.Ecdsa.P224.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.P224.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p224_combConsts,
     Abi.withConsts] at pub
   obtain ⟨hsp, hsy, inputs, h0, h1, h2, h3⟩ := pub
@@ -90,8 +100,8 @@ theorem verifyPublic_of_spec {s₁ s₂ : State}
 theorem verify_ct (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) :
     ConstantTime isa
-      (Spec.Ecdsa.P224.inst.verifyContract (AArch64.abi.withConsts p224.combConsts)).pre
-      (Spec.Ecdsa.P224.inst.verifyContract (AArch64.abi.withConsts p224.combConsts)).pub verifyP224 := by
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst (AArch64.abi.withConsts p224.combConsts)).pre
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst (AArch64.abi.withConsts p224.combConsts)).pub verifyP224 := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   exact verify_public_ct (p224_ok hI) hL hT verify_checks _ _ _ _ _ _
     (pre_of (implies.pre _ pre₁)) (pre_of (implies.pre _ pre₂)) (verifyPublic_of_spec pub) e₁ e₂
@@ -99,9 +109,23 @@ theorem verify_ct (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch
 theorem verify_verified (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) :
     Verified AArch64.target verifyP224
-      (Spec.Ecdsa.P224.inst.verifyContract (AArch64.abi.withConsts p224.combConsts)) := by
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst (AArch64.abi.withConsts p224.combConsts)) := by
   refine ⟨fun s hs => ?_, verify_ct hL hI hT, implies.sat⟩
   obtain ⟨t, s', he, ha, hp⟩ := verify_a64 hL hI hT s (implies.pre _ hs)
   exact ⟨t, s', he, ha, implies.post s s' hs hp⟩
+
+
+/-- `vg_ecdsa_p224_verify`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash
+(`Hash.verifyHash_verified_cons`). -/
+theorem verifyHash_verified (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds)
+    (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) :
+    Verified AArch64.target
+      (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false verifyP224)
+      (Spec.Ecdsa.P224.inst.verifyHashContract (AArch64.abi.withConsts p224.combConsts) 80) :=
+  Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.p224_len (by decide) (verify_verified hL hI hT)
+    (by taint_decide) (Hash.hashSat_cons (by decide) sat_spec (by decide) fun r hr => by
+      simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
 
 end VG.Proof.Ecdsa.Verify.AArch64.P224

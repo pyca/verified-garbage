@@ -126,13 +126,6 @@ theorem canonicalizeGroup_coeff (m : Mem) (p : Addr) {start k : Nat}
     rfl
   · rfl
 
-/-- Each group leaves every other coefficient unchanged, allowing in-place
-iteration without changing the inputs of future groups. -/
-theorem canonicalizeGroup_outside (m : Mem) (p : Addr) {start k : Nat}
-    (hs : start+4≤256) (hk : k<256) (ho : k<start ∨ start+4≤k) :
-    coeffAt (canonicalizeGroupMem m (coeffAddr p start)) p k=coeffAt m p k := by
-  rw [canonicalizeGroup_coeff m p hs hk,ite_eq_right (by omega)]
-
 /-- Invariant for the in-place conversion: the processed prefix is corrected,
 and all subsequent coefficients still contain the original signed words. -/
 def CanonicalizePrefix (initial current : Mem) (p : Addr) (done : Nat) : Prop :=

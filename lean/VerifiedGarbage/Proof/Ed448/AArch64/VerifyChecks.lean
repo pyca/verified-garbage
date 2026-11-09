@@ -55,10 +55,6 @@ theorem CFrame.word {base : Addr} {m m' : Mem} (h : CFrame base m m') {d : Nat}
     (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega)]; omega)
     (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega)]; omega)
 
-theorem CFrame.whole {base : Addr} {m m' : Mem} (h : CFrame base m m') : Outside base 0 8192 m m' :=
-  fun x hx => h x (by simp only [X2, slot] at *; omega) (by simp only [CAN] at *; omega)
-    (by simp only [ACC] at *; omega)
-
 /-- A slot other than `X2` is unchanged. -/
 theorem CFrame.limbs {base : Addr} {m m' : Mem} (h : CFrame base m m') {i : Fin 22} (hi : i ≠ 1) {j : Nat}
     (hj : j < 16) : limbs m' base (slot i.val) j = limbs m base (slot i.val) j := by
@@ -75,9 +71,6 @@ theorem CFrame.E {base : Addr} {m m' : Mem} (h : CFrame base m m') {i : Fin 22} 
 structure CKeep (base : Addr) (s t : State) : Prop where
   regs : Keeps (.x20 :: workRegs) s t
   mem : CFrame base s.mem t.mem
-
-theorem CKeep.trans {base : Addr} {s t u : State} (h₁ : CKeep base s t) (h₂ : CKeep base t u) :
-    CKeep base s u := ⟨h₁.regs.trans h₂.regs, h₁.mem.trans h₂.mem⟩
 
 theorem CKeep.scr {base : Addr} {s t : State} (h : CKeep base s t) (hs : Scr s base) : Scr t base :=
   hs.of_keeps h.regs (by decide)

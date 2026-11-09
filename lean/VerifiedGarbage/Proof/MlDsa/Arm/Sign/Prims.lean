@@ -108,10 +108,6 @@ include En
 theorem Ent.poly {p : Ptr} (h : inB (rbs ++ wbs) p 1024 = true) : polyAt E.mem (pa s p) = polyAt s.mem (pa s p) :=
   polyAt_congr fun k hk => En.mem p 1024 h k hk
 
-theorem Ent.natPoly {p : Ptr} (h : inB (rbs ++ wbs) p 1024 = true) :
-    natPolyAt E.mem (pa s p) = natPolyAt s.mem (pa s p) :=
-  natPolyAt_congr fun k hk => En.mem p 1024 h k hk
-
 theorem Ent.red {p : Ptr} (h : inB (rbs ++ wbs) p 1024 = true) (hr : Reduced s.mem (pa s p)) :
     Reduced E.mem (pa s p) :=
   reduced_congr (fun k hk => En.mem p 1024 h k hk) hr
@@ -267,11 +263,6 @@ theorem nl0 : Reg.r0 ∉ linkRegs := by decide
 theorem nl1 : Reg.r1 ∉ linkRegs := by decide
 theorem nl2 : Reg.r2 ∉ linkRegs := by decide
 theorem nl3 : Reg.r3 ∉ linkRegs := by decide
-
-/-- The memory of the entry state of a call with its arguments in registers. -/
-theorem vR_mem {s s1 : State} (k : Keep argRegs s s1) (rd wr : List Region) :
-    (s1.callEntry.withRegions rd wr).mem = s.mem := by
-  rw [State.withRegions_mem, State.callEntry_mem, k.mem]
 
 /-! ## Addition and subtraction -/
 

@@ -17,8 +17,8 @@ and 0 if not.
 Three blocks of output (504 bytes, for 168 iterations) almost always give
 256 coefficients, so the output is squeezed in two tries:
 
-* `sampleFast`: the first 504 bytes, and 168 iterations on them;
-* if they leave fewer than 256 coefficients, `sampleFull`, from the start
+* `sampleFastWith`: the first 504 bytes, and 168 iterations on them;
+* if they leave fewer than 256 coefficients, `sampleFullWith`, from the start
   again: 840 bytes (the `3 · 280` of 280 iterations), squeezed at once, and
   the 280 iterations on them.
 
@@ -28,8 +28,8 @@ Three blocks of output (504 bytes, for 168 iterations) almost always give
 * `[840, 1040)`: the Keccak state;
 * `[1040, 1680)`: the Keccak functions' working space;
 * `[1680, 1712)`: our caller's `x25`, `x26`, `x30` and `x24`, which each
-  try saves there, and restores before its loop (`sampleFull`) or after it
-  (`sampleFast`).
+  try saves there, and restores before its loop (`sampleFullWith`) or after it
+  (`sampleFastWith`).
 
 The Keccak calls keep `x24` = `seed`, `x25` = `a` and `x26` = `scratch`
 (callee-saved) for us. The loop keeps `x2` = the next chunk of output,
@@ -41,7 +41,7 @@ only if it accepts it: until there are 256, coefficient `j` may hold a
 rejected candidate, which `sampleLoop` sets back to zero if the loop ends
 with fewer.
 
-The loop's branches, the addresses it writes, and whether `sampleFull`
+The loop's branches, the addresses it writes, and whether `sampleFullWith`
 runs depend on the SHAKE128 output, and so on the seed, which the contract
 declares that it may leak; everything else depends only on the pointers.
 -/
@@ -106,7 +106,7 @@ def sampleSqueezeNWith (c : Impl.Sha3.AArch64.Callee) (len : Nat) (setup : List 
   .seq (.call ("vg_keccak_squeeze_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith c)) <|
   .seq sampleZero (.block setup)
 
-/-- Everything before the loop of `sampleFull`. -/
+/-- Everything before the loop of `sampleFullWith`. -/
 def sampleSqueezeWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := (sampleSqueezeNWith c) 840 sampleSetup
 
 /-- Accept the candidate `d` if it is less than `q`, without a branch: store
@@ -146,7 +146,7 @@ stay saved. -/
 def sampleFastWith (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
   .seq ((sampleSqueezeNWith c) 504 (sampleRegs 168)) (.loop sampleBody (.nonzero .x .x5))
 
-/-- `sampleFull`'s arguments, from `x24`, `x25` and `x26`, and our caller's
+/-- `sampleFullWith`'s arguments, from `x24`, `x25` and `x26`, and our caller's
 registers back. -/
 def sampleRetry : List Instr := [mov .x0 .x24, mov .x1 .x25, mov .x2 .x26] ++ sampleRestore
 
@@ -155,11 +155,5 @@ def sampleDone : List Instr := .movz .x .x0 1 0 :: sampleRestore
 
 def sampleNTTWith (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
   .seq (sampleFastWith c) (.ite (.zero .x .x4) (.block sampleDone) (.seq (.block sampleRetry) (sampleFullWith c)))
-
-def sampleSqueezeN := sampleSqueezeNWith .scalar
-def sampleSqueeze := sampleSqueezeWith .scalar
-def sampleFull := sampleFullWith .scalar
-def sampleFast := sampleFastWith .scalar
-def sampleNTT := sampleNTTWith .scalar
 
 end VG.Impl.MlKem.AArch64

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
 import VerifiedGarbage.Proof.AesGcmSiv.AArch64.FnCT
 import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
@@ -85,7 +86,7 @@ theorem seal_verified (v : GcmImpl) :
     Verified AArch64.target («seal» v.callees) (Proof.AesGcmSiv.sealScratchContract AArch64.abi 476) :=
   Verified.of_correct (seal_correct v) (seal_ct v) (by
     sig_implies [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
-      Spec.GcmSiv.sealPost, sealAArch64, sealPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
+      Proof.AesGcmSiv.sealRoundsPost, sealAArch64, sealPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
       AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [sealSat] using sealSat)
 
@@ -93,7 +94,7 @@ theorem open_verified (v : GcmImpl) :
     Verified AArch64.target («open» v.callees) (Proof.AesGcmSiv.openScratchContract AArch64.abi 476) :=
   Verified.of_correct (open_correct v) (open_ct v)
     { pre := by sig_implies_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
         openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
         AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       -- `h` and the goal match on the same outcome of `decryptWith` with
@@ -102,21 +103,21 @@ theorem open_verified (v : GcmImpl) :
       post := by
         intro s s' _ h
         sig_post [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-          Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+          Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
           openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
           AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
         sig_reduce [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-          Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+          Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
           openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
           AArch64.stackArgAddr, List.getD, List.range, List.range.loop] at h
         intro _
         split at h <;> rename_i heq <;> rw [heq] <;> exact h
       pub := by sig_implies_pub [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
         openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
         AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       sat := by sig_implies_sat [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
         openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
         AArch64.stackArgAddr, List.getD, List.range, List.range.loop] [openSat, sealSat] using openSat }
 
@@ -137,18 +138,18 @@ working space. -/
 def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩], wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.GcmSiv.sealContract AArch64.abi 3824).pre s := by
-  implies_sat [Spec.GcmSiv.sealContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, Spec.GcmSiv.sealPost,
+theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract AArch64.abi 3824).pre s := by
+  implies_sat [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost,
     AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
     List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
 theorem seal_framed (v : GcmImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 3824 0 («seal» v.callees))
-      (Spec.GcmSiv.sealContract AArch64.abi 3824) :=
+      (Proof.AesGcmSiv.sealRoundsContract AArch64.abi 3824) :=
   AArch64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 476) (pre := Spec.GcmSiv.sealPre AArch64.abi.ptrBits)
-    (post := Spec.GcmSiv.sealPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
+    (post := Proof.AesGcmSiv.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
     (seal_verified v) (by decide) (by decide) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_siv_open`'s precondition, without the
@@ -156,18 +157,18 @@ working space. -/
 def openFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x5000, 16⟩], wr := [⟨0x4000, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.GcmSiv.openContract AArch64.abi 3824).pre s := by
-  implies_sat [Spec.GcmSiv.openContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, Spec.GcmSiv.openPost,
+theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract AArch64.abi 3824).pre s := by
+  implies_sat [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost,
     Spec.GcmSiv.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD,
     List.range, List.range.loop] [openFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using openFrameSat
 
 theorem open_framed (v : GcmImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 3824 0 («open» v.callees))
-      (Spec.GcmSiv.openContract AArch64.abi 3824) :=
+      (Proof.AesGcmSiv.openRoundsContract AArch64.abi 3824) :=
   AArch64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 476) (pre := Spec.GcmSiv.openPre AArch64.abi.ptrBits)
-    (post := Spec.GcmSiv.openPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
+    (post := Proof.AesGcmSiv.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
     (leak := some (Spec.GcmSiv.openLeak AArch64.abi.ptrBits))
     (Proof.AesGcmSiv.Verified.of_openScratch (open_verified v)) (by decide) (by decide) (openPre_local _)
     (openPost_local _) openFrameSat_pre

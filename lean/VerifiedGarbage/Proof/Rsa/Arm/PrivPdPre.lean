@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rsa.Scratch
 import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # The re-exponentiation call satisfies the shared buffer contract -/
 
@@ -28,14 +29,14 @@ theorem pdArgs_stack {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
 
 theorem pdCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) (a : PdArgs g s) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 56).pre (s.callEntry.withRegions (pdRd g) (pdWr g)) := by
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre (s.callEntry.withRegions (pdRd g) (pdWr g)) := by
   have sa := fun {j} (hj : j < 6) => pdArgs_stack h a hj
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
   have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega
   have wfit : g.scratchLength < 2 ^ 32 := by have := h.valid.workspaceFit; omega
   have pfit : 2 * Spec.Rsa.modulusWords g.length < 2 ^ 32 := by
     have := h.valid.maxLength; simp only [Spec.Rsa.modulusWords]; omega
-  sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+  sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   simp only [h.sp, a.output, a.outputLength, a.precomputation, a.precomputationLength,
     sa (by decide : 0 < 6), sa (by decide : 1 < 6), sa (by decide : 2 < 6),
     sa (by decide : 3 < 6), sa (by decide : 4 < 6), sa (by decide : 5 < 6), pdArgument,

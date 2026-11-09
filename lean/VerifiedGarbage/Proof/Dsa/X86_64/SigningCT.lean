@@ -6,7 +6,8 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.SigningPublic
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
 import VerifiedGarbage.Proof.Dsa.X86_64.EntryCT
-import VerifiedGarbage.Proof.Dsa.X86_64.BodyCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.BodyCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.SizeBounds
@@ -17,7 +18,7 @@ section
 
 /-! # Constant time of signing argument capture and domain validation -/
 
-section
+@[expose] public section
 
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
@@ -97,7 +98,7 @@ section
 
 /-! # The public schedule after independent signing-workspace initialization -/
 
-section
+public section
 
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64

@@ -637,22 +637,4 @@ theorem blocksAvx2_ct : ConstantTime isa blocksAvx2X86_64.pre blocksAvx2X86_64.p
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-/-- A state satisfying the precondition (with no blocks). -/
-def sat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rsp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x2000, 0⟩]
-  wr := [⟨0x1000, 128⟩]
-
-theorem blocksAvx2_verified :
-    Verified X86_64.target blocksAvx2 (Proof.Poly1305.blocksContract X86_64.abi 8) :=
-  Verified.of_correct blocksAvx2_ok blocksAvx2_ct (by
-    sig_implies [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig, blocksAvx2X86_64,
-      Proof.Poly1305.blocksX86_64, X86_64.abi, X86_64.argRegs] [sat] using sat)
-
 end VG.Proof.Poly1305.X86_64.Avx2

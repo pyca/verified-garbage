@@ -12,21 +12,16 @@ public import VerifiedGarbage.TCB.Artifact
   RSAEP needs (`Rsa.publicPrecompute`), to be kept with the key;
 * `vg_rsa_crt_values`: the CRT values `(dP, dQ, qInv)` of the private key
   `(p, q, d)` (`Rsa.crtKey`);
-* `vg_rsa_public_precomputed_checked`: RSAEP and RSAVP1 (`Rsa.publicOp`)
-  within BoringSSL's limits on the public exponent (`Rsa.publicOpChecked`),
-  from the values `vg_rsa_public_precompute` computed, without computing
-  them again;
-* `vg_rsa_private_checked`: RSADP and RSASP1 with the private key
-  `(p, q, dP, dQ, qInv)` (`Rsa.privateCrt`), given the public exponent too,
-  releasing a result only if it passes BoringSSL's check against it
-  (`Rsa.privateChecked`);
 * `vg_rsa_check_key`: BoringSSL's `RSA_check_key` of the private key
-  `(n, e, d, p, q, dP, dQ, qInv)` (`Rsa.checkKey`);
-* `vg_rsa_check_crt_key`: the same checks of the CRT form
-  `(n, e, p, q, dP, dQ, qInv)` alone (`Rsa.checkCrtKey`), for loading a key.
+  `(n, e, d, p, q, dP, dQ, qInv)` (`Rsa.checkKey`).
 
 A private key is brought to the CRT form once, when it is loaded, and every
-operation is `vg_rsa_private_checked`.
+operation on it is checked against the public exponent as BoringSSL checks
+it (`Rsa.privateChecked`, `writtenOutcome`). The RSA public-key and checked
+private-key operations themselves, `vg_rsa_public_precomputed_checked` and
+`vg_rsa_private_checked`, are internal functions, which only the padding
+schemes' verified functions call: their contracts are in
+`Proof/Rsa/Contract.lean`, untrusted.
 
 Every number is a slice of octets, most significant first, with a length of
 its own (a `Sig` slice carries its own length). The modulus `n` is `n_len`
@@ -36,9 +31,7 @@ octets; `p` and its values (`dP`, `qInv`) are `p_len` octets, and `q` and
 `dQ` are `q_len` octets, each below `n_len`. These are preconditions, on the
 public lengths; everything about the values is checked: the function returns
 1 and writes its results, or returns 0 and writes zeros (but
-`vg_rsa_private_checked`, which returns 2 and writes zeros on its internal
-error, and `vg_rsa_check_key` and `vg_rsa_check_crt_key`, which write
-nothing).
+`vg_rsa_check_key`, which writes nothing).
 
 The signature determines memory validity, separation and that the pointers
 and lengths are public, through `Sig.contract`. The public key, `n` and `e`,
@@ -49,7 +42,7 @@ value depends on secrets (whether the input is below `n`, and whether the
 private key is consistent).
 
 `scratch` is working space of at least `16 n_len + 32` `u64`s, or, for the
-public-key functions (`vg_rsa_public_precompute` and
+public-key functions (`vg_rsa_public_precompute` and the internal
 `vg_rsa_public_precomputed_checked`), `8 ⌈n_len / 8⌉ + 48`, whose
 contents on return are unspecified. `stack` is the number of bytes below the stack
 pointer that an implementation's calls and frames use. The functions may
@@ -150,17 +143,6 @@ def publicPrecomputeApi : Api where
   safety := ["`n_len` must be in 64..=1024.", "`pre_len` must be `2 * ⌈n_len / 8⌉`."] ++
     publicScratchSafety
 
-/-! ## The signature of the public-key operation from precomputed values -/
-
-/-- `vg_rsa_public_precomputed_checked(out: *mut u8, out_len: usize, pre: *const u64,
-pre_len: usize, e: *const u8, e_len: usize, input: *const u8,
-input_len: usize, scratch: *mut u64, scratch_len: usize) -> u32`. -/
-def publicPrecomputedSig : Sig where
-  params := [("out", .slice true .u8 "out_len"), ("pre", .slice false .u64 "pre_len"),
-    ("e", .slice false .u8 "e_len"), ("input", .slice false .u8 "input_len"),
-    ("scratch", .slice true .u64 "scratch_len")]
-  ret := some .u32
-
 /-! ## `vg_rsa_crt_values` -/
 
 /-- `vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq: *mut u8,
@@ -218,60 +200,16 @@ def crtValuesApi : Api where
 
 /-! ## BoringSSL's checks
 
-The functions below check what BoringSSL checks (`Rsa.publicOpChecked`,
-`Rsa.privateChecked`, `Rsa.checkKey`, `Rsa.checkCrtKey`). -/
+What BoringSSL checks (`Rsa.publicOpChecked`, `Rsa.privateChecked`,
+`Rsa.checkKey`), for the contracts of the RSA functions here and in the
+padding schemes' files. -/
 
 /-- The public exponent and its limits, in the summaries. -/
 def exponentDoc : String :=
   "the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to \
     `2^33 - 1`: BoringSSL's limits)"
 
-/-! ### `vg_rsa_public_precomputed_checked` -/
-
-/-- RSAEP of the input with the public key `(n, e)`, within BoringSSL's
-limits, given `n` by its precomputed values (`publicPrecompute`): for
-whichever `n_len`-octet modulus `pre` holds the values of, the result
-of `publicOpChecked`. If `pre` holds the values of no modulus, the result
-is unspecified (but memory safety and constant time are not). Constant time
-but for the public key. -/
-def publicPrecomputedCheckedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  publicPrecomputedSig.contract A
-    (pre := fun _out outLen _pre preLen _e eLen _input inputLen _scratch scratchLen _ =>
-      lenValid outLen.toNat ∧ preLen.toNat = precomputedWords outLen.toNat ∧
-        inputLen.toNat = outLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ outLen.toNat ∧
-        publicScratchWords outLen.toNat ≤ scratchLen.toNat)
-    (post := fun out outLen pre preLen e eLen input _inputLen _scratch _scratchLen m m' r =>
-      ∀ nB : List Byte, nB.length = outLen.toNat →
-        publicPrecompute nB = some (wordsAt m pre preLen.toNat) →
-        written m' out outLen.toNat r
-          (publicOpChecked nB (bytesAt m e eLen.toNat) (bytesAt m input outLen.toNat)))
-    (writeArgs := true) (stack := stack)
-    (leak := some fun _out _outLen pre preLen e eLen _input _inputLen _scratch _scratchLen m =>
-      (wordsAt m pre preLen.toNat).map (·.toNat) ++ (bytesAt m e eLen.toNat).map (·.toNat))
-
-def publicPrecomputedCheckedApi : Api where
-  module := "rsa"
-  name := "vg_rsa_public_precomputed_checked"
-  sig := publicPrecomputedSig
-  writeArgs := true
-  contracts := some fun A stack => publicPrecomputedCheckedContract A stack
-  summary := s!"The RSA public-key operation: RSAEP (RFC 8017 §5.1.1), which is also RSAVP1 \
-    (§5.2.2), for a public key within BoringSSL's limits, with the modulus given by the \
-    values `vg_rsa_public_precompute` wrote for it to `pre`. With those values \
-    of a modulus `n` of `out_len` bytes and {exponentDoc}, writes `input^e mod n` \
-    (`out_len` bytes, most significant first) to `out` and returns 1; or writes zeros and \
-    returns 0 if `e` is not such a number or the input (`out_len` bytes, most significant \
-    first) is not below `n`.\n\n\
-    Contract: `VG.Spec.Rsa.publicPrecomputedCheckedContract`. Constant time but for the \
-    public key: timing may depend on the pointers, the lengths and the contents of `pre` \
-    and `e`, not on the input."
-  safety := ["`out_len` must be in 64..=1024.", "`input_len` must be `out_len`.",
-    "`pre_len` must be `2 * ⌈out_len / 8⌉`.", "`e_len` must be in 1..=`out_len`.",
-    "For the result to be RSAEP's, `pre` must hold what `vg_rsa_public_precompute` wrote \
-      for a modulus of `out_len` bytes (returning 1); otherwise it is unspecified."] ++
-    publicScratchSafety
-
-/-! ### `vg_rsa_private_checked` -/
+/-! ### The outcome of a checked private-key operation -/
 
 /-- The postcondition of a function with the outcome `o` (`Outcome`) of
 `nLen` octets at `out`: 1 and the result, 0 and zeros if the key or the
@@ -280,70 +218,6 @@ def writtenOutcome (m' : Mem) (out : Addr) (nLen : Nat) (r : BitVec 32) : Outcom
   | .ok y => r = 1 ∧ bytesAt m' out nLen = y
   | .invalid => r = 0 ∧ bytesAt m' out nLen = List.replicate nLen 0
   | .fault => r = 2 ∧ bytesAt m' out nLen = List.replicate nLen 0
-
-/-- `vg_rsa_private_checked(out: *mut u8, out_len: usize, n: *const u8,
-n_len: usize, e: *const u8, e_len: usize, input: *const u8,
-input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize,
-dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize,
-qinv: *const u8, qinv_len: usize, scratch: *mut u64,
-scratch_len: usize) -> u32`. -/
-def privateCheckedSig : Sig where
-  params := [("out", .slice true .u8 "out_len"), ("n", .slice false .u8 "n_len"),
-    ("e", .slice false .u8 "e_len"), ("input", .slice false .u8 "input_len"),
-    ("p", .slice false .u8 "p_len"), ("q", .slice false .u8 "q_len"),
-    ("dp", .slice false .u8 "dp_len"), ("dq", .slice false .u8 "dq_len"),
-    ("qinv", .slice false .u8 "qinv_len"), ("scratch", .slice true .u64 "scratch_len")]
-  ret := some .u32
-
-/-- RSADP of the input with the private key `(p, q, dP, dQ, qInv)` of the
-modulus `n`, checked against the public exponent `e` (`privateChecked`).
-Constant time but for the public key. -/
-def privateCheckedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  privateCheckedSig.contract A
-    (pre := fun _out outLen _n nLen _e eLen _input inputLen _p pLen _q qLen _dp dpLen _dq dqLen
-        _qinv qinvLen _scratch scratchLen _ =>
-      lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ inputLen.toNat = nLen.toNat ∧
-        1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
-        1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
-        dpLen.toNat = pLen.toNat ∧ qinvLen.toNat = pLen.toNat ∧ dqLen.toNat = qLen.toNat ∧
-        scratchWords nLen.toNat ≤ scratchLen.toNat)
-    (post := fun out _outLen n nLen e eLen input _inputLen p pLen q qLen dp _dpLen dq _dqLen qinv
-        _qinvLen _scratch _scratchLen m m' r =>
-      writtenOutcome m' out nLen.toNat r
-        (privateChecked (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
-          (bytesAt m input nLen.toNat) (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat)
-          (bytesAt m dp pLen.toNat) (bytesAt m dq qLen.toNat) (bytesAt m qinv pLen.toNat)))
-    (writeArgs := true) (stack := stack)
-    (leak := some fun _out _outLen n nLen e eLen _input _inputLen _p _pLen _q _qLen _dp _dpLen
-        _dq _dqLen _qinv _qinvLen _scratch _scratchLen m =>
-      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
-
-def privateCheckedApi : Api where
-  module := "rsa"
-  name := "vg_rsa_private_checked"
-  sig := privateCheckedSig
-  writeArgs := true
-  contracts := some fun A stack => privateCheckedContract A stack
-  summary := s!"The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 \
-    (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two \
-    primes), checked against the public exponent as BoringSSL checks it \
-    (`rsa_default_private_transform`). With the modulus `n` (`n_len` bytes, most \
-    significant first, odd, from 512 to 8192 bits, its first byte not zero) and \
-    {exponentDoc}, computes the result `m` of step 2.b for the input (`n_len` bytes, most \
-    significant first), and if `m^e mod n` is the input, writes `m` to `out` (`n_len` \
-    bytes, most significant first) and returns 1. Writes zeros and returns 0 if `n` or `e` \
-    is not such a number, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`; writes \
-    zeros and returns 2 (an internal error) if `m^e mod n` is not the input, which is the \
-    case for no input if `vg_rsa_check_key` accepts the key and `p` and `q` are prime: the \
-    result is never released unless it passes the check, so that a fault in its \
-    computation does not reveal the key. `p`, `dp` and `qinv` are `p_len` bytes, and `q` \
-    and `dq` are `q_len` bytes, all most significant first.\n\n\
-    Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: \
-    timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on \
-    the input or the private key."
-  safety := ["`n_len` must be in 64..=1024.", "`out_len` and `input_len` must be `n_len`.",
-    "`e_len` must be in 1..=`n_len`.", "`p_len` and `q_len` must be in 1..`n_len`.",
-    "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++ scratchSafety
 
 /-! ### `vg_rsa_check_key` -/
 
@@ -402,64 +276,6 @@ def checkKeyApi : Api where
     may depend on the pointers, the lengths and the contents of `n` and `e`, not on the \
     private key."
   safety := ["`n_len` must be in 64..=1024.", "`e_len` and `d_len` must be in 1..=`n_len`.",
-    "`p_len` and `q_len` must be in 1..`n_len`.",
-    "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++ scratchSafety
-
-/-! ### `vg_rsa_check_crt_key` -/
-
-/-- `vg_rsa_check_crt_key(n: *const u8, n_len: usize, e: *const u8,
-e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize,
-dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize,
-qinv: *const u8, qinv_len: usize, scratch: *mut u64,
-scratch_len: usize) -> u32`. -/
-def checkCrtKeySig : Sig where
-  params := [("n", .slice false .u8 "n_len"), ("e", .slice false .u8 "e_len"),
-    ("p", .slice false .u8 "p_len"), ("q", .slice false .u8 "q_len"),
-    ("dp", .slice false .u8 "dp_len"), ("dq", .slice false .u8 "dq_len"),
-    ("qinv", .slice false .u8 "qinv_len"), ("scratch", .slice true .u64 "scratch_len")]
-  ret := some .u32
-
-/-- The checks of BoringSSL's `RSA_check_key` on the CRT form
-`(n, e, p, q, dP, dQ, qInv)` of a private key (`checkCrtKey`): 1 if they
-accept the key, 0 if not. Constant time but for the public key. -/
-def checkCrtKeyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  checkCrtKeySig.contract A
-    (pre := fun _n nLen _e eLen _p pLen _q qLen _dp dpLen _dq dqLen _qinv qinvLen _scratch
-        scratchLen _ =>
-      lenValid nLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
-        1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
-        dpLen.toNat = pLen.toNat ∧ qinvLen.toNat = pLen.toNat ∧ dqLen.toNat = qLen.toNat ∧
-        scratchWords nLen.toNat ≤ scratchLen.toNat)
-    (post := fun n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv _qinvLen _scratch
-        _scratchLen m _m' r =>
-      r = if checkCrtKey (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
-          (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat)
-          (bytesAt m dq qLen.toNat) (bytesAt m qinv pLen.toNat) then 1 else 0)
-    (writeArgs := true) (stack := stack)
-    (leak := some fun n nLen e eLen _p _pLen _q _qLen _dp _dpLen _dq _dqLen _qinv _qinvLen
-        _scratch _scratchLen m =>
-      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
-
-def checkCrtKeyApi : Api where
-  module := "rsa"
-  name := "vg_rsa_check_crt_key"
-  sig := checkCrtKeySig
-  writeArgs := true
-  contracts := some fun A stack => checkCrtKeyContract A stack
-  summary := "Checks the CRT form `(n, e, p, q, dP, dQ, qInv)` of an RSA private key as \
-    BoringSSL's `RSA_check_key` checks it, without the private exponent `d`, which the \
-    private-key operations do not use. With the modulus `n` (`n_len` bytes), the public \
-    exponent `e` (`e_len` bytes), `p`, `dp` and `qinv` (`p_len` bytes) and `q` and `dq` \
-    (`q_len` bytes), all most significant first, returns 1 if `n` is odd, from 512 to 8192 \
-    bits and its first byte not zero, `e` is odd and from 3 to `2^33 - 1`, `p q = n`, \
-    `dP < p - 1`, `e dP ≡ 1 (mod p - 1)`, `dQ < q - 1`, `e dQ ≡ 1 (mod q - 1)`, \
-    `qInv < p` and `q qInv ≡ 1 (mod p)`; and 0 otherwise. It does not check that `p` and `q` \
-    are prime; if they are, `vg_rsa_private_checked` never returns its internal error for a \
-    key it accepts.\n\n\
-    Contract: `VG.Spec.Rsa.checkCrtKeyContract`. Constant time but for the public key: timing \
-    may depend on the pointers, the lengths and the contents of `n` and `e`, not on the \
-    private key."
-  safety := ["`n_len` must be in 64..=1024.", "`e_len` must be in 1..=`n_len`.",
     "`p_len` and `q_len` must be in 1..`n_len`.",
     "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++ scratchSafety
 

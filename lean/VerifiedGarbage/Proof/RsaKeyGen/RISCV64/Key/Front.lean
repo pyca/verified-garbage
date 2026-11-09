@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.RsaKeyGen.RISCV64.Key
@@ -124,8 +125,8 @@ structure PreC (s : State) : Prop where
   hs : Spec.Rsa.scratchWords (s.gpr .a1).toNat ≤ (stackArg s 9).toNat
   al : (stackArg s 8).toNat % 8 = 0
 
-theorem preC_of {s : State} (h : (Spec.RsaKeyGen.keyContract RISCV64.abi).pre s) : PreC s := by
-  sig_pre [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, RISCV64.abi, RISCV64.argRegs,
+theorem preC_of {s : State} (h : (Proof.RsaKeyGen.keyContract RISCV64.abi).pre s) : PreC s := by
+  sig_pre [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, RISCV64.abi, RISCV64.argRegs,
     stackArgs_ten, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp16, sp2, hrd, hwr, nd, np, nq, ndp, ndq, nqi, ne, ns, na, dp, dq, ddp, ddq, dqi, de, ds, da, pq, pdp, pdq, pqi, pe, ps, pa, qdp, qdq, qqi, qe, qs, qa, dpdq, dpqi, dpe, dps, dpa, dqqi, dqe, dqs, dqa, qie, qis, qia, es, sa, wn, wd, wp, wq, wdp, wdq, wqi, we, ws, ⟨p32, p512, p8⟩, hn, hd, hq, hdp, hdq, hqi, e1, e2, hs, al⟩ := h
   exact ⟨sp16, sp2, hrd, hwr, nd, np, nq, ndp, ndq, nqi, ne, ns, na, dp, dq, ddp, ddq, dqi, de, ds, da, pq, pdp, pdq, pqi, pe, ps, pa, qdp, qdq, qqi, qe, qs, qa, dpdq, dpqi, dpe, dps, dpa, dqqi, dqe, dqs, dqa, qie, qis, qia, es, sa, wn, wd, wp, wq, wdp, wdq, wqi, we, ws, p32, p512, p8, hn, hd, hq, hdp, hdq, hqi, e1, e2, hs, al⟩
@@ -336,8 +337,6 @@ structure CE (s0 s : State) : Prop where
   rd : s.rd = s0.rd
   wr : s.wr = s0.wr
   hdr : ∀ i < 12, word s.mem (bOf s0) (8 * i) = s0.gpr (saved i)
-
-theorem CB.ce {s0 s : State} {M : Mem} (c : CB s0 M s) : CE s0 s := ⟨c.s11, c.ra, c.rd, c.wr, c.hdr⟩
 
 theorem preserved_saved : ∀ r ∈ preserved, ∃ i < 12, saved i = r := by decide
 

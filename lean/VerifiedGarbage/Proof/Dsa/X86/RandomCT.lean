@@ -29,8 +29,4 @@ theorem rangeBody_ct {α : Type} {Φ : α → State → Prop} (h : Pins Φ [.esi
       (fun _ _ => True) :=
   two_taint [.esi, .edx, .ecx] h (by taint_decide)
 
-theorem mask_ct {α : Type} {Φ : α → State → Prop} (h : Pins Φ [.edx]) :
-    RelCT isa (Two Φ) Random.mask (fun _ _ => True) :=
-  two_taint [.edx] h (by taint_decide)
-
 end VG.Proof.Dsa.X86

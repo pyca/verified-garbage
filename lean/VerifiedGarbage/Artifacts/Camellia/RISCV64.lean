@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Camellia.RISCV64.Verified
 public import VerifiedGarbage.Proof.Camellia.RISCV64.KeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Camellia.RISCV64.Lit
 
 /-! # Camellia artifacts on RISC-V -/

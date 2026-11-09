@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on PPC64LE: one `h` of the generator search
 
-`gStep` (`gStep_vp`): `h`, the `pLen` bytes at `fH` of the `hs` tape, into
+`gStep` (`gStep_vp`): `h`, the `pLen` bytes at `fH` of `rand`, into
 array `aH` of the key working space (zeroed first); unless `1 < h < p − 1`,
 nothing more; else `g = h^((p−1)/q) mod p` by the power in the P space, and
 if `g > 1`, `g` big-endian at `sG` and `fG` := 1.
@@ -27,45 +27,34 @@ open VG.Impl.Dsa.PPC64LE.Generation
 open VG.Impl.Rsa.PPC64LE.Keys (seqs copy sub3 stBorrow andS)
 open VG.Proof.Mont (off)
 
-/-- The `h` at byte `i` of the tape. -/
-abbrev hAt (G : GP) (i : Nat) : List Byte := (G.hsB.drop i).take G.pLen
+/-- The `h` at byte `i` of `rand`. -/
+abbrev hAt (G : GP) (i : Nat) : List Byte := (G.witB.drop i).take G.pLen
 
 section
 variable {G : GP} {STK : Nat} {σ s : State} {V : Nat → BitVec 64} {LS : List Nat}
 
-theorem GI.hsFit (h : GI G STK σ V LS s) : G.hs.toNat + G.hsLen ≤ 2 ^ 64 := by
-  have := h.pre.nH; rw [← h.hG]; exact this
-
-/-- The tape is apart from what the search changes. -/
-theorem GI.hs_apart (h : GI G STK σ V LS s) : ∀ r ∈ [G.rScr, rBelow σ STK], G.rHs.Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · rw [← h.hG]; exact h.pre.hC
-  · rw [← h.hG]; exact h.pre.bH.symm
-
 /-- The `h` at byte `i`, in memory. -/
-theorem GI.hBytes (h : GI G STK σ V LS s) {i : Nat} (hi : i + G.pLen ≤ G.hsLen) :
-    Spec.Rsa.bytesAt s.mem (G.hs + BitVec.ofNat 64 i) G.pLen = hAt G i := by
-  have fit := h.hsFit
-  have hw : Spec.Rsa.bytesAt s.mem G.hs G.hsLen = G.hsB := by
-    rw [VG.Proof.Dsa.Generation.frame_bytesAt h.frame h.hs_apart (by omega), ← h.hG]; rfl
-  obtain ⟨d, hd⟩ : ∃ d, G.hsLen = i + G.pLen + d := ⟨G.hsLen - i - G.pLen, by omega⟩
-  show _ = (G.hsB.drop i).take G.pLen
+theorem GI.hBytes (h : GI G STK σ V LS s) {i : Nat} (hi : i + G.pLen ≤ G.witLen) :
+    Spec.Rsa.bytesAt s.mem (G.wit + BitVec.ofNat 64 i) G.pLen = hAt G i := by
+  have fit := h.witFit
+  have hw : Spec.Rsa.bytesAt s.mem G.wit G.witLen = G.witB := by
+    rw [VG.Proof.Dsa.Generation.frame_bytesAt h.frame h.wit_apart (by omega), ← h.hG]; rfl
+  obtain ⟨d, hd⟩ : ∃ d, G.witLen = i + G.pLen + d := ⟨G.witLen - i - G.pLen, by omega⟩
+  show _ = (G.witB.drop i).take G.pLen
   rw [← hw, hd, VG.Proof.Dsa.Generation.bytesAt_append, VG.Proof.Dsa.Generation.bytesAt_append,
     List.append_assoc, List.drop_left' (by simp [Spec.Rsa.bytesAt]),
     List.take_left' (by simp [Spec.Rsa.bytesAt])]
 
 /-- The `h` at byte `i`, as a source of a load. -/
-theorem GI.hSrc (h : GI G STK σ V LS s) {i : Nat} (hi : i + G.pLen ≤ G.hsLen) (hp : 0 < G.pLen) :
-    Covers [⟨G.hs + BitVec.ofNat 64 i, G.pLen⟩] (s.rd ++ s.wr) ∧
-      Region.Disjoint ⟨G.hs + BitVec.ofNat 64 i, G.pLen⟩ G.rScr ∧
-      (G.hs + BitVec.ofNat 64 i).toNat + G.pLen ≤ 2 ^ 64 ∧
-      Spec.Rsa.bytesAt s.mem (G.hs + BitVec.ofNat 64 i) G.pLen = hAt G i := by
-  have fit := h.hsFit
-  have sub : Region.Sub ⟨G.hs + BitVec.ofNat 64 i, G.pLen⟩ G.rHs := Offset.sub_base _ hi
-  have hC := h.pre.hC; rw [h.hG] at hC
-  refine ⟨Covers.left (Covers.one ⟨G.rHs, by rw [h.rd, h.pre.rd, h.hG]; simp,
+theorem GI.hSrc (h : GI G STK σ V LS s) {i : Nat} (hi : i + G.pLen ≤ G.witLen) (hp : 0 < G.pLen) :
+    Covers [⟨G.wit + BitVec.ofNat 64 i, G.pLen⟩] (s.rd ++ s.wr) ∧
+      Region.Disjoint ⟨G.wit + BitVec.ofNat 64 i, G.pLen⟩ G.rScr ∧
+      (G.wit + BitVec.ofNat 64 i).toNat + G.pLen ≤ 2 ^ 64 ∧
+      Spec.Rsa.bytesAt s.mem (G.wit + BitVec.ofNat 64 i) G.pLen = hAt G i := by
+  have fit := h.witFit
+  have sub : Region.Sub ⟨G.wit + BitVec.ofNat 64 i, G.pLen⟩ G.rWit := Offset.sub_base _ hi
+  have hC := h.pre.wC; rw [h.hG] at hC
+  refine ⟨Covers.left (Covers.one ⟨G.rWit, by rw [h.rd, h.pre.rd, h.hG]; simp,
     Offset.contains_base _ hi (by omega)⟩), hC.sub_left sub, ?_, h.hBytes hi⟩
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega),
     Nat.mod_eq_of_lt (by omega)]
@@ -138,7 +127,7 @@ theorem gStep_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
     (hPc : (sPBE, Spec.Rsa.i2osp pv G.pLen) ∈ c.cl) (hpv : pv < 256 ^ G.pLen) (hp2 : 2 ≤ pv) (hpo : pv % 2 = 1)
     (hEc : (sE, Spec.Rsa.i2osp ev (eBytes G.pLen G.qLen)) ∈ c.cl) (hev : ev < 256 ^ eBytes G.pLen G.qLen)
     (hcl : ∀ x ∈ c.cl, Apart pB (pZ G.pLen) x ∧ Apart sG G.pLen x)
-    (hH : fH ∈ c.LS) (hHv : c.V fH = G.hs + BitVec.ofNat 64 i) (hi : i + G.pLen ≤ G.hsLen) :
+    (hH : fH ∈ c.LS) (hHv : c.V fH = G.wit + BitVec.ofNat 64 i) (hi : i + G.pLen ≤ G.witLen) :
     VP (St G c X) g.gStep (St G (gOut c G (Spec.Dsa.decodeBE (hAt G i)) pv ev) X) := by
   by_cases l : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384
   swap
@@ -208,7 +197,7 @@ theorem gStep_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
     generalize hgv : hv ^ ev % pv = gv
     have glt : gv < pv := hgv ▸ Nat.mod_lt _ (by omega)
     -- `g`, back at the stage `c`.
-    refine VP.seq ((power_vp (c := c) (X := X) (H := G.hs + BitVec.ofNat 64 i) (hb := hAt G i) cert hPc hpv hp2
+    refine VP.seq ((power_vp (c := c) (X := X) (H := G.wit + BitVec.ofNat 64 i) (hb := hAt G i) cert hPc hpv hp2
       hpo hEc hev hH hHv (fun x hx => (hcl x hx).1) fun σ s h => ?_).mono
       (fun σ s ⟨⟨⟨⟨h, x⟩, _⟩, _⟩, _⟩ => ⟨h.back hkls rfl rfl rfl (kc hv), x⟩)
       (G' := fun σ t => St G c X σ t ∧ VG.Proof.MillerRabin.PPC64LE.Env t G.pS (pZ G.pLen) (pw G.pLen) ∧

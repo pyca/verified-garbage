@@ -23,7 +23,7 @@ namespace VG.Proof.AesCbc.X86
 
 open VG VG.X86 VG.Impl.AesCbc.X86
 open VG.Impl.CmacAes.X86 (argOp advance xor4 zero4)
-open VG.Proof.CmacAes.X86 (wp_arg xor4_ok zero4_ok add0 arg_ofNat)
+open VG.Proof.CmacAes.X86 (wp_arg xor4_ok zero4_ok add0 arg_ofNat saved_bound)
 open VG.Proof.MdStream.X86 (Upd wp_mov wp_movi)
 open VG.Proof.Aes.X86 (BlocksImpl)
 open VG.Spec.Aes (bytesAt)
@@ -221,14 +221,14 @@ theorem encA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀)
 
 theorem encPost_eq : encPost = .mov .ebx (argOp 2) :: (zero4 .ebx 0 ++ (xor4 .ebx .esi .ebx 0 0 0 ++ advance)) := rfl
 
-theorem encBody_ok (v : BlocksImpl) : BodyOk (cbcMode true) (encBody v.enc) := by
+theorem encBody_okB (v : BlocksImpl) : BodyOkB (cbcMode true) (encBody v.enc) v.encWritten := by
   intro s₀ hp k hk s h
   have hd := hp.d32 hk
   have qN := hp.dataN hk
   have hdf := hp.data_fit
   have hiv := hp.iv_fit
   refine WP.seq (WP.mono (encA_wp hp hk h) fun s₁ a => ?_)
-  refine WP.seq (WP.mono (blk_call v.encOk v.encNosp v.encStack a.pre) fun s₂ c => ?_)
+  refine WP.seq (WP.mono (blk_call_tail v.encOk v.encWrittenOk v.encNosp v.encStack a.pre) fun s₂ ⟨c, fc⟩ => ?_)
   have esp₁ : s₁.gpr .esp = E s₀ := by rw [a.esp, h.esp]
   have hb : below (s₁.gpr .esp) 24 = stkR s₀ := by rw [esp₁]; exact hp.below_eq
   -- Memory so far.
@@ -286,7 +286,7 @@ theorem encBody_ok (v : BlocksImpl) : BodyOk (cbcMode true) (encBody v.enc) := b
   refine WP.mono (advance_wp hp hk (by rw [g₅.gpr _ (by decide) (by decide), i₄])
     (by rw [g₅.gpr _ (by decide) (by decide), g₄ _ (by decide), u₃.other _ (by decide), esp₂])
     (hp.args_of big₅) (by rw [g₅.rd, g₅.wr, rd₄, wr₄, u₃.rd, u₃.wr, rw₂]))
-    fun s₆ ⟨esi₆, esp₆, _, mem₆, rd₆, wr₆, zf₆⟩ => ⟨?_, zf₆⟩
+    fun s₆ ⟨esi₆, esp₆, _, mem₆, rd₆, wr₆, zf₆⟩ => ⟨⟨?_, zf₆⟩, ?_⟩
   -- The new block, and the chaining value.
   have hblk := h.block hk
   have newBlk : bytesAt s₆.mem (blk s₀ k) 16 =
@@ -313,6 +313,20 @@ theorem encBody_ok (v : BlocksImpl) : BodyOk (cbcMode true) (encBody v.enc) := b
       set_prefix _ _ _ hl (by simp [Spec.Cbc.blocksAt]; exact hk)]
   · rw [newIv]
     simp only [chainK, cbcMode_chain, cts, ite_true, outSucc, next_snoc]
+  -- What the step changed.
+  have fc' : Frame [⟨blk s₀ k, 16⟩, ⟨(S s₀).setWidth 64, v.encWritten⟩, stkR s₀] s₁.mem s₂.mem := by
+    have fr := fc; rw [hb, hd] at fr; exact fr
+  rw [mem₆]
+  refine (f₁.sub fun r hr => ?_).trans ((fc'.sub fun r hr => ?_).trans (f₅.sub fun r hr => ?_))
+  · simp only [List.mem_singleton] at hr; subst hr; exact ⟨dataR s₀, by simp, UPre.data_sub hk⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨dataR s₀, by simp, UPre.data_sub hk⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+  · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
+
+theorem encBody_ok (v : BlocksImpl) : BodyOk (cbcMode true) (encBody v.enc) := BodyOkB.ok (encBody_okB v)
 
 /-! ## Decryption -/
 
@@ -359,7 +373,7 @@ theorem decA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀)
 theorem decPost_eq : decPost = .mov .ebx (argOp 2) :: (xor4 .esi .ebx .esi 0 0 0 ++
     (.mov .ebp (argOp 5) :: (zero4 .ebx 0 ++ (xor4 .ebx .ebp .ebx 0 cOff 0 ++ advance)))) := rfl
 
-theorem decBody_ok (v : BlocksImpl) : BodyOk (cbcMode false) (decBody v.dec) := by
+theorem decBody_okB (v : BlocksImpl) : BodyOkB (cbcMode false) (decBody v.dec) v.decWritten := by
   intro s₀ hp k hk s h
   have hd := hp.d32 hk
   have qN := hp.dataN hk
@@ -367,7 +381,7 @@ theorem decBody_ok (v : BlocksImpl) : BodyOk (cbcMode false) (decBody v.dec) := 
   have hiv := hp.iv_fit
   have hsc := hp.scr_fit
   refine WP.seq (WP.mono (decA_wp hp hk h) fun s₁ a => ?_)
-  refine WP.seq (WP.mono (blk_call v.decOk v.decNosp v.decStack a.pre) fun s₂ c => ?_)
+  refine WP.seq (WP.mono (blk_call_tail v.decOk v.decWrittenOk v.decNosp v.decStack a.pre) fun s₂ ⟨c, fc⟩ => ?_)
   have esp₁ : s₁.gpr .esp = E s₀ := by rw [a.esp, h.esp]
   have hb : below (s₁.gpr .esp) 24 = stkR s₀ := by rw [esp₁]; exact hp.below_eq
   have svSub : Region.Sub ⟨Sv s₀, 16⟩ ⟨(S s₀).setWidth 64, 2064⟩ := Offset.sub_base _ (by decide)
@@ -445,7 +459,7 @@ theorem decBody_ok (v : BlocksImpl) : BodyOk (cbcMode false) (decBody v.dec) := 
       g₄.gpr _ (by decide) (by decide), i₃])
     (by rw [g₇.gpr _ (by decide) (by decide), g₆ _ (by decide), u₅.other _ (by decide), esp₄])
     (hp.args_of (bigOf fStep)) (by rw [g₇.rd, g₇.wr, rd₆, wr₆, u₅.rd, u₅.wr, rw₄]))
-    fun s₈ ⟨esi₈, esp₈, _, mem₈, rd₈, wr₈, zf₈⟩ => ⟨?_, zf₈⟩
+    fun s₈ ⟨esi₈, esp₈, _, mem₈, rd₈, wr₈, zf₈⟩ => ⟨⟨?_, zf₈⟩, ?_⟩
   have callIv : ∀ r ∈ [⟨blk s₀ k, 16⟩, ⟨(S s₀).setWidth 64, 2048⟩, stkR s₀], (ivR s₀).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -490,5 +504,133 @@ theorem decBody_ok (v : BlocksImpl) : BodyOk (cbcMode false) (decBody v.dec) := 
       set_prefix _ _ _ hl (by simp [Spec.Cbc.blocksAt]; exact hk)]
   · rw [newIv]
     simp only [chainK, cbcMode_chain, cts, Bool.false_eq_true, ite_false, take_succ_blks s₀ hk, next_snoc]
+  -- What the step changed.
+  have fc' : Frame [⟨blk s₀ k, 16⟩, ⟨(S s₀).setWidth 64, v.decWritten⟩, stkR s₀] s₁.mem s₂.mem := by
+    have fr := fc; rw [hb, hd] at fr; exact fr
+  rw [mem₈]
+  refine (f₁.sub fun r hr => ?_).trans ((fc'.sub fun r hr => ?_).trans
+    ((f₄.sub fun r hr => ?_).trans (f₇.sub fun r hr => ?_)))
+  · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨dataR s₀, by simp, UPre.data_sub hk⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+  · simp only [List.mem_singleton] at hr; subst hr; exact ⟨dataR s₀, by simp, UPre.data_sub hk⟩
+  · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
+
+theorem decBody_ok (v : BlocksImpl) : BodyOk (cbcMode false) (decBody v.dec) := BodyOkB.ok (decBody_okB v)
+
+
+/-! ## Zeroing the saved block and registers -/
+
+theorem zero4_at (m : Mem) (c : Addr) {j : Nat} (hj : j < 16) :
+    Proof.Cmac.zero4 m c (c + BitVec.ofNat 64 j) = 0 := by
+  have h := congrArg (·[j]?) (Proof.Cmac.zero4_bytes m c)
+  simp only [bytesAt, Spec.Cmac.zeros, List.getElem?_map, List.getElem?_range hj, List.getElem?_replicate, hj,
+    ite_true, Option.map_some, Option.some.injEq] at h
+  exact h
+
+theorem not_contains {x : Addr} {R : Region} (h : Region.Disjoint ⟨x, 1⟩ R) : ¬ R.Contains x 1 :=
+  h x (Region.contains_self _ _)
+
+/-- `wholeZ body`, for a `body` that changes memory only within `FB s₀ b`:
+the contract, and every byte of the scratch buffer from offset `b` on
+unchanged or zero. -/
+theorem wholeZ_wp {M : Mode} {body : Prog isa} {b : Nat} (hb : BodyOkB M body b)
+    {s₀ : State} (h0 : (modeX86 M).pre s₀) :
+    WP isa (wholeZ body) s₀ fun s' => abiPreserved s₀ s' ∧ (modeX86 M).post s₀ s' ∧
+      ∀ i, b ≤ i → i < 2176 →
+        s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = s₀.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) ∨
+          s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = 0 := by
+  have hp := UPre.of h0
+  have hsc := hp.scr_fit
+  refine WP.seq (WP.mono (prologue_wp (M := M) hp) fun s₁ ⟨⟨h₁, hz⟩, hm₁⟩ => ?_)
+  refine WP.seq (WP.mono (ends_mid_wpB hb hp h₁ hz) fun t ⟨ht, hft⟩ => ?_)
+  rw [WP.block_append_iff]
+  refine WP.mono (epilogue_wp hp ht) fun s₂ ⟨⟨habi, hpost⟩, hm₂, hesp₂, hrd₂, hwr₂⟩ => ?_
+  rw [zeroSaved, List.append_assoc, List.singleton_append]
+  refine wp_arg (s₀ := s₀) hesp₂ (by rw [hrd₂, hwr₂, ht.rd, ht.wr]; exact hp.arg_in (by decide))
+    (by rw [hm₂]; exact hp.arg_keep (UPre.big_of ht.frame) (by decide)) fun s₃ u₃ => ?_
+  have c₃ : s₃.gpr .ecx = S s₀ := u₃.gpr
+  have w₃ : s₃.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [u₃.wr, hwr₂, ht.wr, hp.wr]
+  refine zero4_ok (b := .ecx) (d := cOff) (by decide) (by rw [c₃]; unfold cOff; omega)
+    (by rw [c₃, w₃]; exact covSv (by simp)) fun s₄ g₄ m₄ rd₄ wr₄ => ?_
+  have c₄ : s₄.gpr .ecx = S s₀ := by rw [g₄ _ (by decide), c₃]
+  refine zero4_ok (b := .ecx) (d := cOff + 16) (is := []) (by decide) (by rw [c₄]; unfold cOff; omega)
+    (by
+      rw [c₄, wr₄, w₃]
+      exact Covers.of_sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨scrR s₀, by simp, 2064, rfl, by simp⟩) fun s₅ g₅ m₅ rd₅ wr₅ => WP.block_nil ?_
+  rw [c₄] at m₅
+  rw [c₃] at m₄
+  -- Memory: only `[2048, 2080)` of the scratch buffer changed since the restore, to zero.
+  let Z : Region := ⟨(S s₀).setWidth 64 + BitVec.ofNat 64 2048, 32⟩
+  have fz : Frame [Z] s₂.mem s₅.mem := by
+    rw [m₅, m₄, u₃.mem]
+    refine (Proof.Cmac.frame_store4 _ 0 0 0 0 |>.sub fun r hr => ?_).trans
+      (Proof.Cmac.frame_store4 _ 0 0 0 0 |>.sub fun r hr => ?_)
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨Z, List.mem_singleton_self _, Offset.sub _ (by unfold cOff; omega) (by unfold cOff; omega)⟩
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨Z, List.mem_singleton_self _, Offset.sub _ (by unfold cOff; omega) (by unfold cOff; omega)⟩
+  have zS : Region.Sub Z (scrR s₀) := UPre.scr_sub (by decide)
+  have g₅' : ∀ r, r ≠ .eax → r ≠ .ecx → s₅.gpr r = s₂.gpr r := fun r h1 h2 => by
+    rw [g₅ r h1, g₄ r h1, u₃.other r h2]
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, fun i h1 h2 => ?_⟩
+  · have h1 : r ≠ .eax := by rintro rfl; simp [calleeSaved] at hr
+    have h2 : r ≠ .ecx := by rintro rfl; simp [calleeSaved] at hr
+    rw [g₅' r h1 h2]; exact habi.1 r hr
+  · rw [fz.readW (r := retR s₀) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.ret_scr.sub_right zS) (by decide)]
+    exact habi.2
+  · obtain ⟨hd, hi⟩ := hpost
+    refine ⟨?_, ?_⟩
+    · show Spec.Cbc.blocksAt s₅.mem ((Dp s₀).setWidth 64) (N s₀) = _
+      rw [← hd]
+      simp only [Spec.Cbc.blocksAt]
+      refine List.map_congr_left fun j hj => Proof.Cmac.bytesAt_frame fz (fun r hr => ?_) (by decide)
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (hp.data_scr.sub_left (UPre.data_sub (List.mem_range.mp hj))).sub_right zS
+    · show bytesAt s₅.mem ((Iv s₀).setWidth 64) 16 = _
+      rw [← hi]
+      exact Proof.Cmac.bytesAt_frame fz (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact hp.iv_scr.sub_right zS) (by decide)
+  · have hx1 : (scrR s₀).Contains ((S s₀).setWidth 64 + BitVec.ofNat 64 i) 1 :=
+      Offset.contains_base _ (by omega) (by omega)
+    rw [show cOff = 2048 from rfl] at m₄ m₅
+    by_cases hzi : 2048 ≤ i ∧ i < 2080
+    · right
+      rw [m₅]
+      by_cases hhi : 2064 ≤ i
+      · rw [show i = 2048 + 16 + (i - 2064) by omega, BitVec.ofNat_add (2048 + 16), ← BitVec.add_assoc]
+        exact zero4_at _ _ (by omega)
+      · have zf : Frame [⟨(S s₀).setWidth 64 + BitVec.ofNat 64 (2048 + 16), 16⟩] s₄.mem
+            (Proof.Cmac.zero4 s₄.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 (2048 + 16))) :=
+          Proof.Cmac.frame_store4 _ 0 0 0 0
+        rw [zf _ fun r hr => ?_, m₄]
+        · rw [show i = 2048 + (i - 2048) by omega, BitVec.ofNat_add 2048, ← BitVec.add_assoc]
+          exact zero4_at _ _ (by omega)
+        · simp only [List.mem_singleton] at hr; subst hr
+          exact not_contains (Offset.disjoint _ (.inl (by omega)) (by omega) (by omega))
+    · left
+      rw [fz _ fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr
+          exact not_contains (Offset.disjoint _ (by omega) (by omega) (by omega)),
+        hm₂, hft _ fun r hr => ?_, hm₁]
+      · refine Spill.saveMem_frame (rs := [⟨(S s₀).setWidth 64 + BitVec.ofNat 64 2064, 16⟩])
+          (List.mem_singleton_self _) _ _ _ _ (fun p hp' => ?_) _ fun r hr => ?_
+        · have := saved_bound p hp'
+          exact Offset.contains _ this.1 (by omega) (by omega)
+        · simp only [List.mem_singleton] at hr; subst hr
+          exact not_contains (Offset.disjoint _ (by omega) (by omega) (by omega))
+      · simp only [FB, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl
+        · exact fun hc => hp.iv_scr _ hc hx1
+        · exact fun hc => hp.data_scr _ hc hx1
+        · exact not_contains (Offset.disjoint_base _ h1 (by omega))
+        · exact not_contains (Offset.disjoint _ (by omega) (by omega) (by omega))
+        · exact fun hc => hp.b_scr _ hc hx1
 
 end VG.Proof.AesCbc.X86

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
@@ -17,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 Untrusted: everything here is checked by Lean. The shared contract of
 `vg_aes_gcm_seal_gather`, with the 2592 bytes of stack below the stack
-pointer that its frame and its call use (`Spec.Gcm.sealGatherContract`),
+pointer that its frame and its call use (`Proof.AesGcm.sealGatherRoundsContract`),
 implies the one the proof is written against (`gatherAArch64`,
 `gather_implies`), and so the code, calling an implementation of
 `vg_aes_gcm_seal` by its shared contract, is `Verified` against it
@@ -60,9 +61,9 @@ theorem pairFacts_ro (l : List (Region × Bool)) (h : ∀ a ∈ l, a.2 = false) 
     rfl
 
 set_option linter.unusedSimpArgs false in
-theorem gatherPre_of_spec {s : State} (h : (Spec.Gcm.sealGatherContract AArch64.abi 2592).pre s) :
+theorem gatherPre_of_spec {s : State} (h : (Proof.AesGcm.sealGatherRoundsContract AArch64.abi 2592).pre s) :
     gatherPre .plain s := by
-  sig_pre [Spec.Gcm.sealGatherContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre,
+  sig_pre [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre,
     AArch64.abi, AArch64.argRegs, stackArgs_three, List.append_eq] at h
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h
   simp only [List.map_append, List.filter_append, List.filter_map, List.map_map, List.filterMap_append,
@@ -77,14 +78,14 @@ theorem gatherPre_of_spec {s : State} (h : (Spec.Gcm.sealGatherContract AArch64.
     dt, da, ta, bk, bn, ba, bds, bl, barg, bd, bt, ok, on, oa, ods, ol, od, ot, w₁, w₂, hr, hg⟩
 
 theorem gatherPost_of {s s' : State} (h : gatherPost s s') :
-    (Spec.Gcm.sealGatherContract AArch64.abi 2592).post s s' := by
-  sig_post [Spec.Gcm.sealGatherContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPost,
+    (Proof.AesGcm.sealGatherRoundsContract AArch64.abi 2592).post s s' := by
+  sig_post [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Proof.AesGcm.sealGatherRoundsPost,
     AArch64.abi, AArch64.argRegs, stackArgs_three, List.append_eq]
   exact fun _ _ => h
 
-theorem gatherPub_of {s₁ s₂ : State} (hp : (Spec.Gcm.sealGatherContract AArch64.abi 2592).pub s₁ s₂) :
+theorem gatherPub_of {s₁ s₂ : State} (hp : (Proof.AesGcm.sealGatherRoundsContract AArch64.abi 2592).pub s₁ s₂) :
     gatherPub s₁ s₂ := by
-  sig_pub [Spec.Gcm.sealGatherContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre,
+  sig_pub [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre,
     AArch64.abi, AArch64.argRegs, stackArgs_three, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
   obtain ⟨qsp, q0, q1, q2, q3, q4, q5, q6, q7, a0, a1, a2, hd⟩ := hp
@@ -100,16 +101,16 @@ def gatherSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x9000, 24⟩]
   wr := [⟨0, 0⟩, ⟨0x5000, 16⟩]
 
-theorem gatherSat_pre : ∃ s, (Spec.Gcm.sealGatherContract AArch64.abi 2592).pre s := by
-  sig_implies_sat [Spec.Gcm.sealGatherContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre,
+theorem gatherSat_pre : ∃ s, (Proof.AesGcm.sealGatherRoundsContract AArch64.abi 2592).pre s := by
+  sig_implies_sat [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre,
     AArch64.abi, AArch64.argRegs, stackArgs_three, List.append_eq] [gatherSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using gatherSat
 
-theorem gather_implies : (gatherAArch64 .plain).Implies (Spec.Gcm.sealGatherContract AArch64.abi 2592) :=
+theorem gather_implies : (gatherAArch64 .plain).Implies (Proof.AesGcm.sealGatherRoundsContract AArch64.abi 2592) :=
   ⟨fun _ h => ⟨gatherPre_of_spec h, trivial⟩, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
 
 theorem sealGather_verified (F : SealFn .plain) :
-    Verified AArch64.target (sealGather F.fn) (Spec.Gcm.sealGatherContract AArch64.abi 2592) :=
+    Verified AArch64.target (sealGather F.fn) (Proof.AesGcm.sealGatherRoundsContract AArch64.abi 2592) :=
   Verified.of_correct (k := gatherAArch64 .plain) (sealGather_correct F) (sealGather_ct F) gather_implies
 
 theorem depth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : c.aarch64Depth = 0 := by

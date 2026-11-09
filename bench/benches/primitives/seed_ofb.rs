@@ -22,7 +22,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::nid::Nid;
     use openssl::provider::Provider;
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::seed_ofb::SeedOfb;
+    use verified_garbage::cipher::seed::SeedOfb;
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
@@ -30,7 +30,7 @@ pub fn bench(c: &mut Criterion) {
     // for the other algorithms benchmarked by this process.
     let _legacy = Provider::try_load(None, "legacy", true).unwrap();
     let cipher = Cipher::from_nid(Nid::SEED_OFB128).unwrap();
-    let key: Vec<_> = (0..16).map(|i| (17 * i + 3) as u8).collect();
+    let key: [u8; 16] = core::array::from_fn(|i| (17 * i + 3) as u8);
     let iv = [0x3c; 16];
     let mut group = c.benchmark_group("seed-ofb");
     for size in SIZES {
@@ -39,10 +39,9 @@ pub fn bench(c: &mut Criterion) {
         let mut buffer = crate::InPlace::new(size, &data);
         group.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
-                let ctx = SeedOfb::new(black_box(&key)).unwrap();
-                let mut chain = black_box(iv);
+                let ctx = SeedOfb::new(black_box(&key), &black_box(iv));
                 buffer.copy_from_slice(black_box(&data));
-                ctx.apply_keystream(&mut chain, black_box(&mut buffer));
+                ctx.apply_keystream_final(black_box(&mut buffer));
                 black_box(&buffer);
             })
         });

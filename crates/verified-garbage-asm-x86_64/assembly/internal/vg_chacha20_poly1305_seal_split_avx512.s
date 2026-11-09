@@ -216,6 +216,7 @@ vg_chacha20_poly1305_seal_split_avx512:
 	add rsi, 672
 	mov rcx, r15
 	add rcx, 128
+	mov r8, rsi
 	call {vg_chacha20_xor_avx512}
 	mov r15, rsi
 	sub r15, 128
@@ -3138,6 +3139,7 @@ vg_chacha20_poly1305_seal_split_avx512:
 	mov rsi, r9
 	jmp 2114f
 2113:
+	mov r8, rsi
 	call {vg_chacha20_xor_avx512}
 2114:
 	mov rsi, r15

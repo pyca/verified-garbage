@@ -63,12 +63,9 @@ theorem OutUp.congr {s t : State} {B : Addr} {Z : Nat} {op up : Addr} {k : Nat} 
     (hw : t.wr = s.wr) : OutUp t B Z op up k :=
   ⟨by rw [hw]; exact h.upw, h.upZ, fun j hj => by rw [hw]; exact h.outw j hj, h.outZ, h.ou⟩
 
-theorem OutUp.outOk {s : State} {B : Addr} {Z : Nat} {op up : Addr} {k : Nat} (h : OutUp s B Z op up k) :
-    OutOk s B Z op k := ⟨h.outw, h.outZ⟩
-
 /-! ## The precondition -/
 
-/-- What `code` uses of its precondition, for the working space at stack
+/-- What `codeWith` uses of its precondition, for the working space at stack
 argument 1 of `Z` bytes and the prime's length in `x1`. -/
 structure KCtx (s : State) : Prop where
   k1 : 32 ≤ (s.gpr .x1).toNat

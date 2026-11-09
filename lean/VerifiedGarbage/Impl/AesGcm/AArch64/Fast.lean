@@ -158,17 +158,11 @@ def openRunWithP (cl : Prog isa) : Prog isa :=
   (.seq (.ite (.zero .x .x27) (.block []) (oneCryptT c))
     (.block [mov .x0 .x27]))))))))))
 
-/-- `openRunWithP`, hashing the whole blocks by a call of `gh`. -/
-def openRunWith (gh : Fn) : Prog isa := openRunWithP c (.call gh.name gh.code)
-
 /-- `openRest`, with `openRunWithP` for `openMain`. -/
 def openFastP (cl : Prog isa) : Prog isa :=
   .seq tagLenOk
   (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openRunWithP c cl)))
     (.block restore))
-
-/-- `openFastP`, hashing by a call of `gh`. -/
-def openFast (gh : Fn) : Prog isa := openFastP c (.call gh.name gh.code)
 
 /-- `vg_aes_gcm_open` with this path, with `work` at `sp + k`: the entry,
 `cond`, then `openFastP` or `openRest`; the ciphertext's whole blocks hashed
@@ -177,7 +171,7 @@ def openWithE (k : Nat) (cl : Prog isa) : Prog isa :=
   .seq (.block (oneEntry k ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)))
     (.seq cond (.ite (.zero .x .x10) (openFastP c cl) (openRest c)))
 
-/-- `vg_aes_gcm_open` with this path: the entry, `cond`, then `openFast` or
+/-- `vg_aes_gcm_open` with this path: the entry, `cond`, then `openFastP` or
 `openRest`; the ciphertext's whole blocks hashed by `gh`. -/
 def openWith (gh : Fn) : Prog isa := openWithE c 16 (.call gh.name gh.code)
 
@@ -206,12 +200,47 @@ def sealWithPw (gh : Fn) : Prog isa := sealWithE c 16 (pwSel c 8 gh)
 /-- `vg_aes_gcm_open_with_powers`: `tag`, `tag_len`, `pw`, then `work` on the stack. -/
 def openWithPw (gh : Fn) : Prog isa := openWithE c 24 (pwSel c 16 gh)
 
-/-- `vg_aes_gcm_seal_store_powers`: `sealWithPw`, with `gh` storing the
-powers, called for every length. -/
-def sealStorePw (gh : Fn) : Prog isa := sealWithE c 16 (pwCall 8 gh)
+/-! ## Out of place
 
-/-- `vg_aes_gcm_open_store_powers`: `openWithPw`, with `gh` storing the
-powers, called for every length. -/
-def openStorePw (gh : Fn) : Prog isa := openWithE c 24 (pwCall 16 gh)
+The path for TLS records of `open_to` (`to`): as `open`'s, but that the text
+is decrypted out of place (`oneCryptG c true`: without `Tail.cryptAlT`'s
+16-byte store over the end of the text, which out of place would store the
+ciphertext before the last bytes over the output) and `dst` zeroed if the
+tag is wrong. -/
+
+/-- `oneCryptT`, or out of place `oneCryptG c true`. -/
+def oneCryptTG (to : Bool) : Prog isa := bif to then oneCryptG c true else oneCryptT c
+
+/-- `openRunWithP`, or out of place. -/
+def openRunWithPG (to : Bool) (cl : Prog isa) : Prog isa :=
+  .seq front
+  (.seq (.block ([mov .x24 .x26, imm .x25 0] ++ absSeg2 16))
+  (.seq cl
+  (.seq (.block (hReload ++ loadRev Y .x20 16 ++ [mov .x13 .x24, mov .x12 .x23]))
+  (.seq padMulT
+  (.seq (.block (lensTagAt uO))
+  (.seq (ctrCall c)
+  (.seq cmp
+  (.seq (.block [imm .x27 1, .sub .x .x27 .x27 .x10])
+  (.seq (.ite (.zero .x .x27) (wipeG to) (oneCryptTG c to))
+    (.block [mov .x0 .x27]))))))))))
+
+/-- `openFastP`, or out of place. -/
+def openFastPG (to : Bool) (cl : Prog isa) : Prog isa :=
+  .seq tagLenOk
+  (.seq (.ite (.zero .x .x9) (.seq (.block [imm .x0 0]) (wipeG to)) (.seq tagIn (openRunWithPG c to cl)))
+    (.block restore))
+
+/-- `openWithE`, or out of place, with `work` the stack argument `w`. -/
+def openWithEG (to : Bool) (w : Nat) (cl : Prog isa) : Prog isa :=
+  .seq (.block (openEntryG to w))
+    (.seq cond (.ite (.zero .x .x10) (openFastPG c to cl) (openRestG c to)))
+
+/-- `vg_aes_gcm_open_to` with this path: `tag`, `tag_len`, then `work` after
+`dst` and `dst_len` on the stack. -/
+def openTo : Prog isa := openWithEG c true 4 (.call c.gh.name c.gh.code)
+
+/-- `vg_aes_gcm_open_to_with_powers`: `pw` (the stack argument 4), then `work`. -/
+def openToWithPw (gh : Fn) : Prog isa := openWithEG c true 5 (pwSel c 32 gh)
 
 end VG.Impl.AesGcm.AArch64.Fast

@@ -43,14 +43,6 @@ theorem fs_zero {m : Mem} {b : Addr} {o : Nat} {w : Nat → Nat} (hw : val32 w 1
     FS m b o = 0 ↔ val32 w 14 = 0 := by
   rw [hw, FS, ← VG.Proof.X448.toFe_zero, VG.Proof.X448.toFe_eq_iff, Nat.zero_mod]
 
-theorem dcW_sub {b : Addr} : ∀ r ∈ [⟨b + BitVec.ofNat 64 Y, 56⟩, ⟨b + BitVec.ofNat 64 OUT, 56⟩],
-    ∃ r' ∈ yW b, Region.Sub r r' := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by decide)⟩
-  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Region.sub_prefix (Nat.le_refl _)⟩
-
 /-- The slots `decodeCheck` keeps. -/
 def CQ : List Nat := [DXX, DV, DU, DY, DK, DTMP]
 
@@ -80,7 +72,8 @@ theorem decodeCheck_ok {s : State} (hc : VCtx b s) {x v u : Fe} (hx : FS s.mem b
   simp only [outZero, copy, List.append_assoc, List.cons_append, List.nil_append]
   have hc1 : VCtx b s1 := hc.of_rest h1.stp.rest (by decide) (by decide)
   -- `v x² - u` into `X2`.
-  refine WP.append (subS (o := X2) (x := DTMP) (y := DU) (by decide) (by decide) (by decide) (by decide)
+  refine WP.append (subS (o := X2) (x := DTMP) (y := DU) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)
     h1.ctx h1.slots) fun s2 ⟨hr2, hf2, hS2⟩ => ?_
   have hc2 : VCtx b s2 := hc1.of_rest hr2 (by decide) (by decide)
   have e2 : FS s2.mem b X2 = v * (x * x) - u := by

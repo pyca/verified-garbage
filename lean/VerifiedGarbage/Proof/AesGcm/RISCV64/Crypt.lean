@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Loops
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.Loops
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Callee
 public import VerifiedGarbage.Proof.Gcm.Ctr
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
 # AES-GCM on RISC-V: counter mode over a piece (`crypt`)
@@ -27,6 +28,10 @@ block for `P` bytes (`Proof.Gcm.Ctr`): the rest of the keystream block
 (`cryptHead`), whole blocks with `vg_aes_ctr32` (`cryptWhole`), then a new
 keystream block for the last bytes (`cryptTail`). The number of rounds is in
 `s3`.
+
+The same proofs serve `cryptWith o` out of place (`o`): the text is read
+from `S` and written to `D`, apart from it (`Alias`), whose distance from
+`S` is in `s9`; in place, `S = D`.
 -/
 
 @[expose] public section
@@ -66,45 +71,52 @@ abbrev ciphOf (m : Mem) (C : Addr) (R : Nat) : Block → Block :=
 abbrev crFrame (st w D : Addr) (n : Nat) : List Region :=
   [⟨D, n⟩, ⟨st + BitVec.ofNat 64 48, 32⟩, ⟨w + BitVec.ofNat 64 512, 2048⟩]
 
-/-- Before `crypt`: `P` bytes of text so far, `n` bytes at `D` to go, `R`
-rounds in `s3`. -/
-structure CrIn (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (icb : Block) (P : Nat) (D : Addr) (n : Nat)
-    (s : State) : Prop where
+/-- Before `cryptWith o`: `P` bytes of text so far, `n` bytes at `S` to go,
+written to `D` (`S` itself in place), `R` rounds in `s3`. -/
+structure CrIn (o : Bool) (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (icb : Block) (P : Nat)
+    (S D : Addr) (n : Nat) (s : State) : Prop where
   env : Env V sp s
-  s4 : s.gpr .s4 = D
+  s4 : s.gpr .s4 = S
   s5 : s.gpr .s5 = BitVec.ofNat 64 n
   s6 : s.gpr .s6 = BitVec.ofNat 64 (P % 16)
   s3 : V .s3 = BitVec.ofNat 64 R
   rounds : R = 10 ∨ R = 12 ∨ R = 14
   data : DataW (V .s2) (V .s1) (V .s0) s D n
+  src : DataOk (V .s1) (V .s0) s S n
+  alias : Alias o S D n
+  dst : o = true → V .s9 = D - S
 
 /-- Part of the way: `j` bytes done, from `m₀`. -/
-structure CrMid (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (icb : Block) (P : Nat) (D : Addr) (n : Nat)
-    (m₀ : Mem) (j : Nat) (s : State) : Prop where
+structure CrMid (o : Bool) (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (icb : Block) (P : Nat)
+    (S D : Addr) (n : Nat) (m₀ : Mem) (j : Nat) (s : State) : Prop where
   env : Env V sp s
   le : j ≤ n
-  s4 : s.gpr .s4 = D + BitVec.ofNat 64 j
+  s4 : s.gpr .s4 = S + BitVec.ofNat 64 j
   s5 : s.gpr .s5 = BitVec.ofNat 64 (n - j)
   s3 : V .s3 = BitVec.ofNat 64 R
   rounds : R = 10 ∨ R = 12 ∨ R = 14
   data : DataW (V .s2) (V .s1) (V .s0) s D n
+  src : DataOk (V .s1) (V .s0) s S n
+  alias : Alias o S D n
+  dst : o = true → V .s9 = D - S
   ctr : Ctr m₀ (V .s1 + BitVec.ofNat 64 48) (V .s1 + BitVec.ofNat 64 64) (ciphOf m₀ (V .s2) R) icb P →
     Ctr s.mem (V .s1 + BitVec.ofNat 64 48) (V .s1 + BitVec.ofNat 64 64) (ciphOf m₀ (V .s2) R) icb (P + j)
   done : Ctr m₀ (V .s1 + BitVec.ofNat 64 48) (V .s1 + BitVec.ofNat 64 64) (ciphOf m₀ (V .s2) R) icb P →
-    bytesAt s.mem D j = xorKs (ciphOf m₀ (V .s2) R) icb P (bytesAt m₀ D j)
-  rest : bytesAt s.mem (D + BitVec.ofNat 64 j) (n - j) = bytesAt m₀ (D + BitVec.ofNat 64 j) (n - j)
+    bytesAt s.mem D j = xorKs (ciphOf m₀ (V .s2) R) icb P (bytesAt m₀ S j)
+  rest : bytesAt s.mem (S + BitVec.ofNat 64 j) (n - j) = bytesAt m₀ (S + BitVec.ofNat 64 j) (n - j)
   whole : n - j = 0 ∨ (P + j) % 16 = 0
   frame : Frame (crFrame (V .s1) (V .s0) D n) m₀ s.mem
 
-/-- After `crypt`. -/
-structure CrOut (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (icb : Block) (P : Nat) (D : Addr) (n : Nat)
-    (m₀ : Mem) (s : State) : Prop where
+/-- After `cryptWith o`. -/
+structure CrOut (o : Bool) (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (icb : Block) (P : Nat)
+    (S D : Addr) (n : Nat) (m₀ : Mem) (s : State) : Prop where
   env : Env V sp s
   ctr : Ctr m₀ (V .s1 + BitVec.ofNat 64 48) (V .s1 + BitVec.ofNat 64 64) (ciphOf m₀ (V .s2) R) icb P →
     Ctr s.mem (V .s1 + BitVec.ofNat 64 48) (V .s1 + BitVec.ofNat 64 64) (ciphOf m₀ (V .s2) R) icb (P + n)
   out : Ctr m₀ (V .s1 + BitVec.ofNat 64 48) (V .s1 + BitVec.ofNat 64 64) (ciphOf m₀ (V .s2) R) icb P →
-    bytesAt s.mem D n = xorKs (ciphOf m₀ (V .s2) R) icb P (bytesAt m₀ D n)
+    bytesAt s.mem D n = xorKs (ciphOf m₀ (V .s2) R) icb P (bytesAt m₀ S n)
   frame : Frame (crFrame (V .s1) (V .s0) D n) m₀ s.mem
+
 
 section
 variable {c st w : Addr} (L : Lay c st w)
@@ -135,11 +147,28 @@ theorem split_disj {D : Addr} {j n : Nat} (hj : j ≤ n) (hn : n < 2 ^ 64) :
   have := Offset.disjoint D (d := 0) (n := j) (e := j) (k := n - j) (.inl (by omega)) (by omega) (by omega)
   simpa using this
 
+/-- What the code writes from byte `j` on, `l` bytes of the destination, is
+apart from the source after them. -/
+theorem Alias.rest {o : Bool} {S D : Addr} {n : Nat} (ha : Alias o S D n) {j l : Nat} (hl : j + l ≤ n)
+    (hn : n < 2 ^ 64) :
+    (⟨D + BitVec.ofNat 64 j, l⟩ : Region).Disjoint ⟨S + BitVec.ofNat 64 (j + l), n - (j + l)⟩ := by
+  cases o
+  · have e : S = D := ha
+    subst e
+    exact Offset.disjoint S (.inl (by omega)) (by omega) (by omega)
+  · have ha' : (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩ := ha
+    exact (ha'.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega)) |>.symm
+
+/-- The source, part of the way: what is left of it. -/
+theorem Alias.rest_sub {S : Addr} {n j : Nat} (hj : j ≤ n) :
+    Region.Sub ⟨S + BitVec.ofNat 64 j, n - j⟩ ⟨S, n⟩ :=
+  Offset.sub_base _ (by omega)
+
 /-- The bytes done so far and the next ones. -/
-theorem done_append {m m₀ : Mem} {ciph : Block → Block} {icb : Block} {P : Nat} {D : Addr} {j l : Nat}
-    (h₁ : bytesAt m D j = xorKs ciph icb P (bytesAt m₀ D j))
-    (h₂ : bytesAt m (D + BitVec.ofNat 64 j) l = xorKs ciph icb (P + j) (bytesAt m₀ (D + BitVec.ofNat 64 j) l)) :
-    bytesAt m D (j + l) = xorKs ciph icb P (bytesAt m₀ D (j + l)) := by
+theorem done_append {m m₀ : Mem} {ciph : Block → Block} {icb : Block} {P : Nat} {S D : Addr} {j l : Nat}
+    (h₁ : bytesAt m D j = xorKs ciph icb P (bytesAt m₀ S j))
+    (h₂ : bytesAt m (D + BitVec.ofNat 64 j) l = xorKs ciph icb (P + j) (bytesAt m₀ (S + BitVec.ofNat 64 j) l)) :
+    bytesAt m D (j + l) = xorKs ciph icb P (bytesAt m₀ S (j + l)) := by
   rw [bytesAt_add, bytesAt_add, Proof.Gcm.xorKs_append, h₁, h₂, length_bytesAt]
 
 end VG.Proof.AesGcm.RISCV64

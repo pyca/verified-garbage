@@ -26,34 +26,6 @@ theorem value_congr {r n : Nat} {f g : Nat → Nat} (h : ∀ i < n, f i = g i) :
   | succ n ih =>
     rw [value, value, h n (by omega), ih (fun i hi => h i (by omega))]
 
-/-- Splitting every word product commutes with assembling the whole block. -/
-theorem product_halves (r q : Nat) (f : Nat → Nat) (n : Nat) :
-    value r (fun i => q * f i % r) n +
-      r * value r (fun i => q * f i / r) n = q * value r f n := by
-  induction n with
-  | zero => simp only [value, Nat.mul_zero, Nat.add_zero]
-  | succ n ih =>
-    have h := Nat.mod_add_div (q * f n) r
-    simp only [value]
-    grind
-
-/-- A row emits its low word and retains the rest in the register block and
-carry. Both carry chains are included; no discarded carry is assumed zero. -/
-theorem row_value {r k a q n low high lo cLow hi cHigh carry : Nat}
-    (hk : 1 ≤ k)
-    (hprod : low + r * high = q * n)
-    (hlow : lo + r ^ k * cLow = a + low)
-    (hhigh : hi + r ^ k * cHigh = lo / r + high + r ^ (k - 1) * (carry + cLow)) :
-    lo % r + r * (hi + r ^ k * cHigh) = a + q * n + r ^ k * carry := by
-  have hsplit := Nat.mod_add_div lo r
-  have hp : r ^ k = r * r ^ (k - 1) := by
-    calc
-      r ^ k = r ^ ((k - 1) + 1) := congrArg (r ^ ·) (by omega)
-      _ = r ^ (k - 1) * r := Nat.pow_succ r (k - 1)
-      _ = r * r ^ (k - 1) := Nat.mul_comm _ _
-  rw [hhigh]
-  grind
-
 
 open VG.Proof.Ed25519.Word64
 
@@ -118,32 +90,6 @@ theorem chained_row_value {b r a q n low high aLow cLow shifted aHigh cHigh cin 
     lo + b * (aHigh + r * cHigh) = a + q * n + r * cin := by
   grind
 
-/-- Compose scheduled rows at an arbitrary radix. The state includes its
-high carry, so this identity does not silently discard an overflow flag. -/
-theorem rows_value (b n : Nat) (q lo state : Nat → Nat) (k : Nat)
-    (hrow : ∀ i < k, lo i + b * state (i + 1) = state i + q i * n) :
-    value b lo k + b ^ k * state k = state 0 + value b q k * n := by
-  induction k with
-  | zero => simp only [value, Nat.pow_zero, Nat.one_mul, Nat.zero_mul, Nat.zero_add,
-      Nat.add_zero]
-  | succ k ih =>
-    have hp := ih (fun i hi => hrow i (by omega))
-    have hr := congrArg (b ^ k * ·) (hrow k (by omega))
-    simp only [value, Nat.pow_succ]
-    grind
-
-/-- Eight rows together form one radix-2^512 multiply-add. This bridges
-individual machine rows and the outer blocked reduction loop. -/
-theorem eight_rows_value (q lo acc carry : Nat → Nat) (n : Nat)
-    (hrow : ∀ i < 8,
-      lo i + 2 ^ 64 * (acc (i + 1) + (2 ^ 64) ^ 8 * carry (i + 1)) =
-        acc i + q i * n + (2 ^ 64) ^ 8 * carry i) :
-    value (2 ^ 64) lo 8 + (2 ^ 64) ^ 8 * (acc 8 + (2 ^ 64) ^ 8 * carry 8) =
-      acc 0 + (2 ^ 64) ^ 8 * carry 0 + value (2 ^ 64) q 8 * n := by
-  apply rows_value (2 ^ 64) n q lo (fun i => acc i + (2 ^ 64) ^ 8 * carry i) 8
-  intro i hi
-  exact (hrow i hi).trans (by omega)
-
 /-- A block of bounded digits is smaller than its radix power. -/
 theorem value_lt (r : Nat) (f : Nat → Nat) (k : Nat)
     (hf : ∀ i < k, f i < r) : value r f k < r ^ k := by
@@ -158,27 +104,6 @@ theorem value_lt (r : Nat) (f : Nat → Nat) (k : Nat)
       _ = (f k + 1) * r ^ k := by grind
       _ ≤ r * r ^ k := Nat.mul_le_mul_right _ hd
       _ = r ^ (k + 1) := by rw [Nat.pow_succ, Nat.mul_comm]
-
-/-- The lowest digit is the remainder modulo the word radix. -/
-theorem value_mod (r : Nat) (f : Nat → Nat) (k : Nat) (h : f 0 < r) :
-    value r f (k + 1) % r = f 0 := by
-  rw [← value_shift]
-  simp only [Nat.add_mod, Nat.mul_mod, Nat.mod_self, Nat.zero_mul, Nat.zero_mod,
-    Nat.add_zero, Nat.mod_eq_of_lt h]
-
-/-- The final high carry vanishes after eight rows when the incoming two
-blocks, coefficient block, and modulus block are bounded. No inverse
-property is needed for this bound. -/
-theorem eight_rows_carry_zero (q lo acc carry : Nat → Nat) (n a x : Nat)
-    (hrow : ∀ i < 8,
-      lo i + 2 ^ 64 * (acc (i + 1) + (2 ^ 64) ^ 8 * carry (i + 1)) =
-        acc i + q i * n + (2 ^ 64) ^ 8 * carry i)
-    (hin : acc 0 + (2 ^ 64) ^ 8 * carry 0 = a + x)
-    (ha : a < (2 ^ 64) ^ 8) (hx : x < (2 ^ 64) ^ 8)
-    (hq : ∀ i < 8, q i < 2 ^ 64) (hn : n < (2 ^ 64) ^ 8) : carry 8 = 0 := by
-  have hv := eight_rows_value q lo acc carry n hrow
-  have hv' := hv.trans (congrArg (· + value (2 ^ 64) q 8 * n) hin)
-  exact tile_carry_zero (by decide) ha hx (value_lt _ _ _ hq) hn hv'
 
 /-- A cancellation row has no incoming carry. Its quotient fits the
 register block even if the supplied Montgomery inverse is malformed. -/

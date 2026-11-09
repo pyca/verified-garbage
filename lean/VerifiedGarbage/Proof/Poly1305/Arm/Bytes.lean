@@ -51,18 +51,10 @@ def val (f : Nat → Nat) : Nat :=
   f 0 + 2 ^ 13 * f 1 + 2 ^ 26 * f 2 + 2 ^ 39 * f 3 + 2 ^ 52 * f 4 + 2 ^ 65 * f 5 + 2 ^ 78 * f 6 +
     2 ^ 91 * f 7 + 2 ^ 104 * f 8 + 2 ^ 117 * f 9
 
-theorem val_congr {f g : Nat → Nat} (h : ∀ k < 10, f k = g k) : val f = val g := by
-  simp only [val, h 0 (by decide), h 1 (by decide), h 2 (by decide), h 3 (by decide), h 4 (by decide),
-    h 5 (by decide), h 6 (by decide), h 7 (by decide), h 8 (by decide), h 9 (by decide)]
-
 /-- `Σ_{j < n} f j`. -/
 def rsum (f : Nat → Nat) : Nat → Nat
   | 0 => 0
   | n + 1 => rsum f n + f n
-
-theorem rsum_le {f g : Nat → Nat} (h : ∀ j, f j ≤ g j) : ∀ n, rsum f n ≤ rsum g n
-  | 0 => (Nat.le_refl _)
-  | n + 1 => Nat.add_le_add (rsum_le h n) (h n)
 
 theorem rsum_mono (f : Nat → Nat) {m n : Nat} (h : m ≤ n) : rsum f m ≤ rsum f n := by
   induction n with
@@ -565,8 +557,6 @@ theorem yr_inj : ∀ j < 10, ∀ k < 10, yr j = yr k → j = k := by decide +ker
 theorem xr_ne : ∀ k < 10, xr k ≠ .r0 ∧ xr k ≠ .r1 ∧ xr k ≠ .r2 := by decide +kernel
 theorem xr_inj : ∀ j < 10, ∀ k < 10, xr j = xr k → j = k := by decide +kernel
 theorem yr_eq_xr : ∀ k < 9, yr k = xr k := by decide +kernel
-theorem xr9 : xr 9 = .r12 := rfl
-
 /-- The registers `r1`–`r12`: every register the code changes but `r0` and `lr`. -/
 def work : List Reg := [.r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
 
@@ -1010,9 +1000,6 @@ def cregs : List Reg := .r1 :: yregs
 theorem yr_cregs : ∀ k < 10, yr k ∈ cregs := by decide +kernel
 
 theorem cregs_r2 : Reg.r2 ∉ cregs := by decide
-theorem cregs_r12 : Reg.r12 ∉ cregs := by decide
-theorem cregs_r0 : Reg.r0 ∉ cregs := by decide
-
 theorem carryStep_ok {k : Nat} (hk : k < 9) {s : State} (hm : s.gpr .r2 = maskV)
     (hb : (s.gpr (yr (k + 1))).toNat + (s.gpr (yr k)).toNat / 2 ^ 13 < 2 ^ 32) :
     WP isa (.block (carryStep k)) s fun s' =>
@@ -1212,10 +1199,6 @@ def tw0 (L : Nat → Nat) : Nat := L 0 + 2 ^ 13 * L 1 + 2 ^ 26 * (L 2 % 2 ^ 6)
 def tw1 (L : Nat → Nat) : Nat := L 2 / 2 ^ 6 + 2 ^ 7 * L 3 + 2 ^ 20 * (L 4 % 2 ^ 12)
 def tw2 (L : Nat → Nat) : Nat := L 4 / 2 ^ 12 + 2 * L 5 + 2 ^ 14 * L 6 + 2 ^ 27 * (L 7 % 2 ^ 5)
 def tw3 (L : Nat → Nat) : Nat := L 7 / 2 ^ 5 + 2 ^ 8 * L 8 + 2 ^ 21 * (L 9 % 2 ^ 11)
-
-theorem add_shl {x y : BitVec 32} {a : Nat} (h : x.toNat + y.toNat * 2 ^ a % 2 ^ 32 < 2 ^ 32) :
-    (x + y <<< a).toNat = x.toNat + y.toNat * 2 ^ a % 2 ^ 32 := by
-  rw [toNat_add_lt (by rw [toNat_shl]; exact h), toNat_shl]
 
 theorem shr' {x : BitVec 32} {n X : Nat} (hx : x.toNat = X) : (x >>> n).toNat = X / 2 ^ n := by
   rw [toNat_shr, hx]

@@ -161,15 +161,6 @@ theorem tagCopy_ok {o aN tN : Nat} (ho : o = 0 ∨ o = 112) {m₀ : Mem} {s : St
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), fun _ h => h⟩)
 
-theorem kept_tFrame : ∀ r ∈ tFrame St W SP 28 16, (keptR W).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact (L.lay.stk_w (by decide)).symm
-
 theorem ctx_tFrame' : ∀ r ∈ tFrame St W SP 28 16, (⟨w64 Ctx, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

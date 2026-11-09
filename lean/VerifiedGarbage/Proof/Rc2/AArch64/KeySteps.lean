@@ -22,8 +22,6 @@ def keyTemps : List Reg := [.x8, .x23, .x3, .x5, .x6, .x7, .x9, .x10]
 /-- The public comparison register represents the loop's zero test. -/
 def zeroFlag (s : State) : Option Bool := some (s.gpr .x10 == 0)
 
-theorem eval_zero (s : State) : eval (.zero .x .x10) s = zeroFlag s := rfl
-
 theorem eval_nonzero (s : State) :
     eval (.nonzero .x .x10) s = (zeroFlag s).map (!·) := rfl
 

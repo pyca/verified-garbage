@@ -68,9 +68,6 @@ theorem exec_sub32_imm (s : State) (d : Reg) (v : BitVec 32) :
         (subOverflow ((s.gpr d).setWidth 32) v ((s.gpr d).setWidth 32 - v))).setReg32 d
         ((s.gpr d).setWidth 32 - v)) := rfl
 
-theorem laneA_setFlags (s : State) (a b c d : Option Bool) (k i : Nat) :
-    laneA (s.setFlags a b c d) k i = laneA s k i := rfl
-
 theorem gSlot_mem (i : Nat) : gSlot i ∈ arrays := by
   unfold gSlot; split <;> decide
 

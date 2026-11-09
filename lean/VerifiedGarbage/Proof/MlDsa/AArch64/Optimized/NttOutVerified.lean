@@ -100,16 +100,6 @@ theorem outMemory_field_disjoint {m : Mem} {p src : Addr} {w : Poly}
   have hi := fivePassMem_field (by simpa only [Int.neg_mul] using ho)
   simpa only [outMemory,Traversal.traversal_ntt] using hi
 
-/-- The caller may use either exact aliasing or disjoint polynomial buffers. -/
-theorem outMemory_field {m : Mem} {p src : Addr} {w : Poly}
-    (h : PolyIs m src w) (hd : src=p ∨ (polyRegion src).Disjoint (polyRegion p)) :
-    PosPolyIs (outMemory m p src ordinaryRoot innerRoot tailRoot) p (ntt w) := by
-  rcases hd with he | hs
-  · subst src
-    rw [outMemory_self]
-    exact nttMemory_field h
-  · exact outMemory_field_disjoint h hs
-
 end VG.Proof.MlDsa.AArch64.Optimized
 
 end

@@ -291,12 +291,6 @@ theorem cbyte_step {σ : State} (hp : Pre σ) {m₁ : Mem} {F : Nat → Nat → 
 def PF (σ : State) (k q : Nat) : Byte :=
   if q < 66 then Bq σ k q else if q = 66 then 0x1f else if q = 135 then 0x80 else 0
 
-theorem sfx_eq : (List.range 4).flatMap (fun k => [Instr.store8 (at_ .rbx (256 + 8 * k + 2)) .rax]) =
-    (List.range 4).flatMap (fun k => [Instr.store8 (at_ .rbx (32 * (66 / 8) + 8 * k + 66 % 8)) .rax]) := rfl
-
-theorem last_eq : (List.range 4).flatMap (fun k => [Instr.store8 (at_ .rbx (512 + 8 * k + 7)) .rax]) =
-    (List.range 4).flatMap (fun k => [Instr.store8 (at_ .rbx (32 * (135 / 8) + 8 * k + 135 % 8)) .rax]) := rfl
-
 /-- The byte `c` to byte `q₀` of each state. -/
 theorem cbytes_ok {σ : State} (hp : Pre σ) {m₁ : Mem} {F : Nat → Nat → Byte} {q₀ : Nat} (hq₀ : q₀ < 200)
     {c : Byte} {s : State} (hax : s.gpr .rax = c.setWidth 64) (h : AI σ m₁ s ∧ SB σ s.mem F) :

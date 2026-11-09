@@ -37,37 +37,35 @@ def cbcChainedSig : Sig where
   params := [("schedule", .array false .u8 272), ("rounds", .int .usize true),
     ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]
 
-/-- For `rounds` of 18 or 24, with the subkeys of that many rounds at
-`schedule`: replaces the `n` blocks at `data` with their CBC encryption
-(§6.2) by Camellia, from the chaining value at `iv`, and the chaining value
-with the last ciphertext block (unchanged if `n = 0`), as
-`Cbc.aesEncryptContract` does. Stated for those numbers of rounds, which
-the precondition requires, so that it reads only the buffers. -/
+/-- If the schedule at `schedule` is that of a key `key` with `rounds`
+rounds (`KeySchedule`): replaces the `n` blocks at `data` with their CBC
+encryption (§6.2) by Camellia under `key`, from the chaining value at `iv`,
+and the chaining value with the last ciphertext block (unchanged if
+`n = 0`), as `Cbc.aesEncryptContract` does. -/
 def cbcEncryptChainedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   cbcChainedSig.contract A
     (pre := fun _schedule rounds _iv _data _n _ => rounds.toNat = 18 ∨ rounds.toNat = 24)
     (post := fun schedule rounds iv data n m m' _ =>
-      (rounds.toNat = 18 ∨ rounds.toNat = 24) →
-        let cs := Cbc.encrypt (cipher (subkeysAt m schedule rounds.toNat)) (Aes.bytesAt m iv 16)
+      ∀ key, KeySchedule m schedule rounds.toNat key →
+        let cs := Cbc.encrypt (cipher (expandKey key)) (Aes.bytesAt m iv 16)
           (Cbc.blocksAt m data n.toNat)
         Cbc.blocksAt m' data n.toNat = cs ∧
           Aes.bytesAt m' iv 16 = Cbc.next (Aes.bytesAt m iv 16) cs)
     (writeArgs := true) (stack := stack)
 
-/-- For `rounds` of 18 or 24, with the subkeys of that many rounds at
-`schedule`: replaces the `n` blocks at `data` with their CBC decryption
-(§6.2) by Camellia, from the chaining value at `iv`, and the chaining value
-with the last ciphertext block, the last block at `data` on entry (unchanged
-if `n = 0`), as `Cbc.aesDecryptContract` does. Stated for those numbers of
-rounds, as `cbcEncryptChainedContract` is. -/
+/-- If the schedule at `schedule` is that of a key `key` with `rounds`
+rounds (`KeySchedule`): replaces the `n` blocks at `data` with their CBC
+decryption (§6.2) by Camellia under `key`, from the chaining value at `iv`,
+and the chaining value with the last ciphertext block, the last block at
+`data` on entry (unchanged if `n = 0`), as `Cbc.aesDecryptContract` does. -/
 def cbcDecryptChainedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   cbcChainedSig.contract A
     (pre := fun _schedule rounds _iv _data _n _ => rounds.toNat = 18 ∨ rounds.toNat = 24)
     (post := fun schedule rounds iv data n m m' _ =>
-      (rounds.toNat = 18 ∨ rounds.toNat = 24) →
+      ∀ key, KeySchedule m schedule rounds.toNat key →
         let cs := Cbc.blocksAt m data n.toNat
         Cbc.blocksAt m' data n.toNat =
-            Cbc.decrypt (invCipher (subkeysAt m schedule rounds.toNat)) (Aes.bytesAt m iv 16) cs ∧
+            Cbc.decrypt (invCipher (expandKey key)) (Aes.bytesAt m iv 16) cs ∧
           Aes.bytesAt m' iv 16 = Cbc.next (Aes.bytesAt m iv 16) cs)
     (writeArgs := true) (stack := stack)
 

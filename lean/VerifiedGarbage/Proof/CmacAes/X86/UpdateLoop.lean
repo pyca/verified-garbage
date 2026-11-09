@@ -42,7 +42,7 @@ abbrev dataR : Region := ⟨(Dp s₀).setWidth 64, 16 * N s₀⟩
 abbrev scrR : Region := ⟨(S s₀).setWidth 64, 2176⟩
 abbrev argsR : Region := ⟨argAddr s₀ 0, 24⟩
 abbrev retR : Region := ⟨(E s₀).setWidth 64, 4⟩
-abbrev stkR : Region := ⟨(E s₀).setWidth 64 - BitVec.ofNat 64 28, 28⟩
+abbrev stkR : Region := ⟨(E s₀).setWidth 64 - BitVec.ofNat 64 32, 32⟩
 
 /-- The cipher. -/
 abbrev ciph : Spec.Cmac.Cipher := ciphAt s₀.mem ((W s₀).setWidth 64) (R s₀)
@@ -76,7 +76,7 @@ structure UPre (s₀ : State) : Prop where
   st_fit : (St s₀).toNat + 16 ≤ 2 ^ 32
   data_fit : (Dp s₀).toNat + 16 * N s₀ ≤ 2 ^ 32
   scr_fit : (S s₀).toNat + 2176 ≤ 2 ^ 32
-  esp28 : 28 ≤ (E s₀).toNat
+  esp32 : 32 ≤ (E s₀).toNat
   esp_fit : (E s₀).toNat + 28 ≤ 2 ^ 32
   rounds : R s₀ = 10 ∨ R s₀ = 12 ∨ R s₀ = 14
 
@@ -107,8 +107,8 @@ section
 variable {s₀ : State} (hp : UPre s₀)
 include hp
 
-theorem UPre.below_eq : below (E s₀) 28 = stkR s₀ := by
-  simp only [below]; rw [Taint.sub_setWidth hp.esp28]
+theorem UPre.below_eq : below (E s₀) 32 = stkR s₀ := by
+  simp only [below]; rw [Taint.sub_setWidth hp.esp32]
 
 theorem UPre.argA {i : Nat} (hi : i < 6) : argAddr s₀ i = argAddr s₀ 0 + BitVec.ofNat 64 (4 * i) := by
   have : (s₀.gpr .esp).toNat + 28 ≤ 2 ^ 32 := hp.esp_fit
@@ -229,7 +229,7 @@ end
 # AES-CMAC on x86: the loop of `vg_cmac_aes_update`
 
 One block keeps the loop invariant (`body_ok`): the counter block is `C ⊕ Mᵢ`
-and the state is zeroed (`Cmac.chainMem4`), the call of `vg_aes_ctr32` leaves
+and the state is zeroed (`Cmac.chainMem4`), the call of `vg_aes_ctr32_to` leaves
 `CIPH_K(C ⊕ Mᵢ)` in the state, and ZF is set once `esi` reaches `data + 16 n`
 (`adv_zf`).
 -/
@@ -440,11 +440,11 @@ theorem bodyA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s 
   have rd₉ : s₉.rd = s.rd := by rw [u₉.rd, u₈.rd, u₇.rd, u₆.rd, u₅.rd, rd₄']
   have wr₉ : s₉.wr = s.wr := by rw [u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, wr₄']
   have mem₉ : s₉.mem = s₄.mem := by rw [u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem]
-  have hb : below (s₉.gpr .esp) 28 = stkR s₀ := by rw [sp₉]; exact hp.below_eq
+  have hb : below (s₉.gpr .esp) 32 = stkR s₀ := by rw [sp₉]; exact hp.below_eq
   have cA : (Cb s₀).setWidth 64 = (S s₀).setWidth 64 + BitVec.ofNat 64 2048 := hp.scrA (by decide)
   have cSt : (⟨(Cb s₀).setWidth 64, 16⟩ : Region).Disjoint (stR s₀) := by
     rw [cA]; exact hp.st_scr.symm.sub_left (UPre.scr_sub (by decide))
-  refine ⟨⟨?_, ?_, ?_, ?_, u₉.gpr, ?_, hp.rounds, by rw [sp₉]; exact hp.esp28, ?_, hp.sch_st, ?_, cSt,
+  refine ⟨⟨?_, ?_, ?_, ?_, u₉.gpr, ?_, hp.rounds, by rw [sp₉]; exact hp.esp32, ?_, hp.sch_st, ?_, cSt,
     ?_, ?_, by rw [hb]; exact hp.b_sch, ?_, by rw [hb]; exact hp.b_st, ?_, hp.sch_fit, ?_, hp.st_fit, ?_, ?_, ?_,
     ?_⟩, ?_, ?_, ?_, ?_, ?_⟩
   · rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr]
@@ -485,7 +485,7 @@ theorem body_ok {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s :
   refine WP.seq (WP.mono (bodyA_wp hp hk h) fun s₁ a => ?_)
   refine WP.seq (WP.mono (ctr_call v a.pre) fun s₂ h₂ => ?_)
   have esp₁ : s₁.gpr .esp = E s₀ := by rw [a.esp, h.esp]
-  have hb : below (s₁.gpr .esp) 28 = stkR s₀ := by rw [esp₁]; exact hp.below_eq
+  have hb : below (s₁.gpr .esp) 32 = stkR s₀ := by rw [esp₁]; exact hp.below_eq
   have cA : (Cb s₀).setWidth 64 = (S s₀).setWidth 64 + BitVec.ofNat 64 2048 := hp.scrA (by decide)
   have f₁ : Frame [⟨(S s₀).setWidth 64 + BitVec.ofNat 64 2048, 16⟩, stR s₀] s.mem s₁.mem := by
     rw [a.mem]; exact Proof.Cmac.chainMem4_frame _ _ _ _

@@ -432,13 +432,6 @@ theorem Pre.in_blk16 {s₀ : State} (hp : Pre s₀) {i n : Nat} (hi : i < nb s�
     InRegions (s₀.rd ++ s₀.wr) (blkAddr s₀ i + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 16 :=
   ⟨blR s₀, by simp [hp.rd], Pre.blk16 hp hi hn⟩
 
-theorem Pre.blk4 {s₀ : State} (hp : Pre s₀) {i t : Nat} (hi : i < nb s₀) (ht : t < 16) :
-    (blR s₀).Contains (blkAddr s₀ i + BitVec.ofInt 64 ((4 * t : Nat) : Int)) 4 := by
-  have := hp.nb_lt
-  rw [ofInt_natCast', show blkAddr s₀ i + BitVec.ofNat 64 (4 * t) =
-    bp s₀ + BitVec.ofNat 64 (64 * i + 4 * t) from Offset.add_add _ _ _]
-  exact contains_offset (by omega_arith) (by omega_arith)
-
 /-- What holds between blocks, after `i` of them: no memory has changed, and
 `rax` holds the table's address. -/
 structure Common (s₀ : State) (i : Nat) (s : State) : Prop where

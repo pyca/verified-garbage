@@ -14,7 +14,8 @@ This writes `<arch>-<uuid>.lcov` in the current directory, where `<arch>`
 is the `target_arch` the tests were built for, containing only this
 repository's files, with repository-relative `/`-separated paths, so lcov
 files from different platforms can be merged by `ci/merge_rust_coverage.py`,
-which also checks each architecture's alone.
+which also checks each architecture's alone. A file may have a record for
+each test binary; the merge sums them.
 """
 
 import json
@@ -98,24 +99,32 @@ def main(profraw_dir: str, *cargo_args: str) -> None:
         check=True,
     )
 
-    first, *rest = test_binaries(list(cargo_args))
-    lcov = subprocess.run(
-        [
-            str(bindir / f"llvm-cov{EXE}"),
-            "export",
-            first,
-            *(arg for b in rest for arg in ("-object", b)),
-            f"-instr-profile={profdata}",
-            "--format=lcov",
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout
+    # One export per binary, never one export of them all (`-object` for each):
+    # a function compiled into several binaries (a dependency's `#[inline]` or
+    # generic function, instantiated in each) has a coverage record in each,
+    # under the same name, and a binary that never calls it records 0. Given
+    # them all, llvm-cov keeps the first binary's record and drops the others
+    # ("functions have mismatched data"), so the counts depended on the order
+    # of the binaries. `ci/merge_rust_coverage.py` sums the records of a file.
+    records = []
+    for binary in test_binaries(list(cargo_args)):
+        lcov = subprocess.run(
+            [
+                str(bindir / f"llvm-cov{EXE}"),
+                "export",
+                binary,
+                f"-instr-profile={profdata}",
+                "--format=lcov",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+        records.append(relative_records(lcov, root))
 
     out = f"{target_arch()}-{uuid.uuid4()}.lcov"
     with open(out, "w", newline="\n") as f:
-        f.write(relative_records(lcov, root))
+        f.write("".join(records))
     print(f"wrote {out}")
 
 

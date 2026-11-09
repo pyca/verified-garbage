@@ -5,7 +5,6 @@
 // gives.
 
 vg_mldsa_expand_mask_pair_sha3:
-	.arch_extension sha3
 	str x19, [x4, #7968]
 	str x20, [x4, #7976]
 	str x21, [x4, #7984]
@@ -855,5 +854,4 @@ vg_mldsa_expand_mask_pair_sha3:
 	ldr x28, [x19, #8040]
 	ldr x19, [x19, #7968]
 	ret
-	.arch_extension nosha3
 	.p2align 6

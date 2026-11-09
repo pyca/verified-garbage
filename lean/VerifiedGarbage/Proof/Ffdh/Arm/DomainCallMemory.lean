@@ -43,17 +43,6 @@ theorem DomainCallMemory.after {p : Inputs} {s t : State} {rs : List Reg}
   · exact h.domain
   · exact h.publicValue
 
-theorem Octets.after_arithmetic {base src : BitVec 32} {len : Nat} {bs : List Byte}
-    {s t : State} {rs : List Reg} (h : Octets base src len bs s)
-    (frame : Frame [⟨State.addr base, 8 * len⟩, belowA s.sp 48] s.mem t.mem)
-    (rest : Rest rs s t) (below : Region.Disjoint ⟨State.addr src, bs.length⟩ (belowA s.sp 48)) :
-    Octets base src len bs t := by
-  refine h.after_frame frame rest ?_
-  intro r hr
-  rcases List.mem_cons.mp hr with hr | hr
-  · subst r; exact h.separate
-  · have eq := List.mem_singleton.mp hr; subst r; exact below
-
 theorem Context.after_arithmetic {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg}
     (h : Context p slots s) (call : DomainCallMemory p s)
     (frame : Frame [⟨State.addr p.base, 8 * p.len⟩, belowA s.sp 48] s.mem t.mem)

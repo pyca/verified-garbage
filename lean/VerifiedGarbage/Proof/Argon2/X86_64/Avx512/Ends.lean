@@ -126,15 +126,6 @@ theorem finQ : ∀ n < 2, ∀ k < 4, ∀ q < 8,
       32 * k + 16 + 8 * n + q := by
   decide
 
-/-- Quadword `q` of `vshufi32x4 d, a, b, sel`, from the halves of `a` and `b`. -/
-theorem qz_shuf (s : State) (d a b : XReg) (n : BitVec 8) {q : Nat} (hq : q < 8) :
-    qz ((ZOp.vshufi32x4 d a b n).exec s) d q =
-      (if q < 4 then qz s a else qz s b) (2 * sel4 n.toNat (q / 2) + q % 2) := by
-  rw [qz_vshufi32x4 _ _ _ _ _ _ hq, ite_eq_left_of_eq_true _ _ (eq_true rfl)]
-  by_cases h : q < 4
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith)), ite_eq_left_of_eq_true _ _ (eq_true h)]
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)), ite_eq_right_of_eq_false _ _ (eq_false h)]
-
 def joinOps : List ZOp :=
   [.vshufi32x4 .xmm2 .xmm0 .xmm1 0x88, .vshufi32x4 .xmm3 .xmm0 .xmm1 0xdd,
     .zbin .vpxord .xmm2 .xmm2 .xmm4, .zbin .vpxord .xmm3 .xmm3 .xmm5]

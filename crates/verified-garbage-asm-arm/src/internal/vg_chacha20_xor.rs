@@ -15,6 +15,8 @@ pub(crate) unsafe extern "C" fn vg_chacha20_xor() {
 str r5, [r3, #260]
 str r6, [r3, #264]
 str lr, [r3, #268]
+str r7, [r3, #272]
+mov r7, r5
 mov r4, r0
 mov r5, r1
 mov r6, r2
@@ -38,8 +40,9 @@ mov r3, r1
 ldrb r0, [r5, #0]
 ldrb r12, [r3, #0]
 eor r0, r0, r12
-strb r0, [r5, #0]
+strb r0, [r7, #0]
 add r5, r5, #1
+add r7, r7, #1
 add r3, r3, #1
 subs r2, r2, #1
 bne 25b
@@ -56,6 +59,7 @@ ldr r4, [r1, #256]
 ldr r5, [r1, #260]
 ldr r6, [r1, #264]
 ldr lr, [r1, #268]
+ldr r7, [r1, #272]
 bx lr",
         vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
     )

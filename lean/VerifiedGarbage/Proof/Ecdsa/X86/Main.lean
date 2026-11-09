@@ -69,16 +69,6 @@ theorem fixedOk_slWkP {l : List Nat} (hl : ∀ i ∈ l, i = TMP ∨ 12 ≤ i) (h
     FixedOk c (slWkP c l) :=
   (fixedOk_slWk hl).append fixedOk_ptW
 
-/-- The flag word apart from what the ladder writes. -/
-theorem flag_unchP {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (slWkP c l) m m')
-    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 32) (hl : FLAG ∉ l) :
-    m'.readW (off base (c.sl FLAG)) 32 = m.readW (off base (c.sl FLAG)) 32 := by
-  have hF := sl_le c h7 (i := FLAG) (by decide)
-  refine Unch.readW32 hu (fun w hw => ?_) (by omega_arith)
-  rcases apart_slWkP (c := c) (i := FLAG) (by decide) hl h7 w hw with h | h
-  · exact Or.inl (by omega_arith)
-  · exact Or.inr h
-
 /-- After `[k]G` and `Z^(p-2)`. -/
 structure St₂ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
   k : sv c base s K = kv c A s₀

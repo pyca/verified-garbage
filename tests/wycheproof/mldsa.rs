@@ -67,7 +67,8 @@ json_struct! {
 macro_rules! mldsa_tests {
     ($n:literal, $module:ident, $SigningKey:ident, $VerifyingKey:ident) => {
         use super::mldsa::{Sign, SignGroup, Verify, VerifyGroup};
-        use verified_garbage::$module::{Error, $SigningKey, $VerifyingKey};
+        use verified_garbage::error::MlDsaError;
+        use verified_garbage::$module::{$SigningKey, $VerifyingKey};
 
         use super::harness::{self, Expectation};
         use crate::require_vectors;
@@ -89,6 +90,13 @@ macro_rules! mldsa_tests {
                 let key = $SigningKey::from_seed(&seed).unwrap();
                 let pk = g.params.public_key.as_ref().map(|pk| &pk.0[..]);
                 assert_eq!(pk, Some(&key.verifying_key().as_bytes()[..]), "tcId {id}");
+                // `from_bytes` hashes the key (`pk_tr`) to the `tr` that key
+                // generation keeps in the private key: equality compares both.
+                assert_eq!(
+                    &$VerifyingKey::from_bytes(key.verifying_key().as_bytes()),
+                    key.verifying_key(),
+                    "tcId {id}"
+                );
                 let ctx = c.ctx.as_ref().map_or(&[][..], |x| &x.0[..]);
                 if test.result == Expectation::Valid {
                     let sig: Sig = c.sig.as_ref().unwrap().0[..].try_into().unwrap();
@@ -112,7 +120,10 @@ macro_rules! mldsa_tests {
                     assert_eq!(test.result, Expectation::Invalid, "tcId {id}");
                     let msg = &c.msg.as_ref().unwrap().0;
                     assert!(ctx.len() > 255, "tcId {id}");
-                    assert_eq!(key.sign_deterministic(msg, ctx), Err(Error::ContextTooLong));
+                    assert_eq!(
+                        key.sign_deterministic(msg, ctx),
+                        Err(MlDsaError::ContextTooLong)
+                    );
                 }
             });
         }
@@ -137,6 +148,80 @@ macro_rules! mldsa_tests {
                 };
                 assert_eq!(ok, test.result == Expectation::Valid, "tcId {id}");
             });
+        }
+
+        /// Every vector of each key, signed and verified with one prepared
+        /// key (`prepare`), as a key that signs a stream of messages does:
+        /// the deterministic signatures are the vectors', every signature
+        /// verifies with the prepared public key, and context strings longer
+        /// than 255 bytes are refused.
+        #[test]
+        fn sign_seed_prepared() {
+            require_vectors!();
+            let file =
+                harness::load::<SignGroup, Sign>(concat!("mldsa_", $n, "_sign_seed_test.json"));
+            let count = harness::Count::default();
+            harness::par_each(&file.test_groups, |g| {
+                let Ok(seed) = <[u8; 32]>::try_from(&g.params.private_seed.0[..]) else {
+                    return;
+                };
+                let key = $SigningKey::from_seed(&seed).unwrap().prepare();
+                let vk = key.signing_key().verifying_key().clone().prepare();
+                for test in &g.tests {
+                    let c = &test.case;
+                    let id = test.tc_id;
+                    let Some(msg) = &c.msg else {
+                        continue;
+                    };
+                    let ctx = c.ctx.as_ref().map_or(&[][..], |x| &x.0[..]);
+                    if test.result != Expectation::Valid {
+                        assert_eq!(
+                            key.sign_deterministic(&msg.0, ctx),
+                            Err(MlDsaError::ContextTooLong),
+                            "tcId {id}"
+                        );
+                        assert_eq!(key.sign(&msg.0, ctx), Err(MlDsaError::ContextTooLong));
+                        continue;
+                    }
+                    let sig: Sig = c.sig.as_ref().unwrap().0[..].try_into().unwrap();
+                    if c.rnd.is_none() {
+                        assert_eq!(key.sign_deterministic(&msg.0, ctx), Ok(sig), "tcId {id}");
+                    }
+                    assert_eq!(vk.verify(&msg.0, ctx, &sig), Ok(()), "tcId {id}");
+                    let hedged = key.sign(&msg.0, ctx).unwrap();
+                    assert_eq!(vk.verify(&msg.0, ctx, &hedged), Ok(()), "tcId {id}");
+                    count.add();
+                }
+            });
+            assert!(count.get() > 0);
+        }
+
+        /// Every vector of each public key, verified with one prepared key.
+        #[test]
+        fn verify_prepared() {
+            require_vectors!();
+            let file =
+                harness::load::<VerifyGroup, Verify>(concat!("mldsa_", $n, "_verify_test.json"));
+            let count = harness::Count::default();
+            harness::par_each(&file.test_groups, |g| {
+                // Keys of the wrong length are not represented.
+                let Ok(pk) = <[u8; $VerifyingKey::SIZE]>::try_from(&g.params.public_key.0[..])
+                else {
+                    return;
+                };
+                let vk = $VerifyingKey::from_bytes(&pk).prepare();
+                assert_eq!(vk.verifying_key().as_bytes(), &pk);
+                for test in &g.tests {
+                    let c = &test.case;
+                    let ctx = c.ctx.as_ref().map_or(&[][..], |x| &x.0[..]);
+                    // Signatures of the wrong length are not represented.
+                    let ok = <Sig>::try_from(&c.sig.0[..])
+                        .is_ok_and(|sig| vk.verify(&c.msg.0, ctx, &sig) == Ok(()));
+                    assert_eq!(ok, test.result == Expectation::Valid, "tcId {}", test.tc_id);
+                    count.add();
+                }
+            });
+            assert!(count.get() > 0);
         }
     };
 }

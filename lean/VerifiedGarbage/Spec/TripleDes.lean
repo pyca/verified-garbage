@@ -16,11 +16,11 @@ The API accepts 24-byte keys (K1 || K2 || K3), or 16-byte keys
 parity is neither checked nor changed. Weak and repeated component keys
 are accepted: this specifies the cipher, not a key-generation policy.
 
-Issue #1's streaming interface buffers partial blocks, emits complete
-8-byte blocks, and rejects a partial block at finalization. There is no
-padding. All key bytes, round keys and data are secret in the contracts;
-S-box indexing here does not permit secret-dependent memory access in an
-implementation.
+ECB here is on complete 8-byte blocks only. The Rust API's streaming
+interface (issue #1's) buffers partial blocks, emits complete blocks, and
+rejects a partial block at finalization; there is no padding. All key
+bytes, round keys and data are secret in the contracts; S-box indexing here
+does not permit secret-dependent memory access in an implementation.
 -/
 
 @[expose] public section
@@ -178,7 +178,7 @@ instance (n : Nat) : Decidable (validKey n) :=
   inferInstanceAs (Decidable (n = 16 ∨ n = 24))
 
 /-- For 16-byte keys the third component repeats the first. Defined on
-all lists; initialization and the expansion contract require a valid length. -/
+all lists; the expansion contract requires a valid length (`validKey`). -/
 def expandKey (key : List Byte) : Schedule :=
   let component (i : Nat) :=
     let offset := if i = 2 ∧ key.length = 16 then 0 else 8 * i
@@ -216,30 +216,6 @@ def decryptBlock (k : Schedule) (b : Block) : Block :=
 /-- SP 800-38A §6.1, including empty input. -/
 def ecb (k : Schedule) (direction : Direction) (input : List Block) : List Block :=
   input.map (match direction with | .encrypt => encryptBlock k | .decrypt => decryptBlock k)
-
-def blocks (data : List Byte) : List Block :=
-  (List.range (data.length / 8)).map fun j =>
-    Vector.ofFn fun i => data.getD (8 * j + i.val) 0
-
-structure Context where
-  schedule : Schedule
-  direction : Direction
-  pending : List Byte := []
-
-inductive Error | invalidKeyLength | incompleteBlock
-  deriving DecidableEq, Repr
-
-def init (key : List Byte) (direction : Direction) : Except Error Context := do
-  unless validKey key.length do throw .invalidKeyLength
-  return { schedule := expandKey key, direction }
-
-def update (ctx : Context) (data : List Byte) : Context × List Byte :=
-  let input := ctx.pending ++ data
-  ({ ctx with pending := input.drop (8 * (input.length / 8)) },
-    (ecb ctx.schedule ctx.direction (blocks input)).flatMap Vector.toList)
-
-def finalize (ctx : Context) : Except Error (List Byte) :=
-  if ctx.pending.isEmpty then .ok [] else .error .incompleteBlock
 
 /-! ## Memory layouts for contracts -/
 

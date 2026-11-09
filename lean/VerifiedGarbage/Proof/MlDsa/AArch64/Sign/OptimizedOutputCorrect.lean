@@ -157,19 +157,6 @@ theorem canonicalizeZChk_ok {p : Params} (hp : Ok3 p) :
     ∀r<p.ℓ,canonicalizeZChk p r=true := by
   rcases hp with rfl | rfl | rfl <;> decide +kernel
 
-theorem canonicalizeZ_rooted {p : Params} {S : Nat} {σ s : State} {r : Nat} {f : Poly}
-    {lo hi : Int} (hc : canonicalizeZChk p r=true) (hs : RootedSt p S σ s)
-    (hf : SignedPolyIs s.mem (pa s (yP p r)) f lo hi)
-    (hl : -(q:Int)<lo) (hh : hi<(q:Int)) :
-    WP isa (Impl.MlDsa.AArch64.Sign.Optimized.canonicalizeZ p r) s fun t =>
-      RootedSt p S σ t ∧ t.gpr .x24=s.gpr .x24 ∧ PolyIs t.mem (pa t (yP p r)) f := by
-  simp only [canonicalizeZChk,Bool.and_eq_true] at hc
-  obtain ⟨⟨hr,hw⟩,hst⟩ := hc
-  refine WP.mono_syms (canonicalizeAt_layout hs.1.lay hr hw hf hl hh) fun t ⟨hp,h24,hv⟩ hy => ?_
-  refine ⟨hs.step hp hy hst (by simpa using hw),h24,?_⟩
-  rw [hp.pa (hs.1.lay.ptrBs hr)]
-  exact hv
-
 end VG.Proof.MlDsa.AArch64.Sign
 
 end
@@ -227,39 +214,6 @@ theorem canonicalizeZ_step_post {p : Params} {S : Nat} {σ s : State} {f : Nat �
   · intro j hj hjl
     exact keepSignedPoly h.rooted.1.lay hp (canonicalizeZ_keep hk hr hjl (by omega))
       (h.pending j (by omega) hjl)
-
-theorem canonicalizeZ_step {p : Params} {S : Nat} {σ s : State} {f : Nat → Poly}
-    {lo hi : Int} {r : Nat} (hr : r<p.ℓ)
-    (hc : canonicalizeZChk p r=true) (hk : canonicalizeZKeepChk p=true)
-    (hl : -(q:Int)<lo) (hh : hi<(q:Int))
-    (h : CanonicalizeZState p S σ f lo hi r s) :
-    WP isa (Impl.MlDsa.AArch64.Sign.Optimized.canonicalizeZ p r) s
-      (CanonicalizeZState p S σ f lo hi (r+1)) := by
-  exact WP.mono (canonicalizeZ_step_post hr hc hk hl hh h) fun _ ht => ht.1
-
-theorem canonicalizeZ_vector {p : Params} {S : Nat} {σ s : State} {f : Nat → Poly}
-    {lo hi : Int} (hc : ∀r<p.ℓ,canonicalizeZChk p r=true)
-    (hk : canonicalizeZKeepChk p=true) (hl : -(q:Int)<lo) (hh : hi<(q:Int))
-    (h : CanonicalizeZState p S σ f lo hi 0 s) :
-    WP isa (seqR (Impl.MlDsa.AArch64.Sign.Optimized.canonicalizeZ p) 0 p.ℓ) s
-      (CanonicalizeZState p S σ f lo hi p.ℓ) := by
-  simpa only [Nat.zero_add] using seqR_ok
-    (I := fun r s => CanonicalizeZState p S σ f lo hi r s) p.ℓ 0
-    (fun r _ hr s h => canonicalizeZ_step (by omega) (hc r (by omega)) hk hl hh h) s h
-
-/-- The complete accepted response vector reaches the canonical representation
-required by BitPack, with the acceptance flag and root tables intact. -/
-theorem canonicalizeZ_all {p : Params} {S : Nat} {σ s : State} {f : Nat → Poly}
-    {lo hi : Int} (hp : Ok3 p) (hs : RootedSt p S σ s)
-    (hf : ∀j<p.ℓ,SignedPolyIs s.mem (pa s (yP p j)) (f j) lo hi)
-    (hl : -(q:Int)<lo) (hh : hi<(q:Int)) (hflag : s.gpr .x24=1) :
-    WP isa (seqR (Impl.MlDsa.AArch64.Sign.Optimized.canonicalizeZ p) 0 p.ℓ) s fun t =>
-      RootedSt p S σ t ∧ Fam t (5+p.k) p.ℓ f ∧ t.gpr .x24=1 := by
-  have hinit : CanonicalizeZState p S σ f lo hi 0 s :=
-    ⟨hs,by intro j hj; omega,fun j _ hj => hf j hj,hflag⟩
-  refine WP.mono (canonicalizeZ_vector (canonicalizeZChk_ok hp)
-    (canonicalizeZKeepChk_ok hp) hl hh hinit) fun t ht => ?_
-  exact ⟨ht.rooted,ht.converted,ht.flag⟩
 
 end VG.Proof.MlDsa.AArch64.Sign
 

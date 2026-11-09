@@ -35,14 +35,10 @@ def prepFor (C : VG.Impl.Ecdsa.AArch64.Cfg) : Prog isa :=
   .seq (.block (WinCfg.addConst C.n (C.sl K) 3944 (WinCfg.offset 131)))
     (bits 3944 3304 (8*(C.n+1)))
 
-abbrev prep := prepFor c
-
 def doublesFor (C : VG.Impl.Ecdsa.AArch64.Cfg) : Prog isa × Prog isa :=
   let k := config C
   (fprogB k.M (VG.Impl.Weierstrass.dblJS k.S k.R k.D),
    fprogB k.M (VG.Impl.Weierstrass.dblJS k.S k.D k.R))
-
-abbrev doubles := doublesFor c
 
 def coreFor (C : VG.Impl.Ecdsa.AArch64.Cfg) : Prog isa :=
   .seq (prepFor C) (WinCfg.windowJ (config C) (Cfg.invJ C) C.padd (some (doublesFor C)))

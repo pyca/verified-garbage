@@ -30,20 +30,6 @@ theorem exp_square_ok (s : State) {base : BitVec 32} {len w M x E : Nat}
   rw [h.modulus] at modulus bound value
   exact ⟨h.after_y ready modulus keeps bound (mont_sq h.coprime h.powerValue value), keeps, frame, rest⟩
 
-theorem exp_multiply_ok (s : State) {base : BitVec 32} {len w M x E : Nat}
-    (h : ExpState base len w M x E s) :
-    WP isa (montOp 6 6 5) s fun t => ExpState base len w M x (E + 1) t ∧
-      Keeps (State.addr base) len w 6 s.mem t.mem ∧
-      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  refine WP.mono (montOp_ok s h.ready
-    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
-    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
-    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
-    (by rw [h.modulus]; exact h.inputBound)) ?_
-  rintro t ⟨ready, modulus, bound, value, keeps, frame, rest⟩
-  rw [h.modulus] at modulus bound value
-  exact ⟨h.after_y ready modulus keeps bound (mont_mulx h.coprime h.powerValue h.inputValue value), keeps, frame, rest⟩
-
 theorem exp_finish_ok (s : State) {base : BitVec 32} {len w M x E : Nat}
     (h : ExpState base len w M x E s) :
     WP isa (montOp 6 6 7) s fun t => ArithmeticReady base len w t ∧

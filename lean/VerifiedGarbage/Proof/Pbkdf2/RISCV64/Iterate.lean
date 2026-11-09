@@ -122,8 +122,6 @@ theorem sc0 (s₀ : State) : sc s₀ + BitVec.ofNat 64 0 = sc s₀ := BitVec.add
 /-- The callee-saved registers our code never writes. -/
 abbrev nvRegs : List Reg := [.s0, .s7, .s8, .s9, .s10, .s11]
 
-theorem nv_pres : ∀ r ∈ nvRegs, r ∈ preserved := by decide
-
 /-- What holds between the pieces of a step, with `c` in `s6`. -/
 structure St (P : It) (Wi : Nat) (H : Md P.B P.N L) (s₀ : State) (c : BitVec 64) (s : State) : Prop where
   rd : s.rd = s₀.rd
@@ -260,7 +258,6 @@ theorem hv_in {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
 theorem blk_in {s : State} (hwr : s.wr = s₀.wr) {n : Nat} (hn : n ≤ P.B) : InRegions s.wr (blk P s₀) n :=
   ⟨scR Wi s₀, by rw [hwr, hp.wr]; simp, by rw [blk_eq]; exact sc_contains hz (by have := hz.fits; omega)⟩
 
-
 omit hz in
 /-- Regions of the aligned scratch space are within the writable regions. -/
 theorem sc_covers {rs : List Region}
@@ -352,7 +349,7 @@ theorem cmp_ok {H : Md P.B P.N L} (hf : CalleeOk H P.CW P.cmpC) {c : BitVec 64} 
     rcases hr with rfl | rfl
     · exact ⟨_, hv_eq P s₀, by dsimp only; omega⟩
     · exact ⟨0, (sc0 s₀).symm, by dsimp only; omega⟩
-  refine compressAt_ok hf h.s1 h.s2 h.s3 (hv_sc hz) (hv_blk hz).symm (blk_sc hz)
+  refine compressAt_ok hf h.s1 h.s2 h.s3 (hv_sc hz) (hv_blk hz).symm (blk_sc hz) sc_al
     (by rw [h.rd, h.wr]; exact fun a n hi => (hcv a n hi).elim fun r ⟨hr, hc⟩ =>
       ⟨r, List.mem_append_right _ hr, hc⟩)
     (by rw [h.wr]; exact hcw)

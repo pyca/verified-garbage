@@ -35,7 +35,7 @@ mod legacy_vectors;
     target_arch = "riscv64"
 ))]
 pub fn bench(c: &mut Criterion) {
-    use crate::{BenchDyn, OPENSSL, VG, fixed_tape};
+    use crate::{BenchDyn, OPENSSL, VG};
     use criterion::BenchmarkId;
     use openssl::{
         bn::BigNum,
@@ -83,15 +83,8 @@ pub fn bench(c: &mut Criterion) {
         )
         .unwrap();
         let digest = [0x42; 32];
-        // The signature the verification benchmarks check, the same in
-        // every run.
-        let mut tape = fixed_tape((p_len * 8) as u64);
-        let signature = key
-            .sign_with_rng(&digest, |buf| {
-                tape(buf);
-                Ok(())
-            })
-            .unwrap();
+        // The signature the verification benchmarks check.
+        let signature = key.sign(&digest).unwrap();
         let der = DsaSig::from_private_components(
             BigNum::from_slice(&signature[..q_len]).unwrap(),
             BigNum::from_slice(&signature[q_len..]).unwrap(),
@@ -112,7 +105,7 @@ pub fn bench(c: &mut Criterion) {
             ssl_sig.s().to_vec_padded(q_len as i32).unwrap(),
         ]
         .concat();
-        assert!(key.public_key().verify(&digest, &fixed));
+        key.public_key().verify(&digest, &fixed).unwrap();
         // CI interprets the final benchmark ID component as a numeric size.
         let size = p_len * 8;
 
@@ -145,24 +138,51 @@ pub fn bench(c: &mut Criterion) {
             group.finish();
         }
 
-        // verified-garbage draws its nonces and keys below from a fixed tape
-        // (`sign` and `generate` but for `getrandom`); OpenSSL draws from
-        // its own generator.
+        // Each library draws its nonces and keys below from its own
+        // generator.
         let mut group = c.benchmark_group(format!("dsa_sign_q{}", q_len * 8));
         group.bench(BenchmarkId::new(VG, size), |b| {
-            b.iter(|| {
-                let mut tape = fixed_tape(size as u64);
-                black_box(&key)
-                    .sign_with_rng(black_box(&digest), |buf| {
-                        tape(buf);
-                        Ok(())
-                    })
-                    .unwrap()
-            })
+            b.iter(|| black_box(&key).sign(black_box(&digest)).unwrap())
         });
         group.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut ctx = PkeyCtx::new(black_box(&ssl_key)).unwrap();
+                ctx.sign_init().unwrap();
+                let mut signature = Vec::new();
+                ctx.sign_to_vec(black_box(&digest), &mut signature).unwrap();
+                black_box(signature)
+            })
+        });
+        group.finish();
+        // Import plus the first signature exposes the cost of lazy validation.
+        let mut group = c.benchmark_group(format!("dsa_sign_cold_q{}", q_len * 8));
+        group.bench(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                let fresh = PrivateKey::from_components(
+                    black_box(&p),
+                    black_box(&q),
+                    black_box(&g),
+                    black_box(&y),
+                    black_box(&x),
+                )
+                .unwrap();
+                fresh.sign(black_box(&digest)).unwrap()
+            })
+        });
+        group.bench(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| {
+                let key = PKey::from_dsa(
+                    Dsa::from_private_components(
+                        BigNum::from_slice(black_box(&p)).unwrap(),
+                        BigNum::from_slice(black_box(&q)).unwrap(),
+                        BigNum::from_slice(black_box(&g)).unwrap(),
+                        BigNum::from_slice(black_box(&x)).unwrap(),
+                        BigNum::from_slice(black_box(&y)).unwrap(),
+                    )
+                    .unwrap(),
+                )
+                .unwrap();
+                let mut ctx = PkeyCtx::new(&key).unwrap();
                 ctx.sign_init().unwrap();
                 let mut signature = Vec::new();
                 ctx.sign_to_vec(black_box(&digest), &mut signature).unwrap();
@@ -268,17 +288,7 @@ pub fn bench(c: &mut Criterion) {
             let mut group = c.benchmark_group(format!("dsa_generate_key_q{}", q_len * 8));
             group.bench(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
-                    let mut tape = fixed_tape(size as u64);
-                    PrivateKey::generate_with_rng(
-                        black_box(&p),
-                        black_box(&q),
-                        black_box(&g),
-                        |buf| {
-                            tape(buf);
-                            Ok(())
-                        },
-                    )
-                    .unwrap()
+                    PrivateKey::generate(black_box(&p), black_box(&q), black_box(&g)).unwrap()
                 })
             });
             group.bench(BenchmarkId::new(OPENSSL, size), |b| {

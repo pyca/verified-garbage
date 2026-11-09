@@ -395,9 +395,6 @@ theorem pipe_ok {s0 : State} {x y : Nat} (hx : x + 56 ≤ ACC) (hx8 : x % 8 = 0)
       (fun j => dw s0.mem b (y + 8 * j)) ts (pstart (fun c => (ps c).length) k))
     (fun k hk s h hi => pcol_ok hx hx8 hy hy8 ht hk h hi) 14 (Nat.le_refl _) s4 hinit hp0) fun _ h => h.1
 
-theorem colPairs_eval : ∀ k < 14, colPairs k = ((List.range 7).reverse.filter fun i => i ≤ k ∧ k - i < 7).map
-    fun i => (i, k - i) := fun _ _ => rfl
-
 /-- The columns sum to the product. -/
 theorem mulCols_sum (X Y : Nat → Nat) : colsV (mulCs X Y) 14 = val7 X * val7 Y := by
   simp only [colsV, val7]

@@ -29,7 +29,7 @@ def variant : Proof.Rsa.Arm.CrtImpl where
   pc := PcFn.codeWith normalizedPublicPrecomputeKernel.code
   pcVerified := precompute_verified (kernel := normalizedPublicPrecomputeKernel)
   pcStack := by decide +kernel
-  pdName := Spec.Rsa.publicPrecomputedCheckedApi.name
+  pdName := "vg_rsa_public_precomputed_checked"
   pd := PdFn.code
   pdVerified := pd_verified
   pdStack := by decide +kernel

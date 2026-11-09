@@ -8,8 +8,8 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
 `vg_rsa_mont_mul`'s path for `a = b`: the products `a_i a_j` for `i ≠ j` once
 (`AdxSquare.crossWith`), doubled, with the squares `a_i²` added
 (`AdxSquare.diagonalWith`), then a Montgomery reduction of the `2 w`-word
-square, row by row (`redc`), and `montMul`'s final subtraction. About
-`3 w² / 2` multiplications instead of `montMul`'s `2 w²`.
+square, row by row (`redc`), and the multiplication's final subtraction. About
+`3 w² / 2` multiplications instead of the multiplication's `2 w²`.
 
 The rows are `mul`, `add` and `adc` (`row`, `core`, `head`). The square lies
 at `aAcc + 16`, over arrays `aAcc` and `aTmp`, as in `AdxSquare`, and the
@@ -87,7 +87,7 @@ def square : Prog isa :=
   .seq raw (.seq redc (.seq (.block unstash) (.seq subMod selectAcc)))
 
 /-- What follows `basesR` in `vg_rsa_mont_mul`: `square` if `a` and `b` are
-the same array, `montMul`'s rounds otherwise. -/
+the same array, the multiplication's rounds otherwise. -/
 def mulTail : Prog isa :=
   .seq (.block [.alu .cmp .r11 (.reg .r9)])
     (.ite .e square (.seq zeroAccLoop (.seq rounds (.seq subMod selectAcc))))

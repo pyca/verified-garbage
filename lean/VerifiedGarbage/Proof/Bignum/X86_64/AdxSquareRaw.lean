@@ -44,9 +44,6 @@ structure DiagOk (diag : Prog isa) (P : Nat → Prop) : Prop where
       Outside B A (16*w) s.mem t.mem ∧
       Keep [.rdx,.r11,.r12,.rsi,.rbx,.rax,.rcx,.r15,.rbp,.r14] s t
 
-theorem diagonalChoice_diag : DiagOk AdxSquare.diagonalChoice (fun _ => True) :=
-  ⟨fun hs h8 h9 h10 h0 hw _ hA hb sep => diagonalChoice_ok hs h8 h9 h10 h0 hw hA hb sep⟩
-
 theorem diagonal4_diag : DiagOk AdxSquareGrouped.diagonal (fun w => w % 4 = 0) :=
   ⟨fun hs h8 h9 h10 h0 hw h4 hA hb sep => AdxSquareGrouped.diagonal_ok hs h8 h9 h10 h0 hw h4 hA hb sep⟩
 
@@ -128,17 +125,5 @@ theorem rawSquareWith_ok {diag : Prog isa} {P : Nat → Prop} (hd : DiagOk diag 
     (k14.trans kt).mono (by decide)⟩
   rw [wv_add, high, Nat.mul_zero, Nat.add_zero]
   exact low
-
-theorem rawSquare_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
-    (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv)
-    (hZ : slot w 8 ≤ Z) (hw1 : 2 ≤ w) (hw : w < 2 ^ 31)
-    {a : Nat} (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) :
-    WP isa (AdxSquare.rawSquare a) s fun t =>
-      wv t.mem B (slot w aAcc + 16) (2 * w + 2) =
-        wv s.mem B (slot w a) w * wv s.mem B (slot w a) w ∧
-      wv t.mem B (slot w aAcc + 16) (2 * w) =
-        wv s.mem B (slot w a) w * wv s.mem B (slot w a) w ∧
-      Outside B (slot w aAcc + 16) (8 * (2 * w + 2)) s.mem t.mem ∧ Keep mmRegs s t :=
-  rawSquareWith_ok diagonalChoice_diag hs hdi hH hZ hw1 hw trivial ha ha1 ha2
 
 end VG.Proof.Bignum.X86_64.AdxSquare

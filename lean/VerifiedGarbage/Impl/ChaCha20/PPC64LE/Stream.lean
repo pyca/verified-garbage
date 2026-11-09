@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
+public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Vmx4
 
 /-!
 # Streaming ChaCha20: PPC64LE implementation
@@ -47,7 +47,7 @@ namespace VG.Impl.ChaCha20.PPC64LE.Stream
 
 open VG.PPC64LE
 open VG.Impl.ChaCha20.PPC64LE (block)
-open VG.Impl.ChaCha20.PPC64LE.Xor (mov xor)
+open VG.Impl.ChaCha20.PPC64LE.Xor (mov)
 
 /-- The 32-bit word `v` into `off(r3)`, built in `r10`. -/
 def word (v : BitVec 32) (off : Nat) : List Instr :=
@@ -113,7 +113,7 @@ def part1 : Prog isa :=
     (.block [.lsr .d .r5 .r26 6, .lsl .r5 .r5 6]))))
 
 /-- The whole blocks: the state copied and the counter advanced (word 12),
-then `vg_chacha20_xor` on the copy. -/
+then `vg_chacha20_xor` on the copy, in place (`dst = src`). -/
 def blocksArgs : List Instr :=
   [.load .d .r9 .r24 0, .load .d .r10 .r24 8, .load .d .r11 .r24 16, .load .d .r12 .r24 24,
    .store .d .r9 .r24 192, .store .d .r10 .r24 200, .store .d .r11 .r24 208, .store .d .r12 .r24 216,
@@ -121,10 +121,10 @@ def blocksArgs : List Instr :=
    .store .d .r9 .r24 224, .store .d .r10 .r24 232, .store .d .r11 .r24 240, .store .d .r12 .r24 248,
    .lsr .d .r9 .r5 6, .load .w .r10 .r24 48, .add .r10 .r10 .r9, .store .w .r10 .r24 48,
    .addi .r3 .r24 192, mov .r4 .r25, .addi .r6 .r24 256,
-   .add .r25 .r25 .r5, .sub .r26 .r26 .r5]
+   .add .r25 .r25 .r5, .sub .r26 .r26 .r5, mov .r7 .r4]
 
 def part2 : Prog isa :=
-  .ite (.zero .d .r5) (.block []) (.seq (.block blocksArgs) (.call "vg_chacha20_xor" xor))
+  .ite (.zero .d .r5) (.block []) (.seq (.block blocksArgs) (.call "vg_chacha20_xor" VG.Impl.ChaCha20.PPC64LE.Vmx4.xor))
 
 /-- The arguments of the block function: the state and the buffer. -/
 def tailArgs : List Instr := [mov .r3 .r24, .addi .r4 .r24 64]

@@ -26,12 +26,6 @@ theorem booth_sign_a64 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.
   have he : Exec isa Impl.P256.Booth.sign s t s' := he
   exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, hpost⟩
 
-theorem booth_sign_verified_of_comb (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
-    (hcomb : CombCorrect p256 Impl.P256.Booth.comb) :
-    Verified AArch64.target Impl.P256.Booth.sign
-      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts p256.combConsts)) :=
-  Verified.of_correct (booth_sign_a64 hL hI hcomb) booth_sign_ct implies
-
 end VG.Proof.Ecdsa.AArch64
 
 namespace VG.Proof.EcKey.AArch64

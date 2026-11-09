@@ -493,24 +493,7 @@ theorem crtBitEnd_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc 
       ofNat64_pred hb1 (by omega_arith), ofNat64_beq_zero (show b - 1 < 2 ^ 64 by omega_arith)]) rfl)
     fun t' ⟨h, k⟩ => ⟨h.1, h.2, k⟩
 
-/-- `Y := Y² R⁻¹`: `x^E R` becomes `x^(2E) R`. -/
-theorem crtSq_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat} {Q : Prop}
-    {x E : Nat} (hc : CExpCtx t P wx minv X Xc n) (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30)
-    (hR : Nat.Coprime (2 ^ (64 * wx)) X) (hY : wv t.mem P (slot wx aY) wx < X)
-    (hYv : Q → wv t.mem P (slot wx aY) wx % X = x ^ E * 2 ^ (64 * wx) % X) :
-    WP isa (M.mm aY aY aY) t fun t' => CExpCtx t' P wx minv X Xc n ∧ wv t'.mem P (slot wx aY) wx < X ∧
-      (Q → wv t'.mem P (slot wx aY) wx % X = x ^ (2 * E) * 2 ^ (64 * wx) % X) ∧
-      (∀ k < 32, word t'.mem P (8 * k) = word t.mem P (8 * k)) ∧
-      Frm P (crtWinRanges wx) t.mem t'.mem ∧ Keep mmRegs t t' := by
-  refine WP.mono (M.mm_ok (o := aY) (a := aY) (b := aY) hc.good (Nat.le_refl _) hw (by omega_arith)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv
-    (by rw [hc.n]; exact hY)) fun t₁ ⟨_, hlt₁, hm₁, ha₁, k₁⟩ => ?_
-  rw [hc.n] at hlt₁ hm₁
-  have f₁ : Frm P (crtWinRanges wx) t.mem t₁.mem := Frm.of_arrays ha₁ (by simp [crtWinRanges])
-  exact ⟨hc.of_win f₁ k₁.2.2 (k₁.gpr (by decide)), hlt₁, fun hq => VG.Proof.Bignum.mont_sq hR (hYv hq) hm₁,
-    fun k hk => ha₁.hslot hk, f₁, k₁⟩
-
-/-- `crtSq_ok` for a squaring `Sq` whose results stay below `Sq.bd X R`. -/
+/-- A phase's squaring, for a squaring `Sq` whose results stay below `Sq.bd X R`. -/
 theorem crtSqS_ok (Sq : MontS) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat} {Q : Prop}
     {x E : Nat} (hc : CExpCtx t P wx minv X Xc n) (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30)
     (hR : Nat.Coprime (2 ^ (64 * wx)) X) (hY : wv t.mem P (slot wx aY) wx < Sq.bd X (2 ^ (64 * wx)))

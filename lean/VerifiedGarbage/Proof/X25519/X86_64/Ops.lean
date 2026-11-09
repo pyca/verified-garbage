@@ -42,11 +42,6 @@ theorem Op.scr {base : Addr} {o : Nat} {s s' : State} (h : Op base o s s') (hs :
 /-- A field element's slot: 32 bytes of the working space. -/
 abbrev Slot (o : Nat) : Prop := o + 32 ≤ 4096
 
-/-- A field element at another slot is unchanged. -/
-theorem Op.fe {base : Addr} {o : Nat} {s s' : State} (h : Op base o s s') {d : Nat}
-    (hd : d + 32 ≤ o ∨ o + 32 ≤ d) (hd' : Slot d) : fe s'.mem base d = fe s.mem base d :=
-  h.mem.fe hd (by omega)
-
 theorem stores_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : Slot o)
     (a b c d : Reg) :
     WP isa (.block (stores o a b c d)) s fun s' =>

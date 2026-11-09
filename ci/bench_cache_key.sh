@@ -12,8 +12,9 @@
 # fingerprint of a crate from the registry includes the path of its sources,
 # under Cargo's home, so an entry built in an image with another home (as
 # PPC64LE's was, before its runner image set CARGO_HOME) restores, but every
-# dependency is built again. ci.yml's `rust` job saves the entry on main;
-# bench.yml's `compare` restores it.
+# dependency is built again. ci.yml's `rust` job saves the entry on main,
+# starting, on a miss, from the prefix's latest entry; bench.yml's `compare`
+# restores it.
 set -e
 bench=$1
 # macOS has `shasum`, Linux `sha256sum`.

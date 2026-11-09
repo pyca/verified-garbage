@@ -503,7 +503,7 @@ vg_ec_p224_public_key:
 	and t0, t0, a7
 	sd t0, 1472(s0)
 	addi a0, s0, 0
-	call {vg_p224_mul}
+	call {vg_p224_mul_g}
 	addi s0, s3, 0
 	addi a0, s0, 0
 	addi a1, zero, 1536

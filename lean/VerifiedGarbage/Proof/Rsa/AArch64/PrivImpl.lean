@@ -39,7 +39,7 @@ structure CrtImpl where
   pcNoFrames : pc.noFrames = true
   pdName : String
   pd : Prog isa
-  pdVerified : Verified AArch64.target pd (Spec.Rsa.publicPrecomputedCheckedContract AArch64.abi 0)
+  pdVerified : Verified AArch64.target pd (Proof.Rsa.publicPrecomputedCheckedContract AArch64.abi 0)
   pdNoFrames : pd.noFrames = true
   /-- What the names of `vg_rsa_private_checked`'s instances end with (e.g.
   `_neon`; nothing for the baseline implementation). -/

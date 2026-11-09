@@ -122,6 +122,11 @@ abbrev ddAt := ddWith "vg_mlkem_decode_decompress" decodeDecompress
 def dec12At (b : Reg) (o off : Nat) : Prog isa :=
   .seq (.block (ptrTo .x0 b o ++ ptrTo .x1 .x28 off)) (.call "vg_mlkem_decode12" decode12)
 
+/-- `vg_mlkem<n>_encaps_h(ek = x0, h = x1, m = x2, key = x3, ct = x4, scratch = x5)`'s arguments moved to
+`encaps`'s (`m`, `key`, `ct` and `scratch` in `x1`–`x4`), `h` unused: `encaps_h` is `encaps` after these
+moves. -/
+def hArgs : List Instr := [mov .x1 .x2, mov .x2 .x3, mov .x3 .x4, mov .x4 .x5]
+
 namespace KemLay
 
 variable (L : KemLay)

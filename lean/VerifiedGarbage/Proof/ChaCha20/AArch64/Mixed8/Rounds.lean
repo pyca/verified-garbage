@@ -135,34 +135,4 @@ theorem parallelRound_ok {blocks : Nat → CState} {v : CState} {s : State}
   intro k j hj
   exact (hu k j hj).trans (VG.Proof.ChaCha20.AArch64.Rows6.round_eq blocks k j hj)
 
-theorem rounds_ok {blocks : Nat → CState} {v : CState} {s : State}
-    (hn : N (VG.Proof.ChaCha20.AArch64.Rows6.pack blocks) s) (hc : C v s)
-    (ht : s.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table) :
-    ∀ n, WP isa (rounds sve n) s fun u =>
-      N (VG.Proof.ChaCha20.AArch64.Rows6.pack
-        (fun b => Nat.repeat innerBlock n (blocks b))) u ∧
-      RI (Nat.repeat (fun x => innerBlock (innerBlock x)) n v) s u ∧ u.sp = s.sp ∧
-      u.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table
-  | 0 => WP.block_nil ⟨hn,⟨hc,rfl,rfl,rfl,fun _ _ => rfl⟩,rfl,ht⟩
-  | n + 1 => by
-    apply WP.seq
-    refine (rounds_ok hn hc ht n).mono fun a ⟨ha,hra,hspa,hat⟩ => ?_
-    refine (parallelRound_ok ha hra.holds hat).mono fun u ⟨hu,hru,hspu,hut⟩ => ?_
-    exact ⟨hu,⟨hru.holds,hru.mem.trans hra.mem,hru.rd.trans hra.rd,hru.wr.trans hra.wr,
-      fun r hr => (hru.keep r hr).trans (hra.keep r hr)⟩,hspu.trans hspa,hut⟩
-
-theorem phase_ok {blocks : Nat → CState} {v : CState} {s : State}
-    (hn : N (VG.Proof.ChaCha20.AArch64.Rows6.pack blocks) s) (hc : C v s)
-    (ht : s.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table) :
-    WP isa (rounds sve 5) s fun u =>
-      N (VG.Proof.ChaCha20.AArch64.Rows6.pack
-        (fun b => Nat.repeat innerBlock 5 (blocks b))) u ∧
-      RI (Nat.repeat innerBlock 10 v) s u ∧ u.sp = s.sp ∧
-      u.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table := by
-  have he (f : CState → CState) (x : CState) :
-      Nat.repeat (fun x => f (f x)) 5 x = Nat.repeat f 10 x := rfl
-  refine (rounds_ok hn hc ht 5).mono fun u ⟨hu,hr,hsp,hut⟩ => ?_
-  rw [he innerBlock v] at hr
-  exact ⟨hu,hr,hsp,hut⟩
-
 end VG.Proof.ChaCha20.AArch64.Mixed8

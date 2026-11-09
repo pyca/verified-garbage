@@ -2,11 +2,11 @@ module
 public import VerifiedGarbage.Proof.X448.RISCV64.Field
 public import VerifiedGarbage.Proof.X25519.RISCV64.Mul
 
-import VerifiedGarbage.Proof.X448.RISCV64.AddSub
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.X448.RISCV64.Pass
+import VerifiedGarbage.Proof.X25519.RISCV64.Pass
 
 /-!
 # X448 on RISCV64: multiplication
@@ -172,111 +172,6 @@ theorem row_ok {x y : Nat} (hx : x + 56 ≤ ACC) (hy : y + 56 ≤ ACC) (hx4 : x 
       rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_arith) (by omega_arith)
     · rw [val32_congr hacc]; exact row_val h.val
     · rw [hr11, ofNat_ne_zero (by omega_arith)]
-
-/-- A word of `ACC`, through a pass at `o` below it. -/
-theorem wd_acc {s0 s : State} (hc : Ctx b s0) {o k j : Nat} (ho : o + 56 ≤ ACC) (hk : k < 14)
-    (hj : j < 28) (hf : Frame [⟨s0.gpr .a3 + BitVec.ofNat 64 o, 4 * k⟩] s0.mem s.mem) :
-    wd s.mem b (ACC + 4 * j) = accw ACC s0.mem b j := by
-  have hA := ACC_eq
-  exact wd_pass hc hf (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-
-theorem mul_ok {o x y : Nat} (ho : o + 56 ≤ ACC) (hx : x + 56 ≤ ACC)
-    (hy : y + 56 ≤ ACC) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) {s : State} (hc : Ctx b s) :
-    WP isa (mul o x y) s fun s' =>
-      Rest clob s s' ∧
-      Frame [⟨b + BitVec.ofNat 64 o, 56⟩, ⟨b + BitVec.ofNat 64 ACC, 112⟩] s.mem s'.mem ∧
-      V s'.mem b o % P = (V s.mem b x * V s.mem b y) % P := by
-  have hA := ACC_eq
-  unfold mul
-  refine WP.seq (WP.mono (mulPre_ok (x := x) (y := y) hc) fun s1 h1 => ?_)
-  refine WP.seq (WP.mono (Q := RowInv b x y s 14) (WP.loop (M := isa)
-    (fun n s' => ∃ i, n = 14 - i ∧ i < 14 ∧ RowInv b x y s i s') ?_ 14 s1 ⟨0, rfl, by decide, h1⟩)
-    fun s2 h2 => ?_)
-  · rintro n s' ⟨i, rfl, hi, hr⟩
-    refine WP.mono (row_ok hx hy hx4 hy4 hi hr) fun s'' ⟨hr', hz⟩ => ?_
-    by_cases h14 : i + 1 = 14
-    · refine .inl ⟨by rw [eval_nonzero, hz]; simp [h14], ?_⟩
-      rw [h14] at hr'; exact hr'
-    · exact .inr ⟨by rw [eval_nonzero, hz]; simp; omega_arith, 14 - (i + 1), by omega_arith, i + 1, rfl,
-        by omega_arith, hr'⟩
-  · rw [List.cons_append]
-    refine wp_li (by decide) fun s3 u3 => ?_
-    have hc3 : Ctx b s3 := h2.ctx.of_rest (u3.rest (ws := [.a5]) (by decide)) (by decide)
-    have hl28 : ∀ k < 28, accw ACC s2.mem b k < 2 ^ 32 := fun k _ => wd_lt _ _ _
-    have hv : val32 (accw ACC s2.mem b) 28 = V s.mem b x * V s.mem b y := h2.val
-    obtain ⟨hfb, hfv⟩ := foldC_facts hl28
-    refine WP.mono (passTail_ok (c := foldC (accw ACC s2.mem b)) (by omega_arith) ho4
-      (foldC_le hl28) hfb hc3 u3.gpr ?_)
-      fun s4 ⟨hr4, hf4, hv4⟩ => ⟨h2.rest.trans ((u3.rest (by decide)).trans (hr4.mono (by decide))),
-        ?_, ?_⟩
-    · intro k hk s' hp
-      have hc' : Ctx b s' := hc3.of_rest hp.rest (by decide)
-      have hacc : ∀ j < 28, wd s'.mem b (ACC + 4 * j) = accw ACC s2.mem b j := fun j hj => by
-        rw [wd_acc hc3 ho hk hj hp.frame, accw, accw, u3.mem]
-      have lo : ∀ (t : State) (j : Nat), j < 28 → Rest [.a2, .a4] s' t → t.mem = s'.mem → ∀ (r : Reg) (d : Nat),
-          d = ACC + 4 * j → ∀ (is : List Instr) (Q : State → Prop),
-          (∀ t', Upd t t' r (BitVec.ofNat 64 (accw ACC s2.mem b j)) → WP isa (.block is) t' Q) →
-          WP isa (.block (.load .w r .a3 d :: is)) t Q := by
-        intro t j hj hr hm r d hd is Q k
-        subst hd
-        refine lw0_ok (hc'.of_rest hr (by decide)) (by omega_arith) (by omega_arith) fun t' u => k t' ?_
-        have e : (t.mem.readW (b + BitVec.ofNat 64 (ACC + 4 * j)) 32).setWidth 64 =
-            BitVec.ofNat 64 (accw ACC s2.mem b j) := by
-          apply BitVec.eq_of_toNat_eq
-          rw [toNat_ext32, hm, toNat_imm (v := accw ACC s2.mem b j) (Nat.lt_trans (wd_lt _ _ _) (by decide))]
-          exact hacc j hj
-        rw [← e]; exact u
-      have hl := hl28 k (by omega_arith)
-      have hh := hl28 (14 + k) (by omega_arith)
-      unfold mulSrc
-      by_cases h7 : k < 7
-      · simp only [h7, ite_true, List.cons_append, List.nil_append]
-        have hh' := hl28 (14 + (k + 7)) (by omega_arith)
-        refine lo s' k (by omega_arith) (Rest.refl _ _) rfl _ _ rfl _ _ fun t1 v1 => ?_
-        refine lo t1 (14 + k) (by omega_arith) (v1.rest (by decide)) v1.mem _ _ (by omega_arith) _ _ fun t2 v2 => ?_
-        refine wp_add fun t3 v3 => ?_
-        refine lo t3 (14 + (k + 7)) (by omega_arith)
-          ((v1.rest (by decide)).trans ((v2.rest (by decide)).trans (v3.rest (by decide))))
-          (by rw [v3.mem, v2.mem, v1.mem]) _ _ (by omega_arith) _ _ fun t4 v4 => ?_
-        refine wp_add fun t5 v5 => WP.block_nil ⟨?_, ?_, by rw [v5.mem, v4.mem, v3.mem, v2.mem, v1.mem]⟩
-        · have e3 : (t3.gpr .a4).toNat = accw ACC s2.mem b k + accw ACC s2.mem b (14 + k) := by
-            rw [v3.gpr, v2.other .a4 (by decide), v1.gpr, v2.gpr, toNat_add_lt (by
-              rw [toNat_imm (by omega_arith), toNat_imm (by omega_arith)]; omega_arith),
-              toNat_imm (by omega_arith), toNat_imm (by omega_arith)]
-          rw [v5.gpr, v4.other .a4 (by decide), v4.gpr, toNat_add_lt (by
-            rw [e3, toNat_imm (by omega_arith)]; omega_arith), e3, toNat_imm (by omega_arith), foldC]
-          simp only [h7, ite_true]
-        · exact (v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
-            ((v4.rest (by decide)).trans (v5.rest (by decide)))))
-      · simp only [h7, ite_false, List.cons_append, List.nil_append]
-        have hh' := hl28 (14 + (k - 7)) (by omega_arith)
-        refine lo s' k (by omega_arith) (Rest.refl _ _) rfl _ _ rfl _ _ fun t1 v1 => ?_
-        refine lo t1 (14 + k) (by omega_arith) (v1.rest (by decide)) v1.mem _ _ (by omega_arith) _ _ fun t2 v2 => ?_
-        refine wp_add fun t3 v3 => wp_add fun t3' v3' => ?_
-        have hr3 : Rest [.a2, .a4] s' t3' :=
-          (v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
-            (v3'.rest (by decide))))
-        refine lo t3' (14 + (k - 7)) (by omega_arith) hr3 (by rw [v3'.mem, v3.mem, v2.mem, v1.mem]) _ _
-          (by omega_arith) _ _ fun t4 v4 => ?_
-        refine wp_add fun t5 v5 => WP.block_nil ⟨?_, hr3.trans ((v4.rest (by decide)).trans (v5.rest (by decide))),
-          by rw [v5.mem, v4.mem, v3'.mem, v3.mem, v2.mem, v1.mem]⟩
-        have e5 : (t3.gpr .a2).toNat = accw ACC s2.mem b (14 + k) := by
-          rw [v3.other .a2 (by decide), v2.gpr, toNat_imm (by omega_arith)]
-        have e3 : (t3.gpr .a4).toNat = accw ACC s2.mem b k + accw ACC s2.mem b (14 + k) := by
-          rw [v3.gpr, v2.other .a4 (by decide), v1.gpr, v2.gpr, toNat_add_lt (by
-            rw [toNat_imm (by omega_arith), toNat_imm (by omega_arith)]; omega_arith),
-            toNat_imm (by omega_arith), toNat_imm (by omega_arith)]
-        have e3' : (t3'.gpr .a4).toNat = accw ACC s2.mem b k + accw ACC s2.mem b (14 + k) +
-            accw ACC s2.mem b (14 + k) := by
-          rw [v3'.gpr, toNat_add_lt (by rw [e3, e5]; omega_arith), e3, e5]
-        rw [v5.gpr, v4.other .a4 (by decide), v4.gpr, toNat_add_lt (by
-          rw [e3', toNat_imm (by omega_arith)]; omega_arith), e3', toNat_imm (by omega_arith), foldC]
-        simp only [h7, ite_false]
-    · have hf2 : Frame [⟨b + BitVec.ofNat 64 o, 56⟩, ⟨b + BitVec.ofNat 64 ACC, 112⟩]
-          s.mem s2.mem := h2.frame.mono fun r hr => by simp [List.mem_singleton.mp hr]
-      rw [u3.mem] at hf4
-      exact hf2.trans (hf4.mono fun r hr => by simp [List.mem_singleton.mp hr])
-    · rw [hv4, hfv, hv]
 
 end
 

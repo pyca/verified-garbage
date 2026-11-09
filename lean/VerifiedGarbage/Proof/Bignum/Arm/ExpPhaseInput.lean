@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Bignum.Arm.ExpInit
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteState
-import VerifiedGarbage.Proof.Bignum.Arm.ExpBytes
 
 /-! # The complete inputs for native RSA exponentiation -/
 
@@ -43,12 +42,5 @@ theorem expPhase_init_ready (s : State) {base ep : BitVec 32} {len w M x : Nat} 
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.separate)
       (by change eb.length ≤ 2 ^ 64; have := h.countFit; omega) hi]
     exact h.bytes i hi
-
-theorem expPhase_bytes_ready (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte}
-    (h : ExpByteState base ep len w M x eb 0 s) (positive : 0 < eb.length) :
-    WP isa expBytes s fun t => ExpState base len w M x (Spec.Rsa.os2ip eb) t ∧
-      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ VG.Proof.X25519.Arm.Rest roundClobbers s t :=
-  expBytes_ok s h.power positive h.countFit h.sourceFit h.read h.separate h.bytes
-    (by simpa only [BitVec.add_zero] using h.pointer) h.count
 
 end VG.Proof.Bignum.Arm

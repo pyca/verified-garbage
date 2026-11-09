@@ -19,8 +19,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 # `vg_rsa_public_precomputed` on AArch64: the computation
 
 The input, the mask of `input < m`, `-m⁻¹` and the number 1 (`pdSetup_ok`),
-then the exponentiation and the result (`pdRest_ok`), for any values of `m`
-and `R² mod m` that pass the checks.
+for any values of `m` and `R² mod m` that pass the checks.
 -/
 
 @[expose] public section
@@ -304,13 +303,6 @@ theorem outPhase_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64} {Y : N
 
 /-! ## `rest` -/
 
-/-- `X = input R`, the exponentiation and `Y R⁻¹`. -/
-def pdExp (M : Mont) : List (Prog isa) := [M.mm aXm aX aR2, Precomputed.expLoop M.mm, Precomputed.finish M.mm]
-
-theorem pdRest_eq (M : Mont) : Precomputed.rest M.mm =
-    seqs ((([.block [ldh .x1 sIn, ldh .x2 sK, ldh .x8 (sArr aX)], loadW] : List (Prog isa)) ++ setupSteps) ++ (pdExp M ++ outSteps)) :=
-  rfl
-
 /-- The input, the mask, `-m⁻¹` and 1. -/
 theorem pdSetupAll_ok {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : Nat} {eb xb : List Byte} {N R : Nat}
     (h : PdPre s B Z k op ep ip L eb xb N R) :
@@ -338,99 +330,5 @@ theorem pdSetupAll_ok {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : 
       (by have := slot_le (w := (k + 7) / 8) (show aR2 < 8 by decide); omega_using [hn', this]),
     ha₁.wv_of_not_mem (by decide) (by decide) hn']
   exact h.r
-
-/-- `rest`, for values the checks accepted: `x^e mod N` (or zeros, if the
-input is not below `N`) to `out`, for the `x` with `x R ≡ input R² R⁻¹`,
-which is the input if `R ≡ R²`. -/
-theorem pdRest_ok {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : Nat} {eb xb : List Byte} {N R : Nat}
-    (h : PdPre s B Z k op ep ip L eb xb N R) :
-    WP isa (Precomputed.rest M.mm) s fun t => ∃ x : Nat,
-      (R % N = 2 ^ (64 * ((k + 7) / 8)) * 2 ^ (64 * ((k + 7) / 8)) % N → x % N = Spec.Rsa.os2ip xb % N) ∧
-      MainPost s t B Z k op (if Spec.Rsa.os2ip xb < N then x ^ Spec.Rsa.os2ip eb % N else 0)
-        (decide (Spec.Rsa.os2ip xb < N)) := by
-  have hk1 := h.k1
-  have hk2 := h.k2
-  have hL2 := h.L2
-  have hZ := h.z
-  have hs := h.scr
-  have hn := hs.nowrap
-  have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_using [hZ, hn]
-  have hw : 2 ≤ (k + 7) / 8 := by omega_using [hk1]
-  have hR : Nat.Coprime (2 ^ (64 * ((k + 7) / 8))) N := VG.Proof.Bignum.coprime_pow2 h.odd _
-  have hle := pdAll_le ((k + 7) / 8)
-  have hle' : ∀ r ∈ pdAll ((k + 7) / 8), r.1 + r.2 ≤ Z := fun r hr => Nat.le_trans (hle r hr) hZ
-  rw [pdRest_eq]
-  refine wp_seqs_append (by simp) (by simp [pdExp])
-    (WP.mono (pdSetupAll_ok h) fun t₂ ⟨minv, so, f₂, k₂, hR₂⟩ => ?_)
-  refine wp_seqs_append (by simp [pdExp]) (by simp [outSteps]) ?_
-  unfold pdExp
-  -- `X = input R`.
-  refine WP.seq (WP.mono (M.mm_ok (o := aXm) (a := aX) (b := aR2) so.good hZ hw (by omega_using [hk2]) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) so.inv (by rw [hR₂, so.n]; exact h.rlt))
-    fun t₃ ⟨hg₃, hlt₃, hm₃, ha₃, k₃⟩ => ?_)
-  rw [so.n] at hlt₃ hm₃
-  rw [so.x, hR₂] at hm₃
-  have hn₃ : wv t₃.mem B (slot ((k + 7) / 8) aN) ((k + 7) / 8) = N := by
-    rw [ha₃.wv_of_not_mem (by decide) (by decide) hn']; exact so.n
-  have hinv₃ : ((word t₃.mem B (slot ((k + 7) / 8) aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
-    rw [ha₃.word0_of_not_mem (by decide) (by decide) hn' (by omega_using [hw])]; exact so.inv
-  have f₃ : Frm B (pdAll ((k + 7) / 8)) t₂.mem t₃.mem :=
-    Frm.of_arrays ha₃ (by simp [pdAll, pExpRanges, pBitRanges, bitRanges])
-  have f₁₃ := f₂.trans f₃
-  have x₁₃ := Fixed.of_frm f₁₃ (pdAll_fixed _)
-  obtain ⟨x, hx⟩ := exists_mont hR h.n1 (wv t₃.mem B (slot ((k + 7) / 8) aXm) ((k + 7) / 8))
-  have he₃ := h.e.congrK (InScr.of_frm f₁₃ hle') (k₂.trans k₃)
-  -- The exponentiation.
-  refine WP.seq (WP.mono (pExpLoop_ok (x := x) ⟨hg₃, hn₃, hinv₃, rfl⟩ hZ hw (by omega_using [hk2]) hR hlt₃ hx
-    (by rw [x₁₃ sE (by decide)]; exact h.hE) (by rw [x₁₃ sElen (by decide)]; exact h.hL) h.el h.L1 (by omega_using [hk2, hL2])
-    (fun i hi => he₃.rd i (by rw [h.el]; exact hi)) (fun i hi => he₃.val i (by rw [h.el]; exact hi))
-    (fun i hi => he₃.out i (by rw [h.el]; exact hi)))
-    fun t₄ ⟨hc₄, hy₄, f₄', k₄⟩ => ?_)
-  have f₄ : Frm B (pdAll ((k + 7) / 8)) t₃.mem t₄.mem := f₄'.mono fun _ hr => List.mem_append_right _ hr
-  have hone₄ : wv t₄.mem B (slot ((k + 7) / 8) aOne) ((k + 7) / 8) = 1 := by
-    rw [f₄'.wv_eq (fun r hr => by
-        have := hdr_lt_slot ((k + 7) / 8) aOne (show 31 < 32 by decide)
-        have := slot_sep (w := (k + 7) / 8) (show aOne ≠ aAcc by decide)
-        have := slot_sep (w := (k + 7) / 8) (show aOne ≠ aTmp by decide)
-        have := slot_sep (w := (k + 7) / 8) (show aOne ≠ aY by decide)
-        simp only [pExpRanges, pBitRanges, bitRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [sI, sV, sBit, sStarted, sFn] at * <;>
-          omega_arith)
-        (by have := slot_le (w := (k + 7) / 8) (show aOne < 8 by decide); omega_using [hn', this]),
-      ha₃.wv_of_not_mem (by decide) (by decide) hn']
-    exact so.one
-  rw [seqs_one]
-  refine WP.mono (pFinish_ok hc₄ hZ hw (by omega_using [hk2]) hR h.n1 hone₄ hy₄) fun t₅ ⟨hg₅, hY₅, f₅', k₅⟩ => ?_
-  have f₅ : Frm B (pdAll ((k + 7) / 8)) t₄.mem t₅.mem :=
-    f₅'.mono (by simp [finRanges, pdAll, pExpRanges, pBitRanges, bitRanges])
-  have f₁₅ := (f₁₃.trans f₄).trans f₅
-  have x₁₅ := Fixed.of_frm f₁₅ (pdAll_fixed _)
-  have k₁₅ := ((k₂.trans k₃).trans k₄).trans k₅
-  have hM₅ : word t₅.mem B (8 * sMask) = mask (decide (Spec.Rsa.os2ip xb < N)) := by
-    rw [f₅'.word_eq (fun r hr => by
-        have := hdr_lt_slot ((k + 7) / 8) aAcc (show sMask < 32 by decide)
-        have := hdr_lt_slot ((k + 7) / 8) aTmp (show sMask < 32 by decide)
-        have := hdr_lt_slot ((k + 7) / 8) aY (show sMask < 32 by decide)
-        simp only [finRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> omega_arith) (by unfold sMask sFn; omega_using []),
-      f₄'.word_eq (pExpRanges_hdr _ (by decide) (by decide) (by decide) (by decide) (by decide))
-        (by unfold sMask sFn; omega_using []),
-      ha₃.hslot (by decide)]
-    exact so.mask
-  refine WP.mono (outPhase_ok hg₅ hZ (by omega_using [hw]) (by omega_using [hk2]) hY₅ (by rw [x₁₅ sOut (by decide)]; exact h.hO)
-    (by rw [x₁₅ sK (by decide)]; exact h.hK) hM₅ (by rw [k₁₅.wr]; exact h.out) h.outSep)
-    fun t ⟨hb, hx0, hfr, k₆⟩ => ⟨x, fun hRR => ?_, ⟨?_, hx0,
-      fun y hy hy' => by rw [hfr y hy', InScr.of_frm f₁₅ hle' y hy], (k₁₅.trans k₆).mono (by decide)⟩⟩
-  · apply VG.Proof.Bignum.mont_cancel hR
-    apply VG.Proof.Bignum.mont_cancel hR
-    calc x * 2 ^ (64 * ((k + 7) / 8)) * 2 ^ (64 * ((k + 7) / 8)) % N
-        = x * 2 ^ (64 * ((k + 7) / 8)) % N * 2 ^ (64 * ((k + 7) / 8)) % N := (Nat.mod_mul_mod _ _ _).symm
-      _ = wv t₃.mem B (slot ((k + 7) / 8) aXm) ((k + 7) / 8) % N * 2 ^ (64 * ((k + 7) / 8)) % N := by rw [hx]
-      _ = Spec.Rsa.os2ip xb * R % N := by rw [Nat.mod_mul_mod, hm₃]
-      _ = Spec.Rsa.os2ip xb * (R % N) % N := (Nat.mul_mod_mod _ _ _).symm
-      _ = Spec.Rsa.os2ip xb * 2 ^ (64 * ((k + 7) / 8)) * 2 ^ (64 * ((k + 7) / 8)) % N := by
-        rw [hRR, Nat.mul_mod_mod, Nat.mul_assoc]
-  · rw [hb]
-    by_cases hc : Spec.Rsa.os2ip xb < N <;> simp [hc]
 
 end VG.Proof.Bignum.AArch64

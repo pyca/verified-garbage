@@ -68,7 +68,6 @@ theorem stepPub_spec : StepSpec stepPub := r2dStepPub_ok
 def stepsOf (st : Prog isa) : Prog isa :=
   .seq (.block [sth .x13 sCnt]) (.loop (.seq st (.block (dblCount sCnt))) (.nonzero .x .x13))
 
-theorem steps_eq_of : steps = stepsOf step := rfl
 theorem stepsPub_eq_of : stepsPub = stepsOf stepPub := rfl
 
 theorem eval_count {t : State} {j c : Nat} (hj : j < c) (h : (t.gpr .x13).toNat ≠ 0 ↔ j + 1 ≠ c) :
@@ -215,9 +214,6 @@ def fastOf (sts : Prog isa) : Prog isa := seqs [
   recip,
   .block [ldh .x13 sW],
   sts]
-
-theorem fast_eq_of : fast = fastOf steps := rfl
-theorem fastPub_eq_of : fastPub = fastOf stepsPub := rfl
 
 /-- `fast`'s pieces before its steps: `x := R - m`, `v`, and the count `w`. -/
 theorem r2dFastHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M : Nat} (hg : Good s B Z w minv)

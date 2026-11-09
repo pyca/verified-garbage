@@ -108,14 +108,6 @@ def updateSat : State :=
   { Proof.Md5.X86.Stream.Update.sat with
     rd := [⟨0x2000, 0⟩], wr := [⟨0x1000, 80⟩, ⟨0x3000, 112⟩, ⟨0x5004, 24⟩] }
 
-theorem compress :
-    Verified X86.target Impl.Md5.X86.compress (Proof.Md5.compressContract X86.abi) :=
-  Proof.Md5.X86.compress_verified.of_implies (by
-    contract_implies [Proof.Md5.compressContract, Proof.Md5.compressSig, Proof.Md5.compressX86,
-      X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      [Proof.Md5.X86.satState, Proof.Md5.X86.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read]
-      using Proof.Md5.X86.satState)
-
 theorem init :
     Verified X86.target Impl.Md5.X86.Stream.init (Spec.Md5.initContract X86.abi) :=
   Proof.Md5.X86.Stream.init_verified.of_implies (by

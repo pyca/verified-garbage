@@ -86,16 +86,6 @@ theorem In.keep (h : In Ex base bytes len args s) {regs : List Reg} (K : Keeps r
     by rw [K.1 _ sp]; exact h.room, by rw [K.1 _ sp]; exact h.top, h.need, h.hbase, h.hbytes,
     by rw [K.2.1, K.2.2]; exact h.extra⟩
 
-theorem In.keepZ (h : In Ex base bytes len args s) {regs : List Reg} (K : Keeps regs s t)
-    (di : .edi ∉ regs) (sp : .esp ∉ regs)
-    (O : VG.Proof.Mont.X86.OutsZ base (s.gpr .esp) [(0, bytes)] s.mem t.mem) : In Ex base bytes len args t :=
-  ⟨h.scratch.of_keeps K di sp, h.lower, h.upper,
-    fun i hi => ⟨(h.stack i hi).stack.keep K sp,
-      (Crt.stackValue_keepZ (h.stack i hi).stack K sp hi h.top (by have := h.room.low; omega) O).trans
-        (h.stack i hi).value⟩, h.outLen,
-    by rw [K.1 _ sp]; exact h.room, by rw [K.1 _ sp]; exact h.top, h.need, h.hbase, h.hbytes,
-    by rw [K.2.1, K.2.2]; exact h.extra⟩
-
 theorem In.ws (h : In Ex base bytes len args s) : Ws s base bytes :=
   ⟨h.scratch.wr, h.scratch.nowrap⟩
 

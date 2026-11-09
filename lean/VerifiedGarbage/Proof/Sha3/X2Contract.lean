@@ -57,19 +57,4 @@ def permuteX2Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       stateX2At m' states 1 = keccakF (stateX2At m states 1))
     (stack := stack)
 
-/-- `vg_keccak_f1600_x3(states: *mut [u64; 50], state: *mut [u64; 25],
-scratch: *mut [u64; 16])`. `scratch` is working space. -/
-def permuteX3Sig : Sig where
-  params := [("states", .array true .u64 50), ("state", .array true .u64 25),
-    ("scratch", .array true .u64 16)]
-
-/-- Applies Keccak-f[1600] to each of the two states interleaved at `states`
-and to the state at `state`. The states are secret. -/
-def permuteX3Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  permuteX3Sig.contract A (post := fun states state _scratch m m' _ =>
-    stateX2At m' states 0 = keccakF (stateX2At m states 0) ∧
-      stateX2At m' states 1 = keccakF (stateX2At m states 1) ∧
-      stateAt m' state = keccakF (stateAt m state))
-    (stack := stack)
-
 end VG.Proof.Sha3

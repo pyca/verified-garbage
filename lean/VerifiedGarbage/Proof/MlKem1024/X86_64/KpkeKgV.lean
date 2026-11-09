@@ -58,33 +58,4 @@ theorem kpkeKg1024Y_correct : ∀ s, (kpkeKgK kem1024).pre s →
       (kpkeKgK kem1024).post s s' :=
   KpkeKg.kpkeKg_correct PrimsOk.avx2 keWf1024 kgMul16Y4_correct (by lit_decide) (by lit_decide) (by lit_decide)
 
-theorem kpkeKg1024_of {c : Prog isa}
-    (hc : ∀ s, (kpkeKgK kem1024).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧
-      (kpkeKgK kem1024).post s s')
-    (hct : ConstantTime isa (kpkeKgK kem1024).pre (kpkeKgK kem1024).pub c) :
-    Verified X86_64.target c (Proof.MlKem.kpkeKeyGenContract 4 X86_64.abi) :=
-  Verified.of_correct hc hct
-    { pre := by sig_implies_pre [kpkeKeyGenContract, kpkeKeyGenSig, kpkeKgK, X86_64.abi,
-        X86_64.argRegs, kScrE, Kem.k, kem1024, retR, mlKem1024]
-      post := by sig_implies_post [kpkeKeyGenContract, kpkeKeyGenSig, kpkeKgK, X86_64.abi,
-        X86_64.argRegs, kScrE, Kem.k, kem1024, retR, mlKem1024]
-      pub := by sig_implies_pub [kpkeKeyGenContract, kpkeKeyGenSig, kpkeKgK, X86_64.abi,
-        X86_64.argRegs, kScrE, Kem.k, kem1024, retR, mlKem1024]
-      sat := by
-        refine ⟨kpkeKgSat kem1024, ?_⟩
-        sig_pre [kpkeKeyGenContract, kpkeKeyGenSig, kpkeKgK, X86_64.abi, X86_64.argRegs]
-        and_intros
-        all_goals first
-          | rfl
-          | decide
-          | exact Region.disjoint_of_sep (by decide)
-          | exact vecReducedW16_zero _ _
-          | (intro a h₁ h₂
-             simp only [Region.Contains] at h₁ h₂
-             bv_omega) }
-
-theorem kpkeKg1024Y_verified :
-    Verified X86_64.target (kpkeKg kem1024 .avx2 keygenMul16Y) (Proof.MlKem.kpkeKeyGenContract 4 X86_64.abi) :=
-  kpkeKg1024_of kpkeKg1024Y_correct kpkeKg1024Y_ct
-
 end VG.Proof.MlKem1024.X86_64

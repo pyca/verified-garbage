@@ -15,8 +15,8 @@ public import VerifiedGarbage.Spec.BrainpoolP512r1
 
 Not trusted: what the code of the curves' internal functions (`Rust.Internal`),
 which only verified code calls, is generated from, and where it keeps its
-numbers. Their contracts are in `Proof/Weierstrass/MontContract.lean`, in these
-namespaces.
+numbers. The definitions their proofs share are in
+`Proof/Weierstrass/MontContract.lean`, in these namespaces.
 -/
 
 @[expose] public section
@@ -97,11 +97,5 @@ def brainpoolp512r1p : Modulus :=
 
 def brainpoolp512r1n : Modulus :=
   ⟨"brainpoolp512r1", "n", Spec.BrainpoolP512r1.n, 8, "brainpoolP512r1's order `n`"⟩
-
-/-- Every modulus. -/
-def moduli : List Modulus :=
-  [p192p, p192n, p224p, p224n, p256p, p256n, p384p, p384n, p521p, p521n, secp256k1p, secp256k1n,
-    brainpoolp256r1p, brainpoolp256r1n, brainpoolp384r1p, brainpoolp384r1n,
-    brainpoolp512r1p, brainpoolp512r1n]
 
 end VG.Impl.Weierstrass.Mont

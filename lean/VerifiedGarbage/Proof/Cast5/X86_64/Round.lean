@@ -46,13 +46,6 @@ theorem rotateStep_ok (s : State) {b : Nat} (hb : b < 5) {a kb : BitVec 32}
     xrun [imm, hax, h9, execShift32, hn, List.append_nil, xmm_setReg, xmm_setFlags]
     exact ⟨rfl, by rw [ite_eq_right h4]⟩
 
-/-- The register state the blocks of a round leave alone. -/
-structure Same (s t : State) : Prop where
-  mem : t.mem = s.mem
-  rd : t.rd = s.rd
-  wr : t.wr = s.wr
-  xmm : t.xmm = s.xmm
-
 theorem rotate_ok (s : State) {a kb : BitVec 32}
     (hax : s.gpr .rax = a.setWidth 64) (h9 : s.gpr .r9 = kb.setWidth 64) :
     WP isa (.block rotate) s fun t =>

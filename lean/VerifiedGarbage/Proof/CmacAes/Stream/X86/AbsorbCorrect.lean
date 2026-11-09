@@ -50,7 +50,7 @@ theorem absorb_wp {s₀ : State} (h0 : absorbX86.pre s₀) :
   have fSt : (aSt s₀).toNat + 304 ≤ 2 ^ 32 := hp.fSt
   have fD : (aD s₀).toNat + aL s₀ ≤ 2 ^ 32 := hp.fD
   have fS : (aSc s₀).toNat + 2304 ≤ 2 ^ 32 := hp.fS
-  have e56 := hp.esp56
+  have e60 := hp.esp60
   have ⟨hfL, hfh⟩ := f_le (aC s₀) (aL s₀)
   have hsum := nb_le (aC s₀) (aL s₀)
   have hrr := rest_le (aC s₀) (aL s₀)
@@ -91,10 +91,10 @@ theorem absorb_wp {s₀ : State} (h0 : absorbX86.pre s₀) :
   obtain ⟨m₁₀, g₁₀, rd₁₀, wr₁₀⟩ := h₁₀
   -- The frames.
   have f6 : Frame [⟨(aSt s₀).setWidth 64 + BitVec.ofNat 64 272, 16⟩, ⟨(aSc s₀).setWidth 64, 2176⟩,
-      below (aE s₀) 56] s₅.mem s₆.mem := by
+      below (aE s₀) 60] s₅.mem s₆.mem := by
     have := h₆.frame; rw [h₅.ctx.esp, add_setWidth (by omega_using [fSt])] at this; exact this
   have f8 : Frame [⟨(aSt s₀).setWidth 64 + BitVec.ofNat 64 272, 16⟩, ⟨(aSc s₀).setWidth 64, 2176⟩,
-      below (aE s₀) 56] s₆.mem s₈.mem := by
+      below (aE s₀) 60] s₆.mem s₈.mem := by
     have := h₈.frame; rw [h₇.aft.ctx.esp, add_setWidth (by omega_using [fSt]), m₇] at this; exact this
   have m₁₀' : s₁₀.mem = writeBytes s₈.mem ((aSt s₀).setWidth 64 + BitVec.ofNat 64 288)
       (Spec.Aes.bytesAt s₈.mem ((aD s₀).setWidth 64 + BitVec.ofNat 64 (fOf (aC s₀) (aL s₀) + 16 * nbOf (aC s₀) (aL s₀)))
@@ -114,7 +114,7 @@ theorem absorb_wp {s₀ : State} (h0 : absorbX86.pre s₀) :
       (savedMem s₀ (aSc s₀)) s₅.mem := by rw [h₅.mem]; exact m4_frame s₀
   let K : List Region := [⟨(aSc s₀).setWidth 64 + BitVec.ofNat 64 2176, 16⟩,
     ⟨(aSt s₀).setWidth 64 + BitVec.ofNat 64 (288 + held (aC s₀)), fOf (aC s₀) (aL s₀)⟩,
-    ⟨(aSt s₀).setWidth 64 + BitVec.ofNat 64 272, 16⟩, ⟨(aSc s₀).setWidth 64, 2176⟩, below (aE s₀) 56,
+    ⟨(aSt s₀).setWidth 64 + BitVec.ofNat 64 272, 16⟩, ⟨(aSc s₀).setWidth 64, 2176⟩, below (aE s₀) 60,
     ⟨(aSt s₀).setWidth 64 + BitVec.ofNat 64 288, restOf (aC s₀) (aL s₀)⟩]
   have F5 : Frame K s₀.mem s₅.mem := (fSv.mono (by simp [K])).trans (fC1.mono (by simp [K]))
   have F6 : Frame K s₀.mem s₆.mem := F5.trans (f6.mono (by simp [K]))
@@ -184,7 +184,7 @@ theorem absorb_wp {s₀ : State} (h0 : absorbX86.pre s₀) :
     · exact hp.ret_st.sub_right (Offset.sub_base _ (by omega_using [hfh]))
     · exact hp.ret_st.sub_right (Offset.sub_base _ (by decide))
     · exact hp.ret_s.sub_right (Region.sub_prefix (by decide))
-    · exact ret_below e56
+    · exact ret_below e60
     · exact hp.ret_st.sub_right (Offset.sub_base _ (by omega_using [hrr]))
   refine ⟨⟨hcs, F11.readW (r := ⟨(aE s₀).setWidth 64, 4⟩) (Region.contains_self _ _) dRet (by decide)⟩, ?_⟩
   intro key msg hr hRk hcnt hlen
@@ -271,7 +271,7 @@ theorem absorb_wp {s₀ : State} (h0 : absorbX86.pre s₀) :
       have sub : Region.Sub ⟨(aSt s₀).setWidth 64 + BitVec.ofNat 64 288, held (aC s₀) + aL s₀⟩ (astR s₀) :=
         Offset.sub_base _ (by omega_using [hfh, hfL'])
       have dj : ∀ r ∈ [⟨(aSt s₀).setWidth 64 + BitVec.ofNat 64 272, 16⟩, ⟨(aSc s₀).setWidth 64, 2176⟩,
-          below (aE s₀) 56], (⟨(aSt s₀).setWidth 64 + BitVec.ofNat 64 288, held (aC s₀) + aL s₀⟩ : Region).Disjoint r := by
+          below (aE s₀) 60], (⟨(aSt s₀).setWidth 64 + BitVec.ofNat 64 288, held (aC s₀) + aL s₀⟩ : Region).Disjoint r := by
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl

@@ -50,17 +50,6 @@ theorem pin1 {I : State → Prop} {a : Reg} {x : BitVec 32} (h : ∀ s, I s → 
     ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ [a], s₁.gpr r = s₂.gpr r := fun s₁ s₂ h₁ h₂ r hr => by
   simp only [List.mem_singleton] at hr; subst hr; rw [h _ h₁, h _ h₂]
 
-/-- Four registers pinned. -/
-theorem pin4 {I : State → Prop} {a b c d : Reg} {x y z w : BitVec 32}
-    (h : ∀ s, I s → s.gpr a = x ∧ s.gpr b = y ∧ s.gpr c = z ∧ s.gpr d = w) :
-    ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ [a, b, c, d], s₁.gpr r = s₂.gpr r := fun s₁ s₂ h₁ h₂ r hr => by
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · rw [(h _ h₁).1, (h _ h₂).1]
-  · rw [(h _ h₁).2.1, (h _ h₂).2.1]
-  · rw [(h _ h₁).2.2.1, (h _ h₂).2.2.1]
-  · rw [(h _ h₁).2.2.2, (h _ h₂).2.2.2]
-
 /-- A loop of `n` iterations, its body constant time and leaving the
 condition to loop back exactly while iterations are left. -/
 theorem CT.loopN {body : Prog isa} {c : Cond} (Inv : Nat → State → Prop)

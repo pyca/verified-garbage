@@ -45,14 +45,6 @@ theorem ltBit_eq {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 63) :
     BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   split <;> omega
 
-/-- Whether `ltBit`'s bit is zero. -/
-theorem ltBit_zero {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 63) :
-    ((BitVec.ofNat 64 x - BitVec.ofNat 64 y) >>> 63 == 0) = decide (y ≤ x) := by
-  rw [ltBit_eq hx hy]
-  split
-  · rw [decide_eq_false (by omega)]; rfl
-  · rw [decide_eq_true (by omega)]; rfl
-
 /-- The counter of a loop over 256 coefficients: `j + 1 - 256`. -/
 theorem cnt256 {j : Nat} (hj : j < 256) :
     (BitVec.ofNat 64 (j + 1) - BitVec.ofNat 64 256 != 0) = decide (j + 1 ≠ 256) := by
@@ -83,10 +75,6 @@ theorem byte_ofNat (b : Byte) : b.setWidth 64 = BitVec.ofNat 64 b.toNat := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, ofNat_lt (by have := b.isLt; omega),
     Nat.mod_eq_of_lt (by have := b.isLt; omega)]
-
-/-- A word, zero-extended: zero exactly when the word is. -/
-theorem word_w_zero (v : BitVec 32) : ((v.setWidth 64).setWidth 32 == 0) = (v == 0) := by
-  rw [lo32_ext]
 
 theorem eval_zero_w (s : State) (r : Reg) :
     isa.eval (.zero .w r) s = some ((s.gpr r).setWidth 32 == 0) := by

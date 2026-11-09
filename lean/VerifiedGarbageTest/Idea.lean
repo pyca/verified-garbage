@@ -13,8 +13,9 @@ pyca/cryptography reformatted them, read from the unmodified file under
 `vectors/cryptography-idea/` (see `vectors/sources/`) when this file is
 built, so that a transcription error in the spec fails the build. Every
 vector is checked:
-* in both directions, by `encryptBlock` and `decryptBlock`, and by `ecb`
-  under the encryption and decryption subkeys;
+* in both directions, by `encryptBlock` and `decryptBlock` below (the
+  spec's `cryptBlock` under `expandKey` and under `invertKey` of it), and
+  by `ecb` under the encryption and decryption subkeys;
 * with ECB on every vector of the same key at once, whole and in two
   pieces, and on no blocks;
 * where it gives them, against the ciphertexts of 100 and 1000 iterated
@@ -54,6 +55,16 @@ def bytes (fs : Fields) (k : String) (n : Nat) : Except String (List Byte) := do
   return bs
 
 def block (bs : List Byte) : Block := Vector.ofFn fun i => bs.getD i 0
+
+/-- IDEA encryption of the block `b` under the key `key`: `cryptBlock` under
+the encryption subkeys. -/
+def encryptBlock (key : Vector Byte 16) (b : Block) : Block :=
+  cryptBlock (expandKey key) b
+
+/-- IDEA decryption of the block `b` under the key `key`: `cryptBlock` under
+the decryption subkeys. -/
+def decryptBlock (key : Vector Byte 16) (b : Block) : Block :=
+  cryptBlock (invertKey (expandKey key)) b
 
 def iterate (f : Block → Block) : Nat → Block → Block
   | 0, b => b

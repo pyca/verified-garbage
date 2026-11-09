@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Md5.Arm.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # MD5 (RFC 1321) on ARMv7 -/
 

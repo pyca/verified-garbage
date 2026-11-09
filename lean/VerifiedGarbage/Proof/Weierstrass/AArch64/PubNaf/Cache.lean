@@ -54,17 +54,6 @@ theorem CacheLay.loopW {K : WinCfg} {size : Nat} (hC : CacheLay K size) :
   · exact hC.slots y (winOther_mem hy)
   · exact hC.tmp
 
-/-- What the window method writes is below the cache. -/
-theorem CacheLay.winW {K : WinCfg} {size : Nat} (hC : CacheLay K size) :
-    ∀ w ∈ winW K, w.1 + w.2 ≤ cacheAt K 1 := by
-  intro w hw
-  simp only [VG.Proof.Weierstrass.winW, winWs, List.mem_append, List.mem_map,
-    List.mem_singleton] at hw
-  rcases hw with ⟨y, hy | hy, rfl⟩ | rfl
-  · exact hC.slots y (winOther_mem hy)
-  · exact hC.slots y (by simp only [winSlots, List.mem_append]; exact Or.inr hy)
-  · exact hC.tmp
-
 /-- Ranges apart from the table and the cache of entries `1 … m`: below the
 cache and apart from the table, or above entry `m`'s cache. -/
 def Away (K : WinCfg) (m : Nat) (W : List (Nat × Nat)) : Prop :=

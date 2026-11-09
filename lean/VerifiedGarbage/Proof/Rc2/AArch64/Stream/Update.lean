@@ -66,9 +66,9 @@ theorem call_ok (d : Spec.Rc2.Direction) {s : State} {c dp op b : Addr} {len ol 
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       Frame [⟨c + BitVec.ofNat 64 128, 8⟩, ⟨op, 8 * n⟩, ⟨b, 512⟩] s.mem s'.mem →
       (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r) →
-      Spec.Rc2.blocksAt s'.mem op n = (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem c) d
+      Spec.Rc2.blocksAt s'.mem op n = (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem c) d
         (Spec.Rc2.blockAt s.mem (c + BitVec.ofNat 64 128)) (Spec.Rc2.blocksAt s.mem op n)).1 →
-      Spec.Rc2.blockAt s'.mem (c + BitVec.ofNat 64 128) = (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem c) d
+      Spec.Rc2.blockAt s'.mem (c + BitVec.ofNat 64 128) = (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem c) d
         (Spec.Rc2.blockAt s.mem (c + BitVec.ofNat 64 128)) (Spec.Rc2.blocksAt s.mem op n)).2 →
       Q s') :
     WP isa (cbcCall d) s Q := by

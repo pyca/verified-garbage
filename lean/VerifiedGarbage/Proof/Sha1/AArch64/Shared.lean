@@ -26,14 +26,6 @@ code calls) run in a frame that allocates it (`Verified.stackScratch`).
 
 namespace VG.Proof.Sha1.AArch64.Shared
 
-theorem compress_of {code : Prog AArch64.isa}
-    (hv : Verified AArch64.target code Proof.Sha1.compressAArch64) :
-    Verified AArch64.target code (Proof.Sha1.compressContract AArch64.abi) :=
-  hv.of_implies (by
-    sig_implies [Proof.Sha1.compressContract, Proof.Sha1.compressSig,
-      Proof.Sha1.compressAArch64, AArch64.abi, AArch64.argRegs]
-      [Proof.Sha1.AArch64.satState] using Proof.Sha1.AArch64.satState)
-
 theorem init :
     Verified AArch64.target Impl.Sha1.AArch64.Stream.init (Spec.Sha1.initContract AArch64.abi) :=
   Proof.Sha1.AArch64.Stream.init_verified.of_implies (by
@@ -58,10 +50,6 @@ theorem finalizeScratch_of {code : Prog AArch64.isa}
       Proof.Sha1.finalizeAArch64, AArch64.abi, AArch64.argRegs]
       [Proof.Sha1.AArch64.Stream.Finalize.sat,
         MdStream.AArch64.Finalize.sat, Impl.Sha1.AArch64.Stream.params] using Proof.Sha1.AArch64.Stream.Finalize.sat)
-
-theorem compress :
-    Verified AArch64.target Impl.Sha1.AArch64.compress (Proof.Sha1.compressContract AArch64.abi) :=
-  compress_of Proof.Sha1.AArch64.compress_verified
 
 /-- `update`: `updateScratch_of` with its working space in a frame of its own. -/
 theorem update_of {code : Prog AArch64.isa}

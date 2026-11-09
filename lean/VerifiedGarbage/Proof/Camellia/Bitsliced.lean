@@ -39,8 +39,6 @@ def cpos (i : Nat) : Nat := 2 * (i % 4) + i / 4
 theorem pos_lt {c : Nat} (hc : c < 8) : pos c < 8 := by simp only [pos]; omega_arith
 theorem cpos_lt {i : Nat} (hi : i < 8) : cpos i < 8 := by simp only [cpos]; omega_arith
 theorem pos_cpos {i : Nat} (hi : i < 8) : pos (cpos i) = i := by simp only [pos, cpos]; omega_arith
-theorem cpos_pos {c : Nat} (hc : c < 8) : cpos (pos c) = c := by simp only [pos, cpos]; omega_arith
-
 /-- The planes `Q` hold the halves `d b` of the eight blocks. -/
 def HalfRel (Q : Nat → BitVec 64) (d : Nat → BitVec 64) : Prop :=
   ∀ b < 8, ∀ c < 8, ∀ j < 8, (Q j).getLsbD (8 * c + b) = (byteOf (d b) (pos c)).getLsbD j

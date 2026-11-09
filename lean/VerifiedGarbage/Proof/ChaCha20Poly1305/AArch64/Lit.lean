@@ -25,7 +25,6 @@ meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Lit
 namespace VG
 
 materialize_code Impl.ChaCha20Poly1305.AArch64.seal
-materialize_code Impl.ChaCha20Poly1305.AArch64.open
 materialize_code ChaCha20Poly1305.AArch64.sealScalar :=
   Impl.ChaCha20Poly1305.AArch64.sealMainCode .scalar false
 materialize_code ChaCha20Poly1305.AArch64.openScalar :=

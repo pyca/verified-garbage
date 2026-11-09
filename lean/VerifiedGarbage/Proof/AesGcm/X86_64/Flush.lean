@@ -46,21 +46,6 @@ theorem gh_tFrame {St W SP : Addr} {yo : Nat} {m m' : Mem}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp
 
-/-- Zeroing `T`: two stores. -/
-theorem zeroT_ok (s : State) {W : Addr} (h15 : s.gpr .r15 = W)
-    (hw : Covers [⟨W, 2560⟩] s.wr) :
-    ∃ s', runBlock isa [.mov32 .rax (imm 0), .store (at_ .r15 tO) .rax, .store (at_ .r15 (tO + 8)) .rax] s =
-        some s' ∧
-      s'.mem = (s.mem.writeW (W + BitVec.ofNat 64 96) (0 : BitVec 64)).writeW
-        (W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8) (0 : BitVec 64) ∧
-      (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have w₁ := in_off hw (show 96 + 8 ≤ 2560 by decide) (by decide)
-  have w₂ := in_off hw (show 104 + 8 ≤ 2560 by decide) (by decide)
-  refine ⟨_, by xrun [h15, w₁, w₂], ?_, ?_, ?_, ?_⟩
-  · simp only [mem_setReg, add_ofNat_assoc]; rfl
-  · intro r hr; simp [gpr_setReg, hr]
-  all_goals rfl
-
 /-- The 16 bytes after zeroing. -/
 theorem zeroT_bytes (m : Mem) (p : Addr) :
     bytesAt ((m.writeW p (0 : BitVec 64)).writeW (p + BitVec.ofNat 64 8) (0 : BitVec 64)) p 16 = zeros 16 := by
@@ -110,15 +95,6 @@ structure PadOut (Ctx St W SP : Addr) (yo : Nat) (H : Block) (x₀ x : List Byte
 section
 variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
 include L hyo
-
-theorem ctx_tFrame : ∀ r ∈ tFrame St W SP yo, (⟨Ctx + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact L.ctx_st (by decide) (by omega_arith)
-  · exact L.ctx_w (by decide) (by decide)
-  · exact L.ctx_w (by decide) (by decide)
-  · exact (L.stk_ctx (by decide)).symm
 
 /-- `flush yo`. -/
 theorem flush_ok {H : Block} {x : List Byte} {s : State} (h : FlIn Ctx St W SP yo H x s)

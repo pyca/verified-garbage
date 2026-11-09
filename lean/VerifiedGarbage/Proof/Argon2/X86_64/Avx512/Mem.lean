@@ -134,10 +134,6 @@ theorem cvQ_lt : ∀ i < 128, cvQ i < 8 := by decide
 `4k + e % 4` of column `2c + e / 4`. -/
 def cvIdx (c k e : Nat) : Nat := 16 * (2 * k + e % 4 / 2) + 4 * c + 2 * (e / 4) + e % 2
 
-theorem cvIdx_colIndex {c k e : Nat} (hc : c < 4) (hk : k < 4) (he : e < 8) :
-    (colIndex ⟨2 * c + e / 4, by omega⟩ ⟨4 * k + e % 4, by omega⟩).val = cvIdx c k e := by
-  simp only [colIndex, cvIdx]; omega
-
 theorem cvOff_cvIdx : ∀ c < 4, ∀ k < 4, ∀ e < 8, cvOff (cvIdx c k e) = 256 * c + 64 * k + 8 * e := by
   decide
 

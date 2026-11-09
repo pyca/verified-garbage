@@ -28,7 +28,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 (`Impl/MdStream/AArch64.lean`), so they are verified by the generic proofs
 (`Proof/MdStream/AArch64/`) for SHA-1's instance (`Proof/Sha1/Md.lean`), given
 what SHA-1's own pieces do: its length field and digest (`shape`), that its
-compression function is verified (`callee`), and that the taint analysis
+compression function is verified, and that the taint analysis
 accepts its code.
 -/
 
@@ -51,17 +51,7 @@ theorem shape : Shape (P := params) md where
       ⟨g, rd, wr, sp, ?_⟩
     rw [m, digest_eq]
 
-theorem callee : CalleeOk (P := params) md Impl.Sha1.AArch64.compress :=
-  ⟨compress_verified.1, by lit_decide, by lit_decide⟩
-
 namespace Update
-
-theorem update_verified : Verified AArch64.target Impl.Sha1.AArch64.Stream.update Proof.Sha1.updateAArch64 :=
-  have h := MdStream.AArch64.Update.verified (name := "vg_sha1_compress") dims callee
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-      (fun _ _ _ _ hp => MdStream.AArch64.Update.agree₀ hp) (by taint_decide))
-    (instrs_keeps (by lit_decide)) (by lit_decide)
-  Verified.of_implies h ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Sha1.H0 m hr hc, fun _ _ _ _ h => h, h.2.2⟩
 
 /-- A state satisfying `update`'s precondition. -/
 abbrev sat : State := MdStream.AArch64.Update.sat params
@@ -69,14 +59,6 @@ abbrev sat : State := MdStream.AArch64.Update.sat params
 end Update
 
 namespace Finalize
-
-theorem finalize_verified : Verified AArch64.target Impl.Sha1.AArch64.Stream.finalize Proof.Sha1.finalizeAArch64 :=
-  have h := MdStream.AArch64.Finalize.verified (name := "vg_sha1_compress") dims shape callee
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
-      (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀ hp) (by taint_decide))
-    (instrs_keeps (by lit_decide)) (by lit_decide)
-  Verified.of_implies h
-    ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Sha1.H0 m hr trivial hc, fun _ _ _ _ h => h, h.2.2⟩
 
 /-- A state satisfying `finalize`'s precondition. -/
 abbrev sat : State := MdStream.AArch64.Finalize.sat params

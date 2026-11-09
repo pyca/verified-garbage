@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingle
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSample
 import VerifiedGarbage.Proof.Framework.Omega
@@ -35,10 +36,11 @@ theorem random_sign_test_one {t : State} :
   simp only [beq_iff_eq, BitVec.sub_eq_iff_eq_add, BitVec.zero_add]
 
 
-theorem random_sign_attempt (v : Backend) {s t : State} {h : RandomSignABI v.stack s}
+theorem random_sign_attempt (S : Signer) {s t : State} {h : RandomSignABI S.stack s}
     {hq : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {used fuel : Nat}
-    (hr : RandomSignRunning h hq used fuel t) (hpos : 0 < fuel) (hbound : fuel < 2 ^ 64) :
-    WP isa (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.mul)) t (RandomSignAttemptPost h hq used fuel) := by
+    (hr : RandomSignRunning h hq used fuel t) (hpos : 0 < fuel) (hbound : fuel < 2 ^ 64)
+    (hval : RandomValid S s) :
+    WP isa (RandomSign.attempt S.name S.code) t (RandomSignAttemptPost h hq used fuel) := by
   unfold RandomSign.attempt
   refine WP.seq (WP.mono (random_sign_sample hr) fun a ⟨ha, hstatus, har, hnonce⟩ => ?_)
   refine WP.seq (WP.mono (random_sign_test_one (t := a)) fun b ⟨⟨hbm, hbz⟩, hkb⟩ => ?_)
@@ -62,7 +64,7 @@ theorem random_sign_attempt (v : Backend) {s t : State} {h : RandomSignABI v.sta
     refine WP.ite true (by
       change some (b.gpr .x4 == 0#64) = _
       rw [hbz, ht]) (fun _ => ?_) (fun he => Bool.noConfusion he)
-    refine WP.mono (random_sign_single v hbr hpos hbound (by rw [hbm]; exact hnonce k hc)) fun u hu => ?_
+    refine WP.mono (random_sign_single S hbr hpos hbound (by rw [hbm]; exact hnonce k hc) hval) fun u hu => ?_
     simpa only [RandomSignAttemptPost, hc] using hu
 
 end VG.Proof.Dsa.AArch64

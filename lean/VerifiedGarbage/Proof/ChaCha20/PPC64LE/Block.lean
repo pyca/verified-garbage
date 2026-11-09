@@ -122,8 +122,6 @@ theorem wreg_ne_r0 {k : Nat} (hk : k < 16) : wreg k ≠ .r0 := by
   have key : ∀ k < 16, wreg k ≠ .r0 := by decide
   exact key k hk
 
-theorem not_words_r0 : ¬ Words .r0 := by
-  rintro ⟨k, hk, h⟩; exact wreg_ne_r0 hk h.symm
 theorem not_words_r3 : ¬ Words .r3 := by
   rintro ⟨k, hk, h⟩; interval_cases k <;> simp [wreg] at h
 theorem not_words_r4 : ¬ Words .r4 := by

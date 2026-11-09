@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallResult
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublic
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
@@ -54,12 +55,12 @@ def RandomSignLoopAgree {extra : Nat} {s t : State} (hs : RandomSignABI extra s)
   0 < fuel ∧ fuel ≤ 8 ∧ ∃ used, RandomSignRunning hs hqs used fuel a ∧ RandomSignRunning ht hqt used fuel b ∧
     (randomSignRemaining (randomInput s) used fuel).trace = (randomSignRemaining (randomInput t) used fuel).trace
 
-theorem random_sign_loop_ct (v : Backend) {s t : State}
-    {hs : RandomSignABI v.stack s} {ht : RandomSignABI v.stack t}
+theorem random_sign_loop_ct (S : Signer) {s t : State}
+    {hs : RandomSignABI S.stack s} {ht : RandomSignABI S.stack t}
     {hqs : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {hqt : 1 < Spec.Dsa.decodeBE (randomQBytes t)}
-    (hpub : RandomSignPublicAgree s t) (fuel : Nat) :
+    (hpub : RandomSignPublicAgree s t) (hvs : RandomValid S s) (hvt : RandomValid S t) (fuel : Nat) :
     RelCT isa (RandomSignLoopAgree hs ht hqs hqt fuel)
-      (.loop (.seq (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.sq v.mul)) randomSignStatusTest) .e)
+      (.loop (.seq (RandomSign.attempt S.name S.code) randomSignStatusTest) .e)
       (fun _ _ => True) := by
   refine RelCT.loop (M := isa) (RandomSignLoopAgree hs ht hqs hqt) ?_ fuel
   intro n a b tsa tsb u w ⟨hf, hn, used, ha, hb, htrace⟩ ea eb
@@ -74,9 +75,9 @@ theorem random_sign_loop_ct (v : Backend) {s t : State}
     | seq eaa eat =>
       cases eb with
       | seq eba ebt =>
-        have hattempt := random_sign_attempt_agreement v ha hb hpub (by omega) htrace eaa eba
-        have hpa := random_post_of_exec (random_sign_step v ha (by omega) (by omega)) eaa
-        have hpb := random_post_of_exec (random_sign_step v hb (by omega) (by omega)) eba
+        have hattempt := random_sign_attempt_agreement S ha hb hpub (by omega) htrace hvs hvt eaa eba
+        have hpa := random_post_of_exec (random_sign_step S ha (by omega) (by omega) hvs) eaa
+        have hpb := random_post_of_exec (random_sign_step S hb (by omega) (by omega) hvt) eba
         obtain ⟨_, hrunA⟩ := hpa.1
         obtain ⟨_, hrunB⟩ := hpb.1
         obtain ⟨_, _, hra⟩ := hrunA.ready

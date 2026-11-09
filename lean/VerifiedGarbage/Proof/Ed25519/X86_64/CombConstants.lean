@@ -161,8 +161,6 @@ theorem combG_ok : Rep combG (combGVal • baseAff) := by
   · show toZ (combGAff.1 * combGAff.2) * toZ 1 = toZ combGAff.1 * toZ combGAff.2
     rw [toZ_mul, toZ_one, mul_one]
 
-theorem combGCached_eq : combGCached = cache combG := by decide +kernel
-
 /-- The multiple of `B` the comb starts at, for bit 255 `b`: `(W b) / 32` modulo the group's order
 (`combStartW`), so that its five doublings give `[W b]B`. -/
 def combStartVal (b : Bool) : Nat :=

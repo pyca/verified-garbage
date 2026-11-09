@@ -31,14 +31,14 @@ theorem rResult_used_le {s₀ : State} (A : KeyABI s₀) : (rResult s₀).used �
   · exact Nat.zero_le _
 
 theorem code_ok (check derive : String) {s₀ : State} (A : KeyABI s₀) :
-    WP isa (code check derive Generate.checkParameters Generate.deriveKey) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed frameBytes u :=
+    WP isa (code check derive Generate.checkParameters Generate.deriveChecked) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed frameBytes u :=
   WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by have := A.stackLow; unfold frameBytes; omega)
     (WP.mono (body_ok check derive A) fun u hu => ⟨u, hu, rfl⟩)
 
 /-- `vg_dsa_generate_key` meets its contract. -/
 theorem generateKey_correct (check derive : String) (s : State)
     (hpre : (Spec.Dsa.generateKeyContract Arm.abi 144).pre s) :
-    ∃ t s', Exec isa (code check derive Generate.checkParameters Generate.deriveKey) s t s' ∧
+    ∃ t s', Exec isa (code check derive Generate.checkParameters Generate.deriveChecked) s t s' ∧
       abiPreserved s s' ∧ (Spec.Dsa.generateKeyContract Arm.abi 144).post s s' := by
   have A := keyABI_of hpre
   obtain ⟨t, s', he, u, hF, rfl⟩ := code_ok check derive A

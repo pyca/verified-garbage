@@ -60,8 +60,6 @@ is made from it first. -/
 def verifyGeneratorP256With (u : Bool) : Prog VG.Arm.isa :=
   .seq (Weierstrass.Arm.bits (p256.sl K) (bitsAt p256.n 0) (8 * p256.n)) (Weierstrass.Arm.mulGeneratorP256With u)
 
-def verifyGeneratorP256 : Prog VG.Arm.isa := verifyGeneratorP256With false
-
 def verifyP256CombWith (u : Bool) : Prog VG.Arm.isa :=
   Verify.Arm.Cfg.verifyWith (p256With u) (verifyGeneratorP256With u)
 

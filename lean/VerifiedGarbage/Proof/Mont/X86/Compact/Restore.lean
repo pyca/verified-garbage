@@ -14,9 +14,6 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 namespace VG.Proof.Mont.X86.Compact
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Proof.Mont.X86
 
-theorem inner_noSp : NoSp (.seq Compact.core (.block Compact.restoreRegs)) :=
-  .of_all (by decide +kernel)
-
 theorem restore_ok {s : State} {edi esi ebp : BitVec 32}
     (readEdi : readSrc s (.mem (at_ .esp 0)) = some edi)
     (readEsi : readSrc s (.mem (at_ .esp 4)) = some esi)

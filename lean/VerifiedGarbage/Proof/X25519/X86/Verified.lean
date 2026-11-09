@@ -18,12 +18,14 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
-# X25519 on x86 (32-bit): `Verified`
+# X25519 on x86 (32-bit): correct and constant time
 
-Constant time (by taint tracking: the only branches are on the loop counters,
-and every address is a pointer plus a constant or the counter, through the
-inversion's call of `vg_gf25519_r32_pow250`),
-satisfiability, and the shared contract of `Spec/`.
+Correctness (`x25519_ok`) and constant time (`x25519_ct`, by taint tracking:
+the only branches are on the loop counters, and every address is a pointer
+plus a constant or the counter, through the inversion's call of
+`vg_gf25519_r32_pow250`) against the target's contract `x25519X86`, which
+`vg_x25519_exchange`'s proof (`Exchange.lean`) composes, with a state
+satisfying it (`satState`).
 -/
 
 @[expose] public section
@@ -105,18 +107,5 @@ def satState : State where
 theorem x25519_ok (s : State) (hs : Proof.X25519.x25519X86.pre s) :
     ∃ t s', Exec isa Impl.X25519.X86.x25519 s t s' ∧ abiPreserved s s' ∧ Proof.X25519.x25519X86.post s s' :=
   x25519_correct (Pre.of s hs)
-
-theorem x25519_verified :
-    Verified X86.target Impl.X25519.X86.x25519 (Spec.X25519.x25519Contract X86.abi 8) :=
-  Verified.of_correct x25519_ok x25519_ct (by
-    have a0 : arg satState 0 = 0x1000 := by decide
-    have a1 : arg satState 1 = 0x2000 := by decide
-    have a2 : arg satState 2 = 0x3000 := by decide
-    have a3 : arg satState 3 = 0x4000 := by decide
-    have e : argAddr satState 0 = 0x8004 := by decide
-    have esp : satState.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, Proof.X25519.x25519X86, X86.abi,
-      X86.argSlots, X86.argVal, X86.argBytes, stackBelow]
-      [a0, a1, a2, a3, e, esp] using Proof.X25519.X86.satState)
 
 end VG.Proof.X25519.X86

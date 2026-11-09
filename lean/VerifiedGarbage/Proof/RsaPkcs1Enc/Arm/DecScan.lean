@@ -131,9 +131,6 @@ theorem zbit (b : Byte) :
   · subst h; rfl
   · simp only [setWidth_ne_zero h, ↓reduceIte, h, decide_false]; rfl
 
-theorem bit_toNat (p : Bool) : (if p = true then (1 : BitVec 32) else 0) = BitVec.ofNat 32 p.toNat := by
-  cases p <;> rfl
-
 /-! ## The scan -/
 
 /-- The first zero of `EM` before index `i`. -/
@@ -144,8 +141,6 @@ def SCI (P : EP) (j : Nat) (σ s : State) : Prop :=
   SB P σ s ∧ s.gpr .r0 = P.out + BitVec.ofNat 32 (2 + j) ∧ s.gpr .r1 = BitVec.ofNat 32 (2 + j) ∧
     s.gpr .lr = BitVec.ofNat 32 (P.K - 2 - j) ∧ s.gpr .r6 = 0 ∧
     s.gpr .r4 = BitVec.ofNat 32 (fz P σ (2 + j)).isSome.toNat ∧ s.gpr .r5 = BitVec.ofNat 32 ((fz P σ (2 + j)).getD 0)
-
-theorem firstZero_two (EM : List Byte) : firstZero EM 2 = none := rfl
 
 theorem scanInit_wp {σ s : State} (h : AL P σ s) : WP isa (.block scanInit) s (SCI P 0 σ) := by
   have hb := h.sb

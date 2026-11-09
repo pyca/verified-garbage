@@ -15,7 +15,7 @@ buffers' addresses and the lengths; `RL.Ok`, what `rsContract.pre` says of
 them (`rlOf_ok`). The frame is at `F`, 304 octets below the stack pointer.
 
 `Ctx L s₀ t`: in the frame's body, the registers that hold the call's data,
-the frame's saved registers, return address and `vg_dsa_sign`'s stack
+the frame's saved registers, return address and `vg_dsa_sign_prevalidated`'s stack
 arguments, and the key, the digest and the tape as on entry. A change of
 memory in `out`, `scratch` or the nonce keeps it (`Ctx.step`).
 -/
@@ -100,7 +100,7 @@ structure RL.Ok (L : RL) : Prop where
 
 theorem rlOf_ok {s : State} (h : rsContract.pre s) : (rlOf s).Ok := by
   obtain ⟨hF, hT, -, -, dOU, dOK, dOD, dOR, dOS, -, dUK, dUD, dUR, dUS, -, dKS, dDS, dRS, -,
-    dFO, dFU, dFK, dFD, dFR, dFS, -, nO, nU, nK, nD, nR, nS, lv, hol, hkl, hsw⟩ := h
+    dFO, dFU, dFK, dFD, dFR, dFS, -, nO, nU, nK, nD, nR, nS, lv, hol, hkl, hsw, -⟩ := h
   simp only [Spec.Dsa.randomSignScratchWords, Spec.Dsa.scratchWords] at hsw
   have e4 : 2 * (s.gpr .r9).toNat = (s.gpr .r4).toNat := hol.symm
   have e7 : 3 * (s.gpr .r8).toNat + (s.gpr .r4).toNat = (s.gpr .r7).toNat := by omega

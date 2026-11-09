@@ -9,8 +9,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # X25519 on RISCV64: the field elements the working space holds
 
-`SlotsOk m B qs v`: each slot `q` of `qs` holds the element `v q`. The field
-operations as updates of `v` (`mulS`, `addS`, `subS`, `cswapS`), for slots
+`SlotsOk m B qs v`: each slot `q` of `qs` holds the element `v q`. A write of
+one slot keeps the others' elements (`slots_after`, with `upd`), for slots
 whose separation from the output is decided on their offsets (`Sep1`), and
 writing only the field area `[0, ACC + 64)` of the working space (`FA`).
 -/
@@ -44,10 +44,6 @@ theorem upd_of_ne (v : Nat → Fe) {o q : Nat} (x : Fe) (h : q ≠ o) : upd v o 
 it, below `ACC`, and a multiple of 4 (for the alignment of words). -/
 def Sep1 (o : Nat) (qs : List Nat) : Bool :=
   o % 4 == 0 && qs.all fun q => (q == o || q + 32 ≤ o || o + 32 ≤ q) && q + 32 ≤ ACC && q % 4 == 0
-
-theorem sep1_o {o : Nat} {qs : List Nat} (h : Sep1 o qs = true) : o % 4 = 0 := by
-  simp only [Sep1, Bool.and_eq_true, beq_iff_eq] at h
-  exact h.1
 
 theorem sep1_get {o : Nat} {qs : List Nat} (h : Sep1 o qs = true) {q : Nat} (hq : q ∈ qs) :
     (q = o ∨ q + 32 ≤ o ∨ o + 32 ≤ q) ∧ q + 32 ≤ ACC ∧ q % 4 = 0 := by
@@ -87,109 +83,13 @@ theorem frame_FA {o : Nat} (ho : o + 32 ≤ ACC) {m m' : Mem}
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl <;> exact Offset.sub_base _ (by omega_using [ho])
 
-theorem mulS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = true)
-    (ho : o + 32 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
-    (hS : SlotsOk s.mem b qs v) :
-    WP isa (mul o x y) s fun s' => Rest clob s s' ∧ Frame [FA b] s.mem s'.mem ∧
-      SlotsOk s'.mem b (o :: qs) (upd v o (v x * v y)) := by
-  refine WP.mono (mul_ok (by decide) ho (sep1_get hq hx).2.1 (sep1_get hq hy).2.1 (by decide) (sep1_o hq)
-    (sep1_get hq hx).2.2 (sep1_get hq hy).2.2 hc)
-    fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho hf, fun q hq' => ?_⟩
-  by_cases hqo : q = o
-  · subst hqo
-    rw [upd_self, ← hS x hx, ← hS y hy]
-    exact toFe_mul hv
-  · rw [upd_of_ne _ _ hqo]
-    exact slots_after hq ho hf hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
-
 theorem frame_o {o : Nat} {m m' : Mem} (hf : Frame [⟨b + BitVec.ofNat 64 o, 32⟩] m m') :
     Frame [⟨b + BitVec.ofNat 64 o, 32⟩, ⟨b + BitVec.ofNat 64 ACC, 64⟩] m m' :=
   hf.mono fun r hr => by simp [List.mem_singleton.mp hr]
 
-theorem addS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = true)
-    (ho : o + 32 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
-    (hS : SlotsOk s.mem b qs v) :
-    WP isa (.block (add o x y)) s fun s' => Rest clob s s' ∧ Frame [FA b] s.mem s'.mem ∧
-      SlotsOk s'.mem b (o :: qs) (upd v o (v x + v y)) := by
-  have hx' := sep1_get hq hx
-  have hy' := sep1_get hq hy
-  have hA := ACC_eq
-  refine WP.mono (add_ok (by omega_using [hA, ho]) (by omega_using [hA, hx']) (by omega_using [hA, hy'])
-    (hx'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm) (hy'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm)
-    (sep1_o hq) hx'.2.2 hy'.2.2 hc) fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
-  by_cases hqo : q = o
-  · subst hqo
-    rw [upd_self, ← hS x hx, ← hS y hy]
-    exact toFe_add hv
-  · rw [upd_of_ne _ _ hqo]
-    exact slots_after hq ho (frame_o hf) hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
-
-theorem subS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = true)
-    (ho : o + 32 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
-    (hS : SlotsOk s.mem b qs v) :
-    WP isa (.block (sub o x y)) s fun s' => Rest clob s s' ∧ Frame [FA b] s.mem s'.mem ∧
-      SlotsOk s'.mem b (o :: qs) (upd v o (v x - v y)) := by
-  have hx' := sep1_get hq hx
-  have hy' := sep1_get hq hy
-  have hA := ACC_eq
-  refine WP.mono (sub_ok (by omega_using [hA, ho]) (by omega_using [hA, hx']) (by omega_using [hA, hy'])
-    (hx'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm) (hy'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm)
-    (sep1_o hq) hx'.2.2 hy'.2.2 hc) fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
-  by_cases hqo : q = o
-  · subst hqo
-    rw [upd_self, ← hS x hx, ← hS y hy]
-    exact toFe_sub hv
-  · rw [upd_of_ne _ _ hqo]
-    exact slots_after hq ho (frame_o hf) hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
-
 /-- The elements after swapping `x` and `y` if `sw = 1`. -/
 def swapV (x y sw : Nat) (v : Nat → Fe) (q : Nat) : Fe :=
   if q = x then sel sw (v x) (v y) else if q = y then sel sw (v y) (v x) else v q
-
-theorem cswapS {x y : Nat} {qs : List Nat} {v : Nat → Fe}
-    (hq : Sep1 x qs = true) (hq' : Sep1 y qs = true)
-    (hx : x ∈ qs) (hy : y ∈ qs) (hxy : x + 32 ≤ y ∨ y + 32 ≤ x) {s : State} (hc : Ctx b s) {sw : Nat}
-    (hsw : sw ≤ 1) (h11 : s.gpr .t0 = 0 - BitVec.ofNat 64 sw) (hS : SlotsOk s.mem b qs v) :
-    WP isa (.block (cswap x y)) s fun s' => Rest [.a2, .a4, .a5] s s' ∧ Frame [FA b] s.mem s'.mem ∧
-      SlotsOk s'.mem b qs (swapV x y sw v) := by
-  have hx' := sep1_get hq hx
-  have hy' := sep1_get hq hy
-  have hA := ACC_eq
-  refine WP.mono (cswap_ok (b := b) (by omega_using [hA, hx']) (by omega_using [hA, hy']) hxy hx'.2.2 hy'.2.2
-    hc hsw h11)
-    fun s' h => ⟨h.rest, ?_, ?_⟩
-  · refine h.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact Offset.sub_base _ (by omega_using [hA, hx', hy'])
-  · intro q hq''
-    have hlx : ∀ k < 8, limb s'.mem b x k = sel sw (limb s.mem b x k) (limb s.mem b y k) := h.lx
-    have hly : ∀ k < 8, limb s'.mem b y k = sel sw (limb s.mem b y k) (limb s.mem b x k) := h.ly
-    by_cases hqx : q = x
-    · subst hqx
-      simp only [swapV, ite_true]
-      rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hsw with rfl | rfl
-      · have e : ∀ k < 8, limb s'.mem b q k = limb s.mem b q k := fun k hk => by rw [hlx k hk]; rfl
-        rw [FS, V, val32_congr e]; exact hS q hx
-      · have e : ∀ k < 8, limb s'.mem b q k = limb s.mem b y k := fun k hk => by rw [hlx k hk]; rfl
-        rw [FS, V, val32_congr e]; exact hS y hy
-    by_cases hqy : q = y
-    · subst hqy
-      simp only [swapV, hqx, ite_false, ite_true]
-      rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hsw with rfl | rfl
-      · have e : ∀ k < 8, limb s'.mem b q k = limb s.mem b q k := fun k hk => by rw [hly k hk]; rfl
-        rw [FS, V, val32_congr e]; exact hS q hy
-      · have e : ∀ k < 8, limb s'.mem b q k = limb s.mem b x k := fun k hk => by rw [hly k hk]; rfl
-        rw [FS, V, val32_congr e]; exact hS x hx
-    · simp only [swapV, hqx, hqy, ite_false]
-      obtain ⟨h1, h3, -⟩ := sep1_get hq hq''
-      obtain ⟨h1', -⟩ := sep1_get hq' hq''
-      have e : ∀ k < 8, limb s'.mem b q k = limb s.mem b q k :=
-        limb_frame h.frame fun r hr k hk => by
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl
-          · exact Offset.disjoint _ (by omega_using [hqx, h1, hk]) (by omega_using [hA, h3, hk]) (by omega_using [hA, hx'])
-          · exact Offset.disjoint _ (by omega_using [hqy, h1', hk]) (by omega_using [hA, h3, hk]) (by omega_using [hA, hy'])
-      rw [FS, V, val32_congr e]; exact hS q hq''
 
 end
 

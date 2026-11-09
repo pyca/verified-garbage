@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Seed.Arm.CbcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # SEED-CBC artifacts on baseline ARMv7 -/
 

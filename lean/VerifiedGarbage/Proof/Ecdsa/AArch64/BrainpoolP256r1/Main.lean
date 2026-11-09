@@ -55,11 +55,4 @@ theorem stage₂ (hc : BaseCfgOk brainpoolp256r1) (hC : Law brainpoolp256r1.C)
   · rw [r₆ (i := RZ) (by decide) (by decide)]
     exact L₅ (brainpoolp256r1.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
 
-theorem sign_ok (hc : BaseCfgOk brainpoolp256r1) (hC : Law brainpoolp256r1.C)
-    {s₀ : State} (hp : SetupPre brainpoolp256r1 s₀) (ho : SignOutput brainpoolp256r1 s₀) :
-    WP isa signBrainpoolP256r1 s₀ fun s' =>
-      (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost brainpoolp256r1 s₀ s' := by
-  exact stage₁ hc (.inr (.inr rfl)) hp fun _ S₁ =>
-    stage₂ hc hC S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ => stage₄ hc hC ho rfl S₃
-
 end VG.Proof.Ecdsa.AArch64.BrainpoolP256r1

@@ -52,16 +52,4 @@ theorem selectRow_ok {s : State} {j v : Nat} (hj : j < 32) (hv : v < 32)
     simpa only [List.mem_singleton] using (acc_facts i hi).1)]
   simp only [hi, true_and]
 
-/-- No SIMD value controls a row's addresses or instruction sequence. -/
-theorem inner_ct :
-    RelCT isa (Two fun (p : Addr × BitVec 64) s => s.gpr .x16 = p.1 ∧ s.gpr .x6 = p.2)
-      (.block inner) (fun _ _ => True) := by
-  apply two_taint [.x16, .x6] (hc := .block [])
-  · intro p s t hs ht r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact hs.1.trans ht.1.symm
-    · exact hs.2.trans ht.2.symm
-  · rfl
-
 end VG.Proof.Bignum.AArch64.WindowVector

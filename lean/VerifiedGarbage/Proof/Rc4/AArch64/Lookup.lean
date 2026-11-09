@@ -116,10 +116,6 @@ theorem vbyte_tblN (s : State) (ext : Bool) {q : Nat} (hq : q < 4) (d m : VReg) 
   · rename_i h; rw [tableByte_quarter _ hq h]
   · rfl
 
-theorem toNat_xor_byte (X : BitVec 8) (k : Nat) (hk : k < 256) :
-    (X ^^^ BitVec.ofNat 8 k).toNat = X.toNat ^^^ k := by
-  rw [BitVec.toNat_xor, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk]
-
 theorem or_zero8 (y : BitVec 8) : y ||| 0 = y := by simp
 theorem zero_or8 (y : BitVec 8) : 0 ||| y = y := by simp
 

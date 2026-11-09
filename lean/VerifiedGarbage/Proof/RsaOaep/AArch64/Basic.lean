@@ -41,9 +41,6 @@ abbrev word (m : Mem) (p : Addr) (d : Nat) : BitVec 64 := m.readW (off p d) 64
 theorem off_off (p : Addr) (a b : Nat) : off (off p a) b = off p (a + b) := by
   simp only [off, BitVec.add_assoc, BitVec.ofNat_add]
 
-theorem off_add_one (p : Addr) (n : Nat) : off p n + 1 = off p (n + 1) := by
-  simp only [off, BitVec.ofNat_add, BitVec.add_assoc]; rfl
-
 /-- The 16 bytes below `F` that a call of a streaming hash function uses. -/
 abbrev retR (F : Addr) : Region := below F 16
 
@@ -223,9 +220,6 @@ theorem Rep.wq {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     Rep (m.write (off F (8 * k)) 8 v) F S V (upd W k v) := by
   have := R.wf G hk v
   simpa only [Mem.writeW, Nat.reduceDiv, Nat.reduceMul, BitVec.setWidth_eq] using this
-
-theorem upd_self {α : Type} (f : Nat → α) (a : Nat) : upd f a (f a) = f := by
-  funext x; simp only [upd]; split <;> simp_all
 
 theorem inR_nil (o : Nat) : ¬ inR [] o := by simp [inR]
 

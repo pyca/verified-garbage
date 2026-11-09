@@ -112,17 +112,6 @@ structure PH (p : PP) (s : State) : Prop where
 theorem PSt.ph {p : PP} {w : Nat} {s : State} (h : PSt p w s) : PH p s :=
   ⟨h.ws.scr, h.ws.x0, h.args, h.src, h.ou, h.dims⟩
 
-/-- `PH` survives a change within `PMut` ranges of the working space. -/
-theorem PH.step {p : PP} {s t : State} {rs : List (Nat × Nat)} {regs : List Reg} (h : PH p s)
-    (hf : Frm p.B rs s.mem t.mem) (hm : ∀ r ∈ rs, PMut r) (hZ : ∀ r ∈ rs, r.1 + r.2 ≤ p.Z) (k : Keep regs s t)
-    (h0 : .x0 ∉ regs) : PH p t :=
-  ⟨h.scr.congr k.wr, (k.gpr .x0 h0).trans h.x0, h.args.frm hf hm, h.src.congrK (InScr.of_frm hf hZ) k,
-    h.ou.congr k.wr, h.dims⟩
-
-theorem PSt.scr {p : PP} {w : Nat} {s : State} (h : PSt p w s) : Scr s p.B p.Z := h.ws.scr
-
-theorem PSt.x0 {p : PP} {w : Nat} {s : State} (h : PSt p w s) : s.gpr .x0 = p.B := h.ws.x0
-
 /-! ## The precondition -/
 
 /-- The public data, from the state on entry. -/

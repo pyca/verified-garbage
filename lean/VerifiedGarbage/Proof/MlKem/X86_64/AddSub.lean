@@ -259,28 +259,4 @@ theorem add_ct : ConstantTime isa (accK Spec.MlKem.add).pre (accK Spec.MlKem.add
 theorem sub_ct : ConstantTime isa (accK Spec.MlKem.sub).pre (accK Spec.MlKem.sub).pub Impl.MlKem.X86_64.sub :=
   VG.Taint.constantTime (A := taint) accτ acc_agree (by taint_decide)
 
-/-- A state satisfying the precondition. -/
-def accSat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rsp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x2000, 1024⟩]
-  wr := [⟨0x1000, 1024⟩]
-
-theorem add_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.add (Proof.MlKem.addContract X86_64.abi) :=
-  Verified.of_correct add_correct add_ct (by
-    mlkem_implies [Proof.MlKem.addContract, Proof.MlKem.accSig, accK, X86_64.abi, X86_64.argRegs]
-      [accSat] using accSat)
-
-theorem sub_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.sub (Proof.MlKem.subContract X86_64.abi) :=
-  Verified.of_correct sub_correct sub_ct (by
-    mlkem_implies [Proof.MlKem.subContract, Proof.MlKem.accSig, accK, X86_64.abi, X86_64.argRegs]
-      [accSat] using accSat)
-
 end VG.Proof.MlKem.X86_64

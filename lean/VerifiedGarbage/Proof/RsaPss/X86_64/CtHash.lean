@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
+public import VerifiedGarbage.Proof.RsaPss.X86_64.TabCall
 public import VerifiedGarbage.Proof.RsaPss.CtPad
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # RSASSA-PSS on x86-64: hashing a message of secret length
@@ -49,35 +51,53 @@ theorem Lay.after_call {t t' : State} {F S : Addr} (L : Lay t F S) {V : Nat → 
   refine ⟨L.congr hsp hwr ?_, R'⟩
   rw [slot_eq sScr 21 rfl, slot_eq sScr 21 rfl, R'.fr 21 (by decide), R.fr 21 (by decide)]
 
+/-- The return address of a call from the frame is apart from our working
+space. -/
+theorem Lay.dR8 {t : State} {F S : Addr} (L : Lay t F S) : (below F 8).Disjoint ⟨S, oRsa⟩ :=
+  L.dRS.sub_left (below_sub (by decide) (by decide))
+
+/-- A frame of a call whose callee makes no calls is within `retR`. -/
+theorem frame_ret {rs : List Region} {F : Addr} {m m' : Mem} (h : Frame (rs ++ [below F (8 * (0 + 1))]) m m') :
+    Frame (rs ++ [retR F]) m m' := Frame.below_mono h (by decide) (by decide)
+
 /-- A callee-saved register is not `rdi`. -/
-theorem cs_ne {r : Reg} (hr : r ∈ calleeSaved) : r ∉ [Reg.rdi] := by
+theorem cs_ne {r : Reg} (hr : r ∈ calleeSaved) : r ∉ [Reg.rdi, .r11] := by
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 include K in
-/-- The streaming `init` on `scratch + oSt`: its hash value is the initial one. -/
+/-- The streaming `init` on `scratch + oSt`, through the table: its hash
+value is the initial one. -/
 theorem ctInit_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep t.mem F S V W) :
-    WP isa (ctInit H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+    (R : Rep t.mem F S V W) {dn : String} {f : MdFns} (hT : HT H dn f W t.syms) :
+    WP isa (ctInit f) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧
       Rep t'.mem F S (fun o => if inR [(oSt, H.P.N + H.P.B)] o then t'.mem (off S o) else V o) W ∧
       hH.md.stateAt t'.mem (off S oSt) = hH.iv := by
   have hNB : H.P.N + H.P.B ≤ 192 := by have := hH.N_le; have := hH.B_le; omega_arith
-  refine WP.seq (WP.mono (scr_ok L (d := .rdi) (by decide) (o := oSt) (by decide)) fun u ⟨hdi, hm, hk⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (scr_ok L (d := .rdi) (by decide) (o := oSt) (by decide)) fun u₀ ⟨hdi₀, hm₀, hk₀⟩ y₀ => ?_)
+  have Lu₀ : Lay u₀ F S := L.congr (hk₀.gpr (by decide)) hk₀.2.2 (by rw [hm₀])
+  refine scall_ok Lu₀ (hm₀ ▸ R) (k := 8) rfl (by decide) (by decide) (by rw [y₀]; exact hT.wi) (by rw [y₀]; exact hT.fi)
+    fun u k₁ hm₁ _ => ?_
+  have hk : Keep [.rdi, .r11] t u := ⟨fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    rw [k₁.gpr (by simp [hr.2]), hk₀.gpr (by simp [hr.1])], k₁.2.1.trans hk₀.2.1, k₁.2.2.trans hk₀.2.2⟩
+  have hm : u.mem = t.mem := hm₁.trans hm₀
+  have hdi : u.gpr .rdi = off S oSt := (k₁.gpr (by decide)).trans hdi₀
   have Lu : Lay u F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
   have Ru : Rep u.mem F S V W := hm ▸ R
   refine WP.call (k := initK (H.P.N + H.P.B) hH.SH.Repr) hH.init.1 hH.initSp (by rw [K.iD]; decide)
     (rd := []) (wr := [⟨off S oSt, H.P.N + H.P.B⟩]) ?_ ?_ (Lu.cov (by unfold oSt oRsa; omega_using [hNB])) ?_
   · simp only [initK, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, State.callEntry_rsp,
       State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), hdi, Lu.rsp, true_and]
-    exact Region.Disjoint.sub_right L.dRS (Offset.sub_base S (by unfold oSt oRsa; omega_using [hNB]))
+    exact Region.Disjoint.sub_right L.dR8 (Offset.sub_base S (by unfold oSt oRsa; omega_using [hNB]))
   · exact Covers.right (Lu.cov (by unfold oSt oRsa; omega_using [hNB]))
   · intro t' hrd hwr hcs hF _ ⟨s₂, hm₂, _, hpost⟩
     simp only [initK, State.withRegions_gpr, State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), hdi, hm₂]
       at hpost
     rw [K.iD, Lu.rsp] at hF
     obtain ⟨L', R'⟩ := Lu.after_call Ru (rgs := [(oSt, H.P.N + H.P.B)])
-      (by simp only [List.mem_singleton]; rintro p rfl; unfold oSt oRsa; omega_using [hNB]) hF
+      (by simp only [List.mem_singleton]; rintro p rfl; unfold oSt oRsa; omega_using [hNB]) (by simpa [regs] using frame_ret hF)
       (hcs .rsp (by decide)) hwr
     refine ⟨L', hrd.trans hk.2.1, hwr.trans hk.2.2, fun r hr => (hcs r hr).trans ?_, R', ?_⟩
     · exact hk.gpr (cs_ne hr)

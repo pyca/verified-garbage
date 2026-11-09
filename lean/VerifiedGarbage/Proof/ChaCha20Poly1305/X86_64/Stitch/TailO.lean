@@ -223,7 +223,7 @@ structure TPO (c dp : Addr) (L o n : Nat) (R0 R1 : BitVec 64) (X : Nat) (sp : Ad
   st : stR (stA c) ∈ s.wr
   bf : bufR (bfA c) ∈ s.wr
   ps : psR c ∈ s.wr
-  dw : (⟨dp, L⟩ : Region) ∈ s.wr
+  dw : (⟨dp, L⟩ : Region) ∈ s.rd ++ s.wr
   le : o + n ≤ L
   rdi : s.gpr .rdi = stA c
   rcx : s.gpr .rcx = bfA c
@@ -277,7 +277,7 @@ theorem tailOg_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} 
   have hin : ∀ off n', off + n' ≤ 16 * k →
       InRegions (s₁.rd ++ s₁.wr) (dp + BitVec.ofNat 64 o + BitVec.ofNat 64 off) n' := by
     intro off n' hn
-    refine ⟨_, List.mem_append_right _ (by rw [wr₁]; exact h.dw), ?_⟩
+    refine ⟨_, by rw [rd₁, wr₁]; exact h.dw, ?_⟩
     rw [Offset.add_add]
     exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   -- The rounds.

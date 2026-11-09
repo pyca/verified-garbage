@@ -169,11 +169,6 @@ def cipher (nr : Nat) (w : List Byte) (input : State) : State :=
     (fun s j => addRoundKey (mixColumns (shiftRows (subBytes s))) (roundKey w (j + 1))) s
   addRoundKey (shiftRows (subBytes s)) (roundKey w nr)
 
-/-- AES encryption of the 16-byte block `input` under the key `key` (16,
-24 or 32 bytes). -/
-def encrypt (key : List Byte) (input : List Byte) : List Byte :=
-  (cipher (rounds (key.length / 4)) (expandKey key) (Vector.ofFn fun i => input.getD i 0)).toList
-
 /-! ## The inverse cipher (§5.3) -/
 
 /-- §5.3.1, `INVSHIFTROWS`, the inverse of `SHIFTROWS`:
@@ -228,11 +223,6 @@ def invCipher (nr : Nat) (w : List Byte) (input : State) : State :=
     (fun s j =>
       invMixColumns (addRoundKey (invSubBytes (invShiftRows s)) (roundKey w (nr - 1 - j)))) s
   addRoundKey (invSubBytes (invShiftRows s)) (roundKey w 0)
-
-/-- AES decryption of the 16-byte block `input` under the key `key` (16,
-24 or 32 bytes). -/
-def decrypt (key : List Byte) (input : List Byte) : List Byte :=
-  (invCipher (rounds (key.length / 4)) (expandKey key) (Vector.ofFn fun i => input.getD i 0)).toList
 
 /-! ## On memory -/
 

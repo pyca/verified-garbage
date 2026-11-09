@@ -76,21 +76,8 @@ end Update
 
 namespace Finalize
 
-theorem pre_of {s₀ : State} (h : Proof.Sha256.finalizeX86_64.pre s₀) : MdStream.X86_64.Finalize.Pre params s₀ :=
-  MdStream.X86_64.Finalize.pre_of (H := md) h
-
 variable {f : Callee} (hf : f.Ok)
 include hf
-
-theorem correct {s₀ : State} (hp : MdStream.X86_64.Finalize.Pre params s₀) :
-    WP isa (finalize f) s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Sha256.finalizeX86_64.post s₀ s' ∧
-      s'.gpr .rdi = s₀.gpr .rdi ∧ s'.gpr .rcx = s₀.gpr .rcx :=
-  (MdStream.X86_64.Finalize.correct dims shape (callee hf) hp).mono fun _ ⟨g, h, di, cx⟩ =>
-    ⟨g, fun iv m hr hc => h iv m hr trivial hc, di, cx⟩
-
-theorem constantTime :
-    ConstantTime isa Proof.Sha256.finalizeX86_64.pre Proof.Sha256.finalizeX86_64.pub (finalize f) :=
-  MdStream.X86_64.Finalize.constantTime dims shape taints (callee hf)
 
 /-- `finalize` is verified if it never loads MXCSR. -/
 theorem verified_of (hm : (finalize f).allInstrs (fun i => !loadsMxcsr i) = true) :
@@ -103,17 +90,6 @@ omit hf
 
 /-- A state satisfying `finalize`'s precondition. -/
 abbrev sat : State := MdStream.X86_64.Finalize.sat params
-
-theorem writeW_bswap32 (m : Mem) (a : Addr) (w : BitVec 32) :
-    m.writeW a (bswap32 w) = writeBytes m a (Spec.Sha256.wordBytes w) :=
-  writeW32 m a true w
-
-theorem flat_length (H : Spec.Sha256.HashValue) (k : Nat) (hk : k ≤ 8) :
-    ((H.toList.take k).flatMap Spec.Sha256.wordBytes).length = 4 * k := by
-  rw [List.length_flatMap]
-  have : ∀ w ∈ H.toList.take k, (Spec.Sha256.wordBytes w).length = 4 := fun w _ => rfl
-  rw [List.map_congr_left this, List.map_const', List.sum_replicate_nat, List.length_take]
-  simp; omega
 
 end Finalize
 

@@ -26,11 +26,6 @@ theorem win_iff (x : BitVec 64) :
     (x - BitVec.ofNat 64 961).toNat < 64 ↔ 961 ≤ x.toNat ∧ x.toNat < 1025 := by
   bv_omega
 
-theorem readSrc_imm (t : State) {n : Nat}
-    (h : BitVec.signExtend 64 (BitVec.ofNat 32 n) = BitVec.ofNat 64 n) :
-    readSrc t (.imm (BitVec.ofNat 32 n)) = some (BitVec.ofNat 64 n) :=
-  congrArg some h
-
 /-- The length test, from `s`: `CF` set if `len` is below `lim` or in the
 window, and only `rax`, `r10` and the flags written. -/
 theorem smallTest_ok {lim : Nat} (hl : BitVec.signExtend 64 (BitVec.ofNat 32 lim) = BitVec.ofNat 64 lim)

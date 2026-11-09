@@ -78,16 +78,6 @@ theorem StaticRoots.nttTableAt {S : Nat} {s : State} (h : StaticRoots S s) {p : 
     (hp : InRegions s.wr p 1024) : NttTableAt s p :=
   ⟨h.forward.held,h.forward.fit,h.forward.apart_write hp,h.forward.aligned⟩
 
-/-- Wrap an existing phase proof while retaining immutable roots. The machine
-semantics supplies symbol preservation independently of the phase's ABI. -/
-theorem StaticRoots.wp {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State}
-    {ws : List (Ptr × Nat)} {code : Prog isa} {Q : State → Prop}
-    (h : StaticRoots S s) (L : Lay S rbs wbs s)
-    (hw : ∀ w∈ws,inB wbs w.1 w.2=true)
-    (hc : WP isa code s fun t => PPostB S s t ws ∧ Q t) :
-    WP isa code s fun t => PPostB S s t ws ∧ Q t ∧ StaticRoots S t := by
-  exact WP.mono_syms hc fun t ht hy => ⟨ht.1,ht.2,h.step_layout L ht.1 hy hw⟩
-
 /-- The optimized phase invariant adds static roots to the existing semantic
 state; no polynomial or rejection-schedule invariant is weakened. -/
 def RootedSt (p : Params) (S : Nat) (σ s : State) : Prop := St p S σ s ∧ StaticRoots S s

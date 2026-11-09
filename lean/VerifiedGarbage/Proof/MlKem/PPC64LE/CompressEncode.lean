@@ -577,48 +577,4 @@ theorem zext_rel : RelCT isa LoAgree (.block [.rotr .w .r4 .r4 0])
   · rw [g1 _ (by decide), g2 _ (by decide), hr _ (by decide)]
   · rw [g1 _ (by decide), g2 _ (by decide), hr _ (by decide)]
 
-theorem pre_of {s : State} (h : (Proof.MlKem.compressEncodeContract PPC64LE.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig, PPC64LE.abi, PPC64LE.argRegs] at h
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 1 | .r5 => 0x2000 | .r6 => 32 | _ => 0
-  lr := 0
-  sp := 0x4000
-  mem _ := 0
-  rd := [⟨0x1000, 1024⟩]
-  wr := [⟨0x2000, 32⟩]
-
-theorem verified : Verified PPC64LE.target Impl.MlKem.PPC64LE.compressEncode
-    (Proof.MlKem.compressEncodeContract PPC64LE.abi) := by
-  refine ⟨fun s hs => ?_, RelCT.constantTime (Q := fun _ _ => True) ?_, ?_⟩
-  · obtain ⟨t, s', he, hpres, hsp, hlr, h⟩ := correct (pre_of hs)
-    refine ⟨t, s', he, ⟨hpres, hsp, hlr⟩, ?_⟩
-    sig_post [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig, PPC64LE.abi, PPC64LE.argRegs]
-    exact bytesAt_eq! (compressEncode_length _ _ ▸ (pre_of hs).len.symm) h
-  · refine RelCT.seq (zext_rel.mono (fun s₁ s₂ ⟨_, _, hp⟩ => ?_) fun _ _ h => h)
-      (RelCT.taint (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
-        (fun _ _ ⟨hsp, hr⟩ => ⟨hsp, fun r h => hr r (Taint.mem_ofRegs.mp h)⟩) (by taint_decide))
-    sig_pub [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig, PPC64LE.abi, PPC64LE.argRegs] at hp
-    obtain ⟨hsp, h3, h4, h5, h6⟩ := hp
-    refine ⟨hsp, fun r hr => ?_, h4⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact h3
-    · exact h5
-    · exact h6
-  · refine ⟨satState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig, PPC64LE.abi,
-        PPC64LE.argRegs]
-      sig_and_intros
-      all_goals first
-        | trivial
-        | exact Add.reduced_zero _
-        | decide +kernel
-
 end VG.Proof.MlKem.PPC64LE.CompressEncode

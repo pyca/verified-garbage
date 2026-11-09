@@ -15,10 +15,10 @@ from `c` (`signIteration_eq`): so it depends on the bounds only through
 `SampleInBall`, and a larger bound gives the same result once a smaller one
 finishes (`signIteration_mono`, `signIteration_min`). The loop (`signLoop`)
 returns the first iteration that passes after iterations that were rejected
-(`signLoop_pass`), and nothing if all of them were rejected
-(`signLoop_exhaust`); within smaller bounds, it returns nothing if the larger
-bounds reject every iteration before one whose `SampleInBall` does not finish
-within the smaller ones (`signLoop_min_none`).
+(`signLoop_pass`), and nothing if all of them were rejected; within smaller
+bounds, it returns nothing if the larger bounds reject every iteration before
+one whose `SampleInBall` does not finish within the smaller ones
+(`signLoop_min_none`).
 -/
 
 @[expose] public section
@@ -134,10 +134,6 @@ theorem signLoop_pass {b : Bounds} {i N : Nat} (h : Rej p Â ŝ₁ ŝ₂ t₀Hat
     signLoop p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' N 0 = some (ct, z, hh) := by
   rw [signLoop_rej p Â ŝ₁ ŝ₂ t₀Hat μ ρ'' h (by omega), Nat.zero_add,
     show N - i = (N - i - 1) + 1 by omega, signLoop_succ, hp]
-
-theorem signLoop_exhaust {b : Bounds} {n : Nat} (h : Rej p Â ŝ₁ ŝ₂ t₀Hat μ ρ'' b 0 n) :
-    signLoop p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' n 0 = none := by
-  rw [signLoop_rej p Â ŝ₁ ŝ₂ t₀Hat μ ρ'' h (Nat.le_refl _), Nat.sub_self]; rfl
 
 /-- Within smaller bounds `b`, the loop returns nothing if the larger bounds
 `b'` reject the `i` iterations from `κ`, and the loop ends within them or at

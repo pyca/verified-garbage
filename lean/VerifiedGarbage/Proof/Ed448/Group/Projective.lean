@@ -22,11 +22,10 @@ specification's `d` is not a square (its power `(P - 1) / 2` is `-1`), so the
 Edwards addition law over `ZMod PZ` is complete (`params`).
 
 `Rep p a`: the projective point `p` of the specification represents the
-affine point `a`: `Z ≠ 0`, `X = xZ` and `Y = yZ`. Equivalently `Valid p`
-(`Z ≠ 0` and `(X/Z, Y/Z)` is on the curve) and `toAffine p = a` (`rep_iff`).
-The specification's addition, scalar multiplication, encoding and comparison
-only depend on the points represented, which is what lets an implementation
-compute other representatives of the same points. `double` (RFC 8032
+affine point `a`: `Z ≠ 0`, `X = xZ` and `Y = yZ`. The specification's
+addition, scalar multiplication, encoding and comparison only depend on the
+points represented, which is what lets an implementation compute other
+representatives of the same points. `double` (RFC 8032
 §5.2.4's doubling formulas, `Ref.lean`) doubles the point represented.
 -/
 
@@ -455,9 +454,6 @@ theorem toZ_ne_zero {a : Fe} : toZ a ≠ 0 ↔ a ≠ 0 := by
 theorem toZ_neg (a : Fe) : toZ (0 - a) = -toZ a := by
   rw [toZ_sub, toZ_zero, zero_sub]
 
-theorem val_toZ (a : Fe) : (toZ a).val = a.val := by
-  unfold toZ; rw [ZMod.val_natCast, PZ_eq, Nat.mod_eq_of_lt a.isLt]
-
 theorem toZ_pow (a : Fe) (e : Nat) : toZ (Spec.X448.pow a e) = toZ a ^ e := by
   induction e using Nat.strongRecOn generalizing a with
   | _ e ih =>
@@ -558,12 +554,6 @@ theorem rep_toAffine (h : Valid p) : Rep p (toAffine p) := by
   · rw [toAffine, dite_eq_left_of_eq_true (eq_true h)]; exact (div_mul_cancel₀ _ h.1).symm
   · rw [toAffine, dite_eq_left_of_eq_true (eq_true h)]; exact (div_mul_cancel₀ _ h.1).symm
 
-theorem rep_iff : Rep p a ↔ Valid p ∧ toAffine p = a :=
-  ⟨fun h => ⟨h.valid, h.toAffine_eq⟩, fun ⟨h, e⟩ => e ▸ rep_toAffine h⟩
-
-theorem Rep.unique (h : Rep p a) (h' : Rep p b) : a = b :=
-  h.toAffine_eq.symm.trans h'.toAffine_eq
-
 /-- Another representative of the same point: the same projective `X : Y : Z`. -/
 theorem Rep.of_proj (h : Rep p a) (hz : toZ q.Z ≠ 0)
     (hx : toZ q.X * toZ p.Z = toZ p.X * toZ q.Z) (hy : toZ q.Y * toZ p.Z = toZ p.Y * toZ q.Z) :
@@ -577,24 +567,6 @@ theorem rep_affine (x y : Fe) (h : OnCurve dZ (toZ x) (toZ y)) :
   ⟨by rw [toZ_one]; exact one_ne_zero, by rw [toZ_one, mul_one], by rw [toZ_one, mul_one]⟩
 
 /-! ## Scaling and negation -/
-
-/-- `⟨λX, λY, λZ⟩`. -/
-def scale (l : Fe) (p : Point) : Point := ⟨l * p.X, l * p.Y, l * p.Z⟩
-
-theorem Rep.scale {l : Fe} (h : Rep p a) (hl : l ≠ 0) : Rep (scale l p) a := by
-  refine ⟨?_, ?_, ?_⟩
-  · show toZ (l * p.Z) ≠ 0
-    rw [toZ_mul]; exact mul_ne_zero (toZ_ne_zero.mpr hl) h.z
-  · show toZ (l * p.X) = a.x * toZ (l * p.Z)
-    rw [toZ_mul, toZ_mul, h.x]; ring
-  · show toZ (l * p.Y) = a.y * toZ (l * p.Z)
-    rw [toZ_mul, toZ_mul, h.y]; ring
-
-theorem valid_scale {l : Fe} (h : Valid p) (hl : l ≠ 0) : Valid (scale l p) :=
-  ((rep_toAffine h).scale hl).valid
-
-theorem toAffine_scale {l : Fe} (h : Valid p) (hl : l ≠ 0) : toAffine (scale l p) = toAffine p :=
-  ((rep_toAffine h).scale hl).toAffine_eq
 
 theorem Rep.neg (h : Rep p a) : Rep (negPoint p) (-a) := by
   refine ⟨h.z, ?_, h.y⟩
@@ -619,10 +591,6 @@ theorem identity_rep : Rep Spec.Ed448.identity 0 := by
   · show toZ 1 = 1 * toZ 1
     rw [one_mul]
 
-theorem identity_valid : Valid Spec.Ed448.identity := identity_rep.valid
-
-theorem toAffine_identity : toAffine Spec.Ed448.identity = 0 := identity_rep.toAffine_eq
-
 private theorem base_fe :
     Spec.Ed448.basePoint.X * Spec.Ed448.basePoint.X + Spec.Ed448.basePoint.Y * Spec.Ed448.basePoint.Y =
       1 + Spec.Ed448.d * Spec.Ed448.basePoint.X * Spec.Ed448.basePoint.X *
@@ -646,10 +614,6 @@ theorem basePoint_rep : Rep Spec.Ed448.basePoint baseAff := by
   · rw [base_z, toZ_one]; exact one_ne_zero
   · rw [base_z, toZ_one, mul_one]; rfl
   · rw [base_z, toZ_one, mul_one]; rfl
-
-theorem basePoint_valid : Valid Spec.Ed448.basePoint := basePoint_rep.valid
-
-theorem toAffine_basePoint : toAffine Spec.Ed448.basePoint = baseAff := basePoint_rep.toAffine_eq
 
 /-! ## Addition and scalar multiplication -/
 
@@ -694,14 +658,6 @@ theorem pointAdd_rep {p q : Point} {a b : EPoint dZ} (hp : Rep p a) (hq : Rep q 
     linear_combination (-((toZ p.Z * toZ q.Z) ^ 4 * (a.y * b.y - a.x * b.x) *
       (1 + dZ * a.x * b.x * a.y * b.y))) * hv
 
-theorem pointAdd_valid {p q : Point} (hp : Valid p) (hq : Valid q) :
-    Valid (Spec.Ed448.pointAdd p q) :=
-  (pointAdd_rep (rep_toAffine hp) (rep_toAffine hq)).valid
-
-theorem toAffine_pointAdd {p q : Point} (hp : Valid p) (hq : Valid q) :
-    toAffine (Spec.Ed448.pointAdd p q) = toAffine p + toAffine q :=
-  (pointAdd_rep (rep_toAffine hp) (rep_toAffine hq)).toAffine_eq
-
 theorem pointMul_rep (s : Nat) : ∀ {p : Point} {a : EPoint dZ}, Rep p a →
     Rep (Spec.Ed448.pointMul s p) (s • a) := by
   induction s using Nat.strongRecOn with
@@ -718,13 +674,6 @@ theorem pointMul_rep (s : Nat) : ∀ {p : Point} {a : EPoint dZ}, Rep p a →
       · simp only [h2, ↓reduceIte]; rw [hs, h2, zero_smul, add_zero]; exact hq
       · simp only [h2, ↓reduceIte]
         rw [hs, show s % 2 = 1 by omega, one_smul]; exact pointAdd_rep hq hp
-
-theorem pointMul_valid (s : Nat) {p : Point} (hp : Valid p) : Valid (Spec.Ed448.pointMul s p) :=
-  (pointMul_rep s (rep_toAffine hp)).valid
-
-theorem toAffine_pointMul (s : Nat) {p : Point} (hp : Valid p) :
-    toAffine (Spec.Ed448.pointMul s p) = s • toAffine p :=
-  (pointMul_rep s (rep_toAffine hp)).toAffine_eq
 
 /-! ## Doubling (RFC 8032 §5.2.4) -/
 
@@ -757,12 +706,6 @@ theorem double_rep {p : Point} {a : EPoint dZ} (h : Rep p a) : Rep (double p) (a
   · rw [hZ, double_Y, toZ_mul, hE, hCD, add_y, addY, div_eq_mul_inv]
     linear_combination (-(toZ p.Z ^ 4 * (1 + dZ * a.x * a.x * a.y * a.y) * (a.x ^ 2 - a.y ^ 2))) * hv
 
-theorem double_valid {p : Point} (hp : Valid p) : Valid (double p) :=
-  (double_rep (rep_toAffine hp)).valid
-
-theorem toAffine_double {p : Point} (hp : Valid p) : toAffine (double p) = toAffine p + toAffine p :=
-  (double_rep (rep_toAffine hp)).toAffine_eq
-
 /-! ## Comparison and encoding -/
 
 theorem pointEqual_rep {p q : Point} {a b : EPoint dZ} (hp : Rep p a) (hq : Rep q b) :
@@ -783,10 +726,6 @@ theorem pointEqual_rep {p q : Point} {a b : EPoint dZ} (hp : Rep p a) (hq : Rep 
     · rw [toZ_mul, toZ_mul, hp.x, hq.x]; ring
     · rw [toZ_mul, toZ_mul, hp.y, hq.y]; ring
 
-theorem pointEqual_iff {p q : Point} (hp : Valid p) (hq : Valid q) :
-    Spec.Ed448.pointEqual p q = true ↔ toAffine p = toAffine q :=
-  pointEqual_rep (rep_toAffine hp) (rep_toAffine hq)
-
 /-- The encoding only depends on the affine coordinates `X/Z`, `Y/Z`. -/
 theorem encodePoint_congr {p q : Point}
     (hx : p.X * Spec.X448.pow p.Z (P - 2) = q.X * Spec.X448.pow q.Z (P - 2))
@@ -800,8 +739,6 @@ theorem encodePoint_congr {p q : Point}
 noncomputable def ofZ (z : ZMod PZ) : Fe := ⟨z.val, by rw [← PZ_eq]; exact ZMod.val_lt z⟩
 
 theorem toZ_ofZ (z : ZMod PZ) : toZ (ofZ z) = z := ZMod.natCast_zmod_val z
-
-theorem ofZ_toZ (a : Fe) : ofZ (toZ a) = a := Fin.ext (val_toZ a)
 
 /-- The encoding of an affine point (RFC 8032 §5.2.2): that of `(x, y, 1)`. -/
 noncomputable def encodeAff (a : EPoint dZ) : List Byte := Spec.Ed448.encodePoint ⟨ofZ a.x, ofZ a.y, 1⟩
@@ -817,9 +754,5 @@ theorem encodePoint_rep {p : Point} {a : EPoint dZ} (h : Rep p a) :
       mul_one]
   · rw [toZ_mul, toZ_pow, h.y, mul_pow_inv h.z, toZ_mul, toZ_pow, toZ_ofZ, toZ_one, one_pow,
       mul_one]
-
-theorem encodePoint_eq {p q : Point} (hp : Valid p) (hq : Valid q)
-    (h : toAffine p = toAffine q) : Spec.Ed448.encodePoint p = Spec.Ed448.encodePoint q := by
-  rw [encodePoint_rep (rep_toAffine hp), encodePoint_rep (rep_toAffine hq), h]
 
 end VG.Proof.Ed448

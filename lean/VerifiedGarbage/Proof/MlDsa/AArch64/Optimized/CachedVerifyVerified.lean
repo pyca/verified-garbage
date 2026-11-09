@@ -59,23 +59,4 @@ def verifySat (p : Params) : State where
   rd := [⟨0x1000, p.pkLen⟩, ⟨0x3000, 0⟩, ⟨0x3100, 0⟩, ⟨0x3200, p.sigLen⟩, ⟨0x8000, 64⟩]
   wr := [⟨0x10000, mScrLen p⟩]
 
-theorem verifyMessage_sat {p : Params} (hp : p ∈ params) :
-    ∃ s, (verifyMessageCachedContract p AArch64.abi 16).pre s := by
-  refine ⟨verifySat p, ?_⟩
-  simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl <;>
-    sig_pre [verifyMessageCachedContract, verifyMessageCachedSig, AArch64.abi, AArch64.argRegs,
-      List.range, List.range.loop] <;> sig_and_intros
-  all_goals first
-    | exact satMem_digest (by decide)
-    | rfl
-    | decide
-    | exact Region.disjoint_of_sep (by decide)
-
-theorem verifyMessage_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params} {n : String} {c : Prog isa}
-    (hV : Message.VerifyFn p c) (hp : p ∈ params) :
-    Verified AArch64.target (verifyMessageCached v.callee n c p) (verifyMessageCachedContract p AArch64.abi 16) :=
-  ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := verifyMessageCached_wp v hV hp h; ⟨t, s', he, ha, hq⟩,
-    verifyMessage_ct v hV hp, verifyMessage_sat hp⟩
-
 end VG.Proof.MlDsa.AArch64.Optimized.CachedVerify

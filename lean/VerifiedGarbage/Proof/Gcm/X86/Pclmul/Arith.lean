@@ -114,8 +114,6 @@ namespace Prod
 /-- Its class: `hi` holds the low powers. -/
 noncomputable def val (p : Prod) : Q := φ p.hi + x ^ 64 * φ p.mid + x ^ 128 * φ p.lo
 
-def xor (p q : Prod) : Prod := ⟨p.lo ^^^ q.lo, p.mid ^^^ q.mid, p.hi ^^^ q.hi⟩
-
 /-- The four products of `acc`, added to `p`. -/
 def acc (p : Prod) (a b : BitVec 128) : Prod :=
   ⟨p.lo ^^^ pclmul a b 0x00,

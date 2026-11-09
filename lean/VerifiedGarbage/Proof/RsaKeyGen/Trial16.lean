@@ -25,12 +25,6 @@ def nstep (s x : BitVec 32) : BitVec 32 := x * (2 - s * x)
 /-- `−s⁻¹ mod 2^16` for an odd `s`, as the 32-bit code computes it. -/
 def ninv (s : BitVec 32) : BitVec 32 := ((0 - nstep s (nstep s (nstep s s))) <<< 16) >>> 16
 
-theorem ninv_lt (s : BitVec 32) : (ninv s).toNat < 2 ^ 16 := by
-  unfold ninv
-  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-  have := (((0 - nstep s (nstep s (nstep s s))) <<< 16)).isLt
-  omega
-
 theorem slots_ninv : slots.all (fun s => (s * (ninv (BitVec.ofNat 32 s)).toNat + 1) % 2 ^ 16 == 0) = true := by
   unfold slots; rw [primes.lit_eq]; decide +kernel
 

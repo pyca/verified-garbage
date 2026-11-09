@@ -42,18 +42,4 @@ def signAArch64 : Contract AArch64.isa where
   pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | .x3 => 0x4000 | .x4 => 0x8000 | _ => 0
-  sp := 0x20000
-  mem _ := 0
-  rd := [⟨0x2000, 64⟩, ⟨0x3000, 64⟩, ⟨0x4000, 64⟩]
-  wr := [⟨0x1000, 128⟩, ⟨0x8000, 8192⟩]
-
-theorem implies : signAArch64.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP512r1.inst AArch64.abi) := by
-  sig_implies [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
-    Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, signAArch64, sig]
-    [satState] using satState
-
 end VG.Proof.Ecdsa.AArch64.BrainpoolP512r1

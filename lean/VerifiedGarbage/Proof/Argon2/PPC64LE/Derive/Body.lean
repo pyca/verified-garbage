@@ -92,9 +92,6 @@ theorem E_add (s₀ : State) (d : Nat) : E s₀ + BitVec.ofNat 64 d = at' s₀ (
   rw [E_eq, BitVec.add_assoc, BitVec.ofNat_add]
 
 theorem entry_sp (s₀ : State) : (entry s₀).sp = E s₀ := rfl
-theorem entry_gpr (s₀ : State) : (entry s₀).gpr = s₀.gpr := rfl
-theorem entry_rd (s₀ : State) : (entry s₀).rd = s₀.rd := rfl
-theorem entry_lr (s₀ : State) : (entry s₀).lr = s₀.lr := rfl
 theorem entry_wr (s₀ : State) : (entry s₀).wr = ⟨at' s₀ 80, 304⟩ :: s₀.wr := by
   show (⟨E s₀ + BitVec.ofNat 64 32, 304⟩ : Region) :: s₀.wr = _
   rw [E_add]
@@ -137,16 +134,6 @@ theorem Inv.mupd {s₀ s t : State} {m : Mem} (h : Inv s₀ s) (u : Mupd s t m)
 section
 variable {s₀ : State} (hp : DPre s₀)
 include hp
-
-theorem B_toNat : (B s₀).toNat = s₀.sp.toNat - 384 :=
-  toNat_sub_ofNat' (by have := hp.sp_lo; omega)
-
-theorem B_hi : (B s₀).toNat + 560 ≤ 2 ^ 64 := by
-  have := hp.sp_hi; have := hp.sp_lo; rw [B_toNat hp]; omega
-
-omit hp in
-/-- The stack the derivation uses, at offsets of `B`. -/
-theorem stk_eq : stkR0 s₀ = ⟨B s₀, 384⟩ := rfl
 
 omit hp in
 theorem stk_sub {d n : Nat} (h : d + n ≤ 384) : Region.Sub ⟨at' s₀ d, n⟩ (stkR0 s₀) :=
@@ -207,9 +194,6 @@ theorem setupMem_lr (s₀ : State) :
     Mem.readW_writeW_self64]
 
 /-! ## What the body's writes keep -/
-
-/-- The slots of the setup, and the return address. -/
-abbrev slotR (s₀ : State) : Region := ⟨at' s₀ 152, 104⟩
 
 section
 variable {s₀ : State} (hp : DPre s₀)

@@ -90,8 +90,6 @@ theorem win {t : Nat} (h : 512 * t + 512 ≤ L) :
 variable (hl : Lay c dp L)
 include hl
 
-theorem Lay.L_le : L ≤ 2 ^ 64 := Nat.le_of_lt hl.L_lt
-
 theorem Lay.cd {d n : Nat} (h : d + n ≤ 1248) : (⟨c + BitVec.ofNat 64 d, n⟩ : Region).Disjoint ⟨dp, L⟩ :=
   hl.dc.sub_left (sub_c h)
 

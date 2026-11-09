@@ -134,27 +134,6 @@ def subLowNormChk (p : Params) (i : Nat) : Bool :=
   sepB (sgR p) (sgW p) (wP p i) 1024 (hP i) 1024 &&
   sepB (sgR p) (sgW p) t1P 1024 (hP i) 1024 && stChk p [(wP p i,1024),(hP i,1024)]
 
-theorem subLowNormChk_ok {p : Params} (hp : Ok3 p) : ∀i<p.k,subLowNormChk p i=true := by
-  rcases hp with rfl|rfl|rfl <;> decide
-
-theorem subLowNorm_rooted {p : Params} {S : Nat} {σ s : State} {i : Nat}
-    (hc : subLowNormChk p i=true) (hs : RootedSt p S σ s)
-    (hcan : Reduced s.mem (pa s (wP p i))) (hraw : RawReduced s.mem (pa s t1P))
-    (hg : p.γ₂∈gamma2s) (hB : 1≤p.γ₂-p.β) (hB' : p.γ₂-p.β≤524288) :
-    WP isa (callAt "vg_mldsa_signed_sub_low_norm"
-      VG.Impl.MlDsa.AArch64.Optimized.Response.subLowNorm
-      (Response.subLowNormArgs (wP p i) t1P (hP i) p.γ₂ (p.γ₂-p.β))) s fun t =>
-      RootedSt p S σ t ∧ t.gpr .x24=s.gpr .x24 ∧
-      Response.SubLowNormPost p.γ₂ (p.γ₂-p.β) s.mem t.mem (pa t (wP p i)) (pa t t1P) (pa t (hP i))
-        ((t.gpr .x0).setWidth 32) := by
-  simp only [subLowNormChk,Bool.and_eq_true] at hc
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨hw,hr⟩,hl⟩,hww⟩,hwl⟩,hwc⟩,hwo⟩,hco⟩,hst⟩ := hc
-  have hready := subLowNormReady_layout hs.1.lay hw hr hl hww hwl hwc hwo hco hcan hraw hg hB hB'
-  refine WP.mono_syms (subLowNormAt_layout hs.1.lay hw hr hl hready) fun t ⟨hp,h24,hv⟩ hy => ?_
-  refine ⟨hs.step hp hy hst (by simpa using And.intro hww hwl),h24,?_⟩
-  rw [hp.pa (hs.1.lay.ptrBs hw),hp.pa (hs.1.lay.ptrBs hr),hp.pa (hs.1.lay.ptrBs hl)]
-  exact hv
-
 end VG.Proof.MlDsa.AArch64.Sign
 end
 
@@ -225,13 +204,5 @@ theorem optimizedR0_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
   exact bit_congr ⟨fun ⟨⟨a,b⟩,c⟩=>⟨a,forall_lt_succ.mp ⟨b,c⟩⟩,
     fun ⟨a,b⟩=>⟨⟨a,(forall_lt_succ.mpr b).1⟩,(forall_lt_succ.mpr b).2⟩⟩
 
-
-/-- The whole r0 vector runs before the hint phase or rejection branch. -/
-theorem optimizedR0_vector_ok {p : Params} {S : Nat} {σ s : State} {t : Nat}
-    (hp : Ok3 p) (h : PositiveIR p S σ t 0 s) :
-    WP isa (VG.Impl.MlDsa.AArch64.Call.seqR (Impl.MlDsa.AArch64.Sign.Optimized.r0R p) 0 p.k)
-      s (PositiveIR p S σ t p.k) := by
-  simpa only [Nat.zero_add] using seqR_ok (I := fun i s=>PositiveIR p S σ t i s)
-    p.k 0 (fun i _ hi s h=>optimizedR0_ok hp (by omega) h) s h
 
 end VG.Proof.MlDsa.AArch64.Sign

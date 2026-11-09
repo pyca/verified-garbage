@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-! Verification's fixed-length salt input, built without a masked shift. -/
 
@@ -30,10 +31,11 @@ theorem fixedSaltBack_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
     (hsl : W 36 = BitVec.ofNat 64 sl) (hdg : W 37 = dig)
     (hlo : lo ≤ 1) (hslFit : sl < db) (hfit : lo + db + H.D + 1 ≤ 1024)
     (hdR : ∀ i < H.D, InRegions (u.rd ++ u.wr) (dig + BitVec.ofNat 64 i) 1)
-    (hdO : ∀ i < H.D, Outside u.wr F (dig + BitVec.ofNat 64 i)) :
+    (hdO : ∀ i < H.D, Outside u.wr F (dig + BitVec.ofNat 64 i)) {dn : String} {f : MdFns}
+    (hT : HT H dn f W u.syms) (hdk : DigOK H) :
     let msg := Spec.RsaPss.zeros 8 ++ (List.range H.D).map (bytesF u.mem dig) ++
       (List.range sl).map (fun i => V (oEm + lo + db - sl + i))
-    WP isa (fixedSaltBack H) u fun u' =>
+    WP isa (fixedSaltBack f H) u fun u' =>
       Lay u' F S ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
       (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], u'.gpr r = u.gpr r) ∧
       (∃ V' W', Rep u'.mem F S V' W' ∧
@@ -60,18 +62,18 @@ theorem fixedSaltBack_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
   unfold fixedSaltBack fixedSaltPrefix fixedHead seqs seqs seqs seqs
   apply WP.assoc'
   apply WP.assoc'
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [hashSaltLen]) (by exact Nat.zero_le 8)
-    (hashSaltLen_ok hH L R (k := 36) (by decide) hsl (by omega_arith))) fun u0 ⟨⟨L0, k0, R0⟩, f0⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (WP.keepIn (by safe_by [hashSaltLen]) (by exact Nat.zero_le 16)
+    (hashSaltLen_ok hH L R (k := 36) (by decide) hsl (by omega_arith))) fun u0 ⟨⟨L0, k0, R0⟩, f0⟩ s0 => ?_)
   have hS0 := chain (u := u) rfl L.rsp (fun _ _ => rfl) f0
   apply WP.assoc'
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [clearNb]) (by exact Nat.zero_le 8)
+  refine WP.seq (X86_64.WP.mono_syms (WP.keepIn (by safe_by [clearNb]) (by exact Nat.zero_le 16)
     (clearNb_ok hH L0 R0 (nbm := (8 + H.D + sl + H.P.L) / H.P.B + 1) (by simp [upd]) (Nat.succ_pos _) hnb))
-    fun u1 ⟨⟨L1, k1, hcx1, R1⟩, f1⟩ => ?_)
+    fun u1 ⟨⟨L1, k1, hcx1, R1⟩, f1⟩ s1 => ?_)
   have hS1 := chain (u := u) k0.2.2 L0.rsp hS0 f1
-  refine WP.seq (WP.mono (copyDigest_ok hH L1 R1 (p := dig) (by simp [upd, hdg]) hcx1
+  refine WP.seq (X86_64.WP.mono_syms (copyDigest_ok hH L1 R1 (p := dig) (by simp [upd, hdg]) hcx1
     (fun i hi => by rw [k1.2.1, k0.2.1, k1.2.2, k0.2.2]; exact hdR i hi)
     (fun i hi j hj => Outside.ne L1 (by rw [k1.2.2, k0.2.2]; exact hdO i hi) (by omega_arith)))
-    fun u2 ⟨L2, k2, R2⟩ => ?_)
+    fun u2 ⟨L2, k2, R2⟩ s2 => ?_)
   have salt_src : ∀ i < sl, u2.mem (off S (oEm + lo + db - sl + i)) =
       V (oEm + lo + db - sl + i) := by
     intro i hi
@@ -79,12 +81,14 @@ theorem fixedSaltBack_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
     simp only [cpV, clrV]
     rw [ifn (by omega_arith), ifn (by omega_arith)]
   apply WP.assoc'
-  refine WP.seq (WP.mono (copyFixedSalt_ok hH L2 R2 (e := oEm + lo) (by simp [upd, he]) (by simp [upd, hdb])
+  refine WP.seq (X86_64.WP.mono_syms (copyFixedSalt_ok hH L2 R2 (e := oEm + lo) (by simp [upd, he]) (by simp [upd, hdb])
     (by simp [upd, hsl]) hslFit (by omega_arith) (by omega_arith)
-    ((k2.gpr (by decide)).trans hcx1)) fun u3 ⟨L3, k3, R3⟩ => ?_)
-  refine WP.seq (WP.mono (padSalt_ok L3 R3 (sl := sl) (by simp [upd, hsl]) (by omega_arith)) fun u4 ⟨L4, k4, R4⟩ => ?_)
+    ((k2.gpr (by decide)).trans hcx1)) fun u3 ⟨L3, k3, R3⟩ s3 => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (padSalt_ok L3 R3 (sl := sl) (by simp [upd, hsl]) (by omega_arith))
+    fun u4 ⟨L4, k4, R4⟩ s4 => ?_)
   refine WP.seq (WP.mono (fixedHash_gen hH K L4 R4 (ℓ := 8 + H.D + sl)
-    (nbm := (8 + H.D + sl + H.P.L) / H.P.B + 1) (by simp [upd]) (by simp [upd]) rfl hnb)
+    (nbm := (8 + H.D + sl + H.P.L) / H.P.B + 1) (by simp [upd]) (by simp [upd]) rfl hnb
+    (by rw [s4, s3, s2, s1, s0]; exact hT.congr rfl (by simp [upd]) (by simp [upd]) (by simp [upd])) hdk)
     fun u5 ⟨L5, rd5, wr5, cs5, V5, W5, R5, hout5, hW5, hdig⟩ => ?_)
   have hdig5 := hdig msg hml (fun i hi => ?_)
   rotate_left

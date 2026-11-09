@@ -102,9 +102,9 @@ end
 # Streaming AES-CMAC on x86: `Verified`
 
 Correctness and constant time, a state satisfying each precondition, and the
-shared contracts of `Spec/Cmac/Contract.lean`, with 48 bytes of stack for
+shared contracts of `Spec/Cmac/Contract.lean`, with 52 bytes of stack for
 `init` (a call of `vg_cmac_aes_subkeys`: its four arguments, the return
-address, and its call of `vg_aes_ctr32`) and 56 for `absorb` and `finish` (as
+address, and its call of `vg_aes_ctr32_to`) and 60 for `absorb` and `finish` (as
 `init`, with six arguments).
 -/
 
@@ -144,7 +144,7 @@ def initSat : State where
   rd := [⟨0x3000, 16⟩, ⟨0x8004, 16⟩]
   wr := [⟨0x1000, 304⟩, ⟨0x4000, 2304⟩]
 
-theorem init_verified : Verified X86.target (init v.expand v.callee v.suffix) (initScratchContract X86.abi 48) :=
+theorem init_verified : Verified X86.target (init v.expand v.callee v.suffix) (initScratchContract X86.abi 52) :=
   Verified.of_correct (fun _ hs => (init_wp v) hs) (init_ct v) (by
     have a0 : arg initSat 0 = 0x1000 := by decide
     have a1 : arg initSat 1 = 0x3000 := by decide
@@ -169,7 +169,7 @@ def absorbSat : State where
   rd := [⟨0x3000, 0⟩, ⟨0x8004, 28⟩]
   wr := [⟨0x1000, 304⟩, ⟨0x4000, 2304⟩]
 
-theorem absorb_verified : Verified X86.target (absorb v.callee v.suffix) (absorbScratchContract X86.abi 56) :=
+theorem absorb_verified : Verified X86.target (absorb v.callee v.suffix) (absorbScratchContract X86.abi 60) :=
   Verified.of_correct (fun _ hs => (absorb_wp v) hs) (absorb_ct v) (by
     have a0 : arg absorbSat 0 = 0x1000 := by decide
     have a1 : arg absorbSat 1 = 10 := by decide
@@ -197,7 +197,7 @@ def finishSat : State where
   rd := [⟨0x8004, 24⟩]
   wr := [⟨0x1000, 304⟩, ⟨0x2000, 16⟩, ⟨0x4000, 2304⟩]
 
-theorem finish_verified : Verified X86.target (finish v.callee v.suffix) (finishScratchContract X86.abi 56) :=
+theorem finish_verified : Verified X86.target (finish v.callee v.suffix) (finishScratchContract X86.abi 60) :=
   Verified.of_correct (fun _ hs => (finish_wp v) hs) (finish_ct v) (by
     have a0 : arg finishSat 0 = 0x1000 := by decide
     have a1 : arg finishSat 1 = 10 := by decide

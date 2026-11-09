@@ -61,11 +61,6 @@ def FTI (c st w sp : Addr) (A T : BitVec 64) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ V .s10 = A ∧
     V .s11 = T ∧ Env V sp s ∧ Big V sp
 
-theorem FTI.r {c st w sp : Addr} {A T : BitVec 64} {s : State} (h : FTI c st w sp A T s) :
-    EnvB c st w sp s :=
-  let ⟨V, a, b, d, _, _, he, hb⟩ := h
-  ⟨V, a, b, d, he, hb⟩
-
 section
 variable {c st w sp : Addr} (L : Lay c st w)
 include L

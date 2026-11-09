@@ -59,16 +59,20 @@ def keygenDeriveStatus (s a : State) : Nat :=
 def KeygenDeriveRelated (v : Backend) (a b : State) : Prop :=
   ∃ s t, ∃ hs : GenerateKeyABI v.stack s, ∃ ht : GenerateKeyABI v.stack t, ∃ ua ub : Nat,
     KeygenState hs ua a ∧ KeygenState ht ub b ∧ KeygenDeriveRegs s a ∧ KeygenDeriveRegs t b ∧
-    KeygenPublicAgree s t ∧ keygenDeriveStatus s a = keygenDeriveStatus t b
+    KeygenPublicAgree s t ∧ keygenDeriveStatus s a = keygenDeriveStatus t b ∧
+    Spec.Dsa.checkParametersBytes (keygenInput s).pLen (keygenInput s).qLen (keygenInput s).params = true ∧
+    Spec.Dsa.checkParametersBytes (keygenInput t).pLen (keygenInput t).qLen (keygenInput t).params = true
 
 theorem keygen_derive_ct (v : Backend) : RelCT isa (KeygenDeriveRelated v)
-    (.call (keygenDeriveName v) (Generate.deriveKey v.sq v.mul)) (fun _ _ => True) := by
-  apply VG.X86_64.RelCT.callEx v.deriveVerified.1 v.deriveVerified.2.1
-  intro a b ⟨s, t, hs, ht, _, _, ha, hb, ⟨a1, a2, a3, a4, a5, a6, aw⟩, ⟨b1, b2, b3, b4, b5, b6, bw⟩, hp, hst⟩
+    (.call (keygenDeriveName v) (Generate.deriveChecked v.sq v.mul)) (fun _ _ => True) := by
+  apply VG.X86_64.RelCT.callEx v.deriveCheckedVerified.1 v.deriveCheckedVerified.2.1
+  intro a b ⟨s, t, hs, ht, _, _, ha, hb, ⟨a1, a2, a3, a4, a5, a6, aw⟩, ⟨b1, b2, b3, b4, b5, b6, bw⟩, hp, hst,
+    hcs, hct⟩
   obtain ⟨hca, hwa⟩ := keygen_derive_covers hs ha.rd ha.wr
   obtain ⟨hcb, hwb⟩ := keygen_derive_covers ht hb.rd hb.wr
   refine ⟨keygenDeriveRd s, keygenDeriveWr s, keygenDeriveRd t, keygenDeriveWr t,
-    keygen_derive_pre hs ha.sp aw a1 a2 a3 a4 a5 a6, keygen_derive_pre ht hb.sp bw b1 b2 b3 b4 b5 b6, ?_,
+    keygen_derive_checked_pre hs ha.sp aw a1 a2 a3 a4 a5 a6 (keygen_bytes_params ha) hcs,
+    keygen_derive_checked_pre ht hb.sp bw b1 b2 b3 b4 b5 b6 (keygen_bytes_params hb) hct, ?_,
     hca, hwa, hcb, hwb, ha.sp.trans (hp.base.trans hb.sp.symm)⟩
   have hA (i : Nat) (hi : i < 3) :
       stackArg (a.callEntry.withRegions (keygenDeriveRd s) (keygenDeriveWr s)) i = keygenDeriveArg s i :=
@@ -76,7 +80,7 @@ theorem keygen_derive_ct (v : Backend) : RelCT isa (KeygenDeriveRelated v)
   have hB (i : Nat) (hi : i < 3) :
       stackArg (b.callEntry.withRegions (keygenDeriveRd t) (keygenDeriveWr t)) i = keygenDeriveArg t i :=
     (random_call_stackArg hb.sp _ _ (by omega)).trans (bw i hi)
-  sig_pub [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three]
+  sig_pub [Spec.Dsa.deriveKeyDomainCheckedContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three]
   simp only [hA 0 (by decide), hA 1 (by decide), hA 2 (by decide), hB 0 (by decide), hB 1 (by decide),
     hB 2 (by decide), keygenDeriveArg, List.getD_cons_succ, List.getD_cons_zero]
   rw [show a.mem.writeW (a.gpr .rsp - 8) (a.unknowns 0) = a.callEntry.mem from rfl,

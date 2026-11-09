@@ -12,7 +12,7 @@ compose. Only the callers' contracts, in `Spec/`, are trusted.
 
 `vg_ecdsa_<name>_sign` is the signature with a given per-message secret
 number `k`, which the deterministic signatures of
-`Spec/Ecdsa/Rfc6979/Generic.lean` call once they have derived `k`.
+`Spec/Ecdsa/Rfc6979/Table.lean` call once they have derived `k`.
 
 `sign` takes the private key `d`, the hash and the per-message secret
 number `k`, each as `len` octets, most significant first. The hash is
@@ -21,7 +21,7 @@ are FIPS 186-5's `e`, as `hashToInt` reads them: its leftmost `len` octets
 if it is longer. A shorter hash is padded on the left with zeros, which
 leaves its integer value unchanged, when `n` has `8 len` bits (P-256,
 P-384); otherwise its integer is shifted left by the `8 len - N` bits that
-`hashToInt` drops (P-521: 7). `digestDoc` says which.
+`hashToInt` drops (P-521: 7).
 
 The signature determines memory validity, separation and that the pointers
 are public, through `Sig.contract`; the contents of every buffer are secret.

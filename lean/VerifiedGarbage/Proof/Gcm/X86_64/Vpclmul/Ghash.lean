@@ -21,7 +21,7 @@ public import VerifiedGarbage.Proof.Gcm.Contract
 /-!
 # GHASH with VPCLMULQDQ
 
-`ghash_verified` proves `Impl.Gcm.X86_64.Vpclmul.ghash` against
+`ghash_correct` and `ghash_ct` prove `Impl.Gcm.X86_64.Vpclmul.ghash` against
 `Pclmul.ghashX86_64`.
 
 The eight-block loop keeps `vg_ghash_pclmul`'s loop invariant (`Pclmul.Inv`,
@@ -943,12 +943,5 @@ theorem ghash_ct : ConstantTime isa ghashX86_64.pre ghashX86_64.pub ghash := by
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
-
-theorem ghash_verified :
-    Verified X86_64.target ghash (Proof.Gcm.ghashContract X86_64.abi) :=
-  Verified.of_correct ghash_correct ghash_ct (by
-    sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, Proof.Gcm.X86_64.Pclmul.ghashX86_64,
-      X86_64.abi, X86_64.argRegs] [Proof.Gcm.X86_64.Pclmul.satState] using
-      Proof.Gcm.X86_64.Pclmul.satState)
 
 end VG.Proof.Gcm.X86_64.Vpclmul

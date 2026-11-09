@@ -4,48 +4,48 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedCTState
 
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterInvariant
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkTake
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkCheck
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
-import Mathlib.Algebra.Group.Nat.Defs
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGeneratorPlanCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrime
-import Mathlib.Basic.IsEmpty.Defs
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedValidate
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackMemoryCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
-import VerifiedGarbage.Impl.Dsa.Generation.Layout
-import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
-import VerifiedGarbage.Impl.RsaOaep.X86_64
-import VerifiedGarbage.Proof.Bignum.Words
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SubgroupState
-import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Spec.Ffdh
-import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPack
-import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
-import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Pack
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGenerator
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccessCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchInitCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchIterationCTState
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchIterationCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashChoice
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPhaseStableCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroupCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterInvariant
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkTake
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkCheck
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
+public import Mathlib.Algebra.Group.Nat.Defs
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGeneratorPlanCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrime
+public import Mathlib.Basic.IsEmpty.Defs
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedValidate
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackMemoryCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
+public import VerifiedGarbage.Impl.Dsa.Generation.Layout
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
+public import VerifiedGarbage.Impl.RsaOaep.X86_64
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SubgroupState
+public import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Spec.Ffdh
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPack
+public import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
+public import VerifiedGarbage.Proof.Dsa.Encoding
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Pack
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGenerator
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccessCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchInitCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchIterationCTState
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchIterationCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashChoice
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPhaseStableCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroupCT
 /-! # Public seed and witness cursors for the complete parameter search -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/SeedPrimeResultCT.lean`, which only this module imported.
@@ -53,7 +53,7 @@ section
 
 /-! # Public prime-search outcomes select the next generator phase -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Proof.MillerRabin.X86_64
@@ -113,11 +113,10 @@ section
 
 /-! # Final domain validation uses the generation arena and exact packed bytes -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.Dsa.Generation.Layout VG.Impl.RsaOaep.X86_64
-
 
 variable {checkName : String}
 
@@ -192,11 +191,10 @@ section
 
 /-! # Compose domain packing with the final verified parameter check -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Dsa.Generation.Layout
-
 
 variable {checkName : String}
 
@@ -250,7 +248,7 @@ section
 
 /-! # Generator selection supplies public inputs to the final validation gate -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64
@@ -281,7 +279,7 @@ theorem seedGenerator_after (M : Mont) (Sq : MontS) {n pLen qLen : Nat}
   obtain ⟨⟨⟨⟨W, hm, _⟩, _, _, _, hq⟩, hp, bq⟩, bp, be⟩ := h
   have step := seedGenerator_ok M Sq hm p.value p.qValue p.domain bp be bq
   rw [hp] at step
-  refine WP.mono step fun t ⟨Wt, ht, _, bp', bq', outcome, _, _, _⟩ => ?_
+  refine WP.mono step fun t ⟨Wt, ht, _, _, bp', bq', outcome, _, _, _⟩ => ?_
   rcases outcome with ⟨hs, hr⟩ | ⟨gv, hs, hr, _, _, bg⟩
   · have status : p.status = 3 := by simp [SeedGeneratorPublic.status, SeedGeneratorPublic.result, hp, hr]
     exact ⟨⟨Wt, ht, hs.trans status.symm⟩, by simp [status]⟩
@@ -304,43 +302,12 @@ end
 
 end
 
--- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/SeedGeneratorFinishCT.lean`, which only this module imported.
-section
-
-/-! # Complete generator search, phase gate, packing, and validation timing -/
-
-section
-namespace VG.Proof.Dsa.X86_64.Generation
-open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
-open VG.Impl.Dsa.X86_64.Generation
-
-
-variable {checkName : String}
-
-theorem seedGeneratorFinish_ct (M : Mont) (Sq : MontS) (n pLen qLen : Nat)
-    (sizes : GenerationSizes pLen qLen) :
-    RelCT isa (Two (SeedGeneratorBefore n pLen qLen))
-      (.seq (generatorSearch Sq.mm M.mm pLen) (onSuccess (finishDomain (checkName := checkName) Sq.mm M.mm pLen qLen)))
-      (fun _ _ => True) := by
-  have width : pLen = 128 ∨ pLen = 256 ∨ pLen = 384 := by
-    rcases sizes with h | h | h <;> simp [h.1]
-  refine RelCT.seq (two_post (seedGenerator_ct M Sq n pLen qLen width)
-    (fun _ _ h => seedGenerator_after M Sq h)) ?_
-  apply onSuccess_ct (Φ := SeedGeneratorAfter pLen qLen) (fun p : SeedGeneratorPublic => p.seed.context) SeedGeneratorPublic.status
-    (fun _ _ h => h.1) (fun _ _ _ h hm hk => seedGeneratorAfter_congr h hm hk)
-  exact two_map SeedGeneratorPublic.finish (fun _ _ h => h.1.2 h.2) (finishDomain_ct (checkName := checkName) M Sq pLen qLen sizes)
-
-end VG.Proof.Dsa.X86_64.Generation
-end
-
-end
-
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/SeedSearchStateCT.lean`, which only this module imported.
 section
 
 /-! # Instantiate the public prime-search state from actual persistent-frame words -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64 VG.Impl.Dsa.Generation.Layout
@@ -421,7 +388,7 @@ section
 
 /-! # Timing of the bounded native p search, including its exact retry cursor -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 open VG.Proof.Pbkdf2.Md.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Bignum.X86_64
@@ -431,7 +398,7 @@ private def searchLoopInv (n pLen qLen remaining : Nat) : State → State → Pr
 
 section
 variable (G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream)
-variable (T : PrimeTest) (n : Nat) (hn : n = 2 ∨ n = 3) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
+variable (T : PrimeTest) (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
 variable (sizes : GenerationSizes pLen qLen)
 variable (hG : Calls.StreamOK (if qLen = 20 then G1 else G256))
 variable (hmatch : ∀ x, H.hash x = hG.SH.H.hash x)
@@ -498,13 +465,13 @@ section
 
 /-! # The complete bounded native p search has a public trace -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 open VG.Proof.Pbkdf2.Md.X86_64 VG.Impl.Dsa.X86_64.Generation
 
 theorem primeSearch_ct (G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream)
-    (T : PrimeTest) (n : Nat) (hn : n = 2 ∨ n = 3) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
+    (T : PrimeTest) (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
     (sizes : GenerationSizes pLen qLen)
     (hG : Calls.StreamOK (if qLen = 20 then G1 else G256))
     (hmatch : ∀ x, H.hash x = hG.SH.H.hash x)
@@ -530,12 +497,12 @@ section
 
 /-! # The accepted subgroup enters the complete public-trace prime search -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 
 theorem seedPrime_ct (H : GenerationHashes) (T : PrimeTest)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (SeedPrimeBefore n pLen qLen))
       (Impl.Dsa.X86_64.Generation.primeSearch H.sha1 H.sha256 T.run pLen qLen) (fun _ _ => True) := by
   have hq : qLen = 20 ∨ qLen = 32 := by
@@ -555,11 +522,10 @@ section
 
 /-! # Prime search composes with generator selection and final domain checking -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Proof.MillerRabin.X86_64 VG.Impl.Dsa.X86_64.Generation
-
 
 variable {checkName : String}
 
@@ -588,19 +554,6 @@ theorem seedPrimeAfter_related {n pLen qLen : Nat} {s t : State}
   subst vt; subst rt
   exact ⟨p.generatorPublic vs rs ds, hgs, hgt⟩
 
-theorem seedPrimeFinish_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
-    RelCT isa (Two (SeedPrimeBefore n pLen qLen))
-      (.seq (primeSearch H.sha1 H.sha256 T.run pLen qLen)
-        (onSuccess (.seq (generatorSearch Sq.mm M.mm pLen) (onSuccess (finishDomain (checkName := checkName) Sq.mm M.mm pLen qLen)))))
-      (fun _ _ => True) := by
-  refine RelCT.seq (two_post (seedPrime_ct H T n hn pLen qLen sizes)
-    (fun _ _ h => seedPrime_after H T h)) ?_
-  apply onSuccess_ct (Φ := SeedPrimeAfter n pLen qLen) SeedPublic.context SeedPublic.primeStatus
-    (fun _ _ h => h.1) (fun _ _ _ h hm hk => seedPrimeAfter_congr h hm hk)
-  exact (seedGeneratorFinish_ct (checkName := checkName) M Sq n pLen qLen sizes).mono
-    (fun _ _ h => seedPrimeAfter_related h) (fun _ _ h => h)
-
 end VG.Proof.Dsa.X86_64.Generation
 end
 
@@ -616,114 +569,12 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.MillerRabin.X86_64 VG.Impl.Dsa.X86_64.Generation
 
-
 variable {checkName : String}
 
 def SeedAttemptBefore (n pLen qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
   SeedBefore n qLen p s ∧ p.context.geo.pLen = pLen
 
-theorem seedAttempt_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
-    RelCT isa (Two (SeedAttemptBefore n pLen qLen))
-      (seedAttempt (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pLen qLen) (fun _ _ => True) := by
-  have width : qLen = 20 ∨ qLen = 32 := by
-    rcases sizes with h | h | h <;> simp [h.2]
-  unfold seedAttempt
-  refine RelCT.seq (two_post
-    (two_map (fun p : SeedPublic => p) (fun _ _ h => h.1) (seedSubgroup_ct H T n hn qLen width))
-    (fun _ _ h => seedSubgroup_after H T h.1 h.2)) ?_
-  apply onSuccess_ct (Φ := SeedSubgroupAfter n pLen qLen) SeedPublic.context SeedPublic.subgroupStatus
-    (fun _ _ h => h.1) (fun _ _ _ h hm hk => seedSubgroupAfter_congr h hm hk)
-  exact two_map SeedPublic.afterSubgroup (fun _ _ h => h.1.2 h.2) (seedPrimeFinish_ct (checkName := checkName) H M Sq T n hn pLen qLen sizes)
-
 end VG.Proof.Dsa.X86_64.Generation
 end
 
 end
-
-@[expose] public section
-namespace VG.Proof.Dsa.X86_64.Generation
-open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
-open VG.Impl.Dsa.X86_64.Generation VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64
-
-structure ParameterPublic where
-  context : GenerationContext
-  seedUsed : Nat
-  seedBound : seedUsed ≤ context.seeds.bytes.length
-  randUsed : Nat
-  randBound : randUsed ≤ context.rand.bytes.length
-  ws : List Region
-  wr : List Region
-  header : PrimeHeaderLayout context.geo.B wr
-
-def ParameterBefore (n pLen qLen : Nat) (p : ParameterPublic) (s : State) : Prop :=
-  (∃ W, GenerationMemory p.context W s ∧ W 10 = BitVec.ofNat 64 p.seedUsed ∧ W 16 = BitVec.ofNat 64 p.randUsed) ∧
-  FrV n p.context.geo.F p.ws s ∧ s.wr = p.wr ∧ p.context.geo.pLen = pLen ∧ p.context.geo.qLen = qLen
-
-def ParameterPublic.exhausted (p : ParameterPublic) : Bool :=
-  decide (p.context.seeds.bytes.length - p.seedUsed < p.context.geo.qLen)
-
-def ParameterChecked (n pLen qLen : Nat) (p : ParameterPublic) (s : State) : Prop :=
-  ParameterBefore n pLen qLen p s ∧ isa.eval .b s = some p.exhausted
-
-def ParameterAvailable (n pLen qLen : Nat) (p : ParameterPublic) (s : State) : Prop :=
-  ParameterBefore n pLen qLen p s ∧ p.seedUsed + p.context.geo.qLen ≤ p.context.seeds.bytes.length
-
-def ParameterPublic.seed (p : ParameterPublic)
-    (room : p.seedUsed + p.context.geo.qLen ≤ p.context.seeds.bytes.length) : SeedPublic where
-  context := p.context
-  seed := p.context.seeds.slice p.seedUsed p.context.geo.qLen room
-  length := by
-    change ((p.context.seeds.bytes.drop p.seedUsed).take p.context.geo.qLen).length = _
-    simp only [List.length_take, List.length_drop]; omega
-  used := p.randUsed
-  seedCursor := BitVec.ofNat 64 (p.seedUsed + p.context.geo.qLen)
-  bound := p.randBound
-  ws := p.ws
-  wr := p.wr
-  header := p.header
-
-def ParameterTaken (n pLen qLen : Nat) (p : ParameterPublic) (s : State) : Prop :=
-  ∃ room, SeedAttemptBefore n pLen qLen (p.seed room) s
-
-theorem parameter_check {n pLen qLen : Nat} {p : ParameterPublic} {s : State}
-    (h : ParameterBefore n pLen qLen p s) :
-    WP isa (.block (chunkCheck seedTape qLen)) s (ParameterChecked n pLen qLen p) := by
-  obtain ⟨⟨W, hm, h10, h16⟩, hf, hw, hp, hq⟩ := h
-  obtain ⟨V, R⟩ := hm.rep
-  have hl : qLen < 2 ^ 31 := by rcases p.context.geo.qWidth with hh | hh <;> omega
-  have total := (hm.slots 9 (by simp [generationSlots])).trans p.context.seedsLengthSlot
-  refine WP.mono (chunkCheck_ok hm.layout R seedTape (by decide) (by decide)
-    hl h10 total p.seedBound p.context.seeds.size) fun t ⟨hc, hmem, hk⟩ => ?_
-  exact ⟨⟨⟨W, hm.congr2 hmem hk, h10, h16⟩,
-    hf.congr (hk.gpr (by decide)) hk.2.2, hk.2.2.trans hw, hp, hq⟩,
-    by simp only [eval, hc, ParameterPublic.exhausted, hq]⟩
-
-theorem parameter_available {n pLen qLen : Nat} {p : ParameterPublic} {s : State}
-    (h : ParameterChecked n pLen qLen p s) (hb : isa.eval .b s = some false) :
-    ParameterAvailable n pLen qLen p s := by
-  have hn := of_decide_eq_false (Option.some.inj (h.2.symm.trans hb))
-  exact ⟨h.1, by have := p.seedBound; omega⟩
-
-theorem parameter_take {n pLen qLen : Nat} {p : ParameterPublic} {s : State}
-    (h : ParameterAvailable n pLen qLen p s) :
-    WP isa (.block (tapeTake seedTape qLen)) s (ParameterTaken n pLen qLen p) := by
-  obtain ⟨⟨⟨W, hm, h10, h16⟩, hf, hw, hp, hq⟩, room⟩ := h
-  subst qLen
-  obtain ⟨V, R⟩ := hm.rep
-  have hl : p.context.geo.qLen < 2 ^ 31 := by rcases p.context.geo.qWidth with hh | hh <;> omega
-  refine WP.mono (chunkTake_ok hm.layout R seedTape (by decide) (by decide)
-    (by decide) (by decide) (by decide) hl h10) fun t ⟨Lt, Rt, ft, kt⟩ => ?_
-  have ht := hm.frame Lt ⟨V, Rt⟩ (by
-    intro k hk
-    simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl)
-    (p.context.frame_single ft) kt.2.1 kt.2.2
-  refine ⟨room, ⟨⟨_, ht, ?_, ?_, ?_⟩, ht.seeds.slice room,
-    hf.congr (kt.gpr (by decide)) kt.2.2, kt.2.2.trans hw, rfl⟩, hp⟩
-  · have base := (hm.slots 8 (by simp [generationSlots])).trans p.context.seedsSlot
-    simp [seedTape, upd, ParameterPublic.seed, GenerationTape.slice, base]
-  · simpa [seedTape, upd, ParameterPublic.seed] using h16
-  · simp [seedTape, upd, ParameterPublic.seed]
-
-end VG.Proof.Dsa.X86_64.Generation

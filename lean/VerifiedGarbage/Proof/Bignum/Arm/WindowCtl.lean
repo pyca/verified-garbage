@@ -21,21 +21,6 @@ open VG.Proof.Rsa.Mont (arrAt numAt)
 open VG.Proof.X25519.Arm (Rest wp_ldr wp_dp wp_mov wp_str wp_cmp op2_reg op2_imm op2_lsl op2_lsr dpVal
   ofNat_beq_zero)
 
-/-- A write to a header word leaves the table alone. -/
-theorem TableHolds.after_header {m m' : Mem} {base : BitVec 32} {len w M x k d : Nat}
-    (h : TableHolds m base w M x k) (fits : arrAt w 16 ≤ 8 * len) (nowrap : base.toNat + 8 * len ≤ 2 ^ 32)
-    (hd : d + 4 ≤ 256) (hk : k ≤ 8) (outside : Outside (State.addr base) d 4 m m') :
-    TableHolds m' base w M x k := by
-  intro j hj
-  have bound := Nat.le_trans (array_end_le (w := w) (show 8 + j < 16 by omega_arith)) fits
-  have value : numAt m' (State.addr base) w (8 + j) = numAt m (State.addr base) w (8 + j) := by
-    rw [numAt_native, numAt_native]
-    apply outside.val32
-    · right; simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_arith
-    · omega_arith
-  rw [value]
-  exact h j hj
-
 /-- The mask bit of an entry: one for the digit's. -/
 theorem mask_bit : ∀ d < 8, ∀ j < 8,
     ((BitVec.ofNat 32 d ^^^ BitVec.ofNat 32 j) - 1) >>> 31 = if d = j then (1 : BitVec 32) else 0 := by

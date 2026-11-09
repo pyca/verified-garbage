@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExponentFrame
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArrayDivision
 import VerifiedGarbage.Proof.Rsa.WordRanges
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 
 /-! # Frames for preparing the quotient-based inverse -/
 
@@ -11,16 +13,6 @@ namespace VG.Proof.RsaKeyGen.X86.Key
 open VG VG.Proof.Mont VG.Proof.Rsa.X86.Keys
 open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.RsaKeyGen.X86.Key
-
-theorem exponent_division_frame {m m' : Mem} {B : Addr} {n : Nat}
-    (O : Outs B (arrayDivisionRanges n aU aV) m m') : Outs B (exponentRanges n) m m' := by
-  apply VG.Proof.Rsa.outs_cover O
-  intro r hr
-  simp only [arrayDivisionRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact ⟨(hdr, 15 * S n), by simp [exponentRanges, exponentTemps], Nat.le_refl _, by omega⟩
-  · exact ⟨(arr n aU, S n), by simp [exponentRanges, ranges, exponentArrays], Nat.le_refl _, by unfold S; omega⟩
-  · exact ⟨(arr n aV, S n), by simp [exponentRanges, ranges, exponentArrays], Nat.le_refl _, by unfold S; omega⟩
 
 theorem exponent_mask_coefficient {m m' : Mem} {B : Addr} {n : Nat}
     (O : Keep B n [aT1, aT2] [kOk] m m') : num m' B 2 3 = num m B 2 3 := by

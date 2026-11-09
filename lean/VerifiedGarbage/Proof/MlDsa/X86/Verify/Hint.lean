@@ -28,7 +28,6 @@ open VG.Proof.MlDsa (PolyIs Reduced polyAt HintIs)
 open VG.Proof.MlDsa.Verify (vZ vHint)
 open VG.Spec.Sha3 (bytesAt)
 
-theorem lenZ_eq (p : Params) : lenZ p = Proof.MlDsa.Verify.lenZ p := rfl
 theorem accB_YV (p : Params) : accB (YV p) = sb oACC 4 := rfl
 
 /-! ## The inputs -/

@@ -33,8 +33,8 @@ compression function, using the 20 bytes of stack below the return address.
 they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's and PBKDF2's code calls) run
 in a frame that allocates it (`update_frame`, `finalize_frame`). Each is
-stated for any code verified against the per-target contract (`compress_of`,
-`updateScratch_of`, `finalizeScratch_of`), so that the functions made with
+stated for any code verified against the per-target contract (`updateScratch_of`,
+`finalizeScratch_of`), so that the functions made with
 every implementation of the compression function
 (`Proof/Sha1/X86/Variants/`) are moved to the shared contracts the same way.
 -/
@@ -111,22 +111,6 @@ theorem updateWide_of {code : Prog isa} (hv : Verified X86.target code Proof.Sha
 def updateSat : State :=
   { Proof.Sha1.X86.Stream.Update.sat with
     rd := [⟨0x2000, 0⟩], wr := [⟨0x1000, 84⟩, ⟨0x3000, 160⟩, ⟨0x5004, 24⟩] }
-
-theorem compress_implies : Proof.Sha1.compressX86.Implies (Proof.Sha1.compressContract X86.abi) := by
-  contract_implies [Proof.Sha1.compressContract, Proof.Sha1.compressSig, Proof.Sha1.compressX86,
-    X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    [Proof.Sha1.X86.satState, Proof.Sha1.X86.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read]
-    using Proof.Sha1.X86.satState
-
-/-- Any implementation of the compression function verified against the
-per-target contract is verified against the shared one. -/
-theorem compress_of {code : Prog isa} (hv : Verified X86.target code Proof.Sha1.compressX86) :
-    Verified X86.target code (Proof.Sha1.compressContract X86.abi) :=
-  hv.of_implies compress_implies
-
-theorem compress :
-    Verified X86.target Impl.Sha1.X86.compress (Proof.Sha1.compressContract X86.abi) :=
-  compress_of Proof.Sha1.X86.compress_verified
 
 theorem init :
     Verified X86.target Impl.Sha1.X86.Stream.init (Spec.Sha1.initContract X86.abi) :=

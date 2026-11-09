@@ -62,21 +62,4 @@ theorem expandKey_constantTime : ConstantTime isa keyContract.pre keyContract.pu
   exact VG.Taint.constantTime (A := VG.X86.sseTaint) keyTaint (fun _ _ h₁ h₂ hp => keyTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
-def keySatState : State where
-  gpr r := if r = .esp then 0x4000 else 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem a := if a = 0x4005 then 0x10 else if a = 0x4008 then 1 else
-    if a = 0x400c then 8 else if a = 0x4011 then 0x20 else if a = 0x4015 then 0x30 else 0
-  rd := [⟨0x1000, 1⟩, ⟨0x4004, 20⟩]
-  wr := [⟨0x2000, 128⟩, ⟨0x3000, 512⟩]
-
-theorem key_verified : Verified target expandKey (Proof.Rc2.expandKeyContract abi) := by
-  refine Verified.of_correct key_body_correct expandKey_constantTime ?_
-  sig_implies [Proof.Rc2.expandKeyContract, Proof.Rc2.expandKeySig, abi, argSlots, argVal,
-    argBytes, addr32, keyContract, Spec.Rc2.validKey]
-    [keySatState, arg, argAddr, Mem.readW, Mem.read] using keySatState
-
 end VG.Proof.Rc2.X86

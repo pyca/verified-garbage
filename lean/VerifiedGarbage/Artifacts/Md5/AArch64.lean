@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Md5.AArch64.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # MD5 (RFC 1321) on AArch64 -/
 

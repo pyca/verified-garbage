@@ -24,21 +24,6 @@ theorem entry_rep (i : Nat) (hi : i < 16) :
   simp only [checkEntry, Bool.and_eq_true, beq_iff_eq] at h
   exact VG.Proof.X448.basePt_rep (pointMul_rep _ basePoint_rep) h.1 h.2
 
-def digit (k t : Nat) : Nat :=
-  k / 2 ^ t % 2 + k / 2 ^ (t + 1) % 2 * 2 +
-  k / 2 ^ (t + 2) % 2 * 4 + k / 2 ^ (t + 3) % 2 * 8
-
-theorem digit_eq (k t : Nat) : digit k t = k / 2 ^ t % 16 := by
-  simp only [digit, Nat.pow_add, ← Nat.div_div_eq_div_mul]
-  omega
-
-theorem digit_lt (k t : Nat) : digit k t < 16 := by rw [digit_eq]; omega
-
-theorem high_step (k n : Nat) :
-    k / 2 ^ (4 * n) = 16 * (k / 2 ^ (4 * (n + 1))) + digit k (4 * n) := by
-  rw [digit_eq, show 4 * (n + 1) = 4 * n + 4 by omega, Nat.pow_add, ← Nat.div_div_eq_div_mul]
-  omega
-
 /-- The runtime table, defined even for malformed points. Group representation is conditional
 on valid decoding, while the machine-code proof runs unconditionally. -/
 def multiples (p : Point) : Nat → Point

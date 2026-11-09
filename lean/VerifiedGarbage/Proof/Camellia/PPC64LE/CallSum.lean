@@ -33,6 +33,6 @@ def τCrypt : SlotTaint.T :=
     bases := [(.r6, 2, 0), (.r4, 2, 0)] }
 
 taint_summary cryptSum : slotTaint τCrypt
-  (.call (Spec.Camellia.Prepared.cryptApi Impl.Camellia.PPC64LE.layout).name Impl.Camellia.PPC64LE.cryptPrepared)
+  (.call "vg_camellia_crypt_prepared" Impl.Camellia.PPC64LE.cryptPrepared)
 
 end VG.Proof.Camellia.PPC64LE

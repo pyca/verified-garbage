@@ -81,14 +81,6 @@ theorem exec_ldrq {s : State} {t : VReg} {n : Reg} {off : Nat}
   simp only [exec, addr, show 4096 * 16 = 65536 from rfl, ho, and_self, ite_true, State.load,
     h, Option.bind_some, Option.map_some]
 
-theorem exec_strq {s : State} {t : VReg} {n : Reg} {off : Nat}
-    (ho : off % 16 = 0 ∧ off < 65536)
-    (h : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 16) :
-    exec (.strq t n off) s =
-      some { s with mem := s.mem.write (s.gpr n + BitVec.ofNat 64 off) 16 (s.v t) } := by
-  simp only [exec, addr, show 4096 * 16 = 65536 from rfl, ho, and_self, ite_true, State.store,
-    h, Option.bind_some]
-
 theorem rounds4_ok (n : Nat) (s : State) (v : HashValue) (q : BitVec 128)
     (h0 : s.v .v0 = abcd v) (h1 : s.v .v1 = eReg v) (hq : s.v (msg n) = q)
     (hk : s.v (kreg (n / 5)) = kQuad n) :
@@ -269,7 +261,6 @@ theorem rounds_ok (H : HashValue) (M : Block) (bp : Addr) (sB : State)
         hx₁ _ (Ne.symm (msg_other n _ (keepL_others r hr)))]
       exact hs.keep r hr
     · rw [hg₂, hg₁, hs.gpr r hr]
-
 
 theorem read_abcd (m : Mem) (p : Addr) : m.read (p + BitVec.ofNat 64 0) 16 = abcd (stateAt m p) := by
   rw [read16]
@@ -514,7 +505,6 @@ theorem correct {s₀ : State} (hp : AArch64.Pre s₀) :
         v1 := by rw [hv1, hm₁]
         k := hk }
     exact WP.loop (M := isa) Inv hstep (nb s₀) s₁ ⟨0, rfl, hpos, hL₀⟩
-
 
 theorem compress_verified :
     Verified AArch64.target Impl.Sha1.AArch64.Sha2.compress Proof.Sha1.compressAArch64 := by

@@ -65,8 +65,6 @@ def name : String := "VG_MLKEM16_NTT_ZETAS"
 /-- `tab` as 64-bit words. -/
 def tabWords : List (BitVec 64) := Readonly.words 16 tab
 
-def tables : List (String × List (BitVec 64)) := [(name, tabWords)]
-
 /-- Straight code: `pass1Pre`. -/
 def pass1Pre : List Instr := [
   .movz .x .x5 3329 0,

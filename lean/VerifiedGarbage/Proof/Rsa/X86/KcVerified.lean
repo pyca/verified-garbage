@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Weierstrass.Env
 import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Rsa.Contract
 /-! # Complete i686 certificates for RSA key validation -/
 
 -- Formerly `VerifiedGarbage/Proof/Rsa/X86/KcReturn.lean`, which only this module imported.
@@ -94,8 +95,8 @@ theorem correct (full : Bool) (s : State) (h : (contract full).pre s) :
   obtain ⟨trace, t, run, value, preserved⟩ := operation_ok a
   refine ⟨trace, t, run, preserved, ?_⟩
   cases full
-  · change (Spec.Rsa.checkCrtKeyContract abi 20).post s t
-    sig_post [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes]
+  · change (Proof.Rsa.checkCrtKeyContract abi 20).post s t
+    sig_post [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes]
     rw [BitVec.setWidth_append_eq_right]
     simp only [validity, numbers, caller, inputBytes, CallGeometry.buffer, Bool.false_eq_true, ite_false] at value
     have dp : (arg s 9).toNat = (arg s 5).toNat := a.dpLen
@@ -157,7 +158,7 @@ def crtState : State where
   rd := [⟨4096, 64⟩, ⟨8192, 3⟩, ⟨12288, 32⟩, ⟨16384, 32⟩, ⟨20480, 32⟩, ⟨24576, 32⟩, ⟨28672, 32⟩]
   wr := [⟨0x10000, 8448⟩, ⟨0x20004, 64⟩]
 
-theorem crt_satisfiable : ∃ s, (Spec.Rsa.checkCrtKeyContract abi 20).pre s := by
+theorem crt_satisfiable : ∃ s, (Proof.Rsa.checkCrtKeyContract abi 20).pre s := by
   have a0 : arg crtState 0 = 4096 := by decide
   have a1 : arg crtState 1 = 64 := by decide
   have a2 : arg crtState 2 = 8192 := by decide
@@ -176,7 +177,7 @@ theorem crt_satisfiable : ∃ s, (Spec.Rsa.checkCrtKeyContract abi 20).pre s := 
   have a15 : arg crtState 15 = 1056 := by decide
   have e : argAddr crtState 0 = 0x20004 := by decide
   have esp : crtState.gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_implies_sat [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes, stackBelow]
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, e, esp, crtState, Spec.Rsa.lenValid, Spec.Rsa.scratchWords] using crtState
 
 def keyState : State where

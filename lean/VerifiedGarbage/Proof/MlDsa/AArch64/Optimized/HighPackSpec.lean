@@ -46,26 +46,4 @@ theorem highPacked_length {g : Nat} (hg : IsG g) (p : Poly) :
   rw [highPacked,simpleBitPack_eq,packWidth_eq hg]
   exact pack_length _ _ (by simp [n])
 
-/-- Each sixteen-coefficient output block agrees byte for byte with the
-existing bit-level specification, for both parameter choices. -/
-theorem highPacked_group {g : Nat} (hg : IsG g) (p : Poly)
-    {j t : Nat} (hj : j<16) (ht : t<2*packWidth g) :
-    (highPacked g p)[(2*packWidth g)*j+t]! =
-      BitVec.ofNat 8 (digits (packWidth g)
-        ((List.range 16).map fun i => (highCoefficients g p).toList.getD (16*j+i) 0) / 2^(8*t)) := by
-  rw [highPacked,simpleBitPack_eq,packWidth_eq hg]
-  have hlen : (highCoefficients g p).toList.length=256 := by simp [n]
-  have hshape : packWidth g*16=8*(2*packWidth g) := by omega
-  have hk : (2*packWidth g)*j+t<32*packWidth g := by
-    rcases hg with rfl | rfl
-    · change t<8 at ht
-      change 8*j+t<128
-      omega
-    · change t<12 at ht
-      change 12*j+t<192
-      omega
-  rw [pack_group (by rcases hg with rfl | rfl <;> decide) hshape hlen
-    (highCoefficients_bound hg p) ht hk]
-  rw [take_drop_eq _ 0 (by rw [hlen]; omega)]
-
 end VG.Proof.MlDsa.AArch64.Optimized.HighPack

@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.X86.Isa
 
 The AES-GCM functions of `Spec/Gcm/Contract.lean`, cdecl (every argument on
 the stack), composed of calls of the verified `vg_aes_expand_key_scratch`,
-`vg_aes_ctr32` and `vg_ghash`, as on x86-64 (`Impl/AesGcm/X86_64.lean`),
+`vg_aes_ctr32_to` and `vg_ghash`, as on x86-64 (`Impl/AesGcm/X86_64.lean`),
 whose algorithm and pieces these follow.
 
 ## The working space
@@ -36,9 +36,9 @@ last argument):
 called preserve them. Everything else is reloaded from `W`: a piece takes
 its arguments from `W + 272` on (`dO`: a pointer, `nO`: a length, `bO`: an
 offset). Each call pushes its arguments (last to first) in a frame of its
-own, popped into `eax`: `vg_aes_ctr32` six, `vg_ghash` five and
-`vg_aes_expand_key_scratch` four, with the return address 28 bytes of stack at
-most. The working space of the callee, `W + 512`, is passed in `ebp`, which
+own, popped into `eax`: `vg_aes_ctr32_to` seven (in place, the data twice),
+`vg_ghash` five and `vg_aes_expand_key_scratch` four, with the return address
+32 bytes of stack at most. The working space of the callee, `W + 512`, is passed in `ebp`, which
 is moved there before the frame and back after it.
 
 ## The pieces
@@ -52,10 +52,10 @@ is moved there before the frame and back after it.
   are kept at `W + a`, `W + a'` (low, high) and `W + t`, `W + t'`, absorbed.
 * `crypt`: the `nO` bytes at `dO` XORed with the keystream, `bO` bytes into
   the current keystream block: the rest of that block (at `esi + 64`), then
-  whole blocks with `vg_aes_ctr32` from the counter block at `esi + 48`,
+  whole blocks with `vg_aes_ctr32_to` from the counter block at `esi + 48`,
   then a new keystream block for the last bytes.
 * `tag o …`: the lengths block absorbed, and `GHASH ⊕ CIPH_K(J₀)` written to
-  `W + o`, with `vg_aes_ctr32` on it with the counter block `J₀` (at `esi`).
+  `W + o`, with `vg_aes_ctr32_to` on it with the counter block `J₀` (at `esi`).
 * `j0`: `J₀` for the `nO`-byte nonce at `dO` (GHASH'd with `absorb`,
   `flush` and `lens` unless it is 12 bytes), and the state's accumulator and
   first counter block `inc₃₂(J₀)` (`initState`).
@@ -134,7 +134,7 @@ structure Fn where
   name : String
   code : Prog isa
 
-/-- The implementations of `vg_aes_ctr32`, `vg_aes_expand_key_scratch` and
+/-- The implementations of `vg_aes_ctr32_to`, `vg_aes_expand_key_scratch` and
 `vg_ghash` a set of AES-GCM functions calls. -/
 structure Callees where
   ctr : Fn
@@ -144,9 +144,9 @@ structure Callees where
 section
 variable (c : Callees)
 
-/-- `vg_aes_ctr32(eax, ecx, edx, ebx, edi, ebp)`. -/
+/-- `vg_aes_ctr32_to(eax, ecx, edx, ebx, edi, ebp, ebx)`: in place. -/
 def ctrCall : Prog isa :=
-  .frame (.push [.ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.ctr.name c.ctr.code) (.pop .eax 6)
+  .frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.ctr.name c.ctr.code) (.pop .eax 7)
 
 /-- `vg_ghash(eax, edx, ebx, edi, ebp)`. -/
 def ghCall : Prog isa :=
@@ -166,10 +166,19 @@ def copyLoop : Prog isa :=
   .loop (.block [.movzx8 .eax (at_ .edi 0), .store8 (at_ .edx 0) .al, .alu .add .edi (imm 1),
     .alu .add .edx (imm 1), .alu .sub .ecx (imm 1)]) .ne
 
+/-- The register holding the bytes XORed with the keystream: the destination
+`edi` in place, `esi` out of place. -/
+def xorSrc (to : Bool) : Reg := if to then .esi else .edi
+
+/-- XORs the `ecx` (at least 1) bytes at `edx` with those at `edi` (in place)
+or at `esi` (out of place, `to`) into those at `edi`, advancing them. -/
+def xorLoopG (to : Bool) : Prog isa :=
+  .loop (.block ([.movzx8 .eax (at_ .edx 0), .movzx8 .ebx (at_ (xorSrc to) 0), .alu .xor .eax (.reg .ebx),
+    .store8 (at_ .edi 0) .al, .alu .add .edi (imm 1)] ++ (if to then [.alu .add .esi (imm 1)] else []) ++
+    [.alu .add .edx (imm 1), .alu .sub .ecx (imm 1)])) .ne
+
 /-- XORs the `ecx` (at least 1) bytes at `edx` into those at `edi`, advancing both. -/
-def xorLoop : Prog isa :=
-  .loop (.block [.movzx8 .eax (at_ .edx 0), .movzx8 .ebx (at_ .edi 0), .alu .xor .eax (.reg .ebx),
-    .store8 (at_ .edi 0) .al, .alu .add .edi (imm 1), .alu .add .edx (imm 1), .alu .sub .ecx (imm 1)]) .ne
+abbrev xorLoop : Prog isa := xorLoopG false
 
 /-- `ecx := min (16 - bO, nO)`. -/
 def minLen : Prog isa :=
@@ -249,7 +258,7 @@ def lens (yo al ah tl th : Nat) : Prog isa :=
 
 /-! ## Counter mode -/
 
-/-- The arguments of `vg_aes_ctr32` but the data and their number (`ebx`,
+/-- The arguments of `vg_aes_ctr32_to` but the data and their number (`ebx`,
 `edi`): the key schedule, the rounds, the counter block at `esi + 48` and the
 working space. -/
 def ctrArgs : List Instr :=
@@ -264,18 +273,23 @@ def cryptHead : Prog isa :=
       .mov .eax (.reg .edi), .alu .add .eax (.reg .ecx), .store (at_ .ebp dO) .eax])
     xorLoop)
 
-/-- Whole blocks at `dO`, by `vg_aes_ctr32`. -/
+/-- Whole blocks at `dO`, by `vg_aes_ctr32_to`. -/
 def cryptWhole : Prog isa :=
   .seq (.block splitWhole)
     (.ite .e (.block []) (.seq (.block ctrArgs) (.seq (ctrCall c) (.block unscr))))
+
+/-- The keystream block at `esi + 64` zeroed, and the arguments of
+`vg_aes_ctr32_to` to encrypt it in place from the counter block. -/
+def ksArgs : List Instr :=
+  ([.mov .eax (imm 0), .store (at_ .esi 64) .eax, .store (at_ .esi 68) .eax, .store (at_ .esi 72) .eax,
+    .store (at_ .esi 76) .eax, .mov .ebx (.reg .esi), .alu .add .ebx (imm 64), .mov .edi (imm 1)] : List Instr) ++
+    ctrArgs
 
 /-- The last `nO` bytes at `dO`, with a new keystream block. -/
 def cryptTail : Prog isa :=
   .seq (.block [.mov .eax (slot nO), .alu .test .eax (.reg .eax)])
     (.ite .e (.block [])
-      (.seq (.block (([.mov .eax (imm 0), .store (at_ .esi 64) .eax, .store (at_ .esi 68) .eax,
-          .store (at_ .esi 72) .eax, .store (at_ .esi 76) .eax, .mov .ebx (.reg .esi), .alu .add .ebx (imm 64),
-          .mov .edi (imm 1)] : List Instr) ++ ctrArgs))
+      (.seq (.block ksArgs)
       (.seq (.seq (ctrCall c) (.block unscr))
       (.seq (.block [.mov .edi (slot dO), .mov .edx (.reg .esi), .alu .add .edx (imm 64), .mov .ecx (slot nO)])
         xorLoop))))
@@ -487,20 +501,104 @@ def «seal» : Prog isa :=
   .seq (oneEntry 9 (keep 8 tpO))
     (.seq (oneAad c) (.seq (oneCrypt c) (.seq (oneTag c 0) (.seq (tagOut 0) (.block restore)))))
 
-/-- `vg_aes_gcm_open(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len, work)`. -/
-def «open» : Prog isa :=
+/-- The body of `vg_aes_gcm_open(ctx, rounds, nonce, nonce_len, aad, aad_len,
+data, len, tag, tag_len, work)`, which decrypts the data only once its tag is
+checked: `bad` runs if the tag length is not one `tagLenOk` allows (with
+`eax := 0`), and then `fail` if the tag is wrong (with `eax = 0`), `dec` if
+it is right. In place they set `eax`, do nothing and decrypt the data
+(`«open»`); `open_to` runs the body with `dst` in the word at `esp` (`Open`).
+-/
+def openBody (bad fail dec : Prog isa) : Prog isa :=
   .seq (oneEntry 10 (keep 8 tpO ++ keep 9 tglO))
   (.seq tagLenOk
-  (.seq (.ite .e (.block [.mov .eax (imm 0)])
+  (.seq (.ite .e bad
       (.seq (oneAad c)
       (.seq (oneTag c uO)
       (.seq recv
       (.seq (cmp uO)
       (.seq (.block [.store (at_ .ebp auxO) .eax, .alu .test .eax (.reg .eax)])
-      (.seq (.ite .e (.block []) (oneCrypt c))
+      (.seq (.ite .e fail dec)
         (.block [.mov .eax (slot auxO)]))))))))
     (.block restore)))
 
+/-- `vg_aes_gcm_open(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len, work)`. -/
+def «open» : Prog isa := openBody c (.block [.mov .eax (imm 0)]) (.block []) (oneCrypt c)
+
 end
+
+/-! ## Out of place
+
+`vg_aes_gcm_open_to` runs `openBody`, in a frame of 48 bytes of its own,
+with the arguments of `open` (the data being `src`), and the destination
+`dst` in the word at `esp` (`openTo`), which the body keeps as it keeps a
+return address: there it is `vg_aes_ctr32_to`'s last argument, above the
+six registers `ctrToCall` pushes, so that the whole blocks are decrypted from
+`src` straight to `dst`; the last bytes are copied to `dst` and decrypted
+there (`decTo`). If the tag is wrong, `dst` is zeroed (`wipe`). -/
+
+namespace Open
+
+/-- `vg_aes_ctr32_to(eax, ecx, edx, ebx, edi, ebp, dst)`, `dst` the word at `esp`. -/
+def ctrToCall (f : Fn) : Prog isa :=
+  .frame (.push [.ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call f.name f.code) (.pop .eax 6)
+
+/-- The whole blocks of the `lenO` bytes at `dataO`, decrypted to `dst` by
+`vg_aes_ctr32_to` (`f`) from the counter block at `esi + 48`. -/
+def wholeTo (f : Fn) : Prog isa :=
+  .seq (.block [.mov .ebx (slot dataO), .mov .edi (slot lenO), .shift .shr .edi 4, .alu .test .edi (.reg .edi)])
+    (.ite .e (.block []) (.seq (.block ctrArgs) (.seq (ctrToCall f) (.block unscr))))
+
+/-- `ecx := lenO mod 16`, ZF set if it is 0. -/
+def tailLen : List Instr := [.mov .ecx (slot lenO), .alu .and .ecx (imm 15), .alu .test .ecx (.reg .ecx)]
+
+/-- The last `lenO mod 16` bytes, after `16 k` whole ones: `edx` at the
+keystream block, `edi` at them in `dst` (the word at `esp`), `esi` at them in
+the data, and their number in `ecx`. -/
+def tailRegs : List Instr :=
+  [.mov .eax (slot lenO), .mov .ecx (.reg .eax), .alu .and .ecx (imm 15), .alu .sub .eax (.reg .ecx),
+    .mov .edx (.reg .esi), .alu .add .edx (imm 64), .mov .edi (.mem (at_ .esp 0)), .alu .add .edi (.reg .eax),
+    .mov .esi (slot dataO), .alu .add .esi (.reg .eax)]
+
+variable (c : Callees)
+
+/-- The data decrypted to `dst` from the first counter block: the whole
+blocks by `vg_aes_ctr32_to`, and the last bytes, if any, XORed from the data
+into `dst` with a keystream block (`xorLoopG`, as `cryptTail` does in place);
+`esi` is then the state again. -/
+def decTo (f : Fn) : Prog isa :=
+  .seq (wholeTo f) (.seq (.block tailLen) (.ite .e (.block [])
+    (.seq (.seq (.block ksArgs) (.seq (ctrCall c) (.block unscr))) (.seq (.block tailRegs)
+      (.seq (xorLoopG true) (.block [.mov .esi (.reg .ebp), .alu .add .esi (imm stO)]))))))
+
+/-- `dst` (the word at `esp`) in `edx`, `len` in `ecx`, and zero in `eax`. -/
+def wipeArgs : List Instr := [.mov .edx (.mem (at_ .esp 0)), .mov .ecx (slot lenO), .mov .eax (imm 0)]
+
+/-- The `ecx` bytes at `edx` zeroed, a byte at a time. -/
+def wipeLoop : Prog isa :=
+  .seq (.block [.alu .cmp .ecx (imm 0)])
+    (.ite .e (.block [])
+      (.loop (.block [.store8 (at_ .edx 0) .al, .alu .add .edx (imm 1), .alu .sub .ecx (imm 1)]) .ne))
+
+/-- The `len` bytes at `dst` zeroed, and `eax := 0`. -/
+def wipe : Prog isa := .seq (.block wipeArgs) wipeLoop
+
+/-- `mov eax, [esp + 52 + 4i]; mov [esp + o], eax`: our argument `i`, above
+the frame of 48 bytes, into it at `o`. -/
+def frameArg (i o : Nat) : List Instr := [.mov .eax (.mem (at_ .esp (52 + 4 * i))), .store (at_ .esp o) .eax]
+
+/-- The arguments of `vg_aes_gcm_open_to(ctx, rounds, nonce, nonce_len, aad,
+aad_len, src, len, dst, dst_len, tag, tag_len, work)` laid out in the frame
+as `openBody` takes those of `open`: `dst` in the word at `esp`, and the
+others but `dst_len` above it. -/
+def frameArgs : List Instr :=
+  frameArg 8 0 ++ ([0, 1, 2, 3, 4, 5, 6, 7].flatMap fun i => frameArg i (4 + 4 * i)) ++
+    frameArg 10 36 ++ frameArg 11 40 ++ frameArg 12 44
+
+/-- `vg_aes_gcm_open_to` with its working space as its last argument: `open`'s
+body in a frame of 48 bytes holding its arguments and `dst`. -/
+def openTo (f : Fn) : Prog isa :=
+  .frame (.alloc 48) (.seq (.block frameArgs) (openBody c wipe wipe (decTo c f))) (.free 48)
+
+end Open
 
 end VG.Impl.AesGcm.X86

@@ -16,12 +16,9 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # RSAES-OAEP on x86-64: MGF1 in constant time
 
-`mgfXor lay G` is constant time in two runs with the same frame, regions,
-`src` and `dst` (`MQ`), whatever the bytes they hold (`mgf_ct`). In each
-round (`round_ct`) the pieces between the calls are checked by the taint
-analysis from the frame's public slots (`RW.words`), and the calls' arguments
-are the same in both runs; the rounds are as many as `dstLen` and `hLen`
-say, by correctness (`round_ok`).
+Two runs of `mgfXor lay G` with the same frame, regions, `src` and `dst`
+(`MQ`): the frame's public slots in a round (`RW`, `RW.words`), where MGF1
+starts (`ME`), and the number of rounds (`nR`).
 -/
 
 @[expose] public section
@@ -91,120 +88,11 @@ variable {G : Stream} (hG : StreamOK G) (n : Nat)
 
 /-! ## The points of a round -/
 
-abbrev P0 (a : MQ × Nat) (t : State) : Prop := RW n G.D a.1 a.2 t
-
-abbrev P1 (a : MQ × Nat) (t : State) : Prop := RW n G.D a.1 a.2 t ∧ t.gpr .rdi = off a.1.S oSt
-
-abbrev P3 (a : MQ × Nat) (t : State) : Prop :=
-  RW n G.D a.1 a.2 t ∧ t.gpr .rdi = off a.1.S oSt ∧ t.gpr .rsi = BitVec.ofNat 64 0 ∧
-    t.gpr .rdx = off a.1.S a.1.src ∧ t.gpr .rcx = BitVec.ofNat 64 a.1.srcLen ∧ t.gpr .r8 = off a.1.S oW
-
-abbrev P5 (a : MQ × Nat) (t : State) : Prop :=
-  RW n G.D a.1 a.2 t ∧ t.gpr .rdi = off a.1.S oSt ∧ t.gpr .rsi = BitVec.ofNat 64 a.1.srcLen ∧
-    t.gpr .rdx = off a.1.S oCtr ∧ t.gpr .rcx = BitVec.ofNat 64 4 ∧ t.gpr .r8 = off a.1.S oW
-
-abbrev P7 (a : MQ × Nat) (t : State) : Prop :=
-  RW n G.D a.1 a.2 t ∧ t.gpr .rdi = off a.1.S oSt ∧ t.gpr .rsi = BitVec.ofNat 64 (a.1.srcLen + 4) ∧
-    t.gpr .rdx = off a.1.S oDig ∧ t.gpr .rcx = off a.1.S oW
-
 /-- A hash function's streaming functions of `hLen = d`, for the code that
 depends on `hLen` alone. -/
 def gD (d : Nat) : Stream := ⟨0, 0, d, 0, 0, "", .block [], "", .block [], "", .block []⟩
 
-theorem xorOut_taint (hn : n = 2 ∨ n = 3) : ∀ d < 65, (taint.check (frT [] [14, 17, 18, 20] n)
-    (xorOut lay (gD d)) (taint.hintOf (frT [] [14, 17, 18, 20] n) (xorOut lay (gD 0)))).isSome = true := by
-  rcases hn with rfl | rfl <;> decide +kernel
-
-theorem nextCtr_taint (hn : n = 2 ∨ n = 3) : ∀ d < 65, (taint.check (frT [] [] n) (.block (nextCtr lay (gD d)))
-    (taint.hintOf (frT [] [] n) (.block (nextCtr lay (gD 0))))).isSome = true := by
-  rcases hn with rfl | rfl <;> decide +kernel
-
 theorem nopin {β : Type} {Φ : β → State → Prop} : Pins Φ [] := fun _ _ _ _ _ _ h => absurd h List.not_mem_nil
-
-theorem ks_lt : ∀ k ∈ [14, 15, 16, 17, 18, 19, 20], k < nW := by decide
-
-/-- The words of `RW`, for any of its slots. -/
-theorem RW.sub {m D : Nat} {q : MQ} {c : Nat} {t : State} (h : RW m D q c t) {ks : List Nat}
-    (hks : ∀ k ∈ ks, k ∈ [14, 15, 16, 17, 18, 19, 20]) :
-    FrV m q.F q.ws t ∧ ∀ k ∈ ks, word t.mem q.F (8 * k) = mw D q c k :=
-  ⟨h.words.1, fun k hk => h.words.2 k (hks k hk)⟩
-
-include hG in
-theorem round_ct (hn : n = 2 ∨ n = 3) : RelCT isa (Two (P0 (G := G) n)) (round lay G) fun _ _ => True := by
-  obtain ⟨hzS, hzF, hzW, hzDF, hzD⟩ := sizes hG
-  have c1 : oSt = 3072 := rfl
-  have c2 : oDig = 3328 := rfl
-  have c3 : oCtr = 3456 := rfl
-  have c4 : oW = 4096 := rfl
-  have c5 : oRsa = 8192 := rfl
-  unfold round seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs
-  -- `init`.
-  refine RelCT.seq (two_pieceF (Ψ := P1 (G := G) n) [] [] (fun a => a.1.F) (fun a => a.1.ws)
-    (fun a => mw G.D a.1 a.2) (fun a t h => h.sub (by decide)) nopin (by decide) (by rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩)
-    fun a t h => WP.mono (scr_ok h.L (d := .rdi) (by decide) (o := oSt) (by decide))
-      fun t' ⟨hdi, hm, k⟩ => ⟨h.congr (k.gpr (by decide)) k.2.2 hm, hdi⟩) ?_
-  refine RelCT.seq (two_post (Ψ := P0 (G := G) n) (two_init hG (fun a => a.1.F) (fun a => a.1.S) fun a t h => ⟨h.1.L, h.2⟩)
-    fun a t h => ?_) ?_
-  · obtain ⟨V, W, R, A, h19, h20⟩ := h.1.rep
-    exact WP.mono (init_ok hG h.1.L R h.2) fun t' ⟨L', _, wr', _, R', _⟩ => h.1.after L' wr' R' A h19 h20
-  -- `update` with `src`.
-  refine RelCT.seq (two_pieceF (Ψ := P3 (G := G) n) [] [] (fun a => a.1.F) (fun a => a.1.ws)
-    (fun a => mw G.D a.1 a.2) (fun a t h => h.sub (by decide)) nopin (by decide) (by rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩)
-    fun a t h => ?_) ?_
-  · obtain ⟨V, W, R, A, h19, h20⟩ := h.rep
-    exact WP.mono (updSrc_ok h.L R A) fun t' ⟨hdi, hsi, hdx, hcx, h8, hm, k⟩ =>
-      ⟨h.congr (k.gpr (by decide)) k.2.2 hm, hdi, hsi, hdx, hcx, h8⟩
-  refine RelCT.seq (two_post (Ψ := P0 (G := G) n) (two_upd hG (fun a => a.1.F) (fun a => a.1.S) (fun a => a.1.src)
-    (fun a => a.1.srcLen) (fun _ => BitVec.ofNat 64 0) fun a t h => by
-      have := h.1.fit.fs
-      exact ⟨h.1.L, by omega, by omega, by omega, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2⟩)
-    fun a t h => ?_) ?_
-  · obtain ⟨V, W, R, A, h19, h20⟩ := h.1.rep
-    have := h.1.fit.fs
-    exact WP.mono (upd_ok hG h.1.L R (a := a.1.src) (len := a.1.srcLen) (by omega) (by omega) (by omega)
-      h.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2) fun t' ⟨L', _, wr', _, R', _⟩ => h.1.after L' wr' R' A h19 h20
-  -- The counter, and `update` with it.
-  refine RelCT.seq (two_pieceF (Ψ := P5 (G := G) n) [] [14] (fun a => a.1.F) (fun a => a.1.ws)
-    (fun a => mw G.D a.1 a.2) (fun a t h => h.sub (by decide)) nopin (by decide) (by rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩)
-    fun a t h => ?_) ?_
-  · obtain ⟨V, W, R, A, h19, h20⟩ := h.rep
-    have := h.lt
-    have := h.fit.dstB
-    have hc : a.2 ≤ a.2 * G.D := Nat.le_mul_of_pos_right _ hzD
-    exact WP.mono (updCtr_ok h.L R A.hsl h19 (by omega)) fun t' ⟨L', hdi, hsi, hdx, hcx, h8, k, R'⟩ =>
-      ⟨h.after L' k.2.2 R' A h19 h20, hdi, hsi, hdx, hcx, h8⟩
-  refine RelCT.seq (two_post (Ψ := P0 (G := G) n) (two_upd hG (fun a => a.1.F) (fun a => a.1.S) (fun _ => oCtr)
-    (fun _ => 4) (fun a => BitVec.ofNat 64 a.1.srcLen) fun a t h =>
-      ⟨h.1.L, by omega, by omega, by omega, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2⟩)
-    fun a t h => ?_) ?_
-  · obtain ⟨V, W, R, A, h19, h20⟩ := h.1.rep
-    exact WP.mono (upd_ok hG h.1.L R (a := oCtr) (len := 4) (by omega) (by omega) (by omega)
-      h.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2) fun t' ⟨L', _, wr', _, R', _⟩ => h.1.after L' wr' R' A h19 h20
-  -- `finalize`.
-  refine RelCT.seq (two_pieceF (Ψ := P7 (G := G) n) [] [] (fun a => a.1.F) (fun a => a.1.ws)
-    (fun a => mw G.D a.1 a.2) (fun a t h => h.sub (by decide)) nopin (by decide) (by rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩)
-    fun a t h => ?_) ?_
-  · obtain ⟨V, W, R, A, h19, h20⟩ := h.rep
-    exact WP.mono (finA_ok h.L R A.hsl) fun t' ⟨hdi, hsi, hdx, hcx, hm, k⟩ =>
-      ⟨h.congr (k.gpr (by decide)) k.2.2 hm, hdi, hsi, hdx, hcx⟩
-  refine RelCT.seq (two_post (Ψ := P0 (G := G) n) (two_fin hG (fun a => a.1.F) (fun a => a.1.S) (fun _ => oDig)
-    (fun a => BitVec.ofNat 64 (a.1.srcLen + 4)) fun a t h =>
-      ⟨h.1.L, by omega, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2⟩)
-    fun a t h => ?_) ?_
-  · obtain ⟨V, W, R, A, h19, h20⟩ := h.1.rep
-    exact WP.mono (fin_ok hG h.1.L R (o := oDig) (by omega) h.2.1 h.2.2.2.1 h.2.2.2.2)
-      fun t' ⟨L', _, wr', _, R', _⟩ => h.1.after L' wr' R' A h19 h20
-  -- Into `dst`, and the next counter.
-  have hD65 : G.D < 65 := by omega
-  refine RelCT.seq (two_pieceF (Ψ := P0 (G := G) n) [] [14, 17, 18, 20] (fun a => a.1.F) (fun a => a.1.ws)
-    (fun a => mw G.D a.1 a.2) (fun a t h => h.sub (by decide)) nopin (by decide) ⟨_, xorOut_taint n hn G.D hD65⟩
-    fun a t h => ?_) ?_
-  · obtain ⟨V, W, R, A, h19, h20⟩ := h.rep
-    have := h.fit.fd
-    exact WP.mono (xorOut_ok h.L R (dst := a.1.dst) (dstLen := a.1.dstLen) (done := a.2 * G.D) (by omega) hzD
-      (by omega) A.hdst A.hdl h20 h.lt) fun t' ⟨L', k, R'⟩ => h.after L' k.2.2 R' A h19 h20
-  exact two_taintF [] [] (fun a => a.1.F) (fun a => a.1.ws) (fun a => mw G.D a.1 a.2)
-    (fun a t h => h.sub (by decide)) nopin (by decide) ⟨_, nextCtr_taint n hn G.D hD65⟩
 
 /-! ## MGF1 -/
 
@@ -215,11 +103,6 @@ structure ME (q : MQ) (t : State) : Prop where
   fit : MFit q.src q.srcLen q.dst q.dstLen
   rep : ∃ V W, Rep t.mem q.F q.S V W ∧ MArgs W q.S q.src q.srcLen q.dst q.dstLen
 
-/-- Before the round with counter `j`. -/
-def ML (Gs : Spec.Mgf1.Hash) (q : MQ) (j : Nat) (t : State) : Prop :=
-  FrV n q.F q.ws t ∧ MFit q.src q.srcLen q.dst q.dstLen ∧ ∃ u₀ V W, MArgs W q.S q.src q.srcLen q.dst q.dstLen ∧
-    MgfI u₀ q.F q.S V W (Spec.Mgf1.mgf1 Gs (srcB V q.src q.srcLen) q.dstLen) q.dst q.dstLen G.D j t
-
 /-- The number of rounds. -/
 def nR (D : Nat) (q : MQ) : Nat := (q.dstLen + D - 1) / D
 
@@ -227,36 +110,5 @@ theorem lt_nR {D : Nat} (hD : 0 < D) (q : MQ) (j : Nat) : j < nR D q ↔ j * D <
   unfold nR
   rw [← Nat.succ_le_iff, Nat.le_div_iff_mul_le hD, Nat.succ_mul]
   omega
-
-include hG in
-theorem ML.rw {Gs : Spec.Mgf1.Hash} {q : MQ} {j : Nat} {t : State} (h : ML (G := G) n Gs q j t) (hj : j < nR G.D q) :
-    RW n G.D q j t := by
-  obtain ⟨fv, fit, u₀, V, W, A, I⟩ := h
-  obtain ⟨V', W', R', h19, h20, hW, -⟩ := I.rep
-  exact ⟨fv, I.L, fit, (lt_nR (sizes hG).2.2.2.2 q j).mp hj, V', W', R',
-    A.of_eq fun k h1 h2 => hW k (by unfold nW frameBytes; omega) (by omega) (by omega), h19, h20⟩
-
-include hG in
-/-- `dst ⊕= MGF1(src, dstLen)` in two runs with the same `MQ`. -/
-theorem mgf_ct {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D)
-    (hGv : Proof.Mgf1.Valid Gs) (hn : n = 2 ∨ n = 3) : RelCT isa (Two (ME n)) (mgfXor lay G) fun _ _ => True := by
-  have hD := (sizes hG).2.2.2.2
-  unfold mgfXor
-  refine RelCT.seq (two_pieceF (Ψ := fun q t => 0 < nR G.D q ∧ ML (G := G) n Gs q 0 t) [] [] MQ.F MQ.ws
-    (fun _ _ => 0) (fun q t h => ⟨h.fv, fun _ h => absurd h List.not_mem_nil⟩) nopin (by decide)
-    (by rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun q t h => ?_) ?_
-  · obtain ⟨V, W, R, A⟩ := h.rep
-    have hpos := h.fit.pos
-    exact WP.mono (mgfHead_ok (G := G) h.L R (Spec.Mgf1.mgf1 Gs (srcB V q.src q.srcLen) q.dstLen) q.dst q.dstLen)
-      fun v I => ⟨(lt_nR hD q 0).mpr (by omega), h.fv.congr (I.L.rsp.trans h.L.rsp.symm) I.wr, h.fit, t, V, W, A, I⟩
-  refine (two_loop (Ψ := fun _ _ => True) (nR G.D)
-    (two_map id (fun p s h => ML.rw hG n h.2 h.1) (round_ct hG n hn)) fun q j t hj h => ?_).mono
-    (fun _ _ h => h) fun _ _ _ => trivial
-  obtain ⟨fv, fit, u₀, V, W, A, I⟩ := h
-  refine WP.mono (round_ok hG hGh hGl hGv fit A I ((lt_nR hD q j).mp hj)) fun t' ⟨hcf, I'⟩ => ?_
-  have e : decide ((j + 1) * G.D < q.dstLen) = decide (j + 1 < nR G.D q) := by
-    rw [decide_eq_decide]; exact (lt_nR hD q (j + 1)).symm
-  refine ⟨by simp only [eval, hcf, e], fun _ => ⟨fv.congr (I'.L.rsp.trans I.L.rsp.symm) (I'.wr.trans I.wr.symm),
-    fit, u₀, V, W, A, I'⟩, fun _ => trivial⟩
 
 end VG.Proof.RsaOaep.X86_64

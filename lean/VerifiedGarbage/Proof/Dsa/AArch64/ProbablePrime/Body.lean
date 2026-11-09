@@ -59,12 +59,6 @@ theorem exit_ok {u : State} {B F U used st : Addr} (hx0 : u.gpr .x0 = B) (hsp : 
     done
   exact WP.mono (WP.keep [.x0, .x3, .x4] run (by decide)) fun t ⟨⟨hm, hx⟩, k⟩ => ⟨hm, hx, k⟩
 
-/-- The test's 0, 1 and 3 are the function's 0, 1 and 2. -/
-theorem status_halve (b : Option Bool) :
-    let st : BitVec 64 := BitVec.ofNat 64 (match b with | none => 0 | some true => 1 | some false => 3)
-    st - (st >>> 1) = BitVec.ofNat 64 (match b with | none => 0 | some true => 1 | some false => 2) := by
-  rcases b with _ | _ | _ <;> decide
-
 end VG.Proof.Dsa.AArch64.ProbablePrime
 end
 

@@ -5,7 +5,6 @@
 // gives.
 
 vg_aes_ctr32_aes:
-	.arch_extension aes
 	ldr q16, [x0, #0]
 	ldr q17, [x0, #16]
 	ldr q18, [x0, #32]
@@ -382,5 +381,4 @@ vg_aes_ctr32_aes:
 	rev w12, w10
 	str w12, [x2, #12]
 	ret
-	.arch_extension noaes
 	.p2align 6

@@ -88,20 +88,21 @@ theorem z_eq {x y : State} {p q : Bool} (hx : x.z = p) (hy : y.z = q) (hab : p =
 /-! ## The call of `vg_chacha20_xor` -/
 
 theorem Args.covers {s₀ s : State} (h : Args s₀ s) :
-    Covers ([] ++ [cpR s₀, blR s₀, wkR s₀]) (s.rd ++ s.wr) ∧ Covers [cpR s₀, blR s₀, wkR s₀] s.wr := by
-  have hcov : ∀ r ∈ [cpR s₀, blR s₀, wkR s₀], ∃ r' ∈ [stR s₀, dR s₀], ∃ o,
+    Covers ([blR s₀] ++ [cpR s₀, blR s₀, wkR s₀]) (s.rd ++ s.wr) ∧ Covers [cpR s₀, blR s₀, wkR s₀] s.wr := by
+  have hcov : ∀ r ∈ [blR s₀] ++ [cpR s₀, blR s₀, wkR s₀], ∃ r' ∈ [stR s₀, dR s₀], ∃ o,
       r.base = r'.base + BitVec.ofNat 64 o ∧ o + r.len ≤ r'.len := by
     intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨dR s₀, by simp, H s₀, rfl, HNB_le s₀⟩
     · exact ⟨stR s₀, by simp, 192, rfl, by simp⟩
     · exact ⟨dR s₀, by simp, H s₀, rfl, HNB_le s₀⟩
     · exact ⟨stR s₀, by simp, 256, rfl, by simp⟩
-  exact ⟨by rw [h.rd, h.wr, List.nil_append, List.nil_append]; exact Covers.of_sub hcov,
-    by rw [h.wr]; exact Covers.of_sub hcov⟩
+  exact ⟨by rw [h.rd, h.wr, List.nil_append]; exact Covers.of_sub hcov,
+    by rw [h.wr]; exact Covers.of_sub fun r hr => hcov r (List.mem_append_right _ hr)⟩
 
 theorem Args.pre {s₀ s : State} (hp : APre s₀) (h : Args s₀ s) (hnb : 0 < NB s₀) :
-    Proof.ChaCha20.xorArm.pre (s.callEntry.withRegions [] [cpR s₀, blR s₀, wkR s₀]) := by
+    Proof.ChaCha20.xorArm.pre (s.callEntry.withRegions [blR s₀] [cpR s₀, blR s₀, wkR s₀]) := by
   have hL := L_lt s₀
   have hHNB := HNB_le s₀
   have hst := hp.st_fit
@@ -111,12 +112,14 @@ theorem Args.pre {s₀ s : State} (hp : APre s₀) (h : Args s₀ s) (hnb : 0 < 
   simp only [Proof.ChaCha20.xorArm, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, State.callEntry_gpr s (by decide : Reg.r0 ∉ linkRegs),
     State.callEntry_gpr s (by decide : Reg.r1 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.r2 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.r3 ∉ linkRegs), h.r0, h.r1, h.r2, h.r3, hn,
+    State.callEntry_gpr s (by decide : Reg.r3 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.r5 ∉ linkRegs),
+    h.r0, h.r1, h.r2, h.r3, h.r5, hn,
     hp.eaS (d := 192) (by decide), hp.eaS (d := 256) (by decide), hp.eaD (d := H s₀) (by omega_arith),
     hp.sNat (d := 192) (by decide), hp.sNat (d := 256) (by decide), hp.dNat (d := H s₀) (by omega_arith)]
-  exact ⟨trivial, trivial, (hp.st_d.sub_left (cpR_sub s₀)).sub_right (blR_sub s₀),
-    Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith),
-    (hp.st_d.sub_left (wkR_sub s₀)).symm.sub_left (blR_sub s₀), by omega_arith, by omega_arith, by omega_arith⟩
+  have hSD := (hp.st_d.sub_left (cpR_sub s₀)).sub_right (blR_sub s₀)
+  have hDB := (hp.st_d.sub_left (wkR_sub s₀)).symm.sub_left (blR_sub s₀)
+  exact ⟨trivial, trivial, hSD, hSD, Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith),
+    hDB, hDB, .inl trivial, by omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
 
 /-! ## The call of the block function -/
 
@@ -228,7 +231,7 @@ theorem xor_rel :
   have ecp : cpR b = cpR a := by simp only [cpR, h.eqst]
   have ebl : blR b = blR a := by simp only [blR, h.eqdp, h.eqH, h.eqNB]
   have ewk : wkR b = wkR a := by simp only [wkR, h.eqst]
-  refine RelCT.call Proof.ChaCha20.Arm.Xor.xor_correct Proof.ChaCha20.Arm.Xor.xor_ct [] [cpR a, blR a, wkR a]
+  refine RelCT.call Proof.ChaCha20.Arm.Xor.xor_correct Proof.ChaCha20.Arm.Xor.xor_ct [blR a] [cpR a, blR a, wkR a]
     fun x y ⟨⟨hx, hnb⟩, hy⟩ => ?_
   have py := hy.pre h.pb (by rw [← h.eqNB]; exact hnb)
   have cy := hy.covers
@@ -239,8 +242,9 @@ theorem xor_rel :
     State.callEntry_gpr x (by decide : Reg.r2 ∉ linkRegs), State.callEntry_gpr x (by decide : Reg.r3 ∉ linkRegs),
     State.callEntry_gpr y (by decide : Reg.r0 ∉ linkRegs), State.callEntry_gpr y (by decide : Reg.r1 ∉ linkRegs),
     State.callEntry_gpr y (by decide : Reg.r2 ∉ linkRegs), State.callEntry_gpr y (by decide : Reg.r3 ∉ linkRegs),
-    hx.r0, hx.r1, hx.r2, hx.r3, hy.r0, hy.r1, hy.r2, hy.r3, h.hst, h.hdp, h.eqH, h.eqNB]
-  exact ⟨trivial, trivial, trivial, trivial⟩
+    State.callEntry_gpr x (by decide : Reg.r5 ∉ linkRegs), State.callEntry_gpr y (by decide : Reg.r5 ∉ linkRegs),
+    hx.r0, hx.r1, hx.r2, hx.r3, hx.r5, hy.r0, hy.r1, hy.r2, hy.r3, hy.r5, h.hst, h.hdp, h.eqH, h.eqNB]
+  exact ⟨trivial, trivial, trivial, trivial, trivial⟩
 
 theorem part2_rel :
     RelCT isa (fun x y => Q1 a x ∧ Q1 b y) part2 fun x y => Q2 a x ∧ Q2 b y := by

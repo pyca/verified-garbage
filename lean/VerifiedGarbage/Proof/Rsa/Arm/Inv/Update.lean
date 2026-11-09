@@ -39,27 +39,6 @@ theorem sub_shl1 (x : BitVec 32) : x - (x <<< 1) = 0 - x := by
 def win (s : State) : WSt :=
   ⟨s.gpr .r0, s.gpr .r1, s.gpr .r2, s.gpr .r3, s.gpr .r4, s.gpr .r5, s.gpr .r10⟩
 
-theorem wstepI_run (s : State) : ∃ t, runBlock isa wstepI s = some t ∧ win t = wstep (win s) ∧
-    (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r10 → r ≠ .r11 →
-      r ≠ .r12 → r ≠ .lr → t.gpr r = s.gpr r) ∧
-    t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
-  have e1 : encodable 1 = true := by decide
-  have e2 : encodable 2 = true := by decide
-  have s1 : (1 ≤ 1 ∧ 1 ≤ 31) = True := by decide
-  have s31 : (1 ≤ 31 ∧ 31 ≤ 31) = True := by decide
-  obtain ⟨t, run⟩ : ∃ t, runBlock isa wstepI s = some t := ⟨_, by
-    simp only [wstepI, runBlock_cons, runStep_some, runBlock_nil, reduceExec, Op2.eval,
-      Option.map_some, e1, e2, s1, s31, ↓reduceIte]
-    exact rfl⟩
-  have ht := run
-  simp only [wstepI, runBlock_cons, runStep_some, runBlock_nil, reduceExec, Op2.eval,
-    Option.map_some, e1, e2, s1, s31, ↓reduceIte, Option.some.injEq] at ht
-  subst ht
-  refine ⟨_, run, ?_, ?_, rfl, rfl, rfl, rfl⟩
-  · simp only [win, wstep, gpr_setReg, reduceCtorEq, ↓reduceIte, sub_shl1]
-  · intro r h0 h1 h2 h3 h4 h5 h10 h11 h12 hl
-    simp only [gpr_setReg, h0, h1, h2, h3, h4, h5, h10, h11, h12, hl, ↓reduceIte]
-
 /-- The registers the divsteps write. -/
 abbrev wRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r10, .r11, .r12, .lr]
 
@@ -315,8 +294,6 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Proof.Rsa.Arm.Keys VG.Proof
 open VG.Impl.Rsa.Arm.Keys.Inv
 open VG.Proof.X25519.Arm
 
-/-- The arrays a batch writes. -/
-abbrev updArrs : List Nat := [bF, bG, bD, bE, bT1, bT2, bA1, bA2]
 abbrev deArrs : List Nat := [bD, bE, bT1, bT2, bA1, bA2]
 abbrev fgArrs : List Nat := [bF, bG, bT1, bT2, bA1, bA2]
 

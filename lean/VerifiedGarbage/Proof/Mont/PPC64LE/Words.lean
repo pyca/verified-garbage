@@ -197,8 +197,4 @@ theorem w32_write_ne {m : Mem} {base : Addr} {size o d : Nat} (hn : base.toNat +
   have := base.isLt
   rw [w32, Mem.readW_writeW_sep (Offset.sep base hsep (by omega) (by omega)) (by decide)]
 
-/-- The number one word up. -/
-theorem val32_succ' (m : Mem) (base : Addr) (d k : Nat) :
-    val32 m base d (k + 1) = w32 m base d + 2 ^ 32 * val32 m base (d + 4) k := rfl
-
 end VG.Proof.Mont.PPC64LE

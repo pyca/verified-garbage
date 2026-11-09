@@ -49,17 +49,8 @@ theorem ptrX_ok {s : State} {L : Lay} {key sig : Addr} (hs : ScrL s L) (hL : L.O
 /-- The registers `keyPair` writes. -/
 def keyPairRegs : List Reg := ptrRegs ++ [.s9] ++ ptrRegs ++ powPRegs ++ ptrRegs ++ loadRegs ++ eqRegs .a0
 
-theorem kp_b1 (L : Lay) : 256 ≤ slot L.wp 1 ∧ slot L.wp 1 + 23 * (8 * (L.wp + 2)) ≤ slot L.wp 24 := by
-  simp only [Lay.slot_eq]; omega
-
-theorem kp_b5 (L : Lay) : 256 ≤ slot L.wp 5 ∧ slot L.wp 5 + 8 * (L.wp + 1) ≤ slot L.wp 24 := by
-  simp only [Lay.slot_eq]; omega
-
 /-- A change in the P space's arrays 1–23. -/
 abbrev PLow (L : Lay) (m m' : Mem) : Prop := Outside L.S (slot L.wp 1) (23 * (8 * (L.wp + 2))) m m'
-
-theorem PLow.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : PLow L m₁ m₂) (h₂ : PLow L m₂ m₃) : PLow L m₁ m₃ :=
-  Outside.trans h₁ h₂
 
 theorem PLow.parr {L : Lay} {m m' : Mem} (h : PLow L m m') : PArr L m m' :=
   PArr.of h (Nat.le_refl _) (by simp only [Lay.slot_eq]; omega)
@@ -74,11 +65,6 @@ theorem PLow.arr {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PLow L m m') {j : Nat} 
   · exact h.wordsVal (Or.inl (by simp only [Lay.slot_eq]; omega)) (by simp only [Lay.bOff, Lay.qOff] at hb; omega)
   · exact h.wordsVal (Or.inr (by have := slot_mono (w := L.wp) hj'; omega))
       (by simp only [Lay.bOff, Lay.qOff] at hb; omega)
-
-theorem PLow.top0 {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PLow L m m') :
-    word m' L.S (slot L.wp 0 + 8 * L.wp) = word m L.S (slot L.wp 0 + 8 * L.wp) := by
-  have hw := hL.wp_ge
-  exact h.word (Or.inl (by simp only [Lay.slot_eq]; omega)) (by simp only [Lay.slot_eq]; omega)
 
 theorem PLow.word0 {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PLow L m m') :
     word m' L.S (slot L.wp 0) = word m L.S (slot L.wp 0) := by

@@ -25,7 +25,7 @@ structure CrtImpl where
   pcNoSp : NoSp pc
   pdName : String
   pd : Prog isa
-  pdVerified : Verified target pd (Spec.Rsa.publicPrecomputedCheckedContract abi 96)
+  pdVerified : Verified target pd (Proof.Rsa.publicPrecomputedCheckedContract abi 96)
   pdStack : stackUse pd ≤ 96
   pdNoSp : NoSp pd
   suffix : String := ""

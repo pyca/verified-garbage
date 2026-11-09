@@ -69,10 +69,10 @@ def hDone : Nat := 5
 `Callee4.batchP16`), which samples its three entries and computes
 `PRF₂(σ, 0)` and `PRF₂(σ, 1)` from `σ`, copied first to the samplers'
 working space. -/
-def frag0 (p : Prog isa) : Prog isa :=
+def frag0 (p : Nat → Nat → Prog isa) : Prog isa :=
   .seq (copy (sc (K.oW + Sample4.oPS)) (sc (oG + 32)) 32)
     (.seq (seedAt 0 0 0) (.seq (seedAt 1 0 1) (.seq (seedAt 2 0 2) (.seq (seedAt 3 1 0)
-      (Encaps.sampleHAt p (Top16.aP K 0) (sc K.oW))))))
+      (Encaps.sampleHAt (p 0 2) (Top16.aP K 0) (sc K.oW))))))
 
 /-- Row `i` of `Â`: the blocks `(hm i).2`, … of `ek` to `HB`, the seeds of
 entries `3i` to `3i + 3`, and `b (hm i).1`, which samples the first three
@@ -98,7 +98,7 @@ def tail : Prog isa :=
 /-- Row 0, with `PRF₂(σ, 0)` and `PRF₂(σ, 1)` (`frag0 p`), the sponge's
 state zeroed, the noise they give, `nttAt`, and the rows after, with the
 matrix's fragments `b`, and the tail. -/
-def rows (b : Nat → Prog isa) (p : Prog isa) (A : Arith) : Prog isa :=
+def rows (b : Nat → Prog isa) (p : Nat → Nat → Prog isa) (A : Arith) : Prog isa :=
   .seq (frag0 K p) (.seq (.block (Encaps16.hzero K)) (.seq (cbdP K A 0) (.seq (cbdP K A 1) (.seq (nttAt K)
     (.seq (ifOk (rowAt K 0)) (.seq (frag K b 1) (.seq (ifOk (rowAt K 1)) (.seq (frag K b 2)
       (ifOk (.seq (rowAt K 2) (tail K)))))))))))
@@ -110,7 +110,7 @@ open KeyGen KeyGenH16 in
 the matrix's fragments `b` and computing two outputs of `PRF₂` with `p`,
 of the implementation `c`: `PRF₂(σ, 2)` to `PRF₂(σ, 5)` and their
 polynomials first (`c.prfs`, four at a time). -/
-def kemKeyGenH16 (K : Kem16) (c : Callee4) (b : Nat → Prog isa) (p : Prog isa) : Prog isa :=
+def kemKeyGenH16 (K : Kem16) (c : Callee4) (b : Nat → Prog isa) (p : Nat → Nat → Prog isa) : Prog isa :=
   .seq (.block pro) (.seq (gRho K.L) (.seq (c.prfs 2 4 (K.oPR + 256) (K.oW / 32))
     (.seq (seqR (Top16.cbdN K c.arith) 2 4) (.seq (rows K b p c.arith) (.block topEpi)))))
 

@@ -70,9 +70,6 @@ theorem stk_scr (h : L.Ok) {d n e k : Nat} (h₁ : d + n ≤ 264) (h₂ : e + k 
 theorem stk_input (h : L.Ok) {r : Region} (hr : r ∈ L.inputs) {d n : Nat} (hd : d + n ≤ 264) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r :=
   (h.ks r hr).sub_left (Offset.sub_base _ hd)
-theorem input_scr (h : L.Ok) {r : Region} (hr : r ∈ L.inputs) {e k : Nat} (he : e + k ≤ 8192) :
-    Region.Disjoint r ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
-  (h.sc r hr).sub_right (Offset.sub_base _ he)
 end Lay.Ok
 
 structure Ctx (L : Lay) (g : Reg → BitVec 64) (mx : BitVec 32) (m₀ : Mem) (t : State) : Prop where

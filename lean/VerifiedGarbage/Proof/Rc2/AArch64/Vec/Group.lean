@@ -33,7 +33,7 @@ def prevBlock (X : BitVec 64) (m : Mem) (q : Addr) (b : Nat) : Spec.Rc2.Block :=
 
 structure GroupPost (m : Mem) (p : Addr) (t t' : State) : Prop where
   data : ∀ b < 8, Spec.Rc2.blockAt t'.mem (t.gpr .x1 + BitVec.ofNat 64 (8 * b)) =
-    Spec.Rc2.xorBlock (Spec.Rc2.decryptBlock (Spec.Rc2.scheduleAt m p)
+    Proof.Rc2.xorBlock (Spec.Rc2.decryptBlock (Spec.Rc2.scheduleAt m p)
         (Spec.Rc2.blockAt t.mem (t.gpr .x1 + BitVec.ofNat 64 (8 * b))))
       (prevBlock (t.gpr .x11) t.mem (t.gpr .x1) b)
   frame : Frame [⟨t.gpr .x1, 64⟩] t.mem t'.mem
@@ -57,10 +57,10 @@ theorem out_block {m m' : Mem} {q : Addr} {X : BitVec 64} {R : Nat → Spec.Rc2.
     (h : ∀ o < 64, m' (q + BitVec.ofNat 64 o) = encByte (R (o / 8)) (o % 8) ^^^ prevByte X m q o)
     {b : Nat} (hb : b < 8) :
     Spec.Rc2.blockAt m' (q + BitVec.ofNat 64 (8 * b)) =
-      Spec.Rc2.xorBlock (Spec.Rc2.encodeBlock (R b)) (prevBlock X m q b) := by
+      Proof.Rc2.xorBlock (Spec.Rc2.encodeBlock (R b)) (prevBlock X m q b) := by
   apply Vector.ext
   intro j hj
-  simp only [Spec.Rc2.blockAt, Spec.Rc2.xorBlock, Vector.getElem_ofFn, Offset.add_add, Fin.getElem_fin]
+  simp only [Spec.Rc2.blockAt, Proof.Rc2.xorBlock, Vector.getElem_ofFn, Offset.add_add, Fin.getElem_fin]
   rw [h _ (by omega), encodeBlock_getElem _ hj, show (8 * b + j) / 8 = b by omega,
     show (8 * b + j) % 8 = j by omega, prevByte, prevBlock]
   by_cases h0 : b = 0

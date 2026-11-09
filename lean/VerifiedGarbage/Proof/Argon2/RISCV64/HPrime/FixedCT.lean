@@ -236,7 +236,6 @@ theorem AgreeRegs.taint {rs : List Reg} {s t : State} (h : AgreeRegs rs s t) :
 
 theorem publicRegs_callee : ∀ r ∈ publicRegs, r ∈ preserved := by decide
 
-
 theorem setup_rel :
     RelCT isa (AgreeRegs [.a0, .a1, .a2, .a3, .a4]) (.block setup)
       (AgreeRegs publicRegs) :=
@@ -247,10 +246,6 @@ theorem chooseLength_rel : RelCT isa (AgreeRegs publicRegs) chooseLength
     (AgreeRegs (.a1 :: publicRegs)) :=
   RelCT.taintRegs (τ := Taint.ofRegs publicRegs)
     (fun _ _ hp => hp.taint) (.a1 :: publicRegs) (by taint_decide)
-
-theorem copy_rel : RelCT isa (AgreeRegs (.a6 :: publicRegs)) copy (AgreeRegs publicRegs) :=
-  RelCT.taintRegs (τ := Taint.ofRegs (.a6 :: publicRegs))
-    (fun _ _ hp => hp.taint) publicRegs (by taint_decide)
 
 theorem emitPrefix_rel : RelCT isa (AgreeRegs publicRegs) emitPrefix (AgreeRegs publicRegs) :=
   RelCT.taintRegs (τ := Taint.ofRegs publicRegs)

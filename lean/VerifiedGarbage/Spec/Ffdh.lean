@@ -55,10 +55,6 @@ def parametersValid (a : Parameters) : Bool :=
     | some q => 2 < q && q % 2 == 1 && q < a.p - 1 &&
         (a.p - 1) % q == 0 && powMod a.g q a.p == 1
 
-def parametersFrom (p g : Nat) (q : Option Nat) : Option Parameters :=
-  let a : Parameters := ⟨p, g, q⟩
-  if parametersValid a then some a else none
-
 /-- Reject the identity and order-two value even without q. -/
 def publicValid (k : PublicKey) : Bool :=
   1 < k.y && k.y < k.params.p - 1 && match k.params.q with
@@ -75,21 +71,6 @@ def publicFrom (a : Parameters) (y : Nat) : Option PublicKey :=
 def privateFrom (a : Parameters) (y x : Nat) : Option PrivateKey := do
   let k ← publicFrom a y
   if privateValid a x && powMod a.g x a.p == y then some ⟨k, x⟩ else none
-
-/-- Component export is exact, including whether q was supplied. -/
-def publicComponents (k : PublicKey) : Nat × Nat × Option Nat × Nat :=
-  (k.params.p, k.params.g, k.params.q, k.y)
-def privateComponents (k : PrivateKey) : Nat × Nat × Option Nat × Nat × Nat :=
-  (k.publicKey.params.p, k.publicKey.params.g, k.publicKey.params.q, k.publicKey.y, k.x)
-
-/-- Uniform scalar sampling; invalid samples and degenerate public keys retry. -/
-def generate (a : Parameters) : List Nat → Option PrivateKey
-  | [] => none
-  | x :: xs =>
-    if !parametersValid a then none else
-    match privateFrom a (powMod a.g x a.p) x with
-    | some k => some k
-    | none => generate a xs
 
 /-- Parameter equality prevents exchanging across domains. Reject degenerate
 shared values as well as invalid peers. No KDF is applied. -/
@@ -125,14 +106,6 @@ def generationShape (bits generator p : Nat) : Bool :=
   if generator == 2 then p % 24 == 11 else
     generator == 5 && (p % 10 == 3 || p % 10 == 7)
 
-/-- Random candidate with independent witness tapes for p and (p-1)/2.
-The result contains no q, matching PKCS #3 parameter generation. -/
-def generateParameters (bits generator : Nat) : List (Nat × List Nat × List Nat) → Option Parameters
-  | [] => none
-  | (p, wp, wq) :: rest =>
-    if generationShape bits generator p && probablePrime p wp && probablePrime ((p - 1) / 2) wq
-    then some ⟨p, generator, none⟩ else generateParameters bits generator rest
-
 /-! ## Octet tapes
 
 The lists of integers above, drawn from random octets as the operations draw
@@ -145,10 +118,11 @@ any extension of a tape that sufficed. -/
 /-- The bound a private scalar is below: q, or p-1 without q. -/
 def scalarBound (a : Parameters) : Nat := a.q.getD (a.p - 1)
 
-/-- The scalar of one key-generation attempt (an element of `generate`'s
-list) from random octets: their integer cut to the bit length of
-`scalarBound`. A value outside [1, bound-1] fails `privateValid`, and
-`generate` goes on to the next attempt. -/
+/-- The scalar x of one key-generation attempt from random octets: their
+integer cut to the bit length of `scalarBound`. An attempt gives the key
+`privateFrom` of `g^x mod p` and x, if any; a value outside [1, bound-1]
+fails `privateValid`, and key generation goes on to the next attempt, as
+it does for a degenerate public value. -/
 def scalarOfOctets (a : Parameters) (r : List Byte) : Nat :=
   os2ip r % 2 ^ bitLength (scalarBound a)
 
@@ -180,25 +154,4 @@ def drawWitnesses (w : Nat) : Nat → Rand → Option (List Nat × Rand)
       return (a :: as, r)
     else return ([a], r)
 
-/-- One element of `generateParameters`' list from the tape, and whether it
-is accepted: the candidate p from `⌈bits/8⌉` octets (`candidateOf`); if it
-has the generator's shape and p and q = (p-1)/2 pass `primeShape`, the
-witnesses for q and then, if q is a probable prime, those for p. Returns
-the accepted p, if it is, and the octets left. -/
-def parameterCandidate (bits generator : Nat) (r : Rand) : Option (Option Nat × Rand) := do
-  let (x, r) ← draw ((bits + 7) / 8) r
-  let p := candidateOf bits x
-  let q := (p - 1) / 2
-  if !(generationShape bits generator p && primeShape p && primeShape q) then
-    return (none, r)
-  let (wq, r) ← drawWitnesses q (primeChecks (bitLength q)) r
-  let (wp, r) ← if probablePrime q wq then drawWitnesses p (primeChecks (bitLength p)) r
-    else some ([], r)
-  return (if generationShape bits generator p && probablePrime p wp && probablePrime q wq
-    then some p else none, r)
-
-/-- Select a word by the low bit, used by the fixed-schedule exponentiation.
-Both candidate words and the bit are secret. -/
-def choose (a b bit : BitVec 64) : BitVec 64 :=
-  a ^^^ ((a ^^^ b) &&& (0 - (bit &&& 1)))
 end VG.Spec.Ffdh

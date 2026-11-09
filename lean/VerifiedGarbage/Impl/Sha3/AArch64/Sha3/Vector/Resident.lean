@@ -26,8 +26,6 @@ def bulkPrefixWith (whole : Prog isa) : Prog isa :=
 def absorbWith (whole : Prog isa) (c : Callee) : Prog isa :=
   .seq (bulkPrefixWith whole) (Stream.absorbGenericWith c)
 
-def bulkPrefix : Prog isa := bulkPrefixWith bulk
-
 def absorb (c : Callee) : Prog isa := absorbWith bulk c
 
 end VG.Impl.Sha3.AArch64.Sha3.Vector.Resident

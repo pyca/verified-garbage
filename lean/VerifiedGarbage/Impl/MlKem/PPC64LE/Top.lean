@@ -346,6 +346,25 @@ def KemLay.encaps (K : KemLay) : Prog isa :=
   .seq (copy .r31 oG .r28 0 32) <|
   .seq K.encrypt (.block topEnd)
 
+/-! ## `vg_mlkem<n>_encaps_h(ek = r3, h = r4, m = r5, key = r6, ct = r7, scratch = r8) -> r3`
+
+`encaps` with `H(ek)` given: `h`, kept in `r26` (which the setup saves, and
+nothing uses before the copy), is copied to `992` in place of hashing `ek`,
+first. -/
+
+def encapsHSetup : List Instr :=
+  topSave .r8 ++
+    ([mov .r30 .r3, mov .r29 .r5, mov .r28 .r6, mov .r27 .r7, mov .r31 .r8, mov .r26 .r4] : List Instr)
+
+def KemLay.encapsH (K : KemLay) : Prog isa :=
+  .seq (.block encapsHSetup) <|
+  .seq (copy .r26 0 .r31 oHek 32) <|
+  .seq (copy .r29 0 .r31 oMsg 32) <|
+  .seq (.block [.addi .r29 .r31 oMsg]) <|
+  .seq (hash 72 0x06 [⟨.r31, oMsg, 32⟩, ⟨.r31, oHek, 32⟩] [⟨.r31, oG, 64⟩]) <|
+  .seq (copy .r31 oG .r28 0 32) <|
+  .seq K.encrypt (.block topEnd)
+
 /-! ## `vg_mlkem<n>_decaps(dk = r3, ct = r4, key = r5, scratch = r6) -> r3` -/
 
 def decapsSetup : List Instr :=
@@ -425,6 +444,7 @@ def kl768 : KemLay :=
 
 abbrev keygen : Prog isa := kl768.keygen
 abbrev encaps : Prog isa := kl768.encaps
+abbrev encapsH : Prog isa := kl768.encapsH
 abbrev decaps : Prog isa := kl768.decaps
 
 end VG.Impl.MlKem.PPC64LE

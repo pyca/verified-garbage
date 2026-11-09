@@ -2,8 +2,8 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
 
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Consume
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckGenerator
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckGenerator
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LoadOutput
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
 
@@ -29,9 +29,9 @@ theorem consume_initial (d : CandidatePublic) (s : State) (h : OuterValue false 
         rw [hv]; exact h.1.2⟩
 
 def InitialLoaded (d : CandidatePublic) (s : State) : Prop :=
-  PhaseLoaded false d s ∧ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.p.op d.p.k) = d.p.P
+  PhaseLoaded false .all d s ∧ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.p.op d.p.k) = d.p.P
 
-theorem load_initial (d : CandidatePublic) (s : State) (h : PhaseSet false d s) :
+theorem load_initial (d : CandidatePublic) (s : State) (h : PhaseSet false .all d s) :
     WP isa loadOutput s (InitialLoaded d) := by
   obtain ⟨mi, hg, hp, hv⟩ := h.2
   exact WP.mono (loadOutput_ok h.1.1 hg hp hv)
@@ -39,7 +39,7 @@ theorem load_initial (d : CandidatePublic) (s : State) (h : PhaseSet false d s) 
       ⟨⟨⟨ht, k.2.2.trans h.1.2.1, h.1.2.2⟩, mi, hgt, hpt, hnt⟩, by rw [hbytes]; exact hv⟩
 
 def InitialGenerator (d : CandidatePublic) (s : State) : Prop :=
-  InitialLoaded d s ∧ s.zf = some (Spec.Ffdh.generationShape d.p.bits d.p.gen d.p.P)
+  InitialLoaded d s ∧ s.zf = some d.p.congruent
 
 theorem generator_initial (d : CandidatePublic) (s : State) (h : InitialLoaded d s) :
     WP isa generatorPolicy s (InitialGenerator d) := by
@@ -49,13 +49,13 @@ theorem generator_initial (d : CandidatePublic) (s : State) (h : InitialLoaded d
       ⟨⟨⟨⟨ht, k.2.2.trans h.1.1.2.1, h.1.1.2.2⟩, mi, hgt, hpt, hnt⟩,
         by rw [hm]; exact h.2⟩, hz⟩
 
-def InitialPrime (d : CandidatePublic) (s : State) : Prop :=
-  InitialLoaded d s ∧ s.zf = some (Spec.Ffdh.primeShape d.p.P)
+def InitialEarly (d : CandidatePublic) (s : State) : Prop :=
+  InitialLoaded d s ∧ s.zf = some (earlyOk d.p.P)
 
-theorem prime_initial (d : CandidatePublic) (s : State) (h : InitialLoaded d s) :
-    WP isa primeCheck s (InitialPrime d) := by
+theorem early_initial (d : CandidatePublic) (s : State) (h : InitialLoaded d s) :
+    WP isa earlyCheck s (InitialEarly d) := by
   obtain ⟨mi, hg, hp, hn⟩ := h.1.2
-  exact WP.mono (primeCheck_state_ok h.1.1.1 hg hp hn)
+  exact WP.mono (earlyCheck_state_ok h.1.1.1 hg hp hn)
     fun _ ⟨ht, hgt, hpt, hnt, hz, _, _, k, hbytes⟩ =>
       ⟨⟨⟨⟨ht, k.2.2.trans h.1.1.2.1, h.1.1.2.2⟩, mi, hgt, hpt, hnt⟩,
         by rw [hbytes]; exact h.2⟩, hz⟩

@@ -33,8 +33,4 @@ theorem maskOf_indices : ∀a b c d : Bool,
       (if a then [0] else []) ++ (if b then [1] else []) ++
       (if c then [2] else []) ++ (if d then [3] else []) := by decide
 
-/-- The count stored beside the mask is precisely the number accepted. -/
-theorem maskOf_count : ∀a b c d : Bool,
-    (acceptedIndices (maskOf a b c d)).length=a.toNat+b.toNat+c.toNat+d.toNat := by decide
-
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour

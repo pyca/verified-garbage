@@ -158,27 +158,6 @@ calls) run in a frame that allocates it (`Verified.stackScratch`), for an
 
 namespace VG.Proof.Sha256.X86_64.Shared
 
-theorem compress :
-    Verified X86_64.target Impl.Sha256.X86_64.compress (Proof.Sha256.compressContract X86_64.abi) :=
-  Proof.Sha256.X86_64.compress_verified.of_implies (by
-    contract_implies [Proof.Sha256.compressContract, Proof.Sha256.compressSig,
-      Proof.Sha256.compressX86_64, X86_64.abi, X86_64.argRegs]
-      [Proof.Sha256.X86_64.satState] using Proof.Sha256.X86_64.satState)
-
-theorem compress_shani :
-    Verified X86_64.target Impl.Sha256.X86_64.ShaNi.compress (Proof.Sha256.compressContract X86_64.abi) :=
-  Proof.Sha256.X86_64.ShaNi.compress_verified.of_implies (by
-    contract_implies [Proof.Sha256.compressContract, Proof.Sha256.compressSig,
-      Proof.Sha256.compressX86_64, X86_64.abi, X86_64.argRegs]
-      [Proof.Sha256.X86_64.satState] using Proof.Sha256.X86_64.satState)
-
-theorem compress_avx2 :
-    Verified X86_64.target Impl.Sha256.X86_64.Avx2.compress (Proof.Sha256.compressContract X86_64.abi) :=
-  Proof.Sha256.X86_64.Avx2.compress_verified.of_implies (by
-    contract_implies [Proof.Sha256.compressContract, Proof.Sha256.compressSig,
-      Proof.Sha256.compressX86_64, X86_64.abi, X86_64.argRegs]
-      [Proof.Sha256.X86_64.satState] using Proof.Sha256.X86_64.satState)
-
 theorem init :
     Verified X86_64.target Impl.Sha256.X86_64.Stream.init (Spec.Sha256.initContract X86_64.abi) :=
   Proof.Sha256.X86_64.Stream.init_verified.of_implies (by

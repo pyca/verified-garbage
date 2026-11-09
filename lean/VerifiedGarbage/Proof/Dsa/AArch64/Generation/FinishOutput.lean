@@ -20,7 +20,7 @@ theorem finishOutput_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : Sta
     (h : GenerationMemory p W s) (o : OutputPlan p)
     (hw : (⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩ : Region) ∈ s.wr)
     (expected : Option Spec.Dsa.Params)
-    (result : (((W 19 = 0 ∨ W 19 = 3) ∧ expected = none) ∨
+    (result : ((W 19 ≠ 1 ∧ expected = none) ∨
       (W 19 = 1 ∧ ∃ a, expected = some a ∧
         Spec.Rsa.bytesAt s.mem (VG.Proof.Bignum.off p.geo.B packed) (2 * p.geo.pLen + p.geo.qLen) = Spec.Dsa.encodeParams p.geo.pLen p.geo.qLen a))) :
     WP isa Impl.Dsa.AArch64.Generation.finishOutput s fun t =>
@@ -38,7 +38,7 @@ theorem finishOutput_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : Sta
   have mu := h.congr hm ku
   have hwu : (⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩ : Region) ∈ u.wr := by rw [ku.wr]; exact hw
   rcases result with ⟨h19, he⟩ | ⟨h19, a, he, bytes⟩
-  · have hn : W 19 ≠ 1 := by rcases h19 with hh | hh <;> rw [hh] <;> decide
+  · have hn : W 19 ≠ 1 := h19
     refine WP.ite false (by exact hz.trans (congrArg some (beq_eq_false_iff_ne.mpr hn)))
       (fun impossible => Bool.noConfusion impossible) (fun _ => ?_)
     obtain ⟨Vu, Ru⟩ := mu.rep

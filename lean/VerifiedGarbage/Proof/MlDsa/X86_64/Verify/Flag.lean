@@ -55,10 +55,6 @@ theorem and_flag {p : Prop} [Decidable p] {r : BitVec 32} (hr : r = 1 ∨ r = 0)
   unfold flag
   rcases hr with rfl | rfl <;> by_cases hp : p <;> simp [hp]
 
-theorem mov_flag {r : BitVec 32} (hr : r = 1 ∨ r = 0) : BitVec.setWidth 64 r = flag (r = 1) := by
-  unfold flag
-  rcases hr with rfl | rfl <;> simp
-
 /-! ## The mask -/
 
 theorem mask_one {m : Mem} {p : Addr} (x : BitVec 32) (h : x = 1) :

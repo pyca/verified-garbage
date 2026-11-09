@@ -80,10 +80,10 @@ theorem decryptStep_ok (s : State) (hp : StepPre s) :
   have pin₀₃ := pin₂.trans pin₃
   have hp₃ := pin₀₃.pre hp
   have data₃ : Spec.Rc2.blockAt s₃.mem (s.gpr .x1) =
-      Spec.Rc2.xorBlock (Spec.Rc2.decryptBlock (Spec.Rc2.scheduleAt s.mem (s.gpr .x0))
+      Proof.Rc2.xorBlock (Spec.Rc2.decryptBlock (Spec.Rc2.scheduleAt s.mem (s.gpr .x0))
         (Spec.Rc2.blockAt s.mem (s.gpr .x1))) (Spec.Rc2.blockAt s.mem (s.gpr .x23)) := by
     have h : Spec.Rc2.blockAt s₃.mem (s₂.gpr .x1) =
-        Spec.Rc2.xorBlock (Spec.Rc2.blockAt s₂.mem (s₂.gpr .x1)) (Spec.Rc2.blockAt s₂.mem (s₂.gpr .x23)) := by
+        Proof.Rc2.xorBlock (Spec.Rc2.blockAt s₂.mem (s₂.gpr .x1)) (Spec.Rc2.blockAt s₂.mem (s₂.gpr .x23)) := by
       rw [keep₃.mem]; exact blockAt_xor _ _ _
     rw [pin₂.reg .x1 (by decide), pin₂.reg .x23 (by decide), output₂, iv₂] at h
     exact h

@@ -3,7 +3,8 @@
 //!
 //! OpenSSL implements ML-DSA from version 3.5; the runners use 3.0.
 //! Enable `openssl-mldsa` on a supported host for the comparison. The ids'
-//! sizes are the output bytes for keygen/sign and message bytes for verify.
+//! sizes are the output bytes for keygen/sign, message bytes for verify and
+//! key bytes for public_key (`from_bytes`).
 //! Signing has an empty context. Each signing iteration signs the next of
 //! `MESSAGES` messages, the same for every library, since the number of
 //! times the rejection loop runs depends on the message (and, hedged, on the
@@ -11,7 +12,10 @@
 //! loop rather than one message's luck. `mldsa44_sign` signs hedged, with
 //! fresh randomness, in every library; `mldsa44_sign_deterministic` is
 //! verified-garbage's deterministic signing (`rnd` all zeros), whose time
-//! for the same messages repeats exactly from run to run.
+//! for the same messages repeats exactly from run to run. The `_prepared`
+//! groups sign and verify with keys prepared once (`prepare`), whose cost
+//! `mldsa44_prepare` measures (with the key generation, for a signing
+//! key).
 
 use criterion::Criterion;
 
@@ -43,7 +47,7 @@ pub fn bench(c: &mut Criterion) {
         KeyPair, ML_DSA_44, ML_DSA_44_SIGNING, ParsedPublicKey, PqdsaKeyPair,
     };
     use criterion::BenchmarkId;
-    use verified_garbage::mldsa44::SigningKey44;
+    use verified_garbage::mldsa44::{SigningKey44, VerifyingKey44};
 
     use crate::{AWS_LC, BenchDyn, VG};
 
@@ -173,6 +177,65 @@ pub fn bench(c: &mut Criterion) {
                 .verify_sig(black_box(&msg), black_box(&sig))
                 .unwrap()
         })
+    });
+    g.finish();
+    // Keys prepared once, for a stream of signatures and verifications, as
+    // the other libraries' keys are used above.
+    let prepared = SigningKey44::from_seed(&seed).unwrap().prepare();
+    let prepared_public = key.verifying_key().clone().prepare();
+    let mut g = c.benchmark_group("mldsa44_sign_prepared");
+    g.bench(BenchmarkId::new(VG, 2420), |b| {
+        b.iter(|| {
+            i = (i + 1) % MESSAGES;
+            prepared.sign(black_box(&msgs[i]), b"").unwrap()
+        })
+    });
+    g.finish();
+    let mut g = c.benchmark_group("mldsa44_sign_deterministic_prepared");
+    g.bench(BenchmarkId::new(VG, 2420), |b| {
+        b.iter(|| {
+            i = (i + 1) % MESSAGES;
+            prepared
+                .sign_deterministic(black_box(&msgs[i]), b"")
+                .unwrap()
+        })
+    });
+    g.finish();
+    let mut g = c.benchmark_group("mldsa44_verify_prepared");
+    g.bench(BenchmarkId::new(VG, 64), |b| {
+        b.iter(|| prepared_public.verify(black_box(&msg), b"", &sig).unwrap())
+    });
+    g.finish();
+    // Preparing a key, the cost a stream of operations shares.
+    let mut g = c.benchmark_group("mldsa44_prepare");
+    g.bench(BenchmarkId::new(VG, "signing"), |b| {
+        b.iter(|| SigningKey44::from_seed(black_box(&seed)).unwrap().prepare())
+    });
+    g.bench(BenchmarkId::new(VG, "verifying"), |b| {
+        b.iter(|| key.verifying_key().clone().prepare())
+    });
+    g.finish();
+    // A public key from its bytes: verified-garbage hashes it (`tr`), which
+    // each verification then reuses.
+    let pk = *key.verifying_key().as_bytes();
+    let mut g = c.benchmark_group("mldsa44_public_key");
+    g.bench(BenchmarkId::new(VG, 1312), |b| {
+        b.iter(|| VerifyingKey44::from_bytes(black_box(&pk)))
+    });
+    #[cfg(feature = "openssl-mldsa")]
+    g.bench(BenchmarkId::new(crate::OPENSSL, 1312), |b| {
+        b.iter(|| {
+            openssl::pkey::PKey::public_key_from_raw_bytes_ex(
+                None,
+                openssl::pkey::KeyType::ML_DSA_44,
+                None,
+                black_box(&pk),
+            )
+            .unwrap()
+        })
+    });
+    g.bench(BenchmarkId::new(AWS_LC, 1312), |b| {
+        b.iter(|| ParsedPublicKey::new(&ML_DSA_44, black_box(&pk)).unwrap())
     });
     g.finish();
     // Precomputed message representatives exclude hashing from the timing.

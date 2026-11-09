@@ -158,3 +158,169 @@ vg_aes_cfb128_decrypt:
 	ldr lr, [r10, #2092]
 	ldr r10, [r10, #2088]
 	bx lr
+
+vg_aes_cfb128_encrypt_final:
+	sub sp, sp, #56
+	add r12, sp, #0
+	str lr, [r12, #12]
+	ldr lr, [sp, #56]
+	str lr, [r12, #0]
+	ldr lr, [sp, #60]
+	str lr, [r12, #4]
+	add lr, sp, #16
+	str lr, [r12, #8]
+	ldr lr, [sp, #12]
+	ldr r12, [sp, #8]
+	str r4, [r12, #0]
+	str r5, [r12, #4]
+	str r6, [r12, #8]
+	str r7, [r12, #12]
+	str r8, [r12, #16]
+	str r9, [r12, #20]
+	str r10, [r12, #24]
+	str r11, [r12, #28]
+	str lr, [r12, #32]
+	mov r4, r0
+	mov r5, r1
+	mov r6, r2
+	ldr r8, [sp, #0]
+	ldr r10, [sp, #4]
+	lsr r12, r8, #4
+	and r8, r8, #15
+	add r7, r3, r12, lsl #4
+	mov lr, r10
+	push {r12, lr}
+	bl {vg_aes_cfb128_encrypt}
+	ldr r12, [sp], #8
+	cmp r8, #0
+	beq 20f
+	mov r0, r4
+	mov r1, r5
+	mov r2, r6
+	mov r3, #1
+	mov r12, r10
+	push {r12, lr}
+	bl {vg_aes_encrypt_blocks}
+	ldr r12, [sp], #8
+	mov r0, r6
+	mov r6, r7
+	mov r7, r8
+22:
+	ldrb r9, [r6, #0]
+	ldrb r10, [r0, #0]
+	eor r9, r9, r10
+	strb r9, [r6, #0]
+	add r0, r0, #1
+	add r6, r6, #1
+	subs r7, r7, #1
+	bne 22b
+	b 21f
+20:
+21:
+	ldr r12, [sp, #8]
+	ldr r4, [r12, #0]
+	ldr r5, [r12, #4]
+	ldr r6, [r12, #8]
+	ldr r7, [r12, #12]
+	ldr r8, [r12, #16]
+	ldr r9, [r12, #20]
+	ldr r10, [r12, #24]
+	ldr r11, [r12, #28]
+	ldr lr, [r12, #32]
+	add r12, sp, #16
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	add sp, sp, #56
+	bx lr
+
+vg_aes_cfb128_decrypt_final:
+	sub sp, sp, #56
+	add r12, sp, #0
+	str lr, [r12, #12]
+	ldr lr, [sp, #56]
+	str lr, [r12, #0]
+	ldr lr, [sp, #60]
+	str lr, [r12, #4]
+	add lr, sp, #16
+	str lr, [r12, #8]
+	ldr lr, [sp, #12]
+	ldr r12, [sp, #8]
+	str r4, [r12, #0]
+	str r5, [r12, #4]
+	str r6, [r12, #8]
+	str r7, [r12, #12]
+	str r8, [r12, #16]
+	str r9, [r12, #20]
+	str r10, [r12, #24]
+	str r11, [r12, #28]
+	str lr, [r12, #32]
+	mov r4, r0
+	mov r5, r1
+	mov r6, r2
+	ldr r8, [sp, #0]
+	ldr r10, [sp, #4]
+	lsr r12, r8, #4
+	and r8, r8, #15
+	add r7, r3, r12, lsl #4
+	mov lr, r10
+	push {r12, lr}
+	bl {vg_aes_cfb128_decrypt}
+	ldr r12, [sp], #8
+	cmp r8, #0
+	beq 20f
+	mov r0, r4
+	mov r1, r5
+	mov r2, r6
+	mov r3, #1
+	mov r12, r10
+	push {r12, lr}
+	bl {vg_aes_encrypt_blocks}
+	ldr r12, [sp], #8
+	mov r0, r6
+	mov r6, r7
+	mov r7, r8
+22:
+	ldrb r9, [r6, #0]
+	ldrb r10, [r0, #0]
+	eor r9, r9, r10
+	strb r9, [r6, #0]
+	add r0, r0, #1
+	add r6, r6, #1
+	subs r7, r7, #1
+	bne 22b
+	b 21f
+20:
+21:
+	ldr r12, [sp, #8]
+	ldr r4, [r12, #0]
+	ldr r5, [r12, #4]
+	ldr r6, [r12, #8]
+	ldr r7, [r12, #12]
+	ldr r8, [r12, #16]
+	ldr r9, [r12, #20]
+	ldr r10, [r12, #24]
+	ldr r11, [r12, #28]
+	ldr lr, [r12, #32]
+	add r12, sp, #16
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	add sp, sp, #56
+	bx lr

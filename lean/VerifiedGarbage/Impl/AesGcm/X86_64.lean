@@ -160,11 +160,22 @@ def copyTag : Prog isa :=
         .store (at_ .rdi 8) .r10])
       copyLoop)
 
-/-- XORs the `rcx` (at least 1) bytes at `rsi` into those at `rdi`. -/
-def xorLoop : Prog isa :=
+/-- The register `xorLoopG` reads the bytes it XORs at: the destination
+`rdi` in place, `rbx` out of place (`to`). -/
+def xorInReg (to : Bool) : Reg := if to then .rbx else .rdi
+
+/-- `[rdi + r10]` in place, `[rbx + r10]` out of place. -/
+def xorIn (to : Bool) : MemOp := { base := xorInReg to, index := some .r10 }
+
+/-- XORs the `rcx` (at least 1) bytes at `rsi` with those at `rdi` (in place)
+or at `rbx` (out of place, `to`) into those at `rdi`. -/
+def xorLoopG (to : Bool) : Prog isa :=
   .seq (.block [.mov32 .r10 (imm 0)])
-    (.loop (.block [.movzx8 .rax dstB, .movzx8 .r11 srcB, .alu .xor .rax (.reg .r11), .store8 dstB .rax,
+    (.loop (.block [.movzx8 .rax (xorIn to), .movzx8 .r11 srcB, .alu .xor .rax (.reg .r11), .store8 dstB .rax,
       .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)]) .ne)
+
+/-- XORs the `rcx` (at least 1) bytes at `rsi` into those at `rdi`. -/
+def xorLoop : Prog isa := xorLoopG false
 
 /-- `[r12 + r10]`. -/
 def maskByte : MemOp := { base := .r12, index := some .r10 }
@@ -287,15 +298,20 @@ def cryptWhole : Prog isa :=
           ptr .r9 .r15 scrO))
         (.call c.ctr.name c.ctr.code)))
 
-/-- The last `rbp` bytes at `r12`, with a new keystream block. -/
-def cryptTail : Prog isa :=
+/-- The last `rbp` bytes at `r12`, with a new keystream block: XORed in place,
+or out of place (`to`) from those at `rbx` into `r12`. -/
+def cryptTailG (to : Bool) : Prog isa :=
   .seq (.block [.alu .test .rbp (.reg .rbp)])
     (.ite .e (.block [])
       (.seq (.block (([.mov32 .rax (imm 0), .store (at_ .r14 64) .rax, .store (at_ .r14 72) .rax,
           .mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r14 48 ++
           ptr .rcx .r14 64 ++ ([.mov32 .r8 (imm 1)] : List Instr) ++ ptr .r9 .r15 scrO))
       (.seq (.call c.ctr.name c.ctr.code)
-        (.seq (.block (([.mov .rdi (.reg .r12)] : List Instr) ++ ptr .rsi .r14 64 ++ ([.mov .rcx (.reg .rbp)] : List Instr))) xorLoop))))
+        (.seq (.block (([.mov .rdi (.reg .r12)] : List Instr) ++ ptr .rsi .r14 64 ++ ([.mov .rcx (.reg .rbp)] : List Instr)))
+          (xorLoopG to)))))
+
+/-- The last `rbp` bytes at `r12`, with a new keystream block. -/
+def cryptTail : Prog isa := cryptTailG c false
 
 def crypt : Prog isa :=
   .seq (.block [.alu .test .rbp (.reg .rbp)])
@@ -605,10 +621,23 @@ def oneTag (o : Nat) : Prog isa :=
   (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .mov .rbp (.mem (at_ .r15 tlenO))])
     (tag c o)))
 
+/-- The data left, kept at `W + 200`, and its length, `lenO`: in place, the
+data at `r12`, from the start of a keystream block (`rbx = 0`); out of
+place (`to`), the data in `rbx` and the end of `dst` (`[rsp + 8]`, of the
+total length at `W + 192`) in `r12`. -/
+def oneCryptBlk (to : Bool) : List Instr :=
+  if to then [.mov .r12 (.mem (at_ .rsp 8)), .mov .rax (.mem (at_ .r15 tlenO)), .alu .sub .rax (.mem (at_ .r15 lenO)),
+    .alu .add .r12 (.reg .rax), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.mem (at_ .r15 dataO))]
+  else [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)]
+
+/-- The data left encrypted or decrypted, from the first counter block: in
+place, or out of place (`to`, fewer than 16 bytes) from the data kept at
+`W + 200` to the end of `dst`. -/
+def oneCryptG (to : Bool) : Prog isa :=
+  .seq (.block (oneCryptBlk to)) (if to then cryptTailG c true else cryptAl c)
+
 /-- The data encrypted or decrypted, from the first counter block. -/
-def oneCrypt : Prog isa :=
-  .seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)])
-    (cryptAl c)
+def oneCrypt : Prog isa := oneCryptG c false
 
 /-- The whole blocks decrypted by `oneBlocks`, encrypted again (when the tag
 is wrong): `vg_aes_ctr32` from the first counter block, which `tag`'s call of
@@ -629,20 +658,35 @@ def «seal» : Prog isa :=
   .seq (.block (oneEntry 32)) (.seq (oneAad c) (.seq (oneBlocks c.enc) (.seq (oneCrypt c)
     (.seq (.seq (oneTag c 0) (.block (tagOut (at_ .rsp 24)))) (.block restore)))))
 
-/-- `vg_aes_gcm_open`, with `tag_len = [rsp + 32]` and `work = [rsp + 40]`. -/
-def «open» : Prog isa :=
-  .seq (.block (oneEntry 40 ++ ([.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx] : List Instr)))
+/-- `open`'s body, in place or out of place: after the entry `entry` (which
+keeps `tag_len` at `tlO`, or leaves it to `mid`), if the tag length is
+allowed, `J₀` and the additional data, then `mid`, which takes the whole
+blocks (in place, `oneBlocks`: decrypted and absorbed where they are; out of
+place, read from `src` and written to `dst`) and leaves the bytes after them
+as the data; the tag of the ciphertext compared with the received one, at
+`[rsp + 24]`; and if they match `good`, which decrypts the bytes left
+(`oneCryptG`), and if not `bad` (in place, `oneUndo`: the whole blocks
+encrypted again; out of place, nothing, the caller zeroing `dst`). The result
+is in `rax`. -/
+def openBody (entry : List Instr) (mid bad good : Prog isa) : Prog isa :=
+  .seq (.block entry)
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov32 .rax (imm 0)])
       (.seq (oneAad c)
-      (.seq (oneBlocks c.dec)
+      (.seq mid
       (.seq (oneTag c uO)
       (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
       (.seq recv
       (.seq (cmp uO)
       (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
-      (.seq (.ite .e (oneUndo c) (oneCrypt c))
+      (.seq (.ite .e bad good)
         (.block [.mov .rax (.mem (at_ .r15 auxO))]))))))))))
     (.block restore)))
+
+/-- `vg_aes_gcm_open`, with `tag_len = [rsp + 32]` and `work = [rsp + 40]`:
+`openBody` in place. -/
+def «open» : Prog isa :=
+  openBody c (oneEntry 40 ++ ([.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx] : List Instr))
+    (oneBlocks c.dec) (oneUndo c) (oneCrypt c)
 
 end VG.Impl.AesGcm.X86_64

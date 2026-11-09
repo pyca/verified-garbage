@@ -11,7 +11,9 @@ Two functions, for CPUs with AES-NI (and SSSE3, for `pshufb`):
 * `vg_aes_expand_key_scratch_aesni(key = rdi, key_len = rsi, schedule = rdx, scratch = rcx)`,
   with the contract of `vg_aes_expand_key_scratch` (`Proof.Aes.expandKeyScratchContract`).
 * `vg_aes_ctr32_aesni(schedule = rdi, rounds = rsi, counter = rdx, data = rcx, n = r8,
-  scratch = r9)`, with the contract of `vg_aes_ctr32` (`Proof.Gcm.ctr32Contract`).
+  scratch = r9)`, with the contract of `vg_aes_ctr32` (`Proof.Gcm.ctr32Contract`),
+  and its out-of-place form `vg_aes_ctr32_to_aesni`, with the output in
+  `r11`, the same code but for the stores and `r11`'s steps (`ctr32To`).
 
 Neither uses `scratch` or writes a callee-saved register. Every branch and
 every address depends only on the pointers and the public lengths
@@ -183,26 +185,37 @@ def ctrs : List XReg → List Instr
   | b :: bs => ([.xop (.bin .movdqa b .xmm9), .xop (.bin .pshufb b .xmm10),
       .xop (.bin .paddd .xmm9 .xmm11)] : List Instr) ++ ctrs bs
 
-/-- XOR block register `i` into the data block `rcx + 16 (j + i)`. -/
-def xorData : List XReg → Nat → List Instr
-  | [], _ => []
-  | b :: bs, j => ([.movdquLoad .xmm8 (at_ .rcx (16 * j)), .xop (.bin .pxor b .xmm8),
-      .movdquStore (at_ .rcx (16 * j)) b] : List Instr) ++ xorData bs (j + 1)
+/-- Where the blocks go: back to the data (`rcx`), or, out of place (`to`),
+to the output (`r11`). -/
+def dstReg (to : Bool) : Reg := if to then .r11 else .rcx
+
+/-- XOR block register `i` into the data block `rcx + 16 (j + i)`, stored
+to `dstReg to + 16 (j + i)`. -/
+def xorData (regs : List XReg) (j : Nat) (to : Bool) : List Instr :=
+  match regs with
+  | [] => []
+  | b :: bs => ([.movdquLoad .xmm8 (at_ .rcx (16 * j)), .xop (.bin .pxor b .xmm8),
+      .movdquStore (at_ (dstReg to) (16 * j)) b] : List Instr) ++ xorData bs (j + 1) to
+
+/-- On to the next `k` bytes of the output, out of place. -/
+def dstStep (to : Bool) (k : Nat) : List Instr :=
+  if to then [.alu .add .r11 (.imm (BitVec.ofNat 32 k))] else []
 
 def regs8 : List XReg := [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7]
 
 /-- Eight blocks. -/
-def body8 : Prog isa :=
+def body8 (to : Bool) : Prog isa :=
   .seq (.block (ctrs regs8))
     (.seq (aes regs8)
-      (.block (xorData regs8 0 ++ ([.alu .add .rcx (.imm 128), .alu .sub .r8 (.imm 8),
-        .alu .cmp .r8 (.imm 8)] : List Instr))))
+      (.block (xorData regs8 0 to ++ (dstStep to 128 ++ ([.alu .add .rcx (.imm 128), .alu .sub .r8 (.imm 8),
+        .alu .cmp .r8 (.imm 8)] : List Instr)))))
 
 /-- One block. -/
-def body1 : Prog isa :=
+def body1 (to : Bool) : Prog isa :=
   .seq (.block (ctrs [.xmm0]))
     (.seq (aes [.xmm0])
-      (.block (xorData [.xmm0] 0 ++ ([.alu .add .rcx (.imm 16), .alu .sub .r8 (.imm 1)] : List Instr))))
+      (.block (xorData [.xmm0] 0 to ++ (dstStep to 16 ++
+        ([.alu .add .rcx (.imm 16), .alu .sub .r8 (.imm 1)] : List Instr)))))
 
 def ctrLoad : List Instr :=
   const .xmm10 revMask ++
@@ -217,11 +230,19 @@ def ctrStore : List Instr :=
 
 /-- The blocks left, eight and then one at a time, after `cmp r8, 8`, and the
 counter stored. -/
-def ctrTail : Prog isa :=
-  .seq (.ite .b (.block []) (.loop body8 .ae))
+def ctrTail (to : Bool) : Prog isa :=
+  .seq (.ite .b (.block []) (.loop (body8 to) .ae))
     (.seq (.block [.alu .test .r8 (.reg .r8)])
-      (.seq (.ite .e (.block []) (.loop body1 .ne)) (.block ctrStore)))
+      (.seq (.ite .e (.block []) (.loop (body1 to) .ne)) (.block ctrStore)))
 
-def ctr32 : Prog isa := .seq (.block ctrLoad) ctrTail
+/-- `vg_aes_ctr32_aesni` (in place), or, out of place (`to`),
+`vg_aes_ctr32_to_aesni` (the blocks read from `rcx` and written to `r11`). -/
+def ctr32T (to : Bool) : Prog isa := .seq (.block ctrLoad) (ctrTail to)
+
+/-- `vg_aes_ctr32_aesni`. -/
+def ctr32 : Prog isa := ctr32T false
+
+/-- `vg_aes_ctr32_to_aesni`. -/
+def ctr32To : Prog isa := ctr32T true
 
 end VG.Impl.Aes.X86_64.AesNi

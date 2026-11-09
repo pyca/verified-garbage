@@ -40,7 +40,7 @@ depends only on the pointers, the lengths and the counters; `out`'s and
 
 The frame (`Impl/RsaPkcs1Sig/Arm/Wrap.lean`) holds, from its base, the
 calls' stack arguments, then the slots. In `scratch`: SHA-256's and HMAC's
-inner state (`sSt`), HMAC's outer state (`sOuter`), the message of an IRPRF
+inner state (at its start), HMAC's outer state (`sOuter`), the message of an IRPRF
 block (`sMsg`), `DH`, `KDK`, `CL`, `AM` and `D`. The SHA-256 and HMAC
 functions called keep their working space in their own frames.
 -/
@@ -63,7 +63,6 @@ def oAL : Nat := 76
 def oMK : Nat := 80
 
 /-! Where things are in `scratch`. -/
-def sSt : Nat := 0
 def sOuter : Nat := 96
 def sMsg : Nat := 192
 def sDH : Nat := 208

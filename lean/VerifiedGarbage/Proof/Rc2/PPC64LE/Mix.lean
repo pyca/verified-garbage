@@ -107,12 +107,6 @@ theorem rot16 (y : BitVec 16) {s : Nat} (h1 : 1 ≤ s) (h2 : s < 16) :
 
 /-! ## The steps, for any registers -/
 
-/-- The registers of a step: the word `x` it changes and the words `a`,
-`b`, `c` before it, apart from each other and from the code's other
-registers. -/
-structure StepRegs (x a b c : Reg) : Prop where
-  ne : [x, a, b, c, Reg.r0, .r3, .r4, .r5, .r10, .r11, .r12].Nodup
-
 theorem loadKey_run (u : State) {T : Addr} (E : KeyEnv T u) {j : Nat} (hj : j < 64) :
     WP isa (.block (loadKey j)) u fun t =>
       (t.gpr .r12).setWidth 16 = (Spec.Rc2.scheduleAt u.mem T).getD j 0 ∧ t.mem = u.mem ∧

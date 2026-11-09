@@ -11,10 +11,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Taint
 /-!
 # ML-KEM on AArch64: what the NTT and its inverse share
 
-The per-target contract of both (`inPlaceAArch64`), the facts that hold
-throughout (`St`: the constants, the table of zetas in `scratch`), and a
-butterfly's effect on the polynomial in memory, from its two stores
-(`polyIs_write2`).
+The per-target contract of both (`inPlaceAArch64`), what it gives the proofs
+(`Pre`), and the constants they load (`vconsts_ok`).
 -/
 
 @[expose] public section
@@ -47,8 +45,6 @@ variable (s₀ : State)
 
 abbrev fP : Addr := s₀.gpr .x0
 abbrev sP : Addr := s₀.gpr .x1
-abbrev P₀ : Poly := polyAt s₀.mem (fP s₀)
-
 end
 
 structure Pre (s₀ : State) : Prop where
@@ -59,74 +55,6 @@ structure Pre (s₀ : State) : Prop where
 
 theorem pre_of {t : Poly → Poly} {s₀ : State} (h : (inPlaceAArch64 t).pre s₀) : Pre s₀ :=
   ⟨h.1, h.2.1, h.2.2.1, h.2.2.2⟩
-
-/-- What holds throughout. -/
-structure St (s₀ : State) (s : State) : Prop where
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  sp : s.sp = s₀.sp
-  x0 : s.gpr .x0 = fP s₀
-  vc : VConsts s
-  tab : ∀ k < 128, s.mem.readW (sP s₀ + BitVec.ofNat 64 (4 * k)) 32 =
-    BitVec.ofNat 32 (zetaTable.getD k 0)
-
-theorem St.keep {s₀ s s' : State} (h : St s₀ s) {rs : List Reg} (hk : Keep rs s s')
-    (hm : s'.mem = s.mem) (hv : s'.v = s.v) (h0 : Reg.x0 ∉ rs := by decide) : St s₀ s' :=
-  ⟨by rw [hk.rd, h.rd], by rw [hk.wr, h.wr], by rw [hk.sp, h.sp], by rw [hk.get .x0 h0, h.x0],
-    ⟨by rw [hv]; exact h.vc.q, by rw [hv]; exact h.vc.m⟩, fun k hk' => by rw [hm]; exact h.tab k hk'⟩
-
-theorem St.vchg {s₀ s s' : State} (h : St s₀ s) {rs : List VReg} (hc : VChg rs s s')
-    (h16 : VReg.v16 ∉ rs := by decide) (h17 : VReg.v17 ∉ rs := by decide) : St s₀ s' :=
-  ⟨by rw [hc.rd, h.rd], by rw [hc.wr, h.wr], by rw [hc.sp, h.sp], by rw [hc.gpr, h.x0],
-    h.vc.chg hc h16 h17, fun k hk' => by rw [hc.mem]; exact h.tab k hk'⟩
-
-theorem Pre.in_f {s₀ s : State} (hp : Pre s₀) (h : St s₀ s) {i : Nat} (hi : i < 256) :
-    InRegions s.wr (coeffAddr (fP s₀) i) 4 := by
-  rw [h.wr, hp.wr]
-  exact in_regions (List.mem_cons_self ..) (coeff_contains _ (show i < n from hi))
-
-theorem Pre.in_f' {s₀ s : State} (hp : Pre s₀) (h : St s₀ s) {i : Nat} (hi : i < 256) :
-    InRegions (s.rd ++ s.wr) (coeffAddr (fP s₀) i) 4 := by
-  rw [h.rd, hp.rd]; exact hp.in_f h hi
-
-/-- The zeta at `[x12]` for the `k`-th entry of the table. -/
-theorem Pre.in_tab {s₀ s : State} (hp : Pre s₀) (h : St s₀ s) {k : Nat} (hk : k < 128) :
-    InRegions (s.rd ++ s.wr) (sP s₀ + BitVec.ofNat 64 (4 * k)) 4 := by
-  rw [h.rd, h.wr, hp.rd, hp.wr]
-  exact in_regions (R := polyRegion (sP s₀)) (by simp) (contains_off (by omega) (by decide))
-
-/-- Storing coefficients `j` and `j'` keeps the table. -/
-theorem Pre.tab_write {s₀ : State} (hp : Pre s₀) {m m' : Mem} (hf : Frame [polyRegion (fP s₀)] m m')
-    (ht : ∀ k < 128, m.readW (sP s₀ + BitVec.ofNat 64 (4 * k)) 32 = BitVec.ofNat 32 (zetaTable.getD k 0)) :
-    ∀ k < 128, m'.readW (sP s₀ + BitVec.ofNat 64 (4 * k)) 32 = BitVec.ofNat 32 (zetaTable.getD k 0) :=
-  fun k hk => by
-    rw [hf.readW (r := polyRegion (sP s₀)) (contains_off (by omega) (by decide)) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hp.disj.symm) (by decide)]
-    exact ht k hk
-
-/-- Two stores into the polynomial at `p`: coefficients `j` and `j'`. -/
-theorem polyIs_write2 {m : Mem} {p : Addr} {P R : Poly} (h : PolyIs m p P) {j j' : Nat} (hj : j < 256)
-    (hj' : j' < 256) (hne : j ≠ j') {x y : Zq}
-    (hR : ∀ i < 256, R[i]! = if i = j then x else if i = j' then y else P[i]!) :
-    PolyIs ((m.writeW (coeffAddr p j) (BitVec.ofNat 32 x.val)).writeW (coeffAddr p j')
-      (BitVec.ofNat 32 y.val)) p R := by
-  refine polyIs_of_coeffAt fun i hi => ?_
-  rw [coeffAt_writeW _ _ hi (show j' < n from hj'), coeffAt_writeW _ _ hi (show j < n from hj), hR i hi]
-  by_cases e : j = i
-  · subst e; rw [ite_eq_right (Ne.symm hne), ite_eq_left rfl, ite_eq_left rfl]
-  · rw [ite_eq_right e, ite_eq_right (Ne.symm e)]
-    by_cases e' : j' = i
-    · subst e'; rw [ite_eq_left rfl, ite_eq_left rfl]
-    · rw [ite_eq_right e', ite_eq_right (Ne.symm e'), polyIs_coeffAt h hi]
-
-theorem zetaTable_zeta {k : Nat} (hk : k < 128) : zetaTable.getD k 0 = (zeta k).val := by
-  rw [zetaTable_eq, zetas_getD hk]
-
-/-- The zeta loaded from the table, as the element of `ℤ_q`. -/
-theorem zeta_load {s₀ s : State} (h : St s₀ s) {k : Nat} (hk : k < 128) :
-    ((s.mem.readW (sP s₀ + BitVec.ofNat 64 (4 * k)) 32).setWidth 64).toNat = (zeta k).val := by
-  rw [toNat_readW32, h.tab k hk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt
-    (by have := zetaTable_lt k hk; have : q = 3329 := rfl; omega), zetaTable_zeta hk]
 
 /-- `vconsts`: `q` and `M` in `x9`, `x10` and the lanes of `v16`, `v17`. -/
 theorem vconsts_ok (s : State) :

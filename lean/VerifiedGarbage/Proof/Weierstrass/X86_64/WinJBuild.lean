@@ -1,13 +1,11 @@
 module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinQuad
 
-
 /-!
 # Windows in Jacobian coordinates on x86-64: the slots
 
 The field programs of the Jacobian window method are on slots that are apart
-(`WinLay.rcbApart_winJ`), and the table is apart from what the loop writes
-(`tbl_apart_loopW`).
+(`WinLay.rcbApart_winJ`).
 -/
 
 @[expose] public section
@@ -28,17 +26,6 @@ theorem _root_.VG.Proof.Weierstrass.WinLay.rcbApart_winJ {K : WinCfg} {size : Na
   ⟨hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 13, 14, 15]) (lr := [16, 17, 0, 1, 2, 0, 1, 2]) rfl rfl,
     hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 0, 1, 2]) (lr := [16, 17, 13, 14, 15, 13, 14, 15]) rfl rfl,
     hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 13, 14, 15]) (lr := [16, 17, 0, 1, 2, 18, 18, 18]) rfl rfl⟩
-
-/-- A table slot is apart from what the loop's field programs write. -/
-theorem tbl_apart_loopW {K : WinCfg} {size : Nat} (hL : WinLay K size) {j : Nat} (hj1 : 1 ≤ j) (hj8 : j ≤ 8)
-    {x : Nat} (hx : x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z]) :
-    ∀ w ∈ loopW K, x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := by
-  obtain ⟨i, hi, rfl, -, -⟩ := tblPt_mem K hj1 hj8 x hx
-  intro w hw
-  simp only [loopW, List.mem_append, List.mem_map, List.mem_singleton] at hw
-  rcases hw with ⟨y, hy, rfl⟩ | rfl
-  · exact (hL.tbl_apart (List.mem_append_right _ hy) hi).symm
-  · exact hL.lay.tmp _ (by simp only [winSlots, List.mem_append]; exact Or.inr (winTbl_mem K hi))
 
 /-- The slots of a point, written. -/
 theorem pt_other {K : WinCfg} {p : Pt} (h : p = K.R ∨ p = K.E ∨ p = K.D) :

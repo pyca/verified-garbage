@@ -216,8 +216,6 @@ structure InvW (w16 : Bool) (N : Nat) (B : List Byte) (bP aP : Addr) (s₀ : Sta
   x5 : (u.gpr .x5).toNat = N - t
   x10 : (u.gpr .x10).toNat = 15
 
-abbrev Inv := InvW false
-
 theorem sampleStepCap_eq (L : List Zq) (c₀ c₁ c₂ : Byte) (hL : L.length ≠ n) :
     sampleStepCap L c₀ c₁ c₂ =
       let a := if c₀.toNat + 256 * (c₁.toNat % 16) < q

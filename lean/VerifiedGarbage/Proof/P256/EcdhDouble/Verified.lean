@@ -26,13 +26,6 @@ theorem linear38 : LinearCorrect (Impl.P256.Linear.linear38 544 896 800) 544 896
   exact WP.mono (Linear.linear38_ok hs (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) ha hb) fun _ ⟨hr,ho,_,hv⟩ => ⟨hr,ho,hv⟩
 
-theorem field_ok {base : Addr} {s : State} {E : Nat→Fe C}
-    (hi : Inv M base 8192 C.p Sl live E s) :
-    WP isa Impl.P256.EcdhDouble.program s fun t =>
-      AllocatedFrame allocatedRegs base work s t ∧
-      Inv M base 8192 C.p Sl live (runOps (operations .doubleRR) E) t :=
-  EcdhDouble.field_ok linear129 linear38 (unitMod_pow_two (by decide) _) hi
-
 theorem double_ok (hC : Law C) (ha : AM3 C) {base : Addr} {E : Nat→Fe C} {s : State}
     (hi : Inv M base 8192 C.p Sl live E s) {P : Point C}
     (hp : onCurve C P=true) (hj : InvJ C (E K.R.x) (E K.R.y) (E K.R.z) P) :

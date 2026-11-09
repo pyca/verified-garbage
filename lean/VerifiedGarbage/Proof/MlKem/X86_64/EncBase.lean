@@ -82,9 +82,6 @@ theorem EIn.rho {L : Kem} {C : Ctx rbs wbs} {E : Ptr} {ek m r : List Byte} {s : 
   show _ = ((bytesAt s.mem (pa s E) (384 * L.k + 32)).drop (384 * L.k)).take 32
   rw [bytesAt_slice _ _ (show 384 * L.k + 32 ≤ 384 * L.k + 32 from Nat.le_refl _), pa, pa, off_add]
 
-theorem r14_na : Reg.r14 ∉ argRegs := by decide
-theorem r14_cs : Reg.r14 ∈ calleeSaved := by decide
-
 /-! ## The matrix -/
 
 /-- After the first `e` entries of `Â`. -/

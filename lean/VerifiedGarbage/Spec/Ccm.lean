@@ -15,8 +15,8 @@ test against uses (they are also RFC 3610's); section numbers below refer
 to it. Appendix A.1 requires every string to be a string of whole bytes.
 
 CCM is defined here for any block cipher, given as its forward function
-`CIPH_K` on 16-byte blocks (`Cipher`); `aesCcmEncrypt` and `aesCcmDecrypt`
-are CCM with AES. Its parameters are the length `t` of the MAC in bytes and
+`CIPH_K` on 16-byte blocks (`Cipher`); CCM with AES is CCM with `aes key`
+as `CIPH_K`. Its parameters are the length `t` of the MAC in bytes and
 the length `n` of the nonce in bytes (A.1: `t ∈ {4, 6, …, 16}`,
 `n ∈ {7, …, 13}`), which determines the length `q = 15 − n` of the payload's
 length field; the payload is shorter than `2^(8q)` bytes. The contracts of
@@ -31,9 +31,10 @@ bytes, the tag.
 empty payload, although Appendix A's formatting function accepts an empty
 payload (`p = 0`), §6.1 encrypts it, and the CAVP's own decryption vectors
 (`DVPT`, `Plen = 0`) expect it to be decrypted, as RFC 3610 does (§2.1:
-`0 <= l(m)`).
-`decrypt` follows the CAVP vectors: it rejects a ciphertext shorter than the
-tag (`Clen < Tlen`), and accepts one with an empty payload.
+`0 <= l(m)`). `decryptWith` follows the CAVP vectors: it decrypts an empty
+encrypted payload. Splitting a ciphertext into the encrypted payload and the
+tag, and so rejecting one shorter than the tag (`Clen < Tlen`), is the
+caller's.
 -/
 
 @[expose] public section
@@ -154,24 +155,6 @@ def decryptWith (ciph : Cipher) (t : Nat) (nonce ct aad tag : List Byte) : Optio
   let pt := crypt ciph nonce ct
   if cryptTag ciph t nonce tag = mac ciph t nonce aad pt then some pt else none
 
-/-- §6.1, generation-encryption with the MAC length `t` (bytes) of the
-payload `pt` with the associated data `aad` under the nonce `nonce`: the
-ciphertext `C`, or `none` if the inputs are not valid. -/
-def encrypt (ciph : Cipher) (t : Nat) (nonce pt aad : List Byte) : Option (List Byte) :=
-  if valid t nonce.length aad.length pt.length then
-    let (ct, tag) := encryptWith ciph t nonce pt aad
-    some (ct ++ tag)
-  else none
-
-/-- §6.2, decryption-verification with the MAC length `t` (bytes) of the
-ciphertext `c` with the associated data `aad` under the nonce `nonce`: the
-payload, or `none` (INVALID) if `c` is shorter than the MAC (step 1, but see
-above), if `N`, `A` or `P` is not valid (step 7) or if the MAC is wrong
-(step 10). -/
-def decrypt (ciph : Cipher) (t : Nat) (nonce c aad : List Byte) : Option (List Byte) :=
-  if c.length < t || !valid t nonce.length aad.length (c.length - t) then none
-  else decryptWith ciph t nonce (c.take (c.length - t)) aad (c.drop (c.length - t))
-
 /-! ## AES-CCM -/
 
 /-- `CIPH_K` for AES with `nr` rounds and the key schedule `w` (as bytes). -/
@@ -180,14 +163,6 @@ def aesWith (nr : Nat) (w : List Byte) : Cipher := fun x =>
 
 /-- `CIPH_K` for AES with the key `key` (16, 24 or 32 bytes). -/
 def aes (key : List Byte) : Cipher := aesWith (Aes.rounds (key.length / 4)) (Aes.expandKey key)
-
-/-- AES-CCM generation-encryption, with a MAC of `t` bytes. -/
-def aesCcmEncrypt (key : List Byte) (t : Nat) (nonce pt aad : List Byte) : Option (List Byte) :=
-  encrypt (aes key) t nonce pt aad
-
-/-- AES-CCM decryption-verification, with a MAC of `t` bytes. -/
-def aesCcmDecrypt (key : List Byte) (t : Nat) (nonce c aad : List Byte) : Option (List Byte) :=
-  decrypt (aes key) t nonce c aad
 
 /-! ## On memory -/
 

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 import VerifiedGarbage.Impl.RsaPkcs1Enc.PPC64LE.Precomputed
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.TCB.PPC64LE.Target
@@ -86,10 +86,10 @@ structure PreE (s : State) : Prop where
   hs : Spec.Rsa.publicScratchWords (s.gpr .r6).toNat ≤ (stackArg s 3).toNat
   hp : (stackArg s 5).toNat = Spec.Rsa.precomputedWords (s.gpr .r6).toNat
 
-theorem preE_of {s : State} (h : (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pre s) : PreE s := by
+theorem preE_of {s : State} (h : (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pre s) : PreE s := by
   have e : frameBytes = 2223 + 1 := rfl
   rw [e] at h
-  sig_pre [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
+  sig_pre [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
     stackArgs_six, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp1, sp2, hrd, hwr, on, oe, om, ops, osc, op, oa, ns, es, ms, pss, sp, sa, ko, kn, ke, km, kps, ksc, kp,
     ka, wo, wn, we, wm, wps, wsc, wp, ⟨k1, k2⟩, ok, e1, e2, ml, pl, hs, hp⟩ := h

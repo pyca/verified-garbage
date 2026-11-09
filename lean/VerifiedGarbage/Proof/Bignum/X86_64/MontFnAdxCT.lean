@@ -76,13 +76,6 @@ theorem AdxIn.of_keep {d : CallData} {s t : State} (h : AdxIn d s) (hm : t.mem =
   exact ⟨hs.congr k.2.2, (k.gpr hr.1).trans hdi, ⟨mi, hm ▸ hH⟩, hZ, op, (k.gpr hr.2.1).trans hdx,
     hcx'.trans hcx, (k.gpr hr.2.2).trans h8⟩
 
-theorem head_fw (d : CallData) (s : State) (h : AdxIn d s) : WP isa (.block (saves ++ slotsIn)) s (AdxMid d) := by
-  obtain ⟨hs, hdi, ⟨mi, hH⟩, hZ, op, hdx, hcx, h8⟩ := h
-  refine WP.mono (adxRest_ok hs hdi hH hZ op.1 op.2.1 op.2.2.1 hdx hcx h8) fun t ⟨hm, k, _⟩ => ?_
-  exact ⟨⟨hs.congr k.2.2, (k.gpr (by decide)).trans hdi, ⟨mi, hm ▸ headMem_hdr hH _ _ _⟩, hZ, op,
-    (k.gpr (by decide)).trans hdx, (k.gpr (by decide)).trans hcx, (k.gpr (by decide)).trans h8⟩,
-    hm ▸ headMem_ops _ _ _ _ _ _⟩
-
 /-- The tiled code, for a layout the size test admits. -/
 def adxLayout (d : CallData) (hZ : slot d.w 8 ≤ d.Z) (h : AlignOk d.w) : AdxTiledProduct.Layout :=
   ⟨d.B, d.Z, d.w, d.w / 8, hZ, by unfold AlignOk at h; omega, by unfold AlignOk at h; omega,
@@ -182,11 +175,6 @@ theorem adxTail_ct : RelCT isa (Two AdxMid) (.seq adxBody (.block restore)) fun 
     fun _ _ h => h.1.2.1)
     (two_taint [.rdi] (fun _ _ _ h₁ h₂ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; rw [h₁, h₂]) (by taint_decide))
-
-/-- `vg_rsa_mont_mul_adx` after `zext`. -/
-theorem adxCore_ct : RelCT isa (Two AdxIn) (.seq (.block (saves ++ slotsIn)) (.seq adxBody (.block restore)))
-    fun _ _ => True :=
-  RelCT.seq (two_piece _ pins_adxIn (by taint_decide) head_fw) adxTail_ct
 
 /-- After the head, from `enter ++ slotsIn`. -/
 theorem AdxMid.of_head {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)

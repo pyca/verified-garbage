@@ -60,9 +60,16 @@ abbrev muOf : List Byte := bytesAt s₀.mem (Buf.addr s₀ bMu) 64
 abbrev rndOf : List Byte := bytesAt s₀.mem (Buf.addr s₀ bRnd) 32
 end
 
-/-- Two runs with the same pointers and the same leakage. -/
+/-- The word `KEYS` of `scratch`, on entry. -/
+abbrev keysW (s₀ : State) : BitVec 32 := s₀.mem.readW (Buf.addr s₀ (sc oKEYS 4)) 32
+
+/-- Whether the word `KEYS` is nonzero on entry: whether `scratch` holds
+the private key's polynomials already. -/
+abbrev keysOf (s₀ : State) : List Byte := [if keysW s₀ = 0 then 0 else 1]
+
+/-- Two runs with the same pointers, the same `KEYS` and the same leakage. -/
 def SPub (p : Params) (s₀ s₀' : State) : Prop :=
-  TPub (Y p) lk0 s₀ s₀' ∧ signLeak p (skOf p s₀) (muOf s₀) (rndOf s₀) = signLeak p (skOf p s₀') (muOf s₀') (rndOf s₀')
+  TPub (Y p) keysOf s₀ s₀' ∧ signLeak p (skOf p s₀) (muOf s₀) (rndOf s₀) = signLeak p (skOf p s₀') (muOf s₀') (rndOf s₀')
 
 /-- The full rejection leakage determines the older group-only leakage. -/
 theorem SPub.coarse {p : Params} {x y : State} (h : SPub p x y) :
@@ -72,11 +79,12 @@ theorem SPub.coarse {p : Params} {x y : State} (h : SPub p x y) :
 /-- The pieces of the proof. -/
 abbrev SP (p : Params) (A B : State → State → Prop) (c : Prog isa) : Prop := Piece (TPre (Y p)) (SPub p) A B c
 
+theorem SPub.t {p : Params} {s₀ s₀' : State} (h : SPub p s₀ s₀') : TPub (Y p) lk0 s₀ s₀' :=
+  ⟨h.1.1, h.1.2.1, rfl⟩
+
 theorem lift {p : Params} {A B : State → State → Prop} {c : Prog isa}
     (h : Piece (TPre (Y p)) (TPub (Y p) lk0) A B c) : SP p A B c :=
-  h.pre_mono (fun _ h => h) fun _ _ _ _ h => h.1
-
-theorem SPub.t {p : Params} {s₀ s₀' : State} (h : SPub p s₀ s₀') : TPub (Y p) lk0 s₀ s₀' := h.1
+  h.pre_mono (fun _ h => h) fun _ _ _ _ h => h.t
 
 theorem Y_sc (p : Params) : (Y p).sc = SC := rfl
 

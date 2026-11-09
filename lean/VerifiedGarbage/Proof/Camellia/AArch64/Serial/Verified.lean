@@ -1,10 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
+public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
 import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Crypt
 import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Prepared
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Camellia.PreparedEncrypt
+public import VerifiedGarbage.Proof.Camellia.Prepared
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Crypt
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Prepared
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Camellia.PreparedEncrypt
+meta import VerifiedGarbage.Proof.Camellia.Prepared
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -37,23 +37,19 @@ public import VerifiedGarbage.Impl.Camellia.AArch64.Serial.Prepared
 public import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
 public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.State
 public import VerifiedGarbage.Spec.Camellia.Ctr
-public import VerifiedGarbage.Spec.Camellia.Prepared
 
 /-!
 # The serial core's two functions meet their contracts
 
-`prepare_verified` and `crypt_verified`: `vg_camellia_prepare_encrypt_keys`
-and `vg_camellia_encrypt_prepared` against
-`Proof.Camellia.Prepared.prepareEncryptContract` and
-`encryptPreparedContract`, with `layout`. Each runs the serial core's half
+`prep_correct` and `crypt_correct`: `vg_camellia_prepare_encrypt_keys`
+and `vg_camellia_encrypt_prepared` meet `prepAArch64` and `cryptAArch64`,
+with `layout`. Each runs the serial core's half
 (`prepare_wp`, `crypt_wp`) from the state narrowed to the core's 418 slots
 of the working space, and then from the whole working space
 (`Exec.widen`). The preparation changes only the table's 528 bytes, a
 block only its own 16. A block is encrypted under the words of any table
 its working space holds: the run from it is the run from the table the
-precondition gives (`Exec.det`). Constant time by the taint analysis with
-public values in vector registers: the pointers, `ws_len` and `rounds` are
-public.
+precondition gives (`Exec.det`).
 -/
 
 @[expose] public section
@@ -64,7 +60,7 @@ open VG VG.AArch64 VG.Impl.Camellia.AArch64.Serial
 open VG.Impl.Aes.AArch64 (sb movR)
 open VG.Proof.Camellia (schedWords)
 open VG.Proof.Modes.AArch64 (ScrIn runBlock_app)
-open VG.Spec.Camellia.Prepared (Holds Keeps)
+open VG.Proof.Camellia.Prepared (Holds Keeps)
 
 /-! ## Narrowing the working space -/
 
@@ -105,7 +101,7 @@ def prepAArch64 : Contract AArch64.isa where
       ((s.gpr .x1).toNat = 18 ∨ (s.gpr .x1).toNat = 24) ∧ layout.size ≤ 8 * (s.gpr .x3).toNat
   post s s' :=
     Holds layout s'.mem (s.gpr .x2) (s.gpr .x1).toNat
-        (Spec.Camellia.Prepared.wordsAt s.mem (s.gpr .x0) (s.gpr .x1).toNat) .encrypt ∧
+        (Proof.Camellia.Prepared.wordsAt s.mem (s.gpr .x0) (s.gpr .x1).toNat) .encrypt ∧
       Keeps (s.gpr .x2) (s.gpr .x3).toNat layout.prepScratch s.mem s'.mem
   pub s₁ s₂ :=
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
@@ -168,33 +164,6 @@ theorem prep_correct (s : State) (hs : prepAArch64.pre s) :
   · exact holds_of_ready hr .encrypt
   · exact keeps_of_frame (e := 0) (by simpa only [narrowWs, State.withRegions_mem, State.withRegions_gpr,
       BitVec.add_zero] using hf) (by decide) fitW (by omega)
-
-theorem prepTaint_agree (s₁ s₂ : State) (_ : prepAArch64.pre s₁) (_ : prepAArch64.pre s₂)
-    (hp : prepAArch64.pub s₁ s₂) : VectorTaint.Agree (VectorTaint.ofRegs [.x0, .x1, .x2, .x3]) s₁ s₂ := by
-  obtain ⟨h1, h2, h3, h4, hsp⟩ := hp
-  refine ⟨⟨hsp, fun r hr => ?_⟩, ?_⟩
-  · simp only [VectorTaint.ofRegs, Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
-  · intro r hr
-    simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hr
-
-theorem prep_ct : ConstantTime isa prepAArch64.pre prepAArch64.pub prepareEncrypt :=
-  VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3]) prepTaint_agree
-    (by taint_decide)
-
-/-- A state satisfying the preparation's precondition. -/
-def prepSat : State where
-  gpr r := match r with | .x0 => 0x1000 | .x1 => 18 | .x2 => 0x2000 | .x3 => 418 | _ => 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 272⟩]
-  wr := [⟨0x2000, 418 * 8⟩]
-
-theorem prepare_verified :
-    Verified AArch64.target prepareEncrypt (Proof.Camellia.Prepared.prepareEncryptContract layout AArch64.abi) :=
-  Verified.of_correct prep_correct prep_ct (by
-    sig_implies [Proof.Camellia.Prepared.prepareEncryptContract, Proof.Camellia.Prepared.prepareEncryptSig,
-      prepAArch64, AArch64.abi, AArch64.argRegs, size_eq] [prepSat] using prepSat)
 
 /-! ## A block -/
 
@@ -282,68 +251,5 @@ theorem crypt_correct (s : State) (hs : cryptAArch64.pre s) :
     obtain ⟨-, rfl⟩ := Exec.det he he₂
     exact blocks_of hc
   · exact keeps_of_frame hf (by decide) fitW (by show 784 ≤ _; omega)
-
-theorem cryptTaint_agree (s₁ s₂ : State) (_ : cryptAArch64.pre s₁) (_ : cryptAArch64.pre s₂)
-    (hp : cryptAArch64.pub s₁ s₂) : VectorTaint.Agree (VectorTaint.ofRegs [.x0, .x1, .x2]) s₁ s₂ := by
-  obtain ⟨h1, h2, h3, hsp⟩ := hp
-  refine ⟨⟨hsp, fun r hr => ?_⟩, ?_⟩
-  · simp only [VectorTaint.ofRegs, Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> with_reducible assumption
-  · intro r hr
-    simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hr
-
-theorem crypt_ct : ConstantTime isa cryptAArch64.pre cryptAArch64.pub encryptPrepared :=
-  VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2]) cryptTaint_agree
-    (by taint_decide)
-
-/-- A working space at `0x2000` holding the table of no words (all zeros)
-for 18 rounds. -/
-def cryptSatMem : Mem := fun a =>
-  if 0x2000 ≤ a.toNat ∧ a.toNat < 0x2000 + 3344 then layout.encode 18 [] .encrypt (a.toNat - 0x2000) else 0
-
-theorem cryptSat_holds : Holds layout cryptSatMem 0x2000 18 [] .encrypt := by
-  intro r hr i hi
-  have hr' : r.1 + i < 3344 := by
-    rw [layout_table] at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> dsimp only [Spec.Camellia.scheduleLength] at hi ⊢ <;> omega
-  have ht : ((0x2000 : Addr) + BitVec.ofNat 64 (r.1 + i)).toNat = 0x2000 + (r.1 + i) := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, show (0x2000 : Addr).toNat = 0x2000 from rfl]; omega
-  have hc : 0x2000 ≤ 0x2000 + (r.1 + i) ∧ 0x2000 + (r.1 + i) < 0x2000 + 3344 := ⟨by omega, by omega⟩
-  simp only [cryptSatMem, ht, hc, and_self, ↓reduceIte]
-  rw [show 0x2000 + (r.1 + i) - 0x2000 = r.1 + i by omega]
-
-/-- A state satisfying the block's precondition. -/
-def cryptSat : State where
-  gpr r := match r with | .x0 => 18 | .x1 => 0x2000 | .x2 => 418 | _ => 0
-  sp := 0x8000
-  mem := cryptSatMem
-  rd := []
-  wr := [⟨0x2000, 418 * 8⟩]
-
-theorem crypt_implies :
-    cryptAArch64.Implies (Proof.Camellia.Prepared.encryptPreparedContract layout AArch64.abi) where
-  pre := by
-    sig_implies_pre [Proof.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig,
-      cryptAArch64, AArch64.abi, AArch64.argRegs]
-  post := by
-    sig_implies_post [Proof.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig,
-      cryptAArch64, AArch64.abi, AArch64.argRegs]
-  pub := by
-    sig_implies_pub [Proof.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig,
-      cryptAArch64, AArch64.abi, AArch64.argRegs]
-  sat := by
-    refine ⟨cryptSat, ?_⟩
-    sig_pre [Proof.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig, AArch64.abi,
-      AArch64.argRegs]
-    sig_and_intros
-    all_goals first
-      | decide
-      | exact ⟨_, cryptSat_holds⟩
-      | (rw [size_eq]; decide)
-
-theorem crypt_verified :
-    Verified AArch64.target encryptPrepared (Proof.Camellia.Prepared.encryptPreparedContract layout AArch64.abi) :=
-  Verified.of_correct crypt_correct crypt_ct crypt_implies
 
 end VG.Proof.Camellia.AArch64.Serial

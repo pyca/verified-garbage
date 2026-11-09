@@ -68,13 +68,6 @@ structure SchedOk (z : Spec.Idea.Schedule) (s : State) : Prop where
   fit : (s.gpr .esi).toNat + 104 ≤ 2 ^ 32
   sched : Spec.Idea.scheduleAt s.mem ((s.gpr .esi).setWidth 64) = z
 
-theorem SchedOk.keep {z : Spec.Idea.Schedule} {rs : List Reg} {s s' : State} (h : SchedOk z s)
-    (hk : Keep rs s s') (hesi : .esi ∉ rs) : SchedOk z s' := by
-  refine ⟨?_, ?_, ?_⟩
-  · rw [hk.rd, hk.wr, hk.reg .esi hesi]; exact h.read
-  · rw [hk.reg .esi hesi]; exact h.fit
-  · rw [hk.mem, hk.reg .esi hesi]; exact h.sched
-
 theorem SchedOk.word {z : Spec.Idea.Schedule} {s : State} (h : SchedOk z s) {d : Nat} (hd : d + 4 ≤ 104) :
     readSrc s (.mem (at_ .esi d)) = some (s.mem.readW ((s.gpr .esi).setWidth 64 + BitVec.ofNat 64 d) 32) := by
   have ha := addr_eq (x := s.gpr .esi) (k := d) (by have := h.fit; omega_arith)

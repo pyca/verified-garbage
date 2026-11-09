@@ -39,12 +39,12 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.p384
   inst := Spec.Ecdsa.P384.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inr (.inr (.inl rfl)), .inl rfl, p384_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 48 - Spec.Ecdsa.nBits Spec.P384.curve = 0; rw [p384_nBits]
-  coreN := "vg_ecdsa_p384_sign"
+  coreN := "vg_ecdsa_p384_sign_k"
   coreC := Impl.Ecdsa.Arm.signP384
   coreConsts := []
   coreX := by
@@ -60,6 +60,6 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
     simpa only [coreK,coreSigOf,Spec.P384.curve,Nat.reduceMul,Impl.Ecdsa.Arm.p384,Impl.Ecdsa.Arm.p384With,Proof.Ecdsa.Arm.P384.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
       Proof.Ecdsa.Arm.P384.signArm] using Proof.Ecdsa.Arm.P384.sign_ct
   coreStack := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blk := by rfcT_decide
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

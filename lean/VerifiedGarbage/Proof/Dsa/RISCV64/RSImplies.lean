@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.RISCV64.RSCtx
 import VerifiedGarbage.Proof.Dsa.RISCV64.RSFn
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
@@ -10,9 +11,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 
 As on PPC64LE (`Proof/Dsa/PPC64LE/RandomSign/Contract.lean`).
 `randomSign_implies`: `rsContract` implies the shared contract, with
-`rsStack` bytes of stack; `randomSign_wp`: `vg_dsa_sign_random` meets the
-shared contract's precondition and postcondition, and the calling
-convention.
+`rsStack` bytes of stack.
 -/
 
 @[expose] public section
@@ -40,11 +39,11 @@ def rsSatState : State where
   rd := [⟨0x1000, 424⟩, ⟨0x3000, 0⟩, ⟨0x6000, 0⟩, ⟨0x9000, 40⟩]
   wr := [⟨0x4000, 40⟩, ⟨0x5000, 8⟩, ⟨0x10000, 16896⟩]
 
-theorem randomSign_implies : rsContract.Implies (Spec.Dsa.randomSignContract RISCV64.abi rsStack) := by
+theorem randomSign_implies : rsContract.Implies (randomSignCheckedContract RISCV64.abi rsStack) := by
   exact
     { pre := by
         intro s h
-        sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsContract, rsRes,
+        sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsContract, rsRes,
       rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
       List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
       List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow] at h
@@ -56,11 +55,11 @@ theorem randomSign_implies : rsContract.Implies (Spec.Dsa.randomSignContract RIS
           Bool.or_false, Bool.false_or, List.nil_append, List.cons_append, Sig.conj_cons,
           Sig.conj] at hx
         obtain ⟨_, _, _⟩ := hx
-        sig_reduce [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsContract, rsRes,
+        sig_reduce [randomSignCheckedContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsContract, rsRes,
       rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
       List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
       List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow]
-        sig_simp [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsContract, rsRes,
+        sig_simp [randomSignCheckedContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsContract, rsRes,
       rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
       List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
       List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow] []
@@ -72,25 +71,18 @@ theorem randomSign_implies : rsContract.Implies (Spec.Dsa.randomSignContract RIS
           | omega
           | skip
         all_goals done
-      post := by sig_implies_post [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsContract, rsRes,
+      post := by sig_implies_post [randomSignCheckedContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsContract, rsRes,
       rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
       List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
       List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow]
-      pub := by sig_implies_pub [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsContract, rsRes,
+      pub := by sig_implies_pub [randomSignCheckedContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsContract, rsRes,
       rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
       List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
       List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow]
-      sat := by sig_implies_sat [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsContract, rsRes,
+      sat := by sig_implies_sat [randomSignCheckedContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsContract, rsRes,
       rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
       List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
       List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow]
           [rsSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using rsSatState }
-
-/-- `vg_dsa_sign_random` under the shared contract. -/
-theorem randomSign_wp (s : State) (h : (Spec.Dsa.randomSignContract RISCV64.abi rsStack).pre s) :
-    WP isa RandomSign.code s fun t =>
-      abiPreserved s t ∧ (Spec.Dsa.randomSignContract RISCV64.abi rsStack).post s t := by
-  obtain ⟨tr, t, he, ha, hp⟩ := randomSign_correct s (randomSign_implies.pre s h)
-  exact ⟨tr, t, he, ha, randomSign_implies.post s t h hp⟩
 
 end VG.Proof.Dsa.RISCV64

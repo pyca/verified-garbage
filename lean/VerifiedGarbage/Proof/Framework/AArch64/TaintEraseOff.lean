@@ -87,38 +87,4 @@ theorem Taint.isSome_check_of_eraseOff {c c' : Prog isa} (he : Code.eraseOff c =
     (taint.check τ c hc).isSome = true := by
   rw [← Taint.check_eraseOff, he]; exact h
 
-/-- `allInstrs p` of the code without its immediates, for a `p` that does not read them. -/
-theorem Code.allInstrs_eraseOff {p : Instr → Bool} (hp : ∀ i, p i.eraseOff = p i)
-    (c : Prog isa) : (Code.eraseOff c).allInstrs p = c.allInstrs p := by
-  induction c with
-  | icall => rfl
-  | block is =>
-    show Code.allInstrs p (.block (is.map Instr.eraseOff)) = Code.allInstrs p (.block is)
-    rw [Code.allInstrs_eq, Code.allInstrs_eq]
-    simp only [instrs, List.all_map, Function.comp_def, hp]
-  | seq a b iha ihb => simp only [Code.eraseOff, Code.allInstrs, iha, ihb]
-  | ite c t e iht ihe => simp only [Code.eraseOff, Code.allInstrs, iht, ihe]
-  | loop b c ih => simp only [Code.eraseOff, Code.allInstrs, ih]
-  | call n b ih => simp only [Code.eraseOff, Code.allInstrs, ih]
-  | frame i b j ih => simp only [Code.eraseOff, Code.allInstrs, ih]
-
-theorem keepsV_eraseOff (i : Instr) : keepsV i.eraseOff = keepsV i := by
-  cases i <;> rfl
-
-/-- `keepsV` of `c` from that of `c'`, which is `c` without its immediates. -/
-theorem Code.allInstrs_keepsV_of_eraseOff {c c' : Prog isa} (he : Code.eraseOff c = c')
-    (h : c'.allInstrs keepsV = true) : c.allInstrs keepsV = true := by
-  rw [← Code.allInstrs_eraseOff keepsV_eraseOff, he]; exact h
-
-/-- `keepsV` of `c` from that of `c'`, which is `c` up to immediates. -/
-theorem Code.allInstrs_keepsV_of_eraseOff_eq {c c' : Prog isa}
-    (he : Code.eraseOff c = Code.eraseOff c') (h : c'.allInstrs keepsV = true) :
-    c.allInstrs keepsV = true := by
-  rw [← Code.allInstrs_eraseOff keepsV_eraseOff, he, Code.allInstrs_eraseOff keepsV_eraseOff]
-  exact h
-
-/-- Whether code has no frames does not depend on its immediates. -/
-theorem Code.noFrames_eraseOff (c : Prog isa) : (Code.eraseOff c).noFrames = c.noFrames := by
-  induction c <;> simp_all [Code.eraseOff, Code.noFrames]
-
 end VG.AArch64

@@ -54,15 +54,6 @@ theorem keeps_upd {B SP : BitVec 32} {s t : State} {d : Reg} {v : BitVec 32} (u 
     (hd : d ∉ kept) : Keeps B SP s t :=
   Keeps.same (fun r hr => u.other r fun h => hd (h ▸ hr)) u.sp u.mem u.rd u.wr
 
-/-- Two runs agree on the registers the body keeps. -/
-theorem agree_body {s₀ s₀' : State} (q : Same s₀ s₀') {t₁ t₂ : State} (b₁ : Body s₀ t₁)
-    (b₂ : Body s₀' t₂) : ∀ r ∈ [Reg.r4, .r5, .r6], t₁.gpr r = t₂.gpr r := fun r hr => by
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · rw [b₁.r4, b₂.r4, q.scr]
-  · rw [b₁.r5, b₂.r5]; exact q.r0.symm
-  · rw [b₁.r6, b₂.r6, q.r1]
-
 /-- The code taint checks from nothing public, in two runs. -/
 theorem rel_none {P : State → State → Prop} {c : Prog isa}
     (hc : ∃ hc, (VG.Taint.check taint (Taint.ofRegs []) c hc).isSome = true) :

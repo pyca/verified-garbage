@@ -19,16 +19,6 @@ public import VerifiedGarbage.Proof.Aes.Contract
 namespace VG.Proof.Aes.PPC64LE
 open VG VG.PPC64LE
 
-/-- A state satisfying the precondition. -/
-def ekSatState : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 16 | .r5 => 0x2000 | .r6 => 0x3000 | _ => 0
-  lr := 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 16⟩]
-  wr := [⟨0x2000, 240⟩, ⟨0x3000, 512⟩]
-
 theorem expandKey_correct (s : State) (hs : Proof.Aes.expandKeyPPC64LE.pre s) :
     ∃ t s', Exec isa Impl.Aes.PPC64LE.expandKey s t s' ∧ abiPreserved s s' ∧
       Proof.Aes.expandKeyPPC64LE.post s s' := by
@@ -53,12 +43,6 @@ theorem expandKey_ct_of (pre : State → Prop) (pub : State → State → Prop)
 theorem expandKey_ct : ConstantTime isa Proof.Aes.expandKeyPPC64LE.pre Proof.Aes.expandKeyPPC64LE.pub
     Impl.Aes.PPC64LE.expandKey :=
   expandKey_ct_of _ _ fun _ _ ⟨h1, h2, h3, _, hsp⟩ => ⟨h1, h2, h3, hsp⟩
-
-theorem expandKey_verified :
-    Verified PPC64LE.target Impl.Aes.PPC64LE.expandKey (Proof.Aes.expandKeyScratchContract PPC64LE.abi) :=
-  Verified.of_correct expandKey_correct expandKey_ct (by
-    sig_implies [Proof.Aes.expandKeyScratchContract, Proof.Aes.expandKeyScratchSig,
-      Proof.Aes.expandKeyPPC64LE, PPC64LE.abi, PPC64LE.argRegs] [ekSatState] using ekSatState)
 
 /-- A direct call needs only the key and the output schedule. -/
 def expandKeyDirectSat : State where

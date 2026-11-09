@@ -100,15 +100,6 @@ variable {s s' : State} {rd wr : List Region}
 @[simp] theorem State.withRegions_n (s : State) (rd wr) : (s.withRegions rd wr).n = s.n := rfl
 @[simp] theorem State.withRegions_z (s : State) (rd wr) : (s.withRegions rd wr).z = s.z := rfl
 
-theorem setReg_withRegions (d : Reg) (v : BitVec 32) :
-    (s.withRegions rd wr).setReg d v = (s.setReg d v).withRegions rd wr := rfl
-
-theorem addFlags_withRegions (x y : BitVec 32) :
-    addFlags (s.withRegions rd wr) x y = (addFlags s x y).withRegions rd wr := rfl
-
-theorem subFlags_withRegions (x y : BitVec 32) :
-    subFlags (s.withRegions rd wr) x y = (subFlags s x y).withRegions rd wr := rfl
-
 theorem op2_withRegions (o : Op2) : o.eval (s.withRegions rd wr) = o.eval s := by
   cases o <;> rfl
 
@@ -372,20 +363,6 @@ theorem WP.inline {c : Prog isa} {k : Contract isa}
     (hn : c.noCalls = true := by decide +kernel) : WP isa c s Q :=
   regionModel.wp_narrow (hv _ hpre) hc hw (Code.noFrames_of_noCalls hn) (.inl hn)
     fun _ _ he hr hw hf hp => hQ _ hr hw hp.1 hf (fun _ h => Exec.gpr h he (.inl hn)) hp.2
-
-/-- `WP.inline` for code that makes calls (but has no frames): the
-registers kept are those no instruction writes, other than those a call
-changes (`linkRegs`). -/
-theorem WP.inlineCalls {c : Prog isa} {k : Contract isa}
-    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
-    {s : State} {rd wr : List Region} (hpre : k.pre (s.withRegions rd wr))
-    (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
-    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → abiPreserved s s' → Frame wr s.mem s'.mem →
-      (∀ r, (∀ i ∈ instrs c, clobbers i r = false) → r ∉ linkRegs → s'.gpr r = s.gpr r) →
-      k.post (s.withRegions rd wr) (s'.withRegions rd wr) → Q s')
-    (hn : c.noFrames = true := by decide +kernel) : WP isa c s Q :=
-  regionModel.wp_narrow (hv _ hpre) hc hw hn (.inr callsKeepMem)
-    fun _ _ he hr hw hf hp => hQ _ hr hw hp.1 hf (fun _ h hl => Exec.gpr h he (.inr hl)) hp.2
 
 /-- Widening writable regions: code verified against `k` is verified against
 a contract `k'` whose states permit writing regions that extend (same bases,

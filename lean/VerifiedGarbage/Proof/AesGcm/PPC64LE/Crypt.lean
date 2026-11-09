@@ -53,6 +53,20 @@ theorem DataW.sub {c st w : Addr} {s : State} {D : Addr} {n : Nat} (h : DataW c 
     {j k : Nat} (hjk : j + k ≤ n) (hk : 0 < k) : DataW c st w s (D + BitVec.ofNat 64 j) k :=
   ⟨h.ok.sub hjk hk, covers_off h.wr hjk h.ok.lt, h.ctx.sub_right (Offset.sub_base _ hjk)⟩
 
+/-- The data from byte `j` on. -/
+theorem DataOk.drop {st w : Addr} {s : State} {D : Addr} {n j : Nat}
+    (h : DataOk st w s D n) (hj : j ≤ n) : DataOk st w s (D + BitVec.ofNat 64 j) (n - j) := by
+  have hs : Region.Sub ⟨D+BitVec.ofNat 64 j,n-j⟩ ⟨D,n⟩ := Offset.sub_base _ (by omega)
+  refine ⟨covers_off h.rd (by omega) h.lt,by have := h.lt; omega,?_,h.st.sub_left hs,h.w.sub_left hs⟩
+  by_cases hz : n-j=0
+  · rw [hz,Nat.add_zero]; exact Nat.le_of_lt (D+BitVec.ofNat 64 j).isLt
+  · rw [h.toNat_add (by omega)]; have := h.fit; omega
+
+/-- The data from byte `j` on. -/
+theorem DataW.drop {c st w : Addr} {s : State} {D : Addr} {n j : Nat}
+    (h : DataW c st w s D n) (hj : j ≤ n) : DataW c st w s (D + BitVec.ofNat 64 j) (n - j) :=
+  ⟨h.ok.drop hj, covers_off h.wr (by omega) h.ok.lt, h.ctx.sub_right (Offset.sub_base _ (by omega))⟩
+
 theorem DataW.take {c st w : Addr} {s : State} {D : Addr} {n : Nat} (h : DataW c st w s D n)
     {k : Nat} (hk : k ≤ n) : DataW c st w s D k :=
   ⟨h.ok.take hk, covers_prefix h.wr hk, h.ctx.sub_right (Region.sub_prefix hk)⟩
@@ -134,11 +148,18 @@ theorem split_disj {D : Addr} {j n : Nat} (hj : j ≤ n) (hn : n < 2 ^ 64) :
   have := Offset.disjoint D (d := 0) (n := j) (e := j) (k := n - j) (.inl (by omega)) (by omega) (by omega)
   simpa using this
 
+/-- The text at `S` in `m₀`, decrypted to `E` in `m`, in two pieces. -/
+theorem done_appendTo {m m₀ : Mem} {ciph : Block → Block} {icb : Block} {P : Nat} {S E : Addr} {j l : Nat}
+    (h₁ : bytesAt m E j = xorKs ciph icb P (bytesAt m₀ S j))
+    (h₂ : bytesAt m (E + BitVec.ofNat 64 j) l = xorKs ciph icb (P + j) (bytesAt m₀ (S + BitVec.ofNat 64 j) l)) :
+    bytesAt m E (j + l) = xorKs ciph icb P (bytesAt m₀ S (j + l)) := by
+  rw [bytesAt_add, bytesAt_add, Proof.Gcm.xorKs_append, h₁, h₂, length_bytesAt]
+
 /-- The bytes done so far and the next ones. -/
 theorem done_append {m m₀ : Mem} {ciph : Block → Block} {icb : Block} {P : Nat} {D : Addr} {j l : Nat}
     (h₁ : bytesAt m D j = xorKs ciph icb P (bytesAt m₀ D j))
     (h₂ : bytesAt m (D + BitVec.ofNat 64 j) l = xorKs ciph icb (P + j) (bytesAt m₀ (D + BitVec.ofNat 64 j) l)) :
-    bytesAt m D (j + l) = xorKs ciph icb P (bytesAt m₀ D (j + l)) := by
-  rw [bytesAt_add, bytesAt_add, Proof.Gcm.xorKs_append, h₁, h₂, length_bytesAt]
+    bytesAt m D (j + l) = xorKs ciph icb P (bytesAt m₀ D (j + l)) :=
+  done_appendTo h₁ h₂
 
 end VG.Proof.AesGcm.PPC64LE

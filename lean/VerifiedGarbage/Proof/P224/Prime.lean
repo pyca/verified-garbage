@@ -151,10 +151,6 @@ theorem prime_269599466671506397946670150870196306735579162600263081435100662988
   · exact prime_6700417
   · exact prime_67280421310721
 
-theorem p_prime : Nat.Prime Spec.P224.p := by
-  rw [show Spec.P224.p = 26959946667150639794667015087019630673557916260026308143510066298881 by decide]
-  exact prime_26959946667150639794667015087019630673557916260026308143510066298881
-
 theorem prime_85999 : Nat.Prime 85999 := by
   refine prime_of_cert 85999 3 17 [2, 3, 11, 1303] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)

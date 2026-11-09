@@ -65,9 +65,6 @@ theorem Ws.of_mupd {s t : State} {B : BitVec 32} {Z w N : Nat} {m : Mem}
 
 /-! ## Offsets -/
 
-theorem arr_succ (w j : Nat) : arr w (j + 1) = arr w j + S w :=
-  VG.Proof.Rsa.KeyWorkspace.arr_succ w j
-
 theorem arr_mono {w j k : Nat} (h : j ≤ k) : arr w j ≤ arr w k :=
   VG.Proof.Rsa.KeyWorkspace.arr_mono h
 
@@ -185,14 +182,6 @@ theorem Keep.mono {B : BitVec 32} {w : Nat} {js ds js' ds' : List Nat} {m m' : M
     (h : Keep B w js ds m m') (hj : ∀ j ∈ js, j ∈ js' := by simp)
     (hd : ∀ d ∈ ds, d ∈ ds' := by simp) : Keep B w js' ds' m m' :=
   VG.Proof.Rsa.KeyWorkspace.Keep.mono h hj hd
-
-/-- Two frames, each widened to the union. -/
-theorem Keep.join {B : BitVec 32} {w : Nat} {js₁ ds₁ js₂ ds₂ js ds : List Nat} {m₁ m₂ m₃ : Mem}
-    (h₁ : Keep B w js₁ ds₁ m₁ m₂) (h₂ : Keep B w js₂ ds₂ m₂ m₃)
-    (hj₁ : ∀ j ∈ js₁, j ∈ js := by simp) (hd₁ : ∀ d ∈ ds₁, d ∈ ds := by simp)
-    (hj₂ : ∀ j ∈ js₂, j ∈ js := by simp) (hd₂ : ∀ d ∈ ds₂, d ∈ ds := by simp) :
-    Keep B w js ds m₁ m₃ :=
-  VG.Proof.Rsa.KeyWorkspace.Keep.join h₁ h₂ hj₁ hd₁ hj₂ hd₂
 
 theorem Keep.of_arr {B : BitVec 32} {w o n d : Nat} {js ds : List Nat} {m m' : Mem}
     (h : Outside (State.addr B) (arr w o + d) n m m') (hn : d + n ≤ S w) (ho : o ∈ js) :

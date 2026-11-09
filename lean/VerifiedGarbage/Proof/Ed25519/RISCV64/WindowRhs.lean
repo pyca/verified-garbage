@@ -524,11 +524,6 @@ theorem dblOpsXYZ_keep (e : Env) (i : Slot) (hi : 4 ≤ i.val ∧ i.val < 8 ∨ 
 /-- A doubling reads only `X`, `Y` and `Z`. -/
 theorem dblPoint_T (p : Spec.Ed25519.Point) (t : Spec.X25519.Fe) : dblPoint { p with T := t } = dblPoint p := rfl
 
-/-- A doubling without `T`, then a doubling, is two doublings. -/
-theorem dblOps_dblOpsXYZ (e : Env) : point (evalOps dblOps (evalOps dblOpsXYZ e)) 0 1 2 3 =
-    dblPoint (dblPoint (point e 0 1 2 3)) := by
-  rw [dblOps_eval, dblOpsXYZ_eval, dblPoint_T]
-
 /-- A doubling without `T` after one: the same `X`, `Y` and `Z` as two doublings. -/
 theorem dblOpsXYZ_dblOpsXYZ (e : Env) : point (evalOps dblOpsXYZ (evalOps dblOpsXYZ e)) 0 1 2 3 =
     { dblPoint (dblPoint (point e 0 1 2 3)) with T := e 3 } := by

@@ -14,7 +14,7 @@
 /// * `state` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `key` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "i0QkBItMJAiLEYlQGItRBIlQHItRCIlQIItRDIlQJItREIlQKItRFIlQLItRGIlQMItRHIlQNLoAAAAAiRCJUASJUAiJUAyJUBCJUBTD"
 .p2align 6"#,
@@ -32,7 +32,7 @@ pub unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 156 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkZP///4uEJKAAAACJRCQEi4QkpAAAAIlEJAiLhCSoAAAAiUQkDIuEJKwAAACJRCQQi4QksAAAAIlEJBSJ4IPAHIlEJBiLRCQEiVh0iXB4iXh8iWgUiceLRxgl////D4lHSItHHCX8//8PiUdMicHB6QIByIlHWItHICX8//8PiUdQicHB6QIByIlHXItHJCX8//8PiUdUicHB6QIByIlHYIt0JBCLVCQIg+IPhdI="
 je 20f
@@ -93,7 +93,7 @@ jmp 213f
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkaP///4uEJJwAAACJRCQEi4QkoAAAAIlEJAiLhCSkAAAAiUQkDIuEJKgAAACJRCQQieCDwBiJRCQUi0QkBIlYdIlweIl4fIloFInHi0cYJf///w+JR0iLRxwl/P//D4lHTInBwekCAciJR1iLRyAl/P//D4lHUInBwekCAciJR1yLRyQl/P//D4lHVInBwekCAciJR2CLVCQIg+IPhdI="
 je 20f

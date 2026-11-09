@@ -13,29 +13,6 @@ open VG.Impl.MlDsa.AArch64.Sample
 open VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
 open VG.Proof.MlKem.AArch64
 
-/-- Exact store semantics are retained even on rejection. This stronger
-frame is needed to reproduce the legacy sampler's final rejected coefficient. -/
-theorem accept_memory_ok {s : State}
-    (hw : InRegions s.wr (s.gpr .x3) 4) :
-    WP isa (.block rnAccept) s fun t =>
-      Keep [.x3,.x4,.x13,.x14,.x15] s t ∧
-      t.mem=s.mem.writeW (s.gpr .x3) ((s.gpr .x11).setWidth 32) ∧
-      t.gpr .x3=s.gpr .x3+(((s.gpr .x11-s.gpr .x9)>>>63)<<<2) ∧
-      t.gpr .x4=s.gpr .x4-((s.gpr .x11-s.gpr .x9)>>>63) := by
-  refine wp_sub fun a ha ea => wp_lsr (by decide) fun b hb eb =>
-    wp_strw (a := s.gpr .x3) (by decide)
-      (by rw [hb.get .x3,ha.get .x3]; exact ptr_zero _)
-      (by rw [hb.wr,ha.wr]; exact hw) fun c hc =>
-    wp_lsl (by decide) fun d hd ed => wp_add fun e he ee =>
-    wp_sub fun t ht et => wp_nil ?_
-  refine ⟨(((((ha.keep.trans hb.keep).trans hc.keep).trans hd.keep).trans he.keep).trans
-      ht.keep).mono (by decide),?_,?_,?_⟩
-  · rw [ht.mem,he.mem,hd.mem,hc.mem,hb.get .x11,ha.get .x11,hb.mem,ha.mem]
-  · rw [ht.get .x3,ee,hd.get .x3,hc.gpr,hb.get .x3,ha.get .x3,
-      ed,hc.gpr,eb,ea]
-  · rw [et,he.get .x4,hd.get .x4,hc.gpr,hb.get .x4,ha.get .x4,
-      he.get .x14,hd.get .x14,hc.gpr,eb,ea]
-
 /-- The scalar tail uses a single unaligned word load; masking discards the
 extra fourth byte. The input region explicitly grants that byte as well. -/
 theorem scalarChunk_ok {s : State}

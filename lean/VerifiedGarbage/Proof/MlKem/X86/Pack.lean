@@ -155,17 +155,4 @@ theorem pk_congr {d : Nat} {cv cv' : Nat → Nat} : ∀ {j : Nat}, (∀ i < j, c
   | 0, _ => rfl
   | j + 1, h => by rw [pk, pk, pk_congr (fun i hi => h i (by omega)), h j (by omega)]
 
-theorem pk_lt {d : Nat} (cv : Nat → Nat) (h : ∀ i, cv i < 2 ^ d) : ∀ j, pk d cv j < 2 ^ (d * j)
-  | 0 => by simp [pk]
-  | j + 1 => by
-    have ih := pk_lt cv h j
-    have hc := h j
-    have e : 2 ^ (d * (j + 1)) = 2 ^ d * 2 ^ (d * j) := by
-      rw [← Nat.pow_add]; congr 1; rw [Nat.mul_succ, Nat.add_comm]
-    rw [pk, e]
-    have : cv j * 2 ^ (d * j) + 2 ^ (d * j) ≤ 2 ^ d * 2 ^ (d * j) := by
-      rw [← Nat.succ_mul]
-      exact Nat.mul_le_mul_right _ hc
-    omega
-
 end VG.Proof.MlKem.X86

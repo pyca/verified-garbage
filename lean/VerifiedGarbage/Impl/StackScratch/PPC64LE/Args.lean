@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 
 /-!
 # A scratch buffer on the stack, for a function with stack arguments (PPC64LE)
@@ -40,5 +41,13 @@ others, with the buffer in a frame of `bytes` bytes on the stack, at
 `r1 + 104 + 8m`. -/
 def withStackScratchArgs (bytes m : Nat) (c : Prog isa) : Prog isa :=
   .frame (.alloc bytes) (.seq (.block (setArgs bytes m)) c) (.free bytes)
+
+/-- `wipe words` from `r1 + off` rather than `r1 + 32`. -/
+def wipeFrom (off words : Nat) : List Instr := .addSp .r12 off :: .li .r11 0 :: wipeStores words
+
+/-- `withStackScratchArgs`, zeroing the first `words` doublewords of the
+buffer, at `r1 + 104 + 8m`, after the code. -/
+def withStackScratchArgsWiped (bytes m words : Nat) (c : Prog isa) : Prog isa :=
+  withStackScratchArgs bytes m (.seq c (.block (wipeFrom (104 + 8 * m) words)))
 
 end VG.Impl.StackScratch.PPC64LE

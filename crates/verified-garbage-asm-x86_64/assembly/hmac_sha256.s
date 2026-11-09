@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_hmac_sha256_init:
+vg_hmac_sha256_init_shani:
 	cmp rcx, 65
 	jae 20f
 	lea rsp, [rsp-840]
@@ -108,7 +108,7 @@ vg_hmac_sha256_init:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress}
+	call {vg_sha256_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rbx, r12
@@ -117,7 +117,7 @@ vg_hmac_sha256_init:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress}
+	call {vg_sha256_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rbx, QWORD PTR [r15+608]
@@ -159,14 +159,14 @@ vg_hmac_sha256_init:
 	mov rdx, rbx
 	mov rcx, rbp
 	mov r8, r15
-	call {vg_sha256_update_scratch}
+	call {vg_sha256_update_scratch_shani}
 	mov rdi, r15
 	add rdi, 1184
 	mov rsi, rbp
 	mov rdx, r15
 	add rdx, 1344
 	mov rcx, r15
-	call {vg_sha256_finalize_scratch}
+	call {vg_sha256_finalize_scratch_shani}
 	mov rdx, r15
 	add rdx, 1344
 	mov ecx, 32
@@ -174,7 +174,7 @@ vg_hmac_sha256_init:
 	mov rdi, r12
 	mov rsi, r13
 	mov r8, r15
-	call {vg_hmac_sha256_init_scratch}
+	call {vg_hmac_sha256_init_scratch_shani}
 	mov rbx, QWORD PTR [r15+832]
 	mov rbp, QWORD PTR [r15+840]
 	mov r12, QWORD PTR [r15+848]
@@ -386,7 +386,7 @@ vg_hmac_sha256_init:
 	jmp 21b
 	.p2align 6
 
-vg_hmac_sha256_finalize:
+vg_hmac_sha256_finalize_shani:
 	lea rsp, [rsp-840]
 	mov r8, rsp
 	add r8, 8
@@ -404,7 +404,7 @@ vg_hmac_sha256_finalize:
 	mov rdx, r15
 	add rdx, 656
 	mov rcx, r15
-	call {vg_sha256_finalize_scratch}
+	call {vg_sha256_finalize_scratch_shani}
 	mov eax, DWORD PTR [r12]
 	mov DWORD PTR [rbx], eax
 	mov eax, DWORD PTR [r12+4]
@@ -458,7 +458,7 @@ vg_hmac_sha256_finalize:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress}
+	call {vg_sha256_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rbp, r13
@@ -988,7 +988,7 @@ vg_hmac_sha256_finalize_avx2:
 	ret
 	.p2align 6
 
-vg_hmac_sha256_init_shani:
+vg_hmac_sha256_init:
 	cmp rcx, 65
 	jae 20f
 	lea rsp, [rsp-840]
@@ -1092,7 +1092,7 @@ vg_hmac_sha256_init_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress_shani}
+	call {vg_sha256_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rbx, r12
@@ -1101,7 +1101,7 @@ vg_hmac_sha256_init_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress_shani}
+	call {vg_sha256_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rbx, QWORD PTR [r15+608]
@@ -1143,14 +1143,14 @@ vg_hmac_sha256_init_shani:
 	mov rdx, rbx
 	mov rcx, rbp
 	mov r8, r15
-	call {vg_sha256_update_scratch_shani}
+	call {vg_sha256_update_scratch}
 	mov rdi, r15
 	add rdi, 1184
 	mov rsi, rbp
 	mov rdx, r15
 	add rdx, 1344
 	mov rcx, r15
-	call {vg_sha256_finalize_scratch_shani}
+	call {vg_sha256_finalize_scratch}
 	mov rdx, r15
 	add rdx, 1344
 	mov ecx, 32
@@ -1158,7 +1158,7 @@ vg_hmac_sha256_init_shani:
 	mov rdi, r12
 	mov rsi, r13
 	mov r8, r15
-	call {vg_hmac_sha256_init_scratch_shani}
+	call {vg_hmac_sha256_init_scratch}
 	mov rbx, QWORD PTR [r15+832]
 	mov rbp, QWORD PTR [r15+840]
 	mov r12, QWORD PTR [r15+848]
@@ -1370,7 +1370,7 @@ vg_hmac_sha256_init_shani:
 	jmp 21b
 	.p2align 6
 
-vg_hmac_sha256_finalize_shani:
+vg_hmac_sha256_finalize:
 	lea rsp, [rsp-840]
 	mov r8, rsp
 	add r8, 8
@@ -1388,7 +1388,7 @@ vg_hmac_sha256_finalize_shani:
 	mov rdx, r15
 	add rdx, 656
 	mov rcx, r15
-	call {vg_sha256_finalize_scratch_shani}
+	call {vg_sha256_finalize_scratch}
 	mov eax, DWORD PTR [r12]
 	mov DWORD PTR [rbx], eax
 	mov eax, DWORD PTR [r12+4]
@@ -1442,7 +1442,7 @@ vg_hmac_sha256_finalize_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress_shani}
+	call {vg_sha256_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rbp, r13

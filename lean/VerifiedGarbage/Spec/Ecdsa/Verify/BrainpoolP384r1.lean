@@ -14,7 +14,7 @@ module `ecdsa_brainpoolp384r1`, for brainpoolP384r1's `Ecdsa.Instance`.
 
 namespace VG.Spec.Ecdsa.BrainpoolP384r1
 
-/-- `vg_ecdsa_brainpoolp384r1_verify` on every target. -/
-def verifyApi : Api := inst.verifyApi
+/-- `vg_ecdsa_brainpoolp384r1_verify` on every target, taking the hash function's output. -/
+def verifyHashApi : Api := inst.verifyHashApi
 
 end VG.Spec.Ecdsa.BrainpoolP384r1

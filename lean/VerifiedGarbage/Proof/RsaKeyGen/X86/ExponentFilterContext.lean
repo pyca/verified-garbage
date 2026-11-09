@@ -97,11 +97,6 @@ theorem Input.stackWorkspaceFrame {base : Addr} {size w candidate exponent : Nat
     workspace_of_frame F S.scratch.nowrap (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact far)
   exact W.mono (by intro r mem; nomatch mem)
 
-theorem Output.metadata32 {base : Addr} {size w candidate exponent : Nat} {s t : State}
-    (O : Output base size w candidate exponent s t) {d : Nat} (fit : d + 4 ≤ size)
-    (safe : protectedHeader d 4) : t.mem.readW (off base d) 32 = s.mem.readW (off base d) 32 :=
-  O.workspace.read32 fit (fun _ mem => ranges_apart safe mem)
-
 theorem Output.savedValue {base : Addr} {size w candidate exponent : Nat} {s t : State}
     (O : Output base size w candidate exponent s t) (width : 4 ≤ w) (space : slot w 5 + 8 * w ≤ size) :
     val32 t.mem base (slot w 5) (2 * w) = val32 s.mem base (slot w 5) (2 * w) :=

@@ -89,10 +89,6 @@ theorem scr_sub : Region.Sub ⟨B s₀, 512⟩ (KR s₀) := by
 theorem below_sub : Region.Sub ⟨B s₀ - 608, 608⟩ (KR s₀) := by
   rw [hk.below_eq]; simpa using sub_K s₀ (d := 0) (n := 608) (by omega)
 
-theorem BR_sub : Region.Sub (BR s₀) (KR s₀) := by
-  simp only [BR]
-  rw [show B s₀ = K s₀ + BitVec.ofNat 64 608 from hk.B_eq]; exact sub_K s₀ (by omega)
-
 /-- A slot of the saved registers. -/
 theorem slot_sub {d : Nat} (h : 512 ≤ d) (h' : d + 8 ≤ 560) :
     Region.Sub ⟨B s₀ + BitVec.ofNat 64 d, 8⟩ (KR s₀) := by

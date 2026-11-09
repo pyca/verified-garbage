@@ -22,13 +22,13 @@ header's `sMask`, which is returned as 0 or 1 at the end.
 * `p q = n`: the product, compared with `n` (`Crt.eqCheck`).
 * `d e ≡ 1 (mod p - 1)` and the others: the product `x` of `d`, `dP` or
   `dQ` and `e` (`w + 2` words), or of `q` and `qInv` (`2 w + 2` words), is
-  reduced modulo `m` (`p - 1`, `q - 1` or `p`) by restoring division
-  (`reduce` provides the full-width form): from the top bit of `x` down, `r := 2 r + b mod m` (`dblIn`,
+  reduced modulo `m` (`p - 1`, `q - 1` or `p`) by restoring division:
+  from the top bit of `x` down, `r := 2 r + b mod m` (`dblIn`,
   `vg_rsa_public`'s doubling with the bit as the carry into the low word),
   and `r` compared with 1 (`eqOne`).
 
 The drivers in `CheckKey.lean` and `CheckCrtKey.lean` use bounded-quotient,
-factor-width reductions in place of the full-width `reduce`.
+factor-width reductions.
 
 `p < n` and `q < n` need no computation: `p` and `q` are shorter than `n`,
 which is at least `256^(n_len - 1)`.
@@ -139,14 +139,29 @@ def mulXR : List (Prog isa) :=
     .mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aAcc)))],
   Crt.mulRows]
 
-/-- `[rbx] := 2 [rbx] + c mod [r10]` over `w` words (`r12`), for the carry
-`c` in `rbp` (0 or all ones): `vg_rsa_public`'s `double` from the carry
-`c`, with the accumulator at `r8` and the temporary at `rsi`. -/
+/-- Select the reduced or unreduced remainder with a conditional move.
+Both sources have fixed addresses; the borrow mask is never branched on. -/
+def selectRem : Prog isa :=
+  wordLoop 0 [.mov .rax (.mem (ix .r8 .r14)), .alu .test .rbp (.reg .rbp),
+    .cmov .e .rax (.mem (ix .rsi .r14)), .store (ix .rbx .r14) .rax]
+
+/-- Double one limb and subtract the corresponding modulus limb while the
+sum is still in `rax`. The doubling carry is in `rbp`, the subtraction
+borrow in `rdx`, both represented as masks. -/
+def dblSubWord : List Instr :=
+  [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .adc .rax (.reg .rax),
+    .store (ix .r8 .r14) .rax, cfToRbp,
+    .alu .add .rdx (.reg .rdx), .alu .sbb .rax (.mem (ix .r10 .r14)),
+    .store (ix .rsi .r14) .rax, .alu .sbb .rdx (.reg .rdx)]
+
+/-- `[rbx] := 2 [rbx] + c mod [r10]` over `w` words (`r12`), with the
+input bit in `rbp`. Doubling and subtraction share one limb scan, then
+`selectRem` chooses the result using the final borrow. -/
 def dblIn : Prog isa :=
-  .seq (wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .adc .rax (.reg .rax),
-      .store (ix .r8 .r14) .rax, cfToRbp])
-    (.seq (.block [.mov32 .rax (.imm 0), cfFromRbp, .alu .adc .rax (.imm 0), .store (ix .r8 .r12) .rax])
-      (.seq subMod selectAcc))
+  .seq (.block [.mov32 .rdx (.imm 0)])
+    (.seq (wordLoop 0 dblSubWord)
+      (.seq (.block [.mov32 .rax (.imm 0), cfFromRbp, .alu .adc .rax (.imm 0), .store (ix .r8 .r12) .rax,
+        .alu .add .rdx (.reg .rdx), .alu .sbb .rax (.imm 0), cfToRbp]) selectRem))
 
 /-- One bit of `x`: the top bit of `r15` shifted out into the mask `rbp`,
 `r := 2 r + b mod m`, and `r11` counted down. -/
@@ -160,20 +175,6 @@ bits. -/
 def wordStep : Prog isa :=
   .seq (.block [.alu .sub .r13 (.imm 1), .mov .r15 (.mem (ix .r9 .r13)), .mov32 .r11 (.imm 64)])
     (.seq (.loop bitStep .ne) (.block [.alu .test .r13 (.reg .r13)]))
-
-/-- `[aR] := acc mod [aM]` for the accumulator's `r13 = cnt` words (`cnt`
-the instructions that compute it from `w` in `r13`), by restoring division:
-`r := 0`, then `wordStep` for each word, from the top. -/
-def reduce (cnt : List Instr) : List (Prog isa) := [
-  Crt.zeroArr aR,
-  .block (([.mov .rbx (.mem (hdr (sArr aR))), .mov .r10 (.mem (hdr (sArr aM))), .mov .r8 (.mem (hdr (sArr aX))),
-    .mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aT))), .mov .r9 (.mem (hdr (sArr aAcc))),
-    .mov .r13 (.reg .r12)] : List Instr) ++ cnt),
-  .loop wordStep .ne]
-
-/-- `w + 2` and `2 w + 2` words, from `w` in `r13`. -/
-def cntE : List Instr := [.alu .add .r13 (.imm 2)]
-def cntXR : List Instr := [.alu .add .r13 (.reg .r13), .alu .add .r13 (.imm 2)]
 
 /-- `sMask &= ` the mask of `[aR] = 1` over `w` words: the OR of the words of
 `[aR] XOR [aOne]` is zero. -/

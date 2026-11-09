@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCoreCT
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowDigit
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowStep
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
 
 /-! Constant-time composition of a full group. Its value remains secret. -/
 
@@ -37,31 +37,5 @@ theorem digit_ready (shift : Nat) (hs : shift < 64) {p : XPub} {s : State}
   exact ⟨mi, X, Xc, V / 2 ^ shift % 32,
     hc.of_win fa ka.wr (ka.gpr .x0 (by decide)), ht.of_win fa hc.scrT.nowrap,
     ya.symm ▸ hy, hw, hw', hR, Nat.mod_lt _ (by decide), by rw [hm, word_writeW_self]⟩
-
-theorem windowStep_ct (M : Mont) (S : Selector) (shift : Nat) (hs : shift < 64) :
-    RelCT isa (Two GroupPre) (.seq (.block (groupDigit shift)) (windowCore M.mm S.code))
-      (fun _ _ => True) := by
-  refine RelCT.seq (two_post (Ψ := WindowPre)
-    (two_map (fun p : XPub => off p.B p.o) ?_ (groupDigit_ct shift))
-    (fun _ _ h => digit_ready shift hs h)) (windowCore_ct M S)
-  rintro p s ⟨_, _, _, _, hc, _⟩
-  exact hc.good.x0
-
-theorem step_post (M : Mont) (S : Selector) (shift : Nat) (hs : shift < 64)
-    {p : XPub} {s : State} (h : GroupPre p s) :
-    WP isa (.seq (.block (groupDigit shift)) (windowCore M.mm S.code)) s (GroupPre p) := by
-  obtain ⟨mi, X, Xc, V, hc, ht, hy, hw, hw', hR, hV', hV⟩ := h
-  exact WP.mono (windowStep_ok M S (Q := False) (x := 0) (E := 0)
-    hc ht hw hw' hR hy False.elim hV hV' hs)
-    fun t ⟨ct, tt, yt, _, hVt, _⟩ => ⟨mi, X, Xc, V, ct, tt, yt, hw, hw', hR, hV', hVt⟩
-
-theorem groupWindows_ct (M : Mont) (S : Selector) (n : Nat) (hn : n ≤ 8) :
-    RelCT isa (Two GroupPre) (groupWindows M.mm S.code n) (fun _ _ => True) := by
-  induction n with
-  | zero =>
-    exact two_taint [] (fun _ _ _ _ _ _ h => by cases h) (hc := .block []) rfl
-  | succ n ih =>
-    exact RelCT.seq (two_post (windowStep_ct M S (5 * n) (by omega))
-      (fun _ _ h => step_post M S (5 * n) (by omega) h)) (ih (by omega))
 
 end VG.Proof.Bignum.AArch64.WindowFive

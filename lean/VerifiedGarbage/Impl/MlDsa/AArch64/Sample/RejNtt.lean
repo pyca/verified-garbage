@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
 /-!
 # ML-DSA on AArch64: `vg_mldsa_rej_ntt_poly`
 
-`rejNTT(seed = x0, a = x1, scratch = x2) -> w0` (see `Common.lean` for the
+`rejNTTWith c (seed = x0, a = x1, scratch = x2) -> w0` (see `Common.lean` for the
 layout) squeezes 1008 bytes of SHAKE128 of the 34 bytes of the seed (6
 blocks; the least bound of FIPS 204 Appendix C is 894 bytes, the contract's
 largest 1344), zeroes `a`, and runs the 336 iterations of `RejNTTPoly`'s
@@ -52,7 +52,5 @@ def rnLoop : Prog isa := .seq (.block rnSetup) (.loop rnBody (.nonzero .x .x5))
 def rejNTTWith (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
   .seq (.block (pro .x2 .x1 (.movz .x .x27 0 0) (.movz .x .x4 34 0)))
     (.seq (spongeWith c 168 1008) (.seq zeroPoly (.seq rnLoop (.block (retZ ++ epi)))))
-
-def rejNTT := rejNTTWith .scalar
 
 end VG.Impl.MlDsa.AArch64.Sample

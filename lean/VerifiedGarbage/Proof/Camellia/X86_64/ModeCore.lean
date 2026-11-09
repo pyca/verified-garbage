@@ -43,7 +43,7 @@ open VG.Proof.Modes.X86_64 (ScrIn coreRegion bufRegion bufAddr Layout CoreSpec m
   stkList coreFrame)
 open VG.Proof.Camellia (schedWords schedWords_getD wordAt_frame bytesAt_eq_blockAt ofFn_toList encryptWith_eq
   decryptWith_eq dirPerm_lt specDir)
-open VG.Spec.Camellia.Prepared (Holds)
+open VG.Proof.Camellia.Prepared (Holds)
 
 /-- The number of rounds in `rsi` and the schedule at `rdi`, outside the
 regions `rs`, and the 8 bytes below `rsp`, where the core's call stores its
@@ -253,7 +253,7 @@ theorem holds_frame {m m' : Mem} {B : Addr} {R : Nat} {w : List (BitVec 64)} {d 
 /-- The table survives what a batch keeps. -/
 theorem holds_of_keeps {m m' : Mem} {B : Addr} {R : Nat} {w : List (BitVec 64)} {d : Spec.Camellia.Direction}
     (hR : R = 18 ∨ R = 24) (h : Holds layout m B R w d)
-    (hk : Spec.Camellia.Prepared.Keeps B slots layout.cryptScratch m m') : Holds layout m' B R w d :=
+    (hk : Proof.Camellia.Prepared.Keeps B slots layout.cryptScratch m m') : Holds layout m' B R w d :=
   fun r hr i hi => by
     have hr' := hr
     rw [layout_table] at hr'

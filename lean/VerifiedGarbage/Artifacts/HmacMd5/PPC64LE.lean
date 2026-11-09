@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Md5
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # HMAC-MD5 (RFC 2104) on PPC64LE -/
 

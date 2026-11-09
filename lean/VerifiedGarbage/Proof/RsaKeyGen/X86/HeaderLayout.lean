@@ -52,20 +52,4 @@ theorem layout {base : Addr} {p : BitVec 32} {w wsLen : Nat} {m : Mem}
     omega
   omega
 
-theorem mr_layout {base : Addr} {p : BitVec 32} {w wsLen : Nat} {m : Mem}
-    (baseEq : p.setWidth 64 = base) (positive : 4 ≤ w) (bound : w ≤ 64)
-    (fit : Proof.Rsa.Mont.arrAt w 28 ≤ 8 * wsLen) (nowrap : base.toNat + 8 * wsLen ≤ 2 ^ 32) :
-    Proof.MillerRabin.Round.Layout Proof.MillerRabin.Round.compact (headerMemory base p w m) base wsLen := by
-  unfold Proof.MillerRabin.Round.Layout
-  rw [width_eq (by omega)]
-  refine ⟨Or.inr rfl, layout baseEq (by omega) (by omega) ?_ nowrap, positive, by omega, ?_, ?_⟩
-  · unfold Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes at fit ⊢
-    omega
-  · exact fit
-  · change (headerMemory base p w m).readW (off base 224) 64 = BitVec.ofNat 64 (8 * (w + 2))
-    rw [header_stride, zeroHigh]
-    apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, stride]
-    omega
-
 end VG.Proof.RsaKeyGen.X86.Header

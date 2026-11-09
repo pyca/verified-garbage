@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Steps
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Zero
@@ -27,7 +28,7 @@ open VG.Proof.Dsa.X86 (argumentPointer)
 theorem St.done {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St o ds f s) {r : ParameterSearchResult}
     (hs : ∀ d ∈ doneDs, d ∈ ds) (he : ∀ d ∈ doneDs, f d = doneF (ofState o) (o.gpr .esi) r d)
     (hout : Output (ofState o) r s.mem)
-    (hsm : r.remaining ≤ (ofState o).attempts ∧ r.requested ≤ (ofState o).cap ∧ r.used ≤ (ofState o).randLen) :
+    (hsm : r.remaining ≤ (ofState o).attempts ∧ (Proof.Ffdh.requested (ofState o).bits r) ≤ (ofState o).cap ∧ r.used ≤ (ofState o).randLen) :
     Done (ofState o) o r s :=
   ⟨⟨h.abi, rfl⟩, h.rd, h.wr, h.syms, h.esp, h.esi, h.saved, h.frame, (h.words.sub hs).congr he, hout, hsm⟩
 
@@ -94,7 +95,7 @@ theorem exhausted_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used 
   simp only [doneDs, List.mem_cons, List.not_mem_nil, or_false]
   rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
     simp [upd, liveF, doneF, statusOff, requestOff, attemptsOff, ParameterSearchResult.remaining,
-      ParameterSearchResult.requested, ParameterSearchResult.status, ParameterSearchResult.used, ofState]
+      Proof.Ffdh.requested, ParameterSearchResult.status, ParameterSearchResult.used, ofState]
 
 /-! ## The request -/
 
@@ -202,7 +203,7 @@ theorem St.requestWords {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h
   exact S₁₈
 
 theorem request_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n s) :
-    WP isa request s (Done p o (.entropy n (parameterRequest p.bits (p.randLen - used)) used)) := by
+    WP isa request s (Done p o (.entropy n (p.randLen - used) used)) := by
   have S := h.st
   obtain ⟨A, rfl⟩ := h.input
   have hA := liveDs_aligned
@@ -225,12 +226,12 @@ theorem request_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n 
     fun u ⟨Su, Zo, _, _⟩ => ?_
   have eq : min (2 * max ((ofState o).randLen - used) (256 * (ofState o).len)) (ofState o).cap =
       parameterRequest (ofState o).bits ((ofState o).randLen - used) := by
-    simp only [parameterRequest, PPub.cap, ofState, hb]
-  refine Su.done (by decide) ?_ Zo ⟨h.n_le, by rw [ParameterSearchResult.requested, parameterRequest, ec, eb]; omega_arith,
+    simp only [parameterRequest, Entropy.request, PPub.cap, ofState, hb]
+  refine Su.done (by decide) ?_ Zo ⟨h.n_le, by rw [Proof.Ffdh.requested, parameterRequest, Entropy.request, ec, eb]; omega_arith,
     h.used_le⟩
   simp only [doneDs, List.mem_cons, List.not_mem_nil, or_false]
   rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
     simp [upd, liveF, doneF, statusOff, requestOff, ParameterSearchResult.remaining, eq,
-      ParameterSearchResult.requested, ParameterSearchResult.status, ParameterSearchResult.used]
+      Proof.Ffdh.requested, ParameterSearchResult.status, ParameterSearchResult.used]
 
 end VG.Proof.Ffdh.X86.PSearch

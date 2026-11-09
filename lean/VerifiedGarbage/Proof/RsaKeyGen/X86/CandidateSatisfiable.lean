@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 /-! # A concrete native caller satisfies the candidate contract and its static table -/
 
@@ -82,7 +83,7 @@ theorem sat_table : Abi.constsHeld satState.mem (fun name => (satState.syms name
 
 theorem satisfiable : ∃ s, contract.pre s := by
   refine ⟨satState, ?_⟩
-  sig_pre [contract, Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi,
+  sig_pre [contract, Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi,
     argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts,
     stackBelow]
   simp only [sat_arguments 0 (by decide), sat_arguments 1 (by decide), sat_arguments 2 (by decide),

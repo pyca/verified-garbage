@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Md5.X86_64.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Md5.X86_64.Lit
 
 /-! # MD5 (RFC 1321) on x86-64 -/

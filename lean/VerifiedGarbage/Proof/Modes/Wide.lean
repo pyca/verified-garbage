@@ -19,9 +19,6 @@ mode here computes it (`ComputesB`):
 Both follow from what the widened operations leave in each byte of the
 areas, which the operations on block `j` (`Op.shift`, `copyAt`, `xorAt`)
 change only at block `j`.
-
-`run_group`: running `group L G F` over groups of blocks is running `F`
-over the blocks.
 -/
 
 @[expose] public section
@@ -52,16 +49,6 @@ theorem run_append (F : StepFn) : ∀ (c : List Byte) (xs ys : List (List Byte))
   | _, [], _ => by simp [run]
   | c, x :: xs, ys => by
     simp only [List.cons_append, run, run_append F _ xs ys, List.cons_append]
-
-/-- Running the groups is running their blocks. -/
-theorem run_group (L G : Nat) (F : StepFn) : ∀ (c : List Byte) (gs : List (List Byte)),
-    (run (group L G F) c gs).1.flatten = (run F c (gs.flatMap (split L G))).1.flatten ∧
-      (run (group L G F) c gs).2 = (run F c (gs.flatMap (split L G))).2
-  | _, [] => ⟨rfl, rfl⟩
-  | c, g :: gs => by
-    obtain ⟨h1, h2⟩ := run_group L G F (run F c (split L G g)).2 gs
-    simp only [run, group, List.flatten_cons, List.flatMap_cons, run_append, List.flatten_append]
-    exact ⟨by rw [h1], h2⟩
 
 /-! ## Bytes of joined blocks -/
 
@@ -126,6 +113,7 @@ theorem xorAt_succ (bw : Nat) (dst : Loc) (dO : Nat) (x : Loc) (xO : Nat) (y : L
       [{ wide := true, dst, dOff := 4 * bw + dO, src := x, sOff := 4 * bw + xO, xr := some (y, 4 * bw + yO) }] := by
   simp [xorAt, List.range_succ]
 
+-- Used only by `arith_ifs` below, whose syntax no index records.
 theorem byte_xor_zero' (x : Byte) : x ^^^ 0 = x := by simp
 
 /-- Close a goal of nested `if`s on arithmetic conditions. -/

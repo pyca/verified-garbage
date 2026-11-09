@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # RSAES-OAEP encryption on PPC64LE: the frame
 
 Untrusted: everything here is checked by Lean. The frame of
-`vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed` (`Impl/RsaOaep/PPC64LE.lean`),
+`vg_rsa_oaep_<H>_mgf1_encrypt_precomputed` (`Impl/RsaOaep/PPC64LE.lean`),
 from its base `fb`, and the 48 bytes below it that the streaming hash
 functions use (`cR`): the stack the function uses, `kR`, the 304 bytes below
 the stack pointer on entry. As for RSASSA-PKCS1-v1_5
@@ -102,9 +102,6 @@ theorem stackArgAddr_eq (s : State) (j : Nat) :
 /-- The callee-saved registers other than `r14`–`r29`. -/
 def hiRegs : List Reg := [.r2, .r30, .r31]
 
-/-- The callee-saved registers. -/
-def kept : List Reg := saved.map Prod.fst ++ hiRegs
-
 theorem save_eq : save = ([.addSp .r12 0] : List Instr) ++ Spill.saveCode .r12 saved ++
     ([.mflr .r0, .store .d .r0 .r12 oLr] : List Instr) :=
   rfl
@@ -119,9 +116,6 @@ theorem saved_ho : ∀ p ∈ saved, p.2 % 8 = 0 ∧ p.2 < 32768 := by decide
 
 theorem preserved_split {r : Reg} (h : r ∈ preserved) : r ∈ saved.map Prod.fst ∨ r ∈ hiRegs := by
   revert r; decide
-
-theorem not_kept {rs : List Reg} {r : Reg} (hrs : ∀ r ∈ rs, r ∉ kept) (hr : r ∈ kept) : r ∉ rs :=
-  fun h => hrs r h hr
 
 /-- The saves, from the state after the frame's push (`u`): `r12` holds
 the frame's base, `r14`–`r29` and the return address are in their slots, and

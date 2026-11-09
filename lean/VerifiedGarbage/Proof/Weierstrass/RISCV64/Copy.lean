@@ -13,8 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 `copy k o a` writes `[a]` to `[o]` (`copy_ok`, `k` 64-bit words), `sel k o a
 b` writes `[a]` or `[b]` to `[o]` by the mask `a7` (`sel_ok`; `o` may be `a`
-or `b`), `selPt` does so for the three coordinates of a point
-(`selPt_ok`), as on PPC64LE (`Proof/Weierstrass/PPC64LE/Copy.lean`). Each
+or `b`), as on PPC64LE (`Proof/Weierstrass/PPC64LE/Copy.lean`). Each
 changes only `[o]` and caller-saved registers (`Kp`). `bitMask src` sets
 `a7` to the mask of bit `s1` of the number at `src` (`bitMask_ok`).
 -/
@@ -168,50 +167,5 @@ theorem sel_ok (c : Bool) : ∀ (k : Nat) {s : State} {base : Addr} {o a b : Nat
       O₁.wordsVal (by omega) (by omega)
     rw [wordsVal, O₂.word (by omega) (by omega), e₂, ea, eb, m₁, word_writeW_self]
     cases c <;> simp [wordsVal]
-
-/-- `o = b` if the mask `a7` is all ones (`c`), `a` if it is zero, for points
-whose slots (`n` 64-bit words, at multiples of 8) are in the first 4096 bytes
-of the working space, with `o`'s apart from each other and from `a`'s and
-`b`'s. -/
-theorem selPt_ok {s : State} {base : Addr} (hw : WsReg s base)
-    (c : Bool) (hc : s.gpr .a7 = (if c then BitVec.allOnes 64 else 0)) {n : Nat} {o a b : Pt}
-    (h4 : ∀ d ∈ [o.x, o.y, o.z, a.x, a.y, a.z, b.x, b.y, b.z], d % 8 = 0)
-    (hin : ∀ d ∈ [o.x, o.y, o.z, a.x, a.y, a.z, b.x, b.y, b.z], d + 8 * n ≤ 4096)
-    (hoo : (o.x + 8 * n ≤ o.y ∨ o.y + 8 * n ≤ o.x) ∧ (o.x + 8 * n ≤ o.z ∨ o.z + 8 * n ≤ o.x) ∧
-      (o.y + 8 * n ≤ o.z ∨ o.z + 8 * n ≤ o.y))
-    (hab : ∀ d ∈ [o.x, o.y, o.z], ∀ e ∈ [a.x, a.y, a.z, b.x, b.y, b.z], d + 8 * n ≤ e ∨ e + 8 * n ≤ d) :
-    WP isa (.block (selPt n o a b)) s fun s' =>
-      wordsVal s'.mem base o.x n = (if c then wordsVal s.mem base b.x n else wordsVal s.mem base a.x n) ∧
-      wordsVal s'.mem base o.y n = (if c then wordsVal s.mem base b.y n else wordsVal s.mem base a.y n) ∧
-      wordsVal s'.mem base o.z n = (if c then wordsVal s.mem base b.z n else wordsVal s.mem base a.z n) ∧
-      Rest [.t0, .t1] s s' ∧
-      Outs base [(o.x, 8 * n), (o.y, 8 * n), (o.z, 8 * n)] s.mem s'.mem := by
-  have hn := hw.nowrap
-  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hin hab h4
-  obtain ⟨iox, ioy, ioz, iax, iay, iaz, ibx, iby, ibz⟩ := hin
-  obtain ⟨⟨xax, xay, xaz, xbx, xby, xbz⟩, ⟨yax, yay, yaz, ybx, yby, ybz⟩, ⟨zax, zay, zaz, zbx, zby, zbz⟩⟩ := hab
-  obtain ⟨xy, xz, yz⟩ := hoo
-  obtain ⟨fox, foy, foz, fax, fay, faz, fbx, fby, fbz⟩ := h4
-  -- `omega` would split every disjunction of the context: give it the facts it needs.
-  rw [selPt, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (sel_ok c n hw hc fox fax fbx iox iax ibx (by omega_using [xax]) (by omega_using [xbx]))
-    fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (sel_ok c n (hw.of_rest k₁) (by rw [k₁.gpr _ (by decide), hc]) foy fay fby ioy iay iby
-    (by omega_using [yay]) (by omega_using [yby])) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
-  refine WP.mono (sel_ok c n ((hw.of_rest k₁).of_rest k₂) (by rw [k₂.gpr _ (by decide), k₁.gpr _ (by decide), hc])
-    foz faz fbz ioz iaz ibz (by omega_using [zaz]) (by omega_using [zbz])) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
-  refine ⟨?_, ?_, ?_, (k₁.trans k₂).trans k₃, ?_⟩
-  · rw [O₃.wordsVal (d := o.x) (by omega_using [xz]) (by omega_using [iox, hn]),
-      O₂.wordsVal (d := o.x) (by omega_using [xy]) (by omega_using [iox, hn]), e₁]
-  · rw [O₃.wordsVal (d := o.y) (by omega_using [yz]) (by omega_using [ioy, hn]), e₂,
-      O₁.wordsVal (d := b.y) (by omega_using [xby]) (by omega_using [iby, hn]),
-      O₁.wordsVal (d := a.y) (by omega_using [xay]) (by omega_using [iay, hn])]
-  · rw [e₃, O₂.wordsVal (d := b.z) (by omega_using [ybz]) (by omega_using [ibz, hn]),
-      O₂.wordsVal (d := a.z) (by omega_using [yaz]) (by omega_using [iaz, hn]),
-      O₁.wordsVal (d := b.z) (by omega_using [xbz]) (by omega_using [ibz, hn]),
-      O₁.wordsVal (d := a.z) (by omega_using [xaz]) (by omega_using [iaz, hn])]
-  · exact ((Outs.of_outside O₁ (by simp)).trans (Outs.of_outside O₂ (by simp))).trans
-      (Outs.of_outside O₃ (by simp))
 
 end VG.Proof.Weierstrass.RISCV64

@@ -35,8 +35,6 @@ def Readable (s : State) (sch : Reg) : Prop :=
 
 theorem repeat_succ_v28 : ∀ k < 4, Nat.repeat VReg.succ k (tReg 0) = tReg k := by decide
 
-theorem tReg_ne : ∀ a < 4, ∀ b < 4, a ≠ b → tReg a ≠ tReg b := by decide
-
 theorem loadQuarter_eq (sch : Reg) (j b q : Nat) :
     loadQuarter sch j b q =
       [.ldrq .v28 sch (planeOff j b + 64 * q + 16 * 0), .ldrq .v29 sch (planeOff j b + 64 * q + 16 * 1),

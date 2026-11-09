@@ -6,6 +6,9 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Exit
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.GeFlag
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-!
@@ -23,12 +26,10 @@ open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.Pa
 open VG.Proof.Bignum VG.Proof.Bignum.PPC64LE
 open VG.Impl.MillerRabin.PPC64LE.Search VG.Proof.MillerRabin.PPC64LE.Search
 open VG.Proof.MillerRabin.PPC64LE (RoundImpl)
-open VG.Proof.Ffdh.ParameterCandidate (checkedCandidate)
-
-theorem checked_short {bits g : Nat} {r : List Byte} (h : r.length < (bits + 7) / 8) :
-    checkedCandidate bits g r = none := by
+theorem sieved_short {bits g : Nat} {r : List Byte} (h : r.length < (bits + 7) / 8) :
+    Spec.Ffdh.sievedParameterCandidate bits g r = none := by
   have : (r.take ((bits + 7) / 8)).length ≠ (bits + 7) / 8 := by rw [List.length_take]; omega
-  simp only [checkedCandidate, Spec.RsaKeyGen.draw, this, ↓reduceIte, bind, Option.bind]
+  simp only [Spec.Ffdh.sievedParameterCandidate, Spec.RsaKeyGen.draw, this, ↓reduceIte, bind, Option.bind]
 
 /-- The tape's length and `out_len`. -/
 theorem lenLoad_ok {p : PP} {t : State} (h : St p t) :
@@ -42,7 +43,7 @@ theorem lenLoad_ok {p : PP} {t : State} (h : St p t) :
 theorem lenChk_ok {p : PP} {t : State} (h : St p t) (hU : word t.mem p.B 152 = BitVec.ofNat 64 p.L) :
     WP isa (.block (([ldh .r3 hRandLen, ldh .r4 hLen] : List Instr) ++ geFlag .r5 .r3 .r4)) t fun v =>
       isa.eval (.zero .d .r5) v = some (decide ((if p.L ≤ p.r.length then 1 else 0) = 0)) ∧ St p v ∧
-        word v.mem p.B 152 = BitVec.ofNat 64 p.L := by
+        word v.mem p.B 152 = BitVec.ofNat 64 p.L ∧ v.mem = t.mem ∧ v.rd = t.rd := by
   have hrl := h.dims.rl
   have hb2 := h.dims.b2
   have hLe : p.L = (p.bits + 7) / 8 := rfl
@@ -51,23 +52,23 @@ theorem lenChk_ok {p : PP} {t : State} (h : St p t) (hU : word t.mem p.B 152 = B
   refine WP.mono (geFlag_ok a3 a4 hrl (by omega)) fun v ⟨⟨a5, vm⟩, kv⟩ => ?_
   have hm : v.mem = t.mem := vm.trans am
   exact ⟨eval_zero_ofNat v .r5 (by split <;> decide) a5, h.step (by rw [hm]; exact Frm.refl _ _ _) (ka.trans kv),
-    by rw [hm]; exact hU⟩
+    by rw [hm]; exact hU, hm, (ka.trans kv).rd⟩
 
 /-- The length check, then `main` or the status 0. -/
-theorem body_ok (R : RoundImpl) {p : PP} {t : State} (h : St p t)
+theorem body_ok (R : RoundImpl) {p : PP} {T : Addr} {t : State} (h : St p t) (ht : TabIn p.B p.Z T t)
     (hU : word t.mem p.B 152 = BitVec.ofNat 64 p.L) :
     WP isa (.seq (.block (([ldh .r3 hRandLen, ldh .r4 hLen] : List Instr) ++ geFlag .r5 .r3 .r4))
       (.ite (.zero .d .r5) (.block (finish 0)) (main R.name R.code))) t
-      (CEnd p (checkedCandidate p.bits p.g p.r)) := by
-  refine WP.seq (WP.mono (lenChk_ok h hU) fun v ⟨he, st, hUv⟩ => ?_)
+      (CEnd p (Spec.Ffdh.sievedParameterCandidate p.bits p.g p.r)) := by
+  refine WP.seq (WP.mono_syms (lenChk_ok h hU) fun v ⟨he, st, hUv, vm, vrd⟩ sy => ?_)
   refine WP.ite (decide ((if p.L ≤ p.r.length then 1 else 0) = 0)) he (fun hb => ?_) (fun hb => ?_)
   · have hs : p.r.length < p.L := by
       by_contra hc; simp only [decide_eq_true_eq] at hb; rw [ite_eq_left (by omega)] at hb; exact absurd hb (by decide)
-    rw [checked_short (by omega)]
+    rw [sieved_short (by omega)]
     exact finEnd st (r := 0) (Or.inl rfl) rfl rfl rfl hUv
   · have hl : p.L ≤ p.r.length := by
       by_contra hc; simp only [decide_eq_false_iff_not] at hb; exact hb (by rw [ite_eq_right (by omega)])
-    exact main_ok R st hUv hl
+    exact main_ok R st (ht.step sy (rs := []) (by rw [vm]; exact Frm.refl _ _ _) (by simp) vrd) hUv hl
 
 theorem preserved_cases : ∀ r ∈ preserved,
     r = .r2 ∨ ∃ i < 18, Impl.Ffdh.PPC64LE.ParameterCandidate.saved i = r := by decide
@@ -82,17 +83,36 @@ theorem small_setWidth {k : Nat} (hk : k < 2 ^ 32) : ((BitVec.ofNat 64 k).setWid
 theorem status_le (res : Option (Option Nat × Spec.RsaKeyGen.Rand)) : Proof.Ffdh.candidateStatus res ≤ 2 := by
   rcases res with _ | ⟨_ | _, _⟩ <;> simp [Proof.Ffdh.candidateStatus]
 
-/-- `vg_ffdh_parameter_candidate`, for any implementation of the round. -/
+/-- The front, and the table where the state names it. -/
+theorem front_tab (s : State) (h : pcPre s) :
+    WP isa (.seq (.block entry) zeroOut) s fun t => St (ppOf s) t ∧
+      word t.mem (ppOf s).B 152 = BitVec.ofNat 64 (ppOf s).L ∧
+      TabIn (ppOf s).B (ppOf s).Z (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol) t := by
+  have hpre := h
+  obtain ⟨-, -, hrd, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, htab⟩ := h
+  refine WP.mono_syms (front_ok s hpre) fun t ⟨st, hU, _, fr, trd⟩ sy => ⟨st, hU, ?_⟩
+  obtain ⟨tfit, tat, tdO, tdS⟩ := htab
+  refine ⟨by rw [sy], fun i hi => ?_, by rw [trd, hrd]; simp, tfit, ?_⟩
+  · rw [fr.readW (r := tabR s) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [Nat.mul_comm]; exact tdS
+      · exact tdO) (by decide)]
+    exact tat i hi
+  · show (tabR s).Disjoint ⟨s.gpr .r10, 8 * (stackArg s 0).toNat⟩
+    rw [Nat.mul_comm]; exact tdS
+
+/-- `vg_ffdh_parameter_candidate_sieved`, for any implementation of the round. -/
 theorem code_correct (R : RoundImpl) (s : State) (h : pcContract.pre s) :
     ∃ tr t, Exec isa (code R.name R.code) s tr t ∧ abiPreserved s t ∧ pcContract.post s t := by
   show WP isa (code R.name R.code) s fun t => abiPreserved s t ∧ pcPost s t
   have hpre := h
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hL, -, -⟩ := h
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hL, -, -, -⟩ := h
   have hLe : (s.gpr .r4).toNat = (ppOf s).L := hL
   have hlen : (ppOf s).r.length = (s.gpr .r9).toNat := VG.Proof.Bignum.bytesAt_length _ _ _
   unfold code
-  refine wp_then (front_ok s hpre) fun t ⟨st, hU, _⟩ => ?_
-  refine wp_then (body_ok R st hU) fun u hu => ?_
+  refine wp_then (front_tab s hpre) fun t ⟨st, hU, ht⟩ => ?_
+  refine wp_then (body_ok R st ht hU) fun u hu => ?_
   obtain ⟨E, u3, uo, uu⟩ := hu
   refine WP.mono (exit_ok E) fun w ⟨wr, wlr, wm, wsp, wo⟩ => ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · rcases preserved_cases r hr with rfl | ⟨i, hi, rfl⟩
@@ -100,19 +120,18 @@ theorem code_correct (R : RoundImpl) (s : State) (h : pcContract.pre s) :
     · rw [wr i hi]; simp [ppOf, hi]
   · rw [wsp, E.sp]; rfl
   · rw [wlr]; simp [ppOf]
-  · have hres : pcResult s = checkedCandidate (ppOf s).bits (ppOf s).g (ppOf s).r :=
-      (VG.Proof.Ffdh.ParameterCandidate.checkedCandidate_eq _ _ _).symm
+  · have hres : pcResult s = Spec.Ffdh.sievedParameterCandidate (ppOf s).bits (ppOf s).g (ppOf s).r := rfl
     simp only [pcPost]
     rw [hres, wm, wo .r3 (by decide) (by decide) r3_cases, u3, hLe]
-    refine ⟨small_setWidth (by have := status_le (checkedCandidate (ppOf s).bits (ppOf s).g (ppOf s).r); omega),
+    refine ⟨small_setWidth (by have := status_le (Spec.Ffdh.sievedParameterCandidate (ppOf s).bits (ppOf s).g (ppOf s).r); omega),
       ?_, ?_⟩
     · refine uo.trans ?_
-      generalize checkedCandidate (ppOf s).bits (ppOf s).g (ppOf s).r = res
+      generalize Spec.Ffdh.sievedParameterCandidate (ppOf s).bits (ppOf s).g (ppOf s).r = res
       rcases res with _ | ⟨_ | _, _⟩ <;> rfl
     · simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero]
       refine congrArg (· :: []) (uu.trans ?_)
       rw [← hlen]
-      generalize checkedCandidate (ppOf s).bits (ppOf s).g (ppOf s).r = res
+      generalize Spec.Ffdh.sievedParameterCandidate (ppOf s).bits (ppOf s).g (ppOf s).r = res
       rcases res with _ | ⟨_ | _, _⟩ <;> rfl
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

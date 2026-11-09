@@ -16,17 +16,7 @@ public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Gcm.Spec
-import VerifiedGarbage.Proof.Aes.AArch64.Decrypt
-import VerifiedGarbage.Proof.Aes.Scratch
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Gcm.Spec
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # AES on AArch64 -/
 
@@ -48,22 +38,22 @@ def artifacts : List Artifact := [
     features := ["aes"] },
   Spec.Aes.encryptBlocksApi.artifact AArch64.target {
     code := Impl.Aes.AArch64.encryptBlocks
-    verified := Proof.Aes.AArch64.encryptBlocks_verified },
+    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.AArch64.encryptBlocks_verified },
   Spec.Aes.decryptBlocksApi.artifact AArch64.target {
     code := Impl.Aes.AArch64.decryptBlocks
-    verified := Proof.Aes.AArch64.decryptBlocks_verified },
+    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.AArch64.decryptBlocks_verified },
   Spec.Aes.encryptBlocksApi.artifact AArch64.target {
     suffix := "_aes"
     written := [("scratch", 0)]
     code := Impl.Aes.AArch64.Aese.encryptBlocks
-    verified := Proof.Aes.AArch64.Aese.encryptBlocks_verified
+    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.AArch64.Aese.encryptBlocks_verified
     writtenOk := Proof.Aes.AArch64.Aese.encryptBlocks_written
     features := ["aes"] },
   Spec.Aes.decryptBlocksApi.artifact AArch64.target {
     suffix := "_aes"
     written := [("scratch", 0)]
     code := Impl.Aes.AArch64.Aese.decryptBlocks
-    verified := Proof.Aes.AArch64.Aese.decryptBlocks_verified
+    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.AArch64.Aese.decryptBlocks_verified
     writtenOk := Proof.Aes.AArch64.Aese.decryptBlocks_written
     features := ["aes"] }]
 

@@ -353,7 +353,7 @@ theorem tail3Og_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64}
   have hin : ∀ off n', off + n' ≤ 16 * 16 →
       InRegions (s₁.rd ++ s₁.wr) (dp + BitVec.ofNat 64 o + BitVec.ofNat 64 off) n' := by
     intro off n' hn
-    refine ⟨_, List.mem_append_right _ (by rw [wr₁]; exact h.dw), ?_⟩
+    refine ⟨_, by rw [rd₁, wr₁]; exact h.dw, ?_⟩
     rw [Offset.add_add]
     exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   -- The rounds.
@@ -426,7 +426,7 @@ theorem tailKOg_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 
   have hin : ∀ off n', off + n' ≤ 16 * 24 →
       InRegions (s.rd ++ s.wr) (dp + BitVec.ofNat 64 o + BitVec.ofNat 64 off) n' := by
     intro off n' hn
-    refine ⟨_, List.mem_append_right _ h.dw, ?_⟩
+    refine ⟨_, h.dw, ?_⟩
     rw [Offset.add_add]
     exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   unfold tailKO

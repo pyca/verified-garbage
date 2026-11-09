@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Rel
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseD
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsD
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
 
 /-!
 # ML-DSA signing on x86-64: decoding leaks only the pointers
@@ -61,5 +62,41 @@ theorem decode_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : dC
           ⟨h.im, h.s1, h.s2, fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun x y h => by rwa [Nat.zero_add] at h
   · exact liftT (fun _ _ h => h.im.st) (fun _ _ _ h => rpp_ok hP hc h)
       (RelCT.mono (shake_tr (sgB_bases p) hP.hD hs.2.2.2.1) (fun _ _ h => h) fun _ _ _ => trivial)
+
+/-- Two runs agree on the flag: whether they copy a prepared key or decode. -/
+theorem decodeOrCopy_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : dChk p = true)
+    (hk : pkChk p = true) {E : State → State → Prop} :
+    RelCT isa (RS p D E (IM p D)) (decodeOrCopy P p) (RS p D E (IK p D)) := by
+  have hk' := hk
+  simp only [pkChk, Bool.and_eq_true] at hk'
+  obtain ⟨⟨⟨⟨⟨⟨hcp, -⟩, him⟩, hin⟩, -⟩, -⟩, -⟩ := hk'
+  obtain ⟨-, -, -, h0, hn, hd, hs, hsr⟩ := copyChk_spec hcp
+  have hs' := dChk_spec hc
+  unfold decodeOrCopy
+  let J : State → State → Prop := fun σ s => IM p D σ s ∧ s.zf = some (σ.gpr .r9 == 0)
+  refine RelCT.seq (R := RS p D E J) (liftR (fun σ s _ h => WP.mono
+      (testFlag_ok (D := D) h.st.top (h.st.lay.iR hin)) fun s1 ⟨hP1, _, _, hz⟩ => ⟨h.step hP1 him, hz⟩)
+    (block_tr (rs := [.rbx]) rfl fun x y h r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.lrel fun _ _ h => h.st).regs (.rbx, scrLen p) (by simp [sgR, sgW]))) ?_
+  refine RelCT.ite (fun x y h => ?_) ?_ ?_
+  · obtain ⟨σ₁, σ₂, _, _, hpub, _, ⟨_, z₁⟩, ⟨_, z₂⟩⟩ := h
+    show x.zf.map (!·) = y.zf.map (!·)
+    rw [z₁, z₂, hpub.2.2.2.2.2.2.2]
+  · refine RelCT.seq (R := RS p D E fun σ s => ID p D σ p.ℓ p.k p.k s)
+      (RelCT.mono (liftR (I := fun σ s => IM p D σ s ∧ σ.gpr .r9 ≠ 0)
+        (fun σ s hpre h => copyKey_ok hpre h.2 hP.hD' hk h.1)
+        (RelCT.mono (copy_tr h0 hn hd hs hsr (P := fun x y => LRel D (sgR p) (sgW p) x y) fun x y h =>
+            ⟨h.regs (.rbx, scrLen p) (by simp [sgR, sgW]), h.regs (.rbp, p.skLen) (by simp [sgR, sgW])⟩)
+          (fun x y h => h.lrel fun _ _ h => h.1.st) fun _ _ _ => trivial))
+        (fun x y ⟨⟨σ₁, σ₂, p₁, p₂, hpub, he, ⟨i₁, z₁⟩, ⟨i₂, z₂⟩⟩, hb⟩ => ?_) fun _ _ h => h) ?_
+    · have hb' : x.zf.map (!·) = some true := hb
+      rw [z₁] at hb'
+      have f₁ : σ₁.gpr .r9 ≠ 0 := by simpa using hb'
+      exact ⟨σ₁, σ₂, p₁, p₂, hpub, he, ⟨i₁, f₁⟩, ⟨i₂, hpub.2.2.2.2.2.2.2 ▸ f₁⟩⟩
+    · exact liftT (fun _ _ h => h.im.st) (fun _ _ _ h => rpp_ok hP hc h)
+        (RelCT.mono (shake_tr (sgB_bases p) hP.hD hs'.2.2.2.1) (fun _ _ h => h) fun _ _ _ => trivial)
+  · exact RelCT.mono (decode_tr hP hc) (fun x y ⟨h, _⟩ => h.mono (fun _ _ h => h) fun _ _ h => h.1)
+      fun _ _ h => h
 
 end VG.Proof.MlDsa.X86_64.Sign

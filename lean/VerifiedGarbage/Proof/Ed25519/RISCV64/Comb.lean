@@ -527,9 +527,6 @@ theorem slot_apart {b : Addr} (sl : Slot) {d n : Nat} (h : d + n ≤ offset sl �
       ⟨b + BitVec.ofNat 64 d, n⟩ := fun k hk =>
   Offset.disjoint _ (by omega) (by simp only [offset] at h ⊢; have := sl.isLt; omega) (by omega)
 
-private theorem slot_cases : ∀ sl : Slot, sl.val = 4 ∨ sl.val = 5 ∨ sl.val = 6 ∨
-    sl.val < 4 ∨ 7 ≤ sl.val := by decide
-
 theorem combStep_ok {s₀ s : State} {b T : Addr} {S j : Nat} (E : CombEnv s₀ b T)
     (h : CombInv s₀ b T S j s) (hj : j < 64) :
     WP isa combStep s fun t => isa.eval (.nonzero .a4) t = some (decide (j + 1 ≠ 64)) ∧
@@ -771,11 +768,6 @@ theorem combStart_ok : Rep combStart ((17 * Proof.Ed25519.combGVal) • baseAff)
   exact Proof.Ed25519.combPt_rep (q := combStartAff) hp hx hy
 
 /-! ## The multiplication -/
-
-theorem wp_lla {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {name : String}
-    (k : ∀ s', Upd s s' d (s.syms name) → WP isa (.block is) s' Q) :
-    WP isa (.block (.lla d name :: is)) s Q :=
-  WP.cons exec_lla (k _ (Upd.write _ _ _))
 
 /-- What `combMultiply` writes: the scalar's copy, the sign's mask and the field area. -/
 abbrev combW (b : Addr) : List Region := scalR b :: stepW b

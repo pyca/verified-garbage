@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+public import VerifiedGarbage.Proof.MlDsa.ResponseHintContract
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 
@@ -41,22 +44,6 @@ theorem responseDecomposed_parts {m : Mem} {low high : Addr} {g : Nat} (hg : IsG
   rw [responseHintBase_parts hg (hl i hi) (hh i hi)]
   exact ⟨hl i hi,hh i hi⟩
 
-theorem responseHintPoly_parts {m : Mem} {low ct high : Addr} {g : Nat} (hg : IsG g) (f c : Poly)
-    (hl : ∀i<n,(coeffAt m low i).toInt=lowBits g f[i]!)
-    (hh : ∀i<n,(coeffAt m high i).toNat=(highBits g f[i]!).toNat)
-    (hc : signedPolyAt m ct=c) :
-    responseHintPoly m low ct high g=Vector.zipWith (fun ci fi=>makeHint g (-ci) (fi+ci)) c f := by
-  apply Vector.ext
-  intro i hi
-  simp only [responseHintPoly,Vector.getElem_ofFn,Vector.getElem_zipWith]
-  have hl' := hl i hi
-  have hh' := hh i hi
-  rw [responseHintBase_parts hg hl' hh']
-  have he : ofInt (coeffAt m ct i).toInt=c[i] := by
-    rw [←hc]
-    simp only [signedPolyAt,Vector.getElem_ofFn]
-  rw [he,getElem!_pos f i hi]
-
 theorem small_signed_injective {a b : Int} (ha : -524288≤a ∧ a≤524288)
     (hb : -524288≤b ∧ b≤524288) (he : ofInt a=ofInt b) : a=b := by
   have h1 := VG.Proof.MlDsa.KeyGen.ofInt_val a
@@ -84,16 +71,5 @@ theorem hintHigh_exact {m : Mem} {high : Addr} {g : Nat} {f : Poly}
   simp only [natPolyAt,Vector.getElem_ofFn,Vector.getElem_map] at he
   rw [VG.Proof.MlDsa.Arith.getElem!_eq f hi]
   exact he
-
-theorem HintNormPost.field {g : Nat} {m m' : Mem} {low ct high : Addr} {r : BitVec 64} {f c : Poly}
-    (hp : HintNormPost g m m' low ct high r) (hg : IsG g)
-    (hl : SignedPolyIs m low (f.map fun r=>ofInt (lowBits g r)) (-(g:Int)) g)
-    (hh : NatPolyIs m high (f.map fun r=>(highBits g r).toNat))
-    (hc : RawPolyIs m ct c) :
-    HintIs m' low 1 [Vector.zipWith (fun ci fi=>makeHint g (-ci) (fi+ci)) c f] ∧
-    r=BitVec.ofNat 64 (hintOnes [Vector.zipWith (fun ci fi=>makeHint g (-ci) (fi+ci)) c f]+
-      if normRq [c]<g then 4294967296 else 0) := by
-  have he := responseHintPoly_parts hg f c (hintLow_exact hg hl) (hintHigh_exact hh) hc.2
-  simpa only [HintNormPost,he,hc.2] using hp
 
 end VG.Proof.MlDsa.AArch64.Optimized.Response

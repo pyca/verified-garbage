@@ -27,7 +27,8 @@ and its bits (`jwinPrepO`), the odd window method on the peer's point (or
 `G`), its selections woven into its additions where that applies
 (`winJacOW_ok`), `R`'s `y` negated for an even `d` (`fixSign`: `[n - d]P = -[d]P`,
 `OddWin.mul_oddK`), then the signature's power: `R` represents `[d]P` for
-`d < n` (`MulOk`). It writes what `mulQJ` does (`mulQJW`).
+`d < n` (`MulOk`). It writes what the window method and
+the power may (`mulQJW`).
 -/
 
 @[expose] public section

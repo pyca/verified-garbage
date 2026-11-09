@@ -248,7 +248,7 @@ theorem rResult_key {s₀ : State} (A : KeyABI s₀) : (rResult s₀).status ≠
 /-! ## The body -/
 
 theorem body_ok (check derive : String) {s₀ : State} (A : KeyABI s₀) :
-    WP isa (body check derive Generate.checkParameters Generate.deriveKey) (allocated frameBytes s₀)
+    WP isa (body check derive Generate.checkParameters Generate.deriveChecked) (allocated frameBytes s₀)
       fun u => Finished s₀ u := by
   have hql := rQBytes_le A
   have hqn := rQBytes_length A
@@ -268,7 +268,7 @@ theorem body_ok (check derive : String) {s₀ : State} (A : KeyABI s₀) :
   have h₄ := h₃.fupd f₄
   have m₄ : t₄.mem = t₃.mem := f₄.mem
   rw [r0₃] at z₄
-  suffices H : WP isa (.ite .eq (.block []) (generate derive Generate.deriveKey)) t₄ (RFin s₀) from
+  suffices H : WP isa (.ite .eq (.block []) (generate derive Generate.deriveChecked)) t₄ (RFin s₀) from
     WP.seq (WP.mono H fun u hu => rfinish_ok A hu (rResult_status_le A) (rResult_key A))
   by_cases hc : rChecked s₀ = true
   · rw [hc] at z₄
@@ -310,7 +310,8 @@ theorem body_ok (check derive : String) {s₀ : State} (A : KeyABI s₀) :
       have h1 := sampleStatus_some hk
       refine WP.ite true (by rw [eval_eq, z₇, decide_eq_true h1]) (fun _ => ?_) (fun e => Bool.noConfusion e)
       refine WP.seq (WP.mono (deriveArgs_ok A h₇ (by rw [m₇]; exact sv₆)) fun t₈ ⟨h₈, m₈, C₈, _⟩ => ?_)
-      refine WP.seq (WP.mono (callDerive_ok A h₈ C₈ derive) fun t₉ ⟨h₉, f₉, _, r0₉, out₉⟩ => ?_)
+      refine WP.seq (WP.mono (callDerive_ok A h₈ C₈ derive (by rw [key_bytes A h₈]; exact hc))
+        fun t₉ ⟨h₉, f₉, _, r0₉, out₉⟩ => ?_)
       refine wp_st h₉ (by decide) fun t₁₀ mm₁₀ h₁₀ => WP.block_nil ?_
       -- What the derivation read.
       have hres : deriveResult s₀ t₈ = Spec.Dsa.deriveKeyBytes (rInput s₀).pLen (rInput s₀).qLen (rInput s₀).key

@@ -14,10 +14,8 @@ in word 6, `−N⁻¹` in word 7, the arrays' addresses in words 8–15, their
 size in word 28) nor the round (words 1, 23, 26, 29 and 30) uses; words 2–5
 and 16 are the caller's.
 
-* `smallMod`: the candidate modulo a small number, bit-serially (the model
-  has no division); `sieve ds`: `hBad` or'ed with a flag of a divisor in
-  `ds` of the candidate (`oddPrimes256`, the odd primes below 256, RSA's
-  table's first 53 entries, for FFDH and DSA).
+* `oddPrimes256`: the odd primes below 256, RSA's table's first 53
+  entries, which FFDH's `primeShape` sieves by.
 * `montPrep`: the modulus's Montgomery constants (`−N⁻¹` by Newton's
   iteration, `R² mod N`, `R mod N`, `N − R mod N`) and Miller–Rabin's
   exponent (`expSetup`); `montPrepHi`, for a modulus whose top word is not
@@ -76,27 +74,6 @@ def geFlag (d a b : Reg) : List Instr :=
   [.sub d a b, .lsr .d d d 63, .li .r0 1, .logic .xor d d .r0, .lsr .d .r0 a 63, .logic .or d d .r0]
 
 /-! ## The sieve -/
-
-/-- `r3 := ` array 0 mod `r4` (for `r4` in 2..2^62), bit-serially from the
-top of its `w` words: `r3 := 2 r3 + b`, less `r4` if that is not negative.
-It writes `r3`, `r5`–`r9` and `r14`. -/
-def smallMod : Prog isa :=
-  .seq (.block [.lsl .r5 .r11 2, .add .r5 .r10 .r5, .lsr .d .r6 .r11 1, .li .r3 0])
-    (.loop (.seq (.block [.subi .r5 .r5 8, .load .d .r7 .r5 0, .li .r8 64])
-        (.seq (countLoop .r8 [.lsr .d .r9 .r7 63, .lsl .r7 .r7 1, .add .r3 .r3 .r3, .add .r3 .r3 .r9,
-            .sub .r9 .r3 .r4, .lsr .d .r14 .r9 63, .subi .r14 .r14 1, .logic .xor .r9 .r9 .r3,
-            .logic .and .r9 .r9 .r14, .logic .xor .r3 .r3 .r9])
-          (.block [.subi .r6 .r6 1])))
-      (.nonzero .d .r6))
-
-/-- `r22 |= ` (array 0 mod `d = 0`). -/
-def trial (d : Nat) : Prog isa :=
-  .seq (.block [.li .r4 d]) (.seq smallMod (.block [.subi .r3 .r3 1, .lsr .d .r3 .r3 63,
-    .logic .or .r22 .r22 .r3]))
-
-/-- `hBad |= ` the flag of a divisor in `ds` of array 0. -/
-def sieve (ds : List Nat) : Prog isa :=
-  .seq (.block [ldh .r22 hBad]) (ds.foldr (fun d c => .seq (trial d) c) (.block [sth .r22 hBad]))
 
 /-- The odd primes below 256. -/
 def oddPrimes256 : List Nat :=

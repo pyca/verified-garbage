@@ -278,7 +278,6 @@ abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem 
 is `A.hs`: `c.sh` for the slot `hs` holding a hash, 0 for the others. -/
 abbrev shAt (c : Cfg) (hs : Option Nat) (i : Nat) : Nat := if hs = some i then c.sh else 0
 
-theorem shAt_none (c : Cfg) (i : Nat) : shAt c none i = 0 := rfl
 theorem shAt_self (c : Cfg) (i : Nat) : shAt c (some i) i = c.sh := ite_eq_left_of_eq_true _ _ (eq_true rfl)
 theorem shAt_E_D (c : Cfg) : shAt c (some E) D = 0 := rfl
 theorem shAt_E_K (c : Cfg) : shAt c (some E) K = 0 := rfl
@@ -355,13 +354,6 @@ theorem sl_below_bits (c : Cfg) {i : Nat} (hi : i < 45) (j t : Nat) (hn : c.n < 
 theorem wk_below_bits (c : Cfg) (j : Nat) (hn : c.n < 10 := by n10) : c.wk + 64 * c.n ≤ bitsAt c.n j := by
   have := wk_own c
   rw [bitsAt_eq]
-  omega_arith
-
-/-- The accumulator is in the working space. -/
-theorem wk_le (c : Cfg) (hn : c.n < 10) {M : Mod} (hM : M.n = c.n) : c.wk + accLen M ≤ size := by
-  have := wk_own c
-  rw [accLen_eq, hM]
-  show _ ≤ 8192
   omega_arith
 
 /-- Every slot is in the working space. -/

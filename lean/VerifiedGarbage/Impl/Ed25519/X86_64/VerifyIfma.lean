@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
 each position, from the top) with the accumulated point `(X, Y, Z, T)` in the four lanes of
 `ymm0–ymm4` throughout, as five limbs of 51 bits, rather than in slots 0–3:
 
-* each doubling is `vdbl`, the comb's (`Ifma.combMultiply`);
+* each doubling is `vdbl`, the comb's (`Zmm.combMultiply`'s last doublings);
 * a nonzero digit's table entry, cached as `[Y - X, Y + X, 2dT, 2Z]` (the
   table of `±[j]A` at byte 5376 and the static of `∓[j]B` are already in that
   form), is loaded a row of words at a time into `ymm11–ymm14` (`vrows`),

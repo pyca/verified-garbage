@@ -20,7 +20,7 @@ open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64
 open VG.Proof.MlKem.AArch64 (Keep)
 open VG.Impl.Bignum.Public (aN aAcc aTmp aR2 aY aOne sCnt)
 
-/-- `montSetup`, `expSetup`, `millerRabin` and `mrResult`, for the candidate `c` in
+/-- `montSetup`, `expSetup`, `millerRabinWith` and `mrResult`, for the candidate `c` in
 `aN`, from offset `8 w` of `rand`. -/
 theorem sharedTail_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {s : State} {B : Addr} {Z w c : Nat} {op up rp : Addr} {r : List Byte}
     (h : Ws s B Z w) (hw4 : 4 ≤ w) (hw64 : w ≤ 64) (hEZ : slot w aE + 8 * (w + 2) ≤ Z)

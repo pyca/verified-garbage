@@ -3,10 +3,10 @@ module
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 
 /-!
-# Preparing a key context's first sixteen powers in place, on 128-bit registers
+# Preparing a key context's powers in place, on 128-bit registers
 
-`vg_aes_gcm_prepare16` for the backends without VPCLMULQDQ, whose eight-block
-loops read no other powers: `H'` from the hash subkey at `ctx + 240`, as
+The 16 powers `vg_aes_gcm_prepare` computes for the backends without
+VPCLMULQDQ, whose eight-block loops read no other: `H'` from the hash subkey at `ctx + 240`, as
 those loops compute it (`StitchAvx8.hInv`), then `H'²`–`H'¹⁶` in four rounds
 of independent products (`plan`), each stored as it is computed. Half of
 them are squares, which need two carry-less products rather than four, since
@@ -72,5 +72,41 @@ context at `rdi`, from its hash subkey, for the eight-block loops, which read
 no other. -/
 def prepare16 : Prog isa :=
   .block (setup ++ plan.flatMap step)
+
+/-! ## The SSE code
+
+What the steps run on the lower lanes, on which they are proven. -/
+
+/-- The SSE code of `PrepareAvx.sq d a`. -/
+def sqS (d a : XReg) : List Instr :=
+  [.xop (.bin .movdqa .xmm8 a), .xop (.pclmulqdq .xmm8 a 0x00),
+   .xop (.bin .movdqa .xmm10 a), .xop (.pclmulqdq .xmm10 a 0x11)] ++
+  Impl.Gcm.X86_64.Pclmul.fold ++ Impl.Gcm.X86_64.Pclmul.fold ++
+  [.xop (.bin .movdqa d .xmm10), .xop (.bin .pxor d .xmm8)]
+
+/-- The SSE code of `PrepareAvx.mulD d a b`. -/
+def mulDS (d a b : XReg) : List Instr :=
+  [.xop (.bin .movdqa .xmm8 a), .xop (.pclmulqdq .xmm8 b 0x00),
+   .xop (.bin .movdqa .xmm10 a), .xop (.pclmulqdq .xmm10 b 0x11),
+   .xop (.bin .movdqa .xmm9 a), .xop (.pclmulqdq .xmm9 b 0x01),
+   .xop (.bin .movdqa .xmm11 a), .xop (.pclmulqdq .xmm11 b 0x10),
+   .xop (.bin .pxor .xmm9 .xmm11)] ++
+  Impl.Gcm.X86_64.Pclmul.fold ++
+  [.xop (.bin .pxor .xmm9 .xmm8),
+   .xop (.bin .movdqa .xmm11 .xmm9), .xop (.pclmulqdq .xmm11 .xmm1 0x10),
+   .xop (.pshufd .xmm9 .xmm9 0x4e), .xop (.bin .pxor .xmm9 .xmm11),
+   .xop (.bin .movdqa d .xmm10), .xop (.bin .pxor d .xmm9)]
+
+/-- The SSE code of `PrepareAvx.step p`. -/
+def stepS (p : XReg × XReg × XReg × Nat) : List Instr :=
+  (if p.2.1 = p.2.2.1 then sqS p.1 p.2.1 else mulDS p.1 p.2.1 p.2.2.1) ++
+  [.movdquStore (at_ .rdi (prepOff p.2.2.2)) p.1]
+
+/-- The SSE code of `PrepareAvx.setup`. -/
+def setupS : List Instr :=
+  Impl.Gcm.X86_64.Pclmul.constImm .xmm0 Impl.Gcm.X86_64.Pclmul.revMask ++
+  Impl.Gcm.X86_64.Pclmul.constImm .xmm1 poly ++
+  [.movdquLoad .xmm7 (at_ .rdi 240), .xop (.bin .pshufb .xmm7 .xmm0)] ++ Impl.Gcm.X86_64.Pclmul.hInvImm ++
+  [.movdquStore (at_ .rdi (prepOff 1)) .xmm3]
 
 end VG.Impl.Gcm.X86_64.PrepareAvx

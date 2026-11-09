@@ -17,10 +17,6 @@ open VG.Impl.Dsa.X86_64.ProbablePrime VG.Impl.RsaKeyGen.X86_64.Candidate
 /-- The test's status as the function returns it. -/
 def returned (stat : BitVec 64) : BitVec 64 := stat - (stat >>> 1)
 
-theorem returned_status (n : Nat) (h : n = 0 ∨ n = 1 ∨ n = 3) :
-    returned (BitVec.ofNat 64 n) = BitVec.ofNat 64 (if n = 3 then 2 else n) := by
-  rcases h with rfl | rfl | rfl <;> decide
-
 theorem exit_ok {s : State} {B U : Addr} (hdi : s.gpr .rdi = B)
     (hu1 : InRegions (s.rd ++ s.wr) (off B 200) 8) (hs1 : InRegions (s.rd ++ s.wr) (off B 232) 8)
     (hf : InRegions (s.rd ++ s.wr) (off (s.gpr .rsp) 48) 8)

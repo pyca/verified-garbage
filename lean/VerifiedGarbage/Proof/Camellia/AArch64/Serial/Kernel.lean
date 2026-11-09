@@ -16,9 +16,6 @@ structure Stable (s t : State) : Prop where
   wr : t.wr = s.wr
   sp : t.sp = s.sp
 
-theorem Stable.refl (s : State) : Stable s s :=
-  ⟨fun _ _ => rfl,rfl,rfl,rfl,rfl⟩
-
 theorem Stable.trans {s t u : State} (h : Stable s t) (g : Stable t u) : Stable s u :=
   ⟨fun r hr => (g.regs r hr).trans (h.regs r hr),g.mem.trans h.mem,
     g.rd.trans h.rd,g.wr.trans h.wr,g.sp.trans h.sp⟩

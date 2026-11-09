@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
 public import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+public import VerifiedGarbage.Impl.Ecdh.P521.X86_64
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
 meta import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+meta import VerifiedGarbage.Impl.Ecdh.P521.X86_64
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
@@ -26,7 +28,7 @@ abbrev winKX : WinCfg := p521x.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Im
 /-- ECDH's window method in Jacobian coordinates. -/
 def winBuildJX : Prog isa := WinCfg.build winKX
 def winNormJX : Prog isa := WinCfg.normTbl winKX (InvCfg.inv (Impl.Ecdh.X86_64.Cfg.invWin p521x))
-def winLoopJX : Prog isa := .loop (WinCfg.stepJ winKX) .ne
+def winLoopFX : Prog isa := .loop (P521F.Win.stepF winKX) .ne
 def winLastJX : Prog isa := WinCfg.stepLast winKX
 
 materialize_code winBuildJX
@@ -38,9 +40,7 @@ taint_summary_map winNormJXSum : taintS τB winNormJX via taintS_eraseInv
   (by simp only [winNormJX, WinCfg.normTbl, WinCfg.seqRange, WinCfg.prodStep, WinCfg.backStep,
     WinCfg.backOne, WinCfg.mulTb, WinCfg.mulTx, Code.mapBlocks, winKX_ok.fprogB]; rfl :
     Code.mapBlocks Instr.erase winNormJX = _)
-taint_summary_map winLoopJXSum : taintS τL winLoopJX via taintS_eraseInv
-  (by simp only [winLoopJX, WinCfg.stepJ, WinCfg.quadJ, WinCfg.jacPairOn, WinCfg.sumJ, Code.mapBlocks,
-    winKX_ok.fprogB]; rfl : Code.mapBlocks Instr.erase winLoopJX = _)
+taint_summary winLoopFXSum : taintS τL winLoopFX
 taint_summary_map winLastJXSum : taintS τL winLastJX via taintS_eraseInv
   (by simp only [winLastJX, WinCfg.stepLast, WinCfg.quadJ, WinCfg.jacPairOn, WinCfg.toProjR, Code.mapBlocks,
     winKX_ok.fprogB]; rfl : Code.mapBlocks Instr.erase winLastJX = _)

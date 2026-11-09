@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on AArch64: correctness
 
-As `vg_rsa_pkcs1_encrypt`'s (`enc_ok`), with `pre` loaded for the call
+As `vg_rsa_pkcs1_encrypt`'s, with `pre` loaded for the call
 (`callArgs_inv`) and the precomputed public operation (`pd_call`): the
 registers the ABI keeps whatever `pre` holds, and, if `pre` holds the values
 for `n`, `encK`'s postcondition.
@@ -35,7 +35,7 @@ theorem consistent_iff (P : Nat) (s : State) :
   rw [Consistent, preW_layP, prlW_layP]; rfl
 
 theorem code_ok (c : PdChecked) {s : State}
-    (h : (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s) :
+    (h : (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s) :
     WP isa (Impl.RsaPkcs1Enc.AArch64.Precomputed.code c.name c.code) s fun s' =>
       abiPreserved s s' ∧ post c.stack s s' := by
   obtain ⟨hL, hrd, hwr, hpl, hsp⟩ := pre_of h

@@ -75,7 +75,7 @@ theorem keygen_sampled {extra : Nat} {s t b : State} {h : GenerateKeyABI extra s
 theorem keygen_generate (v : Backend) {s t : State} {h : GenerateKeyABI v.stack s}
     (ht : KeygenState h 0 t) (hQ : word t.mem (randomBase s) Random.oQ = s.gpr .rcx + s.gpr .r9)
     (hc : keygenChecked s = true) :
-    WP isa (GenerateKey.generate (keygenDeriveName v) (Generate.deriveKey v.sq v.mul)) t
+    WP isa (GenerateKey.generate (keygenDeriveName v) (Generate.deriveChecked v.sq v.mul)) t
       (KeygenGenerated h) := by
   have hq := keygen_q_valid h hc
   have hres := keygen_result_checked h hc
@@ -110,7 +110,7 @@ theorem keygen_generate (v : Backend) {s t : State} {h : GenerateKeyABI v.stack 
       simp only [VG.Proof.Dsa.Random.sampleStatus, hx]
     rw [hs1] at hdz
     refine WP.ite true (by simp only [eval, hdz]; rfl) (fun _ => ?_) (fun he => Bool.noConfusion he)
-    refine WP.mono (keygen_derive_step v hsd (hnd k hx)) fun u ⟨hu, hw, hb⟩ => ?_
+    refine WP.mono (keygen_derive_step v hsd (hnd k hx) hc) fun u ⟨hu, hw, hb⟩ => ?_
     unfold KeygenGenerated
     rw [hres]
     simp only [hx]

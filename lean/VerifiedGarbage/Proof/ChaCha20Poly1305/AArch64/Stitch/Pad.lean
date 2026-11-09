@@ -12,9 +12,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 # ChaCha20 and Poly1305 together (AArch64): the keystream while absorbing other data
 
 `Stitch.bulkPad`: `Mixed8.enter`, one chunk of the kernel whose phases absorb
-the 448 bytes from `x2` (`Stitch.chunkPad`, by `chunkWith_ok`: the chunk keeps
-`x2` in `x19`, from which the phases point `x20` at the bytes), and
-`Mixed8.leave`. The registers `enter` saves are restored, the chunk's data
+the 448 bytes from `x27` (`Stitch.chunkPad`, by `chunkWith_ok`: the phases
+point `x20` at the bytes from `x27`, and set it back), and `Mixed8.leave`. The registers `enter` saves are restored, the chunk's data
 (`x1`, 512 bytes) is XORed with the keystream of eight blocks from the
 state's counter, and the accumulator has absorbed the 448 bytes.
 -/
@@ -24,7 +23,7 @@ state's counter, and the accumulator has absorbed the 448 bytes.
 namespace VG.Proof.ChaCha20Poly1305.AArch64.Stitch
 
 open VG VG.AArch64 VG.Impl.ChaCha20Poly1305.AArch64.Stitch VG.Impl.ChaCha20Poly1305.AArch64
-open VG.Proof.ChaCha20.AArch64.Mixed8 (CP Chunked source sr br dr scalarBuf)
+open VG.Proof.ChaCha20.AArch64.Mixed8 (CP ChunkedFrom source sr br dr scalarBuf)
 open VG.Proof.ChaCha20 (ctr)
 open VG.Spec.Poly1305 (bytesAt)
 open VG.Proof.Poly1305 (absorbAll)
@@ -33,7 +32,7 @@ variable {sve : Bool}
 
 /-- What `bulkPad` needs: the kernel's regions (`CP` but for `x20`, which
 `enter` sets), the working space 64 bytes after the state, and the 448 bytes
-from `x2` readable and apart from the state and the working space. -/
+from `x27` readable and apart from the state and the working space. -/
 structure PadPre (s : State) : Prop where
   read : ∀ k : Fin 16, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (4 * k)) 4
   vectorRead : ∀ k : Fin 24, InRegions (s.rd ++ s.wr)
@@ -45,8 +44,8 @@ structure PadPre (s : State) : Prop where
   st_d : (sr s).Disjoint (dr s)
   d_b : (dr s).Disjoint (br s)
   x3 : s.gpr .x3 = s.gpr .x0 + 64#64
-  blk : ∀ d, d + 8 ≤ 448 → InRegions (s.rd ++ s.wr) (s.gpr .x2 + BitVec.ofNat 64 d) 8
-  win : ∀ r ∈ [sr s, br s], (⟨s.gpr .x2, 448⟩ : Region).Disjoint r
+  blk : ∀ d, d + 8 ≤ 448 → InRegions (s.rd ++ s.wr) (s.gpr .x27 + BitVec.ofNat 64 d) 8
+  win : ∀ r ∈ [sr s, br s], (⟨s.gpr .x27, 448⟩ : Region).Disjoint r
 
 /-- The registers `Mixed8.enter` saves, and where in the working space. -/
 abbrev gpSlots : List (Reg × Nat) := [(.x20, 256), (.x19, 264), (.x26, 272)]
@@ -89,8 +88,8 @@ theorem enter_ok (s : State)
     (by rw [haw, ha3]; exact hb 144 16 (by decide))).mono
     fun u ⟨hg, hv, hr, hw, hsp, hf, h8, h9⟩ => ?_
   simp only [VG.Proof.ChaCha20.AArch64.Mixed8.savedVR, ha3] at hf h8 h9
-  have f₁ : Frame [⟨s.gpr .x3 + BitVec.ofNat 64 256, 24⟩] s.mem a.mem :=
-    Spill.saveMem_frame (lo := 256) (n := 24) (fun p hp => by
+  have f₁ : Frame [⟨s.gpr .x3 + BitVec.ofNat 64 256, 32⟩] s.mem a.mem :=
+    Spill.saveMem_frame (lo := 256) (n := 32) (fun p hp => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl <;> decide) (by decide) _ _ _
   have hsv : Spill.Saved (s.gpr .x3) s.gpr gpSlots u.mem :=
@@ -106,7 +105,7 @@ theorem enter_ok (s : State)
   · exact (f₁.mono (by simp [enterR])).trans (hf.mono (by simp [enterR]))
 
 /-- What `bulkPad` leaves: the registers it saves restored, the chunk's data
-XORed with the keystream, and the 448 bytes from `x2` absorbed. -/
+XORed with the keystream, and the 448 bytes from `x27` absorbed. -/
 structure Padded (R a : Nat) (s u : State) : Prop where
   x0 : u.gpr .x0 = s.gpr .x0
   x1 : u.gpr .x1 = s.gpr .x1
@@ -123,7 +122,7 @@ structure Padded (R a : Nat) (s u : State) : Prop where
     s.mem (s.gpr .x1 + BitVec.ofNat 64 k) ^^^
       (VG.Spec.ChaCha20.serialize (VG.Spec.ChaCha20.block (ctr (source s) (k / 64)))).getD (k % 64) 0
   frame : Frame [sr s, br s, dr s] s.mem u.mem
-  acc : Acc R (absorbAll R a (bytesAt s.mem (s.gpr .x2) 448)) u
+  acc : Acc R (absorbAll R a (bytesAt s.mem (s.gpr .x27) 448)) u
 
 /-- An offset of the working space, as an offset of the state. -/
 theorem x3_off {s : State} (h : s.gpr .x3 = s.gpr .x0 + 64#64) (d : Nat) :
@@ -154,6 +153,7 @@ theorem bulkPad_ok {R a : Nat} (s : State) (hp : PadPre s) (ha : Acc R a s) :
   have e1 : e.gpr .x1 = s.gpr .x1 := he.gpr _ (by decide)
   have e2 : e.gpr .x2 = s.gpr .x2 := he.gpr _ (by decide)
   have e3 : e.gpr .x3 = s.gpr .x3 := he.gpr _ (by decide)
+  have e27 : e.gpr .x27 = s.gpr .x27 := he.gpr _ (by decide)
   have esr : sr e = sr s := by simp only [sr, e0]
   have ebr : br e = br s := by simp only [br, e3]
   have edr : dr e = dr s := by simp only [dr, e1]
@@ -170,7 +170,7 @@ theorem bulkPad_ok {R a : Nat} (s : State) (hp : PadPre s) (ha : Acc R a s) :
     · rw [he.wr, e0]; exact hp.counter
     · rw [he.wr, e3]; exact hp.buffer d n h
     · rw [he.wr, e1]; exact hp.data d n h
-  have hblk (d : Nat) (h : d + 8 ≤ 448) : InRegions (e.rd ++ e.wr) (s.gpr .x2 + BitVec.ofNat 64 d) 8 := by
+  have hblk (d : Nat) (h : d + 8 ≤ 448) : InRegions (e.rd ++ e.wr) (s.gpr .x27 + BitVec.ofNat 64 d) 8 := by
     rw [erw]; exact hp.blk d h
   have hk (d : Nat) (hd : d = Poly.r0Off ∨ d = Poly.r1Off) :
       InRegions (e.rd ++ e.wr) (e.gpr .x0 + BitVec.ofNat 64 d) 8 := by
@@ -180,22 +180,30 @@ theorem bulkPad_ok {R a : Nat} (s : State) (hp : PadPre s) (ha : Acc R a s) :
       rw [hx3]; rcases hd with rfl | rfl <;> rfl]
     exact hc
   have hwin (d n : Nat) (h : d + n ≤ 448) :
-      ∀ r ∈ [sr e, scalarBuf e], (⟨s.gpr .x2 + BitVec.ofNat 64 d, n⟩ : Region).Disjoint r := by
+      ∀ r ∈ [sr e, scalarBuf e], (⟨s.gpr .x27 + BitVec.ofNat 64 d, n⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    have hs : (⟨s.gpr .x2 + BitVec.ofNat 64 d, n⟩ : Region).Sub ⟨s.gpr .x2, 448⟩ := Offset.sub_base _ h
+    have hs : (⟨s.gpr .x27 + BitVec.ofNat 64 d, n⟩ : Region).Sub ⟨s.gpr .x27, 448⟩ := Offset.sub_base _ h
     rcases hr with rfl | rfl
     · rw [esr]; exact (hp.win _ (by simp)).sub_left hs
     · rw [esb]; exact ((hp.win _ (by simp)).sub_left hs).sub_right hsb
-  have pre : ChunkPreW (.addImm .x .x20 .x19 0) (.addImm .x .x20 .x19 256) (s.gpr .x2)
-      (s.gpr .x2 + BitVec.ofNat 64 256) (16 * (1 + 5 * 3)) (16 * (2 + 5 * 2)) e := by
-    refine ⟨hcp, by rw [he.x20, e0, hp.x3], fun u h19 _ => ?_, fun u h19 _ => ?_,
+  have pre : ChunkPreW (.addImm .x .x20 .x27 0) (.addImm .x .x20 .x27 256) (.subImm .x .x27 .x20 256)
+      (.subImm .x .x27 .x20 448) .x1 (s.gpr .x27)
+      (s.gpr .x27 + BitVec.ofNat 64 256) (16 * (1 + 5 * 3)) (16 * (2 + 5 * 2)) e := by
+    refine ⟨hcp, by rw [he.x20, e0, hp.x3], fun u _ _ h27 => ?_, fun u _ _ h27 => ?_,
+      fun w h20 _ => ?_, fun w h20 _ => ?_, hcp.src,
       fun d h => hblk d (by omega), fun d h => ?_, hk _ (.inl rfl), hk _ (.inr rfl), ?_, ?_,
       by decide, by decide, ?_⟩
     · rw [exec_addImm_x (by decide)]
-      simp only [State.read, BitVec.setWidth_eq, h19, e2, BitVec.add_zero]
+      simp only [State.read, BitVec.setWidth_eq, h27, e27, BitVec.add_zero]
     · rw [exec_addImm_x (by decide)]
-      simp only [State.read, BitVec.setWidth_eq, h19, e2]
+      simp only [State.read, BitVec.setWidth_eq, h27, e27]
+    · rw [exec_subImm_x (by decide)]
+      simp only [State.read, BitVec.setWidth_eq, h20, e27, show 16 * (1 + 5 * 3) = 256 from rfl,
+        BitVec.add_sub_cancel]
+    · rw [exec_subImm_x (by decide)]
+      simp only [State.read, BitVec.setWidth_eq, h20, e27, show 16 * (2 + 5 * 2) = 192 from rfl]
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add, BitVec.add_sub_cancel]
     · rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact hblk _ (by omega)
     · simpa only [BitVec.add_zero] using hwin 0 256 (by decide)
     · exact hwin 256 192 (by decide)
@@ -314,7 +322,7 @@ theorem bulkPad_ok {R a : Nat} (s : State) (hp : PadPre s) (ha : Acc R a s) :
     · exact ⟨br s, by simp, hsb⟩
     · exact ⟨dr s, by simp, fun _ h => h⟩
   · have hwe (d n : Nat) (h : d + n ≤ 448) :
-        bytesAt e.mem (s.gpr .x2 + BitVec.ofNat 64 d) n = bytesAt s.mem (s.gpr .x2 + BitVec.ofNat 64 d) n :=
+        bytesAt e.mem (s.gpr .x27 + BitVec.ofNat 64 d) n = bytesAt s.mem (s.gpr .x27 + BitVec.ofNat 64 d) n :=
       bytesAt_frame he.frame (hdis_enter _ ((hp.win _ (by simp)).sub_left (Offset.sub_base _ h)))
         (by omega)
     have hwe0 := hwe 0 256 (by decide)

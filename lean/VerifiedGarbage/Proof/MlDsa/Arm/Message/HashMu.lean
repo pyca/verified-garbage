@@ -10,12 +10,12 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 
 /-!
-# ML-DSA on ARMv7, `sign_message` and `verify_message`: `μ` and `tr`
+# ML-DSA on ARMv7, `sign_message` and `verify_message_cached`: `μ`
 
 Untrusted: everything here is checked by Lean. In `Ctx`, `muHash` leaves
-`μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)` at `X + 840` (`muHash_ok`), and
-`trHash` leaves `H(pk, 64)` there (`trHash_ok`): from the zeroed state, each
-absorb continues the message from the position the previous one returned.
+`μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)` at `X + 840` (`muHash_ok`): from the
+zeroed state, each absorb continues the message from the position the
+previous one returned.
 -/
 
 @[expose] public section
@@ -115,28 +115,6 @@ theorem muHash_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t)
   rw [hm7, hS6, Spec.MlDsa.H, Proof.MlKem.shake256_eq]
 
 /-! ## `tr = H(pk, 64)` -/
-
-theorem trHash_ok {p : Params} (hL : L.Ok) (hk : L.keyLen = p.pkLen)
-    {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (trHash p) t fun t' => Ctx L g m₀ t' ∧
-      bytesAt t'.mem L.MU 64 = Spec.MlDsa.H (bytesAt m₀ (State.addr L.key) L.keyLen) 64 := by
-  have hkl := hL.hKey.2
-  refine WP.seq (WP.mono (zeroSt_ok hL hc) fun t1 ⟨hc1, _, hz⟩ => ?_)
-  have hR1 : Repr t1.mem L.ST 136 [] := Proof.MlKem.repr_nil hz
-  refine WP.seq (WP.mono (kabs_ok hL hc1 (n := L.keyLen) (q := 0)
-    (absOk rfl (by simp only [Arg.ok, decide_eq_true_eq]; omega_arith) rfl rfl rfl)
-    (by rw [hc1.slotV hL (f := fKey) (j := 0) rfl (by omega_arith)]; rfl) (by rw [hk]; rfl) rfl (by decide) (by omega_arith)
-    hL.nKey ⟨L.KEY, List.mem_append_left _ hL.inKey, within_self _⟩
-    (by have := hL.x_r hL.xKey (e := 0) (k := 200) (by omega_arith); simpa only [x0] using this.symm)
-    (hL.x_r hL.xKey (e := 200) (k := 640) (by omega_arith)).symm hL.kKey)
-    fun t2 ⟨hc2, _, hR2, _⟩ => ?_)
-  have hR2 := hR2 [] hR1 rfl
-  rw [List.nil_append, hc1.bytesAt_eq hL.xKey hL.kKey (by have := hL.nKey; omega_arith)] at hR2
-  refine WP.seq (WP.mono (kpad_ok hL hc2 (padOk (by simp only [Arg.ok, decide_eq_true_eq]; omega_arith))
-    (q := p.pkLen % 136) rfl (Nat.mod_lt _ (by decide))) fun t3 ⟨hc3, _, hS3⟩ => ?_)
-  have hS3 := hS3 _ hR2 (by rw [Proof.MlKem.bytesAt_length, hk])
-  refine WP.mono (ksqz_ok hL hc3) fun t4 ⟨hc4, _, hm4⟩ => ⟨hc4, ?_⟩
-  rw [hm4, hS3, Spec.MlDsa.H, Proof.MlKem.shake256_eq]
 
 end
 

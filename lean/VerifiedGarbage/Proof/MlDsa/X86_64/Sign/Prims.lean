@@ -83,12 +83,6 @@ theorem sw32_ofNat {v : Nat} (h : v < 2 ^ 32) : (BitVec.setWidth 32 (BitVec.ofNa
 theorem toNat64 {v : Nat} (h : v < 2 ^ 32) : (BitVec.ofNat 64 v).toNat = v := by
   rw [BitVec.toNat_ofNat]; omega
 
-theorem ptr_ok {p : Ptr} (h1 : p.1 ∈ bases) (h2 : p.2 < 2 ^ 31) : (Arg.ptr p).ok = true := by
-  simp [Arg.ok, h1, h2]
-
-theorem imm_ok {v : Nat} (h : v < 2 ^ 32) : (Arg.imm v).ok = true := by
-  simp [Arg.ok, h]
-
 /-- The setting of a call from a state in a layout: the stack pointer and
 memory as they were, and the layout. -/
 structure At (D : Nat) (rbs wbs : List (Reg × Nat)) (s s1 : State) : Prop where
@@ -291,18 +285,6 @@ theorem mulAt_ok {P : Prims} (C : Callee (fun S => productContract P.montgomery 
   sig_post [productContract, mulSig, X86_64.abi, VG.X86_64.argRegs] at hq
   simp only [e1, e2, e3, Arg.val, hm₂, A.poly' i2 hD, A.poly' i3 hD] at hq
   exact hq
-
-/-- Two runs in the same layout, with the arguments of a call in their registers. -/
-theorem argsRel {D : Nat} {rbs wbs : List (Reg × Nat)} {x y x1 y1 : State} (R : LRel D rbs wbs x y)
-    {as : List Arg} (hx : ArgsIn as x x1) (hy : ArgsIn as y y1)
-    (hin : ∀ a ∈ as, match a with | .ptr p => ∃ l, inB (rbs ++ wbs) p l = true | .imm _ => True) :
-    ∀ d ∈ argRegs6.zip as, x1.gpr d.1 = y1.gpr d.1 := by
-  intro d hd
-  rw [hx d hd, hy d hd]
-  have := hin d.2 (List.of_mem_zip hd).2
-  cases e : d.2 with
-  | ptr p => rw [e] at this; obtain ⟨l, hl⟩ := this; simp only [Arg.val, R.pa hl]
-  | imm v => rfl
 
 theorem mulAt_tr {P : Prims} (C : Callee (fun S => productContract P.montgomery X86_64.abi S) D P.mul)
     {h f g : Ptr} (hc : mulChk (rbs ++ wbs) wbs h f g = true) :

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.AArch64.Block
 import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.Offset
@@ -19,7 +20,7 @@ open VG.Impl.Cast5 (table s1234 s5678 s1234Sym s5678Sym ecbConsts)
 open VG.Proof.MlKem.AArch64 (Keep eval_zero eval_nonzero)
 
 /-- The facts of the ECB functions' precondition on this target (the shared
-contract's, `Spec.Cast5.ecbContract`, with the table `VG_CAST5_S1234`). -/
+contract's, `Proof.Cast5.ecbRoundsContract`, with the table `VG_CAST5_S1234`). -/
 structure EPre (s : State) : Prop where
   rd : s.rd = [⟨s.gpr .x0, 128⟩, ⟨s.syms s1234Sym, 4096⟩]
   wr : s.wr = [⟨s.gpr .x2, (s.gpr .x3).toNat * 8⟩, ⟨s.gpr .x4, 256⟩]

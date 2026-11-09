@@ -182,9 +182,6 @@ theorem roundsR_ok (j i : Nat) (H : HashValue) (M : Block) {kb : Addr} {p : Prog
 
 /-! ## The schedule, through the index -/
 
-theorem scheduleR_eq (i : Nat) :
-    scheduleR i = (schedule i).dropLast ++ ([.vmovdquStore .l256 (sSlot i) (msg i)] : List Instr) := rfl
-
 /-- `schedule_ok`, storing through the index. -/
 theorem scheduleR_ok (n : Nat) (s : State) (a b c d e a' b' c' d' e' : BitVec 128)
     (ha : s.xmm (msg n) = a) (hb : s.xmm (msg (n + 1)) = b) (hc : s.xmm (msg (n + 4)) = c)

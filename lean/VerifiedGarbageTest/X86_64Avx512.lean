@@ -399,5 +399,87 @@ def bcstAdd (disp : Int) : Option (BitVec 512) :=
 #guard isa.requires (.zbcst .vporq .xmm0 .xmm1 { base := .rdi }) == ["avx512f"]
 #guard isa.requires (.vpbroadcastdZ .xmm0 { base := .rdi }) == ["avx512f"]
 #guard isa.requires (.zbcstd .vpaddd .xmm0 .xmm1 { base := .rdi }) == ["avx512f"]
+#guard isa.requires (.zop (.vpermw .xmm0 .xmm1 .xmm2)) == ["avx512bw"]
+#guard isa.requires (.zop (.vpsrlvw .xmm0 .xmm1 .xmm2)) == ["avx512bw"]
+#guard isa.requires (.zop (.vextracti32x4 .xmm0 .xmm1 1)) == ["avx512f"]
+#guard isa.requires (.vpcmpltuw .rax .xmm0 .xmm1) == ["avx512f", "avx512bw"]
+
+/-! ## VPERMW, VPSRLVW, VEXTRACTI32X4, and VPCMPUW with KMOVD
+
+Each expected value was computed on an Intel Xeon with AVX512BW (Sapphire
+Rapids, AVX512_FP16) through the instruction's intrinsic
+(`_mm512_permutexvar_epi16`, `_mm512_srlv_epi16`,
+`_mm512_extracti32x4_epi32` with `_mm512_zextsi128_si512`, and
+`_mm512_cmplt_epu16_mask`), on `A` and `B` and on `C`, whose words are
+shift counts in and out of range (0 to 15, then 16, 17, `0xffff`, `0x8000`,
+4, 0, 15, 1, 31, 32, `0x10`, 3, 8, 12, 2 and `0x100`). The bytes of each
+encoding are LLVM's for the printed text (`llvm-mc -triple=x86_64
+-x86-asm-syntax=intel -output-asm-variant=1 -show-encoding`, LLVM 18). -/
+
+def C : BitVec 512 := 0x1000002000c0008000300100020001f0001000f000000048000ffff00110010000f000e000d000c000b000a0009000800070006000500040003000200010000#512
+
+/-- `s` with `C` in `zmm2`, and `rax` all ones. -/
+def sC : State :=
+  { s with
+    gpr := fun r => if r = .rax then -1 else s.gpr r
+    xmm := fun r => if r = .xmm2 then C.extractLsb' 0 128 else s.xmm r
+    ymmHi := fun r => if r = .xmm2 then C.extractLsb' 128 128 else s.ymmHi r
+    zmmHi := fun r => if r = .xmm2 then C.extractLsb' 256 256 else s.zmmHi r }
+
+#guard sC.zmm .xmm2 == C && sC.zmm .xmm0 == A && sC.zmm .xmm1 == B
+
+/-- `zmm5` after `op`, from `sC`. -/
+def runC (op : ZOp) : BitVec 512 := (op.exec sC).zmm .xmm5
+
+-- `vpermw zmm5, zmm0, zmm1` and the others: the indices first.
+#guard runC (.vpermw .xmm5 .xmm0 .xmm1) == 0x89ab89ab89ab456789ab01235678456733335555f0f00f0f24681357b4a5f0e10f0ff0f0aaaacccc9bdface0d2c39687dead01237ffffffff0f0cccc9687ace0#512
+#guard runC (.vpermw .xmm5 .xmm1 .xmm0) == 0x0f1e0f1e66776677ccdde1f0001169787654fedc012389ab88990bada5b43210fedc89abc3d20f1e4b5a0f1ef00df00d0bad0bad321032100bad0badeeffffee#512
+#guard runC (.vpermw .xmm5 .xmm2 .xmm0) == 0x3210ba986978a5b4fedc667732100bad76540f1e3210456732100bad445566770f1e2d3c4b5a6978c3d2e1f08796a5b489abcdef01234567fedcba9876543210#512
+-- `vpsrlvw zmm5, zmm0, zmm2` and the others: the counts second.
+#guard runC (.vpsrlvw .xmm5 .xmm0 .xmm2) == 0x00003c03000f00fa1bd5000000000000444c0001ccdd0eef0000000000000000000000000002000600180038004300a501130337000904561fdb2ea63b2a3210#512
+#guard runC (.vpsrlvw .xmm5 .xmm0 .xmm1) == 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000045670000000000000000#512
+#guard runC (.vpsrlvw .xmm5 .xmm1 .xmm2) == 0x000003c3000f00f00aaa00000000000078700001b4a509680000000000000000000000010004000c001b002f006500ba01ff03ff040000000fff3fff091a5678#512
+-- `vextracti32x4 xmm5, zmm0, n`: lane `n mod 4`, the rest of `zmm5` zeroed.
+#guard runC (.vextracti32x4 .xmm5 .xmm0 0) == 0x89abcdef01234567fedcba9876543210#512
+#guard runC (.vextracti32x4 .xmm5 .xmm0 1) == 0x0f1e2d3c4b5a6978c3d2e1f08796a5b4#512
+#guard runC (.vextracti32x4 .xmm5 .xmm0 2) == 0x8899aabbccddeeff0011223344556677#512
+#guard runC (.vextracti32x4 .xmm5 .xmm0 3) == 0x0badf00dfeedfacedeadbeef00c0ffee#512
+#guard runC (.vextracti32x4 .xmm5 .xmm0 7) == runC (.vextracti32x4 .xmm5 .xmm0 3)
+-- In place, and only the destination changes.
+#guard ((ZOp.vpermw .xmm0 .xmm0 .xmm1).exec sC).zmm .xmm0 == runC (.vpermw .xmm5 .xmm0 .xmm1)
+#guard ((ZOp.vpsrlvw .xmm2 .xmm0 .xmm2).exec sC).zmm .xmm2 == runC (.vpsrlvw .xmm5 .xmm0 .xmm2)
+#guard ((ZOp.vextracti32x4 .xmm0 .xmm0 2).exec sC).zmm .xmm0 == runC (.vextracti32x4 .xmm5 .xmm0 2)
+#guard [ZOp.vpermw .xmm5 .xmm0 .xmm1, .vpsrlvw .xmm5 .xmm0 .xmm2, .vextracti32x4 .xmm5 .xmm0 1].all fun o =>
+  (o.exec sC).zmm .xmm0 == A && (o.exec sC).zmm .xmm1 == B && (o.exec sC).zmm .xmm2 == C
+
+/-- `rax` after `vpcmpuw k1, zmmA, zmmB, 1; kmovd eax, k1`, from `sC` (whose
+`rax` is all ones: bits 63:32 are zeroed). -/
+def cmplt (a b : XReg) : Option (BitVec 64) := (exec (.vpcmpltuw .rax a b) sC).map (·.gpr .rax)
+
+#guard cmplt .xmm0 .xmm1 == some 0x82cd7be5
+#guard cmplt .xmm1 .xmm0 == some 0x7d32841a
+#guard cmplt .xmm0 .xmm0 == some 0
+#guard cmplt .xmm0 .xmm2 == some 0x000c0000
+#guard cmplt .xmm2 .xmm5 == some 0xfffbffff
+-- Only `rax` changes, and no memory is accessed.
+#guard (exec (.vpcmpltuw .rax .xmm0 .xmm1) sC).all fun t =>
+  t.zmm .xmm0 == A && t.zmm .xmm1 == B && t.gpr .rdi == sC.gpr .rdi && t.mem.readW 0x100 512 == A
+#guard addrs (.vpcmpltuw .rax .xmm0 .xmm1) sC == []
+
+-- Printing and encoding.
+#guard Instr.asm (.zop (.vpermw .xmm3 .xmm12 .xmm9)) == ["vpermw zmm3, zmm12, zmm9"]
+#guard Instr.asm (.zop (.vpsrlvw .xmm10 .xmm2 .xmm14)) == ["vpsrlvw zmm10, zmm2, zmm14"]
+#guard Instr.asm (.zop (.vextracti32x4 .xmm9 .xmm13 3)) == ["vextracti32x4 xmm9, zmm13, 3"]
+#guard Instr.asm (.vpcmpltuw .r11 .xmm12 .xmm9) == ["vpcmpuw k1, zmm12, zmm9, 1", "kmovd r11d, k1"]
+#guard Instr.encode (.zop (.vpermw .xmm5 .xmm0 .xmm1)) == some [[0x62, 0xf2, 0xfd, 0x48, 0x8d, 0xe9]]
+#guard Instr.encode (.zop (.vpermw .xmm3 .xmm12 .xmm9)) == some [[0x62, 0xd2, 0x9d, 0x48, 0x8d, 0xd9]]
+#guard Instr.encode (.zop (.vpsrlvw .xmm5 .xmm0 .xmm1)) == some [[0x62, 0xf2, 0xfd, 0x48, 0x10, 0xe9]]
+#guard Instr.encode (.zop (.vpsrlvw .xmm10 .xmm2 .xmm14)) == some [[0x62, 0x52, 0xed, 0x48, 0x10, 0xd6]]
+#guard Instr.encode (.zop (.vextracti32x4 .xmm5 .xmm0 1)) == some [[0x62, 0xf3, 0x7d, 0x48, 0x39, 0xc5, 0x01]]
+#guard Instr.encode (.zop (.vextracti32x4 .xmm9 .xmm13 3)) == some [[0x62, 0x53, 0x7d, 0x48, 0x39, 0xe9, 0x03]]
+#guard Instr.encode (.vpcmpltuw .rax .xmm0 .xmm1) ==
+  some [[0x62, 0xf3, 0xfd, 0x48, 0x3e, 0xc9, 0x01], [0xc5, 0xfb, 0x93, 0xc1]]
+#guard Instr.encode (.vpcmpltuw .r11 .xmm12 .xmm9) ==
+  some [[0x62, 0xd3, 0x9d, 0x48, 0x3e, 0xc9, 0x01], [0xc5, 0x7b, 0x93, 0xd9]]
 
 end VG.Test.Avx512

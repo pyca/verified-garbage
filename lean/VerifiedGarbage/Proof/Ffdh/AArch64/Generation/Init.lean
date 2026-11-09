@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.EntropyRequest
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Init
 meta import VerifiedGarbage.Proof.Ffdh.ControlMemory
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Run
@@ -152,8 +153,9 @@ def initPost (s t : State) : Prop :=
   match Spec.Ffdh.parameterInit (s.gpr .x1).toNat ((s.gpr .x2).setWidth 32).toNat with
   | none => ((t.gpr .x0).setWidth 32).toNat = 0 ∧
       Spec.Rsa.wordsAt t.mem (s.gpr .x0) 4 = List.replicate 4 0
-  | some values => ((t.gpr .x0).setWidth 32).toNat = 1 ∧
-      Spec.Rsa.wordsAt t.mem (s.gpr .x0) 4 = values.map (BitVec.ofNat 64)
+  | some values => ((t.gpr .x0).setWidth 32).toNat = 1 ∧ ∃ first,
+      Spec.Rsa.wordsAt t.mem (s.gpr .x0) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
+      Spec.Entropy.RequestValid (Spec.Ffdh.parameterEntropy (s.gpr .x1).toNat) 0 first
 
 def initPub (s t : State) : Prop :=
   s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧ (s.gpr .x2).setWidth 32 = (t.gpr .x2).setWidth 32
@@ -165,7 +167,7 @@ def initContract : Contract isa where
 
 theorem parameterInit_of {bits g : Nat} (h : initValid bits g) :
     Spec.Ffdh.parameterInit bits g = some [Spec.Ffdh.parameterAttempts bits, (bits + 7) / 8,
-      Spec.Ffdh.parameterEntropy bits, 512 * ((bits + 7) / 8)] := by
+      Spec.Ffdh.parameterEntropy bits] := by
   obtain ⟨h1, h2, h3⟩ := h
   have hg : (g == 2 || g == 5) = true := by rcases h3 with rfl | rfl <;> rfl
   simp [Spec.Ffdh.parameterInit, h1, h2, hg]
@@ -191,7 +193,7 @@ theorem init_ok {s : State} (scr : Scr s (s.gpr .x0) 128) :
     refine WP.ite false (by rw [VG.Proof.MlKem.AArch64.eval_zero, h13]; rfl) (fun h => by cases h)
       fun _ => WP.mono (initialize_ok scr' h0 hb hv.2.1) fun t ⟨ht, hmt⟩ => ?_
     simp only [initPost, parameterInit_of hv]
-    refine ⟨by rw [ht]; rfl, ?_⟩
+    refine ⟨by rw [ht]; rfl, _, ?_, Proof.Ffdh.first_valid hv.1⟩
     rw [hmt, hm, initWritten_words]
     rfl
   · rw [ite_eq_right hv] at h13

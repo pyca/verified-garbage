@@ -23,7 +23,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::nid::Nid;
     use openssl::provider::Provider;
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::cast5_ofb::Cast5Ofb;
+    use verified_garbage::cipher::cast5::Cast5Ofb;
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
@@ -43,10 +43,9 @@ pub fn bench(c: &mut Criterion) {
             let mut buffer = crate::InPlace::new(size, &data);
             group.bench(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
-                    let ctx = Cast5Ofb::new(black_box(key)).unwrap();
-                    let mut chain = black_box(iv);
+                    let ctx = Cast5Ofb::new(black_box(key), &black_box(iv)).unwrap();
                     buffer.copy_from_slice(black_box(&data));
-                    ctx.apply_keystream(&mut chain, black_box(&mut buffer));
+                    ctx.apply_keystream_final(black_box(&mut buffer));
                     black_box(&buffer);
                 })
             });

@@ -75,54 +75,5 @@ theorem storeSwap_ok {base : Addr} {s : State} (hs : Scratch s base) :
     env_swap_store _ _ _, Mem.readW_writeW_self64 _ _ _, rfl,
     writeW_outside s.mem base (s.gpr .x2) (by decide : 768+8<2^64)⟩
 
-theorem swapMask_ok {s : State} {sw kt : Nat} (hsw : sw ≤ 1) (hkt : kt ≤ 1)
-    (h3 : s.gpr .x3 = BitVec.ofNat 64 sw) (h2 : s.gpr .x2 = BitVec.ofNat 64 kt) :
-    WP isa (.block [.logic .eor .x .x3 .x3 .x2, .movz .x .x10 0 0,
-      .sub .x .x3 .x10 .x3]) s fun t =>
-      t.gpr .x3 = mask ((sw ^^^ kt) == 1) ∧ Keeps [.x3,.x10] s t := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil,
-    VG.Proof.X25519.AArch64.exec_eor_x, VG.Proof.X25519.AArch64.exec_movz,
-    VG.Proof.X25519.AArch64.exec_sub_x, RegUpd.gpr_write, BitVec.setWidth_eq,
-    ite_true, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left']
-  refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
-  · rw [h3, h2, VG.Proof.X25519.AArch64.ofNat_xor hsw hkt]
-    exact VG.Proof.X25519.AArch64.maskB_of (VG.Proof.X25519.AArch64.xor_le hsw hkt)
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
-
-
-theorem prefix_ok {base : Addr} {s : State} (hs : Scratch s base) {i sw kt : Nat}
-    (hi : i < 255) (hsw : sw ≤ 1) (hkt : kt ≤ 1)
-    (hc : s.gpr .x19 = BitVec.ofNat 64 (i+1))
-    (hswap : word s.mem base 768 = BitVec.ofNat 64 sw)
-    (hb : s.mem (off base (bitOffset+i)) = BitVec.ofNat 8 kt) :
-    WP isa (.block VG.Impl.X25519.AArch64.Word.stepPrefix) s fun t =>
-      LoopKeep base s t ∧ env t.mem base = env s.mem base ∧
-      t.gpr .x19 = BitVec.ofNat 64 i ∧ t.gpr .x3 = mask ((sw ^^^ kt) == 1) ∧
-      word t.mem base 768 = BitVec.ofNat 64 kt ∧ Outside base 768 8 s.mem t.mem := by
-  change WP isa (.block (([.subImm .x .x19 .x19 1, .add .x .x8 .x0 .x19,
-    .ldrb .x2 .x8 bitOffset] : List Instr) ++
-    ([VG.Impl.Ed25519.AArch64.ld .x3 768] ++
-    ([VG.Impl.Ed25519.AArch64.st .x2 768] ++
-    [.logic .eor .x .x3 .x3 .x2, .movz .x .x10 0 0, .sub .x .x3 .x10 .x3])))) s _
-  rw [WP.block_append_iff]
-  refine WP.mono (loadBit_ok hs hi hkt hc hb) fun a ⟨ac, ak, ka⟩ => ?_
-  have kla : LoopKeep base s a := LoopKeep.of_keeps ka (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (ld_ok (kla.scratch hs) (d := 768) (by decide) (by decide) .x3)
-    fun b ⟨bs, kb⟩ => ?_
-  have klb : LoopKeep base s b := kla.trans (LoopKeep.of_keeps kb (by decide))
-  rw [WP.block_append_iff]
-  refine WP.mono (storeSwap_ok (klb.scratch hs)) fun c ⟨klc, ec, sc, gc, oc⟩ => ?_
-  have ck : c.gpr .x2 = BitVec.ofNat 64 kt := by rw [gc, kb.gpr _ (by decide), ak]
-  have cs : c.gpr .x3 = BitVec.ofNat 64 sw := by rw [gc, bs, ka.mem, hswap]
-  refine WP.mono (swapMask_ok hsw hkt cs ck) fun t ⟨tm, km⟩ => ?_
-  refine ⟨(klb.trans klc).trans (LoopKeep.of_keeps km (by decide)), ?_, ?_, tm, ?_, ?_⟩
-  · rw [km.mem, ec, kb.mem, ka.mem]
-  · rw [km.gpr _ (by decide), gc, kb.gpr _ (by decide), ac]
-  · rw [km.mem, sc, kb.gpr _ (by decide), ak]
-  · rw [km.mem, ← ka.mem, ← kb.mem]
-    exact oc
 
 end VG.Proof.X25519.AArch64.Word

@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
-
 /-! # Clear the unwritten suffix after bounded rejection failure -/
 
 @[expose] public section
@@ -51,28 +50,6 @@ theorem zeroBody_ok {w16 : Bool} {aP : Addr} {L : List Zq} {s u : State} {j : Na
     by_cases he : j=i
     · rw [ite_eq_left he,ite_eq_right (by omega)]; rfl
     · rw [ite_eq_right he,ite_eq_right (by omega),h.coeffs i (by omega)]
-
-theorem zeroSuffix_ok {w16 : Bool} {aP : Addr} {L : List Zq} {s₀ s : State}
-    (hina : ∀i<256,InRegions s₀.wr (cAddr w16 aP i) 4)
-    (h : Scalar.AccW w16 aP s₀ L s) : WP isa (zeroSuffix w16) s fun u =>
-      Keep [.x3,.x4,.x13] s u ∧ Frame [polyRegion aP] s₀.mem u.mem ∧
-        CoeffsUpToW w16 u.mem aP L.length (cvW w16 L) (fun _ => 0) := by
-  have hl := h.len
-  have zi : ZInv w16 aP L s L.length s :=
-    ⟨Keep.refl _ _,Frame.refl _ _,h.x3,h.x4,fun i hi => by rw [ite_eq_left hi]; exact h.coeffs i hi⟩
-  refine WP.ite (s.gpr .x4 == 0) (eval_zero _ _) (fun hz => ?_) (fun hz => ?_)
-  · rw [eq_zero_iff,decide_eq_true_eq,h.x4] at hz
-    have he : L.length=256 := by omega
-    exact wp_nil ⟨Keep.refl _ _,h.frame,fun i hi => zi.coeffs i (by omega)⟩
-  · rw [eq_zero_iff,decide_eq_false_iff_not,h.x4] at hz
-    have hn : 0<256-L.length := by omega
-    refine WP.mono (count_loop hn (fun k u => ZInv w16 aP L s (L.length+k) u)
-      (fun k hk u hu => WP.mono (zeroBody_ok (by intro i hi; rw [h.wr]; exact hina i hi)
-        (by omega) (by omega) hu) fun v hv => ⟨hv,by rw [hv.x4]; omega⟩) zi) fun u hu => ?_
-    refine ⟨hu.keep,h.frame.trans hu.frame,?_⟩
-    intro i hi
-    exact hu.coeffs i (by omega)
-
 
 theorem zeroSuffix_prefix {w16 : Bool} {aP : Addr} {L : List Zq} {s : State}
     (hina : ∀i<256,InRegions s.wr (cAddr w16 aP i) 4)

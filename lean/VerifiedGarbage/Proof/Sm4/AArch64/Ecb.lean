@@ -10,10 +10,11 @@ import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 /-!
 # SM4 ECB on AArch64: the whole function
 
-`ecb_wp`: with the working space as an argument (`ecbAArch64`), `ecb dir`
-saves the callee-saved registers, sets the masks, builds the table of round
-keys in the order `dir` uses them, transforms the blocks a group at a time
-(`dataGroup_wp`) and restores the registers.
+`ecbWith_wp`: with the working space as an argument, ECB's code saves the
+callee-saved registers, sets the masks, builds the table of round keys in
+the order `dir` uses them, transforms the blocks a group at a time
+(`dataGroup_wp`) and restores the registers. `ecbAny_wp`: so does
+`vg_sm4_ecb` (`ecbAnyAArch64`), in the direction its `decrypt` selects.
 -/
 
 @[expose] public section
@@ -188,13 +189,6 @@ theorem ecbWith_wp (sr : Reg) (k : Prog isa) (dir : Dir) {s₀ : State}
   simp only [Spec.Sm4.blocksAt, List.map_map]
   refine List.map_congr_left fun j _ => ?_
   exact outF_spec dir s₀.mem _ D j
-
-theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbAArch64 dir).pre s₀) :
-    WP isa (ecb dir) s₀ fun s' => (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
-      (ecbAArch64 dir).post s₀ s' := by
-  obtain ⟨hrd, hwr, -, dSS, dDS, fitK, fitD, fitB⟩ := hp
-  exact ecbWith_wp .x3 (keys dir) dir hrd hwr dSS dDS fitK fitD fitB
-    fun _ hk₁ x0₁ m₁ _ => keys_wp dir hk₁ x0₁ m₁
 
 /-- The direction `vg_sm4_ecb`'s `decrypt` selects. -/
 def dirOf (decrypt : BitVec 64) : Dir := if decrypt = 0 then .encrypt else .decrypt

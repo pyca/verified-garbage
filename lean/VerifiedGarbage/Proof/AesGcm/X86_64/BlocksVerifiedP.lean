@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerified
-public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.CT
+public import VerifiedGarbage.Spec.Gcm.Precomputed
+public import VerifiedGarbage.Proof.Gcm.Contract
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 
 /-!
 # AES-GCM on whole blocks, x86-64: the `_precomputed` functions
@@ -42,74 +44,5 @@ theorem powersRepr_zero (p : Addr) : Spec.Gcm.PowersRepr (fun _ => 0) p := by
   have z : ∀ q : Addr, blockAt (fun _ => 0) q = 0 := fun q => by
     simp [blockAt, Spec.Aes.bytesAt, Spec.Gcm.ofBytes]; decide
   rw [Spec.Gcm.ctxH, z, z, hpow_zero_succ]
-
-end VG.Proof.AesGcm.X86_64
-
-namespace VG.Proof.AesGcm.X86_64
-
-open VG VG.X86_64 VG.Impl.AesGcm.X86_64
-open Gcm.X86_64.Stitch (CtxMode)
-
-/-- A state satisfying the preconditions of `vg_aes_gcm_encrypt_blocks_precomputed`
-and `_decrypt_blocks_precomputed`: `blocksSat`, with a key context of 1024 bytes. -/
-def blocksSatP : State := { blocksSat with rd := [⟨0x1000, 1024⟩, ⟨0x8008, 8⟩] }
-
-theorem encryptBlocksP_verified (v : GcmImpl) (st : Option (StitchCode CtxMode.powers)) :
-    Verified X86_64.target (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (encFull st) (encSmall st) (encSmall4 st) (st.map (·.encS)))
-      (Proof.Gcm.encryptBlocksPrecomputedContract X86_64.abi 8) :=
-  Verified.of_correct (encryptBlocksM_correct v st) (Blocks.encrypt_ct v st)
-    { pre := by
-        sig_implies_pre [Proof.Gcm.encryptBlocksPrecomputedContract, Proof.Gcm.cryptBlocksPrecomputedSig,
-          Proof.Gcm.cryptBlocksPrecomputedPre, Proof.AesGcm.encryptBlocksX86_64M, Proof.AesGcm.blocksPreM,
-          CtxMode.powers, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
-          Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
-          List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
-      post := by
-        sig_implies_post [Proof.Gcm.encryptBlocksPrecomputedContract, Proof.Gcm.cryptBlocksPrecomputedSig,
-          Proof.Gcm.cryptBlocksPrecomputedPre, Proof.AesGcm.encryptBlocksX86_64M,
-          Proof.AesGcm.encryptBlocksX86_64, X86_64.abi, Proof.AesGcm.arg, X86_64.stackArg,
-          X86_64.stackArgAddr, X86_64.argRegs]
-      pub := by
-        sig_implies_pub [Proof.Gcm.encryptBlocksPrecomputedContract, Proof.Gcm.cryptBlocksPrecomputedSig,
-          Proof.AesGcm.encryptBlocksX86_64M, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg,
-          X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, X86_64.argRegs]
-      sat := ⟨blocksSatP, by
-        sig_pre [Proof.Gcm.encryptBlocksPrecomputedContract, Proof.Gcm.cryptBlocksPrecomputedSig,
-          Proof.Gcm.cryptBlocksPrecomputedPre, X86_64.abi, X86_64.argRegs, blocksSatP, blocksSat]
-        sig_and_intros
-        all_goals first
-          | rfl
-          | decide
-          | exact powersRepr_zero _
-          | exact Region.disjoint_of_sep (by decide)⟩ }
-
-theorem decryptBlocksP_verified (v : GcmImpl) (st : Option (StitchCode CtxMode.powers)) :
-    Verified X86_64.target (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) false (decFull st) (decSmall st) (decSmall4 st) (st.map (·.decS)))
-      (Proof.Gcm.decryptBlocksPrecomputedContract X86_64.abi 8) :=
-  Verified.of_correct (decryptBlocksM_correct v st) (Blocks.decrypt_ct v st)
-    { pre := by
-        sig_implies_pre [Proof.Gcm.decryptBlocksPrecomputedContract, Proof.Gcm.cryptBlocksPrecomputedSig,
-          Proof.Gcm.cryptBlocksPrecomputedPre, Proof.AesGcm.decryptBlocksX86_64M, Proof.AesGcm.blocksPreM,
-          CtxMode.powers, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
-          Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
-          List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
-      post := by
-        sig_implies_post [Proof.Gcm.decryptBlocksPrecomputedContract, Proof.Gcm.cryptBlocksPrecomputedSig,
-          Proof.Gcm.cryptBlocksPrecomputedPre, Proof.AesGcm.decryptBlocksX86_64M,
-          Proof.AesGcm.decryptBlocksX86_64, X86_64.abi, Proof.AesGcm.arg, X86_64.stackArg,
-          X86_64.stackArgAddr, X86_64.argRegs]
-      pub := by
-        sig_implies_pub [Proof.Gcm.decryptBlocksPrecomputedContract, Proof.Gcm.cryptBlocksPrecomputedSig,
-          Proof.AesGcm.decryptBlocksX86_64M, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg,
-          X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, X86_64.argRegs]
-      sat := ⟨blocksSatP, by
-        sig_pre [Proof.Gcm.decryptBlocksPrecomputedContract, Proof.Gcm.cryptBlocksPrecomputedSig,
-          Proof.Gcm.cryptBlocksPrecomputedPre, X86_64.abi, X86_64.argRegs, blocksSatP, blocksSat]
-        sig_and_intros
-        all_goals first
-          | rfl
-          | decide
-          | exact powersRepr_zero _
-          | exact Region.disjoint_of_sep (by decide)⟩ }
 
 end VG.Proof.AesGcm.X86_64

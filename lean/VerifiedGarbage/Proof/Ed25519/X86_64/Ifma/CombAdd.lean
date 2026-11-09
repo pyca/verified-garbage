@@ -11,10 +11,9 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 /-!
 # Ed25519's comb with AVX512_IFMA: an addition in the lanes
 
-`ventry` splits the words of a table's entry into the limbs of the lanes of
-`ymm5–ymm9`, negates it under a mask, and adds it to the point in the lanes of
-`ymm0–ymm4` (`vadd`): the point there is then `pointAdd` of the two, as field
-elements (`fe5`).
+`vadd` adds the entry in the lanes of `ymm5–ymm9` to the point in the lanes of
+`ymm0–ymm4`: the point there is then `pointAdd` of the two, as field elements
+(`fe5`, `vadd_wp`).
 -/
 
 @[expose] public section
@@ -30,28 +29,6 @@ open VG.Proof.X25519.X86_64.Ifma (Sym T Env Bnds EnvOK symOf symOf_eq lanes slot
 open VG.Proof.X25519.X86_64 (Outside)
 open VG.Proof.Poly1305.X86_64.Avx2 (xr qw sel4 sel4_lt)
 
-/-! ## The entry's limbs -/
-
-theorem eload_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
-    (hk : CConsts s.mem base) :
-    WP isa (.block eload) s fun s' => vm s s' = s' ∧ s'.mem = s.mem ∧
-      (∀ l < 4, ∀ i < 5, lanes s' 5 l i = limbNat (erow (envOf s) l) (2 ^ 51 - 1) i ∧
-        lanes s' 5 l i < 2 ^ 52) ∧
-      (∀ r < 5, ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
-  have hE : EnvOK s eloadB := envOK_of hs (fun _ _ _ => lt64 _) (fun _ => rfl) (fun d l hl => by
-      simp only [eloadB]
-      split
-      · subst_vars; rw [hk.km l hl]
-      · exact lt64 _) (fun _ _ _ => Nat.zero_le _)
-  have e : Sym.init.run eload = some eloadS := symOf_eq _ _
-  refine WP.mono (run_ok hc e) fun s' h => ⟨h.eq, by rw [h.mem, eloadS_st]; rfl, fun l hl i hi => ?_,
-    fun r hr l hl => h.keep (by omega_arith) hl (eloadS_keep r hr)⟩
-  obtain ⟨o, b⟩ := eloadS_ok i hi l hl
-  obtain ⟨e, be⟩ := h.out hE (by omega_arith) hl o
-  simp only [lanes] at e ⊢
-  refine ⟨?_, by omega_arith⟩
-  rw [e, eloadS_regs _ i hi l hl, envOf_m hs, hk.km l hl]
-
 /-! ## The negation -/
 
 /-- The entry `(y - x, y + x, 2dt, 2Z)` negated: `(y + x, y - x, bias - 2dt, 2Z)`. -/
@@ -61,38 +38,6 @@ def negL (x : Nat → Nat → Nat) (l i : Nat) : Nat :=
   | 1 => x 0 i
   | 2 => kbv i - x 2 i
   | _ => x 3 i
-
-theorem vneg_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
-    (hk : CConsts s.mem base) {b : Bool} (hm : s.gpr .rcx = VG.Proof.X25519.X86_64.mask b)
-    (hx : ∀ l < 4, ∀ i < 5, lanes s 5 l i ≤ kbv i) :
-    WP isa (.block vneg) s fun s' => vm s s' = s' ∧ s'.mem = s.mem ∧
-      (∀ l < 4, ∀ i < 5, lanes s' 5 l i = if b then negL (lanes s 5) l i else lanes s 5 l i) ∧
-      (∀ r < 5, ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
-  have e : Sym.init.run vneg = some vnegS := symOf_eq _ _
-  refine WP.mono (run_ok hc e) fun s' h => ⟨h.eq, by rw [h.mem, vnegS_st]; rfl, fun l hl i hi => ?_,
-    fun r hr l hl => h.keep (by omega_arith) hl (vnegS_keep r hr)⟩
-  have hq := h.reg (xr (5 + i)) l hl
-  rw [xi_xr _ (by omega_arith), vnegS_regs i hi] at hq
-  simp only [lanes]
-  rw [hq]
-  simp only [T.eval, ↓reduceIte, hm, xor_mask]
-  cases b
-  · rfl
-  · have hkb : ∀ q < 4, (s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (kb i + 8 * q)) 64).toNat = kbv i :=
-      fun q hq' => by rw [hs]; exact kb_m hk hq'
-    simp only [↓reduceIte]
-    have hb : ∀ q < 4, ((Impl.X25519.X86_64.Ifma.lanes false false true false).toNat.testBit (2 * q),
-        (Impl.X25519.X86_64.Ifma.lanes false false true false).toNat.testBit (2 * q + 1)) =
-        (decide (q = 2), decide (q = 2)) := by decide
-    rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;>
-      have b := hb _ hl <;> simp only [Prod.mk.injEq] at b <;> rw [b.1, b.2] <;>
-      simp only [decide_true, decide_false, Nat.reduceEqDiff]
-    · rw [pick2_ff, show sel4 (ord 1 0 2 3).toNat 0 = 1 from by decide]; rfl
-    · rw [pick2_ff, show sel4 (ord 1 0 2 3).toNat 1 = 0 from by decide]; rfl
-    · rw [pick2_tt, BitVec.toNat_sub_of_le, hkb 2 (by decide)]
-      · rfl
-      · rw [BitVec.le_def, hkb 2 (by decide)]; exact hx 2 (by decide) i hi
-    · rw [pick2_ff, show sel4 (ord 1 0 2 3).toNat 3 = 3 from by decide]; rfl
 
 /-! ## An addition's blocks -/
 
@@ -350,111 +295,8 @@ theorem vadd_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
 
 /-! ## An entry, from its words -/
 
-/-- Row `l` of the entry, as a field element. -/
-def erowFe (s : State) (l : Nat) : Spec.X25519.Fe :=
-  VG.Proof.X25519.toFe (erow (envOf s) l 0 + 2 ^ 64 * erow (envOf s) l 1 + 2 ^ 128 * erow (envOf s) l 2 +
-    2 ^ 192 * erow (envOf s) l 3)
-
-/-- The entry `[y - x, y + x, 2dt, 2]` in `ymm11–ymm13`, with `rax` or'd into its first words. -/
-def entryOf (s : State) : Spec.Ed25519.Point := ⟨erowFe s 0, erowFe s 1, erowFe s 2, 2⟩
-
 /-- A cached point negated if `b`: `(y - x, y + x, 2dt, 2z)` becomes `(y + x, y - x, -2dt, 2z)`. -/
 def negIf (b : Bool) (e : Spec.Ed25519.Point) : Spec.Ed25519.Point :=
   if b then ⟨e.Y, e.X, 0 - e.Z, e.T⟩ else e
-
-theorem erow_lt (E : VG.Proof.X25519.X86_64.Ifma.Env) (hv : ∀ r k, E.v r k < 2 ^ 64) (hg : ∀ g, E.g g < 2 ^ 64)
-    (hm : ∀ d k, E.m d k < 2 ^ 64) : ∀ l k, erow E l k < 2 ^ 64 := by
-  intro l k
-  unfold erow
-  split
-  · exact Nat.or_lt_two_pow (hv _ _) (by split <;> [exact hg _; exact Nat.two_pow_pos _])
-  · exact Nat.or_lt_two_pow (hv _ _) (by split <;> [exact hg _; exact Nat.two_pow_pos _])
-  · exact hv _ _
-  · exact hm _ _
-
-theorem envOf_lt (s : State) : (∀ r k, (envOf s).v r k < 2 ^ 64) ∧ (∀ g, (envOf s).g g < 2 ^ 64) ∧
-    ∀ d k, (envOf s).m d k < 2 ^ 64 :=
-  ⟨fun _ _ => BitVec.isLt _, fun _ => BitVec.isLt _, fun _ _ => BitVec.isLt _⟩
-
-theorem ventry_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
-    (hk : EConsts s.mem base) (hx : Small s) (h2 : VG.Proof.X25519.X86_64.F s.mem base K2 = 2) {b : Bool}
-    (hm : s.gpr .rcx = VG.Proof.X25519.X86_64.mask b) :
-    WP isa (.block ventry) s fun s' => s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      Outside base 1024 320 s.mem s'.mem ∧ Small s' ∧
-      lanePt s' = vAddPt (lanePt s) (negIf b (entryOf s)) := by
-  have hcc : CConsts s.mem base := hk.toCConsts
-  simp only [ventry, List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (eload_wp hs hc hcc) fun s₁ ⟨v₁, m₁, u₁, k₁⟩ => ?_
-  have hs₁ : s₁.gpr .rdi = base := by rw [vm_gpr v₁]; exact hs
-  have hc₁ : Ctx s₁ := by intro d hd; rw [vm_gpr v₁, vm_wr v₁]; exact hc d hd
-  have hk₁ : EConsts s₁.mem base := by rw [m₁]; exact hk
-  have ⟨ev, eg, em⟩ := envOf_lt s
-  have f₁ : ∀ l < 4, fe5 (lanes s₁ 5 l) = [erowFe s 0, erowFe s 1, erowFe s 2, 2].getD l 0 := fun l hl => by
-    rw [fe5_congr (fun i hi => (u₁ l hl i hi).1)]
-    show VG.Proof.X25519.toFe _ = _
-    rw [VG.Proof.X25519.X86_64.Ifma.limbNat_lv _ (fun k _ => erow_lt _ ev eg em l k)]
-    rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl
-    · rfl
-    · rfl
-    · rfl
-    · rw [← h2]
-      simp only [erow, envOf_m hs]
-      rfl
-  rw [WP.block_append_iff]
-  refine WP.mono (vneg_wp hs₁ hc₁ hk₁.toCConsts (b := b) (by rw [vm_gpr v₁]; exact hm)
-    fun l hl i hi => by have := (u₁ l hl i hi).2; have := kbv_ge i; omega_arith) fun s₂ ⟨v₂, m₂, u₂, k₂⟩ => ?_
-  have hs₂ : s₂.gpr .rdi = base := by rw [vm_gpr v₂]; exact hs₁
-  have hc₂ : Ctx s₂ := by intro d hd; rw [vm_gpr v₂, vm_wr v₂]; exact hc₁ d hd
-  have hk₂ : EConsts s₂.mem base := by rw [m₂]; exact hk₁
-  have b₂ : ∀ l < 4, ∀ i < 5, lanes s₂ 5 l i < 2 ^ 63 := fun l hl i hi => by
-    rw [u₂ l hl i hi]
-    have h0 := (u₁ 0 (by decide) i hi).2; have h1 := (u₁ 1 (by decide) i hi).2
-    have h3 := (u₁ 3 (by decide) i hi).2; have := (u₁ l hl i hi).2
-    have := kbv_ge i
-    have : kbv i < 2 ^ 63 := by simp only [kbv]; split <;> omega_arith
-    split
-    · rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> simp only [negL] <;> omega_arith
-    · omega_arith
-  have f₂ : ∀ l < 4, fe5 (lanes s₂ 5 l) = [(negIf b (entryOf s)).X, (negIf b (entryOf s)).Y,
-      (negIf b (entryOf s)).Z, (negIf b (entryOf s)).T].getD l 0 := fun l hl => by
-    rw [fe5_congr (fun i hi => u₂ l hl i hi)]
-    cases b
-    · simp only [Bool.false_eq_true, ↓reduceIte, negIf, entryOf]
-      exact f₁ l hl
-    · simp only [↓reduceIte, negIf, entryOf]
-      rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl
-      · exact f₁ 1 (by decide)
-      · exact f₁ 0 (by decide)
-      · rw [show fe5 (fun i => negL (lanes s₁ 5) 2 i) = fe5 (fun _ => 0) - fe5 (lanes s₁ 5 2) from
-          fe5_sub (fun i _ => (Nat.zero_add _).symm)
-            (fun i hi => by have := (u₁ 2 (by decide) i hi).2; have := kbv_ge i; omega_arith),
-          f₁ 2 (by decide)]
-        rfl
-      · exact f₁ 3 (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (carryF_wp hs₂ hc₂ hk₂.toCConsts b₂) fun s₃ ⟨v₃, m₃, u₃, k₃⟩ => ?_
-  have hs₃ : s₃.gpr .rdi = base := by rw [vm_gpr v₃]; exact hs₂
-  have hc₃ : Ctx s₃ := by intro d hd; rw [vm_gpr v₃, vm_wr v₃]; exact hc₂ d hd
-  have hk₃ : EConsts s₃.mem base := by rw [m₃]; exact hk₂
-  have l₃ : ∀ l < 4, ∀ i < 5, lanes s₃ 0 l i = lanes s 0 l i := fun l hl i hi => by
-    simp only [lanes, Nat.zero_add]
-    rw [k₃ i (by omega_arith) (by omega_arith) (by omega_arith) l hl, k₂ i (by omega_arith) l hl, k₁ i (by omega_arith) l hl]
-  refine WP.mono (vadd_wp hs₃ hc₃ hk₃ (fun l hl i hi => by rw [l₃ l hl i hi]; exact hx l hl i hi)
-    (fun l hl i hi => (u₃ l hl i hi).2)) fun t ⟨tg, trd, twr, ho, tsm, tp⟩ => ?_
-  refine ⟨by rw [tg, vm_gpr v₃, vm_gpr v₂, vm_gpr v₁], by rw [trd, vm_rd v₃, vm_rd v₂, vm_rd v₁],
-    by rw [twr, vm_wr v₃, vm_wr v₂, vm_wr v₁], by rw [m₃, m₂, m₁] at ho; exact ho, tsm, ?_⟩
-  rw [tp]
-  have p₃ : lanePt s₃ = lanePt s := by
-    simp only [lanePt]; rw [fe5_congr (l₃ 0 (by decide)), fe5_congr (l₃ 1 (by decide)),
-      fe5_congr (l₃ 2 (by decide)), fe5_congr (l₃ 3 (by decide))]
-  have e₃ : ∀ l < 4, fe5 (lanes s₃ 5 l) = fe5 (lanes s₂ 5 l) := fun l hl => by
-    rw [fe5_congr (fun i hi => (u₃ l hl i hi).1), fe5_carry _ (b₂ l hl 4 (by decide))]
-  have q₃ : lanePt5 s₃ = negIf b (entryOf s) := by
-    simp only [lanePt5]
-    rw [e₃ 0 (by decide), e₃ 1 (by decide), e₃ 2 (by decide), e₃ 3 (by decide), f₂ 0 (by decide),
-      f₂ 1 (by decide), f₂ 2 (by decide), f₂ 3 (by decide)]
-    rfl
-  rw [p₃, q₃]
 
 end VG.Proof.Ed25519.X86_64.Ifma

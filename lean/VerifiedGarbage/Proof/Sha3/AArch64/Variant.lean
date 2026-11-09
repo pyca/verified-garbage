@@ -25,6 +25,9 @@ open VG VG.AArch64
 structure Permutation where
   callee : Impl.Sha3.AArch64.Callee
   features : List String
+  /-- The `target_vendor` of the CPUs it is faster on, which callers that are
+  faster with it only there give their implementations (`Artifact.vendor`). -/
+  vendor : Option String := none
   ok : ∀ s, Proof.Sha3.permuteAArch64.pre s →
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧
       Proof.Sha3.permuteAArch64.post s s'
@@ -148,14 +151,6 @@ theorem Permutation.squeezeMain_depth (v : Permutation) :
 theorem Permutation.squeeze_depth (v : Permutation) :
     (Impl.Sha3.AArch64.Stream.squeezeWith v.callee).aarch64Depth = 1 := by
   simp only [Impl.Sha3.AArch64.Stream.squeezeWith, Code.aarch64Depth, Instr.frameUnits, v.squeezeMain_depth]
-
-theorem keeps_of_check {c : Prog isa} {rs : List Reg}
-    (h : (c.allInstrs fun i => rs.all fun r => !clobbers i r) = true) :
-    ∀ r ∈ rs, ∀ i ∈ instrs c, clobbers i r = false := by
-  rw [Code.allInstrs_eq] at h
-  intro r hr i hi
-  have h' := List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr
-  simpa using h'
 
 sponge_taint_summaries ScalarSums Impl.Sha3.AArch64.Callee.scalar
 

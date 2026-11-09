@@ -93,12 +93,6 @@ theorem wp_lsl {d n : Reg} {sh : Nat} (h : sh < 64)
     WP isa (.block (.lsl d n sh :: is)) s Q :=
   WP.cons (exec_lsl h) (k _ (Upd.write _ _ _))
 
-theorem wp_rotr_w {d n : Reg} {sh : Nat} (h : sh < 32)
-    (k : ∀ s', Upd s s' d ((((s.gpr n).setWidth 32).rotateRight sh).setWidth 64) →
-      WP isa (.block is) s' Q) :
-    WP isa (.block (.rotr .w d n sh :: is)) s Q :=
-  WP.cons (exec_rotr_w h) (k _ (Upd.write _ _ _))
-
 theorem wp_std {t n : Reg} {off : Nat} {a : Addr} (hn : n ≠ .r0) (ho : off < 2 ^ 15 ∧ off % 4 = 0)
     (ha : s.gpr n + BitVec.ofNat 64 off = a) (hout : InRegions s.wr a 8)
     (k : ∀ s', Mupd s s' (s.mem.writeW a (s.gpr t)) → WP isa (.block is) s' Q) :

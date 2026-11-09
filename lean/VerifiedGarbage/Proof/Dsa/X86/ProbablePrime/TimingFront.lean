@@ -31,12 +31,6 @@ theorem decrement_trace (out : Nat) :
   erased_relCT (.block (decrement out)) (.block (decrement 0)) (.block [])
     rfl rfl rfl (by decide +kernel)
 
-theorem increment_trace (out : Nat) :
-    RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block (increment out))
-      (VG.X86.Taint.Agree (τr [.esp, .edi])) :=
-  erased_relCT (.block (increment out)) (.block (increment 0)) (.block [])
-    rfl rfl rfl (by decide +kernel)
-
 end VG.Proof.RsaKeyGen.X86.LowWord
 end
 
@@ -63,23 +57,6 @@ theorem save_trace (n src dst : Nat) :
     RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (save n src dst)
       (VG.X86.Taint.Agree (τr [.esp, .edi])) :=
   RelCT.seq (copy_trace n src dst) (LowWord.decrement_trace dst)
-
-theorem restore_trace (n src dst : Nat) :
-    RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (restore n src dst)
-      (VG.X86.Taint.Agree (τr [.esp, .edi])) :=
-  RelCT.seq (copy_trace n src dst) (LowWord.increment_trace dst)
-
-theorem restore_workspace_trace (n src dst : Nat) :
-    RelCT isa (VG.X86.Taint.Agree (VG.Proof.Mont.X86.Dynamic.workspaceTaint false)) (restore n src dst)
-      (VG.X86.Taint.Agree (VG.Proof.Mont.X86.Dynamic.workspaceTaint false)) := by
-  unfold restore
-  apply RelCT.seq (R := VG.X86.Taint.Agree (VG.Proof.Mont.X86.Dynamic.workspaceTaint false))
-  · exact erased_relCT (VG.Impl.Rsa.X86.Div.copyWords n src dst)
-      (VG.Impl.Rsa.X86.Div.copyWords 1 0 0)
-      (VG.Taint.hintOf taint (VG.Proof.Mont.X86.Dynamic.workspaceTaint false)
-        (Code.erase (VG.Impl.Rsa.X86.Div.copyWords 1 0 0))) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
-  · exact erased_relCT (.block (VG.Impl.RsaKeyGen.X86.LowWord.increment dst))
-      (.block (VG.Impl.RsaKeyGen.X86.LowWord.increment 0)) (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
 end VG.Proof.RsaKeyGen.X86.CandidateSave
 end

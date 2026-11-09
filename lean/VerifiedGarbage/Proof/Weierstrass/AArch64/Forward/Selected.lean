@@ -81,21 +81,4 @@ theorem double_ok (certs : Fixed.Cases) {M : Mod} {base : Addr} {size : Nat} {C 
   · rw [VG.Impl.P256.VerifyDouble.double,ite_eq_right sel]
     exact jacDouble_ok hL hAl hm hC ha hA hSl (.inl hnc) hI hV hP hJ
 
-theorem double_multiple_ok (certs : Fixed.Cases) {M : Mod} {base : Addr} {size : Nat} {C : Curve}
-    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl) (hnc : Mont.callOf M = none)
-    (hm : UnitMod C.p (2^(64*M.n))) (hC : Law C) (ha : AM3 C)
-    {S : RcbSlots} {p o : Pt} (hA : RcbApart S p p o)
-    (hSl : ∀ x ∈ rcbW S o ++ rcbR S p p, Sl x)
-    {V W : List Nat} (hW : ∀ x ∈ rcbW S o, x ∈ W)
-    {E : Nat → Fe C} {s : State} (hI : Inv M base size C.p Sl V E s)
-    (hV : ∀ x ∈ rcbR S p p, x ∈ V) {P : Point C} {e : Nat}
-    (hP : onCurve C P = true) (hJ : InvJ C (E p.x) (E p.y) (E p.z) (mul e P)) :
-    WP isa (VG.Impl.P256.VerifyDouble.double M S p o) s fun t =>
-      ∃ E', ProgKeep M base W s t ∧ Inv M base size C.p Sl V E' t ∧
-      InvJ C (E' o.x) (E' o.y) (E' o.z) (mul (2*e) P) := by
-  refine WP.mono (double_ok certs hL hAl hnc hm hC ha hA hSl hI hV (hC.onCurve_mul hP e) hJ)
-    fun t ⟨hk,hi,hj⟩ => ⟨_,hk.mono hW,hi.sub (fun _ hx => List.mem_append_right _ hx),?_⟩
-  rw [hC.add_mul_mul hP,show e+e=2*e by omega] at hj
-  exact hj
-
 end VG.Proof.Weierstrass.AArch64.Forward

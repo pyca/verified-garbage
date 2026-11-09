@@ -38,11 +38,14 @@ and `crypto/fipsmodule/bn/prime.cc.inc` (`BN_primality_test`,
   `Rsa.checkKey`), and its modulus must have `nlen` bits.
 * A generation that fails for too many tries is started again, up to four
   times in all (`RSA_generate_key_ex_maybe_fips`).
-* Finally, beyond what `RSA_generate_key_ex` does, the key must pass the
-  pairwise consistency test of BoringSSL's `RSA_check_fips` (`pairwiseOk`):
-  the signature of a fixed message with the private key, by the private
-  operation checked against `e` (`Rsa.privateChecked`), verifies with the
-  public key.
+
+This is `RSA_generate_key_ex`, not `RSA_generate_key_fips`: there is no
+FIPS 140 pairwise consistency test (`RSA_check_fips`, which only
+`RSA_generate_key_fips` runs). The key check above already gives what it
+would establish of the values, and a key with a factor that is not prime
+(which Miller–Rabin lets through with negligible probability) releases no
+result: every private-key operation checks its result against `e`
+(`Rsa.privateChecked`).
 
 The randomness is an explicit input, the octet string `rand`, read from the
 front: each draw of `len` octets (`draw`) takes the next `len` octets as an
@@ -54,8 +57,7 @@ sufficed. Every loop draws at least one octet in each iteration, which is
 why it terminates (`loop`).
 
 Primality is probable: nothing here proves that `p` and `q` are prime (as
-nothing in A.1.3 does). The key check and the pairwise consistency test do
-not depend on it.
+nothing in A.1.3 does). The key check does not depend on it.
 
 What timing may depend on is the contracts' business (`RsaKeyGen/Contract`):
 as in BoringSSL, on how many candidates were rejected and on everything about
@@ -352,31 +354,6 @@ validated. -/
 def generateOnce (nlen e : Nat) (r : Rand) : Option (Except Failure Key × Rand) :=
   loop (keyStep nlen e) () r
 
-/-! ## The pairwise consistency test (`RSA_check_fips`) -/
-
-/-- The DER encoding of SHA-256's `DigestInfo` but for the digest (RFC 8017
-§9.2, note 1). -/
-def sha256DigestInfoPrefix : List Byte :=
-  [0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01,
-    0x05, 0x00, 0x04, 0x20]
-
-/-- The message representative `RSA_check_fips` signs, for a modulus of `k`
-octets: EMSA-PKCS1-v1_5 (RFC 8017 §9.2) of SHA-256 with the digest of 32
-zero octets, `0x00 ‖ 0x01 ‖ PS ‖ 0x00 ‖ T`. -/
-def pairwiseMessage (k : Nat) : List Byte :=
-  let t := sha256DigestInfoPrefix ++ List.replicate 32 0
-  [0x00, 0x01] ++ List.replicate (k - 3 - t.length) 0xff ++ [0x00] ++ t
-
-/-- The pairwise consistency test: the message representative, signed with
-the private key by the private operation checked against `e`
-(`Rsa.privateChecked`), verifies with the public key (RSAVP1). -/
-def pairwiseOk (k : Key) : Bool :=
-  let em := pairwiseMessage k.len
-  match Rsa.privateChecked (k.octets k.n) (k.octets k.e) em (k.octets k.p) (k.octets k.q)
-      (k.octets k.dP) (k.octets k.dQ) (k.octets k.qInv) with
-  | .ok s => Rsa.publicOp (k.octets k.n) (k.octets k.e) s == some em
-  | .invalid | .fault => false
-
 /-! ## `generate` -/
 
 /-- The size and exponent of a key generation (`modulusBits`,
@@ -384,9 +361,8 @@ def pairwiseOk (k : Key) : Bool :=
 def params (bits e : Nat) : Option Nat :=
   if exponentValid e then modulusBits bits else none
 
-/-- `RSA_generate_key_ex` of `bits` and `e` from the randomness `rand`, and
-then the pairwise consistency test: `some (.ok key)`, `some (.error f)`, or
-`none` if `rand` ran out. A generation that fails with too many tries is
+/-- `RSA_generate_key_ex` of `bits` and `e` from the randomness `rand`:
+`some (.ok key)`, `some (.error f)`, or `none` if `rand` ran out. A generation that fails with too many tries is
 started again, from where it stopped reading `rand`, up to four times in
 all. -/
 def generate (bits e : Nat) (rand : Rand) : Option (Except Failure Key) :=
@@ -402,6 +378,6 @@ where
       | none => none
       | some (.error .tooManyIterations, r) => attempts nlen left r
       | some (.error f, _) => some (.error f)
-      | some (.ok k, _) => if pairwiseOk k then some (.ok k) else some (.error .internal)
+      | some (.ok k, _) => some (.ok k)
 
 end VG.Spec.RsaKeyGen

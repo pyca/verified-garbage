@@ -53,10 +53,6 @@ theorem Outer.ld {t : State} {B : Addr} {Z w : Nat} (h : Outer t B Z w) {i : Nat
     InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 :=
   h.scr.ld (by have := hdr_lt_slot w 8 hi; have := h.room; omega_arith)
 
-theorem Outer.st {t : State} {B : Addr} {Z w : Nat} (h : Outer t B Z w) {i : Nat} (hi : i < 32) :
-    InRegions t.wr (off B (8 * i)) 8 :=
-  h.scr.st (by have := hdr_lt_slot w 8 hi; have := h.room; omega_arith)
-
 /-- What changes only the outer header's slots from `sFn 0` on, outside the
 inner workspace keeps `Outer`. -/
 theorem Outer.of_frm {s t : State} {B : Addr} {Z w : Nat} {rs : List (Nat × Nat)} (h : Outer s B Z w)

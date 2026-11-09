@@ -1,5 +1,12 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.RISCV64.Hash
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.RISCV64.Hash
+meta import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP512r1.Verify
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP512r1
@@ -45,16 +52,16 @@ def verifySat : State where
   wr := [⟨0x8000, 8192⟩]
 
 theorem verify_verified (hL : VG.Proof.Weierstrass.Law W) :
-    Verified RISCV64.target verifyBrainpoolP512r1 (Spec.Ecdsa.Instance.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst RISCV64.abi) :=
+    Verified RISCV64.target verifyBrainpoolP512r1 (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst RISCV64.abi) :=
   Verified.of_correct (verify_rv hL) verify_ct
     { pre := by
-        sig_implies_pre [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
+        sig_implies_pre [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
           RISCV64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
+        sig_post [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
           RISCV64.argRegs]
         have h' : s'.gpr .a0 = if vf s.mem (s.gpr .a0) (s.gpr .a1) (s.gpr .a2) then 1 else 0 := h
         rw [h']
@@ -62,12 +69,30 @@ theorem verify_verified (hL : VG.Proof.Weierstrass.Law W) :
           if vf s.mem (s.gpr .a0) (s.gpr .a1) (s.gpr .a2) then 1 else 0
         split <;> rfl
       pub := by
-        sig_implies_pub [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
+        sig_implies_pub [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
           RISCV64.argRegs]
       sat := by
-        sig_implies_sat [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
+        sig_implies_sat [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
           RISCV64.argRegs] [verifySat] using verifySat }
+
+
+/-- `verifySat` satisfies the precondition. -/
+theorem verify_sat : (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst RISCV64.abi).pre verifySat := by
+  sig_pre [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
+    Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, RISCV64.abi, RISCV64.argRegs, verifySat]
+  repeat' (first | exact Region.disjoint_of_sep (by decide) | decide | rfl | constructor)
+
+/-- `vg_ecdsa_brainpoolp512r1_verify`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash (`verifyHash_verified_nil`). -/
+theorem verifyHash_verified (hL : VG.Proof.Weierstrass.Law W) :
+    Verified RISCV64.target
+      (Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false Impl.Ecdsa.RISCV64.verifyBrainpoolP512r1)
+      (Spec.Ecdsa.Instance.verifyHashContract Spec.Ecdsa.BrainpoolP512r1.inst RISCV64.abi 80) :=
+  Proof.Ecdsa.Verify.RISCV64.verifyHash_verified_nil Proof.Ecdsa.Verify.brainpoolP512r1_len (by decide) (verify_verified hL)
+    (by taint_decide) (Proof.Ecdsa.Verify.RISCV64.hashSat_nil (by decide) verify_sat (by decide) fun r hr => by
+      simp only [verifySat, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
 
 end VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1

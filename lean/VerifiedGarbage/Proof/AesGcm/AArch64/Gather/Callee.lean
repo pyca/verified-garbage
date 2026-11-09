@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Impl.AesGcm.AArch64
@@ -16,7 +17,7 @@ calls an implementation of `vg_aes_gcm_seal` as an artifact (`SealFn`), with
 its working space in a frame of its own, so what the proof needs of it is
 its contract: its precondition from the layout the call gives it
 (`callPre`), its postcondition and its public data. For the shared contract
-(`Spec.Gcm.sealContract`, with 2576 bytes of stack, `SealFn.plain`), they are
+(`Proof.AesGcm.sealRoundsContract`, with 2576 bytes of stack, `SealFn.plain`), they are
 `sealSpec_pre`, `sealSpec_post` and `sealSpec_pub`.
 -/
 
@@ -71,14 +72,14 @@ structure SealFn (C : CtxSpec) where
 
 theorem stackArgs_one (s : State) : List.map (stackArg s) (List.range 1) = [stackArg s 0] := rfl
 
-theorem sealSpec_pre {s : State} (h : callPre .plain s) : (Spec.Gcm.sealContract AArch64.abi 2576).pre s := by
+theorem sealSpec_pre {s : State} (h : callPre .plain s) : (Proof.AesGcm.sealRoundsContract AArch64.abi 2576).pre s := by
   sig_split h
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄
   have a₂₅ := h
   clear h
-  sig_pre [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, AArch64.abi, AArch64.argRegs,
+  sig_pre [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, AArch64.abi, AArch64.argRegs,
     stackArgs_one, List.append_eq, List.range, List.range.loop]
-  sig_reduce [Spec.Gcm.sealContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, List.getD, List.range, List.range.loop]
+  sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, List.getD, List.range, List.range.loop]
   sig_and_intros
   all_goals first
     | with_reducible assumption
@@ -86,33 +87,33 @@ theorem sealSpec_pre {s : State} (h : callPre .plain s) : (Spec.Gcm.sealContract
     | omega
     | exact Region.Disjoint.symm ‹_›
 
-theorem sealSpec_post {s s' : State} (h : (Spec.Gcm.sealContract AArch64.abi 2576).post s s')
+theorem sealSpec_post {s s' : State} (h : (Proof.AesGcm.sealRoundsContract AArch64.abi 2576).post s s')
     (hR : (s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14) :
     encryptWith (ctxCiph s.mem (s.gpr .x0) (s.gpr .x1).toNat) (ctxH s.mem (s.gpr .x0)) 16
         (bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat)
         (bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat) =
       (bytesAt s'.mem (s.gpr .x6) (s.gpr .x7).toNat, bytesAt s'.mem (stackArg s 0) 16) := by
-  sig_post [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPost, AArch64.abi, AArch64.argRegs,
+  sig_post [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Proof.AesGcm.sealRoundsPost, AArch64.abi, AArch64.argRegs,
     stackArgs_one, List.append_eq, List.range, List.range.loop] at h
   exact h hR
 
 theorem sealSpec_pub {s₁ s₂ : State} (h : s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
     s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧
     s₁.gpr .x5 = s₂.gpr .x5 ∧ s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧ s₁.sp = s₂.sp ∧
-    stackArg s₁ 0 = stackArg s₂ 0) : (Spec.Gcm.sealContract AArch64.abi 2576).pub s₁ s₂ := by
+    stackArg s₁ 0 = stackArg s₂ 0) : (Proof.AesGcm.sealRoundsContract AArch64.abi 2576).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
-  sig_pub [Spec.Gcm.sealContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, stackArgs_one, List.append_eq, List.range, List.range.loop]
-  sig_reduce [Spec.Gcm.sealContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, List.range, List.range.loop]
+  sig_pub [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, stackArgs_one, List.append_eq, List.range, List.range.loop]
+  sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, List.range, List.range.loop]
   sig_and_intros
   all_goals first | with_reducible assumption | trivial
 
 /-- An implementation of `vg_aes_gcm_seal`, by its shared contract
-(`Spec.Gcm.sealContract`, with 2576 bytes of stack). -/
+(`Proof.AesGcm.sealRoundsContract`, with 2576 bytes of stack). -/
 def SealFn.plain (fn : Impl.AesGcm.AArch64.Fn)
-    (verified : Verified AArch64.target fn.code (Spec.Gcm.sealContract AArch64.abi 2576))
+    (verified : Verified AArch64.target fn.code (Proof.AesGcm.sealRoundsContract AArch64.abi 2576))
     (depth : 16 * fn.code.aarch64Depth ≤ 2576) : SealFn .plain where
   fn := fn
-  k := Spec.Gcm.sealContract AArch64.abi 2576
+  k := Proof.AesGcm.sealRoundsContract AArch64.abi 2576
   verified := verified
   depth := depth
   pre _ h _ := sealSpec_pre h

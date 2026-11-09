@@ -71,9 +71,6 @@ tactic_template "cmems" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(
 
 theorem eval_e {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .e s = some b := h
 
-theorem eval_ne {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .ne s = some !b := by
-  show s.zf.map _ = _; rw [h]; rfl
-
 theorem eval_b {s : State} {b : Bool} (h : s.cf = some b) : isa.eval .b s = some b := h
 
 theorem seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq (.seq a b) c) s Q) :

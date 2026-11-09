@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 
 /-!
 # Blowfish on PPC64LE meets its contracts
@@ -78,7 +80,7 @@ theorem key_agree : ∀ s₁ s₂, keyC.pre s₁ → keyC.pre s₂ → keyC.pub 
   · exact h.2.2.2.1
 
 theorem expandKey_ct : ConstantTime isa keyC.pre keyC.pub Impl.Blowfish.PPC64LE.expandKey :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) key_agree (by taint_decide)
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) key_agree (by taint_decide)
 
 def keySat : State where
   gpr r := match r with

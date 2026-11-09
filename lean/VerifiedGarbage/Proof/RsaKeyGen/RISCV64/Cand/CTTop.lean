@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.CTMr
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
-meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.Verified
 meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.CTMr
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
@@ -31,6 +29,18 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 meta import VerifiedGarbage.Proof.Framework.RISCV64.MRun
 meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
+public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.CTBase
+public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.Main
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Consts
+meta import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
+meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.CTBase
+meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.Main
 
 /-!
 # A candidate on RISC-V: the candidate and the whole function in constant time
@@ -372,15 +382,6 @@ theorem code_rel {trial : Prog isa} (D : DivOk trial) (R : RoundImpl)
     RelCT isa (Two KR) (code trial R.name R.code) fun _ _ => True :=
   relCT_alloc ((body_rel D R hmain).mono (fun _ _ ⟨s, t, ⟨a, h₁, h₂, hsp⟩, e₁, e₂⟩ =>
     ⟨a, ⟨s, h₁, e₁⟩, ⟨t, h₂, e₂⟩, by rw [e₁, e₂]; simp only [allocd, hsp]⟩) fun _ _ h => h)
-
-/-- Constant time, from the main part's. -/
-theorem cand_ct_of {trial : Prog isa} (D : DivOk trial) (R : RoundImpl)
-    (hmain : RelCT isa (Two (SG MIn)) (main trial R.name R.code) fun _ _ => True) :
-    ConstantTime isa contract.pre contract.pub (code trial R.name R.code) :=
-  RelCT.constantTime ((code_rel D R hmain).mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
-    ⟨(pubOf s₁, s₁.sp), ⟨⟨(pre_facts h₁).1, (pre_facts h₁).2, rfl⟩, rfl⟩,
-      ⟨⟨(pre_facts h₂).1, (pre_facts h₂).2, (pub_of hp).2.symm⟩, (pub_of hp).1.symm⟩, (pub_of hp).1⟩)
-    fun _ _ h => h)
 
 /-! ## The main part's pieces, by correctness -/
 
@@ -731,11 +732,5 @@ theorem main_rel {trial : Prog isa} (R : RoundImpl)
     by_cases z : s₁.gpr .s9 = 0
     · rw [z, i.mp z]
     · rw [bne_iff_ne.mpr z, bne_iff_ne.mpr fun e => z (i.mpr e)]
-
-/-- `vg_rsa_keygen_candidate` is constant time, given the test's (`TSt`). -/
-theorem cand_ct {trial : Prog isa} (D : DivOk trial) (R : RoundImpl)
-    (hT : RelCT isa (Two TSt) (test trial R.name R.code) fun t₁ t₂ => t₁.sp = t₂.sp) :
-    ConstantTime isa contract.pre contract.pub (code trial R.name R.code) :=
-  cand_ct_of D R (main_rel R hT)
 
 end VG.Proof.RsaKeyGen.RISCV64.Cand

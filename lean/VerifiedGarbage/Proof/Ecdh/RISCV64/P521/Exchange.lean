@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.Tail
 public import VerifiedGarbage.Spec.Ecdh.P521
-import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.CheckVerified
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.CheckLit
 public import VerifiedGarbage.Proof.Ecdh.Exchange
 import VerifiedGarbage.Proof.EcKey.PublicKey

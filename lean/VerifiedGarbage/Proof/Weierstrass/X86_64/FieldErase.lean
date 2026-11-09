@@ -32,7 +32,6 @@ namespace VG.Proof.Weierstrass.X86_64
 theorem _root_.VG.Impl.Mont.Mod.with_inl_false {M : Impl.Mont.Mod} (h : M.inl = false) : { M with inl := false } = M := by
   cases M; cases h; rfl
 
-
 open VG VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Mont
 
 /-- The code of the field operations without displacements and immediates:
@@ -111,13 +110,6 @@ theorem progs_erase : ∀ ps : List (Prog isa), Code.erase (progs ps) = progs (p
   | p :: q :: ps => by
     show Code.seq (Code.erase p) (Code.erase (progs (q :: ps))) = _
     rw [progs_erase (q :: ps)]; rfl
-
-theorem progs_inline : ∀ ps : List (Prog isa), (progs ps).inline = progs (ps.map Code.inline)
-  | [] => rfl
-  | [_] => rfl
-  | p :: q :: ps => by
-    show Code.seq p.inline (progs (q :: ps)).inline = _
-    rw [progs_inline (q :: ps)]; rfl
 
 variable {T : FieldTmpl} {M : Mod}
 

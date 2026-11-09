@@ -26,7 +26,6 @@ import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Md5.X86.Compress
-import VerifiedGarbage.Proof.MdStream.X86.ArgWord
 import VerifiedGarbage.Proof.MdStream.X86.Words
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
@@ -54,7 +53,6 @@ meta import VerifiedGarbage.Proof.Framework.X86.Sse
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
 meta import VerifiedGarbage.Proof.Hmac.Common
 meta import VerifiedGarbage.Proof.Md5.X86.Compress
-meta import VerifiedGarbage.Proof.MdStream.X86.ArgWord
 meta import VerifiedGarbage.Proof.MdStream.X86.Words
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances

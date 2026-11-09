@@ -93,11 +93,6 @@ theorem signMask_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
 
 /-! ## The entry -/
 
-/-- An operation changes only its output and the temporary area. -/
-theorem _root_.VG.Proof.Mont.OpKeep.unch {M : Mod} {base : Addr} {o : Nat} {s s' : State}
-    (h : OpKeep M base o s s') : Unch base [(o, 8 * M.n), (M.tmp, 8 * M.n)] s.mem s'.mem :=
-  fun x hx => h.mem x (hx (o, 8 * M.n) (by simp)) (hx (M.tmp, 8 * M.n) (by simp))
-
 /-- The comb's slots and modulus at offsets that loads and stores can encode. -/
 structure CombA (K : CombCfg) : Prop where
   sl : ∀ x ∈ combSlots K, x % 8 = 0
@@ -152,7 +147,6 @@ theorem combW_mo {K : CombCfg} {size : Nat} (hL : CombLay K size) {m : Nat} {mem
   rcases hw with ⟨y, hy, rfl⟩ | rfl
   · have := hL.lay.mo y (combWs_slots K y hy); dsimp only; omega
   · have := hM.sep; dsimp only; omega
-
 
 /-! ## The addition -/
 
@@ -261,7 +255,6 @@ theorem combSum_ok {K : CombCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Co
   · rw [← v₁]
     show (toM _ _ _, toM _ _ _, toM _ _ _) = _
     rw [wx, wy, wz, I₁.val _ hDx, I₁.val _ hDy, I₁.val _ hDz]
-
 
 theorem winSaved_combClob {n : Nat} {r : Reg} (h : r ∈ clob n ++ winSaved n) : r ∈ combClob n := by
   rcases List.mem_append.mp h with h | h

@@ -64,11 +64,6 @@ theorem Upd.flags (s : State) {w : Nat} (d : Reg) (x : BitVec w) (c o : Bool) (v
     Upd s ((arithFlags s x c o).setReg d v) d v :=
   Upd.withFlags _ _ _ _ _ _ _
 
-theorem Upd.trans {s₁ s₂ s₃ : State} {d : Reg} {v w : BitVec 64} (h₁ : Upd s₁ s₂ d v)
-    (h₂ : Upd s₂ s₃ d w) : Upd s₁ s₃ d w :=
-  ⟨h₂.gpr, fun r h => (h₂.other r h).trans (h₁.other r h), h₂.mem.trans h₁.mem,
-    h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr⟩
-
 theorem WP.cons {i : Instr} {is : List Instr} {s s' : State} {Q : State → Prop}
     (h : exec i s = some s') (k : WP isa (.block is) s' Q) : WP isa (.block (i :: is)) s Q :=
   WP.block_cons_iff.mpr ⟨s', h, k⟩
@@ -111,15 +106,6 @@ theorem wp_xorm {d : Reg} {m : MemOp} {a : Addr} (ha : s.ea m = a)
   refine WP.cons (s' := (arithFlags s (s.gpr d ^^^ s.mem.readW a 64) false false).setReg d
     (s.gpr d ^^^ s.mem.readW a 64)) ?_ (k _ (Upd.flags _ _ _ _ _ _))
   simp [exec, execAlu, readSrc, State.load64, ha, hin]
-
-theorem wp_ror {d : Reg} {n : Nat} (h₁ : 1 ≤ n) (h₂ : n ≤ 63)
-    (k : ∀ s', Upd s s' d ((s.gpr d).rotateRight n) → WP isa (.block is) s' Q) :
-    WP isa (.block (.shift .ror d n :: is)) s Q := by
-  have e : exec (.shift .ror d n) s = some ((s.setFlags (some ((s.gpr d).rotateRight n).msb)
-      (if n = 1 then some (((s.gpr d).rotateRight n).msb ^^ ((s.gpr d).rotateRight n).getMsbD 1)
-        else none) s.zf s.sf).setReg d ((s.gpr d).rotateRight n)) := by
-    simp only [exec, execShift, h₁, h₂, and_self, ite_true]
-  exact WP.cons e (k _ (Upd.withFlags _ _ _ _ _ _ _))
 
 theorem wp_addi {d : Reg} {v : BitVec 32}
     (k : ∀ s', Upd s s' d (s.gpr d + v.signExtend 64) → WP isa (.block is) s' Q) :
@@ -200,9 +186,6 @@ abbrev Lane := Spec.Sha3.Lane
 
 theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = s.gpr b + BitVec.ofNat 64 d := by
   simp only [State.ea, at_]; rw [ofInt_natCast]
-
-theorem ea_lane (s : State) (b : Reg) (i : Nat) :
-    s.ea (lane b i) = s.gpr b + BitVec.ofNat 64 (8 * i) := ea_at s b (8 * i)
 
 end VG.Proof.Sha3.X86_64
 
@@ -367,12 +350,6 @@ structure Pre (s₀ : State) : Prop where
 theorem pre_of (s₀ : State) (h : Proof.Sha3.permuteX86_64.pre s₀) : Pre s₀ := by
   obtain ⟨h1, h2, h3, h4, h5⟩ := h
   exact ⟨h1, h2, h3, h4, h5⟩
-
-theorem cur_succ (s₀ : State) (r : Nat) : cur s₀ (r + 1) = oth s₀ r := by
-  simp only [cur, oth]; split <;> split <;> first | rfl | omega_arith
-
-theorem oth_succ (s₀ : State) (r : Nat) : oth s₀ (r + 1) = cur s₀ r := by
-  simp only [cur, oth]; split <;> split <;> first | rfl | omega_arith
 
 theorem cur_cases (s₀ : State) (r : Nat) :
     (cur s₀ r = st s₀ ∧ oth s₀ r = scr s₀) ∨ (cur s₀ r = scr s₀ ∧ oth s₀ r = st s₀) := by
@@ -686,18 +663,6 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   · exact .inl ⟨by show eval .ne s' = _; rw [he, hlast]; rfl, hlast ▸ hl⟩
   · exact .inr ⟨by show eval .ne s' = _; rw [he]; simp [hlast], 12 - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, hl⟩
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rsp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 200⟩, ⟨0x2000, 512⟩]
-
 theorem permute_correct (s : State) (hs : Proof.Sha3.permuteX86_64.pre s) :
     ∃ t s', Exec isa Impl.Sha3.X86_64.permute s t s' ∧ abiPreserved s s' ∧
       Proof.Sha3.permuteX86_64.post s s' := by
@@ -710,35 +675,6 @@ address or branch depends on them, and the kernel checks the analysis much
 faster without them (`taint_decide_weak`). -/
 def dropRC (τ : VG.X86_64.Taint.T) : VG.X86_64.Taint.T :=
   { τ with slots := τ.slots.filter fun sl => !(200 ≤ sl.2.1 && sl.2.1 < 392) }
-
-theorem permute_ct : ConstantTime isa Proof.Sha3.permuteX86_64.pre Proof.Sha3.permuteX86_64.pub
-    Impl.Sha3.X86_64.permute := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi]) ?_ (by taint_decide_weak dropRC)
-  intro s₁ s₂ _ _ ⟨h1, h2⟩
-  refine Taint.agree_ofRegs fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> with_reducible assumption
-
-theorem permute_verified :
-    Verified X86_64.target Impl.Sha3.X86_64.permute (Proof.Sha3.permuteContract X86_64.abi) :=
-  -- `permuteX86_64` also says that `rdi` and `rsi` are returned unchanged,
-  -- which the shared contract leaves out.
-  Verified.of_correct permute_correct permute_ct
-    { pre := by
-        sig_implies_pre [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig,
-          Proof.Sha3.permuteX86_64, X86_64.abi, X86_64.argRegs]
-      post := by
-        intro s s' _ h
-        sig_eval [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig, Proof.Sha3.permuteX86_64,
-          X86_64.abi, X86_64.argRegs]
-        exact h.1
-      pub := by
-        sig_implies_pub [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig,
-          Proof.Sha3.permuteX86_64, X86_64.abi, X86_64.argRegs]
-      sat := by
-        sig_implies_sat [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig,
-          Proof.Sha3.permuteX86_64, X86_64.abi, X86_64.argRegs]
-          [Proof.Sha3.X86_64.satState] using Proof.Sha3.X86_64.satState }
 
 end VG.Proof.Sha3.X86_64
 

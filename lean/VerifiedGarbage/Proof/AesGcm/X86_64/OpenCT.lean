@@ -155,7 +155,7 @@ theorem tagTl_ok {tg : Prog isa} (htg : TagOk M tg) {R : Nat} {A : Addr} {al : N
     WP isa tg s fun s' => OneS M Ctx W SP R A al D n (some N) s' ∧
       s'.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t ∧ ArgR SP Tp s' :=
   WP.mono (htg L (x := []) (by decide) h.1.env rfl h.1.rounds h.1.dat h.1.len hn16 (h.1.tlen N rfl) hN
-    h.1.alen h.1.dD.ok hDW h.1.dD.ctx h.1.ext) fun _ ⟨he, f, hrd, hwr, _⟩ => by
+    h.1.alen h.1.dD.ok hDW h.1.ext.ctxOk) fun _ ⟨he, f, hrd, hwr, _⟩ => by
     have f' := wFrame_one (D := D) (n := n) (.inr rfl) f
     exact ⟨h.1.frame L he hrd hwr hDW f', by
       rw [f'.readW (r := ⟨W + BitVec.ofNat 64 224, 8⟩) (Region.contains_self _ _)

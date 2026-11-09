@@ -127,29 +127,6 @@ theorem rel_taintC {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {P : St
   obtain ⟨_, hc⟩ := hc
   exact RelCT.taint (A := taint) (sivT rs) (fun s₁ s₂ h => both_agree hDW hn (hP _ _ h)) hc
 
-/-- Code the taint analysis checks from `sivT rs`, leaving the flags public. -/
-theorem rel_flagsC {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {P : State → State → Prop}
-    {c : Prog isa} (rs : List Reg) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64)
-    (hP : ∀ s₁ s₂, P s₁ s₂ → Both K W SP R N A D al n rs s₁ s₂)
-    (hc : ∃ hc, ((taint.check (sivT rs) c hc).map (·.flags)) = some true) :
-    RelCT isa P c fun s₁ s₂ => s₁.cf = s₂.cf ∧ s₁.zf = s₂.zf := by
-  obtain ⟨_, h⟩ := hc
-  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
-  obtain ⟨τ', hc', hs⟩ := Option.map_eq_some_iff.mp h
-  obtain ⟨ht, ha⟩ := VG.Taint.check_sound hc' (both_agree hDW hn (hP _ _ hp)) e₁ e₂
-  obtain ⟨hcf, hzf, -, -⟩ := ha.rf.2 hs
-  exact ⟨ht, hcf, hzf⟩
-
-theorem eval_e_eq {s₁ s₂ : State} (h : s₁.zf = s₂.zf) : isa.eval .e s₁ = isa.eval .e s₂ := h
-theorem eval_ne_eq {s₁ s₂ : State} (h : s₁.zf = s₂.zf) : isa.eval .ne s₁ = isa.eval .ne s₂ := by
-  show s₁.zf.map _ = s₂.zf.map _; rw [h]
-theorem eval_b_eq {s₁ s₂ : State} (h : s₁.cf = s₂.cf) : isa.eval .b s₁ = isa.eval .b s₂ := h
-
-/-- Runs related from each pair of states. -/
-theorem rel_of_pt {P Q : State → State → Prop} {c : Prog isa}
-    (h : ∀ σ₁ σ₂, P σ₁ σ₂ → RelCT isa (fun t₁ t₂ => t₁ = σ₁ ∧ t₂ = σ₂) c Q) : RelCT isa P c Q :=
-  fun _ _ _ _ _ _ hp e₁ e₂ => h _ _ hp _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
-
 end VG.Proof.AesGcmSiv.X86_64
 
 /-!
@@ -488,10 +465,10 @@ theorem tail_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : 
 /-- The start of `crypt`, in a run. -/
 theorem head_cinv {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat} {t : State}
     (O : One K W SP R N A D al n t) (hD : Buf K W SP t D n) :
-    WP isa (.block [.mov .rax (.mem (at_ .r15 tagO)), .store (at_ .r15 cmO) .rax, .mov .rax (.mem (at_ .r15 (tagO + 8))),
-        .movImm64 .rcx 0x8000000000000000, .alu .or .rax (.reg .rcx), .store (at_ .r15 (cmO + 8)) .rax,
-        .mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
-        .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)]) t fun t₁ =>
+    WP isa (.block (([.mov .rax (.mem (at_ .r15 tagO)), .mov .rdx (.mem (at_ .r15 (tagO + 8))),
+        .movImm64 .rcx 0x8000000000000000, .alu .or .rdx (.reg .rcx)] : List Instr) ++ store2 (at_ .r15 cmO) .rax .rdx ++
+        ([.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
+        .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)] : List Instr))) t fun t₁ =>
       CInv K W SP R N A D al n (n / 16) 0 t₁ ∧ t₁.zf = some (decide (n / 16 = 0)) := by
   obtain ⟨t₁, run₁, hm₁, h12₁, hbp₁, hbx₁, hzf₁, hg₁, hrd₁, hwr₁⟩ := cryptHead_ok L O.env O.sl hD
   refine WP.of_runBlock ⟨t₁, run₁, ⟨⟨O.env.keep (fun r hr => by
@@ -503,10 +480,10 @@ theorem head_cinv {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al 
     hbp₁⟩, hzf₁⟩
 
 theorem head_check : ∃ hc, (taint.check (sivT [])
-    (.block [.mov .rax (.mem (at_ .r15 tagO)), .store (at_ .r15 cmO) .rax, .mov .rax (.mem (at_ .r15 (tagO + 8))),
-        .movImm64 .rcx 0x8000000000000000, .alu .or .rax (.reg .rcx), .store (at_ .r15 (cmO + 8)) .rax,
-        .mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
-        .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)]) hc).isSome = true :=
+    (.block (([.mov .rax (.mem (at_ .r15 tagO)), .mov .rdx (.mem (at_ .r15 (tagO + 8))),
+        .movImm64 .rcx 0x8000000000000000, .alu .or .rdx (.reg .rcx)] : List Instr) ++ store2 (at_ .r15 cmO) .rax .rdx ++
+        ([.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
+        .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)] : List Instr))) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
 theorem test_check : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp]) (.block [.alu .test .rbp (.reg .rbp)]) hc).isSome =

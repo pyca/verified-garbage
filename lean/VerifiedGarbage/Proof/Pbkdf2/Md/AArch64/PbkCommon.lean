@@ -149,9 +149,6 @@ theorem in_sc {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ (H.W
 include hp in
 theorem sc_mem : scR (H := H) s₀ ∈ s₀.wr := by rw [hp.wr]; simp
 
-include hp in
-theorem out_mem : outR s₀ ∈ s₀.wr := by rw [hp.wr]; simp
-
 end
 
 /-! ## What every piece keeps -/

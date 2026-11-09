@@ -7,8 +7,8 @@ public import VerifiedGarbage.Impl.Weierstrass.Layout.MulBase
 
 Not trusted: what the code of the curves' internal functions (`Rust.Internal`),
 which only verified code calls, is generated from, and where it keeps its
-numbers. Their contracts are in `Proof/Weierstrass/MulContract.lean`, in these
-namespaces.
+numbers. The definitions their proofs share are in
+`Proof/Weierstrass/MulContract.lean`, in these namespaces.
 -/
 
 @[expose] public section

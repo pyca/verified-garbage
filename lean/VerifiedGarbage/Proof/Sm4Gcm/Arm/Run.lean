@@ -52,9 +52,6 @@ theorem store8_eq (s : State) (a : Addr) (x : BitVec 8) :
 @[simp] theorem z_store (s : State) (m : Mem) : (withMem s m).z = s.z := rfl
 @[simp] theorem c_store (s : State) (m : Mem) : (withMem s m).c = s.c := rfl
 
-theorem op2_imm' {s : State} {n : Nat} (h : encodable (BitVec.ofNat 32 n) = true) :
-    (imm n).eval s = some (BitVec.ofNat 32 n) := by simp only [imm, Op2.eval, h, ite_true]
-
 /-- An immediate's encodability, decided by `arun`'s discharger. -/
 theorem encodable_of_decide {v : BitVec 32} (h : encodable v = true) : encodable v = true := h
 

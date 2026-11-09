@@ -81,9 +81,6 @@ theorem i2osp_four (c : Nat) :
     List.map_nil, List.cons_append, Nat.div_div_eq_div_mul, Nat.reducePow, Nat.reduceMul, Nat.reduceSub,
     Nat.pow_zero, Nat.div_one]
 
-theorem byte64 (b : Byte) : ((b.setWidth 64)).setWidth 8 = b := by
-  apply BitVec.eq_of_toNat_eq; simp
-
 theorem byte_xor (x y : Byte) : BitVec.setWidth 8 (x.setWidth 64 ^^^ y.setWidth 64) = x ^^^ y := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_xor]

@@ -18,12 +18,6 @@ theorem lessThan_relCT (counter : Bool) (n a m : Nat) :
   erased_relCT _ (lessThan 1 0 0) (VG.Taint.hintOf taint (workspaceTaint counter) (Code.erase (lessThan 1 0 0)))
     (by kernel_rfl) (by cases counter <;> kernel_rfl) (by cases counter <;> kernel_rfl) (by cases counter <;> kernel_rfl)
 
-theorem nonzero_relCT (counter : Bool) (n a : Nat) :
-    RelCT isa (VG.X86.Taint.Agree (workspaceTaint counter)) (nonzero n a)
-      (VG.X86.Taint.Agree (workspaceTaint counter)) :=
-  erased_relCT _ (nonzero 1 0) (VG.Taint.hintOf taint (workspaceTaint counter) (Code.erase (nonzero 1 0)))
-    (by kernel_rfl) (by cases counter <;> kernel_rfl) (by cases counter <;> kernel_rfl) (by cases counter <;> kernel_rfl)
-
 theorem equal_relCT (counter : Bool) (n a b : Nat) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint counter)) (equal n a b)
       (VG.X86.Taint.Agree (workspaceTaint counter)) :=

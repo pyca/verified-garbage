@@ -44,14 +44,6 @@ theorem argumentCopyAt_ok (s : State) {base value : BitVec 32} {offset d bytes :
   ffrun [(by omega : offset < 4096), small, h.ptr, sourceAddress, h.space.read sourceFit,
     stackBase, address, stack.write fit, source]
 
-theorem argumentCopy_ok (s : State) {base value : BitVec 32} {j d bytes : Nat}
-    (h : Controller base s) (slot : j < 16) (stack : Workspace s s.sp bytes) (fit : d + 4 ≤ bytes)
-    (stackBase : s.gpr .r12 = s.sp) (source : lowWord s.mem base j = value)
-    (small : d < 4096 := by omega) :
-    WP isa (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r9 j, .str .r9 .r12 d]) s fun t =>
-      t.mem = s.mem.writeW (off (State.addr s.sp) d) value ∧ Rest [.r9] s t := by
-  exact argumentCopyAt_ok s h (by omega) stack fit stackBase source small
-
 theorem argumentStore_ok (s : State) {value : BitVec 32} {d bytes : Nat} (r : Reg)
     (stack : Workspace s s.sp bytes) (fit : d + 4 ≤ bytes) (stackBase : s.gpr .r12 = s.sp)
     (source : s.gpr r = value) (small : d < 4096 := by omega) :

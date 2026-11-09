@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Body
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Save
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Zero
 import VerifiedGarbage.Proof.Dsa.PPC64LE.CheckKey
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Fn
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Output
 import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyFn
 import VerifiedGarbage.Proof.Dsa.PackedBytes

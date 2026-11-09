@@ -169,10 +169,6 @@ theorem correctWith (v : Proof.Sha3.AArch64.Permutation) (σ : State) (hp : sbK.
       fun _ h2 => WP.seq (WP.mono (zero_ok hp h2) fun _ h3 =>
         WP.seq (WP.mono (loopP_ok hp h3) fun _ h4 => end_ok hp h4))))
 
-theorem correct (σ : State) (hp : sbK.pre σ) :
-    ∃ t s', Exec isa sampleInBall σ t s' ∧ abiPreserved σ s' ∧ sbK.post σ s' :=
-  correctWith .scalar σ hp
-
 end Ball
 
 end VG.Proof.MlDsa.AArch64.Sample
@@ -258,9 +254,6 @@ theorem ctWith (v : Proof.Sha3.AArch64.Permutation) : ConstantTime isa sbK.pre s
   exact relTaint [.x25] (fun σ₁ σ₂ s₁ s₂ _ _ hq h₁ h₂ => ⟨by rw [h₁.env.sp, h₂.env.sp, hq.2.2.2.2.2.1],
     fun r hr => by rw [List.mem_singleton.mp hr, h₁.env.x25, h₂.env.x25, pub_eq hq]⟩) (by taint_decide)
 
-theorem ct : ConstantTime isa sbK.pre sbK.pub sampleInBall :=
-  ctWith .scalar
-
 end Ball
 
 end VG.Proof.MlDsa.AArch64.Sample
@@ -311,9 +304,5 @@ theorem sampleInBall_verifiedWith (v : Proof.Sha3.AArch64.Permutation) : Verifie
         exact ⟨hx0, hx1, hx2, hx3, hx4, hsp, VG.Proof.MlKem.map_toNat_inj hb⟩
       sat := by sig_implies_sat [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK,
         AArch64.abi, AArch64.argRegs] [sbSat] using sbSat }
-
-theorem sampleInBall_verified : Verified AArch64.target Impl.MlDsa.AArch64.Sample.sampleInBall
-    (Proof.MlDsa.sampleInBallContract AArch64.abi 16) :=
-  sampleInBall_verifiedWith .scalar
 
 end VG.Proof.MlDsa.AArch64.Sample

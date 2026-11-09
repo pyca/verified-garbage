@@ -72,7 +72,7 @@ theorem byte_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {a : Add
 
 /-- The table's offsets: in the functions' slots, outside the tail buffer. -/
 theorem table_off {r : Nat × Nat} (hr : r ∈ layout.table) {i : Nat} (hi : i < r.2) :
-    r.1 + i + 1 ≤ 8 * slots ∧ (r.1 + i + 1 ≤ 8 * tailSlot ∨ 8 * tailSlot + 16 ≤ r.1 + i) := by
+    r.1 + i + 1 ≤ 8 * slots ∧ (r.1 + i + 1 ≤ 8 * tailSlot ∨ 8 * tailSlot + 256 ≤ r.1 + i) := by
   rw [layout_table] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rw [slots_eq, tailSlot_eq]
@@ -89,7 +89,7 @@ theorem holds_frame {d : Dir} {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {s
   rcases hd q hq with hq' | hq'
   · exact hq'.sub_left (VG.Offset.sub_base B (by rw [core_slots]; exact h1))
   · refine Region.Disjoint.sub_right ?_ hq'
-    show Region.Disjoint ⟨B + BitVec.ofNat 64 (r.1 + i), 1⟩ ⟨B + BitVec.ofNat 64 (8 * tailSlot), 4 * 4 * 1⟩
+    show Region.Disjoint ⟨B + BitVec.ofNat 64 (r.1 + i), 1⟩ ⟨B + BitVec.ofNat 64 (8 * tailSlot), 4 * 4 * 16⟩
     exact VG.Offset.disjoint B (by rw [tailSlot_eq] at h2 ⊢; omega) (by rw [slots_eq] at h1; omega)
       (by rw [tailSlot_eq]; omega)
 
@@ -117,11 +117,6 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.Sm4.Schedule} 
     hf.bytes (R := ⟨p, 128⟩) hdis (by show 128 ≤ 2 ^ 64; omega) hi).symm
 
 /-! ## Around the calls -/
-
-theorem inRegions_right {rd wr : List Region} {a : Addr} {n : Nat} (h : InRegions wr a n) :
-    InRegions (rd ++ wr) a n := by
-  obtain ⟨r, hr, hc⟩ := h
-  exact ⟨r, List.mem_append_right _ hr, hc⟩
 
 /-- The functions' slots, the core's, as the calls' working space. -/
 theorem ws_covers {s : State} {B : Addr} {d : Dir} (hs : ScrIn s B (dirCore d).total) :
@@ -288,10 +283,10 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : 
       kept_of g₃ hpres (by rw [u₄.gpr, r7']) fun r h => u₄.other r h,
       by rw [u₄.mem]; exact holds_of_keeps hr hK, by rw [u₄.mem, ← m₃]; exact hf, fun j hj => ?_,
       by rw [u₄.rd, hrd, rd₃], by rw [u₄.wr, hwr, wr₃]⟩
-    obtain rfl : j = 0 := by have : (dirCore d).G = 1 := rfl; omega
-    have ha : blkAddr (dirCore d) B 0 = B + BitVec.ofNat 64 layout.buf + BitVec.ofNat 64 (16 * 0) := rfl
-    show bytesAt s₄.mem (blkAddr (dirCore d) B 0) 16 = dirCipher d k (bytesAt s.mem (blkAddr (dirCore d) B 0) 16)
-    rw [dirCipher_bytes, Proof.Sm4.bytesAt_eq_blockAt, u₄.mem, ha, blockAt_of_ecb hE' (by decide)]
+    have hj16 : j < 16 := hj
+    have ha : blkAddr (dirCore d) B j = B + BitVec.ofNat 64 layout.buf + BitVec.ofNat 64 (16 * j) := rfl
+    show bytesAt s₄.mem (blkAddr (dirCore d) B j) 16 = dirCipher d k (bytesAt s.mem (blkAddr (dirCore d) B j) 16)
+    rw [dirCipher_bytes, Proof.Sm4.bytesAt_eq_blockAt, u₄.mem, ha, blockAt_of_ecb hE' hj16]
 
 /-- SM4's core for the direction `d` meets what the modes need. -/
 def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where

@@ -260,11 +260,6 @@ theorem scalarRange_ok {D : FD} {X : Nat} {t : State} (h : S2 D X t) :
   exact WP.mono (s6_s7 h₄) fun u ⟨hu, k⟩ =>
     ⟨hu, keep_trans k₁ (keep_trans k₂ (keep_trans k₃ (keep_trans k₄ k)))⟩
 
-theorem s7_eval {D : FD} {X : Nat} {t : State} (h : S7 D X t) :
-    isa.eval (.zero .x .x9) t = some (bit (pv D X = true) == 0) := by
-  obtain ⟨_, _, h9⟩ := h
-  rw [eval_zero, h9]
-
 end ScalarRange
 
 end VG.Proof.Ffdh.AArch64

@@ -25,9 +25,9 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.AArch64.Tbl VG.Impl.Tbl.AArch64 VG.Impl.
 
 /-- A group, as CBC on its eight blocks. -/
 theorem GroupPost.cbc {m : Mem} {p : Addr} {t t' : State} (h : GroupPost m p t t') :
-    Spec.Rc2.blocksAt t'.mem (t.gpr .x1) 8 = (Spec.Rc2.cbc (Spec.Rc2.scheduleAt m p) .decrypt
+    Spec.Rc2.blocksAt t'.mem (t.gpr .x1) 8 = (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt m p) .decrypt
       (wordBlock (t.gpr .x11)) (Spec.Rc2.blocksAt t.mem (t.gpr .x1) 8)).1 ∧
-    wordBlock (t'.gpr .x11) = (Spec.Rc2.cbc (Spec.Rc2.scheduleAt m p) .decrypt
+    wordBlock (t'.gpr .x11) = (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt m p) .decrypt
       (wordBlock (t.gpr .x11)) (Spec.Rc2.blocksAt t.mem (t.gpr .x1) 8)).2 := by
   rw [cbc_decrypt]
   constructor
@@ -53,9 +53,9 @@ structure LoopVPost (m : Mem) (p : Addr) (t : State) (j : Nat) (t' : State) : Pr
   wr : t'.wr = t.wr
   sp : t'.sp = t.sp
   frame : Frame [⟨t.gpr .x1, 64 * j⟩] t.mem t'.mem
-  data : Spec.Rc2.blocksAt t'.mem (t.gpr .x1) (8 * j) = (Spec.Rc2.cbc (Spec.Rc2.scheduleAt m p)
+  data : Spec.Rc2.blocksAt t'.mem (t.gpr .x1) (8 * j) = (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt m p)
     .decrypt (wordBlock (t.gpr .x11)) (Spec.Rc2.blocksAt t.mem (t.gpr .x1) (8 * j))).1
-  chain : wordBlock (t'.gpr .x11) = (Spec.Rc2.cbc (Spec.Rc2.scheduleAt m p)
+  chain : wordBlock (t'.gpr .x11) = (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt m p)
     .decrypt (wordBlock (t.gpr .x11)) (Spec.Rc2.blocksAt t.mem (t.gpr .x1) (8 * j))).2
 
 theorem ofNat_ne_zero {a : Nat} (h : 0 < a) (h' : a < 2 ^ 64) : BitVec.ofNat 64 a ≠ 0 := by

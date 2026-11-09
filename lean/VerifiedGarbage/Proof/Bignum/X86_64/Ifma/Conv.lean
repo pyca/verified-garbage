@@ -31,7 +31,7 @@ theorem conv_bounds (hl : LayOk l) : 1 ≤ l.W ∧ 64 * l.W ≤ 52 * l.L ∧ l.L
 
 theorem conv_boundsN (hl : AmmOk l) : 1 ≤ l.W ∧ 64 * l.W ≤ 52 * l.L ∧ l.L ≤ 80 ∧ 64 * l.W + 2 ≤ 52 * l.S ∧
     128 * l.W ≤ 104 * l.S ∧ l.S ≤ l.L := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem and_mask' (x : BitVec 64) : x &&& mask52 = BitVec.ofNat 64 (x.toNat % 2 ^ 52) := AmmSym.and_mask' x
 
@@ -371,15 +371,6 @@ theorem wv_digitsG {m : Mem} {P : Addr} {V : Nat} :
   | n + 1, h => by
     rw [VG.Proof.Bignum.wv, wv_digitsG n fun w hw => h w (by omega_arith), Nat.zero_add, h n (by omega_arith),
       BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide), Nat.mul_succ, Nat.pow_add, Nat.mod_mul]
-
-/-- The value of the limbs `to52` writes: the number, below `2^(64 W)`. -/
-theorem val_to52 (hl : AmmOk l) {m : Mem} {A : Addr} : lval (limbN (wv m A 0 l.W)) l.L = wv m A 0 l.W := by
-  have h1 := VG.Proof.Bignum.wv_lt m A 0 l.W
-  have h2 := pow2_le (a := 64 * l.W) (b := 52 * l.L) (conv_boundsN hl).2.1
-  rw [lval_limbN]
-  generalize 2 ^ (64 * l.W) = a at h1 h2
-  generalize 2 ^ (52 * l.L) = b at h2 ⊢
-  exact Nat.mod_eq_of_lt (by omega_arith)
 
 /-- The words `to64` writes, for a value below twice a number of `W` words. -/
 theorem wv_to64_lt {m m₀ : Mem} {D' A : Addr} {d V : Nat} (hV : V < 2 * wv m₀ A d l.W)

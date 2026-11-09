@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 `PreR K s`: the shared contract's precondition (`recoverContract`, with the
 stack `stk K` of `vg_rsa_pkcs1_verify`'s frame, which recovery shares, and
-a callee using `K` bytes), by name (`preR_of`).
+a callee using `K` bytes), by name.
 -/
 
 @[expose] public section
@@ -58,21 +58,6 @@ structure PreR (K : Nat) (s : State) : Prop where
   e2 : (s.gpr .x5).toNat ≤ (s.gpr .x3).toNat
   hh : ∃ h, Spec.RsaPkcs1Sig.Hash.ofId ((s.gpr .x6).setWidth 32).toNat = some h ∧ (s.gpr .x1).toNat = h.len
   hs : Spec.Rsa.publicScratchWords (s.gpr .x3).toNat ≤ (stackArg s 2).toNat
-
-theorem preR_of {K : Nat} {s : State}
-    (h : (Spec.RsaPkcs1Sig.recoverContract abi (stk K)).pre s) : PreR K s := by
-  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
-  rw [e] at h
-  sig_pre [Spec.RsaPkcs1Sig.recoverContract, Spec.RsaPkcs1Sig.recoverSig, abi, argRegs, stackArgs_three,
-    List.append_eq] at h
-  sig_pre [Spec.RsaPkcs1Sig.recoverContract, Spec.RsaPkcs1Sig.recoverSig, abi, argRegs, stackArgs_three,
-    List.append_eq] at h
-  obtain ⟨sp1, sp2, hrd, hwr, on, oe, og, os, oa, ns, es, gs, sa, ko, kn, ke, kg, ks, ka, wo, wn, we, wg, ws,
-    ⟨k1, k2⟩, e1, e2, hh, hs⟩ := h
-  rw [← e] at sp1 ko kn ke kg ks ka
-  exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, by rw [hwr]; simp, by rw [hwr]; simp, on, oe, og, os, oa,
-    ns, es, gs, sa, ko, kn, ke, kg, ks, ka, wo, wn, we, wg, ws, k1, k2, e1, e2, hh,
-    hs⟩
 
 /-- The length of the hash value is at most `k`, and not 0. -/
 theorem hlen {K : Nat} {s : State} (hp : PreR K s) :

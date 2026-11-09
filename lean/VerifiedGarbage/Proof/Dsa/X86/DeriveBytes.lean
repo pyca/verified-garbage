@@ -185,36 +185,4 @@ theorem deriveBytesWith_ok {base : Addr} {size pLen qLen p q g x : Nat} {s : Sta
     exact O'.saved ha (by decide) (by have H : 15712 ≤ size := Mt.extent; omega)
       (by have := Mt.scr.nowrap; omega) (E.saved saved)
 
-theorem deriveBytes_ok {base : Addr} {size pLen qLen p q g x : Nat} {s : State} {out : BitVec 32}
-    (M : Moduli base size pLen qLen p q s)
-    (Params : CallerBuffer s base size (.input .p) (2 * pLen + qLen))
-    (G : CallerBuffer s base size (.input .g) pLen)
-    (X : CallerBuffer s base size (.input .nonce) qLen)
-    (hg : operandValue s base (.input .g) pLen = g)
-    (hx : operandValue s base (.input .nonce) qLen = x)
-    (mask : flagW base (Layout.field .mask) s = BitVec.allOnes 32)
-    (hp : pointerValue base s (.input .out) = out)
-    (hf : out.toNat + (3 * pLen + 2 * qLen) ≤ 2 ^ 32)
-    (hw : ∀ i < 3 * pLen + 2 * qLen, InRegions s.wr (off (out.setWidth 64) i) 1)
-    (ha : Region.Disjoint ⟨base, size⟩ ⟨out.setWidth 64, 3 * pLen + 2 * qLen⟩)
-    (pa : Region.Disjoint ⟨(pointerValue base s (.input .p)).setWidth 64, 2 * pLen + qLen⟩
-      ⟨out.setWidth 64, 3 * pLen + 2 * qLen⟩)
-    (xa : Region.Disjoint ⟨(pointerValue base s (.input .nonce)).setWidth 64, qLen⟩
-      ⟨out.setWidth 64, 3 * pLen + 2 * qLen⟩) :
-    let accepted := ((1 < g ∧ g < p) ∧ (p - 1) % q = 0 ∧ g ^ q % p = 1) ∧
-      (0 < x ∧ x < q) ∧ (1 < g ^ x % p ∧ g ^ x % p < p)
-    WP isa (.seq (Generate.deriveCompute pLen qLen) (Generate.writeKey pLen qLen)) s fun sf =>
-      sf.gpr .eax = (if accepted then 1 else 0) ∧
-      Spec.Rsa.bytesAt sf.mem (out.setWidth 64) (3 * pLen + 2 * qLen) =
-        (if accepted then
-          Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input .p)).setWidth 64) (2 * pLen + qLen) ++
-          Spec.Dsa.encodeBE pLen (g ^ x % p) ++
-          Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input .nonce)).setWidth 64) qLen
-        else List.replicate (3 * pLen + 2 * qLen) 0) ∧
-      Keeps powerClob s sf ∧ StackOutputFrame (s.gpr .esp) base (out.setWidth 64) usedBytes
-        (3 * pLen + 2 * qLen) s.mem sf.mem ∧
-      ∀ regs, VG.X86.Spill.Saved s.mem (off base) regs Entry.savedRegisters →
-        VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters :=
-  deriveBytesWith_ok M Params X mask hp hf hw ha pa xa _ (deriveCompute_ok M G X hg hx)
-
 end VG.Proof.Dsa.X86

@@ -101,14 +101,15 @@ theorem mul_step_out_bytes {m n : Mem} (hL : L.Ok) (hf : Frame (mulStepWr L) m n
   · exact Offset.base_disjoint _ (by decide) (by decide)
   · exact hL.oc.sub_left (baseWithin L).sub
 
-structure NonceReady (L : Lay) (m : Mem) (t : State) : Prop where
-  scalar : Spec.Ed25519.bytesAt t.mem (State.addr L.E + 24) 32 = scalar L m
-  nonce : Spec.Ed25519.bytesAt t.mem (State.addr L.E + 88) 32 = nonce L m
-  point : Spec.Ed25519.bytesAt t.mem (State.addr L.out) 32 = Spec.Ed25519.scalarBase (SignCached.nonce L m)
+structure NonceReady (L : Lay) (E : List Byte) (m : Mem) (t : State) : Prop where
+  scalar : Spec.Ed25519.bytesAt t.mem (State.addr L.E + 24) 32 = scalar E
+  nonce : Spec.Ed25519.bytesAt t.mem (State.addr L.E + 88) 32 = nonce L E m
+  point : Spec.Ed25519.bytesAt t.mem (State.addr L.out) 32 = Spec.Ed25519.scalarBase (SignCached.nonce L E m)
 
-theorem nonce_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs : SecretReady L m₀ s)
+theorem nonce_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) {E : List Byte}
+    (hs : SecretReady L E s)
     (hw : Tbl L m₀) (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) :
-    WP isa (nonceCode) s fun t => Ctx L g m₀ t ∧ NonceReady L m₀ t := by
+    WP isa (nonceCode) s fun t => Ctx L g m₀ t ∧ NonceReady L E m₀ t := by
   refine WP.seq (WP.mono_syms (hashNonce_ok hc hL ha) fun u ⟨hu, fu, du⟩ syu => ?_)
   rw [hs.prefixBytes] at du
   have su := (hash_field_bytes hL fu (d := 24) (by decide) (by decide)).trans hs.scalar
@@ -122,12 +123,11 @@ theorem nonce_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs :
     rw [nv] at pt
     exact pt
 
-theorem challenge_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs : NonceReady L m₀ s)
-    (hk : Spec.Ed25519.bytesAt m₀ (State.addr L.pk) 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32)) :
+theorem challenge_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
+    {E : List Byte} (hs : NonceReady L E m₀ s) {seed : List Byte} (hE : E = Spec.Sha512.sha512 seed)
+    (hk : Spec.Ed25519.bytesAt m₀ (State.addr L.pk) 32 = Spec.Ed25519.publicKey seed) :
     WP isa (challengeCode) s fun t => Ctx L g m₀ t ∧
-      Spec.Ed25519.bytesAt t.mem (State.addr L.out) 64 = Spec.Ed25519.sign
-        (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32)
+      Spec.Ed25519.bytesAt t.mem (State.addr L.out) 64 = Spec.Ed25519.sign seed
         (Spec.Ed25519.bytesAt m₀ (State.addr L.msg) L.len.toNat) := by
   refine WP.seq (WP.mono (hashChallenge_ok hc hL ha) fun u ⟨hu, fu, du⟩ => ?_)
   rw [hs.point] at du
@@ -146,8 +146,9 @@ theorem challenge_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (
   rw [nv, cv, sv] at st
   have pt := (mul_step_out_bytes hL ft).trans pv
   rw [Proof.Ed25519.signatureBytes_split, pt]
-  change Spec.Ed25519.scalarBase (nonce L m₀) ++ Spec.Ed25519.bytesAt t.mem (State.addr L.out + (32 : BitVec 64)) 32 = _
+  change Spec.Ed25519.scalarBase (nonce L E m₀) ++ Spec.Ed25519.bytesAt t.mem (State.addr L.out + (32 : BitVec 64)) 32 = _
   rw [st]
+  subst hE
   exact Proof.Ed25519.sign_pipeline _ _ _ hk
 
 theorem wipe_ok (hc : Ctx L g m₀ s) (hL : L.Ok) :
@@ -159,17 +160,20 @@ theorem wipe_ok (hc : Ctx L g m₀ s) (hL : L.Ok) :
   rintro r hr; rw [List.mem_singleton.mp hr]
   exact (hL.ko.sub_left (Offset.sub_base _ (by decide : 4 * 6 + 4 * 56 ≤ 248))).symm
 
-theorem body_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
-    (hk : Spec.Ed25519.bytesAt m₀ (State.addr L.pk) 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32))
+/-- Signing after a first step `first` that leaves the digest `E` of `seed` at `frame 184`. -/
+theorem bodyFrom_ok {first : Prog isa} {E : List Byte}
+    (hfirst : WP isa first s fun t => Ctx L g m₀ t ∧ DigestReady L E t)
+    (hL : L.Ok) (ha : Arguments L m₀) {seed : List Byte} (hE : E = Spec.Sha512.sha512 seed)
+    (hk : Spec.Ed25519.bytesAt m₀ (State.addr L.pk) 32 = Spec.Ed25519.publicKey seed)
     (hw : Tbl L m₀) (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) :
-    WP isa (body) s fun t => Ctx L g m₀ t ∧
-      Spec.Ed25519.bytesAt t.mem (State.addr L.out) 64 = Spec.Ed25519.sign
-        (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32)
+    WP isa (bodyFrom first) s fun t => Ctx L g m₀ t ∧
+      Spec.Ed25519.bytesAt t.mem (State.addr L.out) 64 = Spec.Ed25519.sign seed
         (Spec.Ed25519.bytesAt m₀ (State.addr L.msg) L.len.toNat) := by
-  refine WP.seq (WP.mono_syms (secret_ok hc hL ha) fun u ⟨hu, su⟩ syu => ?_)
+  have hsec : WP isa (.seq first (.block saveSecret)) s fun t => Ctx L g m₀ t ∧ SecretReady L E t :=
+    WP.seq (WP.mono hfirst fun _ ⟨hd, ed⟩ => secret_ok hd hL ed)
+  refine WP.seq (WP.mono_syms hsec fun u ⟨hu, su⟩ syu => ?_)
   refine WP.seq (WP.mono (nonce_ok hu hL ha su hw (by rw [syu]; exact hsy)) fun v ⟨hv, nv⟩ => ?_)
-  refine WP.seq (WP.mono (challenge_ok hv hL ha nv hk) fun w ⟨hw, sw⟩ => ?_)
+  refine WP.seq (WP.mono (challenge_ok hv hL ha nv hE hk) fun w ⟨hw, sw⟩ => ?_)
   exact WP.mono (wipe_ok hw hL) fun t ⟨ht, same⟩ => ⟨ht, same.trans sw⟩
 
 end VG.Proof.Ed25519.Arm.SignCached

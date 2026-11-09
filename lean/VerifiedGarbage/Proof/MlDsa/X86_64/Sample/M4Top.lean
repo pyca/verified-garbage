@@ -145,9 +145,6 @@ theorem unpack4_ok {c : Nat} (hc : emOk c) {s : State} (h : UI σ c 0 s) : WP is
   WP.seq (WP.mono (unpack_ok hp hc (by decide) h) fun _ h₁ => WP.seq (WP.mono (unpack_ok hp hc (by decide) h₁)
     fun _ h₂ => WP.seq (WP.mono (unpack_ok hp hc (by decide) h₂) fun _ h₃ => unpack_ok hp hc (by decide) h₃)))
 
-omit hp in
-theorem sx17 : BitVec.signExtend 64 (0x20000 : BitVec 32) = BitVec.ofNat 64 0x20000 := by decide
-
 /-- The branch on `γ₁`, and the unpackings for it. -/
 theorem sel_ok {s : State} (h : SqInv σ 5 s) {Q : State → Prop} (kont : ∀ s', UI σ (emC (gOf σ)) 4 s' →
     WP isa (.block epi) s' Q) :
@@ -215,11 +212,11 @@ theorem end_ok {s : State} (h : UI σ (emC (gOf σ)) 4 s) :
 
 end
 
-theorem correct (σ : State) (hs : em4K.pre σ) :
-    ∃ t s', Exec isa expandMask4Avx2 σ t s' ∧ abiPreserved σ s' ∧ em4K.post σ s' := by
+theorem correct {fast : Bool} (σ : State) (hs : em4K.pre σ) :
+    ∃ t s', Exec isa (expandMask4Avx2 fast) σ t s' ∧ abiPreserved σ s' ∧ em4K.post σ s' := by
   have hp := pre_of hs
   obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (start_ok hp) fun _ h₀ =>
-    WP.seq (WP.mono (sqs_ok hp h₀) fun _ h₅ => sel_ok hp h₅ fun _ hu => end_ok hp hu))
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he hF.2, hF.1⟩
+    WP.seq (WP.mono (sqs_ok (fast := fast) hp h₀) fun _ h₅ => sel_ok hp h₅ fun _ hu => end_ok hp hu))
+  exact ⟨t, s', he, abiPreserved_of_exec (by cases fast <;> decide +kernel) he hF.2, hF.1⟩
 
 end VG.Proof.MlDsa.X86_64.Mask4

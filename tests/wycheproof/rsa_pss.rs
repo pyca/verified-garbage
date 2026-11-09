@@ -25,8 +25,8 @@ use verified_garbage::hashes::{
     md5::Md5, sha1::Sha1, sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512,
     sha512_224::Sha512_224, sha512_256::Sha512_256,
 };
-use verified_garbage::rsa::{PrivateKey, PublicKey};
-use verified_garbage::rsa_pss::{Hash, SaltLength, sign, sign_with_rng, verify};
+use verified_garbage::rsa::pss::{Hash, SaltLength};
+use verified_garbage::rsa::{BigUint, PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{MsgCase, RsaPrivateKey, RsaPrivateKeyGroup, RsaPublicKey, SigCase};
@@ -49,17 +49,21 @@ json_struct! {
 fn keys(name: &str, k: &RsaPrivateKey) -> (PrivateKey, PublicKey) {
     let n = trim_zeros(&k.modulus.0);
     let private = PrivateKey::from_crt(
-        n,
-        &k.public_exponent.0,
-        &k.private_exponent.0,
-        &k.prime1.0,
-        &k.prime2.0,
-        &k.exponent1.0,
-        &k.exponent2.0,
-        &k.coefficient.0,
+        BigUint::from_be_bytes(n),
+        BigUint::from_be_bytes(&k.public_exponent.0),
+        BigUint::from_be_bytes(&k.private_exponent.0),
+        BigUint::from_be_bytes(&k.prime1.0),
+        BigUint::from_be_bytes(&k.prime2.0),
+        BigUint::from_be_bytes(&k.exponent1.0),
+        BigUint::from_be_bytes(&k.exponent2.0),
+        BigUint::from_be_bytes(&k.coefficient.0),
     )
     .unwrap_or_else(|e| panic!("{name}: {e}"));
-    let public = PublicKey::new(n, &k.public_exponent.0).unwrap();
+    let public = PublicKey::new(
+        BigUint::from_be_bytes(n),
+        BigUint::from_be_bytes(&k.public_exponent.0),
+    )
+    .unwrap();
     (private, public)
 }
 
@@ -107,8 +111,11 @@ fn rsa_pss_test() {
         let (accepted, rejected) = (Count::default(), Count::default());
         let keys = |group: &harness::TestGroup<VerifyGroup, SigCase>| {
             let p = &group.params.public_key;
-            PublicKey::new(trim_zeros(&p.modulus.0), &p.public_exponent.0)
-                .unwrap_or_else(|e| panic!("{name}: {e}"))
+            PublicKey::new(
+                BigUint::from_be_bytes(trim_zeros(&p.modulus.0)),
+                BigUint::from_be_bytes(&p.public_exponent.0),
+            )
+            .unwrap_or_else(|e| panic!("{name}: {e}"))
         };
         file.par_tests_with(keys, |group, key, test| {
             let p = &group.params;
@@ -116,12 +123,10 @@ fn rsa_pss_test() {
             let mgf = hash(&p.mgf_sha).expect("a supported hash function");
             let id = test.tc_id;
             let (d, sig) = (digest(h, &test.case.msg.0), &test.case.sig.0);
-            let ok = verify(key, sig, &d, h, mgf, SaltLength::Len(p.s_len));
-            let any = verify(key, sig, &d, h, mgf, SaltLength::Any);
-            if mgf != h {
-                assert!(!ok && !any, "{name} tcId {id}");
-                return;
-            }
+            let ok = key
+                .verify_pss(sig, &d, h, mgf, SaltLength::Len(p.s_len))
+                .is_ok();
+            let any = key.verify_pss(sig, &d, h, mgf, SaltLength::Any).is_ok();
             assert_ne!(test.result, Expectation::Acceptable, "{name} tcId {id}");
             assert_eq!(ok, test.result == Expectation::Valid, "{name} tcId {id}");
             // A signature with the expected salt length has some salt length.
@@ -133,13 +138,9 @@ fn rsa_pss_test() {
             }
         });
         let (accepted, rejected) = (accepted.get(), rejected.get());
-        if name.contains("mgf1sha1") {
-            assert_eq!(accepted + rejected, 0, "{name}");
-        } else {
-            // The miscellaneous vectors are all valid.
-            let both = rejected > 0 || name.contains("misc");
-            assert!(accepted > 0 && both, "{name}");
-        }
+        // The miscellaneous vectors are all valid.
+        let both = rejected > 0 || name.contains("misc");
+        assert!(accepted > 0 && both, "{name}");
     }
 }
 
@@ -176,35 +177,46 @@ fn check_signatures(
         let id = test.tc_id;
         let d = digest(*h, &test.case.msg.0);
         for s_len in [0, h.digest_len()] {
-            let sig = sign(&private, &d, *h, *h, s_len)
+            let sig = private
+                .sign_pss(&d, *h, *h, s_len)
                 .unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
             assert_eq!(sig.len(), n.len(), "{name} tcId {id}");
-            assert!(verify(&public, &sig, &d, *h, *h, SaltLength::Len(s_len)));
-            assert!(verify(&public, &sig, &d, *h, *h, SaltLength::Any));
-            assert!(!verify(
-                &public,
-                &sig,
-                &d,
-                *h,
-                *h,
-                SaltLength::Len(s_len + 1)
-            ));
+            assert!(
+                public
+                    .verify_pss(&sig, &d, *h, *h, SaltLength::Len(s_len))
+                    .is_ok()
+            );
+            assert!(public.verify_pss(&sig, &d, *h, *h, SaltLength::Any).is_ok());
+            assert!(
+                !public
+                    .verify_pss(&sig, &d, *h, *h, SaltLength::Len(s_len + 1))
+                    .is_ok()
+            );
         }
-        let a = sign(&private, &d, *h, *h, 16).unwrap();
-        let b = sign(&private, &d, *h, *h, 16).unwrap();
+        let a = private.sign_pss(&d, *h, *h, 16).unwrap();
+        let b = private.sign_pss(&d, *h, *h, 16).unwrap();
         assert_ne!(a, b, "{name} tcId {id}");
-        // The same salt gives the same signature, as the fixed-tape
-        // benchmark relies on.
-        let fixed = || {
-            sign_with_rng(&private, &d, *h, *h, 16, |buf| {
-                buf.fill(0x5a);
-                Ok(())
-            })
-            .unwrap()
-        };
-        let a = fixed();
-        assert_eq!(a, fixed(), "{name} tcId {id}");
-        assert!(verify(&public, &a, &d, *h, *h, SaltLength::Len(16)));
+        // MGF1 over the next of the hash functions: the signature verifies
+        // with it, and not with MGF1 over the hash function itself.
+        let i = HASHES.iter().position(|(_, x)| x == h).unwrap();
+        let g = HASHES[(i + 1) % HASHES.len()].1;
+        let sig = private
+            .sign_pss(&d, *h, g, 16)
+            .unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
+        assert!(
+            public
+                .verify_pss(&sig, &d, *h, g, SaltLength::Len(16))
+                .is_ok(),
+            "{name} tcId {id}"
+        );
+        assert!(
+            public.verify_pss(&sig, &d, *h, g, SaltLength::Any).is_ok(),
+            "{name} tcId {id}"
+        );
+        assert!(
+            !public.verify_pss(&sig, &d, *h, *h, SaltLength::Any).is_ok(),
+            "{name} tcId {id}"
+        );
     }
 }
 

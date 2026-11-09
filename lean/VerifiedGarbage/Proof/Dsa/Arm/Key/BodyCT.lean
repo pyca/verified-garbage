@@ -317,11 +317,12 @@ structure Derived (b : BodyPub) (s₀ t : State) : Prop where
   saved : Saved s₀ t.mem
 
 theorem derived_ok (name : String) {b : BodyPub} {s₀ t : State} (A : KeyABI s₀) (D : DeriveIn b s₀ t) :
-    WP isa (callWith name Generate.deriveKey) t (Derived b s₀) := by
+    WP isa (callWith name Generate.deriveChecked) t (Derived b s₀) := by
   obtain ⟨k, hk, hres⟩ := D.x
   have hR := rResult_eq A
   simp only [D.checked, ↓reduceIte, hk] at hR
-  refine WP.mono (callDerive_ok A D.ready D.regs name) fun u ⟨h, f, _, r0, out⟩ => ?_
+  refine WP.mono (callDerive_ok A D.ready D.regs name (by rw [key_bytes A D.ready]; exact D.checked))
+    fun u ⟨h, f, _, r0, out⟩ => ?_
   rw [hres] at r0 out
   have sl : ∀ d, d + 4 ≤ frameBytes → slot u.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd =>
     slot_keep f (derive_keeps A) hd
@@ -351,7 +352,7 @@ theorem fin_two {Φ : BodyPub → State → Prop} {c : Prog isa}
 
 theorem derived_ct (name : String) :
     RelCT isa (Two fun b s => At (SampleTested b) b.pub s ∧ isa.eval .eq s = some true)
-      (.seq (.block deriveArgs) (.seq (callWith name Generate.deriveKey) (.block [st .r0 oStatus])))
+      (.seq (.block deriveArgs) (.seq (callWith name Generate.deriveChecked) (.block [st .r0 oStatus])))
       (Two FinAt) := by
   refine RelCT.seq (two_piece (Ψ := fun b => At (DeriveIn b) b.pub) [.r11]
     (pins_at' BodyPub.pub fun _ _ _ h => h.1.ready) (by taint_decide)
@@ -360,7 +361,7 @@ theorem derived_ct (name : String) :
   refine RelCT.seq (two_post (Ψ := fun b => At (Derived b) b.pub)
     ((deriveCall_ct name).mono (fun t₁ t₂ ⟨_, ⟨s₁, A₁, e₁, D₁⟩, ⟨s₂, A₂, e₂, D₂⟩⟩ =>
       ⟨s₁, s₂, A₁, A₂, e₁.trans e₂.symm, D₁.facts.key.trans D₂.facts.key.symm, D₁.ready, D₂.ready,
-        D₁.regs, D₂.regs, by rw [D₁.status A₁, D₂.status A₂]⟩) fun _ _ h => h)
+        D₁.regs, D₂.regs, by rw [D₁.status A₁, D₂.status A₂], D₁.checked, D₂.checked⟩) fun _ _ h => h)
     fun b t ⟨s₀, A, e, D⟩ => WP.mono (derived_ok name A D) fun u hu => ⟨s₀, A, e, hu⟩) ?_
   exact fin_two (two_piece [.r11] (pins_at BodyPub.pub fun _ _ _ h => h.ready) (by taint_decide)
     fun b t ⟨s₀, A, e, D⟩ => WP.mono (stored_fin A D) fun u hu => ⟨s₀, A, e, hu⟩)
@@ -373,7 +374,7 @@ theorem rejected_ct : RelCT isa (Two fun b s => At (SampleTested b) b.pub s ∧ 
 
 theorem generate_ct (name : String) :
     RelCT isa (Two fun b s => At (Tested b) b.pub s ∧ isa.eval .eq s = some false)
-      (generate name Generate.deriveKey) (Two FinAt) := by
+      (generate name Generate.deriveChecked) (Two FinAt) := by
   unfold generate derived
   refine RelCT.seq (two_post (Ψ := fun b => At (Prepped b) b.pub)
     (two_map BodyPub.pub (fun b t ⟨⟨s₀, A, e, K, _⟩, _⟩ => ⟨s₀, A, e, K.ready, K.saved.2.2.2.2⟩) prepare_ct)
@@ -394,7 +395,7 @@ theorem generate_ct (name : String) :
 
 theorem body_ct (check derive : String) :
     RelCT isa (Two fun b => At (BodyEntry b) b.pub)
-      (body check derive Generate.checkParameters Generate.deriveKey) fun _ _ => True := by
+      (body check derive Generate.checkParameters Generate.deriveChecked) fun _ _ => True := by
   unfold body
   refine RelCT.seq entry_ct ?_
   refine RelCT.seq (two_piece (Ψ := fun b => At (CheckIn b) b.pub) [.r11]

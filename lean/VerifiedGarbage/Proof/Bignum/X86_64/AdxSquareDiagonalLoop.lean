@@ -95,16 +95,4 @@ theorem diagonalWith_ok {core : List Instr} (hc : CoreOk core) {s : State} {B : 
     rw [hm] at ho
     exact ho
 
-theorem diagonal_ok {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B Z)
-    (h8 : s.gpr .r8 = off B A) (h9 : s.gpr .r9 = off B eb)
-    (h10 : s.gpr .r10 = BitVec.ofNat 64 w) (hw0 : 0 < w) (hw : w < 2 ^ 60)
-    (hA : A + 16 * w ≤ Z) (hb : eb + 8 * w ≤ Z)
-    (sb : eb + 8 * w ≤ A ∨ A + 16 * w ≤ eb) :
-    WP isa AdxSquare.diagonal s fun t =>
-      wv t.mem B A (2 * w) + 2 ^ (128 * w) * (t.gpr .r15).toNat =
-        2 * wv s.mem B A (2 * w) + diagonalValue s.mem B eb w ∧
-      Outside B A (16 * w) s.mem t.mem ∧
-      Keep [.rdx, .r11, .r12, .rsi, .rbx, .rax, .rcx, .r15, .rbp, .r14] s t :=
-  diagonalWith_ok diagonalCore_coreOk hs h8 h9 h10 hw0 hw hA hb sb
-
 end VG.Proof.Bignum.X86_64.AdxSquare

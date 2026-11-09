@@ -56,9 +56,6 @@ theorem lane_inArrays {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) (s : State) 
   have := arrays_bound k hk
   exact Offset.contains _ (by omega) (by omega) (by omega)
 
-theorem arraysR_sub (s : State) : Region.Sub (arraysR s) (scratchR s) :=
-  Offset.sub_base _ (by unfold scratchSlots; omega)
-
 /-- Two different lanes do not overlap. -/
 theorem lane_sep {k b k' b' : Nat} (hk : k ∈ arrays) (hb : b < 16) (hk' : k' ∈ arrays)
     (hb' : b' < 16) (h : k ≠ k' ∨ b ≠ b') (s : State) :
@@ -97,13 +94,6 @@ theorem exec_xor32_mem {s : State} {d : Reg} {m : MemOp} (h : InRegions (s.rd ++
       some ((arithFlags s ((s.gpr d).setWidth 32 ^^^ s.mem.readW (s.ea m) 32) false false).setReg32 d
         ((s.gpr d).setWidth 32 ^^^ s.mem.readW (s.ea m) 32)) := by
   simp [exec, execAlu32, readSrc32, State.load32, h]
-
-theorem exec_add32_mem {s : State} {d : Reg} {m : MemOp} (h : InRegions (s.rd ++ s.wr) (s.ea m) 4) :
-    ∃ s', exec (.alu32 .add d (.mem m)) s = some s' ∧
-      s'.gpr = (s.setReg32 d ((s.gpr d).setWidth 32 + s.mem.readW (s.ea m) 32)).gpr ∧
-      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  simp only [exec, execAlu32, readSrc32, State.load32, h, ite_true, Option.bind_some]
-  exact ⟨_, rfl, rfl, rfl, rfl, rfl⟩
 
 /-! ## Steps on every lane -/
 
@@ -248,9 +238,6 @@ theorem lv_setMem (s : State) (m : Mem) (k b : Nat) :
     lv (setMem s m) k b = m.readW (laneA s k b) 32 := rfl
 theorem mem_setMem (s : State) (m : Mem) : (setMem s m).mem = m := rfl
 theorem gpr_setMem (s : State) (m : Mem) : (setMem s m).gpr = s.gpr := rfl
-theorem rd_setMem (s : State) (m : Mem) : (setMem s m).rd = s.rd := rfl
-theorem wr_setMem (s : State) (m : Mem) : (setMem s m).wr = s.wr := rfl
-
 /-! ## Instructions on lanes -/
 
 /-- The scratch buffer is writable: it begins a writable region (which a

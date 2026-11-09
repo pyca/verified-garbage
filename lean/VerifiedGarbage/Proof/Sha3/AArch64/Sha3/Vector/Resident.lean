@@ -320,23 +320,6 @@ namespace VG.Proof.Sha3.AArch64.Sha3.Vector.Resident
 
 open VG VG.AArch64
 
-/-- The selected hardware absorber branches only on public arguments. -/
-theorem absorb_taint : ∃ h, (taint.check (Taint.ofRegs [.x0,.x1,.x2,.x3,.x4,.x5])
-    (Impl.Sha3.AArch64.Sha3.Vector.Resident.absorb Sha3.callee) h).isSome = true :=
-  ⟨_, by taint_decide⟩
-
-theorem absorb_ct : ConstantTime isa Proof.Sha3.absorbAArch64.pre Proof.Sha3.absorbAArch64.pub
-    (Impl.Sha3.AArch64.Sha3.Vector.Resident.absorb Sha3.callee) := by
-  obtain ⟨h,hh⟩ := absorb_taint
-  exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0,.x1,.x2,.x3,.x4,.x5])
-    (fun _ _ _ _ hp => Stream.Absorb.agree₀ hp) hh
-
-end VG.Proof.Sha3.AArch64.Sha3.Vector.Resident
-
-namespace VG.Proof.Sha3.AArch64.Sha3.Vector.Resident
-
-open VG VG.AArch64
-
 /-- The selected hardware absorber, with the actual resident-loop theorem
 supplied to the generic outer composition proof. -/
 theorem hardware_absorb_correct (a : State) (hp : Proof.Sha3.absorbAArch64.pre a) :
@@ -347,6 +330,5 @@ theorem hardware_absorb_correct (a : State) (hp : Proof.Sha3.absorbAArch64.pre a
 theorem hardware_absorb_depth :
     (Impl.Sha3.AArch64.Sha3.Vector.Resident.absorb Sha3.callee).aarch64Depth = 1 :=
   absorb_depth Sha3.backend _ bulk_depth
-
 
 end VG.Proof.Sha3.AArch64.Sha3.Vector.Resident

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Top2
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Body
 import VerifiedGarbage.Proof.Framework.Arm.CallF
@@ -20,7 +21,7 @@ open VG.Impl.RsaKeyGen.Arm.Key (code body)
 
 /-- A call's result, as the body gives it. -/
 def KPost (s t : State) : Prop :=
-  (t.gpr .r0).toNat = Spec.RsaKeyGen.keyStatus (resv (mkP s) (sx s)) ∧
+  (t.gpr .r0).toNat = Proof.RsaKeyGen.keyStatus (resv (mkP s) (sx s)) ∧
     ∀ i < 7, Spec.Rsa.bytesAt t.mem (State.addr (oPtr (mkP s) i)) (oLen (mkP s) i) = outE (mkP s) (sx s) i
 
 section

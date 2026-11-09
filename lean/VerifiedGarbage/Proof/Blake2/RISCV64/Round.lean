@@ -40,8 +40,6 @@ abbrev zW : Size → Width
 /-- The size of a word in bytes. -/
 abbrev zB (z : Size) : Nat := (zW z).bytes
 
-theorem sz_bits (z : Size) : sz z.bits = z := by cases z <;> rfl
-
 theorem wd_bits (z : Size) : wd z.bits = zW z := by cases z <;> rfl
 
 theorem ws_bits (z : Size) : ws z.bits = zB z := by cases z <;> rfl
@@ -178,7 +176,6 @@ theorem wreg_ne_of {q : Reg} (hq : q ∉ wregs) {k : Nat} (hk : k < 16) : wreg k
   fun e => hq (e ▸ wreg_mem hk)
 
 theorem T_not_mem : T ∉ wregs := by decide
-theorem RT_not_mem : RT ∉ wregs := by decide
 theorem SB_not_mem : SB ∉ wregs := by decide
 
 section Rounds
@@ -671,7 +668,7 @@ theorem linesOps_words (hR : ROk P) (r : Nat) (M : Block z.bits) : ∀ (l : List
     obtain ⟨⟨ha, hb, hd, had, hk⟩, hl⟩ := h
     rw [linesOps, List.flatMap_cons, stepAll, List.foldl_append, ← stepAll, ← stepAll, ← linesOps,
       linesOps_words hR r M l _ hl, lineOps_words P hR r M _ ha hb hd had hk]
-    rfl
+    simp only [blines, List.foldl_cons]
 
 /-- Half `h` of the four `G`s `(i, x, y, c, d)` of `qs`, as the code's operations. -/
 def halfOps (qs : List (Nat × Nat × Nat × Nat × Nat)) (h : Nat) : List Op :=

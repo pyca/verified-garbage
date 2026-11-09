@@ -20,20 +20,4 @@ theorem random_byte_borrow (a b : BitVec 64) (ha : a.toNat ≤ 255) (hb : b.toNa
 
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Proof.Bignum.AArch64
 
-/-- The actual instruction block computes the outgoing byte borrow. -/
-theorem random_borrow_ok (s : State)
-    (ha : (s.gpr .x0).toNat ≤ 255) (hb : (s.gpr .x4).toNat ≤ 255)
-    (hc : (s.gpr .x8).toNat ≤ 1) :
-    WP isa (.block Impl.Dsa.AArch64.Random.borrow) s fun t =>
-      (t.gpr .x8).toNat =
-        (if (s.gpr .x0).toNat < (s.gpr .x4).toNat + (s.gpr .x8).toNat then 1 else 0) ∧
-      t.mem = s.mem := by
-  have hadd : (s.gpr .x4 + s.gpr .x8).toNat = (s.gpr .x4).toNat + (s.gpr .x8).toNat := by
-    rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by omega)]
-  have hbound : (s.gpr .x4 + s.gpr .x8).toNat ≤ 256 := by rw [hadd]; omega
-  have hborrow := random_byte_borrow (s.gpr .x0) (s.gpr .x4 + s.gpr .x8) ha hbound
-  rw [hadd] at hborrow
-  unfold Impl.Dsa.AArch64.Random.borrow
-  brun [hborrow]
-
 end VG.Proof.Dsa.AArch64

@@ -103,11 +103,6 @@ structure Only (rs : List Reg) (s s' : State) : Prop where
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
 
-theorem Only.trans {rs : List Reg} {s s' s'' : State} (h : Only rs s s') (h' : Only rs s' s'') :
-    Only rs s s'' :=
-  ⟨fun r hr => (h'.reg r hr).trans (h.reg r hr), h'.mem.trans h.mem, h'.rd.trans h.rd,
-    h'.wr.trans h.wr, h'.sp.trans h.sp⟩
-
 theorem rotate28_ok (s : State) (r : Reg) (hr : r ≠ .t0)
     (x : BitVec 28) (hx : s.gpr r = x.setWidth 64)
     (n : Nat) (hn : 1 ≤ n) (hn' : n < 28) :

@@ -51,12 +51,6 @@ theorem Initial.savedLo {workspace p e : BitVec 32} {size w candidate len expone
   unfold slot stride VG.Impl.Bignum.hdrBytes
   omega
 
-theorem Initial.workspace {workspace p e : BitVec 32} {size w candidate len exponent : Nat} {s : State}
-    (S : Initial workspace p e size w candidate len exponent s) : s.gpr .edi = workspace := by
-  apply BitVec.eq_of_toNat_eq
-  rw [S.scratch.edi_toNat, BitVec.toNat_setWidth,
-    Nat.mod_eq_of_lt (Nat.lt_trans workspace.isLt (by decide : 2 ^ 32 < 2 ^ 64))]
-
 theorem Initial.spaceRt {workspace p e : BitVec 32} {size w candidate len exponent : Nat} {s : State}
     (S : Initial workspace p e size w candidate len exponent s) : ExponentRt.Space workspace p size w s :=
   ⟨S.scratch, S.stack, S.width, S.widthBound, S.space, S.outLen⟩

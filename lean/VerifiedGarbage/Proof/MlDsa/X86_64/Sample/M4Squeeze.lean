@@ -156,17 +156,17 @@ theorem buf_frame {σ : State} {m m' : Mem} {rs : List Region}
   simpa only [at', Offset.add_add, Nat.add_assoc] using this
 
 /-- The permutation, after `n` squeezes. -/
-theorem perm_ok {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 5) {s : State} (h : SqInv σ n s)
+theorem perm_ok {fast : Bool} {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 5) {s : State} (h : SqInv σ n s)
     {rest : Prog isa} {Q : State → Prop} (kont : ∀ s', Env σ s' ∧
       (∀ r < 24, ∀ k < 4, s'.mem.readW (la (scr σ) (50 + r) k) 64 = RC r) ∧
       Lanes4 s'.mem (scr σ) (fun k => iterF (n + 1) (A0 (B σ k))) ∧
       (∀ k < 4, ∀ p < 136 * n, s'.mem (at' σ (oBuf + 680 * k + p)) = hByte (B σ k) p) ∧
       s'.gpr .rbp = s.gpr .rbp ∧ s'.gpr .r10 = s.gpr .r10 → WP isa rest s' Q) :
-    WP isa (.seq (.block permArgs) (.seq Impl.Sha3.X86_64.X4.permute4 rest)) s Q := by
+    WP isa (.seq (.block permArgs) (.seq (Impl.Sha3.X86_64.X4.permute4 fast) rest)) s Q := by
   refine WP.seq (WP.mono (args_ok h.env) fun s₁ ⟨⟨hm, hdi, hsi, hdx, hcx⟩, k₁⟩ => ?_)
   have hrd : s₁.rd = σ.rd := k₁.2.1.trans h.env.rd
   have hwr : s₁.wr = σ.wr := k₁.2.2.trans h.env.wr
-  refine WP.seq (WP.mono (permute4_ok (A := fun k => iterF n (A0 (B σ k))) (pre4 hp hrd hwr (by rw [hm]; exact h.rc))
+  refine WP.seq (WP.mono (permute4_ok (fast := fast) (A := fun k => iterF n (A0 (B σ k))) (pre4 hp hrd hwr (by rw [hm]; exact h.rc))
     hdi hsi hdx (by rw [hcx, at', at', Offset.add_add]) (by rw [hm]; exact h.lanes))
     fun s₂ ⟨hl, hf, hrd₂, hwr₂, _, hg⟩ => kont s₂ ?_)
   have hsub : ∀ r ∈ [(⟨scr σ, 800⟩ : Region), ⟨at' σ 800, 800⟩], Region.Sub r ⟨scr σ, oSave⟩ := by
@@ -264,11 +264,11 @@ theorem extract_ok {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 5) {s : State}
       ⟨h'.env, h'.rc, h'.lanes, fun k hk p hp' hc => h'.buf k hk p hp' (by omega_arith), h'.rbp⟩
 
 /-- `squeeze`, to block `n`: after `n + 1` squeezes, with `rbp` and `r10` kept. -/
-theorem sq_ok {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 5) {s : State} (h : SqInv σ n s)
+theorem sq_ok {fast : Bool} {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 5) {s : State} (h : SqInv σ n s)
     (hbp : s.gpr .rbp = at' σ (oBuf + 136 * n)) :
-    WP isa squeeze s fun s' => SqInv σ (n + 1) s' ∧ s'.gpr .rbp = s.gpr .rbp ∧ s'.gpr .r10 = s.gpr .r10 := by
+    WP isa (squeeze fast) s fun s' => SqInv σ (n + 1) s' ∧ s'.gpr .rbp = s.gpr .rbp ∧ s'.gpr .r10 = s.gpr .r10 := by
   unfold squeeze
-  exact perm_ok hp hn h fun s' ⟨he, hrc, hl, hb, h₁, h₂⟩ =>
+  exact perm_ok (fast := fast) hp hn h fun s' ⟨he, hrc, hl, hb, h₁, h₂⟩ =>
     WP.mono (WP.keep [.rax] (extract_ok hp hn ⟨he, hrc, hl, fun k hk p _ hc => hb k hk p (by omega_arith),
       by rw [h₁, hbp]⟩) (by decide)) fun s'' ⟨h', k⟩ =>
         ⟨h', by rw [k.gpr (by decide), h₁], by rw [k.gpr (by decide), h₂]⟩
@@ -281,10 +281,10 @@ theorem SqInv.frame {σ : State} {n : Nat} {s s' : State} (h : SqInv σ n s) (hm
   exact ⟨h.env.keep hm k (by decide), by rw [hm]; exact h.rc, by rw [hm]; exact h.lanes, by rw [hm]; exact h.buf⟩
 
 /-- `squeezes`: the five squeezes. -/
-theorem sqs_ok {σ : State} (hp : Pre σ) {s : State} (h : SqInv σ 0 s) : WP isa squeezes s (SqInv σ 5) := by
+theorem sqs_ok {fast : Bool} {σ : State} (hp : Pre σ) {s : State} (h : SqInv σ 0 s) : WP isa (squeezes fast) s (SqInv σ 5) := by
   unfold squeezes
   refine blocks_ok (b := 0) (n := 5) (by decide) (by decide) (by decide) (by decide) (fun _ _ _ h => h.frame)
-    (fun i t _ hi hi' hbp => sq_ok hp (by omega_arith) hi' ?_) h
+    (fun i t _ hi hi' hbp => sq_ok (fast := fast) hp (by omega_arith) hi' ?_) h
   rw [hbp, h.env.rbx, Offset.add_add, at', Nat.sub_zero]
 
 end VG.Proof.MlDsa.X86_64.Mask4

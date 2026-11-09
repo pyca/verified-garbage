@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.MlDsa.Verify.Final
 public import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Spec.MlDsa.PreparedKey
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 import VerifiedGarbage.Proof.MlKem.Encode
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
@@ -71,7 +72,7 @@ structure VFacts (p : Params) : Prop where
   ct : 32 ≤ p.ctildeLen ∧ p.ctildeLen ≤ 64
   lz : 576 ≤ lenZ p ∧ lenZ p ≤ 640
   w1 : 128 ≤ w1Len p ∧ 512 ≤ p.k * w1Len p ∧ p.k * w1Len p ≤ 1024
-  scr : 8192 + 1024 * (20 + 8 * p.k) ≤ scratchWords p * 8
+  scr : 8192 + 1024 * (20 + 8 * p.k) ≤ scratchWords p * 8 - 1024 * p.k
   pk : p.pkLen = 32 + 320 * p.k
   sig : p.sigLen = p.ctildeLen + lenZ p * p.ℓ + p.ω + p.k
   sw : scratchWords p = 128 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32)
@@ -94,16 +95,18 @@ theorem vfacts {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
 
 /-! ## The layout -/
 
-/-- The size of `scratch`, in bytes. -/
-abbrev scrLenV (p : Params) : Nat := scratchWords p * 8
+/-- The size of `scratch`, in bytes: that of the external functions but the
+`1024 k` bytes `vg_mldsa*_verify` computes `t̂₁` in. -/
+abbrev scrLenV (p : Params) : Nat := scratchWords p * 8 - 1024 * p.k
 
-/-- `pk`, `mu` and `sig` (read), `scratch` (written); 96 bytes of stack. -/
-def YV (p : Params) : Lay := ⟨[(p.pkLen, false), (64, false), (p.sigLen, false), (scrLenV p, true)], 3, 96⟩
+/-- `pk`, `mu` and `sig` (read), `scratch` (written), `t1` (read); 96 bytes of stack. -/
+def YV (p : Params) : Lay :=
+  ⟨[(p.pkLen, false), (64, false), (p.sigLen, false), (scrLenV p, true), (1024 * p.k, false)], 3, 96⟩
 
 theorem YV_sc (p : Params) : (YV p).sc = vS := rfl
 theorem YV_stk (p : Params) : (YV p).stk = 96 := rfl
 theorem stkV {p : Params} {N : Nat} (h : N + 16 ≤ 96) : N + 16 ≤ (YV p).stk := h
-theorem YV_n (p : Params) : (YV p).n = 4 := rfl
+theorem YV_n (p : Params) : (YV p).n = 5 := rfl
 theorem YV_alen0 (p : Params) : (YV p).alen 0 = p.pkLen := rfl
 theorem YV_alen1 (p : Params) : (YV p).alen 1 = 64 := rfl
 theorem YV_alen2 (p : Params) : (YV p).alen 2 = p.sigLen := rfl
@@ -112,26 +115,31 @@ theorem YV_awr0 (p : Params) : (YV p).awr 0 = false := rfl
 theorem YV_awr1 (p : Params) : (YV p).awr 1 = false := rfl
 theorem YV_awr2 (p : Params) : (YV p).awr 2 = false := rfl
 theorem YV_awr3 (p : Params) : (YV p).awr 3 = true := rfl
+theorem YV_alen4 (p : Params) : (YV p).alen 4 = 1024 * p.k := rfl
+theorem YV_awr4 (p : Params) : (YV p).awr 4 = false := rfl
 
 /-! ### Checks of buffers, as arithmetic -/
 
 /-- The result, a word of `scratch`. -/
 abbrev accB (Y : Lay) : Buf := ⟨Y.sc, oACC, 4⟩
 
-theorem okS {p : Params} {o l : Nat} (h₁ : 0 < l) (h₂ : o + l ≤ scratchWords p * 8) :
-    (YV p).ok ⟨3, o, l⟩ = true := Lay.ok_iff.mpr ⟨show 3 < 4 by decide, h₁, h₂⟩
+theorem okS {p : Params} {o l : Nat} (h₁ : 0 < l) (h₂ : o + l ≤ scratchWords p * 8 - 1024 * p.k) :
+    (YV p).ok ⟨3, o, l⟩ = true := Lay.ok_iff.mpr ⟨show 3 < 5 by decide, h₁, h₂⟩
 
-theorem okWS {p : Params} {o l : Nat} (h₁ : 0 < l) (h₂ : o + l ≤ scratchWords p * 8) :
+theorem okWS {p : Params} {o l : Nat} (h₁ : 0 < l) (h₂ : o + l ≤ scratchWords p * 8 - 1024 * p.k) :
     (YV p).okW ⟨3, o, l⟩ = true := Lay.okW_iff.mpr ⟨okS h₁ h₂, rfl⟩
 
 theorem okPk {p : Params} {o l : Nat} (h₁ : 0 < l) (h₂ : o + l ≤ p.pkLen) : (YV p).ok ⟨0, o, l⟩ = true :=
-  Lay.ok_iff.mpr ⟨show 0 < 4 by decide, h₁, h₂⟩
+  Lay.ok_iff.mpr ⟨show 0 < 5 by decide, h₁, h₂⟩
 
 theorem okMu {p : Params} {o l : Nat} (h₁ : 0 < l) (h₂ : o + l ≤ 64) : (YV p).ok ⟨1, o, l⟩ = true :=
-  Lay.ok_iff.mpr ⟨show 1 < 4 by decide, h₁, h₂⟩
+  Lay.ok_iff.mpr ⟨show 1 < 5 by decide, h₁, h₂⟩
 
 theorem okSig {p : Params} {o l : Nat} (h₁ : 0 < l) (h₂ : o + l ≤ p.sigLen) : (YV p).ok ⟨2, o, l⟩ = true :=
-  Lay.ok_iff.mpr ⟨show 2 < 4 by decide, h₁, h₂⟩
+  Lay.ok_iff.mpr ⟨show 2 < 5 by decide, h₁, h₂⟩
+
+theorem okT {p : Params} {o l : Nat} (h₁ : 0 < l) (h₂ : o + l ≤ 1024 * p.k) : (YV p).ok ⟨4, o, l⟩ = true :=
+  Lay.ok_iff.mpr ⟨show 4 < 5 by decide, h₁, h₂⟩
 
 theorem sepS {p : Params} {o₁ l₁ o₂ l₂ : Nat} (h : o₁ + l₁ ≤ o₂ ∨ o₂ + l₂ ≤ o₁) :
     (YV p).sep ⟨3, o₁, l₁⟩ ⟨3, o₂, l₂⟩ = true := by
@@ -139,12 +147,12 @@ theorem sepS {p : Params} {o₁ l₁ o₂ l₂ : Nat} (h : o₁ + l₁ ≤ o₂ 
   simp only [ite_true, Bool.or_eq_true, decide_eq_true_eq]
   exact h
 
-theorem sepRS {p : Params} {a o₁ l₁ o₂ l₂ : Nat} (ha : a < 3) : (YV p).sep ⟨a, o₁, l₁⟩ ⟨3, o₂, l₂⟩ = true := by
+theorem sepRS {p : Params} {a o₁ l₁ o₂ l₂ : Nat} (ha : a < 3 ∨ a = 4) : (YV p).sep ⟨a, o₁, l₁⟩ ⟨3, o₂, l₂⟩ = true := by
   unfold Lay.sep
   rw [ite_eq_right_iff.mpr fun h => absurd h (show a ≠ 3 by omega)]
   exact Bool.or_eq_true_iff.mpr (.inr rfl)
 
-theorem sepSR {p : Params} {a o₁ l₁ o₂ l₂ : Nat} (ha : a < 3) : (YV p).sep ⟨3, o₁, l₁⟩ ⟨a, o₂, l₂⟩ = true := by
+theorem sepSR {p : Params} {a o₁ l₁ o₂ l₂ : Nat} (ha : a < 3 ∨ a = 4) : (YV p).sep ⟨3, o₁, l₁⟩ ⟨a, o₂, l₂⟩ = true := by
   unfold Lay.sep
   rw [ite_eq_right_iff.mpr fun h => absurd h (show 3 ≠ a by omega)]
   exact Bool.or_eq_true_iff.mpr (.inl rfl)
@@ -177,7 +185,8 @@ elab "lv_step" : tactic => withMainContext do
       | with_reducible apply VG.Proof.MlDsa.X86.Verify.okS
       | with_reducible apply VG.Proof.MlDsa.X86.Verify.okPk
       | with_reducible apply VG.Proof.MlDsa.X86.Verify.okMu
-      | with_reducible apply VG.Proof.MlDsa.X86.Verify.okSig))
+      | with_reducible apply VG.Proof.MlDsa.X86.Verify.okSig
+      | with_reducible apply VG.Proof.MlDsa.X86.Verify.okT))
   | some ``VG.Proof.MlKem.X86.Top.Lay.sep =>
     evalTactic (← `(tactic| first
       | with_reducible apply VG.Proof.MlDsa.X86.Verify.sepS
@@ -219,7 +228,8 @@ tactic_template "lv " hF:term:max : tactic => `(tactic| first
         | with_reducible apply VG.Proof.MlDsa.X86.Verify.apart_nil'
         | with_reducible apply VG.Proof.MlDsa.X86.Verify.okWS | with_reducible apply VG.Proof.MlDsa.X86.Verify.okS
         | with_reducible apply VG.Proof.MlDsa.X86.Verify.okPk | with_reducible apply VG.Proof.MlDsa.X86.Verify.okMu
-        | with_reducible apply VG.Proof.MlDsa.X86.Verify.okSig | with_reducible apply VG.Proof.MlDsa.X86.Verify.sepS
+        | with_reducible apply VG.Proof.MlDsa.X86.Verify.okSig | with_reducible apply VG.Proof.MlDsa.X86.Verify.okT
+        | with_reducible apply VG.Proof.MlDsa.X86.Verify.sepS
         | with_reducible apply VG.Proof.MlDsa.X86.Verify.sepRS
         | with_reducible apply VG.Proof.MlDsa.X86.Verify.sepSR))
 
@@ -251,76 +261,98 @@ theorem inputs_pub {p : Params} {s₀ s₀' : State} (hq : TPub (YV p) (lkV p) s
   obtain ⟨h₃, h₄⟩ := List.append_inj h₁ (by simp [Proof.MlKem.bytesAt_length])
   exact ⟨h₃, h₄, h₂⟩
 
-/-! ## The contract -/
+/-! ## The contract of `vg_mldsa*_verify_core`
 
-theorem pre_of {p : Params} {s₀ : State} (h : (Spec.MlDsa.verifyContract p X86.abi 96).pre s₀) :
-    TPre (YV p) s₀ := by
-  sig_pre [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21,
-    h22, h23, h24, h25⟩ := h
+Not trusted: the contract of the internal function that `vg_mldsa*_verify`
+and `vg_mldsa*_verify_prepared` share. It is `verifyContract`, with `scratch`
+`1024 k` bytes shorter and a further argument `t1` holding the polynomials
+`preparedPublicPolys` of `pk` (`T1In`). -/
+
+/-- The `k` polynomials of `t1` are `preparedPublicPolys` of the public key `pk`. -/
+def T1In (p : Params) (m : Mem) (t1 : Addr) (pk : List Byte) : Prop :=
+  ∀ r < p.k, PolyIs m (t1 + BitVec.ofNat 64 (1024 * r)) (Spec.MlDsa.preparedPublicPolys p pk)[r]!
+
+/-- `vg_mldsa*_verify_core(pk, mu, sig, scratch, t1) -> u32`. -/
+def verifyCoreSig (p : Params) : Sig where
+  params := [("pk", .array false .u8 p.pkLen), ("mu", .array false .u8 64),
+    ("sig", .array false .u8 p.sigLen), ("scratch", .array true .u64 (scratchWords p - 128 * p.k)),
+    ("t1", .array false .u8 (1024 * p.k))]
+  ret := some .u32
+
+/-- `verifyContract`, with `t̂₁` given in `t1`. -/
+def verifyCoreContract (p : Params) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (verifyCoreSig p).contract A
+    (pre := fun pk _mu _sig _scratch t1 m => T1In p m t1 (bytesAt m pk p.pkLen))
+    (post := fun pk mu sig _scratch _t1 m _m' r =>
+      let v := fun b => Spec.MlDsa.verifyMu p b (bytesAt m pk p.pkLen) (bytesAt m mu 64) (bytesAt m sig p.sigLen)
+      (r = 1 ∧ ∃ b, v b = some true) ∨ (r = 0 ∧ v Spec.MlDsa.minBounds ≠ some true))
+    (writeArgs := true) (stack := stack)
+    (leak := some fun pk mu sig _scratch _t1 m =>
+      Spec.MlDsa.leakBytes (bytesAt m pk p.pkLen ++ bytesAt m mu 64 ++ bytesAt m sig p.sigLen))
+
+theorem pre_of {p : Params} {s₀ : State} (h : (verifyCoreContract p X86.abi 96).pre s₀) :
+    TPre (YV p) s₀ ∧ T1In p s₀.mem ((arg s₀ 4).setWidth 64) (bytesAt s₀.mem ((arg s₀ 0).setWidth 64) p.pkLen) := by
+  sig_pre [verifyCoreContract, verifyCoreSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
+  obtain ⟨h1, h2, h3, h4, d0s, d0g, d1s, d1g, d2s, d2g, ds4, dsg, d4g, r0, r1, r2, r3, r4, rg,
+    s0, s1, s2, s3, s4, sg, f0, f1, f2, f3, f4, kp⟩ := h
   have hs : (⟨(E0 s₀).setWidth 64 - 96#64, 96⟩ : Region) = below (E0 s₀) 96 := by
     simp only [below]; rw [Taint.sub_setWidth h1]
-  rw [hs] at h17 h18 h19 h20 h21
-  have c4 : ∀ i, i < (YV p).n → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := fun i hi => by
+  rw [hs] at s0 s1 s2 s3 s4 sg
+  have c5 : ∀ i, i < (YV p).n → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := fun i hi => by
     rw [YV_n] at hi; omega
-  refine ⟨h1, by rw [YV_stk]; omega, by rw [YV_n]; omega, ?_, ?_, ?_, ?_, ?_,
-    ?_, ?_, h21, ?_, by rw [YV_sc, YV_n]; decide⟩
+  have e3 : (scratchWords p - 128 * p.k) * 8 = scrLenV p := by simp only [scrLenV]; omega
+  rw [e3] at h4 d0s d1s d2s ds4 dsg r3 s3 f3
+  refine ⟨⟨h1, by rw [YV_stk]; omega, by rw [YV_n]; omega, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, sg, ?_, by rw [YV_sc, YV_n]; decide⟩, kp⟩
   · intro i hi hw
     rw [h3]
-    rcases c4 i hi with rfl | rfl | rfl | rfl
+    rcases c5 i hi with rfl | rfl | rfl | rfl | rfl
     · simp [argR, Lay.alen, YV]
     · simp [argR, Lay.alen, YV]
     · simp [argR, Lay.alen, YV]
     · simp [YV, Lay.awr] at hw
+    · simp [argR, Lay.alen, YV]
   · intro i hi hw
     rw [h4]
-    rcases c4 i hi with rfl | rfl | rfl | rfl
+    rcases c5 i hi with rfl | rfl | rfl | rfl | rfl
     any_goals simp [YV, Lay.awr] at hw
-    simp [argR, Lay.alen, YV, scrLenV]
+    simp [argR, Lay.alen, YV]
   · rw [h4]; simp [gR, Lay.n, YV]
   · intro i hi j hj hne hw
-    rcases c4 i hi with rfl | rfl | rfl | rfl <;> rcases c4 j hj with rfl | rfl | rfl | rfl
+    rcases c5 i hi with rfl | rfl | rfl | rfl | rfl <;> rcases c5 j hj with rfl | rfl | rfl | rfl | rfl
     all_goals first | exact absurd rfl hne | skip
-    all_goals simp only [YV_awr0, YV_awr1, YV_awr2, YV_awr3, Bool.or_false, Bool.or_true,
+    all_goals simp only [YV_awr0, YV_awr1, YV_awr2, YV_awr3, YV_awr4, Bool.or_false, Bool.or_true,
       Bool.false_eq_true] at hw
-    all_goals simp only [argR, YV_alen0, YV_alen1, YV_alen2, YV_alen3, scrLenV]
-    exacts [h5, h7, h9, h5.symm, h7.symm, h9.symm]
+    all_goals simp only [argR, YV_alen0, YV_alen1, YV_alen2, YV_alen3, YV_alen4]
+    exacts [d0s, d1s, d2s, d0s.symm, d1s.symm, d2s.symm, ds4, ds4.symm]
   · intro i hi
-    rcases c4 i hi with rfl | rfl | rfl | rfl <;>
-      simp only [argR, gR, YV_n, YV_alen0, YV_alen1, YV_alen2, YV_alen3, scrLenV]
-    · exact h6.symm
-    · exact h8.symm
-    · exact h10.symm
-    · exact h11.symm
+    rcases c5 i hi with rfl | rfl | rfl | rfl | rfl <;>
+      simp only [argR, gR, YV_n, YV_alen0, YV_alen1, YV_alen2, YV_alen3, YV_alen4]
+    · exact d0g.symm
+    · exact d1g.symm
+    · exact d2g.symm
+    · exact dsg.symm
+    · exact d4g.symm
   · intro i hi
-    rcases c4 i hi with rfl | rfl | rfl | rfl <;>
-      simp only [argR, YV_alen0, YV_alen1, YV_alen2, YV_alen3, scrLenV]
-    · exact h12
-    · exact h13
-    · exact h14
-    · exact h15
+    rcases c5 i hi with rfl | rfl | rfl | rfl | rfl <;>
+      simp only [argR, YV_alen0, YV_alen1, YV_alen2, YV_alen3, YV_alen4]
+    exacts [r0, r1, r2, r3, r4]
   · intro i hi
-    rcases c4 i hi with rfl | rfl | rfl | rfl <;>
-      simp only [argR, YV_stk, YV_alen0, YV_alen1, YV_alen2, YV_alen3, scrLenV]
-    · exact h17
-    · exact h18
-    · exact h19
-    · exact h20
+    rcases c5 i hi with rfl | rfl | rfl | rfl | rfl <;>
+      simp only [argR, YV_stk, YV_alen0, YV_alen1, YV_alen2, YV_alen3, YV_alen4]
+    exacts [s0, s1, s2, s3, s4]
   · intro i hi
-    rcases c4 i hi with rfl | rfl | rfl | rfl <;> simp only [YV_alen0, YV_alen1, YV_alen2, YV_alen3, scrLenV]
-    · exact h22
-    · exact h23
-    · exact h24
-    · exact h25
+    rcases c5 i hi with rfl | rfl | rfl | rfl | rfl <;> simp only [YV_alen0, YV_alen1, YV_alen2, YV_alen3, YV_alen4]
+    exacts [f0, f1, f2, f3, f4]
 
-theorem pub_of {p : Params} {s₀ s₀' : State} (h : (Spec.MlDsa.verifyContract p X86.abi 96).pub s₀ s₀') :
+theorem pub_of {p : Params} {s₀ s₀' : State} (h : (verifyCoreContract p X86.abi 96).pub s₀ s₀') :
     TPub (YV p) (lkV p) s₀ s₀' := by
-  sig_pub [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
-  obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆⟩ := h
+  sig_pub [verifyCoreContract, verifyCoreSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
+  obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆, e₇⟩ := h
   refine ⟨e₁, fun i hi => ?_, ?_⟩
   · rw [YV_n] at hi
-    obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
-    exacts [e₃, e₄, e₅, e₆]
+    obtain rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega
+    exacts [e₃, e₄, e₅, e₆, e₇]
   · simp only [lkV, vPk, vMu, vSig, addr0]
     exact Proof.MlDsa.KeyGen.leakBytes_inj e₂
 

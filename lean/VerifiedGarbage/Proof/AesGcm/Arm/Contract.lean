@@ -224,9 +224,12 @@ def streamVerifyArm : Contract isa where
       else s'.gpr .r0 = 0
   pub := finPub 7
 
-/-- What `vg_aes_gcm_seal` and `vg_aes_gcm_open` both need: `(ctx = r0, rounds = r1, nonce = r2,
-nonce_len = r3, aad = [sp], aad_len = [sp + 4], data = [sp + 8], len = [sp + 12], …)`, with `n`
-words of stack arguments and `work` the `wi`-th (`sealPreArm.one`, `openPreArm.one`). -/
+/-- What `vg_aes_gcm_seal`, `vg_aes_gcm_open` and `vg_aes_gcm_open_to` need: `(ctx = r0,
+rounds = r1, nonce = r2, nonce_len = r3, aad = [sp], aad_len = [sp + 4], data = [sp + 8],
+len = [sp + 12], …)`, with `n` words of stack arguments and `work` the `wi`-th
+(`sealPreArm.one`, `openPreArm.one`, `openToPreArm.one`). The data need only be
+readable (`open_to`'s source), and is apart from the other buffers read if it is
+written. -/
 def onePre (n wi : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨State.addr (s.gpr .r0), 256⟩
   let nonce : Region := ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩
@@ -234,10 +237,10 @@ def onePre (n wi : Nat) (s : State) : Prop :=
   let data : Region := ⟨State.addr (arg s 2), (arg s 3).toNat⟩
   let work : Region := ⟨State.addr (arg s wi), 2560⟩
   (ctx ∈ s.rd ∧ nonce ∈ s.rd ∧ aad ∈ s.rd ∧ args s n ∈ s.rd) ∧
-    (data ∈ s.wr ∧ work ∈ s.wr ∧ ∀ r ∈ s.wr, (args s n).Disjoint r) ∧
-    ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
-    aad.Disjoint data ∧ aad.Disjoint work ∧
-    data.Disjoint work ∧ data.Disjoint (args s n) ∧ work.Disjoint (args s n) ∧
+    (data ∈ s.rd ++ s.wr ∧ work ∈ s.wr ∧ ∀ r ∈ s.wr, (args s n).Disjoint r) ∧
+    (data ∈ s.wr → ctx.Disjoint data) ∧ ctx.Disjoint work ∧ (data ∈ s.wr → nonce.Disjoint data) ∧
+    nonce.Disjoint work ∧ (data ∈ s.wr → aad.Disjoint data) ∧ aad.Disjoint work ∧
+    data.Disjoint work ∧ (data ∈ s.wr → data.Disjoint (args s n)) ∧ work.Disjoint (args s n) ∧
     (bel s).Disjoint ctx ∧ (bel s).Disjoint nonce ∧ (bel s).Disjoint aad ∧ (bel s).Disjoint data ∧
     (bel s).Disjoint work ∧
     (s.gpr .r0).toNat + 256 ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + (s.gpr .r3).toNat ≤ 2 ^ 32 ∧
@@ -356,8 +359,9 @@ theorem sealPreArm.one {s : State} (h : sealPreArm s) : onePre 6 5 s := by
   have hR := h
   clear h
   refine ⟨⟨by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp⟩,
-    ⟨by rw [hwr]; simp, by rw [hwr]; simp, fun r hr => ?_⟩,
-    cd, cw, nd, nw, ad, aw, dw, da, wa, bc, bn, ba, bd, bw, fc, fn, fa, fd, fw, sp8, spf, hR⟩
+    ⟨List.mem_append_right _ (by rw [hwr]; simp), by rw [hwr]; simp, fun r hr => ?_⟩,
+    fun _ => cd, cw, fun _ => nd, nw, fun _ => ad, aw, dw, fun _ => da, wa, bc, bn, ba, bd, bw, fc, fn, fa, fd, fw, sp8, spf,
+    hR⟩
   rw [hwr] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -373,12 +377,26 @@ theorem openPreArm.one {s : State} (h : openPreArm s) : onePre 7 6 s := by
   have hR := h
   clear h
   refine ⟨⟨by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp⟩,
-    ⟨by rw [hwr]; simp, by rw [hwr]; simp, fun r hr => ?_⟩,
-    cd, cw, nd, nw, ad, aw, dw, da, wa, bc, bn, ba, bd, bw, fc, fn, fa, fd, fw, sp8, spf, hR⟩
+    ⟨List.mem_append_right _ (by rw [hwr]; simp), by rw [hwr]; simp, fun r hr => ?_⟩,
+    fun _ => cd, cw, fun _ => nd, nw, fun _ => ad, aw, dw, fun _ => da, wa, bc, bn, ba, bd, bw, fc, fn, fa, fd, fw, sp8, spf,
+    hR⟩
   rw [hwr] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact da.symm
   · exact wa.symm
+
+/-- What `open`'s body needs of its received tag, and its data writable. -/
+theorem openPreArm.tag {s : State} (h : openPreArm s) :
+    (⟨State.addr (arg s 4), (arg s 5).toNat⟩ : Region) ∈ s.rd ∧
+    (⟨State.addr (arg s 4), (arg s 5).toNat⟩ : Region).Disjoint ⟨State.addr (arg s 6), 2560⟩ ∧
+    (bel s).Disjoint ⟨State.addr (arg s 4), (arg s 5).toNat⟩ ∧ (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32 ∧
+    (⟨State.addr (arg s 2), (arg s 3).toNat⟩ : Region) ∈ s.wr := by
+  sig_split h
+  rename_i hrd hwr hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 tW hdrop12 hdrop13 hdrop14
+    hdrop15 hdrop16 bT hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 fT hdrop24 hdrop25 hdrop26
+  clear hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 hdrop12 hdrop13 hdrop14 hdrop15 hdrop16
+    hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop24 hdrop25 hdrop26 h
+  exact ⟨by rw [hrd]; simp, tW, bT, fT, by rw [hwr]; simp⟩
 
 end VG.Proof.AesGcm.Arm

@@ -2,10 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.PublicKey
 public import VerifiedGarbage.Impl.Ed25519.X86.MulAdd
+public import VerifiedGarbage.Impl.Sha512.X86.Stream
+public import VerifiedGarbage.Spec.Sha512.Contract
 
-/-! Complete cached-key Ed25519 signing on x86. The 256-byte frame holds
-outgoing cdecl arguments at 0..24, scalar at 32, prefix at 64, nonce at 96,
-challenge at 128 and digest at 192. Original caller arguments remain above
+/-! Complete Ed25519 signing from the seed's SHA-512 digest and the public key on x86.
+The 256-byte frame holds outgoing cdecl arguments at 0..24, scalar at 32, prefix at 64,
+nonce at 96, challenge at 128 and digest at 192. Original caller arguments remain above
 the frame. Hashing uses scratch[0..192) for state and scratch[192..464) for
 working memory. Primitive calls may overwrite the entire scratch buffer.
 The 64-bit finalization count includes carry from the 32-bit message length.
@@ -42,9 +44,6 @@ def update (args : List Instr) : Prog isa :=
 def finalize (prefixLen : Nat) (withMessage : Bool) : Prog isa :=
   callWith (finalizeArgs prefixLen withMessage) "vg_sha512_finalize_scratch" Sha512.X86.Stream.finalize
 
-def hashSeed : Prog isa :=
-  .seq init (.seq (update (inputArgs 1 0)) (finalize 32 false))
-
 def copyWord (source destination k : Nat) : List Instr :=
   [.mov .eax (.mem (at_ (source + 4 * k))), .store (at_ (destination + 4 * k)) .eax]
 
@@ -73,14 +72,19 @@ def mulAddArgs : List Instr :=
 
 def wipe : List Instr := Whole.zeroWords 8 56
 
-def secretCode : Prog isa := .seq hashSeed (.block saveSecret)
+/-- The secret scalar and the nonce prefix saved, after `first` leaves the seed's
+SHA-512 digest at 192. -/
+def secretFrom (first : Prog isa) : Prog isa := .seq first (.block saveSecret)
 def nonceCode : Prog isa := .seq hashNonce (.seq (reduce 96)
   (callWith baseArgs "vg_ed25519_scalar_base" scalarBase))
 def challengeCode : Prog isa := .seq hashChallenge (.seq (reduce 128)
   (callWith mulAddArgs "vg_ed25519_scalar_mul_add" scalarMulAdd))
-def body : Prog isa := .seq secretCode (.seq nonceCode (.seq challengeCode (.block wipe)))
-
-def code : Prog isa :=
-  .frame (.push (List.replicate 64 .eax)) body (.pop .eax 64)
+/-- Signing after `first`, which leaves the seed's SHA-512 digest at 192. -/
+def bodyFrom (first : Prog isa) : Prog isa :=
+  .seq (secretFrom first) (.seq nonceCode (.seq challengeCode (.block wipe)))
+/-- `vg_ed25519_sign_expanded`: signing with the seed's SHA-512 digest, the second argument,
+copied to 192 (`signExpandedContract`). -/
+def codeExpanded : Prog isa :=
+  .frame (.push (List.replicate 64 .eax)) (bodyFrom PublicKey.copyExpanded) (.pop .eax 64)
 
 end VG.Impl.Ed25519.X86.SignCached

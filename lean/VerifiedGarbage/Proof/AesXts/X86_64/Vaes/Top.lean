@@ -151,7 +151,7 @@ def LoopOk (enc : Bool) (L : Prog isa) (KP : State → Prop) (s₀ : State) : Pr
 
 theorem loop8_ok {enc : Bool} {KP : State → Prop} {f8 : List XReg → Prog isa} {s₀ : State} (hp : UPre s₀)
     (hst : Stable KP s₀) (hf8 : Blk8 enc f8 KP s₀) : LoopOk enc (loop8 f8) KP s₀ :=
-  fun _ h hcf => groups_wp hp hst hf8 h hcf
+  fun _ h hcf => groups_wp hp hst hf8 h (by rw [hcf, Nat.sub_zero])
 
 /-- The function's body, with at least one block. -/
 theorem body_wp {enc : Bool} {KP : State → Prop} {pre L : Prog isa} {f : List XReg → Prog isa} {s₀ : State}

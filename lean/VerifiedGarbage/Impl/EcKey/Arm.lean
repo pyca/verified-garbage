@@ -56,9 +56,6 @@ def upToPowWith (generator : Prog isa) : Prog isa :=
   .seq generator <|
   .seq (pow c.powP c.SP c.umaal) (.block [])
 
-/-- The common prefix with `gen`. -/
-def upToPow : Prog isa := upToPowWith c c.gen
-
 /-- `04 ‖ x ‖ y` (or zeros) to `out` (in `lr`), the flag's low bit to `r0`,
 and the callee-saved registers restored. -/
 def finishWith (x y : Nat) : List Instr :=

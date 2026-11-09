@@ -187,8 +187,6 @@ def gbOps : List ZOp :=
   addMulOps x0 x1 ++ xorRorOps x3 x0 32 ++ addMulOps x2 x3 ++ xorRorOps x1 x2 24 ++
   addMulOps x0 x1 ++ xorRorOps x3 x0 16 ++ addMulOps x2 x3 ++ xorRorOps x1 x2 63
 
-theorem gb_eq : gb = gbOps.map .zop := rfl
-
 /-- GB on each quadword of `zmm0`–`zmm3`. -/
 theorem gb_qz (s : State) {k : Nat} (hk : k < 8) :
     (qz (zrun gbOps s) x0 k, qz (zrun gbOps s) x1 k, qz (zrun gbOps s) x2 k,

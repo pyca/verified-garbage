@@ -16,7 +16,7 @@
 /// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
 /// * None of `out`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_brainpoolp256r1_public_key(out: *mut [u8; 65], d: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_brainpoolp256r1_public_key(out: *mut [u8; 65], d: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov r12, r2
 str r4, [r12, #0]
@@ -1633,7 +1633,7 @@ pub const VG_EC_BRAINPOOLP256R1_PUBLIC_KEY_UMAAL_FEATURES: verified_garbage_cpu:
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_brainpoolp256r1_public_key_umaal(out: *mut [u8; 65], d: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_brainpoolp256r1_public_key_umaal(out: *mut [u8; 65], d: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov r12, r2
 str r4, [r12, #0]

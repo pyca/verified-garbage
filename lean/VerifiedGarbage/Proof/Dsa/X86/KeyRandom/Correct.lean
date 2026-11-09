@@ -69,10 +69,6 @@ theorem bodyWith_ok {I : State → Mem → Prop} (C : CheckInvoke I) (D : Derive
     · rw [R, fw.mem]; exact statusV
     · rw [R]; intro e; contradiction
 
-theorem body_ok (C : CheckCall.CheckFn) (D : DeriveFn) {s₀ : State} (A : KeyABI s₀) :
-    WP isa (body C.name D.name C.code D.code) (allocated KeyRandom.frameBytes s₀) (Finished s₀) :=
-  bodyWith_ok C.invoke D.invoke (fun _ _ _ => trivial) A
-
 end VG.Proof.Dsa.X86.KeyRandom
 end
 
@@ -101,13 +97,6 @@ theorem codeWith_ok {I : State → Mem → Prop} (C : CheckInvoke I) (D : Derive
     WP isa (codeWith C.code D.code) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed KeyRandom.frameBytes u :=
   WP.alloc ⟨by decide, by decide, by decide⟩ (by have := A.stackLow; unfold KeyRandom.frameBytes; omega)
     (bodyWith_noSp C.code D.code nc nd) (WP.mono (bodyWith_ok C D stable A) fun u hu => ⟨u, hu, rfl⟩)
-
-theorem body_noSp (C : CheckCall.CheckFn) (D : DeriveFn) : NoSp (body C.name D.name C.code D.code) :=
-  bodyWith_noSp _ _ (.call' C.noSp) (.call' D.noSp)
-
-theorem code_ok (C : CheckCall.CheckFn) (D : DeriveFn) {s₀ : State} (A : KeyABI s₀) :
-    WP isa (code C.name D.name C.code D.code) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed KeyRandom.frameBytes u :=
-  codeWith_ok C.invoke D.invoke (fun _ _ _ => trivial) (.call' C.noSp) (.call' D.noSp) A
 
 theorem freed_esp_eq {s₀ u : State} (A : KeyABI s₀) (h : Ready s₀ u) :
     (freed KeyRandom.frameBytes u).gpr .esp = s₀.gpr .esp := by
@@ -171,10 +160,5 @@ theorem generateKeyWith_correct {I : State → Mem → Prop} (C : CheckInvoke I)
       have hi : (u.mem.readW (argumentPointer s 2 + BitVec.ofNat 64 4) 32) = _ := hF.usedHi
       rw [lo, hi, toNat_ofNat_lt hul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
       rfl
-
-theorem generateKey_correct (C : CheckCall.CheckFn) (D : DeriveFn) (s : State) (hpre : (Spec.Dsa.generateKeyContract abi 232).pre s) :
-    ∃ t s', Exec isa (code C.name D.name C.code D.code) s t s' ∧ abiPreserved s s' ∧
-      (Spec.Dsa.generateKeyContract abi 232).post s s' :=
-  generateKeyWith_correct C.invoke D.invoke (fun _ _ _ => trivial) (.call' C.noSp) (.call' D.noSp) s hpre
 
 end VG.Proof.Dsa.X86.KeyRandom

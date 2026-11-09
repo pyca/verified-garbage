@@ -283,9 +283,6 @@ theorem good_store {m : Mem} {p : Addr} {f : Nat → BitVec 32} {K : Nat} (hG : 
     rw [show 4 * (K + j) = 4 * K + 4 * j by omega, ofNat_add', readW_writeW128 _ _ _ (by omega)]
     exact hv j (by omega)
 
-theorem Good.mono {m : Mem} {p : Addr} {f : Nat → BitVec 32} {K K' : Nat} (h : Good m p f K)
-    (hK : K' ≤ K) : Good m p f K' := fun i hi => h i (by omega)
-
 end VG.Proof.Aes.X86.AesNi
 
 end

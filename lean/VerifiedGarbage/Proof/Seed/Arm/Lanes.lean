@@ -60,10 +60,6 @@ def setMem (s : State) (m : Mem) : State := { s with mem := m }
 
 theorem mem_setMem (s : State) (m : Mem) : (setMem s m).mem = m := rfl
 theorem gpr_setMem (s : State) (m : Mem) : (setMem s m).gpr = s.gpr := rfl
-theorem rd_setMem (s : State) (m : Mem) : (setMem s m).rd = s.rd := rfl
-theorem wr_setMem (s : State) (m : Mem) : (setMem s m).wr = s.wr := rfl
-theorem sp_setMem (s : State) (m : Mem) : (setMem s m).sp = s.sp := rfl
-
 theorem exec_ldS {s : State} (h : Room s) {k : Nat} (hk : k < slots) (d : Reg) :
     exec (ldS d k) s = some (s.setReg d (slotW s k)) :=
   exec_ldr (slot_off hk) ⟨_, List.mem_append_right _ h.mem, slot_in h hk⟩

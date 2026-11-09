@@ -82,10 +82,6 @@ theorem ParametersAgrees.qb {reference c : ParametersCall} (h : ParametersAgrees
     c.input.qb = reference.input.qb := by
   rw [ParametersInput.qb, ParametersInput.qb, h.params, h.pLen, h.qLen]
 
-theorem ParametersAgrees.gb {reference c : ParametersCall} (h : ParametersAgrees reference c) :
-    c.input.gb = reference.input.gb := by
-  rw [ParametersInput.gb, ParametersInput.gb, h.params, h.pLen, h.qLen]
-
 theorem ParametersAgrees.accepted {reference c : ParametersCall} (h : ParametersAgrees reference c) :
     c.input.accepted = reference.input.accepted := by
   unfold ParametersInput.accepted

@@ -11,7 +11,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 The symbolic evaluation of `Avx512Tail/Sym.lean`, for `ymm` registers (eight
 doublewords, `p` in lane `p / 4`), on the same regions (`Avx512Tail.regn`):
 the state (at `rdi`), `buf` (at `r9`, of which the first 256 bytes are
-written) and `4 D` bytes of data (at `rsi`).
+written) and `4 D` bytes of data (at `rsi`); from a source to a destination
+(`to`), the data is the source, and the destination, at `rsi + r11`, a
+fourth region (`stepT`, `SRelT`), as there.
 -/
 
 @[expose] public section
@@ -21,9 +23,10 @@ namespace VG.Proof.ChaCha20.X86_64.Avx2Tail
 open VG VG.X86_64 VG.Impl.ChaCha20.X86_64.Avx2Tail
 open VG.Spec.ChaCha20 (Word)
 open VG.Proof.ChaCha20.X86_64.Avx512 (T Sym Sym.init Sym.setReg sel2 sel2_eq sel2_lt add_ofNat' ofInt_ofNat
-  xidx xidx_lt xidx_inj zreg_xidx)
+  xidx xidx_lt xidx_inj zreg_xidx dstR slotD slotD_ok symStore clean3 clean_of Ctx3)
 open VG.Proof.ChaCha20.X86_64.Avx512Tail (baseR bsize wsize regn wregs slot slot_ok wsize_le Ctx
-  bsize_le regn_contains in_regn in_regn')
+  bsize_le regn_contains in_regn in_regn' memBase memBase_0 memBase_1 memBase_2 memBase_3 memBase_lt CtxT wregsT
+  src_after dst_contains)
 open VG.Impl.ChaCha20.X86_64.Avx512 (zreg)
 
 /-- Doubleword `p % 4` of lane `p / 4` of `r`. -/
@@ -31,7 +34,7 @@ abbrev yw (s : State) (r : XReg) (p : Nat) : Word := dword (s.lane r (p / 4)) (p
 
 def T.eval (D : Nat) (s₀ : State) : T → Word
   | .reg r p => yw s₀ (zreg r) p
-  | .mem b i => s₀.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 32
+  | .mem b i => s₀.mem.readW (memBase D s₀ b + BitVec.ofNat 64 (4 * i)) 32
   | .add a b => T.eval D s₀ a + T.eval D s₀ b
   | .xor a b => T.eval D s₀ a ^^^ T.eval D s₀ b
   | .inp _ => 0
@@ -42,7 +45,7 @@ def permT (A B : Nat → T) (n : BitVec 8) (p : Nat) : T :=
   let k := (n.extractLsb' (4 * (p / 4)) 2).toNat
   (if k < 2 then A else B) (4 * (k % 2) + p % 4)
 
-def step (D : Nat) (σ : Sym) : Instr → Option Sym
+def stepT (to : Bool) (D : Nat) (σ : Sym) : Instr → Option Sym
   | .vop (.vbin op .l256 d a b) =>
     if op = .vpaddd then some (σ.setReg (xidx d) fun p => .add (σ.reg (xidx a) p) (σ.reg (xidx b) p))
     else if op = .vpxor then some (σ.setReg (xidx d) fun p => .xor (σ.reg (xidx a) p) (σ.reg (xidx b) p))
@@ -52,47 +55,80 @@ def step (D : Nat) (σ : Sym) : Instr → Option Sym
     if n.getLsbD 3 = false ∧ n.getLsbD 7 = false then
       some (σ.setReg (xidx d) (permT (σ.reg (xidx a)) (σ.reg (xidx b)) n))
     else none
-  | .vmovdquLoad .l256 d m => (slot m 8 (bsize D)).map fun (b, i) => σ.setReg (xidx d) fun p => σ.mem b (i + p)
-  | .vbroadcasti128 d m =>
-    (slot m 4 (bsize D)).map fun (b, i) => σ.setReg (xidx d) fun p => σ.mem b (i + p % 4)
-  | .vmovdquStore .l256 m r => (slot m 8 (wsize D)).map fun (b, i) =>
-    { σ with
-      mem := fun b' i' => if b' = b ∧ i ≤ i' ∧ i' < i + 8 then σ.reg (xidx r) (i' - i) else σ.mem b' i'
-      dirty := true }
+  | .vmovdquLoad .l256 d m => (slot m 8 (bsize D)).bind fun (b, i) =>
+    if to = true ∧ b = 2 ∧ clean3 σ i 8 = false then none
+    else some (σ.setReg (xidx d) fun p => σ.mem b (i + p))
+  | .vbroadcasti128 d m => (slot m 4 (bsize D)).bind fun (b, i) =>
+    if to = true ∧ b = 2 ∧ clean3 σ i 4 = false then none
+    else some (σ.setReg (xidx d) fun p => σ.mem b (i + p % 4))
+  | .vmovdquStore .l256 m r =>
+    if to then
+      match slotD m 8 D with
+      | some i => some (symStore σ 3 i 8 (xidx r))
+      | none => (slot m 8 (wsize 0)).map fun (b, i) => symStore σ b i 8 (xidx r)
+    else (slot m 8 (wsize D)).map fun (b, i) => symStore σ b i 8 (xidx r)
   | _ => none
 
-def run (D : Nat) (σ : Sym) : List Instr → Option Sym
+def runT (to : Bool) (D : Nat) (σ : Sym) : List Instr → Option Sym
   | [] => some σ
-  | i :: is => (step D σ i).bind fun σ' => run D σ' is
+  | i :: is => (stepT to D σ i).bind fun σ' => runT to D σ' is
+
+/-- In place. -/
+abbrev step (D : Nat) := stepT false D
+abbrev run (D : Nat) := runT false D
 
 /-! ## The machine agrees -/
 
-/-- The terms `σ` hold in `s`. -/
-structure SRel (D : Nat) (σ : Sym) (s₀ s : State) : Prop where
+/-- The terms `σ` hold in `s`: in the registers, and in regions 0 to 2 (from
+a source to a destination, in the source where its destination is as on
+entry) and the destination. -/
+structure SRelT (to : Bool) (D : Nat) (σ : Sym) (s₀ s : State) : Prop where
   reg : ∀ r p, p < 8 → yw s r p = T.eval D s₀ (σ.reg (xidx r) p)
-  mem : ∀ b i, b < 3 → i < bsize D b →
+  mem : ∀ b i, b < 3 → i < bsize D b → (to = true → b = 2 → σ.mem 3 i = .mem 3 i) →
     s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 32 = T.eval D s₀ (σ.mem b i)
+  mem3 : to = true → ∀ i < D,
+    s.mem.readW ((dstR D s₀).base + BitVec.ofNat 64 (4 * i)) 32 = T.eval D s₀ (σ.mem 3 i)
+  src : to = true → ∀ i, σ.mem 2 i = .mem 2 i
   gpr : s.gpr = s₀.gpr
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame (wregs D s₀) s₀.mem s.mem
+  frame : Frame (wregsT to D s₀) s₀.mem s.mem
   clean : σ.dirty = false → s.mem = s₀.mem
 
-theorem SRel.init (D : Nat) (s₀ : State) : SRel D Sym.init s₀ s₀ :=
-  ⟨fun r p _ => by simp only [Sym.init, T.eval, zreg_xidx], fun _ _ _ _ => rfl, rfl, rfl, rfl,
-    Frame.refl _ _, fun _ => rfl⟩
+/-- In place. -/
+abbrev SRel (D : Nat) := SRelT false D
 
-theorem SRel.setReg {D : Nat} {σ : Sym} {s₀ s s' : State} (h : SRel D σ s₀ s) {d : XReg} {f : Nat → T}
-    (hz : ∀ r p, p < 8 → yw s' r p = if r = d then T.eval D s₀ (f p) else yw s r p)
+theorem SRel.mem {D : Nat} {σ : Sym} {s₀ s : State} (h : SRel D σ s₀ s) :
+    ∀ b i, b < 3 → i < bsize D b →
+      s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 32 = T.eval D s₀ (σ.mem b i) :=
+  fun b i hb hi => SRelT.mem h b i hb hi (fun e => nomatch e)
+
+theorem SRelT.init (to : Bool) (D : Nat) (s₀ : State) : SRelT to D Sym.init s₀ s₀ :=
+  ⟨fun r p _ => by simp only [Sym.init, T.eval, zreg_xidx],
+   fun b i hb _ _ => by simp only [Sym.init, T.eval, memBase_lt hb],
+   fun _ i _ => by simp only [Sym.init, T.eval, memBase_3],
+   fun _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ => rfl⟩
+
+theorem SRel.init (D : Nat) (s₀ : State) : SRel D Sym.init s₀ s₀ := SRelT.init false D s₀
+
+theorem SRelT.setReg {to : Bool} {D : Nat} {σ : Sym} {s₀ s s' : State} (h : SRelT to D σ s₀ s) {d : XReg}
+    {f : Nat → T} (hz : ∀ r p, p < 8 → yw s' r p = if r = d then T.eval D s₀ (f p) else yw s r p)
     (hm : s'.mem = s.mem) (hg : s'.gpr = s.gpr) (hr : s'.rd = s.rd) (hw : s'.wr = s.wr) :
-    SRel D (σ.setReg (xidx d) f) s₀ s' := by
-  refine ⟨fun r p hp => ?_, fun b i hb hi => by rw [hm]; exact h.mem b i hb hi, hg.trans h.gpr,
+    SRelT to D (σ.setReg (xidx d) f) s₀ s' := by
+  refine ⟨fun r p hp => ?_, fun b i hb hi hc => by rw [hm]; exact h.mem b i hb hi hc,
+    fun ht i hi => by rw [hm]; exact h.mem3 ht i hi, h.src, hg.trans h.gpr,
     hr.trans h.rd, hw.trans h.wr, hm ▸ h.frame, fun hd => hm.trans (h.clean hd)⟩
   rw [hz r p hp]
   simp only [Sym.setReg, xidx_inj]
   split
   · rfl
   · exact h.reg r p hp
+
+theorem SRel.setReg {D : Nat} {σ : Sym} {s₀ s s' : State} (h : SRel D σ s₀ s) {d : XReg} {f : Nat → T}
+    (hz : ∀ r p, p < 8 → yw s' r p = if r = d then T.eval D s₀ (f p) else yw s r p)
+    (hm : s'.mem = s.mem) (hg : s'.gpr = s.gpr) (hr : s'.rd = s.rd) (hw : s'.wr = s.wr) :
+    SRel D (σ.setReg (xidx d) f) s₀ s' :=
+  SRelT.setReg h hz hm hg hr hw
 
 theorem mod4_lt' (p : Nat) : p % 4 < 4 := Nat.mod_lt _ (by decide)
 
@@ -131,11 +167,181 @@ theorem perm2Lanes_eq (a b : Nat → BitVec 128) (n : BitVec 8) {j : Nat} (h : n
   · rw [ite_eq_left hk, ite_eq_left hk]
   · rw [ite_eq_right hk, ite_eq_right hk]
 
-/-- One instruction. -/
-theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : State} (h : SRel D σ s₀ s)
-    {i : Instr} (e : step D σ i = some σ') : ∃ s', exec i s = some s' ∧ SRel D σ' s₀ s' := by
+/-- A store of `ymm r` at doubleword `i` of a region whose doublewords
+`j < D'` are at `p + 4 j`: the doublewords after it. -/
+theorem read_store {m : Mem} {p : Addr} {i j D' : Nat} (hD : D' ≤ 128) (hi : i + 8 ≤ D') (hj : j < D')
+    (v : BitVec 256) :
+    (m.writeW (p + BitVec.ofNat 64 (4 * i)) v).readW (p + BitVec.ofNat 64 (4 * j)) 32 =
+      if i ≤ j ∧ j < i + 8 then v.extractLsb' (8 * (4 * (j - i))) (8 * 4) else m.readW (p + BitVec.ofNat 64 (4 * j)) 32 := by
+  by_cases hx : i ≤ j ∧ j < i + 8
+  · rw [ite_eq_left hx, show p + BitVec.ofNat 64 (4 * j) =
+        p + BitVec.ofNat 64 (4 * i) + BitVec.ofNat 64 (4 * (j - i)) by
+      rw [add_ofNat']; congr 2; omega_arith]
+    exact readW_writeW_inside m _ v (k := 4 * (j - i)) (n := 4) (by omega_arith) (by decide)
+  · rw [ite_eq_right hx]
+    exact readW_writeW_off m _ v (d := 4 * j) (e := 4 * i) (n := 4) (by omega_arith) (by omega_arith)
+      (by omega_arith)
+
+/-- A store in place, to `buf` or the data. -/
+theorem store_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ : Sym} {s : State} (h : SRelT false D σ s₀ s)
+    {m : MemOp} {r : XReg} {b i : Nat} (hs : slot m 8 (wsize D) = some (b, i)) :
+    ∃ s', exec (.vmovdquStore .l256 m r) s = some s' ∧ SRelT false D (symStore σ b i 8 (xidx r)) s₀ s' := by
   have hD := hc.small
-  unfold step at e
+  obtain ⟨hb, hi, hea⟩ := slot_ok hs
+  have hi' : i + 8 ≤ bsize D b := Nat.le_trans hi (wsize_le D b)
+  have hb0 : b = 1 ∨ b = 2 := by
+    rcases (by omega_arith : b = 0 ∨ b = 1 ∨ b = 2) with rfl | e | e
+    · simp [wsize] at hi
+    · exact .inl e
+    · exact .inr e
+  have ea : s.ea m = (regn D s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
+  have hin := in_regn hc hb h.wr hi' (by decide)
+  refine ⟨s.setMem (s.mem.writeW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) (s.ymm r)),
+    by simp only [exec, ea, State.store256_eq, hin, ite_true], ⟨fun r' p hp => ?_,
+    fun b' i' hb' hi'' _ => ?_, (fun e => nomatch e), (fun e => nomatch e), by simp [h.gpr], by simp [h.rd],
+    by simp [h.wr], ?_, fun hd => by cases hd⟩⟩
+  · simp only [yw, State.setMem_lane]; exact h.reg r' p hp
+  · simp only [State.setMem_mem, symStore]
+    by_cases e : b' = b
+    · subst e
+      rw [read_store (bsize_le hD b') hi' hi'']
+      by_cases hx : i ≤ i' ∧ i' < i + 8
+      · rw [ite_eq_left hx, ite_eq_left ⟨rfl, hx⟩, ymm_extract _ _ (by omega_arith)]
+        exact h.reg r _ (by omega_arith)
+      · rw [ite_eq_right hx, ite_eq_right (fun h' => hx h'.2)]
+        exact h.mem b' i' hb' hi'' (fun e => nomatch e)
+    · have f := (Frame.refl [regn D s₀ b] s.mem).writeW (List.mem_singleton_self _) (s.ymm r)
+        (regn_contains hD s₀ (n := 8) hi')
+      rw [f.readW (r := regn D s₀ b') (regn_contains hD s₀ (n := 1) (by omega_arith))
+        (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hc.d b' b hb' hb e)
+        (by decide), ite_eq_right (fun hx => e hx.1)]
+      exact h.mem b' i' hb' hi'' (fun e => nomatch e)
+  · simp only [State.setMem_mem]
+    refine h.frame.writeW (r := if b = 1 then ⟨s₀.gpr .r9, 256⟩ else ⟨s₀.gpr .rsi, 4 * D⟩)
+      (by rcases hb0 with rfl | rfl <;> simp [wregsT, wregs]) _ ?_
+    rcases hb0 with rfl | rfl
+    · simp only [regn, baseR, Region.Contains, ite_true]
+      simp only [wsize] at hi; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith
+    · simp only [regn, baseR, Region.Contains, show (2 : Nat) ≠ 1 by decide, ite_false]
+      simp only [wsize] at hi; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith
+
+/-- From a source to a destination: a store to the destination. -/
+theorem store3_ok {D : Nat} {s₀ : State} (hc : Ctx 0 s₀ ∧ Ctx3 (regn D s₀) D s₀ ∧ D ≤ 128) {σ : Sym} {s : State}
+    (h : SRelT true D σ s₀ s) {m : MemOp} {r : XReg} {i : Nat} (hs : slotD m 8 D = some i) :
+    ∃ s', exec (.vmovdquStore .l256 m r) s = some s' ∧ SRelT true D (symStore σ 3 i 8 (xidx r)) s₀ s' := by
+  have hD := hc.2.2
+  obtain ⟨hi, hea⟩ := slotD_ok hs
+  have ea : s.ea m = (dstR D s₀).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
+  have hin : InRegions s.wr ((dstR D s₀).base + BitVec.ofNat 64 (4 * i)) (4 * 8) := by
+    rw [h.wr]; exact hc.2.1.w i 8 hi (by decide)
+  have hdc : ∀ {j n : Nat}, j + n ≤ D → (dstR D s₀).Contains ((dstR D s₀).base + BitVec.ofNat 64 (4 * j)) (4 * n) :=
+    fun hj => dst_contains hD s₀ hj
+  have f := (Frame.refl [dstR D s₀] s.mem).writeW (List.mem_singleton_self _) (s.ymm r) (hdc (n := 8) hi)
+  have F : Frame [⟨s₀.gpr .r9, 256⟩, dstR D s₀] s₀.mem
+      (s.mem.writeW ((dstR D s₀).base + BitVec.ofNat 64 (4 * i)) (s.ymm r)) :=
+    (h.frame.writeW (r := dstR D s₀) (by simp [wregsT]) _ (hdc (n := 8) hi))
+  have m3 : ∀ j < D, (s.mem.writeW ((dstR D s₀).base + BitVec.ofNat 64 (4 * i)) (s.ymm r)).readW
+      ((dstR D s₀).base + BitVec.ofNat 64 (4 * j)) 32 = T.eval D s₀ ((symStore σ 3 i 8 (xidx r)).mem 3 j) := by
+    intro j hj
+    rw [read_store hD hi hj]
+    simp only [symStore, true_and]
+    by_cases hx : i ≤ j ∧ j < i + 8
+    · rw [ite_eq_left hx, ite_eq_left hx, ymm_extract _ _ (by omega_arith)]
+      exact h.reg r _ (by omega_arith)
+    · rw [ite_eq_right hx, ite_eq_right hx]
+      exact h.mem3 rfl j hj
+  refine ⟨s.setMem (s.mem.writeW ((dstR D s₀).base + BitVec.ofNat 64 (4 * i)) (s.ymm r)),
+    by simp only [exec, ea, State.store256_eq, hin, ite_true], ⟨fun r' p hp => ?_,
+    fun b' i' hb' hi'' hcl => ?_, fun _ => m3, fun _ => h.src rfl, by simp [h.gpr], by simp [h.rd],
+    by simp [h.wr], F, fun hd => by cases hd⟩⟩
+  · simp only [yw, State.setMem_lane]; exact h.reg r' p hp
+  · simp only [State.setMem_mem]
+    have e3 : (symStore σ 3 i 8 (xidx r)).mem b' i' = σ.mem b' i' := by
+      simp only [symStore, show b' ≠ 3 by omega_arith, false_and, ite_false]
+    rcases (by omega_arith : b' = 0 ∨ b' = 1 ∨ b' = 2) with rfl | rfl | rfl
+    · rw [e3, f.readW (r := regn D s₀ 0) (regn_contains hD s₀ (n := 1) (by omega_arith))
+        (by simpa using (hc.2.1.d 0 (by decide)).1) (by decide)]
+      exact h.mem 0 i' hb' hi'' (fun _ e => nomatch e)
+    · rw [e3, f.readW (r := regn D s₀ 1) (regn_contains hD s₀ (n := 1) (by omega_arith))
+        (by simpa using (hc.2.1.d 1 (by decide)).1) (by decide)]
+      exact h.mem 1 i' hb' hi'' (fun _ e => nomatch e)
+    · have hi2 : i' < D := by simpa [bsize] using hi''
+      rw [show (symStore σ 3 i 8 (xidx r)).mem 2 i' = .mem 2 i' by
+        simp only [symStore, show (2 : Nat) ≠ 3 by decide, false_and, ite_false]; exact h.src rfl i']
+      simp only [T.eval, memBase_2]
+      refine src_after hc F hi2 ?_
+      have := m3 i' hi2
+      rw [hcl rfl rfl] at this
+      simpa only [T.eval, memBase_3] using this
+
+/-- From a source to a destination: a store to `buf`. -/
+theorem storeB_ok {D : Nat} {s₀ : State} (hc : Ctx 0 s₀ ∧ Ctx3 (regn D s₀) D s₀ ∧ D ≤ 128) {σ : Sym} {s : State}
+    (h : SRelT true D σ s₀ s) {m : MemOp} {r : XReg} {b i : Nat} (hs : slot m 8 (wsize 0) = some (b, i)) :
+    ∃ s', exec (.vmovdquStore .l256 m r) s = some s' ∧ SRelT true D (symStore σ b i 8 (xidx r)) s₀ s' := by
+  have hD := hc.2.2
+  obtain ⟨hb, hi, hea⟩ := slot_ok hs
+  have hb1 : b = 1 := by
+    rcases (by omega_arith : b = 0 ∨ b = 1 ∨ b = 2) with rfl | e | rfl
+    · simp [wsize] at hi
+    · exact e
+    · simp [wsize] at hi
+  subst hb1
+  have hi' : i + 8 ≤ bsize D 1 := Nat.le_trans hi (by simp [wsize, bsize])
+  have ea : s.ea m = (regn D s₀ 1).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
+  have hin : InRegions s.wr ((regn D s₀ 1).base + BitVec.ofNat 64 (4 * i)) (4 * 8) :=
+    in_regn hc.1 (b := 1) (by decide) h.wr hi' (by decide)
+  have f := (Frame.refl [regn D s₀ 1] s.mem).writeW (List.mem_singleton_self _) (s.ymm r)
+    (regn_contains hD s₀ (n := 8) hi')
+  have F : Frame [⟨s₀.gpr .r9, 256⟩, dstR D s₀] s₀.mem
+      (s.mem.writeW ((regn D s₀ 1).base + BitVec.ofNat 64 (4 * i)) (s.ymm r)) :=
+    h.frame.writeW (r := ⟨s₀.gpr .r9, 256⟩) (by simp [wregsT]) _ (by
+      simp only [regn, baseR, Region.Contains]
+      simp only [wsize] at hi; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith)
+  have m3 : ∀ j < D, (s.mem.writeW ((regn D s₀ 1).base + BitVec.ofNat 64 (4 * i)) (s.ymm r)).readW
+      ((dstR D s₀).base + BitVec.ofNat 64 (4 * j)) 32 = T.eval D s₀ ((symStore σ 1 i 8 (xidx r)).mem 3 j) := by
+    intro j hj
+    rw [f.readW (r := dstR D s₀) (by
+        simp only [Region.Contains, dstR]; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith)
+      (by simpa using (hc.2.1.d 1 (by decide)).1.symm) (by decide)]
+    simp only [symStore, show (3 : Nat) ≠ 1 by decide, false_and, ite_false]
+    exact h.mem3 rfl j hj
+  have hs2 : ∀ j, (symStore σ 1 i 8 (xidx r)).mem 2 j = .mem 2 j := fun j => by
+    simp only [symStore, show (2 : Nat) ≠ 1 by decide, false_and, ite_false]; exact h.src rfl j
+  refine ⟨s.setMem (s.mem.writeW ((regn D s₀ 1).base + BitVec.ofNat 64 (4 * i)) (s.ymm r)),
+    by simp only [exec, ea, State.store256_eq, hin, ite_true], ⟨fun r' p hp => ?_,
+    fun b' i' hb' hi'' hcl => ?_, fun _ => m3, fun _ j => ?_, by simp [h.gpr], by simp [h.rd],
+    by simp [h.wr], F, fun hd => by cases hd⟩⟩
+  · simp only [yw, State.setMem_lane]; exact h.reg r' p hp
+  · simp only [State.setMem_mem]
+    rcases (by omega_arith : b' = 0 ∨ b' = 1 ∨ b' = 2) with rfl | rfl | rfl
+    · rw [f.readW (r := regn D s₀ 0) (regn_contains hD s₀ (n := 1) (by omega_arith))
+        (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact hc.1.d 0 1 (by decide) (by decide) (by decide))
+        (by decide)]
+      simp only [symStore, show (0 : Nat) ≠ 1 by decide, false_and, ite_false]
+      exact h.mem 0 i' hb' hi'' (fun _ e => nomatch e)
+    · rw [read_store (bsize_le hD 1) hi' hi'']
+      simp only [symStore, true_and]
+      by_cases hx : i ≤ i' ∧ i' < i + 8
+      · rw [ite_eq_left hx, ite_eq_left hx, ymm_extract _ _ (by omega_arith)]
+        exact h.reg r _ (by omega_arith)
+      · rw [ite_eq_right hx, ite_eq_right hx]
+        exact h.mem 1 i' hb' hi'' (fun _ e => nomatch e)
+    · have hi2 : i' < D := by simpa [bsize] using hi''
+      rw [hs2 i']
+      simp only [T.eval, memBase_2]
+      refine src_after hc F hi2 ?_
+      have := m3 i' hi2
+      rw [hcl rfl rfl] at this
+      simpa only [T.eval, memBase_3] using this
+  · exact hs2 j
+
+/-- One instruction. -/
+theorem sstepT_ok {to : Bool} {D : Nat} {s₀ : State} (hc : CtxT to D s₀) {σ σ' : Sym} {s : State}
+    (h : SRelT to D σ s₀ s) {i : Instr} (e : stepT to D σ i = some σ') :
+    ∃ s', exec i s = some s' ∧ SRelT to D σ' s₀ s' := by
+  have hD := hc.small
+  unfold stepT at e
   split at e
   · rename_i op d a b
     split at e
@@ -187,10 +393,15 @@ theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : 
       · rfl
     · cases e
   · rename_i d m
-    obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
+    obtain ⟨⟨b, i⟩, hs, e⟩ := Option.bind_eq_some_iff.1 e
+    dsimp only at e
+    by_cases hcl : to = true ∧ b = 2 ∧ clean3 σ i 8 = false
+    · rw [ite_eq_left hcl] at e; cases e
+    rw [ite_eq_right hcl, Option.some.injEq] at e
+    subst e
     obtain ⟨hb, hi, hea⟩ := slot_ok hs
     have ea : s.ea m = (regn D s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
-    have hin := in_regn' hc hb h.wr hi (by decide)
+    have hin := hc.rd hb h.rd h.wr hi (by decide)
     refine ⟨s.setV .l256 d ((s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 256).extractLsb' 0 128)
       ((s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 256).extractLsb' 128 128),
       by simp only [exec, ea, State.load256, hin, ite_true, Option.map_some],
@@ -200,13 +411,18 @@ theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : 
       (128 * l) 128) (by omega_arith)]
     split
     · rw [dword_read256 _ _ hp, add_ofNat', ← Nat.mul_add]
-      exact h.mem b (i + p) hb (by omega_arith)
+      exact h.mem b (i + p) hb (by omega_arith) (clean_of hcl hp)
     · rfl
   · rename_i d m
-    obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
+    obtain ⟨⟨b, i⟩, hs, e⟩ := Option.bind_eq_some_iff.1 e
+    dsimp only at e
+    by_cases hcl : to = true ∧ b = 2 ∧ clean3 σ i 4 = false
+    · rw [ite_eq_left hcl] at e; cases e
+    rw [ite_eq_right hcl, Option.some.injEq] at e
+    subst e
     obtain ⟨hb, hi, hea⟩ := slot_ok hs
     have ea : s.ea m = (regn D s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
-    have hin := in_regn' hc hb h.wr hi (by decide)
+    have hin := hc.rd hb h.rd h.wr hi (by decide)
     refine ⟨s.setV .l256 d (s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 128)
       (s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 128),
       by simp only [exec, ea, State.load128, hin, ite_true, Option.map_some],
@@ -216,66 +432,39 @@ theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : 
       (by omega_arith)]
     split
     · rw [dword_readW _ _ (mod4_lt' p), add_ofNat', ← Nat.mul_add]
-      exact h.mem b (i + p % 4) hb (by have := mod4_lt' p; omega_arith)
+      exact h.mem b (i + p % 4) hb (by have := mod4_lt' p; omega_arith) (clean_of hcl (mod4_lt' p))
     · rfl
   · rename_i m r
-    obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
-    obtain ⟨hb, hi, hea⟩ := slot_ok hs
-    have hi' : i + 8 ≤ bsize D b := Nat.le_trans hi (wsize_le D b)
-    have hb0 : b = 1 ∨ b = 2 := by
-      rcases (by omega_arith : b = 0 ∨ b = 1 ∨ b = 2) with rfl | e | e
-      · simp [wsize] at hi
-      · exact .inl e
-      · exact .inr e
-    have ea : s.ea m = (regn D s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
-    have hin := in_regn hc hb h.wr hi' (by decide)
-    refine ⟨s.setMem (s.mem.writeW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) (s.ymm r)),
-      by simp only [exec, ea, State.store256_eq, hin, ite_true], ⟨fun r' p hp => ?_,
-      fun b' i' hb' hi'' => ?_, by simp [h.gpr], by simp [h.rd], by simp [h.wr], ?_, fun hd => by cases hd⟩⟩
-    · simp only [yw, State.setMem_lane]; exact h.reg r' p hp
-    · simp only [State.setMem_mem]
-      by_cases hx : b' = b ∧ i ≤ i' ∧ i' < i + 8
-      · obtain ⟨rfl, h₁, h₂⟩ := hx
-        simp only [and_self, h₁, h₂, ite_true]
-        rw [show (regn D s₀ b').base + BitVec.ofNat 64 (4 * i') =
-            (regn D s₀ b').base + BitVec.ofNat 64 (4 * i) + BitVec.ofNat 64 (4 * (i' - i)) by
-          rw [add_ofNat']; congr 2; omega_arith]
-        refine (readW_writeW_inside s.mem _ (s.ymm r) (k := 4 * (i' - i)) (n := 4) (by omega_arith)
-          (by decide)).trans ?_
-        rw [ymm_extract _ _ (by omega_arith)]
-        exact h.reg r _ (by omega_arith)
-      · rw [ite_eq_right hx]
-        by_cases e : b' = b
-        · subst e
-          have hx' : i' + 1 ≤ i ∨ i + 8 ≤ i' := by omega_arith
-          have := bsize_le hD b'
-          exact (readW_writeW_off s.mem _ (s.ymm r) (d := 4 * i') (e := 4 * i) (n := 4)
-            (by omega_arith) (by omega_arith) (by omega_arith)).trans (h.mem b' i' hb' hi'')
-        · have f := (Frame.refl [regn D s₀ b] s.mem).writeW (List.mem_singleton_self _) (s.ymm r)
-            (regn_contains hD s₀ (n := 8) hi')
-          rw [f.readW (r := regn D s₀ b') (regn_contains hD s₀ (n := 1) (by omega_arith))
-            (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hc.d b' b hb' hb e)
-            (by decide)]
-          exact h.mem b' i' hb' hi''
-    · simp only [State.setMem_mem]
-      refine h.frame.writeW (r := if b = 1 then ⟨s₀.gpr .r9, 256⟩ else ⟨s₀.gpr .rsi, 4 * D⟩)
-        (by rcases hb0 with rfl | rfl <;> simp [wregs]) _ ?_
-      rcases hb0 with rfl | rfl
-      · simp only [regn, baseR, Region.Contains, ite_true]
-        simp only [wsize] at hi; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith
-      · simp only [regn, baseR, Region.Contains, show (2 : Nat) ≠ 1 by decide, ite_false]
-        simp only [wsize] at hi; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith
+    cases to
+    · -- In place: `buf` or the data.
+      simp only [Bool.false_eq_true, ite_false] at e
+      obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
+      exact store_ok hc h hs
+    · simp only [ite_true] at e
+      split at e
+      · -- The destination.
+        rename_i j hj
+        cases e
+        exact store3_ok hc h hj
+      · -- `buf`.
+        obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
+        exact storeB_ok hc h hs
   · cases e
 
 /-- A block of instructions. -/
-theorem srun_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) :
-    ∀ (is : List Instr) {σ σ' : Sym} {s : State}, SRel D σ s₀ s → run D σ is = some σ' →
-      WP isa (.block is) s (SRel D σ' s₀)
+theorem srunT_ok {to : Bool} {D : Nat} {s₀ : State} (hc : CtxT to D s₀) :
+    ∀ (is : List Instr) {σ σ' : Sym} {s : State}, SRelT to D σ s₀ s → runT to D σ is = some σ' →
+      WP isa (.block is) s (SRelT to D σ' s₀)
   | [], _, _, _, h, e => by cases e; exact WP.block_nil h
   | i :: is, _, _, _, h, e => by
-    simp only [run, Option.bind_eq_some_iff] at e
+    simp only [runT, Option.bind_eq_some_iff] at e
     obtain ⟨σ₁, e₁, e₂⟩ := e
-    obtain ⟨s₁, hx, h₁⟩ := sstep_ok hc h e₁
-    exact WP.block_cons_iff.2 ⟨s₁, hx, srun_ok hc is h₁ e₂⟩
+    obtain ⟨s₁, hx, h₁⟩ := sstepT_ok hc h e₁
+    exact WP.block_cons_iff.2 ⟨s₁, hx, srunT_ok hc is h₁ e₂⟩
+
+/-- A block of instructions, in place. -/
+theorem srun_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) (is : List Instr) {σ σ' : Sym} {s : State}
+    (h : SRel D σ s₀ s) (e : run D σ is = some σ') : WP isa (.block is) s (SRel D σ' s₀) :=
+  srunT_ok (to := false) hc is h e
 
 end VG.Proof.ChaCha20.X86_64.Avx2Tail

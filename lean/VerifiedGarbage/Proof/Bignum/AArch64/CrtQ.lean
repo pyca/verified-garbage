@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Bignum.Math
 /-!
 # RSA with the CRT on AArch64: `q`'s phase
 
-`qPhase`: `m_q = c^dQ mod q` into `q`'s `Y` (`qPhase_ok`), if `q` divides
+`qPhase`: `m_q = c^dQ mod q` into `q`'s `Y`, if `q` divides
 `n` and the modulus' `X_m ≡ c R`.
 -/
 
@@ -267,22 +267,6 @@ theorem qPhase_gen (M : Mont) (E : Nat → Nat → List (Prog isa)) (hE : PowOk 
   · by_cases h : r = .x0
     · subst h; rw [hdi, hg.x0]
     · exact kall.gpr r (by simp only [List.mem_append, List.mem_singleton, hr, h, or_self, not_false_eq_true])
-
-theorem qPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C o wx : Nat}
-    {ep : Addr} {eb : List Byte}
-    (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ Z)
-    (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hslv : word s.mem B (8 * sWsQ) = off B o) (hws : WsAt s.mem B o wx mx)
-    (hN : NVals s B w minv N) (hodd : N % 2 = 1) (hN1 : 1 < N)
-    (hXm : wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)
-    (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
-    (hep : word s.mem B (8 * sDq) = ep) (hel : word s.mem B (8 * sQlen) = BitVec.ofNat 64 eb.length)
-    (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb) :
-    WP isa (seqs (qPhase M.mm)) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
-      wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
-      (X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = C ^ Spec.Rsa.os2ip eb % X) ∧
-      Frm B (gRanges w ++ [xRange o wx]) s.mem t.mem ∧ Keep mmRegs s t := by
-  rw [qPhase_eq]
-  exact qPhase_gen M (expLoop M.mm) (@powPhase_ok M) hg hw hw28 hlo hhi hwx2 hwx hslv hws hN hodd hN1 hXm hX hX1 hXodd hep hel hL1 hL2 he
 
 /-- A change to arrays of a prime's workspace but `X` and 1. -/
 theorem SubCtx.of_arrays {s t : State} {B : Addr} {Z o w wx : Nat} {mx : BitVec 64} {X : Nat} {js : List Nat}

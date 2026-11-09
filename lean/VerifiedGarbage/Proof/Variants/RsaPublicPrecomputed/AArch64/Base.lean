@@ -19,7 +19,7 @@ namespace VG.Proof.Variants.RsaPublicPrecomputed.AArch64.Base
 open VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64
 
 def variant : PublicImpl where
-  name := Spec.Rsa.publicPrecomputedCheckedApi.name ++ ""
+  name := "vg_rsa_public_precomputed_checked"
   code := Impl.Rsa.AArch64.Folded.checked Mont.productEight.mm
   ok := FoldedPublic.checked_correct _
   ct := FoldedPublic.checked_constantTime _

@@ -88,15 +88,6 @@ theorem copyLo {L : Lay} {s : State} (hL : L.Ok) {sb db : Reg} {bo so dO len i j
 theorem mul_eq (p : BitVec 64) (m i : Nat) : p + BitVec.ofNat 64 i * BitVec.ofNat 64 m = p + BitVec.ofNat 64 (m * i) := by
   rw [← BitVec.ofNat_mul, Nat.mul_comm]
 
-/-- `d ← b + m c`, through `t0`. -/
-theorem atMul_ok {s : State} {d b c : Reg} {m : Nat} (hb : b ≠ .t0) (hc : c ≠ .t0)
-    (hm : m < 2048) :
-    WP isa (.block (atMul d b c m)) s fun s' =>
-      s'.gpr d = s.gpr b + s.gpr c * BitVec.ofNat 64 m ∧ (∀ r, r ≠ d → r ≠ .t0 → s'.gpr r = s.gpr r) ∧
-      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  rw [← List.append_nil (atMul d b c m)]
-  exact wp_atMul hm hb hc fun s' u => WP.block_nil ⟨u.gpr, u.other, u.mem, u.rd, u.wr, u.sp⟩
-
 /-! ## Decoding `t̂` -/
 
 theorem decTArgs_ok {s : State} {P B : BitVec 64} {i : Nat} (hi : i < 2048) (h11 : s.gpr .s11 = P)

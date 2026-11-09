@@ -4,8 +4,7 @@ public import VerifiedGarbage.Proof.Zeroize.AArch64Wide
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.TCB.AArch64.Print
 
 @[expose] public section
 

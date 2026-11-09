@@ -84,10 +84,6 @@ theorem ofNat32_sub_beq {x y : Nat} (hx : x < 2 ^ 32) (hy : y < 2 ^ 32) :
   rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
   bv_omega
 
-theorem ofNat32_beq_zero {x : Nat} (hx : x < 2 ^ 32) : (BitVec.ofNat 32 x == 0) = decide (x = 0) := by
-  rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
-  bv_omega
-
 theorem eval_ne (s : State) : isa.eval .ne s = s.zf.map (!·) := rfl
 theorem eval_e (s : State) : isa.eval .e s = s.zf := rfl
 theorem eval_b (s : State) : isa.eval .b s = s.cf := rfl

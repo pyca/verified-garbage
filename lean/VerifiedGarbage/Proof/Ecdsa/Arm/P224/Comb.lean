@@ -46,28 +46,8 @@ open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Weierstrass.Arm
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm.TComb
 open VG.Proof.Ecdsa.Arm
 
-abbrev combSignSpec : Contract isa :=
-  Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst (abi.withConsts p224CombConsts)
-
 def combSignPre (u : Bool) (s : State) : Prop :=
   Pre (p224With u) s (constRegs p224CombConsts s) ∧ ConstsOk p224CombConsts 0 s
-
-theorem sign_spec_pre {u : Bool} {s : State}
-    (h : (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst abi).pre s) : Pre (p224With u) s := by
-  sig_pre [Spec.Ecdsa.P224.inst,Proof.Ecdsa.Instance.signContract,Proof.Ecdsa.Instance.signSig,
-    Spec.P224.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr,stackArgAddr,
-    BitVec.add_zero] at h
-  obtain ⟨sp,rd,wr,_od,_oh,_ok,os,oa,ds,hs,ks,sa,fo,fd,fh,fk,fs⟩ := h
-  exact ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp⟩
-
-theorem combSign_pre {u : Bool} {s : State} (h : combSignSpec.pre s) : combSignPre u s := by
-  have hp : (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst abi).pre (stripConsts p224CombConsts s) ∧
-      ConstsOk p224CombConsts 0 s := pre_consts.mp h
-  have p := sign_spec_pre (u := u) hp.1
-  refine ⟨⟨?_,p.wr,p.out_sc,p.d_sc,p.digest_sc,p.k_sc,p.out_args,p.sc_args,
-    p.out_fit,p.d_fit,p.digest_fit,p.k_fit,p.sc_fit,p.sp_fit⟩,hp.2⟩
-  rw [← List.take_append_drop (s.rd.length-p224CombConsts.length) s.rd,hp.2.1]
-  exact congrArg (fun rs => rs++constRegs p224CombConsts s) p.rd
 
 def combSignPub (s t : State) : Prop := signArm.pub s t ∧ s.syms p224Comb.tsym=t.syms p224Comb.tsym
 
@@ -92,58 +72,5 @@ theorem combSign_ok (hC : Law Spec.P224.curve) {u : Bool} {s₀ : State} (hp : c
   have hd := table_disjoint_of_consts hp.2 member
     (show scR s₀∈s₀.wr by rw [hp.1.wr]; simp)
   exact signWith_ok (p224With_ok u) hC hp.1 fun _ S sy => comb_generator_stage hC S sy ht rfl hd
-
-open VG.Proof.P224.Arm in
-theorem combSign_sat : combSignSpec.pre combSatState := by
-  have arg := combSat_stackArg
-  have held := combSat_held
-  generalize eqs : combSatState=s
-  sig_pre [combSignSpec,Spec.Ecdsa.P224.inst,Proof.Ecdsa.Instance.signContract,
-    Proof.Ecdsa.Instance.signSig,Spec.P224.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
-    Loc.val,State.addr,stackArgAddr,BitVec.add_zero,p224CombConsts,Abi.withConsts,
-    Abi.constRegions,Abi.constsHeld,stackBelow]
-  subst s
-  rw [arg,comb_words_length]
-  rw [comb_words_length] at held
-  refine ⟨by decide,by decide,held,by decide,?_,by decide,by decide,?_⟩
-  · intro r hr
-    change r∈[⟨0x10000,56⟩,⟨0,8192⟩] at hr
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl|rfl <;> exact Region.disjoint_of_sep (by decide)
-  · repeat' apply And.intro
-    all_goals first | exact Region.disjoint_of_sep (by decide) | decide
-
-def combSignLocal (u : Bool) : Contract isa where
-  pre := combSignPre u
-  post := SignPost (p224With u)
-  pub := combSignPub
-
-theorem combSignWith_verified (hC : Weierstrass.Law Spec.P224.curve) (u : Bool)
-    (hct : ConstantTime isa (combSignPre u) combSignPub (signP224CombWith u)) :
-    Verified Arm.target (signP224CombWith u) combSignSpec := by
-  refine Verified.of_correct (k := combSignLocal u) (fun s hs => ?_) hct
-    ⟨fun _ h => combSign_pre h,?_,?_,⟨VG.Proof.P224.Arm.combSatState,combSign_sat⟩⟩
-  · obtain ⟨tr,t,exec,keep,post⟩ := combSign_ok hC hs
-    exact ⟨tr,t,exec,abi_of_saved keep.saved keep.sp,post⟩
-  · intro s t _ post
-    sig_post [combSignSpec,Spec.Ecdsa.P224.inst,Proof.Ecdsa.Instance.signContract,
-      Proof.Ecdsa.Instance.signSig,Spec.P224.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
-      Loc.val,State.addr,stackArgAddr,BitVec.add_zero,Abi.withConsts]
-    rw [show (t.gpr .r1++t.gpr .r0).setWidth 32=t.gpr .r0 from BitVec.setWidth_append_eq_right]
-    exact post
-  · intro s t _ _ pub
-    sig_pub [combSignSpec,Spec.Ecdsa.P224.inst,Proof.Ecdsa.Instance.signContract,
-      Proof.Ecdsa.Instance.signSig,Spec.P224.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
-      Loc.val,State.addr,stackArgAddr,BitVec.add_zero,p224CombConsts,Abi.withConsts] at pub
-    obtain ⟨sp,sy,h0,h1,h2,h3,ha⟩ := pub
-    exact ⟨⟨sp,h0,h1,h2,h3,ha⟩,sy⟩
-
-theorem combSign_verified (hC : Weierstrass.Law Spec.P224.curve) :
-    Verified Arm.target signP224Comb combSignSpec :=
-  combSignWith_verified hC false combSign_ct
-
-theorem combSignU_verified (hC : Weierstrass.Law Spec.P224.curve) :
-    Verified Arm.target signP224CombU combSignSpec :=
-  combSignWith_verified hC true combSignU_ct
 
 end VG.Proof.Ecdsa.Arm.P224

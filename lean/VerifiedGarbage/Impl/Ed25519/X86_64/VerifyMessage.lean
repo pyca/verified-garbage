@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PublicKey
+public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
+public import VerifiedGarbage.Spec.Sha512.Contract
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
 
 /-!

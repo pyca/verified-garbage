@@ -385,19 +385,6 @@ theorem sl_bits0 (c : Cfg) {i : Nat} (hi : i < 45) {L : Nat} (hL : L ≤ 64 * c.
     rw [Nat.mul_succ] at this
     omega_arith
 
-/-- The temporary area is apart from the window method's table of bits
-(`64 (n + 1)` bytes at slot `55`). -/
-theorem tmp_wb (c : Cfg) (h7 : c.n < 10) (h8 : c.n ≠ 8) :
-    c.sl 55 + 4 * (16 * c.n + 1) ≤ c.sl TMP ∨ c.sl TMP + 8 * c.n ≤ c.sl 55 := by
-  rw [sl_eq c 55]
-  by_cases hr : c.n = 6 ∨ c.n = 8 ∨ c.n = 9
-  · rw [sl_tmp c hr]; simp only [Mont.moAt]
-    rcases hr with h | h | h <;> rw [h] <;> omega_arith
-  · rw [sl_aff c hr]; simp only [TMP]; right
-    have : 8 * c.n * 2 + 8 * c.n ≤ 8 * c.n * 55 := by
-      rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by decide)
-    omega_arith
-
 /-- A slot below `45` but the temporary area is below the Montgomery
 products' functions' own working space, as their offsets must be. -/
 theorem sl_own (c : Cfg) (h7 : c.n < 10) {i : Nat} (hi : i < 45) (hT : i ≠ TMP := by sl_ne) :

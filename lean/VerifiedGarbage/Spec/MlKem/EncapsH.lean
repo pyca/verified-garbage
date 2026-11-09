@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.MlKem.Contract
+public import VerifiedGarbage.Spec.Zeroize
 
 /-!
 # ML-KEM: encapsulation with `H(ek)` given, on every target
@@ -16,7 +17,8 @@ with the 32 bytes `h` given, which must be `H(ek)` (the precondition of
 `ML-KEM.Encaps_internal(ek, m)`, which computes `H(ek)` itself. So an
 implementation may use `h` in place of `H(ek)`, and nothing else changes:
 the same outcome (`Outcome`), the same leak (`ρ`, and nothing else; `h` is
-secret as the rest of `ek` is), the same working space.
+secret as the rest of `ek` is), the same working space, left with each byte
+unchanged or zero.
 
 The caller computes `h` from `ek` once, with SHA3-256 (or takes it from the
 decapsulation key, where `vg_mlkem*_keygen` writes it), and passes it with
@@ -44,14 +46,15 @@ def encapsHSig : Sig := encapsHSigOf 1184 1088 4096
 `H(ek)`: with the encapsulation key at `ek`, its hash at `h` and the 32
 bytes of randomness at `m`, writes the shared secret key and the ciphertext
 of `ML-KEM.Encaps_internal(ek, m)` (Algorithm 17) of ML-KEM-768 to `key` and
-`ct`, and returns 1; or returns 0 (see `Outcome`). May leak `ρ`, the seed of
-`Â` in `ek`. -/
+`ct`, and returns 1; or returns 0 (see `Outcome`); and leaves each byte of
+`scratch` unchanged or zero. May leak `ρ`, the seed of `Â` in `ek`. -/
 def encapsHContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   encapsHSig.contract A
     (pre := fun ek h _msg _key _ct _scratch m => bytesAt m h 32 = H (bytesAt m ek 1184))
-    (post := fun ek _h msg key ct _scratch m m' r =>
+    (post := fun ek _h msg key ct scratch m m' r =>
       Outcome (fun iters => encapsInternal mlKem768 iters (bytesAt m ek 1184) (bytesAt m msg 32)) r
-        (bytesAt m' key 32, bytesAt m' ct 1088))
+        (bytesAt m' key 32, bytesAt m' ct 1088) ∧
+      Zeroize.scrubbed m m' scratch 32768)
     (writeArgs := true)
     (stack := stack)
     (leak := some fun ek _h _msg _key _ct _scratch m => leakRho (ekRho mlKem768 (bytesAt m ek 1184)))
@@ -98,9 +101,10 @@ the 32 bytes at `h` given, which must be `H(ek)`. -/
 def encapsHContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   encapsHSig.contract A
     (pre := fun ek h _msg _key _ct _scratch m => bytesAt m h 32 = H (bytesAt m ek 1568))
-    (post := fun ek _h msg key ct _scratch m m' r =>
+    (post := fun ek _h msg key ct scratch m m' r =>
       Outcome (fun iters => encapsInternal mlKem1024 iters (bytesAt m ek 1568) (bytesAt m msg 32)) r
-        (bytesAt m' key 32, bytesAt m' ct 1568))
+        (bytesAt m' key 32, bytesAt m' ct 1568) ∧
+      Zeroize.scrubbed m m' scratch 49152)
     (writeArgs := true)
     (stack := stack)
     (leak := some fun ek _h _msg _key _ct _scratch m => leakRho (ekRho mlKem1024 (bytesAt m ek 1568)))

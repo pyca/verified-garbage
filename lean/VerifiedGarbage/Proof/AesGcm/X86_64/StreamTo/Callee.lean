@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Impl.AesGcm.X86_64
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
@@ -18,7 +19,7 @@ contracts in the terms of this target: `vg_aes_gcm_encrypt_blocks_to`
 (`BlkToFn`, by `encryptBlocksToX86_64M`) and `vg_aes_gcm_stream_encrypt`
 (`EncFn`, by `encK`). The latter is called as an artifact, with its working
 space in a frame of its own, so its proof is its shared contract's
-(`Spec.Gcm.streamEncryptContract`, or `_precomputed`'s), which `encK`'s
+(`Proof.AesGcm.streamEncryptRoundsContract`, or `_precomputed`'s), which `encK`'s
 precondition implies (`encSpec_pre`), and whose postcondition is `encK`'s
 (`encSpec_post`): `EncFn.ofBase` and `EncFn.ofPowers`.
 -/
@@ -67,13 +68,13 @@ def encK (M : CtxMode) : Contract isa where
   pub := encCallPub
 
 theorem encSpec_pre {s : State} (h : encCallPre CtxMode.base s) :
-    (Spec.Gcm.streamEncryptContract X86_64.abi 2608).pre s := by
+    (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).pre s := by
   sig_split h
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁
   clear h
-  sig_pre [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre, X86_64.abi,
+  sig_pre [Proof.AesGcm.streamEncryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre, X86_64.abi,
     X86_64.argRegs]
-  sig_reduce [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre, X86_64.abi,
+  sig_reduce [Proof.AesGcm.streamEncryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre, X86_64.abi,
     X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr,
     List.getD, List.range, List.range.loop, VG.X86_64.below]
   sig_and_intros
@@ -84,14 +85,14 @@ theorem encSpec_pre {s : State} (h : encCallPre CtxMode.base s) :
     | omega
 
 theorem encSpecP_pre {s : State} (h : encCallPre CtxMode.powers s) :
-    (Spec.Gcm.streamEncryptPrecomputedContract X86_64.abi 2608).pre s := by
+    (Proof.AesGcm.streamEncryptPrecomputedRoundsContract X86_64.abi 2608).pre s := by
   sig_split h
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁
   have a₂₂ := h
   clear h
-  sig_pre [Spec.Gcm.streamEncryptPrecomputedContract, Spec.Gcm.streamCryptPrecomputedSig,
+  sig_pre [Proof.AesGcm.streamEncryptPrecomputedRoundsContract, Spec.Gcm.streamCryptPrecomputedSig,
     Spec.Gcm.streamTextPrecomputedPre, X86_64.abi, X86_64.argRegs]
-  sig_reduce [Spec.Gcm.streamEncryptPrecomputedContract, Spec.Gcm.streamCryptPrecomputedSig,
+  sig_reduce [Proof.AesGcm.streamEncryptPrecomputedRoundsContract, Spec.Gcm.streamCryptPrecomputedSig,
     Spec.Gcm.streamTextPrecomputedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
     VG.X86_64.below]
@@ -103,39 +104,39 @@ theorem encSpecP_pre {s : State} (h : encCallPre CtxMode.powers s) :
     | omega
 
 theorem encSpec_post {s s' : State} (hR : Proof.AesGcm.rounds s)
-    (h : (Spec.Gcm.streamEncryptContract X86_64.abi 2608).post s s') :
+    (h : (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).post s s') :
     Proof.AesGcm.streamEncryptX86_64.post s s' := by
-  sig_post [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre, X86_64.abi,
-    X86_64.argRegs, Spec.Gcm.streamEncryptPost] at h
-  sig_reduce [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, X86_64.abi, X86_64.argRegs,
+  sig_post [Proof.AesGcm.streamEncryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre, X86_64.abi,
+    X86_64.argRegs, Proof.AesGcm.streamEncryptRoundsPost] at h
+  sig_reduce [Proof.AesGcm.streamEncryptRoundsContract, Spec.Gcm.streamCryptSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hR
 
 theorem encSpecP_post {s s' : State} (hR : Proof.AesGcm.rounds s)
-    (h : (Spec.Gcm.streamEncryptPrecomputedContract X86_64.abi 2608).post s s') :
+    (h : (Proof.AesGcm.streamEncryptPrecomputedRoundsContract X86_64.abi 2608).post s s') :
     Proof.AesGcm.streamEncryptX86_64.post s s' := by
-  sig_post [Spec.Gcm.streamEncryptPrecomputedContract, Spec.Gcm.streamCryptPrecomputedSig,
-    Spec.Gcm.streamTextPrecomputedPre, X86_64.abi, X86_64.argRegs, Spec.Gcm.streamEncryptPost] at h
-  sig_reduce [Spec.Gcm.streamEncryptPrecomputedContract, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
+  sig_post [Proof.AesGcm.streamEncryptPrecomputedRoundsContract, Spec.Gcm.streamCryptPrecomputedSig,
+    Spec.Gcm.streamTextPrecomputedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.streamEncryptRoundsPost] at h
+  sig_reduce [Proof.AesGcm.streamEncryptPrecomputedRoundsContract, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
     X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hR
 
 theorem encSpec_pub {s₁ s₂ : State} (h : encCallPub s₁ s₂) :
-    (Spec.Gcm.streamEncryptContract X86_64.abi 2608).pub s₁ s₂ := by
+    (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩ := h
-  sig_pub [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, X86_64.abi, X86_64.argRegs]
-  sig_reduce [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, X86_64.abi, X86_64.argRegs,
+  sig_pub [Proof.AesGcm.streamEncryptRoundsContract, Spec.Gcm.streamCryptSig, X86_64.abi, X86_64.argRegs]
+  sig_reduce [Proof.AesGcm.streamEncryptRoundsContract, Spec.Gcm.streamCryptSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg]
   simp only [Proof.AesGcm.arg, X86_64.stackArg, X86_64.stackArgAddr] at a₈
   sig_and_intros
   all_goals first | with_reducible assumption | trivial
 
 theorem encSpecP_pub {s₁ s₂ : State} (h : encCallPub s₁ s₂) :
-    (Spec.Gcm.streamEncryptPrecomputedContract X86_64.abi 2608).pub s₁ s₂ := by
+    (Proof.AesGcm.streamEncryptPrecomputedRoundsContract X86_64.abi 2608).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩ := h
-  sig_pub [Spec.Gcm.streamEncryptPrecomputedContract, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
+  sig_pub [Proof.AesGcm.streamEncryptPrecomputedRoundsContract, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
     X86_64.argRegs]
-  sig_reduce [Spec.Gcm.streamEncryptPrecomputedContract, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
+  sig_reduce [Proof.AesGcm.streamEncryptPrecomputedRoundsContract, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
     X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg]
   simp only [Proof.AesGcm.arg, X86_64.stackArg, X86_64.stackArgAddr] at a₈
   sig_and_intros
@@ -154,7 +155,7 @@ structure EncFn (M : CtxMode) where
   spAll : fn.code.all (fun i => !X86_64.isa.writesSp i) = true
 
 /-- `vg_aes_gcm_stream_encrypt` from its shared contract. -/
-def EncFn.ofBase (f : Fn) (hv : Verified X86_64.target f.code (Spec.Gcm.streamEncryptContract X86_64.abi 2608))
+def EncFn.ofBase (f : Fn) (hv : Verified X86_64.target f.code (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608))
     (sp : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (xd : f.code.x86_64Depth ≤ 2608)
     (mx : f.code.allInstrs (fun i => !loadsMxcsr i) = true) : EncFn CtxMode.base where
   fn := f
@@ -170,7 +171,7 @@ def EncFn.ofBase (f : Fn) (hv : Verified X86_64.target f.code (Spec.Gcm.streamEn
 
 /-- `vg_aes_gcm_stream_encrypt_precomputed` from its shared contract. -/
 def EncFn.ofPowers (f : Fn)
-    (hv : Verified X86_64.target f.code (Spec.Gcm.streamEncryptPrecomputedContract X86_64.abi 2608))
+    (hv : Verified X86_64.target f.code (Proof.AesGcm.streamEncryptPrecomputedRoundsContract X86_64.abi 2608))
     (sp : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (xd : f.code.x86_64Depth ≤ 2608)
     (mx : f.code.allInstrs (fun i => !loadsMxcsr i) = true) : EncFn CtxMode.powers where
   fn := f

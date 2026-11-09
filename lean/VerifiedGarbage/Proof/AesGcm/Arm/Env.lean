@@ -240,9 +240,6 @@ namespace Perm
 variable {c st w : BitVec 32} {s : State} (P : Perm c st w s)
 include P
 
-theorem ctxR {d n : Nat} (h : d + n ≤ 256) : InRegions (s.rd ++ s.wr) (State.addr c + BitVec.ofNat 64 d) n :=
-  in_off P.ctx h (by decide)
-
 theorem stW {d n : Nat} (h : d + n ≤ 80) : InRegions s.wr (State.addr st + BitVec.ofNat 64 d) n :=
   in_off P.st h (by decide)
 

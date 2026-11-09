@@ -53,14 +53,6 @@ theorem num1_eq (m : Mem) (B : Addr) (w j : Nat) :
     num1 m B w j = num m B w j + 2 ^ (64 * w) * (word m B (arr w j + 8 * w)).toNat :=
   wordsVal_succ_top _ _ _ _
 
-/-- The `w + 1` words of an array outside the frame. -/
-theorem Frame.num1 {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}
-    (h : Frame B w js ds m m') {j : Nat} (hj : ∀ k ∈ js, k ≠ j) (hd : ∀ d ∈ ds, d + 8 ≤ hdr)
-    (fit : arr w j + S w ≤ 2 ^ 64) : num1 m' B w j = num1 m B w j := by
-  have hS : S w = 8 * (w + 2) := rfl
-  exact h.words (fun k hk => by have := arr_disj (w := w) (hj k hk); omega_arith)
-    (fun d hd' => by have := hd d hd'; have := hdr_le_arr w j; omega_arith) (by omega_arith)
-
 /-! ## The left shift -/
 
 /-- A word of the left shift: `2 x + c` split into its low word and the carry out. -/

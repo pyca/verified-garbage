@@ -42,8 +42,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
 /-!
 # ML-DSA signing on AArch64: the primitives it calls
 
-The verified AArch64 implementations of the primitives (`prims`), and what the
-proofs of signing need of them (`prims_ok`), with 16 bytes of stack for each
+The verified AArch64 implementations of the primitives (`primsWith`), and what
+the proofs of signing need of them (`prims_okWith`), with 16 bytes of stack for each
 call (the samplers' frames): their contracts (`CalleeOk.of_verified`), and, of
 the two samplers whose result signing branches on, that it depends only on
 their public data and that they succeed only if the algorithm finishes within
@@ -86,8 +86,6 @@ def primsWith (c : Impl.Sha3.AArch64.Callee) : Prims where
   bitPack := Impl.MlDsa.AArch64.Optimized.KeygenPack.signed
   bitUnpack := Impl.MlDsa.AArch64.Pack.bitUnpack
   hintBitPack := Impl.MlDsa.AArch64.Pack.hintBitPack
-
-def prims := primsWith .scalar
 
 /-- The stack signing gives each call. -/
 abbrev signStack : Nat := 16
@@ -233,7 +231,5 @@ theorem prims_okWith : PrimsOk (primsWith keccak.callee) signStack where
     · rw [sampleInBall_mono (show 272 ≤ maxBounds.ball by decide)
         (VG.Proof.MlDsa.Sample.sampleInBall_some _ (by decide) hf)]; rfl
     · rw [ifn hf] at h1; exact absurd h1.symm one_ne_zero32
-
-theorem prims_ok : PrimsOk prims signStack := prims_okWith (keccak := .scalar)
 
 end VG.Proof.MlDsa.AArch64.Sign

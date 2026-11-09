@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Contract
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Front
 import VerifiedGarbage.Proof.Framework.Omega
@@ -55,7 +56,7 @@ def SInput (p : SPub) (s : State) : Prop := searchPre s ∧ sOfState s = p
 
 /-- The search from octet `used` of the tape, with `k` attempts left. -/
 def SPub.tail (p : SPub) (used k : Nat) : ParameterSearchResult :=
-  (parameterSearch p.bits p.gen k (p.rand.drop used)).consume used
+  (sievedParameterSearch p.bits p.gen k (p.rand.drop used)).consume used
 
 /-- The controller's words while it searches. -/
 def SPub.headers (p : SPub) (used k : Nat) : List (Nat × BitVec 64) :=
@@ -100,7 +101,7 @@ def SOutput (p : SPub) (result : ParameterSearchResult) (m : Mem) : Prop :=
 /-- The controller's four public words for a finished search. -/
 def SPub.policy (p : SPub) (result : ParameterSearchResult) : List (BitVec 64) :=
   [BitVec.ofNat 64 result.remaining, BitVec.ofNat 64 p.len,
-    BitVec.ofNat 64 (parameterEntropy p.bits), BitVec.ofNat 64 result.requested]
+    BitVec.ofNat 64 (parameterEntropy p.bits), BitVec.ofNat 64 (Proof.Ffdh.requested p.bits result)]
 
 /-- A finished search, before `finish` stores `used` and restores `x19`. -/
 structure SDone (p : SPub) (original : State) (result : ParameterSearchResult) (s : State) : Prop where
@@ -146,10 +147,6 @@ theorem len_eq (h : SInput p s) : p.len = (p.bits + 7) / 8 := by
 
 theorem len_bounds (h : SInput p s) : 64 ≤ p.len ∧ p.len ≤ 1024 := by
   have := h.bits_bounds; have := h.len_eq; omega
-
-theorem gen_eq (h : SInput p s) : p.gen = 2 ∨ p.gen = 5 := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hg, -⟩ := h.1
-  rw [← h.2]; exact hg
 
 theorem attempts_le (h : SInput p s) : p.attempts ≤ parameterAttempts p.bits := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, ha, -⟩ := h.1

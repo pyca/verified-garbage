@@ -14,29 +14,33 @@
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_cbc_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+pub(crate) unsafe extern "C" fn vg_aes_cbc_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 4, 0x7ff78293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0012b823
-.insn 4, 0x0092bc23
-.insn 2, 0x84be
-call {vg_aes_cbc_chain}
-.insn 4, 0x7ff48293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0102b083
-.insn 4, 0x0182b483
+.insn 2, 0x1101
+.insn 2, 0x828a
+.insn 4, 0x0012b023
+.insn 4, 0x00f2b423
+call {vg_aes_cbc_encrypt_unwiped}
+.insn 2, 0x828a
+.insn 4, 0x00a2b823
+.insn 4, 0x0082b503
+.insn 4, 0x7ff00593
+.insn 4, 0x08158593
+call {vg_zeroize}
+.insn 2, 0x828a
+.insn 4, 0x0102b503
+.insn 4, 0x0002b083
+.insn 2, 0x6105
 .insn 2, 0x8082
 .option pop",
-        vg_aes_cbc_chain = sym super::aes_cbc::vg_aes_cbc_chain::vg_aes_cbc_chain,
+        vg_aes_cbc_encrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped::vg_aes_cbc_encrypt_unwiped,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
 
@@ -51,29 +55,33 @@ call {vg_aes_cbc_chain}
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_cbc_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+pub(crate) unsafe extern "C" fn vg_aes_cbc_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 4, 0x7ff78293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0012b823
-.insn 4, 0x0092bc23
-.insn 2, 0x84be
-call {vg_aes_cbc_dec_wide}
-.insn 4, 0x7ff48293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0102b083
-.insn 4, 0x0182b483
+.insn 2, 0x1101
+.insn 2, 0x828a
+.insn 4, 0x0012b023
+.insn 4, 0x00f2b423
+call {vg_aes_cbc_decrypt_unwiped}
+.insn 2, 0x828a
+.insn 4, 0x00a2b823
+.insn 4, 0x0082b503
+.insn 4, 0x7ff00593
+.insn 4, 0x08158593
+call {vg_zeroize}
+.insn 2, 0x828a
+.insn 4, 0x0102b503
+.insn 4, 0x0002b083
+.insn 2, 0x6105
 .insn 2, 0x8082
 .option pop",
-        vg_aes_cbc_dec_wide = sym super::aes_cbc::vg_aes_cbc_dec_wide::vg_aes_cbc_dec_wide,
+        vg_aes_cbc_decrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped::vg_aes_cbc_decrypt_unwiped,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
 
@@ -84,3 +92,11 @@ pub(crate) mod vg_aes_cbc_chain;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_cbc_dec_wide.rs"]
 pub(crate) mod vg_aes_cbc_dec_wide;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_decrypt_unwiped.rs"]
+pub(crate) mod vg_aes_cbc_decrypt_unwiped;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_encrypt_unwiped.rs"]
+pub(crate) mod vg_aes_cbc_encrypt_unwiped;

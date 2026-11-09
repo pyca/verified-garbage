@@ -12,7 +12,6 @@ import Init.Core
 import Init.Data.BitVec.Basic
 import Init.Data.BitVec.BasicAux
 import Init.Data.BitVec.Lemmas
-import Init.Data.Bool
 import Init.Data.Char.Basic
 import Init.Data.Fin.Basic
 import Init.Data.Int.Basic
@@ -26,7 +25,6 @@ import Init.Data.Nat.Coprime
 import Init.Data.Nat.Gcd
 import Init.Data.Nat.Power2.Basic
 import Init.Data.String.Basic
-import Init.Data.String.Defs
 import Init.Data.Vector.Basic
 import Init.Omega.Constraint
 import Init.Omega.Int

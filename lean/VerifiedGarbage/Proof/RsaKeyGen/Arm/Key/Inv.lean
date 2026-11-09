@@ -37,7 +37,7 @@ namespace VG.Proof.Rsa.Arm.Keys
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 open VG.Proof.X25519.Arm
 
-/-- `inverse_ok`, with the values it leaves. -/
+/-- `inverse`, with the values it leaves. -/
 theorem inverse_ok' [InvLaw] {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) (hN15 : 15 ≤ N) (hN : N ≤ 256) :
     WP isa VG.Impl.Rsa.Arm.Keys.inverse s fun t => Ws t B Z w N ∧ Keep B w invArrs invSlots s.mem t.mem ∧
       Rest (.r6 :: opRegs) s t ∧

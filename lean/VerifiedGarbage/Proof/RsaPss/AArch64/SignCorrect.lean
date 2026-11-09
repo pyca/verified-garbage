@@ -34,13 +34,13 @@ open VG.Proof.RsaPkcs1Sig (bytesAt_writeBytes frame_writeBytes)
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
 open VG.Proof.RsaPss.AArch64 (off loV maskV saltFits_ok)
 
-theorem oR_eq {D K : Nat} {s : State} (hp : PreS D K s) :
+theorem oR_eq {tsH tsG : List FnTable} {K : Nat} {s : State} (hp : PreS tsH tsG K s) :
     (⟨s.gpr .x0, (s.gpr .x3).toNat⟩ : Region) = oR s := by
   show (⟨s.gpr .x0, (s.gpr .x3).toNat⟩ : Region) = ⟨s.gpr .x0, (s.gpr .x1).toNat⟩
   rw [hp.ol]
 
 /-- Zeros to `out`, and 0 returned. -/
-theorem fail_ok {D K : Nat} {s t : State} (hp : PreS D K s) (hm : Mid s t) (h23 : t.gpr .x23 = s.gpr .x3) :
+theorem fail_ok {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS tsH tsG K s) (hm : Mid s t) (h23 : t.gpr .x23 = s.gpr .x3) :
     WP isa signFail t fun t' => Mid s t' ∧
       Spec.Rsa.writtenOutcome t'.mem (s.gpr .x0) (s.gpr .x3).toNat ((t'.gpr .x0).setWidth 32) .invalid := by
   have hk1 := hp.k1; have hk2 := hp.k2

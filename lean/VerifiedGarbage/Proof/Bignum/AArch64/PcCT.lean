@@ -40,9 +40,6 @@ open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.Public VG.Impl.Bignum.AArch64 V
 open VG.Proof.Bignum
 open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 
-theorem arr_fixed (w : Nat) {j : Nat} : 8 * 22 ≤ slot w j ∨ (8 * 6 ≤ slot w j ∧ slot w j + 8 * (w + 2) ≤ 8 * 16) :=
-  Or.inl (by unfold slot hdrBytes; omega_arith)
-
 theorem slot0_ge (w : Nat) : 8 * 31 + 8 ≤ slot w 0 ∧ slot w 0 + 8 * (w + 2) ≤ slot w 8 :=
   ⟨hdr_lt_slot w 0 (by decide), slot_le (by decide)⟩
 
@@ -81,9 +78,6 @@ theorem PcM.congr {p : PcPub} {s t : State} (h : PcM p s) {rs : List (Nat × Nat
   exact ⟨hs.congr k.wr, (k.gpr .x0 hr).trans h0, hZ, hk1, hk2, (hfx sOut (by decide)).trans hO,
     (hfx sK (by decide)).trans hK, (hfx sN (by decide)).trans hN, hn.congrK hi k, hnl, hv,
     fun i hi => by rw [k.wr]; exact hpw i hi, hps, by rw [k.rd, k.wr]; exact hsp⟩
-
-theorem pins_PcM : Pins PcM [.x0] := fun _ _ _ h₁ h₂ r hr => by
-  simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.1, h₂.2.1]
 
 /-- What the load of `m` and `-m⁻¹` needs: `PcM` but for `pre`. -/
 def PcL (p : PcPub) (s : State) : Prop :=
@@ -168,18 +162,6 @@ theorem pcLoad_ct : RelCT isa (Two PcL) (seqs pcLoad) fun _ _ => True := by
     rcases hr with rfl | rfl
     · rw [h₁.1, h₂.1]
     · rw [h₁.2, h₂.2]) (by taint_decide)
-
-/-- `R² mod m`'s hypotheses after the load of `m` and `-m⁻¹`. -/
-theorem pcLoad_r2 {s : State} {B : Addr} {Z k : Nat} {np : Addr} {nb : List Byte} (hs : Scr s B Z)
-    (h0 : s.gpr .x0 = B) (hZ : slot ((k + 7) / 8) 8 ≤ Z) (hk1 : 64 ≤ k) (hk2 : k ≤ 1024)
-    (hK : word s.mem B (8 * sK) = BitVec.ofNat 64 k) (hN : word s.mem B (8 * sN) = np)
-    (hnb : Src s B Z np nb) (hnl : nb.length = k) (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) :
-    WP isa (seqs pcLoad) s fun t => ∃ minv, R2Pre ⟨⟨B, Z, (k + 7) / 8, minv⟩, Spec.Rsa.os2ip nb⟩ t ∧
-      Frm B (pcLoadRanges ((k + 7) / 8)) s.mem t.mem ∧ Keep mmRegs s t := by
-  obtain ⟨hodd, -, hlo⟩ := valid_facts hv hk1
-  exact WP.mono (pcLoad_ok hs h0 hZ (by omega_arith) (by omega_arith) hK hN hnb hnl hodd)
-    fun t ⟨minv, hg, hn, hinv, f, k⟩ => ⟨minv, ⟨⟨hg, hZ⟩, by dsimp only; omega_arith, by dsimp only; omega_arith, hn, hinv,
-      hodd, hlo⟩, f, k⟩
 
 /-- After the first block of `pcLoadW`. -/
 def Pc1W (p : PcPub) (s : State) : Prop :=

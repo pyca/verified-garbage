@@ -137,21 +137,6 @@ def laneFold (v : VReg → BitVec 128) : List (VReg×Nat) → List Zq → List Z
  | [], L => L
  | (r,e)::rs, L => laneFold v rs (acc L (vword (v r) e).toNat)
 
-theorem laneFold_length (v : VReg → BitVec 128) (rs : List (VReg×Nat)) (L : List Zq) :
-    L.length≤(laneFold v rs L).length ∧ (laneFold v rs L).length≤L.length+rs.length := by
-  induction rs generalizing L with
-  | nil => exact ⟨Nat.le_refl _,by simp [laneFold]⟩
-  | cons re rs ih =>
-    rcases re with ⟨r,e⟩
-    have hh := ih (acc L (vword (v r) e).toNat)
-    have ha : L.length≤(acc L (vword (v r) e).toNat).length ∧
-        (acc L (vword (v r) e).toNat).length≤L.length+1 := by
-      rw [acc_length]
-      split <;> omega
-    change L.length≤(laneFold v rs (acc L (vword (v r) e).toNat)).length ∧
-      (laneFold v rs (acc L (vword (v r) e).toNat)).length≤L.length+(rs.length+1)
-    omega
-
 /-- On the all-accepted branch the fallback's logical result is an append,
 which is exactly the result written by the vector store. -/
 theorem laneFold_all {v : VReg → BitVec 128} (rs : List (VReg×Nat)) (L : List Zq)

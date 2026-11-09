@@ -105,6 +105,23 @@ theorem Ctx.mont {s : State} {B : Addr} {Z w N : Nat} (h : Ctx s B Z w N) {o a b
   exact ⟨⟨h.of k (by decide) op, hlt, he,
     fun j hj h2 h3 hjo => h.vj hj (by simp only [List.mem_cons, List.not_mem_nil, or_false]; omega_arith) out, op⟩, k⟩
 
+/-- A dedicated square of the running power in the public-operation context. -/
+theorem Ctx.square {s : State} {B : Addr} {Z w N : Nat} (h : Ctx s B Z w N)
+    (hA : V s.mem B w 5 < N) :
+    WP isa square s fun t =>
+      (Ctx t B Z w N ∧ V t.mem B w 5 < N ∧
+        V t.mem B w 5 * 2 ^ (64 * w) % N = V s.mem B w 5 * V s.mem B w 5 % N ∧
+        (∀ j < 8, j ≠ 1 → j ≠ 2 → j ≠ 3 → j ≠ 5 → V t.mem B w j = V s.mem B w j) ∧
+        Arrays B w powJs s.mem t.mem) ∧ Keep montRegs s t := by
+  refine WP.mono (square_ok h.scr h.w2 h.w31 h.hZ h.a7 h.s5 h.t0 h.inv
+    (by rw [show wordsVal s.mem B (slot w 0) w = N from h.n]; exact hA))
+    fun t ⟨⟨hlt, he, out⟩, k⟩ => ?_
+  have op : Arrays B w powJs s.mem t.mem := arrays_pow out (by decide)
+  rw [show wordsVal s.mem B (slot w 0) w = N from h.n] at hlt he
+  exact ⟨⟨h.of k (by decide) op, hlt, he,
+    fun j hj h1 h2 h3 h5 => h.vj hj (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false]; omega_arith) out, op⟩, k⟩
+
 /-! ## The arithmetic of the scan -/
 
 theorem sq_step {A S X c R N : Nat} (hR : Nat.Coprime R N) (hA : A % N = X ^ c * R % N)
@@ -352,11 +369,10 @@ theorem bitStep_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ctx s B Z w N) (hA 
         (∃ S, S * 2 ^ (64 * w) % N = V s.mem B w 5 * V s.mem B w 5 % N ∧
           if 2 ^ 63 ≤ (s.gpr .s7).toNat then V t.mem B w 5 * 2 ^ (64 * w) % N = S * V s.mem B w 6 % N
           else V t.mem B w 5 = S) ∧
-        (∀ j < 8, j ≠ 2 → j ≠ 3 → j ≠ 5 → V t.mem B w j = V s.mem B w j) ∧
+        (∀ j < 8, j ≠ 1 → j ≠ 2 → j ≠ 3 → j ≠ 5 → V t.mem B w j = V s.mem B w j) ∧
         Arrays B w powJs s.mem t.mem ∧ t.gpr .s7 = s.gpr .s7 <<< 1) ∧ Keep bitRegs s t := by
   unfold bitStep
-  refine WP.seq (WP.mono (h.mont (o := 5) (a := 5) (b := 5) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) hA) fun s₁ ⟨⟨c1, lt1, e1, v1, o1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (h.square hA) fun s₁ ⟨⟨c1, lt1, e1, v1, o1⟩, k1⟩ => ?_)
   refine WP.seq (WP.mono (WP.keep [.t3, .s7] (Q := fun t => t.gpr .t3 = s₁.gpr .s7 >>> 63 ∧
       t.gpr .s7 = s₁.gpr .s7 <<< 1 ∧ t.mem = s₁.mem) (by brun) (by rfl) (by rfl))
     fun s₂ ⟨⟨a3, a7, m2⟩, k2⟩ => ?_)
@@ -365,20 +381,20 @@ theorem bitStep_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ctx s B Z w N) (hA 
   rw [e7] at a7
   have k12 := k1.trans k2
   have c2 : Ctx s₂ B Z w N := c1.of k2 (by decide) (by rw [m2]; exact fun _ _ => rfl)
-  have X1 : V s₁.mem B w 6 = V s.mem B w 6 := v1 6 (by decide) (by decide) (by decide) (by decide)
+  have X1 : V s₁.mem B w 6 = V s.mem B w 6 := v1 6 (by decide) (by decide) (by decide) (by decide) (by decide)
   refine WP.ite (decide (2 ^ 63 ≤ (s.gpr .s7).toNat)) (by
     rw [Steps.eval_nonzero, a3, ne_zero_iff]; split <;> rename_i hb <;> simp [hb]) (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq] at hb
     refine WP.mono (c2.mont (o := 5) (a := 5) (b := 6) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by rw [m2, X1]; exact hX))
       fun t ⟨⟨c3, lt3, e3, v3, o3⟩, k3⟩ => ⟨⟨c3, lt3, ⟨_, e1, by simp only [hb, ↓reduceIte]; rw [e3, m2, X1]⟩,
-        fun j hj h2 h3 h5 => by rw [v3 j hj h2 h3 h5, m2, v1 j hj h2 h3 h5], ?_, ?_⟩,
+        fun j hj h1 h2 h3 h5 => by rw [v3 j hj h2 h3 h5, m2, v1 j hj h1 h2 h3 h5], ?_, ?_⟩,
         (k12.trans k3).mono (by decide)⟩
     · rw [m2] at o3; exact o1.trans o3
     · rw [k3.gpr (by decide), a7]
   · simp only [decide_eq_false_iff_not] at hb
     refine WP.block_nil ⟨⟨c2, by rw [m2]; exact lt1, ⟨_, e1, by simp only [hb, ↓reduceIte]; rw [m2]⟩,
-      fun j hj h2 h3 h5 => by rw [m2, v1 j hj h2 h3 h5], by rw [m2]; exact o1, a7⟩, k12.mono (by decide)⟩
+      fun j hj h1 h2 h3 h5 => by rw [m2, v1 j hj h1 h2 h3 h5], by rw [m2]; exact o1, a7⟩, k12.mono (by decide)⟩
 
 /-- The registers the power writes. -/
 def powRegs : List Reg := montRegs ++ [.t3, .s7, .s8, .s0, .t5]
@@ -393,16 +409,15 @@ theorem lastBit_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ctx s B Z w N) (hA 
           (if 2 ^ 63 ≤ (s.gpr .s7).toNat then V s.mem B w 4 else 1) * S % N) ∧
         V t.mem B w 4 < N ∧ Arrays B w powJs s.mem t.mem ∧ Keep powRegs s t := by
   unfold lastBit
-  refine WP.seq (WP.mono (h.mont (o := 5) (a := 5) (b := 5) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) hA) fun s₁ ⟨⟨c1, lt1, e1, v1, o1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (h.square hA) fun s₁ ⟨⟨c1, lt1, e1, v1, o1⟩, k1⟩ => ?_)
   refine WP.seq (WP.mono (WP.keep [.t3] (Q := fun t => t.gpr .t3 = s₁.gpr .s7 >>> 63 ∧ t.mem = s₁.mem)
     (by brun) (by rfl) (by rfl)) fun s₂ ⟨⟨a3, m2⟩, k2⟩ => ?_)
   have e7 : s₁.gpr .s7 = s.gpr .s7 := k1.gpr (by decide)
   rw [e7, top_bit] at a3
   have k12 := k1.trans k2
   have c2 : Ctx s₂ B Z w N := c1.of k2 (by decide) (by rw [m2]; exact fun _ _ => rfl)
-  have X1 : V s₁.mem B w 4 = V s.mem B w 4 := v1 4 (by decide) (by decide) (by decide) (by decide)
-  have S1 : V s₁.mem B w 7 = 1 := by rw [v1 7 (by decide) (by decide) (by decide) (by decide), h7]
+  have X1 : V s₁.mem B w 4 = V s.mem B w 4 := v1 4 (by decide) (by decide) (by decide) (by decide) (by decide)
+  have S1 : V s₁.mem B w 7 = 1 := by rw [v1 7 (by decide) (by decide) (by decide) (by decide) (by decide), h7]
   refine WP.ite (decide (2 ^ 63 ≤ (s.gpr .s7).toNat)) (by
     rw [Steps.eval_nonzero, a3, ne_zero_iff]; split <;> rename_i hb <;> simp [hb]) (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq] at hb
@@ -541,9 +556,9 @@ theorem power_ok {s : State} {B : Addr} {Z w E : Nat} (hs : Scr s B Z) (hw2 : 2 
       subst e
       refine ⟨⟨c1'.of (Keep.write _ _ _) (by decide) (by rw [mem_write]; exact fun _ _ => rfl),
         by rw [mem_write]; exact ot.trans o1',
-        by rw [mem_write, v1' 6 (by decide) (by decide) (by decide) (by decide), t6],
-        by rw [mem_write, v1' 7 (by decide) (by decide) (by decide) (by decide), t7],
-        by rw [mem_write, v1' 4 (by decide) (by decide) (by decide) (by decide), t4],
+        by rw [mem_write, v1' 6 (by decide) (by decide) (by decide) (by decide) (by decide), t6],
+        by rw [mem_write, v1' 7 (by decide) (by decide) (by decide) (by decide) (by decide), t7],
+        by rw [mem_write, v1' 4 (by decide) (by decide) (by decide) (by decide) (by decide), t4],
         by rw [mem_write]; exact lt1', ((kt.trans k1').trans (Keep.write _ _ _)).mono (by decide),
         fun hv0 hE => ?_⟩,
         by gsimp; rw [k1'.gpr (by decide)]⟩

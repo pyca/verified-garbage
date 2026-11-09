@@ -9,7 +9,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdsa::{BrainpoolP256r1, Error, SigningKey, VerifyingKey};
+use verified_garbage::ec::{BrainpoolP256r1, PrivateKey, PublicKey};
+use verified_garbage::error::{InvalidKey, InvalidSignature};
 use verified_garbage::hashes::sha256::Sha256;
 
 use super::value;
@@ -31,9 +32,9 @@ fn public(x: &str, y: &str) -> [u8; 65] {
 fn ecdsa_and_invalid_keys() {
     let da = value::<32>(CURVE, "dA =");
     let qa = public("x_qA =", "y_qA =");
-    let key = SigningKey::<BrainpoolP256r1>::from_bytes(&da);
-    assert_eq!(key.public_key(), Ok(qa));
-    let verifier = VerifyingKey::<BrainpoolP256r1>::from_bytes(&qa);
+    let key = PrivateKey::<BrainpoolP256r1>::from_bytes(&da);
+    assert_eq!(key.public_key(), Ok(PublicKey::from_bytes(&qa)));
+    let verifier = PublicKey::<BrainpoolP256r1>::from_bytes(&qa);
     let message = b"brainpoolP256r1 API message";
     let sig = key.clone().sign::<Sha256>(message).unwrap();
     assert_eq!(
@@ -43,18 +44,18 @@ fn ecdsa_and_invalid_keys() {
     assert_eq!(verifier.verify::<Sha256>(message, &sig), Ok(()));
     assert_eq!(
         verifier.verify::<Sha256>(b"changed", &sig),
-        Err(Error::InvalidSignature)
+        Err(InvalidSignature)
     );
     let mut invalid = qa;
     invalid[0] = 0;
     assert_eq!(
-        VerifyingKey::<BrainpoolP256r1>::from_bytes(&invalid).verify::<Sha256>(message, &sig),
-        Err(Error::InvalidSignature)
+        PublicKey::<BrainpoolP256r1>::from_bytes(&invalid).verify::<Sha256>(message, &sig),
+        Err(InvalidSignature)
     );
     // 0 and 2²⁵⁶ − 1 (above n) are not in [1, n − 1].
     for d in [[0; 32], [0xff; 32]] {
-        let bad = SigningKey::<BrainpoolP256r1>::from_bytes(&d);
-        assert_eq!(bad.public_key(), Err(Error::InvalidKey));
-        assert_eq!(bad.sign::<Sha256>(message), Err(Error::InvalidKey));
+        let bad = PrivateKey::<BrainpoolP256r1>::from_bytes(&d);
+        assert_eq!(bad.public_key(), Err(InvalidKey));
+        assert_eq!(bad.sign::<Sha256>(message), Err(InvalidKey));
     }
 }

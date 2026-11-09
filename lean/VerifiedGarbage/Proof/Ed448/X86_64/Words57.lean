@@ -55,9 +55,4 @@ theorem take57 (m : Mem) (p : Addr) :
     (Spec.Sha3.bytesAt m p 114).take 57 = Spec.Ed448.bytesAt m p 57 := by
   simp [Spec.Sha3.bytesAt, Spec.Ed448.bytesAt, ← List.map_take, List.take_range]
 
-theorem decodeLE_byte_lt (m : Mem) (p : Addr) : Spec.Ed448.decodeLE (Spec.Ed448.bytesAt m p 1) < 256 := by
-  simp only [Spec.Ed448.bytesAt, List.range_one, List.map_cons, List.map_nil, Spec.Ed448.decodeLE]
-  have := (m (p + BitVec.ofNat 64 0)).isLt
-  omega
-
 end VG.Proof.Ed448.X86_64

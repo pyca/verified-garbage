@@ -32,9 +32,10 @@ import sys
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# The library's features, as its users enable them: none (but the default),
-# `std`, and `cpu-features-env`, which also enables `std`.
-FEATURES = ([], ["--features", "std"], ["--features", "cpu-features-env"])
+# The library's features, as its users enable them: the default (`std`),
+# `alloc` without `std`, for `no_std` users, and `cpu-features-env`, which
+# also enables `std`.
+FEATURES = ([], ["--no-default-features", "--features", "alloc"], ["--features", "cpu-features-env"])
 
 
 def entries(crate):

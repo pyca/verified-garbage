@@ -48,10 +48,6 @@ theorem Keep.refl (s : State) : Keep s s := ⟨fun _ _ => rfl, rfl, rfl⟩
 theorem Keep.trans {s s₁ s₂ : State} (k₁ : Keep s s₁) (k₂ : Keep s₁ s₂) : Keep s s₂ :=
   ⟨fun r hr => by rw [k₂.gpr r hr, k₁.gpr r hr], k₂.rd.trans k₁.rd, k₂.wr.trans k₁.wr⟩
 
-theorem Keep.of_only {s s' : State} {ds : List Reg} (o : Only ds s s') (h : ∀ r ∈ ds, r ∈ temps) :
-    Keep s s' :=
-  ⟨fun r hr => o.gpr r fun hd => hr (h r hd), o.rd, o.wr⟩
-
 theorem Keep.of_wrote {s s₁ s₂ : State} {ds : List Reg} {m : Mem} (o : Only ds s s₁)
     (u : Mupd s₁ s₂ m) (h : ∀ r ∈ ds, r ∈ temps) : Keep s s₂ :=
   ⟨fun r hr => by rw [u.gpr]; exact o.gpr r fun hd => hr (h r hd), u.rd.trans o.rd,

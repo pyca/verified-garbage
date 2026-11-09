@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomState
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRetry
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallLayout
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallResult
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallResult
 /-! One complete supplied-nonce signing step, including arguments and retry state. -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/RandomRestore.lean`, which only this module imported.
@@ -148,7 +148,7 @@ namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.Dsa.X86_64
 
-theorem random_signer_retry (v : Backend) {s t : State} {attempts : Nat} (h : RandomSignABI v.stack s)
+theorem random_signer_retry (S : Signer) {s t : State} {attempts : Nat} (h : RandomSignABI S.stack s)
     (hsp : t.gpr .rsp = randomBase s)
     (hw : ∀ i < 5, word t.mem (randomBase s) (8 * i) = randomCallArg s i)
     (hdi : t.gpr .rdi = s.gpr .rdi) (hsi : t.gpr .rsi = s.gpr .rsi)
@@ -156,16 +156,18 @@ theorem random_signer_retry (v : Backend) {s t : State} {attempts : Nat} (h : Ra
     (h8 : t.gpr .r8 = s.gpr .r9) (h9 : t.gpr .r9 = off (randomBase s) Random.oNonce)
     (hrd : t.rd = s.rd) (hwr : t.wr = ⟨randomBase s, Random.frameBytes⟩ :: s.wr)
     (hn : word t.mem (randomBase s) Random.oAttempts = BitVec.ofNat 64 attempts)
-    (hpos : 0 < attempts) (hbound : attempts < 2 ^ 64) :
-    WP isa (.seq (.call (randomSignerName v) (SignVerify.sign v.sq v.mul)) RandomSign.callFinish) t fun u =>
+    (hpos : 0 < attempts) (hbound : attempts < 2 ^ 64)
+    (hkey : Spec.Rsa.bytesAt t.mem (s.gpr .rcx) (s.gpr .r8).toNat = (randomInput s).key)
+    (hv : RandomValid S s) :
+    WP isa (.seq (.call S.name S.code) RandomSign.callFinish) t fun u =>
       u.rd = t.rd ∧ u.wr = t.wr ∧ (∀ r ∈ calleeSaved, u.gpr r = t.gpr r) ∧
       (∃ m : Mem,
-        Frame (randomCallWr s ++ [below (randomBase s) (v.stack + 8)]) t.mem m ∧
+        Frame (randomCallWr s ++ [below (randomBase s) (S.stack + 8)]) t.mem m ∧
         Spec.Rsa.bytesAt m (s.gpr .rdi) (s.gpr .rsi).toNat =
           (randomCallResult s t).getD (List.replicate (s.gpr .rsi).toNat 0) ∧
         u.mem = randomRetryMem m (randomBase s) (randomCallResult s t).isSome attempts) ∧
       u.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
-  refine WP.seq (WP.mono (random_signer_outcome v h hsp hw hdi hsi hdx hcx h8 h9 hrd hwr)
+  refine WP.seq (WP.mono (random_signer_outcome S h hsp hw hdi hsi hdx hcx h8 h9 hrd hwr hkey hv)
     fun u ⟨hur, huw, huc, hf, hstatus, hout, hmx⟩ => ?_)
   have hus : Scr u (randomBase s) Random.frameBytes :=
     (random_alloc_scr h).congr (huw.trans hwr)
@@ -197,13 +199,13 @@ def randomSingleResult (s : State) (k : Nat) : Option (List Byte) :=
   Spec.Dsa.signBytes (randomInput s).pLen (randomInput s).qLen (randomInput s).key
     (Spec.Dsa.encodeBE (randomInput s).qLen k) (randomInput s).digest
 
-theorem random_sign_single (v : Backend) {s t : State} {h : RandomSignABI v.stack s}
+theorem random_sign_single (S : Signer) {s t : State} {h : RandomSignABI S.stack s}
     {hq : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {used fuel k : Nat}
     (hr : RandomSignRunning h hq used fuel t) (hpos : 0 < fuel) (hbound : fuel < 2 ^ 64)
     (hnonce : Spec.Rsa.bytesAt t.mem (off (randomBase s) Random.oNonce) (stackArg s 0).toNat =
-      Spec.Dsa.encodeBE (stackArg s 0).toNat k) :
+      Spec.Dsa.encodeBE (stackArg s 0).toNat k) (hv : RandomValid S s) :
     WP isa (.seq (.block RandomSign.callArgs)
-      (.seq (.call (randomSignerName v) (SignVerify.sign v.sq v.mul)) RandomSign.callFinish)) t fun u =>
+      (.seq (.call S.name S.code) RandomSign.callFinish)) t fun u =>
       RandomSignRunning h hq used (if (randomSingleResult s k).isSome then fuel else fuel - 1) u ∧
       word u.mem (randomBase s) Random.oStatus =
         (if (randomSingleResult s k).isSome then 1 else if fuel = 1 then 0 else 4) ∧
@@ -220,10 +222,10 @@ theorem random_sign_single (v : Backend) {s t : State} {h : RandomSignABI v.stac
     have hl := h.lengths
     unfold Spec.Dsa.lengthsValid at hl
     omega
+  have hkey : Spec.Rsa.bytesAt a.mem (s.gpr .rcx) (s.gpr .r8).toNat = (randomInput s).key := by
+    simpa only [randomInput, bytesAt_length] using FoldedPublic.src_bytesAt hkeyA
   have hres : randomCallResult s a = randomSingleResult s k := by
     rw [random_callResult_plain h hspA]
-    have hkey : Spec.Rsa.bytesAt a.mem (s.gpr .rcx) (s.gpr .r8).toNat = (randomInput s).key := by
-      simpa only [randomInput, bytesAt_length] using FoldedPublic.src_bytesAt hkeyA
     have hdigest : Spec.Rsa.bytesAt a.mem (stackArg s 1) (stackArg s 2).toNat = (randomInput s).digest := by
       simpa only [randomInput, bytesAt_length] using FoldedPublic.src_bytesAt hdigestA
     have hnonceA := (random_outside_bytes hargs
@@ -233,8 +235,8 @@ theorem random_sign_single (v : Backend) {s t : State} {h : RandomSignABI v.stac
     rfl
   have hna : word a.mem (randomBase s) Random.oAttempts = BitVec.ofNat 64 fuel :=
     (hargs.word (by decide) (by decide)).trans hr.attempts
-  refine WP.mono (random_signer_retry v h hspA hw hdi hsi hdx hcx h8 h9
-    (hka.2.1.trans hr.rd) (hka.2.2.trans hr.wr) hna hpos hbound)
+  refine WP.mono (random_signer_retry S h hspA hw hdi hsi hdx hcx h8 h9
+    (hka.2.1.trans hr.rd) (hka.2.2.trans hr.wr) hna hpos hbound hkey hv)
     fun u ⟨hur, huw, huc, ⟨m, hf, hout, hum⟩, hmx⟩ => ?_
   rw [hres] at hout hum
   have hpostF : InScr (randomBase s) Random.frameBytes m u.mem := by

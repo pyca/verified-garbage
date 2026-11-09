@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.PointContract
 /-!
 # The multiplication of a curve's base point, in its working space, as an internal function
 
-Not trusted: the contract of one function for each
+Not trusted: definitions for one function for each
 curve of `curves` (so far P-224, P-256, P-384 and P-521), on the working space where the x86-64 code
 of the curve's ECDSA signature and public key derivation keeps its numbers,
 so that both can call one copy of the multiplication instead of repeating it:
@@ -40,11 +40,7 @@ with `tail` (P-521) so is every byte from slot 45 on, which holds the
 temporary areas of its products modulo `p` on every target (slot 55 on
 x86-64, slot 54 on AArch64);
 on return they are unspecified and may hold intermediate values, secret
-ones among them, and the caller's callee-saved registers. Every other byte
-of `ws` keeps its value but the result's (`Keeps`).
-
-Everything is secret but the pointer, which is public, and the function is
-constant time.
+ones among them, and the caller's callee-saved registers.
 
 These are internal functions (`Rust.Internal`): only verified code calls them, so
 only their callers' contracts, in `Spec/`, are trusted. The structures, the
@@ -84,34 +80,6 @@ def Own (i : Nat) : Prop :=
     (C.k < 6 ∧ C.slot 41 ≤ i ∧ i < C.slot 42) ∨
     (C.tmpAt ≤ i ∧ i < C.tmpAt + 8 * C.k) ∨ (C.bitsAt ≤ i ∧ i < C.bitsAt + 64 * C.k + 8) ∨
     (C.tail = true ∧ C.bitsAt ≤ i)
-
-/-- Every byte of `ws` but those of the function's own working space and of
-the result keeps its value. -/
-def Keeps (ws : Addr) (m m' : Mem) : Prop :=
-  ∀ i < wsBytes, ¬ C.Own i → (i < C.pAt ∨ C.pAt + C.ptBytes ≤ i) →
-    m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
-
-/-- The caller provides `p` at `modAt` and zero at `zeroAt`. -/
-def ConstsOk (ws : Addr) (m : Mem) : Prop :=
-  C.toPoint.coordAt m ws C.modAt = C.W.p ∧ C.toPoint.coordAt m ws C.zeroAt = 0
-
-/-- The scalar `k`. -/
-def scalar (ws : Addr) (m : Mem) : Nat := C.toPoint.coordAt m ws C.kAt
-
-/-- The result: the point at `pAt` has its coordinates below `p` and stands
-for `P`, and every byte of `ws` but its and the own working space's keeps
-its value. -/
-def Result (P : Point C.W) (ws : Addr) (m m' : Mem) : Prop :=
-  let c := C.toPoint.pointAt m' ws C.pAt
-  C.toPoint.Below c ∧
-    Represents (W := C.W) (C.toPoint.dec c.1) (C.toPoint.dec c.2.1) (C.toPoint.dec c.2.2) P ∧
-    C.Keeps ws m m'
-
-/-- `mul_base`: `P = [k]G`. -/
-def mulBaseContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  sig.contract A (pre := fun ws m => C.ConstsOk ws m)
-    (post := fun ws m m' _ => C.Result (mul (C.scalar ws m) (G C.W)) ws m m')
-    (stack := stack)
 
 end Curve
 

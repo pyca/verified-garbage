@@ -55,16 +55,6 @@ theorem env_upd {base : Addr} {o : Slot} {s t : State} (h : AltOp base (offset o
     simp only [env, F]
     exact congrArg toFe (h.mem.fe (apart i o hi) (by simp only [offset]; omega))
 
-theorem bel_upd {base : Addr} {o : Slot} {s t : State} {S : Slot → Bool} (h : AltOp base (offset o) s t)
-    (hb : Bel s.mem base S) (b : Bool) (ho : b = true → fe t.mem base (offset o) < P2) :
-    Bel t.mem base (Function.update S o b) := by
-  intro i hi
-  by_cases e : i = o
-  · subst e; rw [Function.update_self] at hi; exact ho hi
-  · rw [Function.update_of_ne e] at hi
-    rw [h.mem.fe (apart i o e) (by simp only [offset]; omega)]
-    exact hb i hi
-
 theorem mod_of_add_mul {c a q : Nat} (h : c + P * q = a) : c % P = a % P := by
   rw [← h, Nat.add_mul_mod_self_left]
 

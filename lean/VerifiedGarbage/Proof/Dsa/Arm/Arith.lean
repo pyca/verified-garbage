@@ -145,14 +145,6 @@ theorem setup_inside {n : Nat} (hn : 0 < n) : ∀ r ∈ Context.callRanges n, r.
     contextBytes, slot, stride]
   omega_arith
 
-theorem stream_inside {n : Nat} : ∀ r ∈ streamRanges n, r.1 + r.2 ≤ contextBytes n := by
-  simp only [streamRanges, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true,
-    contextBytes, slot, stride]
-  omega_arith
-
-theorem words_inside {n : Nat} (hn48 : n ≤ 48) : ∀ r ∈ words slots, r.1 + r.2 ≤ contextBytes n :=
-  fun r h => by have := slots_words r h; have := contextBytes_bounds hn48; omega_arith
-
 /-- The saves, then the bytes' address into `r11` and their length into the
 header. -/
 theorem reduceHead_ok {s : State} {base : Addr} {size : Nat} (E : Entry s base size) (hz : 48 ≤ size) :

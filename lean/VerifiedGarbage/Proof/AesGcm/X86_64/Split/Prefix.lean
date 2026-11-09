@@ -77,11 +77,6 @@ theorem covers_tail {rs ts : List Region} {r : Region} (h : Covers rs ts) : Cove
     obtain ⟨y, hy, hc'⟩ := h a j ⟨x, hx, hc⟩
     exact ⟨y, List.mem_cons_of_mem _ hy, hc'⟩
 
-theorem covers_mid {rs ts us : List Region} (h : Covers rs ts) : Covers rs (ts ++ us) :=
-  fun a j hx => by
-    obtain ⟨y, hy, hc'⟩ := h a j hx
-    exact ⟨y, List.mem_append_left _ hy, hc'⟩
-
 /-- Covered by `ts ++ us`, so by `ts ++ x :: us`. -/
 theorem covers_ins {rs ts us : List Region} {x : Region} (h : Covers rs (ts ++ us)) : Covers rs (ts ++ x :: us) :=
   fun a j hx => by

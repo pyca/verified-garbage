@@ -32,11 +32,6 @@ open Spec.Sha256 (bytesAt)
 
 /-! ## Instructions and arithmetic -/
 
-theorem wp_eor {is : List Instr} {s : State} {Q : State → Prop} {d n : Reg} {o : Op2} {y : BitVec 32}
-    (ho : o.eval s = some y) (k : ∀ s', Upd s s' d (s.gpr n ^^^ y) → WP isa (.block is) s' Q) :
-    WP isa (.block (.dp .eor d n o :: is)) s Q :=
-  WP.cons (s' := s.setReg d (s.gpr n ^^^ y)) (by simp [exec, ho]) (k _ (Upd.setReg _ _ _))
-
 theorem ofNat_succ32 (k : Nat) : BitVec.ofNat 32 k + 1 = BitVec.ofNat 32 (k + 1) := by
   rw [BitVec.ofNat_add]; rfl
 
@@ -60,9 +55,6 @@ theorem left_z {n k : Nat} (hk : k < n) (hn : n < 2 ^ 32) :
 theorem left_val {n k : Nat} (hk : k < n) :
     BitVec.ofNat 32 (n - k) - 1 = BitVec.ofNat 32 (n - (k + 1)) := by
   rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat (by omega_nat), Nat.sub_sub]
-
-/-- The registers the loops write. -/
-abbrev clob : List Reg := [.r1, .r2, .r8, .r9, .r12]
 
 /-- The registers `copy` writes. -/
 abbrev cclob : List Reg := [.r2, .r8, .r9, .r12]
@@ -162,96 +154,6 @@ theorem copy_ok {src dst : Reg} (hs : src ∉ cclob) (hd : dst ∉ cclob)
     rw [hl] at e'
     rw [u₆.mem, u₅.mem, m₄.mem, v, u₃.mem, u₂.mem, u₁.mem, h.mem, bytesAt_snoc', e']
   · rw [z₆, h9, left_z hk (by omega_nat)]
-
-/-! ## The exclusive-or of `U` into `T` -/
-
-theorem xor_byte32 (a b : Byte) : ((b.setWidth 32 ^^^ a.setWidth 32).setWidth 8) = b ^^^ a := by
-  ext i hi
-  simp [BitVec.getElem_xor]
-
-/-- After `k` bytes of the exclusive-or of `[U]` into `[T]`. -/
-structure XorInv (s : State) (U T : Addr) (n k : Nat) (t : State) : Prop where
-  rd : t.rd = s.rd
-  wr : t.wr = s.wr
-  sp : t.sp = s.sp
-  other : ∀ r ∉ clob, t.gpr r = s.gpr r
-  r8 : t.gpr .r8 = BitVec.ofNat 32 k
-  r9 : t.gpr .r9 = BitVec.ofNat 32 (n - k)
-  mem : t.mem = writeBytes s.mem T (Spec.Pbkdf2.xorBytes (bytesAt s.mem T k) (bytesAt s.mem U k))
-
-/-- `T ← T ⊕ U`, `n` bytes, with `U` at `r11 + uo` and `T` at `r5`. -/
-theorem xor_ok {uo n : Nat} (huo : uo < 4096) (hn : 0 < n) (hn' : n < 2 ^ 16) {s : State}
-    (huw : (s.gpr .r11).toNat + uo + n ≤ 2 ^ 32) (htw : (s.gpr .r5).toNat + n ≤ 2 ^ 32)
-    (hinU : ∀ k < n, InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r11) + BitVec.ofNat 64 uo + BitVec.ofNat 64 k) 1)
-    (houtT : ∀ k < n, InRegions s.wr (State.addr (s.gpr .r5) + BitVec.ofNat 64 k) 1)
-    (hsep : Region.Disjoint ⟨State.addr (s.gpr .r11) + BitVec.ofNat 64 uo, n⟩ ⟨State.addr (s.gpr .r5), n⟩) :
-    WP isa (.seq (.block [.mov .r8 (.imm 0), .movw .r9 (BitVec.ofNat 16 n)])
-      (.loop (.block [.dp .add .r2 .r11 (.reg .r8), .ldrb .r12 .r2 uo, .dp .add .r2 .r5 (.reg .r8),
-        .ldrb .r1 .r2 0, .dp .eor .r1 .r1 (.reg .r12), .strb .r1 .r2 0, .dp .add .r8 .r8 (.imm 1),
-        .subs .r9 .r9 (.imm 1)]) .ne)) s
-      fun t => XorInv s (State.addr (s.gpr .r11) + BitVec.ofNat 64 uo) (State.addr (s.gpr .r5)) n n t := by
-  let U := State.addr (s.gpr .r11) + BitVec.ofNat 64 uo
-  try rewrite [show State.addr (s.gpr .r11) + BitVec.ofNat 64 uo = U from rfl] at *
-  let T := State.addr (s.gpr .r5)
-  try rewrite [show State.addr (s.gpr .r5) = T from rfl] at *
-  refine WP.seq (wp_mov (op2_imm (by decide)) fun s₀ u₀ => VG.Proof.Pbkdf2.Stream.Arm.wp_movw fun s₁ u₁ =>
-    WP.block_nil ?_)
-  have i0 : XorInv s U T n 0 s₁ :=
-    ⟨by rw [u₁.rd, u₀.rd], by rw [u₁.wr, u₀.wr], by rw [u₁.sp, u₀.sp],
-      fun r hr => by rw [u₁.other r (nm hr .r9), u₀.other r (nm hr .r8)],
-      by rw [u₁.other _ (by decide), u₀.gpr]; rfl, by rw [u₁.gpr, movw_ofNat hn']; rfl,
-      by rw [u₁.mem, u₀.mem]; simp [bytesAt, Spec.Pbkdf2.xorBytes, writeBytes_nil]⟩
-  refine count_loop hn (XorInv s U T n) (fun k hk t h => ?_) i0
-  have hl : (bytesAt s.mem T k).length = k := bytesAt_length _ _ _
-  have hl' : (Spec.Pbkdf2.xorBytes (bytesAt s.mem T k) (bytesAt s.mem U k)).length = k := by
-    rw [xorBytes_length' _ _ (by simp [bytesAt_length]), hl]
-  have rU : t.mem (U + BitVec.ofNat 64 k) = s.mem (U + BitVec.ofNat 64 k) := by
-    rw [h.mem]; simp only [writeBytes, hl', not_mem_of_disjoint hsep hk (Nat.le_of_lt hk) (by omega_nat), ↓reduceIte]
-  have rT : t.mem (T + BitVec.ofNat 64 k) = s.mem (T + BitVec.ofNat 64 k) := by
-    rw [h.mem]
-    simp only [writeBytes, hl', show T + BitVec.ofNat 64 k - T = BitVec.ofNat 64 k by rw [BitVec.add_comm, BitVec.add_sub_cancel],
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega_nat), Nat.lt_irrefl, ↓reduceIte]
-  have g11 := h.other .r11 (by decide)
-  have g5 := h.other .r5 (by decide)
-  refine wp_add (op2_reg _ _) fun t₁ u₁ => ?_
-  refine wp_ldrb (a := U + BitVec.ofNat 64 k) huo (by rw [u₁.gpr, g11, h.r8, addr3 (by omega_nat)])
-    (by rw [u₁.rd, u₁.wr, h.rd, h.wr]; exact hinU k hk) fun t₂ u₂ => ?_
-  refine wp_add (op2_reg _ _) fun t₃ u₃ => ?_
-  have a₃ : State.addr (t₃.gpr .r2 + BitVec.ofNat 32 0) = T + BitVec.ofNat 64 k := by
-    rw [u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), u₂.other _ (by decide),
-      u₁.other _ (by decide), g5, h.r8, addr3 (by omega_nat)]
-    exact congrArg (· + BitVec.ofNat 64 k) (BitVec.add_zero _)
-  refine wp_ldrb (a := T + BitVec.ofNat 64 k) (by decide) a₃
-    (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr, h.rd, h.wr]; exact InRegions.right' (houtT k hk))
-    fun t₄ u₄ => ?_
-  refine wp_eor (op2_reg _ _) fun t₅ u₅ => ?_
-  refine wp_strb (a := T + BitVec.ofNat 64 k) (by decide)
-    (by rw [u₅.other _ (by decide), u₄.other _ (by decide)]; exact a₃)
-    (by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr]; exact houtT k hk) fun t₆ m₆ => ?_
-  refine wp_add (op2_imm (by decide)) fun t₇ u₇ => wp_subs (op2_imm (by decide)) fun t₈ u₈ z₈ =>
-    WP.block_nil ?_
-  have h8 : t₇.gpr .r8 = BitVec.ofNat 32 (k + 1) := by
-    rw [u₇.gpr, m₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
-      u₂.other _ (by decide), u₁.other _ (by decide), h.r8, ofNat_succ32]
-  have h9 : t₇.gpr .r9 = BitVec.ofNat 32 (n - k) := by
-    rw [u₇.other _ (by decide), m₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
-      u₂.other _ (by decide), u₁.other _ (by decide), h.r9]
-  refine ⟨⟨by rw [u₈.rd, u₇.rd, m₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, h.rd],
-    by rw [u₈.wr, u₇.wr, m₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr],
-    by rw [u₈.sp, u₇.sp, m₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp, h.sp],
-    fun r hr => by
-      rw [u₈.other r (nm hr .r9), u₇.other r (nm hr .r8), m₆.gpr, u₅.other r (nm hr .r1), u₄.other r (nm hr .r1),
-        u₃.other r (nm hr .r2), u₂.other r (nm hr .r12), u₁.other r (nm hr .r2), h.other r hr],
-    by rw [u₈.other _ (by decide), h8], by rw [u₈.gpr, h9, left_val hk], ?_⟩, ?_⟩
-  · have hv : (t₅.gpr .r1).setWidth 8 = s.mem (T + BitVec.ofNat 64 k) ^^^ s.mem (U + BitVec.ofNat 64 k) := by
-      rw [u₅.gpr, u₄.gpr, u₄.other .r12 (by decide), u₃.other .r12 (by decide), u₂.gpr, u₃.mem, u₂.mem,
-        u₁.mem, xor_byte32, rU, rT]
-    have e' := writeBytes_snoc s.mem T (Spec.Pbkdf2.xorBytes (bytesAt s.mem T k) (bytesAt s.mem U k))
-      (s.mem (T + BitVec.ofNat 64 k) ^^^ s.mem (U + BitVec.ofNat 64 k)) (by rw [hl']; omega_nat)
-    rw [hl'] at e'
-    rw [u₈.mem, u₇.mem, m₆.mem, hv, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, h.mem, e',
-      bytesAt_snoc', bytesAt_snoc', xorBytes_snoc _ _ _ _ (by simp [bytesAt_length])]
-  · rw [z₈, h9, left_z hk (by omega_nat)]
 
 end VG.Proof.Pbkdf2.Stream.Arm
 
@@ -454,10 +356,6 @@ theorem SavedRegs.of_eq {scr : BitVec 32} {s₀ s₁ : State} {m : Mem} (h : Sav
 /-! ## Odds and ends -/
 
 theorem below_eq {s t : State} (h : s.sp = t.sp) : below s = below t := by simp only [below, h]
-
-theorem toNat_addr (a : BitVec 32) : (State.addr a).toNat = a.toNat := by
-  simp only [State.addr, BitVec.toNat_setWidth]
-  exact Nat.mod_eq_of_lt (by have := a.isLt; omega_nat)
 
 theorem covers_one {rs : List Region} {r : Region} (h : r ∈ rs) : Covers [r] rs :=
   Covers.of_sub fun r' hr' => by

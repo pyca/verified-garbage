@@ -13,7 +13,7 @@
 /// * `state` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
+pub(crate) unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
         r#".base64 "i0QkBLlvFoBziQi5ubIUSYlIBLnXQiQXiUgIuQAGitqJSAy5vDBvqYlIELmqODEWiUgUuU3ujeOJSBi5Tg77sIlIHMM="
 .p2align 6"#,
@@ -33,7 +33,7 @@ pub unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 208 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm3_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm3_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkRP///4uEJMAAAACJRCQEi4QkxAAAAIlEJAiLhCTIAAAAiUQkDIuEJMwAAACJRCQQi4Qk0AAAAIlEJBSJ4IPAHIlEJBiLRCQYiVhwiXB0iXh4iWh8i1wkBItsJBCLdCQUi3wkCIPnPw=="
 20:
@@ -117,7 +117,7 @@ jne 20b
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 204 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm3_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_sm3_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkSP///4uEJLwAAACJRCQEi4QkwAAAAIlEJAiLhCTEAAAAiUQkDIuEJMgAAACJRCQQieCDwBiJRCQUi0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACISiCDxwG+AAAAAIP/OQ=="
 jae 20f

@@ -89,18 +89,18 @@ theorem args_ok {s₀ w : State} (hx21 : w.gpr .x21 = cx s₀) :
       ⟨h0, h1, h2, h3, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _)⟩
 
 /-- After the one-time key. -/
-structure Keyed (s₀ s : State) : Prop where
-  post : PostP s₀ s
+structure Keyed (e : Bool) (s₀ s : State) : Prop where
+  post : PostP e s₀ s
   ks : ∀ k < 512, s.mem (off (cx s₀) 768 + BitVec.ofNat 64 k) = ks8 s₀ k
   vec : ∀ r ∈ preservedV, (s.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64
 
 /-- The parts up to Poly1305 initialized, then `rest`. -/
 theorem keyed_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre e s₀) {rest : Prog isa}
-    {Q : State → Prop} (hk : ∀ s, Keyed s₀ s → WP isa rest s Q) :
+    {Q : State → Prop} (hk : ∀ s, Keyed e s₀ s → WP isa rest s Q) :
     WP isa (.seq (.block (save ++ moves ++ Impl.ChaCha20Poly1305.AArch64.initState ++
         ([.addImm .x .x0 .x21 64, .addImm .x .x1 .x21 128] : List Instr)))
       (.seq (.block (copy ++ Pad.zero ++ args))
-      (.seq (.call v.callee.name v.callee.code)
+      (.seq v.callee.inPlace
       (.seq (.block keyArgs)
       (.seq (.call "vg_poly1305_init" Impl.Poly1305.AArch64.init) rest))))) s₀ Q := by
   refine WP.seq (WP.mono (WP.preservedV (block1_ok hp) (by lit_decide)) fun s₁ ⟨h₁, v₁⟩ => ?_)
@@ -129,8 +129,8 @@ theorem keyed_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre 
     (sub_disj s₀ (a := 640) (n := 64) (b := 768) (m := 512) (by lit_omega) (by lit_omega) (by lit_omega))
     (sub_disj s₀ (a := 640) (n := 64) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
     (sub_disj s₀ (a := 768) (n := 512) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
-    (by rw [hp.off_toNat (by decide)]; lit_omega) (Covers.right hw) hw fun s₅ v₅ k₅ data₅ => ?_)
-  have i₅ : Inv s₀ s₅ := i₄.step k₅
+    (by rw [hp.off_toNat (by decide)]; lit_omega) hw fun s₅ v₅ k₅ data₅ => ?_)
+  have i₅ : Inv e s₀ s₅ := i₄.step k₅
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;>

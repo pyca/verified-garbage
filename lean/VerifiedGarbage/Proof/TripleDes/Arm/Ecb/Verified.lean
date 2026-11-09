@@ -132,21 +132,6 @@ structure StepPre (s : State) (n : Nat := 1) : Prop where
   dataFit : (s.gpr .r1).toNat + 8 * n ≤ 2 ^ 32
   bufFit : (s.gpr .r2).toNat + 1024 ≤ 2 ^ 32
 
-theorem StepPre.transport {s s' : State} {n : Nat} (hp : StepPre s n)
-    (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) (regs : ∀ r ∈ kept, s'.gpr r = s.gpr r) : StepPre s' n := by
-  have a := regs .r0 (by decide)
-  have c := regs .r1 (by decide)
-  have d := regs .r2 (by decide)
-  constructor
-  · simpa only [keyR, dataR, bufR, rd, wr, a, c, d] using hp.reads
-  · simpa only [keyR, dataR, bufR, rd, wr, a, c, d] using hp.writes
-  · simpa only [keyR, dataR, bufR, rd, wr, a, c, d] using hp.keyData
-  · simpa only [keyR, dataR, bufR, rd, wr, a, c, d] using hp.keyBuf
-  · simpa only [keyR, dataR, bufR, rd, wr, a, c, d] using hp.dataBuf
-  · simpa only [a] using hp.keyFit
-  · simpa only [c] using hp.dataFit
-  · simpa only [d] using hp.bufFit
-
 theorem StepPre.call {s : State} (hp : StepPre s) : CallPre s := by
   constructor
   · have hc : Covers [⟨State.addr (s.gpr .r0), 384⟩, ⟨State.addr (s.gpr .r1), 8⟩, ⟨State.addr (s.gpr .r2), 512⟩]

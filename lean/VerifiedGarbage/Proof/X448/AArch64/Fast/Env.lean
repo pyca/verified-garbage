@@ -12,22 +12,12 @@ public import VerifiedGarbage.Proof.Curve448.AArch64.SmallEval
 public import VerifiedGarbage.Proof.Curve448.AArch64.Square
 public import VerifiedGarbage.Proof.Curve448.AArch64.SubEval
 public import VerifiedGarbage.Proof.Curve448.AArch64.SymmetricColumns
-public import VerifiedGarbage.Proof.X448.AArch64.MulLoop
-public import VerifiedGarbage.Proof.X448.AArch64.PointwiseAdd
-public import VerifiedGarbage.Proof.X448.AArch64.PointwiseCarry
-public import VerifiedGarbage.Proof.X448.AArch64.PointwiseFinish
-public import VerifiedGarbage.Proof.X448.AArch64.PointwiseOps
-public import VerifiedGarbage.Proof.X448.AArch64.PointwiseSmall
-public import VerifiedGarbage.Proof.X448.AArch64.PointwiseSub
-public import VerifiedGarbage.Proof.X448.AArch64.Reduce
 public import VerifiedGarbage.Proof.X448.Wide.CarryRegs
 public import VerifiedGarbage.Proof.X448.Wide.DoubleTerm
 public import VerifiedGarbage.Proof.X448.Wide.Encoded
-public import VerifiedGarbage.Proof.X448.Wide.SymmetricColumns
 public import VerifiedGarbage.Proof.X448.Wide.TailBounds
 public import VerifiedGarbage.Proof.X448.Wide.TailNormalize
 public import VerifiedGarbage.Proof.X448.Wide.TailPass
-public import VerifiedGarbage.Proof.X448.Wide.TailProduct
 public import VerifiedGarbage.Proof.X448.Wide.TailRegs
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Butterfly
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sqr
@@ -47,31 +37,18 @@ public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.X448.AArch64.AddSub
 public import VerifiedGarbage.Proof.X448.AArch64.Carry
-public import VerifiedGarbage.Proof.X448.AArch64.Columns
 public import VerifiedGarbage.Proof.X448.AArch64.Copy
 public import VerifiedGarbage.Proof.X448.AArch64.Init
-public import VerifiedGarbage.Proof.X448.AArch64.Normalize
-public import VerifiedGarbage.Proof.X448.AArch64.PointwiseFused
-public import VerifiedGarbage.Proof.X448.AArch64.Row
-public import VerifiedGarbage.Proof.X448.AArch64.Small
 public import VerifiedGarbage.Proof.X448.AArch64.Step
-public import VerifiedGarbage.Proof.X448.Wide.AccumSquareBody
 public import VerifiedGarbage.Proof.X448.Wide.AddCoefficient
 public import VerifiedGarbage.Proof.X448.Wide.CoefficientIO
-public import VerifiedGarbage.Proof.X448.Wide.Columns
 public import VerifiedGarbage.Proof.X448.Wide.Fold
 public import VerifiedGarbage.Proof.X448.Wide.LoadCached
-public import VerifiedGarbage.Proof.X448.Wide.Mul
-public import VerifiedGarbage.Proof.X448.Wide.Normalize
 public import VerifiedGarbage.Proof.X448.Wide.Pack
 public import VerifiedGarbage.Proof.X448.Wide.Pass
 public import VerifiedGarbage.Proof.X448.Wide.PassInit
 public import VerifiedGarbage.Proof.X448.Wide.Reduce
-public import VerifiedGarbage.Proof.X448.Wide.SymmetricColumn
-public import VerifiedGarbage.Proof.X448.Wide.TailMul
-public import VerifiedGarbage.Proof.X448.Wide.TailSquare
 public import VerifiedGarbage.Proof.X448.Wide.TailStep
 public import VerifiedGarbage.Proof.X448.Wide.Term
 public import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
@@ -89,34 +66,34 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.X448.AArch64.AddSub
 import VerifiedGarbage.Proof.X448.AArch64.Carry
-import VerifiedGarbage.Proof.X448.AArch64.Columns
 import VerifiedGarbage.Proof.X448.AArch64.Copy
 import VerifiedGarbage.Proof.X448.AArch64.Init
-import VerifiedGarbage.Proof.X448.AArch64.Normalize
-import VerifiedGarbage.Proof.X448.AArch64.PointwiseFused
-import VerifiedGarbage.Proof.X448.AArch64.Row
-import VerifiedGarbage.Proof.X448.AArch64.Small
 import VerifiedGarbage.Proof.X448.AArch64.Step
-import VerifiedGarbage.Proof.X448.Wide.AccumSquareBody
 import VerifiedGarbage.Proof.X448.Wide.AddCoefficient
 import VerifiedGarbage.Proof.X448.Wide.CoefficientIO
-import VerifiedGarbage.Proof.X448.Wide.Columns
 import VerifiedGarbage.Proof.X448.Wide.Fold
 import VerifiedGarbage.Proof.X448.Wide.LoadCached
-import VerifiedGarbage.Proof.X448.Wide.Mul
-import VerifiedGarbage.Proof.X448.Wide.Normalize
 import VerifiedGarbage.Proof.X448.Wide.Pack
 import VerifiedGarbage.Proof.X448.Wide.Pass
 import VerifiedGarbage.Proof.X448.Wide.PassInit
 import VerifiedGarbage.Proof.X448.Wide.Reduce
-import VerifiedGarbage.Proof.X448.Wide.SymmetricColumn
-import VerifiedGarbage.Proof.X448.Wide.TailMul
-import VerifiedGarbage.Proof.X448.Wide.TailSquare
 import VerifiedGarbage.Proof.X448.Wide.TailStep
 import VerifiedGarbage.Proof.X448.Wide.Term
 import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
+public import VerifiedGarbage.Impl.X448.AArch64
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import VerifiedGarbage.Proof.X448.Limbs
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.X448.AArch64.Mul
+public import VerifiedGarbage.Impl.X448.AArch64.Symmetric
+public import VerifiedGarbage.Proof.X448.Wide.CacheRegs
+public import VerifiedGarbage.Proof.X448.Wide.Memory
+public import VerifiedGarbage.Proof.X448.Wide.Product
+public import VerifiedGarbage.Proof.X448.Wide.Word
+public import VerifiedGarbage.Proof.X448.Wide.Column
+public import VerifiedGarbage.Proof.X448.Wide.CarryStep
 
 /-!
 # X448 on AArch64: the working space as field-element slots
@@ -153,9 +130,6 @@ structure FKeep (base : Addr) (s t : State) : Prop where
   regs : Keeps fclob s t
   mem : Outside2 base 64 2816 ACC 1152 s.mem t.mem
 
-theorem FKeep.refl (base : Addr) (s : State) : FKeep base s s :=
-  ⟨Keeps.refl _ _, Outside2.refl _ _ _ _ _ _⟩
-
 theorem FKeep.trans {base : Addr} {s t u : State} (h : FKeep base s t) (h' : FKeep base t u) :
     FKeep base s u := ⟨h.regs.trans h'.regs, h.mem.trans h'.mem⟩
 
@@ -173,8 +147,6 @@ theorem Same.bnd {base : Addr} {os : List Index} {m m' : Mem} (h : Same base os 
 theorem Same.env {base : Addr} {os : List Index} {m m' : Mem} (h : Same base os m m') {i : Index}
     (hi : i ∉ os) : VG.Proof.X448.AArch64.Weak.E m' base i = VG.Proof.X448.AArch64.Weak.E m base i :=
   congrArg toFe (VG.Proof.X448.Wide.valN_congr (h i hi))
-
-theorem slot_lt (i : Index) : slot i.val + 128 ≤ ACC := slot_bound i
 
 theorem slot_64 (i : Index) : slot i.val + 64 ≤ ACC := by have := slot_bound i; omega
 
@@ -275,9 +247,6 @@ theorem away_outside2 {base : Addr} {os : List Index} {m m' : Mem}
 theorem away_fieldMem {base : Addr} {o : Index} {m m' : Mem}
     (h : ∀ x, Away base [slot o.val] 64 x → m' x = m x) : FieldMem base (slot o.val) m m' :=
   fun x hx _ => h x fun o' ho' => by simp at ho'; subst ho'; omega
-
-theorem bnd_word {m : Mem} {base : Addr} {n : Nat} {o : Nat} (h : Bnd n m base o) {i : Nat} (hi : i < 8) :
-    (word m base (o + 8 * i)).toNat < n := h i hi
 
 theorem subE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) {o a b : Index}
     (ha : Bnd Mb s.mem base (slot a.val)) (hb' : Bnd Mb s.mem base (slot b.val)) (hoa : o ≠ a) (hob : o ≠ b) :

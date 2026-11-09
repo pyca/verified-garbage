@@ -31,10 +31,9 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 # A candidate on AArch64: constant time of the tail
 
 `montSetup` (`montSetup_ct`, then `montSetup_ok` for what Miller–Rabin
-needs), `millerRabin` (`millerRabin_ct`) and the result (`mrResult_ct`),
-which branches on `kStat`, which the shape of the test's result fixes, and
-stores through `used`'s pointer and `out`, pinned after their loads:
-`kTail_ct`, for runs related by `TS`.
+needs) and the result (`mrResult_ct`), which branches on `kStat`, which
+the shape of the test's result fixes, and stores through `used`'s pointer
+and `out`, pinned after their loads, for runs related by `TS`.
 -/
 
 @[expose] public section
@@ -50,7 +49,7 @@ open VG.Proof.RsaKeyGen (shapeOf itersOf passS checksW)
 
 /-! ## The result -/
 
-/-- The status `millerRabin` leaves, from the shape of its result. -/
+/-- The status Miller–Rabin leaves, from the shape of its result. -/
 def statOf (S : Option (Bool × Nat)) : Nat :=
   match S with
   | none => 0
@@ -61,17 +60,6 @@ def EndQ (q : FPub) (s : State) : Prop :=
   Ws s q.B q.Z q.w ∧ word s.mem q.B (8 * kOut) = q.op ∧ word s.mem q.B (8 * kLen) = BitVec.ofNat 64 (8 * q.w) ∧
     word s.mem q.B (8 * kUsedP) = q.up ∧ OutUp s q.B q.Z q.op q.up (8 * q.w) ∧
     word s.mem q.B (8 * kStat) = BitVec.ofNat 64 (statOf q.sch.mr)
-
-theorem loopEnd_endq {q : FPub} {s : State} (h : LoopEnd q s) : EndQ q s := by
-  obtain ⟨-, -, c, r, s₀, res, ⟨⟨bm, hc⟩, h0, h1, hf, k⟩, hS, -, hO, hU, hK, ho⟩ := h
-  have hw : ∀ {i : Nat}, (i = kRand ∨ i = kLen ∨ i = kRandLen ∨ i = kChecks ∨ i = kOut ∨ i = kUsedP) →
-      word s.mem q.B (8 * i) = word s₀.mem q.B (8 * i) := fun hi =>
-    hf.word_eq (roundRanges_hdr _ hi) (by rcases hi with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
-  refine ⟨hc.ws, (hw (by simp)).trans hO, (hw (by simp)).trans hK, (hw (by simp)).trans hU, ho.congr k.wr, ?_⟩
-  rw [← hS]
-  rcases hres : res with _ | ⟨b, rest⟩
-  · exact h0 hres
-  · exact (h1 b rest hres).1
 
 theorem pins_endq {Φ : FPub → State → Prop} (h : ∀ q s, Φ q s → EndQ q s) : Pins Φ [.x0] :=
   pins_ws' (fun q : FPub => q.B) (fun q : FPub => q.Z) (fun q : FPub => q.w) fun _ _ hx => (h _ _ hx).1
@@ -175,9 +163,6 @@ theorem finPrime_ct {Φ : FPub → State → Prop} (hE : ∀ q s, Φ q s → End
       f.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega_arith)) (by omega_arith)
     exact ⟨hw.congr' f (fun r hr => by rw [List.mem_singleton.mp hr]; exact KMut.past h256 _) k (by decide),
       (hw' _ (by decide)).trans hO, (hw' _ (by decide)).trans hK⟩
-
-theorem statOf_lt (S : Option (Bool × Nat)) : statOf S < 4 := by
-  unfold statOf; split <;> (try split) <;> decide
 
 /-- The result leaks the same in runs that agree on the public data. -/
 theorem mrResult_ct : RelCT isa (Two EndQ) mrResult fun _ _ => True := by
@@ -325,16 +310,5 @@ theorem expSetup_ct : RelCT isa (Two MrPre0) (seqs expSetup) (Two MrPre) := by
       · exact h12
       · exact h11
   exact hW
-
-/-- The tail of a candidate, from `montSetup` to the result, leaks the same
-in runs related by `TS`. -/
-theorem kTail_ct (M : Mont) :
-    RelCT isa (Two TS) (seqs (montSetup M.mm ++ expSetup ++ millerRabin M.mm ++ [mrResult])) fun _ _ => True := by
-  rw [List.append_assoc, List.append_assoc]
-  exact ct_app' (by simp [montSetup]) (by simp [expSetup, lowWord])
-    (two_post (two_map FPub.L (fun _ _ h => ts_ms0 h) (montSetup_ct M)) fun _ _ h => ms_mrpre M h)
-    (ct_app' (by simp [expSetup, lowWord]) (by simp [millerRabin]) expSetup_ct (ct_app' (by simp [millerRabin]) (by simp)
-      ((millerRabin_ct M).mono (fun _ _ h => h) fun _ _ h => two_mono (fun _ _ h => loopEnd_endq h) h)
-      mrResult_ct))
 
 end VG.Proof.RsaKeyGen.AArch64

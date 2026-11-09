@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaOaep.Arm
 import VerifiedGarbage.Proof.RsaPss.Arm.CtXor
-import VerifiedGarbage.Proof.RsaPss.Arm.CtInit
+import VerifiedGarbage.Proof.RsaPss.Arm.CtMgf
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.RsaOaep.Arm
@@ -118,14 +118,12 @@ import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
 import VerifiedGarbage.Proof.Bignum.Arm.PrepareZero
 import VerifiedGarbage.Proof.Bignum.Arm.ProductArgs
 import VerifiedGarbage.Proof.Bignum.Arm.ProductStage
-import VerifiedGarbage.Proof.Bignum.Arm.QuotientStage
 import VerifiedGarbage.Proof.Bignum.Arm.R2
 import VerifiedGarbage.Proof.Bignum.Arm.R2Constants
 import VerifiedGarbage.Proof.Bignum.Arm.R2CountInit
 import VerifiedGarbage.Proof.Bignum.Arm.R2Init
 import VerifiedGarbage.Proof.Bignum.Arm.ReduceChoice
 import VerifiedGarbage.Proof.Bignum.Arm.ReductionArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ReductionStage
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreSlots
 import VerifiedGarbage.Proof.Bignum.Arm.ReverseByteStep
@@ -169,12 +167,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
 import VerifiedGarbage.Proof.Bignum.Arm.Setup
 import VerifiedGarbage.Proof.Bignum.Arm.SetupArgs
 import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
-import VerifiedGarbage.Proof.Bignum.Arm.Shift
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftCT
 import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeft
 import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftStep
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftStep
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayout
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayoutCT
@@ -267,13 +261,12 @@ import VerifiedGarbage.Proof.Rsa.ZeroTest32
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
-import VerifiedGarbage.Proof.RsaPss.Arm.CtHash
-import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 import VerifiedGarbage.Proof.RsaPss.Arm.CtPad
 import VerifiedGarbage.Proof.Sha256.StateMem
 public meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.RsaPss.Arm.CtXor
-meta import VerifiedGarbage.Proof.RsaPss.Arm.CtInit
+meta import VerifiedGarbage.Proof.RsaPss.Arm.CtMgf
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
 meta import Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
@@ -390,14 +383,12 @@ meta import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
 meta import VerifiedGarbage.Proof.Bignum.Arm.PrepareZero
 meta import VerifiedGarbage.Proof.Bignum.Arm.ProductArgs
 meta import VerifiedGarbage.Proof.Bignum.Arm.ProductStage
-meta import VerifiedGarbage.Proof.Bignum.Arm.QuotientStage
 meta import VerifiedGarbage.Proof.Bignum.Arm.R2
 meta import VerifiedGarbage.Proof.Bignum.Arm.R2Constants
 meta import VerifiedGarbage.Proof.Bignum.Arm.R2CountInit
 meta import VerifiedGarbage.Proof.Bignum.Arm.R2Init
 meta import VerifiedGarbage.Proof.Bignum.Arm.ReduceChoice
 meta import VerifiedGarbage.Proof.Bignum.Arm.ReductionArgs
-meta import VerifiedGarbage.Proof.Bignum.Arm.ReductionStage
 meta import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 meta import VerifiedGarbage.Proof.Bignum.Arm.RestoreSlots
 meta import VerifiedGarbage.Proof.Bignum.Arm.ReverseByteStep
@@ -441,12 +432,8 @@ meta import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.Setup
 meta import VerifiedGarbage.Proof.Bignum.Arm.SetupArgs
 meta import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
-meta import VerifiedGarbage.Proof.Bignum.Arm.Shift
-meta import VerifiedGarbage.Proof.Bignum.Arm.ShiftArgs
-meta import VerifiedGarbage.Proof.Bignum.Arm.ShiftCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeft
 meta import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftStep
-meta import VerifiedGarbage.Proof.Bignum.Arm.ShiftStep
 meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayout
 meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayoutCT
@@ -539,8 +526,7 @@ meta import VerifiedGarbage.Proof.Rsa.ZeroTest32
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
-meta import VerifiedGarbage.Proof.RsaPss.Arm.CtHash
-meta import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+meta import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 meta import VerifiedGarbage.Proof.RsaPss.Arm.CtPad
 meta import VerifiedGarbage.Proof.Sha256.StateMem
 import VerifiedGarbage.Proof.RsaPss.Arm.Step
@@ -551,13 +537,23 @@ public import VerifiedGarbage.Proof.RsaPss.Arm.Prims
 meta import VerifiedGarbage.Proof.RsaPss.Arm.Prims
 public import VerifiedGarbage.Proof.RsaPss.Arm.Base
 meta import VerifiedGarbage.Proof.RsaPss.Arm.Base
+import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Impl.Bignum.Arm.Round
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+meta import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+meta import VerifiedGarbage.Impl.Bignum.Arm.Round
+meta import VerifiedGarbage.Proof.Mont.Words32
+meta import VerifiedGarbage.Proof.X25519.Arm.Instr
+meta import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
 /-!
 # RSAES-OAEP on ARMv7: the calls of the streaming hash functions
 
 In the setting of the ARMv7 RSASSA-PSS proofs (`Proof/RsaPss/Arm/Base.lean`:
 `Ctx L scr σ s`, a state of the body with our part of `scratch` at `scr`),
-the streaming `init` (`init_vp`), `update` in its frame (`upd_vp`, of any
+the streaming `init` (`initArgs_vp`, `initCall_vp`), `update` in its frame (`upd_vp`, of any
 public range of bytes the body may read) and `finalize` in its frame
 (`fin_vp`) of a hash function `G` (a `Pbkdf2.Stream.Arm.HashOK`), on the
 state at `scratch + oSt` with the working space at `scratch + oW`: each
@@ -582,6 +578,8 @@ theorem sDst_lt : sDst < 4096 := by decide
 theorem sDstLen_lt : sDstLen < 4096 := by decide
 theorem sRes_lt : sRes < 4096 := by decide
 theorem sOk_lt : sOk < 4096 := by decide
+theorem sTab_lt : sTab < 4096 := by decide
+theorem sHl_lt : sHl < 4096 := by decide
 
 theorem offsO : oEm = 0 ∧ oBuf = 1024 ∧ oSt = 3072 ∧ oDig = 3328 ∧ oLh = 3392 ∧ oCtr = 3456 ∧ oW = 3520 ∧
     oRsa = 8192 ∧ frameBytes = 128 ∧ sS = 64 ∧ sSrc = 68 ∧ sSrcLen = 72 ∧ sDst = 76 ∧ sDstLen = 80 ∧ sRes = 84 ∧
@@ -646,16 +644,21 @@ end
 
 /-! ## `init` -/
 
-theorem init_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {Inv : State → Mem → Prop}
+/-- `init`'s argument, the state. -/
+theorem initArgs_vp (hg : Geo L scr) {Inv : State → Mem → Prop} :
+    VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem) (.block initArgs)
+      (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ s.gpr .r0 = scr + BitVec.ofNat 32 oSt) := by
+  refine VP.blk (by decide) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun σ s ⟨hc, hi⟩ => ?_
+  prun [initArgs, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, Ctx.setReg_iff, hc, hi,
+    movw_val (show oSt < 2 ^ 16 by decide)]
+
+/-- The call of `init`. -/
+theorem initCall_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {Inv : State → Mem → Prop}
     (hI : ∀ σ m m', Inv σ m → Frame [sR scr oSt G.S, L.LOW] m m' → Inv σ m') :
-    VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem)
-      (.seq (.block initArgs) (.call G.initN G.initC))
+    VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ s.gpr .r0 = scr + BitVec.ofNat 32 oSt)
+      (.call G.initN G.initC)
       (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ hG.SH.Repr s.mem (sa scr oSt) []) := by
   have hS := hG.hSB
-  refine VP.seq (G := fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ s.gpr .r0 = scr + BitVec.ofNat 32 oSt)
-    (VP.blk (by decide) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun σ s ⟨hc, hi⟩ => ?_) ?_
-  · prun [initArgs, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, Ctx.setReg_iff, hc, hi,
-      movw_val (show oSt < 2 ^ 16 by decide)]
   have fitS : (scr + BitVec.ofNat 32 oSt).toNat + G.S ≤ 2 ^ 32 := fitS hg (by oomega)
   have cov : ∀ σ s, Ctx L scr σ s → Covers [⟨State.addr (scr + BitVec.ofNat 32 oSt), G.S⟩] s.wr :=
     fun σ s hc => covS hg hc.st (by oomega) (by oomega)
@@ -799,6 +802,43 @@ theorem fin_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {o c : Nat} (ho1 : o 
   have := hr (msg σ) (by rw [aS]; exact rp) (by rw [hl]; omega_arith) (by rw [count_of hc32 f.r2 f.r3, hl])
   rw [aO] at this
   exact this
+
+/-! ## The table's words -/
+
+/-- The load of the table's word `k`, through `r4`, its address. -/
+theorem tword_cert {k : Nat} (hk : k < 3) :
+    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r4]) (.block [.ldr .r4 .r4 (4 * k)]) hc).isSome = true := by
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 by omega) with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+
+/-- The load of the table's digest length (its word 4), through `r0`, to its slot. -/
+theorem tabD_cert :
+    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0, .r12]) (.block [.ldr .r0 .r0 16, st .r0 sHl]) hc).isSome =
+      true := ⟨_, by taint_decide⟩
+
+/-- The load of a table's digest length (its word 4), through `r1`. -/
+theorem lenWord_cert :
+    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r1]) (.block [.ldr .r1 .r1 16]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+/-- The comparisons of the digest length in `r1` with each of `lens`. -/
+theorem lens_certs : ∀ x ∈ Impl.RsaOaep.Arm.lens, x < 2 ^ 32 ∧ encodable (BitVec.ofNat 32 x) = true ∧
+    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs []) (.block [.cmp .r1 (.imm (BitVec.ofNat 32 x))]) hc).isSome =
+      true := by
+  intro x hx
+  simp only [Impl.RsaOaep.Arm.lens, List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, by decide, _, by taint_decide⟩
+
+theorem UArgs.r4 {d : BitVec 32} {len c : Nat} {s : State} (h : UArgs scr d len c s) (v : BitVec 32) :
+    UArgs scr d len c (s.setReg .r4 v) := by
+  obtain ⟨a, b, e, f, g, i⟩ := h
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp only [VG.Arm.RegUpd.gpr_setReg, reduceCtorEq, ↓reduceIte] <;>
+    with_reducible assumption
+
+theorem FArgs.r4 {o c : Nat} {s : State} (h : FArgs scr o c s) (v : BitVec 32) :
+    FArgs scr o c (s.setReg .r4 v) := by
+  obtain ⟨a, b, e, f, g⟩ := h
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp only [VG.Arm.RegUpd.gpr_setReg, reduceCtorEq, ↓reduceIte] <;>
+    with_reducible assumption
 
 /-! ## `r12 := r10` -/
 

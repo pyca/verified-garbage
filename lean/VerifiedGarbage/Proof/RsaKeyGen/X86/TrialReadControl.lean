@@ -114,10 +114,4 @@ theorem ReadControl.step_bounded {g : Geometry} (widthBound : g.w ≤ 128)
     rw [Geometry.ending, show 8 * g.w = 4 * (2 * g.w) by omega]
     rw [Trial.pointer_zf g.candidate (by omega) index]
 
-theorem ReadControl.step {g : Geometry} (v : g.Valid) {j : Nat} {s : State}
-    (S : ReadControl g j s) (index : j < 2 * g.w) :
-    WP isa (.block (VG.Impl.RsaKeyGen.X86.Trial.wordStep 4)) s fun t =>
-      ReadControl g (j + 1) t ∧ t.zf = some (decide (j + 1 = 2 * g.w)) :=
-  S.step_bounded v.widthBound v.candidateFit index
-
 end VG.Proof.RsaKeyGen.X86.Sieve

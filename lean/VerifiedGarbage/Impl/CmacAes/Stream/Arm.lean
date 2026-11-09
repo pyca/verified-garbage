@@ -59,9 +59,6 @@ namespace VG.Impl.CmacAes.Stream.Arm
 open VG.Arm
 open VG.Impl.CmacAes.Arm (mov)
 
-/-- Where our caller's callee-saved registers are kept in the scratch buffer. -/
-def sOff : Nat := 2176
-
 /-! ## `vg_cmac_aes_init` -/
 
 /-- Saves `r4`–`r6` and `lr`, keeps the state in `r4`, the scratch buffer in

@@ -28,26 +28,6 @@ open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public
 open VG.Impl.Rsa.AArch64
 open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 
-/-- A suffix of the caller's scratch allocation is a valid exponent
-source for a computation restricted to its prefix. This lets DSA use
-computed exponents without changing the shared exponentiation proof. -/
-theorem scratchSource {s : State} {B : Addr} {capacity active offset : Nat}
-    {bytes : List Byte} (hs : Scr s B capacity) (hactive : active ≤ offset)
-    (hfit : offset + bytes.length ≤ capacity)
-    (hbytes : ∀ i (hi : i < bytes.length),
-      s.mem (off B offset + BitVec.ofNat 64 i) = bytes[i]) :
-    Src s B active (off B offset) bytes := by
-  refine ⟨?_, hbytes, ?_⟩
-  · intro i hi
-    have hp : off B offset + BitVec.ofNat 64 i = off B (offset + i) :=
-      Offset.add_add B offset i
-    rw [hp]
-    obtain ⟨r, hr, hc⟩ := hs.region (show offset + i + 1 ≤ capacity by omega) (by decide)
-    exact ⟨r, List.mem_append_right _ hr, hc⟩
-  · intro i hi
-    rw [ofs_off B (by have := hs.nowrap; omega)]
-    omega
-
 /-- DSA modular exponentiation in Montgomery representation. The exponent
 is a nonempty byte string outside the scratch workspace; leading zeroes
 are permitted. This lemma makes no primality or group-order assumption. -/

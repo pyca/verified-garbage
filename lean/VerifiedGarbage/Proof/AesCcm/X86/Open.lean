@@ -173,7 +173,7 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
   have ci₃ := (St.mut Ar f₂₃).2.2.1
   have ci₄ := (St.mut Ar f₂₄).2.2.1
   have aa₃ := (St.mut Ar f₂₃).2.2.2.1
-  have dW : ∀ (r : Region), Region.Sub r ⟨w64 W, 2560⟩ ∨ r = below SP 56 → (⟨w64 D, n⟩ : Region).Disjoint r :=
+  have dW : ∀ (r : Region), Region.Sub r ⟨w64 W, 2560⟩ ∨ r = below SP 60 → (⟨w64 D, n⟩ : Region).Disjoint r :=
     fun r h => by rcases h with h | rfl; exact Ar.data.w.sub_right h; exact Ar.data.stk.symm
   have pt₃ : bytesAt s₃.mem (w64 D) n =
       Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem (w64 K) R) (bytesAt s.mem (w64 N) nl) (bytesAt s.mem (w64 D) n) := by

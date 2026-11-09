@@ -81,14 +81,13 @@ def ecbSig : Sig where
 def ecbPre (pb : Nat) : Curry (ecbSig.words pb) (Mem → Prop) :=
   fun _schedule rounds _data _n _ => rounds.toNat = 18 ∨ rounds.toNat = 24
 
-/-- For `rounds` of 18 or 24, with the subkeys of that many rounds at
-`schedule` (`subkeysAt`): replaces each of the `n` blocks at `data` with its
-encryption (or decryption) under them. Stated for those numbers of rounds,
-which the precondition requires, so that it reads only the buffers. -/
+/-- If the schedule at `schedule` is that of a key `key` with `rounds`
+rounds (`KeySchedule`, as `vg_camellia_expand_key` writes it): replaces
+each of the `n` blocks at `data` with its encryption (or decryption) by
+Camellia under `key` (`expandKey key`). -/
 def ecbPost (direction : Direction) (pb : Nat) : ecbSig.Post pb := fun schedule rounds data n m m' _ =>
-  (rounds.toNat = 18 ∨ rounds.toNat = 24) →
-    blocksAt m' data n.toNat =
-      ecb (subkeysAt m schedule rounds.toNat) direction (blocksAt m data n.toNat)
+  ∀ key, KeySchedule m schedule rounds.toNat key →
+    blocksAt m' data n.toNat = ecb (expandKey key) direction (blocksAt m data n.toNat)
 
 /-- `ecbPre` and `ecbPost`. The subkeys and the data are secret. -/
 def ecbContract {M : ISA} (A : Abi M) (direction : Direction) (stack : Nat := 0) : Contract M :=

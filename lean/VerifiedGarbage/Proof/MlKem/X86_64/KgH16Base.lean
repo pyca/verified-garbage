@@ -18,8 +18,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 `kemKeyGenH16` (`KeyGenH16.lean`) up to its rows: what it needs of the layout
 (`KgH16Wf`, evaluated for each parameter set), what holds while it samples
 the noise (`KN`) and from the noise's transforms on (`KH`), and the pieces:
-the outputs of `PRF₂` and `s ‖ e` (`noise_ok`), `vg_mlkem768_kpke_keygen_ntt`
-(`ntt_ok`) and the sponge's state zeroed (`hz_ok`).
+the outputs of `PRF₂` (`prfs_ok`) and `s ‖ e` (`se_ok`).
 -/
 
 @[expose] public section
@@ -294,13 +293,6 @@ theorem se_ok {A : Arith} (hA : ArithOk A) {N : Nat} (hN : N < 6) (h2 : 2 ≤ N)
     · exact L₀.keepPoly16 hP₁.b (k (rP K N', 512) (List.mem_append_right _
         (List.mem_map.2 ⟨N', List.mem_range.2 hN', rfl⟩))) (h.se N' hN' h2')
     · exact hp₁
-
-/-- The noise but `PRF₂(σ, 0)` and `PRF₂(σ, 1)`: the outputs of `PRF₂` and
-`s ‖ e` from 2 on. -/
-theorem noise_ok (v : Sample4Impl) {s : State} (h : KA K.L σ s) (h15 : s.gpr .r15 = 1) :
-    WP isa (.seq (v.callee.prfs 2 4 (K.oPR + 256) (K.oW / 32)) (seqR (cbdN K v.callee.arith) 2 4)) s (KN K 6 σ) :=
-  WP.seq (WP.mono (prfs_ok W hp v h h15) fun s₀ h₀ =>
-    seqR_ok (I := fun k => KN K k σ) 4 2 (fun k hk hk' s hs => se_ok W hp v.arith (by omega) hk hs) s₀ h₀)
 
 end
 

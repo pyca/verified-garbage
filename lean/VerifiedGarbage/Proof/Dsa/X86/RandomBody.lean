@@ -106,7 +106,7 @@ theorem Done.mem {s₀ t u : State} (A : RandomSignABI s₀) (D : Done s₀ t) (
   let ⟨d, S⟩ := D.smp
   ⟨⟨d, S.mem A hr hm⟩, by rw [hm]; exact D.status, by rw [hm]; exact D.out, by rw [hm]; exact D.saved⟩
 
-theorem body_ok (F : SignFn) {s₀ : State} (A : RandomSignABI s₀) :
+theorem body_ok (F : SignFn) {s₀ : State} (A : RandomSignABI s₀) (hval : KeyValid F.valid s₀) :
     WP isa (body F.name F.code) (allocated Random.frameBytes s₀) fun u => Finished s₀ u := by
   have h₀ := alloc_ready A
   have hql := rQBytes_le A
@@ -139,7 +139,7 @@ theorem body_ok (F : SignFn) {s₀ : State} (A : RandomSignABI s₀) :
       (fun n u hu => ?_) 8 t₃ ⟨0, by decide, by decide, T₀⟩
     obtain ⟨used, hn1, hn8, T⟩ := hu
     obtain ⟨f, rfl⟩ : ∃ f, n = f + 1 := ⟨n - 1, by omega⟩
-    refine WP.seq (WP.mono (attempt_ok F A T hn8 hq) fun v hv => ?_)
+    refine WP.seq (WP.mono (attempt_ok F A T hn8 hq hval) fun v hv => ?_)
     have hrv : Ready s₀ v := by
       rcases hv with ⟨_, _, T', _⟩ | ⟨_, D, _⟩
       · obtain ⟨_, S⟩ := T'.smp; exact S.ready

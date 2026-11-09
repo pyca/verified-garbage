@@ -3,15 +3,17 @@ module
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 
 /-!
-# RSA key generation: the contract of its internal function
+# RSA key generation: the contracts of its internal functions
 
-Not trusted: the contract of an internal function (`Rust.Internal`), which only
-verified code calls, that its proofs and its callers' compose. Only the
+Not trusted: the contracts of internal functions (`Rust.Internal`), which only
+verified code calls, that their proofs and their callers' compose. Only the
 callers' contracts, in `Spec/`, are trusted.
 
-An implementation of `vg_rsa_keygen_key` may call one helper, which the Rust
-does not: `vg_rsa_keygen_inverse`, a binary extended GCD on numbers in its
-working space, so that the code of its several inversions is emitted once.
+`vg_rsa_keygen_key`, the key from its two primes (`Spec.RsaKeyGen.keyFromPrimes`),
+which `vg_rsa_generate` (`Spec.RsaKeyGen.keySearchContract`) calls for each
+pair of primes. An implementation of it may call one helper:
+`vg_rsa_keygen_inverse`, a binary extended GCD on numbers in its working space,
+so that the code of its several inversions is emitted once.
 -/
 
 @[expose] public section
@@ -19,7 +21,7 @@ working space, so that the code of its several inversions is emitted once.
 namespace VG.Proof.RsaKeyGen
 
 open VG.Spec VG.Spec.RsaKeyGen
-open VG.Spec.Rsa (bytesAt os2ip)
+open VG.Spec.Rsa (bytesAt os2ip i2osp scratchWords)
 
 /-- The octets of each number of `vg_rsa_keygen_inverse`'s working space for a
 length of `len` octets: `8 ⌈len / 8⌉`. -/
@@ -67,5 +69,64 @@ def inverseContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
           (inverseNum m' ws len.toNat 3 : Int) * inverseNum m ws len.toNat 0 - inverseNum m' ws len.toNat 1 ∧
         inverseNum m' ws len.toNat 3 < inverseNum m ws len.toNat 8)
     (stack := stack)
+
+/-! ## `vg_rsa_keygen_key` -/
+
+/-- `keyFromPrimes` for primes of `pLen` octets: the key, as octets: `n` and
+`d` of `2 pLen`, and `p`, `q`, `dP`, `dQ` and `qInv` of `pLen`. -/
+def keyOp (pLen : Nat) (eB pB qB : List Byte) : Except Failure (List (List Byte)) ⊕ Unit :=
+  match keyFromPrimes (16 * pLen) (os2ip eB) (os2ip pB) (os2ip qB) with
+  | .inl (.ok k) =>
+    .inl (.ok [i2osp k.n (2 * pLen), i2osp k.d (2 * pLen), i2osp k.p pLen, i2osp k.q pLen,
+      i2osp k.dP pLen, i2osp k.dQ pLen, i2osp k.qInv pLen])
+  | .inl (.error f) => .inl (.error f)
+  | .inr () => .inr ()
+
+/-- The status `vg_rsa_keygen_key` returns. -/
+def keyStatus : Except Failure (List (List Byte)) ⊕ Unit → Nat
+  | .inl (.ok _) => 1
+  | .inr () => 2
+  | .inl (.error _) => 0
+
+/-- `vg_rsa_keygen_key(n: *mut u8, n_len: usize, d: *mut u8, d_len: usize,
+p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, dp: *mut u8,
+dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize,
+e: *const u8, e_len: usize, scratch: *mut u64, scratch_len: usize) -> u32`. -/
+def keySig : Sig where
+  params := [("n", .slice true .u8 "n_len"), ("d", .slice true .u8 "d_len"),
+    ("p", .slice true .u8 "p_len"), ("q", .slice true .u8 "q_len"),
+    ("dp", .slice true .u8 "dp_len"), ("dq", .slice true .u8 "dq_len"),
+    ("qinv", .slice true .u8 "qinv_len"), ("e", .slice false .u8 "e_len"),
+    ("scratch", .slice true .u64 "scratch_len")]
+  ret := some .u32
+
+/-- The key from the primes at `p` and `q` (`keyOp`): 1 and the key at `n`,
+`d`, `p`, `q`, `dp`, `dq` and `qinv`; 2 if `d` is too small, to generate the
+primes again; 0 if a check failed; zeros at all seven but for 1. Constant
+time but for `e` and the status. -/
+def keyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  keySig.contract A
+    (pre := fun _n nLen _d dLen _p pLen _q qLen _dp dpLen _dq dqLen _qinv qinvLen _e eLen
+        _scratch scratchLen _ =>
+      primeLenValid pLen.toNat ∧ nLen.toNat = 2 * pLen.toNat ∧ dLen.toNat = nLen.toNat ∧
+        qLen.toNat = pLen.toNat ∧ dpLen.toNat = pLen.toNat ∧ dqLen.toNat = pLen.toNat ∧
+        qinvLen.toNat = pLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ 8 ∧
+        scratchWords nLen.toNat ≤ scratchLen.toNat)
+    (post := fun n nLen d _dLen p pLen q _qLen dp _dpLen dq _dqLen qinv _qinvLen e eLen
+        _scratch _scratchLen m m' r =>
+      let res := keyOp pLen.toNat (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
+        (bytesAt m q pLen.toNat)
+      let outs := [(n, nLen.toNat), (d, nLen.toNat), (p, pLen.toNat), (q, pLen.toNat),
+        (dp, pLen.toNat), (dq, pLen.toNat), (qinv, pLen.toNat)]
+      r.toNat = keyStatus res ∧
+        match res with
+        | .inl (.ok ys) => outs.map (fun o => bytesAt m' o.1 o.2) = ys
+        | _ => ∀ o ∈ outs, bytesAt m' o.1 o.2 = List.replicate o.2 0)
+    (writeArgs := true) (stack := stack)
+    (leak := some fun _n _nLen _d _dLen p pLen q _qLen _dp _dpLen _dq _dqLen _qinv _qinvLen e
+        eLen _scratch _scratchLen m =>
+      (bytesAt m e eLen.toNat).map (·.toNat) ++
+        [keyStatus (keyOp pLen.toNat (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
+          (bytesAt m q pLen.toNat))])
 
 end VG.Proof.RsaKeyGen

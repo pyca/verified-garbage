@@ -211,43 +211,6 @@ theorem neMask_ct {F G : KIn → State → Prop} {a b : Nat} (ha : a < 16) (hb :
     rw [← neMask_eq]
     exact WP.mono (neMask_k h ha hb) fun t ⟨ht, hm, h15, _, k⟩ => ⟨ht, hFG I s t h.hZ hf hm k h15⟩
 
-/-- The registers `oddMaskOf` changes. -/
-abbrev omRegs : List Reg := [.x3, .x4, .x7, .x11, .x12, .x15, .x16]
-
-/-- The registers `evenMaskOf` changes. -/
-abbrev emRegs : List Reg := [.x3, .x4, .x11, .x12, .x15, .x16]
-
-theorem oddMaskOf_eq (j : Nat) : oddMaskOf j = ws ++ (base j .x16 ++ ([movi .x7 0, ld .x3 .x16] ++ oddMask)) := by
-  simp only [oddMaskOf, List.append_assoc]
-
-theorem evenMaskOf_eq (j : Nat) : evenMaskOf j = ws ++ (base j .x16 ++ ([ld .x3 .x16, movi .x4 1,
-    .logic .and .x .x3 .x3 .x4, .subImm .x .x15 .x3 1] : List Instr)) := by
-  simp only [evenMaskOf, List.append_assoc]
-
-theorem oddMaskOf_ct {F G : KIn → State → Prop} {j : Nat} (hj : j < 16)
-    (hFG : ∀ I s t, slot I.W 16 ≤ 2 ^ 64 → F I s → t.mem = s.mem → Keep omRegs s t →
-      t.gpr .x15 = mask (decide (av I s.mem j % 2 = 1)) → G I t)
-    {hc : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.block (base j .x16 ++ ([movi .x7 0, ld .x3 .x16] ++ oddMask)))
-      hc).isSome = true) :
-    RelCT isa (Two (KG F)) (.block (oddMaskOf j)) (Two (KG G)) := by
-  rw [oddMaskOf_eq]
-  exact kg_wsb ht fun I _ s h _ hf => by
-    rw [← oddMaskOf_eq]
-    exact WP.mono (oddMaskOf_k h hj) fun t ⟨ht, hm, h15, _, _, _, k⟩ => ⟨ht, hFG I s t h.hZ hf hm k h15⟩
-
-theorem evenMaskOf_ct {F G : KIn → State → Prop} {j : Nat} (hj : j < 16)
-    (hFG : ∀ I s t, slot I.W 16 ≤ 2 ^ 64 → F I s → t.mem = s.mem → Keep emRegs s t →
-      t.gpr .x15 = mask (decide (av I s.mem j % 2 = 0)) → G I t)
-    {hc : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.block (base j .x16 ++ ([ld .x3 .x16, movi .x4 1,
-      .logic .and .x .x3 .x3 .x4, .subImm .x .x15 .x3 1] : List Instr))) hc).isSome = true) :
-    RelCT isa (Two (KG F)) (.block (evenMaskOf j)) (Two (KG G)) := by
-  rw [evenMaskOf_eq]
-  exact kg_wsb ht fun I _ s h _ hf => by
-    rw [← evenMaskOf_eq]
-    exact WP.mono (evenMaskOf_k h hj) fun t ⟨ht, hm, h15, _, _, k⟩ => ⟨ht, hFG I s t h.hZ hf hm k h15⟩
-
 /-! ## Selection and setting -/
 
 /-- The registers `selC` changes. -/
@@ -291,17 +254,6 @@ theorem setOne_ct {F G : KIn → State → Prop} {j : Nat} (hj : j < 16)
     have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega_arith
     exact WP.mono (setOne_k h hj hz) fun t ⟨ht, f, v, k⟩ =>
       ⟨ht, hFG I s t h.hZ hw1 hf f k (av_of_full v (Nat.one_lt_two_pow (by omega_arith)))⟩
-
-/-- `zeroA j` then `setOneA j`. -/
-theorem one_ct {F : KIn → State → Prop} {j : Nat} (hj : j < 16) (hF : Stab F [.arr j] allR)
-    {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht₁ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block (base j .x8 ++ ([movi .x7 0] : List Instr)))
-      zeroAcc) hc₁).isSome = true)
-    (ht₂ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.block (base j .x16 ++ ([movi .x3 1, st .x3 .x16] :
-      List Instr))) hc₂).isSome = true) :
-    RelCT isa (Two (KG F)) (.seq (zeroA j) (.block (setOneA j))) (Two (KG fun I t => F I t ∧ AvIs j 1 I t)) :=
-  RelCT.seq (zeroAZ_ct hj (hF.sub) ht₁)
-    (setOne_ct hj (fun I s t hZ _ hf f k v => ⟨hF I s t hZ hf (f.mono (by simp)) (k.mono (by decide)), v⟩) ht₂)
 
 /-! ## Division and inverses -/
 

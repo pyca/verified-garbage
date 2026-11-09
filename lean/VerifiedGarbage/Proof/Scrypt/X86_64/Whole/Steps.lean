@@ -44,16 +44,10 @@ variable {L : Lay} (h : L.Ok)
 include h
 
 theorem blen_eq : L.blen.toNat = L.r.toNat * L.pp := (Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero h.bmod)).symm
-theorem vlen_eq : L.vlen.toNat = L.r.toNat * L.NN := (Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero h.vmod)).symm
 theorem pp_pos : 0 < L.pp := h.valid.2.2.2.1
-theorem NN_pos : 0 < L.NN := by have := h.valid.1; omega
-
 /-- `b` is not the whole address space, since the stack is not in it. -/
 theorem blen_lt : L.blen.toNat * 128 < 2 ^ 64 :=
   toNat_le_of_disjoint h.kb.symm (by show (0 : Nat) < 88; omega)
-theorem vlen_lt : L.vlen.toNat * 128 < 2 ^ 64 :=
-  toNat_le_of_disjoint h.kv.symm (by show (0 : Nat) < 88; omega)
-
 theorem r_le : L.r.toNat ≤ L.blen.toNat := by
   rw [h.blen_eq]; exact Nat.le_mul_of_pos_right _ h.pp_pos
 
@@ -89,10 +83,6 @@ theorem ea_sp (t : State) (d : Nat) : t.ea (sp d) = t.gpr .rsp + BitVec.ofNat 64
 theorem add_add (p : Addr) (a b : Nat) :
     p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-
-theorem cs_keep {t : State} {d : Reg} (v : BitVec 64) (hd : d ∉ calleeSaved) :
-    ∀ r ∈ calleeSaved, (t.setReg d v).gpr r = t.gpr r :=
-  fun _ hr => RegUpd.gpr_setReg_of_ne _ _ (fun e => hd (e ▸ hr))
 
 namespace Ctx
 
@@ -138,7 +128,6 @@ tactic_template "scrypt_cs_tac" : tactic => `(tactic| (
                    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]
                    rintro (h | h | h | h | h | h | h) <;> subst h <;>
                      simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false]))
-
 
 /-! ## The blocks -/
 

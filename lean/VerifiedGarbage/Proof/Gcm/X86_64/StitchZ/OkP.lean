@@ -67,7 +67,7 @@ theorem fin48P (H : Block) (T : Nat → Nat → Nat → Block)
 theorem enc_ok {s₀ : State} (hp : SPreP s₀) (hm : nb s₀ % 16 = 0) : WP isa Impl.Gcm.X86_64.StitchZP.enc s₀ (EPost s₀) :=
   WP.seq (WP.mono (setupP_ok hp) fun _ ⟨_, hR, hpw⟩ =>
     encTailG_ok hp.base hm (finZ (finP hpw))
-      144 (by decide) (by decide) (fun _ h hI => bigP_ok hp hm (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI) hR)
+      144 (by decide) (by decide) (fun _ h hI => bigP_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI) hR)
 
 /-- The decryption of `n` blocks (a multiple of 16, at least 16). -/
 theorem dec_ok {s₀ : State} (hp : SPreP s₀) (hm : nb s₀ % 16 = 0) : WP isa Impl.Gcm.X86_64.StitchZP.dec s₀ (DPost s₀) :=
@@ -173,7 +173,7 @@ theorem setupTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) :
 kind. -/
 theorem stitchTo_ok (M : CtxMode) : StitchToOkM M Impl.Gcm.X86_64.StitchZTo.enc := fun _ hp hm =>
   WP.seq (WP.mono (setupTo_ok hp) fun _ ⟨_, hR, hpw⟩ =>
-    encTailGTo_ok hp hm (finZ hpw) 256 (by decide) (by decide) (fun _ h hI => bigTo_ok hp hm (finZ hpw) (finZ48 (powers48 hpw)) (Nat.le_trans (by decide) h) hI) hR)
+    encTailGTo_ok hp hm (finZ hpw) 256 (by decide) (by decide) (fun _ h hI => bigTo_ok hp (finZ hpw) (finZ48 (powers48 hpw)) (Nat.le_trans (by decide) h) hI) hR)
 
 open VG.Proof.Gcm.X86_64.StitchZP (vinsSelf_ok consts_ok cvtRun_ok hInvF finP fin48P)
 open VG.Impl.Gcm.X86_64.StitchZP (setupGP)
@@ -229,52 +229,9 @@ theorem setupPTo_ok {s₀ : State} (hp : SPreTo CtxMode.powers s₀) :
 theorem stitchToP_ok : StitchToOkM CtxMode.powers Impl.Gcm.X86_64.StitchZTo.encP := fun s₀ hp hm =>
   WP.seq (WP.mono (setupPTo_ok hp) fun _ ⟨_, hR, hpw⟩ =>
     encTailGTo_ok hp hm (finZ (finP hpw))
-      144 (by decide) (by decide) (fun _ h hI => bigPTo_ok hp hm (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI) hR)
+      144 (by decide) (by decide) (fun _ h hI => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI) hR)
 
 end VG.Proof.Gcm.X86_64.StitchZTo
-
-/-!
-# Prepared-context loops satisfy the unchanged GCM postconditions
-
-The setup loads the same field elements as the old per-record conversion.
-The existing loop and field proofs therefore apply unchanged.
--/
-
-namespace VG.Proof.Gcm.X86_64.StitchZR
-open VG VG.X86_64
-open VG.Proof.Gcm.X86_64.Stitch (nb SPrePrepared StitchOkM CtxMode EPost DPost hk)
-open VG.Proof.Gcm.X86_64.StitchZ (finZ encTailG_ok decTailG_ok)
-open VG.Proof.Gcm.X86_64.StitchZP (finP fin48P)
-
-/-- Encryption with prepared powers. -/
-theorem enc_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) : WP isa Impl.Gcm.X86_64.StitchZR.enc s₀ (EPost s₀) :=
-  WP.seq (WP.mono (setupP_ok hp) fun _ ⟨_, hR, hpw⟩ =>
-    encTailG_ok hp.base hm (finZ (finP hpw))
-      256 (by decide) (by decide) (fun _ h hI => bigP_ok hp hm (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI) hR)
-
-/-- Decryption with prepared powers. -/
-theorem dec_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) : WP isa Impl.Gcm.X86_64.StitchZR.dec s₀ (DPost s₀) :=
-  WP.seq (WP.mono (setupP_ok hp) fun _ ⟨_, hR, hpw⟩ =>
-    decTailG_ok hp.base hm (finZ (finP hpw)) 256 (by decide) (by decide) (fun _ h hI => bigDP_ok hp hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI) hR)
-
-/-- Both in-place loops implement the prepared context mode. -/
-theorem stitch_ok : StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZR.enc Impl.Gcm.X86_64.StitchZR.dec :=
-  ⟨fun _ hp hm => enc_ok hp.toPrepared hm, fun _ hp hm => dec_ok hp.toPrepared hm⟩
-end VG.Proof.Gcm.X86_64.StitchZR
-
-namespace VG.Proof.Gcm.X86_64.StitchZRTo
-open VG VG.X86_64
-open VG.Proof.Gcm.X86_64.Stitch (nb StitchToOkM CtxMode hk)
-open VG.Proof.Gcm.X86_64.StitchZ (finZ)
-open VG.Proof.Gcm.X86_64.StitchZP (finP fin48P)
-open VG.Proof.Gcm.X86_64.StitchZTo (encTailGTo_ok)
-
-/-- Out-of-place encryption implements the same prepared context mode. -/
-theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZRTo.encP := fun s₀ hp hm =>
-  WP.seq (WP.mono (setupPTo_ok hp) fun _ ⟨_, hR, hpw⟩ =>
-    encTailGTo_ok hp hm (finZ (finP hpw))
-      256 (by decide) (by decide) (fun _ h hI => bigPTo_ok hp hm (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI) hR)
-end VG.Proof.Gcm.X86_64.StitchZRTo
 
 /-! ## Prepared powers and cached AES keys -/
 
@@ -285,21 +242,6 @@ open VG.Proof.Gcm.X86_64.StitchZ (finZ)
 open VG.Proof.Gcm.X86_64.StitchZP (finP fin48P)
 open VG.Proof.Gcm.X86_64.Pclmul (Prod φ_reduceB)
 open VG.Spec.Gcm (Block ghashFrom)
-
-theorem enc_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) :
-    WP isa Impl.Gcm.X86_64.StitchZH.enc s₀ (EPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
-    encTailG_ok hp.base hm (finZ (finP hpw))
-      256 (by decide) (by decide) (fun _ h hI hC => bigP_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI hC) hR hK)
-
-theorem dec_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) :
-    WP isa Impl.Gcm.X86_64.StitchZH.dec s₀ (DPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
-    decTailG_ok hp.base hm (finZ (finP hpw))
-      256 (by decide) (by decide) (fun _ h hI hC => bigDP_ok hp hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI hC) hR hK)
-
-theorem stitch_ok : StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZH.enc Impl.Gcm.X86_64.StitchZH.dec :=
-  ⟨fun _ hp hm => enc_ok hp.toPrepared hm, fun _ hp hm => dec_ok hp.toPrepared hm⟩
 
 /-- What lane `n mod 4` gets of block `n`, added up over the four lanes. -/
 theorem laneAccG_sum_succ (X : Nat → Block) (T : Nat → BitVec 128) (y : Block) (n : Nat) :
@@ -383,12 +325,6 @@ open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch (nb StitchToOkM CtxMode hk)
 open VG.Proof.Gcm.X86_64.StitchZ (finZ)
 open VG.Proof.Gcm.X86_64.StitchZP (finP fin48P)
-
-/-- Prepared powers and cached AES keys, with separate input and output buffers. -/
-theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZHTo.encP := fun s₀ hp hm =>
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
-    encTailGTo_ok hp hm (finZ (finP hpw))
-      256 (by decide) (by decide) (fun _ h hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI hC) hR hK)
 
 /-- `encR`, for any number of blocks from 16 on. -/
 theorem encRTo_ok {s₀ : State} (hp : Proof.Gcm.X86_64.Stitch.SPreTo CtxMode.prepared s₀) :

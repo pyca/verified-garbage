@@ -120,14 +120,6 @@ theorem maskCopy_ok {base : Addr} {size : Nat} {m : Reg} (hm : m ≠ .r8) :
 
 /-! ## The signed linear combination -/
 
-/-- `rcx = src`. -/
-theorem movRcx_ok (s : State) (src : Reg) :
-    WP isa (.block [.mov .rcx (.reg src)]) s fun t => t.gpr .rcx = s.gpr src ∧ Keeps [.rcx] s t := by
-  irun
-  exact ⟨fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    simp only [RegUpd.gpr_setReg, hr, ite_false], rfl, rfl, rfl⟩
-
 /-- `omega` on the layout alone of `linR_ok`: first without its disjunctions,
 which it would split, then with one. -/
 tactic_template "inv_lin_omega" : tactic =>
@@ -571,14 +563,6 @@ def xorSum (m : Mem) (base : Addr) (x sl : Nat) : Nat → Nat
   | 0 => 0
   | i + 1 => xorSum m base x sl i + 2 ^ (64 * i) * xorW m base (x + 8 * i) sl
 
-theorem xorSum_congr {m m' : Mem} {base : Addr} {x sl : Nat} :
-    ∀ {i : Nat}, (∀ j < i, xorW m' base (x + 8 * j) sl = xorW m base (x + 8 * j) sl) →
-      xorSum m' base x sl i = xorSum m base x sl i
-  | 0, _ => rfl
-  | i + 1, h => by
-    simp only [xorSum]
-    rw [xorSum_congr fun j hj => h j (by omega_using [hj]), h i (by omega_using [])]
-
 /-- Columns `0 … i - 1`: `[T …] + 2^(64 i) r8' = r8 + rcx (X ⊕ M) + rbp (Y ⊕ M')`. -/
 theorem linCols_ok {base : Addr} {size T x y U : Nat} (hU : U + 16 ≤ size) :
     ∀ (i : Nat) {s : State}, Scr s base size → x + 8 * i ≤ size → y + 8 * i ≤ size → T + 8 * i ≤ size →
@@ -677,7 +661,6 @@ theorem side_cong {w : BitVec 64} {X S Q : Nat} (h0 : smask w = 0 → S = X)
     grind
 
 /-! ## The combination -/
-
 
 /-- `[T] = w [x] + w' [y]` modulo `2^(64 K)` (`k ≤ K ≤ k + 1`), for `|w|`, `|w'| ≤ 2^62`. -/
 theorem linR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w w' : Reg}

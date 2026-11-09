@@ -584,10 +584,10 @@ theorem blR_sub (s₀ : State) : Region.Sub (blR s₀) (dR s₀) := Offset.sub_b
 
 
 theorem part2_eq (x : Impl.ChaCha20.X86_64.Callee) :
-    part2 x = .ite .e (.block []) (.seq (.block blocksArgs) (.call x.name x.code)) := rfl
+    part2 x = .ite .e (.block []) (.seq (.block blocksArgs) x.inPlace) := rfl
 
 theorem blocks_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s)
-    (hnb : 0 < NB s₀) : WP isa (.seq (.block blocksArgs) (.call v.callee.name v.callee.code)) s (Q2 s₀) := by
+    (hnb : 0 < NB s₀) : WP isa (.seq (.block blocksArgs) v.callee.inPlace) s (Q2 s₀) := by
   have hL := L_lt s₀
   have hH := H_le s₀
   have hHNB := HNB_le s₀

@@ -61,8 +61,6 @@ open VG.Proof.Argon2.X86 (blk ofWords blk_of_words xor_words)
 open VG.Impl.Sha512.X86 (at_)
 open VG.Impl.Argon2.X86.Derive (laneOff laneLenOff argOff divisorOff segLenOff strideOff)
 
-
-
 theorem reduction_snoc (p : Spec.Argon2.Params) (M : Array Block) (l : Nat) (acc : Block) :
     Proof.Argon2.reduction p M 0 (l + 1) acc =
       xorBlock (Proof.Argon2.reduction p M 0 l acc) (M[Proof.Argon2.lastIndex p l]?.getD zeroBlock) := by
@@ -278,8 +276,6 @@ open VG.Spec.Argon2 (Block zeroBlock FillState)
 open VG.Spec.Blake2 (bytesAt)
 
 theorem body_nosp : NoSp Impl.Argon2.X86.Derive.body := NoSp.of_all (by lit_decide)
-
-theorem body_stack : stackUse Impl.Argon2.X86.Derive.body = 84 := by lit_decide
 
 section
 variable {s₀ : State} (hp : DPre s₀)

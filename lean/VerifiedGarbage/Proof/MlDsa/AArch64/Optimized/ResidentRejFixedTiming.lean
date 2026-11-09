@@ -34,21 +34,11 @@ theorem flagsTwo_ct : PointerCT [.x19] (.block Two.flags) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x19])
     (fun _ _ _ _ h => h) (by taint_decide)
 
-theorem epi_ct : PointerCT [.x19] (.block Rej4.epi) :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x19])
-    (fun _ _ _ _ h => h) (by taint_decide)
-
 theorem sixthFour_ct : PointerCT [.x19] (Four.squeezeN step 840 1) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x19])
     (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem sixthTwo_ct : PointerCT [.x19] (Two.squeezeN Two.step 840 1) :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x19])
-    (fun _ _ _ _ h => h) (by taint_decide)
-
-theorem firstFour_ct : PointerCT [.x19]
-    (.seq (.block (Four.squeezeSetup 0 5))
-      (.seq (five .x22 .x24 .x25) (five .x23 .x26 .x27))) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x19])
     (fun _ _ _ _ h => h) (by taint_decide)
 

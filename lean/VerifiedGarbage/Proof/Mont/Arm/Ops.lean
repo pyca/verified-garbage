@@ -9,9 +9,9 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 # Montgomery arithmetic on 32-bit ARM: the operations
 
 For a modulus `m` in the working space (`ModOkW`) and an accumulator of
-`accLen M` bytes at `acc` apart from the numbers (`OpLay`): `mul acc o a b`
-writes `[a] [b] R⁻¹ mod m` to `[o]` (`mul_ok`), `add` writes
-`[a] + [b] mod m` (`add_ok`) and `sub` writes `[a] - [b] mod m` (`sub_ok`),
+`accLen M` bytes at `acc` apart from the numbers (`OpLay`): `mulR`
+writes `[a] [b] R⁻¹ mod m` to `[o]` (`mulR_ok`), `addR` writes
+`[a] + [b] mod m` (`addR_ok`) and `subR` writes `[a] - [b] mod m` (`subR_ok`),
 for `[a]`, `[b]` below `m`, in the shape of the other targets' operations
 (`n` 64-bit words). Each changes only the registers `clob`, the result, the
 temporary area and the accumulator (`OpKeep`).
@@ -470,10 +470,6 @@ structure Ptrs (s : State) (ra rb ro : Reg) (ia ib io a b o : Nat) where
   b : kb + ib = b
   o : ko + io = o
 
-/-- The numbers read and written through `r12` itself. -/
-def Ptrs.base (s : State) (a b o : Nat) : Ptrs s .r12 .r12 .r12 a b o a b o :=
-  ⟨0, 0, 0, by simp, by simp, by simp, Nat.zero_add _, Nat.zero_add _, Nat.zero_add _⟩
-
 /-- `[o] = [a] [b] R⁻¹ mod m`, with `[a]`, `[b]` and `[o]` at `[ra + ia]`,
 `[rb + ib]` and `[ro + io]`. -/
 theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
@@ -573,16 +569,6 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       show 64 * M.n = 32 * W by omega_using [hW2], ← O₅.val32 (d := a) (by omega_using [hW2, hacc, h_acc_a]) (by omega_using [hacc, h_acc_le, h_a_le, hs_small]),
       ← O₅.val32 (d := b) (by omega_using [hW2, hacc, h_acc_b]) (by omega_using [hacc, h_acc_le, h_b_le, hs_small]), Nat.mod_mul_mod, Nat.mul_comm, hU, Nat.add_mul_mod_self_right]
 
-/-- `[o] = [a] [b] R⁻¹ mod m`. -/
-theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOkW M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
-    (hB : wordsVal s.mem base b M.n < m) :
-    WP isa (mul M acc o a b) s fun s' => OpKeep M base acc o s s' ∧
-      wordsVal s'.mem base o M.n < m ∧
-      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
-        wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m :=
-  mulR_ok hs hM hL (Ptrs.base s a b o) (by decide) (by decide) (by decide) hB
-
 /-- `[o] = [a] + [b] mod m`, with `[a]`, `[b]` and `[o]` at `[ra + ia]`,
 `[rb + ib]` and `[ro + io]`. -/
 theorem addR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
@@ -659,14 +645,6 @@ theorem addR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     rw [show 4 * W = 8 * M.n by omega_using [hW2]] at O
     exact O.mono (by simp)
   · rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32, ← hW2, V, hsum]
-
-/-- `[o] = [a] + [b] mod m`. -/
-theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOkW M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
-    (hAB : wordsVal s.mem base a M.n + wordsVal s.mem base b M.n < 2 * m) :
-    WP isa (.block (add M acc o a b)) s fun s' => OpKeep M base acc o s s' ∧
-      wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + wordsVal s.mem base b M.n) % m :=
-  addR_ok hs hM hL (Ptrs.base s a b o) (by decide) (by decide) (by decide) hAB
 
 /-- `[o] = [a] - [b] mod m`, with `[a]`, `[b]` and `[o]` at `[ra + ia]`,
 `[rb + ib]` and `[ro + io]`. -/
@@ -760,13 +738,5 @@ theorem subR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     rw [show 4 * W = 8 * M.n by omega_using [hW2]] at O
     exact O.mono (by simp)
   · rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32, ← hW2, V, hdiff]
-
-/-- `[o] = [a] - [b] mod m`. -/
-theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOkW M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
-    (hA : wordsVal s.mem base a M.n < m) (hB : wordsVal s.mem base b M.n < m) :
-    WP isa (.block (sub M acc o a b)) s fun s' => OpKeep M base acc o s s' ∧
-      wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + m - wordsVal s.mem base b M.n) % m :=
-  subR_ok hs hM hL (Ptrs.base s a b o) (by decide) (by decide) (by decide) hA hB
 
 end VG.Proof.Mont.Arm

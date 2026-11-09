@@ -37,10 +37,6 @@ theorem two_post {α : Type} {Φ Ψ : α → State → Prop} {c : Prog isa}
 def Pins {α : Type} (Φ : α → State → Prop) (rs : List Reg) : Prop :=
   ∀ a s₁ s₂, Φ a s₁ → Φ a s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r
 
-theorem pins_of {α : Type} {Φ : α → State → Prop} {rs : List Reg} (f : α → Reg → BitVec 32)
-    (h : ∀ a s, Φ a s → ∀ r ∈ rs, s.gpr r = f a r) : Pins Φ rs :=
-  fun a s₁ s₂ h₁ h₂ r hr => (h a s₁ h₁ r hr).trans (h a s₂ h₂ r hr).symm
-
 theorem two_taint {α : Type} {Φ : α → State → Prop} {c : Prog isa} (rs : List Reg) (hpin : Pins Φ rs)
     {hc : VG.Taint.Hint VG.X86.Taint.T} (h : (taint.check (τr rs) c hc).isSome = true) :
     RelCT isa (Two Φ) c fun _ _ => True :=
@@ -60,11 +56,6 @@ theorem two_map {α β : Type} {Φ : α → State → Prop} {Φ' : β → State 
 theorem two_mono {α : Type} {Φ Φ' : α → State → Prop} (h : ∀ a s, Φ a s → Φ' a s) {s₁ s₂ : State}
     (hp : Two Φ s₁ s₂) : Two Φ' s₁ s₂ :=
   let ⟨a, h₁, h₂⟩ := hp; ⟨a, h a _ h₁, h a _ h₂⟩
-
-theorem two_bind {α β : Type} {Φ : α → State → Prop} {Ψ : β → State → Prop}
-    (f : ∀ a s₁ s₂, Φ a s₁ → Φ a s₂ → ∃ b, Ψ b s₁ ∧ Ψ b s₂) {s₁ s₂ : State} (h : Two Φ s₁ s₂) :
-    Two Ψ s₁ s₂ :=
-  let ⟨a, h₁, h₂⟩ := h; f a s₁ s₂ h₁ h₂
 
 /-- A branch whose condition `Φ a` fixes. -/
 theorem two_ite {α : Type} {Φ : α → State → Prop} {cond : isa.Cond} {th el : Prog isa}

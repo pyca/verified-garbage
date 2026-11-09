@@ -17,12 +17,6 @@ open VG.Proof.Ecdsa.Arm VG.Proof.Mont VG.Proof.Mont.Arm
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm
 open VG.Proof.X25519.Arm (Rest wp_ldr wp_str)
 
-theorem decCounter_ok {j : Nat} (s : State) (hj : 1 ≤ j)
-    (hb : s.gpr .r11 = BitVec.ofNat 32 j) :
-    WP isa (.block [decCounter]) s fun t =>
-      t.gpr .r11 = BitVec.ofNat 32 (j - 1) ∧ Rest [.r11] s t ∧ t.mem = s.mem :=
-  wp_decCounter hj hb fun _ u => WP.block_nil ⟨u.gpr, u.rest (by simp), u.mem⟩
-
 theorem testCounter_ok {j : Nat} (s : State) (hj : j < 2 ^ 32)
     (hb : s.gpr .r11 = BitVec.ofNat 32 j) :
     WP isa (.block [testCounter]) s fun t =>

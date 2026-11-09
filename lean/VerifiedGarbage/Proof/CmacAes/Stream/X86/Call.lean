@@ -22,8 +22,8 @@ The artifacts' contracts are the shared ones of `Spec/Cmac/Contract.lean`,
 which imply these (`Verified.lean`). The arguments are on the stack, from
 `[esp + 4]` (cdecl); `count` takes the slots 2 (low word) and 3. Each call of
 a CMAC function pushes its six arguments and the return address in the 28
-bytes below `esp`, and the callee's call of `vg_aes_ctr32` uses 28 bytes below
-that: 56 bytes (48 for `init`, whose calls take four arguments), which may not
+bytes below `esp`, and the callee's call of `vg_aes_ctr32_to` uses 32 bytes below
+that: 60 bytes (52 for `init`, whose calls take four arguments), which may not
 overlap any buffer.
 -/
 
@@ -42,13 +42,13 @@ def initX86 : Contract isa where
     let scr : Region := ⟨(arg s 3).setWidth 64, 2304⟩
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 48, 48⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 52, 52⟩
     s.rd = [key, args] ∧ s.wr = [state, scr] ∧
       state.Disjoint key ∧ state.Disjoint scr ∧ key.Disjoint scr ∧ args.Disjoint state ∧ args.Disjoint scr ∧
       ret.Disjoint state ∧ ret.Disjoint scr ∧
       stack.Disjoint state ∧ stack.Disjoint key ∧ stack.Disjoint scr ∧
       (arg s 0).toNat + 304 ≤ 2 ^ 32 ∧ (arg s 1).toNat + (arg s 2).toNat ≤ 2 ^ 32 ∧
-      (arg s 3).toNat + 2304 ≤ 2 ^ 32 ∧ 48 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
+      (arg s 3).toNat + 2304 ≤ 2 ^ 32 ∧ 52 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
       ((arg s 2).toNat = 16 ∨ (arg s 2).toNat = 24 ∨ (arg s 2).toNat = 32)
   post s s' :=
     Spec.Cmac.Repr s'.mem ((arg s 0).setWidth 64) (Spec.Aes.bytesAt s.mem ((arg s 1).setWidth 64) (arg s 2).toNat) []
@@ -62,13 +62,13 @@ def absorbX86 : Contract isa where
     let scr : Region := ⟨(arg s 6).setWidth 64, 2304⟩
     let args : Region := ⟨argAddr s 0, 28⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 56, 56⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 60, 60⟩
     s.rd = [data, args] ∧ s.wr = [state, scr] ∧
       state.Disjoint data ∧ state.Disjoint scr ∧ data.Disjoint scr ∧ args.Disjoint state ∧ args.Disjoint scr ∧
       ret.Disjoint state ∧ ret.Disjoint scr ∧
       stack.Disjoint state ∧ stack.Disjoint data ∧ stack.Disjoint scr ∧
       (arg s 0).toNat + 304 ≤ 2 ^ 32 ∧ (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32 ∧
-      (arg s 6).toNat + 2304 ≤ 2 ^ 32 ∧ 56 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 32 ≤ 2 ^ 32 ∧
+      (arg s 6).toNat + 2304 ≤ 2 ^ 32 ∧ 60 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 32 ≤ 2 ^ 32 ∧
       ((arg s 1).toNat = 10 ∨ (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 14)
   post s s' :=
     ∀ key msg, Spec.Cmac.Repr s.mem ((arg s 0).setWidth 64) key msg →
@@ -86,14 +86,14 @@ def finishX86 : Contract isa where
     let scr : Region := ⟨(arg s 5).setWidth 64, 2304⟩
     let args : Region := ⟨argAddr s 0, 24⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 56, 56⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 60, 60⟩
     s.rd = [args] ∧ s.wr = [state, out, scr] ∧
       state.Disjoint out ∧ state.Disjoint scr ∧ out.Disjoint scr ∧
       args.Disjoint state ∧ args.Disjoint out ∧ args.Disjoint scr ∧
       ret.Disjoint state ∧ ret.Disjoint out ∧ ret.Disjoint scr ∧
       stack.Disjoint state ∧ stack.Disjoint out ∧ stack.Disjoint scr ∧
       (arg s 0).toNat + 304 ≤ 2 ^ 32 ∧ (arg s 4).toNat + 16 ≤ 2 ^ 32 ∧
-      (arg s 5).toNat + 2304 ≤ 2 ^ 32 ∧ 56 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧
+      (arg s 5).toNat + 2304 ≤ 2 ^ 32 ∧ 60 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧
       ((arg s 1).toNat = 10 ∨ (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 14)
   post s s' :=
     ∀ key msg, Spec.Cmac.Repr s.mem ((arg s 0).setWidth 64) key msg →
@@ -115,9 +115,9 @@ call (`vg_aes_expand_key_scratch`, `vg_cmac_aes_subkeys`, `vg_cmac_aes_update` a
 (`…Args`: the registers pushed as its arguments, and the regions), what it
 leaves (`…Post`, in terms of the memory before the call), and that two calls
 with the same arguments and stack pointer leak the same (`…_rel`, by
-`RelCT.callWith`). A call of a function of six arguments uses the 56 bytes
+`RelCT.callWith`). A call of a function of six arguments uses the 60 bytes
 below `esp` (`push`, the return address and the callee's call of
-`vg_aes_ctr32`); `vg_cmac_aes_subkeys`, of four, 48; `vg_aes_expand_key_scratch`,
+`vg_aes_ctr32_to`); `vg_cmac_aes_subkeys`, of four, 52; `vg_aes_expand_key_scratch`,
 which calls nothing, 20.
 -/
 
@@ -169,11 +169,11 @@ theorem eq_ofNat {x : BitVec 32} {n : Nat} (h : x = BitVec.ofNat 32 n) (hn : n <
 /-! ## The callees -/
 
 theorem upd_nosp : NoSp (Impl.CmacAes.X86.update v.callee) := Proof.CmacAes.X86.update_nosp v
-theorem upd_stack : stackUse (Impl.CmacAes.X86.update v.callee) = 28 := Proof.CmacAes.X86.update_stack v
+theorem upd_stack : stackUse (Impl.CmacAes.X86.update v.callee) = 32 := Proof.CmacAes.X86.update_stack v
 theorem sub_nosp : NoSp (Impl.CmacAes.X86.subkeys v.callee) := Proof.CmacAes.X86.subkeys_nosp v
-theorem sub_stack : stackUse (Impl.CmacAes.X86.subkeys v.callee) = 28 := Proof.CmacAes.X86.subkeys_stack v
+theorem sub_stack : stackUse (Impl.CmacAes.X86.subkeys v.callee) = 32 := Proof.CmacAes.X86.subkeys_stack v
 theorem fin_nosp : NoSp (Impl.CmacAes.X86.finalize v.callee) := Proof.CmacAes.X86.finalize_nosp v
-theorem fin_stack : stackUse (Impl.CmacAes.X86.finalize v.callee) = 28 := Proof.CmacAes.X86.finalize_stack v
+theorem fin_stack : stackUse (Impl.CmacAes.X86.finalize v.callee) = 32 := Proof.CmacAes.X86.finalize_stack v
 theorem ek_nosp : NoSp v.expand.code := v.expandNosp
 theorem ek_stack : stackUse v.expand.code = 0 := v.expandStack
 
@@ -190,17 +190,17 @@ structure UArgs (s : State) (W C D S : BitVec 32) (R n : Nat) : Prop where
   esi : s.gpr .esi = BitVec.ofNat 32 n
   edi : s.gpr .edi = S
   rounds : R = 10 ∨ R = 12 ∨ R = 14
-  esp : 56 ≤ (s.gpr .esp).toNat
+  esp : 60 ≤ (s.gpr .esp).toNat
   hn : 16 * n < 2 ^ 32
   wc : (⟨W.setWidth 64, 240⟩ : Region).Disjoint ⟨C.setWidth 64, 16⟩
   ws : (⟨W.setWidth 64, 240⟩ : Region).Disjoint ⟨S.setWidth 64, 2176⟩
   dc : (⟨D.setWidth 64, 16 * n⟩ : Region).Disjoint ⟨C.setWidth 64, 16⟩
   ds : (⟨D.setWidth 64, 16 * n⟩ : Region).Disjoint ⟨S.setWidth 64, 2176⟩
   cs : (⟨C.setWidth 64, 16⟩ : Region).Disjoint ⟨S.setWidth 64, 2176⟩
-  bW : (below (s.gpr .esp) 56).Disjoint ⟨W.setWidth 64, 240⟩
-  bD : (below (s.gpr .esp) 56).Disjoint ⟨D.setWidth 64, 16 * n⟩
-  bC : (below (s.gpr .esp) 56).Disjoint ⟨C.setWidth 64, 16⟩
-  bS : (below (s.gpr .esp) 56).Disjoint ⟨S.setWidth 64, 2176⟩
+  bW : (below (s.gpr .esp) 60).Disjoint ⟨W.setWidth 64, 240⟩
+  bD : (below (s.gpr .esp) 60).Disjoint ⟨D.setWidth 64, 16 * n⟩
+  bC : (below (s.gpr .esp) 60).Disjoint ⟨C.setWidth 64, 16⟩
+  bS : (below (s.gpr .esp) 60).Disjoint ⟨S.setWidth 64, 2176⟩
   fW : W.toNat + 240 ≤ 2 ^ 32
   fC : C.toNat + 16 ≤ 2 ^ 32
   fD : D.toNat + 16 * n ≤ 2 ^ 32
@@ -213,7 +213,7 @@ structure UPost (s : State) (W C D S : BitVec 32) (R n : Nat) (s' : State) : Pro
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
-  frame : Frame [⟨C.setWidth 64, 16⟩, ⟨S.setWidth 64, 2176⟩, below (s.gpr .esp) 56] s.mem s'.mem
+  frame : Frame [⟨C.setWidth 64, 16⟩, ⟨S.setWidth 64, 2176⟩, below (s.gpr .esp) 60] s.mem s'.mem
   out : Spec.Aes.bytesAt s'.mem (C.setWidth 64) 16 =
     Spec.Cmac.chain (Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem (W.setWidth 64) (16 * (R + 1))))
       (Spec.Aes.bytesAt s.mem (C.setWidth 64) 16) (Spec.Cmac.blocksAt s.mem (D.setWidth 64) 16 n)
@@ -244,9 +244,9 @@ theorem callPre : CallPre updateX86 rs6 (uRd (s.gpr .esp) W D n) (uWr C S) s := 
     rw [callEntry_argAddr0]; rfl
   have eSp : (pushed rs6 s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 (24 + 4) := by
     rw [callEntry_esp']; rfl
-  have bA : Region.Sub (below (s.gpr .esp) 24) (below (s.gpr .esp) 56) := below_sub (by omega_arith) he
-  have bR := sub_ret (E := s.gpr .esp) (k := 24) (b := 56) (by omega_arith) he
-  have bK := sub_stk (E := s.gpr .esp) (k := 24 + 4) (a := 28) (b := 56) (by omega_arith) he
+  have bA : Region.Sub (below (s.gpr .esp) 24) (below (s.gpr .esp) 60) := below_sub (by omega_arith) he
+  have bR := sub_ret (E := s.gpr .esp) (k := 24) (b := 60) (by omega_arith) he
+  have bK := sub_stk (E := s.gpr .esp) (k := 24 + 4) (a := 32) (b := 60) (by omega_arith) he
   refine ⟨?_, ?_, ?_⟩
   · simp only [updateX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, a5, eA, eSp, hR, hN]
@@ -284,7 +284,7 @@ theorem upd_call {s : State} {W C D S : BitVec 32} {R n : Nat} (h : UArgs s W C 
   obtain ⟨a0, a1, a2, a3, a4, -⟩ := h.args
   rw [(upd_stack v)] at f'
   refine ⟨rd', wr', cs', f'.mono fun r hr => by simpa using hr, ?_⟩
-  have keep : ∀ {p : BitVec 32} {k : Nat}, (below (s.gpr .esp) 56).Disjoint ⟨p.setWidth 64, k⟩ → k ≤ 2 ^ 64 →
+  have keep : ∀ {p : BitVec 32} {k : Nat}, (below (s.gpr .esp) 60).Disjoint ⟨p.setWidth 64, k⟩ → k ≤ 2 ^ 64 →
       Spec.Aes.bytesAt (pushed rs6 s).callEntry.mem (p.setWidth 64) k = Spec.Aes.bytesAt s.mem (p.setWidth 64) k :=
     fun hd hk => entry_bytes h.fit hrs6 (by simp) he hd hk
   simp only [updateX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hN, m₂] at post
@@ -328,16 +328,16 @@ structure FArgs (s : State) (K St P S : BitVec 32) (L R : Nat) : Prop where
   edi : s.gpr .edi = S
   rounds : R = 10 ∨ R = 12 ∨ R = 14
   len : L ≤ 16
-  esp : 56 ≤ (s.gpr .esp).toNat
+  esp : 60 ≤ (s.gpr .esp).toNat
   kst : (⟨K.setWidth 64, 272⟩ : Region).Disjoint ⟨St.setWidth 64, 16⟩
   ks : (⟨K.setWidth 64, 272⟩ : Region).Disjoint ⟨S.setWidth 64, 2176⟩
   pst : (⟨P.setWidth 64, L⟩ : Region).Disjoint ⟨St.setWidth 64, 16⟩
   ps : (⟨P.setWidth 64, L⟩ : Region).Disjoint ⟨S.setWidth 64, 2176⟩
   sts : (⟨St.setWidth 64, 16⟩ : Region).Disjoint ⟨S.setWidth 64, 2176⟩
-  bK : (below (s.gpr .esp) 56).Disjoint ⟨K.setWidth 64, 272⟩
-  bP : (below (s.gpr .esp) 56).Disjoint ⟨P.setWidth 64, L⟩
-  bSt : (below (s.gpr .esp) 56).Disjoint ⟨St.setWidth 64, 16⟩
-  bS : (below (s.gpr .esp) 56).Disjoint ⟨S.setWidth 64, 2176⟩
+  bK : (below (s.gpr .esp) 60).Disjoint ⟨K.setWidth 64, 272⟩
+  bP : (below (s.gpr .esp) 60).Disjoint ⟨P.setWidth 64, L⟩
+  bSt : (below (s.gpr .esp) 60).Disjoint ⟨St.setWidth 64, 16⟩
+  bS : (below (s.gpr .esp) 60).Disjoint ⟨S.setWidth 64, 2176⟩
   fK : K.toNat + 272 ≤ 2 ^ 32
   fSt : St.toNat + 16 ≤ 2 ^ 32
   fP : P.toNat + L ≤ 2 ^ 32
@@ -350,7 +350,7 @@ structure FPost (s : State) (K St P S : BitVec 32) (L R : Nat) (s' : State) : Pr
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
-  frame : Frame [⟨St.setWidth 64, 16⟩, ⟨S.setWidth 64, 2176⟩, below (s.gpr .esp) 56] s.mem s'.mem
+  frame : Frame [⟨St.setWidth 64, 16⟩, ⟨S.setWidth 64, 2176⟩, below (s.gpr .esp) 60] s.mem s'.mem
   out : let ciph := Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem (K.setWidth 64) (16 * (R + 1)))
     let ks := Spec.Cmac.subkeys ciph 16
     Spec.Aes.bytesAt s.mem (K.setWidth 64 + 240) 32 = ks.1 ++ ks.2 →
@@ -385,9 +385,9 @@ theorem callPre : CallPre finalizeX86 rs6 (fRd (s.gpr .esp) K P L) (fWr St S) s 
     rw [callEntry_argAddr0]; rfl
   have eSp : (pushed rs6 s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 (24 + 4) := by
     rw [callEntry_esp']; rfl
-  have bA : Region.Sub (below (s.gpr .esp) 24) (below (s.gpr .esp) 56) := below_sub (by omega_arith) he
-  have bR := sub_ret (E := s.gpr .esp) (k := 24) (b := 56) (by omega_arith) he
-  have bK := sub_stk (E := s.gpr .esp) (k := 24 + 4) (a := 28) (b := 56) (by omega_arith) he
+  have bA : Region.Sub (below (s.gpr .esp) 24) (below (s.gpr .esp) 60) := below_sub (by omega_arith) he
+  have bR := sub_ret (E := s.gpr .esp) (k := 24) (b := 60) (by omega_arith) he
+  have bK := sub_stk (E := s.gpr .esp) (k := 24 + 4) (a := 32) (b := 60) (by omega_arith) he
   refine ⟨?_, ?_, ?_⟩
   · simp only [finalizeX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, a5, eA, eSp, hR, hL]
@@ -425,7 +425,7 @@ theorem fin_call {s : State} {K St P S : BitVec 32} {L R : Nat} (h : FArgs s K S
   obtain ⟨a0, a1, a2, a3, a4, -⟩ := h.args
   rw [(fin_stack v)] at f'
   refine ⟨rd', wr', cs', f'.mono fun r hr => by simpa using hr, ?_⟩
-  have keep : ∀ {p : Addr} {k : Nat}, (below (s.gpr .esp) 56).Disjoint ⟨p, k⟩ → k ≤ 2 ^ 64 →
+  have keep : ∀ {p : Addr} {k : Nat}, (below (s.gpr .esp) 60).Disjoint ⟨p, k⟩ → k ≤ 2 ^ 64 →
       Spec.Aes.bytesAt (pushed rs6 s).callEntry.mem p k = Spec.Aes.bytesAt s.mem p k :=
     fun hd hk => entry_bytes h.fit hrs6 (by simp) he hd hk
   simp only [finalizeX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hL, m₂] at post
@@ -471,13 +471,13 @@ structure SArgs (s : State) (W K S : BitVec 32) (R : Nat) : Prop where
   edx : s.gpr .edx = K
   ebx : s.gpr .ebx = S
   rounds : R = 10 ∨ R = 12 ∨ R = 14
-  esp : 48 ≤ (s.gpr .esp).toNat
+  esp : 52 ≤ (s.gpr .esp).toNat
   wk : (⟨W.setWidth 64, 240⟩ : Region).Disjoint ⟨K.setWidth 64, 32⟩
   ws : (⟨W.setWidth 64, 240⟩ : Region).Disjoint ⟨S.setWidth 64, 2176⟩
   ks : (⟨K.setWidth 64, 32⟩ : Region).Disjoint ⟨S.setWidth 64, 2176⟩
-  bW : (below (s.gpr .esp) 48).Disjoint ⟨W.setWidth 64, 240⟩
-  bK : (below (s.gpr .esp) 48).Disjoint ⟨K.setWidth 64, 32⟩
-  bS : (below (s.gpr .esp) 48).Disjoint ⟨S.setWidth 64, 2176⟩
+  bW : (below (s.gpr .esp) 52).Disjoint ⟨W.setWidth 64, 240⟩
+  bK : (below (s.gpr .esp) 52).Disjoint ⟨K.setWidth 64, 32⟩
+  bS : (below (s.gpr .esp) 52).Disjoint ⟨S.setWidth 64, 2176⟩
   fW : W.toNat + 240 ≤ 2 ^ 32
   fK : K.toNat + 32 ≤ 2 ^ 32
   fS : S.toNat + 2176 ≤ 2 ^ 32
@@ -489,7 +489,7 @@ structure SPost (s : State) (W K S : BitVec 32) (R : Nat) (s' : State) : Prop wh
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
-  frame : Frame [⟨K.setWidth 64, 32⟩, ⟨S.setWidth 64, 2176⟩, below (s.gpr .esp) 48] s.mem s'.mem
+  frame : Frame [⟨K.setWidth 64, 32⟩, ⟨S.setWidth 64, 2176⟩, below (s.gpr .esp) 52] s.mem s'.mem
   out : Spec.Aes.bytesAt s'.mem (K.setWidth 64) 32 =
     (Spec.Cmac.subkeys (Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem (W.setWidth 64) (16 * (R + 1)))) 16).1 ++
       (Spec.Cmac.subkeys (Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem (W.setWidth 64) (16 * (R + 1)))) 16).2
@@ -518,9 +518,9 @@ theorem callPre : CallPre subkeysX86 rs4 (sRd (s.gpr .esp) W) (sWr K S) s := by
     rw [callEntry_argAddr0]; rfl
   have eSp : (pushed rs4 s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 (16 + 4) := by
     rw [callEntry_esp']; rfl
-  have bA : Region.Sub (below (s.gpr .esp) 16) (below (s.gpr .esp) 48) := below_sub (by omega_arith) he
-  have bR := sub_ret (E := s.gpr .esp) (k := 16) (b := 48) (by omega_arith) he
-  have bK := sub_stk (E := s.gpr .esp) (k := 16 + 4) (a := 28) (b := 48) (by omega_arith) he
+  have bA : Region.Sub (below (s.gpr .esp) 16) (below (s.gpr .esp) 52) := below_sub (by omega_arith) he
+  have bR := sub_ret (E := s.gpr .esp) (k := 16) (b := 52) (by omega_arith) he
+  have bK := sub_stk (E := s.gpr .esp) (k := 16 + 4) (a := 32) (b := 52) (by omega_arith) he
   refine ⟨?_, ?_, ?_⟩
   · simp only [subkeysX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, eA, eSp, hR]

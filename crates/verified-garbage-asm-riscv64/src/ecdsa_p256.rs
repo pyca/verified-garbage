@@ -3,24 +3,255 @@
 //! `assembly/ecdsa_p256.s`.
 #![allow(dead_code)]
 
-/// ECDSA signature verification over P-256 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (its leftmost 32 bytes, or, for a shorter hash, the hash padded on the left with zeros to 32 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
+/// ECDSA signature verification over P-256 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (`digest_len` bytes, the hash function's output, of any length; `e` is its leftmost 256 bits, or all of it if it is shorter) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
-/// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
+/// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 65 bytes.
-/// * `digest` must be valid for reads of 32 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
 /// * `sig` must be valid for reads of 64 bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
-/// * None of `public`, `digest`, `sig` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * None of `public`, `digest`, `sig` and `scratch` may overlap the 80 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdsa_p256_verify(public: *const [u8; 65], digest: *const [u8; 32], sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ecdsa_p256_verify(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
+.insn 2, 0x715d
+.insn 2, 0x878a
+.insn 4, 0x02000293
+bltu a2, t0, 20f
+.insn 4, 0x0005c303
+.insn 4, 0x00678023
+.insn 4, 0x0015c303
+.insn 4, 0x006780a3
+.insn 4, 0x0025c303
+.insn 4, 0x00678123
+.insn 4, 0x0035c303
+.insn 4, 0x006781a3
+.insn 4, 0x0045c303
+.insn 4, 0x00678223
+.insn 4, 0x0055c303
+.insn 4, 0x006782a3
+.insn 4, 0x0065c303
+.insn 4, 0x00678323
+.insn 4, 0x0075c303
+.insn 4, 0x006783a3
+.insn 4, 0x0085c303
+.insn 4, 0x00678423
+.insn 4, 0x0095c303
+.insn 4, 0x006784a3
+.insn 4, 0x00a5c303
+.insn 4, 0x00678523
+.insn 4, 0x00b5c303
+.insn 4, 0x006785a3
+.insn 4, 0x00c5c303
+.insn 4, 0x00678623
+.insn 4, 0x00d5c303
+.insn 4, 0x006786a3
+.insn 4, 0x00e5c303
+.insn 4, 0x00678723
+.insn 4, 0x00f5c303
+.insn 4, 0x006787a3
+.insn 4, 0x0105c303
+.insn 4, 0x00678823
+.insn 4, 0x0115c303
+.insn 4, 0x006788a3
+.insn 4, 0x0125c303
+.insn 4, 0x00678923
+.insn 4, 0x0135c303
+.insn 4, 0x006789a3
+.insn 4, 0x0145c303
+.insn 4, 0x00678a23
+.insn 4, 0x0155c303
+.insn 4, 0x00678aa3
+.insn 4, 0x0165c303
+.insn 4, 0x00678b23
+.insn 4, 0x0175c303
+.insn 4, 0x00678ba3
+.insn 4, 0x0185c303
+.insn 4, 0x00678c23
+.insn 4, 0x0195c303
+.insn 4, 0x00678ca3
+.insn 4, 0x01a5c303
+.insn 4, 0x00678d23
+.insn 4, 0x01b5c303
+.insn 4, 0x00678da3
+.insn 4, 0x01c5c303
+.insn 4, 0x00678e23
+.insn 4, 0x01d5c303
+.insn 4, 0x00678ea3
+.insn 4, 0x01e5c303
+.insn 4, 0x00678f23
+.insn 4, 0x01f5c303
+.insn 4, 0x00678fa3
+j 21f
+20:
+.insn 2, 0x4301
+.insn 4, 0x00678023
+.insn 2, 0x4301
+.insn 4, 0x006780a3
+.insn 2, 0x4301
+.insn 4, 0x00678123
+.insn 2, 0x4301
+.insn 4, 0x006781a3
+.insn 2, 0x4301
+.insn 4, 0x00678223
+.insn 2, 0x4301
+.insn 4, 0x006782a3
+.insn 2, 0x4301
+.insn 4, 0x00678323
+.insn 2, 0x4301
+.insn 4, 0x006783a3
+.insn 2, 0x4301
+.insn 4, 0x00678423
+.insn 2, 0x4301
+.insn 4, 0x006784a3
+.insn 2, 0x4301
+.insn 4, 0x00678523
+.insn 2, 0x4301
+.insn 4, 0x006785a3
+.insn 2, 0x4301
+.insn 4, 0x00678623
+.insn 2, 0x4301
+.insn 4, 0x006786a3
+.insn 2, 0x4301
+.insn 4, 0x00678723
+.insn 2, 0x4301
+.insn 4, 0x006787a3
+.insn 2, 0x4301
+.insn 4, 0x00678823
+.insn 2, 0x4301
+.insn 4, 0x006788a3
+.insn 2, 0x4301
+.insn 4, 0x00678923
+.insn 2, 0x4301
+.insn 4, 0x006789a3
+.insn 2, 0x4301
+.insn 4, 0x00678a23
+.insn 2, 0x4301
+.insn 4, 0x00678aa3
+.insn 2, 0x4301
+.insn 4, 0x00678b23
+.insn 2, 0x4301
+.insn 4, 0x00678ba3
+.insn 2, 0x4301
+.insn 4, 0x00678c23
+.insn 2, 0x4301
+.insn 4, 0x00678ca3
+.insn 2, 0x4301
+.insn 4, 0x00678d23
+.insn 2, 0x4301
+.insn 4, 0x00678da3
+.insn 2, 0x4301
+.insn 4, 0x00678e23
+.insn 2, 0x4301
+.insn 4, 0x00678ea3
+.insn 2, 0x4301
+.insn 4, 0x00678f23
+.insn 2, 0x4301
+.insn 4, 0x00678fa3
+.insn 2, 0x4301
+.insn 4, 0x02678023
+.insn 2, 0x4301
+.insn 4, 0x026780a3
+.insn 2, 0x4301
+.insn 4, 0x02678123
+.insn 2, 0x4301
+.insn 4, 0x026781a3
+.insn 2, 0x4301
+.insn 4, 0x02678223
+.insn 2, 0x4301
+.insn 4, 0x026782a3
+.insn 2, 0x4301
+.insn 4, 0x02678323
+.insn 2, 0x4301
+.insn 4, 0x026783a3
+.insn 2, 0x4301
+.insn 4, 0x02678423
+.insn 2, 0x4301
+.insn 4, 0x026784a3
+.insn 2, 0x4301
+.insn 4, 0x02678523
+.insn 2, 0x4301
+.insn 4, 0x026785a3
+.insn 2, 0x4301
+.insn 4, 0x02678623
+.insn 2, 0x4301
+.insn 4, 0x026786a3
+.insn 2, 0x4301
+.insn 4, 0x02678723
+.insn 2, 0x4301
+.insn 4, 0x026787a3
+.insn 2, 0x4301
+.insn 4, 0x02678823
+.insn 2, 0x4301
+.insn 4, 0x026788a3
+.insn 2, 0x4301
+.insn 4, 0x02678923
+.insn 2, 0x4301
+.insn 4, 0x026789a3
+.insn 2, 0x4301
+.insn 4, 0x02678a23
+.insn 2, 0x4301
+.insn 4, 0x02678aa3
+.insn 2, 0x4301
+.insn 4, 0x02678b23
+.insn 2, 0x4301
+.insn 4, 0x02678ba3
+.insn 2, 0x4301
+.insn 4, 0x02678c23
+.insn 2, 0x4301
+.insn 4, 0x02678ca3
+.insn 2, 0x4301
+.insn 4, 0x02678d23
+.insn 2, 0x4301
+.insn 4, 0x02678da3
+.insn 2, 0x4301
+.insn 4, 0x02678e23
+.insn 2, 0x4301
+.insn 4, 0x02678ea3
+.insn 2, 0x4301
+.insn 4, 0x02678f23
+.insn 2, 0x4301
+.insn 4, 0x02678fa3
+.insn 2, 0x4301
+.insn 4, 0x04678023
+.insn 2, 0x4301
+.insn 4, 0x046780a3
+.insn 2, 0x4301
+.insn 4, 0x04678123
+.insn 2, 0x4301
+.insn 4, 0x046781a3
+.insn 2, 0x4301
+.insn 4, 0x04678223
+.insn 2, 0x4301
+.insn 4, 0x046782a3
+.insn 2, 0x4301
+.insn 4, 0x04678323
+.insn 2, 0x4301
+.insn 4, 0x046783a3
+.insn 4, 0x02078393
+.insn 4, 0x40c383b3
+beqz a2, 22f
+24:
+.insn 4, 0x0005c303
+.insn 4, 0x00638023
+.insn 2, 0x0585
+.insn 2, 0x0385
+.insn 2, 0x167d
+bnez a2, 24b
+j 23f
+22:
+23:
+21:
+.insn 2, 0x85be
+.insn 2, 0x8636
+.insn 2, 0x86ba
 .insn 2, 0xe280
 .insn 2, 0xe684
 .insn 4, 0x0126b823
@@ -1082,76 +1313,6 @@ call {vg_p256_mul_mod_n}
 .insn 4, 0x6f843283
 .insn 4, 0x3e543c23
 .insn 2, 0x4491
-20:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_p256_mul_mod_n}
-bnez s1, 20b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_p256_mul_mod_n}
-.insn 2, 0x4491
-21:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_p256_mul_mod_n}
-bnez s1, 21b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_p256_mul_mod_n}
-.insn 2, 0x4491
-22:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_p256_mul_mod_n}
-bnez s1, 22b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_p256_mul_mod_n}
-.insn 2, 0x4491
-23:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_p256_mul_mod_n}
-bnez s1, 23b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_p256_mul_mod_n}
-.insn 2, 0x4491
-24:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_p256_mul_mod_n}
-bnez s1, 24b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_p256_mul_mod_n}
-.insn 2, 0x4491
 25:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1179,7 +1340,7 @@ bnez s1, 26b
 .insn 4, 0x3e000613
 .insn 4, 0x6e000693
 call {vg_p256_mul_mod_n}
-.insn 4, 0x02400493
+.insn 2, 0x4491
 27:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1249,7 +1410,7 @@ bnez s1, 211b
 .insn 4, 0x3e000613
 .insn 4, 0x6e000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4491
+.insn 4, 0x02400493
 212:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1415,9 +1576,9 @@ bnez s1, 223b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6a000693
+.insn 4, 0x6e000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4489
+.insn 2, 0x4491
 224:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1429,9 +1590,9 @@ bnez s1, 224b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x62000693
+.insn 4, 0x6e000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x4491
 225:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1443,9 +1604,9 @@ bnez s1, 225b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x66000693
+.insn 4, 0x6e000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4499
+.insn 2, 0x4491
 226:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1457,7 +1618,7 @@ bnez s1, 226b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6c000693
+.insn 4, 0x6e000693
 call {vg_p256_mul_mod_n}
 .insn 2, 0x4491
 227:
@@ -1485,9 +1646,9 @@ bnez s1, 228b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x64000693
+.insn 4, 0x6a000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x4489
 229:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1499,7 +1660,7 @@ bnez s1, 229b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6a000693
+.insn 4, 0x62000693
 call {vg_p256_mul_mod_n}
 .insn 2, 0x4495
 230:
@@ -1513,9 +1674,9 @@ bnez s1, 230b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6c000693
+.insn 4, 0x66000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x4499
 231:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1527,9 +1688,9 @@ bnez s1, 231b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x66000693
+.insn 4, 0x6c000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x449d
+.insn 2, 0x4491
 232:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1541,9 +1702,9 @@ bnez s1, 232b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6a000693
+.insn 4, 0x6e000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4489
+.insn 2, 0x4491
 233:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1555,9 +1716,9 @@ bnez s1, 233b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x62000693
+.insn 4, 0x64000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4499
+.insn 2, 0x4495
 234:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1569,9 +1730,9 @@ bnez s1, 234b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6e000693
+.insn 4, 0x6a000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4489
+.insn 2, 0x4495
 235:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1583,9 +1744,9 @@ bnez s1, 235b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x60000693
+.insn 4, 0x6c000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x44a1
+.insn 2, 0x4495
 236:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1597,9 +1758,9 @@ bnez s1, 236b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x68000693
+.insn 4, 0x66000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x449d
 237:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1611,9 +1772,9 @@ bnez s1, 237b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x66000693
+.insn 4, 0x6a000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x4489
 238:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1625,9 +1786,9 @@ bnez s1, 238b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x66000693
+.insn 4, 0x62000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x4499
 239:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1639,9 +1800,9 @@ bnez s1, 239b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x66000693
+.insn 4, 0x6e000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x4489
 240:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1653,9 +1814,9 @@ bnez s1, 240b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x66000693
+.insn 4, 0x60000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x44a1
 241:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1667,7 +1828,7 @@ bnez s1, 241b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x64000693
+.insn 4, 0x68000693
 call {vg_p256_mul_mod_n}
 .insn 2, 0x448d
 242:
@@ -1681,9 +1842,9 @@ bnez s1, 242b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x62000693
+.insn 4, 0x66000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x44a1
+.insn 2, 0x4495
 243:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1695,7 +1856,7 @@ bnez s1, 243b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6a000693
+.insn 4, 0x66000693
 call {vg_p256_mul_mod_n}
 .insn 2, 0x4491
 244:
@@ -1709,7 +1870,7 @@ bnez s1, 244b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6e000693
+.insn 4, 0x66000693
 call {vg_p256_mul_mod_n}
 .insn 2, 0x4495
 245:
@@ -1723,7 +1884,7 @@ bnez s1, 245b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x62000693
+.insn 4, 0x66000693
 call {vg_p256_mul_mod_n}
 .insn 2, 0x4495
 246:
@@ -1737,9 +1898,9 @@ bnez s1, 246b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x62000693
+.insn 4, 0x64000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4499
+.insn 2, 0x448d
 247:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1751,9 +1912,9 @@ bnez s1, 247b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x68000693
+.insn 4, 0x62000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x44a1
 248:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1765,9 +1926,9 @@ bnez s1, 248b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x64000693
+.insn 4, 0x6a000693
 call {vg_p256_mul_mod_n}
-.insn 2, 0x4499
+.insn 2, 0x4491
 249:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1776,6 +1937,76 @@ call {vg_p256_mul_mod_n}
 .insn 4, 0x3e000693
 call {vg_p256_mul_mod_n}
 bnez s1, 249b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x6e000693
+call {vg_p256_mul_mod_n}
+.insn 2, 0x4495
+250:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_p256_mul_mod_n}
+bnez s1, 250b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x62000693
+call {vg_p256_mul_mod_n}
+.insn 2, 0x4495
+251:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_p256_mul_mod_n}
+bnez s1, 251b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x62000693
+call {vg_p256_mul_mod_n}
+.insn 2, 0x4499
+252:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_p256_mul_mod_n}
+bnez s1, 252b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x68000693
+call {vg_p256_mul_mod_n}
+.insn 2, 0x4491
+253:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_p256_mul_mod_n}
+bnez s1, 253b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x64000693
+call {vg_p256_mul_mod_n}
+.insn 2, 0x4499
+254:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_p256_mul_mod_n}
+bnez s1, 254b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
@@ -2394,76 +2625,6 @@ call {vg_p256_mul_mod_p}
 .insn 4, 0x6f843283
 .insn 4, 0x3e543c23
 .insn 2, 0x4491
-250:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_p256_mul_mod_p}
-bnez s1, 250b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_p256_mul_mod_p}
-.insn 2, 0x4491
-251:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_p256_mul_mod_p}
-bnez s1, 251b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_p256_mul_mod_p}
-.insn 2, 0x4491
-252:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_p256_mul_mod_p}
-bnez s1, 252b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_p256_mul_mod_p}
-.insn 2, 0x4491
-253:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_p256_mul_mod_p}
-bnez s1, 253b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_p256_mul_mod_p}
-.insn 2, 0x4491
-254:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_p256_mul_mod_p}
-bnez s1, 254b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_p256_mul_mod_p}
-.insn 2, 0x4491
 255:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2491,7 +2652,7 @@ bnez s1, 256b
 .insn 4, 0x3e000613
 .insn 4, 0x6e000693
 call {vg_p256_mul_mod_p}
-.insn 4, 0x02000493
+.insn 2, 0x4491
 257:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2503,9 +2664,9 @@ bnez s1, 257b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x60000693
+.insn 4, 0x6e000693
 call {vg_p256_mul_mod_p}
-.insn 4, 0x06400493
+.insn 2, 0x4491
 258:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2561,7 +2722,7 @@ bnez s1, 261b
 .insn 4, 0x3e000613
 .insn 4, 0x6e000693
 call {vg_p256_mul_mod_p}
-.insn 2, 0x4491
+.insn 4, 0x02000493
 262:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2573,9 +2734,9 @@ bnez s1, 262b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6e000693
+.insn 4, 0x60000693
 call {vg_p256_mul_mod_p}
-.insn 2, 0x4491
+.insn 4, 0x06400493
 263:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2839,6 +3000,76 @@ bnez s1, 281b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
+.insn 4, 0x6e000693
+call {vg_p256_mul_mod_p}
+.insn 2, 0x4491
+282:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_p256_mul_mod_p}
+bnez s1, 282b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x6e000693
+call {vg_p256_mul_mod_p}
+.insn 2, 0x4491
+283:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_p256_mul_mod_p}
+bnez s1, 283b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x6e000693
+call {vg_p256_mul_mod_p}
+.insn 2, 0x4491
+284:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_p256_mul_mod_p}
+bnez s1, 284b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x6e000693
+call {vg_p256_mul_mod_p}
+.insn 2, 0x4491
+285:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_p256_mul_mod_p}
+bnez s1, 285b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x6e000693
+call {vg_p256_mul_mod_p}
+.insn 2, 0x4491
+286:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_p256_mul_mod_p}
+bnez s1, 286b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
 .insn 4, 0x6c000693
 call {vg_p256_mul_mod_p}
 .insn 2, 0x8522
@@ -2908,6 +3139,7 @@ call {vg_p256_sub_mod_n}
 .insn 2, 0x6404
 .insn 4, 0x02043983
 .insn 2, 0x6000
+.insn 2, 0x6161
 .insn 2, 0x8082
 .option pop",
         vg_p256_check_point = sym super::ec_p256_compressed::vg_p256_check_point::vg_p256_check_point,
@@ -2922,9 +3154,576 @@ call {vg_p256_sub_mod_n}
     )
 }
 
+/// Deterministic ECDSA signature generation over P-256 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
+///
+/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `d` must be valid for reads of 32 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
+/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
+/// * `digest_len` must be the digest length of the hash function `hmac` names.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 1024 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ecdsa_p256_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x7101
+.insn 2, 0x828a
+.insn 4, 0x0012b023
+.insn 4, 0x0082b423
+.insn 4, 0x0092b823
+.insn 4, 0x0122bc23
+.insn 4, 0x0332b023
+.insn 4, 0x0342b423
+.insn 4, 0x0352b823
+.insn 4, 0x0362bc23
+.insn 4, 0x0572b023
+.insn 4, 0x0582b423
+.insn 4, 0x0592b823
+.insn 2, 0x8496
+.insn 2, 0x892a
+.insn 2, 0x89ae
+.insn 2, 0x8a32
+.insn 2, 0x843a
+.insn 2, 0x8b3e
+.insn 4, 0x0207bb83
+.insn 4, 0x0287bc03
+.insn 2, 0x4281
+.insn 4, 0x0e54b423
+.insn 4, 0x0e54b823
+.insn 4, 0x0e54bc23
+.insn 4, 0x1054b023
+.insn 4, 0x1054b423
+.insn 4, 0x1054b823
+.insn 4, 0x1054bc23
+.insn 4, 0x1254b023
+.insn 4, 0x1254b423
+.insn 4, 0x02000313
+.insn 4, 0x406b83b3
+.insn 4, 0x03f3de13
+.insn 2, 0x4e81
+.insn 4, 0x41ce8e33
+.insn 4, 0x01c3f3b3
+.insn 4, 0x00730833
+.insn 2, 0x8752
+.insn 4, 0x10848793
+.insn 4, 0x410787b3
+20:
+.insn 4, 0x00074303
+.insn 4, 0x00678023
+.insn 2, 0x0705
+.insn 2, 0x0785
+.insn 2, 0x187d
+bnez a6, 20b
+.insn 4, 0x0e84c283
+.insn 2, 0x02a2
+.insn 4, 0x0e94c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0ea4c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0eb4c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0ec4c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0ed4c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0ee4c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0ef4c303
+.insn 4, 0x0062e2b3
+.insn 4, 0x00543c23
+.insn 4, 0x0f04c283
+.insn 2, 0x02a2
+.insn 4, 0x0f14c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0f24c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0f34c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0f44c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0f54c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0f64c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0f74c303
+.insn 4, 0x0062e2b3
+.insn 4, 0x00543823
+.insn 4, 0x0f84c283
+.insn 2, 0x02a2
+.insn 4, 0x0f94c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0fa4c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0fb4c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0fc4c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0fd4c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0fe4c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x0ff4c303
+.insn 4, 0x0062e2b3
+.insn 4, 0x00543423
+.insn 4, 0x1004c283
+.insn 2, 0x02a2
+.insn 4, 0x1014c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x1024c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x1034c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x1044c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x1054c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x1064c303
+.insn 4, 0x0062e2b3
+.insn 2, 0x02a2
+.insn 4, 0x1074c303
+.insn 4, 0x0062e2b3
+.insn 4, 0x00543023
+.insn 4, 0x000002b7
+.insn 2, 0x2281
+.insn 2, 0x1282
+.insn 4, 0x00000337
+.insn 2, 0x2301
+.insn 2, 0x929a
+.insn 4, 0x02543023
+.insn 4, 0x000002b7
+.insn 2, 0x2281
+.insn 2, 0x1282
+.insn 4, 0x00000337
+.insn 2, 0x2301
+.insn 2, 0x929a
+.insn 4, 0x02543423
+.insn 4, 0x000002b7
+.insn 2, 0x2281
+.insn 2, 0x1282
+.insn 4, 0x00000337
+.insn 2, 0x2301
+.insn 2, 0x929a
+.insn 4, 0x02543823
+.insn 4, 0x000002b7
+.insn 2, 0x2281
+.insn 2, 0x1282
+.insn 4, 0x00000337
+.insn 2, 0x2301
+.insn 2, 0x929a
+.insn 4, 0x02543c23
+.insn 2, 0x8522
+.insn 4, 0x04000593
+.insn 2, 0x4601
+.insn 4, 0x02000693
+call {vg_p256_add_mod_n}
+.insn 2, 0x58fd
+.insn 4, 0x05843283
+.insn 4, 0x0112f2b3
+.insn 4, 0x0382d313
+.insn 4, 0x12648823
+.insn 4, 0x0302d313
+.insn 4, 0x126488a3
+.insn 4, 0x0282d313
+.insn 4, 0x12648923
+.insn 4, 0x0202d313
+.insn 4, 0x126489a3
+.insn 4, 0x0182d313
+.insn 4, 0x12648a23
+.insn 4, 0x0102d313
+.insn 4, 0x12648aa3
+.insn 4, 0x0082d313
+.insn 4, 0x12648b23
+.insn 4, 0x0002d313
+.insn 4, 0x12648ba3
+.insn 4, 0x05043283
+.insn 4, 0x0112f2b3
+.insn 4, 0x0382d313
+.insn 4, 0x12648c23
+.insn 4, 0x0302d313
+.insn 4, 0x12648ca3
+.insn 4, 0x0282d313
+.insn 4, 0x12648d23
+.insn 4, 0x0202d313
+.insn 4, 0x12648da3
+.insn 4, 0x0182d313
+.insn 4, 0x12648e23
+.insn 4, 0x0102d313
+.insn 4, 0x12648ea3
+.insn 4, 0x0082d313
+.insn 4, 0x12648f23
+.insn 4, 0x0002d313
+.insn 4, 0x12648fa3
+.insn 4, 0x04843283
+.insn 4, 0x0112f2b3
+.insn 4, 0x0382d313
+.insn 4, 0x14648023
+.insn 4, 0x0302d313
+.insn 4, 0x146480a3
+.insn 4, 0x0282d313
+.insn 4, 0x14648123
+.insn 4, 0x0202d313
+.insn 4, 0x146481a3
+.insn 4, 0x0182d313
+.insn 4, 0x14648223
+.insn 4, 0x0102d313
+.insn 4, 0x146482a3
+.insn 4, 0x0082d313
+.insn 4, 0x14648323
+.insn 4, 0x0002d313
+.insn 4, 0x146483a3
+.insn 4, 0x04043283
+.insn 4, 0x0112f2b3
+.insn 4, 0x0382d313
+.insn 4, 0x14648423
+.insn 4, 0x0302d313
+.insn 4, 0x146484a3
+.insn 4, 0x0282d313
+.insn 4, 0x14648523
+.insn 4, 0x0202d313
+.insn 4, 0x146485a3
+.insn 4, 0x0182d313
+.insn 4, 0x14648623
+.insn 4, 0x0102d313
+.insn 4, 0x146486a3
+.insn 4, 0x0082d313
+.insn 4, 0x14648723
+.insn 4, 0x0002d313
+.insn 4, 0x146487a3
+.insn 4, 0x10100293
+.insn 4, 0x01029313
+.insn 4, 0x0062e2b3
+.insn 4, 0x02029313
+.insn 4, 0x0062e2b3
+.insn 2, 0x4301
+.insn 4, 0x0664b023
+.insn 4, 0x0a54b023
+.insn 4, 0x0664b423
+.insn 4, 0x0a54b423
+.insn 4, 0x0664b823
+.insn 4, 0x0a54b823
+.insn 4, 0x0664bc23
+.insn 4, 0x0a54bc23
+.insn 4, 0x0864b023
+.insn 4, 0x0c54b023
+.insn 4, 0x0864b423
+.insn 4, 0x0c54b423
+.insn 4, 0x0864b823
+.insn 4, 0x0c54b823
+.insn 4, 0x0864bc23
+.insn 4, 0x0c54bc23
+.insn 4, 0x017482b3
+.insn 2, 0x4301
+.insn 4, 0x0a628023
+.insn 2, 0x8522
+.insn 4, 0x0c040593
+.insn 4, 0x06048613
+.insn 2, 0x86de
+.insn 4, 0x000b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 2, 0x85e2
+.insn 4, 0x0a048613
+.insn 4, 0x001b8693
+.insn 4, 0x008b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 4, 0x017c05b3
+.insn 2, 0x0585
+.insn 2, 0x864e
+.insn 4, 0x02000693
+.insn 4, 0x008b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 4, 0x017c05b3
+.insn 4, 0x02158593
+.insn 4, 0x13048613
+.insn 4, 0x02000693
+.insn 4, 0x008b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 4, 0x0c040593
+.insn 4, 0x017c0633
+.insn 4, 0x04160613
+.insn 4, 0x06048693
+.insn 4, 0x010b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 4, 0x0c040593
+.insn 4, 0x06048613
+.insn 2, 0x86de
+.insn 4, 0x000b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 2, 0x85e2
+.insn 4, 0x0a048613
+.insn 2, 0x86de
+.insn 4, 0x008b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 4, 0x0c040593
+.insn 4, 0x017c0633
+.insn 2, 0x8632
+.insn 4, 0x0a048693
+.insn 4, 0x010b3303
+.insn 4, 0x000300e7
+.insn 4, 0x017482b3
+.insn 2, 0x4305
+.insn 4, 0x0a628023
+.insn 2, 0x8522
+.insn 4, 0x0c040593
+.insn 4, 0x06048613
+.insn 2, 0x86de
+.insn 4, 0x000b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 2, 0x85e2
+.insn 4, 0x0a048613
+.insn 4, 0x001b8693
+.insn 4, 0x008b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 4, 0x017c05b3
+.insn 2, 0x0585
+.insn 2, 0x864e
+.insn 4, 0x02000693
+.insn 4, 0x008b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 4, 0x017c05b3
+.insn 4, 0x02158593
+.insn 4, 0x13048613
+.insn 4, 0x02000693
+.insn 4, 0x008b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 4, 0x0c040593
+.insn 4, 0x017c0633
+.insn 4, 0x04160613
+.insn 4, 0x06048693
+.insn 4, 0x010b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 4, 0x0c040593
+.insn 4, 0x06048613
+.insn 2, 0x86de
+.insn 4, 0x000b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 2, 0x85e2
+.insn 4, 0x0a048613
+.insn 2, 0x86de
+.insn 4, 0x008b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 4, 0x0c040593
+.insn 4, 0x017c0633
+.insn 2, 0x8632
+.insn 4, 0x0a048693
+.insn 4, 0x010b3303
+.insn 4, 0x000300e7
+.insn 2, 0x4aa1
+21:
+.insn 2, 0x4c81
+22:
+.insn 2, 0x8522
+.insn 4, 0x0c040593
+.insn 4, 0x06048613
+.insn 2, 0x86de
+.insn 4, 0x000b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 2, 0x85e2
+.insn 4, 0x0a048613
+.insn 2, 0x86de
+.insn 4, 0x008b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 4, 0x0c040593
+.insn 4, 0x017c0633
+.insn 2, 0x8632
+.insn 4, 0x0a048693
+.insn 4, 0x010b3303
+.insn 4, 0x000300e7
+.insn 4, 0x0a048713
+.insn 4, 0x17048793
+.insn 2, 0x97e6
+.insn 2, 0x885e
+23:
+.insn 4, 0x00074303
+.insn 4, 0x00678023
+.insn 2, 0x0705
+.insn 2, 0x0785
+.insn 2, 0x187d
+bnez a6, 23b
+.insn 2, 0x9cde
+.insn 4, 0x02000293
+.insn 4, 0x005cbfb3
+bnez t6, 22b
+.insn 2, 0x854a
+.insn 2, 0x85ce
+.insn 4, 0x0e848613
+.insn 4, 0x17048693
+.insn 2, 0x8722
+call {vg_ecdsa_p256_sign_k}
+.insn 2, 0x1afd
+.insn 4, 0x00157293
+.insn 2, 0x12fd
+.insn 4, 0x0152ffb3
+bnez t6, 24f
+.insn 2, 0x4f81
+j 25f
+24:
+.insn 4, 0x017482b3
+.insn 2, 0x4301
+.insn 4, 0x0a628023
+.insn 2, 0x8522
+.insn 4, 0x0c040593
+.insn 4, 0x06048613
+.insn 2, 0x86de
+.insn 4, 0x000b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 2, 0x85e2
+.insn 4, 0x0a048613
+.insn 4, 0x001b8693
+.insn 4, 0x008b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 4, 0x0c040593
+.insn 4, 0x017c0633
+.insn 2, 0x0605
+.insn 4, 0x06048693
+.insn 4, 0x010b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 4, 0x0c040593
+.insn 4, 0x06048613
+.insn 2, 0x86de
+.insn 4, 0x000b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 2, 0x85e2
+.insn 4, 0x0a048613
+.insn 2, 0x86de
+.insn 4, 0x008b3303
+.insn 4, 0x000300e7
+.insn 2, 0x8522
+.insn 4, 0x0c040593
+.insn 4, 0x017c0633
+.insn 2, 0x8632
+.insn 4, 0x0a048693
+.insn 4, 0x010b3303
+.insn 4, 0x000300e7
+.insn 2, 0x4f85
+25:
+bnez t6, 21b
+.insn 2, 0x4281
+.insn 4, 0x0654b023
+.insn 4, 0x0654b423
+.insn 4, 0x0654b823
+.insn 4, 0x0654bc23
+.insn 4, 0x0854b023
+.insn 4, 0x0854b423
+.insn 4, 0x0854b823
+.insn 4, 0x0854bc23
+.insn 4, 0x0a54b023
+.insn 4, 0x0a54b423
+.insn 4, 0x0a54b823
+.insn 4, 0x0a54bc23
+.insn 4, 0x0c54b023
+.insn 4, 0x0c54b423
+.insn 4, 0x0c54b823
+.insn 4, 0x0c54bc23
+.insn 4, 0x0e54b023
+.insn 4, 0x0e54b423
+.insn 4, 0x0e54b823
+.insn 4, 0x0e54bc23
+.insn 4, 0x1054b023
+.insn 4, 0x1054b423
+.insn 4, 0x1054b823
+.insn 4, 0x1054bc23
+.insn 4, 0x1254b023
+.insn 4, 0x1254b423
+.insn 4, 0x1254b823
+.insn 4, 0x1254bc23
+.insn 4, 0x1454b023
+.insn 4, 0x1454b423
+.insn 4, 0x1454b823
+.insn 4, 0x1454bc23
+.insn 4, 0x1654b023
+.insn 4, 0x1654b423
+.insn 4, 0x1654b823
+.insn 4, 0x1654bc23
+.insn 4, 0x1854b023
+.insn 4, 0x1854b423
+.insn 4, 0x1854b823
+.insn 4, 0x1854bc23
+.insn 4, 0x1a54b023
+.insn 4, 0x1a54b423
+.insn 4, 0x1a54b823
+.insn 4, 0x1a54bc23
+.insn 4, 0x1c54b023
+.insn 4, 0x1c54b423
+.insn 4, 0x1c54b823
+.insn 4, 0x1c54bc23
+.insn 4, 0x1e54b023
+.insn 4, 0x1e54b423
+.insn 4, 0x1e54b823
+.insn 4, 0x0004b083
+.insn 2, 0x6480
+.insn 4, 0x0184b903
+.insn 4, 0x0204b983
+.insn 4, 0x0284ba03
+.insn 4, 0x0304ba83
+.insn 4, 0x0384bb03
+.insn 4, 0x0404bb83
+.insn 4, 0x0484bc03
+.insn 4, 0x0504bc83
+.insn 2, 0x6884
+.insn 4, 0x20010113
+.insn 2, 0x8082
+.option pop",
+        vg_p256_add_mod_n = sym super::ecdsa_p256::vg_p256_add_mod_n::vg_p256_add_mod_n,
+        vg_ecdsa_p256_sign_k = sym super::ecdsa_p256::vg_ecdsa_p256_sign_k::vg_ecdsa_p256_sign_k,
+    )
+}
+
 #[rustfmt::skip]
-#[path = "internal/vg_ecdsa_p256_sign.rs"]
-pub(crate) mod vg_ecdsa_p256_sign;
+#[path = "internal/vg_ecdsa_p256_sign_k.rs"]
+pub(crate) mod vg_ecdsa_p256_sign_k;
 
 #[rustfmt::skip]
 #[path = "internal/vg_p256_add_mod_n.rs"]

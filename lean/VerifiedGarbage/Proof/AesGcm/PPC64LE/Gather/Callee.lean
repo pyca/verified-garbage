@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Spec.Gcm.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
@@ -13,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_seal_gather`
 calls `vg_aes_gcm_seal`, with its working space in a frame of its own, by
-its shared contract (`Spec.Gcm.sealContract`, with 2672 bytes of stack,
+its shared contract (`Proof.AesGcm.sealRoundsContract`, with 2672 bytes of stack,
 which its frame uses: `seal_sdepth`): its precondition from the layout the
 call gives it (`callPre`: its stack argument `tag` in our frame,
 `sealSpec_pre`), its postcondition (`sealSpec_post`) and its public data
@@ -57,11 +58,11 @@ def callPre (s : State) : Prop :=
 
 theorem stackArgs_one (s : State) : List.map (stackArg s) (List.range 1) = [stackArg s 0] := rfl
 
-theorem sealSpec_pre {s : State} (h : callPre s) : (Spec.Gcm.sealContract PPC64LE.abi 2672).pre s := by
+theorem sealSpec_pre {s : State} (h : callPre s) : (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pre s := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
     a₂₃, a₂₄, a₂₅⟩ := h
-  sig_pre [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, PPC64LE.abi, PPC64LE.argRegs, stackArgs_one, List.range, List.range.loop]
-  sig_reduce [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, PPC64LE.abi, PPC64LE.argRegs, List.getD,
+  sig_pre [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, PPC64LE.abi, PPC64LE.argRegs, stackArgs_one, List.range, List.range.loop]
+  sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, PPC64LE.abi, PPC64LE.argRegs, List.getD,
     stackArgs_one, List.range, List.range.loop]
   sig_and_intros
   all_goals first
@@ -70,13 +71,13 @@ theorem sealSpec_pre {s : State} (h : callPre s) : (Spec.Gcm.sealContract PPC64L
     | omega
     | exact Region.Disjoint.symm ‹_›
 
-theorem sealSpec_post {s s' : State} (h : (Spec.Gcm.sealContract PPC64LE.abi 2672).post s s')
+theorem sealSpec_post {s s' : State} (h : (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).post s s')
     (hR : (s.gpr .r4).toNat = 10 ∨ (s.gpr .r4).toNat = 12 ∨ (s.gpr .r4).toNat = 14) :
     encryptWith (ctxCiph s.mem (s.gpr .r3) (s.gpr .r4).toNat) (ctxH s.mem (s.gpr .r3)) 16
         (bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) (bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat)
         (bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat) =
       (bytesAt s'.mem (s.gpr .r9) (s.gpr .r10).toNat, bytesAt s'.mem (stackArg s 0) 16) := by
-  sig_post [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPost, PPC64LE.abi, PPC64LE.argRegs,
+  sig_post [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Proof.AesGcm.sealRoundsPost, PPC64LE.abi, PPC64LE.argRegs,
     stackArgs_one, List.range, List.range.loop] at h
   exact h hR
 
@@ -84,10 +85,10 @@ theorem sealSpec_pub {s₁ s₂ : State} (h : s₁.gpr .r3 = s₂.gpr .r3 ∧ s�
     s₁.gpr .r5 = s₂.gpr .r5 ∧ s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧
     s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧ s₁.gpr .r10 = s₂.gpr .r10 ∧ s₁.sp = s₂.sp ∧
     stackArg s₁ 0 = stackArg s₂ 0) :
-    (Spec.Gcm.sealContract PPC64LE.abi 2672).pub s₁ s₂ := by
+    (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
-  sig_pub [Spec.Gcm.sealContract, Spec.Gcm.sealSig, PPC64LE.abi, PPC64LE.argRegs, stackArgs_one, List.range, List.range.loop]
-  sig_reduce [Spec.Gcm.sealContract, Spec.Gcm.sealSig, PPC64LE.abi, PPC64LE.argRegs, stackArgs_one, List.range, List.range.loop]
+  sig_pub [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, PPC64LE.abi, PPC64LE.argRegs, stackArgs_one, List.range, List.range.loop]
+  sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, PPC64LE.abi, PPC64LE.argRegs, stackArgs_one, List.range, List.range.loop]
   sig_and_intros
   all_goals first | with_reducible assumption | trivial
 

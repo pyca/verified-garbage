@@ -6,17 +6,16 @@ import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Impl.Bignum.Arm.Shift
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # Workspace and stack invariants shared by repeated modular doublings -/
 
 @[expose] public section
 
 namespace VG.Proof.Bignum.Arm
-open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
+open VG VG.Arm VG.Proof.Mont
 open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 

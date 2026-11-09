@@ -17,15 +17,6 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Impl.Dsa.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Bignum.X86_64
 open VG.Impl.Rsa.X86_64
 
-theorem generation_instrs_seqs (p : Instr → Bool) (l : List (Code Instr Cond)) :
-    (seqs l).allInstrs p = l.all (fun c => c.allInstrs p) := by
-  induction l with
-  | nil => rfl
-  | cons a l ih =>
-    cases l with
-    | nil => simp only [seqs, List.all_cons, List.all_nil, Bool.and_true]
-    | cons b l => simp only [seqs, Code.allInstrs, List.all_cons] at ih ⊢; rw [ih]
-
 theorem generatorPower_safe (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
     (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) :
     generationSafe (generatorPower sq mul) := by
@@ -37,8 +28,8 @@ theorem generatorPower_safe (sq : Prog isa) (mul : Nat → Nat → Nat → Prog 
     Crt.tabBuild Crt.tabBuildN R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
     VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next
   repeat' first
-    | rw [generation_instrs_seqs]
-    | rw [Code.allInstrs]
+    | rw [generationOk_seqs]
+    | rw [generationOk]
     | rw [List.all_append]
     | rw [List.all_cons]
   simp only [hs, hm]

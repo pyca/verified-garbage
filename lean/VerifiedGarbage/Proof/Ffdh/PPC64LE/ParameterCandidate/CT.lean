@@ -5,14 +5,15 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Correct
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Entry
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.CTMain
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Correct
 
 /-!
 # An FFDH parameter candidate on PPC64LE: constant time
 
-`code_ct`: two runs with the same public arguments and tape (`qOf`) leak
-the same, whatever the registers they save. The entry loads `scratch_len`
+`code_ct`: two runs with the same public arguments and tape (`qOf`), and
+the same table's address, leak the same, whatever the registers they save. The entry loads `scratch_len`
 from the stack, pinned once loaded; `zeroOut` and the length check load
 `out`, `out_len` and the tape's length from the header, pinned once loaded;
 the exit loads `scratch_len` from the header to find the save area.
@@ -31,8 +32,10 @@ open VG.Proof.MillerRabin.PPC64LE (RoundImpl)
 saves. -/
 def qOf (s : State) : PP := (ppOf s).with (fun _ => 0) 0
 
-/-- On entry. -/
-def CI (q : PP) (s : State) : Prop := pcPre s ∧ qOf s = q
+/-- On entry, with the public data `a`: the arguments and tape, and the
+table's address. -/
+def CI (a : PP × Addr) (s : State) : Prop :=
+  pcPre s ∧ qOf s = a.1 ∧ s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol = a.2
 
 /-- `scratch_len` from the stack. -/
 theorem entryL_ok {s : State} (hargs : InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 8) :
@@ -74,9 +77,9 @@ theorem entry_ok (s : State) (h : pcPre s) :
   exact ⟨hscr.congr hwr₁, c31, w16.trans (gS _ (by decide)), w24.trans (gS _ (by decide))⟩
 
 /-- After `scratch_len`'s load. -/
-def E1 (q : PP) (t : State) : Prop := t.gpr .r10 = q.B ∧ t.gpr .r12 = BitVec.ofNat 64 q.n
+def EL (q : PP) (t : State) : Prop := t.gpr .r10 = q.B ∧ t.gpr .r12 = BitVec.ofNat 64 q.n
 
-theorem pins_E1 : Pins E1 [.r10, .r12] := by
+theorem pins_E1 : Pins EL [.r10, .r12] := by
   rintro q s₁ s₂ ⟨a10, a12⟩ ⟨b10, b12⟩ r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -88,10 +91,10 @@ def Z0 (q : PP) (t : State) : Prop :=
   ∃ Z, Scr t q.B Z ∧ 32 ≤ Z ∧ t.gpr .r31 = q.B ∧ t.mem.readW (q.B + BitVec.ofNat 64 16) 64 = q.op ∧
     t.mem.readW (q.B + BitVec.ofNat 64 24) 64 = BitVec.ofNat 64 q.L
 
-theorem entry_ct : RelCT isa (Two CI) (.block entry) (Two Z0) := by
+theorem entry_ct : RelCT isa (Two fun q s => pcPre s ∧ qOf s = q) (.block entry) (Two Z0) := by
   refine two_post ?_ fun q s ⟨h, hq⟩ => ?_
   · rw [show entry = [.addSp .r11 96, .load .d .r12 .r11 0] ++ entry.drop 2 from rfl]
-    refine RelCT.block_append (RelCT.seq (two_post (two_taint _ (pins_nil _) (by taint_decide)) (Ψ := E1)
+    refine RelCT.block_append (RelCT.seq (two_post (two_taint _ (pins_nil _) (by taint_decide)) (Ψ := EL)
       fun q s ⟨h, hq⟩ => ?_) (two_taint _ pins_E1 (by taint_decide)))
     subst hq
     have hargs : InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 8 :=
@@ -125,16 +128,20 @@ theorem zeroOut_ct : RelCT isa (Two Z0) zeroOut fun _ _ => True := by
     (by decide)) fun _ ⟨h, _⟩ => h
 
 /-- After the front. -/
-def BI (q : PP) (t : State) : Prop := ∃ sv toc, St (q.with sv toc) t ∧ word t.mem q.B 152 = BitVec.ofNat 64 q.L
+def BI (a : PP × Addr) (t : State) : Prop :=
+  ∃ sv toc, St (a.1.with sv toc) t ∧ word t.mem a.1.B 152 = BitVec.ofNat 64 a.1.L ∧ TabIn a.1.B a.1.Z a.2 t
 
 theorem front_ct : RelCT isa (Two CI) (.seq (.block entry) zeroOut) (Two BI) :=
-  two_post (RelCT.seq entry_ct zeroOut_ct) fun _ s ⟨h, hq⟩ => by
-    subst hq
-    exact WP.mono (front_ok s h) fun _ ⟨st, hU, _⟩ => ⟨_, _, st, hU⟩
+  two_post (two_map Prod.fst (fun _ _ ⟨h, hq, _⟩ => ⟨h, hq⟩) (RelCT.seq entry_ct zeroOut_ct))
+    fun a s ⟨h, hq, ht⟩ => by
+      obtain ⟨q, T⟩ := a
+      dsimp only at hq ht
+      subst hq ht
+      exact WP.mono (front_tab s h) fun _ ⟨st, hU, htab⟩ => ⟨_, _, st, hU, htab⟩
 
 /-- With the tape's length and `out_len` loaded. -/
-def L34 (q : PP) (t : State) : Prop :=
-  t.gpr .r3 = BitVec.ofNat 64 q.r.length ∧ t.gpr .r4 = BitVec.ofNat 64 q.L
+def L34 (a : PP × Addr) (t : State) : Prop :=
+  t.gpr .r3 = BitVec.ofNat 64 a.1.r.length ∧ t.gpr .r4 = BitVec.ofNat 64 a.1.L
 
 theorem pins_L34 : Pins L34 [.r3, .r4] := by
   rintro q s₁ s₂ ⟨a3, a4⟩ ⟨b3, b4⟩ r hr
@@ -144,26 +151,28 @@ theorem pins_L34 : Pins L34 [.r3, .r4] := by
   · rw [a4, b4]
 
 /-- After the length check. -/
-def LC (q : PP) (t : State) : Prop :=
-  isa.eval (.zero .d .r5) t = some (decide ((if q.L ≤ q.r.length then 1 else 0) = 0)) ∧
-    ∃ sv toc, St (q.with sv toc) t ∧ word t.mem q.B 152 = BitVec.ofNat 64 q.L
+def LC (a : PP × Addr) (t : State) : Prop :=
+  isa.eval (.zero .d .r5) t = some (decide ((if a.1.L ≤ a.1.r.length then 1 else 0) = 0)) ∧
+    ∃ sv toc, St (a.1.with sv toc) t ∧ word t.mem a.1.B 152 = BitVec.ofNat 64 a.1.L ∧ TabIn a.1.B a.1.Z a.2 t
 
 theorem lenChk_ct :
     RelCT isa (Two BI) (.block (([ldh .r3 hRandLen, ldh .r4 hLen] : List Instr) ++ geFlag .r5 .r3 .r4)) (Two LC) :=
-  two_post (RelCT.block_append (RelCT.seq (two_post (two_taint _ (pins_r31 PP.B fun _ _ ⟨_, _, h, _⟩ => h.r31)
-      (by taint_decide)) (Ψ := L34) fun _ _ ⟨_, _, h, _⟩ => WP.mono (lenLoad_ok h) fun _ ⟨⟨a3, a4, _⟩, _⟩ =>
-        ⟨a3, a4⟩) (two_taint _ pins_L34 (by taint_decide))))
-    fun _ _ ⟨sv, toc, h, hU⟩ => WP.mono (lenChk_ok h hU) fun _ ⟨he, st, hU'⟩ => ⟨he, sv, toc, st, hU'⟩
+  two_post (RelCT.block_append (RelCT.seq (two_post (two_taint _
+      (pins_r31 (fun a : PP × Addr => a.1.B) fun _ _ ⟨_, _, h, _⟩ => h.r31) (by taint_decide)) (Ψ := L34)
+        fun _ _ ⟨_, _, h, _⟩ => WP.mono (lenLoad_ok h) fun _ ⟨⟨a3, a4, _⟩, _⟩ => ⟨a3, a4⟩)
+      (two_taint _ pins_L34 (by taint_decide))))
+    fun _ _ ⟨sv, toc, h, hU, ht⟩ => WP.mono_syms (lenChk_ok h hU) fun _ ⟨he, st, hU', vm, vrd⟩ sy =>
+      ⟨he, sv, toc, st, hU', ht.step sy (rs := []) (by rw [vm]; exact Frm.refl _ _ _) (by simp) vrd⟩
 
 /-- Before the exit. -/
 def XE (q : PP) (t : State) : Prop := ∃ sv toc, ESt (q.with sv toc) t
 
 theorem body_ct (R : RoundImpl) : RelCT isa (Two BI) (.seq (.block (([ldh .r3 hRandLen, ldh .r4 hLen] : List Instr) ++
-    geFlag .r5 .r3 .r4)) (.ite (.zero .d .r5) (.block (finish 0)) (main R.name R.code))) (Two XE) := by
-  refine two_post (RelCT.seq lenChk_ct (two_ite' (fun q => decide ((if q.L ≤ q.r.length then 1 else 0) = 0))
-    (fun _ _ h => h.1) ?_ ?_)) fun _ _ ⟨sv, toc, h, hU⟩ => WP.mono (body_ok R h hU) fun _ ht => ⟨sv, toc, ht.1⟩
-  · exact two_mono (fun _ _ ⟨⟨_, _, _, h, _⟩, _⟩ => h.fs) (finish_ct (.inl rfl))
-  · refine two_mono (fun q _ ⟨⟨_, sv, toc, h, hU⟩, hb⟩ => ⟨sv, toc, h, hU, ?_⟩) (main_ct R)
+    geFlag .r5 .r3 .r4)) (.ite (.zero .d .r5) (.block (finish 0)) (main R.name R.code))) (Two fun (a : PP × Addr) => XE a.1) := by
+  refine two_post (RelCT.seq lenChk_ct (two_ite' (fun a => decide ((if a.1.L ≤ a.1.r.length then 1 else 0) = 0))
+    (fun _ _ h => h.1) ?_ ?_)) fun _ _ ⟨sv, toc, h, hU, ht⟩ => WP.mono (body_ok R h ht hU) fun _ h' => ⟨sv, toc, h'.1⟩
+  · exact two_map Prod.fst (fun _ _ ⟨⟨_, _, _, h, _⟩, _⟩ => h.fs) (finish_ct (.inl rfl))
+  · refine two_mono (fun (a : PP × Addr) _ ⟨⟨_, sv, toc, h, hU, ht⟩, hb⟩ => ⟨sv, toc, h, ht, hU, ?_⟩) (main_ct R)
     by_contra hc; simp only [decide_eq_false_iff_not] at hb; exact hb (by rw [ite_eq_right (by omega)])
 
 /-- With the save area's word count loaded. -/
@@ -187,22 +196,24 @@ theorem exit_ct : RelCT isa (Two XE) (.block exit) fun _ _ => True := by
       BitVec.ofNat 64 (q.with sv toc).n from h.len]) (by decide)) fun _ ⟨u11, k⟩ =>
     ⟨u11, (k.gpr _ (by decide)).trans h.r31⟩
 
-/-- `vg_ffdh_parameter_candidate` leaks the same from the same public
-arguments and tape. -/
+/-- `vg_ffdh_parameter_candidate_sieved` leaks the same from the same public
+arguments, tape and table. -/
 theorem code_rel (R : RoundImpl) : RelCT isa (Two CI) (code R.name R.code) fun _ _ => True := by
   unfold code
-  exact RelCT.assoc (RelCT.seq front_ct (RelCT.assoc (RelCT.seq (body_ct R) exit_ct)))
+  exact RelCT.assoc (RelCT.seq front_ct (RelCT.assoc (RelCT.seq (body_ct R)
+    (two_map Prod.fst (fun _ _ h => h) exit_ct))))
 
 theorem qOf_pub {s t : State} (h : pcPub s t) : qOf s = qOf t := by
-  obtain ⟨hsp, hr, h3, -, h5, h6, h7, h8, -, h10, hst⟩ := h
+  obtain ⟨hsp, hr, h3, -, h5, h6, h7, h8, -, h10, hst, -⟩ := h
   have hr' : pcRand s = pcRand t :=
     (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hr
   simp only [qOf, PP.with, ppOf, hsp, h3, h5, h6, h7, h8, h10, hst, hr']
 
-/-- `vg_ffdh_parameter_candidate` in constant time, for any implementation of
-the round. -/
+/-- `vg_ffdh_parameter_candidate_sieved` in constant time, for any
+implementation of the round. -/
 theorem code_ct (R : RoundImpl) : ConstantTime isa pcContract.pre pcContract.pub (code R.name R.code) :=
-  RelCT.constantTime ((code_rel R).mono (fun s _ ⟨hs, ht, hp⟩ => ⟨qOf s, ⟨hs, rfl⟩, ⟨ht, (qOf_pub hp).symm⟩, hp.1⟩)
-    fun _ _ h => h)
+  RelCT.constantTime ((code_rel R).mono (fun s _ ⟨hs, ht, hp⟩ =>
+    ⟨(qOf s, s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol), ⟨hs, rfl, rfl⟩,
+      ⟨ht, (qOf_pub hp).symm, hp.2.2.2.2.2.2.2.2.2.2.2.symm⟩, hp.1⟩) fun _ _ h => h)
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

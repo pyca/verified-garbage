@@ -52,8 +52,6 @@ open VG.Impl.Bignum.Public (aN aAcc aTmp aXm aY sCnt)
 /-- The working space. -/
 def WsQ (L : WsP) (s : State) : Prop := Ws s L.B L.Z L.w
 
-theorem pins_wsq : Pins WsQ [.x0] := pins_ws' (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w) fun _ _ h => h
-
 /-- `eqMask j` leaks the same in runs with the same working space. -/
 theorem eqMask_ct {j : Nat} (hj : j < 16) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block [movi .x9 0, mov .x14 .x12])
@@ -290,14 +288,6 @@ theorem selInit_pin {L : WsP} {s : State} (h : WWD L s) :
   · exact hI.x11
   · exact hI.x12
   · exact hI.x13
-
-theorem mrSel_eq : mrSel = [.block (ws ++ base aT0 .x2 ++ base aXm .x13 ++ [ldh .x9 kG, movi .x10 0, movi .x7 0,
-    .subImm .x .x8 .x7 1]),
-  .loop (seqs [
-    .block [.logic .eor .x .x3 .x10 .x9, movi .x4 1, .subs .x .x3 .x3 .x4, .csel .x .x15 .x7 .x8, mov .x16 .x2,
-      mov .x17 .x13, mov .x14 .x12],
-    Crt.selLoop,
-    .block [.add .x .x2 .x2 .x11, .addImm .x .x10 .x10 1, .subImm .x .x3 .x10 16]]) (.nonzero .x .x3)] := rfl
 
 /-- The selection: its first block pins the bases, then one piece. -/
 theorem mrSel_ct : RelCT isa (Two WWD) (seqs mrSel) (Two WWX) := by

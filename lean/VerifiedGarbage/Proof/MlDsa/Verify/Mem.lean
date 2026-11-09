@@ -64,9 +64,6 @@ include hf hd
 theorem polyAt_frame : polyAt m' p = polyAt m p :=
   polyAt_congr (Proof.MlKem.bytes_frame hf hd (by decide))
 
-theorem natPolyAt_frame : natPolyAt m' p = natPolyAt m p :=
-  natPolyAt_congr (Proof.MlKem.bytes_frame hf hd (by decide))
-
 theorem reduced_frame (hr : Reduced m p) : Reduced m' p :=
   reduced_congr (Proof.MlKem.bytes_frame hf hd (by decide)) hr
 
@@ -76,14 +73,6 @@ theorem polyIs_frame {f : Poly} (h : PolyIs m p f) : PolyIs m' p f :=
 end
 
 /-! ## Writing a coefficient -/
-
-/-- Writing coefficient `j` of the polynomial at `p`. -/
-theorem coeffAt_writeW (m : Mem) (p : Addr) {i j : Nat} (hi : i < n) (hj : j < n) (v : BitVec 32) :
-    coeffAt (m.writeW (p + BitVec.ofNat 64 (4 * j)) v) p i = if j = i then v else coeffAt m p i := by
-  have : n = 256 := rfl
-  split
-  · subst j; exact Mem.readW_writeW_self32 m _ v
-  · exact Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
 
 /-- The polynomial whose coefficients are all 0 is reduced, and is zero. -/
 theorem polyIs_zero {m : Mem} {p : Addr} (h : ∀ i < n, coeffAt m p i = 0) : PolyIs m p zero := by

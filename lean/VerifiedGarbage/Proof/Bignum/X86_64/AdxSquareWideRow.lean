@@ -335,8 +335,6 @@ theorem row_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
     · rw [hm, ka.gpr (by decide)] at hv; exact hv
     · rw [hm] at ho; exact ho
 
-theorem row_rowOk : AdxSquare.RowOk AdxSquareWide.row :=
-  ⟨fun hs h8 h9 hbp h0 hw hZ hZb sb => row_ok hs h8 h9 hbp h0 hw hZ hZb sb⟩
 end VG.Proof.Bignum.X86_64.AdxSquareWide
 
 end

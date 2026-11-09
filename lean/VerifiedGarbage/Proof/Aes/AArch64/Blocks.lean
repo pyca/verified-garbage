@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Aes.Rounds
 public import VerifiedGarbage.Proof.Aes.AArch64.Ecb
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
@@ -215,7 +216,8 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
       · exact (scr_disj _ (by omega_arith) (by omega_arith)).symm
       · exact (dDS.sub_right (scr_sub _ (by omega_arith))).symm
   refine WP.mono (restore_ok (by rw [gd.wr, wr₅, d₄.wr, wr₃, wr₂, wr₁]; exact hwS) gd.base (by decide) sv)
-    fun s₇ ⟨rg₇, fR⟩ => ⟨rg₇, ?_⟩
+    fun s₇ ⟨rg₇, m₇, _⟩ => ⟨rg₇, ?_⟩
+  have fR : Frame [(⟨b, 8 * 59⟩ : Region)] s₆.mem s₇.mem := by rw [m₇]; exact Frame.refl _ _
   have dR : ∀ r ∈ [(⟨b, 8 * 59⟩ : Region)], Region.Disjoint ⟨D, 16 * n⟩ r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact dDS.sub_right (Region.sub_prefix (by omega_arith))
@@ -289,15 +291,15 @@ def blocksSat : State where
   wr := [⟨0x3000, 16⟩, ⟨0x4000, 2048⟩]
 
 theorem encryptBlocks_verified :
-    Verified AArch64.target encryptBlocks (Spec.Aes.encryptBlocksContract AArch64.abi) :=
+    Verified AArch64.target encryptBlocks (Proof.Aes.encryptBlocksRoundsContract AArch64.abi) :=
   Verified.of_correct encryptBlocks_correct encryptBlocks_ct (by
-    sig_implies [Spec.Aes.encryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
+    sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
       AArch64.abi, AArch64.argRegs] [blocksSat] using blocksSat)
 
 theorem decryptBlocks_verified :
-    Verified AArch64.target decryptBlocks (Spec.Aes.decryptBlocksContract AArch64.abi) :=
+    Verified AArch64.target decryptBlocks (Proof.Aes.decryptBlocksRoundsContract AArch64.abi) :=
   Verified.of_correct decryptBlocks_correct decryptBlocks_ct (by
-    sig_implies [Spec.Aes.decryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
+    sig_implies [Proof.Aes.decryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
       AArch64.abi, AArch64.argRegs] [blocksSat] using blocksSat)
 
 end VG.Proof.Aes.AArch64

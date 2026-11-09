@@ -77,9 +77,6 @@ structure Stable (origin s : State) : Prop where
   regs : ∀ q ∈ passKept, s.gpr q = origin.gpr q
   mem : s.mem = origin.mem
 
-theorem Stable.refl (s : State) : Stable s s :=
-  ⟨rfl, rfl, rfl, fun _ _ => rfl, rfl⟩
-
 theorem Stable.trans {s t u : State} (hs : Stable s t) (ht : Stable t u) : Stable s u :=
   ⟨ht.rd.trans hs.rd, ht.wr.trans hs.wr, ht.sp.trans hs.sp,
     fun q hq => (ht.regs q hq).trans (hs.regs q hq), ht.mem.trans hs.mem⟩

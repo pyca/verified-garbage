@@ -34,8 +34,6 @@ namespace StackOuts
 theorem of_outs {base sp rs m m'} (O : Outs base rs m m') : StackOuts base sp rs m m' :=
   fun x h _ => O x h
 
-theorem refl (base sp rs m) : StackOuts base sp rs m m := fun _ _ _ => rfl
-
 theorem trans {base sp rs m₁ m₂ m₃} (A : StackOuts base sp rs m₁ m₂)
     (B : StackOuts base sp rs m₂ m₃) : StackOuts base sp rs m₁ m₃ :=
   fun x h hs => (B x h hs).trans (A x h hs)

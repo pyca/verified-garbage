@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
@@ -20,8 +21,7 @@ open VG.Impl.Ffdh.X86_64.Domain
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
 theorem cd_correct (M : Mont) (E : CrtExpL M) (R : R2Impl M)
-    (hmx : (VG.Impl.Ffdh.X86_64.Domain.CheckDomain.code M.mm E.code (.seq (.block r2Head) R.code)).allInstrs
-      (fun i => !loadsMxcsr i) = true) (s : State) (h : cdContract.pre s) :
+    (hmx : ctlOk (VG.Impl.Ffdh.X86_64.Domain.CheckDomain.code M.mm E.code (.seq (.block r2Head) R.code)) = true) (s : State) (h : cdContract.pre s) :
     ∃ tr t, Exec isa (VG.Impl.Ffdh.X86_64.Domain.CheckDomain.code M.mm E.code (.seq (.block r2Head) R.code)) s tr t ∧
       abiPreserved s t ∧ cdContract.post s t := by
   have c := cdCtx_of h
@@ -29,7 +29,7 @@ theorem cd_correct (M : Mont) (E : CrtExpL M) (R : R2Impl M)
   suffices hw : WP isa (VG.Impl.Ffdh.X86_64.Domain.CheckDomain.code M.mm E.code (.seq (.block r2Head) R.code)) s
       fun t => gprPreserved s t ∧ cdContract.post s t by
     obtain ⟨tr, t, he, hg, hp⟩ := hw
-    exact ⟨tr, t, he, abiPreserved_of_exec hmx he hg, hp⟩
+    exact ⟨tr, t, he, abiPreserved_of_ctl hmx he hg, hp⟩
   unfold VG.Impl.Ffdh.X86_64.Domain.CheckDomain.code
   refine WP.seq (WP.mono (cd_body_ok M E R c) fun u ⟨hp, hdi, hf, hsaved, k₁⟩ => ?_)
   have hZ := c.hZ

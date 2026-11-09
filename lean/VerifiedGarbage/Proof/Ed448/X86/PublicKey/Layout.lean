@@ -41,8 +41,6 @@ def pkLocal : Contract isa where
     Spec.Ed448.publicKey (Spec.Ed448.bytesAt s.mem ((arg s 1).setWidth 64) 57)
   pub s t := s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧ arg s 1 = arg t 1 ∧ arg s 2 = arg t 2
 
-abbrev Ctx (s t : State) : Prop := VG.Proof.Ed25519.X86.Whole.Ctx (base s) s.gpr s.mem (pkRd s) (pkWr s) t
-
 abbrev OUT (s : State) : Region := ⟨(arg s 0).setWidth 64, 57⟩
 abbrev SEED (s : State) : Region := ⟨(arg s 1).setWidth 64, 57⟩
 

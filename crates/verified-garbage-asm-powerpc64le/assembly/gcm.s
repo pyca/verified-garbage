@@ -2738,3 +2738,43 @@ vg_aes_gcm_seal_gather:
 21:
 	addi %r1, %r1, 160
 	blr
+
+vg_aes_gcm_open_to:
+	stdu %r1, -2720(%r1)
+	addi %r12, %r1, 0
+	mflr %r0
+	std %r0, 152(%r12)
+	ld %r0, 2832(%r12)
+	std %r0, 96(%r12)
+	ld %r0, 2840(%r12)
+	std %r0, 104(%r12)
+	addi %r0, %r12, 160
+	std %r0, 112(%r12)
+	ld %r0, 2816(%r12)
+	std %r0, 120(%r12)
+	bl {vg_aes_gcm_open_split}
+	cmplwi %cr0, %r3, 0
+	beq %cr0, 20f
+	b 21f
+20:
+	addi %r12, %r1, 0
+	ld %r9, 2816(%r12)
+	ld %r10, 2824(%r12)
+	li %r11, 0
+	cmpldi %cr0, %r10, 0
+	beq %cr0, 22f
+24:
+	stb %r11, 0(%r9)
+	addi %r9, %r9, 1
+	addi %r10, %r10, -1
+	cmpldi %cr0, %r10, 0
+	bne %cr0, 24b
+	b 23f
+22:
+23:
+21:
+	addi %r12, %r1, 0
+	ld %r0, 152(%r12)
+	mtlr %r0
+	addi %r1, %r1, 2720
+	blr

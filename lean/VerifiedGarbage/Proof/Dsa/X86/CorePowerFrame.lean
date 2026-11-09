@@ -4,13 +4,21 @@ import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Mont.X86.ExponentBody
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.Weierstrass
 
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Dsa.Encoding
+public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+import VerifiedGarbage.Proof.Mont.X86.ContextMul
+import VerifiedGarbage.Proof.Mont.X86.ContextMath
+import VerifiedGarbage.Proof.Mont.X86.ExponentMask
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Mont.X86.ExponentShift
+public import VerifiedGarbage.Proof.Mont.X86.ShiftDown
 
 /-! # Short scalar exponents in a full-width arithmetic context -/
 
@@ -35,24 +43,5 @@ theorem decoded_exponent_fits (mem : Mem) (p : Addr) (len : Nat) :
   have E : 256 ^ len = 2 ^ (8 * len) := by rw [Nat.pow_mul]
   rw [E] at H
   exact Nat.lt_of_lt_of_le H (Nat.pow_le_pow_right (by decide) (by omega))
-
-theorem exponentRanges_whole {n k : Nat} {base : Addr} {s t : State}
-    (O : Outs base (exponentRanges n k) s.mem t.mem) (hk : k ≤ 2 * n) :
-    Outside base 0 (contextBytes n) s.mem t.mem := by
-  have b1 := slot_bound (n := n) (i := 1) (by decide)
-  have b2 := slot_bound (n := n) (i := 2) (by decide)
-  have b5 := slot_bound (n := n) (i := 5) (by decide)
-  have b6 := slot_bound (n := n) (i := 6) (by decide)
-  have b7 := slot_bound (n := n) (i := 7) (by decide)
-  have b8 := slot_bound (n := n) (i := 8) (by decide)
-  have bh := slot_header n 9
-  change 64 ≤ contextBytes n at bh
-  simp only [stride] at b1 b2 b5 b6 b7 b8
-  intro x hx
-  apply O x
-  intro r hr
-  simp only [exponentRanges, VG.Proof.Mont.X86.Dynamic.productRanges,
-    List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> omega
 
 end VG.Proof.Dsa.X86

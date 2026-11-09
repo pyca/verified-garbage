@@ -1,10 +1,4 @@
 //! SM3 (GB/T 32905-2016, as transcribed in draft-sca-cfrg-sm3-02).
-//!
-//! `vg_sm3_init`, `vg_sm3_update` and `vg_sm3_finalize` (contracts
-//! `VG.Spec.Sm3.initContract`, `updateContract` and `finalizeContract`)
-//! maintain a streaming state that represents the message absorbed so far
-//! (`VG.Spec.Sm3.Repr`: the hash value after its whole blocks, and its
-//! remaining bytes), and pad it and output the hash value.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -15,7 +9,7 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::sm3::{vg_sm3_finalize, vg_sm3_init, vg_sm3_update};
+use crate::arch::dispatch::sm3::{vg_sm3_finalize_auto, vg_sm3_init_auto, vg_sm3_update_auto};
 
 super::streaming_hash!(
     /// An incremental SM3 computation.
@@ -23,10 +17,9 @@ super::streaming_hash!(
         state: 96,
         block: 64,
         output: 32,
-        init: vg_sm3_init,
-        backends: Sm3Backend {
-            Scalar => (vg_sm3_update, vg_sm3_finalize),
-        },
+        init: vg_sm3_init_auto,
+        update: vg_sm3_update_auto,
+        finalize: vg_sm3_finalize_auto,
     }
 );
 

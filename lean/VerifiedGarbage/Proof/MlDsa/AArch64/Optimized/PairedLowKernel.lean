@@ -495,12 +495,6 @@ theorem subLowReduced_norm {g B : Nat} (hg : IsG g) {a b : BitVec 32}
 def lowInputField (m : Mem) (addr : Addr) (raw : BitVec 128) (e : Nat) : Zq :=
  ofInt (((vword (m.read addr 16) e).toNat:Int)-(vword raw e).toInt)
 
-theorem lowInputValues_spec {m : Mem} {addr : Addr} {raw : BitVec 128} {e : Nat}
-    (ha : (vword (m.read addr 16) e).toNat<Spec.MlDsa.q)
-    (bl : -8380417<(vword raw e).toInt) (bh : (vword raw e).toInt<2*8380417) :
-    (lowInputValues m addr raw e).toNat=(lowInputField m addr raw e).toNat :=
-  Response.subInput_word ha bl bh
-
 theorem lowInputValues_high {g : Nat} (hg : IsG g) {m : Mem} {addr : Addr} {raw : BitVec 128} {e : Nat}
     (ha : (vword (m.read addr 16) e).toNat<Spec.MlDsa.q)
     (bl : -8380417<(vword raw e).toInt) (bh : (vword raw e).toInt<2*8380417) :

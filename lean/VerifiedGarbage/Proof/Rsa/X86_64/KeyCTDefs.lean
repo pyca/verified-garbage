@@ -70,6 +70,9 @@ structure KS (p : KPub) (s : State) : Prop where
   pl2 : p.pl ≤ 8 * p.w
   ql1 : 1 ≤ p.ql
   ql2 : p.ql ≤ 8 * p.w
+  word_w1 : 4 ≤ p.w
+  word_w2 : p.w < 2 ^ 24
+  word_room : slot p.w 8 + slot p.w 17 ≤ p.Z
 
 /-- In the checks' context, from some entry state. -/
 def KK (p : KPub) (t : State) : Prop := ∃ s minv N, KCtx s t p.B p.Z p.w minv N ∧ KS p s
@@ -89,12 +92,6 @@ theorem KK.hl {p : KPub} {t : State} (h : KK p t) : ∀ i < 32, InRegions (t.rd 
   have hZ := c.hZ
   intro i hi
   exact c.good.scr.ld (by have := hdr_lt_slot p.w 8 hi; omega)
-
-theorem KK.hdr {p : KPub} {t : State} (h : KK p t) : ∃ minv, Hdr t.mem p.B p.w minv :=
-  let ⟨_, minv, _, c, _⟩ := h; ⟨minv, c.good.hdr⟩
-
-theorem KK.w {p : KPub} {t : State} (h : KK p t) : 1 ≤ p.w ∧ p.w < 2 ^ 28 :=
-  let ⟨_, _, _, c, _⟩ := h; ⟨c.w1, c.w2⟩
 
 /-- `KK` with the same memory and `rdi`. -/
 theorem KK.keep {p : KPub} {t t' : State} (h : KK p t) (hm : t'.mem = t.mem) (k : Keep mmRegs t t') : KK p t' := by

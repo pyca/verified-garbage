@@ -11,11 +11,12 @@ meta import VerifiedGarbage.Spec.Ctr
 The AES-CTR test vectors of RFC 3686 §6 (three for each of 128-, 192- and
 256-bit keys, of 16, 32 and 36 bytes), read from the unmodified RFC under
 `vectors/rfc3686/` (see `vectors/sources/`) when this file is built and
-checked against `VG.Spec.Ctr.aesCtr` from the first counter block, so that
-a transcription error in the spec fails the build. RFC 3686's counter
-blocks (a nonce, an IV and a 32-bit block counter from 1) are counter
-blocks of SP 800-38A's standard incrementing function while the block
-counter does not wrap, as in every vector. Each vector is checked:
+checked against `aesCtr` below, the spec's `VG.Spec.Ctr.counters` with AES,
+from the first counter block, so that a transcription error in the spec
+fails the build. RFC 3686's counter blocks (a nonce, an IV and a 32-bit
+block counter from 1) are counter blocks of SP 800-38A's standard
+incrementing function while the block counter does not wrap, as in every
+vector. Each vector is checked:
 * in both directions;
 * against each counter block and key stream block it lists (`Tⱼ` and
   `CIPH_K(Tⱼ)`);
@@ -31,6 +32,14 @@ The increment is also checked to carry across bytes and to wrap from
 namespace VG.Test.Ctr
 
 open Lean Elab Command Spec.Ctr
+
+/-- AES-CTR encryption or decryption of `x` (of any length) under the key
+`key` (16, 24 or 32 bytes) from the 16-byte initial counter block `t`: `x`
+XORed with the output blocks, the last one truncated to what is left of
+`x` (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`). -/
+def aesCtr (key t x : List Byte) : List Byte :=
+  let ciph := Spec.Cbc.aes key
+  List.zipWith (· ^^^ ·) x ((counters t ((x.length + 15) / 16)).map ciph).flatten
 
 /-- The contents of `vectors/<path>`. -/
 def readFile (path : System.FilePath) : CommandElabM String := do

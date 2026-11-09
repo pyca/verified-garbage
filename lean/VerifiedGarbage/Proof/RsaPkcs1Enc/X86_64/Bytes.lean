@@ -101,11 +101,6 @@ theorem word_ww0 (m : Mem) (base : Addr) {d : Nat} (v : BitVec 64) (h : 8 ≤ d)
   have := word_ww m base v (d := d) (d' := 0) (.inr h) hd (by omega)
   rwa [off_zero] at this
 
-theorem byte_ww0 (m : Mem) (base : Addr) {d : Nat} (v : BitVec 64) (h : 8 ≤ d) (hd : d < 2 ^ 64) :
-    byte (m.writeW base v) base d = byte m base d := by
-  have := byte_ww m base v (d := d) (d' := 0) (.inr h) hd (by omega)
-  rwa [off_zero] at this
-
 theorem word0_ww (m : Mem) (base : Addr) {d' : Nat} (v : BitVec 64) (h : 8 ≤ d') (hd' : d' + 8 ≤ 2 ^ 64) :
     (m.writeW (off base d') v).readW base 64 = m.readW base 64 := by
   have := word_ww m base v (d := 0) (d' := d') (.inl h) (by omega) hd'

@@ -84,7 +84,6 @@ theorem wp_srlw {d n : Reg} {sh : Nat} (h : sh < 32) (h0 : 0 < sh)
 
 end
 
-
 theorem sub_ofNat {a b : Nat} (h : b ≤ a) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
   rw [show BitVec.ofNat 64 a = BitVec.ofNat 64 (a - b) + BitVec.ofNat 64 b by
@@ -110,8 +109,6 @@ structure Only (ds : List Reg) (s s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
-
-theorem Only.refl (ds : List Reg) (s : State) : Only ds s s := ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
 
 theorem Only.of_upd {s s' : State} {d : Reg} {v : BitVec 64} (u : Upd s s' d v) : Only [d] s s' :=
   ⟨fun r h => u.other r (by simpa using h), u.mem, u.rd, u.wr, u.sp⟩

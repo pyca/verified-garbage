@@ -48,9 +48,6 @@ structure Same (s s' : State) : Prop where
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
 
-theorem Same.trans {s₁ s₂ s₃ : State} (h₁ : Same s₁ s₂) (h₂ : Same s₂ s₃) : Same s₁ s₃ :=
-  ⟨h₂.gpr.trans h₁.gpr, h₂.v.trans h₁.v, h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₂.sp.trans h₁.sp⟩
-
 theorem zeroStores_step (b j : Nat) :
     (List.range (j + 1)).map (fun i => Instr.strq .v0 .x21 (b + 16 * i)) =
       (List.range j).map (fun i => Instr.strq .v0 .x21 (b + 16 * i)) ++

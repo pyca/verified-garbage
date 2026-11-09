@@ -36,10 +36,6 @@ theorem cacheReg_ne11 {i : Nat} (hi : i < 8) : cacheReg i ≠ .x11 := by
   intro h
   exact cacheReg_kept hi (by rw [h]; decide)
 
-theorem cacheReg_ne3 (i : Nat) : cacheReg i ≠ .x3 := by
-  unfold cacheReg
-  split <;> decide
-
 theorem cacheReg_inj {i j : Nat} (hi : i < 8) (hj : j < 8) : cacheReg i = cacheReg j ↔ i = j := by
   have h : ∀ i < 8, ∀ j < 8, cacheReg i = cacheReg j ↔ i = j := by decide +kernel
   exact h i hi j hj

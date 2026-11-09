@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Correct
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Entry
 
 /-!
 # ML-DSA on x86-64, `sign_message`: the signing functions on `μ` it calls
@@ -99,8 +100,8 @@ theorem setArgs_wsp (as : List Arg) : (setArgs as).all (fun i => !isa.writesSp i
   obtain ⟨⟨d, a⟩, hm, hi⟩ := hi
   exact List.all_eq_true.mp (arg_wsp d (List.of_mem_zip hm).1 a) i hi
 
-theorem signMessage_spSafe {p : Params} {n : String} {c : Prog isa} (hc : c.all (fun i => !isa.writesSp i) = true) :
-    (Impl.MlDsa.X86_64.Message.signMessage n c p).all (fun i => !isa.writesSp i) = true := by
+theorem signMessage_spSafe {p : Params} {n : String} {c : Prog isa} (hc : c.all (fun i => !isa.writesSp i) = true)
+    (flag : Nat) : (Impl.MlDsa.X86_64.Message.signMessage n c p flag).all (fun i => !isa.writesSp i) = true := by
   generalize hq : (fun i => !isa.writesSp i) = q at hc ⊢
   have ha : Impl.Sha3.X86_64.Stream.absorb.all q = true := hq ▸ kabs_spSafe
   have hp' : Impl.Sha3.X86_64.Stream.pad.all q = true := hq ▸ kpad_spSafe
@@ -113,5 +114,19 @@ theorem signMessage_spSafe {p : Params} {n : String} {c : Prog isa} (hc : c.all 
     hc, ha, hp', hs, hsa, hmv, Bool.and_true, Bool.true_and]
   subst hq
   decide
+
+/-! ## `vg_mldsa*_sign`: the entry of an encoded key -/
+
+theorem signEntry_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n : String) :
+    Verified X86_64.target (Impl.MlDsa.X86_64.Sign.entry n (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) 0)
+      (signContract p X86_64.abi 40) :=
+  have hS := signFn v hp
+  have hK : Sign.KernelFn p (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) := ⟨hS.ok, hS.ct, hS.nosp, hS.depth⟩
+  Verified.of_correct (Sign.entry0_correct hK) (Sign.entry0_ct hK) (Sign.signK0_implies (ok3_of hp))
+
+theorem signEntry_spSafe {n : String} {c : Prog isa} (hc : c.all (fun i => !isa.writesSp i) = true)
+    (flag : Nat) : (Impl.MlDsa.X86_64.Sign.entry n c flag).all (fun i => !isa.writesSp i) = true := by
+  simp only [Impl.MlDsa.X86_64.Sign.entry, Code.all, hc, Bool.and_true]
+  rfl
 
 end VG.Proof.MlDsa.X86_64.Message

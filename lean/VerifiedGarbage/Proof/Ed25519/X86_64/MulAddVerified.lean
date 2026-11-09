@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.MulAdd
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.X25519.X86_64.Setup
 public import VerifiedGarbage.Spec.Ed25519.Contract
-public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
 import VerifiedGarbage.Proof.X25519.X86_64.Finish
@@ -288,18 +287,6 @@ namespace VG.Proof.Ed25519.X86_64
 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 
-def mulAddSatState : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 0x4000
-    | .r8 => 0x5000 | .rsp => 0x9000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x2000, 32⟩, ⟨0x3000, 32⟩, ⟨0x4000, 32⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0x5000, 8192⟩]
-
 theorem scalarMulAdd_ok (s : State) (hs : scalarMulAddLocal.pre s) :
     ∃ t s', Exec isa scalarMulAdd s t s' ∧ abiPreserved s s' ∧ scalarMulAddLocal.post s s' := by
   obtain ⟨t, s', he, h⟩ := scalarMulAdd_correct (MulAddPre.of hs)
@@ -332,12 +319,5 @@ theorem scalarMulAdd_agree {s₁ s₂ : State} (h₁ : scalarMulAddLocal.pre s�
 theorem scalarMulAdd_ct : ConstantTime isa scalarMulAddLocal.pre scalarMulAddLocal.pub scalarMulAdd := by
   refine VG.Taint.constantTime (A := taint) scalarMulAddτ
     (fun _ _ h₁ h₂ hp => scalarMulAdd_agree h₁ h₂ hp) (by taint_decide)
-
-theorem scalarMulAdd_verified : Verified X86_64.target scalarMulAdd
-    (Proof.Ed25519.scalarMulAddContract X86_64.abi) :=
-  Verified.of_correct scalarMulAdd_ok scalarMulAdd_ct (by
-    sig_implies [Proof.Ed25519.scalarMulAddContract, Proof.Ed25519.scalarMulAddSig,
-      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, scalarMulAddLocal]
-      [mulAddSatState] using mulAddSatState)
 
 end VG.Proof.Ed25519.X86_64

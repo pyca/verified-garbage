@@ -50,9 +50,6 @@ theorem num_succ (w : Width) (s₀ : State) (g j : Nat) :
     num w s₀ g (j + 1) = num w s₀ g j + 2 ^ (8 * j) * byte w s₀ (w.nb * g + j) :=
   digits_range_succ _ _ _
 
-theorem num_lt (w : Width) (s₀ : State) (g j : Nat) : num w s₀ g j < 2 ^ (8 * j) :=
-  digits_range_lt (fun _ => byte_lt _) _
-
 theorem cg_lt {w : Width} (hw : WOk w) {g e : Nat} (hg : g < 256 / w.c) (he : e < w.c) :
     w.c * g + e < 256 := by
   have := hw.cG

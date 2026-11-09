@@ -19,9 +19,10 @@ significant byte.
 OCB is defined here for any blockcipher on 128-bit blocks, given as its
 functions `ENCIPHER(K, ·)` and `DECIPHER(K, ·)` (`Cipher`), with
 `L_* = ENCIPHER(K, zeros(128))` given too, which an implementation computes
-once per key (`encryptWith`, `decryptWith`); `encrypt` and `decrypt` are OCB
-with AES (§3.1's parameter sets), as the RFC defines them. The contracts of
-the functions implemented in assembly are in `Spec/Ocb/Contract.lean`.
+once per key (`encryptWith`, `decryptWith`); OCB with AES (§3.1's
+parameter sets) is these with `aes key`, `aesInv key` and `aes key 0`. The
+contracts of the functions implemented in assembly are in
+`Spec/Ocb/Contract.lean`.
 -/
 
 @[expose] public section
@@ -224,26 +225,6 @@ def aes (key : List Byte) : Cipher := aesWith (Aes.rounds (key.length / 4)) (Aes
 def aesInv (key : List Byte) : Cipher :=
   aesInvWith (Aes.rounds (key.length / 4)) (Aes.expandKey key)
 
-/-- §4.2, AES-OCB encryption under the key `key` (16, 24 or 32 bytes) with
-a tag of `t` bytes, of the plaintext `p` with the associated data `a` under
-the nonce `nonce`: the RFC's ciphertext `C`, or `none` if the tag or nonce
-length is not one OCB is defined for. -/
-def encrypt (key : List Byte) (t : Nat) (nonce a p : List Byte) : Option (List Byte) :=
-  if lengthsOk t nonce.length then
-    let (c, tag) := encryptWith (aes key) (aes key 0) t nonce a p
-    some (c ++ tag)
-  else none
-
-/-- §4.3, AES-OCB decryption under the key `key` (16, 24 or 32 bytes) with
-a tag of `t` bytes, of the RFC's ciphertext `c` with the associated data
-`a` under the nonce `nonce`: the plaintext, or `none` (INVALID) if the tag
-or nonce length is not one OCB is defined for, if `c` is shorter than the
-tag, or if the tag is wrong. -/
-def decrypt (key : List Byte) (t : Nat) (nonce a c : List Byte) : Option (List Byte) :=
-  if !lengthsOk t nonce.length || c.length < t then none
-  else decryptWith (aes key) (aesInv key) (aes key 0) t nonce a (c.take (c.length - t))
-    (c.drop (c.length - t))
-
 /-! ## The key context
 
 `vg_aes_ocb_init` stores what AES-OCB needs of a key in a 256-byte key
@@ -259,7 +240,7 @@ that read a key context compute with the ciphers of the key schedule in it,
 for the number of rounds `Nr` they take as an argument, and the `L_*` in it
 (`ctxCiph`, `ctxInv`, `ctxLstar`), whatever the context holds: for a
 context that `vg_aes_ocb_init` wrote for `key` (`KeyRepr`), that is AES-OCB
-with `key` (`encryptWith_ctx`, `decryptWith_ctx`). -/
+with `key`. -/
 
 /-- The 16 bytes at `p` as a block. -/
 def blockAtMem (m : Mem) (p : Addr) : Block := ofBytes (Aes.bytesAt m p 16)
@@ -280,33 +261,5 @@ schedule of `key` and `L_* = ENCIPHER(K, zeros(128))`. -/
 def KeyRepr (m : Mem) (p : Addr) (key : List Byte) : Prop :=
   Aes.bytesAt m p (16 * (Aes.rounds (key.length / 4) + 1)) = Aes.expandKey key ∧
     ctxLstar m p = aes key 0
-
-/-- Encryption with the key context of `key`, for its number of rounds, is
-AES-OCB's with `key`. -/
-theorem encryptWith_ctx {m : Mem} {p : Addr} {key : List Byte} (hk : KeyRepr m p key)
-    (t : Nat) (nonce a pt : List Byte) (hl : lengthsOk t nonce.length = true) :
-    encrypt key t nonce a pt =
-      some ((encryptWith (ctxCiph m p (Aes.rounds (key.length / 4))) (ctxLstar m p) t nonce a
-          pt).1 ++
-        (encryptWith (ctxCiph m p (Aes.rounds (key.length / 4))) (ctxLstar m p) t nonce a
-          pt).2) := by
-  rw [ctxCiph, hk.1, hk.2, encrypt]
-  simp only [hl, ↓reduceIte]
-  rfl
-
-/-- Decryption with the key context of `key`, for its number of rounds, is
-AES-OCB's with `key`, for lengths that are accepted. -/
-theorem decryptWith_ctx {m : Mem} {p : Addr} {key : List Byte} (hk : KeyRepr m p key)
-    (t : Nat) (nonce a c tag : List Byte) (hl : lengthsOk t nonce.length = true)
-    (ht : tag.length = t) :
-    decrypt key t nonce a (c ++ tag) =
-      decryptWith (ctxCiph m p (Aes.rounds (key.length / 4)))
-        (ctxInv m p (Aes.rounds (key.length / 4))) (ctxLstar m p) t nonce a c tag := by
-  have hc : (c ++ tag).length - t = c.length := by simp [ht]
-  have hlt : decide ((c ++ tag).length < t) = false := by simp [ht]
-  rw [ctxCiph, ctxInv, hk.1, hk.2, decrypt, hc, hl, hlt]
-  simp only [Bool.not_true, Bool.false_or, Bool.false_eq_true, ↓reduceIte, List.take_left,
-    List.drop_left]
-  rfl
 
 end VG.Spec.Ocb

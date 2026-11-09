@@ -3,9 +3,6 @@
 //! `assembly/internal/vg_hmac_sha224_finalize_scratch_sha2.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_hmac_sha224_finalize_scratch_sha2` requires (`VG.Rust.Internal.features`).
-pub(crate) const VG_HMAC_SHA224_FINALIZE_SCRATCH_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
-
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety
@@ -14,8 +11,7 @@ pub(crate) const VG_HMAC_SHA224_FINALIZE_SCRATCH_SHA2_FEATURES: verified_garbage
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_scratch_sha2() {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e,0xf9006897,0x91000013
+        r".inst 0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e,0xf9006897,0x91000013
 .inst 0x91000034,0x91000075,0x91000097,0x91000041,0x910362e2,0x910002e3
 bl {vg_sha256_finalize_scratch_sha2}
 .inst 0xb9400289,0xb9000269,0xb9400689,0xb9000669,0xb9400a89,0xb9000a69,0xb9400e89,0xb9000e69
@@ -30,7 +26,6 @@ bl {vg_sha256_compress_sha2}
 .inst 0xb94006a9,0xb9000709,0xb9400aa9,0xb9000b09,0xb9400ea9,0xb9000f09,0xb94012a9,0xb9001309
 .inst 0xb94016a9,0xb9001709,0xb9401aa9,0xb9001b09,0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6
 .inst 0xf94062f8,0xf94066fe,0xf9406af7,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha256_finalize_scratch_sha2 = sym crate::sha256::vg_sha256_finalize_scratch_sha2::vg_sha256_finalize_scratch_sha2,
         vg_sha256_compress_sha2 = sym crate::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,

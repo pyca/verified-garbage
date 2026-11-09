@@ -58,27 +58,6 @@ theorem checks_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   rw [f₃, f₂, f₁, e₂ RR (by decide) (by decide), e₁ K (by decide) (by decide),
     e₁ MN (by decide) (by decide), hMN', hMN]
 
-theorem scalar_eq (c : Cfg) : c.scalar =
-    .seq (Mont.mulCall c.SN (c.sl RM) (c.sl RR) (c.sl R2N))
-    (.seq (Mont.mulCall c.SN (c.sl DM) (c.sl D) (c.sl R2N))
-    (.seq (Mont.mulCall c.SN (c.sl EM) (c.sl E) (c.sl R2N))
-    (.seq (Mont.mulCall c.SN (c.sl TT) (c.sl RM) (c.sl DM))
-    (.seq (Mont.addCall c.SN (c.sl TT) (c.sl TT) (c.sl EM))
-    (.seq (Mont.mulCall c.SN (c.sl SM) (c.sl ACC) (c.sl TT))
-    (.seq (Mont.mulCall c.SN (c.sl SS) (c.sl SM) (c.sl ONE))
-    (.block (c.checkNonzero (c.sl SS) ++ c.finish)))))))) := rfl
-
-/-- What `scalar`'s field operations leave. -/
-structure ScPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
-  scr : Scr s' base size
-  gpr : ∀ r, r ∉ clob → s'.gpr r = s.gpr r
-  rd : s'.rd = s.rd
-  wr : s'.wr = s.wr
-  unch : Unch base (slW c [RM, DM, EM, TT, SM, SS, TMP] ++ wkW c) s.mem s'.mem
-  ss_lt : sv c base s' SS < c.C.n
-  ss : Fin.ofNat c.C.n (sv c base s' SS) = toM c.C.n (2 ^ (64 * c.n)) (sv c base s ACC) *
-    (Fin.ofNat c.C.n (sv c base s E) + Fin.ofNat c.C.n (sv c base s RR) * Fin.ofNat c.C.n (sv c base s D))
-
 /-- The first three multiplications by `R² mod n`. -/
 theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hMN : ModOkW c.MN' size c.C.n s.mem base)

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesCcm.Rounds
 public import VerifiedGarbage.Proof.AesCcm.Arm.CTFn
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -111,7 +112,7 @@ def openSat : State :=
 
 theorem seal_verified : Verified Arm.target «seal» (Proof.AesCcm.sealScratchContract Arm.abi 16) :=
   Verified.of_correct (fun _ hs => seal_wp hs) seal_ct (by
-    sig_implies [Proof.AesCcm.sealScratchContract, Proof.AesCcm.sealScratchSig, Spec.Ccm.sealPre, Spec.Ccm.sealPost,
+    sig_implies [Proof.AesCcm.sealScratchContract, Proof.AesCcm.sealScratchSig, Spec.Ccm.sealPre, Proof.AesCcm.sealRoundsPost,
       sealArm, sealPre, oneLay, onePub, bel16, arg, args, roundsOk, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val, Arm.State.addr]
       [sealSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using sealSat)
@@ -124,7 +125,7 @@ theorem open_verified : Verified Arm.target «open» (Proof.AesCcm.openScratchCo
           Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       post := by
         intro s s' _ h
-        sig_eval [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPost, Arm.abi,
+        sig_eval [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Proof.AesCcm.openRoundsPost, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
         simp only [openArm, openRes, ciph, Arm.State.addr] at h
         have e : ∀ x y : BitVec 32, (x ++ y).setWidth 32 = y := fun _ _ => BitVec.setWidth_append_eq_right

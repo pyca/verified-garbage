@@ -269,9 +269,6 @@ theorem undiag_eq : undiag = [.xop (.pshufd .xmm0 .xmm0 0x39), .xop (.pshufd .xm
 
 theorem lane_0 (i : Nat) : lane 0 i = i := rfl
 theorem lane_1 (i : Nat) : lane 1 i = (i + 3) % 4 := rfl
-theorem lane_lt (k : Nat) {i : Nat} (hi : i < 4) : lane k i < 4 := by
-  unfold lane; split <;> omega
-
 /-! ## The rounds -/
 
 /-- During the rounds of a block, from `s₀`: the work vector is `v`, and

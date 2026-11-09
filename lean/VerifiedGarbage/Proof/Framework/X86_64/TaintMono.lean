@@ -130,8 +130,6 @@ theorem LeW.refl (τ : T) : LeW τ τ :=
 
 theorem Le.right {τ σ : T} (h : Le τ σ) : Le σ σ := ⟨LeW.refl σ, h.fn⟩
 
-theorem Le.left {τ σ : T} (h : Le τ σ) : Le τ τ := ⟨LeW.refl τ, h.fn.sub h.bases⟩
-
 theorem LeW.trans {a b c : T} (h₁ : LeW a b) (h₂ : LeW b c) : LeW a c where
   regs := RegSet.subset_trans h₁.regs h₂.regs
   flags h := h₂.flags (h₁.flags h)
@@ -538,7 +536,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
       exact hw.pubM hm
     rw [ite_t hm']
     exact ⟨_, rfl, h.clearX⟩
-  | vpmovmskb _ d _ | leaSym d _ =>
+  | vpmovmskb _ d _ | leaSym d _ | vpcmpltuw d _ _ =>
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.upd (set_mono hw d id) h.flags (h.killM d) empty_subset'⟩
@@ -661,10 +659,6 @@ theorem mem_meet_slots {x : Nat × Nat × Nat} :
   · simp only [List.not_mem_nil, false_iff, not_and]; intro h; contradiction
 
 theorem meet_lens : (meet a b).lens = if a.lens = b.lens then a.lens else [] := rfl
-
-/-- A taint that says nothing about memory. -/
-theorem lensBot {τ : T} (hl : τ.lens = []) (hs : τ.slots = []) (σ : T) :
-    τ.lens = σ.lens ∨ (τ.lens = [] ∧ τ.slots = []) := .inr ⟨hl, hs⟩
 
 theorem meet_bot (h : ¬a.lens = b.lens ∨ (a.slots = [] ∨ b.slots = []) ∧ a.lens = []) :
     (meet a b).lens = [] ∧ (meet a b).slots = [] := by

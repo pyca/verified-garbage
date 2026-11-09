@@ -2,7 +2,11 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
 public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Spec.Dsa.DomainChecked
 public import VerifiedGarbage.Proof.Dsa.Contract
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
+public import VerifiedGarbage.Impl.Dsa.AArch64.PrevalidatedSign
+public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
 public import Aesop.BuiltinRules
@@ -30,7 +34,6 @@ structure Backend where
   suffix : String
   features : List String
   signVerified : Verified target (SignVerify.sign mul) (Spec.Dsa.signContract abi stack)
-  verifyVerified : Verified target (SignVerify.verify mul) (Spec.Dsa.verifyContract abi stack)
   validateVerified : Verified target (Prevalidated.validate mul) (Spec.Dsa.validatePublicKeyContract abi stack)
   prevalidatedVerified : Verified target (Prevalidated.verify mul) (Spec.Dsa.verifyPrevalidatedContract abi stack)
   validateSp : (Prevalidated.validate mul).all (fun i => !isa.writesSp i) = true
@@ -43,7 +46,17 @@ structure Backend where
   deriveDepth : 16 * (Generate.deriveKey mul).aarch64Depth ≤ stack
   signSp : (SignVerify.sign mul).all (fun i => !isa.writesSp i) = true
   signDepth : 16 * (SignVerify.sign mul).aarch64Depth ≤ stack
+  prevalidatedSignVerified : Verified target (PrevalidatedSign.sign mul)
+    (signContractWith Spec.Dsa.validatePrivateKeyBytes abi stack)
+  prevalidatedSignSp : (PrevalidatedSign.sign mul).all (fun i => !isa.writesSp i) = true
+  prevalidatedSignDepth : 16 * (PrevalidatedSign.sign mul).aarch64Depth ≤ stack
+  validatePrivateVerified : Verified target (PrevalidatedSign.validate mul)
+    (Spec.Dsa.validatePrivateKeyContract abi stack)
+  validatePrivateSp : (PrevalidatedSign.validate mul).all (fun i => !isa.writesSp i) = true
+  deriveCheckedVerified : Verified target (Generate.deriveChecked mul)
+    (Spec.Dsa.deriveKeyDomainCheckedContract abi stack)
+  deriveCheckedSp : (Generate.deriveChecked mul).all (fun i => !isa.writesSp i) = true
+  deriveCheckedDepth : 16 * (Generate.deriveChecked mul).aarch64Depth ≤ stack
   stackBound : stack < 2 ^ 32
-  verifySp : (SignVerify.verify mul).all (fun i => !isa.writesSp i) = true
 
 end VG.Proof.Dsa.AArch64

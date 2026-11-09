@@ -93,8 +93,4 @@ theorem code_nat_ok (s : State) (lane column q : Nat)
   change BitVec.ofNat 64 (lane * q + column) * BitVec.ofNat 64 1024 + s.gpr .r8 = _
   rw [← BitVec.ofNat_mul, BitVec.add_comm]
 
-theorem code_secret_rel : RelCT isa (fun _ _ => True) code (fun _ _ => True) :=
-  RelCT.taint (A := taint) (Taint.ofRegs [])
-    (fun _ _ _ => Taint.agree_ofRegs (by simp)) (by taint_decide)
-
 end VG.Proof.Argon2.X86_64.BlockAddress

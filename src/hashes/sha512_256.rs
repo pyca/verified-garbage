@@ -1,17 +1,4 @@
 //! SHA-512/256 (FIPS 180-4).
-//!
-//! SHA-512/256 is SHA-512 from another initial hash value, with its digest the
-//! first 32 bytes of the final hash value. `vg_sha512_256_init` (contract
-//! `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512_256`) makes a SHA-512
-//! streaming state represent the empty message, hashed from SHA-512/256's
-//! initial hash value (`VG.Spec.Sha512.Repr`); SHA-512's `vg_sha512_update`
-//! (`updateContract`, which holds for any initial hash value) then absorbs
-//! the message, and `vg_sha512_256_finalize` (`finalizeDigestContract` for
-//! `VG.Spec.Sha512.H0_512_256` and `VG.Spec.Sha512.sha512_256`) outputs its digest, the
-//! result of the whole algorithm.
-//!
-//! The implementations of `update` and `finalize` are chosen as SHA-512's
-//! (see `super::sha512`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -22,28 +9,10 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
-use crate::arch::sha512::vg_sha512_256_digest;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha512::vg_sha512_256_digest_sha3;
-use crate::arch::sha512::vg_sha512_256_init;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha512::{
-    VG_SHA512_256_FINALIZE_AVX2_FEATURES, VG_SHA512_256_FINALIZE_SHANI_FEATURES,
-    VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA512_UPDATE_SHANI_FEATURES,
+use crate::arch::dispatch::sha512::{
+    vg_sha512_256_digest_auto, vg_sha512_256_finalize_auto, vg_sha512_256_init_auto,
+    vg_sha512_update_auto,
 };
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha512::{VG_SHA512_256_FINALIZE_SHA3_FEATURES, VG_SHA512_UPDATE_SHA3_FEATURES};
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha512::{vg_sha512_256_digest_avx2, vg_sha512_256_digest_shani};
-use crate::arch::sha512::{vg_sha512_256_finalize, vg_sha512_update};
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha512::{
-    vg_sha512_256_finalize_avx2, vg_sha512_256_finalize_shani, vg_sha512_update_avx2,
-    vg_sha512_update_shani,
-};
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha512::{vg_sha512_256_finalize_sha3, vg_sha512_update_sha3};
 
 super::streaming_hash!(
     /// An incremental SHA-512/256 computation (FIPS 180-4 §6.7).
@@ -51,37 +20,16 @@ super::streaming_hash!(
         state: 192,
         block: 128,
         output: 32,
-        init: vg_sha512_256_init,
-        backends: Sha512_256Backend {
-            Scalar => (vg_sha512_update, vg_sha512_256_finalize),
-            #[cfg(target_arch = "aarch64")]
-            Sha3 if [VG_SHA512_UPDATE_SHA3_FEATURES, VG_SHA512_256_FINALIZE_SHA3_FEATURES] =>
-                (vg_sha512_update_sha3, vg_sha512_256_finalize_sha3),
-            #[cfg(target_arch = "x86_64")]
-            ShaNi if [VG_SHA512_UPDATE_SHANI_FEATURES, VG_SHA512_256_FINALIZE_SHANI_FEATURES] =>
-                (vg_sha512_update_shani, vg_sha512_256_finalize_shani),
-            #[cfg(target_arch = "x86_64")]
-            Avx2 if [VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA512_256_FINALIZE_AVX2_FEATURES] =>
-                (vg_sha512_update_avx2, vg_sha512_256_finalize_avx2),
-        },
-        digests: #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))] {
-            Scalar => vg_sha512_256_digest,
-            #[cfg(target_arch = "aarch64")]
-            Sha3 => vg_sha512_256_digest_sha3,
-            #[cfg(target_arch = "x86_64")]
-            ShaNi => vg_sha512_256_digest_shani,
-            #[cfg(target_arch = "x86_64")]
-            Avx2 => vg_sha512_256_digest_avx2,
-        },
+        init: vg_sha512_256_init_auto,
+        update: vg_sha512_update_auto,
+        finalize: vg_sha512_256_finalize_auto,
+        digest: vg_sha512_256_digest_auto,
     }
 );
 
 #[cfg(test)]
 mod tests {
-    use super::{Sha512_256, Sha512_256Backend};
-    use crate::cpu::detected;
-    use crate::hashes::sha512::Sha512Backend;
-    use verified_garbage_cpu::Features;
+    use super::Sha512_256;
 
     /// Every way of splitting a message into two updates gives the same
     /// digest, for every length around the padding boundaries.
@@ -103,28 +51,6 @@ mod tests {
                 assert_eq!(h.finalize(), expected);
             }
         }
-    }
-
-    /// The implementation chosen for each set of features is SHA-512's.
-    #[test]
-    fn select() {
-        for bits in 0..(1 << crate::cpu::NAMES.len()) {
-            let f = Features(bits);
-            let expected = match Sha512Backend::select(f) {
-                Sha512Backend::Scalar => Sha512_256Backend::Scalar,
-                #[cfg(target_arch = "aarch64")]
-                Sha512Backend::Sha3 => Sha512_256Backend::Sha3,
-                #[cfg(target_arch = "x86_64")]
-                Sha512Backend::ShaNi => Sha512_256Backend::ShaNi,
-                #[cfg(target_arch = "x86_64")]
-                Sha512Backend::Avx2 => Sha512_256Backend::Avx2,
-            };
-            assert_eq!(Sha512_256Backend::select(f), expected, "{bits:#b}");
-        }
-        assert_eq!(
-            Sha512_256::new().backend,
-            Sha512_256Backend::select(detected())
-        );
     }
 
     /// The `HashFunction` implementation is the inherent functions.

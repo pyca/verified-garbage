@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
 import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+public import VerifiedGarbage.Proof.MdStream.PPC64LE.Digest
+meta import VerifiedGarbage.Proof.MdStream.PPC64LE.Digest
 
 /-!
 # HMAC-SHA-384 on PPC64LE
@@ -100,5 +102,30 @@ theorem finalize : Verified PPC64LE.target
     inst_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
       Spec.Hmac.sha384I, Spec.Hmac.sha384S, Spec.Hmac.sha384, hmacFrame, PPC64LE.abi, PPC64LE.argRegs]
       using finSat 192 48 0)
+
+
+/-! ## The one-shot digest
+
+The one-shot digest over any streaming hash function
+(`Impl/MdStream/PPC64LE/Digest.lean`) for these streaming functions: its
+constant time, which the kernel checks, and its contract. -/
+
+theorem digest_ct : ConstantTime isa (MdStream.PPC64LE.Digest.digestG ok.SH hash.lbytes 96).pre
+    (MdStream.PPC64LE.Digest.digestG ok.SH hash.lbytes 96).pub (Impl.MdStream.PPC64LE.Digest.digest hash) :=
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
+    (fun _ _ _ _ hp => MdStream.PPC64LE.Digest.agree hp) (by taint_decide)
+
+theorem digestScratch :
+    Verified PPC64LE.target (Impl.MdStream.PPC64LE.Digest.digest hash) (MdStream.PPC64LE.Digest.digestScratchContract ok.SH (hash.lbytes / 8)) :=
+  MdStream.PPC64LE.Digest.digestScratch ok (by decide) digest_ct (by
+    inst_sat [MdStream.PPC64LE.Digest.digestScratchContract, MdStream.PPC64LE.Digest.digestScratchSig, Spec.Sha256.digestPost,
+      Spec.Hmac.sha384S, Spec.Hmac.sha384, PPC64LE.abi, PPC64LE.argRegs]
+      using MdStream.PPC64LE.Digest.digestSat 48 hash.lbytes)
+
+theorem digest : Verified PPC64LE.target (Impl.MdStream.PPC64LE.Digest.code hash) (Spec.Sha512.digestContract PPC64LE.abi 48 Spec.Sha512.sha384 (96 + Impl.MdStream.PPC64LE.Digest.frameBytes hash)) :=
+  MdStream.PPC64LE.Digest.digestFrame digestScratch (by decide) (by
+    inst_sat [Spec.Sha256.digestContract, Spec.Sha256.digestSig, Spec.Sha256.digestPost, Spec.Hmac.sha384S,
+      Spec.Hmac.sha384, PPC64LE.abi, PPC64LE.argRegs]
+      using MdStream.PPC64LE.Digest.digestSat 48 0)
 
 end VG.Proof.Hmac.Stream.PPC64LE.Sha384

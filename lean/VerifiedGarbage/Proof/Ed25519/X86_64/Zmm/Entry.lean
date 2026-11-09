@@ -12,8 +12,8 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 The `zmm` comb's selection leaves each half's rows of the entry in
 `ymm11–ymm14` and its sign's mask in `ymm15` itself, so its translated blocks
-are `esplit` (`eload` without the rows' setup) and `vnegBody` (`vneg` without
-the mask's): their lemmas, as `eload_wp` and `vneg_wp`.
+are `esplit` (the rows split into the limbs of the lanes, `esplit_wp`) and
+`vnegBody` (the entry negated under that mask, `vnegBody_wp`).
 -/
 
 @[expose] public section
@@ -121,8 +121,7 @@ theorem vnegBody_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx
 /-! ## The addition of an entry from its limbs -/
 
 /-- `vnegBody`, the carry and `vadd`: the entry in the lanes of `ymm5–ymm9`, negated if the
-mask in `ymm15` is all ones, added to the point in those of `ymm0–ymm4` (`ventry_wp` from
-`eload`'s limbs). -/
+mask in `ymm15` is all ones, added to the point in those of `ymm0–ymm4`. -/
 theorem ventryN_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
     (hk : EConsts s.mem base) (hx : Small s) {b : Bool}
     (hm : ∀ k < 4, qw s (xr 15) k = VG.Proof.X25519.X86_64.mask b)

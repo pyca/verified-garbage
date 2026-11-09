@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Sha256
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # PBKDF2-HMAC-SHA-256 (RFC 8018) on RISC-V: the iteration and the whole derivation -/
 

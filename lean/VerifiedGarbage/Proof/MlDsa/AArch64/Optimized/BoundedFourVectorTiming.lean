@@ -36,19 +36,6 @@ theorem bytePairMask_congr {η : Nat} (hη : η=2∨η=4) {a b c d : Byte}
   unfold bytePairMask nibbleMask
   rw [ha0,ha1,hb0,hb1]
 
-/-- Equality of the old per-byte transcript determines each vector lookup. -/
-theorem transcript_pair {η : Nat} (hη : η=2∨η=4) {X Y : List Byte}
-    (h : X.map (hbOks η)=Y.map (hbOks η)) (j : Nat)
-    (hx : j+1<X.length) (hy : j+1<Y.length) :
-    bytePairMask η X[j]! X[j+1]! =bytePairMask η Y[j]! Y[j+1]! := by
-  have hat (i : Nat) (hi : i<X.length) (hj : i<Y.length) :
-      hbOks η X[i]! =hbOks η Y[i]! := by
-    have hh:=congrArg (fun L : List (Nat×Nat)=>L[i]!) h
-    simpa only [getElem!_pos (X.map (hbOks η)) i (by simpa using hi),
-      getElem!_pos (Y.map (hbOks η)) i (by simpa using hj),List.getElem_map,
-      getElem!_pos X i hi,getElem!_pos Y i hj] using hh
-  exact bytePairMask_congr hη (hat j (by omega) (by omega)) (hat (j+1) hx hy)
-
 /-- Both vector and scalar cursors depend only on the original transcript. -/
 theorem transcript_prefix_length {η : Nat} {X Y : List Byte} {L M : List Zq}
     (h : X.map (hbOks η)=Y.map (hbOks η)) (hl : L.length=M.length) (j : Nat) :

@@ -1389,9 +1389,6 @@ theorem SSaved.frame {st scr : BitVec 32} (fC : scr.toNat + 640 ≤ 2 ^ 32)
 theorem restore_eq :
     Impl.Sha3.Arm.Stream.restore = Impl.Sha3.Arm.Stream.saved.map (fun p => Instr.ldr p.1 .r1 p.2) := rfl
 
-theorem save_eq :
-    Impl.Sha3.Arm.Stream.save = Impl.Sha3.Arm.Stream.saved.map (fun p => Instr.str p.1 .r12 p.2) := rfl
-
 /-- Every callee-saved register is saved, or one of `r8`–`r11`. -/
 theorem preserved_cases : ∀ r ∈ preserved,
     (∃ p ∈ Impl.Sha3.Arm.Stream.saved, p.1 = r) ∨ r ∈ [Reg.r8, .r9, .r10, .r11] := by decide
@@ -1431,8 +1428,6 @@ theorem xor_setWidth32' (x : Byte) (y : BitVec 32) :
   simp
 
 theorem ofNat_toNat32 (x : BitVec 32) : BitVec.ofNat 32 x.toNat = x := by simp
-
-theorem add_imm0 (a : BitVec 32) : a + 0 = a := by simp
 
 theorem sub_imm0 (a : BitVec 32) : a - 0 = a := by simp
 

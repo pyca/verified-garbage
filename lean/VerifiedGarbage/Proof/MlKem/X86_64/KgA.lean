@@ -90,10 +90,6 @@ theorem not_allOk {k : Nat} {ρ : List Byte} (h : ¬ allOk k ρ (k * k)) :
   | none => rfl
   | some f => rw [e'] at hs; exact absurd rfl hs
 
-/-- Entry `e` of `Â` (`k × k`), as polynomial `pA + e`. -/
-theorem aS_eq (L : Kem) (e : Nat) : L.aS (e / L.k) (e % L.k) = pS (L.pA + e) := by
-  rw [Kem.aS, Nat.add_assoc, Nat.div_add_mod]
-
 theorem aS_ij (L : Kem) (i j : Nat) : L.aS i j = pS (L.pA + (L.k * i + j)) := by
   rw [Kem.aS, Nat.add_assoc]
 
@@ -146,15 +142,6 @@ theorem MatB.four {L : Kem} {ρ : List Byte} {e : Nat} {rbs wbs : List (Reg × N
 
 theorem MatB.zero (L : Kem) (ρ : List Byte) {s : State} (h15 : s.gpr .r15 = 1) : MatB L ρ 0 s :=
   ⟨by rw [h15, ifp (allOk_zero _ _)], fun _ h => absurd h (Nat.not_lt_zero _)⟩
-
-/-- Every entry of `Â`, once all were sampled. -/
-theorem MatB.all {L : Kem} {ρ : List Byte} {s : State} (h : MatB L ρ (L.k * L.k) s)
-    (ho : allOk L.k ρ (L.k * L.k)) : ∀ i < L.k, ∀ j < L.k, PolyIs s.mem (pa s (L.aS i j)) (aHat ρ i j) :=
-  fun i hi j hj => by
-    have := h.mat (L.k * i + j) (ij_lt hi hj) (aHat ρ i j)
-    rw [(divmod_ij hj).1, (divmod_ij hj).2] at this
-    rw [aS_ij L i j]
-    exact this (aHat_eq ho hi hj)
 
 /-- The entries `e, …, e + n - 1`, from any invariant `I e` whose steps are
 those of one entry and of four (`ents`). -/

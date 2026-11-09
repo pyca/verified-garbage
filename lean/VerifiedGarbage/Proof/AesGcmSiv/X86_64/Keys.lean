@@ -137,25 +137,27 @@ theorem hkey_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
   have h15 := E.r15
   have r₁ := E.perm.wR (show 16 + 8 ≤ 3816 by decide)
   have r₂ := E.perm.wR (show 24 + 8 ≤ 3816 by decide)
-  have w₁ := E.perm.wW (show 64 + 8 ≤ 3816 by decide)
-  have w₂ := E.perm.wW (show 72 + 8 ≤ 3816 by decide)
-  have w₃ := E.perm.wW (show 80 + 8 ≤ 3816 by decide)
-  have w₄ := E.perm.wW (show 88 + 8 ≤ 3816 by decide)
-  refine ⟨_, by srun [hkey, zero16, h15, r₁, r₂, w₁, w₂, w₃, w₄], ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simp only [mem_setReg, mem_arithFlags, mem_setFlags, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true,
-      ite_false, reduceCtorEq]
+  have w₁ := E.perm.wW (show 64 + 16 ≤ 3816 by decide)
+  have w₃ := E.perm.wW (show 80 + 16 ≤ 3816 by decide)
+  refine ⟨_, by xrun [hkey, store2, zero16, h15, r₁, r₂, w₁, w₃], ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [mem_setReg, mem_arithFlags, mem_setFlags, mem_setXmm, gpr_setXmm, gpr_setReg, gpr_arithFlags,
+      gpr_setFlags, ite_true, ite_false, reduceCtorEq, xmm_setXmm_self, xmm_setXmm_of_ne, punpck_movq, pxor_self,
+      writeW128_app, add_ofNat_assoc, Nat.reduceAdd]
     rw [blockAt_zero_after W, show W + BitVec.ofNat 64 72 = W + BitVec.ofNat 64 64 + BitVec.ofNat 64 8 by
       rw [add_ofNat_assoc], blockAt_two, GcmSiv.ofBytes_bytesAt, add_ofNat_assoc, ← mulXG_words]
     rfl
-  · simp only [mem_setReg, mem_arithFlags, mem_setFlags]
+  · simp only [mem_setReg, mem_arithFlags, mem_setFlags, mem_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne, pxor_self,
+      writeW128_app, add_ofNat_assoc, Nat.reduceAdd]
     rw [show W + BitVec.ofNat 64 88 = W + BitVec.ofNat 64 80 + BitVec.ofNat 64 8 by rw [add_ofNat_assoc],
       Spec.Gcm.blockAt, Proof.Cmac.bytesAt_store2]
     decide
-  · simp only [mem_setReg, mem_arithFlags, mem_setFlags]
+  · simp only [mem_setReg, mem_arithFlags, mem_setFlags, mem_setXmm, gpr_setXmm, gpr_setReg, gpr_arithFlags,
+      gpr_setFlags, ite_true, ite_false, reduceCtorEq, xmm_setXmm_self, xmm_setXmm_of_ne, punpck_movq, pxor_self,
+      writeW128_app, add_ofNat_assoc, Nat.reduceAdd]
     exact frame4 W _ _ _ _ _
   · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
+      simp only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
   all_goals rfl
 
 /-- What `expand` leaves: the schedule of the encryption key at `W + 248`. -/

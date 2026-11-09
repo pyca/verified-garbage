@@ -25,9 +25,6 @@ twice q for the forward transform's (`VConsts`). -/
 structure VConstsW (c : BitVec 32) (s : State) : Prop extends Arith.VConsts s where
   q2 : s.xmm .xmm11 = ofDwords c c c c
 
-/-- The constants of the forward transform's lazy butterfly: twice q in xmm11. -/
-abbrev VConsts := VConstsW 16760834#32
-
 def YConstsW (c : BitVec 32) (s : State) : Prop := ∀ l < 2, VConstsW c (s.proj l)
 
 abbrev YConsts := YConstsW 16760834#32

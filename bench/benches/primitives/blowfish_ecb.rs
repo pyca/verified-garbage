@@ -1,5 +1,4 @@
-//! Blowfish-ECB, including key expansion, update, and unpadded
-//! finalization.
+//! Blowfish-ECB, including key expansion and in-place encryption/decryption.
 
 use criterion::Criterion;
 
@@ -19,7 +18,7 @@ pub fn bench(c: &mut Criterion) {
     use criterion::{BenchmarkId, Throughput};
     use openssl::provider::Provider;
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::blowfish_ecb::{BlowfishEcbDecryptor, BlowfishEcbEncryptor};
+    use verified_garbage::cipher::blowfish::BlowfishEcb;
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
@@ -35,23 +34,19 @@ pub fn bench(c: &mut Criterion) {
         for size in SIZES {
             g.throughput(Throughput::Bytes(size as u64));
             let data = vec![0x5a; size];
-            // Both libraries write into a buffer allocated once, outside the
-            // timed code.
-            let mut output = vec![0; size + 8];
-            g.bench(BenchmarkId::new(VG, size), |b| match mode {
-                Mode::Encrypt => b.iter(|| {
-                    let mut ctx = BlowfishEcbEncryptor::new(black_box(&key)).unwrap();
-                    let n = ctx.update(black_box(&data), &mut output).unwrap();
-                    ctx.finalize().unwrap();
-                    black_box(&output[..n]);
-                }),
-                Mode::Decrypt => b.iter(|| {
-                    let mut ctx = BlowfishEcbDecryptor::new(black_box(&key)).unwrap();
-                    let n = ctx.update(black_box(&data), &mut output).unwrap();
-                    ctx.finalize().unwrap();
-                    black_box(&output[..n]);
-                }),
+            let mut buffer = crate::InPlace::new(size, &data);
+            g.bench(BenchmarkId::new(VG, size), |b| {
+                b.iter(|| {
+                    let ctx = BlowfishEcb::new(black_box(&key)).unwrap();
+                    buffer.copy_from_slice(black_box(&data));
+                    match mode {
+                        Mode::Encrypt => ctx.encrypt(black_box(&mut buffer)).unwrap(),
+                        Mode::Decrypt => ctx.decrypt(black_box(&mut buffer)).unwrap(),
+                    }
+                    black_box(&buffer);
+                })
             });
+            let mut output = vec![0; size + 8];
             g.bench(BenchmarkId::new(OPENSSL, size), |b| {
                 b.iter(|| {
                     let mut ctx =

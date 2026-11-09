@@ -398,7 +398,8 @@ section
 /-!
 # GHASH with PCLMULQDQ: the whole function
 
-`ghash_verified` proves `Impl.Gcm.X86_64.Pclmul.ghash` against `ghashX86_64`.
+`ghash_correct` and `ghash_ct` prove `Impl.Gcm.X86_64.Pclmul.ghash` against
+`ghashX86_64`.
 
 The registers `xmm3`–`xmm6` hold `Tₖ` with `x · Tₖ = Hᵏ` (`k = 1 … 4`), so
 that `mul(a, Tₖ) = a · Hᵏ`, and `xmm2` holds `Y` after `i` blocks, as a
@@ -945,13 +946,6 @@ theorem ghash_ct : ConstantTime isa ghashX86_64.pre ghashX86_64.pub Impl.Gcm.X86
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
-
-theorem ghash_verified :
-    Verified X86_64.target Impl.Gcm.X86_64.Pclmul.ghash (Proof.Gcm.ghashContract X86_64.abi) :=
-  Verified.of_correct ghash_correct ghash_ct (by
-    sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, Proof.Gcm.X86_64.Pclmul.ghashX86_64,
-      X86_64.abi, X86_64.argRegs] [Proof.Gcm.X86_64.Pclmul.satState] using
-      Proof.Gcm.X86_64.Pclmul.satState)
 
 end VG.Proof.Gcm.X86_64.Pclmul
 

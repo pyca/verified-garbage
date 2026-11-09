@@ -1,22 +1,22 @@
 module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttShort
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
 
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
 import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttShortCT
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttShort
 meta import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
 meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 meta import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttShortCT
 meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -42,15 +42,15 @@ open VG.Proof.MlKem.X86_64 (Keep sample4K relInv taintRel relStart Rel2 pR ret_d
 open VG.Proof.MlKem.X86_64.S4 (R4 Pre aP at' sd scr aR scrR stkR sdR pre_of pub_scr pub_aP pub_B pub_sd pub_sp
   env_rbx pro_ok I0 sub_scr sub_poly seed_bytes cov scr6144_lt sx34 sx1024 sx6144 c_sub c_disj and14_ok epi_eq
   cRd cWr in_scr')
-open VG.Proof.MlDsa.X86_64.Sample (rnK nil_regs rejNTT_correct rejNTT_ct)
+open VG.Proof.MlDsa.X86_64.Sample (rnK nil_regs)
 open VG.Proof.MlDsa.Sample (rnFold toPoly)
 open VG.Proof.MlDsa.Arith (polyIs_frame)
 open VG.Spec.MlDsa (G)
 open VG.Proof.MlDsa (PolyIs)
 
-theorem rn_nosp : NoSp Impl.MlDsa.X86_64.Sample.rejNTT := nosp_of (by decide +kernel)
+theorem rn_nosp : NoSp Impl.MlDsa.X86_64.Sample.rejNTTShort := nosp_of (by decide +kernel)
 
-theorem rn_depth : Impl.MlDsa.X86_64.Sample.rejNTT.depth = 2 := by decide +kernel
+theorem rn_depth : Impl.MlDsa.X86_64.Sample.rejNTTShort.depth = 2 := by decide +kernel
 
 /-- Before the call on seed `K`. -/
 structure PC (σ : State) (K : Nat) (s : State) : Prop where
@@ -135,9 +135,9 @@ structure CallI (σ : State) (K : Nat) (s : State) : Prop where
   poly : (Lt σ K 336).length = 256 → PolyIs s.mem (Proof.MlKem.poly4 (aP σ) K) (toPoly (Lt σ K 336))
 
 theorem callK_ok {K : Nat} (hK : K < 4) {s : State} (h : ArgI σ K s) :
-    WP isa (.call "vg_mldsa_rej_ntt_poly" Impl.MlDsa.X86_64.Sample.rejNTT) s (CallI σ K) := by
+    WP isa (.call "vg_mldsa_rej_ntt_poly" Impl.MlDsa.X86_64.Sample.rejNTTShort) s (CallI σ K) := by
   have hcv := cov hp h.pinv.env hK
-  refine WP.call rejNTT_correct rn_nosp (by rw [rn_depth]; decide) (argK_pre hp hK h) hcv.1 hcv.2
+  refine WP.call VG.Proof.MlDsa.X86_64.Sample.RejNttShort.correct rn_nosp (by rw [rn_depth]; decide) (argK_pre hp hK h) hcv.1 hcv.2
     fun s₃ hrd hwr hcs hf _ ⟨s₃', hm₃, hg₃, hpost⟩ => ?_
   rw [rn_depth, h.pinv.env.rsp] at hf
   have h₃ : PC σ K s₃ := h.pinv.call hp hK hrd hwr (fun r hr => hcs r (by
@@ -234,9 +234,9 @@ theorem correct_scalar (σ : State) (hs : r4K.pre σ) :
 
 /-- The call on seed `K`. -/
 theorem call_ct {K : Nat} (hK : K < 4) :
-    RelCT isa (R4 fun σ s => ArgI σ K s) (.call "vg_mldsa_rej_ntt_poly" Impl.MlDsa.X86_64.Sample.rejNTT)
+    RelCT isa (R4 fun σ s => ArgI σ K s) (.call "vg_mldsa_rej_ntt_poly" Impl.MlDsa.X86_64.Sample.rejNTTShort)
       (R4 fun σ s => CallI σ K s) :=
-  relInv (fun σ s hp h => callK_ok (pre_of hp) hK h) (RelCT.callEx rejNTT_correct rejNTT_ct
+  relInv (fun σ s hp h => callK_ok (pre_of hp) hK h) (RelCT.callEx VG.Proof.MlDsa.X86_64.Sample.RejNttShort.correct VG.Proof.MlDsa.X86_64.Sample.RejNttShort.ct
     fun s₁ s₂ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => by
       have hsp : s₁.gpr .rsp = s₂.gpr .rsp := by rw [h₁.pinv.env.rsp, h₂.pinv.env.rsp, pub_sp hq]
       refine ⟨_, _, _, _, argK_pre (pre_of p₁) hK h₁, argK_pre (pre_of p₂) hK h₂, ?_,

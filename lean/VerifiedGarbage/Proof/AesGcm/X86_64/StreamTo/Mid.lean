@@ -117,12 +117,6 @@ theorem hk_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) : ctxH m (K s) = h
   simp only [hk, ctxH]
   exact blockAt_frame hf fun r hr => (k_disj hp r hr).sub_left (Offset.sub_base _ (by have := M.ge; omega))
 
-/-- The plaintext, through a frame of the regions written and the stack. -/
-theorem pt_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) {o : Nat} (ho : o ≤ L s) :
-    bytesAt m (Src s) o = pt s o :=
-  bytesAt_frame hf (fun r hr => (r_disj hp r hr).sub_left (Region.sub_prefix ho))
-    (by have : L s < 2 ^ 64 := (stackArg s 0).isLt; omega)
-
 omit hp in
 theorem Kept.frame {o : Nat} {m m' : Mem} (h : Kept s o m) {rs : List Region} (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, (kR' s).Disjoint r) : Kept s o m' := by

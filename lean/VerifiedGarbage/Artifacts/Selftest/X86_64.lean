@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Selftest.X86_64
+public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.Registration
 
 /-! # The pipeline self-test on x86-64 -/
 
@@ -10,7 +12,7 @@ namespace VG.Artifacts.Selftest.X86_64
 
 def artifacts : List Artifact := [
   { Spec.Selftest.addApi with
-    target := X86_64.target
+    target := .of X86_64.target
     doc := Spec.Selftest.addApi.summary
     code := Impl.Selftest.X86_64.add
     contract := Spec.Selftest.addContract X86_64.abi

@@ -25,7 +25,6 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
@@ -49,8 +48,6 @@ structure StepPostW (w16 : Bool) (A B : Spec.Sha3.State) (L M : List Zq) (p a b 
  saveRight : checkpointW w16 (p+1696) b M t.mem
  flagBoth : (t.gpr .x6).toNat=if L.length=256 ∧ M.length=256 then 1 else 0
  constants : Rej8.Constants t
-
-abbrev StepPost := StepPostW false
 
 theorem extraStep_ok {w16 : Bool} {s : State} {p a b c : Addr} {A B : Spec.Sha3.State} {L M : List Zq}
  (ctx : Context p a b c s) (hp : s.gpr .x19=p) (sym : s.syms "VG_MLKEM_REJ_SHUFFLE"=c)

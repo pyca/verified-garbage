@@ -14,7 +14,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::chacha20::ChaCha20;
+use verified_garbage::cipher::chacha20::ChaCha20;
 
 use super::vectors;
 

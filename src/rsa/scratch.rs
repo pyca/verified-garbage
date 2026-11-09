@@ -1,7 +1,5 @@
-//! The working space of the RSA and FFDH functions: one exclusively owned
-//! verification buffer retained per public key, wiped after each use that
-//! put secrets in it, and the cache-line-aligned working space of each
-//! private-key operation, wiped on drop.
+//! The working space of the RSA and FFDH functions, wiped of the secrets they
+//! put in it.
 
 use crate::zeroize::zeroize;
 use alloc::{boxed::Box, vec, vec::Vec};
@@ -172,7 +170,7 @@ impl Drop for ScratchLease<'_> {
 #[cfg(test)]
 mod tests {
     extern crate std;
-    use super::*;
+    use super::{Ordering, Scratch, VerifyScratch};
 
     #[test]
     fn scratch_is_aligned_and_zeroed() {

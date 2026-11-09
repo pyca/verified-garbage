@@ -972,7 +972,7 @@ theorem private_done_post {s t u : State} (h : AbiEnvironment s)
       (Initial.inputBytes t 88 80) (Initial.inputBytes t 200 208) (Initial.inputBytes t 216 224) at digest
   rw [words.output, password, salt, secret, ad] at digest
   sig_post [Spec.Argon2.deriveContract, Spec.Argon2.deriveSig, AArch64.abi,
-    AArch64.argRegs, AArch64.firstNarrowStack, AArch64.stackArg, AArch64.stackArgAddr, List.range, List.range.loop]
+    AArch64.argRegs, AArch64.pairedNarrowStack, AArch64.stackArg, AArch64.stackArgAddr, List.range, List.range.loop]
   exact digest
 
 end VG.Proof.Argon2.AArch64.Derive
@@ -1128,9 +1128,9 @@ theorem return_post {s t : State} (done : BodyDone s t) :
     (Spec.Argon2.deriveContract AArch64.abi 400).post s (frameEnd t Impl.Argon2.AArch64.Derive.saved) := by
   have post := done.post
   sig_post [Spec.Argon2.deriveContract, Spec.Argon2.deriveSig, AArch64.abi,
-    AArch64.argRegs, AArch64.firstNarrowStack, AArch64.stackArg, AArch64.stackArgAddr, List.range, List.range.loop] at post
+    AArch64.argRegs, AArch64.pairedNarrowStack, AArch64.stackArg, AArch64.stackArgAddr, List.range, List.range.loop] at post
   sig_post [Spec.Argon2.deriveContract, Spec.Argon2.deriveSig, AArch64.abi,
-    AArch64.argRegs, AArch64.firstNarrowStack, AArch64.stackArg, AArch64.stackArgAddr, List.range, List.range.loop]
+    AArch64.argRegs, AArch64.pairedNarrowStack, AArch64.stackArg, AArch64.stackArgAddr, List.range, List.range.loop]
   exact post
 
 theorem code_wp (v : HPrime.Backend) (name : String) (s : State)
@@ -1191,7 +1191,7 @@ structure AbiPublic (s t : State) : Prop where
 theorem abi_public (s t : State) (h : (Spec.Argon2.deriveContract AArch64.abi 400).pub s t) :
     AbiPublic s t := by
   sig_pub [Spec.Argon2.deriveContract, Spec.Argon2.deriveSig, AArch64.abi,
-    AArch64.argRegs, AArch64.firstNarrowStack, AArch64.stackArg, AArch64.stackArgAddr, List.range, List.range.loop] at h
+    AArch64.argRegs, AArch64.pairedNarrowStack, AArch64.stackArg, AArch64.stackArgAddr, List.range, List.range.loop] at h
   all_goals simp only [BitVec.add_zero] at *
   sig_split h
   constructor
@@ -1503,7 +1503,7 @@ def satState : State where
 theorem contract_sat : ∃ s, (Spec.Argon2.deriveContract AArch64.abi 400).pre s := by
   refine ⟨satState, ?_⟩
   sig_sat_check [Spec.Argon2.deriveContract, Spec.Argon2.deriveSig, AArch64.abi,
-    AArch64.argRegs, AArch64.firstNarrowStack, AArch64.stackArg, AArch64.stackArgAddr,
+    AArch64.argRegs, AArch64.pairedNarrowStack, AArch64.stackArg, AArch64.stackArgAddr,
     List.range, List.range.loop, satState, satMem, satArgs, Spec.Argon2.params, Spec.Argon2.valid,
     Spec.Argon2.Params.blocks, Spec.Argon2.Params.segmentLen]
 end VG.Proof.Argon2.AArch64.Derive

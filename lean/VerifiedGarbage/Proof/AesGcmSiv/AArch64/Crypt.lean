@@ -105,9 +105,6 @@ theorem blkArgs_ok {p : Prm} {t : State} (E : Env p t) {j : Nat}
     simp only [mem_write, sep, Mem.writeW, BitVec.setWidth_eq, read8_readW]
   all_goals simp [gpr_write, E.x19, E.x22, h27]
 
-theorem setWidth_rt32' (v : BitVec 32) : (BitVec.setWidth 32 (BitVec.setWidth 64 v) : BitVec 32) = v :=
-  setWidth_rt32 v
-
 /-- The arguments of a block's call, as `vg_aes_ctr32` needs them. -/
 theorem blkCall {p : Prm} (L : Lay p) {t₁ : State} (E₁ : Env p t₁) {j : Nat} (hj : 16 * (j + 1) ≤ p.n)
     (x0 : t₁.gpr .x0 = p.W + BitVec.ofNat 64 240) (x1 : t₁.gpr .x1 = BitVec.ofNat 64 p.R)

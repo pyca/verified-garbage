@@ -140,12 +140,6 @@ The final accumulator is below twice the prime, so zero or the prime
 means divisibility. Z reports that result; r10/r11 remain the sieve cursor. -/
 def trialSmall : Prog isa := seqs [.block trialStart, .loop trialStep .ne, trialFlag]
 
-/-- Test p-1 with the same reducer, seeding its carry with the divisor minus one. -/
-def trialOffsetInit : List Instr := [.dp .sub .r2 .r3 (.imm 1)]
-
-def trialOffset : Prog isa := seqs [.block trialStart, .block trialOffsetInit,
-  .loop trialStep .ne, trialFlag]
-
 /-- Short public residue comparisons, unrolled by the emitter. -/
 def residueEquals : List Nat → Prog isa
   | [] => .block []
@@ -183,24 +177,16 @@ def sieveInitTail : List Instr := sieveInitRegisters ++ save .r1 64
 
 def sieveInit : Prog isa := .seq (.block tablePointer) (.block sieveInitTail)
 
-def sieveEntry : List Instr := [.ldr .r7 .r10 0, .dp .add .r10 .r10 (.imm 4)]
-
 def sieveFlag : Prog isa :=
   .ite .eq (.block ([.mov .r1 (.imm 1)] ++ save .r1 64)) (.block [])
 
 def sieveCount : List Instr := [.subs .r11 .r11 (.imm 1)]
-
-def sieveActiveStep : Prog isa := seqs [.block sieveEntry, trialSmall, sieveFlag, .block sieveCount]
 
 def sieveFinish : List Instr := [.ldrSp .r1 64, .cmp .r1 (.imm 0)]
 
 /-- Once a divisor has been found, jump directly to the table end. -/
 def sieveSkip : List Instr :=
   [.dp .add .r10 .r10 (.shifted .r11 .lsl 2), .subs .r11 .r11 (.reg .r11)]
-
-def sieveStep : Prog isa := .seq (.block sieveFinish) (.ite .eq sieveActiveStep (.block sieveSkip))
-
-def sieve : Prog isa := seqs [sieveInit, .loop sieveStep .ne, .block sieveFinish]
 
 def pairEntry : List Instr := [.ldr .r7 .r10 0]
 def pairAdvance : List Instr := [.dp .add .r10 .r10 (.imm 4)]
@@ -384,9 +370,6 @@ def screenedTests (name : String) (body : Prog isa) : Prog isa := seqs [
   .ite .eq (screenedQ name body) result]
 
 def tests (name : String) (body : Prog isa) : Prog isa := screenedTests name body
-
-def screenQ (name : String) (body : Prog isa) : Prog isa := seqs [halveQ,
-  .ite .eq finRejected (seqs [sieve, .ite .eq (tests name body) finRejected])]
 
 def screenPair (name : String) (body : Prog isa) : Prog isa := seqs [.block tableWrite, pairSieve,
   .ite .eq (tests name body) finRejected]

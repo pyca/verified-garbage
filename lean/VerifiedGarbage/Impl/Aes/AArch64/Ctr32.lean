@@ -5,7 +5,11 @@ public import VerifiedGarbage.Impl.Aes.AArch64.Linear
 /-!
 # AES counter mode (GCM's `inc₃₂`), bitsliced, on AArch64
 
-`vg_aes_ctr32(schedule = x0, rounds = x1, counter = x2, data = x3, n = x4, scratch = x5)`.
+`vg_aes_ctr32(schedule = x0, rounds = x1, counter = x2, data = x3, n = x4, scratch = x5)`,
+and its out-of-place form, the internal `vg_aes_ctr32_to(…, src = x3, …,
+dst = x6)` (`Proof.Aes.ctr32ToAArch64`): the same code (`ctr32Gen`), but
+that `dst` is kept in `x30` (our return address saved in slot 58 until the
+end), and the keystream XORed into `src` is stored there.
 
 Constant-time AES in the style of BearSSL's `aes_ct64` (Thomas Pornin, MIT
 licence): four blocks at a time, bitsliced in eight 64-bit registers
@@ -24,7 +28,8 @@ licence): four blocks at a time, bitsliced in eight 64-bit registers
   but one), un-bitslice, and XOR the keystream into the data, four blocks
   or the remaining one to three.
 * Only `x0` (the first round key), `x1`, `x2` during the key loop, `x3`
-  (the data), `x4` (the blocks left), `x5` and the loop tests (`t0`) hold
+  (the data), `x30` (the destination, out of place), `x4` (the blocks
+  left), `x5` and the loop tests (`t0`) hold
   public values; no address and no branch depends on anything else.
 -/
 
@@ -106,34 +111,53 @@ def encrypt4 : Prog isa :=
   .seq (.block (toBs ++ [movR kp .x0] ++ addRoundKey))
     (.seq (.loop (.block roundBody) (.nonzero .x t0)) (.block (lastRound ++ fromBs)))
 
-/-- XOR the keystream block `b` into data block `b`. -/
-def xorBlock (b : Nat) : List Instr :=
-  [.ldr .x t0 .x3 (16 * b), eorR t0 t0 (q b), .str .x t0 .x3 (16 * b),
-   .ldr .x t0 .x3 (16 * b + 8), eorR t0 t0 (q (b + 4)), .str .x t0 .x3 (16 * b + 8)]
+/-- Where the output goes: over the data (`x3`), or out of place (`to`) to
+the destination, which `x30` holds from the entry on (no other register is
+left: the key loop writes all the others but those of the data). -/
+def dstR (to : Bool) : Reg := cond to .x30 .x3
+
+/-- The slot that keeps our return address out of place, while `x30` holds
+the destination: the last of the slots saved (`Proof.Aes.AArch64.Saved`). -/
+def lrO : Nat := 58
+
+/-- XOR the keystream block `b` into data block `b`, stored to output block
+`b`: both words loaded first, so that in place the second is read before
+the first is stored. -/
+def xorBlock (to : Bool) (b : Nat) : List Instr :=
+  [.ldr .x t0 .x3 (16 * b), .ldr .x t2 .x3 (16 * b + 8), eorR t0 t0 (q b), eorR t2 t2 (q (b + 4)),
+   .str .x t0 (dstR to) (16 * b), .str .x t2 (dstR to) (16 * b + 8)]
 
 /-- Four blocks, and on to the next four. -/
-def xorFull : List Instr :=
-  (List.range 4).flatMap xorBlock ++ ([.addImm .x .x3 .x3 64, .subImm .x .x4 .x4 4] : List Instr)
+def xorFull (to : Bool) : List Instr :=
+  (List.range 4).flatMap (xorBlock to) ++ (([.addImm .x .x3 .x3 64, .subImm .x .x4 .x4 4] : List Instr) ++
+    cond to [.addImm .x .x30 .x30 64] [])
 
 /-- The last one to three blocks (and none left). -/
-def xorTail : Prog isa :=
-  .seq (.block (xorBlock 0 ++ ([.subImm .x t0 .x4 1] : List Instr)))
-    (.seq (.ite (.nonzero .x t0) (.seq (.block (xorBlock 1 ++ ([.subImm .x t0 .x4 2] : List Instr)))
-        (.ite (.nonzero .x t0) (.block (xorBlock 2)) (.block [])))
+def xorTail (to : Bool) : Prog isa :=
+  .seq (.block (xorBlock to 0 ++ ([.subImm .x t0 .x4 1] : List Instr)))
+    (.seq (.ite (.nonzero .x t0) (.seq (.block (xorBlock to 1 ++ ([.subImm .x t0 .x4 2] : List Instr)))
+        (.ite (.nonzero .x t0) (.block (xorBlock to 2)) (.block [])))
       (.block []))
     (.block [.movz .x .x4 0 0]))
 
 /-- One group of (up to) four blocks. -/
-def group : Prog isa :=
+def group (to : Bool) : Prog isa :=
   .seq (.block ctrBlocks)
     (.seq encrypt4
-      (.seq (.block [lsrI t0 .x4 2]) (.ite (.nonzero .x t0) (.block xorFull) xorTail)))
+      (.seq (.block [lsrI t0 .x4 2]) (.ite (.nonzero .x t0) (.block (xorFull to)) (xorTail to))))
 
-def ctr32 : Prog isa :=
-  .seq (.block (saveRegs ++ ctrSetup ++ keySetup))
+/-- `vg_aes_ctr32`, or out of place (`to`) the internal `vg_aes_ctr32_to`,
+with the destination in `x6`, moved to `x30` once our return address is
+saved in slot `lrO`. -/
+def ctr32Gen (to : Bool) : Prog isa :=
+  .seq (.block (saveRegs ++ cond to [stS lrO .x30, movR .x30 .x6] [] ++ ctrSetup ++ keySetup))
     (.seq (.loop (.block keyBody) (.nonzero .x .x2))
       (.seq (.block keyDone)
-        (.seq (.ite (.zero .x .x4) (.block []) (.loop group (.nonzero .x .x4)))
-          (.block restoreRegs))))
+        (.seq (.ite (.zero .x .x4) (.block []) (.loop (group to) (.nonzero .x .x4)))
+          (.block (restoreRegs ++ cond to [ldS .x30 lrO] [])))))
+
+def ctr32 : Prog isa := ctr32Gen false
+
+def ctr32To : Prog isa := ctr32Gen true
 
 end VG.Impl.Aes.AArch64

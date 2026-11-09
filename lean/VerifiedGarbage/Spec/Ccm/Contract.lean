@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Spec.Ccm
 public import VerifiedGarbage.TCB.Artifact
 
@@ -17,9 +18,11 @@ texts and tags) is secret.
 
 All a caller keeps of a key is its key schedule, as `vg_aes_expand_key`
 writes it (`VG.Spec.Aes.expandKeyContract`), with its number of rounds. The
-functions compute with the cipher of the schedule they are given, for the
-number of rounds they are given (`ctxCiph`): with the schedule of a key,
-that is AES-CCM with that key (`ctxCiph_eq`).
+postconditions are stated for every key whose schedule is at `schedule`
+with `rounds` rounds (`Aes.KeySchedule`): the functions are AES-CCM with that
+key (`aes key`). `open`'s leak is stated for the cipher of the schedule it is
+given, for the number of rounds it is given (`ctxCiph`), which with the
+schedule of a key is AES with that key (`ctxCiph_eq`).
 
 * `vg_aes_ccm_seal` is generation-encryption (`encryptWith`): it encrypts
   the payload in place and writes the encrypted MAC of `tag_len` bytes,
@@ -37,9 +40,9 @@ length `nonce_len` and the payload's length `len < 2^(8q)` for
 `q = 15 − nonce_len`, which the caller checks. `seal` writes the tag to the
 `tag_len` bytes at `tag`, and `open` reads the received tag from the
 `tag_len` bytes at `tag`. The functions keep their working space on the
-stack. The postconditions (and `open`'s leak) are stated for `rounds` of 10,
-12 or 14, which the preconditions require, so that they read only the
-buffers (the key schedule's round keys for those rounds).
+stack. `open`'s leak is stated for `rounds` of 10, 12 or 14, which the
+preconditions require, so that it reads only the buffers (the key
+schedule's round keys for those rounds).
 
 Every contract takes the number of bytes of stack below the stack pointer
 that an implementation's calls and frames use (`stack`, see `Sig.contract`),
@@ -75,25 +78,25 @@ def sealPre (pb : Nat) : Curry (sealSig.words pb) (Mem → Prop) :=
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       valid tagLen.toNat nonceLen.toNat aadLen.toNat len.toNat
 
-/-- For `rounds` of 10, 12 or 14, with the key schedule in the first
-`16 (rounds + 1)` bytes at `schedule`: the `len` bytes at `data` are
-encrypted, with the nonce at `nonce` and the `aad_len` bytes of associated
+/-- For every AES key `K` whose key schedule is at `schedule` with `rounds`
+rounds (`Aes.KeySchedule`): the `len` bytes at `data` are encrypted with
+AES-CCM under `K`, with the nonce at `nonce` and the `aad_len` bytes of associated
 data at `aad` (`encryptWith`), and the encrypted MAC of `tag_len` bytes is
 at `tag`. -/
 def sealPost (pb : Nat) : sealSig.Post pb :=
   fun schedule rounds nonce nonceLen aad aadLen data len tag tagLen m m' _ =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
-    encryptWith (ctxCiph m schedule rounds.toNat) tagLen.toNat
+    ∀ key, Aes.KeySchedule m schedule rounds.toNat key →
+    encryptWith (aes key) tagLen.toNat
         (Aes.bytesAt m nonce nonceLen.toNat) (Aes.bytesAt m data len.toNat)
         (Aes.bytesAt m aad aadLen.toNat) =
       (Aes.bytesAt m' data len.toNat, Aes.bytesAt m' tag tagLen.toNat)
 
 /-- For `rounds` of 10, 12 or 14, a MAC length `tag_len`, a nonce of
-`nonce_len` bytes and `len` bytes of payload that Appendix A.1 allows, with
-the key schedule in the first `16 (rounds + 1)` bytes at `schedule`:
-encrypts the `len` bytes at `data` in place, with the nonce at `nonce` and
-the `aad_len` bytes of associated data at `aad` (`encryptWith`), and writes
-the encrypted MAC of `tag_len` bytes to `tag`. -/
+`nonce_len` bytes and `len` bytes of payload that Appendix A.1 allows, and
+every AES key `K` whose key schedule is at `schedule` with `rounds` rounds
+(`Aes.KeySchedule`): encrypts the `len` bytes at `data` in place under `K`,
+with the nonce at `nonce` and the `aad_len` bytes of associated data at `aad`
+(`encryptWith`), and writes the encrypted MAC of `tag_len` bytes to `tag`. -/
 def sealContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealSig.contract A (pre := sealPre A.ptrBits) (post := sealPost A.ptrBits)
     (writeArgs := true)
@@ -128,16 +131,16 @@ def openPre (pb : Nat) : Curry (openSig.words pb) (Mem → Prop) :=
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       valid tagLen.toNat nonceLen.toNat aadLen.toNat len.toNat
 
-/-- For `rounds` of 10, 12 or 14, with the key schedule in the first
-`16 (rounds + 1)` bytes at `schedule` and the received tag (the encrypted
-MAC) the `tag_len` bytes at `tag`: if the MAC is right for the `len` bytes of
+/-- For every AES key `K` whose key schedule is at `schedule` with `rounds`
+rounds (`Aes.KeySchedule`), with the received tag (the encrypted MAC) the
+`tag_len` bytes at `tag`: if the MAC under `K` is right for the `len` bytes of
 encrypted payload at `data`, the nonce at `nonce` and the `aad_len` bytes of
 associated data at `aad` (`decryptWith`), the result is 1 and the payload is
 at `data`; otherwise the result is 0 and zeros are at `data`. -/
 def openPost (pb : Nat) : openSig.Post pb :=
   fun schedule rounds nonce nonceLen aad aadLen data len tag tagLen m m' r =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
-    match decryptWith (ctxCiph m schedule rounds.toNat) tagLen.toNat
+    ∀ key, Aes.KeySchedule m schedule rounds.toNat key →
+    match decryptWith (aes key) tagLen.toNat
         (Aes.bytesAt m nonce nonceLen.toNat) (Aes.bytesAt m data len.toNat)
         (Aes.bytesAt m aad aadLen.toNat) (Aes.bytesAt m tag tagLen.toNat) with
     | some pt => r = 1 ∧ Aes.bytesAt m' data len.toNat = pt
@@ -154,13 +157,14 @@ def openLeak (pb : Nat) : Curry (openSig.words pb) (Mem → List Nat) :=
       then 1 else 0]
 
 /-- For `rounds` of 10, 12 or 14, a MAC length `tag_len`, a nonce of
-`nonce_len` bytes and `len` bytes of payload that Appendix A.1 allows, with
-the key schedule in the first `16 (rounds + 1)` bytes at `schedule` and the
-received tag (the encrypted MAC) the `tag_len` bytes at `tag`: if the MAC is
-right for the `len` bytes of encrypted payload at `data`, the nonce at
-`nonce` and the `aad_len` bytes of associated data at `aad` (`decryptWith`),
-returns 1 and leaves the payload at `data`; otherwise returns 0 and leaves
-zeros at `data`. May leak which (`decryptWith`'s outcome). -/
+`nonce_len` bytes and `len` bytes of payload that Appendix A.1 allows, and
+every AES key `K` whose key schedule is at `schedule` with `rounds` rounds
+(`Aes.KeySchedule`), with the received tag (the encrypted MAC) the `tag_len`
+bytes at `tag`: if the MAC under `K` is right for the `len` bytes of encrypted
+payload at `data`, the nonce at `nonce` and the `aad_len` bytes of associated
+data at `aad` (`decryptWith`), returns 1 and leaves the payload at `data`;
+otherwise returns 0 and leaves zeros at `data`. May leak which
+(`decryptWith`'s outcome). -/
 def openContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   openSig.contract A (pre := openPre A.ptrBits) (post := openPost A.ptrBits)
     (writeArgs := true)

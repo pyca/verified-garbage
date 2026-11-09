@@ -94,12 +94,12 @@ theorem last_flags_ok {s : State} (h : Batch σ 3 112 56 4 s) : WP isa (.block f
   · rw [hr]; unfold allFull okN; split <;> rfl
   · rw [hm]; simpa only [ite_eq_left hk'] using h.st k hk'
 
-theorem fallback_ok {s s₀ : State} (h : Batch σ 2 0 112 4 s₀)
-    (hm : s.mem = s₀.mem) (hk : Keep [.rax, .r14] s₀ s) : WP isa fallback s (Done σ) := by
+theorem fallback_ok {fast : Bool} {s s₀ : State} (h : Batch σ 2 0 112 4 s₀)
+    (hm : s.mem = s₀.mem) (hk : Keep [.rax, .r14] s₀ s) : WP isa (fallback fast) s (Done σ) := by
   refine WP.seq (WP.mono (WP.keep [.r14] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .r14 = 1)
     (by xrun) (by decide)) fun s' ⟨⟨hm', hr⟩, hk'⟩ => ?_)
   have hb := h.restore (hm'.trans hm) ((hk.trans hk').mono (by simp)) hr
-  exact WP.seq (WP.mono (squeeze_last_ok hp hb) fun _ h₁ =>
+  exact WP.seq (WP.mono (squeeze_last_ok (fast := fast) hp hb) fun _ h₁ =>
     WP.seq (WP.mono (batch_ok hp (by decide) (by decide) (by decide) (by decide) (by decide) h₁)
       fun _ h₂ => last_flags_ok hp h₂))
 
@@ -117,8 +117,8 @@ theorem early_done {s s₀ : State} (h : Batch σ 2 0 112 4 s₀)
     rw [hr, okN, hf']; rfl
   · rw [hm, he k hk']; simpa only [ite_eq_left hk'] using h.st k hk'
 
-theorem finish_ok {s : State} (h : Batch σ 2 0 112 4 s) :
-    WP isa finish s fun s' => r4K.post σ s' ∧ gprPreserved σ s' := by
+theorem finish_ok {fast : Bool} {s : State} (h : Batch σ 2 0 112 4 s) :
+    WP isa (finish fast) s fun s' => r4K.post σ s' ∧ gprPreserved σ s' := by
   have hj : ∀ k < 4, s.mem.readW (at' σ (oJ + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 280).length :=
     fun k hk => by simpa only [ite_eq_left hk] using h.j k hk
   apply WP.seq
@@ -133,7 +133,7 @@ theorem finish_ok {s : State} (h : Batch σ 2 0 112 4 s) :
   cases hf : allFull σ 280 with
   | false =>
     have hz' : s₂.zf = some true := by rw [hz, hr, hf]; rfl
-    exact WP.ite true hz' (fun _ => fallback_ok hp h (hm'.trans hm) hkeep)
+    exact WP.ite true hz' (fun _ => fallback_ok (fast := fast) hp h (hm'.trans hm) hkeep)
       (fun hb => absurd hb (by decide))
   | true =>
     have hz' : s₂.zf = some false := by rw [hz, hr, hf]; rfl
@@ -141,26 +141,26 @@ theorem finish_ok {s : State} (h : Batch σ 2 0 112 4 s) :
     exact early_done h (hm'.trans hm) hkeep (by rw [hr', hr, hf]; rfl) hf
 
 /-- Everything after the prologue, the round constants and the padded seeds. -/
-theorem body_ok {s : State} (h : SqInv σ 0 s) :
-    WP isa (.seq (squeezes 0 3) (.seq (.block zeroJ)
+theorem body_ok {fast : Bool} {s : State} (h : SqInv σ 0 s) :
+    WP isa (.seq (squeezes 0 3 fast) (.seq (.block zeroJ)
       (.seq (VG.Impl.MlDsa.X86_64.Sample.Rej5.segment 0 0 168) (.seq (VG.Impl.MlDsa.X86_64.Sample.Rej5.segment 1 0 168)
         (.seq (VG.Impl.MlDsa.X86_64.Sample.Rej5.segment 2 0 168) (.seq (VG.Impl.MlDsa.X86_64.Sample.Rej5.segment 3 0 168)
-        (.seq (squeezes 0 2) (.seq (VG.Impl.MlDsa.X86_64.Sample.Rej5.batch 0 112) finish)))))))) s
+        (.seq (squeezes 0 2 fast) (.seq (VG.Impl.MlDsa.X86_64.Sample.Rej5.batch 0 112) (finish fast))))))))) s
       fun s' => r4K.post σ s' ∧ gprPreserved σ s' := by
-  refine WP.seq (WP.mono (sqTs_ok hp (by decide) (by decide) (sqT_of h)) fun s₃ ⟨q₃, _⟩ =>
+  refine WP.seq (WP.mono (sqTs_ok (fast := fast) hp (by decide) (by decide) (sqT_of h)) fun s₃ ⟨q₃, _⟩ =>
       WP.seq (WP.mono (zeroJ_ok hp q₃) fun s₄ p₀ => ?_))
   refine WP.seq (WP.mono (segment0_ok hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (segment0_ok hp (by decide) p₁)
     fun _ p₂ => WP.seq (WP.mono (segment0_ok hp (by decide) p₂) fun _ p₃ =>
       WP.seq (WP.mono (segment0_ok hp (by decide) p₃) fun _ p₄ => ?_))))
-  exact WP.seq (WP.mono (sqM_ok hp (by decide) (by decide) (m2_of p₄)) fun _ m₂ =>
+  exact WP.seq (WP.mono (sqM_ok (fast := fast) hp (by decide) (by decide) (m2_of p₄)) fun _ m₂ =>
       WP.seq (WP.mono (batch_ok hp (by decide) (by decide) (by decide) (by decide) (by decide) (batch_of_m2 m₂))
-        fun _ b => finish_ok hp b))
+        fun _ b => finish_ok (fast := fast) hp b))
 
 end
-theorem correct (σ : State) (hs : r4K.pre σ) :
-    ∃ t s', Exec isa VG.Impl.MlDsa.X86_64.Sample.Rej5.rejNTT4Avx2 σ t s' ∧ abiPreserved σ s' ∧ r4K.post σ s' := by
+theorem correct {fast : Bool} (σ : State) (hs : r4K.pre σ) :
+    ∃ t s', Exec isa (VG.Impl.MlDsa.X86_64.Sample.Rej5.rejNTT4Avx2 fast) σ t s' ∧ abiPreserved σ s' ∧ r4K.post σ s' := by
   have hp := pre_of (by dsimp only [r4K] at hs; exact hs)
-  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (start_ok hp) fun _ h => body_ok hp h)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he hF.2, hF.1⟩
+  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (start_ok hp) fun _ h => body_ok (fast := fast) hp h)
+  exact ⟨t, s', he, abiPreserved_of_exec (by cases fast <;> decide +kernel) he hF.2, hF.1⟩
 
 end VG.Proof.MlDsa.X86_64.Rej4.Segment

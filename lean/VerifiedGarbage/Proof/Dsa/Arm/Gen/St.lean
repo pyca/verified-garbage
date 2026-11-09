@@ -87,8 +87,8 @@ theorem GI.lens (h : GI G σ V LS s) :
 theorem GI.scrBig (h : GI G σ V LS s) : sK G.pLen + kz G.pLen ≤ G.scrLen * 8 := by
   have l := h.lens
   have := h.pre.scrLen
-  have e1 : (σ.gpr .r2).toNat = G.pLen := by rw [← h.hG]; rfl
-  have e2 : (stackArg σ 7).toNat = G.scrLen := by rw [← h.hG]; rfl
+  have e1 : pLenOf σ = G.pLen := by rw [← h.hG]; rfl
+  have e2 : (stackArg σ 2).toNat = G.scrLen := by rw [← h.hG]; rfl
   rw [e1, e2] at this
   simp only [Spec.Dsa.generationScratchWords] at this
   simp only [sK, sA, wa, kz]
@@ -151,12 +151,6 @@ theorem SB.frame {G : GP} {m m' : Mem} {cl : Claims} {rs : List Region} (h : SB 
 
 theorem SB.sub {G : GP} {m : Mem} {cl cl' : Claims} (h : SB G m cl) (hs : ∀ x ∈ cl', x ∈ cl) : SB G m cl' :=
   fun x hx => h x (hs x hx)
-
-theorem SB.cons {G : GP} {m : Mem} {cl : Claims} (h : SB G m cl) {o : Nat} {bs : List Byte}
-    (e : Spec.Rsa.bytesAt m (G.sa o) bs.length = bs) : SB G m ((o, bs) :: cl) := fun x hx => by
-  rcases List.mem_cons.mp hx with rfl | hx
-  · exact e
-  · exact h x hx
 
 /-- A claim apart from the range `[o, o + n)`. -/
 abbrev Apart (o n : Nat) (x : Nat × List Byte) : Prop := x.1 + x.2.length ≤ o ∨ o + n ≤ x.1

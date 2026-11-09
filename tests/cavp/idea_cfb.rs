@@ -11,7 +11,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::idea_cfb::{IdeaCfb64, InvalidKeyLength};
+use verified_garbage::cipher::idea::{IdeaCfb64Decryptor, IdeaCfb64Encryptor};
 
 use verified_garbage_test_vectors::unhex;
 
@@ -24,24 +24,25 @@ fn pyca_vectors() {
             let line = record.lines().find(|l| l.starts_with(label)).unwrap();
             unhex(line.split_once(" = ").unwrap().1.trim())
         };
-        let key = get("KEY");
+        let key: [u8; 16] = get("KEY").try_into().unwrap();
         let iv: [u8; 8] = get("IV").try_into().unwrap();
         let (plaintext, ciphertext) = (get("PLAINTEXT"), get("CIPHERTEXT"));
         key_lens.push(key.len());
-        let ctx = IdeaCfb64::new(&key).unwrap();
         let vector = (&plaintext[..], &ciphertext[..]);
-        let cfb = crate::modes::Feedback::Ciphertext;
-        crate::modes::check(cfb, iv, vector, vector, &|iv, b| ctx.encrypt(iv, b));
-        crate::modes::check(cfb, iv, vector, (&ciphertext, &plaintext), &|iv, b| {
-            ctx.decrypt(iv, b)
-        });
+        crate::modes::check(
+            iv,
+            vector,
+            &|iv| IdeaCfb64Encryptor::new(&key, iv),
+            IdeaCfb64Encryptor::encrypt,
+            IdeaCfb64Encryptor::encrypt_final,
+        );
+        crate::modes::check(
+            iv,
+            (&ciphertext, &plaintext),
+            &|iv| IdeaCfb64Decryptor::new(&key, iv),
+            IdeaCfb64Decryptor::decrypt,
+            IdeaCfb64Decryptor::decrypt_final,
+        );
     }
     assert_eq!(key_lens, [16; 20]);
-}
-
-#[test]
-fn errors() {
-    for len in [0, 8, 15, 17, 24, 32] {
-        assert_eq!(IdeaCfb64::new(&vec![0; len]).err(), Some(InvalidKeyLength));
-    }
 }

@@ -17,9 +17,6 @@ probable-prime test (`Spec.Dsa.probablePrime`):
   `s + L k` (`mrSB`), rather than after the candidate's own `L` octets: RSA's
   tape starts with the candidate (`s = L`), DSA's holds witnesses alone
   (`s = 0`).
-
-`MrLoopAt.toMrAt` and `MrAt.toMrLoopAt` convert to and from `MrAt` for
-`s = L` when the primality test is that loop.
 -/
 
 @[expose] public section
@@ -144,26 +141,6 @@ theorem mrLoopAt_zero (hwb : witnessBytes c = L) (hL : 0 < L) (hu : s ≤ r.leng
   · have := mrLoop_rest (Or.inl (by decide)) hwb hL e
     simp only [shapeOf, Option.map_some, itersOf]
     exact (Nat.le_div_iff_mul_le hL).mpr (by omega)
-
-/-- `MrAt` is `MrLoopAt` from offset `L` when the primality test is the
-loop with the checks `ch`. -/
-theorem MrLoopAt.toMrAt (hc : primalityTest c (r.drop L) = loop (mrStep c ch a m) (1, 0) (r.drop L))
-    (h : MrLoopAt c ch a m L L r k n) : MrAt c ch a m L r k n := by
-  have e : L + L * k = L * (k + 1) := by rw [Nat.mul_succ]; omega
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [hc, h.run, mrSB_eq_mrS, e]
-  · rw [← mrSB_eq_mrS]; exact h.go
-  · rw [hc, ← e]; exact h.iters
-  · rw [← e]; exact h.used
-
-theorem MrAt.toMrLoopAt (hc : primalityTest c (r.drop L) = Spec.RsaKeyGen.loop (mrStep c ch a m) (1, 0) (r.drop L))
-    (h : MrAt c ch a m L r k n) : MrLoopAt c ch a m L L r k n := by
-  have e : L + L * k = L * (k + 1) := by rw [Nat.mul_succ]; omega
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [← hc, h.loop, mrSB_eq_mrS, e]
-  · rw [mrSB_eq_mrS]; exact h.go
-  · rw [← hc, e]; exact h.iters
-  · rw [e]; exact h.used
 
 end
 

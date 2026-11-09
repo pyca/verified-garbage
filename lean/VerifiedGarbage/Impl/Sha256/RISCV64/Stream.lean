@@ -170,8 +170,6 @@ def finalizeMainWith (n : Nat) : Prog isa :=
 def finalizeWith (n : Nat) : Prog isa :=
   .frame (.alloc frameBytes) (finalizeMainWith n) (.free frameBytes)
 
-/-- SHA-256's `finalize`, all of the final hash value (8 words). -/
-def finalizeMain : Prog isa := finalizeMainWith 8
 def finalize : Prog isa := finalizeWith 8
 
 /-- SHA-224's `finalize`, its first 7 words (28 bytes). -/

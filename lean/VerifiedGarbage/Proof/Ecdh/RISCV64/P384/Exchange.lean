@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.Tail
 public import VerifiedGarbage.Spec.Ecdh.P384
-import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.CheckVerified
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.CheckLit
 public import VerifiedGarbage.Proof.Ecdh.Exchange
 import VerifiedGarbage.Proof.EcKey.PublicKey

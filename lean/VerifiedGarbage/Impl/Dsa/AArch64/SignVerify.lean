@@ -63,10 +63,4 @@ def sign (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
     Checks.privateKey mul, Core.sign mul, Checks.zero (Core.scalar r) true,
     Checks.zero (Core.scalar s) true, writeScalar r false, writeScalar s true, .block result])]
 
-def verify (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
-  .block verifyEntry, Checks.domainShape,
-  .ite (.zero .x .x3) (.block [movi .x0 0]) (seqs [workspaces, Checks.publicKey mul,
-    Checks.range qWorkspace Core.signatureR, Checks.range qWorkspace Core.signatureS,
-    Core.verify mul, Checks.equal (Core.scalar u) Core.signatureR, .block result])]
-
 end VG.Impl.Dsa.AArch64.SignVerify

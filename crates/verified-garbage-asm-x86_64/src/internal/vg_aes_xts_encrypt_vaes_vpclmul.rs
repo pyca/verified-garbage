@@ -3,9 +3,6 @@
 //! `assembly/internal/vg_aes_xts_encrypt_vaes_vpclmul.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_aes_xts_encrypt_vaes_vpclmul` requires (`VG.Rust.Internal.features`).
-pub(crate) const VG_AES_XTS_ENCRYPT_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES);
-
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety
@@ -40,7 +37,7 @@ jmp 23f
 .base64 "TInASAUAAQAATYXJ"
 je 29f
 211:
-.base64 "80EPbwPF+e8A80QPbwdmQQ/vwPNED29HEGZBDzjcwPNED29HIGZBDzjcwPNED29HMGZBDzjcwPNED29HQGZBDzjcwPNED29HUGZBDzjcwPNED29HYGZBDzjcwPNED29HcGZBDzjcwPNED2+HgAAAAGZBDzjcwPNED2+HkAAAAGZBDzjcwEiD/go="
+.base64 "80EPbwPzRA9vCGZBD+/B80QPbwdmQQ/vwPNED29HEGZBDzjcwPNED29HIGZBDzjcwPNED29HMGZBDzjcwPNED29HQGZBDzjcwPNED29HUGZBDzjcwPNED29HYGZBDzjcwPNED29HcGZBDzjcwPNED2+HgAAAAGZBDzjcwPNED2+HkAAAAGZBDzjcwEiD/go="
 je 212f
 .base64 "80QPb4egAAAAZkEPONzA80QPb4ewAAAAZkEPONzASIP+DA=="
 je 214f
@@ -51,7 +48,7 @@ jmp 215f
 jmp 213f
 212:
 213:
-.base64 "80UPbwJmQQ843cDF+e8A80EPfwNJg8MQSIPAEEmD6QE="
+.base64 "80UPbwJmQQ843cDzRA9vCGZBD+/B80EPfwNJg8MQSIPAEEmD6QE="
 jne 211b
 jmp 210f
 29:

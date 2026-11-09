@@ -202,8 +202,6 @@ namespace VG.Proof.Md5.X86
 open VG VG.X86 VG.Impl.Md5.X86
 open VG.Spec.Md5 (HashValue Word Block stateAt blockAt compressBlocks compress parseBlock)
 
-theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = addr (s.gpr b) d := rfl
-
 theorem contains_offset {base : Addr} {len off n : Nat} (h : off + n ≤ len) (ho : off < 2 ^ 64) :
     (⟨base, len⟩ : Region).Contains (base + BitVec.ofNat 64 off) n :=
   Offset.contains_base base h ho

@@ -25,7 +25,7 @@ building. Exits non-zero on violations.
     directly or not): every module that reaches it pays about 1.5e9 more
     instructions to import (a quarter of a typical module's build), and its
     simp lemmas slow `simp` down.
-  * A module of `Proof/`, `Artifacts/`, `Generic/` or `Variants/` with a
+  * A module of `Proof/` or `Artifacts/` with a
     numeral exponent (`x ^ 32`) imports `Proof/Framework/PowLit.lean`
     (directly or through another module), whose macro elaborates it as
     `x ^ (32 : Nat)`: without it, the exponents' default instances take time
@@ -135,21 +135,21 @@ HEAVY_HUBS_ALLOWED = {
     "VerifiedGarbage.Proof.Ed448.Group.Projective",
     "VerifiedGarbage.Proof.Ed25519.Group.Extended",
 }
-# A Weierstrass curve's group law on a target, `Variants/<Curve>/<Target>/Law.lean`:
+# A Weierstrass curve's group law on a target, `Proof/<Curve>/<Target>/Law.lean`:
 # by design the only files that import the algebra of its proof
-# (.agents/skills/adding-a-primitive/SKILL.md),
-# one per curve and target, and imported by nothing (the emitter takes them as
-# variants). Each pays the import once, for itself, so they are not counted
-# among a heavy module's importers.
-LAW_VARIANT = re.compile(r"^VerifiedGarbage\.Variants\.\w+\.\w+\.Law$")
-# A generic file (`Generic/<Iface…>/<Target>/<Alg>.lean`) is likewise imported
-# by nothing (the emitter applies it to the variants): one whose functions call
-# an implementation proved with heavy algebra (GHASH's PMULL) pays the import
-# for itself alone, so it is not counted either. So does a registration file
-# (`Artifacts/<Alg>/<Target>.lean`), which only the emitter reads: one binding
-# a target-independent theorem proved with heavy algebra (AES-GCM-SIV's tag
-# input) to a target's proofs, which take it as a hypothesis.
-GENERIC_LEAF = re.compile(r"^VerifiedGarbage\.(?:Generic|Artifacts)\.")
+# (.agents/skills/adding-a-primitive/SKILL.md), one per curve and target. Each
+# imports it privately and does not expose the law's value, so the registration
+# files that import it, which are all its importers, do not load that algebra:
+# it pays the import once, for itself, and is not counted among a heavy
+# module's importers.
+LAW = re.compile(r"^VerifiedGarbage\.Proof\.(?:P\d+|Secp256k1|Brainpool\w+)\.\w+\.Law$")
+# A registration file (`Artifacts/<Alg>/<Target>.lean`) is imported by nothing
+# (only the emitter reads it): one whose functions call an implementation
+# proved with heavy algebra (GHASH's PMULL), or that binds a target-independent
+# theorem proved with heavy algebra (AES-GCM-SIV's tag input) to a target's
+# proofs, which take it as a hypothesis, pays the import for itself alone, so
+# it is not counted either.
+GENERIC_LEAF = re.compile(r"^VerifiedGarbage\.Artifacts\.")
 DECIDE_CONFIG = re.compile(r"decide\s*:=\s*true\b")  # `after_word`
 DECIDE_FLAG = re.compile(r"\b(?:simp|simp_all|simpa|dsimp)\b[^\n]*?\+decide\b")
 BARE_ASSUMPTION = re.compile(r"(?:<;>|\|)\s*(?:try\s+)?assumption\b")
@@ -182,7 +182,7 @@ from lean_speed_allowed import (  # noqa: E402
 )
 
 POW_LIT = "VerifiedGarbage.Proof.Framework.PowLit"
-POW_PREFIXES = tuple(f"VerifiedGarbage.{d}." for d in ("Proof", "Artifacts", "Generic", "Variants"))
+POW_PREFIXES = tuple(f"VerifiedGarbage.{d}." for d in ("Proof", "Artifacts"))
 NUM_EXP = re.compile(r"\^\s*[0-9]+(?![0-9.])")
 LIB = re.compile(r"^\[\[lean_lib\]\]\n(.*?)(?=^\[\[|\Z)", re.M | re.S)
 
@@ -379,7 +379,9 @@ def heavy_hubs(imports: dict[str, list[str]]) -> list[tuple[str, list[str], int]
                 if i not in seen:
                     seen.add(i)
                     todo.append(i)
-        seen = {i for i in seen if not ((LAW_VARIANT.match(i) or GENERIC_LEAF.match(i)) and not importers[i])}
+        leaf = lambda i: GENERIC_LEAF.match(i) and not importers[i]
+        seen = {i for i in seen
+                if not (leaf(i) or (LAW.match(i) and all(leaf(j) for j in importers[i])))}
         if len(seen) > HEAVY_IMPORTERS:
             out.append((m, heavy, len(seen)))
     return out

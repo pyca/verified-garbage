@@ -15,12 +15,12 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # CBC decryption on AArch64 that updates the chaining value, for any core
 
-`cbcDecryptChained_wp`: `c.cbcDecryptChained r` is `c.cbcDecrypt r`
-(`cbcDecrypt_wp`), which also replaces the IV at `P` with the last block of
+`cbcDecryptChained_wp`: `c.cbcDecryptChained r` is CBC decryption of the
+data, which also replaces the IV at `P` with the last block of
 the data on entry (`Spec.Cbc.next`): once the IV is in the chaining value's
 slots, `cbcLastToIv` copies the last block, at `D + 8 bw (n - 1)`
 (`lastAddr_ok`), to the IV (`cbcLastToIv_wp`); the rest is
-`cbcDecrypt`'s, which no longer reads the IV. As on x86-64
+the decryption, which no longer reads the IV. As on x86-64
 (`Proof/Modes/X86_64/CbcDecChained.lean`).
 -/
 

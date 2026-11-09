@@ -2,14 +2,24 @@ module
 
 import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Print
+meta import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Print
+meta import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.TCB.Arm.Print
+meta import VerifiedGarbage.TCB.Arm.Print
 import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.TCB.PPC64LE.Print
+meta import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.TCB.RISCV64.Target
+import VerifiedGarbage.TCB.RISCV64.Print
+meta import VerifiedGarbage.TCB.RISCV64.Print
 
 /-!
 # The instructions of indirect calls (`ISA.icall`) on x86, AArch64, ARMv7, PPC64LE and RISC-V

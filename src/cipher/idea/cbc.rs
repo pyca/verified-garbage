@@ -1,0 +1,138 @@
+//! IDEA-CBC (SP 800-38A §6.2, with IDEA as in Lai, 1992), in place and without
+//! padding.
+
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
+))]
+
+use crate::align::CacheAligned;
+use crate::arch::dispatch::idea::{vg_idea_expand_key_auto, vg_idea_invert_key_auto};
+use crate::arch::dispatch::idea_cbc::{
+    vg_idea_cbc_decrypt_chained_auto, vg_idea_cbc_encrypt_chained_auto,
+};
+use crate::error::IncompleteBlock;
+use crate::zeroize::zeroize;
+
+/// An IDEA-CBC encryption of one message, without padding.
+///
+/// Each call takes whole 8-byte blocks and continues the message from the
+/// last ciphertext block of the call before, so that a message may be
+/// encrypted in pieces.
+///
+/// The IV must be unpredictable (SP 800-38A Appendix C).
+pub struct IdeaCbcEncryptor {
+    /// The encryption subkeys.
+    schedule: CacheAligned<[u8; 104]>,
+    /// The chaining value: the IV, then the last ciphertext block.
+    iv: [u8; 8],
+}
+
+impl IdeaCbcEncryptor {
+    /// Expands a 16-byte key, to encrypt a message from `iv`.
+    pub fn new(key: &[u8; 16], iv: &[u8; 8]) -> Self {
+        crate::dit::enter!(dit);
+        Self {
+            schedule: expand(dit, key),
+            iv: *iv,
+        }
+    }
+
+    /// Encrypts whole 8-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 8.
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        if !buffer.len().is_multiple_of(8) {
+            return Err(IncompleteBlock);
+        }
+        crate::dit::enter!(dit);
+        // SAFETY: the buffer holds `len / 8` whole blocks, and it, the chaining
+        // value (which the function reads and replaces) and the schedule are
+        // separate valid objects of the sizes of the signature, none of them on
+        // the callee's stack.
+        unsafe {
+            vg_idea_cbc_encrypt_chained_auto(
+                dit,
+                &self.schedule.0,
+                &mut self.iv,
+                buffer.as_mut_ptr().cast(),
+                buffer.len() / 8,
+            );
+        }
+        Ok(())
+    }
+}
+
+impl Drop for IdeaCbcEncryptor {
+    fn drop(&mut self) {
+        zeroize(&mut self.schedule.0);
+    }
+}
+
+/// An IDEA-CBC decryption of one message, without padding.
+///
+/// Each call takes whole 8-byte blocks and continues the message from the
+/// last ciphertext block of the call before, so that a message may be
+/// decrypted in pieces.
+///
+/// The IV must be unpredictable (SP 800-38A Appendix C).
+pub struct IdeaCbcDecryptor {
+    /// The decryption subkeys.
+    schedule: CacheAligned<[u8; 104]>,
+    /// The chaining value: the IV, then the last ciphertext block.
+    iv: [u8; 8],
+}
+
+impl IdeaCbcDecryptor {
+    /// Expands a 16-byte key, to decrypt a message from `iv`.
+    pub fn new(key: &[u8; 16], iv: &[u8; 8]) -> Self {
+        crate::dit::enter!(dit);
+        let mut encrypt = expand(dit, key);
+        let mut schedule = CacheAligned([0; 104]);
+        // SAFETY: both schedules are separate valid buffers of the required
+        // sizes.
+        unsafe { vg_idea_invert_key_auto(dit, &encrypt.0, &mut schedule.0) };
+        zeroize(&mut encrypt.0);
+        Self { schedule, iv: *iv }
+    }
+
+    /// Decrypts whole 8-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 8.
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        if !buffer.len().is_multiple_of(8) {
+            return Err(IncompleteBlock);
+        }
+        crate::dit::enter!(dit);
+        // SAFETY: as in `IdeaCbcEncryptor::encrypt`.
+        unsafe {
+            vg_idea_cbc_decrypt_chained_auto(
+                dit,
+                &self.schedule.0,
+                &mut self.iv,
+                buffer.as_mut_ptr().cast(),
+                buffer.len() / 8,
+            );
+        }
+        Ok(())
+    }
+}
+
+impl Drop for IdeaCbcDecryptor {
+    fn drop(&mut self) {
+        zeroize(&mut self.schedule.0);
+    }
+}
+
+/// The encryption subkeys of a 16-byte key.
+fn expand(dit: crate::dit::Dit<'_>, key: &[u8; 16]) -> CacheAligned<[u8; 104]> {
+    let mut schedule = CacheAligned([0; 104]);
+    // SAFETY: the key and the schedule are separate valid buffers of the
+    // required sizes.
+    unsafe { vg_idea_expand_key_auto(dit, key, &mut schedule.0) };
+    schedule
+}

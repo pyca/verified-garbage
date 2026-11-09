@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Zeroize.PPC64LE
+public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.Registration
 
 @[expose] public section
 
@@ -9,7 +11,7 @@ open VG.PPC64LE
 
 def artifacts : List Artifact := [
   { Spec.Zeroize.zeroizeApi with
-    target := target
+    target := .of target
     doc := Spec.Zeroize.zeroizeApi.doc
     code := Impl.Zeroize.PPC64LE.zeroize
     contract := Spec.Zeroize.zeroizeContract abi

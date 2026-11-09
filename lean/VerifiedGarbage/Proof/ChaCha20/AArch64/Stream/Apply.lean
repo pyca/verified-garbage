@@ -73,8 +73,6 @@ theorem write64_eq (m : Mem) (a : Addr) (v : BitVec 64) : m.write a 8 v = m.writ
 theorem write32_eq (m : Mem) (a : Addr) (v : BitVec 32) : m.write a 4 v = m.writeW a v := by
   simp [Mem.writeW]
 theorem read64_eq (m : Mem) (a : Addr) : m.read a 8 = m.readW a 64 := by simp [Mem.readW]
-theorem read32_eq (m : Mem) (a : Addr) : m.read a 4 = m.readW a 32 := by simp [Mem.readW]
-
 /-! ## The entry state -/
 
 section
@@ -215,10 +213,6 @@ theorem kept_ne {r : Reg} (hr : r ∈ kept) {r' : Reg} (h : r' ∉ kept := by de
 /-- What `apply` guarantees (`applyAArch64`), and the registers it keeps. -/
 def Final (s₀ s : State) : Prop :=
   (∀ r ∈ preserved, s.gpr r = s₀.gpr r) ∧ Proof.ChaCha20.applyAArch64.post s₀ s
-
-/-- The low halves of v8–v15 are those on entry. -/
-abbrev VKeep (s₀ s : State) : Prop :=
-  ∀ r ∈ preservedV, (s.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64
 
 theorem fail_ok {s₀ : State} (hlt : N s₀ < L s₀) {s : State} (h : Q0 s₀ s) :
     WP isa (.block [.movz .x .x0 0 0]) s (Final s₀) := by
@@ -611,7 +605,7 @@ theorem blR_sub (s₀ : State) : Region.Sub (blR s₀) (dR s₀) := Offset.sub_b
 theorem kept_preserved : ∀ r ∈ kept, r ∈ preserved ∧ r ≠ .x30 := by decide
 
 theorem blocks_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s)
-    (hnb : 0 < NB s₀) : WP isa (.seq (.block blocksArgs) (.call v.callee.name v.callee.code)) s (fun u => Q2 s₀ u ∧
+    (hnb : 0 < NB s₀) : WP isa (.seq (.block blocksArgs) v.callee.inPlace) s (fun u => Q2 s₀ u ∧
       ∀ r ∈ preservedV, (u.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) := by
   have hL := L_lt s₀
   have hH := H_le s₀
@@ -641,7 +635,6 @@ theorem blocks_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre
     omega_arith
   refine xor_call v (S := st s₀ + BitVec.ofNat 64 192) (D := dp s₀ + BitVec.ofNat 64 (H s₀))
     (B := st s₀ + BitVec.ofNat 64 256) (n := 64 * NB s₀) x0₁ x1₁ x2₁ x3₁ (by omega_arith) dSD dSB dDB hwrap
-    (by rw [hrd₁, hwr₁, List.nil_append, List.nil_append]; exact Covers.of_sub hcov)
     (by rw [hwr₁]; exact Covers.of_sub hcov) ?_
   intro s₂ k₂ x₂
   refine ⟨?_,fun r hr => (k₂.vec r hr).trans (v₁ r hr)⟩

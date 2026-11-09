@@ -1,25 +1,4 @@
 //! Wiping secrets from memory the library owns.
-//!
-//! What is wiped:
-//!
-//! * ML-KEM, ML-DSA, Ed25519, Ed448, ECDSA, ECDH, DSA, X25519, X448, RSA
-//!   and FFDH wipe their private keys when they are dropped, and the
-//!   intermediate values and working space of each operation (FIPS 203
-//!   §3.3, FIPS 204 §3.6.3).
-//! * Every other object holding key material (the ciphers, AEADs and MACs,
-//!   and the hash functions, whose state represents the key under HMAC,
-//!   PBKDF2 or keyed BLAKE2) wipes it when it is dropped.
-//! * The password KDFs' `verify` functions wipe the key they derive once
-//!   they have compared it with the expected one.
-//!
-//! What is not: the working space (`scratch`) of the symmetric algorithms'
-//! calls; the stack the verified functions use, which their contracts do not
-//! promise to wipe (but RC4's, `VG.Spec.Rc4`); and the copies of states the
-//! Rust code makes on the stack when it moves or copies them (e.g. the context
-//! of each ChaCha20-Poly1305 call, which holds the key, or the blocks of PBKDF2
-//! and scrypt), which the next calls overwrite; and anything once it has been
-//! returned to the caller (e.g. a MAC, a derived key or a shared secret), whose
-//! wiping is the caller's.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -30,26 +9,50 @@
     target_arch = "riscv64"
 ))]
 
+// What is wiped: every object holding key material (private keys, and the
+// ciphers', AEADs', MACs' and hash functions' states, which hold the key under
+// HMAC, PBKDF2 or keyed BLAKE2) when it is dropped; the asymmetric operations'
+// intermediate values and working space (FIPS 203 §3.3, FIPS 204 §3.6.3); and
+// the password KDFs' working memory (scrypt's and Argon2's) and the key their
+// `verify` functions derive, once compared.
+//
+// What is not: the symmetric algorithms' `scratch`; the verified functions'
+// stack, which their contracts do not promise to wipe (but RC4's); copies of
+// states the Rust code makes on the stack when it moves them (e.g. each
+// ChaCha20-Poly1305 call's context, PBKDF2's and scrypt's blocks), which later
+// calls overwrite; and what is returned to the caller (a MAC, a derived key or
+// a shared secret).
+
 mod sealed {
     pub trait Sealed {}
 }
 
-/// An integer type: the value whose bytes are all zero is 0.
-pub(crate) trait Int: Copy + sealed::Sealed {}
+/// A type for which all-zero bytes are a valid value.
+pub(crate) trait Zeroable: Copy + sealed::Sealed {}
 
 macro_rules! int {
     ($($t:ty),*) => {
         $(
             impl sealed::Sealed for $t {}
-            impl Int for $t {}
+            impl Zeroable for $t {}
         )*
     };
 }
 int!(u8, u16, u32, u64, i16, i32, i64);
 
+impl<T: Zeroable, const N: usize> sealed::Sealed for [T; N] {}
+impl<T: Zeroable, const N: usize> Zeroable for [T; N] {}
+
+impl<T: Zeroable> sealed::Sealed for crate::align::CacheAligned<T> {}
+impl<T: Zeroable> Zeroable for crate::align::CacheAligned<T> {}
+
+// Every byte pattern, zeros included, is a valid `MaybeUninit`.
+impl<T: Copy> sealed::Sealed for core::mem::MaybeUninit<T> {}
+impl<T: Copy> Zeroable for core::mem::MaybeUninit<T> {}
+
 /// Overwrites `x` with zeros using the verified assembly primitive. Its
 /// opaque call prevents the compiler from removing the stores.
-pub(crate) fn zeroize<T: Int>(x: &mut [T]) {
+pub(crate) fn zeroize<T: Zeroable>(x: &mut [T]) {
     // SAFETY: `x` is writable for its entire byte length, cannot wrap, and
     // lies outside the callee’s stack frame. All-zero bytes are valid for T.
     unsafe { zeroize_raw(x.as_mut_ptr().cast::<u8>(), core::mem::size_of_val(x)) };
@@ -63,16 +66,10 @@ pub(crate) fn zeroize<T: Int>(x: &mut [T]) {
 /// `p` must be valid for writes of `len` bytes, which may not wrap around the
 /// end of the address space or overlap the callee's stack frame.
 pub(crate) unsafe fn zeroize_raw(p: *mut u8, len: usize) {
-    #[cfg(target_arch = "x86_64")]
-    if crate::cpu::detected().contains(crate::arch::zeroize::VG_ZEROIZE_AVX_FEATURES) {
-        // SAFETY: the caller's, and the CPU has AVX, the feature
-        // `vg_zeroize_avx` needs.
-        unsafe { crate::arch::zeroize::vg_zeroize_avx(p, len) };
-        core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
-        return;
-    }
+    // Storing zeros takes the same time whatever the memory held.
+    let dit = crate::dit::public(crate::dit::Why::Wipe);
     // SAFETY: the caller's.
-    unsafe { crate::arch::zeroize::vg_zeroize(p, len) };
+    unsafe { crate::arch::dispatch::zeroize::vg_zeroize_auto(dit, p, len) };
     core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
 }
 
@@ -109,5 +106,41 @@ mod tests {
         let mut z = [-1i16; 5];
         zeroize(&mut z);
         assert_eq!(z, [0; 5]);
+    }
+
+    #[test]
+    fn zeroizes_arrays_and_aligned_buffers() {
+        use crate::align::CacheAligned;
+
+        let mut arrays = [[-1i16; 3]; 2];
+        zeroize(&mut arrays);
+        assert_eq!(arrays, [[0; 3]; 2]);
+
+        let mut chunks = [CacheAligned([u8::MAX; 128]); 4];
+        zeroize(&mut chunks[1..3]);
+        assert_eq!(chunks[0].0, [u8::MAX; 128]);
+        assert_eq!(chunks[1].0, [0; 128]);
+        assert_eq!(chunks[2].0, [0; 128]);
+        assert_eq!(chunks[3].0, [u8::MAX; 128]);
+
+        // Include alignment padding between the arrays.
+        let mut padded = [CacheAligned([u64::MAX; 3]); 4];
+        zeroize(&mut padded[1..3]);
+        assert_eq!(padded[0].0, [u64::MAX; 3]);
+        assert_eq!(padded[1].0, [0; 3]);
+        assert_eq!(padded[2].0, [0; 3]);
+        assert_eq!(padded[3].0, [u64::MAX; 3]);
+    }
+
+    #[test]
+    fn zeroizes_uninitialized_memory() {
+        use crate::align::CacheAligned;
+        use core::mem::MaybeUninit;
+
+        let mut ctx = [CacheAligned(MaybeUninit::<[u8; 70]>::uninit()); 3];
+        zeroize(&mut ctx[1..]);
+        // SAFETY: zeroize wrote every byte of these two.
+        let wiped = unsafe { [ctx[1].0.assume_init(), ctx[2].0.assume_init()] };
+        assert_eq!(wiped, [[0; 70]; 2]);
     }
 }

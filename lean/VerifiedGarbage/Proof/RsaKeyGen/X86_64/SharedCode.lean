@@ -72,13 +72,13 @@ private theorem sharedCandEnd_post {s t₃ t : State} (c : KCtx s)
   · obtain ⟨hg, hst, hb, hw⟩ := key (by decide) h
     exact ⟨hg, by rw [hst]; rfl, hb, by rw [hw, bytesAt_length]⟩
 
-theorem sharedCode_correct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) (hmx : (VG.Impl.RsaKeyGen.X86_64.Candidate.codeWith mm R.run).allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
+theorem sharedCode_correct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) (hmx : ctlOk (VG.Impl.RsaKeyGen.X86_64.Candidate.codeWith mm R.run) = true) (s : State)
     (h : sharedCandContract.pre s) : ∃ t s', Exec isa (VG.Impl.RsaKeyGen.X86_64.Candidate.codeWith mm R.run) s t s' ∧ abiPreserved s s' ∧ sharedCandContract.post s s' := by
   have c := kctx_of h.1
   have henv := h.2
   suffices hwp : WP isa (VG.Impl.RsaKeyGen.X86_64.Candidate.codeWith mm R.run) s fun s' => gprPreserved s s' ∧ candPost s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
-    exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hp⟩
+    exact ⟨t, s', he, abiPreserved_of_ctl hmx he hg, hp⟩
   have hext : ∀ b < 8, ¬(below (s.gpr .rsp) 128).Contains (s.gpr .rsp + BitVec.ofNat 64 b) 1 := by
     intro b hb
     exact Offset.base_disjoint_below (s.gpr .rsp) (n := 128) (k := 8) (by decide) _
@@ -120,7 +120,7 @@ theorem sharedCode_correct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (h
       unfold candRes Spec.RsaKeyGen.candidateOp
       rw [VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega), ite_f (by rw [bytesAt_length]; omega)]
     rw [hnone]; exact (KEnd.of_fin ho₃ ht).shared
-  · -- `kMain`.
+  · -- `kMainWith`.
     simp only [decide_eq_false_iff_not, Nat.not_lt] at hlt
     refine WP.mono (sharedKMain_ok M hmc R (henv.kept k13 (by decide))
       (by simp only [slot, hdrBytes]; omega_arith) (mainCtx_of c he hf hw hlt)) fun t ht => sharedCandEnd_post c hsv hf.zero hret hsp hext ?_

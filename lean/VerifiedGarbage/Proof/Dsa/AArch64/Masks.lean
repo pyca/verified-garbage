@@ -18,19 +18,8 @@ open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.AArch64
 open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 
-theorem mask_sbb (x : BitVec 64) (c : Bool) : x - x - (BitVec.ofBool c).setWidth 64 = mask c := by
-  cases c <;> simp [mask]
-
-theorem mask_complement (b : Bool) : mask b ^^^ BitVec.allOnes 64 = mask (!b) := by
-  cases b <;> decide
-
 theorem mask_intersect (a b : Bool) : mask a &&& mask b = mask (a && b) := by
   cases a <;> cases b <;> decide
-
-theorem mask_lt_one (x : BitVec 64) : decide (x.toNat < 1) = decide (x = 0) := by
-  apply decide_eq_decide.mpr
-  rw [Nat.lt_one_iff]
-  exact ⟨fun h => BitVec.eq_of_toNat_eq h, fun h => congrArg BitVec.toNat h⟩
 
 /-- Intersect an existing acceptance mask with the new predicate. -/
 theorem accumulate_ok {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z)

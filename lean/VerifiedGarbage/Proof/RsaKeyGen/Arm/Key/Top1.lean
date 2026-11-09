@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Base
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Sig
@@ -41,7 +42,7 @@ def mkP (s : State) : KP where
   el := (stackArg s 11).toNat
   SL := (stackArg s 13).toNat
   eB := Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 10)) (stackArg s 11).toNat
-  st := Spec.RsaKeyGen.keyStatus (Spec.RsaKeyGen.keyOp (stackArg s 1).toNat
+  st := Proof.RsaKeyGen.keyStatus (Proof.RsaKeyGen.keyOp (stackArg s 1).toNat
     (Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 10)) (stackArg s 11).toNat)
     (Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat)
     (Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 2)) (stackArg s 1).toNat))
@@ -143,8 +144,8 @@ structure CIn (s : State) : Prop where
   el2 : (stackArg s 11).toNat ≤ 8
   scr : Spec.Rsa.scratchWords (s.gpr .r1).toNat ≤ (stackArg s 13).toNat
 
-theorem cin_of_pre (s : State) (h : (Spec.RsaKeyGen.keyContract abi 56).pre s) : CIn s := by
-  sig_pre [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, reduceClassify, Loc.val] at h
+theorem cin_of_pre (s : State) (h : (Proof.RsaKeyGen.keyContract abi 56).pre s) : CIn s := by
+  sig_pre [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, reduceClassify, Loc.val] at h
   sig_split h
   rename_i spLo spHi rd wr nD nP nQ nDp nDq nQi nE nS nA dP dQ dDp dDq dQi dE dS dA pQ pDp pDq pQi pE pS pA
     qDp qDq qQi qE qS qA dpDq dpQi dpE dpS dpA dqQi dqE dqS dqA qiE qiS qiA eS SA Fn Fd Fp Fq Fdp Fdq Fqi Fe

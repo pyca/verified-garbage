@@ -203,8 +203,6 @@ theorem r2pSMid_bind (p : R2pS) (s₁ s₂ : State) (h₁ : R2pSMid p s₁) (h�
   cases b₁ <;> cases b₂ <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one] at e₁ e₂ <;>
     omega_arith
 
-theorem pins_r2pSPre : Pins R2pSPre [.x0] := pins_r2dGood (fun (p : R2pS) => p.L) fun _ _ h => h.1
-
 /-- A step's first pieces leak the same, and leave the same `t`, in runs with
 the same `m` and `x`. -/
 theorem r2pStepPre_ct :

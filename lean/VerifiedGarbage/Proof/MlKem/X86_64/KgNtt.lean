@@ -161,13 +161,6 @@ theorem wok_chg {r : Region} (hr : WOk k σ r) : ∃ r' ∈ chg k σ, Region.Sub
   · exact ⟨_, by simp, hr⟩
   · exact ⟨_, by simp, hr⟩
 
-theorem wok_ret {r : Region} (hr : WOk k σ r) : (retR σ).Disjoint r := by
-  rcases hr with hr | hr | hr | hr
-  · exact (E.xC.sub_right (Region.sub_prefix (by decide))).sub_right hr
-  · exact E.xS.sub_right hr
-  · exact E.xE.sub_right hr
-  · exact E.xD.sub_right hr
-
 theorem B.step {s s' : State} (h : B k σ s) {W : List Region} (hP : IPost s s' W) (hW : ∀ r ∈ W, WOk k σ r) :
     B k σ s' :=
   ⟨by rw [hP.cs .rbx (by decide), h.rbx], by rw [hP.cs .r13 (by decide), h.r13],

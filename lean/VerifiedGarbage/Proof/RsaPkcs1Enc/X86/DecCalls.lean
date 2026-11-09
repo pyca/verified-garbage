@@ -113,18 +113,6 @@ theorem keep_sr {σ s t : State} (hs : S P σ s) {ws : List Region} {k : Nat} (h
   · exact hd r hr
   · simp only [List.mem_singleton] at hr; subst hr; exact (hs.1.below_sr hk ho hn).symm
 
-/-- The bytes of a buffer we only read, through a call. -/
-theorem keep_ro {σ s t : State} (hs : S P σ s) {ws : List Region} {k : Nat} (hk : k ≤ 3448)
-    (hf : Frame (ws ++ [below (s.gpr .esp) k]) s.mem t.mem)
-    (hws : ∀ r ∈ ws, ∃ o n, o < 8448 ∧ o + n ≤ 8448 ∧ r = sr P o n) {R : Region} (hR : R ∈ P.ro) :
-    Spec.Rsa.bytesAt t.mem R.base R.len = Spec.Rsa.bytesAt s.mem R.base R.len := by
-  rw [hs.2.sp] at hf
-  refine Proof.RsaPkcs1Sig.bytesAt_frame hf (fun r hr => ?_)
-    (by have := hs.1.ok.fits R (List.mem_append_left _ hR); omega)
-  rcases List.mem_append.mp hr with hr | hr
-  · obtain ⟨o, n, ho, hn, rfl⟩ := hws r hr; exact (hs.1.sr_ro ho hn hR).symm
-  · simp only [List.mem_singleton] at hr; subst hr; exact (hs.1.below_ro hk hR).symm
-
 /-- A SHA-256 state kept while memory changes elsewhere. -/
 theorem repr_keep {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, 96⟩ r) {msg : List Byte} (h : Spec.Sha256.Repr m p msg) :
@@ -179,11 +167,6 @@ theorem Called.keep {σ s t : State} {ws : List Region} {k : Nat} (c : Called s 
     (hk : k ≤ 3448) {o n : Nat} (ho : o < 8448) (hn : o + n ≤ 8448) (hd : ∀ r ∈ ws, (sr P o n).Disjoint r) :
     Spec.Rsa.bytesAt t.mem (sr P o n).base n = Spec.Rsa.bytesAt s.mem (sr P o n).base n :=
   keep_sr hs hk c.frame ho hn hd
-
-theorem Called.keepRo {σ s t : State} {ws : List Region} {k : Nat} (c : Called s t ws k) (hs : S P σ s)
-    (hk : k ≤ 3448) (hws : InScr P ws) {R : Region} (hR : R ∈ P.ro) :
-    Spec.Rsa.bytesAt t.mem R.base R.len = Spec.Rsa.bytesAt s.mem R.base R.len :=
-  keep_ro hs hk c.frame hws hR
 
 theorem Called.repr {σ s t : State} {ws : List Region} {k : Nat} (c : Called s t ws k) (hs : S P σ s)
     (hk : k ≤ 3448) {o : Nat} (ho : o + 96 ≤ 8448) (hd : ∀ r ∈ ws, (sr P o 96).Disjoint r) {msg : List Byte}

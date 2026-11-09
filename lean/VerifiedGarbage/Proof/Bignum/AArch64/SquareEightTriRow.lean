@@ -61,11 +61,6 @@ theorem carryWord_ok (s : State) (r : Reg) (h7 : s.gpr .x7 = 0) :
   brun [h7]
   simp
 
-theorem addr_word8 (s : State) (n : Reg) {j : Nat} (hj : j < 4096) :
-    addr s 8 n (8 * j) = some (s.gpr n + BitVec.ofNat 64 (8 * j)) := by
-  simp only [addr]
-  rw [ite_eq_left ⟨by omega_arith, by omega_arith⟩]
-
 theorem storeWord_ok {s : State} {B : Addr} {Z e : Nat} (r : Reg) (j : Nat)
     (hs : Scr s B Z) (h16 : s.gpr .x16 = off B e) (he : e + 8 * j + 8 ≤ Z) (hj : j < 4096) :
     WP isa (.block [st r .x16 (8 * j)]) s fun t =>

@@ -125,10 +125,6 @@ theorem hiW_frame {m m' : Mem} {B : Addr} {w j : Nat} {js ds : List Nat} (f : Fr
       have := arr_end (w := w) c'; omega_arith
   · have := hd d hd'; have := hdr_le_arr w (2 * j); omega_arith
 
-/-- The number of a wide array read in the narrow view is its value modulo `2^(64 w)`. -/
-theorem st2_num_low_of {m : Mem} {B : Addr} {w j v : Nat} (hv : num m B (W2 w) j = v) :
-    num m B w (2 * j) = v % 2 ^ (64 * w) := by rw [num_low, hv]
-
 /-! ## `a`, `m` and `r` -/
 
 theorem divA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w 63) (hW : W2 w ≤ 1024)
@@ -451,12 +447,6 @@ theorem st2_shl_split {x c y Q : Nat} (hv : x + Q * c = y) (hx : x < Q) : x = y 
   have hQ : 0 < Q := by omega
   refine ⟨by rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hx], ?_⟩
   rw [Nat.add_comm, Nat.mul_add_div hQ, Nat.div_eq_of_lt hx, Nat.add_zero]
-
-/-- `t4 := 1`. -/
-theorem st2_li1_ok (s : State) :
-    WP isa (.block [.li .t4 1]) s fun u => (u.gpr .t4 = 1#64 ∧ u.mem = s.mem) ∧ Keep [.t4] s u := by
-  refine WP.keep _ ?_ (by rfl) (by rfl)
-  brun [keys_exec_li_one]
 
 /-- `t4 := 1 - [sBb]`. -/
 theorem notBb_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) :

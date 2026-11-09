@@ -49,8 +49,6 @@ theorem next_bound (k : Nat) : next k ≤ k / 2 + 8 := by
 
 theorem next_small : ∀ k ≤ 16, residual k 5 = 0 := by decide +kernel
 
-theorem next_zero : next 0 = 0 := rfl
-
 theorem residual_add (k a b : Nat) : residual k (a + b) = residual (residual k a) b := by
   induction b with
   | zero => rfl

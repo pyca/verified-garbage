@@ -211,7 +211,7 @@ theorem bytes_vmem {s₀ : State} (hp : APre s₀) :
         bytesAt_length, Nat.add_sub_cancel' (by omega_arith)]
 
 theorem post_of_V {s₀ : State} (hp : APre s₀) {s' : State}
-    (h : gprPreserved (V s₀) s' ∧ Avx2.xorAvx2X86_64.post (V s₀) s') :
+    (h : gprPreserved (V s₀) s' ∧ xorX86_64.post (V s₀) s') :
     gprPreserved s₀ s' ∧ xorSplitX86_64.post s₀ s' := by
   obtain ⟨⟨hk, hr⟩, hpost⟩ := h
   refine ⟨⟨fun r hr' => (hk r hr').trans (V_keep s₀ hr'), ?_⟩, ?_⟩
@@ -219,7 +219,7 @@ theorem post_of_V {s₀ : State} (hp : APre s₀) {s' : State}
     rw [hr]
     exact ((vmem_frame s₀).readW (r := sret s₀) (a := s₀.gpr .rsp) (w := 64) (Region.contains_self _ _)
       (by intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hp.ret_d) (by decide)).symm
-  · simp only [Avx2.xorAvx2X86_64, xorX86_64, V_rsi, V_rdx, V_rdi, V_mem] at hpost
+  · simp only [xorX86_64, V_rsi, V_rdx, V_rdi, V_mem] at hpost
     simp only [xorSplitX86_64]
     have e : stateAt (vmem s₀) (sst s₀) = stateAt s₀.mem (sst s₀) := V_S0 hp
     rw [hpost, bytes_vmem hp, e]
@@ -394,7 +394,7 @@ theorem xor_call (v : XorImpl) {s : State} {S D B : Addr} {n : Nat}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
       Frame [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩, below (s.gpr .rsp) 24] s.mem s'.mem →
       bytesAt s'.mem D n = List.zipWith (· ^^^ ·) (bytesAt s.mem D n) (keystream (stateAt s.mem S) n) → Q s') :
-    WP isa (.call v.callee.name v.callee.code) s Q := by
+    WP isa v.callee.inPlace s Q := by
   have hn' : (BitVec.ofNat 64 n).toNat = n := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
   have hd := v.depth_le
@@ -411,7 +411,7 @@ theorem xor_call (v : XorImpl) {s : State} {S D B : Addr} {n : Nat}
       State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp), hrdi, hrsi, hrdx, hrcx, hn']
     exact ⟨trivial, trivial, hSD, hSB, hDB, hsS.sub_left h8, hsD.sub_left h8, hsB.sub_left h8,
       hsS.sub_left hk', hsD.sub_left hk', hsB.sub_left hk', hwrap⟩
-  refine WP.call (k := xorStack v.stack) v.ok v.nosp (by lit_omega) hpre hc hw ?_
+  refine v.wpIn hpre hc hw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost, _⟩
   have hf' : Frame [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩, below (s.gpr .rsp) 24] s.mem s'.mem := by
     refine hf.sub fun r hr => ?_
@@ -447,14 +447,14 @@ theorem ret_stk24 (s₀ : State) : (sret s₀).Disjoint (sstk s₀) := by
 
 theorem tailCall_ok {s₀ : State} (hp : APre s₀) {C t : Nat} (hC : C ≤ 1024 * t) (ht : sL s₀ - 1024 * t < 1024)
     {s : State} (h : SInv s₀ C t s) :
-    WP isa (.call "vg_chacha20_xor_avx512" xor) s fun s' => gprPreserved s₀ s' ∧ xorSplitX86_64.post s₀ s' := by
+    WP isa (.seq (.block [.mov .r8 (.reg .rsi)]) (.call "vg_chacha20_xor_avx512" xor)) s fun s' => gprPreserved s₀ s' ∧ xorSplitX86_64.post s₀ s' := by
   have hL := sL_lt s₀
   have hle := h.le
   have hsp : s.gpr .rsp = s₀.gpr .rsp := h.keep .rsp (by simp [calleeSaved])
   have hw' : 1024 * t + (sL s₀ - 1024 * t) ≤ sL s₀ := by omega_arith
   have sD : Region.Sub ⟨sdp s₀ + BitVec.ofNat 64 (1024 * t), sL s₀ - 1024 * t⟩ (sdR s₀) :=
     Offset.sub_base _ hw'
-  show WP isa (.call XorImpl.avx512.callee.name XorImpl.avx512.callee.code) s _
+  show WP isa XorImpl.avx512.callee.inPlace s _
   refine xor_call XorImpl.avx512 h.rdi h.rsi h.rdx h.rcx (by omega_arith) (hp.st_d.sub_right sD) hp.st_b (hp.d_b.sub_left sD)
     (by have := hp.wrap_d; bv_omega) (by rw [hsp]; exact hp.stk_st) (by rw [hsp]; exact hp.stk_d.sub_right sD)
     (by rw [hsp]; exact hp.stk_b)
@@ -522,7 +522,7 @@ theorem tailCall_ok {s₀ : State} (hp : APre s₀) {C t : Nat} (hC : C ≤ 1024
 
 theorem rest_ok {s₀ : State} (hp : APre s₀) {t : Nat} (ht : sL s₀ - 1024 * t < 1024) {s : State}
     (h : SInv s₀ (Cof s₀) t s) :
-    WP isa (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b (.call "vg_chacha20_xor_avx512" xor) last16Sel)) s
+    WP isa (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b (.seq (.block [.mov .r8 (.reg .rsi)]) (.call "vg_chacha20_xor_avx512" xor)) last16Sel)) s
       fun s' => gprPreserved s₀ s' ∧ xorSplitX86_64.post s₀ s' := by
   have hL := sL_lt s₀
   have hle := h.le
@@ -535,7 +535,8 @@ theorem rest_ok {s₀ : State} (hp : APre s₀) {t : Nat} (ht : sL s₀ - 1024 *
       have := Cof_le (s₀ := s₀) (by omega_arith); omega_arith
     exact tailCall_ok hp hC ht h₁
   · simp only [decide_eq_false_iff_not] at hs
-    exact WP.mono (last16Sel_ok hp (Cof_ok hp) (by omega_arith) ht h₁) fun s' ⟨hpost, _⟩ => post_of_V hp hpost
+    exact WP.mono (last16Sel_ok hp (Cof_ok hp) (by omega_arith) ht h₁) fun s' ⟨hg, hpost, _⟩ =>
+      post_of_V hp ⟨hg, hpost⟩
 
 /-! ## The whole function -/
 
@@ -544,7 +545,7 @@ theorem xorSplit_eq : xorSplit =
     (.seq (.block (loopArgs ++ Impl.ChaCha20.X86_64.Avx512Tail.consts ++ consts ++
       ([.alu .cmp .rdx (.imm 1024)] : List Instr)))
     (.seq (.ite .b (.block []) (.loop bodySel .ae))
-    (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b (.call "vg_chacha20_xor_avx512" xor) last16Sel)))))) := rfl
+    (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b (.seq (.block [.mov .r8 (.reg .rsi)]) (.call "vg_chacha20_xor_avx512" xor)) last16Sel)))))) := rfl
 
 theorem correct {s₀ : State} (hp : APre s₀) :
     WP isa xorSplit s₀ fun s' => gprPreserved s₀ s' ∧ xorSplitX86_64.post s₀ s' := by

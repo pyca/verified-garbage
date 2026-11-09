@@ -1,4 +1,4 @@
-use super::*;
+use super::{DRAW_BATCH, Error, PrivateKey, vec};
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -25,7 +25,7 @@ fn cavp_generated_keys() {
         let y = hex(&v["Y"], p.len());
         let x = hex(&v["X"], q.len());
         // A published x is below q, so it is accepted as the first draw.
-        let key = PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+        let key = PrivateKey::generate_from(&p, &q, &g, |buf| {
             for chunk in buf.chunks_exact_mut(q.len()) {
                 chunk.copy_from_slice(&x);
             }
@@ -48,9 +48,12 @@ fn generated_key_rejection_and_replay() {
     let v = &cases[0];
     let (p, q, g) = domain(v);
     let x = hex(&v["X"], q.len());
+    // Three rejected batches, each a refill that keeps the tape so far and
+    // asks only for the bytes after it, then the published scalar.
     let mut draws = 0;
-    let key = PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
-        if draws == 0 {
+    let key = PrivateKey::generate_from(&p, &q, &g, |buf| {
+        assert_eq!(buf.len(), DRAW_BATCH * q.len());
+        if draws < 3 {
             buf.fill(0);
         } else {
             for chunk in buf.chunks_exact_mut(q.len()) {
@@ -61,11 +64,11 @@ fn generated_key_rejection_and_replay() {
         Ok(())
     })
     .unwrap();
-    assert_eq!(draws, 2);
+    assert_eq!(draws, 4);
     assert_eq!(&key.packed.0[3 * p.len() + q.len()..], &x[..]);
     let digest = [0x42; 32];
     let signature = key.sign(&digest).unwrap();
-    assert!(key.public_key().verify(&digest, &signature));
+    assert!(key.public_key().verify(&digest, &signature).is_ok());
 }
 
 #[test]
@@ -79,7 +82,7 @@ fn generated_key_rejection_within_batch() {
     let x = hex(&cases[0]["X"], q.len());
     let y = hex(&cases[0]["Y"], p.len());
     let mut requests = 0;
-    let key = PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+    let key = PrivateKey::generate_from(&p, &q, &g, |buf| {
         requests += 1;
         buf.fill(0);
         // Reject the first draw and accept the published scalar next,
@@ -109,8 +112,8 @@ fn generated_keys_sign_and_verify() {
         assert_ne!(key.packed.0, other.packed.0);
         let digest = [0x5a; 32];
         let signature = key.sign(&digest).unwrap();
-        assert!(key.public_key().verify(&digest, &signature));
-        assert!(!other.public_key().verify(&digest, &signature));
+        assert!(key.public_key().verify(&digest, &signature).is_ok());
+        assert!(!other.public_key().verify(&digest, &signature).is_ok());
     }
 }
 
@@ -127,18 +130,17 @@ fn generation_errors() {
         (&p, &q[1..], &g),
     ] {
         assert_eq!(
-            PrivateKey::generate_with_rng(p, q, g, |_| panic!("no draw for bad widths"))
-                .unwrap_err(),
+            PrivateKey::generate_from(p, q, g, |_| panic!("no draw for bad widths")).unwrap_err(),
             Error::Length
         );
     }
     assert_eq!(
-        PrivateKey::generate_with_rng(&p, &q, &g, |_| Err(Error::Randomness)).unwrap_err(),
+        PrivateKey::generate_from(&p, &q, &g, |_| Err(Error::Randomness)).unwrap_err(),
         Error::Randomness
     );
     let mut draws = 0;
     assert_eq!(
-        PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+        PrivateKey::generate_from(&p, &q, &g, |buf| {
             draws += 1;
             if draws == 1 {
                 buf.fill(0);
@@ -152,7 +154,7 @@ fn generation_errors() {
     );
     draws = 0;
     assert_eq!(
-        PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+        PrivateKey::generate_from(&p, &q, &g, |buf| {
             buf.fill(0);
             draws += 1;
             Ok(())
@@ -166,7 +168,7 @@ fn generation_errors() {
     *minus_one.last_mut().unwrap() -= 1;
     draws = 0;
     assert_eq!(
-        PrivateKey::generate_with_rng(&p, &q, &minus_one, |buf| {
+        PrivateKey::generate_from(&p, &q, &minus_one, |buf| {
             buf.fill(1);
             draws += 1;
             Ok(())
@@ -200,7 +202,7 @@ fn imported_private_components() {
         let key = PrivateKey::from_private_components(&p, &q, &g, &x).unwrap();
         assert_eq!(key.packed.0, [&p[..], &q, &g, &y, &x].concat());
         let signature = key.sign(b"imported key").unwrap();
-        assert!(key.public_key().verify(b"imported key", &signature));
+        assert!(key.public_key().verify(b"imported key", &signature).is_ok());
         for bad_x in [vec![0; q_len], q.clone(), vec![255; q_len]] {
             assert_eq!(
                 PrivateKey::from_private_components(&p, &q, &g, &bad_x).unwrap_err(),
@@ -246,7 +248,7 @@ fn imported_private_components() {
 #[test]
 fn legacy_2048_160_key_generation() {
     let (p, q, g) = crate::dsa::tests::legacy_vectors::parameters();
-    let key = PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+    let key = PrivateKey::generate_from(&p, &q, &g, |buf| {
         assert_eq!(buf.len(), DRAW_BATCH * 20);
         buf.fill(0);
         buf[19] = 1;
@@ -257,7 +259,7 @@ fn legacy_2048_160_key_generation() {
     assert_eq!(&key.public.packed[2 * p.len() + q.len()..], g);
     let digest = [0x42; 32];
     let signature = key.sign(&digest).unwrap();
-    assert!(key.public_key().verify(&digest, &signature));
+    assert!(key.public_key().verify(&digest, &signature).is_ok());
 }
 
 #[test]
@@ -271,5 +273,6 @@ fn legacy_2048_160_private_import() {
     assert!(
         key.public_key()
             .verify(b"legacy private import", &signature)
+            .is_ok()
     );
 }

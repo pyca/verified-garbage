@@ -211,15 +211,4 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbRISCV64 dir).pre s₀) :
   exact ecbWith_wp .a3 (keys dir) dir hrd hwr dSS dDS fitK fitD fitB hal
     fun _ hk₁ a0₁ m₁ _ => keys_wp dir hk₁ a0₁ m₁
 
-/-- The direction `vg_sm4_prepare_keys`'s `decrypt` selects. -/
-def dirOf (decrypt : BitVec 64) : Dir := if decrypt = 0 then .encrypt else .decrypt
-
-theorem specDirA_dirOf (decrypt : BitVec 64) :
-    specDirA (dirOf decrypt) = Proof.Sm4.directionOf decrypt.toNat := by
-  unfold dirOf Proof.Sm4.directionOf
-  by_cases h : decrypt = 0
-  · subst h; rfl
-  · have h' : decrypt.toNat ≠ 0 := fun h' => h (BitVec.eq_of_toNat_eq h')
-    simp only [h, h', ite_false]; rfl
-
 end VG.Proof.Sm4.RISCV64

@@ -109,7 +109,7 @@ by the code of `vg_chacha20_xor_split_avx512`, inline (its own call of
 bytes of `src` after the first `m`; then `rsi` at `buf` (`ctx + 128`), as
 `vg_chacha20_xor` leaves it. -/
 def cryptBigSplit : Prog isa :=
-  .seq (cryptPre 960 1024 6)
+  .seq (cryptPre 960 1024 6 false)
   (.seq (.block splitArgs)
   (.seq ChaCha20.X86_64.Avx512.xorSplit
     (.block (ptr .rsi .r15 128))))

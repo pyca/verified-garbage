@@ -67,9 +67,6 @@ def Stab (F : RpIn → State → Prop) (Q : Nat → Prop) : Prop :=
 /-- Facts that writes to the arrays keep. -/
 abbrev Arr (F : RpIn → State → Prop) : Prop := Stab F fun y => 256 ≤ y
 
-theorem Stab.mono {F : RpIn → State → Prop} {Q Q' : Nat → Prop} (h : Stab F Q) (hQ : ∀ y, Q' y → Q y) : Stab F Q' :=
-  fun I s t P hF hf hP h1 h2 => h I s t P hF hf (fun y hy => ⟨hQ y (hP y hy).1, (hP y hy).2⟩) h1 h2
-
 theorem stab_true {Q : Nat → Prop} : Stab (fun _ _ => True) Q := fun _ _ _ _ _ _ _ _ _ => trivial
 
 /-- A header word, which writes elsewhere keep. -/
@@ -133,11 +130,6 @@ theorem GD.same {w : Nat → Nat} {F : RpIn → State → Prop} {p : RpP} {s t :
     GD w F p t :=
   h.arr (P := fun _ => False) (FrmP.of_eq hm) (fun _ h => h.elim) k hr hF
 
-/-- A header word, after writes to the arrays. -/
-theorem FrmP.hdr {B : Addr} {P : Nat → Prop} {m m' : Mem} (hf : FrmP B P m m') (hP : ∀ y, P y → 256 ≤ y)
-    {i : Nat} (hi : i < 32) : word m' B (8 * i) = word m B (8 * i) :=
-  hf.word_eq (fun y h1 h2 hy => by have := hP y hy; omega_arith) (by omega_arith)
-
 /-! ## The pieces over arrays -/
 
 section
@@ -197,8 +189,6 @@ theorem subA_ct {t a b : Nat} (ht' : t < 16) (ha : a < 16) (hb : b < 16) (hta : 
   rw [subA_eq]
   exact ws_ct RpP.B RpP.Z (fun p => w p.k) (fun _ _ h => h.ws) ht fun p s h => by
     rw [← subA_eq]; exact subA_gd ht' ha hb hta htb hF p s h
-
-theorem gr_gd {p : RpP} {s : State} (h : GR w F p s) : GD w F p s := h.1
 
 theorem addA_gd {o a b : Nat} (ho : o < 16) (ha : a < 16) (hb : b < 16) (hoa : o ≠ a) (hob : o ≠ b) (hF : Arr F)
     (p : RpP) (s : State) (h : GD w F p s) : WP isa (addA o a b) s (GD w F p) :=

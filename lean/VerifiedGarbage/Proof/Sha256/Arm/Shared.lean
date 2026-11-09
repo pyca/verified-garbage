@@ -23,11 +23,11 @@ The proofs are written against per-target contracts
 contracts of `Spec/Sha256/Contract.lean`, which the artifacts are emitted
 with.
 
-The shared contracts give the functions more scratch than these ones use (560
-bytes for `compress`, 608 for `update` and `finalize`, sized for the x86-64
-AVX2 compression function): the per-target contracts are first widened to
-that scratch (`Verified.widen`, the same code running with the same trace and
-result), then moved to the shared ones.
+The shared contracts give the functions more scratch than these ones use (608
+bytes for `update` and `finalize`, sized for the x86-64 AVX2 compression
+function): the per-target contracts are first widened to that scratch
+(`Verified.widen`, the same code running with the same trace and result), then
+moved to the shared ones.
 
 `update` and `finalize` keep their working space in a frame of their own:
 they are `updateScratch` and `finalizeScratch` (the shared contracts with
@@ -40,18 +40,6 @@ in a frame that allocates it (`Verified.stackScratch`).
 namespace VG.Proof.Sha256.Arm.Shared
 
 open _root_.VG.Arm
-
-/-- `compressArm` with 560 bytes of scratch. -/
-def compressWide : Contract Arm.isa :=
-  { Proof.Sha256.compressArm with
-    pre := fun s =>
-      let state : Region := ⟨State.addr (s.gpr .r0), 32⟩
-      let blocks : Region := ⟨State.addr (s.gpr .r1), 64 * (s.gpr .r2).toNat⟩
-      let scratch : Region := ⟨State.addr (s.gpr .r3), 560⟩
-      s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
-      state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch ∧
-      (s.gpr .r0).toNat + 32 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 64 * (s.gpr .r2).toNat ≤ 2 ^ 32 ∧
-      (s.gpr .r3).toNat + 560 ≤ 2 ^ 32 }
 
 /-- `updateArm` with 608 bytes of scratch. -/
 def updateWide : Contract Arm.isa :=
@@ -83,39 +71,23 @@ def finalizeWide : Contract Arm.isa :=
 
 theorem pfx {a : Addr} {m n : Nat} (h : Nat.ble m n = true) : Region.Prefix ⟨a, m⟩ ⟨a, n⟩ :=
   ⟨rfl, Nat.le_of_ble_eq_true h⟩
-theorem sub112 (a : Addr) : Region.Sub ⟨a, 112⟩ ⟨a, 560⟩ := Region.sub_prefix (by decide)
 theorem sub160 (a : Addr) : Region.Sub ⟨a, 160⟩ ⟨a, 608⟩ := Region.sub_prefix (by decide)
-theorem le112 {x : Nat} (h : x + 560 ≤ 2 ^ 32) : x + 112 ≤ 2 ^ 32 := by omega
 theorem le160 {x : Nat} (h : x + 608 ≤ 2 ^ 32) : x + 160 ≤ 2 ^ 32 := by omega
 
 /-- Rewrites the per-target contracts at a narrowed state (`stackArg` does
 not unfold cheaply). -/
 tactic_template "narrow" : tactic =>
   `(tactic| simp only [Proof.Sha256.compressArm, Proof.Sha256.updateArm, Proof.Sha256.finalizeArm,
-                     Proof.Sha256.countArm, compressWide, updateWide, finalizeWide, VG.Arm.stackArg_withRegions,
+                     Proof.Sha256.countArm, updateWide, finalizeWide, VG.Arm.stackArg_withRegions,
                      VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp, State.withRegions_mem,
                      State.withRegions_rd, State.withRegions_wr])
 
 /-- `narrow` at a location. -/
 tactic_template "narrow" loc:Lean.Parser.Tactic.location : tactic =>
   `(tactic| simp only [Proof.Sha256.compressArm, Proof.Sha256.updateArm, Proof.Sha256.finalizeArm,
-                     Proof.Sha256.countArm, compressWide, updateWide, finalizeWide, VG.Arm.stackArg_withRegions,
+                     Proof.Sha256.countArm, updateWide, finalizeWide, VG.Arm.stackArg_withRegions,
                      VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp, State.withRegions_mem,
                      State.withRegions_rd, State.withRegions_wr] $loc)
-
-theorem compressWide_verified (hsat : ∃ s, compressWide.pre s) :
-    Verified Arm.target Impl.Sha256.Arm.compress compressWide :=
-  Verified.widen Proof.Sha256.Arm.compress_verified
-    (fun s => [⟨State.addr (s.gpr .r0), 32⟩, ⟨State.addr (s.gpr .r3), 112⟩])
-    (fun _ h => by
-      obtain ⟨h₁, _, h₃, h₄, h₅, h₆, h₇, h₈⟩ := h
-      narrow
-      exact ⟨h₁, trivial, h₃.sub_right (sub112 _), h₄, h₅.sub_right (sub112 _), h₆, h₇, le112 h₈⟩)
-    (fun _ h => by
-      obtain ⟨_, h₂, _⟩ := h
-      rw [h₂]; exact .cons (pfx rfl) (.cons (pfx rfl) .nil))
-    (fun _ _ _ h => by narrow at h ⊢; exact h)
-    (fun _ _ _ _ h => by narrow; exact h) hsat
 
 theorem updateWide_verified (hsat : ∃ s, updateWide.pre s) :
     Verified Arm.target Impl.Sha256.Arm.Stream.update updateWide :=
@@ -148,25 +120,12 @@ theorem finalizeWide_verified (hsat : ∃ s, finalizeWide.pre s) :
     (fun _ _ _ h => by narrow at h ⊢; exact h)
     (fun _ _ _ _ h => by narrow; exact h) hsat
 
-/-- A state satisfying `compressWide.pre`. -/
-def compressSat : State := { Proof.Sha256.Arm.satState with wr := [⟨0x1000, 32⟩, ⟨0x3000, 560⟩] }
-
 /-- A state satisfying `updateWide.pre`. -/
 def updateSat : State := { Proof.Sha256.Arm.Stream.Update.sat with wr := [⟨0x1000, 96⟩, ⟨0, 608⟩] }
 
 /-- A state satisfying `finalizeWide.pre`. -/
 def finalizeSat : State :=
   { Proof.Sha256.Arm.Stream.Finalize.sat with wr := [⟨0x1000, 96⟩, ⟨0x2000, 32⟩, ⟨0x3000, 608⟩] }
-
-theorem compressWide_implies : compressWide.Implies (Proof.Sha256.compressContract Arm.abi) := by
-  contract_implies [Proof.Sha256.compressContract, Proof.Sha256.compressSig, compressWide,
-    Proof.Sha256.compressArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-    [compressSat, Proof.Sha256.Arm.satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
-    Mem.read] using compressSat
-
-theorem compress :
-    Verified Arm.target Impl.Sha256.Arm.compress (Proof.Sha256.compressContract Arm.abi) :=
-  (compressWide_verified compressWide_implies.sat_left).of_implies compressWide_implies
 
 theorem init : Verified Arm.target Impl.Sha256.Arm.Stream.init (Spec.Sha256.initContract Arm.abi) :=
   Proof.Sha256.Arm.Stream.init_verified.of_implies (by

@@ -112,7 +112,7 @@ theorem push_frame (s : State) (m : Mem) (v : BitVec 64) :
 
 theorem search_start {p : SPub} {s t : State} (h : SInput p s)
     (hx : t.gpr .r31 = p.control) (hm : t.mem = writeController s.mem p.control (entryValues s))
-    (k : Keep entryRegs s t) :
+    (k : Keep entryRegs s t) (hy : t.syms = s.syms) :
     SLive p s 0 p.attempts (framed .r0 t) := by
   have hf := writeController_frame s.mem p.control (entryValues s) (entryValues_bound s)
   have hf₁ : Frame (SInput.changes s) s.mem t.mem := by
@@ -126,7 +126,8 @@ theorem search_start {p : SPub} {s t : State} (h : SInput p s)
     hf₁.trans (frame_of_callChanges s hp)
   have hc (j : Nat) (hj : j < 16) : word (framed .r0 t).mem p.control (8 * j) = word t.mem p.control (8 * j) :=
     h.control_frame hp j hj
-  refine ⟨h, Nat.zero_le _, Nat.le_refl _, k.rd, k.wr, ?_, hx, ?_, ?_, ?_, ?_⟩
+  refine ⟨h, Nat.zero_le _, Nat.le_refl _, k.rd, k.wr, ?_, hx, ?_, ?_, ?_, ?_, hy,
+    h.table_frame hf₂ h.table⟩
   · show t.sp - 48 = p.sp - 48
     rw [k.sp, h.sp_eq]
   · intro r hr h31

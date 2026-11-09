@@ -37,18 +37,6 @@ theorem byte_top_mask (b : Byte) :
     mask_complement, ← decide_not]
   exact congrArg mask (decide_eq_decide.mpr (by omega))
 
-/-- The first significant byte must have its high bit set for an exact
-byte-aligned DSA bit length. -/
-theorem topMask_ok {s : State} {b : Byte} (h9 : s.gpr .r9 = b.zeroExtend 64) :
-    WP isa (.block [.alu .cmp .r9 (.imm 128), .alu .sbb .rax (.reg .rax), .alu .xor .rax (.imm (-1))]) s fun t =>
-      t.gpr .rax = mask (decide (128 ≤ b.toNat)) ∧ t.mem = s.mem ∧ Keep [.rax, .r9] s t := by
-  refine WP.mono (WP.keep [.rax, .r9] (Q := fun t =>
-    t.gpr .rax = mask (decide (128 ≤ b.toNat)) ∧ t.mem = s.mem) ?_ rfl)
-    fun t ⟨⟨ht, hm⟩, hk⟩ => ⟨ht, hm, hk⟩
-  xrun [h9, show BitVec.signExtend 64 (128 : BitVec 32) = 128#64 from rfl,
-    show BitVec.signExtend 64 (-1 : BitVec 32) = BitVec.allOnes 64 from rfl]
-  exact byte_top_mask b
-
 end VG.Proof.Dsa.X86_64
 end
 

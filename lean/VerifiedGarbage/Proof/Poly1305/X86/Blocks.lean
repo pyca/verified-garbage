@@ -44,11 +44,6 @@ namespace VG.Carry
 /-- `x` as a quotient and a remainder, to `generalize` both. -/
 theorem divMod (x n : Nat) : x = n * (x / n) + x % n := (Nat.div_add_mod x n).symm
 
-/-- `x = n * c + e`, with `e < n`, from `c = x / n` and `e = x % n`. -/
-theorem of_divMod {x c e n : Nat} (hn : 0 < n) (hc : c = x / n) (he : e = x % n) :
-    x = n * c + e ∧ e < n := by
-  subst hc he; exact ⟨(Nat.div_add_mod x n).symm, Nat.mod_lt _ hn⟩
-
 /-- A reduction modulo `m` that does not wrap. -/
 theorem eq_of_mod {x y m : Nat} (h : x = y % m) (hy : y < m) : x = y :=
   h.trans (Nat.mod_eq_of_lt hy)
@@ -396,13 +391,6 @@ abbrev wv (m : Mem) (x : BitVec 32) (d : Nat) : Nat := (wd m x d).toNat
 
 /-! ## Addresses and regions -/
 
-theorem addr_toNat {x : BitVec 32} {d : Nat} (h : x.toNat + d < 2 ^ 32) :
-    (addr x d).toNat = x.toNat + d := by
-  rw [addr_eq h, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  have := x.isLt
-  rw [Nat.mod_eq_of_lt (a := x.toNat) (by omega_using []), Nat.mod_eq_of_lt (a := d) (by omega_using [h])]
-  exact Nat.mod_eq_of_lt (by omega_using [h])
-
 /-- The region of `n` bytes at `[x + d]`. -/
 abbrev sub (x : BitVec 32) (d n : Nat) : Region := ⟨addr x d, n⟩
 
@@ -463,19 +451,12 @@ theorem inRW {d n : Nat} (hd : d + n ≤ 128) (hn : 0 < n) :
     InRegions (s.rd ++ s.wr) (addr st d) n :=
   ⟨_, List.mem_append_right _ h.wr, sR_contains h.fit hd hn⟩
 
-theorem inW' {d : Nat} (hd : d + 4 ≤ 128) : InRegions s.wr (addr (s.gpr .edi) d) 4 := by
-  rw [h.edi]; exact h.inW hd (by decide)
-
 theorem inRW' {d : Nat} (hd : d + 4 ≤ 128) : InRegions (s.rd ++ s.wr) (addr (s.gpr .edi) d) 4 := by
   rw [h.edi]; exact h.inRW hd (by decide)
 
 /-- The context survives a change of other registers and of memory. -/
 theorem keep {s' : State} (he : s'.gpr .edi = s.gpr .edi) (hw : s'.wr = s.wr) : Ctx st s' :=
   ⟨he.trans h.edi, h.fit, hw ▸ h.wr⟩
-
-theorem wd_ne (m : Mem) (w : BitVec 32) {d e : Nat} (hd : d + 4 ≤ 128) (he : e + 4 ≤ 128)
-    (hde : d + 4 ≤ e ∨ e + 4 ≤ d) : wd (m.writeW (addr st e) w) st d = wd m st d :=
-  wd_write_ne m w (by have := h.fit; omega_using [hd, this]) (by have := h.fit; omega_using [he, this]) hde
 
 end Ctx
 
@@ -2218,11 +2199,6 @@ theorem okList_ok {st : BitVec 32} {blk : Bool} {rs : List Reg} {S : List Nat}
     intro hbk d hd
     rw [hs.rd, hs.wr, hs.gpr _ hrs.2]; exact hb hbk d hd
 
-/-- The words a `Safe` block leaves. -/
-theorem Safe.after {st : BitVec 32} {rs : List Reg} {S : List Nat} {s s' : State}
-    (h : Safe st rs S s s') : After st s s' (words s'.mem st) rs :=
-  ⟨words_ok _ _, h.frame, h.gpr, h.rd, h.wr⟩
-
 /-- A run of `c` satisfies `Q₁`, and `Q₂` where `C` holds (runs are deterministic). -/
 theorem WP.cond {c : Prog isa} {s : State} {Q₁ Q₂ : State → Prop} {C : Prop}
     (h₁ : WP isa c s Q₁) (h₂ : C → WP isa c s Q₂) : WP isa c s fun s' => Q₁ s' ∧ (C → Q₂ s') := by
@@ -2488,8 +2464,6 @@ abbrev retR : Region := ⟨(s₀.gpr .esp).setWidth 64, 4⟩
 end
 
 theorem arg0_eq (s : State) : s.mem.readW (addr (s.gpr .esp) 4) 32 = arg s 0 := rfl
-
-theorem argAddr_eq (s : State) (i : Nat) : argAddr s i = addr (s.gpr .esp) (4 + 4 * i) := rfl
 
 /-- An argument slot's address, in the argument region. -/
 theorem arg_contains {s : State} {n : Nat} (hfit : (s.gpr .esp).toNat + 4 + n ≤ 2 ^ 32) {i : Nat}
@@ -2990,21 +2964,6 @@ theorem blocks_agree₀ {s₁ s₂ : State} (h₁ : Proof.Poly1305.blocksX86.pre
     rcases this with rfl | rfl | rfl
     exacts [a0, a1, a2]
 
-/-- Memory holding the arguments `0x1000, 0x2000, 0` at `0x4004`. -/
-def blocksSatMem : Mem := fun a => bif Nat.beq a.toNat 0x4005 then 0x10 else bif Nat.beq a.toNat 0x4009 then 0x20 else 0
-
-/-- A state satisfying the precondition (with no blocks). -/
-def blocksSat : State where
-  gpr r := match r with
-    | .esp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem := blocksSatMem
-  rd := [⟨0x2000, 0⟩, ⟨0x4004, 12⟩]
-  wr := [⟨0x1000, 128⟩]
-
 theorem blocks_ok (s : State) (hs : Proof.Poly1305.blocksX86.pre s) :
     ∃ t s', Exec isa blocks s t s' ∧ abiPreserved s s' ∧ Proof.Poly1305.blocksX86.post s s' :=
   blocks_correct (BPre.of s hs)
@@ -3013,18 +2972,6 @@ theorem blocks_ct : ConstantTime isa Proof.Poly1305.blocksX86.pre Proof.Poly1305
     blocks :=
   VG.Taint.constantTime (A := taint) blocksτ₀ (fun _ _ h₁ h₂ hp => blocks_agree₀ h₁ h₂ hp)
     (by taint_decide)
-
-theorem blocks_verified :
-    Verified X86.target Impl.Poly1305.X86.blocks (Proof.Poly1305.blocksContract X86.abi) :=
-  Verified.of_correct blocks_ok blocks_ct (by
-    have a0 : arg blocksSat 0 = 0x1000 := by decide
-    have a1 : arg blocksSat 1 = 0x2000 := by decide
-    have a2 : arg blocksSat 2 = 0 := by decide
-    have e : argAddr blocksSat 0 = 0x4004 := by decide
-    have esp : blocksSat.gpr .esp = 0x4000 := rfl
-    sig_implies [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig, Proof.Poly1305.blocksX86,
-      X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      [a0, a1, a2, e, esp] using Proof.Poly1305.X86.blocksSat)
 
 end VG.Proof.Poly1305.X86
 

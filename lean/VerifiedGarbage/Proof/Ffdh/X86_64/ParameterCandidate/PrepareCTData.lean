@@ -45,8 +45,4 @@ def R2Ready (d : PreparePublic) (s : State) : Prop :=
     wv s.mem d.I (slot d.w VG.Impl.Bignum.X86_64.Public.aR2) d.w = 2 ^ (64 * d.w) * 2 ^ (64 * d.w) % d.N ∧
     d.N % 2 = 1 ∧ 1 < d.N
 
-theorem R2Ready.header {d : PreparePublic} {s : State} (h : R2Ready d s) : InnerHeader d.inner s := by
-  obtain ⟨_, hg, _, _, hw, hk, _⟩ := h
-  exact ⟨hk, good_hp hg hw⟩
-
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

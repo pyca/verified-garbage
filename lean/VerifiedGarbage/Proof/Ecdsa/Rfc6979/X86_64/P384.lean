@@ -53,6 +53,11 @@ theorem coreK_p384 : coreK Impl.Ecdsa.X86_64.p384 = Proof.Ecdsa.X86_64.P384.sign
     false_implies, implies_true, and_true, Proof.Ecdsa.X86_64.P384.signX86_64, Proof.Ecdsa.X86_64.P384.TblHeld]
   rfl
 
+/-! ## The curve's blocks -/
+
+theorem p384_blk : RfcT (cfgC Impl.Ecdsa.X86_64.p384 false 0) := by rfcT_decide
+
+
 /-- P-384, with the group law `hL`, the comb's tables `hT` and the inversions'
 soundness `hI`. -/
 def p384 (hL : Weierstrass.Law Spec.P384.curve)
@@ -61,12 +66,12 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve)
   E := Impl.Ecdsa.X86_64.p384
   inst := Spec.Ecdsa.P384.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inr (.inl rfl), .inl rfl, p384_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := Proof.Ecdsa.X86_64.P384.p384_sh
-  coreN := "vg_ecdsa_p384_sign"
+  coreN := "vg_ecdsa_p384_sign_k"
   coreC := Impl.Ecdsa.X86_64.signP384
   coreX := by rw [coreK_p384]; exact Proof.Ecdsa.X86_64.P384.sign_call_x86 hL hT hI
   coreCT := by rw [coreK_p384]; exact Proof.Ecdsa.X86_64.P384.sign_ct
@@ -74,8 +79,6 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  reduceSp := Function.const _ (by decide +kernel)
-  reduceMx := Function.const _ (by decide +kernel)
+  blk := p384_blk
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

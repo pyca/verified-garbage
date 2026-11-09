@@ -28,28 +28,4 @@ theorem pushed_bytes {s : State} (h : contract.pre s) {r : Region}
   obtain rfl := List.mem_singleton.mp hr
   exact far.sub_right A.savedSub
 
-theorem framed_result_ok {s : State} (h : contract.pre s) :
-    WP isa VG.Impl.RsaKeyGen.X86.Key.code s fun t =>
-      abiPreserved s t ∧ EncodedResult (callEnvironment s) s.mem t := by
-  have v := call_valid h
-  have A := call_layout h
-  have D := call_separation h
-  have Z := call_sizes h
-  have eBytes : Spec.Rsa.bytesAt (Compact.entered s).mem (callEnvironment s).exponentRegion.base
-      (callEnvironment s).exponentRegion.len =
-      Spec.Rsa.bytesAt s.mem (callEnvironment s).exponentRegion.base (callEnvironment s).exponentRegion.len :=
-    pushed_bytes h D.stackExponent (by change (arg s 15).toNat < 2 ^ 64; have := (arg s 15).isLt; omega)
-  have primeBytes (i : Nat) (hi : i < 7) :
-      Spec.Rsa.bytesAt (Compact.entered s).mem ((callEnvironment s).outputRegion i).base ((callEnvironment s).outputRegion i).len =
-        Spec.Rsa.bytesAt s.mem ((callEnvironment s).outputRegion i).base ((callEnvironment s).outputRegion i).len := by
-    rw [Z.outputRegion hi]
-    apply pushed_bytes h (D.stackOutput i hi)
-    change (arg s (2 * i + 1)).toNat < 2 ^ 64
-    have := (arg s (2 * i + 1)).isLt
-    omega
-  refine WP.mono (framed_ok h) fun t ⟨preserved, R⟩ => ?_
-  unfold BodyOutcome at R
-  rw [eBytes, primeBytes 2 (by decide), primeBytes 3 (by decide)] at R
-  exact ⟨preserved, BodyOutcome.encoded v R⟩
-
 end VG.Proof.RsaKeyGen.X86.Key

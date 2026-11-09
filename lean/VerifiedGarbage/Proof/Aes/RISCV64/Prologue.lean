@@ -67,8 +67,6 @@ theorem savedOffs_range : ∀ p ∈ savedOffs, 320 ≤ p.2 ∧ p.2 + 8 ≤ 320 +
 /-- The registers `savedOffs` saves are the preserved ones. -/
 theorem savedOffs_regs : savedOffs.map Prod.fst = RISCV64.preserved := by decide
 
-theorem not_saved_sb : sb ∉ savedOffs.map Prod.fst := by decide
-
 theorem not_saved_ra : Reg.ra ∉ savedOffs.map Prod.fst := by decide
 
 /-! ## The masks -/

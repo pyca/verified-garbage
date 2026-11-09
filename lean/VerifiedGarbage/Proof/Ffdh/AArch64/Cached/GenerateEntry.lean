@@ -27,13 +27,6 @@ def generationSaveMemory (m : Mem) (B xp yp dp dl k rp ctx : Addr) : Mem :=
  ((((((m.writeW (off B (8*sX)) xp).writeW (off B (8*sY)) yp).writeW (off B (8*sDom)) dp).writeW
  (off B (8*sDL)) dl).writeW (off B (8*sLen)) k).writeW (off B (8*sRand)) rp).writeW (off B (8*sCtx)) ctx
 
-theorem generationSave_headers (m : Mem) (B xp yp dp dl k rp ctx : Addr) :
- let t := generationSaveMemory m B xp yp dp dl k rp ctx
- word t B (8*sX)=xp ∧ word t B (8*sY)=yp ∧ word t B (8*sDom)=dp ∧
- word t B (8*sDL)=dl ∧ word t B (8*sLen)=k ∧ word t B (8*sRand)=rp ∧ word t B (8*sCtx)=ctx := by
- simp (disch:=decide) only [generationSaveMemory,hdrStore_hdr,word_writeW_self]
- decide
-
 theorem generationSave_range (m : Mem) (B xp yp dp dl k rp ctx : Addr) :
  Outside B 128 80 m (generationSaveMemory m B xp yp dp dl k rp ctx) := by
  intro q hq

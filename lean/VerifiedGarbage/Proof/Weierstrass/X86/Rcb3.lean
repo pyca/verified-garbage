@@ -33,17 +33,4 @@ theorem ofN_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size
     · exact Or.inl hx
   · exact congrArg₂ Prod.mk (ofN_run hN hA E 6) (congrArg₂ Prod.mk (ofN_run hN hA E 7) (ofN_run hN hA E 8))
 
-/-- `o = p + q` by Algorithm 4 (`a = -3`, with `b` in `S.b3`). -/
-theorem rcb3_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
-    (hW : WkOk F M m size wk Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
-    (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat} {E : Nat → Fin m}
-    {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (fprog F (rcb3 S p q o)) s fun s' => ProgKeep M base wk (rcbW S o) s s' ∧
-      Inv M base size m Sl ([o.x, o.y, o.z] ++ V) (runOps (rcb3 S p q o) E) s' ∧
-      (runOps (rcb3 S p q o) E o.x, runOps (rcb3 S p q o) E o.y, runOps (rcb3 S p q o) E o.z) =
-        VG.Proof.Weierstrass.rcbAdd3 (E S.b3) (E p.x) (E p.y) (E p.z) (E q.x) (E q.y) (E q.z) := by
-  rw [rcb3_eq]
-  exact WP.mono (ofN_ok hL hW hm rcb3N_ok hA hSl hI hV) fun s' ⟨k, I, v⟩ =>
-    ⟨k, I, v.trans (rcb3N_run _)⟩
-
 end VG.Proof.Weierstrass.X86

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.X86.Dec.Unmask
 import VerifiedGarbage.Proof.RsaOaep.X86.Certs
 import VerifiedGarbage.Proof.RsaOaep.X86.Taint
-import VerifiedGarbage.Proof.RsaPss.X86.VfTail
+import VerifiedGarbage.Proof.RsaPss.X86.CmpLoop
 import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 import VerifiedGarbage.Proof.RsaPss.X86.CtMgf
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit

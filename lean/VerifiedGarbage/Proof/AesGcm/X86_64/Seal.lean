@@ -148,23 +148,6 @@ theorem OutWDS.oneFrameB {W D SP : Addr} {n : Nat} {X : Region} (h : OutWDS W D 
   · exact h _ (.inr (.inl fun _ h => h))
   · exact h _ (.inr (.inr fun _ h => h))
 
-theorem OutWDS.oneFrame {W D SP : Addr} {n : Nat} {X : Region} (h : OutWDS W D SP n X) :
-    ∀ r ∈ oneFrame W D SP n, X.Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact h _ (.inl (Region.sub_prefix (by decide)))
-  · exact h _ (.inl (Lay.wSub (by decide)))
-  · exact h _ (.inl (Lay.wSub (by decide)))
-  · exact h _ (.inr (.inl fun _ h => h))
-  · exact h _ (.inr (.inr (below_sub (by decide) (by decide))))
-
-/-- `OutWDS` for the data from byte `k` on. -/
-theorem OutWDS.drop {W D SP : Addr} {n k : Nat} {X : Region} (h : OutWDS W D SP n X) (hk : k ≤ n) :
-    OutWDS W (D + BitVec.ofNat 64 k) SP (n - k) X := fun r hr =>
-  h r (hr.imp_right fun hr => hr.imp_left fun hs a ha =>
-    Offset.sub_base D (d := k) (n := n - k) (k := n) (by omega) a (hs a ha))
-
 /-- The address of `tag`, the argument at `[SP + 24]`, is outside `W`, the
 data and the stack below `SP`. -/
 theorem OneCtx.arg24 {s : State} {k : Nat} (hk : 3 ≤ k) {Ctx W SP Np A D : Addr} {nl al n : Nat}

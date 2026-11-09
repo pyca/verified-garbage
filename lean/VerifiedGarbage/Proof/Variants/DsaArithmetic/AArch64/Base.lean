@@ -7,7 +7,10 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
+public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCheckedVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
+public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedSignVerified
+public import VerifiedGarbage.Proof.Dsa.AArch64.ValidatePrivateVerified
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuard
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuardCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
@@ -44,7 +47,6 @@ def variant : Backend where
   suffix := ""
   features := []
   signVerified := signing_verified Mont.calledProductEight
-  verifyVerified := verifying_verified Mont.calledProductEight
   validateVerified := validating_verified Mont.calledProductEight
   prevalidatedVerified := prevalidated_verified Mont.calledProductEight
   validateSp := by decide +kernel
@@ -57,7 +59,14 @@ def variant : Backend where
   deriveDepth := by decide +kernel
   signSp := by decide +kernel
   signDepth := by decide +kernel
+  prevalidatedSignVerified := prevalidated_sign_verified Mont.calledProductEight
+  prevalidatedSignSp := by decide +kernel
+  prevalidatedSignDepth := by decide +kernel
+  validatePrivateVerified := validating_private_verified Mont.calledProductEight
+  validatePrivateSp := by decide +kernel
+  deriveCheckedVerified := derive_checked_verified Mont.calledProductEight
+  deriveCheckedSp := by decide +kernel
+  deriveCheckedDepth := by decide +kernel
   stackBound := by decide
-  verifySp := by decide +kernel
 
 end VG.Proof.Variants.DsaArithmetic.AArch64.Base

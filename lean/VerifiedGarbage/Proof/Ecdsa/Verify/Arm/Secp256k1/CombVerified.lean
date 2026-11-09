@@ -1,10 +1,25 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Hash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Hash
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.CombCT
 public import VerifiedGarbage.Proof.Secp256k1.Arm.CombSat
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PlainSimp
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.CombCT
+meta import VerifiedGarbage.Proof.Secp256k1.Arm.CombSat
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! The generator comb satisfies the public verification contract. -/
 
@@ -21,8 +36,8 @@ def combVerifySat : State := {combSatState with
 theorem combVerify_sat : combVerifySpec.pre combVerifySat := by
   have held := combSat_held
   generalize eqs : combVerifySat=s
-  sig_pre [combVerifySpec,Spec.Ecdsa.Secp256k1.inst,Spec.Ecdsa.Instance.verifyContract,
-    Spec.Ecdsa.Instance.verifySig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
+  sig_pre [combVerifySpec,Spec.Ecdsa.Secp256k1.inst,Proof.Ecdsa.verifyContract,
+    Proof.Ecdsa.verifySig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
     Loc.val,State.addr,secp256k1CombConsts,Abi.withConsts,Abi.constRegions,Abi.constsHeld,stackBelow]
   subst s
   rw [comb_words_length]
@@ -48,14 +63,14 @@ theorem combVerifyWith_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) (um 
   · obtain ⟨tr,t,exec,keep,post⟩ := combVerify_ok hC hs
     exact ⟨tr,t,exec,VG.Proof.Ecdsa.Arm.abi_of_saved keep.saved keep.sp,post⟩
   · intro s t _ post
-    sig_post [combVerifySpec,Spec.Ecdsa.Secp256k1.inst,Spec.Ecdsa.Instance.verifyContract,
-      Spec.Ecdsa.Instance.verifySig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
+    sig_post [combVerifySpec,Spec.Ecdsa.Secp256k1.inst,Proof.Ecdsa.verifyContract,
+      Proof.Ecdsa.verifySig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
       Loc.val,State.addr,Abi.withConsts]
     rw [show (t.gpr .r1++t.gpr .r0).setWidth 32=t.gpr .r0 from BitVec.setWidth_append_eq_right]
     exact post
   · intro s t _ _ pub
-    sig_pub [combVerifySpec,Spec.Ecdsa.Secp256k1.inst,Spec.Ecdsa.Instance.verifyContract,
-      Spec.Ecdsa.Instance.verifySig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
+    sig_pub [combVerifySpec,Spec.Ecdsa.Secp256k1.inst,Proof.Ecdsa.verifyContract,
+      Proof.Ecdsa.verifySig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
       Loc.val,State.addr,secp256k1CombConsts,Abi.withConsts] at pub
     obtain ⟨sp,sy,_inputs,h0,h1,h2,h3⟩ := pub
     exact ⟨⟨sp,h0,h1,h2,h3⟩,sy⟩
@@ -67,5 +82,27 @@ theorem combVerify_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) :
 theorem combVerifyU_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) :
     Verified Arm.target verifySecp256k1CombU combVerifySpec :=
   combVerifyWith_verified hC true combVerifyU_ct
+
+/-- `combVerifySat`'s 100 bytes below `sp + 4` are free. -/
+theorem hash_sat : ∃ s, (Spec.Ecdsa.Secp256k1.inst.verifyHashContract (Arm.abi.withConsts secp256k1CombConsts) 96).pre s :=
+  VG.Proof.Ecdsa.Verify.Arm.Hash.hashSat_cons (by decide) combVerify_sat (by decide) (by decide) fun r hr => by
+    simp only [combVerifySat, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+
+/-- `vg_ecdsa_secp256k1_verify`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash (`verifyHash_verified_cons`). -/
+theorem verifyHash_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) :
+    Verified Arm.target (Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false verifySecp256k1Comb)
+      (Spec.Ecdsa.Secp256k1.inst.verifyHashContract (Arm.abi.withConsts secp256k1CombConsts) 96) :=
+  VG.Proof.Ecdsa.Verify.Arm.Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.secp256k1_len (by decide) (combVerify_verified hC)
+    ⟨_, by taint_decide⟩ hash_sat
+
+/-- `vg_ecdsa_secp256k1_verify_umaal`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash (`verifyHash_verified_cons`). -/
+theorem verifyHashU_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) :
+    Verified Arm.target (Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false verifySecp256k1CombU)
+      (Spec.Ecdsa.Secp256k1.inst.verifyHashContract (Arm.abi.withConsts secp256k1CombConsts) 96) :=
+  VG.Proof.Ecdsa.Verify.Arm.Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.secp256k1_len (by decide) (combVerifyU_verified hC)
+    ⟨_, by taint_decide⟩ hash_sat
 
 end VG.Proof.Ecdsa.Verify.Arm.Secp256k1

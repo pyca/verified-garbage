@@ -49,32 +49,11 @@ def powP48 : List Instr :=
   ([.vmovdqu32Store (at_ .r11 832) .xmm1] : List Instr)
 
 /-- `StitchZ.big` with the tables loaded. -/
-def bigP : Prog isa :=
-  .seq (.block powP48) (.seq (batch 4 fun _ => []) (.seq (batch 8 fun _ => [])
-    (.seq (.loop body48 .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv))))))
+def bigP (ld : Bool := false) : Prog isa := .seq (.block powP48) (StitchZ.bigRest ld)
 
 /-- `StitchZ.bigD` with the tables loaded. -/
 def bigDP : Prog isa :=
   .seq (.block powP48) (.seq (.loop dbody48 .ae) (.block [.vmovdqu32Load .xmm1 (at_ .r11 832)]))
-
-/-- `StitchZ.enc` with the powers loaded. -/
-def enc : Prog isa :=
-  .seq (.block setupP)
-    (.seq first
-      (.seq (.block [.alu .cmp .r9 (.imm 256)])
-        (.seq (.ite .b (.block []) bigP)
-          (.seq (.block [.alu .cmp .r9 (.imm 32)])
-            (.seq (.ite .b (.block []) (.loop body .ae))
-              (.block (storeCtr ++ lastG ++ storeY)))))))
-
-/-- `StitchZ.dec` with the powers loaded. -/
-def dec : Prog isa :=
-  .seq (.block setupP)
-    (.seq (.block [.alu .cmp .r9 (.imm 256)])
-      (.seq (.ite .b (.block []) bigDP)
-        (.seq (.block [.alu .cmp .r9 (.imm 16)])
-          (.seq (.ite .b (.block []) (.loop dbody .ae))
-            (.block (storeCtr ++ storeY))))))
 
 end VG.Impl.Gcm.X86_64.StitchZR
 
@@ -88,9 +67,6 @@ open VG.Impl.Gcm.X86_64.StitchZTo (setupCTo bigRestTo encWith)
 def setupP : List Instr := StitchZR.setupGP ++ storesK .r11 pregs 0 ++ setupCTo ++ setupZ
 
 /-- The larger prepared tables followed by the existing out-of-place loop. -/
-def bigPTo : Prog isa := .seq (.block StitchZR.powP48) bigRestTo
-
-/-- Out-of-place encryption using the prepared context. -/
-def encP : Prog isa := encWith setupP bigPTo 256
+abbrev bigPTo : Prog isa := StitchZR.bigP true
 
 end VG.Impl.Gcm.X86_64.StitchZRTo

@@ -26,20 +26,6 @@ def scanAfter (bs : List Byte) : Nat → Nat × Byte
   | 0 => (0, 0)
   | j + 1 => scanNext (scanAfter bs j) (bs.length - j) (bs.getD j 0)
 
-theorem scanAfter_bound (bs : List Byte) (hl : bs.length < 2 ^ 32) :
-    ∀ j, (scanAfter bs j).1 < 2 ^ 32 ∧ ((scanAfter bs j).1 = 0 → (scanAfter bs j).2 = 0)
-  | 0 => ⟨by simp [scanAfter], fun _ => rfl⟩
-  | j + 1 => by
-    have ih := scanAfter_bound bs hl j
-    unfold scanAfter scanNext
-    split
-    · rename_i hc
-      refine ⟨by simp only; omega, fun e => ?_⟩
-      simp only at e
-      exfalso; apply hc.2
-      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega)]; rfl
-    · exact ih
-
 /-- The scan before byte `j`. -/
 def ScanAt (j : Nat) (s₀ t : State) : Prop :=
   Ready s₀ t ∧ ScanState t (rQ s₀ + BitVec.ofNat 32 j) ((rQBytes s₀).drop j) (scanAfter (rQBytes s₀) j)

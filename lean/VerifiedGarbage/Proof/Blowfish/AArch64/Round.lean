@@ -33,8 +33,6 @@ structure Only (gs : List Reg) (vs : List VReg) (s s' : State) : Prop where
   g : ∀ r, r ∉ gs → s'.gpr r = s.gpr r
   v : ∀ r, r ∉ vs → s'.v r = s.v r
 
-theorem Only.refl (gs : List Reg) (vs : List VReg) (s : State) : Only gs vs s s := ⟨rfl, fun _ _ => rfl, fun _ _ => rfl⟩
-
 theorem Only.trans {gs : List Reg} {vs : List VReg} {a b c : State} (h₁ : Only gs vs a b) (h₂ : Only gs vs b c) :
     Only gs vs a c := by
   refine ⟨?_, fun r hr => (h₂.g r hr).trans (h₁.g r hr), fun r hr => (h₂.v r hr).trans (h₁.v r hr)⟩

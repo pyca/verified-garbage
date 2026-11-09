@@ -5,7 +5,6 @@
 // gives.
 
 vg_aes_expand_key_scratch_aes:
-	.arch_extension aes
 	movi v0.2d, #0
 	sub x9, x1, #24
 	sub x10, x1, #32
@@ -473,5 +472,4 @@ vg_aes_expand_key_scratch_aes:
 	str w7, [x2, #204]
 21:
 	ret
-	.arch_extension noaes
 	.p2align 6

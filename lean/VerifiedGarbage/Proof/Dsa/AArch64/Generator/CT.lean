@@ -181,7 +181,7 @@ theorem finish_ct (M : Mont) (hb : Supported pLen) :
   refine two_map (StagePublic.validate hb) (fun P t ⟨s, A, u, hP, Pd⟩ => ?_)
     (VG.Proof.Dsa.AArch64.Generation.validate_ct M pLen (qLen pLen) hb.sizes)
   subst hP
-  obtain ⟨V, W, R, h5⟩ := Pd.rep
+  obtain ⟨V, W, R, h5, _⟩ := Pd.rep
   exact ⟨Pd.lay, ⟨V, W, R, h5⟩, Pd.check_scr, Pd.check_src, rfl, rfl⟩
 
 theorem stage_ct (M : Mont) (hb : Supported pLen) :
@@ -191,7 +191,7 @@ theorem stage_ct (M : Mont) (hb : Supported pLen) :
     (fun P t ⟨s, A, u, hP, S⟩ => ?_) (fun P t t' ⟨s, A, u, hP, S⟩ hm hk => ⟨s, A, u, hP, S.congr hm hk⟩)
     (finish_ct M hb))
   subst hP
-  obtain ⟨V, W, R, _, h19⟩ := S.rep
+  obtain ⟨V, W, R, _, h19, _⟩ := S.rep
   exact ⟨_, _, V, W, S.lay, R, h19⟩
 
 def Done (hb : Supported pLen) (P : StagePublic) (t : State) : Prop :=

@@ -11,139 +11,103 @@ vg_p192_mul_mod_p:
 	add %r4, %r3, %r4
 	add %r5, %r3, %r5
 	add %r6, %r3, %r6
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 3984(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 3988(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65534
-	stw %r11, 3992(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 3996(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 4000(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 4004(%r3)
 	lis %r11, 0
 	ori %r11, %r11, 1
-	stw %r11, 3936(%r3)
+	stw %r11, 3960(%r3)
 	lis %r11, 0
 	ori %r11, %r11, 0
-	stw %r11, 3940(%r3)
-	li %r11, 0
-	std %r11, 3904(%r3)
-	std %r11, 3912(%r3)
-	std %r11, 3920(%r3)
-	std %r11, 3928(%r3)
-	addi %r7, %r3, 3984
+	stw %r11, 3964(%r3)
+	std %r15, 3904(%r3)
+	std %r16, 3912(%r3)
+	std %r17, 3920(%r3)
+	std %r18, 3928(%r3)
+	std %r19, 3936(%r3)
+	std %r20, 3944(%r3)
+	std %r21, 3952(%r3)
+	li %r15, 0
+	li %r16, 0
+	li %r17, 0
+	li %r18, 0
+	ld %r19, 0(%r6)
+	ld %r20, 8(%r6)
+	ld %r21, 16(%r6)
+	lis %r6, -1
+	ori %r6, %r6, 65535
+	lis %r7, -1
+	ori %r7, %r7, 65535
+	rldicr %r7, %r7, 32, 31
+	oris %r7, %r7, 65535
+	ori %r7, %r7, 65534
+	lis %r10, -1
+	ori %r10, %r10, 65535
 	li %r8, 3
 20:
 	ld %r9, 0(%r5)
-	li %r0, 0
-	ld %r11, 0(%r6)
-	mulhdu %r10, %r9, %r11
-	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	ld %r0, 3904(%r3)
-	addc %r11, %r11, %r0
-	addze %r0, %r10
-	std %r11, 3904(%r3)
-	ld %r11, 8(%r6)
-	mulhdu %r10, %r9, %r11
-	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	ld %r0, 3912(%r3)
-	addc %r11, %r11, %r0
-	addze %r0, %r10
-	std %r11, 3912(%r3)
-	ld %r11, 16(%r6)
-	mulhdu %r10, %r9, %r11
-	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	ld %r0, 3920(%r3)
-	addc %r11, %r11, %r0
-	addze %r0, %r10
-	std %r11, 3920(%r3)
-	ld %r10, 3928(%r3)
-	addc %r10, %r10, %r0
-	std %r10, 3928(%r3)
+	mulld %r11, %r9, %r19
+	addc %r15, %r15, %r11
+	mulld %r11, %r9, %r20
+	adde %r16, %r16, %r11
+	mulld %r11, %r9, %r21
+	adde %r17, %r17, %r11
+	addze %r18, %r18
 	li %r12, 0
 	addze %r12, %r12
-	ld %r11, 3904(%r3)
-	ld %r10, 3936(%r3)
-	mulld %r9, %r11, %r10
-	ld %r10, 0(%r7)
-	mulhdu %r0, %r9, %r10
-	mulld %r10, %r9, %r10
-	addc %r10, %r10, %r11
-	addze %r0, %r0
-	ld %r11, 8(%r7)
-	mulhdu %r10, %r9, %r11
-	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	ld %r0, 3912(%r3)
-	addc %r11, %r11, %r0
-	addze %r0, %r10
-	std %r11, 3904(%r3)
-	ld %r11, 16(%r7)
-	mulhdu %r10, %r9, %r11
-	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	ld %r0, 3920(%r3)
-	addc %r11, %r11, %r0
-	addze %r0, %r10
-	std %r11, 3912(%r3)
-	ld %r10, 3928(%r3)
-	addc %r10, %r10, %r0
-	std %r10, 3920(%r3)
+	mulhdu %r11, %r9, %r19
+	addc %r16, %r16, %r11
+	mulhdu %r11, %r9, %r20
+	adde %r17, %r17, %r11
+	mulhdu %r11, %r9, %r21
+	adde %r18, %r18, %r11
 	addze %r12, %r12
-	std %r12, 3928(%r3)
+	ori %r9, %r15, 0
+	mulld %r11, %r9, %r6
+	addc %r15, %r15, %r11
+	mulld %r11, %r9, %r7
+	adde %r16, %r16, %r11
+	mulld %r11, %r9, %r10
+	adde %r17, %r17, %r11
+	addze %r18, %r18
+	addze %r12, %r12
+	mulhdu %r11, %r9, %r6
+	addc %r15, %r16, %r11
+	mulhdu %r11, %r9, %r7
+	adde %r16, %r17, %r11
+	mulhdu %r11, %r9, %r10
+	adde %r17, %r18, %r11
+	addze %r18, %r12
 	addi %r5, %r5, 8
 	addi %r8, %r8, -1
 	cmpldi %cr0, %r8, 0
 	bne %cr0, 20b
-	ld %r11, 3904(%r3)
-	ld %r12, 0(%r7)
-	subfc %r11, %r12, %r11
+	subfc %r11, %r6, %r15
 	std %r11, 3960(%r3)
-	ld %r11, 3912(%r3)
-	ld %r12, 8(%r7)
-	subfe %r11, %r12, %r11
+	subfe %r11, %r7, %r16
 	std %r11, 3968(%r3)
-	ld %r11, 3920(%r3)
-	ld %r12, 16(%r7)
-	subfe %r11, %r12, %r11
+	subfe %r11, %r10, %r17
 	std %r11, 3976(%r3)
-	ld %r11, 3928(%r3)
-	addze %r10, %r11
+	addze %r10, %r18
 	li %r11, 0
 	subf %r10, %r10, %r11
-	ld %r11, 3904(%r3)
 	ld %r12, 3960(%r3)
-	xor %r12, %r12, %r11
+	xor %r12, %r12, %r15
 	and %r12, %r12, %r10
-	xor %r11, %r11, %r12
+	xor %r11, %r15, %r12
 	std %r11, 0(%r4)
-	ld %r11, 3912(%r3)
 	ld %r12, 3968(%r3)
-	xor %r12, %r12, %r11
+	xor %r12, %r12, %r16
 	and %r12, %r12, %r10
-	xor %r11, %r11, %r12
+	xor %r11, %r16, %r12
 	std %r11, 8(%r4)
-	ld %r11, 3920(%r3)
 	ld %r12, 3976(%r3)
-	xor %r12, %r12, %r11
+	xor %r12, %r12, %r17
 	and %r12, %r12, %r10
-	xor %r11, %r11, %r12
+	xor %r11, %r17, %r12
 	std %r11, 16(%r4)
+	ld %r15, 3904(%r3)
+	ld %r16, 3912(%r3)
+	ld %r17, 3920(%r3)
+	ld %r18, 3928(%r3)
+	ld %r19, 3936(%r3)
+	ld %r20, 3944(%r3)
+	ld %r21, 3952(%r3)
 	blr

@@ -60,6 +60,15 @@ structure ER16 (C : Ctx rbs wbs) (E : Ptr) (ek m r : List Byte) (n : Nat) (s : S
   prf : ∀ N < 2 * K.L.k + 1, bytesAt s.mem (pa s (prfO K N)) 128 = prf 2 r (BitVec.ofNat 8 N)
   rr : ∀ N < n, PolyIsW 16 s.mem (pa s (rP K N)) (cbd r N)
 
+/-- What `vg_mlkem*_kpke_encrypt` needs: `ER16` with all of `y ‖ e₁ ‖ e₂`,
+wherever the outputs of `PRF₂` were. -/
+structure ERT16 (C : Ctx rbs wbs) (E : Ptr) (ek m r : List Byte) (s : State) : Prop where
+  i : EIn K.L C E ek m r s
+  r15 : s.gpr .r15 = 1
+  ok : allOk K.L.k (rhoE K.L ek) (K.L.k * K.L.k)
+  mat : ∀ e < K.L.k * K.L.k, PolyIsW 16 s.mem (pa s (aP K e)) (aHat (rhoE K.L ek) (e / K.L.k) (e % K.L.k))
+  rr : ∀ N < 2 * K.L.k + 1, PolyIsW 16 s.mem (pa s (rP K N)) (cbd r N)
+
 /-- What `vg_mlkem*_kpke_encrypt` writes. -/
 abbrev keW (Cp : Ptr) : List (Ptr × Nat) :=
   [(Cp, K.L.ctLen), (sc K.oR, 512 * (2 * K.L.k + 1)), (sc K.oZ, kScrE)]
@@ -70,18 +79,22 @@ def tailChk (bs wbs : List (Reg × Nat)) (chk : List (Ptr × Nat) → Bool) (E C
 
 variable {K}
 
-theorem ER16.redA {C : Ctx rbs wbs} {E : Ptr} {ek m r : List Byte} {s : State} (h : ER16 K C E ek m r (2 * K.L.k + 1) s) :
+theorem ER16.toT {C : Ctx rbs wbs} {E : Ptr} {ek m r : List Byte} {s : State} (h : ER16 K C E ek m r (2 * K.L.k + 1) s) :
+    ERT16 K C E ek m r s :=
+  ⟨h.i, h.r15, h.ok, h.mat, h.rr⟩
+
+theorem ERT16.redA {C : Ctx rbs wbs} {E : Ptr} {ek m r : List Byte} {s : State} (h : ERT16 K C E ek m r s) :
     VecReducedW 16 s.mem (pa s (sc K.oA)) (K.L.k * K.L.k) := fun e he => by
   rw [KeyGen16.sc_w16]; exact (h.mat e he).1
 
-theorem ER16.redR {C : Ctx rbs wbs} {E : Ptr} {ek m r : List Byte} {s : State} (h : ER16 K C E ek m r (2 * K.L.k + 1) s) :
+theorem ERT16.redR {C : Ctx rbs wbs} {E : Ptr} {ek m r : List Byte} {s : State} (h : ERT16 K C E ek m r s) :
     VecReducedW 16 s.mem (pa s (sc K.oR)) (2 * K.L.k + 1) := fun N hN => by
   rw [KeyGen16.sc_w16]; exact (h.rr N hN).1
 
 /-- The ciphertext, to `Cp`. -/
-theorem tail_ok (hK : KpkeOk K.L) {C : Ctx rbs wbs} {E Cp : Ptr} (hE : NA E) (hCp : Cp.1 ∈ calleeSaved)
+theorem tail_okT (hK : KpkeOk K.L) {C : Ctx rbs wbs} {E Cp : Ptr} (hE : NA E) (hCp : Cp.1 ∈ calleeSaved)
     (hc : tailChk K (rbs ++ wbs) wbs C.chk E Cp = true) {ek m r : List Byte} {s : State}
-    (h : ER16 K C E ek m r (2 * K.L.k + 1) s) :
+    (h : ERT16 K C E ek m r s) :
     WP isa (K.L.kpkeEncAt Cp (sc K.oA) E (sc K.oR) (sc oM) (sc K.oZ)) s fun s' => PPostB s s' (keW K Cp) ∧
       C.Out s' ∧ s'.gpr .r15 = 1 ∧
       bytesAt s'.mem (pa s' Cp) K.L.ctLen = KPke.ct K.L.p (aHat (rhoE K.L ek)) ek m r := by
@@ -100,6 +113,14 @@ theorem tail_ok (hK : KpkeOk K.L) {C : Ctx rbs wbs} {E Cp : Ptr} (hE : NA E) (hC
     rw [rP, ← KeyGen16.sc_512] at this
     exact this
 
+theorem tail_ok (hK : KpkeOk K.L) {C : Ctx rbs wbs} {E Cp : Ptr} (hE : NA E) (hCp : Cp.1 ∈ calleeSaved)
+    (hc : tailChk K (rbs ++ wbs) wbs C.chk E Cp = true) {ek m r : List Byte} {s : State}
+    (h : ER16 K C E ek m r (2 * K.L.k + 1) s) :
+    WP isa (K.L.kpkeEncAt Cp (sc K.oA) E (sc K.oR) (sc oM) (sc K.oZ)) s fun s' => PPostB s s' (keW K Cp) ∧
+      C.Out s' ∧ s'.gpr .r15 = 1 ∧
+      bytesAt s'.mem (pa s' Cp) K.L.ctLen = KPke.ct K.L.p (aHat (rhoE K.L ek)) ek m r :=
+  tail_okT hK hE hCp hc h.toT
+
 /-- The end of K-PKE.Encrypt: `r15` as `allOk`, and the ciphertext at `Cp` if it is 1. -/
 structure EOut16 (K : Kem16) (C : Ctx rbs wbs) (Cp : Ptr) (ek m r : List Byte) (s : State) : Prop where
   out : C.Out s
@@ -111,13 +132,17 @@ structure EOut16 (K : Kem16) (C : Ctx rbs wbs) (Cp : Ptr) (ek m r : List Byte) (
 abbrev EO16ρ (K : Kem16) (C : Ctx rbs wbs) (Cp : Ptr) (ρ : List Byte) (s : State) : Prop :=
   ∃ ek m r, rhoE K.L ek = ρ ∧ EOut16 K C Cp ek m r s
 
+/-- What `vg_mlkem*_kpke_encrypt` needs, for the `ρ` of `ek`. -/
+abbrev ERT16ρ (K : Kem16) (C : Ctx rbs wbs) (E : Ptr) (ρ : List Byte) (s : State) : Prop :=
+  ∃ ek m r, rhoE K.L ek = ρ ∧ ERT16 K C E ek m r s
+
 /-- After the samples, for the `ρ` of `ek`. -/
 abbrev ER16ρ (K : Kem16) (C : Ctx rbs wbs) (E : Ptr) (ρ : List Byte) (n : Nat) (s : State) : Prop :=
   ∃ ek m r, rhoE K.L ek = ρ ∧ ER16 K C E ek m r n s
 
-theorem tail_tr (hK : KpkeOk K.L) {C : Ctx rbs wbs} {E Cp : Ptr} (hE : NA E) (hCp : Cp.1 ∈ calleeSaved)
+theorem tail_trT (hK : KpkeOk K.L) {C : Ctx rbs wbs} {E Cp : Ptr} (hE : NA E) (hCp : Cp.1 ∈ calleeSaved)
     (hc : tailChk K (rbs ++ wbs) wbs C.chk E Cp = true) {ρ : List Byte} :
-    RelCT isa (fun x y => LRel rbs wbs x y ∧ ER16ρ K C E ρ (2 * K.L.k + 1) x ∧ ER16ρ K C E ρ (2 * K.L.k + 1) y)
+    RelCT isa (fun x y => LRel rbs wbs x y ∧ ERT16ρ K C E ρ x ∧ ERT16ρ K C E ρ y)
       (K.L.kpkeEncAt Cp (sc K.oA) E (sc K.oR) (sc oM) (sc K.oZ))
       (fun x y => LRel rbs wbs x y ∧ EO16ρ K C Cp ρ x ∧ EO16ρ K C Cp ρ y) := by
   have hc' := hc
@@ -125,8 +150,17 @@ theorem tail_tr (hK : KpkeOk K.L) {C : Ctx rbs wbs} {E Cp : Ptr} (hE : NA E) (hC
   refine RelCT.stepL C.bs (RelCT.mono (kpkeEncAt_trL hK rbx_na hE rbx_na rbx_na rbx_na hc'.1)
     (fun _ _ ⟨hl, ⟨_, _, _, _, h₁⟩, ⟨_, _, _, _, h₂⟩⟩ => ⟨hl, ⟨h₁.redA, h₁.redR⟩, ⟨h₂.redA, h₂.redR⟩⟩)
     fun _ _ h => h) fun x ⟨ek, m, r, eρ, hx⟩ => ?_
-  exact WP.mono (tail_ok hK hE hCp hc hx) fun x' ⟨hP, ho, h15, hct⟩ =>
+  exact WP.mono (tail_okT hK hE hCp hc hx) fun x' ⟨hP, ho, h15, hct⟩ =>
     ⟨⟨_, hP⟩, ek, m, r, eρ, ho, by rw [h15, ifp hx.ok], fun _ => hct⟩
+
+theorem tail_tr (hK : KpkeOk K.L) {C : Ctx rbs wbs} {E Cp : Ptr} (hE : NA E) (hCp : Cp.1 ∈ calleeSaved)
+    (hc : tailChk K (rbs ++ wbs) wbs C.chk E Cp = true) {ρ : List Byte} :
+    RelCT isa (fun x y => LRel rbs wbs x y ∧ ER16ρ K C E ρ (2 * K.L.k + 1) x ∧ ER16ρ K C E ρ (2 * K.L.k + 1) y)
+      (K.L.kpkeEncAt Cp (sc K.oA) E (sc K.oR) (sc oM) (sc K.oZ))
+      (fun x y => LRel rbs wbs x y ∧ EO16ρ K C Cp ρ x ∧ EO16ρ K C Cp ρ y) :=
+  RelCT.mono (tail_trT hK hE hCp hc)
+    (fun _ _ ⟨hl, ⟨ek, m, r, e, h₁⟩, ⟨ek', m', r', e', h₂⟩⟩ => ⟨hl, ⟨ek, m, r, e, h₁.toT⟩, ⟨ek', m', r', e', h₂.toT⟩⟩)
+    fun _ _ h => h
 
 end Enc16
 

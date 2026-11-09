@@ -73,11 +73,6 @@ theorem incOp_ctr32 : IncOp Mode.ctr32Inc inc32B := by
         ← List.getD_eq_getElem?_getD, getD_rd (by omega)]
   · simp only [hl, false_and, ite_false]
 
-/-- An operation on the chaining value alone is the same on every block. -/
-theorem shift_chn {o : Op} (hd : o.dst = .chn) (hs : o.src = .chn) (hx : o.xr = none) (L st j : Nat) :
-    Op.shift L st j o = o := by
-  cases o; simp_all [Op.shift, shOff]
-
 theorem repeat_succ {α : Type} (f : α → α) (k : Nat) (x : α) : Nat.repeat f (k + 1) x = f (Nat.repeat f k x) := rfl
 
 theorem repeat_succ' {α : Type} (f : α → α) : ∀ (k : Nat) (x : α), Nat.repeat f (k + 1) x = Nat.repeat f k (f x)

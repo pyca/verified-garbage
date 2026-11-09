@@ -23,8 +23,6 @@ theorem abi_full : abi .full = VG.Arm.abi := rfl
 
 theorem abi_cached : abi .cached = VG.Arm.abi := rfl
 
-theorem abi_vetted : abi .vetted = VG.Arm.abi.withConsts VG.Impl.Ffdh.Arm.VettedGroups.tableConsts := rfl
-
 def tablePtr (sampling : GenerationPolicy) (s : State) : BitVec 32 :=
   match sampling with
   | .full | .cached => 0

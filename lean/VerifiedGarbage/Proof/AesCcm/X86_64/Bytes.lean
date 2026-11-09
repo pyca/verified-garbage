@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 Untrusted: everything here is checked by Lean. A write of a byte, a word or
 bytes into a buffer replaces those of its bytes (`bytesAt_writeBytes_at`,
-`bytesAt_writeW8_at`, `bytesAt_writeW64_at`, `bytesAt_writeW32_at`): the
+`bytesAt_writeW8_at`, `bytesAt_writeW64_at`): the
 pieces build their blocks (`Ctr₀`, `B₀`, the first block of the associated
 data, a last block padded) as lists.
 -/
@@ -62,15 +62,6 @@ theorem writeW64_eq (m : Mem) (a : Addr) (v : BitVec 64) : m.writeW a v = writeB
     simp
   · rfl
 
-theorem writeW32_eq (m : Mem) (a : Addr) (v : BitVec 32) : m.writeW a v = writeBytes m a (le4 v) := by
-  funext x
-  simp only [Mem.writeW, Mem.write, writeBytes, Proof.Cmac.length_le4]
-  split
-  · rename_i h
-    rw [Proof.Cmac.getD_le4 _ h]
-    simp
-  · rfl
-
 theorem bytesAt_writeW8_at (m : Mem) (p : Addr) {o n : Nat} (b : Byte) (h : o + 1 ≤ n) (hn : n < 2 ^ 64) :
     bytesAt (m.writeW (p + BitVec.ofNat 64 o) b) p n = (bytesAt m p n).take o ++ [b] ++ (bytesAt m p n).drop (o + 1) :=
   Proof.AesCcm.bytesAt_writeW8_at m p b h hn
@@ -78,10 +69,6 @@ theorem bytesAt_writeW8_at (m : Mem) (p : Addr) {o n : Nat} (b : Byte) (h : o + 
 theorem bytesAt_writeW64_at (m : Mem) (p : Addr) {o n : Nat} (v : BitVec 64) (h : o + 8 ≤ n) (hn : n < 2 ^ 64) :
     bytesAt (m.writeW (p + BitVec.ofNat 64 o) v) p n = (bytesAt m p n).take o ++ le8 v ++ (bytesAt m p n).drop (o + 8) := by
   rw [writeW64_eq, bytesAt_writeBytes_at _ _ _ (by rw [Proof.Cmac.length_le8]; exact h) hn, Proof.Cmac.length_le8]
-
-theorem bytesAt_writeW32_at (m : Mem) (p : Addr) {o n : Nat} (v : BitVec 32) (h : o + 4 ≤ n) (hn : n < 2 ^ 64) :
-    bytesAt (m.writeW (p + BitVec.ofNat 64 o) v) p n = (bytesAt m p n).take o ++ le4 v ++ (bytesAt m p n).drop (o + 4) := by
-  rw [writeW32_eq, bytesAt_writeBytes_at _ _ _ (by rw [Proof.Cmac.length_le4]; exact h) hn, Proof.Cmac.length_le4]
 
 /-- At offset 0. -/
 theorem bytesAt_writeBytes_base (m : Mem) (p : Addr) {n : Nat} (xs : List Byte) (h : xs.length ≤ n)

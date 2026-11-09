@@ -28,10 +28,6 @@ variable {c : Cfg}
 theorem MP'_n (c : Cfg) : c.MP'.n = c.n := rfl
 theorem MN'_n (c : Cfg) : c.MN'.n = c.n := rfl
 theorem MP'_tmp (c : Cfg) : c.MP'.tmp = c.sl TMP := rfl
-theorem MN'_tmp (c : Cfg) : c.MN'.tmp = c.sl TMP := rfl
-theorem MP'_mo (c : Cfg) : c.MP'.mo = c.sl MP := rfl
-theorem MN'_mo (c : Cfg) : c.MN'.mo = c.sl MN := rfl
-
 theorem MP'_A (c : Cfg) : ModA c.MP' := ⟨sl_mod8 c MP, sl_mod8 c TMP⟩
 theorem MN'_A (c : Cfg) : ModA c.MN' := ⟨sl_mod8 c MN, sl_mod8 c TMP⟩
 

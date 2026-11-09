@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
 public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Prims
+public import VerifiedGarbage.Proof.MlDsa.FusedInverseContract
 import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
 
 /-!
@@ -47,9 +48,6 @@ structure Callee4 (c : Prog isa) : Prop where
 /-- Verified implementations of the primitives key generation calls. -/
 structure PrimsOk (P : Prims) : Prop where
   ntt : Callee P.ntt (fun stk => Proof.MlDsa.nttContract X86_64.abi stk)
-  invNtt : Callee P.invNtt (fun stk => Arith.Representation.inverseContract P.montgomery X86_64.abi stk)
-  mul : Callee P.mul (fun stk => Arith.Representation.productContract P.montgomery X86_64.abi stk)
-  mulAdd : Callee P.mulAdd (fun stk => Arith.Representation.accumulateContract P.montgomery X86_64.abi stk)
   add : Callee P.add (fun stk => Proof.MlDsa.addContract X86_64.abi stk)
   rejNtt : Callee P.rejNtt (fun stk => Proof.MlDsa.rejNTTContract X86_64.abi stk)
   rejBounded : Callee P.rejBounded (fun stk => Proof.MlDsa.rejBoundedContract X86_64.abi stk)
@@ -57,6 +55,7 @@ structure PrimsOk (P : Prims) : Prop where
   simpleBitPack : Callee P.simpleBitPack (fun stk => Proof.MlDsa.simpleBitPackContract X86_64.abi stk)
   bitPack : Callee P.bitPack (fun stk => Proof.MlDsa.bitPackContract X86_64.abi stk)
   rej4 : Callee4 P.rej4
+  dotInv : ∀ c, c = 4 ∨ c = 5 ∨ c = 7 → Callee (P.dotInv c) (fun stk => Proof.MlDsa.dotInverseContract c X86_64.abi stk)
 
 /-! ## MXCSR -/
 

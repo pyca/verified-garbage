@@ -51,14 +51,6 @@ theorem CallReady.covers_state {k : Contract isa} {E : BitVec 64} {g : Reg → B
   · exact ⟨FR E, List.mem_cons_self, h⟩
   · exact ⟨R, List.mem_cons_of_mem _ hr, h⟩
 
-theorem CallReady.wp {k : Contract isa} {E : BitVec 64} {g : Reg → BitVec 64}
-    {v : VReg → BitVec 128} {m : Mem} {rd wr : List Region} {t : State} (hc : Ctx E g v m rd wr t)
-    (h : CallReady k E rd wr t) {c : Prog isa} {name : String}
-    (hv : ∀ s, k.pre s → ∃ trace s', Exec isa c s trace s' ∧ abiPreserved s s' ∧ k.post s s')
-    (hn : c.noFrames = true) :
-    WP isa (.call name c) t (Ctx E g v m rd wr) :=
-  call_ok hc hv hn h.pre h.covers h.writable fun _ hc _ _ => hc
-
 theorem CallReady.wpF {k : Contract isa} {E : BitVec 64} {g : Reg → BitVec 64}
     {v : VReg → BitVec 128} {m : Mem} {rd wr : List Region} {t : State} (hc : Ctx E g v m rd wr t)
     (h : CallReady k E rd wr t) {c : Prog isa} {name : String}

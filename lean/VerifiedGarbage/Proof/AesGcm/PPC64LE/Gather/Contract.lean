@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
@@ -9,7 +10,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 
 Untrusted: everything here is checked by Lean. The contract the proof of
 `vg_aes_gcm_seal_gather` is written against, which the shared one
-(`Spec.Gcm.sealGatherContract`, with the 2832 bytes of stack below the stack
+(`Proof.AesGcm.sealGatherRoundsContract`, with the 2832 bytes of stack below the stack
 pointer that its frame and its call use) implies (`Gather/Verified.lean`):
 `(ctx = r3, rounds = r4, nonce = r5, nonce_len = r6, aad = r7, aad_len = r8,
 src = r9, src_count = r10, dst, len, tag)`, the last three in memory
@@ -89,11 +90,5 @@ def gatherPost (s s' : State) : Prop :=
   encryptWith (ctxCiph s.mem (C s) (Rn s)) (ctxH s.mem (C s)) 16 (bytesAt s.mem (Nn s) (NL s)) (pt s (Cnt s))
       (bytesAt s.mem (Ad s) (AL s)) =
     (bytesAt s'.mem (Dst s) (L s), bytesAt s'.mem (Tg s) 16)
-
-/-- `vg_aes_gcm_seal_gather`. -/
-def gatherPPC64LE : Contract isa where
-  pre := gatherPre
-  post := gatherPost
-  pub := gatherPub
 
 end VG.Proof.AesGcm.PPC64LE.Gather

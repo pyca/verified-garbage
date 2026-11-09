@@ -124,10 +124,6 @@ def ret (r : Nat) : Prog isa := .block [.mov32 .rax (.imm (BitVec.ofNat 32 r))]
 /-- Leave the inner workspace and return a status. -/
 def retInner (r : Nat) : Prog isa := .seq (.block [leave]) (ret r)
 
-/-- Branch on a Boolean computed by a previous stage. -/
-def branchZero (th el : Prog isa) : Prog isa :=
-  .seq (.block [.alu .test .rax (.reg .rax)]) (.ite .e th el)
-
 /-- Compare a value with the FFDH bounds, then test its Boolean result. -/
 def rangeTest (a : Nat) : List (Prog isa) :=
   range a ++ [.block [.alu .test .rax (.reg .rax)]]

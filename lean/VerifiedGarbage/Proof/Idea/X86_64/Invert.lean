@@ -45,8 +45,6 @@ open VG VG.X86_64 VG.Impl.Idea.X86_64 VG.Impl.Idea
 /-- The registers computing a decryption subkey writes. -/
 abbrev invWrites : List Reg := [.rax, .rcx, .rdx, .r8, .r9, .r11]
 
-theorem signExtend_fifteen : BitVec.signExtend 64 (15 : BitVec 32) = 15 := by decide
-
 theorem loadKey_run (z : Spec.Idea.Schedule) (r : Reg) {k : Nat} (hk : k < 52) (t : State)
     (hz : KeyOk z t) :
     ∃ t', runBlock isa (loadKey r k) t = some t' ∧ (t'.gpr r).setWidth 16 = z.getD k 0 ∧

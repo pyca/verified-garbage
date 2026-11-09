@@ -315,25 +315,6 @@ end CheckPrivate
 
 namespace GenerateKey
 
-/-- `(x, x_len, y, y_len, domain, domain_len, p_len, rand, rand_len,
-scratch, scratch_len)`: `scratch` the second stack argument. -/
-def entry : List Instr :=
-  [.ldrSp .x8 8, stw .x0 .x8 sX, stw .x2 .x8 sY, stw .x4 .x8 sDom, stw .x5 .x8 sDomLen, stw .x6 .x8 sK,
-    stw .x7 .x8 sRand, mov .x0 .x8]
-
-/-- The mask `2^b − 1` of the octet in `x3` (`b` its bit length), in
-`x3`. -/
-def smear : List Instr :=
-  [.lsr .x .x5 .x3 1, .logic .orr .x .x3 .x3 .x5, .lsr .x .x5 .x3 2, .logic .orr .x .x3 .x3 .x5,
-    .lsr .x .x5 .x3 4, .logic .orr .x .x3 .x3 .x5]
-
-/-- The bound's scan, in the outer workspace: q's, or p's, whose first
-nonzero octet is `p − 1`'s; the pointer to that octet in `sEp`, the number
-of octets from it (`n`) in `sEl`, the octet in `x3`. -/
-def bound : List (Prog isa) := [
-  .block qTest,
-  .ite (.zero .x .x3) (seqs (scan sDom)) (seqs (scan sQ))]
-
 /-- The loop's body: `rand`'s octet `x10` (at `x1`) to `x` (at `x2`): zero
 before octet `x11 = p_len − n`, and'ed with the mask `x12` at it, kept
 after it. -/
@@ -341,52 +322,6 @@ def cutBody : List Instr :=
   [.ldrb .x4 .x1 0, .subs .x .x5 .x10 .x11, .csel .x .x6 .x13 .x7, .logic .eor .x .x5 .x10 .x11,
     movi .x8 1, .subs .x .x5 .x5 .x8, .csel .x .x6 .x6 .x12, .logic .and .x .x4 .x4 .x6, .strb .x4 .x2 0,
     .addImm .x .x1 .x1 1, .addImm .x .x2 .x2 1, .addImm .x .x10 .x10 1]
-
-/-- In the outer workspace: the scalar's octets to `x`: `p_len` octets of
-`rand`, cut to the bound's bit length. -/
-def scalar : List (Prog isa) := bound ++ [
-  .block (smear ++ [mov .x12 .x3, ldh .x10 sK, ldh .x11 sEl, .sub .x .x11 .x10 .x11, ldh .x2 sX,
-    ldh .x1 sRand, movi .x13 255, movi .x7 0, movi .x10 0, ldh .x14 sK]),
-  countLoop .x14 cutBody]
-
-/-- Zeros to `x` and `y`, and `r` returned. -/
-def fail (r : Nat) : Prog isa := seqs [Keys.zeroOut sX sK, Keys.zeroOut sY sK, ret r]
-
-/-- The `p_len` octets at the outer slot `sPtr` and'ed with the mask in
-`x15`: kept for all ones, zeros for 0. -/
-def maskOut (sPtr : Nat) : Prog isa :=
-  .seq (.block [ldh .x1 sPtr, ldh .x2 sK])
-    (countLoop .x2 [.ldrb .x4 .x1 0, .logic .and .x .x4 .x4 .x15, .strb .x4 .x1 0, .addImm .x .x1 .x1 1])
-
-/-- With the scalar in range: the bound's scan again, for the scalar's
-significant octets in `x` (`sEp`, `sEl`); `y = g^x mod p` to `y`; the flag
-of `1 < y < p − 1` and, with q, `y^q mod p = 1`, in the outer `sF`; then x
-and y masked by the flag (zeros for 0) and `3 − 2 flag` returned, without a
-branch. -/
-def tail : List (Prog isa) :=
-  r2Steps mul ++ [.block [leave]] ++ bound ++
-  [.block [ldh .x10 sK, ldh .x11 sEl, .sub .x .x11 .x10 .x11, ldh .x2 sX, .add .x .x3 .x2 .x11, sth .x3 sEp,
-    enter]] ++
-  pow window select mul sG sK sEp sEl ++ range aY ++
-  [.block [ldh .x12 sW, ldh .x8 (sArr aY), ldh .x5 Crt.sLink, ldw .x1 .x5 sY, ldw .x9 .x5 sK,
-    .add .x .x1 .x1 .x9, movi .x7 0, .subImm .x .x15 .x7 1],
-    storeBE,
-    .block [ldh .x9 sF, leave, sth .x9 sF], .block qTest,
-    .ite (.zero .x .x3) (.block [])
-      (seqs (scan sQ ++ [.block [enter]] ++ pow window select mul sY sK sEp sEl ++ isOne aY ++
-        [.block [leave, ldh .x3 sF, .logic .and .x .x9 .x9 .x3, sth .x9 sF]])),
-    .block [ldh .x9 sF, movi .x7 0, .sub .x .x15 .x7 .x9],
-    maskOut sX, maskOut sY,
-    .block [ldh .x9 sF, movi .x0 3, .lsl .x .x9 .x9 1, .sub .x .x0 .x0 .x9]]
-
-def main : Prog isa :=
-  seqs ([.block head] ++ pSetup ++ [.block [leave]] ++ scalar ++ [.block [enter]] ++ loadArr aXm sX sK ++
-    CheckPrivate.scalarRange ++
-    [.ite (.zero .x .x9) (.seq (.block [leave]) (fail 2)) (seqs (tail window select mul))])
-
-/-- `vg_ffdh_generate_key`. -/
-def code : Prog isa :=
-  .seq (.block (entry ++ domHead)) (.ite (.zero .x .x9) (ret 0) (main window select mul))
 
 end GenerateKey
 

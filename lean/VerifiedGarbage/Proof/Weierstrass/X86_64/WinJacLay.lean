@@ -10,7 +10,7 @@ import Mathlib.Logic.Function.Basic
 /-!
 # The Jacobian window method: where it keeps its numbers
 
-The slots of `JacWinCfg.window` (`Impl/Weierstrass/X86_64/WinJac.lean`): the
+The slots of the Jacobian window method (`Impl/Weierstrass/X86_64/WinJac.lean`): the
 ones it reads only (`jwRo`: the curve's `a` and `3b`, which the renamed
 formulas name but do not read, zero and `P`), the others it writes
 (`jwOther`: `R`, `D`, `-y` and the temporaries), and a grid of `85` slots
@@ -159,10 +159,6 @@ theorem JacWinLay.Tz3 (hL : JacWinLay K size) : K.z2 + 8 * K.M.n = jg K 84 := by
   show K.T + 24 * K.M.n + 8 * K.M.n = _; rw [hL.T]; unfold jg JacWinCfg.st; omega
 
 theorem JacWinLay.T80 (hL : JacWinLay K size) : K.T = jg K 80 := hL.Tx
-
-/-- Coordinate `c` of `T`. -/
-theorem JacWinLay.Tc (hL : JacWinLay K size) (c : Nat) : K.T + 8 * K.M.n * c = jg K (80 + c) := by
-  rw [hL.T]; unfold jg JacWinCfg.st; rw [Nat.mul_add]; omega
 
 /-- Entry `m`'s address. -/
 theorem entry_addr (K : JacWinCfg) (m c : Nat) :

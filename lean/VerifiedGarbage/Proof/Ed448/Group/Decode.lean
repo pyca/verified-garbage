@@ -82,9 +82,4 @@ theorem decodePoint_valid {bs : List Byte} {p : Point} (h : Spec.Ed448.decodePoi
     Valid p :=
   (decodePoint_rep h).elim fun _ hr => hr.valid
 
-theorem decodePoint_z {bs : List Byte} {p : Point} (h : Spec.Ed448.decodePoint bs = some p) :
-    p.Z = 1 := by
-  obtain ⟨x, y, _, _, rfl⟩ := decodePoint_eq h
-  rfl
-
 end VG.Proof.Ed448

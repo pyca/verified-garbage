@@ -206,10 +206,6 @@ theorem BSetup.rY (m : Mem) (v : BitVec 32) {o e : Nat} (ho : o + 4 ≤ 256) (he
     (m.writeW (addr B o) v).readW (addr Yp e) 32 = m.readW (addr Yp e) 32 :=
   rd_wr_other hs.dYS (reg_contains hs.fY he (by decide)) (reg_contains hs.fB ho (by decide))
 
-theorem BSetup.rH (m : Mem) (v : BitVec 32) {o e : Nat} (ho : o + 4 ≤ 256) (he : e + 4 ≤ 16) :
-    (m.writeW (addr B o) v).readW (addr Hp e) 32 = m.readW (addr Hp e) 32 :=
-  rd_wr_other hs.dHS (reg_contains hs.fH he (by decide)) (reg_contains hs.fB ho (by decide))
-
 theorem BSetup.rD (m : Mem) (v : BitVec 32) {o e : Nat} (ho : o + 4 ≤ 256) (he : e + 4 ≤ 16 * n) :
     (m.writeW (addr B o) v).readW (addr Dp e) 32 = m.readW (addr Dp e) 32 :=
   rd_wr_other hs.dDS (reg_contains hs.fD he (by decide)) (reg_contains hs.fB ho (by decide))
@@ -807,39 +803,8 @@ theorem gh_correct {s₀ : State} (hp : GPre s₀) :
       blocksAt_congr (m := s₀.mem) (m' := s₁.mem) (p := Dp.setWidth 64)
         fun i hi => eB (R := dR s₀) hp.dDS (by show 16 * n ≤ 2 ^ 64; omega_arith) i hi]
 
-/-- Memory holding the arguments `0x1000, 0x2000, 0x3000, 0, 0x4000` at `0x8004`. -/
-def ghSatMem : Mem := fun a =>
-  if a = 0x8005 then 0x10 else if a = 0x8009 then 0x20 else if a = 0x800D then 0x30
-  else if a = 0x8015 then 0x40 else 0
-
-/-- A state satisfying the precondition (with no data). -/
-def ghSat : State where
-  gpr r := match r with
-    | .esp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem := ghSatMem
-  rd := [⟨0x1000, 16⟩, ⟨0x3000, 0⟩, ⟨0x8004, 20⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x4000, 256⟩]
-
 theorem ghash_correct (s : State) (hs : Proof.Gcm.ghashX86.pre s) :
     ∃ t s', Exec isa Impl.Gcm.X86.ghash s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashX86.post s s' :=
   (gh_correct (GPre.of hs)).imp fun _ ⟨s', he, h⟩ => ⟨s', he, h⟩
-
-theorem ghash_verified :
-    Verified X86.target Impl.Gcm.X86.ghash (Proof.Gcm.ghashContract X86.abi) :=
-  Verified.of_correct ghash_correct ghash_ct
-    (by
-      have a0 : arg ghSat 0 = 0x1000 := by decide
-      have a1 : arg ghSat 1 = 0x2000 := by decide
-      have a2 : arg ghSat 2 = 0x3000 := by decide
-      have a3 : arg ghSat 3 = 0 := by decide
-      have a4 : arg ghSat 4 = 0x4000 := by decide
-      have e : argAddr ghSat 0 = 0x8004 := by decide
-      have esp : ghSat.gpr .esp = 0x8000 := rfl
-      sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, X86.abi, X86.argSlots,
-        X86.argVal, X86.argBytes, Proof.Gcm.ghashX86] [a0, a1, a2, a3, a4, e, esp] using ghSat)
 
 end VG.Proof.Gcm.X86

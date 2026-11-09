@@ -15,7 +15,7 @@ public import VerifiedGarbage.Spec.X448.Contract
 # X448 on PPC64LE: the setup
 
 The u-coordinate as 32-bit limbs (`decode_val`: the number of its 56 bytes), and the setup of the working space: `x1 = x3 = u`, `x2 = z3 =
-1`, `z2 = 0` and `a24` (`setup_ok`).
+1` and `z2 = 0` (`setup_ok`).
 -/
 
 @[expose] public section
@@ -23,7 +23,7 @@ The u-coordinate as 32-bit limbs (`decode_val`: the number of its 56 bytes), and
 namespace VG.Proof.X448.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.X448.PPC64LE VG.Proof.X25519.PPC64LE
-open VG.Spec.X448 (P Fe bytesAt a24)
+open VG.Spec.X448 (P Fe bytesAt)
 open VG.Proof.X25519 (leNum leNum_append)
 open VG.Proof.X448 (bytesAt_add length_bytesAt toFe)
 
@@ -138,120 +138,147 @@ theorem wd_keep {m m' : Mem} {B : Addr} {o n d : Nat} (hf : Frame [⟨B + BitVec
 
 /-- The ranges `consts` writes. -/
 abbrev constsR (b : Addr) : List Region :=
-  [⟨b + BitVec.ofNat 64 X2, 112⟩, ⟨b + BitVec.ofNat 64 Z3, 56⟩, ⟨b + BitVec.ofNat 64 A24, 56⟩]
+  [⟨b + BitVec.ofNat 64 X2, 112⟩, ⟨b + BitVec.ofNat 64 Z3, 56⟩]
 
 theorem constsR_sub (e k o n : Nat) (he : (⟨b + BitVec.ofNat 64 e, k⟩ : Region) ∈ constsR b)
     (h1 : e ≤ o) (h2 : o + n ≤ e + k) : ∃ r ∈ constsR b, Region.Sub ⟨b + BitVec.ofNat 64 o, n⟩ r :=
   ⟨_, he, Offset.sub b h1 h2⟩
-
-theorem a24_word : (BitVec.ofNat 64 0 ||| (0x98a9 : BitVec 16).setWidth 64).setWidth 32 =
-    BitVec.ofNat 32 39081 := by decide
 
 theorem consts_ok {s : State} (hc : Ctx b s) :
     WP isa (.block consts) s fun s' =>
       (∀ k < 14, limb s'.mem b X2 k = if k = 0 then 1 else 0) ∧
       (∀ k < 14, limb s'.mem b Z2 k = 0) ∧
       (∀ k < 14, limb s'.mem b Z3 k = if k = 0 then 1 else 0) ∧
-      (∀ k < 14, limb s'.mem b A24 k = if k = 0 then 39081 else 0) ∧
       Frame (constsR b) s.mem s'.mem ∧ Rest [.r5, .r7, .r8] s s' := by
   have hX2 : X2 = 56 := rfl
   have hZ2 : Z2 = 112 := rfl
   have hZ3 : Z3 = 224 := rfl
-  have hA : A24 = 784 := rfl
   simp only [consts, List.append_assoc, List.cons_append, List.nil_append]
-  refine wp_li (by decide) fun s1 u1 => wp_li (by decide) fun s2 u2 =>
-    wp_li (by decide) fun s2' u2' => wp_ori fun s3 u3 => ?_
-  have hr3 : Rest [.r5, .r7, .r8] s s3 :=
-    (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u2'.rest (by decide)).trans (u3.rest (by decide))))
+  refine wp_li (by decide) fun s1 u1 => wp_li (by decide) fun s3 u3 => ?_
+  have hr3 : Rest [.r5, .r7, .r8] s s3 := (u1.rest (by decide)).trans (u3.rest (by decide))
   have hc3 : Ctx b s3 := hc.of_rest hr3 (by decide)
   have g7 : (s3.gpr .r7).setWidth 32 = 1 := by
-    rw [u3.other _ (by decide), u2'.other _ (by decide), u2.other _ (by decide), u1.gpr]; rfl
-  have g8 : s3.gpr .r8 = 0 := by rw [u3.other _ (by decide), u2'.other _ (by decide), u2.gpr]; rfl
-  have g5 : (s3.gpr .r5).setWidth 32 = BitVec.ofNat 32 39081 := by
-    rw [u3.gpr, u2'.gpr]; exact a24_word
+    rw [u3.other _ (by decide), u1.gpr]; rfl
+  have g8 : s3.gpr .r8 = 0 := by rw [u3.gpr]; rfl
   refine sw0_ok hc3 (d := X2) (by omega_arith) fun s4 u4 => ?_
   refine sw0_ok (hc3.of_rest (u4.rest []) (by decide)) (d := Z2) (by omega_arith) fun s5 u5 => ?_
   refine sw0_ok (hc3.of_rest ((u4.rest []).trans (u5.rest [])) (by decide)) (d := Z3) (by omega_arith)
-    fun s6 u6 => ?_
-  have hr6 : Rest [] s3 s6 := (u4.rest []).trans ((u5.rest []).trans (u6.rest []))
-  refine sw0_ok (hc3.of_rest hr6 (by decide)) (d := A24) (by omega_arith) fun s8 u8 => ?_
-  have hr8 : Rest [] s3 s8 := hr6.trans (u8.rest [])
+    fun s8 u8 => ?_
+  have hr8 : Rest [] s3 s8 := (u4.rest []).trans ((u5.rest []).trans (u8.rest []))
   have hc8 : Ctx b s8 := hc3.of_rest hr8 (by decide)
   have hg8 : ∀ r, s8.gpr r = s3.gpr r := fun r => hr8.gpr r (by simp)
-  have hm8 : s8.mem = (((s3.mem.writeW (b + BitVec.ofNat 64 X2) ((s3.gpr .r7).setWidth 32)).writeW
+  have hm8 : s8.mem = ((s3.mem.writeW (b + BitVec.ofNat 64 X2) ((s3.gpr .r7).setWidth 32)).writeW
       (b + BitVec.ofNat 64 Z2) ((s3.gpr .r8).setWidth 32)).writeW (b + BitVec.ofNat 64 Z3)
-      ((s3.gpr .r7).setWidth 32)).writeW (b + BitVec.ofNat 64 A24) ((s3.gpr .r5).setWidth 32) := by
-    rw [u8.mem, u6.gpr, u6.mem, u5.gpr, u5.mem, u4.gpr, u4.mem]
+      ((s3.gpr .r7).setWidth 32) := by
+    rw [u8.mem, u5.gpr, u5.mem, u4.gpr, u4.mem]
   refine WP.append (stores_ok (r := .r8) (o := X2 + 4) (n := 13) (by omega_arith) hc8) fun s9 ⟨w9, f9, g9, r9⟩ => ?_
   have hc9 : Ctx b s9 := hc8.of_rest r9 (by decide)
   refine WP.append (stores_ok (r := .r8) (o := Z2 + 4) (n := 13) (by omega_arith) hc9) fun s10 ⟨w10, f10, g10, r10⟩ => ?_
   have hc10 : Ctx b s10 := hc9.of_rest r10 (by decide)
-  refine WP.append (stores_ok (r := .r8) (o := Z3 + 4) (n := 13) (by omega_arith) hc10)
+  refine WP.mono (stores_ok (r := .r8) (o := Z3 + 4) (n := 13) (by omega_arith) hc10)
     fun s11 ⟨w11, f11, g11, r11⟩ => ?_
-  have hc11 : Ctx b s11 := hc10.of_rest r11 (by decide)
-  refine WP.mono (stores_ok (r := .r8) (o := A24 + 4) (n := 13) (by omega_arith) hc11)
-    fun s12 ⟨w12, f12, g12, r12⟩ => ?_
   have e8 : ∀ t : State, t.gpr = s8.gpr → (t.gpr .r8).toNat % 2 ^ 32 = 0 := fun t ht => by
     rw [ht, hg8, g8]; rfl
   -- Words written by the first stores, through the later ones.
   have k8 : ∀ d, d + 4 ≤ 4096 → (d + 4 ≤ X2 + 4 ∨ X2 + 56 ≤ d) → (d + 4 ≤ Z2 + 4 ∨ Z2 + 56 ≤ d) →
-      (d + 4 ≤ Z3 + 4 ∨ Z3 + 56 ≤ d) → (d + 4 ≤ A24 + 4 ∨ A24 + 56 ≤ d) →
-      wd s12.mem b d = wd s8.mem b d := fun d hd h1 h2 h3 h4 => by
-    rw [wd_keep f12 h4 hd (by omega_arith), wd_keep f11 h3 hd (by omega_arith), wd_keep f10 h2 hd (by omega_arith),
+      (d + 4 ≤ Z3 + 4 ∨ Z3 + 56 ≤ d) → wd s11.mem b d = wd s8.mem b d := fun d hd h1 h2 h3 => by
+    rw [wd_keep f11 h3 hd (by omega_arith), wd_keep f10 h2 hd (by omega_arith),
       wd_keep f9 h1 hd (by omega_arith)]
   have g9' : s9.gpr = s8.gpr := g9
   have g10' : s10.gpr = s8.gpr := g10.trans g9
-  have g11' : s11.gpr = s8.gpr := g11.trans g10'
   have t1 : (1 : BitVec 32).toNat = 1 := rfl
   have t0 : ((s3.gpr .r8).setWidth 32).toNat = 0 := by rw [g8]; rfl
-  refine ⟨fun k hk => ?_, fun k hk => ?_, fun k hk => ?_, fun k hk => ?_, ?_, ?_⟩
+  refine ⟨fun k hk => ?_, fun k hk => ?_, fun k hk => ?_, ?_, ?_⟩
   · rcases Nat.eq_zero_or_pos k with rfl | hk0
-    · rw [limb, Nat.mul_zero, Nat.add_zero, k8 _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), hm8,
-        wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+    · rw [limb, Nat.mul_zero, Nat.add_zero, k8 _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), hm8,
+        wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
         wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
         wd_write_self, g7, t1]; rfl
-    · rw [limb, wd_keep f12 (by omega_arith) (by omega_arith) (by omega_arith), wd_keep f11 (by omega_arith) (by omega_arith) (by omega_arith),
+    · rw [limb, wd_keep f11 (by omega_arith) (by omega_arith) (by omega_arith),
         wd_keep f10 (by omega_arith) (by omega_arith) (by omega_arith), show X2 + 4 * k = X2 + 4 + 4 * (k - 1) by omega_arith,
         w9 (k - 1) (by omega_arith), e8 _ rfl]
       simp only [show k ≠ 0 by omega_arith, ite_false]
   · rcases Nat.eq_zero_or_pos k with rfl | hk0
-    · rw [limb, Nat.mul_zero, Nat.add_zero, k8 _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), hm8,
-        wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
-        wd_write_self, t0]
-    · rw [limb, wd_keep f12 (by omega_arith) (by omega_arith) (by omega_arith), wd_keep f11 (by omega_arith) (by omega_arith) (by omega_arith),
+    · rw [limb, Nat.mul_zero, Nat.add_zero, k8 _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), hm8,
+        wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), wd_write_self, t0]
+    · rw [limb, wd_keep f11 (by omega_arith) (by omega_arith) (by omega_arith),
         show Z2 + 4 * k = Z2 + 4 + 4 * (k - 1) by omega_arith, w10 (k - 1) (by omega_arith), e8 _ g9']
   · rcases Nat.eq_zero_or_pos k with rfl | hk0
-    · rw [limb, Nat.mul_zero, Nat.add_zero, k8 _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), hm8,
-        wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+    · rw [limb, Nat.mul_zero, Nat.add_zero, k8 _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), hm8,
         wd_write_self, g7, t1]; rfl
-    · rw [limb, wd_keep f12 (by omega_arith) (by omega_arith) (by omega_arith), show Z3 + 4 * k = Z3 + 4 + 4 * (k - 1) by omega_arith,
-        w11 (k - 1) (by omega_arith), e8 _ g10']
-      simp only [show k ≠ 0 by omega_arith, ite_false]
-  · rcases Nat.eq_zero_or_pos k with rfl | hk0
-    · rw [limb, Nat.mul_zero, Nat.add_zero,
-        k8 _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), hm8,
-        wd_write_self, g5]; rfl
-    · rw [limb, show A24 + 4 * k = A24 + 4 + 4 * (k - 1) by omega_arith, w12 (k - 1) (by omega_arith), e8 _ g11']
+    · rw [limb, show Z3 + 4 * k = Z3 + 4 + 4 * (k - 1) by omega_arith, w11 (k - 1) (by omega_arith), e8 _ g10']
       simp only [show k ≠ 0 by omega_arith, ite_false]
   · -- Every write is in `constsR`.
     have m1 : (⟨b + BitVec.ofNat 64 X2, 112⟩ : Region) ∈ constsR b := List.mem_cons_self ..
     have m2 : (⟨b + BitVec.ofNat 64 Z3, 56⟩ : Region) ∈ constsR b :=
       List.mem_cons_of_mem _ (List.mem_cons_self ..)
-    have m3 : (⟨b + BitVec.ofNat 64 A24, 56⟩ : Region) ∈ constsR b :=
-      List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
     have f8 : Frame (constsR b) s.mem s8.mem := by
-      rw [hm8, u3.mem, u2'.mem, u2.mem, u1.mem]
-      exact ((((Frame.refl _ _).writeW m1 _ (Offset.contains _ (d := X2) (n := 32 / 8) (by omega_arith) (by omega_arith)
+      rw [hm8, u3.mem, u1.mem]
+      exact (((Frame.refl _ _).writeW m1 _ (Offset.contains _ (d := X2) (n := 32 / 8) (by omega_arith) (by omega_arith)
         (by omega_arith))).writeW m1 _ (Offset.contains _ (d := Z2) (n := 32 / 8) (by omega_arith) (by omega_arith)
         (by omega_arith))).writeW m2 _ (Offset.contains _ (d := Z3) (n := 32 / 8) (by omega_arith) (by omega_arith)
-        (by omega_arith))).writeW m3 _ (Offset.contains _ (d := A24) (n := 32 / 8) (by omega_arith) (by omega_arith)
         (by omega_arith))
     exact f8.trans ((f9.sub fun r hr => by rw [List.mem_singleton.mp hr]; exact constsR_sub _ _ _ _ m1 (by omega_arith) (by omega_arith)).trans
       ((f10.sub fun r hr => by rw [List.mem_singleton.mp hr]; exact constsR_sub _ _ _ _ m1 (by omega_arith) (by omega_arith)).trans
-      ((f11.sub fun r hr => by rw [List.mem_singleton.mp hr]; exact constsR_sub _ _ _ _ m2 (by omega_arith) (by omega_arith)).trans
-      (f12.sub fun r hr => by rw [List.mem_singleton.mp hr]; exact constsR_sub _ _ _ _ m3 (by omega_arith) (by omega_arith)))))
+      (f11.sub fun r hr => by rw [List.mem_singleton.mp hr]; exact constsR_sub _ _ _ _ m2 (by omega_arith) (by omega_arith))))
   · exact hr3.trans ((hr8.mono (by decide)).trans ((r9.mono (by decide)).trans ((r10.mono (by decide)).trans
-      ((r11.mono (by decide)).trans (r12.mono (by decide))))))
+      (r11.mono (by decide)))))
+
+/-- The base point's u-coordinate, 5, as limbs. -/
+abbrev fiveLimb (k : Nat) : Nat := if k = 0 then 5 else 0
+
+theorem five_ok {s : State} (hc : Ctx b s) :
+    WP isa (.block five) s fun s' =>
+      (∀ k < 14, limb s'.mem b X1 k = fiveLimb k ∧ limb s'.mem b X3 k = fiveLimb k) ∧
+      Frame [⟨b + BitVec.ofNat 64 X1, 224⟩] s.mem s'.mem ∧ Rest [.r7, .r8] s s' := by
+  have hX1 : X1 = 0 := rfl
+  have hX3 : X3 = 168 := rfl
+  simp only [five, List.cons_append, List.nil_append]
+  refine wp_li (by decide) fun s1 u1 => wp_li (by decide) fun s2 u2 => ?_
+  have hr2 : Rest [.r7, .r8] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
+  have hc2 : Ctx b s2 := hc.of_rest hr2 (by decide)
+  have g4 : (s2.gpr .r7).setWidth 32 = 5 := by rw [u2.other _ (by decide), u1.gpr]; rfl
+  have g5 : s2.gpr .r8 = 0 := by rw [u2.gpr]; rfl
+  refine sw0_ok hc2 (d := X1) (by omega_arith) fun s3 u3 => ?_
+  refine sw0_ok (hc2.of_rest (u3.rest []) (by decide)) (d := X3) (by omega_arith) fun s4 u4 => ?_
+  have hr4 : Rest [] s2 s4 := (u3.rest []).trans (u4.rest [])
+  have hc4 : Ctx b s4 := hc2.of_rest hr4 (by decide)
+  have hg4 : ∀ r, s4.gpr r = s2.gpr r := fun r => hr4.gpr r (by simp)
+  have hm4 : s4.mem = (s2.mem.writeW (b + BitVec.ofNat 64 X1) ((s2.gpr .r7).setWidth 32)).writeW
+      (b + BitVec.ofNat 64 X3) ((s2.gpr .r7).setWidth 32) := by
+    rw [u4.mem, u3.gpr, u3.mem]
+  refine WP.append (stores_ok (r := .r8) (o := X1 + 4) (n := 13) (by omega_arith) hc4)
+    fun s5 ⟨w5, f5, g5', r5⟩ => ?_
+  have hc5 : Ctx b s5 := hc4.of_rest r5 (by decide)
+  refine WP.mono (stores_ok (r := .r8) (o := X3 + 4) (n := 13) (by omega_arith) hc5)
+    fun s6 ⟨w6, f6, _, r6⟩ => ?_
+  have e5 : (s4.gpr .r8).toNat % 2 ^ 32 = 0 := by rw [hg4, g5]; rfl
+  have e6 : (s5.gpr .r8).toNat % 2 ^ 32 = 0 := by rw [g5', hg4, g5]; rfl
+  refine ⟨fun k hk => ⟨?_, ?_⟩, ?_, ?_⟩
+  · rcases Nat.eq_zero_or_pos k with rfl | hk0
+    · rw [limb, Nat.mul_zero, Nat.add_zero, wd_keep f6 (by omega_arith) (by omega_arith) (by omega_arith),
+        wd_keep f5 (by omega_arith) (by omega_arith) (by omega_arith), hm4,
+        wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), wd_write_self, g4]; rfl
+    · rw [limb, wd_keep f6 (by omega_arith) (by omega_arith) (by omega_arith),
+        show X1 + 4 * k = X1 + 4 + 4 * (k - 1) by omega_arith, w5 (k - 1) (by omega_arith), e5]
+      simp only [fiveLimb, show k ≠ 0 by omega_arith, ite_false]
+  · rcases Nat.eq_zero_or_pos k with rfl | hk0
+    · rw [limb, Nat.mul_zero, Nat.add_zero, wd_keep f6 (by omega_arith) (by omega_arith) (by omega_arith),
+        wd_keep f5 (by omega_arith) (by omega_arith) (by omega_arith), hm4, wd_write_self, g4]; rfl
+    · rw [limb, show X3 + 4 * k = X3 + 4 + 4 * (k - 1) by omega_arith, w6 (k - 1) (by omega_arith), e6]
+      simp only [fiveLimb, show k ≠ 0 by omega_arith, ite_false]
+  · have m1 : (⟨b + BitVec.ofNat 64 X1, 224⟩ : Region) ∈ [(⟨b + BitVec.ofNat 64 X1, 224⟩ : Region)] :=
+      List.mem_singleton_self _
+    have f4 : Frame [⟨b + BitVec.ofNat 64 X1, 224⟩] s.mem s4.mem := by
+      rw [hm4, u2.mem, u1.mem]
+      exact ((Frame.refl _ _).writeW m1 _ (Offset.contains _ (d := X1) (n := 32 / 8) (by omega_arith)
+        (by omega_arith) (by omega_arith))).writeW m1 _ (Offset.contains _ (d := X3) (n := 32 / 8)
+        (by omega_arith) (by omega_arith) (by omega_arith))
+    exact f4.trans ((f5.sub fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact ⟨_, m1, Offset.sub b (by omega_arith) (by omega_arith)⟩).trans
+      (f6.sub fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact ⟨_, m1, Offset.sub b (by omega_arith) (by omega_arith)⟩))
+  · exact hr2.trans ((hr4.mono (by decide)).trans ((r5.mono (by decide)).trans (r6.mono (by decide))))
 
 end
 
@@ -278,31 +305,29 @@ def uOf (s : State) : Fe :=
 theorem slot_of {m : Mem} {B : Addr} {o : Nat} {f : Nat → Nat} (h : ∀ k < 14, limb m B o k = f k) :
     FS m B o = toFe (val32 f 14) := by rw [FS, V, val32_congr h]
 
-theorem setup_ok {s : State} (hp : XPre s) :
-    WP isa (.block setup) s fun s' =>
+/-- The setup after the code that writes the u-coordinate's limbs `f` into `X1`
+and `X3` (`decode` or `five`): `consts`, and the ladder's initial state for
+`u = f`. -/
+theorem consts_post {s s4 : State} {f : Nat → Nat} (hc : Ctx (s.gpr .r6) s)
+    (hl4 : ∀ k < 14, limb s4.mem (s.gpr .r6) X1 k = f k ∧ limb s4.mem (s.gpr .r6) X3 k = f k)
+    (hf4 : Frame [⟨s.gpr .r6 + BitVec.ofNat 64 X1, 224⟩] s.mem s4.mem) (hr4 : Rest [.r7, .r8] s s4) :
+    WP isa (.block consts) s4 fun s' =>
       Ctx (s.gpr .r6) s' ∧ Frame [⟨s.gpr .r6, 8192⟩] s.mem s'.mem ∧
-      SlotsOk s'.mem (s.gpr .r6) LQ (ladV (uOf s) (VG.Proof.X448.init (uOf s))) ∧
+      SlotsOk s'.mem (s.gpr .r6) LQ (ladV (toFe (val32 f 14)) (VG.Proof.X448.init (toFe (val32 f 14)))) ∧
       Rest [.r5, .r7, .r8] s s' := by
   have hX1 : X1 = 0 := rfl
   have hX2 : X2 = 56 := rfl
   have hZ2 : Z2 = 112 := rfl
   have hX3 : X3 = 168 := rfl
   have hZ3 : Z3 = 224 := rfl
-  have hA : A24 = 784 := rfl
-  have hws : (⟨s.gpr .r6, 8192⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
-  have hc : Ctx (s.gpr .r6) s := ⟨rfl, 8192, by decide, hws⟩
-  unfold setup
-  refine WP.append (decode_ok hc (pt := s.gpr .r5) rfl (by rw [hp.rd]; simp) (disj4096 hp.pt_ws))
-    fun s4 ⟨hl4, hf4, hr4⟩ => ?_
   have hc4 : Ctx (s.gpr .r6) s4 := hc.of_rest hr4 (by decide)
-  refine WP.mono (consts_ok hc4) fun s5 ⟨hx2, hz2, hz3, ha24, hf5, hr5⟩ => ?_
+  refine WP.mono (consts_ok hc4) fun s5 ⟨hx2, hz2, hz3, hf5, hr5⟩ => ?_
   -- `x1` and `x3` through the constants.
-  have hkeep : ∀ o, (o = X1 ∨ o = X3) → ∀ k < 14,
-      limb s5.mem (s.gpr .r6) o k = uLimb s.mem (s.gpr .r5) k := by
+  have hkeep : ∀ o, (o = X1 ∨ o = X3) → ∀ k < 14, limb s5.mem (s.gpr .r6) o k = f k := by
     intro o ho k hk
     have e := limb_frame (o := o) hf5 fun r hr j hj => by
       simp only [constsR, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+      rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
     rw [e k hk]
     rcases ho with rfl | rfl
     · exact (hl4 k hk).1
@@ -314,25 +339,53 @@ theorem setup_ok {s : State} (hp : XPre s) :
       rw [List.mem_singleton.mp hr]; exact hsub _ _ (by omega_arith)⟩).trans ?_
     refine hf5.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
     simp only [constsR, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> exact hsub _ _ (by omega_arith)
+    rcases hr with rfl | rfl <;> exact hsub _ _ (by omega_arith)
   · intro q hq
     simp only [LQ, List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl
-    · rw [slot_of (hkeep _ (.inl rfl)), decode_val]; simp only [ladV, ite_true]; rfl
+    rcases hq with rfl | rfl | rfl | rfl | rfl
+    · rw [slot_of (hkeep _ (.inl rfl))]; simp only [ladV, ite_true]
     · rw [slot_of hx2, val32_single _ (by decide)]
       simp only [ladV, VG.Proof.X448.init, iteF (show X2 ≠ X1 by decide), ite_true]; rfl
     · rw [slot_of hz2, val32_zero_fn]
       simp only [ladV, VG.Proof.X448.init, iteF (show Z2 ≠ X1 by decide), iteF (show Z2 ≠ X2 by decide),
         ite_true]; rfl
-    · rw [slot_of (hkeep _ (.inr rfl)), decode_val]
+    · rw [slot_of (hkeep _ (.inr rfl))]
       simp only [ladV, VG.Proof.X448.init, iteF (show X3 ≠ X1 by decide), iteF (show X3 ≠ X2 by decide),
-        iteF (show X3 ≠ Z2 by decide), ite_true]; rfl
+        iteF (show X3 ≠ Z2 by decide), ite_true]
     · rw [slot_of hz3, val32_single _ (by decide)]
       simp only [ladV, VG.Proof.X448.init, iteF (show Z3 ≠ X1 by decide), iteF (show Z3 ≠ X2 by decide),
-        iteF (show Z3 ≠ Z2 by decide), iteF (show Z3 ≠ X3 by decide), ite_true]; rfl
-    · rw [slot_of ha24, val32_single _ (by decide)]
-      simp only [ladV, iteF (show A24 ≠ X1 by decide), iteF (show A24 ≠ X2 by decide),
-        iteF (show A24 ≠ Z2 by decide), iteF (show A24 ≠ X3 by decide), iteF (show A24 ≠ Z3 by decide)]; rfl
+        iteF (show Z3 ≠ Z2 by decide), iteF (show Z3 ≠ X3 by decide)]; rfl
   · exact (hr4.mono (by decide)).trans hr5
+
+theorem setup_ok {s : State} (hp : XPre s) :
+    WP isa (.block setup) s fun s' =>
+      Ctx (s.gpr .r6) s' ∧ Frame [⟨s.gpr .r6, 8192⟩] s.mem s'.mem ∧
+      SlotsOk s'.mem (s.gpr .r6) LQ (ladV (uOf s) (VG.Proof.X448.init (uOf s))) ∧
+      Rest [.r5, .r7, .r8] s s' := by
+  have hws : (⟨s.gpr .r6, 8192⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  have hc : Ctx (s.gpr .r6) s := ⟨rfl, 8192, by decide, hws⟩
+  unfold setup
+  refine WP.append (decode_ok hc (pt := s.gpr .r5) rfl (by rw [hp.rd]; simp) (disj4096 hp.pt_ws))
+    fun s4 ⟨hl4, hf4, hr4⟩ => ?_
+  have e : toFe (val32 (uLimb s.mem (s.gpr .r5)) 14) = uOf s := by rw [decode_val]; rfl
+  rw [← e]
+  exact consts_post hc hl4 hf4 (hr4.mono (by decide))
+
+theorem val32_five :
+    toFe (val32 fiveLimb 14) = toFe (VG.Spec.X448.decodeUCoordinate VG.Spec.X448.basePoint) := by
+  rw [val32_single _ (by decide), VG.Proof.X448.decodeUCoordinate_eq (by rfl)]; rfl
+
+/-- `setupBase`: the ladder's initial state for the base point. -/
+theorem setupBase_ok {s : State} (hws : (⟨s.gpr .r6, 8192⟩ : Region) ∈ s.wr) :
+    WP isa (.block setupBase) s fun s' =>
+      Ctx (s.gpr .r6) s' ∧ Frame [⟨s.gpr .r6, 8192⟩] s.mem s'.mem ∧
+      SlotsOk s'.mem (s.gpr .r6) LQ (ladV (toFe (VG.Spec.X448.decodeUCoordinate VG.Spec.X448.basePoint))
+        (VG.Proof.X448.init (toFe (VG.Spec.X448.decodeUCoordinate VG.Spec.X448.basePoint)))) ∧
+      Rest [.r5, .r7, .r8] s s' := by
+  have hc : Ctx (s.gpr .r6) s := ⟨rfl, 8192, by decide, hws⟩
+  unfold setupBase
+  refine WP.append (five_ok hc) fun s4 ⟨hl4, hf4, hr4⟩ => ?_
+  rw [← val32_five]
+  exact consts_post hc hl4 hf4 hr4
 
 end VG.Proof.X448.PPC64LE

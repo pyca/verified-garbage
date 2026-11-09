@@ -149,17 +149,6 @@ theorem frameOuts_bytes {s₀ : State} {m m' : Mem} {rs : List (Nat × Nat)}
     exact Offset.contains_base _ (by omega) (by omega)
   · right; omega
 
-/-- The key's bytes, while the frame is allocated. -/
-theorem callKey {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) :
-    Spec.Rsa.bytesAt t.mem (argumentPointer s₀ 3) (X86.arg s₀ 4).toNat = (rInput s₀).key := by
-  refine rBytes_frame h.frame (fun r hr => ?_) (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
-  simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact A.stackKeyWide.symm
-  · exact A.outKey.symm
-  · exact A.keyScratch
-  · exact A.usedKey.symm
-
 /-- The signer's input is the specification's, with the sampled nonce. -/
 theorem callResult_eq {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) {k : Nat}
     (hn : Spec.Rsa.bytesAt t.mem (off (rBase s₀) oNonce) (rQBytes s₀).length =
@@ -216,7 +205,7 @@ def AttemptOut (s₀ : State) (used f : Nat) (u : State) : Prop :=
         (VG.Proof.Dsa.randomSignRemaining (rInput s₀) used (f + 1)).trace).head? = some 6 ∧ 1 ≤ f))
 
 theorem attempt_ok (F : SignFn) {s₀ t : State} (A : RandomSignABI s₀) {used f : Nat}
-    (T : Att s₀ used (f + 1) t) (hf : f + 1 ≤ 8) (hq : 1 < rq s₀) :
+    (T : Att s₀ used (f + 1) t) (hf : f + 1 ≤ 8) (hq : 1 < rq s₀) (hv : KeyValid F.valid s₀) :
     WP isa (attempt F.name F.code) t fun u => AttemptOut s₀ used f u := by
   have hql := rQBytes_le A
   obtain ⟨d₀, Sm⟩ := T.smp
@@ -264,7 +253,7 @@ theorem attempt_ok (F : SignFn) {s₀ t : State} (A : RandomSignABI s₀) {used 
         Spec.Dsa.encodeBE (rQBytes s₀).length k := by
       rw [outs_frame_bytes o₃ (by decide) (by unfold oNonce; omega), m₂]; exact O.nonce k hsc
     have hres := callResult_eq A h₃ hk
-    refine WP.seq (WP.mono (call_ok F A h₃ C₃) fun u₄ ⟨h₄, f₄, _, eax₄, out₄⟩ => ?_)
+    refine WP.seq (WP.mono (call_ok F A h₃ C₃ hv) fun u₄ ⟨h₄, f₄, _, eax₄, out₄⟩ => ?_)
     have at₄ : slot u₄.mem (rBase s₀) oAttempts = BitVec.ofNat 32 (f + 1) := by
       rw [call_frame_slot A f₄ (by decide) (by decide), outs_high o₃ (e := 44) (by decide) (by decide) (by decide), m₂]
       exact at₁

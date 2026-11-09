@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesSiv.Rounds
 public import VerifiedGarbage.Proof.AesSiv.Arm.CTEnc
 import VerifiedGarbage.Proof.AesSiv.Arm.CTInit
 public import VerifiedGarbage.Proof.AesSiv.Scratch
@@ -310,7 +311,7 @@ theorem encrypt_verified : Verified Arm.target encrypt (Proof.AesSiv.encryptScra
   · obtain ⟨E, hTw, hTd⟩ := encPre_of hs
     obtain ⟨t, s', he, hq⟩ := encrypt_wp E.pre.lay E.pre hTw hTd
     refine ⟨t, s', he, hq.1, ?_⟩
-    sig_post [Proof.AesSiv.encryptScratchContract, Proof.AesSiv.encryptScratchSig, Spec.Siv.encryptPost,
+    sig_post [Proof.AesSiv.encryptScratchContract, Proof.AesSiv.encryptScratchSig, Proof.AesSiv.encryptRoundsPost,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     exact fun _ => hq.2
   · sig_pub [Proof.AesSiv.encryptScratchContract, Proof.AesSiv.encryptScratchSig, Arm.abi, Arm.argRegs,
@@ -324,7 +325,7 @@ theorem decrypt_verified : Verified Arm.target decrypt (Proof.AesSiv.decryptScra
     (fun s₁ s₂ hp => ?_) (fun L hR hN hn => (decrypt_ct L hR hN hn).mono fun s h => h.1), decSat_pre⟩
   · obtain ⟨t, s', he, hq⟩ := decrypt_wp (decPre_of hs).pre.lay (decPre_of hs).pre
     refine ⟨t, s', he, hq.1, ?_⟩
-    sig_post [Proof.AesSiv.decryptScratchContract, Proof.AesSiv.decryptScratchSig, Spec.Siv.decryptPost,
+    sig_post [Proof.AesSiv.decryptScratchContract, Proof.AesSiv.decryptScratchSig, Proof.AesSiv.decryptRoundsPost,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     have e : ∀ x y : BitVec 32, (x ++ y).setWidth 32 = y := fun _ _ => BitVec.setWidth_append_eq_right
     rw [e]

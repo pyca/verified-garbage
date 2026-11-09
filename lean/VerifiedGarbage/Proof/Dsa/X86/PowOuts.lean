@@ -33,9 +33,6 @@ namespace OutsS
 
 variable {base : Addr} {sp : BitVec 32} {rs rs' : List (Nat × Nat)} {m₁ m₂ m₃ : Mem}
 
-theorem refl (base : Addr) (sp : BitVec 32) (rs : List (Nat × Nat)) (m : Mem) : OutsS base sp rs m m :=
-  fun _ _ _ => rfl
-
 theorem trans (h₁ : OutsS base sp rs m₁ m₂) (h₂ : OutsS base sp rs m₂ m₃) : OutsS base sp rs m₁ m₃ :=
   fun x hx hz => (h₂ x hx hz).trans (h₁ x hx hz)
 

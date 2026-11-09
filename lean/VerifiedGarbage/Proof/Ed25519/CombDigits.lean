@@ -315,16 +315,6 @@ theorem combEntry_ok (j n : Nat) (hj : j < 32) (hn : n < 16) :
     rw [e, natCast_zsmul]
     exact hr
 
-/-- `n` doublings represent `[2^n]`. -/
-theorem powerPoint_rep {p : Spec.Ed25519.Point} {a : EPoint dZ} (h : Rep p a) :
-    ∀ n, Rep (powerPoint p n) ((2 ^ n : Nat) • a)
-  | 0 => by rw [pow_zero, one_smul]; exact h
-  | n + 1 => by
-    have := (powerPoint_rep h n).double
-    rw [smul_smul] at this
-    rw [powerPoint, pow_succ, Nat.mul_comm]
-    exact this
-
 theorem Rep.affine_x {p : Spec.Ed25519.Point} {a : EPoint dZ} (h : Rep p a) :
     p.X * Spec.X25519.pow p.Z (Spec.X25519.P - 2) = (a.x : Fe) := by
   show toZ (p.X * Spec.X25519.pow p.Z (Spec.X25519.P - 2)) = a.x

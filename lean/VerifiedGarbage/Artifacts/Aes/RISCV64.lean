@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Aes.RISCV64.Ctr32Verified
 public import VerifiedGarbage.Proof.Aes.RISCV64.ExpandKeyVerified
 public import VerifiedGarbage.Proof.Aes.RISCV64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 
 /-! # AES (FIPS 197) on RISC-V -/
@@ -21,9 +22,9 @@ def artifacts : List Artifact := [
     verified := Proof.Aes.RISCV64.expandKey_framed },
   Spec.Aes.encryptBlocksApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.encryptBlocks
-    verified := Proof.Aes.RISCV64.encryptBlocks_verified },
+    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.RISCV64.encryptBlocks_verified },
   Spec.Aes.decryptBlocksApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.decryptBlocks
-    verified := Proof.Aes.RISCV64.decryptBlocks_verified }]
+    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.RISCV64.decryptBlocks_verified }]
 
 end VG.Artifacts.Aes.RISCV64

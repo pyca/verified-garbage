@@ -97,8 +97,6 @@ theorem LA_succ (s₀ : State) {t : Nat} (ht : t < 544) : LA s₀ (t + 1) = rbSt
   show _ = rbStep _ _ ((X s₀).getD t 0)
   rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [X_length]; exact ht), Option.getD_some]
 
-theorem LA_length_le (s₀ : State) (t : Nat) : (LA s₀ t).length ≤ 256 := rbFold_length_le (by simp) _
-
 namespace BPub
 variable {s₀ s₀' : State} (hq : BPub s₀ s₀')
 include hq

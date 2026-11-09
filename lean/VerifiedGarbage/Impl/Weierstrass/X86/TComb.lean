@@ -159,33 +159,9 @@ def signMask : List Instr :=
 negative. -/
 def negY : Prog isa := .seq (Mont.subCall K.F K.neg K.zero K.E.y) (.block (K.signMask ++ sel (2 * K.M.n) K.E.y K.E.y K.neg))
 
-/-- Iteration `j = esi - 1` (with `esi` counting down from `J`): the entry,
-negated for a negative digit, added to `A`. -/
-def step : Prog isa :=
-  .seq (.block ([.alu .sub .esi (.imm 1)] ++ K.digit ++ K.select)) <|
-  .seq K.negY <|
-  .seq (fprog K.F (rcb3 K.S K.A K.E K.D)) <|
-  .block (copyPt K.M.n K.A K.D ++ [.alu .test .esi (.reg .esi)])
-
 /-- The words of the table of bits the comb clears, past the scalar's
 `kbytes`, up to `w J`. -/
 def zw : Nat := (K.w * K.J - K.kbytes + 3) / 4
-
-/-- `A = [c]G`, the bytes of the table of bits past the scalar's cleared (to
-`w J`, in words), and the counter. -/
-def initCore : List Instr :=
-  setConst K.M.n K.A.x K.start.1 ++ setConst K.M.n K.A.y K.start.2 ++ setConst K.M.n K.A.z K.one ++
-    .mov .eax (.imm 0) :: (List.range K.zw).map (fun i => .store (sc (K.bits + K.kbytes + 4 * i)) .eax) ++
-    [.mov .esi (.imm (BitVec.ofNat 32 K.J))]
-
-def init : List Instr := [.store (sc K.ptr) .eax] ++ K.initCore
-
-/-- `[k]G` into `A`, with the table address initially in `eax`. -/
-def comb : Prog isa := .seq (.block K.init) (.loop K.step .ne)
-
-/-- Obtain the table address once, retaining it in the scratch slot `ptr`.
-The frame accounts for CALL's four-byte saved instruction pointer. -/
-def combAtSym : Prog isa := .frame (.symPush .eax K.tsym) K.comb (.pop .eax 1)
 
 end TCombCfg
 

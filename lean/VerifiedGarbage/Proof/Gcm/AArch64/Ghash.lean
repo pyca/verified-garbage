@@ -340,24 +340,6 @@ def ghashWithAArch64 : Contract AArch64.isa where
   post := ghashAArch64.post
   pub s₁ s₂ := ghashAArch64.pub s₁ s₂ ∧ s₁.gpr .x5 = s₂.gpr .x5
 
-open VG.AArch64 in
-/-- `vg_ghash_store_powers(h = x0, y = x1, data = x2, n = x3, scratch = x4,
-pw = x5)`: `ghashAArch64`, and the 8 prepared powers of the hash subkey
-written to `pw` (`Spec.Gcm.Powers8Repr`, 128 bytes). -/
-def ghashStoreAArch64 : Contract AArch64.isa where
-  pre s :=
-    let h : Region := ⟨s.gpr .x0, 16⟩
-    let y : Region := ⟨s.gpr .x1, 16⟩
-    let data : Region := ⟨s.gpr .x2, 16 * (s.gpr .x3).toNat⟩
-    let scratch : Region := ⟨s.gpr .x4, 256⟩
-    let pw : Region := ⟨s.gpr .x5, 128⟩
-    s.rd = [h, data] ∧ s.wr = [y, scratch, pw] ∧
-    h.Disjoint y ∧ h.Disjoint scratch ∧ h.Disjoint pw ∧ y.Disjoint data ∧ y.Disjoint scratch ∧
-    y.Disjoint pw ∧ data.Disjoint scratch ∧ data.Disjoint pw ∧ scratch.Disjoint pw
-  post s s' := ghashAArch64.post s s' ∧
-    Powers8Repr s'.mem (s.gpr .x5) (blockAt s.mem (s.gpr .x0))
-  pub s₁ s₂ := ghashAArch64.pub s₁ s₂ ∧ s₁.gpr .x5 = s₂.gpr .x5
-
 end
 
 end VG.Proof.Gcm
@@ -681,12 +663,6 @@ theorem ghash_ct : ConstantTime isa Proof.Gcm.ghashAArch64.pre Proof.Gcm.ghashAA
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
-
-theorem ghash_verified :
-    Verified AArch64.target Impl.Gcm.AArch64.ghash (Proof.Gcm.ghashContract AArch64.abi) :=
-  Verified.of_correct ghash_correct ghash_ct (by
-    sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, Proof.Gcm.ghashAArch64, AArch64.abi,
-      AArch64.argRegs] [Proof.Gcm.AArch64.satState] using Proof.Gcm.AArch64.satState)
 
 end VG.Proof.Gcm.AArch64
 

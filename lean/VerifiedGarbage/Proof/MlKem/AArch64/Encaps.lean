@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemB
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
@@ -45,7 +46,7 @@ def encapsAArch64 (P : KemLay) : Contract AArch64.isa where
     let ct : Region := ⟨s.gpr .x3, P.ctLen⟩
     let scratch : Region := ⟨s.gpr .x4, P.scl⟩
     let stack : Region := ⟨s.sp - 16, 16⟩
-    s.rd = [ek, msg] ∧ s.wr = [key, ct, scratch] ∧ ek.Disjoint key ∧ ek.Disjoint ct ∧
+    ek ∈ s.rd ∧ msg ∈ s.rd ∧ s.wr = [key, ct, scratch] ∧ ek.Disjoint key ∧ ek.Disjoint ct ∧
     ek.Disjoint scratch ∧ msg.Disjoint key ∧ msg.Disjoint ct ∧ msg.Disjoint scratch ∧ key.Disjoint ct ∧
     key.Disjoint scratch ∧ ct.Disjoint scratch ∧ 16 ≤ s.sp.toNat ∧ stack.Disjoint ek ∧ stack.Disjoint msg ∧
     stack.Disjoint key ∧ stack.Disjoint ct ∧ stack.Disjoint scratch
@@ -93,11 +94,13 @@ tactic_template "enk" : tactic => `(tactic| (
   first | decide | omega_using [offs (‹Pre _ _ _›).wf] | kom))
 
 theorem pre_of (hP : P.Wf) {s₀ : State} (h : (encapsAArch64 P).pre s₀) : Pre P (enL P) s₀ := by
-  obtain ⟨rd, wr, d02, d03, d04, d12, d13, d14, d23, d24, d34, sp16, k0, k1, k2, k3, k4⟩ := h
+  obtain ⟨rd0, rd1, wr, d02, d03, d04, d12, d13, d14, d23, d24, d34, sp16, k0, k1, k2, k3, k4⟩ := h
   refine ⟨by
     intro b hb
     have hb' : b = 0 ∨ b = 1 := by change b < 2 at hb; omega
-    rcases hb' with rfl | rfl <;> rw [rd] <;> simp [kA, enL, argReg], by rw [wr]; rfl, ⟨fun b hb c hc hbc hw => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16,
+    rcases hb' with rfl | rfl
+    · exact rd0
+    · exact rd1, by rw [wr]; rfl, ⟨fun b hb c hc hbc hw => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16,
     by enk, by enk, rfl, hP⟩
   · have e : ∀ {x y : Region}, x.Disjoint y → y.Disjoint x := fun h => h.symm
     simp only [enL] at hb hc hw
@@ -118,8 +121,6 @@ abbrev mE (s₀ : State) : List Byte := bytesAt s₀.mem (kA s₀ 1) 32
 abbrev gE (P : KemLay) (s₀ : State) : List Byte × List Byte := G (mE s₀ ++ H (ekE P s₀))
 /-- `ρ`. -/
 abbrev rhoE (P : KemLay) (s₀ : State) : List Byte := ekRho P.params (ekE P s₀)
-
-theorem sha3Suffix_eq : Spec.Sha3.sha3Suffix = BitVec.ofNat 8 6 := rfl
 
 /-- After the first phase. -/
 structure AfterA (P : KemLay) (s₀ s : State) : Prop where
@@ -449,13 +450,9 @@ theorem encaps_correctWith (s : State) (hs : (encapsAArch64 lay768).pre s) :
   encaps_correct KeyGen.wf768 calls768 hs
 
 theorem encaps_verifiedWith :
-    Verified AArch64.target (encapsWith keccak.callee) (Spec.MlKem.encapsContract AArch64.abi 16) :=
+    Verified AArch64.target (encapsWith keccak.callee) (Proof.MlKem.Scrubbed.encapsBodyContract AArch64.abi 16) :=
   Verified.of_correct (encaps_correctWith (keccak := keccak)) (ct KeyGen.wf768 taints768) (by
-    mlkem_implies [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, encapsAArch64, lay768, KemLay.params,
+    mlkem_implies [Proof.MlKem.Scrubbed.encapsBodyContract, Spec.MlKem.encapsSig, encapsAArch64, lay768, KemLay.params,
       Spec.MlKem.mlKem768, KemLay.ekLen, KemLay.ctLen, AArch64.abi, AArch64.argRegs] [sat] using sat)
-
-theorem encaps_verified :
-    Verified AArch64.target encaps (Spec.MlKem.encapsContract AArch64.abi 16) :=
-  encaps_verifiedWith (keccak := .scalar)
 
 end VG.Proof.MlKem.AArch64.Encaps

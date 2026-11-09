@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivatePre
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivateCall
 import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Public nested-call observations agree for the same public RSA key -/
 
@@ -13,9 +14,9 @@ open VG VG.X86 VG.Proof.Bignum.X86
 theorem privateCall_pub {g : Geometry} {bs1 bs2 : Fin 8 → List Byte} {s t : State}
     (hs : Context g bs1 s) (ht : Context g bs2 t) (argsS : PrivateArgs g s) (argsT : PrivateArgs g t)
     (nb : bs1 0 = bs2 0) (eb : bs1 1 = bs2 1) :
-    (Spec.Rsa.privateCheckedContract abi VG.Proof.Rsa.X86.PrivChecked.stackBytes).pub
+    (Proof.Rsa.privateCheckedContract abi VG.Proof.Rsa.X86.PrivChecked.stackBytes).pub
       (s.callEntry.withRegions (privateRd g) (privateWr g)) (t.callEntry.withRegions (privateRd g) (privateWr g)) := by
-  sig_pub [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes]
+  sig_pub [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes]
   have sa := fun {j} (hj : j < 20) => privateArgs_values hs argsS hj
   have ta := fun {j} (hj : j < 20) => privateArgs_values ht argsT hj
   simp only [hs.sp, ht.sp, sa (by decide : 0 < 20), ta (by decide : 0 < 20),

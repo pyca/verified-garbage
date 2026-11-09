@@ -7,6 +7,10 @@
 pub struct Table<const N: usize>(pub [u8; N]);
 
 #[rustfmt::skip]
+mod vg_brainpoolp256r1_comb;
+pub use vg_brainpoolp256r1_comb::VG_BRAINPOOLP256R1_COMB;
+
+#[rustfmt::skip]
 mod vg_cast5_s1234;
 pub use vg_cast5_s1234::VG_CAST5_S1234;
 
@@ -23,6 +27,10 @@ mod vg_ed25519_verify_neg_base;
 pub use vg_ed25519_verify_neg_base::VG_ED25519_VERIFY_NEG_BASE;
 
 #[rustfmt::skip]
+mod vg_p224_comb;
+pub use vg_p224_comb::VG_P224_COMB;
+
+#[rustfmt::skip]
 mod vg_p224_sqrt;
 pub use vg_p224_sqrt::VG_P224_SQRT;
 
@@ -37,3 +45,7 @@ pub use vg_p384_comb::VG_P384_COMB;
 #[rustfmt::skip]
 mod vg_rsa_keygen_trial32;
 pub use vg_rsa_keygen_trial32::VG_RSA_KEYGEN_TRIAL32;
+
+#[rustfmt::skip]
+mod vg_secp256k1_comb;
+pub use vg_secp256k1_comb::VG_SECP256K1_COMB;

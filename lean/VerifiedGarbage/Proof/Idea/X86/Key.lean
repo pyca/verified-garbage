@@ -83,8 +83,6 @@ theorem arg_src {s : State} {i n : Nat} (hi : 4 * i + 4 ≤ n) (h : ⟨argAddr s
     addr_eq (by omega), addr_eq (by omega)]
   exact Offset.contains _ (by omega) (by omega) (by omega)
 
-theorem arg_eq (s : State) (i : Nat) : s.mem.readW (addr (s.gpr .esp) (4 + 4 * i)) 32 = arg s i := rfl
-
 theorem expand_correct (s : State) (hs : expandContract.pre s) :
     WP isa expandKey s (fun s' => abiPreserved s s' ∧ expandContract.post s s') := by
   obtain ⟨hrd, hwr, dKS, dAS, dRS, fitK, fitS, fitSp⟩ := hs

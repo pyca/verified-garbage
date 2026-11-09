@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Impl.Rsa.X86_64.WordReduce
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
 
 /-!
@@ -32,8 +34,8 @@ by `inverseN` at the primes' width `⌈max(p_len, q_len) / 8⌉` (and'ing
 `gcd(q, p) = 1` into the mask), and `dP` and `dQ` by
 `divmod` (with the divisor `p` or `q` with its low bit cleared: `p - 1` for
 an odd `p`, which `p q = n` implies). Each result is written out masked.
-`p q = n` is checked by `divmod` too, as `n mod p = 0`, `n / p = q` and `p`
-odd.
+`p q = n` is checked by multiplying the factors into two contiguous
+arrays and comparing the full product with `n`.
 -/
 
 @[expose] public section
@@ -464,7 +466,56 @@ def zeroOut (sPtr sLen : Nat) : Prog isa :=
 /-- The mask's low bit returned, and the saved registers restored. -/
 def retMask : List Instr := ([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit
 
-/-! ## `vg_rsa_crt_values` -/
+end VG.Impl.Rsa.X86_64.Keys
+
+namespace VG.Impl.Rsa.X86_64.WordDivide
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys
+
+def aR : Nat := 3
+def aD : Nat := 5
+def aT : Nat := 8
+def aM : Nat := 9
+def aV : Nat := 16
+
+def wm (d : Nat) : MemOp := { base := .rbp, disp := d }
+
+/-- Invalid factors still enter a normalized, fixed-width computation. -/
+def normalize : List Instr :=
+  ws ++ base aM .r10 ++
+  [.shift .shr .r12 1, .mov .rax (.mem (ix .r10 .r12 (-8))),
+    .movImm64 .rdx 9223372036854775808, .alu .or .rax (.reg .rdx), .store (ix .r10 .r12 (-8)) .rax]
+
+def recipSetup : List Instr :=
+  ws ++ base aM .r10 ++ base aV .r8 ++ [.shift .shr .r12 1]
+
+def countSetup : List Instr :=
+  ws ++ base aV .rbp ++ [.mov .rax (.reg .r12), .store (wm 16) .rax]
+
+def stepLoad : List Instr :=
+  ws ++ base aV .rbp ++ base aD .r11 ++ [.mov .rcx (.mem (wm 16))]
+
+def stepDigit : List Instr :=
+  ([.alu .sub .rcx (.imm 1), .mov .rdx (.mem (ix .r11 .rcx)),
+    .store (wm 8) .rdx] : List Instr) ++
+  base aR .rbx ++ base aM .r10 ++ base aT .r8 ++ [.shift .shr .r12 1]
+
+def stepSetup : List Instr := stepLoad ++ stepDigit
+
+def next : List Instr :=
+  ws ++ base aV .rbp ++ [.mov .rax (.mem (wm 16)), .alu .sub .rax (.imm 1), .store (wm 16) .rax]
+
+def body : Prog isa := seqs [.block stepSetup, WordReduce.step, .block next]
+
+def code : Prog isa := seqs [
+  zeroA aR, .block recipSetup, R2Words.recip, .block countSetup, .loop body .ne]
+
+end VG.Impl.Rsa.X86_64.WordDivide
+
+
+namespace VG.Impl.Rsa.X86_64.Keys
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64
 
 namespace CrtValues
 
@@ -530,16 +581,16 @@ def aC : Nat := 9
 def andZero : List Instr :=
   [.alu .cmp .rbp (.imm 1), .alu .sbb .rbp (.reg .rbp), .alu .and .rbp (.mem (hdr sMask)), .store (hdr sMask) .rbp]
 
-/-- The mask of `[j]` odd and'ed into `sMask`. -/
-def andOdd (j : Nat) : List Instr :=
-  ws ++ base j .rbx ++ ([.mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm 1), .mov32 .rdx (.imm 0),
-    .alu .sub .rdx (.reg .rax), .alu .and .rdx (.mem (hdr sMask)), .store (hdr sMask) .rdx] : List Instr)
+/-- The factors' bases and widths for `mulRows`, and the product's base.
+The product occupies arrays 2 and 3, leaving the factors and `d` alone. -/
+def productSetup : List Instr :=
+  ws ++ base aP .r11 ++ base aQ .rax ++ base aU .r8 ++
+    ([.mov .r9 (.reg .rax), .mov .r10 (.reg .r12)] : List Instr)
 
-/-- The mask of `p q = n` and'ed into `sMask`, as `n mod p = 0`,
-`n / p = q` and `p` odd (which `p q = n` implies, `n` being odd). -/
+/-- The mask of `p q = n` and'ed into `sMask`, comparing all `2 w + 2`
+words of the product so an overflowing product cannot pass. -/
 def pqCheck : List (Prog isa) :=
-  [zeroA aU, copyA aU aN, divmod aU aV aP aT] ++ eqA aU aQ ++ [.block andZero, zeroA aC] ++ eqA aV aC ++
-    [.block andZero, .block (andOdd aP)]
+  Crt.zeroAccs ++ [.block productSetup, Crt.mulRows] ++ Crt.eqCheck
 
 /-- `r13 := ⌈max(p_len, q_len) / 8⌉`, the primes' width in words, without a
 branch (`cmovb`). -/
@@ -557,11 +608,27 @@ def invPart : List (Prog isa) :=
 def divisor (j : Nat) : List (Prog isa) :=
   [zeroA aC, copyA aC j, .block (decA aC), zeroA aU, copyA aU aD]
 
+/-- Public pointer setup for the common balanced-key layout. -/
+def wordGuardHead : List Instr := ws ++ [.mov .rdx (.mem (hdr sN))]
+
+/-- Zero exactly for full-word balanced factors and a full-size modulus. -/
+def wordGuardTail : List Instr :=
+  [.mov .rax (.reg .r12), .alu .and .rax (.imm 1),
+    .mov .rcx (.reg .r12), .shift .shl .rcx 3, .alu .xor .rcx (.mem (hdr sK)), .alu .or .rax (.reg .rcx),
+    .mov .rcx (.mem (hdr sPl)), .shift .shl .rcx 1, .alu .xor .rcx (.mem (hdr sK)), .alu .or .rax (.reg .rcx),
+    .mov .rcx (.mem (hdr sPl)), .alu .xor .rcx (.mem (hdr sQl)), .alu .or .rax (.reg .rcx),
+    .movzx8 .rcx { base := .rdx }, .shift .shr .rcx 7, .alu .xor .rcx (.imm 1), .alu .or .rax (.reg .rcx)]
+
+/-- Word reductions are selected using public lengths and the modulus. -/
+def wordChoice (j : Nat) : Prog isa := .seq (.block wordGuardHead) (.seq (.block wordGuardTail)
+  (.ite .e (.seq (seqs (divisor j)) (.seq (.block WordDivide.normalize) WordDivide.code))
+    (seqs (divisor j ++ [divmod aU aV aC aT]))))
+
 /-- The computation, once `n` is known valid. -/
 def main : Prog isa := seqs ([
   .block head] ++ loadA aN sN sK ++ loadA aP sP sPl ++ loadA aQ sQ sQl ++ loadA aD sD sDl ++ pqCheck ++ invPart ++
   -- `dP = d mod (p - 1)` into `aX₁` and `dQ = d mod (q - 1)` in `aV`.
-  divisor aP ++ [divmod aU aV aC aT, zeroA aX₁, copyA aX₁ aV] ++ divisor aQ ++ [divmod aU aV aC aT] ++
+  [wordChoice aP, zeroA aX₁, copyA aX₁ aV, wordChoice aQ] ++
   storeA aX₂ sQi sPl sMask ++ storeA aX₁ sDp sPl sMask ++ storeA aV sDq sQl sMask ++
   [.block retMask])
 

@@ -16,39 +16,58 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub(crate) unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
         r#".base64 "eCOHfA=="
 20:
 .base64 "AAAD6QAABfkIAGM4CAClOPj/hDgAACQo"
 bne %cr0, 20b
-.base64 "UChHffz/ZTkAAIA5gvDkeBQiBH0UQoR8HACEOAEAwDg="
-21:
-.base64 "AAArgQAALCg="
-beq %cr0, 22f
-.base64 "8P8MOAAAICg="
-beq %cr0, 24f
-b 25f
-24:
-.base64 "4P8HOAAAICg="
-beq %cr0, 26f
-b 27f
-26:
-.base64 "ZwEJfMgFABBnAAl8PgApVQ=="
-27:
+.base64 "6P8HOAAAICg="
+beq %cr0, 21f
+.base64 "UChnfQAAgDmZZit8LAohEBAASzmZZkp8LBJCEMQkhBAAAwA9AgEIYcYHCHkAAwhlAgEIYWcBqHxnAWh8LCqkECwapRABAAA9AwIIYcYHCHkBAAhlAwIIYWcByHxnAWh8LDLEECwaxhAQEAA9BxAIYcYHCHkQEAhlBxAIYWcB6HxnAWh8LDrkECwa5xABAMA48P8HOAAAICg="
+beq %cr0, 23f
+.base64 "BgCAOA=="
 25:
-b 23f
-22:
-.base64 "ZwEJfMgFABBnAAl8PgApVT7AKVV4Mil9wsnAeAAAADlQQAB8GwAAOThAAHwUMsZ8eALGfP8AADk4QMZ8"
+.base64 "ZwEGfeshCBHCycB4AAAAOVBAAHwbAAA5OEAAfBQyxnx4AsZ8/wAAOThAxnxrEQIQyAUAEMREABAsIWEQxBwhECwiYRDEHCEQxAQhECwKIRGZZyV9EAClOKsJARDIBQAQLCFiEMQcQhAsImIQxBxCEMQEQhAsEiIRmWclfRAApTj//4Q4AAAkKA=="
+bne %cr0, 25b
+.base64 "ZwEGfeshCBHCycB4AAAAOVBAAHwbAAA5OEAAfBQyxnx4AsZ8/wAAOThAxnxrEQIQyAUAEMREABAsIWEQxBwhECwiYRDEHCEQxAQhECwKIRGZZyV9EAClOA=="
+b 24f
 23:
-.base64 "AAAKgXhCKX0EACuRBABrOQQASjkEAIw5UGAHfAAAICg="
+.base64 "CgCAOA=="
+26:
+.base64 "ZwEGfeshCBHCycB4AAAAOVBAAHwbAAA5OEAAfBQyxnx4AsZ8/wAAOThAxnxrCQEQyAUAEMREABAsIWEQxBwhECwiYRDEHCEQxAQhECwKIRGZZyV9EAClOP//hDgAACQo"
+bne %cr0, 26b
+24:
+b 22f
+21:
+.base64 "UChHffz/ZTkAAIA5gvDkeBQiBH0UQoR8HACEOAEAwDgAACuB"
+27:
+.base64 "AAAsKA=="
 beq %cr0, 28f
+.base64 "8P8MOAAAICg="
+beq %cr0, 210f
+b 211f
+210:
+.base64 "4P8HOAAAICg="
+beq %cr0, 212f
+b 213f
+212:
+.base64 "ZwEJfMgFABBnAAl8PgApVQ=="
+213:
+211:
 b 29f
 28:
-.base64 "AACAOQ=="
+.base64 "ZwEJfMgFABBnAAl8PgApVT7AKVV4Mil9wsnAeAAAADlQQAB8GwAAOThAAHwUMsZ8eALGfP8AADk4QMZ8"
 29:
+.base64 "AAAKgXhCKX0EACuRBABrOQQASjkEAIw5UGAHfAAAICg="
+beq %cr0, 214f
+b 215f
+214:
+.base64 "AACAOQ=="
+215:
 .base64 "//+EOAAAJCg="
-bne %cr0, 21b
+bne %cr0, 27b
+22:
 .base64 "IACATg==""#,
     )
 }
@@ -67,7 +86,7 @@ bne %cr0, 21b
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "AAAmKA=="
 beq %cr0, 20f
@@ -83,18 +102,36 @@ bne %cr0, 24b
 b 23f
 22:
 23:
-.base64 "AAAnKA=="
+.base64 "BACAOThg7HwAACwo"
 beq %cr0, 26f
+.base64 "mQYGfOsEABAQAMY4mQYmfOsMIRAQAMY4mQZGfOsUQhAQAMY4mQZmfOscYxAQAMY4wP/GOHgbaXyZBgl960QIEcREABDERCEQxERCEMREYxAQACk5//9EOQ=="
 28:
-.base64 "mQYGfOsEABAQAMY48P/GOHgbaXyZBgl960QIEcREABAQACk5//9EOQ=="
-29:
-.base64 "mQYJfetECBEIRQAQEAApOf//SjkAACoo"
-bne %cr0, 29b
-.base64 "mQYJfetECBEJRQAQ6wQAEJkHBnwQAMY4///nOAAAJyg="
+.base64 "mQYJfetECBEIRQAQCEUhEAhFQhAIRWMQEAApOf//SjkAACoo"
 bne %cr0, 28b
+.base64 "mQYJfetECBEJRQAQCUUhEAlFQhAJRWMQ6wQAEJkHBnwQAMY46wwhEJkHJnwQAMY46xRCEJkHRnwQAMY46xxjEJkHZnwQAMY4/P/nOA=="
 b 27f
 26:
 27:
+.base64 "AgCAOThg7HwAACwo"
+beq %cr0, 29f
+.base64 "mQYGfOsEABAQAMY4mQYmfOsMIRAQAMY44P/GOHgbaXyZBgl960QIEcREABDERCEQEAApOf//RDk="
+211:
+.base64 "mQYJfetECBEIRQAQCEUhEBAAKTn//0o5AAAqKA=="
+bne %cr0, 211b
+.base64 "mQYJfetECBEJRQAQCUUhEOsEABCZBwZ8EADGOOsMIRCZByZ8EADGOP7/5zg="
+b 210f
+29:
+210:
+.base64 "AQCAOThg7HwAACwo"
+beq %cr0, 212f
+.base64 "mQYGfOsEABAQAMY48P/GOHgbaXyZBgl960QIEcREABAQACk5//9EOQ=="
+214:
+.base64 "mQYJfetECBEIRQAQEAApOf//SjkAACoo"
+bne %cr0, 214b
+.base64 "mQYJfetECBEJRQAQ6wQAEJkHBnwQAMY4///nOA=="
+b 213f
+212:
+213:
 b 21f
 20:
 21:
@@ -116,7 +153,7 @@ b 21f
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "AAAmKA=="
 beq %cr0, 20f
@@ -132,18 +169,36 @@ bne %cr0, 24b
 b 23f
 22:
 23:
-.base64 "AAAnKA=="
+.base64 "BACAOThg7HwAACwo"
 beq %cr0, 26f
+.base64 "mQYGfOsEABAQAMY4mQYmfOsMIRAQAMY4mQZGfOsUQhAQAMY4mQZmfOscYxAQAMY4wP/GOOQmiXgUSiN9mQYJfetECBHERAAQxEQhEMREQhDERGMQ8P8pOf//RDk="
 28:
-.base64 "mQYGfOsEABAQAMY48P/GOOQmiXgUSiN9mQYJfetECBHERAAQ8P8pOf//RDk="
-29:
-.base64 "mQYJfetECBFIRQAQ8P8pOf//SjkAACoo"
-bne %cr0, 29b
-.base64 "mQYJfetECBFJRQAQ6wQAEJkHBnwQAMY4///nOAAAJyg="
+.base64 "mQYJfetECBFIRQAQSEUhEEhFQhBIRWMQ8P8pOf//SjkAACoo"
 bne %cr0, 28b
+.base64 "mQYJfetECBFJRQAQSUUhEElFQhBJRWMQ6wQAEJkHBnwQAMY46wwhEJkHJnwQAMY46xRCEJkHRnwQAMY46xxjEJkHZnwQAMY4/P/nOA=="
 b 27f
 26:
 27:
+.base64 "AgCAOThg7HwAACwo"
+beq %cr0, 29f
+.base64 "mQYGfOsEABAQAMY4mQYmfOsMIRAQAMY44P/GOOQmiXgUSiN9mQYJfetECBHERAAQxEQhEPD/KTn//0Q5"
+211:
+.base64 "mQYJfetECBFIRQAQSEUhEPD/KTn//0o5AAAqKA=="
+bne %cr0, 211b
+.base64 "mQYJfetECBFJRQAQSUUhEOsEABCZBwZ8EADGOOsMIRCZByZ8EADGOP7/5zg="
+b 210f
+29:
+210:
+.base64 "AQCAOThg7HwAACwo"
+beq %cr0, 212f
+.base64 "mQYGfOsEABAQAMY48P/GOOQmiXgUSiN9mQYJfetECBHERAAQ8P8pOf//RDk="
+214:
+.base64 "mQYJfetECBFIRQAQ8P8pOf//SjkAACoo"
+bne %cr0, 214b
+.base64 "mQYJfetECBFJRQAQ6wQAEJkHBnwQAMY4///nOA=="
+b 213f
+212:
+213:
 b 21f
 20:
 21:
@@ -160,12 +215,20 @@ pub(crate) mod vg_aes_ctr32;
 pub(crate) mod vg_aes_expand_key_scratch;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_encrypt_blocks.rs"]
 pub(crate) mod vg_aes_gcm_encrypt_blocks;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_encrypt_blocks_split.rs"]
 pub(crate) mod vg_aes_gcm_encrypt_blocks_split;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split.rs"]
+pub(crate) mod vg_aes_gcm_open_split;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_seal_split.rs"]

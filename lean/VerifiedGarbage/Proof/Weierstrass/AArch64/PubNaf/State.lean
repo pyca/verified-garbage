@@ -14,8 +14,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 The public NAF (`PubNaf`) keeps its numbers where the window method does
 (`WinLay`, `WinA`), and its table of the odd multiples `[1]P, [3]P, …, [15]P`
 in the window method's eight entries, in Jacobian coordinates (`OddTbl`).
-`NSt` is what holds from the table on; `NSt.inv` and `NSt.post` go from it to
-the field programs' invariant (`Inv`) and back.
+`NSt` is what holds from the table on; `NSt.inv` goes from it to the field
+programs' invariant (`Inv`).
 -/
 
 @[expose] public section
@@ -196,32 +196,6 @@ theorem rcbW_other {K : WinCfg} {o : Pt} (ho : o = K.R ∨ o = K.D ∨ o = K.E) 
   all_goals first
     | (simp only [winOther, rcbW, List.cons_append, List.nil_append, List.mem_cons, true_or, or_true]; done)
     | exact pt_other ho _ (by simp only [List.mem_cons, List.not_mem_nil, or_false, true_or, or_true])
-
-/-- A point operation's result, back in the state: what it wrote is in `loopW`. -/
-theorem NSt.post {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay K size)
-    {P Q : Point C} {s₀ s t : State} (h : NSt K C base size P s₀ s) {V : List Nat} {o : Pt}
-    (ho : o = K.R ∨ o = K.D ∨ o = K.E)
-    (hp : JacPost K.M K.S base size C (· ∈ winSlots K) V o Q s t) :
-    NSt K C base size P s₀ t ∧ (∀ x ∈ [o.x, o.y, o.z], wordsVal t.mem base x K.M.n < C.p) ∧
-      InvJ C (tmv C K.M.n base t o.x) (tmv C K.M.n base t o.y) (tmv C K.M.n base t o.z) Q ∧
-      (∀ x ∈ V, wordsVal t.mem base x K.M.n < C.p) ∧
-      (∀ x ∈ V, x ∉ rcbW K.S o → wordsVal t.mem base x K.M.n = wordsVal s.mem base x K.M.n) := by
-  obtain ⟨E, hk, hi, hj⟩ := hp
-  have hU : Unch base (loopW K) s.mem t.mem := hk.unch.mono fun w hw => by
-    simp only [loopW, List.mem_append, List.mem_map, List.mem_singleton] at hw ⊢
-    rcases hw with ⟨y, hy, rfl⟩ | rfl
-    · exact Or.inl ⟨y, rcbW_other ho y hy, rfl⟩
-    · exact Or.inr rfl
-  refine ⟨h.next hL hi.scr ((⟨hk.gpr, hk.rd, hk.wr, hk.sp⟩ : KeepRegs (clob K.M.n) s t).mono
-      clob_nafClob) hU, fun x hx => hi.lt x (List.mem_append_left _ hx),
-    hi.point_tmv (fun x hx => List.mem_append_left _ hx) hj,
-    fun x hx => hi.lt x (List.mem_append_right _ hx), fun x hx hw => ?_⟩
-  have hs : x ∈ winSlots K := hi.sl x (List.mem_append_right _ hx)
-  refine hk.unch.wordsVal (fun w hw' => ?_) (by have := hL.lay.le x hs; have := h.scr.nowrap; omega)
-  simp only [List.mem_append, List.mem_map, List.mem_singleton] at hw'
-  rcases hw' with ⟨y, hy, rfl⟩ | rfl
-  · exact hL.lay.apart x y hs (winOther_mem (rcbW_other ho y hy)) (fun e => hw (e ▸ hy))
-  · exact hL.lay.tmp x hs
 
 /-- The point operations' slots are apart: `2P` into `E`, `D + E` into `R`,
 `R + E` and `2R` into `D`, and the copies `R = P`, `R = D`, `E = R`, and

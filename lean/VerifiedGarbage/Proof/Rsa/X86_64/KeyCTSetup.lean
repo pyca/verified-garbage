@@ -157,7 +157,13 @@ theorem setup_nested {a : MPub} {s : State} (h : M0 a s) : WP isa (.block VG.Imp
       pl1 := hp.pl1
       pl2 := by dsimp only; omega_arith
       ql1 := hp.ql1
-      ql2 := by dsimp only; omega_arith }⟩
+      ql2 := by dsimp only; omega_arith
+      word_w1 := by dsimp only; omega_arith
+      word_w2 := by dsimp only; omega_arith
+      word_room := by
+        dsimp only
+        simp only [slot, hdrBytes]
+        omega_using [hp.zk, hp.k1] }⟩
   · rw [Outside.wv_arr ho₅ (by decide) hZ hn (by dsimp only; omega_arith), ha₄.wv_of_not_mem (by decide) (by decide) hn', hm₃]
     exact hv₂
   · rw [Outside.wv_arr ho₅ (by decide) hZ hn (by dsimp only; omega_arith), hone, hdx₃]; rfl

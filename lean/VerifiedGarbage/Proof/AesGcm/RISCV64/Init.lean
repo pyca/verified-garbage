@@ -47,10 +47,6 @@ theorem zero_block2 (m : Mem) (p : Addr) :
     blockAt ((m.writeW p (0 : BitVec 64)).writeW (p + BitVec.ofNat 64 8) (0 : BitVec 64)) p = 0 := by
   rw [blockAt, zeroT_bytes]; decide
 
-theorem add8 (p : Addr) (a : Nat) :
-    p + BitVec.ofNat 64 (a + 8) = p + BitVec.ofNat 64 a + BitVec.ofNat 64 8 := by
-  simp only [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-
 /-- The number of rounds of `init`'s key. -/
 abbrev initR (s₀ : State) : Nat := Spec.Aes.rounds ((s₀.gpr .a1).toNat / 4)
 

@@ -7,13 +7,14 @@ import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: the private-key operation, as a callee
 
 Decryption calls `vg_rsa_private_checked`. A `PrivImpl` is any
 implementation of it verified against its shared contract
-`Spec.Rsa.privateCheckedContract` with `stack` bytes of stack (at least
+`Proof.Rsa.privateCheckedContract` with `stack` bytes of stack (at least
 16), whose frames fit in them; the proof of decryption is written for any
 of them, as for any implementation of the hash functions it calls.
 
@@ -36,7 +37,7 @@ structure PrivImpl where
   name : String
   code : Prog isa
   stack : Nat
-  verified : Verified AArch64.target code (Spec.Rsa.privateCheckedContract AArch64.abi stack)
+  verified : Verified AArch64.target code (Proof.Rsa.privateCheckedContract AArch64.abi stack)
   pos : 16 ≤ stack
   depth : 16 * code.aarch64Depth ≤ stack
   spSafe : code.all (fun i => !isa.writesSp i) = true
@@ -99,8 +100,8 @@ def privK (S : Nat) : Contract isa where
       Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x4) (s₁.gpr .x5).toNat = Spec.Rsa.bytesAt s₂.mem (s₂.gpr .x4) (s₂.gpr .x5).toNat
 
 theorem priv_pre {S : Nat} {s : State} (h : (privK S).pre s) :
-    (Spec.Rsa.privateCheckedContract AArch64.abi (S + 1)).pre s := by
-  sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, AArch64.abi, AArch64.argRegs,
+    (Proof.Rsa.privateCheckedContract AArch64.abi (S + 1)).pre s := by
+  sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq]
   simp only [privK] at h
   sig_split h
@@ -110,14 +111,14 @@ theorem priv_pre {S : Nat} {s : State} (h : (privK S).pre s) :
     | with_reducible exact Region.Disjoint.symm ‹_›
 
 theorem priv_post {S : Nat} {s s' : State}
-    (h : (Spec.Rsa.privateCheckedContract AArch64.abi (S + 1)).post s s') : (privK S).post s s' := by
-  sig_post [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, AArch64.abi, AArch64.argRegs,
+    (h : (Proof.Rsa.privateCheckedContract AArch64.abi (S + 1)).post s s') : (privK S).post s s' := by
+  sig_post [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq] at h
   exact h
 
 theorem priv_pub {S : Nat} {s₁ s₂ : State} (h : (privK S).pub s₁ s₂) :
-    (Spec.Rsa.privateCheckedContract AArch64.abi (S + 1)).pub s₁ s₂ := by
-  sig_pub [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, AArch64.abi, AArch64.argRegs,
+    (Proof.Rsa.privateCheckedContract AArch64.abi (S + 1)).pub s₁ s₂ := by
+  sig_pub [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq]
   obtain ⟨hsp, h0, h1, h2, h3, h4, h5, h6, h7, ha, hn, he⟩ := h
   exact ⟨hsp, by rw [List.map_append, List.map_append, hn, he], h0, h1, h2, h3, h4, h5, h6, h7,
@@ -133,7 +134,7 @@ def S : Nat := v.stack - 1
 
 theorem stack_eq : v.stack = v.S + 1 := by have := v.pos; unfold S; omega
 
-theorem verified' : Verified AArch64.target v.code (Spec.Rsa.privateCheckedContract AArch64.abi (v.S + 1)) :=
+theorem verified' : Verified AArch64.target v.code (Proof.Rsa.privateCheckedContract AArch64.abi (v.S + 1)) :=
   v.stack_eq ▸ v.verified
 
 theorem correct (s : State) (h : (privK v.S).pre s) :

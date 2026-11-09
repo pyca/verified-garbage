@@ -16,7 +16,7 @@ open VG.Proof.Rsa.X86.Keys (arr S num)
 open VG.Impl.RsaKeyGen.X86.KeyRuntime
 open VG.Impl.RsaKeyGen.X86.Key (aOne)
 
-/-- `Key.clearArrays_ok` at the run-time width. -/
+/-- `clearInputs`: every array cleared and `aOne` set to 1, at the run-time width. -/
 theorem clearInputs_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) :
     WP isa clearInputs s fun t =>
       Ws t B Z n 32 ∧ Outs B [(VG.Impl.Rsa.X86.Keys.hdr, 32 * S n)] s.mem t.mem ∧

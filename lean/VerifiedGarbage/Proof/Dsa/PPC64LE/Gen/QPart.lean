@@ -51,22 +51,22 @@ section
 variable {G : GP} {STK : Nat} {σ s : State} {V : Nat → BitVec 64} {LS : List Nat}
 
 theorem GI.seedsFit (h : GI G STK σ V LS s) : G.seeds.toNat + G.seedsLen ≤ 2 ^ 64 := by
-  have := h.pre.nS; rw [← h.hG]; exact this
+  have := h.pre.nW; rw [← h.hG]; exact this
 
 /-- The seeds are apart from what the search changes. -/
 theorem GI.seeds_apart (h : GI G STK σ V LS s) : ∀ r ∈ [G.rScr, rBelow σ STK], G.rSeeds.Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · rw [← h.hG]; exact h.pre.sC
-  · rw [← h.hG]; exact h.pre.bS.symm
+  · rw [← h.hG]; exact h.pre.wC
+  · rw [← h.hG]; exact h.pre.bW.symm
 
 /-- The seed at `k`, in memory. -/
 theorem GI.seedBytes (h : GI G STK σ V LS s) {k : Nat} (hk : k + G.qLen ≤ G.seedsLen) :
     Spec.Rsa.bytesAt s.mem (G.seeds + BitVec.ofNat 64 k) G.qLen = seedAt G k := by
   have fit := h.seedsFit
   have hw : Spec.Rsa.bytesAt s.mem G.seeds G.seedsLen = G.seedsB := by
-    rw [VG.Proof.Dsa.Generation.frame_bytesAt h.frame h.seeds_apart (by omega), ← h.hG]; rfl
+    rw [VG.Proof.Dsa.Generation.frame_bytesAt h.frame h.seeds_apart (by dsimp only [GP.seedsLen, GP.seeds] at fit ⊢; omega), ← h.hG]; rfl
   obtain ⟨d, hd⟩ : ∃ d, G.seedsLen = k + G.qLen + d := ⟨G.seedsLen - k - G.qLen, by omega⟩
   show _ = (G.seedsB.drop k).take G.qLen
   rw [← hw, hd, VG.Proof.Dsa.Generation.bytesAt_append, VG.Proof.Dsa.Generation.bytesAt_append,
@@ -80,7 +80,7 @@ theorem GI.seedSrc (h : GI G STK σ V LS s) {k : Nat} (hk : k + G.qLen ≤ G.see
       Region.Disjoint ⟨G.seeds + BitVec.ofNat 64 k, G.qLen⟩ G.rScr := by
   have fit := h.seedsFit
   have sub : Region.Sub ⟨G.seeds + BitVec.ofNat 64 k, G.qLen⟩ G.rSeeds := Offset.sub_base _ hk
-  have sC := h.pre.sC; rw [h.hG] at sC
+  have sC := h.pre.wC; rw [h.hG] at sC
   refine ⟨⟨G.rSeeds, ?_, Offset.contains_base _ hk (by omega)⟩, ?_, sC.sub_left sub⟩
   · rw [h.rd, h.pre.rd, h.hG]; simp
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega),
@@ -230,7 +230,7 @@ theorem qPart_vp {g : Geo} (HO : HashOk g.G) {L : Impl.Dsa.ProbablePrime.Layout}
   have nM : sMsg = 512 := rfl
   have nS : sState = 576 := rfl
   have nQ : sQ = 608 := rfl
-  have nE : hEnd = 296 := rfl
+  have nE : hEnd = 352 := rfl
   generalize hpd : padTail HO.md G.qLen = pad at hpad pl
   generalize hsd : seedAt G k = sd at hsl hHl hne qb
   let c1 : Cfg := { c with cl := [(sMsg, sd), (sMsg + G.qLen, pad)] }

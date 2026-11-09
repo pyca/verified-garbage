@@ -19,8 +19,8 @@ import VerifiedGarbage.Proof.Framework.TacticTemplate
 With `maskReg m` all ones exactly for `m = a` (`a ≤ 8`), `selectWord` loads
 word `w` of the coordinate of every entry `[m]P` of the table, ANDs it with
 its mask and ORs it into `x4`, so that the word of `[a]P` survives
-(`winSelectWord_ok`); `select` writes the entry's `X`, `Y` and `Z`
-(`select_ok`): `(0 : R : 0)` for `a = 0`, else `[a]P`'s coordinates.
+(`winSelectWord_ok`); a coordinate of the entry (`selectCoord_ok`) is that
+of `(0 : R : 0)` for `a = 0`, else `[a]P`'s.
 -/
 
 @[expose] public section

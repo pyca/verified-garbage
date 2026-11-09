@@ -99,17 +99,6 @@ theorem mv_lt (m : Mem) (base : Addr) : ∀ o n, mv m base o n < 2 ^ (64 * n)
     have : 2 ^ 64 * (y + 1) ≤ 2 ^ 64 * P := Nat.mul_le_mul_left _ h2
     omega
 
-theorem wv_lt : ∀ vs : List (BitVec 64), wv vs < 2 ^ (64 * vs.length)
-  | [] => by simp [wv]
-  | v :: vs => by
-    have h1 := v.isLt
-    have h2 := wv_lt vs
-    rw [wv, List.length_cons, pow64_succ]
-    generalize 2 ^ (64 * vs.length) = P at *
-    generalize wv vs = y at *
-    have : 2 ^ 64 * (y + 1) ≤ 2 ^ 64 * P := Nat.mul_le_mul_left _ h2
-    omega
-
 theorem fe_lt (m : Mem) (base : Addr) (o : Nat) : fe m base o < 2 ^ 448 := by
   have := mv_lt m base o 7
   rwa [show 64 * 7 = 448 from rfl] at this
@@ -192,9 +181,6 @@ theorem Stable.of_keeps {X : List Reg} {s s' : State} {src : Src} {v : BitVec 64
 theorem stable_reg {X : List Reg} (s : State) {r : Reg} (hr : r ∉ X) :
     Stable X s (.reg r) (s.gpr r) :=
   fun _ hg _ _ _ => by rw [readSrc, hg r hr]
-
-theorem stable_imm (X : List Reg) (s : State) (v : BitVec 32) :
-    Stable X s (.imm v) (v.signExtend 64) := fun _ _ _ _ _ => rfl
 
 theorem stable_imm0 (X : List Reg) (s : State) : Stable X s (.imm 0) 0 := fun _ _ _ _ _ => rfl
 

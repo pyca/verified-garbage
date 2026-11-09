@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Seed.AArch64.Ecb
 public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
+public import VerifiedGarbage.Impl.Modes.AArch64.CfbDec
 
 /-!
 # SEED-CBC, -OFB and -CFB128 on AArch64
@@ -12,8 +13,9 @@ modes' generic CBC that updates the chaining value, OFB and CFB
 (`Impl/Modes/AArch64/CbcChained.lean`, `Fb.lean`) over `vg_seed_ecb_{en,de}crypt`'s batch of sixteen blocks
 (`batch`), with the working space in the scratch buffer, which the artifact
 allocates on the stack. CBC decryption deciphers sixteen blocks at a time;
-the other modes encipher one block per batch, of which the other fifteen
-lanes are unused. As on x86-64 (`Impl/Seed/X86_64/Modes.lean`).
+CFB decryption gathers the preceding ciphertexts and enciphers sixteen
+independent blocks at a time. The dependent modes encipher one block per
+batch, of which the other fifteen lanes are unused.
 
 The core's slots: the batch's 122 (its working area, at `sb` = `x5` as the
 batch needs), the buffer's sixteen blocks, and a copy of the 128-byte
@@ -98,6 +100,6 @@ def ofb : Prog isa := fbCore.fb .ofb modeRegs .x25
 def cfbEncrypt : Prog isa := fbCore.fb .cfbEnc modeRegs .x25
 
 /-- `vg_seed_cfb128_decrypt`. -/
-def cfbDecrypt : Prog isa := fbCore.fb .cfbDec modeRegs .x25
+def cfbDecrypt : Prog isa := (dirCore .encrypt).cfbDecryptBatched modeRegs
 
 end VG.Impl.Seed.AArch64

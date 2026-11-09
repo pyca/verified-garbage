@@ -218,47 +218,11 @@ theorem polyIs_of_inv {out : Nat → BitVec 32} {s₀ s : State} {g : Poly}
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Proof.MlKem.addContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem.addContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-    Arm.Loc.val] at h
-  obtain ⟨-, h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
-
-theorem pre_of_sub {s : State} (h : (Proof.MlKem.subContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem.subContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-    Arm.Loc.val] at h
-  obtain ⟨-, h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | _ => 0
-  sp := 0x4000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := [⟨0x2000, 1024⟩]
-  wr := [⟨0x1000, 1024⟩]
-
 theorem reduced_zero (p : Addr) : Reduced (fun _ => 0) p := fun i _ => by
   rw [coeffAt_eq]
   have : Mem.readW (fun _ => (0 : Byte)) (coeffAddr p i) 32 = 0 := by
     simp [Mem.readW, Mem.read]
   rw [this]; decide
-
-/-- The taint analysis: only the pointers are public. -/
-theorem ct {k : Contract isa} (hpub : ∀ s₁ s₂, k.pub s₁ s₂ → s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1)
-    {c : Prog isa} {hc : VG.Taint.Hint VG.Arm.taint.T}
-    (h : (VG.Arm.taint.check (Taint.ofRegs [.r0, .r1]) c hc).isSome = true) :
-    ConstantTime isa k.pre k.pub c :=
-  VG.Taint.constantTime (A := VG.Arm.taint) (Taint.ofRegs [.r0, .r1]) (fun s₁ s₂ _ _ hp => by
-    obtain ⟨h0, h1⟩ := hpub s₁ s₂ hp
-    refine Taint.agree_ofRegs fun r hr => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> with_reducible assumption) h
 
 /-- The taint analysis, with the registers `rs` public. -/
 theorem ctRegs {k : Contract isa} (rs : List Reg)
@@ -268,49 +232,5 @@ theorem ctRegs {k : Contract isa} (rs : List Reg)
     ConstantTime isa k.pre k.pub c :=
   VG.Taint.constantTime (A := VG.Arm.taint) (Taint.ofRegs rs)
     (fun s₁ s₂ _ _ hp => Taint.agree_ofRegs (hpub s₁ s₂ hp)) h
-
-theorem add_verified : Verified Arm.target Impl.MlKem.Arm.add (Proof.MlKem.addContract Arm.abi) := by
-  refine ⟨fun s hs => ?_, ct (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
-  · have hp := pre_of hs
-    obtain ⟨t, s', he, h⟩ := loop_ok hp (add_hb hp)
-    refine ⟨t, s', he, ⟨h.pres, h.sp⟩, ?_⟩
-    sig_post [Proof.MlKem.addContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-      Arm.Loc.val]
-    exact polyIs_of_inv h fun j _ => rfl
-  · sig_pub [Proof.MlKem.addContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-      Arm.Loc.val] at h
-    exact ⟨h.2.1, h.2.2⟩
-  · refine ⟨satState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.addContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-        Arm.Loc.val]
-      sig_and_intros
-      all_goals first
-        | trivial
-        | exact reduced_zero _
-        | decide +kernel
-
-theorem sub_verified : Verified Arm.target Impl.MlKem.Arm.sub (Proof.MlKem.subContract Arm.abi) := by
-  refine ⟨fun s hs => ?_, ct (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
-  · have hp := pre_of_sub hs
-    obtain ⟨t, s', he, h⟩ := loop_ok hp (sub_hb hp)
-    refine ⟨t, s', he, ⟨h.pres, h.sp⟩, ?_⟩
-    sig_post [Proof.MlKem.subContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-      Arm.Loc.val]
-    exact polyIs_of_inv h fun j _ => rfl
-  · sig_pub [Proof.MlKem.subContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-      Arm.Loc.val] at h
-    exact ⟨h.2.1, h.2.2⟩
-  · refine ⟨satState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.subContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-        Arm.Loc.val]
-      sig_and_intros
-      all_goals first
-        | trivial
-        | exact reduced_zero _
-        | decide +kernel
 
 end VG.Proof.MlKem.Arm.Add

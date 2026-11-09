@@ -32,9 +32,6 @@ theorem noSp_allStack {c : Prog isa} (h : NoSp c) : c.all (fun i => !isa.writesS
   rw [eq, h i hi]
   rfl
 
-theorem code_sp (v : CrtImpl) : (privCode v).all (fun i => !isa.writesSp i) = true :=
-  noSp_allStack (privateCode_noSp v)
-
 theorem code_stack (v : CrtImpl) : stackUse (privCode v) ≤ stackBytes := by
   have crt := v.stack
   have pc := v.pcStack

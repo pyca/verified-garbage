@@ -3,9 +3,6 @@
 //! `assembly/internal/vg_chacha20_poly1305_seal_split_avx512vl.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_chacha20_poly1305_seal_split_avx512vl` requires (`VG.Rust.Internal.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512VL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512VL);
-
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety
@@ -82,7 +79,7 @@ jmp 219f
 222:
 .base64 "YtF+SH+ED6ACAABIg8FASDnR"
 jb 222b
-.base64 "xfh3TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAA"
+.base64 "xfh3TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAASYnw"
 call {vg_chacha20_xor_avx512vl}
 .base64 "SYn3SYHvgAAAAEyJ/0iBx8ABAABMif5IgcagAgAA"
 call {vg_poly1305_init}
@@ -515,6 +512,7 @@ jmp 2167f
 .base64 "xfh3TInO"
 jmp 2114f
 2113:
+.base64 "SYnw"
 call {vg_chacha20_xor_avx512}
 2114:
 .base64 "TIn+SIHGgAAAAA=="

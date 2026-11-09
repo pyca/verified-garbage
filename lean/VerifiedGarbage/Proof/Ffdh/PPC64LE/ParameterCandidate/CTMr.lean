@@ -34,13 +34,14 @@ structure MrD where
   res : Option (Bool × List Byte)
   i : Nat
   u : Nat
+  K : Nat
 
 /-- At the head of the witness loop. -/
 def MI (a : MrD) (s : State) : Prop :=
-  (∃ sv toc, MrSt (a.q.with sv toc) a.mb a.N a.res a.i a.u s) ∧ Spec.RsaKeyGen.bitLength (a.N - 1) = a.mb
+  (∃ sv toc, MrSt (a.q.with sv toc) a.mb a.N a.K a.res a.i a.u s) ∧ Spec.RsaKeyGen.bitLength (a.N - 1) = a.mb
 
 /-- After the loop. -/
-def ME (a : MrD) (s : State) : Prop := ∃ sv toc, MrEnd (a.q.with sv toc) a.mb a.N a.res s
+def ME (a : MrD) (s : State) : Prop := ∃ sv toc, MrEnd (a.q.with sv toc) a.mb a.N a.K a.res s
 
 def mrNext (a : MrD) : MrD :=
   { a with i := dIdx a.N a.i (wA a.mb a.q.r a.u), u := a.u + (a.mb + 7) / 8 }
@@ -67,7 +68,7 @@ theorem headBlk_MH {a : MrD} {s : State} (h : MI a s) :
       geFlag .r5 .r3 .r4)) s (MH a) := by
   obtain ⟨⟨sv, toc, hs⟩, hbl⟩ := h
   refine WP.mono (mrHeadBlk_ok hs) fun t ⟨⟨t5, tm⟩, k⟩ => ⟨⟨⟨sv, toc, ?_⟩, hbl⟩, t5⟩
-  have M : MSt (a.q.with sv toc) a.mb a.N t := hs.m.frm (rs := []) (by rw [tm]; exact Frm.refl _ _ _) (by simp) k
+  have M : MSt (a.q.with sv toc) a.mb a.N a.K t := hs.m.frm (rs := []) (by rw [tm]; exact Frm.refl _ _ _) (by simp) k
     (by decide) (k.gpr _ (by decide)) (k.gpr _ (by decide)) (k.gpr _ (by decide))
   exact ⟨M, by rw [tm]; exact hs.used, by rw [tm]; exact hs.idx, by rw [tm]; exact hs.stat, hs.ul, hs.ik, hs.rest⟩
 
@@ -92,22 +93,22 @@ theorem mrBody_ct (R : RoundImpl) : RelCT isa (Two MI)
     refine WP.mono (WP.keep [.r3] (Q := fun t => t.gpr .r31 = a.q.B) ?_ (by decide)) fun t ⟨ht, _⟩ => ht
     simp only [sth, hStat]; prun [hs.m.st.r31, l160]; rfl
   · have hd : ∀ a s, MH a s ∧ (!decide ((a.mb + 7) / 8 ≤ a.q.r.length - a.u)) = false →
-        DI ⟨a.q, a.mb, a.N, a.u, a.i⟩ s := by
+        DI ⟨a.q, a.mb, a.N, a.u, a.i, a.K⟩ s := by
       rintro a s ⟨⟨⟨⟨sv, toc, hs⟩, -⟩, -⟩, hb⟩
       simp only [Bool.not_eq_false', decide_eq_true_eq] at hb
       have hul : a.u ≤ a.q.r.length := hs.ul
-      have hik : a.i < Spec.Ffdh.primeChecks a.mb := hs.ik
-      have hK : Spec.Ffdh.primeChecks a.mb ≤ 128 := by unfold Spec.Ffdh.primeChecks; split <;> omega
+      have hik : a.i < a.K := hs.ik
+      have hK : a.K ≤ 128 := hs.m.ph.k2
       exact ⟨sv, toc, hs.m, hs.used, show a.u + (a.mb + 7) / 8 ≤ a.q.r.length by omega, hs.idx, hs.stat,
         show a.i < 2 ^ 62 by omega⟩
-    refine two_post (two_map (fun a : MrD => (⟨a.q, a.mb, a.N, a.u, a.i⟩ : DrawD)) hd (draw_ct R)) fun a s h => ?_
+    refine two_post (two_map (fun a : MrD => (⟨a.q, a.mb, a.N, a.u, a.i, a.K⟩ : DrawD)) hd (draw_ct R)) fun a s h => ?_
     obtain ⟨sv, toc, M, hu, hroom, hI, hS, hi⟩ := hd a s h
     exact WP.mono (draw_ok R M hu hroom hI hS hi) fun t ht => ht.1.st.r31
 
 /-- Before the witness loop. -/
 def MI0 (a : MrD) (s : State) : Prop :=
-  (∃ sv toc, MSt (a.q.with sv toc) a.mb a.N s ∧ word s.mem a.q.B 152 = BitVec.ofNat 64 a.u) ∧
-    a.u ≤ a.q.r.length ∧ a.i = 0 ∧ a.res = checkWitnesses a.N (Spec.Ffdh.primeChecks a.mb) (a.q.r.drop a.u) ∧
+  (∃ sv toc, MSt (a.q.with sv toc) a.mb a.N a.K s ∧ word s.mem a.q.B 152 = BitVec.ofNat 64 a.u) ∧
+    a.u ≤ a.q.r.length ∧ a.i = 0 ∧ a.res = checkWitnesses a.N (a.K) (a.q.r.drop a.u) ∧
     Spec.RsaKeyGen.bitLength (a.N - 1) = a.mb
 
 theorem pins_MI0 : Pins MI0 [.r31] := by
@@ -120,7 +121,7 @@ same tape. -/
 theorem millerRabin_ct (R : RoundImpl) : RelCT isa (Two MI0) (millerRabin R.name R.code) (Two ME) := by
   unfold millerRabin
   refine RelCT.seq (two_post (two_taint _ pins_MI0 (by taint_decide)) (Ψ := MI) fun a s h => ?_)
-    (two_loopD (fun a => a.q.r.length + 1 - a.u) mrNext (fun a => mrGo a.q.r a.mb a.N a.i a.u) (mrBody_ct R)
+    (two_loopD (fun a => a.q.r.length + 1 - a.u) mrNext (fun a => mrGo a.q.r a.mb a.N a.i a.u a.K) (mrBody_ct R)
       fun a s h => ?_)
   · obtain ⟨⟨sv, toc, M, hu⟩, hul, hi, hres, hbl⟩ := h
     refine WP.mono (mrInit_ok M hu hul) fun t ht => ⟨⟨sv, toc, ?_⟩, hbl⟩

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Seed.PPC64LE.Frame
 public import VerifiedGarbage.Proof.Seed.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Seed.PPC64LE.Lit
 
 /-! # SEED artifacts on PPC64LE -/

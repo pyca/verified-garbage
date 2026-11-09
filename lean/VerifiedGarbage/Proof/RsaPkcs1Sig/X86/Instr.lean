@@ -51,12 +51,6 @@ end
 
 theorem readSrc_reg (s : State) (r : Reg) : readSrc s (.reg r) = some (s.gpr r) := rfl
 
-theorem readSrc_imm (s : State) (v : BitVec 32) : readSrc s (.imm v) = some v := rfl
-
-theorem readSrc_memOp {s : State} {b : Reg} {d : Nat} {a : Addr} (ha : addr (s.gpr b) d = a)
-    (hin : InRegions (s.rd ++ s.wr) a 4) : readSrc s (.mem ⟨b, d⟩) = some (s.mem.readW a 32) := by
-  rw [← ha]; exact readSrc_mem rfl (by rw [ha]; exact hin)
-
 theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea ⟨b, d⟩ = addr (s.gpr b) d := rfl
 
 end VG.Proof.RsaPkcs1Sig.X86

@@ -71,10 +71,6 @@ theorem frameEnd_mem (s : State) (rs : List Reg) : (frameEnd s rs).mem = s.mem :
   | nil => rfl
   | cons r rs ih => exact ih
 
-theorem frameEnd_rd (s : State) (rs : List Reg) : (frameEnd s rs).rd = s.rd := by
-  induction rs with
-  | nil => rfl
-  | cons r rs ih => exact ih
 end VG.Proof.Argon2.AArch64.Derive
 end
 

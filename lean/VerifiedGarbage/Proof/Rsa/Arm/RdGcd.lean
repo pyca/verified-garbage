@@ -121,19 +121,6 @@ theorem gcd_vp [InvLaw] {f : Nat × Nat × Nat → Nat × Nat × Nat} {E : State
 
 /-! ## Products -/
 
-theorem upd_upd (A : Nat → Nat) (j v v' : Nat) : upd (upd A j v) j v' = upd A j v' := by
-  funext i; by_cases e : i = j
-  · subst e; rw [upd_self, upd_self]
-  · rw [upd_ne _ _ e, upd_ne _ _ e, upd_ne _ _ e]
-
-theorem upd_comm (A : Nat → Nat) {i j : Nat} (v v' : Nat) (h : i ≠ j) :
-    upd (upd A i v) j v' = upd (upd A j v') i v := by
-  funext k; by_cases e : k = i
-  · subst e; rw [upd_ne _ _ h, upd_self, upd_self]
-  · by_cases e' : k = j
-    · subst e'; rw [upd_self, upd_ne _ _ e, upd_self]
-    · rw [upd_ne _ _ e', upd_ne _ _ e, upd_ne _ _ e, upd_ne _ _ e']
-
 /-- The step of the products. -/
 abbrev ProdF (P : RP) (g : Nat × Nat × Nat → Nat × Nat × Nat) : Prop :=
   ∀ y x a, g (y, x, a) = (y / 2, 2 * x % 2 ^ (32 * P.W), (a + if y % 2 = 0 then 0 else x) % 2 ^ (32 * P.W))

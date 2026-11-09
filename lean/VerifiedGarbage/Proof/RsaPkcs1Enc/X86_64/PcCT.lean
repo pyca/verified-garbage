@@ -123,7 +123,7 @@ theorem code_constantTime (v : PublicImpl) :
 `vg_rsa_public_precomputed_checked`, meets the shared contract. -/
 theorem code_verified (v : PublicImpl) :
     Verified target (Impl.RsaPkcs1Enc.X86_64.Precomputed.code v.name v.code)
-      (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi encStack) :=
+      (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi encStack) :=
   Verified.of_correct (k := contract) (code_correct v) (code_constantTime v) implies
 
 /-- It writes `rsp` only in its frame's push and pop. -/

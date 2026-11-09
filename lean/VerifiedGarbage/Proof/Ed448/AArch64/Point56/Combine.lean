@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.X448.AArch64.Ops
 public import VerifiedGarbage.Impl.Curve448.AArch64
 public import VerifiedGarbage.Proof.X448.AArch64.Mul
 public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
@@ -18,13 +17,14 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
+import VerifiedGarbage.Proof.X448.AArch64.Env
 
 /-!
 # Ed448's comb on AArch64: `16 A + B` by calls
 
 Untrusted: everything here is checked by Lean. `combineCall` (the comb's
 `A := 16 A + B` by calls of `vg_ed448_r56_point_add`) leaves what X448's
-`Base.combine` does (`combineCall_ok`, as `combine_ok`): `B` kept in slots 0–2,
+`Base.combine` does (as `combine_ok`): `B` kept in slots 0–2,
 `A` moved to slots 3–5 and added to a copy of itself in slots 6–8 four times
 (`addCall_ok`, whose addition is `addPt` with 0 in slot 19), `B` added, and the
 sum moved to slots 0–2; the return address kept in a lane of `v8` across the
@@ -283,11 +283,5 @@ theorem combineCall_frame {s₀ s : State} {base : Addr} {v w : ℤ} (h : VG.Pro
     by rw [ku.1 _ (by decide)]; exact f₂.out, by rw [ur]; exact f₂.rd, by rw [uw]; exact f₂.wr, um ▸ f₂.mem⟩, ?_⟩
   rw [um]
   exact r₂
-
-/-- **`16 A + B` by calls**, as `combine_ok`: `[k] B` in `A`, the return address kept. -/
-theorem combineCall_ok {n : Nat} {s₀ s : State} {base : Addr} {k : Nat} (hk : k < 256 ^ n)
-    (h : StepInv n s₀ base k n s) :
-    WP isa combineCall s fun t => VG.Proof.X448.AArch64.Base.Frame s₀ base t ∧ Rep (pt (EV t.mem base) 0 1 2) ((k : ℤ) • baseAff) :=
-  WP.mono (combineCall_frame h.frame h.odd h.even) fun t ⟨f, r⟩ => ⟨f, by rw [← VG.Proof.X448.comb_total hk]; exact r⟩
 
 end VG.Proof.Ed448.AArch64.Point56

@@ -8,8 +8,7 @@ import VerifiedGarbage.Proof.Framework.PowLit
 
 What an implementation's last steps compute, whatever the target: the mask
 of the candidate lengths by doublings (`bitMask_lt`, `bitMask_ge`), the
-alternative length as a fold of masked candidates (`altFold_le`,
-`altStep_eq`), the validity of the padding as a scan finds it (`vEM_eq`),
+validity of the padding as a scan finds it (`vEM_eq`),
 and the output, byte by byte (`outByte`), which is the message
 `implicitDecode` returns after zeros (`sel_eq`).
 -/
@@ -39,23 +38,6 @@ theorem bitMask_le {x : Nat} (hx : x ≠ 0) : bitMask x ≤ 2 * x := by
   simp only [bitMask, bitLength, hx, ↓reduceIte, Nat.pow_succ]
   omega
 
-/-! ## The alternative length -/
-
-theorem altFold_le (k : Nat) (CL : List Byte) (j : Nat) :
-    (List.range j).foldl (altStep k CL) 0 ≤ k - 11 := by
-  induction j with
-  | zero => simp
-  | succ j ih =>
-    rw [foldl_range_succ]
-    simp only [altStep]
-    split <;> omega
-
-/-- The candidate, as a loop computes it. -/
-theorem altStep_eq (k : Nat) (CL : List Byte) (al i : Nat) (h : 2 * i + 1 < CL.length) :
-    altStep k CL al i = (let c := (256 * (CL[2 * i]'(by omega)).toNat + (CL[2 * i + 1]'h).toNat) &&& bitMask (k - 11)
-      if c ≤ k - 11 then c else al) := by
-  simp only [altStep, cand_eq, bitMask, Nat.and_two_pow_sub_one_eq_mod, List.getD_eq_getElem?_getD,
-    List.getElem?_eq_getElem (show 2 * i < CL.length by omega), List.getElem?_eq_getElem h, Option.getD_some]
 
 /-! ## The validity and the output -/
 

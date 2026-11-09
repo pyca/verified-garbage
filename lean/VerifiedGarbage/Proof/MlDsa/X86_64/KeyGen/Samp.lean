@@ -39,23 +39,11 @@ variable {rbs wbs : List (Reg × Nat)} {s s' : State} (L : Lay rbs wbs s) {ws : 
   {q : Ptr} (hc : keepB (rbs ++ wbs) ws q 1024 = true)
 include L hP hc
 
-theorem polyAt_frame' : polyAt s'.mem (pa s' q) = polyAt s.mem (pa s q) := by
-  rw [hP.pa (keepB_cs hc)]
-  have := L.keepBytes hP hc
-  rw [hP.pa (keepB_cs hc)] at this
-  exact Proof.MlDsa.KeyGen.polyAt_congr (Proof.MlDsa.KeyGen.bytes_of_bytesAt this)
-
 theorem polyIs_frame' {f : Poly} (h : PolyIs s.mem (pa s q) f) : PolyIs s'.mem (pa s' q) f := by
   rw [hP.pa (keepB_cs hc)]
   have := L.keepBytes hP hc
   rw [hP.pa (keepB_cs hc)] at this
   exact Proof.MlDsa.KeyGen.polyIs_congr (Proof.MlDsa.KeyGen.bytes_of_bytesAt this) h
-
-theorem reduced_frame' (h : Reduced s.mem (pa s q)) : Reduced s'.mem (pa s' q) := by
-  rw [hP.pa (keepB_cs hc)]
-  have := L.keepBytes hP hc
-  rw [hP.pa (keepB_cs hc)] at this
-  exact Proof.MlDsa.KeyGen.reduced_congr (Proof.MlDsa.KeyGen.bytes_of_bytesAt this) h
 
 end
 

@@ -91,11 +91,6 @@ structure CtrInv (c : Cx) (nonce : List Byte) (s : State) (b : Nat) (t : State) 
   rest : bytesAt t.mem (c.D + BitVec.ofNat 64 (16 * b)) (c.n - 16 * b) =
     bytesAt s.mem (c.D + BitVec.ofNat 64 (16 * b)) (c.n - 16 * b)
 
-theorem low32 (x : Nat) : (BitVec.ofNat 64 x).setWidth 32 + BitVec.ofNat 32 0 = BitVec.ofNat 32 x := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega_arith
-
 /-- `k = min (m, 2³² − (1 + b) mod 2³²)` in `x26`, for `m` blocks left. -/
 theorem kSel_ok {b m : Nat} {t : State} (h24 : t.gpr .x24 = BitVec.ofNat 64 m)
     (h25 : t.gpr .x25 = BitVec.ofNat 64 (1 + b)) (hm : m < 2 ^ 60) :

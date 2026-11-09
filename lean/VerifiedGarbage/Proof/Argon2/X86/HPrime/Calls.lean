@@ -22,8 +22,7 @@ section
 # Argon2 H′ on x86 (32-bit): the contract of the proof
 
 `hPrimeX86`: `vg_argon2_hprime(input, input_len, out, out_len, scratch)` with
-its arguments only read; `Proof.Argon2.hPrimeContract`, which lets the code
-write them, is reached by narrowing. H′ uses the 60 bytes of stack below its
+its arguments only read. H′ uses the 60 bytes of stack below its
 return address: a call of `vg_blake2b_update` pushes six words and its return
 address, and `update` itself uses 32 bytes.
 -/
@@ -206,8 +205,6 @@ theorem covers_frame {E : BitVec 32} {k : Nat} {rd : List Region} {a : Addr}
   exact InRegions_append_cons.mpr (.inl (by subst ha; exact hc))
 
 /-! ## `init` -/
-
-theorem keyBlock_nil (m : Mem) (p : Addr) : keyBlock 64 (bytesAt m p 0) = [] := rfl
 
 theorem init_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {n : Nat} (hn : s.gpr .edx = BitVec.ofNat 32 n)
     (hn₁ : 1 ≤ n) (hn₂ : n ≤ 64) :

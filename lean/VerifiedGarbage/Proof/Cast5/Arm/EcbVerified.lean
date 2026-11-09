@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.Arm.Ecb
 public import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 public import VerifiedGarbage.Proof.Framework.ConstMem
@@ -120,14 +121,14 @@ def ecbSat : State where
   rd := [⟨0x1000, 128⟩, ⟨0x4000, 4⟩]
   wr := [⟨0x2000, 0⟩, ⟨0x3000, 256⟩]
 
-theorem ecbEnc_implies : (ecbArm true).Implies (Spec.Cast5.ecbEncryptContract abi) := by
-  sig_implies [Spec.Cast5.ecbEncryptContract, Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre,
-    Spec.Cast5.ecbPost, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, State.addr, ecbArm]
+theorem ecbEnc_implies : (ecbArm true).Implies (Proof.Cast5.ecbEncryptRoundsContract abi) := by
+  sig_implies [Proof.Cast5.ecbEncryptRoundsContract, Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre,
+    Proof.Cast5.ecbRoundsPost, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, State.addr, ecbArm]
     [ecbSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using ecbSat
 
-theorem ecbDec_implies : (ecbArm false).Implies (Spec.Cast5.ecbDecryptContract abi) := by
-  sig_implies [Spec.Cast5.ecbDecryptContract, Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre,
-    Spec.Cast5.ecbPost, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, State.addr, ecbArm]
+theorem ecbDec_implies : (ecbArm false).Implies (Proof.Cast5.ecbDecryptRoundsContract abi) := by
+  sig_implies [Proof.Cast5.ecbDecryptRoundsContract, Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre,
+    Proof.Cast5.ecbRoundsPost, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, State.addr, ecbArm]
     [ecbSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using ecbSat
 
 theorem ecbConsts_eq : ecbConsts = [(s1234Sym, s1234)] := rfl
@@ -170,14 +171,14 @@ theorem ecbSatC_arg : stackArg ecbSatC 0 = 0x3000 := by
   rw [e]; decide
 
 theorem ecb_sat (up : Bool) :
-    (Spec.Cast5.ecbContract (abi.withConsts ecbConsts) (if up then .encrypt else .decrypt)).pre ecbSatC := by
+    (Proof.Cast5.ecbRoundsContract (abi.withConsts ecbConsts) (if up then .encrypt else .decrypt)).pre ecbSatC := by
   have a := ecbSatC_arg
   have hl : s1234.length = 512 := by rw [Impl.Cast5.s1234, table_length]
   have held := ecbSatMem_held
   rw [ecbConsts_eq]
   generalize s1234 = W at hl held ⊢
   generalize e : ecbSatC = s at a
-  sig_pre [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, abi, argRegs, Arm.reduceClassify,
+  sig_pre [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, abi, argRegs, Arm.reduceClassify,
     Arm.Loc.val, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst e
   rw [a, hl]
@@ -190,8 +191,8 @@ theorem ecb_sat (up : Bool) :
     all_goals first | rfl | decide | exact Region.disjoint_of_sep (by decide)
 
 theorem ecbC_implies (up : Bool) :
-    (ecbArmC up).Implies (Spec.Cast5.ecbContract (abi.withConsts ecbConsts) (if up then .encrypt else .decrypt)) := by
-  have hI : (ecbArm up).Implies (Spec.Cast5.ecbContract abi (if up then .encrypt else .decrypt)) := by
+    (ecbArmC up).Implies (Proof.Cast5.ecbRoundsContract (abi.withConsts ecbConsts) (if up then .encrypt else .decrypt)) := by
+  have hI : (ecbArm up).Implies (Proof.Cast5.ecbRoundsContract abi (if up then .encrypt else .decrypt)) := by
     cases up
     · exact ecbDec_implies
     · exact ecbEnc_implies
@@ -204,11 +205,11 @@ theorem ecbC_implies (up : Bool) :
       sat := ⟨ecbSatC, ecb_sat up⟩ }
 
 theorem ecbEncrypt_verified :
-    Verified target ecbEncrypt (Spec.Cast5.ecbEncryptContract (abi.withConsts ecbConsts)) :=
+    Verified target ecbEncrypt (Proof.Cast5.ecbEncryptRoundsContract (abi.withConsts ecbConsts)) :=
   Verified.of_correct (ecbArmC_correct true) ecbEncrypt_constantTime (ecbC_implies true)
 
 theorem ecbDecrypt_verified :
-    Verified target ecbDecrypt (Spec.Cast5.ecbDecryptContract (abi.withConsts ecbConsts)) :=
+    Verified target ecbDecrypt (Proof.Cast5.ecbDecryptRoundsContract (abi.withConsts ecbConsts)) :=
   Verified.of_correct (ecbArmC_correct false) ecbDecrypt_constantTime (ecbC_implies false)
 
 end VG.Proof.Cast5.Arm

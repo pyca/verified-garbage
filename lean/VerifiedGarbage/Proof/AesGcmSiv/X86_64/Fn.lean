@@ -263,19 +263,6 @@ theorem buf_mutW {K W SP : Addr} {s : State} {P : Addr} {len : Nat} (hP : Buf K 
     · exact hP.w.sub_right (Lay.wSub (by decide))
     · exact hP.stk.symm) (by have := hP.lt; omega_arith)
 
-theorem mutW_frame {K W SP : Addr} (L : Lay K W SP) {d k : Nat}
-    (hd : 144 ≤ d ∧ d + k ≤ 192 ∨ 200 ≤ d ∧ d + k ≤ 248) :
-    ∀ r ∈ mutW W SP, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · simpa using L.w_w (a := d) (n := k) (d := 0) (k := 144) (.inr (by omega_arith)) (by omega_arith) (by decide)
-  · rcases hd with hd | hd
-    · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
-    · exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
-  · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
-  · exact (L.stk_w' (by omega_arith)).symm
-
 /-- What `keys` writes: the keys, GHASH's key and accumulator, the blocks
 the calls use, the encryption key's schedule and the working spaces. -/
 abbrev keyR (W SP : Addr) : List Region := [⟨W + BitVec.ofNat 64 16, 128⟩, wC W, below SP 8]
@@ -349,6 +336,53 @@ theorem keys_ok (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) {K W SP : Addr}
   · rw [ctxCiph_frame f₄ (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inr (by decide)) (by decide) (by decide))
       (by rcases hR with h | h <;> subst h <;> decide), X.ciph, hK]
+
+/-- What `keysS` leaves, from `σ`: as `keys`, with the encryption key itself
+at `W + 32` in place of its schedule. -/
+structure KeysSPost (K W SP : Addr) (R : Nat) (N : Addr) (σ t : State) : Prop where
+  env : Env K W SP t
+  rd : t.rd = σ.rd
+  wr : t.wr = σ.wr
+  frame : Frame (keyR W SP) σ.mem t.mem
+  auth : (Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph σ.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt σ.mem N 12)).1 =
+    bytesAt t.mem (W + BitVec.ofNat 64 16) 16
+  ekey : (Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph σ.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt σ.mem N 12)).2 =
+    bytesAt t.mem (W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen R)
+  hkey : Spec.Gcm.blockAt t.mem (W + BitVec.ofNat 64 64) =
+    GcmSiv.Polyval.mulXG (Spec.GcmSiv.ofBytes (bytesAt t.mem (W + BitVec.ofNat 64 16) 16))
+  acc : Spec.Gcm.blockAt t.mem (W + BitVec.ofNat 64 80) = 0
+
+theorem keysS_ok (eb : Proof.Aes.X86_64.BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat}
+    (hR : R = 10 ∨ R = 14) {N A D : Addr} {al n : Nat} {σ : State} (E : Env K W SP σ)
+    (S : Slots W R N A D al n σ.mem) (hN : Buf K W SP σ N 12) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) :
+    WP isa (keysS ⟨eb.enc.name, eb.enc.code⟩) σ (KeysSPost K W SP R N σ) := by
+  refine WP.seq (WP.mono (derive_ok eb L hR E S hN hDW) fun t₂ I => ?_)
+  have f₂ : Frame (keyR W SP) σ.mem t₂.mem := I.frame.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨⟨W + BitVec.ofNat 64 16, 128⟩, by mem_lit, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨wC W, by mem_lit, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨wC W, by mem_lit, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨_, by mem_lit, fun _ h => h⟩
+  obtain ⟨t₄, run₄, hG, hY, f₄, hg₄, hrd₄, hwr₄⟩ := hkey_ok I.env
+  refine WP.of_runBlock ⟨t₄, run₄, ?_⟩
+  have hkl : Spec.GcmSiv.keyLen R ≤ 32 := by unfold Spec.GcmSiv.keyLen; omega_arith
+  have d64 : ∀ {a k : Nat}, a + k ≤ 64 → ∀ q ∈ [(⟨W + BitVec.ofNat 64 64, 32⟩ : Region)],
+      (⟨W + BitVec.ofNat 64 a, k⟩ : Region).Disjoint q := fun h q hq => by
+    simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inl h) (by omega_arith) (by decide)
+  have hA₄ : bytesAt t₄.mem (W + BitVec.ofNat 64 16) 16 = bytesAt t₂.mem (W + BitVec.ofNat 64 16) 16 :=
+    Proof.AesGcm.X86_64.bytesAt_frame f₄ (d64 (by decide)) (by decide)
+  have hE₄ : bytesAt t₄.mem (W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen R) =
+      bytesAt t₂.mem (W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen R) :=
+    Proof.AesGcm.X86_64.bytesAt_frame f₄ (d64 (by omega_arith)) (by omega_arith)
+  have hK := I.keys hR
+  refine ⟨I.env.keep (fun r hr => ?_) hrd₄ hwr₄, by rw [hrd₄, I.rd], by rw [hwr₄, I.wr],
+    f₂.trans (f₄.sub fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      exact ⟨⟨W + BitVec.ofNat 64 16, 128⟩, by mem_lit, Offset.sub W (by decide) (by decide)⟩),
+    by rw [hK, hA₄], by rw [hK, hE₄], by rw [hG, hA₄], hY⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl <;> exact hg₄ _ (by simp)
 
 end VG.Proof.AesGcmSiv.X86_64
 
@@ -461,8 +495,8 @@ theorem seal_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) 
   have bN₁ := Ar.nonce.of_eq rd₁ wr₁
   have bA₁ := Ar.aad.of_eq rd₁ wr₁
   have bD₁ := Ar.data.of_eq rd₁ wr₁
-  -- The keys.
-  refine WP.seq (WP.mono (keys_ok v eb L Ar.rounds E₁ S₁ bN₁ Ar.data.w) fun s₂ Ky => ?_)
+  -- The keys but the expansion.
+  refine WP.seq (WP.mono (keysS_ok eb L Ar.rounds E₁ S₁ bN₁ Ar.data.w) fun s₂ Ky => ?_)
   have fK : Frame (mutW W SP) s₁.mem s₂.mem := Ky.frame.sub (keyR_mutW W SP)
   have S₂ := slots_mut L Ar.data.w (fK.sub (mutW_mut W SP D n)) S₁
   -- POLYVAL and the tag input.
@@ -470,22 +504,31 @@ theorem seal_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) 
     (bN₁.of_eq Ky.rd Ky.wr) Ky.hkey Ky.acc) fun s₃ Po => ?_)
   have f₃ : Frame (mutW W SP) s₂.mem s₃.mem := Po.frame.sub (polyR_mutW W SP)
   have S₃ := slots_mut L Ar.data.w (f₃.sub (mutW_mut W SP D n)) S₂
+  -- The expansion of the encryption key.
+  refine WP.seq (WP.mono (expand_ok v L Ar.rounds Po.env S₃) fun s₃' X => ?_)
+  have f₃' : Frame (mutW W SP) s₃.mem s₃'.mem := X.frame.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact sub_wC (by decide) (by decide)
+    · exact sub_wC (by decide) (by decide)
+    · exact sub_stk
+  have S₃' := slots_mut L Ar.data.w (f₃'.sub (mutW_mut W SP D n)) S₃
   -- The tag.
-  refine WP.seq (WP.mono (tag_ok v L Ar.rounds Po.env S₃ (o := 0) (by decide)) fun s₄ Tg => ?_)
-  have f₄ : Frame (mutW W SP) s₃.mem s₄.mem := Tg.frame.sub (tagR_mutW W SP (by decide))
-  have S₄ := slots_mut L Ar.data.w (f₄.sub (mutW_mut W SP D n)) S₃
-  have f₁₄ : Frame (mutW W SP) s₁.mem s₄.mem := (fK.trans f₃).trans f₄
+  refine WP.seq (WP.mono (tag_ok v L Ar.rounds X.env S₃' (o := 0) (by decide)) fun s₄ Tg => ?_)
+  have f₄ : Frame (mutW W SP) s₃'.mem s₄.mem := Tg.frame.sub (tagR_mutW W SP (by decide))
+  have S₄ := slots_mut L Ar.data.w (f₄.sub (mutW_mut W SP D n)) S₃'
+  have f₁₄ : Frame (mutW W SP) s₁.mem s₄.mem := ((fK.trans f₃).trans f₃').trans f₄
   -- Counter mode.
-  have bD₄ : Buf K W SP s₄ D n := bD₁.of_eq (by rw [Tg.rd, Po.rd, Ky.rd]) (by rw [Tg.wr, Po.wr, Ky.wr])
+  have bD₄ : Buf K W SP s₄ D n := bD₁.of_eq (by rw [Tg.rd, X.rd, Po.rd, Ky.rd]) (by rw [Tg.wr, X.wr, Po.wr, Ky.wr])
   refine WP.seq (WP.mono (crypt_ok v eb wide L Ar.rounds Tg.env S₄ bD₄
-    (by rw [Tg.wr, Po.wr, Ky.wr, wr₁]; exact Ar.dw)) fun s₅ Cr => ?_)
+    (by rw [Tg.wr, X.wr, Po.wr, Ky.wr, wr₁]; exact Ar.dw)) fun s₅ Cr => ?_)
   have f₁₅ : Frame (mutR W SP D n) s₁.mem s₅.mem := (f₁₄.sub (mutW_mut W SP D n)).trans (Cr.frame.sub (cryR_mut W SP D n))
   have fall : Frame (entryR W :: mutR W SP D n) s.mem s₅.mem :=
     (f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self, fun _ h => h⟩).trans
     (f₁₅.sub fun r hr => ⟨r, List.mem_cons_of_mem _ hr, fun _ h => h⟩)
-  have r₅ : s₅.rd = s.rd := by rw [Cr.rd, Tg.rd, Po.rd, Ky.rd, rd₁]
-  have w₅ : s₅.wr = s.wr := by rw [Cr.wr, Tg.wr, Po.wr, Ky.wr, wr₁]
+  have r₅ : s₅.rd = s.rd := by rw [Cr.rd, Tg.rd, X.rd, Po.rd, Ky.rd, rd₁]
+  have w₅ : s₅.wr = s.wr := by rw [Cr.wr, Tg.wr, X.wr, Po.wr, Ky.wr, wr₁]
   -- The copy of the tag, and `restore`.
   have hTa : InRegions (s₅.rd ++ s₅.wr) (SP + BitVec.ofNat 64 16) 8 := by
     have h := Proof.AesGcm.X86_64.in_off (d := 8) (n := 8) Ar.args (by decide) (by decide)
@@ -519,10 +562,27 @@ theorem seal_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) 
   · rw [hm₇, hsp, fT.readW (r := ⟨SP, 8⟩) (Region.contains_self _ _) (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact hrT) (by decide)]
     exact fall.readW (r := ⟨SP, 8⟩) (Region.contains_self _ _) (ret_disj L Ar.retW Ar.retD) (by decide)
-  · have key₃ : Spec.GcmSiv.ctxCiph s₃.mem (W + BitVec.ofNat 64 248) R =
-        Spec.GcmSiv.ctxCiph s₂.mem (W + BitVec.ofNat 64 248) R := ctxCiph_frame Po.frame (key_polyR L) hRb
-    have key₄ : Spec.GcmSiv.ctxCiph s₄.mem (W + BitVec.ofNat 64 248) R =
-        Spec.GcmSiv.ctxCiph s₃.mem (W + BitVec.ofNat 64 248) R := ctxCiph_frame Tg.frame (key_tagR L (by decide)) hRb
+  · have key₄ : Spec.GcmSiv.ctxCiph s₄.mem (W + BitVec.ofNat 64 248) R =
+        Spec.GcmSiv.ctxCiph s₃'.mem (W + BitVec.ofNat 64 248) R := ctxCiph_frame Tg.frame (key_tagR L (by decide)) hRb
+    have hkl : Spec.GcmSiv.keyLen R ≤ 32 := by unfold Spec.GcmSiv.keyLen; omega_arith
+    have ek₃ : bytesAt s₃.mem (W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen R) =
+        bytesAt s₂.mem (W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen R) :=
+      Proof.AesGcm.X86_64.bytesAt_frame Po.frame (fun q hq => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+        rcases hq with rfl | rfl | rfl | rfl | rfl | rfl
+        · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+        · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+        · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+        · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+        · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+        · exact (L.stk_w' (by omega_arith)).symm) (by omega_arith)
+    have ti₃ : bytesAt s₃'.mem (W + BitVec.ofNat 64 96) 16 = bytesAt s₃.mem (W + BitVec.ofNat 64 96) 16 :=
+      Proof.AesGcm.X86_64.bytesAt_frame X.frame (fun q hq => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+        rcases hq with rfl | rfl | rfl
+        · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+        · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+        · exact (L.stk_w' (by decide)).symm) (by decide)
     have n₂ : bytesAt s₂.mem N 12 = bytesAt s.mem N 12 := by rw [buf_mutW bN₁ fK, hent Ar.nonce]
     have a₂ : bytesAt s₂.mem A al = bytesAt s.mem A al := by rw [buf_mutW bA₁ fK, hent Ar.aad]
     have d₂ : bytesAt s₂.mem D n = bytesAt s.mem D n := by rw [buf_mutW bD₁ fK, hent Ar.data]
@@ -541,11 +601,13 @@ theorem seal_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) 
     have tg := Tg.out
     rw [BitVec.add_zero] at tg
     have au := Ky.auth
-    have ci := Ky.ciph
-    rw [hK₁, hent Ar.nonce] at au ci
+    have ek := Ky.ekey
+    rw [hK₁, hent Ar.nonce] at au ek
+    have ci := X.ciph
+    rw [ek₃, ← ek] at ci
     have po := Po.out hpv
     rw [n₂, a₂, d₂] at po
-    rw [d₇, hm₇, hT₆, Cr.data, t₅, d₄, key₄, key₃, ci, tg, key₃, ci, po, ← au]
+    rw [d₇, hm₇, hT₆, Cr.data, t₅, d₄, key₄, ci, tg, ci, ti₃, po, ← au]
     unfold Spec.GcmSiv.encryptWith
     generalize Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph s.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt s.mem N 12) = dk
     obtain ⟨a, e⟩ := dk

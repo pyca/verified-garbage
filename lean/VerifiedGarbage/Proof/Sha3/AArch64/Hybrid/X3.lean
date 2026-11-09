@@ -593,19 +593,4 @@ theorem ct : ConstantTime isa K.pre K.pub X3code := by
   -- The restores.
   exact rel_taint [.x2] (by rw [l₁.sp, l₂.sp, hS]) (by agree_tac [d₁, d₂, q2]) ⟨_, by taint_decide⟩
 
-/-- A state the precondition holds in. -/
-def satState : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | _ => 0
-  sp := 0x8000
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 400⟩, ⟨0x2000, 200⟩, ⟨0x3000, 128⟩]
-
-theorem verified :
-    Verified AArch64.target X3code (Proof.Sha3.permuteX3Contract AArch64.abi 128) :=
-  Verified.of_correct correct ct (by
-    sig_implies [Proof.Sha3.permuteX3Contract, Proof.Sha3.permuteX3Sig, K, pairR, stR, scrR,
-      Neon.X2.scrR, frR, AArch64.abi, AArch64.argRegs] [satState] using satState)
-
 end VG.Proof.Sha3.AArch64.Hybrid.X3

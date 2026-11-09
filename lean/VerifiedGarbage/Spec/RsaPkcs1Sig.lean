@@ -14,14 +14,14 @@ BoringSSL's `RSA_sign` and `RSA_verify` (step 1 of EMSA-PKCS1-v1_5-ENCODE,
 * `encode`: EMSA-PKCS1-v1_5-ENCODE (§9.2) steps 2–6,
   `EM = 0x00 ‖ 0x01 ‖ PS ‖ 0x00 ‖ T`, with `T` the DER encoding of the
   `DigestInfo` of `H` (`digestInfo`), from note 1's table of prefixes.
-* `verify`: RSASSA-PKCS1-V1_5-VERIFY (§8.2.2) as BoringSSL's
-  `rsa_verify_no_self_test` computes it: RSAVP1, then the padding check of
-  `RSA_padding_check_PKCS1_type_1` (`unpad`), then an exact comparison of
-  what follows the padding with the `DigestInfo` it builds for the given
-  hash and value. The received `DigestInfo` is never parsed. `verifyRfc` is
-  §8.2.2 as written (encode, then compare), and `Proof/RsaPkcs1Sig/Verify.lean`
-  proves the two equal and that `verify` accepts exactly when `s^e mod n` is
-  the encoding of the given value.
+* `verify`: RSASSA-PKCS1-V1_5-VERIFY (§8.2.2) as written: RSAVP1, then
+  `encode` of the given hash value, then an exact comparison of the two.
+  The received `DigestInfo` is never parsed. BoringSSL's
+  `rsa_verify_no_self_test` instead checks the padding of
+  `RSA_padding_check_PKCS1_type_1` (`unpad`) and compares what follows it
+  with the `DigestInfo` it builds; `Proof/RsaPkcs1Sig/Verify.lean` proves
+  the two equal, and that `verify` accepts exactly when `s^e mod n` is the
+  encoding of the given value.
 * `recover`: what BoringSSL's `EVP_PKEY_verify_recover` returns for an RSA
   key with PKCS #1 v1.5 padding and a hash set (`pkey_rsa_verify_recover`,
   `crypto/evp/p_rsa.cc`): RSAVP1 and the same padding check, then the
@@ -141,23 +141,11 @@ def unpad : List Byte → Option (List Byte)
   | _ => none
 
 /-- RSASSA-PKCS1-V1_5-VERIFY (§8.2.2) of the signature `sig` of the hash
-value `H` with the public key `(nB, eB)`, as BoringSSL's
-`rsa_verify_no_self_test` computes it: `sig` must be `k` octets (step 1),
-RSAVP1 must succeed (step 2: the key is valid, `publicOpChecked`, and
-`s < n`),
-and what follows the padding of the result (`unpad`) must be exactly the
-`DigestInfo` of `H`, which must be `hLen` octets. -/
+value `H` with the public key `(nB, eB)`: step 1, `sig` must be `k` octets;
+step 2, RSAVP1 and I2OSP to `k` octets (`publicOpChecked`: the key is valid
+and `s < n`); step 3, the encoding `EM'` of `H` to `k` octets (`encode`,
+which fails if `H` is not `hLen` octets); step 4, `EM = EM'`. -/
 def verify (nB eB : List Byte) (h : Hash) (H sig : List Byte) : Bool :=
-  if sig.length = nB.length ∧ H.length = h.len then
-    match publicOpChecked nB eB sig with
-    | some em => unpad em == some (digestInfo h H)
-    | none => false
-  else false
-
-/-- RSASSA-PKCS1-V1_5-VERIFY (§8.2.2) as written: step 1, the length of
-`sig`; step 2, RSAVP1 and I2OSP to `k` octets (`publicOpChecked`); step 3, the
-encoding `EM'` of `H` to `k` octets; step 4, `EM = EM'`. -/
-def verifyRfc (nB eB : List Byte) (h : Hash) (H sig : List Byte) : Bool :=
   if sig.length = nB.length then
     match publicOpChecked nB eB sig, encode h H nB.length with
     | some em, some em' => em == em'

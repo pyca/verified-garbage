@@ -1,19 +1,12 @@
-//! DSA parameter and key generation, and signing and verification of prehashed messages,
-//! with fixed-width big-endian `r || s` signatures (FIPS 186-4).
+//! DSA (FIPS 186-4): parameter and key generation, and signing and verification
+//! of prehashed messages, with fixed-width big-endian `r || s` signatures.
 //!
-//! The verified operations check domain and key algebraic consistency and
-//! scalar ranges. As with this crate's RSA operations, they do not prove
-//! primality: callers must obtain domain parameters from a trusted source
-//! or validate them separately. `Parameters::generate` runs
-//! probable-prime parameter generation entirely in verified assembly. FIPS 186-5 retains DSA for legacy verification.
-//!
-//! Supported `(p, q)` encoding widths are `(128, 20)`, `(256, 20)`, `(256, 28)`,
-//! `(256, 32)` and `(384, 32)` bytes. The 2048/160 pair is a legacy
-//! interoperability extension to the FIPS 186-4 sizes. Leading-zero padding is accepted;
-//! the actual domain must have one of the supported bit lengths. Digests
-//! may have any length and are truncated to the subgroup's actual bit length.
-//! Keys own their components, so each operation's buffers are disjoint.
-//! Private keys, nonces and scratch are wiped when their owners are dropped.
+//! FIPS 186-5 keeps DSA only for verifying existing signatures. Domain
+//! parameters are checked for consistency, not primality: take them from a
+//! trusted source or validate them separately. `p` and `q` are 128 and 20, 256
+//! and 20, 256 and 28, 256 and 32, or 384 and 32 bytes wide, leading zeros
+//! allowed (2048 and 160 bits is an extension to FIPS 186-4's sizes); a digest
+//! of any length is truncated to the bit length of `q`.
 
 #![cfg(all(
     any(
@@ -29,58 +22,19 @@
 
 use alloc::{vec, vec::Vec};
 use core::fmt;
-#[cfg(any(
-    target_arch = "aarch64",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-))]
 use core::sync::atomic::{AtomicU8, Ordering};
 
-use crate::arch::dsa::vg_dsa_sign_random;
-#[cfg(not(any(
-    target_arch = "aarch64",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-)))]
-use crate::arch::dsa::vg_dsa_verify;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::dsa::{
-    VG_DSA_GENERATE_KEY_ADX_FEATURES, VG_DSA_SIGN_RANDOM_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES,
-    vg_dsa_sign_random_adx, vg_dsa_verify_adx,
+use crate::arch::dispatch::dsa::{
+    vg_dsa_sign_random_prevalidated_auto, vg_dsa_validate_private_key_auto,
+    vg_dsa_validate_public_key_auto, vg_dsa_verify_prevalidated_auto,
 };
-#[cfg(any(
-    target_arch = "aarch64",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-))]
-use crate::arch::dsa::{vg_dsa_validate_public_key, vg_dsa_verify_prevalidated};
-use crate::cpu::detected;
-use crate::zeroize::{Int, zeroize};
-use verified_garbage_cpu::Features;
+use crate::entropy::{self, Step, Stop};
+use crate::error::InvalidSignature;
+use crate::zeroize::{Zeroable, zeroize};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Backend {
-    Baseline,
-    #[cfg(target_arch = "x86_64")]
-    Adx,
-}
+struct Secret<T: Zeroable>(Vec<T>);
 
-impl Backend {
-    fn select(_features: Features) -> Self {
-        #[cfg(target_arch = "x86_64")]
-        if _features.contains(VG_DSA_SIGN_RANDOM_ADX_FEATURES)
-            && _features.contains(VG_DSA_VERIFY_ADX_FEATURES)
-            && _features.contains(VG_DSA_GENERATE_KEY_ADX_FEATURES)
-        {
-            return Self::Adx;
-        }
-        Self::Baseline
-    }
-}
-
-struct Secret<T: Int>(Vec<T>);
-
-impl<T: Int> Drop for Secret<T> {
+impl<T: Zeroable> Drop for Secret<T> {
     fn drop(&mut self) {
         zeroize(&mut self.0);
     }
@@ -112,45 +66,20 @@ impl core::error::Error for Error {}
 /// An owned DSA public key. Import checks widths; verification checks the
 /// domain and public value. Domain primality is the caller's responsibility.
 #[derive(Debug)]
-#[cfg_attr(
-    not(any(
-        target_arch = "aarch64",
-        target_arch = "powerpc64",
-        target_arch = "riscv64"
-    )),
-    derive(Clone)
-)]
 pub struct PublicKey {
     packed: Vec<u8>,
     p_len: usize,
     q_len: usize,
-    backend: Backend,
     // 0 = unchecked, 1 = valid, 2 = invalid. The owned key bytes never change.
-    #[cfg(any(
-        target_arch = "aarch64",
-        target_arch = "powerpc64",
-        target_arch = "riscv64"
-    ))]
     validated: AtomicU8,
 }
 
-#[cfg(any(
-    target_arch = "aarch64",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-))]
 impl Clone for PublicKey {
     fn clone(&self) -> Self {
         Self {
             packed: self.packed.clone(),
             p_len: self.p_len,
             q_len: self.q_len,
-            backend: self.backend,
-            #[cfg(any(
-                target_arch = "aarch64",
-                target_arch = "powerpc64",
-                target_arch = "riscv64"
-            ))]
             validated: AtomicU8::new(self.validated.load(Ordering::Relaxed)),
         }
     }
@@ -176,49 +105,36 @@ impl PublicKey {
             packed,
             p_len: p.len(),
             q_len: q.len(),
-            backend: Backend::select(detected()),
-            #[cfg(any(
-                target_arch = "aarch64",
-                target_arch = "powerpc64",
-                target_arch = "riscv64"
-            ))]
             validated: AtomicU8::new(0),
         })
     }
 
     /// Verify a prehashed digest and a fixed-width big-endian `r || s`
-    /// signature. Invalid keys, signatures and signature lengths return false.
-    /// On AArch64 and PPC64LE, the first verification validates the immutable public key;
+    /// signature. The first verification validates the immutable public key;
     /// later calls reuse that result while checking every signature independently.
-    pub fn verify(&self, digest: &[u8], signature: &[u8]) -> bool {
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidSignature`] if the signature is not valid, is not twice as
+    /// long as `q`, or the key is not valid.
+    pub fn verify(&self, digest: &[u8], signature: &[u8]) -> Result<(), InvalidSignature> {
+        let dit = crate::dit::public(crate::dit::Why::Verify);
         if signature.len() != 2 * self.q_len {
-            return false;
+            return Err(InvalidSignature);
         }
-        #[cfg(any(
-            target_arch = "aarch64",
-            target_arch = "powerpc64",
-            target_arch = "riscv64"
-        ))]
         let validation = self.validated.load(Ordering::Relaxed);
-        #[cfg(any(
-            target_arch = "aarch64",
-            target_arch = "powerpc64",
-            target_arch = "riscv64"
-        ))]
         if validation == 2 {
-            return false;
+            return Err(InvalidSignature);
         }
         let mut scratch = Secret(vec![0u64; 16 * self.p_len]);
-        #[cfg(any(
-            target_arch = "aarch64",
-            target_arch = "powerpc64",
-            target_arch = "riscv64"
-        ))]
         if validation == 0 {
             // SAFETY: import establishes widths, the key owns its immutable
             // bytes, and scratch is a separate allocation of 16*p_len words.
+            // The dispatcher calls only an implementation the CPU has the
+            // features of.
             let valid = unsafe {
-                vg_dsa_validate_public_key(
+                vg_dsa_validate_public_key_auto(
+                    dit,
                     self.packed.as_ptr(),
                     self.packed.len(),
                     self.p_len,
@@ -233,50 +149,36 @@ impl PublicKey {
             self.validated
                 .store(if valid { 1 } else { 2 }, Ordering::Relaxed);
             if !valid {
-                return false;
+                return Err(InvalidSignature);
             }
         }
-        macro_rules! verify {
-            ($function:path) => {
-                // SAFETY: import establishes all widths. The key owns its
-                // bytes; scratch is a fresh allocation, disjoint from every
-                // input, with the contract's 16*p_len words. Read-only inputs
-                // may overlap one another. CPU features select the backend.
-                unsafe {
-                    $function(
-                        self.packed.as_ptr(),
-                        self.packed.len(),
-                        self.p_len,
-                        self.q_len,
-                        signature.as_ptr(),
-                        signature.len(),
-                        digest.as_ptr(),
-                        digest.len(),
-                        scratch.0.as_mut_ptr(),
-                        scratch.0.len(),
-                    )
-                }
-            };
-        }
-        let result = match self.backend {
-            #[cfg(any(
-                target_arch = "aarch64",
-                target_arch = "powerpc64",
-                target_arch = "riscv64"
-            ))]
-            // SAFETY: successful validation above, or a cached result for the
-            // exact same immutable owned bytes, establishes the new precondition.
-            Backend::Baseline => verify!(vg_dsa_verify_prevalidated),
-            #[cfg(not(any(
-                target_arch = "aarch64",
-                target_arch = "powerpc64",
-                target_arch = "riscv64"
-            )))]
-            Backend::Baseline => verify!(vg_dsa_verify),
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => verify!(vg_dsa_verify_adx),
+        // SAFETY: successful validation above, or a cached result for the
+        // exact same immutable owned bytes, establishes the precondition.
+        // Import establishes all widths. The key owns its bytes; scratch is a
+        // fresh allocation, disjoint from every input, with the contract's
+        // 16*p_len words. Read-only inputs may overlap one another. The
+        // dispatcher calls only an implementation the CPU has the features
+        // of.
+        let result = unsafe {
+            vg_dsa_verify_prevalidated_auto(
+                dit,
+                self.packed.as_ptr(),
+                self.packed.len(),
+                self.p_len,
+                self.q_len,
+                signature.as_ptr(),
+                signature.len(),
+                digest.as_ptr(),
+                digest.len(),
+                scratch.0.as_mut_ptr(),
+                scratch.0.len(),
+            )
         };
-        result == 1
+        if result == 1 {
+            Ok(())
+        } else {
+            Err(InvalidSignature)
+        }
     }
 }
 
@@ -284,6 +186,9 @@ impl PublicKey {
 pub struct PrivateKey {
     public: PublicKey,
     packed: Secret<u8>,
+    // Whether `vg_dsa_validate_private_key` accepts the owned, immutable
+    // `packed`: 0 = unchecked, 1 = valid, 2 = invalid.
+    validated: AtomicU8,
 }
 
 impl fmt::Debug for PrivateKey {
@@ -312,10 +217,16 @@ impl PrivateKey {
         }
         let mut packed = public.packed.clone();
         packed.extend_from_slice(x);
-        Ok(Self {
+        Ok(Self::new(public, Secret(packed)))
+    }
+
+    /// The key of a public key and its packed private bytes, not yet validated.
+    fn new(public: PublicKey, packed: Secret<u8>) -> Self {
+        Self {
             public,
-            packed: Secret(packed),
-        })
+            packed,
+            validated: AtomicU8::new(0),
+        }
     }
 
     /// Borrow the public key corresponding to the imported components.
@@ -328,73 +239,102 @@ impl PrivateKey {
     ///
     /// At most eight signing attempts are made, each with at most 128 nonce
     /// draws. Invalid keys therefore return an error instead of retrying
-    /// indefinitely. Each retry draws a fresh nonce.
+    /// indefinitely. Each retry draws a fresh nonce. The first signature
+    /// validates the immutable key, and later ones reuse that result, as
+    /// [`PublicKey::verify`] does.
     pub fn sign(&self, digest: &[u8]) -> Result<Vec<u8>, Error> {
-        self.sign_with_rng(digest, |buf| {
+        self.sign_from(digest, |buf| {
             getrandom::fill(buf).map_err(|_| Error::Randomness)
         })
     }
 
-    /// [`sign`](Self::sign), with its nonces drawn from `random` instead of
-    /// the operating system.
-    ///
-    /// Not part of the API: it lets benchmarks compare implementations on
-    /// identical work, from fixed tapes. The signature is secure only if
-    /// `random` supplies uniformly random bytes, never reused.
-    #[doc(hidden)]
-    pub fn sign_with_rng(
+    /// [`sign`](Self::sign), with its nonces drawn from `random`.
+    fn sign_from(
         &self,
         digest: &[u8],
-        mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+        random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Vec<u8>, Error> {
-        let mut tape = Secret(Vec::with_capacity(8 * 128 * self.public.q_len));
+        crate::dit::enter!(dit);
+        let q_len = self.public.q_len;
         let mut scratch = Secret(vec![0u64; 16 * self.public.p_len + 64]);
-        let mut output = vec![0u8; 2 * self.public.q_len];
-        loop {
+        if !self.validate(dit, &mut scratch.0) {
+            return Err(Error::InvalidKeyOrNonce);
+        }
+        let mut output = vec![0u8; 2 * q_len];
+        // The first call needs no random bytes: it checks the key first.
+        let signed = entropy::serve(0, random, |tape| {
             let mut used = [0u64; 1];
-            macro_rules! sign {
-                ($function:path) => {
-                    // SAFETY: imports establish supported widths. All writable
-                    // buffers are separate owned allocations, disjoint from
-                    // the key, digest and random tape. Scratch has the required
-                    // size, and backend selection establishes CPU features.
-                    unsafe {
-                        $function(
-                            output.as_mut_ptr(),
-                            output.len(),
-                            &mut used,
-                            self.packed.0.as_ptr(),
-                            self.packed.0.len(),
-                            self.public.p_len,
-                            self.public.q_len,
-                            digest.as_ptr(),
-                            digest.len(),
-                            tape.0.as_ptr(),
-                            tape.0.len(),
-                            scratch.0.as_mut_ptr(),
-                            scratch.0.len(),
-                        )
-                    }
-                };
-            }
-            let status = match self.public.backend {
-                Backend::Baseline => sign!(vg_dsa_sign_random),
-                #[cfg(target_arch = "x86_64")]
-                Backend::Adx => sign!(vg_dsa_sign_random_adx),
+            // SAFETY: imports establish supported widths, and the validation
+            // above, or a cached result for the exact same immutable owned
+            // bytes, establishes the prevalidated signer's precondition. All
+            // writable buffers are separate owned allocations, disjoint from
+            // the key, digest and random tape. Scratch has the required size.
+            // The dispatcher calls only an implementation the CPU has the
+            // features of.
+            let status = unsafe {
+                vg_dsa_sign_random_prevalidated_auto(
+                    dit,
+                    output.as_mut_ptr(),
+                    output.len(),
+                    &mut used,
+                    self.packed.0.as_ptr(),
+                    self.packed.0.len(),
+                    self.public.p_len,
+                    q_len,
+                    digest.as_ptr(),
+                    digest.len(),
+                    tape.as_ptr(),
+                    tape.len(),
+                    scratch.0.as_mut_ptr(),
+                    scratch.0.len(),
+                )
             };
             match status {
-                1 => return Ok(output),
-                2 => {
-                    // The contract permits extending an exhausted tape and
-                    // replaying this same signing operation. Preserve its
-                    // prefix; never reuse the tape for another signing.
-                    let start = tape.0.len();
-                    tape.0.resize(start + self.public.q_len, 0);
-                    random(&mut tape.0[start..])?;
-                }
-                _ => return Err(Error::InvalidKeyOrNonce),
+                1 => Step::Done,
+                // The contract permits extending an exhausted tape and
+                // replaying this same signing operation, so the whole tape
+                // is kept; it is never reused for another signing.
+                2 => Step::More {
+                    used: 0,
+                    requested: tape.len() + q_len,
+                },
+                _ => Step::Failed,
             }
+        });
+        match signed {
+            Ok(()) => Ok(output),
+            Err(Stop::Failed) => Err(Error::InvalidKeyOrNonce),
+            Err(Stop::Fill(e)) => Err(e),
         }
+    }
+
+    /// Whether `vg_dsa_validate_private_key` accepts the key, validating it
+    /// on the first call. `scratch` holds at least 16*p_len words.
+    fn validate(&self, dit: crate::dit::Dit<'_>, scratch: &mut [u64]) -> bool {
+        match self.validated.load(Ordering::Relaxed) {
+            0 => {}
+            state => return state == 1,
+        }
+        // SAFETY: import establishes the widths and key_len = 3*p_len +
+        // 2*q_len; the key owns its immutable bytes, and scratch is a separate
+        // allocation of at least 16*p_len words. The dispatcher calls only an
+        // implementation the CPU has the features of.
+        let valid = unsafe {
+            vg_dsa_validate_private_key_auto(
+                dit,
+                self.packed.0.as_ptr(),
+                self.packed.0.len(),
+                self.public.p_len,
+                self.public.q_len,
+                scratch.as_mut_ptr(),
+                scratch.len(),
+            )
+        } == 1;
+        // As in `PublicKey::verify`, the atomic carries only the validation
+        // result of the immutable bytes; concurrent first calls may repeat it.
+        self.validated
+            .store(if valid { 1 } else { 2 }, Ordering::Relaxed);
+        valid
     }
 }
 

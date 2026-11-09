@@ -28,9 +28,6 @@ open VG.Proof.X25519 (bit)
 /-- Bit `t` of the scalar's bytes at `SC`, unclamped. -/
 def rawBit (m : Mem) (SC : Addr) (t : Nat) : Nat := ((m (SC + BitVec.ofNat 64 (t / 8))).toNat >>> (t % 8)) &&& 1
 
-theorem rawBit_le (m : Mem) (SC : Addr) (t : Nat) : rawBit m SC t ≤ 1 := by
-  simp only [rawBit]; exact Nat.le_of_lt_succ (Nat.and_lt_two_pow _ (by decide : 1 < 2 ^ 1))
-
 theorem getD_bytesAt (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
     (bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
   simp [bytesAt, List.getD_eq_getElem?_getD, hi]

@@ -263,9 +263,6 @@ end
 section
 variable {P : CP} {σ s : State} {A : Nat → Nat} {live : List Nat} {V : Nat → Nat} {ls : List Nat}
 
-theorem KS.fwEq (h : KS P σ A live V ls s) {o : Nat} (ho : FwOk o) : fw s.mem P o = fw σ.mem P o :=
-  h.bk.fwEq ho
-
 theorem KS.ldrSp (h : KS P σ A live V ls s) {o : Nat} (ho : FwOk o) {t : Reg} {rest : List Instr}
     {Q : State → Prop} (k : ∀ s', Upd s s' t (fw σ.mem P o) → WP isa (.block rest) s' Q) :
     WP isa (.block (.ldrSp t o :: rest)) s Q :=

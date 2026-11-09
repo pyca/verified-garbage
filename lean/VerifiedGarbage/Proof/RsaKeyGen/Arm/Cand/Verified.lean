@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top4
 import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 import VerifiedGarbage.Proof.MillerRabin.Arm.Top
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Trial
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
+meta import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 /-! # `vg_rsa_keygen_candidate` on ARMv7 is verified against the shared contract
 
@@ -25,13 +27,13 @@ open VG VG.Arm
 open VG.Impl.RsaKeyGen.Arm.Candidate (code)
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem cand_contract_correct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (s : State) (h : (Spec.RsaKeyGen.candidateContract abi 112).pre s) :
+theorem cand_contract_correct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (s : State) (h : (Proof.RsaKeyGen.candidateContract abi 112).pre s) :
     ∃ tr t, Exec isa (code v.name v.code) s tr t ∧ abiPreserved s t ∧
-      (Spec.RsaKeyGen.candidateContract abi 112).post s t := by
+      (Proof.RsaKeyGen.candidateContract abi 112).post s t := by
   have hc := cin_of_pre s h
   obtain ⟨tr, t, run, preserved, r0, outs, used⟩ := cand_ok v hc
   refine ⟨tr, t, run, preserved, ?_⟩
-  sig_post [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify, Loc.val,
+  sig_post [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify, Loc.val,
     State.addr]
   rw [BitVec.setWidth_append_eq_right]
   exact ⟨r0, outs, used⟩
@@ -66,12 +68,12 @@ theorem mkP_eq {s t : State} (hs : CIn s) (sp : s.sp = t.sp) (p0 : s.gpr .r0 = t
       (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact hk) hl]
   · rw [VG.Proof.RsaKeyGen.ite_f hk, VG.Proof.RsaKeyGen.ite_f hk]
 
-theorem cand_contract_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) : ConstantTime isa (Spec.RsaKeyGen.candidateContract abi 112).pre
-    (Spec.RsaKeyGen.candidateContract abi 112).pub (code v.name v.code) := by
+theorem cand_contract_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) : ConstantTime isa (Proof.RsaKeyGen.candidateContract abi 112).pre
+    (Proof.RsaKeyGen.candidateContract abi 112).pub (code v.name v.code) := by
   intro s t tr1 tr2 u w hs ht hp e1 e2
   have is := cin_of_pre s hs
   have it := cin_of_pre t ht
-  sig_pub [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify, Loc.val,
+  sig_pub [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify, Loc.val,
     State.addr] at hp
   obtain ⟨sp, bytes, p0, p1, p2, p3, a0, a1, a2, a3, a4, a5, a6⟩ := hp
   obtain ⟨b1, b2⟩ := List.append_inj bytes (by
@@ -96,15 +98,15 @@ def candSatState : State where
   rd := [⟨0x1200, 1⟩, ⟨0x1300, 0⟩, ⟨0x1400, 0⟩, ⟨0x8000, 28⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x1100, 8⟩, ⟨0x4000, 4352⟩]
 
-theorem cand_contract_sat : ∃ s, (Spec.RsaKeyGen.candidateContract abi 112).pre s := by
-  sig_implies_sat [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify,
+theorem cand_contract_sat : ∃ s, (Proof.RsaKeyGen.candidateContract abi 112).pre s := by
+  sig_implies_sat [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify,
     Loc.val, State.addr]
     [candSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.RsaKeyGen.primeLenValid, Spec.Rsa.scratchWords]
     using candSatState
 
 /-- `vg_rsa_keygen_candidate`, calling the round `v`. -/
 theorem cand_verified [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :
-    Verified target (code v.name v.code) (Spec.RsaKeyGen.candidateContract abi 112) :=
+    Verified target (code v.name v.code) (Proof.RsaKeyGen.candidateContract abi 112) :=
   ⟨cand_contract_correct v, cand_contract_ct v, cand_contract_sat⟩
 
 end VG.Proof.RsaKeyGen.Arm.Cand

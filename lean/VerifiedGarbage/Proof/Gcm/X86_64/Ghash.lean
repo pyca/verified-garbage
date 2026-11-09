@@ -82,17 +82,6 @@ theorem coeff_lp {n : Nat} (v : BitVec n) (k : Nat) : (lp v).coeff k = bit (v.ge
   · simp only [h, ↓reduceIte, BitVec.getLsbD_eq_getElem]
   · simp only [h, ↓reduceIte, BitVec.getLsbD_of_ge v k (by omega_using [h]), Bool.false_eq_true]
 
-theorem lp_xor {n : Nat} (a b : BitVec n) : lp (a ^^^ b) = lp a + lp b := by
-  ext k
-  simp only [coeff_add, coeff_lp, BitVec.getLsbD_xor, bit_xor]
-
-theorem lp_ext {n : Nat} {a b : BitVec n} (h : ∀ k, (lp a).coeff k = (lp b).coeff k) : a = b := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i _
-  have := h i
-  simp only [coeff_lp] at this
-  exact bit_inj this
-
 theorem natDegree_lp {n : Nat} (v : BitVec n) : (lp v).natDegree ≤ n - 1 := by
   rw [natDegree_le_iff_coeff_eq_zero]
   intro N hN
@@ -1142,9 +1131,6 @@ open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom mul)
 theorem ofInt_natCast (n : Nat) : BitVec.ofInt 64 (n : Int) = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toInt_eq; simp only [BitVec.ofInt_natCast]
 
-theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
-
 theorem contains_offset {base : Addr} {len off n : Nat} (h : off + n ≤ len) (ho : off < 2 ^ 64) :
     (⟨base, len⟩ : Region).Contains (base + BitVec.ofNat 64 off) n := Offset.contains_base base h ho
 
@@ -1175,8 +1161,6 @@ abbrev Y₀ : Block := blockAt s₀.mem (yp s₀)
 
 /-- Block `i`, and where it starts. -/
 abbrev blkAddr (i : Nat) : Addr := dp s₀ + BitVec.ofNat 64 (16 * i)
-abbrev blk (i : Nat) : Block := blockAt s₀.mem (blkAddr s₀ i)
-
 end
 
 structure Pre (s₀ : State) : Prop where
@@ -1738,18 +1722,6 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
         rcx := by rw [hr.1 _ (by decide)]; simp only [nb, tsub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq] }
     exact WP.loop (M := isa) Inv hstep (nb s₀) s₁ ⟨0, rfl, hpos, hL₀⟩
 
-/-- A state satisfying the precondition (with no blocks). -/
-def satState : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .r8 => 0x4000 | .rsp => 0x5000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 16⟩, ⟨0x3000, 0⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x4000, 256⟩]
-
 theorem ghash_correct (s : State) (hs : Proof.Gcm.ghashX86_64.pre s) :
     ∃ t s', Exec isa Impl.Gcm.X86_64.ghash s t s' ∧ abiPreserved s s' ∧
       Proof.Gcm.ghashX86_64.post s s' := by
@@ -1764,12 +1736,6 @@ theorem ghash_ct : ConstantTime isa Proof.Gcm.ghashX86_64.pre Proof.Gcm.ghashX86
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
-
-theorem ghash_verified :
-    Verified X86_64.target Impl.Gcm.X86_64.ghash (Proof.Gcm.ghashContract X86_64.abi) :=
-  Verified.of_correct ghash_correct ghash_ct (by
-    sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, Proof.Gcm.ghashX86_64, X86_64.abi,
-      X86_64.argRegs] [Proof.Gcm.X86_64.satState] using Proof.Gcm.X86_64.satState)
 
 end VG.Proof.Gcm.X86_64
 

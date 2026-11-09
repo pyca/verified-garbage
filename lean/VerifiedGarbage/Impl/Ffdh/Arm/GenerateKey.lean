@@ -55,9 +55,6 @@ def scalarArgs : List Instr := [
 def cutEntropy : Prog isa := .seq (unlessZero .lr (.loop (.block prefixStep) .ne))
   (.seq (.block first) (unlessZero .lr copyBytes))
 
-def scalar : Prog isa := .seq bound (.seq (.block scalarArgs)
-  (.seq cutEntropy (.block [.ldrSp .r0 0])))
-
 def clearOutput (slot : Nat) : Prog isa := .seq (.block [
   .ldrSp .r0 slot, .ldrSp .lr 32, .mov .r2 (.imm 0)]) zeros
 
@@ -72,18 +69,10 @@ its nondegenerate range needs checking after exponentiation. -/
 def finish : Prog isa := .seq (maskOutput 40) (.seq (maskOutput 36) (.block [
   .ldrSp .r3 64, .mov .r0 (.imm 3), .dp .sub .r0 .r0 (.shifted .r3 .lsl 1)]))
 
-def tail : Prog isa := .seq (powerAt 56 16 20) (.seq (inRange 6)
-  (.seq (.block Exchange.saveResult) (.seq Exchange.exportResult finish)))
-
-def main : Prog isa := .seq (prepareAt 24) (.seq scalar (.seq (importAt 1 40 44)
-  (.seq CheckPrivate.scalarRange (ifFlag tail failScalar))))
-
 def entry : List Instr := [
   .addSp .r12 0, st .r0 40, st .r2 36, st .r2 4,
   .ldrSp .r3 128, st .r3 24, .ldrSp .r3 132, st .r3 28,
   .ldrSp .r3 136, st .r3 32, st .r3 44, .ldrSp .r3 140, st .r3 48,
   .ldrSp .r0 148, st .r0 0]
-
-def code : Prog isa := framed (.seq (.block entry) (head main))
 
 end VG.Impl.Ffdh.Arm.Domain.GenerateKey

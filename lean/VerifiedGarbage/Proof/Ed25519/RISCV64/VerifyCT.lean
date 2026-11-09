@@ -42,42 +42,6 @@ open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64 VG.Proof.X25519.RISC
 open VG.Spec.X25519 (P Fe)
 open VG.Spec.Ed25519 (decodeLE bytesAt)
 
-section
-variable {b sp : Addr}
-
-/-- Before the comparison: the points `p` and `q` in slots 0–3 and 4–7. -/
-def EqPre (b sp : Addr) (p q : Spec.Ed25519.Point) (s : State) : Prop :=
-  Pin b sp s ∧ point (env s.mem b) 0 1 2 3 = p ∧ point (env s.mem b) 4 5 6 7 = q
-
-theorem pointEqual_ct (p q : Spec.Ed25519.Point) :
-    RelCT isa (Both (EqPre b sp p q)) Impl.Ed25519.RISCV64.pointEqual fun _ _ => True := by
-  unfold Impl.Ed25519.RISCV64.pointEqual
-  let E (t : State) : Prop := Pin b sp t ∧ env t.mem b 8 = p.X * q.Z ∧ env t.mem b 9 = q.X * p.Z ∧
-    env t.mem b 10 = p.Y * q.Z ∧ env t.mem b 11 = q.Y * p.Z
-  have h1 := ctBoth (ctRegs [.a3] (A := EqPre b sp p q) (c := fieldCode pointEqualOps)
-    (fun _ _ h₁ h₂ => h₁.1.regs h₂.1) (by taint_decide)) (B := E) fun s h =>
-      WP.mono (fieldCode_ok _ h.1.1.ctx h.1.1.ws) fun t ⟨k, e⟩ => by
-        refine ⟨h.1.of_rest k.rest (by decide), ?_, ?_, ?_, ?_⟩ <;> rw [e, ← h.2.1, ← h.2.2] <;> rfl
-  let E' (t : State) : Prop := Pin b sp t ∧ env t.mem b 10 = p.Y * q.Z ∧ env t.mem b 11 = q.Y * p.Z
-  have h2 := ctBoth (ctRegs [.a3] (A := E) (c := fieldEqual 8 9) (fun _ _ h₁ h₂ => h₁.1.regs h₂.1)
-    (by taint_decide)) (B := fun t => E' t ∧ (t.gpr .a2 = 0 ↔ p.X * q.Z = q.X * p.Z)) fun s h =>
-      WP.mono (fieldEqual_ok h.1.1.ctx h.1.1.ws 8 9) fun t ⟨k, e, z⟩ =>
-        ⟨⟨h.1.of_rest k.rest (by decide), by rw [e]; exact h.2.2.2.1, by rw [e]; exact h.2.2.2.2⟩,
-          by rw [z, h.2.1, h.2.2.1]⟩
-  have h3 := ctBoth (ctRegs [.a3] (A := E') (c := fieldEqual 10 11) (fun _ _ h₁ h₂ => h₁.1.regs h₂.1)
-    (by taint_decide)) (B := fun t => Pin b sp t ∧ (t.gpr .a2 = 0 ↔ p.Y * q.Z = q.Y * p.Z)) fun s h =>
-      WP.mono (fieldEqual_ok h.1.1.ctx h.1.1.ws 10 11) fun t ⟨k, _, z⟩ =>
-        ⟨h.1.of_rest k.rest (by decide), by rw [z, h.2.1, h.2.2]⟩
-  refine RelCT.seq h1 (RelCT.seq h2 (RelCT.ite (fun _ _ h => eval_zero_agree h.1.2 h.2.2) ?_ ?_))
-  · refine RelCT.seq (h3.mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h)
-      (RelCT.ite (fun _ _ h => eval_zero_agree h.1.2 h.2.2) ?_ ?_)
-    · exact (ctRegs [.a3] (A := Pin b sp) (fun _ _ h₁ h₂ => h₁.regs h₂) (by taint_decide)).mono
-        (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h
-    · exact recoverInvalid_ct.mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h
-  · exact recoverInvalid_ct.mono (fun _ _ h => ⟨h.1.1.1.1, h.1.2.1.1⟩) fun _ _ h => h
-
-end
-
 /-! ## The decoding loop -/
 
 section

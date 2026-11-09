@@ -162,14 +162,6 @@ theorem exponent_pair_trace {E : Environment} (v : E.Valid) {eBytes pBytes qByte
   obtain ⟨DZ, flagZ, saveZ, _, _⟩ := wp_result (exponent_ok v P.right) B
   exact ⟨trace, ⟨⟨DU, DZ⟩, saveU, saveZ⟩, flagU, by rw [same]; exact flagZ⟩
 
-theorem TestPair.keepMem {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
-    {s t u z : State} (P : TestPair E eBytes pBytes qBytes rBytes sBytes s t) (MU : u.mem = s.mem) (MZ : z.mem = t.mem)
-    {regs : List Reg} (KU : Keeps regs s u) (KZ : Keeps regs t z) (base : .edi ∉ regs) (sp : .esp ∉ regs)
-    (SU : u.syms = s.syms) (SZ : z.syms = t.syms) : TestPair E eBytes pBytes qBytes rBytes sBytes u z := by
-  refine ⟨⟨P.left.keepMem v MU KU base sp SU, P.right.keepMem v MZ KZ base sp SZ⟩, ?_, ?_⟩
-  · rw [MU]; exact P.savedLeft
-  · rw [MZ]; exact P.savedRight
-
 theorem tested_trace {mont round : Prog isa} {montName roundName : String}
     (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)

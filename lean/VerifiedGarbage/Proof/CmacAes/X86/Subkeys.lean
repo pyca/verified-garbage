@@ -205,7 +205,7 @@ structure SPre (s₀ : State) : Prop where
   sch_fit : (W s₀).toNat + 240 ≤ 2 ^ 32
   k_fit : (Kb s₀).toNat + 32 ≤ 2 ^ 32
   scr_fit : (Sc s₀).toNat + 2176 ≤ 2 ^ 32
-  esp28 : 28 ≤ (E s₀).toNat
+  esp32 : 32 ≤ (E s₀).toNat
   esp_fit : (E s₀).toNat + 20 ≤ 2 ^ 32
   rounds : R s₀ = 10 ∨ R s₀ = 12 ∨ R s₀ = 14
 
@@ -216,7 +216,7 @@ theorem SPre.of {s₀ : State} (h : subkeysX86.pre s₀) : SPre s₀ :=
 /-! ## Addresses and regions -/
 
 theorem ret_stk (s₀ : State) : (retR s₀).Disjoint (stkR s₀) := by
-  have := Offset.disjoint_below_above ((E s₀).setWidth 64) (m := 28) (a := 0) (l := 4) (by decide)
+  have := Offset.disjoint_below_above ((E s₀).setWidth 64) (m := 32) (a := 0) (l := 4) (by decide)
   rw [add0] at this
   exact this.symm
 
@@ -228,8 +228,8 @@ section
 variable {s₀ : State} (hp : SPre s₀)
 include hp
 
-theorem SPre.below_eq : below (E s₀) 28 = stkR s₀ := by
-  simp only [below]; rw [Taint.sub_setWidth hp.esp28]
+theorem SPre.below_eq : below (E s₀) 32 = stkR s₀ := by
+  simp only [below]; rw [Taint.sub_setWidth hp.esp32]
 
 theorem SPre.argA {i : Nat} (hi : i < 4) : argAddr s₀ i = argAddr s₀ 0 + BitVec.ofNat 64 (4 * i) := by
   have : (s₀.gpr .esp).toNat + 20 ≤ 2 ^ 32 := hp.esp_fit
@@ -375,8 +375,8 @@ theorem spre_wp {s₀ : State} (hp : SPre s₀) : WP isa (.block subkeysPre) s�
   have rd₁₁ : s₁₁.rd = s₀.rd := by rw [u₁₁.rd, u₁₀.rd, u₉.rd, u₈.rd, u₇.rd, rd₆, rd₅, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
   have wr₁₁ : s₁₁.wr = s₀.wr := by rw [u₁₁.wr, u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, wr₆, wr₅, w₄]
   have mem₁₁ : s₁₁.mem = sPreMem s₀ := by rw [u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, mem₆]
-  have hb : below (s₁₁.gpr .esp) 28 = stkR s₀ := by rw [sp₁₁]; exact hp.below_eq
-  refine ⟨⟨?_, ?_, ?_, ?_, u₁₁.gpr, ?_, hp.rounds, by rw [sp₁₁]; exact hp.esp28, ?_,
+  have hb : below (s₁₁.gpr .esp) 32 = stkR s₀ := by rw [sp₁₁]; exact hp.below_eq
+  refine ⟨⟨?_, ?_, ?_, ?_, u₁₁.gpr, ?_, hp.rounds, by rw [sp₁₁]; exact hp.esp32, ?_,
     hp.sch_k.sub_right (Region.sub_prefix (by decide)), hp.sch_scr.sub_right (Region.sub_prefix (by decide)),
     ?_, ?_, (hp.k_scr.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide)),
     by rw [hb]; exact hp.b_sch, ?_, by rw [hb]; exact hp.b_k.sub_right (Region.sub_prefix (by decide)),
@@ -430,7 +430,7 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysX86.pre s₀) :
   unfold subkeys
   refine WP.seq (WP.mono (spre_wp hp) fun s₁ a => ?_)
   refine WP.seq (WP.mono (ctr_call v a.pre) fun s₂ h₂ => ?_)
-  have hb : below (s₁.gpr .esp) 28 = stkR s₀ := by rw [a.esp]; exact hp.below_eq
+  have hb : below (s₁.gpr .esp) 32 = stkR s₀ := by rw [a.esp]; exact hp.below_eq
   -- The memory after the call.
   have f₂ : Frame [kR s₀, ⟨(Sc s₀).setWidth 64, 2064⟩, stkR s₀] (sPreMem s₀) s₂.mem := by
     have fr := h₂.frame

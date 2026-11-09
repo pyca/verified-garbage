@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Params
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 
@@ -42,7 +43,7 @@ def searchOutput (p : SearchParams) (result : Spec.Ffdh.ParameterSearchResult) (
 
 def searchPolicy (p : SearchParams) (result : Spec.Ffdh.ParameterSearchResult) : List (BitVec 64) :=
   [BitVec.ofNat 64 result.remaining, BitVec.ofNat 64 p.c.length,
-    BitVec.ofNat 64 (Spec.Ffdh.parameterEntropy p.c.bits), BitVec.ofNat 64 result.requested]
+    BitVec.ofNat 64 (Spec.Ffdh.parameterEntropy p.c.bits), BitVec.ofNat 64 (Proof.Ffdh.requested p.c.bits result)]
 
 structure SearchDone (p : SearchParams) (result : Spec.Ffdh.ParameterSearchResult) (s : State) : Prop where
   buffers : SearchBuffers p s

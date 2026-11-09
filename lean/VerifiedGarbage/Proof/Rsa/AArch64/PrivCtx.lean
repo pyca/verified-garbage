@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the contract on the registers
@@ -108,25 +109,25 @@ def chkSatState : State where
     ⟨0x4500, 1⟩, ⟨0x10000, 96⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x20000, 8448⟩]
 
-theorem private_checked_implies : chkA.Implies (Spec.Rsa.privateCheckedContract abi stackBytes) where
+theorem private_checked_implies : chkA.Implies (Proof.Rsa.privateCheckedContract abi stackBytes) where
   pre := by
     intro s h
-    sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, chkA, stackBytes,
+    sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, chkA, stackBytes,
       stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
-    sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, chkA, stackBytes,
+    sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, chkA, stackBytes,
       stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     sig_split h
-    sig_reduce [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, chkA, stackBytes,
+    sig_reduce [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, chkA, stackBytes,
       stackArgs_twelve, List.append_eq, List.range, List.range.loop]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
   post := by
-    sig_implies_post [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, chkA,
+    sig_implies_post [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, chkA,
       stackBytes, stackArgs_twelve, List.append_eq, List.range, List.range.loop]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, chkA, stackBytes,
+    sig_pub [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, chkA, stackBytes,
       stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := h
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, h3]) hl
@@ -135,7 +136,7 @@ theorem private_checked_implies : chkA.Implies (Spec.Rsa.privateCheckedContract 
     simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
   sat := by
-    sig_implies_sat [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, chkA,
+    sig_implies_sat [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, chkA,
       stackBytes, stackArgs_twelve, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW,
       Mem.read] using chkSatState
 

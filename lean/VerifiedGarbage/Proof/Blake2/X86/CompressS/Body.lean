@@ -180,10 +180,6 @@ namespace Pre
 variable {s₀ : State} (h : Pre s₀)
 include h
 
-theorem in_st {s : State} (hw : s.wr = s₀.wr) {d : Nat} (hd : d + 4 ≤ 32) :
-    InRegions s.wr (addr (st s₀) d) 4 :=
-  ⟨stR s₀, by simp [hw, h.wr], contains_addr hd (by omega_arith) h.st_fits⟩
-
 theorem in_scr {s : State} (hw : s.wr = s₀.wr) {d : Nat} (hd : d + 4 ≤ 512) :
     InRegions s.wr (addr (scr s₀) d) 4 :=
   ⟨scrR s₀, by simp [hw, h.wr], contains_addr hd (by omega_arith) h.scr_fits⟩
@@ -213,11 +209,6 @@ theorem arg_frame {m : Mem} (hf : Frame [stR s₀, scrR s₀] s₀.mem m) {i : N
   refine (hf.readW (r := ⟨argAddr s₀ i, 4⟩) (Region.contains_self _ _) ?_ (by decide))
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
   exact ⟨h.arg_st.sub_left (h.arg_sub hi), h.arg_scr.sub_left (h.arg_sub hi)⟩
-
-theorem blk_toNat {i : Nat} (hi : i < nb s₀) : (blkAddr s₀ i).toNat = (bp s₀).toNat + 64 * i := by
-  have := h.blk_fits
-  simp only [blkAddr, BitVec.toNat_add, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := 64 * i) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem blk_word {i : Nat} (hi : i < nb s₀) {o : Nat} (ho : o + 4 ≤ 64) :
     addr (blkAddr s₀ i) o = (bp s₀).setWidth 64 + BitVec.ofNat 64 (64 * i + o) := by
@@ -293,13 +284,6 @@ theorem st_frame {m m' : Mem} (hf : Frame [workR (scr s₀)] m m') {d : Nat} (hd
   refine hf.readW (r := stR s₀) (h.st_contains hd) ?_ (by decide)
   simp only [List.mem_singleton, forall_eq]
   exact h.st_scr.sub_right (Region.sub_prefix (by omega_arith))
-
-/-- The work vector is unchanged while only the state is written. -/
-theorem work_frame {m m' : Mem} (hf : Frame [stR s₀] m m') {d : Nat} (hd : d + 4 ≤ 512) :
-    m'.readW (addr (scr s₀) d) 32 = m.readW (addr (scr s₀) d) 32 := by
-  refine hf.readW (r := scrR s₀) (h.scr_contains hd) ?_ (by decide)
-  simp only [List.mem_singleton, forall_eq]
-  exact h.st_scr.symm
 
 theorem saved_frame {m m' : Mem} (hs : Saved s₀ m)
     (hf : Frame [workR (scr s₀)] m m' ∨ Frame [stR s₀] m m') : Saved s₀ m' :=

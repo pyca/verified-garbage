@@ -29,8 +29,8 @@ flags to branch on, so each comparison's carry (`subs`) is moved into a
 register (`adcs` of zeros) and tested with `cbz`. If fewer than `len` bytes
 are left it returns 0 at once. Otherwise it XORs the bytes left in the
 buffered block (as many as `len` asks for), then the whole blocks that
-follow with `vg_chacha20_xor` (an implementation `x` of it: `apply` is
-generic over them), advancing the counter, and finally, if bytes remain,
+follow with `vg_chacha20_xor` in place (an implementation `x` of it: `apply`
+is generic over them; `XorCallee.inPlace`), advancing the counter, and finally, if bytes remain,
 computes the next block into the buffer with `vg_chacha20_block`, advances
 the counter and XORs its first bytes. `x21` holds the state, `x22` the data
 not yet processed and `x23` its length throughout: they are callee-saved,
@@ -117,7 +117,7 @@ def blocksArgs : List Instr :=
    .add .x .x22 .x22 .x2, .sub .x .x23 .x23 .x2]
 
 def part2 (x : XorCallee) : Prog isa :=
-  .ite (.zero .x .x2) (.block []) (.seq (.block blocksArgs) (.call x.name x.code))
+  .ite (.zero .x .x2) (.block []) (.seq (.block blocksArgs) x.inPlace)
 
 /-- The arguments of the block function: the state and the buffer. -/
 def tailArgs : List Instr := [mov .x0 .x21, .addImm .x .x1 .x21 64]

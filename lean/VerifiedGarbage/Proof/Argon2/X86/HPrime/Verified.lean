@@ -214,8 +214,7 @@ end
 Constant time, by relating two runs with the same public data piece by piece
 (`code_ct`): the setup is checked by the taint analysis from the arguments,
 `first` and `finishOutput` by their pieces; then `hPrime_verified` against the
-contract with the arguments read only, and `hPrimeShared_verified` against
-`Proof.Argon2.hPrimeContract`, which lets the code write them.
+contract with the arguments read only.
 -/
 
 namespace VG.Proof.Argon2.X86.HPrime
@@ -379,7 +378,6 @@ theorem code_ct : ConstantTime isa hPrimeX86.pre hPrimeX86.pub Impl.Argon2.X86.H
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr
       rw [b₁.ebx, b₂.ebx, q.scr_eq]) (by taint_decide)
 
-
 /-! ## A state satisfying the precondition -/
 
 /-- Memory holding the arguments `0x1000, 1, 0x2000, 1, 0x10000` at `0x5004`. -/
@@ -412,96 +410,5 @@ theorem hSat_pre : hPrimeX86.pre hSatState := by
 
 theorem hPrime_verified : Verified X86.target Impl.Argon2.X86.HPrime.code hPrimeX86 :=
   ⟨fun s hs => correct (pre_of s hs), code_ct, ⟨hSatState, hSat_pre⟩⟩
-
-/-! ## Writable arguments, and the shared contract -/
-
-/-- `hPrimeX86`, with the arguments writable, as `Sig.contract` lays the
-regions out. -/
-def hPrimeWide : Contract X86.isa :=
-  { hPrimeX86 with
-    pre := fun s =>
-      let input : Region := ⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩
-      let out : Region := ⟨(arg s 2).setWidth 64, (arg s 3).toNat⟩
-      let scratch : Region := ⟨(arg s 4).setWidth 64, 16384⟩
-      let args : Region := ⟨argAddr s 0, 20⟩
-      let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-      let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 60, 60⟩
-      s.rd = [input] ∧ s.wr = [out, scratch, args] ∧
-      input.Disjoint out ∧ input.Disjoint scratch ∧ input.Disjoint args ∧ out.Disjoint scratch ∧
-      out.Disjoint args ∧ scratch.Disjoint args ∧
-      ret.Disjoint input ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧ ret.Disjoint args ∧
-      stack.Disjoint input ∧ stack.Disjoint out ∧ stack.Disjoint scratch ∧ stack.Disjoint args ∧
-      (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32 ∧ (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32 ∧
-      (arg s 4).toNat + 16384 ≤ 2 ^ 32 ∧ 60 ≤ (s.gpr .esp).toNat ∧
-      (s.gpr .esp).toNat + 4 + 20 ≤ 2 ^ 32 ∧
-      (arg s 1).toNat < 2 ^ 32 ∧ 1 ≤ (arg s 3).toNat ∧ (arg s 3).toNat < 2 ^ 32 }
-
-/-- A state satisfying `hPrimeWide.pre`. -/
-def hSatWide : State :=
-  { hSatState with rd := [⟨0x1000, 1⟩], wr := [⟨0x2000, 1⟩, ⟨0x10000, 16384⟩, ⟨0x5004, 20⟩] }
-
-theorem hPrimeWide_verified : Verified X86.target Impl.Argon2.X86.HPrime.code hPrimeWide :=
-  Verified.narrowTo hPrime_verified
-    (fun s => [⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩, ⟨argAddr s 0, 20⟩])
-    (fun s => [⟨(arg s 2).setWidth 64, (arg s 3).toNat⟩, ⟨(arg s 4).setWidth 64, 16384⟩])
-    (fun s h => by
-      obtain ⟨_, _, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅, h₁₆, h₁₇, h₁₈, h₁₉, h₂₀,
-        h₂₁, h₂₂, h₂₃, h₂₄⟩ := h
-      have e : (⟨((s.gpr .esp) - BitVec.ofNat 32 60).setWidth 64, 60⟩ : Region) =
-          ⟨(s.gpr .esp).setWidth 64 - 60, 60⟩ := by rw [Taint.sub_setWidth h₂₀]; rfl
-      simp only [hPrimeX86, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
-        State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr]
-      refine ⟨trivial, trivial, h₄, h₆, h₇.symm, h₈.symm, h₁₀, h₁₁, ?_, ?_, ?_, h₁₇, h₁₈, h₁₉, h₂₀,
-        by omega, h₂₃⟩
-      · simp only [below]; rw [e]; exact h₁₃
-      · simp only [below]; rw [e]; exact h₁₄
-      · simp only [below]; rw [e]; exact h₁₅)
-    (fun _ h => by
-      obtain ⟨h₁, h₂, _⟩ := h
-      rw [h₁, h₂]
-      refine Covers.of_sub fun r hr => ?_
-      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact ⟨_, List.mem_cons_self, 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
-          (List.mem_singleton_self _))), 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_append_right _ List.mem_cons_self, 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_append_right _ (List.mem_cons_of_mem _ List.mem_cons_self), 0, by simp,
-          by simp⟩)
-    (fun _ h => by
-      obtain ⟨_, h₂, _⟩ := h
-      rw [h₂]
-      refine Covers.of_sub fun r hr => ?_
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact ⟨_, List.mem_cons_self, 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, 0, by simp, by simp⟩)
-    (fun _ _ _ h => by
-      simp only [hPrimeX86, hPrimeWide, VG.X86.arg_withRegions, State.withRegions_mem] at h ⊢
-      exact h)
-    (fun _ _ _ _ h => by
-      simp only [hPrimeX86, VG.X86.arg_withRegions, State.withRegions_gpr]
-      exact h)
-    ⟨hSatWide, by
-      have a0 : arg hSatWide 0 = 0x1000 := by decide
-      have a1 : arg hSatWide 1 = 1 := by decide
-      have a2 : arg hSatWide 2 = 0x2000 := by decide
-      have a3 : arg hSatWide 3 = 1 := by decide
-      have a4 : arg hSatWide 4 = 0x10000 := by decide
-      have e : argAddr hSatWide 0 = 0x5004 := by decide
-      simp only [hPrimeWide, a0, a1, a2, a3, a4, e]
-      refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by decide, by decide,
-        by decide, by decide, by decide, by decide, by decide, by decide⟩ <;>
-      exact Region.disjoint_of_sep (by decide)⟩
-
-theorem hPrime_implies : hPrimeWide.Implies (Proof.Argon2.hPrimeContract X86.abi 60) := by
-  sig_implies [Proof.Argon2.hPrimeContract, Proof.Argon2.hPrimeSig, hPrimeWide, hPrimeX86,
-    X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    [hSatWide, hSatState, hSatMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using hSatWide
-
-/-- The emitted function, against the shared contract. -/
-theorem hPrimeShared_verified :
-    Verified X86.target Impl.Argon2.X86.HPrime.code (Proof.Argon2.hPrimeContract X86.abi 60) :=
-  hPrimeWide_verified.of_implies hPrime_implies
 
 end VG.Proof.Argon2.X86.HPrime

@@ -28,9 +28,6 @@ open VG.WriteBytes (writeBytes writeBytes_snoc writeBytes_frame writeBytes_nil w
 
 /-! ## Addresses -/
 
-theorem toNat_sw (x : BitVec 32) : (x.setWidth 64).toNat = x.toNat := by
-  simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega_arith)
-
 /-- `[(x + k) + d]`, where nothing wraps around the 32-bit address space. -/
 theorem addr_add {x : BitVec 32} {k d : Nat} (h : x.toNat + k + d < 2 ^ 32) :
     addr (x + BitVec.ofNat 32 k) d = x.setWidth 64 + BitVec.ofNat 64 (k + d) := by
@@ -52,10 +49,6 @@ theorem addr_step {x : BitVec 32} {j d : Nat} (h : x.toNat + j + d < 2 ^ 32) :
 theorem toNat_add_ofNat {x : BitVec 32} {c : Nat} (h : x.toNat + c < 2 ^ 32) :
     (x + BitVec.ofNat 32 c).toNat = x.toNat + c := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := c) (by omega_arith), Nat.mod_eq_of_lt h]
-
-theorem toNat_add {x y : BitVec 32} (h : x.toNat + y.toNat < 2 ^ 32) :
-    (x + y).toNat = x.toNat + y.toNat := by
-  rw [BitVec.toNat_add, Nat.mod_eq_of_lt h]
 
 /-- Each byte of a range within one of the regions. -/
 theorem inBytes {rs : List Region} {R : Region} (hR : R ∈ rs) {A : Addr} {n : Nat}

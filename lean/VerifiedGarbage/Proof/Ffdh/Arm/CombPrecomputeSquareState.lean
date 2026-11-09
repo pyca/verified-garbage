@@ -18,20 +18,6 @@ namespace VG.Proof.Ffdh.Arm.CombBuilder
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 
-def squareWrites (p : Inputs) (sp : BitVec 32) : List Region :=
-  [⟨State.addr p.base,8*p.len⟩,⟨State.addr sp,72⟩,FrameStack.belowA sp 48]
-
-theorem Memory.squareContextEq {p : Inputs} {sp : BitVec 32} {s t : State}
-    (h : Memory p sp s) (frame : Frame (squareWrites p sp) s.mem t.mem) :
-    WorkspaceEq (State.addr p.output) (bytes p) s.mem t.mem := by
-  apply WorkspaceEq.of_frame (by have := h.output.fits; omega) frame
-  intro r hr
-  simp only [squareWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl|rfl|rfl
-  · exact h.workspaceSeparate.symm
-  · exact h.localSeparate.symm
-  · exact h.callSeparate
-
 def squareNarrowWrites (p : Inputs) (sp : BitVec 32) : List Region :=
   [⟨State.addr p.base,8*p.len⟩,⟨off (State.addr sp) 68,4⟩,FrameStack.belowA sp 48]
 

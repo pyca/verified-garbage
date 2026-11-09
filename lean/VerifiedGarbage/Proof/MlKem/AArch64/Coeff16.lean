@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Simd
 A 16-bit coefficient from its two bytes (`coeffAtW16_toNat`) and from a
 halfword of a vector loaded from memory (`vhalf_read_coeff`); the bytes of
 coefficients `F` stored with 16 bits (`bytesW16`), written a vector of eight
-halfwords at a time (`halves_bytes`, `BytesUpTo.writeN`), and the polynomial
+halfwords at a time (`BytesUpTo.writeN`), and the polynomial
 they store (`polyIsW16_of_bytes`).
 -/
 
@@ -39,28 +39,6 @@ theorem vhalf_read_coeff (m : Mem) (p : Addr) (j : Nat) {e : Nat} (he : e < 8) :
     (vhalf (m.read (p + BitVec.ofNat 64 (2 * j)) 16) e).toNat = (coeffAtW 16 m p (j + e)).toNat := by
   rw [vhalf_read_toNat _ _ he, coeffAtW16_toNat, ptr_add, ptr_add, show 2 * j + 2 * e = 2 * (j + e) by omega,
     show 2 * j + (2 * e + 1) = 2 * (j + e) + 1 by omega]
-
-/-- A byte of a vector, from its halfwords. -/
-theorem vbyte_of_vhalf (x : BitVec 128) (i : Nat) :
-    (vbyte x i).toNat = (vhalf x (i / 2)).toNat / 256 ^ (i % 2) % 256 := by
-  have hl := (vbyte x (2 * (i / 2))).isLt
-  have hh := (vbyte x (2 * (i / 2) + 1)).isLt
-  rw [Cbd16.half_bytes, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt (BitVec.isLt _),
-    Nat.shiftLeft_eq]
-  rcases Nat.mod_two_eq_zero_or_one i with h | h
-  · rw [h, show 2 * (i / 2) = i by omega]
-    simp only [Nat.pow_zero, Nat.div_one]
-    omega
-  · rw [h, show 2 * (i / 2) + 1 = i by omega]
-    simp only [Nat.pow_one]
-    omega
-
-/-- A vector of the eight coefficients `F (t + e)` is the bytes from `2 t`. -/
-theorem halves_bytes {x : BitVec 128} {F : Nat → Nat} {t : Nat} (hx : ∀ e < 8, (vhalf x e).toNat = F (t + e)) :
-    ∀ i < 16, x.extractLsb' (8 * i) 8 = bytesW16 F (2 * t + i) := fun i hi => by
-  apply BitVec.eq_of_toNat_eq
-  rw [show x.extractLsb' (8 * i) 8 = vbyte x i from rfl, vbyte_of_vhalf x i, hx _ (by omega), bytesW16,
-    BitVec.toNat_ofNat, show (2 * t + i) / 2 = t + i / 2 by omega, show (2 * t + i) % 2 = i % 2 by omega]
 
 /-- `n` bytes `x` stored at byte `t` of `N`. -/
 theorem BytesUpTo.writeN {m : Mem} {p : Addr} {N t n : Nat} {L old : Nat → Byte}
@@ -118,14 +96,6 @@ theorem coeffAtW16_write (m : Mem) (p : Addr) {t i : Nat} (ht : t + 8 ≤ 256) (
 def CoeffsInW (m : Mem) (p : Addr) (S : Nat → Prop) [DecidablePred S] (G old : Nat → BitVec 16) :
     Prop :=
   ∀ i < 256, coeffAtW 16 m p i = if S i then G i else old i
-
-theorem CoeffsInW.congr {m : Mem} {p : Addr} {S S' : Nat → Prop} [DecidablePred S] [DecidablePred S']
-    {G old : Nat → BitVec 16} (h : CoeffsInW m p S G old) (hS : ∀ i < 256, (S' i ↔ S i)) :
-    CoeffsInW m p S' G old := fun i hi => by
-  rw [h i hi]
-  by_cases c : S i
-  · rw [ite_eq_left c, ite_eq_left ((hS i hi).2 c)]
-  · rw [ite_eq_right c, ite_eq_right (fun h' => c ((hS i hi).1 h'))]
 
 /-- Storing the eight coefficients `t, …, t + 7`. -/
 theorem CoeffsInW.write16 {m : Mem} {p : Addr} {S S' : Nat → Prop} [DecidablePred S]

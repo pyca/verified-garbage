@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! # One candidate of the parameter search (AArch64)
 
-In its frame, the controller passes `vg_ffdh_parameter_candidate` the rest
+In its frame, the controller passes `vg_ffdh_parameter_candidate_sieved` the rest
 of the tape. The candidate's buffers are the controller's (`out`, `used`,
 the tape's rest and the working space), and its stack argument is in the
 candidate's frame, in the 32 bytes of stack below the controller's stack
@@ -224,7 +224,7 @@ theorem call_candidate_pre {p : SPub} {used : Nat} {u : State} {m : Mem} (hf : C
 /-- What the candidate at `used` leaves: its status, p or zeros at `out`,
 and the octets it read at `used`. -/
 def CandPost (p : SPub) (used : Nat) (t : State) : Prop :=
-  let res := parameterCandidate p.bits p.gen (p.rand.drop used)
+  let res := sievedParameterCandidate p.bits p.gen (p.rand.drop used)
   ((t.gpr .x0).setWidth 32).toNat = candidateStatus res ∧
     Spec.Rsa.bytesAt t.mem p.op p.len =
       (match res with

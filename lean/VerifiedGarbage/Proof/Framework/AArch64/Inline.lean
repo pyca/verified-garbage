@@ -38,10 +38,10 @@ def dstOf : Instr → Option Reg
   | .adds _ d .. | .adcs _ d .. | .subs _ d .. | .sbcs _ d .. | .adc _ d .. | .sbc _ d .. | .csel _ d .. | .umulh d .. | .umaddl d .. | .umull d .. | .adrSym d _ => some d
   | .add _ d .. | .sub _ d .. | .addImm _ d .. | .subImm _ d .. | .logic _ _ d .. | .logicRor _ _ d .. | .bicRor _ d .. | .ror _ d .. | .extr _ d ..
   | .lsr _ d .. | .lsl _ d .. | .madd _ d .. | .mul _ d .. | .rev32 d _ | .rev d _ | .clz _ d _ | .rbit _ d _ | .movz _ d ..
-  | .addSp d _ | .movk _ d .. | .ldr _ d .. | .ldrb d .. | .ldrSp d _ | .pop d | .umov _ d .. => some d
+  | .addSp d _ | .movk _ d .. | .ldr _ d .. | .ldrb d .. | .ldrSp d _ | .pop d | .umov _ d .. | .mrsDit d => some d
   | .cselc _ d .. | .csneg _ d .. => some d
   | .str .. | .strb .. | .strSp .. | .alloc _ | .free _ | .push _ | .vop _ | .ldrq .. | .ldrqTbl .. | .strq .. | .tst .. | .ccmp ..
-  | .ldp .. | .stp .. | .align _ | .blr _ => none
+  | .ldp .. | .stp .. | .align _ | .blr _ | .msrDitImm _ | .barrier _ => none
 
 /-- The general-purpose registers instruction `i` writes. -/
 def dsts (i : Instr) : List Reg :=
@@ -112,9 +112,6 @@ theorem store_widen (hc : Covers s.wr wr) {a : Addr} {n : Nat} {v : BitVec (8 * 
 
 theorem holds_withRegions (c : CondCode) : c.holds (s.withRegions rd wr) = c.holds s := by
   cases c <;> rfl
-
-theorem write_withRegions (sz : Size) (d : Reg) (v : BitVec sz.bits) :
-    (s.withRegions rd wr).write sz d v = (s.write sz d v).withRegions rd wr := rfl
 
 theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr) {i : Instr}
     (h : exec i s = some s') : exec i (s.withRegions rd wr) = some (s'.withRegions rd wr) := by
@@ -349,6 +346,8 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : clobbers i r = false) (h : exec i s
     obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h
     exact hw _ _ _ _ fun e => hi (by simp [dstOf, e])
   | align _ => obtain rfl := Option.some.inj h; rfl
+  | msrDitImm _ => obtain rfl := Option.some.inj h; rfl
+  | barrier _ => obtain rfl := Option.some.inj h; rfl
   | _ => obtain rfl := Option.some.inj h; exact hw _ _ _ _ fun e => hi (by simp [dstOf, e])
 
 theorem eval_withRegions (c : Cond) (s : State) (rd wr : List Region) :
@@ -473,10 +472,6 @@ theorem Exec.widen {c : Prog isa} {s s' : State} {t : List Leak} {rd wr : List R
     (h : Exec isa c s t s') (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr) :
     Exec isa c (s.withRegions rd wr) t (s'.withRegions rd wr) :=
   regionModel.widen h hc hw
-
-theorem execBlock_gpr {is : List Instr} {r : Reg} (hc : ∀ i ∈ is, clobbers i r = false)
-    {s s' : State} {t : List Leak} (h : execBlock isa is s = some (s', t)) : s'.gpr r = s.gpr r :=
-  execBlock_keep (fun s : State => s.gpr r) exec_gpr hc h
 
 /-- A register that no instruction writes keeps its value, unless it is
 one of `linkRegs` and the code calls a function. -/

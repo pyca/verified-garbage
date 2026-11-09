@@ -66,11 +66,11 @@ def compressSat : State := { satState with wr := [⟨0x1000, 16⟩, ⟨0x3000, 8
 
 theorem compress80 : Verified RISCV64.target Impl.Md5.RISCV64.compress (compressK md) :=
   Verified.widen compress_verified (fun s => [⟨s.gpr .a0, 16⟩, ⟨s.gpr .a3, 64⟩])
-    (fun _ ⟨h₁, _, h₃, h₄, h₅⟩ => ⟨h₁, rfl, h₃.sub_right (sub64 _), h₄, h₅.sub_right (sub64 _)⟩)
+    (fun _ ⟨h₁, _, h₃, h₄, h₅, h₆⟩ => ⟨h₁, rfl, h₃.sub_right (sub64 _), h₄, h₅.sub_right (sub64 _), h₆⟩)
     (fun _ ⟨_, h₂, _⟩ => h₂ ▸ .cons (pfx rfl) (.cons (pfx rfl) .nil))
     (fun _ _ _ h => h) (fun _ _ _ _ h => h)
     ⟨compressSat, rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-      Region.disjoint_of_sep (by decide)⟩
+      Region.disjoint_of_sep (by decide), by decide⟩
 
 theorem callee : CalleeOk md Impl.Md5.RISCV64.compress := ⟨compress80.1, by decide +kernel⟩
 

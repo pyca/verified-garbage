@@ -92,41 +92,6 @@ theorem ckMulXR_ok {I : CkIn} {m₀ : Mem} {s : State} (h : CkS I m₀ s) (L : C
     ⟨h.arr (by decide) (Nat.le_refl _) o k (by decide), mword_arr o, hv,
       fun _ hi hij => h.av_out o (Nat.le_refl _) hi hij⟩
 
-/-- `divmod aA aRem aM aT`: the remainder of `[aA]` by `[aM]` into `[aRem]`. -/
-theorem ckDivmod_ok {I : CkIn} {m₀ : Mem} {s : State} (h : CkS I m₀ s) :
-    WP isa (divmod aA aRem aM aT) s fun t =>
-      CkS I m₀ t ∧ mword t.mem I.B = mword s.mem I.B ∧
-      (0 < I.av s.mem aM → I.av t.mem aRem = I.av s.mem aA % I.av s.mem aM) ∧
-      ∀ i < 16, i ≠ aA → i ≠ aRem → i ≠ aT → I.av t.mem i = I.av s.mem i := by
-  have hn := h.ws.scr.nowrap
-  refine WP.mono (divmod_ok h.ws (iQ := aA) (iR := aRem) (iD := aM) (iT := aT) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) fun t ⟨_, f, k, hv⟩ => ?_
-  have hr : ∀ r ∈ [ar (wW I.cap) aA, ar (wW I.cap) aRem, ar (wW I.cap) aT], ∃ j < 16, r = ar (wW I.cap) j := by
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact ⟨aA, by decide, rfl⟩
-    · exact ⟨aRem, by decide, rfl⟩
-    · exact ⟨aT, by decide, rfl⟩
-  refine ⟨h.step f (fun r hr' => by obtain ⟨j, _, rfl⟩ := hr r hr'; exact Mut.ofSlot _ _ _)
-    (fun r hr' => by obtain ⟨j, hj, rfl⟩ := hr r hr'; exact h.ws.sl hj) k (by decide), ?_, fun hM => ?_,
-    fun i hi h1 h2 h3 => ?_⟩
-  · exact f.word_eq (fun r hr' => by
-      obtain ⟨j, hj, rfl⟩ := hr r hr'
-      have := hdr_lt_slot (wW I.cap) j (show Public.sMask < 32 by decide); exact Or.inl (by omega_arith))
-      (by simp only [Public.sMask, sFn]; omega_arith)
-  · obtain ⟨hr', _⟩ := hv hM
-    have hlt : wv t.mem I.B (slot (wW I.cap) aRem) (wW I.cap + 1) < 2 ^ (64 * wW I.cap) := by
-      rw [hr']; exact Nat.lt_of_lt_of_le (Nat.mod_lt _ hM) (Nat.le_of_lt (wv_lt _ _ _ _))
-    unfold CkIn.av
-    rw [wv_low_of_lt (v := wW I.cap) (w := wW I.cap + 1) (by omega_arith) hlt, hr']
-  · exact f.wv_eq (fun r hr' => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-      rcases hr' with rfl | rfl | rfl <;> dsimp only
-      · have := slot_sep (w := wW I.cap) h1; omega_arith
-      · have := slot_sep (w := wW I.cap) h2; omega_arith
-      · have := slot_sep (w := wW I.cap) h3; omega_arith) (by have := h.ws.sl hi; omega_arith)
-
 /-- `decA aM`: `[aM] - 1`, for an odd `[aM]`. -/
 theorem ckDec_ok {I : CkIn} {m₀ : Mem} {s : State} (h : CkS I m₀ s) :
     WP isa (.block (decA aM)) s fun t =>

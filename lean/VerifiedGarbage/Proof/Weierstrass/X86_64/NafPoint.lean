@@ -51,32 +51,6 @@ theorem Inv.transferPoint {M : Mod} {base : Addr} {size : Nat} {C : Curve}
     hI.val _ (hQ _ (by simp [jacCoords])),hI.val _ (hQ _ (by simp [jacCoords]))]
   exact hJ
 
-theorem nafPublicPoint_ok {K : WinCfg} {base : Addr} {size a : Nat} {C : Curve}
-    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9)
-    (hy : K.E.y=K.E.x+8*K.M.n) (hz : K.E.z=K.E.x+16*K.M.n)
-    {V : List Nat} {E : Nat → Fe C} {s : State}
-    (hI : Inv K.M base size C.p Sl V E s)
-    (h8 : s.gpr .r8=BitVec.ofNat 64 a) (ha : 1≤a) (ha' : a≤15)
-    (ht : K.tbl<2^31) (hT : K.tbl+192*K.M.n≤size)
-    (hD : ∀ x∈jacCoords K.E, Sl x)
-    (hQ : ∀ x∈jacCoords (K.tblPt ((a-1)/2+1)), x∈V)
-    (hSep : K.E.x+24*K.M.n≤K.tbl ∨ K.tbl+192*K.M.n≤K.E.x)
-    {P : Point C} (hJ : InvJ C (E (K.tblPt ((a-1)/2+1)).x)
-      (E (K.tblPt ((a-1)/2+1)).y) (E (K.tblPt ((a-1)/2+1)).z) P) :
-    WP isa (.block (Naf.publicEntry K)) s fun t =>
-      ProgKeep K.M base (jacCoords K.E) s t ∧
-      Inv K.M base size C.p Sl (jacCoords K.E++V) (tmv C K.M.n base t) t ∧
-      InvJ C (tmv C K.M.n base t K.E.x) (tmv C K.M.n base t K.E.y)
-        (tmv C K.M.n base t K.E.z) P := by
-  have hdz := hL.le K.E.z (hD _ (by simp [jacCoords]))
-  rw [hz] at hdz
-  refine WP.mono (nafPublicEntry_ok hI.scr ha ha' h8 hn ht hT (by omega) hSep)
-    fun t ⟨hv,hk,ho⟩ => hI.transferPoint hL hy hz hD hQ ?_ ?_ ?_ hk ho hJ
-  · simpa only [WinCfg.tblPt,Nat.add_sub_cancel,Nat.mul_zero,Nat.add_zero] using hv 0 (by decide)
-  · simpa only [hy,WinCfg.tblPt,Nat.add_sub_cancel,Nat.mul_one] using hv 1 (by decide)
-  · simpa only [hz,WinCfg.tblPt,Nat.add_sub_cancel,show 8*K.M.n*2=16*K.M.n by omega]
-      using hv 2 (by decide)
-
 theorem nafTablePoint_ok {K : WinCfg} {base : Addr} {size j : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9)
     (hy : K.R.y=K.R.x+8*K.M.n) (hz : K.R.z=K.R.x+16*K.M.n)

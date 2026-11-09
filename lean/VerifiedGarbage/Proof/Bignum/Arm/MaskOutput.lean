@@ -19,10 +19,6 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest wp_mov op2_reg)
 
-theorem acceptance_byte_mask (b : Bool) (v : Byte) :
-    v &&& (-BitVec.ofNat 32 b.toNat).setWidth 8 = if b then v else 0 :=
-  VG.Proof.Rsa.acceptance_byte_mask b v
-
 theorem acceptance_bytes_mask (b : Bool) (bs : List Byte) :
     bs.map (· &&& (-BitVec.ofNat 32 b.toNat).setWidth 8) = if b then bs else List.replicate bs.length 0 :=
   VG.Proof.Rsa.acceptance_bytes_mask b bs

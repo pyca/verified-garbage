@@ -122,9 +122,6 @@ variable {S : State → Addr} {vf : State → Reg → BitVec 64} {s t w : State}
 theorem Base.sp (h : Base S vf s t) : t.sp = fb s := h.sv.sp
 theorem Base.wr (h : Base S vf s t) : t.wr = fr s :: s.wr := h.sv.wr
 
-theorem not_fx {r : Reg} (hrs : ∀ r ∈ rs, r ∉ .r14 :: fx ++ hiRegs) (hr : r ∈ .r14 :: fx) : r ∉ rs :=
-  fun h' => hrs r h' (List.mem_append_left _ hr)
-
 /-- `Base` is kept by code that keeps the stack pointer, the regions and the
 registers it fixes, and writes memory only in our ranges. -/
 theorem Base.of (P : Fits S s) (h : Base S vf s t) (hsp : w.sp = t.sp) (hrd : w.rd = t.rd) (hwr : w.wr = t.wr)

@@ -72,15 +72,6 @@ theorem scalar_eq (c : Cfg) : c.scalar =
     (.seq (Mont.mulCall c.SN (c.sl SS) (c.sl SM) (c.sl ONE) c.umaal)
     (.block (c.checkNonzero (c.sl SS) ++ c.finish)))))))) := rfl
 
-/-- What `scalar`'s field operations leave. -/
-structure ScPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
-  scr : Scr s' base size
-  rest : VG.Proof.X25519.Arm.Rest Mont.callClob s s'
-  unch : Unch base (slW c [RM, DM, EM, TT, SM, SS, TMP] ++ [(c.wk, 64 * c.n)]) s.mem s'.mem
-  ss_lt : sv c base s' SS < c.C.n
-  ss : Fin.ofNat c.C.n (sv c base s' SS) = toM c.C.n (2 ^ (64 * c.n)) (sv c base s ACC) *
-    (Fin.ofNat c.C.n (sv c base s E) + Fin.ofNat c.C.n (sv c base s RR) * Fin.ofNat c.C.n (sv c base s D))
-
 /-- The first three multiplications by `R² mod n`. -/
 theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) (hf : Far s base 8192)
     (hMN : ModOkW c.MN' size c.C.n s.mem base)

@@ -15,7 +15,7 @@
 /// * `state` must not overlap `key`, `nonce` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `state`, `key` and `nonce` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "i0QkBItMJAjzD28J8w9vURCLVCQM8w9vArkAAAAAKwq6AQAAAIPaAAHJEdIByRHSAckR0gHJEdIByRHSAckR0vMPf0gQ8w9/UCDzD39AMImIgAAAAImQhAAAALlleHBhiQi5bmQgM4lIBLkyLWJ5iUgIuXRlIGuJSAzD"
 .p2align 6"#,
@@ -33,76 +33,10 @@ pub unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8
 /// * `state` must not overlap `nonce` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `nonce` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "i0QkBItUJAjzD28CuQAAAAArCroBAAAAg9oAAckR0gHJEdIByRHSAckR0gHJEdIByRHS8w9/QDCJiIAAAACJkIQAAAC5ZXhwYYkIuW5kIDOJSAS5Mi1ieYlICLl0ZSBriUgMww=="
 .p2align 6"#,
-    )
-}
-
-/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
-///
-/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 768 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkBIuIgAAAAIuQhAAAACtMJAyD2gA="
-jb 20f
-.base64 "iZhAAgAAibBEAgAAibhIAgAAiahMAgAAiYhYAgAAiZBcAgAAicOLdCQIi2wkDIuDgAAAAIPgP4npOeg="
-jb 22f
-jmp 23f
-22:
-.base64 "icE="
-23:
-.base64 "idqBwoAAAAApwinNhck="
-je 24f
-26:
-.base64 "D7YGMwKIBoPGAYPCAYPpAQ=="
-jne 26b
-jmp 25f
-24:
-25:
-.base64 "iemD4cA="
-je 27f
-.base64 "8w9vA/MPb0sQ8w9vUyDzD29bMPMPf4PAAAAA8w9/i9AAAADzD3+T4AAAAPMPf5vwAAAAicjB6AYDQzCJQzCJz4nYBQABAACJ2oHCwAAAAFBRVlI="
-call {vg_chacha20_xor}
-.base64 "WFhYWAH+Kf0="
-jmp 28f
-27:
-28:
-.base64 "he0="
-je 29f
-.base64 "idiDwEBQUw=="
-call {vg_chacha20_block}
-.base64 "WFiLQzCDwAGJQzCJ2oPCQInphck="
-je 211f
-213:
-.base64 "D7YGMwKIBoPGAYPCAYPpAQ=="
-jne 213b
-jmp 212f
-211:
-212:
-jmp 210f
-29:
-210:
-.base64 "i4NYAgAAiYOAAAAAi4NcAgAAiYOEAAAAi7NEAgAAi7tIAgAAi6tMAgAAi5tAAgAAuAEAAAA="
-jmp 21f
-20:
-.base64 "uAAAAAA="
-21:
-.base64 "ww=="
-.p2align 6"#,
-        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
     )
 }
 
@@ -123,7 +57,7 @@ pub const VG_CHACHA20_APPLY_SSSE3_FEATURES: verified_garbage_cpu::Features = ver
 /// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_apply_ssse3(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_apply_ssse3(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "i0QkBIuIgAAAAIuQhAAAACtMJAyD2gA="
 jb 20f
@@ -172,6 +106,72 @@ jmp 21f
 .base64 "ww=="
 .p2align 6"#,
         vg_chacha20_xor_ssse3 = sym super::chacha20::vg_chacha20_xor_ssse3::vg_chacha20_xor_ssse3,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
+    )
+}
+
+/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
+///
+/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "i0QkBIuIgAAAAIuQhAAAACtMJAyD2gA="
+jb 20f
+.base64 "iZhAAgAAibBEAgAAibhIAgAAiahMAgAAiYhYAgAAiZBcAgAAicOLdCQIi2wkDIuDgAAAAIPgP4npOeg="
+jb 22f
+jmp 23f
+22:
+.base64 "icE="
+23:
+.base64 "idqBwoAAAAApwinNhck="
+je 24f
+26:
+.base64 "D7YGMwKIBoPGAYPCAYPpAQ=="
+jne 26b
+jmp 25f
+24:
+25:
+.base64 "iemD4cA="
+je 27f
+.base64 "8w9vA/MPb0sQ8w9vUyDzD29bMPMPf4PAAAAA8w9/i9AAAADzD3+T4AAAAPMPf5vwAAAAicjB6AYDQzCJQzCJz4nYBQABAACJ2oHCwAAAAFBRVlI="
+call {vg_chacha20_xor}
+.base64 "WFhYWAH+Kf0="
+jmp 28f
+27:
+28:
+.base64 "he0="
+je 29f
+.base64 "idiDwEBQUw=="
+call {vg_chacha20_block}
+.base64 "WFiLQzCDwAGJQzCJ2oPCQInphck="
+je 211f
+213:
+.base64 "D7YGMwKIBoPGAYPCAYPpAQ=="
+jne 213b
+jmp 212f
+211:
+212:
+jmp 210f
+29:
+210:
+.base64 "i4NYAgAAiYOAAAAAi4NcAgAAiYOEAAAAi7NEAgAAi7tIAgAAi6tMAgAAi5tAAgAAuAEAAAA="
+jmp 21f
+20:
+.base64 "uAAAAAA="
+21:
+.base64 "ww=="
+.p2align 6"#,
+        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
     )
 }

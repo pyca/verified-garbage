@@ -39,15 +39,10 @@ structure VKeep (s s' : State) : Prop where
 theorem VKeep.qw_eq {s s' : State} (h : VKeep s s') (r : XReg) (k : Nat) : qw s' r k = qw s r k := by
   unfold qw State.lane; rw [h.xmm, h.ymmHi]
 
-theorem VKeep.trans {s₁ s₂ s₃ : State} (h₁ : VKeep s₁ s₂) (h₂ : VKeep s₂ s₃) : VKeep s₁ s₃ :=
-  ⟨h₂.xmm.trans h₁.xmm, h₂.ymmHi.trans h₁.ymmHi, h₂.mxcsr.trans h₁.mxcsr, h₂.rd.trans h₁.rd,
-    h₂.wr.trans h₁.wr⟩
-
 theorem vec_keep {s s' : State} (h : vec s s' = s') : s'.gpr = s.gpr ∧ s'.mem = s.mem ∧
     s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr :=
   ⟨vec_gpr h, vec_mem h, vec_rd h, vec_wr h, by rw [← h]; rfl⟩
 
-theorem se16 : BitVec.signExtend 64 (16 : BitVec 32) = 16 := by decide
 theorem se32 : BitVec.signExtend 64 (BitVec.ofNat 32 32) = 32 := by decide
 theorem se64 : BitVec.signExtend 64 (64 : BitVec 32) = 64 := by decide
 theorem se1 : BitVec.signExtend 64 (1 : BitVec 32) = 1 := by decide

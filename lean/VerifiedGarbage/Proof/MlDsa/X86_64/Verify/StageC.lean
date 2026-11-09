@@ -14,6 +14,10 @@ import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.X86_64.Round
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Blocks
+import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
+import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA verification on x86-64: `w′₁`, row by row
@@ -379,15 +383,102 @@ theorem row7_ok {s : State} (hf : RF7 p σ h A' cH r s₀ s) :
   · rw [pa_rbx hP]
     exact hq
 
+omit C hp hv hr hs in
+/-- The flag at `FL` is the entry's `r8`. -/
+theorem testFlag_ok {s : State} (ht : T p σ s) (hin : InRegions (s.rd ++ s.wr) (pa s (sc oFL)) 8) :
+    WP isa (.block testFlag) s fun s' => PPostB s s' [] ∧ s'.gpr .r15 = s.gpr .r15 ∧
+      s'.mem = s.mem ∧ s'.zf = some (σ.gpr .r8 == 0) := by
+  have e := ht.flag
+  simp only [pa] at hin e
+  unfold testFlag
+  refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rax] (Q := fun s' => s'.mem = s.mem ∧
+      s'.zf = some (s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 oFL) 64 &&&
+        s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 oFL) 64 == 0)) (by xrun [hin]) (by decide))
+    fun s' ⟨⟨hm, hz⟩, k⟩ => ⟨postB_of_keep k (by decide) (by rw [hm]; exact Frame.refl _ _), k.gpr (by decide),
+      hm, by rw [hz, e, BitVec.and_self]⟩
+
+omit C hp hv [Decidable Q] hr hs in
+/-- What copying `t̂₁[r]` from a prepared key needs of the layout. -/
+theorem keyRow_chk : ∀ p ∈ params, inB (vW p) pT 1024 = true ∧ inB (vB p) (sc oFL) 8 = true ∧
+    (∀ r < p.k, p.pkLen + 1024 * r + 1024 ≤ preparedPublicKeyBytes p) ∧ inB (vB p) pT 1024 = true ∧
+    preparedPublicKeyBytes p < 2 ^ 31 := by decide
+
+omit C in
+theorem keyFlag_ok {s : State} (hf : RF1 P.montgomery p σ A' r s₀ s) :
+    WP isa (.block testFlag) s fun s1 => RF1 P.montgomery p σ A' r s₀ s1 ∧ s1.zf = some (σ.gpr .r8 == 0) := by
+  have R := rowC hp hr
+  obtain ⟨_, cF, _⟩ := keyRow_chk p hp
+  have t := hs.t.step hp hv hf.1.1 (keepC_spec R.keep).1
+  refine WP.mono (testFlag_ok t ((t.lay hp hv).inR cF)) fun s1 ⟨hP1, e1, hm1, hz⟩ =>
+    ⟨⟨hf.1.acc hP1 e1 (fun _ h => absurd h (List.not_mem_nil)), by rw [pa_rbx hP1, hm1]; exact hf.2⟩, hz⟩
+
+omit C in
+theorem keyCopy_ok {s1 : State} (hf1 : RF1 P.montgomery p σ A' r s₀ s1) (hb' : σ.gpr .r8 ≠ 0) :
+    WP isa (Impl.MlDsa.X86_64.Sign.copy pT (.rbp, p.pkLen + 1024 * r) 1024) s1 (RF3 P.montgomery p σ A' r s₀) := by
+  have R := rowC hp hr
+  obtain ⟨cW, _, cK, cW', cP⟩ := keyRow_chk p hp
+  have t1 := hs.t.step hp hv hf1.1.1 (keepC_spec R.keep).1
+  have L1 := t1.lay hp hv
+  have hL : pkL p σ = preparedPublicKeyBytes p := by simp only [pkL, hb', ite_false]
+  have d1 := hv.d1; have k1 := hv.k1; have n1 := hv.n1
+  rw [hL] at d1 k1 n1
+  have hk := cK r hr
+  have hprep : preparedPublicKeyBytes p < 2 ^ 64 := by omega
+  -- The source, in the prepared key.
+  have es : Sign.pa s1 (.rbp, p.pkLen + 1024 * r) = σ.gpr .rdi + BitVec.ofNat 64 (p.pkLen + 1024 * r) := by
+    simp only [Sign.pa, t1.rbp]
+  have hsub : Region.Sub ⟨σ.gpr .rdi + BitVec.ofNat 64 (p.pkLen + 1024 * r), 1024⟩
+      ⟨σ.gpr .rdi, preparedPublicKeyBytes p⟩ := Offset.sub_base _ hk
+  obtain ⟨nW, hnW, hsW⟩ := L1.sub (p := pT) (l := 1024) cW'
+  have hnW' : nW = scrLen p := by
+    simp only [vR, vW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
+      Prod.mk.injEq, reduceCtorEq, false_and, false_or] at hnW
+    exact hnW.2
+  subst hnW'
+  have hsW' : Region.Sub ⟨pa s1 pT, 1024⟩ ⟨σ.gpr .rcx, scrLen p⟩ := by rw [← t1.rbx]; exact hsW
+  have hrd : InRegions (s1.rd ++ s1.wr) (Sign.pa s1 (.rbp, p.pkLen + 1024 * r)) 1024 :=
+    ⟨⟨σ.gpr .rdi, preparedPublicKeyBytes p⟩, by rw [t1.rd, t1.wr, hv.rd, hL]; simp,
+      by rw [es]; exact Sign.contains_offset' hk hprep⟩
+  have hwr : InRegions s1.wr (Sign.pa s1 pT) 1024 := L1.inW cW
+  have hdj : Region.Disjoint ⟨Sign.pa s1 (.rbp, p.pkLen + 1024 * r), 1024⟩ ⟨Sign.pa s1 pT, 1024⟩ := by
+    rw [es]; exact (d1.sub_left hsub).sub_right hsW'
+  refine WP.mono (Sign.copy_ok pT (.rbp, p.pkLen + 1024 * r) 1024 (by decide) (by decide) (by decide)
+    (by show p.pkLen + 1024 * r < 2 ^ 31; omega) (by simp) s1 hrd hwr hdj) fun s' ⟨hb2, hfr, k⟩ => ?_
+  have hP : PPostB s1 s' [(pT, 1024)] := postB_of_keep k (by decide) (by simpa using hfr)
+  refine ⟨⟨hf1.1.acc hP (k.gpr (by decide)) (sub1 (wsR_mem p r).2.1),
+    L1.keepPoly hP (keepB_sub R.keepW (sub1 (List.mem_cons_self ..))) hf1.2⟩, ?_⟩
+  -- `t̂₁[r]`, unchanged since entry, copied.
+  have hσ : bytesAt s1.mem (σ.gpr .rdi + BitVec.ofNat 64 (p.pkLen + 1024 * r)) 1024 =
+      bytesAt σ.mem (σ.gpr .rdi + BitVec.ofNat 64 (p.pkLen + 1024 * r)) 1024 := by
+    refine Proof.MlKem.bytesAt_frame t1.fr (fun R' hR' => ?_) (by decide)
+    rw [hv.wr] at hR'
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hR'
+    rcases hR' with rfl | rfl
+    exacts [d1.sub_left hsub, (k1.sub_right hsub).symm]
+  have hpoly : PolyIs σ.mem (σ.gpr .rdi + BitVec.ofNat 64 (p.pkLen + 1024 * r))
+      (preparedPublicPolys p (vPk p σ))[r]! := (polyStored_iff).mp (hv.prep hb' r hr)
+  rw [PreparedKey.public_poly p _ hr] at hpoly
+  rw [pa_rbx hP]
+  refine PreparedKey.polyIs_of_copy ?_ hpoly
+  have hb3 : bytesAt s'.mem (pa s1 pT) 1024 = _ := hb2
+  rw [hb3, es, hσ]
+
+theorem keyRow_ok {s : State} (hf : RF1 P.montgomery p σ A' r s₀ s) :
+    WP isa (keyRow P p r) s (RF3 P.montgomery p σ A' r s₀) := by
+  unfold keyRow
+  refine WP.seq (WP.mono (keyFlag_ok hp hv hr hs hf) fun s1 ⟨hf1, hz⟩ => ?_)
+  refine WP.ite (M := isa) (!(σ.gpr .r8 == 0)) (show s1.zf.map (!·) = _ by rw [hz]; rfl)
+    (fun hb => keyCopy_ok hp hv hr hs hf1 (by simpa using hb))
+    fun _ => WP.seq (WP.mono (row1_ok C hp hv hr hs hf1) fun _ h2 => row2_ok C hp hv hr hs h2)
+
 theorem row_ok : WP isa (row P p r) s₀ (SC p h A' Q p.ℓ cH (r + 1) σ) := by
   unfold row
   exact WP.seq (WP.mono (row0_ok C hp hv hr hs) fun _ h1 =>
-    WP.seq (WP.mono (row1_ok C hp hv hr hs h1) fun _ h2 =>
-    WP.seq (WP.mono (row2_ok C hp hv hr hs h2) fun _ h3 =>
+    WP.seq (WP.mono (keyRow_ok C hp hv hr hs h1) fun _ h3 =>
     WP.seq (WP.mono (row3_ok C hp hv hr hs h3) fun _ h4 =>
     WP.seq (WP.mono (row4_ok C hp hv hr hs h4) fun _ h5 =>
     WP.seq (WP.mono (row5_ok C hp hv hr hs h5) fun _ h6 =>
-    WP.seq (WP.mono (row6_ok C hp hv hr hs h6) fun _ h7 => row7_ok C hp hv hr hs h7)))))))
+    WP.seq (WP.mono (row6_ok C hp hv hr hs h6) fun _ h7 => row7_ok C hp hv hr hs h7))))))
 
 end Row
 

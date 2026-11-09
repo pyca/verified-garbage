@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Precomputed
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCall
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCall
 import VerifiedGarbage.Proof.Framework.Omega
@@ -37,7 +37,7 @@ theorem body_eq (pubName : String) (pub : Prog isa) :
   rfl
 
 theorem code_correct (v : PublicImpl) (s : State)
-    (h : (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi encStack).pre s) :
+    (h : (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi encStack).pre s) :
     ∃ t s', Exec isa (Impl.RsaPkcs1Enc.X86_64.Precomputed.code v.name v.code) s t s' ∧ abiPreserved s s' ∧
       post s s' := by
   have hp := pre_of h

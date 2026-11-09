@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
 `encode12Avx2(f = rdi, out = rsi)` is `vg_mlkem_encode12` (`Encode12.lean`)
 on 32 coefficients at a time, in AVX2 registers. For each 16 of them
 (`e12Half`): `vpackssdw` and `vpermq` pack the doublewords into words, in
-order, as `ypack` does (the coefficients are less than `q`), so that each
+order (the coefficients are less than `q`), so that each
 doubleword holds a pair `f₀ + 2¹⁶ f₁`; shifts take it to `2¹² f₁` and to
 `f₀`, and `vpaddd` adds them into the 24-bit number `f₀ + 2¹² f₁`; `vpshufb`
 (`ymm8`) moves the three low bytes of each doubleword together, 12 bytes in

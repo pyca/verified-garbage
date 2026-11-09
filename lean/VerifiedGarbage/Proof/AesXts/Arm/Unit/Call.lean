@@ -43,11 +43,6 @@ abbrev xname : Bool → String
   | true => "vg_aes_xts_encrypt"
   | false => "vg_aes_xts_decrypt"
 
-theorem xcall_eq (enc : Bool) :
-    (match enc with | true => Impl.AesXts.ArmUnit.encCall | false => Impl.AesXts.ArmUnit.decCall) =
-      .frame (.push [.r12, .lr]) (.call (xname enc) (xcode enc)) (.pop .r12 (4 * [Reg.r12, .lr].length)) := by
-  cases enc <;> rfl
-
 theorem xts_ok : ∀ enc s, (modeArm (AesXts.xtsMode enc)).pre s →
     ∃ t s', Exec isa (xcode enc) s t s' ∧ abiPreserved s s' ∧ (modeArm (AesXts.xtsMode enc)).post s s'
   | true, _, hs => AesCbc.Arm.whole_wp Proof.AesXts.Arm.encBody_ok hs

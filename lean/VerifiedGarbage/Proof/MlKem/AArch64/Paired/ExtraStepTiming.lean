@@ -31,8 +31,6 @@ structure ResumeW (w16 : Bool) (L : List Zq) (B : Nat→Byte) (aP : Addr) (s : S
   x3 : s.gpr .x3=cAddr w16 aP L.length
   x4 : (s.gpr .x4).toNat=256-L.length
 
-abbrev Resume := ResumeW false
-
 theorem continue_relCT {w16 : Bool} {s u : State}
     {B : Nat→Byte} {L : List Zq} {aP : Addr} (ps : ResumeW w16 L B aP s) (pu : ResumeW w16 L B aP u)
     (hsp : s.sp=u.sp) (h20 : s.gpr .x20=u.gpr .x20) (h1 : s.gpr .x1=u.gpr .x1)

@@ -31,7 +31,8 @@ theorem rounds_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s�
     (h6 : s₀.gpr .r6 = off B da) (h8 : s₀.gpr .r8 = off B dA) (h7 : s₀.gpr .r7 = off B dB)
     (h10 : s₀.gpr .r10 = off B dM) (h11 : s₀.gpr .r11 = BitVec.ofNat 64 (2 * w))
     (h4 : s₀.gpr .r4 = BitVec.ofNat 64 w)
-    (hinv : ((word s₀.mem B dM).toNat % 2 ^ 32 * (s₀.gpr .r12).toNat + 1) % 2 ^ 32 = 0)
+    (hm : ((word s₀.mem B dM).toNat * (s₀.gpr .r22).toNat + 1) % 2 ^ 64 = 0)
+    (h22 : s₀.gpr .r22 = word s₀.mem B (dA + 8 * (w + 1)))
     (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
     (ha : da + 8 * w ≤ Z) (hA : dA + 8 * (w + 2) ≤ Z) (hB : dB + 8 * w ≤ Z) (hM : dM + 8 * w ≤ Z)
     (daA : da + 8 * w ≤ dA ∨ dA + 8 * (w + 2) ≤ da)
@@ -41,7 +42,8 @@ theorem rounds_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s�
       (wordsVal s.mem B dA (w + 1) < 2 * wordsVal s₀.mem B dM w ∧
         2 ^ (64 * w) * wordsVal s.mem B dA (w + 1) % wordsVal s₀.mem B dM w =
           wordsVal s₀.mem B da w * wordsVal s₀.mem B dB w % wordsVal s₀.mem B dM w ∧
-        Outside B dA (8 * (w + 2)) s₀.mem s.mem) ∧ Keep (roundRegs ++ ([.r4] : List Reg)) s₀ s := by
+        Outside B dA (8 * (w + 2)) s₀.mem s.mem ∧ s.gpr .r22 = s₀.gpr .r22) ∧
+      Keep (roundRegs ++ ([.r4] : List Reg)) s₀ s := by
   have hnw := hs.nowrap
   let M := wordsVal s₀.mem B dM w
   let Bv := wordsVal s₀.mem B dB w
@@ -49,15 +51,16 @@ theorem rounds_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s�
     s.gpr .r6 = off B (da + 8 * i) ∧ Outside B dA (8 * (w + 2)) s₀.mem s.mem ∧
     wordsVal s.mem B dA (w + 1) < 2 * M ∧
     2 ^ (64 * i) * wordsVal s.mem B dA (w + 1) % M = wordsVal s₀.mem B da i * Bv % M ∧
+    word s.mem B (dA + 8 * (w + 1)) = word s₀.mem B (dA + 8 * (w + 1)) ∧ s.gpr .r22 = s₀.gpr .r22 ∧
     Keep (roundRegs ++ ([.r4] : List Reg)) s₀ s
   have hJ0 : J 0 s₀ := by
     refine ⟨by rw [h6]; rfl, Outside.refl _ _ _ _, by rw [hz]; omega_arith, by rw [hz]; simp [wordsVal],
-      Keep.refl _ _⟩
+      rfl, rfl, Keep.refl _ _⟩
   refine wp_countdown (body := .seq round (.block [.subi .r4 .r4 1])) (cnt := .r4) (N := w)
     (by omega_arith) (by omega_arith) J (fun i hi s hJ hc => ?_) hJ0 h4 |>.mono
-    fun s ⟨_, jout, jlt, jeq, jk⟩ => ⟨⟨jlt, jeq, jout⟩, jk⟩
-  obtain ⟨j6, jout, jlt, jeq, jk⟩ := hJ
-  have keep : ∀ r ∈ [Reg.r7, .r8, .r10, .r11, .r12], s.gpr r = s₀.gpr r := fun r hr =>
+    fun s ⟨_, jout, jlt, jeq, _, j22, jk⟩ => ⟨⟨jlt, jeq, jout, j22⟩, jk⟩
+  obtain ⟨j6, jout, jlt, jeq, jw, j22, jk⟩ := hJ
+  have keep : ∀ r ∈ [Reg.r7, .r8, .r10, .r11], s.gpr r = s₀.gpr r := fun r hr =>
     jk.gpr r (by revert r hr; decide)
   have vM : wordsVal s.mem B dM w = M := jout.wordsVal (by omega_arith) (by omega_arith)
   have vB : wordsVal s.mem B dB w = Bv := jout.wordsVal (by omega_arith) (by omega_arith)
@@ -66,19 +69,23 @@ theorem rounds_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s�
   refine WP.seq (WP.mono (round_ok (dA := dA) (dB := dB) (dM := dM) (hs.congr jk.wr) j6
     (by rw [keep .r7 (by decide), h7]) (by rw [keep .r8 (by decide), h8])
     (by rw [keep .r10 (by decide), h10]) (by rw [keep .r11 (by decide), h11])
-    (by rw [keep .r12 (by decide), wM]; exact hinv)
+    (by rw [j22, wM]; exact hm)
     (by omega_arith) hw' (by omega_arith) (by omega_arith) hB hM (by omega_arith) (by omega_arith))
-    fun s₁ ⟨⟨k6, kout, u, hu, keq⟩, k₁⟩ => ?_)
+    fun s₁ ⟨⟨k6, kout, u, hu, keq⟩, k22, k₁⟩ => ?_)
   refine WP.mono (subi_ok s₁ .r4 (by decide)) fun s₂ e => ?_
   subst e
   rw [vM, vB, wa] at keq
   have hM0 : 0 < M := by omega_arith
-  refine ⟨⟨by gsimp; rw [k6, Nat.mul_succ, Nat.add_assoc], ?_, ?_, ?_, ?_⟩, ?_⟩
+  have kw : word s₁.mem B (dA + 8 * (w + 1)) = word s.mem B (dA + 8 * (w + 1)) :=
+    kout.word (by omega_arith) (by omega_arith)
+  refine ⟨⟨by gsimp; rw [k6, Nat.mul_succ, Nat.add_assoc], ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · gsimp; exact jout.trans (kout.mono (Nat.le_refl _) (by omega_arith))
   · gsimp; exact round_lt keq jlt (s₀.mem.readW _ 64).isLt hb hu
   · gsimp
     rw [wordsVal_succ_top s₀.mem B da i, Nat.mul_succ, Nat.pow_add]
     exact round_step keq jeq
+  · gsimp; rw [kw, jw]
+  · gsimp; rw [k22, jw, h22]
   · have k₂ : Keep [.r4] s₁ (s₁.write .r4 (s₁.gpr .r4 - BitVec.ofNat 64 1)) := Keep.write _ _ _
     exact jk.trans' ((k₁.mono (by decide)).trans' (k₂.mono (by decide)))
   · gsimp

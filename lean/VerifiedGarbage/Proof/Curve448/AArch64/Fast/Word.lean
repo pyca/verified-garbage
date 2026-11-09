@@ -55,17 +55,6 @@ theorem mulPair (a b : BitVec 64) : pair (a * b) (mulHi a b) = a.toNat * b.toNat
   simp only [pair]
   omega
 
-/-- Adding to an accumulator, as integers modulo `2 ^ 128`. -/
-theorem add_emod {x : Nat} {e : Int} (h : (x : Int) = e % M) (p : Nat) :
-    (((x + p) % M : Nat) : Int) = (e + p) % M := by
-  rw [Int.natCast_emod, Int.natCast_add, h, Int.emod_add_emod]
-
-/-- Subtracting from an accumulator, as integers modulo `2 ^ 128`. -/
-theorem sub_emod {x : Nat} {e : Int} (h : (x : Int) = e % M) {p : Nat} (hp : p ≤ M) :
-    (((x + (M - p)) % M : Nat) : Int) = (e - p) % M := by
-  rw [Int.natCast_emod, Int.natCast_add, Int.natCast_sub hp, h, Int.emod_add_emod,
-    show e + ((M : Nat) - (p : Int)) = e - p + (M : Nat) by omega, Int.add_emod_right]
-
 /-- An accumulator holds its true value once that is known to fit. -/
 theorem exact_of_emod {x : Nat} {e : Int} (h : (x : Int) = e % M) {v : Nat} (hv : e = v)
     (hlt : v < M) : x = v := by

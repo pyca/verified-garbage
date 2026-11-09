@@ -82,14 +82,14 @@ theorem sc_big {V : Reg → BitVec 64} (h2 : V .s2 = s₀.gpr .a0) (h1 : V .s1 =
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, hk, -⟩ := h
   exact hk.big (by rw [h2]; simp) (by rw [h1]; simp) (by rw [h0]; simp)
 
-/-- The context, the state and `W` are apart from the 3232 bytes below the stack pointer. -/
-theorem sc_b3 : (below s₀.sp 3232).Disjoint ⟨s₀.gpr .a0, 256⟩ ∧ (below s₀.sp 3232).Disjoint ⟨s₀.gpr .a1, 80⟩ ∧
-    (below s₀.sp 3232).Disjoint ⟨s₀.gpr .a6, 2560⟩ := by
+/-- The context, the state and `W` are apart from the 3248 bytes below the stack pointer. -/
+theorem sc_b3 : (below s₀.sp 3248).Disjoint ⟨s₀.gpr .a0, 256⟩ ∧ (below s₀.sp 3248).Disjoint ⟨s₀.gpr .a1, 80⟩ ∧
+    (below s₀.sp 3248).Disjoint ⟨s₀.gpr .a6, 2560⟩ := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, hk, -⟩ := h
   exact ⟨hk.buf3 (by simp), hk.buf3 (by simp), hk.buf3 (by simp)⟩
 
-/-- The data are apart from the 3232 bytes below the stack pointer. -/
-theorem sc_bd : (below s₀.sp 3232).Disjoint ⟨s₀.gpr .a4, (s₀.gpr .a5).toNat⟩ := by
+/-- The data are apart from the 3248 bytes below the stack pointer. -/
+theorem sc_bd : (below s₀.sp 3248).Disjoint ⟨s₀.gpr .a4, (s₀.gpr .a5).toNat⟩ := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, hk, -⟩ := h
   exact hk.buf3 (by simp)
 
@@ -120,7 +120,7 @@ variable {c st w : Addr} (L : Lay c st w)
 include L
 
 omit L in
-theorem stp_crFrame {sp : Addr} (hbs : (below sp 3232).Disjoint ⟨st, 80⟩) {s : State} {D : Addr} {n : Nat}
+theorem stp_crFrame {sp : Addr} (hbs : (below sp 3248).Disjoint ⟨st, 80⟩) {s : State} {D : Addr} {n : Nat}
     (hd : DataW c st w s D n) {d k : Nat} (h1 : d + k ≤ 48) :
     ∀ r ∈ crFrame st sp D n, (⟨st + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   intro r hr
@@ -130,7 +130,7 @@ theorem stp_crFrame {sp : Addr} (hbs : (below sp 3232).Disjoint ⟨st, 80⟩) {s
   · exact Lay.st_st (.inl h1) (by omega_arith) (by decide)
   · exact (hbs.sub_right (Lay.stSub (by omega_arith))).symm
 
-theorem saved_crFrame {sp : Addr} (hbw : (below sp 3232).Disjoint ⟨w, 2560⟩) {s : State} {D : Addr} {n : Nat}
+theorem saved_crFrame {sp : Addr} (hbw : (below sp 3248).Disjoint ⟨w, 2560⟩) {s : State} {D : Addr} {n : Nat}
     (hd : DataW c st w s D n) : ∀ r ∈ crFrame st sp D n, (savedR w).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -139,7 +139,7 @@ theorem saved_crFrame {sp : Addr} (hbw : (below sp 3232).Disjoint ⟨w, 2560⟩)
   · exact L.saved_st (by decide)
   · exact (hbw.sub_right (Lay.wSub (by decide))).symm
 
-theorem ctx_crFrame' {sp : Addr} (hbc : (below sp 3232).Disjoint ⟨c, 256⟩) {s : State} {D : Addr} {n : Nat}
+theorem ctx_crFrame' {sp : Addr} (hbc : (below sp 3248).Disjoint ⟨c, 256⟩) {s : State} {D : Addr} {n : Nat}
     (hd : DataW c st w s D n) : ∀ r ∈ crFrame st sp D n, (⟨c, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

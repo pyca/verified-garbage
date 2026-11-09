@@ -269,11 +269,6 @@ variable {K : KemLay} {L : Lay} {transpose : Bool} {ρ : List Byte} {v : Nat →
 theorem RS.ctx (hp : RowPre K L ρ v i fl s₀) {s : State} (h : RS K L transpose ρ v i s₀ j s) : Ctx L s :=
   h.kx.ctx (by kdecide) hp.ctx
 
-theorem RS.r9 (hp : RowPre K L ρ v i fl s₀) {s : State} (h : RS K L transpose ρ v i s₀ j s) :
-    s.gpr .r9 = BitVec.ofNat 32 i := by
-  have hK := hp.wf
-  rw [h.kx.cs .r9 (by kdecide) (by kdecide) (by kdecide), hp.r9]
-
 theorem RS.vec (hp : RowPre K L ρ v i fl s₀) (hj : j < K.k) {s : State} (h : RS K L transpose ρ v i s₀ j s) :
     PolyIs s.mem (L.A 0 (oPoly (K.k + j))) (v j) := by
   have hK := hp.wf

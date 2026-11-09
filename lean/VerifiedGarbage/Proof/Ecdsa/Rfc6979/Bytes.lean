@@ -13,15 +13,11 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 /-!
 # Deterministic ECDSA: big-endian numbers
 
-The 32 bytes at an address, big-endian, from the byte reversals of their
-four words (`ofBytes_32`); a number's encoding is determined by its value
-(`toBytes_ofBytes`), and a number's value by its encoding (`ofBytes_toBytes`);
-RFC 6979's conversions at P-256, of a hash of at least 32 bytes, which take
-its leftmost 32 (`hashToInt_take`, `bits2octets_eq`); and, for any curve,
+A number's encoding is determined by its value (`toBytes_ofBytes`), and a
+number's value by its encoding (`ofBytes_toBytes`); and, for any curve,
 `bits2int` of at least `rlen` bytes, from its leftmost `rlen`
 (`hashToInt_takeR`), and `bits2octets` of a hash shorter than `n`, which
 is the hash after zero bytes (`bits2octets_short`).
-Each target's proof uses them, its byte reversal being `byteRev64`.
 -/
 
 @[expose] public section
@@ -32,19 +28,6 @@ open VG VG.Proof.Weierstrass
 
 /-- The bytes at an address, whichever specification names them. -/
 theorem ecdsa_bytesAt : Spec.Ecdsa.bytesAt = Spec.Sha256.bytesAt := rfl
-
-theorem ofBytes_32 (m : Mem) (q : Addr) :
-    Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m q 32) =
-      (byteRev64 (m.readW q 64)).toNat * 2 ^ 192 +
-        (byteRev64 (m.readW (q + BitVec.ofNat 64 8) 64)).toNat * 2 ^ 128 +
-        (byteRev64 (m.readW (q + BitVec.ofNat 64 16) 64)).toNat * 2 ^ 64 +
-        (byteRev64 (m.readW (q + BitVec.ofNat 64 24) 64)).toNat := by
-  rw [byteRev64_ofBytes, byteRev64_ofBytes, byteRev64_ofBytes, byteRev64_ofBytes, ← ecdsa_bytesAt,
-    show 32 = 8 + (8 + (8 + 8)) from rfl, bytesAt_add, bytesAt_add, bytesAt_add,
-    ofBytes_append, ofBytes_append, ofBytes_append, length_bytesAt, List.length_append, length_bytesAt,
-    List.length_append, length_bytesAt, length_bytesAt, Offset.add_add, Offset.add_add]
-  simp only [Nat.reduceAdd, Nat.reducePow]
-  omega
 
 theorem toBytes_succ (len x : Nat) :
     Spec.Weierstrass.toBytes (len + 1) x = BitVec.ofNat 8 (x >>> (8 * len)) :: Spec.Weierstrass.toBytes len x := by
@@ -214,13 +197,6 @@ theorem rlenQ {C : Spec.Weierstrass.Curve} {Q : Nat} (hq : Spec.Ecdsa.nBits C = 
     Spec.Ecdsa.Rfc6979.rlen C = Q := by
   rw [Spec.Ecdsa.Rfc6979.rlen, hq]; omega
 
-theorem bits2octets_eqQ {C : Spec.Weierstrass.Curve} {Q : Nat} (hq : Spec.Ecdsa.nBits C = 8 * Q)
-    {h : List Byte} (hl : Q ≤ h.length) :
-    Spec.Ecdsa.Rfc6979.bits2octets C h =
-      Spec.Weierstrass.toBytes Q (Spec.Weierstrass.ofBytes (h.take Q) % C.n) := by
-  rw [Spec.Ecdsa.Rfc6979.bits2octets, Spec.Ecdsa.Rfc6979.int2octets, Spec.Ecdsa.Rfc6979.bits2int, rlenQ hq,
-    hashToInt_takeQ hq hl]
-
 /-- A number below `2^K < 2N` modulo `N`: itself if subtracting `N` borrows,
 the difference `D` if not. -/
 theorem mod_mathK (X N D K : Nat) (c : Bool) (hsum : D + N = X + 2 ^ K * c.toNat) (hD : D < 2 ^ K)
@@ -260,50 +236,5 @@ theorem nBits_p256 : Spec.Ecdsa.nBits Spec.P256.curve = 256 := by
   have h₂ : Spec.P256.curve.n.log2 < 256 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   show Spec.P256.curve.n.log2 + 1 = 256
   omega
-
-theorem hashToInt_32 {h : List Byte} (hl : h.length = 32) :
-    Spec.Ecdsa.hashToInt Spec.P256.curve h = Spec.Weierstrass.ofBytes h := by
-  rw [Spec.Ecdsa.hashToInt, nBits_p256, hl]; rfl
-
-/-- A hash of at least 32 bytes is the number of its leftmost 32. -/
-theorem hashToInt_take {h : List Byte} (hl : 32 ≤ h.length) :
-    Spec.Ecdsa.hashToInt Spec.P256.curve h = Spec.Weierstrass.ofBytes (h.take 32) := by
-  have hd : (h.drop 32).length = h.length - 32 := List.length_drop
-  have key : Spec.Weierstrass.ofBytes h =
-      Spec.Weierstrass.ofBytes (h.take 32) * 2 ^ (8 * (h.length - 32)) + Spec.Weierstrass.ofBytes (h.drop 32) := by
-    conv => lhs; rw [← List.take_append_drop 32 h]
-    rw [ofBytes_append, hd, pow256]
-  rw [Spec.Ecdsa.hashToInt, nBits_p256]
-  by_cases h32 : h.length = 32
-  · rw [show h.take 32 = h from List.take_of_length_le (by omega), h32]; rfl
-  · simp only [show ¬ 8 * h.length ≤ 256 by omega, ite_false]
-    rw [key, show 8 * h.length - 256 = 8 * (h.length - 32) by omega, Nat.shiftRight_eq_div_pow,
-      Nat.add_comm, Nat.add_mul_div_right _ _ (Nat.two_pow_pos _),
-      Nat.div_eq_of_lt (by have := ofBytes_lt (h.drop 32); rwa [hd] at this), Nat.zero_add]
-
-theorem rlen_p256 : Spec.Ecdsa.Rfc6979.rlen Spec.P256.curve = 32 := by
-  rw [Spec.Ecdsa.Rfc6979.rlen, nBits_p256]
-
-theorem bits2octets_eq {h : List Byte} (hl : 32 ≤ h.length) :
-    Spec.Ecdsa.Rfc6979.bits2octets Spec.P256.curve h =
-      Spec.Weierstrass.toBytes 32 (Spec.Weierstrass.ofBytes (h.take 32) % Spec.P256.n) := by
-  rw [Spec.Ecdsa.Rfc6979.bits2octets, Spec.Ecdsa.Rfc6979.int2octets, Spec.Ecdsa.Rfc6979.bits2int, rlen_p256,
-    hashToInt_take hl]; rfl
-
-/-- A number below `2^256 < 2N` modulo `N`: itself if subtracting `N` borrows, the
-difference `D` if not. -/
-theorem mod_math (X N D : Nat) (c : Bool) (hsum : D + N = X + 2 ^ 256 * c.toNat) (hD : D < 2 ^ 256)
-    (hX : X < 2 ^ 256) (hN : 2 ^ 255 ≤ N) : (if c then X else D) = X % N := by
-  cases c
-  · simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at hsum
-    simp only [Bool.false_eq_true, ite_false]
-    have hge : N ≤ X := by omega
-    have hlt : X - N < N := by omega
-    rw [Nat.mod_eq_sub_mod hge, Nat.mod_eq_of_lt hlt]
-    omega
-  · simp only [Bool.toNat_true, Nat.mul_one] at hsum
-    simp only [ite_true]
-    have hlt : X < N := by omega
-    rw [Nat.mod_eq_of_lt hlt]
 
 end VG.Proof.Ecdsa.Rfc6979

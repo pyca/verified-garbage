@@ -8,9 +8,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 # RSAES-OAEP on x86-64: the stack its pieces use
 
 Code that never writes `rsp` (`NoSp`) uses 8 bytes below `rsp` for each
-level of its calls (`xdepth_le`), and what code that writes `rsp` only in
-its frames leaves of memory, added to a weakest precondition (`wp_frame`):
-changes only within its writable regions and the stack it uses.
+level of its calls (`xdepth_le`), and what a `Good` piece keeps, added to a
+weakest precondition (`wp_good`): `rsp`, MXCSR, and memory but within its
+writable regions and the 16 bytes below `rsp`.
 -/
 
 @[expose] public section
@@ -44,13 +44,6 @@ theorem xdepth_le : ∀ {c : Prog isa}, NoSp c → c.x86_64Depth ≤ 8 * c.depth
     have hb := xdepth_le (c := b) (fun x hx => h x (List.mem_append_left _ (List.mem_cons_of_mem _ hx)))
     have hn := xdepth_le (c := n) (fun x hx => h x (List.mem_append_right _ hx))
     simp only [Code.x86_64Depth, Code.depth]; omega
-
-/-- What code that writes `rsp` only in its frames leaves of memory. -/
-theorem wp_frame {c : Prog isa} (hc : SpSafe c) (hd : c.x86_64Depth < 2 ^ 64) {s : State}
-    {Q : State → Prop} (h : WP isa c s Q) :
-    WP isa c s fun s' => Q s' ∧ Frame (s.wr ++ [below (s.gpr .rsp) c.x86_64Depth]) s.mem s'.mem := by
-  obtain ⟨t, s', he, hq⟩ := h
-  exact ⟨t, s', he, hq, Exec.stackFrame hc he hd⟩
 
 /-- Code that never writes `rsp` writes it only in its (no) frames. -/
 theorem SpSafe.of_noSp {c : Prog isa} (h : NoSp c) : SpSafe c := fun i hi => by

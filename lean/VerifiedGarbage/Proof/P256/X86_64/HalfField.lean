@@ -18,11 +18,6 @@ def halfFe (x : Fin Spec.P256.p) : Fin Spec.P256.p :=
 private theorem two_inv :
     (2 : Fin Spec.P256.p) * Fin.ofNat Spec.P256.p ((Spec.P256.p+1)/2)=1 := by decide
 
-theorem halfFe_double (x : Fin Spec.P256.p) : halfFe x + halfFe x=x := by
-  have := two_inv
-  unfold halfFe
-  grind
-
 private theorem mul_of_double {F : Type _} [Lean.Grind.CommRing F]
     {x y i : F} (hi : (2:F)*i=1) (h : y+y=x) : y=x*i := by
   have hy := congrArg (fun z => y*z) hi

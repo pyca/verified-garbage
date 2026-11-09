@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageA
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
 
 /-!
 # ML-DSA verification on x86-64: constant time, `w′₁`, the hash and the comparison
@@ -133,22 +134,58 @@ theorem RF7.bound {σ : State} {h : List (Vector Bool n)} {A' : Nat → Nat → 
   rw [this, R.max]
   exact useHint_le R.g2 _ _
 
-theorem rowRest_tr : RelCT isa (RV p (IRX p r fun _ A' _ σ s₀ s => RF1 P.montgomery p σ A' r s₀ s))
-    (.seq (unpackT1At P (.rbp, 32 + 320 * r) pT) (.seq (nttAt P pT) (.seq (mulAt P pT2 pC pT)
-      (.seq (subAt P pW pT2) (.seq (invNttAt P pW) (.seq (useHintAt P (pH r) pW p.γ₂ pW1)
-        (sbpAt P pW1 (w1Max p) (sc (oB + w1Len p * r)) (w1Len p))))))))
-    fun _ _ => True := by
+/-- Two runs agree on the flag: whether they copy `t̂₁[r]` from a prepared key, or unpack and transform it. -/
+theorem keyRow_tr : RelCT isa (RV p (IRX p r fun _ A' _ σ s₀ s => RF1 P.montgomery p σ A' r s₀ s)) (keyRow P p r)
+    (RV p (IRX p r fun _ A' _ σ s₀ s => RF3 P.montgomery p σ A' r s₀ s)) := by
   have R := rowC hp hr
   have hS := layOk p hp
+  obtain ⟨_, _, cK, _, cP⟩ := keyRow_chk p hp
+  have hk := cK r hr
+  unfold keyRow
+  refine RelCT.seq (IRX.step (F' := fun _ A' _ σ s₀ s => RF1 P.montgomery p σ A' r s₀ s ∧ s.zf = some (σ.gpr .r8 == 0))
+    (fun h A' q cH σ s₀ s hv hs hf => keyFlag_ok hp hv hr hs hf)
+    (Sign.block_tr (rs := [.rbx]) rfl fun x y hxy r' hr' => ?_)) ?_
+  · simp only [List.mem_singleton] at hr'; subst hr'
+    exact (IRX.lrel hp (fun _ _ _ _ _ _ hf => ⟨_, hf.1.1⟩) hxy).2.2.1 .rbx (by decide)
+  refine RelCT.ite (fun x y hxy => ?_) ?_ ?_
+  · obtain ⟨σ₁, σ₂, _, _, pub, ⟨_, _, _, _, _, _, _, z₁⟩, ⟨_, _, _, _, _, _, _, z₂⟩⟩ := hxy
+    show x.zf.map (!·) = y.zf.map (!·)
+    rw [z₁, z₂, pub.2.2.2.2.2.2.2.2]
+  · refine RelCT.mono (IRX.step (F := fun _ A' _ σ s₀ s => RF1 P.montgomery p σ A' r s₀ s ∧ σ.gpr .r8 ≠ 0)
+      (F' := fun _ A' _ σ s₀ s => RF3 P.montgomery p σ A' r s₀ s)
+      (fun h A' q cH σ s₀ s hv hs hf => keyCopy_ok hp hv hr hs hf.1 hf.2)
+      (Sign.copy_tr (by decide) (by decide) (by decide)
+        (by show p.pkLen + 1024 * r < 2 ^ 31; omega) (by simp) fun x y hxy => ?_)) (fun x y ⟨hxy, hb⟩ => ?_) fun _ _ h => h
+    · have L := IRX.lrel hp (fun _ _ _ _ _ _ hf => ⟨_, hf.1.1.1⟩) hxy
+      exact ⟨L.2.2.1 .rbx (by decide), L.2.2.1 .rbp (by decide)⟩
+    · obtain ⟨σ₁, σ₂, v₁, v₂, pub, ⟨h₁, A₁, q₁, c₁, x₀, hx, f₁, z₁⟩, ⟨h₂, A₂, q₂, c₂, y₀, hy, f₂, z₂⟩⟩ := hxy
+      have hb' : x.zf.map (!·) = some true := hb
+      rw [z₁] at hb'
+      have e₁ : σ₁.gpr .r8 ≠ 0 := by simpa using hb'
+      exact ⟨σ₁, σ₂, v₁, v₂, pub, ⟨h₁, A₁, q₁, c₁, x₀, hx, f₁, e₁⟩,
+        ⟨h₂, A₂, q₂, c₂, y₀, hy, f₂, pub.2.2.2.2.2.2.2.2 ▸ e₁⟩⟩
+  refine RelCT.mono (P := RV p (IRX p r fun _ A' _ σ s₀ s => RF1 P.montgomery p σ A' r s₀ s)) ?_
+    (fun x y ⟨⟨σ₁, σ₂, v₁, v₂, pub, ⟨h₁, A₁, q₁, c₁, x₀, hx, f₁, _⟩, ⟨h₂, A₂, q₂, c₂, y₀, hy, f₂, _⟩⟩, _⟩ =>
+      ⟨σ₁, σ₂, v₁, v₂, pub, ⟨h₁, A₁, q₁, c₁, x₀, hx, f₁⟩, ⟨h₂, A₂, q₂, c₂, y₀, hy, f₂⟩⟩)
+    fun _ _ h => h
   refine RelCT.seq (IRX.step (F' := fun _ A' _ σ s₀ s => RF2 P.montgomery p σ A' r s₀ s)
     (fun h A' q cH σ s₀ s hv hs hf => row1_ok C hp hv hr hs hf)
     (unpackT1At_tr C.unpackT1 hS R.t1 fun x y hxy => IRX.lrel hp (fun _ _ _ _ _ _ hf => ⟨_, hf.1.1⟩) hxy)) ?_
-  refine RelCT.seq (IRX.step (F' := fun _ A' _ σ s₀ s => RF3 P.montgomery p σ A' r s₀ s)
+  refine IRX.step (F' := fun _ A' _ σ s₀ s => RF3 P.montgomery p σ A' r s₀ s)
     (fun h A' q cH σ s₀ s hv hs hf => row2_ok C hp hv hr hs hf)
-    (ipAt_tr C.ntt hS R.ipT fun x y hxy => ?_)) ?_
-  · have L := IRX.lrel hp (fun _ _ _ _ _ _ hf => ⟨_, hf.1.1.1⟩) hxy
-    obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, _, hx⟩, ⟨_, _, _, _, _, _, hy⟩⟩ := hxy
-    exact ⟨L.1, L.2.1, hx.2.1, hy.2.1, L.2.2⟩
+    (ipAt_tr C.ntt hS R.ipT fun x y hxy => ?_)
+  have L := IRX.lrel hp (fun _ _ _ _ _ _ hf => ⟨_, hf.1.1.1⟩) hxy
+  obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, _, hx⟩, ⟨_, _, _, _, _, _, hy⟩⟩ := hxy
+  exact ⟨L.1, L.2.1, hx.2.1, hy.2.1, L.2.2⟩
+
+theorem rowRest_tr : RelCT isa (RV p (IRX p r fun _ A' _ σ s₀ s => RF1 P.montgomery p σ A' r s₀ s))
+    (.seq (keyRow P p r) (.seq (mulAt P pT2 pC pT)
+      (.seq (subAt P pW pT2) (.seq (invNttAt P pW) (.seq (useHintAt P (pH r) pW p.γ₂ pW1)
+        (sbpAt P pW1 (w1Max p) (sc (oB + w1Len p * r)) (w1Len p)))))))
+    fun _ _ => True := by
+  have R := rowC hp hr
+  have hS := layOk p hp
+  refine RelCT.seq (keyRow_tr C hp hr) ?_
   refine RelCT.seq (IRX.step (F' := fun _ A' cH σ s₀ s => RF4 P.montgomery p σ A' cH r s₀ s)
     (fun h A' q cH σ s₀ s hv hs hf => row3_ok C hp hv hr hs hf)
     (mulAt_tr C.mul hS R.mulT fun x y hxy => ?_)) ?_

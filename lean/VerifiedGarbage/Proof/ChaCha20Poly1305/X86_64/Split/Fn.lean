@@ -40,7 +40,7 @@ theorem sealSplitBody_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1
     (hb : b = .avx512 ∨ b = .ifma) :
     (sealSplitBody v.callee b).all (fun i => !isa.writesSp i) = true := by
   have hx := v.spSafe
-  simp only [sealSplitBody, prologue, bigCallee, Code.all, hx, Bool.and_true]
+  simp only [sealSplitBody, prologue, bigCallee, Impl.ChaCha20.X86_64.Callee.inPlace, Code.all, hx, Bool.and_true]
   rcases hb with rfl | rfl <;> lit_decide
 
 theorem xorSplit_xdepth : Impl.ChaCha20.X86_64.Avx512.xorSplit.x86_64Depth ≤ 24 := by
@@ -53,8 +53,8 @@ theorem sealSplitBody_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1
   have hs := xorSplit_xdepth
   have hc := padRest_xdepth (dataCopy b) b 2
   have ha := padSite_xdepth (dataCopy b) b .rbx .rbp
-  simp only [sealSplitBody, bigCallee, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
-    padRest, padCopy, padTail, cryptSplit, cryptBigSplit, cryptPre, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth,
+  simp only [sealSplitBody, bigCallee, Impl.ChaCha20.X86_64.Callee.inPlace, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
+    padRest, padCopy, padTail, cryptSplit, cryptBigSplit, cryptPre, xorKs, Bool.cond_false, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth,
     xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hx hc ha ⊢
   omega
 
@@ -255,14 +255,6 @@ theorem pre : preX86_64 true (u.withRegions (rdB u) (wrB u)) := by
     hs.o_w, hs.o_a, hs.o_d, hs.o_t, hs.o_k, hs.o_n⟩
 
 end Body
-
-/-- `APre` of a state that may read more. -/
-theorem APre.of_more {e : Bool} {u : State} {rd wr more : List Region} (h : preX86_64 e (u.withRegions rd wr)) :
-    APre e (u.withRegions (rd ++ more) wr) := by
-  have h' := APre.of _ h
-  obtain ⟨m', hm'⟩ := h'.rd
-  have hrd : rd = (if e then [kR u, nR u, aR u, argR u] else [kR u, nR u, aR u, tR u, argR u]) ++ m' := hm'
-  exact { h' with rd := ⟨m' ++ more, by simp only [State.withRegions_rd, hrd, List.append_assoc]; rfl⟩ }
 
 /-- `sealSplitBody`'s precondition, narrowed. -/
 theorem Body.spre {whole : Bool} {s u : State} (hs : FPre s) (hb : Body whole s u) :

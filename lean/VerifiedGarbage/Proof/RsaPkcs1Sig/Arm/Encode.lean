@@ -75,9 +75,6 @@ theorem Bytes.store {m : Mem} {a : Addr} {xs : List Byte} {n : Nat} (h : Bytes m
   · simp only [Offset.add_ofNat_ne a (by omega_arith) hn e, ↓reduceIte]
     exact h i (by omega_arith)
 
-theorem Bytes.mono {m : Mem} {a : Addr} {xs : List Byte} {n n' : Nat} (h : Bytes m a xs n) (hn : n' ≤ n) :
-    Bytes m a xs n' := fun i hi => h i (by omega_arith)
-
 /-- The encoding, once its checks pass. -/
 def encList (h : Hash) (D : List Byte) (k : Nat) : List Byte :=
   [0, 1] ++ List.replicate (k - tLen h - 3) 0xff ++ [0] ++ (h.prefix ++ D)

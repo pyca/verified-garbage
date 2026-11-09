@@ -17,7 +17,7 @@
 /// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `out`, `seed` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 280 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "UFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUIuEJAwBAAC6AAAAAIkQiVAEiVAIiVAMiVAQiVAUiVAYiVAciVAgiVAkiVAoiVAsiVAwiVA0iVA4iVA8iVBAiVBEiVBIiVBMiVBQiVBUiVBYiVBciVBgiVBkiVBoiVBsiVBwiVB0iVB4iVB8iZCAAAAAiZCEAAAAiZCIAAAAiZCMAAAAiZCQAAAAiZCUAAAAiZCYAAAAiZCcAAAAiZCgAAAAiZCkAAAAiZCoAAAAiZCsAAAAiZCwAAAAiZC0AAAAiZC4AAAAiZC8AAAAiZDAAAAAiZDEAAAAi4QkDAEAAIPAAIkEJLiIAAAAiUQkBLgAAAAAiUQkCIuEJAgBAACDwACJRCQMuDkAAACJRCQQi4QkDAEAAAXQAAAAiUQkFA=="
 call {vg_keccak_absorb_scratch}
@@ -29,7 +29,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_ed448_scalar_base}
 .base64 "uAAAAACJRCQYuAAAAACJRCQcuAAAAACJRCQguAAAAACJRCQkuAAAAACJRCQouAAAAACJRCQsuAAAAACJRCQwuAAAAACJRCQ0uAAAAACJRCQ4uAAAAACJRCQ8uAAAAACJRCRAuAAAAACJRCREuAAAAACJRCRIuAAAAACJRCRMuAAAAACJRCRQuAAAAACJRCRUuAAAAACJRCRYuAAAAACJRCRcuAAAAACJRCRguAAAAACJRCRkuAAAAACJRCRouAAAAACJRCRsuAAAAACJRCRwuAAAAACJRCR0uAAAAACJRCR4uAAAAACJRCR8uAAAAACJhCSAAAAAuAAAAACJhCSEAAAAuAAAAACJhCSIAAAAuAAAAACJhCSMAAAAuAAAAACJhCSQAAAAuAAAAACJhCSUAAAAuAAAAACJhCSYAAAAuAAAAACJhCScAAAAuAAAAACJhCSgAAAAuAAAAACJhCSkAAAAuAAAAACJhCSoAAAAuAAAAACJhCSsAAAAuAAAAACJhCSwAAAAuAAAAACJhCS0AAAAuAAAAACJhCS4AAAAuAAAAACJhCS8AAAAuAAAAACJhCTAAAAAuAAAAACJhCTEAAAAuAAAAACJhCTIAAAAuAAAAACJhCTMAAAAuAAAAACJhCTQAAAAuAAAAACJhCTUAAAAuAAAAACJhCTYAAAAuAAAAACJhCTcAAAAuAAAAACJhCTgAAAAuAAAAACJhCTkAAAAuAAAAACJhCToAAAAuAAAAACJhCTsAAAAuAAAAACJhCTwAAAAuAAAAACJhCT0AAAAuAAAAACJhCT4AAAAuAAAAACJhCT8AAAAWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWMM="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
@@ -55,7 +55,7 @@ call {vg_ed448_scalar_base}
 /// * `out` and `scratch` must not overlap each other, `seed`, `pk`, `context` or `message` (distinct Rust objects never do).
 /// * None of `out`, `seed`, `pk`, `context`, `message` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 280 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "UFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUIuEJCABAAC6AAAAAIkQiVAEiVAIiVAMiVAQiVAUiVAYiVAciVAgiVAkiVAoiVAsiVAwiVA0iVA4iVA8iVBAiVBEiVBIiVBMiVBQiVBUiVBYiVBciVBgiVBkiVBoiVBsiVBwiVB0iVB4iVB8iZCAAAAAiZCEAAAAiZCIAAAAiZCMAAAAiZCQAAAAiZCUAAAAiZCYAAAAiZCcAAAAiZCgAAAAiZCkAAAAiZCoAAAAiZCsAAAAiZCwAAAAiZC0AAAAiZC4AAAAiZC8AAAAiZDAAAAAiZDEAAAAi4QkIAEAAIPAAIkEJLiIAAAAiUQkBLgAAAAAiUQkCIuEJAgBAACDwACJRCQMuDkAAACJRCQQi4QkIAEAAAXQAAAAiUQkFA=="
 call {vg_keccak_absorb_scratch}
@@ -99,7 +99,7 @@ call {vg_ed448_scalar_reduce}
 call {vg_ed448_scalar_mul_add}
 .base64 "uAAAAACJRCQYuAAAAACJRCQcuAAAAACJRCQguAAAAACJRCQkuAAAAACJRCQouAAAAACJRCQsuAAAAACJRCQwuAAAAACJRCQ0uAAAAACJRCQ4uAAAAACJRCQ8uAAAAACJRCRAuAAAAACJRCREuAAAAACJRCRIuAAAAACJRCRMuAAAAACJRCRQuAAAAACJRCRUuAAAAACJRCRYuAAAAACJRCRcuAAAAACJRCRguAAAAACJRCRkuAAAAACJRCRouAAAAACJRCRsuAAAAACJRCRwuAAAAACJRCR0uAAAAACJRCR4uAAAAACJRCR8uAAAAACJhCSAAAAAuAAAAACJhCSEAAAAuAAAAACJhCSIAAAAuAAAAACJhCSMAAAAuAAAAACJhCSQAAAAuAAAAACJhCSUAAAAuAAAAACJhCSYAAAAuAAAAACJhCScAAAAuAAAAACJhCSgAAAAuAAAAACJhCSkAAAAuAAAAACJhCSoAAAAuAAAAACJhCSsAAAAuAAAAACJhCSwAAAAuAAAAACJhCS0AAAAuAAAAACJhCS4AAAAuAAAAACJhCS8AAAAuAAAAACJhCTAAAAAuAAAAACJhCTEAAAAuAAAAACJhCTIAAAAuAAAAACJhCTMAAAAuAAAAACJhCTQAAAAuAAAAACJhCTUAAAAuAAAAACJhCTYAAAAuAAAAACJhCTcAAAAuAAAAACJhCTgAAAAuAAAAACJhCTkAAAAuAAAAACJhCToAAAAuAAAAACJhCTsAAAAuAAAAACJhCTwAAAAuAAAAACJhCT0AAAAuAAAAACJhCT4AAAAuAAAAACJhCT8AAAAWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWMM="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
@@ -123,7 +123,7 @@ call {vg_ed448_scalar_mul_add}
 /// * `scratch` must not overlap `pk`, `context`, `message` or `signature` (distinct Rust objects never do).
 /// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 280 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "i0QkDMHoCIP4AA=="
 je 20f
@@ -152,7 +152,7 @@ call {vg_ed448_verify_equation}
 21:
 .base64 "ww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
@@ -187,6 +187,10 @@ pub(crate) mod vg_gf448_r16_mul;
 #[rustfmt::skip]
 #[path = "internal/vg_gf448_r16_sub.rs"]
 pub(crate) mod vg_gf448_r16_sub;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_absorb_scratch.rs"]
+pub(crate) mod vg_keccak_absorb_scratch;
 
 #[rustfmt::skip]
 #[path = "internal/vg_keccak_f1600.rs"]

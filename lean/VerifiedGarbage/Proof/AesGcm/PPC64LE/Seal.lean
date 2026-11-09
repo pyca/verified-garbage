@@ -16,8 +16,9 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: `vg_aes_gcm_seal`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/Seal.lean`): the entry, `oneAad`, `oneCrypt`, `oneTag 0`
-and the tag copied out to `tag` (`seal_wp`).
+(`Proof/AesGcm/Arm/Seal.lean`): the entry, `oneAad`, a body for the text
+and the tag copied out to `tag` (`sealBody_wp`), with `SealFused`'s body
+(`sealFused_wp`).
 -/
 
 @[expose] public section
@@ -44,9 +45,6 @@ theorem oneLay {c W : Addr} (fc : c.toNat + 256 ≤ 2 ^ 64) (fW : W.toNat + 2560
   exact ⟨fc, sw, fW, dcW.sub_right (Lay.wSub (by decide)), dcW, sa, sb⟩
 
 theorem stackArgAddr_0 (s : State) : stackArgAddr s 0 = s.sp + BitVec.ofNat 64 96 := rfl
-
-theorem stackArg_eq (s : State) (i : Nat) :
-    stackArg s i = s.mem.readW (s.sp + BitVec.ofNat 64 (32 + 8 * (8 + i))) 64 := rfl
 
 /-- The stack arguments, in a state that may read them. -/
 theorem args_in {s : State} {n : Nat} (h : Covers [args s n] (s.rd ++ s.wr)) (hn : n ≤ 3) {i : Nat}
@@ -304,11 +302,6 @@ theorem sealBody_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {sealBody : Prog isa}
         exact ddW) (by have := (s₀.gpr .r10).isLt; omega)
     change SealFused.BodyOutWith _ _ _ _ _ _ _ _ at bo
     simpa only [hp] using bo)
-
-theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : sealPPC64LE.pre s₀) :
-    WP isa «seal» s₀ fun s' => abiPreserved s₀ s' ∧ sealPPC64LE.post s₀ s' := by
-  exact sealBody_wp (sealBody := .seq oneCrypt (oneTag 0))
-    (fun L he hd hR hv ha hab => SealFused.smallBody_ok L he hd hR hv ha hab) h
 
 theorem sealFused_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {s₀ : State} (h : sealPPC64LE.pre s₀) :

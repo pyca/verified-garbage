@@ -14,7 +14,7 @@ regions `ws` alone. Their own working space (`rvOwn` to `rvOwnEnd`) is
 the `64 k` bytes below byte 4096 (`Impl.Weierstrass.Mont.ownAt k`) for up
 to six words, and the top `64 k` bytes of the working space for more, so
 that a wider field's operands may take every byte below 4096. Each field's
-proof shows its code meets them, and the shared contracts follow; callers (`Proof/Weierstrass/RISCV64/Call.lean`)
+proof shows its code meets them; callers (`Proof/Weierstrass/RISCV64/Call.lean`)
 use them at their calls. The calls' offsets are zero-extended multiples of 8
 (`OffsOk`), for which each function has code without its entry's
 zero-extension and copies, meeting the contracts for them (`alignedC`).
@@ -45,8 +45,6 @@ theorem rvOwn_cases (k : Nat) :
   · exact .inr ⟨by omega, by simp only [h, ↓reduceIte], by simp only [h, ↓reduceIte]⟩
 
 theorem rvOwn_le {k : Nat} (h : k ≤ 6) : rvOwn k = ownAt k := by simp only [rvOwn, h, ↓reduceIte]
-
-theorem rvOwnEnd_le {k : Nat} (h : k ≤ 6) : rvOwnEnd k = 4096 := by simp only [rvOwnEnd, h, ↓reduceIte]
 
 /-- What the three contracts by register share. -/
 def rvPre (S : Modulus) (s : State) : Prop :=

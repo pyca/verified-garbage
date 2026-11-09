@@ -235,7 +235,7 @@ theorem pair_step {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr :
   · exact Hybrid.tables_frame128 H.tables H.tstk sy post.keep.rd post.keep.wr post.keep.sp
       (fr.sub (pairH_wr hp kb (by omega_arith)))
 
-/-- `matrix_singleton`, with what it writes. -/
+/-- The last entry of the matrix, with what it writes. -/
 theorem matrix_singletonF {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e<P.k*P.k)
     (h : BInvW true P s₀ e s) (tb : MatrixTable P s₀ s) :
     WP isa (Paired.lastCode SB SS e P.k (AH+1024*e) true) s fun t =>

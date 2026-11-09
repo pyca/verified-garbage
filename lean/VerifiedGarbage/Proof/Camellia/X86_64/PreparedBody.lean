@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Camellia.Prepared
 public import VerifiedGarbage.Proof.Camellia.X86_64.Ecb
 import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
 import VerifiedGarbage.Proof.Modes.X86_64.Setup
@@ -12,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # Camellia's batches under prepared subkeys on x86-64: the code
 
 What `vg_camellia_crypt_prepared` reads (`layout`,
-`Spec.Camellia.Prepared.Holds`) is the masks and the table that ECB's
+`Proof.Camellia.Prepared.Holds`) is the masks and the table that ECB's
 rounds read (`ReadyAt`), word for word (`TableWordsAt`, `holds_of_words`,
 `readyAt_of_words` and back): each of the table's words is the plane of its
 subkey (`keyPlane`, the only words related to it by `HalfRel`,
@@ -32,6 +33,17 @@ open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Camellia.X86_64
 open VG.Impl.Aes.X86_64 (sb movR movS st)
 open VG.Impl.Camellia (keyPlane)
 open VG.Proof.Camellia (HalfRel blockFn)
+
+/-- The masks' slots and the table's, as byte ranges. -/
+def layout : Prepared.Layout where
+  table rounds := [(8 * evenSlot, 40), (8 * keySlot, 64 * (8 * (rounds / 6) + 2))]
+  encode rounds w d i := (preparedWord rounds w (ofSpecDir d) (i / 8)).extractLsb' (8 * (i % 8)) 8
+  buf := 8 * tailSlot
+  blocks := 8
+  prepScratch := [(0, 8 * slots)]
+  cryptScratch := [(0, 8 * evenSlot), (8 * (m3Slot + 1), 8 * (keySlot - m3Slot - 1)),
+    (8 * endSlot, 8), (8 * savedSlot, 8 * (tailSlot + 16 - savedSlot))]
+  size := 8 * slots
 
 /-! ## The encoding -/
 
@@ -96,14 +108,14 @@ theorem table_ranges (R o : Nat) :
     · exact ⟨_, .inr rfl, o - 768, by dsimp only; omega, by dsimp only; omega⟩
 
 theorem holds_of_words {R : Nat} {m : Mem} {B : Addr} {w : List (BitVec 64)} {d : Spec.Camellia.Direction}
-    (h : TableWordsAt R m B w (ofSpecDir d)) : Spec.Camellia.Prepared.Holds layout m B R w d := by
+    (h : TableWordsAt R m B w (ofSpecDir d)) : Proof.Camellia.Prepared.Holds layout m B R w d := by
   intro r hr i hi
   have hw := (table_ranges R (r.1 + i)).1 ⟨r, hr, i, hi, rfl⟩
   rw [word_byte_addr, byte_of_readW m _ (by omega), h _ hw]
   rfl
 
 theorem words_of_holds {R : Nat} {m : Mem} {B : Addr} {w : List (BitVec 64)} {d : Spec.Camellia.Direction}
-    (h : Spec.Camellia.Prepared.Holds layout m B R w d) : TableWordsAt R m B w (ofSpecDir d) := by
+    (h : Proof.Camellia.Prepared.Holds layout m B R w d) : TableWordsAt R m B w (ofSpecDir d) := by
   intro k hk
   simp only [Mem.readW, BitVec.setWidth_eq]
   refine Mem.read_eq_of_bytes fun j hj => ?_

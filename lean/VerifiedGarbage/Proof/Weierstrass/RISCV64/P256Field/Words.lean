@@ -17,7 +17,7 @@ registers it writes (`Keeps`):
 
 * `adc_ok`: `d + 2⁶⁴ c := x + y + c` (`add`, `sltu`, `add`, `sltu`, `add`);
 * `sbb_ok`: `d - 2⁶⁴ c := x - y - c` (`sltu`, `sub`, `sltu`, `sub`, `add`);
-* `add1_ok`, `add3s_ok`, `addTop_ok`: the shorter sums of a round, whose
+* `add1_ok`, `addTop_ok`: the shorter sums of a round, whose
   operands are small enough not to carry twice;
 * `quot_ok`: the words of `q 2³²` and `q (2⁶⁴ - 2³² + 1)`.
 -/
@@ -138,23 +138,6 @@ theorem add1_ok {d y c : Reg} (hdy : d ≠ y := by decide) (hdc : d ≠ c := by 
   simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
 
 set_option linter.unusedSimpArgs false in
-/-- `d + 2⁶⁴ c := d + y + c`, through `y`, for `y + c` below `2⁶⁴`. -/
-theorem add3s_ok {d y c : Reg} (hdy : d ≠ y := by decide) (hdc : d ≠ c := by decide) :
-    WP isa (.block [.add y y c, .add d d y, .sltu c d y]) s fun s' =>
-      ((s.gpr y).toNat + (s.gpr c).toNat < 2 ^ 64 →
-        (s'.gpr d).toNat + 2 ^ 64 * (s'.gpr c).toNat = (s.gpr d).toNat + (s.gpr y).toNat + (s.gpr c).toNat) ∧
-      Keeps [d, y, c] s s' := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec_add, exec_sltu,
-    RegUpd.gpr_write, hdy, hdc, Ne.symm hdy, Ne.symm hdc, ite_true, ite_false,
-    Option.some.injEq, exists_eq_left']
-  refine ⟨fun h => ?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
-  · have := carry (s.gpr d) (s.gpr y + s.gpr c)
-    rw [BitVec.toNat_add (s.gpr y), Nat.mod_eq_of_lt h] at this
-    omega
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2, ite_false]
-
 set_option linter.unusedSimpArgs false in
 /-- `d + 2⁶⁴ k := d + h + c + k`, through `h`, for `h + c + k` below `2⁶⁴`. -/
 theorem addTop_ok {d h c k : Reg} (hdh : d ≠ h := by decide)

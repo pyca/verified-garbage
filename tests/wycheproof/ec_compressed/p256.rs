@@ -10,7 +10,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdh::P256;
+use verified_garbage::ec::P256;
 
 public_keys!(p256, P256, 32, "ecdsa_secp256r1_sha256_p1363_test.json");
 compressed_peers!(p256_peers, P256, 32, "ecdh_secp256r1_ecpoint_test.json");

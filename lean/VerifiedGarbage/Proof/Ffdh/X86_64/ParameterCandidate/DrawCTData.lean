@@ -34,9 +34,6 @@ theorem DrawBefore.link {d : DrawPublic} {s : State} (h : DrawBefore d s) :
 def DrawPublic.inner (d : DrawPublic) : InnerPublic :=
   ⟨d.p.O, d.p.w, d.wr, d.p.op, d.p.len, 0⟩
 
-theorem DrawBefore.header {d : DrawPublic} {s : State} (h : DrawBefore d s) : InnerHeader d.inner s :=
-  ⟨h.2.2, good_hp h.1.ready.good h.2.1⟩
-
 /-- A byte cut temporarily uses RDI for the output buffer; the saved
 modulus words still belong to the inner frame. -/
 structure CutBefore (d : DrawPublic) (s : State) : Prop where

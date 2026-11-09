@@ -50,10 +50,10 @@ structure PhasePost (s : State) (n : Nat) (s' : State) : Prop where
   wr : s'.wr = s.wr
   mem : Frame [ivR s, dataR s (8 * (n / 8))] s.mem s'.mem
   data : Spec.Rc2.blocksAt s'.mem (s.gpr .x1) (8 * (n / 8)) =
-    (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) .decrypt
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) .decrypt
       (Spec.Rc2.blockAt s.mem (s.gpr .x23)) (Spec.Rc2.blocksAt s.mem (s.gpr .x1) (8 * (n / 8)))).1
   iv : Spec.Rc2.blockAt s'.mem (s.gpr .x23) =
-    (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) .decrypt
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) .decrypt
       (Spec.Rc2.blockAt s.mem (s.gpr .x23)) (Spec.Rc2.blocksAt s.mem (s.gpr .x1) (8 * (n / 8)))).2
 
 theorem exec_lsr (s : State) (d n : Reg) {sh : Nat} (h : sh < 64) :
@@ -84,10 +84,10 @@ theorem groups_ok (s s₁ : State) {n : Nat} (hp : StepPre s n) (bound : 8 * n <
         s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
         Frame [ivR s, dataR s (8 * (n / 8))] s.mem s'.mem ∧
         Spec.Rc2.blocksAt s'.mem (s.gpr .x1) (8 * (n / 8)) =
-          (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) .decrypt
+          (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) .decrypt
             (Spec.Rc2.blockAt s.mem (s.gpr .x23)) (Spec.Rc2.blocksAt s.mem (s.gpr .x1) (8 * (n / 8)))).1 ∧
         Spec.Rc2.blockAt s'.mem (s.gpr .x23) =
-          (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) .decrypt
+          (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) .decrypt
             (Spec.Rc2.blockAt s.mem (s.gpr .x23)) (Spec.Rc2.blocksAt s.mem (s.gpr .x1) (8 * (n / 8)))).2 := by
   subst e₁
   let g := n / 8
@@ -206,10 +206,10 @@ theorem phase_ok (s : State) {n : Nat} (hp : StepPre s n) (bound : 8 * n < 2 ^ 6
         s₂.gpr g = s.gpr g) → s₂.rd = s.rd → s₂.wr = s.wr →
       Frame [ivR s, dataR s (8 * (n / 8))] s.mem s₂.mem →
       Spec.Rc2.blocksAt s₂.mem (s.gpr .x1) (8 * (n / 8)) =
-        (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) .decrypt
+        (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) .decrypt
           (Spec.Rc2.blockAt s.mem (s.gpr .x23)) (Spec.Rc2.blocksAt s.mem (s.gpr .x1) (8 * (n / 8)))).1 →
       Spec.Rc2.blockAt s₂.mem (s.gpr .x23) =
-        (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) .decrypt
+        (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) .decrypt
           (Spec.Rc2.blockAt s.mem (s.gpr .x23)) (Spec.Rc2.blocksAt s.mem (s.gpr .x1) (8 * (n / 8)))).2 →
       WP isa (.block (mask .x24 3)) s₂ (PhasePost s n) := by
     intro s₂ ptr reg rd wr fr data iv

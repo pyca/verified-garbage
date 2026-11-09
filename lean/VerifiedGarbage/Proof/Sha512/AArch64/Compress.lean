@@ -373,16 +373,12 @@ def finalizeAArch64 : Contract AArch64.isa where
 
 end VG.Proof.Sha512
 
-
 namespace VG.Proof.Sha512.AArch64
 
 open VG VG.AArch64 VG.Impl.Sha512.AArch64
 open VG.Spec.Sha512 (HashValue Word Block K W stateAt blockAt compressBlocks compress parseBlock)
 
 /-! ## Addresses and regions -/
-
-theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
 
 theorem contains_offset {base : Addr} {len off n : Nat} (h : off + n ≤ len) (ho : off < 2 ^ 64) :
     (⟨base, len⟩ : Region).Contains (base + BitVec.ofNat 64 off) n := Offset.contains_base base h ho

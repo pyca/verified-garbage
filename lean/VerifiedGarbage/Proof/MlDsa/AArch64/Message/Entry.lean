@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
-# ML-DSA on AArch64, `sign_message` and `verify_message`: entry and exit
+# ML-DSA on AArch64, `sign_message` and `verify_message_cached`: entry and exit
 
 Untrusted: everything here is checked by Lean. Stores of registers at
 distinct offsets that are multiples of 8 from a base (`strs_ok`). The entry:
@@ -215,10 +215,6 @@ structure Fin (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (t : 
   vs : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (vv r).extractLsb' 0 64
   s28 : t.mem.readW (L.X + BitVec.ofNat 64 904 + BitVec.ofNat 64 0) 64 = g .x28
   s30 : t.mem.readW (L.X + BitVec.ofNat 64 904 + BitVec.ofNat 64 8) 64 = g .x30
-
-theorem Ctx.fin {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
-    (hc : Ctx L g vv m₀ t) : Fin L g vv t :=
-  ⟨hc.rd, hc.wr, hc.sp, hc.x28, hc.cs, hc.vs, hc.s28, hc.s30⟩
 
 /-- The exit: `x30`, then `x28`, from the saves. -/
 theorem leave_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {t : State}

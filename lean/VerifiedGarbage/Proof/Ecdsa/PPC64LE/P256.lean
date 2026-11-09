@@ -53,5 +53,7 @@ theorem p256_ok : CfgOk p256 where
   fnk := rfl
   fnm := rfl
   mulNf := fun _ _ => Impl.Ecdsa.PPC64LE.mulP256_noFrames
+  chainP := .of_check (by decide +kernel)
+  chainN := .of_check (by decide +kernel)
 
 end VG.Proof.Ecdsa.PPC64LE

@@ -80,8 +80,6 @@ abbrev bodyRegs : List Reg :=
   [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .s0, .s1, .s2, .s3, .s4,
     .s7, .s8]
 
-theorem bodySlots_hdr : ∀ d ∈ bodySlots, d + 8 ≤ hdr := by decide
-
 /-- Between the steps. -/
 structure Stg (g : Geo) (s0 : State) (A : Nat → Nat) (live : List Nat) (c : Bool) (s : State) : Prop where
   ws : Ws s g.B g.Z g.w nArr

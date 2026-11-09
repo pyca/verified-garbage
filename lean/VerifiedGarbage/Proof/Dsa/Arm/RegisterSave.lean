@@ -160,14 +160,6 @@ theorem numAt_eq4 (m : Mem) (base : Addr) (d e : Nat) : numAt m base d (4 * e) =
   rw [← read_eq_val32]; rfl
 
 
-/-- Bytes of 1: an odd number, above 255 when there are at least two. -/
-theorem read_ones (a : Addr) : ∀ k, (Mem.read (fun _ => 1) a (k + 2)).toNat % 2 = 1 ∧
-    255 < (Mem.read (fun _ => 1) a (k + 2)).toNat := by
-  intro k
-  rw [VG.Proof.Mont.read_toNat_succ, VG.Proof.Mont.read_toNat_succ]
-  rw [show (1 : BitVec 8).toNat = 1 from rfl]
-  omega
-
 
 /-- The context's bytes, in words: the function's `ws_len`. -/
 theorem words_eq {n : Nat} (hn48 : n ≤ 48) :

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
 public import VerifiedGarbage.Spec.Ecdsa.P256
@@ -41,9 +42,9 @@ theorem preG_of_x {s : State} (h : verifyGX86_64.pre s) : VPre p256vx s :=
   { preG_of h with }
 
 theorem jointPublic_of_spec {a b : State}
-    (pub : (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256v.combConsts)).pub a b) :
+    (pub : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256v.combConsts)).pub a b) :
     JointPublic p256v p256GTab a b := by
-  sig_pub [Spec.Ecdsa.P256.inst,Spec.Ecdsa.Instance.verifyContract,Spec.Ecdsa.Instance.verifySig,
+  sig_pub [Spec.Ecdsa.P256.inst,Proof.Ecdsa.verifyContract,Proof.Ecdsa.verifySig,
     Spec.P256.curve,Spec.Ecdsa.scratchWords,X86_64.abi,X86_64.argRegs,p256v_combConsts,
     Abi.withConsts] at pub
   obtain ⟨_,hsy,inputs,h0,h1,h2,h3⟩ := pub

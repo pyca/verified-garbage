@@ -140,24 +140,10 @@ def bits (src dst nbytes : Nat) : Prog isa :=
 
 /-! ## Numbers as bytes -/
 
-/-- `[rdi + o] = ` the `n`-word big-endian number at `[src]`, little-endian. -/
-def loadBE (n : Nat) (o : Nat) (src : Reg) : List Instr :=
-  (List.range n).flatMap fun j =>
-    [.mov .rax (.mem { base := src, disp := ((8 * (n - 1 - j) : Nat) : Int) }), .bswap .rax,
-      .store (sc (o + 8 * j)) .rax]
-
-/-- `[dst + d] = ` the `n`-word number at `[rdi + a]`, big-endian, masked with
-`rcx`. -/
-def storeBE (n : Nat) (dst : Reg) (d a : Nat) : List Instr :=
-  (List.range n).flatMap fun j =>
-    [.mov .rax (.mem (sc (a + 8 * j))), .alu .and .rax (.reg .rcx), .bswap .rax,
-      .store { base := dst, disp := ((d + 8 * (n - 1 - j) : Nat) : Int) } .rax]
-
 /-- `[rdi + o] = ` the `len`-byte big-endian number at `[src]`, in `n` words
 (`8 (n - 1) ≤ len ≤ 8 n`, and `8 ≤ len`): word `j` is the byte reversal of
 the word at `src + len - 8 (j + 1)`, and a top word of fewer bytes `t` the
-first eight bytes' reversal shifted right by `8 (8 - t)` bits. For
-`len = 8 n`, it is `loadBE n o src`. -/
+first eight bytes' reversal shifted right by `8 (8 - t)` bits. -/
 def loadBytes (len n : Nat) (o : Nat) (src : Reg) : List Instr :=
   (List.range n).flatMap fun j =>
     if 8 * (j + 1) ≤ len then
@@ -184,7 +170,7 @@ def shrWords (n o sh : Nat) : List Instr :=
 /-- `[dst + d] = ` the `n`-word number at `[rdi + a]` masked with `rcx`,
 big-endian in `len` bytes (`8 (n - 1) ≤ len ≤ 8 n`): word `j` byte-reversed
 at `dst + d + len - 8 (j + 1)`, and a top word of fewer bytes `t` a byte at a
-time (through `rdx`). For `len = 8 n`, it is `storeBE n dst d a`. -/
+time (through `rdx`). -/
 def storeBytes (len n : Nat) (dst : Reg) (d a : Nat) : List Instr :=
   (List.range n).flatMap fun j =>
     if 8 * (j + 1) ≤ len then

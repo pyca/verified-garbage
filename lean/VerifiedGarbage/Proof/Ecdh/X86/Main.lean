@@ -105,11 +105,6 @@ theorem ecFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
     rw [others' _ (by simp [h1, h2, h4, h5, h6, h7']), k₃.1 _ (by simp [h1, h4]), k₂.1 _ (by simp [h2, h3])]
   · rw [hm', ← hm₂]; exact O₃
 
-theorem middle_eq (c : Cfg) : Impl.Ecdh.X86.Cfg.middle c =
-    .seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC))
-    (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE))
-    (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86.Cfg.finish c))) := rfl
-
 /-- Whether the result is a shared secret: the peer's key (`V`), `d` in
 `[1, n-1]`, and `Z ≠ 0`. -/
 abbrev ok (c : Cfg) (base : Addr) (s : State) (V : Prop) [Decidable V] : Bool :=

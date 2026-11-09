@@ -306,6 +306,56 @@ theorem callPR_piece (hv : Verified X86.target c k) (hsp : NoSp c) (hst : stackU
     rw [m₁] at fr'
     exact hQ s₀ s s' hp ha h' fr' ⟨_, s₂, ent_of hp hN h₁ m₁ hn v, m₂, g₂, post⟩
 
+/-- `callPR_piece`, for a callee whose calls and frames use up to `K` bytes of
+stack, in a layout with `K + 40` bytes of stack: the call's memory changes
+are within the buffers it writes and the `K + 24` bytes of stack below `E1`. -/
+theorem callPR_pieceK {K : Nat} {Pub : State → State → Prop} (hT : ∀ s₀ s₀', Pub s₀ s₀' → TPub Y lk s₀ s₀') (hv : Verified X86.target c k) (hsp : NoSp c) (hst : stackUse c ≤ K)
+    (hn₀ : as.length ≠ 0) (hn : as.length ≤ 5) (hok : as.all (Arg.ok Y) = true) (hN : 96 ≤ Y.stk)
+    (hK : K + 40 ≤ Y.stk) (hr : rB.all Y.ok = true) (hw : wB.all Y.okW = true)
+    {ht : Taint.Hint VG.X86.Taint.T}
+    (tt : (VG.X86.taint.check (τr [.esp, .esi]) (.block (setArgs Y.sc argRegs as)) ht).isSome = true)
+    (hA : ∀ s₀ s, TPre Y s₀ → A s₀ s → Ctx Y s₀ s)
+    (hpre : ∀ s₀ s e, TPre Y s₀ → A s₀ s → Ent Y s₀ s as e →
+      k.pre (e.withRegions (rdR s₀ rB) (wrR s₀ wB as.length)))
+    (hpub : ∀ s₀ s₀' s s' e e', TPre Y s₀ → TPre Y s₀' → Pub s₀ s₀' → A s₀ s → A s₀' s' →
+      Ent Y s₀ s as e → Ent Y s₀' s' as e' →
+      k.pub (e.withRegions (rdR s₀ rB) (wrR s₀ wB as.length)) (e'.withRegions (rdR s₀ rB) (wrR s₀ wB as.length)))
+    (hQ : ∀ s₀ s s', TPre Y s₀ → A s₀ s → Ctx Y s₀ s' → Frame (FR s₀ wB (K + 24)) s.mem s'.mem →
+      (∃ e s₂, Ent Y s₀ s as e ∧ s₂.mem = s'.mem ∧ s₂.gpr .eax = s'.gpr .eax ∧
+        k.post (e.withRegions (rdR s₀ rB) (wrR s₀ wB as.length)) s₂) → B s₀ s') :
+    Piece (TPre Y) Pub A B (callPR Y.sc nm c as) := by
+  refine Piece.seq ((setup_call (lk := lk) as hok tt hA).pre_mono (fun _ h => h) fun _ _ _ _ h => hT _ _ h) ?_
+  refine Piece.callRet hv.1 hv.2.1 hsp (argRs_ne hn₀ (by omega_arith)) (esp_argRs _)
+    (fun s₀ => rdR s₀ rB) (fun s₀ => wrR s₀ wB as.length)
+    (fun s₀ s₁ hp ⟨_, _, h₁, _⟩ => by
+      rw [argRs_len (by omega_arith)]; have := ctx_E hp h₁ (N := K + 24) (by omega_arith); omega_arith)
+    (fun s₀ s₁ hp ⟨s, ha, h₁, m₁, v⟩ => ⟨hpre s₀ s _ hp ha (ent_of hp hN h₁ m₁ hn v),
+      (call_cov as rB wB hp h₁ hn hr hw).1, (call_cov as rB wB hp h₁ hn hr hw).2⟩)
+    (fun s₀ s₀' s₁ s₁' hp hp' hq₀ ⟨s, ha, h₁, m₁, v⟩ ⟨s', ha', h₁', m₁', v'⟩ => ?_)
+    (fun s₀ s₁ s' hp ⟨s, ha, h₁, m₁, v⟩ e₁ e₂ e₃ fr ⟨s₂, m₂, g₂, post⟩ => ?_)
+  · have hq := hT _ _ hq₀
+    have er : rdR s₀ rB = rdR s₀' rB := List.map_congr_left fun b hb => by
+      simp only [Buf.rgn, hq.ptr (List.all_eq_true.mp hr b hb)]
+    have ew : wrR s₀ wB as.length = wrR s₀' wB as.length := by
+      simp only [wrR, hq.E1]
+      exact congrArg (· ++ _) (List.map_congr_left fun b hb => by
+        simp only [Buf.rgn, hq.ptr (Lay.okW_iff.mp (List.all_eq_true.mp hw b hb)).1])
+    refine ⟨er, ew, by rw [h₁.esp, h₁'.esp, hq.E1], ?_⟩
+    exact hpub s₀ s₀' s s' _ _ hp hp' hq₀ ha ha' (ent_of hp hN h₁ m₁ hn v) (ent_of hp' hN h₁' m₁' hn v')
+  · have fr' : Frame (FR s₀ wB (K + 24)) s₁.mem s'.mem := by
+      rw [h₁.esp, argRs_len (by omega_arith)] at fr
+      refine fr.sub fun r hr => ?_
+      simp only [List.mem_append, List.mem_singleton] at hr
+      rcases hr with (hr | rfl) | rfl
+      · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+      · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
+          stk_sub hp (by omega_arith) (by omega_arith)⟩
+      · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
+          stk_sub hp (by omega_arith) (by omega_arith)⟩
+    have h' : Ctx Y s₀ s' := h₁.call e₁ e₂ e₃ fr' (wr_sub hp hw (by omega_arith))
+    rw [m₁] at fr'
+    exact hQ s₀ s s' hp ha h' fr' ⟨_, s₂, ent_of hp hN h₁ m₁ hn v, m₂, g₂, post⟩
+
 end
 
 /-! ## Calls of functions that may not write their arguments -/
@@ -412,5 +462,27 @@ theorem Ent.buf {s₀ s e : State} {as : List Arg} (he : Ent Y s₀ s as e) (hp 
       (⟨(e.gpr .esp).setWidth 64 - BitVec.ofNat 64 K, K⟩ : Region).Disjoint (b.rgn s₀) ∧
       (b.ptr s₀).toNat + b.len ≤ 2 ^ 32 :=
   ⟨(he.rgn hp hN hn hb hK).1, (he.rgn hp hN hn hb hK).2.1, (he.rgn hp hN hn hb hK).2.2, Buf.fit hp hb⟩
+
+/-- `Ent.buf`, for a callee with `K` bytes of stack in a layout with `K + 40`. -/
+theorem Ent.bufK {s₀ s e : State} {as : List Arg} (he : Ent Y s₀ s as e) (hp : TPre Y s₀)
+    (hn : as.length ≤ 5) {b : Buf} (hb : Y.ok b = true) {K : Nat} (hK : K + 40 ≤ Y.stk) :
+    (b.rgn s₀).Disjoint (below (E1 s₀) (4 * as.length)) ∧
+      (⟨(e.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (b.rgn s₀) ∧
+      (⟨(e.gpr .esp).setWidth 64 - BitVec.ofNat 64 K, K⟩ : Region).Disjoint (b.rgn s₀) ∧
+      (b.ptr s₀).toNat + b.len ≤ 2 ^ 32 := by
+  have hE : 4 * as.length + 4 + K ≤ (E1 s₀).toNat := by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega_arith
+  rw [he.esp]
+  exact ⟨(entry_regions hE (Buf.stkD hp hb (N := 4 * as.length + 4 + K) (by omega_arith))).1,
+    (entry_regions hE (Buf.stkD hp hb (N := 4 * as.length + 4 + K) (by omega_arith))).2.1,
+    (entry_regions hE (Buf.stkD hp hb (N := 4 * as.length + 4 + K) (by omega_arith))).2.2, Buf.fit hp hb⟩
+
+/-- `Ent.self`, for a callee with `K` bytes of stack in a layout with `K + 40`. -/
+theorem Ent.selfK {s₀ s e : State} {as : List Arg} (he : Ent Y s₀ s as e) (hp : TPre Y s₀)
+    (hn : as.length ≤ 5) {K : Nat} (hK : K + 40 ≤ Y.stk) :
+    (⟨(e.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (below (E1 s₀) (4 * as.length)) ∧
+      (⟨(e.gpr .esp).setWidth 64 - BitVec.ofNat 64 K, K⟩ : Region).Disjoint (below (E1 s₀) (4 * as.length)) := by
+  have hE : 4 * as.length + 4 + K ≤ (E1 s₀).toNat := by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega_arith
+  rw [he.esp]
+  exact entry_self hE
 
 end VG.Proof.MlDsa.X86.KeyGen

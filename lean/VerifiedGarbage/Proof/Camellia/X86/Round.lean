@@ -323,25 +323,4 @@ theorem round_ok {off src dst : Nat}
     have g₅ : Frame [slotRegion layerCfg s] s₄.mem s₅.mem := by rw [← e₄]; exact f₅
     exact f₁.trans (g₂.trans (g₃.trans (g₄.trans g₅)))
 
-/-- The checks and the registers of both rounds of a pair. -/
-theorem round0_ok {s : State} (hok : Ok layerCfg s) {d1 d2 : Nat → BitVec 64} {k : BitVec 64}
-    (hQ : W32.HalfRel (half s d1Slot) d1) (hK : W32.HalfRel (fun i => keyW s (0 + i)) fun _ => k)
-    (hR : W32.HalfRel (half s d2Slot) d2) :
-    ∃ s', runBlock isa (round 0 d1Slot d2Slot) s = some s' ∧
-      W32.HalfRel (half s' d2Slot) (fun b => d2 b ^^^ Spec.Camellia.f (d1 b) k) ∧
-      (∀ i < 16, slotW s' (d1Slot + i) = slotW s (d1Slot + i)) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r) ∧
-      Frame [slotRegion layerCfg s] s.mem s'.mem :=
-  round_ok preL0_check mid0_check post2_check (by decide +kernel) (.inl ⟨rfl, rfl, rfl⟩) hok hQ hK hR
-
-theorem round16_ok {s : State} (hok : Ok layerCfg s) {d1 d2 : Nat → BitVec 64} {k : BitVec 64}
-    (hQ : W32.HalfRel (half s d2Slot) d1) (hK : W32.HalfRel (fun i => keyW s (16 + i)) fun _ => k)
-    (hR : W32.HalfRel (half s d1Slot) d2) :
-    ∃ s', runBlock isa (round 16 d2Slot d1Slot) s = some s' ∧
-      W32.HalfRel (half s' d1Slot) (fun b => d2 b ^^^ Spec.Camellia.f (d1 b) k) ∧
-      (∀ i < 16, slotW s' (d2Slot + i) = slotW s (d2Slot + i)) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r) ∧
-      Frame [slotRegion layerCfg s] s.mem s'.mem :=
-  round_ok preL16_check mid16_check post1_check (by decide +kernel) (.inr ⟨rfl, rfl, rfl⟩) hok hQ hK hR
-
 end VG.Proof.Camellia.X86

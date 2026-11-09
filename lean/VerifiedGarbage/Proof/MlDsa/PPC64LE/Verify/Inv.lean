@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Lay
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Piece
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.TopSave
+public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
 import VerifiedGarbage.Proof.MlKem.Mem
@@ -67,6 +70,30 @@ theorem vlay_pub {p : Params} {STK : Nat} {σ₁ σ₂ : State} (h : vPub p σ�
   simp only [vlay, vPk, vMu, vSg, vScr] at *
   rw [e0, e1, e2, e3, e4]
 
+/-! ## A kernel's cache -/
+
+/-- What a kernel's entry state holds of its cache, the `r15` bytes at `r14`:
+nothing, or the `k` polynomials `NTT(t₁ · 2ᵈ)` of `pk`; a region it may read,
+apart from `scratch` and the stack. -/
+structure VCache (p : Params) (STK : Nat) (σ : State) : Prop where
+  polys : σ.gpr .r15 = 0 ∨ ((σ.gpr .r15).toNat = 4 * Spec.MlDsa.n * p.k ∧
+    Proof.MlDsa.CachedPublicPolys p σ.mem (σ.gpr .r14) (pkOf p σ))
+  rd : reg (σ.gpr .r14) (σ.gpr .r15).toNat ∈ σ.rd
+  d_c : (reg (σ.gpr .r14) (σ.gpr .r15).toNat).Disjoint (reg (vScr σ) (scrLen p))
+  b : (reg (σ.gpr .r14) (σ.gpr .r15).toNat).Disjoint (below σ.sp STK)
+
+/-- The polynomials of a cache, kept by a change of memory apart from it. -/
+theorem VCache.frame {p : Params} {STK : Nat} {σ : State} (hc : VCache p STK σ) (hne : σ.gpr .r15 ≠ 0)
+    {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, (reg (σ.gpr .r14) (σ.gpr .r15).toNat).Disjoint r)
+    (h : Proof.MlDsa.CachedPublicPolys p m (σ.gpr .r14) (pkOf p σ)) :
+    Proof.MlDsa.CachedPublicPolys p m' (σ.gpr .r14) (pkOf p σ) := fun i hi => by
+  obtain ⟨hl, -⟩ := hc.polys.resolve_left hne
+  have hsub : Region.Sub (Proof.MlDsa.Verify.polyRegion (σ.gpr .r14 + BitVec.ofNat 64 (4 * Spec.MlDsa.n * i)))
+      (reg (σ.gpr .r14) (σ.gpr .r15).toNat) :=
+    Offset.sub_base _ (by rw [hl]; show 4 * 256 * i + 1024 ≤ 4 * 256 * p.k; omega)
+  exact Proof.MlDsa.Verify.polyIs_frame hf (fun r hr => (hd r hr).sub_left hsub) (h i hi)
+
 /-! ## What holds throughout -/
 
 /-- What holds throughout, from the entry state `σ`. -/
@@ -80,6 +107,7 @@ structure VC (p : Params) (STK : Nat) (σ s : State) : Prop where
   pk : bytesAt s.mem ((vlay p STK σ).A 2 0) p.pkLen = pkOf p σ
   mu : bytesAt s.mem ((vlay p STK σ).A 3 0) 64 = muOf σ
   sg : bytesAt s.mem ((vlay p STK σ).A 4 0) p.sigLen = sgOf p σ
+  cache : VCache p STK σ → σ.gpr .r15 ≠ 0 → Proof.MlDsa.CachedPublicPolys p s.mem (σ.gpr .r14) (pkOf p σ)
 
 theorem inputs_eq (p : Params) (STK : Nat) (σ : State) :
     bytesAt σ.mem ((vlay p STK σ).A 2 0) p.pkLen = pkOf p σ ∧ bytesAt σ.mem ((vlay p STK σ).A 3 0) 64 = muOf σ ∧
@@ -123,10 +151,21 @@ theorem VC.keep {p : Params} {STK : Nat} {σ s s' : State} (h : VC p STK σ s) {
       exact disjW hL (List.all_eq_true.mp h0 w hw') (.inl (by decide))
   refine ⟨h.site.kept hk, hk.rd.trans h.rd, hk.wr.trans h.wr, hk.sp.trans h.sp,
     fun r hr hs => (hk.cs r hr).trans (h.pres r hr hs), h.sav.keep hk.frame (by rw [saveR_vlay p STK σ]; exact hd),
-    ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_⟩
   · rw [bytes_keepR hL hk.frame h2 hw (vfit hL 2 (by decide))]; exact h.pk
   · rw [bytes_keepR hL hk.frame h3 hw (by decide)]; exact h.mu
   · rw [bytes_keepR hL hk.frame h4 hw (vfit hL 4 (by decide))]; exact h.sg
+  · intro hc hne
+    refine hc.frame hne hk.frame (fun r hr => ?_) (h.cache hc hne)
+    obtain ⟨w, hw', rfl⟩ := List.mem_map.mp hr
+    have hb := List.all_eq_true.mp h0 w hw'
+    have h01 := List.all_eq_true.mp hw w hw'
+    simp only [sepB, Bool.and_eq_true, decide_eq_true_eq] at hb
+    obtain ⟨⟨⟨⟨-, -⟩, -⟩, hin⟩, -⟩ := hb
+    simp only [Bool.or_eq_true, beq_iff_eq] at h01
+    rcases h01 with e | e <;> rw [e] at hin ⊢
+    · exact hc.d_c.sub_right (Lay.R_sub hin)
+    · exact hc.b.sub_right (Lay.R_sub hin)
 
 /-! ## The prologue -/
 
@@ -175,7 +214,7 @@ theorem vpro_ok {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ
     by rw [vlay_size0]; omega_arith, rfl, by rw [sp, sp₁]; rfl, hSTK, by rw [sp, sp₁]; exact hp.stk, g31, g30, g29, g28,
     fun i hi hi1 => ?_, fun i hi hi1 => ?_⟩, rd.trans rd₁, wr.trans wr₁, sp.trans sp₁,
     fun r hr hs => (cs r hr hs).trans (g₁ r (by rintro rfl; simp [preserved] at hr)), by rw [m]; exact sav,
-    ?_, ?_, ?_⟩, g24⟩
+    ?_, ?_, ?_, ?_⟩, g24⟩
   · show _ ∈ s.wr
     rw [wr, wr₁, hp.wr]
     simp only [vWb, List.mem_cons, List.not_mem_nil, or_false] at hi
@@ -183,11 +222,17 @@ theorem vpro_ok {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ
     · simp [Lay.buf, vlay]
     · exact absurd rfl hi1
   · show _ ∈ s.rd ++ s.wr
-    rw [rd, rd₁, wr, wr₁, hp.rd, hp.wr]
+    obtain ⟨X, hX⟩ := hp.rd
+    rw [rd, rd₁, wr, wr₁, hX, hp.wr]
     rcases (by omega_arith : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, vlay]
   · rw [m, hin (i := 2) (l := p.pkLen) (.inl rfl) rfl]; exact ep
   · rw [m, hin (i := 3) (l := 64) (.inr (.inl rfl)) rfl]; exact em
   · rw [m, hin (i := 4) (l := p.sigLen) (.inr (.inr rfl)) rfl]; exact es
+  · intro hc hne
+    rw [m]
+    refine hc.frame hne fr (fun r hr => ?_) (hc.polys.resolve_left hne).2
+    rw [List.mem_singleton] at hr; subst hr
+    exact hc.d_c.sub_right (Offset.sub_base _ (by have := hF.scr; omega_arith))
 
 theorem vpro_piece {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 48 ≤ STK) :
     VPiece p STK (fun σ s => s = σ) (fun σ s => VC p STK σ s ∧ s.gpr .r24 = 1) (.block pro) :=

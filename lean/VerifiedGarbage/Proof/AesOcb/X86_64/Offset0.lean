@@ -43,11 +43,6 @@ open VG.Proof.AesCcm.X86_64 (runBlock_append toNat_ofNat_of_lt)
 theorem sel_mask' (x x' : BitVec 64) (b : Bool) :
     x ^^^ ((x' ^^^ x) &&& (0#64 - (if b then 1 else 0))) = if b then x' else x := sel_mask x x' b
 
-theorem bit_bottom0 {v : Nat} (hv : v < 64) :
-    BitVec.ofNat 64 v &&& BitVec.signExtend 64 (1 : BitVec 32) = if v.testBit 0 then 1 else 0 := by
-  have := bit_bottom hv 0
-  rwa [BitVec.ushiftRight_zero] at this
-
 /-- One stage: the three words shifted left by `a` if bit `k` of `bottom` is set. -/
 theorem stage_ok (s : State) {k a v : Nat} (hk6 : k < 64) (ha : 0 < a) (ha' : a < 64) (hv : v < 64)
     (hbx : s.gpr .rbx = BitVec.ofNat 64 v) :

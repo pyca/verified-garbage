@@ -58,14 +58,14 @@ abbrev invCiphOf (s : State) : Spec.Cbc.Cipher :=
 
 /-- CBC decryption on AArch64 that updates the chaining value. -/
 def cbcDecAArch64 : Contract isa where
-  pre := fbPre
+  pre := fbPre blkLen
   post s s' := blocksOf s s'.mem = Spec.Cbc.decrypt (invCiphOf s) (ivOf s) (blocksOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .x2) 16 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
   pub := fbPub
 
 /-- CBC encryption on AArch64 that updates the chaining value. -/
 def cbcEncAArch64 : Contract isa where
-  pre := fbPre
+  pre := fbPre blkLen
   post s s' := blocksOf s s'.mem = Spec.Cbc.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .x2) 16 =
       Spec.Cbc.next (ivOf s) (Spec.Cbc.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem))
@@ -77,7 +77,7 @@ theorem invCipher_eq (m : Mem) (p : Addr) (R : Nat) :
     ((dirCoreSpec .decrypt).toBlock rfl).cipher (R, schedWords m p R) = Spec.Camellia.invCipher (Spec.Camellia.subkeysAt m p R) :=
   rfl
 
-theorem cbcTaint_agree (s₁ s₂ : State) (_ : fbPre s₁) (_ : fbPre s₂)
+theorem cbcTaint_agree (s₁ s₂ : State) (_ : fbPre blkLen s₁) (_ : fbPre blkLen s₂)
     (hp : fbPub s₁ s₂) :
     VG.AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5]) s₁ s₂ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, hsp⟩ := hp
@@ -125,14 +125,15 @@ theorem cbcDecryptChained_verified :
       Proof.Camellia.cbcChainedPre, Proof.Camellia.cbcDecChainedPost, cbcDecAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs, slots,
       tailSlot, savedSlot, endSlot, keySlot] [fbSat] using fbSat)
 
-theorem cbcDecFrameSat_pre : ∃ s, (Spec.Camellia.cbcDecryptChainedContract AArch64.abi 3344).pre s := by
-  implies_sat [Spec.Camellia.cbcDecryptChainedContract, Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre,
+theorem cbcDecFrameSat_pre : ∃ s, (Proof.Camellia.cbcDecryptChainedContractSk AArch64.abi 3344).pre s := by
+  implies_sat [Proof.Camellia.cbcDecryptChainedContractSk, Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre,
     Proof.Camellia.cbcDecChainedPost, AArch64.abi, AArch64.argRegs] [fbFrameSat] using fbFrameSat
 
 /-- CBC decryption with its working space on the stack. -/
 theorem cbcDecryptChained_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 cbcDecryptChained)
       (Spec.Camellia.cbcDecryptChainedContract AArch64.abi 3344) :=
+  Proof.Camellia.cbcDecryptChained_of_sk <|
   AArch64.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 418) (pre := Proof.Camellia.cbcChainedPre AArch64.abi.ptrBits)
     (post := Proof.Camellia.cbcDecChainedPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
@@ -174,14 +175,15 @@ theorem cbcEncryptChained_verified :
       Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre, Proof.Camellia.cbcEncChainedPost, cbcEncAArch64, fbPre, fbPub,
       AArch64.abi, AArch64.argRegs, slots, tailSlot, savedSlot, endSlot, keySlot] [fbSat] using fbSat)
 
-theorem cbcEncFrameSat_pre : ∃ s, (Spec.Camellia.cbcEncryptChainedContract AArch64.abi 3344).pre s := by
-  implies_sat [Spec.Camellia.cbcEncryptChainedContract, Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre,
+theorem cbcEncFrameSat_pre : ∃ s, (Proof.Camellia.cbcEncryptChainedContractSk AArch64.abi 3344).pre s := by
+  implies_sat [Proof.Camellia.cbcEncryptChainedContractSk, Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre,
     Proof.Camellia.cbcEncChainedPost, AArch64.abi, AArch64.argRegs] [fbFrameSat] using fbFrameSat
 
 /-- CFB128 encryption with its working space on the stack. -/
 theorem cbcEncryptChained_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 cbcEncryptChained)
       (Spec.Camellia.cbcEncryptChainedContract AArch64.abi 3344) :=
+  Proof.Camellia.cbcEncryptChained_of_sk <|
   AArch64.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 418) (pre := Proof.Camellia.cbcChainedPre AArch64.abi.ptrBits)
     (post := Proof.Camellia.cbcEncChainedPost AArch64.abi.ptrBits) (wa := true) (stack := 0)

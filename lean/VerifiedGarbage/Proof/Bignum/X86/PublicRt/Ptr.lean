@@ -8,9 +8,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The width and the pointers of public RSA at a run-time width
 
-`widthB` leaves `B = 8 ⌈n_len / 8⌉` in its register (`widthB_ok`), `offAt`
-the offset `256 + j B` of number `j` (`offAt_ok`) and `slotPtr` a pointer to
-it (`slotPtr_ok`).
+`widthB` leaves `B = 8 ⌈n_len / 8⌉` in its register (`widthB_ok`), and `slotPtr`
+a pointer to number `j`, at offset `256 + j B` (`slotPtr_ok`).
 -/
 
 @[expose] public section
@@ -80,24 +79,6 @@ theorem widthB_ok {s : State} {is : List Instr} {Q : State → Prop} {k len : Na
   simp only [BitVec.toNat_add, BitVec.toNat_ushiftRight, h7, BitVec.toNat_ofNat, wb, Spec.Rsa.modulusWords,
     Nat.shiftRight_eq_div_pow]
   omega
-
-/-- `offAt r j t`: `r = 256 + j B`, `t = B`. -/
-theorem offAt_ok {s : State} {is : List Instr} {Q : State → Prop} {len j : Nat} {r t : Reg} (hrt : r ≠ t)
-    (hr : readSrc s (.mem (argAt 0 1)) = some (BitVec.ofNat 32 len)) (hl : len ≤ 1024) (hj : j ≤ 8)
-    (kk : ∀ u, Keeps [r, t] s u → u.mem = s.mem → u.gpr r = BitVec.ofNat 32 (numAt len j) →
-      u.gpr t = BitVec.ofNat 32 (wb len) → WP isa (.block is) u Q) :
-    WP isa (.block (offAt r j t ++ is)) s Q := by
-  have hw := wb_le hl
-  simp only [offAt, List.append_assoc, List.cons_append]
-  refine widthB_ok hr hl fun s₁ K₁ m₁ e₁ => wp_movS rfl fun s₂ u₂ _ => adds_ok hrt j fun u K m e => ?_
-  have et : s₂.gpr t = BitVec.ofNat 32 (wb len) := by rw [u₂.other _ hrt.symm, e₁]
-  refine kk u ((K₁.mono (by simp)).trans ((u₂.keeps.trans K).mono (by simp)))
-    (by rw [m, u₂.mem, m₁]) ?_ (by rw [K.1 _ (by simp [hrt.symm]), et])
-  rw [e, u₂.gpr, et]
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_ofNat, numAt, numOff]
-  have : j * wb len ≤ 8 * 1024 := Nat.mul_le_mul hj hw
-  rw [Nat.mod_eq_of_lt (a := wb len) (by omega), Nat.mod_eq_of_lt (a := j * wb len) (by omega)]
 
 /-- `slotPtr r j t`: `r = edi + 256 + j B`, `t = B`. -/
 theorem slotPtr_ok {s : State} {is : List Instr} {Q : State → Prop} {base : Addr} {len j : Nat} {r t : Reg}

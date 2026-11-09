@@ -30,7 +30,4 @@ def p256Order : Weierstrass.RISCV64.Field :=
 /-- P-256 as the code has it. -/
 def p256 : Cfg := { n := 4, C := Spec.P256.curve, FP := p256Field }
 
-/-- `vg_p256_mul`. -/
-def mulP256 : Prog isa := p256.mulFn
-
 end VG.Impl.Ecdsa.RISCV64

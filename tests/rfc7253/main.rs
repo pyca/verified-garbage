@@ -18,7 +18,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::aes_ocb::{AesOcb, Error};
+use verified_garbage::aead::aes_ocb::{AesOcb, Error};
 
 use verified_garbage_test_vectors::try_unhex;
 

@@ -89,11 +89,6 @@ theorem BlockDone.h0 {s t : State} {column : Nat} (h : BlockDone s t column)
   · exact ready.stackFrame.symm.sub_left (Region.sub_prefix (by decide))
   · exact Offset.base_disjoint _ (by decide) (by decide)
 
-theorem BlockDone.block {s t : State} {column : Nat} (h : BlockDone s t column) :
-    blockAt t.mem (s.gpr .x22) = parseBlock
-      (Proof.Argon2.initialBytes (bytesAt s.mem (s.gpr .x19) 64) (s.gpr .x20).toNat column) :=
-  Proof.Argon2.blockAt_of_initialBytes _ _ _ _ _ h.digest
-
 end VG.Proof.Argon2.AArch64.MemoryInit
 end
 
@@ -910,7 +905,6 @@ theorem lane_step (v : HPrime.Backend) (name : String)
     exact not_congr eqzero
   exact ⟨next, zf⟩
 
-
 theorem lanesLoop_ok (v : HPrime.Backend) (name : String)
     (s₀ : State) (memory : Addr) (lanes q : Nat) (h0 : List Byte)
     (space : Space s₀ memory (1024 * (lanes * q))) (lo : 1 ≤ lanes)
@@ -1174,14 +1168,6 @@ theorem block_rel (v : HPrime.Backend) (name : String) (column : Nat) (columnBou
     intro r hr
     have saved : ∀ r ∈ savedRegs, r ∈ FillCompress.loopRegs := by decide
     exact (ha.regs r (saved r hr)).trans ((hp.2.2.2 r hr).trans (hb.regs r (saved r hr)).symm))
-
-theorem blocks_rel (v : HPrime.Backend) (name : String) :
-    RelCT isa (fun s t => BlockReady s ∧ BlockReady t ∧ AgreeSaved s t)
-      (block name v.hash 0) AgreeSaved ∧
-    RelCT isa (fun s t => BlockReady s ∧ BlockReady t ∧ AgreeSaved s t)
-      (block name v.hash 1) AgreeSaved :=
-  ⟨block_rel v name 0 (by decide) ⟨_, by taint_decide⟩,
-    block_rel v name 1 (by decide) ⟨_, by taint_decide⟩⟩
 
 end VG.Proof.Argon2.AArch64.MemoryInit
 end

@@ -109,8 +109,6 @@ def scVal (A : Args) (s : State) : BitVec 32 :=
   | none => stackArg s 0
   | some r => s.gpr r
 
-theorem scVal_sign (s : State) : scVal .sign s = stackArg s 0 := rfl
-
 /-- The working space's base, as an address. -/
 abbrev scBase (A : Args) (s : State) : Addr := State.addr (scVal A s)
 
@@ -175,7 +173,6 @@ abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem 
 is `A.hs`: `c.sh` for the slot `hs` holding a hash, 0 for the others. -/
 abbrev shAt (c : Cfg) (hs : Option Nat) (i : Nat) : Nat := if hs = some i then c.sh else 0
 
-theorem shAt_none (c : Cfg) (i : Nat) : shAt c none i = 0 := rfl
 theorem shAt_self (c : Cfg) (i : Nat) : shAt c (some i) i = c.sh := ite_eq_left_of_eq_true _ _ (eq_true rfl)
 theorem shAt_E_D (c : Cfg) : shAt c (some E) D = 0 := rfl
 theorem shAt_E_K (c : Cfg) : shAt c (some E) K = 0 := rfl

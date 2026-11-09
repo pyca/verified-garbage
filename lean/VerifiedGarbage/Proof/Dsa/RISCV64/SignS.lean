@@ -70,8 +70,6 @@ theorem AKeep.trans {L : Lay} {ws ws' : List Nat} {m₁ m₂ m₃ : Mem} (h₁ :
     (h₂ : AKeep L ws' m₂ m₃) : AKeep L (ws ++ ws') m₁ m₃ := fun j hj hn =>
   (h₂ j hj fun h => hn (List.mem_append_right _ h)).trans (h₁ j hj fun h => hn (List.mem_append_left _ h))
 
-theorem AKeep.of_eq {L : Lay} {m m' : Mem} (h : m' = m) : AKeep L [] m m' := fun _ _ _ => by rw [h]
-
 theorem AKeep.one {L : Lay} (hL : L.Ok) {o n : Nat} {m m' : Mem} (h : Outside L.Q (slot L.wq o) n m m')
     (hn : n ≤ 8 * (L.wq + 2)) : AKeep L [o] m m' := fun j hj ho => by
   have hjo : j ≠ o := by simpa only [List.mem_singleton] using ho
@@ -109,12 +107,6 @@ theorem AddFrame.qarr {L : Lay} {o : Nat} {m m' : Mem} (h : AddFrame L.Q L.wq o 
   have h2 := slot_lt (w := L.wq) ho
   exact (QArr.of h₁ (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.slot_eq]; omega)).trans
     (QArr.of h₂ h1 (by omega))
-
-theorem AddFrame.word0 {L : Lay} (hL : L.Ok) {o : Nat} {m m' : Mem} (h : AddFrame L.Q L.wq o m m') (ho1 : 1 ≤ o)
-    (ho : o < 28) : word m' L.Q (slot L.wq 0) = word m L.Q (slot L.wq 0) := by
-  have hq := h.qarr ho1 ho
-  have := hL.wq_ge
-  exact hq.word (Or.inl (by simp only [Lay.slot_eq]; omega)) (by simp only [Lay.slot_eq]; omega)
 
 theorem QArr.word0 {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QArr L m m') :
     word m' L.Q (slot L.wq 0) = word m L.Q (slot L.wq 0) := by

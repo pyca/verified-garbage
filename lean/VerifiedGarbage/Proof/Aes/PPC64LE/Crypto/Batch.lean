@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 namespace VG.Proof.Aes.PPC64LE.Crypto
 open VG VG.PPC64LE
 open VG.Proof.Aes.Memory
-open VG.Impl.Aes.PPC64LE.Crypto (batchRegs breg key mask byteMask counterWord counterMask counterControl data)
+open VG.Impl.Aes.PPC64LE.Crypto (batchRegs breg key mask byteMask counterBase counterStep counterOne data)
 
 theorem rewind_ok (ctr : Bool) (N : Nat) (s : State) (hN : N ≤ 8) :
     WP isa (.block (if ctr then [] else [.subi .r6 .r6 (16 * (batchRegs N).length)])) s fun t =>
@@ -30,14 +30,14 @@ theorem rewind_ok (ctr : Bool) (N : Nat) (s : State) (hN : N ≤ 8) :
     exact ⟨True.intro, Local.refl _ _ _⟩
 
 structure BatchRead (ctr : Bool) (s₀ : State) (N : Nat) (s : State) : Prop where
-  effects : Local [.r6, .r8] (counterWord :: batchRegs N) s₀ s
+  effects : Local [.r6] (counterBase :: batchRegs N) s₀ s
   ptr : s.gpr .r6 = s₀.gpr .r6
-  counter : s.gpr .r8 = if ctr then s₀.gpr .r8 + BitVec.ofNat 64 N else s₀.gpr .r8
+  counter : s.vpr counterBase = if ctr then ctrAdd (s₀.vpr counterBase) N else s₀.vpr counterBase
   val : ∀ i < N, s.vpr (breg i) = readValue ctr s₀ i
 
 theorem batch_read_ok (ctr : Bool) (N : Nat) (s : State) (hN : N ≤ 8)
     (h0 : s.gpr .r0 = 0) (hm : s.vpr mask = byteMask)
-    (hc : ctr = true → s.vpr counterMask = counterControl)
+    (hc : ctr = true → s.vpr counterStep = counterOne)
     (hr : ∀ i < N, InRegions (s.rd ++ s.wr) (s.gpr .r6 + BitVec.ofNat 64 (16*i)) 16) :
     WP isa (.block ((batchRegs N).flatMap (Impl.Aes.PPC64LE.Crypto.readBlock ctr) ++
       (if ctr then [] else [.subi .r6 .r6 (16 * (batchRegs N).length)]))) s (BatchRead ctr s N) := by
@@ -47,19 +47,19 @@ theorem batch_read_ok (ctr : Bool) (N : Nat) (s : State) (hN : N ≤ 8)
   refine ⟨(ht.effects.trans he).weaken (by simp) (by simp), ?_, ?_, ?_⟩
   · rw [hu, ht.ptr]
     cases ctr <;> simp only [Bool.false_eq_true, ite_false, ite_true, BitVec.add_sub_cancel]
-  · rw [he.keep.gpr (by decide), ht.counter]
+  · rw [he.v _ (by simp), ht.counter]
   · intro i hi
     rw [he.v _ (by simp), ht.val i hi]
 
 structure BatchCipher (inverse ctr : Bool) (s₀ : State) (nr N : Nat) (s : State) : Prop where
-  effects : Local [.r6, .r8, .r9, .r10] (key :: counterWord :: batchRegs N) s₀ s
+  effects : Local [.r6, .r9, .r10] (key :: counterBase :: batchRegs N) s₀ s
   ptr : s.gpr .r6 = s₀.gpr .r6
-  counter : s.gpr .r8 = if ctr then s₀.gpr .r8 + BitVec.ofNat 64 N else s₀.gpr .r8
+  counter : s.vpr counterBase = if ctr then ctrAdd (s₀.vpr counterBase) N else s₀.vpr counterBase
   val : ∀ i < N, aesState (s.vpr (breg i)) =
     result inverse nr (schedule nr s₀) (aesState (readValue ctr s₀ i))
 
 theorem batch_cipher_ok (inverse ctr : Bool) (N : Nat) (s : State) {nr : Nat} (hN : N ≤ 8)
-    (hp : Inputs nr s) (hc : ctr = true → s.vpr counterMask = counterControl)
+    (hp : Inputs nr s) (hc : ctr = true → s.vpr counterStep = counterOne)
     (hr : ∀ i < N, InRegions (s.rd ++ s.wr) (s.gpr .r6 + BitVec.ofNat 64 (16*i)) 16) :
     WP isa (.seq (.block ((batchRegs N).flatMap (Impl.Aes.PPC64LE.Crypto.readBlock ctr) ++
       (if ctr then [] else [.subi .r6 .r6 (16 * (batchRegs N).length)])))
@@ -68,7 +68,7 @@ theorem batch_cipher_ok (inverse ctr : Bool) (N : Nat) (s : State) {nr : Nat} (h
   refine WP.seq (WP.mono (batch_read_ok ctr N s hN hp.zero hp.mask hc hr) fun t ht => ?_)
   have hpt : Inputs nr t := by
     refine ⟨(ht.effects.keep.gpr (by decide)).trans hp.zero,
-      (ht.effects.v mask (by simp [facts.2.2.1, mask, counterWord])).trans hp.mask,
+      (ht.effects.v mask (by simp [facts.2.2.1, mask, counterBase])).trans hp.mask,
       (ht.effects.keep.gpr (by decide)).trans hp.rounds, hp.min, hp.max, ?_⟩
     intro j hj
     rw [ht.effects.keep.2.1, ht.effects.keep.2.2, ht.effects.keep.gpr (by decide)]
@@ -76,7 +76,7 @@ theorem batch_cipher_ok (inverse ctr : Bool) (N : Nat) (s : State) {nr : Nat} (h
   refine WP.mono (aes_ok inverse (batchRegs N) facts.1 facts.2.1 facts.2.2.1 hpt) fun u ⟨hv, he⟩ => ?_
   refine ⟨(ht.effects.trans he).weaken (by simp) (by simp [or_left_comm]), ?_, ?_, ?_⟩
   · exact (he.keep.gpr (by decide)).trans ht.ptr
-  · exact (he.keep.gpr (by decide)).trans ht.counter
+  · exact (he.v _ (by simp [facts.2.2.2.1, key, counterBase])).trans ht.counter
   · intro j hj
     rw [hv _ (breg_mem hj), ht.val j hj]
     have hs : schedule nr t = schedule nr s := by
@@ -92,29 +92,32 @@ theorem count_ok (N : Nat) (s : State) (hN : N ≤ 8) :
     Option.some.injEq, exists_eq_left']
   exact ⟨RegUpd.gpr_write_self .., Local.write s .r7 _⟩
 
-structure BatchDone (ctr : Bool) (s₀ : State) (m₀ : Mem) (D : Addr) (n k N : Nat)
+structure BatchDone (ctr : Bool) (s₀ : State) (m₀ : Mem) (D E : Addr) (n k N : Nat)
     (F : Nat → Spec.Aes.State) (s : State) : Prop where
   keep : Keep [.r6, .r7, .r8, .r9, .r10] s₀ s
   ptr : s.gpr .r6 = D + BitVec.ofNat 64 (16*(k+N))
-  counter : s.gpr .r8 = if ctr then s₀.gpr .r8 + BitVec.ofNat 64 N else s₀.gpr .r8
+  counter : s.vpr counterBase = if ctr then ctrAdd (s₀.vpr counterBase) N else s₀.vpr counterBase
   left : s.gpr .r7 = s₀.gpr .r7 - BitVec.ofNat 64 N
-  processed : Processed m₀ s.mem D n (k+N) F
-  frame : Frame [⟨D, 16*n⟩] s₀.mem s.mem
-  fixed : ∀ r, r ∉ key :: data :: counterWord :: batchRegs N → s.vpr r = s₀.vpr r
+  processed : Processed m₀ s.mem E n (k+N) F
+  frame : Frame [⟨E, 16*n⟩] s₀.mem s.mem
+  fixed : ∀ r, r ∉ key :: data :: counterBase :: batchRegs N → s.vpr r = s₀.vpr r
 
-theorem group_ok (inverse ctr : Bool) (N : Nat) (s : State) {nr n k : Nat} {m₀ : Mem}
-    {D : Addr} {F : Nat → Spec.Aes.State} (hN : N ≤ 8) (hkn : k+N ≤ n) (hsize : 16*n ≤ 2^64)
-    (hp : Inputs nr s) (hc : ctr = true → s.vpr counterMask = counterControl)
-    (hw : (⟨D, 16*n⟩ : Region) ∈ s.wr)
-    (hptr : s.gpr .r6 = D + BitVec.ofNat 64 (16*k)) (hproc : Processed m₀ s.mem D n k F)
+/-- A batch, reading the blocks at `D` and storing them at `E` (through the
+offset register `o`, which holds `E - D`). -/
+theorem group_ok (inverse ctr : Bool) (N : Nat) (o : Reg) (s : State) {nr n k : Nat} {m₀ : Mem}
+    {D E : Addr} {F : Nat → Spec.Aes.State} (hN : N ≤ 8) (hkn : k+N ≤ n) (hsize : 16*n ≤ 2^64)
+    (hp : Inputs nr s) (hc : ctr = true → s.vpr counterStep = counterOne)
+    (hw : (⟨E, 16*n⟩ : Region) ∈ s.wr) (hrd : (⟨D, 16*n⟩ : Region) ∈ s.rd ++ s.wr)
+    (ho : o ∉ [.r6, .r9, .r10]) (hO : s.gpr o = E - D)
+    (hptr : s.gpr .r6 = D + BitVec.ofNat 64 (16*k)) (hproc : Processed m₀ s.mem E n k F)
     (hF : ∀ i < N, ∀ v, aesState v = result inverse nr (schedule nr s) (aesState (readValue ctr s i)) →
-      ∀ m, Processed m₀ m D n (k+i) F →
+      ∀ m, Processed m₀ m E n (k+i) F → Frame [⟨E, 16*n⟩] s.mem m →
         aesState (outputAt ctr v m (D + BitVec.ofNat 64 (16*(k+i)))) = F (k+i)) :
-    WP isa (Impl.Aes.PPC64LE.Crypto.group inverse ctr N) s (BatchDone ctr s m₀ D n k N F) := by
+    WP isa (Impl.Aes.PPC64LE.Crypto.group inverse ctr N o) s (BatchDone ctr s m₀ D E n k N F) := by
   have hr : ∀ i < N, InRegions (s.rd ++ s.wr) (s.gpr .r6 + BitVec.ofNat 64 (16*i)) 16 := by
     intro i hi
     rw [hptr, Offset.add_add]
-    exact ⟨⟨D, 16*n⟩, List.mem_append_right _ hw,
+    exact ⟨⟨D, 16*n⟩, hrd,
       Offset.contains_base D (d := 16*k+16*i) (n := 16) (k := 16*n) (by omega) (by omega)⟩
   have hb := batch_cipher_ok inverse ctr N s hN hp hc hr
   rw [Impl.Aes.PPC64LE.Crypto.group]
@@ -124,22 +127,27 @@ theorem group_ok (inverse ctr : Bool) (N : Nat) (s : State) {nr n k : Nat} {m₀
   have hzero : u.gpr .r0 = 0 := (hu.effects.keep.gpr (by decide)).trans hp.zero
   have hmask : u.vpr mask = byteMask := by
     have facts := batchFacts ⟨N, by omega⟩
-    exact (hu.effects.v mask (by simp [facts.2.2.1, mask, key, counterWord])).trans hp.mask
-  have hwu : (⟨D, 16*n⟩ : Region) ∈ u.wr := by rw [hu.effects.keep.2.2]; exact hw
+    exact (hu.effects.v mask (by simp [facts.2.2.1, mask, key, counterBase])).trans hp.mask
+  have hwu : (⟨E, 16*n⟩ : Region) ∈ u.wr := by rw [hu.effects.keep.2.2]; exact hw
+  have hru : (⟨D, 16*n⟩ : Region) ∈ u.rd ++ u.wr := by
+    rw [hu.effects.keep.2.1, hu.effects.keep.2.2]; exact hrd
+  have hOu : u.gpr o = E - D := (hu.effects.keep.gpr ho).trans hO
+  have ho6 : o ≠ .r6 := fun e => ho (by simp [e])
   have hpu : u.gpr .r6 = D + BitVec.ofNat 64 (16*k) := hu.ptr.trans hptr
-  have hpr : Processed m₀ u.mem D n k F := by rw [hu.effects.mem]; exact hproc
-  refine WP.mono (write_ok ctr hN hkn hsize hwu hzero hmask hpu hpr
-    (fun i hi m hm => hF i hi _ (hu.val i hi) m hm)) fun v hv => ?_
+  have hpr : Processed m₀ u.mem E n k F := by rw [hu.effects.mem]; exact hproc
+  refine WP.mono (write_ok ctr hN hkn hsize hwu hru ho6 hOu hzero hmask hpu hpr
+    (fun i hi m hm hf => hF i hi _ (hu.val i hi) m hm (by rw [← hu.effects.mem]; exact hf))) fun v hv => ?_
   simp only [batchRegs, List.length_map, List.length_range]
   refine WP.mono (count_ok N v hN) fun w ⟨hl, he⟩ => ?_
   refine ⟨((hu.effects.keep.trans hv.keep).trans he.keep).mono (by simp), ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact (he.keep.gpr (by decide)).trans hv.ptr
-  · rw [he.keep.gpr (by decide), hv.keep.gpr (by decide), hu.counter]
+  · have facts := batchFacts ⟨N, by omega⟩
+    rw [he.v _ (by simp), hv.fixed _ (by simp [facts.2.2.2.1, counterBase, data]), hu.counter]
   · rw [hl, hv.keep.gpr (by decide), hu.effects.keep.gpr (by decide)]
   · rw [he.mem]; exact hv.processed
   · rw [he.mem, ← hu.effects.mem]; exact hv.frame
   · intro r hr
-    have hr' : r ≠ key ∧ r ≠ data ∧ r ≠ counterWord ∧ r ∉ batchRegs N := by
+    have hr' : r ≠ key ∧ r ≠ data ∧ r ≠ counterBase ∧ r ∉ batchRegs N := by
       simpa only [List.mem_cons, not_or] using hr
     rw [he.v r (by simp), hv.fixed r (by simp [hr'.2.1, hr'.2.2.2]),
       hu.effects.v r (by simp [hr'.1, hr'.2.2.1, hr'.2.2.2])]

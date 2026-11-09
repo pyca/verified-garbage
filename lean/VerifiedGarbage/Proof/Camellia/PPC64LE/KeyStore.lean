@@ -90,8 +90,6 @@ theorem strRev_ok (s : State) (t n : Reg) {d : Nat} (hd : d < 32768) (ht : t ≠
 
 theorem hiReg_ne : ∀ v < 4, hiReg v ≠ t0 ∧ hiReg v ≠ t1 ∧ loReg v ≠ t0 ∧ loReg v ≠ t1 := by decide
 
-theorem hiReg_ne12 : ∀ v < 4, hiReg v ≠ .r12 ∧ loReg v ≠ .r12 := by decide
-
 /-- One subkey, stored byte-swapped at word `i` of `r5`. -/
 theorem subkey_ok (s : State) {i v r : Nat} {hi : Bool} (hv : v < 4) (hi34 : i < 34)
     (hw : InRegions s.wr (s.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8) :

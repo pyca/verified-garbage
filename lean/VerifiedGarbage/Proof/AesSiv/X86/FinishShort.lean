@@ -263,7 +263,7 @@ theorem shortTail_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec
 stack below `SP`. -/
 abbrev finR (W SP : BitVec 32) (out : Nat) : List Region :=
   [⟨w64 W + BitVec.ofNat 64 out, 16⟩, ⟨w64 W + BitVec.ofNat 64 32, 32⟩, ⟨w64 W + BitVec.ofNat 64 144, 32⟩, wS W,
-    ⟨w64 W + BitVec.ofNat 64 256, 2176⟩, below SP 56]
+    ⟨w64 W + BitVec.ofNat 64 256, 2176⟩, below SP 60]
 
 /-- What `finish out` leaves: S2V's end, from `D` and the string `P`, at
 `W + out`. -/
@@ -322,7 +322,7 @@ theorem ctxMac_block (m : Mem) (C : Addr) (R : Nat) {T : List Byte} (hT : T.leng
     Spec.Siv.ctxMac m C R T = Spec.Cmac.aesWith R (bytesAt m C (16 * (R + 1)))
       (Spec.Cmac.xor (Spec.Cmac.lastBlock 16 (bytesAt m (C + BitVec.ofNat 64 240) 16)
         (bytesAt m (C + BitVec.ofNat 64 256) 16) T) (Spec.Cmac.zeros 16)) := by
-  have := Siv.cmacWith_split (Spec.Siv.schedCiph m C R) (bytesAt m (C + 240) 16) (bytesAt m (C + 256) 16)
+  have := Siv.macWith_split (Spec.Siv.schedCiph m C R) (bytesAt m (C + 240) 16) (bytesAt m (C + 256) 16)
     (msg := []) (last := T) (by decide) (by omega_arith) (.inl rfl)
   simp only [List.nil_append] at this
   rw [Spec.Siv.ctxMac, this, Proof.Cmac.xor_comm]

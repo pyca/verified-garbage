@@ -41,12 +41,12 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.secp256k1
   inst := Spec.Ecdsa.Secp256k1.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inr (.inl rfl), .inl rfl, secp256k1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.Secp256k1.curve = 0; rw [secp256k1_nBits]
-  coreN := "vg_ecdsa_secp256k1_sign"
+  coreN := "vg_ecdsa_secp256k1_sign_k"
   coreC := Impl.Ecdsa.Arm.signSecp256k1
   coreConsts := []
   coreX := by
@@ -62,6 +62,6 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve where
     simpa only [coreK,coreSigOf,Spec.Secp256k1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.secp256k1,Impl.Ecdsa.Arm.secp256k1With,Proof.Ecdsa.Arm.Secp256k1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
       Proof.Ecdsa.Arm.Secp256k1.signArm] using Proof.Ecdsa.Arm.Secp256k1.sign_ct
   coreStack := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blk := by rfcT_decide
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

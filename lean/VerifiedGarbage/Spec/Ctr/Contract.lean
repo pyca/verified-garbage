@@ -22,8 +22,8 @@ It reads the AES key schedule that `vg_aes_expand_key`
 start of a 240-byte buffer, and transforms `n` whole blocks in place, from
 the counter block in `ctr`, which it replaces with the one to continue from
 (`Ctr.next`): so a caller may process a message in pieces of whole blocks,
-keeping `ctr` between calls. A partial last block is the caller's: CTR of a
-zero block is the next output block, whose first bytes it XORs in.
+keeping `ctr` between calls. A partial last
+block is left to `vg_aes_ctr_final` (`Spec/Ctr/Final.lean`).
 
 It takes the `scratch` buffer of CBC's functions (`Spec/Cbc/Contract.lean`):
 room for the working space of `vg_aes_encrypt_blocks` (`[u64; 256]`) and
@@ -49,9 +49,9 @@ public arguments: the counter block's last four bytes, the 32-bit counter
 def ctrLeak (m : Mem) (ctr : Addr) : List Nat :=
   ((Aes.bytesAt m ctr 16).drop 12).map (·.toNat)
 
-/-- For `rounds` of 10, 12 or 14, with the key schedule `w` in the first
-`16 (rounds + 1)` bytes at `schedule`: replaces the `n` blocks at `data`
-with their CTR encryption or decryption (§6.5) by AES with `w`, from the
+/-- For `rounds` of 10, 12 or 14, and every AES key `K` whose key schedule
+is at `schedule` with `rounds` rounds (`Aes.KeySchedule`): replaces the `n` blocks at `data`
+with their CTR encryption or decryption (§6.5) by AES with `K`, from the
 counter block at `ctr`, and that block with `Tₙ₊₁`, its `n`-th increment
 modulo `2¹²⁸` (unchanged if `n = 0`). -/
 def aesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
@@ -59,9 +59,10 @@ def aesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (pre := fun _schedule rounds _ctr _data _n _scratch _ =>
       rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
     (post := fun schedule rounds ctr data n _scratch m m' _ =>
-      let ciph := Cbc.aesWith rounds.toNat (Aes.bytesAt m schedule (16 * (rounds.toNat + 1)))
-      Cbc.blocksAt m' data n.toNat = crypt ciph (Aes.bytesAt m ctr 16) (Cbc.blocksAt m data n.toNat) ∧
-        Aes.bytesAt m' ctr 16 = next (Aes.bytesAt m ctr 16) n.toNat)
+      ∀ key, Aes.KeySchedule m schedule rounds.toNat key →
+        let ciph := Cbc.aes key
+        Cbc.blocksAt m' data n.toNat = crypt ciph (Aes.bytesAt m ctr 16) (Cbc.blocksAt m data n.toNat) ∧
+          Aes.bytesAt m' ctr 16 = next (Aes.bytesAt m ctr 16) n.toNat)
     (leak := some fun _schedule _rounds ctr _data _n _scratch m => ctrLeak m ctr)
     (stack := stack)
 

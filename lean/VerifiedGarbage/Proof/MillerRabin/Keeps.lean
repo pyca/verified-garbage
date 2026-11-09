@@ -35,22 +35,6 @@ theorem keeps_word {L : Proof.MillerRabin.Round.Workspace} {B : Addr} {n w d : N
     omega_arith
   · omega_arith
 
-theorem keeps_wv {L : Proof.MillerRabin.Round.Workspace} {B : Addr} {n w d k : Nat} {m m' : Mem}
-    (h : Proof.MillerRabin.Round.Keeps L B n w m m') (hd : d + 8 * k ≤ 8 * n)
-    (hh : ∀ j ∈ [L.flag, L.value, L.words, L.windows, L.digit], d + 8 * k ≤ 8 * j ∨ 8 * j + 8 ≤ d)
-    (ha : ∀ j ∈ [2, 3, 5, 6, L.base],
-      d + 8 * k ≤ Proof.Rsa.Mont.arrAt w j ∨ Proof.Rsa.Mont.arrAt w j + 8 * (w + 2) ≤ d)
-    (ht : d + 8 * k ≤ Proof.Rsa.Mont.arrAt w L.table ∨ Proof.Rsa.Mont.arrAt w (L.table + 16) ≤ d) :
-    wv m' B d k = wv m B d k := by
-  induction k with
-  | zero => rfl
-  | succ k ih =>
-    rw [wv, wv, ih (by omega_arith) (fun j hj => by have := hh j hj; omega_arith)
-      (fun j hj => by have := ha j hj; omega_arith) (by omega_arith)]
-    rw [keeps_word h (by omega_arith)
-      (fun j hj => by have := hh j hj; omega_arith)
-      (fun j hj => by have := ha j hj; omega_arith) (by omega_arith)]
-
 def mutRanges (L : Proof.MillerRabin.Round.Workspace) (w : Nat) : List (Nat × Nat) :=
   [L.flag, L.value, L.words, L.windows, L.digit].map (fun k => (8 * k, 8)) ++
     ([2, 3, 5, 6, L.base].map (fun j => (Proof.Rsa.Mont.arrAt w j, 8 * (w + 2))) ++

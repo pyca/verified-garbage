@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86.RandomSign
 public import VerifiedGarbage.Proof.Dsa.X86.RandomAttemptState
 public import VerifiedGarbage.Proof.Dsa.X86.RandomCallCT
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 
 import VerifiedGarbage.Proof.Dsa.X86.RandomBodyCT
 
@@ -25,10 +26,10 @@ theorem drop_take_prefix {α : Type} (xs : List α) {p q n : Nat} (h : p + q ≤
 
 /-- Two entries with the same public data: the same arguments, q, public
 key bytes, status and trace. -/
-theorem random_public {s t : State} (H : (Spec.Dsa.randomSignContract abi 232).pub s t) :
+theorem random_public {s t : State} (H : (randomSignCheckedContract abi 232).pub s t) :
     pubOf s = pubOf t ∧ keyLeak s = keyLeak t ∧ (rResult s).status = (rResult t).status ∧
       (rResult s).trace = (rResult t).trace := by
-  sig_pub [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes] at H
+  sig_pub [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes] at H
   obtain ⟨hsp, hleak, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12⟩ := H
   change keyLeak s ++ [(rResult s).status, (rResult s).used] ++ (rResult s).trace =
     keyLeak t ++ [(rResult t).status, (rResult t).used] ++ (rResult t).trace at hleak
@@ -66,9 +67,9 @@ theorem alloc_push {s₀ : State} (A : RandomSignABI s₀) :
 
 /-- `vg_dsa_sign_random` leaks only what its contract makes public. -/
 theorem randomSign_constantTime (F : SignFn) :
-    ConstantTime isa (Spec.Dsa.randomSignContract abi 232).pre (Spec.Dsa.randomSignContract abi 232).pub
-      (code F.name F.code) := by
-  intro s t tsa tsb u w hs ht hpub ea eb
+    ConstantTime isa (fun s => (randomSignCheckedContract abi 232).pre s ∧ KeyValid F.valid s)
+      (randomSignCheckedContract abi 232).pub (code F.name F.code) := by
+  intro s t tsa tsb u w ⟨hs, hvs⟩ ⟨ht, hvt⟩ hpub ea eb
   have As := randomSignABI_of hs
   have At' := randomSignABI_of ht
   obtain ⟨e, hk, hst, htr⟩ := random_public hpub
@@ -80,7 +81,8 @@ theorem randomSign_constantTime (F : SignFn) :
       rw [alloc_push At', Option.some.injEq] at hbp
       subst hap hbp
       have hh := body_ct F _ _ _ _ _ _ ⟨⟨pubOf s, keyLeak s, (rResult s).status, (rResult s).trace⟩,
-        ⟨s, As, rfl, ⟨rfl, rfl, rfl⟩, rfl⟩, ⟨t, At', e.symm, ⟨hk.symm, hst.symm, htr.symm⟩, rfl⟩⟩ hab hbb |>.1
+        ⟨s, As, rfl, ⟨rfl, rfl, rfl, hvs⟩, rfl⟩,
+        ⟨t, At', e.symm, ⟨hk.symm, hst.symm, htr.symm, hvt⟩, rfl⟩⟩ hab hbb |>.1
       simpa only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] using hh
 
 end VG.Proof.Dsa.X86

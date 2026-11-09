@@ -174,7 +174,6 @@ def finalizeX86 : Contract X86.isa where
 
 end VG.Proof.Sha512
 
-
 namespace VG.Proof.Sha512.X86
 
 open VG VG.X86 VG.Impl.Sha512.X86
@@ -281,15 +280,8 @@ include h
 theorem ctx {s : State} (hesi : s.gpr .esi = scr s₀) (hw : s.wr = s₀.wr) : Ctx (scr s₀) s :=
   ⟨hesi, h.scr_fits, by rw [hw, h.wr]; simp⟩
 
-theorem accS {s : State} (hw : s.wr = s₀.wr) : Acc s.wr (st s₀) 64 :=
-  Acc.of_mem (by rw [hw, h.wr]; simp) h.st_fits
-
 theorem accV {s : State} (hw : s.wr = s₀.wr) : Acc s.wr (scr s₀) 224 :=
   Acc.of_mem (by rw [hw, h.wr]; simp) h.scr_fits
-
-theorem in_st {s : State} (hw : s.wr = s₀.wr) {d : Nat} (hd : d + 4 ≤ 64) :
-    InRegions (s.rd ++ s.wr) (addr (st s₀) d) 4 :=
-  mem_rd (h.accS hw d hd)
 
 theorem in_scr {s : State} (hw : s.wr = s₀.wr) {d : Nat} (hd : d + 4 ≤ 224) :
     InRegions (s.rd ++ s.wr) (addr (scr s₀) d) 4 :=
@@ -576,7 +568,6 @@ theorem enter_ok {s : State} {H : HashValue} (hesi : s.gpr .esi = scr s₀) (hwr
     i4, v0, v1, v2, v4, reduceCtorEq, ↓reduceIte, Option.map_some, and_self, Option.some.injEq,
     exists_eq_left']
 
-
 /-! ## Adding them into the hash value -/
 
 theorem exit_ok {s : State} (hesi : s.gpr .esi = scr s₀) (hwr : s.wr = s₀.wr) :
@@ -861,13 +852,6 @@ theorem prologue_eq : prologue = .mov .eax (.mem ⟨.esp, 16⟩) :: (Spill.saveC
 theorem epilogue_eq :
     epilogue = Spill.restoreCode .esi ([(.ebx, 200), (.edi, 208), (.ebp, 212)] ++ [(.esi, 204)]) ++ [] :=
   rfl
-
-/-- Reading an argument after writing the scratch buffer. -/
-theorem readW_writeW_scr_arg {s₀ : State} (hp : Pre s₀) (m : Mem) (v : BitVec 32) {d e : Nat}
-    (hd : d + 4 ≤ 224) (he : 4 ≤ e) (he' : e + 4 ≤ 20) :
-    (m.writeW (addr (scr s₀) d) v).readW (addr (esp₀ s₀) e) 32 = m.readW (addr (esp₀ s₀) e) 32 :=
-  Mem.readW_writeW_sep (hp.arg_scr.sep (hp.arg_contains he he')
-    (contains_addr hd (by bdd_omega) hp.scr_fits)) (by decide)
 
 theorem readW_writeW_scr {s₀ : State} (hp : Pre s₀) (m : Mem) (v : BitVec 32) {d e : Nat}
     (hd : d + 4 ≤ 224) (he : e + 4 ≤ 224) (h : d + 4 ≤ e ∨ e + 4 ≤ d) :

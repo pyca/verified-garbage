@@ -35,10 +35,6 @@ theorem far_bytes {base p : Addr} {n : Nat} {m m' : Mem} (h : Outside base 0 819
   simp only [Spec.Ed448.bytesAt]
   exact List.map_congr_left fun i hi => h _ (Or.inr (hf i (List.mem_range.mp hi)))
 
-theorem pt_congr {e e' : Fin 22 → Spec.X448.Fe} {a b c : Fin 22} (ha : e' a = e a) (hb : e' b = e b)
-    (hc : e' c = e c) : pt e' a b c = pt e a b c := by
-  simp only [pt, ha, hb, hc]
-
 /-- `x0 := x1`. -/
 theorem mov01_ok (s : State) :
     WP isa (.block [.addImm .x .x0 .x1 0]) s fun t => t.gpr .x0 = s.gpr .x1 ∧ t.mem = s.mem ∧ Keeps [.x0] s t := by

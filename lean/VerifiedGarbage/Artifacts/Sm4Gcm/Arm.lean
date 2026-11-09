@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.Arm.Batch32Verified
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # SM4-GCM on baseline ARMv7 -/
 

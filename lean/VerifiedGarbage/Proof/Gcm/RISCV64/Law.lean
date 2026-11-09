@@ -1971,18 +1971,4 @@ theorem law_correct (s : State) (hs : ghashX.pre s) :
 
 instance : GhashLaw := ⟨law_correct⟩
 
-def ghashSat : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 0x2000 | .a2 => 0x3000 | .a3 => 1 | .a4 => 0x4000 | _ => 0
-  sp := 0x10000
-  mem _ := 0
-  rd := [⟨0x1000, 16⟩, ⟨0x3000, 16⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x4000, 256⟩]
-
-theorem ghash_verified : Verified RISCV64.target ghash (Proof.Gcm.ghashContract RISCV64.abi 2048) :=
-  Verified.of_correct ghash_correct ghash_ct (by
-    sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, ghashX, RISCV64.abi, RISCV64.argRegs]
-      [ghashSat]
-      using ghashSat)
-
 end VG.Proof.Gcm.RISCV64

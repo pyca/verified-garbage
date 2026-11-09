@@ -194,11 +194,6 @@ theorem G.coef {s₀ s : State} (hp : Pre s₀) {b t k : Nat} (h : G s₀ b t k 
       coeff_contains _ (by rw [n_eq]; omega_using [ht, hi])⟩
   · rw [e, ← coeffAt_eq, hp.f_keep h.frame (by bdd_omega)]
 
-/-- Coefficient `8 t + i` of group `t`, from `esi`, with an offset `o` of the index. -/
-theorem G.coefO {s₀ s : State} (hp : Pre s₀) {b t k : Nat} (h : G s₀ b t k s) (ht : t < 32) (o : Nat)
-    {i : Nat} (hi : o + i < 8) : Coef s (o + i) (coeffAt s₀.mem (fA s₀) (8 * t + (o + i))).toNat :=
-  h.coef hp ht hi
-
 /-- Store byte `k` of group `t` at `edi + k`. -/
 theorem G.st8 {s₀ s : State} (hp : Pre s₀) {b t k : Nat} (h : G s₀ b t k s) (hk : b * t + k < (lenV s₀).toNat)
     {r : Reg8} (hv : (s.gpr r.reg).setWidth 8 = (L s₀)[b * t + k]!) {is : List Instr} {Q : State → Prop}

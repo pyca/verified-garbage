@@ -152,8 +152,6 @@ theorem sub_val {x a b c M : Nat} (e : x + b = a + M * c) (hc : c ≤ 1) (hx : x
     rw [Nat.mod_eq_of_lt (by omega)]
     omega
 
-theorem subW_lt (w a b : Nat) : subW w a b < 2 ^ (32 * w) := Nat.mod_lt _ (Nat.two_pow_pos _)
-
 /-- `x + y = x - (0 - y)` modulo `2^(32 w)`. -/
 theorem subW_neg {w x y : Nat} (hy : y < 2 ^ (32 * w)) :
     subW w x (subW w 0 y) = (x + y) % 2 ^ (32 * w) := by

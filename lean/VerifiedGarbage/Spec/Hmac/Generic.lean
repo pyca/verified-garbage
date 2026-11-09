@@ -20,18 +20,16 @@ An `Instance` is a hash function as the Rust interface has it: the names of
 its functions `vg_hmac_<hash>_init` and `vg_hmac_<hash>_finalize` (and
 `vg_pbkdf2_hmac_<hash>_iterate` and `vg_pbkdf2_hmac_<hash>`,
 `Spec/Pbkdf2/Generic.lean`), their working space, and their documentation
-(`Instance.initApi`, `Instance.finalizeApi`). Every hash function, SHA-256
-included, is an `Instance`, and a new one needs nothing else.
+(`Instance.initAnyKeyApi`, `Instance.finalizeApi`). Every hash function,
+SHA-256 included, is an `Instance`, and a new one needs nothing else.
 
-`init` has two contracts. `initContract` (`Instance.initApi`), which every
-target implements, takes a key of at most a block, and leaves FIPS 198-1
-§4's step 2 (hashing a longer key) to its caller. `initAnyKeyContract`
-(`Instance.initAnyKeyApi`), which no target implements yet, takes a key of
-any length, and does all of steps 1–3 (`blockKey`): with the same signature,
-an implementation hashes a long key with the verified streaming functions of
-`H` in more working space (`Instance.initAnyKeyScratch`). A target registers
-an implementation of `vg_hmac_<hash>_init` against one of them, never two;
-`initContract` is removed once every target implements `initAnyKeyContract`.
+`vg_hmac_<hash>_init` (`Instance.initAnyKeyApi`) has the contract
+`initAnyKeyContract`: it takes a key of any length and does all of FIPS
+198-1 §4's steps 1–3 (`blockKey`), hashing a long key with the verified
+streaming functions of `H` in more working space
+(`Instance.initAnyKeyScratch`). `initContract` takes a key of at most a
+block and leaves step 2 (hashing a longer key) to its caller: no `Api` has
+it, only functions the verified code calls internally.
 
 `A` is the target's calling convention. The signatures fix where the
 arguments are, the memory each function may access, disjointness, and that
@@ -207,23 +205,6 @@ def initContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
 def finalizeContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   Hmac.finalizeContract I.S A stack
 
-/-- `vg_hmac_<hash>_init` on every target. -/
-def initApi : Api where
-  module := s!"hmac_{I.rust}"
-  name := s!"vg_hmac_{I.rust}_init"
-  sig := initSig I.S
-  writeArgs := true
-  contracts := some fun A stack => I.initContract A stack
-  summary := s!"Starts an HMAC-{I.alg} computation with a key of at most {I.S.H.blockSize} bytes: \
-    makes the {I.alg} streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent \
-    `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` padded with zeros to \
-    {I.S.H.blockSize} bytes (FIPS 198-1). The text is then absorbed with \
-    `{I.update}` on `*inner` (its `count` starting at {I.S.H.blockSize}), and the MAC computed \
-    with `vg_hmac_{I.rust}_finalize`.\n\n\
-    Contract: `VG.Spec.Hmac.Instance.initContract` of `VG.Spec.Hmac.{I.lean}`. Constant time: \
-    only the pointers and `key_len` may affect timing, not the key."
-  safety := [s!"`key_len` must be at most {I.S.H.blockSize}."]
-
 /-- The number of 64-bit words of working space of `vg_hmac_<hash>_init`
 for a key of any length (`initAnyKeyContract`), which an implementation keeps
 on its stack: that of the HMAC functions (`scratch`, which holds the working
@@ -239,9 +220,7 @@ def initAnyKeyScratch : Nat := I.scratch + I.S.stateBytes
 def initAnyKeyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   Hmac.initAnyKeyContract I.S A stack
 
-/-- `vg_hmac_<hash>_init` for a key of any length, on every target. It has
-the Rust name and signature of `initApi`, which it replaces: the two are
-never registered on the same target. -/
+/-- `vg_hmac_<hash>_init`, for a key of any length, on every target. -/
 def initAnyKeyApi : Api where
   module := s!"hmac_{I.rust}"
   name := s!"vg_hmac_{I.rust}_init"

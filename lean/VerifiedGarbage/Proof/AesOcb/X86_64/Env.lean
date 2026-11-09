@@ -83,15 +83,8 @@ theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 35
     (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
 
-theorem k_w' {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 3584) :
-    (⟨K + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
-  (L.k_w.sub_left (kSub ha)).sub_right (wSub hd)
-
 theorem stk_w' {a n : Nat} (ha : a + n ≤ 3584) : (below SP 8).Disjoint ⟨W + BitVec.ofNat 64 a, n⟩ :=
   L.stk_w.sub_right (wSub ha)
-
-theorem stk_k' {a n : Nat} (ha : a + n ≤ 256) : (below SP 8).Disjoint ⟨K + BitVec.ofNat 64 a, n⟩ :=
-  L.stk_k.sub_right (kSub ha)
 
 end Lay
 
@@ -108,9 +101,6 @@ theorem wW {d n : Nat} (h : d + n ≤ 3584) : InRegions s.wr (W + BitVec.ofNat 6
 
 theorem wR {d n : Nat} (h : d + n ≤ 3584) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
   in_left (P.wW h)
-
-theorem kC {d n : Nat} (h : d + n ≤ 256) : Covers [⟨K + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
-  covers_off P.k h (by decide)
 
 theorem wC {d n : Nat} (h : d + n ≤ 3584) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.w h (by decide)

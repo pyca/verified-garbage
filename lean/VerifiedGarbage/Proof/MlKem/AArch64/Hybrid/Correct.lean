@@ -14,7 +14,7 @@ import Mathlib.Data.Nat.Cast.Order.Ring
 The constant tables kept apart from every write, the 128 bytes below the stack
 pointer the x3 calls use included (`TStk`, `WP.tables128`), for the
 correctness of the hashing encapsulation (`Kem16/Encaps.lean`: the first phase,
-`startH_ok`; the matrix, `matrixH_ok`; `H` and `G`, `tailH_ok`; then noise,
+`startH_ok`; the matrix, `matrixH_ok`; `H` and `G`, `tailHN_ok`; then noise,
 `u`, `v` and the epilogue).
 -/
 

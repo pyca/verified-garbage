@@ -69,8 +69,7 @@ theorem field_lt (X d k : Nat) (hd : d ≤ 20) : X / 2 ^ (d * k) % 2 ^ d < 2 ^ 2
 the address of `32 d` readable bytes and `r1` that of a writable
 polynomial, disjoint and not wrapping around: it writes `BitUnpack` of the
 bytes to the polynomial, reduced, and changes nothing else but the
-registers `r0`–`r4` and `r12` (`unpackRegs`) and the flags. Its constant
-time (with `r0` and `r1` public) is `unpackLoop_ct18` and `unpackLoop_ct20`.
+registers `r0`–`r4` and `r12` (`unpackRegs`) and the flags.
 -/
 
 theorem unpackLoop_buFin_ok {B d c nb : Nat} (hs : Shape d c nb) (hB : encodable (BitVec.ofNat 32 B) = true)
@@ -93,21 +92,6 @@ theorem unpackLoop_buFin_ok {B d c nb : Nat} (hs : Shape d c nb) (hB : encodable
     BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show B < 2 ^ 32 by omega_arith),
     Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega_arith), toRq, Vector.getElem_map, bitUnpack_get _ _ _ hi, hd,
     ofInt_sub (by omega_arith)]
-
-/-- The loop of `BitUnpack` is constant time, with `r0` and `r1` public. -/
-theorem unpackLoop_ct18 {P : State → State → Prop} (hP : ∀ a b, P a b → a.gpr .r0 = b.gpr .r0 ∧ a.gpr .r1 = b.gpr .r1) :
-    RelCT isa P (unpackLoop (buFin 131072) 18 4 9) fun _ _ => True :=
-  RelCT.taint (A := VG.Arm.taint) (Taint.ofRegs [.r0, .r1]) (fun a b h => Taint.agree_ofRegs fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    exacts [(hP a b h).1, (hP a b h).2]) (by native_taint_decide)
-
-theorem unpackLoop_ct20 {P : State → State → Prop} (hP : ∀ a b, P a b → a.gpr .r0 = b.gpr .r0 ∧ a.gpr .r1 = b.gpr .r1) :
-    RelCT isa P (unpackLoop (buFin 524288) 20 2 5) fun _ _ => True :=
-  RelCT.taint (A := VG.Arm.taint) (Taint.ofRegs [.r0, .r1]) (fun a b h => Taint.agree_ofRegs fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    exacts [(hP a b h).1, (hP a b h).2]) (by native_taint_decide)
 
 /-! ## `vg_mldsa_bit_unpack` -/
 

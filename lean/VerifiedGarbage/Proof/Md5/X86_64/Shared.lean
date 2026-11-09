@@ -29,13 +29,6 @@ in a frame that allocates it (`Verified.stackScratch`).
 
 namespace VG.Proof.Md5.X86_64.Shared
 
-theorem compress :
-    Verified X86_64.target Impl.Md5.X86_64.compress (Proof.Md5.compressContract X86_64.abi) :=
-  Proof.Md5.X86_64.compress_verified.of_implies (by
-    sig_implies [Proof.Md5.compressContract, Proof.Md5.compressSig,
-      Proof.Md5.compressX86_64, X86_64.abi, X86_64.argRegs]
-      [Proof.Md5.X86_64.satState] using Proof.Md5.X86_64.satState)
-
 theorem init :
     Verified X86_64.target Impl.Md5.X86_64.Stream.init (Spec.Md5.initContract X86_64.abi) :=
   Proof.Md5.X86_64.Stream.init_verified.of_implies (by

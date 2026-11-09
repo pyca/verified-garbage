@@ -39,9 +39,4 @@ theorem pointTableRead_ok {x : BitVec 32} {s : State} (hc : Ctx x s) (o : Nat)
   exact ⟨(FieldKeep.of_mem ka ma).trans (FieldKeep.of_copy kt (ka.ctx hc)),
     by rw [ma] at vt; exact vt, fun i hi => by rw [kt.high (ka.ctx hc) i hi, ma]⟩
 
-theorem Saved.copykeep {s₀ s t : State} {x : BitVec 32} {o n : Nat} (h : Saved s₀ x s)
-    (hx : x.toNat + 8192 ≤ 2 ^ 32) (k : ScalarKeep s t) (f : Frame [sub x o n] s.mem t.mem)
-    (ho : 16 ≤ o) (hn : o + n ≤ 8192) (ho' : o < 8192) : Saved s₀ x t :=
-  h.of_offset hx k f ho hn ho'
-
 end VG.Proof.Ed25519.X86

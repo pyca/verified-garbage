@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Entry
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.CT
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Correct
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Loop
@@ -96,23 +97,24 @@ private theorem entry_ct : RelCT isa (Two SInput) (.block entry) (fun _ _ => Tru
 /-- After the entry: the controller's words written. -/
 def SEntered (p : SPub) (t : State) : Prop :=
   ∃ s, SInput p s ∧ t.gpr .r31 = p.control ∧
-    t.mem = writeController s.mem p.control (entryValues s) ∧ Keep entryRegs s t
+    t.mem = writeController s.mem p.control (entryValues s) ∧ Keep entryRegs s t ∧ t.syms = s.syms
 
 private theorem entry_ready (p : SPub) (s : State) (h : SInput p s) :
     WP isa (.block entry) s (SEntered p) :=
-  WP.mono (entry_ok h) fun _ ⟨⟨hx, hm⟩, k⟩ => ⟨s, h, hx, hm, k⟩
+  WP.mono_syms (entry_ok h) fun _ ⟨⟨hx, hm⟩, k⟩ hy => ⟨s, h, hx, hm, k, hy⟩
 
 private theorem entered_ctl {p : SPub} {t : State} (h : SEntered p t) :
     SCTL ⟨p, 0, p.attempts⟩ (framed .r0 t) := by
-  obtain ⟨s, hi, hx, hm, k⟩ := h
-  exact ⟨s, search_start hi hx hm k⟩
+  obtain ⟨s, hi, hx, hm, k, hy⟩ := h
+  exact ⟨s, search_start hi hx hm k hy⟩
 
 /-- `mflr r0` keeps the state after the entry. -/
 private theorem mflr_ready (p : SPub) (t : State) (h : SEntered p t) :
     WP isa (.block [.mflr .r0]) t (SEntered p) := by
-  obtain ⟨s, hi, hx, hm, k⟩ := h
-  refine WP.mono (WP.keep [.r0] (Q := fun u => u.mem = t.mem) (by prun [exec_mflr]) (by decide))
-    fun u ⟨hu, ku⟩ => ⟨s, hi, (ku.gpr _ (by decide)).trans hx, hu.trans hm, k.trans' (ku.mono (by decide))⟩
+  obtain ⟨s, hi, hx, hm, k, hy⟩ := h
+  refine WP.mono_syms (WP.keep [.r0] (Q := fun u => u.mem = t.mem) (by prun [exec_mflr]) (by decide))
+    fun u ⟨hu, ku⟩ hyu => ⟨s, hi, (ku.gpr _ (by decide)).trans hx, hu.trans hm, k.trans' (ku.mono (by decide)),
+      hyu.trans hy⟩
 
 def SCTDone (p : SPub) (s : State) : Prop := ∃ original r, SDone p original r s
 
@@ -138,8 +140,8 @@ private theorem search_ct (c : Cand) : RelCT isa (Two SEntered) (search c.call) 
 
 private theorem search_ready (c : Cand) (p : SPub) (t : State) (h : SEntered p t) :
     WP isa (search c.call) t (SCTDone p) := by
-  obtain ⟨s, hi, hx, hm, k⟩ := h
-  exact WP.mono (search_body c hi hx hm k) fun _ ⟨hd, _, _⟩ => ⟨s, _, hd⟩
+  obtain ⟨s, hi, hx, hm, k, hy⟩ := h
+  exact WP.mono (search_body c hi hx hm k hy) fun _ ⟨hd, _, _⟩ => ⟨s, _, hd⟩
 
 private theorem finish_pointer (p : SPub) (s : State) (h : SCTDone p s) :
     WP isa (.block (finish.take 3)) s fun t => t.gpr .r4 = p.up ∧ t.gpr .r31 = p.control := by
@@ -171,7 +173,7 @@ theorem search_code_ct (c : Cand) : RelCT isa (Two SInput) (code c.call) (fun _ 
     (RelCT.seq (two_post (search_ct c) (search_ready c)) finish_ct)
 
 private theorem s_public_descriptor {s t : State} (h : searchPub s t) : sOfState s = sOfState t := by
-  obtain ⟨hsp, hr, hw, r3, r4, r5, r6, r7, r8, r9, r10, a0, a1⟩ := h
+  obtain ⟨hsp, hr, hw, r3, r4, r5, r6, r7, r8, r9, r10, a0, a1, hy⟩ := h
   have h0 : s.mem.readW (stackArg s 1) 64 = t.mem.readW (stackArg t 1) 64 := by
     change [word s.mem (stackArg s 1) 0, word s.mem (stackArg s 1) 8, word s.mem (stackArg s 1) 16,
       word s.mem (stackArg s 1) 24] = [word t.mem (stackArg t 1) 0, word t.mem (stackArg t 1) 8,
@@ -180,7 +182,7 @@ private theorem s_public_descriptor {s t : State} (h : searchPub s t) : sOfState
   have hrand : genRand s = genRand t := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hr
   unfold sOfState
   rw [genAttempts, genAttempts, h0, hrand, hsp, r3, r5, r8, r10, genLen, genLen, r4, genBits, genBits, r6,
-    genGen, genGen, r7, r9, a0, a1]
+    genGen, genGen, r7, r9, a0, a1, hy]
 
 theorem search_constantTime (c : Cand) :
     ConstantTime isa searchContract.pre searchContract.pub (code c.call) := by

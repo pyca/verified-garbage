@@ -1,13 +1,11 @@
 module
 
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
-public import VerifiedGarbage.Proof.ChaCha20.Contract
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
-meta import VerifiedGarbage.Proof.ChaCha20.Contract
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 meta import VerifiedGarbage.Proof.Aes.KeyExp
@@ -15,6 +13,10 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
+meta import VerifiedGarbage.Spec.ChaCha20
+meta import VerifiedGarbage.TCB.Artifact
 
 /-!
 # `vg_chacha20_xor_split_avx512` verified
@@ -59,24 +61,5 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : xorSplitX86_64.pre s₁) (h₂ : xo
 
 theorem xorSplit_ct : ConstantTime isa xorSplitX86_64.pre xorSplitX86_64.pub xorSplit :=
   VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
-
-/-- A state satisfying the precondition (with no data). -/
-def sat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rcx => 0x3000 | .r9 => 0x4000 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x2000, 0⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x3000, 0⟩, ⟨0x4000, 320⟩]
-
-theorem xorSplit_verified :
-    Verified X86_64.target xorSplit (Proof.ChaCha20.xorSplitContract X86_64.abi 24) :=
-  Verified.of_correct xorSplit_correct xorSplit_ct
-    (by sig_implies [Proof.ChaCha20.xorSplitContract, Proof.ChaCha20.xorSplitSig, Proof.ChaCha20.xorSplitPre,
-      X86_64.abi, X86_64.argRegs, Proof.ChaCha20.xorSplitX86_64]
-      [sat] using sat)
 
 end VG.Proof.ChaCha20.X86_64.Avx512Split

@@ -30,11 +30,6 @@ open VG.Impl.Rsa.Arm.Keys (hdr ptr)
 open VG.Proof.X25519.Arm (Rest Upd wp_mov wp_movw wp_dp op2_imm op2_reg dpVal)
 open VG.Proof.Rsa.Arm.Recover (VP)
 
-theorem setWidth_ofNat16 {n : Nat} (h : n < 2 ^ 16) : (BitVec.ofNat 16 n).setWidth 32 = BitVec.ofNat 32 n := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega)]
-
 /-- The top word of a number of `w + 2` words below `2^(32 w)`. -/
 theorem top_of_lt {m : Mem} {base : Addr} {d w : Nat} (h : val32 m base d (w + 2) < 2 ^ (32 * w)) :
     w32 m base (d + 4 * w) = 0 := by

@@ -108,8 +108,6 @@ theorem mkSra_ok {a : E} {x : BitVec 16} (ha : Hd L O a x) :
   · rename_i h
     exact Hd.of_eq (by simp only [E.eval]; rw [← ha.eq (by simpa using h)])
 
-theorem eval_mt (b : E) (z z' : Nat) : (mt b z z').eval L O = mtW (b.eval L O) z z' := rfl
-
 theorem mkAdd_ok {R : Rules} (hM : Model R L O) {a b : E} {x y : BitVec 16} (ha : Hd L O a x) (hb : Hd L O b y) :
     Hd L O (mkAdd R a b) (x + y) := by
   unfold mkAdd
@@ -199,8 +197,6 @@ end
 /-- Word `e` (`e < 16`) of `ymm r`. -/
 def wd (s : State) (r : XReg) (e : Nat) : BitVec 16 := word (s.lane r (e / 8)) (e % 8)
 
-theorem xr_xi (r : XReg) : xr (xi r) = r := by cases r <;> rfl
-
 theorem xi_inj {r r' : XReg} : xi r = xi r' ↔ r = r' := by
   cases r <;> cases r' <;> decide
 
@@ -210,12 +206,6 @@ theorem wd_setV256 (s : State) (d r : XReg) (lo hi : BitVec 128) {e : Nat} :
     wd (s.setV .l256 d lo hi) r e = if r = d then word (if e / 8 = 0 then lo else hi) (e % 8) else wd s r e := by
   simp only [wd, State.lane_setV256]
   split <;> rfl
-
-theorem lane_sel (s : State) (r : XReg) {e : Nat} (he : e < 16) :
-    (if e / 8 = 0 then s.lane r 0 else s.lane r 1) = s.lane r (e / 8) := by
-  by_cases h : e / 8 = 0
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true h), h]
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false h), show e / 8 = 1 by omega]
 
 /-- Word `e` of a 256-bit value, as `setV` splits it. -/
 theorem word_split (x : BitVec 256) {e : Nat} (he : e < 16) :

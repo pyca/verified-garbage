@@ -96,8 +96,8 @@ theorem extras_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.
     (by rw [wrd, vk.rd, urd]) (by rw [wwr, vk.wr, uwr]) (by rw [wsy, vsy, usy]), ?_, by rw [wsy, vsy, usy],
     ⟨fun r hr => ?_, by rw [wrd, vk.rd, urd], by rw [wwr, vk.wr, uwr], by rw [wk.sp, vk.sp, uk.sp],
       fun r hr => by
-        obtain ⟨n1, n2, n3, n4, n5⟩ := pv_ne r hr
-        rw [wk.vcs r hr, vk.v r n1 n2 n3 n4 n5, uk.vcs r hr]⟩⟩
+        obtain ⟨n1, n2, n3, n4, n5, n16, n17, n18, n19⟩ := pv_ne r hr
+        rw [wk.vcs r hr, vk.v r n1 n2 n3 n4 n5 n16 n17 n18 n19, uk.vcs r hr]⟩⟩
   · have hum : u.mem = s.mem := um
     have hl (k : Nat) (hk : k < 4) :
         ent u.mem (u.syms s5678Sym) (gIdx s.mem (s.gpr .x3) a b c' d k).toNat k =

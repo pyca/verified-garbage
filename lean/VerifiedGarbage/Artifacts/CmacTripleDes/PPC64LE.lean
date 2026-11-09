@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Lit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 

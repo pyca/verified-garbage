@@ -181,15 +181,6 @@ theorem subOpK {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base
   WP.seq (WP.mono (VG.Proof.X448.AArch64.Fast.subE hs hb ha hb' hoa hob) fun t ⟨tk, tb, ts, te⟩ =>
     h t tk tb ts te)
 
-/-- A copy in `opsK`, as in `ops`. -/
-theorem copyOpK {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) (o a : Index)
-    {rest : List Impl.X448.AArch64.Fast.Op} {Q : State → Prop}
-    (h : ∀ t, FKeep base s t → BEnv t.mem base → Same base [o] s.mem t.mem →
-      EV t.mem base = VG.Proof.X448.AArch64.opCopy o a (EV s.mem base) → WP isa (opsK rest) t Q) :
-    WP isa (opsK (.copy (slot o.val) (slot a.val) :: rest)) s Q :=
-  WP.seq (WP.mono (VG.Proof.X448.AArch64.Fast.copyE hs hb o a) fun t ⟨tk, tb, _, ts, te⟩ =>
-    h t tk tb ts te)
-
 /-! ## Chains with calls -/
 
 /-- The registers a chain with calls may change: the field operations', the counter `x19` (which

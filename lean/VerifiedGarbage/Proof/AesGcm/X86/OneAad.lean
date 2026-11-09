@@ -109,7 +109,7 @@ theorem setB_ok {sl : Nat} (h₃ : 128 ≤ sl) (h₄ : sl + 4 ≤ 240) {s : Stat
   · mems []
   · mems []
 
-theorem j0Frame_oF : ∀ r ∈ j0Frame (stOf (p.2 8)) (p.2 8) p.1 28, ∃ r' ∈ oF p, Region.Sub r r' := by
+theorem j0Frame_oF : ∀ r ∈ j0Frame (stOf (p.2 8)) (p.2 8) p.1 32, ∃ r' ∈ oF p, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -118,7 +118,7 @@ theorem j0Frame_oF : ∀ r ∈ j0Frame (stOf (p.2 8)) (p.2 8) p.1 28, ∃ r' ∈
   · exact ws_sub_oF
   · exact stk_sub_oF
 
-theorem absFrame_oF : ∀ r ∈ absFrame (stOf (p.2 8)) (p.2 8) p.1 28 16, ∃ r' ∈ oF p, Region.Sub r r' := by
+theorem absFrame_oF : ∀ r ∈ absFrame (stOf (p.2 8)) (p.2 8) p.1 32 16, ∃ r' ∈ oF p, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -127,7 +127,7 @@ theorem absFrame_oF : ∀ r ∈ absFrame (stOf (p.2 8)) (p.2 8) p.1 28 16, ∃ r
   · exact ws_sub_oF
   · exact stk_sub_oF
 
-theorem tFrame_oF : ∀ r ∈ tFrame (stOf (p.2 8)) (p.2 8) p.1 28 16, ∃ r' ∈ oF p, Region.Sub r r' := by
+theorem tFrame_oF : ∀ r ∈ tFrame (stOf (p.2 8)) (p.2 8) p.1 32 16, ∃ r' ∈ oF p, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -138,7 +138,7 @@ theorem tFrame_oF : ∀ r ∈ tFrame (stOf (p.2 8)) (p.2 8) p.1 28 16, ∃ r' �
 
 /-- A block of the state that `absorb 16` and `flush 16` keep (`J₀`, the counter block). -/
 theorem st_absFrame {d : Nat} (hd : d + 16 ≤ 16 ∨ (48 ≤ d ∧ d + 16 ≤ 80)) :
-    ∀ r ∈ absFrame (stOf (p.2 8)) (p.2 8) p.1 28 16,
+    ∀ r ∈ absFrame (stOf (p.2 8)) (p.2 8) p.1 32 16,
       (⟨w64 (stOf (p.2 8)) + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -149,7 +149,7 @@ theorem st_absFrame {d : Nat} (hd : d + 16 ≤ 16 ∨ (48 ≤ d ∧ d + 16 ≤ 8
   · exact (G.L.stk_st (by omega)).symm
 
 theorem st_tFrame {d : Nat} (hd : d + 16 ≤ 16 ∨ (32 ≤ d ∧ d + 16 ≤ 80)) :
-    ∀ r ∈ tFrame (stOf (p.2 8)) (p.2 8) p.1 28 16,
+    ∀ r ∈ tFrame (stOf (p.2 8)) (p.2 8) p.1 32 16,
       (⟨w64 (stOf (p.2 8)) + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -184,7 +184,7 @@ theorem oneAad_pc :
   -- The additional data's arguments.
   refine Pc.seq (Q := fun b s => OJ p b.2 b.1 s ∧
       blockAt s.mem (w64 (stOf (p.2 8)) + BitVec.ofNat 64 16) = 0 ∧
-      AbsIn (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 28 (p.2 4) (p.2 5).toNat 0 s)
+      AbsIn (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 32 (p.2 4) (p.2 5).toNat 0 s)
     (Pc.taint [.ebp] (fun b s ⟨h, y0⟩ => ?_) (fun _ _ s₁ s₂ ⟨h₁, _⟩ ⟨h₂, _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.o.env.ebp, h₂.o.env.ebp]) (by taint_decide)) ?_
   · obtain ⟨s', run, d, n, bz, f, bp, si, sp, rd, wr⟩ := setP_ok G (so := aadO) (sl := alO) (by decide) (by decide)

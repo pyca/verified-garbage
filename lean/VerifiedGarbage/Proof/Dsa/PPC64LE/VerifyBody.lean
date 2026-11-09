@@ -61,12 +61,6 @@ theorem QBuf.arrP {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBuf L m m') {j : Nat}
   exact Outside.val32 (h.keepP hL) (Or.inl (by simp only [Lay.qOff] at *; omega_arith))
     (by have := hL.nowrap; have := hL.buf_end; simp only [Lay.bOff, Lay.qOff] at *; omega_arith)
 
-theorem QBuf.ptop {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBuf L m m') :
-    word m' L.S (slot L.wp 0 + 8 * L.wp) = word m L.S (slot L.wp 0 + 8 * L.wp) := by
-  have := slot_lt (w := L.wp) (show 0 < 28 by decide)
-  exact Outside.word (h.keepP hL) (Or.inl (by simp only [Lay.qOff] at *; omega_arith))
-    (by have := hL.nowrap; have := hL.buf_end; simp only [Lay.bOff, Lay.qOff] at *; omega_arith)
-
 /-- A buffer's first `min n k` octets. -/
 theorem bytesAt_take (m : Mem) (D : Addr) (n k : Nat) :
     (Spec.Rsa.bytesAt m D n).take k = Spec.Rsa.bytesAt m D (min n k) := by
@@ -219,7 +213,7 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
   -- `g^u1 y^u2 mod p`.
   refine WP.seq (WP.mono (combine_ok hL Q₆.scr Q₆.regs (hk.keep k₁₆.rd k₁₆.wr)
       ((qb₂₆.arrP hL (by decide)).trans ((pw 0 (by decide)).trans p0)) (by omega_arith) hpo
-      ((qb₂₆.arrP hL (by decide)).trans ((pw 8 (by decide)).trans p8)))
+      ((qb₂₆.arrP hL (by decide)).trans ((pw 24 (by decide)).trans p8)))
     fun s₇ ⟨⟨v₇, ip₇, B₇, Qk₇⟩, k₇⟩ => ?_)
   rw [u1₆, u2₆, eg₆, ey₆, hgg, hyy] at v₇
   have k₁₇ := k₁₆.trans k₇

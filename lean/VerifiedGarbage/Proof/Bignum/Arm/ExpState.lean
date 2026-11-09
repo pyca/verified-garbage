@@ -40,25 +40,4 @@ theorem ExpState.after_y {s t : State} {base : BitVec 32} {len w M x E F : Nat}
     (keeps_array_num keeps fits (q := 4)
       (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans h.r2⟩
 
-theorem ExpState.of_mem {s t : State} {base : BitVec 32} {len w M x E : Nat} {rs : List Reg}
-    (h : ExpState base len w M x E s) (mem : t.mem = s.mem)
-    (rest : VG.Proof.X25519.Arm.Rest rs s t) (ptr : t.gpr .r0 = base) : ExpState base len w M x E t := by
-  refine ⟨h.ready.of_mem mem rest ptr, ?_, h.coprime, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [mem]
-  exacts [h.modulus, h.inputBound, h.inputValue, h.powerBound, h.powerValue, h.one, h.r2]
-
-theorem ExpState.after_header {s t : State} {base : BitVec 32} {len w M x E d : Nat} {value : BitVec 32}
-    {rs : List Reg} (h : ExpState base len w M x E s) (hd : 128 ≤ d) (hd' : d + 4 ≤ 256)
-    (mem : t.mem = s.mem.writeW (VG.Proof.Mont.off (State.addr base) d) value)
-    (rest : VG.Proof.X25519.Arm.Rest rs s t) (ptr : t.gpr .r0 = base) :
-    ExpState base len w M x E t ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem := by
-  obtain ⟨ready, frame, arrays⟩ := h.ready.after_header hd hd' mem rest ptr
-  refine ⟨⟨ready, ?_, h.coprime, ?_, ?_, ?_, ?_, ?_, ?_⟩, frame⟩
-  · rw [arrays 0 (by decide)]; exact h.modulus
-  · rw [arrays 5 (by decide)]; exact h.inputBound
-  · rw [arrays 5 (by decide)]; exact h.inputValue
-  · rw [arrays 6 (by decide)]; exact h.powerBound
-  · rw [arrays 6 (by decide)]; exact h.powerValue
-  · rw [arrays 7 (by decide)]; exact h.one
-  · rw [arrays 4 (by decide)]; exact h.r2
-
 end VG.Proof.Bignum.Arm

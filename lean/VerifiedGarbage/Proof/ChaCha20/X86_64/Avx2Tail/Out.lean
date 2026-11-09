@@ -24,7 +24,9 @@ open VG VG.X86_64 VG.Impl.ChaCha20.X86_64.Avx2Tail
 open VG.Spec.ChaCha20 (Word stateAt serialize)
 open VG.Proof.ChaCha20
 open VG.Proof.ChaCha20.X86_64.Avx512 (T Sym Sym.init xidx xidx_lt xidx_zreg stateAt_get byte_dword add_ofNat')
-open VG.Proof.ChaCha20.X86_64.Avx512Tail (bsize regn baseR wregs Ctx S0 byte_out)
+open VG.Proof.ChaCha20.X86_64.Avx512Tail (bsize regn baseR wregs Ctx S0 byte_out memBase_0 memBase_1 memBase_2
+  memBase_3 wregsT CtxT)
+open VG.Proof.ChaCha20.X86_64.Avx512 (dstR Ctx3)
 open VG.Impl.ChaCha20.X86_64.Avx512 (zreg)
 open VG.Proof.ChaCha20.X86_64.Avx2 (plus ctr_get Consts hiR hiR_contains)
 
@@ -96,11 +98,11 @@ theorem inT_eval (hi : Incs s.mem (s.gpr .r9)) {k i l : Nat} (hk : k < 2) (hi16 
   rw [show 56 + 8 * k + (4 * l + i % 4) = 56 + 8 * k + 4 * l + i % 4 by omega_arith,
     show (4 * l + i % 4) / 4 = l by omega_arith, show (4 * l + i % 4) % 4 = i % 4 by omega_arith] at e
   split
-  · simp only [T.eval, regn, baseR, e, stateAt_get _ _ hi16]
+  · simp only [T.eval, memBase_0, memBase_1, e, stateAt_get _ _ hi16]
     by_cases h12 : i = 12
     · subst h12; simp
     · rw [ite_eq_right (by omega_arith), ite_eq_right h12]; exact BitVec.add_zero _
-  · simp only [T.eval, regn, baseR, stateAt_get _ _ hi16]
+  · simp only [T.eval, memBase_0, stateAt_get _ _ hi16]
     rw [ite_eq_right (by omega_arith)]
 
 theorem outT_eval {S : Nat} {vs : Nat → CState} (hz : HB S vs s) (hi : Incs s.mem (s.gpr .r9)) {k i l : Nat}
@@ -124,7 +126,7 @@ theorem lane_of {D : Nat} {σ : Sym} {s s' : State} (h : SRel D σ s s') (r : XR
     have dq : ∀ q < 4, dword (s'.lane r l) q = dword x q := by
       intro q hq
       rw [← yw_lk s' r hq, h.reg r _ (by omega_arith), hr _ (by omega_arith)]
-      simp only [T.eval, regn, baseR]
+      simp only [T.eval, memBase_1]
       have d := dword_read256 s.mem (s.gpr .r9 + BitVec.ofNat 64 (4 * o)) (p := 4 * l + q) (by omega_arith)
       rw [show (4 * l + q) / 4 = l by omega_arith, show (4 * l + q) % 4 = q by omega_arith, add_ofNat',
         show 4 * o + 4 * (4 * l + q) = 4 * (o + (4 * l + q)) by omega_arith] at d

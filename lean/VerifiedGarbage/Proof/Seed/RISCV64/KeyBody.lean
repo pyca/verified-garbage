@@ -33,16 +33,6 @@ theorem gSlot_lo {i : Nat} (hi : i < 16) : gSlot i = tSlot 0 := by simp [gSlot, 
 theorem gSlot_hi {w : Nat} (hw : w < 16) : gSlot (16 + w) = uSlot := by
   simp [gSlot, show ¬ 16 + w < 16 by omega]
 
-theorem schedR_sep {s : State} {k : Nat} (hk : k + 64 ≤ 128)
-    (h : (⟨s.gpr .a1, 128⟩ : Region).Disjoint (scratchR s)) : (outR s (k / 4)).Disjoint (scratchR s) := by
-  refine h.sub_left ?_
-  exact Offset.sub_base _ (by omega)
-
-theorem lane_sub_work {s : State} {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) :
-    Region.Sub ⟨laneA s k b, 4⟩ (workR s) := by
-  have := arrays_bound k hk
-  exact Offset.sub_base _ (by omega)
-
 /-- A lane after a frame over regions apart from the scratch buffer. -/
 theorem lv_frame {s s' : State} {R : Region} (hx5 : s'.gpr sb = s.gpr sb) (hf : Frame [R] s.mem s'.mem)
     (hd : R.Disjoint (scratchR s)) {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) : lv s' k b = lv s k b := by

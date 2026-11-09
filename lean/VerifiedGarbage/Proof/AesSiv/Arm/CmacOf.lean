@@ -26,7 +26,7 @@ zeroes the state, computes `16 nb`, the bytes of the whole blocks before the
 last 1 to 16 (`Spec.Cmac.chainedLen`), into `r4`, chains the `nb` blocks
 with `vg_cmac_aes_update` and finalizes the rest with
 `vg_cmac_aes_finalize`, from the subkeys in the context
-(`Siv.cmacWith_chained`).
+(`Siv.macWith_chained`).
 -/
 
 @[expose] public section
@@ -396,7 +396,7 @@ theorem cmacOf_ok {s : State} (he : Env c w sp R s) (hR : R = 10 ∨ R = 12 ∨ 
   rw [eSt] at out₂
   have out₄ := h₄.out
   rw [eSt, eP, k₃.mem, sch₃, k1, k2, rest₃, out₂, sch₁, hz, Proof.Cmac.Stream.blocksAt_eq, hcd, pre₁] at out₄
-  rw [out₄, Spec.Siv.ctxMac, Spec.Siv.schedCiph, Siv.cmacWith_chained, hS, tk, dr, Proof.Cmac.xor_comm]
+  rw [out₄, Spec.Siv.ctxMac, Spec.Siv.schedCiph, Siv.macWith_chained, hS, tk, dr, Proof.Cmac.xor_comm]
   rfl
 
 end

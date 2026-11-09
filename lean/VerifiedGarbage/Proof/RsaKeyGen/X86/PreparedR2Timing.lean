@@ -93,11 +93,6 @@ theorem seedAt_round_trace (n e out : Nat) :
   · exact erased_relCT _ (.block [.mov .eax (.imm 1), .store (sc 0) .eax])
       (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
 
-theorem seed_round_trace (n out : Nat) :
-    RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (seed n out)
-      (VG.X86.Taint.Agree (roundTaint [.edi])) :=
-  seedAt_round_trace n _ out
-
 theorem doublesAt_round_trace (M : VG.Impl.Mont.Mod) (e acc out : Nat) :
     RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (doublesAt M e acc out)
       (VG.X86.Taint.Agree (roundTaint [.edi])) := by
@@ -108,11 +103,6 @@ theorem doublesAt_round_trace (M : VG.Impl.Mont.Mod) (e acc out : Nat) :
     (VG.Taint.hintOf taint (roundTaint [.edi]) (Code.erase (.seq (.block [.mov .esi (.imm 1)])
       (doubleLoop { n := 1, mo := 0, tmp := 0, minv := 0 } 0 0))))
     (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
-
-theorem doubles_round_trace (M : VG.Impl.Mont.Mod) (acc out : Nat) :
-    RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (doubles M acc out)
-      (VG.X86.Taint.Agree (roundTaint [.edi])) :=
-  doublesAt_round_trace M _ acc out
 
 end VG.Proof.RsaKeyGen.X86.FastR2
 end
@@ -162,15 +152,5 @@ theorem code_traceAt {mont : Prog isa} {name : String}
   rw [Prepared.slot_eq, Prepared.slot_eq]
   refine RelCT.seq (RelCT.seq (doublesAt_pair v bound positive eLt) (squares_pair verified noSp stack v length 5)) ?_
   exact (copy_relCT v 4 6 (by decide) (by decide)).mono (fun _ _ H => H.1) (fun _ _ H => H)
-
-theorem code_trace {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
-    {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
-    (length : g.L = 8 * capacity) (bound : g.w ≤ 64) :
-    RelCT isa (InputPair g capacity p) (VG.Impl.RsaKeyGen.X86.PreparedR2.code g.w name mont)
-      (Pair g [.edi]) :=
-  code_traceAt verified noSp stack v length bound (e := 64 * g.w - 1)
-    (by have := v.minWidth; omega) (by have := v.minWidth; omega)
 
 end VG.Proof.RsaKeyGen.X86.PreparedR2

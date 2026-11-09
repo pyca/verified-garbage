@@ -3,9 +3,12 @@
 
 use criterion::Criterion;
 
+/// The module `ecdsa_brainpoolp256r1`, the tables of functions (`fn_tables`), the
+/// curve's arithmetic (`ec_brainpoolp256r1`), and the HMAC and hash functions it
+/// signs with through their tables (their generated modules).
 pub const USES: &[&str] = &[
-    "ecdsa_brainpoolp256r1_sha256",
     "ecdsa_brainpoolp256r1",
+    "fn_tables",
     "ec_brainpoolp256r1",
     "hmac_sha256",
     "sha256",
@@ -31,7 +34,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
     use openssl::hash::MessageDigest;
     use openssl::nid::Nid;
-    use verified_garbage::ecdsa::{BrainpoolP256r1, SigningKey};
+    use verified_garbage::ec::{BrainpoolP256r1, PrivateKey};
     use verified_garbage::hashes::sha256::Sha256;
 
     use crate::{BenchDyn, OPENSSL, VG};
@@ -46,7 +49,7 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("ec_brainpoolp256r1_public_key");
     g.bench(BenchmarkId::new(VG, 65), |b| {
         b.iter(|| {
-            SigningKey::<BrainpoolP256r1>::from_bytes(black_box(&d))
+            PrivateKey::<BrainpoolP256r1>::from_bytes(black_box(&d))
                 .public_key()
                 .unwrap()
         })
@@ -73,7 +76,7 @@ pub fn bench(c: &mut Criterion) {
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::BrainpoolP256r1>>(
+fn hash<H: verified_garbage::ec::SignatureHash<verified_garbage::ec::BrainpoolP256r1>>(
     c: &mut Criterion,
     name: &str,
     md: openssl::hash::MessageDigest,
@@ -88,11 +91,11 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Brain
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
     use openssl::sign::{Signer, Verifier};
-    use verified_garbage::ecdsa::{BrainpoolP256r1, SigningKey, VerifyingKey};
+    use verified_garbage::ec::{BrainpoolP256r1, PrivateKey};
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
-    let key = SigningKey::<BrainpoolP256r1>::from_bytes(d);
+    let key = PrivateKey::<BrainpoolP256r1>::from_bytes(d);
     let group = EcGroup::from_curve_name(Nid::BRAINPOOL_P256R1).unwrap();
     let mut ctx = BigNumContext::new().unwrap();
     let d_bn = BigNum::from_slice(d).unwrap();
@@ -118,8 +121,8 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Brain
     }
     g.finish();
 
-    let q = key.public_key().unwrap();
-    let verifying_key = VerifyingKey::<BrainpoolP256r1>::from_bytes(&q);
+    let verifying_key = key.public_key().unwrap();
+    let q = *verifying_key.as_bytes();
     let digest = H::digest(&[0x5a; 32]);
     let ec_private = openssl_key.ec_key().unwrap();
     let mut g = c.benchmark_group(format!("ecdsa_brainpoolp256r1_{name}_sign_prehashed"));

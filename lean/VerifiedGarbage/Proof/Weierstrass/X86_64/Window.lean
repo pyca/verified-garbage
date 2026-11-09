@@ -179,28 +179,6 @@ theorem tblPt_slots (K : WinCfg) {m : Nat} (h1 : 1 ≤ m) (h8 : m ≤ 8) :
   simp only [winSlots, List.mem_append]
   exact Or.inr (winTbl_mem K hi)
 
-/-- The slots of entry `j` are apart from what the addition into entry
-`m + 1 ≠ j` writes. -/
-theorem tbl_apart_add {K : WinCfg} {size : Nat} (hL : WinLay K size) {j m : Nat} (hj1 : 1 ≤ j)
-    (hj8 : j ≤ 8) (hm1 : 1 ≤ m + 1) (hm8 : m + 1 ≤ 8) (hjm : j ≠ m + 1) :
-    ∀ x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z],
-      ∀ w ∈ (rcbW K.S (K.tblPt (m + 1))).map (·, 8 * K.M.n) ++ [(K.M.tmp, 8 * K.M.n)],
-        x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := by
-  intro x hx w hw
-  obtain ⟨i, hi, rfl, hi₁, hi₂⟩ := tblPt_mem K hj1 hj8 x hx
-  simp only [List.mem_append, List.mem_map, List.mem_singleton] at hw
-  rcases hw with ⟨y, hy, rfl⟩ | rfl
-  · have ets : rcbW K.S (K.tblPt (m + 1)) = [K.S.t0, K.S.t1, K.S.t2, K.S.t3, K.S.t4, K.S.t5] ++
-        [(K.tblPt (m + 1)).x, (K.tblPt (m + 1)).y, (K.tblPt (m + 1)).z] := rfl
-    rw [ets, List.mem_append] at hy
-    dsimp only
-    rcases hy with hy | hy
-    · exact (hL.tbl_apart (rcbW_mem_other y hy) hi).symm
-    · obtain ⟨i', hi', rfl, hi'₁, hi'₂⟩ := tblPt_mem K hm1 hm8 y hy
-      exact winTbl_apart K (by omega_arith)
-  · exact hL.lay.tmp _ (by
-      simp only [winSlots, List.mem_append]; exact Or.inr (winTbl_mem K hi))
-
 /-- The table's entries `[1 … m]P`, `E = [m]P`, and `rbx = 8 - m`: what holds
 between the additions that build the table. -/
 structure BuildInvE (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point C) (s₀ : State)

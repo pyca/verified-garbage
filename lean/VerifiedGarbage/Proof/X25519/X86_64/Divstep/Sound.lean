@@ -197,8 +197,6 @@ theorem sv_rep {f : Int} (hf : |f| ≤ P) {X : Nat} (hX : (X : Int) = f % 2 ^ 25
   unfold sv
   split <;> omega_arith
 
-theorem toInt_eq_of_abs {u : Int} (h : |u| ≤ 2 ^ 59) : (BitVec.ofInt 64 u).toInt = u := toInt_small h
-
 theorem absN_ofInt {u : Int} (h : |u| ≤ 2 ^ 59) : (absN (BitVec.ofInt 64 u) : Int) = |u| := by
   unfold absN; rw [toInt_small h]; exact Int.natCast_natAbs u
 

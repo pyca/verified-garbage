@@ -39,10 +39,12 @@ theorem seedIn_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen =
   have sz := v.size_ge
   have nl := G.hash.N_le
   have sf := v.seedsFit
-  have sl := v.ptrs.2.1
   have q0 : 0 < g.qLen := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_arith
   have q32 : g.qLen ≤ 32 := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_arith
   have kq : k * E.qLen + E.qLen ≤ E.seedsLen := by rw [Nat.add_mul] at hk; omega_arith
+  have sl : E.seeds.toNat < 2 ^ 32 := by omega_arith
+  have sN := v.seedsNat
+  have si := v.seedsIn
   have seedW : ((E.seeds + BitVec.ofNat 64 (k * E.qLen)).setWidth 32).setWidth 64 =
       E.seeds + BitVec.ofNat 64 (k * E.qLen) := by
     apply BitVec.eq_of_toNat_eq
@@ -55,17 +57,21 @@ theorem seedIn_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen =
     rw [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k * E.qLen) (by omega_arith),
       Nat.mod_eq_of_lt (a := E.seeds.toNat + k * E.qLen) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
   unfold Geo.seedIn
-  refine WP.mono (copyIn_ok B.scr (w := fSeed) (by simp only [fSeed, hdr]; omega_arith) hS (R := E.seedsRegion)
-    B.tapes.1 (v.tapesFar _ (by simp)).1 (by simp only [Env.seedsRegion]; omega_arith) (o := k * E.qLen) seedW
-    (by simp only [Env.seedsRegion]; omega_arith) (by rw [seedN]; omega_arith) q0
+  have seedW' : ((E.seeds + BitVec.ofNat 64 (k * E.qLen)).setWidth 32).setWidth 64 =
+      E.wit + BitVec.ofNat 64 (E.seedsOff + k * E.qLen) := by
+    rw [seedW, Env.seeds, VG.Offset.add_add]
+  have wl := v.witFit
+  refine WP.mono (copyIn_ok B.scr (w := fSeed) (by simp only [fSeed, hdr]; omega_arith) hS (R := E.witRegion)
+    B.tapes v.witFar.1 (by simp only [Env.witRegion]; omega_arith) (o := E.seedsOff + k * E.qLen) seedW'
+    (by simp only [Env.witRegion]; omega_arith) (by rw [seedN]; omega_arith) q0
     (by simp only [sState]; omega_arith)) fun t ⟨R, F, K⟩ => ?_
   refine ⟨?_, F, K⟩
   rw [R, ← hq]
-  simp only [chunk, Env.seedsRegion, ← B.seeds, Spec.Rsa.bytesAt]
-  apply List.ext_getElem (by simp; omega_arith)
-  intro i h₁ h₂
-  simp only [List.getElem_map, List.getElem_range, List.getElem_take, List.getElem_drop]
-  rw [VG.Offset.add_add]
+  change Spec.Rsa.bytesAt s.mem (E.wit + _) E.qLen = _
+  rw [B.part (by omega_arith)]
+  simp only [chunk, Env.seedT, List.drop_take, List.drop_drop, List.take_take]
+  congr 1
+  omega_arith
 
 theorem HashOk.hash_length {H : VG.Impl.Pbkdf2.Md.X86.Hash} {iv : List (BitVec 32)} (F : HashOk H iv)
     (m : List Byte) : (F.ok.hH.SH.H.hash m).length = H.N := by

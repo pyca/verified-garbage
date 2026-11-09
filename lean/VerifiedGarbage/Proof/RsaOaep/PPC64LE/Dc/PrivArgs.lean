@@ -85,19 +85,6 @@ theorem privArgs_eq : privArgs = ([.addSp .r12 0, .store .d .r10 .r12 96] : List
       Impl.AesGcm.PPC64LE.mov .r8 .r9, .load .d .r9 .r12 (argP 11), Impl.AesGcm.PPC64LE.mov .r10 .r15] :
       List Instr) := rfl
 
-/-- `pb s + d` in the stack the function uses. -/
-theorem pb_contains (s : State) {d n : Nat} (h : d + n ≤ frameBytes + privBytes) :
-    (kD s).Contains (pb s + BitVec.ofNat 64 d) n := by
-  rw [pb_base, Offset.add_add]
-  exact Offset.contains_base _ (by unfold stackBytes; omega)
-    (by unfold Impl.Rsa.PPC64LE.Priv.frameBytes frameBytes privBytes at *; omega)
-
-theorem allocP_mem {s t : State} (E : Entered s t) : Frame [kD s] s.mem (allocated privBytes t).mem := by
-  have hsp : t.sp = fb s := E.sv.sp
-  refine (toD E.mem).write (List.mem_singleton_self _) _ ?_
-  rw [hsp, show fb s - BitVec.ofNat 64 privBytes = pb s + BitVec.ofNat 64 0 by rw [BitVec.add_zero]]
-  exact pb_contains s (by decide)
-
 theorem sub_ofNat {x : BitVec 64} {a : Nat} (h : a ≤ x.toNat) : x - BitVec.ofNat 64 a = BitVec.ofNat 64 (x.toNat - a) := by
   apply BitVec.eq_of_toNat_eq
   have := x.isLt

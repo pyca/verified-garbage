@@ -58,9 +58,6 @@ theorem lane_inArrays {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) (s : State) 
   have := arrays_bound k hk
   exact Offset.contains _ (by omega) (by omega) (by omega)
 
-theorem arraysR_sub (s : State) : Region.Sub (arraysR s) (scratchR s) :=
-  Offset.sub_base _ (by unfold scratchSlots; omega)
-
 /-- Two different lanes do not overlap. -/
 theorem lane_sep {k b k' b' : Nat} (hk : k ∈ arrays) (hb : b < 16) (hk' : k' ∈ arrays)
     (hb' : b' < 16) (h : k ≠ k' ∨ b ≠ b') (s : State) :
@@ -211,10 +208,6 @@ theorem lv_setMem (s : State) (m : Mem) (k b : Nat) :
     lv (setMem s m) k b = m.readW (laneA s k b) 32 := rfl
 theorem mem_setMem (s : State) (m : Mem) : (setMem s m).mem = m := rfl
 theorem gpr_setMem (s : State) (m : Mem) : (setMem s m).gpr = s.gpr := rfl
-theorem rd_setMem (s : State) (m : Mem) : (setMem s m).rd = s.rd := rfl
-theorem wr_setMem (s : State) (m : Mem) : (setMem s m).wr = s.wr := rfl
-theorem sp_setMem (s : State) (m : Mem) : (setMem s m).sp = s.sp := rfl
-
 /-! ## Instructions on lanes -/
 
 /-- The scratch buffer is writable: a writable region at `r8` holds it (and

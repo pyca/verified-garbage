@@ -46,8 +46,4 @@ def RandomDrawPre (p : RandomDrawPublic) (s : State) : Prop :=
 def RandomDrawFullPre (p : RandomDrawPublic) (s : State) : Prop :=
   RandomDrawPre p s ∧ p.used + p.width ≤ p.randLen
 
-theorem RandomDrawPre.sp {p : RandomDrawPublic} {s : State} (h : RandomDrawPre p s) : s.sp = p.B := by
-  obtain ⟨_, _, _, hr⟩ := h
-  exact hr.sp
-
 end VG.Proof.Dsa.AArch64

@@ -41,11 +41,6 @@ theorem pres_ne {r : Reg} (h : r ∈ preserved) :
     r ≠ .t0 ∧ r ≠ .a0 ∧ r ≠ .a1 ∧ r ≠ .a2 ∧ r ≠ .a3 ∧ r ≠ .a4 := by
   revert r; decide
 
-/-- Writes of registers other than the callee-saved ones keep them. -/
-theorem Only.of_writes {s s' : State} (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
-    (hsp : s'.sp = s.sp) (h : ∀ r ∈ preserved, s'.gpr r = s.gpr r) : Only s s' :=
-  ⟨h, hm, hrd, hwr, hsp⟩
-
 theorem updOnly {s s' : State} {d : Reg} {v : BitVec 64} (h : Wp.Upd s s' d v) (hd : d ∉ preserved) : Only s s' :=
   ⟨fun r hr => h.other r fun e => hd (e ▸ hr), h.mem, h.rd, h.wr, h.sp⟩
 
@@ -157,8 +152,6 @@ abbrev kRegs : List (Nat × Nat × Nat) := [(0, 0, 200), (1, 0, 1168)]
 theorem Ctx.kregs {L : Lay} {s : State} (hc : Ctx L s) :
     (⟨L.ptr 0, 200⟩ : Region) = L.R 0 0 200 ∧ below s.sp 1168 = L.R 1 0 1168 :=
   ⟨Lay.R_zero _ _ _, hc.bel⟩
-
-theorem RL_kRegs (L : Lay) : L.RL kRegs = [L.R 0 0 200, L.R 1 0 1168] := rfl
 
 /-! ## Pieces -/
 

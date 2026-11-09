@@ -268,11 +268,6 @@ theorem pins_SF (V : SPub → Nat) : Pins (fun p => SF (V p) p) [.rbx, .r10, .r1
 def SFc (V : SPub → Nat) (p : SPub) (t : State) : Prop :=
   SF (V p) p t ∧ t.cf = some (decide (p.W / 2 ≤ V p))
 
-theorem fixV_lt {W M T : Nat} (hW : 0 < W) (hT : T < W) : fixV W M T < W := by
-  unfold fixV; split
-  · exact Nat.mod_lt _ hW
-  · exact hT
-
 /-- `fix` leaks the same in runs with the same `t`, which it makes `fixV`. -/
 theorem fix_ct (V : SPub → Nat) :
     RelCT isa (Two fun p => SF (V p) p) fix (Two fun p => SF (fixV p.W p.M (V p)) p) := by
@@ -366,9 +361,6 @@ def StPub.X (p : StPub) (j : Nat) : Nat := (2 ^ (64 * p.L.w) - p.M) * 2 ^ (64 * 
 def StepsAt (p : StPub) (j : Nat) (t : State) : Prop :=
   ∃ (σ : State) (T : Nat), StepsInv σ p.L.B p.L.Z p.L.w p.L.minv p.c (2 ^ (64 * p.L.w) - p.M) p.M T j t ∧
     slot p.L.w 8 ≤ p.L.Z ∧ 4 ≤ p.L.w ∧ p.L.w % 4 = 0 ∧ p.L.w < 2 ^ 30 ∧ p.c < 2 ^ 31 ∧ 0 < p.M ∧ 2 ^ 63 ≤ T
-
-theorem stepsAt_good {p : StPub} {j : Nat} {t : State} (h : StepsAt p j t) : GoodL p.L t :=
-  let ⟨_, _, hI, hZ, _⟩ := h; ⟨⟨hI.scr, hI.rdi, hI.hdr⟩, hZ⟩
 
 theorem stepsAt_pre {p : StPub} {j : Nat} {t : State} (h : StepsAt p j t) :
     SPre ⟨p.L, p.X j, p.M⟩ t := by

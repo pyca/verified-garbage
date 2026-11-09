@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha3.X86.Permute
 
 /-!
-# ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: calls, correct and constant time
+# ML-DSA on x86 (32-bit), `sign_message` and `verify_message_cached`: calls, correct and constant time
 
 Untrusted: everything here is checked by Lean. The body is proven piece by
 piece (`Piece`, `Proof/MlKem/X86/Piece.lean`) from the entry state `s₀` of
@@ -67,26 +67,6 @@ theorem SetPost.esp {n : Nat} {as : List (Reg × Arg)} (ho : argsOk n as = true)
 theorem SetPost.esi {n : Nat} {as : List (Reg × Arg)} (ho : argsOk n as = true) {s s₁ : State}
     (h : SetPost as s s₁) : s₁.gpr .esi = s.gpr .esi :=
   h.2.gpr _ fun hm => (argsOk_regs ho _ hm).2 rfl
-
-/-- The value of an argument but `eax` is public. -/
-theorem Arg.val_pub {L L' : Lay} {m m' : Mem} {s s' : State} (hc : Ctx L m s) (hc' : Ctx L' m' s')
-    (hp : PubL L L') {a : Arg} (ha : a.ok L.nA = true) (hr : a.isRet = false) : a.val s = a.val s' := by
-  cases a with
-  | arg i =>
-    simp only [Arg.ok, decide_eq_true_eq] at ha
-    rw [hc.argV ha, hc'.argV (hp.nA ▸ ha), hp.argv]
-  | argOff i o =>
-    simp only [Arg.ok, decide_eq_true_eq] at ha
-    rw [hc.argOffV ha, hc'.argOffV (hp.nA ▸ ha), hp.argv]
-  | off o => rw [hc.off, hc'.off, hp.x]
-  | imm v => rfl
-  | ret => simp [Arg.isRet] at hr
-
-/-- Registers set by the moves of two runs agree, if the values do. -/
-theorem SetPost.agree {as : List (Reg × Arg)} {s s' s₁ s₁' : State} (h : SetPost as s s₁)
-    (h' : SetPost as s' s₁') (hv : ∀ da ∈ as, da.2.val s = da.2.val s') {r : Reg} {a : Arg}
-    (hr : (r, a) ∈ as) : s₁.gpr r = s₁'.gpr r := by
-  rw [h.1 _ hr, h'.1 _ hr]; exact hv _ hr
 
 section
 variable {Pre : State → Prop} {Pub : State → State → Prop} {lay : State → Lay} {A B : State → State → Prop}

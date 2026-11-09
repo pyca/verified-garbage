@@ -7,14 +7,14 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_public_precomputed_checked` on AArch64
 
-`vg_rsa_public_precomputed`'s code guarded by the check of `e` (`guarded`),
-against the contract on the registers with the checked postcondition
-(`pdChkContract`), and from there against the shared contract
-(`precomputedChecked_verified`).
+For `vg_rsa_public_precomputed`'s code guarded by the check of `e`
+(`guarded`), the contract on the registers with the checked postcondition
+(`pdChkContract`) implies the shared contract (`precomputedChecked_implies`).
 -/
 
 @[expose] public section
@@ -58,32 +58,6 @@ theorem pdGeom {s : State} (h : pdContract.pre s) : Geom s := by
 
 /-! ## `vg_rsa_public_precomputed_checked` -/
 
-theorem precomputedChecked_correct (M : Mont) (s : State) (h : pdContract.pre s) :
-    ∃ t s', Exec isa (precomputedChecked M.mm) s t s' ∧ abiPreserved s s' ∧ pdChkContract.post s s' := by
-  refine guarded_correct (pdCode_correct M) (fun _ h => pdGeom h) (fun s t hs h => (pdPre_same hs).symm ▸ h)
-    ?_ ?_ s h
-  · intro s t s' _ hs hv hp nB hl hpre
-    simp only [pdContract, hs.x0, hs.x1, hs.x2, hs.x3, hs.x4, hs.x5, hs.x6, hs.mem] at hp
-    simp only [eValid, eBytes] at hv
-    simp only [Spec.Rsa.publicOpChecked, hv, ↓reduceIte]
-    exact hp nB hl hpre
-  · intro s s' h hv hb hax nB _ _
-    simp only [eValid, eBytes] at hv
-    simp only [Spec.Rsa.publicOpChecked, hv, Bool.false_eq_true, ite_false, Spec.Rsa.written, hax]
-    exact ⟨rfl, hb⟩
-
-theorem precomputedChecked_constantTime (M : Mont) :
-    ConstantTime isa pdContract.pre pdContract.pub (precomputedChecked M.mm) :=
-  guarded_ct (pdCode_constantTime (M := M)) (fun _ h => pdGeom h) (fun s t hs h => (pdPre_same hs).symm ▸ h)
-    (fun _ _ _ _ hp => ⟨hp.1, fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact hp.2.1
-      · exact hp.2.2.1
-      · exact hp.2.2.2.2.2.1
-      · exact hp.2.2.2.2.2.2.1, hp.2.2.2.2.2.2.2.2.2.2.2.2⟩)
-    fun _ _ _ _ h₁ h₂ hp => pdPub_same h₁ h₂ hp
-
 /-- A state meeting `pdContract.pre`: a 512-bit modulus, a one-byte
 exponent, and the stack arguments at `0x6000`. -/
 def pdSatState : State where
@@ -99,39 +73,32 @@ def pdSatState : State where
 theorem stackArgs_two (s : State) : List.map (stackArg s) (List.range 2) = [stackArg s 0, stackArg s 1] := rfl
 
 theorem precomputedChecked_implies :
-    pdChkContract.Implies (Spec.Rsa.publicPrecomputedCheckedContract abi) where
+    pdChkContract.Implies (Proof.Rsa.publicPrecomputedCheckedContract abi) where
   pre := by
     intro s h
     -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, pdChkContract,
+    sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, pdChkContract,
       pdContract, pdArgs, stackArgs_two, List.append_eq] at h
-    sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, pdChkContract,
+    sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, pdChkContract,
       pdContract, pdArgs, stackArgs_two, List.append_eq] at h
     sig_split h
-    sig_reduce [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+    sig_reduce [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
       pdChkContract, pdContract, pdArgs, stackArgs_two, List.append_eq]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+  post := by sig_implies_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     pdChkContract, pdContract, pdArgs, stackArgs_two, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, pdChkContract,
+    sig_pub [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, pdChkContract,
       pdContract, pdArgs, stackArgs_two, List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     obtain ⟨hsp, hl, a0, a1, a2, a3, a4, a5, a6, a7, s0, s1⟩ := h
     obtain ⟨hw, he⟩ := leak_eq2 (by simp [Spec.Rsa.wordsAt, a3]) hl
     exact ⟨hsp, a0, a1, a2, a3, a4, a5, a6, a7, s0, s1, hw, he⟩
-  sat := by sig_implies_sat [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+  sat := by sig_implies_sat [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     pdChkContract, pdContract, pdArgs, stackArgs_two, List.append_eq] [pdSatState, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using pdSatState
-
-/-- `vg_rsa_public_precomputed_checked` with Montgomery multiplication `M`. -/
-theorem precomputedChecked_verified (M : Mont) :
-    Verified target (precomputedChecked M.mm) (Spec.Rsa.publicPrecomputedCheckedContract abi) :=
-  have hct : ConstantTime isa pdChkContract.pre pdChkContract.pub (precomputedChecked M.mm) :=
-    precomputedChecked_constantTime M
-  Verified.of_correct (k := pdChkContract) (precomputedChecked_correct M) hct precomputedChecked_implies
 
 end VG.Proof.Rsa.AArch64

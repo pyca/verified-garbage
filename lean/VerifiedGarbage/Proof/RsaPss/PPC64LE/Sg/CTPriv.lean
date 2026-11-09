@@ -25,18 +25,18 @@ lengths, the modulus and the public exponent.
 namespace VG.Proof.RsaPss.PPC64LE.Sg
 
 open VG VG.PPC64LE VG.Impl.RsaOaep.PPC64LE VG.Impl.RsaPss.PPC64LE.Sign
-open VG.Proof.RsaOaep.PPC64LE (B.sp pins_of two_seq allocated_sp fb)
+open VG.Proof.RsaOaep.PPC64LE (B B.sp pins_of two_seq allocated_sp fb)
 open VG.Proof.RsaPkcs1Sig.PPC64LE (Two two_alloc)
 
 theorem psa_pub {a s : State} (p : PubS a s) {i : Nat} (hi : i < 12) : psa s i = psa a i := by
   rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
       i = 11) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [psa, Ss, p.g .r9 (by decide), p.g .r10 (by decide), p.args _ (by decide : (0 : Nat) < 13),
-      p.args _ (by decide : (1 : Nat) < 13), p.args _ (by decide : (2 : Nat) < 13),
-      p.args _ (by decide : (3 : Nat) < 13), p.args _ (by decide : (4 : Nat) < 13),
-      p.args _ (by decide : (5 : Nat) < 13), p.args _ (by decide : (6 : Nat) < 13),
-      p.args _ (by decide : (7 : Nat) < 13), p.args _ (by decide : (11 : Nat) < 13),
-      p.args _ (by decide : (12 : Nat) < 13)]
+    simp only [psa, Ss, p.g .r9 (by decide), p.g .r10 (by decide), p.args _ (by decide : (0 : Nat) < 16),
+      p.args _ (by decide : (1 : Nat) < 16), p.args _ (by decide : (2 : Nat) < 16),
+      p.args _ (by decide : (3 : Nat) < 16), p.args _ (by decide : (4 : Nat) < 16),
+      p.args _ (by decide : (5 : Nat) < 16), p.args _ (by decide : (6 : Nat) < 16),
+      p.args _ (by decide : (7 : Nat) < 16), p.args _ (by decide : (12 : Nat) < 16),
+      p.args _ (by decide : (13 : Nat) < 16)]
 
 /-- At the call, from an entry state with `a`'s public data. -/
 def APriv (D : Nat) (a u : State) : Prop := ∃ s em, PreS D s ∧ PubK a s ∧ AtPriv s em u
@@ -63,7 +63,7 @@ theorem priv_pub {D : Nat} {a u₁ u₂ : State} (h₁ : APriv D a u₁) (h₂ :
     · rw [A₁.r6, A₂.r6, p₁.g _ (by decide), p₂.g _ (by decide)]
     · rw [A₁.r7, A₂.r7, p₁.g _ (by decide), p₂.g _ (by decide)]
     · rw [A₁.r8, A₂.r8, p₁.g _ (by decide), p₂.g _ (by decide)]
-    · rw [A₁.r9, A₂.r9, Ss, Ss, p₁.args 11 (by decide), p₂.args 11 (by decide)]
+    · rw [A₁.r9, A₂.r9, Ss, Ss, p₁.args 12 (by decide), p₂.args 12 (by decide)]
     · rw [A₁.r10, A₂.r10, p₁.g _ (by decide), p₂.g _ (by decide)]
   · rw [m, m, callE_gpr _ _ (r := .r5), callE_gpr _ _ (r := .r6), callE_gpr _ _ (r := .r5),
       callE_gpr _ _ (r := .r6), A₁.r5, A₁.r6, A₂.r5, A₂.r6,
@@ -83,14 +83,17 @@ theorem call_ct {D : Nat} : RelCT isa (Two (APriv D)) privCall fun _ _ => True :
     Rsa.PPC64LE.Priv.pre_of_preP (preP_at P₂ A₂), hp, (call_covers P₁ A₁).1, (call_covers P₁ A₁).2,
     (call_covers P₂ A₂).1, (call_covers P₂ A₂).2⟩
 
-/-- The private operation, in both runs. -/
-theorem priv_ct {D : Nat} : RelCT isa (Two (BS D)) priv fun _ _ => True := by
+/-- The private operation, in both runs, from states with `Base` for entry
+states with `PreS` and `PubK`. -/
+theorem priv_ct {D : Nat} {Pre : State → Prop} {Pub : State → State → Prop} (hP : ∀ {s}, Pre s → PreS D s)
+    (hQ : ∀ {a s}, Pub a s → PubK a s) : RelCT isa (Two (B Ss vS Pre Pub)) priv fun _ _ => True := by
+  have X := signOk D hP hQ
   unfold priv
-  refine two_alloc (R := fun _ _ => True) (pins_of (signOk D) (an := id) (fun _ _ h => h) []) ?_
+  refine two_alloc (R := fun _ _ => True) (pins_of X (an := id) (fun _ _ h => h) []) ?_
   refine two_seq (Ψ := APriv D) (privArgs_taint fun a u₁ u₂ ⟨t₁, h₁, e₁⟩ ⟨t₂, h₂, e₂⟩ =>
-      ⟨by rw [e₁, e₂, allocated_sp, allocated_sp, h₁.sp (signOk D), h₂.sp (signOk D)], fun _ h => nomatch h⟩)
+      ⟨by rw [e₁, e₂, allocated_sp, allocated_sp, h₁.sp X, h₂.sp X], fun _ h => nomatch h⟩)
     (fun a u ⟨t, ⟨s, P, p, b⟩, e⟩ => by
-      subst e; exact WP.mono (privArgs_ok P b rfl) fun u' A => ⟨s, _, P, p, A⟩)
+      subst e; exact WP.mono (privArgs_ok (hP P) b rfl) fun u' A => ⟨s, _, hP P, hQ p, A⟩)
     call_ct
 
 end VG.Proof.RsaPss.PPC64LE.Sg

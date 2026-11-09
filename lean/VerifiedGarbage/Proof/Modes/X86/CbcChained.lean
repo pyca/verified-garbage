@@ -8,8 +8,7 @@ import VerifiedGarbage.Proof.Modes.StepsChained
 # CBC that updates the chaining value on x86 (32-bit), for any core
 
 `seq_wp` for `Mode.cbcEncChained` and `Mode.cbcDecChained`: the data as
-`Spec.Cbc.encrypt` and `Spec.Cbc.decrypt` under the core's cipher (as
-`cbcEnc_wp` and `cbcDec_wp`), and the IV replaced with the chaining value to
+`Spec.Cbc.encrypt` and `Spec.Cbc.decrypt` under the core's cipher, and the IV replaced with the chaining value to
 continue from (`Spec.Cbc.next`).
 -/
 

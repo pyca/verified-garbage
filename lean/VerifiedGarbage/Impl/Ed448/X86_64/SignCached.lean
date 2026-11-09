@@ -120,7 +120,4 @@ def signCachedFor (v : FieldVariant) : Prog isa :=
   .seq (.block [.mov .r10 (.mem (stk 8)), .mov .r11 (.mem (stk 16)), .mov32 .rax (.imm 0)])
     (.frame (.push regs) (bodyFor v) (.pop .r11 56))
 
-def body : Prog isa := bodyFor .scalar
-def signCached : Prog isa := signCachedFor .scalar
-
 end VG.Impl.Ed448.X86_64.SignCached

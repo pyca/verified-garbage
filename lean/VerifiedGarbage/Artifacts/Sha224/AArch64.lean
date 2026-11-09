@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # SHA-224 (FIPS 180-4) on AArch64 -/
 

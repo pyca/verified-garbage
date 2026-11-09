@@ -270,42 +270,4 @@ theorem decryptBlock_constantTime : ConstantTime isa (blockContract .decrypt).pr
   exact VG.Taint.constantTime (A := VG.X86.sseTaint) blockTaint (fun _ _ h₁ h₂ hp => blockTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
-def blockSatState : State where
-  gpr r := if r = .esp then 0x4000 else 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem a := if a = 0x4005 then 0x10 else if a = 0x4009 then 0x20 else if a = 0x400d then 0x30 else 0
-  rd := [⟨0x1000, 128⟩, ⟨0x4004, 12⟩]
-  wr := [⟨0x2000, 8⟩, ⟨0x3000, 256⟩]
-
-theorem encrypt_verified : Verified target encryptBlock (Proof.Rc2.encryptBlockContract abi) := by
-  refine Verified.of_correct (block_correct .encrypt) encryptBlock_constantTime ?_
-  refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
-  · sig_implies_pre [Proof.Rc2.encryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal,
-      argBytes, addr32, blockContract, cipher]
-  · intro s s' _ h
-    sig_post [Proof.Rc2.encryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal, argBytes]
-    exact h.2
-  · sig_implies_pub [Proof.Rc2.encryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal,
-      argBytes, addr32, blockContract, cipher]
-  · sig_implies_sat [Proof.Rc2.encryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal,
-      argBytes, addr32, blockContract, cipher]
-      [blockSatState, arg, argAddr, Mem.readW, Mem.read] using blockSatState
-
-theorem decrypt_verified : Verified target decryptBlock (Proof.Rc2.decryptBlockContract abi) := by
-  refine Verified.of_correct (block_correct .decrypt) decryptBlock_constantTime ?_
-  refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
-  · sig_implies_pre [Proof.Rc2.decryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal,
-      argBytes, addr32, blockContract, cipher]
-  · intro s s' _ h
-    sig_post [Proof.Rc2.decryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal, argBytes]
-    exact h.2
-  · sig_implies_pub [Proof.Rc2.decryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal,
-      argBytes, addr32, blockContract, cipher]
-  · sig_implies_sat [Proof.Rc2.decryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal,
-      argBytes, addr32, blockContract, cipher]
-      [blockSatState, arg, argAddr, Mem.readW, Mem.read] using blockSatState
-
 end VG.Proof.Rc2.X86

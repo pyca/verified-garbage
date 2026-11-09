@@ -63,17 +63,4 @@ theorem verifyingReady_related {s₁ s₂ : State}
     (reference.val.input.shapeFacts reference.property).2.2
   exact ⟨_, h₁, h₂, hsp⟩
 
-theorem verifyingSuccess_ct (M : Mont) :
-    RelCT isa (Two (fun c : AcceptedVerifyingCall => VerifyingShaped c.val))
-      (seqs [SignVerify.workspaces, Checks.publicKey M.mm,
-        Checks.range qWorkspace Core.signatureR, Checks.range qWorkspace Core.signatureS,
-        Core.verify M.mm, Checks.equal (Core.scalar u) Core.signatureR, .block SignVerify.result])
-      (fun _ _ => True) := by
-  refine RelCT.seq verifyingWorkspaces_ct ?_
-  apply RelCT.seqs_append (a := [Checks.publicKey M.mm,
-    Checks.range qWorkspace Core.signatureR, Checks.range qWorkspace Core.signatureS,
-    Core.verify M.mm, Checks.equal (Core.scalar u) Core.signatureR])
-    (b := [.block SignVerify.result]) (by simp) (by simp)
-  exact (verifyBody_ct M).mono (fun _ _ h => verifyingReady_related h) (fun _ _ h => h)
-
 end VG.Proof.Dsa.AArch64

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
 import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 public import VerifiedGarbage.Spec.Cmac.Contract
-public import VerifiedGarbage.Proof.Cmac.Contract
 public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -17,7 +16,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 meta import VerifiedGarbage.Spec.Cmac.Contract
-meta import VerifiedGarbage.Proof.Cmac.Contract
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
 meta import VerifiedGarbage.Proof.Cmac.Spec
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -30,7 +28,7 @@ meta import VerifiedGarbage.Proof.Aes.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
-# AES-CMAC's chaining with AES-NI on x86-64: `vg_cmac_aes_update_aesni_cbc`
+# AES-CMAC's chaining with AES-NI on x86-64: `vg_cmac_aes_update_aesni`
 
 The code reads everything it needs before it writes the state, once, at the
 end, so the proof is about registers: after the setup, the round keys are in
@@ -58,7 +56,7 @@ open VG.Spec.Aes (roundKey cipher)
 
 /-! ## The contract -/
 
-/-- `vg_cmac_aes_update_aesni_cbc(schedule = rdi, rounds = rsi, state = rdx, data = rcx, n = r8,
+/-- `vg_cmac_aes_update_aesni(schedule = rdi, rounds = rsi, state = rdx, data = rcx, n = r8,
 scratch = r9)`: `updateX86_64` without the stack and the disjointness of the
 buffers, which the code does not need. -/
 def cbcX86_64 : Contract isa where
@@ -558,23 +556,6 @@ theorem ct : ConstantTime isa cbcX86_64.pre cbcX86_64.pub update := by
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
-
-/-- A state satisfying the precondition (with no blocks). -/
-def cbcSat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 10 | .rdx => 0x2000 | .rcx => 0x3000 | .r9 => 0x4000 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 240⟩, ⟨0x3000, 0⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x4000, 2176⟩]
-
-theorem verified : Verified X86_64.target update (Proof.Cmac.aesUpdateContract X86_64.abi) :=
-  Verified.of_correct correct ct (by
-    sig_implies [Proof.Cmac.aesUpdateContract, Proof.Cmac.aesUpdateSig, cbcX86_64, X86_64.abi,
-      X86_64.argRegs] [cbcSat] using cbcSat)
 
 /-! ## As an implementation of `vg_cmac_aes_update` for its callers -/
 

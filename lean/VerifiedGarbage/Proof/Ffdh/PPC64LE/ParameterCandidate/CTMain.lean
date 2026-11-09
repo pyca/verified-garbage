@@ -5,15 +5,24 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Main
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
+public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Trial.Loop
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+meta import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Trial.Loop
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.CTTests
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Main
 
 /-!
 # An FFDH parameter candidate on PPC64LE: `main` in constant time
 
-p's congruence branches on the generator, pinned once loaded; the shape
-checks branch on `hBad`, which the candidate decides (`MB`); the tests are
-`tests_ct`.
+The public data are the arguments and tape, and the table's address
+(`taintSym`: the contract makes it public). p's congruence branches on the
+generator, pinned once loaded; the shape checks branch on `hBad`, which the
+candidate decides (`MB`), as do whether q's and p's whole checks run;
+trial division (`trialSieve_ct`, `trialSieveN_ct`) loops while the
+entry tested, a function of the candidate and of how many are left, does
+not divide it; the tests are `tests_ct`.
 -/
 
 @[expose] public section
@@ -28,24 +37,38 @@ open VG.Proof.MillerRabin.PPC64LE (RoundImpl)
 /-- The candidate from the tape. -/
 def candOf (q : PP) : Nat := Spec.Ffdh.candidateOf q.bits (Spec.Rsa.os2ip (q.r.take q.L))
 
-/-- Before `main`. -/
-def MnI (q : PP) (s : State) : Prop :=
-  ∃ sv toc, St (q.with sv toc) s ∧ word s.mem q.B 152 = BitVec.ofNat 64 q.L ∧ q.L ≤ q.r.length
+/-- Code the taint analysis with the table's address public proves constant
+time, from states a predicate relates. -/
+theorem two_taint_sym {α : Type} {Φ : α → State → Prop} {c : Prog isa} (rs : List Reg) (hpin : Pins Φ rs)
+    (hsym : ∀ a s₁ s₂, Φ a s₁ → Φ a s₂ →
+      s₁.syms VG.Impl.RsaKeyGen.TrialTable32.symbol = s₂.syms VG.Impl.RsaKeyGen.TrialTable32.symbol)
+    {hc : VG.Taint.Hint T}
+    (h : (VG.Taint.check (taintSym [VG.Impl.RsaKeyGen.TrialTable32.symbol]) (ofRegs rs) c hc).isSome = true) :
+    RelCT isa (Two Φ) c fun _ _ => True :=
+  RelCT.taint (A := taintSym [VG.Impl.RsaKeyGen.TrialTable32.symbol]) (ofRegs rs) (fun _ _ ⟨a, h₁, h₂, hsp⟩ =>
+    ⟨⟨hsp, fun r hr => hpin a _ _ h₁ h₂ r (RegSet.mem_ofList.mp hr)⟩, fun n hn => by
+      simp only [List.mem_singleton] at hn; subst hn; exact hsym a _ _ h₁ h₂⟩) h
+
+/-- Before `main`: the arguments and tape, and the table's address. -/
+def MnI (a : PP × Addr) (s : State) : Prop :=
+  ∃ sv toc, St (a.1.with sv toc) s ∧ TabIn a.1.B a.1.Z a.2 s ∧ word s.mem a.1.B 152 = BitVec.ofNat 64 a.1.L ∧
+    a.1.L ≤ a.1.r.length
 
 /-- With p in array 0. -/
-def MnA (q : PP) (t : State) : Prop :=
-  (∃ sv toc, St (q.with sv toc) t ∧ Ph (q.with sv toc) q.bits t ∧ word t.mem q.B 152 = BitVec.ofNat 64 q.L ∧
-    wv t.mem q.B (slot (wOf q.bits) 0) (wOf q.bits) = candOf q) ∧ q.L ≤ q.r.length
+def MnA (a : PP × Addr) (t : State) : Prop :=
+  (∃ sv toc, St (a.1.with sv toc) t ∧ TabIn a.1.B a.1.Z a.2 t ∧ Ph (a.1.with sv toc) a.1.bits
+    (Spec.Ffdh.primeChecks a.1.bits) t ∧ word t.mem a.1.B 152 = BitVec.ofNat 64 a.1.L ∧
+    wv t.mem a.1.B (slot (wOf a.1.bits) 0) (wOf a.1.bits) = candOf a.1) ∧ a.1.L ≤ a.1.r.length
 
 /-- In p's working space, `hBad` zero iff `B q`. -/
-def MnB (x : PP → Nat) (B : PP → Prop) (q : PP) (t : State) : Prop :=
-  (∃ sv toc, MB (q.with sv toc) (x q) (B q) t) ∧ q.L ≤ q.r.length
+def MnB (x : PP → Nat) (B : PP → Prop) (a : PP × Addr) (t : State) : Prop :=
+  (∃ sv toc, MB (a.1.with sv toc) a.2 (x a.1) (B a.1) t) ∧ a.1.L ≤ a.1.r.length
 
-theorem pins_MnB {x : PP → Nat} {B : PP → Prop} {Φ : PP → State → Prop} (h : ∀ q s, Φ q s → MnB x B q s) :
-    Pins Φ [.r10, .r11, .r29, .r31] := by
-  intro q s₁ s₂ h₁ h₂ r hr
-  obtain ⟨⟨_, _, M₁⟩, _⟩ := h q s₁ h₁
-  obtain ⟨⟨_, _, M₂⟩, _⟩ := h q s₂ h₂
+theorem pins_MnB {x : PP → Nat} {B : PP → Prop} {Φ : PP × Addr → State → Prop}
+    (h : ∀ a s, Φ a s → MnB x B a s) : Pins Φ [.r10, .r11, .r29, .r31] := by
+  intro a s₁ s₂ h₁ h₂ r hr
+  obtain ⟨⟨_, _, M₁⟩, _⟩ := h a s₁ h₁
+  obtain ⟨⟨_, _, M₂⟩, _⟩ := h a s₂ h₂
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · rw [M₁.ph.r10, M₂.ph.r10]; rfl
@@ -54,18 +77,20 @@ theorem pins_MnB {x : PP → Nat} {B : PP → Prop} {Φ : PP → State → Prop}
   · rw [M₁.st.r31, M₂.st.r31]; rfl
 
 theorem mainA_ct : RelCT isa (Two MnI) (.seq (phase false) shapeP) (Two MnA) :=
-  two_post (two_mono (fun _ _ ⟨sv, toc, h, _⟩ => ⟨sv, toc, h⟩) (RelCT.seq (phasePA_ct false) shapeP_ct))
-    fun _ _ ⟨sv, toc, h, hU, hL⟩ => WP.mono (mainA_ok h hU hL) fun _ ⟨a, b, c, d⟩ => ⟨⟨sv, toc, a, b, c, d⟩, hL⟩
+  two_post (two_map Prod.fst (fun _ _ ⟨sv, toc, h, _⟩ => ⟨sv, toc, h⟩) (RelCT.seq (phasePA_ct false) shapeP_ct))
+    fun _ _ ⟨sv, toc, h, ht, hU, hL⟩ => WP.mono_syms (mainA_ok h hU hL) fun _ ⟨a, b, c, d, hr, f, rd⟩ sy =>
+      ⟨⟨sv, toc, a, ht.step sy f hr rd, b, c, d⟩, hL⟩
 
 /-- After the congruence's first block. -/
-def RH (q : PP) (t : State) : Prop :=
-  (t.gpr .r3 = BitVec.ofNat 64 q.g - BitVec.ofNat 64 2 ∧ (q.g = 2 ∨ q.g = 5)) ∧
-    t.gpr .r10 = off q.B (slot (wOf q.bits) 0) ∧ t.gpr .r11 = BitVec.ofNat 64 (2 * wOf q.bits) ∧ t.gpr .r31 = q.B
+def RH (a : PP × Addr) (t : State) : Prop :=
+  (t.gpr .r3 = BitVec.ofNat 64 a.1.g - BitVec.ofNat 64 2 ∧ (a.1.g = 2 ∨ a.1.g = 5)) ∧
+    t.gpr .r10 = off a.1.B (slot (wOf a.1.bits) 0) ∧ t.gpr .r11 = BitVec.ofNat 64 (2 * wOf a.1.bits) ∧
+    t.gpr .r31 = a.1.B
 
-theorem pins_RH {Φ : PP → State → Prop} (h : ∀ q s, Φ q s → RH q s) : Pins Φ [.r10, .r11, .r31] := by
-  intro q s₁ s₂ h₁ h₂ r hr
-  obtain ⟨_, a10, a11, a31⟩ := h q s₁ h₁
-  obtain ⟨_, b10, b11, b31⟩ := h q s₂ h₂
+theorem pins_RH {Φ : PP × Addr → State → Prop} (h : ∀ a s, Φ a s → RH a s) : Pins Φ [.r10, .r11, .r31] := by
+  intro a s₁ s₂ h₁ h₂ r hr
+  obtain ⟨_, a10, a11, a31⟩ := h a s₁ h₁
+  obtain ⟨_, b10, b11, b31⟩ := h a s₂ h₂
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · rw [a10, b10]
@@ -73,21 +98,22 @@ theorem pins_RH {Φ : PP → State → Prop} (h : ∀ q s, Φ q s → RH q s) : 
   · rw [a31, b31]
 
 theorem pins_MnA : Pins MnA [.r31] := by
-  rintro q s₁ s₂ ⟨⟨_, _, h₁, _⟩, _⟩ ⟨⟨_, _, h₂, _⟩, _⟩ r hr
+  rintro a s₁ s₂ ⟨⟨_, _, h₁, _⟩, _⟩ ⟨⟨_, _, h₂, _⟩, _⟩ r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   subst hr; rw [h₁.r31, h₂.r31]; rfl
 
-theorem residue_ct : RelCT isa (Two MnA) residue (Two (MnB candOf fun q => goodRes q.g (candOf q))) := by
-  refine two_post ?_ fun _ _ ⟨⟨sv, toc, h, hp, hU, hn⟩, hL⟩ =>
-    WP.mono (residue_mb h hp hU hn) fun _ M => ⟨⟨sv, toc, M⟩, hL⟩
+theorem residue_ct :
+    RelCT isa (Two MnA) residue (Two (MnB candOf fun q => goodRes q.g (candOf q))) := by
+  refine two_post ?_ fun _ _ ⟨⟨sv, toc, h, ht, hp, hU, hn⟩, hL⟩ =>
+    WP.mono (residue_mb h hp ht hU hn) fun _ M => ⟨⟨sv, toc, M⟩, hL⟩
   unfold residue
   refine RelCT.seq (two_post (two_taint _ pins_MnA (by taint_decide)) (Ψ := RH)
-    fun q s ⟨⟨sv, toc, h, hp, _⟩, _⟩ => ?_) (two_ite' (fun q => decide (q.g = 2)) (fun q s h => ?_)
+    fun a s ⟨⟨sv, toc, h, _, hp, _⟩, _⟩ => ?_) (two_ite' (fun a => decide (a.1.g = 2)) (fun a s h => ?_)
       (two_taint _ (pins_RH fun _ _ h => h.1) (by taint_decide))
       (two_taint _ (pins_RH fun _ _ h => h.1) (by taint_decide)))
-  · refine WP.mono (WP.keep [.r3] (Q := fun t => t.gpr .r3 = BitVec.ofNat 64 q.g - BitVec.ofNat 64 2) ?_ (by decide))
-      fun t ⟨t3, k⟩ => ⟨⟨t3, h.dims.g⟩, (k.gpr _ (by decide)).trans hp.r10, (k.gpr _ (by decide)).trans hp.r11,
-        (k.gpr _ (by decide)).trans h.r31⟩
+  · refine WP.mono (WP.keep [.r3] (Q := fun t => t.gpr .r3 = BitVec.ofNat 64 a.1.g - BitVec.ofNat 64 2) ?_
+      (by decide)) fun t ⟨t3, k⟩ => ⟨⟨t3, h.dims.g⟩, (k.gpr _ (by decide)).trans hp.r10,
+        (k.gpr _ (by decide)).trans hp.r11, (k.gpr _ (by decide)).trans h.r31⟩
     simp only [ldh, hGen]
     prun [h.r31, h.ld (d := 128) (by decide), h.args.gen', BitVec.add_zero]
     rfl
@@ -97,51 +123,182 @@ theorem residue_ct : RelCT isa (Two MnA) residue (Two (MnB candOf fun q => goodR
 
 theorem badLoad_ct {x : PP → Nat} {B : PP → Prop} [∀ q, Decidable (B q)] :
     RelCT isa (Two (MnB x B)) (.block [ldh .r5 hBad])
-      (Two fun q t => MnB x B q t ∧ isa.eval (.zero .d .r5) t = some (decide (B q))) :=
+      (Two fun a t => MnB x B a t ∧ isa.eval (.zero .d .r5) t = some (decide (B a.1))) :=
   two_post (two_taint _ (pins_MnB fun _ _ h => h) (by taint_decide)) fun _ _ ⟨⟨sv, toc, M⟩, hL⟩ =>
     WP.mono M.badLoad fun _ ⟨M', t5⟩ => ⟨⟨⟨sv, toc, M'⟩, hL⟩,
       (by rw [eval_zero, t5]; exact congrArg some (beq_zero_of_iff M.bad))⟩
 
-theorem finMnB_ct {x : PP → Nat} {B : PP → Prop} {Φ : PP → State → Prop} (h : ∀ q s, Φ q s → MnB x B q s) :
-    RelCT isa (Two Φ) (.block (finish 2)) fun _ _ => True :=
-  two_mono (fun q s hs => let ⟨⟨_, _, M⟩, _⟩ := h q s hs; M.st.fs) (finish_ct (.inr (.inr rfl)))
-
-theorem sieve_ct {x : PP → Nat} {B : PP → Prop} {Φ : PP → State → Prop} (h : ∀ q s, Φ q s → MnB x B q s) :
-    RelCT isa (Two Φ) VG.Impl.Ffdh.PPC64LE.ParameterCandidate.sieve
-      (Two (MnB x fun q => B q ∧ ∀ d ∈ oddPrimes256, x q % d ≠ 0)) :=
-  two_post (two_taint _ (pins_MnB h) (by taint_decide)) fun q s hs =>
-    let ⟨⟨sv, toc, M⟩, hL⟩ := h q s hs; WP.mono M.sieve fun _ M' => ⟨⟨sv, toc, M'⟩, hL⟩
+theorem finMnB_ct {x : PP → Nat} {B : PP → Prop} {Φ : PP × Addr → State → Prop}
+    (h : ∀ a s, Φ a s → MnB x B a s) : RelCT isa (Two Φ) (.block (finish 2)) fun _ _ => True :=
+  two_map Prod.fst (fun a s hs => let ⟨⟨_, _, M⟩, _⟩ := h a s hs; M.st.fs) (finish_ct (.inr (.inr rfl)))
 
 theorem halve_ct {x : PP → Nat} {B : PP → Prop} :
     RelCT isa (Two (MnB x B)) halveQ (Two (MnB (fun q => x q / 2) fun q => B q ∧ x q / 2 % 2 = 1)) :=
   two_post (two_taint _ (pins_MnB fun _ _ h => h) (by taint_decide)) fun _ _ ⟨⟨sv, toc, M⟩, hL⟩ =>
     WP.mono M.halve fun _ M' => ⟨⟨sv, toc, M'⟩, hL⟩
 
-/-- The shape checks' conjunction, after both sieves. -/
+/-! ## Trial division by products of four entries -/
+
+/-- With the table's address and the count `N q` in `r23` and `r24`. -/
+def MnPT (x : PP → Nat) (B : PP → Prop) (N : PP → Nat) (a : PP × Addr) (v : State) : Prop :=
+  ∃ u, MnB x B a u ∧ (v.gpr .r23 = a.2 ∧ v.gpr .r24 = BitVec.ofNat 64 (N a.1) ∧ v.mem = u.mem) ∧
+    (∀ r, r ∉ [Reg.r3, Reg.r4, Reg.r23, Reg.r24] → v.gpr r = u.gpr r) ∧ v.rd = u.rd ∧ v.wr = u.wr ∧
+    v.sp = u.sp ∧ v.syms = u.syms
+
+/-- In the loop, `d.2` groups left. -/
+def MnPL (x : PP → Nat) (B : PP → Prop) (N : PP → Nat) (d : (PP × Addr) × Nat) (w : State) : Prop :=
+  ∃ v, MnPT x B N d.1 v ∧ LInv v d.1.1.B d.1.2 (x d.1.1) (N d.1.1) d.2 w
+
+/-- After the loop. -/
+def MnPE (x : PP → Nat) (B : PP → Prop) (N : PP → Nat) (d : (PP × Addr) × Nat) (w : State) : Prop :=
+  ∃ v, MnPT x B N d.1 v ∧ Keep groupRegs v w
+
+theorem MnPT.base {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} {a : PP × Addr} {v : State}
+    (h : MnPT x B N a v) :
+    v.gpr .r10 = off a.1.B (slot (wOf a.1.bits) 0) ∧ v.gpr .r11 = BitVec.ofNat 64 (2 * wOf a.1.bits) ∧
+      v.gpr .r31 = a.1.B := by
+  obtain ⟨u, ⟨⟨_, _, M⟩, _⟩, -, vg, -⟩ := h
+  exact ⟨(vg _ (by decide)).trans M.ph.r10, (vg _ (by decide)).trans M.ph.r11, (vg _ (by decide)).trans M.st.r31⟩
+
+theorem pins_MnPL {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} :
+    Pins (MnPL x B N) [.r10, .r11, .r23, .r31] := by
+  rintro d s₁ s₂ ⟨v₁, hv₁, k₁, hm₁, hk₁, ⟨a23, -⟩, kv₁⟩ ⟨v₂, hv₂, k₂, hm₂, hk₂, ⟨b23, -⟩, kv₂⟩ r hr
+  obtain ⟨a10, a11, a31⟩ := hv₁.base
+  obtain ⟨b10, b11, b31⟩ := hv₂.base
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · rw [kv₁.gpr _ (by decide), kv₂.gpr _ (by decide), a10, b10]
+  · rw [kv₁.gpr _ (by decide), kv₂.gpr _ (by decide), a11, b11]
+  · rw [a23, b23, show k₁ = k₂ by omega]
+  · rw [kv₁.gpr _ (by decide), kv₂.gpr _ (by decide), a31, b31]
+
+theorem pins_MnPE {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} : Pins (MnPE x B N) [.r31] := by
+  rintro d s₁ s₂ ⟨v₁, hv₁, kv₁⟩ ⟨v₂, hv₂, kv₂⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  subst hr
+  rw [kv₁.gpr _ (by decide), kv₂.gpr _ (by decide), hv₁.base.2.2, hv₂.base.2.2]
+
+theorem MnPT.init {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} {a : PP × Addr} {v : State}
+    (hN : 4 ≤ N a.1) (h : MnPT x B N a v) : MnPL x B N (a, N a.1 / 4) v := by
+  obtain ⟨u, -, ⟨v23, v24, -⟩, -⟩ := id h
+  refine ⟨v, h, 0, by dsimp only; omega, by dsimp only; omega, ⟨?_, ?_, ?_, Frm.refl _ _ _⟩, Keep.refl _ _⟩
+  · rw [v23]; exact (BitVec.add_zero _).symm
+  · rw [v24]; rfl
+  · simp [VG.Proof.RsaKeyGen.trialPrefix]
+
+/-- The go-on condition of the loop, `d.2` groups left. -/
+def prodGo (x : PP → Nat) (N : PP → Nat) (d : (PP × Addr) × Nat) : Bool :=
+  lgo (x d.1.1) (N d.1.1) (N d.1.1 / 4 - d.2)
+
+theorem MnPL.step {x : PP → Nat} {B : PP → Prop} {N : PP → Nat}
+    (hN : ∀ q, N q % 4 = 0 ∧ 4 ≤ N q ∧ N q ≤ 1024) {d : (PP × Addr) × Nat} {w : State} (h : MnPL x B N d w) :
+    WP isa prodGroup w fun t =>
+      isa.eval (.nonzero .d .r24) t = some (prodGo x N d) ∧ (prodGo x N d = false → MnPE x B N d t) ∧
+        (prodGo x N d = true → d.2 - 1 < d.2 ∧ MnPL x B N (d.1, d.2 - 1) t) := by
+  obtain ⟨v, hv, hI⟩ := h
+  obtain ⟨u, ⟨⟨sv, toc, M⟩, _⟩, ⟨_, _, vm⟩, vg, vrd, vwr, -⟩ := id hv
+  have ha := M.largs vm vg vrd vwr (hN d.1.1).1 (hN d.1.1).2.1 (hN d.1.1).2.2
+  refine WP.mono (lstep_ok ha hI) fun t ⟨e, f, g⟩ => ⟨e, fun hg => ⟨v, hv, (f hg).2⟩, fun hg => ?_⟩
+  obtain ⟨hm, hI'⟩ := g hg
+  exact ⟨by omega, v, hv, hI'⟩
+
+theorem prodLoop_ct {x : PP → Nat} {B : PP → Prop} {N : PP → Nat}
+    (hN : ∀ q, N q % 4 = 0 ∧ 4 ≤ N q ∧ N q ≤ 1024) :
+    RelCT isa (Two (MnPT x B N)) prodLoop (Two (MnPE x B N)) :=
+  two_map (fun a => (a, N a.1 / 4)) (fun _ _ h => h.init (hN _).2.1)
+    (two_loopD (Φ := MnPL x B N) (Ψ := MnPE x B N) Prod.snd (fun d => (d.1, d.2 - 1)) (prodGo x N)
+      (two_taint _ pins_MnPL (by taint_decide)) fun _ _ h => h.step hN)
+
+/-- Trial division by the first entries, by products, leaks the same from
+the same candidate and table. -/
+theorem prodSieveN_ct {x : PP → Nat} {B : PP → Prop} :
+    RelCT isa (Two (MnB x B)) (prodSieveN firstEntries)
+      (Two (MnB x fun q => B q ∧ VG.Proof.RsaKeyGen.trialPrefix (x q) firstEntries = false)) := by
+  refine two_post ?_ fun _ _ ⟨⟨sv, toc, M⟩, hL⟩ =>
+    WP.mono (prodSieveN_ok M (by decide) (by decide) (by decide)) fun _ M' => ⟨⟨sv, toc, M'⟩, hL⟩
+  unfold prodSieveN
+  refine RelCT.seq (two_post (two_taint_sym _ (pins_MnB fun _ _ h => h)
+      (fun _ _ _ ⟨⟨_, _, M₁⟩, _⟩ ⟨⟨_, _, M₂⟩, _⟩ => M₁.tab.sym.trans M₂.tab.sym.symm) (by unfold firstEntries; taint_decide))
+    (Ψ := MnPT x B fun _ => firstEntries) fun _ u hu => ?_)
+    (RelCT.seq (prodLoop_ct fun _ => by decide) (two_taint _ pins_MnPE (by taint_decide)))
+  obtain ⟨⟨sv, toc, M⟩, hL⟩ := hu
+  exact WP.mono (M.prodA firstEntries (by decide)) fun v hv =>
+    ⟨u, ⟨⟨sv, toc, M⟩, hL⟩, hv.1, fun r hr => hv.2.1 r fun h' => hr (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h')),
+      hv.2.2⟩
+
+/-- So does trial division by `trialN` entries, by products. -/
+theorem prodSieve_ct {x : PP → Nat} {B : PP → Prop} :
+    RelCT isa (Two (MnB x B)) prodSieve
+      (Two (MnB x fun q => B q ∧ VG.Proof.RsaKeyGen.trialPrefix (x q) (trialN q.bits) = false)) := by
+  refine two_post ?_ fun _ _ ⟨⟨sv, toc, M⟩, hL⟩ => WP.mono (prodSieve_ok M) fun _ M' => ⟨⟨sv, toc, M'⟩, hL⟩
+  unfold prodSieve
+  refine RelCT.seq (two_post (two_taint_sym _ (pins_MnB fun _ _ h => h)
+      (fun _ _ _ ⟨⟨_, _, M₁⟩, _⟩ ⟨⟨_, _, M₂⟩, _⟩ => M₁.tab.sym.trans M₂.tab.sym.symm) (by taint_decide))
+    (Ψ := MnPT x B fun q => trialN q.bits) fun _ u hu => ?_)
+    (RelCT.seq (prodLoop_ct fun _ => by unfold trialN; split <;> decide) (two_taint _ pins_MnPE (by taint_decide)))
+  obtain ⟨⟨sv, toc, M⟩, hL⟩ := hu
+  exact WP.mono M.prodC fun v hv => ⟨u, ⟨⟨sv, toc, M⟩, hL⟩, hv⟩
+
+/-- p into array 0 again leaks the same. -/
+theorem reshape_ct {x : PP → Nat} {B : PP → Prop} :
+    RelCT isa (Two (MnB x B)) shapeP (Two (MnB candOf B)) :=
+  two_post (two_map (fun a => a.1) (fun _ _ ⟨⟨sv, toc, M⟩, _⟩ => ⟨sv, toc, _, M.st, M.ph⟩) shapeP_ct)
+    fun _ _ ⟨⟨sv, toc, M⟩, hL⟩ => WP.mono (M.reshape hL) fun _ M' => ⟨⟨sv, toc, M'⟩, hL⟩
+
+/-! ## `main` -/
+
+/-- The congruence and p's trial division by the first entries. -/
+def pOk (q : PP) : Prop :=
+  goodRes q.g (candOf q) ∧ VG.Proof.RsaKeyGen.trialPrefix (candOf q) firstEntries = false
+
+instance (q : PP) : Decidable (pOk q) := by unfold pOk; infer_instance
+
+/-- Then q's parity and trial division. -/
+def qOk (q : PP) : Prop :=
+  (pOk q ∧ candOf q / 2 % 2 = 1) ∧ VG.Proof.RsaKeyGen.trialPrefix (candOf q / 2) (trialN q.bits) = false
+
+instance (q : PP) : Decidable (qOk q) := by unfold qOk; infer_instance
+
+/-- The shape checks' conjunction, after p's whole trial division. -/
 def allOk (q : PP) : Prop :=
-  ((goodRes q.g (candOf q) ∧ ∀ d ∈ oddPrimes256, candOf q % d ≠ 0) ∧ candOf q / 2 % 2 = 1) ∧
-    ∀ d ∈ oddPrimes256, candOf q / 2 % d ≠ 0
+  qOk q ∧ VG.Proof.RsaKeyGen.trialPrefix (candOf q) (trialN q.bits) = false
 
 instance (q : PP) : Decidable (allOk q) := by unfold allOk; infer_instance
 
-theorem ts_of {q : PP} {s : State} (h : MnB (fun q => candOf q / 2) allOk q s) (ha : allOk q) :
-    TS ⟨q, candOf q, q.L⟩ s := by
+theorem ts_of {a : PP × Addr} {s : State} (h : MnB candOf allOk a s) (ha : allOk a.1) :
+    TS ⟨a.1, candOf a.1, a.1.L⟩ s := by
   obtain ⟨⟨sv, toc, M⟩, hL⟩ := h
-  have hb1 : 512 ≤ q.bits := M.st.dims.b1
-  obtain ⟨ho, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := q.bits) (by omega)
-    (Spec.Rsa.os2ip (q.r.take q.L))
-  have hq : (candOf q - 1) / 2 = candOf q / 2 := by unfold candOf; omega
-  refine ⟨⟨sv, toc, M.st, rfl, by rw [hq]; exact M.n, by rw [hq]; exact ha.1.2, M.u, hL⟩, hL⟩
+  have hb1 : 512 ≤ a.1.bits := M.st.dims.b1
+  obtain ⟨ho, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := a.1.bits) (by omega)
+    (Spec.Rsa.os2ip (a.1.r.take a.1.L))
+  have hq : (candOf a.1 - 1) / 2 = candOf a.1 / 2 := by unfold candOf; omega
+  exact ⟨⟨sv, toc, M.st, rfl, M.u, hL, hL⟩, by rw [hq]; exact ha.1.1.2⟩
 
-/-- `main` leaks the same from the same arguments and tape. -/
+/-- `mainP` leaks the same from the same arguments, tape and table. -/
+theorem mainP_ct (R : RoundImpl) :
+    RelCT isa (Two (MnB (fun q => candOf q / 2) qOk)) (mainP R.name R.code) fun _ _ => True := by
+  unfold mainP
+  refine RelCT.seq reshape_ct (RelCT.seq prodSieve_ct (RelCT.seq (badLoad_ct (B := allOk))
+    (two_ite' (fun a => decide (allOk a.1)) (fun _ _ h => h.2) ?_ (finMnB_ct fun _ _ h => h.1.1))))
+  exact two_map (fun a => (⟨a.1, candOf a.1, a.1.L⟩ : TQD))
+    (fun _ _ ⟨⟨h, _⟩, ha⟩ => ts_of h (of_decide_eq_true ha)) (tests_ct R)
+
+/-- `mainQ` leaks the same from the same arguments, tape and table. -/
+theorem mainQ_ct (R : RoundImpl) : RelCT isa (Two (MnB candOf pOk)) (mainQ R.name R.code) fun _ _ => True := by
+  unfold mainQ
+  refine RelCT.seq halve_ct (RelCT.seq prodSieve_ct (RelCT.seq (badLoad_ct (B := qOk))
+    (two_ite' (fun a => decide (qOk a.1)) (fun _ _ h => h.2) ?_ (finMnB_ct fun _ _ h => h.1.1))))
+  exact two_map (fun a => a) (fun _ _ h => h.1.1) (mainP_ct R)
+
+/-- `main` leaks the same from the same arguments, tape and table. -/
 theorem main_ct (R : RoundImpl) : RelCT isa (Two MnI) (main R.name R.code) fun _ _ => True := by
   unfold main
   refine RelCT.assoc (RelCT.seq mainA_ct (RelCT.seq residue_ct (RelCT.seq badLoad_ct
-    (two_ite' (fun q => decide (goodRes q.g (candOf q))) (fun _ _ h => h.2) ?_ (finMnB_ct fun _ _ h => h.1.1)))))
-  refine RelCT.seq (sieve_ct fun _ _ h => h.1.1) (RelCT.seq halve_ct (RelCT.seq (sieve_ct fun _ _ h => h)
-    (RelCT.seq (badLoad_ct (B := allOk)) (two_ite' (fun q => decide (allOk q)) (fun _ _ h => h.2) ?_
+    (two_ite' (fun a => decide (goodRes a.1.g (candOf a.1))) (fun _ _ h => h.2) ?_
       (finMnB_ct fun _ _ h => h.1.1)))))
-  exact two_map (fun q => (⟨q, candOf q, q.L⟩ : TQD)) (fun _ _ ⟨⟨h, _⟩, ha⟩ => ts_of h (of_decide_eq_true ha))
-    (tests_ct R)
+  refine RelCT.seq (two_map (fun a => a) (fun _ _ h => h.1.1) prodSieveN_ct)
+    (RelCT.seq (badLoad_ct (B := pOk))
+      (two_ite' (fun a => decide (pOk a.1)) (fun _ _ h => h.2) ?_ (finMnB_ct fun _ _ h => h.1.1)))
+  exact two_map (fun a => a) (fun _ _ h => h.1.1) (mainQ_ct R)
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

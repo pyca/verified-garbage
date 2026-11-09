@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
 public import VerifiedGarbage.Proof.AesGcm.ScratchP
@@ -36,21 +37,21 @@ variable (v : GcmImpl) {M : CtxMode} (B : BlkFn M)
 theorem sealM_mx : («seal» (v.withBlk B)).allInstrs (fun i => !loadsMxcsr i) = true := by
   have e := B.encMx
   have d := B.decMx
-  simp only [e, d, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.allInstrs, GcmImpl.withBlk, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and,
+  simp only [e, d, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, Code.allInstrs, GcmImpl.withBlk, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
 theorem sealM_spSafe : («seal» (v.withBlk B)).all (fun i => !X86_64.isa.writesSp i) = true := by
   have e := B.encSp
   have d := B.decSp
-  simp only [e, d, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.all, GcmImpl.withBlk, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and,
+  simp only [e, d, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, Code.all, GcmImpl.withBlk, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
 theorem sealM_xdepth : («seal» (v.withBlk B)).x86_64Depth ≤ 24 := by
   have e := B.encXd
   have d := B.decXd
-  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, cmp, tagOut, copyTag, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
+  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, oneUndo, tagLenOk, recv, cmp, tagOut, copyTag, copyLoop, xorLoop, xorLoopG, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
 
@@ -62,21 +63,21 @@ theorem sealM_correct (s : State) (hs : (Proof.AesGcm.sealX86_64M M).pre s) :
 theorem openM_mx : («open» (v.withBlk B)).allInstrs (fun i => !loadsMxcsr i) = true := by
   have e := B.encMx
   have d := B.decMx
-  simp only [e, d, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.allInstrs, GcmImpl.withBlk, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and,
+  simp only [e, d, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, Code.allInstrs, GcmImpl.withBlk, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
 theorem openM_spSafe : («open» (v.withBlk B)).all (fun i => !X86_64.isa.writesSp i) = true := by
   have e := B.encSp
   have d := B.decSp
-  simp only [e, d, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.all, GcmImpl.withBlk, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and,
+  simp only [e, d, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, Code.all, GcmImpl.withBlk, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
 theorem openM_xdepth : («open» (v.withBlk B)).x86_64Depth ≤ 24 := by
   have e := B.encXd
   have d := B.decXd
-  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, cmp, tagOut, copyTag, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
+  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, oneUndo, tagLenOk, recv, cmp, tagOut, copyTag, copyLoop, xorLoop, xorLoopG, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
 
@@ -88,21 +89,21 @@ theorem openM_correct (s : State) (hs : (Proof.AesGcm.openX86_64M M).pre s) :
 theorem streamEncryptM_mx : (streamEncrypt (v.withBlk B)).allInstrs (fun i => !loadsMxcsr i) = true := by
   have e := B.encMx
   have d := B.decMx
-  simp only [e, d, ↓reduceIte, Bool.false_eq_true, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneTag, oneCrypt, Code.allInstrs, GcmImpl.withBlk, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and,
+  simp only [e, d, ↓reduceIte, Bool.false_eq_true, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneTag, oneCrypt, oneCryptG, oneCryptBlk, Code.allInstrs, GcmImpl.withBlk, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
 theorem streamEncryptM_spSafe : (streamEncrypt (v.withBlk B)).all (fun i => !X86_64.isa.writesSp i) = true := by
   have e := B.encSp
   have d := B.decSp
-  simp only [e, d, ↓reduceIte, Bool.false_eq_true, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneTag, oneCrypt, Code.all, GcmImpl.withBlk, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and,
+  simp only [e, d, ↓reduceIte, Bool.false_eq_true, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneTag, oneCrypt, oneCryptG, oneCryptBlk, Code.all, GcmImpl.withBlk, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
 theorem streamEncryptM_xdepth : (streamEncrypt (v.withBlk B)).x86_64Depth ≤ 24 := by
   have e := B.encXd
   have d := B.decXd
-  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, oneAad, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
+  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, oneAad, copyLoop, xorLoop, xorLoopG, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
 
@@ -114,21 +115,21 @@ theorem streamEncryptM_correct (s : State) (hs : (Proof.AesGcm.streamEncryptX86_
 theorem streamDecryptM_mx : (streamDecrypt (v.withBlk B)).allInstrs (fun i => !loadsMxcsr i) = true := by
   have e := B.encMx
   have d := B.decMx
-  simp only [e, d, ↓reduceIte, Bool.false_eq_true, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneTag, oneCrypt, Code.allInstrs, GcmImpl.withBlk, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and,
+  simp only [e, d, ↓reduceIte, Bool.false_eq_true, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneTag, oneCrypt, oneCryptG, oneCryptBlk, Code.allInstrs, GcmImpl.withBlk, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
 theorem streamDecryptM_spSafe : (streamDecrypt (v.withBlk B)).all (fun i => !X86_64.isa.writesSp i) = true := by
   have e := B.encSp
   have d := B.decSp
-  simp only [e, d, ↓reduceIte, Bool.false_eq_true, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneTag, oneCrypt, Code.all, GcmImpl.withBlk, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and,
+  simp only [e, d, ↓reduceIte, Bool.false_eq_true, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneTag, oneCrypt, oneCryptG, oneCryptBlk, Code.all, GcmImpl.withBlk, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
 theorem streamDecryptM_xdepth : (streamDecrypt (v.withBlk B)).x86_64Depth ≤ 24 := by
   have e := B.encXd
   have d := B.decXd
-  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, oneAad, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
+  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, oneAad, copyLoop, xorLoop, xorLoopG, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
 
@@ -159,21 +160,21 @@ theorem sealPCode_verified {c : Prog isa}
   Verified.of_correct hc hct
     { pre := by
         sig_implies_pre [Proof.AesGcm.sealPrecomputedScratchContract, Proof.AesGcm.sealPrecomputedScratchSig,
-          Spec.Gcm.sealPrecomputedPre, Spec.Gcm.sealPost, Proof.AesGcm.sealX86_64M, Proof.AesGcm.sealX86_64,
+          Spec.Gcm.sealPrecomputedPre, Proof.AesGcm.sealRoundsPost, Proof.AesGcm.sealX86_64M, Proof.AesGcm.sealX86_64,
           Proof.AesGcm.sealPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi,
           Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       post := by
         sig_implies_post [Proof.AesGcm.sealPrecomputedScratchContract, Proof.AesGcm.sealPrecomputedScratchSig,
-          Spec.Gcm.sealPrecomputedPre, Spec.Gcm.sealPost, Proof.AesGcm.sealX86_64M, Proof.AesGcm.sealX86_64,
+          Spec.Gcm.sealPrecomputedPre, Proof.AesGcm.sealRoundsPost, Proof.AesGcm.sealX86_64M, Proof.AesGcm.sealX86_64,
           Proof.AesGcm.sealPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi,
           Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       pub := by
         sig_implies_pub [Proof.AesGcm.sealPrecomputedScratchContract, Proof.AesGcm.sealPrecomputedScratchSig,
-          Spec.Gcm.sealPrecomputedPre, Spec.Gcm.sealPost, Proof.AesGcm.sealX86_64M, Proof.AesGcm.sealX86_64,
+          Spec.Gcm.sealPrecomputedPre, Proof.AesGcm.sealRoundsPost, Proof.AesGcm.sealX86_64M, Proof.AesGcm.sealX86_64,
           Proof.AesGcm.sealPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi,
           Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
@@ -209,13 +210,13 @@ theorem openPCode_verified {c : Prog isa}
     Verified X86_64.target c (Proof.AesGcm.openPrecomputedScratchContract X86_64.abi 24) :=
   Verified.of_correct hc hct
     { pre := by sig_implies_pre [Proof.AesGcm.openPrecomputedScratchContract, Proof.AesGcm.openPrecomputedScratchSig,
-          Spec.Gcm.openPrecomputedPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
+          Spec.Gcm.openPrecomputedPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
           Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       post := by sig_implies_post [Proof.AesGcm.openPrecomputedScratchContract, Proof.AesGcm.openPrecomputedScratchSig,
-          Spec.Gcm.openPrecomputedPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
+          Spec.Gcm.openPrecomputedPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
           Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
@@ -223,20 +224,20 @@ theorem openPCode_verified {c : Prog isa}
       pub := by
         intro s₁ s₂ _ _ h
         sig_pub [Proof.AesGcm.openPrecomputedScratchContract, Proof.AesGcm.openPrecomputedScratchSig,
-          Spec.Gcm.openPrecomputedPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
+          Spec.Gcm.openPrecomputedPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
           Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs] at h
         sig_split h
         sig_reduce [Proof.AesGcm.openPrecomputedScratchContract, Proof.AesGcm.openPrecomputedScratchSig,
-          Spec.Gcm.openPrecomputedPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
+          Spec.Gcm.openPrecomputedPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
           Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
         sig_simp [Proof.AesGcm.openPrecomputedScratchContract, Proof.AesGcm.openPrecomputedScratchSig,
-          Spec.Gcm.openPrecomputedPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
+          Spec.Gcm.openPrecomputedPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
           Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
@@ -267,19 +268,19 @@ theorem streamEncryptP_verified :
       (Proof.AesGcm.streamEncryptPrecomputedScratchContract X86_64.abi 24) :=
   Verified.of_correct (streamEncryptM_correct v v.blkP) (streamEncryptM_ct v v.blkP)
     { pre := by sig_implies_pre [Proof.AesGcm.streamEncryptPrecomputedScratchContract, Proof.AesGcm.streamCryptPrecomputedScratchSig,
-          Spec.Gcm.streamTextPrecomputedPre, Spec.Gcm.streamEncryptPost, Proof.AesGcm.streamEncryptX86_64M,
+          Spec.Gcm.streamTextPrecomputedPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamEncryptX86_64M,
           Proof.AesGcm.streamEncryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, CtxMode.powers,
           X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       post := by sig_implies_post [Proof.AesGcm.streamEncryptPrecomputedScratchContract, Proof.AesGcm.streamCryptPrecomputedScratchSig,
-          Spec.Gcm.streamTextPrecomputedPre, Spec.Gcm.streamEncryptPost, Proof.AesGcm.streamEncryptX86_64M,
+          Spec.Gcm.streamTextPrecomputedPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamEncryptX86_64M,
           Proof.AesGcm.streamEncryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, CtxMode.powers,
           X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       pub := by sig_implies_pub [Proof.AesGcm.streamEncryptPrecomputedScratchContract, Proof.AesGcm.streamCryptPrecomputedScratchSig,
-          Spec.Gcm.streamTextPrecomputedPre, Spec.Gcm.streamEncryptPost, Proof.AesGcm.streamEncryptX86_64M,
+          Spec.Gcm.streamTextPrecomputedPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamEncryptX86_64M,
           Proof.AesGcm.streamEncryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, CtxMode.powers,
           X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
@@ -299,19 +300,19 @@ theorem streamDecryptP_verified :
       (Proof.AesGcm.streamDecryptPrecomputedScratchContract X86_64.abi 24) :=
   Verified.of_correct (streamDecryptM_correct v v.blkP) (streamDecryptM_ct v v.blkP)
     { pre := by sig_implies_pre [Proof.AesGcm.streamDecryptPrecomputedScratchContract, Proof.AesGcm.streamCryptPrecomputedScratchSig,
-          Spec.Gcm.streamTextPrecomputedPre, Spec.Gcm.streamDecryptPost, Proof.AesGcm.streamDecryptX86_64M,
+          Spec.Gcm.streamTextPrecomputedPre, Proof.AesGcm.streamDecryptRoundsPost, Proof.AesGcm.streamDecryptX86_64M,
           Proof.AesGcm.streamDecryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, CtxMode.powers,
           X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       post := by sig_implies_post [Proof.AesGcm.streamDecryptPrecomputedScratchContract, Proof.AesGcm.streamCryptPrecomputedScratchSig,
-          Spec.Gcm.streamTextPrecomputedPre, Spec.Gcm.streamDecryptPost, Proof.AesGcm.streamDecryptX86_64M,
+          Spec.Gcm.streamTextPrecomputedPre, Proof.AesGcm.streamDecryptRoundsPost, Proof.AesGcm.streamDecryptX86_64M,
           Proof.AesGcm.streamDecryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, CtxMode.powers,
           X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       pub := by sig_implies_pub [Proof.AesGcm.streamDecryptPrecomputedScratchContract, Proof.AesGcm.streamCryptPrecomputedScratchSig,
-          Spec.Gcm.streamTextPrecomputedPre, Spec.Gcm.streamDecryptPost, Proof.AesGcm.streamDecryptX86_64M,
+          Spec.Gcm.streamTextPrecomputedPre, Proof.AesGcm.streamDecryptRoundsPost, Proof.AesGcm.streamDecryptX86_64M,
           Proof.AesGcm.streamDecryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, CtxMode.powers,
           X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
@@ -333,10 +334,10 @@ theorem streamDecryptP_verified :
 the working space. -/
 def sealFrameSatP : State := { sealFrameSat with rd := [⟨0x1000, 1024⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0x8008, 24⟩] }
 
-theorem sealFrameSatP_pre : ∃ s, (Spec.Gcm.sealPrecomputedContract X86_64.abi 2624).pre s := by
+theorem sealFrameSatP_pre : ∃ s, (Proof.AesGcm.sealPrecomputedRoundsContract X86_64.abi 2624).pre s := by
   refine ⟨sealFrameSatP, ?_⟩
-  sig_pre [Spec.Gcm.sealPrecomputedContract, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPrecomputedPre,
-    Spec.Gcm.sealPost, X86_64.abi, X86_64.argRegs, sealFrameSatP, sealFrameSat, sealSat]
+  sig_pre [Proof.AesGcm.sealPrecomputedRoundsContract, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPrecomputedPre,
+    Proof.AesGcm.sealRoundsPost, X86_64.abi, X86_64.argRegs, sealFrameSatP, sealFrameSat, sealSat]
   sig_and_intros
   all_goals first
     | rfl
@@ -353,10 +354,10 @@ theorem sealPCode_framed {c : Prog isa}
     (hv : Verified X86_64.target c (Proof.AesGcm.sealPrecomputedScratchContract X86_64.abi 24))
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 c)
-      (Spec.Gcm.sealPrecomputedContract X86_64.abi 2624) :=
+      (Proof.AesGcm.sealPrecomputedRoundsContract X86_64.abi 2624) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.sealPrecomputedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.sealPrecomputedPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.sealPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (post := Proof.AesGcm.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2600) hv (by decide) (by decide) (by decide)
     hsp hxd (Proof.AesGcm.sealPrecomputedPre_local _)
     (Proof.AesGcm.sealPrecomputedPost_local _) sealFrameSatP_pre
@@ -364,7 +365,7 @@ theorem sealPCode_framed {c : Prog isa}
 theorem sealP_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 («seal» (v.withBlk v.blkP)))
-      (Spec.Gcm.sealPrecomputedContract X86_64.abi 2624) :=
+      (Proof.AesGcm.sealPrecomputedRoundsContract X86_64.abi 2624) :=
   sealPCode_framed (sealP_verified v) (sealM_spSafe v v.blkP) (sealM_xdepth v v.blkP)
 
 /-- A state satisfying `vg_aes_gcm_open_precomputed`'s precondition, without
@@ -372,10 +373,10 @@ the working space. -/
 def openFrameSatP : State :=
   { openFrameSat with rd := [⟨0x1000, 1024⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0, 0⟩, ⟨0x8008, 32⟩] }
 
-theorem openFrameSatP_pre : ∃ s, (Spec.Gcm.openPrecomputedContract X86_64.abi 2632).pre s := by
+theorem openFrameSatP_pre : ∃ s, (Proof.AesGcm.openPrecomputedRoundsContract X86_64.abi 2632).pre s := by
   refine ⟨openFrameSatP, ?_⟩
-  sig_pre [Spec.Gcm.openPrecomputedContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedPre,
-    Spec.Gcm.openPost, Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs, openFrameSatP, openFrameSat, openSat]
+  sig_pre [Proof.AesGcm.openPrecomputedRoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedPre,
+    Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs, openFrameSatP, openFrameSat, openSat]
   sig_and_intros
   all_goals first
     | rfl
@@ -389,10 +390,10 @@ theorem openPCode_framed {c : Prog isa}
     (hv : Verified X86_64.target c (Proof.AesGcm.openPrecomputedScratchContract X86_64.abi 24))
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 c)
-      (Spec.Gcm.openPrecomputedContract X86_64.abi 2632) :=
+      (Proof.AesGcm.openPrecomputedRoundsContract X86_64.abi 2632) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openPrecomputedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openPrecomputedPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (post := Proof.AesGcm.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) hv
     (by decide) (by decide) (by decide) hsp hxd
     (Proof.AesGcm.openPrecomputedPre_local _) (Proof.AesGcm.openPrecomputedPost_local _) openFrameSatP_pre
@@ -401,17 +402,17 @@ theorem openPCode_framed {c : Prog isa}
 theorem openP_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» (v.withBlk v.blkP)))
-      (Spec.Gcm.openPrecomputedContract X86_64.abi 2632) :=
+      (Proof.AesGcm.openPrecomputedRoundsContract X86_64.abi 2632) :=
   openPCode_framed (openP_verified v) (openM_spSafe v v.blkP) (openM_xdepth v v.blkP)
 
 /-- A state satisfying the preconditions of `vg_aes_gcm_stream_encrypt_precomputed`
 and `_decrypt_precomputed`, without the working space. -/
 def crFrameSatP : State := { crFrameSat with rd := [⟨0x1000, 1024⟩, ⟨0x8008, 8⟩] }
 
-theorem streamEncryptFrameSatP_pre : ∃ s, (Spec.Gcm.streamEncryptPrecomputedContract X86_64.abi 2608).pre s := by
+theorem streamEncryptFrameSatP_pre : ∃ s, (Proof.AesGcm.streamEncryptPrecomputedRoundsContract X86_64.abi 2608).pre s := by
   refine ⟨crFrameSatP, ?_⟩
-  sig_pre [Spec.Gcm.streamEncryptPrecomputedContract, Spec.Gcm.streamCryptPrecomputedSig,
-    Spec.Gcm.streamTextPrecomputedPre, Spec.Gcm.streamEncryptPost, X86_64.abi, X86_64.argRegs, crFrameSatP, crFrameSat,
+  sig_pre [Proof.AesGcm.streamEncryptPrecomputedRoundsContract, Spec.Gcm.streamCryptPrecomputedSig,
+    Spec.Gcm.streamTextPrecomputedPre, Proof.AesGcm.streamEncryptRoundsPost, X86_64.abi, X86_64.argRegs, crFrameSatP, crFrameSat,
     crSat]
   sig_and_intros
   all_goals first
@@ -423,18 +424,18 @@ theorem streamEncryptFrameSatP_pre : ∃ s, (Spec.Gcm.streamEncryptPrecomputedCo
 theorem streamEncryptP_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamEncrypt (v.withBlk v.blkP)))
-      (Spec.Gcm.streamEncryptPrecomputedContract X86_64.abi 2608) :=
+      (Proof.AesGcm.streamEncryptPrecomputedRoundsContract X86_64.abi 2608) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamCryptPrecomputedSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPrecomputedPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.streamEncryptPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (post := Proof.AesGcm.streamEncryptRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2584) (streamEncryptP_verified v) (by decide) (by decide) (by decide)
     (streamEncryptM_spSafe v v.blkP) (streamEncryptM_xdepth v v.blkP) (Proof.AesGcm.streamTextPrecomputedPre_local _)
     (Proof.AesGcm.streamEncryptPrecomputedPost_local _) streamEncryptFrameSatP_pre
 
-theorem streamDecryptFrameSatP_pre : ∃ s, (Spec.Gcm.streamDecryptPrecomputedContract X86_64.abi 2608).pre s := by
+theorem streamDecryptFrameSatP_pre : ∃ s, (Proof.AesGcm.streamDecryptPrecomputedRoundsContract X86_64.abi 2608).pre s := by
   refine ⟨crFrameSatP, ?_⟩
-  sig_pre [Spec.Gcm.streamDecryptPrecomputedContract, Spec.Gcm.streamCryptPrecomputedSig,
-    Spec.Gcm.streamTextPrecomputedPre, Spec.Gcm.streamDecryptPost, X86_64.abi, X86_64.argRegs, crFrameSatP, crFrameSat,
+  sig_pre [Proof.AesGcm.streamDecryptPrecomputedRoundsContract, Spec.Gcm.streamCryptPrecomputedSig,
+    Spec.Gcm.streamTextPrecomputedPre, Proof.AesGcm.streamDecryptRoundsPost, X86_64.abi, X86_64.argRegs, crFrameSatP, crFrameSat,
     crSat]
   sig_and_intros
   all_goals first
@@ -446,10 +447,10 @@ theorem streamDecryptFrameSatP_pre : ∃ s, (Spec.Gcm.streamDecryptPrecomputedCo
 theorem streamDecryptP_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamDecrypt (v.withBlk v.blkP)))
-      (Spec.Gcm.streamDecryptPrecomputedContract X86_64.abi 2608) :=
+      (Proof.AesGcm.streamDecryptPrecomputedRoundsContract X86_64.abi 2608) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamCryptPrecomputedSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPrecomputedPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.streamDecryptPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (post := Proof.AesGcm.streamDecryptRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2584) (streamDecryptP_verified v) (by decide) (by decide) (by decide)
     (streamDecryptM_spSafe v v.blkP) (streamDecryptM_xdepth v v.blkP) (Proof.AesGcm.streamTextPrecomputedPre_local _)
     (Proof.AesGcm.streamDecryptPrecomputedPost_local _) streamDecryptFrameSatP_pre

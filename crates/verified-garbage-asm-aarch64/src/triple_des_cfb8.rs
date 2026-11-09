@@ -15,7 +15,7 @@
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_triple_des_cfb8_encrypt(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_triple_des_cfb8_encrypt(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10fc3ff,0x910003e4,0x91000085,0xf901c4b3,0xf901c8b4,0xf901ccb5,0xf901d0b6,0xf901d4b7
 .inst 0xf901d8b8,0xf901dcb9,0xf901e0ba,0xf901e4bb,0xf901e8bc,0x91000039,0x91000057,0x91000078
@@ -69,7 +69,7 @@ b 21f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_triple_des_cfb8_decrypt(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_triple_des_cfb8_decrypt(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10fc3ff,0x910003e4,0x91000085,0xf901c4b3,0xf901c8b4,0xf901ccb5,0xf901d0b6,0xf901d4b7
 .inst 0xf901d8b8,0xf901dcb9,0xf901e0ba,0xf901e4bb,0xf901e8bc,0x91000039,0x91000057,0x91000078

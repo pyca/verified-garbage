@@ -12,7 +12,9 @@
 
 use std::collections::BTreeMap;
 
-use verified_garbage::idea_ecb::{Error, IdeaEcb};
+use verified_garbage::error::IncompleteBlock;
+
+use verified_garbage::cipher::idea::IdeaEcb;
 use verified_garbage_test_vectors::{Record, unhex};
 
 /// Encrypts or decrypts `input` with `operation`, whole, in two pieces at
@@ -20,7 +22,7 @@ use verified_garbage_test_vectors::{Record, unhex};
 /// time, and checks each against `expected`.
 fn check(
     ctx: &IdeaEcb,
-    operation: fn(&IdeaEcb, &mut [u8]) -> Result<(), Error>,
+    operation: fn(&IdeaEcb, &mut [u8]) -> Result<(), IncompleteBlock>,
     input: &[u8],
     expected: &[u8],
 ) {
@@ -44,7 +46,7 @@ fn check(
 #[test]
 fn nessie() {
     // The vectors of each key, in order, for multi-block ECB.
-    let mut by_key: BTreeMap<Vec<u8>, (Vec<u8>, Vec<u8>)> = BTreeMap::new();
+    let mut by_key: BTreeMap<[u8; 16], (Vec<u8>, Vec<u8>)> = BTreeMap::new();
     let mut count = 0;
     let mut iterated = 0;
     for record in crate::vectors::text("vectors/cryptography-idea/idea-ecb.txt")
@@ -55,10 +57,10 @@ fn nessie() {
         let Some(key) = fields.get("KEY") else {
             continue;
         };
-        let key = unhex(key);
+        let key: [u8; 16] = unhex(key).try_into().unwrap();
         let pt = unhex(fields["PLAINTEXT"]);
         let ct = unhex(fields["CIPHERTEXT"]);
-        let ctx = IdeaEcb::new(&key).unwrap();
+        let ctx = IdeaEcb::new(&key);
         let mut block = pt.clone();
         ctx.encrypt(&mut block).unwrap();
         assert_eq!(block, ct);
@@ -88,7 +90,7 @@ fn nessie() {
     assert_eq!(count, 900);
     assert_eq!(iterated, 900);
     for (key, (pt, ct)) in by_key {
-        let ctx = IdeaEcb::new(&key).unwrap();
+        let ctx = IdeaEcb::new(&key);
         check(&ctx, IdeaEcb::encrypt, &pt, &ct);
         check(&ctx, IdeaEcb::decrypt, &ct, &pt);
     }
@@ -96,17 +98,11 @@ fn nessie() {
 
 #[test]
 fn errors() {
-    for len in [0, 15, 17, 24, 32] {
-        assert!(matches!(
-            IdeaEcb::new(&vec![0; len]),
-            Err(Error::InvalidKeyLength)
-        ));
-    }
-    let ctx = IdeaEcb::new(&[0; 16]).unwrap();
+    let ctx = IdeaEcb::new(&[0; 16]);
     for len in [1, 7, 9, 15] {
         let mut buffer = vec![0xa5; len];
-        assert_eq!(ctx.encrypt(&mut buffer), Err(Error::IncompleteBlock));
-        assert_eq!(ctx.decrypt(&mut buffer), Err(Error::IncompleteBlock));
+        assert_eq!(ctx.encrypt(&mut buffer), Err(IncompleteBlock));
+        assert_eq!(ctx.decrypt(&mut buffer), Err(IncompleteBlock));
         assert!(crate::bytes::all_equal(&buffer, 0xa5));
     }
 }

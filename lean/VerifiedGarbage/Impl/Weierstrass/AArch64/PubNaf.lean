@@ -11,7 +11,7 @@ public import VerifiedGarbage.Impl.Weierstrass.CachedJac
 fields whose products may be calls (`Mont.callOf`): the signed digits of `k`
 (width five, `64 n + 1` bytes, `prep`), a table of the eight odd multiples
 `[1]P, [3]P, …, [15]P` (`table`), and one doubling per digit, adding the
-table's entry for each nonzero digit (`window`). The table holds no operand
+table's entry for each nonzero digit (`step`, `stepD`). The table holds no operand
 of a product: `2P` is kept in `E` while the table is built, and an entry is
 copied to `E` before it is added, so the table may lie above the products'
 offsets. The table is built by co-Z arithmetic, for a `P` whose `z` is one,
@@ -174,24 +174,10 @@ def step (K : WinCfg) : Prog isa :=
 def stepD (K : WinCfg) (d : Prog isa) : Prog isa :=
   .seq (.block [decCounter]) <| .seq d (digit K)
 
-/-- An iteration, with the given doubling (`dd`) if any. -/
-def stepOf (K : WinCfg) : Option (Prog isa) → Prog isa
-  | none => step K
-  | some d => stepD K d
-
 /-- `R` to projective coordinates, through `E`: `(XZ : Y : Z³)`, and
 `(0 : 1 : 0)` for the point at infinity. -/
 def finish (K : WinCfg) : Prog isa :=
   .seq (.block (copyPt K.M.n K.E K.R)) <|
     .seq (fprogB K.M (fromJ K.S K.E (WinCfg.zeroPt K) K.R)) (.block (WinCfg.ySel K))
-
-/-- `[k]P` into `R`, projective, from the digits at `K.bits`, with the
-doubling `dd` if given (an allocated one, which does what `dblJ` does). -/
-def window (K : WinCfg) (dd : Option (Prog isa) := none) : Prog isa :=
-  .seq (table K) <|
-  .seq (cache K) <|
-  .seq (.block (infinity K K.D ++ [.movz .x .x19 (BitVec.ofNat 16 (64 * K.M.n)) 0])) <|
-  .seq (digit K) <|
-  .seq (.loop (stepOf K dd) (.nonzero .x .x19)) (finish K)
 
 end VG.Impl.Weierstrass.AArch64.PubNaf

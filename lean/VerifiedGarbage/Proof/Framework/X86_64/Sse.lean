@@ -184,13 +184,6 @@ theorem pshufb_bswap_bytes (a : BitVec 128) :
       ofBytes fun j => byte a (4 * (j / 4) + 3 - j % 4) := by
   simp only [reduceXBinOpEval, ofBytes]
   rfl
-theorem getLsbD_bswap32 (x : BitVec 32) (i : Nat) :
-    (bswap32 x).getLsbD i = if i < 8 then x.getLsbD (24 + i) else if i - 8 < 8 then x.getLsbD (16 + (i - 8))
-      else if i - 8 - 8 < 8 then x.getLsbD (8 + (i - 8 - 8)) else (decide (i - 8 - 8 - 8 < 8) && x.getLsbD (i - 8 - 8 - 8)) := by
-  simp only [bswap32, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  rcases (by omega_arith : i < 8 ∨ (8 ≤ i ∧ i < 16) ∨ (16 ≤ i ∧ i < 24) ∨ 24 ≤ i) with h | h | h | h <;>
-  simp (disch := omega_arith) only [ite_eq_left, ite_eq_right, decide_eq_true, Bool.true_and, Nat.zero_add]
-
 theorem getLsbD_ofDwords_block (a b c d : BitVec 32) {q s : Nat} (hq : q < 4) (hs : s < 32) :
     (ofDwords a b c d).getLsbD (32 * q + s) =
       if q = 0 then a.getLsbD s else if q = 1 then b.getLsbD s else if q = 2 then c.getLsbD s

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rc2.Contract
 import VerifiedGarbage.Proof.Rc2.RISCV64.Cbc.Call
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 public import VerifiedGarbage.Proof.Rc2.RISCV64.Run
@@ -56,9 +57,9 @@ structure Inv (d : Spec.Rc2.Direction) (T I D W : Addr) (n : Nat) (g : Reg → B
   saved : Spill.Saved W g saved t.mem
   sched : Spec.Rc2.scheduleAt t.mem T = Spec.Rc2.scheduleAt m₀ T
   done : Spec.Rc2.blocksAt t.mem D j =
-    (Spec.Rc2.cbc (Spec.Rc2.scheduleAt m₀ T) d (Spec.Rc2.blockAt m₀ I) (Spec.Rc2.blocksAt m₀ D j)).1
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt m₀ T) d (Spec.Rc2.blockAt m₀ I) (Spec.Rc2.blocksAt m₀ D j)).1
   iv : Spec.Rc2.blockAt t.mem I =
-    (Spec.Rc2.cbc (Spec.Rc2.scheduleAt m₀ T) d (Spec.Rc2.blockAt m₀ I) (Spec.Rc2.blocksAt m₀ D j)).2
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt m₀ T) d (Spec.Rc2.blockAt m₀ I) (Spec.Rc2.blocksAt m₀ D j)).2
   rest : ∀ i, j ≤ i → i < n → Spec.Rc2.blockAt t.mem (D + BitVec.ofNat 64 (8 * i)) =
     Spec.Rc2.blockAt m₀ (D + BitVec.ofNat 64 (8 * i))
 

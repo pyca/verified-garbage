@@ -46,8 +46,4 @@ theorem round_add_regs {s t : State} {rs : List Reg}
   · exact H.rf.1 .esp (by simp only [roundTaint, RegSet.mem_ofList]; exact List.mem_cons_self)
   · exact regs r mem
 
-theorem pair_regs {g : Geometry} {s t : State} {before after : List Reg}
-    (H : Pair g before s t) (subset : ∀ r ∈ after, r ∈ before) : Pair g after s t :=
-  ⟨H.1, H.2.1, round_add_regs (round_forget H.2.2) fun r mem => round_regs H.2.2 (subset r mem)⟩
-
 end VG.Proof.MillerRabin.X86

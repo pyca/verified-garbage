@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Argon2.PPC64LE.Compress
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.CT
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # Argon2 (RFC 9106) on PPC64LE -/
 

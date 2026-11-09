@@ -375,11 +375,6 @@ theorem fprogB_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
     rw [k₂.mem x (fun w hw => hx w (List.mem_cons_of_mem _ hw)) ht,
       k₁.mem x (hx _ (List.mem_cons_self ..)) ht]
 
-/-- Code that calls nothing runs as its inlined form. -/
-theorem _root_.VG.X86_64.wp_of_inline {c : Prog isa} (h : c.noCalls = true) {s : State} {Q : State → Prop}
-    (hw : WP isa c.inline s Q) : WP isa c s Q :=
-  Code.inline_of_noCalls h ▸ hw
-
 /-- `fprogB` of `op :: ops`: the operation, then the rest. -/
 theorem fprogB_cons_iff {M : Mod} {op : FOp} {ops : List FOp} {s : State} {Q : State → Prop} :
     WP isa (fprogB M (op :: ops)).inline s Q ↔

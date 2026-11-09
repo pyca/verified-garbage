@@ -94,10 +94,11 @@ abbrev sScr : Addr := σ.gpr .r7
 
 end
 
-/-- The precondition of `signContract` with `STK` bytes of stack. -/
+/-- The precondition of `signContract` with `STK` bytes of stack; there may
+be more regions to read after the inputs (a kernel's cache). -/
 structure SPre (p : Params) (STK : Nat) (σ : State) : Prop where
   stk : STK ≤ σ.sp.toNat
-  rd : σ.rd = [reg (sSk σ) p.skLen, reg (sMu σ) 64, reg (sRnd σ) 32]
+  rd : ∃ X, σ.rd = [reg (sSk σ) p.skLen, reg (sMu σ) 64, reg (sRnd σ) 32] ++ X
   wr : σ.wr = [reg (sSig σ) p.sigLen, reg (sScr σ) (scrLen p)]
   d_kg : (reg (sSk σ) p.skLen).Disjoint (reg (sSig σ) p.sigLen)
   d_kc : (reg (sSk σ) p.skLen).Disjoint (reg (sScr σ) (scrLen p))
@@ -121,7 +122,8 @@ theorem spre_of {p : Params} {n : Nat} {σ : State} (h : (Spec.MlDsa.signContrac
     SPre p (n + 1) σ := by
   sig_pre [Spec.MlDsa.signContract, Spec.MlDsa.signSig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19⟩ := h
-  exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19⟩
+  exact ⟨h0, ⟨[], h1.trans (List.append_nil _).symm⟩, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14,
+    h15, h16, h17, h18, h19⟩
 
 /-! ## The buffers -/
 

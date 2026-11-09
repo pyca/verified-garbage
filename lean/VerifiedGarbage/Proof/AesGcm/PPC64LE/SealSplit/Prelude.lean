@@ -196,10 +196,6 @@ theorem work_argument (s : State) : (state s).mem.readW (s.sp+104) 64=work s :=
   config_arg1 (savedState (headState s))
 
 
-theorem fields (s : State) :
-    (state s).rd=s.rd ∧ (state s).wr=s.wr ∧ (state s).sp=s.sp ∧ (state s).lr=s.lr := by
-  exact ⟨rfl,rfl,rfl,rfl⟩
-
 
 theorem keep (s : State) : Keep [.r0,.r9,.r10,.r11,.r12] s (state s) := by
   refine ⟨fun r hr => ?_,rfl,rfl⟩

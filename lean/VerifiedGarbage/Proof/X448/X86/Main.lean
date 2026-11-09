@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Contract
 import VerifiedGarbage.Proof.X448.X86.BitsInput
 import VerifiedGarbage.Proof.X448.X86.Finish
 import VerifiedGarbage.Proof.X448.X86.Ladder
@@ -18,7 +19,7 @@ import VerifiedGarbage.Impl.X25519.X86
 /-!
 # X448 on x86 (32-bit): the whole function
 
-The contract the proof is written against (the facts of `Spec.X448.x448Contract`
+The contract the proof is written against (the facts of `Proof.X448.x448Contract`
 it uses, stated for x86 (32-bit)), and the correctness of `vg_x448` against it:
 every write is in the working space but the result's, so the arguments are read
 unchanged, the callee-saved registers restored from the working space, and the

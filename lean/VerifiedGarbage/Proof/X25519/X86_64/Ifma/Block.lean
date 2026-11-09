@@ -30,19 +30,6 @@ theorem val_extract (s₀ : State) (t : T) {l : Nat} (hl : l < 4) :
   refine this.trans ?_
   rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
 
-/-- A quadword no store touched. -/
-theorem stores_mq_fresh (s₀ : State) (base : Addr) (m : Mem) :
-    ∀ (st : List (Nat × T)) {d : Nat}, d < 2 ^ 62 → (∀ e ∈ st, e.1 < 2 ^ 62) →
-      (st.all fun (e, _) => d + 8 ≤ e || e + 32 ≤ d) = true →
-      mq (stores s₀ base st m) base d = mq m base d
-  | [], _, _, _, _ => rfl
-  | (e, t) :: st, d, hd, he, hf => by
-    simp only [List.all_cons, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq] at hf
-    have e1 := readW_writeW_off (stores s₀ base st m) base (t.val s₀) (d := d) (e := e) (n := 8)
-      (by omega) (by have := he _ (List.mem_cons_self ..); simp at this; omega) (by omega)
-    have e2 := stores_mq_fresh s₀ base m st hd (fun x hx => he x (List.mem_cons_of_mem _ hx)) hf.2
-    exact e1.trans e2
-
 /-- Slots 32 bytes apart. -/
 def Apart (st : List (Nat × T)) : Prop := st.Pairwise fun x y => x.1 + 32 ≤ y.1 ∨ y.1 + 32 ≤ x.1
 

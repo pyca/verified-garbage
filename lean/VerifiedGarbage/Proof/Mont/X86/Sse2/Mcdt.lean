@@ -36,8 +36,6 @@ a run (`Exec.mxcsr`), as `Exec.syms` for the statics.
 namespace VG.Proof.Mont.X86.Sse2
 open VG VG.X86
 
-theorem setReg_mxcsr (s : State) (r : Reg) (v : BitVec 32) : (s.setReg r v).mxcsr = s.mxcsr := rfl
-
 theorem exec_mxcsr {i : Instr} {s s' : State} (h : exec i s = some s') : s'.mxcsr = s.mxcsr := by
   cases i with
   | store m r | store8 m r | movdquStore m r | movqStore m r =>
@@ -143,25 +141,16 @@ theorem mcdtPushed_esp (r : Reg) (s : State) (hr : r ≠ .esp) :
     (mcdtPushed r s).gpr .esp = s.gpr .esp - 12 := by
   simp [mcdtPushed, State.setReg, Ne.symm hr]
 
-theorem mcdtPushed_gpr (r : Reg) (s : State) {q : Reg} (hq : q ≠ .esp) (hqr : q ≠ r) :
-    (mcdtPushed r s).gpr q = s.gpr q := by
-  simp [mcdtPushed, State.setReg, hq, hqr]
-
 theorem mcdtPushed_mcdt (r : Reg) (s : State) : (mcdtPushed r s).mcdt = s.mcdt + 1 := rfl
-theorem mcdtPushed_rd (r : Reg) (s : State) : (mcdtPushed r s).rd = s.rd := rfl
 theorem mcdtPushed_wr (r : Reg) (s : State) :
     (mcdtPushed r s).wr = ⟨(s.gpr .esp - 12).setWidth 64, 9⟩ :: s.wr := rfl
 theorem mcdtPushed_mxcsr (r : Reg) (s : State) : (mcdtPushed r s).mxcsr = s.mxcsr := rfl
 
 theorem mcdtPopped_esp (s : State) : (mcdtPopped s).gpr .esp = s.gpr .esp + 12 := by
   simp [mcdtPopped, State.setReg]
-theorem mcdtPopped_gpr (s : State) {q : Reg} (hq : q ≠ .esp) : (mcdtPopped s).gpr q = s.gpr q := by
-  simp [mcdtPopped, State.setReg, hq]
 theorem mcdtPopped_mem (s : State) : (mcdtPopped s).mem = s.mem := rfl
 theorem mcdtPopped_rd (s : State) : (mcdtPopped s).rd = s.rd := rfl
 theorem mcdtPopped_wr (s : State) : (mcdtPopped s).wr = s.wr.tail := rfl
-theorem mcdtPopped_mcdt (s : State) : (mcdtPopped s).mcdt = s.mcdt - 1 := rfl
-
 /-- The pushed frame holds MXCSR's value at `esp + 4`. -/
 theorem mcdtPushed_saved (r : Reg) (s : State) (hr : r ≠ .esp) (hn : 12 ≤ (s.gpr .esp).toNat) :
     (mcdtPushed r s).mem.readW (((mcdtPushed r s).gpr .esp + 4).setWidth 64) 32 = mcdtSaved s.mcdt s.mxcsr := by

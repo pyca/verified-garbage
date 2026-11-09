@@ -68,9 +68,6 @@ theorem loadImm_val {v : Nat} (hv : v < 2 ^ 31 - 2048) :
 theorem loadImm_imm (v : Nat) : imm12 ((v : Int) - 4096 * hi20 v) := by
   unfold imm12 hi20; omega
 
-theorem q_val : sext32 (BitVec.ofNat 20 (hi20 8380417) ++ (0 : BitVec 12)) +
-    BitVec.ofInt 64 ((8380417 : Nat) - 4096 * hi20 8380417 : Int) = 8380417 := loadImm_val (by decide)
-
 /-- `loadImm` of the constants, as instructions with their immediates. -/
 theorem loadImm_q (r : Reg) : loadImm r 8380417 = [.lui r 0x7FE, .addi r r 1] := by
   simp only [loadImm, hi20]; rfl
@@ -82,13 +79,6 @@ theorem loadM_eq (r : Reg) :
 
 theorem loadImm_inv (r : Reg) : loadImm r 8347681 = [.lui r 0x7F6, .addi r r 33] := by
   simp only [loadImm, hi20]; rfl
-
-theorem q_lui : sext32 ((0x7FE : BitVec 20) ++ (0 : BitVec 12)) + BitVec.ofInt 64 1 = 8380417 := by decide
-
-theorem m_lui : (sext32 ((0x20080 : BitVec 20) ++ (0 : BitVec 12)) + BitVec.ofInt 64 448) <<< 12 +
-    BitVec.ofInt 64 1537 = 2201172575745 := by decide
-
-theorem inv_lui : sext32 ((0x7F6 : BitVec 20) ++ (0 : BitVec 12)) + BitVec.ofInt 64 33 = 8347681 := by decide
 
 /-! ## Words -/
 
@@ -224,9 +214,6 @@ theorem red_toNat (x : BitVec 64) : (red x).toNat = x.toNat % q := by
   unfold red
   rw [fixd_subq (barv_lt x), barv_mod]
 
-theorem red_lt (x : BitVec 64) : (red x).toNat < q := by
-  rw [red_toNat]; exact Nat.mod_lt _ (by decide)
-
 theorem toNat_val64 (x : Zq) : (BitVec.ofNat 64 x.val).toNat = x.val := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega)]
 
@@ -252,10 +239,6 @@ theorem red_mulAdd (a b c : Zq) :
     rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
   rw [red_toNat, hp, val_add', val_mul,
     Nat.add_comm (a.val * b.val), Nat.add_mod_mod]
-
-/-- A reduced coefficient, as loaded. -/
-theorem coeff64 (x : Zq) : (BitVec.ofNat 32 x.val).setWidth 64 = BitVec.ofNat 64 x.val :=
-  VG.Proof.MlKem.RISCV64.setWidth64_ofNat (by have := val_lt x; omega)
 
 /-! ## Steps -/
 
@@ -286,11 +269,6 @@ structure Kept2 (s s' : State) (d t : Reg) (v : BitVec 64) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
-
-theorem Kept2.trans {s s₁ s₂ : State} {d t : Reg} {v w : BitVec 64} (h₁ : Kept2 s s₁ d t v)
-    (h₂ : Kept2 s₁ s₂ d t w) : Kept2 s s₂ d t w :=
-  ⟨h₂.gpr, fun r h1 h2 => (h₂.other r h1 h2).trans (h₁.other r h1 h2), h₂.mem.trans h₁.mem,
-    h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₂.sp.trans h₁.sp⟩
 
 /-- `fixup d t rq`: `d + (d >> 63 & rq)`. -/
 theorem fixup_ok {d t rq : Reg} (hdt : d ≠ t) (hrq : t ≠ rq)

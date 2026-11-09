@@ -106,14 +106,14 @@ structure PI (scr : BitVec 32) (T : Nat) (msg : List Byte) (k : Nat) (s : State)
     if i < k then padY h.B h.L msg (h.md.lenBytes msg.length) i else msg.getD i 0
 
 theorem padBody_taint : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0, .r1, .lr, .r6, .r7, .r9])
-    (.block (padBody h.H)) hc).isSome = true := by
+    (.block (padBody h.sh)) hc).isSome = true := by
   rcases h.lg with ⟨e, -⟩ | ⟨e, -⟩ <;> simp only [padBody, e] <;> exact ⟨_, by taint_decide⟩
 
 /-- One byte. -/
 theorem padStep (hg : Geo L scr) {σ : State} {T : Nat} (hnb : T ≤ 2048) {msg : List Byte}
     (hfit : msg.length + 1 + h.L ≤ T) {k : Nat} (hk : k < T) {s : State}
     (hs : L.St σ s) (hp : PI h scr T msg k s) :
-    WP isa (.block (padBody h.H)) s fun t =>
+    WP isa (.block (padBody h.sh)) s fun t =>
       t.mem = s.mem.writeW (sa scr (oY + k)) (padY h.B h.L msg (h.md.lenBytes msg.length) k) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.gpr .r0 = scr + BitVec.ofNat 32 (oY + (k + 1)) ∧
       t.gpr .r1 = BitVec.ofNat 32 (k + 1) ∧ t.gpr .lr = BitVec.ofNat 32 (T - (k + 1)) ∧
@@ -132,7 +132,7 @@ theorem padStep (hg : Geo L scr) {σ : State} {T : Nat} (hnb : T ≤ 2048) {msg 
     rw [ofNat_and_mask h.B_cases (by pomega), BitVec.add_comm, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   have aL8 : State.addr (scr + BitVec.ofNat 32 (oLen + k % h.B)) = sa scr (oLen + k % h.B) := hg.addr (by pomega)
   have rL8 : InRegions (s.rd ++ s.wr) (sa scr (oLen + k % h.B)) 1 := hg.rd hs (by pomega)
-  have esh : BitVec.ofNat 32 k >>> lgB h.H = BitVec.ofNat 32 (k / h.B) := by
+  have esh : BitVec.ofNat 32 k >>> lgB h.sh = BitVec.ofNat 32 (k / h.B) := by
     rw [VG.Proof.MdStream.Arm.ofNat_shr (by pomega), h.pow_lg]
   have eq1 := eqBit (a := k) (b := msg.length) (by pomega) (by pomega)
   have eq2 := eqBit (a := k / h.B) (b := (msg.length + h.L) / h.B) (by have := Nat.div_le_self k h.B; pomega)
@@ -158,7 +158,7 @@ theorem pad_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 : 0
     (hsn : ∀ σ m, Inv σ m → m.readW (L.fr sNb) 32 = BitVec.ofNat 32 nbm) :
     VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ LB h scr (msg σ).length s.mem ∧
         ∀ i < nbm * h.B, s.mem (sa scr (oY + i)) = (msg σ).getD i 0)
-      (.seq (.block (padArgs h.H)) (countLoop (padBody h.H)))
+      (.seq (.block (padArgs h.sh)) (countLoop (padBody h.sh)))
       (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧
         ∀ i < nbm * h.B, s.mem (sa scr (oY + i)) = padY h.B h.L (msg σ) (h.md.lenBytes (msg σ).length) i) := by
   have hBl := h.B_le
@@ -169,10 +169,10 @@ theorem pad_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 : 0
   generalize hT : nbm * h.B = T at hnb hpos hfit hI ⊢
   refine VP.seq (G := fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ PI h scr T (msg σ) 0 s)
     (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun σ s ⟨hc, hi, lb, hy⟩ => ?_) ?_
-  · have esh : (BitVec.ofNat 32 (msg σ).length + BitVec.ofNat 32 h.L) >>> lgB h.H =
+  · have esh : (BitVec.ofNat 32 (msg σ).length + BitVec.ofNat 32 h.L) >>> lgB h.sh =
         BitVec.ofNat 32 (((msg σ).length + h.L) / h.B) := by
       rw [BitVec.ofNat_add_ofNat, VG.Proof.MdStream.Arm.ofNat_shr (by have := hfit σ; pomega), h.pow_lg]
-    have esl : BitVec.ofNat 32 nbm <<< lgB h.H = BitVec.ofNat 32 T := by
+    have esl : BitVec.ofNat 32 nbm <<< lgB h.sh = BitVec.ofNat 32 T := by
       rw [← hT]
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq, h.pow_lg,

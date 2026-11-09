@@ -5,6 +5,8 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_private_checked` on RISC-V: the precondition
@@ -107,10 +109,10 @@ structure PreP (s : State) : Prop where
   hs : Spec.Rsa.scratchWords (s.gpr .a3).toNat ≤ (stackArg s 11).toNat
   al : (stackArg s 10).toNat % 8 = 0
 
-theorem preP_of {s : State} (h : (Spec.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre s) : PreP s := by
+theorem preP_of {s : State} (h : (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre s) : PreP s := by
   have e : frameBytes = 3247 + 1 := rfl
   rw [e] at h
-  sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, RISCV64.abi, RISCV64.argRegs,
+  sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, RISCV64.abi, RISCV64.argRegs,
     stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp16, sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, h1, h7,

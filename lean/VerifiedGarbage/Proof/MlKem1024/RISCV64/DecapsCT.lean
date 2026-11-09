@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Impl.MlKem1024.RISCV64.Top
 public import VerifiedGarbage.Spec.MlKem.Contract1024
 public import VerifiedGarbage.Proof.MlKem.RISCV64.Decaps
@@ -28,8 +29,8 @@ open VG.Proof.MlKem VG.Proof.MlKem.RISCV64 VG.Proof.MlKem1024.RISCV64
 open VG.Proof.MlKem.RISCV64.Enc
 open VG.Proof.MlKem.RISCV64.Decaps hiding pre_of post_of satState verified
 
-theorem pre_of {s : State} (h : (Spec.MlKem1024.decapsContract RISCV64.abi 1168).pre s) : Pre kl1024 s := by
-  sig_pre [Spec.MlKem1024.decapsContract, Spec.MlKem1024.decapsSig, RISCV64.abi, RISCV64.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlKem.Scrubbed.decaps1024BodyContract RISCV64.abi 1168).pre s) : Pre kl1024 s := by
+  sig_pre [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, RISCV64.abi, RISCV64.argRegs] at h
   obtain ⟨al, h0, h1, h2, d1, d2, d3, d4, d5, b1, b2, b3, b4, f1, f2, f3, f4, alS⟩ := h
   exact ⟨kl1024_wf, kl1024_calls, al, h0, h1, h2, d1, d2, d3, d4, d5, b1, b2, b3, b4, f1, f2, f3, f4, alS⟩
 
@@ -37,8 +38,8 @@ theorem post_of {s₀ s : State}
     (h3 : s.gpr .a0 = if okEnc kl1024.k (ρD kl1024 s₀) kl1024.k then 1 else 0)
     (hkey : bytesAt s.mem (pKey s₀) 32 =
       if CT kl1024 s₀ = C2 kl1024 s₀ then K1 kl1024 s₀ else KB kl1024 s₀) :
-    (Spec.MlKem1024.decapsContract RISCV64.abi 1168).post s₀ s := by
-  sig_post [Spec.MlKem1024.decapsContract, Spec.MlKem1024.decapsSig, RISCV64.abi, RISCV64.argRegs]
+    (Proof.MlKem.Scrubbed.decaps1024BodyContract RISCV64.abi 1168).post s₀ s := by
+  sig_post [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, RISCV64.abi, RISCV64.argRegs]
   have e : BitVec.setWidth 32
       (if okEnc kl1024.k (ρD kl1024 s₀) kl1024.k then (1 : BitVec 64) else 0) =
       if okEnc kl1024.k (ρD kl1024 s₀) kl1024.k then 1 else 0 := by
@@ -58,13 +59,13 @@ def satState : State where
   wr := [⟨0x3000, 32⟩, ⟨0x10000, 49152⟩]
 
 theorem verified :
-    Verified RISCV64.target Impl.MlKem1024.RISCV64.decaps1024 (Spec.MlKem1024.decapsContract RISCV64.abi 1168) := by
+    Verified RISCV64.target Impl.MlKem1024.RISCV64.decaps1024 (Proof.MlKem.Scrubbed.decaps1024BodyContract RISCV64.abi 1168) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, hlr, h3, hkey⟩ := correct (pre_of hs)
     exact ⟨t, s', he, ⟨hpres, hsp, hlr⟩, post_of h3 hkey⟩
   · have hp₁ := pre_of h₁
     have hp₂ := pre_of h₂
-    sig_pub [Spec.MlKem1024.decapsContract, Spec.MlKem1024.decapsSig, RISCV64.abi, RISCV64.argRegs] at hpub
+    sig_pub [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, RISCV64.abi, RISCV64.argRegs] at hpub
     obtain ⟨hsp, hl, g3, g4, g5, g6⟩ := hpub
     have hr : ρD kl1024 s₁ = ρD kl1024 s₂ := by
       rw [rhoD_eq, rhoD_eq, DK_eq, DK_eq]
@@ -74,7 +75,7 @@ theorem verified :
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem1024.decapsContract, Spec.MlKem1024.decapsSig, RISCV64.abi, RISCV64.argRegs]
+    · sig_reduce [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, RISCV64.abi, RISCV64.argRegs]
       sig_and_intros
       all_goals first
         | trivial

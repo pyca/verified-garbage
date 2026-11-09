@@ -17,22 +17,6 @@ open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Proof.M
 def encodeRanges (n : Nat) : List (Nat × Nat) :=
   [(slot n 5, 8*n), (slot n 6, 8*n), (slot n 1, 8*n), (slot n 2, 16*n+4)]
 
-theorem encodeRanges_val32 {n i k : Nat} {base : Addr} {s t : State}
-    (O : Outs base (encodeRanges n) s.mem t.mem) (hi : i < 9) (hk : k ≤ 2*n)
-    (h1 : i ≠ 1) (h2 : i ≠ 2) (h5 : i ≠ 5) (h6 : i ≠ 6) (hn : contextBytes n ≤ 2^64) :
-    val32 t.mem base (slot n i) k = val32 s.mem base (slot n i) k := by
-  apply O.val32
-  · intro r hr
-    simp only [encodeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    have a := slot_sep (n := n) h1
-    have b := slot_sep (n := n) h2
-    have c := slot_sep (n := n) h5
-    have d := slot_sep (n := n) h6
-    rcases hr with rfl | rfl | rfl | rfl <;> simp only [stride] at * <;> omega
-  · have bound := slot_bound (n := n) hi
-    unfold stride at bound
-    omega
-
 theorem encodeBase_ok {n size m : Nat} {base : Addr} {s : State}
     (C : Context n m base size s)
     (one : wordsVal s.mem base (slot n 3) n = 1)

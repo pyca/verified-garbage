@@ -240,43 +240,6 @@ theorem initS_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) 
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl <;> dsimp only <;> omega_using [eL, eF, eG, eA, eB]
 
-/-- The batches, counted down in `x19`, from `invRun 0` to `invRun B`. -/
-theorem loop_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
-    (hM : ModOkA P.M size m s.mem base) {X : Nat} (hX : X < m) (hm2 : m % 2 = 1) (hm1 : 1 < m)
-    (hB1 : 1 ≤ P.B) (hB : P.B < 2 ^ 16)
-    (hI : IInv P base (Divstep.invRun 59 m P.M.minv.toNat X 0) s) (h19 : s.gpr .x19 = BitVec.ofNat 64 P.B) :
-    WP isa (.loop P.batch (.nonzero .x .x19)) s fun t =>
-      IInv P base (Divstep.invRun 59 m P.M.minv.toNat X P.B) t ∧
-      KeepRegs [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x16, .x17, .x19] s t ∧
-      Unch base (batchW P) s.mem t.mem := by
-  have hn := hs.nowrap
-  have hmt := hL.mo_tbl; have hmo := hM.mo; have n4 := hL.n4
-  have hmi : ((m : Int) * (P.M.minv.toNat : Int) + 1) % 2 ^ 64 = 0 := by exact_mod_cast hM.inv
-  refine countLoop_ok (n := P.B) (by omega_using [hB])
-    (Inv := fun j t => IInv P base (Divstep.invRun 59 m P.M.minv.toNat X (P.B - j)) t ∧
-      t.gpr .x19 = BitVec.ofNat 64 j ∧ Scr t base size ∧ ModOkA P.M size m t.mem base ∧
-      KeepRegs [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x16, .x17, .x19] s t ∧
-      Unch base (batchW P) s.mem t.mem)
-    (fun j t hj1 hjB ⟨It, xt, St, Mt, Kt, Ut⟩ => ?_) (fun t ⟨It, _, _, _, Kt, Ut⟩ => ⟨by simpa using It, Kt, Ut⟩)
-    hB1 ⟨by rw [Nat.sub_self]; exact hI, h19, hs, hM, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩, Unch.refl _ _ _⟩
-  obtain ⟨bd, bf1, bf, bg, ba0, ba1, bb0, bb1⟩ := Divstep.invRun_bounds (N := 59) (by decide) (p := m)
-    (m := P.M.minv.toNat) (x := X) (by exact_mod_cast hm2) (by exact_mod_cast hm1) hmi (by omega_using [])
-    (by exact_mod_cast hX) (P.B - j)
-  refine WP.mono (batch_ok hL St Mt It (by
-      have : (59 * (P.B - j) : Nat) ≤ 59 * 2 ^ 16 := Nat.mul_le_mul_left _ (by omega_using [hB])
-      have h2 : ((59 * (P.B - j) : Nat) : Int) ≤ 59 * 2 ^ 16 := by exact_mod_cast this
-      omega_using [bd, h2]) bf1 bf bg (by rw [abs_of_nonneg ba0]; exact ba1.le) (by rw [abs_of_nonneg bb0]; exact bb1.le)
-    hj1 (by omega_using [hB, hjB]) xt) fun u ⟨Iu, xu, Ku, Uu⟩ => ⟨⟨?_, xu, ?_, ?_, Kt.trans Ku, (Ut.trans Uu).mono ?_⟩, xu⟩
-  · rw [show P.B - (j - 1) = P.B - j + 1 by omega_using [hj1, hjB]]; exact Iu
-  · exact St.of_keepRegs Ku (by decide)
-  · refine ⟨Mt.n0, Mt.n10, Mt.mo, Mt.tmp, Mt.sep, ?_, Mt.inv, Mt.red, Mt.call⟩
-    rw [Uu.wordsVal (fun w hw => by
-      simp only [batchW, List.mem_cons, List.not_mem_nil, or_false] at hw
-      subst hw; dsimp only; omega_using [hmt, n4]) (by omega_using [hmo, hn])]
-    exact Mt.val
-  · intro w hw; simp only [batchW, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_self] at hw ⊢
-    exact hw
-
 /-- The signed batches, counted down in `x19`, from `invRunS 0` to `invRunS B`. -/
 theorem loopS_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
     (hM : ModOkA P.M size m s.mem base) {X : Nat} (hX : X < m) (hm2 : m % 2 = 1) (hm1 : 1 < m)

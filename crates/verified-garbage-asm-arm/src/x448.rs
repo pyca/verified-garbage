@@ -3,9 +3,9 @@
 //! `assembly/x448.s`.
 #![allow(dead_code)]
 
-/// Computes X448 (RFC 7748 §5): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`. The scalar is decoded (clamped); all 448 bits of `u` are used and noncanonical coordinates are reduced modulo the field prime. The result may be all zero (for a `u` of small order), which the caller must check for if its protocol requires it (RFC 7748 §6.2).
+/// Computes an X448 shared secret (RFC 7748 §6.2): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped); all 448 bits of `u` are used and noncanonical coordinates are reduced modulo the field prime (§5).
 ///
-/// Contract: `VG.Spec.X448.x448Contract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate.
+/// Contract: `VG.Spec.X448.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
 ///
 /// # Safety
 ///
@@ -15,11 +15,153 @@
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
-/// * None of `out`, `scalar`, `point` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `scalar`, `point` and `scratch` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_x448(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        r"str r4, [r3, #0]
+        r"push {{lr}}
+push {{r0}}
+bl {vg_x448}
+ldr r1, [sp], #4
+movw r3, #0
+ldrb r2, [r1, #0]
+orr r3, r3, r2
+ldrb r2, [r1, #1]
+orr r3, r3, r2
+ldrb r2, [r1, #2]
+orr r3, r3, r2
+ldrb r2, [r1, #3]
+orr r3, r3, r2
+ldrb r2, [r1, #4]
+orr r3, r3, r2
+ldrb r2, [r1, #5]
+orr r3, r3, r2
+ldrb r2, [r1, #6]
+orr r3, r3, r2
+ldrb r2, [r1, #7]
+orr r3, r3, r2
+ldrb r2, [r1, #8]
+orr r3, r3, r2
+ldrb r2, [r1, #9]
+orr r3, r3, r2
+ldrb r2, [r1, #10]
+orr r3, r3, r2
+ldrb r2, [r1, #11]
+orr r3, r3, r2
+ldrb r2, [r1, #12]
+orr r3, r3, r2
+ldrb r2, [r1, #13]
+orr r3, r3, r2
+ldrb r2, [r1, #14]
+orr r3, r3, r2
+ldrb r2, [r1, #15]
+orr r3, r3, r2
+ldrb r2, [r1, #16]
+orr r3, r3, r2
+ldrb r2, [r1, #17]
+orr r3, r3, r2
+ldrb r2, [r1, #18]
+orr r3, r3, r2
+ldrb r2, [r1, #19]
+orr r3, r3, r2
+ldrb r2, [r1, #20]
+orr r3, r3, r2
+ldrb r2, [r1, #21]
+orr r3, r3, r2
+ldrb r2, [r1, #22]
+orr r3, r3, r2
+ldrb r2, [r1, #23]
+orr r3, r3, r2
+ldrb r2, [r1, #24]
+orr r3, r3, r2
+ldrb r2, [r1, #25]
+orr r3, r3, r2
+ldrb r2, [r1, #26]
+orr r3, r3, r2
+ldrb r2, [r1, #27]
+orr r3, r3, r2
+ldrb r2, [r1, #28]
+orr r3, r3, r2
+ldrb r2, [r1, #29]
+orr r3, r3, r2
+ldrb r2, [r1, #30]
+orr r3, r3, r2
+ldrb r2, [r1, #31]
+orr r3, r3, r2
+ldrb r2, [r1, #32]
+orr r3, r3, r2
+ldrb r2, [r1, #33]
+orr r3, r3, r2
+ldrb r2, [r1, #34]
+orr r3, r3, r2
+ldrb r2, [r1, #35]
+orr r3, r3, r2
+ldrb r2, [r1, #36]
+orr r3, r3, r2
+ldrb r2, [r1, #37]
+orr r3, r3, r2
+ldrb r2, [r1, #38]
+orr r3, r3, r2
+ldrb r2, [r1, #39]
+orr r3, r3, r2
+ldrb r2, [r1, #40]
+orr r3, r3, r2
+ldrb r2, [r1, #41]
+orr r3, r3, r2
+ldrb r2, [r1, #42]
+orr r3, r3, r2
+ldrb r2, [r1, #43]
+orr r3, r3, r2
+ldrb r2, [r1, #44]
+orr r3, r3, r2
+ldrb r2, [r1, #45]
+orr r3, r3, r2
+ldrb r2, [r1, #46]
+orr r3, r3, r2
+ldrb r2, [r1, #47]
+orr r3, r3, r2
+ldrb r2, [r1, #48]
+orr r3, r3, r2
+ldrb r2, [r1, #49]
+orr r3, r3, r2
+ldrb r2, [r1, #50]
+orr r3, r3, r2
+ldrb r2, [r1, #51]
+orr r3, r3, r2
+ldrb r2, [r1, #52]
+orr r3, r3, r2
+ldrb r2, [r1, #53]
+orr r3, r3, r2
+ldrb r2, [r1, #54]
+orr r3, r3, r2
+ldrb r2, [r1, #55]
+orr r3, r3, r2
+sub r3, r3, #1
+lsr r0, r3, #31
+eor r0, r0, #1
+ldr lr, [sp], #4
+bx lr",
+        vg_x448 = sym super::x448::vg_x448::vg_x448,
+    )
+}
+
+/// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
+///
+/// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 56 bytes.
+/// * `scalar` must be valid for reads of 56 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
+/// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_x448_base(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r"mov r3, r2
+str r4, [r3, #0]
 str r5, [r3, #4]
 str r6, [r3, #8]
 str r7, [r3, #12]
@@ -31,144 +173,88 @@ mov r8, r0
 mov r10, lr
 mov r0, r3
 movw r6, #65535
-ldrb r3, [r2, #0]
-ldrb r4, [r2, #1]
-add r3, r3, r4, lsl #8
+mov r3, #5
 str r3, [r0, #64]
 str r3, [r0, #448]
-ldrb r3, [r2, #2]
-ldrb r4, [r2, #3]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #68]
 str r3, [r0, #452]
-ldrb r3, [r2, #4]
-ldrb r4, [r2, #5]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #72]
 str r3, [r0, #456]
-ldrb r3, [r2, #6]
-ldrb r4, [r2, #7]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #76]
 str r3, [r0, #460]
-ldrb r3, [r2, #8]
-ldrb r4, [r2, #9]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #80]
 str r3, [r0, #464]
-ldrb r3, [r2, #10]
-ldrb r4, [r2, #11]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #84]
 str r3, [r0, #468]
-ldrb r3, [r2, #12]
-ldrb r4, [r2, #13]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #88]
 str r3, [r0, #472]
-ldrb r3, [r2, #14]
-ldrb r4, [r2, #15]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #92]
 str r3, [r0, #476]
-ldrb r3, [r2, #16]
-ldrb r4, [r2, #17]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #96]
 str r3, [r0, #480]
-ldrb r3, [r2, #18]
-ldrb r4, [r2, #19]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #100]
 str r3, [r0, #484]
-ldrb r3, [r2, #20]
-ldrb r4, [r2, #21]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #104]
 str r3, [r0, #488]
-ldrb r3, [r2, #22]
-ldrb r4, [r2, #23]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #108]
 str r3, [r0, #492]
-ldrb r3, [r2, #24]
-ldrb r4, [r2, #25]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #112]
 str r3, [r0, #496]
-ldrb r3, [r2, #26]
-ldrb r4, [r2, #27]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #116]
 str r3, [r0, #500]
-ldrb r3, [r2, #28]
-ldrb r4, [r2, #29]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #120]
 str r3, [r0, #504]
-ldrb r3, [r2, #30]
-ldrb r4, [r2, #31]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #124]
 str r3, [r0, #508]
-ldrb r3, [r2, #32]
-ldrb r4, [r2, #33]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #128]
 str r3, [r0, #512]
-ldrb r3, [r2, #34]
-ldrb r4, [r2, #35]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #132]
 str r3, [r0, #516]
-ldrb r3, [r2, #36]
-ldrb r4, [r2, #37]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #136]
 str r3, [r0, #520]
-ldrb r3, [r2, #38]
-ldrb r4, [r2, #39]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #140]
 str r3, [r0, #524]
-ldrb r3, [r2, #40]
-ldrb r4, [r2, #41]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #144]
 str r3, [r0, #528]
-ldrb r3, [r2, #42]
-ldrb r4, [r2, #43]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #148]
 str r3, [r0, #532]
-ldrb r3, [r2, #44]
-ldrb r4, [r2, #45]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #152]
 str r3, [r0, #536]
-ldrb r3, [r2, #46]
-ldrb r4, [r2, #47]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #156]
 str r3, [r0, #540]
-ldrb r3, [r2, #48]
-ldrb r4, [r2, #49]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #160]
 str r3, [r0, #544]
-ldrb r3, [r2, #50]
-ldrb r4, [r2, #51]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #164]
 str r3, [r0, #548]
-ldrb r3, [r2, #52]
-ldrb r4, [r2, #53]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #168]
 str r3, [r0, #552]
-ldrb r3, [r2, #54]
-ldrb r4, [r2, #55]
-add r3, r3, r4, lsl #8
+mov r3, #0
 str r3, [r0, #172]
 str r3, [r0, #556]
 mov r3, #0
@@ -2972,3 +3058,7 @@ bx lr",
 #[rustfmt::skip]
 #[path = "internal/vg_gf448_r16_mul_a24.rs"]
 pub(crate) mod vg_gf448_r16_mul_a24;
+
+#[rustfmt::skip]
+#[path = "internal/vg_x448.rs"]
+pub(crate) mod vg_x448;

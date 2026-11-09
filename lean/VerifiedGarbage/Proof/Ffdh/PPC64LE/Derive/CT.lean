@@ -347,7 +347,8 @@ theorem TG2 {d : DD} {s : State} (h : G2 d s) : WP isa exPre s (X5 d.x) := by
     have := VG.Proof.Bignum.os2ip_lt (d.x.c.db.take d.x.c.k)
     rwa [hb.take_len] at this
   refine WP.mono (exPower_split hb.env hb.r23 he.r9 hb.r28 (by omega) (by omega) he.xl1 (by omega) hb.rdY hb.sepY
-    he.rdX he.sepX he.wX he.wXL (by rw [hp]; exact hf.1) (by rw [hp]; exact hf.2))
+    he.rdX he.sepX he.wX he.wXL (by rw [hp]; exact hf.1) (by rw [hp]; exact hf.2)
+    (by rw [hp]; exact top_of_valid hv (by omega) (by omega)))
     fun s₆ ⟨⟨a30, a31, g10, g29, g11, g23, g28⟩, hw⟩ => ⟨⟨a30, a31, g10, g29, g11, g23, g28⟩, WP.mono hw
       fun t ⟨⟨z5, p5, b5, r10₅⟩, k5⟩ => ?_⟩
   have k29 := (k5.gpr .r29 (by decide)).trans hb.env.h29

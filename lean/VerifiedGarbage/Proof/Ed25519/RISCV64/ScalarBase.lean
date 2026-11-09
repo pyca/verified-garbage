@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.VerifyFn
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Encode
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.ScalarBase
@@ -13,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.BaseContract
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-!
 # `vg_ed25519_scalar_base` on RISC-V: correctness

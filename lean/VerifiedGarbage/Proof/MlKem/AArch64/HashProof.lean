@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 `hash` (`Impl/MlKem/AArch64/Top.lean`) computes the sponge of the
 concatenation of its input pieces, and writes consecutive output to its output
-pieces (`hash_ok`): from the all-zero state (`repr_nil`), each `absorb`
+pieces (`hashWith_ok`): from the all-zero state (`repr_nil`), each `absorb`
 continues the message from the position the previous one returned, the
 padding, and each `squeeze` continues the output. It changes only the Keccak
 state and working space, the outputs, the 16 bytes below the stack pointer,
@@ -177,11 +177,6 @@ theorem mem7 {α : Type} {a b c d e f g x : α} (h : x ∈ [a, b, c, d, e, f, g]
   rcases List.mem_cons.mp h with h | h
   · exact .inl h
   · exact .inr (mem6 h)
-
-theorem covers_one {R : Region} {rs : List Region} (h : R ∈ rs) : Covers [R] rs := fun _ _ hi => by
-  obtain ⟨r, hr, hc⟩ := hi
-  rw [List.mem_singleton.mp hr] at hc
-  exact ⟨R, h, hc⟩
 
 theorem covers_cons {R : Region} {rs xs : List Region} (h : Covers [R] xs) (h' : Covers rs xs) :
     Covers (R :: rs) xs := fun a n hi => by
@@ -482,14 +477,5 @@ theorem hashWith_ok (v : Proof.Sha3.AArch64.Permutation) {sc : Reg} {st wk rate 
   refine (k₂.mono fun r hr => ?_).trans ((kk₇.mono (by simp)).trans ((k₈.mono fun r hr => ?_).trans k'))
   · rcases mem3 hr with rfl | rfl | rfl <;> simp
   · rcases mem3 hr with rfl | rfl | rfl <;> simp
-
-theorem hash_ok {sc : Reg} {st wk rate : Nat} {s₀ : State} (hS : HSetup sc st wk rate s₀) {sfx : Nat}
-    (hsfx : sfx < 256) {ins outs : List Piece} (hne : ins ≠ [])
-    (hin : ∀ p ∈ ins, PieceOk sc st wk s₀ false p) (hout : ∀ p ∈ outs, PieceOk sc st wk s₀ true p)
-    (hpw : outs.Pairwise (fun p q => (preg s₀ p).Disjoint (preg s₀ q))) :
-    WP isa (hash sc st wk rate sfx ins outs) s₀ fun s' =>
-      Kept (STr sc st s₀ :: WKr sc wk s₀ :: below s₀.sp 16 :: outs.map (preg s₀)) s₀ s' ∧
-      Outs s₀ s'.mem rate (absorb rate (pad rate (BitVec.ofNat 8 sfx) (ins.map (pbytes s₀)).flatten)) 0 outs :=
-  hashWith_ok .scalar hS hsfx hne hin hout hpw
 
 end VG.Proof.MlKem.AArch64

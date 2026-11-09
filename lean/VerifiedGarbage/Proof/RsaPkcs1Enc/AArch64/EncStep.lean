@@ -28,8 +28,6 @@ def zmask (bs : List Byte) : BitVec 64 := if bs.all (· != 0) then 0 else BitVec
 /-- All ones if `b` is zero. -/
 def zbit (b : Byte) : BitVec 64 := if b = 0 then BitVec.allOnes 64 else 0
 
-theorem zmask_nil : zmask [] = 0 := rfl
-
 theorem zmask_snoc (bs : List Byte) (b : Byte) : zmask (bs ++ [b]) = zmask bs ||| zbit b := by
   by_cases hb : b = 0
   · subst hb

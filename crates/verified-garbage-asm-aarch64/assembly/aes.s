@@ -1257,7 +1257,6 @@ vg_aes_expand_key:
 	.p2align 6
 
 vg_aes_expand_key_aes:
-	.arch_extension aes
 	sub sp, sp, #512
 	add x3, sp, #0
 	movi v0.2d, #0
@@ -1762,7 +1761,6 @@ vg_aes_expand_key_aes:
 	stp x17, x17, [x16, #496]
 	add sp, sp, #512
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_encrypt_blocks:
@@ -4724,7 +4722,6 @@ vg_aes_decrypt_blocks:
 	.p2align 6
 
 vg_aes_encrypt_blocks_aes:
-	.arch_extension aes
 	ldr q16, [x0, #0]
 	ldr q17, [x0, #16]
 	ldr q18, [x0, #32]
@@ -5050,11 +5047,9 @@ vg_aes_encrypt_blocks_aes:
 27:
 28:
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_decrypt_blocks_aes:
-	.arch_extension aes
 	ldr q16, [x0, #0]
 	ldr q17, [x0, #16]
 	ldr q18, [x0, #32]
@@ -5392,5 +5387,4 @@ vg_aes_decrypt_blocks_aes:
 27:
 28:
 	ret
-	.arch_extension noaes
 	.p2align 6

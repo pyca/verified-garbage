@@ -90,6 +90,7 @@ def TabsOk (K : List (String × List (BitVec 64))) (st : Nat) (s : State) : Prop
       t.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 st, st⟩) ∧
     ∀ t ∈ tabRegs K s, t.base.toNat % 64 = 0
 
+-- Used only in default arguments (`OfbCfb.lean`), which no index records.
 theorem tabsOk_nil (st : Nat) (s : State) : TabsOk [] st s :=
   ⟨fun _ h => absurd h List.not_mem_nil, fun _ h => absurd h List.not_mem_nil, fun _ h => absurd h List.not_mem_nil⟩
 
@@ -243,9 +244,6 @@ include hp
 
 
 omit hp in
-theorem UPre.scrB : c.scratchBytes = oOff + 2 * c.bs + c.stackScratch := rfl
-
-omit hp in
 theorem UPre.blk_sub : Region.Sub (blkR c s₀) (scrR c s₀) := VG.Offset.sub_base _ (by unfold Core.scratchBytes Core.csOff; omega_arith)
 
 omit hp in
@@ -281,8 +279,6 @@ theorem UPre.ciph_eq {m : Mem}
 end
 
 /-! ## The prologue -/
-
-theorem stackArgAddr0 (s : State) : State.addr (s.sp + BitVec.ofNat 32 0) = stackArgAddr s 0 := rfl
 
 
 /-- What the saves and the copy of the IV leave in memory. -/

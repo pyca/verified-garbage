@@ -74,9 +74,6 @@ theorem ecbCall_eq (d : Dir) :
       (.pop .r4 (4 * [Reg.r4, .lr].length)) := by
   cases d <;> rfl
 
-theorem dirOf_dirFlag (d : Dir) : dirOf (BitVec.ofNat 32 (dirFlag d)) = d := by
-  cases d <;> rfl
-
 theorem ecbAnyCode_stack : VG.Arm.FrameStack.armStack ecbAnyCode ≤ 1472 := by decide +kernel
 
 /-- The state the call is made from, `σ`: after the push of `s₀`'s `r4` and

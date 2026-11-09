@@ -41,11 +41,6 @@ private theorem program_eq (k : CombArithmetic.Kind) :
     ite_eq_left ⟨rfl, List.mem_map.mpr ⟨k, by cases k <;> decide, rfl⟩⟩]
   rfl
 
-private theorem out_eq : CombArithmetic.program CombArithmetic.K.M CombArithmetic.K.outOps =
-    .block VG.Proof.Weierstrass.AArch64.Forward.CombOut.rightCode.lit :=
-  (program_eq .out).trans
-    (congrArg Code.block VG.Proof.Weierstrass.AArch64.Forward.CombOut.optimized_lit)
-
 /-- The comb's mixed addition is its field program's code. -/
 theorem program_mixed : CombArithmetic.program CombArithmetic.K.M
     (maddJ CombArithmetic.K.S CombArithmetic.K.A CombArithmetic.K.E CombArithmetic.K.D) = .block mixed :=
@@ -53,21 +48,6 @@ theorem program_mixed : CombArithmetic.program CombArithmetic.K.M
 
 theorem mixed_lit : mixed = VG.Proof.Weierstrass.AArch64.Forward.CombMixed.rightCode.lit :=
   VG.Proof.Weierstrass.AArch64.Forward.CombMixed.optimized_lit
-
-/-- `comb`, with the literals of its field programs. -/
-noncomputable def comb.lit : Prog isa :=
-  .seq CombArithmetic.K.first <|
-  .seq (.block (CombArithmetic.K.bdigit true ++ CombArithmetic.K.select)) <|
-  .seq (.block CombArithmetic.K.bnegY) <|
-  .seq (.loop (CombArithmetic.K.stepJP VG.Proof.Weierstrass.AArch64.Forward.CombMixed.rightCode.lit)
-    (.nonzero .x .x4)) <|
-  .seq (.seq (.block VG.Proof.Weierstrass.AArch64.Forward.CombMixed.rightCode.lit) CombArithmetic.K.fixJ) <|
-  .seq (.block CombArithmetic.K.outFix) (.block VG.Proof.Weierstrass.AArch64.Forward.CombOut.rightCode.lit)
-
-theorem comb.lit_eq : comb = comb.lit := by
-  simp only [comb, TCombCfg.combJP]
-  rw [out_eq, mixed_lit]
-  rfl
 
 materialize_code sign
 materialize_code publicKey

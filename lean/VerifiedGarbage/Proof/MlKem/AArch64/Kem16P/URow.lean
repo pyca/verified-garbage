@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Ops
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
 public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Loop
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Noise

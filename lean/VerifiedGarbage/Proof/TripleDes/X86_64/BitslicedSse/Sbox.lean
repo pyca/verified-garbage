@@ -66,8 +66,6 @@ theorem inputAt_bit (s : State) (P k : Nat) (hk : k < 6) :
     (inputAt s P).toNat.testBit k = (s.xmm (inReg k)).getLsbD P := by
   simp only [inputAt, BitVec.testBit_toNat, getLsbD_ofBits, hk, decide_true, Bool.true_and]
 
-theorem inReg_ne_ones : ∀ k < 6, inReg k ≠ ones := by decide
-
 /-- Every S-box output bit, for arbitrary input words and spill slots, with
 all ones in `ones`. Only the spill slots change in memory, and no
 general-purpose register or flag changes. -/

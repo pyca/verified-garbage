@@ -51,20 +51,26 @@ def callFinish : Prog isa :=
       (.seq (.block [.addi .s6 .s6 (-1)]) (.ite (.nonzero .s6) (.block [.li .s10 4]) (.block [.li .s10 0])))
       (.block [.li .s10 1]))
 
-/-- One attempt. -/
-def attempt : Prog isa :=
+/-- One attempt, with the signer `signer`, a function named `name` with
+`vg_dsa_sign`'s arguments. -/
+def attempt (name : String) (signer : Prog isa) : Prog isa :=
   .seq sample (.seq (.block [.addi .a0 .s10 (-1)])
-    (.ite (.zero .a0) (.seq (.block callArgs) (.seq (.call "vg_dsa_sign" Sign.sign) callFinish)) (.block [])))
+    (.ite (.zero .a0) (.seq (.block callArgs) (.seq (.call name signer) callFinish)) (.block [])))
 
 /-- The attempts, while the status is 4. -/
-def attempts : Prog isa := .loop (.seq attempt (.block [.addi .a0 .s10 (-4)])) (.zero .a0)
+def attempts (name : String) (signer : Prog isa) : Prog isa :=
+  .loop (.seq (attempt name signer) (.block [.addi .a0 .s10 (-4)])) (.zero .a0)
 
 /-- The frame's body. -/
-def body : Prog isa :=
-  .seq (.block entry) (.seq prepareQ (.seq (.ite (.zero .a0) (.block [.li .s10 0]) attempts)
+def body (name : String) (signer : Prog isa) : Prog isa :=
+  .seq (.block entry) (.seq prepareQ (.seq (.ite (.zero .a0) (.block [.li .s10 0]) (attempts name signer))
     (finish (lenQ .t5 ++ [.add .t5 .t5 .t5]))))
 
-/-- `vg_dsa_sign_random`. -/
-def code : Prog isa := .frame (.alloc frameBytes) body (.free frameBytes)
+/-- The randomized signer over `signer`. -/
+def codeWith (name : String) (signer : Prog isa) : Prog isa :=
+  .frame (.alloc frameBytes) (body name signer) (.free frameBytes)
+
+/-- `vg_dsa_sign_random`, over `vg_dsa_sign`. -/
+def code : Prog isa := codeWith "vg_dsa_sign" Sign.sign
 
 end VG.Impl.Dsa.RISCV64.RandomSign

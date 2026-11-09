@@ -238,16 +238,6 @@ theorem lhS_eq : Sym.init.run false
   (Option.some_get _).symm
 theorem lhS_shape : ∀ i < 3, lhS.reg (xi (hreg i)) = .lane0 (.gpr (lg i)) := by decide +kernel
 
-/-- `rax`, `rcx` and `r9` into quadword 0 of `H`, zeros elsewhere. -/
-theorem lhV_ok (s : State) :
-    WP isa (.block [.vop (.vmovq (hreg 0) .rax), .vop (.vmovq (hreg 1) .rcx), .vop (.vmovq (hreg 2) .r9)]) s
-      fun s' => vec s s' = s' ∧ ∀ i < 3, ∀ k < 8, hv s' k i = if k = 0 then (s.gpr (lg i)).toNat else 0 :=
-  WP.mono (run_ok (fun h => by cases h) lhS_eq) fun s' h => ⟨h.eq, fun i hi k hk => by
-    simp only [hv]
-    rw [h.natw _ hk, lhS_shape i hi]
-    simp only [Q.natw]
-    split <;> rfl⟩
-
 /-! ## The folds -/
 
 def fB : Bnds :=

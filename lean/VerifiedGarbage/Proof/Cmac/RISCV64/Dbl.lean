@@ -74,10 +74,6 @@ theorem mask_val {c : Nat} (hc : c ∈ ([0x87, 0x1b] : List Nat)) (b : Byte) :
   have := mask_all c hc b.toNat b.isLt
   rwa [BitVec.ofNat_toNat, BitVec.setWidth_eq] at this
 
-theorem getElem_bytesAt (m : Mem) (p : Addr) {n j : Nat} (h : j < (bytesAt m p n).length) :
-    (bytesAt m p n)[j] = m (p + BitVec.ofNat 64 j) := by
-  simp [bytesAt]
-
 /-- `Spec.Cmac.dbl 16`, byte by byte. -/
 theorem dbl_spec16 (m : Mem) (p : Addr) :
     Spec.Cmac.dbl 16 (bytesAt m p 16) =

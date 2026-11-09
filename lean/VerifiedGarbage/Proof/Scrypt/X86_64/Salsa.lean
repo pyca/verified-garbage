@@ -18,7 +18,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Scrypt.Contract
 
 /-!
 # The Salsa20/8 Core on x86-64: the rounds
@@ -364,28 +363,6 @@ end VG.Proof.Scrypt.X86_64
 # The Salsa20/8 Core on x86-64: loading, finishing, saving and restoring
 -/
 
-namespace VG.Proof.Scrypt
-
-open Spec.Scrypt
-
-open VG.X86_64 in
-/-- X86-64 contract for `vg_salsa20_8(b: *mut [u8; 64], scratch: *mut [u32;
-16])`: replaces the 64 bytes at `b` by their Salsa20/8 Core.
-
-The code may read and write `b` and `scratch` (64 bytes each; the contents of
-`scratch` on exit are unspecified), which may not overlap each other or the
-return address on the stack. The pointers are public; the data is secret. -/
-def salsaX86_64 : Contract X86_64.isa where
-  pre s :=
-    let b : Region := ⟨s.gpr .rdi, 64⟩
-    let scratch : Region := ⟨s.gpr .rsi, 64⟩
-    let ret : Region := ⟨s.gpr .rsp, 8⟩
-    s.rd = [] ∧ s.wr = [b, scratch] ∧ b.Disjoint scratch ∧ ret.Disjoint b ∧ ret.Disjoint scratch
-  post s s' := bytesAt s'.mem (s.gpr .rdi) 64 = salsa (bytesAt s.mem (s.gpr .rdi) 64)
-  pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi
-
-end VG.Proof.Scrypt
-
 namespace VG.Proof.Scrypt.X86_64
 
 open VG VG.X86_64 VG.Impl.Scrypt.X86_64
@@ -400,110 +377,24 @@ variable (s₀ : State)
 abbrev bp : Addr := s₀.gpr .rdi
 /-- `scratch`. -/
 abbrev sp : Addr := s₀.gpr .rsi
-abbrev retR : Region := ⟨s₀.gpr .rsp, 8⟩
 /-- The input words. -/
 def V : Vector Word 16 := Vector.ofFn fun j => s₀.mem.readW (bufAt (bp s₀) (4 * j.1)) 32
 end
 
 abbrev bR (p : Addr) : Region := ⟨p, 64⟩
 
-structure Pre (s₀ : State) : Prop where
-  rd : s₀.rd = []
-  wr : s₀.wr = [bR (bp s₀), scR (sp s₀)]
-  b_sc : (bR (bp s₀)).Disjoint (scR (sp s₀))
-  ret_b : (retR s₀).Disjoint (bR (bp s₀))
-  ret_sc : (retR s₀).Disjoint (scR (sp s₀))
-
-theorem pre_of (s₀ : State) (h : Proof.Scrypt.salsaX86_64.pre s₀) : Pre s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5⟩ := h
-  exact ⟨h1, h2, h3, h4, h5⟩
-
-theorem Pre.hb {s₀ : State} (hp : Pre s₀) : bR (bp s₀) ∈ s₀.wr := by simp [hp.wr]
-theorem Pre.hs {s₀ : State} (hp : Pre s₀) : scR (sp s₀) ∈ s₀.wr := by simp [hp.wr]
-
 theorem V_get (s₀ : State) {k : Nat} (hk : k < 16) :
     (V s₀)[k] = s₀.mem.readW (bufAt (bp s₀) (4 * k)) 32 := by
   simp only [V, Vector.getElem_ofFn]
-
-theorem in_b {rs ws : List Region} {p : Addr} (hw : bR p ∈ ws) {d n : Nat} (h : d + n ≤ 64) :
-    InRegions (rs ++ ws) (bufAt p d) n :=
-  ⟨bR p, List.mem_append_right _ hw, contains_off h (by omega_arith)⟩
 
 theorem out_b {ws : List Region} {p : Addr} (hw : bR p ∈ ws) {d n : Nat} (h : d + n ≤ 64) :
     InRegions ws (bufAt p d) n :=
   ⟨bR p, hw, contains_off h (by omega_arith)⟩
 
-/-- A part of a region: `[p + d, p + d + n)` inside `[p, p + len)`. -/
-theorem sub_off (p : Addr) {len d n : Nat} (h : d + n ≤ len) (_hl : len < 2 ^ 32) :
-    Region.Sub ⟨bufAt p d, n⟩ ⟨p, len⟩ := by
-  simp only [bufAt, ofInt_natCast]; exact Offset.sub_base p h
-
-/-- Reading `b` after writes to `scratch` only. -/
-theorem read_b {s₀ : State} (hp : Pre s₀) {m : Mem} (hf : Frame [scR (sp s₀)] s₀.mem m)
-    {k : Nat} (hk : k < 16) : m.readW (bufAt (bp s₀) (4 * k)) 32 = (V s₀)[k] := by
-  rw [V_get _ hk]
-  refine hf.readW (r := ⟨bufAt (bp s₀) (4 * k), 4⟩) (Region.contains_self _ _) ?_ (by decide)
-  intro r hr
-  simp only [List.mem_singleton] at hr; subst hr
-  exact hp.b_sc.sub_left (sub_off _ (by omega_arith) (by omega_arith))
-
-/-- Reading `scratch` after writes to `b` only. -/
-theorem read_sc {s₀ : State} (hp : Pre s₀) {m m' : Mem} (hf : Frame [bR (bp s₀)] m m')
-    {d w : Nat} (hd : d + w / 8 ≤ 64) (hw : w / 8 < 2 ^ 64) :
-    m'.readW (bufAt (sp s₀) d) w = m.readW (bufAt (sp s₀) d) w := by
-  refine hf.readW (r := ⟨bufAt (sp s₀) d, w / 8⟩) (Region.contains_self _ _) ?_ hw
-  intro r hr
-  simp only [List.mem_singleton] at hr; subst hr
-  exact hp.b_sc.symm.sub_left (sub_off _ hd (by omega_arith))
-
 theorem mem_read {s : State} {r : Reg} {d : Nat}
     (hin : InRegions (s.rd ++ s.wr) (bufAt (s.gpr r) d) 4) :
     readSrc32 s (.mem (at_ r d)) = some (s.mem.readW (bufAt (s.gpr r) d) 32) := by
   simp only [readSrc32, ea_at, State.load32, hin, ite_true]
-
-/-! ## Saving the callee-saved registers -/
-
-theorem saved_bound : ∀ p ∈ saved, 16 ≤ p.2 ∧ p.2 + 8 ≤ 64 := by decide
-
-theorem slot_sc {ws : List Region} {p : Addr} (hw : scR p ∈ ws) {q : Reg × Nat} (hq : q ∈ saved) :
-    InRegions ws (Spill.slot p q.2) 8 := by
-  have := saved_bound q hq
-  exact ⟨scR p, hw, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-
-/-- The memory after the prologue's stores. -/
-abbrev saveMem (s₀ : State) : Mem := Spill.saveMem s₀.mem (sp s₀) s₀.gpr saved
-
-/-- The callee-saved registers are saved in `scratch`. -/
-abbrev Saved (s₀ : State) (m : Mem) : Prop := Spill.Saved m (sp s₀) s₀.gpr saved
-
-theorem save_ok {s₀ : State} (hp : Pre s₀) :
-    WP isa (.block save) s₀ fun s₁ =>
-      s₁.gpr = s₀.gpr ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr ∧ s₁.mem = saveMem s₀ :=
-  Spill.save_ok .rsi saved s₀ fun _ hq => slot_sc hp.hs hq
-
-theorem saveMem_saved (s₀ : State) : Saved s₀ (saveMem s₀) :=
-  Spill.saveMem_saved _ _ _ _ (by decide)
-
-theorem saveMem_frame (s₀ : State) : Frame [scR (sp s₀)] s₀.mem (saveMem s₀) :=
-  Spill.saveMem_frame_base _ _ _ _ (fun p hp => by have := saved_bound p hp; omega_arith) (by decide)
-
-/-- The saved registers survive writes to the slots and to `b`. -/
-theorem saved_frame {s₀ : State} (hp : Pre s₀) {m m₁ m' : Mem} (h : Saved s₀ m)
-    (hf₁ : Frame [slotR (sp s₀)] m m₁) (hf₂ : Frame [bR (bp s₀)] m₁ m') : Saved s₀ m' := by
-  refine Spill.Saved.frame (Spill.Saved.frame h hf₁ fun p hq r hr => ?_) hf₂ fun p hq r hr => ?_ <;>
-    rw [List.mem_singleton.mp hr] <;> have := saved_bound p hq
-  · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
-  · exact hp.b_sc.symm.sub_left (Offset.sub_base _ (by omega_arith))
-
-theorem restore_ok {s₀ : State} {s : State} (hs : Saved s₀ s.mem) (hrsi : s.gpr .rsi = sp s₀)
-    (hw : scR (sp s₀) ∈ s.wr) :
-    WP isa (.block restore) s fun s' =>
-      s'.mem = s.mem ∧ s'.gpr .rsp = s.gpr .rsp ∧
-      ∀ r ∈ [Reg.rbx, .rbp, .r12, .r13, .r14, .r15], s'.gpr r = s₀.gpr r := by
-  have hsub : ∀ r ∈ [Reg.rbx, .rbp, .r12, .r13, .r14, .r15], r ∈ saved.map Prod.fst := by decide
-  refine WP.mono (Spill.restore_ok .rsi saved s₀.gpr s (by decide)
-    (fun q hq => by rw [hrsi]; exact slot_sc (List.mem_append_right _ hw) hq) (by rw [hrsi]; exact hs))
-    fun s' ⟨h₁, h₂, hm, _⟩ => ⟨hm, h₂ _ (by decide), fun r hr => h₁ r (hsub r hr)⟩
 
 /-! ## Loading the words -/
 
@@ -523,231 +414,5 @@ theorem sub_slot_sc (p : Addr) : ∀ r ∈ [slotR p], ∃ r' ∈ [scR p], Region
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
   exact ⟨scR p, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩
-
-theorem load_step {s₀ s₁ : State} (hp : Pre s₀) (hf₁ : Frame [scR (sp s₀)] s₀.mem s₁.mem)
-    {n : Nat} (hn : n < 16) {s : State} (h : LI s₀ s₁ n s) :
-    WP isa (.block (loadWord n)) s (LI s₀ s₁ (n + 1)) := by
-  have hfs : Frame [scR (sp s₀)] s₀.mem s.mem := hf₁.trans (h.frame.sub (sub_slot_sc _))
-  have hr : readSrc32 s (.mem (at_ .rdi (4 * n))) = some (V s₀)[n] := by
-    rw [mem_read (by rw [h.rdi, h.rd, h.wr]; exact in_b hp.hb (by omega_arith)), h.rdi, read_b hp hfs hn]
-  unfold loadWord
-  split
-  · rename_i hn12
-    refine wp_cons (mov32_upd (d := wreg n) hr) fun s' u => WP.block_nil ?_
-    have ne := wreg_ne n hn12
-    refine ⟨fun k hk hkn => ?_, fun k hk h12 hkn => ?_, u.mem ▸ h.frame, u.rd.trans h.rd,
-      u.wr.trans h.wr, (u.other _ ne.2.1.symm).trans h.rsi, (u.other _ ne.2.2.1.symm).trans h.rdi,
-      (u.other _ ne.2.2.2.symm).trans h.rsp⟩
-    · by_cases e : k = n
-      · subst e; exact u.gpr
-      · rw [u.other _ fun h' => e (wreg_inj k hk n hn12 h'), h.regs k hk (by omega_arith)]
-    · rw [u.mem]; exact h.slots k hk h12 (by omega_arith)
-  · rename_i hn12
-    refine wp_cons (mov32_upd (d := .rax) hr) fun s' u => ?_
-    have hout : InRegions s'.wr (s'.ea (at_ .rsi (slotOff n))) 4 := by
-      rw [ea_at, u.other _ (by decide), h.rsi, u.wr, h.wr]
-      exact out_sc hp.hs (by simp only [slotOff]; omega_arith)
-    refine WP.block_cons_iff.mpr ⟨_, store32_exec hout, WP.block_nil ?_⟩
-    rw [ea_at, u.other _ (by decide), h.rsi, u.gpr, u.mem]
-    have e : ((V s₀)[n].setWidth 64).setWidth 32 = (V s₀)[n] := by simp
-    rw [e]
-    refine ⟨fun k hk hkn => ?_, fun k hk h12 hkn => ?_, ?_, u.rd.trans h.rd, u.wr.trans h.wr,
-      (u.other _ (by decide)).trans h.rsi, (u.other _ (by decide)).trans h.rdi,
-      (u.other _ (by decide)).trans h.rsp⟩
-    · rw [u.other _ (wreg_ne k hk).1]; exact h.regs k hk (by omega_arith)
-    · by_cases e : k = n
-      · subst e; exact Mem.readW_writeW_self32 _ _ _
-      · rw [readW_writeW_off _ _ _ (by omega_arith) (by simp only [slotOff]; omega_arith)
-          (by simp only [slotOff]; omega_arith) (by simp only [slotOff]; omega_arith)]
-        exact h.slots k hk h12 (by omega_arith)
-    · exact h.frame.writeW (List.mem_singleton_self _) _
-        (contains_off (by simp only [slotOff]; omega_arith) (by simp only [slotOff]; omega_arith))
-
-/-! ## Adding the input and storing the result -/
-
-/-- The finish invariant after `n` words: `b` holds `(R[j]'(by omega)) + (V[j]'(by omega))` for the
-words `j < n` and still `(V[j]'(by omega))` for the others. -/
-structure FI (s₀ : State) (R : Vector Word 16) (sB : State) (n : Nat) (s : State) : Prop where
-  out : ∀ j (hj : j < 16), s.mem.readW (bufAt (bp s₀) (4 * j)) 32 =
-    if j < n then (R[j]'(by omega_arith)) + (V s₀)[j] else (V s₀)[j]
-  regs : ∀ k (hk : k < 12), n ≤ k → s.gpr (wreg k) = (R[k]'(by omega_arith)).setWidth 64
-  frame : Frame [bR (bp s₀)] sB.mem s.mem
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  rsi : s.gpr .rsi = sp s₀
-  rdi : s.gpr .rdi = bp s₀
-  rsp : s.gpr .rsp = s₀.gpr .rsp
-
-theorem finish_step {s₀ : State} (hp : Pre s₀) {R : Vector Word 16} {sB : State}
-    (hsl : ∀ k (hk : k < 16), 12 ≤ k → sB.mem.readW (bufAt (sp s₀) (slotOff k)) 32 = (R[k]'(by omega_arith)))
-    {n : Nat} (hn : n < 16) {s : State} (h : FI s₀ R sB n s) :
-    WP isa (.block (finishWord n)) s (FI s₀ R sB (n + 1)) := by
-  have hb : readSrc32 s (.mem (at_ .rdi (4 * n))) = some (V s₀)[n] := by
-    rw [mem_read (by rw [h.rdi, h.rd, h.wr]; exact in_b hp.hb (by omega_arith)), h.rdi, h.out n hn]
-    simp
-  /- After the new sum is stored, the invariant holds. -/
-  have fin : ∀ s' : State, s'.mem = s.mem.writeW (bufAt (bp s₀) (4 * n)) ((R[n]'(by omega_arith)) + (V s₀)[n]) →
-      (∀ k (hk : k < 12), n < k → s'.gpr (wreg k) = s.gpr (wreg k)) →
-      s'.rd = s.rd → s'.wr = s.wr → s'.gpr .rsi = s.gpr .rsi → s'.gpr .rdi = s.gpr .rdi →
-      s'.gpr .rsp = s.gpr .rsp → FI s₀ R sB (n + 1) s' := by
-    intro s' hm hg hrd hwr hrsi hrdi hrsp
-    refine ⟨fun j hj => ?_, fun k hk hkn => ?_, ?_, hrd.trans h.rd, hwr.trans h.wr,
-      hrsi.trans h.rsi, hrdi.trans h.rdi, hrsp.trans h.rsp⟩
-    · rw [hm]
-      by_cases e : j = n
-      · subst e; rw [Mem.readW_writeW_self32, ite_pos' (by omega_arith)]
-      · rw [readW_writeW_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), h.out j hj]
-        by_cases hjn : j < n
-        · rw [ite_pos' hjn, ite_pos' (by omega_arith)]
-        · rw [ite_neg' hjn, ite_neg' (by omega_arith)]
-    · rw [hg k hk (by omega_arith)]; exact h.regs k hk (by omega_arith)
-    · rw [hm]; exact h.frame.writeW (List.mem_singleton_self _) _
-        (contains_off (by omega_arith) (by omega_arith))
-  have hout : ∀ s' : State, s'.gpr .rdi = s.gpr .rdi → s'.wr = s.wr →
-      InRegions s'.wr (s'.ea (at_ .rdi (4 * n))) 4 := by
-    intro s' h1 h2
-    rw [ea_at, h1, h2, h.rdi, h.wr]; exact out_b hp.hb (by omega_arith)
-  unfold finishWord
-  split
-  · rename_i hn12
-    have ne := wreg_ne n hn12
-    refine wp_cons (add32_upd (d := wreg n) hb) fun s' u => ?_
-    refine WP.block_cons_iff.mpr ⟨_, store32_exec (hout s' (u.other _ ne.2.2.1.symm) u.wr),
-      WP.block_nil (fin _ ?_ ?_ u.rd u.wr (u.other _ ne.2.1.symm) (u.other _ ne.2.2.1.symm)
-        (u.other _ ne.2.2.2.symm))⟩
-    · simp only [ea_at, u.other _ ne.2.2.1.symm, h.rdi, u.gpr, u.mem, h.regs n hn12 (Nat.le_refl _)]
-      simp [bufAt]
-    · intro k hk hkn
-      exact u.other _ fun e => by have := wreg_inj k hk n hn12 e; omega_arith
-  · rename_i hn12
-    have hsl' : readSrc32 s (.mem (at_ .rsi (slotOff n))) = some (R[n]'(by omega_arith)) := by
-      rw [mem_read (by rw [h.rsi, h.rd, h.wr]; exact in_sc hp.hs (by simp only [slotOff]; omega_arith)),
-        h.rsi, read_sc hp h.frame (by simp only [slotOff]; omega_arith) (by decide), hsl n hn (by omega_arith)]
-    refine wp_cons (mov32_upd (d := .rax) hsl') fun s₁ u₁ => ?_
-    have hb₁ : readSrc32 s₁ (.mem (at_ .rdi (4 * n))) = some (V s₀)[n] := by
-      have hin : InRegions (s₁.rd ++ s₁.wr) (bufAt (s₁.gpr .rdi) (4 * n)) 4 := by
-        rw [u₁.other _ (by decide), h.rdi, u₁.rd, u₁.wr, h.rd, h.wr]
-        exact in_b hp.hb (by omega_arith)
-      rw [mem_read hin, u₁.other _ (by decide), h.rdi, u₁.mem, h.out n hn]
-      simp
-    refine wp_cons (add32_upd (d := .rax) hb₁) fun s₂ u₂ => ?_
-    have e1 : s₂.gpr .rdi = s.gpr .rdi := (u₂.other _ (by decide)).trans (u₁.other _ (by decide))
-    refine WP.block_cons_iff.mpr ⟨_, store32_exec (hout s₂ e1 (u₂.wr.trans u₁.wr)),
-      WP.block_nil (fin _ ?_ ?_ (u₂.rd.trans u₁.rd) (u₂.wr.trans u₁.wr)
-        ((u₂.other _ (by decide)).trans (u₁.other _ (by decide))) e1
-        ((u₂.other _ (by decide)).trans (u₁.other _ (by decide))))⟩
-    · simp only [ea_at, e1, h.rdi, u₂.gpr, u₁.gpr, u₂.mem, u₁.mem]
-      simp [bufAt]
-    · intro k hk _
-      rw [u₂.other _ (wreg_ne k hk).1, u₁.other _ (wreg_ne k hk).1]
-
-end VG.Proof.Scrypt.X86_64
-
-/-!
-# The Salsa20/8 Core on x86-64: the whole function
--/
-
-namespace VG.Proof.Scrypt.X86_64
-
-open VG VG.X86_64 VG.Impl.Scrypt.X86_64
-open VG.Spec.Scrypt (Word)
-open VG.Proof.Scrypt
-
-/-- The input words are those the specification reads from the bytes. -/
-theorem input_eq (s₀ : State) :
-    (Vector.ofFn fun j : Fin 16 => Spec.Scrypt.wordLE (Spec.Scrypt.bytesAt s₀.mem (bp s₀) 64) j.1) =
-      V s₀ := by
-  apply Vector.ext
-  intro j hj
-  rw [Vector.getElem_ofFn, V_get _ hj, wordLE_bytesAt _ _ (by omega_arith), bufAt, ofInt_natCast]
-
-/-- The result words are where the specification writes its bytes. -/
-theorem post_of {s₀ : State} {m : Mem}
-    (h : ∀ j (hj : j < 16), m.readW (bufAt (bp s₀) (4 * j)) 32 =
-      (Nat.repeat Spec.Scrypt.doubleRound 4 (V s₀))[j] + (V s₀)[j]) :
-    Spec.Scrypt.bytesAt m (bp s₀) 64 = Spec.Scrypt.salsa (Spec.Scrypt.bytesAt s₀.mem (bp s₀) 64) := by
-  rw [Spec.Scrypt.salsa, input_eq]
-  refine bytesAt_eq_serialize _ _ _ fun j hj => ?_
-  rw [Spec.Scrypt.core, Vector.getElem_zipWith, ← h j hj, bufAt, ofInt_natCast]
-
-theorem correct {s₀ : State} (hp : Pre s₀) :
-    WP isa salsa s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Scrypt.salsaX86_64.post s₀ s' := by
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (save_ok hp) fun s₁ ⟨hg₁, hrd₁, hwr₁, hm₁⟩ => ?_
-  have hf₁ : Frame [scR (sp s₀)] s₀.mem s₁.mem := hm₁ ▸ saveMem_frame s₀
-  have hl₀ : LI s₀ s₁ 0 s₁ :=
-    ⟨fun _ _ h => absurd h (by omega_arith), fun _ _ _ h => absurd h (by omega_arith), Frame.refl _ _, hrd₁,
-      hwr₁, by rw [hg₁], by rw [hg₁], by rw [hg₁]⟩
-  refine WP.mono (wp_range_flatMap (LI s₀ s₁) (fun k s hk h => load_step hp hf₁ hk h) 16 (Nat.le_refl _)
-    s₁ hl₀) fun s₂ hL => ?_
-  have hri : RI (sp s₀) (V s₀) s₂ s₂ :=
-    ⟨fun k hk => hL.regs k hk (by omega_arith), fun k hk h12 => hL.slots k hk h12 hk, Frame.refl _ _,
-      rfl, rfl, hL.rsi, rfl, rfl⟩
-  have hw₂ : scR (sp s₀) ∈ s₂.wr := by rw [hL.wr]; exact hp.hs
-  refine WP.seq (WP.mono (rounds_ok hri hw₂ 4) fun s₃ hR => ?_)
-  rw [WP.block_append_iff]
-  have hsc : Frame [slotR (sp s₀)] s₁.mem s₃.mem := hL.frame.trans hR.frame
-  have hbf : Frame [scR (sp s₀)] s₀.mem s₃.mem := hf₁.trans (hsc.sub (sub_slot_sc _))
-  have hF₀ : FI s₀ (Nat.repeat Spec.Scrypt.doubleRound 4 (V s₀)) s₃ 0 s₃ :=
-    ⟨fun j hj => by rw [ite_neg' (by omega_arith)]; exact read_b hp hbf hj, fun k hk _ => hR.regs k hk,
-      Frame.refl _ _, hR.rd.trans hL.rd, hR.wr.trans hL.wr, hR.rsi, hR.rdi.trans hL.rdi,
-      hR.rsp.trans hL.rsp⟩
-  refine WP.mono (wp_range_flatMap (FI s₀ _ s₃)
-    (fun k s hk h => finish_step hp (fun k hk h12 => hR.slots k hk h12) hk h) 16 (Nat.le_refl _) s₃ hF₀)
-    fun s₄ hF => ?_
-  have hsaved : Saved s₀ s₄.mem := saved_frame hp (hm₁ ▸ saveMem_saved s₀) hsc hF.frame
-  refine WP.mono (restore_ok hsaved hF.rsi (by rw [hF.wr]; exact hp.hs))
-    fun s' ⟨hm', hrsp', hg'⟩ => ?_
-  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
-  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact hg' _ (by simp)
-    · exact hg' _ (by simp)
-    · exact hrsp'.trans hF.rsp
-    · exact hg' _ (by simp)
-    · exact hg' _ (by simp)
-    · exact hg' _ (by simp)
-    · exact hg' _ (by simp)
-  · rw [hm', hF.frame.readW (r := retR s₀) (Region.contains_self _ _) (by simpa using hp.ret_b)
-      (by decide)]
-    exact hbf.readW (r := retR s₀) (Region.contains_self _ _) (by simpa using hp.ret_sc)
-      (by decide)
-  · show Spec.Scrypt.bytesAt s'.mem (bp s₀) 64 =
-      Spec.Scrypt.salsa (Spec.Scrypt.bytesAt s₀.mem (bp s₀) 64)
-    rw [hm']
-    exact post_of fun j hj => by simpa [hj] using hF.out j hj
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rsp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 64⟩, ⟨0x2000, 64⟩]
-
-theorem salsa_correct (s : State) (hs : Proof.Scrypt.salsaX86_64.pre s) :
-    ∃ t s', Exec isa Impl.Scrypt.X86_64.salsa s t s' ∧ abiPreserved s s' ∧
-      Proof.Scrypt.salsaX86_64.post s s' := by
-  obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
-
-theorem salsa_ct : ConstantTime isa Proof.Scrypt.salsaX86_64.pre Proof.Scrypt.salsaX86_64.pub
-    Impl.Scrypt.X86_64.salsa := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ ⟨h1, h2⟩
-  refine Taint.agree_ofRegs fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> with_reducible assumption
-
-theorem salsa_verified :
-    Verified X86_64.target Impl.Scrypt.X86_64.salsa (Proof.Scrypt.salsaContract X86_64.abi) :=
-  Verified.of_correct salsa_correct salsa_ct (by
-    sig_implies [Proof.Scrypt.salsaContract, Proof.Scrypt.salsaSig, Proof.Scrypt.salsaX86_64,
-      X86_64.abi, X86_64.argRegs] [Proof.Scrypt.X86_64.satState] using Proof.Scrypt.X86_64.satState)
 
 end VG.Proof.Scrypt.X86_64

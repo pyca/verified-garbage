@@ -10,10 +10,10 @@ public import VerifiedGarbage.Spec.RsaKeyGen
 powers `y_i = b^⌊(w − 1) / 2^i⌋ mod w` from the top bit of `w − 1` down
 (square, then multiply by `b` if bit `i` is set), and keep a flag `P`:
 at a set bit `i` it becomes `y_i = 1 ∨ y_i = w − 1`, at a clear one it is
-or'ed with `y_i = w − 1` (`mrRun`). The lowest set bit is `a`, and below it
-`y_i` is `z` squared `a − i` times, so after bit 1 the flag is
-`mrIteration`'s result (`mrRun_eq`), without `a` or `m`: the code needs no
-shift by a secret amount.
+or'ed with `y_i = w − 1`. The lowest set bit is `a`, and below it
+`y_i` is `z` squared `a − i` times (`powMod_pow2`), so after bit 1 the flag
+is `mrIteration`'s result, without `a` or `m`: the code needs no shift by a
+secret amount.
 -/
 
 @[expose] public section
@@ -130,17 +130,6 @@ theorem powMod_pow2 (b m w : Nat) (hm : 0 < m) :
       rw [Nat.pow_succ, ← Nat.mul_assoc, Nat.mul_comm]]
     exact powMod_double b _ w (Nat.mul_pos hm (Nat.two_pow_pos _))
 
-/-- One step of the flag at bit `i` of `N = w − 1`: `y_i` is
-`b^⌊N / 2^i⌋ mod w`. -/
-def mrFlag (w b i : Nat) (P : Bool) : Bool :=
-  let y := powMod b ((w - 1) / 2 ^ i) w
-  if (w - 1) / 2 ^ i % 2 = 1 then (y == 1 || y == w - 1) else (P || y == w - 1)
-
-/-- The flag over bits `k, k − 1, …, 1`. -/
-def mrRun (w b : Nat) : Nat → Bool → Bool
-  | 0, P => P
-  | k + 1, P => mrRun w b k (mrFlag w b (k + 1) P)
-
 theorem splitTwos_spec : ∀ n, 0 < n → n = (splitTwos n).2 * 2 ^ (splitTwos n).1 ∧ (splitTwos n).2 % 2 = 1
   | n, hn => by
     rw [splitTwos]
@@ -152,88 +141,5 @@ theorem splitTwos_spec : ∀ n, 0 < n → n = (splitTwos n).2 * 2 ^ (splitTwos n
       rw [Nat.pow_succ, ← Nat.mul_assoc, ← h1]; omega
 termination_by n => n
 decreasing_by omega
-
-/-- Below the lowest set bit `a` of `N = m 2^a`: the flag or'ed with the
-squares. -/
-theorem mrRun_low (w b m a : Nat) (hm : 0 < m) (hN : w - 1 = m * 2 ^ a) :
-    ∀ k, k < a → ∀ P, (mrRun w b k P = true ↔
-      (P = true ∨ ∃ i, 1 ≤ i ∧ i ≤ k ∧ sqIter w (powMod b m w) (a - i) = w - 1))
-  | 0, _, P => by simp only [mrRun]; constructor; exact .inl; rintro (h | ⟨i, h1, h2, _⟩); exact h; omega
-  | k + 1, hk, P => by
-    rw [mrRun, mrRun_low w b m a hm hN k (by omega)]
-    have hdiv : (w - 1) / 2 ^ (k + 1) = m * 2 ^ (a - (k + 1)) := by
-      rw [hN, show a = (a - (k + 1)) + (k + 1) by omega, Nat.pow_add, ← Nat.mul_assoc,
-        Nat.mul_div_cancel _ (Nat.two_pow_pos _), Nat.add_sub_cancel]
-    have hpar : (w - 1) / 2 ^ (k + 1) % 2 = 0 := by
-      rw [hdiv, show a - (k + 1) = (a - (k + 1) - 1) + 1 by omega, Nat.pow_succ, ← Nat.mul_assoc]
-      exact Nat.mul_mod_left _ _
-    unfold mrFlag
-    rw [hdiv] at hpar
-    simp only [hdiv, powMod_pow2 b m w hm, hpar, Nat.zero_ne_one, ↓reduceIte, Bool.or_eq_true, beq_iff_eq]
-    constructor
-    · rintro ((hp | he) | ⟨i, h1, h2, he⟩)
-      · exact .inl hp
-      · exact .inr ⟨k + 1, by omega, Nat.le_refl _, he⟩
-      · exact .inr ⟨i, h1, by omega, he⟩
-    · rintro (hp | ⟨i, h1, h2, he⟩)
-      · exact .inl (.inl hp)
-      · rcases Nat.lt_or_ge i (k + 1) with h | h
-        · exact .inr ⟨i, h1, by omega, he⟩
-        · exact .inl (.inr (by rw [show i = k + 1 by omega] at he; exact he))
-
-/-- At and above the lowest set bit, the flag only matters from it on. -/
-theorem mrRun_high (w b m a : Nat) (hm : 0 < m) (hm2 : m % 2 = 1) (hN : w - 1 = m * 2 ^ a)
-    (ha : 1 ≤ a) : ∀ k, a ≤ k → ∀ P, mrRun w b k P = mrRun w b (a - 1) (mrFlag w b a false)
-  | 0, hk, _ => by omega
-  | k + 1, hk, P => by
-    rcases Nat.lt_or_ge a (k + 1) with h | h
-    · rw [mrRun, mrRun_high w b m a hm hm2 hN ha k (by omega)]
-    · have hka : k + 1 = a := by omega
-      subst hka
-      rw [mrRun, Nat.add_sub_cancel]
-      congr 1
-      have hdiv : (w - 1) / 2 ^ (k + 1) = m := by
-        rw [hN, Nat.mul_div_cancel _ (Nat.two_pow_pos _)]
-      unfold mrFlag
-      simp only [hdiv, hm2, ↓reduceIte]
-
-/-- The flag over the bits `T − 1, …, 1` of `w − 1`, for `w − 1 < 2^T`, is
-`mrIteration`'s result, whatever it starts as. -/
-theorem mrRun_eq {w b T : Nat} (hw : 3 ≤ w) (hw2 : w % 2 = 1) (hT : w - 1 < 2 ^ T)
-    (hTw : T - 1 ≤ bitLength w - 1) (P : Bool) :
-    mrRun w b (T - 1) P =
-      mrIteration w (splitTwos (w - 1)).1 (splitTwos (w - 1)).2 b := by
-  apply Bool.eq_iff_iff.mpr
-  obtain ⟨hN, hm2⟩ := splitTwos_spec (w - 1) (by omega)
-  generalize (splitTwos (w - 1)).1 = a at hN hm2 ⊢
-  generalize (splitTwos (w - 1)).2 = m at hN hm2 ⊢
-  have hm : 0 < m := by omega
-  have ha : 1 ≤ a := by
-    rcases a with _ | a
-    · rw [Nat.pow_zero, Nat.mul_one] at hN; omega
-    · omega
-  have haT : a < T := by
-    rcases Nat.lt_or_ge a T with h | h
-    · exact h
-    exfalso
-    have : 2 ^ T ≤ 2 ^ a := Nat.pow_le_pow_right (by decide) (by omega)
-    have : 2 ^ a ≤ m * 2 ^ a := Nat.le_mul_of_pos_left _ hm
-    omega
-  rw [mrRun_high w b m a hm hm2 hN ha (T - 1) (by omega) P, mrRun_low w b m a hm hN (a - 1) (by omega),
-    mrIteration_iff hw ha (by omega)]
-  have hdiv : (w - 1) / 2 ^ a = m := by rw [hN, Nat.mul_div_cancel _ (Nat.two_pow_pos _)]
-  unfold mrFlag
-  simp only [hdiv, hm2, ↓reduceIte]
-  simp only [Bool.or_eq_true, beq_iff_eq]
-  constructor
-  · rintro ((h | h) | ⟨i, h1, h2, he⟩)
-    · exact .inl h
-    · exact .inr ⟨0, by omega, h⟩
-    · exact .inr ⟨a - i, by omega, he⟩
-  · rintro (h | ⟨t, ht, he⟩)
-    · exact .inl (.inl h)
-    · rcases t with _ | t
-      · exact .inl (.inr he)
-      · exact .inr ⟨a - (t + 1), by omega, by omega, by rw [show a - (a - (t + 1)) = t + 1 by omega]; exact he⟩
 
 end VG.Proof.RsaKeyGen

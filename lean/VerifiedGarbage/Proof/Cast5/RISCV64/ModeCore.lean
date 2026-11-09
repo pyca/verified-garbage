@@ -124,9 +124,6 @@ theorem modeSaved_ok : ∀ p ∈ modeSaved, p.2 % 8 = 0 ∧ p.2 < 2048 := modeSa
 theorem modeSaved_lt : ∀ p ∈ modeSaved, 56 ≤ p.2 ∧ p.2 + 8 ≤ 56 + 72 := by decide
 theorem modeSaved_restorable : Spill.Restorable sb modeSaved := by decide
 
-/-- The registers the core keeps the mode's `s1`–`s4` in. -/
-def parked : List Reg := [.a3, .a4, .s11, .ra]
-
 /-- The registers the core writes before the block function. -/
 def setRegs : List Reg := [dat, .a3, .a4, .s11, .ra, tbl, rnd]
 
@@ -134,10 +131,6 @@ def setRegs : List Reg := [dat, .a3, .a4, .s11, .ra, tbl, rnd]
 nor parks the mode's in are none it writes. -/
 theorem kept_rest : ∀ r ∈ kept, r ∉ modeSaved.map Prod.fst → r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → r ≠ .s4 →
     r ∉ roundRegs ∧ r ∉ setRegs := by decide
-
-/-- The mode's `s1`–`s4` and the registers the core parks them in are none the
-block function writes. -/
-theorem parked_ok : ∀ r ∈ parked, r ∉ roundRegs := by decide
 
 theorem modeCrypt_eq (up : Bool) (n : Nat) : modeCrypt up n =
     .seq (.block (Spill.saveCode sb modeSaved ++

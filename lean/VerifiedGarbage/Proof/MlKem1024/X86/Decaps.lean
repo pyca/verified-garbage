@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.X86.DecapsBody
 import VerifiedGarbage.Proof.MlKem1024.X86.Kem
 public import VerifiedGarbage.Spec.MlKem.Contract1024
@@ -51,8 +52,8 @@ instance : DecapsOK L1024 where
   dKey := by simp only [Enc.safe, Enc.safeS]; decide
   acc := by decide
 
-theorem pre_of {s₀ : State} (h : (Spec.MlKem1024.decapsContract X86.abi 88).pre s₀) : TPre (Y L1024) s₀ := by
-  sig_pre [Spec.MlKem1024.decapsContract, Spec.MlKem1024.decapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
+theorem pre_of {s₀ : State} (h : (Proof.MlKem.Scrubbed.decaps1024BodyContract X86.abi 88).pre s₀) : TPre (Y L1024) s₀ := by
+  sig_pre [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, -, h19, h20, h21, h22, h23,
     h24, h25, h26, h27⟩ := h
   have hs : (⟨(E0 s₀).setWidth 64 - 88#64, 88⟩ : Region) = below (E0 s₀) 88 := by
@@ -94,8 +95,8 @@ theorem pre_of {s₀ : State} (h : (Spec.MlKem1024.decapsContract X86.abi 88).pr
     rcases c4 i hi with rfl | rfl | rfl | rfl
     exacts [h24, h25, h26, h27]
 
-theorem pub_of {s₀ s₀' : State} (h : (Spec.MlKem1024.decapsContract X86.abi 88).pub s₀ s₀') : TPub (Y L1024) (lk L1024) s₀ s₀' := by
-  sig_pub [Spec.MlKem1024.decapsContract, Spec.MlKem1024.decapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
+theorem pub_of {s₀ s₀' : State} (h : (Proof.MlKem.Scrubbed.decaps1024BodyContract X86.abi 88).pub s₀ s₀') : TPub (Y L1024) (lk L1024) s₀ s₀' := by
+  sig_pub [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
   obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆⟩ := h
   refine ⟨e₁, fun i hi => ?_, ?_⟩
   · simp only [Y, Lay.n, List.length_cons, List.length_nil] at hi
@@ -110,13 +111,13 @@ theorem pub_of {s₀ s₀' : State} (h : (Spec.MlKem1024.decapsContract X86.abi 
 def satMem : Mem := fun a =>
   if a = 0x5009 then 0x10 else if a = 0x500d then 0x20 else if a = 0x5012 then 1 else 0
 
-theorem verified : Verified X86.target Impl.MlKem1024.X86.decaps (Spec.MlKem1024.decapsContract X86.abi 88) := by
+theorem verified : Verified X86.target Impl.MlKem1024.X86.decaps (Proof.MlKem.Scrubbed.decaps1024BodyContract X86.abi 88) := by
   refine Piece.verified (((piece (L := L1024) (by decide) (NoSp.of_all (by lit_decide))).pre_mono (fun _ h => pre_of h) fun _ _ _ _ h => pub_of h).mono
     (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · have hp := pre_of h₀
     obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
-    sig_post [Spec.MlKem1024.decapsContract, Spec.MlKem1024.decapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    sig_post [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     rw [setWidth_append32, hax, hfin.eax, hm]
     have r := post (by decide) hp hfin
     rw [dk_eq, ct_eq, addr0, addr0, addr0] at r
@@ -124,7 +125,7 @@ theorem verified : Verified X86.target Impl.MlKem1024.X86.decaps (Spec.MlKem1024
   · let st := satState satMem [⟨0, 3168⟩, ⟨0x1000, 1568⟩]
       [⟨0x2000, 32⟩, ⟨0x10000, 49152⟩, ⟨0x5004, 16⟩]
     refine ⟨st, ?_⟩
-    sig_sat_check [Spec.MlKem1024.decapsContract, Spec.MlKem1024.decapsSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_sat_check [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
 
 end VG.Proof.MlKem1024.X86.Decaps

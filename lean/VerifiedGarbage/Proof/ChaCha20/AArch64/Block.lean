@@ -7,8 +7,6 @@ public import VerifiedGarbage.Impl.ChaCha20.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Spec.ChaCha20.Contract
-public import VerifiedGarbage.Proof.ChaCha20.Contract
-meta import VerifiedGarbage.Proof.ChaCha20.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
 public import VerifiedGarbage.TCB.AArch64.Target
@@ -30,6 +28,10 @@ meta import VerifiedGarbage.Proof.Framework.Semantics
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
+meta import VerifiedGarbage.Spec.ChaCha20
+meta import VerifiedGarbage.TCB.Artifact
 
 @[expose] public section
 
@@ -431,15 +433,6 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   refine WP.mono (last_ok hp h₄) fun s' ⟨hout, hk', _⟩ => ⟨fun r hr => hk' r (not_words_preserved hr), ?_⟩
   exact block_post hout
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | _ => 0
-  sp := 0x4000
-  mem _ := 0
-  rd := [⟨0x1000, 64⟩]
-  wr := [⟨0x2000, 256⟩]
-
 theorem block_correct (s : State) (hs : Proof.ChaCha20.blockAArch64.pre s) :
     ∃ t s', Exec isa block s t s' ∧ abiPreserved s s' ∧ Proof.ChaCha20.blockAArch64.post s s' := by
   obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
@@ -452,13 +445,6 @@ theorem block_ct : ConstantTime isa Proof.ChaCha20.blockAArch64.pre Proof.ChaCha
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl <;> with_reducible assumption
-
-theorem block_verified :
-    Verified AArch64.target Impl.ChaCha20.AArch64.block (Proof.ChaCha20.blockContract AArch64.abi) :=
-  Verified.of_correct block_correct block_ct (by
-    sig_implies [Proof.ChaCha20.blockContract, Proof.ChaCha20.blockSig, AArch64.abi, AArch64.argRegs,
-      Proof.ChaCha20.blockAArch64]
-      [satState] using satState)
 
 end VG.Proof.ChaCha20.AArch64
 

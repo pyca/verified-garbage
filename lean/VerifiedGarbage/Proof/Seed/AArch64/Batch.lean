@@ -32,8 +32,6 @@ theorem exec_movR (s : State) (d n : Reg) : exec (movR d n) s = some (s.write .x
 theorem exec_sub (s : State) (sz : Size) (d n m : Reg) :
     exec (.sub sz d n m) s = some (s.write sz d (s.read sz n - s.read sz m)) := rfl
 
-theorem sb_eq : sb = .x5 := rfl
-
 theorem batchSize_ok (s : State) :
     WP isa batchSize s (fun s' => s'.gpr .x15 = BitVec.ofNat 64 (min (s.gpr .x2).toNat 16) ∧
       (∀ r, r ≠ .x15 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧

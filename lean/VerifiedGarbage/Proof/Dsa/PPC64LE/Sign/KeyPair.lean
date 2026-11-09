@@ -12,9 +12,10 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Comb.Pow
 /-!
 # DSA signing on PPC64LE: the key pair
 
-`keyPair_ok`: in the P space with p in array 0 and `R² mod p` in array 8,
+`keyPair_ok`: in the P space with p in array 0 and `R² mod p` in array 24,
 `g^x mod p` (x the key's last `q_len` octets) compared with y, the mask into
-the header's word `hMask`.
+the header's word `hMask`; `markValid_ok`: all ones there instead, for a key
+known to pass it.
 -/
 
 @[expose] public section
@@ -48,13 +49,13 @@ theorem ptrX_ok {s : State} {L : Lay} {key sig dig : Addr} (hr : Regs s L key si
 def keyPairRegs : List Reg := [.r0, .r6, .r12, .r24] ++ combPowRegs ++ loadRegs ++ eqRegs .r3
 
 /-- `keyPair`: the mask of `g^x mod p = y` into `hMask`. Memory changes only
-before the P space's array 8, but for its array 0 and the saved registers. -/
+before the P space's array 24, but for its array 0 and the saved registers. -/
 theorem keyPair_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.Ok) (hs : ScrL s L)
     (hr : Regs s L key sig dig) (hin : InP s L) (hk : Src s L key (3 * L.pl + 2 * L.ql))
-    (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 8 = 2 ^ (128 * L.wp) % p) :
+    (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 24 = 2 ^ (128 * L.wp) % p) :
     WP isa keyPair s fun t =>
       (word t.mem L.S hMask = mask (decide (gOf s.mem L key ^ xOf s.mem L key % p = yOf s.mem L key)) ∧
-        InP t L ∧ Outside L.S 0 (slot L.wp 8) s.mem t.mem ∧ arrP t.mem L 0 = arrP s.mem L 0 ∧
+        InP t L ∧ Outside L.S 0 (slot L.wp 24) s.mem t.mem ∧ arrP t.mem L 0 = arrP s.mem L 0 ∧
         word t.mem L.S (slot L.wp 0 + 8 * L.wp) = word s.mem L.S (slot L.wp 0 + 8 * L.wp) ∧
         (∀ i < 19, word t.mem L.S (saveOff i) = word s.mem L.S (saveOff i)) ∧
         word t.mem L.S hOut = word s.mem L.S hOut) ∧ Keep keyPairRegs s t := by
@@ -67,7 +68,7 @@ theorem keyPair_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.
   have hqZ : L.qOff + 1600 ≤ L.Z := by simp only [Lay.bOff] at hbe; omega_arith
   have e0 := Lay.slot_eq L.wp 0; have e1 := Lay.slot_eq L.wp 1; have e4 := Lay.slot_eq L.wp 4
   have e5 := Lay.slot_eq L.wp 5
-  have e8 := Lay.slot_eq L.wp 8; have e28 := Lay.slot_eq L.wp 28
+  have e8 := Lay.slot_eq L.wp 8; have e24 := Lay.slot_eq L.wp 24; have e28 := Lay.slot_eq L.wp 28
   have hq28 : L.qOff = slot L.wp 28 := rfl
   unfold keyPair
   -- The pointers: x's octets into `r24`, g's into `r12`.
@@ -134,5 +135,42 @@ theorem keyPair_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.
   · rw [Outside.word wo (by simp only [hOut]; omega_arith) (by simp only [hOut]; omega_arith),
       Outside.word o6' (by simp only [hOut]; omega_arith) (by simp only [hOut]; omega_arith),
       Outside.word o4 (by simp only [hOut]; omega_arith) (by simp only [hOut]; omega_arith)]
+
+/-- `markValid`: all ones into `hMask`, as `keyPair` leaves the mask of
+`g^x mod p = y` for a key that passes it. -/
+theorem markValid_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : ScrL s L)
+    (hr : Regs s L key sig dig) (hin : InP s L) :
+    WP isa (.block markValid) s fun t =>
+      (word t.mem L.S hMask = mask true ∧
+        InP t L ∧ Outside L.S 0 (slot L.wp 24) s.mem t.mem ∧ arrP t.mem L 0 = arrP s.mem L 0 ∧
+        (∀ i < 19, word t.mem L.S (saveOff i) = word s.mem L.S (saveOff i)) ∧
+        word t.mem L.S hOut = word s.mem L.S hOut) ∧ Keep keyPairRegs s t := by
+  have hZ := hL.z256
+  have hnw := hL.nowrap
+  have hw := hL.wp_ge
+  have e0 := Lay.slot_eq L.wp 0; have e8 := Lay.slot_eq L.wp 8; have e24 := Lay.slot_eq L.wp 24
+  unfold markValid
+  rw [show ([.li .r3 0, .subi .r3 .r3 1, .store .d .r3 .r21 hMask] : List Instr) =
+    [.li .r3 0, .subi .r3 .r3 1] ++ [.store .d .r3 .r21 hMask] from rfl, WP.block_append_iff]
+  refine WP.mono (WP.keep [.r3] (Q := fun u => u.gpr .r3 = mask true ∧ u.mem = s.mem)
+    (by prun; rfl) (by decide)) fun s₁ ⟨⟨a3, m1⟩, k1⟩ => ?_
+  have h21 : s₁.gpr .r21 = L.S := (k1.gpr .r21 (by decide)).trans hr.r21
+  have hst : InRegions s₁.wr (L.S + BitVec.ofNat 64 hMask) 8 := (hs.congr k1.wr).st (by simp only [hMask]; omega_arith)
+  have he : exec (.store .d .r3 .r21 hMask) s₁ =
+      some { s₁ with mem := s₁.mem.writeW (L.S + BitVec.ofNat 64 hMask) (s₁.gpr .r3) } := by
+    rw [exec_std (by decide) (by rw [h21]; exact hst), h21]
+  refine WP.mono (WP.keep [] (Q := fun u => u.mem = s₁.mem.writeW (L.S + BitVec.ofNat 64 hMask) (s₁.gpr .r3))
+    (by prun [he]) (by decide)) fun t ⟨mt, kt⟩ => ?_
+  have wo : Outside L.S 0 8 s.mem t.mem := by
+    rw [mt, m1]; exact writeW_outside s.mem L.S (d := 0) _ (by omega_arith)
+  have kall := k1.trans kt
+  refine ⟨⟨?_, ⟨hin.env.keep kall (by decide), (kall.gpr .r21 (by decide)).trans hin.h21,
+      (kall.gpr .r23 (by decide)).trans hin.h23⟩, wo.mono (Nat.zero_le _) (by omega_arith), ?_,
+      fun i hi => ?_, ?_⟩, kall.mono (by decide)⟩
+  · rw [mt, ← a3]; exact word_writeW_self s₁.mem L.S hMask _
+  · show val32 t.mem L.S (slot L.wp 0) (2 * L.wp) = val32 s.mem L.S (slot L.wp 0) (2 * L.wp)
+    exact Outside.val32 wo (by omega_arith) (by omega_arith)
+  · exact Outside.word wo (by simp only [saveOff]; omega_arith) (by simp only [saveOff]; omega_arith)
+  · exact Outside.word wo (by simp only [hOut]; omega_arith) (by simp only [hOut]; omega_arith)
 
 end VG.Proof.Dsa.PPC64LE

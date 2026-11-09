@@ -55,13 +55,6 @@ theorem VP.callF {n : String} {c : Prog isa} {k : Contract isa} (hv : Verified t
       (Nat.le_trans hst (room σ s h))
       fun s' r w p f g po => post σ s s' h r w p (FrameStack.Frame.belowA_mono f hst (room σ s h)) g po
 
-/-- A piece whose stage carries a fact `X` along, which the piece keeps. -/
-theorem VP.with {F G X : State → State → Prop} {c : Prog isa} (h : VP F c G)
-    (hX : ∀ σ s, F σ s → X σ s → WP isa c s fun t => G σ t → X σ t) :
-    VP (fun σ s => F σ s ∧ X σ s) c (fun σ s => G σ s ∧ X σ s) :=
-  VP.of_ct (fun _ _ => h.ct.mono (fun _ _ hh => ⟨_, _, hh.1.1, hh.2.1⟩) fun _ _ _ => trivial)
-    fun σ s ⟨hf, hx⟩ => WP.mono (WP.and (h.wp σ s hf) (hX σ s hf hx)) fun _ ⟨g, k⟩ => ⟨g, k g⟩
-
 /-- A piece that is constant time when some of its inputs agree. -/
 theorem VP.ct {F G : State → State → Prop} {c : Prog isa} {Pub : State → State → Prop}
     (hct : ConstantTime isa (fun _ => True) Pub c)

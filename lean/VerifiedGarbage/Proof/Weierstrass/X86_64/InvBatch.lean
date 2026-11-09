@@ -183,8 +183,6 @@ structure IInv (P : InvCfg) (base : Addr) (I : Divstep.IState) (s : State) : Pro
   a : (wordsVal s.mem base P.sA P.L : Int) % ((2 ^ (64 * P.L) : Nat) : Int) = I.a % ((2 ^ (64 * P.L) : Nat) : Int)
   b : (wordsVal s.mem base P.sB P.L : Int) % ((2 ^ (64 * P.L) : Nat) : Int) = I.b % ((2 ^ (64 * P.L) : Nat) : Int)
 
-theorem zext1 : (1 : BitVec 32).setWidth 64 = 1 := by decide
-
 /-- `[d] = [a]`, through `rax`. -/
 theorem copy1_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d a : Nat} (hd : d + 8 ≤ size)
     (ha : a + 8 ≤ size) :
@@ -235,10 +233,6 @@ theorem low_cong {P : InvCfg} {m : Mem} {base : Addr} {d : Nat} {x : Int}
   have low : ((word m base d).toNat : Int) % 2 ^ 64 = (wordsVal m base d P.L : Int) % 2 ^ 64 := by
     unfold InvCfg.L; rw [wordsVal]; push_cast; rw [Int.add_mul_emod_self_left]
   rw [low, ← Int.emod_emod_of_dvd _ hdvd, h, Int.emod_emod_of_dvd _ hdvd]
-
-theorem msteps_d15 {T : Divstep.MSt} {k : Nat} (h : |T.d| + 2 * k ≤ 2 ^ 31) :
-    |(Divstep.msteps 15 T).d| + 2 * k ≤ 2 ^ 31 + 30 := by
-  have := Divstep.msteps_d T 15; push_cast at this; omega_arith
 
 /-- A batch's words: `59` divsteps from the low words of `f`, `g`, in chunks,
 leave `d` and the matrix in `rbx`, `r9`–`r12`. -/

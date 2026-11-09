@@ -176,12 +176,6 @@ theorem sat_regs {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)
   | zero => trivial
   | succ m => simp only [satRegs, BitVec.toNat_ofNat]; omega_using [hs]
 
-/-- `withStackScratch`'s code satisfies `spSafe` (no AArch64 instruction
-writes `sp`). -/
-theorem withStackScratch_spSafe (bytes : Nat) (r : Reg) (c : Prog isa) :
-    (withStackScratch bytes r c).all (fun i => !isa.writesSp i) = true :=
-  Code.all_of_forall (fun _ => rfl) _
-
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n n' : Nat}
   {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}

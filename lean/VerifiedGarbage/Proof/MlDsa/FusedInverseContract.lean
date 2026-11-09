@@ -28,13 +28,6 @@ def multiplyInverseSig : Sig where
   params := [("out",.array true .u32 256),("a",.array false .u32 256),
     ("b",.array false .u32 256),("scratch",.array true .u64 128)]
 
-def multiplyInverseContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  multiplyInverseSig.contract A
-    (pre := fun _out a b _scratch m => PositiveReduced m a ∧ PositiveReduced m b)
-    (post := fun out a b _scratch m m' _ =>
-      PolyIs m' out (nttInv (multiplyNTT (polyAt m a) (polyAt m b))))
-    (writeArgs := true) (stack := stack)
-
 /-- A matrix row's coefficientwise products accumulated in the NTT domain. -/
 def dotNTT (f g : Nat → Poly) (count : Nat) : Poly :=
   ((List.range count).map fun j => multiplyNTT (f j) (g j)).foldl add zero

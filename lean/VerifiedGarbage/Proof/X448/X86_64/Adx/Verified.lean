@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Contract
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
@@ -28,12 +29,13 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.X448.Contract
 
 /-!
 # X448 on x86-64 with BMI2 and ADX: `Verified`
 
 The proof of `vg_x448` (`Proof/X448/X86_64/Verified.lean`) for the field
-multiplications `adx` (`adx_ok`): correctness from `correct`, constant time by
+multiplications `adx` (`adx_ok`): correctness from `correct_of`, constant time by
 taint tracking (the only branches are on the loop counters, and every address
 is an argument plus a constant or a counter), satisfiability, and the shared
 contract.
@@ -77,8 +79,39 @@ theorem x448Adx_ct : ConstantTime isa Proof.X448.x448X86_64.pre Proof.X448.x448X
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem x448Adx_verified :
-    Verified X86_64.target Impl.X448.X86_64.x448Adx (Spec.X448.x448Contract X86_64.abi 8) :=
+    Verified X86_64.target Impl.X448.X86_64.x448Adx (Proof.X448.x448Contract X86_64.abi 8) :=
   Verified.of_inline_ct (by lit_decide) x448Adx_ok x448Adx_ct x448_implies8
     (fun _ h => Sig.clear_of_pre h) x448_patch
+
+theorem x448BaseAdx_ok (s : State) (hs : Proof.X448.x448BaseX86_64.pre s) :
+    ∃ t s', Exec isa Impl.X448.X86_64.x448BaseAdx.inline s t s' ∧ abiPreserved s s' ∧
+      Proof.X448.x448BaseX86_64.post s s' := by
+  have hc : WP isa Impl.X448.X86_64.x448BaseAdx.inline s
+      (fun u => gprPreserved s u ∧ Proof.X448.x448BaseX86_64.post s u) := by
+    change WP isa (Impl.X448.X86_64.x448BaseOf Impl.X448.X86_64.adx (Impl.X448.X86_64.ladder Impl.X448.X86_64.adx)
+      (Impl.X448.X86_64.invertCallWith Impl.X448.X86_64.adx ("vg_gf448_r64_pow223" ++ "_adx")).inline) s _
+    exact correctBase_of adx_ok (fun h => ladder_post adx_ok h)
+      (fun h => invertCallWith_post adx_ok _ (keep := []) (by simp) h) (BasePre.of s hs)
+  obtain ⟨t, s', he, h⟩ := hc
+  exact ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he h.1, h.2⟩
+
+/-- `x448AdxErased` for `vg_x448_base_adx`. -/
+def x448BaseAdxErased : Prog isa := Code.erase Impl.X448.X86_64.x448BaseAdx
+
+materialize_shared x448BaseAdxErased
+
+theorem x448BaseAdx_ct : ConstantTime isa Proof.X448.x448BaseX86_64.pre Proof.X448.x448BaseX86_64.pub
+    Impl.X448.X86_64.x448BaseAdx := by
+  refine VG.Taint.constantTime_mapBlocks (c' := x448BaseAdxErased) taintS_eraseInv
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) rfl ?_ rfl (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h0, h1, h2, h3⟩
+  refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem x448BaseAdx_verified :
+    Verified X86_64.target Impl.X448.X86_64.x448BaseAdx (Spec.X448.x448BaseContract X86_64.abi 8) :=
+  Verified.of_inline_ct (by lit_decide) x448BaseAdx_ok x448BaseAdx_ct x448Base_implies8
+    (fun _ h => Sig.clear_of_pre h) x448Base_patch
 
 end VG.Proof.X448.X86_64

@@ -17,10 +17,6 @@ import VerifiedGarbage.TCB.AArch64.Simd
 namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
 open VG VG.AArch64 VG.Spec.MlDsa
 
-theorem pairPoly_contains (p : Addr) {j : Nat} (hj : j<2) :
-    (⟨p,2048⟩ : Region).Contains (pairPolyPtr p j) 1024 :=
-  Offset.contains_base p (by omega) (by omega)
-
 theorem positiveReduced_frame {rs : List Region} {m m' : Mem} {p : Addr}
     (hf : Frame rs m m') (hd : ∀r∈rs,(⟨p,1024⟩:Region).Disjoint r)
     (hp : PositiveReduced m p) : PositiveReduced m' p := by

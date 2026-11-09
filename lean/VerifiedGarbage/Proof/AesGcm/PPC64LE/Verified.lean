@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.AesGcm.Scratch
@@ -67,10 +68,6 @@ theorem streamFinish_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (hs : s
 theorem streamVerify_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (hs : streamVerifyPPC64LE.pre s) :
     ∃ t s', Exec isa streamVerify s t s' ∧ abiPreserved s s' ∧ streamVerifyPPC64LE.post s s' :=
   streamVerify_wp hs
-
-theorem seal_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (hs : sealPPC64LE.pre s) :
-    ∃ t s', Exec isa «seal» s t s' ∧ abiPreserved s s' ∧ sealPPC64LE.post s s' :=
-  seal_wp hs
 
 theorem sealFused_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     (s : State) (hs : sealPPC64LE.pre s) :
@@ -164,28 +161,28 @@ theorem streamEncrypt_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target streamEncrypt (Proof.AesGcm.streamEncryptScratchContract PPC64LE.abi) :=
   Verified.of_correct streamEncrypt_correct streamEncrypt_ct (by
     sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig,
-      Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, streamEncryptPPC64LE, streamCryptPre,
+      Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, streamEncryptPPC64LE, streamCryptPre,
       streamCryptPub, rounds, PPC64LE.abi, PPC64LE.argRegs] [streamCryptSat] using streamCryptSat)
 
 theorem streamDecrypt_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target streamDecrypt (Proof.AesGcm.streamDecryptScratchContract PPC64LE.abi) :=
   Verified.of_correct streamDecrypt_correct streamDecrypt_ct (by
     sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig,
-      Spec.Gcm.streamTextPre, Spec.Gcm.streamDecryptPost, streamDecryptPPC64LE, streamCryptPre,
+      Spec.Gcm.streamTextPre, Proof.AesGcm.streamDecryptRoundsPost, streamDecryptPPC64LE, streamCryptPre,
       streamCryptPub, rounds, PPC64LE.abi, PPC64LE.argRegs] [streamCryptSat] using streamCryptSat)
 
 theorem streamFinish_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target streamFinish (Proof.AesGcm.streamFinishScratchContract PPC64LE.abi) :=
   Verified.of_correct streamFinish_correct streamFinish_ct (by
     sig_implies [Proof.AesGcm.streamFinishScratchContract, Proof.AesGcm.streamFinishScratchSig,
-      Spec.Gcm.streamFinishPre, Spec.Gcm.streamFinishPost, streamFinishPPC64LE, finPre, rounds, PPC64LE.abi,
+      Spec.Gcm.streamFinishPre, Proof.AesGcm.streamFinishRoundsPost, streamFinishPPC64LE, finPre, rounds, PPC64LE.abi,
       PPC64LE.argRegs] [finSat] using finSat)
 
 theorem streamVerify_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target streamVerify (Proof.AesGcm.streamVerifyScratchContract PPC64LE.abi) :=
   Verified.of_correct streamVerify_correct streamVerify_ct (by
     sig_implies [Proof.AesGcm.streamVerifyScratchContract, Proof.AesGcm.streamVerifyScratchSig,
-      Spec.Gcm.streamVerifyPre, Spec.Gcm.streamVerifyPost, streamVerifyPPC64LE, verPre, rounds, PPC64LE.abi,
+      Spec.Gcm.streamVerifyPre, Proof.AesGcm.streamVerifyRoundsPost, streamVerifyPPC64LE, verPre, rounds, PPC64LE.abi,
       PPC64LE.argRegs] [verSat] using verSat)
 
 /-- `tag` at `0x5000` and the working space at `0x6000`, the stack arguments. -/
@@ -198,20 +195,12 @@ def sealSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x9060, 16⟩]
   wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩, ⟨0x6000, 2560⟩]
 
-theorem seal_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target «seal» (Proof.AesGcm.sealScratchContract PPC64LE.abi) :=
-  Verified.of_correct seal_correct seal_ct (by
-    sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
-      Spec.Gcm.sealPost, sealPPC64LE, sealPre, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
-      stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
-      [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
-
 theorem sealFused_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
     Verified PPC64LE.target Impl.AesGcm.PPC64LE.SealFused.seal
       (Proof.AesGcm.sealScratchContract PPC64LE.abi) :=
   Verified.of_correct sealFused_correct sealFused_ct (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
-      Spec.Gcm.sealPost, sealPPC64LE, sealPre, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
+      Proof.AesGcm.sealRoundsPost, sealPPC64LE, sealPre, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
       stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
       [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
 
@@ -241,7 +230,7 @@ theorem open_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
           stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
       post := by
         intro s s' _ h
-        sig_eval [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPost, PPC64LE.abi,
+        sig_eval [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Proof.AesGcm.openRoundsPost, PPC64LE.abi,
           PPC64LE.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
         simp only [openPPC64LE] at h
         intro _

@@ -73,8 +73,6 @@ def Stage (n D k : Nat) (s : State) : Prop :=
   (s.gpr .ecx).toNat = (n % 2 ^ (32 - k)) * 2 ^ k + n / 2 ^ (32 - k) / D ∧
     (s.gpr .eax).toNat = n / 2 ^ (32 - k) % D
 
-theorem toNat_allOnes32 : (BitVec.allOnes 32).toNat = 2 ^ 32 - 1 := by decide
-
 /-- One bit. -/
 theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2 ^ 31) {B : BitVec 32} {d : Nat}
     (hb : s.gpr .ebp = B) (hin : InRegions (s.rd ++ s.wr) (addr B d) 4)

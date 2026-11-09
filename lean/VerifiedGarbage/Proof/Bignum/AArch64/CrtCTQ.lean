@@ -33,7 +33,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 # RSA with the CRT on AArch64: constant time of `q`'s phase
 
 The start of a prime's phase (`unit_ct`, `unitPhase_ok`), its power
-(`pow_ct`, `powPhase_ok`) and `q`'s phase (`qPhase_ct`, `qPhase_ok`), from
+(`pow_ct`, `powPhase_ok`) and `q`'s phase (`qPhase_ct`), from
 the claims about their parts (`GPowCT`, `RedcCT`, `ExpCT`). Between the
 parts, each state predicate fixes the public data and keeps of the secrets
 only what the next part's claim and the correctness of the parts after it

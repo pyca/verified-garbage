@@ -276,9 +276,4 @@ theorem compress_correct (s : State) (hs : compressLocal.pre s) :
   · exact hs.2.2.2.2.2.1
   · exact hs.2.2.2.2.2.2
 
-/-- The emitted primitive is verified against the merged, target-independent contract. -/
-theorem compress_verified : Verified X86_64.target Impl.Argon2.X86_64.compress
-    (Proof.Argon2.compressContract X86_64.abi) :=
-  Verified.of_correct compress_correct compress_ct compress_implies
-
 end VG.Proof.Argon2.X86_64

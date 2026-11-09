@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.MlDsa.RISCV64.Sign.ExpA
 import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Seeds
 import VerifiedGarbage.Proof.MlKem.KPke
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
+import VerifiedGarbage.Proof.MlDsa.RISCV64.CacheCopy
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
@@ -55,8 +57,6 @@ end
 
 /-! ## The layouts -/
 
-theorem sA0 (p : Params) (STK : Nat) (σ : State) (o : Nat) : (slay1 p STK σ).A 0 o = (slay2 p STK σ).A 0 o := rfl
-
 /-- `sig` to `s8`: from `SC1` to `SC2`. -/
 theorem SC1.toSC2 {p : Params} {STK : Nat} {σ s s' : State} (hp : SPre p STK σ) (h : SC1 p STK σ s)
     (g28 : s'.gpr .s8 = sSig σ) (go : ∀ r, r ≠ .s8 → s'.gpr r = s.gpr r) (hm : s'.mem = s.mem)
@@ -66,7 +66,8 @@ theorem SC1.toSC2 {p : Params} {STK : Nat} {σ s s' : State} (hp : SPre p STK σ
     by rw [hsp]; exact hs.spk, by rw [hsp]; exact hs.al, hs.al0, by rw [go _ (by decide)]; exact hs.s11, by rw [go _ (by decide)]; exact hs.s10,
     by rw [go _ (by decide)]; exact hs.s9, g28, fun i hi hi1 => ?_, fun i hi hi1 => ?_⟩,
     hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp, fun r hr hs' => ?_, by rw [hm]; exact h.sav,
-    by rw [hm]; exact h.sk, by rw [hm]; exact h.mu⟩
+    by rw [hm]; exact h.sk, by rw [hm]; exact h.mu, hp, by rw [go _ (by decide)]; exact h.s3,
+    by rw [hm]; exact h.cache⟩
   · show _ ∈ s'.wr
     rw [hwr, h.wr, hp.wr]
     simp only [sWb2, List.mem_cons, List.not_mem_nil, or_false] at hi
@@ -200,8 +201,6 @@ theorem rppHash_ok {σ s : State} (h : IW p STK σ s) :
   rw [e1, e2, shake31, ← List.append_assoc]
   exact (Proof.MlKem.shake256_eq _ _).symm
 
-
-/-! ## The private key -/
 
 end
 
@@ -341,6 +340,105 @@ theorem nt_piece :
 
 end
 
+omit hP hF hS in
+/-- The selection in `s3` is the cache pointer, if it is not zero. -/
+theorem sel_cache {σ s : State} (h : SC2 p STK σ s) (h3 : s.gpr .s3 ≠ 0) :
+    s.gpr .s3 = sCache σ ∧ sCLen σ = 1024 * (p.ℓ + 2 * p.k) ∧
+      Proof.MlDsa.CachedSecretPolys p σ.mem (sCache σ) (skOf p σ) := by
+  have e := h.s3
+  have h6 : σ.gpr .a6 ≠ 0 := fun e6 => by
+    rw [e, cSel, ite_eq_left_of_eq_true _ _ (eq_true e6)] at h3; exact h3 rfl
+  obtain ⟨hl, hc⟩ := h.pre.cache.resolve_left h6
+  exact ⟨by rw [e, cSel, ite_eq_right_of_eq_false _ _ (eq_false h6)],
+    by rw [hl]; simp only [Spec.MlDsa.n]; try omega_arith, hc⟩
+
+omit hP hF hS in
+/-- The bytes of slot `s1Base + j` after the copy are those of polynomial `j` of the cache. -/
+theorem slot_bytes {σ : State} {m : Mem} {j : Nat} (hj : j < p.ℓ + 2 * p.k)
+    (hb : bytesAt m ((slay2 p STK σ).A 0 (oP (s1Base p))) (1024 * (p.ℓ + 2 * p.k)) =
+      bytesAt σ.mem (sCache σ) (1024 * (p.ℓ + 2 * p.k))) :
+    bytesAt m ((slay2 p STK σ).A 0 (oP (s1Base p + j))) 1024 =
+      bytesAt σ.mem (sCache σ + BitVec.ofNat 64 (4 * Spec.MlDsa.n * j)) 1024 := by
+  have hm : 1024 * j + 1024 ≤ 1024 * (p.ℓ + 2 * p.k) := by omega_arith
+  have e1 := Proof.MlKem.bytesAt_slice m ((slay2 p STK σ).A 0 (oP (s1Base p))) hm
+  have e2 := Proof.MlKem.bytesAt_slice σ.mem (sCache σ) hm
+  rw [hb] at e1
+  rw [show 4 * Spec.MlDsa.n * j = 1024 * j by simp only [Spec.MlDsa.n]; try omega_arith, ← e2, e1]
+  simp only [Lay.A, BitVec.add_assoc, ← BitVec.ofNat_add, oP]
+  congr 3; omega_arith
+
+omit hP hS in
+theorem cached_glue : KeyGen.glueOk [(.a1, .ptr (s1P p 0)), (.a2, .imm (1024 * (p.ℓ + 2 * p.k)))] = true := by
+  have hk := hF.k; have hl := hF.l
+  simp only [KeyGen.glueOk, KeyGen.argReg, KeyGen.argOk, List.all_cons, List.all_nil, s1P, pS, sc, oP]
+  set_option linter.unusedSimpArgs false in
+  simp only [Bool.and_eq_true, decide_eq_true_eq, beq_self_eq_true, Bool.true_and, Bool.and_true, Bool.or_true,
+    Bool.true_or]
+  constructor <;> omega_arith
+
+omit hP hS in
+theorem cached_ok {σ s : State} (h : ID p STK σ 0 0 0 s) (h3 : s.gpr .s3 ≠ 0) :
+    WP isa (cached p) s (ID p STK σ p.ℓ p.k p.k) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  have hs := h.sc.site
+  have hp := h.sc.pre
+  have hL := hs.ok
+  obtain ⟨hsel, hlen, hpolys⟩ := sel_cache h.sc h3
+  obtain ⟨hs1, hs2, hs3⟩ := hF.scr
+  have hfit : (sCache σ).toNat + 1024 * (p.ℓ + 2 * p.k) ≤ 2 ^ 64 := by have := hp.f_x; rw [hlen] at this; exact this
+  have hbd : oP (s1Base p) + 1024 * (p.ℓ + 2 * p.k) ≤ (slay2 p STK σ).size 0 := by
+    rw [slay2_size0]; simp only [oP, s1Base]; omega_arith
+  have hgo := cached_glue hF
+  have dcx : Region.Disjoint ⟨sScr σ, scrLen p⟩ ⟨sCache σ, 1024 * (p.ℓ + 2 * p.k)⟩ := by
+    have := hp.d_cx; rw [hlen] at this; exact this
+  have ccov : (⟨sCache σ, 1024 * (p.ℓ + 2 * p.k)⟩ : Region) ∈ σ.rd := by
+    rw [hp.rd, ← hlen]; simp
+  have hS : s.gpr .s3 + BitVec.ofNat 64 0 = sCache σ := by rw [hsel, BitVec.add_zero]
+  have hD : s.gpr (s1P p 0).1 + BitVec.ofNat 64 (s1P p 0).2 = (slay2 p STK σ).A 0 (oP (s1Base p)) := by
+    show s.gpr .s11 + _ = _
+    rw [hs.s11]; simp only [Lay.A, s1Base, Nat.add_zero]
+  unfold cached
+  refine WP.mono (CacheCopy.cacheCopy_ok (off := 0) (dst := s1P p 0) (len := 1024 * (p.ℓ + 2 * p.k)) (s := s)
+    (by decide) hgo (by omega_arith) (by omega_arith)
+    (by rw [hS, hD]; exact (dcx.sub_left (Lay.R_sub (L := slay2 p STK σ) (i := 0) hbd)).symm)
+    (Covers.of_mem fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr; rw [hS, h.sc.rd]; exact List.mem_append_left _ ccov)
+    (by rw [hD]; exact Lay.covers (hs.cw 0 (by decide) (by decide)) hbd))
+    fun s' ⟨cs, rd', wr', sp', fr, hb⟩ => ?_
+  rw [hS, hD] at hb
+  rw [hD] at fr
+  have hk : Kept ((slay2 p STK σ).RL [(0, oP (s1Base p), 1024 * (p.ℓ + 2 * p.k))]) s s' :=
+    ⟨cs, sp', rd', wr', fr⟩
+  have hb' : bytesAt s'.mem ((slay2 p STK σ).A 0 (oP (s1Base p))) (1024 * (p.ℓ + 2 * p.k)) =
+      bytesAt σ.mem (sCache σ) (1024 * (p.ℓ + 2 * p.k)) := by
+    rw [hb]; have := h.sc.cache; rw [hlen] at this; exact this
+  have hpoly : ∀ j (hj : j < p.ℓ + 2 * p.k) {f : Poly},
+      (Spec.MlDsa.preparedSecretPolys p (skOf p σ))[j]! = f →
+        PolyIs s'.mem ((slay2 p STK σ).A 0 (oP (s1Base p + j))) f := fun j hj f hf => by
+    have := hpolys j hj
+    rw [hf] at this
+    exact Proof.MlDsa.PreparedKey.polyIs_of_copy (slot_bytes hj hb') this
+  refine ⟨h.sc.keep hk (by ssep hF [sc2Chk, s1Base]), by rw [hk.cs .s4 (by decide)]; exact h.s4, h.ok,
+    fun e he => polyIs_keepW hL hk.frame (by ssep hF [s1Base]) (by decide) rfl (h.A e he),
+    by rw [bytes_keepW hL hk.frame (i := 0) (o := oMS) (l := 64) (by ssep hF [s1Base]) (by decide) (by decide)]
+       exact h.rpp,
+    fun r hr => hpoly r (by omega_arith) (Proof.MlDsa.PreparedKey.secret_s1 p _ hr),
+    fun i hi => ?_, fun i hi => ?_⟩
+  · rw [show s2Base p + i = s1Base p + (p.ℓ + i) by simp only [s1Base, s2Base]; omega_arith]
+    exact hpoly _ (by omega_arith) (Proof.MlDsa.PreparedKey.secret_s2 p _ hi)
+  · rw [show t0Base p + i = s1Base p + (p.ℓ + p.k + i) by simp only [s1Base, t0Base]; omega_arith]
+    exact hpoly _ (by omega_arith) (Proof.MlDsa.PreparedKey.secret_t0 p _ hi)
+
+omit hP hS in
+theorem cached_piece :
+    SPiece p STK (fun σ s => ID p STK σ 0 0 0 s ∧ s.gpr .s3 ≠ 0) (ID p STK · p.ℓ p.k p.k) (cached p) :=
+  ⟨fun σ s _ h => cached_ok hF h.1 h.2,
+    rel_of (CacheCopy.cacheCopy_tr (by decide) (cached_glue hF)
+      (P := fun x y => x.sp = y.sp ∧ x.gpr .s3 = y.gpr .s3 ∧ x.gpr .s11 = y.gpr .s11) fun _ _ h => h)
+      fun σ₁ σ₂ x y _ _ pub h₁ h₂ => ⟨by rw [h₁.1.sc.sp, h₂.1.sc.sp, pub.1],
+        by rw [h₁.1.sc.s3, h₂.1.sc.s3, cSel_pub pub],
+        by rw [h₁.1.sc.site.s11, h₂.1.sc.site.s11, slay2_pub pub]⟩⟩
+
 omit hP hS in
 theorem eta_facts : (p.η, p.η) ∈ bitPackParams ∧ sLen p = 32 * bitlen (p.η + p.η) ∧
     0 < sLen p ∧ sLen p < 2 ^ 31 - 2048 ∧ p.η < 2 ^ 31 - 2048 := by
@@ -415,16 +513,22 @@ theorem decT0_piece {i : Nat} (hi : i < p.k) :
     rw [e] at hq
     exact hq
 
-/-- Decoding, from `Â`: `ρ″`, `ŝ₁`, `ŝ₂` and `t̂₀`. -/
-theorem decode_piece : SPiece p STK (IM p STK) (ID p STK · p.ℓ p.k p.k) (decode P p) := by
-  unfold decode
-  refine (rhoPP_piece hF).seq ((Piece.mono (Piece.seqR (I := fun r σ s => ID p STK σ r 0 0 s) p.ℓ 0
+/-- `ŝ₁`, `ŝ₂` and `t̂₀`, decoded from `sk` and transformed. -/
+theorem decodeKey_piece : SPiece p STK (ID p STK · 0 0 0) (ID p STK · p.ℓ p.k p.k) (decodeKey P p) := by
+  unfold decodeKey
+  exact (Piece.mono (Piece.seqR (I := fun r σ s => ID p STK σ r 0 0 s) p.ℓ 0
     fun r _ hr => decS1_piece hP hF hS (by omega_arith)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
     ((Piece.mono (Piece.seqR (I := fun i σ s => ID p STK σ p.ℓ i 0 s) p.k 0
       fun i _ hi => decS2_piece hP hF hS (by omega_arith)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
       (Piece.mono (Piece.seqR (I := fun i σ s => ID p STK σ p.ℓ p.k i s) p.k 0
-        fun i _ hi => decT0_piece hP hF hS (by omega_arith)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h)))
+        fun i _ hi => decT0_piece hP hF hS (by omega_arith)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h))
 
+/-- Decoding, from `Â`: `ρ″`, `ŝ₁`, `ŝ₂` and `t̂₀`, from the cache or from `sk`. -/
+theorem decode_piece : SPiece p STK (IM p STK) (ID p STK · p.ℓ p.k p.k) (decode P p) := by
+  unfold decode
+  exact (rhoPP_piece hF).seq (CacheCopy.pieceIte
+    (fun _ _ _ _ _ _ pub h₁ h₂ => by rw [h₁.sc.s3, h₂.sc.s3, cSel_pub pub]) (cached_piece hF)
+    (Piece.mono (decodeKey_piece hP hF hS) (fun _ _ _ h => h.1) fun _ _ _ h => h))
 end
 
 end VG.Proof.MlDsa.RISCV64.Sign

@@ -1,11 +1,12 @@
 //! An experimental, formally verified cryptography library, implemented
 //! entirely by LLMs.
 //!
-//! The cryptographic primitives are assembly that has been formally verified
-//! in Lean (see `lean/README.md` for what is proven and what has to be
-//! trusted). They live in naked functions in the generated crate of each
-//! target, `crates/verified-garbage-asm-<target>/`, and the public APIs
-//! compose them.
+//! Each primitive is assembly proven in Lean to be correct, memory safe and
+//! constant time, and the public APIs are Rust that composes them. The README
+//! says what the constant-time guarantee assumes, and a module's or item's
+//! documentation says when an operation's timing may depend on more than its
+//! public inputs; `lean/README.md` says what is proven and what has to be
+//! trusted.
 
 #![no_std]
 #![deny(missing_docs)]
@@ -100,52 +101,22 @@ compile_error!("AArch64 needs a target with NEON (not, e.g., aarch64-unknown-non
 #[cfg(all(target_arch = "arm", target_vendor = "apple"))]
 compile_error!("32-bit ARM needs an AAPCS target (not Apple's armv7s or armv7k)");
 
-mod aes;
-pub mod aes_cbc;
-pub mod aes_ccm;
-pub mod aes_cfb;
-pub mod aes_cfb8;
-pub mod aes_ctr;
-pub mod aes_ecb;
-pub mod aes_gcm;
-pub mod aes_gcm_siv;
-pub mod aes_ocb;
-pub mod aes_ofb;
-pub mod aes_siv;
-pub mod aes_xts;
-pub mod argon2;
-pub mod blowfish_cbc;
-pub mod blowfish_cfb;
-pub mod blowfish_ecb;
-pub mod blowfish_ofb;
-pub mod camellia_cbc;
-pub mod camellia_cfb;
-pub mod camellia_ctr;
-pub mod camellia_ecb;
-pub mod camellia_ofb;
-pub mod cast5_cbc;
-pub mod cast5_cfb;
-pub mod cast5_ecb;
-pub mod cast5_ofb;
-pub mod chacha20;
-pub mod chacha20poly1305;
+pub mod aead;
+mod align;
+pub mod cipher;
 pub mod cmac;
 mod ct;
+pub mod dit;
 pub mod dsa;
-mod ec;
-pub mod ecdh;
-pub mod ecdsa;
+pub mod ec;
 pub mod ed25519;
 pub mod ed448;
-mod error;
+mod entropy;
+pub mod error;
 pub mod ffdh;
 pub mod hashes;
 pub mod hmac;
-pub mod idea_cbc;
-pub mod idea_cfb;
-pub mod idea_ecb;
-pub mod idea_ofb;
-mod invalid_mac;
+pub mod kdf;
 pub mod mldsa44;
 pub mod mldsa65;
 pub mod mldsa87;
@@ -153,32 +124,8 @@ mod mldsa_common;
 pub mod mlkem1024;
 pub mod mlkem768;
 mod mlkem_common;
-pub mod pbkdf2;
 pub mod poly1305;
-pub mod rc2_cbc;
-pub mod rc4;
 pub mod rsa;
-pub mod rsa_keygen;
-pub mod rsa_oaep;
-pub mod rsa_pkcs1_enc;
-pub mod rsa_pkcs1_sig;
-pub mod rsa_pss;
-pub mod scrypt;
-pub mod seed_cbc;
-pub mod seed_cfb;
-pub mod seed_ecb;
-pub mod seed_ofb;
-pub mod sm4_cbc;
-pub mod sm4_cfb;
-pub mod sm4_ctr;
-pub mod sm4_ecb;
-pub mod sm4_gcm;
-pub mod sm4_ofb;
-pub mod triple_des_cbc;
-pub mod triple_des_cfb;
-pub mod triple_des_cfb8;
-pub mod triple_des_ecb;
-pub mod triple_des_ofb;
 pub mod x25519;
 pub mod x448;
 mod zeroize;
@@ -189,6 +136,7 @@ mod tests {
     #[cfg(target_arch = "x86_64")]
     #[test]
     fn selftest_add_x86_64() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         let cases = [
             (0, 0),
             (1, 2),
@@ -199,7 +147,7 @@ mod tests {
         ];
         for (a, b) in cases {
             // SAFETY: the contract has no preconditions.
-            let r = unsafe { crate::arch::selftest::vg_selftest_add(a, b) };
+            let r = unsafe { crate::arch::dispatch::selftest::vg_selftest_add_auto(dit, a, b) };
             assert_eq!(r, a.wrapping_add(b));
         }
     }

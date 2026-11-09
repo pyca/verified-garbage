@@ -39,10 +39,6 @@ theorem str_exec (u : State) (t b : Reg) {off : Nat} (ho : off < 4096)
     exec (.str t b off) u = some (withMem u (u.mem.writeW (State.addr (u.gpr b + BitVec.ofNat 32 off)) (u.gpr t))) := by
   simp only [exec, ho, ↓reduceIte, store32_eq, hw]
 
-theorem flatMap_succ {α : Type} (f : Nat → List α) (n : Nat) :
-    (List.range (n + 1)).flatMap f = (List.range n).flatMap f ++ f n := by
-  rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
-
 theorem map_range_succ {α : Type} (f : Nat → α) (n : Nat) :
     (List.range (n + 1)).map f = (List.range n).map f ++ ([f n] : List α) := by
   rw [List.range_succ, List.map_append, List.map_cons, List.map_nil]

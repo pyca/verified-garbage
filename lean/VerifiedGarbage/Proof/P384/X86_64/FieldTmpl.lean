@@ -57,40 +57,6 @@ theorem sub_eq {M : Impl.Mont.Mod} (hn : M.n = 6) (hs : M.sparse = true)
   rw [ite_eq_right_of_eq_false _ _ hr]
   simp only [hn, hs, and_self, ite_true]
 
-theorem p384_callOf :
-    Mont.callOf p384.MP' = some ("vg_p384_mul_mod_p", Mont.mulFn6 false) := by
-  unfold Mont.callOf
-  rw [ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_left_of_eq_true _ _ (by decide +kernel),
-    ite_eq_right_of_eq_false _ _ (by decide +kernel)]
-
-theorem p384x_callOf :
-    Mont.callOf p384x.MP' = some ("vg_p384_mul_mod_p" ++ "_adx", Mont.mulFn6 true) := by
-  unfold Mont.callOf
-  rw [ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_left_of_eq_true _ _ (by decide +kernel),
-    ite_eq_left_of_eq_true _ _ (by decide +kernel)]
-
-theorem p384T_ok : p384T.Ok p384.MP' where
-  mul o a b h := by rw [mul_ne (by decide +kernel) (by decide +kernel) (by decide +kernel) h]; kernel_rfl
-  sqr o a := by rw [mul_eq (by decide +kernel) (by decide +kernel) (by decide +kernel)]; kernel_rfl
-  add o a b _ := by rw [add_eq (by decide +kernel)]; kernel_rfl
-  dbl o a := by rw [add_eq (by decide +kernel)]; kernel_rfl
-  sub o a b := by rw [sub_eq (by decide +kernel) (by decide +kernel) (by decide +kernel)]; kernel_rfl
-  call f body hf o a b := by
-    rw [p384_callOf, Option.some.injEq, Prod.mk.injEq] at hf
-    obtain ⟨rfl, rfl⟩ := hf
-    kernel_rfl
-
-theorem p384XT_ok : p384XT.Ok p384x.MP' where
-  mul o a b h := by rw [mul_ne (by decide +kernel) (by decide +kernel) (by decide +kernel) h]; kernel_rfl
-  sqr o a := by rw [mul_eq (by decide +kernel) (by decide +kernel) (by decide +kernel)]; kernel_rfl
-  add o a b _ := by rw [add_eq (by decide +kernel)]; kernel_rfl
-  dbl o a := by rw [add_eq (by decide +kernel)]; kernel_rfl
-  sub o a b := by rw [sub_eq (by decide +kernel) (by decide +kernel) (by decide +kernel)]; kernel_rfl
-  call f body hf o a b := by
-    rw [p384x_callOf, Option.some.injEq, Prod.mk.injEq] at hf
-    obtain ⟨rfl, rfl⟩ := hf
-    kernel_rfl
-
 /-- With its products written out (`Mod.inl`), `p384`'s modulus calls none. -/
 theorem p384h_callOf : Mont.callOf { p384.MP' with inl := true } = none := by
   unfold Mont.callOf

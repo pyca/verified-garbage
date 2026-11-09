@@ -1,7 +1,8 @@
-//! What the modules' errors share: the one `InvalidKeyLength`, which each
-//! module whose constructor can fail only on the key's length re-exports,
-//! and `impl_error!`, which implements `Display` and `core::error::Error`
-//! for an error enum.
+//! The errors the modules share.
+//!
+//! A function returns the type that names the failures it can have; a module
+//! whose failures no other module shares has an `Error` of its own. The
+//! messages do not name the algorithm: the caller knows which call failed.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -12,22 +13,117 @@
     target_arch = "riscv64"
 ))]
 
-// Each module's re-export has a doc of the key lengths it accepts, which
-// rustdoc puts before this one: the blank first line makes this a paragraph
-// of its own.
-///
-/// Every module whose constructor fails only on the length of the key
-/// returns this one type.
+/// The key does not have a length the algorithm accepts. The constructor
+/// (or one-shot function) that returns it says which lengths it accepts.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct InvalidKeyLength;
 
-impl core::fmt::Display for InvalidKeyLength {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_str("invalid key length")
-    }
+/// An input that a block mode takes in whole blocks of its block cipher is
+/// not a whole number of blocks. The function that returns it says which
+/// input: every call's for CBC and ECB, that of a call that does not end the
+/// message for CFB, OFB and CTR, and the whole message's for the modes that
+/// buffer a partial block (Blowfish-ECB's and RC2-CBC's `finalize`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct IncompleteBlock;
+
+/// The output buffer of an update is shorter than the bytes it would write
+/// (which the type's `output_len` gives).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct OutputTooSmall;
+
+/// The MAC did not match: the message or the key is not what was
+/// authenticated. HMAC, CMAC, Poly1305 and keyed BLAKE2 return it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct InvalidMac;
+
+/// A key is not valid. The function that returns it says which key, and
+/// which checks it failed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct InvalidKey;
+
+/// The signature is not a valid signature of the message (or hash value)
+/// with the public key, or the public key is not valid. The function that
+/// returns it says which checks the key and the signature are held to.
+/// Every signature scheme's verification returns it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct InvalidSignature;
+
+/// Why an X25519 or X448 operation failed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum XdhError {
+    /// The shared secret is all zero: the peer's public key is a point of
+    /// small order (RFC 7748 §6.1 for X25519, §6.2 for X448).
+    ZeroSharedSecret,
+    /// The operating system's random number generator failed.
+    Randomness,
 }
 
-impl core::error::Error for InvalidKeyLength {}
+/// Why an ML-KEM-768 or ML-KEM-1024 operation failed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MlKemError {
+    /// A `SampleNTT` reached the bound on its loop's iterations (FIPS 203
+    /// Appendix B), which happens with probability less than 2⁻²⁶¹ for each
+    /// call: less than 2⁻²⁵⁸ in an ML-KEM-768 operation (9 calls) and 2⁻²⁵⁷
+    /// in an ML-KEM-1024 one (16 calls).
+    SampleBound,
+    /// The operating system's random number generator failed.
+    Randomness,
+}
+
+/// Why an ML-DSA-44, ML-DSA-65 or ML-DSA-87 operation failed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MlDsaError {
+    /// A loop reached its bound (FIPS 204 Appendix C), which happens with
+    /// probability about 2⁻²⁵⁶ or less.
+    LoopBound,
+    /// The context string to sign with is longer than 255 bytes (FIPS 204
+    /// Algorithm 2).
+    ContextTooLong,
+    /// The operating system's random number generator failed.
+    Randomness,
+}
+
+/// Why scrypt or Argon2 refused to derive a key, or to accept one.
+#[cfg(feature = "alloc")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PasswordHashError {
+    /// The parameters (costs or lengths) are not valid: the function that
+    /// returns it says which are.
+    InvalidParameters,
+    /// The memory the derivation needs, which the function that returns it
+    /// gives, exceeds `max_memory` (or the address space).
+    MemoryLimitExceeded,
+    /// Allocating that memory failed.
+    AllocationFailed,
+    /// A `verify` derived a key other than the expected one: the password
+    /// (or another input or a parameter) is not the one it was derived from.
+    KeyMismatch,
+}
+
+/// Implements `core::fmt::Display` for each error struct `$ty`, writing
+/// `$msg`, and `core::error::Error`.
+macro_rules! impl_unit_error {
+    ($($ty:ident => $msg:expr,)+) => {
+        $(
+            impl core::fmt::Display for $ty {
+                fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                    f.write_str($msg)
+                }
+            }
+
+            impl core::error::Error for $ty {}
+        )+
+    };
+}
+
+impl_unit_error! {
+    InvalidKeyLength => "invalid key length",
+    IncompleteBlock => "input is not a whole number of blocks",
+    OutputTooSmall => "output buffer is too small",
+    InvalidMac => "MAC does not match",
+    InvalidKey => "invalid key",
+    InvalidSignature => "invalid signature",
+}
 
 /// Implements `core::fmt::Display` for the error enum `$ty`, writing `$msg`
 /// for `$variant`, and `core::error::Error`.
@@ -46,6 +142,38 @@ macro_rules! impl_error {
 }
 pub(crate) use impl_error;
 
+impl_error! {
+    XdhError {
+        ZeroSharedSecret => "shared secret is all zero",
+        Randomness => "random number generator failed",
+    }
+}
+
+impl_error! {
+    MlKemError {
+        SampleBound => "ML-KEM sampling loop reached its bound",
+        Randomness => "random number generator failed",
+    }
+}
+
+impl_error! {
+    MlDsaError {
+        LoopBound => "ML-DSA loop reached its bound",
+        ContextTooLong => "context is longer than 255 bytes",
+        Randomness => "random number generator failed",
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl_error! {
+    PasswordHashError {
+        InvalidParameters => "invalid password hashing parameters",
+        MemoryLimitExceeded => "derivation would need more than the memory limit",
+        AllocationFailed => "could not allocate the derivation's memory",
+        KeyMismatch => "derived key does not match",
+    }
+}
+
 #[cfg(test)]
 mod tests {
     extern crate std;
@@ -58,155 +186,65 @@ mod tests {
         };
     }
 
-    /// Every error value of every module RISC-V has so far has a message.
-    #[cfg(target_arch = "riscv64")]
+    /// Every value of the shared errors, and of the modules' own, has a
+    /// message.
     #[test]
     fn errors_display() {
         check!(
+            super::IncompleteBlock,
+            super::InvalidKey,
             super::InvalidKeyLength,
-            crate::aes_cbc::Error::IncompleteBlock,
-            crate::aes_cbc::Error::InvalidKeyLength,
-            crate::aes_ccm::Error::InvalidKeyLength,
-            crate::aes_ccm::Error::InvalidNonceLength,
-            crate::aes_ccm::Error::InvalidTextLength,
-            crate::aes_ccm::Error::TagMismatch,
-            crate::aes_ecb::Error::IncompleteBlock,
-            crate::aes_ecb::Error::InvalidKeyLength,
-            crate::aes_ocb::Error::InvalidKeyLength,
-            crate::aes_ocb::Error::InvalidNonceLength,
-            crate::aes_ocb::Error::TagMismatch,
-            crate::aes_siv::Error::InvalidKeyLength,
-            crate::aes_siv::Error::TooManyComponents,
-            crate::aes_siv::Error::TagMismatch,
-            crate::blowfish_cbc::Error::IncompleteBlock,
-            crate::blowfish_cbc::Error::InvalidKeyLength,
-            crate::blowfish_ecb::Error::IncompleteBlock,
-            crate::blowfish_ecb::Error::InvalidKeyLength,
-            crate::blowfish_ecb::Error::OutputTooSmall,
-            crate::camellia_cbc::Error::IncompleteBlock,
-            crate::camellia_cbc::Error::InvalidKeyLength,
-            crate::camellia_ecb::Error::IncompleteBlock,
-            crate::camellia_ecb::Error::InvalidKeyLength,
-            crate::idea_cbc::Error::IncompleteBlock,
-            crate::idea_cbc::Error::InvalidKeyLength,
-            crate::idea_ecb::Error::IncompleteBlock,
-            crate::idea_ecb::Error::InvalidKeyLength,
-            crate::mlkem_common::Error::InvalidKey,
-            crate::mlkem_common::Error::Randomness,
-            crate::mlkem_common::Error::SampleBound,
-            crate::rc2_cbc::Error::IncompleteBlock,
-            crate::rc2_cbc::Error::InvalidEffectiveBits,
-            crate::rc2_cbc::Error::InvalidIvLength,
-            crate::rc2_cbc::Error::InvalidKeyLength,
-            crate::rc2_cbc::Error::OutputTooSmall,
-            crate::rc4::Error::InvalidKeyLength,
-            crate::seed_cbc::Error::IncompleteBlock,
-            crate::seed_cbc::Error::InvalidKeyLength,
-            crate::seed_ecb::Error::IncompleteBlock,
-            crate::sm4_cbc::Error::IncompleteBlock,
-            crate::sm4_ecb::Error::IncompleteBlock,
-            crate::triple_des_cbc::Error::IncompleteBlock,
-            crate::triple_des_cbc::Error::InvalidKeyLength,
-            crate::triple_des_ecb::Error::IncompleteBlock,
-            crate::triple_des_ecb::Error::InvalidKeyLength,
-            crate::x25519::Error::Randomness,
-            crate::x25519::Error::ZeroSharedSecret,
-        );
-    }
-
-    /// Every error value of every module has a message.
-    #[cfg(not(target_arch = "riscv64"))]
-    #[test]
-    fn errors_display() {
-        check!(
-            super::InvalidKeyLength,
-            crate::aes_cbc::Error::IncompleteBlock,
-            crate::aes_cbc::Error::InvalidKeyLength,
-            crate::aes_ccm::Error::InvalidKeyLength,
-            crate::aes_ccm::Error::InvalidNonceLength,
-            crate::aes_ccm::Error::InvalidTextLength,
-            crate::aes_ccm::Error::TagMismatch,
-            crate::aes_ecb::Error::IncompleteBlock,
-            crate::aes_ecb::Error::InvalidKeyLength,
-            crate::aes_gcm::Error::AadAfterText,
-            crate::aes_gcm::Error::InvalidAadLength,
-            crate::aes_gcm::Error::InvalidKeyLength,
-            crate::aes_gcm::Error::InvalidNonceLength,
-            crate::aes_gcm::Error::InvalidOutputLength,
-            crate::aes_gcm::Error::InvalidTextLength,
-            crate::aes_gcm::Error::TagMismatch,
-            crate::aes_gcm::Error::TooManyPieces,
-            crate::aes_gcm_siv::Error::InvalidAadLength,
-            crate::aes_gcm_siv::Error::InvalidKeyLength,
-            crate::aes_gcm_siv::Error::InvalidTextLength,
-            crate::aes_gcm_siv::Error::TagMismatch,
-            crate::aes_ocb::Error::InvalidKeyLength,
-            crate::aes_ocb::Error::InvalidNonceLength,
-            crate::aes_ocb::Error::TagMismatch,
-            crate::aes_siv::Error::InvalidKeyLength,
-            crate::aes_siv::Error::TagMismatch,
-            crate::aes_siv::Error::TooManyComponents,
-            crate::aes_xts::Error::DataUnitTooLong,
-            crate::aes_xts::Error::DataUnitTooShort,
-            crate::aes_xts::Error::EqualKeyHalves,
-            crate::aes_xts::Error::InvalidKeyLength,
-            crate::blowfish_cbc::Error::IncompleteBlock,
-            crate::blowfish_cbc::Error::InvalidKeyLength,
-            crate::blowfish_ecb::Error::IncompleteBlock,
-            crate::blowfish_ecb::Error::InvalidKeyLength,
-            crate::blowfish_ecb::Error::OutputTooSmall,
-            crate::camellia_cbc::Error::IncompleteBlock,
-            crate::camellia_cbc::Error::InvalidKeyLength,
-            crate::camellia_ecb::Error::IncompleteBlock,
-            crate::camellia_ecb::Error::InvalidKeyLength,
-            crate::cast5_ecb::Error::IncompleteBlock,
-            crate::cast5_ecb::Error::InvalidKeyLength,
-            crate::chacha20poly1305::Error::InvalidOutputLength,
-            crate::chacha20poly1305::Error::InvalidTextLength,
-            crate::chacha20poly1305::Error::TagMismatch,
-            crate::chacha20poly1305::Error::TooManyPieces,
-            crate::ed25519::Error::InvalidSignature,
+            super::InvalidMac,
+            super::InvalidSignature,
+            super::MlDsaError::ContextTooLong,
+            super::MlDsaError::LoopBound,
+            super::MlDsaError::Randomness,
+            super::MlKemError::Randomness,
+            super::MlKemError::SampleBound,
+            super::OutputTooSmall,
+            super::XdhError::Randomness,
+            super::XdhError::ZeroSharedSecret,
+            crate::aead::aes_ccm::Error::InvalidNonceLength,
+            crate::aead::aes_ccm::Error::InvalidTextLength,
+            crate::aead::aes_ccm::Error::TagMismatch,
+            crate::aead::aes_gcm::Error::AadAfterText,
+            crate::aead::aes_gcm::Error::InvalidAadLength,
+            crate::aead::aes_gcm::Error::InvalidNonceLength,
+            crate::aead::aes_gcm::Error::InvalidOutputLength,
+            crate::aead::aes_gcm::Error::InvalidTextLength,
+            crate::aead::aes_gcm::Error::TagMismatch,
+            crate::aead::aes_gcm::Error::TooManyPieces,
+            crate::aead::aes_gcm_siv::Error::InvalidAadLength,
+            crate::aead::aes_gcm_siv::Error::InvalidTextLength,
+            crate::aead::aes_gcm_siv::Error::TagMismatch,
+            crate::aead::aes_ocb::Error::InvalidNonceLength,
+            crate::aead::aes_ocb::Error::TagMismatch,
+            crate::aead::aes_siv::Error::TagMismatch,
+            crate::aead::aes_siv::Error::TooManyComponents,
+            crate::cipher::aes::XtsError::DataUnitTooLong,
+            crate::cipher::aes::XtsError::DataUnitTooShort,
+            crate::cipher::aes::XtsError::EqualKeyHalves,
+            crate::cipher::aes::XtsError::InvalidKeyLength,
+            crate::cipher::aes::XtsError::InvalidOutputLength,
+            crate::aead::chacha20poly1305::Error::InvalidOutputLength,
+            crate::aead::chacha20poly1305::Error::InvalidTextLength,
+            crate::aead::chacha20poly1305::Error::TagMismatch,
+            crate::aead::chacha20poly1305::Error::TooManyPieces,
             crate::ed448::Error::ContextTooLong,
-            crate::ed448::Error::InvalidSignature,
-            crate::hmac::InvalidMac,
-            crate::idea_cbc::Error::IncompleteBlock,
-            crate::idea_cbc::Error::InvalidKeyLength,
-            crate::idea_ecb::Error::IncompleteBlock,
-            crate::idea_ecb::Error::InvalidKeyLength,
-            crate::mldsa44::Error::ContextTooLong,
-            crate::mldsa44::Error::InvalidSignature,
-            crate::mldsa44::Error::LoopBound,
-            crate::mldsa44::Error::Randomness,
-            crate::mldsa65::Error::ContextTooLong,
-            crate::mldsa65::Error::InvalidSignature,
-            crate::mldsa65::Error::LoopBound,
-            crate::mldsa65::Error::Randomness,
-            crate::mldsa87::Error::ContextTooLong,
-            crate::mldsa87::Error::InvalidSignature,
-            crate::mldsa87::Error::LoopBound,
-            crate::mldsa87::Error::Randomness,
-            crate::mlkem_common::Error::InvalidKey,
-            crate::mlkem_common::Error::Randomness,
-            crate::mlkem_common::Error::SampleBound,
-            crate::rc2_cbc::Error::IncompleteBlock,
-            crate::rc2_cbc::Error::InvalidEffectiveBits,
-            crate::rc2_cbc::Error::InvalidIvLength,
-            crate::rc2_cbc::Error::InvalidKeyLength,
-            crate::rc2_cbc::Error::OutputTooSmall,
-            crate::rc4::Error::InvalidKeyLength,
-            crate::seed_cbc::Error::IncompleteBlock,
-            crate::seed_cbc::Error::InvalidKeyLength,
-            crate::seed_ecb::Error::IncompleteBlock,
-            crate::sm4_cbc::Error::IncompleteBlock,
-            crate::sm4_ecb::Error::IncompleteBlock,
-            crate::triple_des_cbc::Error::IncompleteBlock,
-            crate::triple_des_cbc::Error::InvalidKeyLength,
-            crate::triple_des_ecb::Error::IncompleteBlock,
-            crate::triple_des_ecb::Error::InvalidKeyLength,
-            crate::x25519::Error::Randomness,
-            crate::x25519::Error::ZeroSharedSecret,
-            crate::x448::Error::Randomness,
-            crate::x448::Error::ZeroSharedSecret,
+            crate::cipher::rc2::Error::InvalidEffectiveBits,
+            crate::cipher::rc2::Error::InvalidKeyLength,
+            crate::aead::sm4_gcm::Error::AadAfterText,
+            crate::aead::sm4_gcm::Error::InvalidAadLength,
+            crate::aead::sm4_gcm::Error::InvalidNonceLength,
+            crate::aead::sm4_gcm::Error::InvalidTextLength,
+            crate::aead::sm4_gcm::Error::TagMismatch,
+        );
+        #[cfg(feature = "alloc")]
+        check!(
+            super::PasswordHashError::AllocationFailed,
+            super::PasswordHashError::InvalidParameters,
+            super::PasswordHashError::KeyMismatch,
+            super::PasswordHashError::MemoryLimitExceeded,
         );
     }
 }

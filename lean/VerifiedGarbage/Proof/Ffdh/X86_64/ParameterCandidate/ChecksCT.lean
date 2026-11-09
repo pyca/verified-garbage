@@ -29,18 +29,6 @@ structure CheckPub where
 
 def CheckHeader (q : CheckPub) (s : State) : Prop := KW q.B q.wr ∧ HP q.B q.wr (gvs q.B q.w) s
 
-theorem sieve_ct : RelCT isa (Two CheckHeader) sieve fun _ _ => True :=
-  kt_ct CheckPub.B CheckPub.wr gS (fun q => gvs q.B q.w) [] (by decide)
-    (fun q => gvs_fst q.B q.w) (fun _ _ h => h) (pins_nil _) (by taint_decide)
-
-theorem generator2_ct : RelCT isa (Two CheckHeader) generator2 fun _ _ => True :=
-  kt_ct CheckPub.B CheckPub.wr gS (fun q => gvs q.B q.w) [] (by decide)
-    (fun q => gvs_fst q.B q.w) (fun _ _ h => h) (pins_nil _) (by taint_decide)
-
-theorem generator5_ct : RelCT isa (Two CheckHeader) generator5 fun _ _ => True :=
-  kt_ct CheckPub.B CheckPub.wr gS (fun q => gvs q.B q.w) [] (by decide)
-    (fun q => gvs_fst q.B q.w) (fun _ _ h => h) (pins_nil _) (by taint_decide)
-
 theorem generatorCheck_ct : RelCT isa (Two fun q s => CheckHeader q s ∧ s.gpr .rdx = q.generator)
     generatorCheck fun _ _ => True :=
   kt_ct CheckPub.B CheckPub.wr gS (fun q => gvs q.B q.w) [.rdx] (by decide)

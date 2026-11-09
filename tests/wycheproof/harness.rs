@@ -95,7 +95,7 @@ pub fn rsa_bits_tested(bits: usize) -> bool {
 
 /// Whether `rsa_pss::rsa_pss_sign_test` signs with RSA keys of `bits` bits:
 /// those [`rsa_bits_tested`] tests, and every size in the configuration
-/// without `VG_CPU_FEATURES` (`src/cpu.rs`), which an emulated CPU's lines
+/// without `VG_CPU_FEATURES` (`crates/verified-garbage-cpu/src/detect.rs`), which an emulated CPU's lines
 /// in CI run once. Its other configurations call the same IFMA code with
 /// the 3072- and 4096-bit keys, emulated some thirty times slower than the
 /// ADX code, each for minutes of CI's time.

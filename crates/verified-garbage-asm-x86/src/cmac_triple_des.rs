@@ -15,7 +15,7 @@
 /// * `state` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `key` may overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_triple_des_stream_init(state: *mut [u64; 52], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_cmac_triple_des_stream_init(state: *mut [u64; 52], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkbP3//4uEJJgCAACJRCQEi4QknAIAAIlEJAiLhCSgAgAAiUQkDIngg8AUiUQkEItEJASJmJABAACLXCQIi0wkDItUJBBSUFFTVotEJBCJWFSJcFiJeFyJaGCJxYtMJASLAQ/IiUVki0EED8iJRWiLQQgPyIlFbItBDA/IiUVwi0QkCIP4EA=="
 je 20f
@@ -52,7 +52,7 @@ jne 23b
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 740 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_triple_des_absorb(state: *mut [u64; 52], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_cmac_triple_des_absorb(state: *mut [u64; 52], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkNP3//4uEJNACAACJRCQEi4Qk1AIAAIlEJAiLhCTYAgAAiUQkDIuEJNwCAACJRCQQi4Qk4AIAAIlEJBSJ4IPAHIlEJBiLRCQYiZiAAgAAibCEAgAAibiIAgAAiaiMAgAAi0QkCItMJAwJwQ=="
 je 20f
@@ -143,7 +143,7 @@ jmp 222f
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_triple_des_finish(state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {
+pub(crate) unsafe extern "C" fn vg_cmac_triple_des_finish(state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkOP3//4uEJMwCAACJRCQEi4Qk0AIAAIlEJAiLhCTUAgAAiUQkDIuEJNgCAACJRCQQieCDwBiJRCQUi0QkFImYgAIAAImwhAIAAIm4iAIAAImojAIAAIt0JASBxpABAACLfCQQuQgAAACFyQ=="
 je 20f

@@ -43,10 +43,6 @@ theorem tagLenOk_le {t : Nat} (h : Spec.Gcm.tagLenOk t = true) : t ≤ 16 := by
   simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at h
   omega
 
-theorem setWidth_ofNat_bool (b : Bool) :
-    (BitVec.ofNat 64 (if b then 1 else 0)).setWidth 32 = if b then 1 else 0 := by
-  cases b <;> rfl
-
 /-- The entry of `verify`: `tag_len` in `x28` and `tag` in `x12`. -/
 theorem verEntry_ok {s : State} {Ctx St W : Addr} (hCtx : s.gpr .x0 = Ctx) (hSt : s.gpr .x1 = St)
     (hW : s.gpr .x6 = W) (hperm : Perm Ctx St W s) :

@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 
 /-!
-# ML-DSA on ARMv7, `sign_message` and `verify_message`: entry and exit
+# ML-DSA on ARMv7, `sign_message` and `verify_message_cached`: entry and exit
 
 Untrusted: everything here is checked by Lean. Stores of registers at
 distinct offsets that are multiples of 4 from a base (`strs_ok`), and loads
@@ -306,9 +306,6 @@ structure Fin (L : Lay) (g : Reg → BitVec 32) (t : State) : Prop where
   cs : ∀ r ∈ preserved, r ≠ .r7 → r ≠ .lr → t.gpr r = g r
   s7 : t.mem.readW (L.X + BitVec.ofNat 64 (904 + 0)) 32 = g .r7
   sLR : t.mem.readW (L.X + BitVec.ofNat 64 (904 + 4)) 32 = g .lr
-
-theorem Ctx.fin {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State} (hc : Ctx L g m₀ t) : Fin L g t :=
-  ⟨hc.rd, hc.wr, hc.sp, hc.r7, hc.cs, hc.s7, hc.sLR⟩
 
 /-- The exit: `lr`, then `r7`, from the saves. -/
 theorem leave_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 32} {t : State} (hc : Fin L g t) :

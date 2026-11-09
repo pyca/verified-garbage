@@ -78,8 +78,6 @@ def StepTimingW (w16 : Bool) (A B : Spec.Sha3.State) (p a b c : Addr) : Prop :=
     s.syms "VG_MLKEM_REJ_SHUFFLE"=c → u.syms "VG_MLKEM_REJ_SHUFFLE"=c → s.sp=u.sp →
     RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraStep w16) (fun _ _=>True)
 
-abbrev StepTiming := StepTimingW false
-
 theorem retryInit_ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (Taint.ofRegs []))
     (.block [.movz .x .x30 1 0]) :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs []) (fun _ _ _ _ h=>h) (hc:=.block []) rfl

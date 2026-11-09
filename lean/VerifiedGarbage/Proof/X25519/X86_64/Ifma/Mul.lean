@@ -71,22 +71,6 @@ theorem mulV_ok : ∀ k < 5, ∀ l < 4, (mulV.reg k).ok (mulB OPV) l = true ∧
 theorem mulV_keep : ∀ r < 16, 5 ≤ r → r < 10 ∨ r = 15 → mulV.reg r = .reg r := by decide +kernel
 theorem mulV_st : mulV.st = [] := by decide +kernel
 
-def mulG : Sym := mulS OPG
-
-theorem mulG_nat (E : Env) (l : Nat) : ∀ k < 5, (mulG.reg k).nat E l =
-    mulNat (fun i => E.m (OPG + 32 * i) l) (fun j => E.v (5 + j) l) k
-  | 0, _ => rfl
-  | 1, _ => rfl
-  | 2, _ => rfl
-  | 3, _ => rfl
-  | 4, _ => rfl
-
-theorem mulG_ok : ∀ k < 5, ∀ l < 4, (mulG.reg k).ok (mulB OPG) l = true ∧
-    (mulG.reg k).bnd (mulB OPG) l < 2 ^ 61 := by decide +kernel
-
-theorem mulG_keep : ∀ r < 16, 5 ≤ r → r < 10 ∨ r = 15 → mulG.reg r = .reg r := by decide +kernel
-theorem mulG_st : mulG.st = [] := by decide +kernel
-
 /-! ## The ladder's products (`mul4H`) -/
 
 def mulHS : Sym := (Sym.init.run mul4H).get (by decide +kernel)

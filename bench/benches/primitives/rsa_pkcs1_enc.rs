@@ -25,15 +25,12 @@ pub fn bench(c: &mut Criterion) {
     use openssl::bn::BigNum;
     use openssl::pkey::PKey;
     use openssl::rsa::{Padding, Rsa};
-    use verified_garbage::rsa::{PrivateKey, PublicKey};
-    use verified_garbage::rsa_pkcs1_enc::{decrypt, encrypt_with_rng};
+    use verified_garbage::rsa::{BigUint, PrivateKey, PublicKey};
 
-    use crate::{AWS_LC, BenchDyn, OPENSSL, VG, fixed_tape};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
     // Moduli of 2048, 3072 and 4096 bits with the exponent 65537; the ids'
     // size is the modulus' bytes. Each library loads the key once, outside
-    // the measurements. verified-garbage takes its padding string from a
-    // fixed tape (`encrypt` but for `getrandom`); OpenSSL and aws-lc-rs draw
-    // a fresh one per encryption.
+    // the measurements. Each draws a fresh padding string per encryption.
     // aws-lc-rs sets up an `EVP_PKEY_CTX` in every operation, where OpenSSL's
     // `RSA_public_encrypt` and `RSA_private_decrypt` take the key itself.
     let msg = [0x42u8; 32];
@@ -42,7 +39,8 @@ pub fn bench(c: &mut Criterion) {
         let key = Rsa::generate(bits).unwrap();
         let (n, e) = (key.n().to_vec(), key.e().to_vec());
         let k = n.len();
-        let vg_key = PublicKey::new(&n, &e).unwrap();
+        let vg_key =
+            PublicKey::new(BigUint::from_be_bytes(&n), BigUint::from_be_bytes(&e)).unwrap();
         let openssl_key = Rsa::from_public_components(
             BigNum::from_slice(&n).unwrap(),
             BigNum::from_slice(&e).unwrap(),
@@ -51,12 +49,9 @@ pub fn bench(c: &mut Criterion) {
         let mut out = vec![0; k];
         g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
-                let mut tape = fixed_tape(k as u64);
-                encrypt_with_rng(black_box(&vg_key), black_box(&msg), |buf| {
-                    tape(buf);
-                    Ok(())
-                })
-                .unwrap()
+                black_box(&vg_key)
+                    .encrypt_pkcs1v15(black_box(&msg))
+                    .unwrap()
             })
         });
         g.bench(BenchmarkId::new(OPENSSL, k), |b| {
@@ -95,21 +90,21 @@ pub fn bench(c: &mut Criterion) {
         let n = key.n().to_vec();
         let k = n.len();
         let vg_key = PrivateKey::from_crt(
-            &n,
-            &key.e().to_vec(),
-            &key.d().to_vec(),
-            &key.p().unwrap().to_vec(),
-            &key.q().unwrap().to_vec(),
-            &key.dmp1().unwrap().to_vec(),
-            &key.dmq1().unwrap().to_vec(),
-            &key.iqmp().unwrap().to_vec(),
+            BigUint::from_be_bytes(&n),
+            BigUint::from_be_bytes(&key.e().to_vec()),
+            BigUint::from_be_bytes(&key.d().to_vec()),
+            BigUint::from_be_bytes(&key.p().unwrap().to_vec()),
+            BigUint::from_be_bytes(&key.q().unwrap().to_vec()),
+            BigUint::from_be_bytes(&key.dmp1().unwrap().to_vec()),
+            BigUint::from_be_bytes(&key.dmq1().unwrap().to_vec()),
+            BigUint::from_be_bytes(&key.iqmp().unwrap().to_vec()),
         )
         .unwrap();
         let mut ct = vec![0; k];
         key.public_encrypt(&msg, &mut ct, Padding::PKCS1).unwrap();
         let mut out = vec![0; k];
         g.bench(BenchmarkId::new(VG, k), |b| {
-            b.iter(|| decrypt(black_box(&vg_key), black_box(&ct)).unwrap())
+            b.iter(|| black_box(&vg_key).decrypt_pkcs1v15(black_box(&ct)).unwrap())
         });
         g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {

@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 """Splits a CPU's runs in CI's `rust-cpu-features` job across its shards.
 
-A CPU's `runs` are lines of `<VG_CPU_FEATURES> | <tests>`, each a `cargo
-test` (see ci.yml). A CPU whose runs take long has several matrix entries,
-its shards (`shards = n` in ci/rust_matrix.toml), with the same `runs` and a
-`shard` of `i/n`: each job runs its share of the lines. The lines are dealt
-out by the CPU time each took in `main`'s last run (from a cache `main`
-saves), largest first, each to the shard with the least time so far, so that
-a slow line (e.g. Wycheproof's RSA tests under SDE) does not share a runner
-with another when it need not. A line without a time (new, or before
-`main` saved any) counts as the median of the CPU's known lines, or 1 if
-none is known. Every shard computes the same split from the same times
-(which the plan job hands to all of them), so each line runs in exactly one.
+A CPU's `runs` are lines of `<VG_CPU_FEATURES> | <groups>` (see ci.yml).
+Unsharded jobs run a line together. Sharded jobs deal out independent test
+groups, bundling overlapping selectors so each test still runs once per
+feature configuration. In particular, an unrestricted line's RSA, FFDH
+and DSA tests no longer have to share a shard. Each task goes to the least
+loaded shard, largest first, using main's cached CPU times. Ties favor a
+shard with fewer tasks, so even zero-duration observations leave work in
+every shard (an excessive shard count is an error).
+
+Group timings use `<features> <groups>` keys. Reduced groups use their
+original identities, so hosts with and without IFMA agree on ownership.
+Older feature-line observations bootstrap the split, divided equally over
+that line's tasks. New timings replace them without invalidating the cache.
 
 A runner's CPU decides how fast SDE emulates another: one without AVX-512
 emulates `-icx`'s AVX-512 instructions several times slower, and the shards
@@ -26,6 +28,8 @@ hosts' on a tie).
                                       line) of CPU, slowest first, as
                                       `<features>|<tests>`, by the times
                                       in the JSON TIMES (`{}` for none)
+  cpu_shards.py pick-groups CPU SHARD TIMES
+      independent groups of SHARD, as `<features>|<groups>|<timing key>`
   cpu_shards.py times CPU HOST FILE   the times (seconds of CPU, `user sys`)
                                       of FILE's lines (`<features>\t<user>
                                       <sys>`), on a host of class HOST, as
@@ -38,6 +42,8 @@ hosts' on a tie).
 import json
 import statistics
 import sys
+
+from cpu_tests import disjoint_groups, original_group
 
 # The classes of host, slowest first: whether its CPU has AVX-512
 # (`/proc/cpuinfo`'s `avx512f`).
@@ -89,7 +95,8 @@ def split(lines, times, shards):
     out = [[] for _ in range(shards)]
     # Ties keep the order of `runs`, so that the split is the same in every shard.
     for _, (features, tests) in sorted(enumerate(lines), key=lambda e: (-cost[e[1][0]], e[0])):
-        i = load.index(min(load))
+        # A zero-duration observation must not leave the other shards empty.
+        i = min(range(shards), key=lambda i: (load[i], len(out[i]), i))
         load[i] += cost[features]
         out[i].append((features, tests))
     return out
@@ -112,6 +119,45 @@ def pick(cpu, shard, times, runs):
     if n > len(lines):
         raise SystemExit(f"{n} shards for {len(lines)} lines: some would run nothing")
     return split(lines, host_times(lines, times.get(cpu_key(cpu), {})), n)[i - 1]
+
+
+def group_key(features, group):
+    """A stable timing/ownership key, also when a mixed host reduces a group."""
+    original = " ".join(original_group(g) for g in group.split())
+    return f"{features} {original}"
+
+
+def pick_groups(cpu, shard, times, runs):
+    """Deal out groups independently, so a CPU's unrestricted line can use
+    every shard. Return (features, group, stable timing key) triples.
+
+    Earlier caches time whole feature lines. Divide those observations
+    equally between their groups until the per-group timings replace them.
+    Every host uses canonical keys and the same cache to decide ownership.
+    """
+    lines = parse_runs(runs)
+    i, n = parse_shard(shard)
+    tasks, fallback = [], {}
+    for features, groups in lines:
+        names = disjoint_groups(groups.split())
+        for group in names:
+            key = group_key(features, group)
+            if key in fallback:
+                raise SystemExit(f"{key}: group twice on a feature line")
+            tasks.append((key, (features, group, key)))
+            fallback[key] = (features, len(names))
+    if n > len(tasks):
+        raise SystemExit(f"{n} shards for {len(tasks)} groups: some would run nothing")
+    by_host = {}
+    for host, observations in times.get(cpu_key(cpu), {}).items():
+        known = {}
+        for key, (features, count) in fallback.items():
+            if key in observations:
+                known[key] = observations[key]
+            elif features in observations:
+                known[key] = observations[features] / count
+        by_host[host] = known
+    return [task for _, task in split(tasks, host_times(tasks, by_host), n)[i - 1]]
 
 
 def seconds(t):
@@ -153,6 +199,9 @@ def main(argv):
     if argv[:1] == ["pick"] and len(argv) == 4:
         for features, tests in pick(argv[1], argv[2], json.loads(argv[3] or "{}"), sys.stdin.read()):
             print(f"{features}|{tests}")
+    elif argv[:1] == ["pick-groups"] and len(argv) == 4:
+        for features, group, key in pick_groups(argv[1], argv[2], json.loads(argv[3] or "{}"), sys.stdin.read()):
+            print(f"{features}|{group}|{key}")
     elif argv[:1] == ["times"] and len(argv) == 4:
         with open(argv[3]) as f:
             print(json.dumps(times(argv[1], argv[2], f.read()), sort_keys=True))

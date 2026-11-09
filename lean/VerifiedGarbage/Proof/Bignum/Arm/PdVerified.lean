@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # ARMv7 checked public RSA is verified against the shared RSA contract -/
 
@@ -35,12 +37,12 @@ def pdSatState : State where
   rd := [⟨0x2000, 128⟩, ⟨0x3000, 1⟩, ⟨0x3100, 64⟩, ⟨0x8000, 24⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x4000, 8448⟩]
 
-theorem pd_contract_sat : ∃ s, (Spec.Rsa.publicPrecomputedCheckedContract abi 56).pre s := by
-  sig_implies_sat [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+theorem pd_contract_sat : ∃ s, (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre s := by
+  sig_implies_sat [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
     [pdSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
       Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords] using pdSatState
 
-theorem pd_verified : Verified target PdFn.code (Spec.Rsa.publicPrecomputedCheckedContract abi 56) :=
+theorem pd_verified : Verified target PdFn.code (Proof.Rsa.publicPrecomputedCheckedContract abi 56) :=
   ⟨pd_contract_correct, pd_contract_ct, pd_contract_sat⟩
 
 end VG.Proof.Bignum.Arm

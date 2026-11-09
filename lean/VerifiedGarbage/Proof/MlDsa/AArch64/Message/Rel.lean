@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 
 /-!
-# ML-DSA on AArch64, `sign_message` and `verify_message`: two runs
+# ML-DSA on AArch64, `sign_message` and `verify_message_cached`: two runs
 
 Untrusted: everything here is checked by Lean. Blocks whose addresses are
 functions of `x28` and the stack pointer, which they keep, leak the same in
@@ -141,11 +141,6 @@ theorem two_wp {c : Prog isa} {Φ Ψ : Lay → Mem → State → Prop}
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
   exact ⟨ht, L, g₁, g₂, v₁, v₂, m₁, m₂, hL, hi, y₁.1, y₂.1, y₁.2, y₂.2⟩
-
-theorem two_mono {Φ Ψ : Lay → Mem → State → Prop} (h : ∀ L m t, Φ L m t → Ψ L m t) {a b : State}
-    (hp : Two I Φ a b) : Two I Ψ a b :=
-  let ⟨L, g₁, g₂, v₁, v₂, m₁, m₂, hL, hi, c₁, c₂, f₁, f₂⟩ := hp
-  ⟨L, g₁, g₂, v₁, v₂, m₁, m₂, hL, hi, c₁, c₂, h _ _ _ f₁, h _ _ _ f₂⟩
 
 /-- What the moves of the arguments `as` leave. -/
 abbrev Moved (as : List (Reg × Arg)) (t t1 : State) : Prop :=

@@ -178,18 +178,6 @@ theorem keep_a {m m' : Mem} (hf : Frame (wR s ++ [tR s]) m m') {i : Nat} (hi : i
     · exact (Offset.disjoint_below (SP s) (n := 2624) (d := 8 * (i + 1)) (k := 8) (by omega)).sub_left
         (fun _ h => h)) (by decide)
 
-/-- The return address, through a frame of the regions written. -/
-theorem keep_r {m m' : Mem} (hf : Frame (wR s) m m') : m'.readW (SP s) 64 = m.readW (SP s) 64 :=
-  hf.readW (r := ⟨SP s, 8⟩) (Region.contains_self _ _) (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact hp.t_st
-    · exact hp.t_d
-    · exact hp.t_w) (by decide)
-
-omit hp in
-theorem arg_eq (i : Nat) : s.mem.readW (SP s + BitVec.ofNat 64 (8 * (i + 1))) 64 = stackArg s i := rfl
-
 /-- The entry: the arguments kept, with `work` in `r11`, and none done. -/
 theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = W s ∧
     (∀ r, r ≠ .r11 → r ≠ .rax → r ≠ .r10 → s₁.gpr r = s.gpr r) ∧

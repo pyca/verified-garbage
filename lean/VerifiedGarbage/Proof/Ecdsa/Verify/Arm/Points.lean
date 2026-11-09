@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.Const
 
 As on x86 (`Proof/Ecdsa/Verify/X86/Points.lean`).
 
-`points_ok`: from what `mid_ok` leaves, the table of `u`'s bits, the
+`pointsWith_ok`: from what `mid_ok` leaves, the table of `u`'s bits, the
 signature's ladder (from `G`), `save` (`[u]G` to `U`, and `R = O`), the
 table of `v`'s bits, ECDH's ladder (from the key's point) and `sum` (the
 complete addition of `U` and `R`, into `R`), for any invariants of the two
@@ -500,15 +500,5 @@ theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
       · exact scW_le h7 w hw
       · have := slWkP_le h7 (by decide) w hw; dsimp only [size] at this; omega_arith
     · exact genX_le h7 w hw
-
-/-- The existing double-ladder implementation uses the same generic pipeline. -/
-theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
-    (hM : Mid c s₀ base s) {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
-    (hstep₁ : Step c.ladderCfg c.C base s (sv c base s U) Q₁ c.qA0) (hO₁ : Q₁ (8*c.C.len) 0 1 0)
-    (hstep₂ : Step (Impl.Ecdh.Arm.Cfg.ladderQ c) c.C base s (sv c base s V) Q₂ c.qA0)
-    (hO₂ : Q₂ (8*c.C.len) 0 1 0) {rest : Prog isa} {Q : State → Prop}
-    (h : ∀ s',Pts c s₀ base Q₁ Q₂ s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.Arm.Cfg.points c) rest) s Q :=
-  pointsWith_ok hc hM (generatorWP_gen hc hO₁) hstep₁ hO₁ hstep₂ hO₂ h
 
 end VG.Proof.Ecdsa.Verify.Arm

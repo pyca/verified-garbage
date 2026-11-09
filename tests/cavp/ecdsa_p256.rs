@@ -20,7 +20,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdsa::{Error, P256, SignatureHash, VerifyingKey};
+use verified_garbage::ec::{P256, PublicKey, SignatureHash};
+use verified_garbage::error::InvalidSignature;
 use verified_garbage::hashes::sha1::Sha1;
 use verified_garbage::hashes::sha224::Sha224;
 use verified_garbage::hashes::sha256::Sha256;
@@ -118,12 +119,12 @@ fn add(x: &[u8], y: &[u8]) -> [u8; 32] {
 fn ecdsa_p256_sigver() {
     let (mut valid, mut invalid) = (0, 0);
     for (q, d, rs, ok, _, _) in vectors() {
-        let result = VerifyingKey::<P256>::from_bytes(&q).verify_prehashed::<Sha256>(&d, &rs);
+        let result = PublicKey::<P256>::from_bytes(&q).verify_prehashed::<Sha256>(&d, &rs);
         if ok {
             assert_eq!(result, Ok(()));
             valid += 1;
         } else {
-            assert_eq!(result, Err(Error::InvalidSignature));
+            assert_eq!(result, Err(InvalidSignature));
             invalid += 1;
         }
     }
@@ -176,8 +177,8 @@ fn ecdsa_p256_sigver_invalid() {
         neg[33..].copy_from_slice(&add(&p, &add(&not_y, &one)));
         bad.push((neg, d, rs));
         for (k, d, rs) in bad {
-            let result = VerifyingKey::<P256>::from_bytes(&k).verify_prehashed::<Sha256>(&d, &rs);
-            assert_eq!(result, Err(Error::InvalidSignature));
+            let result = PublicKey::<P256>::from_bytes(&k).verify_prehashed::<Sha256>(&d, &rs);
+            assert_eq!(result, Err(InvalidSignature));
         }
     }
 }
@@ -187,8 +188,8 @@ fn verify_with<H: SignatureHash<P256>>(
     q: &[u8; 65],
     msg: &[u8],
     rs: &[u8; 64],
-) -> Result<(), Error> {
-    VerifyingKey::<P256>::from_bytes(q).verify::<H>(msg, rs)
+) -> Result<(), InvalidSignature> {
+    PublicKey::<P256>::from_bytes(q).verify::<H>(msg, rs)
 }
 
 /// The SHA-256 and SHA-384 vectors, of their messages: each valid
@@ -202,14 +203,7 @@ fn ecdsa_p256_sigver_messages() {
             "SHA-384" => verify_with::<Sha384>(&q, &msg, &rs),
             _ => continue,
         };
-        assert_eq!(
-            result,
-            if ok {
-                Ok(())
-            } else {
-                Err(Error::InvalidSignature)
-            }
-        );
+        assert_eq!(result, if ok { Ok(()) } else { Err(InvalidSignature) });
         checked += 1;
     }
     assert_eq!(checked, 30);

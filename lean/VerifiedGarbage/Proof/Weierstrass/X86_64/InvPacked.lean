@@ -44,8 +44,6 @@ theorem zf_setFlags' (s : State) (a b c d : Option Bool) : (s.setFlags a b c d).
 theorem sextm2 : (-2 : BitVec 32).signExtend 64 = -2 := by decide
 theorem sext16k : (16384 : BitVec 32).signExtend 64 = 16384 := by decide
 theorem sext7fff : (0x7fff : BitVec 32).signExtend 64 = 0x7fff := by decide
-theorem sextm1' : (-1 : BitVec 32).signExtend 64 = -1 := by decide
-
 /-- `rax` after `mul`: the low word of the product. -/
 theorem mul_lo (a b : BitVec 64) : BitVec.ofNat 64 (a.toNat * b.toNat) = a * b := by
   apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat, BitVec.toNat_mul]
@@ -309,7 +307,6 @@ theorem plow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {n
     exact (((((ou _ (t + 16) _ (by omega_arith) (by omega_arith)).trans (ou _ (t + 16) _ (by omega_arith) (by omega_arith))).trans
       (ou _ t _ (by omega_arith) (by omega_arith))).trans (ou _ (t + 8) _ (by omega_arith) (by omega_arith))).trans
       (ou _ t _ (by omega_arith) (by omega_arith)))
-
 
 /-- The first chunk's matrix into `r9`–`r12`. -/
 theorem pfirst_ok (s : State) :

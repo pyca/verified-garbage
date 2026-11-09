@@ -1,17 +1,4 @@
 //! SHA-224 (FIPS 180-4).
-//!
-//! SHA-224 is SHA-256 from another initial hash value, with its digest the
-//! first 28 bytes of the final hash value. `vg_sha224_init` (contract
-//! `VG.Spec.Sha256.init224Contract`) makes a SHA-256 streaming state
-//! represent the empty message, hashed from SHA-224's initial hash value
-//! (`VG.Spec.Sha256.ReprFrom`); SHA-256's `vg_sha256_update`
-//! (`updateContract`, which holds for any initial hash value) then absorbs
-//! the message, and `vg_sha224_finalize` (`finalize224Contract`) outputs its
-//! digest.
-//!
-//! `vg_sha224_finalize` (and, on AArch64 and x86-64, `vg_sha224_digest`)
-//! has a variant for each of SHA-256's, chosen the same way (see
-//! `super::sha256`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -22,26 +9,9 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha256::{VG_SHA224_FINALIZE_AVX2_FEATURES, VG_SHA256_UPDATE_AVX2_FEATURES};
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha256::{VG_SHA224_FINALIZE_SHA2_FEATURES, VG_SHA256_UPDATE_SHA2_FEATURES};
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::sha256::{VG_SHA224_FINALIZE_SHANI_FEATURES, VG_SHA256_UPDATE_SHANI_FEATURES};
-use crate::arch::sha256::{vg_sha224_finalize, vg_sha224_init, vg_sha256_update};
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha256::{vg_sha224_finalize_avx2, vg_sha256_update_avx2};
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha256::{vg_sha224_finalize_sha2, vg_sha256_update_sha2};
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::sha256::{vg_sha224_finalize_shani, vg_sha256_update_shani};
-
-#[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
-use crate::arch::sha256::vg_sha224_digest;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha256::vg_sha224_digest_sha2;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha256::{vg_sha224_digest_avx2, vg_sha224_digest_shani};
+use crate::arch::dispatch::sha256::{
+    vg_sha224_digest_auto, vg_sha224_finalize_auto, vg_sha224_init_auto, vg_sha256_update_auto,
+};
 
 super::streaming_hash!(
     /// An incremental SHA-224 computation (FIPS 180-4 §6.3).
@@ -49,37 +19,16 @@ super::streaming_hash!(
         state: 96,
         block: 64,
         output: 28,
-        init: vg_sha224_init,
-        backends: Sha224Backend {
-            Scalar => (vg_sha256_update, vg_sha224_finalize),
-            #[cfg(target_arch = "aarch64")]
-            Sha2 if [VG_SHA256_UPDATE_SHA2_FEATURES, VG_SHA224_FINALIZE_SHA2_FEATURES] =>
-                (vg_sha256_update_sha2, vg_sha224_finalize_sha2),
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            ShaNi if [VG_SHA256_UPDATE_SHANI_FEATURES, VG_SHA224_FINALIZE_SHANI_FEATURES] =>
-                (vg_sha256_update_shani, vg_sha224_finalize_shani),
-            #[cfg(target_arch = "x86_64")]
-            Avx2 if [VG_SHA256_UPDATE_AVX2_FEATURES, VG_SHA224_FINALIZE_AVX2_FEATURES] =>
-                (vg_sha256_update_avx2, vg_sha224_finalize_avx2),
-        },
-        digests: #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))] {
-            Scalar => vg_sha224_digest,
-            #[cfg(target_arch = "aarch64")]
-            Sha2 => vg_sha224_digest_sha2,
-            #[cfg(target_arch = "x86_64")]
-            ShaNi => vg_sha224_digest_shani,
-            #[cfg(target_arch = "x86_64")]
-            Avx2 => vg_sha224_digest_avx2,
-        },
+        init: vg_sha224_init_auto,
+        update: vg_sha256_update_auto,
+        finalize: vg_sha224_finalize_auto,
+        digest: vg_sha224_digest_auto,
     }
 );
 
 #[cfg(test)]
 mod tests {
-    use super::{Sha224, Sha224Backend};
-    use crate::cpu::detected;
-    use crate::hashes::sha256::Sha256Backend;
-    use verified_garbage_cpu::Features;
+    use super::Sha224;
 
     /// Every way of splitting a message into two updates gives the same
     /// digest, for every length around the padding boundaries.
@@ -101,25 +50,6 @@ mod tests {
                 assert_eq!(h.finalize(), expected);
             }
         }
-    }
-
-    /// The implementation chosen for each set of features is SHA-256's.
-    #[test]
-    fn select() {
-        for bits in 0..(1 << crate::cpu::NAMES.len()) {
-            let f = Features(bits);
-            let expected = match Sha256Backend::select(f) {
-                Sha256Backend::Scalar => Sha224Backend::Scalar,
-                #[cfg(target_arch = "aarch64")]
-                Sha256Backend::Sha2 => Sha224Backend::Sha2,
-                #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-                Sha256Backend::ShaNi => Sha224Backend::ShaNi,
-                #[cfg(target_arch = "x86_64")]
-                Sha256Backend::Avx2 => Sha224Backend::Avx2,
-            };
-            assert_eq!(Sha224Backend::select(f), expected, "{bits:#b}");
-        }
-        assert_eq!(Sha224::new().backend, Sha224Backend::select(detected()));
     }
 
     /// The `HashFunction` implementation is the inherent functions.

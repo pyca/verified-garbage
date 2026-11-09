@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Sha3.RISCV64.Contract
 public import VerifiedGarbage.Impl.Sha3.RISCV64.Stream
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.AbsorbWs
 import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Squeeze
 import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Lit
@@ -15,15 +16,20 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Sha3.RISCV64.Contract
 meta import VerifiedGarbage.Impl.Sha3.RISCV64.Stream
 meta import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.Proof.Sha3.Contract
+meta import VerifiedGarbage.Proof.Sha3.Contract
 
 /-!
 # The SHA-3 sponge on RISC-V: `Verified`
 
-`absorb`, `pad` and `squeeze` (`Stream/`): correctness, constant time (by
-taint tracking, `taint_decide`), and a state satisfying each precondition,
-against the per-target contracts, then moved to the shared ones of
-`Spec/Sha3/Contract.lean` with the stack they use: their frame and the
-permutation's (608 bytes).
+`absorb`, `absorbWs`, `pad` and `squeeze` (`Stream/`): correctness,
+constant time (by taint tracking, `taint_decide`), and a state satisfying
+each precondition, against the per-target contracts, then moved to the
+shared ones of `Spec/Sha3/Contract.lean` with the stack they use: their
+frame and the permutation's (608 bytes), or for `absorbWs`, which has no
+frame, the permutation's alone. `absorb` has no shared contract: it is an internal
+function, which RISC-V's verified code (ML-KEM, ML-DSA, Ed448, the SHA-3
+pieces) calls by its per-target contract (`Calls.lean`).
 -/
 
 @[expose] public section
@@ -60,12 +66,34 @@ theorem absorb_verified' :
     exact ⟨t, s', he, h⟩
   all_goals exact Region.disjoint_of_sep (by decide)
 
-theorem absorb_verified :
-    Verified RISCV64.target Impl.Sha3.RISCV64.Stream.absorb (Spec.Sha3.absorbContract RISCV64.abi 1168) :=
-  absorb_verified'.of_implies (by
-    contract_implies [Spec.Sha3.absorbContract, Spec.Sha3.absorbSig, Spec.Sha3.absorbPre,
-      Spec.Sha3.absorbPost, Proof.Sha3.absorbRISCV64, RISCV64.abi, RISCV64.argRegs] [absorbSat]
-      using absorbSat)
+/-! ## `absorbWs` -/
+
+theorem absorbWs_ct : ConstantTime isa Proof.Sha3.absorbWsRISCV64.pre Proof.Sha3.absorbWsRISCV64.pub
+    Impl.Sha3.RISCV64.Stream.absorbWs := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5]) ?_
+    (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, h4, h5, hsp⟩
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [h0, h1, h2, h3, h4, h5]
+
+/-- A state satisfying `absorbWs`'s precondition, with no data. -/
+def absorbWsSat : State where
+  gpr r := match r with
+    | .a0 => 0x1000 | .a1 => 72 | .a3 => 0x2000 | .a5 => 0x3000 | _ => 0
+  sp := 0x5000
+  mem _ := 0
+  rd := [⟨0x2000, 0⟩]
+  wr := [⟨0x1000, 200⟩, ⟨0x3000, 640⟩]
+
+theorem absorbWs_verified' :
+    Verified RISCV64.target Impl.Sha3.RISCV64.Stream.absorbWs Proof.Sha3.absorbWsRISCV64 := by
+  refine ⟨fun s hs => ?_, absorbWs_ct, absorbWsSat, rfl, rfl, ?_, ?_, ?_, by decide, by decide,
+    by decide, by decide, ?_, ?_, ?_, by decide, by decide⟩
+  · obtain ⟨t, s', he, h⟩ := AbsorbWs.correct (AbsorbWs.pre_of hs)
+    exact ⟨t, s', he, h⟩
+  all_goals exact Region.disjoint_of_sep (by decide)
 
 /-! ## `pad` -/
 
@@ -94,12 +122,6 @@ theorem pad_verified' :
     exact ⟨t, s', he, h⟩
   · exact Region.disjoint_of_sep (by decide)
 
-theorem pad_verified :
-    Verified RISCV64.target Impl.Sha3.RISCV64.Stream.pad (Spec.Sha3.padContract RISCV64.abi 1136) :=
-  pad_verified'.of_implies (by
-    contract_implies [Spec.Sha3.padContract, Spec.Sha3.padSig, Spec.Sha3.padPre, Spec.Sha3.padPost,
-      Proof.Sha3.padRISCV64, RISCV64.abi, RISCV64.argRegs] [padSat] using padSat)
-
 /-! ## `squeeze` -/
 
 theorem squeeze_ct : ConstantTime isa Proof.Sha3.squeezeRISCV64.pre Proof.Sha3.squeezeRISCV64.pub
@@ -127,13 +149,5 @@ theorem squeeze_verified' :
   · obtain ⟨t, s', he, h⟩ := Squeeze.correct (Squeeze.pre_of hs)
     exact ⟨t, s', he, h⟩
   all_goals exact Region.disjoint_of_sep (by decide)
-
-theorem squeeze_verified :
-    Verified RISCV64.target Impl.Sha3.RISCV64.Stream.squeeze
-      (Spec.Sha3.squeezeContract RISCV64.abi 1168) :=
-  squeeze_verified'.of_implies (by
-    contract_implies [Spec.Sha3.squeezeContract, Spec.Sha3.squeezeSig, Spec.Sha3.squeezePre,
-      Spec.Sha3.squeezePost, Proof.Sha3.squeezeRISCV64, RISCV64.abi, RISCV64.argRegs] [squeezeSat]
-      using squeezeSat)
 
 end VG.Proof.Sha3.RISCV64.Stream

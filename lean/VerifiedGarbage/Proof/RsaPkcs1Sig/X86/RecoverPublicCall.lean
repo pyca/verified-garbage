@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Weierstrass.PointContract
+public import VerifiedGarbage.Proof.Rsa.Contract
 /-! # Calling checked public RSA retains every immutable verification input -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaPkcs1Sig/X86/RecoverCall.lean`, which only this module imported.
@@ -130,7 +131,7 @@ theorem public_call (v : PublicImpl) {g : Geometry} {bs : Fin 4 → List Byte} {
     (publicCovers h).1 (publicCovers h).2 (publicWrites_sub h)) ?_
   rintro t ⟨ht, F, K, u, M, G, post⟩
   refine ⟨ht, F, K, ?_⟩
-  sig_post [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argSlots, argVal, argBytes] at post
+  sig_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal, argBytes] at post
   have sa := fun {j} (hj : j < 10) => publicArgs_values h a hj
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
   have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega

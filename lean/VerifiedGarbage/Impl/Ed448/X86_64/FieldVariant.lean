@@ -47,10 +47,6 @@ def addFn : FieldVariant → Prog isa
 
 def powName (v : FieldVariant) : String := "vg_gf448_r64_pow223" ++ v.suffix
 
-def powFn : FieldVariant → Prog isa
-  | .scalar => Impl.X448.X86_64.pow223Fn
-  | .adx => Impl.X448.X86_64.pow223AdxFn
-
 def calls (v : FieldVariant) : Point64.Ops :=
   ⟨.call ("vg_ed448_r64_point_double" ++ v.suffix) v.doubleFn,
    .call ("vg_ed448_r64_point_add_affine" ++ v.suffix) v.addFn⟩

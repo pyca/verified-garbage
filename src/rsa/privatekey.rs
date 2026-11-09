@@ -1,7 +1,5 @@
-//! The RSA private-key operation (RSADP with the CRT, checked against the
-//! public exponent), the loading of a private key from its CRT values, from
-//! `(n, e, d, p, q)` or from `(n, e, d)`, and the check of a key: see the
-//! parent module.
+//! The RSA private key and its loading, which checks it as BoringSSL's
+//! `RSA_check_key` does.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -16,34 +14,43 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-use super::{Backend, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
-#[cfg(all(
-    target_arch = "arm",
-    any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )
-))]
-use crate::arch::rsa::vg_rsa_private_checked_umaal;
-use crate::arch::rsa::vg_rsa_recover_primes_det;
-use crate::arch::rsa::{
-    vg_rsa_check_crt_key, vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked,
+use super::{BigUint, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
+use crate::arch::dispatch::rsa::{
+    vg_rsa_check_key_auto, vg_rsa_crt_values_auto, vg_rsa_recover_primes_det_auto,
 };
-#[cfg(target_arch = "x86_64")]
-use crate::arch::rsa::{vg_rsa_private_checked_adx, vg_rsa_private_checked_ifma};
-use crate::cpu::detected;
 
-/// `x` (big-endian) in `len` bytes, if it fits.
-fn widen(x: &[u8], len: usize) -> Option<Vec<u8>> {
-    let x = trim(x);
-    (x.len() <= len).then(|| {
-        let mut v = vec![0; len];
+/// The secret `x` (big-endian) in exactly `len` bytes, a public width, if it
+/// fits: the bytes before its last `len` must be zero, which the verified
+/// comparison checks (`ct::is_zero`). The time depends on `x.len()` and
+/// `len`, not on `x`'s value or its number of leading zero bytes.
+fn fixed(dit: crate::dit::Dit<'_>, x: &[u8], len: usize) -> Option<Vec<u8>> {
+    let mut v = vec![0; len];
+    if x.len() <= len {
         v[len - x.len()..].copy_from_slice(x);
-        v
-    })
+        return Some(v);
+    }
+    let (high, low) = x.split_at(x.len() - len);
+    v.copy_from_slice(low);
+    if crate::ct::is_zero(dit, high) {
+        Some(v)
+    } else {
+        crate::zeroize::zeroize(&mut v);
+        None
+    }
+}
+
+/// The primes `p` and `q` without their leading zero bytes, if each is
+/// shorter than the `k`-byte modulus and not empty. Their lengths are public:
+/// the verified functions' arithmetic modulo each prime is at its length, as
+/// BoringSSL's is at its minimal width (`freeze_private_key`), so trimming
+/// them leaks nothing their use does not.
+fn primes<'a>(p: &'a [u8], q: &'a [u8], k: usize) -> Result<(&'a [u8], &'a [u8]), Error> {
+    let (p, q) = (trim(p), trim(q));
+    if p.is_empty() || p.len() >= k || q.is_empty() || q.len() >= k {
+        Err(Error::InvalidPrivateKey)
+    } else {
+        Ok((p, q))
+    }
 }
 
 /// Whether SP 800-56B Rev. 2 Appendix C.2's method
@@ -55,6 +62,7 @@ fn widen(x: &[u8], len: usize) -> Option<Vec<u8>> {
 /// `64 ≤ n.len() ≤ 1024`, `1 ≤ e.len() ≤ 5`, `1 ≤ d.len() ≤ n.len()`,
 /// `p.len() = q.len() = n.len()` and `scratch.len() = scratch_words(n.len())`.
 unsafe fn recover(
+    dit: crate::dit::Dit<'_>,
     p: &mut [u8],
     q: &mut [u8],
     n: &[u8],
@@ -67,7 +75,8 @@ unsafe fn recover(
     // distinct Rust slices; the caller gives the lengths, and the function
     // needs no CPU feature.
     let r = unsafe {
-        vg_rsa_recover_primes_det(
+        vg_rsa_recover_primes_det_auto(
+            dit,
             p.as_mut_ptr(),
             p.len(),
             q.as_mut_ptr(),
@@ -87,7 +96,9 @@ unsafe fn recover(
 
 /// An RSA private key in the Chinese remainder form `(p, q, dP, dQ, qInv)`
 /// of RFC 8017 §3.2, with its public key `(n, e)` and its private exponent
-/// `d`. Its private values are wiped when it is dropped.
+/// `d`, which passes BoringSSL's `RSA_check_key` (see the
+/// [module](super) documentation). Its private values are wiped when it is
+/// dropped.
 pub struct PrivateKey {
     pub(crate) n: Vec<u8>,
     pub(crate) e: Vec<u8>,
@@ -122,23 +133,101 @@ impl Drop for PrivateKey {
 
 impl PrivateKey {
     /// The key with the modulus `n`, the public exponent `e`, the private
-    /// exponent `d` and the values `p`, `q`, `dP`, `dQ` and `qInv`, all
-    /// big-endian (with any number of leading zero bytes but `n`). `n` must
-    /// be odd, from 512 to 8192 bits long, with no leading zero byte; `e`
-    /// must be odd, from 3 to `2^33 - 1`, as BoringSSL requires; `p` and `q`
-    /// must be shorter than `n`, and `dP` and `qInv` must be less than
-    /// `2^(8 len(p))` and `dQ` less than `2^(8 len(q))` (each fitting in its
-    /// prime's bytes, without its leading zeros). The values must pass the
-    /// checks of BoringSSL's `RSA_check_key` on them: `p q = n`,
-    /// `dP < p - 1`, `e dP ≡ 1 (mod p - 1)`, `dQ < q - 1`,
-    /// `e dQ ≡ 1 (mod q - 1)`, `qInv < p` and `q qInv ≡ 1 (mod p)`. `d` is
-    /// kept as it is given, and not used by the operation.
+    /// exponent `d` and the values `p`, `q`, `dP`, `dQ` and `qInv`, each with
+    /// any number of leading zero bytes but `n`. `n` must be odd, from 512 to
+    /// 8192 bits long, with no leading zero byte; `e` must be odd, from 3 to
+    /// `2^33 - 1`, as BoringSSL requires; without their leading zero bytes,
+    /// `d` must not be zero or have more bytes than `n`, `p` and `q` must have
+    /// fewer bytes than `n`, and `dP` and `qInv` no more bytes than `p` and
+    /// `dQ` no more than `q`. The
+    /// values must pass the checks of BoringSSL's
+    /// `RSA_check_key`, the verified `vg_rsa_check_key`: `d < n`, `p q = n`,
+    /// `d e ≡ 1` modulo `p - 1` and `q - 1`, `dP < p - 1`,
+    /// `e dP ≡ 1 (mod p - 1)`, `dQ < q - 1`, `e dQ ≡ 1 (mod q - 1)`,
+    /// `qInv < p` and `q qInv ≡ 1 (mod p)`.
     ///
-    /// Nothing else is checked here: not that `p` and `q` are prime (see
-    /// [`private_op`](Self::private_op), which never releases a result that
-    /// does not match `e`), nor `d` (see [`check_key`](Self::check_key)).
+    /// Like `RSA_check_key`, nothing checks that `p` and `q` are prime: with
+    /// a factor that is not, the private-key operations' results fail their
+    /// check against `e` and are never released.
     #[allow(clippy::too_many_arguments)]
     pub fn from_crt(
+        n: BigUint<'_>,
+        e: BigUint<'_>,
+        d: BigUint<'_>,
+        p: BigUint<'_>,
+        q: BigUint<'_>,
+        dp: BigUint<'_>,
+        dq: BigUint<'_>,
+        qinv: BigUint<'_>,
+    ) -> Result<Self, Error> {
+        let b = BigUint::as_be_bytes;
+        Self::from_crt_bytes(b(n), b(e), b(d), b(p), b(q), b(dp), b(dq), b(qinv))
+    }
+
+    /// The key with the modulus `n`, the public exponent `e`, the private
+    /// exponent `d` and the primes `p` and `q`, each with any number of
+    /// leading zero bytes but `n`, as RFC 8017 §3.2's first form with the
+    /// primes: computes the CRT values `dP = d mod (p - 1)`,
+    /// `dQ = d mod (q - 1)` and `qInv = q⁻¹ mod p` and loads the key as
+    /// [`from_crt`](Self::from_crt) does. `n` must be odd, from 512 to 8192
+    /// bits long, with no leading zero byte; `e` must be odd, from 3 to
+    /// `2^33 - 1`, as BoringSSL requires; `d` must not be zero, and `p` and `q` must have fewer bytes
+    /// than `n`; `p q = n`, `d < n`, `q` must have an inverse modulo `p`, and `d e ≡ 1`
+    /// modulo `p - 1` and `q - 1`. Nothing checks that `p` and `q` are prime
+    /// (see [`from_crt`](Self::from_crt)).
+    pub fn from_primes(
+        n: BigUint<'_>,
+        e: BigUint<'_>,
+        d: BigUint<'_>,
+        p: BigUint<'_>,
+        q: BigUint<'_>,
+    ) -> Result<Self, Error> {
+        let b = BigUint::as_be_bytes;
+        Self::from_primes_bytes(b(n), b(e), b(d), b(p), b(q))
+    }
+
+    /// The key with the modulus `n`, the public exponent `e` and the private
+    /// exponent `d`, RFC 8017 §3.2's first form: recovers the primes `p > q`
+    /// of `n` and loads the key as [`from_primes`](Self::from_primes) does.
+    /// `n` must be odd, from 512 to 8192 bits long, with no leading zero
+    /// byte, `e` odd, from 3 to `2^33 - 1`, and `d` not zero and less than
+    /// `n`.
+    ///
+    /// It recovers the primes by SP 800-56B Rev. 2 Appendix C.2's
+    /// deterministic method, and refuses a key it does not factor. Its step 1
+    /// makes `a = K φ(n)`, with `K ≤ k²` for `k = (d e - 1) / λ(n)` (so
+    /// `K < e²` for the least private exponent), and the method finds the
+    /// primes whenever `K (p + q - 1) ≤ n`: it refuses only keys with a tiny
+    /// prime factor (a few dozen bits at most) and those that are not valid
+    /// two-prime keys. (Every valid `d < n` of Wycheproof's two-prime keys
+    /// factors, as do `e = 3` and `e = 2^33 - 1`, and primes as unbalanced as
+    /// 24 bits.)
+    pub fn from_components(n: BigUint<'_>, e: BigUint<'_>, d: BigUint<'_>) -> Result<Self, Error> {
+        Self::from_components_bytes(n.as_be_bytes(), e.as_be_bytes(), d.as_be_bytes())
+    }
+
+    /// [`from_crt`](Self::from_crt) of the values' big-endian bytes (with any
+    /// number of leading zero bytes but `n`).
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn from_crt_bytes(
+        n: &[u8],
+        e: &[u8],
+        d: &[u8],
+        p: &[u8],
+        q: &[u8],
+        dp: &[u8],
+        dq: &[u8],
+        qinv: &[u8],
+    ) -> Result<Self, Error> {
+        crate::dit::enter!(dit);
+        Self::from_crt_with(dit, n, e, d, p, q, dp, dq, qinv)
+    }
+
+    /// [`from_crt`](Self::from_crt), with the token of the operation it is part of
+    /// (see `crate::dit`).
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn from_crt_with(
+        dit: crate::dit::Dit<'_>,
         n: &[u8],
         e: &[u8],
         d: &[u8],
@@ -153,51 +242,63 @@ impl PrivateKey {
             return Err(Error::InvalidModulus);
         }
         let e = exponent(e)?;
-        let (p, q) = (trim(p), trim(q));
-        if p.is_empty() || p.len() >= k || q.is_empty() || q.len() >= k {
+        let (p, q) = primes(p, q, k)?;
+        // `d` at the modulus' width and the CRT values at their primes', as
+        // BoringSSL holds them: their own lengths are not public.
+        let values = [
+            fixed(dit, d, k),
+            fixed(dit, dp, p.len()),
+            fixed(dit, dq, q.len()),
+            fixed(dit, qinv, p.len()),
+        ];
+        if values.iter().any(Option::is_none) {
+            for mut x in values.into_iter().flatten() {
+                crate::zeroize::zeroize(&mut x);
+            }
             return Err(Error::InvalidPrivateKey);
         }
-        let (Some(dp), Some(dq), Some(qinv)) =
-            (widen(dp, p.len()), widen(dq, q.len()), widen(qinv, p.len()))
-        else {
-            return Err(Error::InvalidPrivateKey);
-        };
+        let [d, dp, dq, qinv] = values.map(Option::unwrap_or_default);
         let key = PrivateKey {
             n: n.to_vec(),
             e: e.to_vec(),
-            d: d.to_vec(),
+            d,
             p: p.to_vec(),
             q: q.to_vec(),
             dp,
             dq,
             qinv,
         };
-        if key.crt_valid() {
+        if key.valid(dit) {
             Ok(key)
         } else {
             Err(Error::InvalidPrivateKey)
         }
     }
 
-    /// Whether the key passes `from_crt`'s checks of its values:
-    /// `vg_rsa_check_crt_key`, which implies what the operation checks of
-    /// the key (a valid modulus, `p q = n` and `qInv < p`), so that it
-    /// refuses only an input not below the modulus.
-    fn crt_valid(&self) -> bool {
+    /// Whether BoringSSL's `RSA_check_key` accepts the key, by the verified
+    /// `vg_rsa_check_key` (`VG.Spec.Rsa.checkKey`), which implies what the
+    /// private-key operations check of the key (a valid modulus, `p q = n`
+    /// and `qInv < p`), so that they refuse only an input not below the
+    /// modulus.
+    fn valid(&self, dit: crate::dit::Dit<'_>) -> bool {
         let k = self.n.len();
         let mut scratch = vec![0u64; scratch_words(k)];
         // SAFETY: each pointer is valid for its length (`scratch` for
         // writes), and none overlaps another or wraps around, as they are
         // distinct Rust allocations; `from_crt`'s checks give
-        // `64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`,
-        // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len`, `dq_len = q_len`,
-        // and `scratch_len = 16 n_len + 32`.
+        // `64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`, `d_len = n_len`,
+        // `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
+        // `dp_len = qinv_len = p_len`, `dq_len = q_len`, and
+        // `scratch_len = 16 n_len + 32`.
         let r = unsafe {
-            vg_rsa_check_crt_key(
+            vg_rsa_check_key_auto(
+                dit,
                 self.n.as_ptr(),
                 k,
                 self.e.as_ptr(),
                 self.e.len(),
+                self.d.as_ptr(),
+                self.d.len(),
                 self.p.as_ptr(),
                 self.p.len(),
                 self.q.as_ptr(),
@@ -217,46 +318,49 @@ impl PrivateKey {
         r == 1
     }
 
-    /// The key with the modulus `n`, the public exponent `e`, the private
-    /// exponent `d` and the primes `p` and `q`, all big-endian (with any
-    /// number of leading zero bytes but `n`), as RFC 8017 §3.2's first form
-    /// with the primes: computes the CRT values `dP = d mod (p - 1)`,
-    /// `dQ = d mod (q - 1)` and `qInv = q⁻¹ mod p` and loads the key as
-    /// [`from_crt`](Self::from_crt) does. `n` must be odd, from 512 to 8192
-    /// bits long, with no leading zero byte; `e` must be odd, from 3 to
-    /// `2^33 - 1`, as BoringSSL requires; `d` must be 1 to `n.len()` bytes
-    /// long without its leading zeros, and `p` and `q` shorter than `n`;
-    /// `p q = n`, `q` must have an inverse modulo `p`, and `d e ≡ 1` modulo
-    /// `p - 1` and `q - 1` (`from_crt`'s checks of `dP` and `dQ`). Nothing
-    /// checks that `p` and `q` are prime (but
-    /// [`private_op`](Self::private_op) never releases a result that does
-    /// not match `e`).
-    pub fn from_primes(n: &[u8], e: &[u8], d: &[u8], p: &[u8], q: &[u8]) -> Result<Self, Error> {
+    /// [`from_primes`](Self::from_primes) of the values' big-endian bytes
+    /// (with any number of leading zero bytes but `n`).
+    pub(crate) fn from_primes_bytes(
+        n: &[u8],
+        e: &[u8],
+        d: &[u8],
+        p: &[u8],
+        q: &[u8],
+    ) -> Result<Self, Error> {
+        crate::dit::enter!(dit);
+        Self::from_primes_with(dit, n, e, d, p, q)
+    }
+
+    /// [`from_primes_bytes`](Self::from_primes_bytes), with the token of the
+    /// operation it is part of (see `crate::dit`).
+    fn from_primes_with(
+        dit: crate::dit::Dit<'_>,
+        n: &[u8],
+        e: &[u8],
+        d: &[u8],
+        p: &[u8],
+        q: &[u8],
+    ) -> Result<Self, Error> {
         let k = n.len();
         if !(MIN_MODULUS_LEN..=MAX_MODULUS_LEN).contains(&k) {
             return Err(Error::InvalidModulus);
         }
         let e = exponent(e)?;
-        let (d, p, q) = (trim(d), trim(p), trim(q));
-        if d.is_empty()
-            || d.len() > k
-            || p.is_empty()
-            || p.len() >= k
-            || q.is_empty()
-            || q.len() >= k
-        {
+        let (p, q) = primes(p, q, k)?;
+        let Some(mut d) = fixed(dit, d, k) else {
             return Err(Error::InvalidPrivateKey);
-        }
+        };
         let (mut dp, mut dq, mut qinv) = (vec![0; p.len()], vec![0; q.len()], vec![0; p.len()]);
         let mut scratch = vec![0u64; scratch_words(k)];
         // SAFETY: each pointer is valid for its length (`dp`, `dq`, `qinv`
         // and `scratch` for writes), and none overlaps another or wraps
         // around, as they are distinct Rust allocations; the checks above
         // give `64 ≤ n_len ≤ 1024`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`
-        // and `1 ≤ d_len ≤ n_len`, and `dp_len = qinv_len = p_len`,
+        // and `d_len = n_len`, and `dp_len = qinv_len = p_len`,
         // `dq_len = q_len` and `scratch_len = 16 n_len + 32`.
         let r = unsafe {
-            vg_rsa_crt_values(
+            vg_rsa_crt_values_auto(
+                dit,
                 dp.as_mut_ptr(),
                 dp.len(),
                 dq.as_mut_ptr(),
@@ -278,270 +382,107 @@ impl PrivateKey {
         // The working space holds the private key.
         crate::zeroize::zeroize(&mut scratch);
         let key = if r == 1 {
-            PrivateKey::from_crt(n, e, d, p, q, &dp, &dq, &qinv)
+            PrivateKey::from_crt_with(dit, n, e, &d, p, q, &dp, &dq, &qinv)
         } else {
             Err(Error::InvalidPrivateKey)
         };
-        for x in [&mut dp, &mut dq, &mut qinv] {
+        for x in [&mut d, &mut dp, &mut dq, &mut qinv] {
             crate::zeroize::zeroize(x);
         }
         key
     }
 
-    /// The key with the modulus `n`, the public exponent `e` and the private
-    /// exponent `d`, all big-endian (with any number of leading zero bytes
-    /// but `n`), RFC 8017 §3.2's first form: recovers the primes `p > q` of
-    /// `n` and loads the key as [`from_primes`](Self::from_primes) does.
-    /// `n` must be odd, from 512 to 8192 bits long, with no leading zero
-    /// byte, `e` odd, from 3 to `2^33 - 1`, and `d` 1 to `n.len()` bytes long
-    /// without its leading zeros.
-    ///
-    /// It recovers the primes by SP 800-56B Rev. 2 Appendix C.2's
-    /// deterministic method, and refuses a key it does not factor. Its step 1
-    /// makes `a = K φ(n)`, with `K ≤ k²` for `k = (d e - 1) / λ(n)` (so
-    /// `K < e²` for the least private exponent), and the method finds the
-    /// primes whenever `K (p + q - 1) ≤ n`: it refuses only keys with a tiny
-    /// prime factor (a few dozen bits at most) and those that are not valid
-    /// two-prime keys. (Every valid `d < n` of Wycheproof's two-prime keys
-    /// factors, as do larger `d`, `e = 3` and `e = 2^33 - 1`, and primes as
-    /// unbalanced as 24 bits.)
-    pub fn from_components(n: &[u8], e: &[u8], d: &[u8]) -> Result<Self, Error> {
+    /// [`from_components`](Self::from_components) of the values' big-endian
+    /// bytes (with any number of leading zero bytes but `n`).
+    pub(crate) fn from_components_bytes(n: &[u8], e: &[u8], d: &[u8]) -> Result<Self, Error> {
+        crate::dit::enter!(dit);
         let k = n.len();
         if !(MIN_MODULUS_LEN..=MAX_MODULUS_LEN).contains(&k) {
             return Err(Error::InvalidModulus);
         }
-        let (e, d) = (exponent(e)?, trim(d));
-        if d.is_empty() || d.len() > k {
+        let e = exponent(e)?;
+        let Some(mut d) = fixed(dit, d, k) else {
             return Err(Error::InvalidPrivateKey);
-        }
+        };
         let (mut p, mut q) = (vec![0; k], vec![0; k]);
         let mut scratch = vec![0u64; scratch_words(k)];
         // SAFETY: the checks above give `64 ≤ n_len ≤ 1024`,
-        // `1 ≤ e_len ≤ 5` and `1 ≤ d_len ≤ n_len`, and `p_len = q_len = n_len`
+        // `1 ≤ e_len ≤ 5` and `d_len = n_len`, and `p_len = q_len = n_len`
         // and `scratch_len = scratch_words(n_len)`.
-        let found = unsafe { recover(&mut p, &mut q, n, e, d, &mut scratch) };
+        let found = unsafe { recover(dit, &mut p, &mut q, n, e, &d, &mut scratch) };
         // The working space holds the private key.
         crate::zeroize::zeroize(&mut scratch);
         let key = if found {
-            PrivateKey::from_primes(n, e, d, &p, &q)
+            PrivateKey::from_primes_with(dit, n, e, &d, &p, &q)
         } else {
             Err(Error::InvalidPrivateKey)
         };
-        for x in [&mut p, &mut q] {
+        for x in [&mut d, &mut p, &mut q] {
             crate::zeroize::zeroize(x);
         }
         key
     }
 
-    /// The length of the modulus in bytes, which is that of every input and
-    /// output.
+    /// The length of the modulus in bytes, which is that of the key's
+    /// ciphertexts and signatures.
     pub fn modulus_len(&self) -> usize {
         self.n.len()
     }
 
-    /// The key's values, big-endian, as it holds them:
-    /// `[n, e, d, p, q, dP, dQ, qInv]`.
-    pub fn components(&self) -> [&[u8]; 8] {
+    /// The key's values as it holds them, `[n, e, d, p, q, dP, dQ, qInv]`
+    /// (`d` in as many bytes as `n`, `p` and `q` without leading zero bytes,
+    /// `dP` and `qInv` in as many bytes as `p`, `dQ` as `q`; `p > q` for a
+    /// key loaded by [`from_components`](Self::from_components) or generated
+    /// by [`keygen::generate`](super::keygen::generate)).
+    pub fn components(&self) -> [BigUint<'_>; 8] {
         [
             &self.n, &self.e, &self.d, &self.p, &self.q, &self.dp, &self.dq, &self.qinv,
         ]
-    }
-
-    /// Whether BoringSSL's `RSA_check_key` accepts the key: `d < n`,
-    /// `p < n`, `q < n`, `p q = n`, `d e ≡ 1` modulo `p - 1` and `q - 1`,
-    /// `dP < p - 1`, `e dP ≡ 1 (mod p - 1)`, `dQ < q - 1`,
-    /// `e dQ ≡ 1 (mod q - 1)`, `qInv < p` and `q qInv ≡ 1 (mod p)` (the
-    /// modulus and `e` were checked when the key was loaded). Like
-    /// `RSA_check_key`, it does not check that `p` and `q` are prime. Loading
-    /// a key runs all of these checks but those of `d` (see
-    /// [`from_crt`](Self::from_crt)).
-    pub fn check_key(&self) -> bool {
-        let k = self.n.len();
-        let d = trim(&self.d);
-        // `d = 0` fails `d e ≡ 1 (mod p - 1)`, and a `d` longer than `n`
-        // fails `d < n`.
-        if d.is_empty() || d.len() > k {
-            return false;
-        }
-        let mut scratch = vec![0u64; scratch_words(k)];
-        // SAFETY: each pointer is valid for its length (`scratch` for
-        // writes), and none overlaps another or wraps around, as they are
-        // distinct Rust allocations; `PrivateKey::from_crt` and the check
-        // above give `64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`,
-        // `1 ≤ d_len ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
-        // `dp_len = qinv_len = p_len`, `dq_len = q_len`, and
-        // `scratch_len = 16 n_len + 32`.
-        let r = unsafe {
-            vg_rsa_check_key(
-                self.n.as_ptr(),
-                k,
-                self.e.as_ptr(),
-                self.e.len(),
-                d.as_ptr(),
-                d.len(),
-                self.p.as_ptr(),
-                self.p.len(),
-                self.q.as_ptr(),
-                self.q.len(),
-                self.dp.as_ptr(),
-                self.dp.len(),
-                self.dq.as_ptr(),
-                self.dq.len(),
-                self.qinv.as_ptr(),
-                self.qinv.len(),
-                scratch.as_mut_ptr(),
-                scratch.len(),
-            )
-        };
-        // The working space holds the private key.
-        crate::zeroize::zeroize(&mut scratch);
-        r == 1
-    }
-
-    /// RSADP (RSASP1) by §5.1.2's step 2.b, checked against the public
-    /// exponent: computes `m = m_2 + q ((m_1 - m_2) qInv mod p)` for
-    /// `m_1 = input^dP mod p` and `m_2 = input^dQ mod q`, and writes it to
-    /// `out` if `m^e mod n` is the input, both big-endian and
-    /// [`modulus_len`](Self::modulus_len) bytes long; for a valid RSA key
-    /// this is `input^d mod n`. The input must be less than `n`. If
-    /// `m^e mod n` is not the input (the key's values do not match, or the
-    /// computation was faulted), returns [`Error::Fault`]. On an error `out`
-    /// is left as zeros.
-    pub fn private_op(&self, input: &[u8], out: &mut [u8]) -> Result<(), Error> {
-        let k = self.n.len();
-        if input.len() != k || out.len() != k {
-            return Err(Error::InvalidLength);
-        }
-        let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
-        let f = match Backend::select(detected()) {
-            Backend::Baseline => vg_rsa_private_checked,
-            // `select` chose them because the CPU has the features they need.
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_rsa_private_checked_adx,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Ifma => vg_rsa_private_checked_ifma,
-            #[cfg(all(
-                target_arch = "arm",
-                any(
-                    target_os = "linux",
-                    target_os = "android",
-                    target_os = "freebsd",
-                    target_os = "netbsd",
-                    target_os = "openbsd"
-                )
-            ))]
-            Backend::Umaal => vg_rsa_private_checked_umaal,
-        };
-        // SAFETY: each pointer is valid for its length (`out` for writes,
-        // `scratch` too), and none overlaps another or wraps around, as they
-        // are distinct Rust allocations; `PrivateKey::from_crt` and the check
-        // above give `64 ≤ n_len ≤ 1024`, `out_len = input_len = n_len`,
-        // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
-        // `dp_len = qinv_len = p_len`, `dq_len = q_len`, and
-        // `scratch_len = 16 n_len + 32`; and the CPU has the features of the
-        // function `select` chose.
-        let r = unsafe {
-            f(
-                out.as_mut_ptr(),
-                k,
-                self.n.as_ptr(),
-                k,
-                self.e.as_ptr(),
-                self.e.len(),
-                input.as_ptr(),
-                k,
-                self.p.as_ptr(),
-                self.p.len(),
-                self.q.as_ptr(),
-                self.q.len(),
-                self.dp.as_ptr(),
-                self.dp.len(),
-                self.dq.as_ptr(),
-                self.dq.len(),
-                self.qinv.as_ptr(),
-                self.qinv.len(),
-                scratch.as_mut_ptr(),
-                scratch.len(),
-            )
-        };
-        // `PrivateKey::from_crt` checked `e` and the key, so a refusal means
-        // the input is not below the modulus.
-        match r {
-            1 => Ok(()),
-            2 => Err(Error::Fault),
-            _ => Err(Error::InputOutOfRange),
-        }
+        .map(|x| BigUint::from_be_bytes(x))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::rsa::tests::{be, composite};
-
-    /// `a b`, big-endian, in `a.len() + b.len()` bytes.
-    fn mul(a: &[u8], b: &[u8]) -> Vec<u8> {
-        let mut r = vec![0u32; a.len() + b.len()];
-        for (i, &x) in a.iter().rev().enumerate() {
-            for (j, &y) in b.iter().rev().enumerate() {
-                r[i + j] += u32::from(x) * u32::from(y);
-            }
-            for t in i..r.len() - 1 {
-                r[t + 1] += r[t] >> 8;
-                r[t] &= 0xff;
-            }
-        }
-        r.iter().rev().map(|&x| x as u8).collect()
-    }
-
-    fn private(key: &PrivateKey, x: &[u8]) -> Result<Vec<u8>, Error> {
-        let mut out = vec![0xa5; x.len()];
-        let r = key.private_op(x, &mut out);
-        if r.is_err() {
-            assert_eq!(out, vec![0; x.len()]);
-        }
-        r.map(|()| out)
-    }
+    use super::{BigUint, Error, PrivateKey, Vec, trim, vec};
+    use crate::rsa::tests::{composite, composite_d, mul};
 
     /// The sizes of `composite`'s keys: 64 to 1024 bytes, with primes of
     /// whole words and not.
     const SIZES: [usize; 6] = [32, 33, 39, 43, 64, 511];
 
-    /// With `composite`'s keys and `e = 3`, 0 and 1 are their own result and
-    /// pass the check; the result for 2 fails it, as the factors are not
-    /// prime. With either prime first, of lengths that are and are not
-    /// whole words.
+    /// `composite`'s keys load, with either prime first, of lengths that are
+    /// and are not whole words.
     #[test]
-    fn private_identities() {
+    fn crt_loads() {
         for a in SIZES {
             for swap in [false, true] {
                 let [n, p, q, dp, dq, qinv] = composite(a, swap);
                 let k = n.len();
                 assert_eq!(k, 2 * a);
-                let key = PrivateKey::from_crt(&n, &[3], &[1], &p, &q, &dp, &dq, &qinv).unwrap();
+                let d = composite_d(a);
+                let key =
+                    PrivateKey::from_crt_bytes(&n, &[3], &d, &p, &q, &dp, &dq, &qinv).unwrap();
                 assert_eq!(key.modulus_len(), k);
-                for x in [be(0, k), be(1, k)] {
-                    assert_eq!(private(&key, &x), Ok(x.clone()));
-                }
-                assert_eq!(private(&key, &be(2, k)), Err(Error::Fault));
-                assert_eq!(private(&key, &n), Err(Error::InputOutOfRange));
-                assert_eq!(private(&key, &vec![0xff; k]), Err(Error::InputOutOfRange));
             }
         }
         // Leading zeros on the values and on `e`.
         let [n, p, q, dp, dq, qinv] = composite(32, false);
         let z = |x: &[u8]| [&[0, 0][..], x].concat();
+        let d = composite_d(32);
         assert!(
-            PrivateKey::from_crt(&n, &[0, 3], &[], &z(&p), &q, &z(&dp), &dq, &z(&qinv)).is_ok()
+            PrivateKey::from_crt_bytes(&n, &[0, 3], &z(&d), &z(&p), &q, &z(&dp), &dq, &z(&qinv))
+                .is_ok()
         );
-        assert!(PrivateKey::from_crt(&n, &[3], &[], &p, &z(&q), &dp, &z(&dq), &qinv).is_ok());
+        assert!(PrivateKey::from_crt_bytes(&n, &[3], &d, &p, &z(&q), &dp, &z(&dq), &qinv).is_ok());
     }
 
     #[test]
     fn private_invalid() {
         let [n, p, q, dp, dq, qi] = composite(32, false);
+        let d = composite_d(32);
         let new = |n: &[u8], e: &[u8], p: &[u8], q: &[u8], dp: &[u8], dq: &[u8], qi: &[u8]| {
-            PrivateKey::from_crt(n, e, &[7], p, q, dp, dq, qi).map(|_| ())
+            PrivateKey::from_crt_bytes(n, e, &d, p, q, dp, dq, qi).map(|_| ())
         };
         assert_eq!(new(&n, &[3], &p, &q, &dp, &dq, &qi), Ok(()));
         assert_eq!(
@@ -568,7 +509,7 @@ mod tests {
         assert_eq!(new(&n, &[3], &p, &q, &dp, &[1; 34], &qi), bad);
         assert_eq!(new(&n, &[3], &p, &q, &dp, &dq, &[1; 33]), bad);
         // Each of the checks: an even `n`, `p q ≠ n`, `qInv ≥ p`, and
-        // `dP = dQ = 0`, whose result for 0 is not 0.
+        // `dP = dQ = 0`.
         let mut even = n.clone();
         *even.last_mut().unwrap() ^= 1;
         assert_eq!(new(&even, &[3], &p, &q, &dp, &dq, &qi), bad);
@@ -578,8 +519,8 @@ mod tests {
         assert_eq!(new(&n, &[3], &p, &q, &dp, &dq, &p), bad);
         assert_eq!(new(&n, &[3], &p, &q, &[0], &[0], &qi), bad);
         // A `dP`, `dQ` or `qInv` that does not match, `dP = p - 1`,
-        // `dQ = (q - 1) + dQ` (`q - 1 = 2^256`), and an `e` that does not
-        // match: refused, as loading checks them.
+        // `dQ = (q - 1) + dQ` (`q - 1 = 2^256`), an `e` that does not match,
+        // and each of them all zeros or all ones in its prime's bytes.
         let flip = |x: &[u8]| {
             let mut x = x.to_vec();
             *x.last_mut().unwrap() ^= 1;
@@ -599,45 +540,85 @@ mod tests {
         ] {
             assert_eq!(r, bad);
         }
-        let key = PrivateKey::from_crt(&n, &[3], &[7], &p, &q, &dp, &dq, &qi).unwrap();
-        let mut out = [0; 64];
-        assert_eq!(
-            key.private_op(&[0; 63], &mut out),
-            Err(Error::InvalidLength)
-        );
-        assert_eq!(
-            key.private_op(&[0; 64], &mut out[..63]),
-            Err(Error::InvalidLength)
-        );
+        for byte in [0, 0xff] {
+            assert_eq!(new(&n, &[3], &p, &q, &[byte; 32], &dq, &qi), bad);
+            assert_eq!(new(&n, &[3], &p, &q, &dp, &[byte; 33], &qi), bad);
+            assert_eq!(new(&n, &[3], &p, &q, &dp, &dq, &[byte; 32]), bad);
+        }
+        let key = PrivateKey::from_crt_bytes(&n, &[3], &d, &p, &q, &dp, &dq, &qi).unwrap();
         assert!(!alloc::format!("{key:?}").contains('['));
     }
 
-    /// `composite`'s keys from `(n, e, d, p, q)` with `d = p dP`, which is
-    /// `3⁻¹` modulo `p - 1` and `q - 1` (`3 p dP = p²`): the key passes
-    /// `check_key`, and gives the same results as from the CRT values. With
-    /// `d = 1`, `d e` matches neither.
+    /// The checks of `d`: `d e ≡ 1` modulo `p - 1` and `q - 1`, and
+    /// `d < n` (`n`, all ones, is the only `d` as long as `n` but not less),
+    /// before which a `d` of zero or longer than `n` is refused. `d` plus
+    /// `lcm(p - 1, q - 1)` matches `e` too, and is still less than `n`.
     #[test]
-    fn private_from_primes() {
+    fn private_exponent() {
         for a in SIZES {
             for swap in [false, true] {
-                let [n, p, q, dp, dq, _] = composite(a, swap);
-                let k = n.len();
-                let (ones, third) = if swap { (&q, &dq) } else { (&p, &dp) };
-                let d = mul(ones, third);
-                let key =
-                    PrivateKey::from_primes(&n, &[0, 3], &d, &[&[0][..], &p].concat(), &q).unwrap();
-                assert!(key.check_key());
-                for x in [be(0, k), be(1, k)] {
-                    assert_eq!(private(&key, &x), Ok(x.clone()));
+                let [n, p, q, dp, dq, qi] = composite(a, swap);
+                let new = |d: &[u8]| PrivateKey::from_crt_bytes(&n, &[3], d, &p, &q, &dp, &dq, &qi);
+                let d = composite_d(a);
+                let bad = Err(Error::InvalidPrivateKey);
+                // `lcm(p - 1, q - 1) = lcm(2^(8a) - 2, 2^(8a))
+                // = (2^(8a - 1) - 1) 2^(8a)`.
+                let mut lcm = vec![0xff; a];
+                lcm[0] = 0x7f;
+                lcm.extend(vec![0; a]);
+                let plus = |x: &[u8], y: &[u8]| {
+                    let len = x.len().max(y.len()) + 1;
+                    let mut r = vec![0u8; len];
+                    let mut carry = 0u16;
+                    for i in 0..len {
+                        let at =
+                            |v: &[u8]| u16::from(v.len().checked_sub(i + 1).map_or(0, |j| v[j]));
+                        let s = at(x) + at(y) + carry;
+                        r[len - 1 - i] = s as u8;
+                        carry = s >> 8;
+                    }
+                    r
+                };
+                assert!(new(&d).is_ok());
+                assert!(new(&plus(&d, &lcm)).is_ok());
+                for d in [
+                    vec![7],
+                    vec![],
+                    vec![0, 0],
+                    vec![1; 2 * a + 1],
+                    n.clone(),
+                    plus(&d, &n),
+                ] {
+                    assert_eq!(new(&d).map(|_| ()), bad);
                 }
-                assert_eq!(private(&key, &be(2, k)), Err(Error::Fault));
-                // `d = 1`: refused, as loading checks `dP` and `dQ`.
-                assert!(PrivateKey::from_primes(&n, &[3], &[1], &p, &q).is_err());
+            }
+        }
+    }
+
+    /// `composite`'s keys from `(n, e, d, p, q)`: they have its CRT values.
+    /// With `d = 1`, `d e` matches neither prime.
+    #[test]
+    fn from_primes() {
+        for a in SIZES {
+            for swap in [false, true] {
+                let [n, p, q, dp, dq, qi] = composite(a, swap);
+                let d = composite_d(a);
+                let key =
+                    PrivateKey::from_primes_bytes(&n, &[0, 3], &d, &[&[0][..], &p].concat(), &q)
+                        .unwrap();
+                let crt: Vec<Vec<u8>> = key.components().map(BigUint::as_be_bytes)[5..]
+                    .iter()
+                    .map(|x| trim(x).to_vec())
+                    .collect();
+                assert_eq!(crt, [&dp, &dq, &qi].map(|x| trim(x).to_vec()));
+                // `d = 1`: refused, as loading checks `dP` and `dQ`; and `d = n`.
+                assert!(PrivateKey::from_primes_bytes(&n, &[3], &[1], &p, &q).is_err());
+                assert!(PrivateKey::from_primes_bytes(&n, &[3], &n, &p, &q).is_err());
             }
         }
         let [n, p, q, ..] = composite(32, false);
         let new = |n: &[u8], e: &[u8], d: &[u8], p: &[u8], q: &[u8]| {
-            PrivateKey::from_primes(n, e, d, p, q).map(|_| ())
+            PrivateKey::from_primes_bytes(n, e, d, p, q).map(|_| ())
         };
         assert_eq!(new(&n[1..], &[3], &[1], &p, &q), Err(Error::InvalidModulus));
         assert_eq!(
@@ -666,103 +647,53 @@ mod tests {
         assert_eq!(new(&mul(&p3, &q3), &[3], &[1], &p3, &q3), bad);
     }
 
-    /// `composite`'s keys fail the check with `d = 7` (`d e = 21`, not 1
-    /// modulo `p - 1`), and so does a `d` of zero or longer than `n`, which
-    /// the check refuses before the arithmetic. With `d = p dP` it passes.
     #[test]
     fn components_round_trip() {
         let [n, p, q, dp, dq, qi] = composite(32, false);
-        let key = PrivateKey::from_crt(&n, &[3], &[1], &p, &q, &dp, &dq, &qi).unwrap();
-        let c = key.components();
-        assert_eq!(c[..3], [&n[..], &[3][..], &[1][..]]);
-        let again = PrivateKey::from_crt(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]).unwrap();
-        assert_eq!(again.components(), c);
-    }
-
-    #[test]
-    fn check_key_invalid() {
-        let [n, p, q, dp, dq, qi] = composite(32, false);
-        let key = |d: &[u8]| PrivateKey::from_crt(&n, &[3], d, &p, &q, &dp, &dq, &qi).unwrap();
-        for d in [&[7][..], &[0, 7], &[], &[0, 0], &[1; 65]] {
-            assert!(!key(d).check_key());
-        }
-        assert!(key(&mul(&p, &dp)).check_key());
-    }
-
-    // Exercise the full checker even for CRT inputs that the constructor
-    // rejects. Keep all byte lengths unchanged, as required by its FFI.
-    #[test]
-    fn check_key_crt_ranges() {
-        for a in SIZES {
-            for swap in [false, true] {
-                let [n, p, q, dp, dq, qi] = composite(a, swap);
-                let (ones, third) = if swap { (&q, &dq) } else { (&p, &dp) };
-                let d = mul(ones, third);
-                let new = || PrivateKey::from_crt(&n, &[3], &d, &p, &q, &dp, &dq, &qi).unwrap();
-                assert!(new().check_key());
-                for component in 0..3 {
-                    for byte in [0, 0xff] {
-                        let mut key = new();
-                        let value = match component {
-                            0 => &mut key.dp,
-                            1 => &mut key.dq,
-                            _ => &mut key.qinv,
-                        };
-                        // A value out of its range is refused.
-                        value.fill(byte);
-                        assert!(!key.check_key());
-                    }
-                }
-            }
-        }
-    }
-
-    // A `d` not below `n`, a `p` or `q` of 0, 1 or 255, and values padded
-    // with leading zeros, through the primitive, preserving the FFI's length
-    // constraints.
-    #[test]
-    fn check_key_full_exponent_bounds() {
-        for a in SIZES {
-            for swap in [false, true] {
-                let [n, p, q, dp, dq, qi] = composite(a, swap);
-                let (ones, third) = if swap { (&q, &dq) } else { (&p, &dp) };
-                let d = mul(ones, third);
-                let new = || PrivateKey::from_crt(&n, &[3], &d, &p, &q, &dp, &dq, &qi).unwrap();
-                for bad_d in [n.clone(), vec![0xff; n.len()]] {
-                    let mut key = new();
-                    key.d = bad_d;
-                    assert!(!key.check_key());
-                }
-                for factor in 0..2 {
-                    for byte in [0, 1, 0xff] {
-                        let mut key = new();
-                        let value = if factor == 0 { &mut key.p } else { &mut key.q };
-                        value.fill(0);
-                        *value.last_mut().unwrap() = byte;
-                        assert!(!key.check_key());
-                    }
-                }
-                let mut key = new();
-                for value in [
-                    &mut key.p,
-                    &mut key.q,
-                    &mut key.dp,
-                    &mut key.dq,
-                    &mut key.qinv,
-                ] {
-                    let mut padded = vec![0; n.len() - 1 - value.len()];
-                    padded.extend_from_slice(value);
-                    *value = padded;
-                }
-                assert!(key.check_key());
-            }
-        }
+        let d = composite_d(32);
+        let z = |x: &[u8]| [&[0][..], x].concat();
+        let key =
+            PrivateKey::from_crt_bytes(&n, &[0, 3], &z(&d), &z(&p), &q, &dp, &dq, &qi).unwrap();
+        let c = key.components().map(BigUint::as_be_bytes);
+        // `dQ` in `q`'s 33 bytes.
+        assert_eq!(
+            c,
+            [
+                &n[..],
+                &[3],
+                &d,
+                &p,
+                &q,
+                &dp,
+                &[&[0][..], &dq].concat(),
+                &qi
+            ]
+        );
+        let again =
+            PrivateKey::from_crt_bytes(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]).unwrap();
+        assert_eq!(again.components().map(BigUint::as_be_bytes), c);
+        // `d` is held in `n`'s bytes, and the CRT values in their primes',
+        // whatever lengths they are given in; `fixed` holds a value in fewer
+        // bytes than its width, and in more if they are zeros.
+        let key = PrivateKey::from_crt_bytes(&n, &[3], &z(&z(&d)), &p, &q, &z(&dp), &dq, &qi);
+        let k = n.len();
+        assert_eq!(
+            key.unwrap().components().map(|x| x.as_be_bytes().len()),
+            [k, 1, k, 32, 33, 32, 33, 32]
+        );
+        let mut short = vec![0; k];
+        short[k - 2..].copy_from_slice(&[1, 1]);
+        let dit = crate::dit::public(crate::dit::Why::Test);
+        assert_eq!(super::fixed(dit, &[1, 1], k), Some(short.clone()));
+        assert_eq!(super::fixed(dit, &z(&z(&short)), k), Some(short));
+        assert_eq!(super::fixed(dit, &[1, 0, 1], 2), None);
     }
 
     #[test]
     fn private_from_components_invalid() {
         let [n, ..] = composite(32, false);
-        let new = |n: &[u8], e: &[u8], d: &[u8]| PrivateKey::from_components(n, e, d).map(|_| ());
+        let new =
+            |n: &[u8], e: &[u8], d: &[u8]| PrivateKey::from_components_bytes(n, e, d).map(|_| ());
         assert_eq!(new(&n[1..], &[3], &[1]), Err(Error::InvalidModulus));
         assert_eq!(new(&[1; 1025], &[3], &[1]), Err(Error::InvalidModulus));
         assert_eq!(new(&n, &[0, 0], &[1]), Err(Error::InvalidExponent));

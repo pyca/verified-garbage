@@ -72,7 +72,7 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
   | mov | mov32 | movzx8 | movzx16 | movdquLoad | vbroadcasti128 | vmovdqu32Load | vbroadcasti32x4 | vbroadcasti32x4H | zbcst | vpbroadcastdZ | zbcstd
   | vpmadd52Load | kLoad | kLoad8 =>
     simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
-  | bswap32 | bswap | movImm64 | leaSym | lfence | mul | imul | imul3 | andn32 | andn | vpmovmskb
+  | bswap32 | bswap | movImm64 | leaSym | lfence | mul | imul | imul3 | andn32 | andn | vpmovmskb | vpcmpltuw
   | movqR | shiftCl | shiftx =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; rfl
   | rorx32 => simp only [reduceExec, execRorx32] at h; split at h <;> cases h; rfl
@@ -168,8 +168,6 @@ registers and the return address. -/
 def gprPreserved (s s' : State) : Prop :=
   (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
   s'.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
-
-theorem abiPreserved.gpr {s s' : State} (h : abiPreserved s s') : gprPreserved s s' := ⟨h.1, h.2.1⟩
 
 /-- The calling-convention obligations of code that never loads MXCSR (the
 kernel checks `hc` by evaluating the code), from the others. -/

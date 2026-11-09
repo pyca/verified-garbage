@@ -27,8 +27,6 @@ namespace VG.Proof.Blowfish.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Blowfish.AArch64 VG.Spec.Blowfish VG.Proof.Blowfish
 open VG.AArch64.Tbl (VOnly)
 
-def ioRegs : List VReg := [.v20, .v21, .v22, .v23, .v24, .v25, .v26, .v27]
-
 /-- Word `w` of a reversed 16-byte load: the big-endian word at `4 w`, which
 is half `w % 2` of block `w / 2`. -/
 theorem vword_rev_read (m : Mem) (a : Addr) {w : Nat} (hw : w < 4) :

@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExponentFrame
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArrayDivision
 import VerifiedGarbage.Proof.Rsa.WordRanges
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 
 /-! # Frames for the modulus-width inverse fallback -/
 
@@ -29,22 +31,5 @@ theorem exponent_keep_frame {m m' : Mem} {B : Addr} {n : Nat} {js ds : List Nat}
     · exact ⟨(arr n j, S n), List.mem_append_right _
         (List.mem_append_left _ (List.mem_map.mpr ⟨j, result, rfl⟩)), Nat.le_refl _, Nat.le_refl _⟩
   · exact ⟨(kOk, 68), by simp [exponentRanges, exponentTemps], (scalars d hd).1, (scalars d hd).2⟩
-
-theorem arrayDivision_preserves_header {m m' : Mem} {B : Addr} {n q r d count : Nat}
-    (bound : d + 4 * count ≤ hdr)
-    (O : Outs B (arrayDivisionRanges n q r) m m') : val32 m' B d count = val32 m B d count := by
-  apply O.val32 _ (by unfold hdr at bound; omega)
-  intro region mem
-  simp only [arrayDivisionRanges, List.mem_cons, List.not_mem_nil, or_false] at mem
-  rcases mem with rfl | rfl | rfl
-  · exact Or.inl bound
-  · exact Or.inl (Nat.le_trans bound (show hdr ≤ arr n q from Nat.le_add_right ..))
-  · exact Or.inl (Nat.le_trans bound (show hdr ≤ arr n r from Nat.le_add_right ..))
-
-theorem arrayDivision_preserves_slot {m m' : Mem} {B : Addr} {n q r d : Nat}
-    (bound : d + 4 ≤ hdr)
-    (O : Outs B (arrayDivisionRanges n q r) m m') : slot m' B d = slot m B d := by
-  have H := arrayDivision_preserves_header (count := 1) bound O
-  simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
 
 end VG.Proof.RsaKeyGen.X86.Key

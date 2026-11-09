@@ -90,21 +90,21 @@ theorem output_check {n : Nat} {p : OutputPublic} {s : State} (h : OutputBefore 
   exact ⟨⟨⟨W, hm.congr he hk, hs⟩, hf.congr (hk.gpr (by decide)) hk.2.2⟩,
     by simp only [eval, hz, hs]⟩
 
-theorem outputCopy_ct (n : Nat) (hn : n = 2 ∨ n = 3) :
+theorem outputCopy_ct (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) :
     RelCT isa (Two (OutputBefore n)) Impl.Dsa.X86_64.Generation.outputCopy (fun _ _ => True) := by
   refine two_taintF [] [5, 6, 7] (fun p => p.context.geo.F) OutputPublic.ws OutputPublic.words
     (fun _ _ h => output_frame h) (by intro _ _ _ _ _ r hr; simp at hr) (by decide) ?_
-  rcases hn with rfl | rfl
+  rcases hn with rfl | rfl | rfl
   all_goals exact ⟨_, by taint_decide⟩
 
-theorem outputZero_ct (n : Nat) (hn : n = 2 ∨ n = 3) :
+theorem outputZero_ct (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) :
     RelCT isa (Two (OutputBefore n)) Impl.Dsa.X86_64.Generation.outputZero (fun _ _ => True) := by
   refine two_taintF [] [5, 6, 7] (fun p => p.context.geo.F) OutputPublic.ws OutputPublic.words
     (fun _ _ h => output_frame h) (by intro _ _ _ _ _ r hr; simp at hr) (by decide) ?_
-  rcases hn with rfl | rfl
+  rcases hn with rfl | rfl | rfl
   all_goals exact ⟨_, by taint_decide⟩
 
-theorem finishOutput_ct (n : Nat) (hn : n = 2 ∨ n = 3) :
+theorem finishOutput_ct (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) :
     RelCT isa (Two (OutputBefore n)) Impl.Dsa.X86_64.Generation.finishOutput (fun _ _ => True) := by
   refine RelCT.seq (two_piece [.rsp] (output_pins n) (by taint_decide)
     (fun _ _ h => output_check h)) ?_

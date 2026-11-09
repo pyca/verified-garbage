@@ -10,8 +10,7 @@ Code that reads an operand's base from the header slot `sArr X` works for
 whichever array `x` that slot names (`OpAt m B w X x`): the slot of its own
 array (`X = x`, `Hdr.opAt`), or a slot the caller wrote the base into, when
 the arrays are given at run time (`Impl/Bignum/X86_64/MontFn.lean`). A slot
-below `sFn 12` keeps its value wherever the header does (`OpAt.of_outside`,
-`OpAt.of_arrays`, `OpAt.of_frm`).
+below `sFn 12` keeps its value wherever the header does.
 -/
 
 @[expose] public section
@@ -30,20 +29,6 @@ theorem Hdr.opAt {m : Mem} {B : Addr} {w : Nat} {minv : BitVec 64} (hH : Hdr m B
 theorem OpAt.of_word {m m' : Mem} {B : Addr} {w X x : Nat} (h : OpAt m B w X x)
     (he : word m' B (8 * sArr X) = word m B (8 * sArr X)) : OpAt m' B w X x :=
   he.trans h
-
-theorem OpAt.of_outside {m m' : Mem} {B : Addr} {w X x : Nat} (h : OpAt m B w X x) {o n : Nat}
-    (ho : Outside B o n m m') (hX : 8 * sArr X + 8 ≤ o ∨ o + n ≤ 8 * sArr X) (hX' : X < 24) :
-    OpAt m' B w X x :=
-  h.of_word (ho.word hX (by unfold sArr; omega))
-
-theorem OpAt.of_arrays {m m' : Mem} {B : Addr} {w X x : Nat} {js : List Nat} (h : OpAt m B w X x)
-    (ha : Arrays B w js m m') (hX : X < 24) : OpAt m' B w X x :=
-  h.of_word (ha.word_eq (fun j _ => Or.inl (hdr_lt_slot w j (by unfold sArr; omega))) (by unfold sArr; omega))
-
-theorem OpAt.of_frm {m m' : Mem} {B : Addr} {w X x : Nat} {rs : List (Nat × Nat)} (h : OpAt m B w X x)
-    (hf : Frm B rs m m') (hX : ∀ r ∈ rs, 8 * sArr X + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * sArr X) (hX' : X < 24) :
-    OpAt m' B w X x :=
-  h.of_word (hf.word_eq hX (by unfold sArr; omega))
 
 /-- The header slots `sArr X` of the pairs `(X, x)` of `ps` hold the bases of
 their arrays `x`, each below `sFn 12`, the first slot the ADX code borrows. -/
@@ -82,17 +67,6 @@ theorem Ops.of_outside {m m' : Mem} {B : Addr} {w : Nat} {ps : List (Nat × Nat)
 theorem Ops.of_frm {m m' : Mem} {B : Addr} {w : Nat} {ps : List (Nat × Nat)} (h : Ops m B w ps)
     {rs : List (Nat × Nat)} (hf : Frm B rs m m') (hX : ∀ r ∈ rs, 8 * sFn 12 ≤ r.1) : Ops m' B w ps :=
   h.of_word fun X hX' => hf.word_eq (fun r hr => by have := hX r hr; unfold sArr; unfold sFn at this; omega)
-    (by unfold sArr; omega)
-
-theorem Ops.of_arrays {m m' : Mem} {B : Addr} {w : Nat} {ps : List (Nat × Nat)} (h : Ops m B w ps)
-    {js : List Nat} (ha : Arrays B w js m m') : Ops m' B w ps :=
-  h.of_word fun X hX' => ha.word_eq (fun j _ => Or.inl (hdr_lt_slot w j (by unfold sArr; omega)))
-    (by unfold sArr; omega)
-
-/-- A store to a slot from `sFn 12` on keeps them. -/
-theorem Ops.store {m : Mem} {B : Addr} {w : Nat} {ps : List (Nat × Nat)} (h : Ops m B w ps) {i : Nat}
-    (hi : sFn 12 ≤ i) (hi' : i < 32) (v : BitVec 64) : Ops (m.writeW (off B (8 * i)) v) B w ps :=
-  h.of_word fun X hX' => (writeW_outside m B v (by omega)).word (by unfold sArr; unfold sFn at hi; omega)
     (by unfold sArr; omega)
 
 end VG.Proof.Bignum

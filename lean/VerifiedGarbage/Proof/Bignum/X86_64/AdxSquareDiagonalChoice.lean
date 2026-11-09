@@ -580,14 +580,6 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep)
 
-theorem and3 (w : Nat) (hw : w < 2^64) :
-    BitVec.ofNat 64 w &&& 3 = BitVec.ofNat 64 (w%4) := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hw,
-    show (3 : BitVec 64).toNat = 2^2-1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
-    BitVec.toNat_ofNat]
-  omega_arith
-
 theorem and7 (w : Nat) (hw : w < 2^64) :
     BitVec.ofNat 64 w &&& 7 = BitVec.ofNat 64 (w%8) := by
   apply BitVec.eq_of_toNat_eq
@@ -595,62 +587,6 @@ theorem and7 (w : Nat) (hw : w < 2^64) :
     show (7 : BitVec 64).toNat = 2^3-1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
     BitVec.toNat_ofNat]
   omega_arith
-
-theorem test3_ok {s : State} {w : Nat} (h10 : s.gpr .r10 = BitVec.ofNat 64 w) (hw : w < 2^60) :
-    WP isa (.block [.mov .rax (.reg .r10), .alu .and .rax (.imm 3), .alu .cmp .rax (.imm 0)]) s
-      fun t => t.zf = some (decide (w%4=0)) ∧ t.mem = s.mem ∧ Keep [.rax] s t := by
-  refine WP.mono (WP.keep [.rax] (Q := fun t =>
-    t.zf = some (decide (w%4=0)) ∧ t.mem = s.mem) ?_ rfl) fun t ⟨h,k⟩ => ⟨h.1,h.2,k⟩
-  xrun [h10,and3 w (by omega_arith)]
-  change (BitVec.ofNat 64 (w%4) - BitVec.ofNat 64 0 == 0) = _
-  exact ofNat_sub_beq (by omega_arith) (by decide)
-
-theorem test7_ok {s : State} {w : Nat} (h10 : s.gpr .r10 = BitVec.ofNat 64 w) (hw : w < 2^60) :
-    WP isa (.block [.mov .rax (.reg .r10), .alu .and .rax (.imm 7), .alu .cmp .rax (.imm 0)]) s
-      fun t => t.zf = some (decide (w%8=0)) ∧ t.mem = s.mem ∧ Keep [.rax] s t := by
-  refine WP.mono (WP.keep [.rax] (Q := fun t =>
-    t.zf = some (decide (w%8=0)) ∧ t.mem = s.mem) ?_ rfl) fun t ⟨h,k⟩ => ⟨h.1,h.2,k⟩
-  xrun [h10,show (BitVec.signExtend 64 (7 : BitVec 32) : BitVec 64) = 7 from rfl,and7 w (by omega_arith)]
-  change (BitVec.ofNat 64 (w%8) - BitVec.ofNat 64 0 == 0) = _
-  exact ofNat_sub_beq (by omega_arith) (by decide)
-
-theorem diagonalChoice_ok {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B Z)
-    (h8 : s.gpr .r8 = off B A) (h9 : s.gpr .r9 = off B eb)
-    (h10 : s.gpr .r10 = BitVec.ofNat 64 w) (hw0 : 0 < w) (hw : w < 2^60)
-    (hA : A+16*w ≤ Z) (hb : eb+8*w ≤ Z)
-    (sep : eb+8*w ≤ A ∨ A+16*w ≤ eb) :
-    WP isa AdxSquare.diagonalChoice s fun t =>
-      wv t.mem B A (2*w) + 2^(128*w)*(t.gpr .r15).toNat =
-        2*wv s.mem B A (2*w) + diagonalValue s.mem B eb w ∧
-      Outside B A (16*w) s.mem t.mem ∧
-      Keep [.rdx,.r11,.r12,.rsi,.rbx,.rax,.rcx,.r15,.rbp,.r14] s t := by
-  unfold AdxSquare.diagonalChoice
-  refine WP.seq (WP.mono (test7_ok h10 hw) fun a ⟨hz,hm,ka⟩ => ?_)
-  by_cases h8w : w%8=0
-  · refine WP.ite true (by simp [eval,hz,h8w]) (fun _ => ?_) (by simp)
-    refine WP.mono (AdxSquareGrouped.diagonal8_ok (hs.congr ka.2.2)
-      ((ka.gpr (by decide)).trans h8) ((ka.gpr (by decide)).trans h9)
-      ((ka.gpr (by decide)).trans h10) hw0 hw h8w hA hb sep) fun t ⟨hv,ho,kt⟩ => ?_
-    rw [hm] at hv ho
-    exact ⟨hv,ho,(ka.trans kt).mono (by decide)⟩
-  · refine WP.ite false (by simp [eval,hz,h8w]) (by simp) (fun _ => ?_)
-    refine WP.seq (WP.mono (test3_ok ((ka.gpr (by decide)).trans h10) hw)
-      fun b ⟨hzb,hmb,kb⟩ => ?_)
-    have kab := ka.trans kb
-    have hmab : b.mem = s.mem := hmb.trans hm
-    by_cases h4 : w%4=0
-    · refine WP.ite true (by simp [eval,hzb,h4]) (fun _ => ?_) (by simp)
-      refine WP.mono (AdxSquareGrouped.diagonal_ok (hs.congr kab.2.2)
-        ((kab.gpr (by decide)).trans h8) ((kab.gpr (by decide)).trans h9)
-        ((kab.gpr (by decide)).trans h10) hw0 hw h4 hA hb sep) fun t ⟨hv,ho,kt⟩ => ?_
-      rw [hmab] at hv ho
-      exact ⟨hv,ho,(kab.trans kt).mono (by decide)⟩
-    · refine WP.ite false (by simp [eval,hzb,h4]) (by simp) (fun _ => ?_)
-      refine WP.mono (diagonal_ok (hs.congr kab.2.2)
-        ((kab.gpr (by decide)).trans h8) ((kab.gpr (by decide)).trans h9)
-        ((kab.gpr (by decide)).trans h10) hw0 hw hA hb sep) fun t ⟨hv,ho,kt⟩ => ?_
-      rw [hmab] at hv ho
-      exact ⟨hv,ho,(kab.trans kt).mono (by decide)⟩
 
 end VG.Proof.Bignum.X86_64.AdxSquare
 

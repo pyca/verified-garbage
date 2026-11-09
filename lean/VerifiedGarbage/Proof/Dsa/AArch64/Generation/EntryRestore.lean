@@ -24,11 +24,11 @@ structure RestoredEntry (s t u : State) : Prop where
   result : u.gpr .x0 = t.gpr .x0
 
 theorem entryRestore_ok {s t : State}
-    (sp : t.sp = generationBase s)
-    (read : ∀ d, d + 8 ≤ 448 → InRegions (t.rd ++ t.wr) (generationBase s + BitVec.ofNat 64 d) 8)
-    (g : Spill.Saved (generationBase s) s.gpr abiGprs t.mem)
-    (v : Spill.Saved (generationBase s) (vectorValues s) vectorSlots t.mem)
-    (lr : t.mem.readW (generationBase s + BitVec.ofNat 64 296) 64 = s.gpr .x30) :
+    (sp : t.sp = Refill.refillBase s)
+    (read : ∀ d, d + 8 ≤ 480 → InRegions (t.rd ++ t.wr) (Refill.refillBase s + BitVec.ofNat 64 d) 8)
+    (g : Spill.Saved (Refill.refillBase s) s.gpr abiGprs t.mem)
+    (v : Spill.Saved (Refill.refillBase s) (vectorValues s) vectorSlots t.mem)
+    (lr : t.mem.readW (Refill.refillBase s + BitVec.ofNat 64 296) 64 = s.gpr .x30) :
     WP isa (.block entryRestore) t (RestoredEntry s t) := by
   simp only [entryRestore, abiGprs, abiVectors, List.map_cons, List.map_nil,
     List.flatMap_cons, List.flatMap_nil, List.cons_append, List.nil_append]

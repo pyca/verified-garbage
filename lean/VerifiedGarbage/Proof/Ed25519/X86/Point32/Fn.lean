@@ -13,9 +13,10 @@ stack), `entry` saves `ebx`, `ebp` and `edi` at `SAVE` and points `edi` at
 the working space (`entry_ok`); the body is the inlined addition
 (`fieldCode pointAddOps`), whose values `pointAdd_eval` gives, and which
 writes only its outputs, slots 0–3 and 8–15, and X25519's product `T`
-(`fieldCode_frame`); `exit` restores the registers (`exit_ok`). `addFn_ok`:
-the function keeps the callee-saved registers, changes memory only in slots
-0–3 and 8–15 and bytes 864 to 1023, and leaves in slots 0–3 the sum of the
+(`fieldCode_frame`); `exit` restores the registers (`exit_ok`). `fnOf_ok`:
+a function of a field program keeps the callee-saved registers, changes
+memory only in slots 0–3 and 8–15 and bytes 864 to 1023, and leaves in the
+slots the program's values: for the addition, in slots 0–3 the sum of the
 points in slots 0–3 and 4–7, if slot 16 holds `d`.
 -/
 
@@ -218,14 +219,6 @@ theorem fnOf_ok {ops : List FieldOp} (hd : DestsOk ops) {s : State} {x : BitVec 
       · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self),
           sub_sub hfit (Nat.le_refl _) (by simp only [T]; decide) (by simp only [T]; decide)⟩
   · rw [rm, eu, env_save hfit hf]
-
-theorem addFn_ok {s : State} {x : BitVec 32} (h : Entry s x) :
-    WP isa addFn s fun t => (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Frame (addW x) s.mem t.mem ∧
-      (env s.mem x 16 = Spec.Ed25519.d → point (env t.mem x) 0 1 2 3 =
-        Spec.Ed25519.pointAdd (point (env s.mem x) 0 1 2 3) (point (env s.mem x) 4 5 6 7)) :=
-  WP.mono (fnOf_ok pointAddOps_dests h) fun _ ⟨hk, hrd, hwr, hf, hv⟩ =>
-    ⟨hk, hrd, hwr, hf, fun hd => by rw [hv]; exact pointAdd_eval _ hd⟩
 
 /-! ## The new functions' values -/
 

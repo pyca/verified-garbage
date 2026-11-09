@@ -1,46 +1,50 @@
 module
 
-public import VerifiedGarbage.Impl.Mgf1.X86_64
+public import VerifiedGarbage.Impl.Mgf1.X86_64.Table
 
 /-!
 # RSAES-OAEP (RFC 8017 §7.1) on x86-64
 
-`encrypt` and `decrypt`, for a hash function `H` (the label's) and MGF1's
-hash function `G`, each an `Impl.Pbkdf2.Md.X86_64.Stream` (the streaming
+Encryption with a precomputed public key
+(`Impl/RsaOaep/X86_64/Precomputed.lean`) and `decrypt`, for a hash function
+`H` (the label's), an `Impl.Pbkdf2.Md.X86_64.Stream` (the streaming
 functions of MD5, SHA-1, SHA-224, SHA-256 or the SHA-512 family), calling
-those functions, MGF1 (`Impl/Mgf1/X86_64.lean`), and the RSA operation: the
-public-key operation within BoringSSL's limits (`vg_rsa_public_checked`)
-when encrypting, the private-key operation checked against `e`
-(`vg_rsa_private_checked`) when decrypting.
+those functions, MGF1 with the hash function of the table of the interface
+`Hash` that the last argument points to (`Impl/Mgf1/X86_64/Table.lean`,
+among the functions `f : Fns`), and the RSA operation: the public-key
+operation within BoringSSL's limits when encrypting, the private-key
+operation checked against `e` (`vg_rsa_private_checked`) when decrypting.
 
 Everything runs in a frame of `frameBytes` bytes: at `rsp`, the stack
 arguments of the RSA operation; then the slots, which hold the arguments
-and the values the code computes (the callees keep no caller-saved
+and the values the code computes (MGF1 its table's address and digest
+length too) (the callees keep no caller-saved
 register). The first `oRsa` = 8192 bytes of `scratch` are ours; the RSA
 operation gets the rest, `scratch_len - 1024` words.
 
 ## Encryption
 
 `encrypt(out = rdi, out_len = rsi, n = rdx, n_len = rcx, e = r8,
-e_len = r9, label, label_len, msg, msg_len, seed, scratch, scratch_len)`,
-the last seven on the stack. If `k < 2 hLen + 2` or `msg_len > k - 2 hLen
+e_len = r9, label, label_len, msg, msg_len, seed, scratch, scratch_len, …)`,
+the last seven (and what follows them) on the stack. If `k < 2 hLen + 2` or `msg_len > k - 2 hLen
 - 2` (public), it writes zeros to `out` and returns 0. Otherwise it writes
 `EM = 0x00 ‖ seed ‖ DB` to `scratch` (`DB = lHash ‖ 0… ‖ 0x01 ‖ M`, the
 label hashed with `H`), masks `DB` with MGF1 of the seed and then the seed
-with MGF1 of `maskedDB` (`G`), and returns `vg_rsa_public_checked` of `EM`
-into `out`.
+with MGF1 of `maskedDB` (the table's hash function), and returns the
+public-key operation of `EM` into `out`.
 
 ## Decryption
 
 `decrypt(out = rdi, out_len = rsi, msg_len = rdx, n = rcx, n_len = r8,
 e = r9, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len,
 label, label_len, ct, ct_len, scratch, scratch_len)`, the last seventeen
-on the stack. `vg_rsa_private_checked` writes `EM` (or zeros) to `scratch`
+on the stack, then `mgf1`. `vg_rsa_private_checked` writes `EM` (or zeros) to `scratch`
 and returns `r` (1, 0 or 2), which only selects values without a branch.
 If `k < 2 hLen + 2` (public), the result is `r = 2 ? 2 : 0`, with zeros to
 `out` and `*msg_len`. Otherwise, as BoringSSL's
 `RSA_padding_check_PKCS1_OAEP_mgf1` without a branch on anything secret:
-the label is hashed (`H`), the seed and `DB` unmasked in place (`G`); an
+the label is hashed (`H`), the seed and `DB` unmasked in place (with the
+table's hash function); an
 accumulator `acc` ORs together `EM`'s first byte and `lHash' ⊕ lHash`; the
 scan over `T = DB[hLen..]` (`t = k - 2 hLen - 1` bytes) finds the index
 `idx` of its first nonzero byte with masks, and ORs into `acc` a mask if a
@@ -60,7 +64,8 @@ namespace VG.Impl.RsaOaep.X86_64
 
 open VG.X86_64
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
-open VG.Impl.Mgf1.X86_64 (seqs sp ix at_ step byteLoop Layout mgfXor)
+open VG.Impl.Mgf1.X86_64 (seqs sp ix at_ step byteLoop Layout)
+open VG.Impl.Mgf1.X86_64.Table (Fns tcall)
 
 /-! ## The frame -/
 
@@ -98,6 +103,9 @@ def sAcc : Nat := 248
 def sIdx : Nat := 256
 def sOk : Nat := 264
 def sA : Nat := 272
+/-- MGF1's table's address and its digest length. -/
+def sTab : Nat := 280
+def sD : Nat := 288
 
 /-! ## Our part of `scratch` -/
 
@@ -133,7 +141,11 @@ def argSlot (j d : Nat) : List Instr := [.mov .rax (.mem (arg j)), .store (sp d)
 /-- `imm32 n`. -/
 def im (n : Nat) : Src := .imm (BitVec.ofNat 32 n)
 
-variable (H G : Stream)
+variable (H : Stream) (f : Fns)
+
+/-- `dst ⊕= MGF1(src, dstLen)` with the hash function of the table that the
+function's stack argument `j` points to. -/
+def mgfT (j : Nat) : Prog isa := Impl.Mgf1.X86_64.Table.mgfXor lay (frameBytes + 8 + 8 * j) sTab sD f
 
 /-! ## Common pieces -/
 
@@ -145,6 +157,41 @@ def hashLabel (o : Nat) : Prog isa :=
     .call H.updN H.updC,
     .block (scr .rdi oSt ++ [.mov .rsi (.mem (sp sLabLen))] ++ scr .rdx o ++ scr .rcx oW),
     .call H.finN H.finC]
+
+/-- The label's hash, `H(label)`, to `scratch + o`, with the hash function
+of the table whose address is in `sTab`: its `init`, `update` with the label
+and `finalize`, each an indirect call (`tcall`). -/
+def hashLabelT (o : Nat) : Prog isa :=
+  seqs [.block (scr .rdi oSt), tcall sTab 0 f.init,
+    .block (scr .rdi oSt ++ [.mov32 .rsi (.imm 0), .mov .rdx (.mem (sp sLab)), .mov .rcx (.mem (sp sLabLen))] ++
+      scr .r8 oW),
+    tcall sTab 1 f.upd,
+    .block (scr .rdi oSt ++ [.mov .rsi (.mem (sp sLabLen))] ++ scr .rdx o ++ scr .rcx oW),
+    tcall sTab 2 f.fin]
+
+/-- The streaming functions' shape with only the digest length `d`, which
+is all the code with the hash function's calls through a table uses of it. -/
+def ofLen (d : Nat) : Stream := ⟨0, 0, d, 0, 0, "", .block [], "", .block [], "", .block []⟩
+
+/-- The digest lengths of the hash functions whose tables the functions take
+(MD5, SHA-1, SHA-224 and SHA-512/224, SHA-256 and SHA-512/256, SHA-384,
+SHA-512). -/
+def lens : List Nat := [16, 20, 28, 32, 48, 64]
+
+/-- The address of the table that the function's stack argument `j` points
+to, to `sTab` (through `r11`, which keeps `rax`). -/
+def tabSlot (j : Nat) : List Instr := [.mov .r11 (.mem (arg j)), .store (sp sTab) .r11]
+
+/-- The digest length of the table whose address is in `sTab` (its word 4),
+to `r11`. -/
+def lenLoad : List Instr := [.mov .r11 (.mem (sp sTab)), .mov .r11 (.mem (at_ .r11 32))]
+
+/-- `b d` for the digest length `d` in `r11`, among `ds`: the last if it is
+none of the others. -/
+def byLen (b : Nat → Prog isa) : List Nat → Prog isa
+  | [] => .block []
+  | [d] => b d
+  | d :: ds => .seq (.block [.alu .cmp .r11 (im d)]) (.ite .e (b d) (byLen b ds))
 
 /-- MGF1's slots for masking `DB` (`k - hLen - 1` bytes at `EM + 1 + hLen`)
 with the seed (`hLen` bytes at `EM + 1`). -/
@@ -173,7 +220,7 @@ def chkK : List Instr := [.mov .rax (.mem (sp sK)), .alu .cmp .rax (im (2 * H.D 
 def encPrologue : List Instr :=
   [.store (sp sOut) .rdi, .store (sp sN) .rdx, .store (sp sK) .rcx, .store (sp sE) .r8, .store (sp sEl) .r9] ++
   argSlot 0 sLab ++ argSlot 1 sLabLen ++ argSlot 2 sMsg ++ argSlot 3 sMsgLen ++ argSlot 4 sSeed ++
-  argSlot 5 sScr ++ argSlot 6 sScrLen
+  argSlot 6 sScr ++ argSlot 7 sScrLen
 
 /-- `msg_len ≤ k - 2 hLen - 2`, from `rax = k`: CF set if not. -/
 def chkMsg : List Instr := [.alu .sub .rax (im (2 * H.D + 2)), .alu .cmp .rax (.mem (sp sMsgLen))]
@@ -214,24 +261,20 @@ def pubArgs : List Instr :=
     .mov .rdi (.mem (sp sOut)), .mov .rsi (.mem (sp sK)), .mov .rdx (.mem (sp sN)), .mov .rcx (.mem (sp sK)),
     .mov .r8 (.mem (sp sE)), .mov .r9 (.mem (sp sEl))]
 
-/-- `EM`, before masking. -/
-def encEm : Prog isa := seqs [clearEm, copySeed H, hashLabel H oDig, copyLh H, putMsg]
+/-- `EM`, before masking, with the label's hash function that of the table
+`hash` (the stack argument 10), whose address it stores to `sTab` first. -/
+def encEm : Prog isa := seqs [clearEm, copySeed H, .block (tabSlot 10), hashLabelT f oDig, copyLh H, putMsg]
 
-variable (pubN : String) (pubC : Prog isa)
+/-- The checks for the label's hash function's digest length `H.D`, then
+`main`. -/
+def encChecks (main : Prog isa) : Prog isa :=
+  seqs [.block (chkK H), .ite .b encFail (seqs [.block (chkMsg H), .ite .b encFail main])]
 
-/-- After the checks. -/
-def encMain : Prog isa :=
-  seqs [encEm H, .block (dbArgs H), mgfXor lay G, .block (seedArgs H), mgfXor lay G, .block pubArgs,
-    .call pubN pubC]
-
-/-- The prologue and the checks, then `main`. -/
-def encBodyWith (main : Prog isa) : Prog isa :=
-  seqs [.block (encPrologue ++ chkK H), .ite .b encFail (seqs [.block (chkMsg H), .ite .b encFail main])]
-
-def encBody : Prog isa := encBodyWith H (encMain H G pubN pubC)
-
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt`. -/
-def encrypt : Prog isa := .frame (.alloc frameBytes) (encBody H G pubN pubC) (.free frameBytes)
+/-- The prologue, the address of the table `hash` (the stack argument 10) to
+`sTab` and its digest length `d` to `r11`, then the checks and `main d`. -/
+def encBodyWith (main : Nat → Prog isa) : Prog isa :=
+  seqs [.block encPrologue, .block (tabSlot 10), .block lenLoad,
+    byLen (fun d => encChecks (ofLen d) (main d)) lens]
 
 /-! ## Decryption -/
 
@@ -347,17 +390,22 @@ def decRet : List Instr :=
 
 /-- After the private operation and the check of `k`: the decoding. -/
 def decMain : Prog isa :=
-  seqs [hashLabel H oLh, .block (seedArgs H), mgfXor lay G, .block (dbArgs H), mgfXor lay G, accLh H, scan H,
+  seqs [hashLabelT f oLh, .block (seedArgs H), mgfT f 18, .block (dbArgs H), mgfT f 18, accLh H, scan H,
     clearBuf H, copyT, shift, .block okMask, outLoop, .block (decRet H)]
+
+/-- After the private operation, for the label's hash function's digest
+length `H.D`: its result to its slot, the check of `k`, and the decoding. -/
+def decTail : Prog isa :=
+  seqs [.block ([.mov32 .rax (.reg .rax), .store (sp sR) .rax] ++ chkK H), .ite .b decFail (decMain H f)]
 
 variable (privN : String) (privC : Prog isa)
 
 def decBody : Prog isa :=
   seqs [.block (decPrologue ++ privArgs), .call privN privC,
-    .block ([.mov32 .rax (.reg .rax), .store (sp sR) .rax] ++ chkK H),
-    .ite .b decFail (decMain H G)]
+    .block (tabSlot 17), .block lenLoad,
+    byLen (fun d => decTail (ofLen d) f) lens]
 
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`. -/
-def decrypt : Prog isa := .frame (.alloc frameBytes) (decBody H G privN privC) (.free frameBytes)
+/-- `vg_rsa_oaep_decrypt`. -/
+def decrypt : Prog isa := .frame (.alloc frameBytes) (decBody f privN privC) (.free frameBytes)
 
 end VG.Impl.RsaOaep.X86_64

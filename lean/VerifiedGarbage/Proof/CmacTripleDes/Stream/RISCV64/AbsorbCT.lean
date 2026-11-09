@@ -48,9 +48,6 @@ theorem HF.cpre {s : State} (h : HF s₀ St D S n L s) (hc : 8 - held n < L) : C
     by rw [hu.keep _ (by decide) (by decide) (by decide), h₁.a3], hu.t0, hu.t1,
     Proof.CmacTripleDes.Stream.held_le n, hc, by rw [hu.rd, h₁.rd], by rw [hu.wr, h₁.wr], by rw [hu.sp, h₁.sp]⟩
 
-theorem HF.sp {s : State} (h : HF s₀ St D S n L s) : s.sp = s₀.sp := by
-  obtain ⟨s₁, h₁, hu⟩ := h; rw [hu.sp, h₁.sp]
-
 /-! ## The loop -/
 
 /-- The loop's relation, with the number of iterations left. -/

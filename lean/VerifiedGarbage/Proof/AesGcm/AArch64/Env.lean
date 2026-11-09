@@ -344,10 +344,6 @@ theorem Regs.comp {rs rs' : List Reg} {s₁ s₂ s₃ : State} (h₁ : Regs rs s
     (h₁.others r fun h => hr (List.mem_append_left _ h)), h₂.mem.trans h₁.mem,
     h₂.sp.trans h₁.sp, h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr⟩
 
-theorem Regs.mono {rs rs' : List Reg} {s s' : State} (h : Regs rs s s') (hs : ∀ r ∈ rs, r ∈ rs' := by decide) :
-    Regs rs' s s' :=
-  ⟨fun r hr => h.others r fun h' => hr (hs r h'), h.mem, h.sp, h.rd, h.wr⟩
-
 theorem Regs.refl (rs : List Reg) (s : State) : Regs rs s s := ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
 
 /-- Proves `Others rs s s'` for a chain of register writes. -/

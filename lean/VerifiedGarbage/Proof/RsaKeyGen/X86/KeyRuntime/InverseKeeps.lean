@@ -7,8 +7,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseBridge
 
 /-! # What a call of `vg_rsa_keygen_inverse` leaves in the workspace
 
-`Key.inverse_preserves_num` and `Key.inverse_preserves_slot`, for the frame of a call
-(`OutsS`): the stack it writes is beyond the workspace. -/
+The numbers and header words the inverse keeps (`Ws.inverse_num`, `Ws.inverse_slot`), for
+the frame of a call (`OutsS`): the stack it writes is beyond the workspace. -/
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.KeyRuntime

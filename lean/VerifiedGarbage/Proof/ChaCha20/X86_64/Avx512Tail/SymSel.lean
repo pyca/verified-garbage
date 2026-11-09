@@ -43,8 +43,8 @@ structure SelOk (D : Nat) (s₀ : State) : Prop where
 theorem SRel.congr {D : Nat} {σ : Sym} {s₀ s s' : State} (h : SRel D σ s₀ s)
     (hz : ∀ r p, zw s' r p = zw s r p) (hm : s'.mem = s.mem) (hg : s'.gpr = s.gpr) (hr : s'.rd = s.rd)
     (hw : s'.wr = s.wr) : SRel D σ s₀ s' :=
-  ⟨fun r p hp => (hz r p).trans (h.reg r p hp), fun b i hb hi => by rw [hm]; exact h.mem b i hb hi,
-    hg.trans h.gpr, hr.trans h.rd, hw.trans h.wr, hm ▸ h.frame, fun hd => hm.trans (h.clean hd)⟩
+  SRel.mk' (fun r p hp => (hz r p).trans (h.reg r p hp)) (fun b i hb hi => by rw [hm]; exact h.mem b i hb hi)
+    (hg.trans h.gpr) (hr.trans h.rd) (hw.trans h.wr) (hm ▸ h.frame) fun hd => hm.trans (h.clean hd)
 
 /-- A load of 64 bytes whose doublewords are given terms. -/
 theorem SRel.load {D : Nat} {σ : Sym} {s₀ s : State} (h : SRel D σ s₀ s) (d : XReg) (m : MemOp) {f : Nat → T}
@@ -89,7 +89,7 @@ theorem sel_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) (hs : SelOk D s₀) {�
     obtain ⟨s₂, hx, h₂⟩ := h₁.load t (at_ .rsi off) (f := fun p => .inp (off / 4 + p)) (by rw [ea2]; exact i2)
       (fun p hp => by
         rw [ea2, add_ofNat', ← Nat.mul_add, h₁.mem 2 _ (by decide) (by simp only [bsize]; omega), hcl p hp]
-        simp only [T.eval, inpW, inp_block hoff hp, regn, baseR]
+        simp only [T.eval, inpW, inp_block hoff hp, memBase_2]
         rw [ite_eq_right (by omega)])
     exact WP.block_cons_iff.2 ⟨s₂, hx, rest s₂ h₂⟩
   · simp only [decide_eq_false_iff_not, Nat.not_lt] at hb

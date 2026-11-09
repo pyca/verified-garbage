@@ -33,19 +33,6 @@ theorem rotate28_word (x : BitVec 28) (n : Nat) (hn : 1 ≤ n) (hn' : n < 5) :
       show j - n < 32 by omega, BitVec.getLsbD_of_ge]
 
 
-theorem mask_word (x : BitVec 32) (n : Nat) (hn : 0 < n) (hn32 : n ≤ 32) :
-    (x <<< (32 - n)) >>> (32 - n) = (x.setWidth n).setWidth 32 := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro j hj
-  simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
-  by_cases h : j < n
-  · have hi : 32 - n + j < 32 := by omega
-    have hlo : ¬32 - n + j < 32 - n := by omega
-    simp only [hi, hlo, h, hj, decide_true, decide_false, Bool.not_false,
-      Bool.true_and, show 32 - n + j - (32 - n) = j by omega]
-  · have ho : ¬32 - n + j < 32 := by omega
-    simp only [ho, h, hj, decide_true, decide_false, Bool.false_and, Bool.true_and]
-
 theorem packed48 (x : BitVec 48) :
     ((x >>> 32).setWidth 16).setWidth 32 ++ x.setWidth 32 = x.setWidth 64 := by
   apply BitVec.eq_of_getLsbD_eq

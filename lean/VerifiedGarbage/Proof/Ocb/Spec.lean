@@ -16,9 +16,9 @@ Untrusted: everything here is checked by Lean. Target-independent facts
 about `Spec/Ocb.lean`:
 
 * OCB's blocks, `double` and AES are GCM's and CMAC's (`ofBytes_eq`,
-  `double_eq`, `aesWith_eq`), whose lemmas apply;
+  `double_eq`), whose lemmas apply;
 * `L_i` is `L_0` doubled `i` times, and `ntz` halves an even number
-  (`lAt_succ`, `ntz_odd`, `ntz_even`);
+  (`ntz_odd`, `ntz_even`);
 * the folds of `HASH`, `OCB-ENCRYPT` and `OCB-DECRYPT` over the whole blocks
   compute the offsets (`offAt`), the checksum (`ckAt`), the sum (`hsum`) and
   the output a block at a time (`hash_eq`, `encryptWith_eq`,
@@ -35,9 +35,6 @@ open VG.Spec.Ocb
 theorem ofBytes_eq : Spec.Ocb.ofBytes = Spec.Gcm.ofBytes := rfl
 theorem toBytes_eq : Spec.Ocb.toBytes = Spec.Gcm.toBytes := rfl
 theorem xor_eq : Spec.Ocb.xor = Spec.Cmac.xor := rfl
-theorem aesWith_eq : Spec.Ocb.aesWith = Spec.Gcm.aesWith := rfl
-theorem zeros_eq : Spec.Ocb.zeros = Spec.Cmac.zeros := rfl
-
 theorem double_eq (s : Block) : double s = Proof.Cmac.dbl128 s := by
   unfold double Proof.Cmac.dbl128; split <;> simp
 
@@ -64,12 +61,6 @@ theorem ofBytes_xor {xs ys : List Byte} (hx : xs.length = 16) (hy : ys.length = 
     toBytes_ofBytes (by simp [Spec.Ocb.xor, hx, hy])]
 
 /-! ## `L_i` and `ntz` -/
-
-theorem lAt_zero (l : Block) : lAt l 0 = double (double l) := rfl
-
-theorem lAt_succ (l : Block) (i : Nat) : lAt l (i + 1) = double (lAt l i) := rfl
-
-theorem lAt_zero_dollar (l : Block) : lAt l 0 = double (lDollar l) := rfl
 
 theorem ntzAux_succ : ∀ f n, n ≤ f → ntzAux (f + 1) n = ntzAux f n
   | 0, n, h => by

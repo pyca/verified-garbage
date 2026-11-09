@@ -104,10 +104,10 @@ structure LoopPost (d : Spec.Rc2.Direction) (s : State) (n : Nat) (s' : State) :
   wr : s'.wr = s.wr
   mem : Frame (loopWrites s n) s.mem s'.mem
   data : Spec.Rc2.blocksAt s'.mem (addr32 (s.gpr .esi)) n =
-    (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (addr32 (s.gpr .ebx))) d
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (addr32 (s.gpr .ebx))) d
       (Spec.Rc2.blockAt s.mem (addr32 (s.gpr .ecx))) (Spec.Rc2.blocksAt s.mem (addr32 (s.gpr .esi)) n)).1
   iv : Spec.Rc2.blockAt s'.mem (addr32 (s.gpr .ecx)) =
-    (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (addr32 (s.gpr .ebx))) d
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (addr32 (s.gpr .ebx))) d
       (Spec.Rc2.blockAt s.mem (addr32 (s.gpr .ecx))) (Spec.Rc2.blocksAt s.mem (addr32 (s.gpr .esi)) n)).2
 
 theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
@@ -124,10 +124,10 @@ theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
       · simp only [eval_nonzeroCount, h₁.flag, decide_true, Option.map_some, Bool.not_true]
       · refine ⟨h₁.ptr, h₁.count, h₁.reg, h₁.callee, h₁.rd, h₁.wr, h₁.frame (by decide), ?_, ?_⟩
         · rw [blocksAt_cons, blocksAt_cons]
-          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Spec.Rc2.cbc]
+          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Proof.Rc2.cbcBlocks]
           exact congrArg (· :: []) h₁.data
         · rw [blocksAt_cons]
-          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Spec.Rc2.cbc]
+          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Proof.Rc2.cbcBlocks]
           exact h₁.iv
     · have hp₁ := h₁.tail hp (by omega)
       obtain ⟨t₂, s₂, exec₂, h₂⟩ := ih s₁ (by omega) (by omega) hp₁ (by simpa using h₁.count)

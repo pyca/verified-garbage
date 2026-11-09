@@ -37,10 +37,8 @@ abbrev md : Md h.B h.N h.L := h.ok.md
 
 theorem B_cases : h.B = 64 ∨ h.B = 128 := h.ok.sizes.B
 theorem N_le : h.N ≤ 64 := h.ok.sizes.N.2.1
-theorem N4 : h.N % 4 = 0 := h.ok.sizes.N.2.2
 theorem D_le : h.D ≤ h.N := h.ok.sizes.D.2.1
 theorem D_pos : 0 < h.D := h.ok.sizes.D.1
-theorem DL : h.D + h.L + 4 ≤ h.B := h.ok.sizes.DL
 theorem so_le : h.H.so ≤ 512 := by have := h.ok.sizes.so; have := h.ok.sizes.W; omega
 theorem B_le : h.B ≤ 128 := by rcases h.B_cases with e | e <;> omega
 theorem B_ge : 64 ≤ h.B := by rcases h.B_cases with e | e <;> omega

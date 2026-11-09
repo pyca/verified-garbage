@@ -47,8 +47,6 @@ structure Only (ds : List Reg) (s s' : State) : Prop where
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
 
-theorem Only.refl (ds : List Reg) (s : State) : Only ds s s := ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
-
 theorem Only.of_upd {s s' : State} {d : Reg} {v : BitVec 64} (u : Upd s s' d v) : Only [d] s s' :=
   ⟨fun r h => u.other r (by simpa using h), u.mem, u.rd, u.wr, u.sp⟩
 

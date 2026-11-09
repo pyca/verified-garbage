@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Inst
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # ML-DSA (FIPS 204) key generation on RISC-V -/
 

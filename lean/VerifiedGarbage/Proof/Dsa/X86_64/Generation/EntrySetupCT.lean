@@ -19,16 +19,6 @@ open VG VG.X86_64 VG.Impl.Dsa.X86_64.Generation
 
 def EntryStackAgree (s t : State) : Prop := s.gpr .rsp = t.gpr .rsp
 
-theorem entrySetup_ct : RelCT isa EntryStackAgree
-    (.block (entryHeader ++ entryIncoming ++ entryDerived)) (fun _ _ => True) := by
-  apply RelCT.taint (A := taint) (Taint.ofRegs [.rsp])
-  · intro s t h
-    apply Taint.agree_ofRegs
-    intro r hr
-    simp only [List.mem_singleton] at hr
-    subst r; exact h
-  · taint_decide
-
 theorem entrySave_ct : RelCT isa EntryStackAgree (.block saveRegisters) (fun _ _ => True) := by
   apply RelCT.taint (A := taint) (Taint.ofRegs [.rsp])
   · intro s t h

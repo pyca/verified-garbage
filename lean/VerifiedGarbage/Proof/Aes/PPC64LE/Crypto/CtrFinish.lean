@@ -13,9 +13,9 @@ namespace VG.Proof.Aes.PPC64LE.Crypto
 open VG VG.PPC64LE
 open VG.Proof.Aes.Memory
 
-theorem ctr_processed {m₀ m : Mem} {D : Addr} {n nr : Nat} {w : List Byte} {icb : Spec.Gcm.Block}
-    (h : Processed m₀ m D n n (outputState false true nr w icb m₀ D)) :
-    Spec.Gcm.blocksAt m D n = Spec.Gcm.ctr32 (Spec.Gcm.aesWith nr w) icb (Spec.Gcm.blocksAt m₀ D n) := by
+theorem ctr_processed {m₀ m : Mem} {D E : Addr} {n nr : Nat} {w : List Byte} {icb : Spec.Gcm.Block}
+    (h : Processed m₀ m E n n (outputState false true nr w icb m₀ D)) :
+    Spec.Gcm.blocksAt m E n = Spec.Gcm.ctr32 (Spec.Gcm.aesWith nr w) icb (Spec.Gcm.blocksAt m₀ D n) := by
   unfold Spec.Gcm.blocksAt Spec.Gcm.ctr32 Spec.Gcm.keystream
   apply List.ext_getElem (by simp)
   intro i hi hi'

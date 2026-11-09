@@ -263,13 +263,8 @@ theorem tailSetup_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V
 
 /-- A suffix may be empty when the text ends on a block boundary. -/
 theorem data_suffix {c st w : Addr} {s : State} {D : Addr} {n j : Nat}
-    (h : DataW c st w s D n) (hj : j≤n) : DataW c st w s (D+BitVec.ofNat 64 j) (n-j) := by
-  have hs : Region.Sub ⟨D+BitVec.ofNat 64 j,n-j⟩ ⟨D,n⟩ := Offset.sub_base _ (by omega)
-  refine ⟨⟨covers_off h.ok.rd (by omega) h.ok.lt,by have := h.ok.lt; omega,?_,
-    h.ok.st.sub_left hs,h.ok.w.sub_left hs⟩,covers_off h.wr (by omega) h.ok.lt,h.ctx.sub_right hs⟩
-  by_cases hz : n-j=0
-  · rw [hz,Nat.add_zero]; exact Nat.le_of_lt (D+BitVec.ofNat 64 j).isLt
-  · rw [h.ok.toNat_add (by omega)]; have := h.ok.fit; omega
+    (h : DataW c st w s D n) (hj : j≤n) : DataW c st w s (D+BitVec.ofNat 64 j) (n-j) :=
+  h.drop hj
 
 theorem WholeOutWith.rest {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t : State} {plaintext : List Spec.Gcm.Block}
     (h : WholeOutWith V sp R s.mem plaintext t)
@@ -329,13 +324,14 @@ theorem tail_ok {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s : State} {icb :
       · intro _; simp only [hz',Spec.Aes.bytesAt,List.range_zero,List.map_nil,Proof.Gcm.xorKs_nil]
     exact WP.block_nil ⟨ho,h24,h25,h26⟩
   · have hz' : (V .r23).toNat%16-0≠0 := by simpa using hz
-    refine WP.seq (WP.mono (tailKs_ok L mid (by rw [hk.mem])) fun v hv => ?_)
-    have hx := tailXor_ok hv (by omega) hz'
+    have ti := mid.tailIn (by rw [hk.mem])
+    refine WP.seq (WP.mono (tailKs_ok L ti) fun v hv => ?_)
+    have hx := tailXor_ok ti hv (by omega) hz'
     have hx24 := WP.gpr hx (r := .r24) (by decide +kernel)
     have hx25 := WP.gpr hx24 (r := .r25) (by decide +kernel)
     have hx26 := WP.gpr hx25 (r := .r26) (by decide +kernel)
     refine WP.mono hx26 fun u ⟨⟨⟨ho,h24'⟩,h25'⟩,h26'⟩ => ?_
-    refine ⟨ho,?_,?_,?_⟩
+    refine ⟨mid.crOut ho,?_,?_,?_⟩
     · rw [h24',hv.r24,BitVec.add_zero]
     · simpa only [Nat.sub_zero] using h25'.trans hv.r25
     · rw [h26',hv.r26,h26]
@@ -358,29 +354,6 @@ theorem tail_prefix {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t u : State
     exact hsplit
   · exact (hd.take hj).ok.st.sub_right (Lay.stSub (d := 48) (n := 32) (by decide))
   · exact (hd.take hj).ok.w.sub_right (Lay.wSub (d := 512) (n := 2048) (by decide))
-
-theorem whole_tail_ciphertext {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t u : State}
-    {icb : Spec.Gcm.Block} (hw : WholeOut V sp R s.mem t)
-    (ht : CrOut V sp R icb (16*((V .r23).toNat/16))
-      (V .r27+BitVec.ofNat 64 (16*((V .r23).toNat/16))) ((V .r23).toNat%16) t.mem u)
-    (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat)
-    (hc : ciphOf t.mem (V .r29) R=Spec.Gcm.ctxCiph s.mem (V .r29) R)
-    (hctr : Proof.Gcm.Ctr s.mem (V .r30+48) (V .r30+64)
-      (Spec.Gcm.ctxCiph s.mem (V .r29) R) icb 0) :
-    Spec.Aes.bytesAt u.mem (V .r27) (V .r23).toNat =
-      Spec.Gcm.gctr (Spec.Gcm.ctxCiph s.mem (V .r29) R) icb
-        (Spec.Aes.bytesAt s.mem (V .r27) (V .r23).toNat) := by
-  obtain ⟨hp,hc₁⟩ := hw.ctr hctr
-  have hc₂ : Proof.Gcm.Ctr t.mem (V .r30+48) (V .r30+64) (ciphOf t.mem (V .r29) R) icb
-      (16*((V .r23).toNat/16)) := by rw [hc]; exact hc₁
-  have htail := ht.out hc₂
-  rw [hc,hw.rest hd] at htail
-  have hprefix := tail_prefix ht hd
-  have hp' := hprefix.trans hp
-  have hall := done_append (m₀ := s.mem) (P := 0) hp' (by simpa only [Nat.zero_add] using htail)
-  have he : 16*((V .r23).toNat/16)+(V .r23).toNat%16=(V .r23).toNat := by omega
-  rw [he,← Proof.Gcm.gctr_eq] at hall
-  exact hall
 
 theorem whole_ctx_disjoint {V : Reg → BitVec 64} {s : State}
     (L : Lay (V .r29) (V .r30) (V .r31))

@@ -73,8 +73,6 @@ theorem ofId_ge {j : Nat} (h : hashes.length ≤ j) : Hash.ofId j = none := by
   unfold Hash.ofId
   split <;> simp_all [hashes]
 
-theorem hashes_length : hashes.length = 12 := rfl
-
 theorem prefix_length_le (h : Hash) : h.prefix.length + h.len ≤ 83 := by cases h <;> decide
 
 theorem lens_ok (h : Hash) (s : State) :

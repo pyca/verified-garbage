@@ -33,9 +33,4 @@ theorem prepend_digest (digest low : List Byte) :
       Spec.Dsa.decodeBE low + Spec.Dsa.decodeBE digest * 256 ^ low.length := by
   rw [decodeBE_append, Nat.add_comm]
 
-/-- A fixed-width byte copy with zero carry preserves the seed exactly. -/
-theorem seedAdd_zero (bs : List Byte) :
-    Spec.Dsa.encodeBE bs.length (Spec.Dsa.decodeBE bs + 0) = bs := by
-  rw [Nat.add_zero, encodeBE_decodeBE]
-
 end VG.Proof.Dsa.Generation

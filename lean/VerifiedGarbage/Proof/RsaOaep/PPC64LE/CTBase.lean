@@ -97,10 +97,6 @@ theorem B.spS {a t : State} (h : B S vf Pre Pub a t) : t.sp = fb a :=
 theorem B.r14S {a t : State} (h : B S vf Pre Pub a t) : t.gpr .r14 = S a :=
   let ⟨_, _, p, b⟩ := h; b.r14.trans (X.S p)
 
-theorem B.onlyS {a t t' : State} {rs : List Reg} (h : B S vf Pre Pub a t) (o : Only rs t t')
-    (hrs : ∀ r ∈ rs, r ∉ .r14 :: fx ++ hiRegs := by decide) : B S vf Pre Pub a t' :=
-  let ⟨s, P, p, b⟩ := h; ⟨s, P, p, b.only (X.fits P) o hrs⟩
-
 end
 
 section

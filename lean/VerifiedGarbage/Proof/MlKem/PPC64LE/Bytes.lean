@@ -45,11 +45,6 @@ theorem byte_one {m m₀ : Mem} {O : Addr} {out : Nat → Byte} {a L : Nat} (ha 
     · rw [ite_eq_left hk', ite_eq_left (by omega)]
     · rw [ite_eq_right hk', ite_eq_right (by omega)]
 
-/-- A byte of a region disjoint from one written. -/
-theorem byte_writeW_disj {m : Mem} {R S : Region} (hd : R.Disjoint S) {a x : Addr} {w : Nat}
-    (v : BitVec w) (ha : S.Contains a (w / 8)) (hx : R.Contains x 1) : (m.writeW a v) x = m x :=
-  Mem.write_apply fun h => hd x hx (ha.byte h)
-
 /-- A byte zero-extended, as `lbz` loads it. -/
 theorem setWidth_zero_append (b : Byte) : (0#0 ++ b).setWidth 64 = b.setWidth 64 := by
   apply BitVec.eq_of_toNat_eq

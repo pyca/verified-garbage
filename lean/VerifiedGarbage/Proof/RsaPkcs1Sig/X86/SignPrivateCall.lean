@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Rsa.X86.PrivCrtCall
 import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Rsa.Contract
 /-! # Checked private RSA returns the signature of the exact local encoding -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaPkcs1Sig/X86/SignCall.lean`, which only this module imported.
@@ -74,7 +75,7 @@ namespace VG.Proof.RsaPkcs1Sig.X86.Sgn
 open VG VG.X86 VG.Proof.Bignum.X86 VG.Proof.Mont.X86
 open VG.Proof.Rsa.X86.PrivChecked (CrtImpl privCode stackBytes)
 
-def privName (v : CrtImpl) : String := Spec.Rsa.privateCheckedApi.name ++ v.suffix
+def privName (v : CrtImpl) : String := "vg_rsa_private_checked" ++ v.suffix
 
 theorem privateCovers {g : Geometry} {bs : Fin 8 → List Byte} {s : State} (h : Context g bs s) :
     Covers (privateRd g ++ privateWr g) (s.rd ++ s.wr) ∧ Covers (privateWr g) s.wr := by
@@ -132,7 +133,7 @@ theorem private_call (v : CrtImpl) {g : Geometry} {bs : Fin 8 → List Byte} {s 
     (privateCall_pre h a) (privateCovers h).1 (privateCovers h).2 (privateWrites_sub h)) ?_
   rintro t ⟨ht, F, K, u, M, G, post⟩
   refine ⟨ht, F, K, ?_⟩
-  sig_post [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes] at post
+  sig_post [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes] at post
   have sa := fun {j} (hj : j < 20) => privateArgs_values h a hj
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
   have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega

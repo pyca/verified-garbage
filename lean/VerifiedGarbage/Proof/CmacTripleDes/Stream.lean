@@ -199,7 +199,7 @@ theorem repr_chain {m m' : Mem} {p : Addr} {key msg d : List Byte} (hr : tdesRep
 theorem tdesCmac_eq (key msg : List Byte) : tdesCmac key 8 msg = macFull (tdes key) 8 msg := by
   simp only [tdesCmac, mac]
   apply List.take_of_length_le
-  simp only [macFull, Proof.Cmac.chain_append, Proof.Cmac.chain_single, tdes, tdesWith,
+  simp only [macFull, macWith, Proof.Cmac.chain_append, Proof.Cmac.chain_single, tdes, tdesWith,
     Vector.length_toList, Nat.le_refl]
 
 /-- What `vg_cmac_triple_des_finalize` takes of a state that represents `msg`. -/

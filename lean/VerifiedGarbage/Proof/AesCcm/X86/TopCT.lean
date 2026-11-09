@@ -179,7 +179,7 @@ theorem Run.mac {s : State} (Ar : Args s₀ K W SP N A D T R nl al n tl) (h : Ru
 /-- After the tag at `W + y`. -/
 theorem Run.tag {s : State} (Ar : Args s₀ K W SP N A D T R nl al n tl) (h : Run s₀ K W SP N A D T R nl al n tl s)
     {y : Nat} (hy : y = 0 ∨ y = 96) {s' : State} (E : Env K W SP s') (rd : s'.rd = s.rd) (wr : s'.wr = s.wr)
-    (f : Frame [⟨w64 W + BitVec.ofNat 64 64, 16⟩, ⟨w64 W + BitVec.ofNat 64 y, 16⟩, wC W, below SP 56] s.mem s'.mem) :
+    (f : Frame [⟨w64 W + BitVec.ofNat 64 64, 16⟩, ⟨w64 W + BitVec.ofNat 64 y, 16⟩, wC W, below SP 60] s.mem s'.mem) :
     Run s₀ K W SP N A D T R nl al n tl s' :=
   h.step E rd wr f (inMut_tag W SP D n hy) fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 import VerifiedGarbage.Proof.Weierstrass.Comb
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 /-! Digit selection remains unchanged while point arithmetic uses a wider frame.
 The callbacks include the final coordinate copy, so no intermediate scratch
@@ -91,9 +92,6 @@ namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont VG.Proof.Mont.AArch64 Spec.Weierstrass
 open VG.Proof.Ed25519.AArch64 (read_x)
-
-private theorem jointByteTest : ∀ b : BitVec 8,
-    (b.setWidth 64 != 0)=decide (nafMagnitude b≠0) := by decide +kernel
 
 local macro "jslots" : tactic => `(tactic| plain_simp_names (simp only [jointSlots,jointLive,jointWork,
                    jacWinSlots,nafLive,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind))

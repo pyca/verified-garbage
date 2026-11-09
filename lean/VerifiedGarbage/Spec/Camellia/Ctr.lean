@@ -15,8 +15,8 @@ public import VerifiedGarbage.Spec.Camellia
 `vg_camellia_ctr` transforms `n` whole blocks in place, from the counter
 block in `ctr`, which it replaces with the one to continue from
 (`Ctr.next`): a caller may process a message in pieces of whole blocks,
-keeping `ctr` between calls. A partial last block is the caller's: CTR of a
-zero block is the next output block, whose first bytes it XORs in. The
+keeping `ctr` between calls. A partial last
+block is left to `vg_camellia_ctr_final` (`Spec/Camellia/CtrFinal.lean`). The
 counter is incremented as one 128-bit big-endian integer (SP 800-38A
 Appendix B.1).
 
@@ -43,16 +43,15 @@ def ctrSig : Sig where
 def ctrPre (pb : Nat) : Curry (ctrSig.words pb) (Mem → Prop) :=
   fun _schedule rounds _ctr _data _n _ => rounds.toNat = 18 ∨ rounds.toNat = 24
 
-/-- For `rounds` of 18 or 24, with the subkeys of that many rounds at
-`schedule` (`subkeysAt`): replaces the `n` blocks at `data` with their CTR
-encryption or decryption (§6.5) by Camellia, from the counter block at
-`ctr`, and that block with `Tₙ₊₁`, its `n`-th increment modulo `2¹²⁸`
-(unchanged if `n = 0`). Stated for those numbers of rounds, which the
-precondition requires, so that it reads only the buffers. -/
+/-- If the schedule at `schedule` is that of a key `key` with `rounds`
+rounds (`KeySchedule`): replaces the `n` blocks at `data` with their CTR
+encryption or decryption (§6.5) by Camellia under `key`, from the counter
+block at `ctr`, and that block with `Tₙ₊₁`, its `n`-th increment modulo
+`2¹²⁸` (unchanged if `n = 0`). -/
 def ctrPost (pb : Nat) : ctrSig.Post pb := fun schedule rounds ctr data n m m' _ =>
-  (rounds.toNat = 18 ∨ rounds.toNat = 24) →
+  ∀ key, KeySchedule m schedule rounds.toNat key →
     Cbc.blocksAt m' data n.toNat =
-        Ctr.crypt (cipher (subkeysAt m schedule rounds.toNat)) (Aes.bytesAt m ctr 16)
+        Ctr.crypt (cipher (expandKey key)) (Aes.bytesAt m ctr 16)
           (Cbc.blocksAt m data n.toNat) ∧
       Aes.bytesAt m' ctr 16 = Ctr.next (Aes.bytesAt m ctr 16) n.toNat
 

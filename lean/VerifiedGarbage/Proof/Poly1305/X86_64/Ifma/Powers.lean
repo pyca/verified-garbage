@@ -221,8 +221,6 @@ theorem sq_ok {s : State} (hc : Ctx s) (hm : (envOf s).mb 104 = 0xfffffffffff)
   simp only [hval, yval] at e ⊢
   rwa [y₁ k hk, hh k hk] at e
 
-theorem qz_0 (s : State) (r : XReg) : qz s r 0 = (s.xmm r).extractLsb' 0 64 := rfl
-
 theorem sq_mod {a b R : Nat} {n : Nat} (h₁ : a ≡ b * b [MOD P]) (h₂ : b ≡ R ^ n [MOD P]) :
     a ≡ R ^ (n + n) [MOD P] := by
   rw [Nat.pow_add]; exact h₁.trans (h₂.mul h₂)

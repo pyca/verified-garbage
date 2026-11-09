@@ -24,8 +24,8 @@ import VerifiedGarbage.Proof.Framework.X86.SseTaint
 /-!
 # CAST5 on 32-bit x86: running blocks
 
-* The instructions the code uses, as rewrites for `simp` (`exec_ld`, …), at
-  the addresses `addr b d` the model computes (`[b + d]`).
+* The addresses `addr b d` the model computes for the code's operands
+  (`[b + d]`, `ea_at`), as rewrites for `simp`.
 * `crun`: a block run by `simp`, one instruction at a time (`runBlock_cons`,
   `runStep_some`), the state a chain of `State.setReg`s, flag updates and
   memory updates whose registers `RegUpd` reads.
@@ -45,37 +45,6 @@ section
 variable {s : State}
 
 theorem ea_at (b : Reg) (d : Nat) : s.ea (Impl.Cast5.X86.at_ b d) = addr (s.gpr b) d := rfl
-
-theorem exec_ld {d b : Reg} {o : Nat} (h : InRegions (s.rd ++ s.wr) (addr (s.gpr b) o) 4) :
-    exec (.mov d (.mem (Impl.Cast5.X86.at_ b o))) s = some (s.setReg d (s.mem.readW (addr (s.gpr b) o) 32)) := by
-  simp only [exec, readSrc, State.load32, ea_at, h, ite_true, Option.map_some]
-
-theorem exec_st {b r : Reg} {o : Nat} (h : InRegions s.wr (addr (s.gpr b) o) 4) :
-    exec (.store (Impl.Cast5.X86.at_ b o) r) s = some (putMem s (s.mem.writeW (addr (s.gpr b) o) (s.gpr r))) := by
-  simp only [exec, State.store32, ea_at, h, ite_true]
-
-theorem exec_ldb {d b : Reg} {o : Nat} (h : InRegions (s.rd ++ s.wr) (addr (s.gpr b) o) 1) :
-    exec (.movzx8 d (Impl.Cast5.X86.at_ b o)) s = some (s.setReg d ((s.mem (addr (s.gpr b) o)).setWidth 32)) := by
-  simp only [exec, State.load8, ea_at, h, ite_true, Option.map_some]
-
-theorem exec_stb {b : Reg} {r : Reg8} {o : Nat} (h : InRegions s.wr (addr (s.gpr b) o) 1) :
-    exec (.store8 (Impl.Cast5.X86.at_ b o) r) s =
-      some (putMem s (s.mem.writeW (addr (s.gpr b) o) ((s.gpr r.reg).setWidth 8))) := by
-  simp only [exec, State.store8, ea_at, h, ite_true]
-
-theorem exec_ld128 {d : XReg} {b : Reg} {o : Nat} (h : InRegions (s.rd ++ s.wr) (addr (s.gpr b) o) 16) :
-    exec (.movdquLoad d (Impl.Cast5.X86.at_ b o)) s = some (s.setXmm d (s.mem.readW (addr (s.gpr b) o) 128)) := by
-  simp only [exec, State.load128, ea_at, h, ite_true, Option.map_some]
-
-theorem exec_st128 {b : Reg} {r : XReg} {o : Nat} (h : InRegions s.wr (addr (s.gpr b) o) 16) :
-    exec (.movdquStore (Impl.Cast5.X86.at_ b o) r) s =
-      some (putMem s (s.mem.writeW (addr (s.gpr b) o) (s.xmm r))) := by
-  simp only [exec, State.store128, ea_at, h, ite_true]
-
-theorem exec_aluM {op : AluOp} {d b : Reg} {o : Nat} (h : InRegions (s.rd ++ s.wr) (addr (s.gpr b) o) 4) :
-    exec (.alu op d (.mem (Impl.Cast5.X86.at_ b o))) s =
-      execAlu op d (.imm (s.mem.readW (addr (s.gpr b) o) 32)) s := by
-  simp only [exec, execAlu, readSrc, State.load32, ea_at, h, ite_true, Option.bind_some]
 
 end
 
@@ -135,10 +104,6 @@ structure Keep (rs : List Reg) (s s' : State) : Prop where
 
 theorem Keep.trans {rs : List Reg} {s t u : State} (h : Keep rs s t) (h' : Keep rs t u) : Keep rs s u :=
   ⟨fun r hr => (h'.gpr r hr).trans (h.gpr r hr), h'.rd.trans h.rd, h'.wr.trans h.wr⟩
-
-theorem Keep.mono {rs rs' : List Reg} {s t : State} (h : Keep rs s t) (hs : ∀ r ∈ rs, r ∈ rs') :
-    Keep rs' s t :=
-  ⟨fun r hr => h.gpr r fun e => hr (hs r e), h.rd, h.wr⟩
 
 theorem Keep.refl (rs : List Reg) (s : State) : Keep rs s s := ⟨fun _ _ => rfl, rfl, rfl⟩
 

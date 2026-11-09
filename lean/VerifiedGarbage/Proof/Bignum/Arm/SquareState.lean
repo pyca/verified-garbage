@@ -133,12 +133,6 @@ theorem SqEnv.modVal (h : SqEnv m0 base size out a mod M n inv s) :
   exact h.frame.val32 (by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp only; omega) (by omega)
 
-/-- An address in the workspace. -/
-theorem SqEnv.ea (h : SqEnv m0 base size out a mod M n inv s) {d imm : Nat} {r : Reg}
-    (hp : s.gpr r = base + BitVec.ofNat 32 d) (hd : d + imm < size) :
-    State.addr (s.gpr r + BitVec.ofNat 32 imm) = off (State.addr base) (d + imm) :=
-  h.workspace.ea hp hd
-
 theorem SqEnv.read (h : SqEnv m0 base size out a mod M n inv s) {d : Nat} (hd : d + 4 ≤ size) :
     InRegions (s.rd ++ s.wr) (off (State.addr base) d) 4 :=
   h.workspace.read hd

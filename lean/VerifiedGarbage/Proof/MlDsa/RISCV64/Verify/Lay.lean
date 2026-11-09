@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Lay
 public import VerifiedGarbage.Impl.MlDsa.RISCV64.Verify.Verify
+public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -71,33 +72,45 @@ abbrev vPk : Addr := σ.gpr .a0
 abbrev vMu : Addr := σ.gpr .a1
 abbrev vSg : Addr := σ.gpr .a2
 abbrev vScr : Addr := σ.gpr .a3
+abbrev vCache : Addr := σ.gpr .a4
+abbrev vCLen : Nat := (σ.gpr .a5).toNat
+
+/-- What verification keeps in `s3`: the cache pointer if the cache is not
+empty, and 0 otherwise. -/
+def vSel : Addr := if σ.gpr .a5 = 0 then 0 else σ.gpr .a4
 
 end
 
-/-- The precondition of `verifyContract` with `STK` bytes of stack. -/
+/-- The precondition of `verifyWithCacheContract` with `STK` bytes of stack. -/
 structure VPre (p : Params) (STK : Nat) (σ : State) : Prop where
   al : σ.sp.toNat % 16 = 0
   stk : STK ≤ σ.sp.toNat
-  rd : σ.rd = [reg (vPk σ) p.pkLen, reg (vMu σ) 64, reg (vSg σ) p.sigLen]
+  rd : σ.rd = [reg (vPk σ) p.pkLen, reg (vMu σ) 64, reg (vSg σ) p.sigLen, reg (vCache σ) (vCLen σ)]
   wr : σ.wr = [reg (vScr σ) (scrLen p)]
   d_pc : (reg (vPk σ) p.pkLen).Disjoint (reg (vScr σ) (scrLen p))
   d_mc : (reg (vMu σ) 64).Disjoint (reg (vScr σ) (scrLen p))
   d_sc : (reg (vSg σ) p.sigLen).Disjoint (reg (vScr σ) (scrLen p))
+  d_cx : (reg (vScr σ) (scrLen p)).Disjoint (reg (vCache σ) (vCLen σ))
   b_p : (below σ.sp STK).Disjoint (reg (vPk σ) p.pkLen)
   b_m : (below σ.sp STK).Disjoint (reg (vMu σ) 64)
   b_s : (below σ.sp STK).Disjoint (reg (vSg σ) p.sigLen)
   b_c : (below σ.sp STK).Disjoint (reg (vScr σ) (scrLen p))
+  b_x : (below σ.sp STK).Disjoint (reg (vCache σ) (vCLen σ))
   f_p : (vPk σ).toNat + p.pkLen ≤ 2 ^ 64
   f_m : (vMu σ).toNat + 64 ≤ 2 ^ 64
   f_s : (vSg σ).toNat + p.sigLen ≤ 2 ^ 64
   f_c : (vScr σ).toNat + scrLen p ≤ 2 ^ 64
+  f_x : (vCache σ).toNat + vCLen σ ≤ 2 ^ 64
+  cache : σ.gpr .a5 = 0 ∨ (vCLen σ = 4 * Spec.MlDsa.n * p.k ∧
+    Proof.MlDsa.CachedPublicPolys p σ.mem (vCache σ) (bytesAt σ.mem (vPk σ) p.pkLen))
   al_c : (vScr σ).toNat % 8 = 0
 
-theorem vpre_of {p : Params} {n : Nat} {σ : State} (h : (Spec.MlDsa.verifyContract p RISCV64.abi (n + 1)).pre σ) :
-    VPre p (n + 1) σ := by
-  sig_pre [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, RISCV64.abi, RISCV64.argRegs] at h
-  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15⟩ := h
-  exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15⟩
+theorem vpre_of {p : Params} {n : Nat} {σ : State}
+    (h : (Proof.MlDsa.verifyWithCacheContract p RISCV64.abi (n + 1)).pre σ) : VPre p (n + 1) σ := by
+  sig_pre [Proof.MlDsa.verifyWithCacheContract, Proof.MlDsa.verifyWithCacheSig, Spec.MlDsa.verifySig, RISCV64.abi,
+    RISCV64.argRegs] at h
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19⟩ := h
+  exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19⟩
 
 /-! ## The buffers -/
 

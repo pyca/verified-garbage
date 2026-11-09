@@ -70,85 +70,15 @@ theorem covers_nil_wr {rs : List Region} {s : State} (h : Covers rs s.wr) : Cove
 
 /-! ## The callees' stack -/
 
-theorem nttInv_nosp : NoSp Impl.MlKem.X86_64.nttInv := nosp_of (by decide +kernel)
-theorem add_nosp : NoSp Impl.MlKem.X86_64.add := nosp_of (by decide +kernel)
-theorem sub_nosp : NoSp Impl.MlKem.X86_64.sub := nosp_of (by decide +kernel)
-theorem cbd2_nosp : NoSp cbd2 := nosp_of (by decide +kernel)
-theorem encode12_nosp : NoSp encode12 := nosp_of (by decide +kernel)
-theorem decode12_nosp : NoSp decode12 := nosp_of (by decide +kernel)
 theorem ce_nosp : NoSp compressEncode := nosp_of (by decide +kernel)
 theorem dd_nosp : NoSp decodeDecompress := nosp_of (by decide +kernel)
 theorem sampleW_nosp (w16 : Bool) : NoSp (sampleNTTW w16) := by cases w16 <;> exact nosp_of (by decide +kernel)
 theorem sample_nosp : NoSp sampleNTT := sampleW_nosp false
 
-theorem nttInv_depth : Impl.MlKem.X86_64.nttInv.depth = 0 := by decide +kernel
-theorem add_depth : Impl.MlKem.X86_64.add.depth = 0 := by decide +kernel
-theorem sub_depth : Impl.MlKem.X86_64.sub.depth = 0 := by decide +kernel
-theorem cbd2_depth : cbd2.depth = 0 := by decide +kernel
-theorem encode12_depth : encode12.depth = 0 := by decide +kernel
-theorem decode12_depth : decode12.depth = 0 := by decide +kernel
 theorem ce_depth : compressEncode.depth = 0 := by decide +kernel
 theorem dd_depth : decodeDecompress.depth = 0 := by decide +kernel
 theorem sampleW_depth (w16 : Bool) : (sampleNTTW w16).depth = 2 := by cases w16 <;> decide +kernel
 theorem sample_depth : sampleNTT.depth = 2 := sampleW_depth false
-
-/-! ## `NTT` and `NTT⁻¹` in place -/
-
-/-- What a call of `vg_mlkem_ntt` or `vg_mlkem_inv_ntt` on `f` needs. -/
-structure IpH (f : Ptr) (s : State) : Prop where
-  off : f.2 < 2 ^ 31
-  red : Reduced s.mem (pa s f)
-  d : (pR (pa s f)).Disjoint (pR (pa s (sc oSS)))
-  kF : (below (s.gpr .rsp) 32).Disjoint (pR (pa s f))
-  kZ : (below (s.gpr .rsp) 32).Disjoint (pR (pa s (sc oSS)))
-  w : Covers [pR (pa s f), pR (pa s (sc oSS))] s.wr
-
-theorem ipGlue_ok (f : Ptr) (hf : f.2 < 2 ^ 31) (s : State) :
-    WP isa (.block (lea .rdi f ++ lea .rsi (sc oSS))) s fun s1 =>
-      ((s1.gpr .rdi = pa s f ∧ s1.gpr .rsi = pa s (sc oSS)) ∧ s1.mem = s.mem) ∧ Keep argRegs s s1 := by
-  refine WP.keep _ ?_ (by rfl)
-  unfold lea
-  xrun [sx_ofNat hf, sx_ofNat (show oSS < 2 ^ 31 by decide), List.cons_append, List.nil_append]
-
-theorem ipPre {t : Poly → Poly} {f : Ptr} {s s1 : State} (h : IpH f s) (hv : s1.gpr .rdi = pa s f ∧ s1.gpr .rsi = pa s (sc oSS))
-    (hm : s1.mem = s.mem) (k : Keep argRegs s s1) :
-    (inPlaceK t).pre (s1.callEntry.withRegions [] [pR (pa s f), pR (pa s (sc oSS))]) := by
-  have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
-  simp only [inPlaceK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
-    ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp), hv.1, hv.2]
-  refine ⟨trivial, trivial, h.d, ret_disj s1 (by rw [hsp]; exact h.kF), ret_disj s1 (by rw [hsp]; exact h.kZ), ?_⟩
-  rw [ce_reduced s1 (by rw [hsp]; exact h.kF), hm]; exact h.red
-
-/-- A call of an in-place transformation `t` (`NTT` or `NTT⁻¹`). -/
-theorem ipAt_ok {t : Poly → Poly} {n : String} {c : Prog isa}
-    (hv : ∀ s, (inPlaceK t).pre s → ∃ tr s', Exec isa c s tr s' ∧ abiPreserved s s' ∧ (inPlaceK t).post s s')
-    (hsp : NoSp c) (hd : c.depth ≤ 2) {f : Ptr} {s : State} (h : IpH f s) :
-    WP isa (.seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call n c)) s fun s' =>
-      Post s s' [pR (pa s f), pR (pa s (sc oSS))] ∧ PolyIs s'.mem (pa s f) (t (polyAt s.mem (pa s f))) := by
-  refine WP.mono (glueCall_ok hv hsp (Nat.le_succ_of_le hd) (ipGlue_ok f h.off s) (fun s1 hv hm k => ipPre h hv hm k)
-    (covers_nil_wr h.w) h.w) fun s' ⟨hpost, s1, hV, hm, k, s₂, hm₂, _, hq⟩ => ⟨hpost, ?_⟩
-  have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
-  simp only [inPlaceK, State.withRegions_gpr, State.withRegions_mem, ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp),
-    hV.1, hm₂, ce_polyAt s1 (by rw [hsp]; exact h.kF), hm] at hq
-  exact hq
-
-
-theorem ipAt_tr {t : Poly → Poly} {n : String} {c : Prog isa}
-    (hv : ∀ s, (inPlaceK t).pre s → ∃ tr s', Exec isa c s tr s' ∧ abiPreserved s s' ∧ (inPlaceK t).post s s')
-    (hct : ConstantTime isa (inPlaceK t).pre (inPlaceK t).pub c) {f : Ptr} :
-    RelCT isa (fun x y => IpH f x ∧ IpH f y ∧ x.gpr f.1 = y.gpr f.1 ∧ x.gpr .rbx = y.gpr .rbx ∧
-      x.gpr .rsp = y.gpr .rsp) (.seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call n c)) fun _ _ => True :=
-  glueCall_tr hv hct (V := fun x x1 => ((x1.gpr .rdi = pa x f ∧ x1.gpr .rsi = pa x (sc oSS)) ∧ x1.mem = x.mem) ∧
-      Keep argRegs x x1)
-    (block_nomem_tr (nomem_append (lea_nomem _ _) (lea_nomem _ _)))
-    (fun x y ⟨hx, hy, _⟩ => ⟨ipGlue_ok f hx.off x, ipGlue_ok f hy.off y⟩)
-    fun x y x1 y1 ⟨hx, hy, e1, e2, e3⟩ ⟨⟨hv1, hm1⟩, k1⟩ ⟨⟨hv2, hm2⟩, k2⟩ => by
-      refine ⟨[], _, [], _, ipPre hx hv1 hm1 k1, ipPre hy hv2 hm2 k2, ?_, covers_nil_wr (by rw [k1.2.2]; exact hx.w),
-        by rw [k1.2.2]; exact hx.w, covers_nil_wr (by rw [k2.2.2]; exact hy.w), by rw [k2.2.2]; exact hy.w,
-        by rw [k1.gpr (by decide), k2.gpr (by decide), e3]⟩
-      simp only [inPlaceK, State.withRegions_gpr, State.callEntry_rsp, ce_gpr' _ (by decide : Reg.rdi ≠ .rsp),
-        ce_gpr' _ (by decide : Reg.rsi ≠ .rsp), hv1.1, hv1.2, hv2.1, hv2.2, pa, e1, e2, k1.gpr (r := .rsp) (by decide),
-        k2.gpr (r := .rsp) (by decide), e3, and_self]
 
 /-! ## Addition and subtraction -/
 
@@ -210,7 +140,6 @@ theorem accAt_tr {t : Poly → Poly → Poly} {n : String} {c : Prog isa}
       simp only [accK, State.withRegions_gpr, State.callEntry_rsp, ce_gpr' _ (by decide : Reg.rdi ≠ .rsp),
         ce_gpr' _ (by decide : Reg.rsi ≠ .rsp), hv1.1, hv1.2, hv2.1, hv2.2, pa, e1, e2, k1.gpr (r := .rsp) (by decide),
         k2.gpr (r := .rsp) (by decide), e3, and_self]
-
 
 /-- The bases of the arguments are not argument registers. -/
 abbrev NA (p : Ptr) : Prop := p.1 ∉ argRegs
@@ -336,7 +265,6 @@ theorem dec12At_tr {A : Arith} (hA : ArithOk A) {p q : Ptr} (hq : NA q) :
       simp only [decode12K, State.withRegions_gpr, State.callEntry_rsp, ce_gpr' _ (by decide : Reg.rdi ≠ .rsp),
         ce_gpr' _ (by decide : Reg.rsi ≠ .rsp), hv1.1, hv1.2, hv2.1, hv2.2, pa, e1, e2,
         k1.gpr (r := .rsp) (by decide), k2.gpr (r := .rsp) (by decide), e3, and_self]
-
 
 /-! ## `ByteEncode_d ∘ Compress_d` and `Decompress_d ∘ ByteDecode_d` -/
 

@@ -44,23 +44,4 @@ def cryptPrepared : Prog isa :=
   .seq (.block ([movR sb .a0] ++ saveRegs ++ setSlots bsKs ++ slotAddr .a0 tableEnd))
     (.seq crypt16 (.block restoreRegs))
 
-/-! ## The layout -/
-
-/-- The direction of the specification. -/
-def ofSpecDir : Spec.Sm4.Direction → Dir
-  | .encrypt => .encrypt
-  | .decrypt => .decrypt
-
-/-- The round key of the table's entry `e`, for the round keys `k` in the
-order of the direction. -/
-def keyEntry (k : Spec.Sm4.Schedule) : Dir → Nat → Spec.Sm4.Word
-  | .encrypt, e => k.getD e 0
-  | .decrypt, e => k.getD (31 - e) 0
-
-/-- The word of slot `w` of the working space that the preparation writes:
-a mask of the round keys' planes, or plane `w % 8` of the table's entry. -/
-def preparedWord (k : Spec.Sm4.Schedule) (d : Dir) (w : Nat) : BitVec 64 :=
-  if w < tableSlot then (keyMasks.find? (·.1 = w)).elim 0 (·.2)
-  else Impl.Sm4.planeOf (keyEntry k d ((w - tableSlot) / 8)) ((w - tableSlot) % 8)
-
 end VG.Impl.Sm4.RISCV64

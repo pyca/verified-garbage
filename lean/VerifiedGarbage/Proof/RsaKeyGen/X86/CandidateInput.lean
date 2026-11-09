@@ -27,19 +27,9 @@ theorem native_word {m : Mem} {base : Addr} {offset value : Nat}
     (H : m.readW (off base offset) 32 = BitVec.ofNat 32 value) (bound : value < 2 ^ 32) :
     w32 m base offset = value := by rw [w32, H, BitVec.toNat_ofNat, Nat.mod_eq_of_lt bound]
 
-theorem Input.length_eq {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}
-    (I : Input E eBytes pBytes entropy s) : w32 s.mem E.base 4 = E.length :=
-  native_word (I.header 1 (by decide)) (by have := v.length; unfold Spec.RsaKeyGen.primeLenValid at this; omega)
-
 theorem Input.exponentLength_eq {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}
     (I : Input E eBytes pBytes entropy s) : w32 s.mem E.base 16 = E.exponentLength :=
   native_word (I.header 4 (by decide)) (by have := v.exponentLength; omega)
-
-theorem Input.otherLength_eq {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}
-    (I : Input E eBytes pBytes entropy s) : w32 s.mem E.base 24 = E.otherLength :=
-  native_word (I.header 6 (by decide)) (by
-    have bounds := v.length; unfold Spec.RsaKeyGen.primeLenValid at bounds
-    have := v.otherLength; omega)
 
 theorem Input.randLength_eq {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}
     (I : Input E eBytes pBytes entropy s) : w32 s.mem E.base 32 = E.randLength :=

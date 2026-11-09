@@ -30,8 +30,6 @@ open VG.Proof.Mgf1 (ifp ifn)
 def Same (S : Addr) (t t' : State) (rgs : List (Nat × Nat)) : Prop :=
   ∀ o < oRsa, (∀ p ∈ rgs, o < p.1 ∨ p.1 + p.2 ≤ o) → view t'.mem S o = view t.mem S o
 
-theorem Same.refl (S : Addr) (t : State) (rgs : List (Nat × Nat)) : Same S t t rgs := fun _ _ _ => rfl
-
 theorem Same.trans {S : Addr} {t₁ t₂ t₃ : State} {rgs : List (Nat × Nat)} (h₁ : Same S t₁ t₂ rgs)
     (h₂ : Same S t₂ t₃ rgs) : Same S t₁ t₃ rgs := fun o ho hr => (h₂ o ho hr).trans (h₁ o ho hr)
 

@@ -2,9 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDerive
 public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Spec.Dsa.DomainChecked
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCheck
 import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
+import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCheckedVerified
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallLayout
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -75,5 +79,25 @@ theorem keygen_derive_pre {extra : Nat} {s t : State} (h : GenerateKeyABI extra 
     unfold Spec.Dsa.generationScratchWords at hh
     unfold Spec.Dsa.scratchWords
     omega
+
+/-- The checked derivation's contract at key generation's call, once the
+domain check has passed. -/
+theorem keygen_derive_checked_pre {extra : Nat} {s t : State} (h : GenerateKeyABI extra s)
+    (hsp : t.sp = randomBase s)
+    (hw : word t.mem (randomBase s) 0 = stackArg s 2)
+    (hdi : t.gpr .x0 = s.gpr .x0) (hsi : t.gpr .x1 = s.gpr .x1)
+    (hdx : t.gpr .x2 = s.gpr .x3) (hcx : t.gpr .x3 = s.gpr .x4)
+    (h8 : t.gpr .x4 = s.gpr .x5) (h9 : t.gpr .x5 = off (randomBase s) Random.oNonce)
+    (h6 : t.gpr .x6 = s.gpr .x6) (h7 : t.gpr .x7 = stackArg s 1)
+    (hparams : Spec.Rsa.bytesAt t.mem (s.gpr .x3) (s.gpr .x4).toNat = (keygenInput s).params)
+    (hc : Spec.Dsa.checkParametersBytes (keygenInput s).pLen (keygenInput s).qLen (keygenInput s).params = true) :
+    (Spec.Dsa.deriveKeyDomainCheckedContract abi extra).pre
+      (t.callEntry.withRegions (keygenDeriveRd s) (keygenDeriveWr s)) := by
+  refine deriveChecked_of_pre (keygen_derive_pre h hsp hw hdi hsi hdx hcx h8 h9 h6 h7) ?_
+  simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
+    State.callEntry_gpr _ (r := .x2) (by decide), State.callEntry_gpr _ (r := .x3) (by decide),
+    State.callEntry_gpr _ (r := .x4) (by decide), State.callEntry_gpr _ (r := .x6) (by decide),
+    hdx, hcx, h8, h6, hparams]
+  exact hc
 
 end VG.Proof.Dsa.AArch64

@@ -1,9 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.Random
-meta import VerifiedGarbage.Proof.Dsa.Random
-import VerifiedGarbage.Proof.Dsa.RandomSign
-meta import VerifiedGarbage.Proof.Dsa.RandomSign
 import VerifiedGarbageTest.Dsa
 meta import VerifiedGarbageTest.Dsa
 
@@ -39,21 +35,6 @@ open Lean Elab Command Spec.Dsa
       | none => counts)
     (Array.replicate q 0)
   (List.range (q - 1)).all fun j => counts[j + 1]! == 256 / 2 ^ bitLength q
-
-#assert_standard_axioms Spec.Dsa.randomSignContract
-#assert_no_compiler_overrides Spec.Dsa.randomSignApi
-#assert_standard_axioms VG.Proof.Dsa.Random.sample_range
-#assert_standard_axioms VG.Proof.Dsa.Random.sample_used_le
-#assert_standard_axioms VG.Proof.Dsa.Random.sample_used_budget
-#assert_standard_axioms VG.Proof.Dsa.Random.sample_used_multiple
-#assert_standard_axioms VG.Proof.Dsa.Random.sample_used_trace
-#assert_standard_axioms VG.Proof.Dsa.Random.sample_used_eq_of_trace_eq
-#assert_standard_axioms VG.Proof.Dsa.randomSignLoop_used_le
-#assert_standard_axioms VG.Proof.Dsa.randomSignLoop_used_budget
-#assert_standard_axioms VG.Proof.Dsa.randomSignBytes_used_le
-#assert_standard_axioms VG.Proof.Dsa.randomSignLoop_signature
-#assert_standard_axioms VG.Proof.Dsa.randomSignLoop_success
-#assert_spec_origin
 
 run_cmd do
   let file ← IO.FS.realPath (← getFileName)

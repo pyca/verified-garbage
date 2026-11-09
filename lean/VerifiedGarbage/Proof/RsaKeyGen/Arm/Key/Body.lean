@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Out2
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Out3
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Stores
@@ -37,7 +38,7 @@ def outE (P : KP) (σ : State) (i : Nat) : List Byte :=
 
 /-- The end of the body. -/
 def Res (P : KP) (σ s : State) : Prop :=
-  Bo P σ s ∧ (s.gpr .r0).toNat = Spec.RsaKeyGen.keyStatus (resv P σ) ∧
+  Bo P σ s ∧ (s.gpr .r0).toNat = Proof.RsaKeyGen.keyStatus (resv P σ) ∧
     ∀ i < 7, Spec.Rsa.bytesAt s.mem (State.addr (oPtr P i)) (oLen P i) = outE P σ i
 
 theorem i2osp_mod (x L : Nat) : Spec.Rsa.i2osp (x % 2 ^ (8 * L)) L = Spec.Rsa.i2osp x L := by

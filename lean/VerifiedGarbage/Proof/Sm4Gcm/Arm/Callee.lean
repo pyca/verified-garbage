@@ -86,10 +86,6 @@ theorem addr_sub {a : BitVec 32} {k : Nat} (h : k ≤ a.toNat) :
     Nat.mod_eq_of_lt (a := a.toNat) (by omega)]
   omega
 
-theorem addr_toNat (a : BitVec 32) : (State.addr a).toNat = a.toNat := by
-  simp only [State.addr, BitVec.toNat_setWidth]
-  exact Nat.mod_eq_of_lt (by have := a.isLt; omega)
-
 /-- The 1520 bytes below the stack pointer `sp`, which the calls use: all of
 them `vg_sm4_ctr32`, and the frame of `vg_ghash` the 8 bytes `push8 sp`. -/
 abbrev below (sp : BitVec 32) : Region := ⟨State.addr sp - BitVec.ofNat 64 1520, 1520⟩
@@ -198,10 +194,6 @@ theorem view_sp (s : State) (rd wr : List Region) :
     ((pushed [.r12, .lr] s).callEntry.withRegions rd wr).sp = s.sp - 8 := by
   simp only [State.withRegions_sp, State.callEntry_sp, pushed_sp8]
 
-theorem view_mem (s : State) (rd wr : List Region) :
-    ((pushed [.r12, .lr] s).callEntry.withRegions rd wr).mem = (pushed [.r12, .lr] s).mem := by
-  simp only [State.withRegions_mem, State.callEntry_mem]
-
 theorem cover_pushed {s : State} {rs : List Region} (h : Covers rs s.wr) : Covers rs (pushed [.r12, .lr] s).wr := by
   intro x n' hi
   obtain ⟨r', hr', hc'⟩ := h x n' hi
@@ -294,15 +286,6 @@ variable {s : State} {K C D : BitVec 32} {n : Nat} (h : CtrCall s K C D n)
 include h
 
 theorem n_lt : n < 2 ^ 32 := by have := h.fitD; omega
-
-theorem g0 : (ctrArgs s).gpr .r0 = K := by
-  simp only [ctrArgs, VG.Arm.RegUpd.gpr_setReg, reduceCtorEq, ↓reduceIte]; exact h.r0
-theorem g1 : (ctrArgs s).gpr .r1 = C := by
-  simp only [ctrArgs, VG.Arm.RegUpd.gpr_setReg, reduceCtorEq, ↓reduceIte]; exact h.r2
-theorem g2 : (ctrArgs s).gpr .r2 = D := by
-  simp only [ctrArgs, VG.Arm.RegUpd.gpr_setReg, reduceCtorEq, ↓reduceIte]; exact h.r3
-theorem g3 : (ctrArgs s).gpr .r3 = BitVec.ofNat 32 n := by
-  simp only [ctrArgs, VG.Arm.RegUpd.gpr_setReg, reduceCtorEq, ↓reduceIte]; exact h.r12
 
 omit h in
 theorem a_sp : (ctrArgs s).sp = s.sp := rfl

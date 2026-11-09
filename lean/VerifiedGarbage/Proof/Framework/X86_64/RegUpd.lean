@@ -109,7 +109,4 @@ theorem rd_setV (len : VLen) (r : XReg) (lo hi : BitVec 128) :
     (s.setV len r lo hi).rd = s.rd := rfl
 theorem wr_setV (len : VLen) (r : XReg) (lo hi : BitVec 128) :
     (s.setV len r lo hi).wr = s.wr := rfl
-theorem mxcsr_setV (len : VLen) (r : XReg) (lo hi : BitVec 128) :
-    (s.setV len r lo hi).mxcsr = s.mxcsr := rfl
-
 end VG.X86_64.RegUpd

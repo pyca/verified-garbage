@@ -15,8 +15,9 @@ meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Verified
 testing with the probable-prime functions over the Miller–Rabin round `v`,
 whose candidates are at the start of their working space, and checking the
 domain with `ck`; `geoOk`: its proofs, for every call with those lengths;
-`params_verified`: the three of them meet the contract, and `generate_params`
-with `vg_dsa_check_parameters` as the check.
+`params_verified`: the three of them meet the contract of
+`vg_dsa_parameter_search`, and `search_params` with `vg_dsa_check_parameters`
+as the check.
 -/
 
 @[expose] public section
@@ -97,13 +98,10 @@ theorem genOk {g : Geo} {HO : HashOk g.G} {pL qL : Nat} {G : GP} (hex : ∃ σ, 
     hlq := pre.lens
     hp := gp
     hq := gq
-    hsb := by simp [mkG, Spec.Rsa.bytesAt]
     hwl := by simp [mkG, Spec.Rsa.bytesAt]
-    hhsb := by simp [mkG, Spec.Rsa.bytesAt]
-    hmod := pre.hsMod
     h64 := BitVec.isLt _
-    smod := pre.seedsMod
-    s64 := BitVec.isLt _ }
+    hqL := rfl
+    k0 := pre.seeds }
 
 def geo1 (v : RoundImpl) (ck : Prog isa) : Geo := geo 128 20 sha1 v ck
 def geo2 (v : RoundImpl) (ck : Prog isa) : Geo := geo 256 32 sha256 v ck
@@ -143,12 +141,12 @@ def geoOk3 (v : RoundImpl) {ck : Prog isa} (hck : CheckOk ck) : GeoOk (geo3 v ck
   hlb := by exact (by decide : Proof.Sha256.md.lenBytes 32 =
     [0, 0, 0, 0, 0, 0, BitVec.ofNat 8 (8 * 32 / 256), BitVec.ofNat 8 (8 * 32 % 256)])
 
-/-- `vg_dsa_generate_parameters` over the round `v` and the check `ck` meets
+/-- `vg_dsa_parameter_search` over the round `v` and the check `ck` meets
 its contract. -/
 theorem params_verified (v : RoundImpl) {ck : Prog isa} (hck : CheckOk ck) :
     Verified target (code (geo1 v ck) (geo2 v ck) (geo3 v ck))
-      (Spec.Dsa.generateParametersContract (abi.withConsts Impl.RsaKeyGen.TrialTable32.consts) 176) :=
-  generate_verified (geoOk1 v hck) (geoOk2 v hck) (geoOk3 v hck)
+      (Spec.Dsa.parameterSearchContract (abi.withConsts Impl.RsaKeyGen.TrialTable32.consts) 176) :=
+  search_verified (geoOk1 v hck) (geoOk2 v hck) (geoOk3 v hck)
 
 /-- `vg_dsa_check_parameters`, which uses no stack. -/
 theorem checkOk : CheckOk Impl.Dsa.PPC64LE.Params.checkParameters :=
@@ -159,10 +157,10 @@ def gen1 (v : RoundImpl) : Geo := geo1 v Impl.Dsa.PPC64LE.Params.checkParameters
 def gen2 (v : RoundImpl) : Geo := geo2 v Impl.Dsa.PPC64LE.Params.checkParameters
 def gen3 (v : RoundImpl) : Geo := geo3 v Impl.Dsa.PPC64LE.Params.checkParameters
 
-/-- `vg_dsa_generate_parameters` over the round `v` meets its contract. -/
-theorem generate_params (v : RoundImpl) :
+/-- `vg_dsa_parameter_search` over the round `v` meets its contract. -/
+theorem search_params (v : RoundImpl) :
     Verified target (code (gen1 v) (gen2 v) (gen3 v))
-      (Spec.Dsa.generateParametersContract (abi.withConsts Impl.RsaKeyGen.TrialTable32.consts) 176) :=
+      (Spec.Dsa.parameterSearchContract (abi.withConsts Impl.RsaKeyGen.TrialTable32.consts) 176) :=
   params_verified v checkOk
 
 end VG.Proof.Dsa.PPC64LE.Gen

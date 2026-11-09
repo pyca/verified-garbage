@@ -47,11 +47,6 @@ theorem Keep.mono {rs rs' : List Reg} {s s' : State} (h : Keep rs s s')
 
 theorem Keep.refl (rs : List Reg) (s : State) : Keep rs s s := ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
 
-/-- `Keep.trans` into a given list. -/
-theorem Keep.trans' {rs rs' rs'' : List Reg} {s₁ s₂ s₃ : State} (h₁ : Keep rs s₁ s₂)
-    (h₂ : Keep rs' s₂ s₃) (hs : ∀ r, r ∈ rs ∨ r ∈ rs' → r ∈ rs'') : Keep rs'' s₁ s₃ :=
-  (h₁.trans h₂).mono fun r hr => hs r (List.mem_append.mp hr)
-
 /-- `Keep.trans`, the second list within the first. -/
 theorem Keep.trans_sub {rs rs' : List Reg} {s₁ s₂ s₃ : State} (h₁ : Keep rs s₁ s₂)
     (h₂ : Keep rs' s₂ s₃) (hs : rs'.all (rs.contains ·) = true) : Keep rs s₁ s₃ :=
@@ -73,17 +68,6 @@ theorem WP.keep {is : List Instr} {s : State} {Q : State → Prop} (rs : List Re
   obtain ⟨r, w, p, -⟩ := execBlock_regions he'
   exact ⟨t, s', he, hq, fun r' hr => execBlock_gpr (fun i hi =>
     clobbers_eq_false_of_contains (List.all_eq_true.mp hc i hi) hr) he', r, w, p⟩
-
-/-- Code that calls nothing keeps the registers it never writes, its
-regions and the stack pointer. -/
-theorem WP.keepCode {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg)
-    (h : WP isa c s Q) (hc : (instrs c).all (fun i => (dsts i).all rs.contains) = true)
-    (hn : c.noCalls = true) :
-    WP isa c s fun s' => Q s' ∧ Keep rs s s' := by
-  obtain ⟨t, s', he, hq⟩ := h
-  obtain ⟨hrd, hwr, hsp⟩ := Exec.rdwr he
-  exact ⟨t, s', he, hq, fun r' hr => Exec.gpr (fun i hi =>
-    clobbers_eq_false_of_contains (List.all_eq_true.mp hc i hi) hr) he (.inl hn), hrd, hwr, hsp⟩
 
 theorem WP.reassoc {a b c : Prog isa} {s : State} {Q : State → Prop}
     (h : WP isa (.seq (.seq a b) c) s Q) : WP isa (.seq a (.seq b c)) s Q :=

@@ -16,10 +16,11 @@ the same contract, `updateX86_64`, makes at most one level of calls, and
 uses at most 8 bytes of stack (the return address of its call of
 `vg_aes_ctr32`).
 
-There are two kinds: the chaining by calls of an implementation of
-`vg_aes_ctr32` on one block at a time (`UpdateImpl.ctr32`, e.g.
-`vg_cmac_aes_update_aesni`), and the chaining in AES-NI registers,
-`vg_cmac_aes_update_aesni_cbc` (`UpdateImpl.aesniCbc`). Each comes with the
+There are two: the chaining by calls of the bitsliced `vg_aes_ctr32` on one
+block at a time (`UpdateImpl.ctr32 .scalar`, `vg_cmac_aes_update`), and the
+chaining in AES-NI registers (`UpdateImpl.aesniCbc`,
+`vg_cmac_aes_update_aesni`), faster than the chaining by calls of an
+AES-NI or VAES `vg_aes_ctr32` for any number of blocks. Each comes with the
 implementation of `vg_aes_ctr32` that goes with it (`ctr`), for the callers
 that also run counter mode or call the other CMAC functions (AES-CCM,
 AES-SIV): the one it is built on, or for the chaining in registers,
@@ -50,7 +51,7 @@ structure UpdateImpl where
   spSafe : callee.code.all (fun i => !isa.writesSp i) = true
   /-- It uses at most 8 bytes of stack. -/
   xdepth : callee.code.x86_64Depth ≤ 8
-  /-- What the names of its callers' instances end with (e.g. `_aesni_cbc`;
+  /-- What the names of its callers' instances end with (e.g. `_aesni`;
   nothing for the baseline implementation). -/
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
@@ -95,10 +96,10 @@ theorem aesniCbc_nosp : NoSp Impl.CmacAes.X86_64.AesNi.update := by
     rw [← Code.allInstrs_eq]; decide +kernel
   exact fun i hi => by simpa using List.all_eq_true.mp this i hi
 
-/-- The chaining in AES-NI registers, `vg_cmac_aes_update_aesni_cbc`, which
-goes with `vg_aes_ctr32_aesni`. -/
+/-- The chaining in AES-NI registers, `vg_cmac_aes_update_aesni`, which goes
+with `vg_aes_ctr32_aesni`. -/
 def UpdateImpl.aesniCbc : UpdateImpl where
-  callee := ⟨"vg_cmac_aes_update" ++ "_aesni_cbc", Impl.CmacAes.X86_64.AesNi.update⟩
+  callee := ⟨"vg_cmac_aes_update" ++ "_aesni", Impl.CmacAes.X86_64.AesNi.update⟩
   depth := by decide +kernel
   ok := AesNi.update_ok
   ct := AesNi.update_ct
@@ -106,7 +107,7 @@ def UpdateImpl.aesniCbc : UpdateImpl where
   mxcsr := by decide +kernel
   spSafe := Code.all_of_allInstrs (by decide +kernel)
   xdepth := by decide +kernel
-  suffix := "_aesni_cbc"
+  suffix := "_aesni"
   features := ["aes"]
   ctr := .aesni
 

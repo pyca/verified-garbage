@@ -5,7 +5,6 @@
 // gives.
 
 vg_keccak_squeeze_scratch_sha3:
-	.arch_extension sha3
 	str x30, [sp, #-16]!
 	str x19, [x5, #512]
 	str x20, [x5, #520]
@@ -64,5 +63,4 @@ vg_keccak_squeeze_scratch_sha3:
 	ldr x20, [x20, #520]
 	ldr x30, [sp], #16
 	ret
-	.arch_extension nosha3
 	.p2align 6

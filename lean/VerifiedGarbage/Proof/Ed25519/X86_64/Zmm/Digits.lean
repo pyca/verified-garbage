@@ -34,14 +34,6 @@ open VG.Proof.Poly1305.X86_64.Avx2 (xr qw qword_app0 qword_app1)
 /-- Memory kept but at the offsets of `P` from `b`. -/
 def MemOff (b : Addr) (P : Nat → Prop) (m m' : Mem) : Prop := ∀ a, ¬ P (ofs b a) → m' a = m a
 
-theorem MemOff.refl (b : Addr) (P : Nat → Prop) (m : Mem) : MemOff b P m m := fun _ _ => rfl
-
-theorem MemOff.trans {b : Addr} {P : Nat → Prop} {m₁ m₂ m₃ : Mem} (h₁ : MemOff b P m₁ m₂)
-    (h₂ : MemOff b P m₂ m₃) : MemOff b P m₁ m₃ := fun a ha => (h₂ a ha).trans (h₁ a ha)
-
-theorem MemOff.mono {b : Addr} {P Q : Nat → Prop} {m m' : Mem} (h : MemOff b P m m')
-    (hpq : ∀ q, P q → Q q) : MemOff b Q m m' := fun a ha => h a fun hp => ha (hpq _ hp)
-
 private theorem sign_fact : ∀ n < 32,
     ((BitVec.ofNat 64 n - (16 : BitVec 32).signExtend 64 ^^^
         0#64 - (BitVec.ofBool (decide ((BitVec.ofNat 64 n).toNat <

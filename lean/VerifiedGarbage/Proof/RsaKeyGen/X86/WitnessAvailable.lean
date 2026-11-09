@@ -31,12 +31,4 @@ theorem codeAt_ok {s : State} {base : Addr} {size D remaining used : Nat}
   rw [value, BitVec.toNat_ofNat, Nat.mod_eq_of_lt width] at carry
   exact carry
 
-theorem code_ok {s : State} {base : Addr} {size w remaining used : Nat}
-    (S : Scr s base size) (head : 256 ≤ size) (width : 8 * w < 2 ^ 32)
-    (length : w32 s.mem base 32 = remaining) (consumed : w32 s.mem base 152 = used)
-    (bound : used ≤ remaining) :
-    WP isa (.block (code w)) s fun t =>
-      t.cf = some (decide (remaining - used < 8 * w)) ∧ t.mem = s.mem ∧ Keeps [.eax] s t :=
-  codeAt_ok S head width length consumed bound
-
 end VG.Proof.RsaKeyGen.X86.WitnessAvailable

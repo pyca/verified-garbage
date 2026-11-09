@@ -478,18 +478,6 @@ theorem mulFn_ok (hc : CfgOk c) {s : State} {base : Addr} (hb : State.addr (s.gp
 
 /-! ## The call -/
 
-/-- What `vg_<curve>_mul` needs on entry, and gives its caller, at the
-working space `base`: the constants, `Q`, the invariant `Q'` of the ladder
-from `Q` and that it accepts `O`. -/
-structure MulIn (c : Cfg) (base : Addr) (Q' : Nat → Fe c.C → Fe c.C → Fe c.C → Prop) (m : Mem) : Prop where
-  mp : wordsVal m base (c.sl MP) c.n = c.C.p
-  ap : wordsVal m base (c.sl AP) c.n < c.C.p
-  b3 : wordsVal m base (c.sl B3P) c.n < c.C.p
-  one : wordsVal m base (c.sl ONEP) c.n < c.C.p
-  zero : wordsVal m base (c.sl ZERO) c.n < c.C.p
-  qx : wordsVal m base (c.sl RX) c.n < c.C.p
-  qy : wordsVal m base (c.sl RY) c.n < c.C.p
-
 /-- A call of `vg_<curve>_mul` on the point at `px`, `py`, from the working
 space at `r12`: for any invariant `Q` of the ladder from that point that
 accepts `O`, `Q 0` accepts what `R` holds after it; only `r0`–`r4`, `r10`,

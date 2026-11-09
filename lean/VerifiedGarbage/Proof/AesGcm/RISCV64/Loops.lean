@@ -144,24 +144,51 @@ theorem copyLoop_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
 
 /-! ## `xorLoop` -/
 
-abbrev xorBody : List Instr :=
-  [.load .b .t0 .a1 0, .load .b .a3 .a0 0, .logic .xor .t0 .t0 .a3, .store .b .t0 .a1 0,
-    .addi .a0 .a0 1, .addi .a1 .a1 1, .addi .a2 .a2 (-1)]
+/-- In place (`o` false) the data is its own destination, `S = D`; out of
+place, the `n` bytes at `S` and at `D` are apart. -/
+def Alias : Bool → Addr → Addr → Nat → Prop
+  | false, S, D, _ => S = D
+  | true, S, D, n => (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩
 
-theorem xorStep_ok (s : State) {S D : Addr} {i n : Nat} (hs : s.gpr .a0 = S + BitVec.ofNat 64 i)
-    (hd : s.gpr .a1 = D + BitVec.ofNat 64 i) (hn : s.gpr .a2 = BitVec.ofNat 64 (n - i))
-    (r : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 i) 1)
-    (w : InRegions s.wr (D + BitVec.ofNat 64 i) 1) :
-    WP isa (.block xorBody) s fun s' =>
-      s'.mem = s.mem.writeW (D + BitVec.ofNat 64 i)
-        (s.mem (D + BitVec.ofNat 64 i) ^^^ s.mem (S + BitVec.ofNat 64 i)) ∧
-      s'.gpr .a0 = S + BitVec.ofNat 64 (i + 1) ∧ s'.gpr .a1 = D + BitVec.ofNat 64 (i + 1) ∧
+/-- The body of `xorLoopWith o`. -/
+abbrev xorBodyWith (o : Bool) : List Instr :=
+  [.load .b .t0 .a1 0, .load .b .a3 .a0 0, .logic .xor .t0 .t0 .a3,
+    .store .b .t0 (outReg o) 0, .addi .a0 .a0 1, .addi .a1 .a1 1] ++ outStep o ++
+    [.addi .a2 .a2 (-1)]
+
+/-- One byte of the data at `X` XORed with the keystream at `K`, to `O`. -/
+theorem xorStepWith_ok (o : Bool) (s : State) {K X O : Addr} {i n : Nat}
+    (hk : s.gpr .a0 = K + BitVec.ofNat 64 i) (hx : s.gpr .a1 = X + BitVec.ofNat 64 i)
+    (ho : s.gpr (outReg o) = O + BitVec.ofNat 64 i) (hn : s.gpr .a2 = BitVec.ofNat 64 (n - i))
+    (rK : InRegions (s.rd ++ s.wr) (K + BitVec.ofNat 64 i) 1)
+    (rX : InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 i) 1)
+    (w : InRegions s.wr (O + BitVec.ofNat 64 i) 1) :
+    WP isa (.block (xorBodyWith o)) s fun s' =>
+      s'.mem = s.mem.writeW (O + BitVec.ofNat 64 i)
+        (s.mem (X + BitVec.ofNat 64 i) ^^^ s.mem (K + BitVec.ofNat 64 i)) ∧
+      s'.gpr .a0 = K + BitVec.ofNat 64 (i + 1) ∧ s'.gpr .a1 = X + BitVec.ofNat 64 (i + 1) ∧
+      s'.gpr (outReg o) = O + BitVec.ofNat 64 (i + 1) ∧
       s'.gpr .a2 = BitVec.ofNat 64 (n - i) - BitVec.ofNat 64 1 ∧
-      (∀ r, r ≠ .t0 → r ≠ .a0 → r ≠ .a1 → r ≠ .a2 → r ≠ .a3 → s'.gpr r = s.gpr r) ∧
+      (∀ r, r ≠ .t0 → r ≠ .a0 → r ≠ .a1 → r ≠ .a2 → r ≠ .a3 → (o = true → r ≠ .a4) →
+        s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  have w' : InRegions (s.rd ++ s.wr) (D + BitVec.ofNat 64 i) 1 := in_left w
-  crun [hs, hd, hn, r, w, w', rd8x, write1, add_ofNat_assoc]
-  intro r h₀ h₃ h₄ h₅ h₆; simp [h₀, h₃, h₄, h₅, h₆]
+  have w' : InRegions (s.rd ++ s.wr) (O + BitVec.ofNat 64 i) 1 := in_left w
+  cases o
+  · simp only [outReg, Bool.false_eq_true, ↓reduceIte] at ho
+    have e : X = O := by
+      have := hx.symm.trans ho
+      simpa using this
+    subst e
+    simp only [xorBodyWith, outReg, outStep, Bool.false_eq_true, ↓reduceIte, List.cons_append,
+      List.nil_append, List.append_nil]
+    crun [hk, hx, hn, rK, w, w', rd8x, write1, add_ofNat_assoc]
+    intro r h₀ h₃ h₄ h₅ h₆ _; simp [h₀, h₃, h₄, h₅, h₆]
+  · simp only [outReg, ↓reduceIte] at ho
+    simp only [xorBodyWith, outReg, outStep, ↓reduceIte, List.cons_append, List.nil_append]
+    crun [hk, hx, ho, hn, rK, rX, w, w', rd8x, write1, add_ofNat_assoc]
+    intro r h₀ h₃ h₄ h₅ h₆ h₇
+    have h₈ : r ≠ .a4 := by simpa using h₇
+    simp [h₀, h₃, h₄, h₅, h₆, h₈]
 
 /-- The bytes at `D` XORed with those at `S`. -/
 def xorBytes (m : Mem) (D S : Addr) (n : Nat) : List Byte :=
@@ -180,38 +207,87 @@ theorem dst_kept {m : Mem} {D : Addr} {n i : Nat} (hi : i < n) (hn : n < 2 ^ 64)
   simp only [writeBytes, hxs, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_arith), Nat.lt_irrefl, ite_false]
 
-theorem xorLoop_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
-    WP isa xorLoop s fun s' =>
-      s'.mem = writeBytes s.mem D (xorBytes s.mem D S n) ∧ LoopOut s S D n s' := by
+/-- Byte `i` of the data, not yet written over, in place or out of place. -/
+theorem data_kept {o : Bool} {m : Mem} {X O : Addr} {n i : Nat} (ha : Alias o X O n) (hi : i < n)
+    (hn : n < 2 ^ 64) (xs : List Byte) (hxs : xs.length = i) :
+    writeBytes m O xs (X + BitVec.ofNat 64 i) = m (X + BitVec.ofNat 64 i) := by
+  cases o
+  · have e : X = O := ha
+    subst e; exact dst_kept hi hn xs hxs
+  · exact src_kept ha hi hn xs hxs
+
+/-- What `xorLoopWith o` needs: the keystream at `K` (`a0`), `n` (at least
+1) bytes of data at `X` (`a1`), written to `O` (`a4` out of place; in place
+`X` itself). -/
+structure XorPre (o : Bool) (s : State) (K X O : Addr) (n : Nat) : Prop where
+  a0 : s.gpr .a0 = K
+  a1 : s.gpr .a1 = X
+  out : s.gpr (outReg o) = O
+  a2 : s.gpr .a2 = BitVec.ofNat 64 n
+  pos : 1 ≤ n
+  lt : n < 2 ^ 64
+  rdK : Covers [⟨K, n⟩] (s.rd ++ s.wr)
+  rdX : Covers [⟨X, n⟩] (s.rd ++ s.wr)
+  wr : Covers [⟨O, n⟩] s.wr
+  disj : (⟨K, n⟩ : Region).Disjoint ⟨O, n⟩
+  alias : Alias o X O n
+
+/-- What `xorLoopWith o` leaves, but memory. -/
+structure XorOut (o : Bool) (s : State) (K X O : Addr) (n : Nat) (s' : State) : Prop where
+  a0 : s'.gpr .a0 = K + BitVec.ofNat 64 n
+  a1 : s'.gpr .a1 = X + BitVec.ofNat 64 n
+  out : s'.gpr (outReg o) = O + BitVec.ofNat 64 n
+  a2 : s'.gpr .a2 = 0
+  other : ∀ r, r ≠ .t0 → r ≠ .a0 → r ≠ .a1 → r ≠ .a2 → r ≠ .a3 → (o = true → r ≠ .a4) →
+    s'.gpr r = s.gpr r
+  keeps : s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp
+
+theorem xorLoopWith_ok (o : Bool) (s : State) {K X O : Addr} {n : Nat} (h : XorPre o s K X O n) :
+    WP isa (xorLoopWith o) s fun s' =>
+      s'.mem = writeBytes s.mem O (xorBytes s.mem X K n) ∧ XorOut o s K X O n s' := by
   have hn := h.lt
-  refine WP.loop (M := isa) (body := .block xorBody) (c := .nonzero .a2)
-    (fun (k : Nat) (t : State) => ∃ i, k = n - i ∧ i < n ∧ t.gpr .a0 = S + BitVec.ofNat 64 i ∧
-      t.gpr .a1 = D + BitVec.ofNat 64 i ∧ t.gpr .a2 = BitVec.ofNat 64 (n - i) ∧
-      t.mem = writeBytes s.mem D (xorBytes s.mem D S i) ∧
-      (∀ r, r ≠ .t0 → r ≠ .a0 → r ≠ .a1 → r ≠ .a2 → r ≠ .a3 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧
-      t.wr = s.wr ∧ t.sp = s.sp) ?_ (n - 0) _
-    ⟨0, rfl, h.pos, by rw [h.a0, BitVec.add_zero], by rw [h.a1, BitVec.add_zero], by rw [h.a2]; rfl,
-      by simp [xorBytes, bytesAt, writeBytes_nil], fun _ _ _ _ _ _ => rfl, rfl, rfl, rfl⟩
-  rintro k t ⟨i, rfl, hi, r3, r4, r5, mem, g, rd, wr, sp⟩
-  refine WP.mono (xorStep_ok t r3 r4 r5 (by rw [rd, wr]; exact in_of_covers h.rd hi hn)
-    (by rw [wr]; exact in_of_covers h.wr hi hn)) fun t' ⟨mem', r3', r4', r5', g', rd', wr', sp'⟩ => ?_
-  have hlen := length_xorBytes s.mem D S i
-  have hmem : t'.mem = writeBytes s.mem D (xorBytes s.mem D S (i + 1)) := by
-    rw [mem', mem, src_kept h.disj hi hn _ hlen, dst_kept hi hn _ hlen, xorBytes_succ,
+  refine WP.loop (M := isa) (body := .block (xorBodyWith o)) (c := .nonzero .a2)
+    (fun (k : Nat) (t : State) => ∃ i, k = n - i ∧ i < n ∧ t.gpr .a0 = K + BitVec.ofNat 64 i ∧
+      t.gpr .a1 = X + BitVec.ofNat 64 i ∧ t.gpr (outReg o) = O + BitVec.ofNat 64 i ∧
+      t.gpr .a2 = BitVec.ofNat 64 (n - i) ∧
+      t.mem = writeBytes s.mem O (xorBytes s.mem X K i) ∧
+      (∀ r, r ≠ .t0 → r ≠ .a0 → r ≠ .a1 → r ≠ .a2 → r ≠ .a3 → (o = true → r ≠ .a4) →
+        t.gpr r = s.gpr r) ∧
+      t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp) ?_ (n - 0) _
+    ⟨0, rfl, h.pos, by rw [h.a0, BitVec.add_zero], by rw [h.a1, BitVec.add_zero],
+      by rw [h.out, BitVec.add_zero], by rw [h.a2]; rfl,
+      by simp [xorBytes, bytesAt, writeBytes_nil], fun _ _ _ _ _ _ _ => rfl, rfl, rfl, rfl⟩
+  rintro k t ⟨i, rfl, hi, r3, r4, ro, r5, mem, g, rd, wr, sp⟩
+  refine WP.mono (xorStepWith_ok o t r3 r4 ro r5 (by rw [rd, wr]; exact in_of_covers h.rdK hi hn)
+    (by rw [rd, wr]; exact in_of_covers h.rdX hi hn)
+    (by rw [wr]; exact in_of_covers h.wr hi hn)) fun t' ⟨mem', r3', r4', ro', r5', g', rd', wr', sp'⟩ => ?_
+  have hlen := length_xorBytes s.mem X K i
+  have hmem : t'.mem = writeBytes s.mem O (xorBytes s.mem X K (i + 1)) := by
+    rw [mem', mem, src_kept h.disj hi hn _ hlen, data_kept h.alias hi hn _ hlen, xorBytes_succ,
       writeBytes_snoc s.mem _ _ _ (by rw [hlen]; omega_arith), hlen]
-  have gg : ∀ r, r ≠ .t0 → r ≠ .a0 → r ≠ .a1 → r ≠ .a2 → r ≠ .a3 → t'.gpr r = s.gpr r :=
-    fun r h₀ h₃ h₄ h₅ h₆ => by rw [g' r h₀ h₃ h₄ h₅ h₆, g r h₀ h₃ h₄ h₅ h₆]
+  have gg : ∀ r, r ≠ .t0 → r ≠ .a0 → r ≠ .a1 → r ≠ .a2 → r ≠ .a3 → (o = true → r ≠ .a4) →
+      t'.gpr r = s.gpr r :=
+    fun r h₀ h₃ h₄ h₅ h₆ h₇ => by rw [g' r h₀ h₃ h₄ h₅ h₆ h₇, g r h₀ h₃ h₄ h₅ h₆ h₇]
   have ev : isa.eval (.nonzero .a2) t' = some !decide (i + 1 = n) := by
     show some (t'.gpr .a2 != 0) = _
     rw [r5', dec64 hi hn, nz_dec hi hn]
   by_cases he : i + 1 = n
   · left
-    refine ⟨by rw [ev]; simp [he], by rw [hmem, he], ⟨by rw [r3', he], by rw [r4', he], ?_, gg,
+    refine ⟨by rw [ev]; simp [he], by rw [hmem, he], ⟨by rw [r3', he], by rw [r4', he], by rw [ro', he], ?_, gg,
       by rw [rd', rd], by rw [wr', wr], by rw [sp', sp]⟩⟩
     rw [r5', dec64 hi hn, he, Nat.sub_self]; rfl
   · right
-    refine ⟨by rw [ev]; simp [he], n - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, r3', r4',
+    refine ⟨by rw [ev]; simp [he], n - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, r3', r4', ro',
       by rw [r5', dec64 hi hn], hmem, gg, by rw [rd', rd], by rw [wr', wr], by rw [sp', sp]⟩
+
+/-- `xorLoop`: XORs the `n` bytes at `S` into those at `D`. -/
+theorem xorLoop_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
+    WP isa xorLoop s fun s' =>
+      s'.mem = writeBytes s.mem D (xorBytes s.mem D S n) ∧ LoopOut s S D n s' :=
+  WP.mono (xorLoopWith_ok false s (K := S) (X := D) (O := D)
+    ⟨h.a0, h.a1, h.a1, h.a2, h.pos, h.lt, h.rd, covers_left h.wr, h.wr, h.disj, rfl⟩)
+    fun _ ⟨hm, lo⟩ => ⟨hm, lo.a0, lo.a1, lo.a2,
+      fun r a b c d e => lo.other r a b c d e (fun h => Bool.noConfusion h), lo.keeps⟩
 
 /-! ## `minLen` -/
 

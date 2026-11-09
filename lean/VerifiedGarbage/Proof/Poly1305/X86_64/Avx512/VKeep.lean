@@ -30,10 +30,6 @@ structure VKeep (s s' : State) : Prop where
 theorem VKeep.qz_eq {s s' : State} (h : VKeep s s') (r : XReg) (k : Nat) : qz s' r k = qz s r k := by
   unfold qz State.zlane State.lane; rw [h.xmm, h.ymmHi, h.zmmHi]
 
-theorem VKeep.trans {s₁ s₂ s₃ : State} (h₁ : VKeep s₁ s₂) (h₂ : VKeep s₂ s₃) : VKeep s₁ s₃ :=
-  ⟨h₂.xmm.trans h₁.xmm, h₂.ymmHi.trans h₁.ymmHi, h₂.zmmHi.trans h₁.zmmHi, h₂.mxcsr.trans h₁.mxcsr,
-    h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr⟩
-
 theorem se40 : BitVec.signExtend 64 (BitVec.ofNat 32 40) = 40 := by decide
 theorem se128 : BitVec.signExtend 64 (128 : BitVec 32) = 128 := by decide
 theorem se7 : BitVec.signExtend 64 (7 : BitVec 32) = 7 := by decide

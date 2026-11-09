@@ -4,6 +4,8 @@ import VerifiedGarbage.TCB.Rust
 meta import VerifiedGarbage.TCB.Rust
 import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Print
+meta import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Semantics
@@ -95,7 +97,7 @@ theorem verified (w : BitVec 64) : Verified target (code w) (contract w) := by
   · sig_pre [contract, sig, abi, argRegs, stackBelow, sat]
 
 def artifactOf (fn : String) (w : BitVec 64) : Artifact where
-  target := target
+  target := .of target
   module := "test"
   name := fn
   sig := sig

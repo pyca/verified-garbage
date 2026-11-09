@@ -401,7 +401,8 @@ theorem setup_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : c
   have f₀₇ : Frame [modeR c (S s₀ c), coreRegion c (S s₀ c), stkRegion (E s₀) c.stack] s₀.mem s₇.mem := by
     rw [m₇]; exact f₀₄.writeW List.mem_cons_self _ nIn |> fun h => by rw [← m₄]; exact h
   have hF : Fixed c s₇ (S s₀ c) (Dp s₀ c) (N s₀ c) M.step :=
-    ⟨⟨by rw [wr₇]; exact hp.scr.wr, hfit⟩, by rw [wr₇]; exact hp.dataW, hp.dataFit, hp.dataScr,
+    ⟨⟨by rw [wr₇]; exact hp.scr.wr, hfit⟩, ⟨_, 0, _, by rw [wr₇]; exact hp.dataW, (BitVec.add_zero _).symm,
+      by omega_arith, by have := hp.dataFit; omega_arith⟩, hp.dataFit, hp.dataScr,
       by rw [esp₇]; exact hp.stkData, by rw [esp₇]; exact hp.stkMode, by rw [esp₇]; exact hp.stack, hp.step, hL⟩
   have sChn : Region.Sub (chnRegion c (S s₀ c)) (modeR c (S s₀ c)) := VG.Offset.sub _ (by slot_omega) (by slot_omega)
   have dn : Region.Disjoint ⟨slotA (S s₀ c) c.dSlot, 4⟩ ⟨slotA (S s₀ c) c.nSlot, 4⟩ :=

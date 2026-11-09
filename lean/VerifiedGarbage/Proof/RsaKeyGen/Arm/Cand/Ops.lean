@@ -101,20 +101,6 @@ theorem St.porOne {j : Nat} (cert : Cert (.block (orOne j))) (hj : j ∈ L) :
     exact orOne_ok hw hj' (by decide) fun t ht k v r => WP.block_nil ⟨e, h.write1 k hj' (by simp) r.sp r.rd r.wr
       (by rw [v, h.arrs j hj]) (by simp), ht⟩
 
-/-- `orTwo j`: bit 1 of `[j]` set. -/
-theorem St.porTwo {j : Nat} (cert : Cert (.block (orTwo j))) (hj : j ∈ L) :
-    VP (St P E A L V LS) (.block (orTwo j))
-      (St P E (fun σ => upd (A σ) j (A σ j ||| 2)) (j :: L) V LS) :=
-  VP.kv cert (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => by
-    unfold orTwo
-    rw [← List.append_nil (ptr .r0 j ++ _), List.append_assoc]
-    have hj' := h.live_lt j hj
-    refine lowOp_ok (ops := [.dp .orr .r1 .r1 (.imm 2)]) (f := fun x => x ||| 2) hw hj' (by decide)
-      (fun u R k' => wp_dp (op2_imm (by decide)) fun u' up => WP.block_nil (k' u' up))
-      fun t ht k v r _ => WP.block_nil ⟨e, h.write1 k hj' (by simp) r.sp r.rd r.wr ?_ (by simp), ht⟩
-    rw [v, h.arrs j hj, or_low (b := 2) (by decide), BitVec.toNat_or, BitVec.toNat_ofNat, Nat.mod_mod]
-    rfl
-
 /-- A word op on word `i` of `[j]`, at byte `4 W − c`: the number becomes `g`. -/
 theorem St.phiOp {j c : Nat} {i : CP → Nat} {ops : List Instr} {f : BitVec 32 → BitVec 32} {g : State → Nat}
     (cert : Cert (.block (ptr .r0 j ++ .dp .add .r0 .r0 (.shifted .r9 .lsl 2) ::

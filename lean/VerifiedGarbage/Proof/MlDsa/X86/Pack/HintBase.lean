@@ -106,12 +106,6 @@ def Keep (rs : List Reg) (s s' : State) : Prop :=
 theorem Keep.gpr {rs : List Reg} {s s' : State} (h : Keep rs s s') {r : Reg} (hr : r ∉ rs) :
     s'.gpr r = s.gpr r := h.1 r hr
 
-theorem Keep.trans {rs rs' : List Reg} {s₁ s₂ s₃ : State} (h₁ : Keep rs s₁ s₂) (h₂ : Keep rs' s₂ s₃) :
-    Keep (rs ++ rs') s₁ s₃ :=
-  ⟨fun r hr => by
-    rw [List.mem_append, not_or] at hr
-    rw [h₂.1 r hr.2, h₁.1 r hr.1], h₂.2.1.trans h₁.2.1, h₂.2.2.trans h₁.2.2⟩
-
 theorem Keep.drop {r : Reg} {rs : List Reg} {s s' : State} (k : Keep (r :: rs) s s') (h : s'.gpr r = s.gpr r) :
     Keep rs s s' :=
   ⟨fun r' hr' => by

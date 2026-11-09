@@ -15,8 +15,8 @@ as `CIPH_K`, on 8-byte blocks, under the 4168-byte schedule that
 `vg_blowfish_ofb` transforms `n` whole blocks in place, from the block in
 `iv`, which it replaces with the one to continue from, the last output block
 (`Ofb.next`): a caller may process a message in pieces of whole blocks,
-keeping `iv` between calls. A partial last block is the caller's: OFB of a
-zero block is the next output block, whose first bytes it XORs in.
+keeping `iv` between calls. A partial last
+block is left to `vg_blowfish_ofb_final` (`Spec/Blowfish/OfbFinal.lean`).
 
 Only the pointers and `n` are public: no part of the chaining value may affect
 timing.

@@ -14,9 +14,6 @@ structure Execution (base : Addr) (s t : State) : Prop where
   keeps : Keeps powerClob s t
   mem : StackOuts base (s.gpr .esp) runRanges s.mem t.mem
 
-theorem Execution.refl (base : Addr) (s : State) : Execution base s s :=
-  ⟨Keeps.refl _ _, StackOuts.refl _ _ _ _⟩
-
 theorem Execution.trans {base : Addr} {s t u : State} (A : Execution base s t) (B : Execution base t u) :
     Execution base s u := by
   refine ⟨A.keeps.trans B.keeps, A.mem.trans ?_⟩

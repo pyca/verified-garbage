@@ -104,7 +104,7 @@ theorem pHash_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
     · simp only [List.mem_singleton] at hr; subst hr
       exact Env.in_range (o := (sState, 128)) (List.mem_singleton_self _) (by omega) (by simp only [sState]; omega)
     · simp only [List.mem_singleton] at ho; subst ho
-      simp only [sState, fOut, fHs, fWitLen, hdr]; omega
+      simp only [sState, fOut, fWitLen, hdr]; omega
   -- The hash.
   exact both_map (fun _ => ()) (fun _ _ h => h) (hash_ct G v _)
 

@@ -76,8 +76,4 @@ def groupWindows (mul : Nat → Nat → Nat → Prog isa) (select : Prog isa) : 
   | n + 1 => .seq (.seq (.block (groupDigit (5 * n))) (windowCore mul select))
       (groupWindows mul select n)
 
-/-- Eight windows consume exactly the next five exponent bytes. -/
-def batch (mul : Nat → Nat → Nat → Prog isa) (select : Prog isa) : Prog isa :=
-  .seq (.block loadGroup) (groupWindows mul select 8)
-
 end VG.Impl.Rsa.AArch64.WindowFive

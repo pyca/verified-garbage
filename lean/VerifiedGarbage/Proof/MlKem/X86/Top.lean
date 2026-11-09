@@ -148,9 +148,6 @@ include hp
 
 theorem E0_big : 16 ≤ (E0 s₀).toNat := Nat.le_trans hp.sp16 hp.sp
 
-theorem stk_eq : (⟨(E0 s₀).setWidth 64 - BitVec.ofNat 64 Y.stk, Y.stk⟩ : Region) = below (E0 s₀) Y.stk := by
-  simp only [below]; rw [Taint.sub_setWidth hp.sp]
-
 theorem frame_sub : Region.Sub (frameR s₀) (below (E0 s₀) Y.stk) := below_sub hp.sp16 hp.sp
 
 theorem c_sub : Region.Sub (cR Y s₀) (below (E0 s₀) Y.stk) := by

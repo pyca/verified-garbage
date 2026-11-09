@@ -433,7 +433,7 @@ theorem linesOps_words : ∀ (l : List (Nat × Nat × Nat × Nat)) (x : Nat → 
     obtain ⟨⟨ha, hb, hd, had, hk⟩, hl⟩ := h
     rw [linesOps, List.flatMap_cons, stepAll, List.foldl_append, ← stepAll, ← stepAll, ← linesOps,
       linesOps_words l _ hl, lineOps_words _ ha hb hd had (by omega) hk]
-    rfl
+    simp only [qlines, List.foldl_cons]
 
 theorem roundOps_fold (x : Nat → Word) :
     words (stepAll x (roundOps columns ++ roundOps diagonals)) =

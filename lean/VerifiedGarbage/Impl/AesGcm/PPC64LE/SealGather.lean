@@ -62,7 +62,4 @@ def body : Prog isa :=
 def withBody (main : Prog isa) : Prog isa :=
   .frame (.alloc 160) (.seq (.block entry) main) (.free 160)
 
-/-- `vg_aes_gcm_seal_gather`. -/
-def sealGather : Prog isa := withBody body
-
 end VG.Impl.AesGcm.PPC64LE.SealGather

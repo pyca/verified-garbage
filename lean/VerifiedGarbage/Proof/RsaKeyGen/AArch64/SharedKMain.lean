@@ -22,7 +22,7 @@ open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64
 open VG.Proof.MlKem.AArch64 (Keep eval_nonzero)
 open VG.Impl.Bignum.Public (aN aX aAcc aTmp aY sCnt)
 
-/-- `kMain`. -/
+/-- `kMainWith`. -/
 theorem sharedKMain_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP : Addr} {eB pB r : List Byte}
     (h : MainCtx s B Z w op up eP pP rP eB pB r) :
     WP isa (kMainWith M.mm R.run) s fun t => CandEnd s t op up (8 * w) r

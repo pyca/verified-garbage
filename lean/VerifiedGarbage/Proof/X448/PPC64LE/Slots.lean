@@ -83,11 +83,11 @@ theorem frame_FA {o : Nat} (ho : o + 56 ≤ ACC) {m m' : Mem}
   rcases hr with rfl | rfl <;> exact Offset.sub_base _ (by omega_using [ho])
 
 theorem mulS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = true)
-    (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
-    (hS : SlotsOk s.mem b qs v) :
+    (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0)
+    (ho4 : o % 4 = 0) {s : State} (hc : Ctx b s) (hS : SlotsOk s.mem b qs v) :
     WP isa (mul o x y) s fun s' => Rest clob s s' ∧ Frame [FA b] s.mem s'.mem ∧
       SlotsOk s'.mem b (o :: qs) (upd v o (v x * v y)) := by
-  refine WP.mono (mul_ok ho (sep1_get hq hx).2 (sep1_get hq hy).2 hc)
+  refine WP.mono (mul_ok ho (sep1_get hq hx).2 (sep1_get hq hy).2 hx4 hy4 ho4 hc)
     fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho hf, fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo
@@ -100,8 +100,25 @@ theorem frame_o {o : Nat} {m m' : Mem} (hf : Frame [⟨b + BitVec.ofNat 64 o, 56
     Frame [⟨b + BitVec.ofNat 64 o, 56⟩, ⟨b + BitVec.ofNat 64 ACC, 112⟩] m m' :=
   hf.mono fun r hr => by simp [List.mem_singleton.mp hr]
 
+theorem mul24S {o x : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = true)
+    (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0) {s : State}
+    (hc : Ctx b s) (hS : SlotsOk s.mem b qs v) :
+    WP isa (.block (mulA24 o x)) s fun s' => Rest clob s s' ∧ Frame [FA b] s.mem s'.mem ∧
+      SlotsOk s'.mem b (o :: qs) (upd v o (Spec.X448.a24 * v x)) := by
+  have hx' := sep1_get hq hx
+  have hA := ACC_eq
+  refine WP.mono (mulA24_ok (by omega_using [hA, ho]) (by omega_using [hA, hx'.2]) hx'.1
+    ho4 hx4 hc) fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
+  by_cases hqo : q = o
+  · subst hqo
+    rw [upd_self, ← hS x hx, show Spec.X448.a24 = toFe 39081 from rfl]
+    exact toFe_mul hv
+  · rw [upd_of_ne _ _ hqo]
+    exact slots_after hq ho (frame_o hf) hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
+
 theorem addS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = true)
-    (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
+    (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0)
+    (hy4 : y % 4 = 0) {s : State} (hc : Ctx b s)
     (hS : SlotsOk s.mem b qs v) :
     WP isa (.block (add o x y)) s fun s' => Rest clob s s' ∧ Frame [FA b] s.mem s'.mem ∧
       SlotsOk s'.mem b (o :: qs) (upd v o (v x + v y)) := by
@@ -110,7 +127,7 @@ theorem addS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = tr
   have hA := ACC_eq
   refine WP.mono (add_ok (by omega_using [hA, ho]) (by omega_using [hA, hx']) (by omega_using [hA, hy'])
     (hx'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm) (hy'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm)
-    hc) fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
+    ho4 hx4 hy4 hc) fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo
     rw [upd_self, ← hS x hx, ← hS y hy]
@@ -119,7 +136,8 @@ theorem addS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = tr
     exact slots_after hq ho (frame_o hf) hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
 
 theorem subS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = true)
-    (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
+    (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0)
+    (hy4 : y % 4 = 0) {s : State} (hc : Ctx b s)
     (hS : SlotsOk s.mem b qs v) :
     WP isa (.block (sub o x y)) s fun s' => Rest clob s s' ∧ Frame [FA b] s.mem s'.mem ∧
       SlotsOk s'.mem b (o :: qs) (upd v o (v x - v y)) := by
@@ -128,7 +146,7 @@ theorem subS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = tr
   have hA := ACC_eq
   refine WP.mono (sub_ok (by omega_using [hA, ho]) (by omega_using [hA, hx']) (by omega_using [hA, hy'])
     (hx'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm) (hy'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm)
-    hc) fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
+    ho4 hx4 hy4 hc) fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo
     rw [upd_self, ← hS x hx, ← hS y hy]

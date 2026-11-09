@@ -7,8 +7,8 @@ meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.CT
 import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.CT
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.CT
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Fn
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.CT
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Fn
+import VerifiedGarbage.Proof.Dsa.PPC64LE.DeriveChecked.CT
+import VerifiedGarbage.Proof.Dsa.PPC64LE.DeriveChecked.Fn
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sizes
 import VerifiedGarbage.Proof.Dsa.RandomSignTrace
 import VerifiedGarbage.Proof.Dsa.RandomTraceResult
@@ -45,9 +45,9 @@ octets consumed and trace) leak the same trace. The runs are followed
 together (`SameTrace`), as the correctness proof follows each: the pieces
 the taint analysis checks from the registers both runs agree on
 (`st_taint`), the calls of `vg_dsa_check_parameters` and
-`vg_dsa_derive_key`, whose runs are constant time (`checkParameters_ct`,
-`deriveKey_ct`) for the domain and the derivation's success, which the
-trace declassifies, and the branches on public data: the domain's
+`vg_dsa_derive_key_checked`, whose runs are constant time
+(`checkParameters_ct`, `deriveChecked_ct`) for the domain and the
+derivation's success, which the trace declassifies, and the branches on public data: the domain's
 validity, q, the sampling decisions (`sample_st`) and the derivation's
 success (`split_marker`).
 -/
@@ -219,7 +219,7 @@ theorem check_st {s₁ s₂ w₁ w₂ : State} (h₁ : gkContract.pre s₁) (h�
     rw [g₁ .r3 (by decide), g₂ .r3 (by decide), g₁ .r4 (by decide), g₂ .r4 (by decide), A₁.r3, A₂.r3, A₁.r4,
       A₂.r4, b₁, b₂, ep]
 
-/-- The state `vg_dsa_derive_key` is entered in, after `deriveArgs`. -/
+/-- The state `vg_dsa_derive_key_checked` is entered in, after `deriveArgs`. -/
 theorem dnarrow {s₀ w : State} (A : DArgs (glOf s₀) s₀ w) (rd wr : List Region) :
     (w.callEntry.withRegions rd wr).sp = (glOf s₀).F ∧
       (w.callEntry.withRegions rd wr).gpr .r3 = (glOf s₀).out ∧
@@ -240,14 +240,15 @@ theorem dnarrow {s₀ w : State} (A : DArgs (glOf s₀) s₀ w) (rd wr : List Re
 
 theorem dcall_st {s₁ s₂ w₁ w₂ : State} (h₁ : gkContract.pre s₁) (h₂ : gkContract.pre s₂) (eL : glOf s₁ = glOf s₂)
     (ep : parOf s₁ = parOf s₂) (A₁ : DArgs (glOf s₁) s₁ w₁) (A₂ : DArgs (glOf s₂) s₂ w₂)
+    (hc₁ : chkOf s₁ = true) (hc₂ : chkOf s₂ = true)
     (hs : Spec.Dsa.signStatus (dresOf (glOf s₁) w₁.mem) = Spec.Dsa.signStatus (dresOf (glOf s₂) w₂.mem)) :
-    SameTrace isa (.call "vg_dsa_derive_key" Impl.Dsa.PPC64LE.Derive.derive) w₁ w₂ := by
-  refine SameTrace.of_relCT (RelCT.callEx (k := dContract) deriveKey_correct deriveKey_ct
+    SameTrace isa (.call "vg_dsa_derive_key_checked" Impl.Dsa.PPC64LE.Derive.deriveChecked) w₁ w₂ := by
+  refine SameTrace.of_relCT (RelCT.callEx (k := dcContract) deriveChecked_correct deriveChecked_ct
     (P := fun a b => a = w₁ ∧ b = w₂) fun _ _ ⟨e₁, e₂⟩ => ?_) ⟨rfl, rfl⟩
   rw [e₁, e₂]
   obtain ⟨c₁, cw₁⟩ := derive_cov h₁ A₁.ctx
   obtain ⟨c₂, cw₂⟩ := derive_cov h₂ A₂.ctx
-  refine ⟨_, _, _, _, derive_pre h₁ A₁, derive_pre h₂ A₂, ?_, c₁, cw₁, c₂, cw₂⟩
+  refine ⟨_, _, _, _, derive_pre_checked h₁ A₁ hc₁, derive_pre_checked h₂ A₂ hc₂, ?_, c₁, cw₁, c₂, cw₂⟩
   have hL₁ := glOf_ok h₁
   have hL₂ := glOf_ok h₂
   have q₁ := hL₁.ql
@@ -334,7 +335,8 @@ theorem derive_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (h�
     (b31 : t₂.gpr .r31 = BitVec.ofNat 64 (sampleStatus (drawOf s₂)))
     (k₁ : ∀ x, (drawOf s₁).scalar = some x → Spec.Dsa.decodeBE (cands (eOf s₁) t₁.mem) = x)
     (k₂ : ∀ x, (drawOf s₂).scalar = some x → Spec.Dsa.decodeBE (cands (eOf s₂) t₂.mem) = x)
-    (est : sampleStatus (drawOf s₁) = sampleStatus (drawOf s₂)) (emk : mkOf s₁ = mkOf s₂) :
+    (est : sampleStatus (drawOf s₁) = sampleStatus (drawOf s₂)) (emk : mkOf s₁ = mkOf s₂)
+    (hc₁ : chkOf s₁ = true) (hc₂ : chkOf s₂ = true) :
     SameTrace isa Impl.Dsa.PPC64LE.Generate.derive t₁ t₂ := by
   have hL₁ := glOf_ok h₁
   have hL₂ := glOf_ok h₂
@@ -374,7 +376,8 @@ theorem derive_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (h�
     simp only [dresOf, dkOf, parOf]; rw [mw₂, cz₂.par, nn₂]
   have hs : Spec.Dsa.signStatus (dresOf (glOf s₁) w₁.mem) = Spec.Dsa.signStatus (dresOf (glOf s₂) w₂.mem) := by
     rw [es₁, es₂]; simp only [Spec.Dsa.signStatus, isSome_eq hx₁ hx₂ emk]
-  refine SameTrace.seq (dcall_st h₁ h₂ eL ep A₁ A₂ hs) (derive_ok h₁ A₁) (derive_ok h₂ A₂) fun v₁ v₂ D₁ D₂ => ?_
+  refine SameTrace.seq (dcall_st h₁ h₂ eL ep A₁ A₂ hc₁ hc₂ hs) (derive_ok h₁ A₁ hc₁) (derive_ok h₂ A₂ hc₂)
+    fun v₁ v₂ D₁ D₂ => ?_
   exact deriveFinish_st (by rw [D₁.ctx.sp, D₂.ctx.sp, eL])
     (by rw [RS.setWidth_beq_zero D₁.r3, RS.setWidth_beq_zero D₂.r3, hs])
 
@@ -448,7 +451,7 @@ theorem valid_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (h�
   rw [List.drop_zero] at so₁ so₂
   obtain ⟨cy₁, ny₁⟩ := after_sample h₁ hc sc₁ (fun j hj => by rw [m₁]; exact ck₁.nonce j hj) so₁
   obtain ⟨cy₂, ny₂⟩ := after_sample h₂ hq₂ sc₂ (fun j hj => by rw [m₂]; exact ck₂.nonce j hj) so₂
-  exact derive_st h₁ h₂ eL ep hc hq₂ cy₁ cy₂ ny₁ ny₂ so₁.r31 so₂.r31 so₁.cand so₂.cand est emk
+  exact derive_st h₁ h₂ eL ep hc hq₂ cy₁ cy₂ ny₁ ny₂ so₁.r31 so₂.r31 so₁.cand so₂.cand est emk c₁ c₂
 
 theorem generate_ct : ConstantTime isa gkContract.pre gkContract.pub Impl.Dsa.PPC64LE.Generate.code := by
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ hp => ?_

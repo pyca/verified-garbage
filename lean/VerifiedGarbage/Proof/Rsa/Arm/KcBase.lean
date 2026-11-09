@@ -64,10 +64,6 @@ structure WsR (s : State) (B : BitVec 32) (Z w N : Nat) : Prop where
 theorem Ws.toR {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) : WsR s B Z w N :=
   ⟨h.nowrap, h.writable, h.fits, h.wpos, h.wle, h.r8⟩
 
-theorem WsR.ws {s : State} {B : BitVec 32} {Z w N : Nat} (h : WsR s B Z w N)
-    (h7 : s.gpr .r7 = BitVec.ofNat 32 (S w)) (h9 : s.gpr .r9 = BitVec.ofNat 32 w) : Ws s B Z w N :=
-  ⟨h.nowrap, h.writable, h.fits, h.wpos, h.wle, h7, h.r8, h9⟩
-
 /-- Between the steps. -/
 structure Stg (g : Geo) (s0 : State) (A : Nat → Nat) (live : List Nat) (c : Bool) (s : State) : Prop where
   ws : Ws s g.B g.Z g.w nArr

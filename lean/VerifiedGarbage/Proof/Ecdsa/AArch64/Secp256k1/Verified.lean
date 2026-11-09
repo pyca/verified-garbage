@@ -57,8 +57,4 @@ theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signSecp256k1
       · exact h3
       · exact h4⟩) (by taint_decide)
 
-theorem sign_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : InvSounds) :
-    Verified AArch64.target signSecp256k1 (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.Secp256k1.inst AArch64.abi) :=
-  Verified.of_correct (sign_a64 hL hI) sign_ct implies
-
 end VG.Proof.Ecdsa.AArch64.Secp256k1

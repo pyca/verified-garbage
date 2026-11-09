@@ -203,10 +203,10 @@ def pdA : Contract isa where
 
 theorem stackArgs_two (s : State) : List.map (stackArg s) (List.range 2) = [stackArg s 0, stackArg s 1] := rfl
 
-theorem pd_pre {s : State} (h : pdA.pre s) : (Spec.Rsa.publicPrecomputedCheckedContract abi 0).pre s := by
-  sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+theorem pd_pre {s : State} (h : pdA.pre s) : (Proof.Rsa.publicPrecomputedCheckedContract abi 0).pre s := by
+  sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     stackArgs_two, List.append_eq]
-  sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+  sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     stackArgs_two, List.append_eq]
   simp only [pdA] at h
   sig_split h
@@ -215,15 +215,15 @@ theorem pd_pre {s : State} (h : pdA.pre s) : (Spec.Rsa.publicPrecomputedCheckedC
     | with_reducible assumption
     | exact VG.Proof.Rsa.publicScratch_le ‹_› ‹_›
 
-theorem pd_post {s s' : State} (h : (Spec.Rsa.publicPrecomputedCheckedContract abi 0).post s s') :
+theorem pd_post {s s' : State} (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 0).post s s') :
     pdA.post s s' := by
-  sig_post [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+  sig_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     stackArgs_two, List.append_eq] at h
   exact h
 
 theorem pd_pub {s₁ s₂ : State} (h : pdA.pub s₁ s₂) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 0).pub s₁ s₂ := by
-  sig_pub [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 0).pub s₁ s₂ := by
+  sig_pub [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     stackArgs_two, List.append_eq]
   obtain ⟨hr, hsp, a0, a1, hw, he⟩ := h
   simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hr

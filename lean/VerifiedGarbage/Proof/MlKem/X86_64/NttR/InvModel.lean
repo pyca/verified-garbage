@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 # ML-KEM on x86-64: `NTT⁻¹` on registers, the words of its layers
 
 The polynomial's words after the first `st` layers of `invRules` (`LIW`):
-the lazy Gentleman–Sande layers (`invW`, as `vibflyL` computes them) and the
+the lazy Gentleman–Sande layers (`invW`) and the
 reductions by Montgomery multiplication with `2¹⁶ mod q`. They obey the
 layers `Sym.run` collapses (`modelI`), and their scaled and reduced values
 (`OfI`) are the coefficients of `NTT⁻¹` (`OfI_nttInv`).

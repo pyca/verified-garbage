@@ -16,25 +16,6 @@ open VG VG.AArch64
 open VG.Impl.ChaCha20.AArch64.Mixed5
 open VG.Spec.ChaCha20 (innerBlock)
 
-noncomputable def scalarKeepsV : Bool := (VG.Impl.ChaCha20.AArch64.doubleRound.allInstrs fun i =>
-  match vdstOf i with | none => true | _ => false)
-
-theorem scalar_round_vectors {v : CState} {s : State} (h : VG.Proof.ChaCha20.AArch64.Holds v s) :
-    WP isa VG.Impl.ChaCha20.AArch64.doubleRound s fun u =>
-      VG.Proof.ChaCha20.AArch64.RI (innerBlock v) s u ∧ u.v = s.v ∧ u.sp = s.sp := by
-  have hp := VG.Proof.ChaCha20.AArch64.doubleRound_ok (s₀ := s) ⟨h,rfl,rfl,rfl,fun _ _ => rfl⟩
-  obtain ⟨t,u,he,hu⟩ := hp
-  have hv : scalarKeepsV = true := by decide +kernel
-  rw [scalarKeepsV, Code.allInstrs_eq] at hv
-  refine ⟨t,u,he,hu,?_,Exec.sp he⟩
-  apply funext
-  intro r
-  apply Exec.vec (c := VG.Impl.ChaCha20.AArch64.doubleRound) (r := r) ?_ he
-  intro i hi
-  have h' := List.all_eq_true.mp hv i hi
-  cases hdst : vdstOf i <;> simp only [hdst, Bool.false_eq_true] at h'
-  simp
-
 theorem parallelRound_ok {sve : Bool} {vs : Nat → CState} {v : CState} {s : State}
     (hn : VG.Proof.ChaCha20.AArch64.Neon4.Holds vs s) (ht : s.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table)
     (hc : VG.Proof.ChaCha20.AArch64.Holds v s) :

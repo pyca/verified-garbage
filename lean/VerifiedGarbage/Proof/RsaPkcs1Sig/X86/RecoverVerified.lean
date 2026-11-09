@@ -32,6 +32,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLength
 import VerifiedGarbage.Proof.Rsa.X86.PrivFnTiming
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverObservations
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContractInput
+public import VerifiedGarbage.Proof.Rsa.Contract
 /-! # Complete i686 certificate for precomputed PKCS #1 recovery -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaPkcs1Sig/X86/RecoverReturn.lean`, which only this module imported.
@@ -318,9 +319,9 @@ theorem Context.words_equal {g : Geometry} {bs : Fin 4 → List Byte} {s t : Sta
 theorem publicCall_pub {g : Geometry} {bs : Fin 4 → List Byte} {s t : State}
     (hs : Context g bs s) (ht : Context g bs t)
     (argsS : Arguments g (publicArgument g) 10 s) (argsT : Arguments g (publicArgument g) 10 t) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pub
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 96).pub
       (s.callEntry.withRegions (publicRd g) (publicWr g)) (t.callEntry.withRegions (publicRd g) (publicWr g)) := by
-  sig_pub [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argSlots, argVal, argBytes]
+  sig_pub [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal, argBytes]
   have sa := fun {j} (hj : j < 10) => publicArgs_values hs argsS hj
   have ta := fun {j} (hj : j < 10) => publicArgs_values ht argsT hj
   simp only [hs.sp, ht.sp, sa (by decide : 0 < 10), ta (by decide : 0 < 10),

@@ -72,7 +72,7 @@ fn signatures() {
                 assert_eq!(group.params.sha, "SHA-256");
                 Sha256::digest(&test.case.msg.0).to_vec()
             };
-            let valid = key.verify(&digest, &test.case.sig.0);
+            let valid = key.verify(&digest, &test.case.sig.0).is_ok();
             match test.result {
                 Expectation::Valid => {
                     assert!(valid, "{name} tcId {}", test.tc_id);

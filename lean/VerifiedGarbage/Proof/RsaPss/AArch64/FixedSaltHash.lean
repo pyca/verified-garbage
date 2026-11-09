@@ -65,8 +65,9 @@ theorem finish_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e
     (h25 : u.gpr .x25 = BitVec.ofNat 64 db) (h26 : u.gpr .x26 = acc)
     (hS : u.mem.readW (off F sSaltLen) 64 = BitVec.ofNat 64 (db - pos - 1)) (hdg : u.mem.readW (off F sDig) 64 = dig)
     (hr : ∀ j < H.D, InRegions (u.rd ++ u.wr) (dig + BitVec.ofNat 64 j) 1)
-    (hd : Region.Disjoint ⟨dig, H.D⟩ ⟨S, oRsa⟩) :
-    WP isa (Impl.RsaPss.AArch64.FixedSalt.finish H) u
+    (hd : Region.Disjoint ⟨dig, H.D⟩ ⟨S, oRsa⟩) {f : MdFns} {dn : String} (hT : HT H dn f F u.mem u.syms)
+    (hdo : DigOK H.P) :
+    WP isa (Impl.RsaPss.AArch64.FixedSalt.finish f H) u
       fun u' => u'.sp = u.sp ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
         (∀ r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25], u'.gpr r = u.gpr r) ∧
         (∀ r ∈ preservedV, (u'.v r).extractLsb' 0 64 = (u.v r).extractLsb' 0 64) ∧
@@ -83,30 +84,30 @@ theorem finish_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e
   have c2 : oY = 3584 := rfl
   have c3 : oDig = 2304 := rfl
   have c6 : oRsa = 8192 := rfl
-  simp only [Impl.RsaPss.AArch64.FixedSalt.finish, seqs]
+  unfold Impl.RsaPss.AArch64.FixedSalt.finish seqs seqs seqs seqs seqs
   -- `Y` cleared.
-  refine WP.seq (WP.mono (clearY_ok L (V := fun o => u.mem (off S o)) (fun _ _ => rfl)) fun u1 ⟨k1, f1, R1⟩ => ?_)
+  refine WP.seq (WP.mono_syms (clearY_ok L (V := fun o => u.mem (off S o)) (fun _ _ => rfl)) fun u1 ⟨k1, f1, R1⟩ sy1 => ?_)
   have L1 := L.congr k1.sp k1.wr (k1.get .x20)
   have hm1 : Spec.Rsa.bytesAt u1.mem dig H.D = Spec.Rsa.bytesAt u.mem dig H.D :=
     bytes_apartL f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) (by omega)
   -- `mHash`.
-  refine WP.seq (WP.mono (copyDigest_ok hH L1 R1 (dig := dig) (by rw [slot_keep f1 (L.slotSd (by decide)), hdg])
-    (by rw [k1.rd, k1.wr]; exact hr) hd) fun u2 ⟨k2, f2, R2⟩ => ?_)
+  refine WP.seq (WP.mono_syms (copyDigest_ok hH L1 R1 (dig := dig) (by rw [slot_keep f1 (L.slotSd (by decide)), hdg])
+    (by rw [k1.rd, k1.wr]; exact hr) hd) fun u2 ⟨k2, f2, R2⟩ sy2 => ?_)
   rw [hm1] at R2
   generalize hmH : Spec.Rsa.bytesAt u.mem dig H.D = mH at R2
   have hml : mH.length = H.D := by rw [← hmH, VG.Proof.RsaPkcs1Sig.bytesAt_length]
   have L2 := L1.congr k2.sp k2.wr (k2.get .x20)
   have F3 : Frame [⟨S, oRsa⟩] u.mem u2.mem := f1.trans f2
-  refine WP.seq (WP.mono (copySalt_ok hH L2 R2 (e := e) (db := db) (sl := db - pos - 1)
+  refine WP.seq (WP.mono_syms (copySalt_ok hH L2 R2 (e := e) (db := db) (sl := db - pos - 1)
     he (by omega) (by omega) hdb
     (by rw [k2.get .x24, k1.get .x24, h24])
     (by rw [k2.get .x25, k1.get .x25, h25])
-    (by rw [slot_keep F3 (L.slotSd (by decide)), hS])) fun u4 ⟨k4, f4, R4⟩ => ?_)
+    (by rw [slot_keep F3 (L.slotSd (by decide)), hS])) fun u4 ⟨k4, f4, R4⟩ sy4 => ?_)
   have L4 := L2.congr k4.sp k4.wr (k4.get .x20)
   -- `nbm`.
-  refine WP.seq (WP.mono (signLen_ok hH L4 (sl := db - pos - 1)
+  refine WP.seq (WP.mono_syms (signLen_ok hH L4 (sl := db - pos - 1)
     (by rw [slot_keep (F3.trans f4) (L.slotSd (by decide)), hS]) (by omega))
-    fun u5 ⟨k5, x22₅, m5⟩ => ?_)
+    fun u5 ⟨k5, x22₅, m5⟩ sy5 => ?_)
   have L5 := L4.congr k5.sp k5.wr (k5.get .x20)
   have R5 := R4.frame (m' := u5.mem) (rs := [slotR F sNb]) (by rw [m5]; exact frame_slot _ F sNb _)
     (L.slotS (by decide))
@@ -123,10 +124,13 @@ theorem finish_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       rw [k5.get _ (by decide), k4.get _ (by decide), k2.get _ (by decide),
         k1.get _ (by decide)]
+  have F5 : Frame (mgfWr F S) u.mem u5.mem :=
+    (F3.trans f4).mono (by simp) |>.trans (by rw [m5]; exact (frame_slot _ F sNb _).mono (by simp))
+  have hT5 : HT H dn f F u5.mem u5.syms := by rw [sy5, sy4, sy2, sy1]; exact hT.stepW L F5
   refine WP.seq (WP.mono (ctHash_ok hH L5 R5 (msg := msg) (nbm := (8 + H.D + (db - pos - 1) + H.P.L) / H.P.B + 1)
     (by rw [g5 .x19 (by decide), h19]) (by rw [g5 .x21 (by decide), h21])
     (by rw [x22₅, hmsgl]) (by rw [m5, Mem.readW_writeW_self64]) (by rw [hmsgl, hnbB]; omega)
-    (by rw [hnbB]; omega) (fun i hi => ?_)) fun u6 ⟨O6, d6⟩ => ?_)
+    (by rw [hnbB]; omega) (fun i hi => ?_) hT5 hdo) fun u6 ⟨O6, d6⟩ => ?_)
   · rw [← hmsg]
     exact fixed_msg_y hH hml hpos hdb he hfit hEm (by rw [hnbB] at hi; omega)
   have L6 := L5.congr O6.sp O6.wr (O6.cs .x20 (by decide))
@@ -136,8 +140,6 @@ theorem finish_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e
     (by rw [O6.cs .x24 (by decide), g5 .x24 (by decide), h24])
     (by rw [O6.cs .x25 (by decide), g5 .x25 (by decide), h25])
     (by rw [O6.cs .x26 (by decide), g5 .x26 (by decide), h26])) fun u7 ⟨O7, x0₇⟩ => ?_
-  have F5 : Frame (mgfWr F S) u.mem u5.mem :=
-    (F3.trans f4).mono (by simp) |>.trans (by rw [m5]; exact (frame_slot _ F sNb _).mono (by simp))
   refine ⟨by rw [O7.sp, O6.sp, k5.sp, k4.sp, k2.sp, k1.sp], by rw [O7.rd, O6.rd, k5.rd, k4.rd, k2.rd, k1.rd],
     by rw [O7.wr, O6.wr, k5.wr, k4.wr, k2.wr, k1.wr], fun r hr => ?_,
     fun r hr => by rw [O7.vcs r hr, O6.vec r hr, k5.vcs r hr, k4.vcs r hr, k2.vcs r hr, k1.vcs r hr],

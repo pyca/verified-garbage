@@ -160,7 +160,7 @@ section
 
 /-! # Complete arithmetic schedule of an x86 DSA signing attempt -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86 VG.Proof.Ecdsa.X86

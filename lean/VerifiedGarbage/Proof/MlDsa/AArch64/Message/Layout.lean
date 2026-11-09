@@ -17,14 +17,14 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Call
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 
 /-!
-# ML-DSA on AArch64, `sign_message` and `verify_message`: where everything is
+# ML-DSA on AArch64, `sign_message` and `verify_message_cached`: where everything is
 
 Untrusted: everything here is checked by Lean. The function's buffers, the
 16 bytes of stack below the stack pointer on entry (`STK`, which the calls'
 frames use), and the 1 KiB `X` of `scratch` after the working space of the
 function on `μ` (`Lay`): the Keccak state, the sponge functions' working
 space and `μ` in its first 904 bytes (`W`), then the saved registers and
-arguments and the two bytes of the formatted message (`SV`). `Ctx` is what
+arguments and the two bytes of the formatted message. `Ctx` is what
 holds from the entry's saves to the exit: the permissions, the stack
 pointer, `x28` pointing at `X`, the callee-saved registers, the saves, and
 that memory changed only in `X` and `STK`. `Ctx.keep` carries it over code
@@ -75,8 +75,6 @@ abbrev XS : Region := ⟨L.X, 1024⟩
 /-- What the calls write in it: the Keccak state, the sponge functions'
 working space and `μ`. -/
 abbrev W : Region := ⟨L.X, 904⟩
-/-- The saves and the two bytes of the formatted message. -/
-abbrev SV : Region := ⟨L.X + BitVec.ofNat 64 904, 88⟩
 abbrev ST : Addr := L.X
 abbrev KS : Addr := L.X + BitVec.ofNat 64 200
 abbrev MU : Addr := L.X + BitVec.ofNat 64 840

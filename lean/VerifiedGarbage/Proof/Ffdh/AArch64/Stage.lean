@@ -408,10 +408,6 @@ theorem Pa.enterM {D : FD} {mi : BitVec 64} {t : State} (h : Pa D mi t) :
       ⟨by rw [hm]; exact hv.n, by rw [hm]; exact hv.inv, by rw [hm]; exact hv.one⟩, by rw [hm]; exact hWs,
       by rw [hm]; exact hs, hmv⟩, hm⟩, k.mono (by decide)⟩
 
-theorem pa_eval3 {D : FD} {t : State} (h3 : t.gpr .x3 = BitVec.ofNat 64 (D.dl - 2 * D.k)) :
-    isa.eval (.zero .x .x3) t = some (BitVec.ofNat 64 (D.dl - 2 * D.k) == 0) := by
-  rw [eval_zero, h3]
-
 theorem Base.q {D : FD} {t : State} (hb : Base D t) (he : (BitVec.ofNat 64 (D.dl - 2 * D.k) == 0) = false) :
     D.dl = 3 * D.k := by
   have := hb.k2

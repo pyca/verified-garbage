@@ -4,10 +4,12 @@ public import Lean.Elab.Command
 public meta import Lean.Elab.Command
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 public meta import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Spec.Dsa.Prevalidated
+public meta import VerifiedGarbage.Spec.Dsa.Prevalidated
+public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
+public meta import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Spec.Sha512
 public meta import VerifiedGarbage.Spec.Sha512
-public import VerifiedGarbage.TCB.Axioms
-public meta import VerifiedGarbage.TCB.Axioms
 public import VerifiedGarbage.TCB.Audit
 public meta import VerifiedGarbage.TCB.Audit
 public import VerifiedGarbageTest.Memo
@@ -87,6 +89,31 @@ def digest (v : Vector) : Except String (List Byte) :=
   | "SHA-384" => pure (Spec.Sha512.sha384 v.msg)
   | "SHA-512" => pure (Spec.Sha512.sha512 v.msg)
   | h => throw s!"unknown hash {h}"
+
+/-! ## Operations over the specification
+
+Import, export and randomized signing as a caller composes them from the
+specification's `parametersValid`, `keyValid` and `signWithNonce`. -/
+
+/-- Import public (x=none) or private components, with consistency checks.
+Like RSA import, this does not test primality.
+No private key is manufactured by silently reducing x modulo q. -/
+def fromComponents (p q g y : Nat) (x : Option Nat := none) : Option Key :=
+  let key : Key := ⟨⟨p, q, g⟩, y, x⟩
+  if parametersValid key.params && keyValid key then some key else none
+
+/-- Export the exact components; public exports have no private scalar. -/
+def toComponents (key : Key) : Nat × Nat × Nat × Nat × Option Nat :=
+  (key.params.p, key.params.q, key.params.g, key.y, key.x)
+
+/-- Randomized signing: consume fresh independent N-bit candidates until a
+nonzero signature is obtained; exhaustion reports failure. No deterministic
+signing or nonce-reuse behavior is specified. -/
+def sign (key : Key) (digest : List Byte) : List Nat → Option Signature
+  | [] => none
+  | k :: ks => match signWithNonce key digest k with
+    | some sig => some sig
+    | none => sign key digest ks
 
 /-! The checks of a signing vector compute the same exponentiations modulo
 `p` again (`g^q`, `y^q` and `g^x` validating the domain and the key in
@@ -298,8 +325,6 @@ def checkEdges : Except String Unit := do
     throw "import accepted unsupported parameter sizes"
   unless sampleScalar a.q [0, a.q, a.q + 1] == none do throw "invalid scalar accepted"
   unless generate a [] == none do throw "empty randomness tape accepted"
-  for bits in [0, 512, 1024, 2048, 3072, 4096] do
-    unless generateParameters bits [] [] [] == none do throw "empty seed tape accepted"
   for n in List.range 4 do
     for x in List.range 512 do
       unless decodeBE (encodeBE n x) == x % 2 ^ (8 * n) do throw "big-endian wrap failed"
@@ -346,16 +371,7 @@ def checkPrimality : Except String Unit := do
   unless primeFromSeed 0 160 5 [] suffix == some (none, suffix) do
     throw "empty parameter search consumed witnesses"
 
-#assert_standard_axioms Spec.Dsa.signContract
-#assert_standard_axioms Spec.Dsa.verifyContract
-#assert_standard_axioms Spec.Dsa.generateParameters
-#assert_standard_axioms Spec.Dsa.probablePrime
-#assert_standard_axioms Spec.Dsa.fromComponents
-#assert_standard_axioms Spec.Dsa.sign
-#assert_standard_axioms Spec.Dsa.verify
-#assert_no_compiler_overrides Spec.Dsa.generateParameters Spec.Dsa.fromComponents Spec.Dsa.sign Spec.Dsa.verify
-#assert_no_compiler_overrides Spec.Dsa.verifyApi
-#assert_spec_origin
+#assert_no_compiler_overrides Spec.Dsa.verify
 
 run_cmd do
   let file ← IO.FS.realPath (← getFileName)

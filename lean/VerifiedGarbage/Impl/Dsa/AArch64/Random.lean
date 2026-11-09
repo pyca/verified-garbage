@@ -34,8 +34,6 @@ def frameBytes : Nat := 256
 def store (offset : Nat) (r : Reg) : List Instr :=
   [.addSp .x15 offset, .str .x r .x15 0]
 
-def address (r : Reg) (offset : Nat) : List Instr := [.addSp r offset]
-
 def copySlot (src dst : Nat) : List Instr := [.ldrSp .x0 src] ++ store dst .x0
 
 def significant : Prog isa :=

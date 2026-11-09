@@ -44,12 +44,6 @@ theorem vhalf_ofVHalves (f : Nat → BitVec 16) {e : Nat} (he : e < 8) : vhalf (
     simp (disch := omega_arith) only [ite_eq_left, ite_eq_right]
     all_goals exact congrArg _ (by omega_arith)
 
-theorem ofVHalves_congr {f g : Nat → BitVec 16} (h : ∀ e < 8, f e = g e) : ofVHalves f = ofVHalves g :=
-  vhalf_ext fun e he => by rw [vhalf_ofVHalves _ he, vhalf_ofVHalves _ he, h e he]
-
-theorem ofVHalves_vhalf (x : BitVec 128) : ofVHalves (vhalf x) = x :=
-  vhalf_ext fun _ he => vhalf_ofVHalves _ he
-
 theorem vhalf_map2 (f : (w : Nat) → BitVec w → BitVec w → BitVec w) (x y : BitVec 128) {e : Nat}
     (he : e < 8) : vhalf (VArr.h8.map2 f x y) e = f 16 (vhalf x e) (vhalf y e) := by
   rw [VArr.map2, vhalf_ofVHalves _ he]
@@ -104,9 +98,6 @@ private theorem range2 : List.range 2 = [0, 1] := rfl
 private theorem range4 : List.range 4 = [0, 1, 2, 3] := rfl
 
 private theorem range8 : List.range 8 = [0, 1, 2, 3, 4, 5, 6, 7] := rfl
-
-private theorem sw16 (w : BitVec 16) : (w.setWidth 128).setWidth 16 = w := by
-  rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
 
 /-- A permutation of halfwords, as the sources of its lanes. -/
 theorem vhalf_perm_h8 (op : VPermOp) (x y : BitVec 128) {e : Nat} (he : e < 8) :
@@ -189,20 +180,8 @@ theorem vhalf_trn_d2 (x y : BitVec 128) {e : Nat} (he : e < 8) :
 def LRep (a : BitVec 16) (X : Zq) (B : Nat) : Prop :=
   -(B : Int) < a.toInt ∧ a.toInt < B ∧ (a.toInt - (X.val : Int)) % 3329 = 0
 
-/-- The lanes of `x` represent `g` with the bound `B`. -/
-def Rep (x : BitVec 128) (g : Nat → Zq) (B : Nat) : Prop := ∀ e < 8, LRep (vhalf x e) (g e) B
-
-/-- The lanes of `x` are the constants `c`. -/
-def Cst (x : BitVec 128) (c : Nat → Nat) : Prop := ∀ e < 8, vhalf x e = BitVec.ofNat 16 (c e)
-
 theorem LRep.mono {a : BitVec 16} {X : Zq} {B B' : Nat} (h : LRep a X B) (hB : B ≤ B') : LRep a X B' :=
   ⟨by have := h.1; omega_arith, by have := h.2.1; omega_arith, h.2.2⟩
-
-theorem Rep.mono {x : BitVec 128} {g : Nat → Zq} {B B' : Nat} (h : Rep x g B) (hB : B ≤ B') : Rep x g B' :=
-  fun e he => (h e he).mono hB
-
-theorem Rep.congr {x : BitVec 128} {g g' : Nat → Zq} {B : Nat} (h : Rep x g B) (hg : ∀ e < 8, g e = g' e) :
-    Rep x g' B := fun e he => by rw [← hg e he]; exact h e he
 
 private theorem toInt_add16 {a r : BitVec 16} (h1 : -32768 ≤ a.toInt + r.toInt)
     (h2 : a.toInt + r.toInt < 32768) : (a + r).toInt = a.toInt + r.toInt := by
@@ -211,9 +190,6 @@ private theorem toInt_add16 {a r : BitVec 16} (h1 : -32768 ≤ a.toInt + r.toInt
 private theorem toInt_sub16 {a r : BitVec 16} (h1 : -32768 ≤ a.toInt - r.toInt)
     (h2 : a.toInt - r.toInt < 32768) : (a - r).toInt = a.toInt - r.toInt := by
   rw [BitVec.toInt_sub]; simp only [Int.bmod_def]; split <;> omega_arith
-
-private theorem toInt_ofNat16 {z : Nat} (hz : z < 32768) : (BitVec.ofNat 16 z).toInt = z := by
-  rw [BitVec.toInt_ofNat']; simp only [Int.bmod_def]; omega_arith
 
 /-- A butterfly on one lane: `a ± r`, `r = b · z - t · q`, `t = sqrdmulh(b, tw z)`. -/
 theorem bf_lane {a b : BitVec 16} {X Y : Zq} {z Bx By : Nat} (ha : LRep a X Bx) (hb : LRep b Y By)
@@ -257,70 +233,5 @@ theorem eval_mulH {s : State} {op : VMulHOp} {d n m : VReg}
     simp only [List.all_cons, List.all_nil, h 0 (by decide), h 1 (by decide), h 2 (by decide),
       h 3 (by decide), h 4 (by decide), h 5 (by decide), h 6 (by decide), h 7 (by decide),
       Bool.and_self])]
-
-theorem vhalf_mulH {s : State} {op : VMulHOp} {d n m : VReg} {e : Nat} (he : e < 8) {r : BitVec 16}
-    (hr : op.lane (vhalf (s.v d) e) (vhalf (s.v n) e) (vhalf (s.v m) e) = some r) :
-    vhalf (ofVHalves fun e => (op.lane (vhalf (s.v d) e) (vhalf (s.v n) e) (vhalf (s.v m) e)).getD 0) e = r := by
-  rw [vhalf_ofVHalves _ he, hr]; rfl
-
-section
-variable {rest : List Instr} {s : State} {Q : State → Prop}
-
-open Impl.MlKem.AArch64.Ntt16 in
-/-- The butterflies on the lanes of `x` and `y` with the zetas `Z` (in `z`, their
-`tw` in `t`, `q` in `v31`): `x ← x + Z·y`, `y ← x - Z·y` modulo `q`. -/
-theorem bf_ok {x y z t : VReg} (hxy : x ≠ y := by decide) (hx16 : x ≠ .v16 := by decide)
-    (hx17 : x ≠ .v17 := by decide) (hy16 : y ≠ .v16 := by decide)
-    (ht16 : t ≠ .v16 := by decide) {X Y : Nat → Zq} {Z : Nat → Nat} {Bx By : Nat}
-    (hx : Rep (s.v x) X Bx) (hy : Rep (s.v y) Y By) (hz : Cst (s.v z) Z)
-    (ht : Cst (s.v t) fun e => tw (Z e)) (hq : Cst (s.v .v31) fun _ => 3329) (hZ : ∀ e < 8, Z e < 3329)
-    (hB : Bx + 3329 ≤ 32768) (hBy : By ≤ 32768)
-    (k : ∀ s', VChg [.v16, .v17, .v16, y, x] s s' →
-      Rep (s'.v x) (fun e => X e + ofNat (Z e) * Y e) (Bx + 3329) →
-      Rep (s'.v y) (fun e => X e - ofNat (Z e) * Y e) (Bx + 3329) → WP isa (.block rest) s' Q) :
-    WP isa (.block (bf x y z t ++ rest)) s Q := by
-  simp only [bf, List.cons_append, List.nil_append]
-  refine wp_vop (eval_mulH fun _ _ => rfl) fun s₁ h₁ => ?_
-  have L : ∀ e < 8, ∃ T, sqdmulhHLane true (vhalf (s.v y) e) (BitVec.ofNat 16 (tw (Z e))) = some T ∧
-      LRep (vhalf (s.v x) e + (vhalf (s.v y) e * BitVec.ofNat 16 (Z e) - T * BitVec.ofNat 16 3329))
-        (X e + ofNat (Z e) * Y e) (Bx + 3329) ∧
-      LRep (vhalf (s.v x) e - (vhalf (s.v y) e * BitVec.ofNat 16 (Z e) - T * BitVec.ofNat 16 3329))
-        (X e - ofNat (Z e) * Y e) (Bx + 3329) := fun e he =>
-    bf_lane (hx e he) (hy e he) (hZ e he) hB hBy
-  have y₁ : s₁.v y = s.v y := h₁.get y hy16
-  have t₁ : s₁.v t = s.v t := h₁.get t ht16
-  refine wp_vop (eval_mulH fun e he => by
-    obtain ⟨T, hT, -⟩ := L e he
-    simp only [VMulHOp.lane, y₁, t₁, ht e he, hT, Option.isSome_some]) fun s₂ h₂ => ?_
-  refine wp_vop (eval_mulH fun _ _ => rfl) fun s₃ h₃ => ?_
-  refine wp_vop rfl fun s₄ h₄ => wp_vop rfl fun s₅ h₅ => ?_
-  have c : VChg [.v16, .v17, .v16, y, x] s s₅ :=
-    (((h₁.chg.trans h₂.chg).trans h₃.chg).trans h₄.chg).trans h₅.chg
-  -- the lanes of `v16` after `mls`
-  have r16 : ∀ e < 8, ∃ T, sqdmulhHLane true (vhalf (s.v y) e) (BitVec.ofNat 16 (tw (Z e))) = some T ∧
-      vhalf (s₃.v .v16) e = vhalf (s.v y) e * BitVec.ofNat 16 (Z e) - T * BitVec.ofNat 16 3329 := by
-    intro e he
-    obtain ⟨T, hT, -⟩ := L e he
-    refine ⟨T, hT, ?_⟩
-    have q₂ : s₂.v .v31 = s.v .v31 := by rw [h₂.get .v31, h₁.get .v31]
-    have v₂ : s₂.v .v16 = s₁.v .v16 := h₂.get .v16
-    rw [h₃.v, vhalf_mulH he (r := vhalf (s.v y) e * BitVec.ofNat 16 (Z e) - T * BitVec.ofNat 16 3329)]
-    rw [h₂.v, q₂, v₂, h₁.v, vhalf_ofVHalves _ he, vhalf_ofVHalves _ he]
-    simp only [VMulHOp.lane, y₁, t₁, ht e he, hT, Option.getD_some, hq e he, hz e he]
-  refine k s₅ c (fun e he => ?_) (fun e he => ?_)
-  · obtain ⟨T, hT, h16⟩ := r16 e he
-    obtain ⟨T', hT', l1, -⟩ := L e he
-    rw [hT] at hT'; cases hT'
-    rw [h₅.v, vhalf_map2 _ _ _ he, h₄.get x hxy, h₄.get .v16 (Ne.symm hy16), h₃.get x hx16,
-      h₂.get x hx17, h₁.get x hx16, h16]
-    exact l1
-  · obtain ⟨T, hT, h16⟩ := r16 e he
-    obtain ⟨T', hT', -, l2⟩ := L e he
-    rw [hT] at hT'; cases hT'
-    rw [h₅.get y (Ne.symm hxy), h₄.v, vhalf_map2 _ _ _ he, h₃.get x hx16, h₂.get x hx17,
-      h₁.get x hx16, h16]
-    exact l2
-
-end
 
 end VG.Proof.MlKem.AArch64.Ntt16

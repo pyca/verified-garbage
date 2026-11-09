@@ -7,12 +7,10 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
-# X25519 on x86-64: chains of multiplications
+# X25519 on x86-64: the counter of runs of squarings
 
-An addition chain (Ed25519's `rootPower`) writes only the temporaries
-`T0`–`T3` (slots 16–19, bytes `[512, 640)`) and, in its runs of squarings
-(`sqn`), the counter `rbx`. Each part of it is an `ISpec`: a change of the
-slots by a function of them, keeping everything else.
+A run of squarings (`sqn`) counts in `rbx`: `rbx = k` (`setRbx_ok`), and its
+decrement (`decRbx_ok`).
 -/
 
 @[expose] public section
@@ -20,72 +18,6 @@ slots by a function of them, keeping everything else.
 namespace VG.Proof.X25519.X86_64
 
 open VG VG.X86_64 VG.Impl.X25519.X86_64 VG.Proof.X25519
-
-/-- What a chain keeps: the registers but `clob` and `rbx`, the regions,
-and the memory outside `[512, 640)`. -/
-structure IKeep (base : Addr) (s s' : State) : Prop where
-  gpr : ∀ r, r ∉ clob → r ≠ .rbx → s'.gpr r = s.gpr r
-  rd : s'.rd = s.rd
-  wr : s'.wr = s.wr
-  mem : Outside base 512 128 s.mem s'.mem
-
-theorem IKeep.trans {base : Addr} {s₁ s₂ s₃ : State} (h₁ : IKeep base s₁ s₂)
-    (h₂ : IKeep base s₂ s₃) : IKeep base s₁ s₃ :=
-  ⟨fun r hr hb => (h₂.gpr r hr hb).trans (h₁.gpr r hr hb), h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr,
-    h₁.mem.trans h₂.mem⟩
-
-theorem IKeep.scr {base : Addr} {s s' : State} (h : IKeep base s s') (hs : Scr s base) :
-    Scr s' base :=
-  ⟨(h.gpr _ (by decide) (by decide)).trans hs.rdi, h.wr ▸ hs.wr, hs.nowrap⟩
-
-/-- `c` changes the slots by `f`, and keeps everything else (`IKeep`). -/
-def ISpec (base : Addr) (c : Prog isa) (f : Env → Env) : Prop :=
-  ∀ s, Scr s base → WP isa c s fun s' => IKeep base s s' ∧ E s'.mem base = f (E s.mem base)
-
-theorem ISpec.seq {base : Addr} {c₁ c₂ : Prog isa} {f g : Env → Env} (h₁ : ISpec base c₁ f)
-    (h₂ : ISpec base c₂ g) : ISpec base (.seq c₁ c₂) fun e => g (f e) := fun s hs =>
-  WP.seq (WP.mono (h₁ s hs) fun _ ⟨k₁, e₁⟩ =>
-    WP.mono (h₂ _ (k₁.scr hs)) fun _ ⟨k₂, e₂⟩ => ⟨k₁.trans k₂, by rw [e₂, e₁]⟩)
-
-theorem ISpec.append {base : Addr} {l₁ l₂ : List Instr} {f g : Env → Env}
-    (h₁ : ISpec base (.block l₁) f) (h₂ : ISpec base (.block l₂) g) :
-    ISpec base (.block (l₁ ++ l₂)) fun e => g (f e) := fun s hs => by
-  rw [WP.block_append_iff]
-  exact WP.mono (h₁ s hs) fun _ ⟨k₁, e₁⟩ =>
-    WP.mono (h₂ _ (k₁.scr hs)) fun _ ⟨k₂, e₂⟩ => ⟨k₁.trans k₂, by rw [e₂, e₁]⟩
-
-/-- A slot of a chain's: 16 to 19. -/
-abbrev ISlot (o : Fin 128) : Prop := 16 ≤ o.val ∧ o.val < 20
-
-variable {fld : Field} (hf : FieldOk fld)
-
-include hf in
-/-- A multiplication into a slot of a chain's, which also keeps `rbx`. -/
-theorem mulI_ok {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho : ISlot o) :
-    WP isa (.block (fld.mul (32 * o.val) (32 * a.val) (32 * b.val))) s fun s' =>
-      IKeep base s s' ∧ s'.gpr .rbx = s.gpr .rbx ∧ E s'.mem base = opMul o a b (E s.mem base) :=
-  WP.mono (hf.mul hs (by omega) (by omega) (by omega)) fun _ ⟨h, e⟩ =>
-    ⟨⟨fun r hr _ => h.gpr r hr, h.rd, h.wr, h.mem.mono (by omega) (by omega)⟩,
-      h.gpr _ (by decide), by rw [E_update h.mem, e]; rfl⟩
-
-include hf in
-/-- A square into a slot of a chain's, which also keeps `rbx`. -/
-theorem sqrI_ok {s : State} {base : Addr} (hs : Scr s base) (o a : Fin 128) (ho : ISlot o) :
-    WP isa (.block (fld.sqr (32 * o.val) (32 * a.val))) s fun s' =>
-      IKeep base s s' ∧ s'.gpr .rbx = s.gpr .rbx ∧ E s'.mem base = opMul o a a (E s.mem base) :=
-  WP.mono (hf.sqr hs (by omega) (by omega)) fun _ ⟨h, e⟩ =>
-    ⟨⟨fun r hr _ => h.gpr r hr, h.rd, h.wr, h.mem.mono (by omega) (by omega)⟩,
-      h.gpr _ (by decide), by rw [E_update h.mem, e]; rfl⟩
-
-include hf in
-theorem mulI (base : Addr) (o a b : Fin 128) (ho : ISlot o) :
-    ISpec base (.block (fld.mul (32 * o.val) (32 * a.val) (32 * b.val))) (opMul o a b) :=
-  fun _ hs => WP.mono (mulI_ok hf hs o a b ho) fun _ ⟨k, _, e⟩ => ⟨k, e⟩
-
-include hf in
-theorem sqrI (base : Addr) (o a : Fin 128) (ho : ISlot o) :
-    ISpec base (.block (fld.sqr (32 * o.val) (32 * a.val))) (opMul o a a) :=
-  fun _ hs => WP.mono (sqrI_ok hf hs o a ho) fun _ ⟨k, _, e⟩ => ⟨k, e⟩
 
 /-! ## Runs of squarings -/
 
@@ -127,60 +59,5 @@ theorem decRbx_ok {s : State} {k : Nat} (hk : k < 2 ^ 32)
     RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.zf_arithFlags, zf]
   exact ⟨trivial, fun r hr => by simp only [RegUpd.gpr_setReg, hr, ite_false,
     RegUpd.gpr_arithFlags], trivial, trivial, trivial, trivial⟩
-
-/-- Slot `o` becomes slot `a` squared `n` times. -/
-def opSqn (o a : Fin 128) (n : Nat) (e : Env) : Env := Function.update e o (sqn (e a) n)
-
-theorem opMul_update (o : Fin 128) (e : Env) (v : Spec.X25519.Fe) :
-    opMul o o o (Function.update e o v) = Function.update e o (v * v) := by
-  simp only [opMul, Function.update_self, Function.update_idem]
-
-include hf in
-/-- The loop of `sqn`, with the counter `rbx = m` and slot `o` squared
-`n - m` times since `s₀`. -/
-theorem sqLoop_ok {s₀ : State} {base : Addr} (hs₀ : Scr s₀ base) (o : Fin 128) (ho : ISlot o)
-    (x : Spec.X25519.Fe) (n : Nat) (hn : n < 2 ^ 32) :
-    ∀ m s, 1 ≤ m → m < n → IKeep base s₀ s → s.gpr .rbx = BitVec.ofNat 64 m →
-      E s.mem base = Function.update (E s₀.mem base) o (sqn x (n - m)) →
-      WP isa (.loop (.block (fld.sqr (32 * o.val) (32 * o.val) ++
-          ([.alu .sub .rbx (.imm 1)] : List Instr))) .ne) s fun s' =>
-        IKeep base s₀ s' ∧ E s'.mem base = Function.update (E s₀.mem base) o (sqn x n) := by
-  intro m s h1 h2 hk hb he
-  refine WP.loop (M := isa) (Inv := fun m (s : State) => 1 ≤ m ∧ m < n ∧ IKeep base s₀ s ∧
-    s.gpr .rbx = BitVec.ofNat 64 m ∧
-    E s.mem base = Function.update (E s₀.mem base) o (sqn x (n - m))) ?_ m s ⟨h1, h2, hk, hb, he⟩
-  intro m s ⟨h1, h2, hk, hb, he⟩
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
-  rw [WP.block_append_iff]
-  refine WP.mono (sqrI_ok hf (hk.scr hs₀) o o ho) fun s1 ⟨k1, b1, e1⟩ => ?_
-  refine WP.mono (decRbx_ok (by omega) (b1.trans hb)) fun s2 ⟨b2, g2, m2, rd2, wr2, z2⟩ => ?_
-  have k2 : IKeep base s₀ s2 := hk.trans (k1.trans ⟨fun r _ hr => g2 r hr, rd2, wr2,
-    by rw [m2]; exact Outside.refl _ _ _ _⟩)
-  have e2 : E s2.mem base = Function.update (E s₀.mem base) o (sqn x (n - m)) := by
-    rw [m2, e1, he, opMul_update]
-    congr 2
-    rw [show n - m = (n - (m + 1)) + 1 by omega]
-    rfl
-  simp only [eval, z2, Option.map_some]
-  rcases Nat.eq_zero_or_pos m with rfl | hm
-  · exact .inl ⟨rfl, k2, by rw [e2, Nat.sub_zero]⟩
-  · exact .inr ⟨by simp only [decide_eq_false (by omega : ¬m = 0), Bool.not_false], m, by omega,
-      by omega, by omega, k2, b2, e2⟩
-
-include hf in
-/-- `sqn o a n`: slot `o` becomes slot `a` squared `n` times (`o` may be `a`). -/
-theorem sqnI (base : Addr) (o a : Fin 128) (ho : ISlot o) (n : Nat) (hn : 2 ≤ n)
-    (hn' : n < 2 ^ 32) :
-    ISpec base (Impl.X25519.X86_64.sqn fld (32 * o.val) (32 * a.val) n) (opSqn o a n) := by
-  intro s hs
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (sqrI_ok hf hs o a ho) fun s1 ⟨k1, _, e1⟩ => ?_
-  refine WP.mono (setRbx_ok s1 (n - 1) (by omega)) fun s2 ⟨b2, g2, m2, rd2, wr2⟩ => ?_
-  have k2 : IKeep base s s2 := k1.trans ⟨fun r _ hr => g2 r hr, rd2, wr2,
-    by rw [m2]; exact Outside.refl _ _ _ _⟩
-  refine sqLoop_ok hf hs o ho (E s.mem base a) n hn' (n - 1) s2 (by omega) (by omega) k2 b2 ?_
-  rw [m2, e1, show n - (n - 1) = 1 by omega]
-  rfl
 
 end VG.Proof.X25519.X86_64

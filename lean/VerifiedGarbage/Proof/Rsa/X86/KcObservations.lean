@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KcABI
 public import VerifiedGarbage.Proof.Rsa.X86.KcFrames
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Public observations of both RSA key-validation contracts -/
 
@@ -12,8 +13,8 @@ open VG VG.X86 VG.Impl.Rsa.X86.KeyCheck
 theorem arguments_eq {full : Bool} {s t : State} (h : (contract full).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ ∀ i < scratchArg full + 2, arg s i = arg t i := by
   cases full
-  · change (Spec.Rsa.checkCrtKeyContract abi 20).pub s t at h
-    sig_pub [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes] at h
+  · change (Proof.Rsa.checkCrtKeyContract abi 20).pub s t at h
+    sig_pub [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes] at h
     sig_split h
     constructor
     · assumption
@@ -38,8 +39,8 @@ theorem publicBytes_eq {full : Bool} {s t : State} (h : (contract full).pub s t)
   have leak : ((inputBytes (caller full s) s.mem 0) ++ (inputBytes (caller full s) s.mem 1)).map (·.toNat) =
       ((inputBytes (caller full t) t.mem 0) ++ (inputBytes (caller full t) t.mem 1)).map (·.toNat) := by
     cases full
-    · change (Spec.Rsa.checkCrtKeyContract abi 20).pub s t at h
-      sig_pub [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes] at h
+    · change (Proof.Rsa.checkCrtKeyContract abi 20).pub s t at h
+      sig_pub [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes] at h
       exact h.2.1
     · change (Spec.Rsa.checkKeyContract abi 20).pub s t at h
       sig_pub [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argSlots, argVal, argBytes] at h

@@ -32,7 +32,6 @@ import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
-import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay42
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -55,7 +54,6 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay42
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
 
 /-!
@@ -89,76 +87,6 @@ theorem kgMul_agree {k : Nat} (s₁ s₂ : State) (_ : (kgMulK k).pre s₁) (_ :
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
     exacts [hp.1, hp.2.1, hp.2.2.1, hp.2.2.2.1, hp.2.2.2.2.1, hp.2.2.2.2.2]
 
-/-- A state satisfying the precondition, for `k ≤ 4`. -/
-def kgMulSat (k : Nat) : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x8000 | .rdx => 0x10000 | .rcx => 0x20000 | .r8 => 0x30000
-    | .rsp => 0x40000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x10000, 1024 * (k * k)⟩, ⟨0x20000, 1024 * k⟩]
-  wr := [⟨0x1000, 1024 * k⟩, ⟨0x8000, 1024 * k⟩, ⟨0x30000, 4096⟩]
-
-section
-variable (B : Bodies)
-
-theorem kgMul3_verified {R : AccRep} {T : TabRep} (hB : BodiesOk B R T) (hrow : KgMul.RowOk B R T)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
-      (KgMul.inner B 3) = true)
-    (hctl : ctlOk (keygenMul B 3) = true)
-    (hct : ConstantTime isa (kgMulK 3).pre (kgMulK 3).pub (keygenMul B 3)) :
-    Verified X86_64.target (keygenMul B 3) (Proof.MlKem.keygenMulContract 3 X86_64.abi) :=
-  Verified.of_correct (kgMul_correct hB hrow (by decide) (by decide) hwo hctl) hct
-    { pre := by sig_implies_pre [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi,
-        X86_64.argRegs]
-      post := by sig_implies_post [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi,
-        X86_64.argRegs]
-      pub := by sig_implies_pub [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi,
-        X86_64.argRegs]
-      sat := by
-        refine ⟨kgMulSat 3, ?_⟩
-        sig_pre [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi, X86_64.argRegs]
-        and_intros
-        all_goals first
-          | rfl
-          | decide
-          | exact Region.disjoint_of_sep (by decide)
-          | exact vecReduced_zero _ _
-          | (intro a h₁ h₂
-             simp only [Region.Contains] at h₁ h₂
-             bv_omega) }
-
-theorem kgMul4_verified {R : AccRep} {T : TabRep} (hB : BodiesOk B R T) (hrow : KgMul.RowOk B R T)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
-      (KgMul.inner B 4) = true)
-    (hctl : ctlOk (keygenMul B 4) = true)
-    (hct : ConstantTime isa (kgMulK 4).pre (kgMulK 4).pub (keygenMul B 4)) :
-    Verified X86_64.target (keygenMul B 4) (Proof.MlKem.keygenMulContract 4 X86_64.abi) :=
-  Verified.of_correct (kgMul_correct hB hrow (by decide) (by decide) hwo hctl) hct
-    { pre := by sig_implies_pre [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi,
-        X86_64.argRegs]
-      post := by sig_implies_post [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi,
-        X86_64.argRegs]
-      pub := by sig_implies_pub [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi,
-        X86_64.argRegs]
-      sat := by
-        refine ⟨kgMulSat 4, ?_⟩
-        sig_pre [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi, X86_64.argRegs]
-        and_intros
-        all_goals first
-          | rfl
-          | decide
-          | exact Region.disjoint_of_sep (by decide)
-          | exact vecReduced_zero _ _
-          | (intro a h₁ h₂
-             simp only [Region.Contains] at h₁ h₂
-             bv_omega) }
-
-end
-
 /-! The facts about the code, each checked once (on the literals of `Lit.lean`). -/
 
 theorem kgMulSse3_wo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
@@ -180,19 +108,11 @@ theorem kgMulSse3_correct : ∀ s, (kgMulK 3).pre s →
     ∃ t s', Exec isa (keygenMul .sse 3) s t s' ∧ abiPreserved s s' ∧ (kgMulK 3).post s s' :=
   kgMul_correct BodiesOk.sse (KgMul.RowOk.ofAcc BodiesOk.sse rfl) (by decide) (by decide) kgMulSse3_wo kgMulSse3_ctl
 
-theorem kgMulSse3_verified :
-    Verified X86_64.target (keygenMul .sse 3) (Proof.MlKem.keygenMulContract 3 X86_64.abi) :=
-  kgMul3_verified _ BodiesOk.sse (KgMul.RowOk.ofAcc BodiesOk.sse rfl) kgMulSse3_wo kgMulSse3_ctl kgMulSse3_ct
-
 theorem kgMulSse4_ct : ConstantTime isa (kgMulK 4).pre (kgMulK 4).pub (keygenMul .sse 4) :=
   VG.Taint.constantTime (A := taint) _ kgMul_agree (by taint_decide)
 
 theorem kgMulSse4_correct : ∀ s, (kgMulK 4).pre s →
     ∃ t s', Exec isa (keygenMul .sse 4) s t s' ∧ abiPreserved s s' ∧ (kgMulK 4).post s s' :=
   kgMul_correct BodiesOk.sse (KgMul.RowOk.ofAcc BodiesOk.sse rfl) (by decide) (by decide) kgMulSse4_wo kgMulSse4_ctl
-
-theorem kgMulSse4_verified :
-    Verified X86_64.target (keygenMul .sse 4) (Proof.MlKem.keygenMulContract 4 X86_64.abi) :=
-  kgMul4_verified _ BodiesOk.sse (KgMul.RowOk.ofAcc BodiesOk.sse rfl) kgMulSse4_wo kgMulSse4_ctl kgMulSse4_ct
 
 end VG.Proof.MlKem.X86_64

@@ -68,23 +68,6 @@ theorem Words.at_mod {s : State} {v : Spec.Rc2.State} (h : Words s v) (i : Nat) 
     s.gpr (wordReg i) = (v.getD (i % 4) 0).setWidth 32 := by
   simpa only [wordReg, Nat.mod_mod] using h (i % 4) (Nat.mod_lt _ (by decide))
 
-theorem Words.preserve {s s' : State} {v : Spec.Rc2.State} (h : Words s v)
-    (keep : Keep temps s s') : Words s' v := by
-  intro i hi
-  exact (keep.reg _ (wordReg_not_temps i)).trans (h i hi)
-
-theorem Words.update {s s' : State} {v : Spec.Rc2.State} (h : Words s v)
-    (i : Nat) (hi : i < 4) (x : BitVec 16)
-    (out : s'.gpr (wordReg i) = x.setWidth 32)
-    (keep : Keep (wordReg i :: temps) s s') : Words s' (v.set! i x) := by
-  intro j hj
-  by_cases he : j = i
-  · subst j; simpa [Vector.getD, hi] using out
-  · rw [keep.reg _ (by
-      simp only [List.mem_cons, not_or]
-      exact ⟨fun e => he ((wordReg_injective j hj i hi).mp e), wordReg_not_temps j⟩), h j hj]
-    rw [vector_getD _ j hj, vector_getD _ j hj, Vector.getElem_set!_ne hj (Ne.symm he)]
-
 def wordIndex : Reg → Nat
   | .eax => 0 | .ebx => 1 | .ecx => 2 | .edx => 3 | _ => 0
 

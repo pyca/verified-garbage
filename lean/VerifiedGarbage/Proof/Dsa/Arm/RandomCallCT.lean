@@ -44,8 +44,8 @@ theorem signLeak_call {s₀ u : State} (A : RandomABI s₀) (h : RReady s₀ u) 
   rfl
 
 /-- Two runs about to call the signer alike. -/
-def CallRel (t₁ t₂ : State) : Prop :=
-  ∃ s₁ s₂, RandomABI s₁ ∧ RandomABI s₂ ∧ pubOf s₁ = pubOf s₂ ∧ keyLeak s₁ = keyLeak s₂ ∧
+def CallRel (S : Signer) (t₁ t₂ : State) : Prop :=
+  ∃ s₁ s₂, RandomABI s₁ ∧ RandomABI s₂ ∧ RValid S s₁ ∧ RValid S s₂ ∧ pubOf s₁ = pubOf s₂ ∧ keyLeak s₁ = keyLeak s₂ ∧
     RReady s₁ t₁ ∧ RReady s₂ t₂ ∧ CallRegs s₁ t₁ ∧ CallRegs s₂ t₂ ∧
     Spec.Dsa.signStatus (callResult s₁ t₁) = Spec.Dsa.signStatus (callResult s₂ t₂)
 
@@ -81,26 +81,27 @@ theorem call_pub {s₁ s₂ t₁ t₂ : State} (A₁ : RandomABI s₁) (A₂ : R
     · rw [(ea 6 (by decide)).1, (ea 6 (by decide)).2]
       exact C₁.r10.trans ((pub_arg e 8 (by decide)).trans C₂.r10.symm)
 
-theorem callSigner_ct (name : String) : RelCT isa CallRel (callSigner name (Entry.operation true))
+theorem callSigner_ct (S : Signer) (name : String) : RelCT isa (CallRel S) (callSigner name S.code)
     fun _ _ => True := by
   unfold callSigner
-  refine RelCT.frame (fun t₁ t₂ ⟨s₁, s₂, _, _, e, _, h₁, h₂, _⟩ => by rw [h₁.sp, h₂.sp, pub_sp e]) ?_
+  refine RelCT.frame (fun t₁ t₂ ⟨s₁, s₂, _, _, _, _, e, _, h₁, h₂, _⟩ => by rw [h₁.sp, h₂.sp, pub_sp e]) ?_
   intro a b ta tb a' b' hp ea eb
-  obtain ⟨t₁, t₂, ⟨s₁, s₂, A₁, A₂, e, hk, h₁, h₂, C₁, C₂, hr⟩, p₁, p₂⟩ := hp
+  obtain ⟨t₁, t₂, ⟨s₁, s₂, A₁, A₂, V₁, V₂, e, hk, h₁, h₂, C₁, C₂, hr⟩, p₁, p₂⟩ := hp
   rw [push_pushed (by decide) (call_sp_le A₁ h₁), Option.some.injEq] at p₁
   rw [push_pushed (by decide) (call_sp_le A₂ h₂), Option.some.injEq] at p₂
   subst p₁ p₂
-  refine RelCT.call (P := fun x y => x = pushed callPush t₁ ∧ y = pushed callPush t₂) (k := signArm)
-    (fun s hs => let ⟨t, s', e, ha, hp⟩ := sign_correct hs; ⟨t, s', e, ha, hp⟩) sign_constantTime
+  refine RelCT.call (P := fun x y => x = pushed callPush t₁ ∧ y = pushed callPush t₂) (k := signArmWith S.valid)
+    S.correct S.constantTime
     (callRd s₁) (callWr s₁) (fun _ _ ⟨r₁, r₂⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ ea eb
   subst r₁ r₂
   obtain ⟨c₁, w₁⟩ := call_covers A₁ h₁
   obtain ⟨c₂, w₂⟩ := call_covers A₂ h₂
-  have p₂ : signArm.pre ((pushed callPush t₂).callEntry.withRegions (callRd s₂) (callWr s₂)) := call_pre A₂ h₂ C₂
+  have p₂ : (signArmWith S.valid).pre ((pushed callPush t₂).callEntry.withRegions (callRd s₂) (callWr s₂)) :=
+    call_pre_with S A₂ h₂ C₂ V₂
   have pb : signArm.pub ((pushed callPush t₁).callEntry.withRegions (callRd s₁) (callWr s₁))
       ((pushed callPush t₂).callEntry.withRegions (callRd s₂) (callWr s₂)) := call_pub A₁ A₂ e hk h₁ h₂ C₁ C₂ hr
   rw [← pub_callRd e, ← pub_callWr e] at p₂ c₂ pb
   rw [← pub_callWr e] at w₂
-  exact ⟨call_pre A₁ h₁ C₁, p₂, pb, c₁, w₁, c₂, w₂⟩
+  exact ⟨call_pre_with S A₁ h₁ C₁ V₁, p₂, pb, c₁, w₁, c₂, w₂⟩
 
 end VG.Proof.Dsa.Arm

@@ -71,9 +71,4 @@ theorem rawFinalLoop_ok {s : State} (hf : FinalRoots s) (hs : ScaleRoots s)
       · rw [hc₂,hk₁.get .x12]; rfl
   · exact ⟨Keep.refl _ _,fun _ _ => rfl,by simp,rfl⟩
 
-theorem rawFinalLoop_eq :
-    .loop (.block VG.Impl.MlDsa.AArch64.Optimized.MultiplyInverse.rawFinalBody) (.nonzero .x .x12)=
-      (.loop (.block (rawFinalSliceCode++finalAdvance)) (.nonzero .x .x12) : Prog isa) := by
-  rw [rawFinalBody_eq]
-
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse

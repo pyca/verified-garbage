@@ -164,10 +164,6 @@ theorem wrapW {d : Nat} (hd : d < 2576) : (c.W + BitVec.ofNat 64 d).toNat = c.W.
   have := L.ww
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
 
-theorem wrapC {d : Nat} (hd : d < 512) : (c.C + BitVec.ofNat 64 d).toNat = c.C.toNat + d := by
-  have := L.cw
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
-
 theorem rb : 16 * (c.R + 1) ≤ 240 := by rcases L.rounds with h | h | h <;> rw [h] <;> decide
 
 end Lay

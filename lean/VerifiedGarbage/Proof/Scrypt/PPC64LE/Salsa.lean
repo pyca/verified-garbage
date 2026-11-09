@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Spec.Scrypt.Contract
-public import VerifiedGarbage.Proof.Scrypt.Contract
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.Scrypt.PPC64LE.Salsa
 meta import VerifiedGarbage.Proof.Scrypt.Spec
@@ -27,8 +26,7 @@ meta import VerifiedGarbage.Spec.Scrypt.Contract
 # The Salsa20/8 Core on PPC64LE
 
 The rounds on the low words of the registers (`RI`), then the whole function
-(`correct`), constant time, and `salsa_verified` against
-`Proof.Scrypt.salsaContract`.
+(`correct`, and `salsa_correct` from the contract's precondition).
 -/
 
 @[expose] public section
@@ -51,8 +49,6 @@ theorem wreg_ne_r0 {k : Nat} (hk : k < 16) : wreg k ≠ .r0 := by
 
 /-- The registers that hold words. -/
 def Words (r : Reg) : Prop := ∃ k < 16, r = wreg k
-
-theorem not_words_r0 : ¬ Words .r0 := fun ⟨_, hk, h⟩ => wreg_ne_r0 hk h.symm
 
 theorem not_words_r3 : ¬ Words .r3 := fun ⟨k, hk, h⟩ => by
   have key : ∀ k < 16, wreg k ≠ .r3 := by decide
@@ -477,36 +473,11 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     refine post_of fun j hj => ?_
     rw [← hb, hout j hj, Rs, hV]
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 0x2000 | _ => 0
-  lr := 0
-  sp := 0x4000
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 64⟩, ⟨0x2000, 64⟩]
-
 theorem salsa_correct (s : State) (hs : Proof.Scrypt.salsaPPC64LE.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.PPC64LE.salsa s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.salsaPPC64LE.post s s' := by
   obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
   exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.lr he (by decide +kernel)
     (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h₂⟩
-
-theorem salsa_ct : ConstantTime isa Proof.Scrypt.salsaPPC64LE.pre Proof.Scrypt.salsaPPC64LE.pub
-    Impl.Scrypt.PPC64LE.salsa := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ ⟨h1, h2, hsp⟩
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> with_reducible assumption
-
-theorem salsa_verified :
-    Verified PPC64LE.target Impl.Scrypt.PPC64LE.salsa (Proof.Scrypt.salsaContract PPC64LE.abi) :=
-  Verified.of_correct salsa_correct salsa_ct (by
-    sig_implies [Proof.Scrypt.salsaContract, Proof.Scrypt.salsaSig, Proof.Scrypt.salsaPPC64LE,
-      PPC64LE.abi, PPC64LE.argRegs] [Proof.Scrypt.PPC64LE.satState] using
-      Proof.Scrypt.PPC64LE.satState)
 
 end VG.Proof.Scrypt.PPC64LE

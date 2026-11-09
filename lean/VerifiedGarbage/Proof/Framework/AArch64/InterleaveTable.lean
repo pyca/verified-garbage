@@ -143,6 +143,7 @@ theorem scal_setV {xb xt : Reg} {W : Nat} {i : Instr} (h : scalOk xb xt W i = tr
     · rw [g1.wr]; exact f1.wr.symm
     · rw [g1.unknowns]; exact f1.unknowns.symm
     · rw [g1.syms]; exact f1.syms.symm
+    · rw [g1.dit]; exact f1.dit.symm
 
 /-- What a vector instruction of `vecOk` sets is the same after scalar code
 of `scalOk`, from a state where the table is apart from its stores. -/

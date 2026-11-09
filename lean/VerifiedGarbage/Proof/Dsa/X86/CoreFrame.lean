@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Arithmetic
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Mont.X86.ExponentProduct
 
 /-! # Persistent operands across arithmetic-context updates -/
 
@@ -92,19 +91,6 @@ theorem slotOutside_val {s t : State} {base : Addr} {n i j : Nat}
   have sep := slot_sep (n := n) hij
   simp only [stride] at sep
   exact O.wordsVal (by omega) hb
-
-theorem productRanges_whole {n : Nat} {base : Addr} {s t : State}
-    (O : Outs base (productRanges n) s.mem t.mem) : Outside base 0 (contextBytes n) s.mem t.mem := by
-  have b1 := slot_bound (n := n) (i := 1) (by decide)
-  have b2 := slot_bound (n := n) (i := 2) (by decide)
-  have b6 := slot_bound (n := n) (i := 6) (by decide)
-  have b7 := slot_bound (n := n) (i := 7) (by decide)
-  simp only [stride] at b1 b2 b6 b7
-  intro x hx
-  apply O x
-  intro r hr
-  simp only [productRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> omega
 
 theorem resultKeep_whole {n : Nat} {base : Addr} {s t : State}
     (K : OpKeep (contextMod n) base (slot n 2) (slot n 6) s t) :

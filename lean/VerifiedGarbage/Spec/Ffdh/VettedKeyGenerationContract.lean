@@ -89,24 +89,4 @@ def vettedKeySearchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract 
       dom.map (·.toNat) ++ (wordsAt m state 4).map (·.toNat) ++
         (vettedKeySearch a pLen.toNat retries (bytesAt m rand randLen.toNat)).statuses)
 
-def vettedKeySearchApi : Api where
-  module := "ffdh"
-  name := "vg_ffdh_generate_key_search_vetted"
-  sig := keySearchSig
-  writeArgs := true
-  contracts := some fun A stack => vettedKeySearchContract A stack
-  summary := "Generate a finite-field Diffie–Hellman key pair using vetted-group short exponents and native rejection sampling. \
-    Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 \
-    with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. \
-    On 0, discard `used` bytes from `rand`, preserve the suffix and extend it \
-    to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. \
-    Contract: `VG.Spec.Ffdh.vettedKeySearchContract`. Timing may depend on the public domain, \
-    controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes."
-  safety := domainSafety ++ ["`domain` must be one that `vg_ffdh_check_domain` accepted \
-      (returned 1 for): the attempts' statuses, which the controller branches on, are \
-      specified only for such a domain.",
-    "`state` must be initialized by `vg_ffdh_key_generation_init` for `p_len`, or be the \
-      state returned by this routine.",
-    "`x_len` and `y_len` must be `p_len`."] ++ scratchSafety
-
 end VG.Spec.Ffdh

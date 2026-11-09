@@ -38,10 +38,4 @@ theorem code_relCT : RelCT isa
   · exact h.2.1
   · exact h.2.2
 
-theorem code_ct : ConstantTime isa (fun _ => True)
-    (fun s t => s.gpr .r0=t.gpr .r0 ∧ s.gpr .r12=t.gpr .r12 ∧ s.gpr .lr=t.gpr .lr)
-    VG.Impl.Bignum.Arm.FusedReduction.code := by
-  intro s t tr₁ tr₂ u v _ _ h ex ey
-  exact (code_relCT s t tr₁ tr₂ u v h ex ey).1
-
 end VG.Proof.Bignum.Arm.FusedReduction

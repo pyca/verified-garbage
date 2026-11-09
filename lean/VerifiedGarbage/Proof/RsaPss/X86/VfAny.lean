@@ -188,14 +188,16 @@ theorem anyLen_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       congr 1; omega
 
 /-- A salt of any length. -/
-theorem any_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
-    VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧ True) (anyPath h.H)
-      (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧
-        s.gpr .eax = if acc2 h P τ = 0 ∧ HOk h P τ (Ma h P τ) then 1 else 0) := by
+theorem any_vp (P : EP) (hP : ∃ σ, In h.D P σ) {dn : String} {f : MdFns}
+    (hTH : ∀ σ, P.TH σ → HFacts h dn f P.tabH P.hai P.hac P.had σ)
+    (fne : f.init ≠ [] ∧ f.comp ≠ [] ∧ f.dig ≠ []) :
+    VP (fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧ True) ∧ s.syms = τ.syms) (anyPathT f h.H)
+      (fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧
+        s.gpr .eax = if acc2 h P τ = 0 ∧ HOk h P τ (Ma h P τ) then 1 else 0) ∧ s.syms = τ.syms) := by
   obtain ⟨σ₀, hi₀⟩ := hP
   by_cases hf : fits h P
   swap
-  · exact VP.empty fun σ s h' => hf h'.2.1.2.1
+  · exact VP.empty fun σ s h' => hf h'.1.2.1.2.1
   have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
   have hL := h.L_le
   have hB := h.B_le
@@ -207,11 +209,12 @@ theorem any_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     show ((dbN h P + (7 + h.D + h.L)) / h.B + 1) * h.B ≤ 2048
     rw [Nat.succ_mul, Nat.mul_comm]; omega
   show VP _ (.seq (yDig h.H 4) (.seq (.block (cpDb h.H)) (.seq Impl.Bignum.X86.copyBytes (.seq (shift h.H)
-    (.seq (.block (anyLen h.H)) (.seq (ctHash h.H) (cmpH h.H))))))) _
-  refine (yDig_vf h P ⟨σ₀, hi₀⟩ True).seq (Sg.vpAssoc ((cpDb_vp h P ⟨σ₀, hi₀⟩).seq ((shift_vp h P ⟨σ₀, hi₀⟩).seq
-    ((anyLen_vp h P ⟨σ₀, hi₀⟩).seq ?_))))
-  exact (tail_vp h P ⟨σ₀, hi₀⟩ hT (Nat.succ_pos _) (msg := Ma h P) fun τ => by
+    (.seq (.block (anyLen h.H)) (.seq (ctHashT f h.H 14) (cmpH h.H))))))) _
+  refine (Proof.RsaOaep.X86.VP.syms (yDig_vf h P ⟨σ₀, hi₀⟩ True)).seq (Sg.vpAssoc
+    ((Proof.RsaOaep.X86.VP.syms (cpDb_vp h P ⟨σ₀, hi₀⟩)).seq ((Proof.RsaOaep.X86.VP.syms (shift_vp h P ⟨σ₀, hi₀⟩)).seq
+    ((Proof.RsaOaep.X86.VP.syms (anyLen_vp h P ⟨σ₀, hi₀⟩)).seq ?_))))
+  exact (tail_vp h P ⟨σ₀, hi₀⟩ hTH fne hT (Nat.succ_pos _) (msg := Ma h P) fun τ => by
       rw [Ma_length]; show _ ≤ ((dbN h P + (7 + h.D + h.L)) / h.B + 1) * h.B; rw [Nat.mul_comm]; omega).mono
-    (fun τ s ⟨hc, hk, hy⟩ => ⟨hc, hk, fun i hi => hy i (by omega)⟩) fun τ s ⟨hc, hk, r0⟩ => ⟨hc, hk, r0⟩
+    (fun τ s ⟨⟨hc, hk, hy⟩, sy⟩ => ⟨⟨hc, hk, fun i hi => hy i (by omega)⟩, sy⟩) fun τ s h => h
 
 end VG.Proof.RsaPss.X86.Vf

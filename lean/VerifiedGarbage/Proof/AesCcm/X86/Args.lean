@@ -78,7 +78,7 @@ theorem args_of_lay {s : State} (h : oneLay s)
     beq_iff_eq] at hv
   obtain ⟨⟨⟨⟨⟨ht4, ht16⟩, hte⟩, hn7, hn13⟩, hp⟩, -⟩ := hv
   rw [Nat.pow_mul] at hp
-  rw [show (56 : Addr) = BitVec.ofNat 64 56 from rfl, below_eq hsp] at b1 b2 b3 b4 b5 b6
+  rw [show (60 : Addr) = BitVec.ofNat 64 60 from rfl, below_eq hsp] at b1 b2 b3 b4 b5 b6
   exact {
     lay := ⟨f1, f6, hsp, d2, b1, b6⟩
     perm := ⟨mrd _ (by simp), mwr _ (by simp)⟩
@@ -180,7 +180,7 @@ theorem inMut_macR (W SP D : BitVec 32) (n : Nat) {y : Nat} (hy : y = 0 ∨ y = 
   · exact ⟨wA W, by simp, by rcases hy with rfl | rfl <;> exact Offset.sub_base _ (by decide)⟩
   · exact ⟨wA W, by simp, Offset.sub_base _ (by decide)⟩
   · exact ⟨wC W, by simp, fun _ h => h⟩
-  · exact ⟨below SP 56, by simp, fun _ h => h⟩
+  · exact ⟨below SP 60, by simp, fun _ h => h⟩
 
 theorem inMut_ctrR (W SP D : BitVec 32) (n : Nat) : InMut W SP D n (ctrR W SP D n) := by
   intro r hr
@@ -188,7 +188,7 @@ theorem inMut_ctrR (W SP D : BitVec 32) (n : Nat) : InMut W SP D n (ctrR W SP D 
   rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨wA W, by simp, Offset.sub_base _ (by decide)⟩
   · exact ⟨wC W, by simp, fun _ h => h⟩
-  · exact ⟨below SP 56, by simp, fun _ h => h⟩
+  · exact ⟨below SP 60, by simp, fun _ h => h⟩
   · exact ⟨_, by simp, fun _ h => h⟩
 
 theorem frame_toMut {W SP D : BitVec 32} {n : Nat} {rs : List Region} {m m' : Mem} (hf : Frame rs m m')

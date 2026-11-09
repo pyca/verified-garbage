@@ -38,10 +38,6 @@ theorem controllerValue_unchanged (values : List (Nat × BitVec 64)) (j : Nat) (
     rw [ite_eq_right (hnot e (List.mem_cons_self ..))]
     exact ih initial (fun x hx => hnot x (List.mem_cons_of_mem _ hx))
 
-theorem writeController_append (m : Mem) (B : Addr) (xs ys : List (Nat × BitVec 64)) :
-    writeController m B (xs ++ ys) = writeController (writeController m B xs) B ys := by
-  exact List.foldl_append
-
 theorem writeController_frame_size (m : Mem) (B : Addr) (values : List (Nat × BitVec 64))
     {size : Nat} (hsize : size ≤ 2 ^ 64) (hvalues : ∀ e ∈ values, 8 * e.1 + 8 ≤ size) :
     Frame [⟨B, size⟩] m (writeController m B values) := by

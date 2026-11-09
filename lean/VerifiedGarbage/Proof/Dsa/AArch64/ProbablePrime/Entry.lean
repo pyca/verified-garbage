@@ -24,15 +24,6 @@ def entryMem (s : State) (F : Addr) : Mem :=
   ((((s.mem.writeW (off F 40) (s.gpr .x0)).writeW (off F 112) (s.gpr .x2)).writeW (off F 120) (s.gpr .x3)).writeW
     (off F usedSlot) (s.gpr .x4)).writeW (off F 128) (0 : BitVec 64)
 
-theorem entryMem_outside (s : State) (F : Addr) :
-    Outside F 40 104 s.mem (entryMem s F) := by
-  unfold entryMem usedSlot
-  exact ((((writeW_outside _ _ _ (by omega)).mono (by omega) (by omega)).trans
-    ((writeW_outside _ _ _ (by omega)).mono (by omega) (by omega))).trans
-    ((writeW_outside _ _ _ (by omega)).mono (by omega) (by omega))).trans
-    ((writeW_outside _ _ _ (by omega)).mono (by omega) (by omega)) |>.trans
-    ((writeW_outside _ _ _ (by omega)).mono (by omega) (by omega))
-
 theorem entryMem_word (s : State) (F : Addr) :
     word (entryMem s F) F 40 = s.gpr .x0 ∧ word (entryMem s F) F 112 = s.gpr .x2 ∧
       word (entryMem s F) F 120 = s.gpr .x3 ∧ word (entryMem s F) F usedSlot = s.gpr .x4 ∧

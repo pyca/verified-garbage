@@ -283,9 +283,6 @@ def baseOddCached (q : Spec.X25519.Fe × Spec.X25519.Fe) : Spec.Ed25519.Point :=
 /-- The static holding the entries. -/
 def baseOddSym : String := "VG_ED25519_VERIFY_BASE"
 
-/-- The bytes of the static: 128 entries of 128 bytes. -/
-def baseOddBytes : Nat := 16384
-
 /-- The words of the static: each entry's four field elements. -/
 def baseOddWords : List (BitVec 64) :=
   baseOddAffine.flatMap fun q =>

@@ -31,10 +31,6 @@ def fAcc (K : Schedule) (x : Word) : Nat → Word
   | 2 => (sq K x 0 + sq K x 1) ^^^ sq K x 2
   | _ => ((sq K x 0 + sq K x 1) ^^^ sq K x 2) + sq K x 3
 
-theorem fAcc_succ (K : Schedule) (x : Word) {j : Nat} (hj : j < 3) :
-    fAcc K x (j + 1) = if j + 1 = 2 then fAcc K x j ^^^ sq K x (j + 1) else fAcc K x j + sq K x (j + 1) := by
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl <;> rfl
-
 /-- One S-box step of F, from the previous steps' `prev`, for any schedule `K`
 (so that no proof evaluates a concrete schedule's S-boxes). -/
 theorem fAcc_step (K : Schedule) (x : Word) {j : Nat} (hj : j < 4) (prev : Word)

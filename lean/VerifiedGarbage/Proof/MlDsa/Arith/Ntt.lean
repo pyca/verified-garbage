@@ -17,7 +17,7 @@ implementation runs, so that its proof is only about its instructions:
   a layer is `blockN` for each of its blocks (`layerN`), and a block is
   `len` butterflies. `blockN` and `layerN` are the loops after their first
   `t` iterations (`…_zero`, `…_succ`), for loop invariants, and
-  `blockN_bfly_get` and `blockN_bflyInv_get` say what each coefficient is
+  `blockN_bfly_get'` and `blockN_bflyInv_get'` say what each coefficient is
   after `t` butterflies of a block. `nttInv f` is likewise `nttInvLayer` for
   each `len` of `nttInvLens`, then the multiplication of every coefficient
   by `256⁻¹ = 8347681`.
@@ -140,44 +140,6 @@ theorem layerN_zero (op : Poly → Nat → Nat → Zq → Poly) (w : Poly) (len 
 theorem layerN_succ (op : Poly → Nat → Nat → Zq → Poly) (w : Poly) (len : Nat) (zf : Nat → Zq) (b : Nat) :
     layerN op w len zf (b + 1) = blockN op (layerN op w len zf b) len (zf b) (2 * len * b) len :=
   foldl_range_succ _ _ _
-
-/-- Each coefficient after the first `t` butterflies of a block of `NTT`:
-the butterflies on `(j, j + len)` for `start ≤ j < start + t` are done. -/
-theorem blockN_bfly_get (w : Poly) {len : Nat} {z : Zq} {start t : Nat} (hlen : 0 < len) (ht : t ≤ len)
-    (hs : start + 2 * len ≤ n) {i : Nat} (hi : i < n) :
-    (blockN bfly w len z start t)[i]! =
-      if start ≤ i ∧ i < start + t then w[i]! + z * w[i + len]!
-      else if start + len ≤ i ∧ i < start + len + t then w[i - len]! - z * w[i]!
-      else w[i]! := by
-  induction t generalizing i with
-  | zero =>
-    rw [blockN_zero, ite_eq_right (by omega), ite_eq_right (by omega)]
-  | succ t ih =>
-    rw [blockN_succ, bfly_get _ hlen (by omega) _ hi, ih (i := start + t) (by omega) (by omega),
-      ih (i := start + t + len) (by omega) (by omega), ih (by omega) hi]
-    rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
-        (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
-        i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
-      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
-
-/-- Each coefficient after the first `t` inverse butterflies of a block of
-`NTT⁻¹`. -/
-theorem blockN_bflyInv_get (w : Poly) {len : Nat} {z : Zq} {start t : Nat} (hlen : 0 < len) (ht : t ≤ len)
-    (hs : start + 2 * len ≤ n) {i : Nat} (hi : i < n) :
-    (blockN bflyInv w len z start t)[i]! =
-      if start ≤ i ∧ i < start + t then w[i]! + w[i + len]!
-      else if start + len ≤ i ∧ i < start + len + t then z * (w[i - len]! - w[i]!)
-      else w[i]! := by
-  induction t generalizing i with
-  | zero =>
-    rw [blockN_zero, ite_eq_right (by omega), ite_eq_right (by omega)]
-  | succ t ih =>
-    rw [blockN_succ, bflyInv_get _ hlen (by omega) _ hi, ih (i := start + t) (by omega) (by omega),
-      ih (i := start + t + len) (by omega) (by omega), ih (by omega) hi]
-    rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
-        (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
-        i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
-      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
 
 /-! ## NTT -/
 

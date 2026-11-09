@@ -66,25 +66,9 @@ structure LoopKeep (s t : State) : Prop where
   wr : t.wr = s.wr
   syms : t.syms = s.syms
 
-theorem LoopKeep.refl (s : State) : LoopKeep s s := ⟨fun _ _ _ _ => rfl, rfl, rfl, rfl, rfl, rfl⟩
-
 theorem LoopKeep.trans {s t u : State} (h : LoopKeep s t) (h' : LoopKeep t u) : LoopKeep s u :=
   ⟨fun r a b c => (h'.gpr r a b c).trans (h.gpr r a b c), h'.x0.trans h.x0, h'.mem.trans h.mem,
    h'.rd.trans h.rd, h'.wr.trans h.wr, h'.syms.trans h.syms⟩
-
-theorem LoopKeep.setXmm (s : State) {x : XReg} (v : BitVec 128) (hx : x ≠ .xmm0) : LoopKeep s (s.setXmm x v) :=
-  ⟨fun _ _ _ _ => rfl, xmm_setXmm_of_ne _ _ (Ne.symm hx), rfl, rfl, rfl, rfl⟩
-
-theorem LoopKeep.setReg (s : State) {r : Reg} (v : BitVec 32) (hr : r = .eax ∨ r = .ecx ∨ r = .edx) :
-    LoopKeep s (s.setReg r v) :=
-  ⟨fun _ a b c => gpr_setReg_of_ne _ _ (by rcases hr with rfl | rfl | rfl <;> with_reducible assumption), rfl, rfl, rfl, rfl,
-    rfl⟩
-
-theorem LoopKeep.setFlags (s : State) (a b c d : Option Bool) : LoopKeep s (s.setFlags a b c d) :=
-  ⟨fun _ _ _ _ => rfl, rfl, rfl, rfl, rfl, rfl⟩
-
-theorem LoopKeep.arithFlags (s : State) (v : BitVec 32) (c o : Bool) : LoopKeep s (arithFlags s v c o) :=
-  ⟨fun _ _ _ _ => rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 /-- `LoopKeep s t` for `t` made from `s` by writes of `eax`, `ecx`, `edx`, the
 flags and registers other than `xmm0`. -/

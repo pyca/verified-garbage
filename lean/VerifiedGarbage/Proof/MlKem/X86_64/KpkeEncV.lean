@@ -38,10 +38,6 @@ theorem kpkeEnc_agree (L : Kem) (s₁ s₂ : State) (_ : (kpkeEncK L).pre s₁) 
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [hp.1, hp.2.1, hp.2.2.1, hp.2.2.2.1, hp.2.2.2.2.1, hp.2.2.2.2.2.1, hp.2.2.2.2.2.2]
 
-theorem vecReducedW16_zero (p : Addr) (l : Nat) : VecReducedW 16 (fun _ => 0) p l := fun _ _ _ _ => by
-  simp only [coeffAtW, Mem.readW, read_zero]
-  decide
-
 theorem keWf768 : KpkeEnc.KeWf kem768 := ⟨.inl rfl, by decide, by decide, by decide⟩
 
 /-- The pointers that `kpkeEncPost` uses agree after `kpkeEncPre`: they are those of
@@ -78,46 +74,5 @@ theorem kpkeEnc768Y_correct : ∀ s, (kpkeEncK kem768).pre s →
     ∃ t s', Exec isa (kpkeEnc kem768 .avx2 encryptMul16Y) s t s' ∧ abiPreserved s s' ∧ (kpkeEncK kem768).post s s' :=
   KpkeEnc.kpkeEnc_correct PrimsOk.avx2 kdCalls768 keWf768 encMul16Y3_correct (by lit_decide) (by lit_decide)
     (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)
-
-/-- A state the contract permits. -/
-def kpkeEncSat (L : Kem) : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x5000 | .rcx => 0x6000 | .r8 => 0x8000 | .r9 => 0x10000
-    | .rsp => 0x20000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x2000, 512 * (L.k * L.k)⟩, ⟨0x5000, 384 * L.k⟩, ⟨0x8000, 32⟩]
-  wr := [⟨0x1000, L.ctLen⟩, ⟨0x6000, 512 * (2 * L.k + 1)⟩, ⟨0x10000, 20480⟩]
-
-theorem kpkeEnc768_of {c : Prog isa}
-    (hc : ∀ s, (kpkeEncK kem768).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (kpkeEncK kem768).post s s')
-    (hct : ConstantTime isa (kpkeEncK kem768).pre (kpkeEncK kem768).pub c) :
-    Verified X86_64.target c (Proof.MlKem.Params.kpkeEncryptContract Spec.MlKem.mlKem768 X86_64.abi) :=
-  Verified.of_correct hc hct
-    { pre := by sig_implies_pre [Params.kpkeEncryptContract, Params.kpkeEncryptSig, kpkeEncK, X86_64.abi,
-        X86_64.argRegs, kScrE, Kem.k, Kem.ctLen, kem768, retR, Params.ctLen, mlKem768]
-      post := by sig_implies_post [Params.kpkeEncryptContract, Params.kpkeEncryptSig, kpkeEncK, encCt, X86_64.abi,
-        X86_64.argRegs, kScrE, Kem.k, Kem.du, Kem.dv, Kem.ctLen, kem768, retR, Params.ctLen, mlKem768]
-      pub := by sig_implies_pub [Params.kpkeEncryptContract, Params.kpkeEncryptSig, kpkeEncK, X86_64.abi,
-        X86_64.argRegs, kScrE, Kem.k, Kem.ctLen, kem768, retR, Params.ctLen, mlKem768]
-      sat := by
-        refine ⟨kpkeEncSat kem768, ?_⟩
-        sig_pre [Params.kpkeEncryptContract, Params.kpkeEncryptSig, kpkeEncK, X86_64.abi, X86_64.argRegs]
-        and_intros
-        all_goals first
-          | rfl
-          | decide
-          | exact Region.disjoint_of_sep (by decide)
-          | exact vecReducedW16_zero _ _
-          | (intro a h₁ h₂
-             simp only [Region.Contains] at h₁ h₂
-             bv_omega) }
-
-theorem kpkeEnc768Y_verified :
-    Verified X86_64.target (kpkeEnc kem768 .avx2 encryptMul16Y) (Proof.MlKem.Params.kpkeEncryptContract mlKem768 X86_64.abi) :=
-  kpkeEnc768_of kpkeEnc768Y_correct kpkeEnc768Y_ct
 
 end VG.Proof.MlKem.X86_64

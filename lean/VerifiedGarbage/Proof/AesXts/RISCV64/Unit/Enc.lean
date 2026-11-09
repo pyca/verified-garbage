@@ -51,11 +51,6 @@ structure BlocksReady (s₀ : State) (N : Nat) (s : State) : Prop where
   tw : TwPost s₀ s
   pre : XPre s (W s₀) (Tp s₀) (D s₀) (Wk s₀) N (R s₀)
 
-/-- Registers other than the ones the invariant needs. -/
-theorem keep_of {s s' : State} {P : Reg → Prop} (hg : ∀ r, P r → s'.gpr r = s.gpr r)
-    (hP : ∀ r ∈ preserved, r ≠ .s3 → P r) : ∀ r ∈ preserved, r ≠ .s3 → s'.gpr r = s.gpr r :=
-  fun r hr h16 => hg r (hP r hr h16)
-
 section
 variable {s₀ : State} (hp : UPre s₀)
 include hp

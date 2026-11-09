@@ -34,10 +34,4 @@ theorem restores_ok (s : State) :
   exact WP.mono (umovOf_ok savedLanes s (by decide) (by decide))
     fun _ ⟨hm, _, _, _, hl, _⟩ => ⟨hm, hl⟩
 
-/-- The column loop cannot overwrite any saved scalar register's vector lane. -/
-theorem columns_noVec :
-    (countLoop .x15 VG.Impl.Bignum.AArch64.ProductEight.offBlock).allInstrs
-      (fun i => (vdstOf i).isNone) = true := by
-  decide +kernel
-
 end VG.Proof.Bignum.AArch64.ProductEight

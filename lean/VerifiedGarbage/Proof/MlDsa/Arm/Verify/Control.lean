@@ -51,7 +51,26 @@ theorem vrel7 {p : Params} {STK : Nat} {I : State → State → Prop} (hI : ∀ 
 
 theorem VC.r11 {p : Params} {STK : Nat} {σ s : State} (h : VC p STK σ s) (v : BitVec 32) :
     VC p STK σ (s.setReg .r11 v) :=
-  ⟨h.site.setReg (by decide) v, h.rd, h.wr, h.sp, h.sav, h.lr, h.pk, h.mu, h.sg⟩
+  ⟨h.site.setReg (by decide) v, h.rd, h.wr, h.sp, h.sav, h.lr, h.pk, h.mu, h.sg,
+    by simp only [State.setReg, show Reg.r8 ≠ .r11 by decide, ite_false]; exact h.r8, h.ck⟩
+
+/-! ## A state that differs but in registers other than the layout's -/
+
+theorem siteCongr {L : Lay} {Wb : List Nat} {STK : Nat} {s s' : State} (h : Site L Wb STK s)
+    (h4 : s'.gpr .r4 = s.gpr .r4) (h5 : s'.gpr .r5 = s.gpr .r5) (h6 : s'.gpr .r6 = s.gpr .r6)
+    (h7 : s'.gpr .r7 = s.gpr .r7) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
+    Site L Wb STK s' :=
+  ⟨h.ok, h.len, h.w0, h.w1, h.sz0, h.sz1, by rw [hsp]; exact h.p1, h.s8, by rw [hsp]; exact h.spk,
+    by rw [h7]; exact h.r7, by rw [h4]; exact h.r4, by rw [h5]; exact h.r5, by rw [h6]; exact h.r6,
+    by rw [hwr]; exact h.cw, by rw [hrd, hwr]; exact h.cr⟩
+
+theorem VC.congr {p : Params} {STK : Nat} {σ s s' : State} (h : VC p STK σ s)
+    (hr : ∀ r ∈ [Reg.r4, .r5, .r6, .r7, .r8], s'.gpr r = s.gpr r) (hm : s'.mem = s.mem) (hsp : s'.sp = s.sp)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : VC p STK σ s' :=
+  ⟨siteCongr h.site (hr _ (by decide)) (hr _ (by decide)) (hr _ (by decide)) (hr _ (by decide)) hsp hrd hwr,
+    hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp,
+    by rw [hm]; exact h.sav, by rw [hm]; exact h.lr, by rw [hm]; exact h.pk, by rw [hm]; exact h.mu,
+    by rw [hm]; exact h.sg, by rw [hr _ (by decide)]; exact h.r8, fun hne => by rw [hm]; exact h.ck hne⟩
 
 /-! ## A branch on `r11` -/
 

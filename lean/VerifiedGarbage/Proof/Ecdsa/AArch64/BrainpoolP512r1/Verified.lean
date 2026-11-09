@@ -57,8 +57,4 @@ theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signBrainpool
       · exact h3
       · exact h4⟩) (by taint_decide)
 
-theorem sign_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (hI : InvSounds) :
-    Verified AArch64.target signBrainpoolP512r1 (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP512r1.inst AArch64.abi) :=
-  Verified.of_correct (sign_a64 hL hI) sign_ct implies
-
 end VG.Proof.Ecdsa.AArch64.BrainpoolP512r1

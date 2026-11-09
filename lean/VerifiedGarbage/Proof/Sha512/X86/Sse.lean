@@ -85,9 +85,6 @@ theorem q_pand (a b : BitVec 128) : qword (XBinOp.eval .pand a b) 0 = qword a 0 
 theorem q_paddq (a b : BitVec 128) : qword (XBinOp.eval .paddq a b) 0 = qword a 0 + qword b 0 := by
   simp only [XBinOp.eval, qword_append_0]
 
-theorem q1_paddq (a b : BitVec 128) : qword (XBinOp.eval .paddq a b) 1 = qword a 1 + qword b 1 := by
-  simp only [XBinOp.eval, qword_append_1]
-
 /-- `paddq`, as the two quadwords. -/
 theorem eval_paddq (a b : BitVec 128) :
     XBinOp.eval .paddq a b = (qword a 1 + qword b 1) ++ (qword a 0 + qword b 0) := rfl

@@ -17,7 +17,7 @@
 /// * `schedule` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `key`, `schedule` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_cast5_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r#".base64 "pgIIfMgABvhAAMb5SADm+VAABvpYACb6YABG+mgAZvpwAIb6eACm+oAAxvqIAOb6kAAG+5gAJvugAEb7qABm+7AAhvu4AKb7wADG+w=="
 bcl 20, 31, 2f
@@ -273,11 +273,11 @@ b 24f
 23:
 .base64 "GgDGiRgA5okbAAaKGQAmig=="
 24:
-.base64 "eNt3fwAAwDoAAEA6AABgOgAAgDoAAKA6"
+.base64 "BwAgOzjI0n3kRVh6eMNSfuSDWHp4w1J+OMjzfeRFeHp4w3N+5IN4enjDc37GB3N6eJtSfjjIFH7kRZh6eMOUfuSDmHp4w5R+OMg1fuRFuHp4w7V+5IO4enjDtX7GB7V6eKuUfmcB0n1nAfR9LHLOESx6LhDC6NJ55EVYenjDUn7kg1h6eMNSfsLo83nkRXh6eMNzfuSDeHp4w3N+xgdzenibUn7C6BR65EWYenjDlH7kg5h6eMOUfsLoNXrkRbh6eMO1fuSDuHp4w7V+xge1enirlH5nAdJ9ZwH0fSxyzhEsek4Q//8AP///GGMiABh7ZwEYfmuAsBDkgxl7eMoYf2cBGH5rgJAQ5EUZe3jKGH9nARh+a4BwEMQEABD/AAA7xsEYe2cBGH4sgsAQLALGEMQ85xB423d/EADAOiAAYDowAKA6"
 283:
-.base64 "AAA3g3iy2H3//xg74A8Ye1AAGH84wDl/eMtSfgQAN4N4svh9//8YO+APGHtQABh/OMA5f3jLc34IADeDeLIYfv//GDvgDxh7UAAYfzjAOX94y5R+DAA3g3iyOH7//xg74A8Ye1AAGH84wDl/eMu1fhAA9zoBANY6AP8WOwAAOCg="
+.base64 "qzgGEew75hDsM8AQmQY3fZm2V33qUCkRmZ5XfZmud33qWEoRKlEpEUAA9zqZBld9mbZ3fepYShGZnnd9ma6XfepgaxEqWUoRalEpESpKrRFAAPc6ULgbfwDwGDsAADgo"
 bne %cr0, 283b
-.base64 "AAALOwAAOCg="
+.base64 "ZwCyfSIAU3rGB1J6IgBSeixqDRJnABR+IgCVesYHlHoiAJR6AAALOwAAOCg="
 beq %cr0, 284f
 .base64 "//8LOwAAOCg="
 beq %cr0, 286f
@@ -540,7 +540,7 @@ bne %cr0, 21b
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_ecb_encrypt(schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_cast5_ecb_encrypt(schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r#".base64 "pgIIfMgAB/hAAMf5SADn+VAAB/pYACf6YABH+mgAZ/pwAIf6eACn+oAAx/qIAOf6kAAH+5gAJ/ugAEf7qABn+7AAh/u4AKf7wADH+w=="
 bcl 20, 31, 2f
@@ -566,11 +566,11 @@ b 25f
 24:
 .base64 "AACKg1DgiX8="
 25:
-.base64 "QACqgwb4vnvgD957///eOz4ImFd4wpl/OPA5f3jKHH9G8L574A/ee///3js+EJhXeMKZfzjwOX94yhx/hui+e+AP3nv//947PiCYV3jCmX848Dl/eMocf8bgvnvgD957///eOz5AmFd4wpl/OPA5f3jKHH8G2b574A/ee///3js+gJhXeMKZfzjwOX94yhx/ONCOfz7Cj1c40O99PoSQVzjQEH4+RpFXeNt3fwAAwDoAAEA6AABgOgAAgDoAAKA6"
+.base64 "QACqgwb4vnvgD957///eOz4ImFd4wpl/OPA5f3jKHH9G8L574A/ee///3js+EJhXeMKZfzjwOX94yhx/hui+e+AP3nv//947PiCYV3jCmX848Dl/eMocf8bgvnvgD957///eOz5AmFd4wpl/OPA5f3jKHH8G2b574A/ee///3js+gJhXeMKZfzjwOX94yhx/ONCOfz7Cj1c40O99PoSQVzjQEH4+RpFXBwAgOzjI0n3kRVh6eMNSfuSDWHp4w1J+OMjzfeRFeHp4w3N+5IN4enjDc37GB3N6eJtSfjjIFH7kRZh6eMOUfuSDmHp4w5R+OMg1fuRFuHp4w7V+5IO4enjDtX7GB7V6eKuUfmcB0n1nAfR9LHLOESx6LhDC6NJ55EVYenjDUn7kg1h6eMNSfsLo83nkRXh6eMNzfuSDeHp4w3N+xgdzenibUn7C6BR65EWYenjDlH7kg5h6eMOUfsLoNXrkRbh6eMO1fuSDuHp4w7V+xge1enirlH5nAdJ9ZwH0fSxyzhEsek4Q//8AP///GGMiABh7ZwEYfmuAsBDkgxl7eMoYf2cBGH5rgJAQ5EUZe3jKGH9nARh+a4BwEMQEABD/AAA7xsEYe2cBGH4sgsAQLALGEMQ85xB423d/EADAOiAAYDowAKA6"
 28:
-.base64 "AAA3g3iy2H3//xg74A8Ye1AAGH84wDl/eMtSfgQAN4N4svh9//8YO+APGHtQABh/OMA5f3jLc34IADeDeLIYfv//GDvgDxh7UAAYfzjAOX94y5R+DAA3g3iyOH7//xg74A8Ye1AAGH84wDl/eMu1fhAA9zoBANY6AP8WOwAAOCg="
+.base64 "qzgGEew75hDsM8AQmQY3fZm2V33qUCkRmZ5XfZmud33qWEoRKlEpEUAA9zqZBld9mbZ3fepYShGZnnd9ma6XfepgaxEqWUoRalEpESpKrRFAAPc6ULgbfwDwGDsAADgo"
 bne %cr0, 28b
-.base64 "AAAsKA=="
+.base64 "ZwCyfSIAU3rGB1J6IgBSeixqDRJnABR+IgCVesYHlHoiAJR6AAAsKA=="
 beq %cr0, 29f
 .base64 "//8MOwAAOCg="
 beq %cr0, 211f
@@ -616,7 +616,7 @@ b 21f
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_ecb_decrypt(schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_cast5_ecb_decrypt(schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r#".base64 "pgIIfMgAB/hAAMf5SADn+VAAB/pYACf6YABH+mgAZ/pwAIf6eACn+oAAx/qIAOf6kAAH+5gAJ/ugAEf7qABn+7AAh/u4AKf7wADH+w=="
 bcl 20, 31, 2f
@@ -642,11 +642,11 @@ b 25f
 24:
 .base64 "AACKg1DgiX8="
 25:
-.base64 "QACqgwb4vnvgD957///eOz4ImFd4wpl/OPA5f3jKHH9G8L574A/ee///3js+EJhXeMKZfzjwOX94yhx/hui+e+AP3nv//947PiCYV3jCmX848Dl/eMocf8bgvnvgD957///eOz5AmFd4wpl/OPA5f3jKHH8G2b574A/ee///3js+gJhXeMKZfzjwOX94yhx/ONCOfz7Cj1c40O99PoSQVzjQEH4+RpFXeNt3fwAAwDoAAEA6AABgOgAAgDoAAKA6"
+.base64 "QACqgwb4vnvgD957///eOz4ImFd4wpl/OPA5f3jKHH9G8L574A/ee///3js+EJhXeMKZfzjwOX94yhx/hui+e+AP3nv//947PiCYV3jCmX848Dl/eMocf8bgvnvgD957///eOz5AmFd4wpl/OPA5f3jKHH8G2b574A/ee///3js+gJhXeMKZfzjwOX94yhx/ONCOfz7Cj1c40O99PoSQVzjQEH4+RpFXBwAgOzjI0n3kRVh6eMNSfuSDWHp4w1J+OMjzfeRFeHp4w3N+5IN4enjDc37GB3N6eJtSfjjIFH7kRZh6eMOUfuSDmHp4w5R+OMg1fuRFuHp4w7V+5IO4enjDtX7GB7V6eKuUfmcB0n1nAfR9LHLOESx6LhDC6NJ55EVYenjDUn7kg1h6eMNSfsLo83nkRXh6eMNzfuSDeHp4w3N+xgdzenibUn7C6BR65EWYenjDlH7kg5h6eMOUfsLoNXrkRbh6eMO1fuSDuHp4w7V+xge1enirlH5nAdJ9ZwH0fSxyzhEsek4Q//8AP///GGMiABh7ZwEYfmuAsBDkgxl7eMoYf2cBGH5rgJAQ5EUZe3jKGH9nARh+a4BwEMQEABD/AAA7xsEYe2cBGH4sgsAQLALGEMQ85xB423d/EADAOiAAYDowAKA6"
 28:
-.base64 "AAA3g3iy2H3//xg74A8Ye1AAGH84wDl/eMtSfgQAN4N4svh9//8YO+APGHtQABh/OMA5f3jLc34IADeDeLIYfv//GDvgDxh7UAAYfzjAOX94y5R+DAA3g3iyOH7//xg74A8Ye1AAGH84wDl/eMu1fhAA9zoBANY6AP8WOwAAOCg="
+.base64 "qzgGEew75hDsM8AQmQY3fZm2V33qUCkRmZ5XfZmud33qWEoRKlEpEUAA9zqZBld9mbZ3fepYShGZnnd9ma6XfepgaxEqWUoRalEpESpKrRFAAPc6ULgbfwDwGDsAADgo"
 bne %cr0, 28b
-.base64 "AAAsKA=="
+.base64 "ZwCyfSIAU3rGB1J6IgBSeixqDRJnABR+IgCVesYHlHoiAJR6AAAsKA=="
 beq %cr0, 29f
 .base64 "//8MOwAAOCg="
 beq %cr0, 211f

@@ -128,9 +128,6 @@ structure Frame (s₀ : State) (base : Addr) (s : State) : Prop where
   wr : s.wr = s₀.wr
   mem : Outside2 base 64 2816 ACC 1152 s₀.mem s.mem
 
-theorem StepInv.frame {n : Nat} {s₀ s : State} {base : Addr} {k j : Nat} (h : StepInv n s₀ base k j s) :
-    Frame s₀ base s := ⟨h.scr, h.env, h.zero, h.lr, h.out, h.rd, h.wr, h.mem⟩
-
 /-- What the comb needs before its accumulators are set: the working space, every slot's limbs
 below `Ib`, slot 19 zero, the bits of `k` and the tables. -/
 structure CombPre (n : Nat) (base : Addr) (k : Nat) (s : State) : Prop where

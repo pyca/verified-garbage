@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Hint
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
 
 import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
 import VerifiedGarbage.Proof.MlDsa.X86.Verify.Ball
@@ -56,34 +57,36 @@ variable {P : Prims} (hP : PrimsOk P) {p : Params} (hF : VFacts p)
 include hP hF
 
 /-- Once the norms of `z` are within the bound. -/
-theorem ok2_piece : VP p (fun s₀ s => ZI p s₀ p.ℓ s ∧ decide (NormsOk p s₀ p.ℓ) = true) (VFin p)
-    (.seq (samples P p) (compute P p)) :=
-  ((samples_piece hP hF).mono (fun _ _ _ ⟨h, hn⟩ => by
+theorem ok2_piece : VP p (fun s₀ s => (ZI p s₀ p.ℓ s ∧ T1Ok p s₀) ∧ decide (NormsOk p s₀ p.ℓ) = true)
+    (fun s₀ s => VFin p s₀ s ∧ T1Ok p s₀) (.seq (samples P p) (compute P p)) :=
+  ((piece_pure (T1Ok p) (samples_piece hP hF)).mono (fun _ _ _ ⟨⟨h, ht⟩, hn⟩ => by
     have hn := of_decide_eq_true hn
-    exact ⟨⟨h.ctx, h.hint, h.z, hn⟩, by rw [h.acc, ifp hn _ _]⟩) fun _ _ _ h => h).seq (compute_piece hP hF)
+    exact ⟨⟨⟨h.ctx, h.hint, h.z, hn⟩, by rw [h.acc, ifp hn _ _]⟩, ht⟩) fun _ _ _ h => h).seq (compute_piece hP hF)
 
 /-- Once the hint is well formed. -/
-theorem ok1_piece : VP p (fun s₀ s => H1 p s₀ s ∧ (hOf p s₀).isSome = true) (VFin p)
+theorem ok1_piece : VP p (fun s₀ s => (H1 p s₀ s ∧ (hOf p s₀).isSome = true) ∧ T1Ok p s₀)
+    (fun s₀ s => VFin p s₀ s ∧ T1Ok p s₀)
     (.seq (seqR (zOne P p) 0 p.ℓ) (ifOk (.seq (samples P p) (compute P p)))) := by
-  refine Piece.seq (B := (ZI p · p.ℓ)) ((seqR_piece (I := fun i => (ZI p · i)) p.ℓ 0
-    fun i _ hi => zOne_piece hP hF (by omega)).mono (fun s₀ s _ ⟨h, hs⟩ => ?_) fun _ _ _ h => by simpa using h) ?_
+  refine Piece.seq (B := fun s₀ s => ZI p s₀ p.ℓ s ∧ T1Ok p s₀)
+    (piece_pure (T1Ok p) ((seqR_piece (I := fun i => (ZI p · i)) p.ℓ 0
+    fun i _ hi => zOne_piece hP hF (by omega)).mono (fun s₀ s _ ⟨h, hs⟩ => ?_) fun _ _ _ h => by simpa using h)) ?_
   · rcases h.2 with ⟨e, ho⟩ | ⟨_, hn⟩
     · exact ⟨h.1, ho, fun j hj => absurd hj (Nat.not_lt_zero _), by
         rw [e, ifp (fun j hj => absurd hj (Nat.not_lt_zero _)) _ _]⟩
     · rw [hn] at hs; exact absurd hs (by decide)
   refine ifOk_piece (Y := YV p) (fun s₀ => decide (NormsOk p s₀ p.ℓ)) (by lvd) (by native_taint_decide)
-    (fun _ _ _ h => h.ctx) (fun s₀ s s' _ h h' m => ⟨h', ?_, ?_, ?_⟩) (fun s₀ s _ h => ?_)
-    (fun _ _ _ _ hq => norms_pub hq) (ok2_piece hP hF) fun s₀ s _ h hn => ⟨h.ctx, .inr ⟨?_, ?_⟩⟩
-  · obtain ⟨hh, e, hi⟩ := h.hint; exact ⟨hh, e, by rw [m]; exact hi⟩
-  · intro j hj; rw [m]; exact h.z j hj
-  · rw [accV, m]; exact h.acc
+    (fun _ _ _ h => h.1.ctx) (fun s₀ s s' _ h h' m => ⟨⟨h', ?_, ?_, ?_⟩, h.2⟩) (fun s₀ s _ h => ?_)
+    (fun _ _ _ _ hq => norms_pub hq) (ok2_piece hP hF) fun s₀ s _ h hn => ⟨⟨h.1.ctx, .inr ⟨?_, ?_⟩⟩, h.2⟩
+  · obtain ⟨hh, e, hi⟩ := h.1.hint; exact ⟨hh, e, by rw [m]; exact hi⟩
+  · intro j hj; rw [m]; exact h.1.z j hj
+  · rw [accV, m]; exact h.1.acc
   · show (accV s₀ s != 0) = _
-    rw [h.acc]
+    rw [h.1.acc]
     by_cases hn : NormsOk p s₀ p.ℓ
     · rw [ifp hn _ _, decide_eq_true hn]; rfl
     · rw [ifn hn _ _, decide_eq_false hn]; rfl
-  · rw [h.acc, ifn (of_decide_eq_false hn) _ _]
-  · obtain ⟨hh, e, -⟩ := h.hint
+  · rw [h.1.acc, ifn (of_decide_eq_false hn) _ _]
+  · obtain ⟨hh, e, -⟩ := h.1.hint
     show Spec.MlDsa.verifyMu p minBounds (vPk p s₀) (vMu s₀) (vSig p s₀) ≠ some true
     exact Proof.MlDsa.Verify.verifyMu_norm minBounds _ _ e fun hlt =>
       of_decide_eq_false hn ((Proof.MlDsa.Verify.normR_vZ_iff hF.beta.1 p hF.g1 _).mp hlt)
@@ -93,20 +96,22 @@ theorem ret_piece : VP p (VFin p) (Done p) (.block [.mov .eax (.mem (at_ .esi oA
   ld32_piece (Y := YV p) oACC (by lvd) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.1)
     fun s₀ s s' _ h h' m e => ⟨⟨h', by rw [accV, m]; exact h.2⟩, by rw [e, accV, m]; rfl⟩
 
-theorem body_piece : VP p (fun s₀ s => s = P0 s₀) (Done p) (body P p) := by
+theorem body_piece : VP p (fun s₀ s => s = P0 s₀ ∧ T1Ok p s₀) (fun s₀ s => Done p s₀ s ∧ T1Ok p s₀) (body P p) := by
   unfold body
-  refine (ldsc_piece (Y := YV p) (ht := .block []) (by kernel_rfl)).seq ((hint_piece hP hF).seq ?_)
+  refine (piece_pure (T1Ok p) (ldsc_piece (Y := YV p) (ht := .block []) (by kernel_rfl))).seq
+    ((piece_pure (T1Ok p) (hint_piece hP hF)).seq ?_)
   refine Piece.seq (ifOk_piece (Y := YV p) (fun s₀ => (hOf p s₀).isSome) (by lvd) (by native_taint_decide)
-    (fun _ _ _ h => h.1) (fun s₀ s s' _ h h' m => ⟨h', ?_⟩) (fun s₀ s _ h => ?_) (fun _ _ _ _ hq => by
-      rw [hOf_pub hq]) (ok1_piece hP hF) fun s₀ s _ h hn => ⟨h.1, .inr ⟨?_, ?_⟩⟩) (ret_piece hF)
-  · rcases h.2 with ⟨e, hh, eh, hi⟩ | ⟨e, hn⟩
+    (fun _ _ _ h => h.1.1) (fun s₀ s s' _ h h' m => ⟨⟨h', ?_⟩, h.2⟩) (fun s₀ s _ h => ?_) (fun _ _ _ _ hq => by
+      rw [hOf_pub hq]) ((ok1_piece hP hF).mono (fun _ _ _ h => ⟨⟨h.1.1, h.2⟩, h.1.2⟩) fun _ _ _ h => h)
+      fun s₀ s _ h hn => ⟨⟨h.1.1, .inr ⟨?_, ?_⟩⟩, h.2⟩) (piece_pure (T1Ok p) (ret_piece hF))
+  · rcases h.1.2 with ⟨e, hh, eh, hi⟩ | ⟨e, hn⟩
     · exact .inl ⟨by rw [accV, m]; exact e, hh, eh, by rw [m]; exact hi⟩
     · exact .inr ⟨by rw [accV, m]; exact e, hn⟩
   · show (accV s₀ s != 0) = _
-    rcases h.2 with ⟨e, _, eh, _⟩ | ⟨e, hn⟩
+    rcases h.1.2 with ⟨e, _, eh, _⟩ | ⟨e, hn⟩
     · rw [e, eh]; rfl
     · rw [e, hn]; rfl
-  · rcases h.2 with ⟨_, _, eh, _⟩ | ⟨e, _⟩
+  · rcases h.1.2 with ⟨_, _, eh, _⟩ | ⟨e, _⟩
     · rw [eh] at hn; simp at hn
     · exact e
   · have e : hOf p s₀ = none := by
@@ -148,8 +153,8 @@ theorem body_nosp {P : Prims} (hP : PrimsOk P) (p : Params) : NoSp (body P p) :=
       (NoSp.seq (NoSp.seqR (fun r => ?_) _ _) (NoSp.seq (NoSp.of_all (by kernel_rfl)) (NoSp.of_all (by kernel_rfl)))))
     unfold row
     exact NoSp.seq (NoSp.callP hP.mul.nosp) (NoSp.seq (NoSp.seqR (fun j => NoSp.callP hP.mulAdd.nosp) _ _)
-      (NoSp.seq (NoSp.callP hP.unpackT1.nosp) (NoSp.seq (NoSp.callP hP.ntt.nosp) (NoSp.seq (NoSp.callP hP.mul.nosp)
+      (NoSp.seq (NoSp.callP hP.mul.nosp)
         (NoSp.seq (NoSp.callP hP.sub.nosp) (NoSp.seq (NoSp.callP hP.invNtt.nosp) (NoSp.seq
-          (NoSp.callP hP.useHint.nosp) (NoSp.callP hP.simpleBitPack.nosp))))))))
+          (NoSp.callP hP.useHint.nosp) (NoSp.callP hP.simpleBitPack.nosp))))))
 
 end VG.Proof.MlDsa.X86.Verify

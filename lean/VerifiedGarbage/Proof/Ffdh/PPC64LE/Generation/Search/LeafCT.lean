@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Call
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Writes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
@@ -69,9 +70,9 @@ private theorem zero_header (p : SPub) (s : State) (h : SAny p s) :
     h.header (j := 6) (by simp [SPub.headers])
   have hp : word s.mem p.control 40 = p.op := h.header (j := 5) (by simp [SPub.headers])
   simp only [Bignum.word, off] at hk hp
-  refine WP.mono (WP.keep [.r3, .r4, .r5] (Q := fun t => (t.gpr .r3 = p.op ∧
+  refine WP.mono_syms (WP.keep [.r3, .r4, .r5] (Q := fun t => (t.gpr .r3 = p.op ∧
     t.gpr .r4 = BitVec.ofNat 64 p.len) ∧ t.mem = s.mem) ?_ (by decide))
-    fun _ ⟨⟨hr, hm⟩, k⟩ => ⟨⟨original, used, _, h.keep k hm⟩, hr⟩
+    fun _ ⟨⟨hr, hm⟩, k⟩ hy => ⟨⟨original, used, _, h.keep k hm hy⟩, hr⟩
   prun [ldf, h.r31, hp, hk, a.ld 40 (by decide), a.ld 48 (by decide)]
 
 theorem s_zero_ct : RelCT isa (Two SAny) zeroOut (fun _ _ => True) := by
@@ -110,7 +111,7 @@ def SCallCT (q : SPoint) (u : State) : Prop :=
   ∃ original s, SLive q.inputs original q.used q.k s ∧ q.k ≠ 0 ∧
     SArgs q.inputs q.used u ∧
     u.mem = writeController (allocated 112 s).mem (callSp q.inputs) (callValues q.inputs) ∧
-    Keep argRegsW (allocated 112 s) u
+    Keep argRegsW (allocated 112 s) u ∧ u.syms = s.syms
 
 def SAllocated (q : SPoint) (u : State) : Prop := ∃ s, SReady q s ∧ u = allocated 112 s
 
@@ -123,19 +124,21 @@ theorem s_allocated_pins : Pins SAllocated [.r31] := by
 private theorem arguments_ready (q : SPoint) (u : State) (h : SAllocated q u) :
     WP isa (.block arguments) u (SCallCT q) := by
   obtain ⟨s, ⟨⟨original, h⟩, hk⟩, rfl⟩ := h
-  exact WP.mono (search_arguments_ok h) fun _ ⟨⟨ha, hm⟩, k⟩ => ⟨original, s, h, hk, ha, hm, k⟩
+  exact WP.mono_syms (search_arguments_ok h) fun _ ⟨⟨ha, hm⟩, k⟩ hy => ⟨original, s, h, hk, ha, hm, k, hy⟩
 
 /-- What the candidate sees at its entry, in terms of the point alone. -/
 private theorem call_view {q : SPoint} {u : State} (h : SCallCT q u) :
     (callState q.inputs q.used u).sp = callSp q.inputs ∧
     pcRand (callState q.inputs q.used u) = q.inputs.rand.drop q.used ∧
     SArgs q.inputs q.used (callState q.inputs q.used u) ∧
-    stackArg (callState q.inputs q.used u) 0 = BitVec.ofNat 64 (q.inputs.Z / 8) := by
-  obtain ⟨original, s, h, _, ha, hm, k⟩ := h
+    stackArg (callState q.inputs q.used u) 0 = BitVec.ofNat 64 (q.inputs.Z / 8) ∧
+    (callState q.inputs q.used u).syms VG.Impl.RsaKeyGen.TrialTable32.symbol = q.inputs.T := by
+  obtain ⟨original, s, h, _, ha, hm, k, hy⟩ := h
+  have hT : original.syms VG.Impl.RsaKeyGen.TrialTable32.symbol = q.inputs.T := by rw [← h.input.2]; rfl
   have hu : u.sp = callSp q.inputs := by
     rw [k.sp]; show s.sp - BitVec.ofNat 64 112 = _; rw [h.sp]; exact callSp_eq _
   refine ⟨by simp only [State.withRegions_sp, State.callEntry_sp, hu], call_rand h hm ha, ?_,
-    call_arg hu hm⟩
+    call_arg hu hm, by show u.syms _ = _; rw [hy]; show s.syms _ = _; rw [h.syms]; exact hT⟩
   obtain ⟨r3, r4, r5, r6, r7, r8, r9, r10⟩ := ha
   exact ⟨(call_gpr (by decide)).trans r3, (call_gpr (by decide)).trans r4, (call_gpr (by decide)).trans r5,
     (call_gpr (by decide)).trans r6, (call_gpr (by decide)).trans r7, (call_gpr (by decide)).trans r8,
@@ -143,20 +146,23 @@ private theorem call_view {q : SPoint} {u : State} (h : SCallCT q u) :
 
 private theorem call_pub {q : SPoint} {u₁ u₂ : State} (h₁ : SCallCT q u₁) (h₂ : SCallCT q u₂) :
     pcPub (callState q.inputs q.used u₁) (callState q.inputs q.used u₂) := by
-  obtain ⟨a₁, b₁, ⟨c3, c4, c5, c6, c7, c8, c9, c10⟩, d₁⟩ := call_view h₁
-  obtain ⟨a₂, b₂, ⟨e3, e4, e5, e6, e7, e8, e9, e10⟩, d₂⟩ := call_view h₂
+  obtain ⟨a₁, b₁, ⟨c3, c4, c5, c6, c7, c8, c9, c10⟩, d₁, y₁⟩ := call_view h₁
+  obtain ⟨a₂, b₂, ⟨e3, e4, e5, e6, e7, e8, e9, e10⟩, d₂, y₂⟩ := call_view h₂
   exact ⟨a₁.trans a₂.symm, by rw [b₁, b₂], c3.trans e3.symm, c4.trans e4.symm, c5.trans e5.symm,
     c6.trans e6.symm, by rw [c7, e7], c8.trans e8.symm, c9.trans e9.symm, c10.trans e10.symm,
-    d₁.trans d₂.symm⟩
+    d₁.trans d₂.symm, y₁.trans y₂.symm⟩
 
 private theorem call_ready {q : SPoint} {u : State} (h : SCallCT q u) :
     pcPre (callState q.inputs q.used u) ∧
       Covers (callRd q.inputs q.used ++ callWr q.inputs) (u.rd ++ u.wr) ∧
       Covers (callWr q.inputs) u.wr := by
-  obtain ⟨original, s, h, _, ha, hm, k⟩ := h
+  have hv := (call_view h).2.2.2.2
+  obtain ⟨original, s, h, _, ha, hm, k, -⟩ := h
   have hu : u.sp = callSp q.inputs := by
     rw [k.sp]; show s.sp - BitVec.ofNat 64 112 = _; rw [h.sp]; exact callSp_eq _
-  exact ⟨call_candidate_pre h.callFacts hu ha hm, call_covers_reads h k.rd k.wr,
+  have htu : VG.Proof.Ffdh.PPC64LE.ParameterCandidate.TabAt q.inputs.T u.mem :=
+    h.input.table_frame (frame_of_callChanges original (candidate_frame (t := u) h hm (fun _ _ => rfl))) h.table
+  exact ⟨call_candidate_pre h.callFacts hu ha hm hv htu, call_covers_reads h k.rd k.wr,
     call_covers_writes h k.wr⟩
 
 theorem s_candidate_call_ct (c : Cand) :

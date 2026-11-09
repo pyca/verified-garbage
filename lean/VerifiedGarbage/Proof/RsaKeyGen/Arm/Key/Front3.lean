@@ -112,21 +112,6 @@ variable {P : KP}
 theorem hk_succ (P : KP) (σ : State) (k : Nat) : hk P σ (k + 1) = halveStep (hk P σ k) :=
   VG.Proof.RsaKeyGen.halveIter_succ' k _
 
-theorem hk_le (P : KP) (σ : State) (k : Nat) :
-    (hk P σ k).1 ≤ pm P σ ∧ (hk P σ k).2.1 ≤ qm P σ ∧ (hk P σ k).2.2 ≤ pm P σ * qm P σ := by
-  obtain ⟨j, ha, hb, hf⟩ := VG.Proof.RsaKeyGen.halveIter_inv k (a := pm P σ) (b := qm P σ)
-    (st := (pm P σ, qm P σ, pm P σ * qm P σ)) ⟨0, by simp, by simp, by simp⟩
-  unfold hk
-  generalize halveIter k (pm P σ, qm P σ, pm P σ * qm P σ) = st at ha hb hf
-  obtain ⟨u, v, f⟩ := st
-  dsimp only at ha hb hf ⊢
-  have p : 1 ≤ 2 ^ j := Nat.one_le_two_pow
-  refine ⟨?_, ?_, ?_⟩
-  · rw [ha]; exact Nat.le_mul_of_pos_left _ p
-  · rw [hb]; exact Nat.le_mul_of_pos_left _ p
-  · rw [ha, hb, hf]
-    exact Nat.mul_le_mul_left _ (Nat.le_mul_of_pos_left _ p)
-
 /-- `φ` and the halving's start. -/
 theorem halvingStart_vp {E : State → Prop} {c : Prog isa} {G : State → State → Prop}
     (hc : VP (IH P E (8 * P.K)) c G) :

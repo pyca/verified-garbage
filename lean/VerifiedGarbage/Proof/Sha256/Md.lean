@@ -45,8 +45,6 @@ def md : MdStream.Md 64 32 8 where
   lenOf_length _ := by simp [lenField]
   digest_length h := by simp [List.length_flatMap, wordBytes, List.map_const']
 
-theorem repr_iff {mem : Mem} {p : Addr} {m : List Byte} : Repr mem p m ↔ md.Repr H0 mem p m := Iff.rfl
-
 theorem hash_eq (m : List Byte) : Spec.Sha256.hash m = md.hash H0 m := rfl
 
 /-- The digest, as 32-bit words. -/

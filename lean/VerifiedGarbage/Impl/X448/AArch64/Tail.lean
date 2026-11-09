@@ -26,14 +26,4 @@ def pass (o : Nat) (unpack : Bool) : List Instr :=
 def normalize (o : Nat) : List Instr :=
   Wide.pass TMP false ++ Wide.fold ++ pass TMP false ++ Wide.fold ++ pass o true
 
-def product (o a b : Nat) : Prog isa := .block (
-  Wide.pack Wide.PACKA a ++ Wide.pack Wide.PACKB b ++
-  (List.range 16).flatMap (Wide.column Wide.PACKA Wide.PACKB) ++
-  (List.range 8).flatMap Wide.reduceCol ++ normalize o)
-def sqr (o a : Nat) : Prog isa := .block (
-  Wide.pack Wide.PACKA a ++ Cached.loadCached Wide.PACKA ++
-  (List.range 16).flatMap Symmetric.column ++
-  (List.range 8).flatMap Wide.reduceCol ++ normalize o)
-def mul (o a b : Nat) : Prog isa := if a = b then sqr o a else product o a b
-
 end VG.Impl.X448.AArch64.Tail

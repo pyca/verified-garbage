@@ -1,5 +1,11 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.Contract
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
@@ -25,6 +31,28 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.P384.X86_64.JointLayout
+meta import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.Contract
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+meta import VerifiedGarbage.Proof.Weierstrass.CombW
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCT
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointErased
+meta import Batteries.Data.List.Lemmas
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
+meta import VerifiedGarbage.Impl.P384.X86_64.Joint
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
+meta import VerifiedGarbage.Proof.P384.X86_64.JointLayout
 /-!
 # ECDSA verification over P-384 on x86-64: `Verified`
 
@@ -158,15 +186,15 @@ theorem verify_abi_of_wp {code : Prog isa} {s : State} (hs : verifyX86_64.pre s)
 /-- The shared contract, but with `verifyX86_64`'s postcondition: what the
 proofs of the inlined code give. -/
 def verifyK₀ : Contract isa :=
-  { pre := (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts p384v.combConsts)).pre
+  { pre := (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384v.combConsts)).pre
     post := verifyX86_64.post
-    pub := (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts p384v.combConsts)).pub }
+    pub := (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384v.combConsts)).pub }
 
 theorem sat_spec8 :
-    (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts p384v.combConsts) 8).pre satState := by
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384v.combConsts) 8).pre satState := by
   have held : ∀ i < p384GW.length, satState.mem.readW (satState.syms "VG_P384_GTAB" +
       BitVec.ofNat 64 (8 * i)) 64 = p384GW.getD i 0 := satMemG_held
-  sig_pre [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+  sig_pre [Spec.Ecdsa.P384.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.P384.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p384v_combConsts,
     Abi.withConsts, p384G_constRegions, Abi.constsHeld, stackBelow]
   sig_and_intros
@@ -174,7 +202,7 @@ theorem sat_spec8 :
 
 /-- The contract with 8 bytes of stack, for the calls' return address. -/
 theorem implies8 :
-    verifyK₀.Implies (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts p384v.combConsts) 8) :=
+    verifyK₀.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384v.combConsts) 8) :=
   ⟨fun _ hs => Sig.pre_stack0 hs, fun s s' hs hp => implies.post s s' (Sig.pre_stack0 hs) hp,
     fun _ _ _ _ hp => hp, ⟨satState, sat_spec8⟩⟩
 
@@ -196,16 +224,38 @@ theorem jointVerify_x86_adx (s : State) (hs : verifyX86_64.pre s) :
     (by rw [Code.allInstrs_inline]; exact jointVerifyP384Adx_rspMxcsr) (Code.noCalls_inline jointVerifyP384Adx_inlineOk)
 
 theorem jointVerify_verified : Verified X86_64.target jointVerifyP384
-    (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts p384v.combConsts) 8) :=
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384v.combConsts) 8) :=
   Verified.of_inline (k₀ := verifyK₀) jointVerifyP384_inlineOk (fun s hs => jointVerify_x86 hL hT hI hO s (implies.pre _ hs))
     (jointVerify_ct hL hT hI hO) implies8 (fun _ h => Sig.clear_of_pre_consts h) (fun _ _ _ _ _ hp => hp)
     fun s₁ s₂ h₁ h₂ hp => (implies.pub s₁ s₂ (Sig.pre_stack0 h₁) (Sig.pre_stack0 h₂) hp).1
 
 theorem jointVerify_verified_adx : Verified X86_64.target jointVerifyP384Adx
-    (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts p384v.combConsts) 8) :=
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384v.combConsts) 8) :=
   Verified.of_inline (k₀ := verifyK₀) jointVerifyP384Adx_inlineOk (fun s hs => jointVerify_x86_adx hL hT hI hO s (implies.pre _ hs))
     (jointVerify_adx_ct hL hT hI hO) implies8 (fun _ h => Sig.clear_of_pre_consts h) (fun _ _ _ _ _ hp => hp)
     fun s₁ s₂ h₁ h₂ hp => (implies.pub s₁ s₂ (Sig.pre_stack0 h₁) (Sig.pre_stack0 h₂) hp).1
+
+/-- `vg_ecdsa_p384_verify`, taking the hash function's output: `jointVerify_verified`,
+run on the `len` bytes of the hash (`verifyHash_verified_cons`). -/
+theorem verifyHash_verified : Verified X86_64.target
+    (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false jointVerifyP384)
+    (Spec.Ecdsa.P384.inst.verifyHashContract (X86_64.abi.withConsts p384v.combConsts) 96) :=
+  Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.p384_len (by decide) (jointVerify_verified hL hT hI hO)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by taint_decide)
+    (Hash.hashSat_cons (by decide) sat_spec8 (by decide) fun r hr => by
+      simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
+
+/-- `vg_ecdsa_p384_verify_adx`, taking the hash function's output: `jointVerify_verified_adx`,
+run on the `len` bytes of the hash (`verifyHash_verified_cons`). -/
+theorem verifyHash_verified_adx : Verified X86_64.target
+    (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false jointVerifyP384Adx)
+    (Spec.Ecdsa.P384.inst.verifyHashContract (X86_64.abi.withConsts p384v.combConsts) 96) :=
+  Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.p384_len (by decide) (jointVerify_verified_adx hL hT hI hO)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by taint_decide)
+    (Hash.hashSat_cons (by decide) sat_spec8 (by decide) fun r hr => by
+      simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
 
 end
 end VG.Proof.Ecdsa.Verify.X86_64.P384

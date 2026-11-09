@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 /-!
 # Randomized DSA signing on PPC64LE: the function
 
-`randomSign_correct`: `vg_dsa_sign_random` meets `rsContract`. In its frame,
+`randomSign_correct`: `vg_dsa_sign_random_prevalidated` meets `rsContract`. In its frame,
 the entry (`entry_ok`), the scan of q (`prepareQ_ok`), the attempts
 (`attempts_ok`, or none when `q ≤ 1`) and the exit (`finish_ok`) follow one
 another; the result is `randomSignBytes`'s (`rsRes_eq`).

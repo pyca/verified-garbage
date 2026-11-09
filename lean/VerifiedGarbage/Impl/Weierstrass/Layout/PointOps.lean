@@ -7,8 +7,8 @@ public import VerifiedGarbage.Impl.Weierstrass.Layout.Point
 
 Not trusted: what the code of the curves' internal functions (`Rust.Internal`),
 which only verified code calls, is generated from, and where it keeps its
-numbers. Their contracts are in `Proof/Weierstrass/PointOpsContract.lean`, in these
-namespaces.
+numbers. The definitions their proofs share are in
+`Proof/Weierstrass/PointOpsContract.lean`, in these namespaces.
 -/
 
 @[expose] public section
@@ -89,61 +89,14 @@ structure Curve extends Point.Curve where
   dbl : Fin p → Fin p → Fin p → Fin p × Fin p × Fin p := jacDouble
   dblDoc : String := "for `a = -3` (dbl-2001-b, with `Z' = 2YZ`)"
 
-namespace Curve
-
-variable (C : Curve)
-
-/-- Byte offset of slot `i`: `64 + 8 k i`. -/
-def slot (i : Nat) : Nat := 64 + 8 * C.k * i
-
-/-- Where the prime `p` is. -/
-def modAt : Nat := C.slot 0
-
-/-- Where `P` is (and the Jacobian functions' result). -/
-def pAt : Nat := C.slot 14
-
-/-- Where the projective addition's result `O` is. -/
-def oAt : Nat := C.slot 17
-
-/-- Where `Q` is. -/
-def qAt : Nat := C.slot 20
-
-/-- Where the curve's `b` is, for the projective addition. -/
-def bAt : Nat := C.slot 40
-
-/-- Where the products' temporary area is. -/
-def tmpAt : Nat := C.slot C.tmp
-
-/-- Where `Q`'s `Z²` is. -/
-def zzAt : Nat := C.cache
-
-/-- Where `Q`'s `Z³` is. -/
-def zzzAt : Nat := C.cache + 8 * C.k
-
-/-- The bytes of a point. -/
-def ptBytes : Nat := 24 * C.k
-
-/-- The name of the function `op`. -/
-def fn (op : String) : String := s!"vg_{C.curve}_{op}"
-
-end Curve
-
 /-! ## The curves -/
 
 def p224 : Curve := { Point.p224 with tmp := 2, cache := 5408 }
 
-def p256 : Curve := { Point.p256 with tmp := 2, cache := 5408 }
-
 def p384 : Curve := { Point.p384 with tmp := 83, cache := 6160 }
-
-def p521 : Curve :=
-  { curve := "p521", p := Spec.P521.p, k := 9, desc := "P-521", tmp := 55, cache := 5968 }
 
 def secp256k1 : Curve :=
   { curve := "secp256k1", p := Spec.Secp256k1.p, k := 4, desc := "secp256k1", tmp := 2,
     cache := 5408, dbl := jacDouble0, dblDoc := "for `a = 0` (dbl-2009-l, with `Z' = 2YZ`)" }
-
-/-- Every curve. -/
-def curves : List Curve := [p224, p256, p384, p521, secp256k1]
 
 end VG.Impl.Weierstrass.PointOps

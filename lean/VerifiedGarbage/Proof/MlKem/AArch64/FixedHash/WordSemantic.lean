@@ -39,18 +39,4 @@ theorem squeezeWord_bytes (m : Mem) (a p : Addr) :
    rw [writeW64_byte _ _ _ hi',Mem.readW,BitVec.setWidth_eq,
      Mem.extractLsb'_read _ _ (show i<64/8 from hi')]
 
-/-- Aligned chunks use the existing sponge invariant, including permutation
-exactly when the rate boundary is reached. -/
-theorem absorbWord_rep {m : Mem} {p a : Addr} {rate : Nat} {msg : List Byte}
- (hr : 0<rate) (hr' : rate≤200) (hfit : msg.length%rate+8≤rate)
- (hm : stateAt m p=Rep rate msg) :
- Rep rate (msg++bytesAt m a 8) =
-   let A := stateAt (m.writeW (p+BitVec.ofNat 64 (msg.length%rate))
-     (m.readW a 64 ^^^ m.readW (p+BitVec.ofNat 64 (msg.length%rate)) 64)) p
-   if msg.length%rate+8=rate then keccakF A else A := by
- rw [rep_append hr hr' msg _ (by rw [bytesAt_length]; decide)
-   (by rw [bytesAt_length]; exact hfit),bytesAt_length]
- dsimp only
- rw [absorbWord_state m p a (by omega),hm]
-
 end VG.Proof.MlKem.AArch64.FixedHash

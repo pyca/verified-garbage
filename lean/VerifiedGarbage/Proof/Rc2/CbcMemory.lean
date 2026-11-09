@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Rc2.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 
 import VerifiedGarbage.Proof.Rc2.Memory
@@ -25,10 +26,10 @@ theorem blockAt_read64 (m : Mem) (p : Addr) : Spec.Rc2.blockAt m p = wordBlock (
   exact (read64_byte m p i hi).symm
 
 theorem wordBlock_xor (x y : BitVec 64) :
-    wordBlock (x ^^^ y) = Spec.Rc2.xorBlock (wordBlock x) (wordBlock y) := by
+    wordBlock (x ^^^ y) = Proof.Rc2.xorBlock (wordBlock x) (wordBlock y) := by
   apply Vector.ext
   intro i hi
-  simp only [wordBlock, Spec.Rc2.xorBlock, Vector.getElem_ofFn, Fin.getElem_fin, BitVec.extractLsb'_xor]
+  simp only [wordBlock, Proof.Rc2.xorBlock, Vector.getElem_ofFn, Fin.getElem_fin, BitVec.extractLsb'_xor]
 
 theorem blockAt_store64 (m : Mem) (p : Addr) (x : BitVec 64) :
     Spec.Rc2.blockAt (m.writeW p x) p = wordBlock x := by
@@ -44,7 +45,7 @@ theorem blockAt_copy (m : Mem) (dst src : Addr) :
 
 theorem blockAt_xor (m : Mem) (dst iv : Addr) :
     Spec.Rc2.blockAt (m.writeW dst (m.readW dst 64 ^^^ m.readW iv 64)) dst =
-      Spec.Rc2.xorBlock (Spec.Rc2.blockAt m dst) (Spec.Rc2.blockAt m iv) := by
+      Proof.Rc2.xorBlock (Spec.Rc2.blockAt m dst) (Spec.Rc2.blockAt m iv) := by
   rw [blockAt_store64, wordBlock_xor, blockAt_read64 m dst, blockAt_read64 m iv]
 
 theorem blocksAt_cons (m : Mem) (p : Addr) (n : Nat) :

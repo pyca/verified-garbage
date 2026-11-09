@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.CbcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
 
 /-! # Camellia-CBC artifacts on baseline x86-64 -/

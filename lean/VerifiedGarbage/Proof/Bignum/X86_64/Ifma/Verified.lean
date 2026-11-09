@@ -37,8 +37,8 @@ meta import VerifiedGarbage.Proof.Rsa.Contract
 `code` is `Crt.code` with
 `CrtIfma.main` (`main_ct`), so the function is constant time but for `n`
 (`code_constantTime`); with correctness (`code_correct`) and the contract on
-the registers and the stack (`crt_implies`), `CrtIfma.code` is verified
-(`verified`).
+the registers and the stack (`crt_implies`), `CrtIfma.code` is constant
+time (`code_constantTime`).
 -/
 
 @[expose] public section
@@ -165,17 +165,6 @@ theorem code_constantTime (M : Mont)
     (pPhase_ct M (CrtExpL.w4 M) (unit_ct M (gPow_ct_P M) (redc_ct_Y M) (by taint_decide))
       (pow_ct M (CrtExpL.w4 M) (redc_ct_Y M) (CrtExpL.w4_ct M).1 (by taint_decide)) (redc_ct_X M) loadArr_ct_pI)
     crtFinish_ct (redc_ct_R2 M) (redc_ct_Xm M) loadArr_ct_pI hpost
-
-/-- `vg_rsa_private_crt_ifma` with Montgomery multiplication `M`, given that
-its code but the vector code never loads MXCSR (which the registration file
-evaluates). -/
-theorem verified (M : Mont)
-    (hfront : (seqs (nSetup M.mm ++ primesSetup ++ checks)).allInstrs (fun i => !loadsMxcsr i) = true)
-    (hpre : (seqs (CrtIfma.pre M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
-    (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
-    (hcrt : (seqs (qPhase M.mm (CrtExpL.w4 M).code ++ pPhase M.mm (CrtExpL.w4 M).code)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target (CrtIfma.code M.mm) (Proof.Rsa.privateCrtContract abi) :=
-  Verified.of_correct (code_correct M hfront hpre hpost hcrt) (code_constantTime M hpost) crt_implies
 
 end
 

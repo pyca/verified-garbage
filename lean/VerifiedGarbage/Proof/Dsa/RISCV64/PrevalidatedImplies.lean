@@ -9,9 +9,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # `vg_dsa_verify_prevalidated` on RISC-V: the shared contract
 
-`prevalidated_implies`: `vpContract` implies the shared contract;
-`prevalidated_wp`: `vg_dsa_verify_prevalidated` meets it, with no stack of its
-own.
+`prevalidated_implies`: `vpContract` implies the shared contract, with no
+stack of its own.
 -/
 
 @[expose] public section
@@ -90,12 +89,5 @@ theorem prevalidated_implies : vpContract.Implies (Spec.Dsa.verifyPrevalidatedCo
          sig_simp_only [Region.Contains, prevalidatedSatState, satState, stackArg, stackArgAddr, Mem.readW,
            Mem.read] at h₁ h₂
          bv_omega)
-
-/-- `vg_dsa_verify_prevalidated` under the shared contract. -/
-theorem prevalidated_wp (s : State) (h : (Spec.Dsa.verifyPrevalidatedContract RISCV64.abi).pre s) :
-    WP isa Prevalidated.verify s fun t =>
-      abiPreserved s t ∧ (Spec.Dsa.verifyPrevalidatedContract RISCV64.abi).post s t := by
-  obtain ⟨tr, t, he, ha, hp⟩ := prevalidated_correct s (prevalidated_implies.pre s h)
-  exact ⟨tr, t, he, ha, prevalidated_implies.post s t h hp⟩
 
 end VG.Proof.Dsa.RISCV64

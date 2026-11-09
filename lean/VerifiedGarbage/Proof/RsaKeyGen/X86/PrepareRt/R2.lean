@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2Squares
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Blocks
 import VerifiedGarbage.Proof.MillerRabin.X86.Copy
 
-/-! # R² in array 4 at the run-time width, with `PreparedR2.code_ok`'s post-state -/
+/-! # R² in array 4 at the run-time width -/
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.PrepareRt

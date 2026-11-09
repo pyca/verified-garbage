@@ -5,7 +5,6 @@
 // gives.
 
 vg_aes_ocb_init_aes:
-	.arch_extension aes
 	sub sp, sp, #2560
 	add x3, sp, #0
 	str x20, [x3, #168]
@@ -47,11 +46,9 @@ vg_aes_ocb_init_aes:
 	ldr x19, [x19, #160]
 	add sp, sp, #2560
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_ocb_seal_aes:
-	.arch_extension aes
 	sub sp, sp, #2592
 	add x16, sp, #0
 	ldr x17, [sp, #2592]
@@ -1122,11 +1119,9 @@ vg_aes_ocb_seal_aes:
 	ldr x19, [x19, #160]
 	add sp, sp, #2592
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_ocb_open_aes:
-	.arch_extension aes
 	sub sp, sp, #2592
 	add x16, sp, #0
 	ldr x17, [sp, #2592]
@@ -2270,7 +2265,6 @@ vg_aes_ocb_open_aes:
 	ldr x19, [x19, #160]
 	add sp, sp, #2592
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_ocb_init:

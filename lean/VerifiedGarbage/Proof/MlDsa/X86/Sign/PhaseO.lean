@@ -134,9 +134,6 @@ theorem sigKeep {s₀ : State} (hp : TPre (Y p) s₀) (ps : PS p) {m m' : Mem} {
     keepW' hp hN fr (sc_ok' ps (by decide) (by decide)) fun c hc => ⟨(hb c hc).1, fun e => by
       rw [(hb c hc).2] at e; cases e⟩⟩
 
-theorem sig_ok {o l : Nat} (h : o + l ≤ p.sigLen) (hl : 0 < l) : (Y p).okW (bSig o l) = true :=
-  Lay.okW_iff.mpr ⟨Lay.ok_iff.mpr ⟨by rw [Y_n]; exact (by decide : 3 < 5), hl, by rw [Y_alen3]; exact h⟩, rfl⟩
-
 /-- Before the signature, the last iteration `U s₀` having passed. -/
 structure OI (p : Params) (F : PrimsOk P) (U : State → Nat) (s₀ s : State) : Prop where
   ctx : Ctx (Y p) s₀ s

@@ -40,7 +40,7 @@ theorem top_zero {T P e X : Nat} (h : T + P * e = X) (hX : X < P) : e = 0 := by
   · exfalso; have := Nat.mul_le_mul_left P he; omega_arith
 
 /-- The registers `sqrTail` writes and does not restore. -/
-def sqrRegs : List Reg := [.a0, .a1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4]
+def sqrRegs : List Reg := [.a4, .a0, .a1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4]
 
 /-- `sqrTail`, for arrays below `n`: `[o] < m` and `[o] 2^(64 w) ≡ [a]²
 (mod m)`, with only arrays 2, 3 (`T`), `p` (the temporary) and `o`

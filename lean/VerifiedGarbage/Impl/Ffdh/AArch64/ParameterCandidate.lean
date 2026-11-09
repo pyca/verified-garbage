@@ -5,9 +5,9 @@ public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 /-!
 # One FFDH parameter candidate on AArch64
 
-`vg_ffdh_parameter_candidate(out = x0, out_len = x1, used = x2, bits = x3,
+`vg_ffdh_parameter_candidate_sieved(out = x0, out_len = x1, used = x2, bits = x3,
 generator = x4, rand = x5, rand_len = x6, scratch = x7, scratch_len = [sp])`
-(`Proof.Ffdh.parameterCandidateContract`), in the working space of RSA's key
+(`Proof.Ffdh.sievedParameterCandidateContract`), in the working space of RSA's key
 routines (`Impl/Rsa/AArch64/Keys.lean`, as the RSA candidate's,
 `Impl/RsaKeyGen/AArch64/Candidate.lean`): a header of 32 words, then arrays
 of `w + 2` words, `w` set for each modulus by `Keys.head` from the length
@@ -19,19 +19,23 @@ nor the shared Miller–Rabin round changes.
    cut to `bits` bits with its top and low bits set (`shapeP`: the top
    word's mask `2^k − 1`, `k = bits − 64 (w − 1)`, is computed by a loop of
    `k` steps); `p mod 24` (generator 2) or `p mod 10` (generator 5) by RSA's
-   bit-serial reduction, and its congruence; the sieve of the 53 odd primes
-   below 256 (RSA's trial division by the first 53 entries of its table);
-   then `q = (p − 1) / 2` in place, its oddness and its sieve. Their flags
-   are or'ed in `fBad`; the result is 2 if it is set.
-3. For `q` and then `p`, each with its own word count `w = ⌈mb / 64⌉`
-   (`mb` its bit length: `bits − 1` or `bits`): RSA's Montgomery setup
-   (`-N⁻¹`, `R² mod N`, `R mod N`, `N − R mod N`), Miller–Rabin's exponent,
-   then witnesses: each the next `⌈mb / 8⌉` octets of `rand`, its top word
-   cut to `mb` bits, rejected unless `2 ≤ x ≤ N − 2` (`x ≥ 2` and
-   `(x | 1) < N`), then in Montgomery form, and the shared round called;
-   a witness that fails ends with 2, and `primeChecks mb` passing ones with 1.
-   The result is 0 when `rand` runs out. `p` is loaded again from the start
-   of `rand` for its test, and written to `out` when it passes.
+   bit-serial reduction, and its congruence; RSA's trial division by its
+   table's first 512 entries (1024 above 1024 bits), the odd primes of
+   `Spec.RsaKeyGen.obviouslyComposite`; then `q = (p − 1) / 2` in place,
+   its oddness and its trial division. Their flags are or'ed in `fBad`; the
+   result is 2 if it is set (`Spec.Ffdh.sievedParameterCandidate`).
+3. The witnesses of `Spec.Ffdh.screenedParameterWitnesses`: one for `p`,
+   then `primeChecks` for `q`, then the other `primeChecks − 1` for `p`,
+   each test with its modulus's word count `w = ⌈mb / 64⌉` (`mb` its bit
+   length: `bits` or `bits − 1`): RSA's Montgomery setup (`-N⁻¹`,
+   `R² mod N`, `R mod N`, `N − R mod N`), Miller–Rabin's exponent, then
+   witnesses: each the next `⌈mb / 8⌉` octets of `rand`, its top word cut
+   to `mb` bits, rejected unless `2 ≤ x ≤ N − 2` (`x ≥ 2` and
+   `(x | 1) < N`), then in Montgomery form, and the shared round called; a
+   witness that fails ends with 2, and the test's count of passing ones
+   with 1. The result is 0 when `rand` runs out. `p` is loaded again from
+   the start of `rand` for each of its tests, `q` halved again from it, and
+   `p` written to `out` when it passes.
 
 `used` is written at the end: the octets read, or 0 for the result 0.
 Every value is public: the code branches on the tape's contents.
@@ -111,14 +115,15 @@ def residue : List (Prog isa) := [
 /-- RSA's table of small primes at `aTab`. -/
 def tableWrite : Prog isa := .block (ws ++ base aTab .x9 ++ tabWrite)
 
-/-- The sieve: the mask of an entry of the table's first 53 (13 words, then
-an entry) dividing `aN`, or'ed into `fBad`. -/
+/-- The sieve: RSA's trial division by the first `4 N` entries of its table
+(`N = 256` words of four for `w > 16`, else 128, counted in `x10`), the
+mask of one dividing `aN` or'ed into `fBad`. -/
 def sieve : List (Prog isa) := [
-  .block (ws ++ base aTab .x9 ++ [movi .x10 13, movi .x1 0, movi .x7 0, .subImm .x .x8 .x7 1]),
+  .block (ws ++ base aTab .x9 ++ [movi .x3 128, movi .x4 256, movi .x5 17, .subs .x .x6 .x12 .x5,
+    .csel .x .x10 .x4 .x3, movi .x1 0, movi .x7 0, .subImm .x .x8 .x7 1]),
   .loop (seqs (([.block [ld .x17 .x9, next .x9]] : List (Prog isa)) ++ trialEntry 0 ++ trialEntry 1 ++
     trialEntry 2 ++ trialEntry 3 ++ ([.block [.subImm .x .x10 .x10 1]] : List (Prog isa)))) (.nonzero .x .x10),
-  .block [ld .x17 .x9]] ++ trialEntry 0 ++
-  [.block [ldh .x5 fBad, .logic .orr .x .x5 .x5 .x1, sth .x5 fBad]]
+  .block [ldh .x5 fBad, .logic .orr .x .x5 .x5 .x1, sth .x5 fBad]]
 
 /-- `q := p / 2` in place, and its evenness or'ed into `fBad`. -/
 def halveQ : List (Prog isa) :=
@@ -173,24 +178,42 @@ def millerRabin (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog
     .ite (.zero .x .x5) (.block [movi .x3 0, sth .x3 kStat]) (seqs (draw mul roundCode)),
     .block [ldh .x3 kStat, .subImm .x .x3 .x3 4]]) (.zero .x .x3)]
 
-/-- The test of `q` (with `q` in `aN`) or of `p` (loaded again). -/
-def test (q : Bool) (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : List (Prog isa) :=
-  phase q ++ (if q then [] else shapeP) ++ montPrep mul ++ expSetup ++ millerRabin mul roundCode
+/-- The test of `q` (with `q` in `aN`) or of `p` (loaded again), its
+witness count `fChecks` changed by `adjust` once the working space is set. -/
+def test (q : Bool) (adjust : List (Prog isa)) (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) :
+    List (Prog isa) :=
+  phase q ++ (if q then [] else shapeP) ++ adjust ++ montPrep mul ++ expSetup ++ millerRabin mul roundCode
 
-/-! ## `vg_ffdh_parameter_candidate` -/
+/-- `p`'s first witness alone: `fChecks := 1`. -/
+def firstCheck : Prog isa := .block [movi .x3 1, sth .x3 fChecks]
+
+/-- `p`'s other witnesses: `fChecks := fChecks − 1`. -/
+def restChecks : Prog isa := .block [ldh .x3 fChecks, .subImm .x .x3 .x3 1, sth .x3 fChecks]
+
+/-! ## `vg_ffdh_parameter_candidate_sieved` -/
 
 /-- After `p`'s test: 0, 1 (`p` to `out`) or 2. -/
 def pResult : Prog isa :=
   .seq (.block [ldh .x3 kStat])
     (.ite (.zero .x .x3) finNone (.seq (.block [.subImm .x .x3 .x3 1]) (.ite (.zero .x .x3) finPrime (finUsed 2))))
 
-/-- After a failed test of `q`: 0 or 2. -/
+/-- After a failed test of `p`'s first witness or of `q`: 0 or 2. -/
 def qResult : Prog isa := .seq (.block [ldh .x3 kStat]) (.ite (.zero .x .x3) finNone (finUsed 2))
 
-/-- The tests, once the shape passed. -/
+/-- After `q` passed: `p`'s other witnesses. -/
+def testRest (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=
+  seqs (test false [restChecks] mul roundCode ++ [pResult])
+
+/-- After `p`'s first witness passed: `q` from `p` in `aN`, and its test. -/
+def testQ (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=
+  seqs (halveQ ++ test true [] mul roundCode ++ [.block [ldh .x3 kStat, .subImm .x .x3 .x3 1],
+    .ite (.zero .x .x3) (testRest mul roundCode) qResult])
+
+/-- The tests, once the shape passed: one witness of `p`, then all of `q`'s,
+then `p`'s others (`Spec.Ffdh.screenedParameterWitnesses`). -/
 def tests (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=
-  seqs (test true mul roundCode ++ [.block [ldh .x3 kStat, .subImm .x .x3 .x3 1],
-    .ite (.zero .x .x3) (seqs (test false mul roundCode ++ [pResult])) qResult])
+  seqs (test false [firstCheck] mul roundCode ++ [.block [ldh .x3 kStat, .subImm .x .x3 .x3 1],
+    .ite (.zero .x .x3) (testQ mul roundCode) qResult])
 
 /-- Once `rand` holds the candidate's octets: `p`, its congruence, rejected
 before any other check (most candidates fail it); then the sieves of `p`
@@ -201,7 +224,7 @@ def main (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) 
       [.block [ldh .x5 fBad], .ite (.zero .x .x5) (tests mul roundCode) (finUsed 2)]))
     (finUsed 2)])
 
-/-- `vg_ffdh_parameter_candidate`. -/
+/-- `vg_ffdh_parameter_candidate_sieved`. -/
 def code (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=
   seqs [.block entry, zeroOut kOut kLen, .block ([ldh .x3 kRandLen, ldh .x4 kLen] ++ geFlag),
     .ite (.zero .x .x5) finNone (main mul roundCode)]

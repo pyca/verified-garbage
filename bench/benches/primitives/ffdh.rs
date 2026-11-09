@@ -141,19 +141,14 @@ pub fn bench(c: &mut Criterion) {
         // Cold cases include the checked constructor. Keep these separate
         // from reused-Parameters generation below: one-key total cost can
         // dominate warm gains.
-        // Here and below, verified-garbage draws its keys from a fixed tape
-        // (`generate_private_key` but for `getrandom`); OpenSSL and AWS-LC
-        // draw from their own generators.
+        // Here and below, each library draws its keys from its own
+        // generator.
         let mut group = c.benchmark_group("ffdh_cold_first_key");
         group.bench(BenchmarkId::new(VG, size / 8), |b| {
             b.iter(|| {
-                let mut tape = fixed_tape(size as u64);
                 Parameters::from_components(black_box(&p), black_box(&g), q.as_deref())
                     .unwrap()
-                    .generate_private_key_with_rng(|buf: &mut [u8]| {
-                        tape(buf);
-                        Ok::<_, ()>(())
-                    })
+                    .generate_private_key()
                     .unwrap()
             })
         });
@@ -188,15 +183,7 @@ pub fn bench(c: &mut Criterion) {
             b.iter(|| aws_lc::Dh::parameters(&p, &g, q.as_deref()).generate())
         });
         group.bench(BenchmarkId::new(VG, size / 8), |b| {
-            b.iter(|| {
-                let mut tape = fixed_tape(size as u64);
-                black_box(&params)
-                    .generate_private_key_with_rng(|buf: &mut [u8]| {
-                        tape(buf);
-                        Ok::<_, ()>(())
-                    })
-                    .unwrap()
-            })
+            b.iter(|| black_box(&params).generate_private_key().unwrap())
         });
         group.bench(BenchmarkId::new(OPENSSL, size / 8), |b| {
             let mut keygen = PkeyCtx::new(&openssl_params).unwrap();

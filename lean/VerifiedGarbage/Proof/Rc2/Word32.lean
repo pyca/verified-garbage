@@ -64,12 +64,6 @@ theorem rotateLeft_reverse (x : BitVec 16) (n : Nat) (hn : 1 ≤ n) (hn' : n < 1
     Nat.mod_eq_of_lt hn', Nat.mod_eq_of_lt (show 16 - n < 16 by omega),
     show 16 - (16 - n) = n by omega]
 
-theorem subInputsWord (x k c : BitVec 32) :
-    (x - k - c) &&& 65535 =
-      (x.setWidth 16 - k.setWidth 16 - c.setWidth 16).setWidth 32 := by
-  rw [maskWord]
-  simp [BitVec.sub_eq_add_neg, BitVec.setWidth_add, BitVec.setWidth_neg_of_le]
-
 theorem joinBytes_shift (lo hi : VG.Byte) :
     lo.setWidth 32 ||| hi.setWidth 32 <<< 8 =
       (lo.setWidth 16 ||| hi.setWidth 16 <<< 8).setWidth 32 := by

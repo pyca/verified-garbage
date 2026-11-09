@@ -3,13 +3,14 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCorrect
 
 import VerifiedGarbage.Proof.Rsa.AArch64.PrivCT
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the shared contract
 
 `vg_rsa_private_checked`, calling the implementation `v` of
 `vg_rsa_private_crt` and its public operation, is verified against
-`Spec.Rsa.privateCheckedContract` for the `stackBytes` bytes of stack its
+`Proof.Rsa.privateCheckedContract` for the `stackBytes` bytes of stack its
 frames use (`code_verified`); its frames nest `stackBytes / 16` units deep
 (`privCode_depth`), which its callers need.
 -/
@@ -21,13 +22,13 @@ namespace VG.Proof.Rsa.AArch64
 open VG VG.AArch64 VG.Impl.Rsa.AArch64.PrivChecked
 
 /-- The name of `vg_rsa_private_checked` calling `v`. -/
-def privName (v : CrtImpl) : String := Spec.Rsa.privateCheckedApi.name ++ v.suffix
+def privName (v : CrtImpl) : String := "vg_rsa_private_checked" ++ v.suffix
 
 /-- Its code. -/
 abbrev privCode (v : CrtImpl) : Prog isa := privCodeOf v
 
 theorem code_verified (v : CrtImpl) :
-    Verified AArch64.target (privCode v) (Spec.Rsa.privateCheckedContract AArch64.abi stackBytes) :=
+    Verified AArch64.target (privCode v) (Proof.Rsa.privateCheckedContract AArch64.abi stackBytes) :=
   Verified.of_correct (fun s h => code_correct v s h) (code_constantTime v) private_checked_implies
 
 /-- Code without frames uses no stack. -/

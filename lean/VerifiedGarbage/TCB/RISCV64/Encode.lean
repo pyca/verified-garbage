@@ -27,7 +27,7 @@ describes, which `compress` then replaces by its compressed (16-bit)
 encoding when it has one (chapter "\"C\" Extension for Compressed
 Instructions", whose every instruction "expands into a single 32-bit
 instruction in the base ISA"), as the assembler would: the target requires
-the C extension (`Target.lean`'s `rustCfg`).
+the C extension (`Print.lean`'s `rustCfg`).
 
 `encode` is `none` for an instruction whose operand does not fit its field
 (e.g. an `addi` immediate outside `-2048 ≤ imm < 2048`), which the printer

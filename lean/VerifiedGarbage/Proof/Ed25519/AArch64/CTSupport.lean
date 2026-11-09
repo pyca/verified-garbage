@@ -86,16 +86,6 @@ theorem taintSRegs {L : List String} {τ : VG.AArch64.Taint.T} {P : State → St
     (show (VG.AArch64.taintS L).Agree τ x y from ⟨⟨hsp, (hp x y hp').1⟩, (hp x y hp').2⟩) ex ey
   exact ⟨ht, ha.1.1, fun r hr => ha.1.2 r (RegSet.mem_of_subset hs (RegSet.mem_ofList.mpr hr))⟩
 
-theorem taintRegs {τ : VG.AArch64.Taint.T} {P : State → State → Prop} {c : Prog isa}
-    (hp : ∀ x y, P x y → ∀ r ∈ τ, x.gpr r = y.gpr r) (rs : List Reg)
-    {hc : VG.Taint.Hint VG.AArch64.Taint.T}
-    (h : ((VG.AArch64.taint.check τ c hc).map fun τ' => (RegSet.ofList rs).subset τ') = some true) :
-    CT P c (fun x y => ∀ r ∈ rs, x.gpr r = y.gpr r) := by
-  intro x y tx ty u v ⟨hsp, hp'⟩ ex ey
-  obtain ⟨τ', hh, hs⟩ := Option.map_eq_some_iff.mp h
-  obtain ⟨ht, ha⟩ := VG.Taint.check_sound hh (show VG.AArch64.Taint.Agree τ x y from ⟨hsp, hp x y hp'⟩) ex ey
-  exact ⟨ht, ha.1, fun r hr => ha.2 r (RegSet.mem_of_subset hs (RegSet.mem_ofList.mpr hr))⟩
-
 end CT
 
 theorem agree_ofRegs {rs : List Reg} {x y : State} (h : ∀ r ∈ rs, x.gpr r = y.gpr r) :

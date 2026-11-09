@@ -36,18 +36,7 @@ def scratchSafety : String :=
   "The contents of `scratch` on return are unspecified and may contain secrets; the caller \
     must destroy them after use."
 
-/-! ## Complete operations -/
-
-/-- `(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024])`. -/
-def publicKeySig : Sig where
-  params := [("out", .array true .u8 32), ("seed", .array false .u8 32),
-    ("scratch", .array true .u64 scratchWords)]
-
-/-- Derive the public key from a seed, including SHA-512 and pruning. -/
-def publicKeyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  publicKeySig.contract A
-    (post := fun out seed _scratch m m' _ => bytesAt m' out 32 = publicKey (bytesAt m seed 32))
-    (writeArgs := true) (stack := stack)
+/-! ## Verification -/
 
 /-- `(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32`. -/
 def verifySig : Sig where
@@ -66,18 +55,6 @@ def verifyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       (bytesAt m pk 32 ++ bytesAt m message len.toNat ++ bytesAt m signature 64).map (·.toNat))
 
 /-! ## Emitted API documentation -/
-
-def publicKeyApi : Api where
-  module := "ed25519"
-  name := "vg_ed25519_public_key"
-  sig := publicKeySig
-  writeArgs := true
-  contracts := some fun A stack => publicKeyContract A stack
-  summary := "Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public \
-    key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning. \
-    Contract: `VG.Spec.Ed25519.publicKeyContract`. Constant time: only pointers may affect \
-    timing."
-  safety := ["`seed` must originate from a cryptographically secure random generator.", scratchSafety]
 
 def verifyApi : Api where
   module := "ed25519"

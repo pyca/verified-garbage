@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha3.Contract
 
 /-!
 # The SHA-3 sponge on AArch64: `absorb`
@@ -614,13 +615,5 @@ theorem absorb_ct (v : Permutation) : ConstantTime isa Proof.Sha3.absorbAArch64.
   obtain ⟨hint, hhint⟩ := v.absorbTaint
   exact VectorTaint.constantTime (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
     (fun _ _ _ _ hp => agree₀ hp) hhint
-
-theorem absorb_verified (v : Permutation) :
-    Verified AArch64.target (Impl.Sha3.AArch64.Stream.absorbWith v.callee) (Spec.Sha3.absorbScratchContract AArch64.abi
-      16) :=
-  Verified.of_correct (absorb_correct v) (absorb_ct v) (by
-    sig_implies [Spec.Sha3.absorbScratchContract, Spec.Sha3.absorbScratchSig, Spec.Sha3.absorbPre, Spec.Sha3.absorbPost, Proof.Sha3.absorbAArch64,
-      AArch64.abi, AArch64.argRegs] [Proof.Sha3.AArch64.Stream.Absorb.sat] using
-      Proof.Sha3.AArch64.Stream.Absorb.sat)
 
 end VG.Proof.Sha3.AArch64.Stream.Absorb

@@ -3,9 +3,6 @@
 //! `assembly/internal/vg_keccak_f1600_x2_sha3.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_keccak_f1600_x2_sha3` requires (`VG.Rust.Internal.features`).
-pub(crate) const VG_KECCAK_F1600_X2_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
-
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety
@@ -14,8 +11,7 @@ pub(crate) const VG_KECCAK_F1600_X2_SHA3_FEATURES: verified_garbage_cpu::Feature
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_f1600_x2_sha3() {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0x3d800028,0x3d800429,0x3d80082a,0x3d800c2b,0x3d80102c,0x3d80142d,0x3d80182e,0x3d801c2f
+        r".inst 0x3d800028,0x3d800429,0x3d80082a,0x3d800c2b,0x3d80102c,0x3d80142d,0x3d80182e,0x3d801c2f
 .inst 0x3dc00000,0x3dc00401,0x3dc00802,0x3dc00c03,0x3dc01004,0x3dc01405,0x3dc01806,0x3dc01c07
 .inst 0x3dc02008,0x3dc02409,0x3dc0280a,0x3dc02c0b,0x3dc0300c,0x3dc0340d,0x3dc0380e,0x3dc03c0f
 .inst 0x3dc04010,0x3dc04411,0x3dc04812,0x3dc04c13,0x3dc05014,0x3dc05415,0x3dc05816,0x3dc05c17
@@ -231,7 +227,6 @@ pub(crate) unsafe extern "C" fn vg_keccak_f1600_x2_sha3() {
 .inst 0x3d804010,0x3d804411,0x3d804812,0x3d804c13,0x3d805014,0x3d805415,0x3d805816,0x3d805c17
 .inst 0x3d806018,0x3dc00028,0x3dc00429,0x3dc0082a,0x3dc00c2b,0x3dc0102c,0x3dc0142d,0x3dc0182e
 .inst 0x3dc01c2f,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
     )
 }

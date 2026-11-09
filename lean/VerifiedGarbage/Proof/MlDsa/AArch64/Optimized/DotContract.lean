@@ -114,9 +114,6 @@ theorem positiveReduced_iff {m : Mem} {p : Addr} :
     PositiveReduced m p ↔ PosPolyIs m p (polyAt m p) :=
   ⟨fun h => ⟨h,rfl⟩,fun h => h.bound⟩
 
-theorem dotNTT_eq_dotPoly (f g : Nat → Poly) (count : Nat) :
-    dotNTT f g count=dotPoly f g count := rfl
-
 /-- The inverse cancels the internal Montgomery factor for a whole matrix row. -/
 theorem inverse_dotNTT (f g : Nat → Poly) (count : Nat) :
     montgomeryNttInv (Representation.encode true (dotPoly f g count))=

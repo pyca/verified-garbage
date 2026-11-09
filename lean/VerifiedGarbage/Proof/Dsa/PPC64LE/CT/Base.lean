@@ -117,9 +117,6 @@ def coreRegs : List Reg := [.r2, .r21, .r26, .r27, .r28]
 def Ph (qb : VD → Nat) (X : VD → State → Prop) (v : VD) (s : State) : Prop :=
   Base v s ∧ s.gpr .r2 = pack v.L.pl v.L.ql (qb v) v.d ∧ X v s
 
-theorem Ph.base {qb : VD → Nat} {X : VD → State → Prop} {v : VD} {s : State} (h : Ph qb X v s) : Base v s :=
-  h.1
-
 /-- A phase fixes `coreRegs` and the registers `X` fixes. -/
 theorem pins_ph {qb : VD → Nat} {X : VD → State → Prop} (rs : List Reg) (val : VD → Reg → BitVec 64)
     (hX : ∀ v s, X v s → ∀ r ∈ rs, s.gpr r = val v r) : Pins (Ph qb X) (coreRegs ++ rs) := by

@@ -29,9 +29,6 @@ theorem zero_nat (x : Addr) : x.toNat < 1 ↔ x = 0#64 := by
   · intro h; exact BitVec.eq_of_toNat_eq (Nat.lt_one_iff.mp h)
   · intro h; rw [h]; decide
 
-theorem xor_nat (x y : Addr) : (x ^^^ y).toNat < 1 ↔ x = y := by
-  rw [zero_nat, BitVec.xor_eq_zero_iff]
-
 theorem borrow_lt (a b : Nat) :
     (if decide (b ≤ a) = true then (0 : Addr) else -1) =
       Divide.mask (decide (a < b)) := by
@@ -54,7 +51,6 @@ theorem kind_ok (s : State) (hr : InRegions (s.rd ++ s.wr) (off (s.gpr .x19) 112
     List.flatten_cons, List.flatten_nil, List.cons_append, List.nil_append,
     runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.read, Size.bytes, Size.bits,
     RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_write, RegUpd.c_addWithCarry,
-
 
     BitVec.setWidth_eq, Bool.toNat_true, sub_value, sub_carry, borrow_mask, borrow_lt,
     Nat.reduceMul, Nat.reduceLT, BitVec.shiftLeft_zero,
@@ -85,7 +81,6 @@ theorem pass_ok (s : State) (hr : InRegions (s.rd ++ s.wr) (off (s.gpr .x19) 0) 
     runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.read, Size.bytes, Size.bits,
     RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_write, RegUpd.c_addWithCarry,
 
-
     BitVec.setWidth_eq, Bool.toNat_true, sub_value, sub_carry, borrow_mask, borrow_lt,
     Nat.reduceMul, Nat.reduceLT, BitVec.shiftLeft_zero,
     show (1#16).setWidth 64 = 1#64 from rfl,
@@ -112,7 +107,6 @@ theorem slice_ok (s : State) : WP isa (.block slice) s fun t =>
     List.flatten_cons, List.flatten_nil, List.cons_append, List.nil_append,
     runBlock_cons, runStep_some, runBlock_nil, exec,   State.read,  Size.bits,
     RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_write, RegUpd.c_addWithCarry,
-
 
     BitVec.setWidth_eq, Bool.toNat_true, sub_value, sub_carry, borrow_mask, borrow_lt,
     Nat.reduceMul, Nat.reduceLT, BitVec.shiftLeft_zero,
@@ -346,24 +340,6 @@ theorem Selected.words {s t : State} {p : Params} {pass lane slice old : Nat}
     (h.frame_word ready.layout 112 (by decide) (by decide)).trans ready.words.variantWord,
     h.counterWord.trans (counter_nat _)⟩
 
-theorem Ready.of_keeps {p : Params} {pass lane slice old : Nat} {s t : State}
-    (h : Ready p pass lane slice old s) (k : Divide.Keeps ReferenceMap.changed s t) :
-    Ready p pass lane slice old t := by
-  have regs : ∀ r ∈ FillCompress.loopRegs, t.gpr r = s.gpr r := by
-    intro r hr
-    apply k.regs
-    simp only [FillCompress.loopRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-  have stable := AddressCalls.stable_of_frame h.layout regs k.rd k.wr
-    (by rw [k.mem]; exact Frame.refl _ _) k.sp
-  refine ⟨stable.ready, stable.reads h.reads, ?_, stable.words h.layout h.words, ?_⟩
-  · rw [k.wr, k.regs .x19 (by decide)]; exact h.write
-  · intro same
-    have wanted' : wanted t = wanted s := by unfold wanted; rw [k.regs .x23 (by decide)]
-    rw [k.mem, k.regs .x19 (by decide), k.regs .x23 (by decide)] at same
-    rw [k.mem, stable.work_eq, wanted']
-    exact h.cached same
-
 end VG.Proof.Argon2.AArch64.AddressCache
 end
 
@@ -472,10 +448,6 @@ theorem Selected.invariant {s t : State} {p : Params} {pass lane slice old : Nat
   · rw [h.rd, h.wr, bp]; exact ready.reads
   · rw [h.wr, bp]; exact ready.write
   · rw [h.work_eq]; exact h.block
-
-theorem Invariant.zero {p : Params} {pass lane slice : Nat} {s : State}
-    (h : Ready p pass lane slice 0 s) : Invariant p pass lane slice 0 s :=
-  ⟨h.layout, h.reads, h.write, h.words, by decide, Or.inl rfl⟩
 
 theorem Invariant.of_state {p : Params} {pass lane slice old : Nat} {s t : State}
     (h : Invariant p pass lane slice old s)

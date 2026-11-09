@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP384r1.Tail
 public import VerifiedGarbage.Spec.Ecdh.BrainpoolP384r1
-import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP384r1.CheckVerified
 import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP384r1.CheckLit
 public import VerifiedGarbage.Proof.Ecdh.Exchange
 import VerifiedGarbage.Proof.EcKey.PublicKey

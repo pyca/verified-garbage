@@ -67,12 +67,6 @@ theorem ret_post {s₀ t : State} {r : Nat} (hr : r < 65536) (hk : KX s₀ t)
     show ((u.gpr .x0).setWidth 32).toNat = _
     rw [h0, setWidth32_ofNat (by omega), hv hd]⟩
 
-theorem bit_true {t : State} {P : Prop} [Decidable P] (h : isa.eval (.zero .x .x9) t = some (bit P == 0))
-    (he : isa.eval (.zero .x .x9) t = some false) : P := by
-  rw [h] at he
-  by_contra hc
-  simp [bit, hc] at he
-
 theorem bit_false' {t : State} {P : Prop} [Decidable P] (h : isa.eval (.zero .x .x9) t = some (bit P == 0))
     (he : isa.eval (.zero .x .x9) t = some true) : ¬ P := by
   rw [h] at he

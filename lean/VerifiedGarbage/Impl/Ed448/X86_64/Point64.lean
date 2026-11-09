@@ -8,7 +8,7 @@ public import VerifiedGarbage.Spec.Ed448
 # Ed448's point doubling and affine addition on x86-64, as functions
 
 `vg_ed448_r64_point_double(ws)` and `vg_ed448_r64_point_add_affine(ws)`
-(`Proof/Ed448/Point64Contract.lean`; `ws` in `rdi`, where the Ed448 code keeps it)
+(`ws` in `rdi`, where the Ed448 code keeps it)
 run the field programs that code inlined, with X448's field arithmetic on
 seven 64-bit words (`Impl/X448/X86_64.lean`, the baseline's
 multiplications): RFC 8032's doubling (`doubleOps`) of slots 0–2, and the
@@ -76,7 +76,6 @@ def addCodeWith (F : Field) : List Instr :=
 def fnWith (F : Field) (ops : List FOp) : Prog isa :=
   .block (saves ++ fieldCode F ops ++ restores)
 
-def addCode : List Instr := addCodeWith Impl.X448.X86_64.baseline
 def fn (ops : List FOp) : Prog isa := fnWith Impl.X448.X86_64.baseline ops
 
 def doubleFnWith (F : Field) : Prog isa := fnWith F doubleOps
@@ -98,9 +97,6 @@ structure Ops where
 
 /-- The operations as calls of the functions. -/
 def calls : Ops := ⟨doubleCall, addCall⟩
-
-/-- The operations as the functions' code, as the calls run it (`Code.inline`). -/
-def bodies : Ops := ⟨doubleFn, addFn⟩
 
 end Point64
 

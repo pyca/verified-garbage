@@ -31,9 +31,6 @@ open VG VG.X86 VG.X86.RegUpd VG.Impl.Mont.X86 VG.Impl.Mont.X86.Sse2
 theorem ea_setXmm (s : State) (r : XReg) (v : BitVec 128) (m : MemOp) : (s.setXmm r v).ea m = s.ea m := rfl
 theorem mcdt_setXmm (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).mcdt = s.mcdt := rfl
 theorem mcdt_setReg (s : State) (r : Reg) (v : BitVec 32) : (s.setReg r v).mcdt = s.mcdt := rfl
-theorem mcdt_setFlags (s : State) (a b c d : Option Bool) : (s.setFlags a b c d).mcdt = s.mcdt := rfl
-theorem mcdt_arithFlags (s : State) (x : BitVec 32) (c o : Bool) : (arithFlags s x c o).mcdt = s.mcdt := rfl
-
 /-- Only `xmm0` to `xmm5` changed. -/
 structure SseOnly (s t : State) : Prop where
   gpr : t.gpr = s.gpr
@@ -80,8 +77,6 @@ theorem word_mul_lt (x y : BitVec 32) : x.toNat * y.toNat < 2 ^ 64 := by
 /-- The product of the words at `a` and `b`. -/
 def pw (m : Mem) (a b : Addr) : Nat := (m.readW a 32).toNat * (m.readW b 32).toNat
 
-theorem pw_lt (m : Mem) (a b : Addr) : pw m a b < 2 ^ 64 := word_mul_lt _ _
-
 /-- Two products by `pmuludq`, of doublewords 0 and 2. -/
 theorem Sums.addMul {x0 x1 u v : BitVec 128} {S H : Nat} (h : Sums x0 x1 S H) (hH : H + 2 ^ 32 < 2 ^ 64) :
     Sums (XBinOp.eval .paddq x0 (pmuludq u v)) (XBinOp.eval .paddq x1 (XShiftOp.eval .psrlq (pmuludq u v) 32))
@@ -94,9 +89,6 @@ theorem Sums.addMul {x0 x1 u v : BitVec 128} {S H : Nat} (h : Sums x0 x1 S H) (h
 theorem dword_read128 (m : Mem) (a : Addr) {j : Nat} (hj : j < 4) :
     (dword (m.readW a 128) j).toNat = (m.readW (a + BitVec.ofNat 64 (4 * j)) 32).toNat := by
   rw [dword_readW m a hj]
-
-theorem add_ofNat_add (a : Addr) (d e : Nat) : a + BitVec.ofNat 64 d + BitVec.ofNat 64 e = a + BitVec.ofNat 64 (d + e) := by
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
 
 /-! ## `quadLastMul` -/
 

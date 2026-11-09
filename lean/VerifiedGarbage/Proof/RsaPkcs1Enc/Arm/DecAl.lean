@@ -150,9 +150,6 @@ theorem maskLoop_vp : VP (MI P 0) maskLoop (MK P) := by
 
 /-! ## The candidates -/
 
-theorem clV_length (P : EP) (σ : State) : (clV P σ).length = 256 := by
-  rw [clV_eq, flatMap_blocks_length]
-
 /-- Byte `i` of `CL`. -/
 theorem cl_byte {σ s : State} (h : IR P σ s) {i : Nat} (hi : i < 256) :
     s.mem (State.addr P.scr + BitVec.ofNat 64 (sCL + i)) = (clV P σ).getD i 0 := by

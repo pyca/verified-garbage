@@ -3,9 +3,6 @@
 //! `assembly/internal/vg_ghash_with_powers_aes.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_ghash_with_powers_aes` requires (`VG.Rust.Internal.features`).
-pub(crate) const VG_GHASH_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety
@@ -14,8 +11,7 @@ pub(crate) const VG_GHASH_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Featur
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ghash_with_powers_aes() {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0x3dc004b0,0x6e104218,0x3dc000b1,0x6e114239,0x3dc00cb2,0x6e12425a,0x3dc008b3,0x6e13427b
+        r".inst 0x3dc004b0,0x6e104218,0x3dc000b1,0x6e114239,0x3dc00cb2,0x6e12425a,0x3dc008b3,0x6e13427b
 .inst 0x3dc014b4,0x6e14429c,0x3dc010b5,0x6e1542bd,0x3dc01cb6,0x6e1642de,0x3dc018b7,0x6e1742ff
 .inst 0xd2f84005,0x4e080ca1,0x3dc00020,0x4e200800,0xd343fc65
 cbz x5, 20f
@@ -97,7 +93,6 @@ b 214f
 214:
 21:
 .inst 0x4e200800,0x3d800020,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
     )
 }

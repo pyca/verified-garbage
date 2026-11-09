@@ -50,7 +50,6 @@ theorem wordRel_eq {Q : Nat → BitVec 32} {x : Spec.Sm4.Word} (h : W32.WordRel 
 theorem keyEntry_eq (k : Spec.Sm4.Schedule) (d : Dir) (e : Nat) : keyEntry k d e = dirKeys d k e := by
   cases d <;> rfl
 
-theorem ofSpecDir_specDirArm (d : Dir) : ofSpecDir (specDirArm d) = d := by cases d <;> rfl
 theorem specDirArm_ofSpecDir (d : Spec.Sm4.Direction) : specDirArm (ofSpecDir d) = d := by cases d <;> rfl
 
 /-- The words `vg_sm4_prepare_keys` writes, in the working space at `B`. -/

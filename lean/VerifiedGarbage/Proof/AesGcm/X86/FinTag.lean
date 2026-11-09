@@ -108,7 +108,7 @@ theorem FinIn.keep {Ctx St W SP : BitVec 32} {R : Nat} {al ah xl xh : BitVec 32}
     by rw [hm]; exact h.xh, by rw [hm]; exact h.rounds⟩
 
 section
-variable {Ctx St W SP : BitVec 32} (L : Lay Ctx St W SP 28)
+variable {Ctx St W SP : BitVec 32} (L : Lay Ctx St W SP 32)
 include L
 
 theorem finTag_pc {R o : Nat} (ho : o = 0 ∨ o = 112) {al ah xl xh : BitVec 32} :

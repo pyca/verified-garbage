@@ -37,9 +37,7 @@ have the same working space (`init` at 76 words, and the iteration, also at
 `sha256I`), that `sha256I`'s functions have the names and modules of the
 existing SHA-256 ones, and that each `Instance` names its own record and its
 hash's `update` function, and has at least that function's working space
-and its `finalize`'s. `init` for a key of any length (`initAnyKeyApi`) is
-checked to be the same Rust function as `initApi`, with the same arguments
-but for its working space.
+and its `finalize`'s.
 -/
 
 namespace VG.Test.Hmac
@@ -201,7 +199,7 @@ run_cmd do
 open Spec.Hmac in
 run_cmd do
   -- `sha256I`'s functions have the names and modules the Rust code uses.
-  for (a, n, m) in [(sha256I.initApi, "vg_hmac_sha256_init", "hmac_sha256"),
+  for (a, n, m) in [(sha256I.initAnyKeyApi, "vg_hmac_sha256_init", "hmac_sha256"),
       (sha256I.finalizeApi, "vg_hmac_sha256_finalize", "hmac_sha256")] do
     unless a.name == n && a.module == m do
       throwError "{a.module}::{a.name} is not {m}::{n}"
@@ -244,7 +242,7 @@ run_cmd do
     let some w := scratchWords sig | throwError "{update} has no working space"
     unless w ≤ I.scratch do throwError "{lean}: {update} needs {w} words of working space"
   let names := instances.flatMap fun (I, _, _, _) =>
-    [I.initApi.name, I.finalizeApi.name, I.pbkdf2Api.name]
+    [I.initAnyKeyApi.name, I.finalizeApi.name, I.pbkdf2Api.name]
   unless names.eraseDups.length == names.length do throwError "duplicate names: {names}"
 
 /-! ## `init` for a key of any length -/
@@ -266,15 +264,6 @@ run_cmd do
   unless finalizes.map (·.1.lean) == instances.map (·.1.lean) do
     throwError "`finalizes` does not list the instances"
   for (I, finalize, sig) in finalizes do
-    -- `initAnyKeyApi` replaces `initApi`: the same Rust function, with the
-    -- same arguments, which keeps more working space on its stack
-    -- (`initAnyKeyScratch`).
-    let a := I.initAnyKeyApi
-    let b := I.initApi
-    unless a.name == b.name && a.module == b.module do
-      throwError "{a.module}::{a.name} is not {b.module}::{b.name}"
-    unless a.sig.params == b.sig.params do
-      throwError "{a.name}: the arguments differ from `initApi`'s"
     let some w := scratchWords sig | throwError "{finalize} has no working space"
     unless w ≤ I.scratch do throwError "{I.lean}: {finalize} needs {w} words of working space"
     unless (finalize.replace "_scratch" "").replace "_finalize" "_update" == I.update do

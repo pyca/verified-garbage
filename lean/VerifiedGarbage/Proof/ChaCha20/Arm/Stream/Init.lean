@@ -244,16 +244,6 @@ theorem nonceMem_post (m : Mem) (st np : Addr) :
       lo_eq, hi_eq, show (132 : Nat) = 128 + 4 from rfl, readW64_halves _ _ _ (by decide), BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (by omega_arith), wordLE_bytesAt _ _ (by decide), show np + BitVec.ofNat 64 0 = np by simp]
 
-/-- The stores of `set_nonce` write only the state. -/
-theorem nonceMem_frame (m : Mem) (st : Addr) (w₀ w₁ w₂ w₃ l h : BitVec 32) :
-    Frame [⟨st, 768⟩] m (nonceMem m st w₀ w₁ w₂ w₃ l h) := by
-  have w : ∀ {m' : Mem} (_ : Frame [⟨st, 768⟩] m m') (d : Nat), d + 4 ≤ 768 → ∀ v : BitVec 32,
-      Frame [⟨st, 768⟩] m (m'.writeW (st + BitVec.ofNat 64 d) v) :=
-    fun hf d hd v => hf.writeW (List.mem_singleton_self _) v (Proof.ChaCha20.Arm.contains_off hd (by omega_arith))
-  exact w (w (w (w (w (w (w (w (w (w (Frame.refl _ _) 48 (by decide) _) 52 (by decide) _) 56 (by decide) _)
-    60 (by decide) _) 128 (by decide) _) 132 (by decide) _) 0 (by decide) _) 4 (by decide) _) 8 (by decide) _)
-    12 (by decide) _
-
 theorem preserved_ne {r : Reg} (hr : r ∈ preserved) : r ≠ .r0 ∧ r ≠ .r1 ∧ r ≠ .r2 ∧ r ≠ .r3 ∧ r ≠ .r12 := by
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide

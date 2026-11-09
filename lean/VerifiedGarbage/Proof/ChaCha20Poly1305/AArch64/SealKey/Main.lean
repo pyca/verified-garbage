@@ -59,7 +59,7 @@ variable {e : Bool}
 
 /-- `pre`: the counter set to 8, the kernel's arguments, the length in `x2`,
 and 448 in `x23`. -/
-theorem pre_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv0 s₀ s) :
+theorem pre_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv0 e s₀ s) :
     WP isa (.block SealKey.pre) s fun s' =>
       s'.mem = s.mem.writeW (off (cx s₀) 112) (8 : BitVec 32) ∧ s'.gpr .x0 = off (cx s₀) 64 ∧
       s'.gpr .x3 = off (cx s₀) 128 ∧ s'.gpr .x2 = s.gpr .x23 ∧ s'.gpr .x23 = BitVec.ofNat 64 448 ∧
@@ -136,23 +136,23 @@ theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
       u.gpr .x23 = s₅.gpr .x14 ∧ (∀ r, r ≠ .x23 → u.gpr r = s₅.gpr r) ∧ u.mem = s₅.mem)
     (wp_mov fun t₁ u₁ => WP.block_nil ⟨u₁.gpr, fun r h23 => u₁.other _ h23, u₁.mem⟩)).mono
     fun s₆ ⟨⟨x23₆, g₆, m₆⟩, vv₆, sp₆, rd₆, wr₆⟩ => ?_
-  have g₅' (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13) :
+  have g₅' (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧ r ≠ .x15) :
       s₅.gpr r = s₄.gpr r :=
-    have ⟨h9, h10, h11, h12, h13⟩ := h
-    g₅ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h9, h10, h11, h12, h13⟩)
-  have to₃ (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧ r ≠ .x14 ∧ r ≠ .x23) :
+    have ⟨h9, h10, h11, h12, h13, h15⟩ := h
+    g₅ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h9, h10, h11, h12, h13, h15⟩)
+  have to₃ (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧ r ≠ .x14 ∧ r ≠ .x15 ∧ r ≠ .x23) :
       s₆.gpr r = s₃.gpr r := by
-    obtain ⟨h9, h10, h11, h12, h13, h14, h23⟩ := h
-    rw [g₆ r h23, g₅' r ⟨h9, h10, h11, h12, h13⟩, g₄ r h14 h23]
+    obtain ⟨h9, h10, h11, h12, h13, h14, h15, h23⟩ := h
+    rw [g₆ r h23, g₅' r ⟨h9, h10, h11, h12, h13, h15⟩, g₄ r h14 h23]
   have x23₆' : s₆.gpr .x23 = BitVec.ofNat 64 (L s₀) := by
     rw [x23₆, g₅' _ (by decide), x14₄, i₃.x23, hL]
   have sp₆' : s₆.sp = s₀.sp := by rw [sp₆, k₅.sp, sp₄, i₃.sp]
   have rd₆' : s₆.rd = s₀.rd := by rw [rd₆, k₅.rd, rd₄, i₃.rd]
   have wr₆' : s₆.wr = s₀.wr := by rw [wr₆, k₅.wr, wr₄, i₃.wr]
-  have i₆ : Inv0 s₀ s₆ := by
+  have i₆ : Inv0 true s₀ s₆ := by
     refine ⟨by rw [to₃ _ (by decide),
         i₃.x21], fun r hr => ?_, sp₆', rd₆', wr₆', ?_, ?_⟩
-    · have hu : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧ r ≠ .x14 ∧ r ≠ .x23 := by
+    · have hu : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧ r ≠ .x14 ∧ r ≠ .x15 ∧ r ≠ .x23 := by
         simp only [untouched, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide
       rw [to₃ r hu, i₃.un r hr]
@@ -305,17 +305,17 @@ theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   have wr₁₀' : s₁₀.wr = s₀.wr := by rw [wr₁₀, wr₉, wr₈']
   refine WP.seq (WP.mono (WP.preservedV (Short.xorKsAt_ok hp (o := 448) (n := L s₀ - 448) (by omega_arith)
     (by omega_arith) x21₁₀ x22₁₀' x23₁₀' rd₁₀' wr₁₀') (by lit_decide)) fun s₁₁ ⟨⟨k₁₁, e₁₁, f₁₁, g₁₁⟩, v₁₁⟩ => ?_)
-  have g₁₁' (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13) :
+  have g₁₁' (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧ r ≠ .x15) :
       s₁₁.gpr r = s₁₀.gpr r :=
-    have ⟨h9, h10, h11, h12, h13⟩ := h
-    g₁₁ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h9, h10, h11, h12, h13⟩)
+    have ⟨h9, h10, h11, h12, h13, h15⟩ := h
+    g₁₁ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h9, h10, h11, h12, h13, h15⟩)
   -- The invariant.
   have r32 (d : Nat) (hd : d = 32 ∨ d = 40) :
       s₉.mem.readW (off (cx s₀) d) 64 = s₈.mem.readW (off (cx s₀) d) 64 :=
     f₉.readW (r := sub s₀ d 8) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact sub_disj s₀ (by omega_arith) (by omega_arith) (by lit_omega)) (by decide)
-  have to₁₀ (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13) :
+  have to₁₀ (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧ r ≠ .x15) :
       s₁₁.gpr r = s₁₀.gpr r := g₁₁' r h
   have un₁₁ : ∀ r ∈ untouched, s₁₁.gpr r = s₀.gpr r := by
     intro r hr
@@ -341,7 +341,7 @@ theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   have Fb : Frame out s₁₀.mem s₁₁.mem := k₁₁.frame.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s₀, by simp [out], fun _ h => h⟩
   have F : Frame out s₆.mem s₁₁.mem := Fa.trans Fb
-  have i₁₁ : Inv0 s₀ s₁₁ := ⟨by rw [to₁₀ _ (by decide), x21₁₀],
+  have i₁₁ : Inv0 true s₀ s₁₁ := ⟨by rw [to₁₀ _ (by decide), x21₁₀],
     un₁₁, by rw [k₁₁.sp, sp₁₀, sp₉, sp₈, sp₇, i₆.sp], by rw [k₁₁.rd, rd₁₀'], by rw [k₁₁.wr, wr₁₀'],
     i₆.saved.frame F (fun r hr => by
       simp only [out, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -367,7 +367,7 @@ theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok0 hp i₁₂) (by lit_decide))
     fun s₁₃ ⟨⟨i₁₃, k₁₃, r₁₃⟩, v₁₃⟩ => ?_)
   refine WP.mono (Pad.zero_ok hp i₁₃.x21 i₁₃.wr) fun s₁₄ ⟨k₁₄, _, v₁₄⟩ => ?_
-  have i₁₄ : Inv0 s₀ s₁₄ := i₁₃.step k₁₄
+  have i₁₄ : Inv0 true s₀ s₁₄ := i₁₃.step k₁₄
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩)

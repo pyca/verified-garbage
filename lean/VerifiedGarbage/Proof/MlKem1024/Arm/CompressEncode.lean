@@ -569,48 +569,4 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
       simp only [State.setReg, subFlags]; rw [ite_eq_right (by intro e; subst e; simp [preserved] at hr)])
       rfl rfl rfl rfl
 
-theorem pre_of {s : State} (h : (Proof.MlKem1024.compressEncodeContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem1024.compressEncodeContract, Proof.MlKem1024.compressEncodeSig, Arm.abi, Arm.argRegs,
-    Arm.reduceClassify, Arm.Loc.val] at h
-  obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 5 | .r2 => 0x2000 | .r3 => 160 | _ => 0
-  sp := 0x4000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := [⟨0x1000, 1024⟩]
-  wr := [⟨0x2000, 160⟩]
-
-theorem verified : Verified Arm.target compressEncode1024 (Proof.MlKem1024.compressEncodeContract Arm.abi) := by
-  refine ⟨fun s hs => ?_, Add.ctRegs [.r0, .r1, .r2, .r3] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
-  · have hp := pre_of hs
-    obtain ⟨t, s', he, hpres, hsp, h⟩ := correct hp
-    refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
-    sig_post [Proof.MlKem1024.compressEncodeContract, Proof.MlKem1024.compressEncodeSig, Arm.abi,
-      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-    exact h
-  · sig_pub [Proof.MlKem1024.compressEncodeContract, Proof.MlKem1024.compressEncodeSig, Arm.abi,
-      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
-    obtain ⟨-, h0, h1, h2, h3⟩ := h
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
-  · refine ⟨satState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem1024.compressEncodeContract, Proof.MlKem1024.compressEncodeSig, Arm.abi,
-        Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-      sig_and_intros
-      all_goals first
-        | trivial
-        | exact Add.reduced_zero _
-        | decide +kernel
-
 end VG.Proof.MlKem1024.Arm.CompressEncode

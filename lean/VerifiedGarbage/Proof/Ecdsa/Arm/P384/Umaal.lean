@@ -1,20 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.MulVerified
 public import VerifiedGarbage.Impl.Ecdsa.P384.Arm
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.MulVerified
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.UmaalLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.MulVerified
 meta import VerifiedGarbage.Impl.Ecdsa.P384.Arm
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Weierstrass.Law
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.MulVerified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.UmaalLit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -23,13 +21,12 @@ public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
-# P-384 on 32-bit ARM with `umaal`: the configuration, and `vg_p384_mul_umaal`
+# P-384 on 32-bit ARM with `umaal`: the configuration
 
 `p384With true`, P-384 with its field multiplications by
 `vg_p384_mul_mod_<p|n>_umaal`, is a configuration the code supports
 (`p384u_ok`: what `p384_ok` states, but that its `vg_p384_mul_umaal` has no
-frame), and `vg_p384_mul_umaal` meets `vg_p384_mul`'s contract
-(`mulU_verified`), constant time by taint tracking with `umaal` (`taintU`).
+frame).
 -/
 
 @[expose] public section
@@ -68,20 +65,5 @@ theorem p384With_ok (u : Bool) : CfgOk (p384With u) := by
   cases u
   · exact p384_ok
   · exact p384u_ok
-
-namespace Mul
-
-theorem mulU_ct : ConstantTime isa (mulArm C).pre (mulArm C).pub mulP384U :=
-  VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs fun r hr => by
-      rw [List.mem_singleton] at hr; subst hr; exact hp.2) (by taint_decide)
-
-/-- `vg_p384_mul_umaal` on 32-bit ARM. -/
-theorem mulU_verified (hL : Weierstrass.Law Spec.P384.curve) :
-    Verified Arm.target mulP384U (C.mulInRangeContract Arm.abi) :=
-  VG.Proof.Ecdsa.Arm.mul_verified (c := p384With true) (curve := "p384") (desc := "P-384") (saved := 1)
-    p384u_ok hL mulU_ct ⟨_, sat_pre hL⟩
-
-end Mul
 
 end VG.Proof.Ecdsa.Arm.P384

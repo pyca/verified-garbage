@@ -41,9 +41,6 @@ def windowCounters (V : Nat → BitVec 32) (A : Nat → Nat) (c w q : Nat) (F : 
   setAt (setAt (setAt V sFlag (BitVec.ofNat 32 (windowResult V A c w F).2.toNat))
     sValue (V sValue <<< 4)) sWindows (BitVec.ofNat 32 (q - 1))
 
-theorem windowSquares_digit (V : Nat → BitVec 32) (A : Nat → Nat) (c w : Nat) (F : Bool) :
-    windowSquaresV V A c w F sValue = V sValue := rfl
-
 theorem windowScan_product (V : Nat → BitVec 32) (A : Nat → Nat) (c w : Nat) (F : Bool) :
     Word32.mm c w (windowScanA V A c w F aY) (windowScanA V A c w F aX) =
       (windowResult V A c w F).1 := by

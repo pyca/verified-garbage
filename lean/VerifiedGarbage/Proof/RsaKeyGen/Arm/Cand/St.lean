@@ -39,9 +39,6 @@ open VG.Proof.Rsa (b2n)
 open VG.Impl.RsaKeyGen.Arm.Key (notS andNotS isOne)
 open VG.Proof.RsaKeyGen.Arm.Key (b2n_xor b2n_and b2n_or b2n_mod2 b2n_eq_one b2n_lt)
 
-/-- The working space's registers. -/
-abbrev kRegs : List Reg := [.r7, .r8, .r9]
-
 /-- A stage with the working space's registers. -/
 abbrev St (P : CP) (E : State → Prop) (A : State → Nat → Nat) (L : List Nat) (V : State → Nat → Nat)
     (LS : List Nat) (σ s : State) : Prop :=
@@ -148,11 +145,6 @@ theorem St.mono {A' : State → Nat → Nat} {L' : List Nat} {V' : State → Nat
     St P E A' L' V' LS' σ s :=
   ⟨h.1, h.2.1.mono hl hls, h.2.2⟩
 
-/-- Fewer arrays and header words. -/
-theorem St.sub {L' LS' : List Nat} {σ s : State} (h : St P E A L V LS σ s) (hl : ∀ j ∈ L', j ∈ L)
-    (hls : ∀ d ∈ LS', d ∈ LS) : St P E A L' V LS' σ s :=
-  h.mono (fun j hj => ⟨hl j hj, rfl⟩) fun d hd => ⟨hls d hd, rfl⟩
-
 /-- `copy o a`. -/
 theorem St.pcopy {o a : Nat} (cert : Cert (copy o a)) (ho : o < nArr) (ha : a ∈ L) (hoa : o ≠ a) :
     VP (St P E A L V LS) (copy o a) (St P E (fun σ => upd (A σ) o (A σ a)) (o :: L) V LS) :=
@@ -243,42 +235,6 @@ theorem St.pnotS {d a : Nat} {X : State → Bool} (cert : Cert (.block (notS d a
     have hw2 := hw1.of_upd u2 (by decide) (by decide) (by decide)
     refine h2.str hw2 hd fun t ht hwt _ => WP.block_nil ⟨e, ?_, hwt⟩
     rwa [u2.gpr, dpVal, u1.gpr, hX σ e, b2n_xor] at ht
-
-/-- `andS d a b`: the header word `d := a ∧ b`. -/
-theorem St.pandS {d a b : Nat} {X Y : State → Bool} (cert : Cert (.block (andS d a b))) (ha : a ∈ LS)
-    (hb : b ∈ LS) (hd : LsOk d) (hX : ∀ σ, E σ → V σ a = b2n (X σ)) (hY : ∀ σ, E σ → V σ b = b2n (Y σ)) :
-    VP (St P E A L V LS) (.block (andS d a b))
-      (St P E A L (fun σ => upd (V σ) d (b2n (X σ && Y σ))) (d :: LS)) :=
-  VP.kv cert (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => by
-    unfold andS
-    refine h.ldr hw ha (r := .r1) (by decide) fun s1 h1 hw1 u1 => ?_
-    refine h1.ldr hw1 hb (r := .r2) (by decide) fun s2 h2 hw2 u2 => ?_
-    refine wp_dp (op2_reg _ _) fun s3 u3 => ?_
-    have h3 := h2.of_rest (u3.rest (ws := [.r1]) (by simp)) u3.mem
-    have hw3 := hw2.of_upd u3 (by decide) (by decide) (by decide)
-    refine h3.str hw3 hd fun t ht hwt _ => WP.block_nil ⟨e, ?_, hwt⟩
-    rwa [u3.gpr, dpVal, u2.gpr, u2.other _ (by decide), u1.gpr, hX σ e, hY σ e, b2n_and] at ht
-
-/-- `andNotS d a b`: the header word `d := ¬a ∧ b`. -/
-theorem St.pandNotS {d a b : Nat} {X Y : State → Bool} (cert : Cert (.block (andNotS d a b))) (ha : a ∈ LS)
-    (hb : b ∈ LS) (hd : LsOk d) (hX : ∀ σ, E σ → V σ a = b2n (X σ)) (hY : ∀ σ, E σ → V σ b = b2n (Y σ)) :
-    VP (St P E A L V LS) (.block (andNotS d a b))
-      (St P E A L (fun σ => upd (V σ) d (b2n (!X σ && Y σ))) (d :: LS)) :=
-  VP.kv cert (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => by
-    unfold andNotS
-    refine h.ldr hw ha (r := .r1) (by decide) fun s1 h1 hw1 u1 => ?_
-    refine wp_dp (op2_imm (by decide)) fun s2 u2 => ?_
-    have h2 := h1.of_rest (u2.rest (ws := [.r1]) (by simp)) u2.mem
-    have hw2 := hw1.of_upd u2 (by decide) (by decide) (by decide)
-    refine h2.ldr hw2 hb (r := .r2) (by decide) fun s3 h3 hw3 u3 => ?_
-    refine wp_dp (op2_reg _ _) fun s4 u4 => ?_
-    have h4 := h3.of_rest (u4.rest (ws := [.r1]) (by simp)) u4.mem
-    have hw4 := hw3.of_upd u4 (by decide) (by decide) (by decide)
-    refine h4.str hw4 hd fun t ht hwt _ => WP.block_nil ⟨e, ?_, hwt⟩
-    have x1 : s3.gpr .r1 = BitVec.ofNat 32 (b2n (!X σ)) := by
-      rw [u3.other _ (by decide), u2.gpr, dpVal, u1.gpr, hX σ e]
-      apply BitVec.eq_of_toNat_eq; rw [b2n_xor, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (b2n_lt _)]
-    rwa [u4.gpr, dpVal, u3.gpr, x1, hY σ e, b2n_and] at ht
 
 /-- `isOne d`: Z iff the header word `d` holds 1. -/
 theorem St.pisOne {d : Nat} (cert : Cert (.block (isOne d))) (hd : d ∈ LS) (bit : ∀ σ, E σ → V σ d ≤ 1) :

@@ -108,14 +108,13 @@ def encrypt (key : List Byte) (counter : Word) (nonce : List Byte) (m : List Byt
 
 /-- The whole keystream for the 256-bit key `key` (32 bytes) and the 16-byte
 `nonce`: state words 12–15 (§2.3), i.e. the initial 32-bit block counter `c`
-(bytes 0–3, little-endian) followed by the 96-bit nonce (bytes 4–15). It is
-the keystream of §2.4.1, the concatenation of
-`chacha20_block(key, c + j, nonce)` for `j = 0, 1, …`, up to the last 32-bit
-block counter, 2³² − 1: the 32-bit block counter of §2.3 does not go further
-(the `P_MAX` of §2.8, 2³⁸ − 64 bytes, is this length for `c = 1`). So it is
-64 × (2³² − c) bytes long, and `encrypt key c n m` (`c` and `n` the counter
-and nonce of `nonce`) XORs `m` with its first `m.length` bytes, for any
-message `m` that is not longer. -/
+(bytes 0–3, little-endian) followed by the 96-bit nonce (bytes 4–15): the
+concatenation of `chacha20_block(key, c + j, nonce)` for `j = 0, 1, …`, up to
+the last 32-bit block counter, 2³² − 1, since the 32-bit block counter of §2.3
+does not go further (the `P_MAX` of §2.8, 2³⁸ − 64 bytes, is this length for
+`c = 1`). In terms of §2.4.1's `encrypt`, it is the encryption of the
+64 × (2³² − c) zero bytes, and `encrypt` XORs any message that is not longer
+with its first bytes. -/
 def keystreamOf (key nonce : List Byte) : List Byte :=
   let c := wordLE nonce 0
   (List.range (2 ^ 32 - c.toNat)).flatMap fun j =>

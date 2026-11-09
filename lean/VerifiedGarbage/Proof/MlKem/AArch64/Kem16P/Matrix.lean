@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Pair
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Last
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
@@ -186,12 +187,31 @@ theorem pairM_sub {s₀ : State} {e N₀ : Nat} (he : e + 1 < P.k * P.k) (hN : N
   · rw [List.mem_singleton.mp hr, bufR_eq]
     exact ⟨bufsR P L s₀, by simp, R.sub2 (by omega_arith) (by omega_arith)⟩
 
+/-- Calls preserve the pointers and saved-register invariant used by the matrix. -/
+theorem _root_.VG.Proof.MlKem.AArch64.Kem.KB.callEntry {s₀ s : State} (h : KB P L s₀ s) : KB P L s₀ s.callEntry := by
+  refine ⟨h.rd, h.wr, h.sp, ?_, ?_, h.sv, h.ro, h.lens, h.nrd, h.vcs⟩
+  · intro k hk
+    rw [State.callEntry_gpr s (preserved_not_link _ (slot_pres hk).1 (slot_pres hk).2)]
+    exact h.ptr k hk
+  · intro r hr ho
+    have h30 : r ≠ Reg.x30 := fun e => ho (by rw [e]; decide)
+    rw [State.callEntry_gpr s (preserved_not_link r hr h30)]
+    exact h.cs r hr ho
+
+theorem PInvW.callEntry {w16 : Bool} {s₀ s : State} {mA : Mem} {ρ : List Byte} {n c : Nat}
+    (h : PInvW w16 P L s₀ mA ρ n c s) : PInvW w16 P L s₀ mA ρ n c s.callEntry :=
+  ⟨⟨h.b.kb.callEntry, h.b.fr, h.b.rho, by rw [State.callEntry_gpr s (by decide)]; exact h.b.acc,
+    h.b.red, h.b.res⟩, h.fr, h.prf⟩
+
+theorem _root_.VG.Proof.MlKem.AArch64.Hybrid.MT3.callEntry {s₀ s : State} (h : MT3 P L s₀ s) : MT3 P L s₀ s.callEntry :=
+  ⟨⟨h.t.artifact, h.t.readable, h.t.apart⟩, h.stk⟩
+
 /-- **A pair computing PRF outputs** `N₀`, …, `N₀ + m - 1`. -/
-theorem paired_stepP {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) {mA : Mem} {ρ : List Byte}
+theorem paired_stepP_link {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) {mA : Mem} {ρ : List Byte}
     {i N₀ m : Nat} (he : 2 * i + 1 < P.k * P.k) (hN : N₀ + 3 ≤ 12) (hm : m ≤ 3)
     (h : PInvW true P L s₀ mA ρ (2 * i) N₀ s) (tb : MT3 P L s₀ s) :
     WP isa (Impl.MlKem.AArch64.Kem16P.pairP SB SS AH RB (TP P) P (2 * i) N₀ m) s fun t =>
-      PInvW true P L s₀ mA ρ (2 * i + 2) (N₀ + m) t ∧ MT3 P L s₀ t := by
+      PInvW true P L s₀ mA ρ (2 * i + 2) (N₀ + m) t ∧ MT3 P L s₀ t ∧ t.gpr .x30 = s.gpr .x30 := by
   have hw := hp.wf
   have hbo : Impl.MlKem.AArch64.Kem16P.bufOff (TP P) (N₀ + 2) < 65536 := by
     simp only [Impl.MlKem.AArch64.Kem16P.bufOff]; lom
@@ -212,7 +232,7 @@ theorem paired_stepP {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀)
   rw [seed, seed] at post
   have fr : Frame (pairWritesM P L s₀ (2 * i) N₀) s.mem t.mem := by
     have f := post.frame; rw [h.b.kb.sp] at f; exact f
-  refine ⟨⟨BInvW.pairedP hp hk he hN h.b post, h.fr.trans (fr.sub (pairM_sub he hN)), fun N hN' => ?_⟩, ?_⟩
+  refine ⟨⟨BInvW.pairedP hp hk he hN h.b post, h.fr.trans (fr.sub (pairM_sub he hN)), fun N hN' => ?_⟩, ?_, post.keep.get .x30⟩
   · by_cases hlt : N < N₀
     · refine (h.prf N hlt).frame fr (pairP_far hp hk he (o := TP P + 168 * N) (l := 128) (by lom) (by constructor <;> lom) (by lom)
         (.inl (by omega_arith)) hN)
@@ -234,6 +254,25 @@ theorem paired_stepP {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀)
         · exact .inl (by rw [stR_sc]; exact scratch_sub hp (by lom))
         · exact .inr rfl
     · rw [List.mem_singleton.mp hr, bufR_eq]; exact .inl (scratch_sub hp (by lom))
+
+/-- **A pair computing PRF outputs** `N₀`, …, `N₀ + m - 1`. -/
+theorem paired_stepP {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) {mA : Mem} {ρ : List Byte}
+    {i N₀ m : Nat} (he : 2 * i + 1 < P.k * P.k) (hN : N₀ + 3 ≤ 12) (hm : m ≤ 3)
+    (h : PInvW true P L s₀ mA ρ (2 * i) N₀ s) (tb : MT3 P L s₀ s) :
+    WP isa (Impl.MlKem.AArch64.Kem16P.pairP SB SS AH RB (TP P) P (2 * i) N₀ m) s fun t =>
+      PInvW true P L s₀ mA ρ (2 * i + 2) (N₀ + m) t ∧ MT3 P L s₀ t :=
+  WP.mono (paired_stepP_link hp hk he hN hm h tb) fun _ ht => ⟨ht.1, ht.2.1⟩
+
+/-- **A pair computing PRF outputs** `N₀`, …, `N₀ + m - 1`. -/
+theorem paired_stepP_call {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) {mA : Mem} {ρ : List Byte}
+    {i N₀ m : Nat} (he : 2 * i + 1 < P.k * P.k) (hN : N₀ + 3 ≤ 12) (hm : m ≤ 3)
+    (h : PInvW true P L s₀ mA ρ (2 * i) N₀ s) (tb : MT3 P L s₀ s) :
+    WP isa (Impl.MlKem.AArch64.Kem16P.pairPCall SB SS AH RB (TP P) P (2 * i) N₀ m) s fun t =>
+      PInvW true P L s₀ mA ρ (2 * i + 2) (N₀ + m) t ∧ MT3 P L s₀ t := by
+  obtain ⟨tr, t, he, hi, ht, h30⟩ := paired_stepP_link hp hk he hN hm h.callEntry tb.callEntry
+  have hr : isa.ret s.callEntry t = some t := by
+    simp only [isa, ret, h30, ite_true]
+  exact ⟨_, t, Exec.call (call_callEntry s) he hr, hi, ht⟩
 
 /-- The paired matrix's writes miss buffer `N`. -/
 theorem buf_bW {s₀ : State} (hp : Pre P L s₀) {N : Nat} (hN : N < 12) :
@@ -489,7 +528,7 @@ theorem matrixP_ok {M : Hybrid.Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : S
         simp only [Impl.MlKem.AArch64.Kem16P.pairCount] at hc; omega_arith
       have h0 := ht.1
       rw [show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j) = 3 * (j + H - H) by omega_arith] at h0
-      refine WP.mono (paired_stepP hp hk he (by omega_arith) (by simp only [Impl.MlKem.AArch64.Kem16P.pairCount]; omega_arith)
+      refine WP.mono (paired_stepP_call hp hk he (by omega_arith) (by simp only [Impl.MlKem.AArch64.Kem16P.pairCount]; omega_arith)
         h0 ht.2) fun v hv => ?_
       rw [show 2 * (j + 1 + H) = 2 * (j + H) + 2 by omega_arith,
         show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * (j + 1)) =

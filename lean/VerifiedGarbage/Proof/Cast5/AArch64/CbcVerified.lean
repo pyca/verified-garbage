@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.AArch64.FbVerified
 import VerifiedGarbage.Proof.Modes.AArch64.CbcDecChained
 import VerifiedGarbage.Proof.Modes.AArch64.CbcEncChained
@@ -46,7 +47,7 @@ open VG.Proof.Cast5.AArch64.Mode (dirCoreSpec TabAt SchedAt dirCore_bw)
 
 /-- CBC encryption on AArch64 that updates the chaining value. -/
 def cbcEncX : Contract isa where
-  pre := FPre
+  pre := FPre blkLen
   post s s' :=
     let cs := Spec.Cbc.encrypt (Spec.Cast5.cipher (keyOf s) (s.gpr .x1).toNat) (ivOf s) (dataOf s s.mem)
     dataOf s s'.mem = cs ∧ Spec.Aes.bytesAt s'.mem (s.gpr .x2) 8 = Spec.Cbc.next (ivOf s) cs
@@ -54,7 +55,7 @@ def cbcEncX : Contract isa where
 
 /-- CBC decryption on AArch64 that updates the chaining value. -/
 def cbcDecX : Contract isa where
-  pre := FPre
+  pre := FPre blkLen
   post s s' :=
     dataOf s s'.mem = Spec.Cbc.decrypt (Spec.Cast5.invCipher (keyOf s) (s.gpr .x1).toNat) (ivOf s)
         (dataOf s s.mem) ∧
@@ -64,7 +65,7 @@ def cbcDecX : Contract isa where
 theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecX.pre s₀) :
     WP isa cbcDecryptChained s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcDecX.post s₀ s' := by
-  have hp' : FPre s₀ := hp
+  have hp' : FPre blkLen s₀ := hp
   have hwS : (⟨s₀.gpr .x5, 8 * 13⟩ : Region) ∈ s₀.wr := by rw [hp'.wr]; simp
   have e : 8 * (dirCore false).bw * (s₀.gpr .x4).toNat = (s₀.gpr .x4).toNat * 8 := by
     rw [dirCore_bw, Nat.mul_one, Nat.mul_comm]
@@ -92,7 +93,7 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecX.pre s₀) :
 theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncX.pre s₀) :
     WP isa cbcEncryptChained s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcEncX.post s₀ s' := by
-  have hp' : FPre s₀ := hp
+  have hp' : FPre blkLen s₀ := hp
   have hwS : (⟨s₀.gpr .x5, 8 * 13⟩ : Region) ∈ s₀.wr := by rw [hp'.wr]; simp
   have e : 8 * (dirCore true).bw * (s₀.gpr .x4).toNat = (s₀.gpr .x4).toNat * 8 := by
     rw [dirCore_bw, Nat.mul_one, Nat.mul_comm]
@@ -146,7 +147,7 @@ def cbcSat : State where
 
 theorem cbc_implies {postX : State → State → Prop} {post : Spec.Cast5.cbcChainedSig.Post AArch64.abi.ptrBits}
     (hpost : ∀ s s', postX s s' → (cbcK post).post s s') :
-    ({ pre := FPre, post := postX, pub := cbcPub } : Contract isa).Implies (cbcK post) where
+    ({ pre := FPre blkLen, post := postX, pub := cbcPub } : Contract isa).Implies (cbcK post) where
   pre s h := by
     sig_pre [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcChainedSig,
       Proof.Cast5.cbcChainedPre, AArch64.abi, AArch64.argRegs, ecbConsts_eq, Abi.withConsts, Abi.constRegions,
@@ -231,7 +232,7 @@ theorem cbcFrame_sat (post : Spec.Cast5.cbcChainedSig.Post AArch64.abi.ptrBits) 
 /-- `cbcEncryptChained` with its working space on the stack. -/
 theorem cbcEncryptChained_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 cbcEncryptChained)
-      (Spec.Cast5.cbcEncryptChainedContract (AArch64.abi.withConsts ecbConsts) 112) :=
+      (Proof.Cast5.cbcEncryptChainedRoundsContract (AArch64.abi.withConsts ecbConsts) 112) :=
   AArch64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig)
     (nm := "scratch") (e := .u64) (n := 13) (pre := Proof.Cast5.cbcChainedPre AArch64.abi.ptrBits)
     (post := Proof.Cast5.cbcEncChainedPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 112)
@@ -241,7 +242,7 @@ theorem cbcEncryptChained_framed :
 /-- `cbcDecryptChained` with its working space on the stack. -/
 theorem cbcDecryptChained_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 cbcDecryptChained)
-      (Spec.Cast5.cbcDecryptChainedContract (AArch64.abi.withConsts ecbConsts) 112) :=
+      (Proof.Cast5.cbcDecryptChainedRoundsContract (AArch64.abi.withConsts ecbConsts) 112) :=
   AArch64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig)
     (nm := "scratch") (e := .u64) (n := 13) (pre := Proof.Cast5.cbcChainedPre AArch64.abi.ptrBits)
     (post := Proof.Cast5.cbcDecChainedPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 112)

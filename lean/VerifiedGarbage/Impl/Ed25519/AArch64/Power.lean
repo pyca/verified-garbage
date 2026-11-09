@@ -7,13 +7,13 @@ public import VerifiedGarbage.Spec.X25519
 # The shared addition chain for inversion and square-root recovery
 
 `power250` leaves `z^(2^250 - 1)` and `z^11` in `T1` and `T0`, for `z` in `Z2`:
-the offsets of `vg_gf25519_r64_pow250` (`Proof/X25519/Field64Contract.lean`; AAPCS64:
-`ws` in `x0`), which runs it as a function (`powFn`), keeping the callee-saved
+the offsets of `vg_gf25519_r64_pow250` (AAPCS64: `ws` in `x0`), which runs it as a
+function (`powFn`), keeping the callee-saved
 registers it writes (`x19`, the squarings' counter, and `x20`–`x24`) in lanes
 of `v16`–`v18`, which are not callee-saved, so that it needs no stack.
-Inversion (`invert`, `z^(p-2)`) and decoding's square root (`rootPower`,
-`z^((p-5)/8)`) call it (`powCall`, with the return address kept in a lane of
-`v31`, which it does not write) and finish with a few squarings and a product.
+Decoding's square root (`rootPower`, `z^((p-5)/8)`) calls it (`powCall`, with
+the return address kept in a lane of `v31`, which it does not write) and
+finishes with a few squarings and a product.
 -/
 
 @[expose] public section
@@ -59,8 +59,6 @@ def powFn : Prog isa :=
 def powCall : Prog isa :=
   .seq (.block [.vop (.ins .d2 .v31 0 .x30)]) <|
     .seq (.call "vg_gf25519_r64_pow250" powFn) (.block [.umov .x .x30 .v31 0])
-
-def invert : Prog isa := .seq powCall (.seq (sqn T1 T1 5) (.block (fieldMul T1 T1 T0)))
 
 def rootPower : Prog isa := .seq powCall (.seq (sqn T1 T1 2) (.block (fieldMul T1 T1 Z2)))
 

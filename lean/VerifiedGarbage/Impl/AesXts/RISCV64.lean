@@ -6,8 +6,7 @@ public import VerifiedGarbage.Impl.AesCbc.RISCV64
 # XTS-AES: RISC-V implementation
 
 `vg_aes_xts_encrypt(schedule = a0, rounds = a1, tweak = a2, data = a3, n = a4, scratch = a5)`
-and `vg_aes_xts_decrypt` with the same arguments (see
-`VG.Proof.Xts.aesEncryptContract` and `aesDecryptContract`): each a call of
+and `vg_aes_xts_decrypt` with the same arguments: each a call of
 the wide XTS encryption or decryption (`Impl.Aes.RISCV64.xtsEncWide`,
 `xtsDecWide`, `Impl/Aes/RISCV64/Wide.lean`), which take the same arguments
 and the first 2048 bytes of the scratch buffer, bitslice the round keys once

@@ -17,8 +17,6 @@ it.
 
 namespace VG.RISCV64
 
-theorem write_syms (s : State) (r : Reg) (v : BitVec 64) : (s.write r v).syms = s.syms := rfl
-
 theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms = s.syms := by
   cases i <;> simp only [exec, State.store, Option.bind_eq_some_iff, Option.map_eq_some_iff,
       reduceCtorEq] at h <;> (repeat' split at h) <;>

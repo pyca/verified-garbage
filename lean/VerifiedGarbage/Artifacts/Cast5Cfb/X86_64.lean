@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86_64.FbVerified
+public import VerifiedGarbage.Proof.Cast5.X86_64.FbFinalVerified
 import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
+import VerifiedGarbage.Proof.Cast5.X86_64.FbFinalLit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # CAST5-CFB64 artifacts on baseline x86-64 -/
 
@@ -12,14 +15,20 @@ namespace VG.Artifacts.Cast5Cfb.X86_64
 
 def artifacts : List Artifact := [
   Spec.Cast5.cfbEncryptApi.artifact X86_64.target {
-    consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 Impl.Cast5.X86_64.cfbEncrypt
     stack := 240
-    verified := Proof.Cast5.X86_64.cfbEncrypt_framed },
+    verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.X86_64.cfbEncrypt_framed },
   Spec.Cast5.cfbDecryptApi.artifact X86_64.target {
-    consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 Impl.Cast5.X86_64.cfbDecrypt
     stack := 240
-    verified := Proof.Cast5.X86_64.cfbDecrypt_framed }]
+    verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.X86_64.cfbDecrypt_framed },
+  Spec.Cast5.cfbEncryptFinalApi.artifact X86_64.target {
+    code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 Impl.Cast5.X86_64.cfbEncryptFinal
+    stack := 240
+    verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.X86_64.cfbEncryptFinal_framed },
+  Spec.Cast5.cfbDecryptFinalApi.artifact X86_64.target {
+    code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 Impl.Cast5.X86_64.cfbDecryptFinal
+    stack := 240
+    verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.X86_64.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.Cast5Cfb.X86_64

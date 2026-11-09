@@ -117,9 +117,6 @@ def GoodW1 (L : Ws) (s : State) : Prop := GoodW L s ∧ 1 ≤ L.w ∧ L.w < 2 ^ 
 
 theorem two_goodW1 {s₁ s₂ : State} (h : Two GoodW1 s₁ s₂) : Two GoodW s₁ s₂ := two_mono (fun _ _ h => h.1) h
 
-/-- The workspace, with `x16` the temporary array's base. -/
-def TmpReg (L : Ws) (t : State) : Prop := GoodW L t ∧ t.gpr .x16 = off L.B (slot L.w aTmp)
-
 theorem tmpPtr_ok (L : Ws) (s : State) (h : GoodW1 L s) :
     WP isa (.block [ldh .x16 (sArr aTmp)]) s fun t => GoodW1 L t ∧ t.gpr .x16 = off L.B (slot L.w aTmp) := by
   obtain ⟨⟨mi, hg, hZ⟩, hw⟩ := h

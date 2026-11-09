@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.AArch64.Ecb
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem
@@ -106,8 +107,8 @@ def ecbSat : State where
 /-- The shared contract's precondition, from its facts. -/
 theorem EPre.spec_pre (d : Spec.Cast5.Direction) {s : State} (h : EPre s)
     (hal : (s.syms s1234Sym).toNat % 64 = 0) :
-    (Spec.Cast5.ecbContract (AArch64.abi.withConsts ecbConsts) d).pre s := by
-  sig_pre [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, AArch64.abi, AArch64.argRegs,
+    (Proof.Cast5.ecbRoundsContract (AArch64.abi.withConsts ecbConsts) d).pre s := by
+  sig_pre [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, AArch64.abi, AArch64.argRegs,
     ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length]
   refine ⟨by rw [h.rd]; rfl, h.held, h.fitT, fun r hr => ?_, hal, by rw [h.rd]; rfl, h.wr, h.dKD, h.dKS,
     h.dDS, h.fK, h.fD, h.fS, h.rounds⟩
@@ -118,9 +119,9 @@ theorem EPre.spec_pre (d : Spec.Cast5.Direction) {s : State} (h : EPre s)
   · exact h.dTS
 
 theorem ecb_implies (d : Spec.Cast5.Direction) :
-    (ecbX d).Implies (Spec.Cast5.ecbContract (AArch64.abi.withConsts ecbConsts) d) where
+    (ecbX d).Implies (Proof.Cast5.ecbRoundsContract (AArch64.abi.withConsts ecbConsts) d) where
   pre s h := by
-    sig_pre [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, AArch64.abi, AArch64.argRegs,
+    sig_pre [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, AArch64.abi, AArch64.argRegs,
       ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length] at h
     obtain ⟨hdr, hheld, hfit, hdw, -, htk, hw, dKD, dKS, dDS, fK, fD, fS, hr⟩ := h
     refine ⟨?_, hw, hheld, hfit, hdw _ (by rw [hw]; exact List.mem_cons_self),
@@ -128,11 +129,11 @@ theorem ecb_implies (d : Spec.Cast5.Direction) :
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, htk, hdr]
     rfl
   post s s' _ h := by
-    sig_post [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPost, AArch64.abi, AArch64.argRegs,
+    sig_post [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Proof.Cast5.ecbRoundsPost, AArch64.abi, AArch64.argRegs,
       ecbConsts_eq, Abi.withConsts]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, AArch64.abi, AArch64.argRegs, ecbConsts_eq,
+    sig_pub [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, AArch64.abi, AArch64.argRegs, ecbConsts_eq,
       Abi.withConsts] at h
     obtain ⟨hsp, hsy, h1, h2, h3, h4, h5⟩ := h
     exact ⟨h1, h2, h3, h4, h5, hsp, hsy⟩
@@ -141,12 +142,12 @@ theorem ecb_implies (d : Spec.Cast5.Direction) :
     Region.disjoint_of_sep (by decide), by decide, by decide, by decide, by decide⟩ (by decide)⟩
 
 theorem ecbEncrypt_verified :
-    Verified AArch64.target ecbEncrypt (Spec.Cast5.ecbEncryptContract (AArch64.abi.withConsts ecbConsts)) :=
+    Verified AArch64.target ecbEncrypt (Proof.Cast5.ecbEncryptRoundsContract (AArch64.abi.withConsts ecbConsts)) :=
   Verified.of_correct (ecb_correct .encrypt (fun _ _ _ h => encryptBlock_ok h) (fun _ _ _ => rfl)
     (by lit_decide) (by lit_decide) (by lit_decide)) ecbEncrypt_ct (ecb_implies .encrypt)
 
 theorem ecbDecrypt_verified :
-    Verified AArch64.target ecbDecrypt (Spec.Cast5.ecbDecryptContract (AArch64.abi.withConsts ecbConsts)) :=
+    Verified AArch64.target ecbDecrypt (Proof.Cast5.ecbDecryptRoundsContract (AArch64.abi.withConsts ecbConsts)) :=
   Verified.of_correct (ecb_correct .decrypt (fun _ _ _ h => decryptBlock_ok h) (fun _ _ _ => rfl)
     (by lit_decide) (by lit_decide) (by lit_decide)) ecbDecrypt_ct (ecb_implies .decrypt)
 

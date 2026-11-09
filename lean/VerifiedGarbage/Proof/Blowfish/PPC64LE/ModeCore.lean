@@ -129,7 +129,7 @@ theorem crypt_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sche
   have r3₅ : s₅.gpr .r3 = s.gpr .r3 := by
     rw [k₅.gpr (by decide), g₄ _ (by decide) (by decide), u₁.other _ (by decide)]
   have E : LookEnv s₅ := by
-    refine ⟨fun o ho => ?_, by rw [k₅.gpr (by decide)]; exact z₄⟩
+    refine ⟨fun o n ho => ?_, by rw [k₅.gpr (by decide)]; exact z₄⟩
     rw [r3₅, k₅.2.1, k₅.2.2, rd₄, wr₄]
     exact ⟨_, hin, Offset.contains_base _ ho (by omega)⟩
   -- The block function.

@@ -358,12 +358,6 @@ def inverseB (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
   seqs (batchInit iV iU iX₂ iX₁ iM ++ [.loop (batch iV iU iX₂ iX₁ iT iM) (.nonzero .x .x15)] ++
     batchFinish iV iU iX₂ iM iT)
 
-/-- The inverse at the width in `x12` (`x11` the stride): by batches of
-divsteps for a width below `2^21`, else bit by bit at the header's width. -/
-def inverseN (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
-  .seq (.block [.lsr .x .x3 .x12 21])
-    (.ite (.zero .x .x3) (inverseB iU iV iX₁ iX₂ iM iT) (inverseBits iU iV iX₁ iX₂ iM iT))
-
 /-- `inverse u v x₁ x₂ m t`: `[v] = gcd(a, m)` and `[x₂] a ≡ [v] (mod m)`
 for `[u] = a` and the odd `[m] = [v]`. -/
 def inverse (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=

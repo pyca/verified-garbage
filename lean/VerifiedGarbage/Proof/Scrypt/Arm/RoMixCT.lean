@@ -39,7 +39,6 @@ meta import VerifiedGarbage.Proof.Scrypt.Arm.Lit
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Proof.Scrypt.Contract
 
 /-!
 # scryptROMix on 32-bit ARM: the precondition
@@ -2154,21 +2153,6 @@ theorem preserved_cases :
     ∀ r ∈ preserved, r ∈ rmSaved.map Prod.fst ∨ r ∈ [Reg.r10, .r11] := by
   decide
 
-/-- A state satisfying the precondition: `b` at `0x1000`, `v` at `0x2000`
-(`N = 1`) and the scratch space at `0x3000` (384 bytes), passed on the stack
-at `0x5000` with its length in 128-byte blocks. -/
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 1 | .r2 => 0x2000 | .r3 => 1 | _ => 0
-  sp := 0x5000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem a := bif Nat.beq a.toNat 0x5001 then 0x30 else bif Nat.beq a.toNat 0x5004 then 3 else 0
-  rd := [⟨0x5000, 8⟩]
-  wr := [⟨0x1000, 128⟩, ⟨0x2000, 128⟩, ⟨0x3000, 384⟩]
-
 theorem roMix_correct (s : State) (hs : Proof.Scrypt.roMixArm.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.Arm.roMix s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.roMixArm.post s s' := by
@@ -2189,27 +2173,5 @@ theorem roMix_ct : ConstantTime isa Proof.Scrypt.roMixArm.pre Proof.Scrypt.roMix
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂
   exact (roMix_rel (pre_of h₁) (pre_of h₂) (pubEq_of hpub) hpub.2.2.2.2.2.2.2
     _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
-
-theorem roMix_verified :
-    Verified Arm.target Impl.Scrypt.Arm.roMix (Proof.Scrypt.roMixContract Arm.abi) :=
-  Verified.of_correct roMix_correct roMix_ct
-    { pre := by
-        sig_implies_pre [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
-          Proof.Scrypt.roMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-          Arm.State.addr]
-      post := by
-        sig_implies_post [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
-          Proof.Scrypt.roMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-          Arm.State.addr]
-      pub := by
-        sig_implies_pub [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
-          Proof.Scrypt.roMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-          Arm.State.addr]
-      sat := by
-        implies_sat [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
-          Proof.Scrypt.roMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-          Arm.State.addr]
-          [Proof.Scrypt.Arm.RoMix.satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
-          using Proof.Scrypt.Arm.RoMix.satState }
 
 end VG.Proof.Scrypt.Arm.RoMix

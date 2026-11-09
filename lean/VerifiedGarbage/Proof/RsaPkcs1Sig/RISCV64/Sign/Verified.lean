@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_pkcs1_sign` on RISC-V: `Verified`
@@ -144,7 +146,7 @@ theorem AtAft.a0_eq {s u : State} (B : AtAft s u) : u.gpr .a0 = if (encOut s).is
 
 theorem priv_pub {a s₁ s₂ t₁ t₂ : State} {em₁ em₂ : List Byte} (h₁ : E a s₁) (h₂ : E a s₂)
     (A₁ : AtCall s₁ t₁ em₁) (A₂ : AtCall s₂ t₂ em₂) :
-    (Spec.Rsa.privateCheckedContract RISCV64.abi Impl.Rsa.RISCV64.Priv.frameBytes).pub (callE s₁ t₁)
+    (Proof.Rsa.privateCheckedContract RISCV64.abi Impl.Rsa.RISCV64.Priv.frameBytes).pub (callE s₁ t₁)
       (callE s₂ t₂) := by
   have hn : ∀ {s t : State} {em : List Byte}, SPre s → AtCall s t em →
       Spec.Rsa.bytesAt (callE s t).mem ((callE s t).gpr .a2) ((callE s t).gpr .a3).toNat =

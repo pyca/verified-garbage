@@ -1,41 +1,11 @@
-//! Standalone public-key validation, in one call of a verified function.
+//! Public-key validation on its own.
 
 #![cfg(target_arch = "x86_64")]
 
-use crate::cpu::detected;
-
-use verified_garbage_cpu::Features;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Backend {
-    Baseline,
-    Adx,
-}
-
-impl Backend {
-    fn select(cpu: Features, required: Features) -> Self {
-        if cpu.contains(required) {
-            Self::Adx
-        } else {
-            Self::Baseline
-        }
-    }
-}
-
-macro_rules! check {
-    ($base:ident, $public:ident, $ws:ident) => {
-        $base($public, &mut $ws)
-    };
-    ($base:ident, $public:ident, $ws:ident, $adx:ident, $features:ident) => {
-        match Backend::select(detected(), $features) {
-            Backend::Baseline => $base($public, &mut $ws),
-            Backend::Adx => $adx($public, &mut $ws),
-        }
-    };
-}
-
+/// The validation of the curve `$curve`, whose coordinates are `$len` bytes,
+/// by the dispatcher `$validate` of `crate::arch::dispatch::$module`.
 macro_rules! validate {
-    ($curve:ident, $len:literal, $module:ident, $base:ident, [$($adx:ident, $features:ident)?]) => {
+    ($curve:ident, $len:literal, $module:ident, $validate:ident) => {
         impl super::$curve {
             /// Checks an uncompressed SEC 1 public key (`04 || x || y`).
             ///
@@ -45,14 +15,15 @@ macro_rules! validate {
             /// scalar multiplication is needed. Infinity and compressed or
             /// hybrid encodings are rejected. Available on x86-64.
             pub fn validate_public_key(public: &[u8; 2 * $len + 1]) -> bool {
-                use crate::arch::$module::{$base, $($adx, $features)?};
-                let mut ws = [0u64; 1024];
+                use crate::arch::dispatch::$module::$validate;
+                let dit = crate::dit::public(crate::dit::Why::PublicKey);
+                let mut ws = $crate::align::CacheAligned([0u64; 1024]);
                 // SAFETY: public is readable for the complete encoding;
                 // ws is a separate, writable 8192-byte Rust object. They
                 // cannot overlap each other or the call's stack frame, or
-                // wrap around the address space. Dispatch checks the CPU
-                // features required by the selected variant.
-                let ok = unsafe { check!($base, public, ws $(, $adx, $features)?) };
+                // wrap around the address space. The dispatcher calls only
+                // an implementation the CPU has the features of.
+                let ok = unsafe { $validate(dit, public, &mut ws.0) };
                 // The verified contract returns exactly zero or one.
                 ok == 1
             }
@@ -64,100 +35,72 @@ validate!(
     P192,
     24,
     ec_p192_validate,
-    vg_ec_p192_validate_public_key,
-    []
+    vg_ec_p192_validate_public_key_auto
 );
 
 validate!(
     P224,
     28,
     ec_p224_validate,
-    vg_ec_p224_validate_public_key,
-    []
+    vg_ec_p224_validate_public_key_auto
 );
 
 validate!(
     P256,
     32,
     ec_p256_validate,
-    vg_ec_p256_validate_public_key,
-    [
-        vg_ec_p256_validate_public_key_adx,
-        VG_EC_P256_VALIDATE_PUBLIC_KEY_ADX_FEATURES
-    ]
+    vg_ec_p256_validate_public_key_auto
 );
 
 validate!(
     P384,
     48,
     ec_p384_validate,
-    vg_ec_p384_validate_public_key,
-    [
-        vg_ec_p384_validate_public_key_adx,
-        VG_EC_P384_VALIDATE_PUBLIC_KEY_ADX_FEATURES
-    ]
+    vg_ec_p384_validate_public_key_auto
 );
 
 validate!(
     P521,
     66,
     ec_p521_validate,
-    vg_ec_p521_validate_public_key,
-    [
-        vg_ec_p521_validate_public_key_adx,
-        VG_EC_P521_VALIDATE_PUBLIC_KEY_ADX_FEATURES
-    ]
+    vg_ec_p521_validate_public_key_auto
 );
 
 validate!(
     Secp256k1,
     32,
     ec_secp256k1_validate,
-    vg_ec_secp256k1_validate_public_key,
-    []
+    vg_ec_secp256k1_validate_public_key_auto
 );
 
 validate!(
     BrainpoolP256r1,
     32,
     ec_brainpoolp256r1_validate,
-    vg_ec_brainpoolp256r1_validate_public_key,
-    []
+    vg_ec_brainpoolp256r1_validate_public_key_auto
 );
 
 validate!(
     BrainpoolP384r1,
     48,
     ec_brainpoolp384r1_validate,
-    vg_ec_brainpoolp384r1_validate_public_key,
-    []
+    vg_ec_brainpoolp384r1_validate_public_key_auto
 );
 
 validate!(
     BrainpoolP512r1,
     64,
     ec_brainpoolp512r1_validate,
-    vg_ec_brainpoolp512r1_validate_public_key,
-    []
+    vg_ec_brainpoolp512r1_validate_public_key_auto
 );
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::ecdh::*;
-    use verified_garbage_cpu::feature;
-
-    #[test]
-    fn select() {
-        let required = crate::arch::ec_p256_validate::VG_EC_P256_VALIDATE_PUBLIC_KEY_ADX_FEATURES;
-        for bits in [0, feature::BMI2, feature::ADX] {
-            assert_eq!(Backend::select(Features(bits), required), Backend::Baseline);
-        }
-        assert_eq!(
-            Backend::select(Features(feature::BMI2 | feature::ADX), required),
-            Backend::Adx
-        );
-    }
+    use crate::ec::PrivateKey;
+    use crate::ec::{
+        BrainpoolP256r1, BrainpoolP384r1, BrainpoolP512r1, P192, P224, P256, P384, P521, PublicKey,
+        Secp256k1,
+    };
 
     macro_rules! cases {
         ($name:ident, $curve:ident, $len:literal) => {
@@ -166,31 +109,36 @@ mod tests {
                 let mut one = [0; $len];
                 one[$len - 1] = 1;
                 let reference = PrivateKey::<$curve>::from_bytes(&one);
-                for d in 1..=8 {
+                let public = *reference.public_key().unwrap().as_bytes();
+                assert!($curve::validate_public_key(&public));
+                for d in 2..=8 {
                     let mut private = one;
                     private[$len - 1] = d;
-                    let public = PrivateKey::<$curve>::from_bytes(&private)
+                    let public = *PrivateKey::<$curve>::from_bytes(&private)
                         .public_key()
-                        .unwrap();
+                        .unwrap()
+                        .as_bytes();
                     assert!($curve::validate_public_key(&public));
-                    // Check every tag, including compressed and hybrid
-                    // forms, against the uncompressed encoding requirement.
-                    for tag in 0..=255 {
+                }
+                // Encoding and coordinate checks need only one valid point:
+                // repeating every mutation for each key repeats costly ECDH
+                // reference calls without testing another input position.
+                // Check every tag, including compressed and hybrid forms.
+                for tag in 0..=255 {
+                    let mut q = public;
+                    q[0] = tag;
+                    assert_eq!($curve::validate_public_key(&q), tag == 4);
+                }
+                // Differential checks exercise decoding at every byte,
+                // field bounds, and both coordinates' curve equation.
+                for i in 1..public.len() {
+                    for byte in [0, 1, 0xff] {
                         let mut q = public;
-                        q[0] = tag;
-                        assert_eq!($curve::validate_public_key(&q), tag == 4);
-                    }
-                    // Differential checks exercise decoding at every byte,
-                    // field bounds, and both coordinates' curve equation.
-                    for i in 1..public.len() {
-                        for byte in [0, 1, 0xff] {
-                            let mut q = public;
-                            q[i] = byte;
-                            assert_eq!(
-                                $curve::validate_public_key(&q),
-                                reference.diffie_hellman(&q).is_ok()
-                            );
-                        }
+                        q[i] = byte;
+                        assert_eq!(
+                            $curve::validate_public_key(&q),
+                            reference.exchange(&PublicKey::from_bytes(&q)).is_ok()
+                        );
                     }
                 }
                 for tag in [0, 4] {

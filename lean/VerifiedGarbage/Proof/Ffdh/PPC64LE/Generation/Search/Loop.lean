@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.Generation.Search
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Live
 
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Classify
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
@@ -31,9 +32,9 @@ theorem attempts_guard {p : SPub} {original s : State} {used k : Nat}
   have hw := h.header (j := 0) (v := BitVec.ofNat 64 k) (by simp [SPub.headers])
   simp only [Bignum.word, off, Nat.mul_zero, BitVec.add_zero] at hw
   have hk : k < 2 ^ 64 := by have := h.k_le; have := h.input.attempts_lt; omega
-  refine WP.mono (WP.keep [.r9] (Q := fun t =>
+  refine WP.mono_syms (WP.keep [.r9] (Q := fun t =>
     isa.eval (.zero .d .r9) t = some (decide (k = 0)) ∧ t.mem = s.mem) ?_ (by decide))
-    fun _ ⟨⟨he, hm⟩, kt⟩ => ⟨h.keep kt hm, he⟩
+    fun _ ⟨⟨he, hm⟩, kt⟩ hy => ⟨h.keep kt hm hy, he⟩
   prun [ldf, h.r31, hw, a.ld 0 (by decide), a.ld0, BitVec.add_zero]
   refine (eval_zero _ _).trans ?_
   rw [RegUpd.gpr_write_self, ofNat_beq_zero hk]
@@ -69,8 +70,8 @@ theorem live_loop_guard {p : SPub} {original s : State} {used k : Nat}
     (h : SLive p original used k s) (hs : word s.mem p.control 112 = 4) :
     WP isa (.block [ldf .r9 14, .subi .r9 .r9 4]) s fun t =>
       isa.eval (.zero .d .r9) t = some true ∧ SLive p original used k t :=
-  WP.mono (status_guard (st := 4) h.access h.r31 hs (by decide))
-    fun _ ⟨⟨he, hm⟩, k⟩ => ⟨he, h.keep k hm⟩
+  WP.mono_syms (status_guard (st := 4) h.access h.r31 hs (by decide))
+    fun _ ⟨⟨he, hm⟩, k⟩ hy => ⟨he, h.keep k hm hy⟩
 
 /-- The loop's state: the search from octet `used`, with `k` attempts left,
 leads to the expected result. -/

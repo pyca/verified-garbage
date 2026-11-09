@@ -22,8 +22,6 @@ open VG.Impl.MlDsa.AArch64.Call (Ptr sc Arg glue callAt setB and24 seqR movV lea
 /-- The registers the function keeps the addresses of its buffers in. -/
 abbrev bases : List Reg := [.x23, .x25, .x26, .x27, .x28]
 
-theorem bases_pres : ∀ r ∈ bases, r ∈ preserved ∧ r ≠ .x30 := by decide
-
 theorem bases_kept : ∀ r ∈ bases, r ∈ keptRegs := by decide
 
 /-- The buffers of a layout are in the registers `bases`. -/

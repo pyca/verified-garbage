@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Gcm.Prepared16
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 
 /-!
 # The first `n` pairs of a prepared key context
@@ -25,12 +25,5 @@ def PowersN (n : Nat) (m : Mem) (p : Addr) : Prop :=
       Spec.Gcm.preparedPower (Spec.Gcm.hpow (Spec.Gcm.ctxH m p) (2 * k + 2)) ∧
     m.readW (p + BitVec.ofNat 64 (272 + 32 * k)) 128 =
       Spec.Gcm.preparedPower (Spec.Gcm.hpow (Spec.Gcm.ctxH m p) (2 * k + 1))
-
-theorem PowersN.of_repr {m : Mem} {p : Addr} (h : Spec.Gcm.PreparedPowersRepr m p) : PowersN 24 m p := h
-
-theorem PowersN.of_repr16 {m : Mem} {p : Addr} (h : Spec.Gcm.PreparedPowers16Repr m p) : PowersN 8 m p := h
-
-theorem PowersN.mono {n n' : Nat} {m : Mem} {p : Addr} (h : PowersN n m p) (hn : n' ≤ n) : PowersN n' m p :=
-  fun k hk => h k (Nat.lt_of_lt_of_le hk hn)
 
 end VG.Proof.Gcm.X86_64.Stitch

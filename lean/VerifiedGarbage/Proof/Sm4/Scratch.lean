@@ -94,9 +94,6 @@ def ecbDirScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : C
     (post := fun schedule data len decrypt _scratch => ecbDirPost A.ptrBits schedule data len decrypt)
     (writeArgs := true) (stack := stack)
 
-theorem ecbDirContract_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    ecbDirContract A stack = ecbDirSig.contract A (ecbDirPre A.ptrBits) (ecbDirPost A.ptrBits) true stack := rfl
-
 /-! ## Locality -/
 
 section

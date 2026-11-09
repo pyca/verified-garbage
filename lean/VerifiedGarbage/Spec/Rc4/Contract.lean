@@ -19,7 +19,8 @@ arguments.
 Initialization returns 0 on success or 1 on invalid key length, when the
 context is unspecified. Update accepts any byte-valued context, including
 zero-length input, and applies exactly `update`. Finalization needs no
-primitive: the model emits no bytes and examines no secrets.
+primitive: raw RC4 has no final output, so it emits no bytes and examines
+no secrets.
 -/
 
 @[expose] public section

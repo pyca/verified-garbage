@@ -15,8 +15,8 @@ parameter set but for compression: `vg_mlkem_compress_encode` and
 ML-KEM-1024 compresses to 11 (`d_u`) and 5 (`d_v`), which
 `vg_mlkem1024_compress_encode` and `vg_mlkem1024_decode_decompress` take.
 (They have a name of their own, not `vg_mlkem_compress_encode_…`: a
-function named after another with a suffix and the same signature is a
-variant of it to `ci/check_variants.py`.)
+function named after another with a suffix and the same signature is an
+implementation of it to its dispatcher, `Rust.groupsOf`.)
 -/
 
 @[expose] public section

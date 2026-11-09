@@ -59,10 +59,6 @@ materialize_shared baseline := code
     Spec.EcKey.Instance.decompressPublicKeySig, hlen, Spec.EcKey.scratchWords,
     abi, argRegs, decompressSatState] [decompressSatState] using (decompressSatState 66)
 
- theorem calls : CallsKeep code := by lit_decide
- theorem untouched : KeepsUntouched code := by lit_decide
- theorem vec : code.allInstrs keepsV = true := by lit_decide
-
  theorem chain_ok : Proof.Weierstrass.AArch64.ChainOk
     (Impl.EcKey.Compressed.AArch64.rootChain p521 ((p521.C.p + 1) / 4)) ((p521.C.p + 1) / 4) := by
   apply Proof.Weierstrass.AArch64.ChainOk.of_check

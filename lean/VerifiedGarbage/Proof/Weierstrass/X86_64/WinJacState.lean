@@ -231,10 +231,6 @@ theorem rcbW_loopW {p : Pt} (hp : ∀ x ∈ [p.x, p.y, p.z], (x, 8 * K.M.n) ∈ 
   · exact other_loopW (by jw_mem)
   all_goals exact hp _ (by simp [h])
 
-/-- The loop's writes, as the method's. -/
-theorem loopW_jwW {base : Addr} {m m' : Mem} (h : Unch base (jwLoopW K) m m') : Unch base (jwW K) m m' :=
-  h.mono (jwLoopW_sub K)
-
 /-- `T`'s slots as the named ones. -/
 theorem JacWinLay.TS_eq (hL : JacWinLay K size) :
     TS K 0 = K.E.x ∧ TS K 1 = K.E.y ∧ TS K 2 = K.E.z ∧ TS K 3 = K.z2 ∧ TS K 4 = K.z2 + 8 * K.M.n :=
@@ -284,8 +280,5 @@ theorem sub_powClob {n : Nat} {rs : List Reg} (h : ∀ r ∈ rs, r ∈ [Reg.rax,
   · simp [powClob, clob]
   · simp [powClob, clob]
   · exact clob_powClob _ (r8_mem_clob _)
-
-theorem keepRegs_of_keeps {rs rs' : List Reg} {s s' : State} (h : Keeps rs s s')
-    (hr : ∀ r ∈ rs, r ∈ rs') : KeepRegs rs' s s' := (Keeps.regs h).mono hr
 
 end VG.Proof.Weierstrass.X86_64

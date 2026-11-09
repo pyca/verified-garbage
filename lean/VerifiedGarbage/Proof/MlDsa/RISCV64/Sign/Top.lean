@@ -147,7 +147,7 @@ theorem rest_ok {σ : State} (hpre : SPre p STK σ) {s : State} (h : IM p STK σ
 
 theorem sign_ok {σ : State} (hpre : SPre p STK σ) (h48 : 1168 ≤ STK) :
     WP isa (sign P p) σ fun s' =>
-      RISCV64.target.abiPreserved σ s' ∧ (Spec.MlDsa.signContract p RISCV64.abi STK).post σ s' := by
+      RISCV64.target.abiPreserved σ s' ∧ (Proof.MlDsa.signWithCacheContract p RISCV64.abi STK).post σ s' := by
   unfold sign
   refine WP.seq (WP.mono (spro_ok hF h48 hpre) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (expandA_ok hP hF hS h₁.1 h₁.2) fun s₂ h₂ => ?_)
@@ -160,7 +160,8 @@ theorem sign_ok {σ : State} (hpre : SPre p STK σ) (h48 : 1168 ≤ STK) :
         fun _ => signMu_min_A (h₂.bad h0)⟩
   · refine WP.mono (topEnd_ok h₄.tf.s11 hpre.al_c h₄.tf.sav h₄.tf.inr h₄.tf.pres)
       fun s' ⟨pr, lr, r3, m', sp', _, _⟩ => ⟨⟨pr, sp'.trans h₄.tf.sp, lr⟩, ?_⟩
-    sig_post [Spec.MlDsa.signContract, Spec.MlDsa.signSig, RISCV64.abi, RISCV64.argRegs]
+    sig_post [Proof.MlDsa.signWithCacheContract, Proof.MlDsa.signWithCacheSig, Spec.MlDsa.signSig, RISCV64.abi,
+      RISCV64.argRegs]
     rw [r3, m']
     rcases h₄.r01 with h0 | h1
     · exact .inr ⟨by rw [h0]; rfl, h₄.bad h0⟩
@@ -173,7 +174,7 @@ omit hP hF hS hp in
 theorem pub_leq {σ₁ σ₂ : State} (hpub : sPub p σ₁ σ₂)
     (hA₁ : expandA p maxBounds (rhoOf p σ₁) = some (amat p (Am p σ₁)))
     (hA₂ : expandA p maxBounds (rhoOf p σ₂) = some (amat p (Am p σ₂))) : LeakEq p 0 σ₁ σ₂ := by
-  have e := hpub.2.2.2.2.2.2
+  have e := hpub.2.2.2.2.2.2.1
   rw [Proof.MlDsa.Sign.signLeak_eq hA₁, Proof.MlDsa.Sign.signLeak_eq hA₂, pub_rho hpub] at e
   exact List.append_cancel_left e
 
@@ -256,32 +257,34 @@ end
 
 /-! ## The contract -/
 
-/-- A state that satisfies `signContract`'s precondition, for the contract's satisfiability. -/
+/-- A state that satisfies `signWithCacheContract`'s precondition, with an
+empty cache, for the contract's satisfiability. -/
 def signSat (p : Params) : State where
   gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 0x8000 | .a2 => 0x9000 | .a3 => 0xA000 | .a4 => 0x10000 | _ => 0
+    | .a0 => 0x1000 | .a1 => 0x8000 | .a2 => 0x9000 | .a3 => 0xA000 | .a4 => 0x10000 | .a5 => 0x9800 | _ => 0
   sp := 0x80000
   mem _ := 0
-  rd := [⟨0x1000, p.skLen⟩, ⟨0x8000, 64⟩, ⟨0x9000, 32⟩]
+  rd := [⟨0x1000, p.skLen⟩, ⟨0x8000, 64⟩, ⟨0x9000, 32⟩, ⟨0x9800, 0⟩]
   wr := [⟨0xA000, p.sigLen⟩, ⟨0x10000, scrLen p⟩]
 
-/-- `vg_mldsa*_sign` of the parameter set `p` meets its contract with `S`
+/-- `vg_mldsa*_sign_with_cache` of the parameter set `p` meets its contract with `S`
 bytes of stack, for any verified implementations `P` of the primitives it
 calls with at most `S` bytes of stack whose samplers' results are public
 (`SPrimsOk`), and `S` at least the 48 bytes the sponge needs. The contract's
 satisfiability (`hsat`, by `signSat`) is evaluated once `S` is known. -/
 theorem sign_verified {P : Prims} {S : Nat} (hP : SPrimsOk P S) (h48 : 1168 ≤ S)
     (p : Spec.MlDsa.Params) (hp3 : p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87)
-    (hsat : (Spec.MlDsa.signContract p RISCV64.abi S).pre (signSat p)) :
-    Verified RISCV64.target (sign P p) (Spec.MlDsa.signContract p RISCV64.abi S) := by
+    (hsat : (Proof.MlDsa.signWithCacheContract p RISCV64.abi S).pre (signSat p)) :
+    Verified RISCV64.target (sign P p) (Proof.MlDsa.signWithCacheContract p RISCV64.abi S) := by
   have hF := sfacts hp3
   have hp : ParamsOk p := by rcases hp3 with rfl | rfl | rfl <;> exact ⟨by decide, by decide, by decide⟩
   obtain ⟨n, rfl⟩ : ∃ n, S = n + 1 := ⟨S - 1, by omega⟩
   refine ⟨fun s hs => sign_ok hP hF (Nat.le_refl _) hp (spre_of hs) h48,
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ⟨signSat p, hsat⟩⟩
-  sig_pub [Spec.MlDsa.signContract, Spec.MlDsa.signSig, RISCV64.abi, RISCV64.argRegs] at hpub
-  obtain ⟨hsp, hl, h3, h4, h5, h6, h7⟩ := hpub
+  sig_pub [Proof.MlDsa.signWithCacheContract, Proof.MlDsa.signWithCacheSig, Spec.MlDsa.signSig, RISCV64.abi,
+    RISCV64.argRegs] at hpub
+  obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9⟩ := hpub
   exact relStart (sign_tr hP hF (Nat.le_refl _) hp h48) s₁ s₂ t₁ t₂ s₁' s₂' (spre_of h₁) (spre_of h₂)
-    ⟨hsp, h3, h4, h5, h6, h7, hl⟩ e₁ e₂
+    ⟨hsp, h3, h4, h5, h6, h7, hl, h8, h9⟩ e₁ e₂
 
 end VG.Proof.MlDsa.RISCV64.Sign

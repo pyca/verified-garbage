@@ -9,7 +9,10 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Halves
 import VerifiedGarbage.Proof.Ed25519.X86_64.Points
 import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombMul
+import VerifiedGarbage.Impl.Ed25519.X86_64.CombIfma
+import VerifiedGarbage.Proof.Ed25519.Group.Extended
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Double4
 
 /-!
 # The `zmm` comb: the multiplication
@@ -153,7 +156,7 @@ theorem zv_sum {S : Nat} (hS : S < 2 ^ 256) : ((32 : Nat) : ℤ) * zvA S 26 + zv
   rw [Int.add_assoc]
 
 /-- `Zmm.combMultiply`: `[s]B` into slots 0–3, for the scalar bits expanded into bytes 768
-onward, as `vcomb_ok`. -/
+onward. -/
 theorem zcomb_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : Nat}
     (hS : S < 2 ^ (16 * 16)) (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
     (ht : CombTbl s T) (hfar : TblFar base T) :

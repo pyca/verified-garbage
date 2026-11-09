@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPost
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
@@ -11,9 +12,6 @@ public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Spec.Ffdh VG.Proof.Ffdh.SievedGeneration VG.Proof.Ffdh.ParameterCandidate
-
-theorem SearchParams.tail_zero (p : SearchParams) (used : Nat) :
-    p.tail used 0 = .exhausted used := rfl
 
 theorem candidateUsed_bound (p : SearchParams) (used : Nat) :
     candidateUsed p used ≤ p.c.bytes.length - used := by
@@ -33,7 +31,7 @@ theorem candidate_short (p : SearchParams) (used : Nat)
 theorem SearchParams.tail_short {p : SearchParams} {used remaining : Nat} (positive : 0 < remaining)
     (candidate : candidateResult p used = none) :
     p.tail used remaining = if Spec.Ffdh.parameterEntropy p.c.bits ≤ p.c.bytes.length - used
-      then .exhausted used else .entropy remaining (parameterRequest p.c.bits (p.c.bytes.length - used)) used := by
+      then .exhausted used else .entropy remaining (p.c.bytes.length - used) used := by
   cases remaining with
   | zero => omega
   | succ n =>

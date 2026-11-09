@@ -77,8 +77,6 @@ theorem var_ne_T0 (t k : Nat) : var t k ≠ T0 := (work_ne' _ (var_mem t k)).1
 
 theorem var_ne_T1 (t k : Nat) : var t k ≠ T1 := (work_ne' _ (var_mem t k)).2.1
 
-theorem var_ne_r4 (t k : Nat) : var t k ≠ .r4 := (work_ne' _ (var_mem t k)).2.2.1
-
 theorem var_ne_pub (t k : Nat) {p : Reg} (hp : p ∈ pubRegs) : var t k ≠ p :=
   (work_ne' _ (var_mem t k)).2.2.2 p hp
 

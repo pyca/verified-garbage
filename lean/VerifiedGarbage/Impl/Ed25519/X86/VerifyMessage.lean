@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.PublicKey
 public import VerifiedGarbage.Impl.Ed25519.X86.Verify
+public import VerifiedGarbage.Impl.Sha512.X86.Stream
+public import VerifiedGarbage.Spec.Sha512.Contract
 
 /-! Complete x86 Ed25519 verification: hash R || A || message, reduce the
 challenge modulo L, and invoke the verified strict equation checker. -/

@@ -34,7 +34,6 @@ import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
 import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay42
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
 import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
 

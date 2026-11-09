@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
 import VerifiedGarbage.Proof.Hmac.Common
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Layout
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Sha256
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -12,6 +13,9 @@ public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Loops
+import VerifiedGarbage.Proof.Mgf1.Bytes
 
 /-!
 # Deterministic ECDSA on AArch64: copying words
@@ -179,5 +183,107 @@ theorem copyBytes_ok {src dst : Reg} {S D : Addr} {Q : Nat} (hdr : dst ≠ .x11)
         simp only [List.mem_singleton] at hr; subst hr
         exact (hsep.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Region.sub_prefix (by omega_arith)))
         (by omega_arith)
+
+
+section
+
+open VG.Proof.RsaOaep.AArch64 (count_loop counter_step counter_ne read_one byte64 byte_rt64 write1_apply)
+open VG.Proof.Mgf1 (ifp ifn)
+
+variable {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {g : Reg → BitVec 64} {m₀ : Mem}
+
+/-! ## A byte loop -/
+
+/-- After `j` of the `n` bytes from `q` to `p`. -/
+structure CpI (u₀ : State) (p q : Addr) (n j : Nat) (v : State) : Prop where
+  rd : v.rd = u₀.rd
+  wr : v.wr = u₀.wr
+  sp : v.sp = u₀.sp
+  syms : v.syms = u₀.syms
+  gpr : ∀ r, r ≠ .x10 → r ≠ .x11 → r ≠ .x12 → r ≠ .x13 → v.gpr r = u₀.gpr r
+  x11 : v.gpr .x11 = q + BitVec.ofNat 64 j
+  x12 : v.gpr .x12 = p + BitVec.ofNat 64 j
+  x13 : v.gpr .x13 = BitVec.ofNat 64 (n - j)
+  mem : ∀ x, v.mem x = if (⟨p, j⟩ : Region).Contains x 1 then u₀.mem (q + (x - p)) else u₀.mem x
+
+/-- One byte of the loop. -/
+theorem cpStep_ok {v : State} {a b : Addr} (h11 : v.gpr .x11 = a) (h12 : v.gpr .x12 = b)
+    (hr : InRegions (v.rd ++ v.wr) a 1) (hw : InRegions v.wr b 1) :
+    WP isa (.block Cfg.cpBody) v fun v' => v'.rd = v.rd ∧ v'.wr = v.wr ∧ v'.sp = v.sp ∧ v'.syms = v.syms ∧
+      v'.mem = v.mem.write b 1 (v.mem a) ∧ v'.gpr .x11 = a + BitVec.ofNat 64 1 ∧
+      v'.gpr .x12 = b + BitVec.ofNat 64 1 ∧ v'.gpr .x13 = v.gpr .x13 - BitVec.ofNat 64 1 ∧
+      ∀ r, r ≠ .x10 → r ≠ .x11 → r ≠ .x12 → r ≠ .x13 → v'.gpr r = v.gpr r := by
+  apply WP.of_runBlock
+  simp only [Cfg.cpBody, runBlock_cons, runStep_some, runBlock_nil, exec, State.read, State.load, State.store,
+    addr, Size.bits, Nat.mod_one, and_self, ite_true, ite_false, reduceCtorEq, Option.map_some,
+    Option.bind_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write,
+    RegUpd.sp_write, RegUpd.mem_write, BitVec.add_zero, h11, h12, hr, hw, read_one, byte64, byte_rt64,
+    BitVec.setWidth_eq, show (1 : Nat) < 4096 by decide, show (0 : Nat) < 4096 by decide]
+  exact ⟨by atriv, by atriv, by atriv, by atriv, by atriv, by atriv, by atriv, by atriv,
+    fun r h₁ h₂ h₃ h₄ => by simp only [h₁, h₂, h₃, h₄, ite_false]⟩
+
+theorem cpRaw_ok {u₀ : State} {p q : Addr} {n : Nat} (hn : 0 < n) (hpn : n < 2 ^ 63)
+    (hw : InRegions u₀.wr p n) (hsrc : ∀ i < n, InRegions (u₀.rd ++ u₀.wr) (q + BitVec.ofNat 64 i) 1)
+    (hd : ∀ i < n, ¬ (⟨p, n⟩ : Region).Contains (q + BitVec.ofNat 64 i) 1)
+    (h11 : u₀.gpr .x11 = q) (h12 : u₀.gpr .x12 = p) (h13 : u₀.gpr .x13 = BitVec.ofNat 64 n) :
+    WP isa Cfg.cpLoop u₀ (CpI u₀ p q n n) := by
+  refine count_loop hn (CpI u₀ p q n) (fun j hj v I => ?_)
+    ⟨rfl, rfl, rfl, rfl, fun _ _ _ _ _ => rfl, by rw [h11, add_ofNat_zero], by rw [h12, add_ofNat_zero],
+      by rw [h13, Nat.sub_zero], fun x => by simp [Region.Contains]⟩
+  have hin : InRegions v.wr (p + BitVec.ofNat 64 j) 1 := by
+    obtain ⟨R, hR, hc⟩ := hw
+    refine ⟨R, I.wr ▸ hR, hc.byte ?_⟩
+    rw [BitVec.add_comm p, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    exact hj
+  have hrd : InRegions (v.rd ++ v.wr) (q + BitVec.ofNat 64 j) 1 := by
+    rw [I.rd, I.wr]; exact hsrc j hj
+  have hq : v.mem (q + BitVec.ofNat 64 j) = u₀.mem (q + BitVec.ofNat 64 j) := by
+    rw [I.mem, ifn]
+    exact fun h => hd j hj (by
+      simp only [Region.Contains] at h ⊢; omega)
+  refine WP.mono (cpStep_ok I.x11 I.x12 hrd hin) fun v' ⟨hrd', hwr', hsp', hsy', hm', h11', h12', h13', hg'⟩ => ?_
+  refine ⟨⟨hrd'.trans I.rd, hwr'.trans I.wr, hsp'.trans I.sp, hsy'.trans I.syms,
+    fun r a b c d => (hg' r a b c d).trans (I.gpr r a b c d), by rw [h11', Offset.add_add],
+    by rw [h12', Offset.add_add], by rw [h13', I.x13, counter_step hj (by omega)], fun x => ?_⟩, ?_⟩
+  · rw [hm', write1_apply, I.mem x, hq]
+    by_cases he : x = p + BitVec.ofNat 64 j
+    · subst he
+      rw [ifp rfl, ifp (show (⟨p, j + 1⟩ : Region).Contains (p + BitVec.ofNat 64 j) 1 from
+        Offset.contains_base _ (by omega) (by omega))]
+      congr 1
+      rw [BitVec.add_comm p, BitVec.add_sub_cancel]
+    · rw [ifn he]
+      have hne : (x - p).toNat ≠ j := fun h => he (by
+        rw [← h, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel])
+      have iff : (⟨p, j + 1⟩ : Region).Contains x 1 ↔ (⟨p, j⟩ : Region).Contains x 1 := by
+        simp only [Region.Contains]; omega
+      by_cases h1 : (⟨p, j⟩ : Region).Contains x 1
+      · rw [ifp h1, ifp (iff.mpr h1)]
+      · rw [ifn h1, ifn (fun h => h1 (iff.mp h))]
+  · rw [h13', I.x13, counter_step hj (by omega)]; exact counter_ne hj (by omega)
+
+/-- `n` bytes from `q` (`x11`) to `p` (`x12`), `n` in `x13`, by `cpLoop`:
+`Ctx` kept, for a destination the code may write apart from the source. -/
+theorem cp_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {p q : Addr} {n : Nat} (hn : 0 < n)
+    (hn' : n < 2 ^ 63) (h13 : u.gpr .x13 = BitVec.ofNat 64 n) (h12 : u.gpr .x12 = p) (h11 : u.gpr .x11 = q)
+    (hpn : p.toNat + n ≤ 2 ^ 64) (hw : InRegions u.wr p n)
+    (hs : Safe L ⟨p, n⟩) (hsrc : ∀ i < n, InRegions (u.rd ++ u.wr) (q + BitVec.ofNat 64 i) 1)
+    (hd : ∀ i < n, ¬ (⟨p, n⟩ : Region).Contains (q + BitVec.ofNat 64 i) 1) :
+    WP isa Cfg.cpLoop u fun u' => Ctx L g m₀ u' ∧
+      (∀ r, r ≠ .x10 → r ≠ .x11 → r ≠ .x12 → r ≠ .x13 → u'.gpr r = u.gpr r) ∧
+      Frame [⟨p, n⟩] u.mem u'.mem ∧ Spec.Sha256.bytesAt u'.mem p n = Spec.Sha256.bytesAt u.mem q n := by
+  refine WP.mono (cpRaw_ok hn hn' hw hsrc hd h11 h12 h13) fun u' I => ?_
+  have hf : Frame [⟨p, n⟩] u.mem u'.mem := fun x hx => by
+    rw [I.mem x, ifn (hx _ (List.mem_singleton_self _))]
+  refine ⟨hc.keep hL I.rd I.wr I.sp
+      (fun r hr _ => I.gpr r (ne_cs hr (by decide)) (ne_cs hr (by decide)) (ne_cs hr (by decide))
+        (ne_cs hr (by decide))) hf
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hs) I.syms, I.gpr, hf, ?_⟩
+  simp only [Spec.Sha256.bytesAt]
+  refine List.map_congr_left fun i hi => ?_
+  have hi := List.mem_range.mp hi
+  rw [I.mem, ifp (Offset.contains_base _ (d := i) (by omega) (by omega)), BitVec.add_comm p, BitVec.add_sub_cancel]
+
+end
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

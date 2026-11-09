@@ -96,7 +96,8 @@ theorem dpBody_ok {s : State} {B D X O : Addr} {Z w k L xl p x g b : Nat} (h : E
     (hrdD : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1) (hsepD : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x)
     (hrdX : ∀ i < xl, InRegions (s.rd ++ s.wr) (off X i) 1) (hsepX : ∀ i < xl, ∀ x, ofs B x < Z → off X i ≠ x)
     (ho : Scr s O k) (hsepO : ∀ x, ofs O x < k → Z ≤ ofs B x) (hsepB : ∀ x, ofs B x < Z → k ≤ ofs O x)
-    (hP : arr s.mem B w 0 = p) (hp2 : 2 ≤ p) (hodd : p % 2 = 1) (hpk : p < 256 ^ k)
+    (hP : arr s.mem B w 0 = p) (hp2 : 2 ≤ p) (hodd : p % 2 = 1)
+    (hpt : 2 ^ (64 * (w - 1)) < p) (hpk : p < 256 ^ k)
     (hx : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem X xl) = x) (hg : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D k) k) = g)
     (hb : bnd s.mem D k L p = b) :
     WP isa dpBody s fun t =>
@@ -165,7 +166,8 @@ theorem dpBody_ok {s : State} {B D X O : Addr} {Z w k L xl p x g b : Nat} (h : E
       ((k2.gpr .r23 (by decide)).trans g23) a9 ((k2.gpr .r28 (by decide)).trans g28) (by omega) (by omega) hxl
       (by omega) (by rw [k12.rd, k12.wr]; exact rdG) sepG (by rw [k12.rd, k12.wr]; exact hrdX) hsepX
       (by rw [m2]; exact (hw1 64 (by omega)).trans hX) (by rw [m2]; exact (hw1 72 (by omega)).trans hXL)
-      (by rw [m2, p1]; exact hp2) (by rw [m2, p1]; exact hodd)) fun s₃ ⟨⟨z3, p3, b3, r10₃⟩, k3⟩ => ?_)
+      (by rw [m2, p1]; exact hp2) (by rw [m2, p1]; exact hodd)
+      (by rw [m2, p1]; exact hpt)) fun s₃ ⟨⟨z3, p3, b3, r10₃⟩, k3⟩ => ?_)
     rw [b12.bytesAt hZ sepG, b12.bytesAt hZ hsepX, hg, hx, m2, p1] at z3
     rw [m2, p1] at p3
     have k13 := k12.trans k3

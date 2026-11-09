@@ -514,7 +514,4 @@ theorem called_verified (b : MontBackend) :
     Verified target (calledCode b) (Spec.Ffdh.checkPublicContract abi 176) := by
   exact b.caller.verified (sharedCheckPublic_verified b)
 
-theorem called_stack (b : MontBackend) : FrameStack.armStack (calledCode b) ≤ 176 :=
-  Nat.le_trans (b.caller.stack_le _) (stack_ok b)
-
 end VG.Proof.Ffdh.Arm.SharedCheckPublic

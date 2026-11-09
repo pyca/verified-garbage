@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.AesCfb8.X86
+public import VerifiedGarbage.Proof.AesCfb8.Rounds
 public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 public import VerifiedGarbage.Spec.Cfb8.Contract
 
@@ -37,7 +38,7 @@ theorem decrypt_spSafe (v : BlocksImpl) : (decrypt v.enc).all (fun i => !isa.wri
   decide +kernel
 
 theorem encrypt_verified (v : BlocksImpl) :
-    Verified X86.target (encrypt v.enc) (Spec.Cfb8.aesEncryptContract X86.abi 24) :=
+    Verified X86.target (encrypt v.enc) (Proof.AesCfb8.encryptRoundsContract X86.abi 24) :=
   Verified.of_correct (fun _ hs => whole_wp (encBody_ok v) hs) (whole_ct (encBody_ok v) (encBody_ct v)) (by
     have a0 : arg sat 0 = 0x1000 := by decide
     have a1 : arg sat 1 = 10 := by decide
@@ -47,11 +48,11 @@ theorem encrypt_verified (v : BlocksImpl) :
     have a5 : arg sat 5 = 0x4000 := by decide
     have e : argAddr sat 0 = 0x8004 := by decide
     have esp : sat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Cfb8.aesEncryptContract, Spec.Cfb8.aesSig, X86.abi, X86.argSlots,
+    sig_implies [Proof.AesCfb8.encryptRoundsContract, Spec.Cfb8.aesSig, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, cfb8X86, cfb8, cts, inK] [a0, a1, a2, a3, a4, a5, e, esp] using sat)
 
 theorem decrypt_verified (v : BlocksImpl) :
-    Verified X86.target (decrypt v.enc) (Spec.Cfb8.aesDecryptContract X86.abi 24) :=
+    Verified X86.target (decrypt v.enc) (Proof.AesCfb8.decryptRoundsContract X86.abi 24) :=
   Verified.of_correct (fun _ hs => whole_wp (decBody_ok v) hs) (whole_ct (decBody_ok v) (decBody_ct v)) (by
     have a0 : arg sat 0 = 0x1000 := by decide
     have a1 : arg sat 1 = 10 := by decide
@@ -61,7 +62,7 @@ theorem decrypt_verified (v : BlocksImpl) :
     have a5 : arg sat 5 = 0x4000 := by decide
     have e : argAddr sat 0 = 0x8004 := by decide
     have esp : sat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Cfb8.aesDecryptContract, Spec.Cfb8.aesSig, X86.abi, X86.argSlots,
+    sig_implies [Proof.AesCfb8.decryptRoundsContract, Spec.Cfb8.aesSig, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, cfb8X86, cfb8, cts, inK] [a0, a1, a2, a3, a4, a5, e, esp] using sat)
 
 end VG.Proof.AesCfb8.X86

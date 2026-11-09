@@ -44,8 +44,13 @@ def wordSetup : List Instr :=
    .alu .add .r8 (.reg .r8), .alu .add .r8 (.reg .rax), .alu .add .r8 (.imm 28),
    imm .rax 1, st rconSlot .rax]
 
-/-- The S-box on each byte of `q 0` (and of the other words). -/
-def subAll : List Instr := toBs ++ sboxCode ++ fromBs
+/-- Transpose each eight-byte column across the eight words. Key expansion
+does not need the four-block byte interleaving used by the round function. -/
+def subOrtho : List Instr := setMasks (bsMasks.drop 3) ++ ortho
+
+/-- The S-box on each byte of `q 0` (and of the other words). The two
+transposes move each byte to the S-box's bit planes and back directly. -/
+def subAll : List Instr := subOrtho ++ sboxCode ++ subOrtho
 
 /-- After `subAll`: `rax := ROTWORD(rax) ⊕ Rcon` (on the low 32 bits), and
 the round constant times `x` (without a branch: `{1b}` is XORed in under a

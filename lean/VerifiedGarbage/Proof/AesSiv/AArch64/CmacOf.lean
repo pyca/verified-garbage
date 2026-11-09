@@ -43,7 +43,7 @@ meta import VerifiedGarbage.Proof.Gcm.Spec
 state at `W + 128`: the code zeroes the state, computes `16 nb`, the bytes of
 the whole blocks before the last 1 to 16 (`Spec.Cmac.chainedLen`), into
 `x28`, chains the `nb` blocks with `vg_cmac_aes_update` and finalizes the
-rest with `vg_cmac_aes_finalize` (`Siv.cmacWith_chained`).
+rest with `vg_cmac_aes_finalize` (`Siv.macWith_chained`).
 -/
 
 @[expose] public section
@@ -88,8 +88,6 @@ theorem ofNat_sub {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
 /-- The other registers `encrypt` and `decrypt` keep: the descriptors, the
 number left, and the data and its length. -/
 def Hold (s s' : State) : Prop := ∀ r ∈ [Reg.x24, .x25, .x26, .x27], s'.gpr r = s.gpr r
-
-theorem Hold.refl (s : State) : Hold s s := fun _ _ => rfl
 
 theorem Hold.trans {a b c : State} (h₁ : Hold a b) (h₂ : Hold b c) : Hold a c :=
   fun r hr => by rw [h₂ r hr, h₁ r hr]
@@ -264,7 +262,7 @@ theorem cmacOf_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W R
   have hS : (Spec.Aes.bytesAt s.mem P L).length = L := Proof.Cmac.bytesAt_length _ _ _
   have hsplit : L = Spec.Cmac.chainedLen 16 L + (L - Spec.Cmac.chainedLen 16 L) := by omega_arith
   rw [h₄.out, mn, sch.2, k1, k2, rest, m₃, h₂.out, Proof.Cmac.Stream.blocksAt_eq, chainedLen_div, sch.1, hz, pre,
-    Spec.Siv.ctxMac, Spec.Siv.schedCiph, Siv.cmacWith_chained, hS]
+    Spec.Siv.ctxMac, Spec.Siv.schedCiph, Siv.macWith_chained, hS]
   have tk : (Spec.Aes.bytesAt s.mem P L).take (Spec.Cmac.chainedLen 16 L) =
       Spec.Aes.bytesAt s.mem P (Spec.Cmac.chainedLen 16 L) := by
     have := Proof.AesSiv.take_bytesAt s.mem P (a := Spec.Cmac.chainedLen 16 L)

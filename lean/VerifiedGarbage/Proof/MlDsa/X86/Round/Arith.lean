@@ -32,20 +32,6 @@ open VG.Proof.MlKem.X86 (Only wp_cons wp_mul execMul_eax execMul_other toNat_ofN
 theorem updOnly {s s' : State} {d : Reg} {v : BitVec 32} (h : Upd s s' d v) : Only [d] s s' :=
   ⟨fun r hr => h.other r (by simpa using hr), h.mem, h.rd, h.wr⟩
 
-theorem Fupd.only {s s' : State} (h : Fupd s s') (ds : List Reg) : Only ds s s' :=
-  ⟨fun r _ => by rw [h.gpr], h.mem, h.rd, h.wr⟩
-
-theorem Only.gpr_of {ds : List Reg} {s s' : State} (h : Only ds s s') {r : Reg} (hr : r ∉ ds) :
-    s'.gpr r = s.gpr r := h.gpr r hr
-
-/-- Two `Only`s, as one over a list that contains both. -/
-theorem Only.comp {ds es fs : List Reg} {s₁ s₂ s₃ : State} (h₁ : Only ds s₁ s₂) (h₂ : Only es s₂ s₃)
-    (hd : ∀ r ∈ ds, r ∈ fs := by decide) (he : ∀ r ∈ es, r ∈ fs := by decide) : Only fs s₁ s₃ :=
-  (h₁.trans h₂).mono fun r hr => by
-    rcases List.mem_append.mp hr with h | h
-    · exact hd r h
-    · exact he r h
-
 /-- `sub d, [b + o]`, and the flags. -/
 theorem wp_subm {is : List Instr} {s : State} {Q : State → Prop} {d b : Reg} {B : BitVec 32} {o : Nat}
     (hb : s.gpr b = B) (hin : InRegions (s.rd ++ s.wr) (addr B o) 4)

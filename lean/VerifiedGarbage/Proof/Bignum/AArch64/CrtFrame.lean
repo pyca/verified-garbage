@@ -86,9 +86,6 @@ theorem st' {i : Nat} (hi : i < 32) : InRegions t.wr (off B (o + 8 * i)) 8 :=
 theorem ldn {i : Nat} (hi : i < 32) : InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 :=
   hc.scr.ld (by have := hdr_lt_slot w 8 hi; have := hc.lo; have := hc.hi; omega)
 
-theorem stn {i : Nat} (hi : i < 32) : InRegions t.wr (off B (8 * i)) 8 :=
-  hc.scr.st (by have := hdr_lt_slot w 8 hi; have := hc.lo; have := hc.hi; omega)
-
 theorem link' : word t.mem B (o + 8 * sLink) = B := by rw [← word_off]; exact hc.link
 
 theorem hw' : word t.mem B (o + 8 * sW) = BitVec.ofNat 64 wx := by rw [← word_off]; exact hc.hdr.hw

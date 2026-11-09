@@ -51,7 +51,7 @@ abbrev iscR : Region := ⟨(iSc s₀).setWidth 64, 2304⟩
 abbrev iaR : Region := ⟨argAddr s₀ 0, 16⟩
 
 /-- Where the function writes: the state, the scratch buffer and the stack. -/
-abbrev IBig : List Region := [istR s₀, iscR s₀, below (iE s₀) 48]
+abbrev IBig : List Region := [istR s₀, iscR s₀, below (iE s₀) 52]
 
 end
 
@@ -66,13 +66,13 @@ structure IPre (s₀ : State) : Prop where
   a_s : (iaR s₀).Disjoint (iscR s₀)
   ret_st : (⟨(iE s₀).setWidth 64, 4⟩ : Region).Disjoint (istR s₀)
   ret_s : (⟨(iE s₀).setWidth 64, 4⟩ : Region).Disjoint (iscR s₀)
-  b_st' : (⟨(iE s₀).setWidth 64 - BitVec.ofNat 64 48, 48⟩ : Region).Disjoint (istR s₀)
-  b_k' : (⟨(iE s₀).setWidth 64 - BitVec.ofNat 64 48, 48⟩ : Region).Disjoint (ikR s₀)
-  b_s' : (⟨(iE s₀).setWidth 64 - BitVec.ofNat 64 48, 48⟩ : Region).Disjoint (iscR s₀)
+  b_st' : (⟨(iE s₀).setWidth 64 - BitVec.ofNat 64 52, 52⟩ : Region).Disjoint (istR s₀)
+  b_k' : (⟨(iE s₀).setWidth 64 - BitVec.ofNat 64 52, 52⟩ : Region).Disjoint (ikR s₀)
+  b_s' : (⟨(iE s₀).setWidth 64 - BitVec.ofNat 64 52, 52⟩ : Region).Disjoint (iscR s₀)
   fSt : (iSt s₀).toNat + 304 ≤ 2 ^ 32
   fK : (iKp s₀).toNat + iKL s₀ ≤ 2 ^ 32
   fS : (iSc s₀).toNat + 2304 ≤ 2 ^ 32
-  esp48 : 48 ≤ (iE s₀).toNat
+  esp52 : 52 ≤ (iE s₀).toNat
   espfit : (iE s₀).toNat + 20 ≤ 2 ^ 32
   klen : iKL s₀ = 16 ∨ iKL s₀ = 24 ∨ iKL s₀ = 32
 
@@ -84,9 +84,9 @@ namespace IPre
 variable {s₀ : State} (hp : IPre s₀)
 include hp
 
-theorem b_st : (below (iE s₀) 48).Disjoint (istR s₀) := by rw [below_eq hp.esp48]; exact hp.b_st'
-theorem b_k : (below (iE s₀) 48).Disjoint (ikR s₀) := by rw [below_eq hp.esp48]; exact hp.b_k'
-theorem b_s : (below (iE s₀) 48).Disjoint (iscR s₀) := by rw [below_eq hp.esp48]; exact hp.b_s'
+theorem b_st : (below (iE s₀) 52).Disjoint (istR s₀) := by rw [below_eq hp.esp52]; exact hp.b_st'
+theorem b_k : (below (iE s₀) 52).Disjoint (ikR s₀) := by rw [below_eq hp.esp52]; exact hp.b_k'
+theorem b_s : (below (iE s₀) 52).Disjoint (iscR s₀) := by rw [below_eq hp.esp52]; exact hp.b_s'
 
 theorem fit : (s₀.gpr .esp).toNat + 4 + 4 * 4 ≤ 2 ^ 32 := by have := hp.espfit; omega_arith
 
@@ -101,7 +101,7 @@ theorem keep {m : Mem} (hf : Frame (IBig s₀) s₀.mem m) {i : Nat} (hi : i < 4
     rcases hr with rfl | rfl | rfl
     · exact hp.a_st.sub_left (arg_sub hp.fit hi)
     · exact hp.a_s.sub_left (arg_sub hp.fit hi)
-    · exact (args_below hp.fit (by decide) hp.esp48).symm.sub_left (arg_sub hp.fit hi)
+    · exact (args_below hp.fit (by decide) hp.esp52).symm.sub_left (arg_sub hp.fit hi)
 
 theorem argsOut : ArgsOut 4 s₀ := by
   refine ⟨by have := hp.espfit; omega_arith, ?_⟩
@@ -134,7 +134,7 @@ structure IMid₁ (s₀ s : State) : Prop where
 theorem initPre_wp {s₀ : State} (hp : IPre s₀) : WP isa (.block initPre) s₀ (IMid₁ s₀) := by
   have fS := hp.fS
   have fSt := hp.fSt
-  have e48 := hp.esp48
+  have e52 := hp.esp52
   rw [initPre_eq]
   refine wp_arg (s₀ := s₀) rfl (hp.arg_in (by decide)) rfl fun s₁ u₁ => ?_
   refine save_wp (Sc := iSc s₀) u₁.gpr fS (by
@@ -165,7 +165,7 @@ theorem initPre_wp {s₀ : State} (hp : IPre s₀) : WP isa (.block initPre) s�
     rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), esp₂]
   have rd₆ : s₆.rd = s₀.rd := by rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, rd₂']
   have wr₆ : s₆.wr = s₀.wr := by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, wr₂']
-  have b20 : Region.Sub (below (iE s₀) 20) (below (iE s₀) 48) := below_sub (by decide) e48
+  have b20 : Region.Sub (below (iE s₀) 20) (below (iE s₀) 52) := below_sub (by decide) e52
   refine ⟨?_, esp₆, by rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, hm₂], rd₆, wr₆⟩
   exact
   { eax := by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr]
@@ -217,7 +217,7 @@ theorem IMid₁.after {s₀ s s' : State} (hp : IPre s₀) (h : IMid₁ s₀ s)
   rcases hr with rfl | rfl | rfl
   · exact ⟨istR s₀, by simp, Region.sub_prefix (by decide)⟩
   · exact ⟨iscR s₀, by simp, Region.sub_prefix (by decide)⟩
-  · exact ⟨below (iE s₀) 48, by simp, below_sub (by decide) hp.esp48⟩
+  · exact ⟨below (iE s₀) 52, by simp, below_sub (by decide) hp.esp52⟩
 
 theorem ek_after {s₀ s : State} (hp : IPre s₀) (h : IMid₁ s₀ s) :
     WP isa (call4 v.expand.name v.expand.code) s (IAft s₀) :=
@@ -238,7 +238,7 @@ theorem initMid_wp {s₀ s : State} (hp : IPre s₀) (h : IAft s₀ s) :
     WP isa (.block initMid) s fun s' => IMid₂ s₀ s' ∧ s'.mem = s.mem := by
   have fS := hp.fS
   have fSt := hp.fSt
-  have e48 := hp.esp48
+  have e52 := hp.esp52
   have rw₀ : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
   have av : ∀ i < 4, s.mem.readW (argAddr s₀ i) 32 = arg s₀ i := fun i hi => hp.keep h.frame hi
   refine wp_arg (s₀ := s₀) h.esp (by rw [rw₀]; exact hp.arg_in (by decide)) (av 0 (by decide)) fun s₁ u₁ => ?_
@@ -276,7 +276,7 @@ theorem initMid_wp {s₀ s : State} (hp : IPre s₀) (h : IAft s₀ s) :
         u₂.other _ (by decide), u₁.gpr]; rfl
     ebx := u₇.gpr
     rounds := hR
-    esp := by rw [esp₇]; exact e48
+    esp := by rw [esp₇]; exact e52
     wk := by
       rw [add_setWidth (by omega_arith)]; exact Offset.base_disjoint _ (by decide) (by omega_arith)
     ws := (hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide))
@@ -311,7 +311,7 @@ theorem IMid₂.after {s₀ s s' : State} (hp : IPre s₀) (h : IMid₂ s₀ s)
   · refine ⟨istR s₀, by simp, ?_⟩
     rw [add_setWidth (by omega_arith)]; exact Offset.sub_base _ (by decide)
   · exact ⟨iscR s₀, by simp, Region.sub_prefix (by decide)⟩
-  · exact ⟨below (iE s₀) 48, by simp, fun _ h => h⟩
+  · exact ⟨below (iE s₀) 52, by simp, fun _ h => h⟩
 
 theorem sub_after {s₀ s : State} (hp : IPre s₀) (h : IMid₂ s₀ s) :
     WP isa (call4 ("vg_cmac_aes_subkeys" ++ v.suffix) (Impl.CmacAes.X86.subkeys v.callee)) s (IAft s₀) :=
@@ -367,7 +367,7 @@ theorem init_wp {s₀ : State} (h0 : initX86.pre s₀) :
   have fS : (arg s₀ 3).toNat + 2304 ≤ 2 ^ 32 := hp.fS
   have fSt : (arg s₀ 0).toNat + 304 ≤ 2 ^ 32 := hp.fSt
   have fSt' : (iSt s₀).toNat + 304 ≤ 2 ^ 32 := hp.fSt
-  have e48 := hp.esp48
+  have e52 := hp.esp52
   unfold init
   refine WP.seq (WP.mono (initPre_wp hp) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono ((ek_call v) h₁.args) fun s₂ h₂ => ?_)
@@ -375,7 +375,7 @@ theorem init_wp {s₀ : State} (h0 : initX86.pre s₀) :
   refine WP.seq (WP.mono (initMid_wp hp a₂) fun s₃ ⟨h₃, m₃⟩ => ?_)
   refine WP.seq (WP.mono ((sub_call v) h₃.args) fun s₄ h₄ => ?_)
   have a₄ := h₃.after hp h₄
-  have f₂ : Frame [⟨(iSt s₀).setWidth 64, 240⟩, ⟨(iSc s₀).setWidth 64, 512⟩, below (iE s₀) 48] s₁.mem s₂.mem := by
+  have f₂ : Frame [⟨(iSt s₀).setWidth 64, 240⟩, ⟨(iSc s₀).setWidth 64, 512⟩, below (iE s₀) 52] s₁.mem s₂.mem := by
     have := h₂.frame
     rw [h₁.esp] at this
     refine this.sub fun r hr => ?_
@@ -383,13 +383,13 @@ theorem init_wp {s₀ : State} (h0 : initX86.pre s₀) :
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨below (iE s₀) 48, by simp, below_sub (by decide) e48⟩
+    · exact ⟨below (iE s₀) 52, by simp, below_sub (by decide) e52⟩
   have f₄ : Frame [⟨(iSt s₀).setWidth 64 + BitVec.ofNat 64 240, 32⟩, ⟨(iSc s₀).setWidth 64, 2176⟩,
-      below (iE s₀) 48] s₂.mem s₄.mem := by
+      below (iE s₀) 52] s₂.mem s₄.mem := by
     have := h₄.frame; rw [h₃.aft.esp, m₃, add_setWidth (by omega_arith)] at this; exact this
   -- The saved registers.
   have dSlot : ∀ d, 2176 ≤ d → d + 4 ≤ 2192 → ∀ r ∈ [⟨(iSt s₀).setWidth 64, 240⟩, ⟨(iSc s₀).setWidth 64, 512⟩,
-      below (iE s₀) 48, ⟨(iSt s₀).setWidth 64 + BitVec.ofNat 64 240, 32⟩, ⟨(iSc s₀).setWidth 64, 2176⟩],
+      below (iE s₀) 52, ⟨(iSt s₀).setWidth 64 + BitVec.ofNat 64 240, 32⟩, ⟨(iSc s₀).setWidth 64, 2176⟩],
       (⟨(iSc s₀).setWidth 64 + BitVec.ofNat 64 d, 4⟩ : Region).Disjoint r := fun d h₁ h₂ r hr => by
     have sub : Region.Sub ⟨(iSc s₀).setWidth 64 + BitVec.ofNat 64 d, 4⟩ (iscR s₀) := Offset.sub_base _ (by omega_arith)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -420,7 +420,7 @@ theorem init_wp {s₀ : State} (h0 : initX86.pre s₀) :
     rcases hr with rfl | rfl | rfl
     · exact hp.ret_st
     · exact hp.ret_s
-    · exact ret_below e48
+    · exact ret_below e52
   · show Spec.Cmac.Repr s₅.mem ((iSt s₀).setWidth 64) (Spec.Aes.bytesAt s₀.mem ((iKp s₀).setWidth 64) (iKL s₀)) []
     rw [Proof.Cmac.Stream.repr_iff]
     have hlen : (Spec.Aes.bytesAt s₀.mem ((iKp s₀).setWidth 64) (iKL s₀)).length = iKL s₀ :=

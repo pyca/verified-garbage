@@ -57,15 +57,6 @@ theorem nextPolynomial {p : Params} (hp : p=mlDsa65∨p=mlDsa87) {t : Nat} (ht :
   rw [nextSeed hp ht hs hn]
   rcases hp with rfl|rfl <;> rfl
 
-theorem nextMask {p : Params} (hp : p=mlDsa65∨p=mlDsa87) {t : Nat} (ht : t<814)
-    {m : Mem} {a : Addr} {σ s : State} {nonce : BitVec 64}
-    (hs : Spec.Sha3.bytesAt m a 64=rppOf p σ)
-    (hn : nonce=BitVec.ofNat 64 (p.ℓ*t+2*p.ℓ-1))
-    (hm : PolyIs s.mem (pa s t4P) (toRq (bitUnpack (H (commitTailSeed m a nonce) 640) 524287 524288))) :
-    Mask p σ (t+1) s := by
-  rw [nextPolynomial hp ht hs hn] at hm
-  exact hm
-
 theorem nextPolynomial_of_phase {p : Params} (hp : p=mlDsa65∨p=mlDsa87)
     {S t i : Nat} {σ s : State} (h : PositiveICh p S σ t i s)
     (hn : s.gpr .x9=BitVec.ofNat 64 (p.ℓ*t+2*p.ℓ-1)) :

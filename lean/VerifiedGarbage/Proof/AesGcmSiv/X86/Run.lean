@@ -77,10 +77,6 @@ theorem eval_ne {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .ne s = so
 
 theorem eval_b {s : State} {b : Bool} (h : s.cf = some b) : isa.eval .b s = some b := h
 
-theorem seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq (.seq a b) c) s Q) :
-    WP isa (.seq a (.seq b c)) s Q :=
-  WP.seq (WP.mono (WP.seq_iff.mp (WP.seq_iff.mp h)) fun _ h => WP.seq h)
-
 /-- A block, then code: the block constant time by the taint analysis from
 the registers `rs`, which `I` pins, and the code from what the block leaves
 (`F`, from the state it started in). -/

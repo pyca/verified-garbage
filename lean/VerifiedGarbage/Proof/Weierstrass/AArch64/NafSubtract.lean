@@ -84,36 +84,6 @@ theorem nafSign_toNat (k j : Nat) :
   · have hp := hp hn
     simp only [ite_true]; omega_arith
 
-theorem nafSub5_next (a b c d e : BitVec 64) (k j : Nat)
-    (hv : nafVal5 a b c d e=Naf5.residual k j) (hb : Naf5.residual k j≤2^256) :
-    let x := BitVec.ofInt 64 (Naf5.digit k j)
-    let out := nafSub5 a b c d e x (0#64-(x>>>63))
-    nafVal5 out.1 out.2.1 out.2.2.1 out.2.2.2.1 out.2.2.2.2 = 2*Naf5.residual k (j+1) := by
-  have hs := nafSub5_value a b c d e (BitVec.ofInt 64 (Naf5.digit k j))
-    (0#64-(BitVec.ofInt 64 (Naf5.digit k j)>>>63))
-  have hlt := nafVal5_lt (nafSub5 a b c d e (BitVec.ofInt 64 (Naf5.digit k j))
-    (0#64-(BitVec.ofInt 64 (Naf5.digit k j)>>>63))).1
-    (nafSub5 a b c d e (BitVec.ofInt 64 (Naf5.digit k j)) (0#64-(BitVec.ofInt 64 (Naf5.digit k j)>>>63))).2.1
-    (nafSub5 a b c d e (BitVec.ofInt 64 (Naf5.digit k j)) (0#64-(BitVec.ofInt 64 (Naf5.digit k j)>>>63))).2.2.1
-    (nafSub5 a b c d e (BitVec.ofInt 64 (Naf5.digit k j)) (0#64-(BitVec.ofInt 64 (Naf5.digit k j)>>>63))).2.2.2.1
-    (nafSub5 a b c d e (BitVec.ofInt 64 (Naf5.digit k j)) (0#64-(BitVec.ofInt 64 (Naf5.digit k j)>>>63))).2.2.2.2
-  dsimp only at hs ⊢
-  rw [hv] at hs
-  have he : nafVal5 (BitVec.ofInt 64 (Naf5.digit k j))
-      (0#64-(BitVec.ofInt 64 (Naf5.digit k j)>>>63))
-      (0#64-(BitVec.ofInt 64 (Naf5.digit k j)>>>63))
-      (0#64-(BitVec.ofInt 64 (Naf5.digit k j)>>>63))
-      (0#64-(BitVec.ofInt 64 (Naf5.digit k j)>>>63)) =
-      if Naf5.negative k j then 2^320-Naf5.magnitude k j else Naf5.magnitude k j := by
-    simp only [nafVal5,nafWord_toNat,nafSign_toNat]
-    cases hn : Naf5.negative k j <;> simp only [Bool.false_eq_true,ite_false,ite_true]
-    · omega_arith
-    · have := Naf5.magnitude_le k j; omega_arith
-  rw [he] at hs
-  have hr := Naf5.recurrence k j
-  have hm := Naf5.magnitude_le k j
-  cases hn : Naf5.negative k j <;> simp only [hn,Bool.false_eq_true,ite_false,ite_true] at hs hr <;> omega_arith
-
 /-- Five adjacent extract-right instructions implement a whole-number shift. -/
 theorem nafShift5_value (a b c d e : BitVec 64) :
     nafVal5 ((b++a).extractLsb' 1 64) ((c++b).extractLsb' 1 64)
@@ -125,29 +95,5 @@ theorem nafShift5_value (a b c d e : BitVec 64) :
     omega_arith
   simp only [nafVal5,extr,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow]
   omega_arith
-
-theorem nafSubtract_ok (s : State) (k j : Nat) (h12 : s.gpr .x12=0)
-    (h2 : s.gpr .x2=BitVec.ofInt 64 (Naf5.digit k j))
-    (hv : nafVal5 (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x8) (s.gpr .x9)=Naf5.residual k j)
-    (hb : Naf5.residual k j≤2^256) :
-    WP isa (.block Naf.subtractShift) s fun t =>
-      nafVal5 (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) (t.gpr .x8) (t.gpr .x9)=Naf5.residual k (j+1) ∧
-      Keeps [.x3,.x5,.x6,.x7,.x8,.x9] s t := by
-  have hs := nafSub5_next (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x8) (s.gpr .x9) k j hv hb
-  apply WP.of_runBlock
-  simp only [Naf.subtractShift,runBlock_cons,runStep_some,runBlock_nil,exec,read_x,
-    RegUpd.gpr_write,RegUpd.gpr_addWithCarry,RegUpd.c_addWithCarry,
-    BitVec.setWidth_eq,ite_true,ite_false,reduceCtorEq,h12,h2,
-    show 63<Size.x.bits from by decide,show 1<Size.x.bits from by decide,
-    Option.some.injEq,exists_eq_left']
-  refine ⟨?_,?_,rfl,rfl,rfl,rfl⟩
-  · dsimp only [nafSub5] at hs
-    rw [nafShift5_value]
-    dsimp only [Word64.addCarry,Word64.carryOut,Size.bits] at hs ⊢
-    simpa using congrArg (fun n : Nat => n/2) hs
-  · intro r hr
-    simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
-    simp only [RegUpd.gpr_write,RegUpd.gpr_addWithCarry,hr.1,hr.2.1,hr.2.2.1,
-      hr.2.2.2.1,hr.2.2.2.2.1,hr.2.2.2.2.2,ite_false]
 
 end VG.Proof.Weierstrass.AArch64

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Aes.PPC64LE.Crypto -- shake: keep (exports the baseline CTR entry point)
+public import VerifiedGarbage.Impl.Aes.PPC64LE.Crypto -- shake: keep (exports the baseline CTR entry points)
 
 /-! # Baseline POWER8 AES CTR entry point -/
 

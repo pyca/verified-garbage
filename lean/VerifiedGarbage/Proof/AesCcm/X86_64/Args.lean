@@ -63,8 +63,6 @@ structure TagBuf (W SP D : Addr) (n : Nat) (T : Addr) (tl : Nat) : Prop where
   stk : (below SP 16).Disjoint ⟨T, tl⟩
   wrap : T.toNat + tl ≤ 2 ^ 64
 
-theorem arg_eq (s : State) (i : Nat) : arg s i = s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 (8 * (i + 1))) 64 := rfl
-
 /-- `Args` from the layout, with the buffers covered as each function's
 permissions say. -/
 theorem args_of_lay {s : State} (h : oneLay s)

@@ -40,13 +40,6 @@ is `H'^(4 j + 4 - l)`. -/
 def TabOk (m : Mem) (T : Addr) (H : Block) (n : Nat) : Prop :=
   ∀ j < n, ∀ l < 4, m.readW (T + BitVec.ofNat 64 (64 * j + 16 * l)) 128 = hInvF (hpow H (4 * j + 4 - l))
 
-theorem TabOk.keep {m m' : Mem} {T : Addr} {H : Block} {g : Nat} (h : TabOk m T H g) (hg : g ≤ 8)
-    {rs : List Region} (f : Frame rs m m') (hd : ∀ r ∈ rs, (⟨T, 512⟩ : Region).Disjoint r) : TabOk m' T H g :=
-  fun j hj l hl => by
-    rw [f.readW (r := ⟨T + BitVec.ofNat 64 (64 * j + 16 * l), 16⟩) (Region.contains_self _ _)
-      (fun r hr => (hd r hr).sub_left (Offset.sub_base T (by omega))) (by decide)]
-    exact h j hj l hl
-
 /-- `mul`'s fold, for a first factor none of whose bits is set: the product
 stays 0. -/
 theorem foldl_fst_keep (c : Nat → Bool) (hc : ∀ i, c i = false) (f : Block × Block → Nat → Block)

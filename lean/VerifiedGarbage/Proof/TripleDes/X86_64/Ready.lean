@@ -84,9 +84,6 @@ structure Stable (origin s : State) : Prop where
   regs : ∀ q ∈ [Reg.rsi, .rdx, .rsp], s.gpr q = origin.gpr q
   frame : Frame [workRegion origin] origin.mem s.mem
 
-theorem Stable.refl (s : State) : Stable s s :=
-  ⟨rfl, rfl, fun _ _ => rfl, Frame.refl _ _⟩
-
 theorem Stable.trans {s t u : State} (hs : Stable s t) (ht : Stable t u) : Stable s u := by
   have hwork : workRegion t = workRegion s :=
     congrArg (fun p => (⟨p + BitVec.ofNat 64 56, 408⟩ : Region)) (hs.regs .rdx (by decide))

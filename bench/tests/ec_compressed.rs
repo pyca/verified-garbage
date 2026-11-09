@@ -5,26 +5,27 @@
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use openssl::bn::BigNumContext;
 use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
 use openssl::nid::Nid;
-use verified_garbage::ecdh::PrivateKey;
+use verified_garbage::ec::PrivateKey;
 
 macro_rules! differential {
     ($name:ident, $curve:ident, $len:literal, $nid:ident) => {
         #[test]
         fn $name() {
-            use verified_garbage::ecdh::$curve;
+            use verified_garbage::ec::$curve;
             let group = EcGroup::from_curve_name(Nid::$nid).unwrap();
             let mut ctx = BigNumContext::new().unwrap();
             for d in 1..=16 {
                 let mut private = [0; $len];
                 private[$len - 1] = d;
                 let key = PrivateKey::<$curve>::from_bytes(&private);
-                let public = key.public_key().unwrap();
+                let public = *key.public_key().unwrap().as_bytes();
                 let point = EcPoint::from_bytes(&group, &public, &mut ctx).unwrap();
                 let compressed = $curve::compress_public_key(&public).unwrap();
                 assert_eq!(

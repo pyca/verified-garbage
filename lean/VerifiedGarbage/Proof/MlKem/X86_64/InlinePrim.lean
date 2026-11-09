@@ -33,18 +33,6 @@ structure IPost (s s' : State) (W : List Region) : Prop where
 theorem IPost.rsp {s s' : State} {W : List Region} (h : IPost s s' W) : s'.gpr .rsp = s.gpr .rsp :=
   h.cs .rsp (by decide)
 
-theorem IPost.pa {s s' : State} {W : List Region} (h : IPost s s' W) {p : Ptr} (hp : p.1 ∈ calleeSaved) :
-    pa s' p = pa s p := by
-  simp only [VG.Proof.MlKem.X86_64.pa, h.cs _ hp]
-
-theorem IPost.trans {s₁ s₂ s₃ : State} {W : List Region} (h₁ : IPost s₁ s₂ W) (h₂ : IPost s₂ s₃ W) :
-    IPost s₁ s₃ W :=
-  ⟨h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, fun r hr => (h₂.cs r hr).trans (h₁.cs r hr), h₁.frame.trans h₂.frame⟩
-
-theorem IPost.mono {s s' : State} {W W' : List Region} (h : IPost s s' W) (hs : ∀ r ∈ W, r ∈ W') :
-    IPost s s' W' :=
-  ⟨h.rd, h.wr, h.cs, h.frame.mono hs⟩
-
 /-- The moves of the arguments, then verified code inline. -/
 theorem glueIn_ok {glue : List Instr} {c : Prog isa} {k : Contract isa}
     (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')

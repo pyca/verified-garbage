@@ -23,7 +23,7 @@ as `finishWith` does (`Short.finRest_ok`): it does what `Split.FinOk` asks of
 an end after `oneBlocks` (`finOk_finishP`). The long `seal` with any such end
 leaves what `Short.sealRunW_ok` does (`sealRunFin_ok`), and with
 `finishP` does it in two runs with the same addresses and branches
-(`sealRunP_rel`, as `Short.sealRunW_rel` for `finishWith`).
+(`sealRunP_rel`).
 -/
 
 @[expose] public section
@@ -152,8 +152,7 @@ theorem sealRunFin_ok {M : CtxMode} (B : BlkFn M) {fin : Prog isa} (hfin : FinOk
 
 /-- After the entry, the long `seal` with `finishP ks` in two runs, with the
 additional data absorbed by `aadP`, which leaves what `oneAad` does: `aadP`
-(which branches alike in both runs), `oneBlocks` and `finishP ks`, as
-`Short.sealRunW_rel` for `finishWith ks`. -/
+(which branches alike in both runs), `oneBlocks` and `finishP ks`. -/
 theorem sealRunP_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks)
     (B : BlkFn (CtxMode.preparedN np hpn)) {aadP : Prog isa} {s₀ s₀' : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat}
     (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n) (C' : OneCtx s₀' 4 Ctx W SP Np A D nl al n)

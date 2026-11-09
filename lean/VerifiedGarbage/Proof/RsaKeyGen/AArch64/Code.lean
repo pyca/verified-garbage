@@ -13,8 +13,9 @@ import Mathlib.Algebra.Group.Nat.Defs
 /-!
 # A candidate on AArch64: correctness
 
-`code`, from a state `candContract` allows, ends as `candidateOp`
-(`code_correct`).
+The front of `codeWith`, from a state `candContract` allows: the entry,
+the zeros to `out` and the length check, and the postcondition from how the
+candidate ended (`candEnd_post`).
 -/
 
 @[expose] public section
@@ -164,7 +165,7 @@ theorem Front.src {s t : State} (c : KCtx s) (h : Front s t) {p : Addr} {bs : Li
   have hk1 := c.k1
   exact Src.congr' hp (fun i hi => h.hi _ (by have := hp.out i hi; omega_using [hZ, hk1, this]) (hd i hi)) h.keep.rd h.keep.wr
 
-/-- What `kMain` needs, after the front with enough octets. -/
+/-- What `kMainWith` needs, after the front with enough octets. -/
 theorem mainCtx_of {s t : State} {w : Nat} (c : KCtx s) (h : Front s t) (hw : (s.gpr .x1).toNat = 8 * w)
     (hlt : (s.gpr .x1).toNat ≤ (stackArg s 0).toNat) :
     MainCtx t (stackArg s 1) ((stackArg s 2).toNat * 8) w (s.gpr .x0) (s.gpr .x2) (s.gpr .x3)
@@ -216,30 +217,5 @@ theorem front_none {s t : State} (c : KCtx s) (h : Front s t) (hlt : (stackArg s
     rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega_using [hk1, hw]),
       VG.Proof.RsaKeyGen.ite_f (by rw [bytesAt_length]; omega_using [hlt, hw])]
   rw [hnone]; exact KEnd.of_fin ho ht
-
-/-- `vg_rsa_keygen_candidate` ends as the specification says. -/
-theorem code_correct (M : Mont) (s : State) (h : candContract.pre s) :
-    ∃ t s', Exec isa (code M.mm) s t s' ∧ abiPreserved s s' ∧ candContract.post s s' := by
-  have c := kctx_of h
-  suffices hwp : WP isa (code M.mm) s fun s' => abiPreserved s s' ∧ candPost s s' by
-    obtain ⟨t, s', he, hg, hp⟩ := hwp
-    exact ⟨t, s', he, hg, hp⟩
-  have hk1 := c.k1
-  have hk8 := c.k8
-  obtain ⟨w, hw⟩ : ∃ w, (s.gpr .x1).toNat = 8 * w := ⟨(s.gpr .x1).toNat / 8, by omega_using [hk8]⟩
-  unfold code
-  simp only [seqs]
-  refine WP.seq (WP.mono (entry_ok c) fun t₁ he => ?_)
-  refine WP.seq (WP.mono (zeros_ok c he) fun t₂ hz => ?_)
-  refine WP.seq (WP.mono (lenCheck_ok c he hz) fun t₄ hf => ?_)
-  refine WP.ite (!decide ((s.gpr .x1).toNat ≤ (stackArg s 0).toNat))
-    (by rw [eval_zero, hf.x5]; cases decide ((s.gpr .x1).toNat ≤ (stackArg s 0).toNat) <;> rfl)
-    (fun hlt => ?_) (fun hlt => ?_)
-  · simp only [Bool.not_eq_true', decide_eq_false_iff_not, Nat.not_le] at hlt
-    exact front_none c hf hlt
-  · simp only [Bool.not_eq_false', decide_eq_true_eq] at hlt
-    refine WP.mono (kMain_ok M (mainCtx_of c hf hw hlt)) fun t ht => candEnd_post hf.zero hf.keep ?_
-    rw [candRes_main hw (by omega_using [hk1, hw]) hlt, hw]
-    exact ht
 
 end VG.Proof.RsaKeyGen.AArch64

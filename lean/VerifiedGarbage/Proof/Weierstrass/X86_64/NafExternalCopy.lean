@@ -78,14 +78,6 @@ theorem nafExternalCopy_words {mem mem' : Mem} {base X : Addr} {n o : Nat}
   rw [show 8*8=64 from rfl,off,Offset.add_add] at e2
   rw [e2,VG.Proof.Mont.word,off,show 16*c+8*q=8*(2*c+q) from by omega]
 
-theorem nafExternalCopy_field {mem mem' : Mem} {base X : Addr} {n o j : Nat}
-    (h : ∀ c<n,mem'.readW (off base (o+16*c)) 128=mem.readW (off X (16*c)) 128)
-    (hj : 2*j+2≤n) : wordsVal mem' base (o+32*j) 4=wordsVal mem X (32*j) 4 := by
-  apply wordsVal_congr₂
-  intro i hi
-  rw [show o+32*j+8*i=o+8*(4*j+i) from by omega,show 32*j+8*i=8*(4*j+i) from by omega]
-  exact nafExternalCopy_words h _ (by omega)
-
 /-- A field of `w` words at an 8-byte-aligned offset `d` of the copied pieces. -/
 theorem nafExternalCopy_fieldAt {mem mem' : Mem} {base X : Addr} {n o d w : Nat}
     (h : ∀ c<n,mem'.readW (off base (o+16*c)) 128=mem.readW (off X (16*c)) 128)

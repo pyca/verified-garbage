@@ -53,16 +53,6 @@ theorem writes_apart {L : KemLay} (wf : L.Wf) (room : Room L) (kg : Bool) (B : A
   · exact sep hg f1
   · exact sep hns lim.2.2.1
 
-theorem writes_seed_far {L : KemLay} (wf : L.Wf) (room : Room L) (kg : Bool) (B : Addr)
-    {n : Nat} (hn : n+1<2*L.k) :
-    ∀r∈writes L kg B n, (Region.mk (B+BitVec.ofNat 64 (seedOff kg)) 32).Disjoint r := by
-  have lim := layout_limits wf kg
-  have lo0 := outOff_low wf room kg n
-  have lo1 := outOff_low wf room kg (n+1)
-  change nttOff kg+1024≤_ at lo0 lo1
-  exact writes_apart wf room kg B hn (by omega) (Or.inl lim.2.1)
-    (Or.inl (by omega)) (Or.inl (by omega)) (Or.inl (by omega))
-
 theorem writes_old_far {L : KemLay} (wf : L.Wf) (room : Room L) (kg : Bool) (B : Addr)
     {n j : Nat} (hn : n+1<2*L.k) (hj : j<n) :
     ∀r∈writes L kg B n, (polyRegion (B+BitVec.ofNat 64 (outOff L kg j))).Disjoint r := by

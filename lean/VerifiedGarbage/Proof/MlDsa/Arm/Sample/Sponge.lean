@@ -142,12 +142,6 @@ theorem covScr {s : State} (he : Env P σ s) {rs : List Region}
     obtain ⟨off, hb, hl⟩ := h r hr
     exact ⟨P.scrR, by rw [he.wr, hp.wr]; simp, off, hb, hl⟩
 
-theorem covScrRd {s : State} (he : Env P σ s) {rs : List Region}
-    (h : ∀ r ∈ rs, ∃ off, r.base = P.S + BitVec.ofNat 64 off ∧ off + r.len ≤ 2048) :
-    Covers rs (s.rd ++ s.wr) := fun x n hi => by
-  obtain ⟨r, hr, hc⟩ := covScr hp he h x n hi
-  exact ⟨r, List.mem_append_right _ hr, hc⟩
-
 /-- The saved registers are apart from where code may write. -/
 theorem sav_disj {r : Region} (h : P.Wr σ r) : (⟨P.at' 2012, 36⟩ : Region).Disjoint r := by
   rcases h with h | h | h

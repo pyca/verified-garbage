@@ -55,14 +55,4 @@ theorem openScratch_precise {s : State} {base : Addr} {size arg : Nat} {ptr : Bi
       omega
     exact (F a (by intro reg hreg hcontains; exact H ⟨reg, hreg, hcontains⟩)).trans (congrFun U.mem a)
 
-theorem openScratch_ok {s : State} {base : Addr} {size arg : Nat} {ptr : BitVec 32}
-    (read : readSrc s (.mem (Entry.argument arg)) = some ptr)
-    (hb : ptr.setWidth 64 = base) (hf : ptr.toNat + size ≤ 2 ^ 32) (hz : 8272 ≤ size)
-    (hw : (⟨base, size⟩ : Region) ∈ s.wr) (stk : StkOk (s.gpr .esp) base size) :
-    WP isa (.block (Entry.openScratch arg)) s fun t =>
-      Scr t base size ∧ Saved t.mem (off base) s.gpr Entry.savedRegisters ∧
-      Keeps [.eax, .edi] s t ∧ Outside base 0 size s.mem t.mem :=
-  WP.mono (openScratch_precise read hb hf hz hw stk) fun _ ⟨S,V,K,O⟩ =>
-    ⟨S,V,K,O.mono (Nat.le_refl _) (by omega)⟩
-
 end VG.Proof.Dsa.X86

@@ -67,7 +67,7 @@ theorem alloc_push {s₀ : State} (A : KeyABI s₀) :
 theorem generateKey_constantTime (check derive : String) :
     ConstantTime isa (Spec.Dsa.generateKeyContract Arm.abi 144).pre
       (Spec.Dsa.generateKeyContract Arm.abi 144).pub
-      (code check derive Generate.checkParameters Generate.deriveKey) := by
+      (code check derive Generate.checkParameters Generate.deriveChecked) := by
   intro s t tsa tsb u w hs ht hpub ea eb
   have As := keyABI_of hs
   have At' := keyABI_of ht

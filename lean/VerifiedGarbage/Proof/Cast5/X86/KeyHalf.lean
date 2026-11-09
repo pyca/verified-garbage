@@ -28,11 +28,6 @@ theorem storeKey_zero : (fun k => storeKey (0 + k)) = storeKey := funext fun k =
 /-- The registers key expansion's halves write. -/
 def keyRegs : List Reg := [.eax, .ecx, .edx, .ebp, .edi, .ebx]
 
-theorem keep_widen {s u : State} (h : Keep lineRegs s u) : Keep keyRegs s u :=
-  Keep.mono h fun r hr => by
-    simp only [lineRegs, keyRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-    rcases hr with rfl | rfl | rfl | rfl <;> simp
-
 theorem half_ok {m0 : Mem} {S : BitVec 32} {K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}
     (h : KS m0 S K s st ws) {hh : Nat} {K32 : BitVec 32} (hK : K = K32.setWidth 64)
     (hfitK : K32.toNat + 128 ≤ 2 ^ 32) (hdi : s.gpr .edi = K32 + BitVec.ofNat 32 (64 * hh))

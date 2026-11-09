@@ -45,7 +45,4 @@ theorem verifiedWith {I : State → Mem → Prop} (C : CheckInvoke I) (D : Deriv
   ⟨generateKeyWith_correct C D stable nc nd,
     generateKeyWith_constantTime C D stable ctC ctD, satisfiable⟩
 
-theorem verified (C : CheckCall.CheckFn) (D : DeriveFn) :
-    Verified target (code C.name D.name C.code D.code) (Spec.Dsa.generateKeyContract abi 232) :=
-  ⟨generateKey_correct C D, generateKey_constantTime C D, satisfiable⟩
 end VG.Proof.Dsa.X86.KeyRandom

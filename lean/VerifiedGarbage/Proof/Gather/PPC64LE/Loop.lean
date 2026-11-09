@@ -243,12 +243,6 @@ theorem gather_advance_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : Gather
     exact gatherLoop_advance_wp t h (by omega)
 
 
-/-- `gatherLoop`, forgetting the final descriptor pointer. -/
-theorem gatherLoop_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre t Src Dst cnt L)
-    (hpos : 1≤cnt) :
-    WP isa gatherLoop t fun t' => t'.mem=writeBytes t.mem Dst (gathered 64 t.mem Src cnt) ∧ GKeeps t t' :=
-  WP.mono (gatherLoop_advance_wp t h hpos) fun _ ht => ⟨ht.1,ht.2.1⟩
-
 /-- `gather`, forgetting the final descriptor pointer. -/
 theorem gather_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre t Src Dst cnt L) :
     WP isa gather t fun t' => t'.mem=writeBytes t.mem Dst (gathered 64 t.mem Src cnt) ∧ GKeeps t t' :=

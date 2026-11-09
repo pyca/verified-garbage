@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_hmac_sha512_224_init:
+vg_hmac_sha512_224_init_shani:
 	cmp rcx, 129
 	jae 20f
 	lea rsp, [rsp-1880]
@@ -172,7 +172,7 @@ vg_hmac_sha512_224_init:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rbx, r12
@@ -181,7 +181,7 @@ vg_hmac_sha512_224_init:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rbx, QWORD PTR [r15+1376]
@@ -223,14 +223,14 @@ vg_hmac_sha512_224_init:
 	mov rdx, rbx
 	mov rcx, rbp
 	mov r8, r15
-	call {vg_sha512_update_scratch}
+	call {vg_sha512_update_scratch_shani}
 	mov rdi, r15
 	add rdi, 2512
 	mov rsi, rbp
 	mov rdx, r15
 	add rdx, 2760
 	mov rcx, r15
-	call {vg_sha512_finalize_scratch}
+	call {vg_sha512_finalize_scratch_shani}
 	mov rdx, r15
 	add rdx, 2760
 	mov ecx, 28
@@ -238,7 +238,7 @@ vg_hmac_sha512_224_init:
 	mov rdi, r12
 	mov rsi, r13
 	mov r8, r15
-	call {vg_hmac_sha512_224_init_scratch}
+	call {vg_hmac_sha512_224_init_scratch_shani}
 	mov rbx, QWORD PTR [r15+1872]
 	mov rbp, QWORD PTR [r15+1880]
 	mov r12, QWORD PTR [r15+1888]
@@ -676,7 +676,7 @@ vg_hmac_sha512_224_init:
 	jmp 21b
 	.p2align 6
 
-vg_hmac_sha512_224_finalize:
+vg_hmac_sha512_224_finalize_shani:
 	lea rsp, [rsp-1880]
 	mov r8, rsp
 	add r8, 8
@@ -694,7 +694,7 @@ vg_hmac_sha512_224_finalize:
 	mov rdx, r15
 	add rdx, 1424
 	mov rcx, r15
-	call {vg_sha512_finalize_scratch}
+	call {vg_sha512_finalize_scratch_shani}
 	movdqu xmm0, XMMWORD PTR [r12]
 	movdqu XMMWORD PTR [rbx], xmm0
 	movdqu xmm0, XMMWORD PTR [r12+16]
@@ -737,7 +737,7 @@ vg_hmac_sha512_224_finalize:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, QWORD PTR [rbx]
@@ -1556,7 +1556,7 @@ vg_hmac_sha512_224_finalize_avx2:
 	ret
 	.p2align 6
 
-vg_hmac_sha512_224_init_shani:
+vg_hmac_sha512_224_init:
 	cmp rcx, 129
 	jae 20f
 	lea rsp, [rsp-1880]
@@ -1724,7 +1724,7 @@ vg_hmac_sha512_224_init_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rbx, r12
@@ -1733,7 +1733,7 @@ vg_hmac_sha512_224_init_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rbx, QWORD PTR [r15+1376]
@@ -1775,14 +1775,14 @@ vg_hmac_sha512_224_init_shani:
 	mov rdx, rbx
 	mov rcx, rbp
 	mov r8, r15
-	call {vg_sha512_update_scratch_shani}
+	call {vg_sha512_update_scratch}
 	mov rdi, r15
 	add rdi, 2512
 	mov rsi, rbp
 	mov rdx, r15
 	add rdx, 2760
 	mov rcx, r15
-	call {vg_sha512_finalize_scratch_shani}
+	call {vg_sha512_finalize_scratch}
 	mov rdx, r15
 	add rdx, 2760
 	mov ecx, 28
@@ -1790,7 +1790,7 @@ vg_hmac_sha512_224_init_shani:
 	mov rdi, r12
 	mov rsi, r13
 	mov r8, r15
-	call {vg_hmac_sha512_224_init_scratch_shani}
+	call {vg_hmac_sha512_224_init_scratch}
 	mov rbx, QWORD PTR [r15+1872]
 	mov rbp, QWORD PTR [r15+1880]
 	mov r12, QWORD PTR [r15+1888]
@@ -2228,7 +2228,7 @@ vg_hmac_sha512_224_init_shani:
 	jmp 21b
 	.p2align 6
 
-vg_hmac_sha512_224_finalize_shani:
+vg_hmac_sha512_224_finalize:
 	lea rsp, [rsp-1880]
 	mov r8, rsp
 	add r8, 8
@@ -2246,7 +2246,7 @@ vg_hmac_sha512_224_finalize_shani:
 	mov rdx, r15
 	add rdx, 1424
 	mov rcx, r15
-	call {vg_sha512_finalize_scratch_shani}
+	call {vg_sha512_finalize_scratch}
 	movdqu xmm0, XMMWORD PTR [r12]
 	movdqu XMMWORD PTR [rbx], xmm0
 	movdqu xmm0, XMMWORD PTR [r12+16]
@@ -2289,7 +2289,7 @@ vg_hmac_sha512_224_finalize_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, QWORD PTR [rbx]

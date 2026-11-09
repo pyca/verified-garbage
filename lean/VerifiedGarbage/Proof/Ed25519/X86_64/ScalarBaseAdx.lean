@@ -1,5 +1,4 @@
 module
-public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 
@@ -19,6 +18,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-!
 # Ed25519's fixed-base multiplication with BMI2 and ADX: `Verified`
@@ -68,9 +68,5 @@ theorem scalarBase_adx_ct [X25519.X86_64.DivstepInv] :
     ConstantTime isa scalarBaseLocal.clear.pre scalarBaseLocal.pub scalarBase_adx :=
   ct_of_inline (by lit_decide) (fun s h => let ⟨t, s', e, _⟩ := scalarBase_adx_okI s h; ⟨t, s', e⟩)
     (fun _ _ h => h.1) scalarBase_adx_ctI
-
-theorem scalarBase_adx_verified [X25519.X86_64.DivstepInv] : Verified X86_64.target scalarBase_adx
-    (Proof.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts) 8) :=
-  scalarBase_verified_of (by lit_decide) scalarBase_adx_okI scalarBase_adx_ctI
 
 end VG.Proof.Ed25519.X86_64

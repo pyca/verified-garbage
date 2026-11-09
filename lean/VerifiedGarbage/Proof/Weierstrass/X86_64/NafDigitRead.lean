@@ -18,8 +18,6 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.X25519.X86_64
 
 def nafMagnitude (b : BitVec 8) : Nat := if b.toNat<128 then b.toNat else 256-b.toNat
 
-def nafNegative (b : BitVec 8) : Bool := decide (128≤b.toNat)
-
 private theorem nafRead_zero : ∀ b : BitVec 8, (b.setWidth 64==0)=decide (b=0) := by decide
 
 theorem nafRead_ok {K : WinCfg} {s : State} {base : Addr} {size j : Nat} {b : BitVec 8}

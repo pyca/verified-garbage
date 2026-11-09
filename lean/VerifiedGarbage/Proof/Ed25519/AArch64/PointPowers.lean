@@ -109,23 +109,4 @@ theorem powersNext_ok (s : State) (j count : Nat) (hj : j < count) (hn : count �
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
 
-theorem powersLeft_ok (s : State) (n count : Nat) (hn : n ≤ count) (hc64 : count ≤ 64)
-    (hc : s.gpr .x19 = BitVec.ofNat 64 n) :
-    WP isa (.block (powersLeft count)) s fun t =>
-      (t.gpr .x8 != 0) = decide (n ≠ count) ∧ Keeps [.x8] s t := by
-  have hz : (BitVec.ofNat 64 n - BitVec.ofNat 64 count != 0) = decide (n ≠ count) := by
-    apply Bool.eq_iff_iff.mpr
-    simp only [bne_iff_ne, decide_eq_true_eq]
-    bv_omega_using [hn, hc64]
-  apply WP.of_runBlock
-  simp only [powersLeft, const64, List.cons_append, List.nil_append,
-    runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
-    show 16 * 0 < Size.x.bits from by decide, show 16 * 1 < Size.x.bits from by decide,
-    show 16 * 2 < Size.x.bits from by decide, show 16 * 3 < Size.x.bits from by decide,
-    RegUpd.gpr_write, BitVec.setWidth_eq, Size.bits, hc,
-    ite_true, ite_false, reduceCtorEq, movz_movk64', hz, Option.some.injEq, exists_eq_left']
-  refine ⟨True.intro, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  simp only [RegUpd.gpr_write, hr, ite_false]
-
 end VG.Proof.Ed25519.AArch64

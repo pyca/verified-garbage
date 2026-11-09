@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Siv.Spec
 Untrusted: everything here is checked by Lean. The counter block at
 `W + 96` starts as the tag with the top bit of its last byte set
 (`cryptHead_ok`); each block of the data is encrypted in place by
-`vg_aes_ctr32` from a copy of it at `W + 112`, after which its first word is
+`vg_aes_ctr32_to` from a copy of it at `W + 112`, after which its first word is
 incremented (`cryptBlock_ok`); the last bytes are XORed with the keystream
 block, computed at `W + 224` (`cryptTail_ok`). `crypt_ok`: the data becomes
 `ctr` of it (RFC 8452 §4). The pointer is in `esi` and the number of bytes
@@ -70,7 +70,7 @@ theorem frame_outside {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {P : 
     · exact hd _ (Offset.contains_base P (show p + 1 ≤ len by omega_arith) (by omega_arith)) hc
 
 /-- What counter mode writes: the counter block and its copy, the bytes
-left, the block at `W + 224`, `vg_aes_ctr32`'s working space, the data and
+left, the block at `W + 224`, `vg_aes_ctr32_to`'s working space, the data and
 the stack below `SP`. -/
 abbrev cryR (p : Prm) : List Region :=
   [⟨w64 p.W + BitVec.ofNat 64 96, 32⟩, ⟨w64 p.W + BitVec.ofNat 64 176, 8⟩, ⟨w64 p.W + BitVec.ofNat 64 224, 16⟩,

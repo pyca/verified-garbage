@@ -30,11 +30,6 @@ theorem CopyKeep.ctx {x : BitVec 32} {o n : Nat} {s t : State}
 theorem CopyKeep.refl (x : BitVec 32) (o n : Nat) (s : State) : CopyKeep x o n s s :=
   ⟨fun _ _ => rfl, rfl, rfl, Frame.refl _ _⟩
 
-theorem CopyKeep.trans {x : BitVec 32} {o n : Nat} {s t u : State}
-    (h : CopyKeep x o n s t) (k : CopyKeep x o n t u) : CopyKeep x o n s u :=
-  ⟨fun r hr => (k.gpr r hr).trans (h.gpr r hr), k.rd.trans h.rd, k.wr.trans h.wr,
-    h.frame.trans k.frame⟩
-
 theorem copyWorkspaceWord_ok {x : BitVec 32} {s₀ s : State} (hc : Ctx x s)
     (src dst : Reg) (hs : src ≠ .eax) (hd : dst ≠ .eax) (sa da a o n total : Nat)
     (hsa : s₀.gpr src = x + BitVec.ofNat 32 sa) (hda : s₀.gpr dst = x + BitVec.ofNat 32 da)

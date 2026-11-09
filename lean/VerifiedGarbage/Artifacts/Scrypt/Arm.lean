@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Verified
 public import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # scrypt (RFC 7914): Salsa20/8, scryptBlockMix, scryptROMix and scrypt on 32-bit ARM -/
 

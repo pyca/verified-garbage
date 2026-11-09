@@ -57,8 +57,6 @@ theorem bitV_and (b c : Bool) : bitV b &&& bitV c = bitV (b && c) := by cases b 
 
 theorem bitV_or (b c : Bool) : bitV b ||| bitV c = bitV (b || c) := by cases b <;> cases c <;> decide
 
-theorem bitV_shr (b : Bool) : bitV b >>> 63 = 0 := by cases b <;> decide
-
 theorem nlBody_ok (s : State) (hq : s.gpr .x9 = Qv) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .x0) 4) :
     WP isa (.block (nlBody ++ [Reg.x0].map (fun p => .addImm .x p p 4) ++ ([.subImm .x .x11 .x11 1] : List Instr))) s
       fun s' =>

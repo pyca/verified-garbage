@@ -50,8 +50,6 @@ structure Same (s₀ s : State) : Prop where
   wr : s.wr = s₀.wr
   frame : Frame [xR s₀] s₀.mem s.mem
 
-theorem Same.refl (s : State) : Same s s := ⟨rfl, rfl, rfl, rfl, Frame.refl _ _⟩
-
 /-- The key schedule. -/
 abbrev sch (s₀ : State) : Spec.TripleDes.Schedule := Spec.TripleDes.scheduleAt s₀.mem (State.addr (s₀.gpr .r9))
 

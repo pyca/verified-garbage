@@ -180,6 +180,7 @@ theorem synth_congr {a : Args} {n : Nat} (B : Below a n) {f g : Nat → BitVec 3
     cases ex : a.x with
     | none => rw [ex] at e; cases e
     | some k => rw [ex] at e; cases e; exact B.x k ex
+  have hc := opt B.ctx
   funext i
   match i with
   | 0 => exact ho
@@ -195,7 +196,7 @@ theorem synth_congr {a : Args} {n : Nat} (B : Below a n) {f g : Nat → BitVec 3
   | 10 => exact hx
   | 11 => exact hx'
   | 12 => exact hl
-  | 13 => rfl
+  | 13 => exact hc
   | 14 => rfl
   | 15 => rfl
   | 16 => exact hw

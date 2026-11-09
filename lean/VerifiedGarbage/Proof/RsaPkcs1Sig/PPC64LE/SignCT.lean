@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignCall
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_pkcs1_sign` on PPC64LE: constant time
@@ -108,7 +110,7 @@ theorem AtAft.r3_eq {s u : State} (B : AtAft s u) : u.gpr .r3 = if (encOut s).is
 
 theorem priv_pub {s₁ s₂ t₁ t₂ : State} {em₁ em₂ : List Byte} (h₁ : SPre s₁) (h₂ : SPre s₂) (S : Same s₁ s₂)
     (A₁ : AtCall s₁ t₁ em₁) (A₂ : AtCall s₂ t₂ em₂) :
-    (Spec.Rsa.privateCheckedContract abi Impl.Rsa.PPC64LE.Priv.frameBytes).pub (callE s₁ t₁) (callE s₂ t₂) := by
+    (Proof.Rsa.privateCheckedContract abi Impl.Rsa.PPC64LE.Priv.frameBytes).pub (callE s₁ t₁) (callE s₂ t₂) := by
   have hn : ∀ {s t : State} {em : List Byte}, SPre s → AtCall s t em →
       Spec.Rsa.bytesAt (callE s t).mem ((callE s t).gpr .r5) ((callE s t).gpr .r6).toNat =
         Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat := fun h A => by

@@ -59,14 +59,6 @@ theorem tagR_mut (c : Cx) {y : Nat} (hy : y = 0 ∨ y = 96) :
   · exact sub_lo (by omega)
   · exact sub_hi (by decide) (by decide)
 
-/-- The bytes of `W` below 48, kept by `ctrs`. -/
-theorem ctrs_keeps {c : Cx} (L : Lay c) {d k : Nat} (h : d + k ≤ 48 ∨ (64 ≤ d ∧ d + k ≤ 2560)) :
-    ∀ r ∈ [(⟨c.W + BitVec.ofNat 64 48, 16⟩ : Region)], (⟨c.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
-  intro r hr; simp only [List.mem_singleton] at hr; subst hr
-  rcases h with h | h
-  · exact L.w_w (.inl h) (by omega) (by decide)
-  · exact L.w_w (.inr h.1) (by omega) (by decide)
-
 /-- `Ctr₀` is kept by the MAC's pieces. -/
 theorem macR_c0 {c : Cx} (L : Lay c) {y : Nat} (hy : y = 0 ∨ y = 96) :
     ∀ r ∈ macR c.W y, (⟨c.W + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint r := by
@@ -91,16 +83,6 @@ theorem tagR_c0 {c : Cx} (L : Lay c) {y : Nat} (hy : y = 0 ∨ y = 96) :
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
     · exact L.w_w (.inl (by decide)) (by decide) (by decide)
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-
-/-- The data, kept by the pieces before `ctr`. -/
-theorem d_lo {c : Cx} (L : Lay c) {rs : List Region} (hs : ∀ r ∈ rs, ∃ r' ∈ [wLo c.W, wHi c.W], Region.Sub r r') :
-    ∀ r ∈ rs, (⟨c.D, c.n⟩ : Region).Disjoint r := by
-  intro r hr
-  obtain ⟨r', hr', hsub⟩ := hs r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-  rcases hr' with rfl | rfl
-  · exact (L.d_w.sub_right (Region.sub_prefix (by decide))).sub_right hsub
-  · exact (L.d_w' (by decide)).sub_right hsub
 
 /-- The address of the tag loaded from its slot into `r`. -/
 theorem loadTag_ok {c : Cx} {s : State} (E : Env c s) (S : Slots c s.mem) (r : Reg) :

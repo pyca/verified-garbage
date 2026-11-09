@@ -44,8 +44,8 @@ theorem finish_ct : RelCT isa (Two FinishHeader) finish fun _ _ => True :=
     (fun p => outerSlots p ++ [(oStatus, BitVec.ofNat 64 p.status)]) [] (by decide)
     (fun _ => rfl) (fun _ _ h => h) (pins_nil _) (by taint_decide)
 
-theorem phaseSetup_ct (q : Bool) : RelCT isa (Two OuterHeader) (phaseSetup q) fun _ _ => True := by
-  cases q
+theorem phaseSetup_ct (q : Bool) (c : Checks) : RelCT isa (Two OuterHeader) (phaseSetup q c) fun _ _ => True := by
+  cases q <;> cases c
   all_goals
     exact kt_ct OuterPublic.B OuterPublic.wr outerS outerSlots [] (by decide)
       (fun _ => rfl) (fun _ _ h => h) (pins_nil _) (by taint_decide)
@@ -59,6 +59,23 @@ theorem halveOutput_ct : RelCT isa (Two OuterHeader) halveOutput fun _ _ => True
     (fun _ => rfl) (fun _ _ h => h) (pins_nil _) (by taint_decide)
 
 theorem consumeCandidate_ct : RelCT isa (Two OuterHeader) (.block consumeCandidate) fun _ _ => True :=
+  kt_ct OuterPublic.B OuterPublic.wr outerS outerSlots [] (by decide)
+    (fun _ => rfl) (fun _ _ h => h) (pins_nil _) (by taint_decide)
+
+theorem byteScreen2_ct : RelCT isa (Two OuterHeader) (byteScreen allowed2 3) fun _ _ => True :=
+  kt_ct OuterPublic.B OuterPublic.wr outerS outerSlots [] (by decide)
+    (fun _ => rfl) (fun _ _ h => h) (pins_nil _) (by taint_decide)
+
+theorem byteScreen5_ct : RelCT isa (Two OuterHeader) (byteScreen allowed5 2) fun _ _ => True :=
+  kt_ct OuterPublic.B OuterPublic.wr outerS outerSlots [] (by decide)
+    (fun _ => rfl) (fun _ _ h => h) (pins_nil _) (by taint_decide)
+
+theorem screenHead_ct : RelCT isa (Two OuterHeader)
+    (.block [.mov .rdx (.mem (VG.Impl.Bignum.X86_64.hdr oGen)), .alu .cmp .rdx (.imm 2)]) fun _ _ => True :=
+  kt_ct OuterPublic.B OuterPublic.wr outerS outerSlots [] (by decide)
+    (fun _ => rfl) (fun _ _ h => h) (pins_nil _) (by taint_decide)
+
+theorem screenReject_ct : RelCT isa (Two OuterHeader) (status 2) fun _ _ => True :=
   kt_ct OuterPublic.B OuterPublic.wr outerS outerSlots [] (by decide)
     (fun _ => rfl) (fun _ _ h => h) (pins_nil _) (by taint_decide)
 

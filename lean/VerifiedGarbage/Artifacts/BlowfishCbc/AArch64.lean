@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.AArch64.CbcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # Blowfish-CBC artifacts on baseline AArch64 -/
 

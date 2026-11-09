@@ -28,8 +28,8 @@ open VG.Spec.Poly1305 (Repr bytesAt)
 variable {e : Bool}
 
 /-- The data's first 256 bytes absorbed. -/
-theorem absorbFirst_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) (hL : 256 ≤ L s₀) :
-    WP isa absorbFirst s fun s' => Inv s₀ s' ∧ Kept (macR s₀) s s' ∧
+theorem absorbFirst_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv e s₀ s) (hL : 256 ≤ L s₀) :
+    WP isa absorbFirst s fun s' => Inv e s₀ s' ∧ Kept (macR s₀) s s' ∧
       ∀ key msg, Repr s.mem (off (cx s₀) 448) key msg →
         Repr s'.mem (off (cx s₀) 448) key (msg ++ bytesAt s.mem (dp s₀) 256) := by
   unfold absorbFirst
@@ -63,8 +63,8 @@ theorem absorbFirst_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s�
   exact ⟨mac_inv h hk, hk, fun key msg hr => by rw [← m₁]; exact repr₂ key msg (by rw [m₁]; exact hr)⟩
 
 /-- `x22` and `x23` past the first 256 bytes: `Inv` without them. -/
-theorem skipFirst_ok {s₀ : State} {s : State} (h : Inv s₀ s) (hL : 256 ≤ L s₀) :
-    WP isa (.block skipFirst) s fun s' => Inv0 s₀ s' ∧
+theorem skipFirst_ok {s₀ : State} {s : State} (h : Inv e s₀ s) (hL : 256 ≤ L s₀) :
+    WP isa (.block skipFirst) s fun s' => Inv0 e s₀ s' ∧
       s'.gpr .x22 = dp s₀ + BitVec.ofNat 64 256 ∧ s'.gpr .x23 = BitVec.ofNat 64 (L s₀ - 256) ∧
       s'.mem = s.mem ∧
       ∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64 := by

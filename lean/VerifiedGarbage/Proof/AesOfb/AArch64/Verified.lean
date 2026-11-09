@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.AesOfb.AArch64
+public import VerifiedGarbage.Proof.AesOfb.Rounds
 public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Call
 public import VerifiedGarbage.Proof.AesOfb.Spec
@@ -37,23 +38,23 @@ theorem crypt_correct (v : BlocksImpl) (s : State) (hs : (modeAArch64 ofbMode).p
   WP.withPreservedV (whole_wp (body_ok v) hs) (crypt_keepsV v)
 
 theorem crypt_verified (v : BlocksImpl) :
-    Verified AArch64.target (crypt v.enc) (Spec.Ofb.aesContract AArch64.abi) :=
+    Verified AArch64.target (crypt v.enc) (Proof.AesOfb.roundsContract AArch64.abi) :=
   Verified.of_correct (crypt_correct v) (whole_ct (body_ok v) (body_ct v))
-    { pre := by sig_implies_pre [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeAArch64,
+    { pre := by sig_implies_pre [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeAArch64,
         AArch64.abi, AArch64.argRegs]
       -- `ofbMode.chain` counts the blocks, which are `n`.
       post := by
         intro s s' _ h
-        sig_post [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeAArch64, ofbMode, AArch64.abi,
+        sig_post [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeAArch64, ofbMode, AArch64.abi,
           AArch64.argRegs]
-        sig_reduce [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeAArch64, ofbMode, AArch64.abi,
+        sig_reduce [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeAArch64, ofbMode, AArch64.abi,
           AArch64.argRegs] at h
-        sig_simp [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeAArch64, ofbMode, AArch64.abi,
+        sig_simp [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeAArch64, ofbMode, AArch64.abi,
           AArch64.argRegs] [] at h
         rwa [VG.Proof.AesCbc.length_blocksAt] at h
-      pub := by sig_implies_pub [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeAArch64,
+      pub := by sig_implies_pub [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeAArch64,
         AArch64.abi, AArch64.argRegs]
-      sat := by sig_implies_sat [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeAArch64,
+      sat := by sig_implies_sat [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeAArch64,
         AArch64.abi, AArch64.argRegs] [sat] using sat }
 
 end VG.Proof.AesOfb.AArch64

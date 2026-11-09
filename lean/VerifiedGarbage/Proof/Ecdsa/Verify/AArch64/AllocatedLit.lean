@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Double
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -9,7 +8,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Double
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

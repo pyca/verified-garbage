@@ -188,14 +188,6 @@ theorem contains_st (st : Addr) {d n : Nat} (hd : d + n ≤ 768) :
     (⟨st, 768⟩ : Region).Contains (st + BitVec.ofNat 64 d) n :=
   Offset.contains_base _ hd (by omega)
 
-theorem nonceMem_frame (m : Mem) (st np : Addr) : Frame [⟨st, 768⟩] m (nonceMem m st np) := by
-  simp only [nonceMem]
-  have w : ∀ {m' : Mem} (_ : Frame [⟨st, 768⟩] m m') (d : Nat) {k : Nat} (v : BitVec k), d + k / 8 ≤ 768 →
-      Frame [⟨st, 768⟩] m (m'.writeW (st + BitVec.ofNat 64 d) v) :=
-    fun {_} hf d {_} v h => hf.writeW (List.mem_singleton_self _) v (contains_st st h)
-  exact w (w (w (w (w (w (w (w (w (Frame.refl _ _) 48 _ (by decide)) 52 _ (by decide)) 56 _ (by decide)) 60 _
-    (by decide)) 0 _ (by decide)) 4 _ (by decide)) 8 _ (by decide)) 12 _ (by decide)) 128 _ (by decide)
-
 theorem setNonce_ok (s : State) (hs : Proof.ChaCha20.setNoncePPC64LE.pre s) :
     ∃ t s', Exec isa setNonce s t s' ∧ abiPreserved s s' ∧ Proof.ChaCha20.setNoncePPC64LE.post s s' := by
   obtain ⟨hrd, hwr, _⟩ := hs

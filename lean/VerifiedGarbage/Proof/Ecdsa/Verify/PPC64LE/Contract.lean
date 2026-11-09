@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 /-!
 # ECDSA verification over P-256 on PPC64LE: the contract the proof is written against
 
-The facts of `Spec.Ecdsa.P256.inst.verifyContract` for PPC64LE, by name:
+The facts of `Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst` for PPC64LE, by name:
 `vg_ecdsa_p256_verify(public, digest, sig, scratch)`, with the arguments in
 `r3`–`r6` and the result in `r3` (ELFv2). Only the pointers are public here:
 the proof shows that nothing else affects timing, although the contract

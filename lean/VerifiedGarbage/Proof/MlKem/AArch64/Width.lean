@@ -64,12 +64,4 @@ theorem digits_range_succ (w : Nat) (f : Nat → Nat) (e : Nat) :
     rw [Nat.mul_add, h]
     omega
 
-/-- The digits of `e` values less than `2ʷ` are less than `2^(w e)`. -/
-theorem digits_range_lt {w : Nat} {f : Nat → Nat} (hf : ∀ i, f i < 2 ^ w) (e : Nat) :
-    digits w ((List.range e).map f) < 2 ^ (w * e) := by
-  have := digits_lt (w := w) (L := (List.range e).map f) fun a ha => by
-    obtain ⟨i, -, rfl⟩ := List.mem_map.mp ha
-    exact hf i
-  rwa [List.length_map, List.length_range] at this
-
 end VG.Proof.MlKem.AArch64

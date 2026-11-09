@@ -209,9 +209,9 @@ theorem copyW_ok (h : In Ex base bytes len args s) {a b : Nat} (ha : a ≤ 19) (
   rw [cw1] at V
   exact ⟨Step.slot h (by omega_arith) O K, V, kept_slot h O⟩
 
-/-- The tail up to its branch on q. -/
-abbrev tailFront : List (Prog isa) :=
-  [powP 10 13, copy (.slot .wide 6) (.slot .wide 12) (one .wide), rangeMask 12, .block [.store (sc accOff) .ecx],
+/-- The tail up to its branch on q, with the stage `pow` computing y into slot 6. -/
+abbrev tailFrontWith (pow : Prog isa) : List (Prog isa) :=
+  [pow, copy (.slot .wide 6) (.slot .wide 12) (one .wide), rangeMask 12, .block [.store (sc accOff) .ecx],
     .block qTest]
 
 /-- The tail's branch on q. -/
@@ -223,26 +223,31 @@ abbrev qBranch : Prog isa :=
 abbrev statusOf : List Instr :=
   [.alu .add .eax (.reg .eax), .mov .ecx (.imm 3), .alu .sub .ecx (.reg .eax), .mov .eax (.reg .ecx)]
 
-theorem tail_eq : GenerateKey.tail =
-    Prog.chain tailFront (.seq (.ite .e (.block []) qBranch) (.seq GenerateKey.outputs (.block statusOf))) := rfl
+/-- The tail with the stage `pow`. -/
+abbrev tailWith (pow : Prog isa) : Prog isa :=
+  Prog.chain (tailFrontWith pow) (.seq (.ite .e (.block []) qBranch) (.seq GenerateKey.outputs (.block statusOf)))
 
-/-- `y = g^x mod P` into the wide slot 12, its range into the acceptance word, and ZF telling whether
-there is no q. -/
-theorem tailFront_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
-    {P : Nat} (hP : safeM (sv s.mem base len .wide 9) = P) :
-    WP isa (Prog.chain tailFront (.block [])) s fun u =>
-      Step Ex base bytes len args s u ∧ Kept base len [12] [maskOff, accOff] s.mem u.mem ∧
-      sv u.mem base len .wide 12 = sv s.mem base len .wide 10 ^ sv s.mem base len .wide 13 % P ∧
+/-- y (from the stage `pow`, `Y` in slot 6) into the wide slot 12, its range into the acceptance word,
+and ZF telling whether there is no q. -/
+theorem tailFrontWith_ok {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
+    {pow : Prog isa} {Y : Nat} {ds : List Nat}
+    (hpow : WP isa pow s fun u => Step Ex base bytes len args s u ∧ Kept base len [] ds s.mem u.mem ∧
+      sv u.mem base len .wide 6 = Y) :
+    WP isa (Prog.chain (tailFrontWith pow) (.block [])) s fun u =>
+      Step Ex base bytes len args s u ∧ Kept base len [12] (ds ++ [maskOff, accOff]) s.mem u.mem ∧
+      sv u.mem base len .wide 12 = Y ∧
       w32 u.mem base accOff = (cmask (decide (sv u.mem base len .wide 12 < sv s.mem base len .wide 15) &&
         decide (sv s.mem base len .wide 14 < sv u.mem base len .wide 12))).toNat ∧
       isa.eval .e u = some (decide (dlen = 2 * len)) := by
   have ao : accOff = 8 := rfl
   have mo : maskOff = 12 := rfl
   have nb : numBase = 3336 := rfl
-  refine WP.seq (WP.mono (powP_ok h (P := P) (b := 10) (e := 13) (by decide) (by decide) (by decide) (by decide) hP)
-    fun u₁ ⟨C₁, Y₁, _, F₁, k₁, K₁⟩ => ?_)
-  have S₁ : Step Ex base bytes len args s u₁ := Step.ops h F₁ K₁
-  refine WP.seq (WP.mono (copyW_ok C₁.inp (a := 6) (b := 12) (by decide) (by decide) (by decide))
+  have m₁ : ∀ d ∈ ds, d ∈ ds ++ [maskOff, accOff] := fun d hd => List.mem_append_left _ hd
+  have m₂ : ∀ d ∈ [maskOff], d ∈ ds ++ [maskOff, accOff] := fun d hd => by simp_all
+  have m₃ : ∀ d ∈ [accOff], d ∈ ds ++ [maskOff, accOff] := fun d hd => by simp_all
+  have m₀ : ∀ d ∈ ([] : List Nat), d ∈ ds ++ [maskOff, accOff] := fun d hd => by simp at hd
+  refine WP.seq (WP.mono hpow fun u₁ ⟨S₁, k₁, Y₁⟩ => ?_)
+  refine WP.seq (WP.mono (copyW_ok S₁.inp (a := 6) (b := 12) (by decide) (by decide) (by decide))
     fun u₂ ⟨S₂, V₂, k₂⟩ => ?_)
   refine WP.seq (WP.mono (rangeMask_ok S₂.inp (a := 12) (by decide)) fun u₃ ⟨I₃, e₃, O₃, K₃⟩ => ?_)
   have S₃ : Step Ex base bytes len args u₂ u₃ := Step.word S₂.inp (by decide) O₃ K₃
@@ -253,8 +258,9 @@ theorem tailFront_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo 
   have S₁₄ := ((S₁.trans S₂).trans S₃).trans S₄
   refine WP.seq (WP.mono (qTest_ok I₄ G.e3 G.e12 G.dl) fun t ⟨z, m, K⟩ => WP.block_nil ?_)
   have S₅ : Step Ex base bytes len args u₄ t := Step.regs I₄ m K
-  have kk : Kept base len [12] [maskOff, accOff] s.mem t.mem :=
-    (((k₁.mono.trans k₂.mono).trans k₃.mono).trans k₄.mono).trans (by rw [m]; exact (Kept.refl _).mono)
+  have kk : Kept base len [12] (ds ++ [maskOff, accOff]) s.mem t.mem :=
+    ((((k₁.mono (by simp) m₁).trans (k₂.mono (by simp) m₀)).trans (k₃.mono (by simp) m₂)).trans
+      (k₄.mono (by simp) m₃)).trans (by rw [m]; exact (Kept.refl _).mono (by simp) m₀)
   have v12 : sv t.mem base len .wide 12 = sv u₂.mem base len .wide 12 := by
     rw [m, k₄.slot_eq, k₃.slot_eq]
   refine ⟨S₁₄.trans S₅, kk, ?_, ?_, z⟩
@@ -304,31 +310,31 @@ theorem statusOf_ok {c : Bool} (he : s.gpr .eax = BitVec.ofNat 32 c.toNat) :
   · rw [a4.mem, a3.mem, a2.mem, a1.mem]
   · exact (((a1.keeps.mono (by decide)).widen a2.keeps).widen a3.keeps).widen a4.keeps
 
-/-- The tail: y, its acceptance, x and y written (zeros unless accepted), and `3 − 2 flag`. -/
-theorem tail_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
+/-- The tail with the stage `pow` computing y: y, its acceptance, x and y written (zeros unless accepted),
+and `3 − 2 flag`. -/
+theorem tailWith_ok {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
     (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr) (Oy : OutAt args base bytes len 8 (s.gpr .esp) s.wr)
     (h9a : args 9 = BitVec.ofNat 32 len) (xy : Region.Disjoint ⟨byteAddr (args 0), len⟩ ⟨byteAddr (args 8), len⟩)
-    {p g x q P : Nat} (h9 : sv s.mem base len .wide 9 = p) (hP : safeM p = P) (h10 : sv s.mem base len .wide 10 = g)
+    {p x q P Y : Nat} (h9 : sv s.mem base len .wide 9 = p) (hP : safeM p = P)
     (h13 : sv s.mem base len .wide 13 = x) (h14 : sv s.mem base len .wide 14 = 1)
     (h15 : sv s.mem base len .wide 15 = pm1 len p) (h16 : ¬ dlen = 2 * len → sv s.mem base len .wide 16 = q)
-    (xlt : x < 2 ^ (8 * len)) (Plt : P < 2 ^ (8 * len)) (Ppos : 0 < P) :
-    WP isa GenerateKey.tail s fun t =>
-      t.gpr .eax = BitVec.ofNat 32 (if accept len dlen p q P (g ^ x % P) then 1 else 3) ∧
+    (xlt : x < 2 ^ (8 * len)) (ylt : Y < 2 ^ (8 * len)) {pow : Prog isa} {ds : List Nat}
+    (hpow : WP isa pow s fun u => Step Ex base bytes len args s u ∧ Kept base len [] ds s.mem u.mem ∧
+      sv u.mem base len .wide 6 = Y) :
+    WP isa (tailWith pow) s fun t =>
+      t.gpr .eax = BitVec.ofNat 32 (if accept len dlen p q P Y then 1 else 3) ∧
       Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len =
-        Spec.Rsa.i2osp (if accept len dlen p q P (g ^ x % P) then x else 0) len ∧
+        Spec.Rsa.i2osp (if accept len dlen p q P Y then x else 0) len ∧
       Spec.Rsa.bytesAt t.mem (byteAddr (args 8)) len =
-        Spec.Rsa.i2osp (if accept len dlen p q P (g ^ x % P) then g ^ x % P else 0) len ∧
+        Spec.Rsa.i2osp (if accept len dlen p q P Y then Y else 0) len ∧
       Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameR base (s.gpr .esp) (fR len))
         s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
-  have ylt : g ^ x % P < 2 ^ (8 * len) := Nat.lt_trans (Nat.mod_lt _ Ppos) Plt
-  rw [tail_eq]
-  refine WP.chain_split (tailFront_ok h G (P := P) (by rw [h9, hP])) fun u ⟨S, k, V12, W, z⟩ => ?_
-  rw [h10, h13] at V12
+  refine WP.chain_split (tailFrontWith_ok G hpow) fun u ⟨S, k, V12, W, z⟩ => ?_
   rw [V12, h15, h14] at W
   have mid : WP isa (.ite .e (.block []) qBranch) u fun v => Step Ex base bytes len args u v ∧
       Kept base len [] [accOff] u.mem v.mem ∧
-      w32 v.mem base accOff = (cmask (accept len dlen p q P (g ^ x % P))).toNat := by
+      w32 v.mem base accOff = (cmask (accept len dlen p q P Y)).toNat := by
     refine WP.ite _ z (fun hb => WP.block_nil ⟨⟨S.inp, Frame.refl _ _, Keeps.refl _ _⟩, (Kept.refl _).mono, ?_⟩)
       (fun hb => WP.mono (qBranch_ok S.inp (P := P) (by rw [k.slot_eq, h9, hP]) W) fun v ⟨Sv, kv, Wv⟩ =>
         ⟨Sv, kv, ?_⟩)
@@ -399,25 +405,14 @@ theorem bound_bytes {dlen : Nat} {rd wr : List Region} (G : DomGeo args base byt
 abbrev domOf (m : Mem) (args : Nat → BitVec 32) (dlen : Nat) : List Byte :=
   Spec.Rsa.bytesAt m (byteAddr (args 2)) dlen
 
-/-- The bound's octets. -/
-abbrev bndOf (m : Mem) (args : Nat → BitVec 32) (len dlen : Nat) : List Byte :=
-  KeyScalar.bnd len (domOf m args dlen)
+/-- The scalar of `rand` cut at its octet `ld`, and'ed with `tt` there. -/
+abbrev cutOf (m : Mem) (args : Nat → BitVec 32) (len ld : Nat) (tt : Byte) : Nat :=
+  Spec.Rsa.os2ip (KeyScalar.cut (Spec.Rsa.bytesAt m (byteAddr (args 10)) len) ld tt)
 
-/-- The mask of the cut's first octet. -/
-abbrev maskOf (m : Mem) (args : Nat → BitVec 32) (len dlen : Nat) : Byte :=
-  BitVec.ofNat 8 (KeyScalar.smearN ((bndOf m args len dlen).getD (VG.Proof.Ffdh.lead (bndOf m args len dlen)) 0).toNat)
-
-/-- The scalar the code cuts from `rand`. -/
-abbrev scalarOf (m : Mem) (args : Nat → BitVec 32) (len dlen : Nat) : Nat :=
-  Spec.Rsa.os2ip (KeyScalar.cut (Spec.Rsa.bytesAt m (byteAddr (args 10)) len)
-    (VG.Proof.Ffdh.lead (bndOf m args len dlen)) (maskOf m args len dlen))
-
-/-- The body up to its branch on the scalar. -/
-abbrev mainFront : List (Prog isa) :=
-  [pSetup, load (.slot .wide 10) (one .wide) 4 5, GenerateKey.scan, GenerateKey.cut,
+/-- The body up to its branch on the scalar, with the stage `st` choosing the cut. -/
+abbrev mainFrontWith (st : Prog isa) : List (Prog isa) :=
+  [pSetup, load (.slot .wide 10) (one .wide) 4 5, st, GenerateKey.cut,
     load (.slot .wide 13) (one .wide) 0 1, CheckPrivate.bound, CheckPrivate.scalarMask, testMask]
-
-theorem main_eq : GenerateKey.main = Prog.chain mainFront (.ite .e GenerateKey.fail GenerateKey.tail) := rfl
 
 /-- A component through a write of `x`, apart from the domain. -/
 theorem comp_x {dlen : Nat} {rd wr : List Region} (G : DomGeo args base bytes len dlen rd wr)
@@ -433,45 +428,56 @@ theorem w32_ofNat {m : Mem} {d n : Nat} (h : w32 m base d = n) (hn : n < 2 ^ 32)
     m.readW (off base d) 32 = BitVec.ofNat 32 n :=
   BitVec.eq_of_toNat_eq (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]; exact h)
 
-/-- What the body's front leaves. -/
-structure Front (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen : Nat)
-    (args : Nat → BitVec 32) (s u : State) : Prop where
+/-- What the body's front leaves, for the scalar `xs`. -/
+structure FrontW (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen : Nat)
+    (args : Nat → BitVec 32) (s : State) (xs : Nat) (u : State) : Prop where
   inp : In Ex base bytes len args u
   frame : Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem u.mem
   keeps : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u
-  gate : Gate u (Spec.Ffdh.privateValid (CheckPrivate.params s.mem args len dlen) (scalarOf s.mem args len dlen) = false)
+  gate : Gate u (Spec.Ffdh.privateValid (CheckPrivate.params s.mem args len dlen) xs = false)
   v9 : sv u.mem base len .wide 9 = comp s.mem args len 0
   v10 : sv u.mem base len .wide 10 = comp s.mem args len 1
-  v13 : sv u.mem base len .wide 13 = scalarOf s.mem args len dlen
+  v13 : sv u.mem base len .wide 13 = xs
   v14 : sv u.mem base len .wide 14 = 1
   v15 : sv u.mem base len .wide 15 = pm1 len (comp s.mem args len 0)
   v16 : ¬ dlen = 2 * len → sv u.mem base len .wide 16 = comp s.mem args len 2
 
-/-- The front up to the bound. -/
-abbrev prefixList : List (Prog isa) :=
-  [pSetup, load (.slot .wide 10) (one .wide) 4 5, GenerateKey.scan, GenerateKey.cut,
-    load (.slot .wide 13) (one .wide) 0 1]
+/-- The front up to the bound, with the stage `st` choosing the cut. -/
+abbrev prefixWith (st : Prog isa) : List (Prog isa) :=
+  [pSetup, load (.slot .wide 10) (one .wide) 4 5, st, GenerateKey.cut, load (.slot .wide 13) (one .wide) 0 1]
 
-/-- What the front leaves up to the bound. -/
-structure Pref (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen : Nat)
-    (args : Nat → BitVec 32) (s u : State) : Prop where
+/-- What the front leaves up to the bound, for the scalar `xs`. -/
+structure PrefW (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen : Nat)
+    (args : Nat → BitVec 32) (s : State) (xs : Nat) (u : State) : Prop where
   inp : In Ex base bytes len args u
   frame : Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem u.mem
   keeps : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u
   v9 : sv u.mem base len .wide 9 = comp s.mem args len 0
   v10 : sv u.mem base len .wide 10 = comp s.mem args len 1
-  v13 : sv u.mem base len .wide 13 = scalarOf s.mem args len dlen
+  v13 : sv u.mem base len .wide 13 = xs
   v14 : sv u.mem base len .wide 14 = 1
   v15 : sv u.mem base len .wide 15 = pm1 len (comp s.mem args len 0)
   q : ¬ dlen = 2 * len → comp u.mem args len 2 = comp s.mem args len 2
 
-theorem prefix_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
+/-- What a stage choosing the cut leaves: the cut's first octet `ld` and its mask `tt` in the
+header, which it alone changes. -/
+structure CutPar (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat)
+    (args : Nat → BitVec 32) (s : State) (ld : Nat) (tt : Byte) (u : State) : Prop where
+  step : Step Ex base bytes len args s u
+  kept : Kept base len [] [tbOff, foundOff, ldOff, tOff] s.mem u.mem
+  ld : w32 u.mem base ldOff = ld
+  t : w32 u.mem base tOff = tt.toNat
+
+/-- The front up to the bound, with a stage choosing the cut at `ld` with the mask `tt`. -/
+theorem prefixWith_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
     (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
     (C : KeyCut.CutGeo base bytes len (args 10) (args 0) (s.gpr .esp) s.rd s.wr)
     (rWs : Region.Disjoint ⟨byteAddr (args 10), len⟩ ⟨base, bytes⟩)
     (r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below (s.gpr .esp) 96))
-    (domX : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ ⟨byteAddr (args 0), len⟩) :
-    WP isa (Prog.chain prefixList (.block [])) s (Pref Ex base bytes len dlen args s) := by
+    (domX : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ ⟨byteAddr (args 0), len⟩) {st : Prog isa} {ld : Nat}
+    {tt : Byte} (hld : ld < len)
+    (hst : ∀ u, Step Ex base bytes len args s u → WP isa st u (CutPar Ex base bytes len args u ld tt)) :
+    WP isa (Prog.chain (prefixWith st) (.block [])) s (PrefW Ex base bytes len dlen args s (cutOf s.mem args len ld tt)) := by
   have dl := G.dl
   have fit := G.fit
   have lw := G.lower
@@ -502,31 +508,18 @@ theorem prefix_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo arg
   have S₂ : Step Ex base bytes len args u₁ u₂ := Step.slot I₁ (by decide) O₂ K₂
   have k₂ := kept_slot I₁ (a := 10) O₂
   have S₁₂ := S₁.trans S₂
-  -- The scan.
-  have G₂ := G.keep ⟨rfl, rfl⟩ S₁₂.keeps
-  refine WP.seq (WP.mono (KeyScan.scan_ok S₂.inp G.e3 (bound_geo G₂ (by rw [S₁₂.esp]; exact hb40)))
-    fun u₃ Sc => ?_)
-  have bs : Spec.Rsa.bytesAt u₂.mem (byteAddr (KeyScan.boundAt args)) len = bndOf s.mem args len dlen := by
-    rw [bound_bytes G, dom_keep h G hb40 S₁₂.frame]
-  rw [bs] at Sc
+  -- The cut's first octet and mask.
+  refine WP.seq (WP.mono (hst u₂ S₁₂) fun u₃ Sc => ?_)
   have S₁₃ := S₁₂.trans Sc.step
   -- The cut.
-  have hl : (bndOf s.mem args len dlen).length = len :=
-    KeyScalar.bnd_length (by rw [VG.Proof.Bignum.bytesAt_length]; exact dl)
-  have ne : bndOf s.mem args len dlen ≠ [] := by
-    intro e; rw [e] at hl; simp at hl; omega_arith
-  have ldlt : VG.Proof.Ffdh.lead (bndOf s.mem args len dlen) < len := by
-    have := VG.Proof.Ffdh.lead_lt ne; rw [hl] at this; exact this
-  have tlt : KeyScalar.smearN ((bndOf s.mem args len dlen).getD (VG.Proof.Ffdh.lead (bndOf s.mem args len dlen)) 0).toNat
-      < 256 := KeyScalar.smearN_lt _ (BitVec.isLt _)
+  have tlt := tt.isLt
   have C₃ : KeyCut.CutGeo base bytes len (args 10) (args 0) (u₃.gpr .esp) u₃.rd u₃.wr := by
     rw [S₁₃.esp, S₁₃.keeps.2.1, S₁₃.keeps.2.2]; exact C
-  refine WP.seq (WP.mono (KeyCut.cut_ok Sc.step.inp ldlt C₃ G.e3 (w32_ofNat Sc.ld (by omega_arith))
-    (tt := maskOf s.mem args len dlen) (by
+  refine WP.seq (WP.mono (KeyCut.cut_ok Sc.step.inp hld C₃ G.e3 (w32_ofNat Sc.ld (by omega_arith))
+    (tt := tt) (by
       rw [w32_ofNat Sc.t (by omega_arith)]
       apply BitVec.eq_of_toNat_eq
-      simp only [BitVec.toNat_ofNat, BitVec.toNat_setWidth]
-      omega_arith)) fun u₄ Ct => ?_)
+      simp only [BitVec.toNat_ofNat, BitVec.toNat_setWidth])) fun u₄ Ct => ?_)
   have rb : Spec.Rsa.bytesAt u₃.mem (byteAddr (args 10)) len = Spec.Rsa.bytesAt s.mem (byteAddr (args 10)) len :=
     KeyScan.bytes_keep h rWs (by omega_arith) r40 S₁₃.frame
   have Cxv := Ct.x
@@ -573,13 +566,11 @@ theorem prefix_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo arg
   · rw [v10, hG]
   · rw [v15, hP]
 
-theorem front_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
-    (C : KeyCut.CutGeo base bytes len (args 10) (args 0) (s.gpr .esp) s.rd s.wr)
-    (rWs : Region.Disjoint ⟨byteAddr (args 10), len⟩ ⟨base, bytes⟩)
-    (r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below (s.gpr .esp) 96))
-    (domX : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ ⟨byteAddr (args 0), len⟩) :
-    WP isa (Prog.chain mainFront (.block [])) s (Front Ex base bytes len dlen args s) := by
+/-- The front, from the prefix's: the bound and the scalar's check. -/
+theorem frontWith_ok {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
+    {st : Prog isa} {xs : Nat}
+    (hpre : WP isa (Prog.chain (prefixWith st) (.block [])) s (PrefW Ex base bytes len dlen args s xs)) :
+    WP isa (Prog.chain (mainFrontWith st) (.block [])) s (FrontW Ex base bytes len dlen args s xs) := by
   have dl := G.dl
   have lw := G.lower
   have h2 : 2 * len ≤ dlen := by omega_arith
@@ -590,9 +581,9 @@ theorem front_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args
     · simp only [e, ↓reduceIte]; exact VG.Proof.Ffdh.domainOf_q2 _ _ (by omega_arith)
     · have : ¬ 3 * len = 2 * len := by omega_arith
       simp only [e, this, ↓reduceIte]; exact comp_q s.mem args
-  show WP isa (Prog.chain prefixList (Prog.chain [CheckPrivate.bound, CheckPrivate.scalarMask, testMask]
+  show WP isa (Prog.chain (prefixWith st) (Prog.chain [CheckPrivate.bound, CheckPrivate.scalarMask, testMask]
     (.block []))) s _
-  refine WP.chain_split (prefix_ok h G hb40 C rWs r40 domX) fun u₅ P => ?_
+  refine WP.chain_split hpre fun u₅ P => ?_
   refine WP.mono (CheckPrivate.boundTest_ok P.inp (G.keep ⟨rfl, rfl⟩ P.keeps) P.v15 P.v13 P.v9 P.q)
     fun u₆ ⟨S₆, k₆, z, v16⟩ => ?_
   have F₆ := S₆.frame
@@ -604,32 +595,6 @@ theorem front_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args
   · rw [k₆.slot_eq]; exact P.v13
   · rw [k₆.slot_eq, P.v14]
   · rw [k₆.slot_eq, P.v15]
-
-/-- For a valid modulus, the code's scalar is the attempt's. -/
-theorem scalar_eq_mod {dlen : Nat} {rd wr : List Region} (G : DomGeo args base bytes len dlen rd wr) (m : Mem)
-    (mv : Spec.Rsa.modulusValid (Spec.Ffdh.domainOf len (domOf m args dlen)).p len = true) :
-    scalarOf m args len dlen =
-      Spec.Ffdh.scalarOfOctets (CheckPrivate.params m args len dlen) (Spec.Rsa.bytesAt m (byteAddr (args 10)) len) := by
-  have lw := G.lower
-  have dl := G.dl
-  have hd : (domOf m args dlen).length = 2 * len ∨ (domOf m args dlen).length = 3 * len := by
-    rw [VG.Proof.Bignum.bytesAt_length]; exact dl
-  unfold Spec.Rsa.modulusValid at mv
-  simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
-  have hl : (bndOf m args len dlen).length = len := KeyScalar.bnd_length hd
-  have ne : bndOf m args len dlen ≠ [] := by intro e; rw [e] at hl; simp at hl; omega_arith
-  refine KeyScalar.cut_eq (by omega_arith) hd (fun _ => ⟨mv.1.1.1, ?_⟩) (VG.Proof.Bignum.bytesAt_length _ _ _) ?_
-  · have := Nat.two_pow_pos 511; have := mv.1.1.2; change 1 < (Spec.Ffdh.domainOf len _).p; omega_arith
-  · have b := ((bndOf m args len dlen)[VG.Proof.Ffdh.lead (bndOf m args len dlen)]'(VG.Proof.Ffdh.lead_lt ne)).isLt
-    rw [BitVec.toNat_ofNat, ← VG.Proof.Ffdh.getD_of (VG.Proof.Ffdh.lead_lt ne),
-      Nat.mod_eq_of_lt (KeyScalar.smearN_lt _ (BitVec.isLt _)), KeyScalar.smearN_eq _ (BitVec.isLt _)]
-
-/-- For a valid domain, the code's scalar is the attempt's. -/
-theorem scalar_eq {dlen : Nat} {rd wr : List Region} (G : DomGeo args base bytes len dlen rd wr) (m : Mem)
-    (v : Spec.Ffdh.domainValid len (domOf m args dlen) = true) :
-    scalarOf m args len dlen =
-      Spec.Ffdh.scalarOfOctets (CheckPrivate.params m args len dlen) (Spec.Rsa.bytesAt m (byteAddr (args 10)) len) :=
-  scalar_eq_mod G m (VG.Proof.Ffdh.domainValid_mod v)
 
 /-! ## The body -/
 
@@ -659,18 +624,6 @@ theorem fail_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes le
   · rw [M]; rw [S.esp] at F
     exact (S.frame.mono fun r hr => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)).trans F
 
-/-- What the contract asks of the status and the outputs, for a valid domain. -/
-def KeyPost (len dlen : Nat) (m : Mem) (args : Nat → BitVec 32) (r : Nat) (m' : Mem) : Prop :=
-  Spec.Ffdh.domainValid len (domOf m args dlen) = true →
-    let a := CheckPrivate.params m args len dlen
-    let x := Spec.Ffdh.scalarOfOctets a (Spec.Rsa.bytesAt m (byteAddr (args 10)) len)
-    r = Spec.Ffdh.keyStatus a x ∧
-      if Spec.Ffdh.keyStatus a x = 1 then
-        Spec.Rsa.bytesAt m' (byteAddr (args 0)) len = Spec.Rsa.i2osp x len ∧
-          Spec.Rsa.bytesAt m' (byteAddr (args 8)) len = Spec.Rsa.i2osp (Spec.Rsa.powMod a.g x a.p) len
-      else Spec.Rsa.bytesAt m' (byteAddr (args 0)) len = List.replicate len 0 ∧
-        Spec.Rsa.bytesAt m' (byteAddr (args 8)) len = List.replicate len 0
-
 /-- `y`'s acceptance is `publicValid`'s, for a valid p. -/
 theorem accept_iff {dlen : Nat} {a : Spec.Ffdh.Parameters} {p q y : Nat} (hp : a.p = p) (p1 : 1 < p)
     (hq : a.q = if dlen = 2 * len then none else some q) :
@@ -689,161 +642,5 @@ theorem comp_lt (m : Mem) (k : Nat) : comp m args len k < 2 ^ (8 * len) := by
   have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt m (byteAddr (args 2) + BitVec.ofNat 64 (k * len)) len)
   rw [VG.Proof.Bignum.bytesAt_length, VG.Proof.Bignum.pow256_eq] at this
   exact this
-
-theorem body_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
-    (C : KeyCut.CutGeo base bytes len (args 10) (args 0) (s.gpr .esp) s.rd s.wr)
-    (rWs : Region.Disjoint ⟨byteAddr (args 10), len⟩ ⟨base, bytes⟩)
-    (r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below (s.gpr .esp) 96))
-    (domX : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ ⟨byteAddr (args 0), len⟩)
-    (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr) (Oy : OutAt args base bytes len 8 (s.gpr .esp) s.wr)
-    (h9a : args 9 = BitVec.ofNat 32 len) (xy : Region.Disjoint ⟨byteAddr (args 0), len⟩ ⟨byteAddr (args 8), len⟩) :
-    WP isa GenerateKey.body s fun t => ∃ r, t.gpr .eax = BitVec.ofNat 32 r ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameR base (s.gpr .esp) (fR len))
-        s.mem t.mem ∧
-      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧ KeyPost len dlen s.mem args r t.mem := by
-  have fit := G.fit
-  have dl := G.dl
-  have lw := G.lower
-  have h2 : 2 * len ≤ dlen := by omega_arith
-  unfold GenerateKey.body
-  refine WP.seq (WP.mono (argumentPair_ok (d := .esi) (by decide) (by decide) (h.arg (i := 2) (by decide))
-    (h.arg (i := 3) (by decide))) fun u ⟨P, Cc, M, K⟩ => ?_)
-  have S₁ : Step Ex base bytes len args s u := Step.regs h M K
-  have rd : InRegions (u.rd ++ u.wr) (byteAddr (u.gpr .esi)) len := by
-    rw [P, K.2.1, K.2.2]
-    have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega_arith) (by omega_arith)
-    rwa [BitVec.add_zero] at this
-  refine WP.seq (WP.mono (modulusCheck_ok u (k := len) h.lower' h.upper' (by rw [P]; omega_arith) rd (by rw [Cc, G.e3]))
-    fun v ⟨Z, Mv, Kv⟩ => ?_)
-  rw [P, M] at Z
-  have e0 : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len) = comp s.mem args len 0 :=
-    CheckDomain.argNum_comp s.mem args len
-  rw [e0] at Z
-  have S := S₁.trans (Step.regs S₁.inp Mv Kv)
-  have Mvs : v.mem = s.mem := Mv.trans M
-  -- A domain that is valid has a valid modulus.
-  have vmod : Spec.Ffdh.domainValid len (domOf s.mem args dlen) = true →
-      Spec.Rsa.modulusValid (comp s.mem args len 0) len = true := fun e => by
-    have := VG.Proof.Ffdh.domainValid_mod e
-    rwa [← comp_p s.mem args h2] at this
-  refine WP.ite _ Z (fun valid => ?_) (fun invalid => WP.mono ret_ok fun t ⟨E, Mt, Kt⟩ =>
-    ⟨0, E, ?_, S.keeps.trans (Kt.mono (by decide)), fun e => absurd (vmod e) (by rw [invalid]; decide)⟩)
-  swap
-  · rw [Mt, Mvs]; exact Frame.refl _ _
-  -- A valid modulus: the key pair.
-  have sp : v.gpr .esp = s.gpr .esp := S.esp
-  have G' := G.keep ⟨rfl, rfl⟩ S.keeps
-  have Cv : KeyCut.CutGeo base bytes len (args 10) (args 0) (v.gpr .esp) v.rd v.wr := by
-    rw [sp, S.keeps.2.1, S.keeps.2.2]; exact C
-  rw [main_eq]
-  refine WP.chain_split (front_ok S.inp G' (by rw [sp]; exact hb40) Cv rWs (by rw [sp]; exact r40) domX)
-    fun u F => ?_
-  have Ku : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := S.keeps.trans F.keeps
-  have spu : u.gpr .esp = s.gpr .esp := by rw [F.keeps.1 _ (by decide), sp]
-  have Ox' : OutAt args base bytes len 0 (u.gpr .esp) u.wr := by rw [spu]; exact Ox.keep rfl Ku
-  have Oy' : OutAt args base bytes len 8 (u.gpr .esp) u.wr := by rw [spu]; exact Oy.keep rfl Ku
-  have FF : ∀ {t : State}, Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ ::
-      frameR base (u.gpr .esp) (fR len)) u.mem t.mem →
-      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameR base (s.gpr .esp) (fR len))
-        s.mem t.mem := fun {t} Ft => by
-    have Fv := F.frame
-    have Fs := S.frame
-    rw [sp] at Fv
-    rw [spu] at Ft
-    refine ((Fs.mono fun r hr => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)).trans
-      (Fv.mono fun r hr => ?_)).trans Ft
-    rcases List.mem_cons.mp hr with rfl | hr
-    · exact List.mem_cons_self ..
-    · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)
-  have pvOf : Spec.Ffdh.domainValid len (domOf s.mem args dlen) = true →
-      Spec.Ffdh.parametersValid (CheckPrivate.params s.mem args len dlen) = true := fun e => by
-    unfold Spec.Ffdh.domainValid at e
-    simp only [Bool.and_eq_true] at e
-    exact e.1
-  have gate := F.gate
-  rw [Mvs] at gate
-  refine WP.gate gate (fun inval => WP.mono (fail_ok F.inp Ox' Oy' h9a xy) fun t ⟨E, Bx, By, Ft, Kt⟩ =>
-    ⟨2, E, FF Ft, Ku.trans Kt, fun e => ?_⟩) (fun val => ?_)
-  · rw [scalar_eq G s.mem e] at inval
-    have ks : Spec.Ffdh.keyStatus (CheckPrivate.params s.mem args len dlen)
-        (Spec.Ffdh.scalarOfOctets (CheckPrivate.params s.mem args len dlen)
-          (Spec.Rsa.bytesAt s.mem (byteAddr (args 10)) len)) = 2 := by
-      unfold Spec.Ffdh.keyStatus; rw [inval]; rfl
-    refine ⟨ks.symm, ?_⟩
-    simp only [ks]
-    exact ⟨Bx, By⟩
-  · have v9 := F.v9
-    have v10 := F.v10
-    have v13 := F.v13
-    have v15 := F.v15
-    have v16 := F.v16
-    rw [Mvs] at v9 v10 v13 v15 v16
-    have hl : (Spec.Rsa.bytesAt s.mem (byteAddr (args 10)) len).length = len := VG.Proof.Bignum.bytesAt_length _ _ _
-    have xlt : scalarOf s.mem args len dlen < 2 ^ (8 * len) := by
-      have hb : (bndOf s.mem args len dlen).length = len :=
-        KeyScalar.bnd_length (by rw [VG.Proof.Bignum.bytesAt_length]; exact dl)
-      have ne : bndOf s.mem args len dlen ≠ [] := by intro e; rw [e] at hb; simp at hb; omega_arith
-      have ll := VG.Proof.Ffdh.lead_lt ne
-      have := VG.Proof.Bignum.os2ip_lt (KeyScalar.cut (Spec.Rsa.bytesAt s.mem (byteAddr (args 10)) len)
-        (VG.Proof.Ffdh.lead (bndOf s.mem args len dlen)) (maskOf s.mem args len dlen))
-      rw [KeyScalar.cut_length _ (by omega_arith), hl, VG.Proof.Bignum.pow256_eq] at this
-      exact this
-    have Plt : safeM (comp s.mem args len 0) < 2 ^ (8 * len) := by
-      unfold safeM
-      split
-      · exact comp_lt s.mem 0
-      · have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 8 ≤ 8 * len by omega_arith)
-        have : (2 : Nat) ^ 8 = 256 := rfl
-        omega_arith
-    refine WP.mono (tail_ok F.inp (G.keep ⟨rfl, rfl⟩ Ku) Ox' Oy' h9a xy v9 rfl v10 v13 F.v14 v15 v16 xlt Plt
-      (Nat.lt_trans Nat.zero_lt_one (safeM_gt _))) fun t ⟨E, Bx, By, Ft, Kt⟩ =>
-      ⟨_, E, FF Ft, Ku.trans Kt, fun e => ?_⟩
-    dsimp only
-    have mv := vmod e
-    unfold Spec.Rsa.modulusValid at mv
-    simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
-    have p1 : 1 < comp s.mem args len 0 := by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega_arith
-    have sP : safeM (comp s.mem args len 0) = comp s.mem args len 0 := safeM_of p1 mv.1.1.1
-    have hpa := comp_p s.mem args h2
-    have hga := comp_g s.mem args h2
-    have hqa : (CheckPrivate.params s.mem args len dlen).q =
-        if dlen = 2 * len then none else some (comp s.mem args len 2) := by
-      rcases dl with e | e
-      · simp only [e, ↓reduceIte]; exact VG.Proof.Ffdh.domainOf_q2 _ _ (by omega_arith)
-      · have : ¬ 3 * len = 2 * len := by omega_arith
-        simp only [e, this, ↓reduceIte]; exact comp_q s.mem args
-    have pv : Spec.Ffdh.privateValid (CheckPrivate.params s.mem args len dlen) (scalarOf s.mem args len dlen) = true := by
-      cases c : Spec.Ffdh.privateValid (CheckPrivate.params s.mem args len dlen) (scalarOf s.mem args len dlen)
-      · exact absurd c val
-      · rfl
-    rw [sP] at E Bx By ⊢
-    rw [scalar_eq G s.mem e] at E Bx By pv ⊢
-    rw [VG.Proof.Ffdh.KeyScalar.keyStatus_eq (pvOf e), pv, VG.Proof.Bignum.powMod_eq]
-    generalize Spec.Ffdh.scalarOfOctets (CheckPrivate.params s.mem args len dlen)
-      (Spec.Rsa.bytesAt s.mem (byteAddr (args 10)) len) = x at E Bx By pv ⊢
-    have ai := accept_iff (len := len) (dlen := dlen) (y := comp s.mem args len 1 ^ x % comp s.mem args len 0)
-      hpa.symm p1 hqa
-    rw [show (CheckPrivate.params s.mem args len dlen).g = comp s.mem args len 1 from hga.symm,
-      show (CheckPrivate.params s.mem args len dlen).p = comp s.mem args len 0 from hpa.symm]
-    simp only [Bool.true_eq_false, ↓reduceIte]
-    by_cases hc : accept len dlen (comp s.mem args len 0) (comp s.mem args len 2) (comp s.mem args len 0)
-      (comp s.mem args len 1 ^ x % comp s.mem args len 0) = true
-    · rw [hc] at E Bx By ⊢
-      rw [ai.mp hc]
-      simp only [↓reduceIte] at E Bx By ⊢
-      exact ⟨trivial, Bx, By⟩
-    · have hc' : accept len dlen (comp s.mem args len 0) (comp s.mem args len 2) (comp s.mem args len 0)
-          (comp s.mem args len 1 ^ x % comp s.mem args len 0) = false := by simpa using hc
-      have hv : Spec.Ffdh.publicValid ⟨CheckPrivate.params s.mem args len dlen,
-          comp s.mem args len 1 ^ x % comp s.mem args len 0⟩ = false := by
-        cases c : Spec.Ffdh.publicValid ⟨CheckPrivate.params s.mem args len dlen,
-          comp s.mem args len 1 ^ x % comp s.mem args len 0⟩
-        · rfl
-        · exact absurd (ai.mpr c) hc
-      rw [hc'] at E Bx By ⊢
-      rw [hv]
-      simp only [Bool.false_eq_true, ↓reduceIte] at E Bx By ⊢
-      exact ⟨trivial, by rw [Bx]; exact VG.Proof.Bignum.i2osp_zero' _, by rw [By]; exact VG.Proof.Bignum.i2osp_zero' _⟩
 
 end VG.Proof.Ffdh.X86.KeyGen

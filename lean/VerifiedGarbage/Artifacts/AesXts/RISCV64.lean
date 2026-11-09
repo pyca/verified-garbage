@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesXts.RISCV64.Verified
 public import VerifiedGarbage.Proof.AesXts.RISCV64.Unit.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.AesXts.RISCV64.Lit
 
 /-! # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on RISC-V -/

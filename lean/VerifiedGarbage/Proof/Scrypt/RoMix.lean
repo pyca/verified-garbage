@@ -46,20 +46,6 @@ theorem mixLoop_succ_snd (r N : Nat) (v : List (List Byte)) (n : Nat) (x : List 
     (mixLoop r N v (n + 1) x).2 = integerify r x % N ::
       (mixLoop r N v n (blockMix r (xorBytes x (v.getD (integerify r x % N) [])))).2 := rfl
 
-/-! ## Lengths -/
-
-theorem blockMix_length {r : Nat} {b : List Byte} (_h : b.length = 128 * r) :
-    (blockMix r b).length = 128 * r := by
-  rw [blockMix_eq, List.length_append, length_flatMap_const _ fun _ => yAt_length _ _ _,
-    length_flatMap_const _ fun _ => yAt_length _ _ _, List.length_range]
-  omega
-
-theorem repeat_blockMix_length {r : Nat} {b : List Byte} (h : b.length = 128 * r) (i : Nat) :
-    (Nat.repeat (blockMix r) i b).length = 128 * r := by
-  induction i with
-  | zero => exact h
-  | succ i ih => exact blockMix_length ih
-
 /-! ## `Integerify` -/
 
 theorem bytesAt_length' (m : Mem) (p : Addr) (n : Nat) : (bytesAt m p n).length = n := by

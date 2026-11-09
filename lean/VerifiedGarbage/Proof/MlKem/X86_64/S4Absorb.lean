@@ -64,9 +64,6 @@ structure RcInvW (w16 : Bool) (σ s₀ : State) (n : Nat) (s : State) : Prop whe
   frame : Frame [⟨at' σ oRc, 768⟩] s₀.mem s.mem
   rc : ∀ r < n, ∀ k < 4, s.mem.readW (la (scr σ) (50 + r) k) 64 = Spec.Sha3.RC r
 
-/-- `RcInvW` with 32-bit coefficients. -/
-abbrev RcInv := RcInvW false
-
 theorem rc_step {σ : State} (hp : PreW w16 σ) {s₀ : State} (he : EnvW w16 σ s₀) {r : Nat} (hr : r < 24) {s : State}
     (h : RcInvW w16 σ s₀ r s) :
     WP isa (.block [.movImm64 .rax (Spec.Sha3.RC r), .vop (.vmovq .xmm0 .rax),
@@ -105,7 +102,6 @@ theorem rc_ok {σ : State} (hp : PreW w16 σ) {s₀ : State} (he : EnvW w16 σ s
   exact wp_range_flatMap (M := isa) (RcInvW w16 σ s₀) (fun r s hr h => rc_step hp he hr h) 24 (Nat.le_refl _) s₀
     ⟨Keep.refl _ _, Frame.refl _ _, fun _ h => absurd h (by bdd_omega)⟩
 
-
 /-! ## The states, byte by byte -/
 
 /-- The offset of byte `q` of state `k`. -/
@@ -136,9 +132,6 @@ structure AIW (w16 : Bool) (σ : State) (m₁ : Mem) (s : State) : Prop where
   r14 : s.gpr .r14 = 1
   frame : Frame [⟨scr σ, 800⟩] m₁ s.mem
 
-/-- `AIW` with 32-bit coefficients. -/
-abbrev AI := AIW false
-
 theorem AIW.write {σ : State} {m₁ : Mem} {s s' : State} (h : AIW w16 σ m₁ s) {e n : Nat} (hn : e + n ≤ 800)
     (hm : ∃ v : BitVec (8 * n), s'.mem = s.mem.writeW (at' σ e) v) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hg : ∀ r, r ≠ .rax → s'.gpr r = s.gpr r) : AIW w16 σ m₁ s' := by
@@ -160,9 +153,6 @@ structure ZInvW (w16 : Bool) (σ : State) (m₁ : Mem) (n : Nat) (s : State) : P
   ai : AIW w16 σ m₁ s
   x0 : ∀ k < 4, q4 s .xmm0 k = 0
   bytes : ∀ k < 4, ∀ q < 200, q / 8 < n → s.mem (ba (scr σ) k q) = 0
-
-/-- `ZInvW` with 32-bit coefficients. -/
-abbrev ZInv := ZInvW false
 
 theorem zero_step {σ : State} (hp : PreW w16 σ) {m₁ : Mem} {i : Nat} (hi : i < 25) {s : State} (h : ZInvW w16 σ m₁ i s) :
     WP isa (.block [Impl.Sha3.X86_64.X4.st .rbx i .xmm0]) s (ZInvW w16 σ m₁ (i + 1)) := by
@@ -197,7 +187,6 @@ theorem zero_ok {σ : State} (hp : PreW w16 σ) {m₁ : Mem} {s : State} (h : AI
   rw [u₁.mem]
   funext x
   simp [Mem.writeW, Mem.write]
-
 
 /-! ### The seeds -/
 
@@ -304,7 +293,6 @@ theorem seed_step {σ : State} (hp : PreW w16 σ) {m₁ : Mem} {K : Nat} (hK : K
       · omega
       · rw [ifn hc']
 
-
 /-! ### The padding -/
 
 open VG.Proof.Sha3.X86_64 (wp_store8 wp_mov32i wp_nil) in
@@ -332,12 +320,6 @@ theorem cbyte_step {σ : State} (hp : PreW w16 σ) {m₁ : Mem} {F : Nat → Nat
 /-- The four states hold their padded seeds. -/
 def PF (σ : State) (k q : Nat) : Byte :=
   if q < 34 then Bq σ k q else if q = 34 then 0x1f else if q = 167 then 0x80 else 0
-
-theorem sfx_eq : (List.range 4).flatMap (fun k => [Instr.store8 (at_ .rbx (128 + 8 * k + 2)) .rax]) =
-    (List.range 4).flatMap (fun k => [Instr.store8 (at_ .rbx (32 * (34 / 8) + 8 * k + 34 % 8)) .rax]) := rfl
-
-theorem last_eq : (List.range 4).flatMap (fun k => [Instr.store8 (at_ .rbx (640 + 8 * k + 7)) .rax]) =
-    (List.range 4).flatMap (fun k => [Instr.store8 (at_ .rbx (32 * (167 / 8) + 8 * k + 167 % 8)) .rax]) := rfl
 
 /-- The byte `c` to byte `q₀` of each state. -/
 theorem cbytes_ok {σ : State} (hp : PreW w16 σ) {m₁ : Mem} {F : Nat → Nat → Byte} {q₀ : Nat} (hq₀ : q₀ < 200)

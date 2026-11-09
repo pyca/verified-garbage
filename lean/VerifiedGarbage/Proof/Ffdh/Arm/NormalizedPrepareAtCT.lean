@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyPrograms
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyPrepareLaw
 public import VerifiedGarbage.Impl.Ffdh.Arm.NormalizedPrepare
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
@@ -56,10 +55,5 @@ theorem normalizedPrepareAt24_ct (backend : MontBackend) {p : Inputs} {slots : L
   intro s t tr1 tr2 u v h e1 e2
   exact family s.sp s t tr1 tr2 u v
     ⟨⟨h.1.1, h.1.2, rfl⟩, ⟨h.2.1.1, h.2.1.2, h.2.2.symm⟩, h.2.2⟩ e1 e2
-
-theorem normalizedPrepareLaw (backend : MontBackend) :
-    KeyPrepareLaw (VG.Impl.Ffdh.Arm.NormalizedPrepare.prepareAt
-      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) 24) :=
-  ⟨normalizedPrepareAt24_ok backend, normalizedPrepareAt24_ct backend⟩
 
 end VG.Proof.Ffdh.Arm

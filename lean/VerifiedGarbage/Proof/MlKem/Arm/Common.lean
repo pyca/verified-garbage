@@ -128,9 +128,6 @@ theorem inRegions_off {rs : List Region} {base : Addr} {len : Nat} (hR : ⟨base
     InRegions rs (base + BitVec.ofNat 64 off) n :=
   ⟨_, hR, contains_off h ho⟩
 
-theorem mem_append_left' {R : Region} {rs : List Region} (rd : List Region) (h : R ∈ rs) :
-    R ∈ rd ++ rs := List.mem_append_right _ h
-
 /-- A byte of a region disjoint from the regions written is unchanged. -/
 theorem frame_byte {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {base : Addr} {len : Nat}
     (hd : ∀ r ∈ rs, (⟨base, len⟩ : Region).Disjoint r) (hlen : len ≤ 2 ^ 64) {i : Nat} (hi : i < len) :
@@ -276,9 +273,6 @@ theorem fixq_subq {x : BitVec 32} (hx : x.toNat < 2 * q) : (fixq (x - 3328 - 1))
   rw [q_eq] at *
   rw [fixq_toNat (by bv_omega)]
   split <;> bv_omega
-
-theorem fixq_lt {u : BitVec 32} (h : u.toNat < 3329 ∨ 2 ^ 32 - 3329 ≤ u.toNat) : (fixq u).toNat < q := by
-  rw [fixq_toNat h, q_eq]; split <;> omega
 
 /-- A word is the element of `ℤ_q` it represents, once reduced. -/
 theorem ofNat_val_eq {v : BitVec 32} {x : Zq} (h : v.toNat = x.val) : v = BitVec.ofNat 32 x.val := by

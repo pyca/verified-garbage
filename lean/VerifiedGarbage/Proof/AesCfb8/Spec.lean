@@ -49,9 +49,6 @@ theorem length_cfb8 (enc : Bool) (ciph : Spec.Cbc.Cipher) (iv xs : List Byte) :
 
 theorem next_nil (iv : List Byte) : next iv [] = iv := by simp [next]
 
-theorem length_next (iv cs : List Byte) : (next iv cs).length = iv.length := by
-  simp [next]
-
 theorem next_cons {iv : List Byte} (h : iv ≠ []) (c : Byte) (cs : List Byte) :
     next iv (c :: cs) = next (iv.tail ++ [c]) cs := by
   obtain ⟨a, t, rfl⟩ := List.exists_cons_of_ne_nil h

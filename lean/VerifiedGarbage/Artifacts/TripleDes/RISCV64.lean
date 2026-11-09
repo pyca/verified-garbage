@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.TripleDes.RISCV64.Key.Verified
 public import VerifiedGarbage.Proof.TripleDes.RISCV64.Bitsliced.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.TripleDes.RISCV64.FunctionsLit
 import VerifiedGarbage.Proof.TripleDes.RISCV64.Bitsliced.Lit
 

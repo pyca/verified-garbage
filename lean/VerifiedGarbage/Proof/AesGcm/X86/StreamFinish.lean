@@ -57,13 +57,13 @@ structure FinPre (nA w : Nat) (s : State) : Prop where
   wa : (⟨w64 (arg s w), 2560⟩ : Region).Disjoint ⟨argAddr s 0, 4 * nA⟩
   r_s : (⟨w64 (s.gpr .esp), 4⟩ : Region).Disjoint ⟨w64 (arg s 2), 80⟩
   r_w : (⟨w64 (s.gpr .esp), 4⟩ : Region).Disjoint ⟨w64 (arg s w), 2560⟩
-  k_c : (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s 0), 256⟩
-  k_s : (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s 2), 80⟩
-  k_w : (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s w), 2560⟩
+  k_c : (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s 0), 256⟩
+  k_s : (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s 2), 80⟩
+  k_w : (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s w), 2560⟩
   fc : (arg s 0).toNat + 256 ≤ 2 ^ 32
   fs : (arg s 2).toNat + 80 ≤ 2 ^ 32
   fw : (arg s w).toNat + 2560 ≤ 2 ^ 32
-  sp : 28 ≤ (s.gpr .esp).toNat
+  sp : 32 ≤ (s.gpr .esp).toNat
   fa : (s.gpr .esp).toNat + 4 + 4 * nA ≤ 2 ^ 32
   rounds : roundsOk s 1
 
@@ -120,13 +120,13 @@ theorem verifyPre_tag {s : State} (h : verifyPre s) :
   exact ⟨by rw [hrd, hwr]; exact covers_of_mem (by simp), ft, d_tw⟩
 
 theorem FinPre.lay {nA w : Nat} {s : State} (h : FinPre nA w s) :
-    Lay (arg s 0) (arg s 2) (arg s w) (s.gpr .esp) 28 :=
+    Lay (arg s 0) (arg s 2) (arg s w) (s.gpr .esp) 32 :=
   ⟨h.fc, h.fs, h.fw, by decide, Nat.le_refl _, h.sp, h.cs, h.cw, h.sw.sub_right (Region.sub_prefix (by decide)),
     h.sw.sub_right (Lay.wSub (by decide)), h.k_c, h.k_s, h.k_w⟩
 
 /-- The layout of `finish` and `verify`, for the public data `p` (`W` at 7). -/
 structure FinL (p : BitVec 32 × (Nat → BitVec 32)) : Prop where
-  L : Lay (p.2 0) (p.2 2) (p.2 7) p.1 28
+  L : Lay (p.2 0) (p.2 2) (p.2 7) p.1 32
   r_s : (⟨w64 p.1, 4⟩ : Region).Disjoint ⟨w64 (p.2 2), 80⟩
   r_w : (⟨w64 p.1, 4⟩ : Region).Disjoint ⟨w64 (p.2 7), 2560⟩
   rounds : (p.2 1).toNat = 10 ∨ (p.2 1).toNat = 12 ∨ (p.2 1).toNat = 14
@@ -204,7 +204,7 @@ theorem finEntry_pc (nA w : Nat) (hw : nA = w + 1) (h8 : 8 ≤ w) (ex : List (Na
       ⟨by rw [ax]; exact pubSw_W hpub (by omega) hw, by rw [sp]; exact pubSw_esp hpub⟩
 
 /-- Our caller's registers, outside the regions the tag is computed in. -/
-theorem saved_tagFrame {Ctx St W SP : BitVec 32} (L : Lay Ctx St W SP 28) :
+theorem saved_tagFrame {Ctx St W SP : BitVec 32} (L : Lay Ctx St W SP 32) :
     ∀ r ∈ tagFrame St W SP 0, (savedR W).Disjoint r := fun r hr => by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -242,7 +242,7 @@ theorem fin_exit {nA w : Nat} {p : BitVec 32 × (Nat → BitVec 32)} {s₀ s₁ 
 
 /-- The streaming state and the key context, as the pieces see them after the entry. -/
 theorem fin_repr {nA w : Nat} {p : BitVec 32 × (Nat → BitVec 32)} {s₀ s₁ : State} (h₁ : FinEnt nA w p s₀ s₁)
-    (L : Lay (p.2 0) (p.2 2) (p.2 7) p.1 28) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) {iv a c : List Byte}
+    (L : Lay (p.2 0) (p.2 2) (p.2 7) p.1 32) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) {iv a c : List Byte}
     (hr : StreamRepr s₀.mem (w64 (p.2 2)) (ctxCiph s₀.mem (w64 (p.2 0)) R) (ctxH s₀.mem (w64 (p.2 0))) iv a c) :
     StreamRepr s₁.mem (w64 (p.2 2)) (ciphOf s₁.mem (p.2 0) R) (Hk s₁.mem (p.2 0)) iv a c ∧
       ciphOf s₁.mem (p.2 0) R = ctxCiph s₀.mem (w64 (p.2 0)) R ∧ Hk s₁.mem (p.2 0) = ctxH s₀.mem (w64 (p.2 0)) := by
@@ -260,7 +260,7 @@ theorem fin_repr {nA w : Nat} {p : BitVec 32 × (Nat → BitVec 32)} {s₀ s₁ 
     simpa using L.st_w (a := 0) (n := 80) (d := 128) (k := 2432) (by decide) (.inr ⟨by decide, by decide⟩)) hr
 
 /-- A word of `W` outside the regions the tag is computed in. -/
-theorem slot_tagFrame {Ctx St W SP : BitVec 32} (L : Lay Ctx St W SP 28) {m m' : Mem}
+theorem slot_tagFrame {Ctx St W SP : BitVec 32} (L : Lay Ctx St W SP 32) {m m' : Mem}
     (hf : Frame (tagFrame St W SP 0) m m') {o : Nat} (h₁ : 128 ≤ o) (h₂ : o + 4 ≤ 240) :
     slotv m' W o = slotv m W o := by
   rw [slotv_eq, slotv_eq]

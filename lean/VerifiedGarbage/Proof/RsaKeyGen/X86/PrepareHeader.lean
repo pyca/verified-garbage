@@ -56,13 +56,6 @@ theorem context_of {g : Geometry} (v : g.Valid) {s t : State} (scratch : Scr s g
       BitVec.toNat_add, BitVec.toNat_ofNat, scratch.edi_toNat, Prepared.slot_eq]
     omega
 
-theorem context_ok {g : Geometry} (v : g.Valid) {s : State} (scratch : Scr s g.W g.L) :
-    WP isa (.block (VG.Impl.RsaKeyGen.X86.Header.code g.w)) s fun t =>
-      Context g t ∧ Outs g.W ranges s.mem t.mem ∧ Keeps [.eax, .edx] s t ∧
-      t.mem = headerMemory g.W (s.gpr .edi) g.w s.mem :=
-  WP.mono (code_ok scratch v.headerFit) fun _ ⟨M, K⟩ =>
-    ⟨(context_of v scratch K (by decide) M).1, (context_of v scratch K (by decide) M).2, K, M⟩
-
 end VG.Proof.RsaKeyGen.X86.Header
 end
 

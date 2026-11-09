@@ -188,10 +188,4 @@ theorem refineDR {base : Addr} {s : State} (hs : Scr s base 8192) {Q : State →
   WP.mono (checkedDR.refine (word s.mem base) (by decide) hs (initial_rel inputsDR s base)
     leftBoundDR rightBoundDR hq) fun _ ⟨u, hu, hw, hk, hm⟩ => ⟨u, hu, hw, hk.mono clobDR, hm.cover writesDR⟩
 
-theorem ctDR : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0]))
-    (.block optimizedDR) := by
-  rw [optimizedDR_lit]
-  exact VG.Taint.constantTime (A := taint) (hc := .block (List.replicate 5 (Taint.ofRegs [.x0])))
-    (Taint.ofRegs [.x0]) (fun _ _ _ _ h => h) (by decide +kernel)
-
 end VG.Proof.P384.EcdhDouble.Certificate

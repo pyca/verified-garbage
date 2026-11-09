@@ -103,13 +103,7 @@ abbrev roundRegs : List Reg :=
 
 theorem lane_mem (j : Fin 16) : lane j ∈ roundRegs := by revert j; decide
 
-theorem t5_mem : Reg.t5 ∈ roundRegs := by decide
-theorem t6_mem : Reg.t6 ∈ roundRegs := by decide
-
 theorem lane_ne_r6 (j : Fin 16) : lane j ≠ .a3 := by revert j; decide
-theorem lane_ne_t5 (j : Fin 16) : lane j ≠ .t5 := by revert j; decide
-theorem lane_ne_t6 (j : Fin 16) : lane j ≠ .t6 := by revert j; decide
-
 theorem word_offset (i : Nat) (hi : i < 128) : 1024 + 8 * i < 2048 := by
   omega
 
@@ -584,7 +578,7 @@ theorem linesOps_words : ∀ (l : List (Nat × Nat × Nat × Nat)) (x : Nat → 
     obtain ⟨⟨ha, hb, hd, had, hr⟩, hl⟩ := h
     rw [linesOps, List.flatMap_cons, stepAll, List.foldl_append, ← stepAll, ← stepAll, ← linesOps,
       linesOps_words l _ hl, lineOps_words _ ha hb hd had hr]
-    rfl
+    simp only [alines, List.foldl_cons]
 
 /-- Four GBs' operations as the code runs them. -/
 def roundOps (qs : List (Nat × Nat × Nat × Nat)) : List Op :=

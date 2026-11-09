@@ -79,11 +79,6 @@ theorem quad_vec (f : Nat → Byte) {q : Nat} (hq : q < 4) : quad (vec f) q = qu
   rw [quad, quadOf, vec, getD_ofFn _ (by omega), getD_ofFn _ (by omega), getD_ofFn _ (by omega),
     getD_ofFn _ (by omega)]
 
-theorem setQuad_vec (f : Nat → Byte) (q : Nat) (w : Word) : setQuad (vec f) q w = vec (putQuad f q w) := by
-  apply Vector.ext
-  intro i hi
-  simp [setQuad, vec, putQuad]
-
 /-- XORs reordered. -/
 theorem xor6 (w a b c d e : Word) :
     w ^^^ a ^^^ b ^^^ c ^^^ d ^^^ e = d ^^^ c ^^^ b ^^^ a ^^^ e ^^^ w := by

@@ -435,13 +435,6 @@ theorem cbyte_step {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m 
       Proof.Sha3.extractLsb'_byte]
   · rw [ifn hc, ifn (by bdd_omega)]
 
-theorem b8_of32 {n : Nat} (hn : n < 256) :
-    ((BitVec.ofNat 32 n).setWidth 64 : BitVec 64) = (BitVec.ofNat 8 n).setWidth 64 := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.reducePow]
-  rw [Nat.mod_eq_of_lt (by bdd_omega : n < 4294967296), Nat.mod_eq_of_lt (by bdd_omega : n < 18446744073709551616),
-    Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt (by bdd_omega : n < 18446744073709551616)]
-
 /-- The states after the indices of the first `K`. -/
 def NF (b : Addr) (s₀ : State) (N₀ K : Nat) (k q : Nat) : Byte :=
   if q = 32 ∧ k < K then BitVec.ofNat 8 (N₀ + k) else GF b s₀ 4 0 k q

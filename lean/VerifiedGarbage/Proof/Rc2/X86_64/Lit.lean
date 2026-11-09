@@ -38,15 +38,6 @@ def piLookupLit : List Instr :=
 
 materialize_value piLookupLit
 
-/-- The literal of `piLookup`, evaluated through the packed PITABLE. -/
-noncomputable abbrev piLookup.lit : List Instr := piLookupLit.lit
-
-theorem piLookup.lit_eq : piLookup = piLookup.lit := by
-  have : piStep = piStepLit := by
-    funext n; simp only [piStep, piStepLit, piValues, piValuesLit, VG.Rc2.piTable_getD]
-  refine Eq.trans ?_ piLookupLit.lit_eq
-  simp only [piLookup, piLookupLit, this]
-
 end VG.Impl.Rc2.X86_64.Sse2
 
 namespace VG

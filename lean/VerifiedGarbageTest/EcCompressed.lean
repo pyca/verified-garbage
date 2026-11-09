@@ -20,8 +20,6 @@ import VerifiedGarbage.Spec.BrainpoolP384r1
 meta import VerifiedGarbage.Spec.BrainpoolP384r1
 import VerifiedGarbage.Spec.BrainpoolP512r1
 meta import VerifiedGarbage.Spec.BrainpoolP512r1
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # Checks of the compressed public-point specification
@@ -37,6 +35,10 @@ cryptographic curve or a claim about its group order.
 namespace VG.Test.EcCompressed
 
 open Spec.Weierstrass Spec.EcKey
+
+instance (C : Curve) (bs : List Byte) (Q : Point C) :
+    Decidable (matchesCompressedPublicKey C bs Q) := by
+  cases Q <;> unfold matchesCompressedPublicKey <;> infer_instance
 
 def curves : List Curve :=
   [Spec.P192.curve, Spec.P224.curve, Spec.P256.curve, Spec.P384.curve,
@@ -110,11 +112,5 @@ def checkToyRoots (x : Fe toy) : Bool :=
 #guard compressPublicKey toy [0] == none
 #guard compressPublicKey toy [6, 0, 0] == none
 #guard compressPublicKey toy [4, 17, 0] == none
-
-#assert_standard_axioms VG.Spec.EcKey.encodeCompressedPoint
-#assert_standard_axioms VG.Spec.EcKey.matchesCompressedPublicKey
-#assert_standard_axioms VG.Spec.EcKey.compressPublicKey
-#assert_standard_axioms VG.Spec.EcKey.Instance.compressPublicKeyContract
-#assert_standard_axioms VG.Spec.EcKey.Instance.decompressPublicKeyContract
 
 end VG.Test.EcCompressed

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.MlKem.Contract
+public import VerifiedGarbage.Spec.Zeroize
 
 /-!
 # ML-KEM-1024: the contracts, on every target
@@ -24,7 +25,8 @@ Their documentation is that of `Contract.lean` (`Params.keyGenApi`, …), for
 `mlKem1024`.
 
 The working space `scratch` is 48 KiB, for the 16 entries of `Â` (the
-matrix is 4 × 4) besides what ML-KEM-768 needs.
+matrix is 4 × 4) besides what ML-KEM-768 needs, and on return each of its
+bytes is unchanged or zero.
 -/
 
 @[expose] public section
@@ -43,14 +45,16 @@ def keyGenSig : Sig where
 
 /-- With the 64 bytes `d ‖ z` at `seed`: writes
 `ML-KEM.KeyGen_internal(d, z)` (Algorithm 16) of ML-KEM-1024 to `ek` and
-`dk`, and returns 1; or returns 0 (see `Outcome`). May leak `ρ`, the seed
-of `Â` in the encapsulation key. -/
+`dk`, and returns 1; or returns 0 (see `Outcome`); and leaves each byte of
+`scratch` unchanged or zero. May leak `ρ`, the seed of `Â` in the
+encapsulation key. -/
 def keyGenContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   keyGenSig.contract A
-    (post := fun seed ek dk _scratch m m' r =>
+    (post := fun seed ek dk scratch m m' r =>
       Outcome (fun iters => keyGenInternal mlKem1024 iters (bytesAt m seed 32)
           (bytesAt m (seed + 32) 32)) r
-        (bytesAt m' ek 1568, bytesAt m' dk 3168))
+        (bytesAt m' ek 1568, bytesAt m' dk 3168) ∧
+      Zeroize.scrubbed m m' scratch 49152)
     (writeArgs := true)
     (stack := stack)
     (leak := some fun seed _ek _dk _scratch m => leakRho (keyGenRho mlKem1024 (bytesAt m seed 32)))
@@ -79,14 +83,16 @@ def encapsSig : Sig where
 /-- With the encapsulation key at `ek` and the 32 bytes of randomness at
 `m`: writes the shared secret key and the ciphertext of
 `ML-KEM.Encaps_internal(ek, m)` (Algorithm 17) of ML-KEM-1024 to `key` and
-`ct`, and returns 1; or returns 0 (see `Outcome`). May leak `ρ`, the seed of
-`Â` in `ek`. (The contract holds for any `ek`; the standard requires it to
-have passed the check of §7.2.) -/
+`ct`, and returns 1; or returns 0 (see `Outcome`); and leaves each byte of
+`scratch` unchanged or zero. May leak `ρ`, the seed of `Â` in `ek`. (The
+contract holds for any `ek`; the standard requires it to have passed the
+check of §7.2.) -/
 def encapsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   encapsSig.contract A
-    (post := fun ek msg key ct _scratch m m' r =>
+    (post := fun ek msg key ct scratch m m' r =>
       Outcome (fun iters => encapsInternal mlKem1024 iters (bytesAt m ek 1568) (bytesAt m msg 32))
-        r (bytesAt m' key 32, bytesAt m' ct 1568))
+        r (bytesAt m' key 32, bytesAt m' ct 1568) ∧
+      Zeroize.scrubbed m m' scratch 49152)
     (writeArgs := true)
     (stack := stack)
     (leak := some fun ek _msg _key _ct _scratch m => leakRho (ekRho mlKem1024 (bytesAt m ek 1568)))
@@ -100,14 +106,16 @@ def decapsSig : Sig where
 
 /-- With the decapsulation key at `dk` and the ciphertext at `ct`: writes
 the shared secret key `ML-KEM.Decaps_internal(dk, c)` (Algorithm 18) of
-ML-KEM-1024 to `key`, and returns 1; or returns 0 (see `Outcome`). May leak
-`ρ`, the seed of `Â` in the encapsulation key in `dk`, and nothing else: in
-particular, not whether the ciphertext was rejected implicitly. -/
+ML-KEM-1024 to `key`, and returns 1; or returns 0 (see `Outcome`); and
+leaves each byte of `scratch` unchanged or zero. May leak `ρ`, the seed of
+`Â` in the encapsulation key in `dk`, and nothing else: in particular, not
+whether the ciphertext was rejected implicitly. -/
 def decapsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   decapsSig.contract A
-    (post := fun dk ct key _scratch m m' r =>
+    (post := fun dk ct key scratch m m' r =>
       Outcome (fun iters => decapsInternal mlKem1024 iters (bytesAt m dk 3168) (bytesAt m ct 1568))
-        r (bytesAt m' key 32))
+        r (bytesAt m' key 32) ∧
+      Zeroize.scrubbed m m' scratch 49152)
     (writeArgs := true)
     (stack := stack)
     (leak := some fun dk _ct _key _scratch m => leakRho (dkRho mlKem1024 (bytesAt m dk 3168)))

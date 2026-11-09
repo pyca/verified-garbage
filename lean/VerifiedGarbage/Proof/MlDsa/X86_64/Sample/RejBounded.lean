@@ -79,16 +79,6 @@ theorem eta : etaOf σ = 2 ∨ etaOf σ = 4 := hp.2.2.2.2.2.2.2.2.2.2.2.2
 omit hp in
 theorem sx66 : BitVec.signExtend 64 (66 : BitVec 32) = BitVec.ofNat 64 66 := by decide
 
-theorem pro_ok : WP isa (.block (pro .rcx .rdx (.reg .rsi) (.imm 66))) σ (J0 (spOf σ) σ) := by
-  refine WP.mono (WP.keep [.rbx, .rbp, .r12, .rcx, .r8] (Q := fun s =>
-      s.mem = ((σ.mem.writeW ((spOf σ).at' 2024) (σ.gpr .rbx)).writeW ((spOf σ).at' 2032) (σ.gpr .rbp)).writeW
-        ((spOf σ).at' 2040) (σ.gpr .r12) ∧ s.gpr .rbx = σ.gpr .rcx ∧ s.gpr .rbp = σ.gpr .rdx ∧
-        s.gpr .r12 = BitVec.setWidth 64 ((σ.gpr .rsi).setWidth 32) ∧
-        s.gpr .rcx = σ.gpr .rdi ∧ s.gpr .r8 = BitVec.ofNat 64 66)
-    (by unfold pro; xrun [inScrσ (spOk hp) (a := 2024) (n := 8) (by omega),
-      inScrσ (spOk hp) (a := 2032) (n := 8) (by omega), inScrσ (spOk hp) (a := 2040) (n := 8) (by omega), sx66])
-    (by decide)) fun s ⟨⟨hm, hbx, hbp, h12, hcx, h8⟩, k⟩ => pro_J0 hm hbx hbp h12 hcx h8 k
-
 /-! ## The loop -/
 
 /-- The coefficients sampled after `t` iterations. -/
@@ -146,46 +136,6 @@ theorem lat_step {t : Nat} {s : State} (ht : t < 544) (h : LAt σ t s) :
     by rw [hsi, h.rsi, offAdd],
     hdi, by rw [hcx, h.rcx, ofNat64_pred (by omega) (by omega)]; rfl, hst⟩, by rw [hz, h.rcx]⟩
 
-omit hp in
-theorem lat0 {s : State} (h : J6 136 544 (spOf σ) σ s) :
-    WP isa (.block [.mov .rsi (.reg .rbx), .alu .add .rsi (.imm 840), .mov32 .rdi (.imm 0)]) s fun s' =>
-      Env (spOf σ) σ s' ∧ bytesAt s'.mem ((spOf σ).at' 840) 544 = X σ ∧ s'.gpr .rsi = (spOf σ).at' 840 ∧
-        s'.gpr .rdi = 0 := by
-  refine WP.mono (WP.keep [.rsi, .rdi] (Q := fun s' => s'.mem = s.mem ∧
-      s'.gpr .rsi = (spOf σ).at' 840 ∧ s'.gpr .rdi = 0) (by xrun [h.env.rbx, sx840]) (by decide))
-    fun s1 ⟨⟨hm1, hsi1, hdi1⟩, k1⟩ => ⟨h.env.keep hm1 (k1.mono (by decide)), ?_, hsi1, hdi1⟩
-  rw [hm1, h.out]; exact (H_eq _ _).symm
-
-/-- The loop: `LAt σ 544` at the end. -/
-theorem loop_ok {s : State} (h : J6 136 544 (spOf σ) σ s) : WP isa (rbLoop (etaOf σ)) s (LAt σ 544) := by
-  refine WP.seq (WP.mono (lat0 h) fun s1 ⟨he, hout, hsi, hdi⟩ => ?_)
-  refine WP.seq (WP.mono (WP.keep [.rcx] (Q := fun s' => s'.mem = s1.mem ∧ s'.gpr .rcx = BitVec.ofNat 64 544)
-    (by xrun) (by decide)) fun s2 ⟨⟨hm, hcx⟩, hk⟩ => ?_)
-  refine wp_countdown (N := 544) (by decide) (by decide) (LAt σ) (fun t ht s hI _ =>
-    WP.mono (lat_step hp ht hI) fun s' ⟨hI', hz⟩ => ⟨hI', ?_, by rw [hz, hI.rcx]⟩) (fun _ h => h)
-    ⟨he.keep hm (hk.mono (by decide)), by rw [hm]; exact hout, by rw [hk.gpr (by decide), hsi]; simp,
-      by rw [hk.gpr (by decide), hdi]; rfl, hcx, by rw [hm]; exact stored_nil _ _⟩ hcx
-  rw [hI'.rcx, hI.rcx, ofNat64_pred (by omega) (by omega)]; rfl
-
-/-- The branch on `η`, and the loop for it. -/
-theorem sel_ok {s : State} (h : J6 136 544 (spOf σ) σ s) :
-    WP isa (.seq (.block [.alu32 .cmp .r12 (.imm 2)]) (.ite .e (rbLoop 2) (rbLoop 4))) s (LAt σ 544) := by
-  refine WP.seq (WP.mono (WP.keep [.r12] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .r12 = s.gpr .r12 ∧
-      s'.zf = some (BitVec.setWidth 32 (s.gpr .r12) - 2 == 0)) (by xrun) (by rfl))
-    fun s1 ⟨⟨hm1, h12, hz1⟩, k1⟩ => ?_)
-  have k1' : Keep [] s s1 := ⟨fun r hr => by
-    by_cases e : r = .r12
-    · subst e; exact h12
-    · exact k1.gpr (by simp [e]), k1.2⟩
-  have hr12 : BitVec.setWidth 32 (s.gpr .r12) = BitVec.ofNat 32 (etaOf σ) := by
-    rw [h.env.r12]; rw [sw32_64, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have hJ : J6 136 544 (spOf σ) σ s1 := ⟨h.env.keep hm1 (k1'.mono (by decide)), by rw [hm1]; exact h.out⟩
-  rcases eta hp with he | he
-  · refine WP.ite true (by show s1.zf = _; rw [hz1, hr12, he]; rfl) (fun _ => ?_) (fun hb => absurd hb (by decide))
-    rw [← he]; exact loop_ok hp hJ
-  · refine WP.ite false (by show s1.zf = _; rw [hz1, hr12, he]; rfl) (fun hb => absurd hb (by decide)) (fun _ => ?_)
-    rw [← he]; exact loop_ok hp hJ
-
 /-- The end: the postcondition and the calling convention. -/
 theorem end_ok {s : State} (h : LAt σ 544 s) :
     WP isa (.block (retJ ++ epi)) s fun s' => rbK.post σ s' ∧ gprPreserved σ s' := by
@@ -200,13 +150,5 @@ theorem end_ok {s : State} (h : LAt σ 544 s) :
 end
 
 end RejBounded
-
-theorem rejBounded_correct (σ : State) (hp : rbK.pre σ) :
-    ∃ t s', Exec isa Impl.MlDsa.X86_64.Sample.rejBounded σ t s' ∧ abiPreserved σ s' ∧ rbK.post σ s' := by
-  open RejBounded in
-  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok hp) fun s1 h1 =>
-    WP.seq (WP.mono (sponge_ok (spOk hp) (rate := 136) (outlen := 544) (.inl rfl) (by decide) h1) fun s2 h2 =>
-      WP.seq (WP.mono (sel_ok hp h2) fun s3 h3 => end_ok hp h3)))
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he hF.2, hF.1⟩
 
 end VG.Proof.MlDsa.X86_64.Sample

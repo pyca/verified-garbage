@@ -109,7 +109,7 @@ theorem pHashes_vp {g : Geo} (HO : HashOk g.G) {c : Cfg} {X : State → Prop}
     have nX : sX = 672 := rfl
     have nS : sState = 576 := rfl
     have nM : sMsg = 512 := rfl
-    have nE : hEnd = 296 := rfl
+    have nE : hEnd = 352 := rfl
     have hkw : kB G.pLen ≤ wB G.pLen := by simp only [wB]; omega
     have hkB : sX + G.pLen + 32 ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
     have hHl : ∀ j, (hX HO G k off j).length = G.qLen := fun j => by
@@ -249,7 +249,7 @@ theorem pX_vp {g : Geo} (HO : HashOk g.G) {c : Cfg} {X : State → Prop}
     rcases hlq with ⟨e1, e2⟩ | ⟨e1, e2⟩ | ⟨e1, e2⟩ <;> simp only [cnt, e1, e2] <;> decide
   have hcount : g.count = cnt G := by simp only [Geo.count, hp, hq]
   have nX : sX = 672 := rfl
-  have nE : hEnd = 296 := rfl
+  have nE : hEnd = 352 := rfl
   have nM : sMsg = 512 := rfl
   have hq56 : G.qLen < 56 := by omega
   have hkB : sX + G.pLen + 32 ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide

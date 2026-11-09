@@ -229,15 +229,6 @@ theorem sel_ok {s : State} {B : Addr} {Z w N o a b sl : Nat} (h : Ws s B Z w N)
       Keep opRegs s t :=
   sel_gen_ok h ho ha hb hN (ahead_of_ne hoa) (ahead_of_ne hob) hsl bit
 
-/-- `sel o o b sl`: `[o] := [b]` if the slot `sl` is 1, kept if it is 0. -/
-theorem sel_self_ok {s : State} {B : Addr} {Z w N o b sl : Nat} (h : Ws s B Z w N)
-    (ho : o < N) (hb : b < N) (hN : N ≤ 256) (hob : o ≠ b)
-    (hsl : sl + 4 ≤ KeyWorkspace.hdr) (bit : slot s.mem B sl ≤ 1) :
-    WP isa (sel o o b sl) s fun t => Ws t B Z w N ∧ KeyWorkspace.Keep B w [o] [] s.mem t.mem ∧
-      num t.mem B w o = (if slot s.mem B sl = 0 then num s.mem B w o else num s.mem B w b) ∧
-      Keep opRegs s t :=
-  sel_gen_ok h ho ho hb hN (.inl (Nat.le_refl _)) (ahead_of_ne hob) hsl bit
-
 /-- `copy o a`: `[o] = [a]`. -/
 theorem copy_ok {s : State} {B : Addr} {Z w N o a : Nat} (h : Ws s B Z w N)
     (ho : o < N) (ha : a < N) (hN : N ≤ 256) (hoa : o ≠ a) :

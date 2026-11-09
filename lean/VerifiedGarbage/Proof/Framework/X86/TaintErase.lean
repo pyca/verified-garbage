@@ -199,12 +199,6 @@ theorem checkChunks_erase {chunkSize : Nat} (ms : List T) :
       · exact ih m _ hms.1 hms.2
       · rfl
 
-theorem meet_noBases {τ₁ τ₂ : T} (h₁ : noBases τ₁ = true) : noBases (meet τ₁ τ₂) = true := by
-  obtain ⟨h, ha⟩ := noBases_iff.mp h₁
-  refine noBases_iff.mpr ⟨?_, ?_⟩
-  · simp only [meet, h, List.filter_nil]
-  · simp only [meet, ha, List.filter_nil, ite_self]
-
 /-- The analysis of the code without its displacements and immediates is the
 analysis of the code, from a taint that knows no region bases, with a hint
 whose taints know none either. -/

@@ -92,25 +92,6 @@ theorem rw_facts : ∀ i < 4,
   obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
   all_goals decide
 
-theorem rw_add5 (i : Nat) : rw (i + 5) = rw i := by
-  simp only [rw, Nat.add_mod_right]
-
-theorem mem2 {r : Reg} (h : r ∈ clob64) : ∀ x ∈ [r, .t0], x ∈ clob64 := by
-  intro x hx
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-  rcases hx with rfl | rfl
-  · exact h
-  · decide
-
-theorem mem3 {r r₁ r₂ : Reg} (h : r ∈ clob64) (h₁ : r₁ ∈ clob64 := by decide) (h₂ : r₂ ∈ clob64 := by decide) :
-    ∀ x ∈ [r, r₁, r₂], x ∈ clob64 := by
-  intro x hx
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-  rcases hx with rfl | rfl | rfl
-  · exact h
-  · exact h₁
-  · exact h₂
-
 /-- The initial loads. -/
 theorem loads_ok {b : Addr} {s : State} (hc : Ctx b s) :
     WP isa (.block ((List.range 4).map (fun j => .load .d (rw j) .a3 (ACC + 8 * j)) ++ ([.li .a2 0] : List Instr))) s
@@ -399,7 +380,6 @@ theorem csubWith_ok {sum : List Instr} {M : Nat} (hM : M ≤ 2 ^ 256) {s : State
   · rw [r8, r7, r6, r5, u4.rd, u3.rd, u2.rd, k1.2.2.1]
   · rw [w8, w7, w6, w5, w4]
   · rw [sp8, sp7, sp6, sp5, u4.sp, u3.sp, u2.sp, k1.2.2.2.2]
-
 
 /-- `csub`: `x mod p` at `[t2]`, for `x = X0 + … + 2¹⁹² X3 + 2²⁵⁶ XC` below `2p`. -/
 theorem csub_ok {s : State} {O : Addr} (ht2 : s.gpr .t2 = O) (hal : O.toNat % 8 = 0)
@@ -1126,9 +1106,6 @@ open VG.Proof.X448.RISCV64.R64 (dw dw_lt ld_ok sd_ok clob64 dw_write_self dw_wri
 
 /-- The registers the operations write. -/
 abbrev clobM : List Reg := [.t0, .t3, .t4, .t5, .t6, .a0, .a1, .a2, .a4, .a5, .a6, .a7]
-
-/-- The own area the product writes: the copies and the product's words. -/
-abbrev areaM (b : Addr) : Region := ⟨b + BitVec.ofNat 64 MA, 128⟩
 
 /-- The words of the operand at `p` are the four doublewords at it. -/
 theorem copyIn_ok {b A : Addr} {s : State} (hc : Ctx b s) {p : Reg} (hp : s.gpr p = A)

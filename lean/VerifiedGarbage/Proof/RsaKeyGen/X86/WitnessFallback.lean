@@ -49,14 +49,4 @@ theorem codeAt_ok {s : State} {base : Addr} {size k src : Nat} (scratch : Scr s 
       · exact (Ot.w32 (by omega) (by have := scratch.nowrap; omega)).trans
           (Oa.w32 (by omega) (by have := scratch.nowrap; omega))
 
-theorem code_ok {s : State} {base : Addr} {size w src : Nat} (scratch : Scr s base size)
-    (positive : 0 < w) (fit : src + 8 * w ≤ size) {uniform : Bool} (mask : s.gpr .eax = cmask uniform) :
-    WP isa (.block (code w src)) s fun t =>
-      val32 t.mem base src (2 * w) =
-        (if uniform then val32 s.mem base src (2 * w) else (val32 s.mem base src (2 * w) ||| 2) % 2 ^ (64 * w - 1)) ∧
-      Outside base src (8 * w) s.mem t.mem ∧ Keeps [.ecx] s t := by
-  have h := codeAt_ok (k := 2 * w) (src := src) scratch (by omega) (by omega) mask
-  rw [show 32 * (2 * w) - 1 = 64 * w - 1 by omega, show 4 * (2 * w) = 8 * w by omega] at h
-  exact h
-
 end VG.Proof.RsaKeyGen.X86.WitnessFallback

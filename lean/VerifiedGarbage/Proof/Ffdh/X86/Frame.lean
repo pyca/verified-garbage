@@ -48,6 +48,7 @@ def synth (a : Args) (g : Nat → BitVec 32) : Nat → BitVec 32
   | 10 => optArg g a.x
   | 11 => optArg g (a.x.map (· + 1))
   | 12 => g a.dlen
+  | 13 => optArg g a.ctx
   | 16 => g a.ws
   | 17 => g (a.ws + 1)
   | _ => 0
@@ -61,6 +62,7 @@ structure Below (a : Args) (n : Nat) : Prop where
   y : ∀ j, a.y = some j → j < n
   x : ∀ j, a.x = some j → j + 1 < n
   ws : a.ws + 1 < n
+  ctx : ∀ j, a.ctx = some j → j < n
 
 section
 variable {is : List Instr} {Q : State → Prop}
@@ -133,7 +135,7 @@ theorem val_ok {t : State} {a : Args} {g : Nat → BitVec 32} {n : Nat} (hb : Be
       | none => rw [hx] at hj; cases hj
       | some _ => rw [hx] at hj; cases hj; exact hb.x _ hx) rfl rfl
   | 12 => exact arg hb.dlen rfl rfl
-  | 13 => exact zero rfl rfl
+  | 13 => exact opt hb.ctx rfl rfl
   | 14 => exact zero rfl rfl
   | 15 => exact zero rfl rfl
   | 16 => exact arg (by have := hb.ws; omega) rfl rfl

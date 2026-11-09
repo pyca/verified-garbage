@@ -21,8 +21,6 @@ theorem body_noSp (n : Nat) : NoSp (mulBody n) := NoSp.of_all rfl
 
 theorem body_stackUse (n : Nat) : stackUse (mulBody n) = 0 := rfl
 
-theorem body_spSafe (n : Nat) : (mulBody n).allInstrs (fun i => !isa.writesSp i) = true := rfl
-
 theorem call_ok {s : State} {base : Addr} {size n m : Nat}
     (hs : Scr s base size) (room : Pow.Room (s.gpr .esp) base size)
     (hz : contextBytes n ≤ size) (hused : VG.Impl.Dsa.Layout.usedBytes ≤ size)

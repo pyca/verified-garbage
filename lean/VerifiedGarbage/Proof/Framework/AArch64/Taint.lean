@@ -81,6 +81,11 @@ def stepFn : Instr → Step
   | .ldrqTbl .. => ⟨fun τ => some τ⟩
   | .umov _ d _ _ => ⟨fun τ => some (set τ d false)⟩
   | .align _ => ⟨fun τ => some τ⟩
+  -- PSTATE.DIT is not tracked, as the flags are not: a value read from it is
+  -- secret, and writing it changes no register.
+  | .mrsDit t => ⟨fun τ => some (set τ t false)⟩
+  | .msrDitImm _ => ⟨fun τ => some τ⟩
+  | .barrier _ => ⟨fun τ => some τ⟩
   -- Frames are analysed by the `push` and `pop` hooks (`Taint.push`,
   -- `Taint.pop`), not here.
   | .push .. | .pop .. | .alloc _ | .free _ => ⟨fun _ => none⟩
@@ -386,6 +391,18 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
     exact ⟨rfl, ha.write sz d fun h => by cases h⟩
   | align k =>
+    obtain rfl := Option.some.inj hs
+    obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
+    exact ⟨rfl, ha⟩
+  | mrsDit t =>
+    obtain rfl := Option.some.inj hs
+    obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
+    exact ⟨rfl, ha.write .x t fun h => by cases h⟩
+  | msrDitImm on =>
+    obtain rfl := Option.some.inj hs
+    obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
+    exact ⟨rfl, ha.1, ha.2⟩
+  | barrier _ =>
     obtain rfl := Option.some.inj hs
     obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
     exact ⟨rfl, ha⟩

@@ -74,9 +74,6 @@ def Cfg.loc (c : Cfg) (m : MemOp) : Option Nat :=
   if m.index = none ∧ m.base = c.base ∧ 0 ≤ m.disp ∧ m.disp % 32 = 0 ∧ m.disp.toNat / 32 < c.slots
   then some (m.disp.toNat / 32) else none
 
-/-- The memory operand of slot `k` of base register `b`. -/
-def slotOp (b : Reg) (k : Nat) : MemOp := { base := b, disp := ((32 * k : Nat) : Int) }
-
 /-- The register a vector instruction writes, if any. -/
 def ydst : Instr → Option XReg
   | .vop (.vbin _ _ d _ _) | .vop (.vmovdqa _ d _) | .vop (.vshift _ _ d _ _) => some d

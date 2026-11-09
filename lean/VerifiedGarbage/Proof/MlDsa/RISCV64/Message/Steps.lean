@@ -16,7 +16,7 @@ public import VerifiedGarbage.Spec.MlDsa
 
 public import VerifiedGarbage.TCB.RISCV64.Target
 /-!
-# ML-DSA on RISC-V, `sign_message` and `verify_message`: the steps
+# ML-DSA on RISC-V, `sign_message` and `verify_message_cached`: the steps
 
 As Ed448's whole functions on this target (`Proof/Ed448/RISCV64/Whole/`),
 whose invariant `Inv` (`Proof/Ed25519/RISCV64/Whole/Frame.lean`) they share:

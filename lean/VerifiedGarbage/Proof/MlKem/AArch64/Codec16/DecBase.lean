@@ -78,13 +78,4 @@ theorem G_odd (s₀ : State) {k : Nat} (hk : k < 128) :
   have hq : q = 3329 := rfl
   rw [G, decode12_odd _ (bytesAt_length _ _ _) hk, val_ofNat, condSub_eq (by omega), Nat.mul_comm 16]
 
-/-- A state satisfying the precondition. -/
-def sat : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | _ => 0
-  sp := 0x10000
-  mem _ := 0
-  rd := [⟨0x1000, 384⟩]
-  wr := [⟨0x2000, 1024⟩]
-
 end VG.Proof.MlKem.AArch64.Decode12

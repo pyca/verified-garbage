@@ -37,6 +37,9 @@ macro "atriv" : tactic => `(tactic| first | trivial | rfl)
 theorem ne_cs {r d : Reg} (hr : r ∈ preserved) (hd : d ∉ preserved) : r ≠ d :=
   fun e => hd (e ▸ hr)
 
+theorem not_pres {r : Reg} (hr : r ∈ preserved) (rs : List Reg) (h : ∀ q ∈ rs, q ∉ preserved) : r ∉ rs :=
+  fun h' => h r h' hr
+
 /-- The bytes of a region a frame of writes misses. -/
 theorem bytesAt_frame {ws : List Region} {m m' : Mem} (hf : Frame ws m m') {p : Addr} {n : Nat}
     (hd : ∀ r ∈ ws, Region.Disjoint ⟨p, n⟩ r) (hn : n ≤ 2 ^ 64) :
@@ -143,16 +146,5 @@ theorem movz_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d 
   exact ⟨hc.set hL hd rfl rfl rfl rfl (fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr) rfl, rfl,
     by rw [RegUpd.gpr_write_self]; exact BitVec.setWidth_eq _,
     fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr⟩
-
-/-- Two pieces of code, each setting one register. -/
-theorem upd_append {is js : List Instr} {u : State} {d e : Reg} {v w : BitVec 64}
-    (h₁ : WP isa (.block is) u (Upd L g m₀ u d v))
-    (h₂ : ∀ u', Ctx L g m₀ u' → WP isa (.block js) u' (Upd L g m₀ u' e w)) {Q : State → Prop}
-    (hQ : ∀ u'', Ctx L g m₀ u'' → u''.mem = u.mem → u''.gpr e = w →
-      (∀ r, r ≠ e → r ≠ d → u''.gpr r = u.gpr r) → (e ≠ d → u''.gpr d = v) → Q u'') :
-    WP isa (.block (is ++ js)) u Q := by
-  rw [WP.block_append_iff]
-  refine WP.mono h₁ fun u' h => WP.mono (h₂ u' h.ctx) fun u'' h' => hQ u'' h'.ctx (h'.mem.trans h.mem) h'.val
-    (fun r hre hrd => (h'.keep r hre).trans (h.keep r hrd)) fun hne => (h'.keep d hne.symm).trans h.val
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

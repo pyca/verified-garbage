@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Seed.PPC64LE.CallSum
 import VerifiedGarbage.Proof.Seed.PPC64LE.Lit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Impl.Seed.PPC64LE.Modes
@@ -16,6 +17,7 @@ meta import VerifiedGarbage.Proof.Seed.PPC64LE.CallSum
 meta import VerifiedGarbage.Proof.Seed.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
@@ -30,7 +32,10 @@ stores only at known offsets of the working space, so the analysis knows
 that those slots survive, and finds them as public after the call as before.
 The core takes `sb` back from `r8`, which the analysis knows to point at the
 scratch buffer. The blocks functions are analysed once, as summaries of their
-calls (`CallSum.lean`).
+calls (`CallSum.lean`). The serial modes (CBC and CFB encryption, OFB) run
+the single-block core (`Impl/Seed/PPC64LE/Serial.lean`) and call nothing, so
+the vector analysis (`vectorTaint`) proves them, from the public arguments
+(`modes_agreeV`).
 
 `modeContract post` is the modes' contract with the working space as the
 fifth argument: its precondition gives the writable regions and the
@@ -47,31 +52,31 @@ open VG VG.PPC64LE VG.Impl.Seed.PPC64LE
 def modePub (s₁ s₂ : State) : Prop :=
   s₁.sp = s₂.sp ∧ ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], s₁.gpr r = s₂.gpr r
 
-/-- A mode's function on PPC64LE with its working space as the fifth
-argument, and the postcondition `post`. -/
-def modeContract (post : State → State → Prop) : Contract isa where
+/-- A mode's function on PPC64LE with its working space of `w` words as the
+fifth argument, and the postcondition `post`. -/
+def modeContract (w : Nat) (post : State → State → Prop) : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .r3, 128⟩
     let iv : Region := ⟨s.gpr .r4, 16⟩
     let data : Region := ⟨s.gpr .r5, 16 * (s.gpr .r6).toNat⟩
-    let scratch : Region := ⟨s.gpr .r7, 8 * 144⟩
+    let scratch : Region := ⟨s.gpr .r7, 8 * w⟩
     s.rd = [key] ∧ s.wr = [iv, data, scratch] ∧
       key.Disjoint iv ∧ key.Disjoint data ∧ key.Disjoint scratch ∧ iv.Disjoint data ∧
       iv.Disjoint scratch ∧ data.Disjoint scratch ∧
       (s.gpr .r4).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + 16 * (s.gpr .r6).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .r7).toNat + 8 * 144 ≤ 2 ^ 64
+      (s.gpr .r7).toNat + 8 * w ≤ 2 ^ 64
   post := post
   pub := modePub
 
 /-- The taint on entry: the arguments public, the IV, the data and the
 scratch buffer the writable regions at `r4`, `r5` and `r7`, the scratch
 buffer's whole length known. -/
-def modeTaint : SlotTaint.T := SlotTaint.mk' [.r3, .r4, .r5, .r6, .r7] [16, 0, 8 * 144]
+def modeTaint (w : Nat) : SlotTaint.T := SlotTaint.mk' [.r3, .r4, .r5, .r6, .r7] [16, 0, 8 * w]
   [(.r4, 0), (.r5, 1), (.r7, 2)]
 
-theorem modes_agree {post : State → State → Prop} (s₁ s₂ : State)
-    (h₁ : (modeContract post).pre s₁) (h₂ : (modeContract post).pre s₂) (hp : modePub s₁ s₂) :
-    SlotTaint.Agree modeTaint s₁ s₂ := by
+theorem modes_agree {w : Nat} {post : State → State → Prop} (s₁ s₂ : State)
+    (h₁ : (modeContract w post).pre s₁) (h₂ : (modeContract w post).pre s₂) (hp : modePub s₁ s₂) :
+    SlotTaint.Agree (modeTaint w) s₁ s₂ := by
   obtain ⟨-, hw₁, -, -, -, dVD, dVS, dDS, fV, fD, fS⟩ := h₁
   obtain ⟨-, hw₂, -⟩ := h₂
   obtain ⟨hsp, hr⟩ := hp
@@ -101,23 +106,35 @@ theorem modes_agree {post : State → State → Prop} (s₁ s₂ : State)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> simp [SlotTaint.region, hw₂]
 
+/-- The public arguments agree: the vector analysis's taint on entry, for
+the modes over the single-block core, which call nothing. -/
+theorem modes_agreeV {w : Nat} {post : State → State → Prop} (s₁ s₂ : State)
+    (_ : (modeContract w post).pre s₁) (_ : (modeContract w post).pre s₂) (hp : modePub s₁ s₂) :
+    VG.PPC64LE.Taint.Agree (VG.PPC64LE.Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) s₁ s₂ := by
+  obtain ⟨hsp, hr⟩ := hp
+  refine ⟨hsp, fun r h => hr r ?_⟩
+  simpa only [VG.PPC64LE.Taint.mem_ofRegs] using h
+
 theorem cbcEncryptChained_constantTime {post : State → State → Prop} :
-    ConstantTime isa (modeContract post).pre modePub cbcEncryptChained :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint modes_agree (by taint_decide_sum [encryptSum])
+    ConstantTime isa (modeContract 144 post).pre modePub cbcEncryptChained :=
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) modes_agreeV
+    (by taint_decide)
 
 theorem cbcDecryptChained_constantTime {post : State → State → Prop} :
-    ConstantTime isa (modeContract post).pre modePub cbcDecryptChained :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint modes_agree (by taint_decide_sum [decryptSum])
+    ConstantTime isa (modeContract 174 post).pre modePub cbcDecryptChained :=
+  VG.Taint.constantTime_of_exists (A := slotTaint) (modeTaint 174) modes_agree (by taint_decide_sum [decryptSumW])
 
-theorem ofb_constantTime {post : State → State → Prop} : ConstantTime isa (modeContract post).pre modePub ofb :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint modes_agree (by taint_decide_sum [encryptSum])
+theorem ofb_constantTime {post : State → State → Prop} : ConstantTime isa (modeContract 144 post).pre modePub ofb :=
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) modes_agreeV
+    (by taint_decide)
 
 theorem cfbEncrypt_constantTime {post : State → State → Prop} :
-    ConstantTime isa (modeContract post).pre modePub cfbEncrypt :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint modes_agree (by taint_decide_sum [encryptSum])
+    ConstantTime isa (modeContract 144 post).pre modePub cfbEncrypt :=
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) modes_agreeV
+    (by taint_decide)
 
 theorem cfbDecrypt_constantTime {post : State → State → Prop} :
-    ConstantTime isa (modeContract post).pre modePub cfbDecrypt :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint modes_agree (by taint_decide_sum [encryptSum])
+    ConstantTime isa (modeContract 174 post).pre modePub cfbDecrypt :=
+  VG.Taint.constantTime_of_exists (A := slotTaint) (modeTaint 174) modes_agree (by taint_decide_sum [encryptSumW])
 
 end VG.Proof.Seed.PPC64LE

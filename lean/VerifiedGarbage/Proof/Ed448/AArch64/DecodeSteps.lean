@@ -12,7 +12,8 @@ import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBytes
 import VerifiedGarbage.Proof.Ed448.AArch64.BaseEncode
 import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.X448.AArch64.Square
+import VerifiedGarbage.Proof.X448.Invert
+import VerifiedGarbage.Proof.X448.AArch64.Env
 
 /-!
 # Ed448 verification's equation on AArch64: decoding's blocks
@@ -68,10 +69,6 @@ theorem cframe_dframe {base : Addr} {m m' : Mem} (h : CFrame base m m') : DFrame
   fun x h1 h2 h3 => h x (by simp only [X2, slot] at *; omega_arith) h3 (by simp only [ACC] at *; omega_arith)
 
 theorem fkeep_dframe {base : Addr} {s t : State} (h : FKeep base s t) : DFrame base s.mem t.mem :=
-  DFrame.of_outside2 (Nat.le_refl _) h.mem
-
-theorem ikeep_dframe {base : Addr} {s t : State} (h : VG.Proof.X448.AArch64.Fast.IKeep base s t) :
-    DFrame base s.mem t.mem :=
   DFrame.of_outside2 (Nat.le_refl _) h.mem
 
 /-! ## Bounds -/

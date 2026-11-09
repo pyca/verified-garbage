@@ -59,6 +59,173 @@ vg_md5_compress:
 	lbu t6, 3(a1)
 	slli t6, t6, 24
 	or t5, t5, t6
+	sw t5, 0(a3)
+	lbu t5, 4(a1)
+	lbu t6, 5(a1)
+	slli t6, t6, 8
+	or t5, t5, t6
+	lbu t6, 6(a1)
+	slli t6, t6, 16
+	or t5, t5, t6
+	lbu t6, 7(a1)
+	slli t6, t6, 24
+	or t5, t5, t6
+	sw t5, 4(a3)
+	lbu t5, 8(a1)
+	lbu t6, 9(a1)
+	slli t6, t6, 8
+	or t5, t5, t6
+	lbu t6, 10(a1)
+	slli t6, t6, 16
+	or t5, t5, t6
+	lbu t6, 11(a1)
+	slli t6, t6, 24
+	or t5, t5, t6
+	sw t5, 8(a3)
+	lbu t5, 12(a1)
+	lbu t6, 13(a1)
+	slli t6, t6, 8
+	or t5, t5, t6
+	lbu t6, 14(a1)
+	slli t6, t6, 16
+	or t5, t5, t6
+	lbu t6, 15(a1)
+	slli t6, t6, 24
+	or t5, t5, t6
+	sw t5, 12(a3)
+	lbu t5, 16(a1)
+	lbu t6, 17(a1)
+	slli t6, t6, 8
+	or t5, t5, t6
+	lbu t6, 18(a1)
+	slli t6, t6, 16
+	or t5, t5, t6
+	lbu t6, 19(a1)
+	slli t6, t6, 24
+	or t5, t5, t6
+	sw t5, 16(a3)
+	lbu t5, 20(a1)
+	lbu t6, 21(a1)
+	slli t6, t6, 8
+	or t5, t5, t6
+	lbu t6, 22(a1)
+	slli t6, t6, 16
+	or t5, t5, t6
+	lbu t6, 23(a1)
+	slli t6, t6, 24
+	or t5, t5, t6
+	sw t5, 20(a3)
+	lbu t5, 24(a1)
+	lbu t6, 25(a1)
+	slli t6, t6, 8
+	or t5, t5, t6
+	lbu t6, 26(a1)
+	slli t6, t6, 16
+	or t5, t5, t6
+	lbu t6, 27(a1)
+	slli t6, t6, 24
+	or t5, t5, t6
+	sw t5, 24(a3)
+	lbu t5, 28(a1)
+	lbu t6, 29(a1)
+	slli t6, t6, 8
+	or t5, t5, t6
+	lbu t6, 30(a1)
+	slli t6, t6, 16
+	or t5, t5, t6
+	lbu t6, 31(a1)
+	slli t6, t6, 24
+	or t5, t5, t6
+	sw t5, 28(a3)
+	lbu t5, 32(a1)
+	lbu t6, 33(a1)
+	slli t6, t6, 8
+	or t5, t5, t6
+	lbu t6, 34(a1)
+	slli t6, t6, 16
+	or t5, t5, t6
+	lbu t6, 35(a1)
+	slli t6, t6, 24
+	or t5, t5, t6
+	sw t5, 32(a3)
+	lbu t5, 36(a1)
+	lbu t6, 37(a1)
+	slli t6, t6, 8
+	or t5, t5, t6
+	lbu t6, 38(a1)
+	slli t6, t6, 16
+	or t5, t5, t6
+	lbu t6, 39(a1)
+	slli t6, t6, 24
+	or t5, t5, t6
+	sw t5, 36(a3)
+	lbu t5, 40(a1)
+	lbu t6, 41(a1)
+	slli t6, t6, 8
+	or t5, t5, t6
+	lbu t6, 42(a1)
+	slli t6, t6, 16
+	or t5, t5, t6
+	lbu t6, 43(a1)
+	slli t6, t6, 24
+	or t5, t5, t6
+	sw t5, 40(a3)
+	lbu t5, 44(a1)
+	lbu t6, 45(a1)
+	slli t6, t6, 8
+	or t5, t5, t6
+	lbu t6, 46(a1)
+	slli t6, t6, 16
+	or t5, t5, t6
+	lbu t6, 47(a1)
+	slli t6, t6, 24
+	or t5, t5, t6
+	sw t5, 44(a3)
+	lbu t5, 48(a1)
+	lbu t6, 49(a1)
+	slli t6, t6, 8
+	or t5, t5, t6
+	lbu t6, 50(a1)
+	slli t6, t6, 16
+	or t5, t5, t6
+	lbu t6, 51(a1)
+	slli t6, t6, 24
+	or t5, t5, t6
+	sw t5, 48(a3)
+	lbu t5, 52(a1)
+	lbu t6, 53(a1)
+	slli t6, t6, 8
+	or t5, t5, t6
+	lbu t6, 54(a1)
+	slli t6, t6, 16
+	or t5, t5, t6
+	lbu t6, 55(a1)
+	slli t6, t6, 24
+	or t5, t5, t6
+	sw t5, 52(a3)
+	lbu t5, 56(a1)
+	lbu t6, 57(a1)
+	slli t6, t6, 8
+	or t5, t5, t6
+	lbu t6, 58(a1)
+	slli t6, t6, 16
+	or t5, t5, t6
+	lbu t6, 59(a1)
+	slli t6, t6, 24
+	or t5, t5, t6
+	sw t5, 56(a3)
+	lbu t5, 60(a1)
+	lbu t6, 61(a1)
+	slli t6, t6, 8
+	or t5, t5, t6
+	lbu t6, 62(a1)
+	slli t6, t6, 16
+	or t5, t5, t6
+	lbu t6, 63(a1)
+	slli t6, t6, 24
+	or t5, t5, t6
+	sw t5, 60(a3)
+	lwu t5, 0(a3)
 	add t0, t0, t5
 	lui t5, 882346
 	addiw t5, t5, 1144
@@ -71,16 +238,7 @@ vg_md5_compress:
 	srliw t0, t0, 25
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 4(a1)
-	lbu t6, 5(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 6(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 7(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 4(a3)
 	add t3, t3, t5
 	lui t5, 953467
 	addiw t5, t5, 1878
@@ -93,16 +251,7 @@ vg_md5_compress:
 	srliw t3, t3, 20
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 8(a1)
-	lbu t6, 9(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 10(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 11(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 8(a3)
 	add t2, t2, t5
 	lui t5, 147975
 	addiw t5, t5, 219
@@ -115,16 +264,7 @@ vg_md5_compress:
 	srliw t2, t2, 15
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 12(a1)
-	lbu t6, 13(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 14(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 15(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 12(a3)
 	add t1, t1, t5
 	lui t5, 793565
 	addiw t5, t5, -274
@@ -137,16 +277,7 @@ vg_md5_compress:
 	srliw t1, t1, 10
 	or t1, t1, t4
 	add t1, t1, t2
-	lbu t5, 16(a1)
-	lbu t6, 17(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 18(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 19(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 16(a3)
 	add t0, t0, t5
 	lui t5, 1005505
 	addiw t5, t5, -81
@@ -159,16 +290,7 @@ vg_md5_compress:
 	srliw t0, t0, 25
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 20(a1)
-	lbu t6, 21(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 22(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 23(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 20(a3)
 	add t3, t3, t5
 	lui t5, 292988
 	addiw t5, t5, 1578
@@ -181,16 +303,7 @@ vg_md5_compress:
 	srliw t3, t3, 20
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 24(a1)
-	lbu t6, 25(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 26(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 27(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 24(a3)
 	add t2, t2, t5
 	lui t5, 688900
 	addiw t5, t5, 1555
@@ -203,16 +316,7 @@ vg_md5_compress:
 	srliw t2, t2, 15
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 28(a1)
-	lbu t6, 29(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 30(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 31(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 28(a3)
 	add t1, t1, t5
 	lui t5, 1037417
 	addiw t5, t5, 1281
@@ -225,16 +329,7 @@ vg_md5_compress:
 	srliw t1, t1, 10
 	or t1, t1, t4
 	add t1, t1, t2
-	lbu t5, 32(a1)
-	lbu t6, 33(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 34(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 35(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 32(a3)
 	add t0, t0, t5
 	lui t5, 432138
 	addiw t5, t5, -1832
@@ -247,16 +342,7 @@ vg_md5_compress:
 	srliw t0, t0, 25
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 36(a1)
-	lbu t6, 37(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 38(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 39(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 36(a3)
 	add t3, t3, t5
 	lui t5, 570447
 	addiw t5, t5, 1967
@@ -269,16 +355,7 @@ vg_md5_compress:
 	srliw t3, t3, 20
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 40(a1)
-	lbu t6, 41(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 42(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 43(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 40(a3)
 	add t2, t2, t5
 	lui t5, 1048566
 	addiw t5, t5, -1103
@@ -291,16 +368,7 @@ vg_md5_compress:
 	srliw t2, t2, 15
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 44(a1)
-	lbu t6, 45(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 46(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 47(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 44(a3)
 	add t1, t1, t5
 	lui t5, 562637
 	addiw t5, t5, 1982
@@ -313,16 +381,7 @@ vg_md5_compress:
 	srliw t1, t1, 10
 	or t1, t1, t4
 	add t1, t1, t2
-	lbu t5, 48(a1)
-	lbu t6, 49(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 50(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 51(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 48(a3)
 	add t0, t0, t5
 	lui t5, 440577
 	addiw t5, t5, 290
@@ -335,16 +394,7 @@ vg_md5_compress:
 	srliw t0, t0, 25
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 52(a1)
-	lbu t6, 53(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 54(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 55(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 52(a3)
 	add t3, t3, t5
 	lui t5, 1038727
 	addiw t5, t5, 403
@@ -357,16 +407,7 @@ vg_md5_compress:
 	srliw t3, t3, 20
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 56(a1)
-	lbu t6, 57(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 58(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 59(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 56(a3)
 	add t2, t2, t5
 	lui t5, 681876
 	addiw t5, t5, 910
@@ -379,16 +420,7 @@ vg_md5_compress:
 	srliw t2, t2, 15
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 60(a1)
-	lbu t6, 61(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 62(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 63(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 60(a3)
 	add t1, t1, t5
 	lui t5, 301889
 	addiw t5, t5, -2015
@@ -401,16 +433,7 @@ vg_md5_compress:
 	srliw t1, t1, 10
 	or t1, t1, t4
 	add t1, t1, t2
-	lbu t5, 4(a1)
-	lbu t6, 5(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 6(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 7(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 4(a3)
 	add t0, t0, t5
 	lui t5, 1008098
 	addiw t5, t5, 1378
@@ -424,16 +447,7 @@ vg_md5_compress:
 	srliw t0, t0, 27
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 24(a1)
-	lbu t6, 25(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 26(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 27(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 24(a3)
 	add t3, t3, t5
 	lui t5, 787467
 	addiw t5, t5, 832
@@ -447,16 +461,7 @@ vg_md5_compress:
 	srliw t3, t3, 23
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 44(a1)
-	lbu t6, 45(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 46(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 47(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 44(a3)
 	add t2, t2, t5
 	lui t5, 157158
 	addiw t5, t5, -1455
@@ -470,16 +475,7 @@ vg_md5_compress:
 	srliw t2, t2, 18
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 0(a1)
-	lbu t6, 1(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 2(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 3(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 0(a3)
 	add t1, t1, t5
 	lui t5, 957292
 	addiw t5, t5, 1962
@@ -493,16 +489,7 @@ vg_md5_compress:
 	srliw t1, t1, 12
 	or t1, t1, t4
 	add t1, t1, t2
-	lbu t5, 20(a1)
-	lbu t6, 21(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 22(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 23(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 20(a3)
 	add t0, t0, t5
 	lui t5, 877297
 	addiw t5, t5, 93
@@ -516,16 +503,7 @@ vg_md5_compress:
 	srliw t0, t0, 27
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 40(a1)
-	lbu t6, 41(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 42(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 43(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 40(a3)
 	add t3, t3, t5
 	lui t5, 9281
 	addiw t5, t5, 1107
@@ -539,16 +517,7 @@ vg_md5_compress:
 	srliw t3, t3, 23
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 60(a1)
-	lbu t6, 61(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 62(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 63(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 60(a3)
 	add t2, t2, t5
 	lui t5, 887326
 	addiw t5, t5, 1665
@@ -562,16 +531,7 @@ vg_md5_compress:
 	srliw t2, t2, 18
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 16(a1)
-	lbu t6, 17(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 18(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 19(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 16(a3)
 	add t1, t1, t5
 	lui t5, 949568
 	addiw t5, t5, -1080
@@ -585,16 +545,7 @@ vg_md5_compress:
 	srliw t1, t1, 12
 	or t1, t1, t4
 	add t1, t1, t2
-	lbu t5, 36(a1)
-	lbu t6, 37(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 38(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 39(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 36(a3)
 	add t0, t0, t5
 	lui t5, 138781
 	addiw t5, t5, -538
@@ -608,16 +559,7 @@ vg_md5_compress:
 	srliw t0, t0, 27
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 56(a1)
-	lbu t6, 57(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 58(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 59(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 56(a3)
 	add t3, t3, t5
 	lui t5, 799600
 	addiw t5, t5, 2006
@@ -631,16 +573,7 @@ vg_md5_compress:
 	srliw t3, t3, 23
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 12(a1)
-	lbu t6, 13(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 14(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 15(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 12(a3)
 	add t2, t2, t5
 	lui t5, 1002833
 	addiw t5, t5, -633
@@ -654,16 +587,7 @@ vg_md5_compress:
 	srliw t2, t2, 18
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 32(a1)
-	lbu t6, 33(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 34(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 35(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 32(a3)
 	add t1, t1, t5
 	lui t5, 284065
 	addiw t5, t5, 1261
@@ -677,16 +601,7 @@ vg_md5_compress:
 	srliw t1, t1, 12
 	or t1, t1, t4
 	add t1, t1, t2
-	lbu t5, 52(a1)
-	lbu t6, 53(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 54(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 55(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 52(a3)
 	add t0, t0, t5
 	lui t5, 695871
 	addiw t5, t5, -1787
@@ -700,16 +615,7 @@ vg_md5_compress:
 	srliw t0, t0, 27
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 8(a1)
-	lbu t6, 9(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 10(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 11(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 8(a3)
 	add t3, t3, t5
 	lui t5, 1036026
 	addiw t5, t5, 1016
@@ -723,16 +629,7 @@ vg_md5_compress:
 	srliw t3, t3, 23
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 28(a1)
-	lbu t6, 29(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 30(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 31(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 28(a3)
 	add t2, t2, t5
 	lui t5, 423664
 	addiw t5, t5, 729
@@ -746,16 +643,7 @@ vg_md5_compress:
 	srliw t2, t2, 18
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 48(a1)
-	lbu t6, 49(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 50(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 51(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 48(a3)
 	add t1, t1, t5
 	lui t5, 578213
 	addiw t5, t5, -886
@@ -769,16 +657,7 @@ vg_md5_compress:
 	srliw t1, t1, 12
 	or t1, t1, t4
 	add t1, t1, t2
-	lbu t5, 20(a1)
-	lbu t6, 21(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 22(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 23(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 20(a3)
 	add t0, t0, t5
 	lui t5, 1048484
 	addiw t5, t5, -1726
@@ -790,16 +669,7 @@ vg_md5_compress:
 	srliw t0, t0, 28
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 32(a1)
-	lbu t6, 33(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 34(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 35(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 32(a3)
 	add t3, t3, t5
 	lui t5, 554783
 	addiw t5, t5, 1665
@@ -811,16 +681,7 @@ vg_md5_compress:
 	srliw t3, t3, 21
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 44(a1)
-	lbu t6, 45(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 46(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 47(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 44(a3)
 	add t2, t2, t5
 	lui t5, 448982
 	addiw t5, t5, 290
@@ -832,16 +693,7 @@ vg_md5_compress:
 	srliw t2, t2, 16
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 56(a1)
-	lbu t6, 57(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 58(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 59(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 56(a3)
 	add t1, t1, t5
 	lui t5, 1039956
 	addiw t5, t5, -2036
@@ -853,16 +705,7 @@ vg_md5_compress:
 	srliw t1, t1, 9
 	or t1, t1, t4
 	add t1, t1, t2
-	lbu t5, 4(a1)
-	lbu t6, 5(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 6(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 7(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 4(a3)
 	add t0, t0, t5
 	lui t5, 674799
 	addiw t5, t5, -1468
@@ -874,16 +717,7 @@ vg_md5_compress:
 	srliw t0, t0, 28
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 16(a1)
-	lbu t6, 17(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 18(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 19(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 16(a3)
 	add t3, t3, t5
 	lui t5, 310765
 	addiw t5, t5, -87
@@ -895,16 +729,7 @@ vg_md5_compress:
 	srliw t3, t3, 21
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 28(a1)
-	lbu t6, 29(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 30(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 31(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 28(a3)
 	add t2, t2, t5
 	lui t5, 1010613
 	addiw t5, t5, -1184
@@ -916,16 +741,7 @@ vg_md5_compress:
 	srliw t2, t2, 16
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 40(a1)
-	lbu t6, 41(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 42(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 43(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 40(a3)
 	add t1, t1, t5
 	lui t5, 781308
 	addiw t5, t5, -912
@@ -937,16 +753,7 @@ vg_md5_compress:
 	srliw t1, t1, 9
 	or t1, t1, t4
 	add t1, t1, t2
-	lbu t5, 52(a1)
-	lbu t6, 53(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 54(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 55(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 52(a3)
 	add t0, t0, t5
 	lui t5, 166328
 	addiw t5, t5, -314
@@ -958,16 +765,7 @@ vg_md5_compress:
 	srliw t0, t0, 28
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 0(a1)
-	lbu t6, 1(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 2(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 3(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 0(a3)
 	add t3, t3, t5
 	lui t5, 961042
 	addiw t5, t5, 2042
@@ -979,16 +777,7 @@ vg_md5_compress:
 	srliw t3, t3, 21
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 12(a1)
-	lbu t6, 13(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 14(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 15(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 12(a3)
 	add t2, t2, t5
 	lui t5, 872179
 	addiw t5, t5, 133
@@ -1000,16 +789,7 @@ vg_md5_compress:
 	srliw t2, t2, 16
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 24(a1)
-	lbu t6, 25(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 26(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 27(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 24(a3)
 	add t1, t1, t5
 	lui t5, 18562
 	addiw t5, t5, -763
@@ -1021,16 +801,7 @@ vg_md5_compress:
 	srliw t1, t1, 9
 	or t1, t1, t4
 	add t1, t1, t2
-	lbu t5, 36(a1)
-	lbu t6, 37(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 38(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 39(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 36(a3)
 	add t0, t0, t5
 	lui t5, 892237
 	addiw t5, t5, 57
@@ -1042,16 +813,7 @@ vg_md5_compress:
 	srliw t0, t0, 28
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 48(a1)
-	lbu t6, 49(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 50(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 51(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 48(a3)
 	add t3, t3, t5
 	lui t5, 945594
 	addiw t5, t5, -1563
@@ -1063,16 +825,7 @@ vg_md5_compress:
 	srliw t3, t3, 21
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 60(a1)
-	lbu t6, 61(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 62(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 63(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 60(a3)
 	add t2, t2, t5
 	lui t5, 129576
 	addiw t5, t5, -776
@@ -1084,16 +837,7 @@ vg_md5_compress:
 	srliw t2, t2, 16
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 8(a1)
-	lbu t6, 9(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 10(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 11(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 8(a3)
 	add t1, t1, t5
 	lui t5, 805573
 	addiw t5, t5, 1637
@@ -1105,16 +849,7 @@ vg_md5_compress:
 	srliw t1, t1, 9
 	or t1, t1, t4
 	add t1, t1, t2
-	lbu t5, 0(a1)
-	lbu t6, 1(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 2(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 3(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 0(a3)
 	add t0, t0, t5
 	lui t5, 1000082
 	addiw t5, t5, 580
@@ -1127,16 +862,7 @@ vg_md5_compress:
 	srliw t0, t0, 26
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 28(a1)
-	lbu t6, 29(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 30(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 31(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 28(a3)
 	add t3, t3, t5
 	lui t5, 275120
 	addiw t5, t5, -105
@@ -1149,16 +875,7 @@ vg_md5_compress:
 	srliw t3, t3, 22
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 56(a1)
-	lbu t6, 57(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 58(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 59(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 56(a3)
 	add t2, t2, t5
 	lui t5, 702786
 	addiw t5, t5, 935
@@ -1171,16 +888,7 @@ vg_md5_compress:
 	srliw t2, t2, 17
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 20(a1)
-	lbu t6, 21(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 22(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 23(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 20(a3)
 	add t1, t1, t5
 	lui t5, 1034554
 	addiw t5, t5, 57
@@ -1193,16 +901,7 @@ vg_md5_compress:
 	srliw t1, t1, 11
 	or t1, t1, t4
 	add t1, t1, t2
-	lbu t5, 48(a1)
-	lbu t6, 49(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 50(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 51(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 48(a3)
 	add t0, t0, t5
 	lui t5, 415158
 	addiw t5, t5, -1597
@@ -1215,16 +914,7 @@ vg_md5_compress:
 	srliw t0, t0, 26
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 12(a1)
-	lbu t6, 13(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 14(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 15(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 12(a3)
 	add t3, t3, t5
 	lui t5, 585933
 	addiw t5, t5, -878
@@ -1237,16 +927,7 @@ vg_md5_compress:
 	srliw t3, t3, 22
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 40(a1)
-	lbu t6, 41(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 42(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 43(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 40(a3)
 	add t2, t2, t5
 	lui t5, 1048319
 	addiw t5, t5, 1149
@@ -1259,16 +940,7 @@ vg_md5_compress:
 	srliw t2, t2, 17
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 4(a1)
-	lbu t6, 5(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 6(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 7(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 4(a3)
 	add t1, t1, t5
 	lui t5, 546886
 	addiw t5, t5, -559
@@ -1281,16 +953,7 @@ vg_md5_compress:
 	srliw t1, t1, 11
 	or t1, t1, t4
 	add t1, t1, t2
-	lbu t5, 32(a1)
-	lbu t6, 33(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 34(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 35(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 32(a3)
 	add t0, t0, t5
 	lui t5, 457352
 	addiw t5, t5, -433
@@ -1303,16 +966,7 @@ vg_md5_compress:
 	srliw t0, t0, 26
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 60(a1)
-	lbu t6, 61(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 62(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 63(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 60(a3)
 	add t3, t3, t5
 	lui t5, 1041102
 	addiw t5, t5, 1760
@@ -1325,16 +979,7 @@ vg_md5_compress:
 	srliw t3, t3, 22
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 24(a1)
-	lbu t6, 25(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 26(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 27(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 24(a3)
 	add t2, t2, t5
 	lui t5, 667668
 	addiw t5, t5, 788
@@ -1347,16 +992,7 @@ vg_md5_compress:
 	srliw t2, t2, 17
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 52(a1)
-	lbu t6, 53(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 54(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 55(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 52(a3)
 	add t1, t1, t5
 	lui t5, 319617
 	addiw t5, t5, 417
@@ -1369,16 +1005,7 @@ vg_md5_compress:
 	srliw t1, t1, 11
 	or t1, t1, t4
 	add t1, t1, t2
-	lbu t5, 16(a1)
-	lbu t6, 17(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 18(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 19(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 16(a3)
 	add t0, t0, t5
 	lui t5, 1013048
 	addiw t5, t5, -382
@@ -1391,16 +1018,7 @@ vg_md5_compress:
 	srliw t0, t0, 26
 	or t0, t0, t4
 	add t0, t0, t1
-	lbu t5, 44(a1)
-	lbu t6, 45(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 46(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 47(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 44(a3)
 	add t3, t3, t5
 	lui t5, 775087
 	addiw t5, t5, 565
@@ -1413,16 +1031,7 @@ vg_md5_compress:
 	srliw t3, t3, 22
 	or t3, t3, t4
 	add t3, t3, t0
-	lbu t5, 8(a1)
-	lbu t6, 9(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 10(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 11(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 8(a3)
 	add t2, t2, t5
 	lui t5, 175485
 	addiw t5, t5, 699
@@ -1435,16 +1044,7 @@ vg_md5_compress:
 	srliw t2, t2, 17
 	or t2, t2, t4
 	add t2, t2, t3
-	lbu t5, 36(a1)
-	lbu t6, 37(a1)
-	slli t6, t6, 8
-	or t5, t5, t6
-	lbu t6, 38(a1)
-	slli t6, t6, 16
-	or t5, t5, t6
-	lbu t6, 39(a1)
-	slli t6, t6, 24
-	or t5, t5, t6
+	lwu t5, 36(a3)
 	add t1, t1, t5
 	lui t5, 964717
 	addiw t5, t5, 913

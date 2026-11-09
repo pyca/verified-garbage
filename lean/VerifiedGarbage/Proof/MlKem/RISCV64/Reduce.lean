@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 /-!
 # ML-KEM on RISC-V: the tables
 
-`liq` loads `q` (`q_val`); `table` stores a table of 128 `u32`s (`table_ok`), and
+`liq` loads `q`; `table` stores a table of 128 `u32`s (`table_ok`), and
 the tables of the code are those of the standard (`zetaTable_eq`,
 `gammaTable_eq`). As on PPC64LE (`Proof/MlKem/PPC64LE/Reduce.lean`), but the
 functions save no registers: they write none that their caller keeps
@@ -28,9 +28,6 @@ namespace VG.Proof.MlKem.RISCV64
 open VG VG.RISCV64 VG.Impl.MlKem.RISCV64
 open VG.Spec.MlKem
 
-theorem q_val : sext32 ((1 : BitVec 20) ++ (0 : BitVec 12)) + BitVec.ofInt 64 (-767) = 3329 := by
-  decide
-
 theorem toNat_val64 (x : Zq) : (BitVec.ofNat 64 x.val).toNat = x.val := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega)]
 
@@ -39,10 +36,6 @@ theorem toNat_val64 (x : Zq) : (BitVec.ofNat 64 x.val).toNat = x.val := by
 theorem zetaTable_eq : zetaTable = zetas := rfl
 
 theorem gammaTable_eq : gammaTable = gammas := rfl
-
-theorem zetaTable_lt : ∀ k < 128, zetaTable.getD k 0 < q := by decide +kernel
-
-theorem gammaTable_lt : ∀ k < 128, gammaTable.getD k 0 < q := by decide +kernel
 
 /-- `t0 = 2048`, as the start of `table` leaves it. -/
 theorem t0_val : sext32 ((1 : BitVec 20) ++ (0 : BitVec 12)) + BitVec.ofInt 64 (-2048) = 2048 := by
@@ -113,8 +106,5 @@ return address and the preserved registers. -/
 def kept : List Reg := [.ra, .s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11]
 
 theorem preserved_sub : ∀ r ∈ preserved, r ∈ kept := by decide
-
-theorem table_kept {T : List Nat} {B : Addr} {s₀ s : State} {k : Nat} (h : TabInv T B s₀ k s) :
-    ∀ r ∈ kept, s.gpr r = s₀.gpr r := fun r hr => h.gpr r (by revert r hr; decide) (by revert r hr; decide)
 
 end VG.Proof.MlKem.RISCV64

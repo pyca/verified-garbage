@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Noise
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemUContext
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.DotReady
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -12,7 +13,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Ops
 
 /-! # The 16-bit ciphertext rows
 
-`u_rowsW`: the rows of `u` of `Kem16.encryptRest`, from `Â` and `ŷ` stored with
+`u_rowsW`: the rows of `u` of the 16-bit encryption, from `Â` and `ŷ` stored with
 16 bits (`EInvW true`) and the errors `e₁` (`ErrorsW`): each row is the fused
 dot product, the inverse transform and the sum in 16 bits, widened into `PP`
 for the compression. -/

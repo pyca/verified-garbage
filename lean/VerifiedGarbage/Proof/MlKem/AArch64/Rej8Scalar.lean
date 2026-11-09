@@ -27,13 +27,9 @@ structure LPreW (w16 : Bool) (N : Nat) (B : Nat → Byte) (bP aP : Addr) (s : St
   disj : (⟨bP, 3 * N⟩ : Region).Disjoint (polyRegion aP)
   bound : N ≤ 280
 
-abbrev LPre := LPreW false
-
 /-- Only coefficients already accepted have prescribed contents. -/
 def CoeffsW (w16 : Bool) (m : Mem) (p : Addr) (L : List Zq) : Prop :=
   ∀ i < L.length, coeffAtW (cw w16) m p i = cvW w16 L i
-
-abbrev Coeffs := CoeffsW false
 
 structure AccW (w16 : Bool) (aP : Addr) (s₀ : State) (L : List Zq) (u : State) : Prop where
   rd : u.rd = s₀.rd
@@ -45,8 +41,6 @@ structure AccW (w16 : Bool) (aP : Addr) (s₀ : State) (L : List Zq) (u : State)
   x9 : (u.gpr .x9).toNat = q
   coeffs : CoeffsW w16 u.mem aP L
   frame : Frame [polyRegion aP] s₀.mem u.mem
-
-abbrev Acc := AccW false
 
 theorem CoeffsW.reject {w16 : Bool} {m : Mem} {p : Addr} {L : List Zq} (h : CoeffsW w16 m p L)
     (hl : L.length < 256) (w : BitVec 32) (hw : w.toNat < 2 ^ 16) :
@@ -143,8 +137,6 @@ structure InvW (w16 : Bool) (initial : List Zq) (N : Nat) (B : Nat → Byte) (bP
   x2 : u.gpr .x2 = bP + BitVec.ofNat 64 (3 * t)
   x5 : (u.gpr .x5).toNat = N - t
   x10 : (u.gpr .x10).toNat = 15
-
-abbrev Inv := InvW false
 
 theorem sampleStepCap_eq (L : List Zq) (c₀ c₁ c₂ : Byte) (hL : L.length ≠ n) :
     sampleStepCap L c₀ c₁ c₂ =
@@ -280,6 +272,5 @@ theorem body_ok {w16 : Bool} {N : Nat} {B : Nat → Byte} {bP aP : Addr} {s₀ :
   have x5' : (u'.gpr .x5).toNat = N - (t + 1) := by rw [k'.get .x5, x5₁]
   refine ⟨⟨a', ((h.keep.trans k₁).trans k').mono (by decide), by rw [k'.get .x2, x2₁], x5',
     by rw [k'.get .x10, k₁.get .x10, h.x10]⟩, by rw [x5']; omega_arith⟩
-
 
 end VG.Proof.MlKem.AArch64.Rej8.Scalar

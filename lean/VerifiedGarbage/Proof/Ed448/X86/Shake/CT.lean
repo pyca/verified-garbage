@@ -158,7 +158,7 @@ theorem abs_ct {P N : BitVec 32} {pos : Nat} (hp : pos < 136)
     (hcov : DataOk E ins outs ⟨P.setWidth 64, N.toNat⟩) (hd : Away E scr ⟨P.setWidth 64, N.toNat⟩)
     (hfit : P.toNat + N.toNat ≤ 2 ^ 32) :
     RelCT isa (Two E ins outs g₁ g₂ m₁ m₂ (AbsSlots E scr pos P N))
-      (.call Spec.Sha3.absorbScratchApi.name Impl.Sha3.X86.Stream.absorb)
+      (.call "vg_keccak_absorb_scratch" Impl.Sha3.X86.Stream.absorb)
       (Two E ins outs g₁ g₂ m₁ m₂ fun s => s.gpr .eax = BitVec.ofNat 32 ((pos + N.toNat) % 136)) :=
   call_ct Proof.Sha3.X86.Stream.Absorb.absorb_verified.1 Proof.Sha3.X86.Stream.Absorb.absorb_verified.2.1
     (fun _ _ _ hc hs => hk.abs_ready hc hp hs hcov hd hfit)

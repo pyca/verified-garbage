@@ -68,11 +68,6 @@ theorem lo_rotr' {n : Nat} (x : BitVec 64) (h0 : 32 < n) (h : n < 64) :
 theorem hi_rotr' {n : Nat} (x : BitVec 64) (h0 : 32 < n) (h : n < 64) :
     hi (x.rotateRight n) = lo x >>> (n - 32) ^^^ hi x <<< (64 - n) := Word64.hi_rotr' x h0 h
 
-theorem lo_shr {n : Nat} (x : BitVec 64) (h0 : 0 < n) (h : n < 32) :
-    lo (x >>> n) = lo x >>> n ^^^ hi x <<< (32 - n) := Word64.lo_shr x h0 h
-
-theorem hi_shr (n : Nat) (x : BitVec 64) : hi (x >>> n) = hi x >>> n := Word64.hi_shr n x
-
 /-! ## The terms of `Σ₀`, `Σ₁`, `σ₀` and `σ₁` -/
 
 /-- A term's value. -/

@@ -22,7 +22,7 @@ As on PPC64LE (`Proof/MlDsa/PPC64LE/KeyGen/Mask.lean`): after each sampler,
 its result (0 or 1, the low word of `a0`, which `and24` zero-extends) is
 ANDed into `s4`, and each coefficient of the polynomial it wrote with
 `-a0`: the polynomial is kept if the sampler succeeded, and zeroed if it
-failed (`mask_ok`), without a branch (`mask_tr`).
+failed (`mask_ok`), without a branch.
 -/
 
 @[expose] public section
@@ -157,17 +157,5 @@ theorem mask_ok {L : Lay} {Wb : List Nat} {STK : Nat} {s : State} (hs : Site L W
   refine WP.mono (mask_loop (by rw [o₁.wr]; exact cw) (hs.alS4 aa) g4 g5 g12) fun s' ⟨k, co⟩ => ⟨?_, fun t ht => ?_⟩
   · exact (o₁.kept _).trans k
   · rw [co t ht, o₁.mem, and_mask hr]
-
-/-! ## Constant time -/
-
-/-- The check is the same for every offset: its hint is computed once. -/
-theorem mask_taint : ∀ j < 128, (VG.RISCV64.taint.check (Taint.ofRegs [.s11]) (mask (sc (oP j)))
-    (VG.Taint.hintOf VG.RISCV64.taint (Taint.ofRegs [.s11]) (mask (sc 0)))).isSome = true := by decide +kernel
-
-theorem mask_tr {j : Nat} (hj : j < 128) {P : State → State → Prop} (hsp : ∀ x y, P x y → x.sp = y.sp)
-    (h : ∀ x y, P x y → x.gpr .s11 = y.gpr .s11) : RelCT isa P (mask (sc (oP j))) fun _ _ => True :=
-  RelCT.taint (A := VG.RISCV64.taint) (Taint.ofRegs [.s11])
-    (fun a b hab => ⟨hsp a b hab, fun r hr => by
-      rw [Taint.mem_ofRegs, List.mem_singleton] at hr; subst hr; exact h a b hab⟩) (mask_taint j hj)
 
 end VG.Proof.MlDsa.RISCV64.KeyGen

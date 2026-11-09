@@ -92,11 +92,6 @@ theorem pre_two {σ : State} (h : (Proof.MlDsa.rejNTT2Contract AArch64.abi).pre 
   obtain ⟨hr,hw,hsa,hss,has⟩ := hp σ h
   exact ⟨Or.inl rfl,hr,hw,hsa,hss,has⟩
 
-theorem two_correct {σ : State} (h : (Proof.MlDsa.rejNTT2Contract AArch64.abi).pre σ) :
-    WP isa Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code σ fun t =>
-      abiPreserved σ t ∧ Outcome 2 σ t :=
-  WP.mono (two_ok (pre_two h)) fun _ ht => ⟨ht.abi,ht.outcome⟩
-
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 
 end

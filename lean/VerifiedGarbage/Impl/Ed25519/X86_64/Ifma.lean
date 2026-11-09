@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.X25519.X86_64.Ifma
 # Ed25519: points in the lanes, with AVX512_IFMA
 
 The building blocks of the four-lane point arithmetic of verification's
-windows (`Ifma.windows`) and of the comb (`Ifma.combMultiply`): the four
+windows (`Ifma.windows`) and of the comb (`Zmm.combMultiply`): the four
 coordinates `(X, Y, Z, T)` in the four quadwords (lanes) of `ymm` registers
 and X25519's four-lane field arithmetic (`Impl/X25519/X86_64/Ifma.lean`):
 five limbs of 51 bits, `mul4`'s products with AVX512_IFMA's `vpmadd52luq`

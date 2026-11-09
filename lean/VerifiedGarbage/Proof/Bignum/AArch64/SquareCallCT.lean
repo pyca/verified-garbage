@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.SquareCall
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareCall
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.Bignum.AArch64
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
 import VerifiedGarbage.Proof.Bignum.AArch64.Csub
 import VerifiedGarbage.Proof.Bignum.AArch64.Reduce
@@ -27,7 +26,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Poly1305.Limbs64
-meta import VerifiedGarbage.Impl.Bignum.AArch64
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Csub
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Reduce

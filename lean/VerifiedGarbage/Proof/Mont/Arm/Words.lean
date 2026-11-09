@@ -61,10 +61,6 @@ theorem Scr.ea_off {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   rw [hr, Offset.add_add]
   exact hs.ea hd
 
-theorem Scr.contains {base : Addr} {size d n : Nat} (hn : base.toNat + size ≤ 2 ^ 32) (h : d + n ≤ size) :
-    (⟨base, size⟩ : Region).Contains (off base d) n :=
-  Offset.contains_base base h (by omega)
-
 theorem Scr.read {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d n : Nat}
     (hd : d + n ≤ size) : InRegions (s.rd ++ s.wr) (off base d) n :=
   have ⟨_, hl, hl', hR⟩ := hs.wr
@@ -192,27 +188,10 @@ theorem _root_.VG.Proof.Mont.Outside.pdig {base : Addr} {o n : Nat} {m m' : Mem}
   show hdig (w32 m' base (d + 4 * (j / 2))) (j % 2) = hdig (w32 m base (d + 4 * (j / 2))) (j % 2)
   rw [h.w32 (by omega) (by omega)]
 
-theorem _root_.VG.Proof.Mont.Outside.pval {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m')
-    {d W : Nat} (hd : d + 4 * W ≤ o ∨ o + n ≤ d) (hd' : d + 4 * W ≤ 2 ^ 64) :
-    ∀ {k : Nat}, k ≤ 2 * W → pval m' base d k = pval m base d k
-  | 0, _ => rfl
-  | k + 1, hk => by
-    rw [VG.Proof.Mont.Arm.pval, VG.Proof.Mont.Arm.pval, h.pval hd hd' (by omega), h.pdig (by omega) (by omega)]
-
 theorem Digs.mono {m : Mem} {base : Addr} {d k k' : Nat} (h : Digs m base d k) (hk : k' ≤ k) : Digs m base d k' :=
   fun j hj => h j (by omega)
 
 theorem Digs.shift {m : Mem} {base : Addr} {d j k : Nat} (h : Digs m base d (j + k)) : Digs m base (d + 4 * j) k :=
   fun l hl => by rw [show d + 4 * j + 4 * l = d + 4 * (j + l) by omega]; exact h _ (by omega)
-
-theorem pval_lt (m : Mem) (base : Addr) (d : Nat) : ∀ k, pval m base d k < 2 ^ (16 * k)
-  | 0 => by simp [pval]
-  | k + 1 => by
-    have ih := pval_lt m base d k
-    have hd : pdig m base d k < 2 ^ 16 := hdig_lt _ _
-    rw [pval, pow16_succ]
-    have : pdig m base d k * 2 ^ (16 * k) ≤ (2 ^ 16 - 1) * 2 ^ (16 * k) := Nat.mul_le_mul_right _ (by omega)
-    rw [Nat.sub_mul, Nat.one_mul] at this
-    omega
 
 end VG.Proof.Mont.Arm

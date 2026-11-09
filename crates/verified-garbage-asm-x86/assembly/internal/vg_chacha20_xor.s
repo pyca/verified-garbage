@@ -10,6 +10,7 @@ vg_chacha20_xor:
 	mov DWORD PTR [eax+260], esi
 	mov DWORD PTR [eax+264], edi
 	mov DWORD PTR [eax+268], ebp
+	mov edx, esi
 	mov edi, eax
 	mov ebx, DWORD PTR [esp+4]
 	mov esi, DWORD PTR [esp+8]
@@ -2229,7 +2230,7 @@ vg_chacha20_xor:
 	jb 23f
 	movdqu xmm6, XMMWORD PTR [esi]
 	pxor xmm6, xmm1
-	movdqu XMMWORD PTR [esi], xmm6
+	movdqu XMMWORD PTR [edx], xmm6
 	jmp 24f
 23:
 	cmp ebp, 1
@@ -2243,7 +2244,7 @@ vg_chacha20_xor:
 	jb 27f
 	movdqu xmm6, XMMWORD PTR [esi+64]
 	pxor xmm6, xmm4
-	movdqu XMMWORD PTR [esi+64], xmm6
+	movdqu XMMWORD PTR [edx+64], xmm6
 	jmp 28f
 27:
 	cmp ebp, 65
@@ -2257,7 +2258,7 @@ vg_chacha20_xor:
 	jb 211f
 	movdqu xmm6, XMMWORD PTR [esi+128]
 	pxor xmm6, xmm3
-	movdqu XMMWORD PTR [esi+128], xmm6
+	movdqu XMMWORD PTR [edx+128], xmm6
 	jmp 212f
 211:
 	cmp ebp, 129
@@ -2271,7 +2272,7 @@ vg_chacha20_xor:
 	jb 215f
 	movdqu xmm6, XMMWORD PTR [esi+192]
 	pxor xmm6, xmm0
-	movdqu XMMWORD PTR [esi+192], xmm6
+	movdqu XMMWORD PTR [edx+192], xmm6
 	jmp 216f
 215:
 	cmp ebp, 193
@@ -2310,7 +2311,7 @@ vg_chacha20_xor:
 	jb 219f
 	movdqu xmm6, XMMWORD PTR [esi+16]
 	pxor xmm6, xmm1
-	movdqu XMMWORD PTR [esi+16], xmm6
+	movdqu XMMWORD PTR [edx+16], xmm6
 	jmp 220f
 219:
 	cmp ebp, 17
@@ -2324,7 +2325,7 @@ vg_chacha20_xor:
 	jb 223f
 	movdqu xmm6, XMMWORD PTR [esi+80]
 	pxor xmm6, xmm4
-	movdqu XMMWORD PTR [esi+80], xmm6
+	movdqu XMMWORD PTR [edx+80], xmm6
 	jmp 224f
 223:
 	cmp ebp, 81
@@ -2338,7 +2339,7 @@ vg_chacha20_xor:
 	jb 227f
 	movdqu xmm6, XMMWORD PTR [esi+144]
 	pxor xmm6, xmm3
-	movdqu XMMWORD PTR [esi+144], xmm6
+	movdqu XMMWORD PTR [edx+144], xmm6
 	jmp 228f
 227:
 	cmp ebp, 145
@@ -2352,7 +2353,7 @@ vg_chacha20_xor:
 	jb 231f
 	movdqu xmm6, XMMWORD PTR [esi+208]
 	pxor xmm6, xmm0
-	movdqu XMMWORD PTR [esi+208], xmm6
+	movdqu XMMWORD PTR [edx+208], xmm6
 	jmp 232f
 231:
 	cmp ebp, 209
@@ -2391,7 +2392,7 @@ vg_chacha20_xor:
 	jb 235f
 	movdqu xmm6, XMMWORD PTR [esi+32]
 	pxor xmm6, xmm1
-	movdqu XMMWORD PTR [esi+32], xmm6
+	movdqu XMMWORD PTR [edx+32], xmm6
 	jmp 236f
 235:
 	cmp ebp, 33
@@ -2405,7 +2406,7 @@ vg_chacha20_xor:
 	jb 239f
 	movdqu xmm6, XMMWORD PTR [esi+96]
 	pxor xmm6, xmm4
-	movdqu XMMWORD PTR [esi+96], xmm6
+	movdqu XMMWORD PTR [edx+96], xmm6
 	jmp 240f
 239:
 	cmp ebp, 97
@@ -2419,7 +2420,7 @@ vg_chacha20_xor:
 	jb 243f
 	movdqu xmm6, XMMWORD PTR [esi+160]
 	pxor xmm6, xmm3
-	movdqu XMMWORD PTR [esi+160], xmm6
+	movdqu XMMWORD PTR [edx+160], xmm6
 	jmp 244f
 243:
 	cmp ebp, 161
@@ -2433,7 +2434,7 @@ vg_chacha20_xor:
 	jb 247f
 	movdqu xmm6, XMMWORD PTR [esi+224]
 	pxor xmm6, xmm0
-	movdqu XMMWORD PTR [esi+224], xmm6
+	movdqu XMMWORD PTR [edx+224], xmm6
 	jmp 248f
 247:
 	cmp ebp, 225
@@ -2472,7 +2473,7 @@ vg_chacha20_xor:
 	jb 251f
 	movdqu xmm6, XMMWORD PTR [esi+48]
 	pxor xmm6, xmm1
-	movdqu XMMWORD PTR [esi+48], xmm6
+	movdqu XMMWORD PTR [edx+48], xmm6
 	jmp 252f
 251:
 	cmp ebp, 49
@@ -2486,7 +2487,7 @@ vg_chacha20_xor:
 	jb 255f
 	movdqu xmm6, XMMWORD PTR [esi+112]
 	pxor xmm6, xmm4
-	movdqu XMMWORD PTR [esi+112], xmm6
+	movdqu XMMWORD PTR [edx+112], xmm6
 	jmp 256f
 255:
 	cmp ebp, 113
@@ -2500,7 +2501,7 @@ vg_chacha20_xor:
 	jb 259f
 	movdqu xmm6, XMMWORD PTR [esi+176]
 	pxor xmm6, xmm3
-	movdqu XMMWORD PTR [esi+176], xmm6
+	movdqu XMMWORD PTR [edx+176], xmm6
 	jmp 260f
 259:
 	cmp ebp, 177
@@ -2514,7 +2515,7 @@ vg_chacha20_xor:
 	jb 263f
 	movdqu xmm6, XMMWORD PTR [esi+240]
 	pxor xmm6, xmm0
-	movdqu XMMWORD PTR [esi+240], xmm6
+	movdqu XMMWORD PTR [edx+240], xmm6
 	jmp 264f
 263:
 	cmp ebp, 241
@@ -2530,6 +2531,7 @@ vg_chacha20_xor:
 	add eax, 4
 	mov DWORD PTR [ebx+48], eax
 	add esi, 256
+	add edx, 256
 	sub ebp, 256
 	jmp 268f
 267:
@@ -2537,21 +2539,23 @@ vg_chacha20_xor:
 	and ecx, 15
 	and ebp, -16
 	add esi, ebp
-	mov edx, edi
-	mov ebp, 0
+	add edx, ebp
+	mov ebp, edi
 	test ecx, ecx
 	je 269f
 271:
 	movzx eax, BYTE PTR [esi]
-	xor eax, DWORD PTR [edx]
-	mov BYTE PTR [esi], al
+	xor eax, DWORD PTR [ebp]
+	mov BYTE PTR [edx], al
 	add esi, 1
 	add edx, 1
+	add ebp, 1
 	sub ecx, 1
 	jne 271b
 	jmp 270f
 269:
 270:
+	mov ebp, 0
 268:
 	cmp ebp, 65
 	jae 22b
@@ -2560,22 +2564,26 @@ vg_chacha20_xor:
 21:
 	test ebp, ebp
 	je 272f
+	mov eax, ebx
+	mov ebx, edx
 	push edi
-	push ebx
+	push eax
 	call {vg_chacha20_block}
 	pop eax
 	pop eax
-	mov edx, edi
 	mov ecx, ebp
+	mov ebp, edi
+	mov edx, ebx
 	cmp ecx, 16
 	jb 274f
 276:
 	movdqu xmm4, XMMWORD PTR [esi]
-	movdqu xmm5, XMMWORD PTR [edx]
+	movdqu xmm5, XMMWORD PTR [ebp]
 	pxor xmm4, xmm5
-	movdqu XMMWORD PTR [esi], xmm4
+	movdqu XMMWORD PTR [edx], xmm4
 	add esi, 16
 	add edx, 16
+	add ebp, 16
 	sub ecx, 16
 	cmp ecx, 16
 	jae 276b
@@ -2586,10 +2594,11 @@ vg_chacha20_xor:
 	je 277f
 279:
 	movzx eax, BYTE PTR [esi]
-	xor eax, DWORD PTR [edx]
-	mov BYTE PTR [esi], al
+	xor eax, DWORD PTR [ebp]
+	mov BYTE PTR [edx], al
 	add esi, 1
 	add edx, 1
+	add ebp, 1
 	sub ecx, 1
 	jne 279b
 	jmp 278f

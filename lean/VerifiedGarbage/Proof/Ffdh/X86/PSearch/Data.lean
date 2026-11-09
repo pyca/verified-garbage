@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.ABI
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Tail
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Words
@@ -118,7 +119,7 @@ def doneF (p : PPub) (esi : BitVec 32) (result : ParameterSearchResult) (d : Nat
   if d = 4 then BitVec.ofNat 32 (result.remaining / 2 ^ 32) else
   if d = 8 then BitVec.ofNat 32 p.len else
   if d = 16 then BitVec.ofNat 32 p.cap else
-  if d = 24 then BitVec.ofNat 32 result.requested else
+  if d = 24 then BitVec.ofNat 32 (Proof.Ffdh.requested p.bits result) else
   if d = 32 then esi else
   if d = 40 then p.up else
   if d = 68 then BitVec.ofNat 32 result.status else
@@ -136,6 +137,6 @@ structure Done (p : PPub) (o : State) (result : ParameterSearchResult) (s : Stat
   frame : Frame (frameR o) o.mem s.mem
   words : Ctl s.mem p.S doneDs (doneF p (o.gpr .esi) result)
   output : Output p result s.mem
-  small : result.remaining ≤ p.attempts ∧ result.requested ≤ p.cap ∧ result.used ≤ p.randLen
+  small : result.remaining ≤ p.attempts ∧ (Proof.Ffdh.requested p.bits result) ≤ p.cap ∧ result.used ≤ p.randLen
 
 end VG.Proof.Ffdh.X86.PSearch

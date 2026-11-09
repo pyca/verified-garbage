@@ -41,18 +41,6 @@ theorem body_full_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State} (C : Con
 
   exact WP.seq (WP.mono (WP.seq_iff.mp (WP.assoc run)) fun a H => WP.assoc H)
 
-theorem body_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State} (C : Context g c s)
-    (pointer : s.gpr .edi = g.candidate) (length : g.limit = tableCount g.w)
-    (symbol : s.syms TrialTable32.symbol = g.table) (low : 4 ≤ g.sp.toNat)
-    (candidateFar : g.candidateRegion.Disjoint (below g.sp 4))
-    (tableFar : g.tableRegion.Disjoint (below g.sp 4)) (large : 8161 < c) :
-    WP isa (body stackSlots g.w) s fun t =>
-      t.gpr .eax = BitVec.ofNat 32 (Spec.RsaKeyGen.obviouslyComposite (64 * g.w) c).toNat ∧
-      Frame (setupWrites g) s.mem t.mem ∧
-      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s t :=
-  WP.mono (body_full_ok v C pointer length symbol low candidateFar tableFar large)
-    fun _ ⟨result, F, K, _⟩ => ⟨result, F, K⟩
-
 end VG.Proof.RsaKeyGen.X86.Sieve
 end
 

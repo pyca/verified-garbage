@@ -86,17 +86,8 @@ structure StackD (P : Params) (D : Nat) (s₀ : State) : Prop where
   out : (stkR s₀).Disjoint (outR s₀ D)
   scr : (stkR s₀).Disjoint (scR P s₀)
 
-/-- The precondition for the whole final hash value (`finK`). -/
-abbrev Pre (P : Params) (s₀ : State) : Prop := PreD P P.N s₀
-
-abbrev Stack (P : Params) (s₀ : State) : Prop := StackD P P.N s₀
-
 theorem pre_ofD {P : Params} {H : Md P.B P.N P.L} {D : Nat} {s₀ : State} (h : (finKD H D).pre s₀) :
     PreD P D s₀ ∧ StackD P D s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨⟨h1, h2, h3, h4, h5⟩, ⟨h6, h7, h8, h9⟩⟩
-
-theorem pre_of {P : Params} {H : Md P.B P.N P.L} {s₀ : State} (h : (finK H).pre s₀) : Pre P s₀ ∧ Stack P s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨⟨h1, h2, h3, h4, h5⟩, ⟨h6, h7, h8, h9⟩⟩
 
@@ -732,14 +723,6 @@ theorem correctD (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog is
         exact hk r hr h30
     · exact hpost iv m (H.repr_congr hd.pos (fun i hi => write_frame_bytes (R := stR P s₀) hst.st
         (by have := hd.N; have := hd.B; show P.N + P.B < 2 ^ 64; omega_arith) hi) hm) hok hc
-
-theorem correct (hd : Dims P) (hs : Shape H) {name : String} {code : Prog isa} (hf : CalleeOk H code)
-    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMain P name code), clobbers i r = false)
-    (hn : 16 * (finalizeMain P name code).aarch64Depth + 16 < 2 ^ 64) {s₀ : State} (hp : Pre P s₀)
-    (hst : Stack P s₀) :
-    WP isa (finalize P name code) s₀ fun s' => abiPreserved s₀ s' ∧ (finK H).post s₀ s' :=
-  (correctD hd hs.toD hf hu hn hp hst).mono fun _ ⟨ha, h⟩ => ⟨ha, fun iv m hr hl hc =>
-    (h iv m hr hl hc).trans (List.take_of_length_le (by rw [Md.hash, H.digest_length]))⟩
 
 /-- A state satisfying the precondition of `finKD H D`. -/
 def satD (P : Params) (D : Nat) : State where

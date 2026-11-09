@@ -235,7 +235,7 @@ theorem start_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : EPre s₀ C A P W D
     rw [k0] at hs
     rw [List.take_zero, h₃.out, mn, hz, hd, hk1, hk2, hs, Spec.Siv.s2vAcc, List.foldl_nil, Spec.Siv.s2vStart,
       Spec.Siv.ctxMac, Spec.Siv.schedCiph, show Spec.Siv.zero = [] ++ Spec.Cmac.zeros 16 from rfl,
-      Siv.cmacWith_split _ _ _ rfl (by decide) (Or.inl rfl), chain_blocks_nil,
+      Siv.macWith_split _ _ _ rfl (by decide) (Or.inl rfl), chain_blocks_nil,
       Proof.Cmac.xor_comm (Spec.Cmac.zeros 16)]
     simp only [xor_lastBlock_zeros]
     rfl

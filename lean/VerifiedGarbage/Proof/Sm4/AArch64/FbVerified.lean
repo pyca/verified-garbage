@@ -47,17 +47,20 @@ namespace VG.Proof.Sm4.AArch64
 
 open VG VG.AArch64 VG.Impl.Sm4.AArch64
 
-/-- The precondition of the feedback modes on AArch64, with the working
-space at `x4`. -/
-def fbPre (s : State) : Prop :=
+/-- The precondition of the feedback modes on AArch64, with the data `len`
+bytes long and the working space at `x4`. -/
+def fbPre (len : State → Nat) (s : State) : Prop :=
   let sched : Region := ⟨s.gpr .x0, 128⟩
   let iv : Region := ⟨s.gpr .x1, 16⟩
-  let data : Region := ⟨s.gpr .x2, 16 * (s.gpr .x3).toNat⟩
+  let data : Region := ⟨s.gpr .x2, len s⟩
   let scratch : Region := ⟨s.gpr .x4, 8 * (slots + 12)⟩
   s.rd = [sched] ∧ s.wr = [iv, data, scratch] ∧ sched.Disjoint iv ∧ sched.Disjoint data ∧
     sched.Disjoint scratch ∧ iv.Disjoint data ∧ iv.Disjoint scratch ∧ data.Disjoint scratch ∧
     (s.gpr .x0).toNat + 128 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 16 ≤ 2 ^ 64 ∧
-    (s.gpr .x2).toNat + 16 * (s.gpr .x3).toNat ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8 * (slots + 12) ≤ 2 ^ 64
+    (s.gpr .x2).toNat + len s ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8 * (slots + 12) ≤ 2 ^ 64
+
+/-- `n` blocks. -/
+abbrev blkLen (s : State) : Nat := 16 * (s.gpr .x3).toNat
 
 /-- The public arguments. -/
 def fbPub (s₁ s₂ : State) : Prop :=
@@ -70,20 +73,20 @@ abbrev ivOf (s : State) : List Byte := Spec.Aes.bytesAt s.mem (s.gpr .x1) 16
 abbrev blocksOf (s : State) (m : Mem) : List (List Byte) := Spec.Cbc.blocksAt m (s.gpr .x2) (s.gpr .x3).toNat
 
 def ofbAArch64 : Contract isa where
-  pre := fbPre
+  pre := fbPre blkLen
   post s s' := blocksOf s s'.mem = Spec.Ofb.crypt (ciphOf s) (ivOf s) (blocksOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .x1) 16 = Spec.Ofb.next (ciphOf s) (ivOf s) (s.gpr .x3).toNat
   pub := fbPub
 
 def cfbEncAArch64 : Contract isa where
-  pre := fbPre
+  pre := fbPre blkLen
   post s s' := blocksOf s s'.mem = Spec.Cfb.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .x1) 16 =
       Spec.Cbc.next (ivOf s) (Spec.Cfb.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem))
   pub := fbPub
 
 def cfbDecAArch64 : Contract isa where
-  pre := fbPre
+  pre := fbPre blkLen
   post s s' := blocksOf s s'.mem = Spec.Cfb.decrypt (ciphOf s) (ivOf s) (blocksOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .x1) 16 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
   pub := fbPub
@@ -101,7 +104,7 @@ theorem keeps_x19 : Modes.AArch64.KeepsReg .x19 fbCore.prepare ∧ Modes.AArch64
 
 /-- What the modes' OFB and CFB give, for a mode `mo`: the data and the IV
 as `fbOut` and `fbIn`, keeping the callee-saved registers. -/
-theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : fbPre s₀) :
+theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : fbPre blkLen s₀) :
     WP isa (fbCore.fb mo ⟨.x1, .x2, .x3, .x4⟩ .x19) s₀ fun s' =>
       (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
         s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧
@@ -174,7 +177,7 @@ theorem cfbDecrypt_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbDecAArch64.post s₀ s' := by
   obtain ⟨s₁,e₁,_,g₁,m₁,rd₁,wr₁⟩ := Modes.AArch64.lsr_ok s₀ .x13 .x3 (sh:=3) (by decide)
   have hp₁ : cfbDecAArch64.pre s₁ := by
-    simpa only [cfbDecAArch64,fbPre,m₁,rd₁,wr₁,g₁ .x0 (by decide),g₁ .x1 (by decide),g₁ .x2 (by decide),g₁ .x3 (by decide),g₁ .x4 (by decide)] using hp
+    simpa only [cfbDecAArch64,fbPre,blkLen,m₁,rd₁,wr₁,g₁ .x0 (by decide),g₁ .x1 (by decide),g₁ .x2 (by decide),g₁ .x3 (by decide),g₁ .x4 (by decide)] using hp
   have transfer {s' : State}
       (h : (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
         s₁.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbDecAArch64.post s₁ s') :
@@ -191,7 +194,8 @@ theorem cfbDecrypt_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
 
 /-! ## Constant time -/
 
-theorem fbTaint_agree (s₁ s₂ : State) (_ : fbPre s₁) (_ : fbPre s₂) (hp : fbPub s₁ s₂) :
+theorem fbTaint_agree {len : State → Nat} (s₁ s₂ : State) (_ : fbPre len s₁) (_ : fbPre len s₂)
+    (hp : fbPub s₁ s₂) :
     VectorTaint.Agree (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) s₁ s₂ := by
   obtain ⟨h1, h2, h3, h4, h5, hsp⟩ := hp
   refine ⟨⟨hsp, fun r hr => ?_⟩, ?_⟩

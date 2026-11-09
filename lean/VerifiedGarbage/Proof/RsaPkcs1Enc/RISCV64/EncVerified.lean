@@ -14,13 +14,13 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
-# `vg_rsa_pkcs1_encrypt_precomputed` on RISC-V: `Verified`
+# `vg_rsa_pkcs1_encrypt_precomputed` on RISC-V: constant time
 
-Correctness (`code_correct`), constant time (`code_ct`: the code around the
-call by the taint analysis, from registers holding public values, which the
-correctness proofs pin after the setup and the call; the call of
-`vg_rsa_public_precomputed_checked` by its contract, `pdCallCT`) and a state
-meeting the precondition. As on PPC64LE
+Constant time (`code_ct`: the code around the call by the taint analysis,
+from registers holding public values, which the correctness proofs pin
+after the setup and the call; the call of
+`vg_rsa_public_precomputed_checked` by its contract, `pdCallCT`), which
+`vg_rsa_pkcs1_encrypt_random`'s proofs compose with `code_correct`. As on PPC64LE
 (`Proof/RsaPkcs1Enc/PPC64LE/EncVerified.lean`).
 -/
 
@@ -54,8 +54,8 @@ theorem leak_eq2W {a b a' b' : List Byte} {w w' : List (BitVec 64)} (ha : a.leng
   exact ⟨e, (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h₂⟩
 
 theorem pubE_of {S : Nat} {s₁ s₂ : State}
-    (h : (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi S).pub s₁ s₂) : PubE s₁ s₂ := by
-  sig_pub [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
+    (h : (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi S).pub s₁ s₂) : PubE s₁ s₂ := by
+  sig_pub [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
     stackArgs_six, List.append_eq] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   obtain ⟨hsp, hl, x0, x1, x2, x3, x4, x5, x6, x7, a0, a1, a2, a3, a4, a5⟩ := h
@@ -134,55 +134,10 @@ theorem code_ct : RelCT isa (Two E) code fun _ _ => True := by
     · rw [a₁.s2, a₂.s2, gpr_eq h₁ h₂]
 
 theorem code_constantTime :
-    ConstantTime isa (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pre
-      (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pub code :=
+    ConstantTime isa (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pre
+      (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pub code :=
   RelCT.constantTime (code_ct.mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
     ⟨s₁, ⟨preE_of h₁, ⟨rfl, fun _ _ => rfl, fun _ _ => rfl, rfl, rfl⟩⟩, preE_of h₂, pubE_of hp⟩)
     fun _ _ h => h)
-
-/-! ## A state meeting the precondition -/
-
-/-- `out` and a modulus of 64 bytes at `0x6000` and `0x1000`, `e` and the
-message of a byte each, `PS` of 60 bytes, 112 words of working space and 16
-precomputed words; the stack arguments at `sp`. -/
-def satState : State where
-  gpr r := match r with
-    | .a0 => 0x6000 | .a1 => 64 | .a2 => 0x1000 | .a3 => 64 | .a4 => 0x2000 | .a5 => 1 | .a6 => 0x3000
-    | .a7 => 1 | _ => 0
-  sp := 0x10000000000
-  mem a := bif Nat.beq a.toNat 0x10000000001 then 0x40
-    else bif Nat.beq a.toNat 0x10000000008 then 60 else bif Nat.beq a.toNat 0x10000000012 then 1
-    else bif Nat.beq a.toNat 0x10000000018 then 0x70 else bif Nat.beq a.toNat 0x10000000021 then 0x50
-    else bif Nat.beq a.toNat 0x10000000028 then 16 else 0
-  rd := [⟨0x1000, 64⟩, ⟨0x2000, 1⟩, ⟨0x3000, 1⟩, ⟨0x4000, 60⟩, ⟨0x5000, 128⟩, ⟨0x10000000000, 48⟩]
-  wr := [⟨0x6000, 64⟩, ⟨0x10000, 896⟩]
-
-theorem sat_args : stackArg satState 0 = 0x4000 ∧ stackArg satState 1 = 60 ∧ stackArg satState 2 = 0x10000 ∧
-    stackArg satState 3 = 112 ∧ stackArg satState 4 = 0x5000 ∧ stackArg satState 5 = 16 := by
-  decide
-
-theorem sat : ∃ s, (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pre s := by
-  refine ⟨satState, ?_⟩
-  have e : frameBytes = 2127 + 1 := rfl
-  rw [e]
-  sig_pre [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
-    stackArgs_six, List.append_eq]
-  obtain ⟨a0, a1, a2, a3, a4, a5⟩ := sat_args
-  have ha : stackArgAddr satState 0 = 0x10000000000 := by decide
-  simp only [a0, a1, a2, a3, a4, a5, ha]
-  exact ⟨by decide, by decide, by decide, by decide, by decide,
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    by decide, by decide, by decide, by decide, by decide, by decide, by decide,
-    by unfold Spec.Rsa.lenValid; decide, by decide, by decide, by decide, by decide, by decide, by decide,
-    by decide, by decide⟩
-
-theorem code_verified : Verified RISCV64.target code (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes) :=
-  ⟨code_correct, code_constantTime, sat⟩
 
 end VG.Proof.RsaPkcs1Enc.RISCV64.Enc

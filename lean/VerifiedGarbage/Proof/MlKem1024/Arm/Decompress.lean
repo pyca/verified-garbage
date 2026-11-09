@@ -490,42 +490,4 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   · have e11 : dd s₀ = 11 := by have := of_decide_eq_false e; omega_arith
     rw [← e11]; exact loop_ok hp rfl rfl rfl rfl rfl
 
-theorem pre_of {s : State} (h : (Proof.MlKem1024.decodeDecompressContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig, Arm.abi,
-    Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
-  obtain ⟨-, h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 160 | .r2 => 5 | .r3 => 0x2000 | _ => 0
-  sp := 0x4000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := [⟨0x1000, 160⟩]
-  wr := [⟨0x2000, 1024⟩]
-
-theorem verified : Verified Arm.target decodeDecompress1024
-    (Proof.MlKem1024.decodeDecompressContract Arm.abi) := by
-  refine ⟨fun s hs => ?_, Add.ctRegs [.r0, .r1, .r2, .r3] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
-  · have hp := pre_of hs
-    obtain ⟨t, s', he, hpres, hsp, h⟩ := correct hp
-    refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
-    sig_post [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig, Arm.abi,
-      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-    exact h
-  · sig_pub [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig, Arm.abi,
-      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
-    obtain ⟨-, h0, h1, h2, h3⟩ := h
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
-  · refine ⟨satState, ?_⟩
-    sig_sat_check [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig, Arm.abi,
-      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-
 end VG.Proof.MlKem1024.Arm.Decompress

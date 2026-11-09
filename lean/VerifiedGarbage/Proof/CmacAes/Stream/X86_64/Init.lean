@@ -185,10 +185,6 @@ theorem initPost_ok {s : State} {St S : Addr} (hb : s.gpr .rbx = St) (hp : s.gpr
 
 /-! ## The whole function -/
 
-/-- The regions the function writes: the state, the scratch buffer and the
-stack its calls use. -/
-abbrev IFrame (St S sp : Addr) : List Region := [⟨St, 304⟩, ⟨S, 2304⟩, below sp 16]
-
 theorem IPre.rounds {s₀ : State} {St Kp S : Addr} {KL : Nat} (hp : IPre s₀ St Kp S KL) :
     KL / 4 + 6 = 10 ∨ KL / 4 + 6 = 12 ∨ KL / 4 + 6 = 14 := by
   rcases hp.klen with h | h | h <;> subst h <;> decide

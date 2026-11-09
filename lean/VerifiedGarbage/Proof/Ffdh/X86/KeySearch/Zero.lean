@@ -11,7 +11,8 @@ public import VerifiedGarbage.Proof.Framework.X86.Wp
 /-! # Zeros at an output (x86)
 
 `zeroOut d` writes `p_len` zeros at the pointer in the state's word at `d`,
-one byte at a time (`zeroOut_ok`), changing only `eax`, `ecx` and `edx`.
+one byte at a time: a step of its loop (`zeroStep_ok`) keeps its invariant
+(`ZInv`), changing only `eax`, `ecx` and `edx`.
 -/
 
 @[expose] public section
@@ -43,9 +44,6 @@ theorem wp_store8 {is : List Instr} {s : State} {Q : State → Prop} {r : Reg8} 
 
 theorem Upd.keeps {s t : State} {d : Reg} {v : BitVec 32} (h : Upd s t d v) : Keeps [d] s t :=
   ⟨fun r hr => h.other r fun e => hr (e ▸ List.mem_singleton_self _), h.rd, h.wr⟩
-
-theorem Mupd.keeps {s t : State} {m : Mem} (h : Mupd s t m) (rs : List Reg) : Keeps rs s t :=
-  ⟨fun r _ => by rw [h.gpr], h.rd, h.wr⟩
 
 /-- The output after `k` of its `n` bytes are zeroed. -/
 structure ZInv (s₀ : State) (P : BitVec 32) (n k : Nat) (t : State) : Prop where
@@ -88,39 +86,5 @@ theorem zeroStep_ok {s₀ t : State} {P : BitVec 32} {n k : Nat} (hR : (⟨P.set
   · rw [z₃, v₂.other _ (by decide), m₁.gpr, I.ecx, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
       sub_beq (by omega) (by decide)]
     exact congrArg some (decide_eq_decide.mpr (by omega))
-
-/-- `p_len` zeros at the pointer `P` in the state's word at `d`. -/
-theorem zeroOut_ok {s : State} {S P : BitVec 32} {d n : Nat} (hesi : s.gpr .esi = S)
-    (hd : InRegions (s.rd ++ s.wr) (addr S d) 4) (hl : InRegions (s.rd ++ s.wr) (addr S lenOff) 4)
-    (hP : s.mem.readW (addr S d) 32 = P) (hn : s.mem.readW (addr S lenOff) 32 = BitVec.ofNat 32 n)
-    (hR : (⟨P.setWidth 64, n⟩ : Region) ∈ s.wr) (h0 : 0 < n) (hb : P.toNat + n ≤ 2 ^ 32) (hn32 : n < 2 ^ 32) :
-    WP isa (zeroOut d) s fun u => Frame [⟨P.setWidth 64, n⟩] s.mem u.mem ∧
-      Spec.Rsa.bytesAt u.mem (P.setWidth 64) n = List.replicate n 0 ∧ Keeps [.eax, .ecx, .edx] s u := by
-  unfold zeroOut
-  refine WP.seq (wp_ldm hesi hd fun t₁ u₁ => ?_)
-  refine wp_ldm ((u₁.other _ (by decide)).trans hesi) (by rw [u₁.rd, u₁.wr]; exact hl) fun t₂ u₂ => ?_
-  refine wp_movi fun t₃ u₃ => WP.block_nil ?_
-  have k₃ : Keeps [.eax, .ecx, .edx] s t₃ :=
-    ((u₁.keeps.mono (by decide)).trans (u₂.keeps.mono (by decide))).trans (u₃.keeps.mono (by decide))
-  have m₃ : t₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
-  have I₀ : ZInv s P n 0 t₃ := ⟨by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, hP, BitVec.add_zero],
-    by rw [u₃.other _ (by decide), u₂.gpr, u₁.mem, hn, Nat.sub_zero],
-    u₃.gpr, by rw [m₃]; exact Frame.refl _ _, fun i hi => absurd hi (Nat.not_lt_zero _), k₃⟩
-  refine WP.loop (M := isa) (fun (j : Nat) (u : State) => ∃ k, j = n - k ∧ k < n ∧ ZInv s P n k u)
-    (fun j u hu => ?_) _ t₃ ⟨0, rfl, h0, I₀⟩
-  obtain ⟨k, rfl, hk, I⟩ := hu
-  refine WP.mono (zeroStep_ok hR hb hn32 hk I) fun v ⟨J, z⟩ => ?_
-  by_cases he : n - (k + 1) = 0
-  · left
-    refine ⟨by simp only [eval, z, he, decide_true, Option.map_some, Bool.not_true], J.frame, ?_, J.keeps⟩
-    apply List.ext_getElem
-    · simp [Spec.Rsa.bytesAt]
-    · intro i h₁ _
-      simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, List.getElem_replicate]
-      simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at h₁
-      exact J.zero i (by omega)
-  · right
-    exact ⟨by simp only [eval, z, he, decide_false, Option.map_some, Bool.not_false], _, by omega,
-      k + 1, rfl, by omega, J⟩
 
 end VG.Proof.Ffdh.X86.KeySearch

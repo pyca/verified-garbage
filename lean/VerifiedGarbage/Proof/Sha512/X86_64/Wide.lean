@@ -9,11 +9,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 # SHA-512 compression on x86-64 with the shared contract's scratch space
 
 `compressWideX86_64` is `compressX86_64` with the 1328 bytes of scratch space
-that the shared contract (`Proof.Sha512.compressContract`) gives the
-compression function, and that the streaming functions pass it
-(`Impl.Sha512.X86_64.Stream.params`): every implementation is proven against
-it, the scalar one by widening its own proof (`Verified.widen`, the same code
-running with the same trace and result).
+that the streaming functions pass the compression function
+(`Impl.Sha512.X86_64.Stream.params`).
 -/
 
 @[expose] public section
@@ -45,16 +42,5 @@ theorem sub176 (a : Addr) : Region.Sub ⟨a, 176⟩ ⟨a, 1328⟩ := Region.sub_
 
 /-- A state satisfying `compressWideX86_64.pre`. -/
 def wideSat : State := { satState with wr := [⟨0x1000, 64⟩, ⟨0x3000, 1328⟩] }
-
-theorem compressWide_verified :
-    Verified X86_64.target Impl.Sha512.X86_64.compress Proof.Sha512.compressWideX86_64 :=
-  Verified.widen compress_verified
-    (fun s => [⟨s.gpr .rdi, 64⟩, ⟨s.gpr .rcx, 176⟩])
-    (fun _ ⟨h₁, _, h₃, h₄, h₅, h₆, h₇⟩ =>
-      ⟨h₁, rfl, h₃.sub_right (sub176 _), h₄, h₅.sub_right (sub176 _), h₆, h₇.sub_right (sub176 _)⟩)
-    (fun _ ⟨_, h₂, _⟩ => h₂ ▸ .cons (pfx rfl) (.cons (pfx rfl) .nil))
-    (fun _ _ _ h => h) (fun _ _ _ _ h => h)
-    ⟨wideSat, rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-      Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
 
 end VG.Proof.Sha512.X86_64

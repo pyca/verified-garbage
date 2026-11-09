@@ -415,3 +415,64 @@ vg_sm4_ctr:
 	add sp, sp, #3264
 	ret
 	.p2align 6
+
+vg_sm4_ctr_final:
+	sub sp, sp, #80
+	add x4, sp, #0
+	str x19, [x4, #0]
+	str x20, [x4, #8]
+	str x21, [x4, #16]
+	str x22, [x4, #24]
+	str x23, [x4, #32]
+	str x24, [x4, #40]
+	str x30, [x4, #48]
+	str x25, [x4, #56]
+	add x19, x0, #0
+	add x21, x1, #0
+	add x25, x4, #0
+	lsr x9, x3, #4
+	lsl x10, x9, #4
+	add x22, x2, x10
+	sub x23, x3, x10
+	add x3, x9, #0
+	bl {vg_sm4_ctr}
+	cbz x23, 20f
+	movz x9, #0, lsl #0
+	str x9, [x25, #64]
+	str x9, [x25, #72]
+	add x0, x19, #0
+	add x1, x21, #0
+	add x2, x25, #64
+	movz x3, #1, lsl #0
+	bl {vg_sm4_ctr}
+	add x9, x25, #64
+22:
+	ldrb w6, [x9, #0]
+	ldrb w7, [x22, #0]
+	eor x7, x7, x6
+	strb w7, [x22, #0]
+	add x9, x9, #1
+	add x22, x22, #1
+	sub x23, x23, #1
+	cbnz x23, 22b
+	b 21f
+20:
+21:
+	ldr x19, [x25, #0]
+	ldr x20, [x25, #8]
+	ldr x21, [x25, #16]
+	ldr x22, [x25, #24]
+	ldr x23, [x25, #32]
+	ldr x24, [x25, #40]
+	ldr x30, [x25, #48]
+	ldr x25, [x25, #56]
+	movz x17, #0, lsl #0
+	add x16, sp, #0
+	stp x17, x17, [x16, #0]
+	stp x17, x17, [x16, #16]
+	stp x17, x17, [x16, #32]
+	stp x17, x17, [x16, #48]
+	stp x17, x17, [x16, #64]
+	add sp, sp, #80
+	ret
+	.p2align 6

@@ -72,4 +72,40 @@ theorem decodeAll_ok {s : State} {base p : Addr} (hs : Scr s base)
   exact wp_range_flatMap (M := isa) (N := 28) inv step 28 (by decide) s
     ⟨fun _ hj => by omega, fun _ hj => by omega, Outside2.refl _ _ _ _ _ _, Keeps.refl _ _⟩
 
+/-- Limb `i` of the base point's u-coordinate, 5. -/
+abbrev fiveV (i : Nat) : Nat := if i = 0 then 5 else 0
+
+theorem fiveAll_ok {s : State} {base : Addr} (hs : Scr s base) :
+    WP isa (.block ((List.range 28).flatMap fiveLimb)) s fun t =>
+      (∀ j < 28, limbs t.mem base X1 j = fiveV j) ∧
+      (∀ j < 28, limbs t.mem base X3 j = fiveV j) ∧
+      Outside2 base X1 112 X3 112 s.mem t.mem ∧ Keeps [.r3, .r4] s t := by
+  let inv := fun n (t : State) =>
+    (∀ j < n, limbs t.mem base X1 j = fiveV j) ∧
+    (∀ j < n, limbs t.mem base X3 j = fiveV j) ∧
+    Outside2 base X1 (4 * n) X3 (4 * n) s.mem t.mem ∧ Keeps [.r3, .r4] s t
+  have step : ∀ n t, n < 28 → inv n t → WP isa (.block (fiveLimb n)) t (inv (n + 1)) := by
+    intro n t hn ⟨tx, ty, tm, tk⟩
+    refine WP.mono (fiveLimb_ok (hs.of_keeps tk (by decide)) hn) fun u ⟨um, uk⟩ => ?_
+    let v := BitVec.ofNat 32 (fiveV n)
+    have vn : v.toNat = fiveV n := by
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by unfold fiveV; split <;> decide)]
+    have pair := fun j (hj : j < 28) => pair_write (m := t.mem) (base := base)
+      (x := X1) (y := X3) (by decide) (by decide) (by decide) hn hj v v
+    refine ⟨?_, ?_, ?_, tk.trans (uk.mono (by decide))⟩
+    · intro j hj
+      rw [um, (pair j (by omega)).1]
+      by_cases h : j = n
+      · rw [ite_eq_left h, vn, h]
+      · rw [ite_eq_right h]; exact tx j (by omega)
+    · intro j hj
+      rw [um, (pair j (by omega)).2]
+      by_cases h : j = n
+      · rw [ite_eq_left h, vn, h]
+      · rw [ite_eq_right h]; exact ty j (by omega)
+    · rw [um]
+      exact (tm.mono (by omega) (by omega)).trans (decodeLimb_outside _ _ hn _)
+  exact wp_range_flatMap (M := isa) (N := 28) inv step 28 (by decide) s
+    ⟨fun _ hj => by omega, fun _ hj => by omega, Outside2.refl _ _ _ _ _ _, Keeps.refl _ _⟩
+
 end VG.Proof.X448.Arm

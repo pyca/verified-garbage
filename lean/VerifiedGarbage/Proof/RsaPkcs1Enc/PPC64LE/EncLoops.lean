@@ -33,9 +33,6 @@ theorem zbit_snoc (l : List Byte) (b : Byte) :
   rw [List.all_append]
   cases hl : l.all (· != 0) <;> by_cases hb : b = 0 <;> simp [hb] <;> first | decide | (split <;> decide)
 
-theorem zbit_le (l : List Byte) : zbit l = 0 ∨ zbit l = 1 := by
-  unfold zbit; split <;> simp
-
 theorem byte_toNat_lt (b : Byte) : (b.setWidth 64).toNat < 256 := by
   simp only [BitVec.toNat_setWidth]; have := b.isLt; omega
 

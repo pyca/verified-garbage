@@ -43,9 +43,6 @@ theorem accumulateDec_ok (s : State) (n : Nat)
   · rw [RegUpd.gpr_write_self, BitVec.setWidth_eq, hc, BitVec.ofNat_add, BitVec.add_sub_cancel]
   · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr)
 
-theorem CounterKeep.refl (base : Addr) (s : State) : CounterKeep base s s :=
-  ⟨fun _ _ _ => rfl, rfl, rfl, rfl, Outside.refl _ _ _ _⟩
-
 end VG.Proof.Ed25519.AArch64
 end
 
@@ -339,9 +336,6 @@ theorem WinKeep.of_keeps {base : Addr} {s t : State} {rs : List Reg} (h : Keeps 
 theorem WinKeep.of_double {base : Addr} {s t : State} (h : DoubleKeep base s t) : WinKeep base s t :=
   ⟨fun r hr _ hs => h.gpr r hs hr, h.rd, h.wr, h.sp, h.mem⟩
 
-theorem WinKeep.of_counter {base : Addr} {s t : State} (h : CounterKeep base s t) : WinKeep base s t :=
-  ⟨fun r hr hb _ => h.gpr r hr hb, h.rd, h.wr, h.sp, h.mem⟩
-
 theorem WinKeep.counter {base : Addr} {s t : State} (h : WinKeep base s t) :
     t.mem.readW (off base 56) 64 = s.mem.readW (off base 56) 64 :=
   h.mem.word (Or.inl (by decide)) (by decide)
@@ -620,10 +614,6 @@ theorem TableOf.of_win {f : Spec.Ed25519.Point → Spec.Ed25519.Point} {base : A
 
 theorem Outside.widen {base : Addr} {m m' : Mem} (h : Outside base 64 704 m m') :
     Outside base 56 712 m m' := h.mono (by decide) (by decide)
-
-theorem WinKeep.header {base : Addr} {s t : State} (h : WinKeep base s t) {d : Nat} (hd : 768 ≤ d)
-    (hb : d + 8 ≤ 8192) : t.mem.readW (off base d) 64 = s.mem.readW (off base d) 64 :=
-  h.mem.word (Or.inr (by omega_arith)) (by omega_arith)
 
 theorem Outside.nib {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d : Nat}
     (hd : o + n ≤ d) (hb : d < 8192) : m' (off base d) = m (off base d) :=

@@ -24,7 +24,7 @@ namespace VG.Proof.Variants.RsaPublicPrecomputed.X86_64.Ifma
 open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 def variant : PublicImpl where
-  name := Spec.Rsa.publicPrecomputedCheckedApi.name ++ "_ifma"
+  name := "vg_rsa_public_precomputed_checked" ++ "_ifma"
   code := Impl.Rsa.X86_64.PubIfma.checked Mont.adxSquare.mm
   ok := Ifma.Pub.checked_correct _ (by decide +kernel)
   ct := Ifma.Pub.checked_ct _ FoldedPublic.adx_final_ct

@@ -16,9 +16,9 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # ML-DSA on AArch64: `vg_mldsa_rej_ntt_poly`, constant time and verified
 
-Two runs whose seeds and pointers agree leak the same (`RejNtt.ct`), piece by
+Two runs whose seeds and pointers agree leak the same (`ctWith`), piece by
 piece (`Rel.lean`), and the shared contract follows from `rnK`
-(`rejNTT_verified`).
+(`rejNTT_verifiedWith`).
 -/
 
 @[expose] public section
@@ -31,10 +31,6 @@ open VG.Proof.MlDsa.Sample
 open VG.Spec.MlDsa (Zq q G)
 open VG.Proof.MlDsa (PolyIs coeffAt)
 open VG.Spec.Sha3 (bytesAt)
-
-/-- Registers whose values are equal. -/
-theorem regs_eq {s₁ s₂ : State} {rs : List Reg} (h : ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) :
-    ∀ r ∈ rs, s₁.gpr r = s₂.gpr r := h
 
 theorem toNat_inj {a b : BitVec 64} {n : Nat} (ha : a.toNat = n) (hb : b.toNat = n) : a = b :=
   BitVec.eq_of_toNat_eq (ha.trans hb.symm)
@@ -49,8 +45,6 @@ namespace RejNtt
 /-- The loop's regions. -/
 abbrev lrd (σ : State) : List Region := [⟨(spOf σ).at' 840, 1008⟩]
 abbrev lwr (σ : State) : List Region := [polyR (σ.gpr .x1)]
-
-theorem pub_msg {σ₁ σ₂ : State} (hq : rnK.pub σ₁ σ₂) : (spOf σ₁).msg σ₁ = (spOf σ₂).msg σ₂ := hq.2.2.2.2
 
 theorem pub_eq {σ₁ σ₂ : State} (hq : rnK.pub σ₁ σ₂) : spOf σ₁ = spOf σ₂ := by
   rw [spOf, spOf, hq.1, hq.2.1, hq.2.2.1]
@@ -114,9 +108,6 @@ theorem ctWith (v : Proof.Sha3.AArch64.Permutation) : ConstantTime isa rnK.pre r
   exact relTaint [.x25] (fun σ₁ σ₂ s₁ s₂ _ _ hq h₁ h₂ => ⟨by rw [h₁.env.sp, h₂.env.sp, hq.2.2.2.1],
     fun r hr => by rw [List.mem_singleton.mp hr, h₁.env.x25, h₂.env.x25, pub_eq hq]⟩) (by taint_decide)
 
-theorem ct : ConstantTime isa rnK.pre rnK.pub rejNTT :=
-  ctWith .scalar
-
 end RejNtt
 
 end VG.Proof.MlDsa.AArch64.Sample
@@ -163,9 +154,5 @@ theorem rejNTT_verifiedWith (v : Proof.Sha3.AArch64.Permutation) :
         exact ⟨hx0, hx1, hx2, hsp, VG.Proof.MlKem.map_toNat_inj hb⟩
       sat := by sig_implies_sat [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, AArch64.abi,
         AArch64.argRegs] [rnSat] using rnSat }
-
-theorem rejNTT_verified :
-    Verified AArch64.target Impl.MlDsa.AArch64.Sample.rejNTT (Proof.MlDsa.rejNTTContract AArch64.abi 16) :=
-  rejNTT_verifiedWith .scalar
 
 end VG.Proof.MlDsa.AArch64.Sample

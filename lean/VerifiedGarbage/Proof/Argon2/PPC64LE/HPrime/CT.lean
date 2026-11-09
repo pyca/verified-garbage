@@ -456,15 +456,3 @@ theorem code_ct :
 
 end VG.Proof.Argon2.PPC64LE.HPrime
 end
-
-/-! # `Verified` -/
-
-namespace VG.Proof.Argon2.PPC64LE.HPrime
-
-open VG VG.PPC64LE VG.Impl.Argon2.PPC64LE.HPrime
-
-theorem verified :
-    Verified PPC64LE.target code (Proof.Argon2.hPrimeContract PPC64LE.abi 48) :=
-  Verified.of_correct code_correct code_ct contract_implies
-
-end VG.Proof.Argon2.PPC64LE.HPrime

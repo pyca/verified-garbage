@@ -15,8 +15,8 @@ schedule that `vg_seed_expand_key` writes.
 `vg_seed_cfb128_encrypt` and `vg_seed_cfb128_decrypt` transform `n` whole
 blocks in place, from the block in `iv`, which they replace with the one to
 continue from, the last ciphertext block (`Cbc.next`): a caller may encrypt or
-decrypt a message in pieces of whole blocks, keeping `iv` between calls. A
-partial last segment is the caller's.
+decrypt a message in pieces of whole blocks, keeping `iv` between calls. A partial last
+segment is left to the final functions (`Spec/Seed/CfbFinal.lean`).
 
 Only the pointers and `n` are public: no part of the chaining value may affect
 timing.

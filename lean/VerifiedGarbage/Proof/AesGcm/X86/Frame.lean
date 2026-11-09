@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.X86.Verified
 public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
@@ -66,7 +67,7 @@ theorem streamAad_noEsp :
     Bool.and_true]
   decide +kernel
 
-theorem init_stackUse : stackUse (init vg.callees) ≤ 28 := by
+theorem init_stackUse : stackUse (init vg.callees) ≤ 32 := by
   simp only [absorb, absorbHead, absorbWhole, ctrCall, firstFlush, flush, ghCall, ghash1, init, j0,
     j0hash, keyCall, lens, oneAad, streamAad, streamInit, stackUse, GcmImpl.callees, vg.ctr.stack,
     vg.ctr.expandStack, vg.gh.stack, Nat.max_le]
@@ -90,17 +91,17 @@ arguments at `0x8004`. -/
 def initFrameSat : State :=
   { initSat with rd := [⟨0x1000, 16⟩], wr := [⟨0x2000, 256⟩, ⟨0x8004, 12⟩] }
 
-theorem initFrameSat_pre : ∃ s, (Spec.Gcm.initContract X86.abi 2608).pre s := by
+theorem initFrameSat_pre : ∃ s, (Spec.Gcm.initContract X86.abi 2612).pre s := by
   implies_sat [Spec.Gcm.initContract, Spec.Gcm.initSig, Spec.Gcm.initPre, Spec.Gcm.initPost,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [initFrameSat, initSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using initFrameSat
 
 theorem init_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2580 3 (init vg.callees))
-      (Spec.Gcm.initContract X86.abi 2608) :=
+      (Spec.Gcm.initContract X86.abi 2612) :=
   X86.Verified.stackScratch (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Gcm.initPre X86.abi.ptrBits) (post := Spec.Gcm.initPost X86.abi.ptrBits)
-    (wa := true) (stack := 28) (bytes := 2580) (init_verified (vg := vg)) (by decide)
+    (wa := true) (stack := 32) (bytes := 2580) (init_verified (vg := vg)) (by decide)
     (init_noEsp vg) (init_stackUse vg) (initPre_local _) (initPost_local _) initFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_init`'s precondition, without the
@@ -148,7 +149,7 @@ theorem streamEncrypt_noEsp :
     Bool.and_true]
   decide +kernel
 
-theorem streamEncrypt_stackUse : stackUse (streamEncrypt vg.callees) ≤ 28 := by
+theorem streamEncrypt_stackUse : stackUse (streamEncrypt vg.callees) ≤ 32 := by
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, stackUse, GcmImpl.callees, vg.ctr.stack,
     vg.ctr.expandStack, vg.gh.stack, Nat.max_le]
   decide +kernel
@@ -160,7 +161,7 @@ theorem streamDecrypt_noEsp :
     Bool.and_true]
   decide +kernel
 
-theorem streamDecrypt_stackUse : stackUse (streamDecrypt vg.callees) ≤ 28 := by
+theorem streamDecrypt_stackUse : stackUse (streamDecrypt vg.callees) ≤ 32 := by
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, stackUse, GcmImpl.callees, vg.ctr.stack,
     vg.ctr.expandStack, vg.gh.stack, Nat.max_le]
   decide +kernel
@@ -171,32 +172,32 @@ slots at `0x8004`. -/
 def crFrameSat : State :=
   { crSat with rd := [⟨0x1000, 256⟩], wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩, ⟨0x8004, 36⟩] }
 
-theorem streamEncryptFrameSat_pre : ∃ s, (Spec.Gcm.streamEncryptContract X86.abi 2632).pre s := by
-  implies_sat [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
-    Spec.Gcm.streamEncryptPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+theorem streamEncryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamEncryptRoundsContract X86.abi 2636).pre s := by
+  implies_sat [Proof.AesGcm.streamEncryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Proof.AesGcm.streamEncryptRoundsPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [crFrameSat, crSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using crFrameSat
 
 theorem streamEncrypt_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2604 9 (streamEncrypt vg.callees))
-      (Spec.Gcm.streamEncryptContract X86.abi 2632) :=
+      (Proof.AesGcm.streamEncryptRoundsContract X86.abi 2636) :=
   X86.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre X86.abi.ptrBits)
-    (post := Spec.Gcm.streamEncryptPost X86.abi.ptrBits) (wa := true) (stack := 28)
+    (post := Proof.AesGcm.streamEncryptRoundsPost X86.abi.ptrBits) (wa := true) (stack := 32)
     (bytes := 2604) (streamEncrypt_verified (vg := vg)) (by decide) (streamEncrypt_noEsp vg)
     (streamEncrypt_stackUse vg) (streamTextPre_local _) (streamEncryptPost_local _)
     streamEncryptFrameSat_pre
 
-theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Gcm.streamDecryptContract X86.abi 2632).pre s := by
-  implies_sat [Spec.Gcm.streamDecryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
-    Spec.Gcm.streamDecryptPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+theorem streamDecryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamDecryptRoundsContract X86.abi 2636).pre s := by
+  implies_sat [Proof.AesGcm.streamDecryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Proof.AesGcm.streamDecryptRoundsPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [crFrameSat, crSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using crFrameSat
 
 theorem streamDecrypt_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2604 9 (streamDecrypt vg.callees))
-      (Spec.Gcm.streamDecryptContract X86.abi 2632) :=
+      (Proof.AesGcm.streamDecryptRoundsContract X86.abi 2636) :=
   X86.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre X86.abi.ptrBits)
-    (post := Spec.Gcm.streamDecryptPost X86.abi.ptrBits) (wa := true) (stack := 28)
+    (post := Proof.AesGcm.streamDecryptRoundsPost X86.abi.ptrBits) (wa := true) (stack := 32)
     (bytes := 2604) (streamDecrypt_verified (vg := vg)) (by decide) (streamDecrypt_noEsp vg)
     (streamDecrypt_stackUse vg) (streamTextPre_local _) (streamDecryptPost_local _)
     streamDecryptFrameSat_pre
@@ -207,17 +208,17 @@ theorem streamFinish_noEsp :
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», Code.allInstrs,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, Code.allInstrs,
     GcmImpl.callees, noEsp_of vg.ctr.nosp, noEsp_of vg.ctr.expandNosp, noEsp_of vg.gh.nosp,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem streamFinish_stackUse : stackUse (streamFinish vg.callees) ≤ 28 := by
+theorem streamFinish_stackUse : stackUse (streamFinish vg.callees) ≤ 32 := by
   simp only [absorb, absorbHead, absorbWhole, absorbTail, cmp, cmpTail, copyLoop, crypt,
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», stackUse, GcmImpl.callees,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, stackUse, GcmImpl.callees,
     vg.ctr.stack, vg.ctr.expandStack, vg.gh.stack, Nat.max_le]
   decide +kernel
 
@@ -227,17 +228,17 @@ theorem streamVerify_noEsp :
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», Code.allInstrs,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, Code.allInstrs,
     GcmImpl.callees, noEsp_of vg.ctr.nosp, noEsp_of vg.ctr.expandNosp, noEsp_of vg.gh.nosp,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem streamVerify_stackUse : stackUse (streamVerify vg.callees) ≤ 28 := by
+theorem streamVerify_stackUse : stackUse (streamVerify vg.callees) ≤ 32 := by
   simp only [absorb, absorbHead, absorbWhole, absorbTail, cmp, cmpTail, copyLoop, crypt,
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», stackUse, GcmImpl.callees,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, stackUse, GcmImpl.callees,
     vg.ctr.stack, vg.ctr.expandStack, vg.gh.stack, Nat.max_le]
   decide +kernel
 
@@ -247,17 +248,17 @@ theorem seal_noEsp :
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», Code.allInstrs,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, Code.allInstrs,
     GcmImpl.callees, noEsp_of vg.ctr.nosp, noEsp_of vg.ctr.expandNosp, noEsp_of vg.gh.nosp,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem seal_stackUse : stackUse («seal» vg.callees) ≤ 28 := by
+theorem seal_stackUse : stackUse («seal» vg.callees) ≤ 32 := by
   simp only [absorb, absorbHead, absorbWhole, absorbTail, cmp, cmpTail, copyLoop, crypt,
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», stackUse, GcmImpl.callees,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, stackUse, GcmImpl.callees,
     vg.ctr.stack, vg.ctr.expandStack, vg.gh.stack, Nat.max_le, X86.frameBytes, List.length_cons,
     List.length_nil, Nat.zero_le, true_and, and_true]
   decide +kernel
@@ -268,17 +269,17 @@ theorem open_noEsp :
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», Code.allInstrs,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, Code.allInstrs,
     GcmImpl.callees, noEsp_of vg.ctr.nosp, noEsp_of vg.ctr.expandNosp, noEsp_of vg.gh.nosp,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem open_stackUse : stackUse («open» vg.callees) ≤ 28 := by
+theorem open_stackUse : stackUse («open» vg.callees) ≤ 32 := by
   simp only [absorb, absorbHead, absorbWhole, absorbTail, cmp, cmpTail, copyLoop, crypt,
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», stackUse, GcmImpl.callees,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, stackUse, GcmImpl.callees,
     vg.ctr.stack, vg.ctr.expandStack, vg.gh.stack, Nat.max_le, X86.frameBytes, List.length_cons,
     List.length_nil, Nat.zero_le, true_and, and_true]
   decide +kernel
@@ -288,17 +289,17 @@ the working space: its eight argument slots at `0x8004`. -/
 def finFrameSat : State :=
   { finSat with wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩, ⟨0x8004, 32⟩] }
 
-theorem finFrameSat_pre : ∃ s, (Spec.Gcm.streamFinishContract X86.abi 2628).pre s := by
-  implies_sat [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre,
-    Spec.Gcm.streamFinishPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+theorem finFrameSat_pre : ∃ s, (Proof.AesGcm.streamFinishRoundsContract X86.abi 2632).pre s := by
+  implies_sat [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre,
+    Proof.AesGcm.streamFinishRoundsPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [finFrameSat, finSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finFrameSat
 
 theorem streamFinish_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2600 8 (streamFinish vg.callees))
-      (Spec.Gcm.streamFinishContract X86.abi 2628) :=
+      (Proof.AesGcm.streamFinishRoundsContract X86.abi 2632) :=
   X86.Verified.stackScratch (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamFinishPre X86.abi.ptrBits)
-    (post := Spec.Gcm.streamFinishPost X86.abi.ptrBits) (wa := true) (stack := 28)
+    (post := Proof.AesGcm.streamFinishRoundsPost X86.abi.ptrBits) (wa := true) (stack := 32)
     (bytes := 2600) (streamFinish_verified (vg := vg)) (by decide) (streamFinish_noEsp vg)
     (streamFinish_stackUse vg) (streamFinishPre_local _) (streamFinishPost_local _)
     finFrameSat_pre
@@ -308,17 +309,17 @@ the working space: its nine argument slots at `0x8004`. -/
 def verFrameSat : State :=
   { verSat with wr := [⟨0x3000, 80⟩, ⟨0x8004, 36⟩] }
 
-theorem verFrameSat_pre : ∃ s, (Spec.Gcm.streamVerifyContract X86.abi 2632).pre s := by
-  implies_sat [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre,
-    Spec.Gcm.streamVerifyPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+theorem verFrameSat_pre : ∃ s, (Proof.AesGcm.streamVerifyRoundsContract X86.abi 2636).pre s := by
+  implies_sat [Proof.AesGcm.streamVerifyRoundsContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre,
+    Proof.AesGcm.streamVerifyRoundsPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [verFrameSat, verSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using verFrameSat
 
 theorem streamVerify_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2604 9 (streamVerify vg.callees))
-      (Spec.Gcm.streamVerifyContract X86.abi 2632) :=
+      (Proof.AesGcm.streamVerifyRoundsContract X86.abi 2636) :=
   X86.Verified.stackScratch (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamVerifyPre X86.abi.ptrBits)
-    (post := Spec.Gcm.streamVerifyPost X86.abi.ptrBits) (wa := true) (stack := 28)
+    (post := Proof.AesGcm.streamVerifyRoundsPost X86.abi.ptrBits) (wa := true) (stack := 32)
     (bytes := 2604) (streamVerify_verified (vg := vg)) (by decide) (streamVerify_noEsp vg)
     (streamVerify_stackUse vg) (streamVerifyPre_local _) (streamVerifyPost_local _)
     verFrameSat_pre
@@ -328,17 +329,17 @@ space: its nine argument slots at `0x8004`. -/
 def sealFrameSat : State :=
   { sealSat with wr := [⟨0x3000, 0⟩, ⟨0x5000, 16⟩, ⟨0x8004, 36⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.Gcm.sealContract X86.abi 2632).pre s := by
-  implies_sat [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Spec.Gcm.sealPost,
+theorem sealFrameSat_pre : ∃ s, (Proof.AesGcm.sealRoundsContract X86.abi 2636).pre s := by
+  implies_sat [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Proof.AesGcm.sealRoundsPost,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [sealFrameSat, sealSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using sealFrameSat
 
 theorem seal_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2604 9 («seal» vg.callees))
-      (Spec.Gcm.sealContract X86.abi 2632) :=
+      (Proof.AesGcm.sealRoundsContract X86.abi 2636) :=
   X86.Verified.stackScratch (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.sealPre X86.abi.ptrBits)
-    (post := Spec.Gcm.sealPost X86.abi.ptrBits) (wa := true) (stack := 28)
+    (post := Proof.AesGcm.sealRoundsPost X86.abi.ptrBits) (wa := true) (stack := 32)
     (bytes := 2604) (seal_verified (vg := vg)) (by decide) (seal_noEsp vg)
     (seal_stackUse vg) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
 
@@ -347,17 +348,17 @@ space: its ten argument slots at `0x8004`. -/
 def openFrameSat : State :=
   { openSat with wr := [⟨0x3000, 0⟩, ⟨0x8004, 40⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.Gcm.openContract X86.abi 2636).pre s := by
-  implies_sat [Spec.Gcm.openContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Spec.Gcm.openPost,
+theorem openFrameSat_pre : ∃ s, (Proof.AesGcm.openRoundsContract X86.abi 2640).pre s := by
+  implies_sat [Proof.AesGcm.openRoundsContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Proof.AesGcm.openRoundsPost,
     Spec.Gcm.openLeak, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [openFrameSat, openSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using openFrameSat
 
 theorem open_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2608 10 («open» vg.callees))
-      (Spec.Gcm.openContract X86.abi 2636) :=
+      (Proof.AesGcm.openRoundsContract X86.abi 2640) :=
   X86.Verified.stackScratch (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openPre X86.abi.ptrBits)
-    (post := Spec.Gcm.openPost X86.abi.ptrBits) (wa := true) (stack := 28)
+    (post := Proof.AesGcm.openRoundsPost X86.abi.ptrBits) (wa := true) (stack := 32)
     (leak := some (Spec.Gcm.openLeak X86.abi.ptrBits))
     (bytes := 2608) (open_verified (vg := vg)) (by decide) (open_noEsp vg)
     (open_stackUse vg) (openPre_local _) (openPost_local _) openFrameSat_pre

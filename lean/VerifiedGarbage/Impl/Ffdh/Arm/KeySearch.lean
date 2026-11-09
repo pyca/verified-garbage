@@ -91,11 +91,6 @@ def branchFor (cached : Bool) (attempt : Prog isa) : Prog isa := .ite .eq exhaus
 def iterationFor (cached : Bool) (attempt : Prog isa) : Prog isa := .seq (.block [ldf .r9 0, .cmp .r9 (.imm 0)])
   (.seq (branchFor cached attempt) (.block [ldf .r9 14, .cmp .r9 (.imm 4)]))
 
-abbrev attemptRun := attemptRunFor false
-abbrev attemptOrRequest := attemptOrRequestFor false
-abbrev branch := branchFor false
-abbrev iteration := iterationFor false
-
 def finish : List Instr := [
   ldf .r1 15, ldf .r2 11, ldf .r0 14, .mov .r3 (.imm 0), .str .r2 .r1 0, .str .r3 .r1 4,
   .ldrSp .r9 4, .ldrSp .r10 8, .ldrSp .r11 12, .ldrSp .lr 20]
@@ -104,8 +99,6 @@ def codeFor (cached : Bool) (attempt : Prog isa) : Prog isa :=
   .frame (.push [.r4, .r9, .r10, .r11, .r12, .lr])
     (.seq (.block (entryFor cached))
       (.seq (.loop (iterationFor cached attempt) .eq) (.block finish))) (.pop .r4 24)
-
-abbrev code := codeFor false
 
 
 end VG.Impl.Ffdh.Arm.KeySearch

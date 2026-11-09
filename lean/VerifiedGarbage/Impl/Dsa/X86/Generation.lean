@@ -10,38 +10,52 @@ public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
 public import VerifiedGarbage.Impl.Pbkdf2.Md.X86
 
 /-!
-# DSA parameter generation on baseline i686 (cdecl)
+# DSA parameter generation over refillable random tapes on baseline i686 (cdecl)
 
-`vg_dsa_generate_parameters(out, out_len, p_len, q_len, seeds, seeds_len, hs,
-hs_len, witnesses, witnesses_len, scratch, scratch_len)`, every argument on
-the stack. The callee-saved registers are pushed, and `edi` holds `scratch`
-throughout: every function called keeps it, and both the exponentiation's
-working space and the division's arrays are at fixed offsets from it.
-`scratch` holds, at fixed offsets: the exponentiation's working space
-(from byte 0, `Pow.layout`), the search's state (`f…`), the hash value and
-block and the compression function's scratch space, `X`, p||q||g (`sPk`),
-the division's and the comparisons' arrays (`arr`), the probable-prime
-test's working space (`sPP`) and `vg_dsa_check_parameters`'s scratch
-(`sChk`).
+`vg_dsa_parameter_search(out, out_len, used, rand, rand_len, scratch,
+scratch_len, state)` (`Spec/Dsa/ParameterSearch.lean`), every argument on
+the stack, for the modulus width `state[1]`, and
+`vg_dsa_parameter_search_init(state, p_len)`. The callee-saved registers are
+pushed, and `edi` holds `scratch` throughout: every function called keeps it,
+and both the exponentiation's working space and the division's arrays are at
+fixed offsets from it. `scratch` holds, at fixed offsets: the exponentiation's
+working space (from byte 0, `Pow.layout`), the search's state (`f…`), the hash
+value and block and the compression function's scratch space, `X`, p||q||g
+(`sPk`), the division's and the comparisons' arrays (`arr`), the
+probable-prime test's working space (`sPP`) and `vg_dsa_check_parameters`'s
+scratch (`sChk`).
 
-For each seed of the `seeds` tape (FIPS 186-4 A.1.1.2):
+The seeds, the witnesses of their tests and the generator's `h` candidates
+are all read from one tape, `rand`. Each seed, at the cursor `fC` (FIPS 186-4
+A.1.1.2 and A.2.1):
 
-1. q: the seed's hash (SHA-1 for a 160-bit q, else SHA-256: one block, by
-   the compression function), its top and low bits set, into p||q||g, and
-   tested by `vg_dsa_probable_prime_{N}` with the witnesses left.
+1. q: the seed's `q_len` octets hashed (SHA-1 for a 160-bit q, else SHA-256:
+   one block, by the compression function), its top and low bits set, into
+   p||q||g, and tested by `vg_dsa_probable_prime_{N}` with witnesses from
+   `rand` after the seed (`fUsed`, the octets of `rand` read so far).
 2. p: for each of the `4 L` counters, the hashes of `seed + offset + j`
    (big-endian, `seedlen` bytes) for `j ≤ count`, assembled into `X` with
    its top bit set; `X` divided by `2 q` (RSA's division), `p − 1 = X − (X
    mod 2 q)` and `(p − 1) / q = 2 ⌊X / 2 q⌋`; `p` into p||q||g, and if it has
    `L` bits, tested by `vg_dsa_probable_prime_{L}`.
-3. g: for each `h` of the `hs` tape with `1 < h < p − 1`, `g = h^((p−1)/q)
-   mod p` by `vg_dsa_pow_{n}_{e}`, until `g > 1`, into p||q||g.
+3. g: for each `h` of the window of `rand` after p's witnesses (`fHs`,
+   `fHsLen`: at most `generatorAttempts` candidates of `p_len` octets) with
+   `1 < h < p − 1`, `g = h^((p−1)/q) mod p` by `vg_dsa_pow_{n}_{e}`, until
+   `g > 1`, into p||q||g. The candidates it read count as read; without a
+   g, a window shorter than `generatorAttempts` candidates ran out.
 4. p||q||g checked by `vg_dsa_check_parameters`.
 
-The first domain that passes is copied to `out`, with status 1; otherwise
-`out` is zeroed, with status 0: no seed left, or `witnesses` ran out. Every
-branch and loop count depends on the lengths and the three tapes, which the
-contract makes public, and on nothing else.
+A seed sets `fStatus` to 2 if `rand` ran out inside it, to 1 with p||q||g
+when the domain passes, and leaves it 0 when it is rejected: the controller
+(`search`) then counts it against the seeds left (`fSeedLeft`, from
+`state[0]`) and moves the cursor past it. It stops with no seeds left
+(`fStatus` = 3), a tape too short for the next seed or one that ran out
+(2), or parameters (1); `finish` writes `out`, `used` and `state` and
+returns the protocol's status (`Entropy.Outcome.status`), asking, after a
+tape that ran out, for twice the octets left (at least `256 p_len`, at most
+the entropy budget), unless they reached the budget. Every branch and loop
+count depends on the lengths, `state` and `rand`, which the contract makes
+public, and on nothing else.
 -/
 
 @[expose] public section
@@ -60,11 +74,13 @@ def hdr : Nat := 7168
 def fOut : Nat := hdr
 def fSeed : Nat := hdr + 4
 def fSeedLeft : Nat := hdr + 8
-def fHs : Nat := hdr + 12
-def fHsLen : Nat := hdr + 16
+/-- The pointers to `used` and to `state`. -/
+def fUsedP : Nat := hdr + 12
+def fStP : Nat := hdr + 16
+/-- `rand` and its length. -/
 def fWit : Nat := hdr + 20
 def fWitLen : Nat := hdr + 24
-/-- The octets of `witnesses` read so far. -/
+/-- The octets of `rand` read so far. -/
 def fUsed : Nat := hdr + 28
 /-- The octets a test read, a 64-bit word. -/
 def fUsedOut : Nat := hdr + 32
@@ -79,7 +95,11 @@ def fG : Nat := hdr + 64
 def fStatus : Nat := hdr + 68
 /-- The comparisons' masks. -/
 def fLo : Nat := hdr + 72
-def fHi : Nat := hdr + 76
+/-- The cursor: the current seed's start in `rand`. -/
+def fC : Nat := hdr + 76
+/-- The window of `h` candidates: its start and its length. -/
+def fHs : Nat := hdr + 80
+def fHsLen : Nat := hdr + 84
 
 /-- The hash value, the block right after it, and the compression
 function's scratch space. -/
@@ -316,18 +336,36 @@ def gStep : Prog isa := seqs [
         (seqs [storeS (Pow.layout g.n64 g.e).result (sPk + g.pLen + g.qLen) g.pLen,
           .block (stImm fG 1)])])]
 
-/-- g: `fG` := 1, or 2 if no `h` gives one. -/
+/-- The window of `h` candidates: `rand` after the octets read (`fHs`), and
+at most `generatorAttempts` candidates' octets of it (`fHsLen`). -/
+def gWindow : Prog isa :=
+  .seq (.block [.mov .ecx (.mem (sc fUsed)), .mov .eax (.mem (sc fWit)), .alu .add .eax (.reg .ecx),
+      .store (sc fHs) .eax, .mov .eax (.mem (sc fWitLen)), .alu .sub .eax (.reg .ecx), .store (sc fHsLen) .eax,
+      .alu .cmp .eax (.imm (BitVec.ofNat 32 (128 * g.pLen)))])
+    (.ite .b (.block []) (.block (stImm fHsLen (128 * g.pLen))))
+
+/-- g over the window: `fG` := 1, or 2 if no `h` gives one, with at least
+`p_len` octets left before each. -/
 def gPart : Prog isa := seqs [
   .block [.mov .eax (.mem (sc fHs)), .store (sc fH) .eax, .mov .eax (.mem (sc fHsLen)),
     .store (sc fHLeft) .eax, .mov .eax (.imm 4), .store (sc fG) .eax],
-  .loop (seqs [.block (cmpF fHLeft 0),
-    .ite .e (.block (stImm fG 2))
+  .loop (seqs [.block (cmpF fHLeft g.pLen),
+    .ite .b (.block (stImm fG 2))
       (seqs [g.gStep, .block [.mov .eax (.mem (sc fH)), .alu .add .eax (.imm (BitVec.ofNat 32 g.pLen)),
         .store (sc fH) .eax, .mov .eax (.mem (sc fHLeft)), .alu .sub .eax (.imm (BitVec.ofNat 32 g.pLen)),
         .store (sc fHLeft) .eax]]),
     .block (cmpF fG 4)]) .e]
 
-/-- A seed. -/
+/-- The candidates the search for g read count as read. -/
+def gUsed : List Instr :=
+  [.mov .eax (.mem (sc fH)), .mov .ecx (.mem (sc fWit)), .alu .sub .eax (.reg .ecx), .store (sc fUsed) .eax]
+
+/-- Without a g, a window shorter than `generatorAttempts` candidates ran out. -/
+def gShort : Prog isa :=
+  .seq (.block (cmpF fHsLen (128 * g.pLen))) (.ite .b (.block (stImm fStatus 2)) (.block []))
+
+/-- A seed: `fStatus` := 2 if `rand` ran out, 1 if the domain passes, else as
+it was (0). -/
 def attempt : Prog isa := seqs [
   g.qPart, .block (cmpF fRes 0),
   .ite .e (.block (stImm fStatus 2))
@@ -336,29 +374,84 @@ def attempt : Prog isa := seqs [
         (seqs [g.pPart, .block (cmpF fP 0),
           .ite .e (.block (stImm fStatus 2))
             (seqs [.block (cmpF fP 1),
-              .ite .e (seqs [g.gPart, .block (cmpF fG 1),
-                  .ite .e (check g.pLen g.qLen (16 * g.pLen) g.checkName g.checkCode) (.block [])])
+              .ite .e (seqs [g.gWindow, g.gPart, .block gUsed, .block (cmpF fG 1),
+                  .ite .e (check g.pLen g.qLen (16 * g.pLen) g.checkName g.checkCode) g.gShort])
                 (.block [])])])
         (.block [])])]
 
-/-- The seeds, one at a time, until a domain passes or none is left. -/
+/-- `eax` := the octets of `rand` after the cursor. -/
+def avail : List Instr := [.mov .eax (.mem (sc fWitLen)), .mov .ecx (.mem (sc fC)), .alu .sub .eax (.reg .ecx)]
+
+/-- The next seed starts at the cursor, its witnesses after it. -/
+def seedStart : List Instr :=
+  [.mov .ecx (.mem (sc fC)), .mov .eax (.mem (sc fWit)), .alu .add .eax (.reg .ecx), .store (sc fSeed) .eax,
+    .alu .add .ecx (.imm (BitVec.ofNat 32 g.qLen)), .store (sc fUsed) .ecx]
+
+/-- A rejected seed: the cursor past it, one seed fewer left. -/
+def rejected : List Instr :=
+  [.mov .eax (.mem (sc fUsed)), .store (sc fC) .eax, .mov .eax (.mem (sc fSeedLeft)), .alu .sub .eax (.imm 1),
+    .store (sc fSeedLeft) .eax]
+
+/-- The seeds, one at a time, until a domain passes (`fStatus` = 1), `rand`
+runs out (2) or the seeds do (3). -/
 def search : Prog isa :=
   .loop (seqs [.block (cmpF fSeedLeft 0),
-    .ite .e (.block (stImm fStatus 2))
-      (seqs [g.attempt, .block [.mov .eax (.mem (sc fSeed)), .alu .add .eax (.imm (BitVec.ofNat 32 g.qLen)),
-        .store (sc fSeed) .eax, .mov .eax (.mem (sc fSeedLeft)), .alu .sub .eax (.imm (BitVec.ofNat 32 g.qLen)),
-        .store (sc fSeedLeft) .eax]]),
+    .ite .e (.block (stImm fStatus 3))
+      (seqs [.block (avail ++ [.alu .cmp .eax (.imm (BitVec.ofNat 32 g.qLen))]),
+        .ite .b (.block (stImm fStatus 2))
+          (seqs [.block g.seedStart, g.attempt, .block (cmpF fStatus 0),
+            .ite .e (.block rejected) (.block [])])]),
     .block (cmpF fStatus 0)]) .e
 
-/-- The result: p||q||g to `out` and 1, or zeros and 0. -/
-def finish : Prog isa := seqs [
+/-- The entropy budget, `32769 p_len`. -/
+def budget : Nat := 32769 * g.pLen
+
+/-- `out` := p||q||g, for status 1, or zeros. -/
+def outPart : Prog isa := seqs [
   .block (cmpF fStatus 1),
   .ite .e
     (seqs [.block ([.mov .ebx (.mem (sc fOut))] ++ scr .esi sPk ++
-        [.mov .ecx (.imm (BitVec.ofNat 32 (2 * g.pLen + g.qLen)))]), copyBytes, .block [.mov .eax (.imm 1)]])
+        [.mov .ecx (.imm (BitVec.ofNat 32 (2 * g.pLen + g.qLen)))]), copyBytes])
     (seqs [.block [.mov .esi (.mem (sc fOut)), .mov .ecx (.imm (BitVec.ofNat 32 (2 * g.pLen + g.qLen))),
         .mov .eax (.imm 0)],
-      .loop (.block PublicFn.clearStep) .ne, .block [.mov .eax (.imm 0)]])]
+      .loop (.block PublicFn.clearStep) .ne])]
+
+/-- `state[0]` := `edx`, `state[3]` := `ecx`, `used` := the word at `u` (each
+with its high half zero), and `eax` := `v`. Each pointer is loaded in a block
+of its own, before the block that stores through it. -/
+def results (u v : Nat) : Prog isa := seqs [
+  .block [.mov .ebx (.mem (sc fStP))],
+  .block [.store (at_ .ebx 0) .edx, .store (at_ .ebx 24) .ecx, .mov .eax (.imm 0), .store (at_ .ebx 4) .eax,
+    .store (at_ .ebx 28) .eax, .mov .ebx (.mem (sc fUsedP))],
+  .block [.store (at_ .ebx 4) .eax, .mov .eax (.mem (sc u)), .store (at_ .ebx 0) .eax,
+    .mov .eax (.imm (BitVec.ofNat 32 v))]]
+
+/-- Parameters: nothing left, no request, the octets read used. -/
+def accepted : Prog isa := .seq (.block [.mov .edx (.imm 0), .mov .ecx (.imm 0)]) (results fUsed 1)
+
+/-- Exhausted: nothing left, no request, nothing past the cursor used. -/
+def exhausted : Prog isa := .seq (.block [.mov .edx (.imm 0), .mov .ecx (.imm 0)]) (results fC 3)
+
+/-- `rand` ran out at the cursor: exhausted if the octets left reach the
+budget; else the seeds left, and the next tape's length, twice the octets
+left, at least `256 p_len` and at most the budget. -/
+def ranOut : Prog isa := seqs [
+  .block (avail ++ [.alu .cmp .eax (.imm (BitVec.ofNat 32 g.budget))]),
+  .ite .b
+    (seqs [.block [.alu .cmp .eax (.imm (BitVec.ofNat 32 (256 * g.pLen)))],
+      .ite .b (.block [.mov .eax (.imm (BitVec.ofNat 32 (256 * g.pLen)))]) (.block []),
+      .block [.alu .add .eax (.reg .eax), .alu .cmp .eax (.imm (BitVec.ofNat 32 g.budget))],
+      .ite .b (.block []) (.block [.mov .eax (.imm (BitVec.ofNat 32 g.budget))]),
+      .block [.mov .ecx (.reg .eax), .mov .edx (.mem (sc fSeedLeft))],
+      results fC 0])
+    exhausted]
+
+/-- The result: `out`, then `used` and `state`, and the status. -/
+def finish : Prog isa := seqs [
+  g.outPart,
+  .block (cmpF fStatus 1),
+  .ite .e accepted
+    (seqs [.block (cmpF fStatus 2), .ite .e g.ranOut exhausted])]
 
 def generate : Prog isa := .seq g.search g.finish
 
@@ -369,20 +462,48 @@ end Geo
 /-- Argument `i` into the state word at `o`. -/
 def copyArg (i o : Nat) : List Instr := [.mov .eax (.mem (Compact.arg i)), .store (sc o) .eax]
 
-/-- `edi` := `scratch`; `out` and the tapes' pointers and lengths saved;
-nothing read, searching. -/
+/-- `edi` := `scratch`; `out`, `used`, `rand` and its length, and `state`
+saved; the cursor at 0, searching. -/
 def entry : List Instr :=
-  [.mov .edi (.mem (Compact.arg 10))] ++ copyArg 0 fOut ++ copyArg 4 fSeed ++ copyArg 5 fSeedLeft ++
-    copyArg 6 fHs ++ copyArg 7 fHsLen ++ copyArg 8 fWit ++ copyArg 9 fWitLen ++ stImm fUsed 0 ++ stImm fStatus 0
+  [.mov .edi (.mem (Compact.arg 5))] ++ copyArg 0 fOut ++ copyArg 2 fUsedP ++ copyArg 3 fWit ++
+    copyArg 4 fWitLen ++ copyArg 7 fStP ++ stImm fC 0 ++ stImm fStatus 0
 
-/-- The three geometries, by `p_len`. -/
-def dispatch (g1 g2 g3 : Geo) : Prog isa :=
-  .seq (.block [.mov .eax (.mem (Compact.arg 2)), .alu .cmp .eax (.imm 128)])
-    (.ite .e g1.generate
-      (.seq (.block [.alu .cmp .eax (.imm 0x100)]) (.ite .e g2.generate g3.generate)))
+/-- `state[0]` (the seeds left) into `fSeedLeft`, and the three geometries, by
+the modulus's width, `state[1]`. The pointer to `state` is loaded in a block
+of its own, before the block that reads through it. -/
+def dispatch (g1 g2 g3 : Geo) : Prog isa := seqs [
+  .block [.mov .ebx (.mem (Compact.arg 7))],
+  .block [.mov .eax (.mem (at_ .ebx 0)), .store (sc fSeedLeft) .eax, .mov .eax (.mem (at_ .ebx 8)),
+    .alu .cmp .eax (.imm 128)],
+  .ite .e g1.generate (.seq (.block [.alu .cmp .eax (.imm 0x100)]) (.ite .e g2.generate g3.generate))]
 
+/-- `vg_dsa_parameter_search`. -/
 def code (g1 g2 g3 : Geo) : Prog isa :=
   .frame (.push [.ebx, .ebp, .esi, .edi])
     (.seq (.seq (.block entry) (dispatch g1 g2 g3)) (.block Compact.restoreRegs)) (.pop .ebx 4)
+
+/-! ## `vg_dsa_parameter_search_init` -/
+
+/-- `[ecx + 4 j] := eax`: word `j` of `state`, 32 bits of it. -/
+def st (j : Nat) : Instr := .store (at_ .ecx (4 * j)) .eax
+
+/-- `state` := zeros, and 0. -/
+def initZeros : List Instr :=
+  [.mov .ecx (.mem (PublicFn.argument 0)), .mov .eax (.imm 0), st 0, st 1, st 2, st 3, st 4, st 5, st 6, st 7]
+
+/-- `state` := `[4096, L, 32769 L, 512 L]`, high halves zero, and 1. -/
+def initWords (L : Nat) : List Instr :=
+  [.mov .ecx (.mem (PublicFn.argument 0)), .mov .eax (.imm 4096), st 0, .mov .eax (.imm (BitVec.ofNat 32 L)), st 2,
+    .mov .eax (.imm (BitVec.ofNat 32 (32769 * L))), st 4, .mov .eax (.imm (BitVec.ofNat 32 (512 * L))), st 6,
+    .mov .eax (.imm 0), st 1, st 3, st 5, st 7, .mov .eax (.imm 1)]
+
+/-- `vg_dsa_parameter_search_init(state, p_len)`. -/
+def init : Prog isa :=
+  .seq (.block [.mov .edx (.mem (PublicFn.argument 1)), .alu .cmp .edx (.imm 128)])
+    (.ite .e (.block (initWords 128))
+      (.seq (.block [.alu .cmp .edx (.imm 256)])
+        (.ite .e (.block (initWords 256))
+          (.seq (.block [.alu .cmp .edx (.imm 384)])
+            (.ite .e (.block (initWords 384)) (.block initZeros))))))
 
 end VG.Impl.Dsa.X86.Generation

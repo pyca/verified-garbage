@@ -55,16 +55,7 @@ theorem inWord_rel {k : Nat} (W : Nat → BitVec 32) {i : Nat} (hi : 32 * i + 32
     (by intro a ha; simp at ha; omega)]
   simp [hq, bitOf_word W i q hq]
 
-theorem outWord_rel {k : Nat} {W : Nat → BitVec 32} {g : Nat → List Nat} {x : BitVec 32}
-    (hg : ∀ p < 32, ∀ a ∈ g p, a < 2 ^ k) (h : LaneRel k (assign W (2 ^ k)) (outWord g) x) :
-    ∀ p < 32, x.getLsbD p = xorBits W (g p) := by
-  intro p hp
-  rw [h.2 p hp]
-  simp only [outWord, Nat.zero_testBit, Bool.false_xor]
-  rw [par_mk hp (Nat.le_refl _) _ (fun q hq => hg q hq), xorA_assign W (hg p hp)]
-  simp [hp]
-
-/-- `outWord_rel`, with the output word bounded instead of its atoms (as
+/-- The lanes of `outWord g` hold `x`, given the output word bounded (as
 `Bitslice.outWordW_rel_of_lt`). -/
 theorem outWord_rel_of_lt {k : Nat} {W : Nat → BitVec 32} {g : Nat → List Nat} {x : BitVec 32}
     (hb : mk 32 g 32 < 2 ^ (32 * 2 ^ k)) (h : LaneRel k (assign W (2 ^ k)) (outWord g) x) :

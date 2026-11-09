@@ -5,8 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontFn
 /-!
 # Montgomery arithmetic as functions on PPC64LE: the moduli
 
-Each modulus of `Impl.Weierstrass.Mont.moduli` is one the functions support
-(`ModOk`).
+Each modulus here (`p192p_ok`, …) is one the functions support (`ModOk`).
 -/
 
 @[expose] public section

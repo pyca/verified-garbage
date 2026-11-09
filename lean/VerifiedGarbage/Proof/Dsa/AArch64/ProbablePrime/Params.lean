@@ -26,10 +26,6 @@ open VG.Proof.Dsa.AArch64.Generation (PrimeParams)
 def Supported (bits : Nat) : Prop :=
   bits = 160 ∨ bits = 256 ∨ bits = 1024 ∨ bits = 2048 ∨ bits = 3072
 
-theorem Supported.of_mem {bits : Nat} (h : bits ∈ ([160, 256, 1024, 2048, 3072] : List Nat)) :
-    Supported bits := by
-  simpa only [Supported, List.mem_cons, List.not_mem_nil, or_false] using h
-
 theorem Supported.le {bits : Nat} (hb : Supported bits) : 160 ≤ bits ∧ bits ≤ 3072 := by
   rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
 

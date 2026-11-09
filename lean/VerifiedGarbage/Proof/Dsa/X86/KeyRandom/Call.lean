@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 /-!
 # Calling the key derivation (x86)
 
-`call_ok` runs the call of a verified `vg_dsa_derive_key` (`DeriveFn`) with the
+`call_ok` runs the call of a verified `vg_dsa_derive_key` with the
 arguments `callArgs` stored: it returns the callee's status, writes its
 result to `out`, and changes memory only in `out`, `scratch`, the frame's
 argument words and the stack below the frame.
@@ -18,14 +18,6 @@ argument words and the stack below the frame.
 namespace VG.Proof.Dsa.X86.KeyRandom
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86
 open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.KeyRandom
-
-/-- A verified `vg_dsa_derive_key`, for a frame of 20 bytes. -/
-structure DeriveFn where
-  name : String
-  code : Prog isa
-  verified : Verified X86.target code (Spec.Dsa.deriveKeyContract X86.abi 108)
-  noSp : NoSp code
-  depth : stackUse code ≤ 108
 
 /-- Where the call may write. -/
 def callWrites (s₀ : State) : List Region := callWr s₀ ++ [⟨rCall s₀, 112⟩]
@@ -43,17 +35,6 @@ theorem rBytes_frame {m m' : Mem} {p : Addr} {n : Nat} {rs : List Region}
   apply List.map_congr_left
   intro i hi
   exact frame.bytes sep bound (List.mem_range.mp hi)
-
-/-- The return address's store leaves bytes apart from it. -/
-theorem callEntry_bytes {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) {p : Addr} {n : Nat}
-    (hd : (Region.mk p n).Disjoint ⟨off (rLow s₀) 20, 4⟩) (hn : n ≤ 2 ^ 64) (v : BitVec 32) :
-    Spec.Rsa.bytesAt (t.mem.writeW ((t.gpr .esp - 4).setWidth 64) v) p n = Spec.Rsa.bytesAt t.mem p n := by
-  refine rBytes_frame (rs := [⟨off (rLow s₀) 20, 4⟩])
-    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ ?_) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hd) hn
-  rw [esp_sub4 A h]
-  have := Offset.contains_base (off (rLow s₀) 20) (d := 0) (n := 4) (k := 4) (by decide) (by decide)
-  rwa [BitVec.add_zero] at this
 
 theorem call_covers {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :
     Covers (callRd s₀ ++ callWr s₀) (t.rd ++ t.wr) ∧ Covers (callWr s₀) t.wr := by
@@ -82,66 +63,5 @@ theorem call_covers {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :
         unfold KeyRandom.frameBytes; omega
   · obtain ⟨r', hr', o, ho⟩ := hw r hr
     exact ⟨r', List.mem_append_right _ hr', o, ho⟩
-
-theorem call_ok (F : DeriveFn) {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) (C : CallSlots s₀ t) :
-    WP isa (.call F.name F.code) t fun u => Ready s₀ u ∧ Frame (callWrites s₀) t.mem u.mem ∧
-      (∀ r ∈ calleeSaved, u.gpr r = t.gpr r) ∧
-      u.gpr .eax = BitVec.ofNat 32 (Spec.Dsa.signStatus (callResult s₀ t)) ∧
-      Spec.Rsa.bytesAt u.mem (argumentPointer s₀ 0) (X86.arg s₀ 1).toNat =
-        (callResult s₀ t).getD (List.replicate (X86.arg s₀ 1).toNat 0) := by
-  have he := esp_toNat A h
-  have hfit := rLow_fit A (d := 192) (by decide)
-  obtain ⟨hc, hcw⟩ := call_covers A h
-  have hd := F.depth
-  have hlo := A.stackLow
-  have hrl := rLow_toNat A
-  refine WP.call F.verified.1 F.noSp (by omega) (call_pre A h C) hc hcw
-    fun u hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ => ?_
-  have hesp : u.gpr .esp = t.gpr .esp := hcs .esp (by simp [calleeSaved])
-  -- Where the call wrote.
-  have hbelow : Region.Sub (below (t.gpr .esp) (stackUse F.code + 4)) ⟨rCall s₀, 112⟩ := by
-    show Region.Sub ⟨(t.gpr .esp - BitVec.ofNat 32 (stackUse F.code + 4)).setWidth 64, _⟩ _
-    rw [Taint.sub_setWidth (by omega), h.rf.esp, rBase, rLow_off, Offset.add_ofNat_sub _ (by omega)]
-    exact Offset.sub_base _ (by omega)
-  have hf' : Frame (callWrites s₀) t.mem u.mem := hf.sub fun r hr => by
-    rcases List.mem_append.mp hr with hr | hr
-    · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
-    · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), hbelow⟩
-  have hu : Ready s₀ u := by
-    refine ⟨⟨by rw [hesp]; exact h.rf.esp, by rw [hwr]; exact h.rf.wr, by rw [hwr]; exact h.rf.args,
-      h.rf.nowrap⟩, hrd.trans h.rd, hwr.trans h.wr, h.frame.trans (hf'.sub fun r hr => ?_)⟩
-    simp only [callWrites, callWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-      or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact ⟨_, by simp [rWrites, rOut], fun _ h => h⟩
-    · exact ⟨_, by simp [rWrites, rScratch], fun _ h => h⟩
-    · exact ⟨rStack s₀, by simp [rWrites], stk_sub s₀ (by decide)⟩
-    · refine ⟨rStack s₀, by simp [rWrites], ?_⟩
-      have := Offset.sub_base (rCall s₀) (d := 0) (n := 112) (k := 232) (by decide)
-      rwa [BitVec.add_zero] at this
-  refine ⟨hu, hf', hcs, ?_⟩
-  -- The signer's postcondition.
-  have hp := hpost
-  sig_post [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argSlots, argVal, argBytes, stackBelow] at hp
-  simp only [ce_arg A h C (callRd s₀) (callWr s₀) (show 0 < 9 by decide),
-    ce_arg A h C (callRd s₀) (callWr s₀) (show 1 < 9 by decide),
-    ce_arg A h C (callRd s₀) (callWr s₀) (show 2 < 9 by decide),
-    ce_arg A h C (callRd s₀) (callWr s₀) (show 3 < 9 by decide),
-    ce_arg A h C (callRd s₀) (callWr s₀) (show 4 < 9 by decide),
-    ce_arg A h C (callRd s₀) (callWr s₀) (show 5 < 9 by decide),
-    ce_arg A h C (callRd s₀) (callWr s₀) (show 6 < 9 by decide),
-    callVal, esp_ptr h (d := oNonce) (by decide), show 24 + oNonce = 112 from rfl] at hp
-  have hql := rQBytes_le A
-  have hqn := rQBytes_length A
-  rw [callEntry_bytes A h (A.stackKeyWide.symm.sub_right (stk_sub s₀ (by decide))) (by omega),
-    callEntry_bytes A h ((Offset.disjoint _ (by omega) (by omega) (by omega) :
-      Region.Disjoint ⟨off (rLow s₀) 20, 4⟩ ⟨off (rLow s₀) 112, (X86.arg s₀ 6).toNat⟩).symm) (by omega)] at hp
-  obtain ⟨hr, hb⟩ := hp
-  refine ⟨?_, by rw [← hm₂]; exact hb⟩
-  rw [BitVec.setWidth_append_eq_right, hg₂ .eax (by decide)] at hr
-  apply BitVec.eq_of_toNat_eq
-  rw [hr, toNat_ofNat_lt (by unfold Spec.Dsa.signStatus; split <;> decide)]
-  rfl
 
 end VG.Proof.Dsa.X86.KeyRandom

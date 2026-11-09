@@ -4,6 +4,8 @@ import VerifiedGarbage.TCB.Rust
 meta import VerifiedGarbage.TCB.Rust
 import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Print
+meta import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Sig
@@ -75,7 +77,7 @@ theorem verified : Verified target code contract := by
       Region.disjoint_of_sep (by decide), by decide, by decide, by decide⟩
 
 def artifact (w : List (String × Nat)) : Artifact where
-  target := target
+  target := .of target
   module := "test"
   name := "vg_test_written"
   sig := sig

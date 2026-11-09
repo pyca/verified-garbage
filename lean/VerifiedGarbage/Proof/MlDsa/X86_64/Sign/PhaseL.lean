@@ -94,10 +94,6 @@ structure EB (p : Params) (D : Nat) (σ : State) (t : Nat) (s : State) : Prop wh
   t_lt : t < 814
   rej : RejT p σ t
 
-theorem rej_zero {p : Params} {σ : State} {t : Nat} (h : RejT p σ t) :
-    Rej p (amat p (Am p σ)) ((List.range p.ℓ).map (S1v p σ)) ((List.range p.k).map (S2v p σ))
-      ((List.range p.k).map (T0v p σ)) (muOf σ) (rppOf p σ) maxBounds 0 t := h
-
 theorem loop_none_ball {p : Params} {σ : State} {t : Nat} (h : RejT p σ t)
     (hn : sampleInBall p.τ minBounds.ball (CTv p σ (p.ℓ * t)) = none) : loopF p σ minBounds minBounds.sign 0 = none :=
   signLoop_min_none p _ _ _ _ _ _ (by decide) h (.inr (by rw [Nat.zero_add]; exact iter_none hn))

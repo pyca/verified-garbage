@@ -128,18 +128,6 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   · change Spec.Rc2.blockAt s₅.mem (State.addr (s.gpr .r1)) = _
     rw [finalMem, blockAt_write64, cipher_rounds]
 
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | _ => 0
-  sp := 0x4000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 8⟩, ⟨0x3000, 256⟩]
-
 theorem encrypt_correct (s : State) (hs : (blockContract .encrypt).pre s) :
     ∃ t s', Exec isa encryptBlock s t s' ∧ abiPreserved s s' ∧
       (blockContract .encrypt).post s s' := by
@@ -153,21 +141,5 @@ theorem decrypt_correct (s : State) (hs : (blockContract .decrypt).pre s) :
   obtain ⟨t, s', he, ha, hp⟩ := block_correct .decrypt s hs
   change Exec isa decryptBlock s t s' at he
   exact ⟨t, s', he, ⟨ha, VG.Arm.Exec.sp he⟩, hp⟩
-
-theorem publicRegs_three (s₁ s₂ : State) : PublicRegs [.r0, .r1, .r2] s₁ s₂ ↔
-    s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 := by
-  simp [PublicRegs]
-
-theorem encrypt_verified :
-    Verified target encryptBlock (Proof.Rc2.encryptBlockContract abi) := by
-  refine Verified.of_correct encrypt_correct (encryptBlock_constantTime _) ?_
-  sig_implies [Proof.Rc2.encryptBlockContract, Proof.Rc2.blockSig, abi, argRegs, Arm.reduceClassify, Arm.Loc.val,
-    blockContract, publicRegs_three, cipher, State.addr] [satState] using satState
-
-theorem decrypt_verified :
-    Verified target decryptBlock (Proof.Rc2.decryptBlockContract abi) := by
-  refine Verified.of_correct decrypt_correct (decryptBlock_constantTime _) ?_
-  sig_implies [Proof.Rc2.decryptBlockContract, Proof.Rc2.blockSig, abi, argRegs, Arm.reduceClassify, Arm.Loc.val,
-    blockContract, publicRegs_three, cipher, State.addr] [satState] using satState
 
 end VG.Proof.Rc2.Arm

@@ -213,11 +213,6 @@ def jwinPrep : Prog isa :=
   .seq (.block (WinCfg.addConst c.n (c.sl K) c.winK (JacWinCfg.offset (jwinJ c))))
     (bits c.winK c.winBits (8 * (c.n + 1)))
 
-/-- `[d]P` into `R` by the Jacobian window method, `dbl` doubling a point in
-place. -/
-def mulQJ (dbl : Pt → Prog isa) : Prog isa :=
-  .seq (.block (maskK c)) (.seq (jwinPrep c) ((jwinCfg c).window dbl))
-
 /-- The odd window method's configuration: `jwinCfg`, its windows read from
 bit 1 of its table of bits (`JacWinCfg.windowO`). -/
 def jwinCfgO : JacWinCfg := { jwinCfg c with bits := c.winBits + 1 }
@@ -297,10 +292,6 @@ def mulQJ4 : Prog isa :=
 def exchangeWith (mq : Prog isa) : Prog isa :=
   .seq (.block (args)) <| .seq (prefix' c none) <| .seq (.block (peer c)) <| .seq (check c) <|
   .seq mq <| .seq c.pPow (middle c)
-
-/-- `vg_ecdh_<curve>` by the Jacobian window method, for a curve of prime
-order. -/
-def exchangeJ (dbl : Pt → Prog isa) : Prog isa := exchangeWith c (mulQJ c dbl)
 
 /-- `vg_ecdh_<curve>` by odd windows in Jacobian coordinates (`mulQJO`), for
 a curve of prime order with `n mod 64 < 33`. -/

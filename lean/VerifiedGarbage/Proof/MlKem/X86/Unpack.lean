@@ -167,9 +167,6 @@ theorem unpackSteps_spec {d : Nat} (hd : d ∈ compressWidths) {p : Addr} {i₀ 
       · rw [ite_eq_left hr, ite_eq_left ⟨hr.1, by omega⟩]
       · rw [ite_eq_right hr, ite_eq_right (fun h => hr ⟨h.1, by omega⟩)]
 
-theorem dv_lt {d : Nat} (hd : d ∈ compressWidths) {y : Nat} (hy : y < 2 ^ d) : dv d y < q :=
-  (decompress_val hd hy).2
-
 theorem dv_eq {d : Nat} (hd : d ∈ compressWidths) {y : Nat} (hy : y < 2 ^ d) :
     dv d y = (decompress d y).val := (decompress_val hd hy).1.symm
 

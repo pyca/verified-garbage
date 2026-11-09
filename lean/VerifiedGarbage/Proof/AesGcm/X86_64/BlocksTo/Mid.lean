@@ -18,7 +18,7 @@ first `q` blocks of the plaintext are encrypted into the output and hashed,
 with the arguments kept for the rest after `k` blocks: after the entry
 (`mid_entry`, with `q = k = 0`), and after `rest` (`rest_ok`, `k = q`). The
 plaintext is never written: every region written is apart from it
-(`src_keep`).
+(`src_wR`).
 -/
 
 @[expose] public section
@@ -81,13 +81,6 @@ theorem src_wR : ∀ r ∈ wR s, (srcR s).Disjoint r := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   exacts [hp.c_r.symm, hp.y_r.symm, hp.r_d, hp.r_s]
-
-/-- The plaintext, through a frame of the regions written. -/
-theorem src_keep {m m' : Mem} (hf : Frame (wR s) m m') {q k : Nat} (hqk : q + k ≤ n s) :
-    blocksAt m' (sq s q) k = blocksAt m (sq s q) k :=
-  blocksAt_frame hf (fun r hr => by
-    rw [Nat.mul_comm]
-    exact (src_wR hp r hr).sub_left (Offset.sub_base _ (by omega_arith))) (by have := hp.w_r; omega_arith)
 
 /-- The key schedule, through a frame of the regions written. -/
 theorem keep_sch {m m' : Mem} (hf : Frame (wR s) m m') :

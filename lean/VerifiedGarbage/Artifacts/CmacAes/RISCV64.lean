@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacAes.RISCV64.Verified
 public import VerifiedGarbage.Proof.CmacAes.Stream.RISCV64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # AES-CMAC (NIST SP 800-38B) on RISC-V -/
 

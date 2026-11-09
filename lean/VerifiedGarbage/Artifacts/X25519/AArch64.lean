@@ -10,7 +10,9 @@ import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
+public import VerifiedGarbage.Proof.X25519.AArch64.Exchange
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # X25519 (RFC 7748) on AArch64 -/
 
@@ -19,11 +21,11 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.X25519.AArch64
 
 def artifacts : List Artifact := [
-  Spec.X25519.x25519Api.artifact AArch64.target {
-    code := Impl.X25519.AArch64.AltLadder.x25519
-    verified := Proof.X25519.AArch64.AltLadder.x25519_verified },
+  Spec.X25519.exchangeApi.artifact AArch64.target {
+    code := Impl.Xdh.AArch64.exchange "vg_x25519" Impl.X25519.AArch64.AltLadder.x25519 32
+    stack := 16
+    verified := Proof.X25519.AArch64.Exchange.exchange_verified },
   Spec.X25519.x25519BaseApi.artifact AArch64.target {
-    consts := Impl.Ed25519.AArch64.combConsts
     written := [("scratch", 1024)]
     code := Impl.X25519.AArch64.Base.x25519Base
     verified := Proof.X25519.AArch64.Base.x25519Base_verified

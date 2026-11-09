@@ -18,7 +18,8 @@ each is a variant of the interface `AesBlocks` on x86-64
 `Generic/AesBlocks/X86_64/`) is emitted once for each of them (see
 `TCB/Emit.lean`). Both functions are proven against the same contract,
 `Proof.Aes.blocksX86_64` (with `Spec.Aes.cipher` and `Spec.Aes.invCipher`),
-and make no calls. They come with the implementation of `vg_aes_expand_key`
+and make no calls. Each states how much of `scratch` its functions may write
+(`encWritten`, `decWritten`), so that its callers zero only that. They come with the implementation of `vg_aes_expand_key`
 that goes with them (with the same suffix and CPU features), for the callers
 that also expand the key, proven against `Proof.Aes.expandKeyX86_64`.
 -/
@@ -54,6 +55,19 @@ structure BlocksImpl where
   decMxcsr : dec.code.allInstrs (fun i => !loadsMxcsr i) = true
   decSpSafe : dec.code.all (fun i => !isa.writesSp i) = true
   decNoStack : dec.code.x86_64Depth = 0
+  /-- `enc` writes no byte of `scratch` at offset `encWritten` or beyond:
+  its callers need to zero only the first `encWritten` bytes. -/
+  encWritten : Nat
+  encWrittenLe : encWritten ≤ 2048
+  encWrittenOk : ∀ s t s', (Proof.Aes.encryptBlocksRoundsContract X86_64.abi).pre s →
+    Exec isa enc.code s t s' →
+      Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", encWritten)] s s'
+  /-- `dec` writes no byte of `scratch` at offset `decWritten` or beyond. -/
+  decWritten : Nat
+  decWrittenLe : decWritten ≤ 2048
+  decWrittenOk : ∀ s t s', (Proof.Aes.decryptBlocksRoundsContract X86_64.abi).pre s →
+    Exec isa dec.code s t s' →
+      Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", decWritten)] s s'
   /-- What the names of its callers' instances end with (e.g. `_aesni`;
   nothing for the baseline implementation). -/
   suffix : String
@@ -77,6 +91,14 @@ theorem nosp_of {c : Prog isa}
     (h : ((instrs c).all fun i => !Taint.clobbers i .rsp) = true) : NoSp c :=
   fun i hi => by simpa using List.all_eq_true.mp h i hi
 
+/-- Any run writes none of `scratch` from its end on. -/
+theorem written_all (s s' : State) :
+    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 2048)] s s' := by
+  simp [Sig.writtenWithin, X86_64.abi, X86_64.argRegs, Abi.withConsts, Spec.Aes.blocksSig,
+    Sig.words, Sig.arrays, Param.words, ArgWord.bits, Elem.size]
+  intro i h1 h2
+  omega
+
 /-- The bitsliced implementation, `vg_aes_encrypt_blocks` and
 `vg_aes_decrypt_blocks`, in the baseline ISA. -/
 def scalar : BlocksImpl where
@@ -96,6 +118,12 @@ def scalar : BlocksImpl where
   decMxcsr := by lit_decide
   decSpSafe := Code.all_of_allInstrs (by lit_decide)
   decNoStack := by lit_decide
+  encWritten := 2048
+  encWrittenLe := Nat.le_refl _
+  encWrittenOk := fun s _ s' _ _ => written_all s s'
+  decWritten := 2048
+  decWrittenLe := Nat.le_refl _
+  decWrittenOk := fun s _ s' _ _ => written_all s s'
   suffix := ""
   features := []
   expand := .scalar
@@ -126,6 +154,12 @@ def aesni : BlocksImpl where
   decMxcsr := by lit_decide
   decSpSafe := Code.all_of_allInstrs (by lit_decide)
   decNoStack := by lit_decide
+  encWritten := 0
+  encWrittenLe := Nat.zero_le _
+  encWrittenOk := AesNi.encryptBlocks_written
+  decWritten := 224
+  decWrittenLe := by decide
+  decWrittenOk := AesNi.decryptBlocks_written
   suffix := "_aesni"
   features := ["aes"]
   expand := .aesni
@@ -157,6 +191,12 @@ def vaes : BlocksImpl where
   decMxcsr := by lit_decide
   decSpSafe := Code.all_of_allInstrs (by lit_decide)
   decNoStack := by lit_decide
+  encWritten := 0
+  encWrittenLe := Nat.zero_le _
+  encWrittenOk := VaesBlocks.encryptBlocks_written
+  decWritten := 224
+  decWrittenLe := by decide
+  decWrittenOk := VaesBlocks.decryptBlocks_written
   suffix := "_vaes"
   features := ["aes", "avx", "avx2", "vaes"]
   expand := .aesni

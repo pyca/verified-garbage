@@ -142,10 +142,6 @@ theorem avx2_ok {s₀ : State} (hp : APre s₀) {s : State} (h : TailPre s₀ 0 
 
 /-! ## Registers, memory and the vector state -/
 
-theorem qz_of {s s' : State} (hx : s'.xmm = s.xmm) (hy : s'.ymmHi = s.ymmHi) (hz : s'.zmmHi = s.zmmHi)
-    (r : XReg) (k : Nat) : qz s' r k = qz s r k := by
-  unfold qz State.zlane State.lane; rw [hx, hy, hz]
-
 theorem LaneInv.of_qz {R X : Nat} {s s' : State} (h : ∀ r k, qz s' r k = qz s r k)
     (hI : LaneInv R X s) : LaneInv R X s' := by
   have e₁ : hv s' = hv s := by funext k i; simp only [hv, h]
@@ -551,12 +547,5 @@ theorem blocksAvx512_ct : ConstantTime isa blocksAvx512X86_64.pre blocksAvx512X8
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
-
-theorem blocksAvx512_verified :
-    Verified X86_64.target blocksAvx512 (Proof.Poly1305.blocksContract X86_64.abi 16) :=
-  Verified.of_correct blocksAvx512_ok blocksAvx512_ct (by
-    sig_implies [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig, blocksAvx512X86_64,
-      Proof.Poly1305.blocksStack, Proof.Poly1305.blocksX86_64, X86_64.abi, X86_64.argRegs]
-      [Avx2.sat] using Avx2.sat)
 
 end VG.Proof.Poly1305.X86_64.Avx512

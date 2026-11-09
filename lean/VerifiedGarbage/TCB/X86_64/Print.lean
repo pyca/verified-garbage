@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Encode
 public import VerifiedGarbage.TCB.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # Intel-syntax printer for the x86-64 model
@@ -216,6 +217,9 @@ def ZOp.asm : ZOp → String
   | .vpermq d r o => s!"vpermq {d.zname}, {r.zname}, {o.toNat}"
   | .vpmadd52 hi d a b =>
     s!"{if hi then "vpmadd52huq" else "vpmadd52luq"} {d.zname}, {a.zname}, {b.zname}"
+  | .vpermw d a b => s!"vpermw {d.zname}, {a.zname}, {b.zname}"
+  | .vpsrlvw d a b => s!"vpsrlvw {d.zname}, {a.zname}, {b.zname}"
+  | .vextracti32x4 d r n => s!"vextracti32x4 {d.name}, {r.zname}, {n.toNat}"
 
 /-- The name of the `xmm` register of a `VReg`. -/
 def VReg.name : VReg → String
@@ -328,6 +332,7 @@ def Instr.asm : Instr → List String
   | .kStore m k r => [s!"kmovw k1, {k.name32}", s!"vmovdqu64 {m.str512} " ++ "{k1}" ++ s!", {r.zname}"]
   | .kLoad8 k d m => [s!"kmovq k1, {k.name}", s!"vmovdqu8 {d.zname} " ++ "{k1}{z}" ++ s!", {m.str512}"]
   | .kStore8 m k r => [s!"kmovq k1, {k.name}", s!"vmovdqu8 {m.str512} " ++ "{k1}" ++ s!", {r.zname}"]
+  | .vpcmpltuw d a b => [s!"vpcmpuw k1, {a.zname}, {b.zname}, 1", s!"kmovd {d.name32}, k1"]
   | .stmxcsr m => [s!"stmxcsr {m.str32}"]
   | .ldmxcsr m => [s!"ldmxcsr {m.str32}"]
   | .lfence => ["lfence"]
@@ -377,7 +382,7 @@ def Instr.memOps : Instr → List MemOp
   | .stmxcsr m | .ldmxcsr m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
   | .shift .. | .shiftCl .. | .shiftx .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _
-  | .vpmovmskb .. | .zop _ | .eop _
+  | .vpmovmskb .. | .zop _ | .eop _ | .vpcmpltuw ..
   | .lfence | .mul _ | .imul .. | .imul3 .. | .shld .. | .btr ..
   | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => []
 
@@ -418,5 +423,23 @@ def printer : Printer isa where
     | i => match i.memOps.filter (!·.dispOk) with
       | [] => if i.encode.isNone then some "an operand does not fit its field" else none
       | m :: _ => some s!"the displacement of the memory operand {m.addr} does not fit in 32 bits"
+
+/-- What the emitter needs of the target (`Emitter`): its printer, its Rust `cfg`
+and ABI string, and how documentation names its calling convention's
+argument area and reserved memory (`abi`'s `argArea` and `reserved`). -/
+instance : Emitter isa where
+  printer := printer
+  -- x32 targets (`x86_64-unknown-linux-gnux32`) have 32-bit pointers. The
+  -- model's baseline includes SSE2 (see `Instr.requires`), which
+  -- `x86_64-unknown-none` and `x86_64-unknown-uefi` turn off; there the Rust
+  -- caller would also not save the SSE registers, of which UEFI's convention
+  -- (the Microsoft x64 one) makes `xmm6`–`xmm15` callee-saved.
+  rustCfg := "all(target_arch = \"x86_64\", target_pointer_width = \"64\", \
+    target_feature = \"sse2\")"
+  rustAbi := "sysv64"
+  argAreaDoc ws := if ws.length - argRegs.length = 0 then none else
+    some ("the arguments on the stack", false)
+  reservedDoc n := some (if n = 0 then "the return address on the stack" else
+    s!"the return address on the stack or the {n} bytes of stack below it")
 
 end VG.X86_64

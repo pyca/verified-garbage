@@ -53,7 +53,8 @@ theorem sealEntry_wp {s₀ : State} (h : sealPre s₀) :
       OneI (s₀.gpr .a0) (stackArg s₀ 1) s₀.sp (s₀.gpr .a1).toNat (s₀.gpr .a2) (s₀.gpr .a3).toNat (s₀.gpr .a4)
         (s₀.gpr .a5) (s₀.gpr .a6) (s₀.gpr .a7) s₁ ∧
       s₁.gpr .s4 = s₀.gpr .a2 ∧ s₁.gpr .s5 = BitVec.ofNat 64 (s₀.gpr .a3).toNat ∧
-      s₁.gpr .s9 = stackArg s₀ 0 ∧ Covers [⟨stackArg s₀ 0, 16⟩] s₁.wr := by
+      s₁.gpr .s9 = stackArg s₀ 0 ∧ Covers [⟨stackArg s₀ 0, 16⟩] s₁.wr ∧
+      OD false (s₀.gpr .a0) (stackArg s₀ 1) (s₀.gpr .a6) (s₀.gpr .a6) (s₀.gpr .a7) s₁ := by
   obtain ⟨hrd, hwr, dcd, dcW, dnd, dnW, dad, daW, ddt, ddW, ddA, dtW, dWA, fc, fn, fa, fd, fW, fsp, hR, hstk,
     ca, wa⟩ := h
   have hk₀ : StkOk (s₀.gpr .a0) (stackArg s₀ 1 + BitVec.ofNat 64 16) (stackArg s₀ 1) s₀.sp :=
@@ -71,10 +72,12 @@ theorem sealEntry_wp {s₀ : State} (h : sealPre s₀) :
   have toN : ∀ {x : BitVec 64}, x = BitVec.ofNat 64 x.toNat := fun {x} => by simp
   have hDw : Covers [⟨s₀.gpr .a6, (s₀.gpr .a7).toNat⟩] s₁.wr := by
     rw [hk₁.wr, hwr]; exact covers_mem (by simp)
+  have hDok : DataOk (stackArg s₀ 1 + BitVec.ofNat 64 16) (stackArg s₀ 1) s₁ (s₀.gpr .a6) (s₀.gpr .a7).toNat :=
+    ⟨covers_left hDw, (s₀.gpr .a7).isLt, fd, ddW.sub_right (Lay.wSub (by decide)), ddW,
+      by rw [hk₁.sp]; exact hstk.buf (by simp)⟩
   refine ⟨⟨s₁.gpr, h1.s2, h1.s1, h1.s0, by rw [h1.s3]; exact toN, by rw [h1.s7]; exact toN,
-    h1.s10, h1.s11, one_env h1 hC hW hk₀, ?_, ?_, ⟨⟨covers_left hDw, (s₀.gpr .a7).isLt, fd,
-      ddW.sub_right (Lay.wSub (by decide)), ddW, by rw [hk₁.sp]; exact hstk.buf (by simp)⟩, hDw, dcd⟩,
-    h1.aad, h1.dat⟩, h1.s4, by rw [h1.s5]; exact toN, h1.s9, ?_⟩
+    h1.s10, h1.s11, one_env h1 hC hW hk₀, ?_, ?_, hDok, h1.aad, h1.dat⟩, h1.s4, by rw [h1.s5]; exact toN, h1.s9, ?_,
+    ⟨⟨hDok, hDw, dcd⟩, rfl⟩⟩
   · exact ⟨by rw [hk₁.rd, hk₁.wr]; exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp)),
       (s₀.gpr .a3).isLt, fn, dnW.sub_right (Lay.wSub (by decide)), dnW, by rw [hk₁.sp]; exact hstk.buf (by simp)⟩
   · exact ⟨by rw [hk₁.rd, hk₁.wr]; exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp)),
@@ -94,13 +97,19 @@ theorem oneA_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 8 ∨ off = 
     ⟨by rw [uB.mem, uA.mem], by rw [uB.rd, uA.rd], by rw [uB.wr, uA.wr], by rw [uB.sp, uA.sp]⟩⟩
 
 /-- The rest of the entry, after `W` is in `t1`. -/
-abbrev oneRest : List Instr :=
+abbrev oneRestAt (tagO : Nat) : List Instr :=
   save .t1 ++ ([mov .s2 .a0, mov .s3 .a1, .addi .s1 .s0 16, mov .s4 .a2, mov .s5 .a3, mov .s7 .a3,
     .store .d .a4 .s0 aadO, mov .s10 .a5, .store .d .a6 .s0 dataO, mov .s11 .a7, .addSp .t1 0,
-    .load .d .s9 .t1 0] : List Instr)
+    .load .d .s9 .t1 tagO] : List Instr)
 
-theorem oneEntry_eq (off : Nat) : oneEntry off = ([.addSp .t1 0, .load .d .t1 .t1 off] : List Instr) ++ oneRest := by
-  rw [oneEntry, List.append_assoc]
+abbrev oneRest : List Instr := oneRestAt 0
+
+theorem oneEntryAt_eq (off tagO : Nat) :
+    oneEntryAt off tagO = ([.addSp .t1 0, .load .d .t1 .t1 off] : List Instr) ++ oneRestAt tagO := by
+  rw [oneEntryAt, List.append_assoc]
+
+theorem oneEntry_eq (off : Nat) : oneEntry off = ([.addSp .t1 0, .load .d .t1 .t1 off] : List Instr) ++ oneRest :=
+  oneEntryAt_eq off 0
 
 theorem oneHead_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [])
     (.block [.addSp .t1 0, .load .d .t1 .t1 8]) h).isSome = true := ⟨_, by taint_decide⟩
@@ -112,9 +121,10 @@ theorem oneRest_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint
 section
 variable {c W sp : Addr} {R : Nat} {Np : Addr} {n : Nat} {Ad A D Ln T : BitVec 64}
 
-/-- `OneI`, with the tag's address `T` in `s9`, which the state may write. -/
+/-- `OneI`, with the tag's address `T` in `s9`, which the state may write,
+and the data, which it may write too. -/
 def OneT (c W sp : Addr) (R : Nat) (Np : Addr) (n : Nat) (Ad A D Ln T : BitVec 64) (s : State) : Prop :=
-  OneI c W sp R Np n Ad A D Ln s ∧ s.gpr .s9 = T ∧ Covers [⟨T, 16⟩] s.wr
+  OneI c W sp R Np n Ad A D Ln s ∧ s.gpr .s9 = T ∧ Covers [⟨T, 16⟩] s.wr ∧ OD false c W D D Ln s
 
 theorem OneT.frame {s s' : State} (h : OneT c W sp R Np n Ad A D Ln T s) {V : Reg → BitVec 64}
     (hV : ∀ r ∈ frozen, V r = s.gpr r) (he : Env V sp s') (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
@@ -122,7 +132,7 @@ theorem OneT.frame {s s' : State} (h : OneT c W sp R Np n Ad A D Ln T s) {V : Re
     (hs : ∀ {d : Nat}, 232 ≤ d ∧ d + 8 ≤ 248 → ∀ r ∈ rs, (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r) :
     OneT c W sp R Np n Ad A D Ln T s' :=
   ⟨h.1.frame hV he hrd hwr hsp hf hs, (he.fr _ (by decide)).trans ((hV _ (by decide)).trans h.2.1),
-    by rw [hwr]; exact h.2.2⟩
+    by rw [hwr]; exact h.2.2.1, h.2.2.2.of_eq hrd hwr hsp⟩
 
 /-- Between `oneAad` and `oneTag`: the additional data `a` absorbed and padded. -/
 def OneAbs (c W : Addr) (A : BitVec 64) (s : State) : Prop :=
@@ -151,10 +161,11 @@ theorem sealBody_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : CT (fun s => OneT c W sp R
         by rw [← a]; exact oa.hH, by rw [i, length_bytesAt], by rw [← b]; exact oa.abs⟩
   -- `oneCrypt`
   refine CT.seq (J := fun s => OneT c W sp R Np n Ad A D Ln T s ∧ OneAbs c W A s)
-    ((oneCrypt_ct L hR).mono fun s ⟨hT, _⟩ => hT.1) (fun s ⟨hT, H, x, hH, hl, hab⟩ => ?_) ?_
+    ((oneCrypt_ct L hR (o := false) (Dst := D)).mono fun s ⟨hT, _⟩ => ⟨hT.1, hT.2.2.2, Bool.noConfusion⟩)
+    (fun s ⟨hT, H, x, hH, hl, hab⟩ => ?_) ?_
   · obtain ⟨V, a, b, d, e, f, i, k, he, hN, hA, hD, sa, sd⟩ := hT.1
     have L' := L.v a b d
-    have hd : DataW (V .s2) (V .s1) (V .s0) s D (V .s11).toNat := by rw [a, b, d, k]; exact hD
+    have hd : DataW (V .s2) (V .s1) (V .s0) s D (V .s11).toNat := by rw [a, b, d, k]; exact hT.2.2.2.1
     refine WP.mono (WP.with_rdwr (oneCrypt_ok L' he e hR hd (by rw [d]; exact sd) rfl)) fun s' ⟨oc, rd, wr, sp'⟩ =>
       ⟨hT.frame (fun r hr => (he.fr r hr).symm) oc.env rd wr sp' oc.frame
         (fun hd' => by rw [← d]; exact slot_crFrame L' hd hd'), H, x, ?_, hl, ?_⟩
@@ -170,9 +181,9 @@ theorem sealBody_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : CT (fun s => OneT c W sp R
     (fun s ⟨hT, H, x, hH, hl, hab⟩ => ?_) ?_
   · obtain ⟨V, a, b, d, e, f, i, k, he, hN, hA, hD, sa, sd⟩ := hT.1
     refine WP.mono (WP.with_rdwr (oneTag_ok (L.v a b d) (o := 0) (.inl rfl) (H := H) (a := x) (D := D) he e hR
-      (by rw [a]; exact hH) (by rw [i]; exact hl) (by rw [b]; exact hab) (by rw [b, d, k]; exact hD.ok)
+      (by rw [a]; exact hH) (by rw [i]; exact hl) (by rw [b]; exact hab) (by rw [b, d, k]; exact hD)
       (by rw [d]; exact sd)))
-      fun s' ⟨ot, _, wr, _⟩ => ⟨V, d, (he.fr _ (by decide)).symm.trans hT.2.1, ot.env, by rw [wr]; exact hT.2.2⟩
+      fun s' ⟨ot, _, wr, _⟩ => ⟨V, d, (he.fr _ (by decide)).symm.trans hT.2.1, ot.env, by rw [wr]; exact hT.2.2.1⟩
   -- the tag copied out
   refine CT.seq (J := fun s => s.gpr .s0 = W ∧ s.sp = sp) ?_
     (fun s ⟨V, d, i, he, hT⟩ => WP.mono (tagOut_ok he (by rw [i]; exact hT) (by rw [i, d]; exact hTW))
@@ -226,6 +237,6 @@ theorem seal_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : ConstantTime isa sealRISCV64.p
       exact CT.taintEq _ v σ₁.sp (fun s h => h) hc
   · have := sealEntry_wp hs
     rw [ea0, ea1, e3, e4, e5, e6, e7, e8, e9, e10, esp] at this
-    exact WP.mono this fun s' ⟨hO, h24, h25, h20, hT⟩ => ⟨⟨hO, h20, hT⟩, h24, h25⟩
+    exact WP.mono this fun s' ⟨hO, h24, h25, h20, hT, hOD⟩ => ⟨⟨hO, h20, hT, hOD⟩, h24, h25⟩
 
 end VG.Proof.AesGcm.RISCV64

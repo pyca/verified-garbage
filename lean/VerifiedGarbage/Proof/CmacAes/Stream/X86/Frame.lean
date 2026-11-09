@@ -46,16 +46,16 @@ theorem finish_noEsp : (finish v.callee v.suffix).allInstrs (fun i => !Taint.clo
     noEsp_of (Proof.CmacAes.X86.finalize_nosp v)]
   decide +kernel
 
-theorem init_stackUse : stackUse (init v.expand v.callee v.suffix) ≤ 48 := by
+theorem init_stackUse : stackUse (init v.expand v.callee v.suffix) ≤ 52 := by
   simp only [init, call4, stackUse, v.expandStack, Proof.CmacAes.X86.subkeys_stack v]
   decide +kernel
 
-theorem absorb_stackUse : stackUse (absorb v.callee v.suffix) ≤ 56 := by
+theorem absorb_stackUse : stackUse (absorb v.callee v.suffix) ≤ 60 := by
   simp only [absorb, absorbPre, absorbPost, call6, countHeld, held, fill, copy, chain1, chain2,
     stackUse, Proof.CmacAes.X86.update_stack v]
   decide +kernel
 
-theorem finish_stackUse : stackUse (finish v.callee v.suffix) ≤ 56 := by
+theorem finish_stackUse : stackUse (finish v.callee v.suffix) ≤ 60 := by
   simp only [finish, finPre, call6, countHeld, held, stackUse, Proof.CmacAes.X86.finalize_stack v]
   decide +kernel
 
@@ -65,7 +65,7 @@ stack arguments at `0x8004`. -/
 def initFrameSat : State :=
   { initSat with rd := [⟨0x3000, 16⟩, ⟨0x8004, 12⟩], wr := [⟨0x1000, 304⟩] }
 
-theorem initFrameSat_pre : ∃ s, (Spec.Cmac.aesInitContract X86.abi 2372).pre s := by
+theorem initFrameSat_pre : ∃ s, (Spec.Cmac.aesInitContract X86.abi 2376).pre s := by
   implies_sat [Spec.Cmac.aesInitContract, Spec.Cmac.aesInitSig, Spec.Cmac.aesInitPre,
     Spec.Cmac.aesInitPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [initFrameSat, initSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using initFrameSat
@@ -75,7 +75,7 @@ working space: as `absorbSat`. -/
 def absorbFrameSat : State :=
   { absorbSat with rd := [⟨0x3000, 0⟩, ⟨0x8004, 24⟩], wr := [⟨0x1000, 304⟩] }
 
-theorem absorbFrameSat_pre : ∃ s, (Spec.Cmac.aesAbsorbContract X86.abi 2392).pre s := by
+theorem absorbFrameSat_pre : ∃ s, (Spec.Cmac.aesAbsorbContract X86.abi 2396).pre s := by
   implies_sat [Spec.Cmac.aesAbsorbContract, Spec.Cmac.aesAbsorbSig, Spec.Cmac.aesAbsorbPre,
     Spec.Cmac.aesAbsorbPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [absorbFrameSat, absorbSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using absorbFrameSat
@@ -85,33 +85,33 @@ working space: as `finishSat`. -/
 def finishFrameSat : State :=
   { finishSat with rd := [⟨0x8004, 20⟩], wr := [⟨0x1000, 304⟩, ⟨0x2000, 16⟩] }
 
-theorem finishFrameSat_pre : ∃ s, (Spec.Cmac.aesFinishContract X86.abi 2388).pre s := by
+theorem finishFrameSat_pre : ∃ s, (Spec.Cmac.aesFinishContract X86.abi 2392).pre s := by
   implies_sat [Spec.Cmac.aesFinishContract, Spec.Cmac.aesFinishSig, Spec.Cmac.aesFinishPre,
     Spec.Cmac.aesFinishPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [finishFrameSat, finishSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finishFrameSat
 
 theorem init_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2324 3 (init v.expand v.callee v.suffix))
-      (Spec.Cmac.aesInitContract X86.abi 2372) :=
+      (Spec.Cmac.aesInitContract X86.abi 2376) :=
   X86.Verified.stackScratch (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64) (n := 288)
     (pre := Spec.Cmac.aesInitPre X86.abi.ptrBits) (post := Spec.Cmac.aesInitPost X86.abi.ptrBits)
-    (wa := false) (stack := 48) (bytes := 2324) (init_verified v) (by decide) (init_noEsp v)
+    (wa := false) (stack := 52) (bytes := 2324) (init_verified v) (by decide) (init_noEsp v)
     (init_stackUse v) (initPre_local _) (initPost_local _) initFrameSat_pre
 
 theorem absorb_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2336 6 (absorb v.callee v.suffix))
-      (Spec.Cmac.aesAbsorbContract X86.abi 2392) :=
+      (Spec.Cmac.aesAbsorbContract X86.abi 2396) :=
   X86.Verified.stackScratch (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64) (n := 288)
     (pre := Spec.Cmac.aesAbsorbPre X86.abi.ptrBits) (post := Spec.Cmac.aesAbsorbPost X86.abi.ptrBits)
-    (wa := false) (stack := 56) (bytes := 2336) (absorb_verified v) (by decide) (absorb_noEsp v)
+    (wa := false) (stack := 60) (bytes := 2336) (absorb_verified v) (by decide) (absorb_noEsp v)
     (absorb_stackUse v) (absorbPre_local _) (absorbPost_local _) absorbFrameSat_pre
 
 theorem finish_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2332 5 (finish v.callee v.suffix))
-      (Spec.Cmac.aesFinishContract X86.abi 2388) :=
+      (Spec.Cmac.aesFinishContract X86.abi 2392) :=
   X86.Verified.stackScratch (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64) (n := 288)
     (pre := Spec.Cmac.aesFinishPre X86.abi.ptrBits) (post := Spec.Cmac.aesFinishPost X86.abi.ptrBits)
-    (wa := false) (stack := 56) (bytes := 2332) (finish_verified v) (by decide) (finish_noEsp v)
+    (wa := false) (stack := 60) (bytes := 2332) (finish_verified v) (by decide) (finish_noEsp v)
     (finish_stackUse v) (finishPre_local _) (finishPost_local _) finishFrameSat_pre
 
 end VG.Proof.CmacAes.Stream.X86

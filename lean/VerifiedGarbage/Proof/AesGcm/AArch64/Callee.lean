@@ -54,15 +54,6 @@ structure GhashWithImpl where
   ct : ConstantTime isa Proof.Gcm.ghashWithAArch64.pre Proof.Gcm.ghashWithAArch64.pub fn.code
   keepsV : fn.code.allInstrs keepsV = true
 
-/-- An implementation of `vg_ghash_store_powers` on AArch64. -/
-structure GhashStoreImpl where
-  fn : Fn
-  noFrames : fn.code.noFrames = true
-  ok : ∀ s, Proof.Gcm.ghashStoreAArch64.pre s →
-    ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashStoreAArch64.post s s'
-  ct : ConstantTime isa Proof.Gcm.ghashStoreAArch64.pre Proof.Gcm.ghashStoreAArch64.pub fn.code
-  keepsV : fn.code.allInstrs keepsV = true
-
 /-- An implementation of `vg_ghash` on AArch64. -/
 structure GhashImpl where
   fn : Fn
@@ -82,9 +73,6 @@ structure GhashImpl where
   /-- Its `vg_ghash_with_powers`, if it has one, which the `*_with_powers`
   functions call on the path for TLS records. -/
   withPowers : Option GhashWithImpl := none
-  /-- Its `vg_ghash_store_powers`, if it has one, which the `*_store_powers`
-  functions call on the path for TLS records. -/
-  storePowers : Option GhashStoreImpl := none
 
 /-- An implementation of `vg_aes_expand_key_scratch` on AArch64. -/
 structure KeyImpl where
@@ -177,7 +165,7 @@ structure GhCall (s : State) (H Y D S : Addr) (n : Nat) : Prop where
   writes : Covers [⟨Y, 16⟩, ⟨S, 256⟩] s.wr
 
 /-- What a call of `vg_ghash` leaves, and of a GHASH that also writes the
-regions `ex` (`vg_ghash_store_powers`). -/
+regions `ex`. -/
 structure GhPost (s : State) (H Y D S : Addr) (n : Nat) (s' : State) (ex : List Region := []) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
@@ -216,62 +204,6 @@ theorem gh_rel (g : GhashImpl) {P : State → State → Prop}
   refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
   simp only [Proof.Gcm.ghashAArch64, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
     callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4,
-    h₁.x0, h₁.x1, h₁.x2, h₁.x3, h₁.x4, h₂.x0, h₂.x1, h₂.x2, h₂.x3, h₂.x4, hsp]
-  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
-
-/-! ## `vg_ghash_prepared` -/
-
-/-- What a call of `vg_ghash_prepared` needs beyond `GhCall` with the hash
-subkey at `Ctx + 240`: the 144 bytes from there readable, apart from the
-accumulator and the working space, and the eight prepared powers at `Ctx`. -/
-structure GhPCall (s : State) (Ctx Y S : Addr) : Prop where
-  reads : Covers [⟨Ctx + BitVec.ofNat 64 240, 144⟩] (s.rd ++ s.wr)
-  hy : (⟨Ctx + BitVec.ofNat 64 240, 144⟩ : Region).Disjoint ⟨Y, 16⟩
-  hs : (⟨Ctx + BitVec.ofNat 64 240, 144⟩ : Region).Disjoint ⟨S, 256⟩
-  repr : Proof.Gcm.PreparedPowers8Repr s.mem Ctx
-
-section
-variable {s : State} {Ctx Y D S : Addr} {n : Nat} (h : GhCall s (Ctx + BitVec.ofNat 64 240) Y D S n)
-  (p : GhPCall s Ctx Y S)
-include h p
-
-theorem GhPCall.pre : Proof.Gcm.ghashPreparedAArch64.pre (s.callEntry.withRegions
-    [⟨Ctx + BitVec.ofNat 64 240, 144⟩, ⟨D, 16 * n⟩] [⟨Y, 16⟩, ⟨S, 256⟩]) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
-  have e : Ctx + BitVec.ofNat 64 240 - 240 = Ctx := BitVec.add_sub_cancel _ _
-  simp only [Proof.Gcm.ghashPreparedAArch64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-    State.withRegions_mem, State.callEntry_mem, callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3,
-    callEntry_x4, h.x0, h.x1, h.x2, h.x3, h.x4, hn, e]
-  exact ⟨trivial, trivial, p.hy, p.hs, h.yd, h.ys, h.ds, p.repr⟩
-
-theorem GhPCall.covers : Covers ([⟨Ctx + BitVec.ofNat 64 240, 144⟩, ⟨D, 16 * n⟩] ++ [⟨Y, 16⟩, ⟨S, 256⟩])
-    (s.rd ++ s.wr) :=
-  Covers.cons p.reads ((Covers.of_mem fun _ hr => List.mem_cons_of_mem _ hr).trans h.reads)
-
-theorem gp_call (g : GhashPreparedImpl) :
-    WP isa (.call g.fn.name g.fn.code) s (GhPost s (Ctx + BitVec.ofNat 64 240) Y D S n) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
-  refine WP.call (k := Proof.Gcm.ghashPreparedAArch64) g.ok (rd := [⟨Ctx + BitVec.ofNat 64 240, 144⟩, ⟨D, 16 * n⟩])
-    (wr := [⟨Y, 16⟩, ⟨S, 256⟩]) (GhPCall.pre h p) (GhPCall.covers h p) h.writes ?_ g.noFrames
-  intro s' hrd hwr hsp hf hsaved _ hpost
-  refine ⟨hrd, hwr, hsp, hsaved, hf, ?_⟩
-  simp only [Proof.Gcm.ghashPreparedAArch64, Proof.Gcm.ghashAArch64, State.withRegions_gpr, State.withRegions_mem,
-    State.callEntry_mem, callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, h.x0, h.x1, h.x2, h.x3, hn] at hpost
-  exact hpost
-
-end
-
-theorem gp_rel (g : GhashPreparedImpl) {σ₁ σ₂ : State} {Ctx Y D S : Addr} {n : Nat}
-    (h₁ : GhCall σ₁ (Ctx + BitVec.ofNat 64 240) Y D S n) (p₁ : GhPCall σ₁ Ctx Y S)
-    (h₂ : GhCall σ₂ (Ctx + BitVec.ofNat 64 240) Y D S n) (p₂ : GhPCall σ₂ Ctx Y S) (hsp : σ₁.sp = σ₂.sp) :
-    RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) (.call g.fn.name g.fn.code) fun _ _ => True := by
-  refine RelCT.call g.ok g.ct [⟨Ctx + BitVec.ofNat 64 240, 144⟩, ⟨D, 16 * n⟩] [⟨Y, 16⟩, ⟨S, 256⟩]
-    fun a b hab => ?_
-  obtain ⟨rfl, rfl⟩ := hab
-  refine ⟨GhPCall.pre h₁ p₁, GhPCall.pre h₂ p₂, ?_, GhPCall.covers h₁ p₁, h₁.writes, GhPCall.covers h₂ p₂,
-    h₂.writes⟩
-  simp only [Proof.Gcm.ghashPreparedAArch64, Proof.Gcm.ghashAArch64, State.withRegions_gpr, State.withRegions_sp,
-    State.callEntry_sp, callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4,
     h₁.x0, h₁.x1, h₁.x2, h₁.x3, h₁.x4, h₂.x0, h₂.x1, h₂.x2, h₂.x3, h₂.x4, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
 
@@ -346,6 +278,86 @@ theorem ctr_rel (v : Ctr32Impl) {P : State → State → Prop}
     callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4, callEntry_x5,
     h₁.x0, h₁.x1, h₁.x2, h₁.x3, h₁.x4, h₁.x5, h₂.x0, h₂.x1, h₂.x2, h₂.x3, h₂.x4, h₂.x5, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+/-! ## `vg_aes_ctr32_to` -/
+
+/-- What a call of `vg_aes_ctr32_to` needs: `CtrCall`'s, with the `n`
+blocks read at `D` and written at `O`, which overlap no other buffer. -/
+structure CtrToCall (s : State) (K C D O S : Addr) (R n : Nat) : Prop where
+  x0 : s.gpr .x0 = K
+  x1 : s.gpr .x1 = BitVec.ofNat 64 R
+  x2 : s.gpr .x2 = C
+  x3 : s.gpr .x3 = D
+  x4 : s.gpr .x4 = BitVec.ofNat 64 n
+  x5 : s.gpr .x5 = S
+  x6 : s.gpr .x6 = O
+  rounds : R = 10 ∨ R = 12 ∨ R = 14
+  wrap : D.toNat + 16 * n ≤ 2 ^ 64
+  wrapO : O.toNat + 16 * n ≤ 2 ^ 64
+  n_lt : n < 2 ^ 64
+  kc : (⟨K, 240⟩ : Region).Disjoint ⟨C, 16⟩
+  ko : (⟨K, 240⟩ : Region).Disjoint ⟨O, 16 * n⟩
+  ks : (⟨K, 240⟩ : Region).Disjoint ⟨S, 2048⟩
+  cd : (⟨C, 16⟩ : Region).Disjoint ⟨D, 16 * n⟩
+  co : (⟨C, 16⟩ : Region).Disjoint ⟨O, 16 * n⟩
+  cs : (⟨C, 16⟩ : Region).Disjoint ⟨S, 2048⟩
+  dO : (⟨D, 16 * n⟩ : Region).Disjoint ⟨O, 16 * n⟩
+  ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, 2048⟩
+  os : (⟨O, 16 * n⟩ : Region).Disjoint ⟨S, 2048⟩
+  reads : Covers ([⟨K, 240⟩, ⟨D, 16 * n⟩] ++ [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, 2048⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, 2048⟩] s.wr
+
+/-- What a call of `vg_aes_ctr32_to` leaves. -/
+structure CtrToPost (s : State) (K C D O S : Addr) (R n : Nat) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+  saved : ∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r
+  frame : Frame [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, 2048⟩] s.mem s'.mem
+  out : blocksAt s'.mem O n = ctr32 (aesWith R (bytesAt s.mem K (16 * (R + 1)))) (blockAt s.mem C)
+    (blocksAt s.mem D n)
+  ctr : blockAt s'.mem C = Nat.repeat Spec.Gcm.inc32 n (blockAt s.mem C)
+
+theorem callEntry_x6 (s : State) : s.callEntry.gpr .x6 = s.gpr .x6 := s.callEntry_gpr (by decide)
+
+theorem CtrToCall.pre {s : State} {K C D O S : Addr} {R n : Nat} (h : CtrToCall s K C D O S R n) :
+    Proof.Aes.ctr32ToAArch64.pre
+      (s.callEntry.withRegions [⟨K, 240⟩, ⟨D, 16 * n⟩] [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, 2048⟩]) := by
+  have hR := toNat_rounds h.rounds
+  have hn := toNat_ofNat_lt h.n_lt
+  simp only [Proof.Aes.ctr32ToAArch64, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4,
+    callEntry_x5, callEntry_x6, h.x0, h.x1, h.x2, h.x3, h.x4, h.x5, h.x6, hR, hn]
+  exact ⟨trivial, trivial, h.kc, h.ko, h.ks, h.cd, h.co, h.cs, h.dO, h.ds, h.os, h.wrap, h.wrapO, h.rounds⟩
+
+theorem ctrTo_call (v : Ctr32Impl) {s : State} {K C D O S : Addr} {R n : Nat}
+    (h : CtrToCall s K C D O S R n) :
+    WP isa (.call v.to.name v.to.code) s (CtrToPost s K C D O S R n) := by
+  have hR := toNat_rounds h.rounds
+  have hn := toNat_ofNat_lt h.n_lt
+  refine WP.call (k := Proof.Aes.ctr32ToAArch64) v.toOk (rd := [⟨K, 240⟩, ⟨D, 16 * n⟩])
+    (wr := [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, 2048⟩]) h.pre h.reads h.writes ?_ v.toNoFrames
+  intro s' hrd hwr hsp hf hsaved _ hpost
+  obtain ⟨hdata, hctr⟩ := hpost
+  simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
+    callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4, callEntry_x6, h.x0, h.x1, h.x2,
+    h.x3, h.x4, h.x6, hR, hn] at hdata hctr
+  exact ⟨hrd, hwr, hsp, hsaved, hf, hdata, hctr⟩
+
+theorem ctrTo_rel (v : Ctr32Impl) {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C D O S : Addr, ∃ R n : Nat,
+      CtrToCall s₁ K C D O S R n ∧ CtrToCall s₂ K C D O S R n ∧ s₁.sp = s₂.sp) :
+    RelCT isa P (.call v.to.name v.to.code) fun _ _ => True := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  obtain ⟨K, C, D, O, S, R, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+  refine RelCT.call (P := fun a b => a = s₁ ∧ b = s₂) v.toOk v.toCt [⟨K, 240⟩, ⟨D, 16 * n⟩]
+    [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, 2048⟩] (fun a b hab => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
+  obtain ⟨rfl, rfl⟩ := hab
+  refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
+  simp only [Proof.Aes.ctr32ToAArch64, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
+    callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4, callEntry_x5, callEntry_x6,
+    h₁.x0, h₁.x1, h₁.x2, h₁.x3, h₁.x4, h₁.x5, h₁.x6, h₂.x0, h₂.x1, h₂.x2, h₂.x3, h₂.x4, h₂.x5, h₂.x6, hsp]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
 
 /-! ## `vg_aes_expand_key_scratch` -/
 
@@ -423,7 +435,8 @@ namespace GcmImpl
 
 variable (v : GcmImpl)
 
-def callees : Callees := ⟨⟨v.ctr.callee.name, v.ctr.callee.code⟩, v.key.fn, v.gh.fn⟩
+def callees : Callees :=
+  ⟨⟨v.ctr.callee.name, v.ctr.callee.code⟩, v.key.fn, v.gh.fn, ⟨v.ctr.to.name, v.ctr.to.code⟩⟩
 
 /-- What the names of the AES-GCM functions end with: once if both
 implementations have the same suffix (`_aes`, for the one feature they

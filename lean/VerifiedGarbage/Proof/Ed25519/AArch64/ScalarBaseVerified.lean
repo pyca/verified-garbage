@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -21,6 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-! Merged from `Proof.Ed25519.AArch64.ScalarBaseCT`. -/
 
@@ -146,24 +146,6 @@ open VG VG.AArch64 VG.Impl.Ed25519.AArch64
 theorem scalarBase_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (s : State) (hs : scalarBaseLocal.pre s) :
     ∃ t s', Exec isa scalarBase s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' := scalarBase_correct hs
 
-/-- The shared contract's precondition, from its facts. -/
-theorem scalarBase_spec_pre {s : State}
-    (hrd : s.rd = [⟨s.gpr .x1, 32⟩, ⟨s.syms combSym, 8 * combWords.length⟩])
-    (hw : s.wr = [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x2, 8192⟩])
-    (h1 : Region.Disjoint ⟨s.gpr .x0, 32⟩ ⟨s.gpr .x1, 32⟩)
-    (h2 : Region.Disjoint ⟨s.gpr .x0, 32⟩ ⟨s.gpr .x2, 8192⟩)
-    (h3 : Region.Disjoint ⟨s.gpr .x1, 32⟩ ⟨s.gpr .x2, 8192⟩)
-    (f0 : (s.gpr .x0).toNat + 32 ≤ 2 ^ 64) (f1 : (s.gpr .x1).toNat + 32 ≤ 2 ^ 64)
-    (f2 : (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64)
-    (ht : CombHeld s [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x2, 8192⟩])
-    (hal : (s.syms combSym).toNat % 64 = 0) :
-    (Proof.Ed25519.scalarBaseContract (AArch64.abi.withConsts combConsts)).pre s := by
-  sig_pre [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
-    AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
-    stackBelow]
-  obtain ⟨held, fit, hdw⟩ := ht
-  exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact hdw, hal, by rw [hrd]; rfl, hw, h1, h2, h3, f0, f1, f2⟩
-
 def baseSatState : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | _ => 0
@@ -172,43 +154,5 @@ def baseSatState : State where
   rd := [⟨0x2000, 32⟩, ⟨0x100000, 49152⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x3000, 8192⟩]
   syms _ := 0x100000
-
-theorem scalarBase_sat :
-    (Proof.Ed25519.scalarBaseContract (AArch64.abi.withConsts combConsts)).pre baseSatState := by
-  have hl := combWords_length
-  have held : ∀ i < combWords.length, baseSatState.mem.readW (baseSatState.syms combSym +
-      BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := satMem_held
-  refine scalarBase_spec_pre (by rw [hl]; rfl) rfl (Region.disjoint_of_sep (by decide))
-    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide)) (by decide) (by decide)
-    (by decide) ⟨held, ?_, ?_⟩ (by decide)
-  all_goals rw [hl]
-  · decide
-  · simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
-
-theorem scalarBase_implies : scalarBaseLocal.Implies
-    (Proof.Ed25519.scalarBaseContract (AArch64.abi.withConsts combConsts)) where
-  pre s h := by
-    sig_pre [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
-      AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
-      stackBelow] at h
-    obtain ⟨hd, hheld, hfit, hdw, -, ht, hw, -, -, h3, -, -, h5⟩ := h
-    refine ⟨?_, hw, h3, h5, hheld, hfit, by rw [hw] at hdw; exact hdw⟩
-    rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
-  post := by
-    intro s s' _ h
-    sig_post [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
-      AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts]
-    exact h
-  pub s₁ s₂ _ _ h := by
-    sig_pub [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
-      AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts] at h
-    obtain ⟨hsp, hsy, h0, h1, h2⟩ := h
-    exact ⟨hsp, h0, h1, h2, hsy⟩
-  sat := ⟨baseSatState, scalarBase_sat⟩
-
-theorem scalarBase_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] :
-    Verified AArch64.target scalarBase (Proof.Ed25519.scalarBaseContract (AArch64.abi.withConsts combConsts)) :=
-  Verified.of_correct scalarBase_ok scalarBase_ct scalarBase_implies
 
 end VG.Proof.Ed25519.AArch64

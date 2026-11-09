@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # Poly1305 (RFC 8439 §2.5) on PPC64LE -/
 

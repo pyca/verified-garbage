@@ -33,9 +33,6 @@ open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 theorem ea_sp (t : State) (d : Nat) : t.ea (sp d) = t.gpr .rsp + BitVec.ofNat 64 d := by
   simp only [State.ea, sp, BitVec.ofInt_natCast]
 
-theorem ea_sp_off {t : State} {S : Addr} (h : t.gpr .rsp = S) (d : Nat) : t.ea (sp d) = off S d := by
-  rw [ea_sp, h]
-
 /-- The function's stack argument `j`, from the frame at `S = rsp - frameBytes`. -/
 theorem ea_arg {t : State} {s : State} (h : t.gpr .rsp = s.gpr .rsp - BitVec.ofNat 64 frameBytes) (j : Nat) :
     t.ea (arg j) = stackArgAddr s j := by
@@ -190,18 +187,6 @@ theorem Env.scr {s t : State} (h : Env s t) (hp : PreF s) : Scr t (fb s) frameBy
   Scr.of_mem (by rw [h.wr]; exact List.mem_cons_self ..) (by
     have := hp.sp1; simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes stackBytes at *
     omega)
-
-/-- A buffer of the caller that the function does not write. -/
-theorem Env.bytes {s t : State} (h : Env s t) {p : Addr} {len : Nat} (hk : (stkR s).Disjoint ⟨p, len⟩)
-    (ho : (outR s).Disjoint ⟨p, len⟩) (hs : (scrR s).Disjoint ⟨p, len⟩) (hl : len ≤ 2 ^ 64) :
-    Spec.Rsa.bytesAt t.mem p len = Spec.Rsa.bytesAt s.mem p len := by
-  simp only [Spec.Rsa.bytesAt]
-  refine List.map_congr_left fun i hi => h.mem.bytes (R := ⟨p, len⟩) (fun r hr => ?_) hl (List.mem_range.mp hi)
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact hk.symm
-  · exact ho.symm
-  · exact hs.symm
 
 theorem Env.arg {s t : State} (h : Env s t) (hp : PreF s) {j : Nat} (hj : j < 14) :
     t.mem.readW (stackArgAddr s j) 64 = stackArg s j := by

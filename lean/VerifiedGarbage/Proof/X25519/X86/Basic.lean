@@ -45,8 +45,6 @@ abbrev sub (x : BitVec 32) (d n : Nat) : Region := ⟨addr x d, n⟩
 /-- The working space, of `W` bytes. -/
 abbrev scR (W : Nat) (x : BitVec 32) : Region := ⟨x.setWidth 64, W⟩
 
-theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = addr (s.gpr b) d := rfl
-
 theorem addr_zero (x : BitVec 32) : addr x 0 = x.setWidth 64 := by simp [addr]
 
 theorem sub_contains {x : BitVec 32} {a k d n : Nat} (hx : x.toNat + a + k ≤ 2 ^ 32) (h₁ : a ≤ d)

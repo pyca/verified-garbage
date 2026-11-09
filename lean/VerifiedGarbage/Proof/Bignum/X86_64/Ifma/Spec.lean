@@ -58,24 +58,19 @@ theorem LayOk.D_ge (hl : LayOk l) : l.NB + 32 ≤ l.D := by
   rcases hl with rfl | rfl | rfl <;> decide
 
 theorem AmmOk.D_ge (hl : AmmOk l) : l.NB + 32 ≤ l.D := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- The CRT's layouts have the two primes' lanes. -/
 theorem LayOk.nl (hl : LayOk l) : l.nl = 2 := by
   rcases hl with rfl | rfl | rfl <;> rfl
 
+/-- The CRT's layouts' two regions. -/
+theorem LayOk.nlD (hl : LayOk l) : l.nl * l.D = 2 * l.D := by rw [hl.nl]
+
 /-- A frame at `B + o` as one at `B`, for the lanes. -/
 theorem OutN.rebaseN {B : Addr} {o n : Nat} {m m' : Mem} (h : OutN l (off B o) 0 n m m')
     (hn : o + l.D * (l.nl - 1) + n < 2 ^ 64) : OutN l B o n m m' := fun x hx => h x fun p hp => by
   have hDp := D_lane (l := l) hp
-  rcases ofs_rebase' B x (o := o) (by omega_arith) with ⟨h1, h2⟩ | ⟨h1, h2⟩
-  · rcases hx p hp with h3 | h3 <;> omega_arith
-  · omega_arith
-
-/-- A frame at `B + o` as one at `B`. -/
-theorem Out2.rebase {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l (off B o) 0 n m m')
-    (hn : o + l.D + n < 2 ^ 64) : Out2 l B o n m m' := fun x hx => h x fun p hp => by
-  have hDp : l.D * p ≤ l.D := by rcases (by omega_arith : p = 0 ∨ p = 1) with rfl | rfl <;> simp
   rcases ofs_rebase' B x (o := o) (by omega_arith) with ⟨h1, h2⟩ | ⟨h1, h2⟩
   · rcases hx p hp with h3 | h3 <;> omega_arith
   · omega_arith
@@ -184,18 +179,18 @@ theorem ammCoreSpecN_ok (hl : AmmOk l) {c : Prog isa} (hc : CoreOk l c) {s : Sta
   rw [he, hbS, Nat.add_mul_mod_self_left]
 
 /-- The layout's multiplication with `r8`, `r9`, `r11` at offsets `a`, `b`, `o` of `B = rbx`. -/
-theorem ammCoreSpec_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
+theorem ammCoreSpec_ok (hl : AmmOk l) {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
     (hB : s.gpr .rbx = B) (r8₃ : s.gpr .r8 = off B a) (r9₃ : s.gpr .r9 = off B b) (r11₃ : s.gpr .r11 = off B o)
-    (hs : Scr s B (2 * l.D))
-    (ho : o + l.D + l.NB ≤ 2 * l.D) (ha : a + l.D + l.NB ≤ 2 * l.D) (hb : b + l.D + l.NB ≤ 2 * l.D)
-    (hlt : ∀ p < 2, ∀ j < l.L, limb l s.mem B (l.D * p + a) j < 2 ^ 52 ∧ limb l s.mem B (l.D * p + b) j < 2 ^ 52 ∧
+    (hs : Scr s B (l.nl * l.D))
+    (ho : o + l.NB ≤ l.D) (ha : a + l.NB ≤ l.D) (hb : b + l.NB ≤ l.D)
+    (hlt : ∀ p < l.nl, ∀ j < l.L, limb l s.mem B (l.D * p + a) j < 2 ^ 52 ∧ limb l s.mem B (l.D * p + b) j < 2 ^ 52 ∧
       limb l s.mem B (l.D * p + oM) j < 2 ^ 52)
-    (hk : ∀ p < 2, ∀ t < 4, word s.mem B (l.D * p + l.oK0 + 8 * t) = BitVec.ofNat 64 (k p))
-    (hklt : ∀ p < 2, k p < 2 ^ 52) (hk0 : ∀ p < 2, (limb l s.mem B (l.D * p + oM) 0 * k p + 1) % 2 ^ 52 = 0)
-    (hA : ∀ p < 2, val52 l s.mem B (l.D * p + a) < 2 * val52 l s.mem B (l.D * p + oM))
-    (hBv : ∀ p < 2, val52 l s.mem B (l.D * p + b) < 2 * val52 l s.mem B (l.D * p + oM))
-    (hM : ∀ p < 2, 4 * val52 l s.mem B (l.D * p + oM) ≤ 2 ^ (52 * l.S)) :
-    WP isa (ammMul l) s fun s' => (∀ p < 2,
+    (hk : ∀ p < l.nl, ∀ t < 4, word s.mem B (l.D * p + l.oK0 + 8 * t) = BitVec.ofNat 64 (k p))
+    (hklt : ∀ p < l.nl, k p < 2 ^ 52) (hk0 : ∀ p < l.nl, (limb l s.mem B (l.D * p + oM) 0 * k p + 1) % 2 ^ 52 = 0)
+    (hA : ∀ p < l.nl, val52 l s.mem B (l.D * p + a) < 2 * val52 l s.mem B (l.D * p + oM))
+    (hBv : ∀ p < l.nl, val52 l s.mem B (l.D * p + b) < 2 * val52 l s.mem B (l.D * p + oM))
+    (hM : ∀ p < l.nl, 4 * val52 l s.mem B (l.D * p + oM) ≤ 2 ^ (52 * l.S)) :
+    WP isa (ammMul l) s fun s' => (∀ p < l.nl,
       (∀ j < l.L, limb l s'.mem B (l.D * p + o) j < 2 ^ 52) ∧
       val52 l s'.mem B (l.D * p + o) < 2 * val52 l s.mem B (l.D * p + oM) ∧
       val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.S) % val52 l s.mem B (l.D * p + oM) =
@@ -203,28 +198,28 @@ theorem ammCoreSpec_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {k : 
       Out2 l B o l.NB s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
-  have hn := hl.nl
-  have hD' := hl.amm.D_ge
-  refine WP.mono (ammCoreSpecN_ok hl.amm (ammMul_core hl.amm) hB r8₃ r9₃ r11₃ hs (by rw [hn]; simp only [Nat.reduceSub, Nat.mul_one]; omega_arith)
-    (by have := hl.D_bounds; omega_arith)
-    (by rw [hn]; simpa using ho) (by rw [hn]; simpa using ha) (by rw [hn]; simpa using hb)
-    (fun p hp => hlt p (by omega_arith)) (fun p hp => hk p (by omega_arith)) (fun p hp => hklt p (by omega_arith))
-    (fun p hp => hk0 p (by omega_arith))) fun s' ⟨hv, hf, hg, _, hrd, hwr, hx⟩ =>
-    ⟨fun p hp => let h := hv p (by omega_arith); ⟨h.1, (h.2 (hA p hp) (hBv p hp) (hM p hp)).1,
-      (h.2 (hA p hp) (hBv p hp) (hM p hp)).2⟩, hf.out2 hn, hg, hrd, hwr, hx⟩
+  have hnD := nlD hl
+  have hD := hl.D_bounds
+  have hD' := hl.D_ge
+  have hnl := hl.nl_le
+  have hDn : l.D * (l.nl - 1) ≤ l.D := D_le hl (show l.nl - 1 < l.nl by omega_arith)
+  refine WP.mono (ammCoreSpecN_ok hl (ammMul_core hl) hB r8₃ r9₃ r11₃ hs (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith) hlt hk hklt hk0) fun s' ⟨hv, hf, hg, _, hrd, hwr, hx⟩ =>
+    ⟨fun p hp => let h := hv p hp; ⟨h.1, (h.2 (hA p hp) (hBv p hp) (hM p hp)).1,
+      (h.2 (hA p hp) (hBv p hp) (hM p hp)).2⟩, hf.out2, hg, hrd, hwr, hx⟩
 
-/-- `[o] := [a] [b] / 2^(208 R)` for both primes. -/
-theorem amm_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
-    (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D))
-    (ho : o + l.D + l.NB ≤ 2 * l.D) (ha : a + l.D + l.NB ≤ 2 * l.D) (hb : b + l.D + l.NB ≤ 2 * l.D)
-    (hlt : ∀ p < 2, ∀ j < l.L, limb l s.mem B (l.D * p + a) j < 2 ^ 52 ∧ limb l s.mem B (l.D * p + b) j < 2 ^ 52 ∧
+/-- `[o] := [a] [b] / 2^(208 R)` for each lane. -/
+theorem amm_ok (hl : AmmOk l) {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
+    (hB : s.gpr .rbx = B) (hs : Scr s B (l.nl * l.D))
+    (ho : o + l.NB ≤ l.D) (ha : a + l.NB ≤ l.D) (hb : b + l.NB ≤ l.D)
+    (hlt : ∀ p < l.nl, ∀ j < l.L, limb l s.mem B (l.D * p + a) j < 2 ^ 52 ∧ limb l s.mem B (l.D * p + b) j < 2 ^ 52 ∧
       limb l s.mem B (l.D * p + oM) j < 2 ^ 52)
-    (hk : ∀ p < 2, ∀ t < 4, word s.mem B (l.D * p + l.oK0 + 8 * t) = BitVec.ofNat 64 (k p))
-    (hklt : ∀ p < 2, k p < 2 ^ 52) (hk0 : ∀ p < 2, (limb l s.mem B (l.D * p + oM) 0 * k p + 1) % 2 ^ 52 = 0)
-    (hA : ∀ p < 2, val52 l s.mem B (l.D * p + a) < 2 * val52 l s.mem B (l.D * p + oM))
-    (hBv : ∀ p < 2, val52 l s.mem B (l.D * p + b) < 2 * val52 l s.mem B (l.D * p + oM))
-    (hM : ∀ p < 2, 4 * val52 l s.mem B (l.D * p + oM) ≤ 2 ^ (52 * l.S)) :
-    WP isa (amm l o a b) s fun s' => (∀ p < 2,
+    (hk : ∀ p < l.nl, ∀ t < 4, word s.mem B (l.D * p + l.oK0 + 8 * t) = BitVec.ofNat 64 (k p))
+    (hklt : ∀ p < l.nl, k p < 2 ^ 52) (hk0 : ∀ p < l.nl, (limb l s.mem B (l.D * p + oM) 0 * k p + 1) % 2 ^ 52 = 0)
+    (hA : ∀ p < l.nl, val52 l s.mem B (l.D * p + a) < 2 * val52 l s.mem B (l.D * p + oM))
+    (hBv : ∀ p < l.nl, val52 l s.mem B (l.D * p + b) < 2 * val52 l s.mem B (l.D * p + oM))
+    (hM : ∀ p < l.nl, 4 * val52 l s.mem B (l.D * p + oM) ≤ 2 ^ (52 * l.S)) :
+    WP isa (amm l o a b) s fun s' => (∀ p < l.nl,
       (∀ j < l.L, limb l s'.mem B (l.D * p + o) j < 2 ^ 52) ∧
       val52 l s'.mem B (l.D * p + o) < 2 * val52 l s.mem B (l.D * p + oM) ∧
       val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.S) % val52 l s.mem B (l.D * p + oM) =

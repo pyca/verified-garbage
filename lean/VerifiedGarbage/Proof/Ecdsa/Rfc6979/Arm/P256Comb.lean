@@ -1,5 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+public import VerifiedGarbage.Proof.P256.Arm.Comb
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P256
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Comb
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
@@ -7,6 +12,14 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombLit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Impl.Ecdsa.P256.ArmComb
+meta import VerifiedGarbage.Proof.P256.Arm.Comb
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P256
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Comb
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombLit
+meta import VerifiedGarbage.Proof.Framework.PlainSimp
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Impl.Ecdsa.P256.ArmComb
 
 /-! RFC 6979 calls the same comb signer as the raw signing API. -/
 
@@ -74,7 +87,7 @@ def p256CombCurve (hL : Weierstrass.Law Spec.P256.curve) : RfcCurve :=
 /-- `p256CombCurve`, calling `vg_ecdsa_p256_sign_umaal`. -/
 def p256CombCurveU (hL : Weierstrass.Law Spec.P256.curve) : RfcCurve :=
   {p256CombCurve hL with
-    coreN := "vg_ecdsa_p256_sign" ++ "_umaal"
+    coreN := "vg_ecdsa_p256_sign_k" ++ "_umaal"
     coreC := Impl.Ecdsa.Arm.signP256CombU
     coreX := by
       intro s hs
@@ -85,5 +98,19 @@ def p256CombCurveU (hL : Weierstrass.Law Spec.P256.curve) : RfcCurve :=
       exact post
     coreCT := p256_comb_core_ctU
     coreStack := by lit_decide }
+
+/-! ## With the tables of every hash function with HMAC -/
+
+theorem p256T_verified (hL : Weierstrass.Law Spec.P256.curve) :
+    Verified Arm.target (signCodeT (p256CombCurve hL) Spec.Ecdsa.Rfc6979.Curves.p256.tries HmacTable.Arm.vars)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p256 (p256CombCurve hL).coreConsts HmacTable.Arm.vars) :=
+  oneT_verified ⟨rfl, by decide, by decide⟩ rfl (by decide) rfl Proof.P256.Arm.combSatMem (by decide)
+    (by rw [Proof.P256.Arm.comb_words_length]; decide) Proof.P256.Arm.combSat_held
+
+theorem p256UT_verified (hL : Weierstrass.Law Spec.P256.curve) :
+    Verified Arm.target (signCodeT (p256CombCurveU hL) Spec.Ecdsa.Rfc6979.Curves.p256.tries HmacTable.Arm.vars)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p256 (p256CombCurveU hL).coreConsts HmacTable.Arm.vars) :=
+  oneT_verified ⟨rfl, by decide, by decide⟩ rfl (by decide) rfl Proof.P256.Arm.combSatMem (by decide)
+    (by rw [Proof.P256.Arm.comb_words_length]; decide) Proof.P256.Arm.combSat_held
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

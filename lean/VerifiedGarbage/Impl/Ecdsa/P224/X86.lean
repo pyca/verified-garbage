@@ -21,7 +21,4 @@ def p224 : Cfg where
 /-- `vg_ecdsa_p224_sign`. -/
 def signP224 : Prog isa := p224.sign
 
-/-- `vg_p224_mul`. -/
-def mulP224 : Prog isa := p224.mulFn
-
 end VG.Impl.Ecdsa.X86

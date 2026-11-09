@@ -96,28 +96,7 @@ def room : List Instr :=
 
 variable (attempt : Prog isa)
 
-/-- The attempt, a call of `vg_ffdh_generate_key`, in a frame of its stack
-arguments. -/
-def attemptRun : Prog isa := .frame (.alloc 128) (.seq (.block arguments) attempt) (.free 128)
-
-def attemptOrRequest : Prog isa := .seq (.block room)
-  (.ite (.zero .d .r12) (.seq (attemptRun attempt) classify) request)
-
-def branch : Prog isa :=
-  .ite (.zero .d .r9) exhausted (.seq (.block [ldf .r9 1])
-    (.ite (.zero .d .r9) exhausted (attemptOrRequest attempt)))
-
-/-- The loop goes on while the status is 4, a rejection: `r9 := status − 4`. -/
-def iteration : Prog isa :=
-  .seq (.block [ldf .r9 0]) (.seq (branch attempt) (.block [ldf .r9 14, .subi .r9 .r9 4]))
-
-def search : Prog isa :=
-  .seq (.block [.mflr .r0])
-    (.seq (.frame (.push .r0) (.loop (iteration attempt) (.zero .d .r9)) (.pop .r0)) (.block [.mtlr .r0]))
-
 /-- `used`, the status, and the caller's `r31` restored. -/
 def finish : List Instr := [ldf .r4 15, ldf .r5 11, ldf .r3 14, .store .d .r5 .r4 0, ldf .r31 4]
-
-def code : Prog isa := .seq (.block entry) (.seq (search attempt) (.block finish))
 
 end VG.Impl.Ffdh.PPC64LE.KeyGeneration.Search

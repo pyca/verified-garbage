@@ -267,7 +267,8 @@ theorem compress_buf (hf : CalleeOk H code) {s₀ : State} (hp : Pre P D s₀) {
   have e80 : Region.Sub ⟨scr s₀, 80⟩ (scR s₀) := Region.sub_prefix (by simp only [frameBytes]; omega)
   have eb : Region.Sub ⟨st s₀ + BitVec.ofNat 64 P.N, 64⟩ (stR P s₀) := Offset.sub_base (d := P.N) (n := 64) (k := P.N + 64) _ (by omega)
   refine compressAt_ok hf hC.s1 hC.s2 hx1 ((hp.st_scr.sub_left e32).sub_right e80) ?_
-    ((hp.st_scr.sub_left eb).sub_right e80) ?_ ?_ fun s' hrd hwr hcs hsp hf' hstate =>
+    ((hp.st_scr.sub_left eb).sub_right e80) (by have := hp.scr_al; omega) ?_ ?_
+    fun s' hrd hwr hcs hsp hf' hstate =>
       hQ s' ?_ hcs hstate
   · exact Offset.disjoint_base (st s₀) (d := P.N) (n := 64) (k := P.N) (by omega) (by omega)
   · rw [hC.rd, hC.wr, hp.rd, hp.wr]

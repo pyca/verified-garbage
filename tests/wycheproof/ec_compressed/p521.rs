@@ -10,7 +10,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdh::P521;
+use verified_garbage::ec::P521;
 
 public_keys!(p521, P521, 66, "ecdsa_secp521r1_sha512_p1363_test.json");
 compressed_peers!(p521_peers, P521, 66, "ecdh_secp521r1_ecpoint_test.json");

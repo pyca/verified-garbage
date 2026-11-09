@@ -177,9 +177,6 @@ theorem MacI.next {y : Nat} (hy : y = 0 ∨ y = 112) {s s' : State} (h : MacI k 
   exact ⟨o.next M.frame (macR_mut hy) (by rw [M.env.sp, he.sp]) M.rd M.wr, M.env, nonce, hl,
     by rw [c0_macR hy L M.frame, hc]⟩
 
-theorem MacI.lay {s : State} (h : MacI k w sp N A D T R nl al n tl s) : Lay k w sp := by
-  have := h.1.ar.lay; rwa [h.1.sp] at this
-
 variable (L : Lay k w sp) (hR : R = 10 ∨ R = 12 ∨ R = 14) (hal : al < 2 ^ 32)
 include L hR hal
 

@@ -155,7 +155,7 @@ ldr r10, [r3, #1704]
 ldr r11, [r3, #1708]
 ldr lr, [r3, #1712]
 bx lr",
-        vg_keccak_absorb_scratch = sym crate::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )

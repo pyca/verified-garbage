@@ -30,10 +30,10 @@ open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 /-- `pre` holds the values of the modulus. -/
 def PreOk (s : State) : Prop :=
   Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) =
-    some (Spec.Rsa.wordsAt s.mem (stackArg s 5) (stackArg s 6).toNat)
+    some (Spec.Rsa.wordsAt s.mem (stackArg s 6) (stackArg s 7).toNat)
 
 /-- The working space the public operation gets. -/
-abbrev rsaR (s : State) : Region := ⟨off (S s) oRsa, ((stackArg s 4).toNat - 1024) * 8⟩
+abbrev rsaR (s : State) : Region := ⟨off (S s) oRsa, ((stackArg s 5).toNat - 1024) * 8⟩
 
 /-- At the call of `vg_rsa_public_precomputed_checked`, from the entry state
 `s`, with `EM` the encoding at `S`. -/
@@ -44,20 +44,20 @@ structure AtCall (s : State) (EM : List Byte) (t : State) : Prop where
   em : Spec.Rsa.bytesAt t.mem (off (S s) 0) (kk s) = EM
   g3 : t.gpr .r3 = s.gpr .r3
   g4 : t.gpr .r4 = s.gpr .r6
-  g5 : t.gpr .r5 = stackArg s 5
-  g6 : t.gpr .r6 = stackArg s 6
+  g5 : t.gpr .r5 = stackArg s 6
+  g6 : t.gpr .r6 = stackArg s 7
   g7 : t.gpr .r7 = s.gpr .r7
   g8 : t.gpr .r8 = s.gpr .r8
   g9 : t.gpr .r9 = off (S s) 0
   g10 : t.gpr .r10 = s.gpr .r6
   a0 : stackArg t 0 = off (S s) oRsa
-  a1 : stackArg t 1 = BitVec.ofNat 64 ((stackArg s 4).toNat - 1024)
+  a1 : stackArg t 1 = BitVec.ofNat 64 ((stackArg s 5).toNat - 1024)
 
 section
 variable {D : Nat} {s : State} (P : PreO D s)
 include P
 
-theorem scl : 1024 ≤ (stackArg s 4).toNat := by
+theorem scl : 1024 ≤ (stackArg s 5).toNat := by
   have := P.hs; unfold Spec.RsaPss.publicScratchWords at this; omega_arith
 
 theorem rsa_sub : Region.Sub (rsaR s) (scR s) := by
@@ -139,12 +139,12 @@ theorem pdOk_of {t : State} {EM : List Byte} (ha : AtCall s EM t) : PdOk t := by
   have hsa : stackArgAddr t 0 = fb s + BitVec.ofNat 64 96 := by rw [stackArgAddr_in, hsp]
   have hS := S_fits P.fits
   have hwsc := P.wsc
-  have eS : (S s).toNat = (stackArg s 3).toNat := rfl
+  have eS : (S s).toNat = (stackArg s 4).toNat := rfl
   have hko : (kR s).Disjoint ⟨s.gpr .r3, (s.gpr .r6).toNat⟩ := by rw [← oR_eq P]; exact P.ko
   have hem : Region.Sub ⟨off (S s) 0, (s.gpr .r6).toNat⟩ (scR s) :=
     fun x hx => sc_sub P x (sc_in (by unfold oRsa; omega_arith) x hx)
   have hfa : Region.Sub ⟨fb s + BitVec.ofNat 64 96, 16⟩ (kR s) := frame_sub s (by decide)
-  have h1 : (stackArg t 1).toNat = (stackArg s 4).toNat - 1024 := by
+  have h1 : (stackArg t 1).toNat = (stackArg s 5).toNat - 1024 := by
     rw [ha.a1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   refine ⟨?hl, ?sp, ?hrd, ?hwr, ?hk, ?h6, ?h10, ?he1, ?he2, ?hs⟩
   case hl =>
@@ -166,7 +166,7 @@ theorem pdOk_of {t : State} {EM : List Byte} (ha : AtCall s EM t) : PdOk t := by
         show (S s + BitVec.ofNat 64 0).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64
         rw [BitVec.add_zero]; unfold oRsa at hS; omega_arith
       ws := by
-        show (S s + BitVec.ofNat 64 oRsa).toNat + ((stackArg s 4).toNat - 1024) * 8 ≤ 2 ^ 64
+        show (S s + BitVec.ofNat 64 oRsa).toNat + ((stackArg s 5).toNat - 1024) * 8 ≤ 2 ^ 64
         rw [BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oRsa at *; omega_arith }
   case sp =>
     rw [hsp]; have := P.sp1
@@ -209,7 +209,7 @@ theorem call_ok {t : State} {EM : List Byte} (ha : AtCall s EM t) :
   have hk2 := P.k2
   refine pdCall (pdOk_of P ha) fun s' hrd' hwr' hsp' hf hpres hpost => ?_
   simp only [pdWr] at hf
-  rw [ha.g3, ha.g4, ha.a0, ha.a1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (stackArg s 4).isLt; omega_arith)] at hf
+  rw [ha.g3, ha.g4, ha.a0, ha.a1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (stackArg s 5).isLt; omega_arith)] at hf
   have hko : (kR s).Disjoint ⟨s.gpr .r3, (s.gpr .r6).toNat⟩ := by rw [← oR_eq P]; exact P.ko
   have hd : ∀ r ∈ [(⟨s.gpr .r3, (s.gpr .r6).toNat⟩ : Region), rsaR s], (slR s).Disjoint r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -225,7 +225,7 @@ theorem call_ok {t : State} {EM : List Byte} (ha : AtCall s EM t) :
         (Offset.sub _ (n := 8) (by decide) (by decide))) (by decide)]
       exact ha.sv.ls⟩, fun hc => ?_⟩
   have hw : Spec.Rsa.wordsAt t.mem (t.gpr .r5) (t.gpr .r6).toNat =
-      Spec.Rsa.wordsAt s.mem (stackArg s 5) (stackArg s 6).toNat := by
+      Spec.Rsa.wordsAt s.mem (stackArg s 6) (stackArg s 7).toNat := by
     rw [ha.g5, ha.g6]; exact words_entry ha.mem P.kp ((P.sp).sub_left (sc_sub P)) P.wp
   have := hpost (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat)
     (by rw [ha.g4, bytesAt_length]) (by rw [hw]; exact hc)

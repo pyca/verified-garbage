@@ -17,7 +17,4 @@ def codeAt (D k w : Nat) (montName : String) (montCode : Prog isa) (roundName : 
   .seq (WitnessLoad.codeAt D k w) (.seq (.block [.store (sc uniformOffset) .eax])
     (.seq (WitnessMont.code montName montCode) (RoundCall.code roundName roundCode)))
 
-def code (w : Nat) (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) : Prog isa :=
-  codeAt (8 * w) (2 * w) w montName montCode roundName roundCode
-
 end VG.Impl.RsaKeyGen.X86.WitnessRound

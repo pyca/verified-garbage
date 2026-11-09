@@ -12,7 +12,7 @@
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
+pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
         r#".base64 "BcEAPdieCGEAAAORfDYAPQfVCGEEAAORcDAAPRfdCGEIAAORDvcAPTlZCGEMAAORwP8APTELCGEQAAORWGgAPREVCGEUAAOR+WQAPaePCGEYAAOR+r4APaRPCGEcAAORIACATg==""#,
     )
@@ -30,7 +30,7 @@ pub unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "C" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "gf0h+CAAwTimAgh80f8h+CAAAfhwAEb7eABm+4AAhvuIAKb7kADG+5gA5vsAAEM7AABmOwAAhTsAAKQ7PwAAOThAvn+AAAA5FPJ6fSAAC5kBAN47BwD+O4LR/3s="
 20:
@@ -63,6 +63,32 @@ beq %cr0, 20b
     )
 }
 
+/// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
+///
+/// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.sha224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 512 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        r#".base64 "Yf4h+CAAwTimAgh80f8h+CAAAfhQAYb6WAGm+mABxvpoAeb6cAEG+3gBJvsAAKY6AADFOgAA4zoAAAQ70ACGOgAAdDg="
+bl {vg_sha224_init}
+.base64 "AAB0OAAAgDgAALc4AADYOAAA9Tg="
+bl {vg_sha256_update_scratch}
+.base64 "AAB0OAAAmDgwAbU4AADVOA=="
+bl {vg_sha256_finalize_scratch}
+.base64 "MAEVgQAAFpE0ARWBBAAWkTgBFYEIABaRPAEVgQwAFpFAARWBEAAWkUQBFYEUABaRSAEVgRgAFpFQAZXqYAHV6mgB9epwARXreAE161gBteogAAHoMAAhOKYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+aABITggAIBO""#,
+        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+    )
+}
+
 /// Starts a SHA-256 computation: makes the streaming state `*state` represent the empty message.
 ///
 /// Contract: `VG.Spec.Sha256.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.Repr`).
@@ -72,7 +98,7 @@ beq %cr0, 20b
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha256_init(state: *mut [u8; 96]) {
+pub(crate) unsafe extern "C" fn vg_sha256_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
         r#".base64 "CWoAPWfmCGEAAAORZ7sAPYWuCGEEAAORbjwAPXLzCGEIAAORT6UAPTr1CGEMAAORDlEAPX9SCGEQAAORBZsAPYxoCGEUAAORgx8APavZCGEYAAOR4FsAPRnNCGEcAAORIACATg==""#,
     )
@@ -89,7 +115,7 @@ pub unsafe extern "C" fn vg_sha256_init(state: *mut [u8; 96]) {
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "gf0h+CAA4TimAgh80f8h+CAAAfhwAEf7eABn+4AAh/uIAKf7kADH+5gA5/sAAEM7AABnOwAAhTsAAKY7PwAAOThAnnwAAD0o"
 beq %cr0, 20f
@@ -176,7 +202,7 @@ b 21f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "gf0h+CAAwTimAgh80f8h+CAAAfhwAEb7eABm+4AAhvuIAKb7kADG+5gA5vsAAEM7AABmOwAAhTsAAKQ7PwAAOThAvn+AAAA5FPJ6fSAAC5kBAN47BwD+O4LR/3s="
 20:
@@ -209,6 +235,32 @@ beq %cr0, 20b
     )
 }
 
+/// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
+///
+/// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 512 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
+    core::arch::naked_asm!(
+        r#".base64 "Yf4h+CAAwTimAgh80f8h+CAAAfhQAYb6WAGm+mABxvpoAeb6cAEG+3gBJvsAAKY6AADFOgAA4zoAAAQ70ACGOgAAdDg="
+bl {vg_sha256_init}
+.base64 "AAB0OAAAgDgAALc4AADYOAAA9Tg="
+bl {vg_sha256_update_scratch}
+.base64 "AAB0OAAAmDgwAbU4AADVOA=="
+bl {vg_sha256_finalize_scratch}
+.base64 "MAEVgQAAFpE0ARWBBAAWkTgBFYEIABaRPAEVgQwAFpFAARWBEAAWkUQBFYEUABaRSAEVgRgAFpFMARWBHAAWkVABlepgAdXqaAH16nABFet4ATXrWAG16iAAAegwACE4pgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5oAEhOCAAgE4=""#,
+        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+    )
+}
+
 #[rustfmt::skip]
 #[path = "internal/vg_sha256_compress.rs"]
 pub(crate) mod vg_sha256_compress;
@@ -216,6 +268,10 @@ pub(crate) mod vg_sha256_compress;
 #[rustfmt::skip]
 #[path = "internal/vg_sha256_finalize_scratch.rs"]
 pub(crate) mod vg_sha256_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_state_digest.rs"]
+pub(crate) mod vg_sha256_state_digest;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha256_update_scratch.rs"]

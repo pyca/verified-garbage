@@ -107,7 +107,7 @@ theorem sealSplitBody_correct (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly
   refine WP.seq (WP.mono_mx cryptSplit_mx (cryptSplit_ok hT i₃ st₃ ks₃ (S₃ 2 (.inl rfl))
     (S₃ 3 (.inr rfl))) fun s₄ ⟨i₄, _, f₄, ct₄⟩ mx₄ => ?_)
   rw [P₃] at ct₄
-  refine WP.seq (WP.mono (macPadLengths_ok b hp (p := .r14) (n := .r13) ⟨.inr rfl, .inr rfl⟩ (srcD hp) i₄
+  refine WP.seq (WP.mono (macPadLengths_ok b hp (p := .r14) (n := .r13) ⟨.inr (.inl rfl), .inr rfl⟩ (srcD hp) i₄
     i₄.r14 (by rw [i₄.r13]; exact hL s₀))
     fun s₆ ⟨i₆, _, f₆, mx₆, r₆⟩ => ?_)
   refine WP.seq (WP.mono_mx (by decide +kernel) (finalizeTag_ok hp i₆)

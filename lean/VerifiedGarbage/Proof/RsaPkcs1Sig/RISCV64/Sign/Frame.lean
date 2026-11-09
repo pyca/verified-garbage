@@ -20,7 +20,7 @@ from `fb`), which the allocation makes writable. `save_ok`: the saves of
 values in their slots, five values kept in `s1`–`s5` and the other
 callee-saved registers as on entry, memory changed only in the stack and in
 the regions `S`; it is kept by code writing other registers and the frame
-above the slots (`Mid.keep`, `Mid.frameW`). `restore_ok`: the restores give
+above the slots (`Mid.keep`, `Mid.frameMem`). `restore_ok`: the restores give
 back the caller's registers.
 -/
 
@@ -202,14 +202,6 @@ theorem Mid.frameMem (h : Mid S s a b c d e t) {f n : Nat} {m : Mem}
     rw [List.mem_singleton.mp hr]
     exact Offset.disjoint _ (by unfold oRa oSave at *; omega) (by unfold oRa at *; omega)
       (by unfold frameBytes at hen; omega)
-
-/-- `Mid` is kept by code writing registers other than those it keeps and the
-frame apart from the slots. -/
-theorem Mid.frameW (h : Mid S s a b c d e t) (o : Kept rs t w) {f n : Nat}
-    (he : oRa + 8 ≤ f ∨ f + n ≤ oSave) (hen : f + n ≤ frameBytes) (hm : Frame [⟨fb s + BitVec.ofNat 64 f, n⟩] t.mem w.mem)
-    (hrs : ∀ r ∈ rs, r ∉ kept := by decide) : Mid S s a b c d e w :=
-  have hf := h.frameMem he hen hm
-  h.keep (S' := S) o hf.1 hf.2 hrs
 
 end
 

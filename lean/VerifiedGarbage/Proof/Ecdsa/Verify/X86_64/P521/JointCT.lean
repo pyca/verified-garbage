@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointChecks
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.Contract
@@ -63,9 +64,9 @@ theorem pre_of_x {s : State} (h : verifyX86_64.pre s) : VPre p521x s := by
     simp [hr]
 
 theorem jointPublic_of_spec {a b : State}
-    (pub : (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts)).pub a b) :
+    (pub : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (X86_64.abi.withConsts p521.combConsts)).pub a b) :
     JointPublic p521 p521Table a b := by
-  sig_pub [Spec.Ecdsa.P521.inst,Spec.Ecdsa.Instance.verifyContract,Spec.Ecdsa.Instance.verifySig,
+  sig_pub [Spec.Ecdsa.P521.inst,Proof.Ecdsa.verifyContract,Proof.Ecdsa.verifySig,
     Spec.P521.curve,Spec.Ecdsa.scratchWords,X86_64.abi,X86_64.argRegs,p521_combConsts,
     Abi.withConsts] at pub
   obtain ⟨_,hsy,inputs,h0,h1,h2,h3⟩ := pub
@@ -145,8 +146,8 @@ theorem jointVerify_p521_adx_public_ct :
 
 theorem jointVerify_ct :
     ConstantTime isa
-      (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts)).pre
-      (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts)).pub
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (X86_64.abi.withConsts p521.combConsts)).pre
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (X86_64.abi.withConsts p521.combConsts)).pub
       Impl.Ecdsa.Verify.X86_64.jointVerifyP521.inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   exact jointVerify_p521_public_ct hL hT hI _ _ _ _ _ _ (pre_of (implies.pre _ pre₁))
@@ -154,8 +155,8 @@ theorem jointVerify_ct :
 
 theorem jointVerify_adx_ct :
     ConstantTime isa
-      (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts)).pre
-      (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts)).pub
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (X86_64.abi.withConsts p521.combConsts)).pre
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (X86_64.abi.withConsts p521.combConsts)).pub
       Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx.inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   exact jointVerify_p521_adx_public_ct hL hT hI _ _ _ _ _ _

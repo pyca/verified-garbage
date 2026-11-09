@@ -103,8 +103,6 @@ theorem Ctx.kregs {L : Lay} {s : State} (hc : Ctx L s) :
     (⟨L.ptr 0, 200⟩ : Region) = L.R 0 0 200 ∧ below s.sp 48 = L.R 1 0 48 :=
   ⟨Lay.R_zero _ _ _, hc.bel⟩
 
-theorem RL_kRegs (L : Lay) : L.RL kRegs = [L.R 0 0 200, L.R 0 200 640, L.R 1 0 48] := rfl
-
 /-! ## Pieces -/
 
 /-- Piece `p` is the region `L.R (idx p.base) p.off p.len`, which the state

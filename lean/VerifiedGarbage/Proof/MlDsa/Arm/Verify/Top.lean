@@ -15,14 +15,15 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
-# ML-DSA verification on 32-bit ARM: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
+# ML-DSA verification on 32-bit ARM: the kernel `vg_mldsa*_verify_with_cache`
 
 After the samplers, the NTTs, the rows, the hash and the comparison
 (`compute_piece`); what `r11` then says of `verifyMu` (`ke_out`); and the
 whole body, piece by piece, for any parameter set of Table 1 and any verified
 implementations of the primitives (`body_piece`): a malformed hint gives 0 at
 once, a `z` too large 0 after the norms, and otherwise `r11` is the samplers'
-result and the comparison of `c̃`.
+result and the comparison of `c̃`. The kernel meets `verifyK`
+(`withCache_correct`, `withCache_ct`).
 -/
 
 @[expose] public section
@@ -159,7 +160,7 @@ theorem inner_piece :
     VPiece p STK (V2 p STK p.ℓ) (VFin p STK) (ifOk (.seq (samples P p) (compute P p))) := by
   refine ifOk_piece (v := fun σ => flag (zOk p σ p.ℓ)) (fun _ _ _ h => h.r11) (fun σ₁ σ₂ _ _ pub => ?_)
     (fun _ _ _ _ h => h.flags) ?_ fun σ s _ h hv => ⟨h.vc, .inr ⟨h.r11.trans hv, ?_⟩⟩
-  · have e : sgOf p σ₁ = sgOf p σ₂ := pub.2.2.2.2.2.2.2
+  · have e : sgOf p σ₁ = sgOf p σ₂ := pub.2.2.2.2.2.2.2.1
     dsimp only [zOk]
     rw [e]
   · refine Piece.mono (pieceFrame ((samples_piece hP hF hS).seq (Piece.mono (compute_piece hP hF hS)
@@ -193,7 +194,7 @@ theorem body_piece : VPiece p STK (fun σ s => VC p STK σ s ∧ s.gpr .r11 = 1)
   unfold body
   refine (hint_piece hP hF hS).seq (ifOk_piece (v := fun σ => flag (hintOf p σ).isSome) (fun _ _ _ h => h.r11)
     (fun σ₁ σ₂ _ _ pub => ?_) (fun _ _ _ _ h => h.flags) ?_ fun _ _ _ h hv => v1_out h hv)
-  · have e : sgOf p σ₁ = sgOf p σ₂ := pub.2.2.2.2.2.2.2
+  · have e : sgOf p σ₁ = sgOf p σ₂ := pub.2.2.2.2.2.2.2.1
     dsimp only [hintOf]
     rw [e]
   · refine Piece.seq (Piece.mono (Piece.seqR (I := fun j => V2 p STK j) p.ℓ 0
@@ -206,67 +207,43 @@ end
 /-! ## The return -/
 
 theorem vepi_ok {p : Params} {STK : Nat} {σ s : State} (h : VFin p STK σ s) :
-    WP isa (.block topEnd) s fun s' =>
-      Arm.target.abiPreserved σ s' ∧ (Spec.MlDsa.verifyContract p Arm.abi STK).post σ s' := by
+    WP isa (.block topEnd) s fun s' => Arm.target.abiPreserved σ s' ∧ VOut p σ (s'.gpr .r0) := by
   obtain ⟨vc, hr⟩ := h
   have hs := vc.site
   have e0 : ∀ o, (hashLay (vlay p STK σ) s Kmu).A 0 o = (vlay p STK σ).A 0 o := fun o => by
     simp only [Lay.A, hashLay_ptr _ _ _ (show (0 : Nat) ≠ 1 by decide)]
   refine WP.mono (topEnd_ok (hs.ctx kmu) (by rw [e0]; exact vc.sav) (by rw [e0]; exact vc.lr))
     fun s' ⟨pr, r0, m', sp'⟩ => ⟨⟨pr, sp'.trans vc.sp⟩, ?_⟩
-  sig_post [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-    Arm.Loc.val]
-  rw [setWidth_append32, r0]
+  rw [r0]
   exact hr
 
 theorem vepi_piece {p : Params} {STK : Nat} :
-    VPiece p STK (VFin p STK)
-      (fun σ s => Arm.target.abiPreserved σ s ∧ (Spec.MlDsa.verifyContract p Arm.abi STK).post σ s)
-      (.block topEnd) :=
+    VPiece p STK (VFin p STK) (fun σ s => Arm.target.abiPreserved σ s ∧ VOut p σ (s.gpr .r0)) (.block topEnd) :=
   ⟨fun _ _ _ h => vepi_ok h, vrel7 (fun _ _ h => h.1) (by native_taint_decide)⟩
 
-/-! ## The function -/
+/-! ## The kernel -/
 
-theorem verify_piece {P : Prims} {S : Nat} (hP : VPrimsOk P S) {p : Params} (hF : VFacts p) {STK : Nat}
+/-- The contract of `vg_mldsa*_verify_with_cache` with `STK` bytes of stack:
+`VPre`, the result `verifyContract` states (`VOut`), and the public data `vPub`. -/
+def verifyK (p : Params) (STK : Nat) : Contract isa where
+  pre := VPre p STK
+  post σ s := VOut p σ (s.gpr .r0)
+  pub := vPub p
+
+theorem withCache_piece {P : Prims} {S : Nat} (hP : VPrimsOk P S) {p : Params} (hF : VFacts p) {STK : Nat}
     (hS : S + 8 ≤ STK) :
-    VPiece p STK (fun σ s => s = σ)
-      (fun σ s => Arm.target.abiPreserved σ s ∧ (Spec.MlDsa.verifyContract p Arm.abi STK).post σ s)
-      (verify P p) :=
+    VPiece p STK (fun σ s => s = σ) (fun σ s => Arm.target.abiPreserved σ s ∧ VOut p σ (s.gpr .r0))
+      (withCache P p) :=
   (vpro_piece hF (by omega)).seq ((body_piece hP hF hS).seq vepi_piece)
 
-/-- A state satisfying `verifyContract`'s precondition. -/
-def verifySat (p : Params) : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | .r3 => 0x10000 | _ => 0
-  sp := 0x80000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := [⟨0x1000, p.pkLen⟩, ⟨0x2000, 64⟩, ⟨0x3000, p.sigLen⟩]
-  wr := [⟨0x10000, scrLen p⟩]
+theorem withCache_correct {P : Prims} {S : Nat} (hP : VPrimsOk P S) {p : Params} (hF : VFacts p) {STK : Nat}
+    (hS : S + 8 ≤ STK) (σ : State) (hp : (verifyK p STK).pre σ) :
+    ∃ t s', Exec isa (withCache P p) σ t s' ∧ abiPreserved σ s' ∧ (verifyK p STK).post σ s' := by
+  obtain ⟨t, s', e, a, q⟩ := (withCache_piece hP hF hS).ok σ σ hp rfl
+  exact ⟨t, s', e, a, q⟩
 
-/-- `vg_mldsa*_verify` of the parameter set `p` meets its contract with
-36 bytes of stack, for any verified implementations `P` of the primitives
-it calls with at most 28 bytes of stack. -/
-theorem verify_verified {P : Prims} (hP : VPrimsOk P 28) (p : Spec.MlDsa.Params)
-    (hp : p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87) :
-    Verified Arm.target (verify P p) (Spec.MlDsa.verifyContract p Arm.abi 36) := by
-  have hF := vfacts hp
-  have hk := verify_piece hP hF (STK := 36) (Nat.le_refl _)
-  refine ⟨fun s hs => hk.ok s s (vpre_of (n := 35) hs) rfl, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
-  · sig_pub [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-      Arm.Loc.val] at hpub
-    obtain ⟨hsp, hl, h0, h1, h2, h3⟩ := hpub
-    obtain ⟨e12, e3⟩ := List.append_inj (Proof.MlDsa.KeyGen.leakBytes_inj hl)
-      (by simp only [List.length_append, Proof.MlKem.bytesAt_length])
-    obtain ⟨e1, e2⟩ := List.append_inj e12 (by simp only [Proof.MlKem.bytesAt_length])
-    exact relStart hk.tr s₁ s₂ t₁ t₂ s₁' s₂' (vpre_of (n := 35) h₁) (vpre_of (n := 35) h₂)
-      ⟨hsp, h0, h1, h2, h3, e1, e2, e3⟩ e₁ e₂
-  · refine ⟨verifySat p, ?_⟩
-    rcases hp with rfl | rfl | rfl <;>
-    sig_sat_check [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-      Arm.Loc.val, verifySat]
+theorem withCache_ct {P : Prims} {S : Nat} (hP : VPrimsOk P S) {p : Params} (hF : VFacts p) {STK : Nat}
+    (hS : S + 8 ≤ STK) : ConstantTime isa (verifyK p STK).pre (verifyK p STK).pub (withCache P p) :=
+  relStart (withCache_piece hP hF hS).tr
 
 end VG.Proof.MlDsa.Arm.Verify

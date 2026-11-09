@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.AesCfb.AArch64
+public import VerifiedGarbage.Proof.AesCfb.Rounds
 public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Call
 public import VerifiedGarbage.Proof.AesCfb.Spec
@@ -45,15 +46,15 @@ theorem decrypt_correct (v : BlocksImpl) (s : State) (hs : (modeAArch64 (cfbMode
   WP.withPreservedV (whole_wp (decBody_ok v) hs) (decrypt_keepsV v)
 
 theorem encrypt_verified (v : BlocksImpl) :
-    Verified AArch64.target (encrypt v.enc) (Spec.Cfb.aesEncryptContract AArch64.abi) :=
+    Verified AArch64.target (encrypt v.enc) (Proof.AesCfb.encryptRoundsContract AArch64.abi) :=
   Verified.of_correct (encrypt_correct v) (whole_ct (encBody_ok v) (encBody_ct v)) (by
-    sig_implies [Spec.Cfb.aesEncryptContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeAArch64, cfbMode, cfb, cts,
+    sig_implies [Proof.AesCfb.encryptRoundsContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeAArch64, cfbMode, cfb, cts,
       AArch64.abi, AArch64.argRegs] [sat] using sat)
 
 theorem decrypt_verified (v : BlocksImpl) :
-    Verified AArch64.target (decrypt v.enc) (Spec.Cfb.aesDecryptContract AArch64.abi) :=
+    Verified AArch64.target (decrypt v.enc) (Proof.AesCfb.decryptRoundsContract AArch64.abi) :=
   Verified.of_correct (decrypt_correct v) (whole_ct (decBody_ok v) (decBody_ct v)) (by
-    sig_implies [Spec.Cfb.aesDecryptContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeAArch64, cfbMode, cfb, cts,
+    sig_implies [Proof.AesCfb.decryptRoundsContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeAArch64, cfbMode, cfb, cts,
       AArch64.abi, AArch64.argRegs] [sat] using sat)
 
 end VG.Proof.AesCfb.AArch64

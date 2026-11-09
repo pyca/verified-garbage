@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.PassStart
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.RoundBody
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.Box
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.Spills
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.Write
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
@@ -106,7 +106,7 @@ theorem passCountAdvance_ok (s : State) :
 sixteen rounds, the final half swap and the passes left counted down. -/
 theorem pass_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
     (keys : DesSchedule) (base : Addr) (origin : State) (v : BitVec 32 × BitVec 32)
-    (hok : Ok sboxCfg origin)
+    (hok : Ok scratchCfg origin) (hc : ConstsAt origin)
     (hl : origin.gpr .r14 = v.1.setWidth 64) (hr : origin.gpr .r15 = v.2.setWidth 64)
     (hpasses : origin.gpr .r19 = BitVec.ofNat 64 p)
     (hptr : origin.gpr .r3 + BitVec.ofNat 64 (passOffset (passOf d p).1 (passOf d p).2) =
@@ -123,7 +123,7 @@ theorem pass_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
     (by decide)
   have hspill : spillRegion s = spillRegion origin := by simp only [spillRegion, hbase]
   have hloop := roundsLoop_ok keys dir base s v
-    (hok.congr hbase hbase hs.rd hs.wr)
+    (hok.congr hbase hbase hs.rd hs.wr) (hc.congr hbase hs.mem)
     ((hs.regs .r14 (by decide) (by decide) (by decide) (by decide)).trans hl)
     ((hs.regs .r15 (by decide) (by decide) (by decide) (by decide)).trans hr)
     (hs.ptr.trans hptr) hs.count hs.step

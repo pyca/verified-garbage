@@ -38,7 +38,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFrameContext
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupLoop
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroups
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHead
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLayout
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoopControl
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowMain
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowP
@@ -48,8 +47,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCore
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawSquares
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRun
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowSetup
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowSquares
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailBit
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBlock
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
@@ -120,7 +117,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRow
 public import VerifiedGarbage.Proof.Bignum.AArch64.Store
 public import VerifiedGarbage.Proof.Bignum.AArch64.WideDiagonal
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowArithmeticCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelperContext
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowOperations
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawCtContext
@@ -129,7 +125,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.WindowReduceCanonical
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSetup
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTFast
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCore
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCorrect
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedFast
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedLoop
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedSave
@@ -184,7 +179,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFrameContext
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupLoop
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroups
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHead
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoopControl
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowMain
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowP
@@ -194,8 +188,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCore
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawSquares
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRun
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowSetup
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowSquares
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailBit
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBlock
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
@@ -266,7 +258,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.SquareRow
 import VerifiedGarbage.Proof.Bignum.AArch64.Store
 import VerifiedGarbage.Proof.Bignum.AArch64.WideDiagonal
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowArithmeticCT
-import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelperContext
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowOperations
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawCT
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawCtContext
@@ -275,7 +266,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.WindowReduceCanonical
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTFast
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCore
-import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCorrect
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedFast
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedLoop
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedSave
@@ -296,6 +286,15 @@ import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Rsa.AArch64.ExpCheck
+public import VerifiedGarbage.Proof.Bignum.CrtWindowFiveLayout
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtTab
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedGuard
 
 /-!
 # `vg_rsa_private_crt` on AArch64: the baseline: the variant's code and proofs
@@ -320,7 +319,7 @@ def variant : Proof.Rsa.AArch64.CrtImpl where
   pc := Impl.Rsa.AArch64.Precompute.code Mont.base.mm
   pcVerified := precompute_verified Mont.base
   pcNoFrames := by decide +kernel
-  pdName := Spec.Rsa.publicPrecomputedCheckedApi.name
+  pdName := "vg_rsa_public_precomputed_checked"
   pd := Impl.Rsa.AArch64.Folded.checked Mont.productEight.mm
   pdVerified := Proof.Rsa.AArch64.FoldedPublic.checked_verified Mont.productEight
   pdNoFrames := by decide +kernel

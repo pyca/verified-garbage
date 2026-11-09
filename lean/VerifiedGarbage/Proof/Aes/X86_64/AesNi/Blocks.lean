@@ -1,9 +1,11 @@
 module
 
+public import VerifiedGarbage.Proof.Aes.Rounds
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Dec
 public import VerifiedGarbage.Proof.Aes.X86_64.Blocks
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
@@ -550,6 +552,20 @@ theorem BlkOk.frame {f : List XReg → Prog isa} {F : Spec.Aes.State → Spec.Ae
     {KP : State → Prop} (h : BlkOk f F KP) (s₀ : State) : BlkOk f F (KPf KP s₀) :=
   fun rs hrs s hk => h rs hrs s hk.1
 
+/-- `KP`, and memory changed only in the data and in `R` since `s₀`: the
+loops keep both, where `R` is what ran before them may have written. -/
+def KPw (R : Region) (KP : State → Prop) (s₀ : State) (s : State) : Prop :=
+  KP s ∧ Frame [dR s₀, R] s₀.mem s.mem
+
+theorem Stable.frameW {KP : State → Prop} {s₀ : State} (R : Region) (h : Stable KP s₀) :
+    Stable (KPw R KP s₀) s₀ :=
+  fun s s' ⟨hk, hm⟩ hg hrd hwr hf =>
+    ⟨h s s' hk hg hrd hwr hf, hm.trans (hf.mono fun r hr => by simp at hr; simp [hr])⟩
+
+theorem BlkOk.frameW {f : List XReg → Prog isa} {F : Spec.Aes.State → Spec.Aes.State}
+    {KP : State → Prop} (h : BlkOk f F KP) (R : Region) (s₀ : State) : BlkOk f F (KPw R KP s₀) :=
+  fun rs hrs s hk => h rs hrs s hk.1
+
 /-- The keys and the regions at the start, for `KPe`. -/
 theorem keys₀ {s₀ : State} (hp : Pre s₀) : Keys (nr s₀) (sch s₀) s₀ :=
   ⟨rfl, by rcases hp.rounds with h | h | h <;> omega_arith, fun j hj => ⟨sR s₀, by simp [hp.rd], by
@@ -578,7 +594,8 @@ theorem encrypt_correct {s₀ : State} (hp : Pre s₀) :
 
 theorem decrypt_correct {s₀ : State} (hp : Pre s₀) :
     WP isa Impl.Aes.X86_64.AesNi.decryptBlocks s₀ fun s' =>
-      gprPreserved s₀ s' ∧ (Proof.Aes.blocksX86_64 Spec.Aes.invCipher).post s₀ s' := by
+      gprPreserved s₀ s' ∧ (Proof.Aes.blocksX86_64 Spec.Aes.invCipher).post s₀ s' ∧
+        Frame [dR s₀, ⟨s₀.gpr .r8, 224⟩] s₀.mem s'.mem := by
   have hscr : (scrR s₀) ∈ s₀.wr := by rw [hp.wr]; simp
   have hsch : (sR s₀) ∈ s₀.rd ++ s₀.wr := List.mem_append_left _ (by rw [hp.rd]; simp)
   refine WP.seq (WP.mono (imcKeys_ok hp.rounds (by simp) ⟨_, hscr, Region.contains_self _ _⟩ hsch hp.s_scr)
@@ -586,11 +603,11 @@ theorem decrypt_correct {s₀ : State} (hp : Pre s₀) :
   have hK₁ := dKeys_of_imc (keys₀ hp) ⟨_, hscr, Region.contains_self _ _⟩ hp.s_scr hS₁ hcov
   refine WP.seq (WP.mono (blocksLoad_ok s₁) fun s₂ ⟨r10₂, g₂, m₂, rd₂, wr₂, _, cf₂⟩ => ?_)
   have g : ∀ r, r ≠ .r10 → s₂.gpr r = s₀.gpr r := fun r h => by rw [g₂ r h, hS₁.gpr]
-  have hI₂ : Inv (KPd s₀) (Spec.Aes.invCipher (nr s₀) (sch s₀)) s₀ 0 0 s₂ :=
+  have hI₂ : Inv (KPw ⟨s₀.gpr .r8, 224⟩ (KPd s₀) s₀) (Spec.Aes.invCipher (nr s₀) (sch s₀)) s₀ 0 0 s₂ :=
     { le := Nat.zero_le _
-      kp := ⟨dkeys_congr hK₁ (g₂ _ (by decide)) (g₂ _ (by decide)) rd₂ wr₂ (by rw [m₂])
+      kp := ⟨⟨dkeys_congr hK₁ (g₂ _ (by decide)) (g₂ _ (by decide)) rd₂ wr₂ (by rw [m₂])
           (fun _ _ _ => by rw [m₂]), g _ (by decide), g _ (by decide), g _ (by decide),
-        by rw [r10₂, hS₁.gpr]⟩
+        by rw [r10₂, hS₁.gpr]⟩, by rw [m₂]; exact hS₁.lo.mono fun r hr => by simp at hr; simp [hr]⟩
       gpr := fun r _ _ h3 => g r h3
       r10 := by rw [r10₂, hS₁.gpr]
       rdx := by rw [g _ (by decide)]; simp [bAddr]
@@ -609,7 +626,8 @@ theorem decrypt_correct {s₀ : State} (hp : Pre s₀) :
       wr := by rw [wr₂, hS₁.wr] }
   have hcf : s₂.cf = some (decide (nb s₀ - 0 < 8)) := by
     rw [cf₂, hS₁.gpr]; simp [nb]
-  exact WP.mono (tail_ok hp (kpd_stable hp) (aesDec_blkOk hp) hI₂ hcf) fun s hI => post_of hp hI
+  exact WP.mono (tail_ok hp ((kpd_stable hp).frameW _) ((aesDec_blkOk hp).frameW _ s₀) hI₂ hcf)
+    fun s hI => ⟨(post_of hp hI).1, (post_of hp hI).2, hI.kp.2⟩
 
 end Ecb
 
@@ -623,7 +641,7 @@ theorem decryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksX86_64 Spec.Aes
     ∃ t s', Exec isa Impl.Aes.X86_64.AesNi.decryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksX86_64 Spec.Aes.invCipher).post s s' := by
   obtain ⟨t, s', he, h⟩ := Ecb.decrypt_correct (Ecb.pre_of s hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2.1⟩
 
 theorem encryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksX86_64 Spec.Aes.cipher).pre
     (Proof.Aes.blocksX86_64 Spec.Aes.cipher).pub Impl.Aes.X86_64.AesNi.encryptBlocks := by
@@ -644,12 +662,12 @@ theorem decryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksX86_64 Spec.Aes.inv
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem encryptBlocks_implies :
-    (Proof.Aes.blocksX86_64 Spec.Aes.cipher).Implies (Spec.Aes.encryptBlocksContract X86_64.abi) := by
-  sig_implies [Spec.Aes.encryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksX86_64, X86_64.abi,
+    (Proof.Aes.blocksX86_64 Spec.Aes.cipher).Implies (Proof.Aes.encryptBlocksRoundsContract X86_64.abi) := by
+  sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksX86_64, X86_64.abi,
     X86_64.argRegs] [Proof.Aes.X86_64.blocksSat] using Proof.Aes.X86_64.blocksSat
 
 theorem encryptBlocks_verified :
-    Verified X86_64.target Impl.Aes.X86_64.AesNi.encryptBlocks (Spec.Aes.encryptBlocksContract X86_64.abi) :=
+    Verified X86_64.target Impl.Aes.X86_64.AesNi.encryptBlocks (Proof.Aes.encryptBlocksRoundsContract X86_64.abi) :=
   Verified.of_correct encryptBlocks_correct encryptBlocks_ct encryptBlocks_implies
 
 /-- A run of an encryption that changes memory only in the data writes none of
@@ -666,7 +684,7 @@ theorem written_of_frame {s s' : State} (hp : Ecb.Pre s) (hf : Frame [Ecb.dR s] 
   exact hp.d_scr _ hc (Offset.contains_base _ (by omega) (by omega))
 
 theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
-    (hs : (Spec.Aes.encryptBlocksContract X86_64.abi).pre s)
+    (hs : (Proof.Aes.encryptBlocksRoundsContract X86_64.abi).pre s)
     (he : Exec isa Impl.Aes.X86_64.AesNi.encryptBlocks s t s') :
     Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 0)] s s' := by
   have hp := Ecb.pre_of s (encryptBlocks_implies.pre s hs)
@@ -674,10 +692,40 @@ theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
   obtain ⟨-, rfl⟩ := Exec.det he he'
   exact written_of_frame hp h.2.2
 
+theorem decryptBlocks_implies :
+    (Proof.Aes.blocksX86_64 Spec.Aes.invCipher).Implies (Proof.Aes.decryptBlocksRoundsContract X86_64.abi) := by
+  sig_implies [Proof.Aes.decryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksX86_64, X86_64.abi,
+    X86_64.argRegs] [Proof.Aes.X86_64.blocksSat] using Proof.Aes.X86_64.blocksSat
+
 theorem decryptBlocks_verified :
-    Verified X86_64.target Impl.Aes.X86_64.AesNi.decryptBlocks (Spec.Aes.decryptBlocksContract X86_64.abi) :=
-  Verified.of_correct decryptBlocks_correct decryptBlocks_ct (by
-    sig_implies [Spec.Aes.decryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksX86_64, X86_64.abi,
-      X86_64.argRegs] [Proof.Aes.X86_64.blocksSat] using Proof.Aes.X86_64.blocksSat)
+    Verified X86_64.target Impl.Aes.X86_64.AesNi.decryptBlocks (Proof.Aes.decryptBlocksRoundsContract X86_64.abi) :=
+  Verified.of_correct decryptBlocks_correct decryptBlocks_ct decryptBlocks_implies
+
+/-- A run of a decryption that changes memory only in the data and the first
+224 bytes of `scratch`, its inverse key schedule, writes none of `scratch`
+from there on (`Artifact.written`). -/
+theorem written_of_frameKeys {s s' : State} (hp : Ecb.Pre s)
+    (hf : Frame [Ecb.dR s, ⟨s.gpr .r8, 224⟩] s.mem s'.mem) :
+    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 224)] s s' := by
+  simp [Sig.writtenWithin, X86_64.abi, X86_64.argRegs, Abi.withConsts, Spec.Aes.blocksSig,
+    Sig.words, Sig.arrays, Param.words, ArgWord.bits]
+  intro i hi hlo
+  have hib : i < 2048 := by simpa [Elem.size] using hlo
+  refine hf _ fun r hr hc => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact hp.d_scr _ hc (Offset.contains_base _ (by omega) (by omega))
+  · change (s.gpr .r8 + BitVec.ofNat 64 i - s.gpr .r8).toNat + 1 ≤ 224 at hc
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at hc
+    omega
+
+theorem decryptBlocks_written (s : State) (t : List Leak) (s' : State)
+    (hs : (Proof.Aes.decryptBlocksRoundsContract X86_64.abi).pre s)
+    (he : Exec isa Impl.Aes.X86_64.AesNi.decryptBlocks s t s') :
+    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 224)] s s' := by
+  have hp := Ecb.pre_of s (decryptBlocks_implies.pre s hs)
+  obtain ⟨t', s'', he', h⟩ := Ecb.decrypt_correct hp
+  obtain ⟨-, rfl⟩ := Exec.det he he'
+  exact written_of_frameKeys hp h.2.2
 
 end VG.Proof.Aes.X86_64.AesNi

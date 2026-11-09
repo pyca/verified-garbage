@@ -16,12 +16,6 @@ abbrev complementP := VG.Spec.P256.curve.p
 
 def complement (b : Nat) : List Instr := (Impl.P256.Linear.linear129 0 0 b).take 18
 
-theorem complement_eq129 (o a b : Nat) :
-    (Impl.P256.Linear.linear129 o a b).take 18=complement b := rfl
-
-theorem complement_eq38 (o a b : Nat) :
-    (Impl.P256.Linear.linear38 o a b).take 18=complement b := rfl
-
 private def compWords (a b c d : Word) : Word × Word × Word × Word :=
   let c0 := carryOut (-1) (~~~a) true
   let c1 := carryOut 0xffffffff (~~~b) c0

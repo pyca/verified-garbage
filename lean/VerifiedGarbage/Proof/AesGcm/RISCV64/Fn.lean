@@ -135,9 +135,6 @@ theorem saved_below {sp : Addr} (hk : StkOk c st w sp) : (savedR w).Disjoint (be
 theorem Lay.saved_st {d k : Nat} (hd : d + k ≤ 80) : (savedR w).Disjoint ⟨st + BitVec.ofNat 64 d, k⟩ :=
   (L.st_w hd (.inr ⟨by decide, by decide⟩)).symm
 
-theorem Lay.saved_ctx {d k : Nat} (hd : d + k ≤ 256) : (savedR w).Disjoint ⟨c + BitVec.ofNat 64 d, k⟩ :=
-  (L.ctx_w hd (by decide)).symm
-
 theorem saved_absFrame {yo : Nat} {sp : Addr} (hyo : yo = 0 ∨ yo = 16) (hk : StkOk c st w sp) :
     ∀ r ∈ absFrame st w yo sp, (savedR w).Disjoint r := by
   intro r hr
@@ -145,16 +142,6 @@ theorem saved_absFrame {yo : Nat} {sp : Addr} (hyo : yo = 0 ∨ yo = 16) (hk : S
   rcases hr with rfl | rfl | rfl | rfl
   · exact L.saved_st (by omega)
   · exact L.saved_st (by decide)
-  · exact saved_w (by decide) (.inr (by decide))
-  · exact saved_below hk
-
-theorem saved_tFrame {yo : Nat} {sp : Addr} (hyo : yo = 0 ∨ yo = 16) (hk : StkOk c st w sp) :
-    ∀ r ∈ tFrame st w yo sp, (savedR w).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact L.saved_st (by omega)
-  · exact saved_w (by decide) (.inl (by decide))
   · exact saved_w (by decide) (.inr (by decide))
   · exact saved_below hk
 

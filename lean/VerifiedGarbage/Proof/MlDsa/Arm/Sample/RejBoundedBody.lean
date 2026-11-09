@@ -123,9 +123,6 @@ theorem rbStep_eq (η : Nat) (L : List Zq) (z : Byte) :
       (if (hbTry η L (z.toNat % 16)).length < 256 then hbTry η (hbTry η L (z.toNat % 16)) (z.toNat / 16)
         else hbTry η L (z.toNat % 16)) else L := rfl
 
-theorem hbTry_length_le {η : Nat} {L : List Zq} (hL : L.length < 256) (b : Nat) : (hbTry η L b).length ≤ 256 := by
-  rw [hbTry_length]; have := halfByteOk_le η b; omega
-
 section
 variable {P : Sp} {σ : State} (hp : SpOk P σ)
 include hp
@@ -189,8 +186,6 @@ theorem Lf_succ (η : Nat) {X : List Byte} (hX : X.length = 544) {t : Nat} (ht :
     Lf η X (t + 1) = rbStep η (Lf η X t) (zAt X t) := by
   simp only [Lf]
   rw [take_succ' _ (by omega), rbFold_snoc]
-
-theorem Lf_length_le (η : Nat) (X : List Byte) (t : Nat) : (Lf η X t).length ≤ 256 := rbFold_length_le (by simp) _
 
 /-- An iteration: what `rbStep` does to the coefficients. -/
 theorem body_ok {P : Sp} {σ : State} (hp : SpOk P σ) {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte}

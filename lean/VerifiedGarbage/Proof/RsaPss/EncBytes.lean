@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 # EMSA-PSS: the encoding, a byte at a time
 
 For a modulus `n₀ ‖ rest` (`n₀ ≠ 0`, so `k - emLen` is `lo = [n₀ = 1]`),
-`encodeK` is the `k` bytes `emT …` (`encodeK_eq`): `lo` zeros, then
+`encodeK` is the `k` bytes `emT …` (`encodeK_eq₂`): `lo` zeros, then
 `maskedDB` (`DB ⊕ mask`, its first byte ANDed with `0xFF >>> z`), `H` and
 `0xbc`, byte by byte as the implementations write them.
 -/
@@ -81,27 +81,27 @@ theorem db_getD (p : Nat) (salt : List Byte) (j : Nat) :
 
 variable (G : Hash)
 
-theorem encodeK_eq (hG : Valid G) {n₀ : Byte} {rest mHash salt : List Byte} (h0 : n₀ ≠ 0)
-    (hm : mHash.length = G.len) {emBits emLen lo db : Nat}
+theorem encodeK_eq₂ (H : Hash) (hH : Valid H) (hG : Valid G) {n₀ : Byte} {rest mHash salt : List Byte} (h0 : n₀ ≠ 0)
+    (hm : mHash.length = H.len) {emBits emLen lo db : Nat}
     (hb : bitLength (Rsa.os2ip (n₀ :: rest)) - 1 = emBits) (he : emLength emBits = emLen)
-    (hlo : (n₀ :: rest).length - emLen = lo) (hdb : emLen - G.len - 1 = db)
-    (hfit : G.len + salt.length + 2 ≤ emLen) :
-    encodeK G G (n₀ :: rest) mHash salt =
+    (hlo : (n₀ :: rest).length - emLen = lo) (hdb : emLen - H.len - 1 = db)
+    (hfit : H.len + salt.length + 2 ≤ emLen) :
+    encodeK H G (n₀ :: rest) mHash salt =
       some ((List.range (n₀ :: rest).length).map
-        (emT lo db salt.length salt (G.hash (zeros 8 ++ mHash ++ salt))
-          (mgf1 G (G.hash (zeros 8 ++ mHash ++ salt)) db) ((0xFF : Byte) >>> (8 * emLen - emBits)))) := by
+        (emT lo db salt.length salt (H.hash (zeros 8 ++ mHash ++ salt))
+          (mgf1 G (H.hash (zeros 8 ++ mHash ++ salt)) db) ((0xFF : Byte) >>> (8 * emLen - emBits)))) := by
   have hEL := emLength_eq rest h0
   rw [hb, he] at hEL
   have hle : emLen ≤ (n₀ :: rest).length := by rw [hEL, List.length_cons]; split <;> omega_arith
   simp only [encodeK, encode, hb, he, hdb, hlo]
   rw [ifn (by omega_arith)]
   simp only [Option.map_some]
-  generalize hgen : G.hash (zeros 8 ++ mHash ++ salt) = h
-  have hh : h.length = G.len := by rw [← hgen]; exact hG.2 _
+  generalize hgen : H.hash (zeros 8 ++ mHash ++ salt) = h
+  have hh : h.length = H.len := by rw [← hgen]; exact hH.2 _
   have hmk : (mgf1 G h db).length = db := mgf1_length hG _ _
-  have hdbl : (zeros (emLen - salt.length - G.len - 2) ++ 0x01 :: salt).length = db := by
+  have hdbl : (zeros (emLen - salt.length - H.len - 2) ++ 0x01 :: salt).length = db := by
     simp only [List.length_append, zeros_length, List.length_cons]; omega_arith
-  have hX : (clearTop (8 * emLen - emBits) (xorBytes (zeros (emLen - salt.length - G.len - 2) ++ 0x01 :: salt)
+  have hX : (clearTop (8 * emLen - emBits) (xorBytes (zeros (emLen - salt.length - H.len - 2) ++ 0x01 :: salt)
       (mgf1 G h db))).length = db := by
     rw [clearTop_length, xorBytes_length, hdbl, hmk, Nat.min_self]
   refine congrArg some (eq_range_map ?_ fun i hi => ?_)
@@ -109,26 +109,26 @@ theorem encodeK_eq (hG : Valid G) {n₀ : Byte} {rest mHash salt : List Byte} (h
     simp only [List.length_cons] at hlo hle; omega_arith
   simp only [List.length_cons] at hi hlo hle
   simp only [emT, getD_app, List.length_append, zeros_length, hX, hh]
-  have hlodb : lo + db + G.len + 1 = rest.length + 1 := by omega_arith
+  have hlodb : lo + db + H.len + 1 = rest.length + 1 := by omega_arith
   by_cases h1 : i < lo
   · simp only [h1, ↓reduceIte]; exact zeros_getD _ _
   simp only [h1, ↓reduceIte]
   by_cases h2 : i - lo < db
-  · have h2' : i - lo < db + G.len := by omega_arith
+  · have h2' : i - lo < db + H.len := by omega_arith
     simp only [h2, h2', ↓reduceIte, clearTop_getD]
-    have hx : ∀ j < db, (xorBytes (zeros (emLen - salt.length - G.len - 2) ++ 1 :: salt) (mgf1 G h db)).getD j 0 =
+    have hx : ∀ j < db, (xorBytes (zeros (emLen - salt.length - H.len - 2) ++ 1 :: salt) (mgf1 G h db)).getD j 0 =
         (if j < db - salt.length - 1 then 0 else if j = db - salt.length - 1 then 1
           else salt.getD (j - (db - salt.length)) 0) ^^^ (mgf1 G h db).getD j 0 := fun j hj => by
       rw [xorBytes_getD (by rw [hdbl]; exact hj) (by rw [hmk]; exact hj), db_getD,
-        show emLen - salt.length - G.len - 2 = db - salt.length - 1 by omega_arith,
+        show emLen - salt.length - H.len - 2 = db - salt.length - 1 by omega_arith,
         show j - (db - salt.length - 1) - 1 = j - (db - salt.length) by omega_arith]
     by_cases h3 : i - lo = 0
     · simp only [h3, ↓reduceIte]; rw [hx 0 (by omega_arith)]
     · simp only [h3, ↓reduceIte]; rw [hx _ h2]
   · simp only [h2, ↓reduceIte]
-    by_cases h4 : i - lo < db + G.len
+    by_cases h4 : i - lo < db + H.len
     · simp only [h4, ↓reduceIte]
     · simp only [h4, ↓reduceIte]
-      rw [show i - lo - (db + G.len) = 0 by omega_arith]; rfl
+      rw [show i - lo - (db + H.len) = 0 by omega_arith]; rfl
 
 end VG.Proof.RsaPss

@@ -63,20 +63,6 @@ def Headed (P : MillerRabinLoop.Parameters) (s : State) : Prop :=
 def HeadedPair (P : MillerRabinLoop.Parameters) (other : Nat) (entropy : Spec.RsaKeyGen.Rand) (s t : State) : Prop :=
   Headed P s ∧ Headed (P.withSecret other entropy) t
 
-theorem Headed.keep {P : MillerRabinLoop.Parameters} {s t : State} (H : Headed P s) {rs : List Reg}
-    (K : Keeps rs s t) (sub : ∀ r ∈ rs, r ∈ PrepareHeader.clob) (M : t.mem = s.mem) : Headed P t := by
-  obtain ⟨s0, I, R, O, Kh, stride, len⟩ := H
-  have sp : .esp ∉ rs := fun mem => by have := sub _ mem; unfold PrepareHeader.clob at this; simp at this
-  have edi : .edi ∉ rs := fun mem => by have := sub _ mem; unfold PrepareHeader.clob at this; simp at this
-  refine ⟨s0, I, ⟨R.context.keepMem K edi M, by rw [M]; exact R.modulus,
-    R.caller.keepFrame K sp (by rw [M]; exact Frame.refl _ _), R.scratch.of_keeps K edi sp⟩,
-    by rw [M]; exact O, Kh.trans (K.mono sub), by rw [M]; exact stride, by unfold Len; rw [M]; exact len⟩
-
-theorem headed_keep {P : MillerRabinLoop.Parameters} {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
-    (s t u z : State) (H : HeadedPair P other entropy s t) (U : Fupd s u) (Z : Fupd t z) :
-    HeadedPair P other entropy u z :=
-  ⟨H.1.keep (U.keeps []) (fun _ mem => nomatch mem) U.mem, H.2.keep (Z.keeps []) (fun _ mem => nomatch mem) Z.mem⟩
-
 /-- Header byte 4 is outside what the header writes. -/
 theorem len_header {P : MillerRabinLoop.Parameters} {s t : State} (O : Outs P.g.W PrepareHeader.ranges s.mem t.mem)
     (len : Len P s) : Len P t := by
@@ -106,16 +92,6 @@ theorem header_trace {P : MillerRabinLoop.Parameters} (v : P.Valid) (seed : P.se
   exact ⟨(PrepareHeader.prepareRt_trace _ _ _ _ _ _ (inputs_agree H) E F).1,
     wp_result (headed_ok v.geometry v.length seed H.1.1 H.1.2) E,
     wp_result (headed_ok (Q := P.withSecret other entropy) v.geometry v.length seed H.2.1 H.2.2) F⟩
-
-theorem headed_agree {P : MillerRabinLoop.Parameters} {other : Nat} {entropy : Spec.RsaKeyGen.Rand} {s t : State}
-    (H : HeadedPair P other entropy s t) : VG.X86.Taint.Agree (τr [.esp, .edi]) s t := by
-  obtain ⟨⟨_, _, Rs, _⟩, ⟨_, _, Rt, _⟩⟩ := H
-  apply agree_regs
-  intro r mem
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
-  rcases mem with rfl | rfl
-  · exact Rs.caller.sp.trans Rt.caller.sp.symm
-  · exact (edi_value Rs.context).trans (edi_value Rt.context).symm
 
 theorem head_trace {mont : Prog isa} {name : String}
     (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
@@ -284,18 +260,6 @@ theorem private_len {E : Environment} (v : E.Valid) {eBytes pBytes entropy : Lis
   rw [D.input.header 1 (by decide)]
   change BitVec.ofNat 32 E.length = _
   rw [v.length_eq]
-
-theorem private_pair {P : MillerRabinLoop.Parameters} {other : Nat} {entropy : List Byte} {s t : State}
-    (I : CandidatePrepare.Input P s) (J : CandidatePrepare.Input (P.withSecret other entropy) t)
-    (iterations : P.iterations = (P.withSecret other entropy).iterations) : CandidateTest.CorePair P other entropy s t := by
-  refine ⟨?_, I, J, iterations⟩
-  apply agree_regs
-  intro r mem
-  change r ∈ [.esp, .edi] at mem
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
-  rcases mem with rfl | rfl
-  · exact I.prepare.caller.sp.trans J.prepare.caller.sp.symm
-  · exact BitVec.eq_of_toNat_eq (I.prepare.scratch.edi_toNat.trans J.prepare.scratch.edi_toNat.symm)
 
 theorem test_trace {mont round : Prog isa} {montName roundName : String}
     (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))

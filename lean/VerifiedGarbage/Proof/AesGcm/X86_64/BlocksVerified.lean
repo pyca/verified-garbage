@@ -135,34 +135,6 @@ variable (v : GcmImpl) (st : Option StitchImpl)
 
 /-! The key context of `vg_aes_gcm_init` (`CtxMode.base`). -/
 
-theorem encryptBlocks_correct (s : State) (hs : Proof.AesGcm.encryptBlocksX86_64.pre s) :
-    ∃ t s', Exec isa (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (st.any (·.full))) s t s' ∧ abiPreserved s s' ∧
-      Proof.AesGcm.encryptBlocksX86_64.post s s' := by
-  have h := encryptBlocksM_correct v (st.map (·.code CtxMode.base)) s (Proof.AesGcm.blocksPreM_base hs)
-  rwa [map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h
-
-theorem decryptBlocks_correct (s : State) (hs : Proof.AesGcm.decryptBlocksX86_64.pre s) :
-    ∃ t s', Exec isa (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec))) s t s' ∧ abiPreserved s s' ∧
-      Proof.AesGcm.decryptBlocksX86_64.post s s' := by
-  have h := decryptBlocksM_correct v (st.map (·.code CtxMode.base)) s (Proof.AesGcm.blocksPreM_base hs)
-  rwa [map_code_dec, StitchImpl.decFull_code, StitchImpl.decSmall_code] at h
-
-theorem Blocks.encrypt_ctB :
-    ConstantTime isa Proof.AesGcm.encryptBlocksX86_64.pre Proof.AesGcm.encryptBlocksX86_64.pub
-      (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (st.any (·.full))) := by
-  have h := Blocks.encrypt_ct v (st.map (·.code CtxMode.base))
-  rw [map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h
-  exact fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ => h s₁ s₂ t₁ t₂ s₁' s₂' (Proof.AesGcm.blocksPreM_base h₁)
-    (Proof.AesGcm.blocksPreM_base h₂)
-
-theorem Blocks.decrypt_ctB :
-    ConstantTime isa Proof.AesGcm.decryptBlocksX86_64.pre Proof.AesGcm.decryptBlocksX86_64.pub
-      (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec))) := by
-  have h := Blocks.decrypt_ct v (st.map (·.code CtxMode.base))
-  rw [map_code_dec, StitchImpl.decFull_code, StitchImpl.decSmall_code] at h
-  exact fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ => h s₁ s₂ t₁ t₂ s₁' s₂' (Proof.AesGcm.blocksPreM_base h₁)
-    (Proof.AesGcm.blocksPreM_base h₂)
-
 theorem encryptBlocks_mxB :
     (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (st.any (·.full))).allInstrs (fun i => !loadsMxcsr i) = true := by
   have h := encryptBlocks_mx v (st.map (·.code CtxMode.base)); rwa [map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h
@@ -188,36 +160,5 @@ theorem decryptBlocks_spSafeB :
   have h := decryptBlocks_spSafe v (st.map (·.code CtxMode.base)); rwa [map_code_dec, StitchImpl.decFull_code, StitchImpl.decSmall_code] at h
 
 end
-
-/-- A state satisfying the precondition of `vg_aes_gcm_encrypt_blocks` and `_decrypt_blocks` (with no
-data, and `scratch` at 0). -/
-def blocksSat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 10 | .rdx => 0x2000 | .rcx => 0x3000 | .r8 => 0x4000 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 256⟩, ⟨0x8008, 8⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 0⟩, ⟨0, 2112⟩]
-
-theorem encryptBlocks_verified (v : GcmImpl) (st : Option StitchImpl) :
-    Verified X86_64.target (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (st.any (·.full)))
-      (Proof.Gcm.encryptBlocksContract X86_64.abi 8) :=
-  Verified.of_correct (encryptBlocks_correct v st) (Blocks.encrypt_ctB v st) (by
-    sig_implies [Proof.Gcm.encryptBlocksContract, Proof.Gcm.cryptBlocksSig, Proof.AesGcm.encryptBlocksX86_64,
-      Proof.AesGcm.blocksPre, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
-      Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
-      List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs] [blocksSat] using blocksSat)
-
-theorem decryptBlocks_verified (v : GcmImpl) (st : Option StitchImpl) :
-    Verified X86_64.target (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)))
-      (Proof.Gcm.decryptBlocksContract X86_64.abi 8) :=
-  Verified.of_correct (decryptBlocks_correct v st) (Blocks.decrypt_ctB v st) (by
-    sig_implies [Proof.Gcm.decryptBlocksContract, Proof.Gcm.cryptBlocksSig, Proof.AesGcm.decryptBlocksX86_64,
-      Proof.AesGcm.blocksPre, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
-      Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
-      List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs] [blocksSat] using blocksSat)
 
 end VG.Proof.AesGcm.X86_64

@@ -64,32 +64,10 @@ theorem St.pcopyClr {o a : Nat} (cert : Cert (seqs (copyClr o a))) (ho : o ∈ w
   VP.kv cert (fun _ _ h => h.2.2) fun _ _ ⟨e, h, hw⟩ =>
     WP.mono (h.copyClr_ok hw ho ha hoa) fun _ ⟨ht, hwt⟩ => ⟨e, by rwa [h.numAt_input ha haw] at ht, hwt⟩
 
-/-- `copy o a` and `clrTop o` of an array whose words the stage knows from `σ`. -/
-theorem St.pcopyClrL {o a : Nat} (cert : Cert (seqs (copyClr o a))) (ho : o ∈ wJs) (ha : a ∈ L) (hoa : o ≠ a)
-    (hv : ∀ σ, E σ → A σ a = num σ.mem P.B P.W a) :
-    VP (St P E A L V LS) (seqs (copyClr o a)) (St P E (fun σ => upd (A σ) o (numAt σ.mem (State.addr P.ws) P.w a))
-      (o :: L) V LS) :=
-  VP.kv cert (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ =>
-    WP.mono (h.copyClr_ok hw ho (h.live_lt a ha) hoa) fun _ ⟨ht, hwt⟩ => ⟨e, by
-      have pre := h.pre
-      have e1 : numAt s.mem (State.addr P.ws) P.w a = numAt σ.mem (State.addr P.ws) P.w a := by
-        rw [pre.numAt_val32, pre.numAt_val32, val32_low _ _ _ (2 * P.w) 2, val32_low σ.mem _ _ (2 * P.w) 2]
-        have := (h.arrs a ha).trans (hv σ e)
-        simp only [num, MP.W] at this
-        rw [this]
-      rwa [e1] at ht, hwt⟩
-
 theorem St.pcopy {o a : Nat} (cert : Cert (copy o a)) (ho : o ∈ wJs) (ha : a ∈ L) (hoa : o ≠ a) :
     VP (St P E A L V LS) (copy o a) (St P E (fun σ => upd (A σ) o (A σ a)) (o :: L) V LS) :=
   VP.kv cert (fun _ _ h => h.2.2) fun _ _ ⟨e, h, hw⟩ =>
     WP.mono (h.copy_ok hw ho (h.live_lt a ha) hoa) fun _ ⟨ht, hwt, _⟩ => ⟨e, by rwa [h.arrs a ha] at ht, hwt⟩
-
-theorem St.psel {o a b sl : Nat} (cert : Cert (sel o a b sl)) (ho : o ∈ wJs) (ha : a ∈ L) (hb : b ∈ L)
-    (hoa : o ≠ a) (hob : o ≠ b) (hsl : sl ∈ LS) (bit : ∀ σ, E σ → V σ sl ≤ 1) :
-    VP (St P E A L V LS) (sel o a b sl)
-      (St P E (fun σ => upd (A σ) o (if V σ sl = 0 then A σ a else A σ b)) (o :: L) V LS) :=
-  VP.kv cert (fun _ _ h => h.2.2) fun σ _ ⟨e, h, hw⟩ =>
-    WP.mono (h.sel_ok hw ho ha hb hoa hob hsl (bit σ e)) fun _ ⟨ht, hwt, _⟩ => ⟨e, ht, hwt⟩
 
 theorem St.peqS {d a b t : Nat} (cert : Cert (eqS d a b t)) (ha : a ∈ L) (hb : b ∈ L) (hd : d ∈ wDs)
     (htw : t ∈ wJs) (hT : t ∉ L) (hls : sT ∉ LS) (hdT : d ≠ sT) :

@@ -45,12 +45,6 @@ theorem finishWith_eq (c : Cfg) (x y : Nat) : Impl.EcKey.Arm.Cfg.finishWith c x 
     (.dp .and .r0 .r10 (.imm 1) :: Cfg.restore))) := by
   simp only [Impl.EcKey.Arm.Cfg.finishWith, List.append_assoc, List.cons_append, List.nil_append]
 
-theorem finish_eq (c : Cfg) : Impl.EcKey.Arm.Cfg.finish c =
-    .ldr .r10 wb (c.sl FLAG) :: .mov .r4 (.imm 4) :: .dp .and .r4 .r4 (.reg .r10) :: .strb .r4 .lr 0 ::
-    (storeBytes c.C.len c.n .lr 1 (c.sl X) ++ (storeBytes c.C.len c.n .lr (1 + c.C.len) (c.sl Y) ++
-    (.dp .and .r0 .r10 (.imm 1) :: Cfg.restore))) := by
-  simp only [Impl.EcKey.Arm.Cfg.finish, Impl.EcKey.Arm.Cfg.finishWith, List.append_assoc, List.cons_append, List.nil_append]
-
 /-- The result, the return value and the callee-saved registers. -/
 theorem pointFinish_ok (hc : CfgOk c) {x y : Nat} (hx : x < 45) (hy : y < 45) {base : Addr} {s : State} (hs : Scr s base size) {o32 : BitVec 32}
     (hlr : s.gpr .lr = o32) (hofit : o32.toNat + (1 + 2 * c.C.len) ≤ 2 ^ 32)

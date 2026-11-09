@@ -129,8 +129,6 @@ theorem result_ok {s : State} (h : DPre s) {x : BitVec 64} {mc : Mem} {t : State
 theorem freed_sp (b : Nat) (s : State) : (freed b s).sp = s.sp + BitVec.ofNat 64 b := rfl
 theorem freed_lr (b : Nat) (s : State) : (freed b s).lr = s.lr := rfl
 theorem freed_gpr (b : Nat) (s : State) : (freed b s).gpr = s.gpr := rfl
-theorem freed_mem (b : Nat) (s : State) : (freed b s).mem = s.mem := rfl
-
 theorem code_correct (s : State) (hpre : (Spec.RsaPkcs1Enc.decryptContract abi stackBytes).pre s) :
     ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t := by
   show WP isa code s fun t => abiPreserved s t ∧ fnPost s t

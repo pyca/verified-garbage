@@ -34,12 +34,4 @@ theorem rooted_prologue {p : Params} {S : Nat} {σ : State} (h3 : Ok3 p)
     exact hr.inverse.apart_write hw) ht.rd ht.wr ht.sp hy
   exact ⟨⟨entry_st h3 hp ht hframe,⟨rf,ri⟩⟩,hflag⟩
 
-/-- Shared artifact preconditions enter the same optimized signing state. -/
-theorem rooted_prologue_contract {p : Params} {S : Nat} {σ : State}
-    (hS : 0<S) (h3 : Ok3 p)
-    (hp : (signContractT p (abi.withConsts signRootConsts) S).pre σ) :
-    WP isa (.block pro) σ fun s => RootedSt p S σ s ∧ s.gpr .x24=1 := by
-  have h := staticRoots_entry hS hp
-  exact rooted_prologue h3 h.1 h.2
-
 end VG.Proof.MlDsa.AArch64.Sign

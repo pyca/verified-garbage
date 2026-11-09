@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Argon2.RISCV64.Compress
 public import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.CT
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # Argon2 (RFC 9106) on RISC-V -/
 

@@ -188,11 +188,6 @@ theorem winSqS_q (Sq : MontS) {p : XPub} {s : State} (h : WinQ p s Sq.bd) :
     fun t ⟨hc', hY', _, hh, hf, _⟩ => ⟨minv, X, Xc, V, hc', htab.of_win hf hc.scrT.nowrap, hY', ?_, hV', hw, hw', hR⟩
   rw [hh _ (by decide)]; exact hV
 
-/-- A squaring keeps `WinQ`. -/
-theorem winSq_q (M : Mont) {p : XPub} {s : State} (h : WinQ p s) :
-    WP isa (M.mm Public.aY Public.aY Public.aY) s (WinQ p) :=
-  winSqS_q M.toS h
-
 /-- Before the selection: `tabSel_ok`'s hypotheses, and the rest of `WinQ`. -/
 def WinS (p : XPub) (t : State) (bd : Nat → Nat → Nat := fun m _ => m) : Prop :=
   SelP 16 p t ∧ ∃ (minv : BitVec 64) (X Xc : Nat), CExpCtx t (off p.B p.o) p.wx minv X Xc ∧

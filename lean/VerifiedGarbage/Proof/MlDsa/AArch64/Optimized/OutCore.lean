@@ -195,16 +195,6 @@ theorem outBody_words_ok {s : State} {z : Nat → Int} {zi zt : Nat → Nat → 
     · refine ⟨((hk₁.trans hk₂).trans hk₃).mono,hf₂.trans hf₃,?_⟩
       simpa only [outMemory,hm₂,hm₁,hk₂.get .x0,hk₁.get .x0,hk₁.get .x11] using hm₃
 
-theorem outerOutPassMem_self (m : Mem) (p : Addr) (z : Nat → Int) (N : Nat) :
-    outerOutPassMem m p p z N=outerPassMem m p z N := by
-  induction N with
-  | zero => rfl
-  | succ N ih => simp only [outerOutPassMem,outerPassMem,outerOutMemStep,outerMemStep,ih]
-
-theorem outMemory_self (m : Mem) (p : Addr) (z : Nat → Int) (zi zt : Nat → Nat → Nat → Nat → Int) :
-    outMemory m p p z zi zt=nttMemory m p z zi zt := by
-  simp only [outMemory,nttMemory,outerOutPassMem_self]
-
 end VG.Proof.MlDsa.AArch64.Optimized
 
 end

@@ -46,10 +46,6 @@ def rPost : Proof.MillerRabin.Round.roundSig.Post abi.ptrBits := fun ws wsLen m 
 /-- `roundContract`'s leak. -/
 def rLeak : Curry (Proof.MillerRabin.Round.roundSig.words abi.ptrBits) (Mem → List Nat) := fun ws _ m => [wOf m ws]
 
-theorem roundContract_eq (stack : Nat) :
-    Proof.MillerRabin.Round.roundContract abi compact stack =
-      Proof.MillerRabin.Round.roundSig.contract abi rPre rPost false stack (some rLeak) := rfl
-
 /-- `roundContract` with the 144-byte scratch buffer as a third argument. -/
 abbrev scratchContract : Contract isa :=
   Sig.scratchContract abi Proof.MillerRabin.Round.roundSig "scratch" .u64 18 rPre rPost false 0 (some rLeak)

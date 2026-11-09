@@ -10,9 +10,7 @@ public import VerifiedGarbage.Proof.Argon2.Contract
 # Argon2 H′ on ARMv7: the contract of the proof
 
 `hPrimeArm`: `vg_argon2_hprime(input = r0, input_len = r1, out = r2,
-out_len = r3, scratch = [sp])` with its stack argument only read;
-`Proof.Argon2.hPrimeContract`, which lets the code write it, is reached by
-narrowing. H′ uses the 32 bytes of stack below the stack pointer: a call of
+out_len = r3, scratch = [sp])` with its stack argument only read. H′ uses the 32 bytes of stack below the stack pointer: a call of
 `vg_blake2b_update` pushes four words, and `update` itself uses 16 bytes.
 -/
 

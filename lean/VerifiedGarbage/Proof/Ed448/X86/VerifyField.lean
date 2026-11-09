@@ -116,9 +116,6 @@ structure VKeep (base : Addr) (s t : State) : Prop where
   regs : Keeps (.esi :: workRegs) s t
   mem : WsOut2 base 16 2864 ACC 512 s.mem t.mem
 
-theorem VKeep.refl (base : Addr) (s : State) : VKeep base s s :=
-  ⟨Keeps.refl _ _, WsOut2.refl _ _ _ _ _ _⟩
-
 theorem VKeep.trans {base : Addr} {s t u : State} (h : VKeep base s t) (h' : VKeep base t u) :
     VKeep base s u := ⟨h.regs.trans h'.regs, h.mem.trans h'.mem⟩
 
@@ -128,10 +125,6 @@ theorem VKeep.scr {base : Addr} {s t : State} (h : VKeep base s t) (hs : Scr s b
 theorem VKeep.ctx {base : Addr} {s t : State} (h : VKeep base s t) (hc : CallCtx s base) :
     CallCtx t base :=
   hc.keep (h.regs.1 _ (by decide))
-
-theorem Outside2.widen {base : Addr} {m m' : Mem} (h : Outside2 base 64 2816 ACC 512 m m') :
-    Outside2 base 16 2864 ACC 512 m m' :=
-  fun p h1 h2 => h p (by rcases h1 with h1 | h1 <;> [exact Or.inl (by omega); exact Or.inr (by omega)]) h2
 
 theorem WsOut2.widen {base : Addr} {m m' : Mem} (h : WsOut2 base 64 2816 ACC 512 m m') :
     WsOut2 base 16 2864 ACC 512 m m' :=

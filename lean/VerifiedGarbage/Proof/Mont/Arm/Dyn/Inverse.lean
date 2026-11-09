@@ -34,10 +34,6 @@ theorem newton_step {a x x' : Int} {j : Nat} (hj : 2 * j ≤ 32) (h : (a * x - 1
   rw [this]
   exact Int.dvd_add (Int.dvd_trans h2 (Int.dvd_mul_left a _)) h1
 
-theorem ofNat_mod32 (n : Nat) : ((BitVec.ofNat 32 n).toNat : Int) % 2 ^ 32 = (n : Int) % 2 ^ 32 := by
-  rw [BitVec.toNat_ofNat, Int.natCast_emod]
-  exact Int.emod_emod _ _
-
 /-- The machine's Newton step, as integers modulo `2³²`. -/
 theorem newton_val (a x : BitVec 32) :
     ((x * ((0x2 : BitVec 16).setWidth 32 - a * x)).toNat : Int) % 2 ^ 32 =

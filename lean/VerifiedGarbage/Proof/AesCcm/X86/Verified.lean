@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesCcm.Rounds
 import VerifiedGarbage.Proof.AesCcm.X86.SealCT
 import VerifiedGarbage.Proof.AesCcm.X86.OpenCT
 import VerifiedGarbage.Proof.CmacAes.X86.Verified
@@ -17,11 +18,11 @@ import VerifiedGarbage.Proof.AesGcm.X86.Top
 
 Untrusted: everything here is checked by Lean. Correctness (`seal_wp'`,
 `open_wp'`) and constant time (`seal_ct`, `open_ct`) for any implementation
-`v` of `vg_aes_ctr32`, a state satisfying the precondition, and the shared
+`v` of `vg_aes_ctr32_to`, a state satisfying the precondition, and the shared
 contracts with the working space as a last argument
-(`Proof/AesCcm/Scratch.lean`), with 56 bytes of stack: a call of
+(`Proof/AesCcm/Scratch.lean`), with 60 bytes of stack: a call of
 `vg_cmac_aes_update` (its six arguments and return address) and its own
-calls of `vg_aes_ctr32`.
+calls of `vg_aes_ctr32_to`.
 -/
 
 @[expose] public section
@@ -100,17 +101,17 @@ theorem openSat_args : arg openSat 0 = 0x1000 ∧ arg openSat 1 = 10 ∧ arg ope
   sealSat_args
 
 theorem seal_verified (v : Ctr32Impl) :
-    Verified X86.target («seal» v.callee v.suffix) (Proof.AesCcm.sealScratchContract X86.abi 56) :=
+    Verified X86.target («seal» v.callee v.suffix) (Proof.AesCcm.sealScratchContract X86.abi 60) :=
   Verified.of_correct (seal_correct v) (seal_ct v) (by
     obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, e⟩ := sealSat_args
     have esp : sealSat.gpr .esp = 0x8000 := rfl
     sig_implies [Proof.AesCcm.sealScratchContract, Proof.AesCcm.sealScratchSig, Spec.Ccm.sealPre,
-      Spec.Ccm.sealPost, sealX86, sealPre, oneLay, onePub, schR, nonceR, aadR, dataR, tagR, workR, argsR', retR,
+      Proof.AesCcm.sealRoundsPost, sealX86, sealPre, oneLay, onePub, schR, nonceR, aadR, dataR, tagR, workR, argsR', retR,
       stackR, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, e, esp] using sealSat)
 
 theorem open_verified (v : Ctr32Impl) :
-    Verified X86.target («open» v.callee v.suffix) (Proof.AesCcm.openScratchContract X86.abi 56) :=
+    Verified X86.target («open» v.callee v.suffix) (Proof.AesCcm.openScratchContract X86.abi 60) :=
   Verified.of_correct (open_correct v) (open_ct v)
     { pre := by
         sig_implies_pre [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
@@ -118,7 +119,7 @@ theorem open_verified (v : Ctr32Impl) :
           stackR, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       post := by
         sig_implies_post [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
-          Spec.Ccm.openPost, Spec.Ccm.openLeak, openX86, openLeak, openRes, openPre, oneLay, onePub, schR, nonceR, aadR, dataR, tagR,
+          Proof.AesCcm.openRoundsPost, Spec.Ccm.openLeak, openX86, openLeak, openRes, openPre, oneLay, onePub, schR, nonceR, aadR, dataR, tagR,
           workR, argsR', retR, stackR, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       pub := by
         intro s₁ s₂ _ _ h
@@ -140,7 +141,7 @@ theorem open_verified (v : Ctr32Impl) :
         obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, e⟩ := openSat_args
         have esp : openSat.gpr .esp = 0x8000 := rfl
         sig_implies_sat [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
-          Spec.Ccm.openPost, Spec.Ccm.openLeak, openX86, openLeak, openRes, openPre, oneLay, onePub, schR, nonceR, aadR, dataR, tagR,
+          Proof.AesCcm.openRoundsPost, Spec.Ccm.openLeak, openX86, openLeak, openRes, openPre, oneLay, onePub, schR, nonceR, aadR, dataR, tagR,
           workR, argsR', retR, stackR, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
           [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, e, esp] using openSat }
 

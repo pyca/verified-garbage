@@ -11,8 +11,9 @@ public meta import VerifiedGarbage.Spec.Aes
 The NIST CAVP AES known-answer tests for ECB (`GFSbox`, `KeySbox`, `VarKey`
 and `VarTxt`, each for 128-, 192- and 256-bit keys), read from the vendored
 response files under `vectors/nist-cavp/aes/` (see `vectors/sources/`)
-when this file is built and checked against `VG.Spec.Aes.encrypt` (the
-`ENCRYPT` vectors) and `VG.Spec.Aes.decrypt` (the `DECRYPT` vectors), so
+when this file is built and checked against `encrypt` (the `ENCRYPT`
+vectors) and `decrypt` (the `DECRYPT` vectors) below, the spec's
+`VG.Spec.Aes.cipher` and `VG.Spec.Aes.invCipher` under its key schedule, so
 that a transcription error in the spec fails the build. Every `GFSbox` and
 `KeySbox` vector is checked, and the first two `VarKey` and `VarTxt`
 vectors of each file, in each direction. (Evaluating the spec is slow; the Rust tests run the full
@@ -90,6 +91,21 @@ def readVectors (dir name : String) : CommandElabM String := do
     | throwError "no repository root above {file}"
   IO.FS.readFile (root / "vectors" / "nist-cavp" / dir / name)
 
+/-- AES encryption of the 16-byte block `input` under the key `key` (16,
+24 or 32 bytes): `Spec.Aes.cipher` with the key's number of rounds and key
+schedule. (Protected, so that the tests that open this namespace keep their
+modes' own `encrypt`.) -/
+protected def encrypt (key : List Byte) (input : List Byte) : List Byte :=
+  (Spec.Aes.cipher (Spec.Aes.rounds (key.length / 4)) (Spec.Aes.expandKey key)
+    (Vector.ofFn fun i => input.getD i 0)).toList
+
+/-- AES decryption of the 16-byte block `input` under the key `key` (16,
+24 or 32 bytes): `Spec.Aes.invCipher` with the key's number of rounds and
+key schedule. -/
+protected def decrypt (key : List Byte) (input : List Byte) : List Byte :=
+  (Spec.Aes.invCipher (Spec.Aes.rounds (key.length / 4)) (Spec.Aes.expandKey key)
+    (Vector.ofFn fun i => input.getD i 0)).toList
+
 run_cmd do
   let mut n : Nat := 0
   for kind in ["GFSbox", "KeySbox", "VarKey", "VarTxt"] do
@@ -107,10 +123,10 @@ run_cmd do
           | .ok (key, pt, ct) =>
             unless key.length == bits / 8 do throwError "{name}: a {key.length}-byte key"
             if dir == "ENCRYPT" then
-              unless Spec.Aes.encrypt key pt == ct do
+              unless Aes.encrypt key pt == ct do
                 throwError "{name}, COUNT = {(r.get "COUNT").toOption}: AES encryption is wrong"
             else
-              unless Spec.Aes.decrypt key ct == pt do
+              unless Aes.decrypt key ct == pt do
                 throwError "{name}, COUNT = {(r.get "COUNT").toOption}: AES decryption is wrong"
             n := n + 1
   unless n == 182 do throwError "expected 182 vectors, checked {n}"

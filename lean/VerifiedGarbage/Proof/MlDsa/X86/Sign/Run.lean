@@ -37,9 +37,6 @@ abbrev Good (s₀ : State) : Prop := okE p F.rejF s₀ (p.k * p.ℓ) = true
 /-- The number of iterations of the loop. -/
 def NI (s₀ : State) : Nat := if Good p F s₀ then itV p (skOf p s₀) (muOf s₀) (rndOf s₀) F.ballF else 1
 
-/-- The inputs, on entry. -/
-abbrev sk₀ (s₀ : State) : List Byte := skOf p s₀
-
 end
 
 theorem NI_pos (F : PrimsOk P) (s₀ : State) : 0 < NI p F s₀ := by

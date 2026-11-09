@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncFrame
 
 /-!
@@ -43,8 +43,8 @@ theorem stackArgs_eight (s : State) :
       stackArg s 3, stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7] := rfl
 
 theorem pre_of {s : State}
-    (h : (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi encStack).pre s) : PPre s := by
-  sig_pre [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig,
+    (h : (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi encStack).pre s) : PPre s := by
+  sig_pre [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig,
     abi, argRegs, encStack, Impl.RsaPkcs1Enc.X86_64.Encrypt.frameBytes, stackArgs_eight, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp1, sp3, hrd, hwr, dOn, dOe, dOm, dOp, dOs, dOq, dOa, dns, des, dms, dps, dsq, dsa,
     dRo, -, -, -, -, dRs, -, -, dKo, dKn, dKe, dKm, dKp, dKs, dKq, dKa,

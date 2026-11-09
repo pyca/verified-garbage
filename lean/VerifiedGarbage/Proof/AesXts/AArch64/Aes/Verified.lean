@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.AArch64.Aes.Top
 public import VerifiedGarbage.Spec.Xts.Contract
-public import VerifiedGarbage.Proof.Xts.Contract
-meta import VerifiedGarbage.Proof.Xts.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.AesXts.AArch64.Verified
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -77,11 +75,5 @@ theorem decrypt_ct (enc : Bool) : ConstantTime isa (modeAArch64 (AesXts.xtsMode 
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
-
-theorem encrypt_verified : Verified AArch64.target encrypt (Proof.Xts.aesEncryptContract AArch64.abi) :=
-  Proof.AesXts.AArch64.encrypt_verified_of encrypt_correct (encrypt_ct true)
-
-theorem decrypt_verified : Verified AArch64.target decrypt (Proof.Xts.aesDecryptContract AArch64.abi) :=
-  Proof.AesXts.AArch64.decrypt_verified_of decrypt_correct (decrypt_ct false)
 
 end VG.Proof.AesXts.AArch64.Aes

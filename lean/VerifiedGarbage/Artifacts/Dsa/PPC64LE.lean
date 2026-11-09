@@ -1,14 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyVerified
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.Verified
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.Verified
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Init
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # DSA on PPC64LE -/
 
@@ -17,13 +18,10 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Dsa.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Dsa.verifyApi.artifact PPC64LE.target {
-    code := Impl.Dsa.PPC64LE.Verify.verify
-    verified := Proof.Dsa.PPC64LE.verify_verified },
   Spec.Dsa.deriveKeyApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Derive.derive
     verified := Proof.Dsa.PPC64LE.deriveKey_verified },
-  Spec.Dsa.randomSignApi.artifact PPC64LE.target {
+  Spec.Dsa.randomSignPrevalidatedApi.artifact PPC64LE.target {
     stack := 304
     code := Impl.Dsa.PPC64LE.RandomSign.code
     verified := Proof.Dsa.PPC64LE.randomSign_verified },
@@ -34,8 +32,14 @@ def artifacts : List Artifact := [
   Spec.Dsa.validatePublicKeyApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Prevalidated.validate
     verified := Proof.Dsa.PPC64LE.validate_verified },
+  Spec.Dsa.validatePrivateKeyApi.artifact PPC64LE.target {
+    code := Impl.Dsa.PPC64LE.PrevalidatedSign.validate
+    verified := Proof.Dsa.PPC64LE.validatePrivate_verified },
   Spec.Dsa.verifyPrevalidatedApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Prevalidated.verify
-    verified := Proof.Dsa.PPC64LE.prevalidated_verified }]
+    verified := Proof.Dsa.PPC64LE.prevalidated_verified },
+  Spec.Dsa.parameterInitApi.artifact PPC64LE.target {
+    code := Impl.Dsa.PPC64LE.Generation.init
+    verified := Proof.Dsa.PPC64LE.Gen.init_verified }]
 
 end VG.Artifacts.Dsa.PPC64LE

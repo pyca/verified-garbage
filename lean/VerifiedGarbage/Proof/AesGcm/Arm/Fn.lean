@@ -143,9 +143,6 @@ theorem Lay.of {c st w sp : BitVec 32} (cw : c.toNat + 256 ≤ 2 ^ 32) (sw : st.
 
 theorem ctxH_eq (m : Mem) (p : Addr) : Spec.Gcm.ctxH m p = Spec.Gcm.blockAt m (p + BitVec.ofNat 64 240) := rfl
 
-theorem toNat_mod16 (n : Nat) : (BitVec.ofNat 64 n).toNat % 16 = n % 16 := by
-  rw [BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide)]
-
 theorem ofNat_lit (n : Nat) : (OfNat.ofNat n : Addr) = BitVec.ofNat 64 n := rfl
 
 section
@@ -158,15 +155,6 @@ theorem saved_absFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ absFram
   rcases hr with rfl | rfl | rfl | rfl
   · exact (L.st_w (by omega) (.inr ⟨by decide, by decide⟩)).symm
   · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact (L.stk_w (by decide)).symm
-
-theorem saved_tFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ tFrame st w sp yo, (savedR w).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact (L.st_w (by omega) (.inr ⟨by decide, by decide⟩)).symm
-  · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
   · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
   · exact (L.stk_w (by decide)).symm
 

@@ -36,11 +36,6 @@ theorem redc_cancel {X R A y K : Nat} (hR : Nat.Coprime R X) (h : A * R ^ K % X 
   apply ModArith.mod_eq_of_mul_mod_eq (Nat.Coprime.pow_left K hR)
   rw [h, Nat.pow_succ, Nat.mul_assoc, Nat.mul_comm (R ^ K) R]
 
-/-- A Montgomery multiplication by 1: `Y' R ≡ Y ≡ c R` gives `Y' ≡ c`. -/
-theorem mont_one {X R Y Y' c : Nat} (hR : Nat.Coprime R X) (h : Y' * R % X = Y * 1 % X)
-    (hY : Y % X = c * R % X) : Y' % X = c % X :=
-  ModArith.mod_eq_of_mul_mod_eq hR (by rw [Nat.mul_one] at h; exact h.trans hY)
-
 /-- `h = (m₁ - m₂) qInv mod p` from its Montgomery computation: the
 difference `(a + P - b) mod P` of `a ≡ m₁ R` and `b ≡ m₂ R` modulo `P`, and
 `h R ≡ (a - b) qInv`. -/

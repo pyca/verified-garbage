@@ -49,15 +49,15 @@ theorem verC_pre {s : State} (h : verC.pre s) : VerPre s :=
   let ⟨a, b, c, d, e, f, g, h', i, j, k, l, m, n, o, p, q, r⟩ := h
   ⟨a, b, c, d, e, f, g, h', i, j, k, l, m, n, o, p, q, r⟩
 
-theorem ver_ok (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) (s : State) (hs : verC.pre s) :
+theorem ver_ok (hR : Proof.Ed448.RecoverOk) (s : State) (hs : verC.pre s) :
     ∃ t s', Exec isa verifyMessage s t s' ∧ abiPreserved s s' ∧ verC.post s s' := by
-  obtain ⟨t, s', he, hg, hsp, hlr, hq⟩ := verifyMessage_wp hR hV (verC_pre hs)
+  obtain ⟨t, s', he, hg, hsp, hlr, hq⟩ := verifyMessage_wp hR (verC_pre hs)
   exact ⟨t, s', he, ⟨hg, hsp, hlr⟩, hq⟩
 
-theorem ver_ct (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) :
+theorem ver_ct (hR : Proof.Ed448.RecoverOk) :
     ConstantTime isa verC.pre verC.pub verifyMessage :=
   fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ =>
-    verifyMessage_ct hR hV s₁ s₂ t₁ t₂ s₁' s₂' (verC_pre h₁) (verC_pre h₂) hp.1 e₁ e₂
+    verifyMessage_ct hR s₁ s₂ t₁ t₂ s₁' s₂' (verC_pre h₁) (verC_pre h₂) hp e₁ e₂
 
 /-- A state satisfying the precondition. -/
 def verSat : State where
@@ -69,11 +69,11 @@ def verSat : State where
   rd := [⟨0x1000, 57⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 114⟩]
   wr := [⟨0x5000, 8192⟩, ⟨0x8000, 272⟩]
 
-theorem verify_verified (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) :
+theorem verify_verified (hR : Proof.Ed448.RecoverOk) :
     Verified PPC64LE.target verifyMessage (Sig.scratchContract PPC64LE.abi Spec.Ed448.verifySig "frame" .u8 272
       (Curry.const (fun _ => True) _) (Proof.Ed448.WholeLocal.verifyPost PPC64LE.abi.ptrBits) true 48
       (some (Proof.Ed448.WholeLocal.verifyLeak PPC64LE.abi.ptrBits))) :=
-  Verified.of_correct (ver_ok hR hV) (ver_ct hR hV) (by
+  Verified.of_correct (ver_ok hR) (ver_ct hR) (by
     sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Spec.Ed448.verifySig,
       Spec.Ed448.scratchWords, Proof.Ed448.WholeLocal.verifyPost, Proof.Ed448.WholeLocal.verifyLeak, verC, VPub,
       verResult, vpkR, vcxR, vmsR, vsgR, vscR, vfR, vpkB, vctxB, vmsgB, vsigB, PPC64LE.abi, PPC64LE.argRegs]
@@ -87,11 +87,11 @@ theorem verFrameSat_pre : ∃ s, (Spec.Ed448.verifyContract PPC64LE.abi (48 + 30
     PPC64LE.argRegs] [verFrameSat, verSat] using verFrameSat
 
 /-- In its frame of 304 bytes. -/
-theorem verify_framed (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) :
+theorem verify_framed (hR : Proof.Ed448.RecoverOk) :
     Verified PPC64LE.target verifyCode (Spec.Ed448.verifyContract PPC64LE.abi (48 + 304)) :=
   Verified.stackScratchL (sig := Spec.Ed448.verifySig) (nm := "frame") (e := .u8) (n := 272)
     (post := Proof.Ed448.WholeLocal.verifyPost PPC64LE.abi.ptrBits) (wa := true) (stack := 48) (bytes := 304)
-    (leak := some (Proof.Ed448.WholeLocal.verifyLeak PPC64LE.abi.ptrBits)) (verify_verified hR hV) (by decide)
+    (leak := some (Proof.Ed448.WholeLocal.verifyLeak PPC64LE.abi.ptrBits)) (verify_verified hR) (by decide)
     (by decide) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Ed448.WholeLocal.verifyPost_local _) (Proof.Ed448.WholeLocal.verifyLeak_local _) verFrameSat_pre
 

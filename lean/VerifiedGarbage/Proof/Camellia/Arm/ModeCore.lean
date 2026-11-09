@@ -18,8 +18,8 @@ import VerifiedGarbage.Proof.Framework.Sig
 
 `ecbSpec dir`: what the modes need of `vg_camellia_ecb_encrypt` and
 `vg_camellia_ecb_decrypt` (`Proof.Modes.Arm.CoreSpec`), from their shared
-contract (`Spec.Camellia.ecbContract`, with 2816 bytes of stack) and its
-proof (`ecb_framed`): the schedule is Camellia's 272-byte schedule, the
+contract (`Proof.Camellia.ecbContractSk`, with 2816 bytes of stack) and its
+proof (`ecb_framedSk`): the schedule is Camellia's 272-byte schedule, the
 number of rounds is 18 or 24, and the cipher on a block is
 `Spec.Camellia.cipher` or `Spec.Camellia.invCipher` of the subkeys of that
 many rounds (`rsel`, which reads 18 or 24 whatever the number is).
@@ -76,20 +76,20 @@ def ecbSpec (dir : Dir) : CoreSpec (ecbCore dir) where
   stack := 2816
   rok R := R.toNat = 18 ∨ R.toNat = 24
   ciphAt m K R := dirCipher dir (Spec.Camellia.subkeysAt m K (rsel R))
-  contract := Spec.Camellia.ecbContract Arm.abi (specDir dir) 2816
-  correct := (ecb_framed dir).1
-  ct := (ecb_framed dir).2.1
+  contract := Proof.Camellia.ecbContractSk Arm.abi (specDir dir) 2816
+  correct := (ecb_framedSk dir).1
+  ct := (ecb_framedSk dir).2.1
   depth := ecb_stack dir
   pre_of _ s h := by
     obtain ⟨stk, rd, wr, kd, bk, bd, fK, fD, rr⟩ := h
     have rr := rr rfl
     rw [dReg_eq, nReg_eq] at wr kd bd fD
-    sig_pre [Spec.Camellia.ecbContract, Spec.Camellia.ecbSig, Spec.Camellia.ecbPre, Arm.abi, Arm.argRegs,
+    sig_pre [Proof.Camellia.ecbContractSk, Spec.Camellia.ecbSig, Spec.Camellia.ecbPre, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
     exact ⟨stk, by have := s.sp.isLt; omega, rd, wr, kd, bk, bd, fK, fD, rr⟩
   post_of _ s s' hp h := by
     have rr := hp.rr rfl
-    sig_post [Spec.Camellia.ecbContract, Spec.Camellia.ecbSig, Spec.Camellia.ecbPost, Arm.abi, Arm.argRegs,
+    sig_post [Proof.Camellia.ecbContractSk, Spec.Camellia.ecbSig, Proof.Camellia.ecbPostSk, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at h
     show blocksOf 16 _ _ _ = (blocksOf 16 _ _ _).map _
     rw [dReg_eq, nReg_eq, rsel_eq rr]
@@ -97,7 +97,7 @@ def ecbSpec (dir : Dir) : CoreSpec (ecbCore dir) where
     rw [blocksOf_eq, blocksOf_eq, h rr, ecb_dir, List.map_map, List.map_map]
     exact List.map_congr_left fun v _ => (dirCipher_toList dir _ v).symm
   pub_of _ s₁ s₂ h0 h1 h2 h3 h4 := by
-    sig_pub [Spec.Camellia.ecbContract, Spec.Camellia.ecbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_pub [Proof.Camellia.ecbContractSk, Spec.Camellia.ecbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     exact ⟨h0, h1, h2, h3, h4 rfl⟩
   ciphAt_congr {_ _ _ R} h := congrArg (dirCipher dir) (Proof.Camellia.subkeysAt_congr (R := rsel R)

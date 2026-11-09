@@ -19,7 +19,7 @@ namespace VG.Proof.RsaPkcs1Enc.X86_64.Pc
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 def contract : Contract isa where
-  pre := (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi encStack).pre
+  pre := (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi encStack).pre
   post := post
   pub a s := encK.pub a s ∧ stackArg a 6 = stackArg s 6 ∧ stackArg a 7 = stackArg s 7 ∧
     Spec.Rsa.wordsAt a.mem (stackArg a 6) (stackArg a 7).toNat =
@@ -30,14 +30,14 @@ def satState : State := { encSatState with
   mem := fun a => if a = 0x10039 then 0x50 else if a = 0x10040 then 16 else encSatState.mem a
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 0⟩, ⟨0x4100, 61⟩, ⟨0x5000, 128⟩, ⟨0x10008, 64⟩] }
 
-theorem implies : contract.Implies (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi encStack) where
+theorem implies : contract.Implies (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi encStack) where
   pre := fun _ h => h
-  post := by sig_implies_post [Spec.RsaPkcs1Enc.encryptPrecomputedContract,
-    Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs, contract, post, encK, encStack,
+  post := by sig_implies_post [Proof.RsaPkcs1Enc.encryptPrecomputedContract,
+    Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs, contract, post, encK, encStack,
     Impl.RsaPkcs1Enc.X86_64.Encrypt.frameBytes, stackArgs_eight, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig,
+    sig_pub [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig,
       abi, argRegs, contract, encStack, Impl.RsaPkcs1Enc.X86_64.Encrypt.frameBytes, stackArgs_eight,
       List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
@@ -48,8 +48,8 @@ theorem implies : contract.Implies (Spec.RsaPkcs1Enc.encryptPrecomputedContract 
     refine ⟨⟨?_, by simp only [stackArgs_six, a0, a1, a2, a3, a4, a5], hn, he⟩, a6, a7, hq'⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
-  sat := by sig_implies_sat [Spec.RsaPkcs1Enc.encryptPrecomputedContract,
-    Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs, contract, encStack,
+  sat := by sig_implies_sat [Proof.RsaPkcs1Enc.encryptPrecomputedContract,
+    Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs, contract, encStack,
     Impl.RsaPkcs1Enc.X86_64.Encrypt.frameBytes, stackArgs_eight, List.append_eq]
     [satState, encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
 

@@ -44,16 +44,13 @@ theorem decrypt_eq (hti : TagInputEq) (ciph : Spec.GcmSiv.Cipher) (kl : Nat) (no
   obtain ⟨a, e⟩ := dk
   simp only [hti]
 
-theorem setWidth_ind (P : Prop) [Decidable P] :
-    (BitVec.ofNat 64 (if P then 1 else 0)).setWidth 32 = if P then 1 else 0 := by
-  split <;> rfl
-
 /-- A buffer missing `W` and the data misses what counter mode writes. -/
 theorem buf_cryR {c : Cx} {P : Addr} {len : Nat} (hw : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 3824⟩)
     (hd : (⟨P, len⟩ : Region).Disjoint ⟨c.D, c.n⟩) : ∀ r ∈ cryR c.W c.D c.n, (⟨P, len⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact hw.sub_right (Lay.wSub (by decide))
   · exact hw.sub_right (Lay.wSub (by decide))
   · exact hw.sub_right (Lay.wSub (by decide))
   · exact hw.sub_right (Lay.wSub (by decide))
@@ -88,8 +85,9 @@ theorem open_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
   have dC : ∀ {d : Nat}, d + 16 ≤ 96 → ∀ r ∈ cryR c.W c.D c.n, (⟨c.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r :=
     fun hd r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl
       · exact L.w_w (.inl hd) (by omega) (by decide)
+      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact (L.d_w' (by omega)).symm

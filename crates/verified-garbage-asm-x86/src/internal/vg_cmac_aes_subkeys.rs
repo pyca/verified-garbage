@@ -11,10 +11,10 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_subkeys() {
     core::arch::naked_asm!(
-        r#".base64 "i0QkEImYEAgAAImwFAgAAIm4GAgAAImoHAgAAInFi1wkDLgAAAAAiYUACAAAiYUECAAAiYUICAAAiYUMCAAAuAAAAACJA4lDBIlDCIlDDItEJASLTCQIieqBwgAIAAC/AQAAAFVXU1JRUA=="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYiwOLSwSLUwiLcwwPyA/JD8oPzonHwe8fvQAAAAAp/YHlhwAAAAHAic/B7x8J+AHJidfB7x8J+QHSiffB7x8J+gH2Me4PyA/JD8oPzokDiUsEiVMIiXMMiwOLSwSLUwiLcwwPyA/JD8oPzonHwe8fvQAAAAAp/YHlhwAAAAHAic/B7x8J+AHJidfB7x8J+QHSiffB7x8J+gH2Me4PyA/JD8oPzolDEIlLFIlTGIlzHItEJBCLmBAIAACLsBQIAACLuBgIAACLqBwIAADD"
+        r#".base64 "i0QkEImYEAgAAImwFAgAAIm4GAgAAImoHAgAAInFi1wkDLgAAAAAiYUACAAAiYUECAAAiYUICAAAiYUMCAAAuAAAAACJA4lDBIlDCIlDDItEJASLTCQIieqBwgAIAAC/AQAAAFNVV1NSUVA="
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIsDi0sEi1MIi3MMD8gPyQ/KD86Jx8HvH70AAAAAKf2B5YcAAAABwInPwe8fCfgByYnXwe8fCfkB0on3we8fCfoB9jHuD8gPyQ/KD86JA4lLBIlTCIlzDIsDi0sEi1MIi3MMD8gPyQ/KD86Jx8HvH70AAAAAKf2B5YcAAAABwInPwe8fCfgByYnXwe8fCfkB0on3we8fCfoB9jHuD8gPyQ/KD86JQxCJSxSJUxiJcxyLRCQQi5gQCAAAi7AUCAAAi7gYCAAAi6gcCAAAww=="
 .p2align 6"#,
-        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym crate::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }

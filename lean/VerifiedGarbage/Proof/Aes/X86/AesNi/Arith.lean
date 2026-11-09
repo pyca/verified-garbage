@@ -60,9 +60,6 @@ theorem st_ext {s t : Spec.Aes.State} (h : ∀ i < 16, s.getD i 0 = t.getD i 0) 
   have := h i hi
   simpa [Vector.getD, hi] using this
 
-theorem st_inj {a b : BitVec 128} (h : st a = st b) : a = b :=
-  VG.Proof.Gcm.X86.ext_byte fun i hi => by rw [← getD_st a hi, ← getD_st b hi, h]
-
 theorem byte_xor (a b : BitVec 128) (i : Nat) : byte (a ^^^ b) i = byte a i ^^^ byte b i := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [byte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_xor, hj, decide_true, Bool.true_and]

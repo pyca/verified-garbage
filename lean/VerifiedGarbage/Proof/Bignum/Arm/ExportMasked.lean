@@ -61,26 +61,4 @@ theorem exportMasked_truncated_ok (s : State) {base dst : BitVec 32} {len w o k 
   exact ⟨value, status, frameU.trans frameT,
     (restU.mono (by decide)).trans (restT.mono (by decide))⟩
 
-theorem exportMasked_ok (s : State) {base dst : BitVec 32} {len w o k : Nat} {accepted : Bool}
-    (ws : Workspace s base (8 * len)) (layout : Layout s.mem (State.addr base) len)
-    (width : wOf s.mem (State.addr base) = w) (ho : o < 8) (hk : 0 < k) (hk' : k ≤ 8 * w)
-    (valueFit : numAt s.mem (State.addr base) w o < 2 ^ (8 * k))
-    (dstFit : dst.toNat + k ≤ 2 ^ 32) (write : InRegions s.wr (State.addr dst) k)
-    (sep : Region.Disjoint ⟨State.addr base, 8 * len⟩ ⟨State.addr dst, k⟩)
-    (ptr : s.gpr .r0 = base) (index : s.gpr .r2 = BitVec.ofNat 32 o)
-    (output : s.gpr .r4 = dst) (count : s.gpr .r6 = BitVec.ofNat 32 k)
-    (stackFit : s.sp.toNat + 52 ≤ 2 ^ 32)
-    (read : InRegions (s.rd ++ s.wr) (off (State.addr s.sp) 48) 4)
-    (stackSep : Region.Disjoint ⟨off (State.addr s.sp) 48, 4⟩ ⟨State.addr dst, k⟩)
-    (flag : s.mem.readW (off (State.addr s.sp) 48) 32 = BitVec.ofNat 32 accepted.toNat) :
-    WP isa exportMasked s fun t =>
-      Spec.Rsa.bytesAt t.mem (State.addr dst) k =
-        (if accepted then Spec.Rsa.i2osp (numAt s.mem (State.addr base) w o) k else List.replicate k 0) ∧
-      t.gpr .r0 = BitVec.ofNat 32 accepted.toNat ∧
-      Frame [⟨State.addr dst, k⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  refine WP.mono (exportMasked_truncated_ok s ws layout width ho hk hk' dstFit write sep ptr index output count stackFit read stackSep flag) ?_
-  intro t h
-  rw [Nat.mod_eq_of_lt valueFit] at h
-  exact h
-
 end VG.Proof.Bignum.Arm

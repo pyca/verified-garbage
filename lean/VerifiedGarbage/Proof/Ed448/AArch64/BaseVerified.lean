@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.AArch64.Base.Main
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -31,6 +30,7 @@ meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Spec.Ed448.Contract
 
 /-!
 # Ed448 base-point multiplication on AArch64: `Verified`
@@ -55,8 +55,7 @@ theorem scalarBase_ok (s : State) (hs : scalarBaseLocal.pre s) :
   obtain ⟨t, s', he, h⟩ := scalarBase_correct hs
   exact ⟨t, s', he, ⟨h.1, Exec.sp he, h.2.1⟩, h.2.2⟩
 
-/-- The analysis, of the code without what it does not read, its comb's field operations analysed
-once each (`Proof/X448/AArch64/Base/Erase.lean`). -/
+/-- The analysis, of the code without what it does not read. -/
 theorem scalarBase_check :
     ∃ h, ((taintS [combSym]).check (Taint.ofRegs [.x0, .x1, .x2]) scalarBase h).isSome = true := by
   apply exists_isSome_of_eraseT
@@ -76,70 +75,5 @@ theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub
       simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) hc
 
 theorem scalarBase_baseOk : BaseOk := ⟨scalarBase_ok, scalarBase_ct⟩
-
-/-- The shared contract's precondition, from its facts. -/
-theorem scalarBase_spec_pre {s : State}
-    (hrd : s.rd = [⟨s.gpr .x1, 57⟩, ⟨s.syms combSym, 8 * combWords.length⟩])
-    (hw : s.wr = [⟨s.gpr .x0, 57⟩, ⟨s.gpr .x2, 8192⟩])
-    (h1 : Region.Disjoint ⟨s.gpr .x0, 57⟩ ⟨s.gpr .x1, 57⟩)
-    (h2 : Region.Disjoint ⟨s.gpr .x0, 57⟩ ⟨s.gpr .x2, 8192⟩)
-    (h3 : Region.Disjoint ⟨s.gpr .x1, 57⟩ ⟨s.gpr .x2, 8192⟩)
-    (f0 : (s.gpr .x0).toNat + 57 ≤ 2 ^ 64) (f1 : (s.gpr .x1).toNat + 57 ≤ 2 ^ 64)
-    (f2 : (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64)
-    (ht : CombHeld s [⟨s.gpr .x0, 57⟩, ⟨s.gpr .x2, 8192⟩])
-    (hal : (s.syms combSym).toNat % 64 = 0) :
-    (Proof.Ed448.scalarBaseContract (AArch64.abi.withConsts combConsts)).pre s := by
-  sig_pre [Proof.Ed448.scalarBaseContract, Proof.Ed448.scalarBaseSig, Spec.Ed448.scratchWords,
-    AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
-    stackBelow]
-  obtain ⟨held, fit, hdw⟩ := ht
-  exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact hdw, hal, by rw [hrd]; rfl, hw, h1, h2, h3, f0, f1, f2⟩
-
-def scalarBaseSat : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | _ => 0
-  sp := 0x8000
-  mem := satMem
-  rd := [⟨0x2000, 57⟩, ⟨0x100000, 58368⟩]
-  wr := [⟨0x1000, 57⟩, ⟨0x3000, 8192⟩]
-  syms _ := 0x100000
-
-theorem scalarBase_sat :
-    (Proof.Ed448.scalarBaseContract (AArch64.abi.withConsts combConsts)).pre scalarBaseSat := by
-  have hl := combWords_length
-  have held : ∀ i < combWords.length, scalarBaseSat.mem.readW (scalarBaseSat.syms combSym +
-      BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := satMem_held
-  refine scalarBase_spec_pre (by rw [hl]; rfl) rfl (Region.disjoint_of_sep (by decide))
-    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide)) (by decide) (by decide)
-    (by decide) ⟨held, ?_, ?_⟩ (by decide)
-  all_goals rw [hl]
-  · decide
-  · simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
-
-theorem scalarBase_implies : scalarBaseLocal.Implies
-    (Proof.Ed448.scalarBaseContract (AArch64.abi.withConsts combConsts)) where
-  pre s h := by
-    sig_pre [Proof.Ed448.scalarBaseContract, Proof.Ed448.scalarBaseSig, Spec.Ed448.scratchWords,
-      AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
-      stackBelow] at h
-    obtain ⟨hd, hheld, hfit, hdw, -, ht, hw, -, h2, h3, -, -, h5⟩ := h
-    refine ⟨?_, hw, h2, h3, h5, hheld, hfit, by rw [hw] at hdw; exact hdw⟩
-    rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
-  post := by
-    intro s s' _ h
-    sig_post [Proof.Ed448.scalarBaseContract, Proof.Ed448.scalarBaseSig, Spec.Ed448.scratchWords,
-      AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts]
-    exact h
-  pub s₁ s₂ _ _ h := by
-    sig_pub [Proof.Ed448.scalarBaseContract, Proof.Ed448.scalarBaseSig, Spec.Ed448.scratchWords,
-      AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts] at h
-    obtain ⟨hsp, hsy, h0, h1, h2⟩ := h
-    exact ⟨hsp, h0, h1, h2, hsy⟩
-  sat := ⟨scalarBaseSat, scalarBase_sat⟩
-
-theorem scalarBase_verified :
-    Verified AArch64.target scalarBase (Proof.Ed448.scalarBaseContract (AArch64.abi.withConsts combConsts)) :=
-  Verified.of_correct scalarBase_ok scalarBase_ct scalarBase_implies
 
 end VG.Proof.Ed448.AArch64

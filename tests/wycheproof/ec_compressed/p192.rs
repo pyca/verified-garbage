@@ -9,6 +9,6 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdh::P192;
+use verified_garbage::ec::P192;
 
 public_keys!(p192, P192, 24, "ecdsa_secp192r1_sha256_p1363_test.json");

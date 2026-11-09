@@ -32,9 +32,6 @@ theorem stackArg_fr {σ s : State} (hs : S P σ s) {i : Nat} (hi : i < 16) :
   simp only [stackArg, stackArgAddr, hs.2.sp]
   rw [hs.1.ok.addrB (by show 4 * i < frameBytes + 56 + 76; simp only [frameBytes]; omega_arith)]
 
-theorem stackArgAddr_B {σ s : State} (hs : S P σ s) : stackArgAddr s 0 = State.addr P.B := by
-  simp [stackArgAddr, hs.2.sp]
-
 /-- The bytes of a region of `scratch` kept while memory changes in the frame. -/
 theorem sc_keep_fr {σ : State} (h : In P σ) {m m' : Mem} {d k o n : Nat} (hd : d + k ≤ frameBytes)
     (hn : o + n ≤ 8448) (hf : Frame [⟨P.lay.fr d, k⟩] m m') :

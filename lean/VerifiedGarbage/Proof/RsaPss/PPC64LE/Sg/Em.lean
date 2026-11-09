@@ -32,7 +32,7 @@ open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 
 /-- The digest and the salt, from the entry state. -/
 abbrev digB (D : Nat) (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (stackArg s 8) D
-abbrev saltB (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (stackArg s 9) (stackArg s 10).toNat
+abbrev saltB (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (stackArg s 10) (stackArg s 11).toNat
 
 section
 variable {D : Nat} {s : State} (P : PreS D s)
@@ -42,7 +42,7 @@ theorem scR_contains {o n : Nat} (h : o + n ≤ oRsa) : (scR s).Contains (off (S
   Offset.contains_base _ (by have := scLen P; omega) (by unfold oRsa at h; omega)
 
 /-- Our stack argument `j` into `r`, through `r12`. -/
-theorem ldArg_ok {t : State} (h : Base Ss vS s t) {r : Reg} {j : Nat} (hj : j < 13) {is : List Instr}
+theorem ldArg_ok {t : State} (h : Base Ss vS s t) {r : Reg} {j : Nat} (hj : j < 16) {is : List Instr}
     {Q : State → Prop} (k : ∀ t', Only [.r12, r] t t' → t'.gpr r = stackArg s j → WP isa (.block is) t' Q)
     (ho : arg j < 2 ^ 15 ∧ arg j % 4 = 0 := by decide) :
     WP isa (.block (ldArg r j ++ is)) t Q := by
@@ -54,28 +54,28 @@ theorem ldArg_ok {t : State} (h : Base Ss vS s t) {r : Reg} {j : Nat} (hj : j < 
 
 /-- The salt's pointer to `r4` and its length to `r6`. -/
 theorem saltArgs_ok {t : State} (h : Base Ss vS s t) :
-    WP isa (.block (ldArg .r4 9 ++ [mov .r6 .r19])) t fun t' =>
-      Only [.r12, .r4, .r6] t t' ∧ t'.gpr .r4 = stackArg s 9 ∧ t'.gpr .r6 = stackArg s 10 :=
-  ldArg_ok P h (r := .r4) (j := 9) (by decide) fun t₁ o₁ e₁ => wp_mov fun t₂ o₂ e₂ =>
+    WP isa (.block (ldArg .r4 10 ++ [mov .r6 .r19])) t fun t' =>
+      Only [.r12, .r4, .r6] t t' ∧ t'.gpr .r4 = stackArg s 10 ∧ t'.gpr .r6 = stackArg s 11 :=
+  ldArg_ok P h (r := .r4) (j := 10) (by decide) fun t₁ o₁ e₁ => wp_mov fun t₂ o₂ e₂ =>
     wp_nil ⟨(o₁.trans o₂).mono, by rw [o₂.get .r4, e₁], by rw [e₂, o₁.get .r19, Base.r19 h]⟩
 
 /-- The salt to `S + d`, from its pointer and length. -/
-theorem saltCopy_ok {t : State} (h : Base Ss vS s t) {d : Nat} (h4 : t.gpr .r4 = stackArg s 9)
-    (h5 : t.gpr .r5 = off (Ss s) d) (h6 : t.gpr .r6 = stackArg s 10) (hd : d + (stackArg s 10).toNat ≤ oRsa) :
+theorem saltCopy_ok {t : State} (h : Base Ss vS s t) {d : Nat} (h4 : t.gpr .r4 = stackArg s 10)
+    (h5 : t.gpr .r5 = off (Ss s) d) (h6 : t.gpr .r6 = stackArg s 11) (hd : d + (stackArg s 11).toNat ≤ oRsa) :
     WP isa (.ite (.nonzero .d .r6) copyLoop (.block [])) t fun t' => Base Ss vS s t' ∧
       (∀ r ∈ .r14 :: fx ++ hiRegs, t'.gpr r = t.gpr r) ∧ t'.mem = writeBytes t.mem (off (Ss s) d) (saltB s) := by
-  generalize hL : (stackArg s 10).toNat = sl at hd
+  generalize hL : (stackArg s 11).toNat = sl at hd
   have F := fits P
   have g6 : t.gpr .r6 = BitVec.ofNat 64 sl := by
     rw [h6, ← hL, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have hb : Spec.Rsa.bytesAt t.mem (stackArg s 9) sl = saltB s := by
+  have hb : Spec.Rsa.bytesAt t.mem (stackArg s 10) sl = saltB s := by
     rw [← hL]; exact bytes_entry h.mem (P.ksl.sub_left kR_sub) ((P.sls.symm).sub_left (sc_sub P))
       (by have := P.wsl; omega)
   refine WP.ite _ (eval_nonzero _ _) (fun hc => ?_) (fun hc => ?_)
   · have hs0 : sl ≠ 0 := by intro h0; rw [g6, ne_zero_iff, h0] at hc; simp at hc
-    refine WP.mono (copy_ok (q := stackArg s 9) (p := off (Ss s) d) (n := sl) (by omega)
+    refine WP.mono (copy_ok (q := stackArg s 10) (p := off (Ss s) d) (n := sl) (by omega)
       (by omega) h4 h5 g6
-      (rd_in (s := s) (t := t) h.rd (R := sR s) (by rw [P.hrd]; simp) P.wsl (by show sl ≤ (stackArg s 10).toNat; omega))
+      (rd_in (s := s) (t := t) h.rd (R := sR s) (by rw [P.hrd]; simp) P.wsl (by show sl ≤ (stackArg s 11).toNat; omega))
       (sc_w F h.wr (d := d) hd)
       (fun j hj i hi => ne_of_dis P.sls (Offset.contains_base _ (by omega) (by have := P.wsl; omega))
         (by have := scR_contains P (o := d + i) (n := 1) (by omega); rwa [← off_off] at this)))
@@ -89,7 +89,7 @@ theorem saltCopy_ok {t : State} (h : Base Ss vS s t) {d : Nat} (h4 : t.gpr .r4 =
 
 /-- `copySalt`: the salt to `S + d`, after `r5` is set to it. -/
 theorem copySalt_ok {t : State} (h : Base Ss vS s t) {d : Nat} (h5 : t.gpr .r5 = off (Ss s) d)
-    (hd : d + (stackArg s 10).toNat ≤ oRsa) :
+    (hd : d + (stackArg s 11).toNat ≤ oRsa) :
     WP isa copySalt t fun t' => Base Ss vS s t' ∧ (∀ r ∈ .r14 :: fx ++ hiRegs, t'.gpr r = t.gpr r) ∧
       t'.mem = writeBytes t.mem (off (Ss s) d) (saltB s) := by
   refine WP.seq (WP.mono (saltArgs_ok P h) fun t₂ ⟨k₂, e4, e6⟩ => ?_)
@@ -141,7 +141,7 @@ theorem digCopy_ok (hD0 : 0 < D) (hD64 : D ≤ 64) {t : State} (h : Base Ss vS s
 
 /-- `M' = 0⁸ ‖ mHash ‖ salt` at `S + oY`. -/
 theorem mPrime_ok {H : Impl.Hmac.Stream.PPC64LE.Hash} (hD : H.D = D) (hD0 : 0 < D) (hD64 : D ≤ 64) {t : State}
-    (h : Base Ss vS s t) (hsl : (stackArg s 10).toNat + 8 + D ≤ 2048) :
+    (h : Base Ss vS s t) (hsl : (stackArg s 11).toNat + 8 + D ≤ 2048) :
     WP isa (mPrime H) t fun t' => Base Ss vS s t' ∧ (∀ r ∈ .r14 :: fx ++ hiRegs, t'.gpr r = t.gpr r) ∧
       t'.mem = writeBytes (writeBytes (writeBytes t.mem (off (Ss s) oY) (List.replicate 8 0))
         (off (Ss s) (oY + 8)) (digB D s)) (off (Ss s) (oY + 8 + D)) (saltB s) := by
@@ -174,16 +174,16 @@ theorem clearEm_ok {t : State} (h : Base Ss vS s t) :
 
 /-- `0x01` at `S + oEm + k - sLen - hLen - 2`, and `r5` after it. -/
 theorem saltHead_ok {H : Impl.Hmac.Stream.PPC64LE.Hash} (hD : H.D = D) (hD64 : D ≤ 64) {t : State}
-    (h : Base Ss vS s t) (hfit : (stackArg s 10).toNat + D + 2 ≤ kk s) :
+    (h : Base Ss vS s t) (hfit : (stackArg s 11).toNat + D + 2 ≤ kk s) :
     WP isa (.block [.addi .r4 .r14 oEm, .add .r4 .r4 .r15, .sub .r4 .r4 .r19, .subi .r4 .r4 (H.D + 2), .li .r5 1,
       .stb .r5 .r4 0, .addi .r5 .r4 1]) t fun t' => Base Ss vS s t' ∧
       (∀ r ∈ .r14 :: fx ++ hiRegs, t'.gpr r = t.gpr r) ∧
-      t'.mem = t.mem.writeW (off (Ss s) (oEm + (kk s - (stackArg s 10).toNat - D - 2))) (1 : Byte) ∧
-      t'.gpr .r5 = off (Ss s) (oEm + (kk s - (stackArg s 10).toNat - D - 1)) := by
+      t'.mem = t.mem.writeW (off (Ss s) (oEm + (kk s - (stackArg s 11).toNat - D - 2))) (1 : Byte) ∧
+      t'.gpr .r5 = off (Ss s) (oEm + (kk s - (stackArg s 11).toNat - D - 1)) := by
   have F := fits P
   have k2 : kk s ≤ 1024 := P.k2
   generalize hK : kk s = k at hfit k2
-  generalize hL : (stackArg s 10).toNat = sl at hfit
+  generalize hL : (stackArg s 11).toNat = sl at hfit
   have hE : oEm = 0 := rfl
   refine wp_addi fun t₁ o₁ e₁ => wp_add fun t₂ o₂ e₂ => wp_sub fun t₃ o₃ e₃ =>
     wp_subi (h := by omega) fun t₄ o₄ e₄ => wp_li (by decide) fun t₅ o₅ e₅ => ?_
@@ -213,10 +213,10 @@ theorem saltHead_ok {H : Impl.Hmac.Stream.PPC64LE.Hash} (hD : H.D = D) (hD64 : D
 /-- `putSalt`: `0x01` at `S + oEm + k - sLen - hLen - 2`, and the salt after
 it. -/
 theorem putSalt_ok {H : Impl.Hmac.Stream.PPC64LE.Hash} (hD : H.D = D) (hD64 : D ≤ 64) {t : State}
-    (h : Base Ss vS s t) (hfit : (stackArg s 10).toNat + D + 2 ≤ kk s) :
+    (h : Base Ss vS s t) (hfit : (stackArg s 11).toNat + D + 2 ≤ kk s) :
     WP isa (putSalt H) t fun t' => Base Ss vS s t' ∧ (∀ r ∈ .r14 :: fx ++ hiRegs, t'.gpr r = t.gpr r) ∧
-      t'.mem = writeBytes (t.mem.writeW (off (Ss s) (oEm + (kk s - (stackArg s 10).toNat - D - 2))) (1 : Byte))
-        (off (Ss s) (oEm + (kk s - (stackArg s 10).toNat - D - 1))) (saltB s) := by
+      t'.mem = writeBytes (t.mem.writeW (off (Ss s) (oEm + (kk s - (stackArg s 11).toNat - D - 2))) (1 : Byte))
+        (off (Ss s) (oEm + (kk s - (stackArg s 11).toNat - D - 1))) (saltB s) := by
   have k2 : kk s ≤ 1024 := P.k2
   refine WP.seq (WP.mono (saltHead_ok P hD hD64 h hfit) fun t₇ ⟨b₇, g₇, m₇, a₇⟩ => ?_)
   refine WP.mono (copySalt_ok P b₇ a₇ (by unfold oEm oRsa; omega)) fun t' ⟨b', g', m'⟩ =>

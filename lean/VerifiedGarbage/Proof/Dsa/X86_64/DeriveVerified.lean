@@ -212,13 +212,4 @@ def deriveSatState : State where
   rd := [⟨0x2000, 276⟩, ⟨0x3000, 20⟩, ⟨0x10008, 24⟩]
   wr := [⟨0x1000, 424⟩, ⟨0x8000, 16384⟩]
 
-theorem deriveSatisfiable : ∃ s, (Spec.Dsa.deriveKeyContract abi).pre s := by
-  sig_implies_sat [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three]
-    [deriveSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using deriveSatState
-
-theorem derive_verified (M : Mont) (Sq : MontS)
-    (hmx : (Generate.deriveKey Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target (Generate.deriveKey Sq.mm M.mm) (Spec.Dsa.deriveKeyContract abi) :=
-  ⟨deriveCorrect M Sq hmx, deriveConstantTime M Sq, deriveSatisfiable⟩
-
 end VG.Proof.Dsa.X86_64

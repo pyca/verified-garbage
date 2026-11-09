@@ -84,15 +84,6 @@ section
 variable {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
 include L hyo
 
-theorem ctx_tFrame : ∀ r ∈ tFrame st w sp yo, (⟨State.addr c + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact L.ctx_st (by decide) (by omega_arith)
-  · exact L.ctx_w (by decide) (by decide)
-  · exact L.ctx_w (by decide) (by decide)
-  · exact (L.stk_ctx (by decide)).symm
-
 /-- The `o` buffered bytes copied to `T`, padded with zeros. -/
 theorem flushCopy_ok {H : Block} {o : Nat} {s : State} (h : FlIn c st w sp k7 k8 H s)
     (h6 : s.gpr .r6 = BitVec.ofNat 32 o) (ho : o < 16) (h0 : o ≠ 0) :

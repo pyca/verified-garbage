@@ -194,9 +194,6 @@ def stageMask (k : Nat) : List Instr :=
 all ones, `x` if it is zero. -/
 def sel (x : Reg) : List Instr := [.dp .eor .r8 .r8 (.reg x), .dp .and .r8 .r8 (.reg .r7), .dp .eor x x (.reg .r8)]
 
-/-- The words of `Stretch`, high to low. -/
-def sw : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5]
-
 /-- One stage of the shift of `Stretch` (in `r0`–`r5`, high to low): shifted
 left by `a` (from 1 to 31) bits if bit `k` of `bottom` (in `r6`) is set, a
 word at a time from the high one, `x' = (x ⋘ a) ∨ (next ⋙ (32 − a))`. -/

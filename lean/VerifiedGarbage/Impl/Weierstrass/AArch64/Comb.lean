@@ -22,10 +22,7 @@ negated if `d_j < 0`, by the complete addition for `a = -3` (`rcb3`, with `b` in
 
 The digits are secret, so their entries are selected in constant time. The
 masks of the magnitudes `0 … 8` (all ones exactly for `|d_j|`) are in
-registers (`maskReg`); every word of every entry is built from immediates
-and ANDed with its mask, and the words are ORed together (`selectWord`).
-The entry's `Z` is `1` (Montgomery's, `R mod p`) unless the magnitude is
-zero, when the entry is `(0 : 1 : 0)`. The negation computes `0 - y` and
+registers (`maskReg`). The negation computes `0 - y` and
 selects it by the mask of the digit's sign. The table's code is chosen by
 the iteration's counter `x19`, which is public, as are every address and
 branch.
@@ -98,32 +95,5 @@ def addP (M : Mod) (S : RcbSlots) (p q o : Pt) : Option (String × Nat) → Prog
     .seq (.block [.vop (.ins .d2 .v29 0 .x30)]) <|
     .seq (.call name (fprogB M (rcb3 { S with a := bAt, b3 := bAt } p q o)))
       (.block [.umov .x .x30 .v29 0])
-
-namespace CombCfg
-
-variable (K : CombCfg)
-
-/-- `x4 |= v & mask m` for the word `v`, built in `x9`, through `x2`. -/
-def selectCand (v : BitVec 64) (m : Nat) : List Instr :=
-  const64 .x9 v ++ [.logic .and .x .x2 .x9 (maskReg m), .logic .orr .x .x4 .x4 .x2]
-
-/-- Word `w` of the coordinate whose values for the magnitudes `1 … 8` are
-`vs` and, for magnitude `0`, `z`, into `[o + 8w]`: built in `x4`. -/
-def selectWord (z : Nat) (vs : List Nat) (o w : Nat) : List Instr :=
-  [.movz .x .x4 0 0] ++ (if z = 0 then [] else selectCand (wordOf z w) 0) ++
-    ((List.range 8).flatMap fun i => selectCand (wordOf (vs.getD i 0) w) (i + 1)) ++
-    [st .x4 (o + 8 * w)]
-
-/-- Word `w` of `Z`: `R mod p`'s, unless the magnitude is zero, into `[o + 8w]`. -/
-def selectZ (o w : Nat) : List Instr :=
-  const64 .x9 (wordOf K.one w) ++ [.bicRor .x .x4 .x9 (maskReg 0) 0, st .x4 (o + 8 * w)]
-
-/-- The entry of table `t` for the magnitude whose mask is all ones, into `E`. -/
-def select (t : List (Nat × Nat)) : List Instr :=
-  (List.range K.M.n).flatMap (selectWord 0 (t.map (·.1)) K.E.x) ++
-  (List.range K.M.n).flatMap (selectWord K.one (t.map (·.2)) K.E.y) ++
-  (List.range K.M.n).flatMap ((selectZ K) K.E.z)
-
-end CombCfg
 
 end VG.Impl.Weierstrass.AArch64

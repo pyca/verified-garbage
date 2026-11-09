@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 `callArgs` loads the signer's register arguments and the seven words of its
 stack arguments into `r0`–`r10` (`CallRegs`), and `callSigner` pushes those
 words, as a frame of `r4`–`r11` below ours, and calls `vg_dsa_sign`
-(`Entry.operation true`) under its own contract (`signArm`): it returns its
+(a `Signer`, such as `Entry.operation true`) under its contract (`signArmWith`): it returns its
 status in `r0` and writes `out` (`callSigner_ok`), changing only `out`,
 `scratch` and the pushed words (`callWrites`).
 -/
@@ -324,15 +324,71 @@ theorem call_covers :
 
 end
 
+/-- The key's bytes, while the frame is allocated. -/
+theorem callKey {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) :
+    Spec.Rsa.bytesAt t.mem (State.addr (s₀.gpr .r3)) (stackArg s₀ 0).toNat = (rInput s₀).key := by
+  refine rBytes_frame h.frame (fun r hr => ?_) (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
+  simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact A.stackKey.symm
+  · exact A.outKey.symm
+  · exact A.keyScratch
+  · exact A.usedKey.symm
+
 /-- `vg_dsa_sign` uses no stack of its own. -/
 theorem sign_armStack : armStack (Entry.operation true) = 0 := by decide +kernel
+
+open VG.Spec.Rsa (bytesAt) in
+/-- `signArm` under an extra precondition `valid` on the exact packed key
+bytes: with `fun _ _ _ => true` it is `signArm`, with
+`validatePrivateKeyBytes` the contract of a signing attempt for a validated
+private key. -/
+def signArmWith (valid : Nat → Nat → List Byte → Bool) : Contract isa where
+  pre s := signPre s ∧
+    valid (arg s 0).toNat (arg s 2).toNat (bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat) = true
+  post := signArm.post
+  pub := signArm.pub
+
+/-- A supplied-nonce signer the randomized wrapper calls: the fully checked
+signer (`valid` always true), or the signer for a validated private key
+(`valid` is `validatePrivateKeyBytes`). -/
+structure Signer where
+  code : Prog isa
+  valid : Nat → Nat → List Byte → Bool
+  correct : ∀ s, (signArmWith valid).pre s →
+    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ signArm.post s s'
+  constantTime : ConstantTime isa (signArmWith valid).pre signArm.pub code
+  stack : armStack code = 0
+
+/-- The signer's validity of the wrapper's key. -/
+def RValid (S : Signer) (s₀ : State) : Prop :=
+  S.valid (rInput s₀).pLen (rInput s₀).qLen (rInput s₀).key = true
+
+/-- The key the signer reads at its entry is the wrapper's. -/
+theorem entry_key {s₀ u : State} (A : RandomABI s₀) (h : RReady s₀ u) (C : CallRegs s₀ u) :
+    Spec.Rsa.bytesAt (callEntryOf s₀ u).mem (State.addr ((callEntryOf s₀ u).gpr .r2))
+      ((callEntryOf s₀ u).gpr .r3).toNat = (rInput s₀).key := by
+  have hql := rQBytes_le A
+  simp only [State.withRegions_mem, State.callEntry_mem, ce_r2 C, ce_r3 C]
+  rw [rBytes_frame (call_push_frame A h) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact (A.stackKey.sub_left (low_sub s₀ (by decide))).symm)
+      (by have := (stackArg s₀ 0).isLt; omega), callKey A h]
+
+/-- The signer's contract at the wrapper's call, for a key it accepts. -/
+theorem call_pre_with (S : Signer) {s₀ u : State} (A : RandomABI s₀) (h : RReady s₀ u) (C : CallRegs s₀ u)
+    (V : RValid S s₀) : (signArmWith S.valid).pre (callEntryOf s₀ u) := by
+  refine ⟨call_pre A h C, ?_⟩
+  show S.valid (stackArg (callEntryOf s₀ u) 0).toNat (stackArg (callEntryOf s₀ u) 2).toNat _ = true
+  rw [entry_key A h C, ce_a0 A h C, ce_a2 A h C]
+  exact V
 
 theorem status_lt (r : Option (List Byte)) : Spec.Dsa.signStatus r < 2 := by
   unfold Spec.Dsa.signStatus; split <;> decide
 
 /-- The call of the signer, its stack arguments pushed. -/
-theorem callSigner_ok {s₀ u : State} (A : RandomABI s₀) (h : RReady s₀ u) (C : CallRegs s₀ u) (name : String) :
-    WP isa (callSigner name (Entry.operation true)) u fun v => RReady s₀ v ∧ Frame (callWrites s₀) u.mem v.mem ∧
+theorem callSigner_ok (S : Signer) {s₀ u : State} (A : RandomABI s₀) (h : RReady s₀ u) (C : CallRegs s₀ u)
+    (V : RValid S s₀) (name : String) :
+    WP isa (callSigner name S.code) u fun v => RReady s₀ v ∧ Frame (callWrites s₀) u.mem v.mem ∧
       (∀ r ∈ [Reg.r5, .r6, .r7, .r8, .r9, .r10, .r11], v.gpr r = u.gpr r) ∧
       v.gpr .r0 = BitVec.ofNat 32 (Spec.Dsa.signStatus (callResult s₀ u)) ∧
       Spec.Rsa.bytesAt v.mem (State.addr (s₀.gpr .r0)) (s₀.gpr .r1).toNat =
@@ -340,11 +396,9 @@ theorem callSigner_ok {s₀ u : State} (A : RandomABI s₀) (h : RReady s₀ u) 
   obtain ⟨hc, hcw⟩ := call_covers A h
   unfold callSigner
   refine WP.frame (rs := callPush) (r := .r4) (by decide) (call_sp_le A h) (by decide) ?_
-  refine FrameStack.WP.callF (k := signArm) (fun s hs => ?_) (call_pre A h C) hc hcw
-    (by rw [sign_armStack]; exact Nat.zero_le _) fun s' hrd hwr hsp hf hpres hpost => ?_
-  · obtain ⟨t, s', e, ha, hp⟩ := sign_correct hs
-    exact ⟨t, s', e, ha, hp⟩
-  rw [sign_armStack] at hf
+  refine FrameStack.WP.callF (k := signArmWith S.valid) (fun s hs => S.correct s hs) (call_pre_with S A h C V)
+    hc hcw (by rw [S.stack]; exact Nat.zero_le _) fun s' hrd hwr hsp hf hpres hpost => ?_
+  rw [S.stack] at hf
   have hpu : ∀ r ∈ preserved, r ≠ .lr → s'.gpr r = u.gpr r := fun r hr hl => by rw [hpres r hr hl, pushed_gpr]
   -- Where the call wrote.
   have Fc : Frame (callWrites s₀) u.mem s'.mem := by

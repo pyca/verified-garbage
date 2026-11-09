@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.Fn
 import VerifiedGarbage.Proof.Gather.RISCV64.LoopCT
 import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
@@ -30,8 +31,8 @@ open VG VG.RISCV64 VG.Impl.AesGcm.RISCV64.SealGather
 open VG.Proof.Gather.RISCV64 (Eq2 TT rel_seq rel_taint ct_of gather_rel)
 
 theorem sealGather_ct (hv : SealOk)
-    (hct : ConstantTime isa (Spec.Gcm.sealContract RISCV64.abi 4624).pre
-      (Spec.Gcm.sealContract RISCV64.abi 4624).pub sealCode) :
+    (hct : ConstantTime isa (Proof.AesGcm.sealRoundsContract RISCV64.abi 4624).pre
+      (Proof.AesGcm.sealRoundsContract RISCV64.abi 4624).pub sealCode) :
     ConstantTime isa gatherPre gatherPub sealGather := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
   have h₁ := lay p₁

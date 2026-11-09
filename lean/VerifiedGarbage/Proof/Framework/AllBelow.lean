@@ -29,9 +29,4 @@ theorem of_allBelow {f : Nat → Bool} {n : Nat} (h : allBelow f n=true) :
     · exact ih h'.2 i hi
     · exact h'.1
 
-/-- `∀ i : Fin n, p i` from the kernel's evaluation of `allBelow`. -/
-theorem forall_fin_of_allBelow {n : Nat} (p : Nat → Prop) [DecidablePred p]
-    (h : allBelow (fun i => decide (p i)) n=true) : ∀ i : Fin n,p i.val :=
-  fun i => of_decide_eq_true (of_allBelow h i.val i.isLt)
-
 end VG

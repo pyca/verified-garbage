@@ -37,9 +37,6 @@ theorem ghashFrom_append (h y : Block) (xs ys : List Block) :
 
 theorem ghashFrom_nil (h y : Block) : ghashFrom h y [] = y := rfl
 
-theorem length_blocks (bs : List Byte) : (blocks bs).length = bs.length / 16 := by
-  simp [blocks]
-
 theorem blocks_of_lt {bs : List Byte} (h : bs.length < 16) : blocks bs = [] := by
   simp [blocks, Nat.div_eq_of_lt h]
 
@@ -180,8 +177,6 @@ theorem absorb_complete {m m' : Mem} {y b : Addr} {h : Block} {x d : List Byte} 
     exact (ghashFrom_append _ _ _ _).symm
   · rw [hl, List.drop_of_length_le (by rw [hw]; simp only [List.length_append, whole]; omega_arith)]
     rfl
-
-theorem padLen_lt (n : Nat) : padLen n < 16 := by simp only [padLen]; omega_arith
 
 theorem length_zeros (n : Nat) : (zeros n).length = n := by simp [zeros]
 

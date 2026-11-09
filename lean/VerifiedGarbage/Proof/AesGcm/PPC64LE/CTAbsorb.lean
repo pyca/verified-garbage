@@ -42,9 +42,6 @@ open VG.Spec.Gcm (Block blockAt)
 def EnvC (c st w sp : Addr) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧ Env V sp s
 
-theorem EnvC.of {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V sp s) :
-    EnvC (V .r29) (V .r30) (V .r31) sp s := ⟨V, rfl, rfl, rfl, he⟩
-
 theorem EnvC.pin {c st w sp : Addr} {s₁ s₂ : State} (h₁ : EnvC c st w sp s₁) (h₂ : EnvC c st w sp s₂)
     {r : Reg} (hr : r = .r29 ∨ r = .r30 ∨ r = .r31) : s₁.gpr r = s₂.gpr r := by
   obtain ⟨V₁, a₁, b₁, c₁, e₁⟩ := h₁

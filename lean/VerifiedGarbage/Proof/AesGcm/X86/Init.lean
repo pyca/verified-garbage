@@ -30,7 +30,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 # AES-GCM on x86: `vg_aes_gcm_init`
 
 Untrusted: everything here is checked by Lean. The key schedule
-(`vg_aes_expand_key_scratch`), then the hash subkey `CIPH_K(0¹²⁸)` (`vg_aes_ctr32`
+(`vg_aes_expand_key_scratch`), then the hash subkey `CIPH_K(0¹²⁸)` (`vg_aes_ctr32_to`
 on a zero block, with a zero counter block at `T`), as one `Pc`
 (`init_pc`): correct (`init_correct`) and constant time (`init_ct`).
 -/
@@ -59,13 +59,13 @@ structure InitPure (p : BitVec 32 × (Nat → BitVec 32)) : Prop where
   cw : (⟨w64 (p.2 2), 256⟩ : Region).Disjoint ⟨w64 (p.2 3), 2560⟩
   r_c : (⟨w64 p.1, 4⟩ : Region).Disjoint ⟨w64 (p.2 2), 256⟩
   r_w : (⟨w64 p.1, 4⟩ : Region).Disjoint ⟨w64 (p.2 3), 2560⟩
-  k_k : (below p.1 28).Disjoint ⟨w64 (p.2 0), (p.2 1).toNat⟩
-  k_c : (below p.1 28).Disjoint ⟨w64 (p.2 2), 256⟩
-  k_w : (below p.1 28).Disjoint ⟨w64 (p.2 3), 2560⟩
+  k_k : (below p.1 32).Disjoint ⟨w64 (p.2 0), (p.2 1).toNat⟩
+  k_c : (below p.1 32).Disjoint ⟨w64 (p.2 2), 256⟩
+  k_w : (below p.1 32).Disjoint ⟨w64 (p.2 3), 2560⟩
   fk : (p.2 0).toNat + (p.2 1).toNat ≤ 2 ^ 32
   fc : (p.2 2).toNat + 256 ≤ 2 ^ 32
   fw : (p.2 3).toNat + 2560 ≤ 2 ^ 32
-  sp : 28 ≤ p.1.toNat
+  sp : 32 ≤ p.1.toNat
   len : (p.2 1).toNat = 16 ∨ (p.2 1).toNat = 24 ∨ (p.2 1).toNat = 32
 
 theorem initPure_of {p : BitVec 32 × (Nat → BitVec 32)} {s : State} (h : initPre s) (hp : pubOf 4 s = p) :
@@ -151,7 +151,7 @@ theorem iEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
       rw [a 1 (by decide), ← ofNat_toNat32 (p.2 1), shr2 hL, ofNat_add_ofNat32, toNat_ofNat32 hL]
     refine ⟨_, by xrun [e.esp, i₁, i₀, v₁, v₀, e.esi, e.ebp], ?_⟩
     have eS := w64_add (x := p.2 3) (k := 512) (by have := hc.fw; omega_arith)
-    have bsub : Region.Sub (below p.1 20) (below p.1 28) := VG.X86.below_sub (by decide) hc.sp
+    have bsub : Region.Sub (below p.1 20) (below p.1 32) := VG.X86.below_sub (by decide) hc.sp
     have hrd' : s₀.rd = [⟨w64 (p.2 0), (p.2 1).toNat⟩] := by rw [hrd, a 0 (by decide), a 1 (by decide)]
     have hwr' : s₀.wr = [⟨w64 (p.2 2), 256⟩, ⟨w64 (p.2 3), 2560⟩, ⟨argAddr s₀ 0, 16⟩] := by
       rw [hwr, a 2 (by decide), a 3 (by decide)]
@@ -200,9 +200,9 @@ theorem iEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     exact WP.mono (arg0_ok (argIn_of rA (by omega_arith) (by decide))) fun s' ⟨ax, sp⟩ =>
       ⟨by rw [ax]; exact pubOf_arg hpub (by decide), by rw [sp]; exact pubOf_esp hpub⟩
 
-/-- After the key schedule and `initMid`: the arguments of `vg_aes_ctr32` for `H`. -/
+/-- After the key schedule and `initMid`: the arguments of `vg_aes_ctr32_to` for `H`. -/
 structure IMid (p : BitVec 32 × (Nat → BitVec 32)) (s₀ s : State) : Prop where
-  ent : ∃ s₁, IEnt p s₀ s₁ ∧ Frame [⟨w64 (p.2 2), 256⟩, ⟨w64 (p.2 3), 2560⟩, below p.1 28] s₁.mem s.mem
+  ent : ∃ s₁, IEnt p s₀ s₁ ∧ Frame [⟨w64 (p.2 2), 256⟩, ⟨w64 (p.2 3), 2560⟩, below p.1 32] s₁.mem s.mem
   call : CtrCall s (p.2 2) (p.2 3 + BitVec.ofNat 32 96) (p.2 2 + BitVec.ofNat 32 240) (p.2 3 + BitVec.ofNat 32 512)
     ((p.2 1).toNat / 4 + 6) 1
   esp : s.gpr .esp = p.1
@@ -262,7 +262,7 @@ theorem iMid_ok {p : BitVec 32 × (Nat → BitVec 32)} (hc : InitPure p) {s₀ s
   have hfit := hc.fc
   have hfw := hc.fw
   have hsp := hc.sp
-  have bsub : Region.Sub (below p.1 20) (below p.1 28) := VG.X86.below_sub (by decide) hsp
+  have bsub : Region.Sub (below p.1 20) (below p.1 32) := VG.X86.below_sub (by decide) hsp
   have gf := g.frame
   rw [h.esp, eS] at gf
   have go := g.out
@@ -374,7 +374,7 @@ theorem init_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   rw [hm.esp, eT, eH, eS] at gf
   have hsp := hc.sp
   have dC : ∀ {a k : Nat}, a + k ≤ 240 → ∀ r ∈ [(⟨w64 (p.2 3) + BitVec.ofNat 64 96, 16⟩ : Region),
-      ⟨w64 (p.2 2) + BitVec.ofNat 64 240, 16 * 1⟩, ⟨w64 (p.2 3) + BitVec.ofNat 64 512, 2048⟩, below p.1 28],
+      ⟨w64 (p.2 2) + BitVec.ofNat 64 240, 16 * 1⟩, ⟨w64 (p.2 3) + BitVec.ofNat 64 512, 2048⟩, below p.1 32],
       (⟨w64 (p.2 2) + BitVec.ofNat 64 a, k⟩ : Region).Disjoint r := fun hk r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -390,7 +390,7 @@ theorem init_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
     · exact ((hc.k_w.sub_right (Lay.wSub (by decide)))).symm
   have rG : ∀ r ∈ [(⟨w64 (p.2 3) + BitVec.ofNat 64 96, 16⟩ : Region),
-      ⟨w64 (p.2 2) + BitVec.ofNat 64 240, 16 * 1⟩, ⟨w64 (p.2 3) + BitVec.ofNat 64 512, 2048⟩, below p.1 28],
+      ⟨w64 (p.2 2) + BitVec.ofNat 64 240, 16 * 1⟩, ⟨w64 (p.2 3) + BitVec.ofNat 64 512, 2048⟩, below p.1 32],
       (⟨w64 p.1, 4⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -398,7 +398,7 @@ theorem init_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     · exact hc.r_c.sub_right (Lay.ctxSub (by decide))
     · exact hc.r_w.sub_right (Lay.wSub (by decide))
     · exact ret_below hsp
-  have rF : ∀ r ∈ [(⟨w64 (p.2 2), 256⟩ : Region), ⟨w64 (p.2 3), 2560⟩, below p.1 28],
+  have rF : ∀ r ∈ [(⟨w64 (p.2 2), 256⟩ : Region), ⟨w64 (p.2 3), 2560⟩, below p.1 32],
       (⟨w64 p.1, 4⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl

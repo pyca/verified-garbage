@@ -72,46 +72,6 @@ theorem rejNtt_args {B : List Reg} {bs : List (Reg × Nat)} (L : LayIn B bs) {se
   simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
   exact ⟨⟨ptr_ok (ptr_kept L c4), by decide⟩, ⟨ptr_ok (ptr_kept L c5), by decide⟩, ⟨ptr_ok (ptr_kept L c6), by decide⟩⟩
 
-theorem rejNttAt_ok {S : Nat} (hS : S < 2 ^ 64) {nm : String} {cd : Prog isa} (C : CalleeOk S cd (rejNTTContract AArch64.abi S))
-    {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay S rbs wbs s) {seed a ss : Ptr}
-    (hc : rejNttChk rbs wbs seed a ss = true) :
-    WP isa (callAt nm cd (rejNttArgs seed a ss)) s fun s' => PPostB S s s' [(a, 1024), (ss, 2048)] ∧ s'.gpr .x24 = s.gpr .x24 ∧
-      ((s'.gpr .x0).setWidth 32 = 1 → Reduced s'.mem (pa s a)) ∧
-      Outcome (fun b => rejNTTPoly b.rejNTT (bytesAt s.mem (pa s seed) 34)) ((s'.gpr .x0).setWidth 32)
-        (polyAt s'.mem (pa s a)) := by
-  have hc' := hc
-  simp only [rejNttChk, Bool.and_eq_true, and_assoc] at hc'
-  obtain ⟨_, _, _, c4, c5, c6, _, _⟩ := hc'
-  refine WP.mono (callAt_ok hS C (rejNtt_args L.ok c4 c5 c6) (by simp only [List.map_cons, List.map_nil]; decide)
-    (fun s1 h1 => rejNtt_pre L hc h1) (rejNtt_cov L hc).1 (rejNtt_cov L hc).2)
-    fun s' ⟨hP, s1, h1, hq⟩ => ⟨hP.b, hP.cs .x24 (by decide) (by decide), ?_⟩
-  sig_post [rejNTTContract, rejNTTSig, AArch64.abi, VG.AArch64.argRegs] at hq
-  rw [Args.r0 h1, Args.r1 h1, Args.mem h1] at hq
-  exact hq
-
-theorem rejNttAt_tr {S : Nat} {nm : String} {cd : Prog isa} (C : CalleeOk S cd (rejNTTContract AArch64.abi S))
-    {rbs wbs : List (Reg × Nat)} {B : List Reg} (hB : LayIn B (rbs ++ wbs)) {seed a ss : Ptr} (hc : rejNttChk rbs wbs seed a ss = true)
-    {Q : State → State → Prop}
-    (hQ : ∀ x y, Q x y → Lay S rbs wbs x ∧ Lay S rbs wbs y ∧
-      bytesAt x.mem (pa x seed) 34 = bytesAt y.mem (pa y seed) 34 ∧ SameIn B x y) :
-    RelCT isa Q (callAt nm cd (rejNttArgs seed a ss)) fun _ _ => True := by
-  have hc' := hc
-  simp only [rejNttChk, Bool.and_eq_true, and_assoc] at hc'
-  obtain ⟨_, _, _, c4, c5, c6, _, _⟩ := hc'
-  have hb : seed.1 ∈ B ∧ a.1 ∈ B ∧ ss.1 ∈ B := ⟨ptr_bs hB c4, ptr_bs hB c5, ptr_bs hB c6⟩
-  refine callAt_tr C (rejNtt_args hB c4 c5 c6) (by simp only [List.map_cons, List.map_nil]; decide)
-    fun x y x1 y1 hp h1 h2 => ?_
-  obtain ⟨Lx, Ly, hsd, e⟩ := hQ x y hp
-  refine ⟨_, _, rejNtt_pre Lx hc h1, ?_, ?_, (rejNtt_cov Lx hc).1, (rejNtt_cov Lx hc).2, ?_, ?_⟩
-  · rw [e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2]; exact rejNtt_pre Ly hc h2
-  · sig_pub [rejNTTContract, rejNTTSig, AArch64.abi, VG.AArch64.argRegs]
-    rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r0 h2, Args.r1 h2, Args.r2 h2, Args.sp h1, Args.sp h2,
-      Args.mem h1, Args.mem h2]
-    simp only [Arg.val]
-    exact ⟨e.2, by rw [hsd], e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2⟩
-  · rw [e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2]; exact (rejNtt_cov Ly hc).1
-  · rw [e.pa hb.2.1, e.pa hb.2.2]; exact (rejNtt_cov Ly hc).2
-
 theorem rejNttInline_ok {S : Nat} (hS : S < 2 ^ 64) {cd : Prog isa} (C : CalleeOk S cd (rejNTTContract AArch64.abi S))
     {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay S rbs wbs s) {seed a ss : Ptr}
     (hc : rejNttChk rbs wbs seed a ss = true) :

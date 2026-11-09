@@ -59,9 +59,4 @@ its first word of data (its word `fns`, `ptrBits` bits wide, as
 def hashAt (ptrBits : Nat) (m : Mem) (p : Addr) : Option Hash :=
   Mgf1.hashes[(m.readW (p + BitVec.ofNat 64 (ptrBits / 8 * fns)) ptrBits).toNat]?
 
-/-- Each hash function's `index` is its position in `Mgf1.hashes` (their
-Rust names are distinct), so a table holding `dataOf G` names `G`. -/
-theorem index_hashes : (Mgf1.hashes.map fun G => index G) = List.range Mgf1.hashes.length := by
-  decide
-
 end VG.Spec.HashTable

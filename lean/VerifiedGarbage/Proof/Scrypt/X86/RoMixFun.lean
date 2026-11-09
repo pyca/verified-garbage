@@ -1114,9 +1114,6 @@ theorem jOf_eq {s₀ : State} (hp : Pre s₀) (m : Mem) :
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := jOf_lt hp m; omega_arith), he, and_mask32 _ he',
     jOf, he, integerify_mod32 _ _ hp.pos he']
 
-theorem jOf_lt32 {s₀ : State} (hp : Pre s₀) (m : Mem) : jOf s₀ m < 2 ^ 32 := by
-  have := jOf_lt hp m; have := NN_lt hp; omega_arith
-
 /-- The memory after iteration `i` of step 3. -/
 theorem mem3_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < NN s₀) {s : State} (h : Inv3 s₀ i s)
     {m₄ : Mem}

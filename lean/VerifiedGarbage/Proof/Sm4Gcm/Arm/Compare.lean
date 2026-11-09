@@ -36,9 +36,6 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (zeros)
 open VG.Proof.Cmac (le4 store4)
 
-theorem shr31 (y : BitVec 32) : (y >>> 31).toNat = if y.msb then 1 else 0 :=
-  VG.Proof.Rsa.shr31 y
-
 theorem msb_or_neg (x : BitVec 32) : (x ||| (0 - x)) >>> 31 = if x = 0 then 0 else 1 :=
   VG.Proof.Rsa.msb_or_neg x
 

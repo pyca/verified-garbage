@@ -82,9 +82,6 @@ def rejNttAt (seed a : Ptr) : Prog isa :=
 def rej4At (seed a : Ptr) : Prog isa :=
   callAt ("vg_mldsa_rej_ntt_poly4" ++ P.suffix) P.rej4 [(.x0,.ptr seed),(.x1,.ptr a),(.x2,.ptr ss)]
 
-def rejBoundedAt (seed : Ptr) (eta : Nat) (a : Ptr) : Prog isa :=
-  .seq (.block (glue [(.x0, .ptr seed), (.x1, .imm eta), (.x2, .ptr a), (.x3, .ptr ss)])) P.rejBounded
-
 def ballAt (ct : Ptr) (len tau : Nat) (c : Ptr) : Prog isa :=
   callAt ("vg_mldsa_sample_in_ball" ++ P.suffix) P.ball
     [(.x0, .ptr ct), (.x1, .imm len), (.x2, .imm tau), (.x3, .ptr c), (.x4, .ptr ss)]
@@ -148,8 +145,6 @@ def ifOk (c : Prog isa) : Prog isa := .ite (.nonzero .x .x24) c (.block [])
 state at `scratch + 0` and its working space at `scratch + 200`. -/
 def shake256With (c : Impl.Sha3.AArch64.Callee) (ins outs : List Impl.MlKem.AArch64.Piece) : Prog isa :=
   Impl.MlKem.AArch64.hashWith c .x28 0 200 136 0x1f ins outs
-
-def shake256 := shake256With .scalar
 
 /-! ## Entry and exit -/
 

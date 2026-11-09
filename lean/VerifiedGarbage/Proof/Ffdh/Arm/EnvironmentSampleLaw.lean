@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarLayout
 public import VerifiedGarbage.Proof.Ffdh.Arm.SampleEnvironment
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarCT
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySample
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleResult
 
 /-! A sampling policy supplies both scalar encoding and its public execution width. -/

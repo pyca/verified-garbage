@@ -48,8 +48,21 @@ theorem signMessage_sat {p : Params} (hp : p ∈ params) : ∃ s, (signMessageCo
       List.range.loop] [signSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using signSat mlDsa87
 
 theorem signMessage_verified {p : Params} {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ params) :
-    Verified X86_64.target (signMessage n c p) (signMessageContract p X86_64.abi 112) :=
-  ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := signMessage_wp hS hp h; ⟨t, s', he, ha, hq⟩,
-    signMessage_ct hS hp, signMessage_sat hp⟩
+    Verified X86_64.target (signMessage n c p 0) (signMessageContract p X86_64.abi 112) :=
+  ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := signMessage_wp (prep := false) hS hp (sPre_of h)
+      ⟨t, s', he, ha, sPost_of hq⟩,
+    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => signMessage_ct (prep := false) hS hp s₁ s₂ t₁ t₂ s₁' s₂'
+      (sPre_of h₁) (sPre_of h₂) (sPub_of hpub) e₁ e₂,
+    signMessage_sat hp⟩
+
+/-- `sign_message_prepared`, given a state satisfying its precondition (which holds a prepared key). -/
+theorem signMessagePrepared_verified {p : Params} {n : String} {c : Prog isa} (hS : SignFn p c)
+    (hp : p ∈ params) (hsat : ∃ s, (preparedSignMessageContract p X86_64.abi 112).pre s) :
+    Verified X86_64.target (signMessage n c p 1) (preparedSignMessageContract p X86_64.abi 112) :=
+  ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := signMessage_wp (prep := true) hS hp (sPreP_of h)
+      ⟨t, s', he, ha, sPostP_of hq⟩,
+    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => signMessage_ct (prep := true) hS hp s₁ s₂ t₁ t₂ s₁' s₂'
+      (sPreP_of h₁) (sPreP_of h₂) (sPubP_of hpub) e₁ e₂,
+    hsat⟩
 
 end VG.Proof.MlDsa.X86_64.Message

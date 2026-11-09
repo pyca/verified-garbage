@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Encode
 public import VerifiedGarbage.TCB.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # Printer for the AArch64 model
@@ -232,6 +233,11 @@ def Instr.asm : Instr → List String
   | .strq t n off => [s!"str {t.q}, [{n.name .x}, #{off}]"]
   | .umov .w d n i => [s!"umov {d.name .w}, v{n.index}.s[{i}]"]
   | .umov .x d n i => [s!"umov {d.name .x}, v{n.index}.d[{i}]"]
+  | .mrsDit t => [s!"mrs {t.name .x}, DIT"]
+  | .msrDitImm on => [s!"msr DIT, #{on.toNat}"]
+  | .barrier .dsbSy => ["dsb sy"]
+  | .barrier .isb => ["isb"]
+  | .barrier .sb => ["sb"]
   | .align k => [s!".p2align {k}"]
 
 /-- The lines of an instruction: each of its instructions' text (`asm`) as a
@@ -260,11 +266,6 @@ def printer : Printer isa where
   tables
     | .ldrqTbl _ _ _ name ws => [(name, ws)]
     | _ => []
-  -- LLVM's AArch64 assembler rejects, e.g., `aese` unless the `aes` extension
-  -- is enabled, and a directive in a naked function stays in effect for the
-  -- rest of the module, so each function disables what it enabled.
-  enableFeature f := [s!".arch_extension {f}"]
-  disableFeature f := [s!".arch_extension no{f}"]
   /- Every function starts on a 64-byte boundary, a cache line, and so on
   the 32-byte boundaries the Arm Neoverse N1 Software Optimization Guide
   (§4.8, "Branch instruction alignment") recommends for subroutine entry
@@ -278,5 +279,20 @@ def printer : Printer isa where
       if k ∈ [4, 5, 6] then none else some s!"`.p2align {k}`: only 4, 5 and 6 are allowed"
     | .adrSym .. => none
     | i => if i.encode.isNone then some "an operand does not fit its field" else none
+
+/-- What the emitter needs of the target (`Emitter`): its printer, its Rust `cfg`
+and ABI string, and how documentation names its calling convention's
+argument area and reserved memory (`abi`'s `argArea` and `reserved`). -/
+instance : Emitter isa where
+  printer := printer
+  -- `aarch64_be` targets are big-endian, and ILP32 ones (`aarch64-unknown-linux-gnu_ilp32`)
+  -- have 32-bit pointers. The model's baseline includes AdvSIMD (NEON: see
+  -- `Instr.requires`), which `aarch64-unknown-none-softfloat` turns off.
+  rustCfg := "all(target_arch = \"aarch64\", target_endian = \"little\", \
+    target_pointer_width = \"64\", target_feature = \"neon\")"
+  rustAbi := "C"
+  argAreaDoc ws := if ws.length - argRegs.length = 0 then none else
+    some ("the arguments on the stack", false)
+  reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
 
 end VG.AArch64

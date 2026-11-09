@@ -119,29 +119,6 @@ theorem positiveIH_of_IR {p : Params} {S : Nat} {σ s : State} {t : Nat}
     simp [R0Ok]
 
 
-def positiveHfam (p : Params) (ws : List (VG.Impl.MlDsa.AArch64.Call.Ptr × Nat)) (i : Nat) : Bool :=
-  kbChk p ws && famChk (sgR p) (sgW p) ws (yBase p) p.ℓ &&
-  famChk (sgR p) (sgW p) ws (wBase p) p.k &&
-  famChk (sgR p) (sgW p) ws (5+i) (p.k-i) &&
-  famChk (sgR p) (sgW p) ws 5 i && keepB (sgR p) (sgW p) ws (sc oONES) 8
-
-theorem PositiveIHb.step {p : Params} {S : Nat} {σ s u : State} {t i : Nat}
-    (h : PositiveIHb p S σ t i s) {ws : List (VG.Impl.MlDsa.AArch64.Call.Ptr × Nat)}
-    (hP : PPostB S s u ws) (hy : u.syms=s.syms) (hc : positiveHfam p ws i=true)
-    (hw : ∀w∈ws,inB (sgW p) w.1 w.2=true) : PositiveIHb p S σ t i u := by
-  simp only [positiveHfam,Bool.and_eq_true] at hc
-  obtain ⟨⟨⟨⟨⟨hb,hz⟩,hh⟩,hl⟩,hf⟩,ho⟩ := hc
-  have L := h.b.l.st.lay
-  exact ⟨h.b.step hP hy hb hw,h.z.keep L hP hz,h.high.keep L hP hh,
-    h.low.keep L hP hl,HFam.keep L hP hf h.h,(L.keepW hP ho).trans h.ones⟩
-
-theorem SignedFam.shift {s : State} {b m : Nat} {f : Nat → Poly} {lo hi : Int}
-    (h : SignedFam s b m f lo hi) (hm : 0<m) :
-    SignedFam s (b+1) (m-1) (fun j=>f (j+1)) lo hi := by
-  intro j hj
-  have ht := h (j+1) (by omega)
-  simpa [Nat.add_assoc,Nat.add_comm,Nat.add_left_comm] using ht
-
 end VG.Proof.MlDsa.AArch64.Sign
 
 end

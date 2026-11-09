@@ -78,17 +78,6 @@ For coordinates of at most 6 words, the ladder calls the point functions
 (`ladderP_ok`), which also write their slots and own working space (`ptW`),
 above every numbered slot and below the tables. -/
 
-/-- The ladder's slots are below the point functions'. -/
-theorem ladPt (h6 : c.n ≤ 6) : VG.Proof.Weierstrass.Arm.Point.LadPt c.ladderCfg where
-  sl := by
-    rw [ladSlots_eq]
-    intro x hx
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    have : ∀ i ∈ [AP, B3P, GX, GY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ],
-      i < 45 := by decide
-    exact sl_below_pt h6 (this i hi)
-  mo := sl_below_pt h6 (i := MP) (by decide)
-
 theorem apart_ptW {i : Nat} (hi : i < 45) :
     ∀ w ∈ VG.Proof.Weierstrass.Arm.Point.ptW c.n, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
@@ -138,16 +127,6 @@ theorem fixedOk_slWkP (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i = TMP 
 theorem slWkP_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slWkP c l, w.1 + w.2 ≤ size :=
   fun w hw => (List.mem_append.mp hw).elim (slWk_le h7 hl w) (ptW_le w)
 
-/-- The flag word apart from what the ladder writes. -/
-theorem flag_unchP {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (slWkP c l) m m')
-    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 32) (hl : FLAG ∉ l) :
-    m'.readW (off base (c.sl FLAG)) 32 = m.readW (off base (c.sl FLAG)) 32 := by
-  have hF := sl_le c h7 (i := FLAG) (by decide)
-  refine Unch.readW32 hu (fun w hw => ?_) (by omega_arith)
-  rcases apart_slWkP (c := c) h7 (i := FLAG) (by decide) hl w hw with h | h
-  · exact Or.inl (by omega_arith)
-  · exact Or.inr h
-
 /-- After `[k]G` and `Z^(p-2)`. -/
 structure St₂ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
   k : sv c base s K = kv c A s₀
@@ -168,60 +147,6 @@ def GeneratorPost (c : Cfg) (base : Addr) (k : Nat) (s t : State) : Prop :=
   (∀ x ∈ [c.sl RX,c.sl RY,c.sl RZ],wordsVal t.mem base x c.n<c.C.p) ∧
   Rep c.C (tmv c.C c.n base t (c.sl RX)) (tmv c.C c.n base t (c.sl RY))
     (tmv c.C c.n base t (c.sl RZ)) (mul k (G c.C))
-
-/-- The default generator implementation, shared by the unmodified callers. -/
-theorem generator_ladder_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State}
-    (hS : St₁ c A s₀ base s) :
-    WP isa (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP false c.umaal) s
-      (GeneratorPost c base (kv c A s₀) s) := by
-  have h0 := hc.n0
-  have h7 := hc.n10
-  have hn := hS.scr.nowrap
-  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  have hp3 := hc.p_ge
-  have F := hS.fixed
-  have hkl : kv c A s₀ < 2 ^ (8 * c.C.len) :=
-    Nat.lt_of_le_of_lt (Nat.shiftRight_le _ _) (ofBytes_bytesAt_lt _ _ _)
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
-  have hlt : ∀ x ∈ ladR c.ladderCfg, wordsVal s.mem base x c.MP'.n < c.C.p := by
-    intro x hx
-    have hx' : x ∈ [AP, B3P, GX, GY, ONEP, RX, RY, RZ].map c.sl := hx
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    show sv c base s i < c.C.p
-    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact lt_of_eq_of_lt F.ap (hmont _)
-    · exact lt_of_eq_of_lt F.b3p (hmont _)
-    · exact lt_of_eq_of_lt F.gx (hmont _)
-    · exact lt_of_eq_of_lt F.gy (hmont _)
-    · exact lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega_arith))
-    · exact lt_of_eq_of_lt hS.rx (by omega_arith)
-    · exact lt_of_eq_of_lt hS.ry (hmont _)
-    · exact lt_of_eq_of_lt hS.rz (by omega_arith)
-  have hG : Rep c.C (tmv c.C c.n base s (c.sl GX)) (tmv c.C c.n base s (c.sl GY))
-      (tmv c.C c.n base s (c.sl ONEP)) (G c.C) := by
-    show Rep c.C (toM _ _ (wordsVal s.mem base (c.sl GX) c.n)) (toM _ _ (wordsVal s.mem base (c.sl GY) c.n))
-      (toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n)) (G c.C)
-    rw [F.gx, F.gy, F.onep, toM_cmont hc, toM_cmont hc, toM_one hpR]
-    exact rep_affine' hC _ _
-  have hR : Rep c.C (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
-      (tmv c.C c.n base s (c.sl RZ)) (mul (kv c A s₀ >>> (8 * c.C.len)) (G c.C)) := by
-    show Rep c.C (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ)) _
-    rw [hS.rx, hS.ry, hS.rz, toM_cmont hc, toM_zero, shiftRight_eq_zero hkl, mul_zero_pt]
-    exact rep_infinity' hC
-  have hstep := step_rep (L := c.ladderCfg) (k := kv c A s₀) hC hc.onG (by
-      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl AP) c.n) = _
-      rw [F.ap]; exact toM_cmont hc _)
-    (by
-      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl B3P) c.n) = _
-      rw [F.b3p]; exact toM_cmont hc _) hG
-  have henc := scalarBits_enc hc
-  refine WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (a0 := false) (u := c.umaal) (ladLay hc) (ladWk hc) hc.fp ladPt hpR
-    (bitsAt_lt hc (j := 0) (by decide)) hS.scr hS.far (modP_of hc F.mp) hlt nofun hstep hR
-      (fun t ht => hS.t₀ t (Nat.lt_of_lt_of_le ht (scalarBits_le hc))) henc)
-    fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_
-  rw [Nat.shiftRight_zero] at R₅
-  exact ⟨K₅, U₅.mono fun w hw => List.mem_append_left _ hw, M₅, L₅, R₅⟩
 
 /-- The common inversion and state preservation after any verified generator routine. -/
 theorem stage₂With (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c A s₀ base s)
@@ -290,12 +215,6 @@ theorem stage₂With (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS
     exact v₆
   · rw [r₆ (i := RZ) (by decide) (by decide)]
     exact L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
-
-/-- `[k]G` by the generic ladder, then `Z^(p-2)`. -/
-theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c A s₀ base s)
-    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP false c.umaal) (.seq (pow c.powP c.SP c.umaal) rest)) s Q :=
-  stage₂With hc hS (generator_ladder_ok hc hC hS) h
 
 /-- After `x`, `r`, the checks and `k^(n-2)`. -/
 structure St₃ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where

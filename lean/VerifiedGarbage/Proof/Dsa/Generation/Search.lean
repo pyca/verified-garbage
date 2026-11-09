@@ -60,46 +60,4 @@ theorem generator_cons (p q h : Nat) (hs : List Nat) :
     by_cases hg : 1 < Spec.Dsa.powMod h ((p - 1) / q) p <;> simp [hg]
   · simp only [hh, ite_false]
 
-theorem parameterAttempt_nil (bits n : Nat) (hs : List Nat) (rand : Spec.RsaKeyGen.Rand) :
-    Spec.Dsa.generateParameters.attempt bits hs n [] rand = none := rfl
-
-/-- The h tape is an unchanged argument of every retry; only the witness
-remainder returned by primality testing advances. -/
-theorem parameterAttempt_step (bits n : Nat) (hs : List Nat) (seed : List Byte)
-    (seeds : List (List Byte)) (rand : Spec.RsaKeyGen.Rand) (hlen : n ≤ 8 * seed.length) :
-    Spec.Dsa.generateParameters.attempt bits hs n (seed :: seeds) rand =
-      let q := Spec.Dsa.qCandidate n seed
-      match Spec.Dsa.probablePrime q rand with
-      | none => none
-      | some (false, rest) => Spec.Dsa.generateParameters.attempt bits hs n seeds rest
-      | some (true, rest) =>
-        match Spec.Dsa.primeFromSeed bits n q seed rest with
-        | none => none
-        | some (none, rest') => Spec.Dsa.generateParameters.attempt bits hs n seeds rest'
-        | some (some p, rest') =>
-          match Spec.Dsa.generator p q hs with
-          | none => Spec.Dsa.generateParameters.attempt bits hs n seeds rest'
-          | some g =>
-            if Spec.Dsa.parametersValid ⟨p, q, g⟩ then some ⟨p, q, g⟩
-            else Spec.Dsa.generateParameters.attempt bits hs n seeds rest' := by
-  rw [Spec.Dsa.generateParameters.attempt]
-  simp only [show ¬ 8 * seed.length < n by omega, ite_false]
-  cases Spec.Dsa.probablePrime (Spec.Dsa.qCandidate n seed) rand with
-  | none => rfl
-  | some pair =>
-    rcases pair with ⟨accepted, rest⟩
-    cases accepted with
-    | false => rfl
-    | true =>
-      simp only [bind, Option.bind, Bool.not_true, Bool.false_eq_true, ite_false]
-      cases Spec.Dsa.primeFromSeed bits n (Spec.Dsa.qCandidate n seed) seed rest with
-      | none => rfl
-      | some pair =>
-        rcases pair with ⟨p, rest'⟩
-        cases p with
-        | none => rfl
-        | some p =>
-          dsimp only
-          cases Spec.Dsa.generator p (Spec.Dsa.qCandidate n seed) hs <;> rfl
-
 end VG.Proof.Dsa.Generation

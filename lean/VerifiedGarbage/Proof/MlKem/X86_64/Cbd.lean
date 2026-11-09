@@ -453,22 +453,4 @@ theorem cbd2_ct : ConstantTime isa cbd2K.pre cbd2K.pub Impl.MlKem.X86_64.cbd2 :=
       exacts [hp.1, hp.2.1, hp.2.2])
     (by taint_decide)
 
-/-- A state satisfying the precondition. -/
-def cbd2Sat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rsp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 1024⟩]
-
-theorem cbd2_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.cbd2 (Proof.MlKem.cbd2Contract X86_64.abi) :=
-  Verified.of_correct cbd2_correct cbd2_ct (by
-    mlkem_implies [Proof.MlKem.cbd2Contract, Proof.MlKem.cbd2Sig, cbd2K, X86_64.abi,
-      X86_64.argRegs] [cbd2Sat] using cbd2Sat)
-
 end VG.Proof.MlKem.X86_64

@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Bits
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Weierstrass.PPC64LE
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontCall
+public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Chain
 
 /-!
 # ECDSA on PPC64LE: the curve, the arguments and the working space
@@ -70,6 +71,10 @@ structure CfgOk (c : Cfg) : Prop where
   fnm : c.SN.m = c.C.n
   /-- `vg_<curve>_mul`, if the curve has it, has no frames, as calls need. -/
   mulNf : ∀ C, c.mul = some C → c.mulFn.noFrames = true
+  /-- The sliding windows of `p - 2` are its (`chainCheck`). -/
+  chainP : ChainOk c.chainP (c.C.p - 2)
+  /-- And those of `n - 2`. -/
+  chainN : ChainOk c.chainN (c.C.n - 2)
 
 /-- The registers `setupWith` writes. -/
 abbrev setupClob : List Reg := [.r0, .r3, .r4, .r8, .r9, .r11, .r14]
@@ -121,7 +126,6 @@ theorem mask64_and (p q : Prop) [Decidable p] [Decidable q] : mask64 p &&& mask6
 is `A.hs`: `c.sh` for the slot `hs` holding a hash, 0 for the others. -/
 abbrev shAt (c : Cfg) (hs : Option Nat) (i : Nat) : Nat := if hs = some i then c.sh else 0
 
-theorem shAt_none (c : Cfg) (i : Nat) : shAt c none i = 0 := rfl
 theorem shAt_self (c : Cfg) (i : Nat) : shAt c (some i) i = c.sh := ite_eq_left_of_eq_true _ _ (eq_true rfl)
 theorem shAt_E_D (c : Cfg) : shAt c (some E) D = 0 := rfl
 theorem shAt_E_K (c : Cfg) : shAt c (some E) K = 0 := rfl

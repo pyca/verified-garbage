@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.TCB.Artifact
-public import VerifiedGarbage.TCB.Print
 public import VerifiedGarbage.TCB.Sig
 public import VerifiedGarbage.Proof.Gcm.Contract
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
@@ -61,5 +60,34 @@ length. Key material, the counter, the hash accumulator and data are secret. -/
 def encryptBlocksSplitContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   encryptBlocksSplitSig.contract A (pre := encryptBlocksSplitPre A.ptrBits)
     (post := encryptBlocksSplitPost A.ptrBits) (stack := stack)
+
+/-- `vg_aes_gcm_decrypt_blocks_to(ctx, rounds, state, src, n, dst, dst_n,
+scratch)`: whole blocks decrypted from `src` to `dst`, every argument in a
+register. `state` holds the hash accumulator (bytes 0–15) and the counter
+block (bytes 32–47); `scratch` is 2112 bytes. -/
+def decryptBlocksToSig : Sig where
+  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
+    ("state", .array true .u8 48),
+    ("src", .slice false (.array .u8 16) "n"),
+    ("dst", .slice true (.array .u8 16) "dst_n"),
+    ("scratch", .array true .u64 264)]
+
+/-- AES has 10, 12 or 14 rounds, and the output is as long as the input. -/
+def decryptBlocksToPre (pb : Nat) : Curry (decryptBlocksToSig.words pb) (Mem → Prop) :=
+  fun _ctx rounds _state _src n _dst dstN _scratch _ =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧ dstN = n
+
+/-- Decrypt the source into the destination, advance the counter by `n`,
+and continue GHASH over the source, the ciphertext. -/
+def decryptBlocksToPost (pb : Nat) : decryptBlocksToSig.Post pb :=
+  fun ctx rounds state src n dst _dstN _scratch m m' _ =>
+    let c := blocksAt m src n.toNat
+    blocksAt m' dst n.toNat = ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m (state + 32)) c ∧
+      blockAt m' (state + 32) = Nat.repeat inc32 n.toNat (blockAt m (state + 32)) ∧
+      blockAt m' state = ghashFrom (ctxH m ctx) (blockAt m state) c
+
+def decryptBlocksToContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  decryptBlocksToSig.contract A (pre := decryptBlocksToPre A.ptrBits)
+    (post := decryptBlocksToPost A.ptrBits) (stack := stack)
 
 end VG.Proof.Gcm

@@ -6,8 +6,7 @@ public import VerifiedGarbage.Impl.AesCbc.X86_64
 # XTS-AES: x86-64 implementation
 
 `vg_aes_xts_encrypt(schedule = rdi, rounds = rsi, tweak = rdx, data = rcx, n = r8, scratch = r9)`
-and `vg_aes_xts_decrypt` with the same arguments (see
-`VG.Proof.Xts.aesEncryptContract` and `aesDecryptContract`), composed of one
+and `vg_aes_xts_decrypt` with the same arguments, composed of one
 call of the verified `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` on
 all the blocks, in place. They are generic over the implementation they call
 (`Blocks`): each is emitted once for each implementation (e.g.

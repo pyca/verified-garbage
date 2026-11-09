@@ -429,18 +429,6 @@ theorem blocks_correct {s₀ : State} (hp : BPre s₀) :
         rcx := by rw [hrcx]; simp [nb] }
     exact WP.loop (M := isa) Inv hstep (nb s₀) s₁ ⟨0, rfl, hpos, hL₀⟩
 
-/-- A state satisfying the precondition (with no blocks). -/
-def blocksSat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rsp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x2000, 0⟩]
-  wr := [⟨0x1000, 128⟩]
-
 theorem blocks_ok (s : State) (hs : Proof.Poly1305.blocksX86_64.pre s) :
     ∃ t s', Exec isa Impl.Poly1305.X86_64.blocks s t s' ∧ abiPreserved s s' ∧
       Proof.Poly1305.blocksX86_64.post s s' := by
@@ -454,12 +442,5 @@ theorem blocks_ct : ConstantTime isa Proof.Poly1305.blocksX86_64.pre Proof.Poly1
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl <;> with_reducible assumption
-
-theorem blocks_verified :
-    Verified X86_64.target Impl.Poly1305.X86_64.blocks (Proof.Poly1305.blocksContract X86_64.abi) :=
-  Verified.of_correct blocks_ok blocks_ct (by
-    sig_implies [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig, Proof.Poly1305.blocksX86_64,
-      X86_64.abi, X86_64.argRegs] [Proof.Poly1305.X86_64.blocksSat] using
-      Proof.Poly1305.X86_64.blocksSat)
 
 end VG.Proof.Poly1305.X86_64

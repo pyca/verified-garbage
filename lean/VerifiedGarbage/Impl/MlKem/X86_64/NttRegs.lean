@@ -26,7 +26,7 @@ on sixteen words at a time in AVX2 registers:
   of eight coefficients, and these stored as `u32`s (`vpermq`, then
   `vpunpck{l,h}wd` with zero).
 
-The butterflies reduce lazily, as `vibflyL` does for `NTT⁻¹` (`NttAvx2.lean`), with the
+The butterflies reduce lazily, with the
 zetas `ζ · 2¹⁶ mod q` and `ζ · 2¹⁶ · q⁻¹ mod q mod 2¹⁶` of every word read
 from a table of constants the instructions carry (`vmovdquTbl`, `zetaTbl`):
 `vpmullw t, b, ζ'; vpmulhw b, b, ζ; vpmulhw t, t, q; vpsubw b, b, t` is

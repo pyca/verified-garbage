@@ -108,15 +108,6 @@ theorem inFrW (hc : Ctx L g mx m₀ t) {d : Nat} (h₁ : 16 ≤ d) (h₂ : d + 8
 theorem ea_fr (hc : Ctx L g mx m₀ t) (d : Nat) :
     t.ea (Impl.Ed25519.X86_64.stk d) = L.B + BitVec.ofNat 64 (16 + d) := by
   rw [PublicKey.ea_stk, hc.rsp, PublicKey.add_add]
-theorem input_byte (hL : L.Ok) (hc : Ctx L g mx m₀ t) {r : Region} (hr : r ∈ L.inputs)
-    (hn : r.len ≤ 2 ^ 64) {i : Nat} (hi : i < r.len) :
-    t.mem (r.base + BitVec.ofNat 64 i) = m₀ (r.base + BitVec.ofNat 64 i) :=
-  Frame.bytes hc.frame (by
-    intro R hR
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
-    rcases hR with rfl | rfl
-    · exact hL.sc r hr
-    · exact (hL.ks r hr).symm) hn hi
 end Ctx
 
 /-- Calls may overwrite scratch and the two hash buffers, but not the saved arguments. -/

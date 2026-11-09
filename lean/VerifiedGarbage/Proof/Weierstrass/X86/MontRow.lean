@@ -29,18 +29,6 @@ def yVal (y : Nat → BitVec 32) : Nat → Nat
   | 0 => 0
   | k + 1 => yVal y k + 2 ^ (32 * k) * (y k).toNat
 
-theorem yVal_lt (y : Nat → BitVec 32) : ∀ k, yVal y k < 2 ^ (32 * k)
-  | 0 => by simp [yVal]
-  | k + 1 => by
-    have := yVal_lt y k
-    have := (y k).isLt
-    rw [yVal, pow32_add, show 32 * 1 = 32 from rfl]
-    have : 2 ^ (32 * k) * (y k).toNat ≤ 2 ^ (32 * k) * (2 ^ 32 - 1) := Nat.mul_le_mul_left _ (by omega_arith)
-    have : 2 ^ (32 * k) * (2 ^ 32 - 1) + 2 ^ (32 * k) = 2 ^ (32 * k) * 2 ^ 32 := by
-      rw [Nat.mul_sub_one]; have : 2 ^ (32 * k) ≤ 2 ^ (32 * k) * 2 ^ 32 := Nat.le_mul_of_pos_right _ (by decide)
-      omega_arith
-    omega_arith
-
 theorem val32_one (m : Mem) (base : Addr) (d : Nat) : val32 m base d 1 = w32 m base d := by
   simp [val32]
 
@@ -61,10 +49,6 @@ structure RowKeep (base : Addr) (acc len : Nat) (s t : State) : Prop where
 theorem RowKeep.of {base : Addr} {acc len : Nat} {s t : State} {rs : List Reg} (h : Keeps rs s t)
     (h1 : .esi ∉ rs) (h2 : .ebp ∉ rs) (ho : Outside base acc len s.mem t.mem) : RowKeep base acc len s t :=
   ⟨h.1 _ h1, h.1 _ h2, h.2.1, h.2.2, ho⟩
-
-theorem RowKeep.trans {base : Addr} {acc len : Nat} {s t u : State} (h₁ : RowKeep base acc len s t)
-    (h₂ : RowKeep base acc len t u) : RowKeep base acc len s u :=
-  ⟨h₂.esi.trans h₁.esi, h₂.ebp.trans h₁.ebp, h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₁.out.trans h₂.out⟩
 
 /-- The words of a multiplicand: `ys j` reads `y j` in any state the row
 reaches. -/

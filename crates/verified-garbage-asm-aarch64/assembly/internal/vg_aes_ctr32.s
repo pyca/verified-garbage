@@ -1375,60 +1375,60 @@ vg_aes_ctr32:
 	lsr x21, x4, #2
 	cbnz x21, 25f
 	ldr x21, [x3, #0]
+	ldr x24, [x3, #8]
 	eor x21, x21, x6
+	eor x24, x24, x10
 	str x21, [x3, #0]
-	ldr x21, [x3, #8]
-	eor x21, x21, x10
-	str x21, [x3, #8]
+	str x24, [x3, #8]
 	sub x21, x4, #1
 	cbnz x21, 27f
 	b 28f
 27:
 	ldr x21, [x3, #16]
+	ldr x24, [x3, #24]
 	eor x21, x21, x7
+	eor x24, x24, x11
 	str x21, [x3, #16]
-	ldr x21, [x3, #24]
-	eor x21, x21, x11
-	str x21, [x3, #24]
+	str x24, [x3, #24]
 	sub x21, x4, #2
 	cbnz x21, 29f
 	b 210f
 29:
 	ldr x21, [x3, #32]
+	ldr x24, [x3, #40]
 	eor x21, x21, x8
+	eor x24, x24, x12
 	str x21, [x3, #32]
-	ldr x21, [x3, #40]
-	eor x21, x21, x12
-	str x21, [x3, #40]
+	str x24, [x3, #40]
 210:
 28:
 	movz x4, #0, lsl #0
 	b 26f
 25:
 	ldr x21, [x3, #0]
+	ldr x24, [x3, #8]
 	eor x21, x21, x6
+	eor x24, x24, x10
 	str x21, [x3, #0]
-	ldr x21, [x3, #8]
-	eor x21, x21, x10
-	str x21, [x3, #8]
+	str x24, [x3, #8]
 	ldr x21, [x3, #16]
+	ldr x24, [x3, #24]
 	eor x21, x21, x7
+	eor x24, x24, x11
 	str x21, [x3, #16]
-	ldr x21, [x3, #24]
-	eor x21, x21, x11
-	str x21, [x3, #24]
+	str x24, [x3, #24]
 	ldr x21, [x3, #32]
+	ldr x24, [x3, #40]
 	eor x21, x21, x8
+	eor x24, x24, x12
 	str x21, [x3, #32]
-	ldr x21, [x3, #40]
-	eor x21, x21, x12
-	str x21, [x3, #40]
+	str x24, [x3, #40]
 	ldr x21, [x3, #48]
+	ldr x24, [x3, #56]
 	eor x21, x21, x9
+	eor x24, x24, x13
 	str x21, [x3, #48]
-	ldr x21, [x3, #56]
-	eor x21, x21, x13
-	str x21, [x3, #56]
+	str x24, [x3, #56]
 	add x3, x3, #64
 	sub x4, x4, #4
 26:

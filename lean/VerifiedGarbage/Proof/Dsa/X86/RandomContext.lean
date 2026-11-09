@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.RandomFrame
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Spec.Dsa.RandomSign
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
@@ -90,36 +91,12 @@ structure RandomSignABI (s : State) : Prop where
   keyLength : (arg s 4).toNat = 3 * (arg s 5).toNat + 2 * (arg s 6).toNat
   scratchLength : Spec.Dsa.randomSignScratchWords (arg s 5).toNat ≤ (arg s 12).toNat
 
-theorem randomSignABI_of {s : State} (h : (Spec.Dsa.randomSignContract abi 232).pre s) :
+theorem randomSignABI_of {s : State} (h : (randomSignCheckedContract abi 232).pre s) :
     RandomSignABI s := by
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes,
+  sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes,
     stackBelow] at h
   sig_split h
   constructor <;> with_reducible assumption
-
-theorem RandomSignABI.stackOut {s : State} (A : RandomSignABI s) :
-    (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 0 (arg s 1).toNat) :=
-  A.stackOutWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
-
-theorem RandomSignABI.stackUsed {s : State} (A : RandomSignABI s) :
-    (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 2 8) :=
-  A.stackUsedWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
-
-theorem RandomSignABI.stackKey {s : State} (A : RandomSignABI s) :
-    (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 3 (arg s 4).toNat) :=
-  A.stackKeyWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
-
-theorem RandomSignABI.stackDigest {s : State} (A : RandomSignABI s) :
-    (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 7 (arg s 8).toNat) :=
-  A.stackDigestWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
-
-theorem RandomSignABI.stackRand {s : State} (A : RandomSignABI s) :
-    (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 9 (arg s 10).toNat) :=
-  A.stackRandWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
-
-theorem RandomSignABI.stackScratch {s : State} (A : RandomSignABI s) :
-    (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 11 ((arg s 12).toNat * 8)) :=
-  A.stackScratchWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
 
 end VG.Proof.Dsa.X86
 end
@@ -280,8 +257,6 @@ theorem args_apart : ∀ r ∈ rWrites s₀, Region.Disjoint ⟨argAddr s₀ 0, 
   · exact A.scratchArgs.symm
   · exact A.usedArgs.symm
 
-/-- The return address on entry is apart from the buffers. -/
-theorem stack_apart_key : (rStack s₀).Disjoint (argRegion s₀ 3 (X86.arg s₀ 4).toNat) := A.stackKeyWide
 end
 
 theorem rBytes_length (m : Mem) (p : Addr) (n : Nat) : (Spec.Rsa.bytesAt m p n).length = n := by

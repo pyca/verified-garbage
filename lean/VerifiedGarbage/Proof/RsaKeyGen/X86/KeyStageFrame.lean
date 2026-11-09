@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExponentFrame
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArrayDivision
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseBridge
 import VerifiedGarbage.Proof.Rsa.WordRanges
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 
 /-! # Frames for key-assembly stages that share the native inverse bank -/
 
@@ -75,19 +77,6 @@ theorem stage_outside {m m' : Mem} {B : Addr} {n j : Nat} {js : List Nat}
     (output : j ∈ js) (O : Outside B (arr n j) (S n) m m') : Outs B (stageRanges n js) m m' :=
   Outs.of_outside O (List.mem_append_right _
     (List.mem_append_left _ (List.mem_map.mpr ⟨j, output, rfl⟩)))
-
-theorem stage_division {m m' : Mem} {B : Addr} {n q r : Nat} {js : List Nat}
-    (hq : q ∈ js) (hr : r ∈ js) (O : Outs B (arrayDivisionRanges n q r) m m') :
-    Outs B (stageRanges n js) m m' := by
-  apply VG.Proof.Rsa.outs_cover O
-  intro region mem
-  simp only [arrayDivisionRanges, List.mem_cons, List.not_mem_nil, or_false] at mem
-  rcases mem with rfl | rfl | rfl
-  · exact ⟨(hdr, 15 * S n), by simp [stageRanges, exponentTemps], Nat.le_refl _, by omega⟩
-  · exact ⟨(arr n q, S n), List.mem_append_right _
-      (List.mem_append_left _ (List.mem_map.mpr ⟨q, hq, rfl⟩)), Nat.le_refl _, by unfold S; omega⟩
-  · exact ⟨(arr n r, S n), List.mem_append_right _
-      (List.mem_append_left _ (List.mem_map.mpr ⟨r, hr, rfl⟩)), Nat.le_refl _, by unfold S; omega⟩
 
 theorem stage_preserves_num {m m' : Mem} {B : Addr} {n j : Nat} {js : List Nat}
     (persistent : 15 ≤ j) (unchanged : j ∉ js) (fit : arr n j + S n ≤ 2 ^ 64)

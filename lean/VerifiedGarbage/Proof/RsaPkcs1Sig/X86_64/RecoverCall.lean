@@ -8,8 +8,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 # `vg_rsa_pkcs1_recover` on x86-64: the call of `vg_rsa_public_checked`
 
 As for `vg_rsa_pkcs1_verify` (`VerifyCall.lean`): the arguments kept in the
-frame's slots and those of the call (`slotStores_ok`, `callArgs_ok`), and the
-call (`pub_call`), writing `s^e mod n` to `EM₁`.
+frame's slots and those of the call (`slotStores_ok`, `callArgs_ok`), and
+what the call reads and writes (`pubRd`, `pubWr`, `pub_covers`).
 -/
 
 @[expose] public section
@@ -111,49 +111,6 @@ def pubRd (s : State) : List Region :=
 /-- What it writes: `EM₁` and the working space. -/
 def pubWr (s : State) : List Region := [em1R s, scrR s]
 
-theorem pub_pre {s t : State} (hp : PreR s) (hsig : stackArg s 2 = s.gpr .rcx) (hsp : t.gpr .rsp = fb s)
-    (hw0 : word t.mem (fb s) 0 = stackArg s 1) (hw1 : word t.mem (fb s) 8 = s.gpr .rcx)
-    (hw2 : word t.mem (fb s) 16 = stackArg s 3) (hw3 : word t.mem (fb s) 24 = stackArg s 4)
-    (hdi : t.gpr .rdi = off (fb s) oEM1) (hsi : t.gpr .rsi = s.gpr .rcx) (hdx : t.gpr .rdx = s.gpr .rdx)
-    (hcx : t.gpr .rcx = s.gpr .rcx) (h8 : t.gpr .r8 = s.gpr .r8) (h9 : t.gpr .r9 = s.gpr .r9) :
-    pubChk.pre (t.callEntry.withRegions (pubRd s) (pubWr s)) := by
-  have hE : ∀ i, i < 4 → stackArg (t.callEntry.withRegions (pubRd s) (pubWr s)) i = word t.mem (fb s) (8 * i) :=
-    fun i hi => stackArg_entry hsp _ _ (by omega_arith)
-  simp only [pubChk, pubContract, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-    State.callEntry_rsp, State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide),
-    State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide),
-    State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
-    State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), hdi, hsi, hdx, hcx, h8, h9, hsp,
-    stackArgAddr_entry hsp, hE 0 (by decide), hE 1 (by decide), hE 2 (by decide), hE 3 (by decide),
-    Nat.reduceMul, hw0, hw1, hw2, hw3, fb_sub8]
-  have ⟨hK1, hK2⟩ := kb_toNat hp
-  have e1 : verStack = 2144 := rfl
-  have e2 : oEM1 = 80 := rfl
-  have e3 : frameBytes = 2136 := rfl
-  have hk1 := hp.k1
-  have hk2 := hp.k2
-  have sM : Region.Sub (em1R s) (stkR s) := frame_sub s (by unfold oEM1 frameBytes; omega_arith)
-  have sA : Region.Sub ⟨fb s, 32⟩ (stkR s) := by
-    have := frame_sub s (d := 0) (n := 32) (by decide); simpa only [off, BitVec.add_zero] using this
-  have sR : Region.Sub ⟨kb s, 8⟩ (stkR s) := Region.sub_prefix (by decide)
-  have hfb : fb s = kb s + BitVec.ofNat 64 8 := fb_eq s
-  have dMA : (em1R s).Disjoint ⟨fb s, 32⟩ := Offset.disjoint_base _ (by decide) (by omega_arith)
-  have dRM : (⟨kb s, 8⟩ : Region).Disjoint (em1R s) := by
-    simp only [em1R]; rw [hfb, off, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact Offset.base_disjoint _ (by decide) (by omega_arith)
-  have dRA : (⟨kb s, 8⟩ : Region).Disjoint ⟨fb s, 32⟩ := by
-    rw [hfb]; exact Offset.base_disjoint _ (by decide) (by omega_arith)
-  have wM : (off (fb s) oEM1).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 := by
-    rw [toNat_off (by rw [hfb, ← off, toNat_off (by omega_arith)]; unfold oEM1; omega_arith), hfb, ← off,
-      toNat_off (by omega_arith)]; unfold oEM1; omega_arith
-  have dKg : (stkR s).Disjoint ⟨stackArg s 1, (s.gpr .rcx).toNat⟩ := by rw [← hsig]; exact hp.dKg
-  have dgs : (⟨stackArg s 1, (s.gpr .rcx).toNat⟩ : Region).Disjoint (scrR s) := by rw [← hsig]; exact hp.dgs
-  have wG : (stackArg s 1).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 := by rw [← hsig]; exact hp.wG
-  refine ⟨by omega_arith, rfl, rfl, hp.dKn.sub_left sM, hp.dKe.sub_left sM, dKg.sub_left sM, hp.dKs.sub_left sM, dMA,
-    hp.dns, hp.des, dgs, (hp.dKs.sub_left sA).symm, dRM, hp.dKn.sub_left sR, hp.dKe.sub_left sR,
-    dKg.sub_left sR, hp.dKs.sub_left sR, dRA, wM, hp.wN, hp.wE, wG, hp.wS, ⟨hk1, hk2⟩, trivial, trivial, hp.L1,
-    hp.L2, hp.hsl⟩
-
 /-! ## Memory across the call -/
 
 /-- Memory changed by a call from the frame, within regions in the stack
@@ -204,55 +161,5 @@ theorem pub_covers {s t : State} (hp : PreR s) (hsig : stackArg s 2 = s.gpr .rcx
   · exact Covers.of_sub fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; unfold frameBytes; omega_arith⟩
-
-/-- The call of `vg_rsa_public_checked`: `EM₁` holds `s^e mod n`, which it
-returns, or zeros. -/
-theorem pub_call (v : PubImpl) {s t : State} (hp : PreR s) (hsig : stackArg s 2 = s.gpr .rcx) (he : Env s t)
-    (hw0 : word t.mem (fb s) 0 = stackArg s 1) (hw1 : word t.mem (fb s) 8 = s.gpr .rcx)
-    (hw2 : word t.mem (fb s) 16 = stackArg s 3) (hw3 : word t.mem (fb s) 24 = stackArg s 4)
-    (hdi : t.gpr .rdi = off (fb s) oEM1) (hsi : t.gpr .rsi = s.gpr .rcx) (hdx : t.gpr .rdx = s.gpr .rdx)
-    (hcx : t.gpr .rcx = s.gpr .rcx) (h8 : t.gpr .r8 = s.gpr .r8) (h9 : t.gpr .r9 = s.gpr .r9) :
-    WP isa (.call v.name v.code) t fun t' => Env s t' ∧
-      Spec.Rsa.written t'.mem (off (fb s) oEM1) (s.gpr .rcx).toNat ((t'.gpr .rax).setWidth 32)
-        (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
-          (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 1) (s.gpr .rcx).toNat)) ∧
-      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
-  obtain ⟨hc, hw⟩ := pub_covers hp hsig he
-  refine WP.call_mx (k := pubChk) v.ok v.nosp (by rw [v.depth]; decide)
-    (pub_pre hp hsig he.rsp hw0 hw1 hw2 hw3 hdi hsi hdx hcx h8 h9) hc hw ?_
-  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
-  rw [v.depth, he.rsp] at hf
-  have hE : stackArg (t.callEntry.withRegions (pubRd s) (pubWr s)) 0 = stackArg s 1 :=
-    (stackArg_entry he.rsp _ _ (by omega_arith)).trans hw0
-  have hfE : Frame [stkR s, outR s, scrR s] s.mem t.callEntry.mem :=
-    frame_call he.mem (callEntry_frame he.rsp) fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact .inl (below_sub s)
-  have hk2 := hp.k2
-  have b : ∀ {p : Addr} {len : Nat}, (stkR s).Disjoint ⟨p, len⟩ → (outR s).Disjoint ⟨p, len⟩ →
-      (scrR s).Disjoint ⟨p, len⟩ → len ≤ 2 ^ 64 →
-      Spec.Rsa.bytesAt t.callEntry.mem p len = Spec.Rsa.bytesAt s.mem p len := fun hk ho hs hl =>
-    bytes_of_frame hfE hk ho hs hl
-  simp only [pubChk, pubChkPost, State.withRegions_gpr, State.withRegions_mem,
-    State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide),
-    State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
-    State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide),
-    hdi, hdx, hcx, h8, h9, hE, hm₂, hg₂ .rax (by decide)] at hpost
-  rw [b hp.dKn hp.dOn hp.dns.symm (by have := hp.wN; omega_arith), b hp.dKe hp.dOe hp.des.symm (by have := hp.wE; omega_arith),
-    b (by rw [← hsig]; exact hp.dKg) (by rw [← hsig]; exact hp.dOg) (by rw [← hsig]; exact hp.dgs.symm)
-      (by omega_arith)] at hpost
-  refine ⟨⟨(hcs .rsp (by decide)).trans he.rsp, hrd.trans he.rd, hwr.trans he.wr,
-    frame_call he.mem hf fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, hpost, hcs, hmx⟩
-  · simp only [pubWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact .inl (frame_sub s (by unfold oEM1 frameBytes; omega_arith))
-    · exact .inr (.inr (sub_refl _))
-    · exact .inl (below_sub s)
-  · rw [slot_keep hf (slot_apart hp (by decide) (by decide))]; exact he.sOut
-  · rw [slot_keep hf (slot_apart hp (by decide) (by decide))]; exact he.sOl
-  · rw [slot_keep hf (slot_apart hp (by decide) (by decide))]; exact he.sN
-  · rw [slot_keep hf (slot_apart hp (by decide) (by decide))]; exact he.sK
-  · rw [slot_keep hf (slot_apart hp (by decide) (by decide))]; exact he.sE
-  · rw [slot_keep hf (slot_apart hp (by decide) (by decide))]; exact he.sEl
 
 end VG.Proof.RsaPkcs1Sig.X86_64.Rec

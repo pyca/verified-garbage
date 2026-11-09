@@ -21,9 +21,11 @@ import VerifiedGarbage.Impl.RsaKeyGen.X86.Mod64Array
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayContext
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayLoadTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayStep
-import VerifiedGarbage.Impl.RsaKeyGen.X86.Gcd64Check
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Impl.RsaKeyGen.X86.Gcd64
+import VerifiedGarbage.Impl.RsaKeyGen.X86.Gcd64Result
+import VerifiedGarbage.Impl.RsaKeyGen.X86.Gcd64Setup
 /-! # The general public exponent at a run-time width: the remainder, the gcd and the restored candidate -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/Mod64Timing.lean`, which only this module imported.
@@ -172,11 +174,6 @@ theorem setup_trace (offset : Nat) :
 
 theorem result_trace : RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (.block result)
     (VG.X86.Taint.Agree (workspaceTaint false)) := checkedBlockInvariant rfl rfl
-
-theorem check_trace (offset : Nat) :
-    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (check offset)
-      (VG.X86.Taint.Agree (workspaceTaint false)) :=
-  RelCT.seq (setup_trace offset) (RelCT.seq code_trace result_trace)
 
 end VG.Proof.RsaKeyGen.X86.Gcd64
 end

@@ -127,14 +127,14 @@ theorem gPart_noSp (g : Geo) : NoSp g.gPart := by
 
 theorem attempt_noSp (hq : NoSp g.qCode) (hp : NoSp g.pCode) (hk : NoSp g.checkCode) : NoSp g.attempt := by
   apply NoSp.of_all
-  simp only [Geo.attempt, seqs, Code.allInstrs, checked (qPart_noSp hc hout hq), checked (pPart_noSp hc hout hp),
-    checked (gPart_noSp g), checked (check_call_noSp _ _ _ _ hk)]
+  simp only [Geo.attempt, Geo.gWindow, Geo.gShort, seqs, Code.allInstrs, checked (qPart_noSp hc hout hq),
+    checked (pPart_noSp hc hout hp), checked (gPart_noSp g), checked (check_call_noSp _ _ _ _ hk)]
   rfl
 
 theorem generate_noSp (hq : NoSp g.qCode) (hp : NoSp g.pCode) (hk : NoSp g.checkCode) : NoSp g.generate := by
   apply NoSp.of_all
-  simp only [Geo.generate, Geo.search, Geo.finish, seqs, Code.allInstrs,
-    checked (attempt_noSp hc hout hq hp hk)]
+  simp only [Geo.generate, Geo.search, Geo.finish, Geo.outPart, Geo.ranOut, Geo.accepted, Geo.exhausted,
+    Geo.results, seqs, Code.allInstrs, checked (attempt_noSp hc hout hq hp hk)]
   rfl
 
 end Geo

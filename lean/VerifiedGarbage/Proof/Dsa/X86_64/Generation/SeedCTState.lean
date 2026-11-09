@@ -100,7 +100,7 @@ def SubgroupSized (n len : Nat) (p : SubgroupPublic) (s : State) : Prop :=
 def SubgroupCall (len : Nat) (p : SubgroupPublic) (s : State) : Prop :=
   PrimeTestBefore (8 * p.plan.prime.len) p.primeCall s ∧ p.plan.prime.len = len
 
-theorem subgroupCandidate_ct (H : GenerationHashes) (n : Nat) (hn : n = 2 ∨ n = 3) (len : Nat) :
+theorem subgroupCandidate_ct (H : GenerationHashes) (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (len : Nat) :
     RelCT isa (Two (SubgroupSized n len)) (qCandidate H.sha1 H.sha256 len) (Two (SubgroupCall len)) := by
   refine two_post (two_map SubgroupPublic.hash (fun _ _ h => subgroup_hash h.1)
     (qCandidate_ct H n hn len)) ?_
@@ -109,7 +109,7 @@ theorem subgroupCandidate_ct (H : GenerationHashes) (n : Nat) (hn : n = 2 ∨ n 
   exact WP.mono (subgroup_candidate_ready H h) fun _ ht => ⟨ht, rfl⟩
 
 theorem subgroup_ct (H : GenerationHashes) (T : PrimeTest)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (len : Nat) (hlen : len = 20 ∨ len = 32) :
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (len : Nat) (hlen : len = 20 ∨ len = 32) :
     RelCT isa (Two (SubgroupSized n len)) (subgroup H.sha1 H.sha256 T.run len)
       (fun _ _ => True) := by
   unfold subgroup

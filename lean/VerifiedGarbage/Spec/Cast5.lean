@@ -30,6 +30,10 @@ them.
 
 namespace VG.Spec.Cast5
 
+-- How this file proves its literal indices in bounds (`x[0xD]`), and nothing
+-- else: by `decide`, before core's rules, which rewrite and run `omega`.
+local macro_rules | `(tactic| get_elem_tactic_extensible) => `(tactic| decide)
+
 abbrev Word := BitVec 32
 abbrev Block := Vector Byte 8
 /-- The subkeys `K1 … K32` of §2.4, at indices 0–31: the masking subkey
@@ -349,8 +353,6 @@ def S8 (b : Byte) : Word := s8[b.toFin]
 /-- The valid key lengths in bytes (§2.5). -/
 def validKey (n : Nat) : Prop := 5 ≤ n ∧ n ≤ 16
 
-instance (n : Nat) : Decidable (validKey n) := inferInstanceAs (Decidable (5 ≤ n ∧ n ≤ 16))
-
 /-- §2.5 (1) and (2): 12 rounds for keys of up to 80 bits, 16 for longer
 keys. -/
 def rounds (keyLen : Nat) : Nat := if keyLen ≤ 10 then 12 else 16
@@ -505,5 +507,13 @@ def scheduleAt (m : Mem) (p : Addr) : Schedule :=
   Vector.ofFn fun i =>
     m (p + BitVec.ofNat 64 (4 * i.val + 3)) ++ m (p + BitVec.ofNat 64 (4 * i.val + 2)) ++
       m (p + BitVec.ofNat 64 (4 * i.val + 1)) ++ m (p + BitVec.ofNat 64 (4 * i.val))
+
+/-- The subkeys at `schedule` are those of the key `key`, of 5 to 16 bytes
+(`expandKey`, as `vg_cast5_expand_key` writes them), and `n` is the number
+of rounds for a key of its length (§2.5, `rounds`). The contracts of the
+functions that read subkeys are stated for every key whose subkeys are in
+memory this way, with the cipher of that key. -/
+def KeySchedule (mem : Mem) (schedule : Addr) (n : Nat) (key : List Byte) : Prop :=
+  validKey key.length ∧ n = rounds key.length ∧ scheduleAt mem schedule = expandKey key
 
 end VG.Spec.Cast5

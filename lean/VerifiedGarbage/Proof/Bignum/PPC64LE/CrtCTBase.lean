@@ -86,21 +86,6 @@ theorem pins_L1 : Pins L1 [.r11, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10] := by
 /-- After the front. -/
 def LF (d : List (BitVec 64) × List (BitVec 64) × List Byte) (s : State) : Prop := ∃ s₀, C0 d s₀ ∧ Front s₀ s
 
-theorem pins_LF : Pins LF [.r10, .r11, .r21, .r23, .r27, .r28, .r29] := by
-  rintro d s₁ s₂ ⟨s₀, h₀, F⟩ ⟨s₀', h₀', F'⟩ r hr
-  have E := two_data h₀ h₀'
-  have eS : cS s₀ = cS s₀' := E.sa 8 (by decide)
-  have eX : cwX s₀ = cwX s₀' := by simp only [cwX, ck, E.r6]
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · rw [F.r10, F'.r10, eS, eX]
-  · rw [F.r11, F'.r11, eX]
-  · rw [F.r21, F'.r21, eS, eX]
-  · rw [F.r23, F'.r23, eS]
-  · rw [F.r27, F'.r27, eS, eX]
-  · rw [F.r28, F'.r28, eX]
-  · rw [F.r29, F'.r29, eX]
-
 theorem loadS_L1 {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s : State} (h : C0 d s) :
     WP isa (.block [.addSp .r11 160, .load .d .r11 .r11 0]) s (L1 d) := by
   have hp := h.1

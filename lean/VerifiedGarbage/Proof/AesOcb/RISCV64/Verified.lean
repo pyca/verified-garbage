@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesOcb.Rounds
 public import VerifiedGarbage.Proof.AesOcb.RISCV64.Contract
 public import VerifiedGarbage.Proof.AesOcb.Scratch
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -64,19 +65,19 @@ theorem seal_verified :
     Verified RISCV64.target «seal» (Proof.AesOcb.sealScratchContract RISCV64.abi) :=
   Verified.of_correct seal_correct seal_ct
     { pre := by sig_implies_pre [Proof.AesOcb.sealScratchContract, Proof.AesOcb.sealScratchSig, Spec.Ocb.sealPre,
-      Spec.Ocb.sealPost, sealRISCV64, sealPreA, oneFacts, aCtx, aNonce, aAad, aData, aTag, aWork, onePub, args,
+      Proof.AesOcb.sealRoundsPost, sealRISCV64, sealPreA, oneFacts, aCtx, aNonce, aAad, aData, aTag, aWork, onePub, args,
       rounds, RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range,
       List.range.loop, BitVec.add_zero]
       post := by sig_implies_post [Proof.AesOcb.sealScratchContract, Proof.AesOcb.sealScratchSig, Spec.Ocb.sealPre,
-      Spec.Ocb.sealPost, sealRISCV64, sealPreA, oneFacts, aCtx, aNonce, aAad, aData, aTag, aWork, onePub, args,
+      Proof.AesOcb.sealRoundsPost, sealRISCV64, sealPreA, oneFacts, aCtx, aNonce, aAad, aData, aTag, aWork, onePub, args,
       rounds, RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range,
       List.range.loop]
       pub := by sig_implies_pub [Proof.AesOcb.sealScratchContract, Proof.AesOcb.sealScratchSig, Spec.Ocb.sealPre,
-      Spec.Ocb.sealPost, sealRISCV64, sealPreA, oneFacts, aCtx, aNonce, aAad, aData, aTag, aWork, onePub, args,
+      Proof.AesOcb.sealRoundsPost, sealRISCV64, sealPreA, oneFacts, aCtx, aNonce, aAad, aData, aTag, aWork, onePub, args,
       rounds, RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range,
       List.range.loop]
       sat := by sig_implies_sat [Proof.AesOcb.sealScratchContract, Proof.AesOcb.sealScratchSig, Spec.Ocb.sealPre,
-      Spec.Ocb.sealPost, sealRISCV64, sealPreA, oneFacts, aCtx, aNonce, aAad, aData, aTag, aWork, onePub, args,
+      Proof.AesOcb.sealRoundsPost, sealRISCV64, sealPreA, oneFacts, aCtx, aNonce, aAad, aData, aTag, aWork, onePub, args,
       rounds, RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range,
       List.range.loop] [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat }
 
@@ -86,26 +87,26 @@ theorem open_verified :
     Verified RISCV64.target «open» (Proof.AesOcb.openScratchContract RISCV64.abi) :=
   Verified.of_correct open_correct open_ct
     { pre := by sig_implies_pre [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-        Spec.Ocb.openPost, Spec.Ocb.openLeak, openRISCV64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+        Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openRISCV64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
         aTag, aWork, onePub, openOut, args, rounds, RISCV64.abi, RISCV64.argRegs, stackArg,
         stackArgAddr, List.getD, List.range, List.range.loop, BitVec.add_zero]
       post := by sig_implies_post [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-        Spec.Ocb.openPost, Spec.Ocb.openLeak, openRISCV64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+        Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openRISCV64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
         aTag, aWork, onePub, openOut, args, rounds, RISCV64.abi, RISCV64.argRegs, stackArg,
         stackArgAddr, List.getD, List.range, List.range.loop]
       pub := by
         intro s₁ s₂ _ _ h
         sig_pub [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-          Spec.Ocb.openPost, Spec.Ocb.openLeak, openRISCV64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openRISCV64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
           aTag, aWork, onePub, openOut, args, rounds, RISCV64.abi, RISCV64.argRegs, stackArg,
           stackArgAddr, List.getD, List.range, List.range.loop] at h
         sig_split h
         sig_reduce [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-          Spec.Ocb.openPost, Spec.Ocb.openLeak, openRISCV64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openRISCV64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
           aTag, aWork, onePub, openOut, args, rounds, RISCV64.abi, RISCV64.argRegs, stackArg,
           stackArgAddr, List.getD, List.range, List.range.loop]
         sig_simp [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-          Spec.Ocb.openPost, Spec.Ocb.openLeak, openRISCV64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openRISCV64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
           aTag, aWork, onePub, openOut, args, rounds, RISCV64.abi, RISCV64.argRegs, stackArg,
           stackArgAddr, List.getD, List.range, List.range.loop]
           [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const, true_and]
@@ -113,7 +114,7 @@ theorem open_verified :
         sig_close
         all_goals with_reducible assumption
       sat := by sig_implies_sat [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-        Spec.Ocb.openPost, Spec.Ocb.openLeak, openRISCV64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+        Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openRISCV64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
         aTag, aWork, onePub, openOut, args, rounds, RISCV64.abi, RISCV64.argRegs, stackArg,
         stackArgAddr, List.getD, List.range, List.range.loop] [openSat, sealSat, stackArg, stackArgAddr, Mem.readW,
         Mem.read] using openSat }
@@ -136,16 +137,16 @@ def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x3000, 0⟩, ⟨0x9000, 16⟩],
                  wr := [⟨0x4000, 0⟩, ⟨0x5000, 4⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.Ocb.sealContract RISCV64.abi 2592).pre s := by
-  implies_sat [Spec.Ocb.sealContract, Spec.Ocb.sealSig, Spec.Ocb.sealPre, Spec.Ocb.sealPost, RISCV64.abi,
+theorem sealFrameSat_pre : ∃ s, (Proof.AesOcb.sealRoundsContract RISCV64.abi 2592).pre s := by
+  implies_sat [Proof.AesOcb.sealRoundsContract, Spec.Ocb.sealSig, Spec.Ocb.sealPre, Proof.AesOcb.sealRoundsPost, RISCV64.abi,
     RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
     [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealFrameSat
 
 theorem seal_framed :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 «seal»)
-      (Spec.Ocb.sealContract RISCV64.abi 2592) :=
+      (Proof.AesOcb.sealRoundsContract RISCV64.abi 2592) :=
   RISCV64.Verified.stackScratchArgs (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64) (n := 320)
-    (pre := Spec.Ocb.sealPre RISCV64.abi.ptrBits) (post := Spec.Ocb.sealPost RISCV64.abi.ptrBits)
+    (pre := Spec.Ocb.sealPre RISCV64.abi.ptrBits) (post := Proof.AesOcb.sealRoundsPost RISCV64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2592) (m := 2) seal_verified (by decide) (by decide)
     (Proof.AesOcb.sealPre_local _) (Proof.AesOcb.sealPost_local _) sealFrameSat_pre
 
@@ -155,16 +156,16 @@ def openFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x3000, 0⟩, ⟨0x5000, 4⟩, ⟨0x9000, 16⟩],
                  wr := [⟨0x4000, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.Ocb.openContract RISCV64.abi 2592).pre s := by
-  implies_sat [Spec.Ocb.openContract, Spec.Ocb.openSig, Spec.Ocb.openPre, Spec.Ocb.openPost, Spec.Ocb.openLeak,
+theorem openFrameSat_pre : ∃ s, (Proof.AesOcb.openRoundsContract RISCV64.abi 2592).pre s := by
+  implies_sat [Proof.AesOcb.openRoundsContract, Spec.Ocb.openSig, Spec.Ocb.openPre, Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak,
     RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
     [openFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openFrameSat
 
 theorem open_framed :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 «open»)
-      (Spec.Ocb.openContract RISCV64.abi 2592) :=
+      (Proof.AesOcb.openRoundsContract RISCV64.abi 2592) :=
   RISCV64.Verified.stackScratchArgs (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64) (n := 320)
-    (pre := Spec.Ocb.openPre RISCV64.abi.ptrBits) (post := Spec.Ocb.openPost RISCV64.abi.ptrBits)
+    (pre := Spec.Ocb.openPre RISCV64.abi.ptrBits) (post := Proof.AesOcb.openRoundsPost RISCV64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2592) (m := 2) (leak := some (Spec.Ocb.openLeak RISCV64.abi.ptrBits))
     open_verified (by decide) (by decide) (Proof.AesOcb.openPre_local _) (Proof.AesOcb.openPost_local _)
     openFrameSat_pre (hleak := Proof.AesOcb.openLeak_local _)

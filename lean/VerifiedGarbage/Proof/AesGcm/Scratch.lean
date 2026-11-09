@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Spec.Gcm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -74,22 +75,22 @@ def streamCryptScratchSig : Sig where
     ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
     ("data", .slice true .u8 "len"), ("scratch", .array true .u64 320)]
 
-/-- `streamEncryptContract`, whatever `scratch` is. -/
+/-- `streamEncryptRoundsContract`, whatever `scratch` is. -/
 def streamEncryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamCryptScratchSig.contract A
     (pre := fun ctx rounds state aadLen textLen data len _scratch =>
       streamTextPre A.ptrBits ctx rounds state aadLen textLen data len)
     (post := fun ctx rounds state aadLen textLen data len _scratch =>
-      streamEncryptPost A.ptrBits ctx rounds state aadLen textLen data len)
+      streamEncryptRoundsPost A.ptrBits ctx rounds state aadLen textLen data len)
     (writeArgs := true) (stack := stack)
 
-/-- `streamDecryptContract`, whatever `scratch` is. -/
+/-- `streamDecryptRoundsContract`, whatever `scratch` is. -/
 def streamDecryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamCryptScratchSig.contract A
     (pre := fun ctx rounds state aadLen textLen data len _scratch =>
       streamTextPre A.ptrBits ctx rounds state aadLen textLen data len)
     (post := fun ctx rounds state aadLen textLen data len _scratch =>
-      streamDecryptPost A.ptrBits ctx rounds state aadLen textLen data len)
+      streamDecryptRoundsPost A.ptrBits ctx rounds state aadLen textLen data len)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_stream_finish` with `work: *mut [u64; 320]`. -/
@@ -98,13 +99,13 @@ def streamFinishScratchSig : Sig where
     ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
     ("tag", .array true .u8 16), ("work", .array true .u64 320)]
 
-/-- `streamFinishContract`, whatever `work` is. -/
+/-- `streamFinishRoundsContract`, whatever `work` is. -/
 def streamFinishScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamFinishScratchSig.contract A
     (pre := fun ctx rounds state aadLen textLen tag _work =>
       streamFinishPre A.ptrBits ctx rounds state aadLen textLen tag)
     (post := fun ctx rounds state aadLen textLen tag _work =>
-      streamFinishPost A.ptrBits ctx rounds state aadLen textLen tag)
+      streamFinishRoundsPost A.ptrBits ctx rounds state aadLen textLen tag)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_stream_verify` with `work: *mut [u64; 320]`. -/
@@ -114,13 +115,13 @@ def streamVerifyScratchSig : Sig where
     ("tag", .slice false .u8 "tag_len"), ("work", .array true .u64 320)]
   ret := some .u32
 
-/-- `streamVerifyContract`, whatever `work` is. -/
+/-- `streamVerifyRoundsContract`, whatever `work` is. -/
 def streamVerifyScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamVerifyScratchSig.contract A
     (pre := fun ctx rounds state aadLen textLen tag tagLen _work =>
       streamVerifyPre A.ptrBits ctx rounds state aadLen textLen tag tagLen)
     (post := fun ctx rounds state aadLen textLen tag tagLen _work =>
-      streamVerifyPost A.ptrBits ctx rounds state aadLen textLen tag tagLen)
+      streamVerifyRoundsPost A.ptrBits ctx rounds state aadLen textLen tag tagLen)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_seal` with `work: *mut [u64; 320]`. -/
@@ -129,13 +130,13 @@ def sealScratchSig : Sig where
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("data", .slice true .u8 "len"), ("tag", .array true .u8 16), ("work", .array true .u64 320)]
 
-/-- `sealContract`, whatever `work` is. -/
+/-- `sealRoundsContract`, whatever `work` is. -/
 def sealScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealScratchSig.contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag _work =>
       sealPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag _work =>
-      sealPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
+      sealRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_open` with `work: *mut [u64; 320]`. -/
@@ -146,13 +147,13 @@ def openScratchSig : Sig where
     ("work", .array true .u64 320)]
   ret := some .u32
 
-/-- `openContract`, whatever `work` is. -/
+/-- `openRoundsContract`, whatever `work` is. -/
 def openScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   openScratchSig.contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
-      openPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+      openRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (writeArgs := true) (stack := stack)
     (leak := some fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openLeak A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
@@ -343,8 +344,8 @@ theorem streamTextPre_local : ∀ vs m₁ m₂, vs.length = (streamCryptSig.word
 
 theorem streamEncryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamCryptSig.words pb).length →
     (∀ b ∈ Sig.bufs streamCryptSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (streamCryptSig.words pb) (streamEncryptPost pb) vs m₁ m' r →
-      Curry.apply (streamCryptSig.words pb) (streamEncryptPost pb) vs m₂ m' r := by
+    Curry.apply (streamCryptSig.words pb) (streamEncryptRoundsPost pb) vs m₁ m' r →
+      Curry.apply (streamCryptSig.words pb) (streamEncryptRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
   replace hlen := Nat.succ.inj hlen
@@ -366,10 +367,10 @@ theorem streamEncryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamCryp
   have hs := agree_of hb.2.1
   have hd := agree_of hb.2.2
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-    ArgWord.addr, ArgWord.int pb] (streamEncryptPost pb) _ m₁ m' r at h
+    ArgWord.addr, ArgWord.int pb] (streamEncryptRoundsPost pb) _ m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-    ArgWord.addr, ArgWord.int pb] (streamEncryptPost pb) _ m₂ m' r
-  dsimp only [Curry.apply, streamEncryptPost, ArgWord.ofRaw] at h ⊢
+    ArgWord.addr, ArgWord.int pb] (streamEncryptRoundsPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, streamEncryptRoundsPost, ArgWord.ofRaw] at h ⊢
   intro hn iv a p hr hl ht
   have := Nat.mod_le len.toNat (2 ^ pb)
   have hn' := le15 hn
@@ -381,8 +382,8 @@ theorem streamEncryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamCryp
 
 theorem streamDecryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamCryptSig.words pb).length →
     (∀ b ∈ Sig.bufs streamCryptSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (streamCryptSig.words pb) (streamDecryptPost pb) vs m₁ m' r →
-      Curry.apply (streamCryptSig.words pb) (streamDecryptPost pb) vs m₂ m' r := by
+    Curry.apply (streamCryptSig.words pb) (streamDecryptRoundsPost pb) vs m₁ m' r →
+      Curry.apply (streamCryptSig.words pb) (streamDecryptRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
   replace hlen := Nat.succ.inj hlen
@@ -404,10 +405,10 @@ theorem streamDecryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamCryp
   have hs := agree_of hb.2.1
   have hd := agree_of hb.2.2
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-    ArgWord.addr, ArgWord.int pb] (streamDecryptPost pb) _ m₁ m' r at h
+    ArgWord.addr, ArgWord.int pb] (streamDecryptRoundsPost pb) _ m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-    ArgWord.addr, ArgWord.int pb] (streamDecryptPost pb) _ m₂ m' r
-  dsimp only [Curry.apply, streamDecryptPost, ArgWord.ofRaw] at h ⊢
+    ArgWord.addr, ArgWord.int pb] (streamDecryptRoundsPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, streamDecryptRoundsPost, ArgWord.ofRaw] at h ⊢
   intro hn iv a c hr hl ht
   have := Nat.mod_le len.toNat (2 ^ pb)
   have hn' := le15 hn
@@ -432,8 +433,8 @@ theorem streamFinishPre_local : ∀ vs m₁ m₂, vs.length = (streamFinishSig.w
 
 theorem streamFinishPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamFinishSig.words pb).length →
     (∀ b ∈ Sig.bufs streamFinishSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (streamFinishSig.words pb) (streamFinishPost pb) vs m₁ m' r →
-      Curry.apply (streamFinishSig.words pb) (streamFinishPost pb) vs m₂ m' r := by
+    Curry.apply (streamFinishSig.words pb) (streamFinishRoundsPost pb) vs m₁ m' r →
+      Curry.apply (streamFinishSig.words pb) (streamFinishRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 5) hlen
   replace hlen := Nat.succ.inj hlen
@@ -450,10 +451,10 @@ theorem streamFinishPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamFinis
   have hc := agree_of hb.1
   have hs := agree_of hb.2.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-    ArgWord.addr] (streamFinishPost pb) _ m₁ m' r at h
+    ArgWord.addr] (streamFinishRoundsPost pb) _ m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-    ArgWord.addr] (streamFinishPost pb) _ m₂ m' r
-  dsimp only [Curry.apply, streamFinishPost, ArgWord.ofRaw] at h ⊢
+    ArgWord.addr] (streamFinishRoundsPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, streamFinishRoundsPost, ArgWord.ofRaw] at h ⊢
   intro hn iv a c hr hl ht
   have hn' := le15 hn
   rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)]
@@ -475,8 +476,8 @@ theorem streamVerifyPre_local : ∀ vs m₁ m₂, vs.length = (streamVerifySig.w
 
 theorem streamVerifyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamVerifySig.words pb).length →
     (∀ b ∈ Sig.bufs streamVerifySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (streamVerifySig.words pb) (streamVerifyPost pb) vs m₁ m' r →
-      Curry.apply (streamVerifySig.words pb) (streamVerifyPost pb) vs m₂ m' r := by
+    Curry.apply (streamVerifySig.words pb) (streamVerifyRoundsPost pb) vs m₁ m' r →
+      Curry.apply (streamVerifySig.words pb) (streamVerifyRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
   replace hlen := Nat.succ.inj hlen
@@ -498,10 +499,10 @@ theorem streamVerifyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamVerif
   have hs := agree_of hb.2.1
   have ht := agree_of hb.2.2
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-    ArgWord.addr, ArgWord.int pb] (streamVerifyPost pb) _ m₁ m' r at h
+    ArgWord.addr, ArgWord.int pb] (streamVerifyRoundsPost pb) _ m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-    ArgWord.addr, ArgWord.int pb] (streamVerifyPost pb) _ m₂ m' r
-  dsimp only [Curry.apply, streamVerifyPost, ArgWord.ofRaw] at h ⊢
+    ArgWord.addr, ArgWord.int pb] (streamVerifyRoundsPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, streamVerifyRoundsPost, ArgWord.ofRaw] at h ⊢
   intro hn iv a c hr hl hc'
   have hn' := le15 hn
   have := Nat.mod_le tl.toNat (2 ^ pb)
@@ -528,8 +529,8 @@ theorem sealPre_local : ∀ vs m₁ m₂, vs.length = (sealSig.words pb).length 
 
 theorem sealPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealSig.words pb).length →
     (∀ b ∈ Sig.bufs sealSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (sealSig.words pb) (sealPost pb) vs m₁ m' r →
-      Curry.apply (sealSig.words pb) (sealPost pb) vs m₂ m' r := by
+    Curry.apply (sealSig.words pb) (sealRoundsPost pb) vs m₁ m' r →
+      Curry.apply (sealSig.words pb) (sealRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 8) hlen
   replace hlen := Nat.succ.inj hlen
@@ -557,10 +558,10 @@ theorem sealPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealSig.words pb).l
   have ha := agree_of hb.2.2.1
   have hd := agree_of hb.2.2.2.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealPost pb) _ m₁ m' r at h
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealRoundsPost pb) _ m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealPost pb) _ m₂ m' r
-  dsimp only [Curry.apply, sealPost, ArgWord.ofRaw] at h ⊢
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealRoundsPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, sealRoundsPost, ArgWord.ofRaw] at h ⊢
   intro hr
   have hr' := le15 hr
   have := Nat.mod_le nl.toNat (2 ^ pb)
@@ -619,8 +620,8 @@ theorem openResult_local {pb : Nat} {m₁ m₂ : Mem}
 
 theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).length →
     (∀ b ∈ Sig.bufs openSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (openSig.words pb) (openPost pb) vs m₁ m' r →
-      Curry.apply (openSig.words pb) (openPost pb) vs m₂ m' r := by
+    Curry.apply (openSig.words pb) (openRoundsPost pb) vs m₁ m' r →
+      Curry.apply (openSig.words pb) (openRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
   replace hlen := Nat.succ.inj hlen
@@ -651,12 +652,12 @@ theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).l
   have hD := agree_of hb.2.2.2.1
   have hT := agree_of hb.2.2.2.2
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openPost pb) _
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openRoundsPost pb) _
     m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openPost pb) _
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openRoundsPost pb) _
     m₂ m' r
-  dsimp only [Curry.apply, openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  dsimp only [Curry.apply, openRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   intro hr
   have := Nat.mod_le len.toNat (2 ^ pb)
   rw [openResult_local (pb := pb) (le15 hr) hc hN hA hD hT,

@@ -18,23 +18,28 @@ VerifiedGarbage/
     Print.lean      lowering of structured control flow to labels and branches, of
                     calls to call instructions, and of frames to push and pop
     Sig.lean        Rust signatures and calling conventions (`Abi`)
-    Artifact.lean   Target, Contract, `Verified`, `Artifact`: what "verified" means;
+    Artifact.lean   Target, Contract, `Verified`: what "verified" means;
                     `Sig.contract`: the contract obligations a signature implies
-    Registration.lean  `Api.artifact`: an `Artifact` made from an `Api` and only
-                    what its implementation chooses (`Registration`)
+                    (no printer: every proof imports it)
+    Registration.lean  `Artifact`, emitted for an `EmitTarget` (a target with its
+                    ISA's printer and Rust `cfg`, `Emitter`); `Api.artifact`: an `Artifact`
+                    made from an `Api` and only what its implementation chooses
+                    (`Registration`)
     Rust.lean       rendering artifacts as Rust naked functions; checks that every
                     call is of the function whose code the model runs for it (an
                     artifact, or an internal function the emitter writes from that
                     code), and that each artifact declares the CPU features its
-                    code needs
+                    code needs; and each function's dispatcher (`<name>_auto`),
+                    which calls the best of its implementations the CPU supports,
+                    and each table of functions' (`<table>_auto()`), which
+                    returns the best of its tables
     Axioms.lean     `#assert_standard_axioms`
     Audit.lean      `#assert_no_compiler_overrides` (the compiled code the emitter
                     runs is what the kernel checked) and `#assert_spec_origin`
                     (`VG.Spec` definitions are declared in `Spec/`)
     Emit.lean       what is emitted (every registration file under
-                    `Artifacts/`, and every generic function under `Generic/`
-                    for every variant of its interface under `Variants/`), and
-                    writing or checking the generated crates
+                    `Artifacts/`, each function's implementations from one of
+                    them), and writing or checking the generated crates
     X86_64/         ISA model, printer, System V ABI target
     PPC64LE/        ISA model, printer, ELFv2 ABI target (64-bit little-endian PowerPC)
     RISCV64/        ISA model, printer, psABI target (64-bit RISC-V, RV64IM)
@@ -46,14 +51,9 @@ VerifiedGarbage/
                     constant time by evaluation
   Artifacts/      The registry: one registration file per algorithm and target,
                   each listing the artifacts it emits
-  Variants/       Implementations of an interface that generic callers call: one
-                  file per implementation, `Variants/<Iface>/<Target>/<Name>.lean`
-  Generic/        Callers proven for any variant of an interface, emitted once per
-                  variant: `Generic/<Iface>/<Target>/<Alg>.lean`; callers of several
-                  interfaces, once per combination of their variants:
-                  `Generic/<Iface₁>/<Iface₂>/<Target>/<Alg>.lean`, each instance
-                  named by `Emit.qualifiedName` (a tag and the suffix of each
-                  interface's non-baseline variant: `vg_argon2_blake2b_avx2_g_avx512`)
+                  (a function generic over a callee's implementations is
+                  registered once for each element of their list,
+                  `Proof/Variants/<Iface>/<Target>.lean`)
 VerifiedGarbageTest/  Golden tests for the (unverified) printers and calling conventions
 Emit.lean       Renders every artifact into `../crates/` (see `TCB/Emit.lean`)
 EmitOne.lean    The same, for the registration files named, while iterating
@@ -146,7 +146,17 @@ artifact using them declares those features (`Artifact.features`), the
 emitter checks the declaration is exact, and the generated function's
 `# Safety` section makes their presence the caller's obligation. The Rust
 that calls it checks for them first, using the generated `<NAME>_FEATURES`
-constant.
+constant, or calls the function's generated dispatcher, `<name>_auto`
+(`dispatch/<module>.rs` of its crate, `Rust.dispatcher`), which checks them itself, among
+the features the compilation target enables (`verified_garbage_cpu::target_contains`,
+in a `const` block) and those `verified_garbage_cpu::detected()` reports
+(`crates/verified-garbage-cpu/`), and needs none: it calls an implementation
+only on a CPU with that implementation's features, in the order its
+registration file lists them, and otherwise the baseline. Where the
+compilation target enables an implementation's features (`-C
+target-cpu=x86-64-v3`), the compiler sees that it chooses that one, and the
+implementations after it are not linked. The order is not trusted: every
+implementation it may choose is proven against the same contract.
 
 ## What you need to trust
 
@@ -157,6 +167,11 @@ constant.
   refers to), its `sig` and `doc` (its `Api` in `Spec/`), and
   `TCB/Emit.lean`, which decides what is emitted. Not the internal functions
   it calls, which have no contract: its proof covers their code.
+* The detection of CPU features (`crates/verified-garbage-cpu/src/detect.rs`):
+  the dispatchers, and the Rust that checks a `<NAME>_FEATURES` constant
+  itself, call code needing a feature only where it reports the CPU and
+  operating system support it, or where the compilation target enables it
+  (`COMPILED`, which the dispatchers ask with `target_contains`).
 * Lean's kernel, and the assembler in `rustc`/LLVM for what is printed as
   text: ARM's code, and the branches, calls, addresses of statics and
   directives of the others.
@@ -326,7 +341,8 @@ resolved source references and implicit core imports.
 
 ## Restoring the CI build cache
 
-After CI passes on `main`, it publishes the Linux x86-64 project build and
+Once CI has checked the Lean build of a push to `main` (without waiting for
+its Rust jobs), it publishes the Linux x86-64 project build and
 Mathlib dependencies to `ghcr.io/pyca/vg-lean-cache:latest`, an OCI artifact
 whose one layer is `lean-cache.tar.zst`: `.lake/build` and `.lake/packages`
 relative to `lean/`, with each module's outputs in one `.ltar` archive, the

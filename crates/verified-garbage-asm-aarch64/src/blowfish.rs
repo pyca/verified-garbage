@@ -15,7 +15,7 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blowfish_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 4168]) {
+pub(crate) unsafe extern "C" fn vg_blowfish_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 4168]) {
     core::arch::naked_asm!(
         r".inst 0xd2800806,0x4e010cc2,0xd2801006,0x4e010cc3",
         concat!("adrp x9, ", vg_sym_page!("{VG_BLOWFISH_INIT}")),
@@ -194,7 +194,7 @@ cbnz x15, 210b
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blowfish_ecb_encrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_blowfish_ecb_encrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10403ff,0x910003e3,0x3d802068,0x3d802469,0x3d80286a,0x3d802c6b,0x3d80306c,0x3d80346d
 .inst 0x3d80386e,0x3d803c6f,0xd2800806,0x4e010cc2,0xd2801006,0x4e010cc3,0xd344fc48
@@ -456,7 +456,7 @@ b 25f
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blowfish_ecb_decrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_blowfish_ecb_decrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10403ff,0x910003e3,0x3d802068,0x3d802469,0x3d80286a,0x3d802c6b,0x3d80306c,0x3d80346d
 .inst 0x3d80386e,0x3d803c6f,0xd2800806,0x4e010cc2,0xd2801006,0x4e010cc3,0xd344fc48

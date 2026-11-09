@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecAcc
 public import VerifiedGarbage.Proof.RsaPss.VerifyCases
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.RsaOaep.Arm.DecAcc
 meta import VerifiedGarbage.Proof.RsaPss.VerifyCases
 meta import Init.Data.Nat.Bitwise.Basic
-meta import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+meta import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd

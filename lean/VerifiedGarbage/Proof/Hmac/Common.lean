@@ -153,25 +153,6 @@ theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) (xs : List Byte) (hl : xs.l
   simp only [bytesAt, List.getElem_map, List.getElem_range]
   rw [writeBytes_at _ _ _ h₂ hl, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₂, Option.getD_some]
 
-/-- A byte written right after `j` bytes. -/
-theorem bytesAt_snoc (m : Mem) (p : Addr) {j : Nat} (hj : j + 1 < 2 ^ 64) (x : Byte) :
-    bytesAt (m.writeW (p + BitVec.ofNat 64 j) x) p (j + 1) = bytesAt m p j ++ [x] := by
-  rw [bytesAt_add]
-  congr 1
-  · simp only [bytesAt]
-    refine List.map_congr_left fun i hi => ?_
-    have hi := List.mem_range.mp hi
-    simp only [Mem.writeW]
-    refine Mem.write_apply ?_
-    rw [Offset.add_sub_add_left,
-      BitVec.toNat_sub, toNat_ofNat_lt (by omega_nat), toNat_ofNat_lt (by omega_nat)]
-    omega_nat
-  · have e : p + BitVec.ofNat 64 j + BitVec.ofNat 64 0 - (p + BitVec.ofNat 64 j) = 0 := by
-      rw [Offset.add_sub_cancel_left]; rfl
-    simp only [bytesAt, List.range_one, List.map_cons, List.map_nil, Mem.writeW, Mem.write, e,
-]
-    simp
-
 /-! ## Hash values
 
 Those of `Proof/Sha256/StateMem.lean`. -/
@@ -180,32 +161,7 @@ export VG.Proof.Sha256.StateMem (word_sep readW_writeW_word stateAt_eq writeStat
 
 /-! ## Streaming states -/
 
-theorem blockAt_eq {m : Mem} {p : Addr} {xs : List Byte} (h : bytesAt m p 64 = xs) :
-    Spec.Sha256.blockAt m p = Spec.Sha256.parseBlock fun k => xs.getD k 0 :=
-  Proof.Sha256.Stream.parseBlock_congr fun _ hk => by
-    subst h; exact (bytesAt_getD' _ _ hk).symm
-
-/-- A state with `H⁽⁰⁾` and a full buffer `xs`, compressed, represents `xs`. -/
-theorem repr_block {m m' : Mem} {p : Addr} {xs : List Byte} (hst : stateAt m p = H0)
-    (hb : bytesAt m (p + 32) 64 = xs) (hx : xs.length = 64)
-    (hs : stateAt m' p = Spec.Sha256.compress (stateAt m p) (Spec.Sha256.blockAt m (p + 32))) :
-    Repr m' p xs := by
-  have := repr_append_block (mem' := m') (xs := xs) (repr_nil hst) (by simp [hx])
-    (by rw [hs, blockAt_eq hb]; simp)
-  simpa using this
-
 theorem xorPad_length (k : List Byte) (p : Byte) : (xorPad k p).length = k.length := by
   simp [xorPad]
-
-/-- A state holding the outer hash value and a 32-byte digest represents
-`(K₀ ⊕ opad) ‖ digest`. -/
-theorem repr_outer {k0 d : List Byte} (hk : k0.length = 64) (hd : d.length = 32) {m : Mem} {p : Addr}
-    (hst : stateAt m p = Spec.Sha256.compressList Spec.Sha256.H0 (xorPad k0 opad) 1)
-    (hb : bytesAt m (p + 32) 32 = d) : Repr m p (xorPad k0 opad ++ d) := by
-  have hl : (xorPad k0 opad ++ d).length = 96 := by simp [xorPad_length, hk, hd]
-  refine ⟨?_, ?_⟩
-  · rw [hl, show 96 / 64 = 1 from rfl, compressList_append (by rw [xorPad_length, hk]), hst]
-  · rw [hl, show 96 % 64 = 32 from rfl, show 64 * (96 / 64) = 64 from rfl,
-      List.drop_left' (by rw [xorPad_length, hk]), hb]
 
 end VG.Proof.Hmac.Common

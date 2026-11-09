@@ -38,16 +38,4 @@ analyses use for the code they end with. -/
 taint_summary encSum : taintS ecbTaint Impl.TripleDes.X86_64.Bitslice.encrypt
 taint_summary decSum : taintS ecbTaint Impl.TripleDes.X86_64.Bitslice.decrypt
 
-theorem encrypt_constantTime (pre : State → Prop) (pub : State → State → Prop)
-    (hagree : ∀ s t, pre s → pre t → pub s t → X86_64.Taint.Agree ecbTaint s t) :
-    ConstantTime isa pre pub Impl.TripleDes.X86_64.Bitslice.encrypt :=
-  let ⟨_, h⟩ := VG.Taint.exists_check_of_sumOk encSum (by decide +kernel)
-  VG.Taint.constantTime (A := taintS) ecbTaint hagree h
-
-theorem decrypt_constantTime (pre : State → Prop) (pub : State → State → Prop)
-    (hagree : ∀ s t, pre s → pre t → pub s t → X86_64.Taint.Agree ecbTaint s t) :
-    ConstantTime isa pre pub Impl.TripleDes.X86_64.Bitslice.decrypt :=
-  let ⟨_, h⟩ := VG.Taint.exists_check_of_sumOk decSum (by decide +kernel)
-  VG.Taint.constantTime (A := taintS) ecbTaint hagree h
-
 end VG.Proof.TripleDes.X86_64.Bitsliced

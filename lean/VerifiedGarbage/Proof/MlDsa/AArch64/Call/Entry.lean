@@ -12,8 +12,7 @@ What a callee's contract needs on its entry (the state of the call, with the
 link registers changed), from the layout of the caller (`cpre`): the stack it
 may use (`wfP_of`, `resv`), and its buffers apart from that stack and from
 each other, and not wrapping around. The values of the arguments after their
-moves (`Args.ptr`, `Args.imm`), the same in runs whose layout registers
-agree (`SameIn.args`).
+moves (`Args.ptr`, `Args.imm`).
 -/
 
 @[expose] public section
@@ -83,16 +82,6 @@ theorem imm32 {v : Nat} (h : v < 2 ^ 32) : (BitVec.setWidth 32 (BitVec.ofNat 64 
 theorem ptr_ok {p : Ptr} (h : p.1 ∈ keptRegs) : (Arg.ptr p).Ok := by
   show p.1 ∉ argRegs
   revert h; generalize p.1 = r; cases r <;> decide
-
-theorem SameIn.args {B : List Reg} {as : List (Reg × Arg)} {x y x1 y1 : State} (h : SameIn B x y) (h1 : Args as x x1)
-    (h2 : Args as y y1) {r : Reg} {p : Ptr} (hp : p.1 ∈ B) (hm : (r, Arg.ptr p) ∈ as := by simp) :
-    x1.gpr r = y1.gpr r := by
-  rw [h1.ptr hm, h2.ptr hm, h.pa hp]
-
-theorem SameIn.argi {as : List (Reg × Arg)} {x y x1 y1 : State} (h1 : Args as x x1)
-    (h2 : Args as y y1) {r : Reg} {v : Nat} (hm : (r, Arg.imm v) ∈ as := by simp) :
-    x1.gpr r = y1.gpr r := by
-  rw [h1.imm hm, h2.imm hm]
 
 /-- The facts of a callee's precondition that the layout gives: its stack,
 the disjointness of its buffers, and that they do not wrap around. -/

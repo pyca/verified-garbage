@@ -32,8 +32,6 @@ def TblHeld (s : State) (wr : List Region) : Prop :=
 
 theorem p521_combConsts : p521.combConsts = [(p521.tsym, p521.combWords)] := rfl
 
-theorem p521_tsym : p521.tsym = "VG_P521_COMB" := rfl
-
 theorem p521_tbl_len : Impl.P521.p521Comb7.length = 83 :=
   Proof.P521.p521Comb7_length
 

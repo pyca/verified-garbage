@@ -85,10 +85,6 @@ theorem St.pload {j : Nat} {src : CP → BitVec 32} {k : CP → Nat} (cert : LCe
       exact VG.Proof.Rsa.Arm.CrtValues.val32_low2 lt
     exact h.write1 kp hj (by simp) r.sp r.rd r.wr hv (by simp)
 
-theorem St.weaken {E E' : State → Prop} {σ s : State} (h : St P E A L V LS σ s) (he : E σ → E' σ) :
-    St P E' A L V LS σ s :=
-  ⟨he h.1, h.2⟩
-
 end
 
 theorem isa_eq (s : State) : isa.eval .eq s = some s.z := rfl

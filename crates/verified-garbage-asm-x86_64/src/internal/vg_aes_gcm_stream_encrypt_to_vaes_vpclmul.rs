@@ -3,9 +3,6 @@
 //! `assembly/internal/vg_aes_gcm_stream_encrypt_to_vaes_vpclmul.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_aes_gcm_stream_encrypt_to_vaes_vpclmul` requires (`VG.Rust.Internal.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
-
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety
@@ -69,7 +66,7 @@ jmp 214f
 214:
 .base64 "SI2kJLgIAADD"
 .p2align 6"#,
-        vg_aes_gcm_stream_encrypt_vaes_vpclmul = sym crate::gcm::vg_aes_gcm_stream_encrypt_vaes_vpclmul,
+        vg_aes_gcm_stream_encrypt_vaes_vpclmul = sym crate::aes::vg_aes_gcm_stream_encrypt_vaes_vpclmul::vg_aes_gcm_stream_encrypt_vaes_vpclmul,
         vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul = sym crate::aes::vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul,
     )
 }

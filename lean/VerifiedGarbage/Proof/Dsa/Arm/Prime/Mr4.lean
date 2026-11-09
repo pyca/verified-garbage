@@ -130,27 +130,6 @@ theorem St.porTwoM {j : Nat} (cert : Cert (.block (orTwo j))) (hj : j ∈ L) (hM
     rw [v, h.arrs j hj, or_low (b := 2) (by decide), BitVec.toNat_or, BitVec.toNat_ofNat, Nat.mod_mod]
     rfl
 
-/-- `St.phiOp`, keeping `MS`. -/
-theorem St.phiOpM {j c : Nat} {i : CP → Nat} {ops : List Instr} {f : BitVec 32 → BitVec 32} {g : State → Nat}
-    (cert : Cert (.block (ptr .r0 j ++ .dp .add .r0 .r0 (.shifted .r9 .lsl 2) ::
-      .dp .sub .r0 .r0 (.imm (BitVec.ofNat 32 c)) :: .ldr .r1 .r0 0 :: (ops ++ ([.str .r1 .r0 0] : List Instr)))))
-    (hj : j ∈ L) (hM : MOk j) (hc : encodable (BitVec.ofNat 32 c) = true)
-    (hi : ∀ σ, E σ → In P σ → P.W * 4 = 4 * i P + c ∧ i P < P.W)
-    (hops : ∀ u : State, ∀ R : State → Prop, (∀ u', Upd u u' .r1 (f (u.gpr .r1)) → R u') →
-      WP isa (.block ops) u R)
-    (hg : ∀ σ, E σ → In P σ → A σ j % 2 ^ (32 * i P) +
-        2 ^ (32 * i P) * (f (BitVec.ofNat 32 (A σ j / 2 ^ (32 * i P) % 2 ^ 32))).toNat +
-        2 ^ (32 * (i P + 1)) * (A σ j / 2 ^ (32 * (i P + 1))) = g σ) :
-    VP (fun σ s => St P E A L V LS σ s ∧ MS P σ s) (.block (ptr .r0 j ++ .dp .add .r0 .r0 (.shifted .r9 .lsl 2) ::
-      .dp .sub .r0 .r0 (.imm (BitVec.ofNat 32 c)) :: .ldr .r1 .r0 0 :: (ops ++ ([.str .r1 .r0 0] : List Instr))))
-      (fun σ s => St P E (fun σ => upd (A σ) j (g σ)) (j :: L) V LS σ s ∧ MS P σ s) :=
-  VP.kv cert (fun _ _ h => h.1.2.2) fun σ s ⟨⟨e, h, hw⟩, m⟩ => by
-    have hj' := h.live_lt j hj
-    obtain ⟨i1, i2⟩ := hi σ e h.pre
-    exact hiOp_ok hw hj' (by decide) hc i1 i2 hops fun t ht k v r => WP.block_nil
-      ⟨⟨e, h.write1 k hj' (by simp) r.sp r.rd r.wr (by rw [v, h.arrs j hj]; exact hg σ e h.pre) (by simp), ht⟩,
-        m.of_k1 h hM k r.sp r.rd r.wr⟩
-
 /-- `St.phiOpM` with the word's offset in `r2`. -/
 theorem St.phiOpRM {j : Nat} {i : CP → Nat} {ops : List Instr} {f : BitVec 32 → BitVec 32} {g : State → Nat}
     (cert : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r2, .r7, .r8, .r9]) (.block (ptr .r0 j ++

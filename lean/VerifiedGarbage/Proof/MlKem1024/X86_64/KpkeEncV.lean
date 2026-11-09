@@ -59,33 +59,4 @@ theorem kpkeEnc1024Y_correct : ∀ s, (kpkeEncK kem1024).pre s →
   KpkeEnc.kpkeEnc_correct PrimsOk.avx2 calls1024 keWf1024 encMul16Y4_correct (by lit_decide) (by lit_decide)
     (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)
 
-theorem kpkeEnc1024_of {c : Prog isa}
-    (hc : ∀ s, (kpkeEncK kem1024).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧
-      (kpkeEncK kem1024).post s s')
-    (hct : ConstantTime isa (kpkeEncK kem1024).pre (kpkeEncK kem1024).pub c) :
-    Verified X86_64.target c (Proof.MlKem.Params.kpkeEncryptContract mlKem1024 X86_64.abi) :=
-  Verified.of_correct hc hct
-    { pre := by sig_implies_pre [Params.kpkeEncryptContract, Params.kpkeEncryptSig, kpkeEncK, X86_64.abi,
-        X86_64.argRegs, kScrE, Kem.k, Kem.ctLen, kem1024, retR, Params.ctLen, mlKem1024]
-      post := by sig_implies_post [Params.kpkeEncryptContract, Params.kpkeEncryptSig, kpkeEncK, encCt, X86_64.abi,
-        X86_64.argRegs, kScrE, Kem.k, Kem.du, Kem.dv, Kem.ctLen, kem1024, retR, Params.ctLen, mlKem1024]
-      pub := by sig_implies_pub [Params.kpkeEncryptContract, Params.kpkeEncryptSig, kpkeEncK, X86_64.abi,
-        X86_64.argRegs, kScrE, Kem.k, Kem.ctLen, kem1024, retR, Params.ctLen, mlKem1024]
-      sat := by
-        refine ⟨kpkeEncSat kem1024, ?_⟩
-        sig_pre [Params.kpkeEncryptContract, Params.kpkeEncryptSig, kpkeEncK, X86_64.abi, X86_64.argRegs]
-        and_intros
-        all_goals first
-          | rfl
-          | decide
-          | exact Region.disjoint_of_sep (by decide)
-          | exact vecReducedW16_zero _ _
-          | (intro a h₁ h₂
-             simp only [Region.Contains] at h₁ h₂
-             bv_omega) }
-
-theorem kpkeEnc1024Y_verified :
-    Verified X86_64.target (kpkeEnc kem1024 .avx2 encryptMul16Y) (Proof.MlKem.Params.kpkeEncryptContract mlKem1024 X86_64.abi) :=
-  kpkeEnc1024_of kpkeEnc1024Y_correct kpkeEnc1024Y_ct
-
 end VG.Proof.MlKem1024.X86_64

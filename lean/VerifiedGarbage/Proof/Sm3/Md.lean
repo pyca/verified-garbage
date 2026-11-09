@@ -44,8 +44,6 @@ def md : MdStream.Md 64 32 8 where
 
 theorem repr_iff {mem : Mem} {p : Addr} {m : List Byte} : Repr mem p m ↔ md.Repr iv mem p m := Iff.rfl
 
-theorem hash_eq (m : List Byte) : Spec.Sm3.hash m = md.hash iv m := rfl
-
 /-- The digest, as 32-bit words. -/
 theorem digest_eq (mem : Mem) (p : Addr) :
     md.digest (md.stateAt mem p) = (List.range 8).flatMap fun k =>

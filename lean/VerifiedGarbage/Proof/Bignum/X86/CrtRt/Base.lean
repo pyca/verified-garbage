@@ -55,9 +55,6 @@ theorem bc_ge {len : Nat} (hl : 64 ≤ len) (c : Ctx) : 32 ≤ bc len c := by
   · simp only [bc, mw, Spec.Rsa.modulusWords]; omega
   · simp only [bc, mw, Spec.Rsa.modulusWords]; omega
 
-theorem bc_half_le (len : Nat) : bc len .half ≤ bc len .wide + 8 := by
-  simp only [bc]; omega
-
 theorem bc_half_le' (len : Nat) : 2 * bc len .half ≤ bc len .wide + 8 := by
   simp only [bc]; omega
 
@@ -66,21 +63,6 @@ theorem bc_dvd (len : Nat) (c : Ctx) : bc len c % 8 = 0 := by
 
 theorem len_le_bc (len : Nat) : len ≤ bc len .wide := by
   simp only [bc, mw, Spec.Rsa.modulusWords]; omega
-
-theorem bc_wide (len : Nat) : bc len .wide = wb len := rfl
-
-theorem lo_slot (len : Nat) (c : Ctx) (j : Nat) : lo len (.slot c j) = numBase + j * st len c := rfl
-
-/-- A slot of a context ends before the next. -/
-theorem lo_succ (len : Nat) (c : Ctx) (j : Nat) :
-    lo len (.slot c (j + 1)) = lo len (.slot c j) + st len c := by
-  simp only [lo]; rw [Nat.succ_mul]; omega
-
-theorem lo_lt {len : Nat} (hl : len ≤ 1024) (c : Ctx) {j : Nat} (hj : j ≤ 28) :
-    lo len (.slot c j) + st len c ≤ numBase + 29 * 2080 := by
-  have := bc_le hl c
-  have : j * st len c ≤ 28 * 2080 := Nat.mul_le_mul hj (by simp only [st]; omega)
-  simp only [lo, st] at *; omega
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}

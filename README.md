@@ -131,7 +131,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions, AVX, BMI1, BMI2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -397,7 +397,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions, AVX, BMI1, BMI2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -583,7 +583,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AVX-512F, AVX2</td>
 
 <td>✅</td>
 
@@ -603,7 +603,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AVX-512F, AVX2</td>
 
 <td>✅</td>
 
@@ -683,7 +683,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AES-NI, VAES, AVX2</td>
+<td>✅ AES-NI, VAES, AVX-512F, AVX2</td>
 
 <td>✅ AES, PMULL, SHA extensions</td>
 
@@ -803,7 +803,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX2</td>
+<td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX-512F, AVX-512BW, AVX2</td>
 
 <td>✅ AES, PMULL</td>
 
@@ -1675,7 +1675,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions, AVX, BMI1, BMI2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -1861,7 +1861,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX-512VL, AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX-512BW, AVX2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -1881,7 +1881,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX-512VL, AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX-512BW, AVX2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -2127,7 +2127,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ BMI2, ADX</td>
+<td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, AVX, BMI2, ADX</td>
 
 <td>✅</td>
 
@@ -2213,13 +2213,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
+<td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2233,9 +2233,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA512, AVX2, BMI1, BMI2</td>
+<td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
@@ -2253,9 +2253,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA512, AVX2, BMI1, BMI2</td>
+<td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
@@ -2273,13 +2273,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
-
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
+
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2293,13 +2293,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
+<td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2313,13 +2313,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, SHA512, AVX2, BMI1, BMI2, ADX</td>
+<td>✅ AVX2, BMI2, ADX</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2333,9 +2333,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA512, AVX2, BMI1, BMI2, ADX</td>
+<td>✅ AVX2, BMI2, ADX</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
@@ -2353,9 +2353,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA512, AVX2, BMI1, BMI2, ADX</td>
+<td>✅ AVX2, BMI2, ADX</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2373,13 +2373,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
+<td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2433,7 +2433,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -2453,7 +2453,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -2473,7 +2473,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -2519,7 +2519,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, AVX2, BMI1, BMI2, ADX</td>
+<td>✅ SHA extensions, AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
 
 <td>✅ SHA extensions</td>
 
@@ -2539,7 +2539,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, AVX2, BMI1, BMI2, ADX</td>
+<td>✅ SHA extensions, AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
 
 <td>✅ SHA extensions</td>
 
@@ -2559,7 +2559,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, AVX2, BMI1, BMI2, ADX</td>
+<td>✅ SHA extensions, AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
 
 <td>✅ SHA extensions</td>
 
@@ -2605,7 +2605,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ BMI2, ADX</td>
+<td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, AVX, BMI2, ADX</td>
 
 <td>✅</td>
 
@@ -2615,7 +2615,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -2625,17 +2625,17 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, SHA512, AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
-
-<td>✅ SHA extensions</td>
-
-<td>✅ umaal</td>
-
-<td>✅ SHA extensions</td>
+<td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ umaal</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
 
 </tr>
 
@@ -2645,13 +2645,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, SHA512, AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
+<td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2665,7 +2665,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
+<td>✅ BMI2, ADX</td>
 
 <td>✅</td>
 
@@ -2780,17 +2780,17 @@ The tables are generated from the code by `ci/algorithms_table.py`.
   (Data Independent Timing, `FEAT_DIT`) is 1; with DIT = 0, "the
   architecture makes no statement about the timing properties of any
   instructions" (Arm ARM, `DIT`). The proofs assume DIT = 1
-  (`lean/VerifiedGarbage/TCB/AArch64/Isa.lean`), but nothing in this library
-  sets it, and nothing guarantees that it is set when it runs. On AArch64,
-  the constant-time guarantee therefore holds only if the application sets
-  DIT on each thread that calls this library, around the calls, as Apple's
-  [Writing ARM64 code for Apple platforms](https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms#Enable-DIT-for-constant-time-cryptographic-operations)
-  tells cryptographic code to: with `timingsafe_enable_if_supported` and
-  `timingsafe_restore_if_supported` (macOS 15.2, iOS 18.2 and later), or
-  elsewhere `msr DIT, #1` (allowed at EL0 on CPUs with `FEAT_DIT`, which
-  Linux reports as `HWCAP_DIT` and macOS as `hw.optional.arm.FEAT_DIT`),
-  restoring the previous value afterwards. On CPUs without `FEAT_DIT`, Arm
-  makes no timing statement at all.
+  (`lean/VerifiedGarbage/TCB/AArch64/Isa.lean`). Every operation that may
+  process secrets sets it for the current thread while it runs, on CPUs
+  with `FEAT_DIT` (which Linux reports as `HWCAP_DIT` and macOS as
+  `hw.optional.arm.FEAT_DIT`), and restores it after (`src/dit.rs`, with
+  the verified `vg_dit_enter` and `vg_dit_clear`; on Apple's targets with a
+  speculation barrier after turning it on, `sb` or else `dsb sy; isb`, as
+  Apple's documentation asks, though Arm requires none). Operations on public
+  data alone (hashing without a key, verifying a signature) leave it as it
+  is. A program making many short calls can set it once around them with
+  `verified_garbage::dit::scope`. On CPUs without `FEAT_DIT`, Arm makes no
+  timing statement at all.
 * **PPC64LE's multiplies are constant time only on the cores surveyed.** The
   Power ISA makes no architectural promise about the timing of any
   instruction. The model has no division and only the 64-bit multiplies
@@ -2815,28 +2815,30 @@ The tables are generated from the code by `ci/algorithms_table.py`.
   leaks imply equal timing" relates very few pairs of inputs: these theorems
   guarantee much less than "independent of the secret", and what the leak
   reveals is an argument about SHAKE, outside the proofs.
+* **Speculative execution is not modelled.** Each ISA model runs one
+  instruction at a time, in program order, with each load seeing the
+  latest store, and the constant-time theorems are about that sequential
+  execution. A CPU may also run instructions transiently: past a
+  mispredicted branch, call or return, or with a load that bypasses an
+  earlier store to the same address. The transient instructions are then
+  discarded, but the cache state and other effects they leave behind can
+  still reveal data. These are the Spectre-class attacks (Spectre v1,
+  v1.1, v2, v4 and return-stack-buffer variants, among others), and they
+  are outside the current proofs: nothing here shows that the code is free
+  of them, and the code contains no mitigations aimed at them.
 
 ### What is not verified
 
 The public APIs are Rust around the verified functions, and that Rust is
-tested, not proven. Most of it only lays out buffers and selects an
-implementation, but in some algorithms it does part of the cryptography:
+tested, not proven. Most of it only lays out buffers, but in some
+algorithms it does part of the cryptography:
 
 * **AES-GCM**: the length limits of SP 800-38D §5.2.1.1 (a nonempty
   nonce, at most `2^36 − 32` bytes of text and `2^61 − 1` of additional
   data) and the order of the streaming calls are checked in Rust
-  (`src/aes_gcm.rs`); the mode itself, including `J0`, the padding, the
+  (`src/aead/aes_gcm.rs`); the mode itself, including `J0`, the padding, the
   length block and the comparison of the tag, is verified end to end, as
   are ChaCha20-Poly1305 and ML-KEM.
-* **ML-DSA**: the verified functions take the message representative `μ`.
-  Binding it to the public key, the context string and the message
-  (`μ = H(tr ‖ M′)`, with `M′ = 0 ‖ |ctx| ‖ ctx ‖ M` and `tr = H(pk)`: FIPS
-  204's `formatMessage`, `messageRep` and `pkTr`) is Rust
-  (`src/mldsa_common.rs`) over the verified SHAKE256.
-* **ChaCha20-Poly1305 decryption** is in place, and when the tag is wrong
-  the verified function's contract leaves the data unspecified (it may
-  already hold the decryption); it is the Rust wrapper that then zeroes it,
-  so that no unauthenticated plaintext is released.
 * **HMAC** with a key longer than a block hashes it first, in Rust (with the
   verified hash).
 
@@ -2883,7 +2885,7 @@ does when run by hand, below):
 python3 ci/bench_compare.py path/to/main-checkout .   # --openssl to add OpenSSL's and aws-lc-rs's times
 ```
 
-For a targeted run, `VG_CPU_FEATURES` (see `src/cpu.rs`) restricts the CPU
+For a targeted run, `VG_CPU_FEATURES` (see `crates/verified-garbage-cpu/src/detect.rs`) restricts the CPU
 features the library uses, `VG_BENCH_MODULES` the library modules whose
 benchmarks run, `VG_BENCHES` the benchmarks (the names of the files of
 `bench/benches/primitives/`) that run, and Criterion's filter the benchmark ids

@@ -90,11 +90,6 @@ theorem rounds_succ (H : HashValue) (M : Block) (t : Nat) :
 theorem add_left_comm {n : Nat} (a b c : BitVec n) : a + (b + c) = b + (a + c) := by
   rw [← BitVec.add_assoc, BitVec.add_comm a b, BitVec.add_assoc]
 
-/-- Normalizes sums (with `simp only`) up to associativity and commutativity. -/
-theorem add_ac {n : Nat} : (∀ a b c : BitVec n, a + b + c = a + (b + c)) ∧
-    (∀ a b : BitVec n, a + b = b + a) ∧ (∀ a b c : BitVec n, a + (b + c) = b + (a + c)) :=
-  ⟨BitVec.add_assoc, BitVec.add_comm, add_left_comm⟩
-
 /-- Bit `i` of a rotated word. -/
 theorem getLsbD_rotateRight (x : Word) (r : Nat) {i : Nat} (hi : i < 64) :
     (x.rotateRight r).getLsbD i = x.getLsbD ((i + r) % 64) := by

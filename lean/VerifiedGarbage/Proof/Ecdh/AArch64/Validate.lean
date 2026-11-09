@@ -477,9 +477,6 @@ theorem WP.keepV {p : Prog isa} {s : State} {Q : State → Prop} {r : VReg}
 /-- The registers the function changes: `clob`'s, but those it keeps. -/
 def chkClob (c : Cfg) : List Reg := (clob c.n).filter fun r => r ∉ Impl.Ecdh.AArch64.Cfg.checkKept c
 
-theorem checkKept_sub (c : Cfg) : ∀ r ∈ Impl.Ecdh.AArch64.Cfg.checkKept c, r ∈ preserved := by
-  unfold Impl.Ecdh.AArch64.Cfg.checkKept; split <;> decide
-
 theorem checkKept_nodup (c : Cfg) : (Impl.Ecdh.AArch64.Cfg.checkKept c).Nodup := by
   unfold Impl.Ecdh.AArch64.Cfg.checkKept; split <;> decide
 

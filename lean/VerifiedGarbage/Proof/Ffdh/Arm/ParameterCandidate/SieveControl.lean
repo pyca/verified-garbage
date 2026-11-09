@@ -37,19 +37,6 @@ theorem sieveInitTail_ok (s : State) (stack : Workspace s s.sp 72) {n : Nat} (bo
     show ∀ s x y, (subFlags s x y).wr = s.wr from fun _ _ _ => rfl,
     show ∀ s x y, (subFlags s x y).sp = s.sp from fun _ _ _ => rfl]
 
-theorem sieveCount_ok {s : State} {count : Nat} (positive : 0 < count) (bound : count ≤ 1024)
-    (saved : s.gpr .r11 = BitVec.ofNat 32 count) :
-    WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveCount) s fun t =>
-      (t.gpr .r11 = BitVec.ofNat 32 (count - 1) ∧ t.z = decide (count = 1) ∧ t.mem = s.mem) ∧ Rest [.r11] s t := by
-  have subtract : BitVec.ofNat 32 count - (1 : BitVec 32) = BitVec.ofNat 32 (count - 1) :=
-    BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) positive
-  have zero : (BitVec.ofNat 32 (count - 1) == (0 : BitVec 32)) = decide (count = 1) := by
-    rw [ofNat_beq_zero (by omega : count - 1 < 2 ^ 32)]
-    exact decide_eq_decide.mpr (by omega)
-  refine withRest_all [.r11] ?_ (by rfl) (by rfl)
-  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.sieveCount
-  ffrun [saved, subtract, zero]
-
 theorem sieveSkip_ok (s : State) :
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveSkip) s fun t =>
       (t.gpr .r10 = s.gpr .r10 + (s.gpr .r11 <<< 2) ∧ t.gpr .r11 = 0 ∧

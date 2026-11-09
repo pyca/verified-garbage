@@ -48,8 +48,6 @@ structure Kept (W : List Region) (s s' : State) : Prop where
   cs : ∀ r ∈ preserved, s'.gpr r = s.gpr r
   frame : Frame W s.mem s'.mem
 
-theorem Kept.refl (W : List Region) (s : State) : Kept W s s := ⟨rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _⟩
-
 theorem Kept.trans {W : List Region} {s₁ s₂ s₃ : State} (h₁ : Kept W s₁ s₂) (h₂ : Kept W s₂ s₃) :
     Kept W s₁ s₃ :=
   ⟨h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₂.sp.trans h₁.sp, fun r hr => (h₂.cs r hr).trans (h₁.cs r hr),
@@ -119,12 +117,6 @@ theorem _root_.VG.Impl.Ed448.PPC64LE.Whole.Len.val_lt (g : Reg → BitVec 64) {l
   cases l with
   | imm n => show n < 2 ^ 64; exact Nat.lt_trans hl (by decide)
   | reg r => exact (g r).isLt
-
-theorem _root_.VG.Impl.Ed448.PPC64LE.Whole.Len.set_eq (g : Reg → BitVec 64) (l : Len) :
-    BitVec.ofNat 64 (l.val g) = match l with | .imm n => BitVec.ofNat 64 n | .reg r => g r := by
-  cases l with
-  | imm n => rfl
-  | reg r => show BitVec.ofNat 64 (g r).toNat = g r; simp
 
 /-! ## The arguments -/
 

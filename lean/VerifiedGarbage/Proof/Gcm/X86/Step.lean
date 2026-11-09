@@ -131,11 +131,6 @@ theorem msb_xw (x : Block) {w k : Nat} (hw : w < 4) (hk : k < 32) :
     decide_false, Bool.not_false, show 32 * w + k < 128 by omega_arith, show 32 - 1 - k < 32 by omega_arith]
   congr 1; omega_arith
 
-theorem cat4_xw (x : Block) : cat4 (xw x 0) (xw x 1) (xw x 2) (xw x 3) = x := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [getLsbD_cat4, xw, BitVec.getLsbD_extractLsb']
-  split <;> [simp_all; split <;> [simp_all; split <;> simp_all]] <;> omega_arith
-
 /-! ## The instructions of a step -/
 
 /-- `V`, in `eax`, `ebx`, `ecx` and `edx`. -/
@@ -148,9 +143,6 @@ abbrev zw (m : Mem) (B : BitVec 32) (k : Nat) : BitVec 32 := m.readW (addr B (zO
 def zOf (m : Mem) (B : BitVec 32) : Block := cat4 (zw m B 0) (zw m B 1) (zw m B 2) (zw m B 3)
 
 theorem vReg_ne_esi (k : Nat) : vReg k ≠ .esi := by unfold vReg; split <;> decide
-theorem vReg_ne_ebp (k : Nat) : vReg k ≠ .ebp := by unfold vReg; split <;> decide
-theorem vReg_ne_edi (k : Nat) : vReg k ≠ .edi := by unfold vReg; split <;> decide
-
 section
 variable {s : State} {B : BitVec 32} {P : State → Prop}
 

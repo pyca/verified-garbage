@@ -67,7 +67,7 @@ theorem saltDst_taint (h : Pins Φ []) : RelCT isa (Two Φ)
     (by rfl) (by taint_decide))
 
 theorem saltArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ)
-    (.block (ldArg .r4 9 ++ [Impl.AesGcm.PPC64LE.mov .r6 .r19])) fun _ _ => True :=
+    (.block (ldArg .r4 10 ++ [Impl.AesGcm.PPC64LE.mov .r6 .r19])) fun _ _ => True :=
   two_taint [] h (by taint_decide)
 
 theorem skip_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block []) fun _ _ => True :=

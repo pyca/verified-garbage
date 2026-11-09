@@ -5,14 +5,13 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
-# ECDSA on 32-bit ARM: where the ladder's and the powers' slots are
+# ECDSA on 32-bit ARM: where the powers' slots are
 
-The slots of `c.ladderCfg`, `c.powP` and `c.powN` are numbered slots `c.sl i`
-for distinct `i`, so they are apart as `ladder_ok` and `pow_ok` need
-(`ladLay`, `powLayP`, `powLayN`): each fact is one about the numbers `i`,
-which `decide` checks. The accumulator `c.wk` is above them all and below
-the tables (`ladWk`, `powWkP`, `powWkN`), which are in `scratch`'s `8192`
-bytes.
+The slots of `c.powP` and `c.powN` are numbered slots `c.sl i` for distinct
+`i`, so they are apart as `pow_ok` needs (`powLayP`, `powLayN`): each fact
+is one about the numbers `i`, which `decide` checks (`lay_map`). The
+accumulator `c.wk` is above them all and below the tables (`powWkP`,
+`powWkN`), which are in `scratch`'s `8192` bytes.
 -/
 
 @[expose] public section
@@ -62,9 +61,6 @@ theorem rcbApart_of (hn : 0 < c.n) {S : RcbSlots} {p q o : Pt} {lw lr : List Nat
     (hd : ∀ i ∈ lr, i ∉ lw) : RcbApart S p q o :=
   ⟨hw ▸ map_sl_nodup hn hnd, by rw [hw, hr]; exact map_sl_disj hn hd⟩
 
-theorem ladSlots_eq (c : Cfg) : ladSlots c.ladderCfg = [AP, B3P, GX, GY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4,
-    T5, DX, DY, DZ, TX, TY, TZ].map c.sl := rfl
-
 /-- The scalar's byte width fits the stored table. -/
 theorem scalarBits_le (hc : CfgOk c) : 8 * c.C.len ≤ 64 * c.n := by
   have := hc.len_hi; omega
@@ -73,50 +69,6 @@ theorem scalarBits_le (hc : CfgOk c) : 8 * c.C.len ≤ 64 * c.n := by
 theorem scalarBits_enc (hc : CfgOk c) : encodable (BitVec.ofNat 32 (8 * c.C.len)) = true := by
   have h : c.C.len < 73 := by have := hc.len_hi; have := hc.n10; omega
   exact (by decide : ∀ len < 73, encodable (BitVec.ofNat 32 (8 * len)) = true) _ h
-
-theorem ladLay (hc : CfgOk c) : LadLay c.ladderCfg size 8192 := by
-  have hn := hc.n0
-  have h7 := hc.n10
-  refine ⟨?_, rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
-      (lr := [AP, B3P, RX, RY, RZ, RX, RY, RZ]) rfl rfl (by decide) (by decide),
-    rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, TX, TY, TZ])
-      (lr := [AP, B3P, DX, DY, DZ, GX, GY, ONEP]) rfl rfl (by decide) (by decide), ?_,
-    ⟨fun h => by have := sl_inj c hn h; exact absurd this (by decide),
-      fun h => by have := sl_inj c hn h; exact absurd this (by decide),
-      fun h => by have := sl_inj c hn h; exact absurd this (by decide)⟩, ?_,
-    ⟨show 1 ≤ 8 * c.C.len by have := hc.len8; omega,
-      show 8 * c.C.len < 2 ^ 16 by have := hc.len_hi; omega⟩,
-    (by have := bitsAt_le c h7 (j := 0) (by decide); have := hc.len_hi;
-        change bitsAt c.n 0 + 8 * c.C.len ≤ 8192; omega), ?_⟩
-  · exact lay_map hc rfl rfl rfl (l := [AP, B3P, GX, GY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5,
-      DX, DY, DZ, TX, TY, TZ]) (by decide)
-  · exact map_sl_disj hn (l₁ := [AP, B3P, GX, GY, ONEP])
-      (l₂ := [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ])
-      (by decide)
-  · exact map_sl_disj hn (l₁ := [RX, RY, RZ]) (l₂ := [DX, DY, DZ, TX, TY, TZ]) (by decide)
-  · intro w hw
-    simp only [ladW, List.mem_append, List.mem_map, List.mem_singleton] at hw
-    rcases hw with ⟨y, hy, rfl⟩ | rfl
-    · have hy' : y ∈ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX,
-          TY, TZ].map c.sl := hy
-      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy'
-      have hl : ∀ i ∈ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX,
-          TY, TZ], i < 45 := by decide
-      exact Or.inr (sl_below_bits c hc.n10 (hl i hi) 0 0)
-    · exact Or.inr (sl_below_bits c hc.n10 (i := TMP) (by decide) 0 0)
-
-theorem ladWk (hc : CfgOk c) : LadWk c.ladderCfg size c.wk where
-  le := wk_le c hc.n10 rfl
-  sl := by
-    rw [ladSlots_eq]
-    intro x hx
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    have : ∀ i ∈ [AP, B3P, GX, GY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ],
-      i < 45 := by decide
-    exact sl_below_wk c hc.n10 (this i hi)
-  mo := sl_below_wk c hc.n10 (i := MP) (by decide)
-  tmp := sl_below_wk c hc.n10 (i := TMP) (by decide)
-  bits := wk_below_bits c hc.n10 rfl 0
 
 theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
     (minv : BitVec 64) {red : Red}

@@ -4,24 +4,28 @@ public import VerifiedGarbage.Spec.X448
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
-# X448: the contract, on every target
+# X448: the contracts, on every target
 
 **Trusted** (as every file in `Spec/`). `Sig.contract` fixes argument
 placement, buffer validity, separation and public pointers. Both scalar
 and u-coordinate contents are secret. No input encodings are excluded.
 
-The function takes 8 KiB of working space for field arithmetic and the
+Both functions take 8 KiB of working space for field arithmetic and the
 Montgomery ladder. Its contents on return are unspecified and may contain
 secrets. `stack` is the number of bytes below the stack pointer used by an
 implementation's calls and frames.
 
-`vg_x448` supports both public-key derivation using the base point and key
-exchange using a peer's public key. `vg_x448_base` computes the first alone,
-`X448(k, 5)`, with the same contract as `vg_x448` with `point` the base point
+`vg_x448_exchange` computes a shared secret, `X448(k, u)` for a peer's
+u-coordinate `u`, with the check RFC 7748 §6.2 allows of it: it returns 0
+if the result is all zero (which it is for a `u` of small order), 1
+otherwise. The return value depends on the scalar and the u-coordinate, but
+nothing else about them affects timing.
+
+`vg_x448_base` computes a public key, `X448(k, 5)` with the base point
 (`basePoint`), so that an implementation can compute it otherwise than with
 the ladder (e.g. as the u-coordinate of a fixed-base multiplication on
-edwards448, RFC 7748 §4.2). Key generation, byte import/export and the
-all-zero shared-secret check belong to the Rust wrapper.
+edwards448, RFC 7748 §4.2). Key generation and byte import/export belong to
+the Rust wrapper.
 -/
 
 @[expose] public section
@@ -31,35 +35,6 @@ namespace VG.Spec.X448
 /-- The `n` bytes at `p`. -/
 def bytesAt (m : Mem) (p : Addr) (n : Nat) : List Byte :=
   (List.range n).map fun i => m (p + BitVec.ofNat 64 i)
-
-/-- `vg_x448(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024])`.
-`scratch` is working space. -/
-def x448Sig : Sig where
-  params := [("out", .array true .u8 56), ("scalar", .array false .u8 56),
-    ("point", .array false .u8 56), ("scratch", .array true .u64 1024)]
-
-/-- Writes `X448(k, u)` to `out`, for the 56-byte scalar `k` at `scalar`
-and the 56-byte u-coordinate `u` at `point`. -/
-def x448Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  x448Sig.contract A (post := fun out scalar point _scratch m m' _ =>
-    bytesAt m' out 56 = x448 (bytesAt m scalar 56) (bytesAt m point 56))
-    (stack := stack)
-
-/-- `vg_x448` on every target. -/
-def x448Api : Api where
-  module := "x448"
-  name := "vg_x448"
-  sig := x448Sig
-  contracts := some fun A stack => x448Contract A stack
-  summary := "Computes X448 (RFC 7748 §5): writes `X448(k, u)` to `*out`, for the 56-byte \
-    scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`. The scalar is \
-    decoded (clamped); all 448 bits of `u` are used and noncanonical coordinates are \
-    reduced modulo the field prime. The result may be all zero (for a `u` of small \
-    order), which the caller must check for if its protocol requires it (RFC 7748 §6.2).\n\n\
-    Contract: `VG.Spec.X448.x448Contract`. Constant time: only the pointers may affect \
-    timing, not the scalar or the u-coordinate."
-  safety := ["The contents of `scratch` on return are unspecified and may contain secrets; \
-    the caller must destroy them after use."]
 
 /-- `vg_x448_base(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024])`.
 `scratch` is working space. -/
@@ -85,6 +60,38 @@ def x448BaseApi : Api where
     `*out`. The scalar is decoded (clamped).\n\n\
     Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect \
     timing, not the scalar."
+  safety := ["The contents of `scratch` on return are unspecified and may contain secrets; \
+    the caller must destroy them after use."]
+
+/-- `vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32`.
+`scratch` is working space. -/
+def exchangeSig : Sig where
+  params := [("out", .array true .u8 56), ("scalar", .array false .u8 56),
+    ("point", .array false .u8 56), ("scratch", .array true .u64 1024)]
+  ret := some .u32
+
+/-- Writes `X448(k, u)` to `out`, for the 56-byte scalar `k` at `scalar`
+and the 56-byte u-coordinate `u` at `point`, and returns 0 if it is all zero,
+1 otherwise (RFC 7748 §6.2). -/
+def exchangeContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  exchangeSig.contract A (post := fun out scalar point _scratch m m' r =>
+    let z := x448 (bytesAt m scalar 56) (bytesAt m point 56)
+    bytesAt m' out 56 = z ∧ r = if z = List.replicate 56 0 then 0 else 1)
+    (stack := stack)
+
+/-- `vg_x448_exchange` on every target. -/
+def exchangeApi : Api where
+  module := "x448"
+  name := "vg_x448_exchange"
+  sig := exchangeSig
+  contracts := some fun A stack => exchangeContract A stack
+  summary := "Computes an X448 shared secret (RFC 7748 §6.2): writes `X448(k, u)` to \
+    `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at \
+    `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The \
+    scalar is decoded (clamped); all 448 bits of `u` are used and noncanonical coordinates \
+    are reduced modulo the field prime (§5).\n\n\
+    Contract: `VG.Spec.X448.exchangeContract`. Constant time: only the pointers may affect \
+    timing, not the scalar or the u-coordinate; the return value depends on both."
   safety := ["The contents of `scratch` on return are unspecified and may contain secrets; \
     the caller must destroy them after use."]
 

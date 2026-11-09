@@ -56,12 +56,6 @@ theorem read16 (m : Mem) (a : Addr) :
   · simp only [h0, h1, h2]
     rw [getLsbD_readW32 m a 3 (by omega), show 32 * 3 + (i - 32 - 32 - 32) = i by omega]; simp
 
-theorem toNat_sub_c (d : BitVec 64) (c : Nat) (hc : c < 16) :
-    (d - BitVec.ofNat 64 c).toNat = if c ≤ d.toNat then d.toNat - c else 2 ^ 64 + d.toNat - c := by
-  rw [BitVec.toNat_sub, BitVec.toNat_ofNat]
-  have := d.isLt
-  split <;> omega
-
 /-- The low word of a 64-bit load. -/
 theorem readW64_lo (m : Mem) (a : Addr) : (m.readW a 64).extractLsb' 0 32 = m.readW a 32 := by
   apply BitVec.eq_of_getLsbD_eq

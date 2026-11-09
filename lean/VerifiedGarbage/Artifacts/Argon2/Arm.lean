@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Verified
 public import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
 public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Argon2 (RFC 9106) on ARMv7 -/
 

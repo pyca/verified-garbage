@@ -132,8 +132,6 @@ theorem storeBlkK_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr
         · exact h1
         · exact h9))
 
-theorem stab_hdr_kok : HdrStab KokM := fun _ _ _ ⟨c, h⟩ fw => ⟨c, (fw _ (by decide)).trans h⟩
-
 theorem storeA_eq (j sPtr sLen : Nat) : seqs (storeA j sPtr sLen kOk) = .seq (.block (ws ++ base j .x8 ++
     ([ldh .x1 sPtr, ldh .x9 sLen, .add .x .x1 .x1 .x9, ldh .x15 kOk] : List Instr))) storeBE := rfl
 

@@ -11,8 +11,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 
 `RtWs`: `Keys.Ws` with the width `kw len = 2 ⌈len / 8⌉` words, the modulus's
 length `len` and the working space as arguments on the stack. A pointer to
-array `j` (`arrPtr_ok`) is the workspace's `arr`, and `edi` set back from its
-argument is the workspace (`restoreEdi_ok`).
+array `j` (`arrPtr_ok`) is the workspace's `arr`.
 -/
 
 @[expose] public section
@@ -58,10 +57,6 @@ theorem RtWs.keep {s t : State} (h : RtWs L s B Z len N) {rs : List Reg} (K : Ke
     (edi : .edi ∉ rs) (esp : .esp ∉ rs) (O : Outside B 0 Z s.mem t.mem) : RtWs L t B Z len N :=
   ⟨h.ws.rest K edi esp, h.lenArg.imp fun _ ⟨a, l, c⟩ => ⟨a, l, c.keep K esp O⟩, h.wsArg.keep K esp O, h.lenLe,
     h.layLen⟩
-
-/-- `edi` is the workspace. -/
-theorem RtWs.wsSrc {s : State} (h : RtWs L s B Z len N) :
-    readSrc s (.mem (argOp L.ws)) = some (BitVec.ofNat 32 B.toNat) := h.wsArg.readSrc
 
 theorem RtWs.edi {s : State} (h : RtWs L s B Z len N) : (s.gpr .edi).toNat = B.toNat :=
   h.ws.workspace.edi_toNat
@@ -231,13 +226,6 @@ theorem arrPtr_ok {r t : Reg} {j : Nat} (hl : LenSrc L s len)
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, et, hedi, arr, S, VG.Impl.Rsa.X86.Keys.hdr]
   rw [Nat.mod_eq_of_lt (a := 160) (by omega), Nat.mod_eq_of_lt (a := j * (4 * kw len + 8)) this,
     Nat.mod_add_mod, e8, Nat.add_assoc]
-
-/-- `restoreEdi`: `edi` the workspace again. -/
-theorem restoreEdi_ok (hws : readSrc s (.mem (argOp L.ws)) = some (BitVec.ofNat 32 B.toNat))
-    (k : ∀ t, Keeps [.edi] s t → t.mem = s.mem → t.gpr .edi = BitVec.ofNat 32 B.toNat → WP isa (.block is) t Q) :
-    WP isa (.block (restoreEdi L ++ is)) s Q := by
-  simp only [restoreEdi, List.cons_append, List.nil_append]
-  exact wp_movS hws fun t u _ => k t u.keeps u.mem u.gpr
 
 end
 

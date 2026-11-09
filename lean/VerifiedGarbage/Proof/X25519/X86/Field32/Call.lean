@@ -35,12 +35,6 @@ theorem pow250Fn_noSp : NoSp pow250Fn := NoSp.of_all (by lit_decide)
 
 theorem pow250Fn_stack : stackUse pow250Fn = 0 := rfl
 
-/-- A region of the working space of 8192 bytes, apart from the stack a call uses. -/
-theorem sub_apart {x : BitVec 32} {s : State} (hc : Ctx 8192 x s) {d n : Nat} (hd : d + n ≤ 8192) (hn : 0 < n) :
-    (sub x d n).Disjoint (callStk s) :=
-  (hc.stk rfl (Nat.le_refl _)).2.sub_left (by
-    rw [scR_eq]; exact sub_sub hc.fit (Nat.zero_le _) (by omega) (by omega))
-
 /-- A call from a working space of `W` bytes, the 4096 the function uses apart
 from the 8 bytes of stack below `esp`. -/
 theorem pow250Call_ok' {W : Nat} {x : BitVec 32} {s : State} (hc : Ctx W x s) (hE : 8 ≤ (s.gpr .esp).toNat)

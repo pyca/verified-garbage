@@ -159,12 +159,6 @@ theorem ConstsOk.mem_rd (h : ConstsOk K st s) (hc : (name, ws) ∈ K) :
     rw [h.1]; exact List.mem_map_of_mem (f := fun c => (⟨s.syms c.1, 8 * c.2.length⟩ : Region)) hc
   exact List.mem_of_mem_drop hm'
 
-/-- `w` bytes at offset `x` in the table are readable. -/
-theorem ConstsOk.inRegions (h : ConstsOk K st s) (hc : (name, ws) ∈ K) {x w : Nat}
-    (hx : x + w ≤ 8 * ws.length) (hw : 0 < w) (wr : List Region) :
-    InRegions (s.rd ++ wr) (s.syms name + BitVec.ofNat 64 x) w :=
-  ⟨_, List.mem_append_left _ (h.mem_rd hc), Offset.contains_base _ hx (by have := h.fit hc; omega)⟩
-
 /-- Word `i` of the table. -/
 theorem ConstsOk.readW (h : ConstsOk K st s) (hc : (name, ws) ∈ K) {i : Nat} (hi : i < ws.length) :
     s.mem.readW (s.syms name + BitVec.ofNat 64 (8 * i)) 64 = ws.getD i 0 :=

@@ -86,11 +86,6 @@ theorem arg_eq {a s₁ s₂ : State} (h₁ : E a s₁) (h₂ : E a s₂) {i : Na
     stackArg s₁ i = stackArg s₂ i :=
   (h₁.2.args i hi).trans (h₂.2.args i hi).symm
 
-/-- A call's stack arguments, from a state with its stack pointer and memory. -/
-theorem stackArg_congr {t u : State} (hsp : t.sp = u.sp) (hm : t.mem = u.mem) (i : Nat) :
-    stackArg t i = stackArg u i := by
-  simp only [stackArg, stackArgAddr, hsp, hm]
-
 /-- Two calls of `vg_rsa_public_precomputed_checked` from `AtCall` agree on
 what the callee may leak. -/
 theorem call_ct :

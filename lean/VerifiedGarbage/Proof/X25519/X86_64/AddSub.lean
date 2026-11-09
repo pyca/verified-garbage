@@ -344,11 +344,6 @@ theorem subL_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : 
 
 /-! ## Sums and differences with one fold, selected by `cmov` -/
 
-theorem cmov38 (c : Bool) :
-    (if (!c) = true then (0 : BitVec 64) else BitVec.setWidth 64 (38 : BitVec 32)).toNat =
-      38 * c.toNat := by
-  cases c <;> rfl
-
 /-- A field of the state a `cmov` leaves: of the state it writes or of the one it keeps. -/
 theorem gpr_ite {p : Prop} [Decidable p] (s₁ s₂ : State) (r : Reg) :
     (if p then s₁ else s₂).gpr r = if p then s₁.gpr r else s₂.gpr r := apply_ite (State.gpr · r) p s₁ s₂

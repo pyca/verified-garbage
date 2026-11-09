@@ -57,7 +57,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.Framework.BitByte
 import VerifiedGarbage.Proof.Framework.Offset
@@ -82,7 +81,6 @@ import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 
 /-!
 # The fixed-base comb from tables in memory on x86-64

@@ -46,9 +46,6 @@ theorem writeW8_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 8) (hd : d
   rw [writeW8_apply, ite_eq_right_iff.mpr]
   intro h; subst h; exact absurd (ofs_off' base hd) hx
 
-theorem write1_eq (m : Mem) (p : Addr) (v : BitVec 8) : m.write p 1 v = m.writeW p v := by
-  simp only [Mem.writeW, BitVec.setWidth_eq]
-
 theorem bit_byte : ∀ b : BitVec 8, ∀ j < 8,
     ((b.setWidth 32 >>> j) &&& (1 : BitVec 32)).setWidth 8 =
       BitVec.ofNat 8 ((b.toNat >>> j) &&& 1) := by

@@ -7,13 +7,33 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.SignVerified
 import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.P256Order.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Common
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.Sign
+meta import VerifiedGarbage.Spec.Ecdsa.P256
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.SignLit
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.SignVerified
+meta import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P256Order.Lit
 
 /-!
 # Deterministic ECDSA on RISC-V: P-256's kit
 
-P-256's scalars, the functions of its order, and `vg_ecdsa_p256_sign`,
+P-256's scalars, the functions of its order, and `vg_ecdsa_p256_sign_k` (the signature with a given `k`),
 whose `[k]G` reads the comb's table: its calls against `signRVC`
 (`WP.call`, since it pushes no frames), from what `CoreArgs` gives.
+
+Then `vg_ecdsa_p256_sign`, with HMAC as a table: the curve for the body
+(`curveT`), the taint checks of its pieces (`checksP`), which the kernel
+evaluates, and its verification against `TableInstance.signContract` with
+the tables of `vs` (`verifiedT`).
 -/
 
 @[expose] public section
@@ -119,5 +139,45 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) : Kit where
   K := Impl.Ecdsa.RISCV64.Comb.p256CombConsts
   core_call h _ hQ := core_call hL h hQ
   core_rel h := core_rel hL h
+
+/-! ## `vg_ecdsa_p256_sign`, with HMAC as a table -/
+
+/-- P-256 as the body's curve, for its group law `hL`. -/
+def curveT (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) : CurveT where
+  kit := kit hL
+  coreN := "vg_ecdsa_p256_sign_k"
+  big := false
+  hbig := (by decide : (false = true ↔ 64 < 32))
+  hGv := rfl
+  hsh := fun _ => rfl
+
+/-- The body's configuration without the tables, which the taint checks see. -/
+def cfgP : Impl.Ecdsa.Rfc6979.RISCV64.Cfg where
+  f := Proof.HmacTable.RISCV64.fnsOf []
+  FN := Impl.Ecdsa.RISCV64.p256Order
+  coreN := "vg_ecdsa_p256_sign_k"
+  coreC := Impl.Ecdsa.RISCV64.Sign.signP256
+  tries := Spec.Ecdsa.Rfc6979.Curves.p256.tries
+  nw := 4
+  Q := 32
+  big := false
+  G := 32
+
+theorem checksP : Checks cfgP := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, trivial⟩, ⟨?_, trivial⟩, ⟨?_, trivial⟩, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> refine ⟨?_, ?_⟩
+  taint_decide_all
+
+theorem checksT (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) :
+    Checks (cfgT (curveT hL) Spec.Ecdsa.Rfc6979.Curves.p256.tries []) := checksP
+
+/-- `vg_ecdsa_p256_sign`, with the tables of `vs`. -/
+theorem verifiedT (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) (vs : List Proof.HmacTable.RISCV64.HVar)
+    (h : OK vs ∧ Impl.Ecdsa.RISCV64.Comb.p256Sym ∉ Proof.HmacTable.RISCV64.names vs) :
+    Verified RISCV64.target (signCodeT (curveT hL) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p256 (kit hL).K vs) := by
+  have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p256) h.1 VG.Proof.Ecdsa.RISCV64.Comb.combSatMem h.2
+    (by rw [VG.Proof.Ecdsa.RISCV64.Comb.combWords_length]; decide) VG.Proof.Ecdsa.RISCV64.Comb.combSatMem_held (by decide) rfl
+  exact signT_spec ⟨rfl, by decide, by decide⟩ (checksT hL) rfl h.1 hsat
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64.P256

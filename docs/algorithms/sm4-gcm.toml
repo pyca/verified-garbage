@@ -1,7 +1,7 @@
 name = "SM4-GCM"
 family = "AEADs"
 specs = ["Sm4", "Gcm", "Sm4/Gcm", "Sm4/Gcm/Contract"]
-modules = ["src/sm4_gcm.rs"]
+modules = ["src/aead/sm4_gcm.rs"]
 # Not `gcm`, AES-GCM's module, whose AES-NI and VAES functions SM4-GCM does
 # not call: it calls only GHASH's implementations, in the modules below.
 asm = ["sm4", "sm4_gcm"]

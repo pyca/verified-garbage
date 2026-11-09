@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinishResult
 
 import VerifiedGarbage.Proof.Framework.Omega
@@ -95,9 +97,9 @@ theorem random_sign_invalid_store {s t : State} (hr : RandomSignFinishPre s 0 t)
     exact (hk.vcs r hc).trans (hr.vectors r hc)
   · rw [hwm, word_writeW_self]
 
-theorem random_sign_body_invalid (v : Backend) {s : State} (h : RandomSignABI v.stack s)
+theorem random_sign_body_invalid (S : Signer) {s : State} (h : RandomSignABI S.stack s)
     (hq : ¬ 1 < Spec.Dsa.decodeBE (randomQBytes s)) :
-    WP isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.mul))
+    WP isa (RandomSign.body S.name S.code)
       (allocated Random.frameBytes s)
       (RandomSignBodyPost s (randomSignRemaining (randomInput s) 0 8)) := by
   rw [random_invalid_remaining hq]

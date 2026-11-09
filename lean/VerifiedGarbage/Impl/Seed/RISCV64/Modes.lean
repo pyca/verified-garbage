@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Modes.RISCV64.Seq
+public import VerifiedGarbage.Impl.Modes.RISCV64.Shared
 public import VerifiedGarbage.Impl.Modes.RISCV64.Wide
 public import VerifiedGarbage.Impl.Modes.CbcChained
 public import VerifiedGarbage.Impl.Seed.RISCV64.Ecb
@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Seed.RISCV64.Ecb
 /-!
 # SEED's modes on RISC-V
 
-`dirCore d g`: ECB's batch (`Ecb.lean`), inlined, as a core for the modes
+`inlineCore d g`: ECB's batch (`Ecb.lean`), inlined, as a core for the modes
 (`Impl/Modes/RISCV64/Seq.lean`), on `g` blocks: ECB's
 scratch buffer is the core's slots from `coreSlot` (`ecbOff` bytes into the
 frame), and ECB's prologue (`prologue`) moves its base to `a5`, saves the
@@ -35,6 +35,13 @@ the core on one block. `cbcDecryptChained` and `cfbDecrypt` take sixteen
 blocks a step on the core on sixteen (`Core.seq2`, `Impl/Modes/RISCV64/Wide.lean`)
 while sixteen are left, then one a step on the same core: the rounds cost the
 same for any number of lanes.
+
+`dirCore` wraps this body with named internal calls (`Core.shared`), so the
+key preparation and batch code are emitted once across modes, alignment
+branches, and wide and tail paths. Two additional slots preserve the
+caller's return address and keep the frame aligned; the mode wipes them
+with the original frame. The callee computes its own pointers after the
+call, which may clobber all temporary registers.
 -/
 
 @[expose] public section
@@ -82,13 +89,18 @@ def coreCrypt (d : Direction) (g : Nat) : Prog isa :=
     (.seq (.block (copyTo g)) (.seq (.loop (.block copyOutBody) (.nonzero t2)) (.block (coreOut d g))))))
 
 /-- SEED's core for the modes, in the direction `d`, on `g` blocks (1 or 16). -/
-def dirCore (d : Direction) (g : Nat) : Modes.RISCV64.Core where
+def inlineCore (d : Direction) (g : Nat) : Modes.RISCV64.Core where
   prepare := .block []
   crypt := coreCrypt d g
   total := bufSlot + 1 + 2 * g
   buf := bufSlot
   G := g
   bw := 4
+
+/-- Shared key preparation and batch encryption, with a saved return address. -/
+def dirCore (d : Direction) (g : Nat) : Modes.RISCV64.Core :=
+  (inlineCore d g).shared "vg_legacy_modes_prepare_empty"
+    ("vg_seed_modes_crypt_" ++ (if d = .encrypt then "encrypt" else "decrypt") ++ "_" ++ (if g = 1 then "1" else "16"))
 
 /-- `vg_seed_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := (dirCore .encrypt 1).seq (Modes.Mode.cbcEncChained 4)

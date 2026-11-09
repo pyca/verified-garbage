@@ -27,7 +27,7 @@ theorem mul_lt_mont {a b m R : Nat} (ha : a < R) (hb : b < m) : a * b < m * R :=
   exact h
 
 /-- The reduction and the final subtraction after a raw product `X` in the
-accumulator: what `montMul_ok` and `montSquare_ok` both end with. -/
+accumulator: what the multiplication and the squaring both end with. -/
 theorem redcFinish_ok {s s₁ : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
     (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv)
     (hZ : slot w 8 ≤ Z) (hwN : w=8*n) (hnN : 0<n) (hw : w < 2 ^ 31)

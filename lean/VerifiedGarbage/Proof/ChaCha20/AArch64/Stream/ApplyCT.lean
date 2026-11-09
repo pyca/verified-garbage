@@ -114,8 +114,10 @@ theorem Args.covers {s₀ s : State} (h : Args s₀ s) :
   exact ⟨by rw [h.rd, h.wr, List.nil_append, List.nil_append]; exact Covers.of_sub hcov,
     by rw [h.wr]; exact Covers.of_sub hcov⟩
 
-theorem Args.pre {s₀ s : State} (hp : APre s₀) (h : Args s₀ s) :
-    Proof.ChaCha20.xorAArch64.pre (s.callEntry.withRegions [] [cpR s₀, blR s₀, wkR s₀]) := by
+/-- The call's arguments, in place. -/
+theorem Args.xorArgs {s₀ s : State} (hp : APre s₀) (h : Args s₀ s) :
+    Proof.ChaCha20.AArch64.XorArgs s (st s₀ + BitVec.ofNat 64 192) (dp s₀ + BitVec.ofNat 64 (H s₀))
+      (dp s₀ + BitVec.ofNat 64 (H s₀)) (st s₀ + BitVec.ofNat 64 256) (64 * NB s₀) := by
   have hL := L_lt s₀
   have hH := H_le s₀
   have hHNB := HNB_le s₀
@@ -123,14 +125,10 @@ theorem Args.pre {s₀ s : State} (hp : APre s₀) (h : Args s₀ s) :
     have := hp.wrap_d
     rw [BitVec.toNat_add, Proof.ChaCha20.AArch64.toNat_ofNat_lt (by omega)]
     omega
-  have hn : (BitVec.ofNat 64 (64 * NB s₀)).toNat = 64 * NB s₀ := Proof.ChaCha20.AArch64.toNat_ofNat_lt (by omega)
-  simp only [Proof.ChaCha20.xorAArch64, State.withRegions_gpr, State.withRegions_rd,
-    State.withRegions_wr, callEntry_gpr' s (by decide : Reg.x0 ∉ linkRegs),
-    callEntry_gpr' s (by decide : Reg.x1 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.x2 ∉ linkRegs),
-    callEntry_gpr' s (by decide : Reg.x3 ∉ linkRegs), h.x0, h.x1, h.x2, h.x3, hn]
-  exact ⟨trivial, trivial, (hp.st_d.sub_left (cpR_sub s₀)).sub_right (blR_sub s₀),
-    Offset.disjoint _ (by omega) (by omega) (by omega),
-    (hp.st_d.sub_left (wkR_sub s₀)).symm.sub_left (blR_sub s₀), hwrap⟩
+  exact Proof.ChaCha20.AArch64.XorArgs.inPlace h.x0 h.x1 h.x2 h.x3 (by omega)
+    ((hp.st_d.sub_left (cpR_sub s₀)).sub_right (blR_sub s₀))
+    (Offset.disjoint _ (by omega) (by omega) (by omega))
+    ((hp.st_d.sub_left (wkR_sub s₀)).symm.sub_left (blR_sub s₀)) hwrap h.covers.2
 
 /-! ## The call of the block function -/
 
@@ -221,22 +219,11 @@ theorem part1_rel (hle : L a ≤ N a) :
       wp_sp (part1_ok h.pb (by rw [← h.eqL, ← h.hleft]; exact hle) hy) sy⟩
 
 theorem xor_rel (v : Proof.ChaCha20.AArch64.XorImpl) :
-    RelCT isa (fun x y => Sp Args a x ∧ Sp Args b y) (.call v.callee.name v.callee.code) fun _ _ => True := by
-  have ecp : cpR b = cpR a := by simp only [cpR, h.hst]
-  have ebl : blR b = blR a := by simp only [blR, h.hdp, h.eqH, h.eqNB]
-  have ewk : wkR b = wkR a := by simp only [wkR, h.hst]
-  refine RelCT.call v.ok v.ct [] [cpR a, blR a, wkR a] fun x y ⟨⟨hx, sx⟩, ⟨hy, sy⟩⟩ => ?_
-  have py := hy.pre h.pb
-  have cy := hy.covers
-  rw [ecp, ebl, ewk] at py cy
-  refine ⟨hx.pre h.pa, py, ?_, hx.covers.1, hx.covers.2, cy.1, cy.2⟩
-  simp only [Proof.ChaCha20.xorAArch64, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
-    callEntry_gpr' x (by decide : Reg.x0 ∉ linkRegs), callEntry_gpr' x (by decide : Reg.x1 ∉ linkRegs),
-    callEntry_gpr' x (by decide : Reg.x2 ∉ linkRegs), callEntry_gpr' x (by decide : Reg.x3 ∉ linkRegs),
-    callEntry_gpr' y (by decide : Reg.x0 ∉ linkRegs), callEntry_gpr' y (by decide : Reg.x1 ∉ linkRegs),
-    callEntry_gpr' y (by decide : Reg.x2 ∉ linkRegs), callEntry_gpr' y (by decide : Reg.x3 ∉ linkRegs),
-    hx.x0, hx.x1, hx.x2, hx.x3, hy.x0, hy.x1, hy.x2, hy.x3, h.hst, h.hdp, h.eqH, h.eqNB, sx, sy, h.hsp]
-  exact ⟨trivial, trivial, trivial, trivial, trivial⟩
+    RelCT isa (fun x y => Sp Args a x ∧ Sp Args b y) v.callee.inPlace fun _ _ => True := by
+  refine v.rel fun x y ⟨⟨hx, sx⟩, ⟨hy, sy⟩⟩ => ⟨hx.xorArgs h.pa, ?_, by rw [sx, sy, h.hsp]⟩
+  have py := hy.xorArgs h.pb
+  rw [← h.hst, ← h.hdp, ← h.eqH, ← h.eqNB] at py
+  exact py
 
 theorem part2_rel (v : Proof.ChaCha20.AArch64.XorImpl) :
     RelCT isa (fun x y => Sp Q1 a x ∧ Sp Q1 b y) (part2 v.callee) fun x y => Sp Q2 a x ∧ Sp Q2 b y := by

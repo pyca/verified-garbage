@@ -58,9 +58,6 @@ theorem MulKeep.of_sel {x : BitVec 32} {s t : State} (hc : Ctx x s) (k : Keep s 
     · exact sub_sub hc.fit (by decide) (by decide) (by decide)
     · exact sub_sub hc.fit (by decide) (by decide) (by decide)⟩
 
-theorem MulKeep.of_keepMem {x : BitVec 32} {s t : State} (k : Keep s t) (h : t.mem = s.mem) :
-    MulKeep x s t := ⟨k.edi, k.esp, k.rd, k.wr, by rw [h]; exact Frame.refl _ _⟩
-
 /-- The tables survive the comb's writes, to the workspace and the stack a call uses. -/
 theorem TblAt.mulkeep {x P : BitVec 32} {s t : State} (h : TblAt x P s) (hc : Ctx x s)
     (hstk : (TBL (P.setWidth 64)).Disjoint (callStk s)) (k : MulKeep x s t) : TblAt x P t := by

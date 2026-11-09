@@ -29,9 +29,6 @@ theorem low_le_val4 (a b c d : Word) : a.toNat ≤ val4 a b c d := by
 theorem carryWord (c : Bool) : (BitVec.ofNat 64 c.toNat).toNat = c.toNat := by
   cases c <;> rfl
 
-theorem carry38_value (c : Bool) : (addCarry 0 0 c * 38).toNat = 38 * c.toNat := by
-  cases c <;> decide
-
 theorem carry38_sel (c : Bool) : (if c = true then (38 : Word) else 0).toNat = 38 * c.toNat := by
   cases c <;> decide
 
@@ -64,18 +61,6 @@ theorem subCarry_value (a b : Word) (c : Bool) :
 theorem addCarry_false (a b : Word) : addCarry a b false = a + b := by
   change a + b + 0 = a + b
   exact BitVec.add_zero _
-
-theorem carryOut_false (a b : Word) :
-    carryOut a b false = decide (2 ^ 64 ≤ a.toNat + b.toNat) := by
-  simp only [carryOut, Bool.toNat_false, Nat.add_zero]
-
-theorem addCarry_sub (a b : Word) (c : Bool) :
-    addCarry a (~~~b) c = a - b - BitVec.ofNat 64 (1 - c.toNat) := by
-  apply BitVec.eq_of_toNat_eq
-  have := a.isLt; have := b.isLt; have := Bool.toNat_le c
-  simp only [addCarry, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_not,
-    BitVec.toNat_ofNat]
-  omega_arith
 
 /-- Four limbs, including a carry into the low limb and out of the high limb. -/
 theorem add4_value (a0 a1 a2 a3 b0 b1 b2 b3 : Word) (c : Bool) :
@@ -137,9 +122,5 @@ theorem multiply_accumulate (a b c t : Word) :
   all_goals by_cases h2 : 2 ^ 64 ≤ t.toNat + (a.toNat * b.toNat % 2 ^ 64 + c.toNat) % 2 ^ 64
   all_goals simp only [h2, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false]
   all_goals omega_arith
-
-/-- A doubled bounded value cannot carry out of its four limbs. -/
-theorem bounded_double {v a c b : Nat} (e : v + 2 ^ 256 * c = a + a + b)
-    (h : 2 * a + b < 2 ^ 256) : v = 2 * a + b := by omega_arith
 
 end VG.Proof.Ed25519.Word64

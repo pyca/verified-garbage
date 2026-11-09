@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Contract
 import VerifiedGarbage.Proof.X25519.X86_64.Finish
 import VerifiedGarbage.Proof.X25519.X86_64.Invert
 public import VerifiedGarbage.Spec.X25519.Contract
@@ -17,7 +18,7 @@ import VerifiedGarbage.Proof.X25519.X86_64.Lit
 # X25519 on x86-64: the whole function
 
 The contract the proof is written against (the facts of
-`Spec.X25519.x25519Contract` it uses, stated for x86-64), and the correctness
+`Proof.X25519.x25519Contract` it uses, stated for x86-64), and the correctness
 of `vg_x25519` against it: every write is in the working space but the
 result's, so the arguments are read unchanged, the callee-saved registers
 restored from the working space, and the return address kept.

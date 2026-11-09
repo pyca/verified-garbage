@@ -99,6 +99,14 @@ def pairP (sb ss off sd bt : Nat) (L : KemLay) (a N₀ m : Nat) : Prog isa :=
     .ite (.zero .x .x6) (Paired.extraPair true) (.block []),
     .block ((Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i)))]
 
+/-- Share a PRF pair across the hash variants and the encapsulation and
+decapsulation entry points. `pairP` already saves and restores its link
+register, so this call needs no additional frame. Its name includes every
+parameter that determines its code (only `k` of `L` is used by `pairP`). -/
+def pairPCall (sb ss off sd bt : Nat) (L : KemLay) (a N₀ m : Nat) : Prog isa :=
+  .call s!"vg_mlkem{256 * L.k}_pair_prf_{sb}_{ss}_{off}_{sd}_{bt}_{a}_{N₀}_{m}"
+    (pairP sb ss off sd bt L a N₀ m)
+
 /-! ## PRFs in the singleton's second state -/
 
 /-- The second state of the pair at `x19` set to `PRF₂(r, N)`'s padded block. -/
@@ -132,7 +140,7 @@ def matrixP (L : KemLay) (S : Hybrid.HSrc) (between : Prog isa) : Prog isa :=
   seqs (((List.range (pairs L)).filter (· < hp)).map (fun i => Hybrid.pair3 L S (2*i) i true) ++
     [between] ++
     ((List.range (pairs L)).filter (hp ≤ ·)).map (fun i =>
-      if pairCount L hp i = 0 then Paired.pair L false (2*i) true else pairP SB SS AH RB (TP L) L (2*i) (3*(i-hp)) (pairCount L hp i)) ++
+      if pairCount L hp i = 0 then Paired.pair L false (2*i) true else pairPCall SB SS AH RB (TP L) L (2*i) (3*(i-hp)) (pairCount L hp i)) ++
     (if single L then
       [if placed L hp ≥ 3 * (pairs L - hp) + 3 then lastP L (3 * (pairs L - hp)) else Paired.lastSample L false true]
       else []))
@@ -160,7 +168,7 @@ def vRestP (prf : Nat → Nat → Prog isa) (L : KemLay) (e2 : Bool) (ek : Reg) 
     widenAt (TP L) (PP L),
     ddAt m mo 1 (EP L), addAt (PP L) (EP L), L.ceLAt (PP L) L.dv ct (co + 32 * L.du * L.k)])
 
-/-- The noise, `u` and `v` (`Kem16.encryptRest`), the first `n` PRF outputs in their buffers. -/
+/-- The noise, `u` and `v`, the first `n` PRF outputs in their buffers. -/
 def encryptRestP (prf : Nat → Nat → Prog isa) (L : KemLay) (n : Nat) (ek : Reg) (eo : Nat) (m : Reg)
     (mo : Nat) (ct : Reg) (co : Nat) : Prog isa :=
   .seq (noiseP prf L n) (seqs (((List.range L.k).map (uRow L ct co)) ++
@@ -177,6 +185,11 @@ def encaps (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L 
   .seq (Hybrid.startH L) (.seq (matrixP L (Hybrid.ekSrc L) (gAt hash))
     (.seq (encryptRestP prf L (placed L (Hybrid.hashPairs (Hybrid.ekSrc L))) .x25 0 .x28 MB .x27 0)
       (.block L.kemEpilogue)))
+
+/-- `vg_mlkem<n>_encaps_h`: `encaps` after `hArgs`, which ignores `h` (`H(ek)` is hashed in the pairs
+that sample the matrix). -/
+def encapsH (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
+  .seq (.block hArgs) (encaps hash prf L)
 
 /-- Decapsulation after the matrix: re-encryption from the first `n` PRF
 outputs in their buffers, and the selection (`Kem16.deRest`). -/

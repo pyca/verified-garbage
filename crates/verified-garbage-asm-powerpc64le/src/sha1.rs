@@ -12,7 +12,7 @@
 /// * `state` must be valid for reads and writes of 84 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
+pub(crate) unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
     core::arch::naked_asm!(
         r#".base64 "RWcAPQEjCGEAAAORze8APYmrCGEEAAORupgAPf7cCGEIAAORMhAAPXZUCGEMAAOR0sMAPfDhCGEQAAORIACATg==""#,
     )
@@ -29,7 +29,7 @@ pub unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "Qf8h+CAA4TimAgh80f8h+CAAAfhwAEf7eABn+4AAh/uIAKf7kADH+5gA5/sAAEM7AABnOwAAhTsAAKY7PwAAOThAnnwAAD0o"
 beq %cr0, 20f
@@ -140,7 +140,7 @@ b 21f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r#".base64 "Qf8h+CAAwTimAgh80f8h+CAAAfhwAEb7eABm+4AAhvuIAKb7kADG+5gA5vsAAEM7AABmOwAAhTsAAKQ7PwAAOThAvn+AAAA5FPJ6fRQAC5kBAN47BwD+O4LR/3s="
 20:
@@ -181,6 +181,32 @@ beq %cr0, 20b
     )
 }
 
+/// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
+///
+/// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 20 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 496 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20]) {
+    core::arch::naked_asm!(
+        r#".base64 "cf4h+CAAwTimAgh80f8h+CAAAfg4AYb6QAGm+kgBxvpQAeb6WAEG+2ABJvsAAKY6AADFOgAA4zoAAAQ70ACGOgAAdDg="
+bl {vg_sha1_init}
+.base64 "AAB0OAAAgDgAALc4AADYOAAA9Tg="
+bl {vg_sha1_update_scratch}
+.base64 "AAB0OAAAmDgkAbU4AADVOA=="
+bl {vg_sha1_finalize_scratch}
+.base64 "JAEVgQAAFpEoARWBBAAWkSwBFYEIABaRMAEVgQwAFpE0ARWBEAAWkTgBlepIAdXqUAH16lgBFetgATXrQAG16iAAAegwACE4pgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5kAEhOCAAgE4=""#,
+        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
+    )
+}
+
 #[rustfmt::skip]
 #[path = "internal/vg_sha1_compress.rs"]
 pub(crate) mod vg_sha1_compress;
@@ -188,6 +214,10 @@ pub(crate) mod vg_sha1_compress;
 #[rustfmt::skip]
 #[path = "internal/vg_sha1_finalize_scratch.rs"]
 pub(crate) mod vg_sha1_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_state_digest.rs"]
+pub(crate) mod vg_sha1_state_digest;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha1_update_scratch.rs"]

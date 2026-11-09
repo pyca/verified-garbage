@@ -82,8 +82,6 @@ the test never changes. -/
 def Tail (E : Environment) (m m' : Mem) : Prop :=
   ∀ i, E.scratch ≤ i → i < E.size → m' (off E.base i) = m (off E.base i)
 
-theorem Tail.refl (E : Environment) (m : Mem) : Tail E m m := fun _ _ _ => rfl
-
 theorem Tail.trans {E : Environment} {a b c : Mem} (A : Tail E a b) (B : Tail E b c) : Tail E a c :=
   fun i lo hi => (B i lo hi).trans (A i lo hi)
 

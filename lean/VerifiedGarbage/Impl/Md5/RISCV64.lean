@@ -18,12 +18,13 @@ accesses:
 * The words of a block (little-endian) and of the MD buffer (`state`, an
   array of `u32`) are in argument buffers, whose alignment the contract
   does not state, so they are read and written a byte at a time
-  (`Impl/Words/RISCV64.lean`): each operation loads its word `X[k]` from
-  the block. `scratch` is not used.
+  (`Impl/Words/RISCV64.lean`). Each block's 16 words are decoded once into
+  `scratch` (an array of `u64`, so 8-byte aligned), from which each
+  operation loads its word `X[k]` with one `lw`.
 * `¬d` is `xori d, -1`; a rotation left by `s` is `slliw` by `s` and
   `srliw` by `32 - s`, combined by `or`.
 * Only temporaries are used, so nothing is saved.
-* `a0`–`a2` (the pointers and the block count) are public; no address and
+* `a0`–`a3` (the pointers and the block count) are public; no address and
   no branch depends on anything else.
 -/
 
@@ -43,7 +44,7 @@ def var (t k : Nat) : Reg := work.getD ((k + 4 - t % 4) % 4) .t0
 
 /-- Temporaries: `T0` holds the auxiliary function's terms and the rotated
 bits, `T1` the word `X[k]` and then the constant `T[t+1]`, `T2` the bytes
-of `X[k]`. -/
+of the block's words as they are decoded. -/
 def T0 : Reg := .t4
 def T1 : Reg := .t5
 def T2 : Reg := .t6
@@ -65,7 +66,7 @@ def rot (t : Nat) : Nat := (ss.getD (t / 16) []).getD (t % 4) 0
 /-- Operation `t`: `a := b + ((a + X[k] + T[t+1] + fn(b,c,d)) <<< s)`. -/
 def step (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3
-  loadLE32 T1 T2 .a1 (4 * ks.getD t 0) ++ [.add a a T1] ++ li32 T1 (Ts.getD t 0) ++
+  [.load .w T1 .a3 (4 * ks.getD t 0), .add a a T1] ++ li32 T1 (Ts.getD t 0) ++
   ([.add a a T1] : List Instr) ++ fn (t / 16) a b c d ++
   ([.shift .sll .w T0 a (rot t), .shift .srl .w a a (32 - rot t), .logic .or a a T0,
     .add a a b] : List Instr)
@@ -83,12 +84,16 @@ def load : List Instr := (List.range 4).flatMap fun k => loadLE32 (var 0 k) T0 .
 def updateW (k : Nat) : List Instr :=
   loadLE32 T0 T1 .a0 (4 * k) ++ [.add (var 0 k) (var 0 k) T0] ++ storeLE32 (var 0 k) T0 .a0 (4 * k)
 
+/-- The block's words to `scratch`, once, read a byte at a time. -/
+def decode : List Instr :=
+  (List.range 16).flatMap fun k => loadLE32 T1 T2 .a1 (4 * k) ++ [.store .w T1 .a3 (4 * k)]
+
 /-- Advance to the next block and decrement the count. -/
 def advance : List Instr := [.addi .a1 .a1 64, .addi .a2 .a2 (-1)]
 
 /-- One block. -/
 def body : Prog isa :=
-  .seq (.block load) (.seq (steps 64) (.block ((List.range 4).flatMap updateW ++ advance)))
+  .seq (.block (load ++ decode)) (.seq (steps 64) (.block ((List.range 4).flatMap updateW ++ advance)))
 
 def compress : Prog isa := .ite (.zero .a2) (.block []) (.loop body (.nonzero .a2))
 

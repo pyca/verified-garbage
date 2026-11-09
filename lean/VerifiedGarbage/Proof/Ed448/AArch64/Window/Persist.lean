@@ -7,9 +7,8 @@ import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 # Ed448 verification on AArch64: what every phase keeps
 
 Untrusted: everything here is checked by Lean. The saved registers and the
-challenge's copy (`Persist`), and the bits of `S` and `R`'s coordinates, are
-kept by `tabInit` (`IFrame`), the table's loop (`TFrame`) and the field
-operations (`Outside2`).
+challenge's copy (`Persist`), kept by a frame that keeps their bytes
+(`Persist.of_frame`), such as the field operations' (`Outside2`).
 -/
 
 @[expose] public section
@@ -48,65 +47,8 @@ theorem Persist.of_frame {base : Addr} {g gv b} {m m' : Mem} (h : Persist base g
     (hw LRS (by simp only [LRS]; omega) (by simp only [LRS]; omega)).trans h.lrs,
     h.kb.of_frame fun i hi => hf _ (by rw [kb_ofs base hi]; simp only [KB]; omega)⟩
 
-theorem Persist.iframe {base : Addr} {g gv b} {m m' : Mem} (h : Persist base g gv b m) (hf : IFrame base m m') :
-    Persist base g gv b m' :=
-  h.of_frame fun x hx => hf x (by omega) (by simp only [RX]; omega) (by simp only [RY, CAN]; omega)
-
-theorem Persist.tframe {base : Addr} {g gv b} {m m' : Mem} (h : Persist base g gv b m) (hf : TFrame base m m') :
-    Persist base g gv b m' :=
-  h.of_frame fun x hx => hf x (by omega) (by simp only [ACC]; omega) (by simp only [TAB]; omega)
-
 theorem Persist.outside2 {base : Addr} {g gv b} {m m' : Mem} (h : Persist base g gv b m)
     (hf : Outside2 base 64 2816 ACC 1152 m m') : Persist base g gv b m' :=
   h.of_frame fun x hx => hf x (by omega) (by simp only [ACC]; omega)
-
-/-- Through the challenge's nibbles, written at `BITS`. -/
-theorem Persist.nframe {base : Addr} {g gv b} {m m' : Mem} (h : Persist base g gv b m)
-    (hf : Outside base BITS 114 m m') : Persist base g gv b m' :=
-  h.of_frame fun x hx => hf x (by simp only [BITS]; omega)
-
-theorem TabOk.of_nframe {m m' : Mem} {base : Addr} {P : Point} {k : Nat} (h : TabOk m base P k)
-    (ho : Outside base BITS 114 m m') (hk : k ≤ 16) : TabOk m' base P k := by
-  have hw : ∀ e < 16, ∀ w < 24, tw m' base e w = tw m base e w := fun e he w hw => by
-    unfold tw
-    exact ho.word (Or.inr (by simp only [TAB, BITS]; omega)) (by simp only [TAB]; omega)
-  intro e he
-  refine ⟨by rw [TPt_of_tw (hw e (by omega))]; exact (h e he).1, fun w hw' => ?_⟩
-  rw [hw e (by omega) w hw']; exact (h e he).2 w hw'
-
-theorem rlimbs_nframe {base : Addr} {m m' : Mem} (hf : Outside base BITS 114 m m') {o : Nat}
-    (ho : o = RX ∨ o = RY) {i : Nat} (hi : i < 8) : limbs m' base o i = limbs m base o i := by
-  have hn : o + 8 * i + 8 ≤ 8192 := by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN] <;> omega
-  refine congrArg BitVec.toNat (hf.word ?_ hn) <;> rcases ho with rfl | rfl <;>
-    simp only [RX, RY, CAN, BITS] <;> omega
-
-/-- The bits of `S`, through `IFrame` and `TFrame`. -/
-theorem Bits.iframe {base : Addr} {k : Nat} {m m' : Mem} (h : Bits 57 base k m) (hf : IFrame base m m') :
-    Bits 57 base k m' := fun t ht => by
-  rw [hf _ (by rw [bits_ofs base (by omega)]; simp only [BITS]; omega)
-    (by rw [bits_ofs base (by omega)]; simp only [BITS, RX]; omega)
-    (by rw [bits_ofs base (by omega)]; simp only [BITS, RY, CAN]; omega)]
-  exact h t ht
-
-theorem Bits.tframe {base : Addr} {k : Nat} {m m' : Mem} (h : Bits 57 base k m) (hf : TFrame base m m') :
-    Bits 57 base k m' := fun t ht => by
-  rw [hf _ (by rw [bits_ofs base (by omega)]; simp only [BITS]; omega)
-    (by rw [bits_ofs base (by omega)]; simp only [BITS, ACC]; omega)
-    (by rw [bits_ofs base (by omega)]; simp only [BITS, TAB]; omega)]
-  exact h t ht
-
-/-- `R`'s coordinates at `RX` and `RY`, through `TFrame` and `Outside2`. -/
-theorem rlimbs_tframe {base : Addr} {m m' : Mem} (hf : TFrame base m m') {o : Nat} (ho : o = RX ∨ o = RY) {i : Nat}
-    (hi : i < 8) : limbs m' base o i = limbs m base o i := by
-  have hn : o + 8 * i + 8 ≤ 8192 := by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN] <;> omega
-  refine congrArg BitVec.toNat (Mem.readW_congr fun j hj => (hf _ ?_ ?_ ?_).symm |>.symm) <;>
-    rw [VG.Proof.X448.AArch64.ofs_off base (by omega)] <;> rcases ho with rfl | rfl <;>
-    simp only [RX, RY, CAN, ACC, TAB] <;> omega
-
-theorem rlimbs_outside2 {base : Addr} {m m' : Mem} (hf : Outside2 base 64 2816 ACC 1152 m m') {o : Nat}
-    (ho : o = RX ∨ o = RY) {i : Nat} (hi : i < 8) : limbs m' base o i = limbs m base o i := by
-  have hn : o + 8 * i + 8 ≤ 8192 := by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN] <;> omega
-  refine congrArg BitVec.toNat (hf.word ?_ ?_ hn) <;> rcases ho with rfl | rfl <;>
-    simp only [RX, RY, CAN, ACC] <;> omega
 
 end VG.Proof.Ed448.AArch64.Window

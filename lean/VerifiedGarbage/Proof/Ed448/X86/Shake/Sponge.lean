@@ -447,7 +447,7 @@ theorem absorb_call (hc : Whole.Ctx E g m₀ ins outs t) {P N : BitVec 32} {pos 
     (hfit : P.toNat + N.toNat ≤ 2 ^ 32)
     (h0 : arg t.callEntry 0 = scr) (h1 : arg t.callEntry 1 = 136) (h2 : arg t.callEntry 2 = BitVec.ofNat 32 pos)
     (h3 : arg t.callEntry 3 = P) (h4 : arg t.callEntry 4 = N) (h5 : arg t.callEntry 5 = scr + BitVec.ofNat 32 KSCR) :
-    WP isa (.call Spec.Sha3.absorbScratchApi.name Impl.Sha3.X86.Stream.absorb) t fun v =>
+    WP isa (.call "vg_keccak_absorb_scratch" Impl.Sha3.X86.Stream.absorb) t fun v =>
       Whole.Ctx E g m₀ ins outs v ∧ Frame (Lo E :: kWr scr) t.mem v.mem ∧
       (∀ msg, Spec.Sha3.Repr t.mem (scr.setWidth 64) 136 msg → pos = msg.length % 136 →
         Spec.Sha3.Repr v.mem (scr.setWidth 64) 136 (msg ++ Spec.Sha3.bytesAt t.mem (P.setWidth 64) N.toNat)) ∧
@@ -585,7 +585,7 @@ theorem absorb_slots (hc : Whole.Ctx E g m₀ ins outs t) {P N : BitVec 32} {pos
     (hs : AbsSlots E scr pos P N t)
     (hcov : DataOk E ins outs ⟨P.setWidth 64, N.toNat⟩) (hd : Away E scr ⟨P.setWidth 64, N.toNat⟩)
     (hfit : P.toNat + N.toNat ≤ 2 ^ 32) :
-    WP isa (.call Spec.Sha3.absorbScratchApi.name Impl.Sha3.X86.Stream.absorb) t fun v =>
+    WP isa (.call "vg_keccak_absorb_scratch" Impl.Sha3.X86.Stream.absorb) t fun v =>
       Whole.Ctx E g m₀ ins outs v ∧ Frame (Lo E :: kWr scr) t.mem v.mem ∧
       (∀ msg, Spec.Sha3.Repr t.mem (scr.setWidth 64) 136 msg → pos = msg.length % 136 →
         Spec.Sha3.Repr v.mem (scr.setWidth 64) 136 (msg ++ Spec.Sha3.bytesAt t.mem (P.setWidth 64) N.toNat)) ∧

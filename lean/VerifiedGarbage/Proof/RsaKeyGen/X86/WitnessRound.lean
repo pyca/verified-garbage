@@ -90,29 +90,4 @@ theorem codeAt_ok {mont round : Prog isa} {montName roundName : String}
     ((Wa.trans Wb).trans Wd').trans Wt', ((Fa.trans Fb).trans Fd').trans Ft,
     (((Ka.mono (by unfold clob WitnessLoad.clob; decide)).widen Kb).widen Kd).widen Kt⟩
 
-theorem code_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
-    {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
-    (length : g.L = 8 * capacity) (S : Prepare.Data g c capacity p s) {input : Import.Geometry}
-    (C : Import.Context input s) (width : input.count = g.words)
-    (source : s.gpr .esi = input.src)
-    (destination : s.gpr .edi + BitVec.ofNat 32 (g.array 6) = input.dst)
-    (odd : c % 2 = 1) (large : 3 ≤ c) (shape : Spec.RsaKeyGen.bitLength (c - 1) = 64 * g.w)
-    (fit : 108 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108))
-    (lengthFar : (lengthRegion p).Disjoint (below p 108)) :
-    WP isa (code g.w montName mont roundName round) s fun t =>
-      let sampled := Spec.RsaKeyGen.witness (c - 1)
-        (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (input.src.setWidth 64) (8 * g.w)))
-      Prepare.Data g c capacity p t ∧ (t.gpr .eax).toNat = (if Proof.MillerRabin.Round.round c sampled.1 then 1 else 0) ∧
-      t.mem.readW (off g.W uniformOffset) 32 = cmask sampled.2 ∧
-      WorkspaceFrame g (ranges g) s.mem t.mem ∧
-      Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem t.mem ∧ Keeps clob s t :=
-  codeAt_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v length S C
-    (by rw [width]; unfold Geometry.words; omega) (by have := v.minWidth; omega)
-    (by rw [width]; unfold Geometry.words; omega) (by rw [width]) source destination odd large
-    (by rw [shape]; omega) fit far lengthFar
-
 end VG.Proof.RsaKeyGen.X86.WitnessRound

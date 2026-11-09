@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 
 Untrusted: everything here is checked by Lean. `tag o` copies the block at
 `W + 96` to `W + 112` (`copyMem`), zeroes the block at `W + o`, and calls
-`vg_aes_ctr32` on that one block with the copy as the counter block: the
+`vg_aes_ctr32_to` on that one block with the copy as the counter block: the
 encryption of the block at `W + 96` with the encryption key's schedule at
 `W + 512` (`tag_ok`).
 -/

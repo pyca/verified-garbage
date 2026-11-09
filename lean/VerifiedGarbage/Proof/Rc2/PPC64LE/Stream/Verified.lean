@@ -26,6 +26,8 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Rc2.PPC64LE.Stream.Lit
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 
 /-!
 # Verified streaming RC2-CBC on PPC64LE
@@ -98,15 +100,15 @@ theorem agree {pub : State → State → Prop}
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem init_ct : ConstantTime isa initC.pre initC.pub init :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9])
     (agree fun _ _ h => h) (by taint_decide)
 
 theorem encryptUpdate_ct : ConstantTime isa (updateC .encrypt).pre (updateC .encrypt).pub encryptUpdate :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9])
     (agree fun _ _ h => h) (by taint_decide)
 
 theorem decryptUpdate_ct : ConstantTime isa (updateC .decrypt).pre (updateC .decrypt).pub decryptUpdate :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9])
     (agree fun _ _ h => h) (by taint_decide)
 
 def initSat : State where

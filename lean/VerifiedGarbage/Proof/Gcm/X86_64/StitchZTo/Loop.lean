@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Aes
 public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512
@@ -24,11 +24,10 @@ the state the loop starts from (`ReadyTo`).
 
 `EInvTo s₀ P e s`: `e` groups of sixteen blocks are encrypted (`AInvTo`),
 the ciphertext of the first `e - 1` hashed into `Y`; `rdx` points to output
-group `e - 1`, the next to hash. `bodyTo_ok`: a body encrypts group `e`
-(`batchTo_ok`) while it hashes the output of group `e - 1` between its
-rounds (`StitchZ.gq_ok`), which it does not write (`StitchZ.QG.data`, for
-the in-place view `dst s₀`). `finalTo_ok`: the stores after the loops, and
-the contract (`EPostTo`).
+group `e - 1`, the next to hash. The loop is the in-place one, out of place,
+and so are its proofs: `bodyTo_ok`, `firstTo_ok` and `finalTo_ok` are
+`StitchZ.bodyM_ok` and its neighbours for the output at `r10`
+(`EInvTo.toM`, `EPostM.toEPostTo`).
 -/
 
 @[expose] public section
@@ -227,105 +226,31 @@ structure EInvTo (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : State
   y : s.zlane .xmm2 0 = ghashFrom (hk s₀) (y₀ s₀) ((List.range (16 * (e - 1))).map (ctbT s₀))
   y1 : ∀ l, 1 ≤ l → l < 4 → s.zlane .xmm2 l = 0
 
-/-- The powers in the working space are kept by the output written. -/
-theorem keepPTo {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} (hc : c + 16 ≤ nb s₀) {m m' : Mem}
-    (hf : Frame [⟨oAddr s₀ c, 256⟩] m m') {k l : Nat} (hk : k < 4) (hl : l < 4) :
-    m'.readW (pp s₀ + BitVec.ofNat 64 (64 * k + 16 * l)) 128 = m.readW (pp s₀ + BitVec.ofNat 64 (64 * k + 16 * l)) 128 :=
-  keepP hp.toD hc hf hk hl
+/-! ## As the in-place loop's, out of place -/
 
-/-- What hashing output group `e - 1` needs, from `rdx` pointing to it with
-its blocks below `c` encrypted. -/
-theorem genv {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} {e c : Nat} {s : State}
-    (hA : AInvTo s₀ c s) (h1e : 1 ≤ e) (hec : 16 * e ≤ c)
-    (hrdx : (s.gpr .rdx).toNat = (op s₀).toNat + 256 * (e - 1)) (hr11 : s.gpr .r11 = pp s₀)
-    (hpw : ∀ k < 4, ∀ l < 4, s.mem.readW (pp s₀ + BitVec.ofNat 64 (64 * k + 16 * l)) 128 = P k l) :
-    GEnv (dst s₀) 0 (s.gpr .rdx) (fun i => ctbT s₀ (16 * (e - 1) + i)) P s :=
-  { rdx := rfl
-    r11 := hr11
-    xs := fun i _ hi => by
-      rw [show s.gpr .rdx + BitVec.ofNat 64 (16 * i) = oAddr s₀ (16 * (e - 1) + i) from addr_eq (by omega_arith),
-        hA.blocks _ (by omega_arith)]
-    pv := hpw
-    ina := fun k hk => by
-      have := hA.le
-      rw [hA.rd, hA.wr, BitVec.ofInt_natCast,
-        show s.gpr .rdx + BitVec.ofNat 64 (64 * k) = op s₀ + BitVec.ofNat 64 (256 * (e - 1) + 64 * k) from
-          addr_eq (by omega_arith)]
-      exact in_rdwr (in_sub hp.o_in (by omega_arith))
-    inp := fun k hk => by
-      rw [hA.rd, hA.wr]
-      exact in_rdwr (in_sub_int hp.p_in (by omega_arith))
-    m0 := hA.msk }
+theorem EInvTo.toM {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} {e : Nat} {s : State}
+    (h : EInvTo s₀ P e s) : StitchZ.EInvM true s₀ P e s :=
+  ⟨h.a.toM hp, h.one, h.rdx, h.r9, h.rax, fun _ => h.a.r8, fun r h1 h2 h3 h4 h5 => h.gpr r h1 h2 (h3 rfl) h4 h5,
+    h.pw, h.m1, h.y, h.y1⟩
+
+theorem _root_.VG.Proof.Gcm.X86_64.StitchZ.EInvM.toTo {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State}
+    (h : StitchZ.EInvM true s₀ P e s) : EInvTo s₀ P e s :=
+  ⟨h.a.toTo rfl (h.r8 rfl), h.one, h.rdx, h.r9, h.rax, fun r h1 h2 h3 h4 h5 => h.gpr r h1 h2 (fun _ => h3) h4 h5,
+    h.pw, h.m1, h.y, h.y1⟩
+
+theorem ReadyTo.toM {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} {s : State}
+    (h : ReadyTo s₀ P s) : StitchZ.ReadyM true s₀ P s :=
+  ⟨h.a.toM hp, h.rdx, fun _ => h.a.r8, h.rax, fun r h1 h2 h3 h4 => h.gpr r h1 h2 (h3 rfl) h4, h.pw, h.m1, h.y, h.y1⟩
 
 theorem bodyTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     {e : Nat} (he : 16 * (e + 1) ≤ nb s₀) {s : State} (hI : EInvTo s₀ P e s) :
-    WP isa bodyTo s fun s' => EInvTo s₀ P (e + 1) s' ∧ s'.cf = some (decide (nb s₀ - 16 * e < 32)) := by
-  have hd := hp.toD
-  have hnb := nb_dst s₀
-  have hw := hp.wrap_o
-  have h1e := hI.one
-  have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
-  let a := s.gpr .rdx
-  let X : Nat → Block := fun i => ctbT s₀ (16 * (e - 1) + i)
-  let yl : Nat → Block := fun l => s.zlane .xmm2 l
-  have ha : a.toNat = (op s₀).toNat + 256 * (e - 1) := hI.rdx
-  have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide) (by decide)
-  have hE₁ : GEnv (dst s₀) 0 a X P s := genv hp hI.a h1e (by omega_arith) hI.rdx hr11 hI.pw
-  have hrdx₁ : (s.gpr .rdx).toNat + 64 * 4 = (op s₀).toNat + 16 * (16 * e) := by
-    show a.toNat + _ = _; omega_arith
-  -- The group, with the loads of the previous group after rounds 1–4 and the reduction after round 5.
-  refine WP.seq (WP.mono (batchTo_ok hp gq gRegs gRegs_ok (QG (dst s₀) (fun _ => 0) a X P yl)
-    (gq_ok (s₀ := dst s₀) (fun _ => Nat.le_refl _) (fun _ _ _ => Nat.zero_le _))
-    (fun j t t' h f => h.zframe f (by decide))
-    (fun t t' h hg hrd hwr hl hf => QG.data hd (by omega_arith) (by omega_arith) ha (fun i _ hi => by omega_arith) h hg hrd hwr hl hf)
-    (c := 16 * e) (j := 4) (by omega_arith) hI.a hrdx₁
-    ⟨hE₁, hI.m1, by rw [ite_f (by decide)]; exact ⟨fun h => absurd h (by decide), fun l hl => rfl⟩⟩)
-    fun s₂ ⟨hA₂, hQ₂, hg₂, hl₂, hm₂⟩ => ?_)
-  refine WP.mono (nextE_ok s₂) fun s' ⟨frdx, fr9, fcf, fg, fl, fm, frd, fwr⟩ => ?_
-  obtain ⟨_, h1', h2⟩ := hQ₂
-  rw [ite_t (by decide)] at h2
-  have gk : ∀ r, r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r := fun r h1 h2 => by rw [fg r h1 h2, hg₂]
-  have hA' : AInvTo s₀ (16 * (e + 1)) s' := by
-    rw [show 16 * (e + 1) = 16 * e + 16 by omega_arith]
-    exact hA₂.gpr2 fg fl fm frd fwr
-  have hr9 : s₂.gpr .r9 - 16 = BitVec.ofNat 64 (nb s₀ - 16 * (e + 1 - 1)) := by
-    rw [hg₂, hI.r9, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl,
-      ofNat_sub_ofNat (by omega_arith) (by omega_arith)]
-    congr 1; omega_arith
-  refine ⟨⟨hA', by omega_arith, ?_, by rw [fr9, hr9], by rw [gk _ (by decide) (by decide)]; exact hI.rax,
-    fun r h1 h2 h3 h4 h5 => by rw [gk r h2 h4]; exact hI.gpr r h1 h2 h3 h4 h5,
-    fun k hk l hl => by rw [fm, keepPTo hp (by omega_arith) hm₂ hk hl]; exact hI.pw k hk l hl,
-    fun l hl => by rw [fl]; exact h1' l hl, ?_,
-    fun l h1 h4 => by rw [fl]; exact h2.2 l h1 h4⟩, ?_⟩
-  · rw [frdx, hg₂, BitVec.toNat_add, show (256 : BitVec 64).toNat = 256 from rfl,
-      Nat.mod_eq_of_lt (by show a.toNat + 256 < 2 ^ 64; omega_arith)]
-    show a.toNat + 256 = _
-    rw [ha, show e + 1 - 1 = (e - 1) + 1 by omega_arith, Nat.mul_succ, Nat.add_assoc]
-  · rw [fl, h2.1, hf X yl hI.y1,
-      show e + 1 - 1 = (e - 1) + 1 by omega_arith, ghash_append16, ← hI.y]
-  · rw [fcf, hr9, toNat_ofNat_lt (by omega_arith), show e + 1 - 1 = e by omega_arith]
+    WP isa bodyTo s fun s' => EInvTo s₀ P (e + 1) s' ∧ s'.cf = some (decide (nb s₀ - 16 * e < 32)) :=
+  WP.mono (StitchZ.bodyM_ok hp.toM hf he (hI.toM hp)) fun _ ⟨h, hc⟩ => ⟨h.toTo, hc⟩
 
 /-- The first group, with nothing between its rounds. -/
 theorem firstTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} {s : State}
-    (hR : ReadyTo s₀ P s) : WP isa firstTo s (EInvTo s₀ P 1) := by
-  have hd := hp.toD
-  have h16 := hp.nb16
-  have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
-  have none : ∀ j, 1 ≤ j → j ≤ 9 → ∀ t, Keys (nr s₀) (sch s₀) t → (fun _ _ => True) j t →
-      WP isa (.block ((fun _ => []) j)) t fun t' => (fun (_ : Nat) (_ : State) => True) (j + 1) t' ∧ ZFrame [] t t' :=
-    fun _ _ _ _ _ _ => WP.block_nil ⟨trivial, ZFrame.refl _ _⟩
-  refine WP.mono (batchTo_ok hp (fun _ => []) [] (by simp) (fun _ _ => True) none
-    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 0) (j := 0) (by omega_arith) hR.a
-    (by rw [hR.rdx]) trivial) fun s₁ ⟨hA₁, _, hg₁, hl₁, hm₁⟩ => ?_
-  have lk : ∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → ∀ l < 4, s₁.zlane r l = s.zlane r l :=
-    fun r h13 h14 hr l hl => hl₁ r h13 h14 hr (by simp) l hl
-  refine ⟨by simpa using hA₁, Nat.le_refl _, by rw [hg₁, hR.rdx]; simp, ?_, by rw [hg₁]; exact hR.rax,
-    fun r h1 h2 h3 _ h5 => by rw [hg₁]; exact hR.gpr r h1 h2 h3 h5,
-    fun k hk l hl => by rw [keepPTo hp (by omega_arith) hm₁ hk hl]; exact hR.pw k hk l hl,
-    fun l hl => by rw [lk _ (by decide) (by decide) (by decide) l hl]; exact hR.m1 l hl,
-    by rw [lk _ (by decide) (by decide) (by decide) 0 (by decide), hR.y]; simp [ghashFrom],
-    fun l h1 h4 => by rw [lk _ (by decide) (by decide) (by decide) l h4]; exact hR.y1 l h1 h4⟩
-  rw [hg₁, hR.gpr _ (by decide) (by decide) (by decide) (by decide)]; simp
+    (hR : ReadyTo s₀ P s) : WP isa firstTo s (EInvTo s₀ P 1) :=
+  WP.mono (StitchZ.firstM_ok hp.toM hp.nb16 (hR.toM hp)) fun _ h => h.toTo
 
 /-- `cmp r9, 32`. -/
 theorem cmpE_ok {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State} (hI : EInvTo s₀ P e s) :
@@ -353,96 +278,14 @@ theorem blocks_ctr32To {s₀ : State} {m : Mem} (hb : ∀ k < nb s₀, blockAt m
       List.getElem_zipWith, List.length_map, List.length_range]
     exact hb k hk
 
+theorem _root_.VG.Proof.Gcm.X86_64.Stitch.EPostM.toEPostTo {s₀ s : State} (h : Stitch.EPostM true s₀ s) :
+    EPostTo s₀ s :=
+  ⟨blocks_ctr32To h.data, h.ctr, by rw [h.y]; exact congrArg _ h.blocks.symm, h.frame,
+    fun r h1 h2 h3 h4 h5 => h.gpr r h1 h2 (fun _ => h3) h4 h5, h.rd, h.wr⟩
+
 theorem finalTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     {e : Nat} (he : nb s₀ = 16 * e) {s : State} (hI : EInvTo s₀ P e s) :
-    WP isa (.block (storeCtr ++ lastG ++ storeY)) s (EPostTo s₀) := by
-  have hw := hp.wrap_o
-  have hwp := hp.wrap_p
-  have h1e := hI.one
-  have hm0 : s.lane .xmm0 0 = revMask := by rw [← State.zlane_lt2 _ _ (by decide)]; exact hI.a.msk 0 (by decide)
-  rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (store16Z_ok .xmm13 .xmm14 .rax s hm0 (by rw [hI.rax, hI.a.wr]; exact hp.c_in))
-    fun s₁ ⟨m₁, g₁, rd₁, wr₁, l₁⟩ => ?_
-  have cD : ∀ k < nb s₀, Region.Disjoint ⟨oAddr s₀ k, 16⟩ (cR s₀) := fun k hk =>
-    hp.o_c.sub_left (Offset.sub_base _ (by omega_arith))
-  have cP : ∀ k < 4, ∀ l < 4, Region.Disjoint ⟨pp s₀ + BitVec.ofNat 64 (64 * k + 16 * l), 16⟩ (cR s₀) :=
-    fun k hk l hl => hp.p_c.sub_left (Offset.sub_base _ (by omega_arith))
-  rw [hI.rax] at m₁
-  let a := s.gpr .rdx
-  let X : Nat → Block := fun i => ctbT s₀ (16 * (e - 1) + i)
-  let yl : Nat → Block := fun l => s.zlane .xmm2 l
-  have ha : a.toNat = (op s₀).toNat + 256 * (e - 1) := hI.rdx
-  have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide) (by decide)
-  simp only [lastG, List.append_assoc]
-  rw [WP.block_append_iff]
-  have hE₂ : GEnv (dst s₀) 0 a X P s₁ :=
-    { rdx := by rw [g₁]
-      r11 := by rw [g₁]; exact hr11
-      xs := fun i _ hi => by
-        rw [m₁, show a + BitVec.ofNat 64 (16 * i) = oAddr s₀ (16 * (e - 1) + i) from addr_eq (by omega_arith),
-          blockAt_writeW_sep' (cD _ (by omega_arith)) rfl, hI.a.blocks _ (by omega_arith)]
-      pv := fun k hk l hl => by
-        rw [m₁, Mem.readW_writeW_sep ((cP k hk l hl).sep (Region.contains_self _ _) (Region.contains_self _ _))
-          (by decide)]
-        exact hI.pw k hk l hl
-      ina := fun k hk => by
-        rw [rd₁, wr₁, hI.a.rd, hI.a.wr, BitVec.ofInt_natCast,
-          show a + BitVec.ofNat 64 (64 * k) = op s₀ + BitVec.ofNat 64 (256 * (e - 1) + 64 * k) from
-            addr_eq (by omega_arith)]
-        exact in_rdwr (in_sub hp.o_in (by omega_arith))
-      inp := fun k hk => by
-        rw [rd₁, wr₁, hI.a.rd, hI.a.wr]
-        exact in_rdwr (in_sub_int hp.p_in (by omega_arith))
-      m0 := fun l hl => by rw [l₁ _ (by decide) l hl]; exact hI.a.msk l hl }
-  refine WP.mono (ghRun_ok (yl := yl) 4 (Nat.le_refl _) s₁ hE₂
-    (fun l hl => by rw [l₁ _ (by decide) l hl])) fun s₃ ⟨hE₃, p₃, _, f₃⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (ghFin hE₃ (fun l hl => by
-      rw [f₃.zlane _ (by decide) l hl, l₁ _ (by decide) l hl]; exact hI.m1 l hl))
-    fun s₄ ⟨_, y4, _, f₄⟩ => ?_
-  rw [p₃ (by decide) 0 (by decide), p₃ (by decide) 1 (by decide), p₃ (by decide) 2 (by decide),
-    p₃ (by decide) 3 (by decide)] at y4
-  have hm0₄ : s₄.lane .xmm0 0 = revMask := by
-    rw [← State.zlane_lt2 _ _ (by decide), f₄.zlane _ (by decide) 0 (by decide), f₃.zlane _ (by decide) 0 (by decide),
-      l₁ _ (by decide) 0 (by decide)]; exact hI.a.msk 0 (by decide)
-  have g₄ : s₄.gpr = s.gpr := by rw [f₄.gpr, f₃.gpr, g₁]
-  rw [show storeY = [.vop (.vbin .vpshufb .l128 .xmm2 .xmm2 .xmm0),
-    .vmovdquStore .l128 (VG.Impl.Gcm.X86_64.Pclmul.at_ .rcx 0) .xmm2] ++ [.vop .vzeroupper] from rfl,
-    WP.block_append_iff]
-  have hrcx : s.gpr .rcx = yp s₀ := hI.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide)
-  refine WP.mono (store16Z_ok .xmm2 .xmm2 .rcx s₄ hm0₄ (by
-      rw [g₄, f₄.wr, f₃.wr, wr₁, hI.a.wr, hrcx]
-      exact hp.y_in)) fun s₅ ⟨m₅, g₅, rd₅, wr₅, _⟩ => ?_
-  rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ?_⟩
-  rw [g₄, hrcx] at m₅
-  have m₄ : s₄.mem = s₁.mem := by rw [f₄.mem, f₃.mem]
-  rw [m₄, m₁] at m₅
-  have yD : ∀ k < nb s₀, Region.Disjoint ⟨oAddr s₀ k, 16⟩ (yR s₀) := fun k hk =>
-    hp.o_y.sub_left (Offset.sub_base _ (by omega_arith))
-  have hb : ∀ k < nb s₀, blockAt s₅.mem (oAddr s₀ k) = ctbT s₀ k := fun k hk => by
-    rw [m₅, blockAt_writeW_sep' (yD k hk) rfl, blockAt_writeW_sep' (cD k hk) rfl]
-    exact hI.a.blocks k (by omega_arith)
-  refine ⟨blocks_ctr32To hb, ?_, ?_, ?_, ?_, by
-      show s₅.rd = _; rw [rd₅, f₄.rd, f₃.rd, rd₁, hI.a.rd], by
-      show s₅.wr = _; rw [wr₅, f₄.wr, f₃.wr, wr₁, hI.a.wr]⟩
-  · show blockAt s₅.mem (cp s₀) = _
-    rw [m₅, blockAt_writeW_sep' hp.c_y rfl, VG.Proof.Gcm.X86_64.blockAt_store, ← State.zlane_lt2 _ _ (by decide),
-      hI.a.ctr 0 (by decide), Nat.add_zero, he]
-  · show blockAt s₅.mem (yp s₀) = ghashFrom (hk s₀) (y₀ s₀) (blocksAt s₅.mem (op s₀) (nb s₀))
-    rw [show blocksAt s₅.mem (op s₀) (nb s₀) = (List.range (16 * e)).map (ctbT s₀) from by
-        rw [← he]; simp only [blocksAt]
-        exact List.map_congr_left fun k hk => hb k (by simpa using hk),
-      m₅, VG.Proof.Gcm.X86_64.blockAt_store, ← State.zlane_lt2 _ _ (by decide), y4]
-    refine (hf X yl hI.y1).trans ?_
-    rw [show 16 * e = 16 * ((e - 1) + 1) by congr 1; omega_arith, ghash_append16]
-    exact congrArg (fun y => ghashFrom (hk s₀) y ((List.range 16).map X)) hI.y
-  · show Frame _ s₀.mem s₅.mem
-    rw [m₅]
-    exact ((hI.a.frame.mono fun r hr => by simp at hr ⊢; rcases hr with h | h <;> simp [h]).writeW
-      (r := cR s₀) (by simp) _ (Region.contains_self _ _)).writeW (r := yR s₀) (by simp) _
-      (Region.contains_self _ _)
-  · intro r h1 h2 h3 h4 h5
-    show s₅.gpr r = _
-    rw [g₅, g₄]; exact hI.gpr r h1 h2 h3 h4 h5
+    WP isa (.block (storeCtr ++ lastG ++ storeY)) s (EPostTo s₀) :=
+  WP.mono (StitchZ.finalM_ok hp.toM hf he (hI.toM hp)) fun _ h => h.toEPostTo
 
 end VG.Proof.Gcm.X86_64.StitchZTo

@@ -57,15 +57,6 @@ theorem store1_ok {s : State} {base : Addr} (b r : Reg) (hb : s.gpr b = base)
   have w : InRegions s.wr (base + BitVec.ofNat 64 d) 8 := ⟨_, hw, contains_sc hd⟩
   erun [hb, w]
 
-/-- `rsi = [rdi + d]`. -/
-theorem movRsi_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d + 8 ≤ 8192) :
-    WP isa (.block ([.mov .rsi (.mem (sc d))] : List Instr)) s fun t =>
-      t.gpr .rsi = word s.mem base d ∧ (∀ r, r ≠ .rsi → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧
-        t.rd = s.rd ∧ t.wr = s.wr := by
-  have rb : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 d) 8 := hs.read hd
-  erun [hs.rdi, rb]
-  exact fun r hr => by simp only [hr, ite_false]
-
 /-- `rdx = [rdi + BAD]`, then `rdx = (rdx == 0)` into `rax`. -/
 theorem result_ok {s : State} {base : Addr} (hs : Scr s base) :
     WP isa (.block (([.mov .rdx (.mem (sc BAD))] : List Instr) ++ (isZero ++
@@ -907,17 +898,6 @@ theorem verifyEquation_correct (hR : RecoverOk) (_hE : VerifyEqOk) {rt : Prog is
         rw [verifyEquation_some (bytesAt57_len _ _) (bytesAt114_len _ _) (bytesAt57_len _ _) ha hR hQ hRrep,
           Bool.and_eq_true, decide_eq_true_iff, bytesAt_drop57, hS, cA0, cR0, hc0]
         exact ⟨fun h => ⟨h.1.1.1, h.2⟩, fun h => ⟨⟨⟨h.1, rfl⟩, rfl⟩, h.2⟩⟩
-
-theorem verifyEquation_inline : verifyEquation.inline =
-    verifyEquationWith Impl.X448.X86_64.baseline Point64.bodies (rootCall Impl.X448.X86_64.baseline).inline := rfl
-
-/-- `vg_ed448_verify_equation`, its calls of the point functions and `vg_gf448_r64_pow223`
-inlined. -/
-theorem verifyEquation_correct_inline (hR : RecoverOk) (hE : VerifyEqOk) {s : State}
-    (hp : verifyEquationLocal.pre s) :
-    WP isa verifyEquation.inline s fun t => gprPreserved s t ∧ verifyEquationLocal.post s t := by
-  rw [verifyEquation_inline]
-  exact verifyEquation_correct Proof.X448.X86_64.baseline_ok Point64.bodies_ok hR hE (rootCall_ok Proof.X448.X86_64.baseline_ok) hp
 
 theorem verifyEquationFor_inline (v : Impl.Ed448.X86_64.FieldVariant) :
     (verifyEquationFor v).inline = verifyEquationWith v.field v.bodies

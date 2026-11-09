@@ -52,10 +52,6 @@ theorem gacc_succ (m : Mem) (G T : Addr) (g l n : Nat) :
       (m.readW (T + BitVec.ofNat 64 (64 * (g - 1 - n) + 16 * l)) 128) := by
   simp only [gacc, List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil]
 
-theorem prod_zproj_zero (t : State) (h8 : ∀ l < 4, t.zlane .xmm8 l = 0) (h9 : ∀ l < 4, t.zlane .xmm9 l = 0)
-    (h10 : ∀ l < 4, t.zlane .xmm10 l = 0) : ∀ l < 4, prod (t.zproj l) = Prod.zero := fun l hl => by
-  simp only [prod, State.zproj_xmm, h8 l hl, h9 l hl, h10 l hl, Prod.zero]
-
 /-- The products cleared. -/
 theorem clear3_ok (t : State) :
     WP isa (.block [.zop (.zbin .vpxord .xmm8 .xmm8 .xmm8), .zop (.zbin .vpxord .xmm9 .xmm9 .xmm9),

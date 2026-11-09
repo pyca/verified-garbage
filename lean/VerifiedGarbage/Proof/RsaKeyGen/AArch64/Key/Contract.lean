@@ -1,14 +1,17 @@
 module
 
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Key
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # An RSA key from its primes on AArch64: the contract the proofs use
 
 Untrusted: everything here is checked by Lean. `keyA` states
-`Spec.RsaKeyGen.keyContract` on the registers and the stack:
+`Proof.RsaKeyGen.keyContract` on the registers and the stack:
 `vg_rsa_keygen_key(n = x0, n_len = x1, d = x2, d_len = x3, p = x4,
 p_len = x5, q = x6, q_len = x7, dp = [sp], dp_len = [sp + 8],
 dq = [sp + 16], dq_len = [sp + 24], qinv = [sp + 32], qinv_len = [sp + 40],
@@ -22,7 +25,8 @@ namespace VG.Proof.RsaKeyGen.AArch64.Key
 
 open VG VG.AArch64
 open VG.Spec.Rsa (bytesAt)
-open VG.Spec.RsaKeyGen (keyOp keyStatus primeLenValid)
+open VG.Spec.RsaKeyGen (primeLenValid)
+open VG.Proof.RsaKeyGen (keyOp keyStatus)
 
 /-- The `i`-th argument on the stack. -/
 abbrev arg (s : State) (i : Nat) : BitVec 64 := stackArg s i
@@ -97,5 +101,14 @@ def keyA : Contract isa where
   pre := keyPre
   post := keyPost
   pub := keyPub
+
+/-- What a caller's proofs use of `vg_rsa_keygen_key`'s: `keyCode_correct`
+and `keyCode_constantTime`, an instance in `Verified.lean`. A caller's proofs
+assume it, so that they need not import that proof, which the speed check
+keeps out of all but a few modules; only its registration file imports it. -/
+class KeyProof : Prop where
+  correct : ∀ s, keyA.pre s → ∃ t s', Exec isa VG.Impl.RsaKeyGen.AArch64.Key.code s t s' ∧
+    abiPreserved s s' ∧ keyA.post s s'
+  ct : ConstantTime isa keyA.pre keyA.pub VG.Impl.RsaKeyGen.AArch64.Key.code
 
 end VG.Proof.RsaKeyGen.AArch64.Key

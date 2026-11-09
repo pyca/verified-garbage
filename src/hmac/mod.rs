@@ -1,12 +1,5 @@
-//! HMAC (FIPS 198-1, RFC 2104), for any hash function with a verified HMAC
-//! implementation.
-//!
-//! The construction is the same for every hash function `H` ([`HmacHash`]);
-//! what each one provides, in a module of its own here, is verified
-//! assembly for a key of any length, which computes
-//! `H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖ text))` (`VG.Spec.Hmac.hmac`): a key
-//! longer than a block is hashed by the verified `init` itself (FIPS 198-1
-//! §4, steps 1–3).
+//! HMAC (FIPS 198-1, RFC 2104) with keys of any length, over MD5, SHA-1 or a
+//! SHA-2 hash function ([`HmacHash`]).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -39,19 +32,19 @@ pub trait HmacHash: HashFunction + sealed::Sealed {
     type State: Clone;
     /// Starts an HMAC computation with a key of any length.
     #[doc(hidden)]
-    fn hmac_init(key: &[u8]) -> Self::State;
+    fn hmac_init(dit: crate::dit::Dit<'_>, key: &[u8]) -> Self::State;
     /// Absorbs `data`.
     #[doc(hidden)]
-    fn hmac_update(state: &mut Self::State, data: &[u8]);
+    fn hmac_update(dit: crate::dit::Dit<'_>, state: &mut Self::State, data: &[u8]);
     /// Returns the MAC.
     #[doc(hidden)]
-    fn hmac_finalize(state: Self::State) -> Self::Output;
+    fn hmac_finalize(dit: crate::dit::Dit<'_>, state: Self::State) -> Self::Output;
     /// The MAC of `data` with `key`, with the states on the stack.
     #[doc(hidden)]
-    fn hmac_mac(key: &[u8], data: &[u8]) -> Self::Output;
+    fn hmac_mac(dit: crate::dit::Dit<'_>, key: &[u8], data: &[u8]) -> Self::Output;
 }
 
-pub use crate::invalid_mac::InvalidMac;
+use crate::error::InvalidMac;
 
 /// An incremental HMAC computation with the hash function `H`.
 #[derive(Clone)]
@@ -63,19 +56,22 @@ impl<H: HmacHash> Hmac<H> {
     /// Starts an HMAC computation with `key`, of any length (a key longer
     /// than the block size is hashed first).
     pub fn new(key: &[u8]) -> Self {
+        crate::dit::enter!(dit);
         Hmac {
-            state: H::hmac_init(key),
+            state: H::hmac_init(dit, key),
         }
     }
 
     /// Absorbs `data`.
     pub fn update(&mut self, data: &[u8]) {
-        H::hmac_update(&mut self.state, data);
+        crate::dit::enter!(dit);
+        H::hmac_update(dit, &mut self.state, data);
     }
 
     /// Returns the MAC of everything absorbed.
     pub fn finalize(self) -> H::Output {
-        H::hmac_finalize(self.state)
+        crate::dit::enter!(dit);
+        H::hmac_finalize(dit, self.state)
     }
 
     /// Checks that `mac` is the MAC of everything absorbed, in constant
@@ -83,7 +79,8 @@ impl<H: HmacHash> Hmac<H> {
     /// differs from it (its length is public). `mac` must be the whole MAC,
     /// of `H::OUTPUT_SIZE` bytes; a truncated one is rejected.
     pub fn verify(self, mac: &[u8]) -> Result<(), InvalidMac> {
-        if crate::ct::eq(self.finalize().as_ref(), mac) {
+        crate::dit::enter!(dit);
+        if crate::ct::eq(dit, H::hmac_finalize(dit, self.state).as_ref(), mac) {
             Ok(())
         } else {
             Err(InvalidMac)
@@ -93,7 +90,21 @@ impl<H: HmacHash> Hmac<H> {
     /// The MAC of `data` with `key`: as `new`, `update` and `finalize`,
     /// without the intermediate computations.
     pub fn mac(key: &[u8], data: &[u8]) -> H::Output {
-        H::hmac_mac(key, data)
+        crate::dit::enter!(dit);
+        H::hmac_mac(dit, key, data)
+    }
+
+    /// Checks that `mac` is the MAC of `data` with `key`, in constant time,
+    /// as `new`, `update` and `verify` do, without the intermediate
+    /// computations: data independent timing is turned on once rather than
+    /// for each of them.
+    pub fn verify_mac(key: &[u8], data: &[u8], mac: &[u8]) -> Result<(), InvalidMac> {
+        crate::dit::enter!(dit);
+        if crate::ct::eq(dit, H::hmac_mac(dit, key, data).as_ref(), mac) {
+            Ok(())
+        } else {
+            Err(InvalidMac)
+        }
     }
 }
 
@@ -105,87 +116,63 @@ impl<H: HmacHash> Hmac<H> {
 #[derive(Clone)]
 pub struct StreamingHmacState<H, const S: usize> {
     pub(crate) inner: H,
-    pub(crate) outer: [u8; S],
+    pub(crate) outer: crate::align::CacheAligned<[u8; S]>,
 }
 
 impl<H, const S: usize> Drop for StreamingHmacState<H, S> {
     /// Wipes the outer state, which represents `K₀ ⊕ opad` (the inner hash
     /// wipes its own).
     fn drop(&mut self) {
-        crate::zeroize::zeroize(&mut self.outer);
+        crate::zeroize::zeroize(&mut self.outer.0);
     }
 }
 
 /// Makes a hash function over verified streaming primitives (defined by
-/// `streaming_hash!`) an [`HmacHash`], with its verified
+/// `streaming_hash!`) an [`HmacHash`], with the dispatchers of its verified
 /// `vg_hmac_<hash>_init` and `vg_hmac_<hash>_finalize` (contracts
 /// `VG.Spec.Hmac.Instance.initAnyKeyContract` and `finalizeContract` of the
-/// hash's `Instance`), given its streaming state size and its digest size.
-/// The text is absorbed by the hash's own `update`.
-///
-/// `init` and `finalize` are listed for each implementation of the hash (its
-/// backend enum's variants, with the CPU features they need), and a
-/// computation runs those of the implementation its hash was selected for:
-/// the `match` on the backend is exhaustive, so a new implementation of the
-/// hash does not compile until its HMAC functions are listed here too (see
-/// "Variants and generic callers" in `lean/VerifiedGarbage/TCB/Emit.lean`),
-/// and a test checks that they need no CPU feature the hash's
-/// implementation was not selected for.
+/// hash's `Instance`), `vg_hmac_<hash>_init_auto` and
+/// `vg_hmac_<hash>_finalize_auto`, which run the best implementations this
+/// CPU runs, given its streaming state size and its digest size. The text is
+/// absorbed by the hash's own `update`.
 macro_rules! streaming_hmac {
     (
-        $hash:ident ($backend:ident) {
-            $base:ident => ($init:path, $finalize:path)
-            $(, $(#[$attr:meta])* $variant:ident if [$($req:path),*] => ($vinit:path, $vfinalize:path))*
-            $(,)?
-        },
+        $hash:ident,
+        init: $init:path,
+        finalize: $finalize:path,
         state: $state:literal,
         output: $output:literal $(,)?
     ) => {
-        // The CPU features of each implementation, which `tests` checks.
-        $(
-            $(#[$attr])*
-            const _: &[verified_garbage_cpu::Features] = &[$($req),*];
-        )*
-
         impl super::sealed::Sealed for $hash {}
 
         impl super::HmacHash for $hash {
             type State = super::StreamingHmacState<$hash, $state>;
 
-            fn hmac_init(key: &[u8]) -> Self::State {
-                let backend = $backend::select($crate::cpu::detected());
-                let init = match backend {
-                    $backend::$base => $init,
-                    $($(#[$attr])* $backend::$variant => $vinit,)*
-                };
+            fn hmac_init(dit: $crate::dit::Dit<'_>, key: &[u8]) -> Self::State {
                 // The states are written in place, where they are wiped when
                 // the computation is dropped. Once `init` has run, the inner
                 // one represents `K₀ ⊕ ipad`, of a block.
                 let mut state = super::StreamingHmacState {
-                    inner: $hash::from_state([0; $state], Self::BLOCK_SIZE as u64, backend),
-                    outer: [0; $state],
+                    inner: $hash::from_state([0; $state], Self::BLOCK_SIZE as u64),
+                    outer: $crate::align::CacheAligned([0; $state]),
                 };
                 let (inner, _) = state.inner.state_mut();
                 // SAFETY: `inner` and `state.outer` are valid for reads and
                 // writes of a streaming state and `key` for reads of
                 // `key.len()` bytes (of any length); they are distinct
                 // objects or fields, so they do not overlap each other or the
-                // call's stack frame, nor wrap around the address space.
-                // `init` needs no CPU feature that `backend` was not selected
-                // for (`tests::backend_features`).
-                unsafe { init(inner, &mut state.outer, key.as_ptr(), key.len()) };
+                // call's stack frame, nor wrap around the address space. The
+                // dispatcher calls only an implementation the CPU has the
+                // features of.
+                unsafe { $init(dit, inner, &mut state.outer.0, key.as_ptr(), key.len()) };
                 state
             }
 
-            fn hmac_update(state: &mut Self::State, data: &[u8]) {
-                state.inner.update(data);
+            fn hmac_update(dit: $crate::dit::Dit<'_>, state: &mut Self::State, data: &[u8]) {
+                state.inner.update_with(dit, data);
             }
 
-            fn hmac_finalize(mut state: Self::State) -> [u8; $output] {
-                let finalize = match state.inner.backend() {
-                    $backend::$base => $finalize,
-                    $($(#[$attr])* $backend::$variant => $vfinalize,)*
-                };
+            fn hmac_finalize(dit: $crate::dit::Dit<'_>, mut state: Self::State) -> [u8; $output] {
                 // The inner state is finalized in place, and wiped with the
                 // computation.
                 let (inner, count) = state.inner.state_mut();
@@ -197,61 +184,34 @@ macro_rules! streaming_hmac {
                 // around the address space. `inner` represents `(K₀ ⊕ ipad) ‖
                 // text`, of `count` bytes (which the hash's `update` keeps
                 // below 2⁶⁴, so the text is shorter than 2⁶⁴ − B bytes), and
-                // `state.outer` represents `K₀ ⊕ opad`. `finalize` needs no
-                // CPU feature that the hash's implementation was not selected
-                // for (`tests::backend_features`).
-                unsafe { finalize(inner, &state.outer, count, &mut mac) };
+                // `state.outer` represents `K₀ ⊕ opad`. The dispatcher calls
+                // only an implementation the CPU has the features of.
+                unsafe { $finalize(dit, inner, &state.outer.0, count, &mut mac) };
                 mac
             }
 
-            fn hmac_mac(key: &[u8], data: &[u8]) -> [u8; $output] {
-                let backend = $backend::select($crate::cpu::detected());
-                let init = match backend {
-                    $backend::$base => $init,
-                    $($(#[$attr])* $backend::$variant => $vinit,)*
-                };
-                let finalize = match backend {
-                    $backend::$base => $finalize,
-                    $($(#[$attr])* $backend::$variant => $vfinalize,)*
-                };
+            fn hmac_mac(dit: $crate::dit::Dit<'_>, key: &[u8], data: &[u8]) -> [u8; $output] {
                 // As in `hmac_init` and `hmac_finalize`, with the states on
                 // the stack: `inner` is wiped when dropped, `outer` below.
-                let mut inner = $hash::from_state([0; $state], Self::BLOCK_SIZE as u64, backend);
-                let mut outer = [0; $state];
+                let mut inner = $hash::from_state([0; $state], Self::BLOCK_SIZE as u64);
+                let mut outer = $crate::align::CacheAligned([0; $state]);
                 let (st, _) = inner.state_mut();
                 // SAFETY: as in `hmac_init`.
-                unsafe { init(st, &mut outer, key.as_ptr(), key.len()) };
-                inner.update(data);
+                unsafe { $init(dit, st, &mut outer.0, key.as_ptr(), key.len()) };
+                inner.update_with(dit, data);
                 let (st, count) = inner.state_mut();
                 let mut mac = [0; $output];
                 // SAFETY: as in `hmac_finalize`: `st` represents `(K₀ ⊕
                 // ipad) ‖ data`, of `count` bytes, and `outer` `K₀ ⊕ opad`.
-                unsafe { finalize(st, &outer, count, &mut mac) };
-                $crate::zeroize::zeroize(&mut outer);
+                unsafe { $finalize(dit, st, &outer.0, count, &mut mac) };
+                $crate::zeroize::zeroize(&mut outer.0);
                 mac
             }
         }
 
         #[cfg(test)]
         mod tests {
-            #[allow(unused_imports)]
-            use super::*;
-
-            /// Each implementation's `init` and `finalize` need no CPU
-            /// feature that the hash's implementation is not selected for:
-            /// on every set of features that selects it.
-            #[test]
-            fn backend_features() {
-                $(
-                    $(#[$attr])*
-                    for bits in 0..1u32 << $crate::cpu::NAMES.len() {
-                        let f = verified_garbage_cpu::Features(bits);
-                        if $backend::select(f) == $backend::$variant {
-                            assert!(f.contains(verified_garbage_cpu::Features::all(&[$($req),*])));
-                        }
-                    }
-                )*
-            }
+            use super::$hash;
 
             /// `mac` gives the MAC that `new`, `update` and `finalize`
             /// compute: with keys up to longer than a block and messages

@@ -43,15 +43,15 @@ theorem CandidateBase.modulus_ranges {p : CandidateP} {s : State} (h : Candidate
     omega_using [hz, hx]
 
 theorem prepareModulus_state_ok (M : Mont) (R : R2Impl M)
-    {p : CandidateP} {used : Nat} {q : Bool} {s : State} {mi : BitVec 64}
+    {p : CandidateP} {used : Nat} {q : Bool} {c : Checks} {s : State} {mi : BitVec 64}
     (h : CandidateTape p used s)
     (hg : Good s (off p.B 256) (p.Z - 256) (p.phaseWords q) mi)
-    (hp : PhaseHeader p q s)
+    (hp : PhaseHeader p q c s)
     (hn : wv s.mem (off p.B 256) (slot (p.phaseWords q) aN) (p.phaseWords q) = p.phaseValue q)
     (ho : p.phaseValue q % 2 = 1) :
     WP isa (prepareModulus M.mm R.code) s fun t => ∃ mi', CandidateTape p used t ∧
       ModulusReady t (off p.B 256) (p.Z - 256) (p.phaseWords q) mi' (p.phaseValue q) ∧
-      PhaseHeader p q t ∧ CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem ∧ Keep mmRegs s t := by
+      PhaseHeader p q c t ∧ CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem ∧ Keep mmRegs s t := by
   refine WP.mono (prepareModulus_ok M R hg (h.base.phase_dims q) hn ho
     (by omega_using [h.base.phase_large q]) (h.base.phase_wordshape q).1)
     fun t ⟨mi', ht, hf, k⟩ => ?_

@@ -50,11 +50,6 @@ theorem GK.ctx {s s' : State} (h : GK s s') (hc : Ctx s) : Ctx s' :=
   Ctx.of_eq hc (h.gpr _ (by decide) (by decide) (by decide)) (h.gpr _ (by decide) (by decide) (by decide))
     h.rd h.wr
 
-theorem GK.consts {s s' : State} (h : GK s s') (hc : Consts s) : Consts s' :=
-  hc.of_mem (h.gpr _ (by decide) (by decide) (by decide)) h.mem
-
-theorem one_val : Limbs44.val one = 1 := rfl
-
 /-- The value of `Y` that a block setting it leaves. -/
 theorem YSet.yv_val {sel : Nat → Bool} {s s' : State} (h : YSet sel s s') {k : Nat} (hk : k < 8) :
     yval s' k = if sel k then Limbs44.val (fun i => (s.gpr (lg i)).toNat) else 1 := by
@@ -80,10 +75,6 @@ theorem setMul_ok {seg : List Instr} {sel : Nat → Bool} {s : State}
   rw [Y.yv_val hk] at e
   simp only [hval] at e ⊢
   rwa [eh k hk] at e
-
-theorem fold1_eq : ∀ {s s' : State}, (∀ j < 4, ∀ i < 3, hv s' (2 * j) i = hv s (2 * j) i + hv s (2 * j + 1) i) →
-    ∀ j < 4, hval s' (2 * j) = hval s (2 * j) + hval s (2 * j + 1) :=
-  fun h j hj => hval_add (h j hj)
 
 /-! ## The steps -/
 

@@ -57,9 +57,6 @@ theorem aligned : Aligned M Sl := ⟨by decide +kernel,
 theorem regs_x0 : Reg.x0∉regs := by decide
 theorem clob_regs : ∀ r∈clob 4,r∈regs := by decide
 theorem allocated_regs : ∀ r∈allocatedRegs,r∈regs := fun _ hr => List.mem_cons_of_mem _ hr
-theorem work_bounds : ∀ w∈work,w.1+w.2≤8192 := by decide
-theorem buildWork_bounds : ∀ w∈buildWork,w.1+w.2≤8192 := by decide
-
 structure JPt (base : Addr) (s : State) (o : Nat → Nat) (Q : Point C) : Prop where
   lt : ∀ i<5,wordsVal s.mem base (o i) 4<C.p
   jac : InvJ C (tmv C 4 base s (o 0)) (tmv C 4 base s (o 1)) (tmv C 4 base s (o 2)) Q

@@ -28,14 +28,6 @@ theorem leNum_append (a b : List Byte) : leNum (a ++ b) = leNum a + 256 ^ a.leng
     simp only [List.cons_append, leNum, ih, List.length_cons, Nat.pow_succ, Nat.mul_add,
       Nat.add_assoc, Nat.mul_comm _ 256, Nat.mul_assoc]
 
-theorem leNum_lt (a : List Byte) : leNum a < 256 ^ a.length := by
-  induction a with
-  | nil => simp [leNum]
-  | cons x xs ih =>
-    simp only [leNum, List.length_cons, Nat.pow_succ]
-    have := x.isLt
-    omega
-
 theorem leNum_replicate_zero (n : Nat) : leNum (List.replicate n (0 : Byte)) = 0 := by
   induction n with
   | zero => rfl
@@ -150,11 +142,6 @@ theorem absorbAll_block {r a : Nat} {b : List Byte} (h₁ : 0 < b.length) (h₂ 
   rw [List.take_of_length_le h₂]
 
 theorem absorbAll_nil (r a : Nat) : absorbAll r a [] = a := rfl
-
-theorem accumulate_append_block {r : Nat} {a b : List Byte} (ha : a.length % 16 = 0)
-    (h₁ : 0 < b.length) (h₂ : b.length ≤ 16) :
-    accumulate r (a ++ b) = (r * (accumulate r a + leNum (b ++ [0x01]))) % P := by
-  rw [accumulate_append ha, absorbAll_block h₁ h₂]
 
 theorem absorbAll_lt {r a : Nat} (ha : a < P) (msg : List Byte) : absorbAll r a msg < P := by
   rw [absorbAll]

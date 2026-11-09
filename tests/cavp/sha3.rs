@@ -58,7 +58,7 @@ fn monte_carlo(text: &str, n: usize, digest: &dyn Fn(&[u8], &mut [u8])) {
 macro_rules! cavp {
     ($name:ident, $hash:ident, $file:literal, $short:literal, $long:literal) => {
         mod $name {
-            use super::*;
+            use super::{check_messages, check_monte_carlo, $hash};
 
             #[test]
             fn short_messages() {
@@ -170,7 +170,9 @@ fn check_shake_monte_carlo(text: &str, min: usize, max: usize, xof: fn(&[u8], &m
 macro_rules! shake {
     ($name:ident, $xof:ident, $file:literal, $out:literal, $short:literal, $long:literal, $variable:literal, $min:literal, $max:literal) => {
         mod $name {
-            use super::*;
+            use super::{
+                check_shake_messages, check_shake_monte_carlo, check_shake_variable, $xof,
+            };
 
             #[test]
             fn short_messages() {

@@ -12,8 +12,8 @@ working space as a ninth argument, `work`, against the shared contracts
 with it appended (`Proof/AesGcmSiv/Scratch.lean`), which imply these
 (`Verified.lean`); a frame allocates it (`Frame.lean`). The arguments are on
 the stack, from `[esp + 4]` (cdecl), and may be overwritten (`writeArgs`);
-the calls of `vg_aes_ctr32`, `vg_aes_expand_key` and `vg_ghash`, which make
-no calls, push their arguments and return addresses in the 28 bytes below
+the calls of `vg_aes_ctr32_to`, `vg_aes_expand_key` and `vg_ghash`, which make
+no calls, push their arguments and return addresses in the 32 bytes below
 `esp`, which no buffer overlaps, nor the return address.
 -/
 
@@ -35,7 +35,7 @@ abbrev tagR (s : State) : Region := ⟨(arg s 7).setWidth 64, 16⟩
 abbrev workR (s : State) : Region := ⟨(arg s 8).setWidth 64, 2816⟩
 abbrev argsR' (s : State) : Region := ⟨argAddr s 0, 36⟩
 abbrev retR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-abbrev stackR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 28, 28⟩
+abbrev stackR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩
 
 /-- What both functions' preconditions say of the buffers and the
 arguments, but for which may be written. -/
@@ -53,7 +53,7 @@ def oneLay (s : State) : Prop :=
   (stackR s).Disjoint (argsR' s) ∧
   (arg s 0).toNat + 240 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 12 ≤ 2 ^ 32 ∧
   (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 5).toNat + (arg s 6).toNat ≤ 2 ^ 32 ∧
-  (arg s 7).toNat + 16 ≤ 2 ^ 32 ∧ (arg s 8).toNat + 2816 ≤ 2 ^ 32 ∧ 28 ≤ (s.gpr .esp).toNat ∧
+  (arg s 7).toNat + 16 ≤ 2 ^ 32 ∧ (arg s 8).toNat + 2816 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧
   (s.gpr .esp).toNat + 40 ≤ 2 ^ 32 ∧ ((arg s 1).toNat = 10 ∨ (arg s 1).toNat = 14)
 
 /-- `seal` writes the tag. -/

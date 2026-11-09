@@ -118,9 +118,6 @@ theorem ofNat_lit (n : Nat) : (OfNat.ofNat n : Addr) = BitVec.ofNat 64 n := rfl
 
 theorem ctxH_eq (m : Mem) (p : Addr) : Spec.Gcm.ctxH m p = Spec.Gcm.blockAt m (p + BitVec.ofNat 64 240) := rfl
 
-theorem toNat_mod16_64 (n : Nat) : (BitVec.ofNat 64 n).toNat % 16 = n % 16 := by
-  rw [BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide)]
-
 end VG.Proof.AesGcm.X86
 
 namespace VG.Proof.AesGcm.X86

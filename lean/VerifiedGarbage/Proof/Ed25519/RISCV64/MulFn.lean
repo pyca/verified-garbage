@@ -51,17 +51,6 @@ theorem byte_out {b : Addr} {i e k : Nat} (hi : i + 1 ≤ 4096) (he : e + k ≤ 
     ¬ (⟨b + BitVec.ofNat 64 e, k⟩ : Region).Contains (b + BitVec.ofNat 64 i) 1 := fun hc =>
   Offset.disjoint b (d := i) (n := 1) (e := e) (k := k) (by omega) (by omega) (by omega) _ (Region.contains_self _ _) hc
 
-theorem keeps_mul {ws : Addr} {o : BitVec 32} (ho : o.toNat + 32 ≤ 768) {m m' : Mem}
-    (hf : Frame (mulW ws o.toNat) m m') : Keeps ws o m m' := by
-  intro i hi hown hoi
-  simp only [Proof.X25519.Field32.wsBytes, Proof.X25519.Field32.ownAt, Proof.X25519.Field32.ownEnd,
-    Proof.X25519.Field32.elemBytes] at hi hown hoi
-  refine hf _ fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact byte_out (by omega) (by omega) (by omega)
-  · exact byte_out (by omega) (by omega) hoi
-
 theorem mulFn_ok {s : State} (hrd : s.rd = []) (hwr : s.wr = [⟨s.gpr .a0, 4096⟩])
     (hO : Fits (offArg s .a1)) (hA : Fits (offArg s .a2)) (hB : Fits (offArg s .a3))
     (hal : (s.gpr .a0).toNat % 8 = 0) :

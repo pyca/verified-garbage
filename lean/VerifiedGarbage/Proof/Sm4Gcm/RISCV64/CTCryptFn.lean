@@ -46,7 +46,7 @@ after `aad_len` (`A`) bytes of additional data and `text_len` (`T`) of
 text. -/
 def DI (c st w sp D : Addr) (N A T : BitVec 64) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ V .s9 = D ∧ V .s8 = N ∧ V .s10 = A ∧
-    V .s11 = T ∧ Env V sp s ∧ Big V sp ∧ (below sp 3232).Disjoint ⟨D, N.toNat⟩ ∧ DataW c st w s D N.toNat
+    V .s11 = T ∧ Env V sp s ∧ Big V sp ∧ (below sp 3248).Disjoint ⟨D, N.toNat⟩ ∧ DataW c st w s D N.toNat
 
 /-- Before `crypt`, with the arguments kept. -/
 def CI (c st w sp D : Addr) (N A T : BitVec 64) (s : State) : Prop :=

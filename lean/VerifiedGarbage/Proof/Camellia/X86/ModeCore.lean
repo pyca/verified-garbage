@@ -83,7 +83,6 @@ theorem RArg.frame {s s' : State} {R : Nat} {rs : List Region} (h : RArg s R) (h
   rw [hea, hf.readW (Region.contains_self _ _) (fun r hr => by
     obtain ⟨r', hr', hs⟩ := hsub r hr; exact (hd r' hr').sub_right hs) (by decide), hv]
 
-theorem dirCore_slots (d : Dir) : (dirCore d).slots = 672 := rfl
 theorem dirCore_total (d : Dir) : (dirCore d).total = 682 := rfl
 theorem dirCore_ka (d : Dir) : (dirCore d).ka = 2 := rfl
 @[simp] theorem dirCore_bw (d : Dir) : (dirCore d).bw = 4 := rfl
@@ -210,17 +209,6 @@ def dirCipher : Dir → Spec.Camellia.Subkeys → Spec.Cbc.Cipher
   | .encrypt => Spec.Camellia.cipher
   | .decrypt => Spec.Camellia.invCipher
 
-/-- The cipher on a block in memory: `crypt8`'s words. -/
-theorem dirCipher_bytes (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) (ws : List (BitVec 64)) (m : Mem) (p : Addr) :
-    dirCipher d (Spec.Camellia.subkeysOfWords R ws) (Spec.Aes.bytesAt m p 16) =
-      (Spec.Camellia.encodeBlock (cryptWords (R / 6) (fun i => ws.getD (permOf d (R / 6) i) 0)
-        (Spec.Camellia.decodeBlock (Spec.Camellia.blockAt m p)))).toList := by
-  cases d
-  · rw [dirCipher, Spec.Camellia.cipher, bytesAt_eq_blockAt, ofFn_toList, Spec.Camellia.encryptBlock,
-      encryptWith_eq hR]; rfl
-  · rw [dirCipher, Spec.Camellia.invCipher, bytesAt_eq_blockAt, ofFn_toList, Spec.Camellia.decryptBlock,
-      decryptWith_eq hR]; rfl
-
 /-- The cipher on a block in memory: its block function. -/
 theorem dirCipher_blockFn (d : Dir) (K : Spec.Camellia.Subkeys) (m : Mem) (p : Addr) :
     dirCipher d K (Spec.Aes.bytesAt m p 16) =
@@ -233,13 +221,13 @@ theorem dirCipher_blockFn (d : Dir) (K : Spec.Camellia.Subkeys) (m : Mem) (p : A
 theorem holds_of_ready {d : Dir} {m : Mem} {B : BitVec 32} {R : Nat} {ws : List (BitVec 64)}
     (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) (hR : R = 18 ∨ R = 24)
     (he : ∀ i < 8 * (R / 6) + 2, EntryOk m B i (ws.getD (permOf d (R / 6) i) 0)) :
-    Spec.Camellia.Prepared.Holds layout m (B.setWidth 64) R ws (specDir d) :=
+    Proof.Camellia.Prepared.Holds layout m (B.setWidth 64) R ws (specDir d) :=
   holds_of_words hfit hR (words_of_entries fun e he' => by
     rw [ofSpecDir_specDir, keyEntry_eq]; exact he e he')
 
 theorem ready_of_holds {d : Dir} {m : Mem} {B : BitVec 32} {R : Nat} {ws : List (BitVec 64)}
     (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) (hR : R = 18 ∨ R = 24)
-    (h : Spec.Camellia.Prepared.Holds layout m (B.setWidth 64) R ws (specDir d)) :
+    (h : Proof.Camellia.Prepared.Holds layout m (B.setWidth 64) R ws (specDir d)) :
     ∀ i < 8 * (R / 6) + 2, EntryOk m B i (ws.getD (permOf d (R / 6) i) 0) := fun i hi => by
   have := entries_of_words (words_of_holds hfit hR h) hi
   rwa [ofSpecDir_specDir, keyEntry_eq] at this
@@ -247,9 +235,9 @@ theorem ready_of_holds {d : Dir} {m : Mem} {B : BitVec 32} {R : Nat} {ws : List 
 /-- The table survives what keeps the bytes outside a batch's ranges. -/
 theorem holds_of_keeps {R : Nat} {m m' : Mem} {B : BitVec 32} {w : List (BitVec 64)}
     {d : Spec.Camellia.Direction} (hR : R = 18 ∨ R = 24)
-    (h : Spec.Camellia.Prepared.Holds layout m (B.setWidth 64) R w d)
-    (hk : Spec.Camellia.Prepared.Keeps (B.setWidth 64) wsWords layout.cryptScratch m m') :
-    Spec.Camellia.Prepared.Holds layout m' (B.setWidth 64) R w d := fun r hr i hi => by
+    (h : Proof.Camellia.Prepared.Holds layout m (B.setWidth 64) R w d)
+    (hk : Proof.Camellia.Prepared.Keeps (B.setWidth 64) wsWords layout.cryptScratch m m') :
+    Proof.Camellia.Prepared.Holds layout m' (B.setWidth 64) R w d := fun r hr i hi => by
   have hg : R / 6 ≤ 4 := by omega
   have hr' := hr
   rw [layout_table] at hr'

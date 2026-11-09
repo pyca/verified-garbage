@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.EntropyRequest
 
 /-! # Native FFDH parameter-generation initialization on PPC64LE: correctness, constant time -/
 
@@ -102,8 +103,9 @@ def initPost (s t : State) : Prop :=
   match Spec.Ffdh.parameterInit (s.gpr .r4).toNat ((s.gpr .r5).setWidth 32).toNat with
   | none => ((t.gpr .r3).setWidth 32).toNat = 0 ∧
       Spec.Rsa.wordsAt t.mem (s.gpr .r3) 4 = List.replicate 4 0
-  | some values => ((t.gpr .r3).setWidth 32).toNat = 1 ∧
-      Spec.Rsa.wordsAt t.mem (s.gpr .r3) 4 = values.map (BitVec.ofNat 64)
+  | some values => ((t.gpr .r3).setWidth 32).toNat = 1 ∧ ∃ first,
+      Spec.Rsa.wordsAt t.mem (s.gpr .r3) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
+      Spec.Entropy.RequestValid (Spec.Ffdh.parameterEntropy (s.gpr .r4).toNat) 0 first
 
 def initPub (s t : State) : Prop :=
   s.sp = t.sp ∧ s.gpr .r3 = t.gpr .r3 ∧ s.gpr .r4 = t.gpr .r4 ∧
@@ -156,14 +158,13 @@ theorem init_ok {s : State} (h : StateWr s) : WP isa init s (initPost s) := by
       have hvw : StateWr v := by rw [StateWr, kv.2.2, h3]; exact h
       refine WP.mono (initialize_ok hvw hv4 hv.2.1) fun t ⟨ht, hmt⟩ => ?_
       have he : Spec.Ffdh.parameterInit (s.gpr .r4).toNat ((s.gpr .r5).setWidth 32).toNat =
-          some [Spec.Ffdh.parameterAttempts n, (n + 7) / 8, Spec.Ffdh.parameterEntropy n,
-            512 * ((n + 7) / 8)] := by
+          some [Spec.Ffdh.parameterAttempts n, (n + 7) / 8, Spec.Ffdh.parameterEntropy n] := by
         rw [hxn, hgn]
         simp only [Spec.Ffdh.parameterInit]
         refine ite_eq_left ?_
         simpa only [initValid, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, beq_iff_eq, and_assoc] using hv
       simp only [initPost, he]
-      refine ⟨by rw [ht]; rfl, ?_⟩
+      refine ⟨by rw [ht]; rfl, _, ?_, by rw [hxn]; exact Proof.Ffdh.first_valid hv.1⟩
       rw [hmt, hm', hm, h3, initWritten_words]
       rfl
     · rw [ite_eq_right hv] at h12'

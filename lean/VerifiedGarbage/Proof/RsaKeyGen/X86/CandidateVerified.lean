@@ -38,6 +38,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateEntry
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTimingInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 /-! # Native candidate generation has complete correctness, timing, and satisfiability certificates -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/CandidateSaved.lean`, which only this module imported.
@@ -213,7 +214,7 @@ theorem correct {mont round : Prog isa} {montName roundName : String}
   obtain ⟨trace, t, run, preserved, R⟩ := framed_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack
     (call_valid h) (entry_input h) A.low D.returnFar
   refine ⟨trace, t, run, preserved, ?_⟩
-  sig_post [contract, Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig,
+  sig_post [contract, Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
   rw [BitVec.setWidth_append_eq_right]
   have entropyLength : (callEntropy s).length = (arg s 8).toNat := VG.Proof.Bignum.bytesAt_length _ _ _
@@ -265,7 +266,7 @@ structure PublicInputs (s t : State) : Prop where
       Spec.RsaKeyGen.candidateLeak (arg t 1).toNat (callEBytes t) (callPBytes t) (callEntropy t)
 
 theorem public_inputs {s t : State} (H : contract.pub s t) : PublicInputs s t := by
-  sig_pub [contract, Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig,
+  sig_pub [contract, Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts] at H
   sig_split H
   refine ⟨by with_reducible assumption, ?_, by with_reducible assumption, by dsimp only [callEBytes, callPBytes, callEntropy]; with_reducible assumption⟩

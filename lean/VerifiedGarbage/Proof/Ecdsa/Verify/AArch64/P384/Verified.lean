@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
@@ -46,6 +48,14 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedSource
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointChecks
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash
+public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash
+meta import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Spec.Ecdsa.P384
 /-!
 # ECDSA verification over P-384 on AArch64: `Verified`
 
@@ -70,7 +80,7 @@ section
 
 `Contract.lean`'s contract with the verifier's table of `[m]G`, `m = 1 … 256`
 (`P384Joint.p384v`, in the static `VG_P384_GTAB`) in place of the comb's: the
-facts of `Spec.Ecdsa.P384.inst.verifyContract` with those constants, by name,
+facts of `Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst` with those constants, by name,
 and the precondition the proofs are written against (`VPreT`).
 -/
 
@@ -139,8 +149,8 @@ theorem spec_preG {s : State}
     (f2 : (s.gpr .x2).toNat + 96 ≤ 2 ^ 64) (f3 : (s.gpr .x3).toNat + 8192 ≤ 2 ^ 64)
     (ht : TblHeldG s [⟨s.gpr .x3, 8192⟩])
     (hal : (s.syms P384Joint.p384v.tsym).toNat % 64 = 0) :
-    (Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts P384Joint.p384v.combConsts)).pre s := by
-  sig_pre [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (AArch64.abi.withConsts P384Joint.p384v.combConsts)).pre s := by
+  sig_pre [Spec.Ecdsa.P384.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.P384.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p384v_combConsts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   obtain ⟨held, fit, hdw⟩ := ht
@@ -158,7 +168,7 @@ def satStateG : State where
   syms _ := 0x100000
 
 theorem sat_specG :
-    (Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts P384Joint.p384v.combConsts)).pre
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (AArch64.abi.withConsts P384Joint.p384v.combConsts)).pre
       satStateG := by
   have hl := p384v_combWords_length
   have held : ∀ i < P384Joint.p384v.combWords.length, satStateG.mem.readW (satStateG.syms P384Joint.p384v.tsym +
@@ -172,20 +182,20 @@ theorem sat_specG :
     rintro r rfl; exact Region.disjoint_of_sep (by decide)
 
 theorem impliesG : verifyGAArch64.Implies
-    (Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts P384Joint.p384v.combConsts)) where
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (AArch64.abi.withConsts P384Joint.p384v.combConsts)) where
   pre s h := by
-    sig_pre [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    sig_pre [Spec.Ecdsa.P384.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
       Spec.P384.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p384v_combConsts,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
     obtain ⟨hd, hheld, hfit, hdw, -, ht, hw, h1, h2, h3, -, -, -, h4⟩ := h
     refine ⟨?_, hw, h1, h2, h3, h4, hheld, hfit, by rw [hw] at hdw; exact hdw⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post := by
-    sig_implies_post [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.verifyContract,
-      Spec.Ecdsa.Instance.verifySig, Spec.P384.curve, Spec.Ecdsa.scratchWords, AArch64.abi,
+    sig_implies_post [Spec.Ecdsa.P384.inst, Proof.Ecdsa.verifyContract,
+      Proof.Ecdsa.verifySig, Spec.P384.curve, Spec.Ecdsa.scratchWords, AArch64.abi,
       AArch64.argRegs, p384v_combConsts, Abi.withConsts, verifyGAArch64, vfG]
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    sig_pub [Spec.Ecdsa.P384.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
       Spec.P384.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p384v_combConsts,
       Abi.withConsts] at h
     obtain ⟨hsp, hsy, -, h0, h1, h2, h3⟩ := h
@@ -193,10 +203,10 @@ theorem impliesG : verifyGAArch64.Implies
   sat := ⟨satStateG, sat_specG⟩
 
 theorem jacPublicG_of_spec {s₁ s₂ : State}
-    (pub : (Spec.Ecdsa.P384.inst.verifyContract
+    (pub : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst
       (AArch64.abi.withConsts P384Joint.p384v.combConsts)).pub s₁ s₂) :
     JacPublicT p384 "VG_P384_GTAB" s₁ s₂ := by
-  sig_pub [Spec.Ecdsa.P384.inst,Spec.Ecdsa.Instance.verifyContract,Spec.Ecdsa.Instance.verifySig,
+  sig_pub [Spec.Ecdsa.P384.inst,Proof.Ecdsa.verifyContract,Proof.Ecdsa.verifySig,
     Spec.P384.curve,Spec.Ecdsa.scratchWords,AArch64.abi,AArch64.argRegs,p384v_combConsts,
     Abi.withConsts] at pub
   obtain ⟨hsp,hsy,inputs,h0,h1,h2,h3⟩ := pub
@@ -895,8 +905,8 @@ theorem verify_ct (hL : Weierstrass.Law Spec.P384.curve) (hO : Weierstrass.Prime
     (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P384.curve 9 1 Impl.P384.p384G9 Impl.P384.p384G9Start) :
     ConstantTime isa
-      (Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts P384Joint.p384v.combConsts)).pre
-      (Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts P384Joint.p384v.combConsts)).pub
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (AArch64.abi.withConsts P384Joint.p384v.combConsts)).pre
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (AArch64.abi.withConsts P384Joint.p384v.combConsts)).pub
       verifyP384 := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   exact Joint.verify_public_ct (p384_ok hI) hL hO (by decide) hT (dbl_spec hI) _ _ _ _ _ _
@@ -906,9 +916,24 @@ theorem verify_verified (hL : Weierstrass.Law Spec.P384.curve) (hO : Weierstrass
     (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P384.curve 9 1 Impl.P384.p384G9 Impl.P384.p384G9Start) :
     Verified AArch64.target verifyP384
-      (Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts P384Joint.p384v.combConsts)) := by
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (AArch64.abi.withConsts P384Joint.p384v.combConsts)) := by
   refine ⟨fun s hs => ?_, verify_ct hL hO hI hT, impliesG.sat⟩
   obtain ⟨t, s', he, ha, hp⟩ := verify_a64 hL hO hI hT s (impliesG.pre _ hs)
   exact ⟨t, s', he, ha, impliesG.post s s' hs hp⟩
+
+
+/-- `vg_ecdsa_p384_verify`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash
+(`Hash.verifyHash_verified_cons`). -/
+theorem verifyHash_verified (hL : Weierstrass.Law Spec.P384.curve) (hO : Weierstrass.PrimeOrder Spec.P384.curve)
+    (hI : Weierstrass.AArch64.InvSounds)
+    (hT : Weierstrass.CombOkW Spec.P384.curve 9 1 Impl.P384.p384G9 Impl.P384.p384G9Start) :
+    Verified AArch64.target
+      (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false verifyP384)
+      (Spec.Ecdsa.P384.inst.verifyHashContract (AArch64.abi.withConsts P384Joint.p384v.combConsts) 80) :=
+  Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.p384_len (by decide) (verify_verified hL hO hI hT)
+    (by taint_decide) (Hash.hashSat_cons (by decide) sat_specG (by decide) fun r hr => by
+      simp only [satStateG, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
 
 end VG.Proof.Ecdsa.Verify.AArch64.P384

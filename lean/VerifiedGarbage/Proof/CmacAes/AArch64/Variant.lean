@@ -42,14 +42,16 @@ def UpdateImpl.ctr32 (v : Proof.Aes.AArch64.Ctr32Impl) : UpdateImpl where
   ctr := v
   ctrFeatures := rfl
 
-/-- Round keys and chaining value stay in registers across all blocks. -/
+/-- Round keys and chaining value stay in registers across all blocks:
+`vg_cmac_aes_update_aes`, faster than the chaining by calls of
+`vg_aes_ctr32_aes` for any number of blocks. -/
 def UpdateImpl.aese : UpdateImpl where
-  callee := ⟨"vg_cmac_aes_update_aes_cbc", Impl.CmacAes.AArch64.Aese.update⟩
+  callee := ⟨"vg_cmac_aes_update_aes", Impl.CmacAes.AArch64.Aese.update⟩
   noFrames := by decide +kernel
   ok := Aese.correct
   ct := Aese.ct
   keepsV := by decide +kernel
-  suffix := "_aes_cbc"
+  suffix := "_aes"
   features := ["aes"]
   ctr := .aese
   ctrFeatures := rfl

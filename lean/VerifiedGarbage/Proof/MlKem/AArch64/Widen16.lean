@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Widen16
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass1
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
@@ -34,14 +33,6 @@ open VG.Impl.MlKem.AArch64.Widen16 (widenBody widen)
 def CoeffsIn (m : Mem) (p : Addr) (S : Nat → Prop) [DecidablePred S] (G old : Nat → BitVec 32) :
     Prop :=
   ∀ i < 256, coeffAt m p i = if S i then G i else old i
-
-theorem CoeffsIn.congr {m : Mem} {p : Addr} {S S' : Nat → Prop} [DecidablePred S] [DecidablePred S']
-    {G old : Nat → BitVec 32} (h : CoeffsIn m p S G old) (hS : ∀ i < 256, (S' i ↔ S i)) :
-    CoeffsIn m p S' G old := fun i hi => by
-  rw [h i hi]
-  by_cases c : S i
-  · rw [ite_eq_left c, ite_eq_left ((hS i hi).2 c)]
-  · rw [ite_eq_right c, ite_eq_right (fun h' => c ((hS i hi).1 h'))]
 
 /-- Storing four coefficients `t, …, t + 3`. -/
 theorem CoeffsIn.write16 {m : Mem} {p : Addr} {S S' : Nat → Prop} [DecidablePred S]

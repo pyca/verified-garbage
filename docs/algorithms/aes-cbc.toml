@@ -1,5 +1,5 @@
 name = "AES-CBC (128-, 192- and 256-bit keys)"
 family = "Ciphers"
 specs = ["Aes", "Cbc"]
-modules = ["src/aes_cbc.rs"]
+modules = ["src/cipher/aes/cbc.rs"]
 asm = ["aes_cbc"]

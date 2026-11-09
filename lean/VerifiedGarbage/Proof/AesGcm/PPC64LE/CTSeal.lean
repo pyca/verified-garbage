@@ -147,11 +147,6 @@ theorem sealWith_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {textBody : Prog isa}
     rw [ea0, ea1, e3, e4, e5, e6, e7, e8, e9, e10, esp] at this
     exact WP.mono this fun s' ⟨hO, h24, h25, h20, hT⟩ => ⟨⟨hO, h20, hT⟩, h24, h25⟩
 
-theorem seal_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    ConstantTime isa sealPPC64LE.pre sealPPC64LE.pub «seal» :=
-  sealWith_ct (fun L he hd hR hv ha hab => SealFused.smallBody_ok L he hd hR hv ha hab)
-    (fun L hv => SealFusedCT.smallBody_ct L hv)
-
 theorem sealFused_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
     ConstantTime isa sealPPC64LE.pre sealPPC64LE.pub Impl.AesGcm.PPC64LE.SealFused.seal :=
   sealWith_ct (fun L he hd hR hv ha hab => SealFused.body_ok L he hd hR hv ha hab)

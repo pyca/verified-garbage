@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.GPow
 import VerifiedGarbage.Proof.Dsa.Generation.Search
+public import VerifiedGarbage.Proof.Dsa.Generation.GeneratorCount
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
@@ -9,7 +10,7 @@ import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.GRange
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 
-/-! # The generator: the `h` of the tape in turn (A.2.1) -/
+/-! # The generator: the `h` of the window in turn (A.2.1) -/
 
 @[expose] public section
 namespace VG.Proof.Dsa.X86.Generation
@@ -163,6 +164,8 @@ structure GLoop (E : Env) (g : Geo) (p Q : Nat) (Rg : Option Nat) (s : State) (j
   fg : t.mem.readW (off E.base fG) 32 = BitVec.ofNat 32 4
   hj : j * E.pLen ≤ E.hsLen
   spec : Spec.Dsa.generator p Q ((hList E).drop j) = Rg
+  count : VG.Proof.Dsa.Generation.generatorCount p Q (hList E) =
+    j + VG.Proof.Dsa.Generation.generatorCount p Q ((hList E).drop j)
 
 /-- The arrays outside the generator's working space are as they were. -/
 theorem gkeep_arrs {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t : State} (K : GKeep E g s t) {d : Nat}
@@ -181,7 +184,18 @@ theorem gkeep_arrs {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t : State}
 
 /-- Whether the loop goes on after `h` number `j`. -/
 def gCont (E : Env) (p x j : Nat) : Bool :=
-  decide (E.hsLen - j * E.pLen ≠ 0 ∧ ¬ Found (Spec.Dsa.decodeBE (hChunk E j)) p x)
+  decide (¬ E.hsLen - j * E.pLen < E.pLen ∧ ¬ Found (Spec.Dsa.decodeBE (hChunk E j)) p x)
+
+/-- Where the search for g leaves `fH`: after the candidates it read. -/
+def hEnd (E : Env) (p Q : Nat) : BitVec 32 :=
+  (E.hs + BitVec.ofNat 64 (E.pLen * VG.Proof.Dsa.Generation.generatorCount p Q (hList E))).setWidth 32
+
+theorem hit_found {p Q x h : Nat} (hx' : x = (p - 1) / Q) :
+    VG.Proof.Dsa.Generation.generatorHit p Q h = decide (Found h p x) := by
+  subst hx'
+  unfold VG.Proof.Dsa.Generation.generatorHit Found gVal
+  rw [VG.Proof.Dsa.powMod_eq]
+  by_cases a : 1 < h <;> by_cases b : h < p - 1 <;> by_cases c : 1 < h ^ ((p - 1) / Q) % p <;> simp [a, b, c]
 
 /-- One `h`: the loop exits with the generator's result, or goes on. -/
 theorem gBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) {p Q x : Nat}
@@ -190,20 +204,21 @@ theorem gBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
     (hP : val32 s.mem E.base aP g.n32 = p) (hE : val32 s.mem E.base aE g.n32 = x) (hxl : x < 2 ^ (32 * g.e))
     (hp1 : 1 < p) (hodd : p % 2 = 1) (hplt : p < 2 ^ (8 * g.pLen)) {j : Nat} {t : State}
     (L : GLoop E g p Q Rg s j t) :
-    WP isa (seqs [.block (cmpF fHLeft 0),
-      .ite .e (.block (stImm fG 2))
+    WP isa (seqs [.block (cmpF fHLeft g.pLen),
+      .ite .b (.block (stImm fG 2))
         (seqs [g.gStep, .block [.mov .eax (.mem (sc fH)), .alu .add .eax (.imm (BitVec.ofNat 32 g.pLen)),
           .store (sc fH) .eax, .mov .eax (.mem (sc fHLeft)), .alu .sub .eax (.imm (BitVec.ofNat 32 g.pLen)),
           .store (sc fHLeft) .eax]]),
       .block (cmpF fG 4)]) t fun t' =>
-      (t'.zf = some false ∧ gCont E p x j = false ∧ GKeep E g s t' ∧ GRes E g t'.mem Rg) ∨
+      (t'.zf = some false ∧ gCont E p x j = false ∧ GKeep E g s t' ∧ GRes E g t'.mem Rg ∧
+        t'.mem.readW (off E.base fH) 32 = hEnd E p Q) ∨
       (t'.zf = some true ∧ gCont E p x j = true ∧ (j + 1) * E.pLen ≤ E.hsLen ∧ GLoop E g p Q Rg s (j + 1) t') := by
   have sz := v.size_ge
   have bd := G.bounds
   have nw := v.scratchFit
-  have hl : E.hT.length = E.hsLen := by rw [← L.keep.base.hs, VG.Proof.Bignum.bytesAt_length]
-  have lens := v.lens
-  have whole : E.hsLen = E.hsLen / E.pLen * E.pLen := (Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero v.hsWhole)).symm
+  have hl : E.hT.length = E.hsLen := by rw [← L.keep.base.hs v, VG.Proof.Bignum.bytesAt_length]
+  have lens := v.witLen32
+  have hsl : E.hsLen < 2 ^ 32 := by have := v.hsIn; omega_arith
   have pl := v.pLen_ge
   have gA := gRanges_apart G v
   have arrK : ∀ {d : Nat}, 9728 ≤ d → d + 4 * g.n32 ≤ 9728 + 400 * 8 ∨ 9728 + 400 * 10 ≤ d →
@@ -211,33 +226,36 @@ theorem gBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
     gkeep_arrs G v L.keep h₀ h₁ h₂
   have n32 : g.n32 = g.pLen / 4 := rfl
   simp only [seqs]
-  refine WP.seq (cmpF_end L.keep.base.scr (o := fHLeft) (v := 0) (by simp only [fHLeft, hdr]; omega_arith) L.left
-    (by omega_arith) (by decide) fun t₁ g₁ m₁ rd₁ wr₁ sy₁ z₁ => ?_)
+  refine WP.seq (cmpFb_end L.keep.base.scr (o := fHLeft) (v := g.pLen) (by simp only [fHLeft, hdr]; omega_arith) L.left
+    (by omega_arith) (by omega_arith) fun t₁ g₁ m₁ rd₁ wr₁ sy₁ z₁ => ?_)
   have K₁ := L.keep.mem m₁ (g₁ _ (by decide)) (g₁ _ (by decide)) rd₁ wr₁ sy₁
   refine WP.seq (WP.ite _ z₁ (fun hz => stImm_end K₁.base.scr (o := fG) (v := 2) (by simp only [fG, hdr]; omega_arith)
     fun t₂ g₂ m₂ rd₂ wr₂ sy₂ => ?_) (fun hz => ?_))
   · -- No `h` left.
-    have h0 : E.hsLen - j * E.pLen = 0 := of_decide_eq_true hz
+    have h0 : E.hsLen - j * E.pLen < E.pLen := by have h := of_decide_eq_true hz; rwa [← hp] at h
     have K₂ := K₁.store G v (d := fG) (by simp [gRanges, wRanges]) _ m₂ (g₂ _ (by decide)) (g₂ _ (by decide)) rd₂ wr₂
       sy₂
     refine cmpF_end K₂.base.scr (o := fG) (v := 4) (w := 2) (by simp only [fG, hdr]; omega_arith)
       (by rw [m₂, Mem.readW_writeW_self32]) (by decide) (by decide) fun t₃ g₃ m₃ rd₃ wr₃ sy₃ z₃ => ?_
-    refine .inl ⟨z₃, by simp [gCont, h0], K₂.mem m₃ (g₃ _ (by decide)) (g₃ _ (by decide)) rd₃ wr₃ sy₃, ?_⟩
     have hN : E.hT.length / E.pLen ≤ j := by
-      rw [hl]; exact Nat.div_le_of_le_mul (by rw [Nat.mul_comm]; omega_arith)
-    have hR : Rg = none := by
-      rw [← L.spec, List.drop_eq_nil_of_le (by rw [hList_length]; exact hN)]
-      rfl
-    rw [hR]; show _ = _; rw [m₃, m₂, Mem.readW_writeW_self32]
-  · -- `h` number `j`.
-    have hne : E.hsLen - j * E.pLen ≠ 0 := of_decide_eq_false hz
-    have hj1 : (j + 1) * E.pLen ≤ E.hsLen := by
-      have hlt : j * E.pLen < E.hsLen / E.pLen * E.pLen := by omega_arith
-      have := Nat.lt_of_mul_lt_mul_right hlt
-      have := Nat.mul_le_mul_right E.pLen (show j + 1 ≤ E.hsLen / E.pLen by omega_arith)
+      rw [hl]
+      have := (Nat.div_lt_iff_lt_mul (k := E.pLen) (by omega_arith)).mpr
+        (show E.hsLen < (j + 1) * E.pLen by rw [Nat.succ_mul]; omega_arith)
       omega_arith
+    have hD : (hList E).drop j = [] := List.drop_eq_nil_of_le (by rw [hList_length]; exact hN)
+    refine .inl ⟨z₃, by simp [gCont, h0], K₂.mem m₃ (g₃ _ (by decide)) (g₃ _ (by decide)) rd₃ wr₃ sy₃, ?_, ?_⟩
+    · have hR : Rg = none := by
+        rw [← L.spec, hD]
+        rfl
+      rw [hR]; show _ = _; rw [m₃, m₂, Mem.readW_writeW_self32]
+    · rw [m₃, m₂, word_store_other v _ (by simp only [fH, hdr]; omega_arith) (by simp only [fG, hdr]; omega_arith)
+        (by simp only [fH, fG, hdr]; omega_arith), m₁, L.fh, hEnd, L.count, hD]
+      simp only [VG.Proof.Dsa.Generation.generatorCount, Nat.add_zero, Nat.mul_comm]
+  · -- `h` number `j`.
+    have hne : ¬ E.hsLen - j * E.pLen < E.pLen := by have h := of_decide_eq_false hz; rwa [← hp] at h
+    have hj1 : (j + 1) * E.pLen ≤ E.hsLen := by rw [Nat.succ_mul]; omega_arith
     have hjN : j < E.hT.length / E.pLen := by
-      rw [hl]; exact Nat.lt_of_mul_lt_mul_right (a := E.pLen) (by rw [Nat.succ_mul] at hj1; omega_arith)
+      rw [hl]; exact (Nat.le_div_iff_mul_le (by omega_arith)).mpr hj1
     refine WP.seq (WP.mono (gStep_ok G v hp K₁.base (j := j) (p := p) (x := x) (F := 4) hj1
       (by rw [m₁]; exact L.fh)
       (by rw [m₁, arrK (by simp only [aOne, arr]; omega_arith) (by simp only [aOne, arr]; omega_arith) (by simp only [aOne, arr]; omega_arith),
@@ -294,13 +312,19 @@ theorem gBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
         (by simp only [fG, fHLeft, hdr]; omega_arith), m₅, ws _ (by simp only [fG, sState, hdr]; omega_arith)
         (by simp only [fH, sState, hdr]; omega_arith) (by simp only [fG, fH, hdr]; omega_arith), S.fg]
     have spec := L.spec
+    have cnt := L.count
     rw [hList_drop E hjN, VG.Proof.Dsa.Generation.generator_cons] at spec
+    rw [hList_drop E hjN, VG.Proof.Dsa.Generation.generatorCount, hit_found hx'] at cnt
     refine cmpF_end K₈.base.scr (o := fG) (v := 4) (by simp only [fG, hdr]; omega_arith) fG₈ (by split <;> omega_arith)
       (by decide) fun t₉ g₉ m₉ rd₉ wr₉ sy₉ z₉ => ?_
     have K₉ := K₈.mem m₉ (g₉ _ (by decide)) (g₉ _ (by decide)) rd₉ wr₉ sy₉
     by_cases hf : Found (Spec.Dsa.decodeBE (hChunk E j)) p x
     · -- A generator.
-      refine .inl ⟨by rw [show t₉.zf = _ from z₉]; simp [hf], by simp [gCont, hf], K₉, ?_⟩
+      refine .inl ⟨by rw [show t₉.zf = _ from z₉]; simp [hf], by simp [gCont, hf], K₉, ?_, ?_⟩
+      rotate_left
+      · simp only [hf, decide_true, ↓reduceIte] at cnt
+        rw [m₉, m₈, ws _ (by simp only [fH, sState, hdr]; omega_arith) (by simp only [fHLeft, sState, hdr]; omega_arith)
+          (by simp only [fH, fHLeft, hdr]; omega_arith), m₅, Mem.readW_writeW_self32, hEnd, cnt, Nat.mul_comm]
       have hR : Rg = some (gVal (Spec.Dsa.decodeBE (hChunk E j)) p x) := by
         rw [← spec]; simp only [hf.1, hf.2.1, and_self, ↓reduceIte]
         rw [VG.Proof.Dsa.powMod_eq, ← hx']
@@ -314,7 +338,10 @@ theorem gBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
         (by decide) _) (by simp only [sPk]; omega_arith) (fun o ho => by
           simp only [List.mem_singleton] at ho; subst ho; simp only [fH, sPk, hdr]; omega_arith), S.gb hf]
     · -- On to the next `h`.
-      refine .inr ⟨by rw [show t₉.zf = _ from z₉]; simp [hf], by simp [gCont, hne, hf], hj1, K₉, ?_, ?_, ?_, hj1, ?_⟩
+      refine .inr ⟨by rw [show t₉.zf = _ from z₉]; simp [hf], by simp [gCont, hne, hf], hj1, K₉, ?_, ?_, ?_, hj1, ?_, ?_⟩
+      rotate_right
+      · simp only [hf, decide_false, Bool.false_eq_true, ↓reduceIte] at cnt
+        rw [cnt]; omega_arith
       · rw [m₉, m₈, ws _ (by simp only [fH, sState, hdr]; omega_arith) (by simp only [fHLeft, sState, hdr]; omega_arith)
           (by simp only [fH, fHLeft, hdr]; omega_arith), m₅, Mem.readW_writeW_self32]
       · rw [m₉, m₈, Mem.readW_writeW_self32]
@@ -328,7 +355,9 @@ theorem gBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
         · simp only [hr, ↓reduceIte]
 
 /-- The generator's state words: the first `h`, all of the tape left, `fG` := 4. -/
-theorem gInit_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} (B : Base E s) (p Q : Nat) :
+theorem gInit_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} (B : Base E s) (p Q : Nat)
+    (hsW : s.mem.readW (off E.base fHs) 32 = E.hs.setWidth 32)
+    (hsLenW : s.mem.readW (off E.base fHsLen) 32 = BitVec.ofNat 32 E.hsLen) :
     WP isa (.block [.mov .eax (.mem (sc fHs)), .store (sc fH) .eax, .mov .eax (.mem (sc fHsLen)),
       .store (sc fHLeft) .eax, .mov .eax (.imm 4), .store (sc fG) .eax]) s
       (GLoop E g p Q (Spec.Dsa.generator p Q (hList E)) s 0) := by
@@ -359,35 +388,38 @@ theorem gInit_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} (B 
     rw [M₆.mem, u₅.mem, u₅.gpr, M₄.mem, u₃.mem, u₃.gpr, M₂.mem, u₁.mem, u₁.gpr,
       ws _ (by simp only [fHsLen, sState, hdr]; omega) (by simp only [fH, sState, hdr]; omega)
       (by simp only [fHsLen, fH, hdr]; omega)]
-  refine ⟨K₆, ?_, ?_, by rw [m₆, Mem.readW_writeW_self32]; rfl, by omega, by rw [List.drop_zero]⟩
+  refine ⟨K₆, ?_, ?_, by rw [m₆, Mem.readW_writeW_self32]; rfl, by omega, by rw [List.drop_zero],
+    by rw [List.drop_zero, Nat.zero_add]⟩
   · rw [m₆, ws _ (by simp only [fH, sState, hdr]; omega) (by simp only [fG, sState, hdr]; omega)
       (by simp only [fH, fG, hdr]; omega), ws _ (by simp only [fH, sState, hdr]; omega)
       (by simp only [fHLeft, sState, hdr]; omega) (by simp only [fH, fHLeft, hdr]; omega),
-      Mem.readW_writeW_self32, B.hsW, Nat.zero_mul, BitVec.add_zero]
+      Mem.readW_writeW_self32, hsW, Nat.zero_mul, BitVec.add_zero]
   · rw [m₆, ws _ (by simp only [fHLeft, sState, hdr]; omega) (by simp only [fG, sState, hdr]; omega)
-      (by simp only [fHLeft, fG, hdr]; omega), Mem.readW_writeW_self32, B.hsLenW, Nat.zero_mul, Nat.sub_zero]
+      (by simp only [fHLeft, fG, hdr]; omega), Mem.readW_writeW_self32, hsLenW, Nat.zero_mul, Nat.sub_zero]
 
 /-- The generator over the whole `h` tape. -/
 theorem gPart_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) {s : State} (B : Base E s)
+    (hsW : s.mem.readW (off E.base fHs) 32 = E.hs.setWidth 32)
+    (hsLenW : s.mem.readW (off E.base fHsLen) 32 = BitVec.ofNat 32 E.hsLen)
     {p Q x : Nat} (hx' : x = (p - 1) / Q)
     (hone : val32 s.mem E.base aOne g.n32 = 1) (hpm1 : val32 s.mem E.base aPm1 g.n32 = p - 1)
     (hP : val32 s.mem E.base aP g.n32 = p) (hE : val32 s.mem E.base aE g.n32 = x) (hxl : x < 2 ^ (32 * g.e))
     (hp1 : 1 < p) (hodd : p % 2 = 1) (hplt : p < 2 ^ (8 * g.pLen)) :
-    WP isa g.gPart s fun t => GKeep E g s t ∧ GRes E g t.mem (Spec.Dsa.generator p Q (hList E)) := by
+    WP isa g.gPart s fun t => GKeep E g s t ∧ GRes E g t.mem (Spec.Dsa.generator p Q (hList E)) ∧
+      t.mem.readW (off E.base fH) 32 = hEnd E p Q := by
   have sz := v.size_ge
-  have lens := v.lens
+  have lens := v.witLen32
   have pl := v.pLen_ge
-  have hl : E.hT.length = E.hsLen := by rw [← B.hs, VG.Proof.Bignum.bytesAt_length]
   unfold Geo.gPart
   show WP isa (.seq (.block _) (.loop _ .e)) s _
-  refine WP.seq (WP.mono (gInit_ok G v B p Q) fun s₆ L₀ => ?_)
+  refine WP.seq (WP.mono (gInit_ok G v B p Q hsW hsLenW) fun s₆ L₀ => ?_)
   have hm : E.hsLen / E.pLen * E.pLen ≤ E.hsLen := Nat.div_mul_le_self _ _
   refine WP.loop (M := isa) (fun m t => ∃ j, j + m = E.hsLen / E.pLen + 1 ∧
       GLoop E g p Q (Spec.Dsa.generator p Q (hList E)) s j t)
     (fun m t ⟨j, hm', L⟩ => WP.mono (gBody_ok G v hp hx' hone hpm1 hP hE hxl hp1 hodd hplt L) fun t' h => ?_)
     (E.hsLen / E.pLen + 1) s₆ ⟨0, by omega, L₀⟩
-  rcases h with ⟨z, _, K, res⟩ | ⟨z, _, hj1, L'⟩
-  · exact .inl ⟨z, K, res⟩
+  rcases h with ⟨z, _, K, res, fh⟩ | ⟨z, _, hj1, L'⟩
+  · exact .inl ⟨z, K, res, fh⟩
   · have : j + 1 ≤ E.hsLen / E.pLen := (Nat.le_div_iff_mul_le (by omega)).mpr hj1
     exact .inr ⟨z, m - 1, by omega, j + 1, by omega, L'⟩
 

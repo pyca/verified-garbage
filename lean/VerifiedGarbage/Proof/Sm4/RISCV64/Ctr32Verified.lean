@@ -16,11 +16,10 @@ meta import VerifiedGarbage.Spec.Sm4.Gcm
 /-!
 # SM4's counter mode with GCM's `inc₃₂` on RISC-V meets its contract
 
-`ctr32_verified`: the counter mode of `Proof/Modes/RISCV64/WideCtr.lean`,
+`ctr32_correct`: the counter mode of `Proof/Modes/RISCV64/WideCtr.lean`,
 sixteen blocks a step while sixteen are left (`ctr32Wide_wp`), over
-SM4's core (`dirCoreSpec .encrypt`) meets `vg_sm4_ctr32`'s contract with the
-modes' frame of 3232 bytes below the stack pointer (`modeContract`), and is
-constant time as the other modes are (`ModesConstantTime.lean`). As on
+SM4's core (`dirCoreSpec .encrypt`) is correct (`ctr32Post`) with the
+modes' frame of 3232 bytes below the stack pointer (`modeContract`). As on
 PPC64LE (`Proof/Sm4/PPC64LE/Ctr32Verified.lean`), whose working space is an
 argument instead.
 -/
@@ -53,10 +52,5 @@ theorem ctr32_correct (s : State) (hs : (modeContract ctr32Post).pre s) :
       refine ⟨h1, ?_, h3⟩
       rw [Proof.Modes.gcmBlocks_eq, Proof.Modes.gcmBlocks_eq]
       exact h2
-
-theorem ctr32_verified : Verified RISCV64.target ctr32 (Proof.Sm4.ctr32Contract RISCV64.abi frameBytes) := by
-  refine Verified.of_correct ctr32_correct (Proof.Sm4.RISCV64.ctr32_constantTime _) ?_
-  contract_implies [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, RISCV64.abi, RISCV64.argRegs,
-    modeContract, ctr32Post, modePub_iff] [modeSat] using modeSat
 
 end VG.Proof.Sm4.RISCV64.Modes

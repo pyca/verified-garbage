@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm3.AArch64.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # SM3 (GB/T 32905-2016) on AArch64 -/
 

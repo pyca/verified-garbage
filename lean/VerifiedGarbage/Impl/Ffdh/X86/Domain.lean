@@ -21,8 +21,9 @@ stack. Each function saves the callee-saved registers in the working
 space's header (`CrtRt.save`), then allocates a frame of 76 bytes holding
 eighteen such arguments (`fill`), computed from its own: the length `p_len`
 (1), p, g and q (2 to 7, each `p_len` bytes of the domain), y (8, 9), x
-(10, 11), the domain's length (12), the output (0) and the working space
-and its length (16, 17), the rest zero. All of them are public.
+(10, 11), the domain's length (12), the context of cached key generation
+(13), the output (0) and the working space and its length (16, 17), the
+rest zero. All of them are public.
 
 The wide slots used: p (9), g (10), q (11), y (12), x (13), one (14),
 `p − 1` (15), the scalar's bound (16), zero (17) and the result (19). Only
@@ -37,7 +38,8 @@ open VG.Impl.Bignum.X86.PublicRt (argAt)
 
 /-- The positions of a function's arguments: the output (if any), the
 domain, its length, `p_len`, y and x (each followed by its length, if
-any), and the working space (followed by its length). -/
+any), the working space (followed by its length) and the context of
+cached key generation, if any. -/
 structure Args where
   out : Option Nat := none
   dom : Nat
@@ -46,6 +48,8 @@ structure Args where
   y : Option Nat := none
   x : Option Nat := none
   ws : Nat
+  /-- The reusable key-generation context's pointer, if any. -/
+  ctx : Option Nat := none
 
 /-- The bytes of the frame of the synthetic arguments. -/
 def argsFrame : Nat := 76
@@ -84,6 +88,7 @@ def val (a : Args) : Nat → List Instr
   | 10 => optVal a.x
   | 11 => optVal (a.x.map (· + 1))
   | 12 => argVal a.dlen
+  | 13 => optVal a.ctx
   | 16 => argVal a.ws
   | 17 => argVal (a.ws + 1)
   | _ => zeroVal

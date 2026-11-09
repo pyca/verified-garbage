@@ -122,6 +122,4 @@ theorem xorSet_two_pow_xor {V : Nat → BitVec 64} {a b N : Nat} (ha : a < N) (h
 /-- The state words' region. -/
 def stR (s : State) : Region := ⟨s.gpr .s0, 512⟩
 
-theorem slotRegion_vars (s : State) : slotRegion varsCfg s = stR s := rfl
-
 end VG.Proof.TripleDes.RISCV64.Bitsliced

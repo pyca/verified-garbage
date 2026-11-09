@@ -70,27 +70,6 @@ def bitsBody : List Instr :=
 
 def bits : Prog isa := .seq (.block [.mov32 .rbx (.imm 0)]) (.loop (.block bitsBody) .ne)
 
-/-! ## The loop over the bits -/
-
-/-- `rcx = -BITS[rbx]`: the mask of bit `rbx`. -/
-def bitMask : List Instr :=
-  [.movzx8 .rdx { base := .rdi, index := some .rbx, disp := (BITS : Int) }, .mov32 .rcx (.imm 0),
-    .alu .sub .rcx (.reg .rdx)]
-
-/-- `T` swapped into `R` by the mask of bit `rbx`, and ZF set at the last bit. -/
-def stepSwap : List Instr :=
-  bitMask ++ cswap (slot 0) (slot 3) ++ cswap (slot 1) (slot 4) ++ cswap (slot 2) (slot 5) ++
-    [.alu .test .rbx (.reg .rbx)]
-
-/-- One bit `t = rbx - 1`, from the top: `R = 2R`, `T = R + B`, and `T`
-swapped into `R` if bit `t` is set, with the point operations `P`. -/
-def step (P : Point64.Ops) : Prog isa :=
-  .seq (.block [.alu .sub .rbx (.imm 1)]) <| .seq P.dbl <| .seq P.add (.block stepSwap)
-
-/-- The 456 bits, from 455 down to 0. -/
-def mulLoop (P : Point64.Ops) : Prog isa :=
-  .seq (.block [.mov32 .rbx (.imm 456)]) (.loop (step P) .ne)
-
 /-! ## Four-column fixed-base comb -/
 
 /-- The mask of `i` matching bits `rbx + {0,114,228,342}` of the scalar.

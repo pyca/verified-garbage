@@ -5,11 +5,11 @@ public import VerifiedGarbage.Impl.Dsa.PPC64LE.Common
 /-!
 # DSA on PPC64LE: the frame of the randomized functions, and rejection sampling
 
-`vg_dsa_sign_random` and `vg_dsa_generate_key` run in a frame of
+`vg_dsa_sign_random_prevalidated` and `vg_dsa_generate_key` run in a frame of
 `frameBytes` bytes on the stack, which holds, above its 32-byte header:
 
 * at `r1 + 96`, the arguments on the stack of the function they call
-  (`vg_dsa_sign`'s `digest_len`, `scratch` and `scratch_len`, or
+  (`vg_dsa_sign_prevalidated`'s `digest_len`, `scratch` and `scratch_len`, or
   `vg_dsa_derive_key`'s `scratch_len`), at the start of its Parameter Save
   Area's doubleword 8 (ELFv2 §2.2.3.3), written once on entry;
 * at `r1 + oNonce`, the 32 octets of the nonce (or of x), the sampled

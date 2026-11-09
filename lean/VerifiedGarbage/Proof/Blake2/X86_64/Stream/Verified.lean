@@ -78,18 +78,6 @@ theorem initB_correct (st : State) (hs : (initX86_64 b).pre st) :
   obtain ⟨t, s', he, h⟩ := Init.correct okB hs
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
-theorem updateB_correct (st : State) (hs : (updateX86_64 b).pre st) :
-    ∃ t s', Exec isa (Impl.Blake2.X86_64.Stream.update b) st t s' ∧ abiPreserved st s' ∧
-      (updateX86_64 b).post st s' := by
-  obtain ⟨t, s', he, h⟩ := Update.correct (callee := Impl.Blake2.X86_64.Stream.scalar b) okB calleeB (Update.pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
-
-theorem finalizeB_correct (st : State) (hs : (finalizeX86_64 b).pre st) :
-    ∃ t s', Exec isa (Impl.Blake2.X86_64.Stream.finalize b) st t s' ∧ abiPreserved st s' ∧
-      (finalizeX86_64 b).post st s' := by
-  obtain ⟨t, s', he, h⟩ := Finalize.correct (callee := Impl.Blake2.X86_64.Stream.scalar b) okB calleeB hs
-  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
-
 theorem initB_verified :
     Verified X86_64.target (Impl.Blake2.X86_64.Stream.init b) (Spec.Blake2.initBContract X86_64.abi) :=
   Verified.of_correct initB_correct initB_ct (by
@@ -97,28 +85,10 @@ theorem initB_verified :
       Spec.Blake2.bufOff, Spec.Blake2.blockBytes,
       X86_64.abi, X86_64.argRegs] [initSat] using initSat)
 
-theorem updateB_verified :
-    Verified X86_64.target (Impl.Blake2.X86_64.Stream.update b)
-      (Proof.Blake2.updateBScratchContract X86_64.abi 8) :=
-  Verified.of_correct updateB_correct updateB_ct (by
-    sig_implies [Proof.Blake2.updateBScratchContract, Proof.Blake2.updateBScratchSig, Proof.Blake2.updateX86_64,
-      Spec.Blake2.bufOff, Spec.Blake2.blockBytes, X86_64.abi, X86_64.argRegs]
-      [updateSat] using updateSat 64)
-
-theorem finalizeB_verified :
-    Verified X86_64.target (Impl.Blake2.X86_64.Stream.finalize b)
-      (Proof.Blake2.finalizeBScratchContract X86_64.abi 8) :=
-  Verified.of_correct finalizeB_correct finalizeB_ct (by
-    sig_implies [Proof.Blake2.finalizeBScratchContract, Proof.Blake2.finalizeBScratchSig,
-      Proof.Blake2.finalizeX86_64, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, X86_64.abi,
-      X86_64.argRegs]
-      [finalizeSat] using finalizeSat 64)
-
 /-! ## BLAKE2s -/
 
 /-- `init` for BLAKE2s, with no key. -/
 def initSatS : State := { initSat with wr := [⟨0x1000, 96⟩] }
-
 
 theorem initS_correct (st : State) (hs : (initX86_64 s).pre st) :
     ∃ t s', Exec isa (Impl.Blake2.X86_64.Stream.init s) st t s' ∧ abiPreserved st s' ∧

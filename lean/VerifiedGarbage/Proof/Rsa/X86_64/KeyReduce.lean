@@ -10,10 +10,9 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 /-!
 # `vg_rsa_check_key` on x86-64: reduction by restoring division
 
-The loop of `reduce`: for each word of `x` from the top (`wordStep`), each
-of its bits from the top (`bitStep`) is shifted out of `r15` as the carry
-of `dblIn`: `r := 2 r + b mod m`. After the top `i` words, `r` is their
-number modulo `m` (`reduceLoop_ok`), when `m > 0`.
+The loop of the reduction: for each word of `x` from the top (`wordStep`,
+`wordStep_ok`), each of its bits from the top (`bitStep`, `bitStep_ok`) is
+shifted out of `r15` as the carry of `dblIn`: `r := 2 r + b mod m`.
 -/
 
 @[expose] public section
@@ -71,11 +70,11 @@ theorem toNat_decide {n : Nat} (p : Prop) [Decidable p] (h : p ↔ (n : Nat) % 2
 
 /-! ## One bit -/
 
-/-- The working arrays `reduce` writes: `dblIn`'s accumulator and
+/-- The working arrays the reduction writes: `dblIn`'s accumulator and
 temporary, and `r`. -/
 def redRs (eA eT eo w : Nat) : List (Nat × Nat) := [(eA, 8 * (w + 1)), (eT, 8 * w), (eo, 8 * w)]
 
-/-- Where `reduce`'s loop works: `r` at `eo`, `m` at `em`, the accumulator
+/-- Where the reduction's loop works: `r` at `eo`, `m` at `em`, the accumulator
 and temporary at `eA` and `eT`, and `x` at `eS`, `cnt` words. -/
 structure RedLay (B : Addr) (Z w eo em eA eT eS cnt : Nat) : Prop where
   w1 : 1 ≤ w
@@ -97,7 +96,7 @@ structure RedLay (B : Addr) (Z w eo em eA eT eS cnt : Nat) : Prop where
   sST : eS + 8 * cnt ≤ eT ∨ eT + 8 * w ≤ eS
   sSo : eS + 8 * cnt ≤ eo ∨ eo + 8 * w ≤ eS
 
-/-- The registers `reduce`'s loop keeps. -/
+/-- The registers the reduction's loop keeps. -/
 structure RedRegs (B : Addr) (w eo em eA eT eS : Nat) (t : State) : Prop where
   bx : t.gpr .rbx = off B eo
   r10 : t.gpr .r10 = off B em
@@ -248,89 +247,5 @@ theorem wordStep_ok {Q : Prop} {s₀ : State} {B : Addr} {Z w eo em eA eT eS cnt
     simp only [wv, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero,
       show 64 * 1 = 64 from rfl]
     rw [Nat.mul_comm (2 ^ 64), Nat.add_comm]
-
-theorem reduceLoop_ok {s₀ : State} {B : Addr} {Z w eo em eA eT eS cnt : Nat}
-    (hL : RedLay B Z w eo em eA eT eS cnt) (hs : Scr s₀ B Z) (hr : RedRegs B w eo em eA eT eS s₀)
-    (h13 : s₀.gpr .r13 = BitVec.ofNat 64 cnt) (hR : wv s₀.mem B eo w = 0) :
-    WP isa (.loop wordStep .ne) s₀ fun t => Scr t B Z ∧
-      Keep [.rax, .rbp, .r14, .rdx, .r11, .r15, .r13] s₀ t ∧ Frm B (redRs eA eT eo w) s₀.mem t.mem ∧
-      (0 < wv s₀.mem B em w → wv t.mem B eo w = wv s₀.mem B eS cnt % wv s₀.mem B em w) := by
-  refine wp_upto (a := 0) (N := cnt) (by have := hL.cnt1; omega_using [this]) (WInv True s₀ B Z w eo em eA eT eS cnt)
-    (fun i _ hi t hI => wordStep_ok hL hi hI) (fun t hI => ⟨hI.scr, hI.keep, hI.frm, fun hM0 => ?_⟩)
-    ⟨hs, hr, Keep.refl _ _, by rw [h13, Nat.sub_zero], Frm.refl _ _ _, fun _ _ => by rw [hR]; simp [wv]⟩
-  rw [hI.val trivial hM0, Nat.sub_self, Nat.mul_zero, Nat.add_zero]
-
-/-- `reduce cnt`: `[aR] := x mod [aM]` for the number `x` of the `N` words
-of the accumulator, `N` the count the instructions `cnt` compute from `w`,
-when `[aM] > 0`. -/
-theorem reduce_ok {cnt : List Instr} {N : Nat} {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
-    (hcnt : ∀ t, t.gpr .r13 = BitVec.ofNat 64 w →
-      WP isa (.block cnt) t fun t' => t'.gpr .r13 = BitVec.ofNat 64 N ∧ t'.mem = t.mem ∧ Keep [.r13] t t')
-    (hg : Good s B Z w minv) (hZ : slot w 8 ≤ Z)
-    (hw : 1 ≤ w) (hw' : w < 2 ^ 28) (hN : 1 ≤ N) (hN' : N ≤ 2 * w + 4) :
-    WP isa (seqs (reduce cnt)) s fun t => Good t B Z w minv ∧
-      (0 < wv s.mem B (slot w aM) w →
-        wv t.mem B (slot w aR) w = wv s.mem B (slot w Public.aAcc) N % wv s.mem B (slot w aM) w) ∧
-      Arrays B w [aR, Public.aX, aT] s.mem t.mem ∧ Keep mmRegs s t := by
-  have hn := hg.scr.nowrap
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
-  have e8 : slot w 8 = 256 + 8 * (8 * (w + 2)) := by unfold slot hdrBytes; omega_using []
-  have sl : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun j => by unfold slot hdrBytes; rfl
-  show WP isa (.seq (Impl.Rsa.X86_64.Crt.zeroArr aR) (.seq (.block _) (.loop wordStep .ne))) s _
-  refine WP.seq (WP.mono (zeroArr_ok hg hZ hw (by omega_using [hw']) (show aR < 8 by decide))
-    fun s₁ ⟨hz₁, ho₁, k₁⟩ => ?_)
-  have a₁ : Arrays B w [aR, Public.aX, aT] s.mem s₁.mem :=
-    Arrays.of_outside (j := aR) (by simp) ho₁ (Nat.le_refl _) (by omega_using [])
-  have hs₁ := hg.scr.congr k₁.2.2
-  have hH₁ := a₁.hdr hg.hdr
-  have hdi₁ : s₁.gpr .rdi = B := (k₁.gpr (by decide)).trans hg.rdi
-  have hl₁ : ∀ i < 32, InRegions (s₁.rd ++ s₁.wr) (off B (8 * i)) 8 := fun i hi =>
-    hs₁.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.rbx, .r10, .r8, .r12, .rsi, .r9, .r13] (Q := fun t =>
-      RedRegs B w (slot w aR) (slot w aM) (slot w Public.aX) (slot w aT) (slot w Public.aAcc) t ∧
-      t.gpr .r13 = BitVec.ofNat 64 w ∧ t.mem = s₁.mem)
-    (by
-      xrun [State.ea, hdr, hdi₁, hdrOff, hl₁ (sArr aR) (by unfold sArr aR; omega_using []),
-      hl₁ (sArr aM) (by unfold sArr aM; omega_using []), hl₁ (sArr Public.aX) (by unfold sArr Public.aX; omega_using []),
-      hl₁ sW (by decide), hl₁ (sArr aT) (by unfold sArr aT; omega_using []),
-      hl₁ (sArr Public.aAcc) (by unfold sArr Public.aAcc; omega_using []), hH₁.harr aR (by decide),
-      hH₁.harr aM (by decide), hH₁.harr Public.aX (by decide), hH₁.harr aT (by decide),
-        hH₁.harr Public.aAcc (by decide), hH₁.hw]
-      exact ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩) rfl) fun s₂ ⟨⟨rg₂, h13₂, hm₂⟩, k₂⟩ => ?_
-  refine WP.mono (hcnt s₂ h13₂) fun s₃ ⟨h13₃, hm₃, k₃⟩ => ?_
-  have rg₃ := rg₂.keep k₃ (by decide)
-  have hs₃ := hs₁.congr (k₂.trans k₃).2.2
-  have hL : RedLay B Z w (slot w aR) (slot w aM) (slot w Public.aX) (slot w aT) (slot w Public.aAcc) N := by
-    refine ⟨hw, by omega_using [hw'], hN, by omega_using [hw', hN'], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-      simp only [sl, aR, aM, aT, Public.aX, Public.aAcc] <;> omega_using [hZ, e8, hN']
-  have hR₃ : wv s₃.mem B (slot w aR) w = 0 := by
-    rw [hm₃, hm₂]
-    have := wv_add s₁.mem B (slot w aR) w 2
-    omega_using [hz₁, this]
-  refine WP.mono (reduceLoop_ok hL hs₃ rg₃ h13₃ hR₃) fun t ⟨hst, kt, ft, hv⟩ => ?_
-  have k := ((k₁.trans k₂).trans k₃).trans kt
-  have at₃ : Arrays B w [aR, Public.aX, aT] s₃.mem t.mem := fun x hx => ft x fun r hr => by
-    simp only [redRs, List.mem_cons, List.not_mem_nil, or_false] at hr
-    have h1 := hx Public.aX (by simp); have h2 := hx aT (by simp); have h3 := hx aR (by simp)
-    simp only [sl, aR, aT, Public.aX] at h1 h2 h3
-    rcases hr with rfl | rfl | rfl <;> simp only [sl, aR, aT, Public.aX] <;> omega_using [h1, h2, h3]
-  have a₃ : Arrays B w [aR, Public.aX, aT] s.mem s₃.mem := by rw [hm₃, hm₂]; exact a₁
-  have hM : wv s₃.mem B (slot w aM) w = wv s.mem B (slot w aM) w := by
-    rw [hm₃, hm₂]; exact a₁.wv_eq (fun j hj => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-      rcases hj with rfl | rfl | rfl <;> simp only [sl, aR, aT, Public.aX, aM] <;> omega_using [])
-      (by rw [sl]; unfold aM; omega_using [hw'])
-  have hS : wv s₃.mem B (slot w Public.aAcc) N = wv s.mem B (slot w Public.aAcc) N := by
-    rw [hm₃, hm₂]; exact a₁.wv_eq (fun j hj => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-      rcases hj with rfl | rfl | rfl <;> simp only [sl, aR, aT, Public.aX, Public.aAcc] <;> omega_using [hN'])
-      (by rw [sl]; unfold Public.aAcc; omega_using [hw', hN'])
-  refine ⟨⟨hst, (k.gpr (by decide)).trans hg.rdi, at₃.hdr (a₃.hdr hg.hdr)⟩, fun hM0 => ?_, a₃.trans at₃,
-    k.mono (by decide)⟩
-  rw [← hM] at hM0 ⊢
-  rw [hv hM0, hS]
 
 end VG.Proof.Rsa.X86_64.Key

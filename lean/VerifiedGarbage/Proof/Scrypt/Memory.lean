@@ -73,10 +73,6 @@ theorem InRegions.right {rd wr : List Region} {a : Addr} {n : Nat} (h : InRegion
     InRegions (rd ++ wr) a n := by
   obtain ⟨r, hr, hc⟩ := h; exact ⟨r, List.mem_append_right _ hr, hc⟩
 
-theorem InRegions.left {rd wr : List Region} {a : Addr} {n : Nat} (h : InRegions rd a n) :
-    InRegions (rd ++ wr) a n := by
-  obtain ⟨r, hr, hc⟩ := h; exact ⟨r, List.mem_append_left _ hr, hc⟩
-
 /-! ## Bytes -/
 
 theorem bytesAt_length (m : Mem) (p : Addr) (n : Nat) : (bytesAt m p n).length = n := by

@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.TCB.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_pkcs1_verify_precomputed` on RISC-V: the call
@@ -38,7 +39,7 @@ Untrusted: everything here is checked by Lean. `vg_rsa_pkcs1_verify_precomputed`
 and `vg_rsa_pkcs1_recover_precomputed` call `vg_rsa_public_precomputed_checked`
 (`out = a0, out_len = a1, pre = a2, pre_len = a3, e = a4, e_len = a5,
 input = a6, input_len = a7, scratch, scratch_len`, the last two on the
-stack) by its shared contract (`Spec.Rsa.publicPrecomputedCheckedContract`,
+stack) by its shared contract (`Proof.Rsa.publicPrecomputedCheckedContract`,
 with no stack: it has no frames), which its artifact proves
 (`Proof.Bignum.RISCV64.Pub.publicChecked_verified`). As on PPC64LE
 (`Proof/RsaPkcs1Sig/PPC64LE/Callee.lean`), the call lemmas evaluate that
@@ -106,9 +107,9 @@ structure PdOk (t : State) : Prop where
   al0 : (stackArg t 0).toNat % 8 = 0
 
 theorem PdOk.pre {t : State} (h : PdOk t) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi).pre (t.callEntry.withRegions (pdRd t) (pdWr t)) := by
+    (Proof.Rsa.publicPrecomputedCheckedContract abi).pre (t.callEntry.withRegions (pdRd t) (pdWr t)) := by
   have hl := h.hl
-  sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+  sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     stackArgs_two, List.append_eq]
   simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
     Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj, List.append_nil]
@@ -116,9 +117,9 @@ theorem PdOk.pre {t : State} (h : PdOk t) :
     hl.wo, hl.wn, hl.we, hl.wi, hl.ws, h.hk, h.h6, h.h10, h.he1, h.he2, h.hs, h.al2, h.al0⟩
 
 /-- The correctness of `vg_rsa_public_precomputed_checked`, from its artifact. -/
-theorem pd_correct : ∀ s, (Spec.Rsa.publicPrecomputedCheckedContract abi).pre s →
+theorem pd_correct : ∀ s, (Proof.Rsa.publicPrecomputedCheckedContract abi).pre s →
     ∃ t s', Exec isa Impl.Bignum.RISCV64.PublicChecked.publicChecked s t s' ∧ abiPreserved s s' ∧
-      (Spec.Rsa.publicPrecomputedCheckedContract abi).post s s' :=
+      (Proof.Rsa.publicPrecomputedCheckedContract abi).post s s' :=
   Proof.Bignum.RISCV64.Pub.publicChecked_verified.1
 
 /-- A call of `vg_rsa_public_precomputed_checked`. Its result is that of any
@@ -132,10 +133,10 @@ theorem pdCall {t : State} {Q : State → Prop} (h : PdOk t)
           (Spec.Rsa.publicOpChecked nB (Spec.Rsa.bytesAt t.mem (t.gpr .a4) (t.gpr .a5).toNat)
             (Spec.Rsa.bytesAt t.mem (t.gpr .a6) (t.gpr .a1).toNat))) → Q s') :
     WP isa Impl.RsaPkcs1Sig.RISCV64.pubCall t Q := by
-  refine WP.call (k := Spec.Rsa.publicPrecomputedCheckedContract abi) pd_correct h.pre
+  refine WP.call (k := Proof.Rsa.publicPrecomputedCheckedContract abi) pd_correct h.pre
     (Covers.append_left (Covers.trans h.hrd (Covers.refl _)) (Covers.right h.hwr)) h.hwr ?_
   intro s' hrd' hwr' hsp' hf hpres _ hpost
-  sig_post [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+  sig_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     stackArgs_two, List.append_eq] at hpost
   exact hQ s' hrd' hwr' hsp' hf hpres hpost
 
@@ -161,7 +162,7 @@ theorem pdCallCT {P : State → State → Prop}
   refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_,
     Covers.append_left (Covers.trans h₁.hrd (Covers.refl _)) (Covers.right h₁.hwr), h₁.hwr,
     Covers.append_left (Covers.trans h₂.hrd (Covers.refl _)) (Covers.right h₂.hwr), h₂.hwr⟩
-  sig_pub [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+  sig_pub [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     stackArgs_two, List.append_eq]
   simp only [List.getD_cons_succ, List.getD_cons_zero]
   exact ⟨he.sp, by rw [hn, hE], he.gpr _ (by decide), he.gpr _ (by decide), he.gpr _ (by decide),

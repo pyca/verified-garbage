@@ -4,8 +4,6 @@ import VerifiedGarbageTest.Sha256
 meta import VerifiedGarbageTest.Sha256
 import VerifiedGarbage.Spec.Argon2.Contract
 meta import VerifiedGarbage.Spec.Argon2.Contract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # Argon2 specification tests
@@ -130,8 +128,5 @@ run_cmd do
     match runVector text sec variant with
     | .ok () => pure ()
     | .error e => throwError "rfc9106.txt: {e}"
-
-#assert_standard_axioms VG.Spec.Argon2.derive
-#assert_standard_axioms VG.Spec.Argon2.deriveContract
 
 end VG.Test.Argon2

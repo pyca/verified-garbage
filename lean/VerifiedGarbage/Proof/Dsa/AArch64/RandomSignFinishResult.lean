@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRunning
 
@@ -41,10 +42,10 @@ private theorem sample_none_status {draw : VG.Spec.Dsa.Random.Sample} (h : draw.
   simp only [sampleStatus, h]
   split <;> decide
 
-private theorem attempt_progress (v : Backend) {s t : State} {h : RandomSignABI v.stack s}
+private theorem attempt_progress (S : Signer) {s t : State} {h : RandomSignABI S.stack s}
     {hq : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {start fuel : Nat} {result : Spec.Dsa.RandomSignResult}
-    (hi : RandomSignLoopInv h hq start result fuel t) :
-    WP isa (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.mul)) t fun u =>
+    (hi : RandomSignLoopInv h hq start result fuel t) (hval : RandomValid S s) :
+    WP isa (RandomSign.attempt S.name S.code) t fun u =>
       Scr u (randomBase s) Random.frameBytes ∧ u.sp = randomBase s ∧
       ((word u.mem (randomBase s) Random.oStatus ≠ 4 ∧ RandomSignLoopPost h hq start result u) ∨
         (word u.mem (randomBase s) Random.oStatus = 4 ∧ ∃ k < fuel, RandomSignLoopInv h hq start result k u)) := by
@@ -52,7 +53,7 @@ private theorem attempt_progress (v : Backend) {s t : State} {h : RandomSignABI 
   cases fuel with
   | zero => omega
   | succ fuel =>
-    refine WP.mono (random_sign_attempt v hr hpos (by omega)) fun u hu => ?_
+    refine WP.mono (random_sign_attempt S hr hpos (by omega) hval) fun u hu => ?_
     cases hc : (randomSignDraw (randomInput s) used).scalar with
     | none =>
       simp only [RandomSignAttemptPost, hc] at hu
@@ -93,10 +94,10 @@ private theorem attempt_progress (v : Backend) {s t : State} {h : RandomSignABI 
           refine ⟨hready.scr, hready.sp, Or.inr ⟨by rw [hword, ite_eq_right hn], fuel,
             by omega, by omega, by omega, used + (randomSignDraw (randomInput s) used).used, hr', hrel'⟩⟩
 
-theorem random_sign_loop_correct (v : Backend) {s t : State} {h : RandomSignABI v.stack s}
+theorem random_sign_loop_correct (S : Signer) {s t : State} {h : RandomSignABI S.stack s}
     {hq : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {used fuel : Nat}
-    (hr : RandomSignRunning h hq used fuel t) (hpos : 0 < fuel) (hbound : fuel ≤ 8) :
-    WP isa (.loop (.seq (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.mul))
+    (hr : RandomSignRunning h hq used fuel t) (hpos : 0 < fuel) (hbound : fuel ≤ 8) (hval : RandomValid S s) :
+    WP isa (.loop (.seq (RandomSign.attempt S.name S.code)
       (.block (Random.statusTest 4))) (.zero .x .x4)) t
       (RandomSignLoopPost h hq used (randomSignRemaining (randomInput s) used fuel)) := by
   apply random_statusLoop_rule _ (randomBase s) (RandomSignLoopInv h hq used (randomSignRemaining (randomInput s) used fuel))
@@ -105,7 +106,7 @@ theorem random_sign_loop_correct (v : Backend) {s t : State} {h : RandomSignABI 
   · intro a b ⟨⟨n, hn⟩, hs, hout⟩ hm hkeep
     exact ⟨⟨n, hn.congr hm hkeep⟩, by rw [hm]; exact hs, fun h => by rw [hm]; exact hout h⟩
   · intro n a ha
-    exact attempt_progress v ha
+    exact attempt_progress S ha hval
   · exact ⟨hpos, hbound, used, hr, RandomSignResultRel.refl _ _ _⟩
 
 end VG.Proof.Dsa.AArch64

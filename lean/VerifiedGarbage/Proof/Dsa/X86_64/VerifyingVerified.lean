@@ -32,13 +32,4 @@ def verifyingSatState : State where
   rd := [⟨0x2000, 404⟩, ⟨0x4000, 40⟩, ⟨0x5000, 0⟩, ⟨0x10008, 32⟩]
   wr := [⟨0x8000, 16384⟩]
 
-theorem verifyingSatisfiable : ∃ s, (Spec.Dsa.verifyContract abi).pre s := by
-  sig_implies_sat [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four]
-    [verifyingSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using verifyingSatState
-
-theorem verifying_verified (M : Mont) (Sq : MontS)
-    (hmx : (SignVerify.verify Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target (SignVerify.verify Sq.mm M.mm) (Spec.Dsa.verifyContract abi) :=
-  ⟨verifyingCorrect M Sq hmx, verifyingConstantTime M Sq, verifyingSatisfiable⟩
-
 end VG.Proof.Dsa.X86_64

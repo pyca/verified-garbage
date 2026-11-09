@@ -296,8 +296,6 @@ theorem column_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) (ts : List Term
     simp only [acc, v]
     omega_using []
 
-theorem cols_zero (o : Nat) (ts : Nat → List Term) : cols o 0 ts = [] := rfl
-
 theorem cols_succ (o n : Nat) (ts : Nat → List Term) :
     cols o (n + 1) ts = cols o n ts ++ column (ts n) (o + 4 * n) := by
   simp only [cols, List.range_succ, List.flatMap_append, List.flatMap_singleton]

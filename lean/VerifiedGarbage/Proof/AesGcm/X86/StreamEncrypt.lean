@@ -46,11 +46,11 @@ theorem streamEncrypt_eq : (streamEncrypt vg.callees) = .seq (entry 9 (([.mov .e
 /-- After `setText`: the text ready for `crypt`. -/
 structure CSet (p : BitVec 32 × (Nat → BitVec 32)) (s₀ s : State) : Prop where
   ent : ∃ s₁, CEnt p s₀ s₁ ∧ Frame [pslotR (p.2 9)] s₁.mem s.mem ∧ s.rd = s₁.rd ∧ s.wr = s₁.wr
-  cr : CrIn (p.2 0) (p.2 2) (p.2 9) p.1 28 (p.2 1).toNat (p.2 7) (p.2 8).toNat (p.2 6 ++ p.2 5).toNat s
+  cr : CrIn (p.2 0) (p.2 2) (p.2 9) p.1 32 (p.2 1).toNat (p.2 7) (p.2 8).toNat (p.2 6 ++ p.2 5).toNat s
 
 theorem cr_dataW {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) {s₀ s : State} (hpre : streamCryptPre s₀)
     (hpub : pubOf 10 s₀ = p) (hwr : s.wr = s₀.wr) :
-    DataW (p.2 0) (p.2 2) (p.2 9) p.1 28 s (p.2 7) (p.2 8).toNat := by
+    DataW (p.2 0) (p.2 2) (p.2 9) p.1 32 s (p.2 7) (p.2 8).toNat := by
   have hp := hpre
   simp only [streamCryptPre] at hp
   have hw : Covers [⟨w64 (p.2 7), (p.2 8).toNat⟩] s.wr := by
@@ -74,7 +74,7 @@ theorem setText_pc (p : BitVec 32 × (Nat → BitVec 32)) :
 
 /-- The streaming state's regions are apart from what `crypt` and `textAbsorb` write, but their own. -/
 theorem st_crFrame {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) {d k : Nat} (hk : d + k ≤ 48) :
-    ∀ r ∈ crFrame (p.2 2) (p.2 9) p.1 28 (p.2 7) (p.2 8).toNat,
+    ∀ r ∈ crFrame (p.2 2) (p.2 9) p.1 32 (p.2 7) (p.2 8).toNat,
       (⟨w64 (p.2 2) + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   have L := hc.lay
   intro r hr
@@ -87,7 +87,7 @@ theorem st_crFrame {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) {d k :
 
 theorem st_taFrame {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) {d k : Nat}
     (hk : d + k ≤ 16 ∨ (48 ≤ d ∧ d + k ≤ 80)) :
-    ∀ r ∈ taFrame (p.2 2) (p.2 9) p.1 28, (⟨w64 (p.2 2) + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
+    ∀ r ∈ taFrame (p.2 2) (p.2 9) p.1 32, (⟨w64 (p.2 2) + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   have L := hc.lay
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -98,7 +98,7 @@ theorem st_taFrame {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) {d k :
   · exact (L.stk_st (by omega)).symm
 
 theorem ret_crFrame {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) :
-    ∀ r ∈ crFrame (p.2 2) (p.2 9) p.1 28 (p.2 7) (p.2 8).toNat, (⟨w64 p.1, 4⟩ : Region).Disjoint r := by
+    ∀ r ∈ crFrame (p.2 2) (p.2 9) p.1 32 (p.2 7) (p.2 8).toNat, (⟨w64 p.1, 4⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -108,7 +108,7 @@ theorem ret_crFrame {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) :
   · exact ret_below hc.sp
 
 theorem ret_taFrame {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) :
-    ∀ r ∈ taFrame (p.2 2) (p.2 9) p.1 28, (⟨w64 p.1, 4⟩ : Region).Disjoint r := by
+    ∀ r ∈ taFrame (p.2 2) (p.2 9) p.1 32, (⟨w64 p.1, 4⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -129,8 +129,8 @@ theorem cset_frame {p : BitVec 32 × (Nat → BitVec 32)} {s₀ s₁ s : State} 
 /-- The exit of `encrypt` and `decrypt`, after `crypt` and `textAbsorb` in either order. -/
 theorem cr_exit {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) {s₀ s₁ s : State} (h₁ : CEnt p s₀ s₁)
     (he : Env (p.2 0) (p.2 2) (p.2 9) p.1 s)
-    (hf : Frame (pslotR (p.2 9) :: crFrame (p.2 2) (p.2 9) p.1 28 (p.2 7) (p.2 8).toNat ++
-      taFrame (p.2 2) (p.2 9) p.1 28) s₁.mem s.mem) :
+    (hf : Frame (pslotR (p.2 9) :: crFrame (p.2 2) (p.2 9) p.1 32 (p.2 7) (p.2 8).toNat ++
+      taFrame (p.2 2) (p.2 9) p.1 32) s₁.mem s.mem) :
     WP isa (.block restore) s fun s' => abiPreserved s₀ s' ∧ s'.mem = s.mem := by
   have L := hc.lay
   have esp := pubOf_esp h₁.pub
@@ -140,8 +140,8 @@ theorem cr_exit {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) {s₀ s�
     rcases List.mem_append.mp hr with hr | hr
     · exact kept_crFrame L (cr_dataW hc h₁.pre h₁.pub h₁.wr) r hr
     · exact kept_taFrame L r hr
-  have rT : ∀ r ∈ pslotR (p.2 9) :: crFrame (p.2 2) (p.2 9) p.1 28 (p.2 7) (p.2 8).toNat ++
-      taFrame (p.2 2) (p.2 9) p.1 28, (⟨w64 p.1, 4⟩ : Region).Disjoint r := fun r hr => by
+  have rT : ∀ r ∈ pslotR (p.2 9) :: crFrame (p.2 2) (p.2 9) p.1 32 (p.2 7) (p.2 8).toNat ++
+      taFrame (p.2 2) (p.2 9) p.1 32, (⟨w64 p.1, 4⟩ : Region).Disjoint r := fun r hr => by
     rcases List.mem_cons.mp hr with rfl | hr
     · exact hc.r_w.sub_right (Lay.wSub (d := 272) (n := 12) (by decide))
     rcases List.mem_append.mp hr with hr | hr
@@ -178,8 +178,8 @@ theorem streamEncrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     (fun _ _ s₁ s₂ ⟨_, _, h₁, _⟩ ⟨_, _, h₂, _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.env.ebp, h₂.env.ebp]) (by taint_decide)
   obtain ⟨s₁, h₁, fr, rd₁, wr₁⟩ := h₂.ent
-  have hf : Frame (pslotR (p.2 9) :: crFrame (p.2 2) (p.2 9) p.1 28 (p.2 7) (p.2 8).toNat ++
-      taFrame (p.2 2) (p.2 9) p.1 28) s₁.mem s₄.mem :=
+  have hf : Frame (pslotR (p.2 9) :: crFrame (p.2 2) (p.2 9) p.1 32 (p.2 7) (p.2 8).toNat ++
+      taFrame (p.2 2) (p.2 9) p.1 32) s₁.mem s₄.mem :=
     ((fr.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self ..).trans
       ((co default).frame.mono fun r hr => List.mem_cons_of_mem _ (List.mem_append_left _ hr))).trans
       (ta.frame.mono fun r hr => List.mem_cons_of_mem _ (List.mem_append_right _ hr))

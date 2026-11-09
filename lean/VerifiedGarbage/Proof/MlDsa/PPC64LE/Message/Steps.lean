@@ -14,7 +14,7 @@ public import VerifiedGarbage.Impl.Sha3.PPC64LE.Pieces
 public import VerifiedGarbage.Spec.MlDsa
 
 /-!
-# ML-DSA on PPC64LE, `sign_message` and `verify_message`: the steps
+# ML-DSA on PPC64LE, `sign_message` and `verify_message_cached`: the steps
 
 As Ed448's whole functions on this target (`Proof/Ed448/PPC64LE/Whole/`),
 whose invariant `Inv` (`Proof/Ed25519/PPC64LE/Whole/Frame.lean`) they share:

@@ -198,16 +198,6 @@ theorem step_congr (ρ : Role) (k : BitVec 48) {j : Nat} (hj : j < 8) {W W' : Na
     simp only [sboxOut, getLsbD_ofBits, hb, decide_true, Bool.true_and, sboxIn_congr ρ k hj hW b]
   · exact hx
 
-theorem outIdx_lt64 : ∀ ρ : Role, ∀ j < 8, ∀ x, outIdx ρ j x ≠ none → x < 64 := by
-  intro ρ j hj x hx
-  have key : ∀ ρ : Role, ∀ j < 8, ∀ i < 4, writeWord ρ (outBit j i) < 64 := by
-    intro ρ; cases ρ <;> lit_decide
-  obtain ⟨i, hi⟩ := Option.ne_none_iff_exists'.mp hx
-  have hm := List.find?_some hi
-  have hl := List.mem_range.mp (List.mem_of_find?_eq_some hi)
-  simp only [beq_iff_eq] at hm
-  rw [← hm]; exact key ρ j hj i hl
-
 /-- The steps read and write only the 64 state words. -/
 theorem steps_congr (ρ : Role) (k : BitVec 48) {n : Nat} (hn : n ≤ 8) {W W' : Nat → BitVec w}
     (hW : ∀ x < 64, W x = W' x) : ∀ x < 64, steps ρ k n W x = steps ρ k n W' x := by
@@ -218,38 +208,5 @@ theorem steps_congr (ρ : Role) (k : BitVec 48) {n : Nat} (hn : n ≤ 8) {W W' :
     have ih' := ih (by omega)
     rw [steps_succ, steps_succ]
     exact step_congr ρ k (by omega) ih' (ih' x hx)
-
-theorem steps_high (ρ : Role) (k : BitVec 48) {n : Nat} (hn : n ≤ 8) (W : Nat → BitVec w)
-    {x : Nat} (hx : 64 ≤ x) : steps ρ k n W x = W x := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-    rw [steps_succ]
-    have : outIdx ρ n x = none := by
-      cases h : outIdx ρ n x with
-      | none => rfl
-      | some i =>
-        have := outIdx_lt64 ρ n (by omega) x (by rw [h]; exact Option.some_ne_none i)
-        omega
-    simp only [step, this, ih (by omega)]
-
-/-- The words of neither half are left alone. -/
-theorem roundW_other (ρ : Role) (k : BitVec 48) (W : Nat → BitVec w) {x : Nat}
-    (hx : ∀ q < 32, x ≠ writeWord ρ q) : roundW ρ k W x = W x := by
-  have key : ∀ n ≤ 8, steps ρ k n W x = W x := by
-    intro n hn
-    induction n with
-    | zero => rfl
-    | succ n ih =>
-      rw [steps_succ]
-      have : outIdx ρ n x = none := by
-        unfold outIdx
-        rw [List.find?_eq_none]
-        intro i hi
-        simp only [List.mem_range] at hi
-        have := hx (outBit n i) (outBit_lt n (by omega) i hi)
-        simp [Ne.symm this]
-      simp only [step, this, ih (by omega)]
-  exact key 8 (Nat.le_refl _)
 
 end VG.Proof.TripleDes.Bitslice

@@ -46,19 +46,6 @@ def compressLocal : Contract isa where
   pub s t := s.gpr .r3 = t.gpr .r3 ∧ s.gpr .r4 = t.gpr .r4 ∧
     s.gpr .r5 = t.gpr .r5 ∧ s.gpr .r6 = t.gpr .r6 ∧ s.sp = t.sp
 
-def satState : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x3000 | .r6 => 0x4000 | _ => 0
-  lr := 0
-  sp := 0x6000
-  mem _ := 0
-  rd := [⟨0x1000, 1024⟩, ⟨0x2000, 1024⟩]
-  wr := [⟨0x3000, 1024⟩, ⟨0x4000, 4096⟩]
-
-theorem compress_implies : compressLocal.Implies (compressContract PPC64LE.abi) := by
-  sig_implies [compressContract, compressSig, compressLocal, PPC64LE.abi, PPC64LE.argRegs]
-    [satState] using satState
-
 theorem compress_ct : ConstantTime isa compressLocal.pre compressLocal.pub
     Impl.Argon2.PPC64LE.compress := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) ?_ (by taint_decide)
@@ -153,9 +140,5 @@ theorem compress_correct (s : State) (hs : compressLocal.pre s) :
       compressLocal.post s t := by
   obtain ⟨tr, t, he, hp, hk⟩ := compress_wp s hs
   exact ⟨tr, t, he, ⟨hk, Exec.sp he, Exec.lr he (by lit_decide) (by rw [← Code.allInstrs_eq]; lit_decide)⟩, hp⟩
-
-theorem compress_verified : Verified PPC64LE.target Impl.Argon2.PPC64LE.compress
-    (Proof.Argon2.compressContract PPC64LE.abi) :=
-  Verified.of_correct compress_correct compress_ct compress_implies
 
 end VG.Proof.Argon2.PPC64LE

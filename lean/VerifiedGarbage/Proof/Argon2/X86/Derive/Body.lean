@@ -203,7 +203,6 @@ theorem passes_pos : 1 ≤ itersN s₀ := hp.valid.2.2.1
 theorem memory_ge : 8 * lanesN s₀ ≤ mcostN s₀ := hp.valid.2.2.2.2.1
 theorem tag_ge : 4 ≤ outL s₀ := hp.valid.2.2.2.2.2.2.1
 
-
 theorem segLen_two : 2 ≤ (prm s₀).segmentLen :=
   Proof.Argon2.segmentLen_ge_two _ hp.lanes_pos hp.memory_ge
 
@@ -414,23 +413,11 @@ abbrev bodyW : List Region := [memR s₀, scrR s₀, outR s₀, locR s₀, callR
 
 end
 
-section
-variable {s₀ : State} (hp : DPre s₀)
-include hp
-
-theorem E_toNat : (E s₀).toNat = (E0 s₀).toNat - 160 := sub_toNat (by have := hp.esp_lo; omega_arith)
-
-end
-
 theorem entry_esp (s₀ : State) : (entry s₀).gpr .esp = E s₀ := by
   simp only [entry, pushed_esp, List.length_singleton, List.length_replicate, BitVec.sub_sub,
     BitVec.ofNat_add_ofNat]
 
-theorem entry_gpr (s₀ : State) {r : Reg} (h : r ≠ .esp) : (entry s₀).gpr r = s₀.gpr r := by
-  simp only [entry, pushed_gpr _ _ h]
-
 theorem entry_rd (s₀ : State) : (entry s₀).rd = s₀.rd := by simp [entry]
-
 
 /-! ## The pushes -/
 
@@ -481,7 +468,6 @@ theorem entry_frame : Frame [below (E0 s₀) 160] s₀.mem (entry s₀).mem := b
       (by rw [List.length_replicate, n₄]; omega_using [hlo]) (by rw [n₄]; omega_using [hlo]))
 
 end
-
 
 /-- A word above the frame a push writes is kept. -/
 theorem push_keep {rs : List Reg} {s : State} (hrs : .esp ∉ rs) (hn : 4 * rs.length ≤ (s.gpr .esp).toNat)
@@ -565,7 +551,6 @@ theorem entry_saved {j : Nat} (hj : j < 4) : (entry s₀).mem.readW (slot s₀ j
 
 end
 
-
 theorem loc_mem (s₀ : State) : locR s₀ ∈ (entry s₀).wr := by
   simp [entry, pushed_wr, pushed_esp, BitVec.sub_sub, BitVec.ofNat_add_ofNat, below]
 
@@ -631,7 +616,6 @@ theorem loc_in' {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 4 ≤ 144) :
   ⟨r, List.mem_append_right _ hr, hc⟩
 
 end
-
 
 section
 variable {s₀ : State} (hp : DPre s₀)

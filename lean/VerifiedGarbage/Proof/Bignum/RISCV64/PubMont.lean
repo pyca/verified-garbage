@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PubLoad
 public import VerifiedGarbage.Proof.Bignum.RISCV64.MontCore
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
+import VerifiedGarbage.Proof.Bignum.RISCV64.MontSqr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -88,5 +89,48 @@ theorem montOp_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
         Arrays B w [2, 3, o] s.mem t.mem) ∧
       Keep montRegs s t :=
   montOpN_ok hs (by decide) ho ha hb ho2 ho3 ha2 hb2 hw2 hw' hZ h7 h5 ht0 hinv hB
+
+/-- The public exponent's running square, with the dead R-squared array as
+its temporary. No input, Montgomery base, or ordinary one is overwritten. -/
+theorem square_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
+    (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 8 ≤ Z)
+    (h7 : s.gpr .a7 = off B (slot w 0)) (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)))
+    (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
+    (hinv : ((word s.mem B (slot w 0)).toNat * (s.gpr .t1).toNat + 1) % 2 ^ 64 = 0)
+    (hA : wordsVal s.mem B (slot w 5) w < wordsVal s.mem B (slot w 0) w) :
+    WP isa square s fun t =>
+      (wordsVal t.mem B (slot w 5) w < wordsVal s.mem B (slot w 0) w ∧
+        wordsVal t.mem B (slot w 5) w * 2 ^ (64 * w) % wordsVal s.mem B (slot w 0) w =
+          wordsVal s.mem B (slot w 5) w * wordsVal s.mem B (slot w 5) w % wordsVal s.mem B (slot w 0) w ∧
+        Arrays B w [2, 3, 1, 5] s.mem t.mem) ∧ Keep montRegs s t := by
+  unfold square
+  refine WP.seq ?_
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (base_ok (rd := .a2) (by decide) h7 h5 5) fun t₁ ⟨⟨a2, m1⟩, k1⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (base_ok (rd := .a3) (by decide) ((k1.gpr (by decide)).trans h7)
+    ((k1.gpr (by decide)).trans h5) 5) fun t₂ ⟨⟨a3, m2⟩, k2⟩ => ?_
+  have k12 := k1.trans k2
+  rw [WP.block_append_iff]
+  refine WP.mono (base_ok (rd := .a5) (by decide) ((k12.gpr (by decide)).trans h7)
+    ((k12.gpr (by decide)).trans h5) 2) fun t₃ ⟨⟨a5, m3⟩, k3⟩ => ?_
+  have k13 := k12.trans k3
+  refine WP.mono (base_ok (rd := .a6) (by decide) ((k13.gpr (by decide)).trans h7)
+    ((k13.gpr (by decide)).trans h5) 1) fun t₄ ⟨⟨a6, m4⟩, k4⟩ => ?_
+  have k14 := k13.trans k4
+  have hm : t₄.mem = s.mem := by rw [m4, m3, m2, m1]
+  have g : ∀ r ∈ [Reg.a7, .t0, .t1], t₄.gpr r = s.gpr r := fun r hr => k14.gpr (by revert r hr; decide)
+  have g2 : t₄.gpr .a2 = off B (slot w 5) := by
+    rw [k4.gpr (by decide), k3.gpr (by decide), k2.gpr (by decide), a2]
+  have g3 : t₄.gpr .a3 = off B (slot w 5) := by rw [k4.gpr (by decide), k3.gpr (by decide), a3]
+  have g5 : t₄.gpr .a5 = off B (slot w 2) := by rw [k4.gpr (by decide), a5]
+  rw [← hm] at hinv hA ⊢
+  refine WP.mono (sqrTail_ok (hs.congr k14.2.2) (o := 5) (a := 5) (p := 1)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) hw2 hw' hZ g2 g3 g5 a6
+    ((g _ (by decide)).trans h7) ((g _ (by decide)).trans ht0)
+    (by rw [g _ (by decide)]; exact hinv) hA) fun t ⟨h, k⟩ =>
+      ⟨h, (k14.trans k).mono (by decide)⟩
 
 end VG.Proof.Bignum.RISCV64.Pub

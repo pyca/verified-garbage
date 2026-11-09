@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Seed.Contract
 meta import VerifiedGarbage.Spec.Seed.Contract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # SEED specification tests
@@ -194,9 +192,5 @@ run_cmd do
   match result with
   | .ok () => pure ()
   | .error e => throwError "SEED: {e}"
-
-#assert_standard_axioms VG.Spec.Seed.expandKeyContract
-#assert_standard_axioms VG.Spec.Seed.ecbEncryptContract
-#assert_standard_axioms VG.Spec.Seed.ecbDecryptContract
 
 end VG.Test.Seed

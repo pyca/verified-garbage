@@ -156,10 +156,6 @@ theorem residual_zero_top (w : Nat) {B k : Nat} (hk : k<2^B) :
   · subst h9; simpa only [residual,ite_true,ite_false,ne_9_7] using FastNaf9.residual_zero_top hk
   · simpa only [residual,h7,ite_false,h9] using Naf5.residual_zero_top hk
 
-theorem residual_zero257 (w : Nat) {k : Nat} (hk : k<2^256) :
-    residual w k 257=0 :=
-  residual_zero_top w hk
-
 theorem add_step {C : Curve} (hC : Law C) {P : Point C} (hP : onCurve C P=true) (w k j : Nat) :
     Spec.Weierstrass.add (mul (2*residual w k (j+1)) P) (point C P w k j)=mul (residual w k j) P := by
   by_cases h7 : w=7
@@ -175,7 +171,6 @@ theorem onCurve_point {C : Curve} (hC : Law C) {P : Point C} (hP : onCurve C P=t
   by_cases h9 : w=9
   · subst h9; simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,FastNaf9.point] using FastNaf9.onCurve_point hC hP k j
   · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,h9] using Naf5.onCurve_point hC hP k j
-
 
 theorem next_even (w n : Nat) (hn : n%2=0) : next w n=n/2 := by
   simp only [next,Naf5.next,FastNaf7.next,FastNaf9.next,hn,ite_true]

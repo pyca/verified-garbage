@@ -3,13 +3,15 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtFix
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 
 /-!
 # `vg_rsa_crt_values` on x86-64: the loads and the check of `p q = n`
 
 The loads of `n`, `p`, `q` and `d` (`cvLoads_ok`), and the mask of
-`p q = n` (`cvCheck_ok`), as `n mod p = 0`, `n / p = q` and `p` odd
-(`pq_iff`).
+`p q = n` (`cvCheck_ok`), comparing the full product including its high words.
 -/
 
 @[expose] public section
@@ -119,129 +121,114 @@ theorem cvLoads_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : C
       outside_arr o₃ (Nat.le_refl _) (by decide) (by omega_arith) (by decide) hZ hn]; exact hv₂
   · rw [outside_arr o₄ (Nat.le_refl _) (by decide) (by omega_arith) (by decide) hZ hn]; exact hv₃
 
-theorem mask_check {c : Bool} {A B1 B2 PQ : Prop} [Decidable A] [Decidable B1] [Decidable B2] [Decidable PQ]
-    (h : A → ((A ∧ B1 ∧ B2) ↔ PQ)) (hA : ¬ A → ¬ PQ) :
-    (decide A && (c && decide B1 && decide B2)) = (c && decide PQ) := by
-  by_cases a : A
-  · have := h a
-    by_cases b1 : B1 <;> by_cases b2 : B2 <;> by_cases pq : PQ <;> simp_all
-  · have := hA a
-    simp_all
+/-- The registers for the product; no operand value determines an address. -/
+theorem productSetup_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) :
+    WP isa (.block productSetup) s fun t =>
+      t.gpr .r11 = off B (slot w aP) ∧ t.gpr .r9 = off B (slot w aQ) ∧
+      t.gpr .r8 = off B (slot w aU) ∧ t.gpr .r10 = BitVec.ofNat 64 w ∧
+      t.gpr .r12 = BitVec.ofNat 64 w ∧ t.mem = s.mem ∧
+      Keep [.r12, .r9, .r11, .rax, .r8, .r10] s t := by
+  rw [show productSetup = ws ++ ((base aP .r11 ++ (base aQ .rax ++ base aU .r8)) ++
+    ([.mov .r9 (.reg .rax), .mov .r10 (.reg .r12)] : List Instr)) by
+      simp only [productSetup, List.append_assoc]]
+  rw [WP.block_append_iff]
+  refine WP.mono h.ws_ok fun t₁ ⟨h12, h9, hm₁, k₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (base3_ok aP aQ aU (r₁ := .r11) (r₂ := .rax) (r₃ := .r8)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    ((k₁.gpr (by decide)).trans h.rdi) h9 (by decide) (by decide)) fun t₂ ⟨h11, ha, h8, hm₂, k₂⟩ => ?_
+  refine WP.mono (WP.keep [.r9, .r10] (Q := fun t => t.gpr .r9 = off B (slot w aQ) ∧
+    t.gpr .r10 = BitVec.ofNat 64 w ∧ t.mem = t₂.mem) (by
+    xrun [ha, (k₂.gpr (by decide) : t₂.gpr .r12 = _), h12]) rfl) fun t ⟨⟨h9', h10, hm₃⟩, k₃⟩ => ?_
+  exact ⟨(k₃.gpr (by decide)).trans h11, h9', (k₃.gpr (by decide)).trans h8, h10,
+    (k₃.gpr (by decide)).trans ((k₂.gpr (by decide)).trans h12), hm₃.trans (hm₂.trans hm₁),
+    ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
-/-- `pqCheck`: the mask of `p q = n` and'ed into `sMask`, for an odd `n`. -/
-theorem cvCheck_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {c : Bool}
-    (hc : mword s.mem I.B = mask c) (hN : wv s.mem I.B (slot (wk I.k) aN) (wk I.k) % 2 = 1) :
+/-- The product computation at the modulus width, from a cleared accumulator. -/
+theorem product_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
+    (hz : wv s.mem B (slot w aU) (2 * w + 2) = 0) :
+    WP isa (.seq (.block productSetup) Impl.Rsa.X86_64.Crt.mulRows) s fun t =>
+      wv t.mem B (slot w aU) (2 * w + 2) = wv s.mem B (slot w aP) w * wv s.mem B (slot w aQ) w ∧
+      Outside B (slot w aU) (8 * (2 * w + 2)) s.mem t.mem ∧ Keep mmRegs s t := by
+  have hw := h.w2
+  have h1 := h.w1
+  have hA : slot w aU + 8 * (2 * w + 2) ≤ Z := by
+    have := h.sl (show 4 < 16 by decide)
+    simp only [slot, aU] at *
+    omega
+  refine WP.seq (WP.mono (productSetup_ok h) fun s₁ ⟨h11, h9, h8, h10, h12, hm, k₁⟩ => ?_)
+  refine WP.mono (mulRows_ok (h.scr.congr k₁.2.2) h11 h9 h10 h12 h8 (by omega) (by omega)
+    (by omega) (by simpa only [Nat.two_mul] using hA)
+    (by have := h.sl (show aP < 16 by decide); omega)
+    (by have := h.sl (show aQ < 16 by decide); omega)
+    (Or.inl (by simp [slot, aP, aU]; omega)) (Or.inr (by simp [slot, aQ, aU]; omega))
+    (by rw [← Nat.two_mul, hm, hz]; exact Nat.two_pow_pos _)) fun t ⟨hv, ho, k₂⟩ => ?_
+  simp only [← Nat.two_mul, hm, hz, Nat.zero_add] at hv ho
+  exact ⟨hv, ho, (k₁.trans k₂).mono (by decide)⟩
+
+/-- A product occupies the first `2 w + 2` words of arrays 2 and 3. -/
+theorem CvS.product {I : CvIn} {m₀ : Mem} {s t : State} (h : CvS I m₀ s)
+    (ho : Outside I.B (slot (wk I.k) aU) (8 * (2 * wk I.k + 2)) s.mem t.mem)
+    {rs : List Reg} (hk : Keep rs s t) (hr : .rdi ∉ rs ∧ .rsp ∉ rs) : CvS I m₀ t :=
+  h.step (Frm.of_outside ho (List.mem_singleton_self _)) (fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact Mut.ofSlot _ _ _) (fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    have := h.ws.sl (show 4 < 16 by decide)
+    dsimp only
+    simp only [slot, aU] at *
+    omega) hk hr
+
+/-- The mask of `p q = n` from the full product, including its high words. -/
+theorem cvCheck_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (_L : CvLens I) {c : Bool}
+    (hc : mword s.mem I.B = mask c) :
     WP isa (seqs pqCheck) s fun t =>
       CvS I m₀ t ∧ mword t.mem I.B = mask (c && decide (wv s.mem I.B (slot (wk I.k) aP) (wk I.k) *
         wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) = wv s.mem I.B (slot (wk I.k) aN) (wk I.k))) ∧
       ∀ j, j = aP ∨ j = aQ ∨ j = aD → wv t.mem I.B (slot (wk I.k) j) (wk I.k) = wv s.mem I.B (slot (wk I.k) j) (wk I.k) := by
+  let w := wk I.k
+  have hw := h.ws.w2
+  have h1 := h.ws.w1
   have hn := h.ws.scr.nowrap
   have hZ := h.ws.hZ
-  have h256 := h.ws.h256
-  have k1 := L.k1
-  have eM : Impl.Bignum.X86_64.Public.sMask = 22 := rfl
-  have hmw : ∀ {m m' : Mem} {j L' : Nat}, Outside I.B (slot (wk I.k) j) L' m m' → L' ≤ 8 * (wk I.k + 2) →
-      mword m' I.B = mword m I.B := fun {_ _ j _} o _ =>
-    o.word (Or.inl (by have := hdr_lt_slot (wk I.k) j (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega_arith))
-      (by omega_arith)
-  simp only [pqCheck, List.cons_append, List.nil_append, List.append_assoc]
-  -- `[u] := n`, then `divmod`.
-  refine WP.seq (WP.mono (zeroA_ok h.ws (by decide)) fun s₁ ⟨_, o₁, k₁⟩ => ?_)
-  have h₁ := h.arr (by decide) (Nat.le_refl _) o₁ k₁ (by decide)
-  refine WP.seq (WP.mono (copyA_ok h₁.ws (by decide) (by decide) (by decide)) fun s₂ ⟨hU₂, o₂, k₂⟩ => ?_)
-  have h₂ := h₁.arr (by decide) (by omega_arith) o₂ k₂ (by decide)
-  have g₂ : ∀ j, j < 16 → j ≠ aU → wv s₂.mem I.B (slot (wk I.k) j) (wk I.k) = wv s.mem I.B (slot (wk I.k) j) (wk I.k) :=
-    fun j hj hne => by
-      rw [outside_arr o₂ (by omega_arith) hne (by omega_arith) hj hZ hn, outside_arr o₁ (Nat.le_refl _) hne (by omega_arith) hj hZ hn]
-  rw [outside_arr o₁ (Nat.le_refl _) (by decide) (by omega_arith) (by decide) hZ hn] at hU₂
-  refine WP.seq (WP.mono (divmod_ok h₂.ws.scr h₂.ws.rdi h₂.ws.hw h₂.ws.hS (by have := h₂.ws.w1; omega_arith) h₂.ws.w2 hZ
-    (iQ := aU) (iR := aV) (iD := aP) (iT := aT) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide)) fun s₃ ⟨_, f₃, k₃, hv₃⟩ => ?_)
-  have h₃ := h₂.step f₃ (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> exact Mut.ofSlot _ _ _) (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> dsimp only <;> exact h₂.ws.sl (by decide)) k₃ (by decide)
-  have g₃ : ∀ j, j < 16 → j ≠ aU → j ≠ aV → j ≠ aT →
-      wv s₃.mem I.B (slot (wk I.k) j) (wk I.k) = wv s₂.mem I.B (slot (wk I.k) j) (wk I.k) := fun j hj h1 h2 h3 =>
-    f₃.wv_eq (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> dsimp only
-      · have := slot_far (w := wk I.k) h1; omega_arith
-      · have := slot_far (w := wk I.k) h2; omega_arith
-      · have := slot_far (w := wk I.k) h3; omega_arith) (by have := h.ws.sl hj; omega_arith)
-  have hm₃ : mword s₃.mem I.B = mask c := by
-    have e : mword s₃.mem I.B = mword s₂.mem I.B := f₃.word_eq (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> dsimp only
-      · have := hdr_lt_slot (wk I.k) aU (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega_arith
-      · have := hdr_lt_slot (wk I.k) aV (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega_arith
-      · have := hdr_lt_slot (wk I.k) aT (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega_arith) (by omega_arith)
-    exact e.trans ((hmw o₂ (by omega_arith)).trans ((hmw o₁ (Nat.le_refl _)).trans hc))
-  rw [hU₂] at hv₃
-  rw [g₂ aP (by decide) (by decide)] at hv₃
-  -- `rbp = 0` iff `n / p = q`.
-  refine wp_seqs_append (by simp [eqA]) (by simp) (WP.mono (eqA_ok h₃.ws (a := aU) (b := aQ) (by decide) (by decide))
-    fun s₄ ⟨hz₄, m₄, k₄⟩ => ?_)
-  have h₄ := h₃.step (rs := []) (by rw [m₄]; exact Frm.refl _ _ _) (by simp) (by simp) k₄ (by decide)
-  refine WP.seq (WP.mono (andZero_ok (c := c) h₄.ws (by rw [m₄]; exact hm₃) hz₄) fun s₅ ⟨m₅, k₅⟩ => ?_)
-  obtain ⟨h₅, hm₅, a₅⟩ := h₄.mask m₅ k₅ (by decide)
-  -- `[c] := 0`, and `rbp = 0` iff `n mod p = 0`.
-  refine WP.seq (WP.mono (zeroA_ok h₅.ws (j := aC) (by decide)) fun s₆ ⟨hz₆, o₆, k₆⟩ => ?_)
-  have h₆ := h₅.arr (by decide) (Nat.le_refl _) o₆ k₆ (by decide)
-  refine wp_seqs_append (by simp [eqA]) (by simp) (WP.mono (eqA_ok h₆.ws (a := aV) (b := aC) (by decide) (by decide))
-    fun s₇ ⟨hz₇, m₇, k₇⟩ => ?_)
-  have h₇ := h₆.step (rs := []) (by rw [m₇]; exact Frm.refl _ _ _) (by simp) (by simp) k₇ (by decide)
-  refine WP.seq (WP.mono (andZero_ok (c := c && decide (wv s₃.mem I.B (slot (wk I.k) aU) (wk I.k) =
-    wv s₃.mem I.B (slot (wk I.k) aQ) (wk I.k))) h₇.ws (by rw [m₇]; exact (hmw o₆ (Nat.le_refl _)).trans hm₅) hz₇)
-    fun s₈ ⟨m₈, k₈⟩ => ?_)
-  obtain ⟨h₈, hm₈, a₈⟩ := h₇.mask m₈ k₈ (by decide)
-  -- `p` odd.
-  simp only [seqs]
-  refine WP.mono (andOdd_ok h₈.ws (j := aP) (by decide) hm₈) fun t ⟨mt, kt⟩ => ?_
-  obtain ⟨ht, hmt, at'⟩ := h₈.mask mt kt (by decide)
-  -- What the arrays hold.
-  have wvw : ∀ {m m' : Mem} {j : Nat}, j < 16 →
-      wv m' I.B (slot (wk I.k) j) (wk I.k + 2) = wv m I.B (slot (wk I.k) j) (wk I.k + 2) →
-      wv m' I.B (slot (wk I.k) j) (wk I.k) = wv m I.B (slot (wk I.k) j) (wk I.k) := fun {m m' j} _ e => by
-    have e1 := wv_add m I.B (slot (wk I.k) j) (wk I.k) 2
-    have e2 := wv_add m' I.B (slot (wk I.k) j) (wk I.k) 2
-    have l1 := wv_lt m I.B (slot (wk I.k) j) (wk I.k)
-    have l2 := wv_lt m' I.B (slot (wk I.k) j) (wk I.k)
-    rw [e] at e2
-    have := congrArg (· % 2 ^ (64 * wk I.k)) (e1.symm.trans e2)
-    simp only [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt l1, Nat.mod_eq_of_lt l2] at this
-    exact this.symm
-  have eP₈ : wv s₈.mem I.B (slot (wk I.k) aP) (wk I.k) = wv s.mem I.B (slot (wk I.k) aP) (wk I.k) := by
-    rw [wvw (by decide) (a₈ aP (by decide)), m₇, outside_arr o₆ (Nat.le_refl _) (by decide) (by omega_arith) (by decide) hZ hn,
-      wvw (by decide) (a₅ aP (by decide)), m₄, g₃ aP (by decide) (by decide) (by decide) (by decide),
-      g₂ aP (by decide) (by decide)]
-  have eC : wv s₆.mem I.B (slot (wk I.k) aC) (wk I.k) = 0 := by
-    have := wv_add s₆.mem I.B (slot (wk I.k) aC) (wk I.k) 2; omega_arith
-  have eV₆ : wv s₆.mem I.B (slot (wk I.k) aV) (wk I.k) = wv s₃.mem I.B (slot (wk I.k) aV) (wk I.k) := by
-    rw [outside_arr o₆ (Nat.le_refl _) (by decide) (by omega_arith) (by decide) hZ hn, wvw (by decide) (a₅ aV (by decide)), m₄]
-  rw [g₃ aQ (by decide) (by decide) (by decide) (by decide), g₂ aQ (by decide) (by decide)] at hz₄
-  refine ⟨ht, ?_, fun j hj => ?_⟩
-  · rw [hmt, eP₈]
-    congr 1
-    rw [eV₆, eC, g₃ aQ (by decide) (by decide) (by decide) (by decide), g₂ aQ (by decide) (by decide)]
-    apply mask_check
-    · intro hp
-      have hP0 : 0 < wv s.mem I.B (slot (wk I.k) aP) (wk I.k) := by omega_arith
-      obtain ⟨e1, e2⟩ := hv₃ hP0
-      have hlt : wv s₃.mem I.B (slot (wk I.k) aV) (wk I.k + 1) < 2 ^ (64 * wk I.k) := by
-        rw [e1]; exact Nat.lt_of_lt_of_le (Nat.mod_lt _ hP0) (Nat.le_of_lt (wv_lt _ _ _ _))
-      rw [wv_low_of_lt (Nat.le_succ _) hlt, e1, e2]
-      exact pq_iff hN
-    · intro hp hpq
-      exact hp ((pq_iff hN).mpr hpq).1
-  · have hj' : j < 16 := by rcases hj with rfl | rfl | rfl <;> decide
-    have e1 : j ≠ aU := by rcases hj with rfl | rfl | rfl <;> decide
-    have e2 : j ≠ aV := by rcases hj with rfl | rfl | rfl <;> decide
-    have e3 : j ≠ aT := by rcases hj with rfl | rfl | rfl <;> decide
-    have e4 : j ≠ aC := by rcases hj with rfl | rfl | rfl <;> decide
-    rw [wvw hj' (at' j hj'), wvw hj' (a₈ j hj'), m₇, outside_arr o₆ (Nat.le_refl _) e4 (by omega_arith) hj' hZ hn,
-      wvw hj' (a₅ j hj'), m₄, g₃ j hj' e1 e2 e3, g₂ j hj' e1]
+  have outside_keep : ∀ {m m' : Mem}, Outside I.B (slot w aU) (8 * (2 * w + 2)) m m' →
+      ∀ j, j = aN ∨ j = aP ∨ j = aQ ∨ j = aD →
+        wv m' I.B (slot w j) w = wv m I.B (slot w j) w := by
+    intro m m' ho j hj
+    apply ho.wv
+    · rcases hj with rfl | rfl | rfl | rfl <;> simp [slot, aU, aN, aP, aQ, aD] <;> omega
+    · have hj16 : j < 16 := by rcases hj with rfl | rfl | rfl | rfl <;> decide
+      have hh := h.ws.sl hj16
+      change slot w j + 8 * (w + 2) ≤ I.Z at hh
+      omega
+  have outside_mask : ∀ {m m' : Mem}, Outside I.B (slot w aU) (8 * (2 * w + 2)) m m' →
+      mword m' I.B = mword m I.B := fun {_ _} ho =>
+    ho.word (Or.inl (by simp [slot, hdrBytes, aU, Impl.Bignum.X86_64.Public.sMask, sFn]; omega))
+      (by have := h.ws.h256; change 184 ≤ 2 ^ 64; decide)
+  unfold pqCheck
+  rw [List.append_assoc]
+  refine wp_seqs_append (by simp [Impl.Rsa.X86_64.Crt.zeroAccs]) (by simp) (WP.mono
+    (zeroAccs_ok h.ws.good.1 h.ws.good.2 (by omega)) fun s₁ ⟨hz₁, o₁, k₁⟩ => ?_)
+  have h₁ := h.product o₁ k₁ (by decide)
+  refine wp_seqs_append (by simp) (by simp [Impl.Rsa.X86_64.Crt.eqCheck])
+    (WP.mono (product_ok h₁.ws (wv_zero hz₁)) fun s₃ ⟨hv₃, o₃, k₃⟩ => ?_)
+  have h₃ := h₁.product o₃ k₃ (by decide)
+  refine WP.mono (eqCheck_ok h₃.ws.good.1 h₃.ws.good.2 (by omega) (by omega)) fun t ⟨hm₄, o₄, k₄⟩ => ?_
+  have h₄ := h₃.step (Frm.of_outside o₄ (List.mem_singleton_self _))
+    (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inr (Or.inl rfl))
+    (fun r hr => by rw [List.mem_singleton.mp hr]; have := h.ws.h256; change 184 ≤ I.Z; omega) k₄ (by decide)
+  have hk₁ := outside_keep o₁
+  have hk₃ := outside_keep o₃
+  have product : wv s₃.mem I.B (slot w aU) (2 * w + 2) =
+      wv s.mem I.B (slot w aP) w * wv s.mem I.B (slot w aQ) w := by
+    rw [hv₃, hk₁ _ (Or.inr (Or.inl rfl)), hk₁ _ (Or.inr (Or.inr (Or.inl rfl)))]
+  have hm₃ : mword s₃.mem I.B = mask c := by rw [outside_mask o₃, outside_mask o₁, hc]
+  refine ⟨h₄, ?_, fun j hj => ?_⟩
+  · change word t.mem I.B (8 * Impl.Bignum.X86_64.Public.sMask) = _
+    rw [hm₄, show Impl.Bignum.X86_64.Public.aAcc = aU from rfl, ← show mword s₃.mem I.B = word s₃.mem I.B (8 * Impl.Bignum.X86_64.Public.sMask) from rfl,
+      hm₃, product, hk₃ _ (Or.inl rfl), hk₁ _ (Or.inl rfl), mask_and']
+  · have hj16 : j < 16 := by rcases hj with rfl | rfl | rfl <;> decide
+    rw [o₄.wv (Or.inr (by have := hdr_lt_slot w j (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega))
+      (by have := h.ws.sl hj16; omega), hk₃ _ (Or.inr hj), hk₁ _ (Or.inr hj)]
 
 /-- `decA j`: the low word of `[j]` minus one. -/
 theorem decA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} (hj : j < 16) :

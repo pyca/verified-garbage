@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # The x86 RSA padding functions: their callee `vg_rsa_public_precomputed_checked`
@@ -66,7 +67,7 @@ theorem pub_pre (h : PubArgs s out pre e inp scr K rl el sl)
     (dLow : ∀ r ∈ pubWr (s.gpr .esp) out scr K sl ++ pubRd pre e inp K rl el,
       Region.Disjoint (below (s.gpr .esp) 100) r)
     (fit : ∀ r ∈ pubWr (s.gpr .esp) out scr K sl ++ pubRd pre e inp K rl el, r.base.toNat + r.len ≤ 2 ^ 32) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pre
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 96).pre
       (s.callEntry.withRegions (pubRd pre e inp K rl el) (pubWr (s.gpr .esp) out scr K sl)) := by
   have k32 := h.k32
   have rl32 := h.rl32
@@ -75,7 +76,7 @@ theorem pub_pre (h : PubArgs s out pre e inp scr K rl el sl)
   have hsp := h.sp
   have hfit := h.fit
   have e4 : (s.gpr .esp - 4).toNat = (s.gpr .esp).toNat - 4 := sub_toNat (k := 4) (by omega)
-  sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
+  sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
     argBytes, stackBelow]
   simp only [a (by decide : 0 < 10), a (by decide : 1 < 10), a (by decide : 2 < 10), a (by decide : 3 < 10),
     a (by decide : 4 < 10), a (by decide : 5 < 10), a (by decide : 6 < 10), a (by decide : 7 < 10),
@@ -119,12 +120,12 @@ theorem pub_pub {s₁ s₂ : State} (h₁ : PubArgs s₁ out pre e inp scr K rl 
     (hdp : (below (s₁.gpr .esp) 100).Disjoint ⟨pre.setWidth 64, rl * 8⟩)
     (hde : (below (s₁.gpr .esp) 100).Disjoint ⟨e.setWidth 64, el⟩)
     (rd wr : List Region) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pub (s₁.callEntry.withRegions rd wr)
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 96).pub (s₁.callEntry.withRegions rd wr)
       (s₂.callEntry.withRegions rd wr) := by
   have rl32 := h₁.rl32
   have a₁ := fun {i} (hi : i < 10) => h₁.arg rd wr hi
   have a₂ := fun {i} (hi : i < 10) => h₂.arg rd wr hi
-  sig_pub [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
+  sig_pub [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
     argBytes]
   simp only [a₁ (by decide : 0 < 10), a₁ (by decide : 1 < 10), a₁ (by decide : 2 < 10), a₁ (by decide : 3 < 10),
     a₁ (by decide : 4 < 10), a₁ (by decide : 5 < 10), a₁ (by decide : 6 < 10), a₁ (by decide : 7 < 10),
@@ -153,14 +154,14 @@ theorem pub_pub {s₁ s₂ : State} (h₁ : PubArgs s₁ out pre e inp scr K rl 
 
 /-- The call's result: what it writes to `out` and returns. -/
 theorem pub_post {s t : State} (h : PubArgs s out pre e inp scr K rl el sl) {rd wr : List Region}
-    (hp : (Spec.Rsa.publicPrecomputedCheckedContract abi 96).post (s.callEntry.withRegions rd wr) t) :
+    (hp : (Proof.Rsa.publicPrecomputedCheckedContract abi 96).post (s.callEntry.withRegions rd wr) t) :
     ∀ nB : List Byte, nB.length = K →
       Spec.Rsa.publicPrecompute nB = some (Spec.Rsa.wordsAt s.callEntry.mem (pre.setWidth 64) rl) →
       Spec.Rsa.written t.mem (out.setWidth 64) K (t.gpr .eax)
         (Spec.Rsa.publicOpChecked nB (Spec.Rsa.bytesAt s.callEntry.mem (e.setWidth 64) el)
           (Spec.Rsa.bytesAt s.callEntry.mem (inp.setWidth 64) K)) := by
   have a := fun {i} (hi : i < 10) => h.arg rd wr hi
-  sig_post [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
+  sig_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
     argBytes] at hp
   simp only [a (by decide : 0 < 10), a (by decide : 1 < 10), a (by decide : 2 < 10), a (by decide : 3 < 10),
     a (by decide : 4 < 10), a (by decide : 5 < 10), a (by decide : 6 < 10),

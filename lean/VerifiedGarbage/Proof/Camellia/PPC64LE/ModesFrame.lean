@@ -39,25 +39,25 @@ def modeFrameSat : State where
   rd := [⟨0x1000, 272⟩]
   wr := [⟨0x3000, 16⟩, ⟨0x4000, 0⟩]
 
-theorem cbcEncFrameSat_pre : ∃ s, (Spec.Camellia.cbcEncryptChainedContract PPC64LE.abi 3408).pre s := by
-  implies_sat [Spec.Camellia.cbcEncryptChainedContract, Spec.Camellia.cbcChainedSig,
+theorem cbcEncFrameSat_pre : ∃ s, (Proof.Camellia.cbcEncryptChainedContractSk PPC64LE.abi 3408).pre s := by
+  implies_sat [Proof.Camellia.cbcEncryptChainedContractSk, Spec.Camellia.cbcChainedSig,
     PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
 
-theorem cbcDecFrameSat_pre : ∃ s, (Spec.Camellia.cbcDecryptChainedContract PPC64LE.abi 3408).pre s := by
-  implies_sat [Spec.Camellia.cbcDecryptChainedContract, Spec.Camellia.cbcChainedSig,
+theorem cbcDecFrameSat_pre : ∃ s, (Proof.Camellia.cbcDecryptChainedContractSk PPC64LE.abi 3408).pre s := by
+  implies_sat [Proof.Camellia.cbcDecryptChainedContractSk, Spec.Camellia.cbcChainedSig,
     PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
 
-theorem ofbFrameSat_pre : ∃ s, (Spec.Camellia.ofbContract PPC64LE.abi 3408).pre s := by
-  implies_sat [Spec.Camellia.ofbContract, Spec.Camellia.ofbSig, Spec.Camellia.ofbPre,
-    Spec.Camellia.ofbPost, PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
+theorem ofbFrameSat_pre : ∃ s, (Proof.Camellia.ofbContractSk PPC64LE.abi 3408).pre s := by
+  implies_sat [Proof.Camellia.ofbContractSk, Spec.Camellia.ofbSig, Spec.Camellia.ofbPre,
+    Proof.Camellia.ofbPostSk, PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
 
-theorem cfbEncFrameSat_pre : ∃ s, (Spec.Camellia.cfbEncryptContract PPC64LE.abi 3408).pre s := by
-  implies_sat [Spec.Camellia.cfbEncryptContract, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre,
-    Spec.Camellia.cfbEncryptPost, PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
+theorem cfbEncFrameSat_pre : ∃ s, (Proof.Camellia.cfbEncryptContractSk PPC64LE.abi 3408).pre s := by
+  implies_sat [Proof.Camellia.cfbEncryptContractSk, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre,
+    Proof.Camellia.cfbEncryptPostSk, PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
 
-theorem cfbDecFrameSat_pre : ∃ s, (Spec.Camellia.cfbDecryptContract PPC64LE.abi 3408).pre s := by
-  implies_sat [Spec.Camellia.cfbDecryptContract, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre,
-    Spec.Camellia.cfbDecryptPost, PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
+theorem cfbDecFrameSat_pre : ∃ s, (Proof.Camellia.cfbDecryptContractSk PPC64LE.abi 3408).pre s := by
+  implies_sat [Proof.Camellia.cfbDecryptContractSk, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre,
+    Proof.Camellia.cfbDecryptPostSk, PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
 
 /-- An implementation `c` of CBC encryption updating the chaining value,
 proved with its working space as an argument and no stack, in its frame. -/
@@ -65,6 +65,7 @@ theorem cbcEnc_framed {c : Prog isa}
     (h : Verified PPC64LE.target c (Proof.Camellia.cbcEncChainedScratchContract PPC64LE.abi 422)) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 c)
       (Spec.Camellia.cbcEncryptChainedContract PPC64LE.abi 3408) :=
+  Proof.Camellia.cbcEncryptChained_of_sk <|
   PPC64LE.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 422) (pre := Proof.Camellia.cbcChainedPre PPC64LE.abi.ptrBits)
     (post := Proof.Camellia.cbcEncChainedPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
@@ -77,6 +78,7 @@ theorem cbcDec_framed {c : Prog isa}
     (h : Verified PPC64LE.target c (Proof.Camellia.cbcDecChainedScratchContract PPC64LE.abi 422)) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 c)
       (Spec.Camellia.cbcDecryptChainedContract PPC64LE.abi 3408) :=
+  Proof.Camellia.cbcDecryptChained_of_sk <|
   PPC64LE.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 422) (pre := Proof.Camellia.cbcChainedPre PPC64LE.abi.ptrBits)
     (post := Proof.Camellia.cbcDecChainedPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
@@ -89,9 +91,10 @@ theorem ofb_framed {c : Prog isa}
     (h : Verified PPC64LE.target c (Proof.Camellia.ofbScratchContract PPC64LE.abi 422)) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 c)
       (Spec.Camellia.ofbContract PPC64LE.abi 3408) :=
+  Proof.Camellia.ofb_of_sk <|
   PPC64LE.Verified.stackScratchWiped (sig := Spec.Camellia.ofbSig) (nm := "scratch") (e := .u64)
     (n := 422) (pre := Spec.Camellia.ofbPre PPC64LE.abi.ptrBits)
-    (post := Spec.Camellia.ofbPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
+    (post := Proof.Camellia.ofbPostSk PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3408) (words := 422) (by rw [← Proof.Camellia.ofbScratchContract_eq]; exact h)
     (by decide) (by decide) (by decide) (Proof.Camellia.ofbPre_local _)
     (Proof.Camellia.ofbPost_local _) (Proof.Camellia.ofbPostOut_local _) ofbFrameSat_pre
@@ -101,9 +104,10 @@ theorem cfbEnc_framed {c : Prog isa}
     (h : Verified PPC64LE.target c (Proof.Camellia.cfbEncScratchContract PPC64LE.abi 422)) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 c)
       (Spec.Camellia.cfbEncryptContract PPC64LE.abi 3408) :=
+  Proof.Camellia.cfbEncrypt_of_sk <|
   PPC64LE.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64)
     (n := 422) (pre := Spec.Camellia.cfbPre PPC64LE.abi.ptrBits)
-    (post := Spec.Camellia.cfbEncryptPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
+    (post := Proof.Camellia.cfbEncryptPostSk PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3408) (words := 422) (by rw [← Proof.Camellia.cfbEncScratchContract_eq]; exact h)
     (by decide) (by decide) (by decide) (Proof.Camellia.cfbPre_local _)
     (Proof.Camellia.cfbEncryptPost_local _) (Proof.Camellia.cfbEncryptPostOut_local _) cfbEncFrameSat_pre
@@ -113,25 +117,27 @@ theorem cfbDec_framed {c : Prog isa}
     (h : Verified PPC64LE.target c (Proof.Camellia.cfbDecScratchContract PPC64LE.abi 422)) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 c)
       (Spec.Camellia.cfbDecryptContract PPC64LE.abi 3408) :=
+  Proof.Camellia.cfbDecrypt_of_sk <|
   PPC64LE.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64)
     (n := 422) (pre := Spec.Camellia.cfbPre PPC64LE.abi.ptrBits)
-    (post := Spec.Camellia.cfbDecryptPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
+    (post := Proof.Camellia.cfbDecryptPostSk PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3408) (words := 422) (by rw [← Proof.Camellia.cfbDecScratchContract_eq]; exact h)
     (by decide) (by decide) (by decide) (Proof.Camellia.cfbPre_local _)
     (Proof.Camellia.cfbDecryptPost_local _) (Proof.Camellia.cfbDecryptPostOut_local _) cfbDecFrameSat_pre
 
-theorem ctrFrameSat_pre : ∃ s, (Spec.Camellia.ctrContract PPC64LE.abi 3408).pre s := by
-  implies_sat [Spec.Camellia.ctrContract, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre,
-    Spec.Camellia.ctrPost, PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
+theorem ctrFrameSat_pre : ∃ s, (Proof.Camellia.ctrContractSk PPC64LE.abi 3408).pre s := by
+  implies_sat [Proof.Camellia.ctrContractSk, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre,
+    Proof.Camellia.ctrPostSk, PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
 
 /-- CTR, in its frame. -/
 theorem ctr_framed {c : Prog isa}
     (h : Verified PPC64LE.target c (Proof.Camellia.ctrScratchContract PPC64LE.abi 422)) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 c)
       (Spec.Camellia.ctrContract PPC64LE.abi 3408) :=
+  Proof.Camellia.ctr_of_sk <|
   PPC64LE.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64)
     (n := 422) (pre := Spec.Camellia.ctrPre PPC64LE.abi.ptrBits)
-    (post := Spec.Camellia.ctrPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
+    (post := Proof.Camellia.ctrPostSk PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3408) (words := 422) (by rw [← Proof.Camellia.ctrScratchContract_eq]; exact h)
     (by decide) (by decide) (by decide) (Proof.Camellia.ctrPre_local _)
     (Proof.Camellia.ctrPost_local _) (Proof.Camellia.ctrPostOut_local _) ctrFrameSat_pre

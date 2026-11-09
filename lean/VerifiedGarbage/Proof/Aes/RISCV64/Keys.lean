@@ -34,8 +34,6 @@ open VG.Spec.Aes (roundKey)
 
 /-! ## Loading a round key -/
 
-theorem q_ne : ∀ i < 8, q i ≠ t0 ∧ q i ≠ t1 ∧ q i ≠ .a0 := by decide
-
 theorem keyLoad_ok {s : State} {sc : Addr} {off : Nat} (hr : (⟨sc, 240⟩ : Region) ∈ s.rd ++ s.wr)
     (hb : s.gpr .a0 = sc + BitVec.ofNat 64 off) (hoff : off + 16 ≤ 240) :
     WP isa (.block keyLoad) s fun s' =>
@@ -152,11 +150,6 @@ theorem keyStore_ok {s : State} {X : Addr} (hs : Scr s X 2048) {off : Nat}
       simp [this])
 
 /-! ## Stepping back -/
-
-theorem ofInt_neg (k : Nat) (hk : k < 2048) : BitVec.ofInt 64 (-(k : Int)) = -BitVec.ofNat 64 k := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_ofInt, BitVec.toNat_neg, BitVec.toNat_ofNat]
-  omega
 
 theorem keyStep_ok (s : State) :
     ∃ s', runBlock isa keyStep s = some s' ∧

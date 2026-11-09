@@ -5,8 +5,8 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
 /-!
 # ML-DSA on AArch64: `vg_mldsa_sample_in_ball`
 
-`sampleInBall(ctilde = x0, len = x1, tau = w2, c = x3, scratch = x4) -> w0`
-(see `Common.lean` for the layout) squeezes 272 bytes of SHAKE256 of the
+`vg_mldsa_sample_in_ball(ctilde = x0, len = x1, tau = w2, c = x3, scratch = x4) -> w0`
+(`sampleInBallWith`; see `Common.lean` for the layout) squeezes 272 bytes of SHAKE256 of the
 `len` bytes of `c̃` (2 blocks; the least bound of FIPS 204 Appendix C is 221
 bytes, the contract's largest 1088), zeroes `c`, and runs `SampleInBall`'s
 loop over the 264 bytes after the first 8, with `x2` at the byte, `x10` =
@@ -54,7 +54,5 @@ def bLoop : Prog isa := .seq (.block bSetup) (.loop bBody (.nonzero .x .x5))
 def sampleInBallWith (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
   .seq (.block (pro .x4 .x3 (.addImm .w .x27 .x2 0) (mov .x4 .x1)))
     (.seq (spongeWith c 136 272) (.seq zeroPoly (.seq bLoop (.block (.lsr .x .x0 .x10 8 :: epi)))))
-
-def sampleInBall := sampleInBallWith .scalar
 
 end VG.Impl.MlDsa.AArch64.Sample

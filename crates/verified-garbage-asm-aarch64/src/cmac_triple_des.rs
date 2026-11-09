@@ -15,7 +15,7 @@
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may overlap the 640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_triple_des_stream_init(state: *mut [u64; 52], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_cmac_triple_des_stream_init(state: *mut [u64; 52], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10a03ff,0x910003e3,0xd2800009,0xf900c809,0x91000009,0x91000020,0x91000041,0x91000122
 .inst 0x9100006f,0xf9400005,0xdac00ca5,0xf90019e5,0xf9400405,0xdac00ca5,0xf9001de5,0xd1004029
@@ -557,7 +557,7 @@ cbnz x16, 26b
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_triple_des_absorb(state: *mut [u64; 52], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_cmac_triple_des_absorb(state: *mut [u64; 52], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10ac3ff,0x910003e4,0xf9014093,0xf9014494,0xf9014895,0xf9014c96,0xf9015097,0x91000013
 .inst 0x91000055,0x91000076,0x91000097
@@ -971,7 +971,7 @@ b 228f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_triple_des_finish(state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {
+pub(crate) unsafe extern "C" fn vg_cmac_triple_des_finish(state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {
     core::arch::naked_asm!(
         r".inst 0xd10a03ff,0x910003e3,0xf940c809,0xf9000049,0x91000064,0x91000023,0x91000041,0x91066002
 cbz x3, 20f

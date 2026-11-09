@@ -27,10 +27,6 @@ open VG.Proof.Ffdh.Control (writeController writeController_word writeController
 open VG.Impl.Ffdh.AArch64.Generation.Search
 open VG.Impl.Bignum.AArch64 (movi)
 
-private theorem not_self_disjoint {r : Region} (h : r.Disjoint r) (hl : 0 < r.len) : False :=
-  h r.base (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
-    (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
-
 namespace SInput
 
 variable {p : SPub} {original : State}
@@ -44,12 +40,6 @@ theorem out_ctl (h : SInput p original) : (⟨p.op, p.len⟩ : Region).Disjoint 
     forall_eq_or_imp, forall_eq] at this
   rw [← h.out_eq, ← h.ctl_eq]
   exact this.1.2.2
-
-theorem out_ne_ctl (h : SInput p original) : (⟨p.op, p.len⟩ : Region) ≠ inCtl original := by
-  intro he
-  have d := h.out_ctl
-  rw [he, h.ctl_eq] at d
-  exact not_self_disjoint d (by show 0 < 128; decide)
 
 end SInput
 

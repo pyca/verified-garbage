@@ -24,13 +24,6 @@ theorem outputs_low_frame (h : KeyInput p s) (frame : Frame [rX p, rY p] m m')
   frame.readW (r := rControl p) (Offset.contains_base _ (by omega) (by omega))
     h.outputs_control (by decide)
 
-theorem outputs_high_frame (h : KeyInput p s) (frame : Frame [rX p, rY p] m m')
-    (j : Nat) (bound : j < 16) :
-    m'.readW (off (State.addr p.control) (8 * j + 4)) 32 =
-      m.readW (off (State.addr p.control) (8 * j + 4)) 32 :=
-  frame.readW (r := rControl p) (Offset.contains_base _ (by omega) (by omega))
-    h.outputs_control (by decide)
-
 theorem outputs_policy_frame (h : KeyInput p s) (frame : Frame [rX p, rY p] m m') :
     Spec.Rsa.wordsAt m' (State.addr p.control) 4 = Spec.Rsa.wordsAt m (State.addr p.control) 4 := by
   unfold Spec.Rsa.wordsAt

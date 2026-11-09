@@ -10,9 +10,8 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 /-!
 # ML-DSA key generation: coefficients and polynomials in memory
 
-`mod± q` inverts the cast of a small integer to `ℤ_q` (`modPm_ofInt`), and the
-cast inverts `mod± q` (`ofInt_modPm`); the ranges of the coefficients
-`RejBoundedPoly` samples (`rejBoundedPoly_range`) and of `Power2Round`
+`mod± q` inverts the cast of a small integer to `ℤ_q` (`modPm_ofInt`); the
+ranges of the coefficients `RejBoundedPoly` samples (`rejBoundedPoly_range`) and of `Power2Round`
 (`power2Round_fst`, `power2Round_snd`); and ML-DSA's polynomials in memory
 (`Proof/MlDsa/Contract.lean`) depend only on their 1024 bytes (`polyAt_congr`,
 `polyIs_frame`, …).
@@ -41,20 +40,6 @@ theorem modPm_q (m : Int) : modPm m q = if m % 8380417 > 4190208 then m % 838041
 theorem modPm_ofInt {x : Int} (h₁ : -4190208 ≤ x) (h₂ : x ≤ 4190208) : modPm (ofInt x).val q = x := by
   rw [modPm_q, ofInt_val]
   split <;> omega
-
-/-- The cast of `mod± q` of an element of `ℤ_q` is the element. -/
-theorem ofInt_modPm (c : Zq) : ofInt (modPm c.val q) = c := by
-  apply Fin.ext
-  have hc : c.val < 8380417 := c.isLt
-  have key : modPm c.val q % 8380417 = c.val := by rw [modPm_q]; split <;> omega
-  have h := ofInt_val (modPm c.val q)
-  rw [key] at h
-  exact_mod_cast h
-
-theorem toRq_modPm (f : Poly) : toRq (f.map fun c => modPm c.val q) = f := by
-  unfold toRq
-  rw [Vector.map_map]
-  exact (Vector.map_congr_left fun c _ => ofInt_modPm c).trans (Vector.map_id f)
 
 theorem modPm_toRq {f : IPoly} (h : ∀ c ∈ f.toList, -4190208 ≤ c ∧ c ≤ 4190208) :
     (toRq f).map (fun c => modPm c.val q) = f := by

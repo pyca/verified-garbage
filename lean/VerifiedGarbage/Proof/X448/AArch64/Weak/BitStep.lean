@@ -23,7 +23,7 @@ open VG VG.AArch64
 open VG.Impl.X448.AArch64 (ld st slot X1 X2 Z2 X3 Z3 A B C D AA BB E DA CB T0 T1 T2 T3 T4 T5 T6 T7 SWAP BITS ACC TMP)
 open VG.Impl.X448.AArch64.Weak
 
-/-- The start of `step`. -/
+/-- The start of a step of the ladder. -/
 def stepPre : List Instr :=
   [.subImm .x .x19 .x19 1, .add .x .x11 .x3 .x19, .ldrb .x4 .x11 BITS,
     ld .x5 SWAP, .logic .eor .x .x5 .x5 .x4, st .x4 SWAP,

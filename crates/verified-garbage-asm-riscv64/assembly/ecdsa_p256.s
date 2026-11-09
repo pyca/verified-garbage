@@ -7,6 +7,237 @@
 vg_ecdsa_p256_verify:
 	.option push
 	.option arch, +m, +c
+	addi sp, sp, -80
+	addi a5, sp, 0
+	addi t0, zero, 32
+	bltu a2, t0, 20f
+	lbu t1, 0(a1)
+	sb t1, 0(a5)
+	lbu t1, 1(a1)
+	sb t1, 1(a5)
+	lbu t1, 2(a1)
+	sb t1, 2(a5)
+	lbu t1, 3(a1)
+	sb t1, 3(a5)
+	lbu t1, 4(a1)
+	sb t1, 4(a5)
+	lbu t1, 5(a1)
+	sb t1, 5(a5)
+	lbu t1, 6(a1)
+	sb t1, 6(a5)
+	lbu t1, 7(a1)
+	sb t1, 7(a5)
+	lbu t1, 8(a1)
+	sb t1, 8(a5)
+	lbu t1, 9(a1)
+	sb t1, 9(a5)
+	lbu t1, 10(a1)
+	sb t1, 10(a5)
+	lbu t1, 11(a1)
+	sb t1, 11(a5)
+	lbu t1, 12(a1)
+	sb t1, 12(a5)
+	lbu t1, 13(a1)
+	sb t1, 13(a5)
+	lbu t1, 14(a1)
+	sb t1, 14(a5)
+	lbu t1, 15(a1)
+	sb t1, 15(a5)
+	lbu t1, 16(a1)
+	sb t1, 16(a5)
+	lbu t1, 17(a1)
+	sb t1, 17(a5)
+	lbu t1, 18(a1)
+	sb t1, 18(a5)
+	lbu t1, 19(a1)
+	sb t1, 19(a5)
+	lbu t1, 20(a1)
+	sb t1, 20(a5)
+	lbu t1, 21(a1)
+	sb t1, 21(a5)
+	lbu t1, 22(a1)
+	sb t1, 22(a5)
+	lbu t1, 23(a1)
+	sb t1, 23(a5)
+	lbu t1, 24(a1)
+	sb t1, 24(a5)
+	lbu t1, 25(a1)
+	sb t1, 25(a5)
+	lbu t1, 26(a1)
+	sb t1, 26(a5)
+	lbu t1, 27(a1)
+	sb t1, 27(a5)
+	lbu t1, 28(a1)
+	sb t1, 28(a5)
+	lbu t1, 29(a1)
+	sb t1, 29(a5)
+	lbu t1, 30(a1)
+	sb t1, 30(a5)
+	lbu t1, 31(a1)
+	sb t1, 31(a5)
+	j 21f
+20:
+	addi t1, zero, 0
+	sb t1, 0(a5)
+	addi t1, zero, 0
+	sb t1, 1(a5)
+	addi t1, zero, 0
+	sb t1, 2(a5)
+	addi t1, zero, 0
+	sb t1, 3(a5)
+	addi t1, zero, 0
+	sb t1, 4(a5)
+	addi t1, zero, 0
+	sb t1, 5(a5)
+	addi t1, zero, 0
+	sb t1, 6(a5)
+	addi t1, zero, 0
+	sb t1, 7(a5)
+	addi t1, zero, 0
+	sb t1, 8(a5)
+	addi t1, zero, 0
+	sb t1, 9(a5)
+	addi t1, zero, 0
+	sb t1, 10(a5)
+	addi t1, zero, 0
+	sb t1, 11(a5)
+	addi t1, zero, 0
+	sb t1, 12(a5)
+	addi t1, zero, 0
+	sb t1, 13(a5)
+	addi t1, zero, 0
+	sb t1, 14(a5)
+	addi t1, zero, 0
+	sb t1, 15(a5)
+	addi t1, zero, 0
+	sb t1, 16(a5)
+	addi t1, zero, 0
+	sb t1, 17(a5)
+	addi t1, zero, 0
+	sb t1, 18(a5)
+	addi t1, zero, 0
+	sb t1, 19(a5)
+	addi t1, zero, 0
+	sb t1, 20(a5)
+	addi t1, zero, 0
+	sb t1, 21(a5)
+	addi t1, zero, 0
+	sb t1, 22(a5)
+	addi t1, zero, 0
+	sb t1, 23(a5)
+	addi t1, zero, 0
+	sb t1, 24(a5)
+	addi t1, zero, 0
+	sb t1, 25(a5)
+	addi t1, zero, 0
+	sb t1, 26(a5)
+	addi t1, zero, 0
+	sb t1, 27(a5)
+	addi t1, zero, 0
+	sb t1, 28(a5)
+	addi t1, zero, 0
+	sb t1, 29(a5)
+	addi t1, zero, 0
+	sb t1, 30(a5)
+	addi t1, zero, 0
+	sb t1, 31(a5)
+	addi t1, zero, 0
+	sb t1, 32(a5)
+	addi t1, zero, 0
+	sb t1, 33(a5)
+	addi t1, zero, 0
+	sb t1, 34(a5)
+	addi t1, zero, 0
+	sb t1, 35(a5)
+	addi t1, zero, 0
+	sb t1, 36(a5)
+	addi t1, zero, 0
+	sb t1, 37(a5)
+	addi t1, zero, 0
+	sb t1, 38(a5)
+	addi t1, zero, 0
+	sb t1, 39(a5)
+	addi t1, zero, 0
+	sb t1, 40(a5)
+	addi t1, zero, 0
+	sb t1, 41(a5)
+	addi t1, zero, 0
+	sb t1, 42(a5)
+	addi t1, zero, 0
+	sb t1, 43(a5)
+	addi t1, zero, 0
+	sb t1, 44(a5)
+	addi t1, zero, 0
+	sb t1, 45(a5)
+	addi t1, zero, 0
+	sb t1, 46(a5)
+	addi t1, zero, 0
+	sb t1, 47(a5)
+	addi t1, zero, 0
+	sb t1, 48(a5)
+	addi t1, zero, 0
+	sb t1, 49(a5)
+	addi t1, zero, 0
+	sb t1, 50(a5)
+	addi t1, zero, 0
+	sb t1, 51(a5)
+	addi t1, zero, 0
+	sb t1, 52(a5)
+	addi t1, zero, 0
+	sb t1, 53(a5)
+	addi t1, zero, 0
+	sb t1, 54(a5)
+	addi t1, zero, 0
+	sb t1, 55(a5)
+	addi t1, zero, 0
+	sb t1, 56(a5)
+	addi t1, zero, 0
+	sb t1, 57(a5)
+	addi t1, zero, 0
+	sb t1, 58(a5)
+	addi t1, zero, 0
+	sb t1, 59(a5)
+	addi t1, zero, 0
+	sb t1, 60(a5)
+	addi t1, zero, 0
+	sb t1, 61(a5)
+	addi t1, zero, 0
+	sb t1, 62(a5)
+	addi t1, zero, 0
+	sb t1, 63(a5)
+	addi t1, zero, 0
+	sb t1, 64(a5)
+	addi t1, zero, 0
+	sb t1, 65(a5)
+	addi t1, zero, 0
+	sb t1, 66(a5)
+	addi t1, zero, 0
+	sb t1, 67(a5)
+	addi t1, zero, 0
+	sb t1, 68(a5)
+	addi t1, zero, 0
+	sb t1, 69(a5)
+	addi t1, zero, 0
+	sb t1, 70(a5)
+	addi t1, zero, 0
+	sb t1, 71(a5)
+	addi t2, a5, 32
+	sub t2, t2, a2
+	beqz a2, 22f
+24:
+	lbu t1, 0(a1)
+	sb t1, 0(t2)
+	addi a1, a1, 1
+	addi t2, t2, 1
+	addi a2, a2, -1
+	bnez a2, 24b
+	j 23f
+22:
+23:
+21:
+	addi a1, a5, 0
+	addi a2, a3, 0
+	addi a3, a4, 0
 	sd s0, 0(a3)
 	sd s1, 8(a3)
 	sd s2, 16(a3)
@@ -1068,76 +1299,6 @@ vg_ecdsa_p256_verify:
 	ld t0, 1784(s0)
 	sd t0, 1016(s0)
 	addi s1, zero, 4
-20:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p256_mul_mod_n}
-	bnez s1, 20b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p256_mul_mod_n}
-	addi s1, zero, 4
-21:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p256_mul_mod_n}
-	bnez s1, 21b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p256_mul_mod_n}
-	addi s1, zero, 4
-22:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p256_mul_mod_n}
-	bnez s1, 22b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p256_mul_mod_n}
-	addi s1, zero, 4
-23:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p256_mul_mod_n}
-	bnez s1, 23b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p256_mul_mod_n}
-	addi s1, zero, 4
-24:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p256_mul_mod_n}
-	bnez s1, 24b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p256_mul_mod_n}
-	addi s1, zero, 4
 25:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1165,7 +1326,7 @@ vg_ecdsa_p256_verify:
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 36
+	addi s1, zero, 4
 27:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1235,7 +1396,7 @@ vg_ecdsa_p256_verify:
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 36
 212:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1401,9 +1562,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1696
+	addi a3, zero, 1760
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 2
+	addi s1, zero, 4
 224:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1415,9 +1576,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1568
+	addi a3, zero, 1760
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 225:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1429,9 +1590,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1632
+	addi a3, zero, 1760
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 4
 226:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1443,7 +1604,7 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1728
+	addi a3, zero, 1760
 	call {vg_p256_mul_mod_n}
 	addi s1, zero, 4
 227:
@@ -1471,9 +1632,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1600
+	addi a3, zero, 1696
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 2
 229:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1485,7 +1646,7 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1696
+	addi a3, zero, 1568
 	call {vg_p256_mul_mod_n}
 	addi s1, zero, 5
 230:
@@ -1499,9 +1660,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1728
+	addi a3, zero, 1632
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 6
 231:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1513,9 +1674,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1632
+	addi a3, zero, 1728
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 4
 232:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1527,9 +1688,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1696
+	addi a3, zero, 1760
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 2
+	addi s1, zero, 4
 233:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1541,9 +1702,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1568
+	addi a3, zero, 1600
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 5
 234:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1555,9 +1716,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1760
+	addi a3, zero, 1696
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 2
+	addi s1, zero, 5
 235:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1569,9 +1730,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1536
+	addi a3, zero, 1728
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 8
+	addi s1, zero, 5
 236:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1583,9 +1744,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1664
+	addi a3, zero, 1632
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 7
 237:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1597,9 +1758,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1632
+	addi a3, zero, 1696
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 2
 238:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1611,9 +1772,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1632
+	addi a3, zero, 1568
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 6
 239:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1625,9 +1786,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1632
+	addi a3, zero, 1760
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 2
 240:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1639,9 +1800,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1632
+	addi a3, zero, 1536
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 8
 241:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1653,7 +1814,7 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1600
+	addi a3, zero, 1664
 	call {vg_p256_mul_mod_n}
 	addi s1, zero, 3
 242:
@@ -1667,9 +1828,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1568
+	addi a3, zero, 1632
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 8
+	addi s1, zero, 5
 243:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1681,7 +1842,7 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1696
+	addi a3, zero, 1632
 	call {vg_p256_mul_mod_n}
 	addi s1, zero, 4
 244:
@@ -1695,7 +1856,7 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1760
+	addi a3, zero, 1632
 	call {vg_p256_mul_mod_n}
 	addi s1, zero, 5
 245:
@@ -1709,7 +1870,7 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1568
+	addi a3, zero, 1632
 	call {vg_p256_mul_mod_n}
 	addi s1, zero, 5
 246:
@@ -1723,9 +1884,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1568
+	addi a3, zero, 1600
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 3
 247:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1737,9 +1898,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1664
+	addi a3, zero, 1568
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 8
 248:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1751,9 +1912,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1600
+	addi a3, zero, 1696
 	call {vg_p256_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 4
 249:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1762,6 +1923,76 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 992
 	call {vg_p256_mul_mod_n}
 	bnez s1, 249b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1760
+	call {vg_p256_mul_mod_n}
+	addi s1, zero, 5
+250:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_p256_mul_mod_n}
+	bnez s1, 250b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1568
+	call {vg_p256_mul_mod_n}
+	addi s1, zero, 5
+251:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_p256_mul_mod_n}
+	bnez s1, 251b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1568
+	call {vg_p256_mul_mod_n}
+	addi s1, zero, 6
+252:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_p256_mul_mod_n}
+	bnez s1, 252b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1664
+	call {vg_p256_mul_mod_n}
+	addi s1, zero, 4
+253:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_p256_mul_mod_n}
+	bnez s1, 253b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1600
+	call {vg_p256_mul_mod_n}
+	addi s1, zero, 6
+254:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_p256_mul_mod_n}
+	bnez s1, 254b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
@@ -2380,76 +2611,6 @@ vg_ecdsa_p256_verify:
 	ld t0, 1784(s0)
 	sd t0, 1016(s0)
 	addi s1, zero, 4
-250:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p256_mul_mod_p}
-	bnez s1, 250b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p256_mul_mod_p}
-	addi s1, zero, 4
-251:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p256_mul_mod_p}
-	bnez s1, 251b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p256_mul_mod_p}
-	addi s1, zero, 4
-252:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p256_mul_mod_p}
-	bnez s1, 252b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p256_mul_mod_p}
-	addi s1, zero, 4
-253:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p256_mul_mod_p}
-	bnez s1, 253b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p256_mul_mod_p}
-	addi s1, zero, 4
-254:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p256_mul_mod_p}
-	bnez s1, 254b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p256_mul_mod_p}
-	addi s1, zero, 4
 255:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2477,7 +2638,7 @@ vg_ecdsa_p256_verify:
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p256_mul_mod_p}
-	addi s1, zero, 32
+	addi s1, zero, 4
 257:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2489,9 +2650,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1536
+	addi a3, zero, 1760
 	call {vg_p256_mul_mod_p}
-	addi s1, zero, 100
+	addi s1, zero, 4
 258:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2547,7 +2708,7 @@ vg_ecdsa_p256_verify:
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p256_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 32
 262:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2559,9 +2720,9 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1760
+	addi a3, zero, 1536
 	call {vg_p256_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 100
 263:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2825,6 +2986,76 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
+	addi a3, zero, 1760
+	call {vg_p256_mul_mod_p}
+	addi s1, zero, 4
+282:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_p256_mul_mod_p}
+	bnez s1, 282b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1760
+	call {vg_p256_mul_mod_p}
+	addi s1, zero, 4
+283:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_p256_mul_mod_p}
+	bnez s1, 283b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1760
+	call {vg_p256_mul_mod_p}
+	addi s1, zero, 4
+284:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_p256_mul_mod_p}
+	bnez s1, 284b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1760
+	call {vg_p256_mul_mod_p}
+	addi s1, zero, 4
+285:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_p256_mul_mod_p}
+	bnez s1, 285b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1760
+	call {vg_p256_mul_mod_p}
+	addi s1, zero, 4
+286:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_p256_mul_mod_p}
+	bnez s1, 286b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
 	addi a3, zero, 1728
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
@@ -2894,5 +3125,550 @@ vg_ecdsa_p256_verify:
 	ld s1, 8(s0)
 	ld s3, 32(s0)
 	ld s0, 0(s0)
+	addi sp, sp, 80
+	ret
+	.option pop
+
+vg_ecdsa_p256_sign:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -512
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd s0, 8(t0)
+	sd s1, 16(t0)
+	sd s2, 24(t0)
+	sd s3, 32(t0)
+	sd s4, 40(t0)
+	sd s5, 48(t0)
+	sd s6, 56(t0)
+	sd s7, 64(t0)
+	sd s8, 72(t0)
+	sd s9, 80(t0)
+	addi s1, t0, 0
+	addi s2, a0, 0
+	addi s3, a1, 0
+	addi s4, a2, 0
+	addi s0, a4, 0
+	addi s6, a5, 0
+	ld s7, 32(a5)
+	ld s8, 40(a5)
+	addi t0, zero, 0
+	sd t0, 232(s1)
+	sd t0, 240(s1)
+	sd t0, 248(s1)
+	sd t0, 256(s1)
+	sd t0, 264(s1)
+	sd t0, 272(s1)
+	sd t0, 280(s1)
+	sd t0, 288(s1)
+	sd t0, 296(s1)
+	addi t1, zero, 32
+	sub t2, s7, t1
+	srli t3, t2, 63
+	addi t4, zero, 0
+	sub t3, t4, t3
+	and t2, t2, t3
+	add a6, t1, t2
+	addi a4, s4, 0
+	addi a5, s1, 264
+	sub a5, a5, a6
+20:
+	lbu t1, 0(a4)
+	sb t1, 0(a5)
+	addi a4, a4, 1
+	addi a5, a5, 1
+	addi a6, a6, -1
+	bnez a6, 20b
+	lbu t0, 232(s1)
+	slli t0, t0, 8
+	lbu t1, 233(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 234(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 235(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 236(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 237(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 238(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 239(s1)
+	or t0, t0, t1
+	sd t0, 24(s0)
+	lbu t0, 240(s1)
+	slli t0, t0, 8
+	lbu t1, 241(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 242(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 243(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 244(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 245(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 246(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 247(s1)
+	or t0, t0, t1
+	sd t0, 16(s0)
+	lbu t0, 248(s1)
+	slli t0, t0, 8
+	lbu t1, 249(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 250(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 251(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 252(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 253(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 254(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 255(s1)
+	or t0, t0, t1
+	sd t0, 8(s0)
+	lbu t0, 256(s1)
+	slli t0, t0, 8
+	lbu t1, 257(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 258(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 259(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 260(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 261(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 262(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 263(s1)
+	or t0, t0, t1
+	sd t0, 0(s0)
+	lui t0, 0
+	addiw t0, t0, 0
+	slli t0, t0, 32
+	lui t1, 0
+	addiw t1, t1, 0
+	add t0, t0, t1
+	sd t0, 32(s0)
+	lui t0, 0
+	addiw t0, t0, 0
+	slli t0, t0, 32
+	lui t1, 0
+	addiw t1, t1, 0
+	add t0, t0, t1
+	sd t0, 40(s0)
+	lui t0, 0
+	addiw t0, t0, 0
+	slli t0, t0, 32
+	lui t1, 0
+	addiw t1, t1, 0
+	add t0, t0, t1
+	sd t0, 48(s0)
+	lui t0, 0
+	addiw t0, t0, 0
+	slli t0, t0, 32
+	lui t1, 0
+	addiw t1, t1, 0
+	add t0, t0, t1
+	sd t0, 56(s0)
+	addi a0, s0, 0
+	addi a1, zero, 64
+	addi a2, zero, 0
+	addi a3, zero, 32
+	call {vg_p256_add_mod_n}
+	addi a7, zero, -1
+	ld t0, 88(s0)
+	and t0, t0, a7
+	srli t1, t0, 56
+	sb t1, 304(s1)
+	srli t1, t0, 48
+	sb t1, 305(s1)
+	srli t1, t0, 40
+	sb t1, 306(s1)
+	srli t1, t0, 32
+	sb t1, 307(s1)
+	srli t1, t0, 24
+	sb t1, 308(s1)
+	srli t1, t0, 16
+	sb t1, 309(s1)
+	srli t1, t0, 8
+	sb t1, 310(s1)
+	srli t1, t0, 0
+	sb t1, 311(s1)
+	ld t0, 80(s0)
+	and t0, t0, a7
+	srli t1, t0, 56
+	sb t1, 312(s1)
+	srli t1, t0, 48
+	sb t1, 313(s1)
+	srli t1, t0, 40
+	sb t1, 314(s1)
+	srli t1, t0, 32
+	sb t1, 315(s1)
+	srli t1, t0, 24
+	sb t1, 316(s1)
+	srli t1, t0, 16
+	sb t1, 317(s1)
+	srli t1, t0, 8
+	sb t1, 318(s1)
+	srli t1, t0, 0
+	sb t1, 319(s1)
+	ld t0, 72(s0)
+	and t0, t0, a7
+	srli t1, t0, 56
+	sb t1, 320(s1)
+	srli t1, t0, 48
+	sb t1, 321(s1)
+	srli t1, t0, 40
+	sb t1, 322(s1)
+	srli t1, t0, 32
+	sb t1, 323(s1)
+	srli t1, t0, 24
+	sb t1, 324(s1)
+	srli t1, t0, 16
+	sb t1, 325(s1)
+	srli t1, t0, 8
+	sb t1, 326(s1)
+	srli t1, t0, 0
+	sb t1, 327(s1)
+	ld t0, 64(s0)
+	and t0, t0, a7
+	srli t1, t0, 56
+	sb t1, 328(s1)
+	srli t1, t0, 48
+	sb t1, 329(s1)
+	srli t1, t0, 40
+	sb t1, 330(s1)
+	srli t1, t0, 32
+	sb t1, 331(s1)
+	srli t1, t0, 24
+	sb t1, 332(s1)
+	srli t1, t0, 16
+	sb t1, 333(s1)
+	srli t1, t0, 8
+	sb t1, 334(s1)
+	srli t1, t0, 0
+	sb t1, 335(s1)
+	addi t0, zero, 257
+	slli t1, t0, 16
+	or t0, t0, t1
+	slli t1, t0, 32
+	or t0, t0, t1
+	addi t1, zero, 0
+	sd t1, 96(s1)
+	sd t0, 160(s1)
+	sd t1, 104(s1)
+	sd t0, 168(s1)
+	sd t1, 112(s1)
+	sd t0, 176(s1)
+	sd t1, 120(s1)
+	sd t0, 184(s1)
+	sd t1, 128(s1)
+	sd t0, 192(s1)
+	sd t1, 136(s1)
+	sd t0, 200(s1)
+	sd t1, 144(s1)
+	sd t0, 208(s1)
+	sd t1, 152(s1)
+	sd t0, 216(s1)
+	add t0, s1, s7
+	addi t1, zero, 0
+	sb t1, 160(t0)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	addi a2, s1, 96
+	addi a3, s7, 0
+	ld t1, 0(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s8, 0
+	addi a2, s1, 160
+	addi a3, s7, 1
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	add a1, s8, s7
+	addi a1, a1, 1
+	addi a2, s3, 0
+	addi a3, zero, 32
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	add a1, s8, s7
+	addi a1, a1, 33
+	addi a2, s1, 304
+	addi a3, zero, 32
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	add a2, s8, s7
+	addi a2, a2, 65
+	addi a3, s1, 96
+	ld t1, 16(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	addi a2, s1, 96
+	addi a3, s7, 0
+	ld t1, 0(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s8, 0
+	addi a2, s1, 160
+	addi a3, s7, 0
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	add a2, s8, s7
+	addi a2, a2, 0
+	addi a3, s1, 160
+	ld t1, 16(s6)
+	jalr ra, 0(t1)
+	add t0, s1, s7
+	addi t1, zero, 1
+	sb t1, 160(t0)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	addi a2, s1, 96
+	addi a3, s7, 0
+	ld t1, 0(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s8, 0
+	addi a2, s1, 160
+	addi a3, s7, 1
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	add a1, s8, s7
+	addi a1, a1, 1
+	addi a2, s3, 0
+	addi a3, zero, 32
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	add a1, s8, s7
+	addi a1, a1, 33
+	addi a2, s1, 304
+	addi a3, zero, 32
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	add a2, s8, s7
+	addi a2, a2, 65
+	addi a3, s1, 96
+	ld t1, 16(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	addi a2, s1, 96
+	addi a3, s7, 0
+	ld t1, 0(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s8, 0
+	addi a2, s1, 160
+	addi a3, s7, 0
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	add a2, s8, s7
+	addi a2, a2, 0
+	addi a3, s1, 160
+	ld t1, 16(s6)
+	jalr ra, 0(t1)
+	addi s5, zero, 8
+21:
+	addi s9, zero, 0
+22:
+	addi a0, s0, 0
+	addi a1, s0, 192
+	addi a2, s1, 96
+	addi a3, s7, 0
+	ld t1, 0(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s8, 0
+	addi a2, s1, 160
+	addi a3, s7, 0
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	add a2, s8, s7
+	addi a2, a2, 0
+	addi a3, s1, 160
+	ld t1, 16(s6)
+	jalr ra, 0(t1)
+	addi a4, s1, 160
+	addi a5, s1, 368
+	add a5, a5, s9
+	addi a6, s7, 0
+23:
+	lbu t1, 0(a4)
+	sb t1, 0(a5)
+	addi a4, a4, 1
+	addi a5, a5, 1
+	addi a6, a6, -1
+	bnez a6, 23b
+	add s9, s9, s7
+	addi t0, zero, 32
+	sltu t6, s9, t0
+	bnez t6, 22b
+	addi a0, s2, 0
+	addi a1, s3, 0
+	addi a2, s1, 232
+	addi a3, s1, 368
+	addi a4, s0, 0
+	call {vg_ecdsa_p256_sign_k}
+	addi s5, s5, -1
+	andi t0, a0, 1
+	addi t0, t0, -1
+	and t6, t0, s5
+	bnez t6, 24f
+	addi t6, zero, 0
+	j 25f
+24:
+	add t0, s1, s7
+	addi t1, zero, 0
+	sb t1, 160(t0)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	addi a2, s1, 96
+	addi a3, s7, 0
+	ld t1, 0(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s8, 0
+	addi a2, s1, 160
+	addi a3, s7, 1
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	add a2, s8, s7
+	addi a2, a2, 1
+	addi a3, s1, 96
+	ld t1, 16(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	addi a2, s1, 96
+	addi a3, s7, 0
+	ld t1, 0(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s8, 0
+	addi a2, s1, 160
+	addi a3, s7, 0
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	add a2, s8, s7
+	addi a2, a2, 0
+	addi a3, s1, 160
+	ld t1, 16(s6)
+	jalr ra, 0(t1)
+	addi t6, zero, 1
+25:
+	bnez t6, 21b
+	addi t0, zero, 0
+	sd t0, 96(s1)
+	sd t0, 104(s1)
+	sd t0, 112(s1)
+	sd t0, 120(s1)
+	sd t0, 128(s1)
+	sd t0, 136(s1)
+	sd t0, 144(s1)
+	sd t0, 152(s1)
+	sd t0, 160(s1)
+	sd t0, 168(s1)
+	sd t0, 176(s1)
+	sd t0, 184(s1)
+	sd t0, 192(s1)
+	sd t0, 200(s1)
+	sd t0, 208(s1)
+	sd t0, 216(s1)
+	sd t0, 224(s1)
+	sd t0, 232(s1)
+	sd t0, 240(s1)
+	sd t0, 248(s1)
+	sd t0, 256(s1)
+	sd t0, 264(s1)
+	sd t0, 272(s1)
+	sd t0, 280(s1)
+	sd t0, 288(s1)
+	sd t0, 296(s1)
+	sd t0, 304(s1)
+	sd t0, 312(s1)
+	sd t0, 320(s1)
+	sd t0, 328(s1)
+	sd t0, 336(s1)
+	sd t0, 344(s1)
+	sd t0, 352(s1)
+	sd t0, 360(s1)
+	sd t0, 368(s1)
+	sd t0, 376(s1)
+	sd t0, 384(s1)
+	sd t0, 392(s1)
+	sd t0, 400(s1)
+	sd t0, 408(s1)
+	sd t0, 416(s1)
+	sd t0, 424(s1)
+	sd t0, 432(s1)
+	sd t0, 440(s1)
+	sd t0, 448(s1)
+	sd t0, 456(s1)
+	sd t0, 464(s1)
+	sd t0, 472(s1)
+	sd t0, 480(s1)
+	sd t0, 488(s1)
+	sd t0, 496(s1)
+	ld ra, 0(s1)
+	ld s0, 8(s1)
+	ld s2, 24(s1)
+	ld s3, 32(s1)
+	ld s4, 40(s1)
+	ld s5, 48(s1)
+	ld s6, 56(s1)
+	ld s7, 64(s1)
+	ld s8, 72(s1)
+	ld s9, 80(s1)
+	ld s1, 16(s1)
+	addi sp, sp, 512
 	ret
 	.option pop

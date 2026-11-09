@@ -10,19 +10,20 @@ public import VerifiedGarbage.Spec.Sha1
 public import VerifiedGarbage.Spec.Sha256
 
 /-!
-# DSA parameter generation on PPC64LE
+# DSA parameter generation over refillable random tapes on PPC64LE
 
-`vg_dsa_generate_parameters(out, out_len, p_len, q_len, seeds, seeds_len, hs,
-hs_len, witnesses, witnesses_len, scratch, scratch_len)`: the first eight in
-`r3`–`r10`, the others on the stack, at `sp + 96 + 8 i` for the `i`-th of
-them (`witnesses` is the 0th). No argument is a `u32`. As on ARMv7
-(`Impl/Dsa/Arm/Generation.lean`), for each seed of the `seeds` tape (FIPS
-186-4 A.1.1.2):
+`vg_dsa_parameter_search(out, out_len, used, rand, rand_len, scratch,
+scratch_len, state)`, all in `r3`–`r10` (`Spec/Dsa/ParameterSearch.lean`),
+for the modulus width `state[1]`, and `vg_dsa_parameter_search_init(state,
+p_len)`. The seeds, the witnesses of their tests and the generator's `h`
+candidates are all read from one tape, `rand`. Each seed, at the cursor
+`fC` (FIPS 186-4 A.1.1.2 and A.2.1, as on ARMv7,
+`Impl/Dsa/Arm/Generation.lean`):
 
-1. q: the seed's hash (SHA-1 for a 160-bit q, else SHA-256: one block, by
-   the compression function), its top and low bits set, tested by
-   `vg_dsa_probable_prime_{N}` with witnesses from the front of what is left
-   of `witnesses`.
+1. q: the seed's `q_len` octets hashed (SHA-1 for a 160-bit q, else
+   SHA-256: one block, by the compression function), its top and low bits
+   set, tested by `vg_dsa_probable_prime_{N}` with witnesses from `rand`
+   after the seed (`fUsed`, the octets of `rand` read so far).
 2. p: for each of the `4 L` counters, the hashes of `seed + offset + j`
    (big-endian, `seedlen` bytes) for `j ≤ count`, assembled into `X` with its
    top bit set; `p = X − (X mod 2q) + 1`, by division of `X` by `q` in the
@@ -30,14 +31,24 @@ them (`witnesses` is the 0th). No argument is a `u32`. As on ARMv7
    parity gives `X mod 2q`, and the quotient with its low bit cleared is
    `(p − 1) / q`); if `p` has `L` bits, tested by
    `vg_dsa_probable_prime_{L}`.
-3. g: for each `h` of the `hs` tape with `1 < h < p − 1` (in the key working
-   space), `g = h^((p−1)/q) mod p` by the fixed-window power of the RSA code
-   (`ModExp.powSecret`, in a working space of the DSA functions' P space
-   layout, `Impl/Dsa/PPC64LE/Common.lean`), until `1 < g` (`elemRange`).
+3. g: for each `h` of the window of `rand` after p's witnesses (at most
+   `generatorAttempts` candidates of `p_len` octets) with `1 < h < p − 1` (in
+   the key working space), `g = h^((p−1)/q) mod p` by the fixed-window power
+   of the RSA code (`ModExp.powSecret`, in a working space of the DSA
+   functions' P space layout, `Impl/Dsa/PPC64LE/Common.lean`), until
+   `1 < g` (`elemRange`). The candidates it read count as consumed; without
+   a g, a window shorter than `generatorAttempts` candidates ran out.
 4. p||q||g checked by `vg_dsa_check_parameters`.
 
-The first domain that passes is copied to `out`, with status 1; otherwise
-`out` is zeroed, with status 0: no seed left, or `witnesses` ran out.
+A seed sets `fStatus` to 2 if `rand` ran out inside it, to 1 with p||q||g
+when the domain passes, and leaves it 0 when it is rejected: the controller
+(`search`) then counts it against the seeds left (`fSeedLeft`, from
+`state[0]`) and moves the cursor past it. It stops with no seeds left
+(`fStatus` = 3), a tape too short for the next seed or one that ran out
+(2), or parameters (1); `finish` writes `out`, `used` and `state` and
+returns the protocol's status (`Entropy.Outcome.status`), asking, after a
+tape that ran out, for twice the octets left (at least `256 p_len`, at most
+the entropy budget), unless they reached the budget.
 
 `scratch` (`S`) holds, from byte 0, the search's state (`f…`), our
 caller's `r2`, `r14`–`r31` and our return address, then small buffers (`s…`),
@@ -74,8 +85,18 @@ def fUsedOut : Nat := 112
 def fLR : Nat := 120
 def fHs : Nat := 128
 def fHsLen : Nat := 136
+/-- The pointers to `used` and to `state`. -/
+def fUsedP : Nat := 144
+def fStP : Nat := 152
+/-- The cursor: the current seed's start in `rand`. -/
+def fC : Nat := 160
+/-- The result's words: `used`, `state[0]`, `state[3]` and the status. -/
+def fRU : Nat := 168
+def fR0 : Nat := 176
+def fR3 : Nat := 184
+def fRet : Nat := 192
 /-- Our caller's `r2` and `r14`–`r31`. -/
-def fSave : Nat := 144
+def fSave : Nat := 200
 
 /-- The nonvolatile registers saved, `r28` (which keeps `S`) last. -/
 def saved : List Reg :=
@@ -94,6 +115,15 @@ def stImm (o v : Nat) : List Instr := [.li .r3 v, st .r3 o]
 /-- `r0 := ` the state word at `o` minus `v`, for a test against zero (through
 `r3`: `subi` reads `r0` as 0). -/
 def cmpF (o v : Nat) : List Instr := [ld .r3 o, .subi .r0 .r3 v]
+
+/-- `r0 := 0` exactly when `r3 < r4`: the carry of `r3 − r4`. -/
+def ltR : List Instr := [.subc .r0 .r3 .r4, .li .r0 0, .addze .r0 .r0]
+
+/-- `r := v · 2^sh`. -/
+def shl (r : Reg) (v sh : Nat) : List Instr := [.li r v, .lsl r r sh]
+
+/-- `r4 := 32769 v`, the entropy budget for `v = p_len`, through `r5`. -/
+def budget (v : Nat) : List Instr := [.li .r4 v, .lsl .r5 .r4 15, .add .r4 .r4 .r5]
 
 /-! ## The scratch -/
 
@@ -372,10 +402,26 @@ def gStep : Prog isa := seqs [
         (seqs [.block [scr .r12 sG, .li .r6 g.pLen], VG.Impl.Dsa.PPC64LE.storeBE 4, .block (stImm fG 1)])
         (.block [])])]
 
-/-- g: `fG` := 1, or 2 if no `h` gives one. -/
+/-- The window of `h` candidates: `rand` after the octets read, at most
+`generatorAttempts` candidates' octets (`fHs`, `fHsLen`). -/
+def gWindow : Prog isa :=
+  .seq (.block ([ld .r3 fWit, ld .r4 fUsed, .add .r3 .r3 .r4, st .r3 fHs, ld .r3 fWitLen, .sub .r3 .r3 .r4] ++
+      shl .r4 g.pLen 7 ++ ltR))
+    (.ite (.zero .d .r0) (.block [st .r3 fHsLen]) (.block [st .r4 fHsLen]))
+
+/-- The candidates the search for g read count as read. -/
+def gUsed : List Instr := [ld .r3 fH, ld .r4 fWit, .sub .r3 .r3 .r4, st .r3 fUsed]
+
+/-- Without a g, a window shorter than `generatorAttempts` candidates ran out. -/
+def gShort : Prog isa :=
+  .seq (.block ([ld .r3 fHsLen] ++ shl .r4 g.pLen 7 ++ ltR))
+    (.ite (.zero .d .r0) (.block (stImm fStatus 2)) (.block []))
+
+/-- g over the window: `fG` := 1, or 2 if no `h` gives one, with at least
+`p_len` octets left before each. -/
 def gPart : Prog isa := seqs [
   .block [ld .r3 fHs, st .r3 fH, ld .r3 fHsLen, st .r3 fHLeft], .block (stImm fG 4),
-  .loop (seqs [.block (cmpF fHLeft 0),
+  .loop (seqs [.block ([ld .r3 fHLeft, .li .r4 g.pLen] ++ ltR),
     .ite (.zero .d .r0) (.block (stImm fG 2))
       (seqs [g.gStep, .block [ld .r3 fH, .addi .r3 .r3 g.pLen, st .r3 fH, ld .r3 fHLeft,
         .subi .r3 .r3 g.pLen, st .r3 fHLeft]]),
@@ -400,25 +446,66 @@ def attempt : Prog isa := seqs [
         (seqs [g.pPart, .block (cmpF fP 0),
           .ite (.zero .d .r0) (.block (stImm fStatus 2))
             (seqs [.block (cmpF fP 1),
-              .ite (.zero .d .r0) (seqs [g.gPart, .block (cmpF fG 1), .ite (.zero .d .r0) g.checkPart (.block [])])
+              .ite (.zero .d .r0)
+                (seqs [g.gWindow, g.gPart, .block gUsed, .block (cmpF fG 1),
+                  .ite (.zero .d .r0) g.checkPart g.gShort])
                 (.block [])])])
         (.block [])])]
 
-/-- The seeds, one at a time, until a domain passes or none is left. -/
+/-- The next seed starts at the cursor, its witnesses after it. -/
+def seedStart : List Instr :=
+  [ld .r3 fWit, ld .r4 fC, .add .r3 .r3 .r4, st .r3 fSeed, .addi .r4 .r4 g.qLen, st .r4 fUsed]
+
+/-- A rejected seed: the cursor past it, one seed fewer left. -/
+def rejected : List Instr := [ld .r3 fUsed, st .r3 fC, ld .r3 fSeedLeft, .subi .r3 .r3 1, st .r3 fSeedLeft]
+
+/-- The seeds, one at a time, until a domain passes (`fStatus` = 1), `rand`
+runs out (2) or the seeds do (3). -/
 def search : Prog isa := seqs [
   .block (padInit g.qLen),
   .loop (seqs [.block (cmpF fSeedLeft 0),
-    .ite (.zero .d .r0) (.block (stImm fStatus 2))
-      (seqs [g.attempt, .block [ld .r3 fSeed, .addi .r3 .r3 g.qLen, st .r3 fSeed, ld .r3 fSeedLeft,
-        .subi .r3 .r3 g.qLen, st .r3 fSeedLeft]]),
+    .ite (.zero .d .r0) (.block (stImm fStatus 3))
+      (seqs [.block ([ld .r3 fWitLen, ld .r4 fC, .sub .r3 .r3 .r4, .li .r4 g.qLen] ++ ltR),
+        .ite (.zero .d .r0) (.block (stImm fStatus 2))
+          (seqs [.block g.seedStart, g.attempt, .block (cmpF fStatus 0),
+            .ite (.zero .d .r0) (.block rejected) (.block [])])]),
     .block (cmpF fStatus 0)]) (.zero .d .r0)]
 
-/-- The result: p||q||g to `out` and 1, or zeros and 0. -/
-def finish : Prog isa :=
-  .seq (.block (cmpF fStatus 1))
-    (.ite (.zero .d .r0)
-      (seqs [copyN [scr .r3 sPacked] [ld .r4 fOut] (2 * g.pLen + g.qLen), .block [.li .r3 1]])
-      (seqs [.block [ld .r3 fOut, .li .r5 (2 * g.pLen + g.qLen)], zeroN, .block [.li .r3 0]]))
+/-- The result's words into the header: `used` from the header word `u`, the
+status `v`, `state[0]` from `r5` and `state[3]` from `r6`. -/
+def results (u v : Nat) : List Instr := [ld .r3 u, st .r3 fRU, .li .r3 v, st .r3 fRet, st .r5 fR0, st .r6 fR3]
+
+/-- Exhausted: no seeds left, no request, nothing past the cursor used. -/
+def exhausted : List Instr := [.li .r5 0, .li .r6 0] ++ results fC 3
+
+/-- `rand` ran out at the cursor: exhausted if the octets left reach the
+budget; else the seeds left, and the next tape's length, twice the octets
+left, at least `256 p_len` and at most the budget. -/
+def ranOut : Prog isa := seqs [
+  .block ([ld .r3 fWitLen, ld .r4 fC, .sub .r3 .r3 .r4] ++ budget g.pLen ++ ltR),
+  .ite (.zero .d .r0)
+    (seqs [.block (shl .r4 g.pLen 8 ++ ltR),
+      .ite (.zero .d .r0) (.block [.addi .r3 .r4 0]) (.block []),
+      .block ([.add .r3 .r3 .r3] ++ budget g.pLen ++ ltR),
+      .ite (.zero .d .r0) (.block []) (.block [.addi .r3 .r4 0]),
+      .block ([.addi .r6 .r3 0, ld .r5 fSeedLeft] ++ results fC 0)])
+    (.block exhausted)]
+
+/-- The result's words to `state` and `used`, and the status into `r3`. -/
+def writeBack : List Instr :=
+  [ld .r3 fStP, ld .r4 fR0, .store .d .r4 .r3 0, ld .r4 fR3, .store .d .r4 .r3 24, ld .r3 fUsedP, ld .r4 fRU,
+    .store .d .r4 .r3 0, ld .r3 fRet]
+
+/-- The result: its words into the header; p||q||g to `out` for status 1,
+else zeros; then the words to `state` and `used`, and the status. -/
+def finish : Prog isa := seqs [
+  .block (cmpF fStatus 1),
+  .ite (.zero .d .r0) (.block ([.li .r5 0, .li .r6 0] ++ results fUsed 1))
+    (seqs [.block (cmpF fStatus 2), .ite (.zero .d .r0) g.ranOut (.block exhausted)]),
+  .block (cmpF fStatus 1),
+  .ite (.zero .d .r0) (copyN [scr .r3 sPacked] [ld .r4 fOut] (2 * g.pLen + g.qLen))
+    (seqs [.block [ld .r3 fOut, .li .r5 (2 * g.pLen + g.qLen)], zeroN]),
+  .block writeBack]
 
 def generate : Prog isa := .seq g.search g.finish
 
@@ -426,21 +513,20 @@ end Geo
 
 /-! ## Entry -/
 
-/-- The words `entry` stores into the header (through `r11`, `scratch`): our
-return address, our caller's registers, `out`, the tapes' pointers and
-lengths; nothing used, searching. -/
+/-- The words `entry` stores into the header (through `r8`, `scratch`): our
+return address, our caller's registers, `out`, `used`, `rand` and its
+length, `state`, the seeds left; the cursor at 0, searching. -/
 def entryStores : List (Reg × Nat) :=
   [(.r0, fLR)] ++ saved.zipIdx.map (fun (r, i) => (r, fSave + 8 * i)) ++
-    [(.r3, fOut), (.r7, fSeed), (.r8, fSeedLeft), (.r9, fHs), (.r10, fHsLen), (.r12, fWit), (.r4, fWitLen),
-      (.r6, fUsed), (.r6, fStatus)]
+    [(.r3, fOut), (.r5, fUsedP), (.r6, fWit), (.r7, fWitLen), (.r10, fStP), (.r11, fSeedLeft), (.r4, fC),
+      (.r4, fStatus)]
 
-/-- `scratch` into `r11`, the witnesses' pointer and length into `r12` and
-`r4`, our return address into `r0` and 0 into `r6`; the header's words
-stored, and `scratch` into `r28`. -/
+/-- Our return address into `r0`, `state[0]` into `r11`, `state[1]` (the
+modulus's width) into `r12` and 0 into `r4`; the header's words stored, and
+`scratch` into `r28`. -/
 def entry : List Instr :=
-  [.addSp .r11 (96 + 8 * 2), .load .d .r11 .r11 0, .addSp .r12 96, .load .d .r12 .r12 0,
-    .addSp .r4 (96 + 8), .load .d .r4 .r4 0, .mflr .r0, .li .r6 0] ++
-    entryStores.map (fun p => .store .d p.1 .r11 p.2) ++ [.addi .r28 .r11 0]
+  [.mflr .r0, .load .d .r11 .r10 0, .load .d .r12 .r10 8, .li .r4 0] ++
+    entryStores.map (fun p => .store .d p.1 .r8 p.2) ++ [.addi .r28 .r8 0]
 
 /-- Our caller's registers but `r28`, and where they are in the header. -/
 def restoreLoads : List (Reg × Nat) := (saved.zipIdx.map fun (r, i) => (r, fSave + 8 * i)).take 18
@@ -449,13 +535,34 @@ def restoreLoads : List (Reg × Nat) := (saved.zipIdx.map fun (r, i) => (r, fSav
 def restore : List Instr :=
   [ld .r0 fLR, .mtlr .r0] ++ restoreLoads.map (fun p => .load .d p.1 .r28 p.2) ++ [ld .r28 (fSave + 8 * 18)]
 
-/-- The three geometries, by `p_len` (in `r5`). -/
+/-- The three geometries, by the modulus's width (in `r12`). -/
 def dispatch (g1 g2 g3 : Geo) : Prog isa :=
-  .seq (.block [.subi .r0 .r5 128])
+  .seq (.block [.subi .r0 .r12 128])
     (.ite (.zero .d .r0) g1.generate
-      (.seq (.block [.subi .r0 .r5 256]) (.ite (.zero .d .r0) g2.generate g3.generate)))
+      (.seq (.block [.subi .r0 .r12 256]) (.ite (.zero .d .r0) g2.generate g3.generate)))
 
+/-- `vg_dsa_parameter_search`. -/
 def code (g1 g2 g3 : Geo) : Prog isa :=
   .seq (.block entry) (.seq (dispatch g1 g2 g3) (.block restore))
+
+/-! ## `vg_dsa_parameter_search_init` -/
+
+/-- `state` (`r3`) := `[4096, p_len, 32769 p_len, 512 p_len]`, and 1. -/
+def initWords : List Instr :=
+  [.li .r5 4096, .store .d .r5 .r3 0, .store .d .r4 .r3 8, .lsl .r5 .r4 15, .add .r5 .r5 .r4,
+    .store .d .r5 .r3 16, .lsl .r5 .r4 9, .store .d .r5 .r3 24, .li .r3 1]
+
+/-- `state` := zeros, and 0. -/
+def initZeros : List Instr :=
+  [.li .r5 0, .store .d .r5 .r3 0, .store .d .r5 .r3 8, .store .d .r5 .r3 16, .store .d .r5 .r3 24, .li .r3 0]
+
+/-- `vg_dsa_parameter_search_init(state, p_len)`. -/
+def init : Prog isa :=
+  .seq (.block [.subi .r0 .r4 128])
+    (.ite (.zero .d .r0) (.block initWords)
+      (.seq (.block [.subi .r0 .r4 256])
+        (.ite (.zero .d .r0) (.block initWords)
+          (.seq (.block [.subi .r0 .r4 384])
+            (.ite (.zero .d .r0) (.block initWords) (.block initZeros))))))
 
 end VG.Impl.Dsa.PPC64LE.Generation

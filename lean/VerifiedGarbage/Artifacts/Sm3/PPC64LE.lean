@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm3.PPC64LE.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # SM3 (GB/T 32905-2016) on PPC64LE -/
 

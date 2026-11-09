@@ -221,8 +221,8 @@ structure ResPub where
 /-- `resBlock_ok`'s hypotheses. -/
 def ResPre (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) (q : ResPub) (s : State) : Prop :=
   ∃ mx : BitVec 64, Scr s q.B q.Z ∧ s.gpr .rdi = off q.B q.o ∧ Hdr s.mem (off q.B q.o) l.W mx ∧
-    word s.mem (off q.B q.o) (8 * sIfma) = off q.B q.a ∧ q.o + slot l.W 8 + wsTab l.W ≤ q.a ∧
-    q.a + 2 * l.D + 8 ≤ q.Z ∧ p < 2 ∧ (∀ j < l.L, limb l s.mem (off q.B q.a) (l.D * p + l.oY) j < 2 ^ 52) ∧
+    word s.mem (off q.B q.o) (8 * sIfma) = off q.B q.a ∧ q.o + slot l.W 8 ≤ q.a ∧
+    q.a + l.nl * l.D + 8 ≤ q.Z ∧ p < l.nl ∧ (∀ j < l.L, limb l s.mem (off q.B q.a) (l.D * p + l.oY) j < 2 ^ 52) ∧
     val52 l s.mem (off q.B q.a) (l.D * p + l.oY) < 2 * wv s.mem (off q.B q.o) (slot l.W Public.aN) l.W
 
 /-- The bases of the subtraction. -/
@@ -235,7 +235,7 @@ theorem result_eq (p : Nat) : result l p = [.block (resLd l p ++ resMid l), subM
   simp only [result, resLd, resMid, List.cons_append, List.nil_append]
 
 /-- `result p` is constant time, given the taint checks of its code that depends on the layout. -/
-theorem result_ct (hl : LayOk l) (p : Nat) (hT : TOk [.rdi] (.block (resLd l p)))
+theorem result_ct (hl : AmmOk l) (p : Nat) (hT : TOk [.rdi] (.block (resLd l p)))
     (hM : TOk [.rdi, .r11, .r8] (.block (resMid l))) :
     RelCT isa (Two (ResPre l p)) (seqs (result l p)) fun _ _ => True := by
   rw [result_eq]
@@ -268,7 +268,8 @@ theorem result_ct (hl : LayOk l) (p : Nat) (hT : TOk [.rdi] (.block (resLd l p))
     have hn := hs.nowrap
     obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
     obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
-    have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_arith
+    have hDp : l.D * p ≤ l.D ∧ l.D * p + l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D :=
+      ⟨D_le hl hp, lane_end hl hp, (nlD_le hl).2⟩
     have h8 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
     have hH' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off (off q.B q.o) (8 * i)) 8 := fun i hi => by
       rw [off_off]; exact hs.ld (by have := hdr_lt_slot l.W 8 hi; omega_arith)
@@ -349,7 +350,7 @@ def F0 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : IfPub) (t : State) : Prop :=
       .store (ws .rdx sIfma) .rax, enterP] : List Instr))) t (F1 l p)
 
 theorem regPre_of {p sp sl : Nat} {B : Addr} {Z o a w : Nat} {ep : Addr} {s : State} {mx : BitVec 64} {X : Nat}
-    {eb : List Byte} (hoa : o + slot l.W 8 + wsTab l.W ≤ a) (haZ : a + 2 * l.D + 8 ≤ Z) (hp : p < 2)
+    {eb : List Byte} (hoa : o + slot l.W 8 ≤ a) (haZ : a + l.nl * l.D + 8 ≤ Z) (hp : p < l.nl)
     (hsp : sp < 32) (hsl : sl < 32) (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ l.E) (hc : SubCtx s B Z o w l.W mx)
     (hia : word s.mem (off B o) (8 * sIfma) = off B a) (hN : wv s.mem (off B o) (slot l.W Public.aN) l.W = X)
     (hY : wv s.mem (off B o) (slot l.W Public.aY) l.W < X) (hpv : word s.mem B (8 * sp) = ep)
@@ -359,7 +360,7 @@ theorem regPre_of {p sp sl : Nat} {B : Addr} {Z o a w : Nat} {ep : Addr} {s : St
 
 theorem resPre_of {p : Nat} {B : Addr} {Z o a : Nat} {s : State} {mx : BitVec 64} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = off B o) (hH : Hdr s.mem (off B o) l.W mx) (hia : word s.mem (off B o) (8 * sIfma) = off B a)
-    (hoa : o + slot l.W 8 + wsTab l.W ≤ a) (haZ : a + 2 * l.D + 8 ≤ Z) (hp : p < 2)
+    (hoa : o + slot l.W 8 ≤ a) (haZ : a + l.nl * l.D + 8 ≤ Z) (hp : p < l.nl)
     (hL : ∀ j < l.L, limb l s.mem (off B a) (l.D * p + l.oY) j < 2 ^ 52)
     (hV : val52 l s.mem (off B a) (l.D * p + l.oY) < 2 * wv s.mem (off B o) (slot l.W Public.aN) l.W) :
     ResPre l p ⟨B, Z, o, a⟩ s :=
@@ -402,8 +403,8 @@ theorem ifma_chain (hl : LayOk l) {p : IfPub} {s : State} (h : IfPre l p s) : F0
   have hep₁ := hep.congr (InScr.of_frm f₁ hZ₁) k₁.2.1 k₁.2.2
   -- `p`'s region.
   dsimp only [F1]
-  refine ⟨regPre_of (by omega_arith) haZ (by decide) (by decide) (by decide) hLp1 hLp2 hc₁ m₁.pia m₁.pn
-    (by rw [hYp₁]; exact hYp) m₁.dp m₁.pl hep₁, WP.mono (region_ok hl (p := 0) hc₁ m₁.pia (by omega_arith) haZ (by decide)
+  refine ⟨regPre_of (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide) (by decide) (by decide) hLp1 hLp2 hc₁ m₁.pia m₁.pn
+    (by rw [hYp₁]; exact hYp) m₁.dp m₁.pl hep₁, WP.mono (region_ok hl (p := 0) hc₁ m₁.pia (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide)
       m₁.pn (by rw [hYp₁]; exact hYp) (by decide) (by decide) m₁.dp m₁.pl hep₁ hLp1 hLp2)
     fun u₂ ⟨rp, f₂, w₂, d₂, k₂⟩ => ?_⟩
   have f₂' := f₂.widen (regFr_ifmaR hl (oq := oq) (.inl rfl) (by decide))
@@ -438,8 +439,8 @@ theorem ifma_chain (hl : LayOk l) {p : IfPub} {s : State} (h : IfPre l p s) : F0
     rw [hq₃ _ (by decide) (by decide) (by decide) (by decide)]; exact hYq
   -- `q`'s region.
   dsimp only [F3]
-  refine ⟨regPre_of (by omega_arith) haZ (by decide) (by decide) (by decide) hLq1 hLq2 hc₃ m₂.qia m₂.qn hYq₃ m₂.dq m₂.ql
-    heq₃, WP.mono (region_ok hl (p := 1) hc₃ m₂.qia (by omega_arith) haZ (by decide) m₂.qn hYq₃ (by decide) (by decide) m₂.dq
+  refine ⟨regPre_of (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide) (by decide) (by decide) hLq1 hLq2 hc₃ m₂.qia m₂.qn hYq₃ m₂.dq m₂.ql
+    heq₃, WP.mono (region_ok hl (p := 1) hc₃ m₂.qia (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide) m₂.qn hYq₃ (by decide) (by decide) m₂.dq
       m₂.ql heq₃ hLq1 hLq2) fun t ⟨rq, f₄, w₄, d₄, k₄⟩ => ?_⟩
   have f₄' := f₄.widen (regFr_ifmaR hl (op := op) (.inr rfl) (by decide))
   rw [ite_eq_left_of_eq_true _ _ (eq_true (rfl : (0 : Nat) = 0)), hYp₁, hCp₁, ← me₃] at rp
@@ -466,8 +467,8 @@ theorem ifma_chain (hl : LayOk l) {p : IfPub} {s : State} (h : IfPre l p s) : F0
   have hdv : v.gpr .rdi = off B oq := dv.trans d₄
   -- `q`'s result.
   dsimp only [F5]
-  refine ⟨resPre_of hsv hdv mv.qws.hdr mv.qia (by omega_arith) haZ (by decide) gq.lt (by rw [mv.qn]; exact gq.v),
-    WP.mono (result_ok hl (p := 1) hsv hdv mv.qws.hdr mv.qia (by omega_arith) haZ (by decide) mv.qn gq.lt gq.v)
+  refine ⟨resPre_of hsv hdv mv.qws.hdr mv.qia (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide) gq.lt (by rw [mv.qn]; exact gq.v),
+    WP.mono (result_ok hl (p := 1) hsv hdv mv.qws.hdr mv.qia (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide) mv.qn gq.lt gq.v)
     fun t₁ ⟨_, f₁', d₁', k₁'⟩ => ?_⟩
   have m₁' := mv.of_frm hl (f₁'.mono (resSh_ifmaR op oq _ (.inr rfl))) hlo hpq (by omega_arith) (by omega_arith)
   have hs₁ := hsv.congr k₁'.2.2
@@ -482,9 +483,9 @@ theorem ifma_chain (hl : LayOk l) {p : IfPub} {s : State} (h : IfPre l p s) : F0
   have hs₂' := hs₁.congr k₂'.2.2
   -- `p`'s result.
   dsimp only [F7]
-  exact ⟨resPre_of hs₂' d₂' m₁'.pws.hdr m₁'.pia (by omega_arith) haZ (by decide) gp₂.1.lt
+  exact ⟨resPre_of hs₂' d₂' m₁'.pws.hdr m₁'.pia (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide) gp₂.1.lt
       (by rw [m₁'.pn]; exact gp₂.1.v),
-    WP.mono (result_ok hl (p := 0) hs₂' d₂' m₁'.pws.hdr m₁'.pia (by omega_arith) haZ (by decide) m₁'.pn gp₂.1.lt gp₂.1.v)
+    WP.mono (result_ok hl (p := 0) hs₂' d₂' m₁'.pws.hdr m₁'.pia (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide) m₁'.pn gp₂.1.lt gp₂.1.v)
       fun t₃ ⟨_, _, d₃', _⟩ => d₃'.trans d₂'⟩
 
 /-- `ifma` is constant time. -/

@@ -23,8 +23,6 @@ def full : Nat := radix ^ 8
 def half : Nat := radix ^ 4
 
 theorem full_eq : full = P + (half + 1) := by decide +kernel
-theorem half_sq : half * half = full := by decide +kernel
-
 /-- Read `n` limbs, lowest first. -/
 def valN (f : Nat → Nat) : Nat → Nat
   | 0 => 0

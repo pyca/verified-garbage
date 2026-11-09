@@ -1,4 +1,5 @@
-//! RFC 6979 §A.2.6: P-384, with SHA-384.
+//! RFC 6979 §A.2.6: P-384, with SHA-384,
+//! and with the RFC's other hash functions.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -9,8 +10,14 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdsa::{Error, P384, SigningKey, VerifyingKey};
+use verified_garbage::ec::{P384, PrivateKey, PublicKey};
+use verified_garbage::error::{InvalidKey, InvalidSignature};
 use verified_garbage::hashes::sha384::Sha384;
+
+use verified_garbage::hashes::sha1::Sha1;
+use verified_garbage::hashes::sha224::Sha224;
+use verified_garbage::hashes::sha256::Sha256;
+use verified_garbage::hashes::sha512::Sha512;
 
 use super::{Signatures, add};
 
@@ -20,7 +27,7 @@ fn p384() -> ([u8; 48], [u8; 48], [u8; 97], Signatures<96>) {
 }
 
 /// The signature of `message`, of the message and of its hash.
-fn sign(key: &SigningKey<P384>, message: &[u8]) -> [Result<[u8; 96], Error>; 2] {
+fn sign(key: &PrivateKey<P384>, message: &[u8]) -> [Result<[u8; 96], InvalidKey>; 2] {
     [
         key.sign::<Sha384>(message),
         key.sign_prehashed::<Sha384>(&Sha384::digest(message)),
@@ -28,7 +35,11 @@ fn sign(key: &SigningKey<P384>, message: &[u8]) -> [Result<[u8; 96], Error>; 2] 
 }
 
 /// Whether `rs` verifies for `message`, of the message and of its hash.
-fn verify(key: &VerifyingKey<P384>, message: &[u8], rs: &[u8; 96]) -> [Result<(), Error>; 2] {
+fn verify(
+    key: &PublicKey<P384>,
+    message: &[u8],
+    rs: &[u8; 96],
+) -> [Result<(), InvalidSignature>; 2] {
     [
         key.verify::<Sha384>(message, rs),
         key.verify_prehashed::<Sha384>(&Sha384::digest(message), rs),
@@ -40,12 +51,12 @@ fn verify(key: &VerifyingKey<P384>, message: &[u8], rs: &[u8; 96]) -> [Result<()
 #[test]
 fn p384_sha384() {
     let (_, x, _, signatures) = p384();
-    let key = SigningKey::<P384>::from_bytes(&x);
+    let key = PrivateKey::<P384>::from_bytes(&x);
     for (hash, message, rs) in &signatures {
         let signed = sign(&key.clone(), message.as_bytes());
         assert_eq!(signed, [Ok(*rs); 2], "{hash} {message}");
     }
-    assert_eq!(format!("{key:?}"), "SigningKey { .. }");
+    assert_eq!(format!("{key:?}"), "PrivateKey { .. }");
 }
 
 /// The signatures verify with the public key, and not of another message,
@@ -53,13 +64,12 @@ fn p384_sha384() {
 #[test]
 fn p384_verify() {
     let (_, x, u, signatures) = p384();
-    let key = VerifyingKey::<P384>::from_bytes(&u);
-    assert_eq!(key.to_bytes(), u);
-    let other = SigningKey::<P384>::from_bytes(&add(&x, 1))
+    let key = PublicKey::<P384>::from_bytes(&u);
+    assert_eq!(key.as_bytes(), &u);
+    let other = PrivateKey::<P384>::from_bytes(&add(&x, 1))
         .public_key()
         .unwrap();
-    let other = VerifyingKey::<P384>::from_bytes(&other);
-    let bad = Err(Error::InvalidSignature);
+    let bad = Err(InvalidSignature);
     for (hash, message, rs) in &signatures {
         let verified = verify(&key.clone(), message.as_bytes(), rs);
         assert_eq!(verified, [Ok(()); 2], "{hash} {message}");
@@ -75,7 +85,10 @@ fn p384_verify() {
 #[test]
 fn p384_public_key() {
     let (_, x, u, _) = p384();
-    assert_eq!(SigningKey::<P384>::from_bytes(&x).public_key(), Ok(u));
+    assert_eq!(
+        PrivateKey::<P384>::from_bytes(&x).public_key(),
+        Ok(PublicKey::from_bytes(&u))
+    );
 }
 
 /// A key outside `[1, n − 1]` is refused; those at its ends sign, and have
@@ -84,13 +97,49 @@ fn p384_public_key() {
 fn p384_keys() {
     let (q, _, _, _) = p384();
     for bad in [[0; 48], q, add(&q, 1), [0xff; 48]] {
-        let key = SigningKey::<P384>::from_bytes(&bad);
-        assert_eq!(sign(&key, b"sample"), [Err(Error::InvalidKey); 2]);
-        assert_eq!(key.public_key(), Err(Error::InvalidKey));
+        let key = PrivateKey::<P384>::from_bytes(&bad);
+        assert_eq!(sign(&key, b"sample"), [Err(InvalidKey); 2]);
+        assert_eq!(key.public_key(), Err(InvalidKey));
     }
     for good in [add(&[0; 48], 1), add(&q, -1)] {
-        let key = SigningKey::<P384>::from_bytes(&good);
+        let key = PrivateKey::<P384>::from_bytes(&good);
         assert!(sign(&key, b"sample").iter().all(Result::is_ok));
         assert!(key.public_key().is_ok());
     }
+}
+
+/// The signatures with SHA-1, which the curve also signs with.
+#[test]
+fn p384_sha1() {
+    super::sign_with::<P384, Sha1, 48, 97, 96>(
+        "\nA.2.6.  ECDSA, 384 Bits (Prime Field)\n",
+        "SHA-1",
+    );
+}
+
+/// The signatures with SHA-224, which the curve also signs with.
+#[test]
+fn p384_sha224() {
+    super::sign_with::<P384, Sha224, 48, 97, 96>(
+        "\nA.2.6.  ECDSA, 384 Bits (Prime Field)\n",
+        "SHA-224",
+    );
+}
+
+/// The signatures with SHA-256, which the curve also signs with.
+#[test]
+fn p384_sha256() {
+    super::sign_with::<P384, Sha256, 48, 97, 96>(
+        "\nA.2.6.  ECDSA, 384 Bits (Prime Field)\n",
+        "SHA-256",
+    );
+}
+
+/// The signatures with SHA-512, which the curve also signs with.
+#[test]
+fn p384_sha512() {
+    super::sign_with::<P384, Sha512, 48, 97, 96>(
+        "\nA.2.6.  ECDSA, 384 Bits (Prime Field)\n",
+        "SHA-512",
+    );
 }

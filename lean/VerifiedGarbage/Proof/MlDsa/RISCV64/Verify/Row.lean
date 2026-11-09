@@ -4,6 +4,10 @@ module
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Verify.Compute
 import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.CallV
+import VerifiedGarbage.Proof.MlDsa.RISCV64.CacheCopy
+import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA verification on RISC-V: a row of `w′₁`
@@ -194,6 +198,92 @@ theorem nttT_piece :
     rw [← vlay_pub pub] at t₂'
     exact ⟨σ₁, vc_twoL pub h₁.vc h₂.vc, t₁.1, t₂'⟩
 
+/-! ## `t̂₁[r]`, from the cache -/
+
+omit hP hF hS hr in
+/-- The selection in `s3` is the cache pointer, if it is not zero. -/
+theorem vsel_cache {σ s : State} (h : VC p STK σ s) (h3 : s.gpr .s3 ≠ 0) :
+    s.gpr .s3 = vCache σ ∧ vCLen σ = 1024 * p.k ∧
+      Proof.MlDsa.CachedPublicPolys p σ.mem (vCache σ) (pkOf p σ) := by
+  have e := h.s3
+  have h5 : σ.gpr .a5 ≠ 0 := fun e5 => by
+    rw [e, vSel, ite_eq_left_of_eq_true _ _ (eq_true e5)] at h3; exact h3 rfl
+  obtain ⟨hl, hc⟩ := h.pre.cache.resolve_left h5
+  exact ⟨by rw [e, vSel, ite_eq_right_of_eq_false _ _ (eq_false h5)],
+    by rw [hl]; simp only [Spec.MlDsa.n]; try omega_arith, hc⟩
+
+omit hP hS in
+theorem keyCache_ok {σ s : State} (h : RowI p STK r (fun σ A' _ _ => PIs p STK σ 18 (dotAcc p (sgOf p σ) A' r p.ℓ)) σ s)
+    (h3 : s.gpr .s3 ≠ 0) :
+    WP isa (VG.Impl.MlDsa.RISCV64.CacheCopy.cacheCopy (1024 * r) pT 1024) s
+      (RowI p STK r (F2 p STK r fun σ => t1Hat (pkOf p σ) r) σ) := by
+  have hk := hF.k; have hl := hF.l
+  obtain ⟨A', cc, h', R, hk5, hw⟩ := h
+  have hv := hk5.vc
+  have hs := hv.site
+  have hp := hv.pre
+  obtain ⟨hsel, hlen, hpolys⟩ := vsel_cache hv h3
+  obtain ⟨hs1, hs2⟩ := hF.scr
+  have hfit : (vCache σ).toNat + 1024 * p.k ≤ 2 ^ 64 := by have := hp.f_x; rw [hlen] at this; exact this
+  have hbd : oP 16 + 1024 ≤ (vlay p STK σ).size 0 := by rw [vlay_size0]; simp only [oP]; try omega_arith
+  have hgo : KeyGen.glueOk [(.a1, .ptr pT), (.a2, .imm 1024)] = true := by
+    simp only [KeyGen.glueOk, KeyGen.argReg, KeyGen.argOk, List.all_cons, List.all_nil, pT, pS, sc, oP]
+    decide
+  have hS : s.gpr .s3 + BitVec.ofNat 64 (1024 * r) = vCache σ + BitVec.ofNat 64 (1024 * r) := by rw [hsel]
+  have hD : s.gpr pT.1 + BitVec.ofNat 64 pT.2 = (vlay p STK σ).A 0 (oP 16) := by
+    show s.gpr .s11 + _ = _
+    rw [hs.s11]
+  have csub : Region.Sub ⟨vCache σ + BitVec.ofNat 64 (1024 * r), 1024⟩ (KeyGen.reg (vCache σ) (vCLen σ)) :=
+    Offset.sub_base _ (by rw [hlen]; omega_arith)
+  refine WP.mono (CacheCopy.cacheCopy_ok (off := 1024 * r) (dst := pT) (len := 1024) (s := s)
+    (by omega_arith) hgo (by decide) (by decide)
+    (by rw [hS, hD]; exact (hp.d_cx.sub_left (Lay.R_sub (L := vlay p STK σ) (i := 0) hbd)).symm.sub_left csub)
+    (Covers.of_sub fun r' hr' => by
+      rw [List.mem_singleton] at hr'; subst hr'
+      refine ⟨KeyGen.reg (vCache σ) (vCLen σ), by rw [hv.rd, hp.rd]; simp, 1024 * r, by rw [hS], ?_⟩
+      show 1024 * r + 1024 ≤ vCLen σ
+      rw [hlen]; omega_arith)
+    (by rw [hD]; exact Lay.covers (hs.cw 0 (by decide) (by decide)) hbd))
+    fun s' ⟨cs, rd', wr', sp', fr, hb⟩ => ?_
+  rw [hS, hD] at hb
+  rw [hD] at fr
+  have kp : Kept ((vlay p STK σ).RL [(0, oP 16, 1024)]) s s' := ⟨cs, sp', rd', wr', fr⟩
+  refine ⟨A', cc, h', R, hk5.keep hF kp (by k5chks hF (Nat.le_of_lt hr)),
+    polyIs_keepW hs.ok kp.frame (by vsep hF) (by decide) rfl hw, ?_⟩
+  have hc : bytesAt s.mem (vCache σ + BitVec.ofNat 64 (1024 * r)) 1024 =
+      bytesAt σ.mem (vCache σ + BitVec.ofNat 64 (1024 * r)) 1024 := by
+    have e := hv.cache
+    rw [hlen] at e
+    have hm : 1024 * r + 1024 ≤ 1024 * p.k := by omega_arith
+    rw [← Proof.MlKem.bytesAt_slice _ _ hm, e, Proof.MlKem.bytesAt_slice _ _ hm]
+  have hq := hpolys r hr
+  rw [Proof.MlDsa.PreparedKey.public_poly p _ hr,
+    show 4 * Spec.MlDsa.n * r = 1024 * r by simp only [Spec.MlDsa.n]; try omega_arith] at hq
+  exact Proof.MlDsa.PreparedKey.polyIs_of_copy (hb.trans hc) hq
+
+omit hP hS in
+theorem keyCache_piece :
+    VPiece p STK (fun σ s => RowI p STK r (fun σ A' _ _ => PIs p STK σ 18 (dotAcc p (sgOf p σ) A' r p.ℓ)) σ s ∧
+        s.gpr .s3 ≠ 0)
+      (RowI p STK r (F2 p STK r fun σ => t1Hat (pkOf p σ) r)) (VG.Impl.MlDsa.RISCV64.CacheCopy.cacheCopy (1024 * r) pT 1024) := by
+  have hgo : KeyGen.glueOk [(.a1, .ptr pT), (.a2, .imm 1024)] = true := by
+    simp only [KeyGen.glueOk, KeyGen.argReg, KeyGen.argOk, List.all_cons, List.all_nil, pT, pS, sc, oP]
+    decide
+  have hk := hF.k
+  exact ⟨fun σ s _ h => keyCache_ok hF hr h.1 h.2,
+    rel_of (CacheCopy.cacheCopy_tr (by omega_arith) hgo
+      (P := fun x y => x.sp = y.sp ∧ x.gpr .s3 = y.gpr .s3 ∧ x.gpr .s11 = y.gpr .s11) fun _ _ h => h)
+      fun σ₁ σ₂ x y _ _ pub ⟨⟨_, _, _, _, h₁, _⟩, _⟩ ⟨⟨_, _, _, _, h₂, _⟩, _⟩ =>
+        ⟨by rw [h₁.vc.sp, h₂.vc.sp, pub.1], by rw [h₁.vc.s3, h₂.vc.s3, vSel_pub pub],
+          by rw [h₁.vc.site.s11, h₂.vc.site.s11, vlay_pub pub]⟩⟩
+
+theorem keyRow_piece :
+    VPiece p STK (RowI p STK r fun σ A' _ _ => PIs p STK σ 18 (dotAcc p (sgOf p σ) A' r p.ℓ))
+      (RowI p STK r (F2 p STK r fun σ => t1Hat (pkOf p σ) r)) (keyRow P r) :=
+  CacheCopy.pieceIte (fun _ _ _ _ _ _ pub ⟨_, _, _, _, h₁, _⟩ ⟨_, _, _, _, h₂, _⟩ => by
+      rw [h₁.vc.s3, h₂.vc.s3, vSel_pub pub]) (keyCache_piece hF hr)
+    (Piece.mono ((t1_piece hP hF hS hr).seq (nttT_piece hP hF hS hr)) (fun _ _ _ h => h.1) fun _ _ _ h => h)
+
 /-! ## `W = NTT⁻¹(W - ĉ t̂₁[r])` -/
 
 /-- After `ĉ t̂₁[r]`. -/
@@ -381,9 +471,9 @@ theorem sbpW_piece :
     exact ⟨σ₁, vc_twoL pub h₁.vc h₂.vc, w1_bound hF w₁, w₂'⟩
 
 theorem row_piece : VPiece p STK (KX p STK p.ℓ true r) (KX p STK p.ℓ true (r + 1)) (row P p r) :=
-  (dot_piece hP hF hS hr).seq ((t1_piece hP hF hS hr).seq ((nttT_piece hP hF hS hr).seq
+  (dot_piece hP hF hS hr).seq ((keyRow_piece hP hF hS hr).seq
     ((mulT_piece hP hF hS hr).seq ((subW_piece hP hF hS hr).seq ((invW_piece hP hF hS hr).seq
-      ((uh_piece hP hF hS hr).seq (sbpW_piece hP hF hS hr)))))))
+      ((uh_piece hP hF hS hr).seq (sbpW_piece hP hF hS hr))))))
 
 end
 

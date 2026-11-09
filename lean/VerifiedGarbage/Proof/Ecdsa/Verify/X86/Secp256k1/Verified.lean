@@ -1,5 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Hash
+public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Secp256k1.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
@@ -40,6 +45,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Hash
+meta import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 
 /-!
 # ECDSA verification over secp256k1 on x86 (32-bit): `Verified`
@@ -199,19 +206,19 @@ def satState : State where
   rd := [⟨0x1000, 65⟩, ⟨0x2000, 32⟩, ⟨0x3000, 64⟩]
   wr := [⟨0x8000, 8192⟩, ⟨0x20004, 16⟩]
 
-theorem verifyWide_implies : verifyWide.Implies (Spec.Ecdsa.Secp256k1.inst.verifyContract X86.abi 28) := by
+theorem verifyWide_implies : verifyWide.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst X86.abi 28) := by
   have a0 : arg satState 0 = 0x1000 := by decide
   have a1 : arg satState 1 = 0x2000 := by decide
   have a2 : arg satState 2 = 0x3000 := by decide
   have a3 : arg satState 3 = 0x8000 := by decide
   have e : argAddr satState 0 = 0x20004 := by decide
   have esp : satState.gpr .esp = 0x20000 := rfl
-  sig_implies [Spec.Ecdsa.Secp256k1.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+  sig_implies [Spec.Ecdsa.Secp256k1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.Secp256k1.curve, Spec.Ecdsa.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow, verifyWide,
     verifyX86, vf] [a0, a1, a2, a3, e, esp] using satState
 
 theorem verify_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Inv.InvSounds) :
-    Verified X86.target verifySecp256k1 (Spec.Ecdsa.Secp256k1.inst.verifyContract X86.abi 28) := by
+    Verified X86.target verifySecp256k1 (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst X86.abi 28) := by
   have hsat := verifyWide_implies.sat_left
   have satLocal : ∃ s, verifyX86.pre s := hsat.elim fun s h => ⟨_, verifyWide_pre s h⟩
   have verifiedLocal : Verified X86.target verifySecp256k1 verifyX86 :=
@@ -233,5 +240,15 @@ theorem verify_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Inv.In
     exact h
   · intro s t _ _ h
     simpa only [verifyWide, verifyX86, arg_withRegions, State.withRegions_gpr] using h
+
+/-- `vg_ecdsa_secp256k1_verify`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash, in a frame of
+`frameBytes` more bytes of stack (`Hash.verifyHash_verified`). -/
+theorem verifyHash_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Inv.InvSounds) :
+    Verified X86.target
+      (Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false verifySecp256k1)
+      (Spec.Ecdsa.Secp256k1.inst.verifyHashContract X86.abi (28 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) :=
+  Hash.verifyHash_verified Proof.Ecdsa.Verify.secp256k1_len (by decide) (verify_verified hL hI)
+    verify_sp.1 verify_sp.2 (by taint_decide) (Hash.hashSat (n := 135) (by decide) (by decide))
 
 end VG.Proof.Ecdsa.Verify.X86.Secp256k1

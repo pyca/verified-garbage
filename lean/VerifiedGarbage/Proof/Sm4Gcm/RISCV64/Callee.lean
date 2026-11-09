@@ -20,7 +20,7 @@ Untrusted: everything here is checked by Lean. SM4-GCM calls
 AES's (`Proof/AesGcm/RISCV64/Callee.lean`): what the arguments in `a0`–`a3`
 must be (`CtrCall`, `KeyCall`), and what the call leaves (`CtrPost`,
 `KeyPost`): the callee's postcondition, memory changed only in the buffers
-it writes and in its frame below the stack pointer (3232 and 3168 bytes),
+it writes and in its frame below the stack pointer (3248 and 3168 bytes),
 and the callee-saved registers kept. `ctr_rel` and `key_rel`: such calls,
 with the same public arguments in both runs, are constant time (and so
 `CT.sctr`, `CT.skey`).
@@ -36,8 +36,8 @@ open VG.Spec.Gcm (Block blockAt blocksAt ctr32 inc32)
 
 /-! ## `vg_sm4_ctr32` -/
 
-/-- `vg_sm4_ctr32`'s frame uses the 3232 bytes of stack its contract reserves. -/
-theorem ctr32_sdepth : sdepth Impl.Sm4.RISCV64.ctr32 = 3232 := by lit_decide
+/-- `vg_sm4_ctr32`'s frame uses the 3248 bytes of stack its contract reserves. -/
+theorem ctr32_sdepth : sdepth Impl.Sm4.RISCV64.ctr32 = 3248 := by lit_decide
 
 /-- What a call of `vg_sm4_ctr32(schedule, counter, data, n)` needs. -/
 structure CtrCall (s : State) (K C D : Addr) (n : Nat) : Prop where
@@ -53,10 +53,10 @@ structure CtrCall (s : State) (K C D : Addr) (n : Nat) : Prop where
   fC : C.toNat + 16 ≤ 2 ^ 64
   fD : D.toNat + 16 * n ≤ 2 ^ 64
   spal : s.sp.toNat % 16 = 0
-  spge : 3232 ≤ s.sp.toNat
-  bk : (below s.sp 3232).Disjoint ⟨K, 128⟩
-  bc : (below s.sp 3232).Disjoint ⟨C, 16⟩
-  bd : (below s.sp 3232).Disjoint ⟨D, 16 * n⟩
+  spge : 3248 ≤ s.sp.toNat
+  bk : (below s.sp 3248).Disjoint ⟨K, 128⟩
+  bc : (below s.sp 3248).Disjoint ⟨C, 16⟩
+  bd : (below s.sp 3248).Disjoint ⟨D, 16 * n⟩
   reads : Covers ([⟨K, 128⟩] ++ [⟨C, 16⟩, ⟨D, 16 * n⟩]) (s.rd ++ s.wr)
   writes : Covers [⟨C, 16⟩, ⟨D, 16 * n⟩] s.wr
 
@@ -66,7 +66,7 @@ structure CtrPost (s : State) (K C D : Addr) (n : Nat) (s' : State) : Prop where
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
   saved : ∀ r ∈ preserved, s'.gpr r = s.gpr r
-  frame : Frame [⟨C, 16⟩, ⟨D, 16 * n⟩, below s.sp 3232] s.mem s'.mem
+  frame : Frame [⟨C, 16⟩, ⟨D, 16 * n⟩, below s.sp 3248] s.mem s'.mem
   out : blocksAt s'.mem D n =
     ctr32 (Spec.Sm4.gcmCipher (Spec.Sm4.scheduleAt s.mem K)) (blockAt s.mem C) (blocksAt s.mem D n)
   ctr : blockAt s'.mem C = Nat.repeat inc32 n (blockAt s.mem C)

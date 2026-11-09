@@ -33,28 +33,6 @@ variable (cs : CoreSpec c) {s₀ : State} {k : cs.Key}
 /-- The data on entry, in blocks. -/
 abbrev blocks0 (s₀ : State) : List (List Byte) := chunksAt (4 * c.bw) s₀.mem ((Dp s₀ c).setWidth 64) (N s₀ c)
 
-theorem cbcEnc_wp (hp : SeqPre c (Mode.cbcEnc c.bw) s₀) (hk : cs.KeyArgs s₀ [scrR s₀ c] k) :
-    WP isa (c.seq (Mode.cbcEnc c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
-      chunksAt (4 * c.bw) s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) =
-        Spec.Cbc.encrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) := by
-  have b := blk_bounds (c := c) (st := (Mode.cbcEnc c.bw).step) rfl
-  exact WP.mono (seq_wp cs hp (xorBlk_inBounds (b _) (b _) (b _))
-    (fun o ho => (List.mem_append.mp ho).elim (copyBlk_inBounds (b _) (b _) o) (copyBlk_inBounds (b _) (b _) o))
-    (cbcEnc_computes (cs.cipher_len k)) hk) fun s' ⟨h1, h2, _⟩ => ⟨h1, h2.trans (by rw [encrypt_run]; rfl)⟩
-
-theorem cbcDec_wp (hp : SeqPre c (Mode.cbcDec c.bw) s₀) (hk : cs.KeyArgs s₀ [scrR s₀ c] k) :
-    WP isa (c.seq (Mode.cbcDec c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
-      chunksAt (4 * c.bw) s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) =
-        Spec.Cbc.decrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) := by
-  have b := blk_bounds (c := c) (st := (Mode.cbcDec c.bw).step) rfl
-  refine WP.mono (seq_wp cs hp (copyBlk_inBounds (b _) (b _)) (fun o ho => ?_)
-    (cbcDec_computes (cs.cipher_len k)) hk) fun s' ⟨h1, h2, _⟩ => ⟨h1, h2.trans (by rw [decrypt_run]; rfl)⟩
-  simp only [Mode.cbcDec, List.mem_append] at ho
-  rcases ho with (ho | ho) | ho
-  · exact xorBlk_inBounds (b _) (b _) (b _) o ho
-  · exact copyBlk_inBounds (b _) (b _) o ho
-  · exact copyBlk_inBounds (b _) (b _) o ho
-
 theorem ofb_wp (hp : SeqPre c (Mode.ofb c.bw) s₀) (hk : cs.KeyArgs s₀ [scrR s₀ c] k) :
     WP isa (c.seq (Mode.ofb c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
       chunksAt (4 * c.bw) s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) =
@@ -94,9 +72,6 @@ theorem cfbDec_wp (hp : SeqPre c (Mode.cfbDec c.bw) s₀) (hk : cs.KeyArgs s₀ 
 
 /-- The data on entry, as bytes. -/
 abbrev bytes0 (c : Core) (s₀ : State) : List Byte := bytesAt s₀.mem ((Dp s₀ c).setWidth 64) (N s₀ c)
-
-theorem cfb8_bounds {l : Loc} : (l = .dat → 1 ≤ lens c 1 l) ∧ (l ≠ .dat → 4 * c.bw ≤ lens c 1 l) := by
-  cases l <;> simp [lens]
 
 theorem cfb8Enc_wp (hp : SeqPre c (Mode.cfb8Enc c.bw) s₀) (hk : cs.KeyArgs s₀ [scrR s₀ c] k) :
     WP isa (c.seq (Mode.cfb8Enc c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧

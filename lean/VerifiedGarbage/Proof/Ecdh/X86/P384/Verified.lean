@@ -90,11 +90,6 @@ theorem ecdh_x86 (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : ecdhX8
   · exact K.saved (.ebp, 12) (by decide)
   · exact K.esp
 
-/-- The hints forget the words known to hold base addresses outside the calls,
-as the signature's do (`Proof/Ecdsa/X86/P384/Verified.lean`), but keep the
-public slots, which the checks of the peer's key read back. -/
-def weak (τ : VG.X86.Taint.T) : VG.X86.Taint.T := if τ.stk = [] then { τ with wbases := [] } else τ
-
 /-- The taint analysis starts with the stack arguments public, and the words
 holding `out` and `scratch` known to be the base addresses of the writable
 regions. -/

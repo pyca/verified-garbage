@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyLoadInputsTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInputPair
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyLoadInputs
@@ -25,15 +24,5 @@ structure ImportedPair (E : Environment) (e p q p' q' : Nat) (s t : State) : Pro
   left : CoreStart E.base E.size E.n E.k e p q s
   right : CoreStart E.base E.size E.n E.k e p' q' t
   agree : VG.X86.Taint.Agree (workspaceTaint true) s t
-
-theorem inputReady_trace (E : Environment) (e p q p' q' : Nat) :
-    RelCT isa (SizedStart E e p q p' q') (inputCode E.n) (ImportedPair E e p q p' q') := by
-  intro s t tr ur u v P A C
-  obtain ⟨trace, inputs, agree⟩ := inputCode_trace E _ _ _ _ _ _ P.inputs A C
-  obtain ⟨_, left, _, _⟩ := wp_result (loadInputs_ok P.inputs.left) A
-  obtain ⟨_, right, _, _⟩ := wp_result (loadInputs_ok P.inputs.right) C
-  rw [P.leftExponent, P.leftP, P.leftQ] at left
-  rw [P.rightExponent, P.rightP, P.rightQ] at right
-  exact ⟨trace, inputs, left, right, agree⟩
 
 end VG.Proof.RsaKeyGen.X86.Key

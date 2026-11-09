@@ -304,24 +304,6 @@ theorem Selected.words {s t : State} {p : Params} {pass lane slice old : Nat}
     (h.frame_word ready.layout 112 (by decide) (by decide)).trans ready.words.variantWord,
     h.counterWord.trans (counter_nat _)⟩
 
-theorem Ready.of_keeps {p : Params} {pass lane slice old : Nat} {s t : State}
-    (h : Ready p pass lane slice old s) (k : Divide.Keeps ReferenceMap.changed s t) :
-    Ready p pass lane slice old t := by
-  have regs : ∀ r ∈ calleeSaved, t.gpr r = s.gpr r := by
-    intro r hr
-    apply k.regs
-    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-  have stable := AddressCalls.stable_of_frame h.layout regs k.rd k.wr
-    (by rw [k.mem]; exact Frame.refl _ _) k.mxcsr
-  refine ⟨stable.ready, stable.reads h.reads, ?_, stable.words h.layout h.words, ?_⟩
-  · rw [k.wr, k.regs .rbp (by decide)]; exact h.write
-  · intro same
-    have wanted' : wanted t = wanted s := by unfold wanted; rw [k.regs .r15 (by decide)]
-    rw [k.mem, k.regs .rbp (by decide), k.regs .r15 (by decide)] at same
-    rw [k.mem, stable.work_eq, wanted']
-    exact h.cached same
-
 end VG.Proof.Argon2.X86_64.AddressCache
 end
 
@@ -430,10 +412,6 @@ theorem Selected.invariant {s t : State} {p : Params} {pass lane slice old : Nat
   · rw [h.rd, h.wr, bp]; exact ready.reads
   · rw [h.wr, bp]; exact ready.write
   · rw [h.work_eq]; exact h.block
-
-theorem Invariant.zero {p : Params} {pass lane slice : Nat} {s : State}
-    (h : Ready p pass lane slice 0 s) : Invariant p pass lane slice 0 s :=
-  ⟨h.layout, h.reads, h.write, h.words, by decide, Or.inl rfl⟩
 
 theorem Invariant.of_state {p : Params} {pass lane slice old : Nat} {s t : State}
     (h : Invariant p pass lane slice old s)

@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Seed.SboxLit
 /-!
 # SEED's S-boxes through the AES S-box
 
-`s0_eq` and `s1_eq`: `S0(x) = P0(S_AES(M x)) ⊕ 0xE7` and
+`sbox_eq`: `S0(x) = P0(S_AES(M x)) ⊕ 0xE7` and
 `S1(x) = P1(S_AES(M x)) ⊕ 0x2B` (`Impl/Seed/Layers.lean`), for every byte
 `x`. As in `Proof/Aes/SboxSpec.lean`, the kernel evaluates both sides on
 truth tables of the 256 inputs at once (`sboxes_table`), and `row` reads
@@ -121,13 +121,5 @@ theorem sbox_eq (odd : Bool) (b : Byte) :
   rw [row_tableT _ hc, row_xorConstT _ _ hc, row_linT hp, row_sboxT (by simp [linT]) hc,
     row_linT (rows_lt mRows (by simp)), row_inTs hc, BitVec.ofNat_toNat, BitVec.setWidth_eq] at h
   exact h.symm
-
-theorem s0_eq (b : Byte) :
-    Spec.Seed.s0.getD b.toNat 0 = linB p0Rows (Spec.Aes.sbox (linB mRows b)) ^^^ 0xE7 :=
-  sbox_eq false b
-
-theorem s1_eq (b : Byte) :
-    Spec.Seed.s1.getD b.toNat 0 = linB p1Rows (Spec.Aes.sbox (linB mRows b)) ^^^ 0x2B :=
-  sbox_eq true b
 
 end VG.Proof.Seed

@@ -46,13 +46,13 @@ abbrev qiB (P : EP) (σ : State) : List Byte := Spec.Rsa.bytesAt σ.mem (P.qinv.
 abbrev digB (P : EP) (σ : State) : List Byte := Spec.Rsa.bytesAt σ.mem (P.dig.setWidth 64) h.D
 abbrev saltB (P : EP) (σ : State) : List Byte := Spec.Rsa.bytesAt σ.mem (P.salt.setWidth 64) P.sl
 
-/-- The result. -/
-abbrev Res (P : EP) (σ : State) (m : Mem) (r : BitVec 32) : Prop :=
+/-- The result, with MGF1's hash function `G`. -/
+abbrev Res (G : Spec.Mgf1.Hash) (P : EP) (σ : State) (m : Mem) (r : BitVec 32) : Prop :=
   Spec.Rsa.writtenOutcome m (P.out.setWidth 64) P.K r
-    (Spec.RsaPss.sign h.G h.G P.nB P.eB (pB P σ) (qB P σ) (dpB P σ) (dqB P σ) (qiB P σ) (digB h P σ) (saltB P σ))
+    (Spec.RsaPss.sign h.G G P.nB P.eB (pB P σ) (qB P σ) (dpB P σ) (dqB P σ) (qiB P σ) (digB h P σ) (saltB P σ))
 
 /-- The end of the body. -/
-abbrev Fin (P : EP) (σ s : State) : Prop := S h P σ s ∧ Res h P σ s.mem (s.gpr .eax)
+abbrev Fin (G : Spec.Mgf1.Hash) (P : EP) (σ s : State) : Prop := S h P σ s ∧ Res h G P σ s.mem (s.gpr .eax)
 
 /-- The modulus' first byte, in a state of the body. -/
 theorem n0_at {D : Nat} {P : EP} {σ s : State} (hi : In D P σ) (hs : (P.lay D).St σ s) :
@@ -81,12 +81,12 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (signChk ++ params h.H)) (C1 h P) :
   refine VP.block_append (G := C0 h P) (VP.taint [.esp] signChk_taint (fun _ _ _ _ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.sp, h₂.2.sp]) fun σ s ⟨hi, hs⟩ => ?_)
     (VP.taint _ h.certs.params (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s ⟨hc, hi, si, cx, dx⟩ => ?_)
-  · have hl : ∀ j, j < 21 → j < ((P.lay h.D).argv).length := fun j hj => by simp; omega
+  · have hl : ∀ j, j < 24 → j < ((P.lay h.D).argv).length := fun j hj => by simp; omega
     simp only [signChk, ld]
-    refine hs.wp_arg (hl 19 (by decide)) (by decide) fun t1 s1 u1 => ?_
+    refine hs.wp_arg (hl 20 (by decide)) (by decide) fun t1 s1 u1 => ?_
     refine s1.wp_arg (hl 2 (by decide)) (by decide) fun t2 s2 u2 => ?_
     refine s2.wp_arg (hl 3 (by decide)) (by decide) fun t3 s3 u3 => ?_
-    refine s3.wp_arg (hl 18 (by decide)) (by decide) fun t4 s4 u4 => WP.block_nil ?_
+    refine s3.wp_arg (hl 19 (by decide)) (by decide) fun t4 s4 u4 => WP.block_nil ?_
     refine ⟨⟨s4, by simp (disch := decide) only [u4.other, u3.other, u2.other, u1.gpr]; rfl⟩, hi, ?_, ?_, ?_⟩
     · simp (disch := decide) only [u4.other, u3.other, u2.gpr]; rfl
     · simp (disch := decide) only [u4.other, u3.gpr]; rfl
@@ -130,8 +130,8 @@ theorem nB_length {D : Nat} {P : EP} {σ : State} (hi : In D P σ) : P.nB.length
   rw [← hi.nB, RsaPkcs1Sig.bytesAt_len]
 
 /-- The specification refuses what does not fit. -/
-theorem sign_invalid {P : EP} {σ : State} (hi : In h.D P σ) (hf : ¬ fits h P) :
-    Spec.RsaPss.sign h.G h.G P.nB P.eB (pB P σ) (qB P σ) (dpB P σ) (dqB P σ) (qiB P σ) (digB h P σ)
+theorem sign_invalid (G : Spec.Mgf1.Hash) {P : EP} {σ : State} (hi : In h.D P σ) (hf : ¬ fits h P) :
+    Spec.RsaPss.sign h.G G P.nB P.eB (pB P σ) (qB P σ) (dpB P σ) (dqB P σ) (qiB P σ) (digB h P σ)
       (saltB P σ) = .invalid := by
   have hl := nB_length hi
   have hK := hi.k64
@@ -145,8 +145,8 @@ theorem sign_invalid {P : EP} {σ : State} (hi : In h.D P σ) (hf : ¬ fits h P)
   rw [hbr]
   by_cases hb : b = 0
   · subst hb
-    exact RsaPss.sign_zero h.G ..
-  · refine RsaPss.sign_long h.G _ _ _ _ _ _ _ _ ?_
+    exact RsaPss.sign_zero₂ G h.G ..
+  · refine RsaPss.sign_long₂ G h.G _ _ _ _ _ _ _ _ ?_
     have e1 := lo_eq hb rest
     have e2 := RsaPss.emLength_eq rest hb
     have gl : h.G.len = h.D := h.glen
@@ -164,7 +164,8 @@ abbrev F1 (P : EP) (σ s : State) : Prop :=
 abbrev F2 (P : EP) (σ s : State) : Prop :=
   Ctx (P.lay h.D) P.scr σ s ∧ In h.D P σ ∧ ¬ fits h P ∧ Spec.Rsa.bytesAt s.mem (P.out.setWidth 64) P.K = List.replicate P.K 0
 
-theorem fail_vp (P : EP) : VP (fun σ s => C1 h P σ s ∧ isa.eval .ne s = some true) (signFail) (Fin h P) := by
+theorem fail_vp (G : Spec.Mgf1.Hash) (P : EP) :
+    VP (fun σ s => C1 h P σ s ∧ isa.eval .ne s = some true) (signFail) (Fin h G P) := by
   show VP _ (.seq (.block [ld .esi (arg 0), ld .ecx (arg 3), mi .eax 0]) (.seq zeroLoop (.block [mi .eax 0]))) _
   refine VP.seq (G := F1 h P) (VP.taint [.esp] failArgs_taint (fun _ _ _ _ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.1.st.sp, h₂.1.1.st.sp])
@@ -173,7 +174,7 @@ theorem fail_vp (P : EP) : VP (fun σ s => C1 h P σ s ∧ isa.eval .ne s = some
       simp only [eval, z, decide_eq_true hfits] at e
       exact absurd e (by decide)
     have hg := hi.geo
-    have hl : ∀ j, j < 21 → j < ((P.lay h.D).argv).length := fun j hj => by simp; omega
+    have hl : ∀ j, j < 24 → j < ((P.lay h.D).argv).length := fun j hj => by simp; omega
     simp only [ld, mi]
     refine hc.wp_arg hg (hl 0 (by decide)) (by decide) (by decide) fun t1 c1 u1 =>
       c1.wp_arg hg (hl 3 (by decide)) (by decide) (by decide) fun t2 c2 u2 => wp_movi fun t3 u3 =>
@@ -205,7 +206,7 @@ theorem fail_vp (P : EP) : VP (fun σ s => C1 h P σ s ∧ isa.eval .ne s = some
       · rw [h₁.1.ebp, h₂.1.ebp]) fun σ s ⟨hc, hi, hf, hz⟩ => ?_
     simp only [mi]
     refine wp_movi fun t u => WP.block_nil ⟨⟨hi, hc.st.upd u (by decide)⟩, ?_⟩
-    rw [Res, sign_invalid h hi hf, u.gpr, u.mem]
+    rw [Res, sign_invalid h G hi hf, u.gpr, u.mem]
     exact ⟨rfl, hz⟩
 
 end VG.Proof.RsaPss.X86.Sg

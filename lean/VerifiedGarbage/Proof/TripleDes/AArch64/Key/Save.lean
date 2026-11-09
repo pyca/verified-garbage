@@ -39,8 +39,6 @@ theorem save_ok (s : State)
       (savedReg i, 8 * i) (Spill.mem_slots hi)
   · rw [h.mem]; exact Spill.saveMem_frame_base (by decide) (by decide) _ _ _
 
-theorem savedReg_separate : ∀ i < 4, savedReg i ≠ .x3 := by decide +kernel
-
 theorem restore_ok (original s : State) (hsaved : Saved original s)
     (hread : ∀ i < 4, InRegions (s.rd ++ s.wr) (s.gpr .x3 + BitVec.ofNat 64 (8 * i)) 8) :
     WP isa (.block Impl.TripleDes.AArch64.Key.restore) s (fun s' =>

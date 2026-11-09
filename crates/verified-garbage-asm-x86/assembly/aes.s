@@ -5252,22 +5252,25 @@ vg_aes_decrypt_blocks:
 	.p2align 6
 
 vg_aes_encrypt_blocks_aesni:
-	mov edx, DWORD PTR [esp+20]
-	mov DWORD PTR [edx], esi
-	mov DWORD PTR [edx+4], edi
 	mov eax, DWORD PTR [esp+4]
+	mov edx, DWORD PTR [esp+12]
+	mov eax, DWORD PTR [esp+12]
+	mov ecx, edx
+	sub ecx, eax
+	shr ecx, 4
+	add ecx, 5
+	mov eax, DWORD PTR [esp+16]
+	cmp ecx, eax
 	mov ecx, DWORD PTR [esp+8]
-	mov esi, DWORD PTR [esp+12]
-	mov edi, DWORD PTR [esp+16]
-	cmp edi, 6
-	jb 20f
+	mov eax, DWORD PTR [esp+4]
+	jae 20f
 22:
-	movdqu xmm0, XMMWORD PTR [esi]
-	movdqu xmm1, XMMWORD PTR [esi+16]
-	movdqu xmm2, XMMWORD PTR [esi+32]
-	movdqu xmm3, XMMWORD PTR [esi+48]
-	movdqu xmm4, XMMWORD PTR [esi+64]
-	movdqu xmm5, XMMWORD PTR [esi+80]
+	movdqu xmm0, XMMWORD PTR [edx]
+	movdqu xmm1, XMMWORD PTR [edx+16]
+	movdqu xmm2, XMMWORD PTR [edx+32]
+	movdqu xmm3, XMMWORD PTR [edx+48]
+	movdqu xmm4, XMMWORD PTR [edx+64]
+	movdqu xmm5, XMMWORD PTR [edx+80]
 	movdqu xmm6, XMMWORD PTR [eax]
 	pxor xmm0, xmm6
 	pxor xmm1, xmm6
@@ -5397,23 +5400,38 @@ vg_aes_encrypt_blocks_aesni:
 	aesenclast xmm4, xmm6
 	aesenclast xmm5, xmm6
 24:
-	movdqu XMMWORD PTR [esi], xmm0
-	movdqu XMMWORD PTR [esi+16], xmm1
-	movdqu XMMWORD PTR [esi+32], xmm2
-	movdqu XMMWORD PTR [esi+48], xmm3
-	movdqu XMMWORD PTR [esi+64], xmm4
-	movdqu XMMWORD PTR [esi+80], xmm5
-	add esi, 96
-	sub edi, 6
-	cmp edi, 6
-	jae 22b
+	movdqu XMMWORD PTR [edx], xmm0
+	movdqu XMMWORD PTR [edx+16], xmm1
+	movdqu XMMWORD PTR [edx+32], xmm2
+	movdqu XMMWORD PTR [edx+48], xmm3
+	movdqu XMMWORD PTR [edx+64], xmm4
+	movdqu XMMWORD PTR [edx+80], xmm5
+	add edx, 96
+	mov eax, DWORD PTR [esp+12]
+	mov ecx, edx
+	sub ecx, eax
+	shr ecx, 4
+	add ecx, 5
+	mov eax, DWORD PTR [esp+16]
+	cmp ecx, eax
+	mov ecx, DWORD PTR [esp+8]
+	mov eax, DWORD PTR [esp+4]
+	jb 22b
 	jmp 21f
 20:
 21:
-	test edi, edi
-	je 27f
+	mov eax, DWORD PTR [esp+12]
+	mov ecx, edx
+	sub ecx, eax
+	shr ecx, 4
+	add ecx, 0
+	mov eax, DWORD PTR [esp+16]
+	cmp ecx, eax
+	mov ecx, DWORD PTR [esp+8]
+	mov eax, DWORD PTR [esp+4]
+	jae 27f
 29:
-	movdqu xmm0, XMMWORD PTR [esi]
+	movdqu xmm0, XMMWORD PTR [edx]
 	movdqu xmm6, XMMWORD PTR [eax]
 	pxor xmm0, xmm6
 	movdqu xmm6, XMMWORD PTR [eax+16]
@@ -5458,15 +5476,21 @@ vg_aes_encrypt_blocks_aesni:
 	movdqu xmm6, XMMWORD PTR [eax+160]
 	aesenclast xmm0, xmm6
 211:
-	movdqu XMMWORD PTR [esi], xmm0
-	add esi, 16
-	sub edi, 1
-	jne 29b
+	movdqu XMMWORD PTR [edx], xmm0
+	add edx, 16
+	mov eax, DWORD PTR [esp+12]
+	mov ecx, edx
+	sub ecx, eax
+	shr ecx, 4
+	add ecx, 0
+	mov eax, DWORD PTR [esp+16]
+	cmp ecx, eax
+	mov ecx, DWORD PTR [esp+8]
+	mov eax, DWORD PTR [esp+4]
+	jb 29b
 	jmp 28f
 27:
 28:
-	mov esi, DWORD PTR [edx]
-	mov edi, DWORD PTR [edx+4]
 	ret
 	.p2align 6
 

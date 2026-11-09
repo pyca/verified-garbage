@@ -22,18 +22,18 @@ private theorem controller_all (p : Instr → Bool) (c : Prog isa)
   simp only [seqs, Code.all, List.all_nil, hc, Bool.and_true] at hp ⊢
   exact hp
 
-private theorem controller_instrs (p : Instr → Bool) (c : Prog isa)
-    (hp : (code (.block [])).allInstrs p = true) (hc : c.allInstrs p = true) :
-    (code c).allInstrs p = true := by
+private theorem controller_ctlC (c : Prog isa) (hp : ctlC (code (.block [])) = true) (hc : ctlC c = true) :
+    ctlC (code c) = true := by
   unfold code iteration candidateRun at hp ⊢
-  simp only [seqs, Code.allInstrs, hc, Bool.and_true] at hp ⊢
+  simp only [seqs, ctlC, hc, Bool.and_true] at hp ⊢
   exact hp
 
 theorem searchCode_sp (v : RoundImpl) : (searchCode v).all (fun i => !isa.writesSp i) = true := by
   exact controller_all _ _ (by decide +kernel) (candidateCode_sp v)
 
-theorem searchCode_mx (v : RoundImpl) : (searchCode v).allInstrs (fun i => !loadsMxcsr i) = true := by
-  exact controller_instrs _ _ (by decide +kernel) (candidateCode_mx v)
+/-- The search loads MXCSR only where the round restores it. -/
+theorem searchCode_ctlC (v : RoundImpl) : ctlC (searchCode v) = true :=
+  controller_ctlC _ (by decide +kernel) (candidateCode_ctlC v)
 
 theorem searchCode_depth (v : RoundImpl) : (searchCode v).x86_64Depth ≤ 160 := by
   have he : exhausted.x86_64Depth = 0 := rfl

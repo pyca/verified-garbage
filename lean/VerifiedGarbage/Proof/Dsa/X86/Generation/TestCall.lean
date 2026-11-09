@@ -130,9 +130,9 @@ theorem testCallPre {bits : Nat} {E : Env} (v : E.Valid) {s t : State} (B : Base
       or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · by_cases h0 : E.witLen - used = 0
-      · exact ⟨E.witRegion, List.mem_append_left _ (A.rd ▸ B.tapes.2.2), 0, by simp [randAddr, h0, Env.witRegion],
+      · exact ⟨E.witRegion, List.mem_append_left _ (A.rd ▸ B.tapes), 0, by simp [randAddr, h0, Env.witRegion],
           by simp [h0]⟩
-      · exact ⟨E.witRegion, List.mem_append_left _ (A.rd ▸ B.tapes.2.2), used, by simp [randAddr, h0, Env.witRegion],
+      · exact ⟨E.witRegion, List.mem_append_left _ (A.rd ▸ B.tapes), used, by simp [randAddr, h0, Env.witRegion],
           by simp only [Env.witRegion]; omega_arith⟩
     · exact ⟨E.tableRegion, List.mem_append_left _ (A.rd ▸ B.table), 0, by simp, by simp⟩
     · exact ⟨E.scratchRegion, List.mem_append_right _ (.tail _ (A.wr ▸ hsT.wr)), sPP, rfl,
@@ -176,7 +176,7 @@ theorem testEntry_facts {bits : Nat} {E : Env} (v : E.Valid) {s t : State} (B : 
   rw [A.eax] at e0; rw [A.ecx] at e1; rw [A.edx] at e2; rw [A.ebx] at e3; rw [A.ebp] at e4
   have wsW := Scr.wide B.scr (d := sPP) (by simp only [sPP]; omega_arith)
   have uoW := Scr.wide B.scr (d := fUsedOut) (by simp only [fUsedOut, hdr]; omega_arith)
-  have lenLt := v.lens.2.2
+  have lenLt := v.witLen32
   rw [spT] at Fm
   have cw := cand_frame v lay (k := 24) (by decide) Fm
   rw [A.mem] at cw
@@ -228,7 +228,7 @@ theorem testCall_ok {bits : Nat} {name : String} {callee : Prog isa}
   simp only [e0, e1, e2, e3, e4, ret32] at post
   have wsW := Scr.wide B.scr (d := sPP) (by simp only [sPP]; omega_arith)
   have uoW := Scr.wide B.scr (d := fUsedOut) (by simp only [fUsedOut, hdr]; omega_arith)
-  have lenLt := v.lens.2.2
+  have lenLt := v.witLen32
   have lenN : (BitVec.ofNat 32 (E.witLen - used)).toNat = E.witLen - used := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have ppN : (BitVec.ofNat 32 ppWords).toNat = ppWords := by decide
@@ -288,7 +288,7 @@ theorem test_ok {bits : Nat} {name : String} {callee : Prog isa}
   have sz := v.size_ge
   unfold test
   simp only [seqs]
-  refine testArgs_ok B.scr (by simp only [sPP]; omega_arith) B.witW B.witLenW hU hu v.lens.2.2 fun t A =>
+  refine testArgs_ok B.scr (by simp only [sPP]; omega_arith) B.witW B.witLenW hU hu v.witLen32 fun t A =>
     WP.seq (WP.mono (testCall_ok verified noSp stack v B A hu lay odd len) fun u R => ?_)
   have hsU : Scr u E.base E.size := Scr.of_eq B.scr R.edi (R.esp.trans B.sp.symm) R.wr
   generalize hres : Spec.Dsa.probablePrime (Proof.Dsa.ProbablePrime.candidateAt

@@ -35,10 +35,10 @@ structure BodyPost (d : Spec.Rc2.Direction) (s : State) (n : Nat) (s' : State) :
   wr : s'.wr = s.wr
   mem : Frame (stepWrites s) s.mem s'.mem
   data : Spec.Rc2.blockAt s'.mem (s.gpr .x1) =
-    (Spec.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) d
+    (Proof.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) d
       (Spec.Rc2.blockAt s.mem (s.gpr .x23)) (Spec.Rc2.blockAt s.mem (s.gpr .x1))).1
   iv : Spec.Rc2.blockAt s'.mem (s.gpr .x23) =
-    (Spec.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) d
+    (Proof.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) d
       (Spec.Rc2.blockAt s.mem (s.gpr .x23)) (Spec.Rc2.blockAt s.mem (s.gpr .x1))).2
 
 theorem body_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (hn : 1 ≤ n) (bound : n < 2 ^ 64)

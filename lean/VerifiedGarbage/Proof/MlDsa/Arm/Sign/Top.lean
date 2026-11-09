@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
 public import VerifiedGarbage.Proof.MlKem.Arm.Reduce
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Lay
 public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
+public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
+public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -36,11 +38,63 @@ open VG.Spec.Sha3 (bytesAt)
 /-- The size of `scratch` in bytes. -/
 abbrev scrLen (p : Params) : Nat := 8 * scratchWords p
 
-/-- `vg_mldsa*_sign(sk = r0, mu = r1, rnd = r2, sig = r3, scratch = [sp]) -> r0`, with
-`D` bytes of stack, and the leakage `signLeak`. -/
+/-- The prepared polynomials `cache` points to, if it is not 0. -/
+abbrev cacheR (p : Params) (s : State) : Region := ⟨State.addr (stackArg s 1), cacheLen p⟩
+
+/-- The regions of the prepared polynomials: none if `cache` is 0. -/
+def cacheRd (p : Params) (s : State) : List Region := if stackArg s 1 = 0 then [] else [cacheR p s]
+
+/-- If `cache` is not 0: the `ŝ₁ ‖ ŝ₂ ‖ t̂₀` of `sk`, apart from `sig`, `scratch`
+and the stack. -/
+def CachePre (p : Params) (D : Nat) (s : State) : Prop :=
+  stackArg s 1 ≠ 0 →
+    (cacheR p s).Disjoint ⟨State.addr (s.gpr .r3), p.sigLen⟩ ∧
+    (cacheR p s).Disjoint ⟨State.addr (stackArg s 0), scrLen p⟩ ∧ (belowA s.sp D).Disjoint (cacheR p s) ∧
+    (stackArg s 1).toNat + cacheLen p ≤ 2 ^ 32 ∧
+    CachedSecretPolys p s.mem (State.addr (stackArg s 1)) (bytesAt s.mem (State.addr (s.gpr .r0)) p.skLen)
+
+/-- `vg_mldsa*_sign_with_cache(sk = r0, mu = r1, rnd = r2, sig = r3, scratch = [sp],
+cache = [sp, #4]) -> r0`, with `D` bytes of stack, and the leakage `signLeak`. -/
 def signK (p : Params) (D : Nat) : Contract isa where
   pre s :=
     let sk : Region := ⟨State.addr (s.gpr .r0), p.skLen⟩
+    let mu : Region := ⟨State.addr (s.gpr .r1), 64⟩
+    let rnd : Region := ⟨State.addr (s.gpr .r2), 32⟩
+    let sig : Region := ⟨State.addr (s.gpr .r3), p.sigLen⟩
+    let scr : Region := ⟨State.addr (stackArg s 0), scrLen p⟩
+    let args : Region := ⟨stackArgAddr s 0, 8⟩
+    s.rd = sk :: mu :: rnd :: args :: cacheRd p s ∧ s.wr = [sig, scr] ∧
+    sk.Disjoint sig ∧ sk.Disjoint scr ∧ mu.Disjoint sig ∧ mu.Disjoint scr ∧ rnd.Disjoint sig ∧
+    rnd.Disjoint scr ∧ sig.Disjoint scr ∧ sig.Disjoint args ∧ scr.Disjoint args ∧
+    (belowA s.sp D).Disjoint sk ∧ (belowA s.sp D).Disjoint mu ∧ (belowA s.sp D).Disjoint rnd ∧
+    (belowA s.sp D).Disjoint sig ∧ (belowA s.sp D).Disjoint scr ∧
+    (s.gpr .r0).toNat + p.skLen ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 64 ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + 32 ≤ 2 ^ 32 ∧
+    (s.gpr .r3).toNat + p.sigLen ≤ 2 ^ 32 ∧ (stackArg s 0).toNat + scrLen p ≤ 2 ^ 32 ∧ D ≤ s.sp.toNat ∧
+    s.sp.toNat + 8 ≤ 2 ^ 32 ∧ CachePre p D s
+  post s s' :=
+    Outcome (fun b => signMu p b (bytesAt s.mem (State.addr (s.gpr .r0)) p.skLen)
+      (bytesAt s.mem (State.addr (s.gpr .r1)) 64) (bytesAt s.mem (State.addr (s.gpr .r2)) 32)) (s'.gpr .r0)
+      (bytesAt s'.mem (State.addr (s.gpr .r3)) p.sigLen)
+  pub s₁ s₂ := s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
+    s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ s₁.sp = s₂.sp ∧
+    signLeak p (bytesAt s₁.mem (State.addr (s₁.gpr .r0)) p.skLen) (bytesAt s₁.mem (State.addr (s₁.gpr .r1)) 64)
+        (bytesAt s₁.mem (State.addr (s₁.gpr .r2)) 32) =
+      signLeak p (bytesAt s₂.mem (State.addr (s₂.gpr .r0)) p.skLen) (bytesAt s₂.mem (State.addr (s₂.gpr .r1)) 64)
+        (bytesAt s₂.mem (State.addr (s₂.gpr .r2)) 32) ∧
+    stackArg s₁ 1 = stackArg s₂ 1
+
+/-! ## The contract of the entries -/
+
+/-- The value of `cache` an entry passes. -/
+def cacheV (p : Params) (prepared : Bool) (sk : BitVec 32) : BitVec 32 :=
+  if prepared then sk + BitVec.ofNat 32 p.skLen else 0
+
+/-- `vg_mldsa*_sign` or `vg_mldsa*_sign_prepared` (`sk = r0, mu = r1, rnd = r2,
+sig = r3, scratch = [sp]) -> r0`, with `D` bytes of stack: `signK` with a
+key of `keyLen` bytes satisfying `KeyOk`, and no `cache`. -/
+def signE (p : Params) (prepared : Bool) (D : Nat) : Contract isa where
+  pre s :=
+    let sk : Region := ⟨State.addr (s.gpr .r0), secretKeyLen p prepared⟩
     let mu : Region := ⟨State.addr (s.gpr .r1), 64⟩
     let rnd : Region := ⟨State.addr (s.gpr .r2), 32⟩
     let sig : Region := ⟨State.addr (s.gpr .r3), p.sigLen⟩
@@ -51,18 +105,24 @@ def signK (p : Params) (D : Nat) : Contract isa where
     rnd.Disjoint scr ∧ sig.Disjoint scr ∧ sig.Disjoint args ∧ scr.Disjoint args ∧
     (belowA s.sp D).Disjoint sk ∧ (belowA s.sp D).Disjoint mu ∧ (belowA s.sp D).Disjoint rnd ∧
     (belowA s.sp D).Disjoint sig ∧ (belowA s.sp D).Disjoint scr ∧
-    (s.gpr .r0).toNat + p.skLen ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 64 ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + 32 ≤ 2 ^ 32 ∧
-    (s.gpr .r3).toNat + p.sigLen ≤ 2 ^ 32 ∧ (stackArg s 0).toNat + scrLen p ≤ 2 ^ 32 ∧ D ≤ s.sp.toNat
-  post s s' :=
-    Outcome (fun b => signMu p b (bytesAt s.mem (State.addr (s.gpr .r0)) p.skLen)
-      (bytesAt s.mem (State.addr (s.gpr .r1)) 64) (bytesAt s.mem (State.addr (s.gpr .r2)) 32)) (s'.gpr .r0)
-      (bytesAt s'.mem (State.addr (s.gpr .r3)) p.sigLen)
+    (s.gpr .r0).toNat + secretKeyLen p prepared ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 64 ≤ 2 ^ 32 ∧
+    (s.gpr .r2).toNat + 32 ≤ 2 ^ 32 ∧
+    (s.gpr .r3).toNat + p.sigLen ≤ 2 ^ 32 ∧ (stackArg s 0).toNat + scrLen p ≤ 2 ^ 32 ∧ D ≤ s.sp.toNat ∧
+    s.sp.toNat + 4 ≤ 2 ^ 32 ∧ SecretKeyOk p prepared s.mem (State.addr (s.gpr .r0))
+  post := (signK p D).post
   pub s₁ s₂ := s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
     s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ s₁.sp = s₂.sp ∧
     signLeak p (bytesAt s₁.mem (State.addr (s₁.gpr .r0)) p.skLen) (bytesAt s₁.mem (State.addr (s₁.gpr .r1)) 64)
         (bytesAt s₁.mem (State.addr (s₁.gpr .r2)) 32) =
       signLeak p (bytesAt s₂.mem (State.addr (s₂.gpr .r0)) p.skLen) (bytesAt s₂.mem (State.addr (s₂.gpr .r1)) 64)
         (bytesAt s₂.mem (State.addr (s₂.gpr .r2)) 32)
+
+/-- The stack an entry uses: its frames (16 bytes), and the kernel's (28, `signStack`). -/
+abbrev entryStack : Nat := 44
+
+theorem secretKeyLen_ge (p : Params) (prepared : Bool) : p.skLen + (if prepared then cacheLen p else 0) ≤
+    secretKeyLen p prepared := by
+  cases prepared <;> simp [secretKeyLen, preparedSecretKeyBytes, cacheLen, n] <;> omega
 
 /-! ## The layout -/
 
@@ -75,6 +135,7 @@ abbrev sgB (p : Params) : List (Reg × Nat) := sgR p ++ sgW p
 /-- The pointer the function keeps in each register of `bases`, from its entry state. -/
 def ptrOf (σ : State) : Reg → BitVec 32
   | .r7 => stackArg σ 0
+  | .r9 => stackArg σ 1
   | .r4 => σ.gpr .r0
   | .r5 => σ.gpr .r1
   | .r6 => σ.gpr .r2
@@ -99,7 +160,7 @@ include hp
 
 theorem sgLay (hsz : scrLen p < 2 ^ 32 ∧ p.skLen < 2 ^ 32 ∧ p.sigLen < 2 ^ 32) {s : State}
     (h : Top σ s) : Lay D (sgR p) (sgW p) s := by
-  obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, -, -, k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, hsp⟩ := hp
+  obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, -, -, k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, hsp, -⟩ := hp
   have e7 : s.gpr .r7 = stackArg σ 0 := h.regs .r7 (by decide)
   have e4 : s.gpr .r4 = σ.gpr .r0 := h.regs .r4 (by decide)
   have e5 : s.gpr .r5 = σ.gpr .r1 := h.regs .r5 (by decide)
@@ -172,8 +233,17 @@ theorem pro_eq : pro = ([.ldrSp .r12 0] : List Instr) ++ Impl.MlKem.Arm.saveRegs
 theorem scrLen_ge (p : Params) : 5120 ≤ scrLen p := by
   unfold scrLen scratchWords; omega_arith
 
-theorem pro_ok {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ) :
-    WP isa (.block pro) σ fun s => Top σ s ∧ Frame [⟨State.addr (stackArg σ 0), scrLen p⟩] σ.mem s.mem ∧
+/-- `Top` but for `r9`, which the prologue loads last. -/
+structure Top0 (σ s : State) : Prop where
+  rd : s.rd = σ.rd
+  wr : s.wr = σ.wr
+  sp : s.sp = σ.sp
+  regs : ∀ r ∈ bases, r ≠ .r9 → s.gpr r = ptrOf σ r
+  saved : Saved s.mem (pa s (sc oSV)) σ.gpr
+  savlr : s.mem.readW (pa s (sc (oSV + 32))) 32 = σ.gpr .lr
+
+theorem pro0_ok {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ) :
+    WP isa (.block pro) σ fun s => Top0 σ s ∧ Frame [⟨State.addr (stackArg σ 0), scrLen p⟩] σ.mem s.mem ∧
       s.gpr .r11 = 1 := by
   have hp' := hp
   obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, n5, -⟩ := hp'
@@ -204,10 +274,11 @@ theorem pro_ok {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ) :
   have g : ∀ r, r ≠ .r12 → s₂.gpr r = σ.gpr r := fun r hr' => by rw [h₂.gpr, hr r hr']
   have hne : ∀ i < 8, Impl.MlKem.Arm.savedRegs.getD i Reg.r4 ≠ Reg.r12 := by decide
   rw [e872]
-  refine ⟨⟨by simp [h₂.rd, hrd₁], by simp [h₂.wr, hwr₁], by simp [h₂.sp, hsp₁], fun r hr => ?_, fun i hi => ?_, ?_⟩,
+  refine ⟨⟨by simp [h₂.rd, hrd₁], by simp [h₂.wr, hwr₁], by simp [h₂.sp, hsp₁], fun r hr h9 => ?_, fun i hi => ?_, ?_⟩,
     ?_, trivial⟩
   · simp only [bases, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [ptrOf, g12, g]
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+    all_goals first | exact absurd rfl h9 | simp [ptrOf, g12, g]
   · simp only [pa, ite_true, ite_false, reduceCtorEq, g12]
     rw [BitVec.add_assoc, ← BitVec.ofNat_add, Mem.readW_writeW_sep (Offset.sep _ (by simp only [oSV]; omega_arith)
       (by omega_arith) (by omega_arith)) (by decide)]
@@ -222,6 +293,39 @@ theorem pro_ok {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ) :
       (Offset.contains_base _ (by omega_arith) (by omega_arith))
     simp only [List.mem_singleton] at hr; subst hr
     exact Offset.sub_base _ (by omega_arith)
+
+theorem pro_ok {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ) :
+    WP isa (.block (pro ++ ([.ldrSp .r9 4] : List Instr))) σ fun s => Top σ s ∧
+      Frame [⟨State.addr (stackArg σ 0), scrLen p⟩] σ.mem s.mem ∧ s.gpr .r11 = 1 := by
+  have hp' := hp
+  obtain ⟨hrd, -, -, -, -, -, -, -, -, -, ha, -, -, -, -, -, -, -, -, -, -, -, h8, -⟩ := hp'
+  rw [WP.block_append_iff]
+  refine WP.mono (pro0_ok hp) fun s₁ ⟨h₁, hf₁, h11⟩ => ?_
+  have hA : InRegions (s₁.rd ++ s₁.wr) (State.addr (s₁.sp + BitVec.ofNat 32 4)) 4 :=
+    ⟨_, List.mem_append_left _ (by rw [h₁.rd, hrd]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _
+      (List.mem_cons_of_mem _ (List.mem_cons_self ..)))), by
+        rw [h₁.sp]; simp only [stackArgAddr, Region.Contains, Nat.mul_zero, show BitVec.ofNat 32 0 = 0 from rfl]
+        rw [addr_add (k := 4) (by omega)]; simp; have := (State.addr σ.sp).isLt; omega⟩
+  have h4 : (4 : Nat) < 4096 := by decide
+  have hl : WP isa (.block [.ldrSp .r9 4]) s₁ fun s => s.gpr .r9 = s₁.mem.readW (State.addr (s₁.sp + BitVec.ofNat 32 4)) 32 ∧
+      (∀ r, r ≠ .r9 → s.gpr r = s₁.gpr r) ∧ s.mem = s₁.mem ∧ s.rd = s₁.rd ∧ s.wr = s₁.wr ∧ s.sp = s₁.sp := by
+    run_block [hA, h4]
+    exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
+  refine WP.mono hl fun s ⟨g9, g, hm, hrd', hwr', hsp'⟩ => ?_
+  have e9 : s.gpr .r9 = stackArg σ 1 := by
+    rw [g9, h₁.sp, stackArg, stackArgAddr]
+    refine hf₁.readW (r := ⟨stackArgAddr σ 0, 8⟩) ?_ ?_ (by decide)
+    · simp only [stackArgAddr, Region.Contains, Nat.mul_zero, show BitVec.ofNat 32 0 = 0 from rfl]
+      rw [addr_add (k := 4) (by omega)]; simp; have := (State.addr σ.sp).isLt; omega
+    · intro r hr; rw [List.mem_singleton] at hr; subst hr; exact ha.symm
+  have epa : ∀ o, pa s (sc o) = pa s₁ (sc o) := fun o => by simp only [pa, g .r7 (by decide)]
+  refine ⟨⟨hrd'.trans h₁.rd, hwr'.trans h₁.wr, hsp'.trans h₁.sp, fun r hr => ?_, ?_, ?_⟩, by rw [hm]; exact hf₁,
+    by rw [g _ (by decide)]; exact h11⟩
+  · by_cases h9 : r = .r9
+    · subst h9; exact e9
+    · rw [g r h9]; exact h₁.regs r hr h9
+  · rw [hm, epa]; exact h₁.saved
+  · rw [hm, epa]; exact h₁.savlr
 
 /-! ## The return -/
 

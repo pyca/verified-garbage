@@ -29,19 +29,4 @@ def localContract : Contract isa where
   pub s t := s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧
     s.gpr .x2 = t.gpr .x2 ∧ s.gpr .x3 = t.gpr .x3 ∧ s.gpr .x4 = t.gpr .x4 ∧ s.sp = t.sp
 
-def satState : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 1 | .x2 => 0x2000 | .x3 => 1 | .x4 => 0x4000 | _ => 0
-  sp := 0x9000
-  c := false
-  v _ := 0
-  unknowns _ := 0
-  mem _ := 0
-  rd := [⟨0x1000, 1⟩]
-  wr := [⟨0x2000, 1⟩, ⟨0x4000, 16384⟩]
-
-theorem contract_implies : localContract.Implies (Proof.Argon2.hPrimeContract AArch64.abi 16) := by
-  sig_implies [Proof.Argon2.hPrimeContract, Proof.Argon2.hPrimeSig, localContract,
-    inputR, outputR, workR, stackR, below, AArch64.abi, AArch64.argRegs] [satState] using satState
-
 end VG.Proof.Argon2.AArch64.HPrime

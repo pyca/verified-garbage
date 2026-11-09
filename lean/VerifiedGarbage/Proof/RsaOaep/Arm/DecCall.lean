@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecBase
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.PrivCall
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Rsa.Arm.PrivVerified
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
@@ -10,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.RsaPss.Arm.Step
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # RSAES-OAEP decryption on ARMv7: the call of `vg_rsa_private_checked`
@@ -73,23 +75,23 @@ abbrev Res (H G : Spec.Mgf1.Hash) (P : EP) (σ : State) (m : Mem) (r : BitVec 32
 abbrev Fin (H G : Spec.Mgf1.Hash) (P : EP) (σ s : State) : Prop := S P σ s ∧ Res H G P σ s.mem (s.gpr .r0)
 
 /-- The arguments' places are immediates. -/
-theorem arg_lt {j : Nat} (hj : j < 23) : arg j < 4096 := by
+theorem arg_lt {j : Nat} (hj : j < 25) : arg j < 4096 := by
   unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega
 
 /-- An argument: its place, readable, and its value. -/
-theorem argAt {P : EP} {σ s : State} (hi : In P σ) (hs : P.lay.St σ s) {j : Nat} (hj : j < 23) :
+theorem argAt {P : EP} {σ s : State} (hi : In P σ) (hs : P.lay.St σ s) {j : Nat} (hj : j < 25) :
     State.addr (P.B + BitVec.ofNat 32 (arg j)) = P.lay.fr (arg j) ∧
     InRegions (s.rd ++ s.wr) (P.lay.fr (arg j)) 4 ∧
     s.mem.readW (P.lay.fr (arg j)) 32 = P.argv.getD j 0 := by
   have hl : j < P.lay.argv.length := by simp only [EP.argv, List.length_cons, List.length_nil]; omega
   exact ⟨hi.ok.addrB (by
-      show arg j < frameBytes + 56 + 76; unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega),
+      show arg j < frameBytes + 56 + 84; unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega),
     by rw [hs.rd, hs.wr]; exact hi.ok.arg_read hl, hs.arg hl⟩
 
 /-- A slot, written with `r12 = sp`. -/
 theorem slotAt {P : EP} {σ : State} (hi : In P σ) {d : Nat} (hd : d + 4 ≤ frameBytes) :
     State.addr (P.B + BitVec.ofNat 32 d) = P.lay.fr d :=
-  hi.ok.addrB (by show d < frameBytes + 56 + 76; unfold frameBytes at hd ⊢; omega)
+  hi.ok.addrB (by show d < frameBytes + 56 + 84; unfold frameBytes at hd ⊢; omega)
 
 /-! ## `scratch` to its slot -/
 
@@ -277,7 +279,7 @@ theorem call_geo {P : EP} {σ : State} (hi : In P σ) :
       (by unfold oRsa; omega)
 
 theorem call_pre {P : EP} {σ s : State} (hr : R1 P σ s) :
-    (Spec.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
+    (Proof.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
       (s.callEntry.withRegions (privRd P.B P.n P.e P.ct P.p P.q P.dp P.dq P.qinv P.K P.el P.pl P.ql)
         (privWr (P.scr + BitVec.ofNat 32 oEm) (P.scr + BitVec.ofNat 32 oRsa) P.K (P.scl - 1024))) := by
   obtain ⟨hc, hi, pa⟩ := hr

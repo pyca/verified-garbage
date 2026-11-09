@@ -60,8 +60,18 @@ theorem ldrSp_one {s u : State} {a : List Leak} (h : execBlock isa [.ldrSp .r12 
       simp [State.setReg, stackArg, stackArgAddr]
     · cases hs
 
+/-- A load from the stack leaks only its address. -/
+theorem ldrSp_leak {r : Reg} {off : Nat} {s u : State} {a : List Leak}
+    (h : execBlock isa [.ldrSp r off] s = some (u, a)) :
+    a = [Leak.addr (State.addr (s.sp + BitVec.ofNat 32 off))] := by
+  simp only [execBlock] at h
+  split at h
+  · cases h
+  · simp only [Option.map_some, Option.some.injEq, Prod.mk.injEq, List.append_nil] at h
+    exact h.2.symm
+
 /-- The prologue leaks only the stack pointer and the pointer to `scratch` it loads. -/
-theorem pro_tr {P : State → State → Prop} (hP : ∀ x y, P x y → x.sp = y.sp ∧ stackArg x 0 = stackArg y 0) :
+theorem pro0_tr {P : State → State → Prop} (hP : ∀ x y, P x y → x.sp = y.sp ∧ stackArg x 0 = stackArg y 0) :
     RelCT isa P (.block pro) fun _ _ => True := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   obtain ⟨hsp, harg⟩ := hP _ _ hp
@@ -77,6 +87,22 @@ theorem pro_tr {P : State → State → Prop} (hP : ∀ x y, P x y → x.sp = y.
   rw [← k₁.2, ← k₂.2, ea₁, ea₂, hsp, execBlock_tr (rs := [.r12]) (by decide) (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; rw [r₁, r₂, harg]) f₁ f₂]
 
+/-- The prologue and the load of `cache` leak only the stack pointer and the
+pointer to `scratch`. -/
+theorem pro_tr {P : State → State → Prop} (hP : ∀ x y, P x y → x.sp = y.sp ∧ stackArg x 0 = stackArg y 0) :
+    RelCT isa P (.block (pro ++ ([.ldrSp .r9 4] : List Instr))) fun _ _ => True := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  rw [Exec.block_iff, execBlock_append] at e₁ e₂
+  obtain ⟨⟨u₁, a₁⟩, h₁, g₁⟩ := Option.bind_eq_some_iff.mp e₁
+  obtain ⟨⟨u₂, a₂⟩, h₂, g₂⟩ := Option.bind_eq_some_iff.mp e₂
+  obtain ⟨⟨v₁, b₁⟩, f₁, k₁⟩ := Option.map_eq_some_iff.mp g₁
+  obtain ⟨⟨v₂, b₂⟩, f₂, k₂⟩ := Option.map_eq_some_iff.mp g₂
+  simp only [Prod.mk.injEq] at k₁ k₂
+  have ea := (pro0_tr hP _ _ _ _ _ _ hp (Exec.block h₁) (Exec.block h₂)).1
+  refine ⟨?_, trivial⟩
+  rw [← k₁.2, ← k₂.2, ea, ldrSp_leak f₁, ldrSp_leak f₂, (execBlock_regions h₁).2.2.1,
+    (execBlock_regions h₂).2.2.1, (hP _ _ hp).1]
+
 section
 variable {p : Params} {D : Nat}
 
@@ -84,7 +110,7 @@ variable {p : Params} {D : Nat}
 theorem pub_leq {σ₁ σ₂ : State} (hpub : (signK p D).pub σ₁ σ₂)
     (hA₁ : expandA p maxBounds (rhoOf p σ₁) = some (amat p (Am p σ₁)))
     (hA₂ : expandA p maxBounds (rhoOf p σ₂) = some (amat p (Am p σ₂))) : LeakEq p 0 σ₁ σ₂ := by
-  have e := hpub.2.2.2.2.2.2
+  have e := hpub.2.2.2.2.2.2.1
   rw [signLeak_eq hA₁, signLeak_eq hA₂] at e
   have hρ : (skOf p σ₁).take 32 = (skOf p σ₂).take 32 := pub_rho hpub
   rw [hρ] at e
@@ -95,7 +121,7 @@ theorem rr_rs {I E : State → State → Prop} {x y : State} (h : RR p D I E x y
   exact ⟨σ₁, σ₂, p₁, p₂, hpub, trivial, i₁, i₂⟩
 
 theorem sign_ct {P : Prims} (hP : PrimsOk P D) (h3 : Ok3 p) :
-    ConstantTime isa (signK p D).pre (signK p D).pub (Impl.MlDsa.Arm.Sign.sign P p) := by
+    ConstantTime isa (signK p D).pre (signK p D).pub (Impl.MlDsa.Arm.Sign.withCache P p) := by
   have hc := allChk_ok h3
   simp only [allChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨ha, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, hf⟩ := hc
@@ -103,7 +129,7 @@ theorem sign_ct {P : Prims} (hP : PrimsOk P D) (h3 : Ok3 p) :
   simp only [fChk, Bool.and_eq_true, decide_eq_true_eq] at hf'
   obtain ⟨⟨⟨⟨⟨⟨⟨st0, fa0⟩, -⟩, -⟩, -⟩, -⟩, -⟩, hsz⟩ := hf'
   refine relStart (Q := fun _ _ => True) ?_
-  unfold Impl.MlDsa.Arm.Sign.sign
+  unfold Impl.MlDsa.Arm.Sign.withCache
   refine RelCT.seq (RelCT.mono (relInvE (J := fun σ s => St p D σ s ∧ s.gpr .r11 = 1) (E := fun _ _ => True)
     (fun σ s hp hs => by
       subst hs

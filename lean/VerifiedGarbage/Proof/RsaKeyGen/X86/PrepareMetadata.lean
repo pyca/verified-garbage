@@ -32,10 +32,4 @@ theorem metadata32 {g : Geometry} (v : g.Valid) {m m' : Mem}
   apply W.read32 (by have := v.headerFit; unfold protectedHeader at safe; omega)
   exact fun _ mem => ranges_apart safe mem
 
-theorem metadata64 {g : Geometry} (v : g.Valid) {m m' : Mem}
-    (W : WorkspaceFrame g (ranges g) m m') {d : Nat} (safe : protectedHeader d 8) :
-    m'.readW (off g.W d) 64 = m.readW (off g.W d) 64 := by
-  apply W.read64 (by have := v.headerFit; unfold protectedHeader at safe; omega)
-  exact fun _ mem => ranges_apart safe mem
-
 end VG.Proof.RsaKeyGen.X86.Prepare

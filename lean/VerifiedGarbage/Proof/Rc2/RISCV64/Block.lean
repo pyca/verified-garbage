@@ -171,40 +171,4 @@ theorem block_ok (d : Spec.Rc2.Direction) (hw : writesOnly blockRegs (blockCode 
   obtain ⟨t, s', he, hp, hk⟩ := WP.keep blockRegs (block_wp d s hs) hw hn
   exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by decide), hp⟩
 
-theorem block_agree (d : Spec.Rc2.Direction) : ∀ s₁ s₂, (blockC d).pre s₁ → (blockC d).pre s₂ →
-    (blockC d).pub s₁ s₂ → taint.Agree (Taint.ofRegs [.a0, .a1, .a2]) s₁ s₂ := by
-  intro s₁ s₂ _ _ h
-  refine ⟨h.2.2.2, fun r hr => ?_⟩
-  simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact h.1
-  · exact h.2.1
-  · exact h.2.2.1
-
-theorem encrypt_ct : ConstantTime isa (blockC .encrypt).pre (blockC .encrypt).pub encryptBlock :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2]) (block_agree .encrypt) (by taint_decide)
-
-theorem decrypt_ct : ConstantTime isa (blockC .decrypt).pre (blockC .decrypt).pub decryptBlock :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2]) (block_agree .decrypt) (by taint_decide)
-
-def blockSat : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 0x2000 | .a2 => 0x3000 | _ => 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 8⟩, ⟨0x3000, 256⟩]
-
-theorem encrypt_verified : Verified RISCV64.target encryptBlock (Proof.Rc2.encryptBlockContract RISCV64.abi) := by
-  refine Verified.of_correct (k := blockC .encrypt) (block_ok .encrypt (by lit_decide) (by lit_decide))
-    encrypt_ct ?_
-  sig_implies [Proof.Rc2.encryptBlockContract, Proof.Rc2.blockSig, RISCV64.abi, RISCV64.argRegs, blockC, cipher]
-    [blockSat] using blockSat
-
-theorem decrypt_verified : Verified RISCV64.target decryptBlock (Proof.Rc2.decryptBlockContract RISCV64.abi) := by
-  refine Verified.of_correct (k := blockC .decrypt) (block_ok .decrypt (by lit_decide) (by lit_decide))
-    decrypt_ct ?_
-  sig_implies [Proof.Rc2.decryptBlockContract, Proof.Rc2.blockSig, RISCV64.abi, RISCV64.argRegs, blockC, cipher]
-    [blockSat] using blockSat
-
 end VG.Proof.Rc2.RISCV64

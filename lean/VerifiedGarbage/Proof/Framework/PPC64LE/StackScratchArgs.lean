@@ -816,12 +816,6 @@ theorem Verified.stackScratchArgs {c : Prog isa}
       hct _ _ _ _ _ _ (narrowA_pre hk hl hb hpre h₁) (narrowA_pre hk hl hb hpre h₂)
         (narrowA_pub hk hl hb h₁ h₂ hp hleak) f₁ f₂]
 
-/-- `withStackScratchArgs`'s code satisfies `spSafe` (no modelled instruction
-writes `r1`). -/
-theorem withStackScratchArgs_spSafe (bytes m : Nat) (c : Prog isa) :
-    (withStackScratchArgs bytes m c).all (fun i => !isa.writesSp i) = true :=
-  Code.all_of_forall (fun _ => rfl) _
-
 end
 
 end VG.PPC64LE

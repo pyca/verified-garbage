@@ -242,12 +242,6 @@ theorem pw_in {r : Region} (hr : InBuf L r) : L.PW.Disjoint r := by
   rcases hR with rfl | rfl | rfl | rfl
   exacts [h.pb.sub_right hs, h.pv.sub_right hs, h.pc.sub_right hs, h.po.sub_right hs]
 
-/-- So does the salt. -/
-theorem salt_in {r : Region} (hr : InBuf L r) : L.SALT.Disjoint r := by
-  obtain ⟨R, hR, hs⟩ := hr.sub
-  rcases hR with rfl | rfl | rfl | rfl
-  exacts [h.sb.sub_right hs, h.sv.sub_right hs, h.sc.sub_right hs, h.so.sub_right hs]
-
 theorem slen17 : 17 ≤ L.slen.toNat := by have := h.slen; have := h.rpos; omega_arith
 
 /-- The save area is in `scratch`. -/
@@ -386,11 +380,6 @@ open VG.Proof.Scrypt.Memory (toNat_ofNat_lt toNat_add_ofNat)
 
 /-! ## Arithmetic -/
 
-theorem toNat_le_of_disjoint {R S : Region} (h : R.Disjoint S) (hS : 0 < S.len) : R.len < 2 ^ 64 := by
-  refine Nat.lt_of_not_le fun hR => h S.base ?_ ?_
-  · simp only [Region.Contains]; have := (S.base - R.base).isLt; omega_arith
-  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
-
 theorem lsl7 (x : BitVec 32) : x <<< 7 = BitVec.ofNat 32 (x.toNat * 128) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
@@ -446,8 +435,6 @@ theorem rd_off {P : Addr} {m : Mem} {x y : Nat} {v : BitVec 32} (h : x + 4 ≤ y
     (m.writeW (P + BitVec.ofNat 64 y) v).readW (P + BitVec.ofNat 64 x) 32 =
       m.readW (P + BitVec.ofNat 64 x) 32 :=
   Mem.readW_writeW_sep (Offset.sep P h (by omega_arith) (by omega_arith)) (by decide)
-
-theorem z32 : BitVec.ofNat 32 0 = 0 := rfl
 
 theorem enc1 : encodable (1 : BitVec 32) = true := by decide
 theorem enc2 : encodable (2 : BitVec 32) = true := by decide
@@ -1009,9 +996,6 @@ theorem a16 (hL : L.Ok) :
 theorem a40 (hL : L.Ok) :
     State.addr (L.sp - BitVec.ofNat 32 16) - BitVec.ofNat 64 24 = State.addr L.sp - BitVec.ofNat 64 40 := by
   rw [addr_sub' (by have := hL.nS; omega_arith), BitVec.sub_sub, BitVec.ofNat_add_ofNat]
-
-theorem toNat_Q (hL : L.Ok) : (State.addr L.sp - BitVec.ofNat 64 40).toNat = L.sp.toNat - 40 := by
-  rw [← addr_sub' hL.nS, toNat_addr, sub_toNat' hL.nS]
 
 /-- Our frames' words and the callee's stack are in `STK`, apart. -/
 theorem args16_sub (hL : L.Ok) : Region.Sub ⟨State.addr (L.sp - BitVec.ofNat 32 16), 16⟩ L.STK := by

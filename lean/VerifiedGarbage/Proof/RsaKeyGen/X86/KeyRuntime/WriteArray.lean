@@ -30,7 +30,7 @@ open VG.Proof.RsaKeyGen.X86.Key (Environment)
 open VG.Proof.RsaKeyGen.X86.KeyArgs (Context argsRegion)
 open VG.Proof.Bignum.X86 (byteAddr)
 
-/-- `Key.writeArray_ok` with the pointer and length from arguments `pointer` and `length`. -/
+/-- `writeArray j pointer length`, with the pointer and length from arguments `pointer` and `length`. -/
 theorem writeArray_ok {E : Environment} {sp : BitVec 32} {s : State} {j pointer length len : Nat}
     {p : BitVec 32} (valid : E.Valid) (h : VG.Proof.Rsa.X86.Keys.Ws s E.base E.size E.n 32)
     (C : Context E.base E.size sp E.argument s) (hj : j < 32) (nonzero : j ≠ aZero)

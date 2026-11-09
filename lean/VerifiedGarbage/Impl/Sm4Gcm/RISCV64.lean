@@ -20,7 +20,7 @@ hash subkey, are AES-GCM's functions themselves.
 * SM4's counter mode and key expansion are calls of the verified
   `vg_sm4_ctr32` (`schedule = a0, counter = a1, data = a2, n = a3`) and
   `vg_sm4_expand_key` (`key = a0, schedule = a1`), each with its working
-  space in a frame of its own below the stack pointer (3232 and 3168 bytes),
+  space in a frame of its own below the stack pointer (3248 and 3168 bytes),
   so they need no part of `W`. They preserve the callee-saved registers, as
   `vg_ghash` does.
 * There is no number of rounds: the arguments of every function but

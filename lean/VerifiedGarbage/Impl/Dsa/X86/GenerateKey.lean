@@ -39,17 +39,11 @@ def sampledWith (derive : Prog isa) : Prog isa :=
         (.seq derive (.block [.store (sp oStatus) .eax])))
       (.block []))
 
-def sampled (derive : String) (deriveKey : Prog isa) : Prog isa :=
-  sampledWith (.call derive deriveKey)
-
 def generateWith (derive : Prog isa) : Prog isa :=
   .seq prepare
     (.seq (.block [.alu .cmp .eax (.imm 0)])
       (.ite .e (.block [.store (sp oStatus) .eax])
         (.seq sample (sampledWith derive))))
-
-def generate (derive : String) (deriveKey : Prog isa) : Prog isa :=
-  generateWith (.call derive deriveKey)
 
 def zeroOut : Prog isa :=
   .seq (.block [.mov .esi (.mem (arg aOut)), .mov .ecx (.mem (arg aOutLen)), .mov .eax (.imm 0)])
@@ -72,13 +66,7 @@ def bodyWith (check derive : Prog isa) : Prog isa :=
       (.seq (.block [.alu .cmp .eax (.imm 0)])
         (.seq (.ite .e (.block []) (generateWith derive)) finish)))
 
-def body (check derive : String) (checkParameters deriveKey : Prog isa) : Prog isa :=
-  bodyWith (.call check checkParameters) (.call derive deriveKey)
-
 def codeWith (check derive : Prog isa) : Prog isa :=
   .frame (.alloc frameBytes) (bodyWith check derive) (.free frameBytes)
-
-def code (check derive : String) (checkParameters deriveKey : Prog isa) : Prog isa :=
-  codeWith (.call check checkParameters) (.call derive deriveKey)
 
 end VG.Impl.Dsa.X86.GenerateKey

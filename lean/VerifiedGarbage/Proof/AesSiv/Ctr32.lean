@@ -83,15 +83,6 @@ theorem ctr32_ctrPart {m m' : Mem} {K C D : Addr} {R : Nat} {q : List Byte} {k :
   rw [ctr32_bytes hd]
   exact xorKs_ctrPart (fun c hc => Proof.Cmac.aesWith_bytes _ _ hc) hinc (Proof.Cmac.bytesAt_length _ _ _)
 
-/-- CTR's output with the first `a` bytes done, on the first `a` bytes of
-`a + b`: those of CTR's output on all of them. -/
-theorem ctrPart_take (ciph : Cmac.Cipher) (q : List Byte) {x : List Byte} {a : Nat} (ha : a ≤ x.length) :
-    ctrPart ciph q (x.take a) a = (ctrPart ciph q x a).take a := by
-  refine ext_getD (by simp only [length_ctrPart, List.length_take]) fun p hp => ?_
-  simp only [length_ctrPart, List.length_take] at hp
-  rw [getD_ctrPart _ _ _ _ (by simp only [List.length_take]; omega), getD_take (by omega), getD_take (by omega),
-    getD_ctrPart _ _ _ _ (by omega)]
-
 /-- The counter `Q`'s last 32 bits, as a big-endian integer, are below `2³¹`. -/
 theorem counter_low (v : List Byte) : Siv.beNat (Siv.counter v) % 2 ^ 32 < 2 ^ 31 := by
   have e : Siv.counter v = ((List.range 12).map fun i => if i = 8 then v.getD i 0 &&& 0x7f else v.getD i 0) ++

@@ -8,9 +8,9 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: correctness
 
-The frames' pushes, `EM` (`setup`, `psLoop`, `sep`, `msgCopy`), the call
-(`callArgs`, `pub_call`), the mask (`maskArgs`, `maskLoop`) and the pops:
-`enc_ok`, for every implementation of `vg_rsa_public_checked`.
+Pieces of the proof of correctness: the state after `setup`
+(`setup_inv`), the mask from the state after the call (`maskArgs_inv`), the
+postcondition from the bytes the mask left (`result_ok`), and the pops.
 -/
 
 @[expose] public section
@@ -109,48 +109,5 @@ theorem freed_mem (n : Nat) (s : State) : (freed n s).mem = s.mem := rfl
 theorem freed_sp (n : Nat) (s : State) : (freed n s).sp = s.sp + BitVec.ofNat 64 n := rfl
 theorem freed_v (n : Nat) (s : State) : (freed n s).v = s.v := rfl
 theorem freed_gpr (n : Nat) (s : State) : (freed n s).gpr = s.gpr := rfl
-
-theorem body_eq (n : String) (c : Prog isa) :
-    body n c = .seq (.block setup) (.seq psLoop (.seq (.block sep) (.seq msgCopy (.seq (.block callArgs)
-      (.seq (.call n c) (.seq (.block maskArgs) maskLoop)))))) := rfl
-
-/-- `vg_rsa_pkcs1_encrypt` meets `encK` and the calling convention. -/
-theorem enc_ok (v : PubImpl) {s : State} (h : (encK (v.S + 1)).pre s) :
-    WP isa (code v.name v.code) s fun s' => abiPreserved s s' ∧ (encK (v.S + 1)).post s s' := by
-  have hL := lay_ok h
-  have hsp := h.1
-  refine WP.frame (by omega) (WP.alloc (by decide) ?_ ?_)
-  · show 1072 ≤ (s.sp - 16).toNat
-    rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega)]
-    show 1072 ≤ s.sp.toNat - 16
-    omega
-  · show WP isa (body v.name v.code) (entered s) _
-    rw [body_eq]
-    refine WP.seq (WP.mono (entry_ok h) fun t ⟨hc, hs⟩ => ?_)
-    refine WP.seq (WP.mono (psLoop_ok hL (setup_inv hc hs)) fun t₁ h₁ => ?_)
-    refine WP.seq (WP.mono (sep_inv hL ⟨rfl, rfl⟩ h₁) fun t₂ h₂ => ?_)
-    refine WP.seq (WP.mono (msgCopy_ok hL h₂) fun t₃ h₃ => ?_)
-    refine WP.seq (WP.mono (callArgs_inv hL (regsOf _ s) h₃) fun t₄ h₄ => ?_)
-    refine WP.seq (WP.mono (pub_call v hL rfl h₄) fun t₅ h₅ => ?_)
-    refine WP.seq (WP.mono (maskArgs_inv h₅.toCalledF) fun t₆ h₆ => ?_)
-    refine WP.mono (maskLoop_ok hL h₆) fun u hu => ?_
-    have hc := hu.ctx
-    have hsp' : (freed frameBytes u).sp = (lay (v.S + 1) s).Q + BitVec.ofNat 64 1072 := by rw [freed_sp, hc.sp]; rfl
-    refine ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, ?_⟩
-    · by_cases h30 : r = .x30
-      · subst r
-        rw [popped_gpr_self, freed_mem, hsp']; exact hc.kept.lr
-      · rw [popped_gpr_ne _ h30, freed_gpr]
-        exact hc.cs r hr h30
-    · rw [popped_sp, hsp']
-      show (lay (v.S + 1) s).Q + BitVec.ofNat 64 1072 + BitVec.ofNat 64 16 = s.sp
-      rw [add_add]; exact lay_Q _ s
-    · rw [popped_v, freed_v]
-      exact hc.vs r hr
-    · refine result_ok hL.mlk hL.plk (y := t₅.mem) (r := t₅.gpr .x0) h₅.out ?_ fun i hi => ?_
-      · rw [popped_gpr_ne _ (by decide), freed_gpr]
-        exact hu.x0
-      · rw [popped_mem, freed_mem]
-        exact hu.done i hi
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Enc

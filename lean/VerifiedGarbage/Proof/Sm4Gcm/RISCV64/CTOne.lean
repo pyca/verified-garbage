@@ -64,7 +64,7 @@ additional data (`Ad` in `W + aadO`, length in `s10`) and the data (`D` in
 `W + dataO`, length in `s11`). -/
 def OneI (c W sp : Addr) (Np : Addr) (n : Nat) (Ad A D Ln : BitVec 64) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = W + BitVec.ofNat 64 16 ∧ V .s0 = W ∧
-    (Big V sp ∧ (below sp 3232).Disjoint ⟨D, Ln.toNat⟩) ∧ V .s7 = BitVec.ofNat 64 n ∧ V .s10 = A ∧ V .s11 = Ln ∧ Env V sp s ∧
+    (Big V sp ∧ (below sp 3248).Disjoint ⟨D, Ln.toNat⟩) ∧ V .s7 = BitVec.ofNat 64 n ∧ V .s10 = A ∧ V .s11 = Ln ∧ Env V sp s ∧
     DataOk (W + BitVec.ofNat 64 16) W s Np n ∧ DataOk (W + BitVec.ofNat 64 16) W s Ad A.toNat ∧
     DataW c (W + BitVec.ofNat 64 16) W s D Ln.toNat ∧ s.mem.readW (W + BitVec.ofNat 64 aadO) 64 = Ad ∧
     s.mem.readW (W + BitVec.ofNat 64 dataO) 64 = D

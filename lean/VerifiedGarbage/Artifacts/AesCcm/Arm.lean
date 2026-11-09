@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # AES-CCM (NIST SP 800-38C) on ARMv7 -/
 
@@ -15,10 +16,10 @@ def artifacts : List Artifact := [
   Spec.Ccm.sealApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesCcm.Arm.«seal»
     stack := 2608
-    verified := seal_framed },
+    verified := Proof.AesCcm.seal_keyed seal_framed },
   Spec.Ccm.openApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesCcm.Arm.«open»
     stack := 2608
-    verified := open_framed }]
+    verified := Proof.AesCcm.open_keyed open_framed }]
 
 end VG.Artifacts.AesCcm.Arm

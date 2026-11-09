@@ -60,8 +60,6 @@ theorem sizes : (HH v).S = 96 ∧ (HH v).W = 104 ∧ (HH v).D = 32 ∧ (HH v).P.
   decide
 
 theorem sh_hash : (OK v).SH.H = Spec.Hmac.sha256 := rfl
-theorem stream_sh : (OK v).stream.SH = (OK v).SH := rfl
-
 /-! ## Regions of `scratch` -/
 
 variable {v}

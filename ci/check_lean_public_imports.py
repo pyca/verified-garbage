@@ -1347,7 +1347,7 @@ def reverse_closure(mod: str, users: dict[str, set[str]]) -> set[str]:
 
 # Directories of files reviewed by hand (CLAUDE.md, "Adding a primitive"),
 # which `--fix` never edits.
-REVIEWED = ("Artifacts", "Generic", "Variants")
+REVIEWED = ("Artifacts",)
 
 
 def insert_header_command(lines: list[str], command: str, after: int) -> None:

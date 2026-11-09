@@ -74,10 +74,6 @@ theorem codeWith_ct (rest : Prog isa) (hrest : RelCT isa (Two DRel) rest fun _ _
   · -- `rest`.
     exact two_map (fun p => p.d) (fun _ _ h => cl_rest h.1 h.2) hrest
 
-theorem code_ct (M : Mont)
-    (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) (fun _ _ => True)) : RelCT isa (Two CR) (Folded.code M.mm) fun _ _ => True :=
-  codeWith_ct (Folded.rest M.mm) (rest_ct M hfinal)
-
 /-- The code after the check of `e` is constant time, for valid `e`s, with any
 constant-time `rest`. -/
 theorem codeWith_constantTime (rest : Prog isa) (hrest : RelCT isa (Two DRel) rest fun _ _ => True) :

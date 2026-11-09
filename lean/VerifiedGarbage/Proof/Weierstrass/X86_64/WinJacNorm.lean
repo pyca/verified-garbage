@@ -475,10 +475,6 @@ theorem backJ_step (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
     rw [k6 hx hb hm'.1 hm'.2]
     exact I.same x hx hb fun j hj hj' => h3 j (by omega_using [hj]) hj'
 
-theorem fprog_flatMapJ (M : Mod) (l : List Nat) (g : Nat → List FOp) :
-    fprog M (l.flatMap g) = l.flatMap fun i => fprog M (g i) := by
-  simp only [fprog, List.flatMap_assoc]
-
 /-- The entries' `X` and `Y` by the square and the cube of their
 `Z^(p-2)`, from `c_16^(p-2)` in `E.x`. -/
 theorem backJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) {base : Addr}

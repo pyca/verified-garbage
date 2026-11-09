@@ -60,9 +60,6 @@ theorem loadComp_ok (h : RIn base bytes len args s) {j : Nat} (hj : j ≤ 19) {n
     (BitVec.eq_of_toNat_eq (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (args (i + 1)).isLt]))
     pos (by omega) (h.crt.fits i hi) (h.crt.readable i hi) (h.crt.apart i hi)
 
-/-- The wide slots 9 to 15. -/
-abbrev imR (len : Nat) : List (Nat × Nat) := [(lo len (.slot .wide 9), 7 * st len .wide)]
-
 /-- The key's components read into the wide slots 9 to 15. -/
 theorem importComponents_ok (h : RIn base bytes len args s) :
     WP isa importComponents s fun u =>

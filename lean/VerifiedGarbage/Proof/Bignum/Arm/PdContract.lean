@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Arm.ExportEncoding
 import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # ARMv7 precomputed public RSA satisfies the shared API contract -/
 
@@ -21,24 +22,24 @@ import VerifiedGarbage.Proof.Framework.Sig
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem pd_contract_correct (s : State) (h : (Spec.Rsa.publicPrecomputedCheckedContract abi 56).pre s) :
+theorem pd_contract_correct (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre s) :
     ∃ tr t, Exec isa PdFn.code s tr t ∧ abiPreserved s t ∧
-      (Spec.Rsa.publicPrecomputedCheckedContract abi 56).post s t := by
+      (Proof.Rsa.publicPrecomputedCheckedContract abi 56).post s t := by
   have input := pd_contract_pre s h
   obtain ⟨tr, t, run, preserved, post⟩ := pdFn_ok s input
   refine ⟨tr, t, run, preserved, ?_⟩
-  sig_post [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+  sig_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   rw [BitVec.setWidth_append_eq_right]
   intro nb length pre
   rw [pd_contract_length s h] at pre
   exact pdOutput_written input.minLength length pre post
 
-theorem pd_contract_ct : ConstantTime isa (Spec.Rsa.publicPrecomputedCheckedContract abi 56).pre
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 56).pub PdFn.code := by
+theorem pd_contract_ct : ConstantTime isa (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pub PdFn.code := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := pd_contract_pre s hs
   have it := pd_contract_pre t ht
-  sig_pub [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at hp
+  sig_pub [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at hp
   obtain ⟨sp, bytes, p0, p1, p2, p3, p4, p5, p6, _, p8, p9⟩ := hp
   rw [← p0, ← p1, ← p2, ← p4, ← p5, ← p6, ← p8, ← p9] at it
   rw [← p2, ← p3, ← p4, ← p5] at bytes

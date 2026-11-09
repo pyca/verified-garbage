@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.MlKem
+public import VerifiedGarbage.Spec.Zeroize
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
@@ -29,16 +30,17 @@ An implementation may bound `SampleNTT`'s loop, as Appendix B allows, by
 1 with the output of the (unbounded) algorithm of the standard, or 0, only
 if some `SampleNTT` does not finish within `minIterations` iterations
 (which happens with probability less than 2⁻²⁶¹ per `SampleNTT`, Table 4):
-its outputs are then unspecified, and the caller must destroy them with the
-other intermediate values and treat the operation as failed (Appendix B).
+its outputs are then unspecified, and the caller must destroy them and
+treat the operation as failed (Appendix B).
 See `Outcome`.
 
 Everything is secret but `ρ`, the seed of the matrix `Â`, which is part of
 the encapsulation key and so public: `SampleNTT`'s loop takes a number of
 iterations that depends on it. The functions may leak it (`Sig.contract`'s
 `leak`), and nothing else: in particular, not whether decapsulation
-rejected the ciphertext implicitly (§6.3). The working space `scratch`
-holds intermediate values on return, which the caller must destroy (§3.3).
+rejected the ciphertext implicitly (§6.3). On return each byte of the
+working space `scratch` is unchanged or zero (`Zeroize.scrubbed`), so that
+none of the intermediate values the function computed is left there (§3.3).
 It is 32 KiB: room for 28 polynomials of 32-bit coefficients (1 KiB each),
 the state of a Keccak computation and its working space.
 
@@ -80,14 +82,16 @@ def keyGenSig : Sig where
 
 /-- With the 64 bytes `d ‖ z` at `seed`: writes
 `ML-KEM.KeyGen_internal(d, z)` (Algorithm 16) of ML-KEM-768 to `ek` and
-`dk`, and returns 1; or returns 0 (see `Outcome`). May leak `ρ`, the seed
-of `Â` in the encapsulation key. -/
+`dk`, and returns 1; or returns 0 (see `Outcome`); and leaves each byte of
+`scratch` unchanged or zero. May leak `ρ`, the seed of `Â` in the
+encapsulation key. -/
 def keyGenContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   keyGenSig.contract A
-    (post := fun seed ek dk _scratch m m' r =>
+    (post := fun seed ek dk scratch m m' r =>
       Outcome (fun iters => keyGenInternal mlKem768 iters (bytesAt m seed 32)
           (bytesAt m (seed + 32) 32)) r
-        (bytesAt m' ek 1184, bytesAt m' dk 2400))
+        (bytesAt m' ek 1184, bytesAt m' dk 2400) ∧
+      Zeroize.scrubbed m m' scratch 32768)
     (writeArgs := true)
     (stack := stack)
     (leak := some fun seed _ek _dk _scratch m => leakRho (keyGenRho mlKem768 (bytesAt m seed 32)))
@@ -116,14 +120,16 @@ def encapsSig : Sig where
 /-- With the encapsulation key at `ek` and the 32 bytes of randomness at
 `m`: writes the shared secret key and the ciphertext of
 `ML-KEM.Encaps_internal(ek, m)` (Algorithm 17) of ML-KEM-768 to `key` and
-`ct`, and returns 1; or returns 0 (see `Outcome`). May leak `ρ`, the seed of
-`Â` in `ek`. (The contract holds for any `ek`; the standard requires it to
-have passed the check of §7.2.) -/
+`ct`, and returns 1; or returns 0 (see `Outcome`); and leaves each byte of
+`scratch` unchanged or zero. May leak `ρ`, the seed of `Â` in `ek`. (The
+contract holds for any `ek`; the standard requires it to have passed the
+check of §7.2.) -/
 def encapsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   encapsSig.contract A
-    (post := fun ek msg key ct _scratch m m' r =>
+    (post := fun ek msg key ct scratch m m' r =>
       Outcome (fun iters => encapsInternal mlKem768 iters (bytesAt m ek 1184) (bytesAt m msg 32)) r
-        (bytesAt m' key 32, bytesAt m' ct 1088))
+        (bytesAt m' key 32, bytesAt m' ct 1088) ∧
+      Zeroize.scrubbed m m' scratch 32768)
     (writeArgs := true)
     (stack := stack)
     (leak := some fun ek _msg _key _ct _scratch m => leakRho (ekRho mlKem768 (bytesAt m ek 1184)))
@@ -137,14 +143,16 @@ def decapsSig : Sig where
 
 /-- With the decapsulation key at `dk` and the ciphertext at `ct`: writes
 the shared secret key `ML-KEM.Decaps_internal(dk, c)` (Algorithm 18) of
-ML-KEM-768 to `key`, and returns 1; or returns 0 (see `Outcome`). May leak
-`ρ`, the seed of `Â` in the encapsulation key in `dk`, and nothing else: in
-particular, not whether the ciphertext was rejected implicitly. -/
+ML-KEM-768 to `key`, and returns 1; or returns 0 (see `Outcome`); and leaves
+each byte of `scratch` unchanged or zero. May leak `ρ`, the seed of `Â` in
+the encapsulation key in `dk`, and nothing else: in particular, not whether
+the ciphertext was rejected implicitly. -/
 def decapsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   decapsSig.contract A
-    (post := fun dk ct key _scratch m m' r =>
+    (post := fun dk ct key scratch m m' r =>
       Outcome (fun iters => decapsInternal mlKem768 iters (bytesAt m dk 2400) (bytesAt m ct 1088))
-        r (bytesAt m' key 32))
+        r (bytesAt m' key 32) ∧
+      Zeroize.scrubbed m m' scratch 32768)
     (writeArgs := true)
     (stack := stack)
     (leak := some fun dk _ct _key _scratch m => leakRho (dkRho mlKem768 (bytesAt m dk 2400)))
@@ -171,8 +179,7 @@ def outcomeDoc : String :=
 
 /-- What the documentation says of the working space. -/
 def scratchSafetyDoc : String :=
-  "`scratch` is working space: on return it holds intermediate values, which the caller must \
-    destroy (FIPS 203 §3.3)."
+  "`scratch` is working space: on return each of its bytes is unchanged or zero."
 
 /-- `vg_mlkem*_keygen` of the parameter set `p` on every target, with the
 signature `sig` and the contracts `contracts`, `keyGenContract` of the

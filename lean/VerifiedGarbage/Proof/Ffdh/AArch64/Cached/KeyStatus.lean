@@ -34,13 +34,4 @@ theorem keyStatus_scalar_rejected {a : Spec.Ffdh.Parameters} (valid : Spec.Ffdh.
  · split <;> simp_all
  · simp_all
 
-theorem keyStatus_success {a : Spec.Ffdh.Parameters} (valid : Spec.Ffdh.parametersValid a=true) (x : Nat) :
- Spec.Ffdh.keyStatus a x=1 ↔ 0<x ∧ x<Spec.Ffdh.scalarBound a ∧
-  1<Spec.Rsa.powMod a.g x a.p ∧ Spec.Rsa.powMod a.g x a.p<a.p-1 := by
- rw [keyStatus_ranges valid]
- split
- · split <;> simp_all
- · simp_all
-   omega
-
 end VG.Proof.Ffdh.AArch64.Cached

@@ -25,8 +25,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 # Ed448's complete operations on AArch64: each call in constant time
 
 The sponge's pieces (`zeroSt_ct`, `kabs_ct`, `kpad_ct`, `ksqz_ct`) and the
-calls of the Ed448 primitives (`reduce_ct`, `base_ct`, `mulAdd_ct`,
-`equation_ct`), related by `Two`: their arguments have values that agree in
+calls of the Ed448 primitives (`reduce_ct`, `base_ct`, `mulAdd_ct`), related by `Two`: their arguments have values that agree in
 both runs (`val`, or the sponge's positions), which are the callee's public
 data, and each run has the effect its correctness lemma gives (`hok`).
 -/
@@ -329,45 +328,5 @@ theorem mulAdd_ct (hV : V.Ok) (h₁ : M m₁) (h₂ : M m₂) {args : List (Reg 
     (covers_rw hrd hw) hw
     (fun _ _ hsp hg _ => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
       entry_eq hg (hm .x2 (by simp)), entry_eq hg (hm .x3 (by simp)), entry_eq hg (hm .x4 (by simp))⟩) hok
-
-theorem equation_ct (hQ : Proof.Ed448.AArch64.EqOk) (hV : V.Ok) (hcfg:V.sym=Impl.X448.AArch64.Base.combSym ∧ V.words=Impl.X448.AArch64.Base.combWords)
-    (h₁ : M m₁) (h₂ : M m₂) {args : List (Reg × Src)}
-    (hn : (args.map Prod.fst).Nodup) (hv : ∀ p ∈ args, srcValid p.2) (hret : retOk args = true)
-    (hr : ∀ p ∈ args, p.1 ∉ preserved) (hl : ∀ p ∈ args, p.1 ∉ linkRegs)
-    {hint : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs []) (.block (setupS args)) hint).isSome = true)
-    {P : State → Prop} (val : Reg → Addr)
-    (hval : ∀ {g vec m₀ t}, M m₀ → WCtx V g vec m₀ t → P t →
-      ∀ p ∈ args, srcValue V.E t.mem (t.gpr .x0) p.2 = val p.1)
-    (hm : ∀ r ∈ [Reg.x0, .x1, .x2, .x3], r ∈ args.map Prod.fst)
-    (hdp : Region.Disjoint ⟨val .x0, 57⟩ ⟨val .x3, 8192⟩) (hds : Region.Disjoint ⟨val .x1, 114⟩ ⟨val .x3, 8192⟩)
-    (hdc : Region.Disjoint ⟨val .x2, 57⟩ ⟨val .x3, 8192⟩) (hnc : (val .x3).toNat + 8192 ≤ 2 ^ 64)
-    (hrp : Readable V ⟨val .x0, 57⟩) (hrs : Readable V ⟨val .x1, 114⟩) (hrc : Readable V ⟨val .x2, 57⟩)
-    (hws : Writable V ⟨val .x3, 8192⟩) (hMT : ∀ {m}, M m → TblWords V.T m) {Q : State → Prop}
-    (hok : ∀ {g vec m₀ t}, M m₀ → WCtx V g vec m₀ t → P t → WP isa
-      (callS args "vg_ed448_verify_equation" Impl.Ed448.AArch64.verifyEquation) t
-      fun u => WCtx V g vec m₀ u ∧ Q u) :
-    RelCT isa (Two V g₁ g₂ v₁ v₂ m₁ m₂ P)
-      (callS args "vg_ed448_verify_equation" Impl.Ed448.AArch64.verifyEquation)
-      (Two V g₁ g₂ v₁ v₂ m₁ m₂ Q) := by
-  have hw : ∀ r ∈ [(⟨val .x3, 8192⟩ : Region)], Writable V r := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r rfl
-    exact hws
-  have hrd : ∀ r ∈ [(⟨val .x0, 57⟩ : Region), ⟨val .x1, 114⟩, ⟨val .x2, 57⟩, TBL V.T], Readable V r := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl)
-    exact hrp
-    · exact hrs
-    · exact hrc
-    · simpa only [hcfg.2] using tbl_readable hV
-  exact callS_ct hV h₁ h₂ hn hv hret hr hl ht val hval (hQ.ok)
-    hQ.ct
-    (fun hM hc hs => equation_pre (regs_get hs (hm .x0 (by simp))) (regs_get hs (hm .x1 (by simp)))
-      (regs_get hs (hm .x2 (by simp))) (regs_get hs (hm .x3 (by simp))) hdp hds hdc hnc (by simpa only [hcfg.1] using hc.2.2)
-      (combHeld_of hV hcfg hc (hMT hM) hw _ _))
-    (covers_rw hrd hw) hw
-    (fun _ _ hsp hg hsy => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
-      entry_eq hg (hm .x2 (by simp)), entry_eq hg (hm .x3 (by simp)), by simpa only [State.withRegions,State.callEntry,VG.AArch64.call,State.write,hcfg.1] using hsy⟩) hok
 
 end VG.Proof.Ed448.AArch64.Whole

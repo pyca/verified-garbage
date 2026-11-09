@@ -67,7 +67,7 @@ theorem keepE1 {P : EP} {σ s t : State} (he : E1 h g P σ s) {i : Nat} {v : Bit
 
 /-- `mov eax, [arg j]; mov [esp + 4 i], eax`: argument `j` to the call's argument `i`. -/
 theorem copySlot {P : EP} {σ s : State} {i j : Nat} (ha : A0 h g P σ s i) (hi : i < 10)
-    (hj : j < 15) (hv : P.argv.getD j 0 = (outv P).getD i 0) {is : List Instr} {Q : State → Prop}
+    (hj : j < 18) (hv : P.argv.getD j 0 = (outv P).getD i 0) {is : List Instr} {Q : State → Prop}
     (kk : ∀ t, A0 h g P σ t (i + 1) → WP isa (.block is) t Q) :
     WP isa (.block (copyArg j i ++ is)) s Q := by
   obtain ⟨he, hs⟩ := ha
@@ -96,9 +96,9 @@ theorem scrSlot {P : EP} {σ s : State} {i o : Nat} (ha : A0 h g P σ s i) (hi :
   · rw [m3.mem, u2.mem, u1.mem, u2.gpr, u1.gpr, hc.ebp]
     exact slots_next hs hi _ hv
 
-theorem pubArgs_eq : pubArgs = copyArg 0 0 ++ copyArg 3 1 ++ copyArg 13 2 ++ copyArg 14 3 ++ copyArg 4 4 ++
+theorem pubArgs_eq : pubArgs = copyArg 0 0 ++ copyArg 3 1 ++ copyArg 14 2 ++ copyArg 15 3 ++ copyArg 4 4 ++
     copyArg 5 5 ++ (atS .eax oEm ++ [st .eax (4 * 6)]) ++ copyArg 3 7 ++ (atS .eax oRsa ++ [st .eax (4 * 8)]) ++
-    [ld .eax (arg 12), .alu .sub .eax (.imm 1024), st .eax (4 * 9)] := by
+    [ld .eax (arg 13), .alu .sub .eax (.imm 1024), st .eax (4 * 9)] := by
   simp only [pubArgs, List.append_assoc]; rfl
 
 /-- Before the call. -/
@@ -117,8 +117,8 @@ theorem pa_vp (P : EP) : VP (E1 h g P) (.block pubArgs) (V1 h g P) := by
   have z0 : A0 h g P σ s 0 := ⟨hm, fun _ hi => absurd hi (Nat.not_lt_zero _)⟩
   refine copySlot h g z0 (by decide) (j := 0) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t1 z1 => ?_
   refine copySlot h g z1 (by decide) (j := 3) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t2 z2 => ?_
-  refine copySlot h g z2 (by decide) (j := 13) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t3 z3 => ?_
-  refine copySlot h g z3 (by decide) (j := 14) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t4 z4 => ?_
+  refine copySlot h g z2 (by decide) (j := 14) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t3 z3 => ?_
+  refine copySlot h g z3 (by decide) (j := 15) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t4 z4 => ?_
   refine copySlot h g z4 (by decide) (j := 4) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t5 z5 => ?_
   refine copySlot h g z5 (by decide) (j := 5) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t6 z6 => ?_
   rw [← List.append_assoc (atS .eax oEm)]
@@ -129,7 +129,7 @@ theorem pa_vp (P : EP) : VP (E1 h g P) (.block pubArgs) (V1 h g P) := by
   obtain ⟨e9, s9⟩ := z9
   have c9 := e9.1.1
   simp only [ld, st]
-  refine c9.wp_arg hg (enc_arg (j := 12) (by decide)) (by decide) (by decide) fun t10 c10 u10 =>
+  refine c9.wp_arg hg (enc_arg (j := 13) (by decide)) (by decide) (by decide) fun t10 c10 u10 =>
     wp_subi fun t11 u11 _ _ => (c10.upd u11 (by decide) (by decide)).wp_st hg (d := 4 * 9) (by decide)
       fun t12 c12 m12 => WP.block_nil ?_
   have v : t11.gpr .eax = BitVec.ofNat 32 (P.scl - 1024) := by

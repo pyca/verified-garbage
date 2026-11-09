@@ -14,7 +14,7 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.Ffdh.X86_64.ParameterCandidate
 
 def searchCandidate (p : SearchPublic) (used : Nat) :=
-  Spec.Ffdh.parameterCandidate p.c.bits p.c.gen (p.c.rand.drop used)
+  Spec.Ffdh.sievedParameterCandidate p.c.bits p.c.gen (p.c.rand.drop used)
 
 def candidateUsed (p : SearchPublic) (used : Nat) : Nat :=
   match searchCandidate p used with
@@ -71,10 +71,5 @@ theorem SearchCandidatePost.used_word {p : SearchPublic} {used : Nat} {s : State
   change [word s.mem p.c.up 0] = [_] at hh
   have he := (List.cons.inj hh).1
   simpa only [Bignum.word, off, BitVec.add_zero] using he
-
-theorem SearchCandidatePost.keep {p : SearchPublic} {used : Nat} {s t : State}
-    (h : SearchCandidatePost p used s) (hm : t.mem = s.mem)
-    (hr : (t.gpr .rax).setWidth 32 = (s.gpr .rax).setWidth 32) : SearchCandidatePost p used t := by
-  exact ⟨by rw [hr]; exact h.1, by rw [hm]; exact h.2⟩
 
 end VG.Proof.Ffdh.X86_64.Generation

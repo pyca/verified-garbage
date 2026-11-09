@@ -100,7 +100,6 @@ def qChecks : Prog isa := .seq qRange (ifFlag
 def main : Prog isa := .seq (prepareAt 24) (.seq (importAt 1 56 32)
   (.seq (inRange 1) (ifFlag (withQ qChecks (ret 1)) (ret 0))))
 
-def code : Prog isa := framed (.seq (.block entry) (head main))
 end CheckDomain
 
 namespace Exchange

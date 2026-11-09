@@ -1066,3 +1066,70 @@ vg_sm4_ctr:
 	lea rsp, [rsp+3208]
 	ret
 	.p2align 6
+
+vg_sm4_ctr_final:
+	lea rsp, [rsp-72]
+	mov r8, rsp
+	add r8, 8
+	mov rax, r8
+	mov QWORD PTR [rax], rbx
+	mov QWORD PTR [rax+8], rbp
+	mov QWORD PTR [rax+16], r12
+	mov QWORD PTR [rax+24], r13
+	mov QWORD PTR [rax+32], r14
+	mov QWORD PTR [rax+40], r15
+	mov rbx, rdi
+	mov r12, rsi
+	mov r15, rax
+	mov r14, rcx
+	and r14, 15
+	mov r13, rcx
+	sub r13, r14
+	add r13, rdx
+	shr rcx, 4
+	call {vg_sm4_ctr}
+	test r14, r14
+	je 20f
+	mov rax, r15
+	mov r10d, 0
+	mov QWORD PTR [rax+48], r10
+	mov QWORD PTR [rax+56], r10
+	mov rdi, rbx
+	mov rsi, r12
+	mov rdx, rax
+	add rdx, 48
+	mov ecx, 1
+	call {vg_sm4_ctr}
+	mov rax, r15
+	add rax, 48
+22:
+	movzx r10d, BYTE PTR [rax]
+	movzx ecx, BYTE PTR [r13]
+	xor rcx, r10
+	mov BYTE PTR [r13], cl
+	add rax, 1
+	add r13, 1
+	sub r14, 1
+	jne 22b
+	jmp 21f
+20:
+21:
+	mov rax, r15
+	mov rbx, QWORD PTR [rax]
+	mov rbp, QWORD PTR [rax+8]
+	mov r12, QWORD PTR [rax+16]
+	mov r13, QWORD PTR [rax+24]
+	mov r14, QWORD PTR [rax+32]
+	mov r15, QWORD PTR [rax+40]
+	mov r11d, 0
+	mov QWORD PTR [rsp+8], r11
+	mov QWORD PTR [rsp+16], r11
+	mov QWORD PTR [rsp+24], r11
+	mov QWORD PTR [rsp+32], r11
+	mov QWORD PTR [rsp+40], r11
+	mov QWORD PTR [rsp+48], r11
+	mov QWORD PTR [rsp+56], r11
+	mov QWORD PTR [rsp+64], r11
+	lea rsp, [rsp+72]
+	ret
+	.p2align 6

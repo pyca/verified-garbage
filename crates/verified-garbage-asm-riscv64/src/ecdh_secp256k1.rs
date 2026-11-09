@@ -17,7 +17,7 @@
 /// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
 /// * None of `out`, `d`, `peer` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdh_secp256k1(out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ecdh_secp256k1(out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -1768,7 +1768,11 @@ call {vg_secp256k1_mul_mod_p}
 .insn 2, 0x8082
 .option pop",
         vg_secp256k1_check_point = sym super::ec_secp256k1_compressed::vg_secp256k1_check_point::vg_secp256k1_check_point,
-        vg_secp256k1_mul = sym super::ec_secp256k1::vg_secp256k1_mul::vg_secp256k1_mul,
+        vg_secp256k1_mul = sym super::ecdh_secp256k1::vg_secp256k1_mul::vg_secp256k1_mul,
         vg_secp256k1_mul_mod_p = sym super::ec_secp256k1::vg_secp256k1_mul_mod_p::vg_secp256k1_mul_mod_p,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_secp256k1_mul.rs"]
+pub(crate) mod vg_secp256k1_mul;

@@ -16,11 +16,6 @@ theorem CandidateParams.length_bounds (p : CandidateParams) : 64 ≤ p.length �
   dsimp only [CandidateParams.length]
   omega
 
-theorem CandidateParams.words_bounds (p : CandidateParams) : 8 ≤ p.words ∧ p.words ≤ 128 := by
-  have := p.length_bounds
-  dsimp only [CandidateParams.words, Spec.Rsa.modulusWords]
-  omega
-
 theorem CandidateParams.public_space (p : CandidateParams) : Spec.Rsa.publicScratchWords p.length ≤ p.capacity := by
   have := p.length_bounds
   have space : 16 * p.length + 32 ≤ p.capacity := p.space

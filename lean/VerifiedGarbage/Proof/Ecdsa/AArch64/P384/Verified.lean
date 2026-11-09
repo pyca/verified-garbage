@@ -140,10 +140,4 @@ theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP384 :=
       · exact h4⟩, fun n hn => by
       simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
 
-theorem sign_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
-    (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
-    Verified AArch64.target signP384
-      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst (AArch64.abi.withConsts p384.combConsts)) :=
-  Verified.of_correct (sign_a64 hL hI hT) sign_ct implies
-
 end VG.Proof.Ecdsa.AArch64.P384

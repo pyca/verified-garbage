@@ -33,7 +33,7 @@ computes the CMAC of the string with the context's PRF into the state at
 bytes of the whole blocks before the last 1 to 16 (`Spec.Cmac.chainedLen`),
 into `s8`, chains the `nb` blocks with `vg_cmac_aes_update` and finalizes
 the rest with `vg_cmac_aes_finalize`, from the subkeys in the context
-(`Siv.cmacWith_chained`). As on PPC64LE (`Proof/AesSiv/PPC64LE/Mac.lean`).
+(`Siv.macWith_chained`). As on PPC64LE (`Proof/AesSiv/PPC64LE/Mac.lean`).
 -/
 
 @[expose] public section
@@ -67,12 +67,6 @@ theorem ofNat_sub' {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
     Nat.mod_eq_of_lt (a := b) (by omega_arith), Nat.mod_eq_of_lt (a := a - b) (by omega_arith)]
   rw [show 2 ^ 64 - b + a = (a - b) + 2 ^ 64 by omega_arith, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
 
-theorem ofNat_add' {a b : Nat} (h : a + b < 2 ^ 64) :
-    BitVec.ofNat 64 a + BitVec.ofNat 64 b = BitVec.ofNat 64 (a + b) := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := a) (by omega_arith),
-    Nat.mod_eq_of_lt (a := b) (by omega_arith)]
-
 theorem chainedLen_le (n : Nat) : Spec.Cmac.chainedLen 16 n ≤ n := by
   simp only [Spec.Cmac.chainedLen]; omega_arith
 
@@ -82,12 +76,7 @@ theorem chainedLen_rest (n : Nat) : n - Spec.Cmac.chainedLen 16 n ≤ 16 := by
 theorem chainedLen_div (n : Nat) : 16 * (Spec.Cmac.chainedLen 16 n / 16) = Spec.Cmac.chainedLen 16 n := by
   simp only [Spec.Cmac.chainedLen]; omega_arith
 
-theorem chainedLen_zero : Spec.Cmac.chainedLen 16 0 = 0 := rfl
-
 theorem chainedLen_pos {n : Nat} (_h : n ≠ 0) : Spec.Cmac.chainedLen 16 n = 16 * ((n - 1) / 16) := by
-  simp only [Spec.Cmac.chainedLen]; omega_arith
-
-theorem chainedLen_ne {n : Nat} (h : n ≠ 0) : 0 < n - Spec.Cmac.chainedLen 16 n := by
   simp only [Spec.Cmac.chainedLen]; omega_arith
 
 /-! ## The calls' arguments -/
@@ -240,8 +229,6 @@ structure MacKeep (s s' : State) : Prop where
   s5 : s'.gpr .s5 = s.gpr .s5
   s6 : s'.gpr .s6 = s.gpr .s6
   s7 : s'.gpr .s7 = s.gpr .s7
-
-theorem MacKeep.refl (s : State) : MacKeep s s := ⟨PK.refl s, rfl, rfl, rfl, rfl⟩
 
 theorem MacKeep.trans {s t u : State} (h₁ : MacKeep s t) (h₂ : MacKeep t u) : MacKeep s u :=
   ⟨h₁.pk.trans h₂.pk, h₂.s4.trans h₁.s4, h₂.s5.trans h₁.s5, h₂.s6.trans h₁.s6, h₂.s7.trans h₁.s7⟩
@@ -425,7 +412,7 @@ theorem cmacOf_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {st : Nat} (hst
   rw [m₄] at out₅
   rw [m₂] at out₃
   rw [out₅, out₃, Proof.CmacAes.RISCV64.mn, Proof.CmacAes.RISCV64.ciphAt, sch₃, k1, k2, rest₃, sch₁, hz, Proof.Cmac.Stream.blocksAt_eq, hcd,
-    pre₁, Spec.Siv.ctxMac, Spec.Siv.schedCiph, Siv.cmacWith_chained, hS, tk, dr]
+    pre₁, Spec.Siv.ctxMac, Spec.Siv.schedCiph, Siv.macWith_chained, hS, tk, dr]
   rfl
 
 end VG.Proof.AesSiv.RISCV64

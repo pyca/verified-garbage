@@ -31,16 +31,6 @@ open VG.Proof.Gcm.X86_64 (revMask)
 open VG.Proof.Aes.X86_64.AesNi (Keys)
 open VG.Spec.Aes (bytesAt)
 
-/-- What counter mode on the groups leaves: the data enciphered, the counter
-block advanced, nothing else written but the working space. -/
-structure CPost (s₀ s : State) : Prop where
-  data : ∀ k < nb s₀, bytesAt s.mem (bAddr s₀ k) 16 = ctb s₀ k
-  ctr : bytesAt s.mem (cp s₀) 16 = Spec.GcmSiv.counterBlock (icb s₀) (nb s₀)
-  frame : Frame [cR s₀, dR s₀, pR s₀] s₀.mem s.mem
-  gpr : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r9 → r ≠ .r10 → s.gpr r = s₀.gpr r
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-
 /-- `vinserti128 r, r, r, 1`: the low lane in both. -/
 theorem insSelf_ok (r : XReg) (s : State) :
     WP isa (.block [.vop (.vinserti128 r r r 1)]) s fun s' =>

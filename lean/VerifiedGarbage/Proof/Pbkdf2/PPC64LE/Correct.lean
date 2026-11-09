@@ -32,8 +32,7 @@ loop (`Iterate.lean`) and the epilogue (`epilogue_ok`) compose to `correct`.
 `ct` is the taint analysis of `main` after the entry block, which
 zero-extends `n`: `n` is public only in its low 32 bits, so the two runs
 agree on the whole of `r5` only once correctness says what the block leaves
-there (`RelCT.wpDep`). `verified` moves the proof to the shared contract
-of an instance of the hash function, with no stack.
+there (`RelCT.wpDep`).
 -/
 
 @[expose] public section
@@ -406,51 +405,5 @@ theorem iterate_noFrames (P : Params) (D : Nat) (name : String) {code : Prog isa
     (iterate P D name code).noFrames = true := by
   simp [iterate, main, Impl.Pbkdf2.PPC64LE.body, Impl.Pbkdf2.PPC64LE.compressBlock, compressAt,
     Impl.MdStream.PPC64LE.compressWith, Code.noFrames, hc]
-
-/-! ## The shared contract -/
-
-theorem iterImp {I : Spec.Hmac.Instance} (hs : ∃ s, (Proof.Pbkdf2.Instance.iterateContract I PPC64LE.abi 0).pre s) :
-    (iterK I.S (8 * I.scratch)).Implies (Proof.Pbkdf2.Instance.iterateContract I PPC64LE.abi 0) := by
-  generic_implies [Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig,
-    iterK, PPC64LE.abi, PPC64LE.argRegs] using hs
-
-/-- `iterate` against the shared contract of an instance `I` of the hash
-function, with the `Wi` bytes of scratch space it uses, given its constant
-time. -/
-theorem verified {P : Params} {D Wi : Nat} {H : Md P.B P.N P.L} {iv : H.HV} {I : Spec.Hmac.Instance}
-    (ho : HashOk P D Wi I.S H iv) {name : String} {code : Prog isa} (hf : CalleeOk H code)
-    (hfit : Wi ≤ 8 * I.scratch)
-    (ct : ConstantTime isa (iterK I.S Wi).pre (iterK I.S Wi).pub (iterate P D name code))
-    (hs : ∃ s, (Proof.Pbkdf2.Instance.iterateContract I PPC64LE.abi 0).pre s) :
-    Verified PPC64LE.target (iterate P D name code) (Proof.Pbkdf2.Instance.iterateContract I PPC64LE.abi 0) := by
-  have imp := iterImp hs
-  have hS : I.S.stateBytes = P.N + P.B := ho.link.hS
-  have hD : I.S.digestBytes = D := ho.link.hD
-  have wide : ∀ s, (iterK I.S (8 * I.scratch)).pre s →
-      (iterK I.S Wi).pre (s.withRegions s.rd [⟨s.gpr .r6, I.S.digestBytes⟩, ⟨s.gpr .r7, Wi⟩]) := by
-    intro s ⟨h1, _, h3, h4, h5, h6, h7⟩
-    exact ⟨h1, rfl, h3, h4.sub_right (Region.sub_prefix hfit), h5, h6.sub_right (Region.sub_prefix hfit),
-      h7.sub_right (Region.sub_prefix hfit)⟩
-  have v : Verified PPC64LE.target (iterate P D name code) (iterK I.S Wi) :=
-    ⟨fun s hs => by
-      obtain ⟨t, s', he, h₁, h₂⟩ := correct ho hf (pre_of hS hD hs); exact ⟨t, s', he, h₁, h₂⟩, ct,
-      imp.sat_left.elim fun s h => ⟨_, wide s h⟩⟩
-  refine (Verified.widen v (fun s => [⟨s.gpr .r6, I.S.digestBytes⟩, ⟨s.gpr .r7, Wi⟩]) wide
-      (fun _ h => ?_) (fun _ _ _ h => h) (fun _ _ _ _ h => h) imp.sat_left).of_implies imp
-  obtain ⟨_, h2, _⟩ := h
-  rw [h2]
-  exact .cons ⟨rfl, Nat.le_refl _⟩ (.cons ⟨rfl, hfit⟩ .nil)
-
-/-- A state satisfying `iterate`'s precondition, with states of `S` bytes, a
-digest of `D` bytes and `sc` bytes of scratch space. -/
-def iterSat (S D sc : Nat) : State where
-  gpr r := match r with
-    | .r3 => 0x10000 | .r4 => 0x20000 | .r5 => 1 | .r6 => 0x30000 | .r7 => 0x40000
-    | _ => 0
-  lr := 0
-  sp := 0x90000
-  mem _ := 0
-  rd := [⟨0x10000, 2 * S⟩, ⟨0x20000, D⟩]
-  wr := [⟨0x30000, D⟩, ⟨0x40000, sc⟩]
 
 end VG.Proof.Pbkdf2.PPC64LE

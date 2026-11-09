@@ -34,7 +34,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Word
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
@@ -57,7 +56,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Math
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Word
 public import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazy
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyVerified
@@ -70,6 +68,11 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABIPost
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABIPre
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
+import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
+public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
+public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedSignVerified
+public import VerifiedGarbage.Proof.Dsa.X86_64.ValidatePrivateVerified
+public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCheckedVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Proof.Mont.Read
@@ -93,7 +96,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Word
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
@@ -116,7 +118,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Math
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Word
 import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
-import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazy
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyVerified
@@ -146,6 +147,10 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
 
 /-!
 # Baseline x86-64 Montgomery arithmetic for DSA: the variant's code and proofs
@@ -168,9 +173,11 @@ def variant : Backend where
   suffix := ""
   features := []
   signVerified := signing_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
-  verifyVerified := verifying_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
   signSp := Code.all_of_allInstrs (by decide +kernel)
-  verifySp := Code.all_of_allInstrs (by decide +kernel)
+  validateVerified := validating_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
+  prevalidatedVerified := prevalidated_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
+  validateSp := Code.all_of_allInstrs (by decide +kernel)
+  prevalidatedSp := Code.all_of_allInstrs (by decide +kernel)
   signDepth := by decide +kernel
   parametersVerified := parameters_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
   deriveVerified := derive_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
@@ -178,6 +185,14 @@ def variant : Backend where
   deriveSp := Code.all_of_allInstrs (by decide +kernel)
   parametersDepth := by decide +kernel
   deriveDepth := by decide +kernel
+  prevalidatedSignVerified := prevalidated_sign_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
+  prevalidatedSignSp := Code.all_of_allInstrs (by decide +kernel)
+  prevalidatedSignDepth := by decide +kernel
+  validatePrivateVerified := validating_private_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
+  validatePrivateSp := Code.all_of_allInstrs (by decide +kernel)
+  deriveCheckedVerified := derive_checked_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
+  deriveCheckedSp := Code.all_of_allInstrs (by decide +kernel)
+  deriveCheckedDepth := by decide +kernel
   stackBound := by decide
 
 end VG.Proof.Variants.DsaArithmetic.X86_64.Base

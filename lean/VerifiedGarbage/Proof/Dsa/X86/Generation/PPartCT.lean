@@ -74,7 +74,7 @@ theorem pAdv_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {t : State} (B :
     exact ((Env.Chg.refl _ _).store (List.mem_cons_self) (by decide) _).store
       (List.mem_cons_of_mem _ List.mem_cons_self) (by decide) _
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
-    rcases ho with rfl | rfl <;> simp only [fCounter, fOffset, fOut, fHs, fWitLen, hdr] <;> omega
+    rcases ho with rfl | rfl <;> simp only [fCounter, fOffset, fOut, fWitLen, hdr] <;> omega
   · rw [m₉, wst _ h₁ (by simp only [fOffset, sState, hdr]; omega) (by simp only [fOffset, fCounter, hdr] at h₂ ⊢; omega),
       wst _ h₁ (by simp only [fCounter, sState, hdr]; omega) (by simp only [fOffset, fCounter, hdr] at h₂ ⊢; omega)]
 
@@ -158,7 +158,7 @@ theorem pMid_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {k Q : Nat}
     · have C : E.Chg [(fP, 4)] t₃.mem t₄.mem := by
         rw [m₄]; exact (Env.Chg.refl _ _).store (List.mem_singleton_self _) (by decide) _
       have Ap : E.Apart [(fP, 4)] := fun o ho => by
-        simp only [List.mem_singleton] at ho; subst ho; simp only [fP, fOut, fHs, fWitLen, hdr]; omega
+        simp only [List.mem_singleton] at ho; subst ho; simp only [fP, fOut, fWitLen, hdr]; omega
       exact B₃.keep v C Ap (g₄ _ (by decide)) (g₄ _ (by decide)) rd₄ wr₄ sy₄
     · rw [m₄, Mem.readW_writeW_self32]
       simp only [fpEnd, F4, of_decide_eq_true hd, ↓reduceIte]
@@ -240,7 +240,7 @@ def PPIn (E : Env) (g : Geo) (a : Nat × Nat × Nat) (s : State) : Prop :=
 theorem pPart_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = g.qLen) :
     RelCT isa (Both (PPIn E g)) g.pPart fun _ _ => True := by
   have sz := v.size_ge
-  have lens := v.lens
+  have lens := v.witLen32
   refine both_exists fun a => ?_
   obtain ⟨k, Q, used⟩ := a
   refine relct_of_fact (fun s t h => (⟨h.1.2.1, h.1.2.2.2.2.1⟩ : _ ∧ _)) fun ⟨hk, hQ0⟩ => ?_

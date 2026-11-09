@@ -483,6 +483,7 @@ vg_chacha20_apply:
 	addi a3, s5, 256
 	add s6, s6, a2
 	sub s7, s7, a2
+	addi a4, a1, 0
 	call {vg_chacha20_xor}
 	j 28f
 27:

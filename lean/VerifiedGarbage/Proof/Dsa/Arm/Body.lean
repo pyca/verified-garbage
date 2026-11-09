@@ -53,10 +53,6 @@ theorem Output.run {s t : State} {base : Addr} {size len : Nat} (O : Output s ba
   have P := pointerValue_keep (Rn.rest.gpr .r12 (by decide)) Rn.mem (by decide) (p := .input .out) (by decide : Impl.Dsa.Layout.Field.out ≠ .mask)
   exact ⟨by rw [P]; exact O.fits, by rw [P, Rn.rest.wr]; exact O.writes, by rw [P]; exact O.apart⟩
 
-theorem Output.next {s t : State} {base : Addr} {size len o l : Nat} (O : Output s base size len)
-    (St : Stage base s t o l) (ho : o = 116 ∧ l = 4 ∨ 4960 ≤ o ∧ o + l ≤ 15712) : Output t base size len :=
-  O.run (St.run ho)
-
 theorem Outs.arith_run {base : Addr} {m m' : Mem} (O : Outs base arithRanges m m') : Outs base runRanges m m' :=
   fun x hx => O x fun r hr => by
     have h₁ := hx (0, 64) (by simp [runRanges])
@@ -255,21 +251,5 @@ theorem signBody_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X K 
   · rw [Pu] at Bdv
     rw [Pv, Pu] at Bdw
     exact ((Body.of_run Rn).trans Bdv).trans (Bdw.trans ⟨Rt.mono (by decide), fun x _ _ => by rw [Mt]⟩)
-
-theorem verifyBody_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R S D c : Nat}
-    (Sc : Sched s base size pLen qLen nP nQ)
-    (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
-    (Ig : Input s base size (.input .g) pLen G) (Iy : Input s base size (.input .y) pLen Y)
-    (Ir : Input s base size (.input .signature) qLen R) (Is : Input s base size .signatureS qLen S)
-    (Id : Input s base size (.input .digest) c D) (hc : countValue base s Core.digestPrefix = c)
-    (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1)
-    (hm : maskW base s = BitVec.allOnes 32) :
-    WP isa (SignVerify.verifyBody pLen qLen) s fun t =>
-      t.gpr .r0 = (if verifyChecks P Q G Y R S D then 1 else 0) ∧ Run base s t := by
-  have big := Sc.big
-  unfold SignVerify.verifyBody
-  refine WP.seq (WP.mono (verifyCompute_ok Sc Ip Iq Ig Iy Ir Is Id hc hP hPo hQ hQo) fun u ⟨Fu, Rn⟩ => ?_)
-  refine WP.mono (result_ok (Rn.ws Sc.ws) (by omega_arith) _ (by rw [Fu, hm, BitVec.allOnes_and])) fun t ⟨r0, Rt, Mt⟩ =>
-    ⟨r0, Rn.trans ⟨Rt.mono (by decide), fun x _ => by rw [Mt]⟩⟩
 
 end VG.Proof.Dsa.Arm

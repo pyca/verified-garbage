@@ -160,14 +160,6 @@ theorem sign_ct_adx : ConstantTime isa signX86_64.pre signX86_64.pub signP521Adx
       · exact h5
       · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩
 
-theorem sign_verified_adx (hL : Law Spec.P521.curve)
-    (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
-    (hI : InvSounds) :
-    Verified X86_64.target signP521Adx
-      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P521.inst (X86_64.abi.withConsts p521.combConsts) 8) :=
-  Verified.of_inline_ct sign_inlineOk_adx (sign_x86_adx hL hT hI) sign_ct_adx implies8
-    (fun _ h => Sig.clear_of_pre_consts h) sign_patch
-
 /-- `sign_call_x86` with BMI2 and ADX. -/
 theorem sign_call_x86_adx (hL : Law Spec.P521.curve)
     (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)

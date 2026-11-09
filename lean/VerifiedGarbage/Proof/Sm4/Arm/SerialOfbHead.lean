@@ -15,9 +15,7 @@ open VG.Impl.Aes.Arm (sb)
 open VG.Proof.Sm4.Arm.BatchFill VG.Proof.Sm4.Arm.BatchXor
 
 abbrev groupHead := SerialCfbHead.groupHead
-abbrev proHead := SerialCfbHead.proHead
 abbrev HeadPre := SerialCfbHead.HeadPre
-abbrev HeadPost := SerialCfbHead.HeadPost
 abbrev head_wp := @SerialCfbHead.head_wp
 
 def groupTail : Prog isa := .seq BatchCtr.xorGroup

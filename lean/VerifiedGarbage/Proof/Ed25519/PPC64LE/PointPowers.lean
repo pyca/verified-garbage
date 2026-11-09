@@ -50,18 +50,9 @@ theorem doubleCall_ok (b : Addr) : PtSpec b fclob doubleCall fun p => Spec.Ed255
     ⟨kt.rest.trans ku.rest, kt.frame.trans ku.frame, by rw [pu, q4, q0], fun i hi => ?_⟩
   rw [keu i (.inr hi), qk i (by omega_arith)]
 
-theorem PtSpec.seq {b : Addr} {R : List Reg} {c₁ c₂ : Prog isa} {f g : Spec.Ed25519.Point → Spec.Ed25519.Point}
-    (h₁ : PtSpec b R c₁ f) (h₂ : PtSpec b R c₂ g) (h6 : Reg.r6 ∉ R) : PtSpec b R (.seq c₁ c₂) (g ∘ f) :=
-  fun s hc hd => WP.seq (WP.mono (h₁ s hc hd) fun t ⟨r1, f1, p1, k1⟩ =>
-    WP.mono (h₂ t (hc.of_rest r1 h6) (by rw [k1 16 (by decide), hd])) fun u ⟨r2, f2, p2, k2⟩ =>
-      ⟨r1.trans r2, f1.trans f2, by rw [p2, p1]; rfl, fun i hi => by rw [k2 i hi, k1 i hi]⟩)
-
 theorem PtSpec.mono {b : Addr} {R R' : List Reg} {c : Prog isa} {f : Spec.Ed25519.Point → Spec.Ed25519.Point}
     (h : PtSpec b R c f) (hR : ∀ r ∈ R, r ∈ R') : PtSpec b R' c f :=
   fun s hc hd => WP.mono (h s hc hd) fun _ ⟨r, fr, p, k⟩ => ⟨r.mono hR, fr, p, k⟩
-
-theorem powerPoint_succ' (p : Spec.Ed25519.Point) (n : Nat) :
-    powerPoint p (n + 1) = Spec.Ed25519.pointAdd (powerPoint p n) (powerPoint p n) := rfl
 
 /-- Sixteen doublings, counted by `r15`. -/
 theorem double16_ok (b : Addr) : PtSpec b (.r15 :: fclob) double16 fun p => powerPoint p 16 := by

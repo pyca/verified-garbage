@@ -35,8 +35,6 @@ def regsRestore : List Instr := (List.range 13).map fun i => .load .d (savedRegs
 /-- `s0 :=` byte `o` of the working space. -/
 def scratchAddr (o : Nat) : List Instr := li32 .s0 (BitVec.ofNat 32 o) ++ [.add .s0 .a3 .s0]
 
-def pointTableWrite (o : Nat) : List Instr := scratchAddr o ++ pointToTable
-
 def pointTableRead (o : Nat) : List Instr := scratchAddr o ++ pointFromTable
 
 /-- `a5` zero exactly when the scalar at `SR` is below `L`. -/

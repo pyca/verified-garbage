@@ -18,7 +18,7 @@ pub fn bench(c: &mut Criterion) {
     use criterion::BenchmarkId;
     use openssl::derive::Deriver;
     use openssl::pkey::{Id, PKey};
-    use verified_garbage::x448::{PrivateKey, x448};
+    use verified_garbage::x448::PrivateKey;
 
     use crate::{BenchDyn, OPENSSL, VG, fixed_tape};
     let private = [0x42; 56];
@@ -29,35 +29,16 @@ pub fn bench(c: &mut Criterion) {
     // comes with each exchange.
     let vg_private = PrivateKey::from_bytes(&private);
     let openssl_private = PKey::private_key_from_raw_bytes(&private, Id::X448).unwrap();
+    let peer_bytes = *peer.as_bytes();
     let mut g = c.benchmark_group("x448");
     // One Diffie-Hellman: a shared secret from a private key and the peer's
     // public key. The ids' size is the bytes of the shared secret.
     g.bench(BenchmarkId::new(VG, 56), |b| {
-        b.iter(|| {
-            black_box(&vg_private)
-                .diffie_hellman(black_box(&peer))
-                .unwrap()
-        })
+        b.iter(|| black_box(&vg_private).exchange(black_box(&peer)).unwrap())
     });
     g.bench(BenchmarkId::new(OPENSSL, 56), |b| {
         b.iter(|| {
-            let peer = PKey::public_key_from_raw_bytes(black_box(&peer), Id::X448).unwrap();
-            let mut d = Deriver::new(black_box(&openssl_private)).unwrap();
-            d.set_peer(&peer).unwrap();
-            d.derive_to_vec().unwrap()
-        })
-    });
-    g.finish();
-
-    // OpenSSL has no function of the scalar multiplication alone: its nearest
-    // is the same Diffie-Hellman (which also rejects an all-zero secret).
-    let mut g = c.benchmark_group("x448_raw");
-    g.bench(BenchmarkId::new(VG, 56), |b| {
-        b.iter(|| x448(black_box(&private), black_box(&peer)))
-    });
-    g.bench(BenchmarkId::new(OPENSSL, 56), |b| {
-        b.iter(|| {
-            let peer = PKey::public_key_from_raw_bytes(black_box(&peer), Id::X448).unwrap();
+            let peer = PKey::public_key_from_raw_bytes(black_box(&peer_bytes), Id::X448).unwrap();
             let mut d = Deriver::new(black_box(&openssl_private)).unwrap();
             d.set_peer(&peer).unwrap();
             d.derive_to_vec().unwrap()

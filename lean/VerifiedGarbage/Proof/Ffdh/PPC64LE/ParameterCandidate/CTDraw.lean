@@ -41,10 +41,11 @@ structure DrawD where
   N : Nat
   u : Nat
   i : Nat
+  K : Nat
 
 /-- Before a draw. -/
 def DI (d : DrawD) (s : State) : Prop :=
-  ∃ sv toc, MSt (d.q.with sv toc) d.mb d.N s ∧ word s.mem d.q.B 152 = BitVec.ofNat 64 d.u ∧
+  ∃ sv toc, MSt (d.q.with sv toc) d.mb d.N d.K s ∧ word s.mem d.q.B 152 = BitVec.ofNat 64 d.u ∧
     d.u + (d.mb + 7) / 8 ≤ d.q.r.length ∧ word s.mem d.q.B 176 = BitVec.ofNat 64 d.i ∧
     word s.mem d.q.B 160 = BitVec.ofNat 64 4 ∧ d.i < 2 ^ 62
 
@@ -57,7 +58,7 @@ theorem pins_DI : Pins DI [.r29, .r31] := by
 
 /-- After a draw's head. -/
 def DA (d : DrawD) (t : State) : Prop :=
-  ∃ sv toc s, (MSt (d.q.with sv toc) d.mb d.N s ∧ word s.mem d.q.B 152 = BitVec.ofNat 64 d.u ∧
+  ∃ sv toc s, (MSt (d.q.with sv toc) d.mb d.N d.K s ∧ word s.mem d.q.B 152 = BitVec.ofNat 64 d.u ∧
     d.u + (d.mb + 7) / 8 ≤ d.q.r.length ∧ word s.mem d.q.B 176 = BitVec.ofNat 64 d.i ∧
     word s.mem d.q.B 160 = BitVec.ofNat 64 4 ∧ d.i < 2 ^ 62) ∧ DHead (d.q.with sv toc) d.mb d.u s t
 
@@ -79,7 +80,7 @@ theorem drawHead_ct : RelCT isa (Two DI) (.block ([ldh .r12 hRand, ldh .r3 hUsed
       ⟨sv, toc, s, ⟨M, hu, hroom, hI, hS, hi⟩, ht⟩
 
 /-- Before a draw's branches. -/
-def DMd (d : DrawD) (t : State) : Prop := ∃ sv toc, DMid (d.q.with sv toc) d.mb d.N d.u d.i t ∧ d.i < 2 ^ 62
+def DMd (d : DrawD) (t : State) : Prop := ∃ sv toc, DMid (d.q.with sv toc) d.mb d.N d.u d.i d.K t ∧ d.i < 2 ^ 62
 
 theorem drawMid_ct : RelCT isa (Two DA) (Prog.chain drawMid (.block [])) (Two DMd) :=
   two_post (two_taint _ pins_DA (by taint_decide)) fun _ _ ⟨sv, toc, _, ⟨M, hu, hroom, hI, hS, hi⟩, ht⟩ =>

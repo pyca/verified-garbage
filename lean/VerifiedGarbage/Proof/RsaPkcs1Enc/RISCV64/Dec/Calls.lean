@@ -40,8 +40,7 @@ changed (`After`).
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaPkcs1Enc/PPC64LE/DecD.lean`): from the call on, `Post s R EM`
 holds: `Mid` with `out` and `scratch` written, `R` (the private-key
-operation's result, zero-extended) in `s7` and `EM` in `out`, which the
-result relates to the private-key operation (`PrivRel`, `privRel_of`).
+operation's result, zero-extended) in `s7` and `EM` in `out`.
 `dBuild_ok`: `k` zeros at `scratch + sD`, then `d` at their end, which is
 `I2OSP(OS2IP(d), k)` (`DB`).
 -/
@@ -67,7 +66,7 @@ return address `ra`. `Mid`: in the frame, the saved values in their slots,
 `scratch`, `k`, `out`, `msg_len`, `d`, `d_len` and the input in `s0`–`s6`,
 `s10` and `s11` as on entry, memory changed only in the stack and in the
 regions `S`; it is kept by code writing other registers and the frame apart
-from the slots (`Mid.keep`, `Mid.frameW`). `restore_ok`: the restores give
+from the slots (`Mid.keep`, `Mid.frameMem`). `restore_ok`: the restores give
 back the caller's registers.
 -/
 
@@ -114,12 +113,6 @@ theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
     Region.Sub ⟨fb s + BitVec.ofNat 64 d, n⟩ (kR s) := by
   rw [fb_off]
   exact Offset.sub_base _ (by unfold stackBytes frameBytes Impl.Rsa.RISCV64.Priv.frameBytes at *; omega)
-
-theorem frame_contains (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
-    (kR s).Contains (fb s + BitVec.ofNat 64 d) n := by
-  rw [fb_off]
-  exact Offset.contains_base _ (by unfold stackBytes frameBytes Impl.Rsa.RISCV64.Priv.frameBytes at *; omega)
-    (by unfold frameBytes Impl.Rsa.RISCV64.Priv.frameBytes at *; omega)
 
 theorem frR_sub (s : State) : Region.Sub (frR s) (kR s) := by
   have := frame_sub s (d := 0) (n := frameBytes) (Nat.le_refl _)
@@ -245,14 +238,6 @@ theorem Mid.frameMem (h : Mid S s t) {f n : Nat} {m : Mem}
     rw [List.mem_singleton.mp hr]
     exact Offset.disjoint _ (by unfold oEnd oSave at *; omega) (by unfold oEnd at *; omega)
       (by unfold frameBytes at hen; omega)
-
-/-- `Mid` is kept by code writing registers other than those it keeps and the
-frame apart from the slots. -/
-theorem Mid.frameW (h : Mid S s t) (o : Kept rs t w) {f n : Nat}
-    (he : oEnd ≤ f ∨ f + n ≤ oSave) (hen : f + n ≤ frameBytes) (hm : Frame [⟨fb s + BitVec.ofNat 64 f, n⟩] t.mem w.mem)
-    (hrs : ∀ r ∈ rs, r ∉ kept := by decide) : Mid S s w :=
-  have hf := h.frameMem he hen hm
-  h.keep (S' := S) o hf.1 hf.2 hrs
 
 end
 
@@ -772,25 +757,6 @@ end
 
 /-! ## After the call -/
 
-/-- The result of the private-key operation `o`, zero-extended to `R`, with
-`EM` in `out`. -/
-def PrivRel (k : Nat) (o : Spec.Rsa.Outcome) (R : BitVec 64) (EM : List Byte) : Prop :=
-  match o with
-  | .ok y => R = 1 ∧ EM = y
-  | .invalid => R = 0 ∧ EM = List.replicate k 0
-  | .fault => R = 2 ∧ EM = List.replicate k 0
-
-/-- The private-key operation of the input. -/
-abbrev privOp (s : State) : Spec.Rsa.Outcome :=
-  Spec.Rsa.privateChecked (Spec.Rsa.bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat)
-    (Spec.Rsa.bytesAt s.mem (s.gpr .a5) (s.gpr .a6).toNat)
-    (Spec.Rsa.bytesAt s.mem (stackArg s 1) (s.gpr .a4).toNat)
-    (Spec.Rsa.bytesAt s.mem (stackArg s 3) (stackArg s 4).toNat)
-    (Spec.Rsa.bytesAt s.mem (stackArg s 5) (stackArg s 6).toNat)
-    (Spec.Rsa.bytesAt s.mem (stackArg s 7) (stackArg s 4).toNat)
-    (Spec.Rsa.bytesAt s.mem (stackArg s 9) (stackArg s 6).toNat)
-    (Spec.Rsa.bytesAt s.mem (stackArg s 11) (stackArg s 4).toNat)
-
 /-- The low word of `x`, zero-extended. -/
 abbrev zx (x : BitVec 64) : BitVec 64 := (x.setWidth 32).setWidth 64
 
@@ -798,13 +764,6 @@ theorem zext_eq (x : BitVec 64) : x <<< 32 >>> 32 = zx x := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth]
   omega
-
-theorem privRel_of {s u : State} (A : AtRet s u) :
-    PrivRel (s.gpr .a4).toNat (privOp s) (zx (u.gpr .a0)) (Spec.Rsa.bytesAt u.mem (s.gpr .a0) (s.gpr .a4).toNat) := by
-  have := A.out
-  change Spec.Rsa.writtenOutcome _ _ _ _ (privOp s) at this
-  unfold PrivRel
-  cases hc : privOp s <;> rw [hc] at this <;> exact ⟨by unfold zx; rw [this.1]; rfl, this.2⟩
 
 /-- From the call on: `Mid` with `out` and `scratch` written, `R` in `s7` and
 `EM` in `out`. -/
@@ -815,11 +774,6 @@ structure Post (s : State) (R : BitVec 64) (EM : List Byte) (t : State) : Prop e
 section
 variable {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte}
 include h
-
-/-- `out` misses `scratch`. -/
-theorem oSc {a l : Nat} (ha : a + l ≤ scrBytes) :
-    Region.Disjoint ⟨s.gpr .a0, (s.gpr .a4).toNat⟩ ⟨scA s a, l⟩ := by
-  have := h.os.sub_right (scSub h ha); simp only [oR, h.h1] at this; exact this
 
 /-- The callees' frames, below ours. -/
 abbrev lowR (s : State) : Region :=

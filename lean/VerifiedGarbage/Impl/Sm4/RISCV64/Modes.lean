@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Modes.RISCV64.Seq
+public import VerifiedGarbage.Impl.Modes.RISCV64.Shared
 public import VerifiedGarbage.Impl.Modes.CbcChained
 public import VerifiedGarbage.Impl.Modes.Ctr
 public import VerifiedGarbage.Impl.Modes.Ctr32
@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.Sm4.RISCV64.Ecb
 /-!
 # SM4's modes on RISC-V
 
-`dirCore d`: ECB's two halves (`Ecb.lean`), inlined, as a core for the modes
+`inlineCore d`: ECB's two halves (`Ecb.lean`), inlined, as a core for the modes
 (`Impl/Modes/RISCV64/Seq.lean`), on one block of a batch of sixteen, as on
 PPC64LE (`Impl/Sm4/PPC64LE/Modes.lean`, which calls them instead). ECB's
 scratch buffer is the core's slots from `ecbSlot` (slot 7 of the mode's
@@ -33,6 +33,13 @@ CBC encryption, OFB and CFB encryption, whose blocks each need the one before,
 use the first block of the buffer; CBC and CFB decryption and the counter
 modes take sixteen blocks a step while sixteen are left (`Core.seq2`,
 `Impl/Modes/RISCV64/Wide.lean`), then one.
+
+`dirCore` wraps this body with named internal calls (`Core.shared`), so the
+key preparation and batch code are emitted once across modes, alignment
+branches, and wide and tail paths. Two additional slots preserve the
+caller's return address and keep the frame aligned; the mode wipes them
+with the original frame. The callee computes its own pointers after the
+call, which may clobber all temporary registers.
 -/
 
 @[expose] public section
@@ -71,13 +78,18 @@ def coreCrypt : Prog isa :=
   .seq (.block (coreIn ++ park ++ slotAddr .a0 tableEnd)) (.seq crypt16 (.block unpark))
 
 /-- SM4's core for the modes, in the direction `d`. -/
-def dirCore (d : Dir) : Modes.RISCV64.Core where
+def inlineCore (d : Dir) : Modes.RISCV64.Core where
   prepare := corePrepare d
   crypt := coreCrypt
   total := ecbSlot + slots + 1
   buf := ecbSlot + tailSlot
   G := 16
   bw := 4
+
+/-- Shared key preparation and batch encryption, with a saved return address. -/
+def dirCore (d : Dir) : Modes.RISCV64.Core :=
+  (inlineCore d).shared ("vg_sm4_modes_prepare_" ++ (if d = .encrypt then "encrypt" else "decrypt"))
+    ("vg_sm4_modes_crypt")
 
 /-- `vg_sm4_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEncChained 4)

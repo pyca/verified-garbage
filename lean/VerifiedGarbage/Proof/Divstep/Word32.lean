@@ -37,13 +37,6 @@ theorem ofInt_sub' (a b : Int) : BitVec.ofInt 32 (a - b) = BitVec.ofInt 32 a - B
 theorem ofInt_two_mul (a : Int) : BitVec.ofInt 32 (2 * a) = BitVec.ofInt 32 a <<< 1 := by
   rw [shl1, two_mul, BitVec.ofInt_add]
 
-/-- Congruence modulo `2^k` (`k ≤ 32`) of a word's value and an integer it is
-congruent to modulo `2^32`. -/
-theorem toNat_cong {x : BitVec 32} {a : Int} {k : Nat} (hk : k ≤ 32)
-    (h : (x.toNat : Int) % 2 ^ 32 = a % 2 ^ 32) : (x.toNat : Int) % 2 ^ k = a % 2 ^ k := by
-  have hd : (2 : Int) ^ k ∣ 2 ^ 32 := pow_dvd_pow 2 hk
-  rw [← Int.emod_emod_of_dvd _ hd, h, Int.emod_emod_of_dvd _ hd]
-
 theorem lowered {x : BitVec 32} {a : Int} {k : Nat} (h : (x.toNat : Int) % 2 ^ (k + 1) = a % 2 ^ (k + 1)) :
     (x.toNat : Int) % 2 ^ k = a % 2 ^ k := by
   have hd : (2 : Int) ^ k ∣ 2 ^ (k + 1) := pow_dvd_pow 2 (by omega_arith)
@@ -79,9 +72,7 @@ theorem half_word {x : BitVec 32} {a : Int} {k : Nat} (hk : k + 1 ≤ 32)
 
 theorem c_allOnes : (0 : BitVec 32) - 1 = BitVec.allOnes 32 := by decide
 theorem c_one : (1 : BitVec 32) - 1 = 0 := by decide
-theorem c_zero : (0 : BitVec 32) - 0 = 0 := by decide
 theorem and0 (x : BitVec 32) : x &&& 0 = 0 := by simp
-theorem and0' (x : BitVec 32) : 0 &&& x = 0 := by simp
 theorem xor0 (x : BitVec 32) : x ^^^ 0 = x := by simp
 theorem ofInt_two : BitVec.ofInt 32 2 = 2 := by decide
 theorem two32 : (2#32 : BitVec 32) = 2 := rfl

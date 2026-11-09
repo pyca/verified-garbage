@@ -76,10 +76,6 @@ theorem writes {rs : List Region}
 theorem field_scr (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 256) :
     (field L d).Disjoint L.SCR := hL.kc.sub_left (fieldWithin L hd).sub
 
-theorem field_mem {m n : Mem} (hm : n = m) (d : Nat) :
-    Spec.Ed25519.bytesAt n (L.E + BitVec.ofNat 64 d) 32 =
-      Spec.Ed25519.bytesAt m (L.E + BitVec.ofNat 64 d) 32 := by rw [hm]
-
 end VG.Proof.Ed25519.AArch64.SignCached
 end
 
@@ -280,11 +276,6 @@ theorem input_self {r : Region} (hr : r ∈ L.inputs) :
     ∃ R ∈ L.inputs ++ L.outputs, Whole.Within r R :=
   ⟨r, List.mem_append_left _ hr, 0, by simp, by simp⟩
 
-/-- The first 32 bytes at `seed` (all of the seed, or the scalar half of its digest). -/
-theorem seed_input (hL : L.Ok) : Input L L.seed 32 :=
-  have w : Whole.Within ⟨L.seed, (32 : Addr).toNat⟩ L.SEED := ⟨0, by simp, by simpa using hL.sl⟩
-  ⟨.inr ⟨L.SEED, List.mem_append_left _ (by simp [Lay.inputs]), w⟩,
-    (hL.sc _ (by simp [Lay.inputs])).sub_left w.sub⟩
 theorem key_input (hL : L.Ok) : Input L L.pk 32 :=
   ⟨.inr (input_self (r := L.PK) (by simp [Lay.inputs])), hL.sc _ (by simp [Lay.inputs])⟩
 theorem message_input (hL : L.Ok) : Input L L.msg L.len :=
@@ -382,24 +373,6 @@ namespace VG.Proof.Ed25519.AArch64.SignCached
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64.SignCached
 
 variable {L : Lay} {g : Reg → BitVec 64} {vec : VReg → BitVec 128} {m₀ : Mem} {s : State}
-
-theorem hashSeed_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
-    (h32 : L.seedLen = 32) :
-    WP isa (hashSeed b.code b.suffix) s fun t => Ctx L g vec m₀ t ∧ Frame (hashWrites L) s.mem t.mem ∧
-      Spec.Ed25519.bytesAt t.mem (L.E + 192) 64 =
-        Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m₀ (L.seed) 32) := by
-  refine WP.seq (WP.mono (init_step hc hL ha) fun u ⟨hu, fu, ru⟩ => ?_)
-  refine WP.seq (WP.mono (update_input b hu hL ha 1 0 (by decide) (by decide) (seed_input hL)
-    (by decide) ru) fun v ⟨hv, fv, rv⟩ => ?_)
-  have hs := hu.input_bytes hL (r := L.SEED) (by simp [Lay.inputs])
-    (by change L.seedLen ≤ 2 ^ 64; rw [h32]; decide)
-  change Spec.Ed25519.bytesAt u.mem (L.seed) L.seedLen = Spec.Ed25519.bytesAt m₀ (L.seed) L.seedLen at hs
-  rw [h32] at hs
-  change Spec.Sha512.Repr _ v.mem _ ([] ++ Spec.Ed25519.bytesAt u.mem (L.seed) 32) at rv
-  rw [List.nil_append, hs] at rv
-  refine WP.mono (finalize_step b hv hL ha 32 (by decide) false
-    (by rw [bytes_length]; decide) (by rw [bytes_length]; rfl) rv)
-    fun t ⟨ht, ft, hd⟩ => ⟨ht, fu.trans (fv.trans ft), hd⟩
 
 theorem hashNonce_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
     WP isa (hashNonce b.code b.suffix) s fun t => Ctx L g vec m₀ t ∧ Frame (hashWrites L) s.mem t.mem ∧

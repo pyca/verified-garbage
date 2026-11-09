@@ -31,8 +31,6 @@ theorem wordReg_separate (i : Nat) :
   have fact : ∀ j < 4, wordReg j ≠ .esi ∧ wordReg j ≠ .edi ∧ wordReg j ≠ .ebp ∧ wordReg j ≠ .esp := by decide
   simpa only [wordReg, Nat.mod_mod] using fact (i % 4) (Nat.mod_lt _ (by decide))
 
-theorem wordReg_injective : ∀ i < 4, ∀ j < 4, wordReg i = wordReg j ↔ i = j := by decide
-
 theorem selectWord (a b c : BitVec 32) :
     ((b ^^^ c) &&& a) ^^^ c = (a &&& b) + (~~~a &&& c) := by
   rw [BitVec.add_eq_or_of_and_eq_zero]

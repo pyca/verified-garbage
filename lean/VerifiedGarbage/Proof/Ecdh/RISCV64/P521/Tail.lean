@@ -450,12 +450,6 @@ theorem out_of_disj {p base : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoi
     {off i : Nat} (hi : off + i < n) : ¬ (⟨base, 8192⟩ : Region).Contains (p + BitVec.ofNat 64 (off + i)) 1 :=
   hd _ (Offset.contains_base p (by omega) (by omega))
 
-/-- Eight bytes of a region. -/
-theorem in_rd8 {rs : List Region} {p : Addr} {n : Nat} (hr : (⟨p, n⟩ : Region) ∈ rs) {off : Nat} (ho : off + 8 ≤ n)
-    (hn : n ≤ 8192 := by decide) :
-    InRegions rs (p + BitVec.ofNat 64 off) 8 :=
-  ⟨_, hr, Offset.contains_base p ho (by omega)⟩
-
 /-- Bytes apart from the working space survive changes within it. -/
 theorem bytesAt_unch {base q : Addr} {W : List (Nat × Nat)} {n : Nat} {m m' : Mem} (U : Unch base W m m')
     (hW : ∀ w ∈ W, w.1 + w.2 ≤ 8192)

@@ -54,8 +54,8 @@ theorem leak_eq2W {a b a' b' : List Byte} {w w' : List (BitVec 64)} (ha : a.leng
   exact ⟨e, (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h₂⟩
 
 theorem pubE_of {S : Nat} {s₁ s₂ : State}
-    (h : (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi S).pub s₁ s₂) : PubE s₁ s₂ := by
-  sig_pub [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
+    (h : (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi S).pub s₁ s₂) : PubE s₁ s₂ := by
+  sig_pub [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
     stackArgs_six, List.append_eq] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10, a0, a1, a2, a3, a4, a5⟩ := h
@@ -137,8 +137,8 @@ theorem code_ct : RelCT isa (Two E) code fun _ _ => True := by
     · rw [a₁.r29, a₂.r29, gpr_eq h₁ h₂]
 
 theorem code_constantTime :
-    ConstantTime isa (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pre
-      (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pub code :=
+    ConstantTime isa (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pre
+      (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pub code :=
   RelCT.constantTime (code_ct.mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
     ⟨s₁, ⟨preE_of h₁, ⟨rfl, fun _ _ => rfl, fun _ _ => rfl, rfl, rfl⟩⟩, preE_of h₂, pubE_of hp⟩)
     fun _ _ h => h)
@@ -165,11 +165,11 @@ theorem sat_args : stackArg satState 0 = 0x4000 ∧ stackArg satState 1 = 60 ∧
     stackArg satState 3 = 112 ∧ stackArg satState 4 = 0x5000 ∧ stackArg satState 5 = 16 := by
   decide
 
-theorem sat : ∃ s, (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pre s := by
+theorem sat : ∃ s, (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pre s := by
   refine ⟨satState, ?_⟩
   have e : frameBytes = 2223 + 1 := rfl
   rw [e]
-  sig_pre [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
+  sig_pre [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
     stackArgs_six, List.append_eq]
   obtain ⟨a0, a1, a2, a3, a4, a5⟩ := sat_args
   have ha : stackArgAddr satState 0 = 0x10000000060 := by decide
@@ -185,7 +185,7 @@ theorem sat : ∃ s, (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes
     by decide, by decide, by decide, by decide, by decide, by decide, by decide,
     by unfold Spec.Rsa.lenValid; decide, by decide, by decide, by decide, by decide, by decide, by decide⟩
 
-theorem code_verified : Verified PPC64LE.target code (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes) :=
+theorem code_verified : Verified PPC64LE.target code (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes) :=
   ⟨code_correct, code_constantTime, sat⟩
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Enc

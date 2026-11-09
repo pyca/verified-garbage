@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Bignum.ByteWords
 `compare`: `ecx` all ones exactly if the input is below the modulus
 (`compare_ok`); `maskOut`: the result cleared unless the mask at 144 is set
 (`maskOut_ok`); `write`: the result's bytes to `out`, and the acceptance in
-`eax` (`write_ok`).
+`eax` (`write_any_ok`).
 -/
 
 @[expose] public section
@@ -145,14 +145,5 @@ theorem write_any_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat →
       read_eq_val32 _ _ _ _
     rw [VG.Proof.Bignum.read_prefix_value s.mem _ (by omega : len ≤ 4 * nw len) (by rw [eq]; exact fitv), eq]
   · rw [u₂.gpr, u₁.gpr, acc]; rfl
-
-theorem write_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : RtIn base bytes len args s)
-    (fitv : val32 s.mem base (numAt len 2) (nw len) < 2 ^ (8 * len)) :
-    WP isa write s fun t =>
-      Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = Spec.Rsa.i2osp (val32 s.mem base (numAt len 2) (nw len)) len ∧
-      t.gpr .eax = s.mem.readW (off base PublicFn.acceptanceOffset) 32 &&& 1 ∧
-      Frame [⟨byteAddr (args 0), len⟩] s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .esi] s t :=
-  WP.mono (write_any_ok h) fun _ ⟨V, A, F, K⟩ => ⟨V fitv, A, F, K⟩
 
 end VG.Proof.Bignum.X86.PublicRt

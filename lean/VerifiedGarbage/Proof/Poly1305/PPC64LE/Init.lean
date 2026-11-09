@@ -93,16 +93,6 @@ theorem init_exec {s₀ : State} (hp : IPre s₀) :
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
 
-theorem initMem_frame (m : Mem) (st key : Addr) : Frame [sR st] m (initMem m st key) := by
-  have c : ∀ d, d + 8 ≤ 128 → (sR st).Contains (off st d) (64 / 8) :=
-    fun d hd => contains_off hd (by omega)
-  simp only [initMem]
-  refine ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 24 ?_)).writeW
-    (List.mem_singleton_self _) _ (c 32 ?_)).writeW (List.mem_singleton_self _) _ (c 40 ?_)).writeW
-    (List.mem_singleton_self _) _ (c 48 ?_)).writeW (List.mem_singleton_self _) _ (c 0 ?_)).writeW
-    (List.mem_singleton_self _) _ (c 8 ?_) |>.writeW (List.mem_singleton_self _) _ (c 16 ?_)
-  all_goals decide
-
 set_option simprocs false in
 theorem initMem_word (m : Mem) (st key : Addr) {j : Nat} (hj : j < 4) :
     (initMem m st key).readW (off st (24 + 8 * j)) 64 = m.readW (off key (8 * j)) 64 := by

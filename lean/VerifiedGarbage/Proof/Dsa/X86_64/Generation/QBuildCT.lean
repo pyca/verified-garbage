@@ -49,7 +49,7 @@ theorem QHashState.label {n : Nat} {p : QHashPlan} {s : State} (h : QHashState n
   obtain ⟨V, W, R, A, _⟩ := h.rep
   exact ⟨h.frame, h.layout, V, W, R, A⟩
 
-theorem qHash_ct (H : GenerationHashes) (n : Nat) (hn : n = 2 ∨ n = 3) (len : Nat) :
+theorem qHash_ct (H : GenerationHashes) (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (len : Nat) :
     RelCT isa (Two (QHashState n)) (Impl.Dsa.X86_64.Generation.seedHashAt H.sha1 H.sha256 len)
       (Two (QHashState n)) := by
   refine two_post (two_map QHashPlan.hash (fun _ _ h => h.label) (seedHashAt_ct H.h1 H.h256 n hn len)) ?_
@@ -82,7 +82,7 @@ theorem qArgs_ct (n : Nat) :
     obtain ⟨V, W, R, A, hop⟩ := h.rep
     exact WP.mono (qArgs_ok h.layout R hop A.hll) fun _ ⟨a, b, c, d, _, _⟩ => ⟨a, b, c, d⟩
 
-theorem qCandidate_ct (H : GenerationHashes) (n : Nat) (hn : n = 2 ∨ n = 3) (len : Nat) :
+theorem qCandidate_ct (H : GenerationHashes) (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (len : Nat) :
     RelCT isa (Two (QHashState n)) (Impl.Dsa.X86_64.Generation.qCandidate H.sha1 H.sha256 len)
       (fun _ _ => True) := by
   refine RelCT.seq (qHash_ct H n hn len) (RelCT.seq (qArgs_ct n) ?_)

@@ -1,7 +1,4 @@
-//! P-224's multiplications, which [`ecdsa`](crate::ecdsa) and
-//! [`ecdh`](crate::ecdh) choose between, and its public keys, which both
-//! compute. `Mul::select` chooses the `_umaal` variants on ARMv7 CPUs with
-//! the features their `_FEATURES` constants name.
+//! P-224's multiplications and public keys, which ECDSA and ECDH share.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -12,84 +9,22 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::ec_p224::vg_ec_p224_public_key;
-#[cfg(target_arch = "arm")]
-use crate::arch::ec_p224::{VG_EC_P224_PUBLIC_KEY_UMAAL_FEATURES, vg_ec_p224_public_key_umaal};
-#[cfg(target_arch = "arm")]
-use crate::arch::ecdh_p224::VG_ECDH_P224_UMAAL_FEATURES;
-#[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_p224::VG_ECDSA_P224_VERIFY_UMAAL_FEATURES;
-#[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_p224_sha224::VG_ECDSA_P224_SHA224_SIGN_UMAAL_FEATURES;
-use crate::cpu::detected;
+use crate::align::CacheAligned;
+use crate::arch::dispatch::ec_p224::vg_ec_p224_public_key_auto;
 use crate::zeroize::zeroize;
-use verified_garbage_cpu::Features;
-
-/// The multiplications of P-224's field elements.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Mul {
-    /// The baseline implementation.
-    Baseline,
-    /// `_umaal`.
-    #[cfg(target_arch = "arm")]
-    Umaal,
-}
-
-impl Mul {
-    /// The fastest multiplications a CPU with the features `f` can run.
-    #[cfg(target_arch = "arm")]
-    pub(crate) fn select(f: Features) -> Mul {
-        let umaal = f.contains(
-            const {
-                Features::all(&[
-                    VG_EC_P224_PUBLIC_KEY_UMAAL_FEATURES,
-                    VG_ECDH_P224_UMAAL_FEATURES,
-                    VG_ECDSA_P224_SHA224_SIGN_UMAAL_FEATURES,
-                    VG_ECDSA_P224_VERIFY_UMAAL_FEATURES,
-                ])
-            },
-        );
-        if umaal { Mul::Umaal } else { Mul::Baseline }
-    }
-
-    /// The multiplications a CPU with the features `f` can run: there is
-    /// only one here.
-    #[cfg(not(target_arch = "arm"))]
-    pub(crate) fn select(_: Features) -> Mul {
-        Mul::Baseline
-    }
-}
 
 /// The public key `Q = dG` of the key `d`, in the uncompressed form of
 /// SEC 1 §2.3.3, or `None` if `d` is not in `[1, n − 1]`.
-pub(crate) fn public_key(d: &[u8; 28]) -> Option<[u8; 57]> {
+pub(crate) fn public_key(dit: crate::dit::Dit<'_>, d: &[u8; 28]) -> Option<[u8; 57]> {
     let mut out = [0; 57];
-    let mut scratch = [0u64; 1024];
-    let ok = match Mul::select(detected()) {
-        // SAFETY: `out` is valid for reads and writes of 57 bytes, `d` for
-        // reads of 28 and `scratch` for reads and writes of 8192; `out` and
-        // `scratch` are distinct objects from each other and `d`, so none
-        // overlaps another or the call's stack frame, and, as Rust objects,
-        // none wraps around the address space.
-        Mul::Baseline => unsafe { vg_ec_p224_public_key(&mut out, d, &mut scratch) },
-        // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
-        // (`Mul::select`).
-        #[cfg(target_arch = "arm")]
-        Mul::Umaal => unsafe { vg_ec_p224_public_key_umaal(&mut out, d, &mut scratch) },
-    };
-    zeroize(&mut scratch);
+    let mut scratch = CacheAligned([0u64; 1024]);
+    // SAFETY: `out` is valid for reads and writes of 57 bytes, `d` for reads of
+    // 28 and `scratch` for reads and writes of 8192; `out` and `scratch` are
+    // distinct objects from each other and `d`, so none overlaps another or the
+    // call's stack frame, and, as Rust objects, none wraps around the address
+    // space. The dispatcher calls only an implementation the CPU has the
+    // features of.
+    let ok = unsafe { vg_ec_p224_public_key_auto(dit, &mut out, d, &mut scratch.0) };
+    zeroize(&mut scratch.0);
     (ok == 1).then_some(out)
-}
-
-#[cfg(all(test, target_arch = "arm"))]
-mod tests {
-    use super::*;
-    use verified_garbage_cpu::feature;
-
-    /// The multiplications chosen with `umaal`, or without it.
-    #[test]
-    fn select() {
-        assert_eq!(Mul::select(Features(0)), Mul::Baseline);
-        assert_eq!(Mul::select(Features(feature::UMAAL)), Mul::Umaal);
-    }
 }

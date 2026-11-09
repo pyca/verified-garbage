@@ -53,6 +53,9 @@ structure Prims where
   expandMask4 : Prog isa
   /-- What the names of the polynomial arithmetic's functions end with (`Arith.Backend`). -/
   sfx : String := ""
+  /-- What the names of the polynomial arithmetic\'s functions but the samplers end with
+  (`Arith.Backend.asfx`). -/
+  asfx : String := sfx
   montgomery : Bool := false
   /-- `vg_mldsa_dot_inverse4`, `5` and `7` -/
   dotInv4 : Prog isa := .block []
@@ -183,9 +186,9 @@ Each takes its working space (if any) at `PS`. -/
 section
 variable (P : Prims)
 
-def nttAt (f : Ptr) : Prog isa := callP ("vg_mldsa_ntt" ++ P.sfx) P.ntt [.ptr f, .ptr (sc oPS)]
+def nttAt (f : Ptr) : Prog isa := callP ("vg_mldsa_ntt" ++ P.asfx) P.ntt [.ptr f, .ptr (sc oPS)]
 
-def invNttAt (f : Ptr) : Prog isa := callP ((if P.montgomery then "vg_mldsa_montgomery_inv_ntt" else "vg_mldsa_inv_ntt") ++ P.sfx) P.invNtt [.ptr f, .ptr (sc oPS)]
+def invNttAt (f : Ptr) : Prog isa := callP ((if P.montgomery then "vg_mldsa_montgomery_inv_ntt" else "vg_mldsa_inv_ntt") ++ P.asfx) P.invNtt [.ptr f, .ptr (sc oPS)]
 
 /-- `vg_mldsa_dot_inverse{c}`, for `c` of 4, 5 and 7. -/
 abbrev Prims.dotInv (P : Prims) (c : Nat) : Prog isa := if c = 4 then P.dotInv4 else if c = 5 then P.dotInv5 else P.dotInv7
@@ -196,14 +199,14 @@ abbrev dotInvName (c : Nat) : String :=
   if c = 4 then "vg_mldsa_dot_inverse4" else if c = 5 then "vg_mldsa_dot_inverse5" else "vg_mldsa_dot_inverse7"
 
 def dotInvAt (count : Nat) (h f g : Ptr) : Prog isa :=
-  callP (dotInvName count ++ P.sfx) (P.dotInv count) [.ptr h, .ptr f, .ptr g, .ptr (sc oPS)]
+  callP (dotInvName count ++ P.asfx) (P.dotInv count) [.ptr h, .ptr f, .ptr g, .ptr (sc oPS)]
 
-def mulAt (h f g : Ptr) : Prog isa := callP ((if P.montgomery then "vg_mldsa_montgomery_multiply_ntt" else "vg_mldsa_multiply_ntt") ++ P.sfx) P.mul [.ptr h, .ptr f, .ptr g]
+def mulAt (h f g : Ptr) : Prog isa := callP ((if P.montgomery then "vg_mldsa_montgomery_multiply_ntt" else "vg_mldsa_multiply_ntt") ++ P.asfx) P.mul [.ptr h, .ptr f, .ptr g]
 
 
-def addAt (f g : Ptr) : Prog isa := callP ("vg_mldsa_add" ++ P.sfx) P.add [.ptr f, .ptr g]
+def addAt (f g : Ptr) : Prog isa := callP ("vg_mldsa_add" ++ P.asfx) P.add [.ptr f, .ptr g]
 
-def subAt (f g : Ptr) : Prog isa := callP ("vg_mldsa_sub" ++ P.sfx) P.sub [.ptr f, .ptr g]
+def subAt (f g : Ptr) : Prog isa := callP ("vg_mldsa_sub" ++ P.asfx) P.sub [.ptr f, .ptr g]
 
 /-- `RejNTTPoly` of the seed at `RS` to `a`, and `r15 ← r15 ∧ result`. -/
 def rejAt (a : Ptr) : Prog isa :=
@@ -230,18 +233,18 @@ def ballAt (len tau : Nat) (c : Ptr) : Prog isa :=
   callP "vg_mldsa_sample_in_ball" P.ball [.ptr (sc oCT), .imm len, .imm tau, .ptr c, .ptr (sc oPS)]
 
 def highBitsAt (r : Ptr) (gamma2 : Nat) (out : Ptr) : Prog isa :=
-  callP ("vg_mldsa_high_bits" ++ P.sfx) P.highBits [.ptr r, .imm gamma2, .ptr out]
+  callP ("vg_mldsa_high_bits" ++ P.asfx) P.highBits [.ptr r, .imm gamma2, .ptr out]
 
 def lowBitsAt (r : Ptr) (gamma2 : Nat) (out : Ptr) : Prog isa :=
-  callP ("vg_mldsa_low_bits" ++ P.sfx) P.lowBits [.ptr r, .imm gamma2, .ptr out]
+  callP ("vg_mldsa_low_bits" ++ P.asfx) P.lowBits [.ptr r, .imm gamma2, .ptr out]
 
 /-- `‖f‖∞ < bound`, and `r15 ← r15 ∧ result`. -/
 def normAt (f : Ptr) (bound : Nat) : Prog isa :=
-  .seq (callP ("vg_mldsa_norm_lt" ++ P.sfx) P.normLt [.ptr f, .imm bound]) (.block [.alu32 .and .r15 (.reg .rax)])
+  .seq (callP ("vg_mldsa_norm_lt" ++ P.asfx) P.normLt [.ptr f, .imm bound]) (.block [.alu32 .and .r15 (.reg .rax)])
 
 /-- `MakeHint` of `z` and `r` to `h`, and the number of 1s added to `ONES`. -/
 def makeHintAt (z r : Ptr) (gamma2 : Nat) (h : Ptr) : Prog isa :=
-  .seq (callP ("vg_mldsa_make_hint" ++ P.sfx) P.makeHint [.ptr z, .ptr r, .imm gamma2, .ptr h])
+  .seq (callP ("vg_mldsa_make_hint" ++ P.asfx) P.makeHint [.ptr z, .ptr r, .imm gamma2, .ptr h])
     (.block [.mov32 .rcx (.mem (at_ .rbx oONES)), .alu32 .add .rcx (.reg .rax), .store (at_ .rbx oONES) .rcx])
 
 def simpleBitPackAt (f : Ptr) (b : Nat) (out : Ptr) (len : Nat) : Prog isa :=

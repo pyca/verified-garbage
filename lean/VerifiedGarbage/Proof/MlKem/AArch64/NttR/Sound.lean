@@ -735,10 +735,6 @@ theorem andT_ok {a b : T} {x y : BitVec 16} (ha : Hd L O a x) (hb : Hd L O b y) 
       Nat.mod_eq_of_lt (z_lt a)]
   rw [Bool.eq_false_iff.2 h₁, Bool.cond_false]; exact Hd.junk _
 
-/-- A term reduced to its width holds as the term did. -/
-theorem Hd.mod {a : T} {w : BitVec 16} (h : Hd L O a w) (ha : a < 2 ^ tw) : Hd L O (a % 2 ^ tw) w := by
-  rw [Nat.mod_eq_of_lt ha]; exact h
-
 theorem cond_lt {c : Bool} {x y n : Nat} (hx : x < n) (hy : y < n) : @LT.lt Nat instLTNat (bif c then x else y) n := by
   cases c with
   | false => exact hy

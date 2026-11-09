@@ -56,7 +56,7 @@ theorem ver_big {V : Reg → BitVec 64} (h2 : V .s2 = s₀.gpr .a0) (h1 : V .s1 
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hk, -⟩ := h
   exact hk.big (by rw [h2]; simp) (by rw [h1]; simp) (by rw [h0]; simp)
 
-theorem ver_bw : (below s₀.sp 3232).Disjoint ⟨s₀.gpr .a6, 2560⟩ := by
+theorem ver_bw : (below s₀.sp 3248).Disjoint ⟨s₀.gpr .a6, 2560⟩ := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hk, -⟩ := h
   exact hk.buf3 (by simp)
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseData
 public import VerifiedGarbage.Spec.Ffdh
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
@@ -18,17 +19,17 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Ffdh.X86_64.ParameterCandidate VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
-def phaseMem (m : Mem) (O : Addr) (bits : Nat) : Mem :=
+def phaseMem (m : Mem) (O : Addr) (bits : Nat) (c : Checks) : Mem :=
   ((m.writeW (off O (8 * oWitnessBits)) (BitVec.ofNat 64 bits)).writeW
     (off O (8 * oWitnessLen)) (BitVec.ofNat 64 ((bits + 7) / 8))).writeW
-    (off O (8 * oChecks)) (BitVec.ofNat 64 (Spec.Ffdh.primeChecks bits))
+    (off O (8 * oChecks)) (BitVec.ofNat 64 (checksCount c (Spec.Ffdh.primeChecks bits)))
 
 /-- The threshold is checked against this modulus, including q's smaller width. -/
 theorem phaseWidth_ok {s : State} {O : Addr} {bits : Nat}
     (hs : Scr s O 256) (hdi : s.gpr .rdi = O)
-    (hb : bits < 2 ^ 32) (hbits : s.gpr .rdx = BitVec.ofNat 64 bits) :
-    WP isa (.block phaseWidth) s fun t =>
-      t.mem = phaseMem s.mem O bits ∧ t.gpr .rax = off O 256 ∧ Keep [.rax, .rcx, .rdx] s t := by
+    (hb : bits < 2 ^ 32) (hbits : s.gpr .rdx = BitVec.ofNat 64 bits) (c : Checks) :
+    WP isa (.block (phaseWidth c)) s fun t =>
+      t.mem = phaseMem s.mem O bits c ∧ t.gpr .rax = off O 256 ∧ Keep [.rax, .rcx, .rdx] s t := by
   have hwr : ∀ j < 32, InRegions s.wr (off O (8 * j)) 8 := fun j hj => hs.st (by omega_arith)
   have hcf : decide ((BitVec.ofNat 64 bits).toNat <
       (BitVec.signExtend 64 (2049 : BitVec 32)).toNat) = decide (bits ≤ 2048) := by
@@ -39,17 +40,31 @@ theorem phaseWidth_ok {s : State} {O : Addr} {bits : Nat}
       BitVec.ofNat 64 (Spec.Ffdh.primeChecks bits) := by
     by_cases h : bits ≤ 2048 <;> simp [Spec.Ffdh.primeChecks, h]
   refine WP.mono (WP.keep [.rax, .rcx, .rdx] (Q := fun t =>
-    t.mem = phaseMem s.mem O bits ∧ t.gpr .rax = off O 256) ?_ rfl)
+    t.mem = phaseMem s.mem O bits c ∧ t.gpr .rax = off O 256) ?_ (by cases c <;> rfl))
     fun t ⟨⟨hm, ha⟩, k⟩ => ⟨hm, ha, k⟩
-  xrun [phaseWidth, phaseMem, State.ea, hdr, hdi, hdrOff, hbits,
-    hwr oWitnessBits (by decide), hwr oWitnessLen (by decide), hwr oChecks (by decide),
-    shr3_w bits hb, hcf, cmov_reg_value, eval]
-  constructor
-  · congr 1
-  · rfl
+  cases c <;> simp only [phaseWidth, Checks.code, List.cons_append, List.nil_append, List.append_nil]
+  · xrun [phaseWidth, Checks.code, phaseMem, checksCount, State.ea, hdr, hdi, hdrOff, hbits,
+      hwr oWitnessBits (by decide), hwr oWitnessLen (by decide), hwr oChecks (by decide),
+      shr3_w bits hb, hcf, cmov_reg_value, eval]
+    constructor
+    · congr 1
+    · rfl
+  · xrun [phaseWidth, Checks.code, phaseMem, checksCount, State.ea, hdr, hdi, hdrOff, hbits,
+      hwr oWitnessBits (by decide), hwr oWitnessLen (by decide), hwr oChecks (by decide),
+      shr3_w bits hb, hcf, cmov_reg_value, eval]
+    constructor
+    · rfl
+    · rfl
+  · xrun [phaseWidth, Checks.code, phaseMem, checksCount, State.ea, hdr, hdi, hdrOff, hbits,
+      hwr oWitnessBits (by decide), hwr oWitnessLen (by decide), hwr oChecks (by decide),
+      shr3_w bits hb, hcf, cmov_reg_value, eval]
+    constructor
+    · congr 1
+      by_cases h : bits ≤ 2048 <;> simp [Spec.Ffdh.primeChecks, h]
+    · rfl
 
-theorem phaseMem_frame (m : Mem) (O : Addr) (bits : Nat) :
-    Frm O [(8 * oWitnessBits, 24)] m (phaseMem m O bits) := by
+theorem phaseMem_frame (m : Mem) (O : Addr) (bits : Nat) (c : Checks) :
+    Frm O [(8 * oWitnessBits, 24)] m (phaseMem m O bits c) := by
   have hf (m : Mem) (d : Nat) (v : BitVec 64) (h1 : 8 * oWitnessBits ≤ d)
       (h2 : d + 8 ≤ 8 * oWitnessBits + 24) : Frm O [(8 * oWitnessBits, 24)] m (m.writeW (off O d) v) :=
     by
@@ -60,7 +75,7 @@ theorem phaseMem_frame (m : Mem) (O : Addr) (bits : Nat) :
   unfold phaseMem
   exact (hf m (8 * oWitnessBits) (BitVec.ofNat 64 bits) (by decide) (by decide)).trans
     ((hf _ (8 * oWitnessLen) (BitVec.ofNat 64 ((bits + 7) / 8)) (by decide) (by decide)).trans
-      (hf _ (8 * oChecks) (BitVec.ofNat 64 (Spec.Ffdh.primeChecks bits)) (by decide) (by decide)))
+      (hf _ (8 * oChecks) (BitVec.ofNat 64 (checksCount c (Spec.Ffdh.primeChecks bits))) (by decide) (by decide)))
 
 theorem phaseSelect_ok {s : State} {O : Addr} {bits : Nat}
     (hs : Scr s O 256) (hdi : s.gpr .rdi = O)
@@ -84,31 +99,31 @@ theorem phaseSelect_ok {s : State} {O : Addr} {bits : Nat}
 theorem phaseHead_ok {s : State} {O : Addr} {bits : Nat}
     (hs : Scr s O 256) (hdi : s.gpr .rdi = O)
     (hb1 : 1 ≤ bits) (hb2 : bits < 2 ^ 32)
-    (hb : word s.mem O (8 * oBits) = BitVec.ofNat 64 bits) (q : Bool) :
-    WP isa (.block (phaseHead q)) s fun t =>
-      t.mem = phaseMem s.mem O (if q then bits - 1 else bits) ∧
+    (hb : word s.mem O (8 * oBits) = BitVec.ofNat 64 bits) (q : Bool) (c : Checks) :
+    WP isa (.block (phaseHead q c)) s fun t =>
+      t.mem = phaseMem s.mem O (if q then bits - 1 else bits) c ∧
       t.gpr .rax = off O 256 ∧ Keep [.rax, .rcx, .rdx] s t := by
   unfold phaseHead
   rw [WP.block_append_iff]
   refine WP.mono (phaseSelect_ok hs hdi hb1 hb q) fun u ⟨hd, hm, k⟩ => ?_
   have hbu : (if q then bits - 1 else bits) < 2 ^ 32 := by cases q <;> simp_all <;> omega_arith
-  refine WP.mono (phaseWidth_ok (hs.congr k.2.2) ((k.gpr (by decide)).trans hdi) hbu hd)
+  refine WP.mono (phaseWidth_ok (hs.congr k.2.2) ((k.gpr (by decide)).trans hdi) hbu hd c)
     fun t ⟨hmem, ha, k'⟩ => ?_
   exact ⟨by rw [hmem, hm], ha, (k.trans k').mono (by decide)⟩
 
-theorem phaseMem_len (m : Mem) (O : Addr) (bits : Nat) :
-    word (phaseMem m O bits) O (8 * oWitnessLen) = BitVec.ofNat 64 ((bits + 7) / 8) := by
+theorem phaseMem_len (m : Mem) (O : Addr) (bits : Nat) (c : Checks) :
+    word (phaseMem m O bits c) O (8 * oWitnessLen) = BitVec.ofNat 64 ((bits + 7) / 8) := by
   unfold phaseMem
   rw [hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
 
-theorem phaseMem_bits (m : Mem) (O : Addr) (bits : Nat) :
-    word (phaseMem m O bits) O (8 * oWitnessBits) = BitVec.ofNat 64 bits := by
+theorem phaseMem_bits (m : Mem) (O : Addr) (bits : Nat) (c : Checks) :
+    word (phaseMem m O bits c) O (8 * oWitnessBits) = BitVec.ofNat 64 bits := by
   unfold phaseMem
   rw [hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
     hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
 
-theorem phaseMem_checks (m : Mem) (O : Addr) (bits : Nat) :
-    word (phaseMem m O bits) O (8 * oChecks) = BitVec.ofNat 64 (Spec.Ffdh.primeChecks bits) := by
+theorem phaseMem_checks (m : Mem) (O : Addr) (bits : Nat) (c : Checks) :
+    word (phaseMem m O bits c) O (8 * oChecks) = BitVec.ofNat 64 (checksCount c (Spec.Ffdh.primeChecks bits)) := by
   unfold phaseMem
   exact word_writeW_self _ _ _ _
 
@@ -118,15 +133,15 @@ def phaseRanges : List (Nat × Nat) :=
 theorem phaseSetup_ok {s : State} {O : Addr} {Z bits : Nat}
     (hs : Scr s O Z) (hdi : s.gpr .rdi = O)
     (hb1 : 1 ≤ bits) (hb2 : bits < 2 ^ 32)
-    (hb : word s.mem O (8 * oBits) = BitVec.ofNat 64 bits) (q : Bool)
+    (hb : word s.mem O (8 * oBits) = BitVec.ofNat 64 bits) (q : Bool) (c : Checks)
     (hz : 256 + slot (wsWords (((if q then bits - 1 else bits) + 7) / 8)) 8 ≤ Z) :
-    WP isa (phaseSetup q) s fun t => ∃ mi,
+    WP isa (phaseSetup q c) s fun t => ∃ mi,
       Good t (off O 256) (Z - 256) (wsWords (((if q then bits - 1 else bits) + 7) / 8)) mi ∧
       word t.mem (off O 256) (8 * VG.Impl.Rsa.X86_64.Crt.sLink) = O ∧
       word t.mem O (8 * oInner) = off O 256 ∧
       word t.mem O (8 * oWitnessBits) = BitVec.ofNat 64 (if q then bits - 1 else bits) ∧
       word t.mem O (8 * oWitnessLen) = BitVec.ofNat 64 (((if q then bits - 1 else bits) + 7) / 8) ∧
-      word t.mem O (8 * oChecks) = BitVec.ofNat 64 (Spec.Ffdh.primeChecks (if q then bits - 1 else bits)) ∧
+      word t.mem O (8 * oChecks) = BitVec.ofNat 64 (checksCount c (Spec.Ffdh.primeChecks (if q then bits - 1 else bits))) ∧
       Frm O phaseRanges s.mem t.mem ∧ Keep (.rdi :: mmRegs) s t := by
   let b := if q then bits - 1 else bits
   let len := (b + 7) / 8
@@ -135,11 +150,11 @@ theorem phaseSetup_ok {s : State} {O : Addr} {Z bits : Nat}
   have hs256 : Scr s O 256 := by
     simpa [off] using hs.sub (o := 0) (n := 256) (by omega_arith) (by decide)
   unfold phaseSetup
-  refine WP.seq (WP.mono (phaseHead_ok hs256 hdi hb1 hb2 hb q) fun u ⟨hm, ha, k⟩ => ?_)
-  have hf : Frm O [(8 * oWitnessBits, 24)] s.mem u.mem := by rw [hm]; exact phaseMem_frame _ _ _
+  refine WP.seq (WP.mono (phaseHead_ok hs256 hdi hb1 hb2 hb q c) fun u ⟨hm, ha, k⟩ => ?_)
+  have hf : Frm O [(8 * oWitnessBits, 24)] s.mem u.mem := by rw [hm]; exact phaseMem_frame _ _ _ _
   have hu : Scr u O Z := hs.congr k.2.2
   have hlen : word u.mem O (8 * oWitnessLen) = BitVec.ofNat 64 len := by
-    rw [hm]; exact phaseMem_len _ _ _
+    rw [hm]; exact phaseMem_len _ _ _ _
   have hlen32 : len < 2 ^ 32 := by
     have hl : b ≤ bits := by dsimp [b]; cases q <;> simp
     dsimp only [len]
@@ -169,9 +184,9 @@ theorem phaseSetup_ok {s : State} {O : Addr} {Z bits : Nat}
     · intro j hj; rw [hmt]; exact harr j hj
   · rw [hmt]; exact hlink
   · rw [hmt]; exact hinner
-  · rw [hmt, hhead _ (by decide), hm]; exact phaseMem_bits _ _ _
-  · rw [hmt, hhead _ (by decide), hm]; exact phaseMem_len _ _ _
-  · rw [hmt, hhead _ (by decide), hm]; exact phaseMem_checks _ _ _
+  · rw [hmt, hhead _ (by decide), hm]; exact phaseMem_bits _ _ _ _
+  · rw [hmt, hhead _ (by decide), hm]; exact phaseMem_len _ _ _ _
+  · rw [hmt, hhead _ (by decide), hm]; exact phaseMem_checks _ _ _ _
   · rw [hmt]
     exact hf.append hf'
 

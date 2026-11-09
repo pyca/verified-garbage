@@ -171,9 +171,6 @@ structure Ok (P : Params w) : Prop where
 theorem Ok.bb (h : Ok P) : blockBytes w = 64 ∨ blockBytes w = 128 := by
   rcases h.w with rfl | rfl <;> decide
 
-theorem Ok.N (h : Ok P) : bufOff w = blockBytes w / 2 := by
-  rcases h.w with rfl | rfl <;> decide
-
 theorem Ok.pos (h : Ok P) : 0 < blockBytes w := by rcases h.bb with h | h <;> omega
 
 /-- The sizes, all small. -/
@@ -208,19 +205,10 @@ theorem mask_mod (hP : Ok P) (x : BitVec 64) :
 /-- The block size, and one less, as immediates. -/
 theorem B_lt (hP : Ok P) : B w < 2048 := by rcases hP.w with rfl | rfl <;> decide
 
-theorem imm_B (hP : Ok P) : imm12 ((B w : Nat) : Int) := by
-  have := B_lt hP; unfold imm12; omega
-
 theorem imm_B1 (hP : Ok P) : imm12 ((B w - 1 : Nat) : Int) := by
   have := B_lt hP; unfold imm12; omega
 
-theorem imm_N (hP : Ok P) : imm12 ((N w : Nat) : Int) := by
-  have := hP.N64; rw [N_eq]; unfold imm12; omega
-
 theorem imm_m1 : imm12 (-1) := by decide
-
-/-- The callee-saved registers and the stack pointer are kept. -/
-def GprAbi (s s' : State) : Prop := (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp
 
 /-! ## Instructions with immediates -/
 
@@ -237,11 +225,6 @@ theorem wp_andi {d n : Reg} {imm : Int} (h : imm12 imm)
     WP isa (.block (.logicImm .and d n imm :: is)) s Q :=
   WP.cons (exec_logicImm h) (k _ (Upd.write _ _ _))
 
-theorem wp_liI {d : Reg} {imm : Int} (h : imm12 imm)
-    (k : ∀ s', Upd s s' d (BitVec.ofInt 64 imm) → WP isa (.block is) s' Q) :
-    WP isa (.block (.li d imm :: is)) s Q :=
-  WP.cons (exec_li h) (k _ (Upd.write _ _ _))
-
 theorem wp_srl {d n : Reg} {sh : Nat} (h : sh < 64)
     (k : ∀ s', Upd s s' d (s.gpr n >>> sh) → WP isa (.block is) s' Q) :
     WP isa (.block (.shift .srl .d d n sh :: is)) s Q :=
@@ -257,12 +240,6 @@ theorem wp_dec {d n : Reg}
     (k : ∀ s', Upd s s' d (s.gpr n - BitVec.ofNat 64 1) → WP isa (.block is) s' Q) :
     WP isa (.block (.addi d n (-1) :: is)) s Q :=
   wp_addiI imm_m1 fun s' u => k s' (by rw [← add_neg_one]; exact u)
-
-/-- `li d, k` for a natural number `k < 2048`. -/
-theorem wp_liN {d : Reg} {k : Nat} (h : k < 2048)
-    (c : ∀ s', Upd s s' d (BitVec.ofNat 64 k) → WP isa (.block is) s' Q) :
-    WP isa (.block (.li d (k : Int) :: is)) s Q :=
-  wp_li h c
 
 end
 

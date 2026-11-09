@@ -39,13 +39,6 @@ theorem baseWord_entry {e w:Nat} (hw:w<16) :
   rw [baseWord,hd,hm,h8]
   rfl
 
-theorem baseWord_bound (i:Nat) : (baseWord i).toNat<2^56 := by
-  have he:i=16*(i/16)+i%16:=by omega
-  have hv:=baseWord_entry (e:=i/16) (w:=i%16) (Nat.mod_lt _ (by decide))
-  rw [←he] at hv
-  rw [hv]
-  exact VG.Proof.X448.AArch64.Base.limb_lt _ _
-
 end VG.Proof.Ed448.AArch64.Sparse
 end
 

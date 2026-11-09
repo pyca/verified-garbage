@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 `Cfg.gMul` is the comb for a curve with one, else the ladder (`Cfg.gMulK`, for a
 secret scalar, the comb with Booth's digits where the curve's has them); each leaves
 `R = [k]G`, from the table of `k`'s bits, changing only the slots and word of
-`gW` (`gMul_ok`).
+`gW` (`gMul_ok'`).
 -/
 
 @[expose] public section
@@ -60,16 +60,6 @@ theorem tbl_apart_gW {j t : Nat} (hj : j = 1 ∨ j = 2) (ht : t < 64 * c.n)
   rw [List.mem_singleton.mp hw]
   simp only [bitsAt_eq]
   rcases hj with rfl | rfl <;> exact Or.inr (by omega)
-
-/-- The flag word apart from what `[k]G` writes. -/
-theorem flag_unch_gW {base : Addr} {m m' : Mem} (hu : Unch base (gW c) m m')
-    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) :
-    word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
-  have hF := sl_le c h7 (i := FLAG) (by decide)
-  refine hu.word (fun w hw => ?_) (by omega)
-  rcases apart_gW (c := c) (i := FLAG) (by decide) (by decide) w hw with h | h
-  · exact Or.inl (by omega)
-  · exact Or.inr h
 
 /-- `R = [k]G` by a comb `P` (`d`'s, with its tables where it reads them),
 after `b R mod p` is put in `EM`: what `P` gives from `TCombFixed`, `gMul`'s
@@ -216,17 +206,6 @@ theorem gMul_ok' (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Add
     exact gMulComb_ok' hc hcd hs F.mp F.zero hkl ht₀ hTM hout fun s₁ hs₁ hM₁ hF =>
       tcomb_ok (tcombLay hc (hc.comb d hcd)) hC (hc.comb_am3 d hcd) hc.onG (tcombVals hc hC (hT d hcd).1) hc.p_lt hs₁
         hM₁ hF publicLookup
-
-/-- `R = [k]G`, by the comb or the ladder, after the setup and the tables. -/
-theorem gMul_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀)
-    {s : State} (hS : St₁ c hs s₀ (s₀.gpr .r8) s) :
-    WP isa c.gMul.inline s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch (s₀.gpr .r8) (gW c) s.mem s'.mem ∧
-      ModOkW c.MP' size c.C.p s'.mem (s₀.gpr .r8) ∧
-      (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem (s₀.gpr .r8) x c.n < c.C.p) ∧
-      Rep c.C (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RX)) (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RY))
-        (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RZ)) (mul (kv c s₀) (G c.C)) :=
-  gMul_ok' hc hC hT hS.scr hS.fixed (hS.k ▸ wordsVal_lt _ _ _ _) hS.rx hS.ry hS.rz (hS.t₀ rfl) fun d hcd => by
-    rw [hS.syms]; exact tbl_of hcd hp hS.rd hS.unch
 
 /-- `R = [k]G` for a secret `k` (`gMulK`): by the comb with Booth's digits for
 a curve whose comb has them, else as `gMul`. -/

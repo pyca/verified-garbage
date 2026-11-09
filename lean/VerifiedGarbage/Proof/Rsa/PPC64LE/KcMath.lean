@@ -7,10 +7,9 @@ import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! # The checks of an RSA key on PPC64LE: the mask is the spec's
 
-`ck_bits`, `cck_bits`: with the products as `mulMod` computes them (`e` over
-33 bits, `q` over all its bits, each known when its factor is below its
-modulus and twice the modulus fits), the mask the checks compute is
-`keyValid` and `crtKeyValid`.
+`ck_bits`: with the products as `mulMod` computes them (`e` over 33 bits,
+`q` over all its bits, each known when its factor is below its modulus and
+twice the modulus fits), the mask the checks compute is `keyValid`.
 -/
 
 @[expose] public section
@@ -38,22 +37,6 @@ theorem ck_bits {k n e d p q dP dQ qI w : Nat} (hm : modulusValid n k = true) (h
   have fp := fit_two hk hw hp
   have fq := fit_two hk hw hq
   refine VG.Proof.Rsa.keyValid_bits hm he hp hq hX (fun h => ?_) (fun h => ?_) (fun h => ?_) hY₁ hY₂
-  · rw [hR₁ h (Nat.le_trans (by omega : 2 * (2 * (p / 2)) ≤ 2 * p) fp), Nat.mod_eq_of_lt he']
-  · rw [hR₂ h (Nat.le_trans (by omega : 2 * (2 * (q / 2)) ≤ 2 * q) fq), Nat.mod_eq_of_lt he']
-  · rw [hR₃ h fp]
-
-theorem cck_bits {k n e p q dP dQ qI w : Nat} (hm : modulusValid n k = true) (he : exponentValid e = true)
-    (hp : p < 256 ^ (k - 1)) (hq : q < 256 ^ (k - 1)) (hk : 1 ≤ k) (hw : 256 ^ k ≤ 2 ^ (32 * w))
-    {X₁ X₂ R₁ R₂ R₃ : Nat} (hX : 0 < p → X₁ = n / p ∧ X₂ = n % p)
-    (hR₁ : dP < 2 * (p / 2) → 2 * (2 * (p / 2)) ≤ 2 ^ (32 * w) → R₁ = e % 2 ^ 33 * dP % (2 * (p / 2)))
-    (hR₂ : dQ < 2 * (q / 2) → 2 * (2 * (q / 2)) ≤ 2 ^ (32 * w) → R₂ = e % 2 ^ 33 * dQ % (2 * (q / 2)))
-    (hR₃ : qI < p → 2 * p ≤ 2 ^ (32 * w) → R₃ = q * qI % p) :
-    crtKeyValid k n e p q dP dQ qI = VG.Proof.Rsa.crtBits p q dP dQ qI X₁ X₂ R₁ R₂ R₃ := by
-  have he' : e < 2 ^ 33 := by
-    simp only [exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he; exact he.2
-  have fp := fit_two hk hw hp
-  have fq := fit_two hk hw hq
-  refine VG.Proof.Rsa.crtKeyValid_bits hm he hp hq hX (fun h => ?_) (fun h => ?_) (fun h => ?_)
   · rw [hR₁ h (Nat.le_trans (by omega : 2 * (2 * (p / 2)) ≤ 2 * p) fp), Nat.mod_eq_of_lt he']
   · rw [hR₂ h (Nat.le_trans (by omega : 2 * (2 * (q / 2)) ≤ 2 * q) fq), Nat.mod_eq_of_lt he']
   · rw [hR₃ h fp]

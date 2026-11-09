@@ -252,29 +252,6 @@ structure EcbPre (s : State) : Prop where
   retBuf : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rcx, 1024⟩
   fit : (s.gpr .rsi).toNat + 8 * (s.gpr .rdx).toNat ≤ 2 ^ 64
 
-/-- `EcbPre` from the regions of the contract. -/
-theorem EcbPre.of_regions {s : State} (hrd : s.rd = [⟨s.gpr .rdi, 384⟩])
-    (hwr : s.wr = [⟨s.gpr .rsi, 8 * (s.gpr .rdx).toNat⟩, ⟨s.gpr .rcx, 1024⟩])
-    (keyData : (⟨s.gpr .rdi, 384⟩ : Region).Disjoint ⟨s.gpr .rsi, 8 * (s.gpr .rdx).toNat⟩)
-    (keyBuf : (⟨s.gpr .rdi, 384⟩ : Region).Disjoint ⟨s.gpr .rcx, 1024⟩)
-    (dataBuf : (⟨s.gpr .rsi, 8 * (s.gpr .rdx).toNat⟩ : Region).Disjoint ⟨s.gpr .rcx, 1024⟩)
-    (retData : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rsi, 8 * (s.gpr .rdx).toNat⟩)
-    (retBuf : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rcx, 1024⟩)
-    (fit : (s.gpr .rsi).toNat + 8 * (s.gpr .rdx).toNat ≤ 2 ^ 64) : EcbPre s where
-  scratch := by rw [hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self
-  dataIn i hi := by
-    rw [hwr]
-    exact ⟨_, List.mem_cons_self, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  keyIn i hi := by
-    rw [hrd]
-    exact ⟨_, List.mem_cons_self, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  keyData := keyData
-  keyBuf := keyBuf
-  dataBuf := dataBuf
-  retData := retData
-  retBuf := retBuf
-  fit := fit
-
 /-- What the function does: every block of the data becomes its encryption or
 decryption, the callee-saved registers and the return address are kept, and
 only the scratch buffer and the data change. -/

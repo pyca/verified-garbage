@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.CbcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Camellia-CBC artifacts on baseline ARMv7 -/
 

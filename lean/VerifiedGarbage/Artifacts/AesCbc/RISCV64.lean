@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesCbc.RISCV64.Verified
+public import VerifiedGarbage.Proof.AesCbc.RISCV64.Wiped
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.AesCbc.RISCV64.Lit
 
 /-! # AES-CBC (NIST SP 800-38A §6.2) on RISC-V -/
@@ -14,10 +15,12 @@ open VG.Proof.AesCbc.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Cbc.aesEncryptApi.artifact RISCV64.target {
-    code := Impl.AesCbc.RISCV64.encrypt
-    verified := encrypt_verified },
+    code := Wiped.encrypt
+    stack := 32
+    verified := Wiped.encrypt_verified },
   Spec.Cbc.aesDecryptApi.artifact RISCV64.target {
-    code := Impl.AesCbc.RISCV64.decrypt
-    verified := decrypt_verified }]
+    code := Wiped.decrypt
+    stack := 32
+    verified := Wiped.decrypt_verified }]
 
 end VG.Artifacts.AesCbc.RISCV64

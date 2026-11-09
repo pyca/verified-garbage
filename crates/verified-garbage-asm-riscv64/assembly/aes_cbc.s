@@ -7,35 +7,41 @@
 vg_aes_cbc_encrypt:
 	.option push
 	.option arch, +m, +c
-	addi t0, a5, 2047
-	addi t0, t0, 8
-	andi t0, t0, -8
-	sd ra, 16(t0)
-	sd s1, 24(t0)
-	addi s1, a5, 0
-	call {vg_aes_cbc_chain}
-	addi t0, s1, 2047
-	addi t0, t0, 8
-	andi t0, t0, -8
-	ld ra, 16(t0)
-	ld s1, 24(t0)
+	addi sp, sp, -32
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd a5, 8(t0)
+	call {vg_aes_cbc_encrypt_unwiped}
+	addi t0, sp, 0
+	sd a0, 16(t0)
+	ld a0, 8(t0)
+	addi a1, zero, 2047
+	addi a1, a1, 129
+	call {vg_zeroize}
+	addi t0, sp, 0
+	ld a0, 16(t0)
+	ld ra, 0(t0)
+	addi sp, sp, 32
 	ret
 	.option pop
 
 vg_aes_cbc_decrypt:
 	.option push
 	.option arch, +m, +c
-	addi t0, a5, 2047
-	addi t0, t0, 8
-	andi t0, t0, -8
-	sd ra, 16(t0)
-	sd s1, 24(t0)
-	addi s1, a5, 0
-	call {vg_aes_cbc_dec_wide}
-	addi t0, s1, 2047
-	addi t0, t0, 8
-	andi t0, t0, -8
-	ld ra, 16(t0)
-	ld s1, 24(t0)
+	addi sp, sp, -32
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd a5, 8(t0)
+	call {vg_aes_cbc_decrypt_unwiped}
+	addi t0, sp, 0
+	sd a0, 16(t0)
+	ld a0, 8(t0)
+	addi a1, zero, 2047
+	addi a1, a1, 129
+	call {vg_zeroize}
+	addi t0, sp, 0
+	ld a0, 16(t0)
+	ld ra, 0(t0)
+	addi sp, sp, 32
 	ret
 	.option pop

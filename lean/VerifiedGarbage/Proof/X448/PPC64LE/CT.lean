@@ -28,4 +28,13 @@ theorem x448_ct {Pre : State → Prop} {Pub : State → State → Prop}
       obtain ⟨hsp, hr⟩ := hpub s₁ s₂ h₁ h₂ hp
       exact ⟨hsp, fun r h => hr r (by simpa using h)⟩) (by taint_decide)
 
+theorem x448Base_ct {Pre : State → Prop} {Pub : State → State → Prop}
+    (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ →
+      s₁.sp = s₂.sp ∧ ∀ r ∈ [Reg.r3, .r4, .r5], s₁.gpr r = s₂.gpr r) :
+    ConstantTime isa Pre Pub Impl.X448.PPC64LE.x448Base :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5])
+    (fun s₁ s₂ h₁ h₂ hp => by
+      obtain ⟨hsp, hr⟩ := hpub s₁ s₂ h₁ h₂ hp
+      exact ⟨hsp, fun r h => hr r (by simpa using h)⟩) (by taint_decide)
+
 end VG.Proof.X448.PPC64LE

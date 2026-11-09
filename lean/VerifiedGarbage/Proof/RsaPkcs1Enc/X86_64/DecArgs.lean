@@ -182,20 +182,6 @@ theorem upd_cx {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : S
     · exact scrW (by decide) (.inl (by decide))
     · exact scrW (by decide) (.inl (by decide))
 
-theorem fin_cx {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : Ctx s R EM t)
-    (hdi : t.gpr .rdi = scA s 0) (hdx : t.gpr .rdx = scA s sDH) (hcx : t.gpr .rcx = scA s sWork) :
-    WP isa (.call (HH v).finN (HH v).finC) t fun t' => Ctx s R EM t' ∧ FrmKeep s t.mem t'.mem := by
-  obtain ⟨-, -, -, -, hS, hF, -, hWb⟩ := sizes v
-  refine Proof.Pbkdf2.Md.X86_64.Calls.fin_call (OK v).stream (finArgsOf hp hc hdi hdx hcx) fun t' a _ => ?_
-  have hf := a.frame
-  rw [below_rsp hc, hS, hF, hWb] at hf
-  exact cx_of (lo := [(sDH, 32)]) hp hc (by decide) a.rd a.wr a.cs hf fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact scrW (by decide) (.inl (by decide))
-    · exact scrW (by decide) (.inr (List.mem_singleton_self _))
-    · exact scrW (by decide) (.inl (by decide))
-
 theorem hinit_cx {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : Ctx s R EM t)
     {kOff : Nat} (hk1 : sMsg ≤ kOff) (hk2 : kOff + 32 ≤ scrBytes) (hdi : t.gpr .rdi = scA s 0)
     (hsi : t.gpr .rsi = scA s sOuter) (hdx : t.gpr .rdx = scA s kOff) (hcx : t.gpr .rcx = BitVec.ofNat 64 32)

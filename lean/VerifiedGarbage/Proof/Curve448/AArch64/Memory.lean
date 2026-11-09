@@ -22,9 +22,4 @@ theorem field_fe {base : Addr} {o : Nat} {m m' : Mem}
     fe m' base d = fe m base d :=
   VG.Proof.X448.Wide.valN_congr (fun i hi => h.limbs hd hw (by omega : i < 16))
 
-theorem outside_fe {base : Addr} {o n : Nat} {m m' : Mem}
-    (h : Outside base o n m m') {d : Nat}
-    (hd : d + 128 ≤ o ∨ o + n ≤ d) (hw : d + 128 ≤ 8192) :
-    fe m' base d = fe m base d :=
-  VG.Proof.X448.Wide.valN_congr (fun i hi => h.limbs hd hw (by omega : i < 16))
 end VG.Proof.Curve448.AArch64

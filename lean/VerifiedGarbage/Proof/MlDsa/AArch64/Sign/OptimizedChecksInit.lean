@@ -39,16 +39,4 @@ theorem positiveChecksInit_ok {p : Params} {S : Nat} {σ s : State} {t : Nat}
     by rw [hpv.pa (by decide),hm,Mem.readW_writeW_self64]; rfl⟩,
     by rw [hkeep.get .x24,hflag]; exact (bit_one.mpr fun _ hj => by omega).symm⟩
 
-/-- A successfully sampled challenge enters the complete signed-z phase. -/
-theorem positiveChallengeZ_ok {p : Params} {S : Nat} {σ s : State} {t : Nat}
-    (hp : Ok3 p) (hc : ksChk p=true) (h : PositiveIB p S σ t s)
-    (h1 : (s.gpr .x0).setWidth 32=1) :
-    WP isa (.seq (VG.Impl.MlDsa.AArch64.Call.callAt "vg_mldsa_ntt_positive"
-      VG.Impl.MlDsa.AArch64.Optimized.Ntt.staticNtt
-      (VG.Proof.MlDsa.AArch64.Optimized.positiveNttArgs cP))
-      (.seq (.block kInit) (VG.Impl.MlDsa.AArch64.Call.seqR
-        (Impl.MlDsa.AArch64.Sign.Optimized.zR p) 0 p.ℓ))) s (PositiveIZ p S σ t p.ℓ) := by
-  refine WP.seq (WP.mono (positiveChallenge_ok hp h h1) fun u hu => ?_)
-  exact WP.seq (WP.mono (positiveChecksInit_ok hp hc hu) fun v hv => optimizedZ_vector_ok hp hv)
-
 end VG.Proof.MlDsa.AArch64.Sign

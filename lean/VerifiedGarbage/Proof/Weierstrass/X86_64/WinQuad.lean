@@ -29,6 +29,35 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
 open Spec.Weierstrass
 
+/-! ## The doubling's operations, numbered (`dblJX`, as `dblJSN`) -/
+
+def dblJXN : List FOp := WinCfg.dblJX ⟨9, 10, 0, 1, 2, 3, 4, 5⟩ ⟨11, 12, 13⟩ ⟨6, 7, 8⟩
+
+def dblJXChoiceN (direct : Bool) : List FOp := if direct then dblJMulN else dblJXN
+
+theorem dblJXChoiceN_ok (direct : Bool) : NumOk (dblJXChoiceN direct) := by
+  cases direct <;> exact ⟨by decide, by decide, by decide⟩
+
+theorem dblJXChoice_eq (direct : Bool) (S : RcbSlots) (p o : Pt) :
+    (if direct then dblJMul S p o else WinCfg.dblJX S p o) = ofN (dblJXChoiceN direct) S p p o := by
+  cases direct <;> rfl
+
+theorem dblJXN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
+    (runOps dblJXN e 6, runOps dblJXN e 7, runOps dblJXN e 8) =
+      dblJF (e 11) (e 12) (e 13) := by
+  dsimp only [dblJXN, WinCfg.dblJX, runOps, List.foldl, FOp.run, Function.update]
+  simp only [dblJF, Prod.mk.injEq]
+  constructor
+  · grind
+  constructor <;> grind
+
+theorem dblJXChoiceN_run {F : Type _} [Lean.Grind.CommRing F] (direct : Bool) (e : Nat → F) :
+    (runOps (dblJXChoiceN direct) e 6, runOps (dblJXChoiceN direct) e 7,
+      runOps (dblJXChoiceN direct) e 8) = dblJF (e 11) (e 12) (e 13) := by
+  cases direct
+  · exact dblJXN_run e
+  · exact dblJMulN_run e
+
 /-! ## The loop -/
 
 /-- What the loop writes: the slots but the table's, and the temporary area. -/
@@ -296,16 +325,16 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
   have body : ∀ j st, 1 ≤ j → j ≤ 2 → LI j st →
       WP isa (WinCfg.jacPair K).inline st fun st' => LI (j - 1) st' ∧ st'.cf = some (decide (j - 1 = 0)) := by
     intro j st hj hj' ⟨S, b, E, I, J⟩
-    simp only [WinCfg.jacPair, WinCfg.double, dblJSChoice_eq]
-    refine WP.seq (WP.mono (winN_ok hL hp (dblJSChoiceN_ok (K.M.n ≤ 6 : Bool)) a2 w2.1 w2.2 I (by
+    simp only [WinCfg.jacPair, WinCfg.double, dblJXChoice_eq]
+    refine WP.seq (WP.mono (winN_ok hL hp (dblJXChoiceN_ok (K.M.n ≤ 6 : Bool)) a2 w2.1 w2.2 I (by
       dsimp [V]; rcb_sub)) fun st₁ ⟨k₁', U₁', E₁', I₁', _, v₁'⟩ => ?_)
     have S₁' := S.next hL I₁'.scr (k₁'.mono clob_powClob) U₁'
-    have J₁' := InvJ.dbl' hC hM3 (hQ _) J (v₁'.trans (dblJSChoiceN_run (K.M.n ≤ 6 : Bool) _))
+    have J₁' := InvJ.dbl' hC hM3 (hQ _) J (v₁'.trans (dblJXChoiceN_run (K.M.n ≤ 6 : Bool) _))
     rw [hC.double hP] at J₁'
-    refine WP.seq (WP.mono (winN_ok hL hp (dblJSChoiceN_ok (K.M.n ≤ 6 : Bool)) a3 w3.1 w3.2 I₁' (by
+    refine WP.seq (WP.mono (winN_ok hL hp (dblJXChoiceN_ok (K.M.n ≤ 6 : Bool)) a3 w3.1 w3.2 I₁' (by
       dsimp [V]; rcb_sub)) fun st₂ ⟨k₂', U₂', E₂', I₂', _, v₂'⟩ => ?_)
     have S₂' := S₁'.next hL I₂'.scr (k₂'.mono clob_powClob) U₂'
-    have J₂' := InvJ.dbl' hC hM3 (hQ _) J₁' (v₂'.trans (dblJSChoiceN_run (K.M.n ≤ 6 : Bool) _))
+    have J₂' := InvJ.dbl' hC hM3 (hQ _) J₁' (v₂'.trans (dblJXChoiceN_run (K.M.n ≤ 6 : Bool) _))
     rw [hC.double hP] at J₂'
     have ar : 2 * (2 * (4 ^ (2 - j) * e)) = 4 ^ (2 - (j - 1)) * e := by
       have hj12 : j = 1 ∨ j = 2 := by omega_arith

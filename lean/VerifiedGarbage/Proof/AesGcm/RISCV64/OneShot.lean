@@ -109,9 +109,10 @@ theorem stb_t16 (hk : StkOk (V .s2) (V .s1) (V .s0) sp) {d : Nat} (hd : d = 0 �
   · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
   · exact hk.st.sub_left (Lay.stSub (by omega))
 
-/-- The slots of `W` from 232 to 248, which hold the addresses of the
-additional data and the data, are apart from what `j0` writes. -/
-theorem slot_j0 (hk : StkOk (V .s2) (V .s1) (V .s0) sp) {d : Nat} (hd : 232 ≤ d ∧ d + 8 ≤ 248) :
+/-- The slots of `W` from 232 to 256, which hold the addresses of the
+additional data and the data (and, out of place, the distance to the
+destination), are apart from what `j0` writes. -/
+theorem slot_j0' (hk : StkOk (V .s2) (V .s1) (V .s0) sp) {d : Nat} (hd : 232 ≤ d ∧ d + 8 ≤ 256) :
     ∀ r ∈ j0Frame (V .s1) (V .s0) sp, (⟨V .s0 + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -120,6 +121,10 @@ theorem slot_j0 (hk : StkOk (V .s2) (V .s1) (V .s0) sp) {d : Nat} (hd : 232 ≤ 
   · exact Lay.w_w (by omega) (by omega) (by decide)
   · exact Lay.w_w (by omega) (by omega) (by decide)
   · exact hk.w.sub_left (Lay.wSub (by omega))
+
+theorem slot_j0 (hk : StkOk (V .s2) (V .s1) (V .s0) sp) {d : Nat} (hd : 232 ≤ d ∧ d + 8 ≤ 248) :
+    ∀ r ∈ j0Frame (V .s1) (V .s0) sp, (⟨V .s0 + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r :=
+  slot_j0' L hk ⟨hd.1, by omega⟩
 
 theorem slot_abs (hk : StkOk (V .s2) (V .s1) (V .s0) sp) {d : Nat} (hd : 232 ≤ d ∧ d + 8 ≤ 248) :
     ∀ r ∈ absFrame (V .s1) (V .s0) 16 sp, (⟨V .s0 + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r :=
@@ -134,8 +139,8 @@ theorem slot_t (hk : StkOk (V .s2) (V .s1) (V .s0) sp) {d : Nat} (hd : 232 ≤ d
     exact (slot_j0 L hk hd r' hr').sub_right hs
 
 /-- The slots of the addresses are apart from what `crypt` writes. -/
-theorem slot_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW (V .s2) (V .s1) (V .s0) s D n) {d : Nat}
-    (hdd : 232 ≤ d ∧ d + 8 ≤ 248) :
+theorem slot_crFrame' {s : State} {D : Addr} {n : Nat} (hd : DataW (V .s2) (V .s1) (V .s0) s D n) {d : Nat}
+    (hdd : 232 ≤ d ∧ d + 8 ≤ 256) :
     ∀ r ∈ crFrame (V .s1) (V .s0) D n, (⟨V .s0 + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -143,6 +148,11 @@ theorem slot_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW (V .s2) (V .s1
   · exact (hd.ok.w.sub_right (Lay.wSub (by omega))).symm
   · exact (L.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
   · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+
+theorem slot_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW (V .s2) (V .s1) (V .s0) s D n) {d : Nat}
+    (hdd : 232 ≤ d ∧ d + 8 ≤ 248) :
+    ∀ r ∈ crFrame (V .s1) (V .s0) D n, (⟨V .s0 + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r :=
+  slot_crFrame' L hd ⟨hdd.1, by omega⟩
 
 /-- `oneAad`: `J₀` of the `n`-byte nonce at `Np`, then the additional data
 (`aad_len`, `s10`, bytes at `A`, in `W + aadO`) absorbed and padded. -/
@@ -208,11 +218,11 @@ theorem oneAad_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {Np A : Addr} {n :
 
 end
 
-/-- After `oneCrypt`, from `m₀`. -/
-structure OC (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (icb : Block) (D : Addr) (m₀ : Mem) (s : State) :
+/-- After `oneCryptWith o`, from `m₀`: the data at `S` decrypted to `D`. -/
+structure OC (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (icb : Block) (S D : Addr) (m₀ : Mem) (s : State) :
     Prop where
   env : Env V sp s
-  out : bytesAt s.mem D (V .s11).toNat = gctr (ciphOf m₀ (V .s2) R) icb (bytesAt m₀ D (V .s11).toNat)
+  out : bytesAt s.mem D (V .s11).toNat = gctr (ciphOf m₀ (V .s2) R) icb (bytesAt m₀ S (V .s11).toNat)
   frame : Frame (crFrame (V .s1) (V .s0) D (V .s11).toNat) m₀ s.mem
 
 theorem dataArgs_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V sp s)
@@ -237,22 +247,34 @@ section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0))
 include L
 
-/-- `oneCrypt`: counter mode over the data (`len`, `s11`, bytes at `D`, in
-`W + dataO`) from the counter block `icb`. -/
-theorem oneCrypt_ok {R : Nat} {D : Addr} {s : State} (he : Env V sp s) (h28 : V .s3 = BitVec.ofNat 64 R)
-    (hR : R = 10 ∨ R = 12 ∨ R = 14) (hd : DataW (V .s2) (V .s1) (V .s0) s D (V .s11).toNat)
-    (hDs : s.mem.readW (V .s0 + BitVec.ofNat 64 dataO) 64 = D)
+/-- `oneCryptWith o`: counter mode over the data (`len`, `s11`, bytes at `S`,
+in `W + dataO`), to `D` (`S` in place), from the counter block `icb`. -/
+theorem oneCryptWith_ok {o : Bool} {R : Nat} {S D : Addr} {s : State} (he : Env V sp s)
+    (h28 : V .s3 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (hd : DataW (V .s2) (V .s1) (V .s0) s D (V .s11).toNat) (hs : DataOk (V .s1) (V .s0) s S (V .s11).toNat)
+    (ha : Alias o S D (V .s11).toNat)
+    (hδ : o = true → V .s9 = D - S)
+    (hDs : s.mem.readW (V .s0 + BitVec.ofNat 64 dataO) 64 = S)
     {icb : Block} (hcb : blockAt s.mem (V .s1 + BitVec.ofNat 64 48) = icb) :
-    WP isa oneCrypt s (OC V sp R icb D s.mem) := by
+    WP isa (oneCryptWith o) s (OC V sp R icb S D s.mem) := by
   refine WP.seq (WP.mono (dataArgs_ok he L.wal hDs) fun s₁ ⟨a24, a25, a26, g₁, k₁⟩ => ?_)
   have he₁ := he.keep (fun r hr => g₁ r (by revert r; decide) (by revert r; decide) (by revert r; decide))
     k₁.sp k₁.rd k₁.wr
-  have ci : CrIn V sp R icb 0 D (V .s11).toNat s₁ :=
-    ⟨he₁, a24, a25, by rw [a26], h28, hR, hd.of_eq k₁.rd k₁.wr k₁.sp⟩
+  have ci : CrIn o V sp R icb 0 S D (V .s11).toNat s₁ :=
+    ⟨he₁, a24, a25, by rw [a26], h28, hR, hd.of_eq k₁.rd k₁.wr k₁.sp, hs.of_eq k₁.rd k₁.wr k₁.sp, ha,
+      hδ⟩
   refine WP.mono (crypt_ok L ci) fun s₂ co => ?_
   rw [k₁.mem] at co
   have c0 := Proof.Gcm.ctr_zero s.mem _ (V .s1 + BitVec.ofNat 64 64) (ciphOf s.mem (V .s2) R) hcb
   exact ⟨co.env, by rw [co.out c0, ← Proof.Gcm.gctr_eq], co.frame⟩
+
+/-- `oneCrypt`: in place. -/
+theorem oneCrypt_ok {R : Nat} {D : Addr} {s : State} (he : Env V sp s) (h28 : V .s3 = BitVec.ofNat 64 R)
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) (hd : DataW (V .s2) (V .s1) (V .s0) s D (V .s11).toNat)
+    (hDs : s.mem.readW (V .s0 + BitVec.ofNat 64 dataO) 64 = D)
+    {icb : Block} (hcb : blockAt s.mem (V .s1 + BitVec.ofNat 64 48) = icb) :
+    WP isa oneCrypt s (OC V sp R icb D D s.mem) :=
+  oneCryptWith_ok L (o := false) he h28 hR hd hd.ok rfl (fun h => Bool.noConfusion h) hDs hcb
 
 end
 

@@ -71,6 +71,13 @@ def sContract : Contract isa where
       Spec.Dsa.publicBytesLeak (s₂.gpr .a4).toNat (s₂.gpr .a6).toNat
           (Spec.Rsa.bytesAt s₂.mem (s₂.gpr .a2) (s₂.gpr .a3).toNat) ++ [Spec.Dsa.signStatus (sRes s₂)]
 
+/-- `vg_dsa_sign`'s contract on the registers, for a key that passes `valid`. -/
+def sContractWith (valid : Nat → Nat → List Byte → Bool) : Contract isa where
+  pre s := sContract.pre s ∧
+    valid (s.gpr .a4).toNat (s.gpr .a6).toNat (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) = true
+  post := sContract.post
+  pub := sContract.pub
+
 /-- A call's layout. -/
 def slayOf (s : State) : Lay := ⟨stackArg s 1, (stackArg s 2).toNat * 8, (s.gpr .a4).toNat, (s.gpr .a6).toNat⟩
 

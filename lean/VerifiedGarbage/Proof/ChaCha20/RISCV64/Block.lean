@@ -177,7 +177,6 @@ theorem not_words {r : Reg} (h : ∀ k < 16, r ≠ wreg k) (hT : r ≠ T) : ¬ W
 
 theorem not_words_a0 : ¬ Words .a0 := not_words (fun _ hk e => (wreg_ne hk).1 e.symm) (by decide)
 theorem not_words_a1 : ¬ Words .a1 := not_words (fun _ hk e => (wreg_ne hk).2.1 e.symm) (by decide)
-theorem not_words_U : ¬ Words U := not_words (fun _ hk e => (wreg_ne hk).2.2.1 e.symm) (by decide)
 theorem not_words_ra : ¬ Words .ra := not_words (fun _ hk e => (wreg_ne hk).2.2.2 e.symm) (by decide)
 
 theorem t0_words : Words .t0 := .inl ⟨0, by decide, rfl⟩

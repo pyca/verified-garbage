@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
 public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Seal
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
@@ -69,12 +70,12 @@ theorem seal_verified [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
       { pre := by
           intro s h
           sig_pre [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
-            Spec.GcmSiv.sealPost, sealRISCV64, sealPre, oneLay, onePub, args, rounds, RISCV64.abi,
+            Proof.AesGcmSiv.sealRoundsPost, sealRISCV64, sealPre, oneLay, onePub, args, rounds, RISCV64.abi,
             RISCV64.argRegs, RISCV64.stackArg, RISCV64.stackArgAddr, stackBelow, stkOk, stkAll, and_true, List.getD, List.range,
             List.range.loop] at h
           sig_split h
           sig_reduce [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
-            Spec.GcmSiv.sealPost, sealRISCV64, sealPre, oneLay, onePub, args, rounds, RISCV64.abi,
+            Proof.AesGcmSiv.sealRoundsPost, sealRISCV64, sealPre, oneLay, onePub, args, rounds, RISCV64.abi,
             RISCV64.argRegs, RISCV64.stackArg, RISCV64.stackArgAddr, stackBelow, stkOk, stkAll, and_true, List.getD, List.range,
             List.range.loop]
           sig_and_intros
@@ -86,17 +87,17 @@ theorem seal_verified [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
             | bv_omega
         post := by
           sig_implies_post [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig,
-            Spec.GcmSiv.sealPre, Spec.GcmSiv.sealPost, sealRISCV64, sealPre, oneLay, onePub, args, rounds,
+            Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost, sealRISCV64, sealPre, oneLay, onePub, args, rounds,
             RISCV64.abi, RISCV64.argRegs, RISCV64.stackArg, RISCV64.stackArgAddr, stackBelow, stkOk, stkAll, and_true, List.getD, List.range,
             List.range.loop]
         pub := by
           sig_implies_pub [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig,
-            Spec.GcmSiv.sealPre, Spec.GcmSiv.sealPost, sealRISCV64, sealPre, oneLay, onePub, args, rounds,
+            Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost, sealRISCV64, sealPre, oneLay, onePub, args, rounds,
             RISCV64.abi, RISCV64.argRegs, RISCV64.stackArg, RISCV64.stackArgAddr, stackBelow, stkOk, stkAll, and_true, List.getD, List.range,
             List.range.loop]
         sat := by
           sig_implies_sat [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig,
-            Spec.GcmSiv.sealPre, Spec.GcmSiv.sealPost, sealRISCV64, sealPre, oneLay, onePub, args, rounds,
+            Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost, sealRISCV64, sealPre, oneLay, onePub, args, rounds,
             RISCV64.abi, RISCV64.argRegs, RISCV64.stackArg, RISCV64.stackArgAddr, stackBelow, stkOk, stkAll, and_true, List.getD, List.range,
             List.range.loop]
             [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat }
@@ -107,12 +108,12 @@ theorem open_verified [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
       { pre := by
           intro s h
           sig_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
-            Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openRISCV64, openPre, oneLay, onePub, openRes, openOut,
+            Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openRISCV64, openPre, oneLay, onePub, openRes, openOut,
             args, rounds, RISCV64.abi, RISCV64.argRegs, RISCV64.stackArg, RISCV64.stackArgAddr, stackBelow, stkOk, stkAll, and_true, List.getD,
             List.range, List.range.loop] at h
           sig_split h
           sig_reduce [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
-            Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openRISCV64, openPre, oneLay, onePub, openRes, openOut,
+            Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openRISCV64, openPre, oneLay, onePub, openRes, openOut,
             args, rounds, RISCV64.abi, RISCV64.argRegs, RISCV64.stackArg, RISCV64.stackArgAddr, stackBelow, stkOk, stkAll, and_true, List.getD,
             List.range, List.range.loop]
           sig_and_intros
@@ -128,11 +129,11 @@ theorem open_verified [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
         post := by
           intro s s' _ h
           sig_post [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
-            Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openRISCV64, openPre, oneLay, onePub, openRes,
+            Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openRISCV64, openPre, oneLay, onePub, openRes,
             args, rounds, RISCV64.abi, RISCV64.argRegs, RISCV64.stackArg, RISCV64.stackArgAddr, stackBelow, stkOk, stkAll, and_true, List.getD,
             List.range, List.range.loop]
           sig_reduce [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
-            Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openRISCV64, openPre, oneLay, onePub, openRes,
+            Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openRISCV64, openPre, oneLay, onePub, openRes,
             args, rounds, RISCV64.abi, RISCV64.argRegs, RISCV64.stackArg, RISCV64.stackArgAddr, stackBelow, stkOk, stkAll, and_true, List.getD,
             List.range, List.range.loop] at h
           intro _
@@ -140,12 +141,12 @@ theorem open_verified [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
           split at h <;> rename_i heq <;> rw [heq] <;> exact h
         pub := by
           sig_implies_pub [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-            Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openRISCV64, openPre, oneLay,
+            Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openRISCV64, openPre, oneLay,
             onePub, openRes, openOut, args, rounds, RISCV64.abi, RISCV64.argRegs, RISCV64.stackArg,
             RISCV64.stackArgAddr, stackBelow, stkOk, stkAll, and_true, List.getD, List.range, List.range.loop]
         sat := by
           sig_implies_sat [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-            Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openRISCV64, openPre, oneLay,
+            Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openRISCV64, openPre, oneLay,
             onePub, openRes, openOut, args, rounds, RISCV64.abi, RISCV64.argRegs, RISCV64.stackArg,
             RISCV64.stackArgAddr, stackBelow, stkOk, stkAll, and_true, List.getD, List.range, List.range.loop]
             [openSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat }
@@ -157,18 +158,18 @@ working space: no stack arguments. -/
 def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩], wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.GcmSiv.sealContract RISCV64.abi 5904).pre s := by
-  implies_sat [Spec.GcmSiv.sealContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, Spec.GcmSiv.sealPost,
+theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract RISCV64.abi 5904).pre s := by
+  implies_sat [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost,
     RISCV64.abi, RISCV64.argRegs, RISCV64.stackArg, RISCV64.stackArgAddr, stackBelow, stkOk, stkAll, and_true, List.getD, List.range,
     List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
 theorem seal_framed [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 «seal»)
-      (Spec.GcmSiv.sealContract RISCV64.abi 5904) :=
+      (Proof.AesGcmSiv.sealRoundsContract RISCV64.abi 5904) :=
   RISCV64.Verified.stackScratchArgs (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 480) (pre := Spec.GcmSiv.sealPre RISCV64.abi.ptrBits)
-    (post := Spec.GcmSiv.sealPost RISCV64.abi.ptrBits) (wa := true) (stack := 2048) (bytes := 3856) (m := 0)
+    (post := Proof.AesGcmSiv.sealRoundsPost RISCV64.abi.ptrBits) (wa := true) (stack := 2048) (bytes := 3856) (m := 0)
     (seal_verified hti) (by decide) (by decide) (Proof.AesGcmSiv.sealPre_local _) (Proof.AesGcmSiv.sealPost_local _)
     sealFrameSat_pre
 
@@ -177,18 +178,18 @@ working space: no stack arguments. -/
 def openFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x5000, 16⟩], wr := [⟨0x4000, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.GcmSiv.openContract RISCV64.abi 5904).pre s := by
-  implies_sat [Spec.GcmSiv.openContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, Spec.GcmSiv.openPost,
+theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract RISCV64.abi 5904).pre s := by
+  implies_sat [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost,
     Spec.GcmSiv.openLeak, RISCV64.abi, RISCV64.argRegs, RISCV64.stackArg, RISCV64.stackArgAddr,
     List.getD, List.range, List.range.loop] [openFrameSat, sealSat, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using openFrameSat
 
 theorem open_framed [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 «open»)
-      (Spec.GcmSiv.openContract RISCV64.abi 5904) :=
+      (Proof.AesGcmSiv.openRoundsContract RISCV64.abi 5904) :=
   RISCV64.Verified.stackScratchArgs (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 480) (pre := Spec.GcmSiv.openPre RISCV64.abi.ptrBits)
-    (post := Spec.GcmSiv.openPost RISCV64.abi.ptrBits) (wa := true) (stack := 2048) (bytes := 3856) (m := 0)
+    (post := Proof.AesGcmSiv.openRoundsPost RISCV64.abi.ptrBits) (wa := true) (stack := 2048) (bytes := 3856) (m := 0)
     (leak := some (Spec.GcmSiv.openLeak RISCV64.abi.ptrBits))
     (Proof.AesGcmSiv.Verified.of_openScratch (open_verified hti)) (by decide) (by decide)
     (Proof.AesGcmSiv.openPre_local _) (Proof.AesGcmSiv.openPost_local _)

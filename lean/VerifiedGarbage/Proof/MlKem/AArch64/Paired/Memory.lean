@@ -55,11 +55,4 @@ theorem EnvW.frame {w16 : Bool} {s u : State} {N : Nat} {B : Nat → Byte} {p a 
     exact h.tableData mask hm
   · simpa only [h16] using h.tableDisj
 
-theorem Env.frame {s u : State} {N : Nat} {B : Nat → Byte} {p a : Addr} {rs : List Region}
-    (h : Env N B p a s) (hr : u.rd=s.rd) (hw : u.wr=s.wr) (h16 : u.gpr .x16=s.gpr .x16)
-    (hf : Frame rs s.mem u.mem)
-    (hb : ∀r∈rs,(Region.mk p (3*N+4)).Disjoint r)
-    (ht : ∀mask<256,∀r∈rs,(Region.mk (s.gpr .x16+BitVec.ofNat 64 (16*mask)) 16).Disjoint r) :
-    Env N B p a u := EnvW.frame h hr hw h16 hf hb ht
-
 end VG.Proof.MlKem.AArch64.Rej8

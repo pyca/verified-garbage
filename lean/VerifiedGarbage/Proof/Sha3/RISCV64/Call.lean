@@ -78,4 +78,57 @@ theorem permuteAt_ok {s : State} {st : Addr} (h1 : s.gpr .s2 = st)
     (fun r hr => ?_) (by rw [← hm, ← sp₂]; exact f') (by rw [e', hm])
   rw [cs' r hr, u₂.other _ (preserved_a0_a1 r hr).2, u₁.other _ (preserved_a0_a1 r hr).1]
 
+/-- Calling `vg_keccak_f1600` on the state at `a0`, with scratch space at
+`a1`, anywhere apart from the state and the 608 bytes below the stack
+pointer: as `call_ok`. -/
+theorem callWs_ok {s : State} {st w : Addr} (h0 : s.gpr .a0 = st) (h1 : s.gpr .a1 = w)
+    (hal : s.sp.toNat % 16 = 0) (hsp : 608 ≤ s.sp.toNat)
+    (d₁ : Region.Disjoint ⟨st, 200⟩ ⟨w, 512⟩) (d₂ : Region.Disjoint ⟨s.sp - 608, 608⟩ ⟨st, 200⟩)
+    (d₃ : Region.Disjoint ⟨s.sp - 608, 608⟩ ⟨w, 512⟩)
+    (hw : Covers [⟨st, 200⟩, ⟨w, 512⟩] s.wr) {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
+      (∀ r ∈ preserved, s'.gpr r = s.gpr r) →
+      Frame [⟨st, 200⟩, ⟨w, 512⟩, ⟨s.sp - 608, 608⟩] s.mem s'.mem →
+      stateAt s'.mem st = keccakF (stateAt s.mem st) → Q s') :
+    WP isa (.call "vg_keccak_f1600" Impl.Sha3.RISCV64.permute) s Q := by
+  have c0 : s.callEntry.gpr .a0 = st := (State.callEntry_gpr _ (by decide)).trans h0
+  have c1 : s.callEntry.gpr .a1 = w := (State.callEntry_gpr _ (by decide)).trans h1
+  refine WP.callAny (k := Proof.Sha3.permuteRISCV64) permute_correct
+    (rd := []) (wr := [⟨st, 200⟩, ⟨w, 512⟩]) ?_ ?_ hw ?_ (by rw [permute_sdepth]; decide)
+  · simp only [Proof.Sha3.permuteRISCV64, State.withRegions_gpr, State.withRegions_rd,
+      State.withRegions_wr, State.withRegions_sp, State.callEntry_sp, c0, c1]
+    exact ⟨trivial, trivial, d₁, hal, hsp, d₂, d₃⟩
+  · intro a n h
+    obtain ⟨r, hr, hc⟩ := hw a n (by simpa using h)
+    exact ⟨r, List.mem_append_right _ hr, hc⟩
+  · intro s' hrd hwr hsp' hf hcs hpost
+    simp only [Proof.Sha3.permuteRISCV64, State.withRegions_gpr, State.withRegions_mem,
+      State.callEntry_mem, c0] at hpost
+    rw [permute_sdepth] at hf
+    exact hQ s' hrd hwr hsp' hcs (by simpa using hf) hpost
+
+/-- `permuteAtWs`: calling `vg_keccak_f1600` on the state at `s2`, with
+scratch space at `s7`. -/
+theorem permuteAtWs_ok {s : State} {st w : Addr} (h2 : s.gpr .s2 = st) (h7 : s.gpr .s7 = w)
+    (hal : s.sp.toNat % 16 = 0) (hsp : 608 ≤ s.sp.toNat)
+    (d₁ : Region.Disjoint ⟨st, 200⟩ ⟨w, 512⟩) (d₂ : Region.Disjoint ⟨s.sp - 608, 608⟩ ⟨st, 200⟩)
+    (d₃ : Region.Disjoint ⟨s.sp - 608, 608⟩ ⟨w, 512⟩)
+    (hw : Covers [⟨st, 200⟩, ⟨w, 512⟩] s.wr) {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
+      (∀ r ∈ preserved, s'.gpr r = s.gpr r) →
+      Frame [⟨st, 200⟩, ⟨w, 512⟩, ⟨s.sp - 608, 608⟩] s.mem s'.mem →
+      stateAt s'.mem st = keccakF (stateAt s.mem st) → Q s') :
+    WP isa permuteAtWs s Q := by
+  unfold permuteAtWs mov
+  refine WP.seq (wp_mv fun s₁ u₁ => wp_mv fun s₂ u₂ => WP.block_nil ?_)
+  have sp₂ : s₂.sp = s.sp := by rw [u₂.sp, u₁.sp]
+  have hm : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
+  refine callWs_ok (st := st) (w := w) (by rw [u₂.other _ (by decide), u₁.gpr, h2])
+    (by rw [u₂.gpr, u₁.other _ (by decide), h7]) (by rw [sp₂]; exact hal)
+    (by rw [sp₂]; exact hsp) d₁ (by rw [sp₂]; exact d₂) (by rw [sp₂]; exact d₃)
+    (by rw [u₂.wr, u₁.wr]; exact hw) fun s' rd' wr' sp' cs' f' e' => ?_
+  refine hQ s' (by rw [rd', u₂.rd, u₁.rd]) (by rw [wr', u₂.wr, u₁.wr]) (by rw [sp', sp₂])
+    (fun r hr => ?_) (by rw [← hm, ← sp₂]; exact f') (by rw [e', hm])
+  rw [cs' r hr, u₂.other _ (preserved_a0_a1 r hr).2, u₁.other _ (preserved_a0_a1 r hr).1]
+
 end VG.Proof.Sha3.RISCV64

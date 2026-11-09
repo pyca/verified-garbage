@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 The taint analysis treats memory as secret, so `out`, which `output` loads
 from the header's word `hOut`, is secret to it. `spre_ok`: the body up to
 that load (`spre`, the body's sequence regrouped there) runs from the state
-`checkKey` leaves for it and loads `out` into `r12`, with `q_len` in `r6`, in
+`checkKey` (or `Prevalidated.setup`) leaves for it and loads `out` into `r12`, with `q_len` in `r6`, in
 the Q space; the constant-time proof fixes those registers there.
 -/
 
@@ -34,7 +34,7 @@ def soutPre : Prog isa :=
 
 /-- The body up to the load of `out`. -/
 def spre : Prog isa :=
-  .seq keyPair (.seq gk (.seq rRanges (.seq Verify.rrQ (.seq Verify.qMinus2 (.seq inverseK
+  .seq (.block markValid) (.seq gk (.seq rRanges (.seq Verify.rrQ (.seq Verify.qMinus2 (.seq inverseK
     (.seq sValue soutPre))))))
 
 theorem soutPre_ok {s : State} {L : Lay} {key nonce dig out : Addr} {b : Bool} (hL : L.Ok)

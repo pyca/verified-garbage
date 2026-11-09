@@ -151,8 +151,6 @@ def verifyWith (generator : Prog isa) : Prog isa :=
   .seq (prefix' c) <| .seq (.block (loadS c)) <|
   .seq (.block (Impl.Ecdh.Arm.Cfg.peerAt c .r0)) <| .seq (Impl.Ecdh.Arm.Cfg.validate c) (backWith c generator)
 
-def points : Prog isa := pointsWith c c.gen
-def back : Prog isa := backWith c c.gen
 def verify : Prog isa := verifyWith c c.gen
 
 end Cfg

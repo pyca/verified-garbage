@@ -21,12 +21,6 @@ example {M : ISA} (A : Abi M) (stack : Nat) :
     (verifyDomainCheckedContract A stack).pub = (verifyContract A stack).pub := rfl
 
 example {M : ISA} (A : Abi M) (stack : Nat) :
-    (randomSignDomainCheckedContract A stack).post = (randomSignContract A stack).post := rfl
-
-example {M : ISA} (A : Abi M) (stack : Nat) :
-    (randomSignDomainCheckedContract A stack).pub = (randomSignContract A stack).pub := rfl
-
-example {M : ISA} (A : Abi M) (stack : Nat) :
     (generateKeyDomainCheckedContract A stack).post = (generateKeyContract A stack).post := rfl
 
 example {M : ISA} (A : Abi M) (stack : Nat) :

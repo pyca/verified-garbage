@@ -1,16 +1,15 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarMulAdd
-import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Scalar
 public import VerifiedGarbage.Spec.Ed25519.Contract
-public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarReduce
+import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 
 /-!
 # Ed25519's scalar functions on RISC-V, verified
@@ -48,23 +47,6 @@ theorem reduce_ok' (s : State) (hs : reduceRISCV64.pre s) :
     (reduce_ok ⟨h1, h2, h3, h4, h5⟩) (by decide +kernel)
   exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by decide), hb⟩
 
-/-- A state satisfying the precondition. -/
-def reduceSat : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 0x2000 | .a2 => 0x4000 | _ => 0
-  sp := 0x10000
-  mem _ := 0
-  rd := [⟨0x2000, 64⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩]
-
-theorem scalarReduce_verified :
-    Verified RISCV64.target Impl.Ed25519.RISCV64.scalarReduce (Proof.Ed25519.scalarReduceContract RISCV64.abi) :=
-  Verified.of_correct reduce_ok' (scalarReduce_ct fun _ _ _ _ ⟨h3, h4, h5, hsp⟩ => ⟨hsp, fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> with_reducible assumption⟩) (by
-    contract_implies [Proof.Ed25519.scalarReduceContract, Proof.Ed25519.scalarReduceSig, reduceRISCV64,
-      Spec.Ed25519.scratchWords, RISCV64.abi, RISCV64.argRegs] [reduceSat] using reduceSat)
-
 /-- `scalarMulAddContract` by register. -/
 def mulAddRISCV64 : Contract isa where
   pre s :=
@@ -87,22 +69,5 @@ theorem mulAdd_ok' (s : State) (hs : mulAddRISCV64.pre s) :
   obtain ⟨t, s', he, hb, hk⟩ := WP.keep [.a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6]
     (mulAdd_ok ⟨h1, h2, h3, h4, h5, h6⟩) (by decide +kernel)
   exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by decide), hb⟩
-
-/-- A state satisfying the precondition. -/
-def mulAddSat : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 0x2000 | .a2 => 0x2100 | .a3 => 0x2200 | .a4 => 0x4000 | _ => 0
-  sp := 0x10000
-  mem _ := 0
-  rd := [⟨0x2000, 32⟩, ⟨0x2100, 32⟩, ⟨0x2200, 32⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩]
-
-theorem scalarMulAdd_verified :
-    Verified RISCV64.target Impl.Ed25519.RISCV64.scalarMulAdd (Proof.Ed25519.scalarMulAddContract RISCV64.abi) :=
-  Verified.of_correct mulAdd_ok' (scalarMulAdd_ct fun _ _ _ _ ⟨h3, h4, h5, h6, h7, hsp⟩ => ⟨hsp, fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption⟩) (by
-    contract_implies [Proof.Ed25519.scalarMulAddContract, Proof.Ed25519.scalarMulAddSig, mulAddRISCV64,
-      Spec.Ed25519.scratchWords, RISCV64.abi, RISCV64.argRegs] [mulAddSat] using mulAddSat)
 
 end VG.Proof.Ed25519.RISCV64

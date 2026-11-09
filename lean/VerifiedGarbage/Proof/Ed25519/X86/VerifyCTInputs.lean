@@ -360,12 +360,6 @@ theorem pointDecode_ct (base sp : BitVec 32) (W : List Region) (n : Nat) :
       (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) (fun _ _ h => h)
   · exact recoverInvalid_ct.mono (fun _ _ _ => trivial) (fun _ _ h => h)
 
-theorem decodeResult_flag {base : BitVec 32} {p : Option Spec.Ed25519.Point} {s : State}
-    (h : DecodeResult base p s) : s.gpr .eax = signWord p.isSome := by
-  cases p with
-  | none => exact h
-  | some p => exact h.1
-
 end VG.Proof.Ed25519.X86
 end
 
@@ -456,10 +450,6 @@ theorem copyWords96_ct : RelCT isa (fun s t => s.gpr .edi = t.gpr .edi ∧ s.gpr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   exacts [h.1, h.2]
-
-theorem inputSlice96_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (i : Nat) (hi : i ≤ 2) :
-    RelCT isa (VerifySaved s₀ t₀) (.block (inputSliceWords i 0 96 8)) (fun _ _ => True) := by
-  exact ctBlockAppend (loadSlicePointer_ct h i 0 hi (Or.inl rfl)) copyWords96_ct
 
 theorem verifyScalar_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
     RelCT isa (VerifySaved s₀ t₀) (.block verifyScalar) (fun _ _ => True) := by

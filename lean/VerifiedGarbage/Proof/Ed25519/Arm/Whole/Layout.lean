@@ -59,11 +59,6 @@ theorem regs (h : Ctx E g m₀ rd wr t)
   refine ⟨hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp,
     fun r hr hn => (hcs r hr hn).trans (h.cs r hr hn), hm ▸ h.frame⟩
 
-theorem readable_frame (h : Ctx E g m₀ rd wr t) {a : Addr} {n : Nat}
-    (hc : (FR E).Contains a n) : InRegions (t.rd ++ t.wr) a n := by
-  rw [h.rd, h.wr]
-  exact ⟨FR E, List.mem_append_right _ List.mem_cons_self, hc⟩
-
 theorem writable_frame (h : Ctx E g m₀ rd wr t) {a : Addr} {n : Nat}
     (hc : (FR E).Contains a n) : InRegions t.wr a n := by
   rw [h.wr]

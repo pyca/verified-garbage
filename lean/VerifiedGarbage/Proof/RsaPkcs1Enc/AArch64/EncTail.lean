@@ -37,9 +37,6 @@ theorem and_not_zero (r : BitVec 64) : r &&& ~~~(0 : BitVec 64) = r := by
 
 theorem and_not_ones (r : BitVec 64) : r &&& ~~~(BitVec.allOnes 64) = 0 := by simp
 
-theorem zmask_cases (bs : List Byte) : zmask bs = 0 ∨ zmask bs = BitVec.allOnes 64 := by
-  unfold zmask; split <;> simp
-
 /-- During the masking loop, after `j` bytes. -/
 structure MaskInv (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (y : Mem) (r : BitVec 64)
     (z : BitVec 64) (j : Nat) (t : State) : Prop where

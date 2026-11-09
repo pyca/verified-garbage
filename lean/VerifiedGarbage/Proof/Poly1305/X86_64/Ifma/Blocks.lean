@@ -578,11 +578,4 @@ theorem blocksIfma_ct :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem blocksIfma_verified :
-    Verified X86_64.target blocksIfma (Proof.Poly1305.blocksContract X86_64.abi 16) :=
-  Verified.of_correct blocksIfma_ok blocksIfma_ct (by
-    sig_implies [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig, Avx512.blocksAvx512X86_64,
-      Proof.Poly1305.blocksStack, Proof.Poly1305.blocksX86_64, X86_64.abi, X86_64.argRegs]
-      [Avx2.sat] using Avx2.sat)
-
 end VG.Proof.Poly1305.X86_64.Ifma

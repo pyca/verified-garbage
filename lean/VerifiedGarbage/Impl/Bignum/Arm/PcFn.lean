@@ -31,11 +31,7 @@ def failArgs : List Instr :=
    .ldrSp .r0 4, .mov .r3 (.imm 0)]
 def fail : Prog isa := .seq (.block failArgs) (.seq zero (.block [.mov .r0 (.imm 0)]))
 
-def valid : Prog isa := validWith precompute
-
 def bodyWith (arithmetic : Prog isa) : Prog isa := .seq (.block modulusCheck) (.ite .eq (validWith arithmetic) fail)
-
-def body : Prog isa := bodyWith precompute
 
 def restore : List Instr :=
   [.ldrSp .r4 16, .ldrSp .r5 20, .ldrSp .r6 24, .ldrSp .r7 28,
@@ -44,7 +40,5 @@ def restore : List Instr :=
 def codeWith (arithmetic : Prog isa) : Prog isa :=
   .frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
     (.seq (.block entry) (.seq (bodyWith arithmetic) (.block restore))) (.pop .r12 56)
-
-def code : Prog isa := codeWith precompute
 
 end VG.Impl.Bignum.Arm.PcFn

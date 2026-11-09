@@ -65,15 +65,6 @@ theorem in_hashR {W : Addr} {d k e n : Nat} (he : (⟨W + BitVec.ofNat 64 e, n�
     (h₁ : e ≤ d) (h₂ : d + k ≤ e + n) : ∃ r' ∈ hashR W, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r' :=
   ⟨_, he, Offset.sub W h₁ h₂⟩
 
-/-- A doubleword of `W` that a frame within `HASH`'s parts keeps. -/
-theorem readW_hashR {K W : Addr} (L : Lay K W) {rs : List Region} {m m' : Mem} (f : Frame rs m m')
-    (hsub : ∀ r ∈ rs, ∃ r' ∈ hashR W, Region.Sub r r') {d : Nat}
-    (hd : (64 ≤ d ∧ d + 8 ≤ 96) ∨ (112 ≤ d ∧ d + 8 ≤ 272) ∨ (288 ≤ d ∧ d + 8 ≤ 296) ∨ (312 ≤ d ∧ d + 8 ≤ 384)) :
-    m'.readW (W + BitVec.ofNat 64 d) 64 = m.readW (W + BitVec.ofNat 64 d) 64 :=
-  (f.sub hsub).readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact L.w_w (by omega_arith) (by omega_arith) (by decide)) (by decide)
-
 /-- What holds of `HASH` of `a` (at `A`) after `j` of its whole blocks, from
 the state `s₀` at its start. -/
 structure HInv (V : Reg → BitVec 64) (sp : Addr) (ciph : Cipher) (l : Block) (A : Addr) (a : List Byte)

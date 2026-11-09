@@ -65,9 +65,6 @@ theorem ext_word {x y : BitVec 128} (h : ∀ i < 8, word x i = word y i) : x = y
     show 16 * (j / 16) + j % 16 = j by omega] at this
   exact this
 
-theorem ofWords_word (x : BitVec 128) : ofWords (word x) = x :=
-  ext_word fun _ hi => word_ofWords _ hi
-
 /-- The words of a doubleword. -/
 theorem word_dword (x : BitVec 128) {k : Nat} (_hk : k < 4) (e : Nat) (he : e < 2) :
     word x (2 * k + e) = (dword x k).extractLsb' (16 * e) 16 := by

@@ -4312,14 +4312,14 @@ vg_dsa_generator_1024:
 	str x3, [sp, #152]
 	b 2299f
 2298:
-	movz x3, #3, lsl #0
+	movz x3, #2, lsl #0
 	str x3, [sp, #152]
 2299:
 2108:
 	ldr x3, [sp, #152]
-	movz x0, #3, lsl #0
-	sub x0, x0, x3
-	lsr x0, x0, #1
+	ldr x4, [sp, #160]
+	lsl x4, x4, #2
+	add x0, x3, x4
 	ldr x9, [sp, #40]
 	ldr x10, [x9, #27928]
 	mov v8.d[0], x10

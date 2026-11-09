@@ -31,13 +31,4 @@ theorem enc_correct (s : State) (hs : encode12AArch64.pre s) :
     (show BytesUpTo s'.mem (Encode12.oP s) 384 384 _ _ from hi.out).eq
       (encode12_length _) fun _ _ => rfl⟩
 
-theorem enc_ct : ConstantTime isa encode12AArch64.pre encode12AArch64.pub enc :=
-  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.x0,.x1])
-    (fun _ _ _ _ ⟨h0,h1,hsp⟩ => agree_of hsp (by simp [h0,h1])) (by taint_decide)
-
-theorem enc_verified : Verified AArch64.target enc (Proof.MlKem.encode12Contract AArch64.abi) :=
-  Verified.of_correct enc_correct enc_ct (by
-    mlkem_implies [Proof.MlKem.encode12Contract,Proof.MlKem.encode12Sig,encode12AArch64,AArch64.abi,
-      AArch64.argRegs] [Encode12.sat] using Encode12.sat)
-
 end VG.Proof.MlKem.AArch64.Codec16

@@ -109,14 +109,4 @@ def maskBody : List Instr :=
 
 def maskLoop : Prog isa := .loop (.block maskBody) (.nonzero .x .x12)
 
-/-- The inner frame's body. -/
-def body (pubName : String) (pub : Prog isa) : Prog isa :=
-  .seq (.block setup) (.seq psLoop (.seq (.block sep) (.seq msgCopy (.seq (.block callArgs)
-    (.seq (.call pubName pub) (.seq (.block maskArgs) maskLoop))))))
-
-/-- `vg_rsa_pkcs1_encrypt`, calling `vg_rsa_public_checked`'s code `pub` by
-its name. -/
-def code (pubName : String) (pub : Prog isa) : Prog isa :=
-  .frame (.push .x30) (.frame (.alloc frameBytes) (body pubName pub) (.free frameBytes)) (.pop .x30)
-
 end VG.Impl.RsaPkcs1Enc.AArch64.Encrypt

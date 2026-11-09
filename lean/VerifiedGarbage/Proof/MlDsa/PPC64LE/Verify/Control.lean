@@ -31,8 +31,6 @@ open VG.Spec.Sha3 (bytesAt)
 /-- 1 if `b`, 0 if not. -/
 def flag (b : Bool) : BitVec 64 := if b then 1 else 0
 
-theorem flag_01 (b : Bool) : flag b = 0 ∨ flag b = 1 := by cases b <;> simp [flag]
-
 theorem flag_ne {b : Bool} : flag b ≠ 0 ↔ b = true := by cases b <;> simp [flag]
 
 theorem vptr_ok {r : Reg} (hr : KeyGen.baseReg r = true) {o : Nat} (h : o < 2 ^ 31) :
@@ -58,10 +56,6 @@ theorem vc_twoL {p : Params} {STK : Nat} {σ₁ σ₂ x y : State} (pub : vPub p
 
 /-- Two runs whose entry states have the same layout. -/
 def VTwo (p : Params) (STK : Nat) (x y : State) : Prop := ∃ σ, Two (vlay p STK σ) vWb STK x y
-
-theorem vc_two {p : Params} {STK : Nat} {σ₁ σ₂ x y : State} (pub : vPub p σ₁ σ₂) (h₁ : VC p STK σ₁ x)
-    (h₂ : VC p STK σ₂ y) : VTwo p STK x y :=
-  ⟨σ₁, vc_twoL pub h₁ h₂⟩
 
 theorem vtaint31 {p : Params} {STK : Nat} {c : Prog isa} {hc : VG.Taint.Hint VG.PPC64LE.taint.T}
     (h : (VG.PPC64LE.taint.check (Taint.ofRegs [.r31]) c hc).isSome = true) :
@@ -89,18 +83,20 @@ theorem VC.regs2 {p : Params} {STK : Nat} {σ s s' : State} (h : VC p STK σ s) 
       have : r ≠ .r3 ∧ r ≠ .r24 := ⟨fun e => by subst e; simp [preserved] at hp,
         fun e => by subst e; simp [savedTop] at hs⟩
       rw [hr.gpr r this.1 this.2]; exact h.pres r hp hs,
-    by rw [hr.mem]; exact h.sav, by rw [hr.mem]; exact h.pk, by rw [hr.mem]; exact h.mu, by rw [hr.mem]; exact h.sg⟩
+    by rw [hr.mem]; exact h.sav, by rw [hr.mem]; exact h.pk, by rw [hr.mem]; exact h.mu, by rw [hr.mem]; exact h.sg,
+    fun hc hne => by rw [hr.mem]; exact h.cache hc hne⟩
 
 /-! ## A branch on `r24` -/
 
 /-- `ifOk c`: `c` if `r24 ≠ 0`, where `r24` is `v σ`, a function of the
 public data. -/
-theorem ifOk_piece {p : Params} {STK : Nat} {I J : State → State → Prop} {c : Prog isa} {v : State → BitVec 64}
-    (hv : ∀ σ s, VPre p STK σ → I σ s → s.gpr .r24 = v σ)
-    (hpub : ∀ σ₁ σ₂, VPre p STK σ₁ → VPre p STK σ₂ → vPub p σ₁ σ₂ → v σ₁ = v σ₂)
-    (hc : VPiece p STK (fun σ s => I σ s ∧ v σ ≠ 0) J c)
-    (he : ∀ σ s, VPre p STK σ → I σ s → v σ = 0 → J σ s) :
-    VPiece p STK I J (ifOk c) := by
+theorem ifOk_piece {Pre : State → Prop} {Pub : State → State → Prop} {I J : State → State → Prop} {c : Prog isa}
+    {v : State → BitVec 64}
+    (hv : ∀ σ s, Pre σ → I σ s → s.gpr .r24 = v σ)
+    (hpub : ∀ σ₁ σ₂, Pre σ₁ → Pre σ₂ → Pub σ₁ σ₂ → v σ₁ = v σ₂)
+    (hc : Piece Pre Pub (fun σ s => I σ s ∧ v σ ≠ 0) J c)
+    (he : ∀ σ s, Pre σ → I σ s → v σ = 0 → J σ s) :
+    Piece Pre Pub I J (ifOk c) := by
   refine ⟨fun σ s hp hs => ?_, ?_⟩
   · have h24 := hv σ s hp hs
     refine WP.ite _ (eval_nonzero s .r24) (fun hb => hc.ok σ _ hp ⟨hs, ?_⟩) fun hb => ?_

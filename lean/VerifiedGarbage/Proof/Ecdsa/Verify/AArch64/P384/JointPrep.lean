@@ -25,9 +25,6 @@ open VG.Impl.Ecdh.AArch64 (PX PY)
 /-- The generator's digits: two bytes for each of `64 n + 1`. -/
 def genW : List (Nat × Nat) := [(P384Joint.KG.bits, 770)]
 
-theorem dimensions : P384Joint.K.M.n=6 ∧ P384Joint.KG.M.n=6 ∧ P384Joint.K.bits=2704 ∧
-    P384Joint.KG.bits=3152 := by decide
-
 theorem K_eq : P384Joint.K=winQ p384 := rfl
 
 /-- The generator's digits miss the constants, the saved registers and every numbered slot. -/

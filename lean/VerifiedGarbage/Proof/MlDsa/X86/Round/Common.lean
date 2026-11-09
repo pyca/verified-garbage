@@ -79,9 +79,6 @@ theorem in_keep {s₀ : State} {W : List Region} {m : Mem} (hsp : 16 ≤ (E0 s�
   rw [coeffAt_frame hf hw (by rw [n_eq]; exact hk), coeffAt_frame (P0_mem hsp) (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; rw [← stk_eq hsp]; exact hstk.symm) (by rw [n_eq]; exact hk)]
 
-theorem inRd {s : State} {a : Addr} (h : InRegions s.wr a 4) : InRegions (s.rd ++ s.wr) a 4 :=
-  let ⟨r, hr, c⟩ := h; ⟨r, List.mem_append_right _ hr, c⟩
-
 /-- `x - k` is zero exactly when `x = k`. -/
 theorem sub_beq_zero' (x k : BitVec 32) : (x - k == 0) = (x == k) := by
   by_cases h : x = k

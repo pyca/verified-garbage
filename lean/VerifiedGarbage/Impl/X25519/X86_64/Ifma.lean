@@ -70,7 +70,6 @@ namespace Ifma
 /-- The first operands of the products. -/
 def OPL : Nat := 1024
 def OPV : Nat := 1184
-def OPG : Nat := 1344
 /-- `2⁵¹ - 1` in each quadword. -/
 def KM : Nat := 1664
 /-- 19 in each quadword. -/

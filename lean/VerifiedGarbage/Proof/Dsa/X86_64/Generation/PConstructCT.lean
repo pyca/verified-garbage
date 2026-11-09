@@ -29,7 +29,7 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.Pbkdf2.Md.X86_64 VG.Impl.Dsa.X86_64.Generation
 
 theorem pConstruct_ct_of {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
     (hmatch : ∀ x, H.hash x = hG.SH.H.hash x) (hsize : ∀ x, (H.hash x).length = G.D)
     (hhash : ∀ bs, H.hash bs = Spec.Dsa.seedHash (8 * qLen) bs)
     (hseedsize : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * qLen) bs).length = 8 * qLen)
@@ -49,7 +49,7 @@ def GenerationSizes (pLen qLen : Nat) : Prop :=
   (pLen = 128 ∧ qLen = 20) ∨ (pLen = 256 ∧ qLen = 32) ∨ (pLen = 384 ∧ qLen = 32)
 
 theorem pConstruct_ct {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
     (sizes : GenerationSizes pLen qLen)
     (hmatch : ∀ x, H.hash x = hG.SH.H.hash x) (hsize : ∀ x, (H.hash x).length = G.D)
     (hhash : ∀ bs, H.hash bs = Spec.Dsa.seedHash (8 * qLen) bs)

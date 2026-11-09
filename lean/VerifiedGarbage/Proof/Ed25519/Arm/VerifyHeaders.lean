@@ -90,7 +90,6 @@ structure VerifyKeep (b : BitVec 32) (s t : State) : Prop where
   rest : Rest powersClob s t
   frame : Frame [verifyRegion b] s.mem t.mem
 
-theorem VerifyKeep.refl (b : BitVec 32) (s : State) : VerifyKeep b s s := ⟨Rest.refl _ _, Frame.refl _ _⟩
 theorem VerifyKeep.ctx {b : BitVec 32} {s t : State} (h : VerifyKeep b s t) (hc : Ctx b s) : Ctx b t :=
   hc.of_rest h.rest (by decide)
 theorem VerifyKeep.trans {b : BitVec 32} {s t u : State} (h : VerifyKeep b s t) (k : VerifyKeep b t u) :

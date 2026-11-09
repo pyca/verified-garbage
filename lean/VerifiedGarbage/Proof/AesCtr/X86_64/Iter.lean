@@ -47,7 +47,7 @@ structure Mid (s₀ : State) (k : Nat) (s : State) : Prop where
   rsp : s.gpr .rsp = s₀.gpr .rsp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, stkR s₀] (savedMem s₀) s.mem
+  frame : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀, stkR s₀] (savedMem s₀) s.mem
   slot : s.mem.readW (S s₀ + BitVec.ofNat 64 2048) 64 = BitVec.ofNat 64 (mOf s₀ k)
   data : Spec.Cbc.blocksAt s.mem (Dp s₀) (N s₀) =
     outK AesCtr.ctrMode s₀ (k + mOf s₀ k) ++ (blks s₀).drop (k + mOf s₀ k)
@@ -76,7 +76,7 @@ theorem mid_wp (v : Ctr32Impl) {k : Nat} (hk : k < N s₀) {s s₁ : State} (h :
   have segSub : Region.Sub ⟨blk s₀ k, 16 * m⟩ (dataR s₀) := UPre.seg_sub (by omega_arith)
   have fc : Frame [⟨Iv s₀, 16⟩, ⟨blk s₀ k, 16 * m⟩, ⟨S s₀, 2048⟩, below (s₁.gpr .rsp) 8] s₁.mem s₂.mem := c.frame
   rw [hrsp] at fc
-  have fAll : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, stkR s₀] s.mem s₂.mem :=
+  have fAll : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀, stkR s₀] s.mem s₂.mem :=
     (f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, slotSub⟩).trans
     (fc.sub fun r hr => by
@@ -105,7 +105,7 @@ theorem mid_wp (v : Ctr32Impl) {k : Nat} (hk : k < N s₀) {s s₁ : State} (h :
     rw [Proof.Cmac.bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hp.iv_scr.sub_right (UPre.scr_sub (by decide))) (by decide), hiv]
-  have big₁ : Frame (Big s₀) s₀.mem s₁.mem := (UPre.big_of h.frame).trans (f₁.sub fun r hr => by
+  have big₁ : Frame (Big s₀) s₀.mem s₁.mem := (UPre.big_ofG h.frame).trans (f₁.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨scrR s₀, by simp, UPre.scr_sub (by decide)⟩)
   have sched : bytesAt s₁.mem (W s₀) (16 * (R s₀ + 1)) = wK s₀ := UPre.sched_bytes hp big₁
   have hlen : (blks s₀).length = N s₀ := Proof.AesCbc.length_blocksAt _ _ _

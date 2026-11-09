@@ -11,7 +11,7 @@ namespace VG.Proof.Dsa.AArch64
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Impl.Dsa.AArch64
 
-theorem random_signer_retry (v : Backend) {s t : State} {attempts : Nat} (h : RandomSignABI v.stack s)
+theorem random_signer_retry (S : Signer) {s t : State} {attempts : Nat} (h : RandomSignABI S.stack s)
     (hsp : t.sp = randomBase s)
     (hw : ∀ i < 3, word t.mem (randomBase s) (8 * i) = randomCallArg s i)
     (h0 : t.gpr .x0 = s.gpr .x0) (h1 : t.gpr .x1 = s.gpr .x1)
@@ -21,16 +21,18 @@ theorem random_signer_retry (v : Backend) {s t : State} {attempts : Nat} (h : Ra
     (hrd : t.rd = s.rd) (hwr : t.wr = ⟨randomBase s, Random.frameBytes⟩ :: s.wr)
     (hn : word t.mem (randomBase s) Random.oAttempts = BitVec.ofNat 64 attempts)
     (hlink : word t.mem (randomBase s) RandomSign.oLink = t.gpr .x30)
-    (hpos : 0 < attempts) (hbound : attempts < 2 ^ 64) :
-    WP isa (.seq (.call (randomSignerName v) (SignVerify.sign v.mul)) RandomSign.callFinish) t fun u =>
+    (hpos : 0 < attempts) (hbound : attempts < 2 ^ 64)
+    (hkey : Spec.Rsa.bytesAt t.mem (s.gpr .x3) (s.gpr .x4).toNat = (randomInput s).key)
+    (hv : RandomValid S s) :
+    WP isa (.seq (.call S.name S.code) RandomSign.callFinish) t fun u =>
       u.rd = t.rd ∧ u.wr = t.wr ∧ u.sp = t.sp ∧ (∀ r ∈ preserved, u.gpr r = t.gpr r) ∧
       (∃ m : Mem,
-        Frame (randomCallWr s ++ [below (randomBase s) v.stack]) t.mem m ∧
+        Frame (randomCallWr s ++ [below (randomBase s) S.stack]) t.mem m ∧
         Spec.Rsa.bytesAt m (s.gpr .x0) (s.gpr .x1).toNat =
           (randomCallResult s t).getD (List.replicate (s.gpr .x1).toNat 0) ∧
         u.mem = randomRetryMem m (randomBase s) (randomCallResult s t).isSome attempts) ∧
       (∀ r ∈ preservedV, (u.v r).extractLsb' 0 64 = (t.v r).extractLsb' 0 64) := by
-  refine WP.seq (WP.mono (random_signer_outcome v h hsp hw h0 h1 h2 h3 h4 h5 h6 h7 hrd hwr)
+  refine WP.seq (WP.mono (random_signer_outcome S h hsp hw h0 h1 h2 h3 h4 h5 h6 h7 hrd hwr hkey hv)
     fun u ⟨hur, huw, husp, huc, hf, hstatus, hout, hv⟩ => ?_)
   have hus : Scr u (randomBase s) Random.frameBytes :=
     (random_alloc_scr h).congr (huw.trans hwr)

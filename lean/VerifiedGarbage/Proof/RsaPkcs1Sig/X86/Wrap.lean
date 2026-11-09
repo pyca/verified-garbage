@@ -49,9 +49,6 @@ theorem entered_esp (F : Nat) (s : State) :
     (entered F s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 16 - BitVec.ofNat 32 F := by
   simp only [entered, allocFrame_esp, pushed_esp]; rfl
 
-theorem entered_gpr (F : Nat) (s : State) {r : Reg} (h : r ≠ .esp) : (entered F s).gpr r = s.gpr r := by
-  simp only [entered]; rw [allocFrame_gpr _ _ h, pushed_gpr _ _ h]
-
 theorem entered_rd (F : Nat) (s : State) : (entered F s).rd = s.rd := by simp [entered]
 
 theorem entered_wr (F : Nat) (s : State) :

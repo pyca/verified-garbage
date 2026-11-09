@@ -119,10 +119,4 @@ theorem nttInv_ct : ConstantTime isa (inPlaceK nttInv).pre (inPlaceK nttInv).pub
       exacts [hp.1, hp.2.1, hp.2.2])
     (by taint_decide)
 
-theorem nttInv_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.nttInv (Proof.MlKem.nttInvContract X86_64.abi) :=
-  Verified.of_correct nttInv_correct nttInv_ct (by
-    mlkem_implies [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, inPlaceK,
-      X86_64.abi, X86_64.argRegs] [inPlaceSat] using inPlaceSat)
-
 end VG.Proof.MlKem.X86_64

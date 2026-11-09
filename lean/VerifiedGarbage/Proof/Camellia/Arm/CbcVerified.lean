@@ -94,8 +94,8 @@ theorem cbcEncryptChained_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt
 theorem cbcEncryptChained_verified : Verified Arm.target cbcEncryptChained (Proof.Camellia.cbcEncChainedScratchContract Arm.abi 9 2816) :=
   seq_verified (ecbSpec .encrypt) (cbcEncChained_ok _) cbcEncryptChainedTaint cbcEncryptChained_implies
 
-theorem cbcEncryptChainedFrameSat : ∃ s, (Spec.Camellia.cbcEncryptChainedContract Arm.abi 2904).pre s := by
-  implies_sat [Spec.Camellia.cbcEncryptChainedContract, Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre, Arm.abi, Arm.argRegs,
+theorem cbcEncryptChainedFrameSat : ∃ s, (Proof.Camellia.cbcEncryptChainedContractSk Arm.abi 2904).pre s := by
+  implies_sat [Proof.Camellia.cbcEncryptChainedContractSk, Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [cbcFrameSat, cbcSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using cbcFrameSat 0
 
@@ -103,6 +103,7 @@ theorem cbcEncryptChainedFrameSat : ∃ s, (Spec.Camellia.cbcEncryptChainedContr
 theorem cbcEncryptChained_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 cbcEncryptChained)
       (Spec.Camellia.cbcEncryptChainedContract Arm.abi 2904) :=
+  Proof.Camellia.cbcEncryptChained_of_sk <|
   Arm.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 9)
     (pre := Proof.Camellia.cbcChainedPre Arm.abi.ptrBits) (post := Proof.Camellia.cbcEncChainedPost Arm.abi.ptrBits)
     (wa := true) (stack := 2816) (m := 1) (bytes := 88)
@@ -139,8 +140,8 @@ theorem cbcDecryptChained_implies : (seqArm (ecbCore .decrypt) (ecbSpec .decrypt
 theorem cbcDecryptChained_verified : Verified Arm.target cbcDecryptChained (Proof.Camellia.cbcDecChainedScratchContract Arm.abi 9 2816) :=
   seq_verified (ecbSpec .decrypt) (cbcDecChained_ok _) cbcDecryptChainedTaint cbcDecryptChained_implies
 
-theorem cbcDecryptChainedFrameSat : ∃ s, (Spec.Camellia.cbcDecryptChainedContract Arm.abi 2904).pre s := by
-  implies_sat [Spec.Camellia.cbcDecryptChainedContract, Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre, Arm.abi, Arm.argRegs,
+theorem cbcDecryptChainedFrameSat : ∃ s, (Proof.Camellia.cbcDecryptChainedContractSk Arm.abi 2904).pre s := by
+  implies_sat [Proof.Camellia.cbcDecryptChainedContractSk, Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [cbcFrameSat, cbcSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using cbcFrameSat 0
 
@@ -148,6 +149,7 @@ theorem cbcDecryptChainedFrameSat : ∃ s, (Spec.Camellia.cbcDecryptChainedContr
 theorem cbcDecryptChained_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 cbcDecryptChained)
       (Spec.Camellia.cbcDecryptChainedContract Arm.abi 2904) :=
+  Proof.Camellia.cbcDecryptChained_of_sk <|
   Arm.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 9)
     (pre := Proof.Camellia.cbcChainedPre Arm.abi.ptrBits) (post := Proof.Camellia.cbcDecChainedPost Arm.abi.ptrBits)
     (wa := true) (stack := 2816) (m := 1) (bytes := 88)

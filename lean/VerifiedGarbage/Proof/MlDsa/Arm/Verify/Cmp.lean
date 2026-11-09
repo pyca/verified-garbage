@@ -30,24 +30,6 @@ open VG.Impl.MlKem.Arm (cmpBody)
 open VG.Spec.MlDsa (Params)
 open VG.Spec.Sha3 (bytesAt)
 
-/-! ## A state that differs but in registers other than the layout's -/
-
-theorem siteCongr {L : Lay} {Wb : List Nat} {STK : Nat} {s s' : State} (h : Site L Wb STK s)
-    (h4 : s'.gpr .r4 = s.gpr .r4) (h5 : s'.gpr .r5 = s.gpr .r5) (h6 : s'.gpr .r6 = s.gpr .r6)
-    (h7 : s'.gpr .r7 = s.gpr .r7) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
-    Site L Wb STK s' :=
-  ⟨h.ok, h.len, h.w0, h.w1, h.sz0, h.sz1, by rw [hsp]; exact h.p1, h.s8, by rw [hsp]; exact h.spk,
-    by rw [h7]; exact h.r7, by rw [h4]; exact h.r4, by rw [h5]; exact h.r5, by rw [h6]; exact h.r6,
-    by rw [hwr]; exact h.cw, by rw [hrd, hwr]; exact h.cr⟩
-
-theorem VC.congr {p : Params} {STK : Nat} {σ s s' : State} (h : VC p STK σ s)
-    (hr : ∀ r ∈ [Reg.r4, .r5, .r6, .r7], s'.gpr r = s.gpr r) (hm : s'.mem = s.mem) (hsp : s'.sp = s.sp)
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : VC p STK σ s' :=
-  ⟨siteCongr h.site (hr _ (by decide)) (hr _ (by decide)) (hr _ (by decide)) (hr _ (by decide)) hsp hrd hwr,
-    hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp,
-    by rw [hm]; exact h.sav, by rw [hm]; exact h.lr, by rw [hm]; exact h.pk, by rw [hm]; exact h.mu,
-    by rw [hm]; exact h.sg⟩
-
 /-! ## The comparison -/
 
 theorem cmpPre_ok {a b : Ptr} (ha : argOk (.ptr a) = true) (hb : argOk (.ptr b) = true) (n : Nat) (s : State) :
@@ -85,7 +67,7 @@ theorem shr31_of {v : BitVec 32} (h : v.toNat < 256) : (v - 1) >>> 31 = if v = 0
 theorem cmpPost_ok (s : State) :
     WP isa (.block [.dp .sub .r12 .r12 (.imm 1), .mov .r12 (.shifted .r12 .lsr 31), .dp .and .r11 .r11 (.reg .r12)]) s
       fun s' => s'.gpr .r11 = s.gpr .r11 &&& ((s.gpr .r12 - 1) >>> 31) ∧
-        (∀ r ∈ [Reg.r4, .r5, .r6, .r7], s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+        (∀ r ∈ [Reg.r4, .r5, .r6, .r7, .r8], s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
         s'.sp = s.sp := by
   apply WP.of_runBlock
   simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, Op2.eval,
@@ -97,7 +79,7 @@ theorem cmpAnd_okS {L : Lay} {Wb : List Nat} {STK : Nat} {s : State} (hs : Site 
     (pa : PtrIn L a n) (pb : PtrIn L b n) (hn : 0 < n) (hn' : n < 2 ^ 32) :
     WP isa (cmpAnd a b n) s fun s' =>
       s'.gpr .r11 = s.gpr .r11 &&& flag (decide (bytesAt s.mem (lpa L a) n = bytesAt s.mem (lpa L b) n)) ∧
-      (∀ r ∈ [Reg.r4, .r5, .r6, .r7], s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ r ∈ [Reg.r4, .r5, .r6, .r7, .r8], s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       s'.sp = s.sp := by
   have fS := hs.fitE pa hn
   have fD := hs.fitE pb hn
@@ -134,10 +116,10 @@ theorem cmpAnd_okS {L : Lay} {Wb : List Nat} {STK : Nat} {s : State} (hs : Site 
   · rw [rs r hr]
     have hp : r ∈ preserved := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> decide
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide
     have h9 : r ≠ .r9 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> decide
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide
     exact (h.cs r hp h9).trans (cs r hp h9)
 
 /-! ## After the comparison -/

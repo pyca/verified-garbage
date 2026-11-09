@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 # Randomized DSA signing on PPC64LE: the entry
 
 `entry_ok`: from the frame's push, `entry` saves the registers and the
-return address, writes `vg_dsa_sign`'s arguments on the stack, keeps the
+return address, writes `vg_dsa_sign_prevalidated`'s arguments on the stack, keeps the
 call's data in the registers of `Ctx`, starts with no octets consumed and
 eight attempts, and zeroes the nonce; memory changes in the frame only.
 -/

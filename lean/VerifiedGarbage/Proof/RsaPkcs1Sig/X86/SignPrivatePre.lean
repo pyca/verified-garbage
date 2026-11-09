@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignLocalArgument
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Proof.Rsa.Contract
 /-! # The signing call satisfies the checked RSA contract -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaPkcs1Sig/X86/SignArguments.lean`, which only this module imported.
@@ -151,14 +152,14 @@ theorem privateArgs_values {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
 
 theorem privateCall_pre {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
     (h : Context g bs s) (a : PrivateArgs g s) :
-    (Spec.Rsa.privateCheckedContract abi stackBytes).pre (s.callEntry.withRegions (privateRd g) (privateWr g)) := by
+    (Proof.Rsa.privateCheckedContract abi stackBytes).pre (s.callEntry.withRegions (privateRd g) (privateWr g)) := by
   have sa := fun {j} (hj : j < 20) => privateArgs_values h a hj
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_arith
   have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega_arith
   have pfit : g.pLength < 2 ^ 32 := by have := h.valid.pFits; omega_arith
   have qfit : g.qLength < 2 ^ 32 := by have := h.valid.qFits; omega_arith
   have wfit : g.scratchLength < 2 ^ 32 := by have := h.valid.workspaceFit; omega_arith
-  sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [sa (by decide : 0 < 20), sa (by decide : 1 < 20), sa (by decide : 2 < 20),
     sa (by decide : 3 < 20), sa (by decide : 4 < 20), sa (by decide : 5 < 20),
     sa (by decide : 6 < 20), sa (by decide : 7 < 20), sa (by decide : 8 < 20),

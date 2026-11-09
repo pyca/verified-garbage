@@ -198,7 +198,4 @@ def ecb (d : Direction) : Prog isa :=
     (.seq (.block [.cmp .r2 (.imm 0)])
       (.seq (.ite .eq (.block []) (.loop group .ne)) (.block ([movR .r12 sb] ++ restoreRegs .r12))))
 
-def encrypt : Prog isa := ecb .encrypt
-def decrypt : Prog isa := ecb .decrypt
-
 end VG.Impl.Seed.Arm

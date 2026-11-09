@@ -48,6 +48,6 @@ theorem verifiedResult_bad {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
   unfold verifiedResult Spec.RsaPkcs1Sig.verifyId
   cases Spec.RsaPkcs1Sig.Hash.ofId g.hash.toNat with
   | none => rfl
-  | some hv => simp only [Spec.RsaPkcs1Sig.verify, diff, false_and, ite_false, Bool.false_eq_true]
+  | some hv => simp only [Spec.RsaPkcs1Sig.verify, diff, ite_false, Bool.false_eq_true]
 
 end VG.Proof.RsaPkcs1Sig.X86.Ver

@@ -314,10 +314,6 @@ def lop : LogicOp → BitVec 64 → BitVec 64 → BitVec 64
   | .or, x, y => x ||| y
   | .xor, x, y => x ^^^ y
 
-theorem lop_eq (op : LogicOp) (x y : BitVec 64) :
-    (match op with | .and => x &&& y | .or => x ||| y | .xor => x ^^^ y) = lop op x y := by
-  cases op <;> rfl
-
 omit [DecidableEq α] in
 theorem binop_sound (hD : D.Sound R) {op : LogicOp} {a b r : α} {x y : BitVec 64} (ha : R a x)
     (hb : R b y) (h : binop D op a b = some r) : R r (lop op x y) := by

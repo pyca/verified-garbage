@@ -42,9 +42,8 @@ word of the counter (`hiW_ok`) is executed once per word size.
 
 The loop is proven against `Proof.Blake2.compressAArch64` (`compress_correct`,
 for any `P` whose rotations fit the word), which the streaming functions use
-for their calls; `compressB_verified` and `compressS_verified` move it to the
-shared contracts of `Spec/Blake2/Contract.lean`. Constant time is the taint
-analysis on the literal code (`Lit.lean`).
+for their calls. Constant time is the taint analysis on the literal code
+(`Lit.lean`).
 -/
 
 @[expose] public section
@@ -1185,54 +1184,5 @@ theorem compressB_noFrames : (Impl.Blake2.AArch64.compress Spec.Blake2.b).noFram
 
 theorem compressS_noFrames : (Impl.Blake2.AArch64.compress Spec.Blake2.s).noFrames = true := by
   lit_decide
-
-theorem agree_pub {w : Nat} (P : Params w) :
-    ∀ s₁ s₂, (compressAArch64 P).pre s₁ → (compressAArch64 P).pre s₂ →
-      (compressAArch64 P).pub s₁ s₂ → taint.Agree (Taint.ofRegs [.x0, .x1, .x2, .x5]) s₁ s₂ := by
-  rintro s₁ s₂ - - ⟨h0, h1, h2, -, -, h5, hsp⟩
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> assumption
-
-theorem compressB_ct : ConstantTime isa (compressAArch64 Spec.Blake2.b).pre
-    (compressAArch64 Spec.Blake2.b).pub (Impl.Blake2.AArch64.compress Spec.Blake2.b) :=
-  VG.Taint.constantTime (A := taint) _ (agree_pub _) (by taint_decide)
-
-theorem compressS_ct : ConstantTime isa (compressAArch64 Spec.Blake2.s).pre
-    (compressAArch64 Spec.Blake2.s).pub (Impl.Blake2.AArch64.compress Spec.Blake2.s) :=
-  VG.Taint.constantTime (A := taint) _ (agree_pub _) (by taint_decide)
-
-/-- A state satisfying the precondition (with no blocks). -/
-def satState (n : Nat) : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | .x5 => 0x3000 | _ => 0
-  sp := 0x4000
-  mem _ := 0
-  rd := [⟨0x2000, 0⟩]
-  wr := [⟨0x1000, n⟩, ⟨0x3000, 512⟩]
-
-theorem compressB_verified' :
-    Verified AArch64.target (Impl.Blake2.AArch64.compress Spec.Blake2.b) (compressAArch64 Spec.Blake2.b) :=
-  ⟨compressB_correct, compressB_ct, satState 64, rfl, rfl, Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
-
-theorem compressS_verified' :
-    Verified AArch64.target (Impl.Blake2.AArch64.compress Spec.Blake2.s) (compressAArch64 Spec.Blake2.s) :=
-  ⟨compressS_correct, compressS_ct, satState 32, rfl, rfl, Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
-
-theorem compressB_verified :
-    Verified AArch64.target (Impl.Blake2.AArch64.compress Spec.Blake2.b)
-      (Proof.Blake2.compressBContract AArch64.abi) :=
-  compressB_verified'.of_implies (by
-    sig_implies [Proof.Blake2.compressBContract, Proof.Blake2.compressBSig, compressAArch64,
-      AArch64.abi, AArch64.argRegs, Spec.Blake2.blockBytes] [satState] using satState 64)
-
-theorem compressS_verified :
-    Verified AArch64.target (Impl.Blake2.AArch64.compress Spec.Blake2.s)
-      (Proof.Blake2.compressSContract AArch64.abi) :=
-  compressS_verified'.of_implies (by
-    sig_implies [Proof.Blake2.compressSContract, Proof.Blake2.compressSSig, compressAArch64,
-      AArch64.abi, AArch64.argRegs, Spec.Blake2.blockBytes] [satState] using satState 32)
 
 end VG.Proof.Blake2.AArch64

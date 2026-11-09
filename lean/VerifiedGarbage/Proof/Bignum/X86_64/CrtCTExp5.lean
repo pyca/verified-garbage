@@ -14,7 +14,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # RSA with the CRT on x86-64: the exponentiation by windows of 5 bits is constant time
 
-As `crtExpLoop_ct` for `Crt.expLoop5`. Its one branch, on whether fewer
+As `crtExpLoop_ct` for `Crt.expLoop5S`. Its one branch, on whether fewer
 than 5 bits are left, is on public numbers: after `j` windows of an
 exponent of `L` bytes, `padBits L + 8 i = 5 j + b` with `b < 8` decides
 the `i` bytes read and the `b` bits left. A byte is read at its pointer
@@ -32,10 +32,6 @@ open VG.Proof.MlKem.X86_64
 /-- `expLoop5S Sq.mm M.mm S.code sp sl` is constant time. -/
 def ExpCT5S (M : Mont) (Sq : MontS) (S : CrtSel 32) (sp sl : Nat) : Prop :=
   RelCT isa (Two (EPre5 sp sl)) (seqs (Crt.expLoop5S Sq.mm M.mm S.code sp sl)) fun _ _ => True
-
-/-- `expLoop5 M.mm S.code sp sl` is constant time. -/
-def ExpCT5 (M : Mont) (S : CrtSel 32) (sp sl : Nat) : Prop :=
-  RelCT isa (Two (EPre5 sp sl)) (seqs (Crt.expLoop5 M.mm S.code sp sl)) fun _ _ => True
 
 /-- The number of windows of an exponent of `a.len` bytes. -/
 def K5 (a : BPub) : Nat := (padBits a.len + 8 * a.len) / 5
@@ -63,10 +59,6 @@ def W5Cmp (q : BPub × Nat) (s : State) : Prop :=
 def W5Ld (q : BPub × Nat) (s : State) : Prop :=
   s.gpr .rdi = off q.1.x.B q.1.x.o ∧ s.gpr .rax = q.1.ptr ∧
     ∃ i b, padBits q.1.len + 8 * i = 5 * q.2 + b ∧ b < 8 ∧ s.gpr .rcx = BitVec.ofNat 64 i
-
-theorem pins_w5Cmp : Pins W5Cmp [.rdi] :=
-  pins_rdi (fun q : BPub × Nat => off q.1.x.B q.1.x.o) fun _ _ ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, hI⟩ =>
-    hI.ctx.good.rdi
 
 theorem pins_w5Ld : Pins W5Ld [.rdi, .rax, .rcx] := by
   rintro q s₁ s₂ ⟨d₁, a₁, i₁, b₁, h₁, hb₁, c₁⟩ ⟨d₂, a₂, i₂, b₂, h₂, hb₂, c₂⟩ r hr
@@ -236,7 +228,7 @@ theorem crtWin5_ct (M : Mont) (Sq : MontS) (S : CrtSel 32) (hS : S.CT) :
 theorem pins_ePre5 (sp sl : Nat) : Pins (EPre5 sp sl) [.rdi] :=
   fun a s₁ s₂ h₁ h₂ => pins_ePre sp sl a s₁ s₂ h₁.1 h₂.1
 
-/-- `expLoop5`'s start keeps `tabBuild_ok`'s hypotheses for 32 entries. -/
+/-- `expLoop5S`'s start keeps `tabBuild_ok`'s hypotheses for 32 entries. -/
 theorem crtExpInit_tpre5 {sp sl : Nat} {a : BPub} {s : State} (h : EPre5 sp sl a s) :
     WP isa (.block [.mov .rax (.mem (hdr Crt.sLink)), .mov .rdx (.mem (Crt.ws .rax sp)),
       .store (hdr Crt.sExp) .rdx, .mov .rdx (.mem (Crt.ws .rax sl)), .store (hdr Crt.sExpLen) .rdx,
@@ -266,7 +258,7 @@ theorem crtExpInit_tpre5 {sp sl : Nat} {a : BPub} {s : State} (h : EPre5 sp sl a
     (by omega_arith), o1.wv (by unfold Crt.sExp sFn at *; omega_arith) (by omega_arith)]
   exact hyl
 
-/-- `expLoop5`'s start, table and padding leak the same in runs with the
+/-- `expLoop5S`'s start, table and padding leak the same in runs with the
 same workspace, given that the taint analysis checks its start after the
 link's load. -/
 theorem crtExpHead5_ct (M : Mont) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -300,7 +292,7 @@ theorem crtExpHead5_ct (M : Mont) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
     exact WP.mono (tabBuild_ok M (Q := False) (x := 0) hc (by decide) (by decide) hw (by omega_arith) hR hXN
       False.elim hY False.elim) fun t' h' => h'.1.good.rdi
 
-/-- `expLoop5 M.mm S.code sp sl` is constant time, given that the taint
+/-- `expLoop5S` with the squarings `Sq` and the selection `S` is constant time, given that the taint
 analysis checks its start after the link's load. -/
 theorem crtExpLoop5S_ct (M : Mont) (Sq : MontS) (S : CrtSel 32) (hS : S.CT) {sp sl : Nat}
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -339,21 +331,6 @@ theorem crtExpLoop5S_ct (M : Mont) (Sq : MontS) (S : CrtSel 32) (hS : S.CT) {sp 
   exact WP.mono (crtWin5_ok M Sq S hw hw' hR rfl hL' he.rd he.val hout (K := K5 a) (by rw [hK, hL]) hj hib hb hiL hI)
     fun s' ⟨hz, i', b', hib', hb', hiL', hI'⟩ => ⟨eval_ne_count hj hz,
       fun _ => ⟨t₀, minv, X, Xc, eb, ⟨i', b', hib', hb', hiL', hI'⟩, hw, hw', hR, hL, hL', he, hout⟩, fun _ => trivial⟩
-
-/-- `crtExpLoop5S_ct` with the squarings by `M`: `expLoop5 M.mm`. -/
-theorem crtExpLoop5_ct (M : Mont) (S : CrtSel 32) (hS : S.CT) {sp sl : Nat}
-    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hT : (taint.check (Taint.ofRegs [.rdi, .rax]) (.block [.mov .rdx (.mem (Crt.ws .rax sp)),
-      .store (hdr Crt.sExp) .rdx, .mov .rdx (.mem (Crt.ws .rax sl)), .store (hdr Crt.sExpLen) .rdx,
-      .mov32 .rdx (.imm 0), .store (hdr Crt.sI) .rdx]) hc).isSome = true) :
-    ExpCT5 M S sp sl :=
-  crtExpLoop5S_ct M M.toS S hS hT
-
-theorem expLoop5_ct_P (M : Mont) (S : CrtSel 32) (hS : S.CT) : ExpCT5 M S sDp sPlen :=
-  crtExpLoop5_ct M S hS (by taint_decide)
-
-theorem expLoop5_ct_Q (M : Mont) (S : CrtSel 32) (hS : S.CT) : ExpCT5 M S sDq sQlen :=
-  crtExpLoop5_ct M S hS (by taint_decide)
 
 theorem expLoop5S_ct_P (M : Mont) (Sq : MontS) (S : CrtSel 32) (hS : S.CT) : ExpCT5S M Sq S sDp sPlen :=
   crtExpLoop5S_ct M Sq S hS (by taint_decide)

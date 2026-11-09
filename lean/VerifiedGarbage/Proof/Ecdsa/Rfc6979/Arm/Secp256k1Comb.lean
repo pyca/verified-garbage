@@ -1,5 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+public import VerifiedGarbage.Proof.Secp256k1.Arm.CombSat
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Secp256k1
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombMain
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombCT
@@ -8,6 +13,15 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombContract
 import VerifiedGarbage.Impl.Ecdsa.Secp256k1.ArmComb
+meta import VerifiedGarbage.Proof.Secp256k1.Arm.CombSat
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Secp256k1
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombMain
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombCT
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
+meta import VerifiedGarbage.Proof.Framework.PlainSimp
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombContract
+meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.ArmComb
 
 /-! RFC 6979 calls the same comb signer as the raw signing API. -/
 
@@ -74,7 +88,7 @@ def secp256k1CombCurve (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve :=
 /-- `secp256k1CombCurve`, calling `vg_ecdsa_secp256k1_sign_umaal`. -/
 def secp256k1CombCurveU (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve :=
   {secp256k1CombCurve hL with
-    coreN := "vg_ecdsa_secp256k1_sign" ++ "_umaal"
+    coreN := "vg_ecdsa_secp256k1_sign_k" ++ "_umaal"
     coreC := Impl.Ecdsa.Arm.signSecp256k1CombU
     coreX := by
       intro s hs
@@ -85,5 +99,19 @@ def secp256k1CombCurveU (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve :
       exact post
     coreCT := comb_core_ctU
     coreStack := by lit_decide }
+
+/-! ## With the tables of every hash function with HMAC -/
+
+theorem secp256k1T_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) :
+    Verified Arm.target (signCodeT (secp256k1CombCurve hL) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries HmacTable.Arm.vars)
+      (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 (secp256k1CombCurve hL).coreConsts HmacTable.Arm.vars) :=
+  oneT_verified ⟨rfl, by decide, by decide⟩ rfl (by decide) rfl Proof.Secp256k1.Arm.combSatMem (by decide)
+    (by rw [Proof.Secp256k1.Arm.comb_words_length]; decide) Proof.Secp256k1.Arm.combSat_held
+
+theorem secp256k1UT_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) :
+    Verified Arm.target (signCodeT (secp256k1CombCurveU hL) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries HmacTable.Arm.vars)
+      (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 (secp256k1CombCurveU hL).coreConsts HmacTable.Arm.vars) :=
+  oneT_verified ⟨rfl, by decide, by decide⟩ rfl (by decide) rfl Proof.Secp256k1.Arm.combSatMem (by decide)
+    (by rw [Proof.Secp256k1.Arm.comb_words_length]; decide) Proof.Secp256k1.Arm.combSat_held
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

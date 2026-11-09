@@ -73,15 +73,7 @@ def A : Nat := 224
 def B : Nat := 256
 def C : Nat := 288
 def D : Nat := 320
-def AA : Nat := 352
-def BB : Nat := 384
-def E : Nat := 416
-def DA : Nat := 448
-def CB : Nat := 480
-def T0 : Nat := 512
 def T1 : Nat := 544
-def T2 : Nat := 576
-def T3 : Nat := 608
 def SWAP : Nat := 640
 def BITS : Nat := 768
 
@@ -305,11 +297,6 @@ def baseline : Field where
   a24add o b a := mulSmallAdd o b a a24
   mul2 o a b := mul o a b ++ add o o o
   sqr2 o a := sqr o a ++ add o o o
-
-/-- `[o] = [a]^(2^n)`, for `n ≥ 2`: a square, then `n - 1` in place. -/
-def sqn (F : Field) (o a n : Nat) : Prog isa :=
-  .seq (.block (F.sqr o a ++ [.mov32 .rbx (.imm (BitVec.ofNat 32 (n - 1)))]))
-    (.loop (.block (F.sqr o o ++ [.alu .sub .rbx (.imm 1)])) .ne)
 
 /-! ## The ladder -/
 

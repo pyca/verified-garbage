@@ -133,15 +133,6 @@ theorem alignRight_4 (a b : BitVec 128) :
       show i - 32 - 32 - 32 < 32 by omega_arith, ite_false, decide_true, Bool.true_and, show ¬ 32 + i < 128 by omega_arith] <;>
       exact congrArg _ (by omega_arith)
 
-theorem movq_const (c : BitVec 128) :
-    XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ c.extractLsb' 0 64)
-      ((0 : BitVec 64) ++ c.extractLsb' 64 64) = c := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [XBinOp.eval, qword, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  rcases (by omega_arith : i < 64 ∨ 64 ≤ i) with h | h <;>
-  simp (disch := omega_arith) only [ite_eq_left, ite_eq_right, decide_eq_true, Bool.true_and] <;>
-  exact congrArg _ (by omega_arith)
-
 
 /-- Bit `r` of block `k` of `x ++ y`, blocks being `n` bits wide. -/
 theorem getLsbD_append_block {w n : Nat} (x : BitVec w) (y : BitVec n) (k : Nat) {r : Nat} (hr : r < n) :
@@ -182,13 +173,6 @@ theorem pshufb_bswap_bytes (a : BitVec 128) :
       ofBytes fun j => byte a (4 * (j / 4) + 3 - j % 4) := by
   simp only [XBinOp.eval, ofBytes]
   rfl
-theorem getLsbD_bswap (x : BitVec 32) (i : Nat) :
-    (bswap x).getLsbD i = if i < 8 then x.getLsbD (24 + i) else if i - 8 < 8 then x.getLsbD (16 + (i - 8))
-      else if i - 8 - 8 < 8 then x.getLsbD (8 + (i - 8 - 8)) else (decide (i - 8 - 8 - 8 < 8) && x.getLsbD (i - 8 - 8 - 8)) := by
-  simp only [bswap, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  rcases (by omega_arith : i < 8 ∨ (8 ≤ i ∧ i < 16) ∨ (16 ≤ i ∧ i < 24) ∨ 24 ≤ i) with h | h | h | h <;>
-  simp (disch := omega_arith) only [ite_eq_left, ite_eq_right, decide_eq_true, Bool.true_and, Nat.zero_add]
-
 theorem getLsbD_ofDwords_block (a b c d : BitVec 32) {q s : Nat} (hq : q < 4) (hs : s < 32) :
     (ofDwords a b c d).getLsbD (32 * q + s) =
       if q = 0 then a.getLsbD s else if q = 1 then b.getLsbD s else if q = 2 then c.getLsbD s

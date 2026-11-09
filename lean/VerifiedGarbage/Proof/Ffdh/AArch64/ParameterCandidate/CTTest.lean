@@ -100,27 +100,28 @@ theorem shapeP_ct : RelCT isa (Two SP) (seqs shapeP) fun _ _ => True := by
 /-! ## The test's tail -/
 
 /-- The public data of a test: the candidate's, the modulus's bits, the
-modulus, and the octets read before it. -/
+modulus, the octets read before it and the witnesses needed. -/
 structure TD where
   p : PP
   mb : Nat
   N : Nat
   u : Nat
+  K : Nat
 
 /-- The witnesses' public data of a test. -/
-abbrev TD.tq (d : TD) : TQ := ⟨d.p, mW d.mb, d.N, d.mb, Spec.Ffdh.primeChecks d.mb, d.u⟩
+abbrev TD.tq (d : TD) : TQ := ⟨d.p, mW d.mb, d.N, d.mb, d.K, d.u⟩
 
 /-- The setup's public data of a test. -/
 abbrev TD.mq (d : TD) : MQ := ⟨⟨d.p.B, d.p.Z, mW d.mb⟩, d.N⟩
 
-theorem tt_mp0 {d : TD} {s : State} (h : TT d.p d.mb d.N d.u s) : MP0 d.mq s := by
+theorem tt_mp0 {d : TD} {s : State} (h : TT d.p d.mb d.N d.u d.K s) : MP0 d.mq s := by
   have hmb1 := h.mb1
   have hmb2 := h.mb2
   exact ⟨h.st.ws, by simp only [mW]; omega, by simp only [mW]; omega, h.n, h.odd,
     Nat.le_trans (Nat.pow_le_pow_right (by decide) (by simp only [mW]; omega)) h.lo⟩
 
 /-- The Montgomery setup, the exponent and the witnesses. -/
-theorem testTail_ct (M : Mont) (R : Kernel) : RelCT isa (Two fun (d : TD) s => TT d.p d.mb d.N d.u s)
+theorem testTail_ct (M : Mont) (R : Kernel) : RelCT isa (Two fun (d : TD) s => TT d.p d.mb d.N d.u d.K s)
     (seqs (montPrep M.mm ++ expSetup ++ VG.Impl.Ffdh.AArch64.ParameterCandidate.millerRabin M.mm R.run))
     (Two TE) := by
   refine ct_app' (by simp [montPrep]) (by simp [VG.Impl.Ffdh.AArch64.ParameterCandidate.millerRabin])
@@ -132,7 +133,7 @@ theorem testTail_ct (M : Mont) (R : Kernel) : RelCT isa (Two fun (d : TD) s => T
   · have hN3 := h.dims.n3
     exact WP.mono (montPrep_ok M h.st.ws (by have := h.mb1; simp only [mW]; omega) h.n h.odd (tt_mp0 h).2.2.2.2.2)
       fun t ⟨hw, _, hn, _⟩ => ⟨hw, hn, h.odd, show 1 < d.N by omega⟩
-  · exact WP.mono (testPre_ok M h) fun t ⟨fix, hU, _⟩ => ⟨h.dims, fix, hU, h.ul, primeChecks_pos _⟩
+  · exact WP.mono (testPre_ok M h) fun t ⟨fix, hU, _⟩ => ⟨h.dims, fix, hU, h.ul, h.k1⟩
 
 /-! ## The results -/
 

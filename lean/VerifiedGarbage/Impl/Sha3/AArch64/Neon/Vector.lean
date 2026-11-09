@@ -57,5 +57,4 @@ def iota : List Instr := [.vop (.dup .d2 .v25 .x16),.vop (.logic .eor .v0 .v0 .v
 
 def round (r : Nat) : List Instr := constant (Spec.Sha3.RC r) ++ theta ++ rhoPi ++ chi ++ iota
 
-def rounds : List Instr := (List.range 24).flatMap round
 end VG.Impl.Sha3.AArch64.Neon.Vector

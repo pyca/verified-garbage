@@ -11,7 +11,7 @@ and `vg_aes_ccm_open` with the same arguments (see `VG.Spec.Ccm.sealContract`
 and `openContract`, which a frame allocating `work` on the stack implements:
 `Proof/AesCcm/X86/Frame.lean`), cdecl (every argument on the stack), composed of calls
 of the verified `vg_cmac_aes_update`, whose chaining (`Cᵢ = CIPH_K(Cᵢ₋₁ ⊕ Mᵢ)`)
-from a zero block is CCM's CBC-MAC (§6.1 steps 1–4), and `vg_aes_ctr32`.
+from a zero block is CCM's CBC-MAC (§6.1 steps 1–4), and `vg_aes_ctr32_to`.
 Like those, they are generic over the implementation of AES they call
 (`c`, and `sfx`, the suffix of the name of `vg_cmac_aes_update` made with
 it), and follow the x86-64 implementation (`Impl/AesCcm/X86_64.lean`), with the
@@ -25,7 +25,7 @@ conventions and pieces of x86's AES-GCM (`Impl/AesGcm/X86.lean`).
 * `[32, 48)`: a block `B`: `B₀`, the first block of the associated data, or
   a last block padded with zeros;
 * `[48, 64)`: the counter block `Ctr₀`;
-* `[64, 80)`: the counter block passed to `vg_aes_ctr32`;
+* `[64, 80)`: the counter block passed to `vg_aes_ctr32_to`;
 * `[80, 96)`: a keystream block;
 * `[96, 112)`: the MAC `open` computes;
 * `[128, 144)`: our caller's `ebx`, `esi`, `edi`, `ebp`;
@@ -40,12 +40,12 @@ conventions and pieces of x86's AES-GCM (`Impl/AesGcm/X86.lean`).
 ## Registers
 
 `ebp` holds `W` throughout; the functions called preserve it. Everything
-else is reloaded from `W`. Each call pushes its six arguments (last to
-first) in a frame of its own, popped into `eax`: `vg_cmac_aes_update`'s
-from `eax`, `ecx`, `edx`, `ebx`, `esi` and `edi` (streaming CMAC's
-`call6`), `vg_aes_ctr32`'s from `eax`, `ecx`, `edx`, `ebx`, `edi` and
-`ebp` (AES-GCM's), with its working space, `W + 384`, in `ebp`, moved there
-before the frame and back after it.
+else is reloaded from `W`. Each call pushes its arguments (last to first)
+in a frame of its own, popped into `eax`: `vg_cmac_aes_update`'s six from
+`eax`, `ecx`, `edx`, `ebx`, `esi` and `edi` (streaming CMAC's `call6`),
+`vg_aes_ctr32_to`'s seven, in place, from `eax`, `ecx`, `edx`, `ebx`, `edi`,
+`ebp` and `ebx` again (AES-GCM's), with its working space, `W + 384`, in
+`ebp`, moved there before the frame and back after it.
 
 ## The pieces
 
@@ -66,9 +66,9 @@ As on x86-64:
   chained: the whole blocks in one call, then the last bytes in `B`.
 * `mac y`: `b0`, `aad` and the payload (`absorbPad` of the data), so that
   `W + y` holds `Yᵣ`.
-* `tag y`: `Yᵣ ⊕ CIPH_K(Ctr₀)` at `W + y`, by `vg_aes_ctr32` on it.
+* `tag y`: `Yᵣ ⊕ CIPH_K(Ctr₀)` at `W + y`, by `vg_aes_ctr32_to` on it.
 * `ctr`: the data XORed with the keystream from `Ctr₁`: its whole blocks by
-  one call of `vg_aes_ctr32` from `Ctr₁`, which increments only the low 32
+  one call of `vg_aes_ctr32_to` from `Ctr₁`, which increments only the low 32
   bits of the counter block: as there are fewer than 2²⁸ blocks, they do not
   wrap around; then the last bytes with a keystream block.
 * `mask`: every byte of the data ANDed with `0 − ok`.
@@ -114,12 +114,12 @@ abbrev scrO : Nat := 384
 
 variable (c : Impl.Aes.X86.Ctr32) (sfx : String)
 
-/-- `vg_aes_ctr32(eax, ecx, edx, ebx, edi, W + 384)`: `ebp` moved to the
-callee's working space, the arguments pushed in a frame of their own (as
-AES-GCM's `ctrCall`), and `ebp` back. -/
+/-- `vg_aes_ctr32_to(eax, ecx, edx, ebx, edi, W + 384, ebx)`, in place:
+`ebp` moved to the callee's working space, the arguments pushed in a frame
+of their own (as AES-GCM's `ctrCall`), and `ebp` back. -/
 def ctrCall : Prog isa :=
   .seq (.block [.alu .add .ebp (imm scrO)])
-    (.seq (.frame (.push [.ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.name c.code) (.pop .eax 6))
+    (.seq (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.name c.code) (.pop .eax 7))
       (.block [.alu .sub .ebp (imm scrO)]))
 
 /-- `vg_cmac_aes_update(eax, ecx, edx, ebx, esi, edi)`, made with `c`. -/
@@ -217,7 +217,7 @@ def mac (y : Nat) : Prog isa :=
       .store (at_ .ebp nO) .eax])
     (absorbPad c sfx y)))
 
-/-- `Yᵣ ⊕ CIPH_K(Ctr₀)` at `W + y`, by `vg_aes_ctr32` on it with a copy of
+/-- `Yᵣ ⊕ CIPH_K(Ctr₀)` at `W + y`, by `vg_aes_ctr32_to` on it with a copy of
 `Ctr₀` (which it increments). -/
 def tag (y : Nat) : Prog isa :=
   .seq (.block ([.mov .eax (imm 0)] ++ ctrAt ++ keyArgs c1O ++
@@ -227,7 +227,7 @@ def tag (y : Nat) : Prog isa :=
 /-! ## Counter mode -/
 
 /-- The data XORed with the keystream from `Ctr₁` (§6.1 steps 5–8, §6.2
-steps 3–5): its whole blocks by `vg_aes_ctr32` from `Ctr₁`, then its last
+steps 3–5): its whole blocks by `vg_aes_ctr32_to` from `Ctr₁`, then its last
 `len mod 16` bytes with a keystream block from `Ctrⱼ`, `j = ⌊len / 16⌋ + 1`. -/
 def ctr : Prog isa :=
   .seq (.block ([.mov .eax (slot dataO), .store (at_ .ebp dO) .eax, .mov .eax (slot lenO),

@@ -3,9 +3,12 @@
 
 use criterion::Criterion;
 
+/// The module `ecdsa_p521`, the tables of functions (`fn_tables`), the
+/// curve's arithmetic (`ec_p521`), and the HMAC and hash functions it
+/// signs with through their tables (their generated modules).
 pub const USES: &[&str] = &[
-    "ecdsa_p521_sha512",
     "ecdsa_p521",
+    "fn_tables",
     "ec_p521",
     "hmac_sha512",
     "sha512",
@@ -26,14 +29,14 @@ pub const USES: &[&str] = &[
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
-    use aws_lc_rs::agreement::{ECDH_P521, PrivateKey};
+    use aws_lc_rs::agreement::{self, ECDH_P521};
     use aws_lc_rs::signature::{ECDSA_P521_SHA512_ASN1, ECDSA_P521_SHA512_FIXED_SIGNING};
     use criterion::BenchmarkId;
     use openssl::bn::{BigNum, BigNumContext};
     use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
     use openssl::hash::MessageDigest;
     use openssl::nid::Nid;
-    use verified_garbage::ecdsa::{P521, SigningKey};
+    use verified_garbage::ec::{P521, PrivateKey};
     use verified_garbage::hashes::sha512::Sha512;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
@@ -57,7 +60,7 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("ec_p521_public_key");
     g.bench(BenchmarkId::new(VG, 133), |b| {
         b.iter(|| {
-            SigningKey::<P521>::from_bytes(black_box(&d))
+            PrivateKey::<P521>::from_bytes(black_box(&d))
                 .public_key()
                 .unwrap()
         })
@@ -74,16 +77,19 @@ pub fn bench(c: &mut Criterion) {
     // aws-lc-rs computes the public key of a bare private key only for ECDH
     // (`agreement::PrivateKey`), when it constructs one.
     assert_eq!(
-        PrivateKey::from_private_key(&ECDH_P521, &d)
+        agreement::PrivateKey::from_private_key(&ECDH_P521, &d)
             .unwrap()
             .compute_public_key()
             .unwrap()
             .as_ref(),
-        SigningKey::<P521>::from_bytes(&d).public_key().unwrap()
+        PrivateKey::<P521>::from_bytes(&d)
+            .public_key()
+            .unwrap()
+            .as_bytes()
     );
     g.bench(BenchmarkId::new(AWS_LC, 133), |b| {
         b.iter(|| {
-            PrivateKey::from_private_key(&ECDH_P521, black_box(&d))
+            agreement::PrivateKey::from_private_key(&ECDH_P521, black_box(&d))
                 .unwrap()
                 .compute_public_key()
                 .unwrap()
@@ -105,7 +111,7 @@ pub fn bench(c: &mut Criterion) {
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P521>>(
+fn hash<H: verified_garbage::ec::SignatureHash<verified_garbage::ec::P521>>(
     c: &mut Criterion,
     name: &str,
     md: openssl::hash::MessageDigest,
@@ -124,11 +130,11 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P521>
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
     use openssl::sign::{Signer, Verifier};
-    use verified_garbage::ecdsa::{P521, SigningKey, VerifyingKey};
+    use verified_garbage::ec::{P521, PrivateKey};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
-    let key = SigningKey::<P521>::from_bytes(d);
+    let key = PrivateKey::<P521>::from_bytes(d);
     let group = EcGroup::from_curve_name(Nid::SECP521R1).unwrap();
     let mut ctx = BigNumContext::new().unwrap();
     let d_bn = BigNum::from_slice(d).unwrap();
@@ -136,8 +142,8 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P521>
     public.mul_generator2(&group, &d_bn, &mut ctx).unwrap();
     let openssl_key =
         PKey::from_ec_key(EcKey::from_private_components(&group, &d_bn, &public).unwrap()).unwrap();
-    let q = key.public_key().unwrap();
-    let verifying_key = VerifyingKey::<P521>::from_bytes(&q);
+    let verifying_key = key.public_key().unwrap();
+    let q = *verifying_key.as_bytes();
     let aws_lc_key =
         aws_lc_sign.map(|alg| EcdsaKeyPair::from_private_key_and_public_key(alg, d, &q).unwrap());
     // Ignored: aws-lc-rs draws `k` from AWS-LC's own generator.

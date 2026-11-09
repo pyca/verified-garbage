@@ -9,8 +9,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 /-!
 # RSA encryption on AArch64: bytes, one at a time
 
-What the byte loops of RSAES-PKCS1-v1_5 (and OAEP) need: a byte load and a
-byte store at a register (`exec_ldrb0`, `exec_strb0`), a byte written to
+What the byte loops of RSAES-PKCS1-v1_5 (and OAEP) need: a byte store at a
+register (`exec_strb0`), a byte written to
 memory (`write1_apply`), and a loop that runs a down-counter from `n` to
 zero (`count_loop`).
 -/
@@ -20,21 +20,6 @@ zero (`count_loop`).
 namespace VG.AArch64.Bytes
 
 open VG
-
-theorem read1 (m : Mem) (a : Addr) : (m.read a 1).setWidth 32 = (m a).setWidth 32 := by
-  simp only [Mem.read]
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_append, BitVec.toNat_ofNat, Nat.zero_mod, Nat.zero_shiftLeft,
-    Nat.zero_or]
-
-/-- `ldrb wt, [n]`. -/
-theorem exec_ldrb0 {s : State} {t n : Reg} (h : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 0) 1) :
-    exec (.ldrb t n 0) s = some (s.write .w t ((s.mem (s.gpr n)).setWidth 32)) := by
-  have h' : InRegions (s.rd ++ s.wr) (s.gpr n + 0#64) 1 := h
-  simp only [reduceExec, addr, Nat.mod_one, and_self, show (0 : Nat) < 4096 * 1 from by decide, ite_true,
-    Option.bind_some, State.load, BitVec.add_zero]
-  simp only [BitVec.add_zero] at h'
-  simp only [h', ite_true, Option.map_some, read1]
 
 /-- `strb wt, [n]`. -/
 theorem exec_strb0 {s : State} {t n : Reg} (h : InRegions s.wr (s.gpr n + BitVec.ofNat 64 0) 1) :
@@ -121,12 +106,6 @@ theorem byte_write_sep {m : Mem} {x b : Addr} {k : Nat} {v : BitVec (8 * k)} (h 
 theorem byte_writeW_sep {m : Mem} {x b : Addr} {w : Nat} {v : BitVec w} (h : Mem.Sep x 1 b (w / 8)) :
     m.writeW b v x = m x :=
   byte_write_sep h
-
-/-- `movz xd, #imm`. -/
-theorem exec_movz_x (s : State) (d : Reg) (imm : BitVec 16) :
-    exec (.movz .x d imm 0) s = some (s.write .x d (imm.setWidth 64)) := by
-  simp only [reduceExec, Size.bits, Nat.mul_zero, show (0 : Nat) < 64 from by decide, ite_true,
-    BitVec.shiftLeft_zero]
 
 theorem read_one (m : Mem) (a : Addr) : m.read a 1 = m a := by
   apply BitVec.eq_of_toNat_eq

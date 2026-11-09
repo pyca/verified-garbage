@@ -36,7 +36,7 @@ theorem verifyId_true_iff (nB eB H sig : List Byte) (x : BitVec 32) :
   unfold Spec.RsaPkcs1Sig.verifyId encodeId
   cases hid : Spec.RsaPkcs1Sig.Hash.ofId x.toNat with
   | none => simp
-  | some h => dsimp only; rw [Proof.RsaPkcs1Sig.verify_eq_verifyRfc, Proof.RsaPkcs1Sig.verifyRfc_true]
+  | some h => dsimp only; rw [Proof.RsaPkcs1Sig.verify_true]
 
 /-- What the function returns, from its entry state. -/
 def verOut (s : State) : Bool :=
@@ -75,10 +75,6 @@ theorem encodeId_length {x : BitVec 32} {H em : List Byte} {k : Nat} (h : encode
 
 theorem ite01 (c : Prop) [Decidable c] : (if c then (1 : BitVec 64) else 0).setWidth 32 = if c then 1 else 0 := by
   split <;> rfl
-
-theorem and01 (c : Bool) (r : BitVec 32) (hr : r = 1 ∨ r = 0) :
-    ((if c then (1 : BitVec 32) else 0) &&& r) = if c ∧ r = 1 then 1 else 0 := by
-  rcases hr with rfl | rfl <;> cases c <;> decide
 
 theorem ret0_ok (t : State) : WP isa (.block ret0) t fun w => Only [.r3] t w ∧ w.gpr .r3 = 0 :=
   wp_li (by decide) fun w o e => wp_nil ⟨o, by rw [e]; rfl⟩

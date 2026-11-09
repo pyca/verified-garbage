@@ -5,10 +5,10 @@
 //! integer) decrypts to its message, and so does that message encrypted
 //! again; an `invalid` one is refused, as of the wrong length if its
 //! ciphertext is, and otherwise with the one error for every failure of
-//! the ciphertext and its decoding. The pairs of hash functions the module
-//! does not support (some of `rsa_oaep_misc_test.json`'s) are refused as
-//! such. The files of three-prime keys are not this module's. And every
-//! pair the module supports encrypts and decrypts with a key of the vectors
+//! the ciphertext and its decoding. Every pair of the vectors' hash
+//! functions is supported, MGF1 being over any of them. The files of
+//! three-prime keys are not this module's. And every pair the module
+//! supports encrypts and decrypts with a key of the vectors
 //! (`rsa_oaep_every_pair`).
 
 #![cfg(all(
@@ -17,16 +17,17 @@
         target_arch = "x86_64",
         target_arch = "aarch64",
         target_arch = "arm",
-        target_arch = "powerpc64"
+        target_arch = "powerpc64",
+        target_arch = "riscv64"
     ),
     feature = "alloc"
 ))]
 
 use crate::json_struct;
 use verified_garbage::hashes::sha256::Sha256;
-use verified_garbage::rsa::{PrivateKey, PublicKey};
-use verified_garbage::rsa_oaep::{Error, Hash, decrypt, encrypt};
-use verified_garbage::{rsa_pkcs1_sig, rsa_pss};
+use verified_garbage::rsa::oaep::{Error, Hash};
+use verified_garbage::rsa::{BigUint, PrivateKey, PublicKey};
+use verified_garbage::rsa::{pkcs1_sig, pss};
 
 use super::harness::{self, Count, Expectation, Hex, TestFile, TestGroup};
 use super::schema::{MsgCase, RsaPrivateKey, RsaPrivateKeyGroup};
@@ -70,24 +71,31 @@ fn hash(name: &str) -> Hash {
 fn keys(name: &str, k: &RsaPrivateKey) -> (PrivateKey, PublicKey) {
     let n = trim_zeros(&k.modulus.0);
     let key = PrivateKey::from_crt(
-        n,
-        &k.public_exponent.0,
-        &k.private_exponent.0,
-        &k.prime1.0,
-        &k.prime2.0,
-        &k.exponent1.0,
-        &k.exponent2.0,
-        &k.coefficient.0,
+        BigUint::from_be_bytes(n),
+        BigUint::from_be_bytes(&k.public_exponent.0),
+        BigUint::from_be_bytes(&k.private_exponent.0),
+        BigUint::from_be_bytes(&k.prime1.0),
+        BigUint::from_be_bytes(&k.prime2.0),
+        BigUint::from_be_bytes(&k.exponent1.0),
+        BigUint::from_be_bytes(&k.exponent2.0),
+        BigUint::from_be_bytes(&k.coefficient.0),
     )
     .unwrap_or_else(|e| panic!("{name}: {e}"));
-    (key, PublicKey::new(n, &k.public_exponent.0).unwrap())
+    (
+        key,
+        PublicKey::new(
+            BigUint::from_be_bytes(n),
+            BigUint::from_be_bytes(&k.public_exponent.0),
+        )
+        .unwrap(),
+    )
 }
 
 /// Checks every vector of the file `name` with a key that
-/// [`harness::rsa_key_tested`] tests; returns the numbers of decrypted,
-/// refused and unsupported vectors.
-fn check(name: &str) -> (usize, usize, usize) {
-    let (valid, refused, unsupported) = (Count::default(), Count::default(), Count::default());
+/// [`harness::rsa_key_tested`] tests; returns the numbers of decrypted and
+/// refused vectors.
+fn check(name: &str) -> (usize, usize) {
+    let (valid, refused) = (Count::default(), Count::default());
     let mut file: TestFile<Group, Case> = harness::load(name);
     file.test_groups
         .retain(|g| harness::rsa_key_tested(&g.params.private_key.modulus.0));
@@ -98,12 +106,8 @@ fn check(name: &str) -> (usize, usize, usize) {
         let n = trim_zeros(&p.private_key.modulus.0);
         let id = test.tc_id;
         let (ct, label, msg) = (&test.case.ct.0, &test.case.label.0, &test.case.msg.0);
-        let r = decrypt(key, ct, h, g, label);
-        if r == Err(Error::UnsupportedHash) {
-            let e = encrypt(public, msg, h, g, label);
-            assert_eq!(e, Err(Error::UnsupportedHash), "{name} tcId {id}");
-            unsupported.add();
-        } else if test.result == Expectation::Invalid {
+        let r = key.decrypt_oaep(ct, h, g, label);
+        if test.result == Expectation::Invalid {
             let e = if ct.len() == n.len() {
                 Error::Decryption
             } else {
@@ -113,12 +117,12 @@ fn check(name: &str) -> (usize, usize, usize) {
             refused.add();
         } else {
             assert_eq!(r.as_deref(), Ok(&msg[..]), "{name} tcId {id}");
-            let again = encrypt(public, msg, h, g, label).unwrap();
-            assert_eq!(decrypt(key, &again, h, g, label), r, "{name} tcId {id}");
+            let again = public.encrypt_oaep(msg, h, g, label).unwrap();
+            assert_eq!(key.decrypt_oaep(&again, h, g, label), r, "{name} tcId {id}");
             valid.add();
         }
     });
-    (valid.get(), refused.get(), unsupported.get())
+    (valid.get(), refused.get())
 }
 
 #[test]
@@ -131,14 +135,11 @@ fn rsa_oaep_test() {
         .filter(|n| harness::rsa_file_tested(n))
         .collect();
     assert!(!names.is_empty());
-    let mut unsupported = 0;
     for name in &names {
-        let (valid, refused, u) = check(name);
+        let (valid, refused) = check(name);
         assert!(valid > 0, "{name}");
         assert!(refused > 0 || name == "rsa_oaep_misc_test.json", "{name}");
-        unsupported += u;
     }
-    assert!(unsupported > 0);
 }
 
 /// Every pair of hash functions the module supports, with a 2048-bit key of
@@ -159,18 +160,21 @@ fn rsa_oaep_every_pair() {
     let n = trim_zeros(&file.test_groups[0].params.private_key.modulus.0);
     let k = public.modulus_len();
     assert_eq!(n.len(), k);
-    // Each hash function with MGF1 over itself and over SHA-1.
-    let mut pairs: Vec<(Hash, Hash)> = Vec::new();
-    for (_, h) in HASHES {
-        pairs.extend([(h, h), (h, Hash::Sha1)]);
-    }
-    pairs.dedup();
-    assert_eq!(pairs.len(), 13);
+    // Each hash function with MGF1 over any of them.
+    let pairs: Vec<(Hash, Hash)> = HASHES
+        .iter()
+        .flat_map(|&(_, h)| HASHES.iter().map(move |&(_, g)| (h, g)))
+        .collect();
+    assert_eq!(pairs.len(), 49);
     for (i, &(h, g)) in pairs.iter().enumerate() {
         let msg: Vec<u8> = (0..k - 2 * h.digest_len() - 2).map(|i| i as u8).collect();
-        let ct = encrypt(&public, &msg, h, g, b"label").unwrap();
-        assert_eq!(decrypt(&key, &ct, h, g, b"label"), Ok(msg), "{h:?} {g:?}");
-        let other = decrypt(&key, &ct, h, g, b"other");
+        let ct = public.encrypt_oaep(&msg, h, g, b"label").unwrap();
+        assert_eq!(
+            key.decrypt_oaep(&ct, h, g, b"label"),
+            Ok(msg),
+            "{h:?} {g:?}"
+        );
+        let other = key.decrypt_oaep(&ct, h, g, b"other");
         assert_eq!(other, Err(Error::Decryption), "{h:?} {g:?}");
         // Ciphertexts as long as the modulus, which reach this pair's
         // decryption and fail in it: one bit flipped; the next pair's
@@ -179,7 +183,7 @@ fn rsa_oaep_every_pair() {
         let mut flipped = ct.clone();
         flipped[k / 2] ^= 1;
         let (h2, g2) = pairs[(i + 1) % pairs.len()];
-        let next = encrypt(&public, b"message", h2, g2, b"label").unwrap();
+        let next = public.encrypt_oaep(b"message", h2, g2, b"label").unwrap();
         for (what, bad) in [
             ("one bit flipped", flipped),
             ("the next pair's", next),
@@ -187,7 +191,7 @@ fn rsa_oaep_every_pair() {
             ("the modulus", n.to_vec()),
             ("every bit set", vec![0xff; k]),
         ] {
-            let r = decrypt(&key, &bad, h, g, b"label");
+            let r = key.decrypt_oaep(&bad, h, g, b"label");
             assert_eq!(r, Err(Error::Decryption), "{h:?} {g:?}: {what}");
         }
     }
@@ -228,72 +232,74 @@ fn shared_key_leases(bits: usize, groups: usize, repetitions: usize) {
             // buffer, with different workspace lengths. Alternate them, including
             // rejected inputs, and share the key across concurrent callers.
             let d = Sha256::digest(&group.tests[0].case.msg.0).as_ref().to_vec();
-            let sig = rsa_pkcs1_sig::sign(&private, &d, rsa_pkcs1_sig::Hash::Sha256).unwrap();
-            let pss = rsa_pss::sign(
-                &private,
-                &d,
-                rsa_pss::Hash::Sha256,
-                rsa_pss::Hash::Sha256,
-                0,
-            )
-            .unwrap();
+            let sig = private.sign_pkcs1v15(&d, pkcs1_sig::Hash::Sha256).unwrap();
+            let pss_sig = private
+                .sign_pss(&d, pss::Hash::Sha256, pss::Hash::Sha256, 0)
+                .unwrap();
             std::thread::scope(|scope| {
                 for _ in 0..4 {
-                    let (public, d, sig, pss) = (&public, &d, &sig, &pss);
+                    let (public, d, sig, pss_sig) = (&public, &d, &sig, &pss_sig);
                     let private = &private;
                     scope.spawn(move || {
                         for _ in 0..repetitions {
-                            assert!(rsa_pkcs1_sig::verify(
-                                public,
-                                sig,
-                                d,
-                                rsa_pkcs1_sig::Hash::Sha256
-                            ));
-                            assert!(!rsa_pkcs1_sig::verify(
-                                public,
-                                &sig[..sig.len() - 1],
-                                d,
-                                rsa_pkcs1_sig::Hash::Sha256
-                            ));
-                            assert!(rsa_pss::verify(
-                                public,
-                                pss,
-                                d,
-                                rsa_pss::Hash::Sha256,
-                                rsa_pss::Hash::Sha256,
-                                rsa_pss::SaltLength::Len(0),
-                            ));
-                            assert!(!rsa_pkcs1_sig::verify(
-                                public,
-                                sig,
-                                &d[..d.len() - 1],
-                                rsa_pkcs1_sig::Hash::Sha256
-                            ));
-                            let ciphertext = verified_garbage::rsa_oaep::encrypt(
-                                public,
-                                d,
-                                verified_garbage::rsa_oaep::Hash::Sha256,
-                                verified_garbage::rsa_oaep::Hash::Sha256,
-                                b"",
-                            )
-                            .unwrap();
-                            assert_eq!(
-                                verified_garbage::rsa_oaep::decrypt(
-                                    private,
-                                    &ciphertext,
-                                    verified_garbage::rsa_oaep::Hash::Sha256,
-                                    verified_garbage::rsa_oaep::Hash::Sha256,
+                            assert!(
+                                public
+                                    .verify_pkcs1v15(sig, d, pkcs1_sig::Hash::Sha256)
+                                    .is_ok()
+                            );
+                            assert!(
+                                !public
+                                    .verify_pkcs1v15(
+                                        &sig[..sig.len() - 1],
+                                        d,
+                                        pkcs1_sig::Hash::Sha256
+                                    )
+                                    .is_ok()
+                            );
+                            assert!(
+                                public
+                                    .verify_pss(
+                                        pss_sig,
+                                        d,
+                                        pss::Hash::Sha256,
+                                        pss::Hash::Sha256,
+                                        pss::SaltLength::Len(0),
+                                    )
+                                    .is_ok()
+                            );
+                            assert!(
+                                !public
+                                    .verify_pkcs1v15(
+                                        sig,
+                                        &d[..d.len() - 1],
+                                        pkcs1_sig::Hash::Sha256
+                                    )
+                                    .is_ok()
+                            );
+                            let ciphertext = public
+                                .encrypt_oaep(
+                                    d,
+                                    verified_garbage::rsa::oaep::Hash::Sha256,
+                                    verified_garbage::rsa::oaep::Hash::Sha256,
                                     b"",
                                 )
-                                .unwrap(),
+                                .unwrap();
+                            assert_eq!(
+                                private
+                                    .decrypt_oaep(
+                                        &ciphertext,
+                                        verified_garbage::rsa::oaep::Hash::Sha256,
+                                        verified_garbage::rsa::oaep::Hash::Sha256,
+                                        b"",
+                                    )
+                                    .unwrap(),
                                 *d,
                             );
-                            assert!(rsa_pkcs1_sig::verify(
-                                public,
-                                sig,
-                                d,
-                                rsa_pkcs1_sig::Hash::Sha256
-                            ));
+                            assert!(
+                                public
+                                    .verify_pkcs1v15(sig, d, pkcs1_sig::Hash::Sha256)
+                                    .is_ok()
+                            );
                         }
                     });
                 }

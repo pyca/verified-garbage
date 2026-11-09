@@ -132,51 +132,6 @@ theorem polyIs_of_outU {rs : List Rg} {s₀ s : State} {L : Nat → Nat → BitV
   rw [show (0 : BitVec 16).toNat = 0 from rfl, Nat.zero_shiftLeft, Nat.zero_or]
   exact hO i hi256
 
-/-- What `fwd` and `inv` need: the polynomial at `x0` and the working space at `x1`, writable and
-apart, the polynomial reduced, and the table `H` at `sym`, readable and apart from both. -/
-structure InU (sym : String) (H : List Nat) (s : State) : Prop where
-  wr : s.wr = [polyRegion (s.gpr .x0), polyRegion (s.gpr .x1)]
-  disj : (polyRegion (s.gpr .x0)).Disjoint (polyRegion (s.gpr .x1))
-  red : Reduced s.mem (s.gpr .x0)
-  table : ∀ j < 64, s.mem.readW (s.syms sym + BitVec.ofNat 64 (8 * j)) 64 = hw4 H j
-  readable : Covers [⟨s.syms sym, 512⟩] (s.rd ++ s.wr)
-  apartOutput : (polyRegion (s.gpr .x0)).Disjoint ⟨s.syms sym, 512⟩
-  apartScratch : (polyRegion (s.gpr .x1)).Disjoint ⟨s.syms sym, 512⟩
-
-/-- A region within the first `n` bytes of a region of `m`. -/
-theorem disjoint_prefix {a b : Addr} {n m k : Nat} (hn : n ≤ m) (h : Region.Disjoint ⟨a, m⟩ ⟨b, k⟩) :
-    Region.Disjoint ⟨a, n⟩ ⟨b, k⟩ := fun x h₁ h₂ => h x (by simp only [Region.Contains] at h₁ ⊢; omega_arith) h₂
-
-theorem ctxU {sym : String} {H : List Nat} {s₀ : State} (hi : InU sym H s₀) : Ctx (rsUs sym) s₀ := by
-  have h3 : (rsUs sym).length = 3 := rfl
-  have cases3 : ∀ k < (rsUs sym).length, k = 0 ∨ k = 1 ∨ k = 2 := fun k hk => by rw [h3] at hk; omega_arith
-  have w0 : polyRegion (s₀.gpr .x0) ∈ s₀.wr := by rw [hi.wr]; exact List.mem_cons_self ..
-  have w1 : polyRegion (s₀.gpr .x1) ∈ s₀.wr := by rw [hi.wr]; simp
-  have c1 : ∀ a, Region.Contains ⟨s₀.gpr .x1, 512⟩ a 16 → (polyRegion (s₀.gpr .x1)).Contains a 16 :=
-    fun a h => by simp only [Region.Contains] at h ⊢; omega_arith
-  refine Ctx.of (fun k => [polyRegion (s₀.gpr .x0), ⟨s₀.gpr .x1, 512⟩,
-      ⟨s₀.syms sym, 512⟩].getD k ⟨0, 0⟩) (by simp [rsUs]) (fun k hk => ?_) (fun k hk => ?_)
-    (fun k hk a ha => ?_) (fun k hk hw a ha => ?_) (fun k k' hk hk' hne => ?_)
-  · rcases cases3 k hk with rfl | rfl | rfl <;> simp [rsUs, chunks]
-  · rcases cases3 k hk with rfl | rfl | rfl <;> exact contains_off (by simp [rsUs, chunks]) (by decide)
-  · rcases cases3 k hk with rfl | rfl | rfl
-    · exact in_rd_wr (in_regions w0 ha)
-    · exact in_rd_wr (in_regions w1 (c1 _ ha))
-    · exact hi.readable _ _ (in_regions (List.mem_singleton_self _) ha)
-  · rcases cases3 k hk with rfl | rfl | rfl
-    · exact in_regions w0 ha
-    · exact in_regions w1 (c1 _ ha)
-    · exact absurd hw Bool.false_ne_true
-  · have d01 : Region.Disjoint (polyRegion (s₀.gpr .x0)) ⟨s₀.gpr .x1, 512⟩ :=
-      (disjoint_prefix (by decide) hi.disj.symm).symm
-    have d12 : Region.Disjoint ⟨s₀.gpr .x1, 512⟩ ⟨s₀.syms sym, 512⟩ :=
-      disjoint_prefix (by decide) hi.apartScratch
-    rcases cases3 k hk with rfl | rfl | rfl <;> rcases cases3 k' hk' with rfl | rfl | rfl
-    all_goals first
-      | exact absurd rfl hne
-      | exact d01 | exact d01.symm | exact hi.apartOutput | exact hi.apartOutput.symm
-      | exact d12 | exact d12.symm
-
 /-- What `ntt` needs: the polynomial at `x0` and the working space at `x1`, writable and apart,
 and the polynomial reduced. -/
 structure InN (s : State) : Prop where

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Idea.PPC64LE.Invert
 public import VerifiedGarbage.Proof.Idea.PPC64LE.Key
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Idea.PPC64LE.Lit
 
 /-! # IDEA artifacts on PPC64LE -/

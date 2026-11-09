@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Camellia.PPC64LE.Ecb
 public import VerifiedGarbage.Impl.Camellia.KeyOrder
-public import VerifiedGarbage.Spec.Camellia.Prepared
+public import VerifiedGarbage.Spec.Camellia
 
 /-!
 # Camellia's subkeys prepared once, and batches under them, on PPC64LE
 
 `vg_camellia_prepare_keys` and `vg_camellia_crypt_prepared`
-(`Spec/Camellia/Prepared.lean`): ECB's two halves (`Ecb.lean`) as functions
+(`Proof/Camellia/Prepared.lean`): ECB's two halves (`Ecb.lean`) as functions
 of the working space, for the modes, as on AArch64
 (`Impl/Camellia/AArch64/Prepared.lean`).
 
@@ -65,16 +65,5 @@ the table's entry. -/
 def preparedWord (rounds : Nat) (w : List (BitVec 64)) (d : Dir) (k : Nat) : BitVec 64 :=
   if k < keySlot then (layerMasks.find? (·.1 = k)).elim 0 (·.2)
   else keyPlane (keyEntry w (rounds / 6) d ((k - keySlot) / 8)) ((k - keySlot) % 8)
-
-/-- The masks' slots and the table's, as byte ranges. -/
-def layout : Spec.Camellia.Prepared.Layout where
-  table rounds := [(8 * evenSlot, 40), (8 * keySlot, 64 * (8 * (rounds / 6) + 2))]
-  encode rounds w d i := (preparedWord rounds w (ofSpecDir d) (i / 8)).extractLsb' (8 * (i % 8)) 8
-  buf := 8 * tailSlot
-  blocks := 8
-  prepScratch := [(0, 8 * slots)]
-  cryptScratch := [(0, 8 * evenSlot), (8 * (m3Slot + 1), 8 * (keySlot - m3Slot - 1)),
-    (8 * savedSlot, 8 * (tailSlot + 16 - savedSlot))]
-  size := 8 * slots
 
 end VG.Impl.Camellia.PPC64LE

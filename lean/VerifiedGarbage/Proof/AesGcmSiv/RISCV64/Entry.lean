@@ -141,19 +141,6 @@ theorem sub_data {c : Cx} : ∃ r' ∈ mutR c, Region.Sub ⟨c.D, c.n⟩ r' := �
 
 theorem sub_below {c : Cx} : ∃ r' ∈ mutR c, Region.Sub (below c.SP 2048) r' := ⟨_, by simp, fun _ h => h⟩
 
-/-- A buffer missing `W`, the data and the stack below `sp` misses what the
-pieces write. -/
-theorem buf_mut {c : Cx} {P : Addr} {k : Nat} (hw : (⟨P, k⟩ : Region).Disjoint ⟨c.W, 3840⟩)
-    (hd : (⟨P, k⟩ : Region).Disjoint ⟨c.D, c.n⟩) (hb : (below c.SP 2048).Disjoint ⟨P, k⟩) :
-    ∀ r ∈ mutR c, (⟨P, k⟩ : Region).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact hw.sub_right (Region.sub_prefix (by decide))
-  · exact hw.sub_right (Lay.wSub (by decide))
-  · exact hd
-  · exact hb.symm
-
 /-- The slots are kept by what the pieces write. -/
 theorem slots_mut {c : Cx} (L : Lay c) : ∀ r ∈ mutR c, (savedR c.W).Disjoint r := by
   intro r hr

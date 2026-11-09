@@ -810,30 +810,9 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
     rw [h₅.2.mem]
     exact scheduleAt_expanded expanded
 
-def keySatState : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 1 | .rdx => 8 | .rcx => 0x2000 | .r8 => 0x3000 | .rsp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 1⟩]
-  wr := [⟨0x2000, 128⟩, ⟨0x3000, 512⟩]
-
 theorem key_correct (s : State) (hs : keyContract.pre s) :
     ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ keyContract.post s s' := by
   obtain ⟨t, s', he, ha, hp⟩ := key_body_correct s hs
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ha, hp⟩
-
-theorem publicRegs_five (s₁ s₂ : State) : PublicRegs [.rdi, .rsi, .rdx, .rcx, .r8] s₁ s₂ ↔
-    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
-    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 := by
-  simp [PublicRegs]
-
-theorem key_verified : Verified target expandKey (Proof.Rc2.expandKeyContract abi) := by
-  refine Verified.of_correct key_correct (expandKey_constantTime _) ?_
-  sig_implies [Proof.Rc2.expandKeyContract, Proof.Rc2.expandKeySig, abi, argRegs,
-    keyContract, publicRegs_five, Spec.Rc2.validKey] [keySatState] using keySatState
 
 end VG.Proof.Rc2.X86_64

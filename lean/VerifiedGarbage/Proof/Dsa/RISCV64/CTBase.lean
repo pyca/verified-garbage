@@ -320,14 +320,8 @@ theorem Base.p {v : VD} {s : State} (h : Base v s) : pOf s.mem v.L v.key = v.p :
 theorem Base.q {v : VD} {s : State} (h : Base v s) : qOf s.mem v.L v.key = v.q := by
   rw [qOf, h.bytesQ]; rfl
 
-theorem Base.g {v : VD} {s : State} (h : Base v s) : gOf s.mem v.L v.key = v.g := by
-  rw [gOf, h.bytes (by have := h.kn; omega)]; rfl
-
 /-- The public octets name y. -/
 abbrev KY (v : VD) : Prop := 3 * v.L.pl + v.L.ql ≤ v.kn
-
-theorem Base.y {v : VD} {s : State} (h : Base v s) (hy : KY v) : yOf s.mem v.L v.key = v.y := by
-  rw [yOf, h.bytes (by omega)]; rfl
 
 /-- The header's lengths, with `qb` as q's significant octets. -/
 abbrev Lens (v : VD) (qb : Nat) (s : State) : Prop := word s.mem v.L.S hLens = pack v.L.pl v.L.ql qb v.d
@@ -466,38 +460,4 @@ abbrev FB : List (Prog isa) := Code.flat Verify.body
 abbrev ΦX1 (v : VD) (u : State) : Prop := At C0 FT 5 v u ∧ u.gpr .a0 = 0
 abbrev ΦX2 (v : VD) (u : State) : Prop := At ΦX1 FX1 5 v u ∧ u.gpr .a0 = 0
 abbrev ΦR0 (v : VD) (u : State) : Prop := At ΦX2 FX2 12 v u ∧ u.gpr .a0 = 0
-abbrev ΦR1 (v : VD) (u : State) : Prop := At ΦR0 FR0 1 v u ∧ u.gpr .a0 = 0
-abbrev ΦR2 (v : VD) (u : State) : Prop := At ΦR1 FR1 1 v u ∧ u.gpr .a0 = 0
-abbrev ΦR3 (v : VD) (u : State) : Prop := At ΦR2 FR2 23 v u ∧ u.gpr .a0 = 0
-abbrev ΦEg (v : VD) (u : State) : Prop := At ΦR3 FR3 45 v u ∧ u.gpr .a0 = 0
-abbrev ΦK (v : VD) (u : State) : Prop := At ΦR3 FR3 46 v u ∧ u.gpr .a0 = 0
-abbrev ΦEy (v : VD) (u : State) : Prop := At ΦK FK 28 v u ∧ u.gpr .a0 = 0
-abbrev ΦB (v : VD) (u : State) : Prop := At ΦK FK 29 v u ∧ u.gpr .a0 = 0
-
-theorem hFT : (FT.drop 5).take 1 = [.ite (.zero .a0) X1 fail0] := rfl
-theorem hFX1 : (FX1.drop 5).take 1 = [.ite (.zero .a0) X2 fail0] := rfl
-theorem hFX2 : (FX2.drop 12).take 1 = [.ite (.zero .a0) R0 fail0] := rfl
-theorem hFR0 : (FR0.drop 1).take 1 = [.ite (.zero .a0) R1 fail0] := rfl
-theorem hFR1 : (FR1.drop 1).take 1 = [.ite (.zero .a0) R2 fail0] := rfl
-theorem hFR2 : (FR2.drop 23).take 1 = [.ite (.zero .a0) R3 fail0] := rfl
-theorem hFR3g : (FR3.drop 45).take 1 = [.ite (.zero .a0) elemOrder (.block [])] := rfl
-theorem hFR3 : (FR3.drop 46).take 1 = [.ite (.zero .a0) RK fail0] := rfl
-theorem hFKy : (FK.drop 28).take 1 = [.ite (.zero .a0) elemOrder (.block [])] := rfl
-theorem hFK : (FK.drop 29).take 1 = [.ite (.zero .a0) Verify.body fail0] := rfl
-
-theorem runT : ∀ v s, C0 v s → WP isa (Code.seqL FT) s fun _ => True := fun _ s h =>
-  let ⟨tr, t, e, _⟩ := verify_correct s h.1
-  ⟨tr, t, exec_flat.mp e, trivial⟩
-
-theorem runX1 : ∀ v s, ΦX1 v s → WP isa (Code.seqL FX1) s fun _ => True := run_then runT hFT
-theorem runX2 : ∀ v s, ΦX2 v s → WP isa (Code.seqL FX2) s fun _ => True := run_then runX1 hFX1
-theorem runR0 : ∀ v s, ΦR0 v s → WP isa (Code.seqL FR0) s fun _ => True := run_then runX2 hFX2
-theorem runR1 : ∀ v s, ΦR1 v s → WP isa (Code.seqL FR1) s fun _ => True := run_then runR0 hFR0
-theorem runR2 : ∀ v s, ΦR2 v s → WP isa (Code.seqL FR2) s fun _ => True := run_then runR1 hFR1
-theorem runR3 : ∀ v s, ΦR3 v s → WP isa (Code.seqL FR3) s fun _ => True := run_then runR2 hFR2
-theorem runEg : ∀ v s, ΦEg v s → WP isa (Code.seqL FE) s fun _ => True := run_then runR3 hFR3g
-theorem runK : ∀ v s, ΦK v s → WP isa (Code.seqL FK) s fun _ => True := run_then runR3 hFR3
-theorem runEy : ∀ v s, ΦEy v s → WP isa (Code.seqL FE) s fun _ => True := run_then runK hFKy
-theorem runB : ∀ v s, ΦB v s → WP isa (Code.seqL FB) s fun _ => True := run_then runK hFK
-
 end VG.Proof.Dsa.RISCV64.CT

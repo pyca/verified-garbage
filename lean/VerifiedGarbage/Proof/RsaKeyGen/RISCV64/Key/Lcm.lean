@@ -71,11 +71,6 @@ theorem St.word_zero {s0 s : State} {used : List Nat} (c : St s0 used s) {j i : 
   simp only [wordsVal, Nat.mul_zero, Nat.add_zero] at this
   exact BitVec.eq_of_toNat_eq (by rw [this]; rfl)
 
-/-- `St` with more arrays written. -/
-theorem St.sub {s0 s : State} {used used' : List Nat} (c : St s0 used s) (hs : ∀ j ∈ used, j ∈ used') :
-    St s0 used' s :=
-  ⟨c.cb, c.ws, fun j hj hu => c.free j hj fun e => hu (hs j e)⟩
-
 /-- The registers the stages here write. -/
 abbrev stRegs : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a4, .a2, .a3, .a5, .a6, .a7, .s7, .s8]
 

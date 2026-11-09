@@ -327,10 +327,6 @@ been kept since `s₀`, `r11` the saved MXCSR, whose reserved bits are clear, an
 def VRun (R₀ : State → Prop) (base : Addr) (Q : State → State → Prop) (x : State) : Prop :=
   ∃ s₀ s₃, R₀ s₀ ∧ ByteKeep base s₀ s₃ ∧ ((s₃.gpr .r11).setWidth 32).extractLsb' 16 16 = 0 ∧ Q s₃ x
 
-theorem VRun.mono {R₀ : State → Prop} {base : Addr} {Q Q' : State → State → Prop} {x y : State}
-    (h : VRun R₀ base Q x) (hq : ∀ s₃, Q s₃ x → Q' s₃ y) : VRun R₀ base Q' y :=
-  let ⟨s₀, s₃, r₀, k, m, q⟩ := h; ⟨s₀, s₃, r₀, k, m, hq s₃ q⟩
-
 /-- Into the lanes, and the MXCSR prologue: the skipping's start. -/
 theorem enter_ok {R₀ : State → Prop} {s : State} {base kp sp T : Addr} {A : EPoint dZ}
     {fA fB : Nat → Nat} {top : Nat} (h : StartRun R₀ base kp sp T A fA fB top s) :

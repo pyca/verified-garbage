@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.Sha3.Arith
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Sha3.Contract
+meta import VerifiedGarbage.Proof.Sha3.Contract
 
 /-!
 # The SHA-3 sponge on x86-64: `absorb`
@@ -562,12 +564,5 @@ theorem absorb_ct : ConstantTime isa Proof.Sha3.absorbX86_64.pre Proof.Sha3.abso
     := by
   exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
     (by taint_decide_weak VG.Proof.Sha3.X86_64.dropRC)
-
-theorem absorb_verified :
-    Verified X86_64.target Impl.Sha3.X86_64.Stream.absorb (Spec.Sha3.absorbScratchContract X86_64.abi 8) :=
-  Verified.of_correct absorb_correct absorb_ct (by
-    sig_implies [Spec.Sha3.absorbScratchContract, Spec.Sha3.absorbScratchSig, Spec.Sha3.absorbPre, Spec.Sha3.absorbPost, Proof.Sha3.absorbX86_64, X86_64.abi,
-      X86_64.argRegs] [Proof.Sha3.X86_64.Stream.Absorb.sat] using
-      Proof.Sha3.X86_64.Stream.Absorb.sat)
 
 end VG.Proof.Sha3.X86_64.Stream.Absorb

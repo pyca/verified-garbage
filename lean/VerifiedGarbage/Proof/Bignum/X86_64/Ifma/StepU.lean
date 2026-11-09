@@ -47,11 +47,17 @@ theorem checkStartU_2048 : ∀ p < lay2048.nl, checkStartU lay2048 p = true := b
 
 theorem checkStartU_p2048 : ∀ p < VG.Impl.Rsa.X86_64.PubIfma.pay2048.nl,
     checkStartU VG.Impl.Rsa.X86_64.PubIfma.pay2048 p = true := by decide +kernel
+theorem checkStartU_p1024 : ∀ p < VG.Impl.Rsa.X86_64.PubIfma.pay1024.nl,
+    checkStartU VG.Impl.Rsa.X86_64.PubIfma.pay1024 p = true := by decide +kernel
+theorem checkStartU_p1536 : ∀ p < VG.Impl.Rsa.X86_64.PubIfma.pay1536.nl,
+    checkStartU VG.Impl.Rsa.X86_64.PubIfma.pay1536 p = true := by decide +kernel
 
 theorem UOk.checkStart (hu : UOk l) : ∀ p < l.nl, checkStartU l p = true := by
-  rcases hu with rfl | rfl
+  rcases hu with rfl | rfl | rfl | rfl
   · exact checkStartU_2048
   · exact checkStartU_p2048
+  · exact checkStartU_p1024
+  · exact checkStartU_p1536
 
 theorem run_ammStartU (hu : UOk l) {p : Nat} (hp : p < l.nl) :
     ∃ σ, ESym.init.run (limU l) (ammStartU l p) = some σ ∧ ∀ r < 32, σ.reg r = expStartU l p r := by

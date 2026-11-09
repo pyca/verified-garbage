@@ -17,8 +17,6 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 saved registers. -/
 def WorkFrame (E : Environment) (m m' : Mem) : Prop := Frame [E.workspaceRegion, below E.p 136] m m'
 
-theorem WorkFrame.refl (E : Environment) (m : Mem) : WorkFrame E m m := fun _ _ => rfl
-
 theorem WorkFrame.trans {E : Environment} {a b c : Mem} (A : WorkFrame E a b) (B : WorkFrame E b c) :
     WorkFrame E a c := fun x out => (B x out).trans (A x out)
 

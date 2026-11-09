@@ -18,8 +18,7 @@ Untrusted: everything here is checked by Lean. The arguments of a piece,
 kept in `W` (`dO`, `nO`, `bO`: `PSlots`) and the frame their writes stay in
 (`pslotR`); the data a piece reads (`DataOk`); `minLen` (`ecx := min (16 -
 b, n)`) and `splitWhole` (the whole blocks and the rest), with their
-constant-time proofs; and `CT.seqEx`, which strings pieces together whose
-pre- and postconditions are indexed by what they started from.
+constant-time proofs.
 -/
 
 @[expose] public section
@@ -31,12 +30,6 @@ namespace VG.Proof.AesGcm.X86
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom)
-
-/-- `CT.seq` for preconditions indexed by what a piece started from. -/
-theorem CT.seqEx {α : Sort _} {P Q : α → State → Prop} {c₁ c₂ : Prog isa}
-    (h₁ : CT (fun s => ∃ a, P a s) c₁) (hw : ∀ a s, P a s → WP isa c₁ s (Q a))
-    (h₂ : CT (fun s => ∃ a, Q a s) c₂) : CT (fun s => ∃ a, P a s) (.seq c₁ c₂) :=
-  CT.seq h₁ (fun _ ⟨a, h⟩ => WP.mono (hw a _ h) fun _ h => ⟨a, h⟩) h₂
 
 /-- The word at `W + o`. -/
 abbrev slotv (m : Mem) (W : BitVec 32) (o : Nat) : BitVec 32 := m.readW (w64 W + BitVec.ofNat 64 o) 32
@@ -183,11 +176,6 @@ theorem splitWhole_ok {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay Ctx St W SP K
       ite_false, reduceCtorEq, hsh, hand, h16]
     rw [BitVec.add_comm (BitVec.ofNat 32 (16 * (r / 16)))]
   all_goals rfl
-
-theorem splitWhole_ct {I : State → Prop} {W : BitVec 32}
-    (hp : ∀ s, I s → s.gpr .ebp = W) : CT I (.block splitWhole) :=
-  CT.taint [.ebp] (fun s₁ s₂ h₁ h₂ r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; rw [hp _ h₁, hp _ h₂]) (by taint_decide)
 
 
 /-! ## Testing a kept value -/

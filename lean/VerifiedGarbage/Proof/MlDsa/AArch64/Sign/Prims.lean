@@ -89,84 +89,6 @@ theorem LRel.same {x y : State} (R : LRel D rbs wbs x y) : SameB x y := ⟨R.reg
 /-- What a call of an in-place transformation of `f` needs of the layout. -/
 abbrev ipChkS (rbs wbs : List (Reg × Nat)) (f : Ptr) : Bool := ipChk rbs wbs f (sc oPS)
 
-theorem ipAt_ok {t : Poly → Poly} {n : String} {c : Prog isa} (C : CalleeOk D c (inPlaceContract AArch64.abi t D))
-    {s : State} (L : Lay D rbs wbs s) {f : Ptr} (hc : ipChkS rbs wbs f = true) (hr : Reduced s.mem (pa s f)) :
-    WP isa (callAt n c [(.x0, .ptr f), (.x1, .ptr (sc oPS))]) s fun s' =>
-      PPostB D s s' [(f, 1024), (sc oPS, 1024)] ∧ s'.gpr .x24 = s.gpr .x24 ∧
-      PolyIs s'.mem (pa s f) (t (polyAt s.mem (pa s f))) :=
-  AArch64.ipAt_ok L.s64 C L hc hr
-
-theorem ipAt_tr {t : Poly → Poly} {n : String} {c : Prog isa} (C : CalleeOk D c (inPlaceContract AArch64.abi t D))
-    {f : Ptr} (hc : ipChkS rbs wbs f = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f))
-      (callAt n c [(.x0, .ptr f), (.x1, .ptr (sc oPS))]) fun _ _ => True :=
-  fun x y t₁ t₂ x' y' hp e₁ e₂ => AArch64.ipAt_tr (Q := fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f)) C hp.1.ok hc
-    (fun _ _ ⟨R, rx, ry⟩ => ⟨R.lx, R.ly, rx, ry, R.same⟩) x y t₁ t₂ x' y' hp e₁ e₂
-
-/-! ## Products -/
-
-theorem mulAt_ok {P : Prims} (C : CalleeOk D P.mul (mulContract AArch64.abi D))
-    {s : State} (L : Lay D rbs wbs s) {h f g : Ptr} (hc : mulChk rbs wbs h f g = true)
-    (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
-    WP isa (mulAt P h f g) s fun s' => PPostB D s s' [(h, 1024)] ∧ s'.gpr .x24 = s.gpr .x24 ∧
-      PolyIs s'.mem (pa s h) (multiplyNTT (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) :=
-  AArch64.mulAt_ok L.s64 C L hc rf rg
-
-theorem mulAddAt_ok {P : Prims} (C : CalleeOk D P.mulAdd (mulAddContract AArch64.abi D))
-    {s : State} (L : Lay D rbs wbs s) {h f g : Ptr} (hc : mulChk rbs wbs h f g = true)
-    (rh : Reduced s.mem (pa s h)) (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
-    WP isa (mulAddAt P h f g) s fun s' => PPostB D s s' [(h, 1024)] ∧ s'.gpr .x24 = s.gpr .x24 ∧
-      PolyIs s'.mem (pa s h)
-        (add (polyAt s.mem (pa s h)) (multiplyNTT (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g)))) :=
-  AArch64.mulAddAt_ok L.s64 C L hc rh rf rg
-
-theorem mulAt_tr {P : Prims} (C : CalleeOk D P.mul (mulContract AArch64.abi D))
-    {h f g : Ptr} (hc : mulChk rbs wbs h f g = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
-      (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (mulAt P h f g) fun _ _ => True :=
-  fun x y t₁ t₂ x' y' hp e₁ e₂ => AArch64.mulAt_tr (Q := fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
-      (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) C hp.1.ok hc
-    (fun _ _ ⟨R, rx, ry⟩ => ⟨R.lx, R.ly, rx, ry, R.same⟩) x y t₁ t₂ x' y' hp e₁ e₂
-
-theorem mulAddAt_tr {P : Prims} (C : CalleeOk D P.mulAdd (mulAddContract AArch64.abi D))
-    {h f g : Ptr} (hc : mulChk rbs wbs h f g = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧
-      (Reduced x.mem (pa x h) ∧ Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
-      (Reduced y.mem (pa y h) ∧ Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (mulAddAt P h f g)
-      fun _ _ => True :=
-  fun x y t₁ t₂ x' y' hp e₁ e₂ => AArch64.mulAddAt_tr (Q := fun x y => LRel D rbs wbs x y ∧
-      (Reduced x.mem (pa x h) ∧ Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
-      (Reduced y.mem (pa y h) ∧ Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) C hp.1.ok hc
-    (fun _ _ ⟨R, rx, ry⟩ => ⟨R.lx, R.ly, rx, ry, R.same⟩) x y t₁ t₂ x' y' hp e₁ e₂
-
-/-! ## Addition and subtraction -/
-
-theorem addAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {f g : Ptr}
-    (hc : accChk rbs wbs f g = true) (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
-    WP isa (addAt P f g) s fun s' => PPostB D s s' [(f, 1024)] ∧ s'.gpr .x24 = s.gpr .x24 ∧
-      PolyIs s'.mem (pa s f) (add (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) :=
-  accAt_ok (op := add) L.s64 hP.add L hc rf rg
-
-theorem subAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {f g : Ptr}
-    (hc : accChk rbs wbs f g = true) (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
-    WP isa (subAt P f g) s fun s' => PPostB D s s' [(f, 1024)] ∧ s'.gpr .x24 = s.gpr .x24 ∧
-      PolyIs s'.mem (pa s f) (sub (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) :=
-  accAt_ok (op := sub) L.s64 hP.sub L hc rf rg
-
-theorem addAt_tr {P : Prims} (hP : PrimsOk P D) {f g : Ptr} (hc : accChk rbs wbs f g = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
-      (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (addAt P f g) fun _ _ => True :=
-  fun x y t₁ t₂ x' y' hp e₁ e₂ => accAt_tr (Q := fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
-      (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (op := add) hP.add hp.1.ok hc
-    (fun _ _ ⟨R, rx, ry⟩ => ⟨R.lx, R.ly, rx, ry, R.same⟩) x y t₁ t₂ x' y' hp e₁ e₂
-
-theorem subAt_tr {P : Prims} (hP : PrimsOk P D) {f g : Ptr} (hc : accChk rbs wbs f g = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
-      (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (subAt P f g) fun _ _ => True :=
-  fun x y t₁ t₂ x' y' hp e₁ e₂ => accAt_tr (Q := fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
-      (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (op := sub) hP.sub hp.1.ok hc
-    (fun _ _ ⟨R, rx, ry⟩ => ⟨R.lx, R.ly, rx, ry, R.same⟩) x y t₁ t₂ x' y' hp e₁ e₂
-
 /-! ## `RejNTTPoly` -/
 
 /-- What a call of `vg_mldsa_rej_ntt_poly` to `a` needs of the layout. -/
@@ -308,98 +230,12 @@ theorem ballCall_tr {P : Prims} (hP : PrimsOk P D) {len tau : Nat} {c : Ptr} (hp
   fun x y t₁ t₂ x' y' hq e₁ e₂ => ballAtK_trRet (Q := fun x y => LRel D rbs wbs x y ∧ bytesAt x.mem (pa x (sc oCT)) len = bytesAt y.mem (pa y (sc oCT)) len) hP.ball hP.ballRet hq.1.ok hc hp
     (fun _ _ ⟨R, hb⟩ => ⟨R.lx, R.ly, hb, R.same⟩) x y t₁ t₂ x' y' hq e₁ e₂
 
-/-! ## `HighBits` and `LowBits` -/
-
-theorem highBitsAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {r out : Ptr} {γ : Nat}
-    (hγ : γ ∈ gamma2s) (hc : rwChk rbs wbs r 1024 out 1024 = true) (hr : Reduced s.mem (pa s r)) :
-    WP isa (highBitsAt P r γ out) s fun s' => PPostB D s s' [(out, 1024)] ∧ s'.gpr .x24 = s.gpr .x24 ∧
-      NatPolyIs s'.mem (pa s out) ((polyAt s.mem (pa s r)).map fun c => (highBits γ c).toNat) :=
-  bitsAtK_ok (Q := fun γ f m out => NatPolyIs m out (f.map fun c => (highBits γ c).toNat)) L.s64 hP.highBits L hc
-    hγ hr
-
-theorem highBitsAt_tr {P : Prims} (hP : PrimsOk P D) {r out : Ptr} {γ : Nat} (hγ : γ ∈ gamma2s)
-    (hc : rwChk rbs wbs r 1024 out 1024 = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x r) ∧ Reduced y.mem (pa y r))
-      (highBitsAt P r γ out) fun _ _ => True :=
-  fun x y t₁ t₂ x' y' hq e₁ e₂ =>
-    bitsAtK_tr (R := fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x r) ∧ Reduced y.mem (pa y r)) (Q := fun γ f m out => NatPolyIs m out (f.map fun c => (highBits γ c).toNat)) hP.highBits
-      hq.1.ok hc hγ (fun _ _ ⟨R, rx, ry⟩ => ⟨R.lx, R.ly, rx, ry, R.same⟩) x y t₁ t₂ x' y' hq e₁ e₂
-
-theorem lowBitsAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {r out : Ptr} {γ : Nat}
-    (hγ : γ ∈ gamma2s) (hc : rwChk rbs wbs r 1024 out 1024 = true) (hr : Reduced s.mem (pa s r)) :
-    WP isa (lowBitsAt P r γ out) s fun s' => PPostB D s s' [(out, 1024)] ∧ s'.gpr .x24 = s.gpr .x24 ∧
-      PolyIs s'.mem (pa s out) ((polyAt s.mem (pa s r)).map fun c => ofInt (lowBits γ c)) :=
-  bitsAtK_ok (Q := fun γ f m out => PolyIs m out (f.map fun c => ofInt (lowBits γ c))) L.s64 hP.lowBits L hc hγ hr
-
-theorem lowBitsAt_tr {P : Prims} (hP : PrimsOk P D) {r out : Ptr} {γ : Nat} (hγ : γ ∈ gamma2s)
-    (hc : rwChk rbs wbs r 1024 out 1024 = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x r) ∧ Reduced y.mem (pa y r))
-      (lowBitsAt P r γ out) fun _ _ => True :=
-  fun x y t₁ t₂ x' y' hq e₁ e₂ =>
-    bitsAtK_tr (R := fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x r) ∧ Reduced y.mem (pa y r)) (Q := fun γ f m out => PolyIs m out (f.map fun c => ofInt (lowBits γ c))) hP.lowBits
-      hq.1.ok hc hγ (fun _ _ ⟨R, rx, ry⟩ => ⟨R.lx, R.ly, rx, ry, R.same⟩) x y t₁ t₂ x' y' hq e₁ e₂
-
 /-! ## Norms -/
 
 /-- What a call of `vg_mldsa_norm_lt` on `f` needs of the layout. -/
 abbrev normChk (bs : List (Reg × Nat)) (f : Ptr) : Bool := inB bs f 1024
 
-theorem normCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {f : Ptr} {B : Nat}
-    (hB : B < 2 ^ 32) (hc : normChk (rbs ++ wbs) f = true) (hr : Reduced s.mem (pa s f)) :
-    WP isa (callAt "vg_mldsa_norm_lt" P.normLt [(.x0, .ptr f), (.x1, .imm B)]) s fun s' => PPostB D s s' [] ∧
-      s'.gpr .x24 = s.gpr .x24 ∧ (s'.gpr .x0).setWidth 32 = if normRq [polyAt s.mem (pa s f)] < B then 1 else 0 :=
-  normAt_ok L.s64 hP.normLt L hc hB hr
-
-theorem normCall_tr {P : Prims} (hP : PrimsOk P D) {f : Ptr} {B : Nat} (hc : normChk (rbs ++ wbs) f = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f))
-      (callAt "vg_mldsa_norm_lt" P.normLt [(.x0, .ptr f), (.x1, .imm B)]) fun _ _ => True :=
-  fun x y t₁ t₂ x' y' hq e₁ e₂ => normAt_tr (Q := fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f)) hP.normLt hq.1.ok hc
-    (fun _ _ ⟨R, rx, ry⟩ => ⟨R.lx, R.ly, rx, ry, R.same⟩) x y t₁ t₂ x' y' hq e₁ e₂
-
-/-! ## `MakeHint` -/
-
-theorem hintCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {z r h : Ptr} {γ : Nat}
-    (hγ : γ ∈ gamma2s) (hc : hintChk rbs wbs z r h = true) (rz : Reduced s.mem (pa s z))
-    (rr : Reduced s.mem (pa s r)) :
-    WP isa (callAt "vg_mldsa_make_hint" P.makeHint [(.x0, .ptr z), (.x1, .ptr r), (.x2, .imm γ), (.x3, .ptr h)]) s
-      fun s' => PPostB D s s' [(h, 1024)] ∧ s'.gpr .x24 = s.gpr .x24 ∧
-      HintIs s'.mem (pa s h) 1 [Vector.zipWith (makeHint γ) (polyAt s.mem (pa s z)) (polyAt s.mem (pa s r))] ∧
-      ((s'.gpr .x0).setWidth 32).toNat =
-        hintOnes [Vector.zipWith (makeHint γ) (polyAt s.mem (pa s z)) (polyAt s.mem (pa s r))] :=
-  hintAtK_ok L.s64 hP.makeHint L hc hγ rz rr
-
-theorem hintCall_tr {P : Prims} (hP : PrimsOk P D) {z r h : Ptr} {γ : Nat} (hγ : γ ∈ gamma2s)
-    (hc : hintChk rbs wbs z r h = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x z) ∧ Reduced x.mem (pa x r)) ∧
-      (Reduced y.mem (pa y z) ∧ Reduced y.mem (pa y r)))
-      (callAt "vg_mldsa_make_hint" P.makeHint [(.x0, .ptr z), (.x1, .ptr r), (.x2, .imm γ), (.x3, .ptr h)])
-      fun _ _ => True :=
-  fun x y t₁ t₂ x' y' hq e₁ e₂ => hintAtK_tr (Q := fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x z) ∧ Reduced x.mem (pa x r)) ∧
-      (Reduced y.mem (pa y z) ∧ Reduced y.mem (pa y r))) hP.makeHint hq.1.ok hc hγ
-    (fun _ _ ⟨R, rx, ry⟩ => ⟨R.lx, R.ly, rx, ry, R.same⟩) x y t₁ t₂ x' y' hq e₁ e₂
-
 /-! ## Encodings -/
-
-theorem sbpOk_of {b len : Nat} (hb : b ∈ simpleBitPackBounds) (hl : len = 32 * bitlen b) : SbpOk b len := by
-  refine ⟨hb, hl, ?_⟩
-  subst hl
-  simp only [simpleBitPackBounds, t1Max, List.mem_cons, List.not_mem_nil, or_false] at hb
-  rcases hb with rfl | rfl | rfl <;> decide
-
-theorem sbpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {f out : Ptr} {b len : Nat}
-    (hb : b ∈ simpleBitPackBounds) (hl : len = 32 * bitlen b) (hc : rwChk rbs wbs f 1024 out len = true)
-    (hle : ∀ i < 256, (coeffAt s.mem (pa s f) i).toNat ≤ b) :
-    WP isa (simpleBitPackAt P f b out len) s fun s' => PPostB D s s' [(out, len)] ∧ s'.gpr .x24 = s.gpr .x24 ∧
-      bytesAt s'.mem (pa s out) len = simpleBitPack (natPolyAt s.mem (pa s f)) b :=
-  AArch64.sbpAt_ok L.s64 hP.simpleBitPack L hc (sbpOk_of hb hl) hle
-
-theorem sbpAt_tr {P : Prims} (hP : PrimsOk P D) {f out : Ptr} {b len : Nat}
-    (hb : b ∈ simpleBitPackBounds) (hl : len = 32 * bitlen b) (hc : rwChk rbs wbs f 1024 out len = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ (∀ i < 256, (coeffAt x.mem (pa x f) i).toNat ≤ b) ∧
-      (∀ i < 256, (coeffAt y.mem (pa y f) i).toNat ≤ b)) (simpleBitPackAt P f b out len) fun _ _ => True :=
-  fun x y t₁ t₂ x' y' hq e₁ e₂ => AArch64.sbpAt_tr (Q := fun x y => LRel D rbs wbs x y ∧ (∀ i < 256, (coeffAt x.mem (pa x f) i).toNat ≤ b) ∧
-      (∀ i < 256, (coeffAt y.mem (pa y f) i).toNat ≤ b)) hP.simpleBitPack hq.1.ok hc (sbpOk_of hb hl)
-    (fun _ _ ⟨R, rx, ry⟩ => ⟨R.lx, R.ly, rx, ry, R.same⟩) x y t₁ t₂ x' y' hq e₁ e₂
 
 theorem bitPackParams_lt {a b : Nat} (h : (a, b) ∈ bitPackParams) :
     a < 2 ^ 32 ∧ b < 2 ^ 32 ∧ 32 * bitlen (a + b) < 2 ^ 32 := by

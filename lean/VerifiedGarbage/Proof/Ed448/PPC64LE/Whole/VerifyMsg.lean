@@ -323,7 +323,7 @@ theorem verHash_ok {s t : State} (hp : VerPre s) (h : V1 s t) :
   · rw [e₄.mem, e₃.mem, e₂.mem, e₁.mem, r₃]
 
 /-- The call of `vg_ed448_verify_equation`. -/
-theorem verCall_ok (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) {s t : State} (hp : VerPre s)
+theorem verCall_ok (hR : Proof.Ed448.RecoverOk) {s t : State} (hp : VerPre s)
     (h : VArgs s t) :
     WP isa (.call "vg_ed448_verify_equation" Impl.Ed448.PPC64LE.verifyEquation) t fun t' => VInv s t' ∧
       (t'.gpr .r3).setWidth 32 = if Spec.Ed448.verifyEquation (vpkB s) (vsigB s) (vkB s) then 1 else 0 := by
@@ -339,7 +339,7 @@ theorem verCall_ok (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) {
     · exact cr _ (by simp) a n ⟨_, List.mem_singleton_self _, hc⟩
     · exact cov_right (cov_in (vF hp h.inv) (by decide)) a n ⟨_, List.mem_singleton_self _, hc⟩
     · exact cov_right hW a n ⟨_, List.mem_singleton_self _, hc⟩
-  refine veq_call hR hV h.r3 h.r4 h.r5 h.r6 hp.cP.symm hp.cS.symm (vfsc hp (by decide)) hc hW
+  refine veq_call hR h.r3 h.r4 h.r5 h.r6 hp.cP.symm hp.cS.symm (vfsc hp (by decide)) hc hW
     fun t' rd' wr' sp' f' cs' r' => ⟨h.inv.step verifyRegs_pres rd' wr' sp' cs' f' (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact ⟨vscR s, by simp, fun _ h => h⟩) fun r hr => by
       rw [List.mem_singleton.mp hr]; exact vcslot hp, ?_⟩
@@ -368,7 +368,7 @@ theorem shr8_zero (x : BitVec 64) : (x >>> 8 == 0) = decide (x.toNat < 256) := b
     rw [h] at this
     exact hx (by simp at this; omega)
 
-theorem verifyMessage_wp (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) {s : State} (hp : VerPre s) :
+theorem verifyMessage_wp (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VerPre s) :
     WP isa verifyMessage s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.lr = s.lr ∧
       (t.gpr .r3).setWidth 32 = verResult s := by
   unfold verifyMessage
@@ -381,7 +381,7 @@ theorem verifyMessage_wp (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq
     unfold verifyMain verifyHash
     refine WP.seq (WP.seq (WP.mono (verSetup_ok hp hu.other hu.rd hu.wr hu.sp rfl hu.mem) fun t₁ h₁ => ?_))
     refine WP.mono (verHash_ok hp h₁) fun t₂ h₂ => ?_
-    refine WP.seq (WP.mono (verCall_ok hR hV hp h₂) fun t₃ ⟨h₃, r₃⟩ => ?_)
+    refine WP.seq (WP.mono (verCall_ok hR hp h₂) fun t₃ ⟨h₃, r₃⟩ => ?_)
     have hrl : ∀ p ∈ restoreList 200 verifyRegs, p.2 + 8 ≤ 272 := by decide
     refine restore_ok h₃ (by decide) (h₃.regs _ (by decide)) (by decide) (by decide) (by decide) (by decide)
       (fun p (hp' : p ∈ restoreList 200 verifyRegs) =>

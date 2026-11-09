@@ -1,14 +1,4 @@
-//! HMAC-SHA-1: `vg_hmac_sha1_init`, `vg_sha1_update` and
-//! `vg_hmac_sha1_finalize` (contracts
-//! `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`,
-//! `VG.Spec.Sha1.updateContract` and `VG.Spec.Hmac.Instance.finalizeContract`)
-//! compute HMAC with a key of any length, `H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖
-//! text))` (`VG.Spec.Hmac.hmac`), keeping the two SHA-1 streaming states.
-//!
-//! Their variants, with the same contracts, run with the hash function's
-//! backend of the same name, which `Sha1` chooses (see `crate::hashes::sha1`):
-//! on x86 and x86-64, `vg_hmac_sha1_init_shani` and
-//! `vg_hmac_sha1_finalize_shani`; on AArch64, the `_sha2` ones.
+//! HMAC-SHA-1.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -19,29 +9,13 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "aarch64")]
-use crate::arch::hmac_sha1::{
-    VG_HMAC_SHA1_FINALIZE_SHA2_FEATURES, VG_HMAC_SHA1_INIT_SHA2_FEATURES,
-    vg_hmac_sha1_finalize_sha2, vg_hmac_sha1_init_sha2,
-};
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::hmac_sha1::{
-    VG_HMAC_SHA1_FINALIZE_SHANI_FEATURES, VG_HMAC_SHA1_INIT_SHANI_FEATURES,
-    vg_hmac_sha1_finalize_shani, vg_hmac_sha1_init_shani,
-};
-use crate::arch::hmac_sha1::{vg_hmac_sha1_finalize, vg_hmac_sha1_init};
-use crate::hashes::sha1::{Sha1, Sha1Backend};
+use crate::arch::dispatch::hmac_sha1::{vg_hmac_sha1_finalize_auto, vg_hmac_sha1_init_auto};
+use crate::hashes::sha1::Sha1;
 
 super::streaming_hmac!(
-    Sha1 (Sha1Backend) {
-        Scalar => (vg_hmac_sha1_init, vg_hmac_sha1_finalize),
-        #[cfg(target_arch = "aarch64")]
-        Sha2 if [VG_HMAC_SHA1_INIT_SHA2_FEATURES, VG_HMAC_SHA1_FINALIZE_SHA2_FEATURES] =>
-            (vg_hmac_sha1_init_sha2, vg_hmac_sha1_finalize_sha2),
-        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-        ShaNi if [VG_HMAC_SHA1_INIT_SHANI_FEATURES, VG_HMAC_SHA1_FINALIZE_SHANI_FEATURES] =>
-            (vg_hmac_sha1_init_shani, vg_hmac_sha1_finalize_shani),
-    },
+    Sha1,
+    init: vg_hmac_sha1_init_auto,
+    finalize: vg_hmac_sha1_finalize_auto,
     state: 84,
     output: 20,
 );

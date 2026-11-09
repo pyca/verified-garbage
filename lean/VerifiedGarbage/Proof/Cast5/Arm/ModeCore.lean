@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.ModeCipher
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.Cast5.Arm.Modes
@@ -31,7 +32,7 @@ open VG.Impl.Cast5 (s1234Sym s1234 ecbConsts)
 def upDir (up : Bool) : Spec.Cast5.Direction := if up then .encrypt else .decrypt
 
 theorem ecb_verified (up : Bool) :
-    Verified target (ecb up) (Spec.Cast5.ecbContract (Arm.abi.withConsts ecbConsts) (upDir up)) := by
+    Verified target (ecb up) (Proof.Cast5.ecbRoundsContract (Arm.abi.withConsts ecbConsts) (upDir up)) := by
   cases up
   · exact ecbDecrypt_verified
   · exact ecbEncrypt_verified
@@ -62,7 +63,7 @@ def ecbSpec (up : Bool) : CoreSpec (ecbCore up) where
   rok R := R.toNat = 12 ∨ R.toNat = 16
   consts := ecbConsts
   ciphAt m K R := Proof.Cast5.dirCipher up (Spec.Cast5.scheduleAt m K) R.toNat
-  contract := Spec.Cast5.ecbContract (Arm.abi.withConsts ecbConsts) (upDir up)
+  contract := Proof.Cast5.ecbRoundsContract (Arm.abi.withConsts ecbConsts) (upDir up)
   correct := (ecb_verified up).1
   ct := (ecb_verified up).2.1
   depth := by have := ecb_stack up; omega
@@ -83,7 +84,7 @@ def ecbSpec (up : Bool) : CoreSpec (ecbCore up) where
     refine pre_consts.mpr ⟨?_, ?_, held, fun t ht => ⟨(tabs t ht).1, (tabs t ht).2.1, fun r hr => ?_⟩, tAl⟩
     · have rd' : (stripConsts ecbConsts s).rd = [⟨State.addr (s.gpr .r0), 128⟩, ⟨stackArgAddr s 0, 4⟩] := by
         simp only [stripConsts, State.withRegions_rd, hl]; rw [rd]; rfl
-      sig_pre [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, Arm.abi, Arm.argRegs,
+      sig_pre [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val]
       exact ⟨spF, rd', wr, kd, ks, ds, da, sa, fK, fD, fS, rr⟩
     · rw [hl, rd]; rfl
@@ -91,7 +92,7 @@ def ecbSpec (up : Bool) : CoreSpec (ecbCore up) where
   post_ofS _ s s' hp h := by
     have rr := hp.rr rfl
     have h := post_consts.mp h
-    sig_post [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPost, Arm.abi, Arm.argRegs,
+    sig_post [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Proof.Cast5.ecbRoundsPost, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at h
     show blocksOf 8 _ _ _ = (blocksOf 8 _ _ _).map _
     rw [dReg_eq, nReg_eq]
@@ -102,7 +103,7 @@ def ecbSpec (up : Bool) : CoreSpec (ecbCore up) where
     rfl
   pub_ofS _ s₁ s₂ h0 h1 h2 h3 h4 h5 h6 := by
     refine pub_consts.mpr ⟨?_, fun x hx => symAddr_eq_iff.mpr (h6 x hx)⟩
-    sig_pub [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+    sig_pub [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     exact ⟨h0, h1, h2, h3, h4 rfl, h5⟩
   depthS _ := ecb_stack up
   cs_enc _ := by cases up <;> decide

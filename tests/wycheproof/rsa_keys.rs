@@ -4,12 +4,12 @@
 //! of the RSA test vector files (`rsa_*_test.json`; keys with other primes
 //! are skipped).
 //!
-//! On a few inputs, RSAEP of each key's result gives back the input, and the
-//! keys loaded from `(n, e, d, p, q)` and from the CRT values the file gives
-//! agree with it. Every key passes `check_key`, and fails it with `d`, `dP`,
-//! `dQ` or `qInv` changed by one; with `dP`, `dQ` or `qInv` changed it does
-//! not load, as loading checks them. (Every key's public exponent, 3 or 65537,
-//! is within BoringSSL's limits.)
+//! Each key loads from `(n, e, d)`, from `(n, e, d, p, q)` and from the CRT
+//! values the file gives, all three with the same `(n, e, d)` and the same
+//! RSASSA-PKCS1-v1_5 signature of a hash value, which verifies with the
+//! public key; with `d`, `dP`, `dQ` or `qInv` changed by one it does not
+//! load, as loading checks them as BoringSSL's `RSA_check_key` does. (Every
+//! key's public exponent, 3 or 65537, is within BoringSSL's limits.)
 //!
 //! From each prime `p` and its CRT exponent `dP = e⁻¹ mod (p - 1)`, the key
 //! `(3 p, e, dP)` (`λ(3 p) = p - 1`) is valid, but one of its primes is 3,
@@ -30,19 +30,13 @@
 
 use std::collections::BTreeMap;
 
-use verified_garbage::rsa::{PrivateKey, PublicKey};
+use verified_garbage::rsa::pkcs1_sig::Hash;
+use verified_garbage::rsa::{BigUint, PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Fields, TestFile};
 use super::schema::{RsaAnyKeyGroup, RsaAnyPrivateKey};
 use crate::bytes::trim_zeros;
 use crate::require_vectors;
-
-/// `key`'s operation on `x`, which must succeed.
-fn private(key: &PrivateKey, x: &[u8]) -> Vec<u8> {
-    let mut out = vec![0; x.len()];
-    key.private_op(x, &mut out).unwrap();
-    out
-}
 
 /// `3 x`, big-endian, without leading zeros.
 fn triple(x: &[u8]) -> Vec<u8> {
@@ -65,7 +59,11 @@ fn triple(x: &[u8]) -> Vec<u8> {
 /// exponent `dP`: Appendix C.2 does not find its primes, so
 /// `from_components` refuses it.
 fn check_triple(name: &str, e: &[u8], p: &[u8], dp: &[u8]) {
-    let key = PrivateKey::from_components(&triple(p), e, dp);
+    let key = PrivateKey::from_components(
+        BigUint::from_be_bytes(&triple(p)),
+        BigUint::from_be_bytes(e),
+        BigUint::from_be_bytes(dp),
+    );
     assert!(
         matches!(key, Err(verified_garbage::rsa::Error::InvalidPrivateKey)),
         "{name}: 3 p"
@@ -79,13 +77,7 @@ fn check_key(name: &str, k: &RsaAnyPrivateKey) -> bool {
         &k.public_exponent.0,
         &k.private_exponent.as_ref().unwrap().0,
     );
-    let len = n.len();
-    let public = PublicKey::new(n, e).unwrap();
-    // 2, and `n` with its top byte halved, both below `n`.
-    let mut x = vec![0; len];
-    x[len - 1] = 2;
-    let mut y = n.to_vec();
-    y[0] >>= 1;
+    let public = PublicKey::new(BigUint::from_be_bytes(n), BigUint::from_be_bytes(e)).unwrap();
     let (p, q, dp, dq, qi) = (
         &k.prime1,
         &k.prime2,
@@ -94,32 +86,58 @@ fn check_key(name: &str, k: &RsaAnyPrivateKey) -> bool {
         &k.coefficient,
     );
     // The key from `(n, e, d)`.
-    let key = PrivateKey::from_components(n, e, d).unwrap_or_else(|err| panic!("{name}: {err}"));
-    assert!(key.check_key(), "{name}: from_components");
-    assert_eq!(key.modulus_len(), len, "{name}");
-    // RSAEP of each result gives back the input.
-    let expect: Vec<Vec<u8>> = [&x, &y]
-        .iter()
-        .map(|v| {
-            let out = private(&key, v);
-            let mut back = vec![0; len];
-            public.public_op(&out, &mut back).unwrap();
-            assert_eq!(&back, *v, "{name}");
-            out
-        })
-        .collect();
+    let key = PrivateKey::from_components(
+        BigUint::from_be_bytes(n),
+        BigUint::from_be_bytes(e),
+        BigUint::from_be_bytes(d),
+    )
+    .unwrap_or_else(|err| panic!("{name}: {err}"));
+    assert_eq!(key.modulus_len(), n.len(), "{name}");
+    // A signature that verifies; RSASSA-PKCS1-v1_5 is deterministic.
+    let digest = [0x5a; 32];
+    let expect = key.sign_pkcs1v15(&digest, Hash::Sha256).unwrap();
+    assert!(
+        public
+            .verify_pkcs1v15(&expect, &digest, Hash::Sha256)
+            .is_ok(),
+        "{name}"
+    );
+    let values = key.components().map(BigUint::as_be_bytes)[..3].concat();
     let check = |key: &PrivateKey, how: &str| {
-        assert_eq!(private(key, &x), expect[0], "{name}: {how}");
-        assert_eq!(private(key, &y), expect[1], "{name}: {how}");
-        assert!(key.check_key(), "{name}: {how}");
+        assert_eq!(
+            key.sign_pkcs1v15(&digest, Hash::Sha256).unwrap(),
+            expect,
+            "{name}: {how}"
+        );
+        assert_eq!(
+            key.components().map(BigUint::as_be_bytes)[..3].concat(),
+            values,
+            "{name}: {how}"
+        );
     };
     let (Some(p), Some(q), Some(dp), Some(dq), Some(qi)) = (p, q, dp, dq, qi) else {
         return false;
     };
-    let key =
-        PrivateKey::from_primes(n, e, d, &p.0, &q.0).unwrap_or_else(|err| panic!("{name}: {err}"));
+    let key = PrivateKey::from_primes(
+        BigUint::from_be_bytes(n),
+        BigUint::from_be_bytes(e),
+        BigUint::from_be_bytes(d),
+        BigUint::from_be_bytes(&p.0),
+        BigUint::from_be_bytes(&q.0),
+    )
+    .unwrap_or_else(|err| panic!("{name}: {err}"));
     check(&key, "from_primes");
-    let key = PrivateKey::from_crt(n, e, d, &p.0, &q.0, &dp.0, &dq.0, &qi.0).unwrap();
+    let key = PrivateKey::from_crt(
+        BigUint::from_be_bytes(n),
+        BigUint::from_be_bytes(e),
+        BigUint::from_be_bytes(d),
+        BigUint::from_be_bytes(&p.0),
+        BigUint::from_be_bytes(&q.0),
+        BigUint::from_be_bytes(&dp.0),
+        BigUint::from_be_bytes(&dq.0),
+        BigUint::from_be_bytes(&qi.0),
+    )
+    .unwrap();
     check(&key, "from_crt");
     check_triple(name, e, &p.0, &dp.0);
     check_triple(name, e, &q.0, &dq.0);
@@ -134,10 +152,17 @@ fn check_key(name: &str, k: &RsaAnyPrivateKey) -> bool {
     for (i, how) in ["d", "dP", "dQ", "qInv"].iter().enumerate() {
         let mut v = [d.clone(), dp.0.clone(), dq.0.clone(), qi.0.clone()];
         v[i] = flip(&v[i]);
-        let key = PrivateKey::from_crt(n, e, &v[0], &p.0, &q.0, &v[1], &v[2], &v[3]);
-        // Loading checks the CRT values, not `d`.
-        assert_eq!(key.is_ok(), i == 0, "{name}: {how}");
-        assert!(!key.is_ok_and(|key| key.check_key()), "{name}: {how}");
+        let key = PrivateKey::from_crt(
+            BigUint::from_be_bytes(n),
+            BigUint::from_be_bytes(e),
+            BigUint::from_be_bytes(&v[0]),
+            BigUint::from_be_bytes(&p.0),
+            BigUint::from_be_bytes(&q.0),
+            BigUint::from_be_bytes(&v[1]),
+            BigUint::from_be_bytes(&v[2]),
+            BigUint::from_be_bytes(&v[3]),
+        );
+        assert!(key.is_err(), "{name}: {how}");
     }
     true
 }
@@ -166,7 +191,10 @@ fn rsa_keys_from_components() {
             }
         }
     }
-    let keys: Vec<(String, RsaAnyPrivateKey)> = keys.into_values().collect();
+    let mut keys: Vec<(String, RsaAnyPrivateKey)> = keys.into_values().collect();
+    // Start the expensive private operations first so large keys do not
+    // leave the other workers idle at the end of the test.
+    keys.sort_by_key(|(_, k)| core::cmp::Reverse(trim_zeros(&k.modulus.as_ref().unwrap().0).len()));
     let (with_primes, without_primes) = (Count::default(), Count::default());
     harness::par_each(&keys, |(name, k)| {
         if check_key(name, k) {

@@ -4,27 +4,12 @@
 
 use criterion::Criterion;
 
-/// The module `rsa_pss`, each hash function's Rust module (`rsa_pss_<H>`,
-/// `src/rsa_pss/<H>.rs`) and its generated one
-/// (`rsa_pss_<H>_mgf1_<H>`), and the modules they call.
+/// The module `rsa_pss`, the tables of functions (`fn_tables`), the RSA
+/// primitives it calls (`rsa`), and the hash
+/// functions whose tables it calls (their generated modules).
 pub const USES: &[&str] = &[
     "rsa_pss",
-    "rsa_pss_md5",
-    "rsa_pss_md5_mgf1_md5",
-    "rsa_pss_sha1",
-    "rsa_pss_sha1_mgf1_sha1",
-    "rsa_pss_sha224",
-    "rsa_pss_sha224_mgf1_sha224",
-    "rsa_pss_sha256",
-    "rsa_pss_sha256_mgf1_sha256",
-    "rsa_pss_sha384",
-    "rsa_pss_sha384_mgf1_sha384",
-    "rsa_pss_sha512",
-    "rsa_pss_sha512_mgf1_sha512",
-    "rsa_pss_sha512_224",
-    "rsa_pss_sha512_224_mgf1_sha512_224",
-    "rsa_pss_sha512_256",
-    "rsa_pss_sha512_256_mgf1_sha512_256",
+    "fn_tables",
     "rsa",
     "md5",
     "sha1",
@@ -46,9 +31,8 @@ pub const USES: &[&str] = &[
 /// its default blinding when signing; aws-lc-rs through
 /// `KeyPair::sign_digest` and `ParsedPublicKey::verify_digest_sig`, which set
 /// up an `EVP_PKEY_CTX` in every operation and take a salt as long as the
-/// hash value, from a key loaded from its components). verified-garbage
-/// takes its salt from a fixed tape (`sign` but for `getrandom`); OpenSSL and
-/// aws-lc-rs draw a fresh one per signature. Signatures are randomized, so
+/// hash value, from a key loaded from its components). Each draws a fresh
+/// salt per signature. Signatures are randomized, so
 /// aws-lc-rs and verified-garbage verify each other's.
 #[cfg(any(
     target_arch = "x86",
@@ -72,10 +56,10 @@ pub fn bench(c: &mut Criterion) {
     use openssl::pkey_ctx::PkeyCtx;
     use openssl::rsa::{Padding, Rsa};
     use openssl::sign::RsaPssSaltlen;
-    use verified_garbage::rsa::{PrivateKey, PublicKey};
-    use verified_garbage::rsa_pss::{Hash, SaltLength, sign, sign_with_rng, verify};
+    use verified_garbage::rsa::pss::{Hash, SaltLength};
+    use verified_garbage::rsa::{BigUint, PrivateKey, PublicKey};
 
-    use crate::{AWS_LC, BenchDyn, OPENSSL, VG, fixed_tape};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     // Each supported hash function, by the name its modules have and
     // OpenSSL's, and, if aws-lc-rs has it, its hash function, signing
@@ -122,17 +106,21 @@ pub fn bench(c: &mut Criterion) {
         .map(|bits| {
             let key = Rsa::generate(bits).unwrap();
             let vg_private = PrivateKey::from_crt(
-                &key.n().to_vec(),
-                &key.e().to_vec(),
-                &key.d().to_vec(),
-                &key.p().unwrap().to_vec(),
-                &key.q().unwrap().to_vec(),
-                &key.dmp1().unwrap().to_vec(),
-                &key.dmq1().unwrap().to_vec(),
-                &key.iqmp().unwrap().to_vec(),
+                BigUint::from_be_bytes(&key.n().to_vec()),
+                BigUint::from_be_bytes(&key.e().to_vec()),
+                BigUint::from_be_bytes(&key.d().to_vec()),
+                BigUint::from_be_bytes(&key.p().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.q().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.dmp1().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.dmq1().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.iqmp().unwrap().to_vec()),
             )
             .unwrap();
-            let vg_public = PublicKey::new(&key.n().to_vec(), &key.e().to_vec()).unwrap();
+            let vg_public = PublicKey::new(
+                BigUint::from_be_bytes(&key.n().to_vec()),
+                BigUint::from_be_bytes(&key.e().to_vec()),
+            )
+            .unwrap();
             let (n, e) = (key.n().to_vec(), key.e().to_vec());
             let aws_private = RsaKeyPair::from_components(&KeyPairComponents {
                 public_key: RsaPublicKeyComponents { n: &n, e: &e },
@@ -174,7 +162,11 @@ pub fn bench(c: &mut Criterion) {
         };
         let sigs: Vec<_> = sizes
             .iter()
-            .map(|(_, vg_private, ..)| sign(vg_private, &digest, hash, hash, digest.len()).unwrap())
+            .map(|(_, vg_private, ..)| {
+                vg_private
+                    .sign_pss(&digest, hash, hash, digest.len())
+                    .unwrap()
+            })
             .collect();
         // aws-lc-rs's public keys, loaded from `(n, e)` for the hash's
         // parameters.
@@ -196,19 +188,9 @@ pub fn bench(c: &mut Criterion) {
             let k = sig.len();
             g.bench(BenchmarkId::new(VG, k), |b| {
                 b.iter(|| {
-                    let mut tape = fixed_tape(k as u64);
-                    sign_with_rng(
-                        black_box(vg_private),
-                        black_box(&digest),
-                        hash,
-                        hash,
-                        digest.len(),
-                        |buf| {
-                            tape(buf);
-                            Ok(())
-                        },
-                    )
-                    .unwrap()
+                    black_box(vg_private)
+                        .sign_pss(black_box(&digest), hash, hash, digest.len())
+                        .unwrap()
                 })
             });
             let mut c = ctx(pkey, &md, |c| c.sign_init().unwrap());
@@ -225,14 +207,9 @@ pub fn bench(c: &mut Criterion) {
                 aws_sign(&digest, &mut out);
                 let d = Digest::import_less_safe(&digest, alg).unwrap();
                 aws_public.verify_digest_sig(&d, sig).unwrap();
-                assert!(verify(
-                    vg_public,
-                    &out,
-                    &digest,
-                    hash,
-                    hash,
-                    SaltLength::Len(digest.len())
-                ));
+                vg_public
+                    .verify_pss(&out, &digest, hash, hash, SaltLength::Len(digest.len()))
+                    .unwrap();
                 g.bench(BenchmarkId::new(AWS_LC, k), |b| {
                     b.iter(|| aws_sign(black_box(&digest), &mut out))
                 });
@@ -247,14 +224,15 @@ pub fn bench(c: &mut Criterion) {
             let k = sig.len();
             g.bench(BenchmarkId::new(VG, k), |b| {
                 b.iter(|| {
-                    assert!(verify(
-                        black_box(vg_public),
-                        black_box(sig),
-                        &digest,
-                        hash,
-                        hash,
-                        SaltLength::Len(digest.len())
-                    ))
+                    black_box(vg_public)
+                        .verify_pss(
+                            black_box(sig),
+                            &digest,
+                            hash,
+                            hash,
+                            SaltLength::Len(digest.len()),
+                        )
+                        .unwrap()
                 })
             });
             let mut c = ctx(pkey, &md, |c| c.verify_init().unwrap());

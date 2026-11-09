@@ -307,14 +307,6 @@ theorem CtxExt.ofSplit {M : CtxMode} {s : State} (hp : Proof.AesGcm.splitPre M.l
   exact ⟨⟨wc, d_cw.sub_right (Lay.wSub (by decide)), d_cw, d_cd, t_c.sub_left (below_sub (by decide) (by decide)),
     by rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..)), hok⟩, t_c⟩
 
-/-- `x; (a; (b; (c; (d; e))))` from `x; ((a; (b; c)); (d; e))`. -/
-theorem WP.reassoc_split {x a b c d e : Prog isa} {s : State} {Q : State → Prop}
-    (h : WP isa (.seq x (.seq (.seq a (.seq b c)) (.seq d e))) s Q) :
-    WP isa (.seq x (.seq a (.seq b (.seq c (.seq d e))))) s Q := by
-  obtain ⟨t, s', ex, q⟩ := h
-  cases ex with | seq ex ex₁ => cases ex₁ with | seq ex₁ ex₂ => cases ex₁ with | seq ea ex₁ => cases ex₁ with
-    | seq eb ec => exact ⟨_, _, .seq ex (.seq ea (.seq eb (.seq ec ex₂))), q⟩
-
 /-- `vg_aes_gcm_seal_split`, for a key context of kind `M`. -/
 theorem sealSplitM_wp {M : CtxMode} {mid : Prog isa} (hmid : MidOk M mid) {s : State}
     (hp : (Proof.AesGcm.sealSplitX86_64M M).pre s) :

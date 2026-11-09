@@ -35,7 +35,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 `pPhase` is constant time (`pPhase_ct`) given its pieces' claims: before
 each piece, a predicate (`PO0` … `PO4`, then `hSteps`' `H0`) carries the
 piece's hypotheses and what correctness gives after it; `o0_of` proves the
-first from `PPre`, as `pPhase_ok` runs the pieces.
+first from `PPre`, as `p`'s phase runs the pieces.
 -/
 
 @[expose] public section
@@ -72,7 +72,7 @@ def PO1 (W : Window) (M : Mont) (S : Selector) (p : PPhasePub) (s : State) : Pro
 def PO0 (W : Window) (M : Mont) (S : Selector) (p : PPhasePub) (s : State) : Prop :=
   UPre sWsP p.u s ∧ WP isa (seqs (unitSteps M.mm sWsP)) s (PO1 W M S p)
 
-/-- From before the exponentiation: `PO3`, as `pPhase_ok` runs the rest. -/
+/-- From before the exponentiation: `PO3`, as `p`'s phase runs the rest. -/
 theorem o3_of (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64}
     {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool}
     (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ Z)
@@ -126,7 +126,7 @@ theorem o3_of (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} {Z w
   rw [hql] at this
   exact this
 
-/-- `pPhase_ok`'s hypotheses give `PO0`. -/
+/-- The hypotheses of `p`'s phase give `PO0`. -/
 theorem o0_of (W : Window) (M : Mont) (S : Selector) {p : PPhasePub} {s : State} (h : PPreWide p s) : PO0 W M S p s :=
   -- `o0_of`'s proof with this exponentiation, whose `o3_of` also takes `Wide`: `tabBytes32` is `wsTab`.
   o0_gen M (PO3 W M S) (fun hg hw28 hlo hhi hwx2 hwx hslv hws hX hX1 hXodd hcg hpl hpy hep hel hL1 hL2 he hmask hqp

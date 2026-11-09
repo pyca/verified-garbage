@@ -23,8 +23,6 @@ def keyInitial (key : BitVec 64) : KeyState :=
 def keyPrefix (key : BitVec 64) (n : Nat) : KeyState :=
   (List.range n).foldl keyStep (keyInitial key)
 
-theorem keyPrefix_zero (key : BitVec 64) : keyPrefix key 0 = keyInitial key := rfl
-
 theorem keyPrefix_succ (key : BitVec 64) (n : Nat) :
     keyPrefix key (n + 1) = keyStep (keyPrefix key n) n := by
   simp only [keyPrefix, List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil]

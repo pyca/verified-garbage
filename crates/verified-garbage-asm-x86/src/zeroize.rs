@@ -13,7 +13,7 @@
 /// * `p` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `p` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_zeroize(p: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_zeroize(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "uAAAAACLTCQEi1QkCMHqBYP6AA=="
 je 20f

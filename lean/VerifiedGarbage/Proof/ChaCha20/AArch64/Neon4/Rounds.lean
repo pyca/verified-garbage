@@ -106,14 +106,6 @@ theorem op_ok (op : Op) {vs : Nat → CState} {s : State} (h : Holds vs s) (ht :
         h a j hj, h b j hj, BitVec.rotateLeft_def, Nat.mod_eq_of_lt hn, BitVec.or_comm]
     · exact h k j hj
 
-theorem ops_ok : ∀ (ops : List Op) {vs : Nat → CState} {s : State}, Holds vs s → s.v .v30 = rol8Table →
-    WP isa (.block (ops.flatMap Op.code)) s fun s' =>
-      Holds (fun j => ops.foldl step (vs j)) s' ∧ RoundSame s s'
-  | [], _, _, h, _ => WP.block_nil ⟨h, ⟨⟨rfl, rfl, rfl, rfl, rfl⟩, rfl⟩⟩
-  | op :: ops, _, _, h, ht => by
-    exact WP.block_append ((op_ok op h ht).mono fun _ ⟨h', hs⟩ =>
-      (ops_ok ops h' (hs.v30.trans ht)).mono fun _ ⟨h'', hs'⟩ => ⟨h'', hs.trans hs'⟩)
-
 /-- A term in the words `var k` of a state. -/
 inductive E
   | var (k : Nat) | add (a b : E) | xor (a b : E) | rol (a : E) (n : Nat)

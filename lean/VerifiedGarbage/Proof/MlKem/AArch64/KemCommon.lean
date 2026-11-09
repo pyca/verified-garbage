@@ -101,8 +101,6 @@ theorem KB.x25 {s₀ s : State} (h : KB P L s₀ s) : s.gpr .x25 = kA s₀ (L.sl
 theorem KB.x26 {s₀ s : State} (h : KB P L s₀ s) : s.gpr .x26 = kA s₀ (L.slot 1) := h.ptr 1 (by decide)
 theorem KB.x27 {s₀ s : State} (h : KB P L s₀ s) : s.gpr .x27 = kA s₀ (L.slot 2) := h.ptr 2 (by decide)
 
-theorem slotReg_mem : ∀ k < 4, slotReg k ∈ [Reg.x25, .x26, .x27, .x28] := by decide
-
 theorem slot_pres {k : Nat} (hk : k < 4) : slotReg k ∈ preserved ∧ slotReg k ≠ .x30 := by
   rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> decide
 
@@ -120,8 +118,6 @@ theorem Saved.frame {s₀ : State} {m m' : Mem} (h : Saved P L s₀ m) {rs : Lis
 /-- A region apart from the saved registers and from the buffers the function only reads. -/
 abbrev Safe (P : KemLay) (L : Layout) (s₀ : State) (r : Region) : Prop :=
   (svR P L s₀).Disjoint r ∧ ∀ b < L.nrd, Region.Disjoint ⟨kA s₀ b, L.len b⟩ r
-
-theorem pres_kept : ∀ r ∈ preserved, r ∉ kemOwn → r ∉ [Reg.x25, .x26, .x27, .x28] := by decide
 
 /-- The callee-saved registers but `x24` and `x30`. -/
 abbrev keptK : List Reg := [.x19, .x20, .x21, .x22, .x23, .x25, .x26, .x27, .x28]

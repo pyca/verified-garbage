@@ -12,14 +12,6 @@ namespace VG.Proof.Dsa.AArch64
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Impl.Dsa.AArch64
 
-theorem random_load {s : State} {B : Addr} {r : Reg} {d : Nat}
-    (hs : Scr s B Random.frameBytes) (hsp : s.sp = B)
-    (hd : d + 8 ≤ Random.frameBytes) (ha : d % 8 = 0) :
-    exec (.ldrSp r d) s = some (s.write .x r (word s.mem B d)) := by
-  have hp : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 d) 8 := by
-    rw [hsp]; exact hs.ld hd
-  simpa only [hsp] using exec_ldrSp ⟨ha, by unfold Random.frameBytes at hd; omega⟩ hp
-
 theorem random_rangeInit_ok {s : State} {B q : Addr} {l n : Nat}
     (hs : Scr s B Random.frameBytes) (hsp : s.sp = B)
     (hl : word s.mem B Random.oQLen = BitVec.ofNat 64 l)

@@ -34,21 +34,6 @@ theorem slice_sub {s₀ : State} {scidx n k len : Nat} {p : BitVec 32}
   rw [sub, sub, addr_eq (by have := h.fit; omega_using [this, hk, hlen]), addr_zero]
   exact Offset.sub_base _ hk
 
-theorem sliceBytes_same {s₀ s : State} {scidx n : Nat} {p : BitVec 32} (hi : SlicePre s₀ scidx p n)
-    (hs : Saved s₀ (arg s₀ scidx) s) :
-    Spec.Ed25519.bytesAt s.mem (p.setWidth 64) n = Spec.Ed25519.bytesAt s₀.mem (p.setWidth 64) n := by
-  apply List.map_congr_left
-  intro k hk
-  have hk' := List.mem_range.mp hk
-  rw [← addr_eq (by have := hi.fit; omega_using [this, hk'])]
-  apply hs.frame
-  intro r hr
-  have hc := slice_contains hi (k := k) (len := 1) (by omega_using [hk']) (by decide)
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact hi.sep _ hc
-  · exact hi.stk _ hc
-
 theorem loadSlicePointer_ok {s₀ s : State} {scidx argc i skip : Nat}
     (hp : ScratchPre s₀ scidx argc) (hs : Saved s₀ (arg s₀ scidx) s) (hi : i < argc) :
     WP isa (.block (loadSlicePointer i skip)) s fun t =>

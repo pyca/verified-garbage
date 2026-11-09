@@ -60,21 +60,7 @@ def first : Prog isa :=
   .seq (.block K.bnegY) <|
   .block (copyPt K.M.n K.A K.E ++ [.movz .x .x19 1 0])
 
-/-- One public window: add its signed entry, correct an infinite accumulator,
-and retain the accumulator for a zero digit. `x4 = x19-J` is zero after the final window. -/
-def stepJWith (arithmetic : Mod → List FOp → Prog isa) : Prog isa :=
-  .seq (.block (K.bdigit true ++ K.select)) <|
-  .seq (.block K.bnegY) <|
-  .seq (arithmetic K.M (maddJ K.S K.A K.E K.D)) <|
-  .seq (.block (nzMask K.M.n K.A.z ++ selPt K.M.n K.D K.E K.D)) <|
-  .block (K.bdigit true ++ [zero7,.movz .x .x5 1 0,.subs .x .x16 .x2 .x5,
-    .sbc .x .x3 .x7 .x7] ++ selPt K.M.n K.A K.D K.A ++
-    [.addImm .x .x19 .x19 1,.subImm .x .x4 .x19 K.J])
-
-/-- The baseline field compiler includes the specialized P-256 squaring path. -/
-def stepJ : Prog isa := K.stepJWith fprogB
-
-/-- After a window's addition (`stepJWith`'s last two blocks): `D = E` where
+/-- After a window's addition: `D = E` where
 `A` is `O`, `A = D` unless the digit is zero, and the next window, with
 `x4 = x19 - J`. -/
 def fixJ : Prog isa :=
@@ -95,14 +81,6 @@ def outFix : List Instr :=
 /-- Convert the Jacobian accumulator to homogeneous coordinates `(XZ,Y,Z³)`. -/
 def outOps : List FOp :=
   [.mul K.A.x K.A.x K.A.z,.mul K.S.t0 K.A.z K.A.z,.mul K.A.z K.S.t0 K.A.z]
-
-/-- Experimental arithmetic injection changes field schedules only. -/
-def combJWith (arithmetic : Mod → List FOp → Prog isa) : Prog isa :=
-  .seq K.first <| .seq (.loop (K.stepJWith arithmetic) (.nonzero .x .x4)) <|
-    .seq (.block K.outFix) (arithmetic K.M K.outOps)
-
-/-- Secret-scalar fixed-base multiplication with Booth digits. -/
-def combJ : Prog isa := K.combJWith fprogB
 
 /-! ### The pipelined comb
 

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyABI
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEnvironment
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -31,7 +32,7 @@ structure CallSizes (s : State) : Prop where
   capacity : Spec.Rsa.scratchWords (arg s 1).toNat ≤ (arg s 17).toNat
 
 theorem call_sizes {s : State} (h : contract.pre s) : CallSizes s := by
-  sig_pre [contract, keyStack, Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig,
+  sig_pre [contract, keyStack, Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig,
     abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> first

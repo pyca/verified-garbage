@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbageTest.Ec.Common
 public meta import VerifiedGarbageTest.Ec.Common
-public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
-public meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
+public meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
 public import VerifiedGarbage.Spec.Sha1
 public meta import VerifiedGarbage.Spec.Sha1
 public import VerifiedGarbage.Spec.Sha256
@@ -17,9 +17,10 @@ public meta import VerifiedGarbage.Spec.Sha512
 For a curve and its section of RFC 6979's appendix A.2 (vendored byte for
 byte), the ten signatures ("sample" and "test" with SHA-1, SHA-224, SHA-256,
 SHA-384 and SHA-512): the first candidate is the `k` the RFC lists, `sign`
-gives the listed `(r, s)` after one candidate, and the contracts' instances
-for the curve agree for their hashes. Keys outside `[1, n-1]`, and no
-candidate to try, give no signature.
+gives the listed `(r, s)` after one candidate, and so does the curve's
+instance of the contract (`TableInstance`), with its bound on candidates,
+for each hash. Keys outside `[1, n-1]`, and no candidate to try, give no
+signature.
 -/
 
 @[expose] public section
@@ -66,8 +67,8 @@ def parse (start stop : String) (text : String) : Except String (Nat × List Vec
   unless vs.size == 10 do throw s!"expected 10 signatures, got {vs.size}"
   return (x, vs.toList)
 
-/-- `insts`: the contracts' instances for the curve, by hash. -/
-def checkVector (C : Curve) (insts : List (String × Spec.Ecdsa.Rfc6979.Instance)) (x : Nat) (v : Vector) :
+/-- `I`: the contract's instance for the curve. -/
+def checkVector (C : Curve) (I : TableInstance) (x : Nat) (v : Vector) :
     Except String Unit := do
   let some (_, H, hlen) := hashes.find? (·.1 == v.hash) | throw s!"unknown hash {v.hash}"
   let h1 := H.hash (utf8 v.message)
@@ -78,10 +79,9 @@ def checkVector (C : Curve) (insts : List (String × Spec.Ecdsa.Rfc6979.Instance
   unless bits2int C T == v.k do throw s!"{v.hash}, {v.message}: k mismatch"
   unless sign C H hlen 8 x h1 == (some (v.r, v.s), 1) do
     throw s!"{v.hash}, {v.message}: signature mismatch"
-  if let some (_, I) := insts.find? (·.1 == v.hash) then
-    unless I.hashLen == hlen && I.ecdsa.curve.n == C.n do throw s!"{v.hash}: instance"
-    unless sign I.ecdsa.curve I.hash I.hashLen I.tries x h1 == (some (v.r, v.s), 1) do
-      throw s!"{v.hash} instance, {v.message}: signature mismatch"
+  unless I.ecdsa.curve.n == C.n do throw "instance"
+  unless sign I.ecdsa.curve H hlen I.tries x h1 == (some (v.r, v.s), 1) do
+    throw s!"{v.hash} instance, {v.message}: signature mismatch"
 
 /-- Keys outside `[1, n-1]` give no signature and no candidate; no
 candidate to try gives none. -/
@@ -94,11 +94,11 @@ def checkEdges (C : Curve) (x : Nat) : Except String Unit := do
   unless rlen C == C.len do throw "rlen"
 
 /-- The checks of the section from `start` to `stop`, with the curve's
-instances `insts`. -/
-def check (C : Curve) (insts : List (String × Spec.Ecdsa.Rfc6979.Instance)) (start stop : String) (text : String) :
+instance of the contract `I`. -/
+def check (C : Curve) (I : TableInstance) (start stop : String) (text : String) :
     Except String Unit := do
   let (x, vs) ← parse start stop text
-  for v in vs do checkVector C insts x v
+  for v in vs do checkVector C I x v
   checkEdges C x
 
 end VG.Test.Ec.Rfc6979

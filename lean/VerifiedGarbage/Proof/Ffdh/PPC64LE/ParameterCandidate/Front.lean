@@ -59,9 +59,11 @@ theorem saved_notin : ∀ i < 18, Impl.Ffdh.PPC64LE.ParameterCandidate.saved i �
 
 theorem front_ok (s : State) (h : pcPre s) :
     WP isa (.seq (.block entry) zeroOut) s fun t =>
-      St (ppOf s) t ∧ word t.mem (ppOf s).B 152 = BitVec.ofNat 64 (ppOf s).L ∧ t.lr = s.lr := by
+      St (ppOf s) t ∧ word t.mem (ppOf s).B 152 = BitVec.ofNat 64 (ppOf s).L ∧ t.lr = s.lr ∧
+        Frame [⟨s.gpr .r10, 8 * (stackArg s 0).toNat⟩, ⟨s.gpr .r3, (s.gpr .r4).toNat⟩] s.mem t.mem ∧
+        t.rd = s.rd := by
   obtain ⟨hsp, hspT, hrd, hwr, dOU, dOR, dOS, dOA, dUR, dUS, dUA, dRS, dSA, qO, qU, qR, qS, qA, nwO, nwU, nwR,
-    nwS, hb1, hb2, hL, hg, hsw⟩ := h
+    nwS, hb1, hb2, hL, hg, hsw, -⟩ := h
   simp only [Spec.Rsa.scratchWords] at hsw
   have hn : stackArg s 0 = BitVec.ofNat 64 (stackArg s 0).toNat := (ofNat_toNat _).symm
   have h8n : 160 ≤ 8 * (stackArg s 0).toNat := by omega_arith
@@ -157,7 +159,7 @@ theorem front_ok (s : State) (h : pcPre s) :
     by show (below s.sp 176).Disjoint ⟨s.gpr .r10, 8 * (stackArg s 0).toNat⟩; rw [Nat.mul_comm]; exact qS,
     sav, kall .r2 (by decide)⟩,
     (hd (d := 152) (by decide)).trans (w152.trans ((gS .r4 (by decide)).trans (by rw [← hLe, ofNat_toNat]))),
-    by rw [kz.lr, kc.lr, hS.lr, ka.lr]⟩
+    by rw [kz.lr, kc.lr, hS.lr, ka.lr], fr, by rw [kz.rd, kc.rd, hS.rd, ka.rd]⟩
   · rw [kz.rd, kc.rd, hS.rd, ka.rd, hrd]
     rw [show (ppOf s).r.length = (s.gpr .r9).toNat from hlen] at hi
     exact ⟨⟨s.gpr .r8, (s.gpr .r9).toNat⟩, by simp, VG.Proof.Bignum.contains_byte _ hi (by omega_arith)⟩

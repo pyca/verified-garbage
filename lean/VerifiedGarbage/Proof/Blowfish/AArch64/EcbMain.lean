@@ -32,12 +32,7 @@ def savedReg (k : Nat) : VReg := [.v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15].
 theorem savedReg_inj : ∀ a < 8, ∀ b < 8, a ≠ b → savedReg a ≠ savedReg b := by decide
 
 theorem saveRegs_eq : saveRegs = (List.range 8).map fun k => .strq (savedReg k) .x3 (saveOff + 16 * k) := rfl
-theorem saveRegsAt_eq (off : Nat) :
-    saveRegsAt off = (List.range 8).map fun k => .strq (savedReg k) .x3 (off + 16 * k) := rfl
 theorem restoreRegs_eq : restoreRegs = (List.range 8).map fun k => .ldrq (savedReg k) .x3 (saveOff + 16 * k) := rfl
-theorem restoreRegsAt_eq (off : Nat) :
-    restoreRegsAt off = (List.range 8).map fun k => .ldrq (savedReg k) .x3 (off + 16 * k) := rfl
-
 /-- The save area: the 128 bytes at `x3 + 128`. -/
 def saveR (s : State) : Region := ⟨s.gpr .x3 + BitVec.ofNat 64 128, 128⟩
 

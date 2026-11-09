@@ -151,11 +151,6 @@ theorem mulAdd_core : CoreSpec mulAddCore true mulAddV := by
     rcases hr with (e | e | e) | (e | e) <;> simp [e]
   · rw [v]; simp only [State.setReg, ite_true]; rw [e]; rfl
 
-theorem mulBody_eq : mulBody = mulHead ++ mulTail := rfl
-
-theorem mulAddBody_eq : mulAddBody = mulAddCore ++ mulTail := by
-  simp only [mulAddBody, mulAddCore, List.append_assoc, List.cons_append]
-
 /-! ## The precondition -/
 
 section

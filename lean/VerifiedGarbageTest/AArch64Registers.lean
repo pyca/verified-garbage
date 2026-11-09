@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Print
+meta import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.TCB.Axioms
 

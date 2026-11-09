@@ -32,15 +32,6 @@ theorem context_of {m : Mem} {p : Addr} {c : Context} (ht : (contextAt m p).tabl
     (hi : m (p + 256#64) = c.i) (hj : m (p + 257#64) = c.j) : contextAt m p = c :=
   context_ext ht hi hj
 
-/-- The bytes of the context at `p` lie outside a region separate from it. -/
-theorem ctx_byte {p : Addr} {R : Region} (hs : Mem.Sep R.base R.len p 258) {k : Nat} (hk : k < 258) :
-    ∀ r ∈ [R], ¬ r.Contains (p + BitVec.ofNat 64 k) 1 := by
-  intro r hr hc
-  simp only [List.mem_singleton] at hr
-  subst hr
-  exact hs (p + BitVec.ofNat 64 k) (by simp only [Region.Contains] at hc; omega)
-    (by rw [Mem.sub_ofNat_toNat _ (by omega)]; exact hk)
-
 /-- The doublewords of the frame zeroed. -/
 theorem wipe_ok (s : State) (hal : (s.gpr .a7).toNat % 8 = 0)
     (hw : InRegions s.wr (s.gpr .a7) 256) :

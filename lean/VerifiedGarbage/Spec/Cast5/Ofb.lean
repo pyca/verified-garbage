@@ -15,8 +15,8 @@ on 8-byte blocks, under the subkeys that `vg_cast5_expand_key` writes, with
 `vg_cast5_ofb` transforms `n` whole blocks in place, from the block in `iv`,
 which it replaces with the one to continue from, the last output block
 (`Ofb.next`): a caller may process a message in pieces of whole blocks,
-keeping `iv` between calls. A partial last block is the caller's: OFB of a
-zero block is the next output block, whose first bytes it XORs in.
+keeping `iv` between calls. A partial last
+block is left to `vg_cast5_ofb_final` (`Spec/Cast5/OfbFinal.lean`).
 
 Only the pointers, `rounds` and `n` are public: no part of the chaining value
 may affect timing.
@@ -36,16 +36,18 @@ def ofbSig : Sig where
 def ofbPre (pb : Nat) : Curry (ofbSig.words pb) (Mem → Prop) :=
   fun _schedule rounds _iv _data _n _ => rounds.toNat = 12 ∨ rounds.toNat = 16
 
-/-- For `rounds` of 12 or 16, with the subkeys at `schedule`: replaces the `n`
-blocks at `data` with their OFB encryption or decryption (§6.4) by CAST5,
-from the block at `iv`, and that block with the last output block `Oₙ`
-(unchanged if `n = 0`). -/
+/-- For `rounds` of 12 or 16, and every key `K` whose subkeys are at
+`schedule` with `rounds` rounds (`KeySchedule`): replaces the `n` blocks at
+`data` with their OFB encryption or decryption (§6.4) by CAST5 under `K`, from
+the block at `iv`, and that block with the last output block `Oₙ` (unchanged
+if `n = 0`). -/
 def ofbContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   ofbSig.contract A (pre := ofbPre A.ptrBits)
     (post := fun schedule rounds iv data n m m' _ =>
-      let ciph := cipher (scheduleAt m schedule) rounds.toNat
-      cbcBlocksAt m' data n.toNat = Ofb.crypt ciph (Aes.bytesAt m iv 8) (cbcBlocksAt m data n.toNat) ∧
-        Aes.bytesAt m' iv 8 = Ofb.next ciph (Aes.bytesAt m iv 8) n.toNat)
+      ∀ key, KeySchedule m schedule rounds.toNat key →
+        let ciph := cipher (expandKey key) (Cast5.rounds key.length)
+        cbcBlocksAt m' data n.toNat = Ofb.crypt ciph (Aes.bytesAt m iv 8) (cbcBlocksAt m data n.toNat) ∧
+          Aes.bytesAt m' iv 8 = Ofb.next ciph (Aes.bytesAt m iv 8) n.toNat)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_cast5_ofb` on every target. -/

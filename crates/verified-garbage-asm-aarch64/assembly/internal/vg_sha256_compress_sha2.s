@@ -5,7 +5,6 @@
 // gives.
 
 vg_sha256_compress_sha2:
-	.arch_extension sha2
 	cbz x2, 20f
 	ldr q0, [x0, #0]
 	ldr q1, [x0, #16]
@@ -246,5 +245,4 @@ vg_sha256_compress_sha2:
 20:
 21:
 	ret
-	.arch_extension nosha2
 	.p2align 6

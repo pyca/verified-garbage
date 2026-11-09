@@ -54,21 +54,6 @@ theorem hv_le (σ : State) (k : Nat) : (hv P σ k).2 ≤ k := by
 theorem hv_succ (σ : State) (k : Nat) : hv P σ (k + 1) = halveStep (hv P σ k) := by
   rw [hv, Function.iterate_succ_apply']; rfl
 
-theorem hv_lt (σ : State) (pre : In P σ) (k : Nat) : (hv P σ k).1 < 2 ^ (32 * P.W) := by
-  have sh := cv_shape (σ := σ) pre
-  have p8 : 2 ^ (8 * P.L) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by simp only [CP.W]; omega)
-  have : (hv P σ k).1 ≤ cv P σ - 1 := by
-    induction k with
-    | zero => exact Nat.le_refl _
-    | succ k ih =>
-      rw [hv_succ]
-      unfold halveStep
-      split
-      · exact Nat.le_trans (Nat.div_le_self _ _) ih
-      · exact ih
-  have := sh.2.2
-  omega
-
 /-- After `8 out_len` halvings: `(m, t)` with `c − 1 = 2^t m`, `m` odd. -/
 theorem hv_done (σ : State) (pre : In P σ) :
     hv P σ (8 * P.L) = ((Spec.Rsa.splitTwos (cv P σ - 1)).2, (Spec.Rsa.splitTwos (cv P σ - 1)).1) := by

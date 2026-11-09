@@ -132,10 +132,6 @@ theorem Ptr.of_keeps {rs : List Reg} {s s' : State} {r : Reg} {base : Addr} {siz
     (hp : Ptr s r base size) (h : Keeps rs s s') (hr : r ∉ rs) : Ptr s' r base size :=
   ⟨(h.gpr _ hr).trans hp.reg, by rw [h.rd, h.wr]; exact hp.ld, hp.enc⟩
 
-theorem Ptr.mono {s : State} {r : Reg} {base : Addr} {size size' : Nat}
-    (hp : Ptr s r base size) (h : size' ≤ size) : Ptr s r base size' :=
-  ⟨hp.reg, fun d hd => hp.ld d (by omega), by have := hp.enc; omega⟩
-
 /-- A load of the word at offset `d` through a pointer. -/
 theorem exec_ldR {s : State} {r : Reg} {base : Addr} {size : Nat} (hp : Ptr s r base size) {d : Nat}
     (hd : d + 8 ≤ size) (ha : d % 8 = 0) (t : Reg) :

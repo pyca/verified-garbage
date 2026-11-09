@@ -29,9 +29,10 @@ open VG.Proof.Gcm (Absorbed)
 section
 variable {n wi : Nat}
 
-theorem one_dataW {s₀ s : State} (h : onePre n wi s₀) (hk : ArgsKeep n s₀ s) (k7 k8 : BitVec 32) :
+theorem one_dataW {s₀ s : State} (h : onePre n wi s₀)
+    (hw : (⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩ : Region) ∈ s₀.wr) (hk : ArgsKeep n s₀ s) (k7 k8 : BitVec 32) :
     DataW (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp k7 k8 s (arg s₀ 2) (arg s₀ 3).toNat :=
-  ⟨one_dataOk h hk, by rw [hk.wr]; exact covers_of_mem h.2.1.1, h.2.2.1⟩
+  ⟨one_dataOk h hk, by rw [hk.wr]; exact covers_of_mem hw, h.2.2.1 hw⟩
 
 theorem saved_otFrame {s₀ : State} (h : onePre n wi s₀) {o : Nat} (ho : o = 0 ∨ o = 112) :
     ∀ r ∈ otFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp o, (savedR (arg s₀ wi)).Disjoint r := by
@@ -47,7 +48,8 @@ theorem saved_otFrame {s₀ : State} (h : onePre n wi s₀) {o : Nat} (ho : o = 
   · exact (L.stk_w (by decide)).symm
 
 /-- What `seal`'s pieces leave, from the entry on. -/
-theorem seal_mid {s₀ s₁ s₂ s₃ : State} (h : onePre n wi s₀) (h1 : SO1 n wi s₀ s₁) (oa : OA n wi s₀ s₁.mem s₂)
+theorem seal_mid {s₀ s₁ s₂ s₃ : State} (h : onePre n wi s₀)
+    (hw : (⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩ : Region) ∈ s₀.wr) (h1 : SO1 n wi s₀ s₁) (oa : OA n wi s₀ s₁.mem s₂)
     {k7 : BitVec 32} (oc : OC n wi s₀ k7 (inc32 (j0 (ctxH s₀.mem (State.addr (s₀.gpr .r0)))
       (bytesAt s₀.mem (State.addr (s₀.gpr .r2)) (s₀.gpr .r3).toNat))) s₂.mem s₃) :
     blockAt s₃.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) ∧
@@ -67,7 +69,7 @@ theorem seal_mid {s₀ s₁ s₂ s₃ : State} (h : onePre n wi s₀) (h1 : SO1 
     SavedAt s₃.mem (arg s₀ wi) s₀ := by
   have L := oneLay h
   have hR := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
-  have hd := one_dataW h oa.args 0 0
+  have hd := one_dataW h hw oa.args 0 0
   have dCr := ctx_crFrame L hd
   have dc₂ : ∀ r ∈ [savedR (arg s₀ wi)] ++ j0Frame (oSt s₀ wi) (arg s₀ wi) s₀.sp,
       (⟨State.addr (s₀.gpr .r0), 256⟩ : Region).Disjoint r := by
@@ -117,9 +119,10 @@ theorem seal_wp {s₀ : State} (h : sealArm.pre s₀) :
   refine WP.seq (one1_wp (wi := 5) h' (by decide) (by decide) fun s₁ h1 =>
     WP.seq (WP.mono (oneAad_ok h' (by decide) h1) fun s₂ oa => ?_))
   obtain ⟨k7, he₂⟩ := oa.env
-  refine WP.seq (WP.mono (oneCrypt_ok h' (by decide) he₂ oa.args oa.cb) fun s₃ oc => ?_)
+  have hw : (⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  refine WP.seq (WP.mono (oneCrypt_ok h' hw (by decide) he₂ oa.args oa.cb) fun s₃ oc => ?_)
   have he₃ := oc.env
-  obtain ⟨hH₃, hab₃, hj₃, hc₃, hD₃, sv₃⟩ := seal_mid h' h1 oa oc
+  obtain ⟨hH₃, hab₃, hj₃, hc₃, hD₃, sv₃⟩ := seal_mid h' hw h1 oa oc
   refine WP.seq (WP.mono (oneTag_ok h' (by decide) (o := 0) (.inl rfl) he₃ oc.args hH₃ (length_bytesAt _ _ _).symm hab₃)
     fun s₄ ot => ?_)
   obtain ⟨k7'', he₄⟩ := ot.env

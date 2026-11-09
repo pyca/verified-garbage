@@ -5,15 +5,18 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Common
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly`
 
-`rejNTT(seed = rdi, a = rsi, scratch = rdx) -> eax` (see `Common.lean` for the
-layout) squeezes 1008 bytes of SHAKE128 of the 34 bytes of the seed (6
-blocks; the least bound of FIPS 204 Appendix C is 894 bytes, the contract's
-largest 1344), which the 336 iterations of `RejNTTPoly`'s loop take 3 bytes
-at a time. The loop runs 336 times, with `rsi` at the 3 bytes of the
-iteration, `rdi` = `j`, the number of coefficients sampled, and `rcx`
-counting down: while `j < 256`, the value of the 3 bytes (`b₀ + 2⁸ b₁ +
-2¹⁶ (b₂ mod 2⁷)`, in `r8`) is stored to `a[j]` and `j` incremented if it is
-less than `q`. It returns `j >> 8`: 1 if `j = 256`, and 0 otherwise.
+`rejNTTShort(seed = rdi, a = rsi, scratch = rdx) -> eax` (see `Common.lean`
+for the layout) squeezes 780 bytes of SHAKE128 of the 34 bytes of the seed,
+which the first 260 iterations of `RejNTTPoly`'s loop take 3 bytes at a time
+(`rnLoopCount 260`); if fewer than 256 coefficients were accepted, it
+squeezes 228 more bytes of the same stream, to 1008 (6 blocks; the least
+bound of FIPS 204 Appendix C is 894 bytes, the contract's largest 1344), and
+resumes the loop for the other 76 (`rnContinue`). The loop has `rsi` at the
+3 bytes of the iteration, `rdi` = `j`, the number of coefficients sampled,
+and `rcx` counting down: while `j < 256`, the value of the 3 bytes (`b₀ +
+2⁸ b₁ + 2¹⁶ (b₂ mod 2⁷)`, in `r8`) is stored to `a[j]` and `j` incremented
+if it is less than `q`. It returns `j >> 8`: 1 if `j = 256`, and 0
+otherwise.
 
 The loop's branches and the addresses of its stores depend on the XOF
 output, a function of the seed, which the contract lets it leak.
@@ -41,12 +44,28 @@ def rnBody : Prog isa :=
   .seq (.block rnLoad) (.seq (.ite .b rnTry (.block [])) (.block [.alu .add .rsi (.imm 3), .alu .sub .rcx (.imm 1)]))
 
 /-- The loop, from the XOF output at `scratch + 840`. -/
-def rnLoop : Prog isa :=
+def rnLoopCount (count : Nat) : Prog isa :=
   .seq (.block [.mov .rsi (.reg .rbx), .alu .add .rsi (.imm 840), .mov32 .rdi (.imm 0)])
-    (.seq (.block [.mov32 .rcx (.imm 336)]) (.loop rnBody .ne))
+    (.seq (.block [.mov32 .rcx (.imm (BitVec.ofNat 32 count))]) (.loop rnBody .ne))
 
-def rejNTT : Prog isa :=
-  .seq (.block (pro .rdx .rsi (.imm 0) (.imm 34)))
-    (.seq (sponge 168 1008) (.seq rnLoop (.block (retJ ++ epi))))
+/-- Save the sampler layout; the parameter register is unused until squeezing. -/
+def rnShortPro : List Instr :=
+  [.store (at_ .rdx 2024) .rbx, .store (at_ .rdx 2032) .rbp, .store (at_ .rdx 2040) .r12,
+    .mov .rbx (.reg .rdx), .mov .rbp (.reg .rsi), .mov .rcx (.reg .rdi), .mov32 .r8 (.imm 34)]
+
+/-- Append only the remaining bytes and resume at the previous coefficient count. -/
+def rnContinueArgs : Prog isa :=
+  .seq (.block saveCount) (.seq (squeezeMore 168 1620 228)
+    (.block (resumeArgs 1620 76 ++ [.mov32 .r12 (.imm 0)])))
+
+def rnContinue : Prog isa :=
+  .seq rnContinueArgs (.seq (.loop rnBody .ne) (.block (retJ ++ epi)))
+
+/-- Parse the prefix, then extend the same SHAKE stream and polynomial to the
+original six-block bound when more coefficients are needed. -/
+def rejNTTShort : Prog isa :=
+  .seq (.block rnShortPro) (.seq (spongeStream 168 780) (.seq (rnLoopCount 260)
+    (.seq (.block [.alu .cmp .rdi (.imm 256)])
+      (.ite .e (.block (retJ ++ epi)) rnContinue))))
 
 end VG.Impl.MlDsa.X86_64.Sample

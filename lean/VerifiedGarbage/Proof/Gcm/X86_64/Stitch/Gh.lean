@@ -77,9 +77,6 @@ def inp (X : Nat → Block) (yl : Nat → Block) (k l : Nat) : Block := (if k = 
 def accN (ord : Nat → Nat) (X : Nat → Block) (P : Nat → Nat → Block) (yl : Nat → Block) (l n : Nat) : Prod :=
   (List.range n).foldl (fun p i => p.acc (inp X yl (ord i) l) (P (ord i) l)) Prod.zero
 
-theorem accN_zero (ord : Nat → Nat) (X : Nat → Block) (P : Nat → Nat → Block) (yl : Nat → Block) (l : Nat) :
-    accN ord X P yl l 0 = Prod.zero := rfl
-
 theorem accN_succ (ord : Nat → Nat) (X : Nat → Block) (P : Nat → Nat → Block) (yl : Nat → Block) (l n : Nat) :
     accN ord X P yl l (n + 1) = (accN ord X P yl l n).acc (inp X yl (ord n) l) (P (ord n) l) := by
   simp only [accN, List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil]

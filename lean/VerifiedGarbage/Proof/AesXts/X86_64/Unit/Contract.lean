@@ -191,8 +191,6 @@ theorem t_sub : Region.Sub (tR s) ⟨S s, 2208⟩ := Offset.sub_base _ (by decid
 omit hp in
 theorem z_sub : Region.Sub (zR s) ⟨S s, 2208⟩ := Offset.sub_base _ (by decide)
 omit hp in
-theorem wk_sub' : Region.Sub (wkR s) ⟨S s, 2208⟩ := Region.sub_prefix (by decide)
-omit hp in
 theorem s_sub : Region.Sub ⟨S s, 2208⟩ (scrR s) := Region.sub_prefix (by decide)
 
 theorem UPre.l_sub : Region.Sub ⟨L s, 16⟩ (dataR s) := data_sub (by have := len_eq s; have := hp.m_pos; omega)

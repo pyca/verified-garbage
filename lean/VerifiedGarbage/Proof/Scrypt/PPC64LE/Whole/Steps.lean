@@ -283,8 +283,6 @@ theorem alloc_mem (s : State) : (allocated 112 s).mem = s.mem.writeW ((lay s).B 
 
 theorem alloc_gpr (s : State) : (allocated 112 s).gpr = s.gpr := rfl
 theorem alloc_lr (s : State) : (allocated 112 s).lr = s.lr := rfl
-theorem alloc_rd (s : State) : (allocated 112 s).rd = s.rd := rfl
-
 theorem arg_slot (s : State) (i : Nat) (hi : i < 5) :
     stackArgAddr s i = (lay s).B + BitVec.ofNat 64 (1216 + 8 * i) := by
   simp only [stackArgAddr, lay]

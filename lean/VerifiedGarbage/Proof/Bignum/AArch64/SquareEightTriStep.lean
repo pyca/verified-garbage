@@ -55,16 +55,4 @@ theorem prod_adds_ok (s : State) (hi : Bool) (r src x y : Reg) (hr : r ≠ tmp) 
     refine ⟨?_, rfl⟩
     simp only [addCarry, off, BitVec.ofNat_add, BitVec.add_assoc]
 
-theorem prod_adc_ok (s : State) (hi : Bool) (r src x y : Reg) (hr : r ≠ tmp) (hs : src ≠ tmp) :
-    WP isa (.block [prod hi x y, .adc .x r src tmp]) s fun t =>
-      (t.gpr r = addCarry (s.gpr src) (half hi (s.gpr x) (s.gpr y)) s.c ∧ t.mem = s.mem) ∧
-      Keep [tmp, r] s t := by
-  cases hi
-  all_goals
-    refine WP.keep [tmp, r] ?_ (by simp [prod, writesOnly, Code.allInstrs, dsts, dstOf, Option.toList])
-      rfl rfl
-    simp only [tmp] at hr hs
-    brun [prod, tmp, hr, hs, half]
-    simp only [addCarry, off, BitVec.ofNat_add, BitVec.add_assoc]
-
 end VG.Proof.Bignum.AArch64.SquareEight

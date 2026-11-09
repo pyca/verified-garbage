@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Spec.Dsa.RandomSign
+public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
+public import VerifiedGarbage.Proof.Dsa.PrivateKeyWitness
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.Implies
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -8,11 +10,13 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # Randomized DSA signing on PPC64LE: the contract on the registers and the stack
 
-`rsContract`: `vg_dsa_sign_random(out = r3, out_len = r4, used = r5,
-key = r6, key_len = r7, p_len = r8, q_len = r9, digest = r10, digest_len,
-rand, rand_len, scratch, scratch_len)`, the last five on the stack, with the
-304 bytes of stack below the stack pointer that its frame uses (`vg_dsa_sign`
-uses none). `randomSign_implies`: it implies the shared contract.
+`rsContract`: `vg_dsa_sign_random_prevalidated(out = r3, out_len = r4,
+used = r5, key = r6, key_len = r7, p_len = r8, q_len = r9, digest = r10,
+digest_len, rand, rand_len, scratch, scratch_len)`, the last five on the
+stack, with the 304 bytes of stack below the stack pointer that its frame
+uses (`vg_dsa_sign_prevalidated` uses none), for a key whose exact octets
+pass private-key validation. `randomSign_implies`: it implies the shared
+contract.
 -/
 
 @[expose] public section
@@ -34,7 +38,7 @@ def rsRes (s : State) : Spec.Dsa.RandomSignResult :=
     (Spec.Rsa.bytesAt s.mem (s.gpr .r10) (stackArg s 0).toNat)
     (Spec.Rsa.bytesAt s.mem (stackArg s 1) (stackArg s 2).toNat)
 
-/-- `vg_dsa_sign_random`, on the registers and the stack. -/
+/-- `vg_dsa_sign_random_prevalidated`, on the registers and the stack. -/
 def rsContract : Contract isa where
   pre s :=
     let out : Region := ⟨s.gpr .r3, (s.gpr .r4).toNat⟩
@@ -59,7 +63,9 @@ def rsContract : Contract isa where
       Spec.Dsa.lengthsValid (s.gpr .r8).toNat (s.gpr .r9).toNat ∧
       (s.gpr .r4).toNat = 2 * (s.gpr .r9).toNat ∧
       (s.gpr .r7).toNat = 3 * (s.gpr .r8).toNat + 2 * (s.gpr .r9).toNat ∧
-      Spec.Dsa.randomSignScratchWords (s.gpr .r8).toNat ≤ (stackArg s 4).toNat
+      Spec.Dsa.randomSignScratchWords (s.gpr .r8).toNat ≤ (stackArg s 4).toNat ∧
+      Spec.Dsa.validatePrivateKeyBytes (s.gpr .r8).toNat (s.gpr .r9).toNat
+        (Spec.Rsa.bytesAt s.mem (s.gpr .r6) (s.gpr .r7).toNat) = true
   post s t :=
     ((t.gpr .r3).setWidth 32).toNat = (rsRes s).status ∧
       Spec.Rsa.bytesAt t.mem (s.gpr .r3) (s.gpr .r4).toNat =
@@ -83,7 +89,8 @@ theorem rsStackArgs_five (s : State) :
   rfl
 
 /-- A state meeting `rsContract.pre`: 1024-bit p and 160-bit q, `out` at
-`0x4000`, `used` at `0x5000`, the key at `0x1000`, the digest at `0x3000`,
+`0x4000`, `used` at `0x5000`, a key that passes validation
+(`validPrivateKeyWitness`) at `0x1000`, the digest at `0x3000`,
 the tape at `0x6000` and the working space at `0x10000`; the stack's
 arguments at `0x9060`. -/
 def rsSatState : State where
@@ -92,20 +99,28 @@ def rsSatState : State where
     | .r10 => 0x3000 | _ => 0
   lr := 0
   sp := 0x9000
-  mem a := bif Nat.beq a.toNat 0x9068 then 0x00 else bif Nat.beq a.toNat 0x9069 then 0x60 else
+  mem a := if 0x1000 ≤ a.toNat ∧ a.toNat < 0x11a8 then
+    VG.Proof.Dsa.validPrivateKeyWitness[a.toNat - 0x1000]?.getD 0 else
+    bif Nat.beq a.toNat 0x9068 then 0x00 else bif Nat.beq a.toNat 0x9069 then 0x60 else
     bif Nat.beq a.toNat 0x907A then 0x01 else bif Nat.beq a.toNat 0x9080 then 0x40 else
     bif Nat.beq a.toNat 0x9081 then 0x08 else 0
   rd := [⟨0x1000, 424⟩, ⟨0x3000, 0⟩, ⟨0x6000, 0⟩, ⟨0x9060, 40⟩]
   wr := [⟨0x4000, 40⟩, ⟨0x5000, 8⟩, ⟨0x10000, 16896⟩]
 
-theorem randomSign_implies : rsContract.Implies (Spec.Dsa.randomSignContract abi rsStack) := by
+theorem rsSat_key :
+    Spec.Rsa.bytesAt rsSatState.mem 0x1000 424 = VG.Proof.Dsa.validPrivateKeyWitness :=
+  bytesAt_window (base := 0x1000) VG.Proof.Dsa.validPrivateKeyWitness_length (by decide) fun a h₁ h₂ => by
+    simp only [rsSatState]
+    exact ite_eq_left ⟨h₁, h₂⟩
+
+theorem randomSign_implies : rsContract.Implies (Spec.Dsa.randomSignPrevalidatedContract abi rsStack) := by
   exact
     { pre := by
         intro s h
-        sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, rsContract, rsRes,
-      rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
-      List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
-      List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow] at h
+        sig_pre [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, abi, argRegs, rsContract, rsRes,
+        rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
+        List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
+        List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow] at h
         sig_split h
         have hx : Sig.conj (Sig.pairFacts [(⟨s.gpr .r10, (stackArg s 0).toNat⟩, false),
             (⟨stackArg s 1, (stackArg s 2).toNat⟩, false), (⟨stackArg s 3, (stackArg s 4).toNat * 8⟩, true),
@@ -114,14 +129,14 @@ theorem randomSign_implies : rsContract.Implies (Spec.Dsa.randomSignContract abi
           Bool.or_false, Bool.false_or, List.nil_append, List.cons_append, Sig.conj_cons,
           Sig.conj] at hx
         obtain ⟨_, _, _⟩ := hx
-        sig_reduce [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, rsContract, rsRes,
-      rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
-      List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
-      List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow]
-        sig_simp [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, rsContract, rsRes,
-      rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
-      List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
-      List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow] []
+        sig_reduce [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, abi, argRegs, rsContract, rsRes,
+        rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
+        List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
+        List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow]
+        sig_simp [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, abi, argRegs, rsContract, rsRes,
+        rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
+        List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
+        List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow] []
         sig_and_intros
         sig_close
         all_goals first
@@ -130,18 +145,31 @@ theorem randomSign_implies : rsContract.Implies (Spec.Dsa.randomSignContract abi
           | omega
           | skip
         all_goals done
-      post := by sig_implies_post [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, rsContract, rsRes,
+      post := by sig_implies_post [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, abi, argRegs, rsContract, rsRes,
       rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
       List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
       List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow]
-      pub := by sig_implies_pub [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, rsContract, rsRes,
+      pub := by sig_implies_pub [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, abi, argRegs, rsContract, rsRes,
       rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
       List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
       List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow]
-      sat := by sig_implies_sat [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, rsContract, rsRes,
+      sat := by
+        have hv : Spec.Dsa.validatePrivateKeyBytes 128 20 (Spec.Rsa.bytesAt rsSatState.mem 0x1000 424) = true := by
+          rw [rsSat_key]; exact VG.Proof.Dsa.validPrivateKeyWitness_valid
+        refine ⟨rsSatState, ?_⟩
+        sig_pre [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, abi, argRegs, rsContract, rsRes,
       rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
       List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
       List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow]
-          [rsSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using rsSatState }
+        sig_and_intros
+        rotate_right
+        · exact hv
+        all_goals first
+          | rfl
+          | decide
+          | exact Region.disjoint_of_sep (by decide)
+          | (intro a h₁ h₂
+             sig_simp_only [Region.Contains, rsSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] at h₁ h₂
+             bv_omega) }
 
 end VG.Proof.Dsa.PPC64LE

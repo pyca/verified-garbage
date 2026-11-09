@@ -56,10 +56,6 @@ theorem writes {rs : List Region}
 theorem field_scr (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 248) :
     (field L d).Disjoint L.SCR := hL.kc.sub_left (fieldWithin L hd).sub
 
-theorem field_mem {m n : Mem} (hm : n = m) (d : Nat) :
-    Spec.Ed25519.bytesAt n (State.addr L.E + BitVec.ofNat 64 d) 32 =
-      Spec.Ed25519.bytesAt m (State.addr L.E + BitVec.ofNat 64 d) 32 := by rw [hm]
-
 theorem frame_addr (hL : L.Ok) {d : Nat} (hd : d < 272) :
     State.addr (L.E + BitVec.ofNat 32 d) = State.addr L.E + BitVec.ofNat 64 d :=
   addr_add (by have := hL.top; omega)

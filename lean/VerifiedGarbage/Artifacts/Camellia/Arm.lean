@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Camellia.Arm.KeyVerified
 public import VerifiedGarbage.Proof.Camellia.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 @[expose] public section
 

@@ -24,6 +24,4 @@ def codeAt (D k w : Nat) : Prog isa :=
   .seq (Import.load (D / 4) (slot w 6))
     (.seq (.block (zeroTail k w (slot w 6))) (WitnessSample.codeAt k w (slot w 6) (slot w 0)))
 
-def code (w : Nat) : Prog isa := codeAt (8 * w) (2 * w) w
-
 end VG.Impl.RsaKeyGen.X86.WitnessLoad

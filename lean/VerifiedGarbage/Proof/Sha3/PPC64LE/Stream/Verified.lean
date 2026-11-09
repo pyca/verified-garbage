@@ -119,13 +119,6 @@ def absorbSat : State where
   rd := [⟨0x2000, 0⟩]
   wr := [⟨0x1000, 200⟩, ⟨0x3000, 640⟩]
 
-theorem absorb_verified :
-    Verified PPC64LE.target Impl.Sha3.PPC64LE.Stream.absorb (Spec.Sha3.absorbScratchContract PPC64LE.abi 48) :=
-  Verified.of_correct absorb_correct absorb_ct (by
-    sig_implies [Spec.Sha3.absorbScratchContract, Spec.Sha3.absorbScratchSig, Spec.Sha3.absorbPre,
-      Spec.Sha3.absorbPost, Proof.Sha3.absorbPPC64LE, PPC64LE.abi, PPC64LE.argRegs] [absorbSat]
-      using absorbSat)
-
 /-! ## `pad` -/
 
 theorem padMain_noFrames : Impl.Sha3.PPC64LE.Stream.padMain.noFrames = true := by lit_decide
@@ -155,13 +148,6 @@ def padSat : State where
   mem _ := 0
   rd := []
   wr := [⟨0x1000, 200⟩, ⟨0x3000, 640⟩]
-
-theorem pad_verified :
-    Verified PPC64LE.target Impl.Sha3.PPC64LE.Stream.pad (Proof.Sha3.padScratchContract PPC64LE.abi 48) :=
-  Verified.of_correct pad_correct pad_ct (by
-    sig_implies [Proof.Sha3.padScratchContract, Proof.Sha3.padScratchSig, Spec.Sha3.padPre,
-      Spec.Sha3.padPost, Proof.Sha3.padPPC64LE, PPC64LE.abi, PPC64LE.argRegs] [padSat]
-      using padSat)
 
 /-! ## `squeeze` -/
 
@@ -196,13 +182,5 @@ def squeezeSat : State where
   mem _ := 0
   rd := []
   wr := [⟨0x1000, 200⟩, ⟨0x2000, 0⟩, ⟨0x3000, 640⟩]
-
-theorem squeeze_verified :
-    Verified PPC64LE.target Impl.Sha3.PPC64LE.Stream.squeeze
-      (Proof.Sha3.squeezeScratchContract PPC64LE.abi 48) :=
-  Verified.of_correct squeeze_correct squeeze_ct (by
-    sig_implies [Proof.Sha3.squeezeScratchContract, Proof.Sha3.squeezeScratchSig, Spec.Sha3.squeezePre,
-      Spec.Sha3.squeezePost, Proof.Sha3.squeezePPC64LE, PPC64LE.abi, PPC64LE.argRegs] [squeezeSat]
-      using squeezeSat)
 
 end VG.Proof.Sha3.PPC64LE.Stream

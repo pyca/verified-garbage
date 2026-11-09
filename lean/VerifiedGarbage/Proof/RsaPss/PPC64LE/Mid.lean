@@ -46,8 +46,6 @@ structure Lay (D : Nat) (s : State) (lN dN : Nat) (c : Byte) : Prop where
   dk : (kR s).Disjoint (dR D s)
   wd : (s.gpr .r7).toNat + D ≤ 2 ^ 64
 
-theorem off_add (S : Addr) (a : Nat) : S + BitVec.ofNat 64 a = off S a := rfl
-
 /-- `p + a - b = p + (a - b)`. -/
 theorem off_sub (p : Addr) {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
     p + BitVec.ofNat 64 a - BitVec.ofNat 64 b = off p (a - b) := by
@@ -77,8 +75,6 @@ theorem accB_eq_zero {V : Nat → Byte} {lN : Nat} {c : Byte} {k : Nat} :
 section
 variable {D lN dN : Nat} {c : Byte} {s : State} (L : Lay D s lN dN c)
 include L
-
-theorem Lay.k1 : 1 ≤ (s.gpr .r4).toNat := by have := L.hk; omega_arith
 
 /-- `acc0`: `EM`'s last byte replaced by `accB`. -/
 theorem acc0_ok {t : State} (h : Base Sp (vP D) s t) :

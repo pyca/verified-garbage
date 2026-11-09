@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Contract
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Main
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
 public import VerifiedGarbage.Proof.X448.AArch64.Main
@@ -18,6 +19,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.X448.Contract
 
 /-!
 # X448 on AArch64: `Verified`
@@ -60,9 +62,9 @@ theorem x448_ct : ConstantTime isa Proof.X448.x448AArch64.pre Proof.X448.x448AAr
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem x448_verified :
-    Verified AArch64.target Impl.X448.AArch64.Fast.x448 (Spec.X448.x448Contract AArch64.abi) :=
+    Verified AArch64.target Impl.X448.AArch64.Fast.x448 (Proof.X448.x448Contract AArch64.abi) :=
   Verified.of_correct x448_ok x448_ct (by
-    sig_implies [Spec.X448.x448Contract, Spec.X448.x448Sig, AArch64.abi, AArch64.argRegs,
+    sig_implies [Proof.X448.x448Contract, Proof.X448.x448Sig, AArch64.abi, AArch64.argRegs,
       Proof.X448.x448AArch64] [satState] using satState)
 
 end VG.Proof.X448.AArch64.Fast

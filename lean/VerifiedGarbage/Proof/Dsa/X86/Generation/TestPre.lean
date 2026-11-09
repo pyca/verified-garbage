@@ -199,7 +199,7 @@ theorem sub_of_contains {R : Region} {a : Addr} {n : Nat} (h : R.Contains a n) :
 
 theorem randPtr_toNat {E : Env} (v : E.Valid) {used : Nat} (hu : used ≤ E.witLen) :
     (randPtr (E.wit.setWidth 32) E.witLen used).toNat = (randAddr E used).toNat := by
-  have witLt := v.ptrs.2.2.2
+  have witLt := v.witPtr
   have wf := v.witFit
   have w32 : (E.wit.setWidth 32).toNat = E.wit.toNat := by
     rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt witLt]
@@ -338,8 +338,8 @@ theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base
     argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, stackBelow]
   have hs := B.scr
   have sz := v.size_ge
-  have witLt := v.ptrs.2.2.2
-  have lenLt := v.lens.2.2
+  have witLt := v.witPtr
+  have lenLt := v.witLen32
   have wsW := Scr.wide hs (d := sPP) (by simp only [sPP]; omega_arith)
   have uoW := Scr.wide hs (d := fUsedOut) (by simp only [fUsedOut, hdr]; omega_arith)
   have wsN := Scr.toNat_add hs (d := sPP) (by simp only [sPP]; omega_arith)

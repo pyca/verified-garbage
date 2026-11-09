@@ -162,7 +162,7 @@ theorem absorb_ct {sc : Nat} (hsc : ScrAt n val sc scr) {args : List (Reg × Val
     (hs : ∀ r ∈ kWr scr, Region.Disjoint ⟨State.addr (argVal E val vsrc), (argVal E val vlen).toNat⟩ r)
     (hfit : (argVal E val vsrc).toNat + (argVal E val vlen).toNat ≤ 2 ^ 32) :
     RelCT isa (Two E ins outs g₁ g₂ m₁ m₂ (Slots E val args [vlen, .caller sc KSCR]))
-      (.call Spec.Sha3.absorbScratchApi.name Impl.Sha3.Arm.Stream.absorb)
+      (.call "vg_keccak_absorb_scratch" Impl.Sha3.Arm.Stream.absorb)
       (Two E ins outs g₁ g₂ m₁ m₂ fun s => s.gpr .r0 = BitVec.ofNat 32 ((pos + (argVal E val vlen).toNat) % 136)) := by
   have get : ∀ t, Slots E val args [vlen, .caller sc KSCR] t → t.gpr .r0 = scr ∧ t.gpr .r1 = 136 ∧
       t.gpr .r2 = BitVec.ofNat 32 pos ∧ t.gpr .r3 = argVal E val vsrc ∧ stackArg t 0 = argVal E val vlen ∧

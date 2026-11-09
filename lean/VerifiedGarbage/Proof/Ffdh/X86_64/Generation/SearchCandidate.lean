@@ -38,7 +38,7 @@ theorem search_candidate_run (v : RoundImpl)
   have hr := search_call_reads h k.2.1 k.2.2
   have hp := search_call_pre h ha hm k
   have hcorrect := pc_correct v.mont (R2Impl.words v.mont) (Kernel.called v)
-    (SpSafe.of_all (candidateCode_sp v)) (candidateCode_depth v) (candidateCode_mx v)
+    (SpSafe.of_all (candidateCode_sp v)) (candidateCode_depth v) (candidateCode_ctl v)
   refine WP.mono (inline_stack (k := pcContract) hcorrect
     (SpSafe.of_all (candidateCode_sp v)) (candidateCode_depth v) (by decide) hp
     (hr.append_left hw.right) hw) fun t ⟨htr, htw, habi, hf, hpost⟩ => ?_

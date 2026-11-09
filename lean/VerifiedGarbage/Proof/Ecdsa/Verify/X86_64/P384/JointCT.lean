@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
@@ -51,8 +52,8 @@ theorem jointVerify_p384_adx_public_ct :
 
 theorem jointVerify_ct :
     ConstantTime isa
-      (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts p384v.combConsts)).pre
-      (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts p384v.combConsts)).pub
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384v.combConsts)).pre
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384v.combConsts)).pub
       Impl.Ecdsa.Verify.X86_64.jointVerifyP384.inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   exact jointVerify_p384_public_ct hL hT hI hO _ _ _ _ _ _ (pre_of (implies.pre _ pre₁))
@@ -60,8 +61,8 @@ theorem jointVerify_ct :
 
 theorem jointVerify_adx_ct :
     ConstantTime isa
-      (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts p384v.combConsts)).pre
-      (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts p384v.combConsts)).pub
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384v.combConsts)).pre
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384v.combConsts)).pub
       Impl.Ecdsa.Verify.X86_64.jointVerifyP384Adx.inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   exact jointVerify_p384_adx_public_ct hL hT hI hO _ _ _ _ _ _

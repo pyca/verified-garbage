@@ -33,13 +33,6 @@ def signLocalWith (n : Nat) (key : State → Prop) (post : State → State → P
     s.gpr .x2 = t.gpr .x2 ∧ s.gpr .x3 = t.gpr .x3 ∧ s.gpr .x4 = t.gpr .x4 ∧ s.gpr .x5 = t.gpr .x5 ∧
     s.syms Impl.Ed25519.AArch64.combSym = t.syms Impl.Ed25519.AArch64.combSym
 
-def signCachedLocal : Contract isa := signLocalWith 32
-  (fun s => Spec.Ed25519.bytesAt s.mem (s.gpr .x2) 32 =
-    Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (s.gpr .x1) 32))
-  (fun s t => Spec.Ed25519.bytesAt t.mem (s.gpr .x0) 64 = Spec.Ed25519.sign
-    (Spec.Ed25519.bytesAt s.mem (s.gpr .x1) 32)
-    (Spec.Ed25519.bytesAt s.mem (s.gpr .x3) (s.gpr .x4).toNat))
-
 def lay (n : Nat) (s : State) : Lay :=
   ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.gpr .x4, s.gpr .x5, Whole.base s,
     s.syms Impl.Ed25519.AArch64.combSym, n⟩
@@ -145,20 +138,5 @@ theorem entry_input {s : State} (h : (signLocalWith n key post).pre s) {m : Mem}
   · exact (kp.sub_left hb).symm
   · exact (km.sub_left hb).symm
   · exact (dj (below s.sp 352) (by simp)).sub_right hb
-
-theorem entry_key {s p : State} (h : signCachedLocal.pre s) (hp : Whole.Saved (Whole.entered s) 6 p) :
-    Spec.Ed25519.bytesAt p.mem (lay 32 s).pk 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt p.mem (lay 32 s).seed 32) := by
-  have hk : Spec.Ed25519.bytesAt s.mem (s.gpr .x2) 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (s.gpr .x1) 32) := by
-    obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hk, _⟩ := h
-    exact hk
-  have hf := Whole.saved_frame hp
-  have hp' := entry_input h hf (r := ⟨s.gpr .x2, 32⟩) (by rw [h.1]; simp) (by change 32 ≤ 2 ^ 64; decide)
-  have hs' := entry_input h hf (r := ⟨s.gpr .x1, 32⟩) (by rw [h.1]; simp) (by change 32 ≤ 2 ^ 64; decide)
-  change Spec.Ed25519.bytesAt p.mem (s.gpr .x2) 32 =
-    Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt p.mem (s.gpr .x1) 32)
-  rw [hp', hs']
-  exact hk
 
 end VG.Proof.Ed25519.AArch64.SignCached

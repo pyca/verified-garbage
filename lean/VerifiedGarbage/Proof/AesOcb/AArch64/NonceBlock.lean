@@ -64,8 +64,6 @@ theorem and63 (b : Byte) :
     show (63 : Nat) % 2 ^ 64 = 2 ^ 6 - 1 by decide, Nat.and_two_pow_sub_one_eq_mod]
   omega_arith
 
-theorem one_byte : BitVec.setWidth 8 (BitVec.setWidth 32 (1#64 : BitVec 64)) = (1 : Byte) := by decide
-
 theorem getD_bytesAt_eq (m : Mem) (p : Addr) {k n : Nat} (hk : k < n) :
     m (p + BitVec.ofNat 64 k) = (bytesAt m p n).getD k 0 := by
   rw [List.getD_eq_getElem?_getD]; simp [bytesAt, hk]

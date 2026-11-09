@@ -32,8 +32,6 @@ def TblHeld (s : State) (wr : List Region) : Prop :=
 
 theorem p224_combConsts : p224.combConsts = [(p224.tsym, p224.combWords)] := rfl
 
-theorem p224_tsym : p224.tsym = "VG_P224_COMB" := rfl
-
 theorem p224_tbl_len : Impl.P224.p224Comb7.length = 37 :=
   Proof.P224.p224Comb7_length
 

@@ -1,18 +1,7 @@
-//! Ed448 (RFC 8032), deterministic signatures from 57-byte private keys,
+//! Ed448 (RFC 8032 §5.2), deterministic signatures from 57-byte private keys,
 //! with an optional context of up to 255 bytes.
 //!
-//! Key derivation, signing, and verification each call one verified
-//! function, including SHAKE256. Signing uses the public key derived once by
-//! [`SigningKey::from_seed`]. This is Ed448 with a context (`dom4` with flag
-//! 0), not Ed448ph. Secret scratch values are cleared after use.
-//!
-//! On x86-64, their `_adx` variants, with the same contracts, are chosen on
-//! CPUs with the features their `_FEATURES` constants name.
-//!
-//! On AArch64, each operation has a variant for each implementation of the
-//! Keccak permutation, and calls the one the SHA-3 functions use
-//! (`crate::hashes::sha3::Backend`), on CPUs with the features of all three
-//! operations' `_FEATURES` constants.
+//! This is Ed448 with a context (`dom4` with flag 0), not Ed448ph.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -23,91 +12,26 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-#[cfg(target_arch = "aarch64")]
-use crate::arch::ed448::{
-    VG_ED448_PUBLIC_KEY_SHA3_FEATURES, VG_ED448_SIGN_CACHED_SHA3_FEATURES,
-    VG_ED448_VERIFY_SHA3_FEATURES, vg_ed448_public_key_sha3, vg_ed448_sign_cached_sha3,
-    vg_ed448_verify_sha3,
+use crate::align::CacheAligned;
+use crate::arch::dispatch::ed448::{
+    vg_ed448_public_key_auto, vg_ed448_sign_cached_auto, vg_ed448_verify_auto,
 };
-use crate::arch::ed448::{vg_ed448_public_key, vg_ed448_sign_cached, vg_ed448_verify};
-#[cfg(not(target_arch = "x86_64"))]
-use crate::hashes::sha3::Backend;
+use crate::error::InvalidSignature;
 use crate::zeroize::zeroize;
-
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ed448::{
-    VG_ED448_PUBLIC_KEY_ADX_FEATURES, VG_ED448_SIGN_CACHED_ADX_FEATURES,
-    VG_ED448_VERIFY_ADX_FEATURES, vg_ed448_public_key_adx, vg_ed448_sign_cached_adx,
-    vg_ed448_verify_adx,
-};
-
-#[cfg(target_arch = "x86_64")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Backend {
-    Scalar,
-    Adx,
-}
-
-#[cfg(target_arch = "x86_64")]
-impl Backend {
-    fn select(features: verified_garbage_cpu::Features) -> Self {
-        if features.contains(
-            const {
-                verified_garbage_cpu::Features::all(&[
-                    VG_ED448_PUBLIC_KEY_ADX_FEATURES,
-                    VG_ED448_SIGN_CACHED_ADX_FEATURES,
-                    VG_ED448_VERIFY_ADX_FEATURES,
-                ])
-            },
-        ) {
-            Self::Adx
-        } else {
-            Self::Scalar
-        }
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-fn backend() -> Backend {
-    Backend::select(crate::cpu::detected())
-}
-
-/// The implementation to call: the Keccak implementation the SHA-3
-/// functions use, if the CPU has the features of every instance calling it.
-#[cfg(not(target_arch = "x86_64"))]
-fn backend() -> Backend {
-    #[cfg(target_arch = "aarch64")]
-    if !crate::cpu::detected().contains(
-        const {
-            verified_garbage_cpu::Features::all(&[
-                VG_ED448_PUBLIC_KEY_SHA3_FEATURES,
-                VG_ED448_SIGN_CACHED_SHA3_FEATURES,
-                VG_ED448_VERIFY_SHA3_FEATURES,
-            ])
-        },
-    ) {
-        return Backend::Scalar;
-    }
-    Backend::detected()
-}
 
 /// The longest context RFC 8032 allows.
 pub const MAX_CONTEXT_LEN: usize = 255;
 
-/// Why an operation failed.
+/// Why signing failed.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
-    /// The signature has the wrong length, a noncanonical encoding, or an
-    /// invalid equation, or the context is longer than 255 bytes.
-    InvalidSignature,
     /// The context to sign with is longer than 255 bytes.
     ContextTooLong,
 }
 
 crate::error::impl_error! {
     Error {
-        InvalidSignature => "invalid Ed448 signature",
-        ContextTooLong => "Ed448 context is longer than 255 bytes",
+        ContextTooLong => "context is longer than 255 bytes",
     }
 }
 
@@ -131,7 +55,12 @@ impl VerifyingKey {
     /// Verify an Ed448 signature with an empty context (RFC 8032 §5.2.7).
     ///
     /// See [`VerifyingKey::verify_with_context`].
-    pub fn verify(&self, message: &[u8], signature: &[u8]) -> Result<(), Error> {
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidSignature`], as [`VerifyingKey::verify_with_context`]
+    /// returns it.
+    pub fn verify(&self, message: &[u8], signature: &[u8]) -> Result<(), InvalidSignature> {
         self.verify_with_context(&[], message, signature)
     }
 
@@ -143,41 +72,42 @@ impl VerifyingKey {
     /// or small-order rejection policy is imposed. Nothing verifies with a
     /// context longer than 255 bytes. Verification timing may depend on the
     /// public key, context, message, and signature.
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidSignature`] if the signature is not 114 bytes long, an
+    /// encoding is not canonical, the equation does not hold, or the context
+    /// is longer than 255 bytes.
     pub fn verify_with_context(
         &self,
         context: &[u8],
         message: &[u8],
         signature: &[u8],
-    ) -> Result<(), Error> {
-        let signature: &[u8; 114] = signature.try_into().map_err(|_| Error::InvalidSignature)?;
-        let mut scratch = [0u64; 1024];
-        let verify = match backend() {
-            Backend::Scalar => vg_ed448_verify,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_ed448_verify_adx,
-            #[cfg(target_arch = "aarch64")]
-            Backend::Sha3 => vg_ed448_verify_sha3,
-        };
+    ) -> Result<(), InvalidSignature> {
+        let dit = crate::dit::public(crate::dit::Why::Verify);
+        let signature: &[u8; 114] = signature.try_into().map_err(|_| InvalidSignature)?;
+        let mut scratch = CacheAligned([0u64; 1024]);
         // SAFETY: the input references are valid for their declared lengths,
         // and scratch is a distinct writable object. No object overlaps the
-        // call's stack or wraps the address space. Backend selection checks
-        // the generated CPU feature requirements.
+        // call's stack or wraps the address space. The dispatcher calls only
+        // an implementation the CPU has the features of.
         let valid = unsafe {
-            verify(
+            vg_ed448_verify_auto(
+                dit,
                 &self.bytes,
                 context.as_ptr(),
                 context.len(),
                 message.as_ptr(),
                 message.len(),
                 signature,
-                &mut scratch,
+                &mut scratch.0,
             )
         };
-        zeroize(&mut scratch);
+        zeroize(&mut scratch.0);
         if valid == 1 {
             Ok(())
         } else {
-            Err(Error::InvalidSignature)
+            Err(InvalidSignature)
         }
     }
 }
@@ -207,22 +137,16 @@ impl SigningKey {
     /// Derive a signing key and its public key (RFC 8032 §5.2.5) from a
     /// 57-byte private key.
     pub fn from_seed(seed: &[u8; 57]) -> Self {
+        crate::dit::enter!(dit);
         let mut public = [0u8; 57];
-        let mut scratch = [0u64; 1024];
+        let mut scratch = CacheAligned([0u64; 1024]);
         // SAFETY: the output, seed, and scratch are distinct objects valid for
         // 57, 57, and 8192 bytes, respectively, so they overlap neither each
         // other nor the call's stack, and none wraps the address space.
-        // Backend selection checks the generated CPU feature requirements.
-        unsafe {
-            match backend() {
-                Backend::Scalar => vg_ed448_public_key(&mut public, seed, &mut scratch),
-                #[cfg(target_arch = "x86_64")]
-                Backend::Adx => vg_ed448_public_key_adx(&mut public, seed, &mut scratch),
-                #[cfg(target_arch = "aarch64")]
-                Backend::Sha3 => vg_ed448_public_key_sha3(&mut public, seed, &mut scratch),
-            }
-        };
-        zeroize(&mut scratch);
+        // The dispatcher calls only an implementation the CPU has the
+        // features of.
+        unsafe { vg_ed448_public_key_auto(dit, &mut public, seed, &mut scratch.0) };
+        zeroize(&mut scratch.0);
         Self {
             seed: *seed,
             public: VerifyingKey { bytes: public },
@@ -241,16 +165,23 @@ impl SigningKey {
 
     /// Sign `message` deterministically with an empty context (RFC 8032 §5.2.6).
     pub fn sign(&self, message: &[u8]) -> [u8; 114] {
-        sign_message(&self.seed, &self.public.bytes, &[], message)
+        crate::dit::enter!(dit);
+        sign_message(dit, &self.seed, &self.public.bytes, &[], message)
     }
 
     /// Sign `message` deterministically with the context `context` (RFC 8032
     /// §5.2.6), which may be at most 255 bytes long.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::ContextTooLong`] if `context` is longer than 255 bytes.
     pub fn sign_with_context(&self, context: &[u8], message: &[u8]) -> Result<[u8; 114], Error> {
+        crate::dit::enter!(dit);
         if context.len() > MAX_CONTEXT_LEN {
             return Err(Error::ContextTooLong);
         }
         Ok(sign_message(
+            dit,
             &self.seed,
             &self.public.bytes,
             context,
@@ -260,24 +191,24 @@ impl SigningKey {
 }
 
 /// `context` must be at most 255 bytes long.
-fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) -> [u8; 114] {
+fn sign_message(
+    dit: crate::dit::Dit<'_>,
+    seed: &[u8; 57],
+    pk: &[u8; 57],
+    context: &[u8],
+    message: &[u8],
+) -> [u8; 114] {
     let mut signature = [0u8; 114];
-    let mut scratch = [0u64; 1024];
-    let sign = match backend() {
-        Backend::Scalar => vg_ed448_sign_cached,
-        #[cfg(target_arch = "x86_64")]
-        Backend::Adx => vg_ed448_sign_cached_adx,
-        #[cfg(target_arch = "aarch64")]
-        Backend::Sha3 => vg_ed448_sign_cached_sha3,
-    };
+    let mut scratch = CacheAligned([0u64; 1024]);
     // SAFETY: the input references are valid for their declared lengths.
     // Signature and scratch are distinct writable objects, disjoint from the
     // inputs and the call's stack. None wraps the address space. pk is seed's
     // public key (`SigningKey::sign` passes the one `from_seed` derived), and
-    // the context is at most 255 bytes long (the callers check it). Backend
-    // selection checks the generated CPU feature requirements.
+    // the context is at most 255 bytes long (the callers check it). The
+    // dispatcher calls only an implementation the CPU has the features of.
     unsafe {
-        sign(
+        vg_ed448_sign_cached_auto(
+            dit,
             &mut signature,
             seed,
             pk,
@@ -285,36 +216,9 @@ fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) 
             context.len(),
             message.as_ptr(),
             message.len(),
-            &mut scratch,
+            &mut scratch.0,
         )
     };
-    zeroize(&mut scratch);
+    zeroize(&mut scratch.0);
     signature
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn backends() {
-        let _ = backend();
-        #[cfg(target_arch = "x86_64")]
-        {
-            use verified_garbage_cpu::{Features, feature};
-            assert_eq!(Backend::select(Features(0)), Backend::Scalar);
-            assert_eq!(Backend::select(Features(feature::BMI2)), Backend::Scalar);
-            assert_eq!(Backend::select(Features(feature::ADX)), Backend::Scalar);
-            assert_eq!(
-                Backend::select(Features::all(&[
-                    VG_ED448_PUBLIC_KEY_ADX_FEATURES,
-                    VG_ED448_SIGN_CACHED_ADX_FEATURES,
-                    VG_ED448_VERIFY_ADX_FEATURES,
-                ])),
-                Backend::Adx
-            );
-        }
-        #[cfg(not(target_arch = "x86_64"))]
-        assert_eq!(backend(), Backend::detected());
-    }
 }

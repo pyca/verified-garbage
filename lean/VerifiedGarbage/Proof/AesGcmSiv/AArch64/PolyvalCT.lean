@@ -90,20 +90,6 @@ theorem rel_wpQ {c : Prog isa} {σ₁ σ₂ : State} {F₁ F₂ : State → Prop
   (h.wp (F₁ := F₁) (F₂ := F₂) fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨w₁, w₂⟩).mono
     (fun _ _ h => h) fun a b h => hq a b h.2.1 h.2.2
 
-/-- `a; (b; (c; (d; e)))`, related as `(a; (b; (c; d))); e`. -/
-theorem RelCT.assoc4 {P Q : State → State → Prop} {a b c d e : Prog isa}
-    (h : RelCT isa P (.seq (.seq a (.seq b (.seq c d))) e) Q) :
-    RelCT isa P (.seq a (.seq b (.seq c (.seq d e)))) Q := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
-  cases e₁ with | seq a₁ e₁ => cases e₁ with | seq b₁ e₁ => cases e₁ with | seq c₁ e₁ => cases e₁ with
-  | seq d₁ e₁' =>
-  cases e₂ with | seq a₂ e₂ => cases e₂ with | seq b₂ e₂ => cases e₂ with | seq c₂ e₂ => cases e₂ with
-  | seq d₂ e₂' =>
-  obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq (.seq a₁ (.seq b₁ (.seq c₁ d₁))) e₁')
-    (.seq (.seq a₂ (.seq b₂ (.seq c₂ d₂))) e₂')
-  simp only [List.append_assoc] at ht
-  exact ⟨ht, hq⟩
-
 /-- A loop step in two runs: the condition agrees, and the runs are related
 anew while it loops. -/
 theorem rel_loop {body : Prog isa} {c : Cond} (I : Nat → State → State → Prop)

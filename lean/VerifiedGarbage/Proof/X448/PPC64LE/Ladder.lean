@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # X448 on PPC64LE: the ladder
 
 One iteration of the ladder (`step_ok`) takes the elements `x1, x2, z2, x3,
-z3, a24` from the state after the bits `447` down to `n` (`ladderAfter k x1
+z3` from the state after the bits `447` down to `n` (`ladderAfter k x1
 n`) to the state after `n - 1`, with the swap in `r0` and the counter in
 `r12`; the loop (`ladder_ok`) runs it for the bits 447 down to 0.
 -/
@@ -62,46 +62,56 @@ theorem Cur.next {s s' : State} (h : Cur b s0 a c qs v s) (hr : Rest clob s s')
     by rw [hr.gpr _ (by decide), h.r0], by rw [hr.gpr _ (by decide), h.r12], hS⟩
 
 theorem opMul {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs)
-    (hy : y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
+    (hy : y ∈ qs) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) (ho4 : o % 4 = 0) {s : State}
+    (h : Cur b s0 a c qs v s) :
     WP isa (mul o x y) s (Cur b s0 a c (o :: qs) (upd v o (v x * v y))) :=
-  WP.mono (mulS hq ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+  WP.mono (mulS hq ho hx hy hx4 hy4 ho4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
 
 theorem opAdd {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs)
-    (hy : y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
+    (hy : y ∈ qs) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa (.block (add o x y)) s (Cur b s0 a c (o :: qs) (upd v o (v x + v y))) :=
-  WP.mono (addS hq ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+  WP.mono (addS hq ho hx hy ho4 hx4 hy4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
 
 theorem opSub {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs)
-    (hy : y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
+    (hy : y ∈ qs) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa (.block (sub o x y)) s (Cur b s0 a c (o :: qs) (upd v o (v x - v y))) :=
-  WP.mono (subS hq ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+  WP.mono (subS hq ho hx hy ho4 hx4 hy4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+
+theorem opMul24 {o x : Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs)
+    (ho4 : o % 4 = 0) (hx4 : x % 4 = 0) {s : State} (h : Cur b s0 a c qs v s) :
+    WP isa (.block (mulA24 o x)) s (Cur b s0 a c (o :: qs) (upd v o (a24 * v x))) :=
+  WP.mono (mul24S hq ho hx ho4 hx4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
 
 end
 
 /-! ## Sequences of field operations -/
 
-/-- A field operation: `o = x · y`, `x + y` or `x - y`. -/
+/-- A field operation: `o = x · y`, `a24 · x`, `x + y` or `x - y`. -/
 inductive FOp
   | mul (o x y : Nat)
+  | mul24 (o x : Nat)
   | add (o x y : Nat)
   | sub (o x y : Nat)
 
 def FOp.code : FOp → Prog isa
   | .mul o x y => Impl.X448.PPC64LE.mul o x y
+  | .mul24 o x => .block (mulA24 o x)
   | .add o x y => .block (Impl.X448.PPC64LE.add o x y)
   | .sub o x y => .block (Impl.X448.PPC64LE.sub o x y)
 
 def FOp.out : FOp → Nat
-  | .mul o _ _ | .add o _ _ | .sub o _ _ => o
+  | .mul o _ _ | .mul24 o _ | .add o _ _ | .sub o _ _ => o
 
 def FOp.x : FOp → Nat
-  | .mul _ x _ | .add _ x _ | .sub _ x _ => x
+  | .mul _ x _ | .mul24 _ x | .add _ x _ | .sub _ x _ => x
 
 def FOp.y : FOp → Nat
   | .mul _ _ y | .add _ _ y | .sub _ _ y => y
+  | .mul24 _ x => x
 
 def FOp.val : FOp → (Nat → Fe) → Fe
   | .mul _ x y, v => v x * v y
+  | .mul24 _ x, v => a24 * v x
   | .add _ x y, v => v x + v y
   | .sub _ x y, v => v x - v y
 
@@ -115,7 +125,8 @@ known. -/
 def opsOk : List FOp → List Nat → Bool
   | [], _ => true
   | op :: ops, qs => Sep1 op.out qs && op.out + 56 ≤ ACC && qs.contains op.x &&
-      qs.contains op.y && opsOk ops (op.out :: qs)
+      qs.contains op.y && op.out % 4 == 0 && op.x % 4 == 0 && op.y % 4 == 0 &&
+      opsOk ops (op.out :: qs)
 
 /-- The elements after the operations. -/
 def runOps : List FOp → (Nat → Fe) → Nat → Fe
@@ -129,12 +140,14 @@ def outsQ : List FOp → List Nat → List Nat
 
 theorem op_ok {b : Addr} {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat → Fe} (op : FOp)
     (hq : Sep1 op.out qs = true) (ho : op.out + 56 ≤ ACC) (hx : op.x ∈ qs) (hy : op.y ∈ qs)
-    {s : State} (h : Cur b s0 a c qs v s) :
+    (ho4 : op.out % 4 = 0) (hx4 : op.x % 4 = 0) (hy4 : op.y % 4 = 0) {s : State}
+    (h : Cur b s0 a c qs v s) :
     WP isa op.code s (Cur b s0 a c (op.out :: qs) (upd v op.out (op.val v))) := by
   cases op with
-  | mul o x y => exact opMul hq ho hx hy h
-  | add o x y => exact opAdd hq ho hx hy h
-  | sub o x y => exact opSub hq ho hx hy h
+  | mul o x y => exact opMul hq ho hx hy hx4 hy4 ho4 h
+  | mul24 o x => exact opMul24 hq ho hx ho4 hx4 h
+  | add o x y => exact opAdd hq ho hx hy ho4 hx4 hy4 h
+  | sub o x y => exact opSub hq ho hx hy ho4 hx4 hy4 h
 
 theorem ops_ok {b : Addr} {s0 : State} {a c : BitVec 64} {k : Prog isa} {Q : State → Prop} :
     ∀ (ops : List FOp) (qs : List Nat) (v : Nat → Fe) (s : State), opsOk ops qs = true →
@@ -142,9 +155,9 @@ theorem ops_ok {b : Addr} {s0 : State} {a c : BitVec 64} {k : Prog isa} {Q : Sta
       WP isa (opsCode ops k) s Q
   | [], _, _, s, _, h, hk => hk s h
   | op :: ops, qs, v, s, hok, h, hk => by
-    simp only [opsOk, Bool.and_eq_true, decide_eq_true_eq, List.contains_iff_mem] at hok
-    obtain ⟨⟨⟨⟨h1, h3⟩, h4⟩, h5⟩, h6⟩ := hok
-    exact WP.seq (WP.mono (op_ok op h1 h3 h4 h5 h) fun s' h' => ops_ok ops _ _ s' h6 h' hk)
+    simp only [opsOk, Bool.and_eq_true, decide_eq_true_eq, List.contains_iff_mem, beq_iff_eq] at hok
+    obtain ⟨⟨⟨⟨⟨⟨⟨h1, h3⟩, h4⟩, h5⟩, h9⟩, h7⟩, h8⟩, h6⟩ := hok
+    exact WP.seq (WP.mono (op_ok op h1 h3 h4 h5 h9 h7 h8 h) fun s' h' => ops_ok ops _ _ s' h6 h' hk)
 
 /-! ## One iteration -/
 
@@ -152,17 +165,17 @@ theorem ops_ok {b : Addr} {s0 : State} {a c : BitVec 64} {k : Prog isa} {Q : Sta
 def ladOps : List FOp :=
   [.add A X2 Z2, .mul AA A A, .sub B X2 Z2, .mul BB B B, .sub E AA BB, .add C X3 Z3, .sub D X3 Z3,
     .mul DA D A, .mul CB C B, .add X3 DA CB, .mul X3 X3 X3, .sub Z3 DA CB, .mul Z3 Z3 Z3,
-    .mul Z3 X1 Z3, .mul X2 AA BB, .mul Z2 A24 E, .add Z2 AA Z2, .mul Z2 E Z2]
+    .mul Z3 X1 Z3, .mul X2 AA BB, .mul24 Z2 E, .add Z2 AA Z2, .mul Z2 E Z2]
 
 /-- The slots the ladder's state lives in. -/
-def LQ : List Nat := [X1, X2, Z2, X3, Z3, A24]
+def LQ : List Nat := [X1, X2, Z2, X3, Z3]
 
 theorem ladOps_ok : opsOk ladOps LQ = true := by decide
 
-/-- The elements of the ladder's state `st`, and `x1` and `a24`. -/
+/-- The elements of the ladder's state `st`, and `x1`. -/
 def ladV (x1 : Fe) (st : Ladder) (q : Nat) : Fe :=
   if q = X1 then x1 else if q = X2 then st.x2 else if q = Z2 then st.z2 else if q = X3 then st.x3
-  else if q = Z3 then st.z3 else a24
+  else st.z3
 
 theorem cswap_fst (sw : Nat) (x y : Fe) : (Spec.X448.cswap sw x y).1 = sel sw x y := by
   unfold Spec.X448.cswap sel; split <;> rfl
@@ -177,9 +190,9 @@ theorem ladOps_vals (k : Nat) (x1 : Fe) (st : Ladder) (t : Nat) :
   intro q hq
   rw [ladderStep_eq]
   simp only [LQ, List.mem_cons, List.not_mem_nil, or_false] at hq
-  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;>
+  rcases hq with rfl | rfl | rfl | rfl | rfl <;>
     simp only [ladOps, runOps, FOp.out, FOp.val, upd, swapV, ladV, cswap_fst, cswap_snd, X1, X2, Z2, X3,
-      Z3, A, B, C, D, AA, BB, E, DA, CB, A24, Nat.reduceEqDiff, ↓reduceIte]
+      Z3, A, B, C, D, AA, BB, E, DA, CB, Nat.reduceEqDiff, ↓reduceIte]
 
 theorem ofNat_xor {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
     BitVec.ofNat 64 x ^^^ BitVec.ofNat 64 y = BitVec.ofNat 64 (x ^^^ y) := by

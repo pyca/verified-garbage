@@ -37,8 +37,6 @@ open VG.Proof.Curve448.AArch64.Fast (Mb Ib)
 open VG.Proof.X448.AArch64.Base (genEnv temps)
 open VG.Proof.Ed448.AArch64.Window (dblEnv)
 
-local notation "EV" => VG.Proof.X448.AArch64.Weak.E
-
 theorem genEnv_pt (e : Env) :
     VG.Proof.X448.AArch64.Base.pt (genEnv 3 4 5 6 7 8 e) 3 4 5 =
       VG.Proof.X448.AArch64.Base.genPt (VG.Proof.X448.AArch64.Base.pt e 3 4 5)
@@ -55,10 +53,6 @@ structure CKeep (base : Addr) (s t : State) : Prop where
 
 theorem CKeep.scr {base : Addr} {s t : State} (h : CKeep base s t) (hs : Scr s base) : Scr t base :=
   hs.of_keeps h.regs (by decide)
-
-theorem CKeep.trans {base : Addr} {s t u : State} (h : CKeep base s t) (h' : CKeep base t u) :
-    CKeep base s u :=
-  ⟨h.regs.trans h'.regs, h'.sp.trans h.sp, h.mem.trans h'.mem, fun r hr => (h'.v r hr).trans (h.v r hr)⟩
 
 /-- The contract of a call, from the function's own proof: from `ws` (`base`) in `x0` and every
 slot's limbs below `Ib`, and `P` of the memory, `FnPost` with `Q` of the memories. -/

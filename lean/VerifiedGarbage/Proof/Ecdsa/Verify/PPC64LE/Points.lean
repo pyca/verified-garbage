@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Rep
 import VerifiedGarbage.Proof.Weierstrass.Pow
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
+public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Joint
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Bits
 
 /-!
 # ECDSA verification on PPC64LE: `[u]G + [v]Q`
@@ -221,8 +223,7 @@ theorem sum_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K₀ : K
     exact (congrArg₂ Prod.mk (I₁.val 0 (hD 0 (by decide)))
       (congrArg₂ Prod.mk (I₁.val 1 (hD 1 (by decide))) (I₁.val 2 (hD 2 (by decide))))).trans t₁
 
-/-- After `[u]G + [v]Q`: `R` holds the complete addition of points that
-represent `[u]G` and `[v]P`. -/
+/-- After `[u]G + [v]Q`: `R` represents `[u]G + [v]P`. -/
 structure Pts (c : Cfg) (s₀ : State) (base : Addr) (u v : Nat) (P : Point c.C) (s : State) : Prop
     extends Keep c s₀ base s where
   t₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0
@@ -231,9 +232,8 @@ structure Pts (c : Cfg) (s₀ : State) (base : Addr) (u v : Nat) (P : Point c.C)
   rm_lt : sv c base s RM' < c.C.n
   rm : toM c.C.n (2 ^ (64 * c.n)) (sv c base s RM') = Fin.ofNat c.C.n (sigR c s₀)
   rz_lt : sv c base s RZ < c.C.p
-  pt : ∃ X1 Y1 Z1 X2 Y2 Z2 : Fe c.C, Rep c.C X1 Y1 Z1 (mul u (G c.C)) ∧ Rep c.C X2 Y2 Z2 (mul v P) ∧
-    (tmv c.C c.n base s (c.sl RX), tmv c.C c.n base s (c.sl RY), tmv c.C c.n base s (c.sl RZ)) =
-      rcbAdd (Fin.ofNat c.C.p c.C.a) (Fin.ofNat c.C.p (3 * c.C.b)) X1 Y1 Z1 X2 Y2 Z2
+  pt : Rep c.C (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY)) (tmv c.C c.n base s (c.sl RZ))
+    (add (mul u (G c.C)) (mul v P))
 
 /-- What `scalarAt` writes: `K`'s slot (for `vg_<curve>_mul`) or the table
 of bits. -/
@@ -272,7 +272,7 @@ theorem scalarAt_ok (hc : CfgOk c) {s : State} {base : Addr} (hw : WsReg s base)
       ⟨k, O.unch.mono fun w hw => List.mem_append_right _ hw, fun h => ?_, fun _ => b⟩
     rw [hN] at h; exact absurd h (by simp)
 
-theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.PPC64LE.Cfg.points c =
+theorem ladders_eq (c : Cfg) : Impl.Ecdsa.Verify.PPC64LE.Cfg.ladders c =
     .seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.scalarAt c U) (.seq (c.qMul GX GY)
       (.seq (.block (Impl.Ecdsa.Verify.PPC64LE.Cfg.save c)) (.seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.scalarAt c V)
       (.seq (c.qMul PX PY) (Impl.Ecdsa.Verify.PPC64LE.Cfg.sum c))))) := rfl
@@ -280,13 +280,13 @@ theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.PPC64LE.Cfg.points c =
 /-- The slots the multiplications, `save` and the sum write. -/
 abbrev ptsW : List Nat := [RX, RY, RZ, UX, UY, UZ, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP, K, ACC, PT]
 
-/-- `[u]G + [v]Q`, into `R`. -/
-theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} {base : Addr}
+/-- `[u]G + [v]Q`, into `R`, by the two ladders and the sum. -/
+theorem ladders_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} {base : Addr}
     {s : State} (hM : Mid c s₀ base s) {P : Point c.C} (hP : onCurve c.C P = true)
     (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) (tmv c.C c.n base s (c.sl ONEP)) P)
     {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base (sv c base s U) (sv c base s V) P s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.points c) rest) s Q := by
+    WP isa (.seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.ladders c) rest) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hM.ws.nowrap
@@ -319,7 +319,7 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} 
   have tbL : ∀ {gx gy j t : Nat}, j ≠ 0 → t < 64 * c.n → ∀ w ∈ ladWp (ladderAt c gx gy) ++ genX c,
       bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := fun hj ht =>
     apart_append (tbl_apart_ladWp h3 h7 _ _ _ _) (tbl_apart_genX h7 hj ht)
-  rw [points_eq]
+  rw [ladders_eq]
   refine WP.seq ?_
   -- `u` to where the multiplication reads it.
   refine WP.seq (WP.mono (scalarAt_ok hc hM.ws (i := U) (by decide) (by decide)) fun s₁ ⟨k₁, U₁, sk₁, b₁⟩ => ?_)
@@ -438,8 +438,10 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} 
     show toM _ _ (sv c base s₅ _) = toM _ _ (sv c base s₂ _)
     rw [u₅ hi, e]
   refine ⟨K₆, fun t ht => ?_, by rw [fl₆]; exact hM.flag, by rw [rm₆]; exact hM.rm_lt, by rw [rm₆]; exact hM.rm,
-    rz₆, ⟨_, _, _, _, _, _, by rw [Nat.shiftRight_zero] at R₂; exact R₂, by rw [Nat.shiftRight_zero] at R₅; exact R₅,
-      by rw [t₆, ha K₅.fixed, hb K₅.fixed, tU (by decide) ux₃, tU (by decide) uy₃, tU (by decide) uz₃]⟩⟩
+    rz₆, Rep.add hC (hC.onCurve_mul hc.onG _) (hC.onCurve_mul hP _)
+      (by rw [Nat.shiftRight_zero] at R₂; exact R₂) (by rw [Nat.shiftRight_zero] at R₅; exact R₅)
+      (by refine Eq.symm ?_
+          rw [t₆, ha K₅.fixed, hb K₅.fixed, tU (by decide) ux₃, tU (by decide) uy₃, tU (by decide) uz₃])⟩
   rw [tbl_unch U₆ h7 (j := 1) (by decide) ht (apart_append (tbl_apart_slW h7 (by decide) 1 t) (tbl_apart_own h7 1 t)),
     tbl_unch U₅ h7 (j := 1) (by decide) ht (tbL (by decide) ht),
     tbl_unch U₄ h7 (j := 1) (by decide) ht (tbl_apart_scW h7 (by decide) ht),
@@ -447,5 +449,199 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} 
     tbl_unch U₂ h7 (j := 1) (by decide) ht (tbL (by decide) ht),
     tbl_unch U₁ h7 (j := 1) (by decide) ht (tbl_apart_scW h7 (by decide) ht)]
   exact hM.t₁ t ht
+
+/-! ## `[u]G + [v]Q` by one chain of doublings, for at most six words -/
+
+open VG.Proof.Weierstrass.PPC64LE.Joint (JLay jointW roL wL tL dL)
+
+/-- The joint multiplication's slots, for curves of three to six words. -/
+theorem jointLay (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) : JLay (Impl.Ecdsa.Verify.PPC64LE.Cfg.jointCfg c) where
+  lad := ladPtLay hc h3 h6 (gx := GX) (gy := GY) (by decide) (by decide)
+  low := by
+    intro x hx
+    simp only [roL, tL, dL, Impl.Ecdsa.Verify.PPC64LE.Cfg.jointCfg, Cfg.ladderCfg, Cfg.pt, List.mem_append, List.mem_cons,
+      List.not_mem_nil, or_false] at hx
+    rcases hx with ((h | h | h | h | h | h | h | h | h | h | h | h) | h | h | h) | h | h | h <;> subst h <;>
+      exact ⟨sl_below_pt h3 h6 (by decide), sl_al c _⟩
+  ro := by
+    intro x hx y hy
+    simp only [roL, wL, Impl.Ecdsa.Verify.PPC64LE.Cfg.jointCfg, Cfg.ladderCfg, Cfg.pt, List.mem_cons, List.not_mem_nil, or_false] at hx hy
+    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      rcases hy with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact sl_apart c (by decide)
+  tne := ⟨sl_apart c (by decide), sl_apart c (by decide), sl_apart c (by decide)⟩
+  dne := ⟨sl_apart c (by decide), sl_apart c (by decide), sl_apart c (by decide)⟩
+  td := by
+    intro x hx y hy
+    simp only [tL, dL, Impl.Ecdsa.Verify.PPC64LE.Cfg.jointCfg, Cfg.ladderCfg, Cfg.pt, List.mem_cons, List.not_mem_nil, or_false] at hx hy
+    rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl <;> exact sl_apart c (by decide)
+  gq := by
+    refine ⟨⟨sl_apart c (by decide), sl_apart c (by decide), sl_apart c (by decide)⟩, ?_⟩
+    intro x hx y hy
+    simp only [Impl.Ecdsa.Verify.PPC64LE.Cfg.jointCfg, Cfg.ladderCfg, Cfg.pt, List.mem_cons, List.not_mem_nil, or_false] at hx hy
+    rcases hx with rfl | rfl | rfl <;>
+      rcases hy with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact sl_apart c (by decide)
+  bitsV := by
+    show 4096 ≤ bitsAt c.n 3 ∧ bitsAt c.n 3 + 8 * c.C.len ≤ 8192
+    rw [bitsAt_eq]; have := hc.len_hi; have := hc.n10; omega_arith
+
+theorem joint_eq (c : Cfg) : Impl.Ecdsa.Verify.PPC64LE.Cfg.joint c =
+    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl V) (bitsAt c.n 3) (8 * c.n))
+      ((Impl.Ecdsa.Verify.PPC64LE.Cfg.jointCfg c).joint c.SP)) := rfl
+
+/-- The slots the joint multiplication writes. -/
+abbrev jointIx : List Nat := [RX, RY, RZ, TX, TY, TZ, DX, DY, DZ, K, D, E]
+
+theorem jointW_eq (c : Cfg) : jointW (Impl.Ecdsa.Verify.PPC64LE.Cfg.jointCfg c) =
+    slW c [RX, RY, RZ, TX, TY, TZ, DX, DY, DZ] ++ [(Impl.Weierstrass.Point.oAt c.n, 4096 - Impl.Weierstrass.Point.oAt c.n)] ++
+      slW c [K, D, E] := rfl
+
+/-- A slot the joint multiplication does not write, apart from what it writes. -/
+theorem apart_jointW (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) {i : Nat} (hi : i < 45) (hl : i ∉ jointIx) :
+    ∀ w ∈ jointW (Impl.Ecdsa.Verify.PPC64LE.Cfg.jointCfg c), c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+  rw [jointW_eq]
+  refine apart_append (apart_append (apart_slW (nmem_of hl (by decide))) fun w hw => ?_)
+    (apart_slW (nmem_of hl (by decide)))
+  rw [List.mem_singleton.mp hw]
+  exact Or.inl (sl_below_pt h3 h6 hi)
+
+/-- The tables of bits are apart from what the joint multiplication writes. -/
+theorem tbl_apart_jointW (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (j t : Nat) :
+    ∀ w ∈ jointW (Impl.Ecdsa.Verify.PPC64LE.Cfg.jointCfg c), bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
+  have hc7 : c.n < 10 := by omega
+  rw [jointW_eq]
+  refine apart_append (apart_append (tbl_apart_slW hc7 (by decide) j t) fun w hw => ?_)
+    (tbl_apart_slW hc7 (by decide) j t)
+  · rw [List.mem_singleton.mp hw]
+    obtain ⟨l1, l2, l3, l4, l5, l6, l7, l8, -, -⟩ := VG.Proof.Weierstrass.PPC64LE.Point.lay_nums h3 h6
+    rw [bitsAt_eq]
+    exact Or.inr (by dsimp only; omega_arith)
+
+theorem fixedOk_jointW (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) : FixedOk c (jointW (Impl.Ecdsa.Verify.PPC64LE.Cfg.jointCfg c)) := by
+  rw [jointW_eq]
+  refine ((fixedOk_slW (by decide)).append fun w hw => ?_).append (fixedOk_slW (by decide))
+  rw [List.mem_singleton.mp hw]
+  exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_pt h3 h6 (i := 12) (by decide)))
+
+theorem jointW_le (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) : ∀ w ∈ jointW (Impl.Ecdsa.Verify.PPC64LE.Cfg.jointCfg c), w.1 + w.2 ≤ size := by
+  rw [jointW_eq]
+  refine le_append (le_append (slW_le (by omega) (by decide)) fun w hw => ?_) (slW_le (by omega) (by decide))
+  rw [List.mem_singleton.mp hw]
+  obtain ⟨l1, l2, l3, l4, l5, l6, l7, l8, -, -⟩ := VG.Proof.Weierstrass.PPC64LE.Point.lay_nums h3 h6
+  show _ ≤ 8192
+  dsimp only; omega
+
+/-- `[u]G + [v]Q`, into `R`, by one chain of doublings: the tables of the
+bits of `u` and `v`, then `Joint.joint_ok`. -/
+theorem jointPts_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C) {s₀ : State} {base : Addr}
+    {s : State} (hM : Mid c s₀ base s) {P : Point c.C} (hP : onCurve c.C P = true)
+    (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) (tmv c.C c.n base s (c.sl ONEP)) P)
+    {rest : Prog isa} {Q : State → Prop}
+    (h : ∀ s', Pts c s₀ base (sv c base s U) (sv c base s V) P s' → WP isa rest s' Q) :
+    WP isa (.seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.joint c) rest) s Q := by
+  have h0 := hc.n0
+  have h7 := hc.n10
+  have hn := hM.ws.nowrap
+  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  have hp3 := hc.p_ge
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
+  have hlen := hc.len_hi
+  rw [joint_eq]
+  refine WP.seq ?_
+  -- The bits of `u`, then of `v`.
+  refine WP.seq (WP.mono (tbl_bits_ok hc hM.ws (i := U) (j := 0) (by decide) (by decide))
+    fun s₁ ⟨b₁, k₁, O₁⟩ => ?_)
+  have K₁ := hM.toKeep.step h7 (k₁.rk (rs' := bitsClob)) (hU := O₁.unch) (hW := fixedOk_tbl h7 0)
+    (hWs := fun w hw => by rw [List.mem_singleton.mp hw]; exact bitsAt_le c h7 (by decide))
+  have hb3 : bitsAt c.n 3 + 64 * c.n ≤ size := by rw [bitsAt_eq]; show _ ≤ 8192; omega_arith
+  have hsV := sl_le c h7 (i := V) (by decide)
+  refine WP.seq (WP.mono (bits_ok K₁.ws.ws K₁.ws.at3 (size := size) (src := c.sl V) (dst := bitsAt c.n 3) h0
+    (by show _ ≤ 8192; omega) hb3 (Or.inl (sl_below_bits c h7 (by decide) 3 0))) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_)
+  have K₂ := K₁.step h7 (k₂.rk (rs' := bitsClob)) (hU := O₂.unch) (hW := fixedOk_tbl h7 3)
+    (hWs := fun w hw => by rw [List.mem_singleton.mp hw]; exact hb3)
+  have v₁ : ∀ {i}, i < 45 → sv c base s₁ i = sv c base s i := fun hi => sv_unch O₁.unch h7 hn hi (apart_tbl h7 hi 0)
+  have v₂ : ∀ {i}, i < 45 → sv c base s₂ i = sv c base s i := fun hi =>
+    (sv_unch O₂.unch h7 hn hi (apart_tbl h7 hi 3)).trans (v₁ hi)
+  have F := K₂.fixed
+  have one : wordsVal s₂.mem base (c.sl ONEP) c.n = c.mont 1 := by
+    rw [F.onep, Cfg.mont, Cfg.R, Nat.one_mul]
+  have tone : toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 := by
+    rw [Cfg.mont, Cfg.R, Nat.one_mul]; exact toM_one hpR
+  -- `[u]G + [v]P`.
+  refine WP.mono (Joint.joint_ok (J := Impl.Ecdsa.Verify.PPC64LE.Cfg.jointCfg c) (G := G c.C) (Q := P) (u := sv c base s U)
+    (v := sv c base s V) (S := c.SP) hc.fpk hc.fpm (modP hc) hc.p_odd hC hc.onG hP (jointLay hc h3 h6) K₂.ws
+    (fun x hx => ?_) ⟨?_, ?_⟩ ?_ ?_ ?_ (fun i hi => ?_) (fun i hi => ?_) (Nat.lt_trans hM.u_lt hc.n_enc)
+    (Nat.lt_trans hM.v_lt hc.n_enc) ⟨hmont 1, tone⟩) fun s₃ ⟨k₃, U₃, l₃, r₃⟩ => h s₃ ?_
+  · simp only [Impl.Ecdsa.Verify.PPC64LE.Cfg.jointCfg, Cfg.ladderCfg, Cfg.pt, Cfg.rcbSlots, List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact lt_of_eq_of_lt F.ap (hmont _)
+    · exact lt_of_eq_of_lt F.b3p (hmont _)
+    · exact lt_of_eq_of_lt F.gx (hmont _)
+    · exact lt_of_eq_of_lt F.gy (hmont _)
+    · exact lt_of_eq_of_lt one (hmont _)
+    · exact lt_of_eq_of_lt (v₂ (by decide)) hM.px_lt
+    · exact lt_of_eq_of_lt (v₂ (by decide)) hM.py_lt
+    · exact lt_of_eq_of_lt one (hmont _)
+    · exact lt_of_eq_of_lt F.zero (by omega_arith)
+    · exact lt_of_eq_of_lt one (hmont _)
+    · exact lt_of_eq_of_lt F.zero (by omega_arith)
+  · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₂.mem base (c.sl AP) c.n) = _; rw [F.ap]; exact toM_cmont hc _
+  · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₂.mem base (c.sl B3P) c.n) = _; rw [F.b3p]; exact toM_cmont hc _
+  · show Rep c.C (toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₂.mem base (c.sl GX) c.n)) (toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₂.mem base (c.sl GY) c.n))
+      (toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₂.mem base (c.sl ONEP) c.n)) (G c.C)
+    rw [F.gx, F.gy, one, toM_cmont hc, toM_cmont hc, tone]
+    exact rep_affine' hC _ _
+  · show Rep c.C (toM c.C.p (2 ^ (64 * c.n)) (sv c base s₂ PX)) (toM c.C.p (2 ^ (64 * c.n)) (sv c base s₂ PY))
+      (toM c.C.p (2 ^ (64 * c.n)) (sv c base s₂ ONEP)) P
+    rw [v₂ (by decide), v₂ (by decide), v₂ (by decide)]
+    exact hQ
+  · show Rep c.C (toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₂.mem base (c.sl ZERO) c.n)) (toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₂.mem base (c.sl ONEP) c.n))
+      (toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₂.mem base (c.sl ZERO) c.n)) _
+    rw [F.zero, one, tone, toM_zero]
+    exact rep_infinity' hC
+  · have hi' : i < 64 * c.n := by
+      have : i < 8 * c.C.len := hi
+      omega_arith
+    show s₂.mem (off base (bitsAt c.n 0 + i)) = _
+    rw [tbl_unch O₂.unch h7 (j := 0) (by decide) hi' (tbl_apart_tbl (by decide) hi')]
+    exact b₁ i hi'
+  · have hi' : i < 64 * c.n := by
+      have : i < 8 * c.C.len := hi
+      omega_arith
+    show s₂.mem (off base (bitsAt c.n 3 + i)) = _
+    rw [b₂ i hi']
+    exact congrArg (fun x => if Nat.testBit x i = true then (1 : BitVec 8) else 0) (v₁ (by decide))
+  -- What `Pts` needs.
+  have K₃ := K₂.step h7 k₃ (hU := U₃) (hW := fixedOk_jointW h3 h6) (hWs := jointW_le h3 h6)
+  have W₃ : ∀ {i}, i < 45 → i ∉ jointIx → sv c base s₃ i = sv c base s i := fun hi hl =>
+    (sv_unch U₃ h7 hn hi (apart_jointW h3 h6 hi hl)).trans (v₂ hi)
+  have hFl := sl_le c h7 (i := FLAG) (by decide)
+  have flagOk : ∀ {W : List (Nat × Nat)} {m m' : Mem}, Unch base W m m' →
+      (∀ w ∈ W, c.sl FLAG + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG) →
+      word m' base (c.sl FLAG) = word m base (c.sl FLAG) := fun U ap =>
+    U.word (fun w hw => (ap w hw).imp (fun h => by omega_arith) id) (by omega_arith)
+  have fl₃ : flagW c base s₃ = flagW c base s := by
+    simp only [flagW]
+    rw [flagOk U₃ (apart_jointW h3 h6 (by decide) (by decide)), flagOk O₂.unch (apart_tbl h7 (by decide) 3),
+      flagOk O₁.unch (apart_tbl h7 (by decide) 0)]
+  have rm₃ : sv c base s₃ RM' = sv c base s RM' := W₃ (by decide) (by decide)
+  refine ⟨K₃, fun t ht => ?_, by rw [fl₃]; exact hM.flag, by rw [rm₃]; exact hM.rm_lt, by rw [rm₃]; exact hM.rm,
+    l₃ _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))), r₃⟩
+  rw [tbl_unch U₃ h7 (j := 1) (by decide) ht (tbl_apart_jointW h3 h6 1 t),
+    tbl_unch O₂.unch h7 (j := 1) (by decide) ht (tbl_apart_tbl (by decide) ht),
+    tbl_unch O₁.unch h7 (j := 1) (by decide) ht (tbl_apart_tbl (by decide) ht)]
+  exact hM.t₁ t ht
+
+/-- `[u]G + [v]Q`, into `R`: by one chain of doublings for at most six
+words, else by the two ladders and the sum. -/
+theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} {base : Addr}
+    {s : State} (hM : Mid c s₀ base s) {P : Point c.C} (hP : onCurve c.C P = true)
+    (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) (tmv c.C c.n base s (c.sl ONEP)) P)
+    {rest : Prog isa} {Q : State → Prop}
+    (h : ∀ s', Pts c s₀ base (sv c base s U) (sv c base s V) P s' → WP isa rest s' Q) :
+    WP isa (.seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.points c) rest) s Q := by
+  unfold Impl.Ecdsa.Verify.PPC64LE.Cfg.points
+  by_cases h6 : c.n ≤ 6
+  · simp only [h6, ↓reduceIte]; exact jointPts_ok hc h3 h6 hC hM hP hQ h
+  · simp only [h6, ↓reduceIte]; exact ladders_ok hc h3 hC hM hP hQ h
 
 end VG.Proof.Ecdsa.Verify.PPC64LE

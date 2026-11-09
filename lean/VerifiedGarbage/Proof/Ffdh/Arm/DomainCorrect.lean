@@ -49,17 +49,4 @@ theorem domain_data (s : State) (pre : (Spec.Ffdh.checkDomainContract abi 128).p
         · contradiction }
   exact ⟨p, rfl, rfl, rfl, rfl, rfl, domain_input s original rfl rfl rfl rfl rfl⟩
 
-theorem domain_correct (s : State) (pre : (Spec.Ffdh.checkDomainContract abi 128).pre s) :
-    ∃ tr t, Exec isa VG.Impl.Ffdh.Arm.Domain.CheckDomain.code s tr t ∧
-      abiPreserved s t ∧ (Spec.Ffdh.checkDomainContract abi 128).post s t := by
-  obtain ⟨p, _, domain, count, _, bytes, input⟩ := domain_data s pre
-  obtain ⟨tr, t, run, preserved, result⟩ := domainFn_ok s input
-  refine ⟨tr, t, run, preserved, ?_⟩
-  sig_post [Spec.Ffdh.checkDomainContract, Spec.Ffdh.checkDomainSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
-  rw [BitVec.setWidth_append_eq_right, domain, count]
-  change (t.gpr .r0).toNat = if Spec.Ffdh.domainValid p.k
-    (Spec.Rsa.bytesAt s.mem (State.addr p.domain) (s.gpr .r1).toNat) then 1 else 0
-  rw [bytes, result, checkedDomainFlag_spec]
-  split <;> rfl
-
 end VG.Proof.Ffdh.Arm

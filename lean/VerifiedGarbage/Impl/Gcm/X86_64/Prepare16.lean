@@ -3,9 +3,10 @@ module
 public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 
 /-!
-# Preparing a key context's first sixteen powers in place, on 256-bit registers
+# Preparing a key context's powers in place, on 256-bit registers
 
-`vg_aes_gcm_prepare16`: `H'` from the hash subkey at `ctx + 240`, as the
+The 16 powers `vg_aes_gcm_prepare` computes for the backends with
+VPCLMULQDQ, whose loops read no other: `H'` from the hash subkey at `ctx + 240`, as the
 stitched loops compute it, then `H'²`–`H'¹⁶`, prepared and paired as the
 context holds them, stored as pairs 0–7 as they are computed (`plan`). The
 powers each round multiplies by, `H'²`, `H'⁴` and `H'⁸` in both lanes, are

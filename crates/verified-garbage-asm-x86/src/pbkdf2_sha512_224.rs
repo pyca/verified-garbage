@@ -18,7 +18,7 @@
 /// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
 /// * None of `password`, `salt` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 3520 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha512_224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkjPL//4uEJHgNAACJRCQEi4QkfA0AAIlEJAiLhCSADQAAiUQkDIuEJIQNAACJRCQQi4QkiA0AAIlEJBSLhCSMDQAAiUQkGIuEJJANAACJRCQcieCDwCSJRCQgi0QkIImYUAcAAImwVAcAAIm4WAcAAImoXAcAAInFi0wkCIH5gQAAAA=="
 jae 20f

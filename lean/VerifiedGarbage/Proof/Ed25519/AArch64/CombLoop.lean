@@ -43,9 +43,6 @@ structure CombKeep (base : Addr) (s t : State) : Prop where
   sp : t.sp = s.sp
   mem : Outside base 64 704 s.mem t.mem
 
-theorem CombKeep.refl (base : Addr) (s : State) : CombKeep base s s :=
-  ⟨fun _ _ _ _ => rfl, rfl, rfl, rfl, Outside.refl _ _ _ _⟩
-
 theorem CombKeep.trans {base : Addr} {s t u : State} (h : CombKeep base s t)
     (k : CombKeep base t u) : CombKeep base s u :=
   ⟨fun r a b c => (k.gpr r a b c).trans (h.gpr r a b c), k.rd.trans h.rd, k.wr.trans h.wr,
@@ -72,19 +69,6 @@ theorem CombKeep.bit {base : Addr} {s t : State} (h : CombKeep base s t) {q : Na
 theorem CombKeep.powers {base : Addr} {s t : State} (h : CombKeep base s t) :
     PowersKeep base 56 968 s t :=
   ⟨fun r a b c => h.gpr r a b c, h.rd, h.wr, h.sp, TableFrame.workspace h.mem⟩
-
-/-- What a field program whose results are in slots 0–15 leaves: every slot from 16 on. -/
-theorem outside_of_unwritten {ops : List FieldOp} {base : Addr} {m m' : Mem}
-    (h : ∀ x, Point64.Unwritten ops base x → m' x = m x) (hd : ∀ op ∈ ops, (fieldDest op).val < 16) :
-    Outside base 64 512 m m' := fun x hx => h x fun op hop => by
-  have := hd op hop
-  simp only [offset]
-  omega
-
-theorem env_high {base : Addr} {m m' : Mem} (h : Outside base 64 512 m m') (i : Slot) (hi : 16 ≤ i.val) :
-    env m' base i = env m base i := by
-  simp only [env, F]
-  rw [h.fe (by simp only [offset]; omega) (by simp only [offset]; omega)]
 
 /-! ## The negations -/
 

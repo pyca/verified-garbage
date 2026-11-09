@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
 /-!
 # ML-DSA on AArch64: `vg_mldsa_expand_mask_poly`
 
-`expandMask(seed = x0, gamma1 = w1, a = x2, scratch = x3)` (see
+`expandMaskWith c (seed = x0, gamma1 = w1, a = x2, scratch = x3)` (see
 `Common.lean` for the layout) squeezes 640 bytes of SHAKE256 of the 66 bytes
 of the seed (5 blocks, which also hold the 576 bytes that `γ₁ = 2¹⁷` needs),
 and unpacks the first `32c` of them, `c = 18` or `20` (`emLoop c`, chosen by
@@ -63,7 +63,5 @@ def expandMaskTailWith (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
 
 def expandMaskWith (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
   .seq (.block (pro .x3 .x2 (.addImm .w .x27 .x1 0) (.movz .x .x4 66 0))) (expandMaskTailWith c)
-
-def expandMask := expandMaskWith .scalar
 
 end VG.Impl.MlDsa.AArch64.Sample

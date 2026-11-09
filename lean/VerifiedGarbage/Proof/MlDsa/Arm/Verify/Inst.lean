@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Top
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Lay
 public import VerifiedGarbage.Impl.MlDsa.Arm.Verify.Inst
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Hint
 import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
@@ -17,8 +17,8 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackCT
 # ML-DSA verification on 32-bit ARM, with this library's primitives
 
 The ARM implementations of the primitives (`prims`) are verified with at most
-28 bytes of stack, and their frames use no more (`prims_ok`), so verification
-with them is verified with 36 (`verify44_verified`, …).
+28 bytes of stack, and their frames use no more (`prims_ok`), so the kernel
+with them is verified with 36.
 -/
 
 @[expose] public section
@@ -42,17 +42,5 @@ theorem prims_ok : VPrimsOk prims 28 where
   unpackT1 := ⟨⟨0, by decide, Pack.unpackT1_verified⟩, by decide +kernel⟩
   hintUnpack := ⟨⟨16, by decide, Pack.Hint.hintBitUnpack_verified⟩, by decide +kernel⟩
   normLt := ⟨⟨4, by decide, Round.NormLt.verified⟩, by decide +kernel⟩
-
-theorem verify44_verified :
-    Verified Arm.target verify44 (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa44 Arm.abi 36) :=
-  verify_verified prims_ok _ (.inl rfl)
-
-theorem verify65_verified :
-    Verified Arm.target verify65 (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa65 Arm.abi 36) :=
-  verify_verified prims_ok _ (.inr (.inl rfl))
-
-theorem verify87_verified :
-    Verified Arm.target verify87 (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa87 Arm.abi 36) :=
-  verify_verified prims_ok _ (.inr (.inr rfl))
 
 end VG.Proof.MlDsa.Arm.Verify

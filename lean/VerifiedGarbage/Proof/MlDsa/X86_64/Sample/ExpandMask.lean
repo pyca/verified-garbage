@@ -158,9 +158,6 @@ theorem loop_ok {c : Nat} (hc : emOk c) {s : State} (h : J6 136 640 (spOf σ) σ
       fun i hi => absurd hi (by omega)⟩ hcx
   rw [hI'.rcx, hI.rcx, ofNat64_pred (by omega) (by omega)]; rfl
 
-omit hp in
-theorem sx17 : BitVec.signExtend 64 (0x20000 : BitVec 32) = BitVec.ofNat 64 0x20000 := by decide
-
 /-- The branch on `γ₁`, and the loop for it. -/
 theorem sel_ok {s : State} (h : J6 136 640 (spOf σ) σ s) :
     WP isa (.seq (.block [.alu32 .cmp .r12 (.imm 0x20000)]) (.ite .e (emLoop 18) (emLoop 20))) s

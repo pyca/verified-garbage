@@ -137,9 +137,6 @@ theorem TblL.frame {W : Addr} {l : Block} {len : Nat} {m m' : Mem} {rs : List Re
   let ⟨M, T, hM⟩ := T
   ⟨M, T.frame h hd, hM⟩
 
-theorem Tbl.mono {W : Addr} {l : Block} {M M' : Nat} {m : Mem} (T : Tbl W l M m) (h : M' ≤ M) : Tbl W l M' m :=
-  ⟨by have := T.lt; omega_arith, fun j hj => T.val j (by omega_arith)⟩
-
 /-- The table misses the rest of `W`. -/
 theorem Lay.wT_w {K W SP : Addr} (L : Lay K W SP) {a k : Nat} (h : a + k ≤ 2560) :
     (wT W).Disjoint ⟨W + BitVec.ofNat 64 a, k⟩ :=

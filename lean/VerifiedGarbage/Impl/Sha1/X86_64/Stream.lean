@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sha1.X86_64
 public import VerifiedGarbage.Impl.Sha1.X86_64.ShaNi
+public import VerifiedGarbage.Impl.Sha1.X86_64.AvxBmi
 public import VerifiedGarbage.Impl.MdStream.X86_64
 
 /-!
@@ -20,7 +21,8 @@ The streaming state (84 bytes at `state`) is the hash value followed by a
 
 `update` and `finalize` are the generic streaming code of
 `Impl/MdStream/X86_64.lean`. They take the compression function they call (a
-`Callee`, e.g. `vg_sha1_compress` or `vg_sha1_compress_shani`), and are
+`Callee`, e.g. `vg_sha1_compress`, `vg_sha1_compress_shani` or
+`vg_sha1_compress_avx_bmi`), and are
 emitted once for each implementation
 (`Generic/MdHash/X86_64/Stream.lean`). It is called with
 `scratch[0..112)` as its scratch space; our caller's callee-saved registers
@@ -43,6 +45,7 @@ structure Callee where
 
 def Callee.scalar : Callee := ⟨"vg_sha1_compress", compress⟩
 def Callee.shani : Callee := ⟨"vg_sha1_compress_shani", ShaNi.compress⟩
+def Callee.avxBmi : Callee := ⟨"vg_sha1_compress_avx_bmi", AvxBmi.compress⟩
 
 def init : Prog isa :=
   .block ((List.range 5).flatMap fun k =>

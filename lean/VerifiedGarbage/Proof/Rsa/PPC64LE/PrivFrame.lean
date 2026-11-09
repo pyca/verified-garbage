@@ -31,8 +31,6 @@ open VG.Proof.Bignum.PPC64LE (Keep)
 /-- The frame's local variable space, which its push makes writable. -/
 abbrev fr (s : State) : Region := ⟨fb s + BitVec.ofNat 64 32, frameBytes - 32⟩
 
-theorem frameR_eq (s : State) : frameR frameBytes s = fr s := rfl
-
 theorem fb_toNat {s : State} (h : frameBytes ≤ s.sp.toNat) : (fb s).toNat + frameBytes = s.sp.toNat := by
   simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega
 

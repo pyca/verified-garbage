@@ -81,9 +81,6 @@ theorem Masks.frame' {s s' : State} {rs : List Region} (h : Masks s) (hsb : s'.g
 theorem masksR_sub (s : State) : Region.Sub (masksR s) (scratchR s) :=
   Offset.sub_base _ (by unfold kSlot scratchSlots; omega)
 
-theorem masksR_workR (s : State) : Region.Disjoint (masksR s) (workR s) :=
-  Offset.disjoint_base _ (by unfold kSlot; omega) (by unfold kSlot; omega)
-
 theorem room_ok_gCfg {s : State} (h : Room s) (hm : Masks s) : Ok gCfg s where
   slotIn k hk := h.wr (Offset.contains_base _ (by simp [gCfg, scratchSlots] at hk ⊢; omega)
     (by simp [gCfg] at hk; omega))
@@ -213,15 +210,6 @@ theorem exec_dec (s : State) (r : Reg) :
 theorem runBlock_trans {a b : List Instr} {s s' s'' : State} (h1 : runBlock isa a s = some s')
     (h2 : runBlock isa b s' = some s'') : runBlock isa (a ++ b) s = some s'' := by
   rw [runBlock_append, h1, Option.bind_some, h2]
-
-theorem runBlock_sp {is : List Instr} {s s' : State} (h : runBlock isa is s = some s') : s'.sp = s.sp := by
-  induction is generalizing s with
-  | nil => rw [runBlock_nil] at h; cases h; rfl
-  | cons i is ih =>
-    rw [runBlock_cons] at h
-    cases he : exec i s with
-    | none => rw [he] at h; cases h
-    | some s₁ => rw [he, runStep_some] at h; exact (ih h).trans (exec_sp he)
 
 /-- The registers a round keeps or only steps. -/
 def roundKeep : List Reg := [.ra, .a0, .a1, .a2, .a3, .a4, .a5]

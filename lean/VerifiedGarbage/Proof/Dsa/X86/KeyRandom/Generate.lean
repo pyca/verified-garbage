@@ -85,12 +85,6 @@ theorem sampledWith_ok {I : State → Mem → Prop} (F : DeriveInvoke I) (stable
     · exact savedW.of_slots fun e he he' => by
         rw [mf, slot_write_ne _ _ _ (by unfold oStatus; omega) (by omega) (by unfold oStatus; omega)]
 
-theorem sampled_ok (F : DeriveFn) {s₀ t : State} (A : KeyABI s₀) (hc : checked s₀ = true)
-    (O : SampleOut s₀ 0 (draw s₀) t) (saved : Saved s₀ t.mem)
-    (eax : t.gpr .eax = BitVec.ofNat 32 (VG.Proof.Dsa.Random.sampleStatus (draw s₀))) :
-    WP isa (sampled F.name F.code) t (Fin s₀) :=
-  sampledWith_ok F.invoke (fun _ _ _ => trivial) A hc O saved trivial eax
-
 end VG.Proof.Dsa.X86.KeyRandom
 end
 
@@ -131,10 +125,5 @@ theorem generateWith_ok {I : State → Mem → Prop} (F : DeriveInvoke I) (stabl
   have Iv : I s₀ v.mem := by rw [fv.mem]; exact stable ou (by decide) invariant
   exact sampledWith_ok F stable A hc O (savedV.of_slots fun d _ hd => outs_low ow (by decide) hd (by omega))
     (stable ow (by decide) Iv) eax
-
-theorem generate_ok (F : DeriveFn) {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t)
-    (hc : checked s₀ = true) (saved : Saved s₀ t.mem) (used : slot t.mem (rBase s₀) oUsed = 0) :
-    WP isa (generate F.name F.code) t (Fin s₀) :=
-  generateWith_ok F.invoke (fun _ _ _ => trivial) A h hc saved used trivial
 
 end VG.Proof.Dsa.X86.KeyRandom

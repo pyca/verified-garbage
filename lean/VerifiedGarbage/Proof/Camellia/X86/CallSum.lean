@@ -41,7 +41,7 @@ def τCrypt : VG.X86.Taint.T :=
     wbases := [(0, 4, 3)], argLen := 28, argBases := [(16, 1), (12, 2), (24, 3)], stk := [some 12], room := 16 }
 
 taint_summary cryptCallSum : VG.X86.taint τCrypt
-  (.call (Spec.Camellia.Prepared.cryptApi Impl.Camellia.X86.layout).name Impl.Camellia.X86.cryptPrepared)
+  (.call "vg_camellia_crypt_prepared" Impl.Camellia.X86.cryptPrepared)
 
 /-- What ECB has public at its calls of `vg_camellia_crypt_prepared`. -/
 def τEcbCall : VG.X86.Taint.T :=
@@ -50,6 +50,6 @@ def τEcbCall : VG.X86.Taint.T :=
     wbases := [(0, 4, 2)], argLen := 24, argBases := [(12, 1), (20, 2)], stk := [some 12], room := 16 }
 
 taint_summary ecbCallSum : VG.X86.taint τEcbCall
-  (.call (Spec.Camellia.Prepared.cryptApi Impl.Camellia.X86.layout).name Impl.Camellia.X86.cryptPrepared)
+  (.call "vg_camellia_crypt_prepared" Impl.Camellia.X86.cryptPrepared)
 
 end VG.Proof.Camellia.X86

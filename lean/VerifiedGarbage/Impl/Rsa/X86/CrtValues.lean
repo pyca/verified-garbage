@@ -39,14 +39,6 @@ def entry : List Instr :=
 def inputArgs (i : Nat) : List Instr :=
   [.mov .esi (.mem (PublicFn.argument i)), .mov .ecx (.mem (PublicFn.argument (i + 1)))]
 
-def load (n arg j : Nat) : Prog isa :=
-  .seq (.block (inputArgs arg)) (loadBE n (slot (2 * n) j))
-
-def store (n arg j : Nat) : Prog isa := seqs [
-  sel (2 * n) j aZero j sMask,
-  .block [.mov .ebx (.mem (PublicFn.argument arg)), .mov .ecx (.mem (PublicFn.argument (arg + 1)))],
-  storeBE (slot (2 * n) j)]
-
 def clear (arg : Nat) : Prog isa :=
   .seq (.block [.mov .esi (.mem (PublicFn.argument arg)),
     .mov .ecx (.mem (PublicFn.argument (arg + 1))), .mov .eax (.imm 0)])

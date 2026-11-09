@@ -54,7 +54,7 @@ theorem keygen_satisfiable (v : Backend) :
 
 theorem keygen_verified (v : Backend) :
     Verified target (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Generate.checkParameters v.sq v.mul)
-        (Generate.deriveKey v.sq v.mul))
+        (Generate.deriveChecked v.sq v.mul))
       (Spec.Dsa.generateKeyContract abi (v.stack + 256)) :=
   ⟨keygen_correct v, keygen_constantTime v, keygen_satisfiable v⟩
 

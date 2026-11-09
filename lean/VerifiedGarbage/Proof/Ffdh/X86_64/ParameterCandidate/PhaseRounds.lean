@@ -18,36 +18,33 @@ open VG.Impl.Ffdh.X86_64.ParameterCandidate VG.Impl.Bignum.X86_64.Public
 open VG.Proof.MlKem.X86_64 VG.Proof.MillerRabin.X86_64
 open VG.Proof.Ffdh.ParameterCandidate (checkWitnesses)
 
-def PhaseOutcome (p : CandidateP) (used consumed : Nat) (q : Bool) (m : Mem) : Prop :=
-  match checkWitnesses (p.phaseValue q) (Spec.Ffdh.primeChecks (p.phaseBits q)) (p.rand.drop used) with
+def PhaseOutcome (p : CandidateP) (used consumed : Nat) (q : Bool) (c : Checks) (m : Mem) : Prop :=
+  match checkWitnesses (p.phaseValue q) (p.phaseChecks q c) (p.rand.drop used) with
   | none => word m p.B (8 * oStatus) = 0
   | some (pass, rest) => word m p.B (8 * oStatus) = BitVec.ofNat 64 (if pass then 1 else 2) ∧
       rest = p.rand.drop (used + consumed)
 
-theorem PhaseOutcome.congr {p : CandidateP} {used consumed : Nat} {q : Bool} {m m' : Mem}
-    (h : PhaseOutcome p used consumed q m)
+theorem PhaseOutcome.congr {p : CandidateP} {used consumed : Nat} {q : Bool} {c : Checks} {m m' : Mem}
+    (h : PhaseOutcome p used consumed q c m)
     (hs : word m' p.B (8 * oStatus) = word m p.B (8 * oStatus)) :
-    PhaseOutcome p used consumed q m' := by
+    PhaseOutcome p used consumed q c m' := by
   unfold PhaseOutcome at *
   simpa only [hs] using h
 
-def PhaseRoundsPost (p : CandidateP) (used : Nat) (q : Bool) (s t : State) : Prop :=
+def PhaseRoundsPost (p : CandidateP) (used : Nat) (q : Bool) (c : Checks) (s t : State) : Prop :=
   ∃ consumed, consumed ≤ (p.rand.drop used).length ∧ CandidateTape p (used + consumed) t ∧
     t.gpr .rdi = off p.B 256 ∧ word t.mem (off p.B 256) (8 * VG.Impl.Rsa.X86_64.Crt.sLink) = p.B ∧
-    PhaseOutcome p used consumed q t.mem ∧
+    PhaseOutcome p used consumed q c t.mem ∧
     CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem ∧ Keep mmRegs s t
 
 theorem rounds_state_ok (M : Mont) (K : Kernel)
-    {p : CandidateP} {used : Nat} {q : Bool} {s : State} {mi : BitVec 64}
-    (h : CandidateTape p used s) (hp : PhaseHeader p q s) (ho : p.phaseValue q % 2 = 1)
+    {p : CandidateP} {used : Nat} {q : Bool} {c : Checks} {s : State} {mi : BitVec 64}
+    (h : CandidateTape p used s) (hp : PhaseHeader p q c s) (ho : p.phaseValue q % 2 = 1)
     (hr : ModulusReady s (off p.B 256) (p.Z - 256) (p.phaseWords q) mi (p.phaseValue q)) :
-    WP isa (rounds M.mm K.run) s (PhaseRoundsPost p used q s) := by
+    WP isa (rounds M.mm K.run) s (PhaseRoundsPost p used q c s) := by
   let wp := h.base.witnessParams q mi ho
   have hdraw : DrawState wp (off p.rp used) used (p.rand.drop used) s := h.drawState hp ho hr
-  have hchecks : 0 < Spec.Ffdh.primeChecks (p.phaseBits q) ∧
-      Spec.Ffdh.primeChecks (p.phaseBits q) < 2 ^ 31 := by
-    unfold Spec.Ffdh.primeChecks
-    split <;> decide
+  have hchecks : 0 < p.phaseChecks q c ∧ p.phaseChecks q c < 2 ^ 31 := checksCount_pos c _
   refine WP.mono (rounds_ok M K hdraw (h.roundRoom ho) hp.checks hchecks.1 hchecks.2)
     fun t ⟨n, hn, ht, hresult, hs, hf, kt⟩ => ?_
   have hfr : CandidateFrame p s.mem t.mem := by
@@ -71,11 +68,11 @@ theorem rounds_state_ok (M : Mont) (K : Kernel)
       have hx : word t.mem p.B (8 * oRandLeft) = BitVec.ofNat 64 ((p.rand.drop used).drop n).length := ht.left
       simpa only [List.length_drop, Nat.sub_sub] using hx
   refine ⟨n, hn, htape, ht.ready.good.rdi, ht.link, ?_, hsave, hfr, kt⟩
-  change (match checkWitnesses (p.phaseValue q) (Spec.Ffdh.primeChecks (p.phaseBits q)) (p.rand.drop used) with
+  change (match checkWitnesses (p.phaseValue q) (p.phaseChecks q c) (p.rand.drop used) with
       | none => word t.mem p.B (8 * oStatus) = 0
       | some (pass, rest) => word t.mem p.B (8 * oStatus) = BitVec.ofNat 64 (if pass then 1 else 2) ∧
           rest = p.rand.drop (used + n))
-  cases he : checkWitnesses (p.phaseValue q) (Spec.Ffdh.primeChecks (p.phaseBits q)) (p.rand.drop used) with
+  cases he : checkWitnesses (p.phaseValue q) (p.phaseChecks q c) (p.rand.drop used) with
   | none => simpa only [wp, CandidateBase.witnessParams, he] using hresult
   | some ar =>
     obtain ⟨pass, rest⟩ := ar

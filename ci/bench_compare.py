@@ -98,9 +98,19 @@ where the PBKDF2 groups' fastest copies were within 0.4%; in a second run
 on an EPYC 9V45 every call site of both sides was within 1%.
 
 `--modules` runs only the benchmarks of those library modules (see
-`bench_arches.py`), and `--shard i/n` only the i-th of n shares of them,
-whose groups (`<primitive>`s) are dealt out by HEAD's list of them, balanced
-by their number of benchmarks.
+`bench_arches.py`), `--groups` only their groups (`<primitive>`s, e.g.
+`aes-128-gcm-tls-seal`) that one of its space-separated regular expressions
+matches in full, and `--shard i/n` only the i-th of n shares of them,
+whose groups are dealt out by HEAD's list of them, balanced by their
+number of benchmarks.
+
+A job that would measure for longer than `--budget-minutes` fails before
+measuring anything, naming its groups, rather than run into the workflow's
+timeout: the planner shards a run by `BENCHES` entries, which it can count
+without building, but an entry can hold many benchmarks (AES-GCM's held
+about 180, each run 16 times from fresh copies). The estimate is
+`SECONDS_PER_RUN` for each run of each benchmark: the rounds and the copies
+of each side, and the references' one.
 """
 
 import argparse
@@ -135,14 +145,20 @@ TARGET = pathlib.Path("bench-target").resolve()
 FRESH_COPIES = re.compile(
     r"^(?:ec_p521_public_key|ecdsa_p521_|chacha20poly1305|aes-(?:128|256)-gcm-(?!siv)"
     r"|pbkdf2-hmac-sha(?:384|512)|sha(?:384|512)(?:-224|-256)?$|mlkem(?:768|1024)_"
-    r"|hmac-sha(?:384|512)(?:-224|-256)?(?:-verify)?$"
+    r"|ecdsa_brainpoolp(?:384|512)r1_.*_sign|hmac-sha(?:384|512)(?:-224|-256)?(?:-verify)?$"
     r"|sha(?:224|256)$|(?:hmac|pbkdf2-hmac)-sha(?:224|256)(?:-verify)?$)")
 # The `VG_BENCH_MODULES` of the copies' runs when the sides are not
 # interleaved (which select each benchmark by `VG_BENCHES`): the modules
 # whose benchmarks hold those groups. The binary sets up every selected
 # benchmark before criterion's filter applies (RSA keys of up to 4096 bits
 # among them), which took about 110 s of each copy's run with every module.
-FRESH_COPIES_MODULES = "ecdsa_p521 chacha20poly1305 aes_gcm sha512 mlkem sha256"
+FRESH_COPIES_MODULES = "ecdsa_p521 ecdsa_brainpoolp384r1 ecdsa_brainpoolp512r1 chacha20poly1305 aes_gcm sha512 mlkem sha256"
+
+# The seconds one run of one benchmark id takes, with the default 0.1 s
+# warm-up and 0.3 s measurement and Criterion's analysis: a shard of 48
+# AES-GCM ids took 8.6 minutes for 24 runs of each (5 rounds and 7 more
+# copies, of each side) on macOS, 0.45 s each.
+SECONDS_PER_RUN = 0.45
 
 # How src/cpu.rs stops a run whose `VG_CPU_FEATURES` names features this CPU
 # does not have.
@@ -266,12 +282,15 @@ def build_base(base, head):
 
 
 def cpu_features(checkout):
-    """`VG_CPU_FEATURES` without the features `checkout`'s src/cpu.rs does
-    not know (which it rejects)."""
+    """`VG_CPU_FEATURES` without the features `checkout`'s detection does
+    not know (which it rejects): `crates/verified-garbage-cpu/src/detect.rs`'s,
+    or `src/cpu.rs`'s from before it moved there."""
     features = os.environ.get("VG_CPU_FEATURES", "")
     if features in ("", "none"):
         return features
-    cpu = checkout / "src/cpu.rs"
+    cpu = checkout / "crates/verified-garbage-cpu/src/detect.rs"
+    if not cpu.exists():
+        cpu = checkout / "src/cpu.rs"
     names = NAMES.search(cpu.read_text())
     if not names:
         sys.exit(f"{cpu}: no `const NAMES` table of CPU feature names (ci/bench_arches.py's NAMES)")
@@ -357,6 +376,41 @@ def shard_groups(groups, shard, shards):
         if i == shard - 1:
             mine.append(group)
     return sorted(mine)
+
+
+def matching_groups(groups, patterns):
+    """The groups of `groups` (by benchmark count) that one of the
+    space-separated regular expressions `patterns` matches in full (every
+    group if there are none)."""
+    regexes = [re.compile(p) for p in patterns.split()]
+    if not regexes:
+        return groups
+    return {g: n for g, n in groups.items() if any(r.fullmatch(g) for r in regexes)}
+
+
+def planned_seconds(groups, sides, rounds, copies, references):
+    """How long measuring `groups` (by benchmark count) takes, in seconds:
+    `rounds` runs of each of `sides` sides, `copies - 1` more of each for
+    the groups of FRESH_COPIES, and one of each of `references` libraries."""
+    total = 0
+    for group, n in groups.items():
+        runs = sides * rounds + references
+        if copies > 1 and FRESH_COPIES.match(group):
+            runs += sides * (copies - 1)
+        total += n * runs * SECONDS_PER_RUN
+    return total
+
+
+def over_budget(groups, seconds, budget_minutes):
+    """The error of a job planned to measure `groups` (by benchmark count)
+    for `seconds`, more than `budget_minutes`, naming the largest groups."""
+    largest = sorted(groups.items(), key=lambda g: (-g[1], g[0]))
+    named = ", ".join(f"`{g}` ({n})" for g, n in largest[:12])
+    more = f" and {len(largest) - 12} more" if len(largest) > 12 else ""
+    return (f"This job would measure {sum(groups.values())} benchmarks for about {seconds / 60:.0f} minutes,"
+            f" more than the budget of {budget_minutes:g}: narrow it with the workflow's `groups` input"
+            f" (bench_compare.py's --groups, regular expressions over these groups' names), or split it"
+            f" into several runs. Its groups, by number of benchmarks: {named}{more}.")
 
 
 def run(binary, home, library, args, checkout, modules, groups=None, bench=None):
@@ -490,6 +544,10 @@ def main():
                    help="run them even under VG_CPU_FEATURES (with --openssl, or without a base)")
     p.add_argument("--work-dir", type=pathlib.Path, default=pathlib.Path("bench-compare"))
     p.add_argument("--modules", default="", help="space-separated; only benchmark these modules")
+    p.add_argument("--groups", default="",
+                   help="space-separated regular expressions; only benchmark the groups one matches in full")
+    p.add_argument("--budget-minutes", type=float, default=20,
+                   help="fail before measuring if the estimate is longer (0: no limit)")
     p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
     p.add_argument("--arch", choices=EXECUTABLES, help="fail unless the binaries are this architecture's")
     args = p.parse_args()
@@ -520,8 +578,25 @@ def main():
     if note is not None and binaries["base"] is not None:
         owner = None
     groups = None
+    if args.groups.strip():
+        listed = matching_groups(listed, args.groups)
+        if not listed:
+            p.error(f"--groups {args.groups!r} matches none of the selected benchmarks' groups")
+        groups = sorted(listed)
     if shards > 1:
         groups = shard_groups(listed, shard, shards)
+    cpu_features = os.environ.get("VG_CPU_FEATURES", "")
+    with_references = (args.openssl or binaries["base"] is None) and (not cpu_features or args.openssl_with_features)
+    measured = {g: listed[g] for g in (groups if groups is not None else listed)}
+    seconds = planned_seconds(measured, sum(b is not None for b in binaries.values()), args.rounds, args.copies,
+                              len(REFERENCES) if with_references else 0)
+    if args.budget_minutes and seconds > args.budget_minutes * 60:
+        message = over_budget(measured, seconds, args.budget_minutes)
+        print(f"::error::{message}")
+        if args.summary:
+            with args.summary.open("a") as f:
+                f.write(f"## Benchmarks\n\nNot measured. {message}\n")
+        return 1
     # Interleaved, every group is named (base's runs of a benchmark it lacks
     # measure nothing); otherwise, unsharded, each side runs all of its own.
     selected = groups if groups is not None or owner is None else sorted(listed)
@@ -606,9 +681,7 @@ def main():
         measure(interleaved(units(confirmed, owner), binaries, r + 1), binaries.get,
                 lambda side, r=r: f"{side}-confirm-{r}", lambda side, _bench: modules[side], runs)
         keep_fastest(runs)
-    cpu_features = os.environ.get("VG_CPU_FEATURES", "")
     references = {}
-    with_references = (args.openssl or binaries["base"] is None) and (not cpu_features or args.openssl_with_features)
     ia32cap = os.environ.get("OPENSSL_ia32cap", "")
     if with_references:
         for library, name in REFERENCES.items():

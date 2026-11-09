@@ -15,8 +15,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 /-!
 # A candidate on x86-64: one round of Miller–Rabin
 
-`roundPre_ok`: the witness `b`, `b R mod c` into `aXm`, the table of its
-powers (`TabOK`) and `y := 1` (`R mod c` into `aY`).
+What the start of a round changes (`preRanges`), and the end of a round
+(`roundTail_ok`).
 -/
 
 @[expose] public section
@@ -72,85 +72,8 @@ theorem preRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(200, 8), (
   · exact .inl (by decide)
   · exact .inl (by decide)
 
-theorem roundPre_eq (mul : Nat → Nat → Nat → Prog isa) :
-    mrWitness ++ [mul aXm aX aR2] ++ tabBuild mul = mrWitness ++ ([mul aXm aX aR2] ++ tabBuild mul) :=
-  List.append_assoc _ _ _
-
-/-- The start of a round. -/
-theorem roundPre_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm : Nat}
-    (hd : MrDims B Z w) (hc : MrCtx s B Z w mi c bm)
-    (hR2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c) (hodd : c % 2 = 1) (hc1 : 1 < c)
-    (hb : Spec.RsaKeyGen.bitLength (c - 1) = 64 * w)
-    {rp : Addr} {used : Nat} {r : List Byte} (hR : word s.mem B (8 * kRand) = rp)
-    (hU : word s.mem B (8 * kUsed) = BitVec.ofNat 64 used) (hK : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w))
-    (hsrc : Src s B Z rp r) (hlen : used + 8 * w ≤ r.length) :
-    WP isa (seqs (mrWitness ++ [M.mm aXm aX aR2] ++ tabBuild M.mm)) s fun t =>
-      MrCtx t B Z w mi c
-        (Spec.Rsa.powMod (Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip (VG.Proof.RsaKeyGen.seg r used (8 * w)))).1
-          1 c * 2 ^ (64 * w) % c) ∧
-      TabOK t.mem B w c
-        (Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip (VG.Proof.RsaKeyGen.seg r used (8 * w)))).1 ∧
-      wv t.mem B (slot w aY) w = 2 ^ (64 * w) % c ∧
-      wv t.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c ∧
-      word t.mem B (8 * kU) =
-        mask (Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip (VG.Proof.RsaKeyGen.seg r used (8 * w)))).2 ∧
-      word t.mem B (8 * kUsed) = BitVec.ofNat 64 (used + 8 * w) ∧
-      Frm B (preRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
-  have hg := hc.good
-  have hZ := hd.z
-  have hXZ := hd.x
-  have hw4 := hd.w4
-  have hw' : w < 2 ^ 31 := by have := hd.w128; omega_using [this]
-  have hn := hg.scr.nowrap
-  have hRc : Nat.Coprime (2 ^ (64 * w)) c := VG.Proof.Bignum.coprime_pow2 hodd _
-  have hc0 : 0 < c := by omega_using [hc1]
-  rw [roundPre_eq]
-  refine wp_seqs_append (by simp [mrWitness]) (by simp) ?_
-  refine WP.mono (mrWitness_ok hd hc hodd hb hR hU hK (VG.Proof.RsaKeyGen.X86_64.Src.seg hsrc hlen) (by
-    simp only [VG.Proof.RsaKeyGen.seg, List.length_take, List.length_drop]; omega_using [hlen]))
-    fun s₁ ⟨hc₁, hx₁, hu₁, hus₁, hf₁, k₁⟩ => ?_
-  generalize hwt : Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip (VG.Proof.RsaKeyGen.seg r used (8 * w))) = wt
-    at hx₁ hu₁ ⊢
-  have hR2₁ : wv s₁.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c := by
-    rw [hf₁.wv_eq (d := slot w aR2) (k := w) (by simp only [witRanges]; rng_disj)
-      (by have := slot_le (w := w) (show aR2 < 8 by decide); omega_using [hZ, hn, this])]; exact hR2
-  -- `b R mod c` into `aXm`.
-  refine wp_seqs_append (by simp) (by simp [tabBuild]) ?_
-  refine WP.mono (M.mm_ok hc₁.good hZ (by omega_using [hw4]) hw' (o := aXm) (a := aX) (b := aR2) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) hc₁.inv
-    (by rw [hR2₁, hc₁.n]; exact Nat.mod_lt _ hc0)) fun s₂ ⟨hg₂, hlt₂, hy₂, ha₂, k₂⟩ => ?_
-  rw [hc₁.n] at hlt₂ hy₂
-  rw [hx₁, hR2₁] at hy₂
-  have hXm : wv s₂.mem B (slot w aXm) w = Spec.Rsa.powMod wt.1 1 c * 2 ^ (64 * w) % c := by
-    rw [← Nat.mod_eq_of_lt hlt₂, VG.Proof.Bignum.powMod_eq, Nat.pow_one, Nat.mod_mul_mod]
-    refine VG.Proof.Bignum.mont_cancel hRc ?_
-    rw [hy₂, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
-  have hf₂ : Frm B [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2))] s₁.mem s₂.mem :=
-    Frm.of_arrays ha₂ (by simp)
-  have hc₂ : MrCtx s₂ B Z w mi c bm := hc₁.of_frm hd hf₂ hg₂.scr hg₂.rdi (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
-    (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
-  -- The table and `y := 1`.
-  refine WP.mono (tabBuild_ok M hd hc₂ hodd hc1 hXm) fun t ⟨hct, hTt, hYt, hft, kt⟩ => ?_
-  have hf : Frm B (preRanges w) s.mem t.mem :=
-    ((hf₁.mono fun r hr => by simp only [preRanges, List.mem_append]; exact .inl (.inl hr)).trans
-      (hf₂.mono fun r hr => by simp only [preRanges, List.mem_append]; exact .inl (.inr hr))).trans
-      (hft.mono fun r hr => by simp only [preRanges, List.mem_append]; exact .inr hr)
-  have hft' : Frm B (tabRanges w ++ [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)),
-      (slot w aXm, 8 * (w + 2))]) s₁.mem t.mem :=
-    (hf₂.mono fun r hr => List.mem_append_right _ hr).trans (hft.mono fun r hr => List.mem_append_left _ hr)
-  refine ⟨hct, hTt, hYt, ?_, ?_, ?_, hf, ((k₁.trans k₂).trans kt).mono (by decide)⟩
-  · rw [hft'.wv_eq (d := slot w aR2) (k := w) (by simp only [tabRanges, List.cons_append, List.nil_append]; rng_disj)
-      (by have := slot_le (w := w) (show aR2 < 8 by decide); omega_using [hZ, hn, this])]; exact hR2₁
-  · rw [hft'.word_eq (d := 8 * kU) (by simp only [tabRanges, List.cons_append, List.nil_append]; rng_disj) (by unfold kU sFn; omega_using [])]; exact hu₁
-  · rw [hft'.word_eq (d := 8 * kUsed) (by simp only [tabRanges, List.cons_append, List.nil_append]; rng_disj) (by unfold kUsed sFn; omega_using [])]
-    exact hus₁
-
 theorem mask_and1' (c : Bool) : mask c &&& BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 c.toNat := by
   cases c <;> decide
-
-theorem rcx_stat (a b : Bool) : ((mask a ||| mask b) &&& BitVec.signExtend 64 (3 : BitVec 32)) +
-    BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 (if a || b then 4 else 1) := by
-  cases a <;> cases b <;> decide
 
 theorem rcx_stat2 (a b : Bool) : ((0#64 - (BitVec.ofBool a).setWidth 64 ||| 0#64 - (BitVec.ofBool b).setWidth 64) &&&
     (3 : BitVec 64)) + 1 = BitVec.ofNat 64 (if a || b then 4 else 1) := by

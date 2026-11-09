@@ -136,14 +136,6 @@ theorem hidx_inj {r r' : HReg} : hidx r = hidx r' ↔ r = r' :=
 /-- Quadword `k` of `ymm (16 + hidx r)`. -/
 def qwH (s : State) (r : HReg) (k : Nat) : BitVec 64 := qword256 (s.ymmH r) k
 
-/-- Quadword `k` of an `EVEX.256` instruction's register. -/
-def qv (s : State) (r : VReg) (k : Nat) : BitVec 64 := qword256 (s.vy r) k
-
-theorem qv_lo (s : State) (r : XReg) {k : Nat} (hk : k < 4) : qv s (.lo r) k = qw s r k :=
-  qword256_ymm s r hk
-
-theorem qv_hi (s : State) (r : HReg) (k : Nat) : qv s (.hi r) k = qwH s r k := rfl
-
 theorem qword256_extract (v : BitVec 256) {k : Nat} (hk : k < 4) :
     qword (if k / 2 = 0 then v.extractLsb' 0 128 else v.extractLsb' 128 128) (k % 2) = qword256 v k := by
   rw [qword256_eq]; rcases VG.X86_64.cases4 hk with rfl | rfl | rfl | rfl <;> rfl
@@ -157,9 +149,6 @@ theorem qw_setVy_lo (s : State) (d r : XReg) (v : BitVec 256) {k : Nat} (hk : k 
 
 theorem qw_setVy_hi (s : State) (d : HReg) (r : XReg) (v : BitVec 256) (k : Nat) :
     qw (s.setVy (.hi d) v) r k = qw s r k := rfl
-
-theorem qwH_setVy_lo (s : State) (d : XReg) (r : HReg) (v : BitVec 256) (k : Nat) :
-    qwH (s.setVy (.lo d) v) r k = qwH s r k := rfl
 
 theorem qwH_setVy_hi (s : State) (d r : HReg) (v : BitVec 256) (k : Nat) :
     qwH (s.setVy (.hi d) v) r k = if r = d then qword256 v k else qwH s r k := by
@@ -390,10 +379,6 @@ theorem SRel.rd {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) : s.rd = s₀.r
 theorem SRel.wr {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) : s.wr = s₀.wr := by rw [← h.eq]; rfl
 theorem SRel.mxcsr {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) : s.mxcsr = s₀.mxcsr := by
   rw [← h.eq]; rfl
-theorem SRel.flags {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) :
-    s.cf = s₀.cf ∧ s.zf = s₀.zf ∧ s.sf = s₀.sf ∧ s.of = s₀.of := by
-  rw [← h.eq]; exact ⟨rfl, rfl, rfl, rfl⟩
-
 theorem SRel.init (s₀ : State) : SRel Sym.init s₀ s₀ :=
   ⟨fun r k _ => by simp only [Sym.init, T.eval, xr_xi], rfl, rfl,
     fun r k _ => by simp only [Sym.init, T.eval, hr_hidx]⟩

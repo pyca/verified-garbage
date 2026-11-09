@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 
 /-!
-# ML-DSA on ARMv7, `sign_message` and `verify_message`: the moves of a call's arguments
+# ML-DSA on ARMv7, `sign_message` and `verify_message_cached`: the moves of a call's arguments
 
 Untrusted: everything here is checked by Lean. Each argument's value
 (`Arg.val`): a saved argument (a slot at `r7 + f`), plus an offset, an

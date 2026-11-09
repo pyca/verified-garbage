@@ -96,10 +96,6 @@ theorem apart_k {q : Nat} (hq : q ≤ n s) : Apart s q (kR M s) where
   s5 := hp.k_s.sub_right (s5_sub (by decide))
   t := hp.t_k.symm
 
-theorem apart_c : (cR s).Disjoint (yR s) ∧ (cR s).Disjoint ⟨S5 s, 256⟩ ∧
-    (cR s).Disjoint (below (SP s) 8) :=
-  ⟨hp.c_y, hp.c_s.sub_right (s5_sub (by decide)), hp.t_c.symm⟩
-
 /-- The first `q` blocks are apart from what the calls write. -/
 theorem apart_dq {q : Nat} (hq : q ≤ n s) : Apart s q ⟨D s, 16 * q⟩ where
   c := hp.c_d.symm.sub_left (Region.sub_prefix (by omega))
@@ -142,14 +138,6 @@ def EncDone (s s' : State) : Prop := gprPreserved s s' ∧ Proof.AesGcm.encryptB
 
 /-- What the function returns with, when decrypting. -/
 def DecDone (s s' : State) : Prop := gprPreserved s s' ∧ Proof.AesGcm.decryptBlocksX86_64.post s s'
-
-omit hp in
-/-- A region apart from what the calls write is kept. -/
-theorem Calls.keep {q : Nat} {st st₂ st₃ st₄ st₅ : State} (c : Calls s q st st₂ st₃ st₄ st₅) {r : Region}
-    (ha : Apart s q r) {p : Addr} {k : Nat} (hs : Region.Sub ⟨p, k⟩ r) (hk : k ≤ 2 ^ 64) :
-    Spec.Aes.bytesAt st₅.mem p k = Spec.Aes.bytesAt st.mem p k := by
-  rw [bytesAt_frame c.f₅ (fun r' hr' => (ha.gh r' hr').sub_left hs) hk, c.m₄,
-    bytesAt_frame c.f₃ (fun r' hr' => (ha.ctr r' hr').sub_left hs) hk, c.m₂]
 
 /-- `tail` from `Mid s q q ys`: its calls, if any blocks are left. -/
 theorem tail_calls (first second : Prog isa) {q : Nat} {ys : List Block} {st : State} (h : Mid s q q ys st)

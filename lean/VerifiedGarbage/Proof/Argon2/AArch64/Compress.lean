@@ -75,18 +75,6 @@ def compressLocal : Contract isa where
   pub s t := s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧
     s.gpr .x2 = t.gpr .x2 ∧ s.gpr .x3 = t.gpr .x3 ∧ s.sp = t.sp
 
-def satState : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | .x3 => 0x4000 | _ => 0
-  sp := 0x6000
-  mem _ := 0
-  rd := [⟨0x1000, 1024⟩, ⟨0x2000, 1024⟩]
-  wr := [⟨0x3000, 1024⟩, ⟨0x4000, 4096⟩]
-
-theorem compress_implies : compressLocal.Implies (compressContract AArch64.abi) := by
-  sig_implies [compressContract, compressSig, compressLocal, AArch64.abi, AArch64.argRegs]
-    [satState] using satState
-
 end VG.Proof.Argon2.AArch64
 end
 
@@ -323,14 +311,6 @@ theorem original_preserved {m m' : Mem} {p : Addr}
   rw [← blockAt_get m' p ⟨i, hi⟩, ← blockAt_get m p ⟨i, hi⟩] at he
   exact he
 
-theorem round_frame {m m' : Mem} {p out : Addr}
-    (hf : Frame [⟨off p 1024, 1024⟩] m m') : Frame [⟨out, 1024⟩, ⟨p, 4096⟩] m m' := by
-  apply hf.sub
-  intro r hr
-  simp only [List.mem_singleton] at hr
-  subst r
-  exact ⟨⟨p, 4096⟩, by simp, Offset.sub_base p (by decide)⟩
-
 /-- Keep the output pointer in v16 while x2 holds a word. -/
 theorem stash_ok (s : State) :
     WP isa (.block [.vop (.dup .d2 .v16 .x2)]) s fun t =>
@@ -404,7 +384,4 @@ theorem compress_correct (s : State) (hs : compressLocal.pre s) :
   have h := List.all_eq_true.mp (List.all_eq_true.mp (instrs_keeps hk) i hi) r hr
   simpa using h
 
-theorem compress_verified : Verified AArch64.target Impl.Argon2.AArch64.compress
-    (Proof.Argon2.compressContract AArch64.abi) :=
-  Verified.of_correct compress_correct compress_ct compress_implies
 end VG.Proof.Argon2.AArch64

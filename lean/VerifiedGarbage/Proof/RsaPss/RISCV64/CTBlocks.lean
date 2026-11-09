@@ -113,19 +113,6 @@ theorem select_taint (h : Pins Φ [.s0]) : RelCT isa (Two Φ) (select H) fun _ _
   two_taint [.s0] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [.s0])
     (c := select H) (c' := select Hd) (by rfl) (by taint_decide))
 
-theorem fixUpd_taint (h : Pins Φ []) : RelCT isa (Two Φ)
-    (.block (([.li .a1 0] : List Instr) ++ yBase .a2 ++ ([.addi .a3 .s6 ((8 + H.D : Nat) : Int)] : List Instr)))
-    fun _ _ => True :=
-  two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])
-    (c := .block ([.li .a1 0] ++ yBase .a2 ++ [.addi .a3 .s6 ((8 + H.D : Nat) : Int)]))
-    (c' := .block ([.li .a1 0] ++ yBase .a2 ++ [.addi .a3 .s6 0])) (by rfl) (by taint_decide))
-
-theorem fixFin_taint (h : Pins Φ []) : RelCT isa (Two Φ)
-    (.block [.addi .a1 .s6 ((8 + H.D : Nat) : Int)]) fun _ _ => True :=
-  two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])
-    (c := .block [.addi .a1 .s6 ((8 + H.D : Nat) : Int)]) (c' := .block [.addi .a1 .s6 0]) (by rfl)
-    (by taint_decide))
-
 theorem anyUpd_taint (h : Pins Φ []) : RelCT isa (Two Φ)
     (.block (([.li .a1 0] : List Instr) ++ yBase .a2 ++ ([.li .a3 (8 + H.D)] : List Instr))) fun _ _ => True :=
   two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])
@@ -157,6 +144,26 @@ theorem lr3_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block [.addi .s8 .s8 1
 theorem finRegs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block [.addi .a0 .s0 oSt, .addi .a2 .s0 oDig])
     fun _ _ => True :=
   two_taint [] h (by taint_decide)
+
+
+theorem digArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block digArgs) fun _ _ => True :=
+  two_taint [] h (by taint_decide)
+
+/-- The padding of `M'`, for the hash functions' block sizes (`2^6` and
+`2^7`, the shift of its lengths). -/
+theorem padAll_taint (hb : H.b = 6 ∨ H.b = 7) (be : Bool) (h : Pins Φ [.s0, .s6]) :
+    RelCT isa (Two Φ) (padAll H be) fun _ _ => True := by
+  obtain ⟨b, N, D, F, i₁, c₁, i₂, c₂, i₃, c₃⟩ := H
+  simp only at hb
+  rcases hb with rfl | rfl <;> cases be
+  · exact two_taint [.s0, .s6] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [.s0, .s6])
+      (c' := padAll ⟨6, 0, 0, 0, "", .block [], "", .block [], "", .block []⟩ false) (by rfl) (by taint_decide))
+  · exact two_taint [.s0, .s6] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [.s0, .s6])
+      (c' := padAll ⟨6, 0, 0, 0, "", .block [], "", .block [], "", .block []⟩ true) (by rfl) (by taint_decide))
+  · exact two_taint [.s0, .s6] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [.s0, .s6])
+      (c' := padAll ⟨7, 0, 0, 0, "", .block [], "", .block [], "", .block []⟩ false) (by rfl) (by taint_decide))
+  · exact two_taint [.s0, .s6] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [.s0, .s6])
+      (c' := padAll ⟨7, 0, 0, 0, "", .block [], "", .block [], "", .block []⟩ true) (by rfl) (by taint_decide))
 
 end
 

@@ -475,47 +475,4 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
       polyIs_of_coeffAt fun j hj => by
         rw [h.coeff j (by rw [n_eq] at hj; exact hj), ite_eq_left (by rw [n_eq] at hj; omega_arith)]; rfl⟩) h₁
 
-/-! ## Verified -/
-
-theorem pre_of {s : State} (h : (Proof.MlKem.mulContract RISCV64.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem.mulContract, Proof.MlKem.mulSig, RISCV64.abi, RISCV64.argRegs] at h
-  obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17⟩
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 0x2000 | .a2 => 0x3000 | .a3 => 0x4000 | _ => 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x2000, 1024⟩, ⟨0x3000, 1024⟩]
-  wr := [⟨0x1000, 1024⟩, ⟨0x4000, 1024⟩]
-
-theorem verified : Verified RISCV64.target Impl.MlKem.RISCV64.multiplyNTTs (Proof.MlKem.mulContract RISCV64.abi) := by
-  refine ⟨fun s hs => ?_, Add.ctRegs [.a0, .a1, .a2, .a3] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_)
-    (by taint_decide), ?_⟩
-  · obtain ⟨t, s', he, hpres, hsp, hra, h⟩ := correct (pre_of hs)
-    refine ⟨t, s', he, ⟨hpres, hsp, hra⟩, ?_⟩
-    sig_post [Proof.MlKem.mulContract, Proof.MlKem.mulSig, RISCV64.abi, RISCV64.argRegs]
-    exact h
-  · sig_pub [Proof.MlKem.mulContract, Proof.MlKem.mulSig, RISCV64.abi, RISCV64.argRegs] at h
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact h.2.1
-    · exact h.2.2.1
-    · exact h.2.2.2.1
-    · exact h.2.2.2.2
-  · sig_pub [Proof.MlKem.mulContract, Proof.MlKem.mulSig, RISCV64.abi, RISCV64.argRegs] at h
-    exact h.1
-  · refine ⟨satState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.mulContract, Proof.MlKem.mulSig, RISCV64.abi, RISCV64.argRegs]
-      sig_and_intros
-      all_goals first
-        | trivial
-        | exact Add.reduced_zero _
-        | decide +kernel
-
 end VG.Proof.MlKem.RISCV64.Mul

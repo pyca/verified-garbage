@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.AesCfb8.Arm
+public import VerifiedGarbage.Proof.AesCfb8.Rounds
 public import VerifiedGarbage.Spec.Cfb8.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 
@@ -26,15 +27,15 @@ namespace VG.Proof.AesCfb8.Arm
 open VG VG.Arm VG.Impl.AesCfb8.Arm
 open VG.Proof.AesCbc.Arm (sat)
 
-theorem encrypt_verified : Verified Arm.target encrypt (Spec.Cfb8.aesEncryptContract Arm.abi 8) :=
+theorem encrypt_verified : Verified Arm.target encrypt (Proof.AesCfb8.encryptRoundsContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => whole_wp encBody_ok hs) (whole_ct encBody_ok encBody_ct) (by
-    sig_implies [Spec.Cfb8.aesEncryptContract, Spec.Cfb8.aesSig, cfb8Arm, cfb8, cts, inK,
+    sig_implies [Proof.AesCfb8.encryptRoundsContract, Spec.Cfb8.aesSig, cfb8Arm, cfb8, cts, inK,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using sat)
 
-theorem decrypt_verified : Verified Arm.target decrypt (Spec.Cfb8.aesDecryptContract Arm.abi 8) :=
+theorem decrypt_verified : Verified Arm.target decrypt (Proof.AesCfb8.decryptRoundsContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => whole_wp decBody_ok hs) (whole_ct decBody_ok decBody_ct) (by
-    sig_implies [Spec.Cfb8.aesDecryptContract, Spec.Cfb8.aesSig, cfb8Arm, cfb8, cts, inK,
+    sig_implies [Proof.AesCfb8.decryptRoundsContract, Spec.Cfb8.aesSig, cfb8Arm, cfb8, cts, inK,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using sat)
 

@@ -34,11 +34,4 @@ theorem validate_implies : vkContract.Implies (Spec.Dsa.validatePublicKeyContrac
     List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append]
     [validateSatState] using validateSatState
 
-/-- `vg_dsa_validate_public_key` under the shared contract. -/
-theorem validate_wp (s : State) (h : (Spec.Dsa.validatePublicKeyContract RISCV64.abi).pre s) :
-    WP isa Prevalidated.validate s fun t =>
-      abiPreserved s t ∧ (Spec.Dsa.validatePublicKeyContract RISCV64.abi).post s t := by
-  obtain ⟨tr, t, he, ha, hp⟩ := validate_correct s (validate_implies.pre s h)
-  exact ⟨tr, t, he, ha, validate_implies.post s t h hp⟩
-
 end VG.Proof.Dsa.RISCV64

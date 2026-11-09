@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.ModeCore
 import VerifiedGarbage.Proof.Modes.X86_64.Fb
+import VerifiedGarbage.Proof.Modes.X86_64.CfbDec
 import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
 public import VerifiedGarbage.Proof.Seed.FbScratch
 import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
@@ -16,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Seed.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
+meta import VerifiedGarbage.Proof.Modes.X86_64.CfbDec
 meta import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
 meta import VerifiedGarbage.Proof.Seed.FbScratch
 meta import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
@@ -32,9 +34,11 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # SEED-OFB and -CFB128 on x86-64 meet their contracts
 
-`ofb_wp`, `cfbEncrypt_wp`, `cfbDecrypt_wp`: the modes' OFB and CFB
+`ofb_wp`, `cfbEncrypt_wp`: the modes' OFB and CFB
 (`Proof.Modes.X86_64.fb_wp`) over SEED's core (`dirCoreSpec .encrypt`), with the
-specification's results (`Proof.Modes.ofb_of`, …). `ofb_verified`, …: each
+specification's results (`Proof.Modes.ofb_of`, …). `cfbDecrypt_wp`: the
+modes' CFB decryption a group at a time
+(`Proof.Modes.X86_64.CfbDec.batched_wp`) over the same core. `ofb_verified`, …: each
 is correct and constant time, by the taint analysis: the pointers, `n` and
 the stack pointer are public, and so is everything the code computes from
 them; the IV is secret. `ofb_framed`, … run them with their working space on
@@ -177,15 +181,29 @@ theorem cfbEncrypt_wp {s₀ : State} (hp : cfbEncX86_64.pre s₀) :
       rw [hv, h2]
 
 theorem cfbDecrypt_wp {s₀ : State} (hp : cfbDecX86_64.pre s₀) :
-    WP isa cfbDecrypt s₀ fun s' => gprPreserved s₀ s' ∧ cfbDecX86_64.post s₀ s' :=
-  WP.mono (fb_wp' .cfbDec hp) fun s' ⟨hg, hd, hv⟩ => by
-    obtain ⟨h1, h2⟩ := Modes.cfbDec_of 16 (ciphOf s₀) s₀.mem (s₀.gpr .rdx) (ivOf s₀) (s₀.gpr .rcx).toNat
-    simp only [Modes.blocksOf_16] at h1 h2 hd
-    refine ⟨hg, ?_, ?_⟩
-    · change Spec.Cbc.blocksAt _ _ _ = Spec.Cfb.decrypt _ _ (Spec.Cbc.blocksAt _ _ _)
-      rw [hd, h1]
-    · change _ = Spec.Cbc.next _ (Spec.Cbc.blocksAt _ _ _)
-      rw [hv, h2]
+    WP isa cfbDecrypt s₀ fun s' => gprPreserved s₀ s' ∧ cfbDecX86_64.post s₀ s' := by
+  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, dTV, dTD, dTS, hst, fitK, fitV, fitD, fitB⟩ := hp
+  have hwS : (⟨s₀.gpr .r8, 8 * 192⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  refine WP.mono (Proof.Modes.X86_64.CfbDec.batched_wp (dirCoreSpec .encrypt) (dirCore_bw _) (r := modeRegs)
+    ⟨by decide, by decide, by decide⟩ (by decide)
+    (B := s₀.gpr .r8) (P := s₀.gpr .rsi) (D := s₀.gpr .rdx) (n := (s₀.gpr .rcx).toNat)
+    (k := Spec.Seed.scheduleAt s₀.mem (s₀.gpr .rdi)) rfl rfl rfl rfl ⟨hwS, fitB⟩
+    (by rw [dirCore_bw, hwr]; exact List.mem_cons_self)
+    (by rw [dirCore_bw, show 8 * 2 = 16 from rfl, hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self)
+    dVS dDS dVD fitD
+    ⟨s₀.gpr .rdi, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact dKS
+      · exact dKV, hst, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact dTS
+      · exact dTV⟩ (hstk := stkOk hwr dTV dTD dTS hst .encrypt)) fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_⟩
+  · exact ret_frame hf dRS dRD dRV
+  · rw [dirCore_bw, show 8 * 2 = 16 from rfl] at hdata hiv
+    rw [encCipher_eq] at hdata
+    exact ⟨hdata, hiv⟩
 
 /-! ## Constant time -/
 

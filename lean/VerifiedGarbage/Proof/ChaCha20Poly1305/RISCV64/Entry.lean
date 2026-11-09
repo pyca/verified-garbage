@@ -38,6 +38,8 @@ abbrev dp : Addr := s₀.gpr .a4
 abbrev L : Nat := (s₀.gpr .a5).toNat
 abbrev tp : Addr := s₀.gpr .a6
 abbrev wk : Addr := s₀.gpr .a7
+/-- The destination: `src` in place, or apart from it. -/
+abbrev op : Addr := s₀.gpr .t6
 /-- The context: `work` rounded up to a multiple of 8. -/
 abbrev cx : Addr := wk s₀ + BitVec.ofNat 64 (pad (wk s₀))
 /-- The Poly1305 state, which `a0` holds between the calls. -/
@@ -55,59 +57,57 @@ abbrev nR : Region := ⟨np s₀, 12⟩
 abbrev aR : Region := ⟨ad s₀, AL s₀⟩
 abbrev dR : Region := ⟨dp s₀, L s₀⟩
 abbrev tR : Region := ⟨tp s₀, 16⟩
-abbrev wR : Region := ⟨wk s₀, 616⟩
+abbrev oR : Region := ⟨op s₀, L s₀⟩
+abbrev wR : Region := ⟨wk s₀, 624⟩
 /-- `ctx[k, k + n)`. -/
 abbrev sub (k n : Nat) : Region := ⟨off (cx s₀) k, n⟩
 end
 
-/-- What the proof uses of the precondition; `enc` for `seal`. -/
+/-- What the proof uses of the precondition; `enc` for `seal`, which runs
+in place. -/
 structure APre (enc : Bool) (s₀ : State) : Prop where
-  rd : s₀.rd = if enc then [kR s₀, nR s₀, aR s₀] else [kR s₀, nR s₀, aR s₀, tR s₀]
-  wr : s₀.wr = if enc then [dR s₀, tR s₀, wR s₀] else [dR s₀, wR s₀]
-  k_d : (kR s₀).Disjoint (dR s₀)
+  k_rd : kR s₀ ∈ s₀.rd
+  n_rd : nR s₀ ∈ s₀.rd
+  a_rd : aR s₀ ∈ s₀.rd
+  /-- The source is readable. -/
+  d_in : dR s₀ ∈ s₀.rd ++ s₀.wr
+  /-- The destination is writable. -/
+  o_wr : oR s₀ ∈ s₀.wr
+  w_wr : wR s₀ ∈ s₀.wr
+  t_in : if enc then tR s₀ ∈ s₀.wr else tR s₀ ∈ s₀.rd
   k_w : (kR s₀).Disjoint (wR s₀)
-  n_d : (nR s₀).Disjoint (dR s₀)
   n_w : (nR s₀).Disjoint (wR s₀)
-  a_d : (aR s₀).Disjoint (dR s₀)
   a_w : (aR s₀).Disjoint (wR s₀)
-  d_t : (dR s₀).Disjoint (tR s₀)
   d_w : (dR s₀).Disjoint (wR s₀)
   t_w : (tR s₀).Disjoint (wR s₀)
+  k_o : (kR s₀).Disjoint (oR s₀)
+  n_o : (nR s₀).Disjoint (oR s₀)
+  a_o : (aR s₀).Disjoint (oR s₀)
+  o_t : (oR s₀).Disjoint (tR s₀)
+  o_w : (oR s₀).Disjoint (wR s₀)
+  /-- In place, or (`open` only) apart. -/
+  alias : op s₀ = dp s₀ ∨ (enc = false ∧ (dR s₀).Disjoint (oR s₀))
   enc_t : if enc then (kR s₀).Disjoint (tR s₀) ∧ (nR s₀).Disjoint (tR s₀) ∧
     (aR s₀).Disjoint (tR s₀) else True
   fit_k : (kp s₀).toNat + 32 ≤ 2 ^ 64
   fit_n : (np s₀).toNat + 12 ≤ 2 ^ 64
   fit_a : (ad s₀).toNat + AL s₀ ≤ 2 ^ 64
   fit_d : (dp s₀).toNat + L s₀ ≤ 2 ^ 64
+  fit_o : (op s₀).toNat + L s₀ ≤ 2 ^ 64
   fit_t : (tp s₀).toNat + 16 ≤ 2 ^ 64
-  fit_w : (wk s₀).toNat + 616 ≤ 2 ^ 64
-
-theorem APre.of {enc : Bool} (s₀ : State) (h : preRISCV64 enc s₀) : APre enc s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18⟩
+  fit_w : (wk s₀).toNat + 624 ≤ 2 ^ 64
 
 variable {e : Bool}
 
-theorem APre.w_wr {s₀ : State} (hp : APre e s₀) : wR s₀ ∈ s₀.wr := by
-  rw [hp.wr]; cases e <;> simp
+theorem APre.t_wr {s₀ : State} (hp : APre true s₀) : tR s₀ ∈ s₀.wr := hp.t_in
 
-theorem APre.d_wr {s₀ : State} (hp : APre e s₀) : dR s₀ ∈ s₀.wr := by
-  rw [hp.wr]; cases e <;> simp
+theorem APre.t_rd {s₀ : State} (hp : APre false s₀) : tR s₀ ∈ s₀.rd := hp.t_in
 
-theorem APre.a_rd {s₀ : State} (hp : APre e s₀) : aR s₀ ∈ s₀.rd := by
-  rw [hp.rd]; cases e <;> simp
-
-theorem APre.k_rd {s₀ : State} (hp : APre e s₀) : kR s₀ ∈ s₀.rd := by
-  rw [hp.rd]; cases e <;> simp
-
-theorem APre.n_rd {s₀ : State} (hp : APre e s₀) : nR s₀ ∈ s₀.rd := by
-  rw [hp.rd]; cases e <;> simp
-
-theorem APre.t_wr {s₀ : State} (hp : APre true s₀) : tR s₀ ∈ s₀.wr := by
-  rw [hp.wr]; simp
-
-theorem APre.t_rd {s₀ : State} (hp : APre false s₀) : tR s₀ ∈ s₀.rd := by
-  rw [hp.rd]; simp
+/-- `seal` runs in place. -/
+theorem APre.inPlace {s₀ : State} (hp : APre true s₀) : op s₀ = dp s₀ := by
+  rcases hp.alias with h | ⟨h, -⟩
+  · exact h
+  · exact absurd h (by decide)
 
 /-! ## Regions -/
 
@@ -127,18 +127,18 @@ theorem off_zero (p : Addr) : off p 0 = p := BitVec.add_zero p
 theorem cx_al (s₀ : State) {d : Nat} (hd : d % 8 = 0) : (off (cx s₀) d).toNat % 8 = 0 :=
   align_al_add _ hd
 
-theorem sub_work (s₀ : State) {k n : Nat} (h : k + n ≤ 608) : Region.Sub (sub s₀ k n) (wR s₀) := by
+theorem sub_work (s₀ : State) {k n : Nat} (h : k + n ≤ 616) : Region.Sub (sub s₀ k n) (wR s₀) := by
   have := pad_lt' s₀
   simp only [sub]; rw [cx_off]; exact Offset.sub_base _ (by omega)
 
-theorem sub_disj (s₀ : State) {a n b m : Nat} (h : a + n ≤ b ∨ b + m ≤ a) (ha : a + n ≤ 608)
-    (hb : b + m ≤ 608) : (sub s₀ a n).Disjoint (sub s₀ b m) :=
+theorem sub_disj (s₀ : State) {a n b m : Nat} (h : a + n ≤ b ∨ b + m ≤ a) (ha : a + n ≤ 616)
+    (hb : b + m ≤ 616) : (sub s₀ a n).Disjoint (sub s₀ b m) :=
   Offset.disjoint (cx s₀) h (by omega) (by omega)
 
-theorem contains_sub (s₀ : State) {k n a w : Nat} (h₁ : k ≤ a) (h₂ : a + w ≤ k + n) (h₃ : k + n ≤ 608) :
+theorem contains_sub (s₀ : State) {k n a w : Nat} (h₁ : k ≤ a) (h₂ : a + w ≤ k + n) (h₃ : k + n ≤ 616) :
     (sub s₀ k n).Contains (off (cx s₀) a) w := Offset.contains (cx s₀) h₁ h₂ (by omega)
 
-theorem contains_work (s₀ : State) {a w : Nat} (h : a + w ≤ 608) : (wR s₀).Contains (off (cx s₀) a) w := by
+theorem contains_work (s₀ : State) {a w : Nat} (h : a + w ≤ 616) : (wR s₀).Contains (off (cx s₀) a) w := by
   have := pad_lt' s₀
   rw [cx_off]; exact Offset.contains_base _ (by omega) (by omega)
 
@@ -146,22 +146,23 @@ namespace APre
 variable {s₀ : State} (hp : APre e s₀)
 include hp
 
-theorem in_w {a w : Nat} (h : a + w ≤ 608) : InRegions s₀.wr (off (cx s₀) a) w :=
+theorem in_w {a w : Nat} (h : a + w ≤ 616) : InRegions s₀.wr (off (cx s₀) a) w :=
   ⟨wR s₀, hp.w_wr, contains_work s₀ h⟩
 
-theorem in_w' {a w : Nat} (h : a + w ≤ 608) : InRegions (s₀.rd ++ s₀.wr) (off (cx s₀) a) w :=
+theorem in_w' {a w : Nat} (h : a + w ≤ 616) : InRegions (s₀.rd ++ s₀.wr) (off (cx s₀) a) w :=
   ⟨wR s₀, List.mem_append_right _ hp.w_wr, contains_work s₀ h⟩
 
 omit hp in
 /-- A region apart from the working space is apart from every part of the context. -/
-theorem w_sub {r : Region} (h : r.Disjoint (wR s₀)) {k n : Nat} (hk : k + n ≤ 608) :
+theorem w_sub {r : Region} (h : r.Disjoint (wR s₀)) {k n : Nat} (hk : k + n ≤ 616) :
     r.Disjoint (sub s₀ k n) := h.sub_right (sub_work s₀ hk)
 
 end APre
 
 /-! ## The saved registers and the invariant -/
 
-/-- Our caller's `s7`–`s11` and our return address, saved in `ctx[560, 608)`. -/
+/-- Our caller's `s7`–`s11`, our return address and our caller's `s6`,
+saved in `ctx[560, 616)`. -/
 structure Saved (s₀ : State) (m : Mem) : Prop where
   s7 : m.readW (off (cx s₀) savOff) 64 = s₀.gpr .s7
   s8 : m.readW (off (cx s₀) (savOff + 8)) 64 = s₀.gpr .s8
@@ -169,39 +170,42 @@ structure Saved (s₀ : State) (m : Mem) : Prop where
   s10 : m.readW (off (cx s₀) (savOff + 24)) 64 = s₀.gpr .s10
   s11 : m.readW (off (cx s₀) (savOff + 32)) 64 = s₀.gpr .s11
   ra : m.readW (off (cx s₀) (savOff + 40)) 64 = s₀.gpr .ra
+  s6 : m.readW (off (cx s₀) (savOff + 48)) 64 = s₀.gpr .s6
 
 /-- The saved registers survive a frame that does not touch them. -/
 theorem Saved.frame {s₀ : State} {rs : List Region} {m m' : Mem} (h : Saved s₀ m)
-    (hf : Frame rs m m') (hd : ∀ r ∈ rs, (sub s₀ savOff 48).Disjoint r) : Saved s₀ m' := by
-  have c : ∀ k, k + 8 ≤ 48 → (sub s₀ savOff 48).Contains (off (cx s₀) (savOff + k)) (64 / 8) :=
+    (hf : Frame rs m m') (hd : ∀ r ∈ rs, (sub s₀ savOff 56).Disjoint r) : Saved s₀ m' := by
+  have c : ∀ k, k + 8 ≤ 56 → (sub s₀ savOff 56).Contains (off (cx s₀) (savOff + k)) (64 / 8) :=
     fun k hk => contains_sub s₀ (by omega) (by simp only [savOff]; omega) (by decide)
-  have c0 : (sub s₀ savOff 48).Contains (off (cx s₀) savOff) (64 / 8) := by
+  have c0 : (sub s₀ savOff 56).Contains (off (cx s₀) savOff) (64 / 8) := by
     simpa using c 0 (by decide)
   exact ⟨by rw [hf.readW c0 hd (by decide), h.s7], by rw [hf.readW (c 8 (by decide)) hd (by decide), h.s8],
     by rw [hf.readW (c 16 (by decide)) hd (by decide), h.s9],
     by rw [hf.readW (c 24 (by decide)) hd (by decide), h.s10],
     by rw [hf.readW (c 32 (by decide)) hd (by decide), h.s11],
-    by rw [hf.readW (c 40 (by decide)) hd (by decide), h.ra]⟩
+    by rw [hf.readW (c 40 (by decide)) hd (by decide), h.ra],
+    by rw [hf.readW (c 48 (by decide)) hd (by decide), h.s6]⟩
 
-/-- The values we keep in `s7`–`s11`. -/
+/-- The values we keep in `s7`–`s11` and `s6`. -/
 structure Regs (s₀ s : State) : Prop where
   s7 : s.gpr .s7 = s₀.gpr .a2
   s8 : s.gpr .s8 = s₀.gpr .a3
   s9 : s.gpr .s9 = s₀.gpr .a4
   s10 : s.gpr .s10 = s₀.gpr .a5
   s11 : s.gpr .s11 = s₀.gpr .a6
+  s6 : s.gpr .s6 = s₀.gpr .t6
 
 theorem Regs.kept {s₀ s s' : State} (h : Regs s₀ s) (hk : ∀ r ∈ preserved, s'.gpr r = s.gpr r) :
     Regs s₀ s' :=
   ⟨by rw [hk _ (by decide), h.s7], by rw [hk _ (by decide), h.s8], by rw [hk _ (by decide), h.s9],
-    by rw [hk _ (by decide), h.s10], by rw [hk _ (by decide), h.s11]⟩
+    by rw [hk _ (by decide), h.s10], by rw [hk _ (by decide), h.s11], by rw [hk _ (by decide), h.s6]⟩
 
 /-- The callee-saved registers we do not save. -/
-abbrev others : List Reg := [.s0, .s1, .s2, .s3, .s4, .s5, .s6]
+abbrev others : List Reg := [.s0, .s1, .s2, .s3, .s4, .s5]
 
 /-- What holds between the parts of the code: the registers, the stack
 pointer and the regions, the saved registers, and memory changed only in
-the working space and the data. -/
+the working space and the destination. -/
 structure Inv (s₀ : State) (s : State) : Prop where
   regs : Regs s₀ s
   pres : ∀ r ∈ others, s.gpr r = s₀.gpr r
@@ -209,7 +213,7 @@ structure Inv (s₀ : State) (s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   saved : Saved s₀ s.mem
-  frame : Frame [wR s₀, dR s₀] s₀.mem s.mem
+  frame : Frame [wR s₀, oR s₀] s₀.mem s.mem
 
 /-- A part's effect: the callee-saved registers, the stack pointer and the
 regions kept, and memory changed only within `rs`. -/
@@ -240,10 +244,10 @@ theorem Step.upd {s s' : State} {d : Reg} {v : BitVec 64} (rs : List Region) (u 
   ⟨fun r hr => u.other r fun e => hd (e ▸ hr), u.sp, u.rd, u.wr, by rw [u.mem]; exact Frame.refl _ _⟩
 
 /-- The invariant survives a step that writes only within the context
-outside the saved registers, and the data. -/
+outside the saved registers, and the destination. -/
 theorem Inv.step {s₀ s s' : State} {rs : List Region} (h : Inv s₀ s) (hk : Step rs s s')
-    (hsub : ∀ r ∈ rs, ∃ r' ∈ [wR s₀, dR s₀], Region.Sub r r')
-    (hsv : ∀ r ∈ rs, (sub s₀ savOff 48).Disjoint r) : Inv s₀ s' where
+    (hsub : ∀ r ∈ rs, ∃ r' ∈ [wR s₀, oR s₀], Region.Sub r r')
+    (hsv : ∀ r ∈ rs, (sub s₀ savOff 56).Disjoint r) : Inv s₀ s' where
   regs := h.regs.kept hk.cs
   pres r hr := by rw [hk.cs r (by revert r; decide), h.pres r hr]
   sp := by rw [hk.sp, h.sp]

@@ -89,11 +89,6 @@ theorem codeAt_trace (k src : Nat) :
       (VG.X86.Taint.Agree (roundTaint [.edi])) :=
   erased_relCT (.block (codeAt k src)) (.block (codeAt 2 0)) (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
-theorem code_trace (w src : Nat) :
-    RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (.block (code w src))
-      (VG.X86.Taint.Agree (roundTaint [.edi])) :=
-  codeAt_trace (2 * w) src
-
 end VG.Proof.RsaKeyGen.X86.WitnessFallback
 end
 
@@ -112,11 +107,6 @@ theorem codeAt_trace (k w src modulus : Nat) :
     RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (codeAt k w src modulus)
       (VG.X86.Taint.Agree (roundTaint [.edi])) :=
   RelCT.seq (WitnessUniform.code_trace w src modulus) (WitnessFallback.codeAt_trace k src)
-
-theorem code_trace (w src modulus : Nat) :
-    RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (code w src modulus)
-      (VG.X86.Taint.Agree (roundTaint [.edi])) :=
-  codeAt_trace (2 * w) w src modulus
 
 end VG.Proof.RsaKeyGen.X86.WitnessSample
 end
@@ -143,10 +133,5 @@ theorem codeAt_trace (D k w : Nat) :
   refine RelCT.seq (Import.load_trace (D / 4) (VG.Impl.Bignum.X86.PublicContext.slot w 6)) ?_
   exact RelCT.seq ((zeros_trace _ _).mono (fun _ _ H => taint.le_sound (by decide +kernel) H) (fun _ _ H => H))
     (WitnessSample.codeAt_trace _ w _ _)
-
-theorem code_trace (w : Nat) :
-    RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi, .esi])) (VG.Impl.RsaKeyGen.X86.WitnessLoad.code w)
-      (VG.X86.Taint.Agree (roundTaint [.edi])) :=
-  codeAt_trace _ _ w
 
 end VG.Proof.RsaKeyGen.X86.WitnessLoad

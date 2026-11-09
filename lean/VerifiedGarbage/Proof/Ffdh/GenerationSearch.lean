@@ -95,15 +95,6 @@ theorem keySearch_public {a : Parameters} {len keys scalars : Nat} {rand : Rand}
     simp only [h1, ite_true, h0, keySearch_exhausted (Or.inl rfl), KeySearchResult.consume, Nat.add_zero]
   · simp only [h1, ite_false]
 
-theorem keySearch_other {a : Parameters} {len keys scalars : Nat} {rand : Rand}
-    (hk : keys ≠ 0) (hs : scalars ≠ 0) (hr : len ≤ rand.length)
-    (h1 : attemptStatus policy a len rand ≠ 1) (h2 : attemptStatus policy a len rand ≠ 2)
-    (h3 : attemptStatus policy a len rand ≠ 3) :
-    policy.search a len ⟨keys, scalars⟩ rand = ⟨.exhausted, len, [attemptStatus policy a len rand]⟩ := by
-  rw [attempt_of hk hs hr]
-  simp only [attemptStatus] at h1 h2 h3 ⊢
-  simp only [h1, h2, h3, ite_false]
-
 /-- A key's status is 1, 2 or 3. -/
 theorem keyStatus_cases (a : Parameters) (x : Nat) :
     keyStatus a x = 1 ∨ keyStatus a x = 2 ∨ keyStatus a x = 3 := by

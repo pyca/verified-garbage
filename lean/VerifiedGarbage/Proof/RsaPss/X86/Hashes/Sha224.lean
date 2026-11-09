@@ -23,7 +23,7 @@ def sha224Shape : Impl.Pbkdf2.Md.X86.Hash :=
 
 theorem sha224Certs : Certs sha224Shape := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    NoSp.of_all (by decide +kernel)⟩ <;> exact ⟨_, by taint_decide⟩
+    ?_, ?_, NoSp.of_all (by decide +kernel), NoSp.of_all (by decide +kernel)⟩ <;> exact ⟨_, by taint_decide⟩
 
 /-- SHA-224 with the SHA-256 backend `v`, as RSASSA-PSS on x86 uses it. -/
 def sha224 (v : Backend) : PssHash where

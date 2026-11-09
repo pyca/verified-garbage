@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Rsa.X86.KeyWs
 
 /-! # R² and the constants at the run-time width
 
-`PreparedR2.code w` and `Constants.code w` for the width at header byte 48,
+`PreparedR2.codeAt (64 w − 1) w` and `Constants.code w` for the width at header byte 48,
 every array through its header pointer. R² starts at the candidate's top
 bit, `2^(64 w − 1)` in array 6, doubled `w + 1` times modulo the candidate
 (array 0) to `2^w R`, then squared six times. A doubling sums into array 2
@@ -105,7 +105,7 @@ def doublesArgs : List Instr :=
 def doubles : Prog isa :=
   .frame (.alloc 20) (.seq (.block doublesArgs) (.loop double .ne)) (.free 20)
 
-/-- `PreparedR2.code w`: R² in array 4. -/
+/-- `PreparedR2.codeAt (64 w − 1) w`: R² in array 4. -/
 def r2 (montName : String) (montCode : Prog isa) : Prog isa :=
   .seq (.seq seed (.seq doubles (VG.Impl.Rsa.X86.Keys.seqs (List.replicate 6 (mulY montName montCode 6)))))
     (copy 4 6)

@@ -1,5 +1,6 @@
 module
 import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
@@ -61,7 +62,7 @@ theorem fastSeal_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
       (Proof.AesGcm.sealScratchContract AArch64.abi) :=
   Verified.of_correct (fastSeal_correct v hMK) (Fast.seal_ct v hMK) (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
-      Spec.Gcm.sealPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
+      Proof.AesGcm.sealRoundsPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
 
@@ -75,10 +76,10 @@ theorem sealCode_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
 theorem sealCode_framed (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode v))
-      (Spec.Gcm.sealContract AArch64.abi 2576) :=
+      (Proof.AesGcm.sealRoundsContract AArch64.abi 2576) :=
   AArch64.Verified.stackArgScratch (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.sealPre AArch64.abi.ptrBits)
-    (post := Spec.Gcm.sealPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2576)
+    (post := Proof.AesGcm.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2576)
     (sealCode_verified v hMK) (by decide) (by decide) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
 
 open VG.Proof.AesGcm.AArch64.Gather in

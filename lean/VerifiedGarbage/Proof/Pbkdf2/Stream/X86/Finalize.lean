@@ -170,8 +170,6 @@ structure KR (s₀ s : State) : Prop where
 abbrev kregs : List Reg := [.esp, .ebp, .ebx, .edi]
 
 theorem kregs_callee : ∀ r ∈ kregs, r ∈ calleeSaved := by decide
-theorem kregs_clob : ∀ r ∈ kregs, r ≠ .esp → r ∉ cclob := by decide
-
 section
 variable {sc : Nat}
 

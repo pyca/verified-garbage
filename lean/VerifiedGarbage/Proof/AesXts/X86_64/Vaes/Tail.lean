@@ -59,7 +59,7 @@ theorem tbody_ok {enc : Bool} {KP : State → Prop} {f : List XReg → Prog isa}
       TInv enc KP s₀ b (c + n) s' ∧ s'.zf = some (decide (N s₀ - (c + n) = 0)) := by
   obtain ⟨hrs1, hn1⟩ := hrs
   have hlen : rs.length = n := by rw [hrs1, hn1]; rfl
-  have hnd : rs.Nodup := by rw [hrs1]; decide
+  have hnd : (XReg.xmm9 :: rs).Nodup := by rw [hrs1]; decide
   have hg := h.g
   have hw := hp.data_wrap
   have hsw := hp.scr_wrap

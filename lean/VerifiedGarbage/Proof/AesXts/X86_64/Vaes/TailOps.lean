@@ -32,57 +32,62 @@ open VG.Impl.Aes.X86_64.AesNi (at_)
 open VG.Proof.Aes.X86_64.AesNi (ea_at inRegions_wr ofInt_natCast)
 open VG.Impl.AesXts.X86_64Vaes (tPre tPost)
 
-theorem tPre1_ok (b : XReg) (d : Nat) (s : State)
+theorem nodup9 {b : XReg} {bs : List XReg} (h : (XReg.xmm9 :: b :: bs).Nodup) :
+    b ≠ .xmm9 ∧ b ∉ bs ∧ (XReg.xmm9 :: bs).Nodup := by
+  simp only [List.nodup_cons, List.mem_cons, not_or] at h ⊢
+  exact ⟨Ne.symm h.1.1, h.2.1, h.1.2, h.2.2⟩
+
+theorem tPre1_ok (b : XReg) (d : Nat) (s : State) (h9 : b ≠ .xmm9)
     (hd : InRegions (s.rd ++ s.wr) (s.gpr .r11 + BitVec.ofInt 64 (d : Int)) 16)
     (he : InRegions (s.rd ++ s.wr) (s.gpr .rax + BitVec.ofInt 64 (d : Int)) 16) :
-    WP isa (.block [.movdquLoad b (at_ .r11 d), .vbinLoad .vpxor .l128 b b (at_ .rax d)]) s fun s' =>
+    WP isa (.block [.movdquLoad b (at_ .r11 d), .movdquLoad .xmm9 (at_ .rax d), .xop (.bin .pxor b .xmm9)]) s
+      fun s' =>
       s'.xmm b = s.mem.readW (s.gpr .r11 + BitVec.ofInt 64 (d : Int)) 128 ^^^
         s.mem.readW (s.gpr .rax + BitVec.ofInt 64 (d : Int)) 128 ∧
-      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ≠ b → s'.xmm r = s.xmm r) := by
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ r, r ∉ [.xmm9, b] → s'.xmm r = s.xmm r) := by
   apply WP.of_runBlock
-  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, isa, State.setXmm,
-    State.load128, ea_at, hd, he, Option.map_some, Option.some.injEq, exists_eq_left']
-  refine ⟨?_, by simp [State.setV], by simp [State.setV], by simp [State.setV], by simp [State.setV],
-    fun r h => by simp [State.setV, h]⟩
-  simp [State.setV, State.lane, reduceVBinOpSse, XBinOp.eval]
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, isa, State.setXmm,
+    State.load128, ea_at, hd, he, Option.map_some, Option.some.injEq, exists_eq_left', h9]
+  refine ⟨by simp [XBinOp.eval], trivial, trivial, trivial, trivial, fun r hr => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp [hr.1, hr.2]
 
-theorem tPost1_ok (b : XReg) (d : Nat) (s : State)
+theorem tPost1_ok (b : XReg) (d : Nat) (s : State) (h9 : b ≠ .xmm9)
     (hd : InRegions s.wr (s.gpr .r11 + BitVec.ofInt 64 (d : Int)) 16)
     (he : InRegions (s.rd ++ s.wr) (s.gpr .rax + BitVec.ofInt 64 (d : Int)) 16) :
-    WP isa (.block [.vbinLoad .vpxor .l128 b b (at_ .rax d), .movdquStore (at_ .r11 d) b]) s fun s' =>
+    WP isa (.block [.movdquLoad .xmm9 (at_ .rax d), .xop (.bin .pxor b .xmm9), .movdquStore (at_ .r11 d) b]) s
+      fun s' =>
       s'.mem = s.mem.writeW (s.gpr .r11 + BitVec.ofInt 64 (d : Int))
         (s.xmm b ^^^ s.mem.readW (s.gpr .rax + BitVec.ofInt 64 (d : Int)) 128) ∧
-      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ≠ b → s'.xmm r = s.xmm r) := by
-  let u := s.mem.readW (s.gpr .rax + BitVec.ofInt 64 (d : Int)) 128
-  let s₁ := s.setV .l128 b (VBinOp.vpxor.sse.eval (s.lane b 0) u) 0
-  rw [WP.block_cons_iff]
-  refine ⟨s₁, by simp only [isa, exec, State.load128, ea_at, he, ite_true, Option.map_some]; rfl, ?_⟩
-  rw [WP.block_cons_iff]
-  refine ⟨s₁.setMem (s.mem.writeW (s.gpr .r11 + BitVec.ofInt 64 (d : Int)) (s₁.xmm b)), by
-    simp only [isa, exec, State.store128_eq, ea_at, s₁, State.setV_gpr, State.setV_mem, State.setV_wr, hd,
-      ite_true], WP.block_nil ?_⟩
-  refine ⟨?_, by simp [s₁], by simp [s₁], by simp [s₁], fun r h => by simp [s₁, State.setV, h]⟩
-  simp [s₁, State.setV, State.lane, reduceVBinOpSse, XBinOp.eval, u]
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ [.xmm9, b] → s'.xmm r = s.xmm r) := by
+  apply WP.of_runBlock
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, isa, State.setXmm,
+    State.load128, State.store128_eq, ea_at, hd, he, Option.map_some, Option.some.injEq, exists_eq_left', h9]
+  refine ⟨by simp [State.setMem, XBinOp.eval], rfl, rfl, rfl, fun r hr => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp [hr.1, hr.2]
 
-theorem tPreList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
+theorem tPreList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : (.xmm9 :: regs).Nodup)
     (hd : ∀ k < regs.length, InRegions (s.rd ++ s.wr) (s.gpr .r11 + BitVec.ofInt 64 ((16 * (j + k) : Nat) : Int)) 16)
     (he : ∀ k < regs.length, InRegions (s.rd ++ s.wr) (s.gpr .rax + BitVec.ofInt 64 ((16 * (j + k) : Nat) : Int)) 16) :
     WP isa (.block (tPre regs j)) s fun s' =>
       (∀ k (h : k < regs.length), s'.xmm regs[k] =
         s.mem.readW (s.gpr .r11 + BitVec.ofNat 64 (16 * (j + k))) 128 ^^^
           s.mem.readW (s.gpr .rax + BitVec.ofNat 64 (16 * (j + k))) 128) ∧
-      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ regs → s'.xmm r = s.xmm r) := by
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ r, r ∉ .xmm9 :: regs → s'.xmm r = s.xmm r) := by
   induction regs generalizing j s with
   | nil => exact WP.block_nil ⟨fun _ h => absurd h (by simp), rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
   | cons b bs ih =>
-    have hbs : b ∉ bs := (List.nodup_cons.mp hnd).1
+    obtain ⟨h9, hbs, hnd'⟩ := nodup9 hnd
     simp only [List.length_cons] at hd he
     rw [tPre, WP.block_append_iff]
     have hd0 := hd 0 (by omega_arith)
     have he0 := he 0 (by omega_arith)
     rw [Nat.add_zero] at hd0 he0
-    refine WP.mono (tPre1_ok b (16 * j) s hd0 he0) fun s₁ ⟨v₁, g₁, m₁, rd₁, wr₁, o₁⟩ => ?_
-    refine WP.mono (ih (j + 1) s₁ (List.nodup_cons.mp hnd).2
+    refine WP.mono (tPre1_ok b (16 * j) s h9 hd0 he0) fun s₁ ⟨v₁, g₁, m₁, rd₁, wr₁, o₁⟩ => ?_
+    refine WP.mono (ih (j + 1) s₁ hnd'
         (fun k hk => by rw [rd₁, wr₁, g₁, show j + 1 + k = j + (k + 1) by omega_arith]; exact hd (k + 1) (by omega_arith))
         (fun k hk => by rw [rd₁, wr₁, g₁, show j + 1 + k = j + (k + 1) by omega_arith]; exact he (k + 1) (by omega_arith)))
       fun s' ⟨hb, g, m, rd, wr, hx⟩ => ?_
@@ -91,14 +96,14 @@ theorem tPreList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
     · cases k with
       | zero =>
         simp only [List.getElem_cons_zero, Nat.add_zero]
-        rw [hx b hbs, v₁, ofInt_natCast]
+        rw [hx b (by simp [h9, hbs]), v₁, ofInt_natCast]
       | succ k =>
         simp only [List.getElem_cons_succ]
         rw [hb k (by simpa using hk), show j + 1 + k = j + (k + 1) by omega_arith]
     · simp only [List.mem_cons, not_or] at hr
-      rw [hx r hr.2, o₁ r hr.1]
+      rw [hx r (by simp [hr.1, hr.2.2]), o₁ r (by simp [hr.1, hr.2.1])]
 
-theorem tPostList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
+theorem tPostList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : (.xmm9 :: regs).Nodup)
     (hd : ∀ k < regs.length, InRegions s.wr (s.gpr .r11 + BitVec.ofInt 64 ((16 * (j + k) : Nat) : Int)) 16)
     (he : ∀ k < regs.length, InRegions (s.rd ++ s.wr) (s.gpr .rax + BitVec.ofInt 64 ((16 * (j + k) : Nat) : Int)) 16)
     (hw : (s.gpr .r11).toNat + 16 * (j + regs.length) ≤ 2 ^ 64)
@@ -109,16 +114,17 @@ theorem tPostList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
       (∀ k (h : k < regs.length), s'.mem.readW (s.gpr .r11 + BitVec.ofNat 64 (16 * (j + k))) 128 =
           s.xmm regs[k] ^^^ s.mem.readW (s.gpr .rax + BitVec.ofNat 64 (16 * (j + k))) 128) ∧
       Frame [⟨s.gpr .r11 + BitVec.ofNat 64 (16 * j), 16 * regs.length⟩] s.mem s'.mem ∧
-      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ regs → s'.xmm r = s.xmm r) := by
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ .xmm9 :: regs → s'.xmm r = s.xmm r) := by
   induction regs generalizing j s with
   | nil => exact WP.block_nil ⟨fun _ h => absurd h (by simp), Frame.refl _ _, rfl, rfl, rfl, fun _ _ => rfl⟩
   | cons b bs ih =>
+    obtain ⟨h9, hbs, hnd'⟩ := nodup9 hnd
     simp only [List.length_cons] at hd he hw hsep
     rw [tPost, WP.block_append_iff]
     have hd0 := hd 0 (by omega_arith)
     have he0 := he 0 (by omega_arith)
     rw [Nat.add_zero] at hd0 he0
-    refine WP.mono (tPost1_ok b (16 * j) s hd0 he0) fun s₁ ⟨m₁, g₁, rd₁, wr₁, x₁⟩ => ?_
+    refine WP.mono (tPost1_ok b (16 * j) s h9 hd0 he0) fun s₁ ⟨m₁, g₁, rd₁, wr₁, x₁⟩ => ?_
     have h11 : s₁.gpr .r11 = s.gpr .r11 := by rw [g₁]
     have hax : s₁.gpr .rax = s.gpr .rax := by rw [g₁]
     rw [ofInt_natCast] at m₁
@@ -135,8 +141,7 @@ theorem tPostList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
       have := hsep (k + 1) (by omega_arith)
       rw [show j + (k + 1) = j + 1 + k by omega_arith] at this
       exact this.sub_right (Region.sub_prefix (by omega_arith))
-    have hbs : b ∉ bs := (List.nodup_cons.mp hnd).1
-    refine WP.mono (ih (j + 1) s₁ (List.nodup_cons.mp hnd).2 (fun k hk => by
+    refine WP.mono (ih (j + 1) s₁ hnd' (fun k hk => by
         rw [wr₁, h11, show j + 1 + k = j + (k + 1) by omega_arith]; exact hd (k + 1) (by omega_arith))
       (fun k hk => by
         rw [rd₁, wr₁, hax, show j + 1 + k = j + (k + 1) by omega_arith]; exact he (k + 1) (by omega_arith))
@@ -170,7 +175,8 @@ theorem tPostList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
         simp only [List.getElem_cons_succ]
         have hk' : k < bs.length := by simpa using hk
         have hne : bs[k] ≠ b := fun h => hbs (h ▸ List.getElem_mem hk')
-        rw [show j + (k + 1) = j + 1 + k by omega_arith, hb k hk', x₁ _ hne, hslot k hk']
+        have hne9 : bs[k] ≠ .xmm9 := fun h => (List.nodup_cons.mp hnd').1 (h ▸ List.getElem_mem hk')
+        rw [show j + (k + 1) = j + 1 + k by omega_arith, hb k hk', x₁ _ (by simp [hne, hne9]), hslot k hk']
     · rw [m₁] at hf
       refine (Frame.writeW (Frame.refl [⟨s.gpr .r11 + BitVec.ofNat 64 (16 * j), 16 * (bs.length + 1)⟩]
         s.mem) List.mem_cons_self _ (by simp only [Region.Contains, BitVec.sub_self]; simp; omega_arith)).trans
@@ -182,6 +188,6 @@ theorem tPostList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
       have := (a - s.gpr .r11).isLt
       omega_arith
     · simp only [List.mem_cons, not_or] at hr
-      rw [xs r hr.2, x₁ r hr.1]
+      rw [xs r (by simp [hr.1, hr.2.2]), x₁ r (by simp [hr.1, hr.2.1])]
 
 end VG.Proof.AesXts.X86_64.Vaes

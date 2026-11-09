@@ -47,8 +47,6 @@ structure Kept (W : List Region) (s s' : State) : Prop where
   cs : ∀ r ∈ preserved, s'.gpr r = s.gpr r
   frame : Frame W s.mem s'.mem
 
-theorem Kept.refl (W : List Region) (s : State) : Kept W s s := ⟨rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _⟩
-
 theorem Kept.trans {W : List Region} {s₁ s₂ s₃ : State} (h₁ : Kept W s₁ s₂) (h₂ : Kept W s₂ s₃) :
     Kept W s₁ s₃ :=
   ⟨h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₂.sp.trans h₁.sp, fun r hr => (h₂.cs r hr).trans (h₁.cs r hr),

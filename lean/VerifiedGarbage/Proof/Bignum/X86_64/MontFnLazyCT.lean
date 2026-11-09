@@ -93,10 +93,4 @@ theorem adxTailLazy_ct : RelCT isa (Two AdxMid) (.seq adxBodyLazy (.block restor
     (two_taint [.rdi] (fun _ _ _ h₁ h₂ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; rw [h₁, h₂]) (by taint_decide))
 
-/-- `vg_rsa_lazy_mont_mul_adx` after `zext`. -/
-theorem adxCoreLazy_ct : RelCT isa (Two AdxIn)
-    (.seq (.block (saves ++ slotsIn)) (.seq adxBodyLazy (.block restore)))
-    fun _ _ => True :=
-  RelCT.seq (two_piece _ pins_adxIn (by taint_decide) head_fw) adxTailLazy_ct
-
 end VG.Proof.Bignum.X86_64

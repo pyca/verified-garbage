@@ -76,14 +76,4 @@ theorem top_ok (s : State) {base : BitVec 32} {size d : Nat}
     exact (rz.mono (by decide)).trans ((ha.rest _).trans
       ((hb.rest _).trans (ht.rest (by decide))))
 
-theorem top_memory_outside {s t : State} {base : BitVec 32} {size d : Nat}
-    (ws : Workspace s base size) (fit : d+8≤size)
-    (mem : t.mem=(s.mem.writeW (off (State.addr base) d) (t.gpr .r3)).writeW
-      (off (State.addr base) (d+4)) (t.gpr .r4)) :
-    Outside (State.addr base) d 8 s.mem t.mem := by
-  have nowrap := ws.nowrap
-  rw [mem]
-  exact ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega)).trans
-    ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))
-
 end VG.Proof.Bignum.Arm.Fios

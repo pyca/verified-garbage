@@ -1,12 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Lit
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Lit
@@ -40,6 +44,11 @@ theorem coreK_p224 : coreK Impl.Ecdsa.X86_64.p224 = Proof.Ecdsa.X86_64.P224.sign
     false_implies, implies_true, and_true, Proof.Ecdsa.X86_64.P224.signX86_64, Proof.Ecdsa.X86_64.P224.TblHeld]
   rfl
 
+/-! ## The curve's blocks -/
+
+theorem p224_blk : RfcT (cfgC Impl.Ecdsa.X86_64.p224 false 0) := by rfcT_decide
+
+
 /-- P-224, with the group law `hL`, the comb's tables `hT` and the inversions'
 soundness `hI`. -/
 def p224 (hL : Weierstrass.Law Spec.P224.curve)
@@ -48,12 +57,12 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve)
   E := Impl.Ecdsa.X86_64.p224
   inst := Spec.Ecdsa.P224.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inl rfl, .inr ⟨rfl, .inl rfl⟩, Proof.Ecdsa.X86_64.P224.p224_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := Proof.Ecdsa.X86_64.P224.p224_sh
-  coreN := "vg_ecdsa_p224_sign"
+  coreN := "vg_ecdsa_p224_sign_k"
   coreC := Impl.Ecdsa.X86_64.signP224
   coreX := by rw [coreK_p224]; exact Proof.Ecdsa.X86_64.P224.sign_call_x86 hL hT hI
   coreCT := by rw [coreK_p224]; exact Proof.Ecdsa.X86_64.P224.sign_ct
@@ -61,8 +70,18 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  reduceSp := Function.const _ (by decide +kernel)
-  reduceMx := Function.const _ (by decide +kernel)
+  blk := p224_blk
+
+
+/-- `vg_ecdsa_p224_sign`, with the tables of `vs`. -/
+theorem p224T_verified (hL : Weierstrass.Law Spec.P224.curve)
+    (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds)
+    (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_P224_COMB" ∉ Proof.HmacTable.X86_64.names vs) :
+    Verified X86_64.target (signCodeT (p224 hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p224 Impl.Ecdsa.X86_64.p224.combConsts vs) := by
+  have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p224) h.1 Proof.Ecdsa.X86_64.P224.satMem h.2
+    (by rw [Proof.Ecdsa.X86_64.P224.p224W_length]; decide) Proof.Ecdsa.X86_64.P224.satMem_held (by decide) rfl
+  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

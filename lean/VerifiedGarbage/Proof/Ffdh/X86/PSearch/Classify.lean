@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Call
 import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Steps
@@ -257,7 +258,7 @@ theorem classify_ok {p : PPub} {o s₀ u : State} {used n : Nat} (h : Live p o u
     · simp only [doneDs, List.mem_cons, List.not_mem_nil, or_false]
       rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
         simp [upd, liveF, doneF, statusOff, requestOff, attemptsOff, ParameterSearchResult.remaining,
-          ParameterSearchResult.requested, ParameterSearchResult.status, ParameterSearchResult.used]
+          Proof.Ffdh.requested, ParameterSearchResult.status, ParameterSearchResult.used]
     · have ho' := ho
       unfold AttemptOut at ho'
       rw [hc] at ho'

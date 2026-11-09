@@ -114,10 +114,6 @@ def mac (tgt : Nat → Nat) (fresh : List Nat) (seen : List Nat) (p : Prod) : In
   if d ∈ fresh ∧ d ∉ seen then vo (.umull p.hi (V d) (V (23 + p.i)) (V 27))
   else vo (.umlal p.hi (V d) (V (23 + p.i)) (V 27))
 
-def macs (tgt : Nat → Nat) (fresh : List Nat) : List Prod → List Nat → List Instr
-  | [], _ => []
-  | p :: ps, seen => mac tgt fresh seen p :: macs tgt fresh ps (tgt p.pos :: seen)
-
 /-- Load the `b` vector before its first product. -/
 def withLoads (h : Nat) (tgt : Nat → Nat) (fresh : List Nat) : List Prod → List Nat → Option Nat → List Instr
   | [], _, _ => []

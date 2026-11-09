@@ -138,8 +138,6 @@ theorem wf₀_pre {u : Bool} {s : State} {extra : List Region} (hp : Pre (p384Wi
     simp only [VG.Arm.Taint.region, hp.wr]
     rfl
 
-theorem wf₀ {s : State} (h : signArm.pre s) : VG.Arm.Taint.Wf τ₀ s := wf₀_pre (u := false) (pre_of h)
-
 theorem argByte_eq (s : State) (k : Nat) :
     VG.Arm.Taint.argByte s k = stackArgAddr s 0 + BitVec.ofNat 64 k := by
   simp [VG.Arm.Taint.argByte, stackArgAddr]
@@ -164,26 +162,5 @@ theorem agree₀ {u : Bool} {s t : State} {extraS extraT : List Region}
 theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signP384 :=
   VG.Taint.constantTime (A := taint) τ₀
     (fun _ _ hs ht pub => agree₀ (pre_of hs) (pre_of ht) pub) (by native_taint_decide)
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | .r3 => 0x4000 | _ => 0
-  sp := 0x20000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem a := if a = 0x20001 then 0x80 else 0
-  rd := [⟨0x2000, 48⟩, ⟨0x3000, 48⟩, ⟨0x4000, 48⟩, ⟨0x20000, 4⟩]
-  wr := [⟨0x1000, 96⟩, ⟨0x8000, 8192⟩]
-
-theorem sign_verified (hL : Weierstrass.Law Spec.P384.curve) :
-    Verified Arm.target signP384 (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst Arm.abi) :=
-  Verified.of_correct (sign_arm hL) sign_ct (by
-    sig_implies [Spec.Ecdsa.P384.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
-      Spec.P384.curve, Spec.Ecdsa.scratchWords, signArm, sig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-      Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero]
-      [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState)
 
 end VG.Proof.Ecdsa.Arm.P384

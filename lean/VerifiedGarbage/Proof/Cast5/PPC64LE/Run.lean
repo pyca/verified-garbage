@@ -68,9 +68,6 @@ abbrev lo (x : BitVec 64) : BitVec 32 := x.setWidth 32
 theorem lo_and (x y : BitVec 64) : lo (x &&& y) = lo x &&& lo y := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [hi]
 
-theorem lo_or (x y : BitVec 64) : lo (x ||| y) = lo x ||| lo y := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [hi]
-
 theorem lo_xor (x y : BitVec 64) : lo (x ^^^ y) = lo x ^^^ lo y := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [hi]
 

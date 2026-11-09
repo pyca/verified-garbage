@@ -123,9 +123,6 @@ include hp
 
 theorem UPre.m_pos : 1 ≤ M s := by have := hp.len_lo; simp only [M]; omega
 
-theorem UPre.m_lt : M s < 2 ^ 60 := by
-  have := hp.len_hi; simp only [M, Spec.Xts.maxBlocks] at *; omega
-
 omit hp in
 theorem len_eq (s : State) : Len s = 16 * M s + B s := by simp only [M, B]; omega
 
@@ -170,8 +167,6 @@ omit hp in
 theorem t_sub : Region.Sub (tR s) ⟨S s, 2208⟩ := Offset.sub_base _ (by decide)
 omit hp in
 theorem z_sub : Region.Sub (zR s) ⟨S s, 2208⟩ := Offset.sub_base _ (by decide)
-omit hp in
-theorem wk_sub' : Region.Sub (wkR s) ⟨S s, 2208⟩ := Region.sub_prefix (by decide)
 omit hp in
 theorem s_sub : Region.Sub ⟨S s, 2208⟩ (scrR s) := Region.sub_prefix (by decide)
 

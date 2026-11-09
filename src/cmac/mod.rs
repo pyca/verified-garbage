@@ -1,7 +1,5 @@
-//! CMAC (NIST SP 800-38B, RFC 4493): a MAC built from a block cipher.
-//!
-//! Each block cipher with a verified CMAC implementation has a module of its
-//! own here: `aes`, and `triple_des` (TDEA).
+//! CMAC (NIST SP 800-38B, RFC 4493) with AES (`aes`) and with TDEA
+//! (`triple_des`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -14,7 +12,3 @@
 
 pub mod aes;
 pub mod triple_des;
-
-/// The key does not have a length the block cipher accepts.
-pub use crate::error::InvalidKeyLength;
-pub use crate::hmac::InvalidMac;

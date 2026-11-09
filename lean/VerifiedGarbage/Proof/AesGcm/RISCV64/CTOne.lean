@@ -56,13 +56,23 @@ open VG.Proof.Gcm (Absorbed)
 /-- The registers and buffers of `seal` and `open` after the entry: the
 context `c`, `W`, `R` rounds, the `n`-byte nonce (length in `s7`), the
 additional data (`Ad` in `W + aadO`, length in `s10`) and the data (`D` in
-`W + dataO`, length in `s11`). -/
+`W + dataO`, length in `s11`), which the code reads; where it writes the
+data (`D` itself, or out of place another buffer) is `OD`'s. -/
 def OneI (c W sp : Addr) (R : Nat) (Np : Addr) (n : Nat) (Ad A D Ln : BitVec 64) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = W + BitVec.ofNat 64 16 ∧ V .s0 = W ∧
     V .s3 = BitVec.ofNat 64 R ∧ V .s7 = BitVec.ofNat 64 n ∧ V .s10 = A ∧ V .s11 = Ln ∧ Env V sp s ∧
     DataOk (W + BitVec.ofNat 64 16) W s Np n ∧ DataOk (W + BitVec.ofNat 64 16) W s Ad A.toNat ∧
-    DataW c (W + BitVec.ofNat 64 16) W s D Ln.toNat ∧ s.mem.readW (W + BitVec.ofNat 64 aadO) 64 = Ad ∧
+    DataOk (W + BitVec.ofNat 64 16) W s D Ln.toNat ∧ s.mem.readW (W + BitVec.ofNat 64 aadO) 64 = Ad ∧
     s.mem.readW (W + BitVec.ofNat 64 dataO) 64 = D
+
+/-- Where `oneCryptWith o` writes the `Ln` bytes of data at `D`: to `Dst`
+(`D` itself in place). -/
+def OD (o : Bool) (c W : Addr) (D Dst Ln : BitVec 64) (s : State) : Prop :=
+  DataW c (W + BitVec.ofNat 64 16) W s Dst Ln.toNat ∧ Alias o D Dst Ln.toNat
+
+theorem OD.of_eq {o : Bool} {c W : Addr} {D Dst Ln : BitVec 64} {s s' : State} (h : OD o c W D Dst Ln s)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hsp : s'.sp = s.sp) : OD o c W D Dst Ln s' :=
+  ⟨h.1.of_eq hrd hwr hsp, h.2⟩
 
 section
 variable {c W sp : Addr} {R : Nat} {Np : Addr} {n : Nat} {Ad A D Ln : BitVec 64}
@@ -214,11 +224,24 @@ theorem dataArgs_one {s : State} (h : OneI c W sp R Np n Ad A D Ln s) :
       (fun r hr => g₁ r (by revert r; decide) (by revert r; decide) (by revert r; decide)) k₁,
       a24, by rw [a25, k], a26⟩
 
-theorem oneCrypt_ct (hR : R = 10 ∨ R = 12 ∨ R = 14) : CT (OneI c W sp R Np n Ad A D Ln) oneCrypt := by
-  refine CT.seq dataArgs_ct (fun s h => dataArgs_one L h)
-    ((crypt_ct L (R := R) (D := D) (n := Ln.toNat) (q := 0)).mono fun s ⟨⟨V, a, b, d, e, _, _, _, he, _, _, hD, _⟩,
-      h24, h25, h26⟩ => ⟨V, blockAt s.mem (V .s1 + BitVec.ofNat 64 48), 0, a, b, d, rfl,
-        ⟨he, h24, h25, h26, e, hR, by rw [a, b, d]; exact hD⟩⟩)
+theorem oneCrypt_ct {o : Bool} {Dst : BitVec 64} (hR : R = 10 ∨ R = 12 ∨ R = 14) :
+    CT (fun s => OneI c W sp R Np n Ad A D Ln s ∧ OD o c W D Dst Ln s ∧ (o = true → s.gpr .s9 = Dst - D))
+      (oneCryptWith o) := by
+  refine CT.seq (J := fun s => (OneI c W sp R Np n Ad A D Ln s ∧ s.gpr .s4 = D ∧
+      s.gpr .s5 = BitVec.ofNat 64 Ln.toNat ∧ s.gpr .s6 = BitVec.ofNat 64 0) ∧ OD o c W D Dst Ln s ∧
+      (o = true → s.gpr .s9 = Dst - D)) (dataArgs_ct.mono fun s h => h.1)
+    (fun s h => by
+      have hs := h.1
+      obtain ⟨V, a, b, d, e, f, i, k, he, hN, hA, hD, sa, sd⟩ := h.1
+      exact WP.mono (dataArgs_ok he (by rw [d]; exact L.wal) (by rw [d]; exact sd)) fun s' ⟨a24, a25, a26, g₁, k₁⟩ =>
+        ⟨⟨OneI.block hs (fun r hr => g₁ r (by revert r; decide) (by revert r; decide) (by revert r; decide)) k₁,
+          a24, by rw [a25, k], a26⟩,
+          h.2.1.of_eq k₁.rd k₁.wr k₁.sp, fun ho => (g₁ _ (by decide) (by decide) (by decide)).trans (h.2.2 ho)⟩)
+    ((crypt_ct L (o := o) (R := R) (S := D) (D := Dst) (n := Ln.toNat) (q := 0)).mono
+      fun s ⟨⟨⟨V, a, b, d, e, _, _, k, he, _, _, hD, _⟩, h24, h25, h26⟩, ⟨hW, ha⟩, h9⟩ =>
+        ⟨V, blockAt s.mem (V .s1 + BitVec.ofNat 64 48), 0, a, b, d, rfl,
+          ⟨he, h24, h25, h26, e, hR, by rw [a, b, d]; exact hW, by rw [b, d]; exact hD, ha,
+            fun ho => by rw [← he.fr .s9 (by decide)]; exact h9 ho⟩⟩)
 
 theorem oneTag_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112) (hR : R = 10 ∨ R = 12 ∨ R = 14) :
     CT (OneI c W sp R Np n Ad A D Ln) (oneTag o) := by
@@ -227,12 +250,12 @@ theorem oneTag_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 
     ((absorb_ct L (yo := 16) (.inr rfl) (D := D) (n := Ln.toNat) (q := 0) (by decide)).mono
       fun s ⟨⟨V, a, b, d, _, _, _, _, he, _, _, hD, _⟩, h24, h25, h26⟩ =>
         ⟨V, blockAt s.mem (V .s2 + BitVec.ofNat 64 240), [], a, b, d, rfl,
-          ⟨he, h24, h25, h26, by rw [b, d]; exact hD.ok, rfl⟩⟩)
+          ⟨he, h24, h25, h26, by rw [b, d]; exact hD, rfl⟩⟩)
     (fun s ⟨hs, h24, h25, h26⟩ => by
       have hs' := hs
       obtain ⟨V, a, b, d, e, f, i, k, he, hN, hA, hD, sa, sd⟩ := hs'
       exact WP.mono (WP.with_rdwr (absorb_ok (L.v a b d) (.inr rfl)
-        (⟨he, h24, h25, h26, by rw [b, d]; exact hD.ok, rfl⟩ : AbsIn V sp 16 _ [] D Ln.toNat s)))
+        (⟨he, h24, h25, h26, by rw [b, d]; exact hD, rfl⟩ : AbsIn V sp 16 _ [] D Ln.toNat s)))
         fun s' ⟨ab, rd, wr, sp'⟩ => OneI.frame hs (fun r hr => (he.fr r hr).symm) ab.env rd wr sp' ab.frame
           (fun hd' => by rw [← d]; exact slot_abs (L.v a b d) he.stk' hd')) ?_
   refine CT.seq (J := fun s => OneI c W sp R Np n Ad A D Ln s ∧ s.gpr .s6 = BitVec.ofNat 64 (Ln.toNat % 16)) ?_

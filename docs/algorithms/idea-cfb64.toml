@@ -1,5 +1,5 @@
 name = "IDEA-CFB64"
 family = "Ciphers"
 specs = ["Idea", "Cfb"]
-modules = ["src/idea_cfb.rs"]
+modules = ["src/cipher/idea/cfb.rs"]
 asm = ["idea_cfb"]

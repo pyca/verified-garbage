@@ -63,13 +63,6 @@ theorem wRegions_bound {b : BitVec 32} {W : List Slot} {r : Region} (hr : r ∈ 
     exact ⟨_, _, rfl, hi.1, by omega⟩
   · exact ⟨ACC, 128, List.mem_singleton.mp hr, by rw [ACC_eq]; omega, by rw [ACC_eq]⟩
 
-/-- The slots and `ACC` are in `FA0`. -/
-theorem wRegions_FA0 {b : BitVec 32} {W : List Slot} {m m' : Mem} (hf : Frame (wRegions b W) m m') :
-    Frame [FA0 b] m m' := by
-  refine hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
-  obtain ⟨d, n, rfl, h1, h2⟩ := wRegions_bound hr
-  exact Offset.sub _ h1 (by rw [ACC_eq]; omega)
-
 /-- The slots an operation reads. -/
 def opReads : FieldOp → List Slot
   | .copy _ a => [a]

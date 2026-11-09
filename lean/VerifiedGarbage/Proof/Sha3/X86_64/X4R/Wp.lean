@@ -26,28 +26,6 @@ def qy (s : State) (r : VReg) (k : Nat) : BitVec 64 := qword256 (s.vy r) k
 
 /-! ## Values -/
 
-theorem extract_xor (a b : BitVec 256) (i n : Nat) :
-    (a ^^^ b).extractLsb' i n = a.extractLsb' i n ^^^ b.extractLsb' i n := by
-  apply BitVec.eq_of_getLsbD_eq; intro j hj; simp [hj]
-
-theorem extract_or (a b : BitVec 256) (i n : Nat) :
-    (a ||| b).extractLsb' i n = a.extractLsb' i n ||| b.extractLsb' i n := by
-  apply BitVec.eq_of_getLsbD_eq; intro j hj; simp [hj]
-
-/-- The two lanes of a value, put back together. -/
-theorem lanes_cat (v : BitVec 256) : lane256 v 1 ++ lane256 v 0 = v := by
-  apply BitVec.eq_of_getLsbD_eq; intro j hj
-  rw [BitVec.getLsbD_append]
-  by_cases h : j < 128
-  · simp [lane256, h]
-  · simp [lane256, h, show j - 128 < 128 by omega, show 128 + (j - 128) = j by omega]
-
-theorem qword256_xor (a b : BitVec 256) (k : Nat) : qword256 (a ^^^ b) k = qword256 a k ^^^ qword256 b k :=
-  extract_xor _ _ _ _
-
-theorem qword256_or (a b : BitVec 256) (k : Nat) : qword256 (a ||| b) k = qword256 a k ||| qword256 b k :=
-  extract_or _ _ _ _
-
 /-- Quadword `k` (`k < 4`) of a 256-bit value. -/
 theorem qword256_eq (x : BitVec 256) (k : Nat) :
     qword256 x k = qword (x.extractLsb' (128 * (k / 2)) 128) (k % 2) := by
@@ -97,9 +75,6 @@ theorem qword_lane (v : BitVec 256) {k : Nat} (_hk : k < 4) : qword (lane256 v (
   congr 1; omega
 
 theorem qword_xor (x y : BitVec 128) (i : Nat) : qword (x ^^^ y) i = qword x i ^^^ qword y i := by
-  apply BitVec.eq_of_getLsbD_eq; intro j hj; simp [qword, hj]
-
-theorem qword_or (x y : BitVec 128) (i : Nat) : qword (x ||| y) i = qword x i ||| qword y i := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj; simp [qword, hj]
 
 theorem ternlog96 (a b c : BitVec 128) : ternlog a b c 0x96 = a ^^^ b ^^^ c := by

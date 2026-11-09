@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesSiv.Arm.Frame
 public import VerifiedGarbage.Proof.AesSiv.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # AES-SIV (RFC 5297) on ARMv7 -/
 
@@ -20,10 +21,10 @@ def artifacts : List Artifact := [
   Spec.Siv.encryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 2608 3 Impl.AesSiv.Arm.encrypt
     stack := 2624
-    verified := encrypt_framed },
+    verified := Proof.AesSiv.encrypt_keyed encrypt_framed },
   Spec.Siv.decryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 2608 3 Impl.AesSiv.Arm.decrypt
     stack := 2624
-    verified := decrypt_framed }]
+    verified := Proof.AesSiv.decrypt_keyed decrypt_framed }]
 
 end VG.Artifacts.AesSiv.Arm

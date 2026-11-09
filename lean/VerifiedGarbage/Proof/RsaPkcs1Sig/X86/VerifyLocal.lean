@@ -16,10 +16,6 @@ def localRegion (g : Geometry) (d n : Nat) : Region := ⟨byteAddr g.stack + Bit
 theorem localSub {g : Geometry} {d n : Nat} (fit : d + n ≤ VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes) :
     (localRegion g d n).Sub g.innerRegion := Offset.sub_base _ fit
 
-theorem Context.localWrite {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
-    (h : Context g bs s) {d n : Nat} (fit : d + n ≤ VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes) :
-    InRegions s.wr (localRegion g d n).base n := h.inner.write fit
-
 theorem Context.em2Fit {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
     (h : Context g bs s) : g.em2.toNat + g.length ≤ 2 ^ 32 :=
   h.valid.encodingFit (by have := h.valid.maxLength; simp only [em2Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega)

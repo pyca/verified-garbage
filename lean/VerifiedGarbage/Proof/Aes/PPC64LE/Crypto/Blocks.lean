@@ -19,7 +19,8 @@ def blockGprs : List Reg := [.r0, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
 theorem blocks_ok (inverse : Bool) (s : State)
     (hs : (Proof.Aes.blocksPPC64LE (result inverse)).pre s) :
     WP isa (Impl.Aes.PPC64LE.Crypto.blocks inverse) s fun t =>
-      Keep blockGprs s t ∧ (Proof.Aes.blocksPPC64LE (result inverse)).post s t := by
+      Keep blockGprs s t ∧ Frame [⟨s.gpr .r5, 16 * (s.gpr .r6).toNat⟩] s.mem t.mem ∧
+        (Proof.Aes.blocksPPC64LE (result inverse)).post s t := by
   obtain ⟨hrd, hwr, hsep, _, _, hbound, hnr⟩ := hs
   let n := (s.gpr .r6).toNat
   let nr := (s.gpr .r4).toNat
@@ -31,14 +32,15 @@ theorem blocks_ok (inverse : Bool) (s : State)
   by_cases hz : s.gpr .r6 = 0
   · refine WP.ite true (by simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hz]; rfl)
       (fun _ => WP.block_nil ?_) (by simp)
-    refine ⟨Keep.refl _ _, ?_⟩
+    refine ⟨Keep.refl _ _, Frame.refl _ _, ?_⟩
     simp only [Proof.Aes.blocksPPC64LE, hz, show (0 : BitVec 64).toNat = 0 from rfl,
       Spec.Aes.statesAt, List.range_zero, List.map_nil]
   · refine WP.ite false (by simpa only [eval, State.read, Size.bits, BitVec.setWidth_eq, Option.some.injEq, beq_eq_false_iff_ne] using hz)
       (by simp) (fun _ => ?_)
     refine WP.seq (WP.mono (blocks_setup_ok s) fun base ⟨hp, hl, hzero, hm, he⟩ => ?_)
-    have hc : LoopConfig inverse false base nr n D := by
-      refine ⟨⟨hzero, hm, ?_, hnrmin, hnrlt, ?_⟩, hsize, ?_, ?_, by simp⟩
+    have hc : LoopConfig inverse false .r0 base nr n D D := by
+      refine ⟨⟨hzero, hm, ?_, hnrmin, hnrlt, ?_⟩, hsize, ?_, ?_, by simp, ?_,
+        by rw [hzero, BitVec.sub_self]; rfl, by decide, Or.inl rfl⟩
       · rw [he.keep.gpr (by decide)]
         simp only [nr, BitVec.ofNat_toNat, BitVec.setWidth_eq]
       · intro j hj
@@ -49,13 +51,16 @@ theorem blocks_ok (inverse : Bool) (s : State)
         exact List.mem_cons_self
       · rw [he.keep.gpr (by decide)]
         exact hsep
-    have hi : LoopInv inverse false base nr n D 0 0 base := by
+      · rw [he.keep.2.2, hwr]
+        exact List.mem_append_right _ List.mem_cons_self
+    have hi : LoopInv inverse false base nr n D D 0 0 base := by
       refine ⟨by omega, Keep.refl _ _, ?_, ?_, Processed.refl _ _ _ _, Frame.refl _ _, hm,
-        by simp, by simp, by simp⟩
+        by simp, by simp⟩
       · simpa only [Nat.mul_zero, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hp
       · simpa only [Nat.sub_zero, n, BitVec.ofNat_toNat, BitVec.setWidth_eq] using hl
-    refine WP.mono (batches_ok hc hi) fun t ht => ⟨?_, ?_⟩
+    refine WP.mono (batches_ok hc hi) fun t ht => ⟨?_, ?_, ?_⟩
     · exact (he.keep.trans ht.keep).mono (by simp [blockGprs, loopGprs])
+    · rw [← he.mem]; exact ht.frame
     · have hstates := ht.processed.statesAt
       have hsched : schedule nr base = schedule nr s := by
         rw [schedule, he.mem, he.keep.gpr (by decide)]

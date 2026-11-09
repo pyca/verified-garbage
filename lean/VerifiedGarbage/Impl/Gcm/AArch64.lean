@@ -116,4 +116,51 @@ def body : Prog isa := .seq (.block load) (.seq (.loop (.block steps) (.nonzero 
 def ghash : Prog isa :=
   .ite (.zero .x .x3) (.block []) (.loop body (.nonzero .x .x3))
 
+/-! ## The powers from a key context
+
+`vg_aes_gcm_store_powers(ctx = x0, pw = x1)` with the multiplication above
+(no PMULL): the hash subkey `H`, bytes 240–255 of the key context, loaded as
+`ghash` loads its `h`, into `x2:x3` and `Z`; then for `k` from 1 to 8,
+`preparedPower(Hᵏ)` (`Z` shifted left one bit, `0xc2 ‖ 0¹¹⁸ ‖ 1` XORed
+in under the mask of its top bit) stored at `pwOff k` as two little-endian
+doublewords, the low first, and, below 8, `Z := Z • H` by the loop of
+`ghash`, from `X := Z`, `V := H`. Only caller-saved registers are used
+(`x2`–`x15`); no branch and no address depends on `H`. -/
+
+/-- The offset in `pw` of `preparedPower(Hᵏ)`, `1 ≤ k ≤ 8`: pair `j` holds
+`H²ʲ⁺²` at `32 j` and `H²ʲ⁺¹` at `32 j + 16`. -/
+def pwOff (k : Nat) : Nat := if k % 2 = 0 then 32 * ((k - 2) / 2) else 16 + 32 * ((k - 1) / 2)
+
+/-- `H` into `x2:x3` and `Z`, with `R` and zero. -/
+def keyLoad : List Instr := [
+  .movz .x RH 0xE100 3, .movz .x ZERO 0 0,
+  .ldr .x .x2 .x0 240, .rev .x2 .x2,
+  .ldr .x .x3 .x0 248, .rev .x3 .x3,
+  .logic .orr .x ZH .x2 ZERO, .logic .orr .x ZL .x3 ZERO]
+
+/-- `preparedPower(Z)` stored at `pw + off`: the high doubleword in `x4`,
+the low one in `T`. -/
+def storeEnc (off : Nat) : List Instr := [
+  .lsr .x T ZH 63, .sub .x M ZERO T,
+  .lsl .x .x4 ZH 1, .lsr .x T ZL 63, .logic .orr .x .x4 .x4 T,
+  .movz .x VH 0xc200 3, .logic .and .x VH VH M, .logic .eor .x .x4 .x4 VH,
+  .lsl .x T ZL 1, .lsr .x VL M 63, .logic .eor .x T T VL,
+  .str .x T .x1 off, .str .x .x4 .x1 (off + 8)]
+
+/-- `X := Z`, `V := H`, `Z := 0` and the count, for `Z • H`. -/
+def nextMul : List Instr := [
+  .logic .orr .x XH ZH ZERO, .logic .orr .x XL ZL ZERO,
+  .logic .orr .x VH .x2 ZERO, .logic .orr .x VL .x3 ZERO,
+  .movz .x ZH 0 0, .movz .x ZL 0 0,
+  .movz .x CNT (BitVec.ofNat 16 (128 / unroll)) 0]
+
+/-- `preparedPower(Hᵏ)` stored, then `Hᵏ⁺¹`. -/
+def keyRound (k : Nat) : Prog isa :=
+  .seq (.block (storeEnc (pwOff k) ++ nextMul)) (.loop (.block steps) (.nonzero .x CNT))
+
+def keyPowers : Prog isa :=
+  .seq (.block keyLoad) (.seq (keyRound 1) (.seq (keyRound 2) (.seq (keyRound 3)
+    (.seq (keyRound 4) (.seq (keyRound 5) (.seq (keyRound 6) (.seq (keyRound 7)
+      (.block (storeEnc (pwOff 8))))))))))
+
 end VG.Impl.Gcm.AArch64

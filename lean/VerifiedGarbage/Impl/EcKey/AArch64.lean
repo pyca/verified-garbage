@@ -55,8 +55,6 @@ def upToPowWith (comb : Prog isa) : Prog isa :=
   .seq comb <|
   .seq c.pPow (.block [])
 
-def upToPow : Prog isa := upToPowWith c c.combP
-
 /-- `04 ‖ x ‖ y` (or zeros, `len` bytes each) to `out`, `x19`–`x25` restored, and the
 flag's low bit to `x0`. -/
 def finishWith (x y : Nat) : List Instr :=
@@ -65,7 +63,6 @@ def finishWith (x y : Nat) : List Instr :=
   storeBytes c.C.len c.n .x6 0 (c.sl x) ++ storeBytes c.C.len c.n .x6 c.C.len (c.sl y) ++
   Impl.Ecdsa.AArch64.Cfg.saved.map (fun (r, d) => ld r d) ++
   ([.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1] : List Instr)
-
 
 def finish : List Instr := finishWith c X Y
 

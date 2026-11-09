@@ -31,11 +31,6 @@ theorem round_lt {T T' a b u m : Nat} (h : 2 ^ 32 * T' = T + a * b + u * m) (hT 
     rw [show (2 : Nat) ^ 33 = 2 ^ 32 * 2 by decide, Nat.mul_assoc]] at this
   exact Nat.lt_of_mul_lt_mul_left this
 
-/-- The accumulator after a round, times `2³²`, modulo `m`. -/
-theorem round_mod {T T' a b u m : Nat} (h : 2 ^ 32 * T' = T + a * b + u * m) :
-    2 ^ 32 * T' % m = (T + a * b) % m := by
-  rw [h, Nat.add_mul_mod_self_right]
-
 /-- The rounds' invariant `2^(32 i) T ≡ A_i B (mod m)`, one round on. -/
 theorem round_step {P T T' a b u m A : Nat} (h : 2 ^ 32 * T' = T + a * b + u * m)
     (hI : P * T % m = A * b % m) : P * 2 ^ 32 * T' % m = (A + P * a) * b % m := by

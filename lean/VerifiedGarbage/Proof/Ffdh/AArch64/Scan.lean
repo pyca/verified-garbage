@@ -57,9 +57,6 @@ def ScanAt (s₀ : State) (p : Addr) (n j : Nat) (t : State) : Prop :=
   t.gpr .x1 = off p j ∧ t.gpr .x2 = BitVec.ofNat 64 (n - j) ∧ t.mem = s₀.mem ∧
     Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9] s₀ t
 
-theorem byte_ofNat (b : Byte) : ((BitVec.ofNat 64 b.toNat) : BitVec 64).toNat = b.toNat := by
-  rw [BitVec.toNat_ofNat]; have := b.isLt; omega_arith
-
 theorem scan_flag8 : ∀ (b : Byte) (d : Bool),
     ((if (!decide (BitVec.setWidth 64 (BitVec.setWidth 32 b) = 0)) = true then BitVec.setWidth 64 0#16
         else BitVec.setWidth 64 1#16) &&& if d = true then BitVec.setWidth 64 1#16 else BitVec.setWidth 64 0#16) =

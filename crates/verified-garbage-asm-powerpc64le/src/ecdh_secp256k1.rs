@@ -17,7 +17,7 @@
 /// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
 /// * None of `out`, `d`, `peer` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdh_secp256k1(out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ecdh_secp256k1(out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "AADG+QgA5vumAgh8EAAG+Hgbbnx4M8N8GAAgOShMBH0gBAP5EAAgOShMBH0oBAP5CAAgOShMBH0wBAP5AAAgOShMBH04BAP5GAAgOShMBH1ABAP5EAAgOShMBH1IBAP5CAAgOShMBH1QBAP5AAAgOShMBH1YBAP5GAAgOShMBH1gBAP5EAAgOShMBH1oBAP5CAAgOShMBH1wBAP5AAAgOShMBH14BAP5//9gPS/8a2FAAGOR//9gPf7/a2FEAGOR//9gPf//a2FIAGOR//9gPf//a2FMAGOR//9gPf//a2FQAGOR//9gPf//a2FUAGOR//9gPf//a2FYAGOR//9gPf//a2FcAGORNtBgPUFBa2FgAGOR0r9gPYxea2FkAGORSK9gPTuga2FoAGORrrpgPebca2FsAGOR//9gPf7/a2FwAGOR//9gPf//a2F0AGOR//9gPf//a2F4AGOR//9gPf//a2F8AGORAABgPQAAa2GgAGORAABgPQAAa2GkAGORAABgPQAAa2GoAGORAABgPQAAa2GsAGORAABgPQAAa2GwAGORAABgPQAAa2G0AGORAABgPQAAa2G4AGORAABgPQAAa2G8AGORAABgPQEAa2HAAGORAABgPQAAa2HEAGORAABgPQAAa2HIAGORAABgPQAAa2HMAGORAABgPQAAa2HQAGORAABgPQAAa2HUAGORAABgPQAAa2HYAGORAABgPQAAa2HcAGORAABgPdEDa2HgAGORAABgPQEAa2HkAGORAABgPQAAa2HoAGORAABgPQAAa2HsAGORAABgPQAAa2HwAGORAABgPQAAa2H0AGORAABgPQAAa2H4AGORAABgPQAAa2H8AGORAABgPQAAa2EAAWORAABgPQAAa2EEAWORAABgPQAAa2EIAWORAABgPQAAa2EMAWORAABgPQAAa2EQAWORAABgPQAAa2EUAWORAABgPQAAa2EYAWORAABgPQAAa2EcAWORAABgPSVQa2EgAWORAABgPRUAa2EkAWORAABgPQAAa2EoAWORAABgPQAAa2EsAWORAABgPQAAa2EwAWORAABgPQAAa2E0AWORAABgPQAAa2E4AWORAABgPQAAa2E8AWORfkhgPZcga2FAAWORNtdgPVoua2FEAWORvClgPdtma2FIAWORHiNgPVMpa2FMAWOR/TNgPZwSa2FQAWORn5dgPcBIa2FUAWORCOlgPUifa2FYAWORgZlgPUPma2FcAWOR29NgPeKra2FgAWORXrFgPdKma2FkAWORHR9gPU3Ga2FoAWOR/I1gPV1da2FsAWORGaxgPTbBa2FwAWORtnBgPZq1a2F0AWORpdRgPdaCa2F4AWORP89gPR+Fa2F8AWOR12dgPUDRa2GAAWORbIlgPRTya2GEAWORfA5gPXj4a2GIAWORFHRgPcKWa2GMAWORzVtgPcYHa2GQAWORl+ZgPeT1a2GUAWORxoFgPcWba2GYAWORZ51gPdUca2GcAWORyS9gPb++a2GgAWORLUBgPXOha2GkAWORt1BgPcRfa2GoAWORUUVgPRkja2GsAWORAABgPQEAa2GwAWORAABgPQAAa2G0AWORAABgPQAAa2G4AWORAABgPQAAa2G8AWOR//9gPS38a2HAAWOR//9gPf7/a2HEAWOR//9gPf//a2HIAWOR//9gPf//a2HMAWOR//9gPf//a2HQAWOR//9gPf//a2HUAWOR//9gPf//a2HYAWOR//9gPf//a2HcAWORNtBgPT9Ba2HgAWOR0r9gPYxea2HkAWORSK9gPTuga2HoAWORrrpgPebca2HsAWOR//9gPf7/a2HwAWOR//9gPf//a2H0AWOR//9gPf//a2H4AWOR//9gPf//a2H8AWORAABgPQAAa2EAAmORAABgPQAAa2EEAmORAABgPQAAa2EIAmORAABgPQAAa2EMAmORAABgPQAAa2EQAmORAABgPQAAa2EUAmORAABgPQAAa2EYAmORAABgPQAAa2EcAmORAABgPdEDa2EgAmORAABgPQEAa2EkAmORAABgPQAAa2EoAmORAABgPQAAa2EsAmORAABgPQAAa2EwAmORAABgPQAAa2E0AmORAABgPQAAa2E4AmORAABgPQAAa2E8AmORAABgPQAAa2FAAmORAABgPQAAa2FEAmORAABgPQAAa2FIAmORAABgPQAAa2FMAmORAABgPQAAa2FQAmORAABgPQAAa2FUAmORAABgPQAAa2FYAmORAABgPQAAa2FcAmORAACAOP//hDjABYP4eCusfCAA4Ds="
 20:
@@ -57,14 +57,526 @@ bl {vg_secp256k1_point_a0_double}
 bl {vg_secp256k1_point_a0_add_affine}
 .base64 "FPqDfAAQhIgAAKA4UChEfQANg+igDKPoeCKlfDhQpXx4KoR8AAKD+AgNg+ioDKPoeCKlfDhQpXx4KoR8CAKD+BANg+iwDKPoeCKlfDhQpXx4KoR8EAKD+BgNg+i4DKPoeCKlfDhQpXx4KoR8GAKD+CANg+jADKPoeCKlfDhQpXx4KoR8IAKD+CgNg+jIDKPoeCKlfDhQpXx4KoR8KAKD+DANg+jQDKPoeCKlfDhQpXx4KoR8MAKD+DgNg+jYDKPoeCKlfDhQpXx4KoR8OAKD+EANg+jgDKPoeCKlfDhQpXx4KoR8QAKD+EgNg+joDKPoeCKlfDhQpXx4KoR8SAKD+FANg+jwDKPoeCKlfDhQpXx4KoR8UAKD+FgNg+j4DKPoeCKlfDhQpXx4KoR8WAKD+AAAPyg="
 bne %cr0, 23b
-.base64 "4ACD6OADg/joAIPo6AOD+PAAg+jwA4P4+ACD6PgDg/gAAeA7"
+.base64 "QAKD6GACg/hIAoPoaAKD+FACg+hwAoP4WAKD6HgCg/hgA4A4QAKgOEACwDg="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "gAKAOGACoDhgA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "oAKAOIACoDhgA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "wAKAOKACoDhgA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "4AKAOMACoDhgA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAOAOOACoDhgA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "IAOAOAADoDhgA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "QAOAOCADoDhgA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "QAOD6OADg/hIA4Po6AOD+FADg+jwA4P4WAOD6PgDg/gEAOA7"
 24:
 .base64 "////O+ADgDjgA6A44APAOA=="
 bl {vg_secp256k1_mul_mod_p}
-.base64 "AASAOOADoDhAAsA4"
-bl {vg_secp256k1_mul_mod_p}
-.base64 "FPqDfAARhIgAAKA4UChEfeADg+gABKPoeCKlfDhQpXx4KoR84AOD+OgDg+gIBKPoeCKlfDhQpXx4KoR86AOD+PADg+gQBKPoeCKlfDhQpXx4KoR88AOD+PgDg+gYBKPoeCKlfDhQpXx4KoR8+AOD+AAAPyg="
+.base64 "AAA/KA=="
 bne %cr0, 24b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+25:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 25b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+26:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 26b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+27:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 27b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+28:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 28b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+29:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 29b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+210:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 210b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+211:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 211b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+212:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 212b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+213:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 213b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+214:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 214b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+215:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 215b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+216:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 216b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+217:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 217b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+218:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 218b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+219:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 219b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+220:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 220b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+221:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 221b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+222:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 222b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+223:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 223b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+224:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 224b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+225:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 225b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+226:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 226b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+227:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 227b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+228:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 228b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+229:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 229b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+230:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 230b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+231:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 231b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+232:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 232b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+233:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 233b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+234:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 234b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+235:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 235b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+236:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 236b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+237:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 237b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+238:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 238b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+239:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 239b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+240:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 240b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+241:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 241b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+242:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 242b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+243:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 243b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+244:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 244b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+245:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 245b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+246:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 246b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+247:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 247b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+248:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 248b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+249:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 249b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+250:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 250b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+251:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 251b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+252:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 252b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+253:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 253b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+254:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 254b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+255:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 255b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+256:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 256b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+257:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 257b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AwDgOw=="
+258:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 258b
+.base64 "4AOAOOADoDjAAsA4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BQDgOw=="
+259:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 259b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+260:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 260b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+261:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 261b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+262:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 262b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "BADgOw=="
+263:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 263b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AgDgOw=="
+264:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 264b
+.base64 "4AOAOOADoDiAAsA4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "CADgOw=="
+265:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 265b
+.base64 "4AOAOOADoDgAA8A4"
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AgDgOw=="
+266:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_secp256k1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 266b
+.base64 "4AOAOOADoDhgAsA4"
+bl {vg_secp256k1_mul_mod_p}
 .base64 "gASAOAACoDjgA8A4"
 bl {vg_secp256k1_mul_mod_p}
 .base64 "oASAOIAEoDjAAMA4"

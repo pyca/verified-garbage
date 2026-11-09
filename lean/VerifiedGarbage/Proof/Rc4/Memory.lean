@@ -27,15 +27,6 @@ theorem write_byte (m : Mem) (p x : Addr) (value : Byte) :
   · have hne : ¬(x - p).toNat < 1 := by bv_omega
     simp only [hne, h, ite_false]
 
-/-- A vector store whose bytes equal the old memory is a memory identity. -/
-theorem write_read (m : Mem) (p : Addr) (n : Nat) : m.write p n (m.read p n) = m := by
-  funext x
-  unfold Mem.write
-  by_cases h : (x - p).toNat < n
-  · rw [ite_eq_left h, Mem.extractLsb'_read _ _ h]
-    rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
-  · rw [ite_eq_right h]
-
 theorem table_get (m : Mem) (p : Addr) (idx : Byte) :
     (contextAt m p).table.getD idx.toNat 0 = m (p + BitVec.ofNat 64 idx.toNat) := by
   rw [get_byte]

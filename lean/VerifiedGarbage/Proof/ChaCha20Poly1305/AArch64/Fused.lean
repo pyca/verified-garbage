@@ -264,7 +264,7 @@ theorem pres_ne : ∀ r ∈ preserved, r ≠ .x0 ∧ r ≠ .x1 ∧
     r ∉ [Reg.x4, .x5, .x6, .x7, .x8, .x16, .x17] := by decide
 
 /-- `x0` and `setup`. -/
-theorem first_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) :
+theorem first_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv e s₀ s) :
     WP isa (.block (([.addImm .x .x0 .x21 448] : List Instr) ++ Impl.Poly1305.AArch64.Radix64.setup)) s
       fun s₂ => HInv (Proof.Poly1305.AArch64.Rk s.mem (off (cx s₀) 448))
           (Spec.Poly1305.leNum (bytesAt s.mem (off (cx s₀) 448) 24)) [] s₂ ∧
@@ -328,7 +328,7 @@ theorem last_ok {s₀ : State} (hp : APre e s₀) {s : State} {R A : Nat} {X : L
 /-- The additional data and the data, each padded, and the lengths block at
 `ctx`, absorbed into the state at `ctx + 448`. -/
 theorem macAll_ok {s₀ : State} (hp : APre e s₀) (srcA : Src s₀ (ad s₀) (AL s₀))
-    (srcD : Src s₀ (dp s₀) (L s₀)) {s : State} (h : Inv s₀ s) :
+    (srcD : Src s₀ (dp s₀) (L s₀)) {s : State} (h : Inv e s₀ s) :
     WP isa macAll s fun s' => Kept (macR s₀) s s' ∧
       ∀ key msg, Repr s.mem (off (cx s₀) 448) key msg →
         Repr s'.mem (off (cx s₀) 448) key (msg ++

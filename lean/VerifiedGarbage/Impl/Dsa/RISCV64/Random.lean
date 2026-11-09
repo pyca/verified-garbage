@@ -58,9 +58,6 @@ def oDig : Nat := 80
 /-- Our caller's `s0`–`s11`, then our return address. -/
 def oSave : Nat := 88
 
-/-- Our `i`-th argument on the stack, above the frame. -/
-def argOff (i : Nat) : Nat := frameBytes + 8 * i
-
 /-- The callee-saved registers saved. -/
 def cs (i : Nat) : Reg :=
   [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11].getD i .s0

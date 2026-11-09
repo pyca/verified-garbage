@@ -33,12 +33,6 @@ theorem word_writeW (m : Mem) (base : Addr) {d d' : Nat} (hd : d + 8 ≤ 8192) (
   · rw [ite_eq_right e]
     exact Mem.readW_writeW_sep (Offset.sep base (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
 
-theorem readW_writeW' (m : Mem) (base : Addr) {d d' : Nat} (hd : d + 8 ≤ 8192)
-    (hd' : d' + 8 ≤ 8192) (h : d' = d ∨ d' + 8 ≤ d ∨ d + 8 ≤ d') (v : BitVec 64) :
-    (m.writeW (base + BitVec.ofNat 64 d) v).readW (base + BitVec.ofNat 64 d') 64 =
-      if d' = d then v else m.readW (base + BitVec.ofNat 64 d') 64 :=
-  word_writeW m base hd hd' h v
-
 theorem st_ok {s : State} {base : Addr} (hs : Scr s base) (r : Reg) {d : Nat}
     (h8 : d % 8 = 0) (hd : d + 8 ≤ 8192) :
     WP isa (.block [st r d]) s fun t =>

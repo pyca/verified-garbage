@@ -210,9 +210,6 @@ theorem KeyOK.keep {kq : Addr} {kn : Nat} (hk : KeyOK H s₀ kq kn) (hl : Lay H)
 
 /-! ## `padKey` and `updBlock` -/
 
-theorem pad36 : (BitVec.ofNat 8 0x36 : Byte) = ipad := rfl
-theorem pad5c : (BitVec.ofNat 8 0x5c : Byte) = opad := rfl
-
 /-- `padKey dst c`: `K₀ ⊕ c` into the buffer of the state at `q`, the inner
 or the outer one. -/
 theorem padKey_ok (hp : Pre H s₀) (hl : Lay H) {dst : Reg}

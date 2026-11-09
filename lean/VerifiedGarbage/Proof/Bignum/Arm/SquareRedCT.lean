@@ -58,10 +58,6 @@ def ProdReady (base : BitVec 32) (size out a mod M n : Nat) (sp0 : BitVec 32) (s
 def RedReady (base : BitVec 32) (size out a mod M n : Nat) (sp0 : BitVec 32) (k : Nat) (s : State) : Prop :=
   s.sp = sp0 ∧ ∃ m0 inv, RedInv m0 base size out a mod M n inv k s
 
-theorem holdStable : ∀ s t : State, SqHold base size out a mod M n sp0 s → t.mem = s.mem →
-    Rest [.r0] s t → SqHold base size out a mod M n sp0 t :=
-  fun _ _ ⟨sp, m0, inv, env⟩ mem rest => ⟨rest.sp.trans sp, m0, inv, env.of_mem mem rest⟩
-
 theorem sqDouble_ct :
     RelCT isa (fun s t => CrossReady base size out a mod M n sp0 (n - 1) s ∧
       CrossReady base size out a mod M n sp0 (n - 1) t) sqDouble

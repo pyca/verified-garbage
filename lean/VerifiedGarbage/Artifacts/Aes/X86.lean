@@ -6,12 +6,11 @@ public import VerifiedGarbage.Proof.Aes.X86.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86.ExpandKey
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
 public import VerifiedGarbage.Proof.Aes.X86.BlocksCT
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksMain
 public import VerifiedGarbage.Proof.Aes.X86.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Body
@@ -27,20 +26,7 @@ public import VerifiedGarbage.Proof.Aes.X86.Keys
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Mmx
 public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Body
-import VerifiedGarbage.Proof.Aes.X86.AesNi.CT
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBranches
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyMemory
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPost
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Loops
-import VerifiedGarbage.Proof.Aes.X86.Blocks
-import VerifiedGarbage.Proof.Aes.X86.Decrypt
-import VerifiedGarbage.Proof.Aes.X86.Keys
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # AES on x86 -/
 
@@ -61,19 +47,19 @@ def artifacts : List Artifact := [
     features := ["aes"] },
   Spec.Aes.encryptBlocksApi.artifact X86.target {
     code := Impl.Aes.X86.encryptBlocks
-    verified := Proof.Aes.X86.encryptBlocks_verified },
+    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.X86.encryptBlocks_verified },
   Spec.Aes.decryptBlocksApi.artifact X86.target {
     code := Impl.Aes.X86.decryptBlocks
-    verified := Proof.Aes.X86.decryptBlocks_verified },
+    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.X86.decryptBlocks_verified },
   Spec.Aes.encryptBlocksApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.Aes.X86.AesNi.encryptBlocks
-    verified := Proof.Aes.X86.AesNi.encryptBlocks_verified
+    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.X86.AesNi.encryptBlocks_verified
     features := ["aes"] },
   Spec.Aes.decryptBlocksApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.Aes.X86.AesNi.decryptBlocks
-    verified := Proof.Aes.X86.AesNi.decryptBlocks_verified
+    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.X86.AesNi.decryptBlocks_verified
     features := ["aes"] }]
 
 end VG.Artifacts.Aes.X86

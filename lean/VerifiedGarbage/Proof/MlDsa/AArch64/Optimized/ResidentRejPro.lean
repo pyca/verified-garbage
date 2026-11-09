@@ -45,11 +45,6 @@ theorem saveG_with {σ : State}
         Offset.sep (scr σ) (d := oSave+8*i) (e := oSave+8*k) (n := 8) (k := 8) (by omega) (by dsimp only [oSave]; omega) (by dsimp only [oSave]; omega)
       rw [Mem.readW_writeW_sep hs (by decide)]
       exact hvals i (by omega)
-theorem saveG_ok {v : Nat} {σ : State} (hp : Pre v σ) :
-    WP isa (.block saveG) σ fun t => Mupd σ t t.mem ∧ Frame [saveR σ] σ.mem t.mem ∧
-      ∀ i < 10,t.mem.readW (at' σ (oSave+8*i)) 64 = σ.gpr (saved[i]!) :=
-  saveG_with (fun _ _ h=>in_scr hp rfl h)
-
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 
 end
@@ -93,12 +88,6 @@ theorem saveV_with {σ s : State}
           (by omega) (by dsimp only [oSave]; omega) (by dsimp only [oSave]; omega)
       rw [Mem.readW_writeW_sep hs (by decide)]
       exact hvals i (by omega)
-theorem saveV_ok {v : Nat} {σ s : State} (hp : Pre v σ) (hw : s.wr = σ.wr) (hs : s.gpr .x2 = scr σ) :
-    WP isa (.block saveV) s fun t => RegKeep [.x8] s t ∧ t.v = s.v ∧
-      Frame [vSaveR σ] s.mem t.mem ∧ ∀ i < 8,
-        t.mem.readW (at' σ (oSave+80+8*i)) 64 = vdword (s.v (vreg (8+i))) 0 :=
-  saveV_with (fun _ _ h=>in_scr hp rfl h) hw hs
-
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 
 end

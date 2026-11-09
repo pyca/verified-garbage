@@ -72,11 +72,6 @@ theorem QPre.τ_le {s₀ : State} (hp : QPre s₀) : τ s₀ ≤ 60 := by
   simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at h
   omega_arith
 
-theorem QPre.len {s₀ : State} (hp : QPre s₀) : (arg s₀ 1).toNat < 136 := by
-  have h := hp.2
-  simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at h
-  omega_arith
-
 /-! ## The loop of `SampleInBall`, from the message -/
 
 /-- The output. -/
@@ -91,9 +86,6 @@ abbrev st (B : List Byte) (τ : Nat) (k : Nat) : IPoly × Nat :=
 
 /-- The byte of iteration `k`. -/
 abbrev jb (B : List Byte) (k : Nat) : Byte := (Xb B).getD (8 + k) 0
-
-/-- The signs used after `k` iterations. -/
-abbrev tu (B : List Byte) (τ k : Nat) : Nat := (st B τ k).2 + τ - 256
 
 theorem out_eq (s₀ : State) : L.out s₀ = Xb (L.Msg s₀) := (H_eq _ _).symm
 

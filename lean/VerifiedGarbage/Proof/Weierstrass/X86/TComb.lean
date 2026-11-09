@@ -27,11 +27,8 @@ public import VerifiedGarbage.Proof.Mont.Words128
 public import VerifiedGarbage.Proof.Mont.X86.Chain
 public import VerifiedGarbage.Proof.Mont.X86.Csub
 public import VerifiedGarbage.Proof.Mont.X86.Instr
-public import VerifiedGarbage.Proof.Mont.X86.P256Red
 public import VerifiedGarbage.Proof.Mont.X86.RedRow
 public import VerifiedGarbage.Proof.Mont.X86.Row
-public import VerifiedGarbage.Proof.Mont.X86.SparseShift
-public import VerifiedGarbage.Proof.Mont.X86.SparseStep
 public import VerifiedGarbage.Proof.Mont.X86.Step
 public import VerifiedGarbage.Proof.Rc2.Memory32
 public import VerifiedGarbage.Proof.Weierstrass.TCombWords
@@ -53,11 +50,8 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Mont.Words128
 import VerifiedGarbage.Proof.Mont.X86.Chain
 import VerifiedGarbage.Proof.Mont.X86.Csub
-import VerifiedGarbage.Proof.Mont.X86.P256Red
 import VerifiedGarbage.Proof.Mont.X86.RedRow
 import VerifiedGarbage.Proof.Mont.X86.Row
-import VerifiedGarbage.Proof.Mont.X86.SparseShift
-import VerifiedGarbage.Proof.Mont.X86.SparseStep
 import VerifiedGarbage.Proof.Mont.X86.Step
 import VerifiedGarbage.Proof.Rc2.Memory32
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
@@ -153,23 +147,6 @@ structure TCombFixed (K : TCombCfg) (C : Curve) (base : Addr) (size : Nat) (s₀
   /-- The tables are apart from the writable regions and the stack the calls use. -/
   apart : ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) 20], Region.Disjoint ⟨T, 8 * ws.length⟩ r
   sp_lo : 20 ≤ (s₀.gpr .esp).toNat
-
-/-- The loop's invariant at `esi = j`: `A` represents `[combEW w k J j]G`, and
-the table of bits (all `w J` bytes) and the tables are where the digits and
-the selection read them. -/
-structure TCombInv (K : TCombCfg) (C : Curve) (base : Addr) (size k : Nat) (T : Addr)
-    (ws : List (BitVec 64)) (s₀ s : State) (j : Nat) : Prop where
-  scr : Scr s base size
-  esi : s.gpr .esi = BitVec.ofNat 32 j
-  keep : KeepRegs powClob s₀ s
-  unch : Unch base (tcombW K) s₀.mem s.mem
-  mod : ModOkW K.M size C.p s.mem base
-  lt : ∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s.mem base x K.M.n < C.p
-  rep : Rep C (tmv C K.M.n base s K.A.x) (tmv C K.M.n base s K.A.y) (tmv C K.M.n base s K.A.z)
-    (mul (combEW K.w k K.J j) (G C))
-  bits : ∀ t < K.w * K.J, s.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0
-  tbl : TblMem s T ws
-  tsym : (s.mem.readW (off base K.ptr) 32).setWidth 64 = T
 
 /-- The tables survive code from a state that keeps the regions and `esp` of
 `s₀` and uses 20 bytes of stack. -/
@@ -282,7 +259,6 @@ theorem copyPt_ok {s : State} {base : Addr} {size n : Nat} (hs : Scr s base size
       rcases hw with h | h | h <;> simp [h]
 
 theorem clob_powClob : ∀ r ∈ clob, r ∈ powClob := fun _ h => List.mem_cons_of_mem _ h
-
 
 end VG.Proof.Weierstrass.X86
 

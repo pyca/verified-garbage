@@ -20,11 +20,4 @@ theorem pair_callee {S : Nat} (hS : S<2^64) :
     have h : Impl.MlDsa.AArch64.Optimized.ResidentMask.raw.aarch64Depth=0 := by decide
     rw [h]; omega)
 
-theorem pair_n2_callee {S : Nat} (hS : S<2^64) :
-    CalleeOk S (Impl.MlDsa.AArch64.Optimized.ResidentMask.rawWith Resident.n2Core.code)
-      (expandMaskPairContract AArch64.abi S) :=
-  CalleeOk.of_verified hS pair_n2_verified (by omega) (by
-    have h : (Impl.MlDsa.AArch64.Optimized.ResidentMask.rawWith Resident.n2Core.code).aarch64Depth=0 := by decide
-    rw [h]; omega)
-
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentMask

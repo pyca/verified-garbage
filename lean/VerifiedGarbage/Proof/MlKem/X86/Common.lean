@@ -325,10 +325,6 @@ theorem bytes_extend1 {m : Mem} {o : Addr} {L : List Byte} {k : Nat} (hk : k < 2
   rw [ite_eq_right_iff.mpr fun e' => absurd e' (add_ofNat_ne (by omega) (by omega) e)]
   exact h j (by omega)
 
-/-- Coefficient `k` of a polynomial at a 32-bit pointer. -/
-theorem coeffAddr_eq (x : BitVec 32) (k : Nat) :
-    coeffAddr (x.setWidth 64) k = x.setWidth 64 + BitVec.ofNat 64 (4 * k) := rfl
-
 /-- Two accesses at offsets `a` and `b` of a region at a 32-bit pointer. -/
 theorem sep_at {x : BitVec 32} {len a b n k : Nat} (ha : a + n ≤ len) (hb : b + k ≤ len)
     (hx : x.toNat + len ≤ 2 ^ 32) (h : a + n ≤ b ∨ b + k ≤ a) :

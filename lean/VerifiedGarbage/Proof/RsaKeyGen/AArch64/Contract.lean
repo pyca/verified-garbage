@@ -3,12 +3,13 @@ module
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 /-!
 # A candidate for an RSA prime on AArch64: the contract the proofs use
 
 Untrusted: everything here is checked by Lean. `candContract` states
-`Spec.RsaKeyGen.candidateContract` on the registers and the stack:
+`Proof.RsaKeyGen.candidateContract` on the registers and the stack:
 `vg_rsa_keygen_candidate(out = x0, out_len = x1, used = x2, e = x3,
 e_len = x4, p = x5, p_len = x6, rand = x7, rand_len = [sp],
 scratch = [sp + 8], scratch_len = [sp + 16])`. The shared contract implies

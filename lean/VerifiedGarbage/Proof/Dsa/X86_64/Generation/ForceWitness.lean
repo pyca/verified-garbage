@@ -53,28 +53,4 @@ theorem forceWitness_ok {s : State} {op : Addr} {len : Nat}
 
   simp [BitVec.setWidth_and, BitVec.setWidth_or]
 
-/-- The native transformation implements the forced branch of the shared
-RSA sampler, with all memory outside the witness buffer preserved. -/
-theorem forceWitness_spec {s : State} {op : Addr} {len w : Nat}
-    (hlen : 2 ≤ len) (hmax : len < 2 ^ 32) (hop : s.gpr .rdi = op)
-    (hcx : s.gpr .rcx = BitVec.ofNat 64 len)
-    (hrd : ∀ i < len, InRegions (s.rd ++ s.wr) (off op i) 1)
-    (hwr : ∀ i < len, InRegions s.wr (off op i) 1)
-    (hbits : Spec.RsaKeyGen.bitLength (w - 1) = 8 * len)
-    (hbad : ¬ (2 ≤ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem op len) ∧
-      Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem op len) < w - 1)) :
-    WP isa (.block Impl.Dsa.X86_64.Generation.forceWitness) s fun t =>
-      Spec.RsaKeyGen.witness (w - 1) (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem op len)) =
-        (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op len), false) ∧
-      (∀ a, (∀ i < len, a ≠ off op i) → t.mem a = s.mem a) ∧ Keep [.rax] s t := by
-  refine WP.mono (forceWitness_ok hlen hmax hop hcx hrd hwr) fun t ⟨hm, hk⟩ => ?_
-  refine ⟨?_, ?_, hk⟩
-  · rw [hm, VG.Proof.Dsa.Generation.forcedWitness_memory s.mem op hlen (by omega)]
-    exact VG.Proof.Dsa.Generation.forcedWitnessBytes_spec
-      (by simpa only [bytesAt_length] using hlen) (by simpa only [bytesAt_length] using hbits) hbad
-  · intro a ha
-    have hzero : a ≠ op := by simpa only [off, BitVec.add_zero] using ha 0 (by omega)
-    rw [hm, WriteBytes.writeW8_apply, ite_eq_right (ha (len - 1) (by omega)),
-      WriteBytes.writeW8_apply, ite_eq_right hzero]
-
 end VG.Proof.Dsa.X86_64.Generation

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Sm4.PPC64LE.KeyVerified
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.PreparedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 
 /-! # SM4 artifacts on PPC64LE -/

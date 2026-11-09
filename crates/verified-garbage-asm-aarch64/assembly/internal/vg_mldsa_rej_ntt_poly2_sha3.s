@@ -5,7 +5,6 @@
 // gives.
 
 vg_mldsa_rej_ntt_poly2_sha3:
-	.arch_extension sha3
 	str x19, [x2, #7968]
 	str x20, [x2, #7976]
 	str x21, [x2, #7984]
@@ -1528,5 +1527,4 @@ vg_mldsa_rej_ntt_poly2_sha3:
 	ldr x28, [x19, #8040]
 	ldr x19, [x19, #7968]
 	ret
-	.arch_extension nosha3
 	.p2align 6

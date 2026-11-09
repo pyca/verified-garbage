@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Rsa.AArch64.Folded
 import VerifiedGarbage.Proof.Bignum.AArch64.FoldedCodeCT
 import VerifiedGarbage.Proof.Bignum.AArch64.FoldedCode
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 @[expose] public section
 namespace VG.Proof.Rsa.AArch64.FoldedPublic
@@ -38,7 +39,7 @@ theorem checked_constantTime (M : Mont) :
     fun _ _ _ _ h₁ h₂ hp => pdPub_same h₁ h₂ hp
 
 theorem checked_verified (M : Mont) :
-    Verified target (Folded.checked M.mm) (Spec.Rsa.publicPrecomputedCheckedContract abi) :=
+    Verified target (Folded.checked M.mm) (Proof.Rsa.publicPrecomputedCheckedContract abi) :=
   have hct : ConstantTime isa pdChkContract.pre pdChkContract.pub (Folded.checked M.mm) :=
     checked_constantTime M
   Verified.of_correct (k := pdChkContract) (checked_correct M) hct precomputedChecked_implies

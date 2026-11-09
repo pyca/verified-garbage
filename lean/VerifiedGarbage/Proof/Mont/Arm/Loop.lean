@@ -385,7 +385,7 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     simp only [decide_eq_decide]
     omega_using [hk]
 
-/-- The loop of `mul`: from the invariant at word 0 to the invariant at `W`. -/
+/-- The loop of `mulR`: from the invariant at word 0 to the invariant at `W`. -/
 theorem loop_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {W acc a b m : Nat}
     {ka da : Nat} (hka : ka + da = a) {rb : Reg} {kb db : Nat}
     (hb : s.gpr rb = s.gpr .r12 + BitVec.ofNat 32 kb) (hkb : kb + db = b) (hrb : rb ∉ rowClob)

@@ -58,7 +58,6 @@ theorem cutSetLow9_check : PCheck [.ecx, .edx] (.seq (.seq Impl.Ffdh.X86.Candida
       ([.mov .ebp (.reg .eax), .shift .shr .ebp 1, .alu .xor .eax (.reg .ebp), .alu .or .ecx (.reg .eax)] : List Instr) ++
       ([.store (at_ .ebx 0) .ecx] : List Instr))) (.block (setLow (.slot .wide 9)))) := by
   dsimp only [PCheck]; taint_decide
-theorem setLow9_check : ACheck (.block (setLow (.slot .wide 9))) := by dsimp only [ACheck]; taint_decide
 theorem testEax_check : ACheck testEax := by dsimp only [ACheck]; taint_decide
 theorem half_check : ACheck half := by dsimp only [ACheck]; taint_decide
 theorem oddQ_check : ACheck (.block (lowWord (.slot .wide 10) ++ ([.alu .and .eax (.imm 1)] : List Instr))) := by

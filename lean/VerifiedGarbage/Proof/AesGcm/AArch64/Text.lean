@@ -135,11 +135,6 @@ theorem Ctr.frame {m m' : Mem} {St : Addr} {ciph : Block → Block} {icb : Block
   hc.congr (blockAt_frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (Nat.le_refl _) (by omega)))
     (blockAt_frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega) (by omega)))
 
-/-- `J₀` stays where it is, outside a frame. -/
-theorem j0_frame {m m' : Mem} {St : Addr} {rs : List Region} (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, (⟨St, 16⟩ : Region).Disjoint r) : blockAt m' St = blockAt m St :=
-  blockAt_frame hf hd
-
 section
 variable {Ctx St W : Addr} (L : Lay Ctx St W)
 include L

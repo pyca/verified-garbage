@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sm3.Arm.Compress
-public import VerifiedGarbage.Proof.Sm3.Contract
 import VerifiedGarbage.Proof.Sm3.Arm.Stream.Init
 import VerifiedGarbage.Proof.Sm3.Arm.Stream.Md
 public import VerifiedGarbage.Proof.Sm3.Scratch
@@ -21,11 +20,6 @@ The proofs are written against per-target contracts
 (`Proof/Sm3/Arm/Contract.lean`); these theorems move them to the shared
 contracts of `Spec/Sm3/Contract.lean`, which the artifacts are emitted with.
 
-The shared contract gives `compress` more scratch (576 bytes) than this one
-uses (104): the per-target contract is first widened to that scratch
-(`Verified.widen`, the same code running with the same trace and result),
-then moved to the shared one.
-
 `update` and `finalize` keep their working space (19 words: the compression
 function's 104 bytes, then the registers the streaming code saves) in a frame
 of their own: they are `updateScratch` and `finalizeScratch` (the shared
@@ -38,47 +32,6 @@ run in a frame that allocates it (`Verified.stackScratch`).
 namespace VG.Proof.Sm3.Arm.Shared
 
 open _root_.VG.Arm
-
-/-- `compressArm` with 576 bytes of scratch. -/
-def compressWide : Contract Arm.isa :=
-  { Proof.Sm3.compressArm with
-    pre := fun s =>
-      let state : Region := ⟨State.addr (s.gpr .r0), 32⟩
-      let blocks : Region := ⟨State.addr (s.gpr .r1), 64 * (s.gpr .r2).toNat⟩
-      let scratch : Region := ⟨State.addr (s.gpr .r3), 576⟩
-      s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
-      state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch ∧
-      (s.gpr .r0).toNat + 32 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 64 * (s.gpr .r2).toNat ≤ 2 ^ 32 ∧
-      (s.gpr .r3).toNat + 576 ≤ 2 ^ 32 }
-
-theorem pfx {a : Addr} {m n : Nat} (h : Nat.ble m n = true) : Region.Prefix ⟨a, m⟩ ⟨a, n⟩ :=
-  ⟨rfl, Nat.le_of_ble_eq_true h⟩
-theorem sub104 (a : Addr) : Region.Sub ⟨a, 104⟩ ⟨a, 576⟩ := Region.sub_prefix (by decide)
-
-/-- A state satisfying `compressWide.pre`. -/
-def compressSat : State := { Proof.Sm3.Arm.satState with wr := [⟨0x1000, 32⟩, ⟨0x3000, 576⟩] }
-
-theorem compressWide_verified : Verified Arm.target Impl.Sm3.Arm.compress compressWide :=
-  Verified.widen Proof.Sm3.Arm.compress_verified
-    (fun s => [⟨State.addr (s.gpr .r0), 32⟩, ⟨State.addr (s.gpr .r3), 104⟩])
-    (fun _ ⟨h₁, _, h₃, h₄, h₅, h₆, h₇, h₈⟩ =>
-      ⟨h₁, rfl, h₃.sub_right (sub104 _), h₄, h₅.sub_right (sub104 _), h₆, h₇,
-        Nat.le_trans (Nat.add_le_add_left (by decide : 104 ≤ 576) _) h₈⟩)
-    (fun _ ⟨_, h₂, _⟩ => h₂ ▸ .cons (pfx rfl) (.cons (pfx rfl) .nil))
-    (fun _ _ _ h => h) (fun _ _ _ _ h => h)
-    (by
-      refine ⟨compressSat, rfl, rfl, ?_, ?_, ?_, by decide, by decide, by decide⟩ <;>
-      first
-      | exact Offset.disjoint_of_le (by decide) (by decide)
-      | exact Region.Disjoint.symm (Offset.disjoint_of_le (by decide) (by decide)))
-
-theorem compress :
-    Verified Arm.target Impl.Sm3.Arm.compress (Proof.Sm3.compressContract Arm.abi) :=
-  compressWide_verified.of_implies (by
-    contract_implies [Proof.Sm3.compressContract, Proof.Sm3.compressSig, compressWide,
-      Proof.Sm3.compressArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      [compressSat, Proof.Sm3.Arm.satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
-      Mem.read] using compressSat)
 
 theorem init : Verified Arm.target Impl.Sm3.Arm.Stream.init (Spec.Sm3.initContract Arm.abi) :=
   Proof.Sm3.Arm.Stream.init_verified.of_implies (by

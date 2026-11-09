@@ -92,9 +92,6 @@ theorem store_widen (hc : Covers s.wr wr) {a : Addr} {n : Nat} {v : BitVec (8 * 
   cases h
   simp only [State.store, State.withRegions_wr, hc _ _ hi, ite_true]; rfl
 
-theorem write_withRegions (d : Reg) (v : BitVec 64) :
-    (s.withRegions rd wr).write d v = (s.write d v).withRegions rd wr := rfl
-
 theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr) {i : Instr}
     (h : exec i s = some s') : exec i (s.withRegions rd wr) = some (s'.withRegions rd wr) := by
   cases i with

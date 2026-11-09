@@ -80,11 +80,6 @@ theorem jointDouble_ct :
     ScratchCT (fprogB publicJoint.K.M (dblJ0 publicJoint.K.S publicJoint.K.R publicJoint.K.D)).inline :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
-/-- `vg_secp256k1_jac_double`: its timing depends only on `rdi`, a straight
-line of field operations at `rdi` plus constants (checked on its literal). -/
-theorem doubleFn_ct : ScratchCT Impl.Secp256k1.X86_64.PointOps.doubleFn :=
-  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
-
 /-- The table by calls' copy of `Q` to `R`. -/
 theorem tableCopyInit_ct : ScratchCT (.block (copyPt publicJoint.K.M.n publicJoint.K.R publicJoint.K.P)) :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)

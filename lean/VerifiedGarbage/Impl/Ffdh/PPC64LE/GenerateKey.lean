@@ -3,28 +3,22 @@ module
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.Derive
 
 /-!
-# Finite-field Diffie–Hellman on PPC64LE: one key-generation attempt
+# Finite-field Diffie–Hellman on PPC64LE: a key-generation attempt's pieces
 
-`vg_ffdh_generate_key` (`Spec/Ffdh/Contract.lean`), in the working space of
+The pieces of `vg_ffdh_generate_key`'s attempt (`Spec/Ffdh/Contract.lean`)
+that its cached form (`Cached.lean`) shares, in the working space of
 `Domain.lean` at `scratch`, with x's address and length, `y`'s address and
 `rand`'s address in the header's words 8–11:
 
-* p is loaded into array 0 and checked as `vg_ffdh_derive_public` checks it;
-  otherwise the result is 0;
 * the bound's octets (q's at `domain + 2 p_len`, or p's without q, whose
-  first nonzero octet is `p − 1`'s) are scanned without a branch for the
-  first nonzero one and its index (`scan`), its bits below the highest set
-  (`smear`), and `rand`'s `p_len` octets are cut there into `x`: zeros
-  before it, and'ed with the smeared octet at it, kept after it (`cut`), so
-  that x is `scalarOfOctets` of `rand`;
-* then as `vg_ffdh_derive_public` (`Derive.dpBody`): the status 2 and zeros
-  at `y` for x out of range, else `y = g^x mod p` or zeros and the status 1
-  or 3;
-* x's octets masked by the status being 1 (`maskX`): zeros but for 1.
+  first nonzero octet is `p − 1`'s, `boundPtr`) are scanned without a branch
+  for the first nonzero one and its index (`scanSetup`, `scanBody`);
+* `rand`'s `p_len` octets are cut into `x`: zeros before an index, and'ed
+  with a mask at it, kept after it (`ptrs`, `cutSetup`, `cutBody`);
+* x's octets masked by the status being 1 (`statusMask`, `maskX`): zeros
+  but for 1.
 
-The code branches on p's validity, whether there is q and x's range, which
-the domain and the status reveal; the scan, the cut and the mask run over
-every octet without a branch.
+The scan, the cut and the mask run over every octet without a branch.
 -/
 
 @[expose] public section
@@ -32,16 +26,6 @@ every octet without a branch.
 namespace VG.Impl.Ffdh.PPC64LE.GenerateKey
 
 open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.Domain
-
-/-- `vg_ffdh_generate_key(x, x_len, y, y_len, domain, domain_len, p_len,
-rand, rand_len, scratch, scratch_len)`, the last three on the stack: the
-scratch buffer into `r11`, the registers saved there; x, `x_len`, `y` and
-`rand` into its header's words 8–11; then `setup` for the domain (`r7`),
-`domain_len` (`r8`) and `p_len` (`r9`); g's address into `r9`. -/
-def gkFront : List Instr :=
-  [.addSp .r11 104, .load .d .r11 .r11 0] ++ save .r11 ++
-    [.store .d .r3 .r23 64, .store .d .r4 .r23 72, .store .d .r5 .r23 80, .store .d .r10 .r23 88,
-      .addi .r3 .r7 0, .addi .r4 .r8 0, .addi .r5 .r9 0] ++ setup ++ [.add .r9 .r21 .r28]
 
 /-- `r12 :=` the bound's octets: q's (`domain + 2 p_len`), or p's without q. -/
 def boundPtr : Prog isa :=
@@ -62,11 +46,6 @@ def scanBody : List Instr :=
     .logic .xor .r18 .r14 .r16, .logic .and .r18 .r18 .r17, .logic .xor .r14 .r14 .r18,
     .logic .or .r15 .r15 .r17, .addi .r12 .r12 1, .addi .r4 .r4 1]
 
-/-- The bits of the octet `r14` below its highest set one, that one too. -/
-def smear : List Instr :=
-  [.lsr .d .r16 .r14 1, .logic .or .r14 .r14 .r16, .lsr .d .r16 .r14 2, .logic .or .r14 .r14 .r16,
-    .lsr .d .r16 .r14 4, .logic .or .r14 .r14 .r16]
-
 /-- `rand` (`r24`) and x (`r25`) from the header. -/
 def ptrs : List Instr := [.load .d .r24 .r23 88, .load .d .r25 .r23 64]
 
@@ -82,11 +61,6 @@ def cutBody : List Instr :=
     .logic .or .r20 .r20 .r17, .logic .xor .r20 .r20 .r17, .logic .and .r16 .r16 .r20, .stb .r16 .r25 0,
     .addi .r24 .r24 1, .addi .r25 .r25 1, .addi .r4 .r4 1]
 
-/-- x := `rand`'s `p_len` octets cut to the bound's bit length. -/
-def scalar : Prog isa :=
-  .seq (.block ptrs) (.seq boundPtr (.seq (.block scanSetup) (.seq (countLoop .r6 scanBody)
-    (.seq (.block (smear ++ cutSetup)) (countLoop .r6 cutBody)))))
-
 /-- `r17 :=` all ones if the status `r3` is 1, else 0, without a branch. -/
 def statusMask : List Instr :=
   [.subi .r12 .r3 1, .li .r0 0, .sub .r17 .r0 .r12, .logic .or .r17 .r17 .r12, .lsr .d .r17 .r17 63,
@@ -97,14 +71,5 @@ zeros otherwise. -/
 def maskX : Prog isa :=
   .seq (.block (statusMask ++ [.load .d .r25 .r23 64, .addi .r6 .r28 0]))
     (countLoop .r6 [.lbz .r16 .r25 0, .logic .and .r16 .r16 .r17, .stb .r16 .r25 0, .addi .r25 .r25 1])
-
-/-- After p's check: x, then `vg_ffdh_derive_public`'s body, then zeros at
-x but for the status 1. -/
-def gkBody : Prog isa := .seq scalar (.seq Derive.dpBody maskX)
-
-/-- `vg_ffdh_generate_key`. -/
-def generateKey : Prog isa :=
-  .seq (.block gkFront) (.seq loadP
-    (.seq (.ite (.zero .d .r0) gkBody (.block [.li .r3 0])) (.block Domain.restore)))
 
 end VG.Impl.Ffdh.PPC64LE.GenerateKey

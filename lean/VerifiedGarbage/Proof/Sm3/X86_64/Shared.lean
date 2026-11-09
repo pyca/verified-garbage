@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sm3.X86_64.Compress
-public import VerifiedGarbage.Proof.Sm3.Contract
 import VerifiedGarbage.Proof.Sm3.X86_64.Stream.Init
 import VerifiedGarbage.Proof.Sm3.X86_64.Stream.Md
 public import VerifiedGarbage.Proof.Sm3.Scratch
@@ -19,11 +18,6 @@ The proofs are written against per-target contracts
 (`Proof/Sm3/X86_64/Contract.lean`); these theorems move them to the shared
 contracts of `Spec/Sm3/Contract.lean`, which the artifacts are emitted with.
 
-The shared contract gives `compress` more scratch (576 bytes) than this one
-uses (112): the per-target contract is first widened to that scratch
-(`Verified.widen`, the same code running with the same trace and result),
-then moved to the shared one.
-
 `update` and `finalize` keep their working space (20 words: the compression
 function's 112 bytes, then our caller's callee-saved registers) in a frame of
 their own: they are `updateScratch` and `finalizeScratch` (the shared
@@ -34,46 +28,6 @@ run in a frame that allocates it (`Verified.stackScratch`).
 @[expose] public section
 
 namespace VG.Proof.Sm3.X86_64.Shared
-
-open _root_.VG.X86_64 in
-/-- `compressX86_64` with 576 bytes of scratch. -/
-def compressWide : Contract X86_64.isa :=
-  { Proof.Sm3.compressX86_64 with
-    pre := fun s =>
-      let state : Region := ⟨s.gpr .rdi, 32⟩
-      let blocks : Region := ⟨s.gpr .rsi, 64 * (s.gpr .rdx).toNat⟩
-      let scratch : Region := ⟨s.gpr .rcx, 576⟩
-      let ret : Region := ⟨s.gpr .rsp, 8⟩
-      s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
-      state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch ∧
-      ret.Disjoint state ∧ ret.Disjoint scratch }
-
-theorem pfx {a : Addr} {m n : Nat} (h : Nat.ble m n = true) : Region.Prefix ⟨a, m⟩ ⟨a, n⟩ :=
-  ⟨rfl, Nat.le_of_ble_eq_true h⟩
-theorem sub112 (a : Addr) : Region.Sub ⟨a, 112⟩ ⟨a, 576⟩ := Region.sub_prefix (by decide)
-
-/-- A state satisfying `compressWide.pre`. -/
-def compressSat : X86_64.State := { Proof.Sm3.X86_64.satState with wr := [⟨0x1000, 32⟩, ⟨0x3000, 576⟩] }
-
-theorem compressWide_verified : Verified X86_64.target Impl.Sm3.X86_64.compress compressWide :=
-  X86_64.Verified.widen Proof.Sm3.X86_64.compress_verified
-    (fun s => [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rcx, 112⟩])
-    (fun _ ⟨h₁, _, h₃, h₄, h₅, h₆, h₇⟩ =>
-      ⟨h₁, rfl, h₃.sub_right (sub112 _), h₄, h₅.sub_right (sub112 _), h₆, h₇.sub_right (sub112 _)⟩)
-    (fun _ ⟨_, h₂, _⟩ => h₂ ▸ .cons (pfx rfl) (.cons (pfx rfl) .nil))
-    (fun _ _ _ h => h) (fun _ _ _ _ h => h)
-    (by
-      refine ⟨compressSat, rfl, rfl, ?_, ?_, ?_, ?_, ?_⟩ <;>
-      first
-      | exact Offset.disjoint_of_le (by decide) (by decide)
-      | exact Region.Disjoint.symm (Offset.disjoint_of_le (by decide) (by decide)))
-
-theorem compress :
-    Verified X86_64.target Impl.Sm3.X86_64.compress (Proof.Sm3.compressContract X86_64.abi) :=
-  compressWide_verified.of_implies (by
-    contract_implies [Proof.Sm3.compressContract, Proof.Sm3.compressSig, compressWide,
-      Proof.Sm3.compressX86_64, X86_64.abi, X86_64.argRegs]
-      [compressSat, Proof.Sm3.X86_64.satState] using compressSat)
 
 theorem init :
     Verified X86_64.target Impl.Sm3.X86_64.Stream.init (Spec.Sm3.initContract X86_64.abi) :=

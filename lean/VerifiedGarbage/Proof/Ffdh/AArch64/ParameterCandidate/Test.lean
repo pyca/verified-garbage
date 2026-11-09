@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
 /-!
 # An FFDH parameter candidate on AArch64: the test of a modulus
 
-`testTail_ok`: with `N` in `aN`, the Montgomery setup, Miller–Rabin's
+`testTail_ok`: with `N` in `aN` and its witness count `K` in `fChecks`, the Montgomery setup, Miller–Rabin's
 exponent and the witnesses (`millerRabin_ok`).
 -/
 
@@ -43,15 +43,18 @@ theorem PDims.eZ {p : PP} (h : PDims p) (q : Bool) :
   simp only [slot, hdrBytes, aE, mW, PP.L] at *
   omega_arith
 
-/-- What the test of `N` (of `mb` bits) in `aN` needs, from octet `u` of the tape. -/
-structure TT (p : PP) (mb N u : Nat) (s : State) : Prop where
+/-- What the test of `N` (of `mb` bits) in `aN` by `K` witnesses needs,
+from octet `u` of the tape. -/
+structure TT (p : PP) (mb N u K : Nat) (s : State) : Prop where
   st : PSt p (mW mb) s
   mb1 : 511 ≤ mb
   mb2 : mb ≤ 8192
   eZ : slot (mW mb) aE + 8 * (mW mb + 2) ≤ p.Z
   len : word s.mem p.B (8 * kLen) = BitVec.ofNat 64 (mLen mb)
   top : word s.mem p.B (8 * fTop) = BitVec.ofNat 64 (2 ^ mK mb - 1)
-  chk : word s.mem p.B (8 * fChecks) = BitVec.ofNat 64 (Spec.Ffdh.primeChecks mb)
+  chk : word s.mem p.B (8 * fChecks) = BitVec.ofNat 64 K
+  k1 : 1 ≤ K
+  k2 : K < 2 ^ 62
   msk : word s.mem p.B (8 * Public.sMask) = mask true
   n : wv s.mem p.B (slot (mW mb) aN) (mW mb) = N
   odd : N % 2 = 1
@@ -68,17 +71,17 @@ theorem primeChecks_lt (mb : Nat) : Spec.Ffdh.primeChecks mb < 2 ^ 62 := by
 theorem primeChecks_pos (mb : Nat) : 1 ≤ Spec.Ffdh.primeChecks mb := by
   unfold Spec.Ffdh.primeChecks; split <;> decide
 
-theorem TT.dims {p : PP} {mb N u : Nat} {s : State} (h : TT p mb N u s) :
-    MrDims p (mW mb) N mb (Spec.Ffdh.primeChecks mb) :=
+theorem TT.dims {p : PP} {mb N u K : Nat} {s : State} (h : TT p mb N u K s) :
+    MrDims p (mW mb) N mb K :=
   ⟨rfl, h.mb1, h.mb2, h.eZ, h.odd, Nat.le_trans (show 3 ≤ 2 ^ 2 by decide)
-    (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by have := h.mb1; omega_arith)) h.lo), h.bl, primeChecks_lt mb, h.hL, h.mbb⟩
+    (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by have := h.mb1; omega_arith)) h.lo), h.bl, h.k2, h.hL, h.mbb⟩
 
 /-- The Montgomery setup and the exponent of the test of `N`. -/
-theorem testPre_ok (M : Mont) {p : PP} {mb N u : Nat} {s : State} (h₀ : TT p mb N u s) :
+theorem testPre_ok (M : Mont) {p : PP} {mb N u K : Nat} {s : State} (h₀ : TT p mb N u K s) :
     WP isa (seqs (montPrep M.mm ++ expSetup)) s fun t =>
-      MrFix p (mW mb) N mb (Spec.Ffdh.primeChecks mb) t ∧ word t.mem p.B (8 * kUsed) = BitVec.ofNat 64 u ∧
+      MrFix p (mW mb) N mb K t ∧ word t.mem p.B (8 * kUsed) = BitVec.ofNat 64 u ∧
         InScr p.B p.Z s.mem t.mem ∧ Keep mmRegs s t := by
-  obtain ⟨h, hmb1, hmb2, hEZ, hlen, htop, hchk, hmsk, hn, hodd, hlo, hbl, hU, hul, -, -⟩ := h₀
+  obtain ⟨h, hmb1, hmb2, hEZ, hlen, htop, hchk, -, -, hmsk, hn, hodd, hlo, hbl, hU, hul, -, -⟩ := h₀
   have hws := h.ws
   have hn' := hws.scr.nowrap
   have hZ := hws.hZ
@@ -117,7 +120,7 @@ theorem testPre_ok (M : Mont) {p : PP} {mb N u : Nat} {s : State} (h₀ : TT p m
     f₂.word_eq (fun r hr => by have := dE (j := aN) (by decide) r hr; omega_arith) (by have := sl (j := aN) (by decide); omega_arith)
   have hMi : word s₂.mem p.B (8 * sMinv) = word s₁.mem p.B (8 * sMinv) :=
     f₂.word_eq (dH (by decide)) (by simp only [sMinv]; omega_arith)
-  have fix : MrFix p (mW mb) N mb (Spec.Ffdh.primeChecks mb) s₂ :=
+  have fix : MrFix p (mW mb) N mb K s₂ :=
     ⟨st₂, ⟨_, ⟨ws₂, by rw [hWd, hMi]; exact inv₁, by rw [hWv (by decide)]; exact n₁, rfl,
         by rw [hWv (by decide)]; exact r1₁, by rw [hWv (by decide)]; exact rm1₁⟩⟩, ex₂,
       by rw [hWv (by decide)]; exact r2₁, by rw [hH (k := kLen) (by decide)]; exact hlen,
@@ -128,13 +131,12 @@ theorem testPre_ok (M : Mont) {p : PP} {mb N u : Nat} {s : State} (h₀ : TT p m
   exact ⟨fix, by rw [hH (k := kUsed) (by decide)]; exact hU, i12, (k₁.trans k₂).mono (by decide)⟩
 
 /-- The test of `N` in `aN`, from the Montgomery setup. -/
-theorem testTail_ok (M : Mont) (R : Kernel) {p : PP} {mb N u : Nat} {s : State} (h : TT p mb N u s) :
+theorem testTail_ok (M : Mont) (R : Kernel) {p : PP} {mb N u K : Nat} {s : State} (h : TT p mb N u K s) :
     WP isa (seqs (montPrep M.mm ++ expSetup ++ VG.Impl.Ffdh.AArch64.ParameterCandidate.millerRabin M.mm R.run)) s
-      (MrEnd p (mW mb) N mb (Spec.Ffdh.primeChecks mb) s
-        (checkWitnesses N (Spec.Ffdh.primeChecks mb) (p.r.drop u))) := by
+      (MrEnd p (mW mb) N mb K s (checkWitnesses N K (p.r.drop u))) := by
   refine wp_seqs_append (by simp [montPrep]) (by simp [VG.Impl.Ffdh.AArch64.ParameterCandidate.millerRabin]) ?_
   refine WP.mono (testPre_ok M h) fun t ⟨fix, hU, i12, k₁₂⟩ => ?_
-  exact WP.mono (millerRabin_ok M R h.dims fix hU h.ul (primeChecks_pos mb)) fun t' ⟨a, b, c, d, e⟩ =>
+  exact WP.mono (millerRabin_ok M R h.dims fix hU h.ul h.k1) fun t' ⟨a, b, c, d, e⟩ =>
     ⟨a, b, c, i12.trans d, (k₁₂.trans e).mono (by decide)⟩
 
 end VG.Proof.Ffdh.AArch64.ParameterCandidate

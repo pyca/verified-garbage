@@ -1,0 +1,49 @@
+name: Conflicts
+
+# After each merge to main, comments on every open pull request that now
+# conflicts with its base branch (ci/conflict_comments.py), once per push to
+# it: a pull request that still conflicts at the head it was told about is
+# not told again, and is told again after a new push that still conflicts.
+#
+# A push to main runs this file as it is on main, and nothing here checks out
+# or runs a pull request's code. Comments made with the GITHUB_TOKEN start
+# no runs of their own.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Only print the pull requests it would comment on
+        type: boolean
+        default: true
+
+permissions: {}
+
+# Each run checks every open pull request against the latest main, so a newer
+# merge supersedes a run still waiting for GitHub to work out mergeability.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: ci/conflict_comments.py
+          sparse-checkout-cone-mode: false
+      - name: Comment on newly conflicting pull requests
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+        # -u: print as it goes, not all at the end.
+        run: python3 -u ci/conflict_comments.py "$REPO" "$SHA" $DRY_RUN

@@ -1,18 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Encrypt
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
 import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
-import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Start
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
 import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Impl.MlKem.AArch64.Lay
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Bounds

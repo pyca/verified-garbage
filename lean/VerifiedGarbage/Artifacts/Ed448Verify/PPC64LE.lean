@@ -10,6 +10,7 @@ import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # Ed448 verification on PPC64LE -/
 
@@ -21,6 +22,6 @@ def artifacts : List Artifact := [
   Spec.Ed448.verifyApi.artifact PPC64LE.target {
     code := Impl.Ed448.PPC64LE.Whole.verifyCode
     stack := 352
-    verified := Proof.Ed448.PPC64LE.Whole.verify_framed Proof.Ed448.recover_ok Proof.Ed448.verifyEq4_ok }]
+    verified := Proof.Ed448.PPC64LE.Whole.verify_framed Proof.Ed448.recover_ok }]
 
 end VG.Artifacts.Ed448Verify.PPC64LE

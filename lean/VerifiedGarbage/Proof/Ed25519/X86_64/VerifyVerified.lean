@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
 import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeCT
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
@@ -71,6 +70,7 @@ meta import VerifiedGarbage.Proof.Framework.RegSetOrder
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-! Merged from `Proof.Ed25519.X86_64.VerifyCTPublic`. -/
 
@@ -1357,28 +1357,6 @@ open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 variable {fld : Arith} [EdArith fld]
 variable {win : Prog isa} [EdWindows win]
 
-/-- The memory of the contract's witness: the static at `0x100000` (irreducible: unfolding it
-in a definitional check would evaluate the words). -/
-@[irreducible] def verifySatMem : Mem := constMem 0x100000 baseOddWords
-
-theorem verifySatMem_held : ∀ i < 2048,
-    verifySatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = baseOddWords.getD i 0 := by
-  unfold verifySatMem
-  intro i hi
-  exact constMem_held _ _ (by rw [baseOddWords_length]; omega_arith) i (by rw [baseOddWords_length]; exact hi)
-
-def verifySatState : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 0x4000 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem := verifySatMem
-  rd := [⟨0x1000, 32⟩, ⟨0x2000, 64⟩, ⟨0x3000, 64⟩, ⟨0x100000, 16384⟩]
-  wr := [⟨0x4000, 8192⟩]
-  syms _ := 0x100000
-
 /-- Every load of MXCSR by the code is between saving it in `r11` and loading
 it back (`ctlOk`): checked by evaluating it, for each `fld` and `win` it is
 registered with. -/
@@ -1388,78 +1366,5 @@ theorem verify_ok (hmx : MxcsrOk (verifyEquationWith fld (Point64.bodies fld) wi
     ∃ t s', Exec isa (verifyEquationWith fld (Point64.bodies fld) win) s t s' ∧ abiPreserved s s' ∧ verifyLocal.post s s' := by
   obtain ⟨t, s', he, h⟩ := verify_correct (fld := fld) (win := win) hs
   exact ⟨t, s', he, abiPreserved_of_ctl hmx he h.1, h.2⟩
-
-private theorem byteMap_inj : ∀ {xs ys : List Byte}, xs.map (·.toNat) = ys.map (·.toNat) → xs = ys
-  | [], [], _ => rfl
-  | a :: xs, b :: ys, h => by
-    simp only [List.map_cons, List.cons.injEq] at h
-    rw [BitVec.eq_of_toNat_eq h.1, byteMap_inj h.2]
-
-theorem baseOddConsts_eq : baseOddConsts = [(baseOddSym, baseOddWords)] := rfl
-
-/-- The shared contract's precondition, from its facts. -/
-theorem verify_spec_pre {s : State}
-    (hrd : s.rd = [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rsi, 64⟩, ⟨s.gpr .rdx, 64⟩, ⟨s.syms baseOddSym, 16384⟩])
-    (hw : s.wr = [⟨s.gpr .rcx, 8192⟩])
-    (h1 : Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rcx, 8192⟩)
-    (h2 : Region.Disjoint ⟨s.gpr .rsi, 64⟩ ⟨s.gpr .rcx, 8192⟩)
-    (h3 : Region.Disjoint ⟨s.gpr .rdx, 64⟩ ⟨s.gpr .rcx, 8192⟩)
-    (r1 : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rdi, 32⟩) (r2 : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rsi, 64⟩)
-    (r3 : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rdx, 64⟩) (r4 : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rcx, 8192⟩)
-    (f0 : (s.gpr .rdi).toNat + 32 ≤ 2 ^ 64) (f1 : (s.gpr .rsi).toNat + 64 ≤ 2 ^ 64)
-    (f2 : (s.gpr .rdx).toNat + 64 ≤ 2 ^ 64) (f3 : (s.gpr .rcx).toNat + 8192 ≤ 2 ^ 64)
-    (held : ∀ i < 2048,
-      s.mem.readW (s.syms baseOddSym + BitVec.ofNat 64 (8 * i)) 64 = baseOddWords.getD i 0)
-    (fit : (s.syms baseOddSym).toNat + 16384 ≤ 2 ^ 64)
-    (td : Region.Disjoint ⟨s.syms baseOddSym, 16384⟩ ⟨s.gpr .rcx, 8192⟩)
-    (tr : Region.Disjoint ⟨s.syms baseOddSym, 16384⟩ ⟨s.gpr .rsp, 8⟩)
-    (hal : (s.syms baseOddSym).toNat % 64 = 0) :
-    (Proof.Ed25519.verifyEquationContract (X86_64.abi.withConsts baseOddConsts)).pre s := by
-  sig_pre [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
-    Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseOddConsts_eq, Abi.withConsts,
-    Abi.constRegions, Abi.constsHeld, stackBelow, baseOddWords_length]
-  exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; simp only [List.mem_singleton, forall_eq]; exact td, tr, hal,
-    by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, r4, f0, f1, f2, f3⟩
-
-theorem verify_sat :
-    (Proof.Ed25519.verifyEquationContract (X86_64.abi.withConsts baseOddConsts)).pre verifySatState :=
-  verify_spec_pre rfl rfl (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
-    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
-    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
-    (Region.disjoint_of_sep (by decide)) (by decide) (by decide) (by decide) (by decide)
-    verifySatMem_held (by decide) (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
-    (by decide)
-
-theorem verify_implies :
-    verifyLocal.Implies (Proof.Ed25519.verifyEquationContract (X86_64.abi.withConsts baseOddConsts)) where
-  pre s h := by
-    sig_pre [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
-      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseOddConsts_eq, Abi.withConsts,
-      Abi.constRegions, Abi.constsHeld, stackBelow, baseOddWords_length] at h
-    obtain ⟨hd, hheld, -, hdw, -, -, ht, hw, h1, h2, h3, -, -, -, r4, -, -, -, f4⟩ := h
-    refine ⟨?_, hw, h1, h2, h3, r4, f4, hdw _ (by rw [hw]; simp), hheld⟩
-    rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
-  post s t _ h := by
-    sig_post [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
-      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseOddConsts_eq, Abi.withConsts]
-    change t.gpr .rax = signWord _ at h
-    rw [h]
-    generalize Spec.Ed25519.verifyEquation (Spec.Ed25519.bytesAt s.mem (s.gpr .rdi) 32)
-      (Spec.Ed25519.bytesAt s.mem (s.gpr .rsi) 64) (Spec.Ed25519.bytesAt s.mem (s.gpr .rdx) 64) = b
-    cases b <;> rfl
-  pub s t _ _ h := by
-    sig_pub [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
-      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseOddConsts_eq, Abi.withConsts] at h
-    obtain ⟨sp, sy, bytes, pk, sig, challenge, base⟩ := h
-    have hb := byteMap_inj bytes
-    obtain ⟨first, last⟩ := List.append_inj' hb (by simp only [bytesAt_length])
-    obtain ⟨first, middle⟩ := List.append_inj' first (by simp only [bytesAt_length])
-    exact ⟨sp, pk, sig, challenge, base, first, middle, last, sy⟩
-  sat := ⟨verifySatState, verify_sat⟩
-
-theorem verify_verified (hmx : MxcsrOk (verifyEquationWith fld (Point64.bodies fld) win)) :
-    Verified X86_64.target (verifyEquationWith fld (Point64.bodies fld) win)
-      (Proof.Ed25519.verifyEquationContract (X86_64.abi.withConsts baseOddConsts)) :=
-  Verified.of_correct (verify_ok hmx) verify_ct verify_implies
 
 end VG.Proof.Ed25519.X86_64

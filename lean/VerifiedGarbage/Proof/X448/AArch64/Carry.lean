@@ -12,8 +12,9 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 /-!
 # X448 on AArch64: carry propagation
 
-The sixteen machine steps implement `digit` and `carry`; the inputs may be
-normalized in place.
+A carry pass over the sixteen limbs (`pass_ok`), which may normalize its
+input in place, and the carry folded into a limb (`foldStep_ok`,
+`foldLimb_ok`).
 -/
 
 @[expose] public section
@@ -129,40 +130,5 @@ theorem foldLimb_ok {s : State} {base : Addr} (hs : Scr s base) {k : Nat} (hk : 
     · rw [ite_eq_right h, ite_eq_right h]
   · rw [hm]
     exact (writeW_outside _ _ _ hd).mono (by omega) (by omega)
-
-/-- The two stores implement the mathematical carry fold. -/
-theorem fold_ok {s : State} {base : Addr} (hs : Scr s base) {f : Nat → Nat}
-    (hf : ∀ i < 16, limbs s.mem base TMP i = digit f i)
-    (hc : (s.gpr .x6).toNat = carry f 16) (hb : carry f 16 < 2 ^ 35) :
-    WP isa (.block fold) s fun s' =>
-      (∀ i < 16, limbs s'.mem base TMP i = folded f i) ∧
-      Outside base TMP 128 s.mem s'.mem ∧ Keeps [.x4] s s' := by
-  have bound : ∀ i < 16, digit f i + carry f 16 < 2 ^ 64 := by
-    intro i _
-    have h := digit_lt f i
-    simp only [radix] at h
-    omega
-  change WP isa (.block
-    (([ld .x4 (TMP + 8 * 0), .add .x .x4 .x4 .x6,
-       st .x4 (TMP + 8 * 0)] : List Instr) ++
-     [ld .x4 (TMP + 8 * 8), .add .x .x4 .x4 .x6,
-       st .x4 (TMP + 8 * 8)])) s _
-  rw [WP.block_append_iff]
-  refine WP.mono (foldLimb_ok hs (k := 0) (by decide) (by rw [hf 0 (by decide), hc]; exact bound 0 (by decide)))
-    fun t ⟨htf, htm, ht⟩ => ?_
-  have htc : (t.gpr .x6).toNat = carry f 16 := by rw [ht.1 _ (by decide), hc]
-  refine WP.mono (foldLimb_ok (hs.of_keeps ht (by decide)) (k := 8) (by decide) ?_)
-    fun u ⟨huf, hum, hu⟩ => ?_
-  · rw [htf 8 (by decide), ite_eq_right (by decide), hf 8 (by decide), htc]
-    exact bound 8 (by decide)
-  · refine ⟨?_, htm.trans hum, ht.trans hu⟩
-    intro i hi
-    rw [huf i hi, htf i hi, hf i hi, hc, htc]
-    simp only [folded]
-    by_cases h0 : i = 0
-    · subst i; simp (config := {decide := true}) only [ite_true, ite_false]
-    · by_cases h8 : i = 8
-      · subst i; simp (config := {decide := true}) only [ite_true, ite_false]
-      · simp only [h0, h8, ite_false, false_or, Nat.add_zero]
 
 end VG.Proof.X448.AArch64

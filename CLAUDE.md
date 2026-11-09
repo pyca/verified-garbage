@@ -55,6 +55,23 @@ own changes are rebuilt either way, on top of the restored build.
   code, `TCB/<ISA>/Encode.lean`, but ARM's, whose one crate serves both A32
   and Thumb, as text), and its assembly file, the text of that code,
   `assembly/<module>.s`, which is not compiled: read the code there.
+* **The cryptography is in the verified code, never in Rust.** The Rust
+  around a verified function is tested, not proven, so it does only what
+  cannot be verified: it checks the API's arguments, lays out buffers and
+  state, calls the dispatcher (`<function>_auto`), serves entropy
+  (`crate::entropy::serve`) and maps results to errors. Everything else is
+  verified code with a contract in `Spec/`. That includes padding, partial
+  blocks and segments, the order of absorb, pad and squeeze, constants
+  (rates, suffixes, lengths), rejection sampling, the retry and outer loops
+  of key generation, comparing tags, and wiping output on failure. When the
+  verified functions cannot do what the API needs, never fill the gap in
+  Rust, even "for now" or on only some targets: add the verified function
+  first, in its own spec PR, then the implementation PR. If you find
+  cryptography in Rust, do not extend it or copy it to a new algorithm or
+  target. Move it into verified code and delete the Rust. Nothing checks
+  this automatically: list any cryptography left in Rust in the README's
+  [What is not verified](README.md#what-is-not-verified), and keep that
+  list shrinking.
 * **No unverified shortcuts in proofs.** No `sorry`, `admit`, `native_decide`,
   `bv_decide` or new `axiom`s in anything an artifact depends on.
   `lake build` and the emitter enforce this (warnings are errors, and
@@ -77,7 +94,9 @@ own changes are rebuilt either way, on top of the restored build.
   architecture's jobs alone must cover every line that architecture builds
   (`ci/merge_rust_coverage.py`). Add tests or delete dead code; only exclude
   lines that genuinely cannot run, between `// NO-COVERAGE-START` and
-  `// NO-COVERAGE-END`, with a comment saying why. A branch that only one
+  `// NO-COVERAGE-END`, with a comment saying why (a generated dispatcher no
+  test reaches at all, one the library does not call, is not counted: one it
+  calls must have every line covered). A branch that only one
   pointer width or architecture takes is a `cfg`, not a test at run time,
   and a test helper only some architectures call is built only for them.
   A pull request starts the Rust jobs (`ci/rust_matrix.toml`) of only the
@@ -110,26 +129,39 @@ own changes are rebuilt either way, on top of the restored build.
   implementation of a function for CPU features (or, where no feature
   tells apart the CPUs it is faster on, for a compilation target; see
   below) is a *variant*: named `<function>_<suffix>` (`_shani`, `_avx2`),
-  with the same signature and contract. Every function that calls a
-  function with variants is generic over them (step 4 of the
-  `adding-a-primitive` skill), so a new variant is emitted for its callers
-  too, and their callers, without anyone listing it. The Rust code that
-  chooses among implementations matches exhaustively on the primitive's
-  backend enum (`streaming_hash!`'s, which `streaming_hmac!` and `whole_pbkdf2!`
-  follow; `chacha20::Backend`, which ChaCha20-Poly1305 follows; a caller of
-  several, like Argon2, matches on each of their enums together): a new
-  backend does not compile until everything built on it handles it.
-  `ci/check_variants.py` checks the generated code for this (the
-  `adding-a-primitive` skill says what it checks). There are no
-  exceptions: never add a caller that calls only the baseline
-  implementation, or a way to excuse one.
+  with the same signature and contract. The variants of a function that
+  others call are one list, best first
+  (`Proof/Variants/<Iface>/<Target>.lean`), and every function that calls
+  it is generic over them, its registration mapping over that list (step 4
+  of the `adding-a-primitive` skill): so a new variant, an element of the
+  list, is emitted for its callers too, and their callers, without editing
+  them, and their dispatchers (below) run it: the Rust code calls only
+  dispatchers, names no variant and chooses nothing, so a new variant needs
+  no Rust change. Never add a caller that calls only the baseline
+  implementation.
+  The emitter writes each function's *dispatcher*, `<function>_auto`
+  (`crate::arch::dispatch::<module>`, `Rust.dispatcher` in
+  `lean/VerifiedGarbage/TCB/Rust.lean`), which runs
+  the best of its implementations the CPU supports and needs no CPU
+  feature: Rust code that calls it names no variant and chooses nothing.
+  So does each table of functions' (`<table>_auto()`, in
+  `crate::arch::dispatch::fn_tables`, `Rust.tableDispatcher`), which
+  returns the best of the tables of its interface and data.
+  Which is best is not trusted: the dispatcher tries a function's
+  implementations in the order its registration file lists them (a
+  generic caller's in the order of its callees' variants, best first in
+  `Proof/Variants/<Iface>/<Target>.lean`), and the emitter fails on one
+  it would never choose. A choice that only some algorithms'
+  implementations need is their registration's (`Registration.extra`
+  features, and its `vendor` for a choice by compilation target).
   A variant is chosen by the CPU's features; only when no feature tells
   apart the CPUs it is faster on may the choice also depend on the
   compilation target (`vg_poly1305_update_neon`, faster on Apple's cores and
   slower on Neoverse N2, is chosen for `target_vendor = "apple"`). Then the
-  choice is a function of the features and that `cfg!`, unit-tested both
-  ways, and the tests force the variant on every target that can run it, so
-  every CI runner of the architecture tests it.
+  dispatcher, with that `vendor`, chooses it for that target, and
+  elsewhere where `VG_CPU_FEATURES` names its features
+  (`verified_garbage_cpu::requested`), so that every CI runner of the
+  architecture can test it.
 * **Keep the README's algorithm tables current.** The tables in the
   [Algorithms](README.md#algorithms) section of `README.md`, one per family
   (hashes, MACs, AEADs, …), are generated by
@@ -173,8 +205,7 @@ Guidance for particular tasks is in skills, `.agents/skills/<name>/SKILL.md`
 tasks, read its skill, whether or not your tool loads it for you:
 
 * `adding-a-primitive`: before adding a primitive, a new target for one, a
-  CPU-feature variant, or a file under `Artifacts/`, `Generic/` or
-  `Variants/`.
+  CPU-feature variant, or a file under `Artifacts/` or `Proof/Variants/`.
 * `proof-performance`: before writing or editing a proof, or when one is
   slow. The rules in "Keeping proofs fast" below are its summary: change
   the two together.
@@ -205,15 +236,17 @@ the Rust API, its tests and its benchmark together. Only what the Rust code
 calls has a spec: a function only verified code calls is emitted as an
 internal function, with no `Api` and its contract in `Proof/`. Any TCB additions the
 primitive needs (e.g. new instructions in an ISA model) go in their own PR
-before either. Registration files (`Artifacts/`, `Generic/`) and variant
-files (`Variants/`) are reviewed by hand, so they only bind
-(`ci/check_registrations.py` checks it). The `adding-a-primitive` skill has
-the steps.
+before either. Registration files (`Artifacts/`) are reviewed by hand, so
+they only bind (`ci/check_registrations.py` checks it). The
+`adding-a-primitive` skill has the steps.
 
 ## Keeping parallel PRs from conflicting
 
 Many PRs are in flight at once, so adding an algorithm or an architecture
 should add files, not edit lists that every other PR edits too.
+A new variant is the exception: it is an element of its interface's list
+(`Proof/Variants/<Iface>/<Target>.lean`), placed where it ranks, which only
+the PRs about that one function's implementations edit.
 
 * A Rust module states the architectures it supports in its own file, as an
   inner `#![cfg(...)]` after its `//!` docs; the parent only says
@@ -222,6 +255,10 @@ should add files, not edit lists that every other PR edits too.
   Tests and benchmarks are gated on exactly the architectures of the
   library modules they use (`ci/check_arch_gates.py` checks it), so update
   their `cfg`s with the module's.
+* A block cipher's modes are one module, `cipher::<cipher>`, but a file
+  each: `src/cipher/<cipher>/<mode>.rs`, a private module with its own
+  `#![cfg(...)]`, whose types `src/cipher/<cipher>/mod.rs` re-exports
+  (`pub use <mode>::{…};`), so that each type has one public path.
 * Import the verified functions from `crate::arch::<module>` (the target's
   crate of generated code, `verified_garbage_asm_<target>::<module>`,
   `src/lib.rs`), once for every
@@ -238,7 +275,8 @@ should add files, not edit lists that every other PR edits too.
   hash everywhere: its `Api`s' `module` is `<family>_<hash>` (so
   `crates/verified-garbage-asm-<target>/src/hmac_sha256.rs`), its registration files are
   `Artifacts/<Family><Hash>/<Target>.lean`, its Rust implementation is
-  `src/<family>/<hash>.rs` (the generic code stays in `src/<family>/mod.rs`),
+  `src/<family>/<hash>.rs` (`src/kdf/pbkdf2_hmac/<hash>.rs` for PBKDF2; the
+  generic code stays in the family's `mod.rs`),
   and its tests, benchmarks and `docs/algorithms/` row are
   `<family>_<hash>.rs` and `<family>-<hash>.toml`.
 
@@ -405,10 +443,7 @@ lake env lean --run EmitOne.lean Md5.X86_64
 lake env lean --run EmitOne.lean --check Md5.X86_64
 ```
 
-Name a generic group (`<Iface>.<Target>`, e.g. `Sha256Compress.AArch64`, or
-`<Iface₁>.….<Ifaceₙ>.<Target>`, e.g. `Blake2b.Argon2Compress.X86_64`) to
-emit its generic callers for each variant (or combination of variants). It
-refuses a file that is new or that other registration files also emit into
+It refuses a file that is new or that other registration files also emit into
 (each table of constants has a file of its own, `consts/<name>.rs`, which it
 writes like any other); the full emitter handles those, and the checks below
 still run everything before pushing.
@@ -435,7 +470,7 @@ modules built: it is yours to run.
 A primitive with implementations for different CPU features is tested (and
 benchmarked) end to end in each configuration, never through a special API:
 the `cpu-features-env` Cargo feature lets `VG_CPU_FEATURES` restrict the
-features detected (see `src/cpu.rs`); the `cpu-feature-tests` skill says how
+features detected (see `crates/verified-garbage-cpu/src/detect.rs`); the `cpu-feature-tests` skill says how
 CI tests each configuration. To test the baseline ISA's implementations:
 
 ```sh

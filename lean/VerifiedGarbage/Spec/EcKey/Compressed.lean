@@ -45,10 +45,6 @@ def matchesCompressedPublicKey (C : Curve) (bs : List Byte) : Point C → Prop
     ofBytes (bs.drop 1) = x.val ∧
     onCurve C (.affine x y) = true
 
-instance (C : Curve) (bs : List Byte) (Q : Point C) :
-    Decidable (matchesCompressedPublicKey C bs Q) := by
-  cases Q <;> unfold matchesCompressedPublicKey <;> infer_instance
-
 /-- Validate an uncompressed public key, then compress it (SEC 1 §2.3.3).
 Malformed encodings, infinity and off-curve points are rejected by the
 existing uncompressed decoder. -/

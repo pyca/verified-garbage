@@ -24,28 +24,6 @@ def ProductCount (sp : BitVec 32) (high low : Nat) (s : State) : Prop :=
   s.mem.readW (off (State.addr sp) 36) 32=BitVec.ofNat 32 high ∧
   s.mem.readW (off (State.addr sp) 40) 32=BitVec.ofNat 32 low
 
-theorem product_frame_arithmetic {p : Inputs} {sp : BitVec 32} {s t : State}
-    (h : Memory p sp s)
-    (frame : Frame [⟨State.addr p.base,8*p.len⟩,FrameStack.belowA s.sp 48] s.mem t.mem) :
-    Frame (productWrites p sp) s.mem t.mem := by
-  apply frame.sub
-  intro r hr
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl|rfl
-  · exact ⟨_,by simp [productWrites],fun _ hx => hx⟩
-  · rw [h.fixed]
-    exact ⟨_,by simp [productWrites],fun _ hx => hx⟩
-
-theorem product_frame_store {p : Inputs} {sp : BitVec 32} {s t : State} {digit : Nat}
-    (hd : digit < 32)
-    (frame : Frame [⟨off (State.addr p.output) (entryOffset p digit),8*p.w⟩] s.mem t.mem) :
-    Frame (productWrites p sp) s.mem t.mem := by
-  apply frame.sub
-  intro r hr
-  have eq := List.mem_singleton.mp hr
-  subst r
-  exact ⟨_,by simp [productWrites],entry_sub p hd⟩
-
 
 def productBodyWrites (p : Inputs) (sp : BitVec 32) : List Region :=
   [⟨State.addr p.base,8*p.len⟩,⟨State.addr p.output,bytes p⟩,FrameStack.belowA sp 48]

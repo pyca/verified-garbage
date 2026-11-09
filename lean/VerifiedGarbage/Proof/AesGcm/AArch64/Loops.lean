@@ -3,6 +3,7 @@ public import VerifiedGarbage.Impl.AesGcm.AArch64
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Zeroize.Common
 
 import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 import VerifiedGarbage.Proof.Cmac.Frame
@@ -21,7 +22,8 @@ import VerifiedGarbage.Proof.Framework.Taint
 Untrusted: everything here is checked by Lean. `copy` copies `x13` bytes
 from `x12` to `x11`, and `xor` XORs `x13` bytes at `x11` into those at `x12`,
 a byte at a time through advancing pointers (`copy_ok`, `xor_ok`); the buffers
-do not overlap. `minK` computes `min (16 - x25, x24)` (`minK_ok`).
+do not overlap. `minK` computes `min (16 - x25, x24)` (`minK_ok`). `wipeLoop`
+zeroes `x10` bytes at `x9` (`wipeLoop_wp`).
 -/
 
 @[expose] public section
@@ -786,5 +788,87 @@ theorem xorB_ok (s : State) {S D : Addr} {n : Nat} (hS : s.gpr .x11 = S) (hD : s
     exact WP.block_nil ⟨by simp [xorBytes, bytesAt, writeBytes_nil], fun _ _ => rfl, rfl, rfl, rfl⟩
   · have h0 : n ≠ 0 := by simpa using hf
     exact xorLoop_ok s hS hD hn (by omega_arith) h
+
+/-! ## Zeroing a buffer (`wipeLoop`) -/
+
+/-- One step of the wipe: the byte at `D + j` zeroed. -/
+theorem zeroStep_ok (u : State) {D : Addr} {j : Nat} (h9 : u.gpr .x9 = D + BitVec.ofNat 64 j)
+    (h11 : u.gpr .x11 = 0) (w : InRegions u.wr (D + BitVec.ofNat 64 j) 1) :
+    ∃ u', runBlock isa [.strb .x11 .x9 0, .addImm .x .x9 .x9 1, .subImm .x .x10 .x10 1] u = some u' ∧
+      u'.mem = u.mem.write (D + BitVec.ofNat 64 j) 1 (0 : BitVec (8 * 1)) ∧
+      u'.gpr .x9 = D + BitVec.ofNat 64 (j + 1) ∧
+      u'.gpr .x10 = u.gpr .x10 - 1 ∧ (∀ r, r ≠ .x9 → r ≠ .x10 → u'.gpr r = u.gpr r) ∧ u'.sp = u.sp ∧
+      u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.v = u.v := by
+  have ha : u.gpr .x9 + BitVec.ofNat 64 0 = D + BitVec.ofNat 64 j := by rw [BitVec.add_zero, h9]
+  let u₁ : State :=
+    { u with mem := (u.mem.write (D + BitVec.ofNat 64 j) 1 (BitVec.setWidth 8 (BitVec.setWidth 32 (u.gpr .x11)))) }
+  refine ⟨(u₁.write .x .x9 (u.gpr .x9 + BitVec.ofNat 64 1)).write .x .x10 (u.gpr .x10 - BitVec.ofNat 64 1), by
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.store, Size.bytes, Size.bits,
+      State.read, gpr_write, mem_write, rd_write, wr_write, sp_write, Option.bind_some, Option.map_some,
+      BitVec.setWidth_eq, ha, w, reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self,
+      Nat.mod_one, true_and, u₁], ?_, ?_, ?_, ?_, rfl, rfl, rfl, rfl⟩
+  · simp only [State.write, u₁, h11]; rfl
+  · simp [State.write, u₁, h9, BitVec.add_assoc, BitVec.ofNat_add]
+  · simp [State.write, u₁]
+  · intro r h₁ h₂; simp [State.write, u₁, h₁, h₂]
+
+theorem ofNat64_sub_one {n : Nat} (h : 0 < n) (hn : n < 2 ^ 64) :
+    BitVec.ofNat 64 n - 1 = BitVec.ofNat 64 (n - 1) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
+  omega
+
+/-- `wipeLoop`: the `n` bytes at `D` zeroed, from `x9 = D`, `x10 = n` and
+`x11 = 0`. -/
+theorem wipeLoop_wp (u : State) {D : Addr} {n : Nat} (hn : n < 2 ^ 64) (h9 : u.gpr .x9 = D)
+    (h10 : u.gpr .x10 = BitVec.ofNat 64 n) (h11 : u.gpr .x11 = 0) (hw : Covers [⟨D, n⟩] u.wr)
+    (hD : D.toNat + n ≤ 2 ^ 64) :
+    WP isa wipeLoop u fun u' => Proof.Zeroize.Prefix u'.mem D n ∧ Frame [⟨D, n⟩] u.mem u'.mem ∧
+      (∀ r, r ≠ .x9 → r ≠ .x10 → u'.gpr r = u.gpr r) ∧ u'.sp = u.sp ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
+      u'.v = u.v := by
+  unfold wipeLoop
+  refine WP.ite (decide (n = 0)) (eval_zero h10 hn) (fun ht => ?_) (fun hf => ?_)
+  · have h0 : n = 0 := by simpa using ht
+    subst h0
+    exact WP.block_nil ⟨fun _ hj => absurd hj (Nat.not_lt_zero _), Frame.refl _ _, fun _ _ _ => rfl, rfl, rfl, rfl,
+      rfl⟩
+  · have h0 : n ≠ 0 := by simpa using hf
+    refine WP.loop (M := isa) (fun rem t => ∃ j, j < n ∧ rem = n - j ∧ t.gpr .x11 = 0 ∧
+      t.gpr .x9 = D + BitVec.ofNat 64 j ∧ t.gpr .x10 = BitVec.ofNat 64 (n - j) ∧
+      (∀ r, r ≠ .x9 → r ≠ .x10 → t.gpr r = u.gpr r) ∧ t.sp = u.sp ∧ t.rd = u.rd ∧ t.wr = u.wr ∧ t.v = u.v ∧
+      Frame [⟨D, n⟩] u.mem t.mem ∧ Proof.Zeroize.Prefix t.mem D j) ?_ n u
+      ⟨0, by omega, by omega, h11, by rw [h9]; exact (BitVec.add_zero _).symm, by rw [h10, Nat.sub_zero], fun _ _ _ => rfl,
+        rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
+    intro rem t ⟨j, hj, hr, e11, e9, e10, ho, esp, erd, ewr, ev, hf', hpz⟩
+    have hc : (⟨D, n⟩ : Region).Contains (D + BitVec.ofNat 64 j) 1 := Offset.contains_base _ (by omega) (by omega)
+    have hin : InRegions t.wr (D + BitVec.ofNat 64 j) 1 := by
+      rw [ewr]; exact hw _ _ ⟨_, List.mem_singleton_self _, hc⟩
+    obtain ⟨t', run, m', x9', x10', o', sp', rd', wr', v'⟩ := zeroStep_ok t e9 e11 hin
+    refine WP.of_runBlock ⟨t', run, ?_⟩
+    have hsub : BitVec.ofNat 64 (n - j) - 1 = BitVec.ofNat 64 (n - (j + 1)) := by
+      rw [ofNat64_sub_one (by omega) (by omega), Nat.sub_sub]
+    rw [e10, hsub] at x10'
+    have f'' : Frame [⟨D, n⟩] u.mem t'.mem := by
+      rw [m']; exact hf'.write (List.mem_singleton_self _) _ hc
+    have p' : Proof.Zeroize.Prefix t'.mem D (j + 1) := by
+      rw [m']; exact Proof.Zeroize.prefix_write hpz (by omega)
+    have o'' : ∀ r, r ≠ .x9 → r ≠ .x10 → t'.gpr r = u.gpr r := fun r a b => by rw [o' r a b, ho r a b]
+    by_cases he : j + 1 = n
+    · left
+      refine ⟨by rw [eval_nonzero x10' (by omega)]; simp only [Option.some.injEq]; simp; omega,
+        by rw [← he]; exact p', f'', o'', sp'.trans esp, rd'.trans erd, wr'.trans ewr, v'.trans ev⟩
+    · right
+      refine ⟨by rw [eval_nonzero x10' (by omega)]; simp only [Option.some.injEq]; simp; omega,
+        n - (j + 1), by omega, j + 1, by omega, rfl, by rw [o' _ (by decide) (by decide), e11],
+        x9', x10', o'', sp'.trans esp, rd'.trans erd, wr'.trans ewr, v'.trans ev, f'', p'⟩
+
+/-- The zeros of `Prefix`, as bytes. -/
+theorem bytesAt_zeros {m : Mem} {D : Addr} {n : Nat} (h : Proof.Zeroize.Prefix m D n) :
+    bytesAt m D n = List.replicate n 0 := by
+  apply List.ext_getElem
+  · simp [bytesAt]
+  · intro i h₁ h₂
+    simp only [bytesAt, List.getElem_map, List.getElem_range, List.getElem_replicate]
+    exact h i (by simpa [bytesAt] using h₁)
 
 end VG.Proof.AesGcm.AArch64

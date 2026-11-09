@@ -57,17 +57,6 @@ theorem fixedOk_genX (h7 : c.n < 10) : FixedOk c (genX c) := by
   · exact Or.inr (Nat.le_of_lt_succ (Nat.lt_succ_of_le (Nat.le_trans (Nat.le_add_right _ _)
       (sl_lt c (i := 12) (j := nslots) (by decide)))))
 
-theorem genX_le (h7 : c.n < 10) : ∀ w ∈ genX c, w.1 + w.2 ≤ size := by
-  have := sl_le c h7 (i := ACC) (by decide)
-  have := sl_le c h7 (i := PT) (by decide)
-  have := bitsAt_le c h7 (j := 0) (by decide)
-  have := save_le_wk (c := c) h7
-  have := wk_own c
-  have hsz : size = 8192 := rfl
-  intro w hw
-  simp only [List.mem_cons, List.not_mem_nil, or_false, List.mem_append, slW, List.map_cons, List.map_nil] at hw
-  rcases hw with (rfl | rfl) | rfl | rfl <;> (dsimp only; omega_arith)
-
 theorem tbl_apart_genX (h7 : c.n < 10) {j t : Nat} (hj : j ≠ 0) (ht : t < 64 * c.n) :
     ∀ w ∈ genX c, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
   have := sl_below_bits c (i := ACC) (by decide) j t

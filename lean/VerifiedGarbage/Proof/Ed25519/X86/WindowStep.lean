@@ -43,9 +43,6 @@ theorem dbl_ok {s : State} {x : BitVec 32} (hc : Ctx x s) {a : EPoint dZ}
   · rw [vt, dblOps_eval]; exact dblPoint_rep h.proj
   · rw [vt]; exact point_ops_high _ (by decide) _ i hi
 
-theorem two_smul_add (a : EPoint dZ) (n : Nat) : n • a + n • a = (2 * n) • a := by
-  rw [← two_nsmul, smul_smul]
-
 /-- `add d, v`, and the carry. -/
 theorem wp_addiC {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {v : BitVec 32}
     (k : ∀ s', Wp.Upd s s' d (s.gpr d + v) → s'.cf = some (decide (2 ^ 32 ≤ (s.gpr d).toNat + v.toNat)) →

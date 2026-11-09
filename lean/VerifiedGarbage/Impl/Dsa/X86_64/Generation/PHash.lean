@@ -26,9 +26,6 @@ def seedInputArgs (j : Nat) : List Instr :=
   [.mov .rsi (.mem (sp 8)), .mov .rdi (.mem (sp 24)),
    .mov .rax (.mem (sp 16)), .alu .add .rax (.imm j)]
 
-def useWrappedSeed : List Instr :=
-  [.mov .rax (.mem (sp 24)), .store (sp sLab) .rax]
-
 def hashCopyArgs (len count j : Nat) : List Instr :=
   [.mov .rsi (.mem (sp sScr)), .alu .add .rsi (.imm oDig),
    .mov .rdi (.mem (sp 32)), .alu .add .rdi (.imm (BitVec.ofNat 32 ((count - j) * len))),

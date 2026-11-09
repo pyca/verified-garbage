@@ -97,8 +97,6 @@ theorem scalarSelect_ok (s : State) (borrow : Bool) (hc : s.cf = some borrow) :
       hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1,
       hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2, ite_false]
 
-def scalarClob : List Reg := [.rax, .rcx, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15]
-
 theorem select_remainder (x y : Nat) (hx : x < 2 * L)
     (he : y + L = x + 2 ^ 256 * (decide (x < L)).toNat) :
     (if x < L then x else y) = x % L := by

@@ -397,8 +397,6 @@ theorem ops_ok {b : Addr} {s0 : State} {a c : BitVec 64} {k : Prog isa} {Q : Sta
 
 /-! ## One iteration -/
 
-theorem ladOps_ok : opsOk ladOps LQ = true := by decide
-
 /-- The loop invariant of the ladder from `sL`, before the iteration for the
 bit `n - 1`. -/
 structure LadInv (b : Addr) (k : Nat) (x1 : Fe) (sL : State) (n : Nat) (s : State) : Prop where

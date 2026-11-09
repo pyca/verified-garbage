@@ -88,12 +88,4 @@ theorem a_tail_using (hash : FixedHash.HashFn)
     show kA s₀ 0 = kA s₀ ((deL P).slot 0) from rfl, slice_eq kb₃ (b := 0) (by decide) (by dek)]
   rfl
 
-
-theorem a_tail {s₀ s₂ : State} (hp : Pre P (deL P) s₀)
-    (kb₂ : KB P (deL P) s₀ s₂) (x₂ : s₂.gpr .x24=1) (m₂ : bytesAt s₂.mem (sA (deL P) s₀ MB) 32=mD P s₀) :
-    WP isa (seqs [hashWith keccak.callee .x28 ST WK 72 6
-      [⟨.x28,MB,32⟩,⟨.x25,768*P.k+32,32⟩] [⟨.x28,KP,32⟩,⟨.x28,RB,32⟩],
-      .block (copy32 .x25 (768*P.k) .x28 SB)]) s₂ (AfterA P s₀) :=
-  a_tail_using _ (FixedHash.hashWith_correct keccak _ _ _ _ _ _ _) hp kb₂ x₂ m₂
-
 end VG.Proof.MlKem.AArch64.Decaps

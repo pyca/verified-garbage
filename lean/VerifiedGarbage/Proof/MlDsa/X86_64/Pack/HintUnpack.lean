@@ -220,9 +220,6 @@ theorem hbuSet_ok (s : State) (hout : InRegions s.wr (s.gpr .rcx + s.gpr .rsi * 
   xrun [hout, show ∀ (t : State) (b i : Reg), t.ea (atIdx b i 4) = t.gpr b + t.gpr i * 4 from fun t b i => by
     simp [State.ea, atIdx]]
 
-theorem ea_idx4 (t : State) (b i : Reg) : t.ea (atIdx b i 4) = t.gpr b + t.gpr i * 4 := by
-  simp [State.ea, atIdx]
-
 theorem ea_idxm1 (t : State) (b i : Reg) : t.ea (atIdx b i 1 (-1)) = t.gpr b + t.gpr i + BitVec.ofInt 64 (-1) := by
   simp [State.ea, atIdx]
 

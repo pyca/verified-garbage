@@ -72,10 +72,10 @@ theorem phase_ct (b : Bool) : RelCT isa (Two PS) (phase b) fun _ _ => True := by
   · exact WP.mono (topT1_ok h hm hw) fun u ⟨⟨u3, _, _⟩, ku⟩ => ⟨(ku.gpr .r31 (by decide)).trans h.r31, u3⟩
 
 /-- In a modulus's working space. -/
-def PA (b : Bool) (q : PP) (s : State) : Prop := ∃ sv toc, St (q.with sv toc) s ∧ Ph (q.with sv toc) (mbOf q b) s
+def PA (b : Bool) (q : PP) (s : State) : Prop := ∃ sv toc C, St (q.with sv toc) s ∧ Ph (q.with sv toc) (mbOf q b) C s
 
 theorem pins_PA (b : Bool) : Pins (PA b) [.r10, .r11, .r29, .r31] := by
-  rintro q s₁ s₂ ⟨_, _, h₁, p₁⟩ ⟨_, _, h₂, p₂⟩ r hr
+  rintro q s₁ s₂ ⟨_, _, _, h₁, p₁⟩ ⟨_, _, _, h₂, p₂⟩ r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · rw [p₁.r10, p₂.r10]; rfl
@@ -100,13 +100,13 @@ theorem pins_SH1 : Pins SH1 [.r6, .r10, .r11, .r12, .r31] := by
 
 theorem shapeP_ct : RelCT isa (Two (PA false)) shapeP fun _ _ => True := by
   unfold shapeP
-  refine RelCT.seq (two_post (two_taint _ (pins_PA false) (by taint_decide)) (Ψ := SH1) fun q s ⟨sv, toc, h, hp⟩ =>
+  refine RelCT.seq (two_post (two_taint _ (pins_PA false) (by taint_decide)) (Ψ := SH1) fun q s ⟨sv, toc, _, h, hp⟩ =>
     WP.mono (shapeHead_ok h) fun u ⟨⟨u12, u6, _⟩, ku⟩ => ⟨(ku.gpr .r31 (by decide)).trans h.r31,
       (ku.gpr .r10 (by decide)).trans hp.r10, (ku.gpr .r11 (by decide)).trans hp.r11, u12, u6⟩)
     (two_taint _ pins_SH1 (by taint_decide))
 
 theorem phasePA_ct (b : Bool) : RelCT isa (Two PS) (phase b) (Two (PA b)) :=
-  two_post (phase_ct b) fun _ _ ⟨sv, toc, h⟩ => WP.mono (phase_ok h b) fun _ ⟨⟨ht, hp, _⟩, _⟩ => ⟨sv, toc, ht, hp⟩
+  two_post (phase_ct b) fun _ _ ⟨sv, toc, h⟩ => WP.mono (phase_ok h b) fun _ ⟨⟨ht, hp, _⟩, _⟩ => ⟨sv, toc, _, ht, hp⟩
 
 /-- A test's public data, once its modulus is in place. -/
 structure TD where
@@ -114,9 +114,10 @@ structure TD where
   mb : Nat
   N : Nat
   u : Nat
+  K : Nat
 
 /-- Before a test's Montgomery set-up. -/
-def TC (d : TD) (s : State) : Prop := ∃ sv toc, TCPre (d.q.with sv toc) d.mb d.N d.u s
+def TC (d : TD) (s : State) : Prop := ∃ sv toc, TCPre (d.q.with sv toc) d.mb d.N d.u d.K s
 
 theorem pins_TC : Pins TC [.r10, .r11, .r29, .r31] := by
   rintro d s₁ s₂ ⟨_, _, h₁⟩ ⟨_, _, h₂⟩ r hr
@@ -129,7 +130,7 @@ theorem pins_TC : Pins TC [.r10, .r11, .r29, .r31] := by
 
 /-- The witness loop's data. -/
 def mrOf (d : TD) : MrD :=
-  ⟨d.q, d.mb, d.N, checkWitnesses d.N (Spec.Ffdh.primeChecks d.mb) (d.q.r.drop d.u), 0, d.u⟩
+  ⟨d.q, d.mb, d.N, checkWitnesses d.N d.K (d.q.r.drop d.u), 0, d.u, d.K⟩
 
 theorem testCore_ct (R : RoundImpl) :
     RelCT isa (Two TC) (.seq montPrep (millerRabin R.name R.code)) (Two ME) :=
@@ -151,12 +152,16 @@ def TQ (d : TQD) (s : State) : Prop :=
     word s.mem d.q.B 152 = BitVec.ofNat 64 d.u ∧ d.u ≤ d.q.r.length
 
 /-- q's test leaks the same from the same candidate and tape. -/
-theorem testQ_ct (R : RoundImpl) : RelCT isa (Two TQ) (test true R.name R.code) (Two ME) := by
+theorem testQ_ct (R : RoundImpl) : RelCT isa (Two TQ) (test true (.block []) R.name R.code) (Two ME) := by
   unfold test
   simp only [↓reduceIte]
-  refine RelCT.assoc (RelCT.seq (two_post ?_ (Ψ := fun d => TC ⟨d.q, d.q.bits - 1, (d.c - 1) / 2, d.u⟩)
+  refine RelCT.assoc (RelCT.seq (two_post ?_
+    (Ψ := fun d => TC ⟨d.q, d.q.bits - 1, (d.c - 1) / 2, d.u, Spec.Ffdh.primeChecks (d.q.bits - 1)⟩)
     fun _ _ ⟨sv, toc, h, hc, hq, hqo, hu, hul⟩ => WP.mono (qPrep_ok h hc hq hqo hu hul) fun _ ht => ⟨sv, toc, ht⟩)
-    (two_map _ (fun _ _ h => h) (testCore_ct R)))
+    (RelCT.seq (two_post (two_map _ (fun _ _ h => h) (two_taint _ pins_TC (by taint_decide)))
+      (Ψ := fun d => TC ⟨d.q, d.q.bits - 1, (d.c - 1) / 2, d.u, Spec.Ffdh.primeChecks (d.q.bits - 1)⟩)
+      fun _ _ h => WP.block_nil h)
+    (two_map _ (fun _ _ h => h) (testCore_ct R))))
   exact two_map TQD.q (fun _ _ ⟨sv, toc, h, _⟩ => ⟨sv, toc, h⟩)
     (RelCT.seq (phasePA_ct true) (two_taint _ (pins_PA true) (by taint_decide)))
 
@@ -165,13 +170,31 @@ def TP (d : TQD) (s : State) : Prop :=
   ∃ sv toc, St (d.q.with sv toc) s ∧ d.c = Spec.Ffdh.candidateOf d.q.bits (Spec.Rsa.os2ip (d.q.r.take d.q.L)) ∧
     word s.mem d.q.B 152 = BitVec.ofNat 64 d.u ∧ d.u ≤ d.q.r.length ∧ d.q.L ≤ d.q.r.length
 
-/-- p's test leaks the same from the same candidate and tape. -/
-theorem testP_ct (R : RoundImpl) : RelCT isa (Two TP) (test false R.name R.code) (Two ME) := by
+/-- p's test, with `adjust` setting its count of witnesses to `Kf` of the
+default, leaks the same from the same candidate and tape. -/
+theorem testP_ct (R : RoundImpl) {adjust : Prog isa} (Kf : Nat → Nat)
+    (hadj : ∀ {p : PP} {c u : Nat} {t : State}, TCPre p p.bits c u (Spec.Ffdh.primeChecks p.bits) t →
+      WP isa adjust t (TCPre p p.bits c u (Kf (Spec.Ffdh.primeChecks p.bits))))
+    (hct : RelCT isa (Two TC) adjust fun _ _ => True) :
+    RelCT isa (Two TP) (test false adjust R.name R.code) (Two ME) := by
   unfold test
   simp only [Bool.false_eq_true, ↓reduceIte]
-  refine RelCT.assoc (RelCT.seq (two_post ?_ (Ψ := fun d => TC ⟨d.q, d.q.bits, d.c, d.u⟩)
+  refine RelCT.assoc (RelCT.seq (two_post ?_
+    (Ψ := fun d => TC ⟨d.q, d.q.bits, d.c, d.u, Spec.Ffdh.primeChecks d.q.bits⟩)
     fun _ _ ⟨sv, toc, h, hc, hu, hul, hL⟩ => WP.mono (pPrep_ok h hc hu hul hL) fun _ ht => ⟨sv, toc, ht⟩)
-    (two_map _ (fun _ _ h => h) (testCore_ct R)))
+    (RelCT.seq (two_post (two_map _ (fun _ _ h => h) hct)
+      (Ψ := fun d => TC ⟨d.q, d.q.bits, d.c, d.u, Kf (Spec.Ffdh.primeChecks d.q.bits)⟩)
+      fun _ _ ⟨sv, toc, h⟩ => WP.mono (hadj h) fun _ ht => ⟨sv, toc, ht⟩)
+    (two_map _ (fun _ _ h => h) (testCore_ct R))))
   exact two_map TQD.q (fun _ _ ⟨sv, toc, h, _⟩ => ⟨sv, toc, h⟩) (RelCT.seq (phasePA_ct false) shapeP_ct)
+
+/-- p's test of its first witness. -/
+theorem testP1_ct (R : RoundImpl) : RelCT isa (Two TP) (test false firstCheck R.name R.code) (Two ME) :=
+  testP_ct R (fun _ => 1) (fun h => firstCheck_ok h) (two_taint _ pins_TC (by taint_decide))
+
+/-- p's test of its other witnesses. -/
+theorem testPR_ct (R : RoundImpl) : RelCT isa (Two TP) (test false restChecks R.name R.code) (Two ME) :=
+  testP_ct R (· - 1) (fun h => restChecks_ok h (by unfold Spec.Ffdh.primeChecks; split <;> decide))
+    (two_taint _ pins_TC (by taint_decide))
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

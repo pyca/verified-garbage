@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Result
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBytes
@@ -58,7 +59,7 @@ theorem post_of {s0 t : State} (h : keyP.pre s0) (bp : BodyPost s0 t) : keyP.pos
       | .inl (.error f) => .inl (.error f)
       | .inr () => .inr () := rfl
   have i1 : ∀ (c : Prop) [Decidable c], (if c then 1 else 0 : Nat) ≤ 1 := fun c _ => flag01 c
-  show ((t.gpr .r3).setWidth 32).toNat = Spec.RsaKeyGen.keyStatus (resOf s0) ∧ _
+  show ((t.gpr .r3).setWidth 32).toNat = Proof.RsaKeyGen.keyStatus (resOf s0) ∧ _
   rw [r3, status_toNat _ _ (i1 _) (i1 _), hres, kr]
   have nl := p.nl
   by_cases hm : kMask s0 D

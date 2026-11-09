@@ -33,9 +33,8 @@ variable {C : Curve}
 The specification's `mul k P` recurses on `k / 2`; an implementation runs a
 fixed number of iterations, one per bit of `k`, most significant first,
 doubling an accumulator and adding `P` where the bit is set. After the bits
-`t - 1, …, j` the accumulator is `mul (k >>> j) P` (`mul_shiftRight`), and
-after all of them it is `mul k P` (`mul_eq_fold`). Multiples of a point of
-the curve are on the curve (`onCurve_mul`).
+`t - 1, …, j` the accumulator is `mul (k >>> j) P` (`mul_shiftRight`).
+Multiples of a point of the curve are on the curve (`onCurve_mul`).
 -/
 
 /-- One step of the loop: `(2m)P = mP + mP`, `(2m + 1)P = (mP + mP) + P`
@@ -67,28 +66,6 @@ theorem mul_shiftRight (P : Point C) (k j : Nat) :
     rw [Nat.testBit, Nat.shiftRight_succ, Nat.one_and_eq_mod_two]
     cases h : (k >>> j) % 2 == 1 <;> simp_all <;> omega
   rw [hk, mul_two_mul_add]
-
-/-- The loop's body. -/
-def ladderStep (k : Nat) (P R : Point C) (i : Nat) : Point C :=
-  if k.testBit i then add (add R R) P else add R R
-
-theorem foldl_ladderStep (P : Point C) (k j : Nat) :
-    (List.range j).reverse.foldl (ladderStep k P) (mul (k >>> j) P) = mul k P := by
-  induction j with
-  | zero => rw [Nat.shiftRight_zero]; rfl
-  | succ j ih =>
-    rw [List.range_succ, List.reverse_append, List.reverse_singleton, List.singleton_append,
-      List.foldl_cons]
-    rw [ladderStep, ← mul_shiftRight, ih]
-
-/-- Scalar multiplication by a `t`-bit scalar, most significant bit first. -/
-theorem mul_eq_fold (P : Point C) {k t : Nat} (hk : k < 2 ^ t) :
-    mul k P = (List.range t).reverse.foldl
-      (fun R i => if k.testBit i then add (add R R) P else add R R) .infinity := by
-  have h0 : k >>> t = 0 := by rw [Nat.shiftRight_eq_div_pow]; exact Nat.div_eq_of_lt hk
-  have := foldl_ladderStep P k t
-  rw [h0, mul, ite_eq_left rfl] at this
-  exact this.symm
 
 /-- Multiples of a point of the curve are on the curve. -/
 theorem onCurve_mul [Fact C.p.Prime] (hp : 2 < C.p) {P : Point C} (hP : onCurve C P = true)

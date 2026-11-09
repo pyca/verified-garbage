@@ -25,18 +25,8 @@ theorem OutputCallReady.keepShape {L : CallLayout} {out : BitVec 32} {s t : Stat
     (shapeFrame_field O (by decide)).trans R.qLength, R.fits,
     by intro e k h; rw [K.2.2]; exact R.write e k h, R.apart⟩
 
-theorem OutputCallReady.compare {L : CallLayout} {out : BitVec 32} {s t : State}
-    (R : OutputCallReady L out s) (K : Keeps [.eax] s t) (O : t.mem = s.mem) : OutputCallReady L out t :=
-  R.keepShape K (by decide) (by decide) (by rw [O]; exact Outs.refl _ _ _)
-
 theorem OutputCallReady.signature {L : CallLayout} {out : BitVec 32} {digestLen : Nat} {s : State}
     (O : OutputCallReady L out s) (S : ShapedCall L digestLen s) : SignatureReady L out s :=
   ⟨S.ready.moduli, ⟨true, S.mask⟩, O.pointer, O.fits, O.write, O.apart⟩
-
-theorem signingShape_compare (L : CallLayout) (digestLen : Nat) (out : BitVec 32) :
-    CompareInvariant L.base L.size (fun s t =>
-      (ShapedCall L digestLen s ∧ ShapedCall L digestLen t) ∧ OutputCallReady L out s ∧ OutputCallReady L out t) :=
-  ⟨fun _ _ H => ⟨H.2.1.scr, H.2.2.scr⟩, fun _ _ _ _ H K1 K2 O1 O2 =>
-    ⟨⟨H.1.1.compare K1 O1, H.1.2.compare K2 O2⟩, H.2.1.compare K1 O1, H.2.2.compare K2 O2⟩⟩
 
 end VG.Proof.Dsa.X86

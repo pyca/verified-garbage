@@ -32,11 +32,6 @@ abbrev rootPowerWrites (c : Cfg) (j : Nat) : List (Nat × Nat) :=
   [(c.sl EXPP, 8 * c.n), (bitsAt c.n j, 64 * c.n)] ++
     powW (Impl.EcKey.Compressed.X86_64.rootPow c ACC j)
 
-theorem rootPower_fixed (c : Cfg) (j : Nat) : FixedOk c (rootPowerWrites c j) := by
-  change FixedOk c ([(c.sl EXPP, 8 * c.n)] ++ [(bitsAt c.n j, 64 * c.n)] ++ slW c [ACC, PT, TMP])
-  exact ((fixedOk_slW (l := [EXPP]) (by decide)).append (fixedOk_tbl j)).append
-    (fixedOk_slW (l := [ACC, PT, TMP]) (by decide))
-
 theorem rootPower_apart {c : Cfg} {i j : Nat} (hi : i < 45) (hw : i ∉ [EXPP, ACC, PT, TMP]) :
     ∀ w ∈ rootPowerWrites c j, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   change ∀ w ∈ [(c.sl EXPP, 8 * c.n), (bitsAt c.n j, 64 * c.n)] ++ slW c [ACC, PT, TMP], _

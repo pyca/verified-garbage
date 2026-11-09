@@ -21,7 +21,8 @@ open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch6
 open VG.Impl.Dsa.AArch64
 
 def keygenCheckName (v : Backend) : String := "vg_dsa_check_parameters" ++ v.suffix
-def keygenDeriveName (v : Backend) : String := Spec.Dsa.deriveKeyApi.name ++ v.suffix
+/-- Key generation derives with `Generate.deriveChecked`, an internal function. -/
+def keygenDeriveName (v : Backend) : String := "vg_dsa_derive_key_checked" ++ v.suffix
 
 theorem keygenStackBase_toNat {extra : Nat} {s : State} (h : GenerateKeyABI extra s) :
     (randomStackBase extra s).toNat = (s.sp).toNat - (extra + 256) := by

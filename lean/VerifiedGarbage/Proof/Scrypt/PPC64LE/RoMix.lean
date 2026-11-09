@@ -43,7 +43,6 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Proof.Scrypt.Contract
 
 /-!
 # scryptROMix on PPC64LE: the precondition
@@ -280,12 +279,6 @@ theorem shr_ofNat {a : Nat} (n : Nat) (h : a < 2 ^ 64) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, toNat_ofNat_lt h, toNat_ofNat_lt
     (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) h), Nat.shiftRight_eq_div_pow]
-
-theorem shl_ofNat {a : Nat} (n : Nat) (h : a * 2 ^ n < 2 ^ 64) :
-    BitVec.ofNat 64 a <<< n = BitVec.ofNat 64 (a * 2 ^ n) := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_shiftLeft, toNat_ofNat_lt (Nat.lt_of_le_of_lt (Nat.le_mul_of_pos_right _
-    (Nat.two_pow_pos n)) h), Nat.shiftLeft_eq, Nat.mod_eq_of_lt h, toNat_ofNat_lt h]
 
 end VG.Proof.Scrypt.PPC64LE.RoMix
 
@@ -1898,16 +1891,6 @@ theorem preserved_cases :
     ∀ r ∈ preserved, r ∈ rmSaved.map Prod.fst ∨ r ∈ mid ∨ r ∈ others := by
   decide
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 1 | .r5 => 0x2000 | .r6 => 1 | .r7 => 0x3000 | .r8 => 3 | _ => 0
-  lr := 0
-  sp := 0x5000
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 128⟩, ⟨0x2000, 128⟩, ⟨0x3000, 384⟩]
-
 theorem roMix_correct (s : State) (hs : Proof.Scrypt.roMixPPC64LE.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.PPC64LE.roMix s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.roMixPPC64LE.post s s' := by
@@ -1929,23 +1912,5 @@ theorem roMix_ct : ConstantTime isa Proof.Scrypt.roMixPPC64LE.pre Proof.Scrypt.r
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂
   exact (roMix_rel (pre_of h₁) (pre_of h₂) (pubEq_of hpub) hpub.2.2.2.2.2.2.2
     _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
-
-theorem roMix_verified :
-    Verified PPC64LE.target Impl.Scrypt.PPC64LE.roMix (Proof.Scrypt.roMixContract PPC64LE.abi 48) :=
-  Verified.of_correct roMix_correct roMix_ct
-    { pre := by
-        sig_implies_pre [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
-          Proof.Scrypt.roMixPPC64LE, PPC64LE.abi, PPC64LE.argRegs, below]
-      post := by
-        sig_implies_post [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
-          Proof.Scrypt.roMixPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
-      pub := by
-        sig_implies_pub [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
-          Proof.Scrypt.roMixPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
-      sat := by
-        sig_implies_sat [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
-          Proof.Scrypt.roMixPPC64LE, PPC64LE.abi, PPC64LE.argRegs, below,
-          Proof.Scrypt.PPC64LE.RoMix.satState]
-          [Proof.Scrypt.PPC64LE.RoMix.satState] using Proof.Scrypt.PPC64LE.RoMix.satState }
 
 end VG.Proof.Scrypt.PPC64LE.RoMix

@@ -114,10 +114,6 @@ theorem ob_sub {o l : Nat} (ho : o + l ≤ 114) : Region.Sub (L.ob o l) L.OUT :=
 
 theorem ob_within {o l : Nat} (ho : o + l ≤ 114) : Whole.Within (L.ob o l) L.OUT := ⟨o, rfl, ho⟩
 
-/-- Two regions of `out`. -/
-theorem ob_ob {o l p k : Nat} (h : o + l ≤ p ∨ p + k ≤ o) (ho : o + l ≤ 114) (hp : p + k ≤ 114) :
-    (L.ob o l).Disjoint (L.ob p k) := Offset.disjoint _ h (by omega) (by omega)
-
 variable (hL : L.Ok)
 include hL
 
@@ -196,25 +192,6 @@ the outgoing stack arguments, the state and the working space. -/
 structure Away (L : Lay) (D : Region) : Prop where
   args : (kArgs L.E 8).Disjoint D
   kwr : ∀ r ∈ kWr L.scr, D.Disjoint r
-
-theorem Away.zero {D : Region} (h : Away L D) : ∀ r ∈ [(⟨State.addr L.scr, 200⟩ : Region)], D.Disjoint r :=
-  fun r hr => h.kwr r (by rw [List.mem_singleton.mp hr]; simp [kWr])
-
-theorem Away.abs {D : Region} (h : Away L D) : ∀ r ∈ kArgs L.E 8 :: kWr L.scr, D.Disjoint r := by
-  intro r hr
-  rcases List.mem_cons.mp hr with rfl | hr
-  · exact h.args.symm
-  · exact h.kwr r hr
-
-theorem Away.sqz {D : Region} (h : Away L D) {d : Nat} (hd : D.Disjoint (L.fr d 114)) :
-    ∀ r ∈ kArgs L.E 8 :: sqzWr L.E L.scr d, D.Disjoint r := by
-  intro r hr
-  simp only [sqzWr, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact h.args.symm
-  · exact h.kwr _ (by simp [kWr])
-  · exact hd
-  · exact h.kwr _ (by simp [kWr])
 
 theorem Lay.Ok.away_fr (hL : L.Ok) {d l : Nat} (h8 : 8 ≤ d) (hd : d + l ≤ 248) : Away L (L.fr d l) :=
   ⟨Offset.base_disjoint _ h8 (by omega), hL.kit.frame_kWr (by omega)⟩

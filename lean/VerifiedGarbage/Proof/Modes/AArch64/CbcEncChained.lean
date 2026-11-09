@@ -15,8 +15,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # CBC encryption on AArch64 that updates the chaining value, for any core
 
-`cbcEncryptChained_wp`: `c.cbcEncryptChained r ivR` is `c.cbcEncrypt r`
-(`cbcEncrypt_wp`), which also replaces the IV at `P` with the last
+`cbcEncryptChained_wp`: `c.cbcEncryptChained r ivR` is CBC encryption of
+the data, which also replaces the IV at `P` with the last
 ciphertext block (`Spec.Cbc.next`): the IV's address stays in `ivR`, which
 the core's `prepare` and `crypt` keep (`KeepsReg`, as for OFB and CFB), and
 after the last block the buffer, which still holds it (`EDone.last`), is

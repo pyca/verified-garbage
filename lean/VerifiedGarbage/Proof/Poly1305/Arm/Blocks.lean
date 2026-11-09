@@ -79,8 +79,6 @@ theorem _root_.VG.Frame.writeOff {B : Addr} {l : List (Nat × Nat)} {m m' : Mem}
     Frame (offR B l) m (m'.writeW (B + BitVec.ofNat 64 d) v) :=
   hf.writeW (List.mem_map.mpr ⟨_, hm, rfl⟩) v (hw ▸ contains_sub B h1 h2 h3)
 
-theorem offR_one (B : Addr) (a len : Nat) : offR B [(a, len)] = [⟨B + BitVec.ofNat 64 a, len⟩] := rfl
-
 theorem accR_offR (B : Addr) : [accR B] = offR B [(0, 20)] := by simp [offR]
 
 theorem _root_.VG.Frame.word {B : Addr} {l : List (Nat × Nat)} {m m' : Mem} (hf : Frame (offR B l) m m') {d : Nat}
@@ -611,59 +609,9 @@ theorem blocks_correct {s₀ : State} (hp : BPre s₀) :
 
 /-! ## Constant time -/
 
-/-- The initial taint of `blocks`: `r0`–`r2` are public, and `r0` points at
-the state, whose public slots (the block pointer and count) the analysis
-tracks. -/
-def τb : VG.Arm.Taint.T :=
-  { regs := .ofList [.r0, .r1, .r2], flags := false, lens := [128], bases := [(.r0, 0)] }
-
-theorem wfb {s : State} (h : Proof.Poly1305.blocksArm.pre s) : VG.Arm.Taint.Wf τb s := by
-  have hp := BPre.of s h
-  refine ⟨fun _ => ⟨by simp [hp.wr, τb], by simp [hp.wr], ?_⟩, ?_, fun h => absurd h (by decide),
-    fun _ h => (List.not_mem_nil h).elim⟩
-  · simp only [hp.wr, List.mem_singleton, forall_eq]
-    rw [addr_toNat]; exact hp.st_fit
-  · intro p hp'; simp only [τb, List.mem_singleton] at hp'; subst hp'; simp [VG.Arm.Taint.region, hp.wr]
-
-theorem agreeb {s₁ s₂ : State} (h₁ : Proof.Poly1305.blocksArm.pre s₁) (h₂ : Proof.Poly1305.blocksArm.pre s₂)
-    (hpub : Proof.Poly1305.blocksArm.pub s₁ s₂) : VG.Arm.Taint.Agree τb s₁ s₂ := by
-  obtain ⟨p0, p1, p2⟩ := hpub
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wfb h₁, wfb h₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
-    fun k hk => absurd hk (Nat.not_lt_zero k)⟩
-  · simp only [τb, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> with_reducible assumption
-  · rw [(BPre.of s₁ h₁).wr, (BPre.of s₂ h₂).wr, p0]
-
-/-- A state satisfying the precondition (with no blocks). -/
-def blocksSat : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | _ => 0
-  sp := 0x4000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := [⟨0x2000, 0⟩]
-  wr := [⟨0x1000, 128⟩]
-
 theorem blocks_ok (s : State) (hs : Proof.Poly1305.blocksArm.pre s) :
     ∃ t s', Exec isa Impl.Poly1305.Arm.blocks s t s' ∧ abiPreserved s s' ∧
       Proof.Poly1305.blocksArm.post s s' :=
   blocks_correct (BPre.of s hs)
-
-theorem blocks_ct : ConstantTime isa Proof.Poly1305.blocksArm.pre Proof.Poly1305.blocksArm.pub
-    Impl.Poly1305.Arm.blocks := by
-  exact VG.Taint.constantTime (A := taint) τb (fun _ _ h₁ h₂ hp => agreeb h₁ h₂ hp) (by
-      taint_decide)
-
-theorem blocks_verified :
-    Verified Arm.target Impl.Poly1305.Arm.blocks (Proof.Poly1305.blocksContract Arm.abi) :=
-  Verified.of_correct blocks_ok blocks_ct (by
-    sig_implies [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig, Proof.Poly1305.blocksArm,
-      Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      [Proof.Poly1305.Arm.blocksSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using
-      Proof.Poly1305.Arm.blocksSat)
 
 end VG.Proof.Poly1305.Arm

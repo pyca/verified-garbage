@@ -38,8 +38,6 @@ def baseCoord (c : Nat) : List Instr :=
   scanCoord (fun i => chooseConst (if c = 0 then (Impl.Ed448.SignedWindow.entry i).1
     else (Impl.Ed448.SignedWindow.entry i).2)) (slot (8 + c))
 
-def selectBase : List Instr := loadDigit BITS ++ baseCoord 0 ++ baseCoord 1
-
 /-- Public verification digit scaled to its 192-byte table entry. -/
 def keyAddress : List Instr :=
   [.mov .rax (.reg .r15), .mov32 .rdx (.imm 192), .mul .rdx, .mov .r15 (.reg .rax)]
@@ -50,49 +48,10 @@ def directKeyCoord (c : Nat) : List Instr :=
     .mov r (.mem { base := .rdi, index := some .r15, disp := ((TAB + 64 * c + 8 * i : Nat) : Int) })) ++
   VG.Impl.X448.X86_64.stores (slot (8 + c)) VG.Impl.X448.X86_64.W
 
-def selectKey (o : Nat) : List Instr :=
-  loadDigit o ++ keyAddress ++ directKeyCoord 0 ++ directKeyCoord 1 ++ directKeyCoord 2
-
-/-- Apply a signed digit by conditionally replacing X with -X. -/
-def signFlag (o : Nat) : List Instr :=
-  [.movzx8 .rax { base := .rdi, index := some .rbx, disp := ((o + 4 : Nat) : Int) },
-   .alu .cmp .rax (.imm 1)]
-
-def negateSelected (o : Nat) : Prog isa :=
-  .seq (.block (constSlot 3 0)) <|
-  .seq (.block (VG.Impl.X448.X86_64.sub (slot 3) (slot 3) (slot 8))) <|
-  .block (VG.Impl.X448.X86_64.loads (slot 8) VG.Impl.X448.X86_64.W ++ signFlag o ++
-    chooseMem (slot 3) ++ VG.Impl.X448.X86_64.stores (slot 8) VG.Impl.X448.X86_64.W)
-
-def selectSignedBase : Prog isa := .seq (.block selectBase) (negateSelected BITS)
-
-def selectSignedKey (o : Nat) : Prog isa := .seq (.block (selectKey o)) (negateSelected o)
-
 /-- The projective formula differs from affine addition only in `A = Z₁Z₂`.
 Form that product in the accumulator's Z slot, then reuse the affine formula's code.
 The accumulator is replaced by the addition result immediately afterwards. -/
 def add (F : Field) (P : Point64.Ops) : Prog isa :=
   .seq (.block (F.mul (slot 2) (slot 2) (slot 10))) P.add
-
-def dbl5 (P : Point64.Ops) : Prog isa := .seq P.dbl (.seq P.dbl (.seq P.dbl (.seq P.dbl P.dbl)))
-
-/-- Two scalar digits share the five doublings; the public-key selection is indexed. -/
-def round (F : Field) (P : Point64.Ops) (o : Nat) : Prog isa :=
-  .seq (dbl5 P) <|
-  .seq selectSignedBase <| .seq P.add <| .seq (.block accept) <| .seq (selectSignedKey o) <|
-  .seq (add F P) (.block (accept ++ [.alu .test .rbx (.reg .rbx)]))
-
-def step (F : Field) (P : Point64.Ops) (o : Nat) : Prog isa :=
-  .seq (.block [.alu .sub .rbx (.imm 5)]) (round F P o)
-
-/-- The first base-point selection is already the accumulator: no identity arithmetic. -/
-def first (F : Field) (P : Point64.Ops) (o : Nat) : Prog isa :=
-  .seq selectSignedBase <|
-  .seq (.block (copyOut (slot 0) (slot 8) ++ copyOut (slot 1) (slot 9) ++ constSlot 2 1)) <|
-  .seq (selectSignedKey o) <| .seq (add F P) (.block accept)
-
-def joint (F : Field) (P : Point64.Ops) (o : Nat) : Prog isa :=
-  .seq (table P) <| .seq (.block [.mov32 .rbx (.imm 455)]) <|
-  .seq (first F P o) (.loop (step F P o) .ne)
 
 end VG.Impl.Ed448.X86_64.Window

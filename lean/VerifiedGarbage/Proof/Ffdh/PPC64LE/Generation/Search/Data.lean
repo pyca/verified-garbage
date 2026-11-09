@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Contract
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Proof.Bignum.Words
@@ -34,6 +35,8 @@ structure SPub where
   Z : Nat
   attempts : Nat
   rand : List Byte
+  /-- The table of trial division. -/
+  T : Addr
 
 def sOfState (s : State) : SPub where
   op := s.gpr .r3
@@ -49,6 +52,7 @@ def sOfState (s : State) : SPub where
   Z := (stackArg s 0).toNat * 8
   attempts := genAttempts s
   rand := genRand s
+  T := s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol
 
 def SInput (p : SPub) (s : State) : Prop := searchPre s ∧ sOfState s = p
 
@@ -57,7 +61,7 @@ def Slots (m : Mem) (B : Addr) (L : List (Nat × BitVec 64)) : Prop := ∀ p ∈
 
 /-- The search from octet `used` of the tape, with `k` attempts left. -/
 def SPub.tail (p : SPub) (used k : Nat) : ParameterSearchResult :=
-  (parameterSearch p.bits p.gen k (p.rand.drop used)).consume used
+  (sievedParameterSearch p.bits p.gen k (p.rand.drop used)).consume used
 
 /-- The controller's words while it searches. -/
 def SPub.headers (p : SPub) (used k : Nat) : List (Nat × BitVec 64) :=
@@ -90,6 +94,8 @@ structure SLive (p : SPub) (original : State) (used k : Nat) (s : State) : Prop 
   savedR31 : word s.mem p.control 32 = original.gpr .r31
   random : Spec.Rsa.bytesAt s.mem p.rp p.randLen = p.rand
   headers : Slots s.mem p.control (p.headers used k)
+  syms : s.syms = original.syms
+  table : VG.Proof.Ffdh.PPC64LE.ParameterCandidate.TabAt p.T s.mem
 
 /-- The output of a finished search. -/
 def SOutput (p : SPub) (result : ParameterSearchResult) (m : Mem) : Prop :=
@@ -101,7 +107,7 @@ def SOutput (p : SPub) (result : ParameterSearchResult) (m : Mem) : Prop :=
 /-- The controller's four public words for a finished search. -/
 def SPub.policy (p : SPub) (result : ParameterSearchResult) : List (BitVec 64) :=
   [BitVec.ofNat 64 result.remaining, BitVec.ofNat 64 p.len,
-    BitVec.ofNat 64 (parameterEntropy p.bits), BitVec.ofNat 64 result.requested]
+    BitVec.ofNat 64 (parameterEntropy p.bits), BitVec.ofNat 64 (Proof.Ffdh.requested p.bits result)]
 
 /-- A finished search, before `finish` stores `used` and restores `r31`. -/
 structure SDone (p : SPub) (original : State) (result : ParameterSearchResult) (s : State) : Prop where
@@ -147,10 +153,6 @@ theorem len_eq (h : SInput p s) : p.len = (p.bits + 7) / 8 := by
 theorem len_bounds (h : SInput p s) : 64 ≤ p.len ∧ p.len ≤ 1024 := by
   have := h.bits_bounds; have := h.len_eq; omega
 
-theorem gen_eq (h : SInput p s) : p.gen = 2 ∨ p.gen = 5 := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hg, -⟩ := h.1
-  rw [← h.2]; exact hg
-
 theorem attempts_le (h : SInput p s) : p.attempts ≤ parameterAttempts p.bits := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, ha, -⟩ := h.1
   rw [← h.2]; exact ha
@@ -164,7 +166,7 @@ theorem attempts_lt (h : SInput p s) : p.attempts < 2 ^ 64 := by
   omega
 
 theorem randLen_le (h : SInput p s) : p.randLen ≤ parameterEntropy p.bits := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr⟩ := h.1
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr, -⟩ := h.1
   rw [← h.2]; exact hr
 
 theorem randLen_lt (h : SInput p s) : p.randLen < 2 ^ 64 := by
@@ -204,6 +206,21 @@ theorem random_frame (h : SInput p s) {m m' : Mem} (hf : Frame (changes s) m m')
     Spec.Rsa.bytesAt m' p.rp p.randLen = Spec.Rsa.bytesAt m p.rp p.randLen := by
   rw [← h.2]
   exact h.bytes_frame (r := inRand s) (by simp [inReads]) hf
+
+theorem table (h : SInput p s) : VG.Proof.Ffdh.PPC64LE.ParameterCandidate.TabAt p.T s.mem := by
+  rw [← h.2]; exact h.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+
+/-- The table's entries survive writes the controller may make. -/
+theorem table_frame (h : SInput p s) {m m' : Mem} (hf : Frame (changes s) m m')
+    (ht : VG.Proof.Ffdh.PPC64LE.ParameterCandidate.TabAt p.T m) :
+    VG.Proof.Ffdh.PPC64LE.ParameterCandidate.TabAt p.T m' := by
+  have hn := h.nowrap (r := inTab s) (by simp [inReads])
+  have hd := h.read_disjoint (r := inTab s) (by simp [inReads])
+  rw [← h.2] at ht ⊢
+  intro i hi
+  rw [← ht i hi]
+  exact hf.readW (r := inTab s) (Offset.contains_base _ (by simp only [inTab] at hn; omega_using [hn, hi])
+    (by omega_using [hi])) hd (by decide)
 
 /-- The writes but the controller's words. -/
 def callChanges (s : State) : List Region :=

@@ -580,12 +580,6 @@ theorem stepRegions_keep {b : BitVec 32} {s t : State} (hr : Rest powersClob s t
     · exact Offset.sub _ (by decide) (by decide)
     · exact Offset.sub _ (by decide) (by decide)⟩⟩
 
-theorem stepRegions_ws {b : BitVec 32} {m m' : Mem} (hf : Frame (stepRegions b) m m') :
-    Frame [⟨State.addr b, 8192⟩] m m' :=
-  hf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact Offset.sub_base _ (by decide)⟩
-
 private theorem next_fact : ∀ j < 64, BitVec.ofNat 32 j + (1 : BitVec 32) = BitVec.ofNat 32 (j + 1) ∧
     (BitVec.ofNat 32 (j + 1) - (64 : BitVec 32) == 0) = decide (j + 1 = 64) := by decide
 

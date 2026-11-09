@@ -18,9 +18,8 @@ public (pointers, lengths) as parameters and leave the secrets
 correctness lemmas, applied to each run, give the invariant of the next
 piece (`CT.seq`). Branches are on flags the invariants fix (`CT.ite`);
 blocks are checked by the taint analysis from registers the invariants fix
-(`CT.taint`, and `CT.argTaint` for blocks that read stack arguments); the
-calls are constant time by their own proofs, with the same arguments in both
-runs (`CT.gh`, `CT.ctr`, `CT.key`).
+(`CT.taint`); the calls are constant time by their own proofs, with the same
+arguments in both runs (`CT.gh`, `CT.ctr`).
 -/
 
 @[expose] public section
@@ -60,18 +59,6 @@ theorem taint {I : State → Prop} {c : Prog isa} (rs : List Reg)
     (hc : (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs rs) c h).isSome = true) : CT I c :=
   RelCT.taint (A := VG.Arm.taint) _ (fun _ _ hh => Taint.agree_ofRegs (hp _ _ hh.1 hh.2)) hc
 
-/-- A block, with the stack arguments: `n` bytes of them, the same in both runs and apart
-from the writable regions. -/
-theorem argTaint {I : State → Prop} {c : Prog isa} (rs : List Reg) (n : Nat)
-    (hp : ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r)
-    (hsp : ∀ s₁ s₂, I s₁ → I s₂ → s₁.sp = s₂.sp)
-    (hw : ∀ s, I s → s.sp.toNat + n ≤ 2 ^ 32 ∧ ∀ r ∈ s.wr, Region.Disjoint ⟨State.addr s.sp, n⟩ r)
-    (hm : ∀ s₁ s₂, I s₁ → I s₂ → ∀ k < n, s₁.mem (VG.Arm.Taint.argByte s₁ k) = s₂.mem (VG.Arm.Taint.argByte s₂ k))
-    {h : Taint.Hint VG.Arm.Taint.T}
-    (hc : (VG.Taint.check VG.Arm.taint (argTaint rs n) c h).isSome = true) : CT I c :=
-  RelCT.taint (A := VG.Arm.taint) _ (fun _ _ hh => agree_argTaint (hp _ _ hh.1 hh.2) (hsp _ _ hh.1 hh.2)
-    (hw _ hh.1) (hw _ hh.2) (hm _ _ hh.1 hh.2)) hc
-
 theorem skip {I : State → Prop} : CT I (.block []) :=
   taint [] (fun _ _ _ _ _ h => by simp at h) (h := .block []) rfl
 
@@ -84,11 +71,6 @@ theorem ctr {I : State → Prop}
     (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ K C D : BitVec 32, ∃ n : Nat,
       CtrCall s₁ K C D n ∧ CtrCall s₂ K C D n ∧ s₁.sp = s₂.sp) : CT I ctrCall :=
   ctr_rel fun _ _ hh => h _ _ hh.1 hh.2
-
-theorem key {I : State → Prop}
-    (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ K C : BitVec 32, KeyCall s₁ K C ∧ KeyCall s₂ K C ∧ s₁.sp = s₂.sp) :
-    CT I keyCall :=
-  key_rel fun _ _ hh => h _ _ hh.1 hh.2
 
 end CT
 

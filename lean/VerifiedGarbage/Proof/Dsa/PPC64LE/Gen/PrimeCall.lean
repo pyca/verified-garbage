@@ -200,13 +200,11 @@ abbrev tRdK (G : GP) (u : Nat) : List Region := tRd G u ++ [G.rTab]
 /-- The test's entry. -/
 abbrev tEntryK (G : GP) (u : Nat) (s : State) : State := s.callEntry.withRegions (tRdK G u) (tWr G)
 
-theorem strip_tEntryK (G : GP) (u : Nat) (s : State) : stripConsts kT (tEntryK G u s) = tEntry G u s := rfl
-
 section
 variable {G : GP} {σ s : State} {c : Cfg}
 
 theorem GI.witLt {V : Nat → BitVec 64} {LS : List Nat} (h : GI G 176 σ V LS s) : G.witLen < 2 ^ 64 := by
-  rw [← h.hG]; exact (stackArg σ 1).isLt
+  rw [← h.hG]; exact (σ.gpr .r7).isLt
 
 theorem wWords_lt {L : Nat} (hL : L = 128 ∨ L = 256 ∨ L = 384) : wWords L < 2 ^ 15 := by
   rcases hL with rfl | rfl | rfl <;> decide

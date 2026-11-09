@@ -33,13 +33,12 @@ open VG.Proof.Rsa.X86_64 (CrtImpl chkContract code_correct code_spSafe)
 
 /-! ## The private operation -/
 
-/-- The names of the public operation `vg_rsa_private_checked` calls, as in
-`Generic/RsaPrivateCrt/X86_64/Rsa.lean`. -/
+/-- The names of the public operations `vg_rsa_private_checked` calls. -/
 def pcName (v : CrtImpl) : String := Spec.Rsa.publicPrecomputeApi.name ++ v.montSuffix
 def pdName (v : CrtImpl) : String := v.pubOp.name
 
 /-- `vg_rsa_private_checked`'s name and code, for `v`. -/
-def privName (v : CrtImpl) : String := Spec.Rsa.privateCheckedApi.name ++ v.suffix
+def privName (v : CrtImpl) : String := "vg_rsa_private_checked" ++ v.suffix
 def privCode (v : CrtImpl) : Prog isa :=
   Impl.Rsa.X86_64.PrivChecked.code v.name v.code (pcName v) v.pc (pdName v) v.pubOp.code
 

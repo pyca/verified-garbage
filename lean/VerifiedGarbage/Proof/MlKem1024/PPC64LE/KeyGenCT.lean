@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Impl.MlKem1024.PPC64LE.Top
 public import VerifiedGarbage.Spec.MlKem.Contract1024
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.KeyGen
@@ -28,16 +29,16 @@ open VG.Proof.MlKem VG.Proof.MlKem.PPC64LE VG.Proof.MlKem1024.PPC64LE
 open VG.Proof.MlKem.PPC64LE.Enc
 open VG.Proof.MlKem.PPC64LE.KeyGen hiding pre_of post_of satState verified
 
-theorem pre_of {s : State} (h : (Spec.MlKem1024.keyGenContract PPC64LE.abi 48).pre s) : Pre kl1024 s := by
-  sig_pre [Spec.MlKem1024.keyGenContract, Spec.MlKem1024.keyGenSig, PPC64LE.abi, PPC64LE.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlKem.Scrubbed.keyGen1024BodyContract PPC64LE.abi 48).pre s) : Pre kl1024 s := by
+  sig_pre [Proof.MlKem.Scrubbed.keyGen1024BodyContract, Spec.MlKem1024.keyGenSig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h0, h1, h2, d1, d2, d3, d4, d5, d6, b1, b2, b3, b4, f1, f2, f3, f4⟩ := h
   exact ⟨kl1024_wf, kl1024_calls, h0, h1, h2, d1, d2, d3, d4, d5, d6, b1, b2, b3, b4, f1, f2, f3, f4⟩
 
 theorem post_of {s₀ s : State} (h3 : s.gpr .r3 = if okK kl1024 s₀ kl1024.k then 1 else 0)
     (hek : bytesAt s.mem (pEk s₀) 1568 = EK kl1024 s₀)
     (hdk : bytesAt s.mem (pDk s₀) 3168 = DK kl1024 s₀) :
-    (Spec.MlKem1024.keyGenContract PPC64LE.abi 48).post s₀ s := by
-  sig_post [Spec.MlKem1024.keyGenContract, Spec.MlKem1024.keyGenSig, PPC64LE.abi, PPC64LE.argRegs]
+    (Proof.MlKem.Scrubbed.keyGen1024BodyContract PPC64LE.abi 48).post s₀ s := by
+  sig_post [Proof.MlKem.Scrubbed.keyGen1024BodyContract, Spec.MlKem1024.keyGenSig, PPC64LE.abi, PPC64LE.argRegs]
   have e : BitVec.setWidth 32 (if okK kl1024 s₀ kl1024.k then (1 : BitVec 64) else 0) =
       if okK kl1024 s₀ kl1024.k then 1 else 0 := by
     cases okK kl1024 s₀ kl1024.k <;> rfl
@@ -55,13 +56,13 @@ def satState : State where
   wr := [⟨0x2000, 1568⟩, ⟨0x3000, 3168⟩, ⟨0x10000, 49152⟩]
 
 theorem verified :
-    Verified PPC64LE.target Impl.MlKem1024.PPC64LE.keygen1024 (Spec.MlKem1024.keyGenContract PPC64LE.abi 48) := by
+    Verified PPC64LE.target Impl.MlKem1024.PPC64LE.keygen1024 (Proof.MlKem.Scrubbed.keyGen1024BodyContract PPC64LE.abi 48) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, hlr, h3, hek, hdk⟩ := correct (pre_of hs)
     exact ⟨t, s', he, ⟨hpres, hsp, hlr⟩, post_of h3 hek hdk⟩
   · have hp₁ := pre_of h₁
     have hp₂ := pre_of h₂
-    sig_pub [Spec.MlKem1024.keyGenContract, Spec.MlKem1024.keyGenSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
+    sig_pub [Proof.MlKem.Scrubbed.keyGen1024BodyContract, Spec.MlKem1024.keyGenSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
     obtain ⟨hsp, hl, g3, g4, g5, g6⟩ := hpub
     have hr : ρ₀ kl1024 s₁ = ρ₀ kl1024 s₂ :=
       (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hl
@@ -69,7 +70,7 @@ theorem verified :
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem1024.keyGenContract, Spec.MlKem1024.keyGenSig, PPC64LE.abi, PPC64LE.argRegs]
+    · sig_reduce [Proof.MlKem.Scrubbed.keyGen1024BodyContract, Spec.MlKem1024.keyGenSig, PPC64LE.abi, PPC64LE.argRegs]
       sig_and_intros
       all_goals first
         | trivial

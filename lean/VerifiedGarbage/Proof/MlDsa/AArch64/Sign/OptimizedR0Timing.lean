@@ -98,12 +98,4 @@ theorem optimizedR0_tr {p : Params} {S : Nat} (hp : Ok3 p) {t r : Nat} (hr : r<p
       (Impl.MlDsa.AArch64.Sign.Optimized.r0R p r) (RootRS p S E (PositiveIR p S · t (r+1))) :=
   liftRootR (fun _ _ _ h=>optimizedR0_ok hp hr h) (optimizedR0_trace hp hr)
 
-theorem optimizedR0_vector_tr {p : Params} {S : Nat} (hp : Ok3 p) {t : Nat}
-    {E : State → State → Prop} :
-    RelCT isa (RootRS p S E (PositiveIR p S · t 0))
-      (seqR (Impl.MlDsa.AArch64.Sign.Optimized.r0R p) 0 p.k)
-      (RootRS p S E (PositiveIR p S · t p.k)) := by
-  simpa only [Nat.zero_add] using seqR_tr (Q := fun r=>RootRS p S E (PositiveIR p S · t r)) p.k 0
-    (fun r _ hr=>optimizedR0_tr hp (by omega))
-
 end VG.Proof.MlDsa.AArch64.Sign

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesCbc.Rounds
 public import VerifiedGarbage.Impl.AesCbc.RISCV64
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
 public import VerifiedGarbage.Spec.Cbc.Contract
@@ -71,14 +72,14 @@ def sat : State where
   rd := [⟨0x1000, 240⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0x4000, 2176⟩]
 
-theorem encrypt_verified : Verified RISCV64.target encrypt (Spec.Cbc.aesEncryptContract RISCV64.abi) :=
+theorem encrypt_verified : Verified RISCV64.target encrypt (Proof.AesCbc.encryptRoundsContract RISCV64.abi) :=
   Verified.of_correct encrypt_correct encrypt_ct (by
-    sig_implies [Spec.Cbc.aesEncryptContract, Spec.Cbc.aesSig, cbcRISCV64, modeRISCV64, cbcMode,
+    sig_implies [Proof.AesCbc.encryptRoundsContract, Spec.Cbc.aesSig, cbcRISCV64, modeRISCV64, cbcMode,
       ciphOf, cbc, cts, RISCV64.abi, RISCV64.argRegs] [sat] using sat)
 
-theorem decrypt_verified : Verified RISCV64.target decrypt (Spec.Cbc.aesDecryptContract RISCV64.abi) :=
+theorem decrypt_verified : Verified RISCV64.target decrypt (Proof.AesCbc.decryptRoundsContract RISCV64.abi) :=
   Verified.of_correct decrypt_correct decrypt_ct (by
-    sig_implies [Spec.Cbc.aesDecryptContract, Spec.Cbc.aesSig, cbcRISCV64, modeRISCV64, cbcMode,
+    sig_implies [Proof.AesCbc.decryptRoundsContract, Spec.Cbc.aesSig, cbcRISCV64, modeRISCV64, cbcMode,
       ciphOf, cbc, cts, RISCV64.abi, RISCV64.argRegs] [sat] using sat)
 
 end VG.Proof.AesCbc.RISCV64

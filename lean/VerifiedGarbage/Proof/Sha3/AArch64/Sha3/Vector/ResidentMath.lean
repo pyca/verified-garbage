@@ -37,10 +37,4 @@ theorem rep_whole {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200)
   rw [rep_append hr hr' msg bs (by omega) (by omega),ha,hb]
   simp only [Nat.zero_add,ite_true,xorAt_zero]
 
-/-- Consuming a complete rate block retains the aligned position. -/
-theorem append_whole_aligned {rate : Nat} (msg bs : List Byte)
-    (ha : msg.length % rate = 0) (hb : bs.length = rate) :
-    (msg ++ bs).length % rate = 0 := by
-  simp only [List.length_append,hb,Nat.add_mod,Nat.mod_self,Nat.add_zero,ha,Nat.zero_mod]
-
 end VG.Proof.Sha3.AArch64.Sha3.Vector

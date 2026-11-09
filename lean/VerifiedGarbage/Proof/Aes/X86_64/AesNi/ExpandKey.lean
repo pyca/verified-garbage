@@ -265,20 +265,6 @@ theorem shuf_ff (x : BitVec 128) :
     shufDwords x 0xff = ofDwords (dword x 3) (dword x 3) (dword x 3) (dword x 3) := rfl
 theorem shuf_55 (x : BitVec 128) :
     shufDwords x 0x55 = ofDwords (dword x 1) (dword x 1) (dword x 1) (dword x 1) := rfl
-theorem shuf_aa (x : BitVec 128) :
-    shufDwords x 0xaa = ofDwords (dword x 2) (dword x 2) (dword x 2) (dword x 2) := rfl
-
-theorem kga1 (x : BitVec 128) (r : BitVec 8) :
-    dword (aesKeygenAssist x r) 1 = (sub32 (dword x 1)).rotateRight 8 ^^^ r.setWidth 32 := by
-  simp only [aesKeygenAssist, dword_ofDwords_1]; rfl
-
-theorem kga2 (x : BitVec 128) (r : BitVec 8) : dword (aesKeygenAssist x r) 2 = sub32 (dword x 3) := by
-  simp only [aesKeygenAssist, dword_ofDwords_2]; rfl
-
-theorem kga3 (x : BitVec 128) (r : BitVec 8) :
-    dword (aesKeygenAssist x r) 3 = (sub32 (dword x 3)).rotateRight 8 ^^^ r.setWidth 32 := by
-  simp only [aesKeygenAssist, dword_ofDwords_3]; rfl
-
 /-! ## `aesenclast` on equal columns -/
 
 /-- `c` in every doubleword. -/
@@ -441,8 +427,8 @@ end
 /-!
 # AES-NI key expansion: the whole function
 
-`expandKey_verified` proves `Impl.Aes.X86_64.AesNi.expandKey` against
-`expandKeyX86_64`. After each step, the first `K` words of the schedule are
+`expandKey_correct` and `expandKey_ct` prove `Impl.Aes.X86_64.AesNi.expandKey`
+against `expandKeyX86_64`, and `expandKey3_verified` against `expandKey3X86_64`. After each step, the first `K` words of the schedule are
 stored (`KS`) and the registers hold the last words computed; the steps are
 composed by induction (`wp_range_flatMap`), each proved once for any index
 (`kstepK`, `kstepB6K`).
@@ -466,13 +452,13 @@ end
 
 structure Pre (s₀ : State) : Prop where
   rd : s₀.rd = [⟨kp s₀, len s₀⟩]
-  wr : s₀.wr = [schR s₀, ⟨s₀.gpr .rcx, 512⟩]
+  wr : schR s₀ ∈ s₀.wr
   ret : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint (schR s₀)
   len : len s₀ = 16 ∨ len s₀ = 24 ∨ len s₀ = 32
 
 theorem pre_of (s₀ : State) (h : expandKeyX86_64.pre s₀) : Pre s₀ := by
   obtain ⟨h1, h2, h3, h4⟩ := h
-  exact ⟨h1, h2, h3, h4⟩
+  exact ⟨h1, by rw [h2]; exact List.mem_cons_self, h3, h4⟩
 
 /-- Words `0 … K − 1` of the schedule of the `nk`-word key are stored. -/
 structure KS (s₀ : State) (nk K : Nat) (s : State) : Prop where
@@ -488,7 +474,7 @@ theorem KS.of_eq {s₀ : State} {nk K K' : Nat} {s : State} (h : KS s₀ nk K s)
 theorem sched_in {s₀ : State} (hp : Pre s₀) {s : State} (hwr : s.wr = s₀.wr) (hg : s.gpr = s₀.gpr)
     {off : Nat} (h : off + 16 ≤ 240) :
     InRegions s.wr (s.gpr .rdx + BitVec.ofInt 64 (off : Int)) 16 :=
-  ⟨schR s₀, by simp [hwr, hp.wr], by rw [hg, ofInt_natCast]; exact contains_offset h (by omega_arith)⟩
+  ⟨schR s₀, by rw [hwr]; exact hp.wr, by rw [hg, ofInt_natCast]; exact contains_offset h (by omega_arith)⟩
 
 theorem key_in {s₀ : State} (hp : Pre s₀) {s : State} (hrd : s.rd = s₀.rd) (hg : s.gpr = s₀.gpr)
     {off : Nat} (h : off + 16 ≤ len s₀) :
@@ -895,18 +881,6 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
         simp only [decide_eq_false_iff_not] at h h'; rcases hp.len with e | e | e <;> omega_arith
       exact WP.mono (expand128_ok hp h16 hf hrc₂) fun _ hI => fin hp (nk := 4) (by decide) h16 hI
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 16 | .rdx => 0x2000 | .rcx => 0x3000 | .rsp => 0x5000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 16⟩]
-  wr := [⟨0x2000, 240⟩, ⟨0x3000, 512⟩]
-
 theorem expandKey_correct (s : State) (hs : expandKeyX86_64.pre s) :
     ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ expandKeyX86_64.post s s' := by
   obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
@@ -920,11 +894,56 @@ theorem expandKey_ct : ConstantTime isa expandKeyX86_64.pre expandKeyX86_64.pub 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem expandKey_verified :
-    Verified X86_64.target Impl.Aes.X86_64.AesNi.expandKey (Proof.Aes.expandKeyScratchContract X86_64.abi) :=
-  Verified.of_correct expandKey_correct expandKey_ct (by
-    sig_implies [Proof.Aes.expandKeyScratchContract, Proof.Aes.expandKeyScratchSig,
+/-! ## Without the working space
+
+The code reads and writes no working space, and reads no fourth argument, so
+it also has the contract of `vg_aes_expand_key` itself, with only the key and
+the schedule: `vg_aes_expand_key_aesni` is this code, with no frame on the
+stack to allocate and wipe a working space. -/
+
+/-- `vg_aes_expand_key`'s contract on x86-64, for this code. -/
+def expandKey3X86_64 : Contract X86_64.isa where
+  pre s :=
+    let key : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
+    let sched : Region := ⟨s.gpr .rdx, 240⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [key] ∧ s.wr = [sched] ∧ ret.Disjoint sched ∧
+    ((s.gpr .rsi).toNat = 16 ∨ (s.gpr .rsi).toNat = 24 ∨ (s.gpr .rsi).toNat = 32)
+  post s s' := expandKeyX86_64.post s s'
+  pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx
+
+/-- A state satisfying `expandKey3X86_64`'s precondition. -/
+def satState3 : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rsi => 16 | .rdx => 0x2000 | .rsp => 0x5000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem _ := 0
+  rd := [⟨0x1000, 16⟩]
+  wr := [⟨0x2000, 240⟩]
+
+theorem expandKey3_correct (s : State) (hs : expandKey3X86_64.pre s) :
+    ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ expandKey3X86_64.post s s' := by
+  obtain ⟨h1, h2, h3, h4⟩ := hs
+  obtain ⟨t, s', he, h⟩ := correct (s₀ := s) ⟨h1, by rw [h2]; exact List.mem_cons_self, h3, h4⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
+
+theorem expandKey3_ct : ConstantTime isa expandKey3X86_64.pre expandKey3X86_64.pub expandKey := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx]) ?_
+    (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, h3⟩
+  refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
+
+theorem expandKey3_verified :
+    Verified X86_64.target Impl.Aes.X86_64.AesNi.expandKey (Spec.Aes.expandKeyContract X86_64.abi) :=
+  Verified.of_correct expandKey3_correct expandKey3_ct (by
+    sig_implies [Spec.Aes.expandKeyContract, Spec.Aes.expandKeySig, Spec.Aes.expandKeyPre,
+      Spec.Aes.expandKeyPost, Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64,
       Proof.Aes.X86_64.AesNi.expandKeyX86_64, X86_64.abi, X86_64.argRegs]
-      [Proof.Aes.X86_64.AesNi.Key.satState] using Proof.Aes.X86_64.AesNi.Key.satState)
+      [Proof.Aes.X86_64.AesNi.Key.satState3] using Proof.Aes.X86_64.AesNi.Key.satState3)
 
 end VG.Proof.Aes.X86_64.AesNi.Key

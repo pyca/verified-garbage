@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Sm4.X86.KeyVerified
 public import VerifiedGarbage.Proof.Sm4.X86.Verified
 public import VerifiedGarbage.Proof.Sm4.X86.PreparedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sm4.X86.Lit
 
 /-! # SM4 artifacts on baseline x86 (32-bit) -/

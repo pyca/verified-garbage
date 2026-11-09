@@ -44,14 +44,4 @@ theorem appendByte_value (v : Nat) (b : Byte) (hv : v < 2 ^ 56) :
     Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by omega), hor]
   omega
 
-theorem groupByte_ct (i : Nat) :
-    RelCT isa (Two fun (src : Addr) s => s.gpr .x3 = src)
-      (.block (VG.Impl.Rsa.AArch64.WindowFive.groupByte i)) (fun _ _ => True) := by
-  apply two_taint [.x3] (hc := .block [])
-  · intro P s t hs ht r hr
-    simp only [List.mem_singleton] at hr
-    subst r
-    exact hs.trans ht.symm
-  · rfl
-
 end VG.Proof.Bignum.AArch64.WindowFive

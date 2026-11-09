@@ -1,16 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Verified
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Hashes
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Verified
 
 /-!
-# RSAES-OAEP encryption on PPC64LE: the instances
+# RSAES-OAEP on PPC64LE: the instances emitted
 
-Untrusted: everything here is checked by Lean. A hash function's streaming
-functions with what the proofs need of them (`Link`: `HashOK`, `HashCT`, and
-the hash function of `Spec.Mgf1` they compute, among those the label may be
-hashed with); `link_verified`: encryption for two of them, which the
-registration files bind.
+Untrusted: everything here is checked by Lean. What the registration checks
+of the hash functions whose tables a function takes (`OK`), and the
+instances' proofs against the contracts it states: encryption (`enc_ok`)
+and decryption (`dec_ok`), with both hash functions any of `vs`' tables.
 -/
 
 @[expose] public section
@@ -18,36 +17,26 @@ registration files bind.
 namespace VG.Proof.RsaOaep.PPC64LE
 
 open VG VG.PPC64LE
-open VG.Impl.Hmac.Stream.PPC64LE (Hash)
-open VG.Proof.Hmac.Stream.PPC64LE
+open VG.Proof.HashTable.PPC64LE (TVar tables names Coh fnsOf)
 
-/-- A hash function's streaming functions, with what the proofs need. -/
-structure Link (H : Hash) where
-  ok : HashOK H
-  ct : HashCT ok
-  G : Spec.Mgf1.Hash
-  hash : ∀ x, G.hash x = ok.SH.H.hash x
-  len : G.len = H.D
-  mem : G ∈ labelHashes
+/-- What the registration checks of the hash functions whose tables a
+function takes: their functions of the same name have the same code, there
+are not too many to give distinct addresses in the witnesses, and there is
+one. -/
+def OK (vs : List TVar) : Prop := Coh vs ∧ (names vs).length < 2 ^ 32 ∧ vs ≠ []
 
-theorem Link.valid {H : Hash} (l : Link H) : Proof.Mgf1.Valid l.G :=
-  ⟨by rw [l.len]; exact l.ok.hD0, fun x => by rw [l.hash, l.ok.hashLen, l.len]⟩
+instance (vs : List TVar) : Decidable (OK vs) := by unfold OK; infer_instance
 
-def sha1L : Link Sha1.hash := ⟨Sha1.ok, sha1CT, Spec.Mgf1.sha1, fun _ => rfl, rfl, by simp [labelHashes]⟩
-def sha224L : Link Sha224.hash := ⟨Sha224.ok, sha224CT, Spec.Mgf1.sha224, fun _ => rfl, rfl, by simp [labelHashes]⟩
-def sha256L : Link Sha256.hash := ⟨Sha256.ok, sha256CT, Spec.Mgf1.sha256, fun _ => rfl, rfl, by simp [labelHashes]⟩
-def sha384L : Link Sha384.hash := ⟨Sha384.ok, sha384CT, Spec.Mgf1.sha384, fun _ => rfl, rfl, by simp [labelHashes]⟩
-def sha512L : Link Sha512.hash := ⟨Sha512.ok, sha512CT, Spec.Mgf1.sha512, fun _ => rfl, rfl, by simp [labelHashes]⟩
-def sha512_224L : Link Sha512_224.hash :=
-  ⟨Sha512_224.ok, sha512_224CT, Spec.Mgf1.sha512_224, fun _ => rfl, rfl, by simp [labelHashes]⟩
-def sha512_256L : Link Sha512_256.hash :=
-  ⟨Sha512_256.ok, sha512_256CT, Spec.Mgf1.sha512_256, fun _ => rfl, rfl, by simp [labelHashes]⟩
+theorem OK.mem {vs : List TVar} (h : OK vs) : ∃ w, w ∈ vs := List.exists_mem_of_ne_nil _ h.2.2
 
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed` for the linked hash
-functions. -/
-theorem link_verified {H G : Hash} (lh : Link H) (lg : Link G) :
-    Verified PPC64LE.target (Impl.RsaOaep.PPC64LE.encrypt H G)
-      (Spec.RsaOaep.encryptPrecomputedContract lh.G lg.G abi 304) :=
-  enc_verified lh.ok lh.ct lg.ok lg.ct lh.hash lh.len lg.hash lg.len lg.valid (enc_sat lg.G lh.mem)
+/-- `vg_rsa_oaep_encrypt_precomputed`, with the tables of `vs`. -/
+theorem enc_ok (vs : List TVar) (hok : OK vs) :
+    Verified PPC64LE.target (Impl.RsaOaep.PPC64LE.encrypt (fnsOf vs)) (encSpec (tables vs)) :=
+  enc_verified hok.1 (let ⟨_, hw⟩ := hok.mem; enc_sat hw hok.2.1)
+
+/-- `vg_rsa_oaep_decrypt`, with the tables of `vs`. -/
+theorem dec_ok (vs : List TVar) (hok : OK vs) :
+    Verified PPC64LE.target (Impl.RsaOaep.PPC64LE.Dec.decrypt (fnsOf vs)) (Dec.decSpec (tables vs)) :=
+  Dec.dec_verified hok.1 (let ⟨_, hw⟩ := hok.mem; Dec.dec_sat hw hok.2.1)
 
 end VG.Proof.RsaOaep.PPC64LE

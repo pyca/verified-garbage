@@ -11,9 +11,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 /-!
 # Short Weierstrass curves on x86-64: code as a sequence of blocks
 
-`blocks ls` runs as the block `ls.flatten` (`blocks_wp`), so `fprogB` (a block
-per field operation) runs as `fprog` for a modulus whose products are not
-calls (`fprogB_wp`), and `fprog_ok` holds for it.
+`blocks ls` runs as the block `ls.flatten` (`blocks_wp`).
 -/
 
 @[expose] public section
@@ -40,29 +38,5 @@ theorem blocks_noCalls : ∀ (ls : List (List Instr)), (blocks ls).noCalls = tru
 
 theorem blocks_inline (ls : List (List Instr)) : (blocks ls).inline = blocks ls :=
   Code.inline_of_noCalls (blocks_noCalls ls)
-
-theorem bits_inline (src dst nbytes : Nat) : (bits src dst nbytes).inline = bits src dst nbytes := rfl
-
-/-- Products of other than six or nine words are never calls. -/
-theorem callOf_of_ne {M : Mod} (h : M.n ≠ 9) (h6 : M.n ≠ 6) (h8 : M.n ≠ 8 := by omega) : Mont.callOf M = none := by
-  unfold Mont.callOf
-  rw [ite_eq_right_iff.mpr fun h' => absurd h'.1 h, ite_eq_right_iff.mpr fun h' => absurd h'.1 h6,
-    ite_eq_right_iff.mpr fun h' => absurd h'.1 h]
-  rw [ite_eq_right_iff.mpr fun h' => absurd h'.1 h6]
-  exact ite_eq_right_iff.mpr fun h' => absurd h'.1 h8
-
-theorem opProg_of_none {M : Mod} (h : Mont.callOf M = none) (op : FOp) : opProg M op = .block (opCode M op) := by
-  cases op <;> simp [opProg, opCall?, h]
-
-theorem fprogB_wp {M : Mod} (h : Mont.callOf M = none) :
-    ∀ (ops : List FOp) {s : State} {Q : State → Prop},
-      WP isa (fprogB M ops).inline s Q ↔ WP isa (.block (fprog M ops)) s Q
-  | [], _, _ => by simp [fprogB, progs, fprog, Code.inline]
-  | [op], _, _ => by simp [fprogB, progs, fprog, opProg_of_none h, Code.inline]
-  | op :: op' :: ops, s, Q => by
-    show WP isa (Code.seq (opProg M op).inline (fprogB M (op' :: ops)).inline) s Q ↔ _
-    rw [WP.seq_iff, fprog, List.flatMap_cons, WP.block_append_iff, opProg_of_none h]
-    exact ⟨fun h' => WP.mono h' fun _ h'' => (fprogB_wp h (op' :: ops)).mp h'',
-      fun h' => WP.mono h' fun _ h'' => (fprogB_wp h (op' :: ops)).mpr h''⟩
 
 end VG.Proof.Weierstrass.X86_64

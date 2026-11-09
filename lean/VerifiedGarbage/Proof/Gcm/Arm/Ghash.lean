@@ -858,25 +858,4 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Gcm.ghashArm.pre s₁) (h₂ 
 theorem ghash_ct : ConstantTime isa Proof.Gcm.ghashArm.pre Proof.Gcm.ghashArm.pub Impl.Gcm.Arm.ghash :=
   VG.Taint.constantTime (A := VG.Arm.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
 
-/-- A state satisfying the precondition (with no blocks, and the scratch buffer at 0). -/
-def sat : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | _ => 0
-  sp := 0x8000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := [⟨0x1000, 16⟩, ⟨0x3000, 0⟩, ⟨0x8000, 4⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0, 256⟩]
-
-theorem ghash_verified :
-    Verified Arm.target Impl.Gcm.Arm.ghash (Proof.Gcm.ghashContract Arm.abi) :=
-  Verified.of_correct ghash_correct ghash_ct (by
-    sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, Proof.Gcm.ghashArm, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      [Proof.Gcm.Arm.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
-      using Proof.Gcm.Arm.sat)
-
 end VG.Proof.Gcm.Arm

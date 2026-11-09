@@ -2,14 +2,6 @@ module
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 
 public import VerifiedGarbage.Proof.Ed25519.ScalarBytes
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.Module
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
 
 /-!
 # Verification with windows, nibble by nibble
@@ -35,7 +27,6 @@ theorem nibble_step (A N : EPoint dZ) (K S i : Nat) :
   have hS := nibble_split S i
   generalize K / 16 ^ i % 16 = kr at hK ⊢
   generalize S / 16 ^ i % 16 = sr at hS ⊢
-  rw [hK, hS]
-  module
+  rw [hK, hS, smul_add, ← mul_nsmul', ← mul_nsmul', add_nsmul, add_nsmul, add_assoc, add_add_add_comm]
 
 end VG.Proof.Ed25519

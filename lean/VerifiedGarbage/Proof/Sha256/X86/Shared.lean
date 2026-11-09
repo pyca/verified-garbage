@@ -31,9 +31,7 @@ meta import VerifiedGarbage.Proof.Sha256.Scratch
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.MdStream.X86.ArgWord
 meta import VerifiedGarbage.Proof.Framework.Bswap
-meta import VerifiedGarbage.Proof.MdStream.X86.ArgWord
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -418,10 +416,6 @@ theorem compressWide_of {code : Prog isa} (hv : Verified X86.target code Proof.S
     (fun _ _ _ h => by narrow at h ⊢; exact h)
     (fun _ _ _ _ h => by narrow; exact h) hsat
 
-theorem compressWide_verified (hsat : ∃ s, compressWide.pre s) :
-    Verified X86.target Impl.Sha256.X86.compress compressWide :=
-  compressWide_of Proof.Sha256.X86.compress_verified hsat
-
 /-- `update` only reads its arguments. -/
 theorem updateWide_of {code : Prog isa} (hv : Verified X86.target code Proof.Sha256.updateX86)
     (hsat : ∃ s, updateWide.pre s) : Verified X86.target code updateWide :=
@@ -492,10 +486,6 @@ theorem compressWide_implies : compressWide.Implies (Proof.Sha256.compressContra
     Proof.Sha256.compressX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [compressSat, Proof.Sha256.X86.satState, Proof.Sha256.X86.satMem, X86.arg, X86.argAddr,
       Mem.readW, Mem.read] using compressSat
-
-theorem compress :
-    Verified X86.target Impl.Sha256.X86.compress (Proof.Sha256.compressContract X86.abi) :=
-  (compressWide_verified compressWide_implies.sat_left).of_implies compressWide_implies
 
 theorem init :
     Verified X86.target Impl.Sha256.X86.Stream.init (Spec.Sha256.initContract X86.abi) :=

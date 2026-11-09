@@ -218,15 +218,6 @@ theorem ofNat_ne_zero {k : Nat} (h : k < 2 ^ 64) : (BitVec.ofNat 64 k != 0) = de
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h] at this
     exact hk this
 
-theorem ofNat_beq_zero {k : Nat} (h : k < 2 ^ 64) : (BitVec.ofNat 64 k == 0) = decide (k = 0) := by
-  by_cases hk : k = 0
-  · simp [hk]
-  · simp only [hk, decide_false, beq_eq_false_iff_ne, ne_eq]
-    intro h'
-    have := congrArg BitVec.toNat h'
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h] at this
-    exact hk this
-
 /-- `BitVec.ofNat 64 n - 1`, for `1 ≤ n`. -/
 theorem ofNat_sub_one {n : Nat} (hn : 1 ≤ n) (h : n < 2 ^ 64) :
     BitVec.ofNat 64 n - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - 1) := by
@@ -264,11 +255,6 @@ theorem wd_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {P : Addr}
 
 theorem wd_shift (m : Mem) (B : Addr) (a d : Nat) : wd m (B + BitVec.ofNat 64 a) d = wd m B (a + d) := by
   unfold wd; rw [Offset.add_add]
-
-/-- An access at an offset of a region at an offset of `P`. -/
-theorem in_off {rs : List Region} {P : Addr} {a len d n : Nat} (hr : (⟨P + BitVec.ofNat 64 a, len⟩ : Region) ∈ rs)
-    (h1 : a ≤ d) (h2 : d + n ≤ a + len) (h3 : a + len < 2 ^ 64) :
-    InRegions rs (P + BitVec.ofNat 64 d) n := ⟨_, hr, Offset.contains P h1 h2 h3⟩
 
 theorem in_base {rs : List Region} {P : Addr} {len d n : Nat} (hr : (⟨P, len⟩ : Region) ∈ rs)
     (h : d + n ≤ len) (h3 : d < 2 ^ 64) : InRegions rs (P + BitVec.ofNat 64 d) n :=

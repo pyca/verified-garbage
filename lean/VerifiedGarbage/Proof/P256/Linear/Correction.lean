@@ -18,12 +18,6 @@ open VG.Proof.P256.VerifySparse (four)
 
 def correction : List Instr := ((Impl.P256.Linear.linear129 0 0 0).drop 52).take 20
 
-theorem correction_eq129 (o a b : Nat) :
-    ((Impl.P256.Linear.linear129 o a b).drop 52).take 20=correction := rfl
-
-theorem correction_eq38 (o a b : Nat) :
-    ((Impl.P256.Linear.linear38 o a b).drop 42).take 20=correction := rfl
-
 private theorem correction_core (s : State) (hz : s.gpr .x17=0) :
     WP isa (.block correction) s fun t =>
       (t.gpr .x3,t.gpr .x4,t.gpr .x5,t.gpr .x6)=

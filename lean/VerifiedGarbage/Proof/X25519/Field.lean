@@ -70,8 +70,6 @@ theorem toFe_a24 {a c : Nat} (h : c % P = 121665 * a % P) : toFe c = a24 * toFe 
   rw [h, Nat.mul_mod]
 
 theorem toFe_zero : toFe 0 = 0 := rfl
-theorem toFe_one : toFe 1 = 1 := rfl
-
 /-- `2²⁵⁶ ≡ 38` modulo `p`: the top of a 512-bit product folds into its
 bottom times 38. -/
 theorem fold256 (lo hi : Nat) : (lo + 2 ^ 256 * hi) % P = (lo + 38 * hi) % P := by

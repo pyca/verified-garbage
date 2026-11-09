@@ -78,10 +78,6 @@ structure ScEnv (sc : Addr) (t : State) : Prop where
   sp : 48 ≤ t.sp.toNat
   d : (below t.sp 48).Disjoint ⟨sc, 8192⟩
 
-theorem ScEnv.of {sc : Addr} {t u : State} (h : ScEnv sc t) (hw : u.wr = t.wr) (hs : u.sp = t.sp) :
-    ScEnv sc u :=
-  ⟨hw ▸ h.w, hs ▸ h.sp, hs ▸ h.d⟩
-
 theorem sub_sc (sc : Addr) {d n : Nat} (h : d + n ≤ 8192) : Region.Sub ⟨sc + BitVec.ofNat 64 d, n⟩ ⟨sc, 8192⟩ :=
   Offset.sub_base sc h
 

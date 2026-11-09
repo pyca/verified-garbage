@@ -152,7 +152,7 @@ theorem ball_piece : VPiece p STK (VS p STK p.k 0) (VS4 p STK) (sampled (ballAt 
       fun x hs => ok x hs).mono (fun _ _ h => h) fun x y h => ⟨σ, h⟩
   · refine ⟨σ₁, vc_twoL pub h₁.vb.vc h₂.vb.vc, ?_⟩
     show bytesAt _ ((vlay p STK σ₁).A 4 0) _ = bytesAt _ ((vlay p STK σ₁).A 4 0) _
-    rw [sig_slice h₁.vb.vc (by have := hF.sig; have := hF.hint; omega), pub.2.2.2.2.2.2.2, vlay_pub pub,
+    rw [sig_slice h₁.vb.vc (by have := hF.sig; have := hF.hint; omega), pub.2.2.2.2.2.2.2.1, vlay_pub pub,
       sig_slice h₂.vb.vc (by have := hF.sig; have := hF.hint; omega)]
 
 /-! ## The samplers -/

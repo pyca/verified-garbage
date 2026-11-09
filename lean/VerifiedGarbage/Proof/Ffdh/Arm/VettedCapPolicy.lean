@@ -27,9 +27,6 @@ theorem vetted_cap_result {a : Spec.Ffdh.Parameters} {bits : Nat}
        (VG.Proof.Ffdh.ScalarWidth.mask bits).setWidth 32) := by
   rcases vetted_caps recognized with rfl | rfl | rfl | rfl | rfl <;> rfl
 
-theorem vetted_cap_unrecognized (old : BitVec 32 × BitVec 32) :
-    VG.Impl.Ffdh.Arm.VettedCap.result VG.Impl.Ffdh.Arm.VettedCap.choices (0#32) old = old := rfl
-
 theorem vetted_layout_width {p : Inputs} {bits : Nat}
     (recognized : Spec.Ffdh.vettedExponentBits (Spec.Ffdh.domainOf p.k p.dom) = some bits) :
     (ScalarLayout.vetted p).width = VG.Proof.Ffdh.ScalarWidth.width bits := by

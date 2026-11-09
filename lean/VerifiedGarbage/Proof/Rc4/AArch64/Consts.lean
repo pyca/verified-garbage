@@ -29,11 +29,6 @@ theorem lanes_next (q : Nat) :
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (16 : BitVec 8).toNat = 16 from rfl]
     omega
 
-theorem dup_b16 (s : State) (r : Reg) (b : Nat) (h : s.gpr r = BitVec.ofNat 64 b) :
-    (ofVBytes fun _ => (s.gpr r).setWidth 8) = bc (BitVec.ofNat 8 b) := by
-  rw [h]; congr; funext _
-  apply BitVec.eq_of_toNat_eq; simp
-
 theorem bc_lit (b : BitVec 8) : (ofVBytes fun _ => b) = bc b := rfl
 
 theorem const64_ok (s : State) (r : Reg) (v : BitVec 64) :

@@ -17,7 +17,8 @@ that its proof holds for every implementation: each is a variant of the
 interface `AesCtr32` on AArch64 (`Variants/AesCtr32/AArch64/`), and each
 caller (in `Generic/AesCtr32/AArch64/`) is emitted once for each of them (see
 `TCB/Emit.lean`). Every implementation is proven against the same contract,
-`Proof.Aes.ctr32AArch64`, and has no frames. It comes with the
+`Proof.Aes.ctr32AArch64`, and has no frames, as is its out-of-place form
+(`to`, against `Proof.Aes.ctr32ToAArch64`). It comes with the
 implementation of `vg_aes_expand_key` that goes with it (with the same
 suffix and CPU features), for the callers that also expand the key, proven
 against `Proof.Aes.expandKeyAArch64`.
@@ -40,6 +41,14 @@ structure Ctr32Impl where
   ct : ConstantTime isa Proof.Aes.ctr32AArch64.pre Proof.Aes.ctr32AArch64.pub callee.code
   /-- It never writes v8–v15. -/
   keepsV : callee.code.allInstrs keepsV = true
+  /-- Its out-of-place form, an internal function proven against
+  `Proof.Aes.ctr32ToAArch64`, with the same CPU features. -/
+  to : Impl.Aes.AArch64.Ctr32
+  toNoFrames : to.code.noFrames = true
+  toOk : ∀ s, Proof.Aes.ctr32ToAArch64.pre s →
+    ∃ t s', Exec isa to.code s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32ToAArch64.post s s'
+  toCt : ConstantTime isa Proof.Aes.ctr32ToAArch64.pre Proof.Aes.ctr32ToAArch64.pub to.code
+  toKeepsV : to.code.allInstrs AArch64.keepsV = true
   /-- What the names of its callers' instances end with (e.g. `_aes`;
   nothing for the baseline implementation). -/
   suffix : String
@@ -63,6 +72,11 @@ def scalar : Ctr32Impl where
   ok := ctr32_correct
   ct := ctr32_ct
   keepsV := by lit_decide
+  to := .scalarTo
+  toNoFrames := by lit_decide
+  toOk := ctr32To_correct
+  toCt := ctr32To_ct
+  toKeepsV := by lit_decide
   suffix := ""
   features := []
   expand := .scalar
@@ -78,6 +92,11 @@ def aese : Ctr32Impl where
   ok := Aese.ctr32_correct
   ct := Aese.ctr32_ct
   keepsV := by lit_decide
+  to := .aeseTo
+  toNoFrames := by lit_decide
+  toOk := Aese.ctr32To_correct
+  toCt := Aese.ctr32To_ct
+  toKeepsV := by lit_decide
   suffix := "_aes"
   features := ["aes"]
   expand := .aese

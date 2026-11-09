@@ -40,15 +40,6 @@ theorem selectWord_ok (s : State) {src dst : Addr} {mask : BitVec 64}
  refine WP.keep [.x3,.x4,.x8,.x9] ?_ rfl rfl rfl
  brun [source,output,choose,readSource,readOutput,writeOutput]
 
-/-- The OR accumulator either retains a prior selected row or inserts the
-unique current match; at most one of the 32 rows can match. -/
-theorem selectWord_value (old row : BitVec 64) (selected : Prop) [Decidable selected] :
- old ||| (row &&& (if selected then BitVec.allOnes 64 else 0#64)) =
- if selected then old ||| row else old := by
- split_ifs
- · rw [BitVec.and_allOnes]
- · rw [BitVec.and_zero,BitVec.or_zero]
-
 end VG.Proof.Ffdh.AArch64.Cached
 end
 

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Aes.Rounds
 public import VerifiedGarbage.Proof.Aes.Arm.Ecb
 public import VerifiedGarbage.Proof.Aes.Arm.Ctr32
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
@@ -519,17 +520,17 @@ def sat : State where
   wr := [⟨0x3000, 0⟩, ⟨0, 2048⟩]
 
 theorem encryptBlocks_verified :
-    Verified Arm.target encryptBlocks (Spec.Aes.encryptBlocksContract Arm.abi) :=
+    Verified Arm.target encryptBlocks (Proof.Aes.encryptBlocksRoundsContract Arm.abi) :=
   Verified.of_correct (blocks_correct encrypt2_cryptOk) encryptBlocks_ct (by
-    sig_implies [Spec.Aes.encryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksArm, Arm.abi,
+    sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksArm, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [Proof.Aes.Arm.Ecb.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
       using Proof.Aes.Arm.Ecb.sat)
 
 theorem decryptBlocks_verified :
-    Verified Arm.target decryptBlocks (Spec.Aes.decryptBlocksContract Arm.abi) :=
+    Verified Arm.target decryptBlocks (Proof.Aes.decryptBlocksRoundsContract Arm.abi) :=
   Verified.of_correct (blocks_correct decrypt2_cryptOk) decryptBlocks_ct (by
-    sig_implies [Spec.Aes.decryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksArm, Arm.abi,
+    sig_implies [Proof.Aes.decryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksArm, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [Proof.Aes.Arm.Ecb.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
       using Proof.Aes.Arm.Ecb.sat)

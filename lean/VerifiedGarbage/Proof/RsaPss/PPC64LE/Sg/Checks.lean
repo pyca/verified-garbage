@@ -71,7 +71,7 @@ theorem chkEm_ok {H : Impl.Hmac.Stream.PPC64LE.Hash} (hD64 : H.D ≤ 64) {t : St
 theorem chkSalt_ok {H : Impl.Hmac.Stream.PPC64LE.Hash} (hD64 : H.D ≤ 64) {t : State} (E : Entered s t)
     (h0 : s.mem (s.gpr .r5) ≠ 0) (hem : H.D + 2 ≤ kk s - loN s) :
     WP isa (.block (chkSalt H)) t fun t' => Entered s t' ∧
-      (t'.gpr .r3 != 0) = decide (kk s - loN s - (H.D + 2) < (stackArg s 10).toNat) := by
+      (t'.gpr .r3 != 0) = decide (kk s - loN s - (H.D + 2) < (stackArg s 11).toNat) := by
   have hk2 : kk s ≤ 1024 := P.k2
   refine wp_sub fun t₅ o₅ e₅ => wp_subi (h := by omega) fun t₆ o₆ e₆ => wp_sub fun t₇ o₇ e₇ =>
     wp_lsr fun t₈ o₈ e₈ => wp_lsr fun t₉ o₉ e₉ => wp_or fun t₁₀ o₁₀ e₁₀ => wp_nil ?_
@@ -79,7 +79,7 @@ theorem chkSalt_ok {H : Impl.Hmac.Stream.PPC64LE.Hash} (hD64 : H.D ≤ 64) {t : 
   refine ⟨E.only P k₁₀, ?_⟩
   rw [e₁₀, o₉.get .r3, e₉, e₈, o₈.get .r19, e₇, o₇.get .r19, e₆, o₆.get .r19, e₅, o₅.get .r19, Base.r15 E.base,
     Base.r23 E.base, Base.r19 E.base, k_lo P h0, Offset.ofNat_sub_ofNat hem, BitVec.or_comm]
-  have := msgBit (x := kk s - loN s - (H.D + 2)) (y := (stackArg s 10).toNat) (by omega) (BitVec.isLt _)
+  have := msgBit (x := kk s - loN s - (H.D + 2)) (y := (stackArg s 11).toNat) (by omega) (BitVec.isLt _)
   rwa [ofNat_toNat] at this
 
 theorem oR_eq : oR s = ⟨s.gpr .r3, (s.gpr .r6).toNat⟩ := by rw [oR, P.ok]

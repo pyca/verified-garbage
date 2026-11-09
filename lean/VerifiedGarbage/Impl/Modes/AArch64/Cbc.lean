@@ -5,8 +5,9 @@ public import VerifiedGarbage.Impl.Modes.AArch64.Ctr
 /-!
 # CBC decryption on AArch64, for any block cipher with blocks of 8 or 16 bytes
 
-`cbcDecrypt core regs`: CBC decryption (SP 800-38A §6.2) over a block
-cipher's core (`Core`, as for CTR), whose `crypt` here applies the inverse
+The pieces of CBC decryption (SP 800-38A §6.2), which `cbcDecryptChained`
+(`CbcChained.lean`) puts together, over a block cipher's core (`Core`, as
+for CTR), whose `crypt` here applies the inverse
 cipher `CIPH⁻¹_K` to the `G` blocks of its buffer. Each group of up to `G`
 blocks is decrypted at once: decryption, unlike encryption, needs no block's
 result for the next. As on x86-64 (`Impl/Modes/X86_64/Cbc.lean`).
@@ -63,13 +64,6 @@ plaintext blocks back to the data. -/
 def cbcDecGroup : Prog isa :=
   .seq c.groupCount (.seq (.block c.xorArgs) (.seq c.copyBlocks (.seq c.crypt
     (.seq c.groupCount (.seq (.block c.xorArgs) (.seq c.unchainBlocks (.block c.advance)))))))
-
-/-- The whole function: the chaining value, the key, then the groups. -/
-def cbcDecrypt (r : CtrRegs) : Prog isa :=
-  .seq (.block (c.ctrEntry r ++ c.cbcSetup r ++ c.ctrArgs r))
-    (.seq c.prepare
-      (.seq (.ite (.zero .x c.leftReg) (.block []) (.loop c.cbcDecGroup (.nonzero .x c.leftReg)))
-        (.block c.restoreRegs)))
 
 end Core
 

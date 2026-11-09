@@ -82,25 +82,4 @@ theorem byte_zip_nibbles (x : BitVec 128) {k : Nat} (hk : k < 16) :
   · simp only [h, ite_false, show (k%2 != 0) = true from bne_iff_ne.mpr h]
     exact ⟨byte_high x (by omega), byte_high x (by omega)⟩
 
-/-- Two zero interleaves widen each byte into a word without changing it. -/
-theorem word_widen (x : BitVec 128) {k : Nat} (hk : k < 4) :
-    (vword (VPermOp.eval .zip1 .h8 (VPermOp.eval .zip1 .b16 x 0) 0) k).toNat =
-      (vbyte x k).toNat ∧
-    (vword (VPermOp.eval .zip2 .h8 (VPermOp.eval .zip1 .b16 x 0) 0) k).toNat =
-      (vbyte x (4+k)).toNat ∧
-    (vword (VPermOp.eval .zip1 .h8 (VPermOp.eval .zip2 .b16 x 0) 0) k).toNat =
-      (vbyte x (8+k)).toNat ∧
-    (vword (VPermOp.eval .zip2 .h8 (VPermOp.eval .zip2 .b16 x 0) 0) k).toNat =
-      (vbyte x (12+k)).toNat := by
-  have z : ∀ e < 8, vhalf 0 e = 0 := by intro e _; simp [vhalf]
-  obtain ⟨h1,h2⟩ := VG.Proof.MlKem.AArch64.Ntt16.vword_zip_zero
-    (x := VPermOp.eval .zip1 .b16 x 0) z hk
-  obtain ⟨h3,h4⟩ := VG.Proof.MlKem.AArch64.Ntt16.vword_zip_zero
-    (x := VPermOp.eval .zip2 .b16 x 0) z hk
-  rw [h1,h2,h3,h4, (half_zip_zero x (by omega : k < 8)).1,
-    (half_zip_zero x (by omega : 4+k < 8)).1,
-    (half_zip_zero x (by omega : k < 8)).2,
-    (half_zip_zero x (by omega : 4+k < 8)).2]
-  simp only [show 8+(4+k) = 12+k by omega, and_self]
-
 end VG.Proof.MlKem.AArch64.Cbd16

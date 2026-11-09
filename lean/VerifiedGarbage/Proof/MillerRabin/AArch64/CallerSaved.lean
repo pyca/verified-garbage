@@ -22,20 +22,4 @@ theorem saved_x30 (s : State) (B : Addr) (w : Nat) :
   unfold savedMem
   exact word_writeW_self _ _ _ _
 
-theorem saved_one (s : State) (B : Addr) (w : Nat) (hp : pad w + 16 ≤ 2 ^ 64) :
-    wv (savedMem s B w) B (slot w aOne) w = wv s.mem B (slot w aOne) w := by
-  apply (saved_outside s B w hp).wv
-  · exact Or.inl (Nat.le_refl _)
-  · unfold pad at hp
-    omega_arith
-
-theorem saved_header (s : State) (B : Addr) (w : Nat) (hp : pad w + 16 ≤ 2 ^ 64)
-    {j : Nat} (hj : j < 32) :
-    word (savedMem s B w) B (8 * j) = word s.mem B (8 * j) := by
-  apply (saved_outside s B w hp).word
-  · left
-    simp only [pad, slot, hdrBytes, aOne]
-    omega_arith
-  · omega_arith
-
 end VG.Proof.MillerRabin.AArch64.Caller

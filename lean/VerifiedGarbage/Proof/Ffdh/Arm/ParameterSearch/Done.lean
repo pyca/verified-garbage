@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
@@ -14,7 +15,7 @@ open VG.Proof.Ffdh.Arm.KeySearch (lowWord)
 theorem SearchLive.done {p : SearchParams} {result : Spec.Ffdh.ParameterSearchResult} {s : State}
     (h : SearchLive p result.used result.remaining s)
     (status : lowWord s.mem p.control 13 = BitVec.ofNat 32 result.status)
-    (request : s.mem.readW (off (State.addr p.control) 24) 64 = BitVec.ofNat 64 result.requested)
+    (request : s.mem.readW (off (State.addr p.control) 24) 64 = BitVec.ofNat 64 (Proof.Ffdh.requested p.c.bits result))
     (output : searchOutput p result s.mem) : SearchDone p result s := by
   refine ⟨h.buffers, h.usedBound, ?_, ?_, status, ?_, output⟩
   · exact h.saved 6 (by simp [searchSlots])

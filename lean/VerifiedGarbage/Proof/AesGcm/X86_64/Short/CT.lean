@@ -490,47 +490,6 @@ theorem sealRunF_rel (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (hkr : Ks
   exact (RelCT.seq a (RelCT.seq bl ((finish_rel hF hks hkr hRr (by omega_arith)).mono (fun _ _ h => ⟨fi h.1, fi h.2⟩)
     fun _ _ h => h))).mono (fun _ _ h => h) fun _ _ _ => trivial
 
-/-- After the entry, the long `seal` in two runs, with the additional data
-absorbed by `aadP`, which leaves what `oneAad` does: `aadP` (which branches
-alike in both runs), `oneBlocks` and `finishWith ks`. -/
-theorem sealRunW_rel (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {M : Gcm.X86_64.Stitch.CtxMode}
-    (B : BlkFn M) {aadP : Prog isa} {s₀ s₀' : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat}
-    (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n) (C' : OneCtx s₀' 4 Ctx W SP Np A D nl al n)
-    (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀) (X' : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀')
-    (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al)
-    (hR : (s₀.gpr .rsi).toNat = R)
-    (hNp' : s₀'.gpr .rdx = Np) (hnl' : (s₀'.gpr .rcx).toNat = nl) (hal' : (s₀'.gpr .r9).toNat = al)
-    (hR' : (s₀'.gpr .rsi).toNat = R)
-    (har : RelCT isa (fun s₁ s₂ => OneEntry s₀ Ctx W SP A D n s₁ ∧ OneEntry s₀' Ctx W SP A D n s₂) aadP
-      fun _ _ => True)
-    (ha : ∀ s, OneEntry s₀ Ctx W SP A D n s → WP isa aadP s
-      (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s.mem))
-    (ha' : ∀ s, OneEntry s₀' Ctx W SP A D n s → WP isa aadP s
-      (OneMid s₀' Ctx W SP D n (ctxH s₀'.mem Ctx) (bytesAt s₀'.mem Np nl) (bytesAt s₀'.mem A al) s.mem)) :
-    RelCT isa (fun s₁ s₂ => OneEntry s₀ Ctx W SP A D n s₁ ∧ OneEntry s₀' Ctx W SP A D n s₂)
-      (.seq aadP (.seq (oneBlocks B.enc) (finishWith ks))) fun _ _ => True := by
-  have L := C.lay
-  have hDW := C.dE
-  have hn := C.data.ok.lt
-  have hRr : R = 10 ∨ R = 12 ∨ R = 14 := hR ▸ C.rounds
-  have w : ∀ {s₀ : State} {Np : Addr} (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n)
-      (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀), s₀.gpr .rdx = Np → (s₀.gpr .rcx).toNat = nl →
-      (s₀.gpr .r9).toNat = al → (s₀.gpr .rsi).toNat = R → ∀ s, OneEntry s₀ Ctx W SP A D n s →
-      WP isa aadP s (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s.mem) →
-      WP isa aadP s (OneS M Ctx W SP R A al D n none) :=
-    fun C X hNp hnl hal hR _ h ha => WP.mono ha fun _ Mi =>
-      (h.aadPre C X hNp hnl hal hR).1.frame L Mi.env (Mi.rd.trans h.rd.symm) (Mi.wr.trans h.wr.symm)
-        C.dE (wFrame_one (.inl rfl) (wFrame_cons Mi.fr))
-  have a := rel_wp har (fun _ _ h => h) (fun s h => w C X hNp hnl hal hR s h (ha s h))
-    (fun s h => w C' X' hNp' hnl' hal' hR' s h (ha' s h))
-  have bl := oneBlocksE_rel B L (R := R) (A := A) (al := al) (T := none) C.t_c C.t_w C.t_d C.sp24
-  have fi : ∀ {s : State}, OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s →
-      FinI Ctx W SP (D + BitVec.ofNat 64 (16 * (n / 16))) R (n - 16 * (n / 16)) s :=
-    fun h => ⟨h.env, h.rounds.1, h.dat, h.len⟩
-  exact (RelCT.seq (a.mono (fun _ _ h => h) fun _ _ h => ⟨h.2.1, h.2.2⟩)
-    (RelCT.seq bl ((finish_rel hF hks hkr hRr (by omega_arith)).mono (fun _ _ h => ⟨fi h.1, fi h.2⟩)
-    fun _ _ h => h))).mono (fun _ _ h => h) fun _ _ _ => trivial
-
 /-- What `seal` needs of the code `lng` it runs when the short path does not
 apply, in two runs: what `sealRunF_rel` gives. -/
 def SealLongRel (M : Gcm.X86_64.Stitch.CtxMode) (lng : Prog isa) : Prop :=

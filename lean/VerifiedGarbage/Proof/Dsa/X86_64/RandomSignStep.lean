@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttempt
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallResult
 public import VerifiedGarbage.Proof.Dsa.RandomSignTraceResult
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
@@ -19,11 +20,11 @@ def RandomSignStepPost {extra : Nat} {s : State} (h : RandomSignABI extra s)
   (randomSignAttemptStatus (randomInput s) used fuel = 4 →
     RandomSignRunning h hq (used + (randomSignDraw (randomInput s) used).used) (fuel - 1) t)
 
-theorem random_sign_step (v : Backend) {s t : State} {h : RandomSignABI v.stack s}
+theorem random_sign_step (S : Signer) {s t : State} {h : RandomSignABI S.stack s}
     {hq : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {used fuel : Nat}
-    (hr : RandomSignRunning h hq used fuel t) (hf : 0 < fuel) (hb : fuel < 2 ^ 64) :
-    WP isa (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.sq v.mul)) t (RandomSignStepPost h hq used fuel) := by
-  refine WP.mono (random_sign_attempt v hr hf hb) fun u hu => ?_
+    (hr : RandomSignRunning h hq used fuel t) (hf : 0 < fuel) (hb : fuel < 2 ^ 64) (hv : RandomValid S s) :
+    WP isa (RandomSign.attempt S.name S.code) t (RandomSignStepPost h hq used fuel) := by
+  refine WP.mono (random_sign_attempt S hr hf hb hv) fun u hu => ?_
   cases hd : (randomSignDraw (randomInput s) used).scalar with
   | none =>
     simp only [RandomSignAttemptPost, hd] at hu

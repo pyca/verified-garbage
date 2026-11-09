@@ -1,8 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Sampler
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Front
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Fn
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.DeriveChecked.Fn
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Offset
@@ -14,13 +13,15 @@ public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Spec.RsaPss
 
 /-!
-# DSA key generation on PPC64LE: the call of `vg_dsa_derive_key`
+# DSA key generation on PPC64LE: the call of `vg_dsa_derive_key_checked`
 
 `deriveArgs` passes `out`, the domain, x (the nonce, in the frame) and
 `scratch`, with their lengths, and the frame holds `scratch_len` on the
-stack, so `vg_dsa_derive_key`'s contract on the registers (`dContract`)
-holds, with the regions it is given (`derRd`, `derWr`): `derive_ok` runs the
-call by `WP.call` from `deriveKey_correct`.
+stack, so, for a domain that passed `vg_dsa_check_parameters` and is
+unchanged since (`Ctx.par`), `vg_dsa_derive_key_checked`'s contract on the
+registers (`dcContract`) holds, with the regions it is given (`derRd`,
+`derWr`): `derive_ok` runs the call by `WP.call` from
+`deriveChecked_correct`.
 -/
 
 @[expose] public section
@@ -31,10 +32,10 @@ open VG VG.PPC64LE VG.Proof.Bignum.PPC64LE VG.Impl.Dsa.PPC64LE.Random VG.Impl.Ds
 open VG.Proof.Mont
 open VG.Proof.Dsa.PPC64LE.Rnd
 
-/-- The regions `vg_dsa_derive_key` may read. -/
+/-- The regions `vg_dsa_derive_key_checked` may read. -/
 abbrev derRd (L : GL) : List Region := [L.parR, ⟨off L.F oNonce, L.ql⟩, ⟨off L.F oArgs, 8⟩]
 
-/-- The regions `vg_dsa_derive_key` may write. -/
+/-- The regions `vg_dsa_derive_key_checked` may write. -/
 abbrev derWr (L : GL) : List Region := [L.outR, L.scrR]
 
 /-- The registers `deriveArgs` writes. -/
@@ -109,7 +110,25 @@ theorem derive_pre {s₀ t : State} (h : gkContract.pre s₀) (ha : DArgs (glOf 
   · exact GL.Ok.frame_disj (d := oNonce) (n := (glOf s₀).ql) hL.dFS (by simp only [oNonce, frameBytes]; omega)
   · exact (GL.Ok.frame_disj (d := oArgs) (n := 8) hL.dFS (by decide)).symm
 
-/-- The regions given to `vg_dsa_derive_key` are within the caller's. -/
+/-- `vg_dsa_derive_key_checked`'s contract on the registers holds when it is
+called, for a domain that passed the specification's checks on entry. -/
+theorem derive_pre_checked {s₀ t : State} (h : gkContract.pre s₀) (ha : DArgs (glOf s₀) s₀ t)
+    (hchk : Spec.Dsa.checkParametersBytes (glOf s₀).pl (glOf s₀).ql
+      (Spec.Rsa.bytesAt s₀.mem (glOf s₀).par (glOf s₀).kl) = true) :
+    dcContract.pre (t.callEntry.withRegions (derRd (glOf s₀)) (derWr (glOf s₀))) := by
+  have hL := glOf_ok h
+  have hp := hL.pl
+  have hq := hL.ql
+  have g := fun (r : Reg) (hr : r ∉ linkRegs) => State.callEntry_gpr t (r := r) hr
+  refine ⟨derive_pre h ha, ?_⟩
+  simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem]
+  rw [g .r5 (by decide), g .r6 (by decide), g .r7 (by decide), g .r9 (by decide), ha.r5, ha.r6, ha.r7, ha.r9]
+  simp only [BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt (a := (glOf s₀).pl) (by omega), Nat.mod_eq_of_lt (a := (glOf s₀).ql) (by omega),
+    Nat.mod_eq_of_lt (a := (glOf s₀).kl) (by simp only [GL.kl]; omega), ha.ctx.par]
+  exact hchk
+
+/-- The regions given to `vg_dsa_derive_key_checked` are within the caller's. -/
 theorem derive_cov {s₀ t : State} (h : gkContract.pre s₀) (hc : Ctx (glOf s₀) s₀ t) :
     Covers (derRd (glOf s₀) ++ derWr (glOf s₀)) (t.rd ++ t.wr) ∧ Covers (derWr (glOf s₀)) t.wr := by
   have hL := glOf_ok h
@@ -137,11 +156,11 @@ theorem derive_cov {s₀ t : State} (h : gkContract.pre s₀) (hc : Ctx (glOf s�
     simp only [derWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> simp
 
-/-- The key `vg_dsa_derive_key` computes from the state `t` it is called in. -/
+/-- The key `vg_dsa_derive_key_checked` computes from the state `t` it is called in. -/
 abbrev dresOf (L : GL) (m : Mem) : Option (List Byte) :=
   Spec.Dsa.deriveKeyBytes L.pl L.ql (Spec.Rsa.bytesAt m L.par L.kl) (Spec.Rsa.bytesAt m (off L.F oNonce) L.ql)
 
-/-- The key `vg_dsa_derive_key` computes, from the state the call enters. -/
+/-- The key `vg_dsa_derive_key_checked` computes, from the state the call enters. -/
 theorem dres_eq {s₀ t : State} (h : gkContract.pre s₀) (ha : DArgs (glOf s₀) s₀ t) :
     dRes (t.callEntry.withRegions (derRd (glOf s₀)) (derWr (glOf s₀))) = dresOf (glOf s₀) t.mem := by
   have hL := glOf_ok h
@@ -163,14 +182,17 @@ structure Derived (L : GL) (s₀ : State) (t t' : State) : Prop where
   r3 : ((t'.gpr .r3).setWidth 32).toNat = Spec.Dsa.signStatus (dresOf L t.mem)
   out : Spec.Rsa.bytesAt t'.mem L.out L.ol = (dresOf L t.mem).getD (List.replicate L.ol 0)
 
-theorem derive_ok {s₀ t : State} (h : gkContract.pre s₀) (ha : DArgs (glOf s₀) s₀ t) :
-    WP isa (.call "vg_dsa_derive_key" Impl.Dsa.PPC64LE.Derive.derive) t (Derived (glOf s₀) s₀ t) := by
+theorem derive_ok {s₀ t : State} (h : gkContract.pre s₀) (ha : DArgs (glOf s₀) s₀ t)
+    (hchk : Spec.Dsa.checkParametersBytes (glOf s₀).pl (glOf s₀).ql
+      (Spec.Rsa.bytesAt s₀.mem (glOf s₀).par (glOf s₀).kl) = true) :
+    WP isa (.call "vg_dsa_derive_key_checked" Impl.Dsa.PPC64LE.Derive.deriveChecked) t
+      (Derived (glOf s₀) s₀ t) := by
   have hL := glOf_ok h
   have hc := ha.ctx
   have hp := hL.pl
   have hq := hL.ql
   obtain ⟨hcov, hcovw⟩ := derive_cov h hc
-  refine WP.call (k := dContract) deriveKey_correct (derive_pre h ha) hcov hcovw
+  refine WP.call (k := dcContract) deriveChecked_correct (derive_pre_checked h ha hchk) hcov hcovw
     fun t' hrd' hwr' hsp' hf hpres _ hpost => ?_
   have hdis : ∀ r ∈ ctxRegs, r ∈ preserved := by decide
   obtain ⟨p3, pout⟩ := hpost

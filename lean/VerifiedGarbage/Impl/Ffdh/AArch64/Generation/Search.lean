@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Bignum.AArch64.Core
 /-! # The native FFDH parameter-search controller on AArch64
 
 As on x86-64 (`Impl/Ffdh/X86_64/Generation/Search.lean`): repeats
-`vg_ffdh_parameter_candidate` on the tape until a candidate is accepted,
+`vg_ffdh_parameter_candidate_sieved` on the tape until a candidate is accepted,
 the attempts run out, or the tape does, consuming the octets of each
 rejected candidate. The first four state words are the attempts left, the
 width, the entropy cap and the next request; the rest are private working
@@ -38,7 +38,7 @@ def entry : List Instr := [
   movi .x13 0, stf .x0 5, stf .x1 6, stf .x2 7, stf .x3 8, stf .x4 9, stf .x5 10, stf .x6 11, stf .x13 12,
   stf .x7 13, stf .x9 15]
 
-/-- `vg_ffdh_parameter_candidate`'s arguments, for the tape's current
+/-- `vg_ffdh_parameter_candidate_sieved`'s arguments, for the tape's current
 pointer and length: its stack argument at the 16 bytes the candidate's
 frame allocates. -/
 def arguments : List Instr := [
@@ -69,7 +69,7 @@ def reject : List Instr := [
   .sub .x .x13 .x13 .x10, .subImm .x .x14 .x14 1, movi .x15 4, stf .x11 12, stf .x12 10, stf .x13 11, stf .x14 0,
   stf .x15 14]
 
-/-- The next request, `parameterRequest`: twice the larger of the octets
+/-- The next request, `VG.Proof.Ffdh.parameterRequest`: twice the larger of the octets
 left and 256 per octet of `p`, at most the entropy cap. -/
 def request : List Instr := [
   ldf .x10 11, ldf .x11 6, ldf .x12 2, .lsl .x .x11 .x11 8, .subs .x .x13 .x10 .x11, .csel .x .x10 .x10 .x11,
@@ -87,7 +87,7 @@ def classify : Prog isa := .seq (.block (head ++ [.subImm .x .x12 .x9 1]))
 
 variable (candidate : Prog isa)
 
-/-- The candidate, a call of `vg_ffdh_parameter_candidate`, in a frame of
+/-- The candidate, a call of `vg_ffdh_parameter_candidate_sieved`, in a frame of
 its stack argument. -/
 def candidateRun : Prog isa := .frame (.alloc 16) (.seq (.block arguments) candidate) (.free 16)
 

@@ -37,44 +37,7 @@ theorem point_ops_high (ops : List FieldOp) (hops : ∀ op ∈ ops, (fieldDest o
   have := congrArg Fin.val heq
   omega
 
-theorem pointAdd_high (e : Env) (i : Slot) (hi : 16 ≤ i.val) :
-    evalOps pointAddOps e i = e i :=
-  point_ops_high _ (by decide) e i hi
-
-theorem pointDouble_high (e : Env) (i : Slot) (hi : 16 ≤ i.val) :
-    evalOps pointDoubleOps e i = e i :=
-  point_ops_high _ (by decide) e i hi
-
 theorem constPoint_eval (p : Spec.Ed25519.Point) (e : Env) :
     point (evalOps (constPointOps p) e) 0 1 2 3 = p := by cases p; rfl
-
-theorem savePoint_eval (e : Env) :
-    point (evalOps savePointOps e) 17 18 19 20 = point e 0 1 2 3 := rfl
-
-theorem restorePoint_eval (e : Env) :
-    point (evalOps restorePointOps e) 0 1 2 3 = point e 17 18 19 20 := rfl
-
-theorem copyPointToQ_eval (e : Env) :
-    point (evalOps copyPointToQOps e) 4 5 6 7 = point e 0 1 2 3 := rfl
-
-theorem pointDoubleWide_ok {s : State} {base : Addr} (hs : Scratch s base)
-    (hd : env s.mem base 16 = Spec.Ed25519.d) :
-    WP isa (.block (pointDouble fld)) s fun t =>
-      Keep base s t ∧ point (env t.mem base) 0 1 2 3 =
-        Spec.Ed25519.pointAdd (point (env s.mem base) 0 1 2 3) (point (env s.mem base) 0 1 2 3) ∧
-      ∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i := by
-  refine WP.mono (fieldCodeWide_ok hs pointDoubleOps) fun t ⟨hk, hv⟩ => ?_
-  rw [hv]
-  exact ⟨hk, pointDouble_eval _ hd, pointDouble_high _⟩
-
-theorem pointAddWide_ok {s : State} {base : Addr} (hs : Scratch s base)
-    (hd : env s.mem base 16 = Spec.Ed25519.d) :
-    WP isa (.block (pointAdd fld)) s fun t =>
-      Keep base s t ∧ point (env t.mem base) 0 1 2 3 =
-        Spec.Ed25519.pointAdd (point (env s.mem base) 0 1 2 3) (point (env s.mem base) 4 5 6 7) ∧
-      ∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i := by
-  refine WP.mono (fieldCodeWide_ok hs pointAddOps) fun t ⟨hk, hv⟩ => ?_
-  rw [hv]
-  exact ⟨hk, pointAdd_eval _ hd, pointAdd_high _⟩
 
 end VG.Proof.Ed25519.X86_64

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rc4.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Raw RC4 on ARMv7 -/
 

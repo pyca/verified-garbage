@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
@@ -34,7 +35,7 @@ theorem done_update {p : SearchPublic} {original s t : State} {used remaining : 
     (hstatus : word t.mem p.control 112 = BitVec.ofNat 64 result.status)
     (hpolicy : Spec.Rsa.wordsAt t.mem p.control 4 =
       [BitVec.ofNat 64 result.remaining, BitVec.ofNat 64 p.c.k,
-        BitVec.ofNat 64 (Spec.Ffdh.parameterEntropy p.c.bits), BitVec.ofNat 64 result.requested])
+        BitVec.ofNat 64 (Spec.Ffdh.parameterEntropy p.c.bits), BitVec.ofNat 64 (Proof.Ffdh.requested p.c.bits result)])
     (hout : SearchOutput p result s.mem) : SearchDone p original result t := by
   have hw (j : Nat) (hj : j ∈ [4, 5, 7]) :
       word t.mem p.control (8 * j) = word s.mem p.control (8 * j) := by

@@ -25,8 +25,8 @@ pub fn bench(c: &mut Criterion) {
     use aws_lc_rs::aead::quic::{AES_128, AES_256, CHACHA20, HeaderProtectionKey};
     use criterion::{BenchmarkId, Throughput};
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::aes_ecb::AesEcb;
-    use verified_garbage::chacha20::ChaCha20;
+    use verified_garbage::cipher::aes::AesEcb;
+    use verified_garbage::cipher::chacha20::ChaCha20;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 

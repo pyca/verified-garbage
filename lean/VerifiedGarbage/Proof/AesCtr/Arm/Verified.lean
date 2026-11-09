@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.AesCtr.Arm
+public import VerifiedGarbage.Proof.AesCtr.Rounds
 public import VerifiedGarbage.Spec.Ctr.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 
@@ -26,23 +27,23 @@ namespace VG.Proof.AesCtr.Arm
 open VG VG.Arm VG.Impl.AesCtr.Arm
 open VG.Proof.AesCbc.Arm
 
-theorem crypt_verified : Verified Arm.target crypt (Spec.Ctr.aesContract Arm.abi 8) :=
+theorem crypt_verified : Verified Arm.target crypt (Proof.AesCtr.roundsContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => whole_wp body_ok hs) (whole_ct body_ok body_ct)
-    { pre := by sig_implies_pre [Spec.Ctr.aesContract, Spec.Ctr.aesSig, modeArm, Arm.abi,
+    { pre := by sig_implies_pre [Proof.AesCtr.roundsContract, Spec.Ctr.aesSig, modeArm, Arm.abi,
         Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       -- `ctrMode.chain` counts the blocks, which are `n`.
       post := by
         intro s s' _ h
-        sig_post [Spec.Ctr.aesContract, Spec.Ctr.aesSig, modeArm, AesCtr.ctrMode, Arm.abi, Arm.argRegs,
+        sig_post [Proof.AesCtr.roundsContract, Spec.Ctr.aesSig, modeArm, AesCtr.ctrMode, Arm.abi, Arm.argRegs,
           Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-        sig_reduce [Spec.Ctr.aesContract, Spec.Ctr.aesSig, modeArm, AesCtr.ctrMode, Arm.abi,
+        sig_reduce [Proof.AesCtr.roundsContract, Spec.Ctr.aesSig, modeArm, AesCtr.ctrMode, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] at h
-        sig_simp [Spec.Ctr.aesContract, Spec.Ctr.aesSig, modeArm, AesCtr.ctrMode, Arm.abi, Arm.argRegs,
+        sig_simp [Proof.AesCtr.roundsContract, Spec.Ctr.aesSig, modeArm, AesCtr.ctrMode, Arm.abi, Arm.argRegs,
           Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [] at h
         rwa [VG.Proof.AesCbc.length_blocksAt] at h
-      pub := by sig_implies_pub [Spec.Ctr.aesContract, Spec.Ctr.aesSig, modeArm, Arm.abi,
+      pub := by sig_implies_pub [Proof.AesCtr.roundsContract, Spec.Ctr.aesSig, modeArm, Arm.abi,
         Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      sat := by sig_implies_sat [Spec.Ctr.aesContract, Spec.Ctr.aesSig, modeArm, Arm.abi,
+      sat := by sig_implies_sat [Proof.AesCtr.roundsContract, Spec.Ctr.aesSig, modeArm, Arm.abi,
         Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
         [sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using sat }
 

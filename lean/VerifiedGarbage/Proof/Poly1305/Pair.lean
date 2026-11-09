@@ -150,26 +150,6 @@ theorem carry_lt {d : Nat → Nat} (h : ∀ k < 5, d k < 2 ^ 62) : ∀ i < 5, ca
   rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;>
     simp only [carry, h0b, h3b, d2a, d1a, d4a] <;> omega
 
-/-! ## Bounds of the products -/
-
-/-- Operands below `2²⁸` and multipliers below `2²⁷` (so `5 y` below
-`2³⁰`): each `d_k` is below `2⁶⁰`, and a sum of two below `2⁶¹`. -/
-theorem prod_lt {x y : Nat → Nat} (hx : ∀ i < 5, x i < 2 ^ 28) (hy : ∀ i < 5, y i < 2 ^ 27) :
-    ∀ k < 5, prod x y k < 2 ^ 60 := by
-  have hm : ∀ i < 5, ∀ k < 5, mulL y i k < 5 * 2 ^ 27 := by
-    intro i hi k hk
-    simp only [mulL]
-    split
-    · have := hy (k - i) (by omega); omega
-    · have := hy (k + 5 - i) (by omega); omega
-  intro k hk
-  have t : ∀ i < 5, x i * mulL y i k < 2 ^ 28 * (5 * 2 ^ 27) := fun i hi =>
-    Nat.mul_lt_mul'' (hx i hi) (hm i hi k hk)
-  have := t 0 (by decide); have := t 1 (by decide); have := t 2 (by decide)
-  have := t 3 (by decide); have := t 4 (by decide)
-  simp only [prod]
-  omega
-
 end Pair
 
 end VG.Proof.Poly1305

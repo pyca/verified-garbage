@@ -25,8 +25,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 # `vg_rsa_public_precomputed` on AArch64: constant time but for `pre` and `e`
 
 Every piece's addresses and branches depend only on the pointers, the
-lengths, `pre` and `e`: the load and the checks of `pre` (`pdLoad_ct`),
-`rest` (`pdRest_ct`), and the whole function (`pdCode_constantTime`).
+lengths, `pre` and `e`: the load and the checks of `pre` (`pdLoad_ct`).
 -/
 
 @[expose] public section
@@ -377,9 +376,6 @@ theorem pdCodeWith_ct (rest : Prog isa)
   · -- `rest`.
     exact two_map (fun p => p.d) (fun _ _ h => cl_rest h.1 h.2) hrest
 
-theorem pdCode_ct : RelCT isa (Two CR) (Precomputed.code M.mm) (fun _ _ => True) :=
-  pdCodeWith_ct (Precomputed.rest M.mm) pdRest_ct
-
 /-- The public data of a state. -/
 def cpubOfD (s : State) : CPubD :=
   ⟨⟨stackArg s 0, (stackArg s 1).toNat * 8, (s.gpr .x1).toNat, s.gpr .x0, s.gpr .x4, s.gpr .x6,
@@ -405,8 +401,5 @@ theorem pdCodeWith_constantTime (c : Prog isa)
       exact (wv_of_wordsAt hw (by omega_arith)).symm
     · rw [← a2, ← a1]
       exact (wv_of_wordsAt hw (by omega_arith)).symm
-
-theorem pdCode_constantTime : ConstantTime isa pdContract.pre pdContract.pub (Precomputed.code M.mm) :=
-  pdCodeWith_constantTime (Precomputed.code M.mm) pdCode_ct
 
 end VG.Proof.Bignum.AArch64

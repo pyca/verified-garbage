@@ -42,26 +42,11 @@ theorem WP.reassoc {a b c : Prog isa} {s : State} {Q : State → Prop}
 /-- The low word of a register. -/
 abbrev lo (x : BitVec 64) : BitVec 32 := x.setWidth 32
 
-theorem lo_and (x y : BitVec 64) : lo (x &&& y) = lo x &&& lo y := lo32_and x y
 theorem lo_or (x y : BitVec 64) : lo (x ||| y) = lo x ||| lo y := lo32_or x y
 theorem lo_xor (x y : BitVec 64) : lo (x ^^^ y) = lo x ^^^ lo y := lo32_xor x y
 theorem lo_add (x y : BitVec 64) : lo (x + y) = lo x + lo y := lo32_add x y
 theorem lo_ext (x : BitVec 32) : lo (x.setWidth 64) = x := lo32_ext x
 theorem lo_sext (x : BitVec 32) : lo (sext32 x) = x := lo32_sext x
-
-theorem lo_ofNat (n : Nat) : lo (BitVec.ofNat 64 n) = BitVec.ofNat 32 n := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  rw [Nat.mod_mod_of_dvd _ (by decide)]
-
-theorem lo_ite (c : Prop) [Decidable c] (x y : BitVec 64) :
-    lo (if c then x else y) = if c then lo x else lo y := by
-  by_cases h : c <;> simp [h]
-
-/-- A word rotated right by `r < 32`, from the two word shifts. -/
-theorem lo_rotr (x : BitVec 64) {r : Nat} (h : r < 32) :
-    lo (sext32 (lo x >>> r) ^^^ sext32 (lo x <<< (32 - r))) = (lo x).rotateRight r := by
-  rw [lo_xor, lo_sext, lo_sext, RISCV64.ByteLoad.rotr_shifts _ h]
 
 /-! ## Masks -/
 
@@ -82,13 +67,5 @@ theorem bit_mask (q : BitVec 64) {c : Nat} (hc : c < 64) :
   · simp
   · simp only [ite_true, BitVec.getLsbD_allOnes, hi, decide_true, show ¬ 64 ≤ i by omega, decide_false,
       Bool.not_false, Bool.and_true]
-
-/-- `x XOR ((r XOR x) AND m)` for an all-ones-or-zero mask. -/
-theorem select_eq (x r : BitVec 64) (b : Bool) :
-    x ^^^ ((r ^^^ x) &&& (if b then BitVec.allOnes 64 else 0)) = if b then r else x := by
-  cases b
-  · simp
-  · simp only [ite_true, BitVec.and_allOnes]
-    rw [BitVec.xor_comm r x, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
 
 end VG.Proof.Blowfish.RISCV64

@@ -62,15 +62,6 @@ theorem exec_ldrq {s : State} {t : VReg} {n : Reg} {off : Nat}
   simp only [exec, addr, show 4096 * 16 = 65536 from rfl, ho, and_self, ite_true, State.load,
     h, Option.bind_some, Option.map_some]
 
-theorem exec_strq {s : State} {t : VReg} {n : Reg} {off : Nat}
-    (ho : off % 16 = 0 ∧ off < 65536)
-    (h : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 16) :
-    exec (.strq t n off) s =
-      some { s with mem := s.mem.write (s.gpr n + BitVec.ofNat 64 off) 16 (s.v t) } := by
-  simp only [exec, addr, show 4096 * 16 = 65536 from rfl, ho, and_self, ite_true, State.store,
-    h, Option.bind_some]
-
-
 theorem msg_not (n : Nat) {r : VReg}
     (hr : r ∈ [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v24, .v25, .v26, .v27, .v28, .v31]) :
     msg n ≠ r := by
@@ -139,9 +130,6 @@ theorem kreg_add2 (n : Nat) : kreg ((n + 2) % 40) = kreg n := by
 
 theorem kreg_succ2 (n : Nat) : kreg (n + 2) = kreg n := by
   simp only [kreg]; rw [show (n + 2) % 2 = n % 2 by omega]
-
-theorem kreg_mod (n : Nat) : kreg (n % 40) = kreg n := by
-  simp only [kreg]; rw [show n % 40 % 2 = n % 2 by omega]
 
 theorem kreg_mem (j : Nat) : kreg j = .v29 ∨ kreg j = .v30 := by
   simp only [kreg]; split <;> simp

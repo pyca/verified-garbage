@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFunction
 public import VerifiedGarbage.Spec.Ecdsa.P256
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
@@ -16,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 namespace VG.Proof.Ecdsa.Verify.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Ecdsa.X86
 
-abbrev vCombSpec : Contract isa := Spec.Ecdsa.P256.inst.verifyContract (X86.abi.withConsts p256Comb.combConsts) 20
+abbrev vCombSpec : Contract isa := Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (X86.abi.withConsts p256Comb.combConsts) 20
 
 def vCombLocal : Contract isa where
   pre := VCombPre p256Comb
@@ -30,8 +31,8 @@ def vCombWr (s : State) : List Region := [⟨ptr s 3, 8192⟩]
 
 theorem vComb_pre {s : State} (h : vCombSpec.pre s) :
     vCombLocal.pre (s.withRegions (vCombRd s) (vCombWr s)) := by
-  sig_pre [vCombSpec, Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract,
-    Spec.Ecdsa.Instance.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
+  sig_pre [vCombSpec, Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract,
+    Proof.Ecdsa.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
   obtain ⟨lo, sp, _drop, held, fit, dw, _ret, st, -, _take, wr,
@@ -67,8 +68,8 @@ theorem vComb_pre {s : State} (h : vCombSpec.pre s) :
 theorem vComb_regions {s : State} (h : vCombSpec.pre s) :
     s.rd = [⟨ptr s 0, 65⟩, ⟨ptr s 1, 32⟩, ⟨ptr s 2, 64⟩] ++ Abi.constRegions (fun n => (s.syms n).setWidth 64) p256Comb.combConsts ∧
     s.wr = [⟨ptr s 3, 8192⟩, ⟨argAddr s 0, 16⟩] := by
-  sig_pre [vCombSpec, Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract,
-    Spec.Ecdsa.Instance.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
+  sig_pre [vCombSpec, Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract,
+    Proof.Ecdsa.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
   obtain ⟨_, _, hd, _, _, _, _, _, _, ht, hw, _⟩ := h

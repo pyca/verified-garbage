@@ -26,7 +26,7 @@ blocks before its last 1 to 16 bytes, `k = max(nb, 1) − 1` (`kOf`) and
 `P` (17 to 32 of them, or 16 if `L = 16`) to the tail at `W + 32` and XORs
 `D` into its last 16 bytes, so the tail is `P[16k..] xorend D`; `longMac`
 chains the `k` blocks of `P`, then the first `j` blocks of the tail, and
-finalizes the rest of the tail (`Siv.s2vFinish_long`, `Siv.cmacWith_split₂`).
+finalizes the rest of the tail (`Siv.s2vFinish_long`, `Siv.macWith_split₂`).
 -/
 
 @[expose] public section
@@ -618,7 +618,7 @@ theorem long_spec (ciph : Spec.Cmac.Cipher) (k1 k2 d p : List Byte) (hd : d.leng
         (Spec.Cmac.chain ciph (Spec.Cmac.chain ciph (Spec.Cmac.zeros 16)
             (Spec.Cmac.blocks 16 (p.take (16 * kOf p.length))))
           (Spec.Cmac.blocks 16 ((Spec.Siv.xorend (p.drop (16 * kOf p.length)) d).take (16 * jOf p.length))))) =
-      Spec.Siv.s2vFinish (Spec.Siv.cmacWith ciph k1 k2) d p := by
+      Spec.Siv.s2vFinish (Spec.Cmac.macWith ciph 16 k1 k2) d p := by
   have hT := kOf_tail hL16
   have hJ := jOf_rest hL16
   have hlT : (Spec.Siv.xorend (p.drop (16 * kOf p.length)) d).length = p.length - 16 * kOf p.length := by
@@ -626,7 +626,7 @@ theorem long_spec (ciph : Spec.Cmac.Cipher) (k1 k2 d p : List Byte) (hd : d.leng
   rw [Siv.s2vFinish_long _ hd (a := 16 * kOf p.length) (by omega_arith)]
   generalize Spec.Siv.xorend (List.drop (16 * kOf p.length) p) d = tl at hlT ⊢
   conv => rhs; rw [← List.take_append_drop (16 * jOf p.length) tl]
-  rw [← List.append_assoc, Siv.cmacWith_split₂ _ _ _ (by rw [List.length_take]; omega_arith)
+  rw [← List.append_assoc, Siv.macWith_split₂ _ _ _ (by rw [List.length_take]; omega_arith)
       (by rw [List.length_take, hlT]; omega_arith) (by rw [List.length_drop, hlT]; omega_arith)
       (Or.inr (by rw [List.length_drop, hlT]; omega_arith)), Proof.Cmac.xor_comm]
 

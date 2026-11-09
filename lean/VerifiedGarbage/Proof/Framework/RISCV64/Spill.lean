@@ -64,18 +64,6 @@ instance (b : Reg) (l : List (Reg × Nat)) : Decidable (Restorable b l) := by
 /-- Registers `regs 0`, …, `regs (n - 1)` in consecutive slots from offset 0. -/
 def slots (regs : Nat → Reg) (n : Nat) : List (Reg × Nat) := (List.range n).map fun i => (regs i, 8 * i)
 
-theorem forall_slots {regs : Nat → Reg} {n : Nat} {P : Reg × Nat → Prop}
-    (h : ∀ i < n, P (regs i, 8 * i)) : ∀ p ∈ slots regs n, P p := fun p hp => by
-  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hp
-  exact h i (List.mem_range.mp hi)
-
-theorem mem_slots {regs : Nat → Reg} {n i : Nat} (hi : i < n) : (regs i, 8 * i) ∈ slots regs n :=
-  List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩
-
-theorem slots_fst (regs : Nat → Reg) (n : Nat) :
-    (slots regs n).map Prod.fst = (List.range n).map regs := by
-  simp only [slots, List.map_map]; rfl
-
 /-! ## The slots -/
 
 /-- The memory after storing `g r` at `B + d` for each `(r, d)`, in order. -/
@@ -227,13 +215,6 @@ theorem Restored.gpr_of {g : Reg → BitVec 64} {l : List (Reg × Nat)} {s s' : 
   · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hm
     exact h.gpr p hp
   · rw [h.other r hm]; exact hr.resolve_left hm
-
-/-- The restores of a list with the same pairs (in another order). -/
-theorem Restored.perm {g : Reg → BitVec 64} {l l' : List (Reg × Nat)} {s s' : State}
-    (h : Restored g l s s') (h₁ : ∀ p ∈ l', p ∈ l) (h₂ : ∀ p ∈ l, p ∈ l') : Restored g l' s s' :=
-  ⟨fun p hp => h.gpr p (h₁ p hp), fun r hr => h.other r fun hm => hr (by
-    obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hm; exact List.mem_map_of_mem (h₂ p hp)),
-    h.mem, h.rd, h.wr, h.sp⟩
 
 theorem restore_wp_aux {b : Reg} {B : Addr} {g : Reg → BitVec 64} (hal : B.toNat % 8 = 0) :
     ∀ {l : List (Reg × Nat)} {s : State}, (l ≠ [] → s.gpr b = B) →

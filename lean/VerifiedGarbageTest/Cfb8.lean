@@ -13,9 +13,10 @@ meta import VerifiedGarbage.Spec.Cfb8
 The NIST CAVP AES-CFB8 multi-block message tests (`CFB8MMT`, for 128-, 192-
 and 256-bit keys), read from the vendored response files under
 `vectors/nist-cavp-aes-mmt/` (see `vectors/sources/`) when this file is
-built and checked against `VG.Spec.Cfb8.aesCfb8Encrypt` (the `ENCRYPT`
-vectors) and `VG.Spec.Cfb8.aesCfb8Decrypt` (the `DECRYPT` vectors), so that
-a transcription error in the spec fails the build. Every vector is checked:
+built and checked against `aesCfb8Encrypt` (the `ENCRYPT` vectors) and
+`aesCfb8Decrypt` (the `DECRYPT` vectors) below, the spec's
+`VG.Spec.Cfb8.encrypt` and `VG.Spec.Cfb8.decrypt` with AES, so that a
+transcription error in the spec fails the build. Every vector is checked:
 ten in each direction for each key length, of one to ten bytes.
 
 Each vector is also checked in two pieces, split after each byte, with the
@@ -26,6 +27,16 @@ functions implemented in assembly rely on.
 namespace VG.Test.Cfb8
 
 open Lean Elab Command Test.Aes Spec.Cfb8
+
+/-- AES-CFB8 encryption of the plaintext `pt` under the key `key` (16, 24
+or 32 bytes) with the 16-byte `iv`. -/
+def aesCfb8Encrypt (key iv pt : List Byte) : List Byte :=
+  encrypt (Spec.Cbc.aes key) iv pt
+
+/-- AES-CFB8 decryption of the ciphertext `ct` under the key `key` (16, 24
+or 32 bytes) with the 16-byte `iv`. -/
+def aesCfb8Decrypt (key iv ct : List Byte) : List Byte :=
+  decrypt (Spec.Cbc.aes key) iv ct
 
 run_cmd do
   let mut n : Nat := 0

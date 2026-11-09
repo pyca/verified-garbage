@@ -50,11 +50,4 @@ theorem start_using_ok (hash : FixedHash.HashFn)
     (by simpa only [hs] using ha)) fun s₂ ⟨kb₂,x₂,m₂⟩ => ?_)
   exact a_tail_using hash hash_ok hp kb₂ x₂ m₂
 
-theorem start_ok {s₀ : State} (hp : Pre P (deL P) s₀) (hc : Calls P) (htr : Optimized.TransformTables s₀)
-    (ht : Dot.GammaArtifact s₀.mem (s₀.syms "VG_MLKEM_GAMMA"))
-    (hcT : Covers [⟨s₀.syms "VG_MLKEM_GAMMA",512⟩] (s₀.rd++s₀.wr))
-    (ha : (⟨s₀.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint ⟨kA s₀ (deL P).sc,P.scl⟩) :
-    WP isa (Impl.MlKem.AArch64.Optimized.deStart keccak.callee P) s₀ (AfterA P s₀) :=
-  start_using_ok _ (FixedHash.hashWith_correct keccak _ _ _ _ _ _ _) hp hc htr ht hcT ha
-
 end VG.Proof.MlKem.AArch64.Decaps

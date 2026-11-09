@@ -17,7 +17,7 @@ meta import VerifiedGarbage.TCB.X86.State
 # AES-GCM on x86: whole blocks of the text (`cryptWhole`)
 
 Untrusted: everything here is checked by Lean. From a block boundary,
-`cryptWhole` encrypts the whole blocks left at `dO` with `vg_aes_ctr32`
+`cryptWhole` encrypts the whole blocks left at `dO` with `vg_aes_ctr32_to`
 (`cryptWhole_pc`), by `Proof.Gcm.ctr_whole`. `ctrArgs_ok` sets up the
 arguments of the call, here and in `cryptTail`.
 -/
@@ -83,7 +83,7 @@ theorem cWhole1_ok {j : Nat} {m₀ : Mem} {s : State} (h : CrMid Ctx St W SP K R
   · rw [slotv_eq, m]; mems [add_ofNat_assoc32]
   · rw [slotv_eq, m]; mems []
 
-theorem cArgs_ok (hK : K = 28) {j nb : Nat} (hnb : nb ≠ 0) (hj : j + 16 * nb ≤ n) {m₀ : Mem} {s : State}
+theorem cArgs_ok (hK : K = 32) {j nb : Nat} (hnb : nb ≠ 0) (hj : j + 16 * nb ≤ n) {m₀ : Mem} {s : State}
     (h : CWhole1 (Ctx := Ctx) (St := St) (W := W) (SP := SP) (K := K) (R := R) (icb := icb) (D := D) (n := n)
       (P := P) j nb m₀ s) :
     WP isa (.block ctrArgs) s fun s' => CtrReady Ctx St W SP R (St + BitVec.ofNat 32 48) (D + BitVec.ofNat 32 j) nb s' ∧
@@ -113,7 +113,7 @@ theorem cArgs_ok (hK : K = 28) {j nb : Nat} (hnb : nb ≠ 0) (hj : j + 16 * nb �
     by rw [eC]; exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm,
     by rw [eP]; exact (dw.sub_right (Lay.wSub (by decide))).symm⟩
 
-theorem cArgs_pc (hK : K = 28) {j nb : Nat} (hnb : nb ≠ 0) (hj : j + 16 * nb ≤ n) :
+theorem cArgs_pc (hK : K = 32) {j nb : Nat} (hnb : nb ≠ 0) (hj : j + 16 * nb ≤ n) :
     Pc (CWhole1 (Ctx := Ctx) (St := St) (W := W) (SP := SP) (K := K) (R := R) (icb := icb) (D := D) (n := n)
         (P := P) j nb) (.block ctrArgs)
       (fun m₀ s => ∃ s₁, CWhole1 (Ctx := Ctx) (St := St) (W := W) (SP := SP) (K := K) (R := R) (icb := icb)
@@ -127,12 +127,12 @@ theorem cArgs_pc (hK : K = 28) {j nb : Nat} (hnb : nb ≠ 0) (hj : j + 16 * nb �
       · rw [h₁.at_.env.ebp, h₂.at_.env.ebp]
       · rw [h₁.at_.env.esi, h₂.at_.env.esi]) (by taint_decide)
 
-/-- What `vg_aes_ctr32` writes on the data from `D + j` is apart from the
+/-- What `vg_aes_ctr32_to` writes on the data from `D + j` is apart from the
 rest of the data. -/
-theorem ctrFr_disj (hK : K = 28) {s : State} (hd : DataW Ctx St W SP K s D n) {j nb a l : Nat}
+theorem ctrFr_disj (hK : K = 32) {s : State} (hd : DataW Ctx St W SP K s D n) {j nb a l : Nat}
     (hal : a + l ≤ n) (hsep : a + l ≤ j ∨ j + 16 * nb ≤ a) (hj : j + 16 * nb ≤ n) :
     ∀ r ∈ [(⟨w64 St + BitVec.ofNat 64 48, 16⟩ : Region), ⟨w64 D + BitVec.ofNat 64 j, 16 * nb⟩,
-      ⟨w64 W + BitVec.ofNat 64 512, 2048⟩, below SP 28], (⟨w64 D + BitVec.ofNat 64 a, l⟩ : Region).Disjoint r := by
+      ⟨w64 W + BitVec.ofNat 64 512, 2048⟩, below SP 32], (⟨w64 D + BitVec.ofNat 64 a, l⟩ : Region).Disjoint r := by
   subst hK
   have hs : Region.Sub ⟨w64 D + BitVec.ofNat 64 a, l⟩ ⟨w64 D, n⟩ := Offset.sub_base _ hal
   have hn := hd.ok.n_lt
@@ -144,11 +144,11 @@ theorem ctrFr_disj (hK : K = 28) {s : State} (hd : DataW Ctx St W SP K s D n) {j
   · exact (hd.ok.w.sub_left hs).sub_right (Lay.wSub (by decide))
   · exact (hd.ok.stk.sub_right hs).symm
 
-/-- The slots are apart from what `vg_aes_ctr32` writes. -/
-theorem ctrFr_slot (hK : K = 28) {s : State} (hd : DataW Ctx St W SP K s D n) {j nb o : Nat}
+/-- The slots are apart from what `vg_aes_ctr32_to` writes. -/
+theorem ctrFr_slot (hK : K = 32) {s : State} (hd : DataW Ctx St W SP K s D n) {j nb o : Nat}
     (h₁ : 240 ≤ o) (h₂ : o + 4 ≤ 512) (hj : j + 16 * nb ≤ n) :
     ∀ r ∈ [(⟨w64 St + BitVec.ofNat 64 48, 16⟩ : Region), ⟨w64 D + BitVec.ofNat 64 j, 16 * nb⟩,
-      ⟨w64 W + BitVec.ofNat 64 512, 2048⟩, below SP 28], (⟨w64 W + BitVec.ofNat 64 o, 4⟩ : Region).Disjoint r := by
+      ⟨w64 W + BitVec.ofNat 64 512, 2048⟩, below SP 32], (⟨w64 W + BitVec.ofNat 64 o, 4⟩ : Region).Disjoint r := by
   subst hK
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -158,9 +158,9 @@ theorem ctrFr_slot (hK : K = 28) {s : State} (hd : DataW Ctx St W SP K s D n) {j
   · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
   · exact (L.stk_w (by omega)).symm
 
-theorem ctrFr_crFrame (hK : K = 28) {j nb : Nat} (hj : j + 16 * nb ≤ n) {m m' : Mem}
+theorem ctrFr_crFrame (hK : K = 32) {j nb : Nat} (hj : j + 16 * nb ≤ n) {m m' : Mem}
     (h : Frame [(⟨w64 St + BitVec.ofNat 64 48, 16⟩ : Region), ⟨w64 D + BitVec.ofNat 64 j, 16 * nb⟩,
-      ⟨w64 W + BitVec.ofNat 64 512, 2048⟩, below SP 28] m m') : Frame (crFrame St W SP K D n) m m' := by
+      ⟨w64 W + BitVec.ofNat 64 512, 2048⟩, below SP 32] m m') : Frame (crFrame St W SP K D n) m m' := by
   subst hK
   exact h.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -168,9 +168,9 @@ theorem ctrFr_crFrame (hK : K = 28) {j nb : Nat} (hj : j + 16 * nb ≤ n) {m m' 
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub _ (by decide) (by decide)⟩
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ hj⟩
     · exact ⟨wsR W, by simp, Offset.sub _ (by decide) (by decide)⟩
-    · exact ⟨below SP 28, by simp, fun _ h => h⟩
+    · exact ⟨below SP 32, by simp, fun _ h => h⟩
 
-theorem cWhole3 (hK : K = 28) {j nb : Nat} (hnb : nb ≠ 0) (hnbd : nb = (n - j) / 16) {m₀ : Mem} {s₁ s₂ s' : State}
+theorem cWhole3 (hK : K = 32) {j nb : Nat} (hnb : nb ≠ 0) (hnbd : nb = (n - j) / 16) {m₀ : Mem} {s₁ s₂ s' : State}
     (h : CWhole1 (Ctx := Ctx) (St := St) (W := W) (SP := SP) (K := K) (R := R) (icb := icb) (D := D) (n := n)
       (P := P) j nb m₀ s₁)
     (m₂ : s₂.mem = s₁.mem) (rd₂ : s₂.rd = s₁.rd) (wr₂ : s₂.wr = s₁.wr)
@@ -216,7 +216,7 @@ theorem cWhole3 (hK : K = 28) {j nb : Nat} (hnb : nb ≠ 0) (hnbd : nb = (n - j)
   · rw [slotv_eq, slot_frame gf (ctrFr_slot L hK hd (by decide) (by decide) hj)]
     have := h.nO; rw [slotv_eq] at this; rw [this]; congr 1; omega
 
-theorem cryptWhole_pc (hK : K = 28) {j : Nat} :
+theorem cryptWhole_pc (hK : K = 32) {j : Nat} :
     Pc (CrMid Ctx St W SP K R icb D n P · j) (cryptWhole vg.callees)
       (CrMid Ctx St W SP K R icb D n P · (j + 16 * ((n - j) / 16))) := by
   generalize hnb : (n - j) / 16 = nb

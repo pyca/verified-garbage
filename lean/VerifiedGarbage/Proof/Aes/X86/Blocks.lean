@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` are `blocks` around
 `encrypt2` and `decrypt2`, and are proven at once, for any transformation
 of two blocks with `CryptOk`: the prologue saves the callee-saved registers
-in the scratch buffer and bitslices the round keys as `vg_aes_ctr32`'s does
+in the scratch buffer and bitslices the round keys as `vg_aes_ctr32_to`'s does
 (`Ctr32.lean`, `Keys.lean`); the groups (`Ecb.lean`) do the rest; the
 epilogue restores the registers.
 -/

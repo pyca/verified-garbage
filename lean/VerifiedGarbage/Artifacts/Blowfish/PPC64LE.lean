@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 @[expose] public section
 

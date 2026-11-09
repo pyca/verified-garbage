@@ -61,15 +61,6 @@ theorem CkRegs.of_keep {s0 t u : State} (h : CkRegs s0 t) {rs : List Reg} (k : K
 /-- The registers the valid branch may change. -/
 abbrev validRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r29, .r30]
 
-/-- The numbers of `vg_rsa_check_key`'s arguments. -/
-abbrev ckBytes (s0 : State) : List (List Byte) :=
-  [Spec.Rsa.bytesAt s0.mem (s0.gpr .r3) (s0.gpr .r4).toNat, Spec.Rsa.bytesAt s0.mem (s0.gpr .r5) (s0.gpr .r6).toNat,
-    Spec.Rsa.bytesAt s0.mem (s0.gpr .r7) (s0.gpr .r8).toNat, Spec.Rsa.bytesAt s0.mem (s0.gpr .r9) (s0.gpr .r10).toNat,
-    Spec.Rsa.bytesAt s0.mem (PPC64LE.stackArg s0 0) (PPC64LE.stackArg s0 1).toNat,
-    Spec.Rsa.bytesAt s0.mem (PPC64LE.stackArg s0 2) (s0.gpr .r10).toNat,
-    Spec.Rsa.bytesAt s0.mem (PPC64LE.stackArg s0 4) (PPC64LE.stackArg s0 1).toNat,
-    Spec.Rsa.bytesAt s0.mem (PPC64LE.stackArg s0 6) (s0.gpr .r10).toNat]
-
 /-- `checkKey` of the arguments. -/
 abbrev ckOk (s0 : State) : Bool :=
   Spec.Rsa.checkKey (Spec.Rsa.bytesAt s0.mem (s0.gpr .r3) (s0.gpr .r4).toNat)

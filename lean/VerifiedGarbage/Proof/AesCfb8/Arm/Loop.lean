@@ -156,10 +156,6 @@ theorem UPre.scrA {d : Nat} (hd : d < 2176) :
 theorem UPre.dataA {k : Nat} (hk : k < N s₀) : State.addr (D32 s₀ k) = byt s₀ k :=
   addr_add (by have := hp.data_fit; have := (Dp s₀).isLt; omega)
 
-theorem UPre.dataN {k : Nat} (hk : k < N s₀) : (D32 s₀ k).toNat = (Dp s₀).toNat + k := by
-  have := hp.data_fit
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (by omega)]
-
 theorem UPre.arg1 : stackArgAddr s₀ 1 = stackArgAddr s₀ 0 + BitVec.ofNat 64 4 := by
   have := hp.sp_fit
   simp only [stackArgAddr]

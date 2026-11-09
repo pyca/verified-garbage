@@ -18,7 +18,7 @@ pub fn bench(c: &mut Criterion) {
     use criterion::{BenchmarkId, Throughput};
     use openssl::provider::Provider;
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::rc2_cbc::{Rc2CbcDecryptor, Rc2CbcEncryptor};
+    use verified_garbage::cipher::rc2::{Rc2CbcDecryptor, Rc2CbcEncryptor};
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 

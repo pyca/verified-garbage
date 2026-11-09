@@ -46,11 +46,6 @@ theorem Upd.flags (s : State) {w : Nat} (d : Reg) (x : BitVec w) (c o : Bool) (v
     Upd s ((arithFlags s x c o).setReg d v) d v :=
   Upd.withFlags _ _ _ _ _ _ _
 
-theorem Upd.trans {s₁ s₂ s₃ : State} {d : Reg} {v w : BitVec 64} (h₁ : Upd s₁ s₂ d v)
-    (h₂ : Upd s₂ s₃ d w) : Upd s₁ s₃ d w :=
-  ⟨h₂.gpr, fun r h => (h₂.other r h).trans (h₁.other r h), h₂.mem.trans h₁.mem,
-    h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr⟩
-
 theorem WP.cons {i : Instr} {is : List Instr} {s s' : State} {Q : State → Prop}
     (h : exec i s = some s') (k : WP isa (.block is) s' Q) : WP isa (.block (i :: is)) s Q :=
   WP.block_cons_iff.mpr ⟨s', h, k⟩
@@ -171,28 +166,6 @@ theorem bufB_ne {st : Addr} {j k : Nat} (hj : j < 16) (hk : k < 16) (h : j ≠ k
 theorem bufB_in {s : State} (hw : sR (s.gpr .rdi) ∈ s.wr) {k : Nat} (hk : k < 16) :
     InRegions s.wr (bufB (s.gpr .rdi) k) 1 :=
   ⟨_, hw, by rw [bufB, ← ofInt_natCast]; exact contains_off (by omega_using [hk]) (by omega_using [hk])⟩
-
-/-- The saved registers are not in the buffer. -/
-theorem Saved.of_frame {st : Addr} {s₀ : State} {m m' : Mem} (h : Saved st s₀ m) (hf : Frame [bfR st] m m') :
-    Saved st s₀ m' := by
-  have e : ∀ d, 72 ≤ d → d + 8 ≤ 128 → m'.readW (off st d) 64 = m.readW (off st d) 64 := by
-    intro d h₁ h₂
-    refine hf.readW (r := ⟨off st d, 8⟩) (Region.contains_self _ _) ?_ (by decide)
-    simp only [List.mem_singleton, forall_eq, bfR, off, ofInt_natCast]
-    exact Offset.disjoint st (by omega_using [h₁, h₂]) (by omega_using [h₁, h₂]) (by decide)
-  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
-  exact ⟨(e 72 (by decide) (by decide)).trans h1, (e 80 (by decide) (by decide)).trans h2,
-    (e 88 (by decide) (by decide)).trans h3, (e 96 (by decide) (by decide)).trans h4,
-    (e 104 (by decide) (by decide)).trans h5, (e 112 (by decide) (by decide)).trans h6⟩
-
-theorem bfR_disjoint_svR (st : Addr) : (bfR st).Disjoint (svR st) := by
-  simp only [bfR, svR, off, ofInt_natCast]
-  exact Offset.disjoint st (by decide) (by decide) (by decide)
-
-/-- The first `n` bytes of the buffer are not where the registers are saved. -/
-theorem buf_disjoint_svR (st : Addr) {n : Nat} (hn : n ≤ 16) :
-    (⟨off st 56, n⟩ : Region).Disjoint (svR st) :=
-  (bfR_disjoint_svR st).sub_left (Region.sub_prefix hn)
 
 theorem bfR_sub_wR (st : Addr) : Region.Sub (bfR st) (wR st) := by
   simp only [bfR, wR, off, ofInt_natCast]

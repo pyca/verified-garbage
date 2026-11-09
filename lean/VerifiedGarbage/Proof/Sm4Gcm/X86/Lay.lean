@@ -40,20 +40,13 @@ theorem fs : St.toNat + 80 ≤ 2 ^ 32 := L.lay.fs
 theorem fw : W.toNat + 2560 ≤ 2 ^ 32 := L.lay.fw
 theorem cs : (⟨w64 Ctx, 256⟩ : Region).Disjoint ⟨w64 St, 80⟩ := L.lay.cs
 theorem cw : (⟨w64 Ctx, 256⟩ : Region).Disjoint ⟨w64 W, 2560⟩ := L.lay.cw
-theorem sa : (⟨w64 St, 80⟩ : Region).Disjoint ⟨w64 W, 16⟩ := L.lay.sa
 theorem sb : (⟨w64 St, 80⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 96, 2464⟩ := L.lay.sb
 
 theorem st_w {a n d k : Nat} (ha : a + n ≤ 80) (hd : (d + k ≤ 16) ∨ (96 ≤ d ∧ d + k ≤ 2560)) :
     (⟨w64 St + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ := L.lay.st_w ha hd
 
-theorem ctx_st {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 80) :
-    (⟨w64 Ctx + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 St + BitVec.ofNat 64 d, k⟩ := L.lay.ctx_st ha hd
-
 theorem ctx_w {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 2560) :
     (⟨w64 Ctx + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ := L.lay.ctx_w ha hd
-
-theorem stk_ctx {a n : Nat} (ha : a + n ≤ 256) :
-    (below SP K).Disjoint ⟨w64 Ctx + BitVec.ofNat 64 a, n⟩ := L.kc.sub_right (Lay.ctxSub ha)
 
 theorem stk_st {a n : Nat} (ha : a + n ≤ 80) :
     (below SP K).Disjoint ⟨w64 St + BitVec.ofNat 64 a, n⟩ := L.ks.sub_right (Lay.stSub ha)
@@ -70,11 +63,8 @@ theorem below28 : Region.Sub (below SP 28) (below SP K) := L.below_sub L.k28
 
 theorem aW {o : Nat} (ho : o < 2560) : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := L.lay.aW ho
 theorem aS {o : Nat} (ho : o < 80) : w64 (St + BitVec.ofNat 32 o) = w64 St + BitVec.ofNat 64 o := L.lay.aS ho
-theorem aC {o : Nat} (ho : o < 256) : w64 (Ctx + BitVec.ofNat 32 o) = w64 Ctx + BitVec.ofNat 64 o := L.lay.aC ho
 theorem nW {o : Nat} (ho : o < 2560) : (W + BitVec.ofNat 32 o).toNat = W.toNat + o := L.lay.nW ho
 theorem nS {o : Nat} (ho : o < 80) : (St + BitVec.ofNat 32 o).toNat = St.toNat + o := L.lay.nS ho
-theorem nC {o : Nat} (ho : o < 256) : (Ctx + BitVec.ofNat 32 o).toNat = Ctx.toNat + o := L.lay.nC ho
-
 end Lay4
 
 /-- The layout, from its regions' bounds and disjointness. -/
@@ -86,7 +76,7 @@ theorem Lay4.of {Ctx St W SP : BitVec 32} {K : Nat} (fc : Ctx.toNat + 256 ≤ 2 
     (kc : (below SP K).Disjoint ⟨w64 Ctx, 256⟩) (ks : (below SP K).Disjoint ⟨w64 St, 80⟩)
     (kw : (below SP K).Disjoint ⟨w64 W, 2560⟩) : Lay4 Ctx St W SP K :=
   have hb := VG.X86.below_sub (sp := SP) k28 sp
-  ⟨⟨fc, fs, fw, by decide, Nat.le_refl _, by omega, cs, cw, sa, sb, kc.sub_left hb, ks.sub_left hb,
+  ⟨⟨fc, fs, fw, by decide, by decide, by omega, cs, cw, sa, sb, kc.sub_left hb, ks.sub_left hb,
     kw.sub_left hb⟩, k28, sp, kc, ks, kw⟩
 
 /-- Data apart from the `K` bytes below `SP` is apart from the `k ≤ K`. -/

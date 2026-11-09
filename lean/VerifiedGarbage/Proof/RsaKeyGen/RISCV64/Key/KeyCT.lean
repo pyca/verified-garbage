@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.Lcm
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.DPart
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
@@ -68,9 +69,9 @@ abbrev Dt : Type := List (BitVec 64) × List (BitVec 64) × List Nat × Addr
 def dataOf (s : State) : Dt :=
   (argRegs.map s.gpr, (List.range 10).map (stackArg s), (eB s).map (·.toNat), s.sp)
 
-theorem pub_data {s₁ s₂ : State} (h : (Spec.RsaKeyGen.keyContract RISCV64.abi).pub s₁ s₂) :
+theorem pub_data {s₁ s₂ : State} (h : (Proof.RsaKeyGen.keyContract RISCV64.abi).pub s₁ s₂) :
     dataOf s₁ = dataOf s₂ := by
-  sig_pub [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, RISCV64.abi, RISCV64.argRegs,
+  sig_pub [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, RISCV64.abi, RISCV64.argRegs,
     stackArgs_ten, List.append_eq] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   obtain ⟨hsp, hl, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9⟩ := h
@@ -94,7 +95,7 @@ theorem same_of {s₁ s₂ : State} (h : dataOf s₁ = dataOf s₂) : Same s₁ 
     (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hb⟩
 
 /-- On entry, with the public data `d`. -/
-def C0 (d : Dt) (s : State) : Prop := (Spec.RsaKeyGen.keyContract RISCV64.abi).pre s ∧ dataOf s = d
+def C0 (d : Dt) (s : State) : Prop := (Proof.RsaKeyGen.keyContract RISCV64.abi).pre s ∧ dataOf s = d
 
 theorem C0.same {d : Dt} {x y : State} (hx : C0 d x) (hy : C0 d y) : Same x y :=
   same_of (hx.2.trans hy.2.symm)
@@ -331,8 +332,8 @@ theorem key_rel [VG.Proof.Rsa.RISCV64.InvLaw] : RelCT isa (Two C0) code fun _ _ 
     exact WP.mono (save2_ok s0 h.scr (by omega_arith) ht) fun u hu => WP.mono (moves_ok h hu) fun v ⟨c, a7⟩ =>
       ⟨s0, c0, c, a7⟩
 
-theorem key_ct [VG.Proof.Rsa.RISCV64.InvLaw] : ConstantTime isa (Spec.RsaKeyGen.keyContract RISCV64.abi).pre
-    (Spec.RsaKeyGen.keyContract RISCV64.abi).pub code :=
+theorem key_ct [VG.Proof.Rsa.RISCV64.InvLaw] : ConstantTime isa (Proof.RsaKeyGen.keyContract RISCV64.abi).pre
+    (Proof.RsaKeyGen.keyContract RISCV64.abi).pub code :=
   RelCT.constantTime (key_rel.mono (fun s _ ⟨hs, ht, hp⟩ =>
     ⟨dataOf s, ⟨hs, rfl⟩, ⟨ht, (pub_data hp).symm⟩, (same_of (pub_data hp)).sp⟩) fun _ _ h => h)
 

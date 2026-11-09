@@ -176,9 +176,6 @@ theorem tryJ_length (η : Nat) (L : List Zq) (b : Nat) :
     (tryJ η L b).length = if L.length < 256 then L.length + halfByteOk η b else L.length := by
   unfold tryJ; split <;> simp only [hbTry_length]
 
-theorem tryJ_length_le {η : Nat} {L : List Zq} (hL : L.length ≤ 256) (b : Nat) : (tryJ η L b).length ≤ 256 := by
-  rw [tryJ_length]; have := halfByteOk_le η b; split <;> omega
-
 /-- An iteration, as two tries. -/
 theorem rbStep_tryJ (η : Nat) (L : List Zq) (z : Byte) :
     rbStep η L z = tryJ η (tryJ η L (z.toNat % 16)) (z.toNat / 16) := by
@@ -353,8 +350,6 @@ theorem Lf_succ (η : Nat) {X : List Byte} (hX : X.length = 544) {t : Nat} (ht :
     Lf η X (t + 1) = rbStep η (Lf η X t) (zAt X t) := by
   simp only [Lf]
   rw [take_succ' _ (by omega), rbFold_snoc]
-
-theorem Lf_length_le (η : Nat) (X : List Byte) (t : Nat) : (Lf η X t).length ≤ 256 := rbFold_length_le (by simp) _
 
 /-- An iteration: what `rbStep` does to the coefficients. -/
 theorem body_ok {σ : State} (hp : SpOk (spOf σ) σ) {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte}

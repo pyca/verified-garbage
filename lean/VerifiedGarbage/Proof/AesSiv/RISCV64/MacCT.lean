@@ -288,13 +288,6 @@ theorem upd_keep {s : State} {K C D S : Addr} {R n : Nat} (U : UArgs s K C D S R
 
 /-! ## S2V's first state -/
 
-/-- `D = AES-CMAC(K1, <zero>)`. -/
-theorem start_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) (E₂ : Env c σ₂) (hsp : σ₁.sp = σ₂.sp) :
-    RelCT isa (Eq2 σ₁ σ₂) (.seq (.block startPre) Impl.CmacAes.Stream.RISCV64.finCall) TT :=
-  rel_seqR (rel_env [] E₁ E₂ hsp agree_nil ⟨_, by taint_decide⟩) (Runs.of_wp (startPre_wp L E₁))
-    (Runs.of_wp (startPre_wp L E₂)) fun _ _ ⟨K₁, _, F₁⟩ ⟨K₂, _, F₂⟩ =>
-      rel_fin F₁ F₂ (by rw [K₁.pk.sp, K₂.pk.sp, hsp])
-
 /-! ## The CMAC of a string -/
 
 /-- `cmacOf stO`, for the same string (`n` bytes at `P`) in both runs. -/

@@ -59,7 +59,7 @@ theorem cryptWhole_ct {D : Addr} {n q j : Nat} :
   obtain ⟨nb, hnb⟩ : ∃ nb, nb = (n - j) / 16 := ⟨_, rfl⟩
   let J₁ : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧
     Env V sp s ∧ DataW (V .s2) (V .s1) (V .s0) s D n ∧ j ≤ n ∧ Big V sp ∧
-    (below sp 3232).Disjoint ⟨D, n⟩ ∧ s.gpr .a3 = D + BitVec.ofNat 64 j ∧ s.gpr .a4 = BitVec.ofNat 64 nb
+    (below sp 3248).Disjoint ⟨D, n⟩ ∧ s.gpr .a3 = D + BitVec.ofNat 64 j ∧ s.gpr .a4 = BitVec.ofNat 64 nb
   refine CT.seq (J := J₁) ?_ (fun s ⟨V, icb, P, m₀, h29, h30, h31, hP, hs⟩ => ?_) ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [.s4, .s5]) (.block splitCtr)
         h).isSome = true := ⟨_, by taint_decide⟩
@@ -79,7 +79,7 @@ theorem cryptWhole_ct {D : Addr} {n q j : Nat} :
     have h0 : nb ≠ 0 := by simpa using hb
     let J₂ : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧
       Env V sp s ∧ DataW (V .s2) (V .s1) (V .s0) s D n ∧ j ≤ n ∧ Big V sp ∧
-      (below sp 3232).Disjoint ⟨D, n⟩ ∧
+      (below sp 3248).Disjoint ⟨D, n⟩ ∧
       s.gpr .a0 = V .s2 ∧ s.gpr .a1 = V .s1 + BitVec.ofNat 64 48 ∧
       s.gpr .a2 = D + BitVec.ofNat 64 j ∧ s.gpr .a3 = BitVec.ofNat 64 nb
     refine CT.seq (J := J₂) ?_ (fun s ⟨V, h29, h30, h31, he, hd, hj, hbg, hbd, h6, h7⟩ => ?_) ?_

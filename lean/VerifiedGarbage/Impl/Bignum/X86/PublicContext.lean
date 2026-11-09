@@ -24,22 +24,7 @@ def stride (n : Nat) : Nat := 8 * n + 16
 def slot (n i : Nat) : Nat := hdrBytes + i * stride n
 def size (n : Nat) : Nat := slot n 8
 def modulus (n : Nat) : Mod := { n, mo := slot n 0, tmp := slot n 1, minv := 0 }
-def inverseOffset : Nat := 8 * sMinv
-
 /-- Arrays two and three are reserved for the double-width accumulator. -/
 def operand (i : Nat) : Prop := i < 8 ∧ i ≠ 2 ∧ i ≠ 3
-
-def multiply (n o a b : Nat) : Prog isa :=
-  Dynamic.mul (modulus n) inverseOffset (slot n 2) (slot n o) (slot n a) (slot n b)
-
-/-- The low-word inverse and ordinary one are shared by both setup phases. -/
-def start (n : Nat) : Prog isa :=
-  .seq (.block (Dynamic.setupInverse (slot n 0) inverseOffset))
-    (Dynamic.one n (slot n 4))
-
-/-- Public-modulus seed followed by six shared Montgomery squares. -/
-def setup (n : Nat) : Prog isa :=
-  .seq (start n) (.seq (Dynamic.publicPower (modulus n) (slot n 2) (slot n 5))
-    (Dynamic.repeatSquaresWith (multiply n 5 5 5) 6))
 
 end VG.Impl.Bignum.X86.PublicContext

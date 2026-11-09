@@ -1,14 +1,4 @@
-//! The Rust types of BLAKE2b and BLAKE2s (RFC 7693), shared by `blake2b` and
-//! `blake2s`.
-//!
-//! `vg_blake2{b,s}_init`, `vg_blake2{b,s}_update` and
-//! `vg_blake2{b,s}_finalize` for the target architecture (contracts
-//! `VG.Spec.Blake2.initBContract`, … `finalizeSContract`) maintain a
-//! streaming state that represents the data absorbed so far
-//! (`VG.Spec.Blake2.Repr`: the hash state after all its blocks but the last,
-//! followed by that last block, which the final compression needs to know
-//! about). The Rust types only keep that state together with the length of
-//! the data, which the contracts take as an argument.
+//! What BLAKE2b and BLAKE2s (RFC 7693) share.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -30,6 +20,10 @@
 /// * `finalize(state, count: u64, out: *mut [u8; MAX])` writes the
 ///   final hash value, whose first `outlen` bytes are the digest.
 ///
+/// `update` and `finalize` are their dispatchers
+/// (`crate::arch::dispatch::blake2<b|s>`), which run the best
+/// implementation this CPU runs.
+///
 /// Every region is a distinct Rust object, so none overlaps another, the
 /// return address (on x86-64 and x86), the arguments on the stack (on 32-bit
 /// ARM and x86) or the stack below them that the call uses, and none wraps
@@ -43,82 +37,10 @@ macro_rules! blake2 {
             block: $block:literal,
             max: $max:literal,
             init: $init:path,
-            backends: $backend:ident {
-                $base:ident => ($update:path, $finalize:path)
-                $(, $(#[$attr:meta])* $variant:ident if [$($req:path),*] => ($vupdate:path, $vfinalize:path))*
-                $(,)?
-            } $(,)?
+            update: $update:path,
+            finalize: $finalize:path $(,)?
         }
     ) => {
-        /// The implementations of the streaming primitives.
-        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-        pub(crate) enum $backend {
-            /// For the baseline ISA.
-            $base,
-            $(
-                $(#[$attr])*
-                /// Needing CPU features.
-                $variant,
-            )*
-        }
-
-        impl $backend {
-            /// The best implementation a CPU with the features `f` can run.
-            pub(crate) fn select(f: verified_garbage_cpu::Features) -> Self {
-                $(
-                    $(#[$attr])*
-                    if f.contains(const { verified_garbage_cpu::Features::all(&[$($req),*]) }) {
-                        return Self::$variant;
-                    }
-                )*
-                let _ = f;
-                Self::$base
-            }
-
-            /// `update`.
-            ///
-            /// # Safety
-            ///
-            /// As for the artifacts; the CPU must have the features of the
-            /// implementation (as `select` guarantees).
-            pub(crate) unsafe fn update(
-                self,
-                state: &mut [u8; $state],
-                count: u64,
-                data: *const u8,
-                len: usize,
-            ) {
-                // SAFETY: the caller's obligations.
-                unsafe {
-                    match self {
-                        Self::$base => $update(state, count, data, len),
-                        $($(#[$attr])* Self::$variant => $vupdate(state, count, data, len),)*
-                    }
-                }
-            }
-
-            /// `finalize`.
-            ///
-            /// # Safety
-            ///
-            /// As for the artifacts; the CPU must have the features of the
-            /// implementation (as `select` guarantees).
-            pub(crate) unsafe fn finalize(
-                self,
-                state: &mut [u8; $state],
-                count: u64,
-                out: &mut [u8; $max],
-            ) {
-                // SAFETY: the caller's obligations.
-                unsafe {
-                    match self {
-                        Self::$base => $finalize(state, count, out),
-                        $($(#[$attr])* Self::$variant => $vfinalize(state, count, out),)*
-                    }
-                }
-            }
-        }
-
         $(#[$doc])*
         ///
         /// `N` is the size of the digest, 1 to
@@ -128,18 +50,19 @@ macro_rules! blake2 {
         #[derive(Clone)]
         pub struct $name<const N: usize = $max> {
             /// The streaming state, representing the data so far.
-            state: [u8; $state],
+            state: $crate::align::CacheAligned<[u8; $state]>,
             /// The length of the data so far (the key block included), in
             /// bytes.
             length: u64,
-            /// The implementation this CPU runs.
-            backend: $backend,
+            /// Whether the computation is keyed, a MAC, which takes data
+            /// independent timing (see `crate::dit`).
+            keyed: bool,
         }
 
         impl<const N: usize> Drop for $name<N> {
             /// Wipes the streaming state (which represents the key, if any).
             fn drop(&mut self) {
-                $crate::zeroize::zeroize(&mut self.state);
+                $crate::zeroize::zeroize(&mut self.state.0);
             }
         }
 
@@ -169,20 +92,26 @@ macro_rules! blake2 {
             ///
             #[doc = concat!("If `key` is longer than ", stringify!($max), " bytes.")]
             pub fn new_keyed(key: &[u8]) -> Self {
+                crate::dit::enter_if!(dit, !key.is_empty(), crate::dit::Why::UnkeyedHash);
+                Self::new_keyed_with(dit, key)
+            }
+
+            /// [`new_keyed`](Self::new_keyed), with the token of the
+            /// operation it is part of (see `crate::dit`).
+            fn new_keyed_with(dit: crate::dit::Dit<'_>, key: &[u8]) -> Self {
                 const { assert!(1 <= N && N <= $max, "unsupported digest size") };
                 assert!(key.len() <= $max, "key too long");
-                let mut state = [0; $state];
+                let mut state = $crate::align::CacheAligned([0; $state]);
                 // SAFETY: `1 ≤ N ≤ MAX` and `key.len() ≤ MAX`. `state` is
                 // valid for writes of its size and `key` for reads of
                 // `key.len()` bytes; they are distinct objects, so they do
                 // not overlap each other, the return address (on x86-64 and
                 // x86) or the arguments on the stack (on x86), and do not
                 // wrap around the end of the address space.
-                unsafe { $init(&mut state, N, key.as_ptr(), key.len()) };
+                unsafe { $init(dit, &mut state.0, N, key.as_ptr(), key.len()) };
                 // The key block is the first block of the data.
                 let length = if key.is_empty() { 0 } else { $block };
-                let backend = $backend::select($crate::cpu::detected());
-                $name { state, length, backend }
+                $name { state, length, keyed: !key.is_empty() }
             }
 
             /// Absorbs `data`.
@@ -191,6 +120,13 @@ macro_rules! blake2 {
             ///
             /// If the data reaches 2⁶⁴ bytes.
             pub fn update(&mut self, data: &[u8]) {
+                crate::dit::enter_if!(dit, self.keyed, crate::dit::Why::UnkeyedHash);
+                self.update_with(dit, data);
+            }
+
+            /// [`update`](Self::update), with the token of the operation it
+            /// is part of (see `crate::dit`).
+            fn update_with(&mut self, dit: crate::dit::Dit<'_>, data: &[u8]) {
                 let length = self
                     .length
                     .checked_add(data.len() as u64)
@@ -203,20 +139,21 @@ macro_rules! blake2 {
                 // call uses, and do not wrap around the end of the address
                 // space. `self.length` is the length of the data
                 // `self.state` represents, and adding `data.len()` to it
-                // does not reach 2⁶⁴.
-                unsafe {
-                    self.backend.update(
-                        &mut self.state,
-                        self.length,
-                        data.as_ptr(),
-                        data.len(),
-                    )
-                };
+                // does not reach 2⁶⁴. The dispatcher calls only an
+                // implementation the CPU has the features of.
+                unsafe { $update(dit, &mut self.state.0, self.length, data.as_ptr(), data.len()) };
                 self.length = length;
             }
 
             /// Returns the digest of the data.
-            pub fn finalize(mut self) -> [u8; N] {
+            pub fn finalize(self) -> [u8; N] {
+                crate::dit::enter_if!(dit, self.keyed, crate::dit::Why::UnkeyedHash);
+                self.finalize_with(dit)
+            }
+
+            /// [`finalize`](Self::finalize), with the token of the operation
+            /// it is part of (see `crate::dit`).
+            fn finalize_with(mut self, dit: crate::dit::Dit<'_>) -> [u8; N] {
                 let mut out = [0; $max];
                 // SAFETY: `self.state` is valid for reads and writes of its
                 // size and `out` for writes of its size; they are distinct
@@ -226,8 +163,9 @@ macro_rules! blake2 {
                 // x86) or the stack below them that the call uses, and do not
                 // wrap around the end of the address space. `self.length` is
                 // the exact length, less than 2⁶⁴, of the data `self.state`
-                // represents.
-                unsafe { self.backend.finalize(&mut self.state, self.length, &mut out) };
+                // represents. The dispatcher calls only an implementation
+                // the CPU has the features of.
+                unsafe { $finalize(dit, &mut self.state.0, self.length, &mut out) };
                 let mut digest = [0; N];
                 digest.copy_from_slice(&out[..N]);
                 digest
@@ -238,19 +176,18 @@ macro_rules! blake2 {
             /// not depend on where, or whether, `mac` differs from it (its
             /// length is public). `mac` must be the whole digest, of `N`
             /// bytes; a truncated one is rejected.
-            pub fn verify(self, mac: &[u8]) -> Result<(), $crate::invalid_mac::InvalidMac> {
-                if $crate::ct::eq(&self.finalize(), mac) {
+            pub fn verify(self, mac: &[u8]) -> Result<(), $crate::error::InvalidMac> {
+                crate::dit::enter_if!(dit, self.keyed, crate::dit::Why::UnkeyedHash);
+                if $crate::ct::eq(dit, &self.finalize_with(dit), mac) {
                     Ok(())
                 } else {
-                    Err($crate::invalid_mac::InvalidMac)
+                    Err($crate::error::InvalidMac)
                 }
             }
 
             /// The (unkeyed) digest of `data`.
             pub fn digest(data: &[u8]) -> [u8; N] {
-                let mut h = Self::new();
-                h.update(data);
-                h.finalize()
+                Self::digest_keyed(&[], data)
             }
 
             /// The digest of `data` keyed with `key` (a MAC; RFC 7693 §2.9).
@@ -259,9 +196,10 @@ macro_rules! blake2 {
             ///
             #[doc = concat!("If `key` is longer than ", stringify!($max), " bytes.")]
             pub fn digest_keyed(key: &[u8], data: &[u8]) -> [u8; N] {
-                let mut h = Self::new_keyed(key);
-                h.update(data);
-                h.finalize()
+                crate::dit::enter_if!(dit, !key.is_empty(), crate::dit::Why::UnkeyedHash);
+                let mut h = Self::new_keyed_with(dit, key);
+                h.update_with(dit, data);
+                h.finalize_with(dit)
             }
         }
 
@@ -291,7 +229,7 @@ pub(super) use blake2;
 mod tests {
     use super::super::blake2b::Blake2b;
     use super::super::blake2s::Blake2s;
-    use crate::invalid_mac::InvalidMac;
+    use crate::error::InvalidMac;
 
     /// `verify`, run by a computation of `mac`, accepts `mac` and rejects
     /// any other: one with a bit flipped in its first, a middle or its last

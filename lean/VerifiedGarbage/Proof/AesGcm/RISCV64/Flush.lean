@@ -100,16 +100,6 @@ variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0)) {
   (hyo : yo = 0 ∨ yo = 16)
 include L hyo
 
-theorem ctx_tFrame (hk : StkOk (V .s2) (V .s1) (V .s0) sp) : ∀ r ∈ tFrame (V .s1) (V .s0) yo sp,
-    (⟨V .s2 + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact L.ctx_st (by decide) (by omega_arith)
-  · exact L.ctx_w (by decide) (by decide)
-  · exact L.ctx_w (by decide) (by decide)
-  · exact hk.c.sub_left (Lay.ctxSub (by decide))
-
 omit hyo in
 /-- `T` zeroed. -/
 theorem zeroT_ok {s : State} (he : Env V sp s) :

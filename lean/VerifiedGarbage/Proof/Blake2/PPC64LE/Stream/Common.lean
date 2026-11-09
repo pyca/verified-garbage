@@ -100,9 +100,6 @@ structure Ok (P : Params w) : Prop where
 theorem Ok.bb (h : Ok P) : blockBytes w = 64 ∨ blockBytes w = 128 := by
   rcases h.w with rfl | rfl <;> decide
 
-theorem Ok.N (h : Ok P) : bufOff w = blockBytes w / 2 := by
-  rcases h.w with rfl | rfl <;> decide
-
 theorem Ok.pos (h : Ok P) : 0 < blockBytes w := by rcases h.bb with h | h <;> omega_arith
 
 /-- The sizes, all small. -/

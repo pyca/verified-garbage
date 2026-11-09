@@ -46,10 +46,6 @@ namespace VG.Proof.EcKey.Arm.BrainpoolP256r1
 
 open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.BrainpoolP256r1 Spec.Weierstrass
 
-theorem pre_of {s : State} (h : pkArm.pre s) : PkPre brainpoolp256r1 s := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
-
 theorem post_of {u : Bool} {s s' : State} (h : PkPost (brainpoolp256r1With u) s s') : pkArm.post s s' := by
   unfold PkPost at h
   show match pk s.mem (State.addr (s.gpr .r1)) with
@@ -63,80 +59,5 @@ theorem post_of {u : Bool} {s s' : State} (h : PkPost (brainpoolp256r1With u) s 
   rw [show Spec.EcKey.publicKey (brainpoolp256r1With u).C (dk (brainpoolp256r1With u) s) = pk s.mem (State.addr (s.gpr .r1)) from rfl,
     hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
-
-theorem pk_arm (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (s : State) (hs : pkArm.pre s) :
-    ∃ t s', Exec isa Impl.EcKey.Arm.publicKeyBrainpoolP256r1 s t s' ∧ abiPreserved s s' ∧ pkArm.post s s' := by
-  have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := publicKey_ok brainpoolp256r1_ok hL hp
-  refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, post_of (u := false) hpost⟩
-  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact K.saved (.r4, 0) (by decide)
-  · exact K.saved (.r5, 4) (by decide)
-  · exact K.saved (.r6, 8) (by decide)
-  · exact K.saved (.r7, 12) (by decide)
-  · exact K.saved (.r8, 16) (by decide)
-  · exact K.saved (.r9, 20) (by decide)
-  · exact K.saved (.r10, 24) (by decide)
-  · exact K.saved (.r11, 28) (by decide)
-  · exact K.saved (.lr, 32) (by decide)
-
-/-- The taint analysis starts with the arguments' registers public. -/
-def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2], flags := false }
-
-theorem pk_ct : ConstantTime isa pkArm.pre pkArm.pub Impl.EcKey.Arm.publicKeyBrainpoolP256r1 := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by native_taint_decide)
-  intro s t _ _ ⟨_, h0, h1, h2⟩
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
-    ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
-      fun _ h => (List.not_mem_nil h).elim⟩,
-    ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
-      fun _ h => (List.not_mem_nil h).elim⟩,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun h => absurd h (Nat.lt_irrefl 0), fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact h0
-  · exact h1
-  · exact h2
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x8000 | _ => 0
-  sp := 0x20000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := [⟨0x2000, 32⟩]
-  wr := [⟨0x1000, 65⟩, ⟨0x8000, 8192⟩]
-
-theorem pk_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) :
-    Verified Arm.target Impl.EcKey.Arm.publicKeyBrainpoolP256r1 (Spec.EcKey.BrainpoolP256r1.inst.publicKeyContract Arm.abi) :=
-  Verified.of_correct (pk_arm hL) pk_ct
-    { pre := by
-        sig_implies_pre [Spec.EcKey.BrainpoolP256r1.inst, Spec.EcKey.Instance.publicKeyContract,
-          Spec.EcKey.Instance.publicKeySig, Spec.BrainpoolP256r1.curve, Spec.EcKey.scratchWords, pkArm, pk, Arm.abi,
-          Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      post := by
-        intro s s' _ h
-        sig_post [Spec.EcKey.BrainpoolP256r1.inst, Spec.EcKey.Instance.publicKeyContract,
-          Spec.EcKey.Instance.publicKeySig, Spec.BrainpoolP256r1.curve, Spec.EcKey.scratchWords, pkArm, pk, Arm.abi,
-          Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-        simp only [pkArm, pk, Spec.BrainpoolP256r1.curve, Arm.State.addr] at h
-        revert h
-        generalize Spec.EcKey.publicKey _ _ = q
-        rcases q with _ | _ | ⟨x, y⟩ <;> exact id
-      pub := by
-        sig_implies_pub [Spec.EcKey.BrainpoolP256r1.inst, Spec.EcKey.Instance.publicKeyContract,
-          Spec.EcKey.Instance.publicKeySig, Spec.BrainpoolP256r1.curve, Spec.EcKey.scratchWords, pkArm, pk, Arm.abi,
-          Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      sat := by
-        sig_implies_sat [Spec.EcKey.BrainpoolP256r1.inst, Spec.EcKey.Instance.publicKeyContract,
-          Spec.EcKey.Instance.publicKeySig, Spec.BrainpoolP256r1.curve, Spec.EcKey.scratchWords, pkArm, pk, Arm.abi,
-          Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-          [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState }
 
 end VG.Proof.EcKey.Arm.BrainpoolP256r1

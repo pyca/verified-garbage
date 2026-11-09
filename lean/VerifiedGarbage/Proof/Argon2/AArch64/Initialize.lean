@@ -137,10 +137,6 @@ theorem Inputs.of_copy {s t : State} {x y p : Addr} (h : Inputs s x y p) (hk : C
       (hk.1 .x1 (by decide) (by decide)).trans h.yreg, by simpa only [hk.2.1, hk.2.2] using h.xread,
       by simpa only [hk.2.1, hk.2.2] using h.yread, h.xsep, h.ysep⟩
 
-theorem input_read {s : State} {x : Addr} (h : (⟨x, 1024⟩ : Region) ∈ s.rd ++ s.wr)
-    (i : Fin 128) : InRegions (s.rd ++ s.wr) (off x (8 * i.val)) 8 :=
-  ⟨_, h, Offset.contains_base x (by omega_arith) (by omega_arith)⟩
-
 theorem input_unchanged {m m' : Mem} {x p : Addr} (hf : Frame [⟨p, 4096⟩] m m')
     (hd : (⟨x, 1024⟩ : Region).Disjoint ⟨p, 4096⟩) (i : Fin 128) :
     m'.readW (off x (8 * i.val)) 64 = m.readW (off x (8 * i.val)) 64 :=

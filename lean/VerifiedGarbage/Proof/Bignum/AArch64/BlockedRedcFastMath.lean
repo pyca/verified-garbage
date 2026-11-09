@@ -31,13 +31,6 @@ theorem canceled_product (a inv n : Word)
   generalize a * inv * n = b at hz ⊢
   bv_omega
 
-/-- For a canceled word, the carry is exactly the nonzero test. -/
-theorem canceled_carry (a : Word) : carryOut a (-a) false = decide (1 ≤ a.toNat) := by
-  have ha := a.isLt
-  simp only [carryOut, Bool.toNat_false, Nat.add_zero, BitVec.toNat_neg]
-  rw [decide_eq_decide]
-  omega
-
 theorem canceled_sum (a : Word) : addCarry a (-a) false = 0 := by
   rw [addCarry_false, BitVec.add_right_neg]
   rfl

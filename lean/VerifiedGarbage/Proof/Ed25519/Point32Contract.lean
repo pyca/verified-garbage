@@ -3,45 +3,22 @@ module
 public import VerifiedGarbage.Proof.Ed25519.Point64Contract
 
 /-!
-# Ed25519's point addition and doubling in radix `2^32`, as functions
+# Ed25519's points in radix `2^32`, in the working space
 
-Not trusted: the contracts of internal functions (`Rust.Internal`), which
-only verified code calls, that their proofs are of and that the proofs of
-their callers compose. Only the callers' contracts, in `Spec/`, are trusted.
-
-The contracts of functions on points
-of edwards25519 in extended coordinates (`Point`), each coordinate eight
-32-bit words, so that the Ed25519 code that keeps points this way (the x86
-code) can call one copy of each operation instead of repeating it at every
-use:
-
-* `vg_ed25519_r32_point_add`: the sum `p + q`, by the specification's
-  complete addition formula (`pointAdd`);
-* `vg_ed25519_r32_add_affine`: the same sum, for `q` with `Z = 1`, given by
-  the first three coordinates of its cached form, `[Y - X, Y + X, 2dT]`
-  (`Point64.cache`), which a table of affine points keeps (as
-  `vg_ed25519_r64_add_affine_ext` takes it in radix `2^64`);
-* `vg_ed25519_r32_double`: the double `[2]p`, by RFC 8032's doubling formula
-  (§5.1.4, `Point64.pointDouble`).
-
-They are not algorithms of a standard but the arithmetic Ed25519 is built
-from, in the representation that code keeps points in: what they compute is
-stated on the coordinates as elements of `GF(p)`, `p = 2^255 - 19`.
+Not trusted: how the proofs of the functions on points in radix `2^32` state
+where their operands are.
 
 A coordinate is 32 bytes, a little-endian number below `2^256`, standing for
-its residue modulo `p` (`elemAt`): any 32 bytes are a coordinate. A point is
-four coordinates, `X, Y, Z, T`, at consecutive offsets (`pointAt`). The
-points live in Ed25519's working space `ws` of 8192 bytes (`[u64; 1024]`),
-at fixed offsets, where that code keeps the operands of its additions: `p` at
-byte 64 (`pAt`), `q` at byte 192 (`qAt`), and the curve's constant `d` at
-byte 576 (`dAt`), which `vg_ed25519_r32_point_add`'s caller provides; the
-result replaces `p`. Bytes 320 to 575 and 864 to 1023 of `ws` are the
-functions' own working space. On return they are unspecified and may hold
-intermediate values; every other byte of `ws` keeps its value but the
-result's (`Keeps`).
-
-Everything is secret but the pointer, which is public, and the functions are
-constant time.
+its residue modulo `p` (`elemAt`), `p = 2^255 - 19`: any 32 bytes are a
+coordinate. A point of edwards25519 in extended coordinates (`Point`) is four
+coordinates, `X, Y, Z, T`, at consecutive offsets (`pointAt`). The points
+live in Ed25519's working space `ws` of 8192 bytes (`[u64; 1024]`), at fixed
+offsets, where that code keeps the operands of its additions: `p` at byte 64
+(`pAt`), `q` at byte 192 (`qAt`), and the curve's constant `d` at byte 576
+(`dAt`), which `vg_ed25519_r32_point_add`'s caller provides; the result
+replaces `p`. Bytes 320 to 575 and 864 to 1023 of `ws` are the functions' own
+working space: every other byte of `ws` keeps its value but the result's
+(`Keeps`).
 -/
 
 @[expose] public section
@@ -84,39 +61,5 @@ value. -/
 def Keeps (ws : Addr) (m m' : Mem) : Prop :=
   ∀ i < wsBytes, (i < pAt ∨ pAt + 4 * elemBytes ≤ i) → (i < 320 ∨ 576 ≤ i) → (i < 864 ∨ 1024 ≤ i) →
     m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
-
-/-- `ws: *mut [u64; 1024]`, the pointer public. -/
-def sig : Sig where
-  params := [("ws", .array true .u64 1024)]
-
-/-- `pointAdd`: with `d` at `dAt`, the point at `pAt` becomes the sum of the
-points at `pAt` and `qAt`. -/
-def addContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  sig.contract A
-    (pre := fun ws m => elemAt m ws dAt = d)
-    (post := fun ws m m' _ =>
-      pointAt m' ws pAt = pointAdd (pointAt m ws pAt) (pointAt m ws qAt) ∧ Keeps ws m m')
-    (stack := stack)
-
-/-- `pointAdd` of an affine point: for every point `q` with `Z = 1` whose cached form's first
-three coordinates, `[Y - X, Y + X, 2dT]`, are at `qAt`, the point at `pAt` becomes the sum of it
-and `q`. The cached form's fourth coordinate, `2Z = 2`, is not read, and neither is `d`. -/
-def addAffineContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  sig.contract A
-    (pre := fun _ _ => True)
-    (post := fun ws m m' _ =>
-      (∀ q : Point, q.Z = 1 → elemAt m ws qAt = q.Y - q.X → elemAt m ws (qAt + elemBytes) = q.Y + q.X →
-        elemAt m ws (qAt + 2 * elemBytes) = q.T * 2 * d →
-        pointAt m' ws pAt = pointAdd (pointAt m ws pAt) q) ∧
-        Keeps ws m m')
-    (stack := stack)
-
-/-- RFC 8032's doubling (`Point64.pointDouble`): the point at `pAt` becomes its double. -/
-def doubleContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  sig.contract A
-    (pre := fun _ _ => True)
-    (post := fun ws m m' _ =>
-      pointAt m' ws pAt = Point64.pointDouble (pointAt m ws pAt) ∧ Keeps ws m m')
-    (stack := stack)
 
 end VG.Proof.Ed25519.Point32

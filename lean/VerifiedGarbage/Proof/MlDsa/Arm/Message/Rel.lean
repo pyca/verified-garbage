@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 
 /-!
-# ML-DSA on ARMv7, `sign_message` and `verify_message`: two runs
+# ML-DSA on ARMv7, `sign_message` and `verify_message_cached`: two runs
 
 Untrusted: everything here is checked by Lean. Blocks whose addresses are
 functions of `r7`, which they keep, leak the same in runs that agree on it

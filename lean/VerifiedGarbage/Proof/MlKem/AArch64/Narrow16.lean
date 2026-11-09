@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Narrow16
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass1
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec

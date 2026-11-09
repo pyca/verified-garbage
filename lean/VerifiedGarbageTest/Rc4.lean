@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Rc4.Contract
 meta import VerifiedGarbage.Spec.Rc4.Contract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # RC4 specification tests
@@ -55,7 +53,6 @@ def checkChunks (ctx : Spec.Rc4.Context) (input : List Byte) (splits : List Nat)
     next := c
     output := output ++ bs
   unless output == expected && same next last do throw "byte-at-a-time mismatch"
-  unless (finalize last).isEmpty do throw "finalization emitted bytes"
 
 def checkRfc (text : String) : Except String Unit := do
   let mut keys := 0
@@ -129,8 +126,5 @@ run_cmd do
   match result with
   | .ok () => pure ()
   | .error e => throwError "RC4: {e}"
-
-#assert_standard_axioms VG.Spec.Rc4.initContract
-#assert_standard_axioms VG.Spec.Rc4.applyContract
 
 end VG.Test.Rc4

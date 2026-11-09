@@ -29,8 +29,6 @@ open VG VG.PPC64LE VG.PPC64LE.StraightK VG.PPC64LE.RegUpd VG.Impl.Seed.PPC64LE V
 theorem exec_movR (s : State) (d n : Reg) : exec (movR d n) s = some (s.write d (s.gpr n)) :=
   exec_or_self
 
-theorem sb_eq : sb = .r8 := rfl
-
 theorem batchSize_ok (s : State) :
     WP isa batchSize s (fun s' => s'.gpr .r10 = BitVec.ofNat 64 (min (s.gpr .r5).toNat 16) ∧
       (∀ r, r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧

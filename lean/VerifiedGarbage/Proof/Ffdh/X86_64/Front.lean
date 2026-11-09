@@ -53,12 +53,6 @@ theorem room_k {k Z : Nat} (hk : 64 ≤ k) (hZ : 128 * k + 256 ≤ Z) :
   rw [e]
   omega_arith
 
-/-- The outer workspace, once back from the inner one. -/
-theorem Outer.of_sub {t : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 64} (hc : SubCtx t B Z o w wx mi)
-    (h0 : t.gpr .rdi = B) (hroom : inner w + slot w 8 + tabBytes w 32 ≤ Z) (hw2 : 2 ≤ w) (hw : w < 2 ^ 28) :
-    Outer t B Z w :=
-  ⟨hc.scr, h0, hc.nw, hc.narr, hroom, hw2, hw⟩
-
 /-- Initialize the outer workspace using RSA's existing header routine. -/
 theorem head_ok {s : State} {B : Addr} {Z k : Nat} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = B) (hZ : slot ((k + 7) / 8) 8 ≤ Z) (hk : k < 2 ^ 32)

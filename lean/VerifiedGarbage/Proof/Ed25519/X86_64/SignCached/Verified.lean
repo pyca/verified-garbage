@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Preserve
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Spec.Ed25519.CachedSign
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
@@ -25,7 +24,6 @@ import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Spec.Weierstrass
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Preserve
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Spec.Ed25519.CachedSign
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
@@ -84,9 +82,6 @@ theorem saveSecret_ok {t : State} (hc : Ctx L g mx m₀ t) {expanded : List Byte
     rw [Proof.Ed25519.bytesAt_encodeLE u.mem, hs]
   · rw [hp, hd]
 
-/-- The SHA-512 digest of the seed, `E` below: hashed (`hashSeed`) or cached. -/
-def expanded (L : Lay) (m : Mem) : List Byte :=
-  Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m L.seed 32)
 def scalar (E : List Byte) : List Byte := Spec.Ed25519.encodeLE 32 (Spec.Ed25519.prune E)
 def nonce (L : Lay) (E : List Byte) (m : Mem) : List Byte :=
   Spec.Ed25519.scalarReduce (Spec.Sha512.sha512
@@ -99,16 +94,6 @@ structure SecretReady (L : Lay) (E : List Byte) (t : State) : Prop where
 /-- The digest left at `stk 128` by the first step of signing. -/
 def DigestReady (L : Lay) (E : List Byte) (t : State) : Prop :=
   Spec.Sha512.bytesAt t.mem (L.B + BitVec.ofNat 64 144) 64 = E
-
-theorem seed_ok (v : Compress) (hL : L.Ok) (h32 : L.seedLen = 32) {t : State}
-    (hc : Ctx L g mx m₀ t) :
-    WP isa (hashSeed v.callee v.suffix) t fun t' => Ctx L g mx m₀ t' ∧ DigestReady L (expanded L m₀) t' := by
-  have he : Spec.Ed25519.bytesAt t.mem L.seed L.seedLen = Spec.Ed25519.bytesAt m₀ L.seed L.seedLen :=
-    hc.input_bytes hL (r := L.SEED) (by simp [Lay.inputs]) (by show L.seedLen ≤ 2 ^ 64; rw [h32]; decide)
-  rw [h32] at he
-  refine WP.mono (hashSeed_ok v hL hc) fun u ⟨hu, hd, _⟩ => ⟨hu, ?_⟩
-  rw [he] at hd
-  exact hd
 
 theorem secret_ok {t : State} (hc : Ctx L g mx m₀ t) {E : List Byte} (hd : DigestReady L E t) :
     WP isa (.block saveSecret) t fun t' => Ctx L g mx m₀ t' ∧ SecretReady L E t' :=
@@ -271,7 +256,7 @@ theorem finish_ok (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) {E : List Byt
 end VG.Proof.Ed25519.X86_64.SignCached
 end
 
-/-! Complete RFC 8032 signing, including all three SHA-512 computations. -/
+/-! Complete RFC 8032 signing after its first step, with the nonce's and challenge's hashes. -/
 namespace VG.Proof.Ed25519.X86_64.SignCached
 
 variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
@@ -295,19 +280,12 @@ theorem bodyFrom_ok (v : Compress) (hL : L.Ok) {secret : Prog isa} {t : State} {
   apply WP.assoc
   exact WP.seq (WP.mono (challenge_ok v hL hw hn hlen) fun z ⟨hz, hk⟩ => finish_ok hL hz hk hE hpk)
 
-theorem body_ok (v : Compress) (hL : L.Ok) (h32 : L.seedLen = 32) {t : State} (hc : Ctx L g mx m₀ t)
-    (hlen : 64 + L.len.toNat < 2 ^ 64)
-    (hpk : Spec.Ed25519.bytesAt m₀ L.pk 32 = Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ L.seed 32)) :
-    WP isa (body bs fs v.callee v.suffix) t fun t' => Ctx L g mx m₀ t' ∧ Spec.Ed25519.bytesAt t'.mem L.out 64 =
-      Spec.Ed25519.sign (Spec.Ed25519.bytesAt m₀ L.seed 32) (Spec.Ed25519.bytesAt m₀ L.msg L.len.toNat) :=
-  bodyFrom_ok v hL (seed_ok v hL h32 hc) hlen rfl hpk
-
 end VG.Proof.Ed25519.X86_64.SignCached
 end
 
 /-! Merged from `Proof.Ed25519.X86_64.SignCached.Entry`. -/
 section
-/-! Entry contract and stack frame of complete cached-key signing. -/
+/-! Entry contract and stack frame of complete signing. -/
 namespace VG.Proof.Ed25519.X86_64.SignCached
 open VG VG.X86_64
 
@@ -369,14 +347,6 @@ def signLocalWith (n : Nat) (key : State → Prop) (post : State → State → P
     s.gpr .rdx = t.gpr .rdx ∧ s.gpr .rcx = t.gpr .rcx ∧ s.gpr .r8 = t.gpr .r8 ∧ s.gpr .r9 = t.gpr .r9 ∧
     s.syms Impl.Ed25519.X86_64.combSym = t.syms Impl.Ed25519.X86_64.combSym
 
-/-- Signing with the seed at `rsi` and its cached public key at `rdx`. -/
-def signLocal : Contract isa := signLocalWith 32
-  (fun s => Spec.Ed25519.bytesAt s.mem (s.gpr .rdx) 32 =
-    Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (s.gpr .rsi) 32))
-  (fun s t => Spec.Ed25519.bytesAt t.mem (s.gpr .rdi) 64 = Spec.Ed25519.sign
-    (Spec.Ed25519.bytesAt s.mem (s.gpr .rsi) 32)
-    (Spec.Ed25519.bytesAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat))
-
 def lay (n : Nat) (s : State) : Lay :=
   ⟨s.gpr .rdi, s.gpr .rsi, s.gpr .rdx, s.gpr .rcx, s.gpr .r8, s.gpr .r9, s.gpr .rsp - BitVec.ofNat 64 264,
     s.syms Impl.Ed25519.X86_64.combSym, n⟩
@@ -425,12 +395,6 @@ theorem lay_ok {s : State} (h : (signLocalWith n key post).pre s) (hn : 32 ≤ n
     · exact rp
     · exact rm
     · exact tr.symm
-
-theorem cached_key {s : State} (h : signLocal.pre s) :
-    Spec.Ed25519.bytesAt s.mem (lay 32 s).pk 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (lay 32 s).seed 32) := by
-  rcases h with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hk, _⟩
-  exact hk
 
 def pushRs : List Reg := [.rdi, .rsi, .rdx, .rcx, .r8, .r9] ++ List.replicate 25 .rax
 
@@ -705,7 +669,7 @@ theorem finalize_ct (v : Compress) (prefixLen : Nat) (hp : prefixLen < 2 ^ 31) (
 end VG.Proof.Ed25519.X86_64.SignCached
 end
 
-/-! All three signing hashes leak only their pointers and lengths. -/
+/-! The signing hashes leak only their pointers and lengths. -/
 namespace VG.Proof.Ed25519.X86_64.SignCached
 open VG VG.X86_64
 open VG.Impl.Ed25519.X86_64.SignCached
@@ -736,13 +700,6 @@ theorem message_ct (v : Compress) (count : Nat) (hc : count < 2 ^ 32)
       fun _ ⟨h', _, ha⟩ => ⟨h', ha⟩
   exact b.seq (upd_ct v (fun _ => BitVec.ofNat 64 count) Lay.msg Lay.len
     (fun _ hL => (stable_input hL (by simp [Lay.inputs])).toInput))
-
-theorem hashSeed_ct (v : Compress) : RelCT isa (Two fun _ _ _ => True)
-    (hashSeed v.callee v.suffix) (Two fun _ _ _ => True) :=
-  init_ct.seq ((input_ct v fSeed 0 (by decide) (by decide) Lay.seed
-    (fun _ hL => (stable_seed hL).toInput)
-    (fun _ _ _ _ _ h => h.pSeed) (by taint_decide)).seq
-    (finalize_ct v 32 (by decide) false (by taint_decide)))
 
 theorem hashNonce_ct (v : Compress) : RelCT isa (Two fun _ _ _ => True)
     (hashNonce v.callee v.suffix) (Two fun _ _ _ => True) := by
@@ -829,46 +786,6 @@ theorem mul_ct : RelCT isa (Two fun _ _ _ => True)
 end VG.Proof.Ed25519.X86_64.SignCached
 end
 
-/-! Merged from `Proof.Ed25519.X86_64.SignCached.Correct`. -/
-section
-/-! Complete signing meets its functional contract and preserves the ABI. -/
-namespace VG.Proof.Ed25519.X86_64.SignCached
-
-variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
-open VG VG.X86_64
-open VG.Impl.Ed25519.X86_64.SignCached
-open VG.Proof.Sha512.X86_64 (Compress)
-open VG.Proof.Ed25519.X86_64.PublicKey (add_add ne_cs)
-
-theorem sign_ok (v : Compress) {s : State} (h : signLocal.pre s) :
-    WP isa (code bs fs v.callee v.suffix) s fun s' => abiPreserved s s' ∧ signLocal.post s s' := by
-  have hL := lay_ok h (le_refl _)
-  have hc := push_ctx h
-  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 31 ≤ _; have := h.1; omega)
-    (WP.mono (body_ok v hL rfl hc hL.message_bound (cached_key h))
-      fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
-  · have hrsp : (popped .rax pushRs.length u).gpr .rsp = s.gpr .rsp := by
-      rw [popped_rsp, hu.rsp, show pushRs.length = 31 from rfl, add_add, lay_ret]
-    refine ⟨fun r hr => ?_, ?_, by rw [popped_mxcsr, hu.mx]⟩
-    · by_cases hr' : r = .rsp
-      · subst hr'; exact hrsp
-      · rw [popped_gpr _ _ _ hr' (ne_cs hr (by decide)), hu.cs r hr hr']
-    · rw [popped_mem]
-      refine hu.frame.readW (r := (lay 32 s).RET) ?_ ?_ (by decide)
-      · rw [Lay.RET, lay_ret]; exact Region.contains_self _ _
-      · intro r hr
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl
-        · exact hL.ro
-        · exact hL.rc
-        · exact Offset.disjoint_base _ (by omega) (by omega)
-  · show Spec.Ed25519.bytesAt (popped .rax pushRs.length u).mem (lay 32 s).out 64 = _
-    rw [popped_mem, ho]
-    rfl
-
-end VG.Proof.Ed25519.X86_64.SignCached
-end
-
 /-! Complete signing is constant-time with respect to seed, key and message bytes. -/
 namespace VG.Proof.Ed25519.X86_64.SignCached
 
@@ -903,9 +820,6 @@ theorem bodyFrom_sign_ct (v : Compress) (hn : 32 ≤ n) {Φ : Lay → Mem → St
   exact ⟨⟨lay n s₁, s₁.gpr, s₂.gpr, s₁.mxcsr, s₂.mxcsr, s₁.mem, s₂.mem⟩, lay_ok h₁ hn,
     push_ctx h₁, e ▸ push_ctx h₂, hΦ _ h₁, e ▸ hΦ _ h₂⟩
 
-theorem sign_ct (v : Compress) : ConstantTime isa signLocal.pre signLocal.pub (code bs fs v.callee v.suffix) :=
-  bodyFrom_sign_ct v (le_refl _) (hashSeed_ct v) fun _ _ => trivial
-
 end VG.Proof.Ed25519.X86_64.SignCached
 end
 
@@ -922,162 +836,5 @@ theorem satKey_length : satKey.length = 32 := by
   simp only [satKey, Spec.Ed25519.publicKey, Spec.Ed25519.encodePoint, Spec.Ed25519.encodeLE,
     List.length_map, List.length_range]
 
-def satMem (a : Addr) : Byte :=
-  if a.toNat < 0x3000 then 0 else satKey[a.toNat - 0x3000]?.getD 0
-
-theorem sat_seed : Spec.Ed25519.bytesAt satMem 0x2000 32 = satSeed := by
-  unfold satSeed Spec.Ed25519.bytesAt
-  apply List.map_congr_left
-  intro i hi
-  have hi' := List.mem_range.mp hi
-  have ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
-    change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
-    omega
-  unfold satMem
-  rw [ha]
-  simp only [show 0x2000 + i < 0x3000 from by omega, ite_true]
-
-theorem sat_key : Spec.Ed25519.bytesAt satMem 0x3000 32 = satKey := by
-  apply List.ext_getElem
-  · simp only [Spec.Ed25519.bytesAt, List.length_map, List.length_range, satKey_length]
-  · intro i hi hj
-    have hi' : i < 32 := by simpa only [Spec.Ed25519.bytesAt, List.length_map, List.length_range] using hi
-    have ha : ((0x3000 : Addr) + BitVec.ofNat 64 i).toNat = 0x3000 + i := by
-      change (0x3000 + i % 2 ^ 64) % 2 ^ 64 = 0x3000 + i
-      omega
-    simp only [Spec.Ed25519.bytesAt, List.getElem_map, List.getElem_range, satMem, ha,
-      show ¬ 0x3000 + i < 0x3000 from by omega, ite_false, Nat.add_sub_cancel_left,
-      List.getElem?_eq_getElem hj, Option.getD_some]
-
 end VG.Proof.Ed25519.X86_64.SignCached
 end
-
-/-! Complete signing satisfies the reviewed cached-key signing contract. -/
-namespace VG.Proof.Ed25519.X86_64.SignCached
-
-variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
-open VG VG.X86_64
-open VG.Impl.Ed25519.X86_64 (scalarReduce scalarMulAdd callWith)
-open VG.Impl.Ed25519.X86_64.SignCached
-open VG.Proof.Sha512.X86_64 (Compress)
-
-/-- The memory of the contract's witness: `satMem`, and the comb's tables at `0x100000`. -/
-@[irreducible] def satMemT : Mem := fun a =>
-  if 0x100000 ≤ a.toNat then constMem 0x100000 Impl.Ed25519.X86_64.combWords a else satMem a
-
-theorem satMemT_low {a : Addr} (h : a.toNat < 0x100000) : satMemT a = satMem a := by
-  unfold satMemT; simp only [show ¬ 0x100000 ≤ a.toNat by omega, ite_false]
-
-theorem satMemT_bytes {p : Addr} (hp : p.toNat + 32 ≤ 0x100000) :
-    Spec.Ed25519.bytesAt satMemT p 32 = Spec.Ed25519.bytesAt satMem p 32 := by
-  unfold Spec.Ed25519.bytesAt
-  refine List.map_congr_left fun i hi => satMemT_low ?_
-  have hi' := List.mem_range.mp hi
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega)]
-  omega
-
-theorem satMemT_held : ∀ i < Impl.Ed25519.X86_64.combWordCount,
-    satMemT.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = Impl.Ed25519.X86_64.combWords.getD i 0 := by
-  intro i hi
-  rw [← constMem_held (0x100000 : Addr) Impl.Ed25519.X86_64.combWords
-    (by rw [Proof.Ed25519.X86_64.combWords_length]; simp only [Impl.Ed25519.X86_64.combWordCount]; omega) i
-    (by rw [Proof.Ed25519.X86_64.combWords_length]; exact hi)]
-  refine Mem.readW_congr fun b hb => ?_
-  unfold satMemT
-  rw [ite_eq_left_of_eq_true _ _ (eq_true ?_)]
-  rw [show (0x100000 : Addr) = BitVec.ofNat 64 0x100000 from rfl, Offset.add_add, ← BitVec.ofNat_add,
-    BitVec.toNat_ofNat]
-  simp only [Impl.Ed25519.X86_64.combWordCount] at hi
-  omega
-
-/-- A state satisfying the precondition. -/
-def satStateT : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 0x4000
-    | .r8 => 0 | .r9 => 0x5000 | .rsp => 0x9000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem := satMemT
-  rd := [⟨0x2000, 32⟩, ⟨0x3000, 32⟩, ⟨0x4000, 0⟩, ⟨0x100000, 40448⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x5000, 8192⟩]
-  syms _ := 0x100000
-
-theorem sat_local : signLocal.pre satStateT := by
-  refine ⟨by decide, rfl, rfl, Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), by decide,
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), by decide, by decide, by decide,
-    by decide, ?_, satMemT_held, by decide, ?_⟩
-  · show Spec.Ed25519.bytesAt satMemT 0x3000 32 = Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt satMemT 0x2000 32)
-    rw [satMemT_bytes (by decide), satMemT_bytes (by decide), sat_seed, sat_key]
-    rfl
-  · simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
-
-/-- The shared contract's precondition, from `signLocal`'s. -/
-theorem sign_spec_pre {s : State} (h : signLocal.pre s) (hal : (s.syms Impl.Ed25519.X86_64.combSym).toNat % 64 = 0) :
-    (Spec.Ed25519.signCachedContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 264).pre s := by
-  obtain ⟨h264, hrd, hw, o1, o2, o3, o4, k1, r1, n1, c1, c2, c3, k2, k3, k4, r2, r3, r4, k5, r5, n3, n4,
-    n2, n5, pk, held, fit, hdw⟩ := h
-  sig_pre [Spec.Ed25519.signCachedContract, Spec.Ed25519.signCachedSig,
-    Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq,
-    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, Proof.Ed25519.X86_64.combWords_length]
-  exact ⟨h264, by rw [hrd]; rfl, held, fit, by rw [hw]; exact fun r hr => hdw r (by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]),
-    hdw _ (by simp), hdw _ (by simp), hal, by rw [hrd]; rfl, hw, o1, o2, o3, o4, c1, c2, c3, r1, r2, r3, r4, r5,
-    k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, pk⟩
-
-theorem implies :
-    signLocal.Implies (Spec.Ed25519.signCachedContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 264) where
-  pre s h := by
-    sig_pre [Spec.Ed25519.signCachedContract, Spec.Ed25519.signCachedSig,
-      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq,
-      Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, Proof.Ed25519.X86_64.combWords_length] at h
-    obtain ⟨h264, hd, held, fit, hdw, hdr, hdk, -, ht, hw, o1, o2, o3, o4, c1, c2, c3, r1, r2, r3, r4, r5,
-      k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, pk⟩ := h
-    refine ⟨h264, ?_, hw, o1, o2, o3, o4, k1, r1, n1, c1, c2, c3, k2, k3, k4, r2, r3, r4, k5, r5, n3, n4,
-      n2, n5, pk, held, fit, fun r hr => ?_⟩
-    · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact hdw _ (by rw [hw]; simp)
-      · exact hdw _ (by rw [hw]; simp)
-      · exact hdr
-      · exact hdk
-  post := by
-    intro s s' _ h
-    sig_post [Spec.Ed25519.signCachedContract, Spec.Ed25519.signCachedSig,
-      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq,
-      Abi.withConsts, signLocal, signLocalWith]
-    exact h
-  pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Ed25519.signCachedContract, Spec.Ed25519.signCachedSig,
-      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq,
-      Abi.withConsts] at h
-    obtain ⟨h0, hs, h1, h2, h3, h4, h5, h6⟩ := h
-    exact ⟨h0, h1, h2, h3, h4, h5, h6, hs⟩
-  sat := ⟨satStateT, sign_spec_pre sat_local (by decide)⟩
-
-theorem verified (v : Compress) : Verified X86_64.target (code bs fs v.callee v.suffix)
-    (Spec.Ed25519.signCachedContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 264) :=
-  Verified.of_correct (fun _ h => sign_ok v h) (sign_ct v) implies
-
-theorem spSafe (v : Compress) : (code bs fs v.callee v.suffix).all (fun i => !isa.writesSp i) = true := by
-  have hu := Proof.Sha512.X86_64.Shared.update_spSafe v.spSafe
-  have hf := Proof.Sha512.X86_64.Shared.finalize_spSafe v.spSafe
-  have hr : scalarReduce.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs (by lit_decide)
-  have hb : bs.all (fun i => !isa.writesSp i) = true :=
-    PublicKey.base_spSafe
-  have hm : scalarMulAdd.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs (by lit_decide)
-  have hi : (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512).all (fun i => !isa.writesSp i) = true := by
-    decide +kernel
-  simp only [code, body, bodyFrom, hashSeed, hashNonce, hashChallenge, init, update, finalize, reduce, callWith,
-    Code.all, hu, hf, hr, hb, hm, hi, Bool.and_true]
-  decide
-
-end VG.Proof.Ed25519.X86_64.SignCached

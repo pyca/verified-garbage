@@ -16,10 +16,6 @@ namespace VG.Proof.Rsa.Arm.Keys
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 open VG.Proof.X25519.Arm
 
-/-- A sum below `2 m` modulo `m`. -/
-theorem mod_of_lt_two {x M : Nat} (h : x < 2 * M) : x % M = if x < M then x else x - M :=
-  VG.Proof.Rsa.mod_of_lt_two h
-
 /-- The arithmetic of `addMod`: the negation of `b`, the sum, and the difference with `m`. -/
 theorem addMod_impl {P A Bv M N1 β1 T β2 U β3 : Nat} (hA : A < M) (hB : Bv < M) (hM : 2 * M ≤ P)
     (h1 : N1 + Bv = 0 + P * β1) (_hN1 : N1 < P) (hβ1 : β1 ≤ 1)

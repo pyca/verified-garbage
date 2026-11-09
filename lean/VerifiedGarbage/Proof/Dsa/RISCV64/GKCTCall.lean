@@ -7,8 +7,8 @@ meta import VerifiedGarbage.Proof.Dsa.RISCV64.GKFn
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.GKCTSample
 import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsCT
 import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsFn
-import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveCTB
-import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFn
+import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveCheckedCT
+import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveChecked
 import VerifiedGarbage.Proof.Dsa.RISCV64.Sizes
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Dsa.RandomSignTrace
@@ -17,8 +17,8 @@ import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsCT
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsFn
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveCTB
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFn
+meta import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveCheckedCT
+meta import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveChecked
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.Sizes
 meta import VerifiedGarbage.Proof.Dsa.PackedBytes
 meta import VerifiedGarbage.Proof.Dsa.RandomSignTrace
@@ -32,8 +32,8 @@ meta import VerifiedGarbage.Proof.Bignum.Octets
 As on PPC64LE (`Proof/Dsa/PPC64LE/Generate/CT.lean`). `pub_facts`: the
 contract's public data fix the call's data, the domain and the result's
 status and trace. The calls of `vg_dsa_check_parameters` and
-`vg_dsa_derive_key` leak the same trace in two runs (`check_st`,
-`dcall_st`) by the callees' constant time (`CT.check_ct`, `CT.derive_ct`)
+`vg_dsa_derive_key_checked` leak the same trace in two runs (`check_st`,
+`dcall_st`) by the callees' constant time (`CT.check_ct`, `CT.deriveChecked_ct`)
 through `RelCT.callEx`: their public data at the call, which correctness
 fixes, agree.
 -/
@@ -204,7 +204,7 @@ theorem check_st {s₁ s₂ w₁ w₂ : State} (h₁ : gkContract.pre s₁) (h�
     rw [g₁ .a0 (by decide), g₂ .a0 (by decide), g₁ .a1 (by decide), g₂ .a1 (by decide), A₁.a0, A₂.a0, A₁.a1,
       A₂.a1, b₁, b₂, ep]
 
-/-- The state `vg_dsa_derive_key` is entered in, after `deriveArgs`. -/
+/-- The state `vg_dsa_derive_key_checked` is entered in, after `deriveArgs`. -/
 theorem dnarrow {s₀ w : State} (A : DArgs (glOf s₀) s₀ w) (rd wr : List Region) :
     (w.callEntry.withRegions rd wr).sp = (glOf s₀).F ∧
       (w.callEntry.withRegions rd wr).gpr .a0 = (glOf s₀).out ∧
@@ -226,14 +226,15 @@ theorem dnarrow {s₀ w : State} (A : DArgs (glOf s₀) s₀ w) (rd wr : List Re
 
 theorem dcall_st {s₁ s₂ w₁ w₂ : State} (h₁ : gkContract.pre s₁) (h₂ : gkContract.pre s₂) (eL : glOf s₁ = glOf s₂)
     (ep : parOf s₁ = parOf s₂) (A₁ : DArgs (glOf s₁) s₁ w₁) (A₂ : DArgs (glOf s₂) s₂ w₂)
-    (hs : Spec.Dsa.signStatus (dresOf (glOf s₁) w₁.mem) = Spec.Dsa.signStatus (dresOf (glOf s₂) w₂.mem)) :
-    SameTrace isa (.call "vg_dsa_derive_key" Impl.Dsa.RISCV64.Derive.derive) w₁ w₂ := by
-  refine SameTrace.of_relCT (RelCT.callEx (k := dContract) deriveKey_correct CT.derive_ct
+    (hs : Spec.Dsa.signStatus (dresOf (glOf s₁) w₁.mem) = Spec.Dsa.signStatus (dresOf (glOf s₂) w₂.mem))
+    (c₁ : chkOf s₁ = true) (c₂ : chkOf s₂ = true) :
+    SameTrace isa (.call "vg_dsa_derive_key_checked" deriveChecked) w₁ w₂ := by
+  refine SameTrace.of_relCT (RelCT.callEx (k := dcContract) deriveChecked_correct CT.deriveChecked_ct
     (P := fun a b => a = w₁ ∧ b = w₂) fun _ _ ⟨e₁, e₂⟩ => ?_) ⟨rfl, rfl⟩
   rw [e₁, e₂]
-  obtain ⟨c₁, cw₁⟩ := derive_cov h₁ A₁.ctx
-  obtain ⟨c₂, cw₂⟩ := derive_cov h₂ A₂.ctx
-  refine ⟨_, _, _, _, derive_pre h₁ A₁, derive_pre h₂ A₂, ?_, c₁, cw₁, c₂, cw₂⟩
+  obtain ⟨cv₁, cw₁⟩ := derive_cov h₁ A₁.ctx
+  obtain ⟨cv₂, cw₂⟩ := derive_cov h₂ A₂.ctx
+  refine ⟨_, _, _, _, derivec_pre h₁ A₁ c₁, derivec_pre h₂ A₂ c₂, ?_, cv₁, cw₁, cv₂, cw₂⟩
   have hL₁ := glOf_ok h₁
   have hL₂ := glOf_ok h₂
   have q₁ := hL₁.ql

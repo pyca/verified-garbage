@@ -403,7 +403,6 @@ theorem toZ_sub (a b : Fe) : toZ (a - b) = toZ a - toZ b := rfl
 theorem toZ_mul (a b : Fe) : toZ (a * b) = toZ a * toZ b := rfl
 theorem toZ_zero : toZ 0 = 0 := rfl
 theorem toZ_one : toZ 1 = 1 := rfl
-theorem toZ_two : toZ 2 = 2 := rfl
 theorem toZ_inj {a b : Fe} : toZ a = toZ b ↔ a = b := Iff.rfl
 
 theorem toZ_pow (a : Fe) (e : Nat) : toZ (Spec.X25519.pow a e) = toZ a ^ e := by
@@ -603,28 +602,6 @@ theorem pointEqual_rep {p q : Point} {a b : EPoint dZ} (hp : Rep p a) (hq : Rep 
     · rw [toZ_mul, toZ_mul, hp.x, hq.x]; ring
     · rw [toZ_mul, toZ_mul, hp.y, hq.y]; ring
 
-/-- The first of the projective comparisons: the `x` coordinates agree. -/
-theorem rep_cross_x {p q : Point} {a b : EPoint dZ} (hp : Rep p a) (hq : Rep q b) :
-    p.X * q.Z = q.X * p.Z ↔ a.x = b.x := by
-  constructor
-  · intro h
-    have e : toZ (p.X * q.Z) = toZ (q.X * p.Z) := congrArg toZ h
-    rw [toZ_mul, toZ_mul, hp.x, hq.x] at e
-    exact mul_right_cancel₀ (mul_ne_zero hp.z hq.z) (by linear_combination e)
-  · intro h
-    exact toZ_inj.mp (by rw [toZ_mul, toZ_mul, hp.x, hq.x, h]; ring)
-
-/-- The second: the `y` coordinates agree. -/
-theorem rep_cross_y {p q : Point} {a b : EPoint dZ} (hp : Rep p a) (hq : Rep q b) :
-    p.Y * q.Z = q.Y * p.Z ↔ a.y = b.y := by
-  constructor
-  · intro h
-    have e : toZ (p.Y * q.Z) = toZ (q.Y * p.Z) := congrArg toZ h
-    rw [toZ_mul, toZ_mul, hp.y, hq.y] at e
-    exact mul_right_cancel₀ (mul_ne_zero hp.z hq.z) (by linear_combination e)
-  · intro h
-    exact toZ_inj.mp (by rw [toZ_mul, toZ_mul, hp.y, hq.y, h]; ring)
-
 theorem base_on : OnCurve dZ (toZ Spec.Ed25519.basePoint.X) (toZ Spec.Ed25519.basePoint.Y) := by
   unfold OnCurve dZ
   decide +kernel
@@ -654,10 +631,6 @@ theorem Rep.neg {p : Point} {a : EPoint dZ} (h : Rep p a) : Rep (negPoint p) (-a
     rw [toZ_sub, toZ_zero, h.x]; ring
   · show toZ (0 - p.T) = -a.x * a.y * toZ p.Z
     rw [toZ_sub, toZ_zero, h.t]; ring
-
-theorem Rep.double {p : Point} {a : EPoint dZ} (h : Rep p a) :
-    Rep (Spec.Ed25519.pointAdd p p) ((2 : Nat) • a) := by
-  rw [two_nsmul]; exact pointAdd_rep h h
 
 /-- An affine point with `Z = 1`. -/
 theorem rep_affine (x y : Fe) (h : OnCurve dZ (toZ x) (toZ y)) :

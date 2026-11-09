@@ -87,7 +87,7 @@ theorem sinv_regs {p : Params} {STK : Nat} {s₁ s₂ a b : State} (h : ∀ r �
   (ha.regs r hr).trans ((signV_eq h r hr).trans (hb.regs r hr).symm)
 
 /-- The hash of `μ` may run. -/
-theorem ms1_hashOk {p : Params} {STK : Nat} {s t : State} (hF : MFacts p) (hp : MSPre p STK s) (h48 : 48 ≤ STK)
+theorem ms1_hashOk {p : Params} {pr : Bool} {STK : Nat} {s t : State} (hF : MFacts p) (hp : MSPre p pr STK s) (h48 : 48 ≤ STK)
     (h : MS1 p STK s t) :
     HashOk 840 64 .r30 .r30 oMU ((⟨.r22, 64, .imm 64⟩ : Piece) :: fmtPieces) t := by
   have hi := h.inv
@@ -97,19 +97,19 @@ theorem ms1_hashOk {p : Params} {STK : Nat} {s t : State} (hF : MFacts p) (hp : 
     by rw [g30]; exact e_cov hp hi.wr (by decide), by rw [g30]; exact (e_e0 (by decide) (by decide)).symm,
     by rw [g30, hi.sp]; exact (hp.bx.sub_left (below48 hp h48)).sub_right (e_sub (by decide))⟩
 
-theorem signMessage_ct {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 48 ≤ STK) {f : Prog isa}
-    (hf : Callee f (fun stk => signContract p PPC64LE.abi stk) S) (hS : S ≤ STK) {n : String} :
-    ConstantTime isa (MSPre p STK) (MSPub p) (signMessage n f p) := by
+theorem signMessage_ct {p : Params} {pr : Bool} {STK S : Nat} (hF : MFacts p) (h48 : 48 ≤ STK) {f : Prog isa}
+    (hf : Callee f (fun stk => signK p pr PPC64LE.abi stk) S) (hS : S ≤ STK) {n : String} :
+    ConstantTime isa (MSPre p pr STK) (MSPub p) (signMessage n f p) := by
   obtain ⟨stk, hstk, hver⟩ := hf.verified
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
-  refine RelCT.mono (P := fun a b => ∃ x : State × State, a = x.1 ∧ b = x.2 ∧ MSPre p STK x.1 ∧ MSPre p STK x.2 ∧
+  refine RelCT.mono (P := fun a b => ∃ x : State × State, a = x.1 ∧ b = x.2 ∧ MSPre p pr STK x.1 ∧ MSPre p pr STK x.2 ∧
     MSPub p x.1 x.2) (RelCT.exists_ fun ⟨s₁, s₂⟩ => ?_) (fun a b h => ⟨(a, b), rfl, rfl, h⟩) (fun _ _ h => h)
-  by_cases hH : MSPre p STK s₁ ∧ MSPre p STK s₂ ∧ MSPub p s₁ s₂
+  by_cases hH : MSPre p pr STK s₁ ∧ MSPre p pr STK s₂ ∧ MSPub p s₁ s₂
   swap
   · exact RelCT.of_false fun a b h => hH h.2.2
-  obtain ⟨hp₁, hp₂, psp, pl, pr⟩ := hH
+  obtain ⟨hp₁, hp₂, psp, pl, preg⟩ := hH
   refine RelCT.mono (P := fun a b => a = s₁ ∧ b = s₂) ?_ (fun a b h => ⟨h.1, h.2.1⟩) (fun _ _ h => h)
-  have p7 : s₁.gpr .r7 = s₂.gpr .r7 := pr _ (by decide)
+  have p7 : s₁.gpr .r7 = s₂.gpr .r7 := preg _ (by decide)
   unfold signMessage top
   -- The length check.
   refine RelCT.seq (R := fun a b => a = s₁.write .r11 (s₁.gpr .r7 >>> 8) ∧ b = s₂.write .r11 (s₂.gpr .r7 >>> 8))
@@ -133,14 +133,14 @@ theorem signMessage_ct {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 48 ≤ 
       (RelCT.mono (relct_wp (ct_prog mArgs (fun a b hab => by
           rw [hab.1.1, hab.1.2, hu₁.sp, hu₂.sp, psp]) (fun a b hab r hr => by
           rw [hab.1.1, hab.1.2, hu₁.other _ (by revert r; decide), hu₂.other _ (by revert r; decide)]
-          exact pr r hr) (enter_taint p)) fun a b hab => by
+          exact preg r hr) (enter_taint p)) fun a b hab => by
           rw [hab.1.1, hab.1.2]
           exact ⟨signSetup_ok hF hp₁ hu₁.other hu₁.rd hu₁.wr hu₁.sp rfl hu₁.mem,
             signSetup_ok hF hp₂ hu₂.other hu₂.rd hu₂.wr hu₂.sp rfl hu₂.mem⟩) (fun _ _ h => h) fun _ _ h => h) ?_
     -- `μ`.
     refine RelCT.seq (R := fun a b => MS2 p STK s₁ a ∧ MS2 p STK s₂ b)
       (relct_wp (hash_ct (by taint_decide) fun a b h => ⟨ms1_hashOk hF hp₁ h48 h.1, ms1_hashOk hF hp₂ h48 h.2,
-          h.1.inv.sp.trans (psp.trans h.2.inv.sp.symm), fun r hr => sinv_regs pr h.1.inv h.2.inv r
+          h.1.inv.sp.trans (psp.trans h.2.inv.sp.symm), fun r hr => sinv_regs preg h.1.inv h.2.inv r
             (by revert r hr; decide)⟩)
         fun a b hab => ⟨signHash_ok hF hp₁ h48 hab.1, signHash_ok hF hp₂ h48 hab.2⟩) ?_
     -- The call.
@@ -148,35 +148,37 @@ theorem signMessage_ct {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 48 ≤ 
       (relct_wp ?_ fun a b hab => ⟨WP.mono (signCall_ok hF hp₁ hf hS hab.1) fun _ h => h.1,
         WP.mono (signCall_ok hF hp₂ hf hS hab.2) fun _ h => h.1⟩)
       (ct_prog [.r30] (fun a b hab => hab.1.sp.trans (psp.trans hab.2.sp.symm))
-        (fun a b hab r hr => by rw [List.mem_singleton.mp hr]; exact sinv_regs pr hab.1 hab.2 _ (by decide))
+        (fun a b hab r hr => by rw [List.mem_singleton.mp hr]; exact sinv_regs preg hab.1 hab.2 _ (by decide))
         (by taint_decide))
     refine RelCT.seq (R := fun a b => SA p STK s₁ a ∧ SA p STK s₂ b)
       (relct_wp (ct_prog [.r22, .r27, .r28, .r29, .r30] (fun a b hab => hab.1.inv.sp.trans (psp.trans hab.2.inv.sp.symm))
-        (fun a b hab r hr => sinv_regs pr hab.1.inv hab.2.inv r (by revert r hr; decide)) (by taint_decide))
+        (fun a b hab r hr => sinv_regs preg hab.1.inv hab.2.inv r (by revert r hr; decide)) (by taint_decide))
         fun a b hab => ⟨signArgs_ok hab.1, signArgs_ok hab.2⟩) ?_
-    refine RelCT.call hver.1 hver.2.1 (sRd p s₁) (sWr p s₁) fun a b hab => ?_
+    refine RelCT.call hver.1 hver.2.1 (sRd p pr s₁) (sWr p s₁) fun a b hab => ?_
     have hpre₁ := signCall_pre hF hp₁ (Nat.le_trans hstk hS) hab.1
     have hpre₂ := signCall_pre hF hp₂ (Nat.le_trans hstk hS) hab.2
-    have eRd : sRd p s₂ = sRd p s₁ := by simp only [sRd, skR, rndR, pr _ (by decide : Reg.r3 ∈ mArgs),
-      pr _ (by decide : Reg.r8 ∈ mArgs), pr _ (by decide : Reg.r10 ∈ mArgs)]
-    have eWr : sWr p s₂ = sWr p s₁ := by simp only [sWr, sigR, pr _ (by decide : Reg.r9 ∈ mArgs),
-      pr _ (by decide : Reg.r10 ∈ mArgs)]
+    have eRd : sRd p pr s₂ = sRd p pr s₁ := by simp only [sRd, skR, rndR, preg _ (by decide : Reg.r3 ∈ mArgs),
+      preg _ (by decide : Reg.r8 ∈ mArgs), preg _ (by decide : Reg.r10 ∈ mArgs)]
+    have eWr : sWr p s₂ = sWr p s₁ := by simp only [sWr, sigR, preg _ (by decide : Reg.r9 ∈ mArgs),
+      preg _ (by decide : Reg.r10 ∈ mArgs)]
     rw [eRd, eWr] at hpre₂
     refine ⟨hpre₁.1, hpre₂.1, ?_, hpre₁.2.1, hpre₁.2.2, hpre₂.2.1, hpre₂.2.2⟩
     have k₁ := hab.1.ms.inv
     have k₂ := hab.2.ms.inv
     refine sign_pub (by simp only [State.withRegions_sp, State.callEntry_sp, k₁.sp, k₂.sp, psp]) ?_ ?_ ?_ ?_ ?_ ?_
-    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.r3, hab.2.r3, pr _ (by decide)]
-    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.r4, hab.2.r4, pr _ (by decide)]
-    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.r5, hab.2.r5, pr _ (by decide)]
-    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.r6, hab.2.r6, pr _ (by decide)]
-    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.r7, hab.2.r7, pr _ (by decide)]
+    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.r3, hab.2.r3, preg _ (by decide)]
+    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.r4, hab.2.r4, preg _ (by decide)]
+    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.r5, hab.2.r5, preg _ (by decide)]
+    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.r6, hab.2.r6, preg _ (by decide)]
+    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.r7, hab.2.r7, preg _ (by decide)]
     · simp only [State.withRegions_mem, State.callEntry_mem, ce_gpr _ _ _ (show Reg.r3 ∉ linkRegs by decide),
         ce_gpr _ _ _ (show Reg.r4 ∉ linkRegs by decide), ce_gpr _ _ _ (show Reg.r5 ∉ linkRegs by decide),
         hab.1.r3, hab.1.r4, hab.1.r5, hab.2.r3, hab.2.r4, hab.2.r5]
-      rw [s_keep k₁ (R := skR p s₁) (by have := hF.skl; show p.skLen < 2 ^ 64; omega) hp₁.kg hp₁.kc hp₁.bk,
+      rw [s_keep k₁ (R := ⟨s₁.gpr .r3, p.skLen⟩) (by have := hF.skl; show p.skLen < 2 ^ 64; omega)
+          (hp₁.kg.sub_left hp₁.subK) (hp₁.kc.sub_left hp₁.subK) (hp₁.bk.sub_right hp₁.subK),
         hab.1.ms.mu, s_keep k₁ (R := rndR s₁) (show (32 : Nat) < 2 ^ 64 by decide) hp₁.rg hp₁.rc hp₁.br,
-        s_keep k₂ (R := skR p s₂) (by have := hF.skl; show p.skLen < 2 ^ 64; omega) hp₂.kg hp₂.kc hp₂.bk,
+        s_keep k₂ (R := ⟨s₂.gpr .r3, p.skLen⟩) (by have := hF.skl; show p.skLen < 2 ^ 64; omega)
+          (hp₂.kg.sub_left hp₂.subK) (hp₂.kc.sub_left hp₂.subK) (hp₂.bk.sub_right hp₂.subK),
         hab.2.ms.mu, s_keep k₂ (R := rndR s₂) (show (32 : Nat) < 2 ^ 64 by decide) hp₂.rg hp₂.rc hp₂.br]
       simp only [signMessageLeak] at pl
       rw [Proof.MlDsa.Message.formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact hcl),

@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Bignum.Layout
 # RSAES-OAEP on x86-64: addresses, the frame and the working space
 
 The memory operands (`ea_sp`, `ea_ix`, `ea_at`), bytes at offsets of a
-buffer and the effect of a store on them (`wb_off`, `ww_off`), the frame and
+buffer and the effect of a store on them (`ww_off`), the frame and
 the working space every piece of the code works in (`Lay`), the counter of
 the byte loops (`stepR_ok`, `stepI_ok`), and the masks of equality the code
 computes without branches (`eqMask_val`).
@@ -50,21 +50,11 @@ theorem ea_at (t : State) (b : Reg) (d : Nat) : t.ea (at_ b d) = off (t.gpr b) d
 theorem ea_at0 (t : State) (b : Reg) : t.ea (at_ b) = t.gpr b := by
   simp only [State.ea, at_, Int.cast_ofNat_Int, BitVec.ofInt_ofNat, BitVec.add_zero]
 
-theorem ea_arg (t : State) (j : Nat) : t.ea (arg j) = off (t.gpr .rsp) (frameBytes + 8 + 8 * j) := ea_sp t _
-
 /-- `p + i + d = p + (i + d)` for an index `i`. -/
 theorem off_ix (p : Addr) (i d : Nat) : p + BitVec.ofNat 64 i + BitVec.ofNat 64 d = off p (i + d) := by
   simp only [off, BitVec.add_assoc, BitVec.ofNat_add]
 
 /-! ## Bytes at offsets of a buffer -/
-
-/-- A byte store to `p + a`, read at `p + b`. -/
-theorem wb_off (m : Mem) (p : Addr) {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) (v : Byte) :
-    (m.writeW (off p a) v) (off p b) = if b = a then v else m (off p b) := by
-  rw [VG.WriteBytes.writeW8_apply]
-  by_cases h : b = a
-  · subst h; simp
-  · simp only [h, ite_false, ifn (Offset.add_ofNat_ne p hb ha h)]
 
 /-- A store of `w / 8` bytes to `p + a`, read at `p + b`. -/
 theorem ww_off (m : Mem) (p : Addr) {a b w : Nat} (ha : a + w / 8 ≤ 2 ^ 64) (hb : b < 2 ^ 64) (v : BitVec w) :
@@ -76,11 +66,6 @@ theorem ww_off (m : Mem) (p : Addr) {a b w : Nat} (ha : a + w / 8 ≤ 2 ^ 64) (h
   by_cases h : a ≤ b ∧ b < a + w / 8
   · rw [ifp (e.mpr h), ifp h, Offset.sub_toNat p h.1 hb]
   · rw [ifn (fun h' => h (e.mp h')), ifn h]
-
-/-- The bytes at `p + o`, from the bytes at offsets of `p`. -/
-theorem bytesAt_off (m : Mem) (p : Addr) (o n : Nat) :
-    Spec.Rsa.bytesAt m (off p o) n = (List.range n).map fun i => m (off p (o + i)) := by
-  simp only [Spec.Rsa.bytesAt, off_off]
 
 /-! ## The frame and the working space
 
@@ -129,21 +114,10 @@ theorem Lay.sld8 {t : State} {F S : Addr} (L : Lay t F S) {d : Nat} (hd : d + 1 
 theorem Lay.sst8 {t : State} {F S : Addr} (L : Lay t F S) {d : Nat} (hd : d + 1 ≤ oRsa) :
     InRegions t.wr (off S d) 1 := L.sc.st8 hd
 
-theorem Lay.sld {t : State} {F S : Addr} (L : Lay t F S) {d : Nat} (hd : d + 8 ≤ oRsa) :
-    InRegions (t.rd ++ t.wr) (off S d) 8 := L.sc.ld hd
-
 theorem Lay.sst {t : State} {F S : Addr} (L : Lay t F S) {d : Nat} (hd : d + 8 ≤ oRsa) :
     InRegions t.wr (off S d) 8 := L.sc.st hd
 
-theorem Lay.sst4 {t : State} {F S : Addr} (L : Lay t F S) {d : Nat} (hd : d + 4 ≤ oRsa) :
-    InRegions t.wr (off S d) 4 :=
-  let ⟨_, hm, hc⟩ := L.sc.region hd (by decide)
-  ⟨_, hm, hc⟩
-
 /-! ## Masks -/
-
-/-- `cmp d, 1; sbb d, d` with `d = a ⊕ b`: all ones iff `a = b`. -/
-def eqM (a b : BitVec 64) : BitVec 64 := if a = b then BitVec.allOnes 64 else 0
 
 theorem cmp_sbb (x : BitVec 64) :
     x - x - BitVec.setWidth 64 (BitVec.ofBool (decide (x.toNat < (1 : BitVec 64).toNat))) =
@@ -160,12 +134,6 @@ theorem cmp_sbb (x : BitVec 64) :
       show x.toNat = 0; omega
     simp only [this, decide_false, h, ite_false]
     decide
-
-theorem eqM_of (a b : BitVec 64) : (if a ^^^ b = 0 then BitVec.allOnes 64 else 0) = eqM a b := by
-  unfold eqM
-  by_cases h : a = b
-  · rw [ifp ((xor_eq_zero a b).mpr h), ifp h]
-  · rw [ifn (fun h' => h ((xor_eq_zero a b).mp h')), ifn h]
 
 /-! ## The working space and the frame, as functions
 
@@ -302,82 +270,10 @@ theorem ofNat_add_lit (a c : Nat) :
     BitVec.ofNat 64 a + (no_index (OfNat.ofNat c) : BitVec 64) = BitVec.ofNat 64 (a + c) := by
   rw [BitVec.ofNat_add]; rfl
 
-theorem sx_lit (c : Nat) (h : c < 2 ^ 31) :
-    BitVec.signExtend 64 (no_index (OfNat.ofNat c) : BitVec 32) = BitVec.ofNat 64 c :=
-  VG.Proof.MlKem.X86_64.sx_ofNat h
-
-/-- Bytes written to the working space at `o`. -/
-theorem Rep.wbs {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64} (G : Geo F S)
-    (R : Rep m F S V W) {o : Nat} {xs : List Byte} (ho : o + xs.length ≤ oRsa) :
-    Rep (VG.WriteBytes.writeBytes m (off S o) xs) F S
-      (fun x => if o ≤ x ∧ x < o + xs.length then xs.getD (x - o) 0 else V x) W where
-  scr x hx := by
-    simp only [VG.WriteBytes.writeBytes]
-    have e := Offset.lt_iff (off S x) S (d := o) (n := xs.length) (by have := G.Sw; unfold oRsa at *; omega)
-    rw [off, Mem.sub_ofNat_toNat S (by unfold oRsa at *; omega)] at e
-    by_cases h : o ≤ x ∧ x < o + xs.length
-    · rw [ifp (e.mpr h), ifp h, Offset.sub_toNat S h.1 (by unfold oRsa at *; omega)]
-    · rw [ifn (fun h' => h (e.mp h')), ifn h]; exact R.scr x hx
-  fr k hk := by
-    rw [Bignum.word]
-    refine Eq.trans (Mem.readW_congr fun i hi => ?_) (R.fr k hk)
-    simp only [VG.WriteBytes.writeBytes]
-    rw [ifn]
-    intro h
-    exact G.dFS _ ((cF F hk).byte (by rw [Mem.sub_ofNat_toNat _ (by omega)]; omega))
-      ((cS S (o := o) (n := xs.length) ho).byte h)
-
 theorem shr_ofNat {x : Nat} (k : Nat) (hx : x < 2 ^ 64) : BitVec.ofNat 64 x >>> k = BitVec.ofNat 64 (x / 2 ^ k) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hx,
     Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hx)]
-
-theorem mask_and (x y : Byte) (c : Bool) :
-    (BitVec.setWidth 64 y ||| BitVec.setWidth 64 x &&& (0#64 - BitVec.setWidth 64 (BitVec.ofBool c))).setWidth 8 =
-      y ||| (if c then x else 0) := by
-  cases c
-  · simp
-  · simp only [ite_true]
-    rw [show (0#64 - BitVec.setWidth 64 (BitVec.ofBool true)) = BitVec.allOnes 64 by decide, BitVec.and_allOnes]
-    ext i hi
-    simp [BitVec.getElem_or]
-
-theorem xor_lt_one {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
-    decide ((BitVec.ofNat 64 a ^^^ BitVec.ofNat 64 b).toNat < BitVec.toNat (1 : BitVec 64)) = decide (a = b) := by
-  rw [show BitVec.toNat (1 : BitVec 64) = 1 from rfl]
-  by_cases h : a = b
-  · subst h; simp
-  · have : BitVec.ofNat 64 a ^^^ BitVec.ofNat 64 b ≠ 0 := fun e =>
-      h (by have := congrArg BitVec.toNat ((xor_eq_zero _ _).mp e); simpa [Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb] using this)
-    simp only [h, decide_false, decide_eq_false_iff_not, Nat.lt_one_iff]
-    exact fun e => this (BitVec.eq_of_toNat_eq e)
-
-/-- Offsets in different blocks differ. -/
-theorem blk_ne {B b c x y : Nat} (hx : x < B) (hy : y < B) (h : b ≠ c) : B * b + x ≠ B * c + y := by
-  intro e
-  apply h
-  have hB : 0 < B := by omega
-  have : (B * b + x) / B = (B * c + y) / B := by rw [e]
-  rwa [Nat.mul_add_div hB, Nat.mul_add_div hB, Nat.div_eq_of_lt hx, Nat.div_eq_of_lt hy, Nat.add_zero,
-    Nat.add_zero] at this
-
-theorem upd_self {α : Type} (f : Nat → α) (a : Nat) : upd f a (f a) = f := by
-  funext x; simp only [upd]; split <;> simp_all
-
-theorem sel_byte (a s : Byte) (c : Bool) :
-    (BitVec.setWidth 64 s ^^^ ((BitVec.setWidth 64 a ^^^ BitVec.setWidth 64 s) &&&
-      (0#64 - BitVec.setWidth 64 (BitVec.ofBool c)))).setWidth 8 = if c then a else s := by
-  cases c
-  · simp
-  · simp only [ite_true]
-    rw [show (0#64 - BitVec.setWidth 64 (BitVec.ofBool true)) = BitVec.allOnes 64 by decide, BitVec.and_allOnes,
-      BitVec.xor_comm (BitVec.setWidth 64 a), ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
-    simp
-
-theorem WP.seq_assoc {A B C : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq (.seq A B) C) s Q) :
-    WP isa (.seq A (.seq B C)) s Q := by
-  obtain ⟨t, s', he, hq⟩ := h
-  cases he with | seq h1 h2 => cases h1 with | seq ha hb => exact ⟨_, _, .seq ha (.seq hb h2), hq⟩
 
 theorem inR_nil (o : Nat) : ¬ inR [] o := by simp [inR]
 

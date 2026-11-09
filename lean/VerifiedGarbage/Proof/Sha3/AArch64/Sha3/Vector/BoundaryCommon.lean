@@ -25,8 +25,6 @@ structure Ptrs (s s' : VG.AArch64.State) : Prop where
 theorem Ptrs.refl (s : VG.AArch64.State) : Ptrs s s := ⟨rfl,rfl,rfl,rfl,rfl⟩
 theorem Ptrs.trans {s t u : VG.AArch64.State} (h : Ptrs s t) (k : Ptrs t u) : Ptrs s u :=
   ⟨k.x0.trans h.x0,k.x1.trans h.x1,k.rd.trans h.rd,k.wr.trans h.wr,k.sp.trans h.sp⟩
-theorem Keep.ptrs {s t : VG.AArch64.State} (h : Keep s t) : Ptrs s t :=
-  ⟨congrFun h.gpr _,congrFun h.gpr _,h.rd,h.wr,h.sp⟩
 theorem CoreKeep.ptrs {s t : VG.AArch64.State} (h : CoreKeep s t) : Ptrs s t :=
   ⟨h.gpr _ (by decide),h.gpr _ (by decide),h.rd,h.wr,h.sp⟩
 

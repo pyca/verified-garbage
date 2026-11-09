@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 public import VerifiedGarbage.Proof.Gcm.Poly
+public import VerifiedGarbage.Impl.Gcm.X86_64.PrepareAvx
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -22,26 +23,7 @@ namespace VG.Proof.Gcm.X86_64.PrepareAvx
 open VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Proof.Gcm.X86_64.Pclmul (Prod Only fold eval_pxor)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
-
-/-- The SSE code of `PrepareAvx.sq d a`. -/
-def sqS (d a : XReg) : List Instr :=
-  [.xop (.bin .movdqa .xmm8 a), .xop (.pclmulqdq .xmm8 a 0x00),
-   .xop (.bin .movdqa .xmm10 a), .xop (.pclmulqdq .xmm10 a 0x11)] ++
-  Impl.Gcm.X86_64.Pclmul.fold ++ Impl.Gcm.X86_64.Pclmul.fold ++
-  [.xop (.bin .movdqa d .xmm10), .xop (.bin .pxor d .xmm8)]
-
-/-- The SSE code of `PrepareAvx.mulD d a b`. -/
-def mulDS (d a b : XReg) : List Instr :=
-  [.xop (.bin .movdqa .xmm8 a), .xop (.pclmulqdq .xmm8 b 0x00),
-   .xop (.bin .movdqa .xmm10 a), .xop (.pclmulqdq .xmm10 b 0x11),
-   .xop (.bin .movdqa .xmm9 a), .xop (.pclmulqdq .xmm9 b 0x01),
-   .xop (.bin .movdqa .xmm11 a), .xop (.pclmulqdq .xmm11 b 0x10),
-   .xop (.bin .pxor .xmm9 .xmm11)] ++
-  Impl.Gcm.X86_64.Pclmul.fold ++
-  [.xop (.bin .pxor .xmm9 .xmm8),
-   .xop (.bin .movdqa .xmm11 .xmm9), .xop (.pclmulqdq .xmm11 .xmm1 0x10),
-   .xop (.pshufd .xmm9 .xmm9 0x4e), .xop (.bin .pxor .xmm9 .xmm11),
-   .xop (.bin .movdqa d .xmm10), .xop (.bin .pxor d .xmm9)]
+open VG.Impl.Gcm.X86_64.PrepareAvx (sqS mulDS)
 
 /-- A square needs no middle term: `x · a²` from the low and high products. -/
 theorem sq_val (a : BitVec 128) :

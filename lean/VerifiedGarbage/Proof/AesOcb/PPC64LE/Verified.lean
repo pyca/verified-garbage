@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesOcb.Rounds
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Contract
 public import VerifiedGarbage.Proof.AesOcb.Scratch
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -61,7 +62,7 @@ theorem seal_verified :
     Verified PPC64LE.target «seal» (Proof.AesOcb.sealScratchContract PPC64LE.abi) :=
   Verified.of_correct seal_correct seal_ct (by
     sig_implies [Proof.AesOcb.sealScratchContract, Proof.AesOcb.sealScratchSig, Spec.Ocb.sealPre,
-      Spec.Ocb.sealPost, sealPPC64LE, sealPreA, oneFacts, aCtx, aNonce, aAad, aData, aTag, aWork, onePub, args,
+      Proof.AesOcb.sealRoundsPost, sealPPC64LE, sealPreA, oneFacts, aCtx, aNonce, aAad, aData, aTag, aWork, onePub, args,
       rounds, PPC64LE.abi, PPC64LE.argRegs, stackArg, stackArgAddr, List.getD, List.range,
       List.range.loop] [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
 
@@ -71,26 +72,26 @@ theorem open_verified :
     Verified PPC64LE.target «open» (Proof.AesOcb.openScratchContract PPC64LE.abi) :=
   Verified.of_correct open_correct open_ct
     { pre := by sig_implies_pre [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-        Spec.Ocb.openPost, Spec.Ocb.openLeak, openPPC64LE, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+        Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openPPC64LE, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
         aTag, aWork, onePub, openOut, args, rounds, PPC64LE.abi, PPC64LE.argRegs, stackArg,
         stackArgAddr, List.getD, List.range, List.range.loop]
       post := by sig_implies_post [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-        Spec.Ocb.openPost, Spec.Ocb.openLeak, openPPC64LE, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+        Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openPPC64LE, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
         aTag, aWork, onePub, openOut, args, rounds, PPC64LE.abi, PPC64LE.argRegs, stackArg,
         stackArgAddr, List.getD, List.range, List.range.loop]
       pub := by
         intro s₁ s₂ _ _ h
         sig_pub [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-          Spec.Ocb.openPost, Spec.Ocb.openLeak, openPPC64LE, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openPPC64LE, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
           aTag, aWork, onePub, openOut, args, rounds, PPC64LE.abi, PPC64LE.argRegs, stackArg,
           stackArgAddr, List.getD, List.range, List.range.loop] at h
         sig_split h
         sig_reduce [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-          Spec.Ocb.openPost, Spec.Ocb.openLeak, openPPC64LE, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openPPC64LE, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
           aTag, aWork, onePub, openOut, args, rounds, PPC64LE.abi, PPC64LE.argRegs, stackArg,
           stackArgAddr, List.getD, List.range, List.range.loop]
         sig_simp [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-          Spec.Ocb.openPost, Spec.Ocb.openLeak, openPPC64LE, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openPPC64LE, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
           aTag, aWork, onePub, openOut, args, rounds, PPC64LE.abi, PPC64LE.argRegs, stackArg,
           stackArgAddr, List.getD, List.range, List.range.loop]
           [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const, true_and]
@@ -98,7 +99,7 @@ theorem open_verified :
         sig_close
         all_goals with_reducible assumption
       sat := by sig_implies_sat [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-        Spec.Ocb.openPost, Spec.Ocb.openLeak, openPPC64LE, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+        Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openPPC64LE, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
         aTag, aWork, onePub, openOut, args, rounds, PPC64LE.abi, PPC64LE.argRegs, stackArg,
         stackArgAddr, List.getD, List.range, List.range.loop] [openSat, sealSat, stackArg, stackArgAddr, Mem.readW,
         Mem.read] using openSat }

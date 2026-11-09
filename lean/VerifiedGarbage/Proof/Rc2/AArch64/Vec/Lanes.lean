@@ -36,25 +36,9 @@ theorem vword_and (x y : BitVec 128) (c : Nat) : vword (x &&& y) c = vword x c &
   ext i hi
   simp [vword, BitVec.getElem_extractLsb', BitVec.getElem_and]
 
-theorem vword_bic (x y : BitVec 128) (c : Nat) :
-    vword (x &&& ~~~y) c = vword x c &&& ~~~vword y c := by
-  ext i hi
-  simp only [vword, BitVec.getElem_extractLsb', BitVec.getElem_and, BitVec.getElem_not,
-    BitVec.getLsbD_and, BitVec.getLsbD_not]
-  by_cases h : 32 * c + i < 128
-  · simp [h]
-  · simp [h, BitVec.getLsbD_of_ge x (32 * c + i) (by omega)]
-
 theorem vword_not (x : BitVec 128) {c : Nat} (hc : c < 4) : vword (~~~x) c = ~~~vword x c := by
   ext i hi
   simp [vword, BitVec.getElem_extractLsb', BitVec.getElem_not, show 32 * c + i < 128 by omega]
-
-theorem vword_xor (x y : BitVec 128) (c : Nat) : vword (x ^^^ y) c = vword x c ^^^ vword y c := by
-  simp only [vword, BitVec.extractLsb'_xor]
-
-theorem vword_or (x y : BitVec 128) (c : Nat) : vword (x ||| y) c = vword x c ||| vword y c := by
-  ext i hi
-  simp [vword, BitVec.getElem_extractLsb', BitVec.getElem_or]
 
 theorem setWidth16_sub (x y : BitVec 32) : (x - y).setWidth 16 = x.setWidth 16 - y.setWidth 16 := by
   apply BitVec.eq_of_toNat_eq

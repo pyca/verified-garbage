@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Scrypt.Contract
-public import VerifiedGarbage.Proof.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
 public import VerifiedGarbage.Proof.Scrypt.X86.BlockMix
 meta import VerifiedGarbage.Proof.Scrypt.X86.BlockMix
@@ -373,35 +372,6 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Scrypt.blockMixX86.pre s₁)
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
     exact congrArg _ (ha _ (by omega))
 
-/-- Memory holding the arguments `0x1000, 1, 0x2000, 1, 0x3000` at `0x5004`. -/
-def satMem : Mem := fun a =>
-  bif Nat.beq a.toNat 0x5005 then 0x10 else bif Nat.beq a.toNat 0x5008 then 1 else bif Nat.beq a.toNat 0x500d then 0x20 else
-  bif Nat.beq a.toNat 0x5010 then 1 else bif Nat.beq a.toNat 0x5015 then 0x30 else 0
-
-/-- A state satisfying the precondition. -/
-def sat : State where
-  gpr r := match r with
-    | .esp => 0x5000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem := satMem
-  rd := [⟨0x1000, 128⟩, ⟨0x5004, 20⟩]
-  wr := [⟨0x2000, 128⟩, ⟨0x3000, 128⟩]
-
-theorem sat_pre : Proof.Scrypt.blockMixX86.pre sat := by
-  have a0 : arg sat 0 = 0x1000 := by decide
-  have a1 : arg sat 1 = 1 := by decide
-  have a2 : arg sat 2 = 0x2000 := by decide
-  have a3 : arg sat 3 = 1 := by decide
-  have a4 : arg sat 4 = 0x3000 := by decide
-  have e : argAddr sat 0 = 0x5004 := by decide
-  simp only [Proof.Scrypt.blockMixX86, a0, a1, a2, a3, a4, e]
-  refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by decide, by decide, by decide, by decide,
-    by decide, trivial, by decide⟩ <;>
-  exact Region.disjoint_of_sep (by decide)
-
 theorem blockMix_correct (s : State) (hs : Proof.Scrypt.blockMixX86.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.X86.blockMix s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.blockMixX86.post s s' := by
@@ -411,93 +381,5 @@ theorem blockMix_correct (s : State) (hs : Proof.Scrypt.blockMixX86.pre s) :
 theorem blockMix_ct : ConstantTime isa Proof.Scrypt.blockMixX86.pre Proof.Scrypt.blockMixX86.pub
     Impl.Scrypt.X86.blockMix :=
   VG.Taint.constantTime (A := VG.X86.sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
-
-/-! ## The shared contract -/
-
-/-- `blockMixX86` with its arguments writable, as the shared contract lets them be. -/
-def blockMixWide : Contract isa :=
-  { Proof.Scrypt.blockMixX86 with
-    pre := fun s =>
-      let r := (arg s 1).toNat
-      let b : Region := ⟨(arg s 0).setWidth 64, r * 128⟩
-      let y : Region := ⟨(arg s 2).setWidth 64, (arg s 3).toNat * 128⟩
-      let scratch : Region := ⟨(arg s 4).setWidth 64, 128⟩
-      let args : Region := ⟨argAddr s 0, 20⟩
-      let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-      let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 12, 12⟩
-      s.rd = [b] ∧ s.wr = [y, scratch, args] ∧
-      y.Disjoint scratch ∧ b.Disjoint y ∧ b.Disjoint scratch ∧ args.Disjoint y ∧ args.Disjoint scratch ∧
-      ret.Disjoint y ∧ ret.Disjoint scratch ∧ stack.Disjoint b ∧ stack.Disjoint y ∧
-      stack.Disjoint scratch ∧
-      (arg s 0).toNat + r * 128 ≤ 2 ^ 32 ∧ (arg s 2).toNat + (arg s 3).toNat * 128 ≤ 2 ^ 32 ∧
-      (arg s 4).toNat + 128 ≤ 2 ^ 32 ∧ 12 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧
-      arg s 3 = arg s 1 ∧ 0 < r }
-
-/-- The regions `blockMixX86` lets the code read and write. -/
-def narrowRd (s : State) : List Region :=
-  [⟨(arg s 0).setWidth 64, (arg s 1).toNat * 128⟩, ⟨argAddr s 0, 20⟩]
-def narrowWr (s : State) : List Region :=
-  [⟨(arg s 2).setWidth 64, (arg s 3).toNat * 128⟩, ⟨(arg s 4).setWidth 64, 128⟩]
-
-/-- Rewrites the contracts at a narrowed state (`arg` does not unfold
-cheaply). -/
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names simp only [Proof.Scrypt.blockMixX86, VG.Proof.Scrypt.X86.BlockMix.blockMixWide,
-                     VG.Proof.Scrypt.X86.BlockMix.narrowRd, VG.Proof.Scrypt.X86.BlockMix.narrowWr, VG.X86.arg_withRegions,
-                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
-
-theorem blockMixWide_pre (s : State) (h : blockMixWide.pre s) :
-    Proof.Scrypt.blockMixX86.pre (s.withRegions (narrowRd s) (narrowWr s)) := by
-  obtain ⟨_, _, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅, h₁₆, h₁₇, h₁₈, h₁₉⟩ := h
-  narrow
-  exact ⟨trivial, trivial, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅, h₁₆, h₁₇, h₁₈, h₁₉⟩
-
-/-- A state satisfying `blockMixWide.pre`. -/
-def wideSat : State :=
-  { sat with rd := [⟨0x1000, 128⟩], wr := [⟨0x2000, 128⟩, ⟨0x3000, 128⟩, ⟨0x5004, 20⟩] }
-
-theorem blockMixWide_implies :
-    blockMixWide.Implies (Proof.Scrypt.blockMixContract X86.abi 12) := by
-  have a0 : arg wideSat 0 = 0x1000 := by decide
-  have a1 : arg wideSat 1 = 1 := by decide
-  have a2 : arg wideSat 2 = 0x2000 := by decide
-  have a3 : arg wideSat 3 = 1 := by decide
-  have a4 : arg wideSat 4 = 0x3000 := by decide
-  have e : argAddr wideSat 0 = 0x5004 := by decide
-  have esp : wideSat.gpr .esp = 0x5000 := rfl
-  sig_implies [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig, blockMixWide,
-    Proof.Scrypt.blockMixX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    [a0, a1, a2, a3, a4, e, esp] using wideSat
-
-/-- The proof is written against `blockMixX86`, widened to writable arguments. -/
-theorem blockMix_verified :
-    Verified X86.target Impl.Scrypt.X86.blockMix (Proof.Scrypt.blockMixContract X86.abi 12) :=
-  have hsat := blockMixWide_implies.sat_left
-  (Verified.narrowTo (Verified.of_correct blockMix_correct blockMix_ct (.refl ⟨sat, sat_pre⟩))
-    narrowRd narrowWr blockMixWide_pre
-    (fun _ h => by
-      obtain ⟨h₁, h₂, _⟩ := h
-      rw [h₁, h₂]
-      refine Covers.of_sub fun r hr => ?_
-      simp only [narrowRd, narrowWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-        or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact ⟨_, List.mem_cons_self, 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
-          List.mem_cons_self)), 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), 0, by simp,
-          by simp⟩)
-    (fun _ h => by
-      obtain ⟨_, h₂, _⟩ := h
-      rw [h₂]
-      refine Covers.of_sub fun r hr => ?_
-      simp only [narrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact ⟨_, List.mem_cons_self, 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, 0, by simp, by simp⟩)
-    (fun _ _ _ h => by narrow at h ⊢; exact h)
-    (fun _ _ _ _ h => by narrow; exact h) hsat).of_implies blockMixWide_implies
 
 end VG.Proof.Scrypt.X86.BlockMix

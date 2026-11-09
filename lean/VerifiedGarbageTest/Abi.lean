@@ -89,7 +89,8 @@ def aarch64Stack : AArch64.State :=
 
 #guard (AArch64.abi.args (List.replicate 8 64)).map (· aarch64State) == some [1, 2, 3, 4, 5, 6, 7, 8]
 -- The ninth argument is the 8 bytes at `sp`. A lone narrow stack argument
--- is rejected; a u32 followed by u64s has the same aligned layout on both ABIs.
+-- is rejected; u32s each followed by a u64 have the same aligned layout on
+-- both ABIs.
 #guard (AArch64.abi.args (List.replicate 9 64)).map (· aarch64Stack) ==
   some [1, 2, 3, 4, 5, 6, 7, 8, 0x0807060504030201]
 #guard (AArch64.abi.args (List.replicate 8 64 ++ [32])).isNone
@@ -99,7 +100,16 @@ def aarch64Stack : AArch64.State :=
 #guard (AArch64.abi.argArea (List.replicate 8 64 ++ [32, 64]) aarch64Stack).map (·.1) ==
   [⟨0x100, 16⟩]
 #guard (AArch64.abi.args (List.replicate 8 64 ++ [32, 32, 64])).isNone
-#guard (AArch64.abi.args (List.replicate 8 64 ++ [64, 32, 64])).isNone
+-- A u32 after a u64, or a second pair: each argument is 8 bytes after the last.
+#guard (AArch64.abi.args (List.replicate 8 64 ++ [64, 32, 64])).map (· aarch64Stack) ==
+  some [1, 2, 3, 4, 5, 6, 7, 8, 0x0807060504030201, 0, 0]
+#guard (AArch64.abi.args (List.replicate 8 64 ++ [32, 64, 32, 64])).map (· aarch64Stack) ==
+  some [1, 2, 3, 4, 5, 6, 7, 8, 0x0807060504030201, 0, 0, 0]
+#guard (AArch64.abi.argArea (List.replicate 8 64 ++ [64, 32, 64]) aarch64Stack).map (·.1) ==
+  [⟨0x100, 24⟩]
+-- A u32 last, or two in a row, may lie at different offsets on Apple.
+#guard (AArch64.abi.args (List.replicate 8 64 ++ [64, 32])).isNone
+#guard (AArch64.abi.args (List.replicate 8 64 ++ [64, 32, 32, 64])).isNone
 #guard (AArch64.abi.args (List.replicate 8 64 ++ [16, 64])).isNone
 #guard (AArch64.abi.argArea (List.replicate 9 64) aarch64Stack).map (·.1) == [⟨0x100, 8⟩]
 -- `ldr xt, [sp, #off]` reads the stack arguments where the ABI puts them:

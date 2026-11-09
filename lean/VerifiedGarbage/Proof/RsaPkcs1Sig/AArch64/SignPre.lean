@@ -162,13 +162,6 @@ theorem frame_sub0 (K : Nat) (s : State) : Region.Sub ⟨fb s, frameBytes⟩ (kR
   have := frame_sub K s (d := 0) (n := frameBytes) (by omega)
   rwa [BitVec.add_zero] at this
 
-/-- The stack below the frame, which the callee uses. -/
-theorem below_fb (K : Nat) (s : State) : below (fb s) K = ⟨kb K s, K⟩ := by
-  simp only [below, fb_eq K, BitVec.add_sub_cancel]
-
-theorem below_sub (K : Nat) (s : State) : Region.Sub (below (fb s) K) (kR K s) := by
-  rw [below_fb]; exact Region.sub_prefix (by unfold stk; omega)
-
 /-- The stack arguments, from the frame. -/
 theorem stackArgAddr_fb (s : State) (j : Nat) :
     stackArgAddr s j = fb s + BitVec.ofNat 64 (frameBytes + 8 * j) := by

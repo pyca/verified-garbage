@@ -37,15 +37,6 @@ open VG.Spec.Sha256 (HashValue stateAt blockAt compressBlocks compress parseBloc
 theorem sub_offset {base : Addr} {off len len' : Nat} (h : off + len ≤ len') (_ho : off < 2 ^ 64) :
     Region.Sub ⟨base + BitVec.ofNat 64 off, len⟩ ⟨base, len'⟩ := Offset.sub_base base h
 
-theorem frame_bytes {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {R : Region}
-    (hd : ∀ r ∈ rs, R.Disjoint r) (hR : R.len ≤ 2 ^ 64) {i : Nat} (hi : i < R.len) :
-    m' (R.base + BitVec.ofNat 64 i) = m (R.base + BitVec.ofNat 64 i) := by
-  refine hf _ fun r hr hc => hd r hr _ ?_ hc
-  simp only [Region.Contains]
-  rw [VG.Offset.add_sub_cancel_left,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
-
 theorem addr_toNat (x : BitVec 32) : (x.setWidth 64).toNat = x.toNat := by
   simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega)
 
@@ -165,14 +156,6 @@ theorem wp_sub {d r : Reg}
     WP isa (.block (.alu .sub d (.reg r) :: is)) s Q :=
   WP.cons rfl (k _ (Upd.flags _ _ _ _ _ _) rfl)
 
-theorem wp_andi {d : Reg} {v : BitVec 32} (k : ∀ s', Upd s s' d (s.gpr d &&& v) → WP isa (.block is) s' Q) :
-    WP isa (.block (.alu .and d (.imm v) :: is)) s Q :=
-  WP.cons rfl (k _ (Upd.flags _ _ _ _ _ _))
-
-theorem wp_or {d r : Reg} (k : ∀ s', Upd s s' d (s.gpr d ||| s.gpr r) → WP isa (.block is) s' Q) :
-    WP isa (.block (.alu .or d (.reg r) :: is)) s Q :=
-  WP.cons rfl (k _ (Upd.flags _ _ _ _ _ _))
-
 /-- `cmp d, r`: CF is `d < r` (unsigned). -/
 theorem wp_cmp {d r : Reg}
     (k : ∀ s', Fupd s s' → s'.cf = some (decide ((s.gpr d).toNat < (s.gpr r).toNat)) →
@@ -219,30 +202,6 @@ theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = addr (s.gpr b) 
 
 theorem eval_e (s : State) : eval .e s = s.zf := rfl
 theorem eval_ne (s : State) : eval .ne s = s.zf.map (!·) := rfl
-theorem eval_b (s : State) : eval .b s = s.cf := rfl
-theorem eval_ae (s : State) : eval .ae s = s.cf.map (!·) := rfl
-
-/-! ## The call of the compression function -/
-
-/-- The 20 bytes of stack below `E`, as the contracts write them. -/
-theorem stk_eq {E : BitVec 32} (h : 20 ≤ E.toNat) : below E 20 = ⟨E.setWidth 64 - 20, 20⟩ := by
-  simp only [below]; rw [Taint.sub_setWidth h]; rfl
-
-theorem compressBlocks_one (H : HashValue) (m : Mem) (p : Addr) :
-    compressBlocks H m p 1 = compress H (blockAt m p) := by
-  simp [compressBlocks]
-
-theorem arg_eq (s : State) (i : Nat) : arg s i = s.mem.readW (addr (s.gpr .esp) (4 + 4 * i)) 32 := rfl
-
-theorem compress_nosp : NoSp Impl.Sha256.X86.compress := NoSp.of_all (by lit_decide)
-
-theorem compress_stack : stackUse Impl.Sha256.X86.compress = 0 := by lit_decide
-
-/-- A region within one of `rs'`, at offset `o`. -/
-theorem within {r : Region} {rs' : List Region} (r' : Region) (hr' : r' ∈ rs') (o : Nat)
-    (hb : r.base = r'.base + BitVec.ofNat 64 o) (hl : o + r.len ≤ r'.len) :
-    ∃ r' ∈ rs', ∃ o, r.base = r'.base + BitVec.ofNat 64 o ∧ o + r.len ≤ r'.len :=
-  ⟨r', hr', o, hb, hl⟩
 
 /-! ## Arithmetic -/
 
@@ -279,27 +238,7 @@ theorem ofNat_succ (k : Nat) : BitVec.ofNat 32 (k + 1) = BitVec.ofNat 32 k + 1 :
 theorem ofNat_pred {k : Nat} (h : 1 ≤ k) : BitVec.ofNat 32 k - 1 = BitVec.ofNat 32 (k - 1) := by
   rw [show k = (k - 1) + 1 by omega, ofNat_succ, Nat.add_sub_cancel, BitVec.add_sub_cancel]
 
-theorem and63 (x : BitVec 32) : x &&& 63 = BitVec.ofNat 32 (x.toNat % 64) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
-  rw [show (63 : BitVec 32).toNat = 2 ^ 6 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  omega
-
 theorem toNat_ofNat_lt {k : Nat} (h : k < 2 ^ 32) : (BitVec.ofNat 32 k).toNat = k := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
-
-theorem bytesAt_getD {m : Mem} {p : Addr} {n : Nat} {l : List Byte} (h : bytesAt m p n = l) {k : Nat}
-    (hk : k < n) : m (p + BitVec.ofNat 64 k) = l.getD k 0 := by
-  subst h; simp [bytesAt, List.getD_eq_getElem?_getD, hk]
-
-/-! ## Byte order -/
-
-theorem bswap_bytes (w : BitVec 32) :
-    (List.range 4).map (fun j => (bswap w).extractLsb' (8 * j) 8) = Spec.Sha256.wordBytes w := by
-  simp only [List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
-    List.cons_append, Spec.Sha256.wordBytes, List.cons.injEq, and_true]
-  refine ⟨?_, ?_, ?_, ?_⟩ <;>
-  · simp (disch := decide) only [bswap, Nat.mul_zero, Nat.reduceMul, VG.extractLsb'_append_byte_lo,
-      VG.extractLsb'_append_byte_hi, Nat.reduceSub, BitVec.extractLsb'_eq_self]
 
 end VG.Proof.Sha256.X86.Stream

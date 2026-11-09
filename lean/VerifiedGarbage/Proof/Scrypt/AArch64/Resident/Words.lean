@@ -245,13 +245,6 @@ theorem step_words {s₀ : State} {src out : Addr} {x : Vector Word 16} {d : Reg
     intro j hj
     simpa only [core,Vector.getElem_zipWith,wo,addr] using w₃ j hj
 
-theorem words_bytes (m : Mem) (p : Addr) :
-    (Vector.ofFn fun j : Fin 16 => wordLE (bytesAt m p 64) j.val) = words m p := by
-  apply Vector.ext
-  intro j hj
-  rw [Vector.getElem_ofFn,words_get _ _ hj,wordLE_bytesAt _ _ (by omega)]
-  rfl
-
 theorem wordLE_xor {a b : List Byte} {j : Nat} (ha : 4*j+4 ≤ a.length) (hb : 4*j+4 ≤ b.length) :
     wordLE (VG.Spec.Pbkdf2.xorBytes a b) j = wordLE a j ^^^ wordLE b j := by
   have hd (i : Nat) (hi : i < 4) :

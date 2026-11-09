@@ -7,12 +7,9 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningAgreement
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingAgreement
 import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABIPost
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningABIPost
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 
@@ -45,22 +42,6 @@ theorem signing_implies8 : (Spec.Dsa.signContract abi).Implies (Spec.Dsa.signCon
     sig_implies_sat [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop]
       [signingSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using signingSatState
 
-theorem verifying_implies8 : (Spec.Dsa.verifyContract abi).Implies (Spec.Dsa.verifyContract abi 8) where
-  pre := by
-    intro s h
-    sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop] at h
-    sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop] at h
-    sig_split h
-    sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop]
-    sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop]
-    sig_and_intros
-    sig_close
-  post := by sig_implies_post [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop]
-  pub := by intro s t _ _ h; exact h
-  sat := by
-    sig_implies_sat [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop]
-      [verifyingSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using verifyingSatState
-
 theorem signing_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     (hs : (Spec.Dsa.signContract abi).pre s) (hc : Clear (hole (s.gpr .rsp)) s)
     (hp : (Spec.Dsa.signContract abi).post s b) :
@@ -72,13 +53,6 @@ theorem signing_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
   sig_post [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop] at hp ⊢
   simpa only [State.patch_gpr, patch_mem, bytesAt_overlay hm] using hp
 
-theorem verifying_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
-    (hp : (Spec.Dsa.verifyContract abi).post s b) :
-    (Spec.Dsa.verifyContract abi).post s (b.patch (hole (s.gpr .rsp)) hv u) := by
-  sig_post [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop] at hp ⊢
-  sig_post [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop] at hp ⊢
-  simpa only [State.patch_gpr] using hp
-
 theorem signing_call_verified (M : Mont) (Sq : MontS) {c : Prog isa}
     (hc : c.InlineOk = true) (hin : c.inline = SignVerify.sign Sq.mm M.mm)
     (hmx : (SignVerify.sign Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
@@ -86,13 +60,5 @@ theorem signing_call_verified (M : Mont) (Sq : MontS) {c : Prog isa}
   Verified.of_inline_sig hc (hin ▸ signingCorrect M Sq hmx) (hin ▸ signingConstantTime M Sq)
     signing_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ h => Sig.rsp_of_pub h)
     signing_patch
-
-theorem verifying_call_verified (M : Mont) (Sq : MontS) {c : Prog isa}
-    (hc : c.InlineOk = true) (hin : c.inline = SignVerify.verify Sq.mm M.mm)
-    (hmx : (SignVerify.verify Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target c (Spec.Dsa.verifyContract abi 8) :=
-  Verified.of_inline_sig hc (hin ▸ verifyingCorrect M Sq hmx) (hin ▸ verifyingConstantTime M Sq)
-    verifying_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ h => Sig.rsp_of_pub h)
-    (fun s b hv u _ _ hp => verifying_patch s b hv u hp)
 
 end VG.Proof.Dsa.X86_64

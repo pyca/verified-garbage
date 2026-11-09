@@ -38,17 +38,6 @@ abbrev wholeR (p : Prm) (k : Nat) : List Region :=
   [⟨w64 p.W + BitVec.ofNat 64 ofsO, 32⟩, ⟨w64 p.W + BitVec.ofNat 64 lO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 kO, 4⟩,
     wC p.W, stk p, ⟨w64 p.D, 16 * k⟩]
 
-theorem wholeR_mut {p : Prm} {k : Nat} (hk : 16 * k ≤ p.n) {m m' : Mem} (h : Frame (wholeR p k) m m') :
-    Frame (mutR p) m m' := h.sub fun r hr => by
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact inMut_w p (.inl (by decide))
-  · exact inMut_w p (.inl (by decide))
-  · exact inMut_w p (.inr (.inr (.inl ⟨by decide, by decide⟩)))
-  · exact ⟨_, by simp, fun _ h => h⟩
-  · exact inMut_stk p
-  · exact ⟨_, by simp, Region.sub_prefix hk⟩
-
 /-- The `m` blocks of the data, for a call. -/
 theorem DReg.d {p : Prm} (L : Lay p) {s : State} (E : Env p s) {m : Nat} (hm : 16 * m ≤ p.n) : DReg p s p.D m := by
   have hd := L.dw

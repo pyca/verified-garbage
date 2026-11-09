@@ -90,7 +90,7 @@ theorem word_disjoint {dir : Dir} {B : Addr} {o : Nat} (ho : o + 8 ≤ 8 * tailS
   rcases hr with h | h
   · exact h.sub_left (VG.Offset.sub_base B (show o + 8 ≤ 8 * slots by rw [slots_eq]; rw [tailSlot_eq] at ho; omega))
   · refine Region.Disjoint.sub_right ?_ h
-    show Region.Disjoint ⟨B + BitVec.ofNat 64 o, 8⟩ ⟨B + BitVec.ofNat 64 (8 * tailSlot), 4 * 4 * 1⟩
+    show Region.Disjoint ⟨B + BitVec.ofNat 64 o, 8⟩ ⟨B + BitVec.ofNat 64 (8 * tailSlot), 4 * 4 * 8⟩
     exact VG.Offset.disjoint B (by simp only [tailSlot_eq] at ho ⊢; omega)
       (by simp only [tailSlot_eq] at ho; omega) (by simp only [tailSlot_eq]; omega)
 
@@ -257,9 +257,9 @@ theorem toNat_slots : (BitVec.ofNat 64 slots).toNat = slots := by rw [BitVec.toN
 
 /-- The table survives what a batch keeps. -/
 theorem holds_of_keeps {R : Nat} {m m' : Mem} {B : Addr} {w : List (BitVec 64)} {d : Spec.Camellia.Direction}
-    (hR : R = 18 ∨ R = 24) (h : Spec.Camellia.Prepared.Holds layout m B R w d)
-    (hk : Spec.Camellia.Prepared.Keeps B slots layout.cryptScratch m m') :
-    Spec.Camellia.Prepared.Holds layout m' B R w d := fun r hr i hi => by
+    (hR : R = 18 ∨ R = 24) (h : Proof.Camellia.Prepared.Holds layout m B R w d)
+    (hk : Proof.Camellia.Prepared.Keeps B slots layout.cryptScratch m m') :
+    Proof.Camellia.Prepared.Holds layout m' B R w d := fun r hr i hi => by
   have hg : R / 6 ≤ 4 := by omega
   have hr' := hr
   rw [layout_table] at hr'
@@ -290,7 +290,7 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {ws : List Region} {k : Nat ×
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨hR, hrd, h28⟩ := hr
   have hfB : B.toNat + 8 * (dirCore d).total ≤ 2 ^ 64 := hS.fit
-  have hH : Spec.Camellia.Prepared.Holds layout s.mem B k.1 k.2 (specDir d) :=
+  have hH : Proof.Camellia.Prepared.Holds layout s.mem B k.1 k.2 (specDir d) :=
     holds_of_words (by rw [ofSpecDir_specDir]; exact words_of_readyAt hrd)
   show WP isa cryptCall s _
   refine WP.seq (wp_mr fun s₁ u₁ => wp_mr fun s₂ u₂ => wp_mr fun s₃ u₃ => wp_mr fun s₄ u₄ =>
@@ -360,11 +360,11 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {ws : List Region} {k : Nat ×
       exact readyAt_of_words (by rw [← ofSpecDir_specDir d]; exact words_of_holds (holds_of_keeps hR hH hK))
     · rw [u₇.other _ (by decide), u₆.other _ (by decide), r28', h28]
     · rw [u₇.mem, u₆.mem, ← m₅]; exact hf
-    · obtain rfl : j = 0 := by have : (dirCore d).G = 1 := rfl; omega
-      have ha : blkAddr (dirCore d) B 0 = B + BitVec.ofNat 64 layout.buf + BitVec.ofNat 64 (16 * 0) := rfl
-      show Spec.Aes.bytesAt s₇.mem (blkAddr (dirCore d) B 0) 16 =
-        dirCipher d _ (Spec.Aes.bytesAt s.mem (blkAddr (dirCore d) B 0) 16)
-      rw [dirCipher_bytes, bytesAt_eq_blockAt, u₇.mem, u₆.mem, ha, blockAt_of_ecb hE' (by decide)]
+    · have hj8 : j < 8 := hj
+      have ha : blkAddr (dirCore d) B j = B + BitVec.ofNat 64 layout.buf + BitVec.ofNat 64 (16 * j) := rfl
+      show Spec.Aes.bytesAt s₇.mem (blkAddr (dirCore d) B j) 16 =
+        dirCipher d _ (Spec.Aes.bytesAt s.mem (blkAddr (dirCore d) B j) 16)
+      rw [dirCipher_bytes, bytesAt_eq_blockAt, u₇.mem, u₆.mem, ha, blockAt_of_ecb hE' hj8]
 
 /-- Camellia's core meets what the modes need. -/
 def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where

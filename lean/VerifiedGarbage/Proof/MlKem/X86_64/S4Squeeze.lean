@@ -17,8 +17,8 @@ The padded seeds are the states that `Keccak-f` turns into the absorbed ones
 (`padded_A0`), and the four states hold them after `absorb4` (`lanes_A0`).
 Each `squeeze` permutes the four states (`permute4_ok`) and copies the
 first 168 bytes of each to block `n` of its output, at `rbp`, which then
-holds the first `168 (n + 1)` bytes of the seed's XOF output (`sq_ok`);
-`squeezes` runs them in a loop (`blocks_ok`, `sqs_ok`).
+holds the first `168 (n + 1)` bytes of the seed's XOF output (`SqInvW`);
+`squeezes` runs them in a loop (`blocks_ok`).
 -/
 
 @[expose] public section
@@ -152,8 +152,6 @@ theorem lanes_A0 {σ : State} {m : Mem} (h : SB σ m (PF σ)) : Lanes4 m (scr σ
   lanes4_of_bytes fun k hk q hq => by
     rw [h k hk q hq, show iterF 0 (A0 (B σ k)) = A0 (B σ k) from rfl, byteOf_A0 (B_length σ k) hq, PF]
 
-
-
 theorem la_tbl (σ : State) (r k : Nat) : la (at' σ 1600) r k = la (scr σ) (50 + r) k := by
   rw [la, la, at', Offset.add_add, show 1600 + (32 * r + 8 * k) = 32 * (50 + r) + 8 * k by omega_arith]
 
@@ -187,142 +185,9 @@ theorem buf_frame {σ : State} {m m' : Mem} {rs : List Region}
   have := hf.bytes (R := ⟨at' σ oBuf, 2016⟩) hd (by simp only; omega_arith) (i := 504 * k + p) (by simp only; omega_arith)
   simpa only [at', Offset.add_add, Nat.add_assoc] using this
 
-/-- The permutation, after `n` squeezes. -/
-theorem perm_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {n : Nat} (hn : n < 3) {s : State} (h : SqInvW w16 σ n s)
-    {rest : Prog isa} {Q : State → Prop} (kont : ∀ s', EnvW w16 σ s' ∧ s'.gpr .r14 = 1 ∧
-      (∀ r < 24, ∀ k < 4, s'.mem.readW (la (scr σ) (50 + r) k) 64 = RC r) ∧
-      Lanes4 s'.mem (scr σ) (fun k => iterF (n + 1) (A0 (B σ k))) ∧
-      (∀ k < 4, ∀ p < 168 * n, s'.mem (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) p) ∧
-      s'.gpr .rbp = s.gpr .rbp ∧ s'.gpr .r10 = s.gpr .r10 → WP isa rest s' Q) :
-    WP isa (.seq (.block permArgs) (.seq (Impl.Sha3.X86_64.X4.permute4 fast) rest)) s Q := by
-  refine WP.seq (WP.mono (args_ok h.env) fun s₁ ⟨⟨hm, hdi, hsi, hdx, hcx⟩, k₁⟩ => ?_)
-  have hrd : s₁.rd = σ.rd := k₁.2.1.trans h.env.rd
-  have hwr : s₁.wr = σ.wr := k₁.2.2.trans h.env.wr
-  refine WP.seq (WP.mono (permute4_ok (fast := fast) (A := fun k => iterF n (A0 (B σ k))) (pre4 hp hrd hwr (by rw [hm]; exact h.rc))
-    hdi hsi hdx (by rw [hcx, at', at', Offset.add_add]) (by rw [hm]; exact h.lanes))
-    fun s₂ ⟨hl, hf, hrd₂, hwr₂, _, hg⟩ => kont s₂ ?_)
-  have hsub : ∀ r ∈ [(⟨scr σ, 800⟩ : Region), ⟨at' σ 800, 800⟩], Region.Sub r ⟨scr σ, oSave⟩ := by
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact Region.sub_prefix (by simp only [oSave]; omega_arith)
-    · exact Offset.sub_base _ (by simp only [oSave]; omega_arith)
-  refine ⟨EnvW.low (h.env.keep hm k₁ (by decide)) hsub hf hrd₂ hwr₂ fun r hr => hg r
-      (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
-      (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide),
-    by rw [hg _ (by decide) (by decide), k₁.gpr (by decide), h.r14], fun r hr k hk => ?_, ?_, fun k hk p hp' => ?_,
-    by rw [hg _ (by decide) (by decide), k₁.gpr (by decide)], by rw [hg _ (by decide) (by decide), k₁.gpr (by decide)]⟩
-  · rw [hf.readW (Region.contains_self _ _) (by
-        simpa using ⟨Offset.disjoint_base (scr σ) (k := 800) (d := 32 * (50 + r) + 8 * k) (n := 8) (by omega_arith) (by omega_arith),
-          Offset.disjoint (scr σ) (d := 32 * (50 + r) + 8 * k) (n := 8) (e := 800) (k := 800) (by omega_arith) (by omega_arith)
-            (by omega_arith)⟩) (by decide), hm]
-    exact h.rc r hr k hk
-  · intro i hi k hk
-    rw [hl i hi k hk]
-    rfl
-  · rw [buf_frame (by simpa using ⟨Offset.disjoint_base (scr σ) (k := 800) (d := oBuf) (n := 2016) (by simp only [oBuf]; omega_arith)
-        (by simp only [oBuf]; omega_arith), Offset.disjoint (scr σ) (d := oBuf) (n := 2016) (e := 800) (k := 800)
-          (by simp only [oBuf]; omega_arith) (by simp only [oBuf]; omega_arith) (by omega_arith)⟩) hf hk (by omega_arith), hm]
-    exact h.buf k hk p hp'
-
-
 /-! ## Copying the output -/
-
-/-- During the copy of block `n`: the first `I` lanes of state `K` copied,
-and all of the states before it. -/
-structure EXIW (w16 : Bool) (σ : State) (n K I : Nat) (s : State) : Prop where
-  env : EnvW w16 σ s
-  r14 : s.gpr .r14 = 1
-  rc : ∀ r < 24, ∀ k < 4, s.mem.readW (la (scr σ) (50 + r) k) 64 = RC r
-  lanes : Lanes4 s.mem (scr σ) (fun k => iterF (n + 1) (A0 (B σ k)))
-  buf : ∀ k < 4, ∀ p < 504, (p < 168 * n ∨ (168 * n ≤ p ∧ p < 168 * n + 168 ∧ (k < K ∨ (k = K ∧ p < 168 * n + 8 * I)))) →
-    s.mem (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) p
-  rbp : s.gpr .rbp = at' σ (oBuf + 168 * n)
-
-/-- `EXIW` with 32-bit coefficients. -/
-abbrev EXI := EXIW false
-
-open VG.Proof.Sha3.X86_64 (wp_movm wp_store wp_nil) in
-theorem ext_step {σ : State} (hp : PreW w16 σ) {n K I : Nat} (hn : n < 3) (hK : K < 4) (hI : I < 21) {s : State}
-    (h : EXIW w16 σ n K I s) :
-    WP isa (.block [.mov .rax (.mem (at_ .rbx (32 * I + 8 * K))),
-      .store (at_ .rbp (504 * K + 8 * I)) .rax]) s (EXIW w16 σ n K (I + 1)) := by
-  refine wp_movm (a := at' σ (32 * I + 8 * K)) (by rw [ea_at, h.env.rbx])
-    (in_scr' hp h.env.rd h.env.wr (by omega_arith)) fun s₁ u₁ => wp_store (a := at' σ (oBuf + 504 * K + 168 * n + 8 * I))
-      (by rw [ea_at, u₁.other _ (by decide), h.rbp, at', at', Offset.add_add,
-        show oBuf + 168 * n + (504 * K + 8 * I) = oBuf + 504 * K + 168 * n + 8 * I by omega_arith])
-      (by rw [u₁.wr]; exact in_scr hp h.env.wr (by simp only [oBuf]; omega_arith))
-      fun s₂ g₂ m₂ r₂ w₂ => wp_nil ?_
-  have hm : s₂.mem = s.mem.writeW (at' σ (oBuf + 504 * K + 168 * n + 8 * I)) (s.mem.readW (at' σ (32 * I + 8 * K)) 64) := by
-    rw [m₂, u₁.mem, u₁.gpr]
-  have hf : Frame [⟨at' σ (oBuf + 504 * K + 168 * n + 8 * I), 8⟩] s.mem s₂.mem := by
-    rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  refine ⟨EnvW.low h.env (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.sub_base _ (by simp only [oBuf, oSave]; omega_arith)) hf (r₂.trans u₁.rd) (w₂.trans u₁.wr)
-      fun r hr => by
-        rw [g₂, u₁.other r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)],
-    by rw [g₂, u₁.other _ (by decide), h.r14], fun r hr k hk => ?_, fun i hi k hk => ?_, fun k hk p hp' hc => ?_,
-    by rw [g₂, u₁.other _ (by decide), h.rbp]⟩
-  · have e := readW_writeW_off s.mem (scr σ) (s.mem.readW (at' σ (32 * I + 8 * K)) 64) (d := 32 * (50 + r) + 8 * k)
-      (e := oBuf + 504 * K + 168 * n + 8 * I) (n := 8) (by omega_arith) (by simp only [oBuf]; omega_arith)
-      (by simp only [oBuf]; omega_arith)
-    rw [hm]; exact e.trans (h.rc r hr k hk)
-  · have e := readW_writeW_off s.mem (scr σ) (s.mem.readW (at' σ (32 * I + 8 * K)) 64) (d := 32 * i + 8 * k)
-      (e := oBuf + 504 * K + 168 * n + 8 * I) (n := 8) (by omega_arith) (by simp only [oBuf]; omega_arith)
-      (by simp only [oBuf]; omega_arith)
-    rw [hm]; exact e.trans (h.lanes i hi k hk)
-  · rw [hm]
-    by_cases hw : k = K ∧ 168 * n + 8 * I ≤ p ∧ p < 168 * n + 8 * I + 8
-    · obtain ⟨rfl, h₁, h₂⟩ := hw
-      rw [wb_in _ _ _ (by omega_arith) (by simp only [oBuf]; omega_arith) (by decide),
-        show 8 * (oBuf + 504 * k + p - (oBuf + 504 * k + 168 * n + 8 * I)) = 8 * (p - 168 * n - 8 * I) by omega_arith,
-        byte_readW _ _ (by omega_arith), at', Offset.add_add,
-        show 32 * I + 8 * k + (p - 168 * n - 8 * I) = 32 * ((8 * I + (p - 168 * n - 8 * I)) / 8) + 8 * k +
-          (8 * I + (p - 168 * n - 8 * I)) % 8 by omega_arith,
-        byte_of_lanes4 h.lanes hk (by omega_arith), ← xofByte_A0 (B_length σ k) (by omega_arith),
-        show 168 * n + (8 * I + (p - 168 * n - 8 * I)) = p by omega_arith]
-    · rw [wb_out _ _ _ (by simp only [oBuf]; omega_arith) (by simp only [oBuf]; omega_arith) (by simp only [oBuf]; omega_arith)]
-      exact h.buf k hk p hp' (by omega_arith)
 
 theorem extract_eq : extract = (List.range 4).flatMap fun K => (List.range 21).flatMap fun I =>
     [.mov .rax (.mem (at_ .rbx (32 * I + 8 * K))), .store (at_ .rbp (504 * K + 8 * I)) .rax] := rfl
-
-/-- Block `n` of each state's output. -/
-theorem extract_ok {σ : State} (hp : PreW w16 σ) {n : Nat} (hn : n < 3) {s : State} (h : EXIW w16 σ n 0 0 s) :
-    WP isa (.block extract) s (SqInvW w16 σ (n + 1)) := by
-  rw [extract_eq]
-  refine WP.mono (wp_range_flatMap (M := isa) (fun K s => EXIW w16 σ n K 0 s) (fun K s hK h => ?_) 4 (Nat.le_refl _) s h)
-    fun s' h' => ⟨h'.env, h'.r14, h'.rc, h'.lanes, fun k hk p hp' => h'.buf k hk p (by omega_arith) (by omega_arith)⟩
-  refine WP.mono (wp_range_flatMap (M := isa) (fun I s => EXIW w16 σ n K I s) (fun I s hI h => ext_step hp hn hK hI h)
-    21 (Nat.le_refl _) s h) fun s' h' =>
-      ⟨h'.env, h'.r14, h'.rc, h'.lanes, fun k hk p hp' hc => h'.buf k hk p hp' (by omega_arith), h'.rbp⟩
-
-/-- `squeeze`, to block `n`: after `n + 1` squeezes, with `rbp` and `r10` kept. -/
-theorem sq_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {n : Nat} (hn : n < 3) {s : State} (h : SqInvW w16 σ n s)
-    (hbp : s.gpr .rbp = at' σ (oBuf + 168 * n)) :
-    WP isa (squeeze fast) s fun s' => SqInvW w16 σ (n + 1) s' ∧ s'.gpr .rbp = s.gpr .rbp ∧ s'.gpr .r10 = s.gpr .r10 := by
-  unfold squeeze
-  exact perm_ok (fast := fast) hp hn h fun s' ⟨he, h14, hrc, hl, hb, h₁, h₂⟩ =>
-    WP.mono (WP.keep [.rax] (extract_ok hp hn ⟨he, h14, hrc, hl, fun k hk p _ hc => hb k hk p (by omega_arith),
-      by rw [h₁, hbp]⟩) (by decide)) fun s'' ⟨h', k⟩ =>
-        ⟨h', by rw [k.gpr (by decide), h₁], by rw [k.gpr (by decide), h₂]⟩
-
-/-- `SqInv` does not depend on `rbp`, `r10` or the flags. -/
-theorem SqInvW.frame {σ : State} {n : Nat} {s s' : State} (h : SqInvW w16 σ n s) (hm : s'.mem = s.mem)
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hg : ∀ r, r ≠ .rbp → r ≠ .r10 → s'.gpr r = s.gpr r) :
-    SqInvW w16 σ n s' := by
-  have k : Keep [.rbp, .r10] s s' := ⟨fun r hr => hg r (fun e => hr (by simp [e])) (fun e => hr (by simp [e])), hrd, hwr⟩
-  exact ⟨h.env.keep hm k (by decide), by rw [k.gpr (by decide), h.r14], by rw [hm]; exact h.rc,
-    by rw [hm]; exact h.lanes, by rw [hm]; exact h.buf⟩
-
-/-- `squeezes b n`: after `b + n` squeezes. -/
-theorem sqs_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {b n : Nat} (hn : 0 < n) (hbn : b + n ≤ 3) {s : State}
-    (h : SqInvW w16 σ b s) : WP isa (squeezes b n fast) s (SqInvW w16 σ (b + n)) := by
-  unfold squeezes
-  refine blocks_ok hn (by omega_arith) (by simp only [oBuf]; omega_arith) (by decide) (fun _ _ _ h => h.frame)
-    (fun i t hb hi hi' hbp => sq_ok hp (by omega_arith) hi' ?_) h
-  rw [hbp, h.env.rbx, Offset.add_add, at', show oBuf + 168 * b + 168 * (i - b) = oBuf + 168 * i by
-    rw [Nat.add_assoc, ← Nat.mul_add, Nat.add_sub_cancel' hb]]
 
 end VG.Proof.MlKem.X86_64.S4

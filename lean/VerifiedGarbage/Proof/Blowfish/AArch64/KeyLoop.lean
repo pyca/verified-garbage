@@ -36,9 +36,6 @@ theorem exec_strb {s : State} {t n : Reg} {off : Nat} (ho : off < 4096)
   simp only [exec, addr, Nat.mod_one, show off < 4096 * 1 by omega_arith, and_self, ite_true, Option.bind_some,
     State.store, h]
 
-theorem exec_umov_w0 (s : State) (d : Reg) (n : VReg) :
-    exec (.umov .w d n 0) s = some (s.write .w d (vword (s.v n) 0)) := rfl
-
 theorem read_write_w (s : State) (r : Reg) (v : BitVec 32) : (s.write .w r v).read .w r = v := by
   simp [State.read, gpr_write, Size.bits]
 

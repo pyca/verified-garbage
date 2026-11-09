@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
 /-!
 # ML-DSA on AArch64: `vg_mldsa_rej_bounded_poly`
 
-`rejBounded(seed = x0, eta = w1, a = x2, scratch = x3) -> w0` (see
+`rejBoundedWith c (seed = x0, eta = w1, a = x2, scratch = x3) -> w0` (see
 `Common.lean` for the layout) squeezes 544 bytes of SHAKE256 of the 66 bytes
 of the seed (4 blocks; the least bound of FIPS 204 Appendix C is 481 bytes,
 the contract's largest 1088), which the 544 iterations of
@@ -77,7 +77,5 @@ def rejBoundedWith (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
     (.seq (spongeWith c 136 544)
       (.seq (.seq (.block [.subImm .x .x9 .x27 2]) (.ite (.zero .x .x9) (rbLoop 2) (rbLoop 4)))
         (.block (retZ ++ epi))))
-
-def rejBounded := rejBoundedWith .scalar
 
 end VG.Impl.MlDsa.AArch64.Sample

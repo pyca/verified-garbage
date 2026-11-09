@@ -138,7 +138,7 @@ theorem OneI.self {s s' : State} (h : OneI c W sp Np n Ad A D Ln s) (hg : ∀ r,
 abbrev Res (b : Bool) (s : State) : Prop := s.gpr .s8 = BitVec.ofNat 64 (if b then 1 else 0)
 
 /-- The slots of the addresses are apart from what `oneTag 112` writes. -/
-theorem slot_ot112 (L : Lay c (W + BitVec.ofNat 64 16) W) (hbw : (below sp 3232).Disjoint ⟨W, 2560⟩) {d : Nat}
+theorem slot_ot112 (L : Lay c (W + BitVec.ofNat 64 16) W) (hbw : (below sp 3248).Disjoint ⟨W, 2560⟩) {d : Nat}
     (hd : 232 ≤ d ∧ d + 8 ≤ 248) :
     ∀ r ∈ otFrame (W + BitVec.ofNat 64 16) W 112 sp, (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := by
   intro r hr
@@ -184,7 +184,7 @@ theorem openGood_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : CT (fun s => (OneO c W sp 
   refine CT.seqG (J := OneO c W sp Np n Ad A D Ln T TL) ((oneTag_ct L (.inr rfl)).mono fun s ⟨hT, _⟩ => hT.1)
     (fun s ⟨hT, H, x, hH, hl, hab⟩ => ?_) ?_
   · obtain ⟨V, a, b, d, e, f, i, k, he, hN, hA, hD, sa, sd⟩ := hT.1
-    have hk : (below sp 3232).Disjoint ⟨W, 2560⟩ := by rw [← d]; exact e.1.w
+    have hk : (below sp 3248).Disjoint ⟨W, 2560⟩ := by rw [← d]; exact e.1.w
     exact WP.mono (Proof.AesGcm.RISCV64.WP.with_rdwr (oneTag_ok (L.v a b d) e.1 (o := 112) (.inr rfl) (H := H) (a := x) (D := D) he
       (by rw [a]; exact hH) (by rw [i]; exact hl) (by rw [b]; exact hab) (by rw [b, d, k]; exact hD.ok)
       (by rw [d]; exact sd)))

@@ -40,11 +40,15 @@ def checkZerosU (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Bool :=
 
 theorem checkZerosU_2048 : checkZerosU lay2048 = true := by decide +kernel
 theorem checkZerosU_p2048 : checkZerosU VG.Impl.Rsa.X86_64.PubIfma.pay2048 = true := by decide +kernel
+theorem checkZerosU_p1024 : checkZerosU VG.Impl.Rsa.X86_64.PubIfma.pay1024 = true := by decide +kernel
+theorem checkZerosU_p1536 : checkZerosU VG.Impl.Rsa.X86_64.PubIfma.pay1536 = true := by decide +kernel
 
 theorem UOk.checkZeros (hu : UOk l) : checkZerosU l = true := by
-  rcases hu with rfl | rfl
+  rcases hu with rfl | rfl | rfl | rfl
   · exact checkZerosU_2048
   · exact checkZerosU_p2048
+  · exact checkZerosU_p1024
+  · exact checkZerosU_p1536
 
 theorem zerosU_ok (hu : UOk l) {s : State} :
     WP isa (.block (zerosU l)) s fun s' =>

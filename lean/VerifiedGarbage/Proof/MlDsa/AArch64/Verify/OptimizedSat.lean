@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSat
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Inst
 
 @[expose] public section
 
@@ -50,7 +49,6 @@ theorem verifySatWith_roots (p : Params) (hp : Ok3 p) (m : Mem)
     all_goals exact Region.disjoint_of_sep (by decide +kernel)
   · exact Region.disjoint_of_sep (by dsimp [verifySatWith,baseSat]; decide)
 
-
 theorem verifySatWith_pre (p : Params) (hp : Ok3 p) (m : Mem)
     (hf : ∀j<488,m.readW (1048576+BitVec.ofNat 64 (8*j)) 64=
       Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords.getD j 0)
@@ -63,14 +61,5 @@ theorem verifySatWith_pre (p : Params) (hp : Ok3 p) (m : Mem)
     all_goals sig_sat_check [verifyContract,verifySig,abi,argRegs,baseSat,List.range,List.range.loop]
   sig_pre [verifyContract,verifySig,abi,argRegs,List.range,List.range.loop] at hb ⊢
   exact hb
-
-def verifySat (p : Params) : State := verifySatWith p (Sign.optimizedSignSat mlDsa44).mem
-
-theorem verify_sat {p : Params} (hp : Ok3 p) :
-    (verifyContract p (abi.withConsts signRootConsts) 16).pre (verifySat p) := by
-  have hr := (Sign.staticRoots_entry (by decide +kernel) (Sign.optimizedSign_sat (.inl rfl))).2
-  apply verifySatWith_pre p hp
-  · exact hr.forward.held
-  · exact hr.inverse.held
 
 end VG.Proof.MlDsa.AArch64.Verify.Optimized

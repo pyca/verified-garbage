@@ -50,7 +50,6 @@ theorem RelCT.assoc_r {P Q : State → State → Prop} {a b c : Prog isa}
           obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq a₁ (.seq b₁ c₁)) (.seq a₂ (.seq b₂ c₂))
           exact ⟨by simpa only [List.append_assoc] using ht, hq⟩
 
-/-! ## The schedule -/
 
 /-! ## The public data and the stages -/
 
@@ -471,33 +470,7 @@ theorem finUsed3_ct {Φ : FPub → State → Prop} (hΦ : ∀ q s, Φ q s → KS
   kt_ct (fun q : FPub => q.B) (fun q => q.wr) fS fvs [] (by decide) fvs_fst (fun _ _ h => (hΦ _ _ h).hp) (pins_nil _)
     (by taint_decide)
 
-/-- Everything after `loadC` leaks the same in runs that agree on the public
-data and the schedule. -/
-theorem afterLoad_ct (M : Mont) : RelCT isa (Two KSt) (seqs (closeCheck ++ ([.ite .ne (finUsed 2) (seqs (trial ++
-    ([.ite .ne (finUsed 3) (seqs (gcdCheck ++
-      ([.ite .ne (finUsed 3) (seqs (montSetup M.mm ++ expSetup ++ millerRabin M.mm ++ [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))) fun _ _ => True := by
-  refine RelCT.seqs_app (by simp [closeCheck]) (by simp) (RelCT.seq (R := Two fun q s => KSt q s ∧
-    s.zf = some (!q.sch.close)) (two_post closeCheck_ct fun _ _ h => closeStage_ok h) ?_)
-  simp only [seqs]
-  refine two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) (finUsed2_ct fun _ _ h => h.1.1) ?_
-  refine RelCT.seqs_app (by simp [trial]) (by simp) (RelCT.seq (R := Two fun q s => (KSt q s ∧
-    s.zf = some (!q.sch.comp)) ∧ q.sch.close = false) (two_post (trial_ct fun _ _ h => h.1.1) fun q s h => ?_) ?_)
-  · have hcl := ne_false h.1.2 h.2
-    exact WP.mono (trialStage_ok h.1.1 hcl) fun t ht => ⟨ht, hcl⟩
-  simp only [seqs]
-  refine two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.1.2, h₂.1.2]) (finUsed3_ct fun _ _ h => h.1.1.1) ?_
-  refine RelCT.seqs_app (by simp [gcdCheck, loadE]) (by simp) (RelCT.seq (R := Two fun q s => (KSt q s ∧
-    s.zf = some (!q.sch.gbad)) ∧ q.sch.close = false ∧ q.sch.comp = false)
-      (two_post (gcdCheck_ct fun _ _ h => h.1.1.1) fun q s h => ?_) ?_)
-  · have hco := ne_false h.1.1.2 h.2
-    exact WP.mono (gcdStage_ok h.1.1.1 h.1.2 hco) fun t ht => ⟨ht, h.1.2, hco⟩
-  simp only [seqs]
-  refine two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.1.2, h₂.1.2]) (finUsed3_ct fun _ _ h => h.1.1.1) ?_
-  refine (tail_ct M).mono (fun _ _ h => two_bind (fun q _ _ h₁ h₂ =>
-    ⟨q.tp, tailPre h₁.1.1.1 h₁.1.2.1 h₁.1.2.2 (ne_false h₁.1.1.2 h₁.2),
-      tailPre h₂.1.1.1 h₂.1.2.1 h₂.1.2.2 (ne_false h₂.1.1.2 h₂.2)⟩) h) fun _ _ h => h
-
-/-! ## `loadC`, and `kMain` -/
+/-! ## `loadC` -/
 
 /-- The arguments' header words. -/
 def avs0 (q : FPub) : List (Nat × BitVec 64) :=
@@ -507,7 +480,7 @@ def avs0 (q : FPub) : List (Nat × BitVec 64) :=
 
 def aS0 : List Nat := [kOut, kLen, kUsedP, kE, kElen, kP, kPlen, kRand, kRandLen]
 
-/-- Before `loadC`: what `kMain_ok` needs, for the public data. -/
+/-- Before `loadC`: what `kMainWith` needs, for the public data. -/
 def K0 (q : FPub) (s : State) : Prop :=
   KW q.B q.wr ∧ s.wr = q.wr ∧ FDims q ∧ ∃ pB r : List Byte,
     MainCtx s q.B q.Z (8 * q.w) q.op q.up q.eP q.pP q.rP q.eB pB r ∧ pB.length = q.pl ∧ r.length = q.rl ∧
@@ -598,11 +571,5 @@ theorem loadC_ct : RelCT isa (Two K0) (seqs loadC) fun _ _ => True := by
   · exact hW
   · exact hA aN (by decide)
   · rw [hhd kLen (by decide) (by decide)]; exact hm.len
-
-/-- `kMain` leaks the same in runs that agree on the public data. -/
-theorem kMain_ct (M : Mont) : RelCT isa (Two K0) (kMain M.mm) fun _ _ => True := by
-  rw [kMain_eq]
-  exact RelCT.seqs_app (by simp [loadC]) (by simp [closeCheck])
-    (RelCT.seq (two_post loadC_ct fun _ _ h => loadCStage_ok h) (afterLoad_ct M))
 
 end VG.Proof.RsaKeyGen.X86_64

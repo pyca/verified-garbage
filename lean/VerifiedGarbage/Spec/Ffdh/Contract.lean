@@ -14,7 +14,8 @@ loops over random tapes, allocation and encoding:
   of exactly `p_len` octets (`domainValid`);
 * `vg_ffdh_check_public`: `publicValid` of an imported y;
 * `vg_ffdh_check_private`: `privateFrom` of an imported (y, x);
-* `vg_ffdh_generate_key`: one attempt of `generate`, from random octets;
+* `vg_ffdh_generate_key`: one key-generation attempt, from random octets
+  (`scalarOfOctets`, `keyStatus`);
 * `vg_ffdh_exchange`: `exchange`, padded to the modulus' length.
 
 The domain is one buffer, `domain`: p, g and, if `domain_len` is `3 p_len`,
@@ -242,7 +243,7 @@ def generateKeySig : Sig where
     ("rand", .slice false .u8 "rand_len"), ("scratch", .slice true .u64 "scratch_len")]
   ret := some .u32
 
-/-- For a valid domain, one attempt of `generate` with the scalar
+/-- For a valid domain, one key-generation attempt with the scalar
 `scalarOfOctets` of `rand`: `keyStatus`, and for 1 the scalar and the public
 value at `x` and `y`, `p_len` octets each; zeros at both otherwise. Timing
 may depend on the domain and the status, not otherwise on `rand`. -/
@@ -268,26 +269,6 @@ def generateKeyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       let dom := bytesAt m domain domainLen.toNat
       let a := domainOf pLen.toNat dom
       dom.map (·.toNat) ++ [keyStatus a (scalarOfOctets a (bytesAt m rand randLen.toNat))])
-
-def generateKeyApi : Api where
-  module := "ffdh"
-  name := "vg_ffdh_generate_key"
-  sig := generateKeySig
-  writeArgs := true
-  contracts := some fun A stack => generateKeyContract A stack
-  summary := "One attempt at a finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 \
-    §5.6.1.1.4, rejection sampling). With `domain` as `vg_ffdh_check_domain` takes it, \
-    takes `rand` (`p_len` random bytes, most significant first) modulo `2^b`, where b is \
-    the bit length of q (of `p − 1` without q), as x. Returns 2 if x is not in `1..q` \
-    (`1..p − 1`); 3 if `y = g^x mod p` is not a valid public value (as \
-    `vg_ffdh_check_public` checks it); otherwise 1, and writes x and y (`p_len` bytes \
-    each, most significant first) to `x` and `y`. `x` and `y` are zeros but for 1. For \
-    2 and 3 the caller tries again with fresh random bytes.\n\n\
-    Contract: `VG.Spec.Ffdh.generateKeyContract`. Timing may depend on the pointers, \
-    the lengths, the domain and the value returned, not otherwise on `rand` or x; the \
-    exponentiation may run over the bytes of q (`p − 1`)."
-  safety := domainSafety ++ ["`x_len`, `y_len` and `rand_len` must be `p_len`.",
-    checkedSafety] ++ scratchSafety
 
 /-! ## `vg_ffdh_exchange` -/
 

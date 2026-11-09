@@ -38,9 +38,6 @@ def savedRegion (b : Addr) : Region := ⟨b + BitVec.ofNat 64 (8 * savedSlot), 1
 
 theorem sreg_ne_sb : ∀ i < 18, sreg i ≠ sb := by decide
 
-theorem sreg_mem (r : Reg) : r ∈ (List.range 18).map sreg ↔ ∃ i < 18, sreg i = r := by
-  simp only [List.mem_map, List.mem_range]
-
 theorem save_ok {s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) ∈ s.wr) (hb : s.gpr sb = b) :
     ∃ s', runBlock isa saveRegs s = some s' ∧ Saved s b s'.mem ∧ s'.gpr = s.gpr ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [savedRegion b] s.mem s'.mem ∧

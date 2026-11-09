@@ -43,24 +43,6 @@ def finalizeSat : State :=
   { Proof.Sha512.X86_64.Stream.Finalize.sat with
     wr := [⟨0x1000, 192⟩, ⟨0x2000, 64⟩, ⟨0x3000, 1376⟩] }
 
-theorem compressImplies :
-    Proof.Sha512.compressWideX86_64.Implies (Proof.Sha512.compressContract X86_64.abi) := by
-  sig_implies [Proof.Sha512.compressContract, Proof.Sha512.compressSig, Proof.Sha512.compressWideX86_64,
-    Proof.Sha512.compressX86_64, X86_64.abi, X86_64.argRegs]
-    [Proof.Sha512.X86_64.wideSat, Proof.Sha512.X86_64.satState] using Proof.Sha512.X86_64.wideSat
-
-theorem compress :
-    Verified X86_64.target Impl.Sha512.X86_64.Rolled.compress (Proof.Sha512.compressContract X86_64.abi) :=
-  Proof.Sha512.X86_64.Rolled.compress_verified.of_implies compressImplies
-
-theorem compress_avx2 :
-    Verified X86_64.target Impl.Sha512.X86_64.Avx2Rolled.compress (Proof.Sha512.compressContract X86_64.abi) :=
-  Proof.Sha512.X86_64.Avx2.Rolled.compress_verified.of_implies compressImplies
-
-theorem compress_shani :
-    Verified X86_64.target Impl.Sha512.X86_64.ShaNi.compress (Proof.Sha512.compressContract X86_64.abi) :=
-  Proof.Sha512.X86_64.ShaNi.compressWide_verified.of_implies compressImplies
-
 theorem init (iv : Spec.Sha512.HashValue) :
     Verified X86_64.target (Impl.Sha512.X86_64.Stream.init iv) (Spec.Sha512.initContract X86_64.abi iv) :=
   (Proof.Sha512.X86_64.Stream.init_verified iv).of_implies (by

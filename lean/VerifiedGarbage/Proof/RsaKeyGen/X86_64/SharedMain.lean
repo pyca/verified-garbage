@@ -52,7 +52,7 @@ abbrev SharedMrEnd (B sp : Addr) (Z w : Nat) (mi : BitVec 64) (c : Nat) (r : Lis
     word s.mem B (8 * kUsed) = BitVec.ofNat 64 (r.length - rest.length)) ∧
   SharedFrame B sp (sharedRoundRanges w) s₀.mem s.mem ∧ Keep mmRegs s₀ s
 
-/-- One iteration of `millerRabin`'s loop. -/
+/-- One iteration of `millerRabinWith`'s loop. -/
 theorem sharedMrIter_ok (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) {B sp : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat} {rp : Addr} {r : List Byte}
     {s₀ : State} {res : Option (Bool × List Byte)} (hd : MrDims B Z w) (hZ28 : slot w 28 ≤ Z) (hc1 : 1 < c)
     (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length < 2 ^ 64) (hch : ch < 2 ^ 62)
@@ -199,7 +199,7 @@ theorem sharedMrIter_ok (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc 
           subst h1b
           rw [List.length_drop]; omega_arith
 
-/-- The start of `millerRabin`: `kI := 1`, `kUni := 0`. -/
+/-- The start of `millerRabinWith`: `kI := 1`, `kUni := 0`. -/
 theorem sharedMrInit_ok {B sp : Addr} {Z w : Nat} {mi : BitVec 64} {c ch bm : Nat} {rp : Addr}
     {r : List Byte} {s : State} {used : Nat} (hd : MrDims B Z w) (_hZ28 : slot w 28 ≤ Z)
     (henv : SharedEnv B Z sp s) (hc : MrCtx s B Z w mi c bm) (hE : ECtx s.mem B w c)
@@ -245,7 +245,7 @@ theorem sharedMrInit_ok {B sp : Addr} {Z w : Nat} {mi : BitVec 64} {c ch bm : Na
     (by have := slot_le (w := w) (show aR2 < 8 by decide); omega_arith)]; exact hr2
 
 
-/-- `millerRabin`: the witnesses from offset `used`, as `primalityTest`'s
+/-- `millerRabinWith`: the witnesses from offset `used`, as `primalityTest`'s
 loop from `(1, 0)`. -/
 theorem sharedMillerRabin_ok (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) {B sp : Addr} {Z w : Nat} {mi : BitVec 64} {c ch bm : Nat} {rp : Addr}
     {r : List Byte} {s : State} {used : Nat} (hd : MrDims B Z w) (hZ28 : slot w 28 ≤ Z) (hc1 : 1 < c)

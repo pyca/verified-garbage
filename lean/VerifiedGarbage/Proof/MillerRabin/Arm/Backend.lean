@@ -8,8 +8,7 @@ import VerifiedGarbage.Proof.MillerRabin.Arm.Verified
 
 A `RoundImpl` is verified against the contract its callers use
 (`roundContract`, `Proof/MillerRabin/Arm/Contract.lean`), within the 56
-bytes of stack its callers leave it, which gives the shared contract
-(`RoundImpl.verifiedSpec`).
+bytes of stack its callers leave it.
 -/
 
 @[expose] public section
@@ -27,9 +26,5 @@ structure RoundImpl where
 
 def RoundImpl.name (v : RoundImpl) : String :=
   "vg_miller_rabin_round" ++ v.suffix
-
-theorem RoundImpl.verifiedSpec (v : RoundImpl) : Verified target v.code
-    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 56) :=
-  v.verified.of_implies round_implies
 
 end VG.Proof.MillerRabin.Arm

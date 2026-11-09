@@ -146,13 +146,6 @@ theorem maskBody_ok (s : State) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .rdi) 16) 
 theorem dword_and (a b : BitVec 128) (i : Nat) : dword (a &&& b) i = dword a i &&& dword b i :=
   VG.Proof.MlDsa.X86_64.Arith.dword_pand a b i
 
-theorem coeffAt_writeW' (m : Mem) (p : Addr) {N i j : Nat} (hN : 4 * N ≤ 2 ^ 64) (hi : i < N) (hj : j < N)
-    (v : BitVec 32) :
-    coeffAt (m.writeW (p + BitVec.ofNat 64 (4 * j)) v) p i = if j = i then v else coeffAt m p i := by
-  split
-  · subst j; exact Mem.readW_writeW_self32 m _ v
-  · exact Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
-
 theorem coeffAt_def (m : Mem) (p : Addr) (i : Nat) : m.readW (p + BitVec.ofNat 64 (4 * i)) 32 = coeffAt m p i :=
   rfl
 

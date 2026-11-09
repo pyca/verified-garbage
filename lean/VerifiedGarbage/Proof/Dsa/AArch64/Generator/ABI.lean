@@ -19,9 +19,6 @@ open VG VG.AArch64
 /-- The widths of p parameter generation produces. -/
 def Supported (pLen : Nat) : Prop := pLen = 128 ∨ pLen = 256 ∨ pLen = 384
 
-theorem Supported.of_mem {pLen : Nat} (h : pLen ∈ ([128, 256, 384] : List Nat)) : Supported pLen := by
-  simpa only [Supported, List.mem_cons, List.not_mem_nil, or_false] using h
-
 /-- The stack the stage's contract asks for. -/
 abbrev stack : Nat := 288
 
@@ -46,7 +43,6 @@ structure StageABI (pLen : Nat) (s : State) : Prop where
   wsBound : (s.gpr .x0).toNat + (s.gpr .x1).toNat * 8 ≤ 2 ^ 64
   tapeBound : (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64
   size : Impl.Dsa.Generation.Layout.usedBytes pLen ≤ 8 * (s.gpr .x1).toNat
-  chunks : (s.gpr .x3).toNat % pLen = 0
   odd : pOf pLen s.mem (s.gpr .x0) % 2 = 1
   bits : Spec.Dsa.bitLength (pOf pLen s.mem (s.gpr .x0)) = 8 * pLen
   qPos : 0 < qOf pLen s.mem (s.gpr .x0)

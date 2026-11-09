@@ -4,79 +4,31 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_ed25519_public_key:
+vg_ed25519_key_pair:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -144
-	addi a3, sp, 0
-	sd s7, 96(a3)
-	sd s8, 104(a3)
-	sd s9, 112(a3)
-	sd s10, 120(a3)
-	sd ra, 128(a3)
-	addi s7, a0, 0
-	addi s8, a1, 0
-	addi s9, a2, 0
-	addi s10, a3, 0
-	addi a0, s9, 0
-	call {vg_sha512_init}
-	addi a0, s9, 0
-	addi a1, zero, 0
-	addi a2, s8, 0
-	addi a3, zero, 32
-	call {vg_sha512_update}
-	addi a0, s9, 0
+	addi sp, sp, -32
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd a0, 8(t0)
+	sd a1, 16(t0)
+	sd a3, 24(t0)
+	addi a0, a2, 0
+	addi a2, a1, 0
 	addi a1, zero, 32
-	addi a2, s10, 0
-	call {vg_sha512_finalize}
-	ld a5, 0(s10)
-	srli a5, a5, 3
-	slli a5, a5, 3
-	sd a5, 64(s10)
-	ld a5, 8(s10)
-	sd a5, 72(s10)
-	ld a5, 16(s10)
-	sd a5, 80(s10)
-	ld a5, 24(s10)
-	slli a5, a5, 2
-	srli a5, a5, 2
-	addi a6, zero, 1
-	slli a6, a6, 62
-	or a5, a5, a6
-	sd a5, 88(s10)
-	addi a0, s7, 0
-	addi a1, s10, 64
-	addi a2, s9, 0
-	call {vg_ed25519_scalar_base}
-	ld ra, 128(s10)
-	ld s7, 96(s10)
-	ld s8, 104(s10)
-	ld s9, 112(s10)
-	ld s10, 120(s10)
-	addi t5, sp, 0
-	addi t6, zero, 0
-	sd t6, 0(t5)
-	sd t6, 8(t5)
-	sd t6, 16(t5)
-	sd t6, 24(t5)
-	sd t6, 32(t5)
-	sd t6, 40(t5)
-	sd t6, 48(t5)
-	sd t6, 56(t5)
-	sd t6, 64(t5)
-	sd t6, 72(t5)
-	sd t6, 80(t5)
-	sd t6, 88(t5)
-	sd t6, 96(t5)
-	sd t6, 104(t5)
-	sd t6, 112(t5)
-	sd t6, 120(t5)
-	sd t6, 128(t5)
-	addi sp, sp, 144
+	call {vg_sha512_digest}
+	addi t0, sp, 0
+	ld a0, 8(t0)
+	ld a1, 16(t0)
+	ld a2, 24(t0)
+	call {vg_ed25519_public_key_expanded}
+	addi t0, sp, 0
+	ld ra, 0(t0)
+	addi sp, sp, 32
 	ret
 	.option pop
 
-vg_ed25519_sign_cached:
+vg_ed25519_sign_expanded:
 	.option push
 	.option arch, +m, +c
 	addi sp, sp, -288
@@ -158,17 +110,134 @@ vg_ed25519_sign_cached:
 	sb a5, 222(s11)
 	lbu a5, 31(a2)
 	sb a5, 223(s11)
-	addi a0, s10, 0
-	call {vg_sha512_init}
-	addi a0, s10, 0
-	addi a1, zero, 0
-	addi a2, s1, 0
-	addi a3, zero, 32
-	call {vg_sha512_update}
-	addi a0, s10, 0
-	addi a1, zero, 32
-	addi a2, s11, 128
-	call {vg_sha512_finalize}
+	lbu a5, 0(s1)
+	sb a5, 128(s11)
+	lbu a5, 1(s1)
+	sb a5, 129(s11)
+	lbu a5, 2(s1)
+	sb a5, 130(s11)
+	lbu a5, 3(s1)
+	sb a5, 131(s11)
+	lbu a5, 4(s1)
+	sb a5, 132(s11)
+	lbu a5, 5(s1)
+	sb a5, 133(s11)
+	lbu a5, 6(s1)
+	sb a5, 134(s11)
+	lbu a5, 7(s1)
+	sb a5, 135(s11)
+	lbu a5, 8(s1)
+	sb a5, 136(s11)
+	lbu a5, 9(s1)
+	sb a5, 137(s11)
+	lbu a5, 10(s1)
+	sb a5, 138(s11)
+	lbu a5, 11(s1)
+	sb a5, 139(s11)
+	lbu a5, 12(s1)
+	sb a5, 140(s11)
+	lbu a5, 13(s1)
+	sb a5, 141(s11)
+	lbu a5, 14(s1)
+	sb a5, 142(s11)
+	lbu a5, 15(s1)
+	sb a5, 143(s11)
+	lbu a5, 16(s1)
+	sb a5, 144(s11)
+	lbu a5, 17(s1)
+	sb a5, 145(s11)
+	lbu a5, 18(s1)
+	sb a5, 146(s11)
+	lbu a5, 19(s1)
+	sb a5, 147(s11)
+	lbu a5, 20(s1)
+	sb a5, 148(s11)
+	lbu a5, 21(s1)
+	sb a5, 149(s11)
+	lbu a5, 22(s1)
+	sb a5, 150(s11)
+	lbu a5, 23(s1)
+	sb a5, 151(s11)
+	lbu a5, 24(s1)
+	sb a5, 152(s11)
+	lbu a5, 25(s1)
+	sb a5, 153(s11)
+	lbu a5, 26(s1)
+	sb a5, 154(s11)
+	lbu a5, 27(s1)
+	sb a5, 155(s11)
+	lbu a5, 28(s1)
+	sb a5, 156(s11)
+	lbu a5, 29(s1)
+	sb a5, 157(s11)
+	lbu a5, 30(s1)
+	sb a5, 158(s11)
+	lbu a5, 31(s1)
+	sb a5, 159(s11)
+	lbu a5, 32(s1)
+	sb a5, 160(s11)
+	lbu a5, 33(s1)
+	sb a5, 161(s11)
+	lbu a5, 34(s1)
+	sb a5, 162(s11)
+	lbu a5, 35(s1)
+	sb a5, 163(s11)
+	lbu a5, 36(s1)
+	sb a5, 164(s11)
+	lbu a5, 37(s1)
+	sb a5, 165(s11)
+	lbu a5, 38(s1)
+	sb a5, 166(s11)
+	lbu a5, 39(s1)
+	sb a5, 167(s11)
+	lbu a5, 40(s1)
+	sb a5, 168(s11)
+	lbu a5, 41(s1)
+	sb a5, 169(s11)
+	lbu a5, 42(s1)
+	sb a5, 170(s11)
+	lbu a5, 43(s1)
+	sb a5, 171(s11)
+	lbu a5, 44(s1)
+	sb a5, 172(s11)
+	lbu a5, 45(s1)
+	sb a5, 173(s11)
+	lbu a5, 46(s1)
+	sb a5, 174(s11)
+	lbu a5, 47(s1)
+	sb a5, 175(s11)
+	lbu a5, 48(s1)
+	sb a5, 176(s11)
+	lbu a5, 49(s1)
+	sb a5, 177(s11)
+	lbu a5, 50(s1)
+	sb a5, 178(s11)
+	lbu a5, 51(s1)
+	sb a5, 179(s11)
+	lbu a5, 52(s1)
+	sb a5, 180(s11)
+	lbu a5, 53(s1)
+	sb a5, 181(s11)
+	lbu a5, 54(s1)
+	sb a5, 182(s11)
+	lbu a5, 55(s1)
+	sb a5, 183(s11)
+	lbu a5, 56(s1)
+	sb a5, 184(s11)
+	lbu a5, 57(s1)
+	sb a5, 185(s11)
+	lbu a5, 58(s1)
+	sb a5, 186(s11)
+	lbu a5, 59(s1)
+	sb a5, 187(s11)
+	lbu a5, 60(s1)
+	sb a5, 188(s11)
+	lbu a5, 61(s1)
+	sb a5, 189(s11)
+	lbu a5, 62(s1)
+	sb a5, 190(s11)
+	lbu a5, 63(s1)
+	sb a5, 191(s11)
 	ld a5, 128(s11)
 	srli a5, a5, 3
 	slli a5, a5, 3

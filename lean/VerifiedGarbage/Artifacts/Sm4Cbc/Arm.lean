@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.Arm.SerialCbcVerified
 public import VerifiedGarbage.Proof.Sm4.Arm.CbcBatchVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # SM4-CBC artifacts on baseline ARMv7 -/
 

@@ -125,22 +125,10 @@ theorem copy_ok {src dst : Reg} (hs : src ≠ .rax ∧ src ≠ .r14) (hd : dst �
   rw [e, show ((s.mem (A + BitVec.ofNat 64 k)).setWidth 64).setWidth 8 = s.mem (A + BitVec.ofNat 64 k) by
     simp, e']
 
-
 /-! ## Single instructions -/
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
-
-theorem wp_xor32r {d r : Reg}
-    (k : ∀ s', Upd s s' d (((s.gpr d).setWidth 32 ^^^ (s.gpr r).setWidth 32).setWidth 64) →
-      WP isa (.block is) s' Q) :
-    WP isa (.block (.alu32 .xor d (.reg r) :: is)) s Q :=
-  Proof.Sha256.X86_64.Stream.WP.cons rfl (k _ (Upd.flags _ _ _ _ _ _))
-
-theorem wp_mov32r {d r : Reg}
-    (k : ∀ s', Upd s s' d (((s.gpr r).setWidth 32).setWidth 64) → WP isa (.block is) s' Q) :
-    WP isa (.block (.mov32 d (.reg r) :: is)) s Q :=
-  Proof.Sha256.X86_64.Stream.WP.cons rfl (k _ (Upd.setReg _ _ _))
 
 theorem wp_xor32i {d : Reg} {v : BitVec 32}
     (k : ∀ s', Upd s s' d (((s.gpr d).setWidth 32 ^^^ v).setWidth 64) → WP isa (.block is) s' Q) :
@@ -214,10 +202,6 @@ theorem SavedRegs.frame {scr : Addr} {s₀ : State} {m m' : Mem} (h : SavedRegs 
       (fun r hr => (hd r hr).sub_left (slot_sub H scr hi)) (by decide)
   exact ⟨by rw [k 0 (by omega_nat), h.rbx], by rw [k 1 (by omega_nat), h.rbp], by rw [k 2 (by omega_nat), h.r12],
     by rw [k 3 (by omega_nat), h.r13], by rw [k 4 (by omega_nat), h.r14], by rw [k 5 (by omega_nat), h.r15]⟩
-
-theorem ea_slot (s : State) (b : Reg) (scr : Addr) (hb : s.gpr b = scr) (i : Nat) :
-    s.ea (at_ b (8 * H.W + 8 * i)) = slot H scr i := by
-  rw [ea_at, ofInt_natCast, hb]
 
 theorem slot_in {rs : List Region} {scr : Addr} {L : Nat} (h : ⟨scr, L⟩ ∈ rs) (hL : 8 * H.W + 48 ≤ L)
     (hW : H.W ≤ 256) {i : Nat} (hi : i < 6) : InRegions rs (slot H scr i) 8 :=
@@ -321,7 +305,6 @@ theorem restore_ok {s : State} {scr : Addr} {L : Nat} (h15 : s.gpr .r15 = scr) (
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h1, h2, h3, h4, h5, h6⟩ := hr
     rw [u₆.other r h6, u₅.other r h5, u₄.other r h4, u₃.other r h3, u₂.other r h2, u₁.other r h1]
-
 
 end VG.Proof.Pbkdf2.Md.X86_64.Calls
 

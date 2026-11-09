@@ -199,8 +199,6 @@ theorem selA_B : ∀ c ≤ 4, ∀ i < c, ∀ i' < c, (selA c).acc.getD i .v0 ≠
   decide
 theorem selA_o : ∀ c ≤ 4, ∀ i < c,
     (selA c).acc.getD i .v0 ∉ [VReg.v16, .v17, .v18, .v19, .v20, .v28, .v30] := by decide
-theorem selB_o : ∀ c ≤ 4, ∀ i < c,
-    (selB c).acc.getD i .v0 ∉ [VReg.v16, .v17, .v18, .v19, .v20, .v28, .v30] := by decide
 theorem selA_mem : ∀ c ≤ 4, ∀ i < c, (selA c).acc.getD i .v0 ∈ (selA c).acc := by decide
 theorem selB_mem : ∀ c ≤ 4, ∀ i < c, (selB c).acc.getD i .v0 ∈ (selB c).acc := by decide
 
@@ -438,8 +436,6 @@ theorem wordsVal_of_words₂ {m m' : Mem} {b b' : Addr} : ∀ (o o' k : Nat),
       have := h (j + 1) (by omega_using [hj])
       rwa [show o + 8 * (j + 1) = o + 8 + 8 * j by omega_using [],
         show o' + 8 * (j + 1) = o' + 8 + 8 * j by omega_using []] at this]
-
-
 
 /-- The pairs of entries `1 … 2q`: the odd ones into `A`, the even ones into
 `B`, `c` pairs from byte `o` each. -/

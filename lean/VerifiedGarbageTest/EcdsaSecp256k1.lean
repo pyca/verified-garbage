@@ -4,8 +4,10 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbageTest.Ec.SelfCheck
 meta import VerifiedGarbageTest.Ec.SelfCheck
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Secp256k1Sha256
-meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Secp256k1Sha256
+import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Spec.Hmac
+meta import VerifiedGarbage.Spec.Hmac
 
 /-!
 # ECDSA secp256k1 specification tests
@@ -13,14 +15,15 @@ meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Secp256k1Sha256
 No standard publishes secp256k1 ECDSA vectors, so the checks of
 `Ec/SelfCheck.lean`: the group law (`[n]G = O`, `[n + 1]G = G`,
 `[n - 1]G = -G`, small multiples), keys and nonces outside `[1, n - 1]`,
-and the signatures of `Secp256k1Sha256.inst`, which verify, and no longer
+and the signatures of `Curves.secp256k1` with HMAC-SHA-256, which verify, and no longer
 once the hash, the signature or the key changes.
 -/
 
 open Lean Elab Command in
 run_cmd do
   let C := VG.Spec.Secp256k1.curve
-  match VG.Test.Ec.SelfCheck.checkSign C VG.Spec.Ecdsa.Rfc6979.Secp256k1Sha256.inst
+  match VG.Test.Ec.SelfCheck.checkSign C VG.Spec.Ecdsa.Rfc6979.Curves.secp256k1
+      VG.Spec.Hmac.sha256 32
       (VG.Test.Ec.SelfCheck.key C "secp256k1 ECDSA") (VG.Test.Ec.SelfCheck.key C "secp256k1 ECDSA other") with
   | .ok () => pure ()
   | .error e => throwError "secp256k1 ECDSA: {e}"

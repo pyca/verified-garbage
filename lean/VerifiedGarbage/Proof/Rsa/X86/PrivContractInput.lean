@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Shared private RSA preconditions establish the i686 wrapper inputs -/
 
@@ -17,7 +18,7 @@ namespace VG.Proof.Rsa.X86.PrivChecked
 open VG VG.X86 VG.Proof.Bignum.X86
 open VG.Proof.Dsa.X86 (argumentPointer)
 
-theorem private_contract_pre (s : State) (h : (Spec.Rsa.privateCheckedContract abi stackBytes).pre s) :
+theorem private_contract_pre (s : State) (h : (Proof.Rsa.privateCheckedContract abi stackBytes).pre s) :
     PrivFnInput (privateGeometry s) (privateBytes s) s := by
   obtain ⟨stackFit, argFit, rd, wr, outN, outE, outI, outP, outQ, outDP, outDQ, outQI, outWs, outArgs,
     nWs, eWs, iWs, pWs, qWs, dpWs, dqWs, qiWs, wsArgs,

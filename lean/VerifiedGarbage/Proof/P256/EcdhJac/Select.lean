@@ -69,7 +69,6 @@ theorem selects_ok (n : Nat) (acc loads : Nat → VReg) (mask : VReg)
     · obtain rfl : i = k := by omega_arith
       rw [RegUpd.v_setV_self]
 
-
 abbrev acc (i : Nat) := vectorAcc.getD i .v0
 abbrev load (i : Nat) := vectorLoad.getD i .v18
 def written : List VReg := [.v28,.v29]++vectorLoad++vectorAcc
@@ -205,7 +204,6 @@ theorem storesReg_ok {size : Nat} (f : Nat → VReg) (reg : Reg) {s : State} {ba
     · exact (O₁.mono (Nat.le_refl _) (by omega_arith)).trans
         ((Oa.mono (by omega_arith) (by omega_arith)).trans (Ob.mono (by omega_arith) (by omega_arith)))
 
-
 def setup : List Instr :=
   [.movz .x .x5 1 0,.vop (.dup .d2 .v31 .x5),.vop (.dup .d2 .v30 .x2),.vop (.movi0 .v28)] ++
   vectorAcc.map (fun r=>.vop (.movi0 r))
@@ -340,11 +338,5 @@ theorem neon_ok {s : State} {base : Addr} {a : Nat} (hs : Scr s base 8192)
   refine ⟨fun j hj=>by rw [wt j hj,k₁.mem],?_,by simpa only [k₁.mem] using ot⟩
   exact ((VG.Proof.Mont.AArch64.Keeps.regs k₁.keeps).mono (by regions_sub)).trans
     (kt.mono (by regions_sub))
-
-theorem neonSetup_eq : Impl.P256.EcdhSelect.neonSetup=setup := rfl
-
-theorem neonScan_eq : Impl.P256.EcdhSelect.neonScan 2816 16=scan 2816 16 := rfl
-
-theorem neonStore_eq : Impl.P256.EcdhSelect.neonStore 704 5400=store := rfl
 
 end VG.Proof.P256.EcdhJac.Select

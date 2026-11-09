@@ -46,28 +46,49 @@ theorem prims_ok : VPrimsOk prims 1168 where
   hintUnpack := ⟨⟨0, by decide, Pack.hintBitUnpack_verified⟩, by decide +kernel⟩
   normLt := ⟨⟨0, by decide, Round.NormLt.verified⟩, by decide +kernel⟩
 
-theorem verify44_sat : (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa44 RISCV64.abi 1168).pre
+theorem withCache44_sat : (Proof.MlDsa.verifyWithCacheContract Spec.MlDsa.mlDsa44 RISCV64.abi 1168).pre
     (verifySat Spec.MlDsa.mlDsa44) := by
-  sig_sat_check [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, RISCV64.abi, RISCV64.argRegs, verifySat]
+  sig_pre [Proof.MlDsa.verifyWithCacheContract, Proof.MlDsa.verifyWithCacheSig, Spec.MlDsa.verifySig, RISCV64.abi,
+    RISCV64.argRegs, verifySat]
+  sig_and_intros
+  all_goals first
+    | exact .inl rfl
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
 
-theorem verify44_verified :
-    Verified RISCV64.target verify44 (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa44 RISCV64.abi 1168) :=
-  verify_verified prims_ok (by decide) _ (.inl rfl) verify44_sat
+theorem withCache44_verified :
+    Verified RISCV64.target withCache44 (Proof.MlDsa.verifyWithCacheContract Spec.MlDsa.mlDsa44 RISCV64.abi 1168) :=
+  verify_verified prims_ok (by decide) _ (.inl rfl) withCache44_sat
 
-theorem verify65_sat : (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa65 RISCV64.abi 1168).pre
+theorem withCache65_sat : (Proof.MlDsa.verifyWithCacheContract Spec.MlDsa.mlDsa65 RISCV64.abi 1168).pre
     (verifySat Spec.MlDsa.mlDsa65) := by
-  sig_sat_check [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, RISCV64.abi, RISCV64.argRegs, verifySat]
+  sig_pre [Proof.MlDsa.verifyWithCacheContract, Proof.MlDsa.verifyWithCacheSig, Spec.MlDsa.verifySig, RISCV64.abi,
+    RISCV64.argRegs, verifySat]
+  sig_and_intros
+  all_goals first
+    | exact .inl rfl
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
 
-theorem verify65_verified :
-    Verified RISCV64.target verify65 (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa65 RISCV64.abi 1168) :=
-  verify_verified prims_ok (by decide) _ (.inr (.inl rfl)) verify65_sat
+theorem withCache65_verified :
+    Verified RISCV64.target withCache65 (Proof.MlDsa.verifyWithCacheContract Spec.MlDsa.mlDsa65 RISCV64.abi 1168) :=
+  verify_verified prims_ok (by decide) _ (.inr (.inl rfl)) withCache65_sat
 
-theorem verify87_sat : (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa87 RISCV64.abi 1168).pre
+theorem withCache87_sat : (Proof.MlDsa.verifyWithCacheContract Spec.MlDsa.mlDsa87 RISCV64.abi 1168).pre
     (verifySat Spec.MlDsa.mlDsa87) := by
-  sig_sat_check [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, RISCV64.abi, RISCV64.argRegs, verifySat]
+  sig_pre [Proof.MlDsa.verifyWithCacheContract, Proof.MlDsa.verifyWithCacheSig, Spec.MlDsa.verifySig, RISCV64.abi,
+    RISCV64.argRegs, verifySat]
+  sig_and_intros
+  all_goals first
+    | exact .inl rfl
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
 
-theorem verify87_verified :
-    Verified RISCV64.target verify87 (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa87 RISCV64.abi 1168) :=
-  verify_verified prims_ok (by decide) _ (.inr (.inr rfl)) verify87_sat
+theorem withCache87_verified :
+    Verified RISCV64.target withCache87 (Proof.MlDsa.verifyWithCacheContract Spec.MlDsa.mlDsa87 RISCV64.abi 1168) :=
+  verify_verified prims_ok (by decide) _ (.inr (.inr rfl)) withCache87_sat
 
 end VG.Proof.MlDsa.RISCV64.Verify

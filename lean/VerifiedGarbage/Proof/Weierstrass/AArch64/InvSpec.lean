@@ -14,10 +14,10 @@ its proof (`InvMain.lean`): the slots (`InvLay`), what the inversion writes
 enough for its bits, and the constants), and `InvSound m`, that the
 inversion leaves `[acc] = [base]^(m - 2)` (in Montgomery form), which a prime
 `m` gives (`InvSounds`). The proof of that needs Mathlib's algebra, so the
-proofs of the functions take it as a hypothesis, and a curve's variant on
-AArch64 (`HasLawInv`, `Variants/<Curve>/AArch64/Law.lean`) supplies it with
+proofs of the functions take it as a hypothesis, and a curve's law on
+AArch64 (`HasLawInv`, `Proof/<Curve>/AArch64/Law.lean`) supplies it with
 its group law, as on x86-64. An inversion with a power's slots takes the
-power's place (`InvLay.of_chain`, `invW_eq`).
+power's place (`InvLay.of_chain`).
 -/
 
 @[expose] public section
@@ -93,8 +93,6 @@ theorem InvOk.ofMod {M : Mod} {acc base tbl m : Nat} (hC : 0 < (InvCfg.ofMod M a
 def _root_.VG.Impl.Weierstrass.AArch64.InvCfg.toChain (P : InvCfg) : ChainCfg :=
   ⟨P.M, P.acc, P.base, P.tbl, 1, []⟩
 
-theorem invW_eq (P : InvCfg) : invW P = chainW P.toChain := rfl
-
 theorem InvLay.of_chain {P : InvCfg} {size : Nat} (h : ChainLay P.toChain size) (h4 : 4 ≤ P.M.n)
     (h7 : P.M.n < 10) : InvLay P size := by
   have mo := h.mo_w
@@ -107,9 +105,8 @@ theorem InvLay.of_chain {P : InvCfg} {size : Nat} (h : ChainLay P.toChain size) 
 and `InvArith.lean`'s `invToM_of_prime`). -/
 def InvSounds : Prop := ∀ {m : Nat} [NeZero m], m.Prime → InvSound m
 
-/-- The group law of `C` and the soundness of the inversions, as a value: the
-variant of a curve's interface on AArch64 (`Variants/<Curve>/AArch64/Law.lean`,
-see `TCB/Emit.lean`), as `HasLaw` is on the targets without inversions by
+/-- The group law of `C` and the soundness of the inversions, as a value: what a
+curve's proofs on AArch64 take (`Proof/<Curve>/AArch64/Law.lean`), as `HasLaw` is on the targets without inversions by
 divsteps. -/
 structure HasLawInv (C : Spec.Weierstrass.Curve) : Type where
   law : Law C

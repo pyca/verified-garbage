@@ -10,10 +10,17 @@ publish = false
 # lints and coverage never build criterion or link OpenSSL or AWS-LC.
 [workspace]
 
+# As the library's (`[workspace.lints]` in its `Cargo.toml`): no glob
+# imports (`clippy.toml`).
+[lints.clippy]
+wildcard_imports = "deny"
+
 [dependencies]
 # `VG_CPU_FEATURES` chooses the implementations benchmarked (see
-# `src/cpu.rs` and `ci/bench_arches.py`).
-verified-garbage = { path = "..", features = ["cpu-features-env"] }
+# `crates/verified-garbage-cpu/src/detect.rs` and
+# `ci/bench_arches.py`); `internal-bench` lets the
+# generation benchmarks give the prime searches fixed tapes.
+verified-garbage = { path = "..", features = ["cpu-features-env", "internal-bench"] }
 
 # Low-level KEM calls are not yet wrapped by rust-openssl.
 openssl-sys = { version = "0.9.117", optional = true }
@@ -24,6 +31,8 @@ foreign-types = { version = "0.3", optional = true }
 # On a supported host, use `cargo bench --features openssl-argon2` and
 # `cargo test --features openssl-argon2 --test argon2` for the comparison.
 openssl-argon2 = []
+# OpenSSL 3.2+ supplies AES-GCM-SIV.
+openssl-gcm-siv = []
 # OpenSSL 3.5+ supplies ML-DSA; enable its benchmark comparisons on a supported host.
 openssl-mldsa = []
 # OpenSSL 3.5+ supplies ML-KEM.

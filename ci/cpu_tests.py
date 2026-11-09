@@ -23,8 +23,8 @@ group, until the code it tests is built for them: `ecdsa`'s unit tests are
 x86-64's for now, and run on the other CPUs' `ecdsa` lines when they are
 built there too.
 
-  cpu_tests.py emulated-rsa CPU
-      of the runs on stdin, focused RSA groups for ICX/DMR; use only after
+  cpu_tests.py emulated-runs CPU
+      of the runs on stdin, focused RSA, DSA and FFDH groups for ICX/DMR; use only after
       detecting SDE on a host without AVX512_IFMA
   cpu_tests.py select BINARY LIB TESTS GROUP...
       the tests of the groups in BINARY (`lib`, `tests` or `cavp`), one per
@@ -60,67 +60,63 @@ def runs_in(runner, test):
 
 GROUPS = {
     "aes_cbc": {
-        "lib": ["aes_cbc"],
+        "lib": [],
         "tests": ["cavp::aes_cbc", "wycheproof::aes_cbc"],
     },
     "aes_ccm": {
-        "lib": ["aes_ccm"],
+        "lib": ["aead::aes_ccm"],
         "tests": ["cavp::aes_ccm", "wycheproof::aes_ccm"],
     },
     "aes_ecb": {
-        "lib": ["aes_ecb"],
+        "lib": [],
         "tests": ["cavp::aes_ecb"],
     },
     "aes_gcm": {
-        "lib": ["aes_gcm", "aes_gcm_siv"],
+        "lib": ["aead::aes_gcm", "aead::aes_gcm_siv"],
         "tests": ["cavp::aes_gcm", "wycheproof::aes_gcm", "wycheproof::aes_gcm_siv"],
     },
     "aes_gcm_siv": {
-        "lib": ["aes_gcm_siv"],
+        "lib": ["aead::aes_gcm_siv"],
         "tests": ["wycheproof::aes_gcm_siv"],
     },
     "aes_ocb": {
-        "lib": ["aes_ocb"],
+        "lib": ["aead::aes_ocb"],
         "tests": ["rfc7253::aes_ocb_iterative", "rfc7253::aes_ocb_sample_results"],
     },
     "aes_ofb": {
-        "lib": ["aes_ofb"],
+        "lib": [],
         "tests": ["cavp::aes_ofb"],
     },
     "aes_cfb": {
-        "lib": ["aes_cfb"],
+        "lib": [],
         "tests": ["cavp::aes_cfb"],
     },
     "aes_cfb8": {
-        "lib": ["aes_cfb8"],
+        "lib": [],
         "tests": ["cavp::aes_cfb8"],
     },
     "aes_ctr": {
-        "lib": ["aes_ctr"],
+        "lib": [],
         "tests": ["rfc3686"],
     },
     "aes_xts": {
-        "lib": ["aes_xts"],
+        "lib": [],
         "tests": ["cavp::aes_xts", "wycheproof::aes_xts"],
     },
     "aes_siv": {
-        "lib": ["aes_siv"],
+        "lib": ["aead::aes_siv"],
         "tests": ["wycheproof::aes_siv"],
     },
     "argon2": {
-        "lib": ["argon2"],
+        "lib": ["kdf::argon2"],
         "tests": [],
     },
     "blake2": {
-        "lib": [
-            "hashes::blake2",
-            "hashes::blake2b",
-            "hashes::blake2s",
-        ],
+        "lib": ["hashes::blake2"],
         "tests": ["blake2_kat::blake2b", "blake2_kat::blake2s", "rfc7693::blake2b", "rfc7693::blake2s"],
     },
     "brainpoolp256r1": {
-        "lib": ["ec::brainpoolp256r1", "ec::validate::tests::brainpoolp256r1", "ec::compressed::tests::brainpoolp256r1"],
+        "lib": ["ec::validate::tests::brainpoolp256r1", "ec::compressed::tests::brainpoolp256r1"],
         "tests": [
             "rfc7027::brainpoolp256r1",
             "rfc7027::brainpoolp256r1_ecdsa",
@@ -130,7 +126,7 @@ GROUPS = {
         ],
     },
     "brainpoolp384r1": {
-        "lib": ["ec::brainpoolp384r1", "ec::validate::tests::brainpoolp384r1", "ec::compressed::tests::brainpoolp384r1"],
+        "lib": ["ec::validate::tests::brainpoolp384r1", "ec::compressed::tests::brainpoolp384r1"],
         "tests": [
             "rfc7027::brainpoolp384r1",
             "rfc7027::brainpoolp384r1_ecdsa",
@@ -140,7 +136,7 @@ GROUPS = {
         ],
     },
     "brainpoolp512r1": {
-        "lib": ["ec::brainpoolp512r1", "ec::validate::tests::brainpoolp512r1", "ec::compressed::tests::brainpoolp512r1"],
+        "lib": ["ec::validate::tests::brainpoolp512r1", "ec::compressed::tests::brainpoolp512r1"],
         "tests": [
             "rfc7027::brainpoolp512r1",
             "rfc7027::brainpoolp512r1_ecdsa",
@@ -150,7 +146,7 @@ GROUPS = {
         ],
     },
     "chacha20": {
-        "lib": ["chacha20", "chacha20poly1305"],
+        "lib": ["cipher::chacha20", "aead::chacha20poly1305"],
         "tests": [
             "rfc8439::chacha20",
             "rfc8439::chacha20poly1305",
@@ -172,8 +168,22 @@ GROUPS = {
         "lib": ["cpu"],
         "tests": [],
     },
+    "dit": {
+        "lib": ["dit"],
+        "tests": [],
+    },
     "dsa_parameters": {
         "lib": ["dsa::parameters"],
+        "tests": [],
+    },
+    "dsa_parameters_dispatch": {
+        "lib": ["dsa::parameters::search"],
+        "tests": [],
+    },
+    # The full error/randomness tests run natively. Keep both hashes'
+    # published answers and the search dispatcher under emulated IFMA.
+    "dsa_parameters_ifma": {
+        "lib": ["dsa::parameters::search", "dsa::parameters::tests::cavp_generated_parameters"],
         "tests": [],
     },
     "dsa": {
@@ -181,7 +191,7 @@ GROUPS = {
         "tests": ["cavp::dsa", "wycheproof::dsa"],
     },
     "ecdsa": {
-        "lib": ["ecdsa", "ec::validate", "ec::compressed"],
+        "lib": ["ec::ecdsa", "ec::validate", "ec::compressed"],
         "tests": [
             "cavp::ecdsa_p256",
             "wycheproof::ec_compressed",
@@ -197,11 +207,11 @@ GROUPS = {
         ],
     },
     "ed25519": {
-        "lib": ["ed25519"],
+        "lib": [],
         "tests": ["rfc8032::ed25519_vectors", "wycheproof::ed25519"],
     },
     "ed448": {
-        "lib": ["ed448"],
+        "lib": [],
         "tests": ["rfc8032::ed448", "wycheproof::ed448"],
     },
     "message_boundaries_and_unaligned_inputs": {
@@ -223,11 +233,11 @@ GROUPS = {
         ],
     },
     "mlkem": {
-        "lib": ["mlkem_common", "mlkem1024::backend_tests", "mlkem768::backend_tests"],
+        "lib": [],
         "tests": ["acvp::mlkem1024", "acvp::mlkem768", "wycheproof::mlkem1024", "wycheproof::mlkem768"],
     },
     "p224": {
-        "lib": ["ec::p224", "ec::validate::tests::p224", "ec::compressed::tests::p224"],
+        "lib": ["ec::validate::tests::p224", "ec::compressed::tests::p224"],
         "tests": [
             "cavp::ecdh_p224",
             "rfc6979::p224",
@@ -241,7 +251,7 @@ GROUPS = {
         "tests": ["rfc6979::p224::p224_sha224"],
     },
     "p256": {
-        "lib": ["ec::p256", "ecdsa::p256", "ec::validate::tests::p256", "ec::compressed::tests::p256"],
+        "lib": ["ec::validate::tests::p256", "ec::compressed::tests::p256"],
         "tests": [
             "cavp::ecdh_p256",
             "cavp::ecdsa_p256",
@@ -255,7 +265,7 @@ GROUPS = {
         "tests": ["rfc6979::p256::p256_sha256", "rfc6979::p256::p256_sha384"],
     },
     "p521": {
-        "lib": ["ec::p521", "ecdsa::p521", "ec::validate::tests::p521", "ec::compressed::tests::p521"],
+        "lib": ["ec::validate::tests::p521", "ec::compressed::tests::p521"],
         "tests": [
             "cavp::ecdh_p521",
             "rfc6979::p521",
@@ -264,7 +274,7 @@ GROUPS = {
         ],
     },
     "p384": {
-        "lib": ["ec::p384", "ecdsa::p384", "ec::validate::tests::p384", "ec::compressed::tests::p384"],
+        "lib": ["ec::validate::tests::p384", "ec::compressed::tests::p384"],
         "tests": [
             "cavp::ecdh_p384",
             "rfc6979::p384",
@@ -277,7 +287,7 @@ GROUPS = {
         "tests": ["rfc6979::p384::p384_sha384"],
     },
     "poly1305": {
-        "lib": ["chacha20poly1305", "poly1305"],
+        "lib": ["aead::chacha20poly1305", "poly1305"],
         "tests": [
             "rfc8439::chacha20::rfc8439_chacha20_poly1305_key_generation",
             "rfc8439::chacha20poly1305",
@@ -294,16 +304,24 @@ GROUPS = {
         "lib": ["ffdh"],
         "tests": ["cavp::ffdh"],
     },
+    # Native/SKX run the complete suite. Exercise parameter generation,
+    # key generation, domain operations and published exchange answers
+    # without repeating the large safe-prime generation test under SDE.
+    "ffdh_ifma": {
+        "lib": ["ffdh::domain::cache_tests::clones_share_immutable_context_and_keep_it_alive",
+                "ffdh::tests::key_search_consumes_rejected_attempts",
+                "ffdh::tests::partial_limb_moduli_and_short_exponents"],
+        "tests": ["cavp::ffdh::imported_private_components", "cavp::ffdh::components_generation_and_padding",
+                  "cavp::ffdh::safe_prime_parameter_generation"],
+    },
     "rsa": {
-        "lib": ["rsa", "rsa_keygen", "rsa_oaep", "rsa_pkcs1_enc", "rsa_pkcs1_sig", "rsa_pss"],
+        "lib": ["rsa"],
         "tests": [
             "cavp::rsa",
             "rsa_guidance::rsa_pkcs1_appendix_b",
             "rsa_guidance::rsa_pkcs1_bad_keys",
             "rsa_guidance::rsa_crt_truncated_factors",
             "rsa_guidance::rsa_pkcs1_lengths",
-            "wycheproof::rsa",
-            "wycheproof::rsa_keygen",
             "wycheproof::rsa_keys",
             "wycheproof::rsa_oaep",
             "wycheproof::rsa_pkcs1_enc",
@@ -314,18 +332,18 @@ GROUPS = {
     # IFMA's vectors once, without repeating ADX prime generation (SKX and
     # native run it). Keep a key-generation dispatch check, every signing
     # hash, large private-key operands and concurrent use of a shared key.
-    # The per-hash backend_features tests enumerate synthetic feature sets,
-    # without executing those instructions: native/SKX's full groups cover
-    # them. Keep the unit tests that execute RSA here.
+    # The tables' tests (`rsa_oaep::table`, `rsa_pss::table`) execute no RSA
+    # code: native/SKX's full groups cover them. Keep the unit tests that
+    # execute RSA here.
     "rsa_ifma": {
-        "lib": ["rsa", "rsa_keygen::tests::generate_small_d", "rsa_oaep::tests", "rsa_pkcs1_enc",
-                "rsa_pkcs1_sig", "rsa_pss::tests"],
+        "lib": ["rsa::tests", "rsa::precomputed", "rsa::privatekey", "rsa::scratch",
+                "rsa::keygen::tests::generate_small_d", "rsa::oaep::tests", "rsa::pkcs1_enc",
+                "rsa::pkcs1_sig", "rsa::pss::tests"],
         "tests": [
             "rsa_guidance::rsa_pkcs1_appendix_b",
             "rsa_guidance::rsa_pkcs1_bad_keys",
             "rsa_guidance::rsa_crt_truncated_factors",
             "rsa_guidance::rsa_pkcs1_lengths",
-            "wycheproof::rsa",
             "wycheproof::rsa_keys",
             "wycheproof::rsa_pkcs1_enc",
             "wycheproof::rsa_pkcs1_sig",
@@ -357,11 +375,11 @@ GROUPS = {
         "tests": ["wycheproof::rsa_pss::rsa_pss_every_hash"],
     },
     "scrypt": {
-        "lib": ["scrypt"],
-        "tests": [],
+        "lib": [],
+        "tests": ["rfc7914::key_lengths", "rfc7914::verify_keys"],
     },
     "secp256k1": {
-        "lib": ["ec::secp256k1", "ec::validate::tests::secp256k1", "ec::compressed::tests::secp256k1"],
+        "lib": ["ec::validate::tests::secp256k1", "ec::compressed::tests::secp256k1"],
         "tests": [
             "secp256k1",
             "wycheproof::ec_compressed::secp256k1",
@@ -370,11 +388,11 @@ GROUPS = {
         ],
     },
     "sha1": {
-        "lib": ["hashes::sha1", "hmac::sha1", "pbkdf2::sha1", "rsa_pss::sha1"],
+        "lib": ["hashes::sha1", "hmac::sha1", "kdf::pbkdf2_hmac::sha1"],
         "tests": ["cavp::sha1", "wycheproof::hmac_sha1", "wycheproof::pbkdf2_sha1"],
     },
     "sha224": {
-        "lib": ["hashes::sha224", "hmac::sha224", "pbkdf2::sha224", "rsa_pss::sha224"],
+        "lib": ["hashes::sha224", "hmac::sha224", "kdf::pbkdf2_hmac::sha224"],
         "tests": [
             "cavp::sha224",
             "rfc4231::hmac_sha224",
@@ -386,7 +404,7 @@ GROUPS = {
         ],
     },
     "sha256": {
-        "lib": ["hashes::sha256", "hmac::sha256", "pbkdf2::sha256", "rsa_pss::sha256"],
+        "lib": ["hashes::sha256", "hmac::sha256", "kdf::pbkdf2_hmac::sha256"],
         "tests": [
             "cavp::sha256",
             "secp256k1",
@@ -403,7 +421,7 @@ GROUPS = {
         ],
     },
     "sha3": {
-        "lib": ["hashes::sha3", "hashes::sha384", "hmac::sha384", "pbkdf2::sha384", "rsa_pss::sha384"],
+        "lib": ["hashes::sha3", "hashes::sha384", "hmac::sha384", "kdf::pbkdf2_hmac::sha384"],
         "tests": [
             "cavp::sha3",
             "cavp::sha384",
@@ -418,7 +436,7 @@ GROUPS = {
         ],
     },
     "sha384": {
-        "lib": ["hashes::sha384", "hmac::sha384", "pbkdf2::sha384", "rsa_pss::sha384"],
+        "lib": ["hashes::sha384", "hmac::sha384", "kdf::pbkdf2_hmac::sha384"],
         "tests": [
             "cavp::sha384",
             "rfc4231::hmac_sha384",
@@ -433,18 +451,18 @@ GROUPS = {
     },
     "sha512": {
         "lib": [
+            # Every hash's tables of functions: their dispatchers' choices
+            # of the SHA-512 family's tables, which only these lines make.
+            "hashes::tables",
             "hashes::sha512",
             "hashes::sha512_224",
             "hashes::sha512_256",
             "hmac::sha512",
             "hmac::sha512_224",
             "hmac::sha512_256",
-            "pbkdf2::sha512",
-            "pbkdf2::sha512_224",
-            "pbkdf2::sha512_256",
-            "rsa_pss::sha512",
-            "rsa_pss::sha512_224",
-            "rsa_pss::sha512_256",
+            "kdf::pbkdf2_hmac::sha512",
+            "kdf::pbkdf2_hmac::sha512_224",
+            "kdf::pbkdf2_hmac::sha512_256",
         ],
         "tests": [
             "cavp::sha512",
@@ -477,11 +495,19 @@ GROUPS = {
         ],
     },
     "sm4_gcm": {
-        "lib": ["sm4_gcm"],
+        "lib": ["aead::sm4_gcm"],
         "tests": ["rfc8998::sm4_gcm", "wycheproof::sm4_gcm"],
     },
+    "triple_des_cbc": {
+        "lib": [],
+        "tests": ["cavp::triple_des_cbc"],
+    },
+    "triple_des_cfb": {
+        "lib": [],
+        "tests": ["cavp::triple_des_cfb"],
+    },
     "triple_des_ecb": {
-        "lib": ["triple_des_ecb"],
+        "lib": [],
         "tests": ["cavp::triple_des_ecb"],
     },
     "x25519": {
@@ -500,13 +526,15 @@ GROUPS = {
 
 # Optional groups: these are used only when SDE runs ICX/DMR on a host
 # without IFMA. A run whose hosts all have IFMA legitimately uses none.
-EMULATED_RSA_GROUPS = {
+EMULATED_GROUPS = {
     "rsa": "rsa_ifma",
+    "ffdh": "ffdh_ifma",
+    "dsa_parameters": "dsa_parameters_ifma",
 }
 
 
-def emulated_rsa_runs(cpu, runs):
-    """Focused RSA groups for ICX/DMR; call only after host detection.
+def emulated_runs(cpu, runs):
+    """Focused groups for ICX/DMR; call only after host detection.
 
     Preserve every feature line and its order: shards must agree about
     ownership even when their hosts have different instruction sets.
@@ -519,7 +547,7 @@ def emulated_rsa_runs(cpu, runs):
         if not sep:
             lines.append(raw)
             continue
-        groups = [EMULATED_RSA_GROUPS.get(g, g) for g in tests.split()]
+        groups = [EMULATED_GROUPS.get(g, g) for g in tests.split()]
         lines.append(f"{features.strip()} | {' '.join(groups)}")
     return "\n".join(lines)
 
@@ -530,6 +558,37 @@ PATH = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(::[A-Za-z_][A-Za-z0-9_]*)*")
 def selects(path, test):
     """Whether `path` selects the test named `test`."""
     return test == path or test.startswith(path + "::")
+
+
+def original_group(group):
+    """A host-reduced group's identity before the emulation substitution."""
+    return {v: k for k, v in EMULATED_GROUPS.items()}.get(group, group)
+
+
+def disjoint_groups(names):
+    """Bundle overlapping groups so independent tasks never repeat a test.
+
+    Use the original selectors even on reduced hosts: every shard must
+    compute the same bundles before choosing its host's actual tests.
+    """
+    parents = list(range(len(names)))
+
+    def root(i):
+        while parents[i] != i:
+            i = parents[i]
+        return i
+
+    for i, name in enumerate(names):
+        a = GROUPS.get(original_group(name), {})
+        for j in range(i):
+            b = GROUPS.get(original_group(names[j]), {})
+            if any(selects(p, q) or selects(q, p)
+                   for binary in BINARIES for p in a.get(binary, []) for q in b.get(binary, [])):
+                parents[root(i)] = root(j)
+    bundles = {}
+    for i, name in enumerate(names):
+        bundles.setdefault(root(i), []).append(name)
+    return [" ".join(bundle) for bundle in bundles.values()]
 
 
 def parse_list(text):
@@ -574,7 +633,7 @@ def check(records):
     # IFMA. Check their reachability even when this run got only full hosts.
     for record in records:
         if record["cpu"].split()[0] in ("icx", "dmr"):
-            used.update(EMULATED_RSA_GROUPS[g] for g in record["groups"] if g in EMULATED_RSA_GROUPS)
+            used.update(EMULATED_GROUPS[g] for g in record["groups"] if g in EMULATED_GROUPS)
     errors = [f"group {name} is used by no CPU's runs" for name in GROUPS if name not in used]
     for name, group in GROUPS.items():
         for b in BINARIES:
@@ -615,8 +674,8 @@ def main(argv):
         for t in select(RUNNERS[argv[1]], listed, argv[4:]):
             if runs_in(argv[1], t):
                 print(t)
-    elif argv[:1] == ["emulated-rsa"] and len(argv) == 2:
-        print(emulated_rsa_runs(argv[1], sys.stdin.read()))
+    elif argv[:1] == ["emulated-runs"] and len(argv) == 2:
+        print(emulated_runs(argv[1], sys.stdin.read()))
     elif argv[:1] == ["record"] and len(argv) == 5:
         tests = {"lib": parse_list(read(argv[3])), "tests": parse_list(read(argv[4]))}
         cpu = " ".join(argv[1].split())

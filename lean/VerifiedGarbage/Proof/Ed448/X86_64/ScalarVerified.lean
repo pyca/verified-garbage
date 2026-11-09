@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMulAddMain
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
@@ -15,6 +14,7 @@ meta import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Spec.Ed448.Contract
 
 /-!
 # Ed448 scalar arithmetic on x86-64: `Verified`
@@ -29,17 +29,6 @@ signature contract is satisfiable.
 namespace VG.Proof.Ed448.X86_64
 
 open VG VG.X86_64 VG.Impl.Ed448.X86_64
-
-def scalarReduceSat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x2000, 114⟩]
-  wr := [⟨0x1000, 57⟩, ⟨0x3000, 8192⟩]
 
 theorem scalarReduce_ok (s : State) (hs : scalarReduceLocal.pre s) :
     ∃ t s', Exec isa scalarReduce s t s' ∧ abiPreserved s s' ∧ scalarReduceLocal.post s s' := by
@@ -74,25 +63,6 @@ theorem scalarReduce_ct :
   refine VG.Taint.constantTime (A := taint) scalarReduceτ
     (fun _ _ h₁ h₂ hp => scalarReduce_agree h₁ h₂ hp) (by taint_decide)
 
-theorem scalarReduce_verified : Verified X86_64.target scalarReduce
-    (Proof.Ed448.scalarReduceContract X86_64.abi) :=
-  Verified.of_correct scalarReduce_ok scalarReduce_ct (by
-    sig_implies [Proof.Ed448.scalarReduceContract, Proof.Ed448.scalarReduceSig,
-      Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs, scalarReduceLocal]
-      [scalarReduceSat] using scalarReduceSat)
-
-def scalarMulAddSat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 0x4000 | .r8 => 0x5000
-    | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x2000, 57⟩, ⟨0x3000, 57⟩, ⟨0x4000, 57⟩]
-  wr := [⟨0x1000, 57⟩, ⟨0x5000, 8192⟩]
-
 theorem scalarMulAdd_ok (s : State) (hs : scalarMulAddLocal.pre s) :
     ∃ t s', Exec isa scalarMulAdd s t s' ∧ abiPreserved s s' ∧ scalarMulAddLocal.post s s' := by
   obtain ⟨t, s', he, h⟩ := scalarMulAdd_correct hs
@@ -126,12 +96,5 @@ theorem scalarMulAdd_ct :
     ConstantTime isa scalarMulAddLocal.pre scalarMulAddLocal.pub scalarMulAdd := by
   refine VG.Taint.constantTime (A := taint) scalarMulAddτ
     (fun _ _ h₁ h₂ hp => scalarMulAdd_agree h₁ h₂ hp) (by taint_decide)
-
-theorem scalarMulAdd_verified : Verified X86_64.target scalarMulAdd
-    (Proof.Ed448.scalarMulAddContract X86_64.abi) :=
-  Verified.of_correct scalarMulAdd_ok scalarMulAdd_ct (by
-    sig_implies [Proof.Ed448.scalarMulAddContract, Proof.Ed448.scalarMulAddSig,
-      Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs, scalarMulAddLocal]
-      [scalarMulAddSat] using scalarMulAddSat)
 
 end VG.Proof.Ed448.X86_64

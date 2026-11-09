@@ -123,11 +123,6 @@ theorem wp_vbin128 {op : VBinOp} {d a b : XReg}
     WP isa (.block (.vop (.vbin op .l128 d a b) :: is)) s Q :=
   WP.cons rfl (k _ (LUpd.setV128 s d _ (op.sse.eval (s.lane a 1) (s.lane b 1))))
 
-theorem wp_vinsert1 {d a b : XReg}
-    (k : ∀ s', LUpd s s' d (fun l => if l = 0 then s.lane a 0 else s.lane b 0) → WP isa (.block is) s' Q) :
-    WP isa (.block (.vop (.vinserti128 d a b 1) :: is)) s Q :=
-  WP.cons rfl (k _ (LUpd.setV256 s d _ _))
-
 theorem wp_vpbcastq {d a : XReg}
     (k : ∀ s', LUpd s s' d (fun _ => qword (s.xmm a) 0 ++ qword (s.xmm a) 0) → WP isa (.block is) s' Q) :
     WP isa (.block (.vop (.vpbroadcastq .l256 d a) :: is)) s Q := by

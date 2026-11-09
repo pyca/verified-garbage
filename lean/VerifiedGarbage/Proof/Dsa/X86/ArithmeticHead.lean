@@ -24,23 +24,4 @@ structure ArithmeticPre (base : Addr) (size len bl : Nat) (modulus : Field) (a b
   large : 1 < Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input modulus)).setWidth 64) len)
   odd : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input modulus)).setWidth 64) len) % 2 = 1
 
-def ArithmeticReady (base : Addr) (size n : Nat) (s : State) : Prop :=
-  ∃ modulus, Context n modulus base size s ∧
-    wordsVal s.mem base (slot n 3) n = 1 ∧
-    wordsVal s.mem base (slot n 4) n = 2 ^ (128 * n) % modulus
-
-theorem arithmeticHead_ok {base : Addr} {size len bl : Nat} {modulus : Field} {a b : Pointer} {s : State}
-    (P : ArithmeticPre base size len bl modulus a b s) (hz : Layout.saved ≤ size)
-    (h4 : 4 ≤ len) (hmax : len ≤ 384) (hb4 : 4 ≤ bl) (hb : bl ≤ len) (hw4 : len % 4 = 0)
-    (hwb : bl % 4 = 0) :
-    WP isa (arithmeticHead len bl modulus a b) s (ArithmeticReady base size ((len + 7) / 8)) := by
-  have hn : (len + 7) / 8 ≤ 48 := by omega
-  unfold arithmeticHead
-  refine WP.seq (WP.mono (coreSetup_ok P.scr hz rfl h4 hmax hw4 P.modulusReady.toReadableComponent
-    (P.modulusReady.slot (by decide)) rfl P.large P.odd) fun u ⟨C, One, R2, O, K⟩ => ?_)
-  refine WP.mono (coreInputs_ok C hz hn h4 (by omega) hb4 (by omega) hw4 hwb
-    (P.leftReady.keep K (by decide) O hn) (P.rightReady.keep K (by decide) O hn))
-    fun t ⟨Ct, _, _, Constants, _, _⟩ => ?_
-  exact ⟨_, Ct, (Constants 3 (.inl rfl)).trans One, (Constants 4 (.inr rfl)).trans R2⟩
-
 end VG.Proof.Dsa.X86

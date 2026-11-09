@@ -110,8 +110,8 @@ theorem em4_verified (c : Prog isa)
       sat := by sig_implies_sat [Proof.MlDsa.expandMask4Contract, Proof.MlDsa.expandMask4Sig, em4K, X86_64.abi,
         X86_64.argRegs] [em4Sat] using em4Sat }
 
-theorem expandMask4Avx2_verified : Verified X86_64.target expandMask4Avx2
-    (Proof.MlDsa.expandMask4Contract X86_64.abi 24) := em4_verified _ correct ct
+theorem expandMask4Avx2_verified {fast : Bool} : Verified X86_64.target (expandMask4Avx2 fast)
+    (Proof.MlDsa.expandMask4Contract X86_64.abi 24) := em4_verified _ (correct (fast := fast)) ct
 
 theorem expandMask4_verified : Verified X86_64.target expandMask4
     (Proof.MlDsa.expandMask4Contract X86_64.abi 24) := em4_verified _ correct_scalar ct_scalar

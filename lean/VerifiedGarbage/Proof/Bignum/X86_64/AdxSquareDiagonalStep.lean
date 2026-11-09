@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
@@ -32,15 +31,13 @@ theorem write2 (m : Mem) (B : Addr) (d : Nat) (x y : BitVec 64) (hd : d + 16 ≤
   rw [wv2, ho'.word (by omega) (by omega), word_writeW_self, word_writeW_self]
 
 /-- A diagonal step's core: `rbx:r12:r11 = 2 (r11 + 2⁶⁴ r12) + rdx² + r15`,
-as `diagonalCore` computes it. -/
+as the diagonal step computes it. -/
 structure CoreOk (core : List Instr) : Prop where
   ok : ∀ s : State, WP isa (.block core) s fun t =>
     (t.gpr .r11).toNat + 2 ^ 64 * (t.gpr .r12).toNat + 2 ^ 128 * (t.gpr .rbx).toNat =
       2 * ((s.gpr .r11).toNat + 2 ^ 64 * (s.gpr .r12).toNat) +
         (s.gpr .rdx).toNat * (s.gpr .rdx).toNat + (s.gpr .r15).toNat ∧
     Keeps [.rsi, .rbx, .rax, .rcx, .r11, .r12] s t
-
-theorem diagonalCore_coreOk : CoreOk AdxSquare.diagonalCore := ⟨diagonalCore_ok⟩
 
 /-- One pair of stored words, the exact carry, and public loop counts. -/
 theorem diagonalStepWith_ok {core : List Instr} (hc : CoreOk core) {s : State} {B : Addr} {Z A eb i w : Nat} (hs : Scr s B Z)

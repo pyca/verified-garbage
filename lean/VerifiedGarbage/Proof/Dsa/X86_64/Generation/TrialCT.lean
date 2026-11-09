@@ -50,7 +50,7 @@ theorem primeTrial_ct (len drawBytes : Nat) : RelCT isa (Two (PrimeCallBefore le
   · refine primeHeader_ct (Φ := fun p s => PrimeCallBefore len drawBytes p s ∧ PrimeHeaderLayout p.arena p.wr)
       PrimeCallPublic.arena PrimeCallPublic.wr gS
       (fun p => gvs p.draw.prime.B p.draw.prime.w) [] (by decide) (fun _ => gvs_fst _ _) ?_
-      (pins_nil _) (by taint_decide) _ _ _ _ _ _ ⟨p, ⟨h₁, hl⟩, h₂, hl⟩ e₁ e₂
+      (pins_nil _) (by taint_decide) (by taint_decide) _ _ _ _ _ _ ⟨p, ⟨h₁, hl⟩, h₂, hl⟩ e₁ e₂
     intro p s h
     obtain ⟨mi, hs⟩ := h.1.1
     exact ⟨h.2, by rw [← p.base]; exact good_hp hs.good h.1.2.1⟩

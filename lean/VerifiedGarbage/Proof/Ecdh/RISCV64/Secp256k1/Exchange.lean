@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.Secp256k1.Tail
 public import VerifiedGarbage.Spec.Ecdh.Secp256k1
-import VerifiedGarbage.Proof.Ecdh.RISCV64.Secp256k1.CheckVerified
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Secp256k1.CheckLit
 public import VerifiedGarbage.Proof.Ecdh.Exchange
 import VerifiedGarbage.Proof.EcKey.PublicKey

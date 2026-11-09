@@ -29,9 +29,6 @@ theorem rbx_bases : Reg.rbx ∈ bases := by decide
 
 /-! ## Composing what pieces leave -/
 
-theorem PostB.refl (s : State) (W : List Region) : PostB s s W :=
-  ⟨rfl, rfl, fun _ _ => rfl, rfl, Frame.refl _ _⟩
-
 theorem PPostB.app {s s₁ s₂ : State} {ws₁ ws₂ : List (Ptr × Nat)} (h₁ : PPostB s s₁ ws₁) (h₂ : PPostB s₁ s₂ ws₂)
     (hb : ∀ w ∈ ws₂, w.1.1 ∈ bases) : PPostB s s₂ (ws₁ ++ ws₂) := by
   have e : ws₂.map (toR s₁) = ws₂.map (toR s) := List.map_congr_left fun w hw => by simp only [toR, h₁.pa (hb w hw)]

@@ -24,8 +24,8 @@ and pointer it uses after the table in registers (`shortLen`), which both runs
 agree on: so its head (`J₀`, the first counter block and `shortLen`) is
 checked by the taint analysis, and the table with everything after it
 (`shortRestZ`) by the caller's `tb` (`sealShort_rel`), which for `pwTbl` is
-the taint analysis too. `sealWithShX_ct`: `sealWithS` with the short path, as
-`sealWithSX_ct`, the lengths that choose the path being public.
+the taint analysis too. `sealWithShX_ct`: `sealWithS` with the short path,
+the lengths that choose the path being public.
 -/
 
 @[expose] public section

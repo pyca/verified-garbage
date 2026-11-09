@@ -1,7 +1,9 @@
 module
 
+import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
+
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttShortCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
@@ -39,7 +41,7 @@ def prims : Prims where
   mul := Arith.mul
   mulAdd := Arith.mulAdd
   sub := Arith.sub
-  rejNtt := Sample.rejNTT
+  rejNtt := Sample.rejNTTShort
   ball := Sample.sampleInBall
   useHint := Round.useHint
   simpleBitPack := Pack.simpleBitPack
@@ -61,6 +63,7 @@ def primsWith (B : Arith.Backend) : Prims :=
     useHint := B.useHint
     rej4 := B.rej4
     sfx := B.sfx
+    asfx := B.asfx
     montgomery := B.montgomery }
 
 /-- A function of the polynomial arithmetic satisfies what the proofs of verification need of it. -/
@@ -82,7 +85,7 @@ theorem prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) where
   mul := calleeOf v.ok.mul
   mulAdd := calleeOf v.ok.mulAdd
   sub := calleeOf v.ok.sub
-  rejNtt := (CalleeOk.of_verified Proof.MlDsa.X86_64.Sample.rejNTT_verified (by decide)
+  rejNtt := (CalleeOk.of_verified Proof.MlDsa.X86_64.Sample.RejNttShort.verified (by decide)
     (Proof.MlKem.X86_64.nosp_of (by lit_decide)) (by lit_decide) (by lit_decide)
     (Code.all_of_allInstrs (by lit_decide)) :
     CalleeOk prims.rejNtt _)
@@ -109,11 +112,5 @@ theorem prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) where
     CalleeOk prims.hintUnpack _)
   normLt := calleeOf v.ok.normLt
   rej4 := ⟨v.ok.rej4.ver.1, v.ok.rej4.ver.2.1, v.ok.rej4.nosp, v.ok.rej4.depth, v.ok.rej4.ctl, v.ok.rej4.sp⟩
-
-/-- `vg_mldsa*_verify` for the parameter set `p`, calling the x86-64
-primitives, with the polynomial arithmetic of `v`. -/
-theorem verify_prims (v : ArithImpl) {p : Spec.MlDsa.Params} (hp : p ∈ params) :
-    Verified X86_64.target (verify (primsWith v.code) p) (Spec.MlDsa.verifyContract p X86_64.abi 32) :=
-  verify_verified (prims_okWith v) hp
 
 end VG.Proof.MlDsa.X86_64.Verify

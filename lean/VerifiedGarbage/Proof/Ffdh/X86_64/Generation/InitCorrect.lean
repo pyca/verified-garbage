@@ -21,7 +21,7 @@ def InitPost (bits generator : Nat) (m : Mem) (B : Addr) (t : State) : Prop :=
 private theorem valid_init {bits generator : Nat} (hlo : 512 ≤ bits) (hhi : bits ≤ 8192)
     (hg : generator = 2 ∨ generator = 5) :
     Spec.Ffdh.parameterInit bits generator = some [Spec.Ffdh.parameterAttempts bits,
-      (bits + 7) / 8, Spec.Ffdh.parameterEntropy bits, 512 * ((bits + 7) / 8)] := by
+      (bits + 7) / 8, Spec.Ffdh.parameterEntropy bits] := by
   rcases hg with rfl | rfl <;> simp [Spec.Ffdh.parameterInit, hlo, hhi]
 
 private theorem invalid_generator {bits generator : Nat} (h2 : generator ≠ 2) (h5 : generator ≠ 5) :

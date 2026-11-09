@@ -21,8 +21,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Target
 
 The iteration over a Merkle–Damgård hash function (`Impl/Pbkdf2/PPC64LE.lean`)
 for SHA-224's parameters (`Impl/Sha256/PPC64LE/Md.lean`) and compression function: what its proof
-needs of SHA-224 (`hashOk`), its constant time, which the kernel checks, and
-`iterate` against the shared contract of `Spec.Hmac.sha224I`.
+needs of SHA-224 (`hashOk`), its constant time, which the kernel checks.
 -/
 
 @[expose] public section
@@ -59,11 +58,5 @@ theorem pushFrames : VG.PPC64LE.pushFrames code = true :=
 theorem iterate_ct : ConstantTime isa (iterK Spec.Hmac.sha224S (8 * Spec.Hmac.sha224I.scratch)).pre
     (iterK Spec.Hmac.sha224S (8 * Spec.Hmac.sha224I.scratch)).pub code :=
   ct _ _ _ _ _ _ (by taint_decide)
-
-theorem iterate : Verified PPC64LE.target code (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha224I PPC64LE.abi 0) :=
-  verified (I := Spec.Hmac.sha224I) hashOk Proof.Sha256.PPC64LE.Md.callee224 (Nat.le_refl _) iterate_ct (by
-    inst_sat [Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig,
-      Spec.Hmac.sha224I, Spec.Hmac.sha224S, Spec.Hmac.sha224, PPC64LE.abi, PPC64LE.argRegs]
-      using iterSat 96 28 832)
 
 end VG.Proof.Pbkdf2.PPC64LE.Sha224

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.Body
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
@@ -111,7 +112,7 @@ theorem post_of {s0 t : State} (h : PreC s0) (bp : BodyPost s0 t) : fnPost s0 t 
           Spec.Rsa.i2osp k.dQ (pLen s0), Spec.Rsa.i2osp k.qInv (pLen s0)])
       | .inl (.error f) => .inl (.error f)
       | .inr () => .inr () := rfl
-  show ((t.gpr .a0).setWidth 32).toNat = Spec.RsaKeyGen.keyStatus (resOf s0) ∧ _
+  show ((t.gpr .a0).setWidth 32).toNat = Proof.RsaKeyGen.keyStatus (resOf s0) ∧ _
   rw [r3, status_toNat _ _ (flag01 _) (flag01 _), hres, kr]
   have hP := kP_lt s0
   have hQ := kQ_lt s0
@@ -178,7 +179,7 @@ theorem post_of {s0 t : State} (h : PreC s0) (bp : BodyPost s0 t) : fnPost s0 t 
     · simp only [hm, hs, ↓reduceIte]
       exact ⟨rfl, z⟩
 
-theorem code_correct [VG.Proof.Rsa.RISCV64.InvLaw] (s : State) (hpre : (Spec.RsaKeyGen.keyContract RISCV64.abi).pre s) :
+theorem code_correct [VG.Proof.Rsa.RISCV64.InvLaw] (s : State) (hpre : (Proof.RsaKeyGen.keyContract RISCV64.abi).pre s) :
     ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t := by
   show WP isa code s fun t => abiPreserved s t ∧ fnPost s t
   have h := preC_of hpre
@@ -196,9 +197,9 @@ theorem code_correct [VG.Proof.Rsa.RISCV64.InvLaw] (s : State) (hpre : (Spec.Rsa
   exact po
 
 /-- `vg_rsa_keygen_key`, given its constant time. -/
-theorem key_verified_of [VG.Proof.Rsa.RISCV64.InvLaw] (hct : ConstantTime isa (Spec.RsaKeyGen.keyContract RISCV64.abi).pre
-    (Spec.RsaKeyGen.keyContract RISCV64.abi).pub code) :
-    Verified RISCV64.target code (Spec.RsaKeyGen.keyContract RISCV64.abi) :=
+theorem key_verified_of [VG.Proof.Rsa.RISCV64.InvLaw] (hct : ConstantTime isa (Proof.RsaKeyGen.keyContract RISCV64.abi).pre
+    (Proof.RsaKeyGen.keyContract RISCV64.abi).pub code) :
+    Verified RISCV64.target code (Proof.RsaKeyGen.keyContract RISCV64.abi) :=
   Verified.of_correct (k := fnContract) code_correct hct key_implies
 
 end VG.Proof.RsaKeyGen.RISCV64.Key

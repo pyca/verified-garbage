@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Md5.PPC64LE.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # MD5 (RFC 1321) on PPC64LE -/
 

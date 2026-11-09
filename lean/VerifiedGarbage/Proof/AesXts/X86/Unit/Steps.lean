@@ -52,10 +52,6 @@ theorem Chg.mupd {s s₁ s' : State} {rs : List Reg} {m m' : Mem} (h : Chg s s�
     Chg s s' rs m' :=
   ⟨fun r hr => by rw [u.gpr, h.gpr r hr], u.mem, by rw [u.rd, h.rd], by rw [u.wr, h.wr]⟩
 
-theorem Chg.mono {s s' : State} {rs rs' : List Reg} {m : Mem} (h : Chg s s' rs m) (hs : ∀ r ∈ rs, r ∈ rs') :
-    Chg s s' rs' m :=
-  ⟨fun r hr => h.gpr r fun h' => hr (hs r h'), h.mem, h.rd, h.wr⟩
-
 /-- The stack arguments of the entry state `s₀`, readable and unchanged in `s`. -/
 structure ArgsOk (s₀ s : State) : Prop where
   esp : s.gpr .esp = s₀.gpr .esp

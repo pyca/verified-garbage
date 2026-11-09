@@ -350,7 +350,7 @@ theorem lm5_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {s : State} (E : 
 called and the stack below `SP`. -/
 abbrev macR (W SP : BitVec 32) (out : Nat) : List Region :=
   [⟨w64 W + BitVec.ofNat 64 out, 16⟩, ⟨w64 W + BitVec.ofNat 64 jO, 4⟩, ⟨w64 W + BitVec.ofNat 64 256, 2176⟩,
-    below SP 56]
+    below SP 60]
 
 theorem out_macR {W SP : BitVec 32} {out : Nat} :
     ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 out, 16⟩ : Region)], ∃ r' ∈ macR W SP out, Region.Sub r r' :=
@@ -371,7 +371,7 @@ theorem macR_finR {W SP : BitVec 32} {out : Nat} : ∀ r ∈ macR W SP out, ∃ 
   · exact ⟨_, by simp, fun _ h => h⟩
 
 theorem call_macR {W SP : BitVec 32} {out : Nat} :
-    ∀ r ∈ [⟨w64 W + BitVec.ofNat 64 out, 16⟩, ⟨w64 W + BitVec.ofNat 64 256, 2176⟩, below SP 56],
+    ∀ r ∈ [⟨w64 W + BitVec.ofNat 64 out, 16⟩, ⟨w64 W + BitVec.ofNat 64 256, 2176⟩, below SP 60],
       ∃ r' ∈ macR W SP out, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -401,7 +401,7 @@ theorem tail_macR {C W SP : BitVec 32} (L : Lay C W SP) {out t : Nat} (hout : ou
   · exact (L.stk_w' (by omega_arith)).symm
 
 theorem slot_macR' {C W SP : BitVec 32} (L : Lay C W SP) {out : Nat} (hout : out = 0 ∨ out = 112) {m m' : Mem}
-    (hf : Frame [⟨w64 W + BitVec.ofNat 64 out, 16⟩, ⟨w64 W + BitVec.ofNat 64 256, 2176⟩, below SP 56] m m')
+    (hf : Frame [⟨w64 W + BitVec.ofNat 64 out, 16⟩, ⟨w64 W + BitVec.ofNat 64 256, 2176⟩, below SP 60] m m')
     {o : Nat} (h₁ : 176 ≤ o) (h₂ : o + 4 ≤ 256) : slotv m' W o = slotv m W o :=
   hf.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -424,7 +424,7 @@ theorem slot_macR {C W SP : BitVec 32} (L : Lay C W SP) {out : Nat} (hout : out 
 
 /-- The slots a call keeps. -/
 theorem slot_call {C W SP : BitVec 32} (L : Lay C W SP) {out : Nat} (hout : out = 0 ∨ out = 112) {m m' : Mem}
-    (hf : Frame [⟨w64 W + BitVec.ofNat 64 out, 16⟩, ⟨w64 W + BitVec.ofNat 64 256, 2176⟩, below SP 56] m m')
+    (hf : Frame [⟨w64 W + BitVec.ofNat 64 out, 16⟩, ⟨w64 W + BitVec.ofNat 64 256, 2176⟩, below SP 60] m m')
     {o : Nat} (h₁ : 176 ≤ o) (h₂ : o + 4 ≤ 256) : slotv m' W o = slotv m W o :=
   slot_macR' L hout hf h₁ h₂
 

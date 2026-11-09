@@ -53,8 +53,6 @@ structure Keeps (s s' : State) : Prop where
 theorem Keeps.trans {s₁ s₂ s₃ : State} (h₁ : Keeps s₁ s₂) (h₂ : Keeps s₂ s₃) : Keeps s₁ s₃ :=
   ⟨h₂.mem.trans h₁.mem, h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₂.sp.trans h₁.sp⟩
 
-theorem Keeps.refl (s : State) : Keeps s s := ⟨rfl, rfl, rfl, rfl⟩
-
 theorem adc_c (b : Bool) : (0 : BitVec 32) + BitVec.ofNat 32 0 + (if b = true then 1 else 0) =
     if b then 1 else 0 := by cases b <;> rfl
 

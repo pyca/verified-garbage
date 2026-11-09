@@ -32,12 +32,12 @@ open VG.Proof.RsaOaep.RISCV64 (two_seq)
 theorem psa_pub {a s : State} (p : PubD a s) {i : Nat} (hi : i < 12) : psa s i = psa a i := by
   rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
       i = 11) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [psa, Sd, p.g .a7 (by decide), p.args _ (by decide : (0 : Nat) < 15),
-      p.args _ (by decide : (1 : Nat) < 15), p.args _ (by decide : (2 : Nat) < 15),
-      p.args _ (by decide : (3 : Nat) < 15), p.args _ (by decide : (4 : Nat) < 15),
-      p.args _ (by decide : (5 : Nat) < 15), p.args _ (by decide : (6 : Nat) < 15),
-      p.args _ (by decide : (7 : Nat) < 15), p.args _ (by decide : (8 : Nat) < 15),
-      p.args _ (by decide : (13 : Nat) < 15), p.args _ (by decide : (14 : Nat) < 15)]
+    simp only [psa, Sd, p.g .a7 (by decide), p.args _ (by decide : (0 : Nat) < 17),
+      p.args _ (by decide : (1 : Nat) < 17), p.args _ (by decide : (2 : Nat) < 17),
+      p.args _ (by decide : (3 : Nat) < 17), p.args _ (by decide : (4 : Nat) < 17),
+      p.args _ (by decide : (5 : Nat) < 17), p.args _ (by decide : (6 : Nat) < 17),
+      p.args _ (by decide : (7 : Nat) < 17), p.args _ (by decide : (8 : Nat) < 17),
+      p.args _ (by decide : (13 : Nat) < 17), p.args _ (by decide : (14 : Nat) < 17)]
 
 /-- At the call, from an entry state with `a`'s public data. -/
 def APriv (a u : State) : Prop := ∃ s, PreD s ∧ PubD a s ∧ AtPriv s u
@@ -100,10 +100,5 @@ theorem priv_ct : RelCT isa (Two AEnt) priv fun _ _ => True := by
       ⟨by rw [e₁, e₂]; show t₁.sp - _ = t₂.sp - _; rw [aEnt_sp h₁, aEnt_sp h₂], fun _ h => nomatch h⟩)
     (fun a u ⟨t, ⟨s, P, p, E⟩, e⟩ => by subst e; exact WP.mono (privArgs_ok P E) fun u' A => ⟨s, P, p, A⟩)
     call_ct
-
-/-- After the private operation's result. -/
-theorem priv_dx {a t : State} (h : AEnt a t) : WP isa priv t fun v => ∃ s, PreD s ∧ PubD a s ∧ AfterPriv s v :=
-  let ⟨s, P, p, E⟩ := h
-  WP.mono (priv_ok P E) fun _ A => ⟨s, P, p, A⟩
 
 end VG.Proof.RsaOaep.RISCV64.Dec

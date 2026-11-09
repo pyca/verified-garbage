@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Cast5.Contract
 meta import VerifiedGarbage.Spec.Cast5.Contract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # CAST5 specification tests
@@ -29,6 +27,8 @@ Appendix B.2's maintenance test (a million iterations) is not run.
 namespace VG.Test.Cast5
 
 open Lean Elab Command Spec.Cast5
+
+instance (n : Nat) : Decidable (validKey n) := inferInstanceAs (Decidable (5 ≤ n ∧ n ≤ 16))
 
 def unhex (s : String) : Except String (List Byte) := do
   let cs := s.toLower.toList.filter (!·.isWhitespace)
@@ -165,9 +165,5 @@ run_cmd do
   match checkLimits with
   | .ok () => pure ()
   | .error e => throwError "CAST5: {e}"
-
-#assert_standard_axioms VG.Spec.Cast5.expandKeyContract
-#assert_standard_axioms VG.Spec.Cast5.ecbEncryptContract
-#assert_standard_axioms VG.Spec.Cast5.ecbDecryptContract
 
 end VG.Test.Cast5

@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Lit
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Lit
@@ -35,6 +39,11 @@ theorem coreK_p192 : coreK Impl.Ecdsa.X86_64.p192 = Proof.Ecdsa.X86_64.P192.sign
     implies_true, and_true, Proof.Ecdsa.X86_64.P192.signX86_64]
   rfl
 
+/-! ## The curve's blocks -/
+
+theorem p192_blk : RfcT (cfgC Impl.Ecdsa.X86_64.p192 false 0) := by rfcT_decide
+
+
 /-- p192, with the group law `hL` and the inversions'
 soundness `hI`. -/
 def p192 (hL : Weierstrass.Law Spec.P192.curve)
@@ -42,12 +51,12 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve)
   E := Impl.Ecdsa.X86_64.p192
   inst := Spec.Ecdsa.P192.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inl rfl, .inr ⟨rfl, .inr rfl⟩, Proof.Ecdsa.X86_64.P192.p192_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := Proof.Ecdsa.X86_64.P192.p192_sh
-  coreN := "vg_ecdsa_p192_sign"
+  coreN := "vg_ecdsa_p192_sign_k"
   coreC := Impl.Ecdsa.X86_64.signP192
   coreX := by rw [coreK_p192]; exact Proof.Ecdsa.X86_64.P192.sign_call_x86 hL hI
   coreCT := by rw [coreK_p192]; exact Proof.Ecdsa.X86_64.P192.sign_ct
@@ -55,8 +64,16 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  reduceSp := Function.const _ (by decide +kernel)
-  reduceMx := Function.const _ (by decide +kernel)
+  blk := p192_blk
+
+
+/-- `vg_ecdsa_p192_sign`, with the tables of `vs`. -/
+theorem p192T_verified (hL : Weierstrass.Law Spec.P192.curve)
+    (hI : Weierstrass.X86_64.InvSounds)
+    (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs) :
+    Verified X86_64.target (signCodeT (p192 hL hI) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p192 Impl.Ecdsa.X86_64.p192.combConsts vs) := by
+  have hsat := sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.p192) h (by decide) rfl
+  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h hsat
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

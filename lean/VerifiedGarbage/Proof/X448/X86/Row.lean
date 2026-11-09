@@ -13,8 +13,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 Bounded input limbs and previous product digits keep every multiply-add within
 a 32-bit word. The row reads `a_i` with code `ldA` and `b_j` at `mb j`
-(`rowWith_ok`): X448's own rows read both at constant offsets of `edi`
-(`row_ok`), the field function's through its operand pointers.
+(`rowWith_ok`): the field function's through its operand pointers.
 -/
 
 @[expose] public section
@@ -129,11 +128,5 @@ theorem rowCode_sc (base : Addr) {a b : Nat} (ha : Slot a) (hb : Slot b) (s0 : S
   refine ⟨fun s h => ?_, fun j hj s hs _ => hs.ea (by omega)⟩
   · refine wp_load (by rw [rowEa h.scr h.ptr (by omega), Nat.add_comm]) (h.scr.read (by omega))
       fun t ht => WP.block_nil ⟨ht.gpr, ht.rest (by decide), ht.mem⟩
-
-theorem row_ok {base : Addr} {a b : Nat} (ha : Slot a) (hb : Slot b) {s0 s : State}
-    (ab : Bounded s0.mem base a) (bb : Bounded s0.mem base b) {i : Nat} (hi : i < 28)
-    (h : RowInv base a b s0 i s) :
-    WP isa (.block (row a b)) s fun t => RowInv base a b s0 (i + 1) t ∧ t.zf = some (decide (i + 1 = 28)) :=
-  rowWith_ok ha hb ab bb hi (rowCode_sc base ha hb s0 hi) h
 
 end VG.Proof.X448.X86

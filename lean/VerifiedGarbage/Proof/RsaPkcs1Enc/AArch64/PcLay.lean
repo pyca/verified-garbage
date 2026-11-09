@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
 
 @[expose] public section
@@ -19,12 +19,12 @@ abbrev layP (P : Nat) (s : State) : Lay := lay P s (preX s) 48
 
 /-- The shared contract's precondition, as `encK`'s with `pre`. -/
 theorem pre_of {P : Nat} {s : State}
-    (h : (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (P + 1088)).pre s) :
+    (h : (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (P + 1088)).pre s) :
     (layP P s).Ok ∧
       s.rd = [(layP P s).N, (layP P s).E, (layP P s).MSG, (layP P s).PS] ++ preX s ++ [(layP P s).ARGS] ∧
       s.wr = [⟨s.gpr .x0, (s.gpr .x1).toNat⟩, ⟨stackArg s 2, (stackArg s 3).toNat * 8⟩] ∧
       (stackArg s 5).toNat = Spec.Rsa.precomputedWords (s.gpr .x3).toNat ∧ P + 1088 ≤ s.sp.toNat := by
-  sig_pre [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, AArch64.abi,
+  sig_pre [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, AArch64.abi,
     AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at h
   obtain ⟨hsp, hsp2, hrd, hwr, oN, oE, oM, oP, oS, oQ, oA, nS, eS, mS, pS, sQ, sA, kO, kN, kE, kM, kP, kS, kQ, -,
     bO, bN, bE, bM, bP, bS, bQ, kv, olk, el1, elk, mlk, plk, slk, pl⟩ := h

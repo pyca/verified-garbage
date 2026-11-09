@@ -3,7 +3,9 @@ module
 import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyLcm
+public import VerifiedGarbage.Impl.Rsa.X86.Inverse
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
 
 /-! # Native key word loops and inverse steps preserve ESP -/
 
@@ -33,28 +35,5 @@ theorem constant (n out value : Nat) : NoSp (setConstW n out value) := by
   · simp only [List.not_mem_nil] at hi
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl <;> rfl
-
-theorem constArray (n j value : Nat) : NoSp (VG.Impl.RsaKeyGen.X86.Key.constArray n j value) := constant (n + 2) (slot n j) value
-
-theorem sub3 (n o a b : Nat) : NoSp (VG.Impl.Rsa.X86.Keys.sub3 n o a b) := NoSp.of_all (by rfl)
-theorem sel (n o a b sl : Nat) : NoSp (VG.Impl.Rsa.X86.Keys.sel n o a b sl) := NoSp.of_all (by rfl)
-theorem half (n j : Nat) : NoSp (VG.Impl.Rsa.X86.Keys.half n j) := NoSp.of_all (by rfl)
-theorem eqS (n d a b t : Nat) : NoSp (VG.Impl.Rsa.X86.Keys.eqS n d a b t) := NoSp.of_all (by rfl)
-theorem copy (n o a : Nat) : NoSp (VG.Impl.Rsa.X86.Keys.copy n o a) := NoSp.of_all (by rfl)
-theorem widenCopy (n k out src : Nat) : NoSp (VG.Impl.RsaKeyGen.X86.Key.widenCopy n k out src) := NoSp.of_all (by rfl)
-theorem product (l r out a b mult : Nat) : NoSp (VG.Impl.RsaKeyGen.X86.Product.code l r out a b mult) := NoSp.of_all (by rfl)
-theorem divisionFrom (n src divisor q r : Nat) : NoSp (VG.Impl.RsaKeyGen.X86.Key.divisionFrom n src divisor q r) := NoSp.of_all (by rfl)
-
-theorem invStep (n a b : Nat) : NoSp (VG.Impl.Rsa.X86.Keys.invStep n a b) := by
-  apply NoSp.of_all
-  simp only [VG.Impl.Rsa.X86.Keys.invStep, subModP, seqs, List.cons_append, List.nil_append, Code.allInstrs,
-    checked (sub3 _ _ _ _), checked (sel _ _ _ _ _), checked (half _ _)]
-  rfl
-
-theorem inverseFrom (n src mo : Nat) : NoSp (VG.Impl.RsaKeyGen.X86.Key.inverseFrom n src mo) := by
-  apply NoSp.of_all
-  simp only [VG.Impl.RsaKeyGen.X86.Key.inverseFrom, inverseSetup, inverseLoad, inverseBank, inverse,
-    seqs, Code.allInstrs, checked (copy _ _ _), checked (sub3 _ _ _ _), checked (invStep _ _ _)]
-  rfl
 
 end VG.Proof.RsaKeyGen.X86.KeyNoSp

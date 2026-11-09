@@ -31,7 +31,7 @@ def checkZeros (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Bool :=
   | none => false
 
 theorem checkZeros_ok (hl : AmmOk l) : checkZeros l = true := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide +kernel
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
 theorem zeros_ok (hl : AmmOk l) {s : State} :
     WP isa (.block (zeros l)) s fun s' => (∀ r < l.nl * l.R + 2 * l.nl + 1, ∀ t < 4, qv s' (vreg r) t = 0) ∧ Keeps s s' := by

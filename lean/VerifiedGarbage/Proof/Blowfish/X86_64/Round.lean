@@ -28,9 +28,6 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Blowfish.X86_64 VG.Spec.Blowfish VG.P
 /-- The P-array entry of round `m`. -/
 def ord (up : Bool) (m : Nat) : Nat := if up then m else 17 - m
 
-theorem ord_true : ord true = id := rfl
-theorem ord_false : ord false = (17 - ·) := rfl
-
 /-- What the rounds need: the lookups', and the P-array readable. -/
 structure CipherEnv (sch : Reg) (S : Addr) (s : State) : Prop where
   look : LookEnv sch S s
@@ -89,8 +86,6 @@ theorem sub_imm_run (t : State) (d : Reg) (v : BitVec 32) :
   refine ⟨_, rfl, ?_, rfl, fun g hg => ?_, rfl, rfl⟩
   · simp only [gpr_setReg_self]
   · simp only [gpr_setReg_of_ne _ _ hg, gpr_arithFlags]
-
-theorem Upd.refl (t : State) : Upd t t := state_eta t
 
 theorem Upd.of_xmm {t t' : State} (h : t' = { t with xmm := t'.xmm }) : Upd t t' := by
   unfold Upd; rw [h]

@@ -26,6 +26,9 @@ leaves 1 in `a0`, exactly when `0 < x < q`, `0 < k < q`, `g^x mod p = y`,
 `s = k^(q − 2) (z + x r) mod q` (`sigS`), z the digest's first
 `min(digest_len, bitLength q / 8)` octets; else zeros and 0. Memory changes
 only in `scratch`'s `hMask` and past its header (`BKept`), and in `out`.
+`sbodyWith_ok` states it of `kp` then `Sign.tail` for any first step `kp`
+that does what `keyPair` does (`KPOk`): `vg_dsa_sign_prevalidated`'s
+`setMask` is one, for a key with `g^x mod p = y`.
 -/
 
 @[expose] public section
@@ -109,6 +112,21 @@ theorem rrQ25_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s L 
     have := slot_mono (w := L.wq) hj25
     exact o.wordsVal (Or.inr (by omega)) (by omega)
 
+/-- What `keyPair` does from `s`, which signing's first step `kp` does too:
+the mask of `g^x mod p = y` into `hMask`, memory changed only there and in
+the P space's arrays 1–23. -/
+def KPOk (kp : Prog isa) (s : State) (L : Lay) (key : Addr) : Prop :=
+  ∀ p, arrP s.mem L 0 = p → 2 ≤ p → p % 2 = 1 → arrP s.mem L 24 = 2 ^ (128 * L.wp) % p →
+    WP isa kp s fun t =>
+      (word t.mem L.S hMask = mask (decide (gOf s.mem L key ^ xOf s.mem L key % p = yOf s.mem L key)) ∧
+        InP t L ∧ PInv t L ∧ ∃ m, PLow L s.mem m ∧ Outside L.S hMask 8 m t.mem) ∧ Keep keyPairRegs s t
+
+/-- `keyPair` is a first step of signing. -/
+theorem keyPair_KPOk {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (hs : ScrL s L)
+    (hr : Regs s L key sig) (hin : InP s L) (hi : PInv s L) (hk : Src s L key (3 * L.pl + 2 * L.ql)) :
+    KPOk keyPair s L key :=
+  fun _ p0 hp hpo p24 => keyPair_ok hL hs hr hin hi hk p0 hp hpo p24
+
 /-- The registers of `Sign.body` up to `output`. -/
 def sprefixRegs : List Reg :=
   keyPairRegs ++ gkRegs ++ rRangesRegs ++ rrQRegs ++ qm2Regs ++ invRegs ++ sValueRegs
@@ -116,9 +134,9 @@ def sprefixRegs : List Reg :=
 /-- `Sign.body` up to `output` (here any `c`): `sValue` leaves r in the Q
 space's array 25, s in its array 6, and in the header's word `hMask` the mask
 of the checks but `s ≠ 0`. -/
-theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig : Addr} {d : Nat} {c : Prog isa}
+theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig : Addr} {d : Nat} {kp c : Prog isa}
     {Q : State → Prop}
-    (hL : L.Ok) (hK : ParamsOk s₀.mem L key) (hc : Checked s₀ s L key nonce d)
+    (hL : L.Ok) (hK : ParamsOk s₀.mem L key) (hc : Checked s₀ s L key nonce d) (hfst : KPOk kp s L key)
     (hkp : Kept L s₀.mem s.mem) (hk : Src s L key (3 * L.pl + 2 * L.ql)) (hn : Src s L nonce L.ql)
     (hd : d < 2 ^ 16) (hdg : Src s L dig d) (hdg8 : word s.mem L.S hDigest = dig)
     (hcont : ∀ t, QS t L key nonce → BKept L s.mem t.mem →
@@ -132,7 +150,7 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig : Addr} {d : Nat} {
         (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength (qOf s₀.mem L key) / 8))))
         (sigR (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key) (kOf s.mem L nonce)) →
       Keep sprefixRegs s t → WP isa c t Q) :
-    WP isa (.seq keyPair (.seq gk (.seq rRanges (.seq Verify.rrQ (.seq Verify.qMinus2 (.seq inverseK
+    WP isa (.seq kp (.seq gk (.seq rRanges (.seq Verify.rrQ (.seq Verify.qMinus2 (.seq inverseK
       (.seq sValue c))))))) s Q := by
   have hZ := hL.z256
   have hpl := hL.pl
@@ -170,7 +188,7 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig : Addr} {d : Nat} {
   generalize hX : xOf s.mem L key = X at vals hcont
   generalize kOf s.mem L nonce = K at vals hcont
   -- The mask of `g^x mod p = y`.
-  refine WP.seq (WP.mono (keyPair_ok (p := p) hL scr regs ip inv hk p0 (by omega) hpo p24)
+  refine WP.seq (WP.mono (hfst p p0 (by omega) hpo p24)
     fun s₁ ⟨⟨mx₁, ip₁, i₁, m₁, o₁, w₁⟩, k₁⟩ => ?_)
   rw [(vals (BKept.refl _ _)).2.2.1, (vals (BKept.refl _ _)).2.2.2.1, hX] at mx₁
   have K₁ : BKept L s.mem s₁.mem := (BKept.ofBody hL (PLow.body hL o₁)).trans (BKept.ofMask hL w₁)
@@ -249,13 +267,13 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig : Addr} {d : Nat} {
 /-- The registers `Sign.body` writes. -/
 def sbodyRegs : List Reg := sprefixRegs ++ outputRegs
 
-theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
-    (hL : L.Ok) (hK : ParamsOk s₀.mem L key) (hc : Checked s₀ s L key nonce d)
+theorem sbodyWith_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat} {kp : Prog isa}
+    (hL : L.Ok) (hK : ParamsOk s₀.mem L key) (hc : Checked s₀ s L key nonce d) (hfst : KPOk kp s L key)
     (hkp : Kept L s₀.mem s.mem) (hk : Src s L key (3 * L.pl + 2 * L.ql)) (hn : Src s L nonce L.ql)
     (hd : d < 2 ^ 16) (hdg : Src s L dig d) (hdg8 : word s.mem L.S hDigest = dig)
     (hw : word s.mem L.S Sign.hOut = out) (hout : ∀ i < 2 * L.ql, InRegions s.wr (off out i) 1)
     (hno : out.toNat + 2 * L.ql ≤ 2 ^ 64) (hos : Src s L out (2 * L.ql)) :
-    WP isa Sign.body s fun t =>
+    WP isa (.seq kp Sign.tail) s fun t =>
       (Spec.Rsa.bytesAt t.mem out (2 * L.ql) =
           (if SignOk (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key) (yOf s₀.mem L key)
               (xOf s.mem L key) (kOf s.mem L nonce)
@@ -278,8 +296,8 @@ theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
     rw [← eq, qOf, ← VG.Proof.Bignum.pow256_eq]
     have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)
     rwa [VG.Proof.Bignum.bytesAt_length] at this
-  unfold Sign.body
-  refine sprefix_ok hL hK hc hkp hk hn hd hdg hdg8 fun s₇ Q₇ K₇ m₇ r25₇ s6₇ k₁₇ => ?_
+  unfold Sign.tail
+  refine sprefix_ok hL hK hc hfst hkp hk hn hd hdg hdg8 fun s₇ Q₇ K₇ m₇ r25₇ s6₇ k₁₇ => ?_
   unfold ParamsOk at hK
   generalize pOf s₀.mem L key = p at hK m₇ r25₇ s6₇ ⊢
   generalize qOf s₀.mem L key = q at hK hqlt m₇ r25₇ s6₇ ⊢
@@ -321,5 +339,30 @@ theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
   · rw [t0]
     simp only [decide_eq_true_eq]
   · exact kall
+
+theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
+    (hL : L.Ok) (hK : ParamsOk s₀.mem L key) (hc : Checked s₀ s L key nonce d)
+    (hkp : Kept L s₀.mem s.mem) (hk : Src s L key (3 * L.pl + 2 * L.ql)) (hn : Src s L nonce L.ql)
+    (hd : d < 2 ^ 16) (hdg : Src s L dig d) (hdg8 : word s.mem L.S hDigest = dig)
+    (hw : word s.mem L.S Sign.hOut = out) (hout : ∀ i < 2 * L.ql, InRegions s.wr (off out i) 1)
+    (hno : out.toNat + 2 * L.ql ≤ 2 ^ 64) (hos : Src s L out (2 * L.ql)) :
+    WP isa Sign.body s fun t =>
+      (Spec.Rsa.bytesAt t.mem out (2 * L.ql) =
+          (if SignOk (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key) (yOf s₀.mem L key)
+              (xOf s.mem L key) (kOf s.mem L nonce)
+              (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength (qOf s₀.mem L key) / 8))))
+            then Spec.Dsa.encodeBE L.ql (sigR (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key)
+                (kOf s.mem L nonce)) ++
+              Spec.Dsa.encodeBE L.ql (sigS (qOf s₀.mem L key) (xOf s.mem L key) (kOf s.mem L nonce)
+                (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength (qOf s₀.mem L key) / 8))))
+                (sigR (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key) (kOf s.mem L nonce)))
+            else List.replicate (2 * L.ql) 0) ∧
+        t.gpr .a0 = BitVec.ofNat 64 (if SignOk (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key)
+            (yOf s₀.mem L key) (xOf s.mem L key) (kOf s.mem L nonce)
+            (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength (qOf s₀.mem L key) / 8))))
+          then 1 else 0) ∧
+        (∃ m, BKept L s.mem m ∧ Outside out 0 (2 * L.ql) m t.mem) ∧ t.gpr .s6 = L.S ∧ ScrL t L) ∧
+        Keep sbodyRegs s t :=
+  sbodyWith_ok hL hK hc (keyPair_KPOk hL hc.scr hc.regs hc.inp hc.inv hk) hkp hk hn hd hdg hdg8 hw hout hno hos
 
 end VG.Proof.Dsa.RISCV64

@@ -12,8 +12,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 A `CrtImpl` is what `vg_rsa_private_checked` needs of the implementation of
 `vg_rsa_private_crt` it calls, so that its proof holds for each of them:
 each is a variant of the interface `RsaPrivateCrt` on x86-64
-(`Variants/RsaPrivateCrt/X86_64/`), and `vg_rsa_private_checked`
-(`Generic/RsaPrivateCrt/X86_64/Rsa.lean`) is emitted once for each. Every
+(`Variants/RsaPrivateCrt/X86_64/`), and `vg_rsa_private_checked`, an
+internal function of the padding functions, is emitted once for each. Every
 implementation is proven against `crtContract` for callers that keep its
 buffers off the return address of its calls (`Contract.clear`), and its
 calls (of Montgomery multiplication) make no calls. It comes with the

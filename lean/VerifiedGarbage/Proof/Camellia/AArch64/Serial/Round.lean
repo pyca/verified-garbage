@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Interleave
 namespace VG.Proof.Camellia.AArch64.Serial
 open VG VG.AArch64 VG.AArch64.RegUpd
 open VG.Impl.Camellia.AArch64.Serial
+open VG.Proof.Camellia.Serial
 
 theorem mixKey_run {s : State} {a : Reg} {k : Nat}
     (ha8 : a ≠ .x8) (hk : k < 34)

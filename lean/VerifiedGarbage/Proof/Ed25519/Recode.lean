@@ -12,7 +12,7 @@ positive and `u = 1 - d` if negative (`dec` reads it back), so `u - 1` is its en
 whose entries `2m` and `2m + 1` are `[2m + 1]` and `-[2m + 1]` of a point.
 
 `digits_sum`: the digits, weighted by powers of two (`hsum`), sum to `K`; `digits_le`: each byte
-is at most `2 ^ (w - 1)`; `digits_zero`: they are zero from bit `n + w` on.
+is at most `2 ^ (w - 1)`.
 -/
 
 @[expose] public section
@@ -264,15 +264,6 @@ theorem digits_le {w K n : Nat} (hw : 2 ≤ w) (j : Nat) : digits w K n j ≤ 2 
   split
   · exact Nat.one_le_two_pow
   · exact (run_good hw n (init_good w K)).le j
-
-/-- The digits are zero from bit `n + w` on. -/
-theorem digits_zero {w K n : Nat} (hw : 2 ≤ w) {j : Nat} (hj : n + w ≤ j) : digits w K n j = 0 := by
-  have hl : (run w K n n init).i < n + w := run_lt (by omega) n (by simp only [init]; omega)
-  have hg : Good w K (run w K n n init) := run_good hw n (init_good w K)
-  unfold digits
-  generalize run w K n n init = F at *
-  rw [fin_ne _ (by omega)]
-  exact hg.above j (by omega)
 
 /-- The digits sum to `K`. -/
 theorem digits_sum {w K n : Nat} (hw : 2 ≤ w) (hK : K < 2 ^ n) {N : Nat} (hN : n + w ≤ N) :

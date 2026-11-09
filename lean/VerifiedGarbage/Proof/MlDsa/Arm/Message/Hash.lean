@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
-# ML-DSA on ARMv7, `sign_message` and `verify_message`: SHAKE256 through the sponge functions
+# ML-DSA on ARMv7, `sign_message` and `verify_message_cached`: SHAKE256 through the sponge functions
 
 Untrusted: everything here is checked by Lean. In `Ctx`: zeroing the Keccak
 state at `X` (`zeroSt_ok`), and the calls of `vg_keccak_absorb`,
@@ -61,9 +61,6 @@ theorem below_stk {t : State} (hsp : t.sp = L.SP) : Region.Sub (below t 8) L.STK
 theorem cov_x (hL : L.Ok) {e k : Nat} (h₂ : e + k ≤ 1024) :
     ∃ R ∈ L.rd ++ L.wr, Within ⟨L.X + BitVec.ofNat 64 e, k⟩ R := by
   obtain ⟨R, hR, hw⟩ := hL.covX h₂; exact ⟨R, List.mem_append_right _ hR, hw⟩
-
-theorem cov_x0 (hL : L.Ok) : ∃ R ∈ L.rd ++ L.wr, Within ⟨L.X, 200⟩ R := by
-  have := cov_x hL (e := 0) (k := 200) (by omega_arith); rwa [x0] at this
 
 theorem cov_xw0 (hL : L.Ok) : ∃ R ∈ L.wr, Within ⟨L.X, 200⟩ R := by
   have := hL.covX (e := 0) (k := 200) (by omega_arith); rwa [x0] at this

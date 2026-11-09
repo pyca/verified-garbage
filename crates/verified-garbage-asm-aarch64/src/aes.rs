@@ -16,7 +16,7 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the 512 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub(crate) unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
         r".inst 0xd10803ff,0x910003e3,0x91000065,0xf900c0b3,0xf900c4b4,0xf900c8b5,0xf900ccb6,0xf900d0b7
 .inst 0xf900d4b8,0xf900d8b9,0xf900dcba,0xf900e0bb,0xf900e4bc,0x91000024
@@ -214,10 +214,9 @@ pub const VG_AES_EXPAND_KEY_AES_FEATURES: verified_garbage_cpu::Features = verif
 /// * Neither `key` nor `schedule` may overlap the 512 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_expand_key_aes(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub(crate) unsafe extern "C" fn vg_aes_expand_key_aes(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd10803ff,0x910003e3,0x6f00e400,0xd1006029,0xd100802a
+        r".inst 0xd10803ff,0x910003e3,0x6f00e400,0xd1006029,0xd100802a
 cbz x9, 20f
 cbz x10, 22f
 .inst 0xb9400004,0xb9000044,0xb9400405,0xb9000445,0xb9400806,0xb9000846,0xb9400c07,0xb9000c47
@@ -289,7 +288,6 @@ b 21f
 .inst 0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611
 .inst 0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611
 .inst 0xa91e4611,0xa91f4611,0x910803ff,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
     )
 }
@@ -308,7 +306,7 @@ b 21f
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r".inst 0x91000085,0x91000064,0x91000043,0xf900c0b3,0xf900c4b4,0xf900c8b5,0xf900ccb6,0xf900d0b7
 .inst 0xf900d4b8,0xf900d8b9,0xf900dcba,0xf900e0bb,0xf900e4bc,0x91000422,0xd37cec26,0x8b060000
@@ -543,7 +541,7 @@ b 22f
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r".inst 0x91000085,0x91000064,0x91000043,0xf900c0b3,0xf900c4b4,0xf900c8b5,0xf900ccb6,0xf900d0b7
 .inst 0xf900d4b8,0xf900d8b9,0xf900dcba,0xf900e0bb,0xf900e4bc,0x91000422,0xd37cec26,0x8b060000
@@ -805,10 +803,9 @@ pub const VG_AES_ENCRYPT_BLOCKS_AES_SCRATCH_WRITTEN: usize = 0;
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_encrypt_blocks_aes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks_aes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0x3dc00010,0x3dc00411,0x3dc00812,0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17
+        r".inst 0x3dc00010,0x3dc00411,0x3dc00812,0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17
 .inst 0x3dc02018,0x3dc02419,0x3dc0281a,0x3dc02c1b,0x3dc0301c,0xd37cec29,0x8b090009,0x3dc0013e
 .inst 0xd1002826,0xd1003027,0xd343fc6d,0xd1004129,0x3dc0013d
 cbz x13, 20f
@@ -877,7 +874,6 @@ b 28f
 27:
 28:
 .inst 0xd65f03c0
-.arch_extension noaes
 .p2align 6",
     )
 }
@@ -905,10 +901,9 @@ pub const VG_AES_DECRYPT_BLOCKS_AES_SCRATCH_WRITTEN: usize = 0;
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_decrypt_blocks_aes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks_aes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0x3dc00010,0x3dc00411,0x3dc00812,0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17
+        r".inst 0x3dc00010,0x3dc00411,0x3dc00812,0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17
 .inst 0x3dc02018,0x3dc02419,0x3dc0281a,0x3dc02c1b,0x3dc0301c,0xd37cec29,0x8b090009,0x3dc0013e
 .inst 0xd1002826,0xd1003027,0xd343fc6d,0x3dc0341d,0x4e287a31,0x4e287a52,0x4e287a73,0x4e287a94
 .inst 0x4e287ab5,0x4e287ad6,0x4e287af7,0x4e287b18,0x4e287b39,0x4e287b5a,0x4e287b7b,0x4e287b9c
@@ -979,7 +974,6 @@ b 28f
 27:
 28:
 .inst 0xd65f03c0
-.arch_extension noaes
 .p2align 6",
     )
 }
@@ -991,6 +985,14 @@ pub(crate) mod vg_aes_ctr32;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32_aes.rs"]
 pub(crate) mod vg_aes_ctr32_aes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_to.rs"]
+pub(crate) mod vg_aes_ctr32_to;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_to_aes.rs"]
+pub(crate) mod vg_aes_ctr32_to_aes;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_expand_key_scratch.rs"]

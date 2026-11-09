@@ -76,7 +76,7 @@ def callWith (args : List Instr) (name : String) (code : Prog isa) : Prog isa :=
   .seq (.block args) (.call name code)
 
 def absorb (args : List Instr) : Prog isa :=
-  callWith args Spec.Sha3.absorbScratchApi.name Impl.Sha3.X86.Stream.absorb
+  callWith args "vg_keccak_absorb_scratch" Impl.Sha3.X86.Stream.absorb
 
 def pad (sc : Nat) : Prog isa :=
   callWith (padArgs sc) "vg_keccak_pad_scratch" Impl.Sha3.X86.Stream.pad

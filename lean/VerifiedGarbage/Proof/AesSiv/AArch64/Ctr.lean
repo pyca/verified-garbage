@@ -898,9 +898,6 @@ structure CPost' (s₀ : State) (C D P W : Addr) (R L : Nat) (q : List Byte) (s 
   data : Spec.Aes.bytesAt s'.mem P L = Spec.Siv.ctr (Spec.Siv.ctxCiph s.mem C R) q (Spec.Aes.bytesAt s.mem P L)
   frame : Frame (ctrRegions W P L) s.mem s'.mem
 
-theorem ctr_nil (ciph : Spec.Cmac.Cipher) (q : List Byte) : Spec.Siv.ctr ciph q [] = [] := by
-  simp [Spec.Siv.ctr, Spec.Siv.xor]
-
 theorem ctrEnd_ok {s : State} (h26 : s.gpr .x26 = P) (h27 : s.gpr .x27 = BitVec.ofNat 64 L) :
     ∃ s', runBlock isa [mov .x22 .x26, mov .x23 .x27] s = some s' ∧
       s'.gpr .x22 = P ∧ s'.gpr .x23 = BitVec.ofNat 64 L ∧ (∀ r, r ≠ .x22 → r ≠ .x23 → s'.gpr r = s.gpr r) ∧

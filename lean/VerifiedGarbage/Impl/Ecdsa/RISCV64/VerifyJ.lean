@@ -81,16 +81,3 @@ end Cfg
 
 end VG.Impl.Ecdsa.RISCV64.VerifyJ
 
-namespace VG.Impl.Ecdsa.RISCV64.Verify
-
-open VG.RISCV64 VG.Impl.Weierstrass
-
-/-- `vg_ecdsa_p256_verify`, its `R = 4 R` by `dblJ` (`a = -3`). -/
-def verifyP256 : Prog isa :=
-  VerifyJ.Cfg.verify p256 dblJ p256Order "vg_p256_check_point" Ecdh.RISCV64.checkP256
-
-/-- `vg_ecdsa_p384_verify`, its `R = 4 R` by `dblJ` (`a = -3`). -/
-def verifyP384 : Prog isa :=
-  VerifyJ.Cfg.verify p384 dblJ p384Order "vg_p384_check_point" Ecdh.RISCV64.checkP384
-
-end VG.Impl.Ecdsa.RISCV64.Verify

@@ -31,9 +31,6 @@ theorem PosPolyIs.of_canonical {m : Mem} {p : Addr} {f : Poly} (h : PolyIs m p f
   have := h.1 i hi
   omega
 
-theorem PosPolyIs.canonical {m : Mem} {p : Addr} {f : Poly}
-    (h : PosPolyIs m p f) (hr : Reduced m p) : PolyIs m p f := ⟨hr, h.value⟩
-
 theorem SignedPolyIs.mono {m : Mem} {p : Addr} {f : Poly} {lo hi lo' hi' : Int}
     (h : SignedPolyIs m p f lo hi) (hl : lo' ≤ lo) (hh : hi ≤ hi') :
     SignedPolyIs m p f lo' hi' :=

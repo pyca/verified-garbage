@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Loop
 import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Phase
 import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.IO
 import VerifiedGarbage.Proof.Rc2.CbcMemory
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.ConstantTime
 import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
@@ -97,14 +96,6 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (mid : Prog isa)
     · rw [h₄.mem]; exact out
     · rw [h₄.mem]; exact iv
 
-def satState : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | .x4 => 0x4000 | _ => 0
-  sp := 0x6000
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 512⟩]
-
 theorem encrypt_correct (s : State) (hs : (contract .encrypt).pre s) :
     ∃ t s', Exec isa Impl.Rc2.AArch64.Cbc.encrypt s t s' ∧ abiPreserved s s' ∧
       (contract .encrypt).post s s' := by
@@ -120,20 +111,5 @@ theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
     (fun s n bound hp count => phaseLoop_ok s n bound hp count) s hs
   change Exec isa Impl.Rc2.AArch64.Cbc.decrypt s t s' at he
   exact ⟨t, s', he, ⟨ha, (VG.AArch64.Exec.regions he rfl).2.2.1, VG.AArch64.Exec.preservedV he (by lit_decide)⟩, hp⟩
-
-theorem publicRegs_five (s₁ s₂ : State) : PublicRegs [.x0, .x1, .x2, .x3, .x4] s₁ s₂ ↔
-    s₁.sp = s₂.sp ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
-    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 := by
-  simp [PublicRegs]
-
-theorem encrypt_verified : Verified target Impl.Rc2.AArch64.Cbc.encrypt (Proof.Rc2.cbcEncryptContract abi 0) := by
-  refine Verified.of_correct encrypt_correct (encrypt_constantTime _) ?_
-  sig_implies [Proof.Rc2.cbcEncryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs,
-    contract, publicRegs_five] [satState] using satState
-
-theorem decrypt_verified : Verified target Impl.Rc2.AArch64.Cbc.decrypt (Proof.Rc2.cbcDecryptContract abi 0) := by
-  refine Verified.of_correct decrypt_correct (decrypt_constantTime _) ?_
-  sig_implies [Proof.Rc2.cbcDecryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs,
-    contract, publicRegs_five] [satState] using satState
 
 end VG.Proof.Rc2.AArch64.Cbc

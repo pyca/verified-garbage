@@ -51,23 +51,4 @@ theorem checkRun_flag_zero_iff (hint : Bool) (v : Values) (out aux : Addr)
     rw [ht]
     simp only [List.mem_cons,forall_eq_or_imp,and_assoc]
 
-/-- No subsequent coefficient check can clear a rejection bit. -/
-theorem checkRun_flag_zero_initial (hint : Bool) (v : Values) (out aux : Addr)
-    (c : CheckConstants) (d : CheckData) (js : List (Fin 2 × Fin 8))
-    {e : Nat} (he : e<4) (hz : vword (checkRun hint v out aux c d js).flags e=0) :
-    vword d.flags e=0 := by
-  induction js generalizing d with
-  | nil => exact hz
-  | cons i js ih =>
-    exact ((checkStep_flag_zero _ _ _ _ _ _ he).mp (ih _ hz)).1
-
-/-- A clean final pass implies the initial accumulator was clean. -/
-theorem finalPass_flag_zero_initial (hint : Bool) (work out aux : Addr)
-    (c : CheckConstants) (d : CheckData) (u : Nat) {e : Nat} (he : e<4)
-    (hz : vword (finalPassData hint work out aux c d u).flags e=0) :
-    vword d.flags e=0 := by
-  induction u with
-  | zero => exact hz
-  | succ u ih => exact ih (checkRun_flag_zero_initial _ _ _ _ _ _ _ he hz)
-
 end VG.Proof.MlDsa.AArch64.Optimized.Paired

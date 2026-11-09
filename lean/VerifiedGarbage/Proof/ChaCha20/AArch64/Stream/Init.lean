@@ -191,14 +191,6 @@ theorem contains_st (st : Addr) {d : Nat} (hd : d + 8 ≤ 768) :
     (⟨st, 768⟩ : Region).Contains (st + BitVec.ofNat 64 d) (64 / 8) :=
   Offset.contains_base _ hd (by omega)
 
-theorem nonceMem_frame (m : Mem) (st np : Addr) : Frame [⟨st, 768⟩] m (nonceMem m st np) := by
-  simp only [nonceMem]
-  exact ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_st st (d := 48) (by decide))).writeW
-    (List.mem_singleton_self _) _ (contains_st st (d := 56) (by decide))).writeW (List.mem_singleton_self _) _
-    (contains_st st (d := 0) (by decide))).writeW (List.mem_singleton_self _) _
-    (contains_st st (d := 8) (by decide))).writeW (List.mem_singleton_self _) _
-    (contains_st st (d := 128) (by decide)))
-
 theorem setNonce_untouched : Untouched setNonce :=
   fun r hr i hi => by
     have : ((instrs setNonce).all fun i => preserved.all fun r => !clobbers i r) = true := by

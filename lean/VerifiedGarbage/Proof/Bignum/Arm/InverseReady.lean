@@ -76,19 +76,4 @@ theorem initInverse_ready_r2 (s : State) {base : BitVec 32} {len w : Nat}
       (by have := ws.nowrap; omega)
 
 
-theorem initInverse_ready (s : State) {base : BitVec 32} {len w : Nat}
-    (ws : Workspace s base (8 * len)) (layout : Layout s.mem (State.addr base) len)
-    (width : wOf s.mem (State.addr base) = w)
-    (ptr : s.gpr .r0 = base + BitVec.ofNat 32 (arrAt w 0)) (baseReg : s.gpr .r12 = base)
-    (odd : (VG.Proof.Mont.word s.mem (State.addr base) (arrAt w 0)).toNat % 2 = 1)
-    (large : 1 < numAt s.mem (State.addr base) w 0)
-    (stackRead : InRegions (s.rd ++ s.wr) (State.addr s.sp) 4)
-    (stackSep : Region.Disjoint ⟨State.addr s.sp, 4⟩ ⟨State.addr base, 8 * len⟩)
-    (saved : s.mem.readW (State.addr s.sp) 32 = base) :
-    WP isa initInverse s fun t => ArithmeticReady base len w t ∧
-      numAt t.mem (State.addr base) w 0 = numAt s.mem (State.addr base) w 0 ∧
-      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  exact WP.mono (initInverse_ready_r2 s ws layout width ptr baseReg odd large stackRead stackSep saved)
-    (fun _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩)
-
 end VG.Proof.Bignum.Arm

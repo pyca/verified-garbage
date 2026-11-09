@@ -160,13 +160,6 @@ theorem reprFrom_append_block {iv : HashValue} {mem mem' : Mem} {p : Addr} {m xs
     simp only [bytesAt, List.range_zero, List.map_nil]
     symm; rw [List.drop_eq_nil_iff]; simp only [List.length_append]; omega
 
-/-- Appending bytes that stay within the buffer. -/
-theorem repr_append_buf {mem mem' : Mem} {p : Addr} {m xs : List Byte} (hr : Spec.Sha256.Repr mem p m)
-    (hlen : m.length % 64 + xs.length < 64) (hs : stateAt mem' p = stateAt mem p)
-    (hb : bytesAt mem' (p + 32) (m.length % 64 + xs.length) = m.drop (64 * (m.length / 64)) ++ xs) :
-    Spec.Sha256.Repr mem' p (m ++ xs) :=
-  reprFrom_append_buf hr hlen hs hb
-
 /-- Appending bytes that complete a block `B` (whose bytes are the buffered
 ones followed by `xs`), which is compressed. -/
 theorem repr_append_block {mem mem' : Mem} {p : Addr} {m xs : List Byte} (hr : Spec.Sha256.Repr mem p m)
@@ -206,27 +199,6 @@ theorem bits8 (x : BitVec 64) : BitVec.ofNat 64 (8 * x.toNat) = x <<< 3 := by
   apply BitVec.eq_of_toNat_eq
   simp [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
   omega
-
-/-- The bytes of a 64-bit word made of two halves. -/
-theorem append_lo (hi lo : BitVec 32) {s : Nat} (h : s + 8 ≤ 32) :
-    (hi ++ lo : BitVec 64).extractLsb' s 8 = lo.extractLsb' s 8 :=
-  BitVec.extractLsb'_append_eq_of_add_le (v := 32) (w := 32) h
-
-theorem append_hi (hi lo : BitVec 32) {s : Nat} (h : 32 ≤ s) :
-    (hi ++ lo : BitVec 64).extractLsb' s 8 = hi.extractLsb' (s - 32) 8 :=
-  BitVec.extractLsb'_append_eq_of_le (v := 32) (w := 32) h
-
-/-- The message length in bits, big-endian, from the two halves of the byte count. -/
-theorem lenBytes_halves (hi lo : BitVec 32) (m : List Byte) (h : hi ++ lo = BitVec.ofNat 64 m.length) :
-    lenBytes m = Spec.Sha256.wordBytes (hi <<< 3 ||| lo >>> 29) ++ Spec.Sha256.wordBytes (lo <<< 3) := by
-  have hx : BitVec.ofNat 64 (8 * m.length) = (hi <<< 3 ||| lo >>> 29) ++ lo <<< 3 := by
-    rw [shl3, h, ← bits8]
-    apply BitVec.eq_of_toNat_eq
-    simp [Nat.mul_mod]
-  simp only [lenBytes, hx, Spec.Sha256.wordBytes]
-  simp (disch := decide) only [List.range_succ, List.range_zero, List.nil_append, List.reverse_cons,
-    List.reverse_nil, List.map_cons, List.map_nil, List.cons_append, List.nil_append, Nat.reduceMul,
-    Nat.reduceSub, append_lo, append_hi]
 
 /-- The bytes after the whole blocks of `m`. -/
 abbrev rest (m : List Byte) : List Byte := m.drop (64 * (m.length / 64))
@@ -299,25 +271,4 @@ theorem finalHash_two {iv : HashValue} {m : List Byte} (hr : 56 ≤ m.length % 6
       simpa using this
   rw [h1, h2]
 
-
-theorem hash_eq (m : List Byte) (nt : Nat)
-    (hn : (m.length % 64 + 1 + (119 - m.length % 64) % 64 + 8) = 64 * nt) :
-    Spec.Sha256.hash m = (compressList (compressList H0 m (m.length / 64))
-      (rest m ++ [0x80] ++ List.replicate ((119 - m.length % 64) % 64) 0 ++ lenBytes m) nt).toList.flatMap
-        wordBytes :=
-  finalHash_eq m nt hn
-
-/-- A message whose padding takes one more block. -/
-theorem hash_one {m : List Byte} (hr : m.length % 64 < 56) :
-    Spec.Sha256.hash m = (compress (compressList H0 m (m.length / 64))
-      (parseBlock fun t => (rest m ++ [0x80] ++ List.replicate (55 - m.length % 64) 0 ++
-        lenBytes m).getD t 0)).toList.flatMap wordBytes :=
-  finalHash_one hr
-
-/-- A message whose padding takes two more blocks. -/
-theorem hash_two {m : List Byte} (hr : 56 ≤ m.length % 64) :
-    Spec.Sha256.hash m = (compress (compress (compressList H0 m (m.length / 64))
-      (parseBlock fun t => (rest m ++ [0x80] ++ List.replicate (63 - m.length % 64) 0).getD t 0))
-      (parseBlock fun t => (List.replicate 56 0 ++ lenBytes m).getD t 0)).toList.flatMap wordBytes :=
-  finalHash_two hr
 end VG.Proof.Sha256.Stream

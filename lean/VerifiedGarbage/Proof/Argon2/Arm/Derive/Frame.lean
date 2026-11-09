@@ -59,12 +59,6 @@ theorem sp2 : (pushed savedRegs (pushed argRegs s₀)).sp.toNat = (E0 s₀).toNa
 
 theorem E_toNat : (E s₀).toNat = (E0 s₀).toNat - 200 := sub_toNat' hlo
 
-theorem entry_sp : (entry s₀).sp = E s₀ := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [entry, allocated]
-  rw [sub_toNat' (by rw [sp2 hlo]; omega_arith), sp2 hlo, E_toNat hlo]
-  omega_arith
-
 end
 
 /-- Loading the registers of `l` from offsets of `sp`, then running `rest`. -/

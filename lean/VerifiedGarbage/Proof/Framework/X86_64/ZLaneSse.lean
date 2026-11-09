@@ -34,10 +34,6 @@ def State.zproj (s : State) (l : Nat) : State :=
 @[simp] theorem State.zproj_wr (s : State) (l : Nat) : (s.zproj l).wr = s.wr := rfl
 @[simp] theorem State.zproj_mxcsr (s : State) (l : Nat) : (s.zproj l).mxcsr = s.mxcsr := rfl
 
-/-- On lanes 0 and 1, `zproj` is `proj`. -/
-theorem State.zproj_eq_proj (s : State) {l : Nat} (hl : l < 2) : s.zproj l = s.proj l := by
-  simp only [State.zproj, State.proj, State.zlane, hl, ite_true]
-
 /-- `vpternlogd`'s immediate `0x96` selects the XOR of its three operands. -/
 theorem ternlog_96 (a b c : BitVec 128) : ternlog a b c 0x96 = a ^^^ b ^^^ c := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi

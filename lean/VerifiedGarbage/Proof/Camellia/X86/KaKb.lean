@@ -128,10 +128,6 @@ theorem VW_xor {s s' : State} {w x : Nat} {v u : BitVec 64 × BitVec 64} (hv : V
   · simp only [itePos h8, byteOf_xor, BitVec.getLsbD_xor]
   · simp only [iteNeg h8, byteOf_xor, BitVec.getLsbD_xor]
 
-theorem kaSlot_eq : kaSlot = 84 := rfl
-theorem kbSlot_eq : kbSlot = 88 := rfl
-theorem cntSlot_eq : cntSlot = 654 := rfl
-
 /-! ## Under the rounds' context -/
 
 /-- Four words of an operation in the tail buffer, under `Ctx`. -/

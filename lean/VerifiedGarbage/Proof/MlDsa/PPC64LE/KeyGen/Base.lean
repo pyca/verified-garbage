@@ -125,10 +125,6 @@ theorem glueSt_wr (s : State) : ∀ as, (glueSt s as).wr = s.wr
 theorem glueSt_sp (s : State) : ∀ as, (glueSt s as).sp = s.sp
   | [] => rfl
   | _ :: as => glueSt_sp _ as
-theorem glueSt_lr (s : State) : ∀ as, (glueSt s as).lr = s.lr
-  | [] => rfl
-  | _ :: as => glueSt_lr _ as
-
 /-- The registers the moves do not write. -/
 theorem glueSt_gpr {r : Reg} (hr : argReg r = false) :
     ∀ (s : State) {as : List (Reg × Arg)}, glueOk as = true → (glueSt s as).gpr r = s.gpr r

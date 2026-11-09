@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Gcm.Clmul -- shake: keep (exports the existin
 # GHASH with PMULL on AArch64
 
 `vg_ghash_aes(h = x0, y = x1, data = x2, n = x3, scratch = x4)`, with the
-contract of `vg_ghash` (`Proof.Gcm.ghashContract`), for CPUs with FEAT_PMULL
+contract of `vg_ghash` (`Proof.Gcm.ghashAArch64`), for CPUs with FEAT_PMULL
 (Rust's `aes` feature, hence the suffix: see `Artifacts/Gcm/AArch64.lean`).
 
 The arithmetic is that of `Impl.Gcm.X86_64.Pclmul`. A block is loaded with
@@ -118,11 +118,6 @@ def consts : List Instr :=
    .vop (.ins .d2 (tReg 2) 0 .x6), .vop (.ins .d2 (tReg 2) 1 .x7),
    .vop (.ins .d2 (sReg 2) 0 .x7), .vop (.ins .d2 (sReg 2) 1 .x6)]
 
-/-- `H` (as loaded), the constants, `H' = mul(H, x⁻²)` and `Y`. -/
-def prologue : List Instr :=
-  loadRev A .x0 0 ++ consts ++ mul (sReg 1) A (sReg 2) (tReg 2) ++
-  ([.vop (.ext (tReg 1) (sReg 1) (sReg 1) 8)] : List Instr) ++ loadRev Y .x1 0 ++ ([.lsr .x .x5 .x3 3] : List Instr)
-
 /-- `H'²` to `H'⁸`. -/
 def powers : List Instr :=
   pow 2 1 1 ++ pow 3 2 1 ++ pow 4 2 2 ++ pow 5 4 1 ++ pow 6 4 2 ++ pow 7 4 3 ++ pow 8 4 4
@@ -190,13 +185,10 @@ def ghashP : Prog isa := ghashWith prologueP powersP
 
 /-! ## With the powers in their own buffer
 
-`vg_ghash_with_powers_aes` and `vg_ghash_store_powers_aes`, whose sixth
-argument `pw` (`x5`) is a 128-byte buffer of the powers
-(`Spec.Gcm.Powers8Repr`): `H'²ʲ⁺²` at `pw + 32 j`, `H'²ʲ⁺¹` 16 bytes after,
-each as `tReg` holds it. Both have all eight powers in their registers before
-the loops, whatever the number of blocks: `vg_ghash_with_powers_aes` loads
-them, and `vg_ghash_store_powers_aes` computes them, as `vg_ghash_aes` does,
-and stores them after its epilogue. -/
+`vg_ghash_with_powers_aes`, whose sixth argument `pw` (`x5`) is a 128-byte
+buffer of the powers (`Spec.Gcm.Powers8Repr`): `H'²ʲ⁺²` at `pw + 32 j`,
+`H'²ʲ⁺¹` 16 bytes after, each as `tReg` holds it. It loads all eight powers
+into their registers before the loops, whatever the number of blocks. -/
 
 /-- GHASH from the prologue `pro`, which sets up `H'` to `H'⁸`, then `fin`
 after the epilogue. Fewer than eight blocks go four, two and one at a time
@@ -221,8 +213,8 @@ def prologueW : List Instr :=
 
 def ghashW : Prog isa := ghashAll prologueW []
 
-/-! The powers of `vg_ghash_store_powers_aes`, which computes them for the
-key setup of AES-GCM (`AesGcm::new`), with fewer instructions on the chain
+/-! The powers of `vg_ghash_aes` and of `vg_aes_gcm_store_powers_aes`, which
+computes them for the key setup of AES-GCM (`AesGcm::new`), with fewer instructions on the chain
 that waits for `H`: the products are written rather than added to a cleared
 product (`accD`), and the squares `H'²`, `H'⁴`, `H'⁶`, `H'⁸` take two
 products, not four: the middle ones, `pmull(t₁, t₀)` and `pmull(t₀, t₁)`,
@@ -278,21 +270,32 @@ def prologueT : List Instr :=
   ([.vop (.ext (tReg 1) (sReg 1) (sReg 1) 8)] : List Instr) ++ loadRev Y .x1 0 ++
     ([.lsr .x .x5 .x3 3] : List Instr)
 
-/-- `pw` kept in `x8`, then the prologue, and the powers. -/
-def prologueS : List Instr := ([.addImm .x .x8 .x5 0] : List Instr) ++ prologueT ++ powersS
-
 /-- `vg_ghash_aes`, with `H'` by `twist` and the powers by `powersS`
 (defined below). -/
 def ghash : Prog isa := ghashWith prologueT powersS
 
-/-- `H'ᵏ` stored to `pw` (`x8`). -/
-def storePw (k : Nat) : List Instr := [.strq (tReg k) .x8 (pwOff k)]
+/-! ## The powers from a key context
+
+`vg_aes_gcm_store_powers_aes(ctx = x0, pw = x1)`: the hash subkey `H`,
+bytes 240–255 of the key context (`Spec.Gcm.ctxH`), loaded as
+`vg_ghash_aes` loads its `h`, `H'` by `twist`, `H'²` to `H'⁸` by
+`powersS`, and the eight stored to `pw` at `pwOff`, from `x1`.
+It is straight-line, and writes only `x5`, `v1`, `v3`–`v7` and
+`v16`–`v31`. -/
+
+/-- `H'ᵏ` stored to `pw` (`x1`). -/
+def storeKeyPw (k : Nat) : List Instr := [.strq (tReg k) .x1 (pwOff k)]
 
 /-- `H'` to `H'⁸` stored. -/
-def storesS : List Instr :=
-  storePw 1 ++ storePw 2 ++ storePw 3 ++ storePw 4 ++ storePw 5 ++ storePw 6 ++ storePw 7 ++
-    storePw 8
+def keyStores : List Instr :=
+  storeKeyPw 1 ++ storeKeyPw 2 ++ storeKeyPw 3 ++ storeKeyPw 4 ++ storeKeyPw 5 ++ storeKeyPw 6 ++
+    storeKeyPw 7 ++ storeKeyPw 8
 
-def ghashS : Prog isa := ghashAll prologueS storesS
+/-- `H` from the key context, the reduction constant, and `H'` by `twist`. -/
+def keyPrologue : List Instr :=
+  loadRev A .x0 240 ++ constC ++ twist (sReg 1) ++
+    ([.vop (.ext (tReg 1) (sReg 1) (sReg 1) 8)] : List Instr)
+
+def keyPowers : Prog isa := .block (keyPrologue ++ powersS ++ keyStores)
 
 end VG.Impl.Gcm.AArch64.Pmull

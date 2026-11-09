@@ -438,10 +438,4 @@ theorem Keep.nk {B : BitVec 32} {W : Nat} {js ds : List Nat} {m m' : Mem}
   · have := arr_disj (w := W) (hj k hk); dsimp only; simp only [S] at *; omega
   · have := hd d hd'; have : hdr ≤ arr W j := Nat.le_add_right _ _; dsimp only; omega
 
-/-- An array's low `L` words from a frame of its other words. -/
-theorem Outside.nk {B : BitVec 32} {W j L d n : Nat} {m m' : Mem}
-    (h : Outside (State.addr B) (arr W j + d) n m m') (hL : 4 * L ≤ d) (fit : arr W j + 4 * L ≤ 2 ^ 64) :
-    nk m' B W j L = nk m B W j L :=
-  h.val32 (by omega) fit
-
 end VG.Proof.Rsa.Arm.Inv

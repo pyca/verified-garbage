@@ -344,3 +344,51 @@ vg_sha1_finalize:
 	addi sp, sp, 144
 	ret
 	.option pop
+
+vg_sha1_digest:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -144
+	addi t0, sp, 0
+	sd ra, 88(t0)
+	sd s7, 96(t0)
+	sd s8, 104(t0)
+	sd s9, 112(t0)
+	sd s10, 120(t0)
+	sd s11, 128(t0)
+	addi s8, t0, 0
+	addi s9, a2, 0
+	addi s10, a0, 0
+	addi s11, a1, 0
+	addi a0, s8, 0
+	call {vg_sha1_init}
+	addi a0, s8, 0
+	addi a1, zero, 0
+	addi a2, s10, 0
+	addi a3, s11, 0
+	call {vg_sha1_update}
+	addi a0, s8, 0
+	addi a1, s11, 0
+	addi a2, s9, 0
+	call {vg_sha1_finalize}
+	addi t1, zero, 0
+	sd t1, 0(s8)
+	sd t1, 8(s8)
+	sd t1, 16(s8)
+	sd t1, 24(s8)
+	sd t1, 32(s8)
+	sd t1, 40(s8)
+	sd t1, 48(s8)
+	sd t1, 56(s8)
+	sd t1, 64(s8)
+	sd t1, 72(s8)
+	sd t1, 80(s8)
+	ld ra, 88(s8)
+	ld s7, 96(s8)
+	ld s9, 112(s8)
+	ld s10, 120(s8)
+	ld s11, 128(s8)
+	ld s8, 104(s8)
+	addi sp, sp, 144
+	ret
+	.option pop

@@ -30,8 +30,4 @@ def decryptM (L : KemLay) : Prog isa :=
  [Kem16.dotAt (KEM.TP L) ((List.range L.k).map fun j => (KEM.aOff L 0 j,KEM.yOff L j)),
  Ntt16.Readonly.nttInvAtWithW (KEM.TP L) KEM.NS,Kem16.widenAt (KEM.TP L) (KEM.PP L),
  L.ddLAt .x26 (32*L.du*L.k) L.dv (KEM.EP L),subAt (KEM.EP L) (KEM.PP L),ceAt (KEM.EP L) 1 .x28 KEM.MB])
-def deStart (callee : Impl.Sha3.AArch64.Callee) (L : KemLay) : Prog isa :=
- seqs [.block (L.kemPrologue 3 [0,1,2,3]),decryptM L,
- hashWith callee .x28 KEM.ST KEM.WK 72 6 [⟨.x28,KEM.MB,32⟩,⟨.x25,768*L.k+32,32⟩]
- [⟨.x28,KEM.KP,32⟩,⟨.x28,KEM.RB,32⟩],.block (copy32 .x25 (768*L.k) .x28 KEM.SB)]
 end VG.Impl.MlKem.AArch64.Optimized

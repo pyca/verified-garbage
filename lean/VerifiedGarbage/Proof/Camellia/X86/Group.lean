@@ -134,7 +134,7 @@ theorem ScrOk.frame {s₀ : State} {b : BitVec 32} {g : Nat} {E : Nat → BitVec
 
 theorem ScrOk.keeps {s₀ : State} {b : BitVec 32} {g : Nat} {E : Nat → BitVec 64} {m m' : Mem}
     (h : ScrOk s₀ b g E m) (hfit : b.toNat + 4 * slots ≤ 2 ^ 32)
-    (hk : Spec.Camellia.Prepared.Keeps (b.setWidth 64) wsWords layout.cryptScratch m m') : ScrOk s₀ b g E m' := by
+    (hk : Proof.Camellia.Prepared.Keeps (b.setWidth 64) wsWords layout.cryptScratch m m') : ScrOk s₀ b g E m' := by
   have hg4 : 8 * g + 2 ≤ 34 := by rcases h.hg with h | h <;> omega_arith
   refine ⟨h.hg, fun e he => (h.keys e he).congr fun j hj => ?_, fun i hi => ?_⟩
   · exact keeps_word hfit hk (by omega_arith) (by rw [grpSlot_eq, keySlot_eq]; omega_arith)

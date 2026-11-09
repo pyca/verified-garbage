@@ -47,7 +47,7 @@ theorem ctr_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) VG.Impl.Mode
       Arm.reduceClassify, Arm.Loc.val] at h
     exact h)
   post s s' _ h := by
-    sig_post [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrPost, Spec.Camellia.ctrSig, Arm.abi, Arm.argRegs,
+    sig_post [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Proof.Camellia.ctrPostSk, Spec.Camellia.ctrSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
     intro hR
     have e := ctr_post h
@@ -67,8 +67,8 @@ theorem ctr_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) VG.Impl.Mode
 theorem ctr_verified : Verified Arm.target ctr (Proof.Camellia.ctrScratchContract Arm.abi 9 2816) :=
   seq_verified (ecbSpec .encrypt) (ctr_ok _ rfl) ctrTaint ctr_implies
 
-theorem ctrFrameSat : ∃ s, (Spec.Camellia.ctrContract Arm.abi 2904).pre s := by
-  implies_sat [Spec.Camellia.ctrContract, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre, Arm.abi, Arm.argRegs,
+theorem ctrFrameSat : ∃ s, (Proof.Camellia.ctrContractSk Arm.abi 2904).pre s := by
+  implies_sat [Proof.Camellia.ctrContractSk, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using fbFrameSat 0
 
@@ -76,8 +76,9 @@ theorem ctrFrameSat : ∃ s, (Spec.Camellia.ctrContract Arm.abi 2904).pre s := b
 theorem ctr_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 ctr)
       (Spec.Camellia.ctrContract Arm.abi 2904) :=
+  Proof.Camellia.ctr_of_sk <|
   Arm.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64) (n := 9)
-    (pre := Spec.Camellia.ctrPre Arm.abi.ptrBits) (post := Spec.Camellia.ctrPost Arm.abi.ptrBits)
+    (pre := Spec.Camellia.ctrPre Arm.abi.ptrBits) (post := Proof.Camellia.ctrPostSk Arm.abi.ptrBits)
     (wa := true) (stack := 2816) (m := 1) (bytes := 88)
     ctr_verified (by decide) (by decide) (by decide) (by decide) (by decide)
     (Proof.Camellia.ctrPre_local _) (Proof.Camellia.ctrPost_local _) (Proof.Camellia.ctrPostOut_local _) ctrFrameSat

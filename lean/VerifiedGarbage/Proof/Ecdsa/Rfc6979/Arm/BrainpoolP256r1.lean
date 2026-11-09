@@ -41,12 +41,12 @@ def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : RfcCurve
   E := Impl.Ecdsa.Arm.brainpoolp256r1
   inst := Spec.Ecdsa.BrainpoolP256r1.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inr (.inl rfl), .inl rfl, brainpoolp256r1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.BrainpoolP256r1.curve = 0; rw [brainpoolp256r1_nBits]
-  coreN := "vg_ecdsa_brainpoolp256r1_sign"
+  coreN := "vg_ecdsa_brainpoolp256r1_sign_k"
   coreC := Impl.Ecdsa.Arm.signBrainpoolP256r1
   coreConsts := []
   coreX := by
@@ -62,6 +62,6 @@ def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : RfcCurve
     simpa only [coreK,coreSigOf,Spec.BrainpoolP256r1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.brainpoolp256r1,Impl.Ecdsa.Arm.brainpoolp256r1With,Proof.Ecdsa.Arm.BrainpoolP256r1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
       Proof.Ecdsa.Arm.BrainpoolP256r1.signArm] using Proof.Ecdsa.Arm.BrainpoolP256r1.sign_ct
   coreStack := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blk := by rfcT_decide
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

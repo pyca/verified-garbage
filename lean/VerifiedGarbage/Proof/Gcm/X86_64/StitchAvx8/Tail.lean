@@ -326,7 +326,7 @@ theorem rbxTo_ok (ix : Bool) (s : State) :
   · exact WP.mono (rbxAdd_ok s) fun u ⟨u1, u2⟩ => ⟨by simp only [ite_true, u1], u2⟩
 
 /-- And back. -/
-theorem rbxFrom_ok (ix : Bool) (s : State) :
+theorem rbxToDec_ok (ix : Bool) (s : State) :
     WP isa (.block (if ix then [.alu .sub .rbx (.reg .rdx)] else [])) s fun u =>
       u.gpr .rbx = s.gpr .rbx - (if ix then s.gpr .rdx else BitVec.ofNat 64 0) ∧
       (∀ q, q ≠ .rbx → u.gpr q = s.gpr q) ∧
@@ -464,7 +464,7 @@ theorem tail_ok {s₀ s : State} {ix : Bool} {P : Nat → Block} {g : Nat} (hp :
         exact hE₂.poly }
   refine WP.seq (WP.mono (StitchZH.remLoop_ok hEok hI₄) fun s₅ hI₅ => ?_)
   rw [WP.block_append_iff]
-  refine WP.mono (rbxFrom_ok ix s₅) fun s₅' ⟨c₅, cg, cl, cm, crd, cwr⟩ => ?_
+  refine WP.mono (rbxToDec_ok ix s₅) fun s₅' ⟨c₅, cg, cl, cm, crd, cwr⟩ => ?_
   refine WP.mono (tailEnd_ok s₅' hp.rounds (by rw [cl]; exact hI₅.m1))
     fun s₆ ⟨y₆, r11₆, r10₆, g₆, m₆, rd₆, wr₆⟩ => ?_
   -- What the tail leaves.

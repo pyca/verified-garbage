@@ -117,7 +117,7 @@ theorem crSeg2T_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D 
     by rw [hdD _ _ (Offset.sub_base D (by omega_arith)) (by omega_arith)]; exact h.rest, h.whole,
     h.frame.trans (fz.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub _ (by decide) (by decide)⟩), ?_⟩
+      exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub _ (by decide) (by decide)⟩), ?_, rfl⟩
   · have hcb : blockAt s₂.mem (St + BitVec.ofNat 64 48) = blockAt s.mem (St + BitVec.ofNat 64 48) :=
       blockAt_frame fz fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.st_st (.inl (by decide)) (by decide) (by decide)
@@ -182,7 +182,8 @@ theorem Cr3.keep {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D : 
     done := fun hc => by rw [hm]; exact h.done hc
     rest := by rw [hm]; exact h.rest
     whole := h.whole
-    frame := by rw [hm]; exact h.frame }
+    frame := by rw [hm]; exact h.frame
+    outAt := rfl }
 
 omit L in
 /-- `crTailT`: `crTail`, or, for a text of `N` (at least 16) bytes whose last

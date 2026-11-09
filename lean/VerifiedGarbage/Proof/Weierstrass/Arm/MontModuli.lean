@@ -5,8 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
 /-!
 # Montgomery arithmetic as functions on 32-bit ARM: the moduli
 
-Each modulus of `Impl.Weierstrass.Mont.moduli` is one the functions support
-(`ModOk`).
+Each modulus here (`p224p_ok`, …) is one the functions support (`ModOk`).
 -/
 
 @[expose] public section

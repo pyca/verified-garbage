@@ -2,11 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Open
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ok
 import VerifiedGarbage.Proof.Cmac.Frame
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Open
-meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ok
 meta import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -101,15 +99,15 @@ structure ArgsAt (W D : Addr) (R n : Nat) (t : State) : Prop where
   r9 : t.gpr .r9 = BitVec.ofNat 64 (16 * (n / 256))
 
 /-- The interleaved loop keeps `Bufs`. -/
-theorem dec_bufs {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr} {al n : Nat}
+theorem dec_bufs {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk lp) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr} {al n : Nat}
     (h256 : 256 ≤ n) {t : State} (h : Bufs K W SP R N A D al n t ∧ ArgsAt W D R n t) :
-    WP isa Impl.AesGcmSiv.X86_64Stitch.dec t (Bufs K W SP R N A D al n) := by
+    WP isa lp.dec t (Bufs K W SP R N A D al n) := by
   obtain ⟨hB, G⟩ := h
   have hn := hB.data.lt
   have hp := spre_of L hR hB.one.env hB.data hB.dw h256 G.rdi G.rsi G.rdx G.rcx G.r8 G.r11 G.r12 G.r9
   have hnb : Stitch.nb t = 16 * (n / 256) := by
     show (t.gpr .r9).toNat = _; rw [G.r9, toNat_ofNat_of_lt (by omega)]
-  refine WP.mono (Stitch.dec_ok hp (by rw [hnb]; omega)) fun t' Dp => ?_
+  refine WP.mono (hlp.dec hp (by rw [hnb]; omega)) fun t' Dp => ?_
   have Fd : Frame [⟨W + BitVec.ofNat 64 96, 16⟩, ⟨W + BitVec.ofNat 64 80, 16⟩, ⟨D, 16 * (16 * (n / 256))⟩,
       ⟨W + BitVec.ofNat 64 1768, 256⟩] t.mem t'.mem := by
     have h := Dp.frame
@@ -162,9 +160,6 @@ theorem sArgs_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {t : Stat
     ⟨rdi₁, rsi₁, rdx₁, rcx₁, r8₁, r11₁, r12₁, r9₁⟩⟩
 
 theorem sArgs_check : ∃ hc, (taint.check (sivT []) (.block sArgs) hc).isSome = true := ⟨_, by taint_decide⟩
-
-theorem dec_check : ∃ hc, (taint.check (sivT [.rdi, .rsi, .rdx, .rcx, .r8, .r11, .r12, .r9])
-    Impl.AesGcmSiv.X86_64Stitch.dec hc).isSome = true := ⟨_, by taint_decide⟩
 
 theorem rest_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {t : State}
     (h : Bufs K W SP R N A D al n t) :
@@ -299,11 +294,11 @@ theorem ArgsAt.both {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {t₁ 
     · rw [h₁.2.r9, h₂.2.r9]⟩
 
 /-- `stitched`, in two runs with the same public arguments. -/
-theorem stitched_rel (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat}
+theorem stitched_rel {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk lp) (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat}
     (hR : R = 10 ∨ R = 14) {N A D : Addr} {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩)
     (hn : n ≤ 2 ^ 64) (hal : al < 2 ^ 64) (hn' : n < 2 ^ 64) (h256 : 256 ≤ n) {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → Bufs K W SP R N A D al n t₁ ∧ Bufs K W SP R N A D al n t₂) :
-    RelCT isa P (Impl.AesGcmSiv.X86_64Stitch.stitched v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)
+    RelCT isa P (Impl.AesGcmSiv.X86_64Stitch.stitched lp v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)
       fun _ _ => True := by
   have r₁ := (rel_taintC [] hDW hn (fun t₁ t₂ h => ⟨(hP _ _ h).1.one, (hP _ _ h).2.one, fun _ h => nomatch h⟩)
     sHead_check).wp
@@ -323,9 +318,9 @@ theorem stitched_rel (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Add
     fun t₁ t₂ h => ⟨sArgs_wp h.2.1, sArgs_wp h.2.2⟩
   have r₄ := (rel_taintC [.rdi, .rsi, .rdx, .rcx, .r8, .r11, .r12, .r9] (P := fun t₁ t₂ => True ∧
       (Bufs K W SP R N A D al n t₁ ∧ ArgsAt W D R n t₁) ∧ (Bufs K W SP R N A D al n t₂ ∧ ArgsAt W D R n t₂))
-    hDW hn (fun t₁ t₂ h => ArgsAt.both h.2.1 h.2.2) dec_check).wp
+    hDW hn (fun t₁ t₂ h => ArgsAt.both h.2.1 h.2.2) hlp.decT).wp
     (F₁ := Bufs K W SP R N A D al n) (F₂ := Bufs K W SP R N A D al n)
-    fun t₁ t₂ h => ⟨dec_bufs L hR h256 h.2.1, dec_bufs L hR h256 h.2.2⟩
+    fun t₁ t₂ h => ⟨dec_bufs hlp L hR h256 h.2.1, dec_bufs hlp L hR h256 h.2.2⟩
   have r₅ := (rel_taintC [] (P := fun t₁ t₂ => True ∧ Bufs K W SP R N A D al n t₁ ∧ Bufs K W SP R N A D al n t₂)
     hDW hn (fun t₁ t₂ h => ⟨h.2.1.one, h.2.2.one, fun _ h => nomatch h⟩) rest_check).wp
     (F₁ := fun (t : State) => Bufs K W SP R N A D al n t ∧
@@ -394,22 +389,22 @@ theorem lenCmp_stk {K W SP : Addr} {R : Nat} {N A D T : Addr} {al n : Nat} {t : 
     hcf₁⟩
 
 /-- Deciphering and the tag input, either way, keep `St`. -/
-theorem mid_st (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat}
+theorem mid_st {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk lp) (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat}
     (hR : R = 10 ∨ R = 14) {N A D T : Addr} {al n : Nat} (hND : (⟨N, 12⟩ : Region).Disjoint ⟨D, n⟩)
     (hAD : (⟨A, al⟩ : Region).Disjoint ⟨D, n⟩) {t : State}
     (h : StK K W SP R N A D al n T t ∧ t.cf = some (decide (n < 256))) :
     WP isa (.ite .b (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (polyval v.callees wide))
-      (Impl.AesGcmSiv.X86_64Stitch.stitched v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)) t
+      (Impl.AesGcmSiv.X86_64Stitch.stitched lp v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)) t
       (St K W SP R N A D al n T) := by
   obtain ⟨h, hcf⟩ := h
   refine WP.ite (decide (n < 256)) (eval_b hcf) (fun _ => ?_) (fun hf => ?_)
   · exact WP.seq (WP.mono (crypt_st v eb wide L hR h) fun _ h' => polyval_st v wide L h')
-  · exact WP.mono (stitched_ok v eb wide L hR h.1.bufs.one.env h.1.bufs.one.sl h.1.bufs.aad h.1.bufs.data h.1.nonce
+  · exact WP.mono (stitched_ok hlp v eb wide L hR h.1.bufs.one.env h.1.bufs.one.sl h.1.bufs.aad h.1.bufs.data h.1.nonce
       h.1.bufs.dw hND hAD h.2.1 h.2.2 (by simpa using hf)) fun _ Md =>
       h.1.frame Md.env Md.frame (mid_disj L h.1.bufs.data.w (.inr ⟨by decide, by decide⟩))
         (Md.frame.sub (mid_mut W SP D n)) Md.rd Md.wr
 
-theorem openSBody_rel (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D T : Addr}
+theorem openSBody_rel {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk lp) (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D T : Addr}
     {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) (hal : al < 2 ^ 64) (hn' : n < 2 ^ 64)
     {P : State → State → Prop}
     (hND : (⟨N, 12⟩ : Region).Disjoint ⟨D, n⟩) (hAD : (⟨A, al⟩ : Region).Disjoint ⟨D, n⟩)
@@ -417,7 +412,7 @@ theorem openSBody_rel (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : B
     RelCT isa P (.seq (.block recv) (.seq (keys v.callees ⟨eb.enc.name, eb.enc.code⟩)
       (.seq (.block [.mov .rax (.mem (Impl.AesGcm.X86_64.at_ .r15 lenO)), .alu .cmp .rax (imm 256)])
       (.seq (.ite .b (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (polyval v.callees wide))
-        (Impl.AesGcmSiv.X86_64Stitch.stitched v.callees ⟨eb.enc.name, eb.enc.code⟩ wide))
+        (Impl.AesGcmSiv.X86_64Stitch.stitched lp v.callees ⟨eb.enc.name, eb.enc.code⟩ wide))
       (.seq (tag v.callees bO) (.seq (.block Impl.AesGcmSiv.X86_64.cmp) (.seq mask
         (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)))))))))
       fun _ _ => True := by
@@ -438,7 +433,7 @@ theorem openSBody_rel (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : B
   have i₃ : RelCT isa (fun t₁ t₂ => True ∧ (StK K W SP R N A D al n T t₁ ∧ t₁.cf = some (decide (n < 256))) ∧
         (StK K W SP R N A D al n T t₂ ∧ t₂.cf = some (decide (n < 256))))
       (.ite .b (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (polyval v.callees wide))
-        (Impl.AesGcmSiv.X86_64Stitch.stitched v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)) fun _ _ => True := by
+        (Impl.AesGcmSiv.X86_64Stitch.stitched lp v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)) fun _ _ => True := by
     refine RelCT.ite (fun t₁ t₂ h => by rw [eval_b h.2.1.2, eval_b h.2.2.2]) ?_ ?_
     · have c₁ := (crypt_rel v eb wide L hR hDW hn (P := fun t₁ t₂ => (True ∧
           (StK K W SP R N A D al n T t₁ ∧ t₁.cf = some (decide (n < 256))) ∧
@@ -449,12 +444,12 @@ theorem openSBody_rel (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : B
         fun t₁ t₂ h => ⟨crypt_st v eb wide L hR h.1.2.1.1, crypt_st v eb wide L hR h.1.2.2.1⟩
       exact RelCT.seq c₁ (polyval_rel v wide L hDW hn hal hn' fun t₁ t₂ h => ⟨h.2.1.1.bufs, h.2.2.1.bufs⟩)
     · by_cases hn256 : 256 ≤ n
-      · exact stitched_rel v eb wide L hR hDW hn hal hn' hn256 fun t₁ t₂ h =>
+      · exact stitched_rel hlp v eb wide L hR hDW hn hal hn' hn256 fun t₁ t₂ h =>
           ⟨h.1.2.1.1.1.bufs, h.1.2.2.1.1.bufs⟩
       · refine RelCT.of_false fun _ _ h => hn256 ?_
         have := h.2; rw [eval_b h.1.2.1.2] at this; simp at this; omega
   have r₃ := i₃.wp (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
-    fun t₁ t₂ h => ⟨mid_st v eb wide L hR hND hAD h.2.1, mid_st v eb wide L hR hND hAD h.2.2⟩
+    fun t₁ t₂ h => ⟨mid_st hlp v eb wide L hR hND hAD h.2.1, mid_st hlp v eb wide L hR hND hAD h.2.2⟩
   have r₄ := (tag_rel v L hR hDW hn (o := bO) (by decide) (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧
       St K W SP R N A D al n T t₂) fun t₁ t₂ h => ⟨h.2.1.bufs.one, h.2.2.bufs.one, fun _ h => nomatch h⟩).wp
     (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
@@ -473,13 +468,13 @@ theorem openSBody_rel (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : B
   exact RelCT.seq r₀ (RelCT.seq r₁ (RelCT.seq r₂ (RelCT.seq r₃ (RelCT.seq r₄ (RelCT.seq r₅ (RelCT.seq r₆ r₇))))))
 
 /-- `vg_aes_gcm_siv_open`, in two runs with the same public arguments. -/
-theorem openS_rel (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) {s₀ s₀' : State} (hp : openPre s₀) (hp' : openPre s₀') (hq : onePub s₀ s₀') :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcmSiv.X86_64Stitch.«open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)
+theorem openS_rel {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk lp) (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) {s₀ s₀' : State} (hp : openPre s₀) (hp' : openPre s₀') (hq : onePub s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcmSiv.X86_64Stitch.«open» lp v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)
       fun _ _ => True := by
   have Ar := (args_of_open hp).1.1
   refine RelCT.seq (entry_rel (pub_regs hq) (hq.2.2.2.2.2.2.2 2 (by decide)) (argW_in Ar rfl)
     (argW_in (args_of_open hp').1.1 rfl) (entry_open hp) (entry_open_pub hp' hq)) ?_
-  exact openSBody_rel v eb wide Ar.lay Ar.rounds Ar.data.w (Nat.le_of_lt Ar.data.lt) Ar.aad.lt Ar.data.lt Ar.nd Ar.ad
+  exact openSBody_rel hlp v eb wide Ar.lay Ar.rounds Ar.data.w (Nat.le_of_lt Ar.data.lt) Ar.aad.lt Ar.data.lt Ar.nd Ar.ad
     fun _ _ h => ⟨h.2.1, h.2.2⟩
 
 end VG.Proof.AesGcmSiv.X86_64

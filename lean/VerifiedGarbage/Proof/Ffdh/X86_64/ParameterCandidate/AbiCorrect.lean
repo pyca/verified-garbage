@@ -33,7 +33,7 @@ open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.MillerRabin.X86_64
 
 def FinalResult (p : CandidateP) (t : State) : Prop :=
-  let r := Spec.Ffdh.parameterCandidate p.bits p.gen p.rand
+  let r := Spec.Ffdh.sievedParameterCandidate p.bits p.gen p.rand
   ((t.gpr .rax).setWidth 32).toNat = Proof.Ffdh.candidateStatus r ∧
     Spec.Rsa.bytesAt t.mem p.op p.k =
       (match r with | some (some n, _) => Spec.Rsa.i2osp n p.k | _ => List.replicate p.k 0) ∧
@@ -43,14 +43,14 @@ def FinalResult (p : CandidateP) (t : State) : Prop :=
 private theorem finish_result {p : CandidateP} {used : Nat} {s t : State}
     (hbound : used ≤ p.rand.length) (hr : NativeResult p used s.mem)
     (hout : word s.mem p.B (8 * oStatus) = 1 → Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem p.op p.k) = p.P)
-    (hax : t.gpr .rax = BitVec.ofNat 64 (Proof.Ffdh.candidateStatus (Spec.Ffdh.parameterCandidate p.bits p.gen p.rand)))
+    (hax : t.gpr .rax = BitVec.ofNat 64 (Proof.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate p.bits p.gen p.rand)))
     (hused : word t.mem p.up 0 = BitVec.ofNat 64
-      (if Proof.Ffdh.candidateStatus (Spec.Ffdh.parameterCandidate p.bits p.gen p.rand) = 0 then 0 else used))
+      (if Proof.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate p.bits p.gen p.rand) = 0 then 0 else used))
     (hbytes : Spec.Rsa.bytesAt t.mem p.op p.k =
-      (if Proof.Ffdh.candidateStatus (Spec.Ffdh.parameterCandidate p.bits p.gen p.rand) = 1 then
+      (if Proof.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate p.bits p.gen p.rand) = 1 then
         Spec.Rsa.bytesAt s.mem p.op p.k else List.replicate p.k 0)) : FinalResult p t := by
   unfold FinalResult
-  cases he : Spec.Ffdh.parameterCandidate p.bits p.gen p.rand with
+  cases he : Spec.Ffdh.sievedParameterCandidate p.bits p.gen p.rand with
   | none => simpa [he, Proof.Ffdh.candidateStatus, hax] using And.intro hbytes hused
   | some ar =>
     obtain ⟨value, rest⟩ := ar
@@ -82,8 +82,8 @@ theorem correct_ok (M : Mont) (R : R2Impl M) (K : Kernel) {s : State} (c : PcCtx
   unfold VG.Impl.Ffdh.X86_64.ParameterCandidate.code
   refine WP.seq (WP.mono (body_ok M R K c) fun u ⟨used, hu, hdu, hr, hout, hsaved, ku⟩ => ?_)
   let p := candidateOfState s
-  have hsmall : Proof.Ffdh.candidateStatus (Spec.Ffdh.parameterCandidate p.bits p.gen p.rand) < 2 ^ 64 := by
-    cases Spec.Ffdh.parameterCandidate p.bits p.gen p.rand with
+  have hsmall : Proof.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate p.bits p.gen p.rand) < 2 ^ 64 := by
+    cases Spec.Ffdh.sievedParameterCandidate p.bits p.gen p.rand with
     | none => decide
     | some ar => obtain ⟨value, rest⟩ := ar; cases value <;> dsimp only [Proof.Ffdh.candidateStatus] <;> decide
   refine WP.mono (finish_ok hu hdu hr.1 hsmall hsaved)
@@ -131,7 +131,7 @@ private theorem ret_frame {c : Prog isa} {s t : State} {tr : List Leak}
 theorem pc_correct (M : Mont) (R : R2Impl M) (K : Kernel)
     (hs : SpSafe (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run))
     (hd : (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run).x86_64Depth ≤ 128)
-    (hmx : (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hmx : ctlOk (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run) = true)
     (s : State) (h : pcContract.pre s) :
     ∃ tr t, Exec isa (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run) s tr t ∧
       abiPreserved s t ∧ pcContract.post s t := by
@@ -148,6 +148,6 @@ theorem pc_correct (M : Mont) (R : R2Impl M) (K : Kernel)
     · exact hregs _ (by decide)
     · exact hregs _ (by decide)
     · exact hregs _ (by decide)
-  exact ⟨tr, t, he, abiPreserved_of_exec hmx he hg, hp⟩
+  exact ⟨tr, t, he, abiPreserved_of_ctl hmx he hg, hp⟩
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

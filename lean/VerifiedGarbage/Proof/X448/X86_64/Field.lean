@@ -40,10 +40,6 @@ structure Op (base : Addr) (o : Nat) (s s' : State) : Prop where
   wr : s'.wr = s.wr
   mem : Outside2 base o 56 ACC 112 s.mem s'.mem
 
-theorem Op.scr {base : Addr} {o : Nat} {s s' : State} (h : Op base o s s') (hs : Scr s base) :
-    Scr s' base :=
-  ⟨(h.gpr _ (by decide)).trans hs.rdi, h.wr ▸ hs.wr, hs.nowrap⟩
-
 theorem mv_add (m : Mem) (base : Addr) :
     ∀ (o a b : Nat), mv m base o (a + b) = mv m base o a + 2 ^ (64 * a) * mv m base (o + 8 * a) b
   | o, 0, b => by simp [mv]

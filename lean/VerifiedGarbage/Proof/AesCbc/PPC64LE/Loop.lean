@@ -253,12 +253,6 @@ theorem UPre.blk_disjoint (hp : UPre s₀) {j k : Nat} (hj : j < N s₀) (hk : k
 
 end
 
-theorem slot_contains (b : Addr) {d : Nat} (h₁ : 2064 ≤ d) (h₂ : d + 8 ≤ 2120) :
-    (⟨b + BitVec.ofNat 64 2064, 56⟩ : Region).Contains (b + BitVec.ofNat 64 d) 8 := by
-  rw [show b + BitVec.ofNat 64 d = (b + BitVec.ofNat 64 2064) + BitVec.ofNat 64 (d - 2064) from
-    (Offset.add_add_eq b (by omega_arith)).symm]
-  exact Offset.contains_base _ (by omega_arith) (by omega_arith)
-
 theorem saved_bound : ∀ p ∈ saveL, 2064 ≤ p.2 ∧ p.2 + 8 ≤ 2120 := by decide
 
 /-- Saving the registers changes only their slots. -/

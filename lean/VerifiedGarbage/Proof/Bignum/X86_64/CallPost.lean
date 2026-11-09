@@ -49,18 +49,6 @@ theorem written_overlay {H : Region} {hv m : Mem} {out : Addr} {n : Nat} {r : Bi
     Spec.Rsa.written (overlay H hv m) out n r v ↔ Spec.Rsa.written m out n r v := by
   cases v <;> simp only [Spec.Rsa.written, bytesAt_overlay h]
 
-theorem writtenAll_overlay {H : Region} {hv m : Mem} {outs : List (Addr × Nat)} {r : BitVec 32}
-    {v : Option (List (List Byte))} (h : ∀ o ∈ outs, ∀ i < o.2, ¬ H.Contains (o.1 + BitVec.ofNat 64 i) 1) :
-    Spec.Rsa.writtenAll (overlay H hv m) outs r v ↔ Spec.Rsa.writtenAll m outs r v := by
-  have e : ∀ o ∈ outs, Spec.Rsa.bytesAt (overlay H hv m) o.1 o.2 = Spec.Rsa.bytesAt m o.1 o.2 :=
-    fun o ho => bytesAt_overlay (h o ho)
-  cases v with
-  | none =>
-    simp only [Spec.Rsa.writtenAll]
-    exact and_congr_right fun _ => forall₂_congr fun o ho => by rw [e o ho]
-  | some ys =>
-    simp only [Spec.Rsa.writtenAll, List.map_congr_left e]
-
 /-- The bytes of a writable buffer miss the hole. -/
 theorem Clear.miss_wr {H : Region} {s : State} (hc : Clear H s) {p : Addr} {n : Nat}
     (hr : (⟨p, n⟩ : Region) ∈ s.wr) (hn : p.toNat + n ≤ 2 ^ 64) {k : Nat} (hk : k ≤ n) :

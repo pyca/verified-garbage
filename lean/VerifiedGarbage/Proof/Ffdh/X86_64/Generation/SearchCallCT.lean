@@ -52,7 +52,7 @@ theorem search_candidate_inline_ct (v : RoundImpl) :
     RelCT isa (Two SearchCallCT) (candidateCode v) (fun _ _ => True) := by
   intro s₁ s₂ tr₁ tr₂ t₁ t₂ ⟨p, h₁, h₂⟩ he₁ he₂
   have hc := pc_correct v.mont (R2Impl.words v.mont) (Kernel.called v)
-    (SpSafe.of_all (candidateCode_sp v)) (candidateCode_depth v) (candidateCode_mx v)
+    (SpSafe.of_all (candidateCode_sp v)) (candidateCode_depth v) (candidateCode_ctl v)
   have ct := inline_constantTime (k := pcContract)
     (fun s h => by obtain ⟨tr, t, he, _, _⟩ := hc s h; exact ⟨tr, t, he⟩)
     (pc_constantTime v.mont (R2Impl.words v.mont) (Kernel.called v))

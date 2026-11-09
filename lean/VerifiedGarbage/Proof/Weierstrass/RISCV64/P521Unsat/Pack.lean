@@ -39,9 +39,6 @@ structure ZKept (b O : Addr) (s0 s : State) : Prop where
   a6 : s.gpr .a6 = M58
   fz : Frame [Zr b] s0.mem s.mem
 
-theorem ZKept.trans {b O : Addr} {s0 s1 s2 : State} (h₁ : ZKept b O s0 s1) (h₂ : ZKept b O s1 s2) : ZKept b O s0 s2 :=
-  ⟨h₁.kept.trans h₂.kept, h₂.a6, h₁.fz.trans h₂.fz⟩
-
 theorem ZKept.refl {b O : Addr} {s : State} (h6 : s.gpr .a6 = M58) : ZKept b O s s :=
   ⟨Kept.refl _ _ _, h6, Frame.refl _ _⟩
 
@@ -457,8 +454,6 @@ theorem lv9 (l : Nat → Nat) : lv l 9 = l 0 + 2 ^ 58 * l 1 + 2 ^ 116 * l 2 + 2 
 
 theorem tsum1 (f : Nat → Nat) (a : Nat) : tsum f [a] = f a := by simp [tsum]
 theorem tsum2 (f : Nat → Nat) (a b : Nat) : tsum f [a, b] = f a + f b := by simp [tsum]
-theorem tsum3 (f : Nat → Nat) (a b c : Nat) : tsum f [a, b, c] = f a + f b + f c := by simp [tsum]; omega
-
 theorem packLimbs0 : packLimbs 0 = [0, 1] := by decide
 theorem shv0_0 (l : Nat → Nat) : shv 0 l 0 = l 0 * 2 ^ 0 % 2 ^ 64 := by unfold shv; rw [ite_eq_left (by decide)]
 theorem shv0_1 (l : Nat → Nat) : shv 0 l 1 = l 1 * 2 ^ 58 % 2 ^ 64 := by unfold shv; rw [ite_eq_left (by decide)]

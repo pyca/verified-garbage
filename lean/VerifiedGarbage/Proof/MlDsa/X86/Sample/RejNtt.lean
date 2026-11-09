@@ -94,8 +94,6 @@ theorem LA_succ (B : List Byte) {t : Nat} (ht : t < 336) :
 
 theorem LA_zero (B : List Byte) : LA B 0 = [] := by simp [LA, rnFold]
 
-theorem LA_length_le (B : List Byte) (t : Nat) : (LA B t).length ≤ 256 := rnFold_length_le (by simp) _
-
 theorem z_lt (B : List Byte) (t : Nat) : z B t < 2 ^ 23 := by
   have := (xb B (3 * t)).isLt
   have := (xb B (3 * t + 1)).isLt

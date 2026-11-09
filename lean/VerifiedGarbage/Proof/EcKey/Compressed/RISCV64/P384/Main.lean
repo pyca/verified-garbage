@@ -9,7 +9,6 @@ import VerifiedGarbage.Impl.EcKey.Compressed.Root
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.PublicKey
 import VerifiedGarbage.Proof.EcKey.Compressed.Parity
-import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.CheckVerified
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.CheckLit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset

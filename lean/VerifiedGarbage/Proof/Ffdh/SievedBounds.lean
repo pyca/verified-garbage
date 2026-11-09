@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
+public import VerifiedGarbage.Proof.EntropyRequest
 import VerifiedGarbage.Proof.Ffdh.SievedTape
 import VerifiedGarbage.Proof.Ffdh.GenerationBounds
 import VerifiedGarbage.Proof.Framework.Omega
@@ -11,43 +12,47 @@ import VerifiedGarbage.Proof.Framework.Omega
 namespace VG.Proof.Ffdh.SievedGeneration
 open VG VG.Spec.Ffdh VG.Spec.RsaKeyGen VG.Proof.Ffdh.Generation
 
-theorem search_used_le (bits generator : Nat) : ∀ remaining r,
-    (sievedParameterSearch bits generator remaining r).used ≤ r.length := by
+/-- Asking for more entropy, the search had fewer octets left than its budget. -/
+theorem search_available_lt (bits generator : Nat) : ∀ remaining r k a u,
+    sievedParameterSearch bits generator remaining r = .entropy k a u → a < parameterEntropy bits := by
   intro remaining
   induction remaining with
-  | zero => intro r; exact Nat.zero_le _
+  | zero => intro r k a u h; cases h
   | succ remaining ih =>
-    intro r
-    rw [sievedParameterSearch]
+    intro r k a u h
+    rw [sievedParameterSearch] at h
     cases he : sievedParameterCandidate bits generator r with
-    | none => dsimp only; split <;> exact Nat.zero_le _
+    | none =>
+      rw [he] at h
+      dsimp only at h
+      split at h
+      · cases h
+      · rename_i hlt
+        cases h
+        omega
     | some pair =>
       obtain ⟨value, rest⟩ := pair
+      rw [he] at h
       cases value with
       | none =>
-        rw [consume_used]
-        obtain ⟨used, hu, hr⟩ := candidate_suffix he
-        have hi := ih rest
-        rw [hr, List.length_drop] at hi
-        simp only [hr, List.length_drop]
-        omega_using [hu, hi]
-      | some p => exact Nat.sub_le _ _
+        dsimp only at h
+        cases hs : sievedParameterSearch bits generator remaining rest with
+        | entropy k' a' u' =>
+          rw [hs] at h
+          simp only [ParameterSearchResult.consume, ParameterSearchResult.entropy.injEq] at h
+          obtain ⟨rfl, rfl, -⟩ := h
+          exact ih rest _ _ _ hs
+        | accepted => rw [hs] at h; cases h
+        | exhausted => rw [hs] at h; cases h
+      | some p => cases h
 
-theorem search_remaining_le (bits generator : Nat) : ∀ remaining r,
-    (sievedParameterSearch bits generator remaining r).remaining ≤ remaining := by
-  intro remaining
-  induction remaining with
-  | zero => intro r; exact Nat.zero_le _
-  | succ remaining ih =>
-    intro r
-    rw [sievedParameterSearch]
-    cases he : sievedParameterCandidate bits generator r with
-    | none => dsimp only; split <;> simp only [ParameterSearchResult.remaining] <;> omega
-    | some pair =>
-      obtain ⟨value, rest⟩ := pair
-      cases value with
-      | none => rw [consume_remaining]; exact Nat.le_trans (ih rest) (Nat.le_succ _)
-      | some p => exact Nat.zero_le _
+/-- The code's request after any search is one the contract allows. -/
+theorem search_requests (bits generator remaining : Nat) (r : Rand) :
+    (sievedParameterSearch bits generator remaining r).Requests (parameterEntropy bits)
+      (Proof.Ffdh.requested bits (sievedParameterSearch bits generator remaining r)) :=
+  Proof.Ffdh.requested_requests fun k a u h => by
+    have hlt := search_available_lt bits generator remaining r k a u h
+    exact Entropy.request_valid (by unfold parameterEntropy at hlt; omega) hlt
 
 theorem candidate_rest {bits generator : Nat} {rand rest : Rand} {value : Option Nat}
     (h : sievedParameterCandidate bits generator rand = some (value, rest)) :

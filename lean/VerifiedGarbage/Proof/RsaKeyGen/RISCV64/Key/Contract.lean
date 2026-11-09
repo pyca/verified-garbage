@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.Front
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 
@@ -26,7 +27,7 @@ open VG VG.RISCV64
 
 /-- The key from the primes, from the caller's memory. -/
 abbrev resOf (s : State) : Except Spec.RsaKeyGen.Failure (List (List Byte)) ⊕ Unit :=
-  Spec.RsaKeyGen.keyOp (s.gpr .a5).toNat (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 7).toNat)
+  Proof.RsaKeyGen.keyOp (s.gpr .a5).toNat (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 7).toNat)
     (Spec.Rsa.bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .a6) (s.gpr .a5).toNat)
 
 /-- The seven outputs' bytes in `m`. -/
@@ -48,16 +49,16 @@ abbrev outZero (s : State) (m : Mem) : Prop :=
 
 /-- `keyContract`'s postcondition, on the registers and the stack. -/
 def fnPost (s s' : State) : Prop :=
-  ((s'.gpr .a0).setWidth 32).toNat = Spec.RsaKeyGen.keyStatus (resOf s) ∧
+  ((s'.gpr .a0).setWidth 32).toNat = Proof.RsaKeyGen.keyStatus (resOf s) ∧
     match resOf s with
     | .inl (.ok ys) => outBytes s s'.mem = ys
     | _ => outZero s s'.mem
 
 /-- The shared contract, its postcondition on the registers and the stack. -/
 def fnContract : Contract isa where
-  pre := (Spec.RsaKeyGen.keyContract RISCV64.abi).pre
+  pre := (Proof.RsaKeyGen.keyContract RISCV64.abi).pre
   post := fnPost
-  pub := (Spec.RsaKeyGen.keyContract RISCV64.abi).pub
+  pub := (Proof.RsaKeyGen.keyContract RISCV64.abi).pub
 
 /-- A state meeting the precondition: 32-byte primes, a one-byte exponent, the
 outputs at `0x1000`–`0x1600`, `e` at `0x1700`, the working space at
@@ -78,14 +79,14 @@ def satState : State where
   wr := [⟨0x1000, 64⟩, ⟨0x1100, 64⟩, ⟨0x1200, 32⟩, ⟨0x1300, 32⟩, ⟨0x1400, 32⟩, ⟨0x1500, 32⟩, ⟨0x1600, 32⟩,
     ⟨0x20000, 8448⟩]
 
-theorem key_implies : fnContract.Implies (Spec.RsaKeyGen.keyContract RISCV64.abi) where
+theorem key_implies : fnContract.Implies (Proof.RsaKeyGen.keyContract RISCV64.abi) where
   pre := fun _ h => h
   post := by
-    sig_implies_post [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, RISCV64.abi, RISCV64.argRegs,
+    sig_implies_post [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, RISCV64.abi, RISCV64.argRegs,
       fnContract, fnPost, stackArgs_ten, List.append_eq]
   pub := fun _ _ _ _ h => h
   sat := by
-    sig_implies_sat [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, RISCV64.abi, RISCV64.argRegs,
+    sig_implies_sat [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, RISCV64.abi, RISCV64.argRegs,
       fnContract, stackArgs_ten, List.append_eq] [satState, stackArg, stackArgAddr, Mem.readW, Mem.read,
         Spec.RsaKeyGen.primeLenValid, Spec.Rsa.scratchWords] using satState
 

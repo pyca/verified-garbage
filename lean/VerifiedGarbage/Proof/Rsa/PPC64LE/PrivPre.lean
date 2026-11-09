@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.Priv
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_private_checked` on PPC64LE: the precondition
@@ -105,10 +106,10 @@ structure PreP (s : State) : Prop where
   h7 : (stackArg s 7).toNat = (stackArg s 3).toNat
   hs : Spec.Rsa.scratchWords (s.gpr .r6).toNat ≤ (stackArg s 11).toNat
 
-theorem preP_of {s : State} (h : (Spec.Rsa.privateCheckedContract abi frameBytes).pre s) : PreP s := by
+theorem preP_of {s : State} (h : (Proof.Rsa.privateCheckedContract abi frameBytes).pre s) : PreP s := by
   have e : frameBytes = 3327 + 1 := rfl
   rw [e] at h
-  sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs,
+  sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs,
     stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, h4, h10,
@@ -117,13 +118,13 @@ theorem preP_of {s : State} (h : (Spec.Rsa.privateCheckedContract abi frameBytes
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h4, h10, e1,
     e2, p1, p2, q1, q2, h5, h9, h7, hs⟩
 
-theorem pre_of_preP {s : State} (h : PreP s) : (Spec.Rsa.privateCheckedContract abi frameBytes).pre s := by
+theorem pre_of_preP {s : State} (h : PreP s) : (Proof.Rsa.privateCheckedContract abi frameBytes).pre s := by
   obtain ⟨sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h4, h10, e1,
     e2, p1, p2, q1, q2, h5, h9, h7, hs⟩ := h
   have e : frameBytes = 3327 + 1 := rfl
   rw [e]
-  sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
+  sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
     List.append_eq, List.range, List.range.loop]
   exact ⟨sp1, by omega, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, h4, h10,

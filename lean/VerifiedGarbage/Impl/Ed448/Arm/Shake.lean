@@ -63,7 +63,7 @@ def sqzArgs (sc d : Nat) : List Instr :=
   setup [(.r0, .caller sc 0), (.r1, .const 136), (.r2, .const 0), (.r3, .frame d)] [.const 114, .caller sc KSCR]
 
 def absorb (args : List Instr) : Prog isa :=
-  callWith args Spec.Sha3.absorbScratchApi.name Impl.Sha3.Arm.Stream.absorb
+  callWith args "vg_keccak_absorb_scratch" Impl.Sha3.Arm.Stream.absorb
 
 def pad (sc : Nat) : Prog isa := callWith (padArgs sc) "vg_keccak_pad_scratch" Impl.Sha3.Arm.Stream.pad
 

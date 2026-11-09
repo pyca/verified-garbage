@@ -43,7 +43,7 @@ b 23f
 cbnz x5, 21b
 .inst 0xd348fd40,0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd65f03c0
 .p2align 6",
-        vg_keccak_absorb_scratch = sym crate::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )

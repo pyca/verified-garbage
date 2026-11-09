@@ -4,10 +4,6 @@ import VerifiedGarbage.TCB.AArch64.Print
 meta import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-! Golden tests for LDP and STP of X registers, signed offset (DDI 0487 C6.2
 "LDP", "STP"): the two doublewords at `n + off` and `n + off + 8`, in
@@ -90,6 +86,4 @@ private def initial : State where
 #guard keeps (RegSet.ofList [.x4]) (.ldp .x3 .x4 .x0 8) == false
 #guard keeps (RegSet.ofList [.x5]) (.ldp .x3 .x4 .x0 8) == true
 
-#assert_standard_axioms VG.AArch64.exec_gpr
-#assert_standard_axioms VG.AArch64.keeps_ofList
 end VG.Test.AArch64Pair

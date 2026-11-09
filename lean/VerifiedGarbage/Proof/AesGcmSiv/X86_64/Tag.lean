@@ -79,21 +79,21 @@ theorem tagArgs_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} {t : State}
   have rR' := E.perm.wR (show 200 + 8 ≤ 3816 by decide)
   have r₀ := E.perm.wR (show 96 + 8 ≤ 3816 by decide)
   have r₈ := E.perm.wR (show 104 + 8 ≤ 3816 by decide)
-  have w₀ := E.perm.wW (show 112 + 8 ≤ 3816 by decide)
-  have w₈ := E.perm.wW (show 120 + 8 ≤ 3816 by decide)
-  have z₀ := E.perm.wW (show o + 8 ≤ 3816 by omega)
-  have z₈ := E.perm.wW (show o + 8 + 8 ≤ 3816 by omega)
+  have r₁₆ := E.perm.wR (show 96 + 16 ≤ 3816 by decide)
+  have w₀ := E.perm.wW (show 112 + 16 ≤ 3816 by decide)
+  have z₀ := E.perm.wW (show o + 16 ≤ 3816 by omega)
   rcases ho with rfl | rfl
   all_goals
-    simp only [Nat.reduceAdd, BitVec.add_zero] at z₀ z₈
-    refine ⟨_, by srun [copy16, zero16, ctrArgs, h15, rR, rR', r₀, r₈, w₀, w₈, z₀, z₈, readW_writeW_W0], ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    try simp only [Nat.reduceAdd, BitVec.add_zero] at z₀
+    refine ⟨_, by xrun [copy16, zero16, ctrArgs, h15, rR, rR', r₁₆, w₀, z₀, readW_writeW_W0, pxor_self], ?_, ?_, ?_, ?_, ?_, ?_, ?_,
       ?_, ?_, ?_⟩
-    · simp only [mem_setReg, mem_arithFlags, Proof.Cmac.zero2, add_ofNat_assoc, BitVec.add_zero, Nat.reduceAdd]; rfl
-    all_goals try (simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15, rR,
+    · simp only [mem_setReg, mem_arithFlags, mem_setXmm, xmm_setXmm_self, pxor_self, readW128_app,
+        writeW128_app, Proof.Cmac.zero2, add_ofNat_assoc, BitVec.add_zero, Nat.reduceAdd]; rfl
+    all_goals try (simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, ite_true, ite_false, reduceCtorEq, h15, rR,
       BitVec.add_zero]; done)
     · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
+        simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, ite_true, ite_false, reduceCtorEq]
     all_goals rfl
 
 theorem tag_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}

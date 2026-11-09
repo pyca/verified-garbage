@@ -62,9 +62,6 @@ theorem sat_step (acc : BitVec 64) (b : BitVec 64) (ha : acc.toNat ≤ 2 ^ 33) (
     rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
     unfold sat; simp; omega_arith
 
-theorem sat_snoc (v b : Nat) : sat (sat v * 256 + b) = sat (256 * v + b) := by
-  unfold sat; omega_arith
-
 theorem bytesAt_succ (m : Mem) (p : Addr) (i : Nat) :
     Spec.Rsa.bytesAt m p (i + 1) = Spec.Rsa.bytesAt m p i ++ [m (off p i)] := by
   simp only [Spec.Rsa.bytesAt, List.range_succ, List.map_append, List.map_cons, List.map_nil, off]

@@ -79,11 +79,6 @@ theorem Scr.st {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d 
   let ⟨_, hm, hc⟩ := hs.region hd (by decide)
   ⟨_, hm, hc⟩
 
-theorem Scr.ld1 {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
-    (hd : d + 1 ≤ size) : InRegions (s.rd ++ s.wr) (off base d) 1 :=
-  let ⟨_, hm, hc⟩ := hs.region hd (by decide)
-  ⟨_, List.mem_append_right _ hm, hc⟩
-
 theorem Scr.st1 {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
     (hd : d + 1 ≤ size) : InRegions s.wr (off base d) 1 :=
   let ⟨_, hm, hc⟩ := hs.region hd (by decide)

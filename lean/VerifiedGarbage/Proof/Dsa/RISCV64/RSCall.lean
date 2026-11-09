@@ -18,7 +18,9 @@ passes `out`, the key, the nonce (in the frame) and the digest, with their
 lengths, and the frame holds the arguments on the stack (`digest_len`,
 `scratch`, `scratch_len`, at its start), so `vg_dsa_sign`'s contract on the
 registers (`sContract`) holds, with the regions it is given (`signRd`,
-`signWr`): `sign_ok` runs the call by `WP.call` from `sign_correct`.
+`signWr`): `sign_ok` runs the call of a signer `S` (`Signer`: `vg_dsa_sign`,
+or `vg_dsa_sign_prevalidated` for a validated key) by `WP.call` from its
+correctness, for a key that passes the signer's precondition (`RandomValid`).
 -/
 
 @[expose] public section
@@ -199,14 +201,46 @@ theorem sres_eq {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s₀
   rw [Nat.mod_eq_of_lt (a := (rlOf s₀).pl) (by omega), Nat.mod_eq_of_lt (a := (rlOf s₀).ql) (by omega),
     Nat.mod_eq_of_lt (a := (rlOf s₀).kl) (by simp only [RL.kl]; omega), Nat.mod_eq_of_lt hdl]
 
-theorem sign_ok {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s₀) s₀ t) :
-    WP isa (.call "vg_dsa_sign" Impl.Dsa.RISCV64.Sign.sign) t (Signed (rlOf s₀) s₀ t) := by
+/-- A signer the randomized wrapper may call: a function with `vg_dsa_sign`'s
+arguments, result and public data, for a key that passes `valid`. -/
+structure Signer where
+  name : String
+  code : Prog isa
+  valid : Nat → Nat → List Byte → Bool
+  correct : ∀ s, (sContractWith valid).pre s →
+    ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ (sContractWith valid).post s t
+  ct : ConstantTime isa (sContractWith valid).pre (sContractWith valid).pub code
+  noFrames : code.noFrames = true
+
+/-- The call's key passes the signer's precondition. -/
+def RandomValid (S : Signer) (s₀ : State) : Prop :=
+  S.valid (rlOf s₀).pl (rlOf s₀).ql (Spec.Rsa.bytesAt s₀.mem (rlOf s₀).key (rlOf s₀).kl) = true
+
+/-- The signer's contract on the registers holds when it is called. -/
+theorem signWith_pre (S : Signer) {s₀ t : State} (h : rsContract.pre s₀) (hv : RandomValid S s₀)
+    (ha : Args (rlOf s₀) s₀ t) :
+    (sContractWith S.valid).pre (t.callEntry.withRegions (signRd (rlOf s₀)) (signWr (rlOf s₀))) := by
+  refine ⟨sign_pre h ha, ?_⟩
+  have hL := rlOf_ok h
+  have hp := hL.pl
+  have hq := hL.ql
+  have g := fun (r : Reg) (hr : r ∉ linkRegs) => entry_gpr t (signRd (rlOf s₀)) (signWr (rlOf s₀)) hr
+  simp only [State.withRegions_mem, State.callEntry_mem]
+  rw [g .a2 (by decide), g .a3 (by decide), g .a4 (by decide), g .a6 (by decide), ha.a2, ha.a3, ha.a4, ha.a6]
+  simp only [BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt (a := (rlOf s₀).pl) (by omega), Nat.mod_eq_of_lt (a := (rlOf s₀).ql) (by omega),
+    Nat.mod_eq_of_lt (a := (rlOf s₀).kl) (by simp only [RL.kl]; omega), ha.ctx.key]
+  exact hv
+
+theorem sign_ok (S : Signer) {s₀ t : State} (h : rsContract.pre s₀) (hv : RandomValid S s₀)
+    (ha : Args (rlOf s₀) s₀ t) :
+    WP isa (.call S.name S.code) t (Signed (rlOf s₀) s₀ t) := by
   have hL := rlOf_ok h
   have hc := ha.ctx
   have hp := hL.pl
   have hq := hL.ql
   obtain ⟨hcov, hcovw⟩ := sign_cov h hc
-  refine WP.call (k := sContract) sign_correct (sign_pre h ha) hcov hcovw
+  refine WP.call (k := sContractWith S.valid) (hn := S.noFrames) S.correct (signWith_pre S h hv ha) hcov hcovw
     fun t' hrd' hwr' hsp' hf hpres _ hpost => ?_
   have hdis : ∀ r ∈ ctxRegs, r ∈ preserved := by decide
   obtain ⟨p0, pout⟩ := hpost

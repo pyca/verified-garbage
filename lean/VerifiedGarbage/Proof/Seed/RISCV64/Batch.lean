@@ -144,9 +144,7 @@ theorem arraysR_sub_work (s : State) : Region.Sub (arraysR s) (workR s) := by
   show Region.Sub ⟨s.gpr sb + BitVec.ofNat 64 (8 * 40), 8 * 64⟩ ⟨s.gpr sb, 8 * 104⟩
   exact Offset.sub_base _ (by omega)
 
-theorem cr_ra : CopyRegs .ra := by unfold CopyRegs; decide
 theorem cr_a0 : CopyRegs .a0 := by unfold CopyRegs; decide
-theorem cr_a1 : CopyRegs .a1 := by unfold CopyRegs; decide
 theorem cr_a2 : CopyRegs .a2 := by unfold CopyRegs; decide
 theorem cr_a3 : CopyRegs .a3 := by unfold CopyRegs; decide
 

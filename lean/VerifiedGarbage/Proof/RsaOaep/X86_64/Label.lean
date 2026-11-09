@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # RSAES-OAEP on x86-64: the label's hash
 
 `hashLabel H o` writes the label's hash `H(label)` to `scratch + o`
-(`hashLabel_ok`): `init`, `update` with the label (from its slots, in the
+(`hashLabel_frame_ok`): `init`, `update` with the label (from its slots, in the
 caller's memory), and `finalize`. The working space changes only within the
 hash function's ranges and the digest's 64 bytes at `o`.
 -/
@@ -170,16 +170,5 @@ theorem hashLabel_frame_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH
       hV4 _ (by simp only [inR_cons, inR_nil, or_false]; omega),
       hV2 _ (by simp only [inR_cons, inR_nil, or_false]; omega)]
   · rw [hV6' _ (by simp only [inR_cons, inR_nil, or_false]; omega), hdig i hi, hHh, hlab]
-
-include hG in
-theorem hashLabel_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.hash x) {u : State} {F S : Addr}
-    (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep u.mem F S V W) {lab : Addr} {labLen : Nat}
-    (A : LabAt u F S W lab labLen) {o : Nat} (ho : o = oDig ∨ o = oLh) :
-    WP isa (hashLabel G o) u fun u' => Lay u' F S ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
-      (∀ r ∈ calleeSaved, u'.gpr r = u.gpr r) ∧
-      ∃ V', Rep u'.mem F S V' W ∧ (∀ x, ¬ inR (labR o) x → V' x = V x) ∧
-        ∀ i < G.D, V' (o + i) = (Hs.hash (Spec.Rsa.bytesAt u.mem lab labLen)).getD i 0 := by
-  exact WP.mono (hashLabel_frame_ok hG hHh L R A ho)
-    fun _ ⟨Lt, rd, wr, cs, _, rest⟩ => ⟨Lt, rd, wr, cs, rest⟩
 
 end VG.Proof.RsaOaep.X86_64

@@ -59,30 +59,10 @@ theorem bitOf_public (n sl j : Nat) : KeyPublic (.block (bitOf n sl j)) := by
     [.mov .eax (.mem (VG.Impl.Mont.X86.sc 0)), .alu .and .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax] = _
   rfl
 
-theorem store_public (sl : Nat) : KeyPublic (.block [.store (VG.Impl.Mont.X86.sc sl) .ebx]) := by
-  refine ⟨.block [], workspaceTaint true, ?_, rfl⟩
-  change taint.checkBlock (workspaceTaint true) [_] = _
-  rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (workspaceTaint true) = true from rfl)]
-  change taint.checkBlock (workspaceTaint true) [.store (VG.Impl.Mont.X86.sc 0) .ebx] = _
-  rfl
-
 theorem masks_public : KeyPublic (.block (([.store (VG.Impl.Mont.X86.sc sB) .ebx] : List Instr) ++ andS sC sOdd sB)) := by
   exact ⟨.block [], workspaceTaint true, rfl, rfl⟩
 
 theorem zeroCarry_public : KeyPublic (.block [.mov .ebx (.imm 0)]) := by
   exact ⟨.block [], { regs := .ofList [.edi, .esi, .ebx], flags := false }, rfl, rfl⟩
-
-theorem xorCarry_public : KeyPublic (.block [.alu .xor .ebx (.mem (VG.Impl.Mont.X86.sc sB))]) := by
-  exact ⟨.block [], workspaceTaint true, rfl, rfl⟩
-
-theorem subModP_public (n o a b : Nat) : KeyPublic (seqs (subModP n o a b)) := by
-  apply KeyPublic.seqs
-  intro c hc
-  simp only [subModP, List.mem_cons, List.not_mem_nil, or_false] at hc
-  rcases hc with rfl | rfl | rfl | rfl
-  · exact sub3_public ..
-  · exact store_public _
-  · exact sel_public ..
-  · exact sub3_public ..
 
 end VG.Proof.Rsa.X86.Keys

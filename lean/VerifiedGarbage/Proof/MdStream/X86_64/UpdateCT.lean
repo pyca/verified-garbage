@@ -395,12 +395,6 @@ theorem take_add_data (s₀ : State) (c t : Nat) (m : List Byte) :
     m ++ (D s₀).take c ++ ((D s₀).drop c).take t = m ++ (D s₀).take (c + t) := by
   rw [List.take_add, List.append_assoc]
 
-/-- A list whose length is a multiple of `B` has nothing past its last block. -/
-theorem drop_full {B : Nat} {l : List Byte} (h : l.length % B = 0) : l.drop (B * (l.length / B)) = [] := by
-  rw [List.drop_eq_nil_iff]
-  have := Nat.div_add_mod l.length B
-  omega_using [h, this]
-
 theorem shr_ofNat (hd : Dims P) {q : Nat} (h : P.B * q < 2 ^ 64) :
     BitVec.ofNat 64 (P.B * q) >>> Nat.log2 P.B = BitVec.ofNat 64 q := by
   obtain ⟨-, -, lgB⟩ := hd.lg

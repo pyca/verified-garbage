@@ -50,18 +50,18 @@ theorem finish_iv {s₀ s : State} (hp : UPre s₀) (hI : Inv s₀ (N s₀) (N s
     rw [hm,hI.chain,chaining_bytes _ _ (Nat.le_refl _),List.take_of_length_le (by rw [length_blocksAt])]
   exact ⟨⟨data_done hd,hi⟩,(hI.frame.mono (by regions_sub)).trans (hf.mono (by regions_sub))⟩
 
-theorem body_ok {s₀ : State} (hp : UPre s₀) :
-    WP isa (Impl.AesCbc.AArch64.Decrypt.body (R s₀)) s₀ fun t =>
+theorem body_ok (sha3 : Bool) {s₀ : State} (hp : UPre s₀) :
+    WP isa (Impl.AesCbc.AArch64.Decrypt.body sha3 (R s₀)) s₀ fun t =>
       (cbcAArch64 false).post s₀ t ∧ Frame [ivR s₀,dataR s₀] s₀.mem t.mem := by
   unfold Impl.AesCbc.AArch64.Decrypt.body
   refine WP.seq (WP.mono (setup_ok hp) fun s ⟨hK,_,h2,h3,h11,h31,hm,hrd,hwr⟩ => ?_)
   have hi := initial hK h2 h3 h11 h31 hm hrd hwr
-  exact WP.seq (WP.mono (loops_ok hp hi) fun _ hI => finish_iv hp hI)
+  exact WP.seq (WP.mono (loops_ok sha3 hp hi) fun _ hI => finish_iv hp hI)
 
-theorem code_ok {s₀ : State} (hp : UPre s₀) :
-    WP isa Impl.AesCbc.AArch64.Decrypt.code s₀ fun t =>
+theorem code_ok (sha3 : Bool) {s₀ : State} (hp : UPre s₀) :
+    WP isa (Impl.AesCbc.AArch64.Decrypt.codeWith sha3) s₀ fun t =>
       (cbcAArch64 false).post s₀ t ∧ Frame [ivR s₀,dataR s₀] s₀.mem t.mem := by
-  unfold Impl.AesCbc.AArch64.Decrypt.code
+  unfold Impl.AesCbc.AArch64.Decrypt.codeWith
   refine WP.seq ?_
   rw [WP.block_cons_iff]
   refine ⟨_,exec_subImm_x (imm := 10) (by decide),?_⟩
@@ -72,9 +72,9 @@ theorem code_ok {s₀ : State} (hp : UPre s₀) :
     hp.iv_data,hp.iv_scr,hp.data_scr,hp.iv_wrap,hp.data_wrap,hp.scr_wrap,hp.rounds⟩
   have hR : R s=R s₀ := rfl
   have hpost : ∀ t, (cbcAArch64 false).post s t=(cbcAArch64 false).post s₀ t := fun _ => rfl
-  have hb : WP isa (Impl.AesCbc.AArch64.Decrypt.body (R s₀)) s (fun t =>
+  have hb : WP isa (Impl.AesCbc.AArch64.Decrypt.body sha3 (R s₀)) s (fun t =>
       (cbcAArch64 false).post s₀ t ∧ Frame [ivR s₀,dataR s₀] s₀.mem t.mem) := by
-    have h := body_ok hs
+    have h := body_ok sha3 hs
     rw [hR] at h
     exact WP.mono h fun t ht => by rw [hpost t] at ht; exact ht
   have hx9 : s.gpr .x9 = BitVec.ofNat 64 (R s₀)-10 := by simp [s,State.write,R]

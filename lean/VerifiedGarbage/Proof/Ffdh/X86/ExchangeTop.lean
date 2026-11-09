@@ -30,7 +30,7 @@ open VG.Impl.Ffdh.X86 (argsFrame)
 
 theorem wrapABI {s : State} (A : ExchangeABI s) : WrapABI Impl.Ffdh.X86.Exchange.args 11 s where
   below := ⟨(fun _ h => by cases h; decide), by decide, by decide, by decide, (fun _ h => by cases h; decide),
-    (fun _ h => by cases h; decide), by decide⟩
+    (fun _ h => by cases h; decide), by decide, (fun _ h => by cases h)⟩
   stackLow := A.stackLow
   stackBound := by have := A.stackBound; omega
   argsIn := by rw [A.wr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))

@@ -224,12 +224,6 @@ theorem LKeep.of_keeps {base : Addr} {s t : State} {rs : List Reg}
 theorem LKeep.win {base : Addr} {s t : State} (h : LKeep base s t) : WinKeep base s t :=
   ⟨h.gpr, h.rd, h.wr, h.mem.mono (by decide) (by decide)⟩
 
-theorem LKeep.scratch {base : Addr} {s t : State} (h : LKeep base s t) (hs : Scratch s base) :
-    Scratch t base := h.win.scratch hs
-
-theorem LKeep.consts {base : Addr} {s t : State} (h : LKeep base s t) (hk : EConsts s.mem base) :
-    EConsts t.mem base := hk.outside h.mem
-
 /-- The slots below byte 1024 (`d`, in slot 16, among them) are kept. -/
 theorem LKeep.slot {base : Addr} {s t : State} (h : LKeep base s t) (i : Slot) :
     env t.mem base i = env s.mem base i :=

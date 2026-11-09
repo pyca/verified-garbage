@@ -1,27 +1,15 @@
 //! RSAES-OAEP encryption and decryption of a 32-byte message with an empty
-//! label, with each supported pair of hash function and MGF1 hash: every
-//! pair with a 2048-bit modulus, and SHA-256 with MGF1 over SHA-256 with
-//! 3072- and 4096-bit moduli too; beside OpenSSL and, for the pairs it has
-//! (SHA-1, SHA-256, SHA-384 and SHA-512, each with MGF1 over itself),
-//! aws-lc-rs.
+//! label, with each hash function and MGF1 over itself and over SHA-1:
+//! every such pair with a 2048-bit modulus, and SHA-256 with MGF1 over
+//! SHA-256 with 3072- and 4096-bit moduli too; beside OpenSSL and, for the
+//! pairs it has (SHA-1, SHA-256, SHA-384 and SHA-512, each with MGF1 over
+//! itself), aws-lc-rs.
 
 use criterion::Criterion;
 
 pub const USES: &[&str] = &[
     "rsa_oaep",
-    "rsa_oaep_sha1_mgf1_sha1",
-    "rsa_oaep_sha224_mgf1_sha1",
-    "rsa_oaep_sha224_mgf1_sha224",
-    "rsa_oaep_sha256_mgf1_sha1",
-    "rsa_oaep_sha256_mgf1_sha256",
-    "rsa_oaep_sha384_mgf1_sha1",
-    "rsa_oaep_sha384_mgf1_sha384",
-    "rsa_oaep_sha512_mgf1_sha1",
-    "rsa_oaep_sha512_mgf1_sha512",
-    "rsa_oaep_sha512_224_mgf1_sha1",
-    "rsa_oaep_sha512_224_mgf1_sha512_224",
-    "rsa_oaep_sha512_256_mgf1_sha1",
-    "rsa_oaep_sha512_256_mgf1_sha512_256",
+    "fn_tables",
     "rsa",
     "sha1",
     "sha224",
@@ -37,7 +25,8 @@ pub const USES: &[&str] = &[
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 ))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
@@ -53,10 +42,10 @@ pub fn bench(c: &mut Criterion) {
     use openssl::hash::MessageDigest;
     use openssl::pkey::PKey;
     use openssl::rsa::{Padding, Rsa};
-    use verified_garbage::rsa::{PrivateKey, PublicKey};
-    use verified_garbage::rsa_oaep::{Hash, decrypt, encrypt, encrypt_with_rng};
+    use verified_garbage::rsa::oaep::Hash;
+    use verified_garbage::rsa::{BigUint, PrivateKey, PublicKey};
 
-    use crate::{AWS_LC, BenchDyn, OPENSSL, VG, fixed_tape};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     // Each supported hash function, by the name its modules have and
     // OpenSSL's, and aws-lc-rs's algorithm with MGF1 over the same hash, if
@@ -87,9 +76,8 @@ pub fn bench(c: &mut Criterion) {
     ];
     // Moduli of 2048, 3072 and 4096 bits with the exponent 65537, generated
     // once; the ids' size is the modulus' bytes. Each library loads the key
-    // once, outside the measurements. verified-garbage takes its seed from a
-    // fixed tape (`encrypt` but for `getrandom`); OpenSSL and aws-lc-rs draw
-    // a fresh seed per encryption.
+    // once, outside the measurements. Each draws a fresh seed per
+    // encryption.
     // aws-lc-rs sets up its `EVP_PKEY_CTX` in every operation, where OpenSSL
     // reuses one.
     let keys: Vec<_> = [2048, 3072, 4096]
@@ -97,8 +85,8 @@ pub fn bench(c: &mut Criterion) {
         .map(|bits| Rsa::generate(bits).unwrap())
         .collect();
     let msg = [0x42u8; 32];
-    // Every pair with MGF1 over the hash itself or over SHA-1 (as
-    // `rsa_oaep` supports), in the groups `rsa_oaep_<H>_mgf1_<G>_encrypt`
+    // Every hash function with MGF1 over itself and over SHA-1 (the pairs in
+    // use; `rsa_oaep` supports MGF1 over any of them), in the groups `rsa_oaep_<H>_mgf1_<G>_encrypt`
     // and `_decrypt`.
     let pairs = hashes.iter().flat_map(|h| {
         [h, &hashes[0]]
@@ -123,7 +111,8 @@ pub fn bench(c: &mut Criterion) {
         for key in sizes {
             let (n, e) = (key.n().to_vec(), key.e().to_vec());
             let k = n.len();
-            let vg_key = PublicKey::new(&n, &e).unwrap();
+            let vg_key =
+                PublicKey::new(BigUint::from_be_bytes(&n), BigUint::from_be_bytes(&e)).unwrap();
             let openssl_key = PKey::from_rsa(
                 Rsa::from_public_components(
                     BigNum::from_slice(&n).unwrap(),
@@ -139,12 +128,9 @@ pub fn bench(c: &mut Criterion) {
             let mut out = vec![0; k];
             group.bench(BenchmarkId::new(VG, k), |b| {
                 b.iter(|| {
-                    let mut tape = fixed_tape(k as u64);
-                    encrypt_with_rng(black_box(&vg_key), black_box(&msg), *h, *g, b"", |buf| {
-                        tape(buf);
-                        Ok(())
-                    })
-                    .unwrap()
+                    black_box(&vg_key)
+                        .encrypt_oaep(black_box(&msg), *h, *g, b"")
+                        .unwrap()
                 })
             });
             group.bench(BenchmarkId::new(OPENSSL, k), |b| {
@@ -157,17 +143,17 @@ pub fn bench(c: &mut Criterion) {
                 // verified-garbage decrypts aws-lc-rs's ciphertext.
                 let ct = aws_key.encrypt(alg, &msg, &mut out, None).unwrap();
                 let vg_private = PrivateKey::from_crt(
-                    &n,
-                    &e,
-                    &key.d().to_vec(),
-                    &key.p().unwrap().to_vec(),
-                    &key.q().unwrap().to_vec(),
-                    &key.dmp1().unwrap().to_vec(),
-                    &key.dmq1().unwrap().to_vec(),
-                    &key.iqmp().unwrap().to_vec(),
+                    BigUint::from_be_bytes(&n),
+                    BigUint::from_be_bytes(&e),
+                    BigUint::from_be_bytes(&key.d().to_vec()),
+                    BigUint::from_be_bytes(&key.p().unwrap().to_vec()),
+                    BigUint::from_be_bytes(&key.q().unwrap().to_vec()),
+                    BigUint::from_be_bytes(&key.dmp1().unwrap().to_vec()),
+                    BigUint::from_be_bytes(&key.dmq1().unwrap().to_vec()),
+                    BigUint::from_be_bytes(&key.iqmp().unwrap().to_vec()),
                 )
                 .unwrap();
-                assert_eq!(decrypt(&vg_private, ct, *h, *g, b"").unwrap(), msg);
+                assert_eq!(vg_private.decrypt_oaep(ct, *h, *g, b"").unwrap(), msg);
                 group.bench(BenchmarkId::new(AWS_LC, k), |b| {
                     b.iter(|| {
                         black_box(&aws_key)
@@ -188,14 +174,14 @@ pub fn bench(c: &mut Criterion) {
             let (n, e) = (key.n().to_vec(), key.e().to_vec());
             let k = n.len();
             let vg_key = PrivateKey::from_crt(
-                &n,
-                &e,
-                &key.d().to_vec(),
-                &key.p().unwrap().to_vec(),
-                &key.q().unwrap().to_vec(),
-                &key.dmp1().unwrap().to_vec(),
-                &key.dmq1().unwrap().to_vec(),
-                &key.iqmp().unwrap().to_vec(),
+                BigUint::from_be_bytes(&n),
+                BigUint::from_be_bytes(&e),
+                BigUint::from_be_bytes(&key.d().to_vec()),
+                BigUint::from_be_bytes(&key.p().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.q().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.dmp1().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.dmq1().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.iqmp().unwrap().to_vec()),
             )
             .unwrap();
             let pkey = PKey::from_rsa(key.clone()).unwrap();
@@ -203,10 +189,17 @@ pub fn bench(c: &mut Criterion) {
             dec.set_rsa_padding(Padding::PKCS1_OAEP).unwrap();
             dec.set_rsa_oaep_md(h_md).unwrap();
             dec.set_rsa_mgf1_md(g_md).unwrap();
-            let ct = encrypt(&PublicKey::new(&n, &e).unwrap(), &msg, *h, *g, b"").unwrap();
+            let ct = PublicKey::new(BigUint::from_be_bytes(&n), BigUint::from_be_bytes(&e))
+                .unwrap()
+                .encrypt_oaep(&msg, *h, *g, b"")
+                .unwrap();
             let mut out = vec![0; k];
             group.bench(BenchmarkId::new(VG, k), |b| {
-                b.iter(|| decrypt(black_box(&vg_key), black_box(&ct), *h, *g, b"").unwrap())
+                b.iter(|| {
+                    black_box(&vg_key)
+                        .decrypt_oaep(black_box(&ct), *h, *g, b"")
+                        .unwrap()
+                })
             });
             group.bench(BenchmarkId::new(OPENSSL, k), |b| {
                 b.iter(|| black_box(&dec).decrypt(black_box(&ct), &mut out).unwrap())
@@ -237,6 +230,7 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 )))]
 pub fn bench(_: &mut Criterion) {}

@@ -16,8 +16,4 @@ def step (word : Bool) : List Instr :=
 def loop (word : Bool) : Prog isa :=
   .ite (.zero .x .x3) (.block []) (.loop (.block (step word)) (.nonzero .x .x3))
 
-def zeroize : Prog isa :=
-  .seq (.block [.movz .x .x2 0 0, .lsr .x .x3 .x1 3, .movz .x .x4 7 0,
-    .logic .and .x .x1 .x1 .x4])
-    (.seq (loop true) (.seq (.block [.addImm .x .x3 .x1 0]) (loop false)))
 end VG.Impl.Zeroize.AArch64

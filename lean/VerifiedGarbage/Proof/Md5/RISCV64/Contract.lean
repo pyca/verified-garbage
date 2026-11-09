@@ -28,8 +28,8 @@ open _root_.VG.RISCV64 in
 updates the MD buffer at `state` with the `n` 64-byte blocks at `blocks`.
 
 The code may read `blocks` (`64 * n` bytes) and read and write `state`
-(16 bytes) and `scratch` (64 bytes, whose contents on exit are unspecified).
-These may not overlap each other. The pointers and `n` are public; the MD
+(16 bytes) and `scratch` (64 bytes, 8-byte aligned, whose contents on exit
+are unspecified). These may not overlap each other. The pointers and `n` are public; the MD
 buffer and the blocks are secret. -/
 def compressRISCV64 : Contract RISCV64.isa where
   pre s :=
@@ -37,7 +37,8 @@ def compressRISCV64 : Contract RISCV64.isa where
     let blocks : Region := ⟨s.gpr .a1, 64 * (s.gpr .a2).toNat⟩
     let scratch : Region := ⟨s.gpr .a3, 64⟩
     s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
-    state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch
+    state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch ∧
+    (s.gpr .a3).toNat % 8 = 0
   post s s' :=
     stateAt s'.mem (s.gpr .a0) =
       compressBlocks (stateAt s.mem (s.gpr .a0)) s.mem (s.gpr .a1) (s.gpr .a2).toNat

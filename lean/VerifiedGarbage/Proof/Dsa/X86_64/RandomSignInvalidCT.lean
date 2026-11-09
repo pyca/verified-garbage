@@ -34,12 +34,12 @@ private theorem invalid_store_ct : RelCT isa (fun s t => s.gpr .rsp = t.gpr .rsp
   subst r
   exact hs.trans ht.symm
 
-private theorem invalid_tail (v : Backend) {s t a b : State}
-    (hs : RandomSignABI v.stack s) (ht : RandomSignABI v.stack t)
+private theorem invalid_tail (S : Signer) {s t a b : State}
+    (hs : RandomSignABI S.stack s) (ht : RandomSignABI S.stack t)
     (ha : RandomSignFinishPre s 0 a) (hb : RandomSignFinishPre t 0 b)
     (hra : a.gpr .rax = 0) (hrb : b.gpr .rax = 0) (hp : RandomSignPublicAgree s t)
-    {tsa tsb : List Leak} {u w : State} (ea : Exec isa (randomSignTail v) a tsa u)
-    (eb : Exec isa (randomSignTail v) b tsb w) : tsa = tsb := by
+    {tsa tsb : List Leak} {u w : State} (ea : Exec isa (randomSignTail S) a tsa u)
+    (eb : Exec isa (randomSignTail S) b tsb w) : tsa = tsb := by
   cases ea with
   | seq eac ear => cases ear with
     | seq eai eaf =>
@@ -65,12 +65,12 @@ private theorem invalid_tail (v : Backend) {s t a b : State}
               have hfinish := random_finish_agreement hs ht hfa hfb hp hsa hsb eaf ebf
               rw [hcmp, hstore, hfinish]
 
-theorem random_sign_body_invalid_ct (v : Backend) {s t : State}
-    (hs : RandomSignABI v.stack s) (ht : RandomSignABI v.stack t) (hp : RandomSignPublicAgree s t)
+theorem random_sign_body_invalid_ct (S : Signer) {s t : State}
+    (hs : RandomSignABI S.stack s) (ht : RandomSignABI S.stack t) (hp : RandomSignPublicAgree s t)
     (hq : ¬ 1 < Spec.Dsa.decodeBE (randomQBytes s))
     {tsa tsb : List Leak} {u w : State}
-    (ea : Exec isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.sq v.mul)) (allocState Random.frameBytes s) tsa u)
-    (eb : Exec isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.sq v.mul)) (allocState Random.frameBytes t) tsb w) : tsa = tsb := by
+    (ea : Exec isa (RandomSign.body S.name S.code) (allocState Random.frameBytes s) tsa u)
+    (eb : Exec isa (RandomSign.body S.name S.code) (allocState Random.frameBytes t) tsb w) : tsa = tsb := by
   have hqt : ¬ 1 < Spec.Dsa.decodeBE (randomQBytes t) := by rw [← hp.qbytes]; exact hq
   cases ea with
   | seq eae ear => cases ear with
@@ -81,7 +81,7 @@ theorem random_sign_body_invalid_ct (v : Backend) {s t : State}
           have hinit := random_sign_init_agreement hs ht hp (.seq eae eap) (.seq ebe ebp)
           obtain ⟨hra, har⟩ := random_post_of_exec (random_sign_init_invalid hs hq) (.seq eae eap)
           obtain ⟨hrb, hbr⟩ := random_post_of_exec (random_sign_init_invalid ht hqt) (.seq ebe ebp)
-          have htail := invalid_tail v hs ht har hbr hra hrb hp eat ebt
+          have htail := invalid_tail S hs ht har hbr hra hrb hp eat ebt
           rw [← List.append_assoc, ← List.append_assoc, hinit, htail]
 
 end VG.Proof.Dsa.X86_64

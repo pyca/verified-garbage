@@ -28,7 +28,7 @@ theorem hashLabel_safe {H : Stream} (h : HashSafety H) (o : Nat) :
     generationSafe (Impl.RsaOaep.X86_64.hashLabel H o) := by
   unfold Impl.RsaOaep.X86_64.hashLabel Impl.Mgf1.X86_64.seqs
   repeat' apply generationSafe.seq
-  all_goals first | exact h.init | exact h.update | exact h.finish | rfl
+  all_goals first | exact h.init.call _ | exact h.update.call _ | exact h.finish.call _ | rfl
 
 private theorem seedAddUnrolled_safe (n : Nat) : generationSafe (seedAddUnrolled n) := by
   induction n with
@@ -41,11 +41,6 @@ theorem seedAdd_safe (n : Nat) : generationSafe (seedAdd n) := by
   · exact seedAddUnrolled_safe n
   · unfold seedAddTail
     split <;> rfl
-
-theorem seedHash_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256) :
-    generationSafe (seedHash H1 H256) := by
-  exact (show generationSafe (.block hashTest) from rfl).seq
-    ((hashLabel_safe h1 _).ite (hashLabel_safe h256 _) _)
 
 theorem seedHashAt_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256) (len : Nat) :
     generationSafe (seedHashAt H1 H256 len) := by

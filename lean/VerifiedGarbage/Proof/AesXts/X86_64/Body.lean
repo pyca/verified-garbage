@@ -55,7 +55,7 @@ structure PInv (s₀ : State) (ys : List (List Byte)) (x10 x11 : BitVec 64) (i :
   rsp : s.gpr .rsp = s₀.gpr .rsp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, stkR s₀] (savedMem s₀) s.mem
+  frame : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀, stkR s₀] (savedMem s₀) s.mem
   len : ys.length = N s₀
   data : Spec.Cbc.blocksAt s.mem (Dp s₀) (N s₀) = xored (iv0 s₀) ys i
   iv : bytesAt s.mem (Iv s₀) 16 = iv0 s₀
@@ -118,7 +118,7 @@ theorem pstep_wp {ys : List (List Byte)} {x10 x11 : BitVec 64} {i : Nat} (hi : i
     rw [mem₃, mem₂, mem₁, bytesAt_frame (xorRegMem_frame _ _ _ _) (one (hp.blk_iv hi).symm) (by decide), h.iv]
   have hax : s₃.gpr .rax = s₂.gpr .rax := keep₃ _ (by decide) (by decide)
   have hcx : s₃.gpr .rcx = s₂.gpr .rcx := keep₃ _ (by decide) (by decide)
-  refine ⟨⟨⟨?_, ?_, ?_, r13₃, r14₃, ?_, ?_, ?_, ?_, ?_, ?_, h.frame.trans (stepFrame hi fStep), h.len,
+  refine ⟨⟨⟨?_, ?_, ?_, r13₃, r14₃, ?_, ?_, ?_, ?_, ?_, ?_, h.frame.trans (stepFrameG hi fStep), h.len,
     ?_, newIv⟩, ?_⟩, zf₃⟩
   · rw [g .rbx (by decide) (by decide) (by decide) (by decide) (by decide), h.rbx]
   · rw [g .rbp (by decide) (by decide) (by decide) (by decide) (by decide), h.rbp]
@@ -310,7 +310,7 @@ theorem call_wp (enc : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.
   refine WP.mono (Proof.AesOcb.X86_64.blk_call ok nosp depth hc) fun s' c => ?_
   have g (r : Reg) (hr : r ∈ calleeSaved) : s'.gpr r = s.gpr r := c.saved r hr
   have hrsp := h.rsp
-  have fCall : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, stkR s₀] s.mem s'.mem :=
+  have fCall : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀, stkR s₀] s.mem s'.mem :=
     c.frame.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -325,7 +325,7 @@ theorem call_wp (enc : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.
     · exact hp.iv_data
     · exact hp.iv_scr.sub_right (Region.sub_prefix (by decide))
     · rw [hrsp]; exact hp.stk_iv.symm
-  have sched : bytesAt s.mem (W s₀) (16 * (R s₀ + 1)) = wK s₀ := UPre.sched_bytes hp (UPre.big_of h.frame)
+  have sched : bytesAt s.mem (W s₀) (16 * (R s₀ + 1)) = wK s₀ := UPre.sched_bytes hp (UPre.big_ofG h.frame)
   refine ⟨by rw [g .rbx (by simp [calleeSaved]), h.rbx], by rw [g .rbp (by simp [calleeSaved]), h.rbp],
     by rw [g .r12 (by simp [calleeSaved]), h.r12], by rw [g .r13 (by simp [calleeSaved]), h.r13],
     by rw [g .r14 (by simp [calleeSaved]), h.r14], by rw [g .r15 (by simp [calleeSaved]), h.r15], rfl, rfl,

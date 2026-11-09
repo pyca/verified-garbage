@@ -19,7 +19,7 @@ stack the call uses (`Ctx`'s `stk`), it keeps what the field arithmetic
 keeps (`Keep`), changes memory only in slots 0–3 and 8–15, bytes 864 to
 1023 of the working space and that stack, and leaves in slots 0–3 the sum
 of the points in slots 0–3 and 4–7, if slot 16 holds `d`. The call's
-correctness is the function's own (`addFn_ok`, through `WP.callWith`).
+correctness is the function's own (`fnOf_ok`, through `callOf_ok`).
 -/
 
 @[expose] public section

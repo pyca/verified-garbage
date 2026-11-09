@@ -97,8 +97,8 @@ The classic checker's `--base` filter compares meta imports separately too.
 A verification budget selects primary source modules and replans their repairs
 together. It never detaches a repair from its cause. Boundaries requiring edits
 to reviewed registrations, variants or modules marked `shake: keep-all` are
-deferred; independent sources can still progress. `Artifacts/`, `Generic/` and
-`Variants/` are never edited. A public repair preserves a private import marked
+deferred; independent sources can still progress. `Artifacts/` is never
+edited. A public repair preserves a private import marked
 `shake: keep`, adding a separate public occurrence when necessary. The editor
 checks module keep annotations again before applying a plan.
 

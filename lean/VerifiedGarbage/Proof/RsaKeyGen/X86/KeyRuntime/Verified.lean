@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyABI
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -94,7 +95,7 @@ theorem correct (s : State) (h : contract.pre s) :
   have Z := call_sizes h
   obtain ⟨trace, t, run, preserved, R⟩ := framed_result_ok h
   refine ⟨trace, t, run, preserved, ?_⟩
-  sig_post [contract, keyStack, Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig,
+  sig_post [contract, keyStack, Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig,
     abi, argSlots, argVal, argBytes]
   rw [BitVec.setWidth_append_eq_right]
   unfold EncodedResult encodedOperation at R
@@ -103,7 +104,7 @@ theorem correct (s : State) (h : contract.pre s) :
     Nat.reduceMul, Nat.reduceLT, ite_true, ite_false] at R
   rw [← Z.modulus] at R
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at R
-  generalize result : Spec.RsaKeyGen.keyOp (arg s 5).toNat
+  generalize result : Proof.RsaKeyGen.keyOp (arg s 5).toNat
     (Spec.Rsa.bytesAt s.mem ((arg s 14).setWidth 64) (arg s 15).toNat)
     (Spec.Rsa.bytesAt s.mem ((arg s 4).setWidth 64) (arg s 5).toNat)
     (Spec.Rsa.bytesAt s.mem ((arg s 6).setWidth 64) (arg s 5).toNat) = value at R ⊢

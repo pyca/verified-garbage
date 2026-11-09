@@ -85,28 +85,4 @@ theorem Context.after_call {p : Inputs} {slots : List Nat} {s t : State} {rs : L
         exact (Offset.below_disjoint _ (by decide)).symm
       exact sep.sub_left inside
 
-theorem KeyCallMemory.domainSlice {p : Inputs} {slots : List Nat} {s : State}
-    (h : KeyCallMemory p s) (context : Context p slots s) {d k : Nat}
-    (positive : 0 < k) (fit : d + k ≤ p.dom.length) :
-    Region.Disjoint ⟨State.addr (p.domain + BitVec.ofNat 32 d), k⟩ (belowA s.sp 48) := by
-  rw [VG.Arm.addr_add (by have := context.domain.fits; omega)]
-  exact h.domain.sub_left (Offset.sub_base _ fit)
-
-theorem KeyCallMemory.significant_below {p : Inputs} {s : State}
-    (h : KeyCallMemory p s) :
-    Region.Disjoint ⟨State.addr p.scalarStart, p.scalarWidth⟩ (belowA s.sp 48) := by
-  have fit := h.privateFits
-  have lead := p.scalarLeadBound
-  rw [Inputs.scalarStart, VG.Arm.addr_add (by omega)]
-  exact h.privateValue.sub_left (Offset.sub_base _ (by unfold Inputs.scalarWidth; omega))
-
-theorem KeyCallMemory.significant {p : Inputs} {s : State} {bs : List Byte}
-    (h : KeyCallMemory p s) (scalar : Octets p.base p.privateValue p.len bs s) (size : bs.length = p.k) :
-    Region.Disjoint ⟨State.addr p.scalarStart, p.scalarWidth⟩ (belowA s.sp 48) := by
-  have fit := scalar.fits
-  rw [size] at fit
-  have lead := p.scalarLeadBound
-  rw [Inputs.scalarStart, VG.Arm.addr_add (by omega)]
-  exact h.privateValue.sub_left (Offset.sub_base _ (by unfold Inputs.scalarWidth; omega))
-
 end VG.Proof.Ffdh.Arm

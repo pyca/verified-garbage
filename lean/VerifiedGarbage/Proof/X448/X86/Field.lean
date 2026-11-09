@@ -24,9 +24,6 @@ structure Op (base : Addr) (o : Nat) (s t : State) : Prop where
   keeps : Keeps clob s t
   mem : FieldMem base o s.mem t.mem
 
-theorem Op.scr {base : Addr} {o : Nat} {s t : State} (h : Op base o s t) (hs : Scr s base) :
-    Scr t base := hs.of_keeps h.keeps (by decide)
-
 abbrev Slot (o : Nat) : Prop := o + 112 ≤ ACC
 
 

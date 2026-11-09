@@ -68,6 +68,17 @@ def expandKeyApi : Api where
     "`key_len` must be 16, 24 or 32.",
     "The bytes of `schedule` after the key schedule are unspecified on return."]
 
+/-- The key schedule in the first `16 (rounds + 1)` bytes at `schedule` is
+that of the key `key`, of 16, 24 or 32 bytes (`expandKey`, as
+`vg_aes_expand_key` writes it), and `rounds` is the number of rounds `Nr`
+for a key of its length (§5). The contracts of the functions that read a key
+schedule are stated for every key whose schedule is in memory this way,
+with the cipher of that key. -/
+def KeySchedule (mem : Mem) (schedule : Addr) (rounds : Nat) (key : List Byte) : Prop :=
+  (key.length = 16 ∨ key.length = 24 ∨ key.length = 32) ∧
+    rounds = Aes.rounds (key.length / 4) ∧
+    bytesAt mem schedule (16 * (rounds + 1)) = expandKey key
+
 /-! ## The cipher and the inverse cipher on whole blocks -/
 
 /-- The 16 bytes at `p` as a state: byte `i` is `in[i]` (§3.4). -/
@@ -84,32 +95,32 @@ def blocksSig : Sig where
   params := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
     ("data", .slice true (.array .u8 16) "n"), ("scratch", .array true .u64 256)]
 
-/-- For `rounds` of 10, 12 or 14, with the key schedule `w` in the first
-`16 (rounds + 1)` bytes at `schedule`: replaces each of the `n` blocks at
-`data` with `CIPHER(·, rounds, w)`. The key schedule and the data are
-secret. -/
+/-- For `rounds` of 10, 12 or 14, and every key `key` whose key schedule is
+at `schedule` with `rounds` rounds (`KeySchedule`): replaces each of the `n`
+blocks at `data` with `CIPHER(·, Nr, KEYEXPANSION(key))`. The key schedule
+and the data are secret. -/
 def encryptBlocksContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   blocksSig.contract A
     (pre := fun _schedule rounds _data _n _scratch _ =>
       rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
     (post := fun schedule rounds data n _scratch m m' _ =>
-      statesAt m' data n.toNat =
-        (statesAt m data n.toNat).map
-          (cipher rounds.toNat (bytesAt m schedule (16 * (rounds.toNat + 1)))))
+      ∀ key, KeySchedule m schedule rounds.toNat key →
+        statesAt m' data n.toNat =
+          (statesAt m data n.toNat).map (cipher (Aes.rounds (key.length / 4)) (expandKey key)))
     (stack := stack)
 
-/-- For `rounds` of 10, 12 or 14, with the key schedule `w` in the first
-`16 (rounds + 1)` bytes at `schedule`: replaces each of the `n` blocks at
-`data` with `INVCIPHER(·, rounds, w)`. The key schedule and the data are
-secret. -/
+/-- For `rounds` of 10, 12 or 14, and every key `key` whose key schedule is
+at `schedule` with `rounds` rounds (`KeySchedule`): replaces each of the `n`
+blocks at `data` with `INVCIPHER(·, Nr, KEYEXPANSION(key))`. The key schedule
+and the data are secret. -/
 def decryptBlocksContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   blocksSig.contract A
     (pre := fun _schedule rounds _data _n _scratch _ =>
       rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
     (post := fun schedule rounds data n _scratch m m' _ =>
-      statesAt m' data n.toNat =
-        (statesAt m data n.toNat).map
-          (invCipher rounds.toNat (bytesAt m schedule (16 * (rounds.toNat + 1)))))
+      ∀ key, KeySchedule m schedule rounds.toNat key →
+        statesAt m' data n.toNat =
+          (statesAt m data n.toNat).map (invCipher (Aes.rounds (key.length / 4)) (expandKey key)))
     (stack := stack)
 
 /-- `vg_aes_encrypt_blocks` on every target. -/

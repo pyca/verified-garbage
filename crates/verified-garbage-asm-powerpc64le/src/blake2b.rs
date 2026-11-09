@@ -15,7 +15,7 @@
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2b_init(state: *mut [u8; 192], outlen: usize, key: *const u8, keylen: usize) {
+pub(crate) unsafe extern "C" fn vg_blake2b_init(state: *mut [u8; 192], outlen: usize, key: *const u8, keylen: usize) {
     core::arch::naked_asm!(
         r#".base64 "Z7sgPYWuKWHGByl5yoQpZTunKWEIACP5bjwgPXLzKWHGByl5lP4pZSv4KWEQACP5T6UgPTr1KWHGByl5HV8pZfE2KWEYACP5DlEgPX9SKWHGByl55q0pZdGCKWEgACP5BZsgPYxoKWHGByl5PispZR9sKWEoACP5gx8gPavZKWHGByl5QfspZWu9KWEwACP54FsgPRnNKWHGByl5fhMpZXkhKWE4ACP5CWogPWfmKWHGByl5vfIpZQjJKWHkRcp4eFIpfXgiKX0AACP5AAAmKA=="
 beq %cr0, 20f
@@ -42,7 +42,7 @@ b 21f
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "of0h+CAA4TimAgh80f8h+CAAAfgAAkf7CAJn+xACh/sYAqf7IALH+ygC5/sAAEM7AABnOwAAhTsAAKY7AADkO///3zt/ACA5OEjefwEA3jsAAD8o"
 beq %cr0, 20f
@@ -122,7 +122,7 @@ b 23f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "C" fn vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r#".base64 "of0h+CAAwTimAgh80f8h+CAAAfgAAkb7CAJm+xAChvsYAqb7IALG+ygC5vsAAEM7AABmOwAAhTsAAOQ7///fO38AIDk4SN5/AQDeOwAAPyg="
 beq %cr0, 20f

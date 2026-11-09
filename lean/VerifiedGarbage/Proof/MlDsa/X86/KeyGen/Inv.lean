@@ -64,16 +64,6 @@ theorem keepPolyD {Y : Lay} {s₀ : State} (hp : TPre Y s₀) {bs : List Buf} {N
     (h : PolyIs m (Buf.addr s₀ ⟨a, o, 1024⟩) f) : PolyIs m' (Buf.addr s₀ ⟨a, o, 1024⟩) f :=
   Proof.MlDsa.KeyGen.polyIs_congr (Top.keep hp hN hs fr) h
 
-theorem keepRedD {Y : Lay} {s₀ : State} (hp : TPre Y s₀) {bs : List Buf} {N : Nat} (hN : N + 16 ≤ Y.stk)
-    {a o : Nat} (hs : Y.apart ⟨a, o, 1024⟩ bs = true) {m m' : Mem} (fr : Frame (FR s₀ bs N) m m')
-    (h : Reduced m (Buf.addr s₀ ⟨a, o, 1024⟩)) : Reduced m' (Buf.addr s₀ ⟨a, o, 1024⟩) :=
-  Proof.MlDsa.KeyGen.reduced_congr (Top.keep hp hN hs fr) h
-
-theorem keepPolyAtD {Y : Lay} {s₀ : State} (hp : TPre Y s₀) {bs : List Buf} {N : Nat} (hN : N + 16 ≤ Y.stk)
-    {a o : Nat} (hs : Y.apart ⟨a, o, 1024⟩ bs = true) {m m' : Mem} (fr : Frame (FR s₀ bs N) m m') :
-    polyAt m' (Buf.addr s₀ ⟨a, o, 1024⟩) = polyAt m (Buf.addr s₀ ⟨a, o, 1024⟩) :=
-  Proof.MlDsa.KeyGen.polyAt_congr (Top.keep hp hN hs fr)
-
 /-! ## After the seeds -/
 
 section

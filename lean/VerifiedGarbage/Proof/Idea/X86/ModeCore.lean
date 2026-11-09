@@ -51,7 +51,6 @@ def KeyArgs (s : State) (rs : List Region) (k : Spec.Idea.Schedule) : Prop :=
     (⟨p.setWidth 64, 104⟩ : Region) ∈ s.rd ++ s.wr ∧ p.toNat + 104 ≤ 2 ^ 32 ∧
     (∀ r ∈ rs, Region.Disjoint ⟨p.setWidth 64, 104⟩ r) ∧ ∀ r ∈ rs, Region.Disjoint ⟨addr (s.gpr .esp) 4, 4⟩ r
 
-theorem modeCore_slots : modeCore.slots = 35 := rfl
 theorem modeCore_total : modeCore.total = 46 := rfl
 theorem modeCore_ka : modeCore.ka = 1 := rfl
 @[simp] theorem modeCore_bw : modeCore.bw = 2 := rfl

@@ -43,23 +43,6 @@ theorem subWord_ok (s : State) (d borrow a b : Reg) (hd : d ≠ borrow) :
       | apply MacFrame.setReg (hr := by simp)
       | exact MacFrame.subFlags _ _ _ _
 
-/-- The word and borrow together represent the exact integer difference. -/
-theorem subWord_value (s : State) (d borrow a b : Reg) (hd : d ≠ borrow) :
-    WP isa (.block (subWord d borrow a b)) s fun t =>
-      (t.gpr d).toNat + (s.gpr b).toNat =
-        (s.gpr a).toNat + 2 ^ 32 * (t.gpr borrow).toNat ∧
-      (t.gpr borrow).toNat ≤ 1 ∧ MacFrame [d, borrow] s t := by
-  refine WP.mono (subWord_ok s d borrow a b hd) ?_
-  rintro t ⟨diff, borrow, keep⟩
-  refine ⟨?_, ?_, keep⟩
-  · rw [diff, borrow]
-    have ha := (s.gpr a).isLt
-    have hb := (s.gpr b).isLt
-    split <;> simp only [BitVec.toNat_sub, show (0 : BitVec 32).toNat = 0 from rfl,
-      show (1 : BitVec 32).toNat = 1 from rfl] <;> omega
-  · rw [borrow]
-    split <;> decide
-
 /-- A two-stage subtraction propagates a one-bit borrow without overflow. -/
 theorem subBorrow_ok (s : State) (hc : (s.gpr .r11).toNat ≤ 1) :
     WP isa (.block subBorrow) s fun t =>
@@ -88,11 +71,5 @@ theorem subBorrow_ok (s : State) (hc : (s.gpr .r11).toNat ≤ 1) :
       by_cases h2 : (s.gpr .r11).toNat ≤ (s.gpr .r1 - s.gpr .r2).toNat <;>
       simp only [h1, h2, decide_true, decide_false, ite_true, ite_false, Bool.false_eq_true] <;>
       dsimp <;> simp only [BitVec.toNat_sub] at h2 ⊢ <;> omega
-
-theorem subBorrow_ct : ConstantTime isa (fun _ => True) (fun _ _ => True) (.block subBorrow) := by
-  refine ConstantTime.of_silent fun s tr t _ h => ?_
-  rw [Exec.block_iff] at h
-  cases h
-  rfl
 
 end VG.Proof.Bignum.Arm

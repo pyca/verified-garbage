@@ -14,7 +14,7 @@
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "AACk6AgAxOgQAOToGAAE6RgAo/ggAMP4KADj+DAAA/kAAKA4AACj+AgAo/gQAKP4IACATg==""#,
     )
@@ -31,7 +31,7 @@ pub unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "Yf8h+CAA4TgAAMf5CADn+RAAB/oYACf6IABH+igAZ/owAIf6OACn+gAApzr/A4A+//+UYhgAQ+ogAGPq/w8APPz/AGDGBwB4/w8AZP//AGA4AFJ+/w8APPz/AGDGBwB4/w8AZPz/AGA4AHN+OKBMfoI2Tno4oM59IGVPeuRkYHoUAu99OKDvfYKTcHo4oBB+IMJxemQXx3kUcud8ZBfoeRR6CH1kFwl6FIIpfWQXKnoUikp9SACDkUwAw5FQAOORVAADklgAI5JcAOOQYAADkWQAI5FoAEORAABD6ggAY+o4oEx+gjZOejigzn0gZU965GRgehQC7304oO99gpNwejigEH4gwnF6EAAD6OTBAHgAAOw4AAAOOQAALzkAAFA5FAJxfQ8AgDk4YIx8AAAsKA=="
 beq %cr0, 20f
@@ -96,7 +96,7 @@ b 215f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "Yf8h+CAAwTgAAMb5CADm+RAABvoYACb6IABG+igAZvowAIb6OACm+gAApjoAAMU4DwCgODgohXz/A4A+//+UYhgAQ+ogAGPq/w8APPz/AGDGBwB4/w8AZP//AGA4AFJ+/w8APPz/AGDGBwB4/w8AZPz/AGA4AHN+OKBMfoI2Tno4oM59IGVPeuRkYHoUAu99OKDvfYKTcHo4oBB+IMJxemQXx3kUcud8ZBfoeRR6CH1kFwl6FIIpfWQXKnoUikp9SACDkUwAw5FQAOORVAADklgAI5JcAOOQYAADkWQAI5FoAEORAABD6ggAY+o4oEx+gjZOejigzn0gZU965GRgehQC7304oO99gpNwejigEH4gwnF6EAAD6OTBAHgAAOw4AAAOOQAALzkAAFA5FAJxfQAAJSg="
 beq %cr0, 20f

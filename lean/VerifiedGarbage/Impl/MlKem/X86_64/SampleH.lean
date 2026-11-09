@@ -76,7 +76,7 @@ def cntFlags3 : List Instr := .mov32 .r14 (.imm 1) :: (List.range 3).flatMap fun
 /-- Two more blocks of each state, and 112 more iterations on each of the first three seeds. -/
 def more3 (fast : Bool := false) (w16 : Bool := false) : Prog isa :=
   .seq (.block [.mov32 .r14 (.imm 1)]) (.seq (squeezes 0 2 fast) (.seq (.block tabAddr)
-    (.seq (run2 0 w16) (.seq (run2 1 w16) (.seq (run2 2 w16) (.block cntFlags3))))))
+    (.seq (run2 0 w16 fast) (.seq (run2 1 w16 fast) (.seq (run2 2 w16 fast) (.block cntFlags3))))))
 
 /-- If one of the first three seeds has fewer than 256 coefficients, `more3`; then the return value. -/
 def tail3 (fast : Bool := false) (w16 : Bool := false) : Prog isa :=
@@ -87,7 +87,7 @@ def tail3 (fast : Bool := false) (w16 : Bool := false) : Prog isa :=
 32-bit coefficients or, if `w16`, 16-bit ones. -/
 def sampleH (fast : Bool := false) (w16 : Bool := false) : Prog isa :=
   .seq (.block (pro ++ rcTable .rbx (oRc / 32) ++ absorb4)) (.seq (.block hload) (.seq (squeezesH fast)
-    (.seq (.block hsave) (.seq (.block tabAddr) (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (tail3 fast w16))))))))
+    (.seq (.block hsave) (.seq (.block tabAddr) (.seq (run1 0 w16 fast) (.seq (run1 1 w16 fast) (.seq (run1 2 w16 fast) (tail3 fast w16))))))))
 
 /-- The three squeezes, the first `m ≤ 3` each absorbing a block from
 `scratch + oHB`, with the fourth state saved as the sponge's after the
@@ -106,7 +106,7 @@ entries of the matrix, with 16-bit coefficients, and `m` blocks of `H`'s
 sponge. -/
 def sampleHM (fast : Bool) (m : Nat) : Prog isa :=
   .seq (.block (pro ++ rcTable .rbx (oRc / 32) ++ absorb4)) (.seq (.block hload) (.seq (squeezesHM fast m)
-    (.seq (.block tabAddr) (.seq (run1 0 true) (.seq (run1 1 true) (.seq (run1 2 true) (tail3 fast true)))))))
+    (.seq (.block tabAddr) (.seq (run1 0 true fast) (.seq (run1 1 true fast) (.seq (run1 2 true fast) (tail3 fast true)))))))
 
 /-! ## Two outputs of `PRF₂` in the fourth state
 
@@ -146,12 +146,20 @@ def pext : List Instr :=
 /-- A squeeze with an output of `PRF₂` in the fourth state. -/
 def squeezeP (fast : Bool := false) : Prog isa := .seq (.block pload) (.seq (squeeze fast) (.block pext))
 
-/-- Three entries of the matrix, with 16-bit coefficients, and `PRF₂(σ, 0)`
-and `PRF₂(σ, 1)`. -/
-def sampleP (fast : Bool) : Prog isa :=
+/-- Three entries of the matrix, with 16-bit coefficients, and `PRF₂(σ, N₀)`,
+…, `PRF₂(σ, N₀ + m - 1)`, for `m ≤ 3`: one in each of the first `m`
+squeezes, to `scratch + oPO + 128 i` (the loops of the squeezes run at
+least once, so a count of none is no loop). -/
+def samplePN (fast : Bool) (N₀ m : Nat) : Prog isa :=
   .seq (.block (pro ++ rcTable .rbx (oRc / 32) ++ absorb4 ++
-      [.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 oPO)), .mov32 .r9 (.imm 0x1f00)]))
-    (.seq (blocks oBuf 168 2 (squeezeP fast)) (.seq (squeezes 2 1 fast)
-      (.seq (.block tabAddr) (.seq (run1 0 true) (.seq (run1 1 true) (.seq (run1 2 true) (tail3 fast true)))))))
+      [.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 oPO)), .mov32 .r9 (.imm (BitVec.ofNat 32 (0x1f00 + N₀)))]))
+    (.seq (if m = 0 then .block [] else blocks oBuf 168 m (squeezeP fast))
+      (.seq (if m = 3 then .block [] else squeezes m (3 - m) fast)
+      (.seq (.block tabAddr) (.seq (run1 0 true fast) (.seq (run1 1 true fast) (.seq (run1 2 true fast) (tail3 fast true)))))))
+
+/-- The first output `N₀` and the count `m` of each `samplePN fast N₀ m` its
+callers inline: key generation's `PRF₂(σ, 0)` and `PRF₂(σ, 1)`, and
+encapsulation's seven (`EncapsHP16.lean`). -/
+def pnUses : List (Nat × Nat) := [(0, 2), (1, 3), (4, 3), (0, 1)]
 
 end VG.Impl.MlKem.X86_64.Sample4

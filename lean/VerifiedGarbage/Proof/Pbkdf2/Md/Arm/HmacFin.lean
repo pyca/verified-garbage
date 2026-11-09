@@ -158,10 +158,6 @@ omit hz in
 theorem blk_sub : Region.Sub ⟨blkA H s₀, H.B⟩ (scR sc s₀) := by
   have hp_fits := hp.fits; exact scr_sub (by simp only [Hash.blkO]; omega_arith)
 
-theorem hv_sub : Region.Sub ⟨hvA H s₀, H.N⟩ (scR sc s₀) := by
-  have hp_fits := hp.fits; have : 64 ≤ H.B := by rcases hz.B with h | h <;> omega_arith
-  exact scr_sub (by simp only [Hash.hvO]; omega_arith)
-
 /-- The saved registers are outside the hash value, the block and the
 working space of the functions we call. -/
 theorem save_disj : ∀ r ∈ [⟨scA s₀, 8 * H.st.W⟩, ⟨hvA H s₀, H.N + H.B⟩, inR H s₀, opR H s₀, below s₀],

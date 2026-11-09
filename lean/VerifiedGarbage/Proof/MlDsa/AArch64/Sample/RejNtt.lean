@@ -138,10 +138,6 @@ theorem correctWith (v : Proof.Sha3.AArch64.Permutation) (σ : State) (hp : rnK.
       fun _ h2 => WP.seq (WP.mono (zero_ok hp h2) fun _ h3 =>
         WP.seq (WP.mono (loopP_ok hp h3) fun _ h4 => end_ok hp h4))))
 
-theorem correct (σ : State) (hp : rnK.pre σ) :
-    ∃ t s', Exec isa rejNTT σ t s' ∧ abiPreserved σ s' ∧ rnK.post σ s' :=
-  correctWith .scalar σ hp
-
 end RejNtt
 
 end VG.Proof.MlDsa.AArch64.Sample

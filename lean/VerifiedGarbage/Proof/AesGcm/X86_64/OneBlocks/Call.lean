@@ -311,8 +311,6 @@ open Gcm.X86_64.Stitch (CtxMode) in
 def GcmImpl.withBlk (v : GcmImpl) {M : CtxMode} (B : BlkFn M) : Callees :=
   { v.callees with enc := B.enc, dec := B.dec }
 
-theorem GcmImpl.withBlk_blkB (v : GcmImpl) : v.withBlk v.blkB = v.callees := rfl
-
 /-- What a call leaves, besides its result. -/
 structure BlkPost (s : State) (C Y D S : Addr) (q : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd

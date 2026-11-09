@@ -15,7 +15,7 @@
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 224 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blowfish_cbc_encrypt_chained(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_blowfish_cbc_encrypt_chained(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10383ff,0x910003e4,0x91000085,0xf90040b3,0xf90044b4,0xf90048b5,0xf9004cb6,0xf90050b7
 .inst 0xf90054b8,0xf90058b9,0xf9005cba,0xf90060bb,0xf90064bc,0x91000039
@@ -172,7 +172,7 @@ b 23f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 224 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blowfish_cbc_decrypt_chained(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_blowfish_cbc_decrypt_chained(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10383ff,0x910003e4,0x91000085,0xf90040b3,0xf90044b4,0xf90048b5,0xf9004cb6,0xf90050b7
 .inst 0xf90054b8,0xf90058b9,0xf9005cba,0xf90060bb,0xf90064bc,0xf9400026,0xf90068a6

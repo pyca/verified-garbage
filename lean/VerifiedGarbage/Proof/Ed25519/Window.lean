@@ -27,15 +27,6 @@ namespace VG.Proof.Ed25519
 
 open Edwards
 
-/-- The windows' sum, nibble by nibble: `16` times the sum so far plus the digits. -/
-theorem window_step (A N : EPoint dZ) (K S i : Nat) (k s : Byte)
-    (hk : k.toNat = K / 256 ^ i % 256) (hs : s.toNat = S / 256 ^ i % 256) :
-    (16 : Nat) • ((16 : Nat) • ((K / 256 ^ (i + 1)) • A + (S / 256 ^ (i + 1)) • N) +
-      (k.toNat / 16) • A + (s.toNat / 16) • N) + (k.toNat % 16) • A + (s.toNat % 16) • N =
-      (K / 256 ^ i) • A + (S / 256 ^ i) • N := by
-  rw [byte_split K i k hk, byte_split S i s hs]
-  module
-
 /-- The projective comparison reads only `X : Y : Z`. -/
 theorem pointEqual_repP {p q : Spec.Ed25519.Point} {a b : EPoint dZ} (hp : RepP p a) (hq : RepP q b) :
     Spec.Ed25519.pointEqual p q = true ↔ a = b := by

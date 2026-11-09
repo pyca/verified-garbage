@@ -65,10 +65,6 @@ theorem body_noCalls (n : Nat) : (body n).noCalls = true := by
   simp only [body, contextSetup, one, powerTwo, addD, addDigits, csubD, Dynamic.zeros, ptrLoop,
     Code.noCalls, Bool.and_self]
 
-theorem call_noFrames (n : Nat) : (Impl.Dsa.Arm.Context.call n).noFrames = true := by
-  simp only [Impl.Dsa.Arm.Context.call, Code.noFrames, Bool.true_and, Bool.and_true]
-  exact Code.noFrames_of_noCalls (body_noCalls n)
-
 theorem head_ok {s : State} (n : Nat) : WP isa (.block (head n)) s fun u =>
     u.gpr .r4 = s.gpr .r12 ∧ u.gpr .r0 = s.gpr .r12 ∧
       u.gpr .r1 = (BitVec.ofNat 16 (contextBytes n / 8)).setWidth 32 ∧

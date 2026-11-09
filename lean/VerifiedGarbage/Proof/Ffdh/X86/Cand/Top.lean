@@ -108,7 +108,7 @@ theorem candABI_of {s : State} (h : contract.pre s) : CandABI s := by
 
 theorem wrapABI {s : State} (A : CandABI s) : WrapABI Impl.Ffdh.X86.Candidate.args 9 s where
   below := ⟨(fun _ h => by cases h; decide), by decide, by decide, by decide, (fun _ h => by cases h),
-    (fun _ h => by cases h), by decide⟩
+    (fun _ h => by cases h), by decide, (fun _ h => by cases h)⟩
   stackLow := A.stackLow
   stackBound := by have := A.stackBound; omega
   argsIn := by

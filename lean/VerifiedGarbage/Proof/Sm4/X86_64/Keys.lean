@@ -174,14 +174,6 @@ def rsiOp : Dir → AluOp
   | .encrypt => .add
   | .decrypt => .sub
 
-theorem keyBody_eq (dir : Dir) :
-    (match dir with | .encrypt => encKeys | .decrypt => decKeys) =
-      .seq (.block (slotAddr .rsi (match dir with | .encrypt => tableSlot | .decrypt => tableSlot + 8 * 31) ++
-          ([.movImm64 t1 16] : List Instr)))
-        (.loop (.block (keyOne 0 ++ ([.alu (rsiOp dir) .rsi (.imm 64)] : List Instr) ++ keyOne 1 ++
-          ([.alu (rsiOp dir) .rsi (.imm 64), .alu .add .rdi (.imm 8), .alu .sub t1 (.imm 1)] : List Instr))) .ne) := by
-  cases dir <;> rfl
-
 /-- `rsi` moves from `x` to `y`. -/
 def RsiStep : Dir → Nat → Nat → Prop
   | .encrypt, x, y => y = x + 64

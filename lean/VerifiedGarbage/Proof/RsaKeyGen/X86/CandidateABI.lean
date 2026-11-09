@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateEnvironment
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 /-! # The shared candidate contract exposes native cdecl arguments and a static sieve table -/
 
@@ -10,7 +11,7 @@ public import VerifiedGarbage.TCB.X86.Target
 namespace VG.Proof.RsaKeyGen.X86.Candidate
 open VG VG.X86
 
-def contract : Contract isa := Spec.RsaKeyGen.candidateContract
+def contract : Contract isa := Proof.RsaKeyGen.candidateContract
   (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) 152
 
 def callEnvironment (s : State) : Environment where
@@ -38,7 +39,7 @@ structure CallSizes (s : State) : Prop where
   capacity : Spec.Rsa.scratchWords (arg s 1).toNat ≤ (arg s 10).toNat
 
 theorem call_sizes {s : State} (h : contract.pre s) : CallSizes s := by
-  sig_pre [contract, Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig,
+  sig_pre [contract, Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts,
     packed_length, stackBelow] at h
   sig_split h
@@ -63,7 +64,7 @@ structure CallLayout (s : State) : Prop where
     VG.Impl.RsaKeyGen.TrialTable32.consts
 
 theorem call_layout {s : State} (h : contract.pre s) : CallLayout s := by
-  sig_pre [contract, Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig,
+  sig_pre [contract, Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts,
     packed_length, stackBelow] at h
   sig_split h

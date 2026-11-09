@@ -1,23 +1,7 @@
 //! SHA-1 (FIPS 180-4).
 //!
-//! SHA-1 is broken as a collision-resistant hash function: use it only where
-//! an existing protocol or file format requires it.
-//!
-//! `vg_sha1_init`, `vg_sha1_update` and `vg_sha1_finalize` for the target
-//! architecture (contracts `VG.Spec.Sha1.initContract`, `updateContract` and
-//! `finalizeContract`) maintain a streaming state that represents the
-//! message absorbed so far (`VG.Spec.Sha1.Repr`: the hash value of its whole
-//! blocks, and its remaining bytes), and pad it and output the digest.
-//!
-//! Their variants, with the same contracts, are chosen on CPUs with the
-//! features their `_FEATURES` constants name: on x86 and x86-64,
-//! `vg_sha1_update_shani` and `vg_sha1_finalize_shani`; on AArch64, the
-//! `_sha2` ones.
-//!
-//! On AArch64 and x86-64, `digest` calls `vg_sha1_digest`, or its variant
-//! with the suffix of the streaming functions chosen (contract
-//! `VG.Spec.Sha1.digestContract`), which hashes the whole message in one
-//! call.
+//! SHA-1 is broken as a collision-resistant hash function: use it only where an
+//! existing protocol or file format requires it.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -28,24 +12,9 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha1::{
-    VG_SHA1_FINALIZE_SHA2_FEATURES, VG_SHA1_UPDATE_SHA2_FEATURES, vg_sha1_finalize_sha2,
-    vg_sha1_update_sha2,
+use crate::arch::dispatch::sha1::{
+    vg_sha1_digest_auto, vg_sha1_finalize_auto, vg_sha1_init_auto, vg_sha1_update_auto,
 };
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::sha1::{
-    VG_SHA1_FINALIZE_SHANI_FEATURES, VG_SHA1_UPDATE_SHANI_FEATURES, vg_sha1_finalize_shani,
-    vg_sha1_update_shani,
-};
-use crate::arch::sha1::{vg_sha1_finalize, vg_sha1_init, vg_sha1_update};
-
-#[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
-use crate::arch::sha1::vg_sha1_digest;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha1::vg_sha1_digest_sha2;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha1::vg_sha1_digest_shani;
 
 super::streaming_hash!(
     /// An incremental SHA-1 computation.
@@ -53,31 +22,16 @@ super::streaming_hash!(
         state: 84,
         block: 64,
         output: 20,
-        init: vg_sha1_init,
-        backends: Sha1Backend {
-            Scalar => (vg_sha1_update, vg_sha1_finalize),
-            #[cfg(target_arch = "aarch64")]
-            Sha2 if [VG_SHA1_UPDATE_SHA2_FEATURES, VG_SHA1_FINALIZE_SHA2_FEATURES] =>
-                (vg_sha1_update_sha2, vg_sha1_finalize_sha2),
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            ShaNi if [VG_SHA1_UPDATE_SHANI_FEATURES, VG_SHA1_FINALIZE_SHANI_FEATURES] =>
-                (vg_sha1_update_shani, vg_sha1_finalize_shani),
-        },
-        digests: #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))] {
-            Scalar => vg_sha1_digest,
-            #[cfg(target_arch = "aarch64")]
-            Sha2 => vg_sha1_digest_sha2,
-            #[cfg(target_arch = "x86_64")]
-            ShaNi => vg_sha1_digest_shani,
-        },
+        init: vg_sha1_init_auto,
+        update: vg_sha1_update_auto,
+        finalize: vg_sha1_finalize_auto,
+        digest: vg_sha1_digest_auto,
     }
 );
 
 #[cfg(test)]
 mod tests {
-    use super::{Sha1, Sha1Backend};
-    use crate::cpu::detected;
-    use verified_garbage_cpu::Features;
+    use super::Sha1;
 
     /// Every way of splitting a message into two updates gives the same
     /// digest, for every length around the padding boundaries.
@@ -99,29 +53,6 @@ mod tests {
                 assert_eq!(h.finalize(), expected);
             }
         }
-    }
-
-    /// The implementation chosen for each set of the features it depends on.
-    #[test]
-    fn select() {
-        for bits in 0..(1 << crate::cpu::NAMES.len()) {
-            let backend = Sha1Backend::select(Features(bits));
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            assert_eq!(backend == Sha1Backend::ShaNi, bits & 0b11 == 0b11);
-            #[cfg(target_arch = "aarch64")]
-            {
-                let expected =
-                    if Features(bits).contains(Features(verified_garbage_cpu::feature::SHA2)) {
-                        Sha1Backend::Sha2
-                    } else {
-                        Sha1Backend::Scalar
-                    };
-                assert_eq!(backend, expected, "{bits:#b}");
-            }
-            #[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
-            assert_eq!(backend, Sha1Backend::Scalar);
-        }
-        assert_eq!(Sha1::new().backend, Sha1Backend::select(detected()));
     }
 
     /// The `HashFunction` implementation is the inherent functions.

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Seed.AArch64.Frame
 public import VerifiedGarbage.Proof.Seed.AArch64.EcbCall
 public import VerifiedGarbage.Proof.Seed.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # SEED artifacts on baseline AArch64 -/
 

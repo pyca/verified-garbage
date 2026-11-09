@@ -47,7 +47,6 @@ vg_sm4_gcm_init:
 	.p2align 6
 
 vg_sm4_gcm_seal_aes:
-	.arch_extension aes
 	sub sp, sp, #784
 	add x16, sp, #0
 	add x17, sp, #16
@@ -700,11 +699,9 @@ vg_sm4_gcm_seal_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #784
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_sm4_gcm_open_aes:
-	.arch_extension aes
 	sub sp, sp, #784
 	add x16, sp, #0
 	ldr x17, [sp, #784]
@@ -1416,11 +1413,9 @@ vg_sm4_gcm_open_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #784
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_sm4_gcm_stream_encrypt_aes:
-	.arch_extension aes
 	sub sp, sp, #768
 	add x6, sp, #0
 	str x20, [x6, #136]
@@ -1772,11 +1767,9 @@ vg_sm4_gcm_stream_encrypt_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #768
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_sm4_gcm_stream_decrypt_aes:
-	.arch_extension aes
 	sub sp, sp, #768
 	add x6, sp, #0
 	str x20, [x6, #136]
@@ -2128,11 +2121,9 @@ vg_sm4_gcm_stream_decrypt_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #768
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_sm4_gcm_stream_finish_aes:
-	.arch_extension aes
 	sub sp, sp, #768
 	add x5, sp, #0
 	str x20, [x5, #136]
@@ -2265,11 +2256,9 @@ vg_sm4_gcm_stream_finish_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #768
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_sm4_gcm_stream_verify_aes:
-	.arch_extension aes
 	sub sp, sp, #768
 	add x6, sp, #0
 	str x20, [x6, #136]
@@ -2492,11 +2481,9 @@ vg_sm4_gcm_stream_verify_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #768
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_sm4_gcm_stream_init_aes:
-	.arch_extension aes
 	sub sp, sp, #2560
 	add x4, sp, #0
 	str x20, [x4, #136]
@@ -2649,11 +2636,9 @@ vg_sm4_gcm_stream_init_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #2560
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_sm4_gcm_stream_aad_aes:
-	.arch_extension aes
 	sub sp, sp, #2560
 	add x5, sp, #0
 	str x20, [x5, #136]
@@ -2795,7 +2780,6 @@ vg_sm4_gcm_stream_aad_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #2560
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_sm4_gcm_seal:

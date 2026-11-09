@@ -3,12 +3,12 @@
 //! `assembly/x448.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_x448_adx` requires (`Artifact.features`).
-pub const VG_X448_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+/// The CPU features `vg_x448_exchange_adx` requires (`Artifact.features`).
+pub const VG_X448_EXCHANGE_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
-/// Computes X448 (RFC 7748 §5): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`. The scalar is decoded (clamped); all 448 bits of `u` are used and noncanonical coordinates are reduced modulo the field prime. The result may be all zero (for a `u` of small order), which the caller must check for if its protocol requires it (RFC 7748 §6.2).
+/// Computes an X448 shared secret (RFC 7748 §6.2): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped); all 448 bits of `u` are used and noncanonical coordinates are reduced modulo the field prime (§5).
 ///
-/// Contract: `VG.Spec.X448.x448Contract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate.
+/// Contract: `VG.Spec.X448.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
 ///
 /// # Safety
 ///
@@ -18,12 +18,39 @@ pub const VG_X448_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbag
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
-/// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x448_adx(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_x448_exchange_adx(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SIkZSIlpCEyJYRBMiWkYTIlxIEyJeShJif9Iic9MiwJMi0oITItSEEyLWhhMi2IgTItqKEyLcjBMiUdATIlPSEyJV1BMiV9YTIlnYEyJb2hMiXdwTImHAAEAAEyJjwgBAABMiZcQAQAATImfGAEAAEyJpyABAABMia8oAQAATIm3MAEAALgAAAAAugEAAABIiZeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHwAAAAEiJh8gAAABIiYfQAAAASImH2AAAAEiJh+AAAABIiYfoAAAASImH8AAAAEiJl0ABAABIiYdIAQAASImHUAEAAEiJh1gBAABIiYdgAQAASImHaAEAAEiJh3ABAABIiUcwuwAAAAA="
+        r#".base64 "Vw=="
+call {vg_x448_adx}
+.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBD7ZCIEgJwQ+2QiFICcEPtkIiSAnBD7ZCI0gJwQ+2QiRICcEPtkIlSAnBD7ZCJkgJwQ+2QidICcEPtkIoSAnBD7ZCKUgJwQ+2QipICcEPtkIrSAnBD7ZCLEgJwQ+2Qi1ICcEPtkIuSAnBD7ZCL0gJwQ+2QjBICcEPtkIxSAnBD7ZCMkgJwQ+2QjNICcEPtkI0SAnBD7ZCNUgJwQ+2QjZICcEPtkI3SAnBSIPpAUjB6T9Ig/EBSInIww=="
+.p2align 6"#,
+        vg_x448_adx = sym super::x448::vg_x448_adx::vg_x448_adx,
+    )
+}
+
+/// The CPU features `vg_x448_base_adx` requires (`Artifact.features`).
+pub const VG_X448_BASE_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
+///
+/// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 56 bytes.
+/// * `scalar` must be valid for reads of 56 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
+/// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_x448_base_adx(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "SInRSIkZSIlpCEyJYRBMiWkYTIlxIEyJeShJif9Iic9BuAUAAABBuQAAAABBugAAAABBuwAAAABBvAAAAABBvQAAAABBvgAAAABMiUdATIlPSEyJV1BMiV9YTIlnYEyJb2hMiXdwTImHAAEAAEyJjwgBAABMiZcQAQAATImfGAEAAEyJpyABAABMia8oAQAATIm3MAEAALgAAAAAugEAAABIiZeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHwAAAAEiJh8gAAABIiYfQAAAASImH2AAAAEiJh+AAAABIiYfoAAAASImH8AAAAEiJl0ABAABIiYdIAQAASImHUAEAAEiJh1gBAABIiYdgAQAASImHaAEAAEiJh3ABAABIiUcwuwAAAAA="
 20:
 .base64 "D7YEHkiJwkiD4gGIlN8ACAAASInCSNHqSIPiAYiU3wEIAABIicJIweoCSIPiAYiU3wIIAABIicJIweoDSIPiAYiU3wMIAABIicJIweoESIPiAYiU3wQIAABIicJIweoFSIPiAYiU3wUIAABIicJIweoGSIPiAYiU3wYIAABIicJIweoHSIPiAYiU3wcIAABIg8MBSIP7OA=="
 jne 20b
@@ -47,9 +74,9 @@ jne 23b
     )
 }
 
-/// Computes X448 (RFC 7748 §5): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`. The scalar is decoded (clamped); all 448 bits of `u` are used and noncanonical coordinates are reduced modulo the field prime. The result may be all zero (for a `u` of small order), which the caller must check for if its protocol requires it (RFC 7748 §6.2).
+/// Computes an X448 shared secret (RFC 7748 §6.2): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped); all 448 bits of `u` are used and noncanonical coordinates are reduced modulo the field prime (§5).
 ///
-/// Contract: `VG.Spec.X448.x448Contract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate.
+/// Contract: `VG.Spec.X448.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
 ///
 /// # Safety
 ///
@@ -59,11 +86,34 @@ jne 23b
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
-/// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x448(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SIkZSIlpCEyJYRBMiWkYTIlxIEyJeShJif9Iic9MiwJMi0oITItSEEyLWhhMi2IgTItqKEyLcjBMiUdATIlPSEyJV1BMiV9YTIlnYEyJb2hMiXdwTImHAAEAAEyJjwgBAABMiZcQAQAATImfGAEAAEyJpyABAABMia8oAQAATIm3MAEAALgAAAAAugEAAABIiZeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHwAAAAEiJh8gAAABIiYfQAAAASImH2AAAAEiJh+AAAABIiYfoAAAASImH8AAAAEiJl0ABAABIiYdIAQAASImHUAEAAEiJh1gBAABIiYdgAQAASImHaAEAAEiJh3ABAABIiUcwuwAAAAA="
+        r#".base64 "Vw=="
+call {vg_x448}
+.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBD7ZCIEgJwQ+2QiFICcEPtkIiSAnBD7ZCI0gJwQ+2QiRICcEPtkIlSAnBD7ZCJkgJwQ+2QidICcEPtkIoSAnBD7ZCKUgJwQ+2QipICcEPtkIrSAnBD7ZCLEgJwQ+2Qi1ICcEPtkIuSAnBD7ZCL0gJwQ+2QjBICcEPtkIxSAnBD7ZCMkgJwQ+2QjNICcEPtkI0SAnBD7ZCNUgJwQ+2QjZICcEPtkI3SAnBSIPpAUjB6T9Ig/EBSInIww=="
+.p2align 6"#,
+        vg_x448 = sym super::x448::vg_x448::vg_x448,
+    )
+}
+
+/// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
+///
+/// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 56 bytes.
+/// * `scalar` must be valid for reads of 56 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
+/// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_x448_base(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "SInRSIkZSIlpCEyJYRBMiWkYTIlxIEyJeShJif9Iic9BuAUAAABBuQAAAABBugAAAABBuwAAAABBvAAAAABBvQAAAABBvgAAAABMiUdATIlPSEyJV1BMiV9YTIlnYEyJb2hMiXdwTImHAAEAAEyJjwgBAABMiZcQAQAATImfGAEAAEyJpyABAABMia8oAQAATIm3MAEAALgAAAAAugEAAABIiZeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHwAAAAEiJh8gAAABIiYfQAAAASImH2AAAAEiJh+AAAABIiYfoAAAASImH8AAAAEiJl0ABAABIiYdIAQAASImHUAEAAEiJh1gBAABIiYdgAQAASImHaAEAAEiJh3ABAABIiUcwuwAAAAA="
 20:
 .base64 "D7YEHkiJwkiD4gGIlN8ACAAASInCSNHqSIPiAYiU3wEIAABIicJIweoCSIPiAYiU3wIIAABIicJIweoDSIPiAYiU3wMIAABIicJIweoESIPiAYiU3wQIAABIicJIweoFSIPiAYiU3wUIAABIicJIweoGSIPiAYiU3wYIAABIicJIweoHSIPiAYiU3wcIAABIg8MBSIP7OA=="
 jne 20b
@@ -86,3 +136,11 @@ jne 23b
         vg_gf448_r64_pow223 = sym super::ed448::vg_gf448_r64_pow223::vg_gf448_r64_pow223,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_x448.rs"]
+pub(crate) mod vg_x448;
+
+#[rustfmt::skip]
+#[path = "internal/vg_x448_adx.rs"]
+pub(crate) mod vg_x448_adx;

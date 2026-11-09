@@ -140,16 +140,6 @@ section
 variable (v : GcmImpl) {Ctx W SP : Addr} (L : IPLay Ctx W SP)
 include L
 
-/-- The blocks in the key context from byte 256 stay where they are, outside
-the working space and the stack. -/
-theorem ctx_frame {m m' : Mem} (hf : Frame [⟨W + BitVec.ofNat 64 512, 256⟩, below SP 8] m m') {d : Nat}
-    (hd : d + 16 ≤ 1024) : blockAt m' (Ctx + BitVec.ofNat 64 d) = blockAt m (Ctx + BitVec.ofNat 64 d) :=
-  blockAt_frame hf fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact (L.cs.sub_left (Offset.sub_base _ hd)).sub_right (Offset.sub_base _ (by decide))
-    · exact (L.kc.sub_right (Offset.sub_base _ hd)).symm
-
 /-- The arguments of the call of `vg_ghash` for the next power, after `j`. -/
 theorem powArgs_ok {j : Nat} (hj : j < 47) {t : State} (h13 : t.gpr .r13 = Ctx) (h15 : t.gpr .r15 = W)
     (hbp : t.gpr .rbp = Ctx + BitVec.ofNat 64 (272 + 16 * j)) (hsp : t.gpr .rsp = SP)

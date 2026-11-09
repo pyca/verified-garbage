@@ -218,8 +218,6 @@ theorem St.take_bytes {p : PP} {s : State} (h : St p s) {k : Nat} (hk : k ≤ p.
 
 /-! ## The arguments, at their literal offsets -/
 
-theorem Args.wsLen' {m : Mem} {p : PP} (h : Args m p) : m.readW (p.B + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 p.n :=
-  h.wsLen
 theorem Args.out' {m : Mem} {p : PP} (h : Args m p) : m.readW (p.B + BitVec.ofNat 64 16) 64 = p.op := h.out
 theorem Args.len' {m : Mem} {p : PP} (h : Args m p) : m.readW (p.B + BitVec.ofNat 64 24) 64 = BitVec.ofNat 64 p.L :=
   h.len

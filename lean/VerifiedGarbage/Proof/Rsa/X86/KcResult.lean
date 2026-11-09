@@ -70,10 +70,6 @@ theorem crtBody_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) : WP isa 
 
 /-! ## The checks of `d` -/
 
-/-- The mask before the checks of `d`. -/
-abbrev cMask (v : Vals) (X₁ X₂ R₁ R₂ R₃ : Nat) : Bool :=
-  VG.Proof.Rsa.crtBits v.p v.q v.dP v.dQ v.qI X₁ X₂ R₁ R₂ R₃
-
 /-- After the division of `d` by `p - 1`. -/
 def DivP (g : Geo) (s0 : State) (v : Vals) (c : Bool) (t : State) : Prop := ∃ Xq Y₁,
   (0 < 2 * (v.p / 2) → Y₁ = v.d % (2 * (v.p / 2)) ∧ Xq = v.d / (2 * (v.p / 2))) ∧

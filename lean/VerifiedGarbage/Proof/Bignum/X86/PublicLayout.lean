@@ -26,10 +26,6 @@ theorem slot_sep {n i j : Nat} (h : i ≠ j) :
   · exact .inl (slot_le h)
   · exact .inr (slot_le h)
 
-theorem slot_header (n i : Nat) : 256 ≤ slot n i := by
-  unfold slot VG.Impl.Bignum.hdrBytes
-  omega
-
 theorem size_eq (n : Nat) : size n = 64 * n + 384 := by
   simp only [size, slot, stride, VG.Impl.Bignum.hdrBytes]
   omega

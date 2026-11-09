@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.ApplyCT
 public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Init
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Streaming ChaCha20 (RFC 8439) on ARMv7 -/
 

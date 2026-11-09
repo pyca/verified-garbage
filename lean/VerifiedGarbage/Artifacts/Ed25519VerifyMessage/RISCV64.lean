@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.VerifyMsgVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # Ed25519's verification of a message, on RISC-V -/
 
@@ -12,7 +13,6 @@ namespace VG.Artifacts.Ed25519VerifyMessage.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Ed25519.verifyApi.artifact RISCV64.target {
-    consts := Impl.Ed25519.RISCV64.bConsts
     code := Impl.Ed25519.RISCV64.Whole.verifyCode
     stack := 480
     verified := Proof.Ed25519.RISCV64.Whole.verify_framed }]

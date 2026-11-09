@@ -8,7 +8,9 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Key
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Contract
 
 /-!
 # `vg_rsa_keygen_key` on AArch64: verified against the shared contract
@@ -24,9 +26,11 @@ namespace VG.Proof.RsaKeyGen.AArch64.Key
 
 open VG VG.AArch64
 
+instance keyProof [VG.Proof.Rsa.AArch64.InvLaw] : KeyProof := ⟨keyCode_correct, keyCode_constantTime⟩
+
 /-- `vg_rsa_keygen_key`. -/
 theorem key_verified [VG.Proof.Rsa.AArch64.InvLaw] :
-    Verified target VG.Impl.RsaKeyGen.AArch64.Key.code (Spec.RsaKeyGen.keyContract abi) :=
+    Verified target VG.Impl.RsaKeyGen.AArch64.Key.code (Proof.RsaKeyGen.keyContract abi) :=
   Verified.of_correct keyCode_correct keyCode_constantTime key_implies
 
 end VG.Proof.RsaKeyGen.AArch64.Key

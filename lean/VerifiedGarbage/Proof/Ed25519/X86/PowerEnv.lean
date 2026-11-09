@@ -54,13 +54,6 @@ theorem ISpec.seq {x : BitVec 32} {c d : Prog isa} {f g : Env → Env}
   fun s hc => WP.seq (WP.mono (h s hc) fun t ⟨ht, et⟩ =>
     WP.mono (k t (ht.ctx hc)) fun u ⟨hu, eu⟩ => ⟨ht.trans hu, by rw [eu, et]⟩)
 
-theorem ISpec.append {x : BitVec 32} {c d : List Instr} {f g : Env → Env}
-    (h : ISpec x (.block c) f) (k : ISpec x (.block d) g) :
-    ISpec x (.block (c ++ d)) (fun e => g (f e)) := fun s hc => by
-  rw [WP.block_append_iff]
-  exact WP.mono (h s hc) fun t ⟨ht, et⟩ =>
-    WP.mono (k t (ht.ctx hc)) fun u ⟨hu, eu⟩ => ⟨ht.trans hu, by rw [eu, et]⟩
-
 abbrev ISlot (o : Slot) : Prop := 14 ≤ o.val ∧ o.val < 18
 
 theorem mulI (x : BitVec 32) (o a b : Slot) (_ho : ISlot o) :

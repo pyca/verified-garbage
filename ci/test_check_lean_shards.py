@@ -135,6 +135,22 @@ class SourceInfo(Project):
         self.assertIsNone(vis["VerifiedGarbage.Spec.A"])
 
 
+    def test_worker_processes_read_sources_as_one_process_does(self):
+        for i in range(30):
+            text = (f"module\n\npublic import VerifiedGarbage.Spec.A\n" if i % 3 else "import VerifiedGarbage.Spec.A\n")
+            text += "".join(f"meta import VerifiedGarbage.Many.M{j}\n" for j in range(i % 4))
+            path = self.lean / f"VerifiedGarbage/Many/M{i}.lean"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text)
+        mods = shards.modules()
+        results = []
+        for threshold in (10 ** 9, 0):
+            sizes, modes = {}, {}
+            with mock.patch.object(shards, "PARALLEL_SOURCES", threshold):
+                info = shards.source_info(mods, sizes, modes)
+            results.append([list(x.items()) for x in (*info, sizes, modes)])
+        self.assertEqual(results[0], results[1])
+
 class Diagnostics(Project):
     def test_cli_retains_inputs_and_still_produces_a_usable_plan(self):
         self.manifest["times"] = {"VerifiedGarbage.Spec.A": 17.5}
@@ -632,6 +648,8 @@ class RebuildFrontier(unittest.TestCase):
         closure = shards.closures(imps)
         self.assertEqual(shards.rebuild_targets({"A", "C", "D"}, closure), ["C", "D"])
         self.assertEqual(shards.rebuild_targets(set(), closure), [])
+        self.assertEqual(shards.rebuild_targets({"A", "C", "D"}, closure, imps), ["C", "D"])
+        self.assertEqual(shards.rebuild_targets(set(), closure, imps), [])
 
     def test_private_rebuilds_are_not_bundled_by_an_unchanged_importer(self):
         imps = {"unchanged": ["L", "R"]}
@@ -764,6 +782,95 @@ class Refinement(unittest.TestCase):
         cost = {"shared": 100.0, "A": 300.0, "B": 100.0, "C": 100.0}
         _, targets, _ = self.example(imps, cost, [["A"], ["B", "C"]], 400.0)
         self.assertEqual(targets, [["A"], ["B", "C"]])
+
+    def test_successive_moves_keep_each_shard_its_targets_closures(self):
+        # Two families split across three shards: each move changes what
+        # the others would add or save, which refine keeps between moves.
+        imps = {"x": [], "y": [], "z": []}
+        for fam in "xyz":
+            for i in range(3):
+                imps[f"{fam}{i}"] = [fam]
+        cost = {m: (60.0 if len(m) == 1 else 1.0) for m in imps}
+        closure = shards.closures(imps)
+        targets = [["x0", "y0", "z0"], ["x1", "y1", "z1"], ["x2", "y2", "z2"]]
+        loads, targets, built = self.example(imps, cost, targets, 1000.0)
+        for ts, part, load in zip(targets, built, loads):
+            self.assertEqual(part, set().union(*(closure[t] for t in ts)))
+            self.assertAlmostEqual(load, shards.build_time(imps, {m: cost[m] for m in part}))
+        # The families' shared imports, built in each shard, are built
+        # once, but for y, whose last target keeps its shard.
+        self.assertEqual(sorted(fam for part in built for fam in "xyz" if fam in part),
+                         ["x", "y", "y", "z"])
+
+    @mock.patch.object(shards, "PARALLELISM", 2.0)
+    def test_a_rejected_move_is_not_simulated_again(self):
+        # F would save the most joining D and G, but makes their shard too
+        # slow; B joins E instead, which changes neither F's shard nor D's.
+        imps = {"s": [], "t": [], "A": [], "B": ["s"], "C": [], "D": ["t"], "E": ["s"],
+                "F": ["t"], "G": ["t"]}
+        cost = {"s": 20.0, "t": 20.0, "A": 1.0, "B": 20.0, "C": 40.0, "D": 40.0, "E": 40.0,
+                "F": 40.0, "G": 1.0}
+        closure = shards.closures(imps)
+        targets = [["C", "F"], ["G", "D"], ["E"], ["A", "B"]]
+        built = [set().union(*(closure[t] for t in ts)) for ts in targets]
+        simulator = shards._BuildGraph(imps, cost)
+        loads = [simulator.time(part) for part in built]
+        seen = []
+        real = simulator.time
+
+        def time(modules=None):
+            seen.append(frozenset(modules))
+            return real(modules)
+
+        with mock.patch.object(simulator, "time", side_effect=time):
+            _, targets, _ = shards.refine(imps, closure, cost, shards.paths(imps, cost),
+                                          (loads, targets, built), max(loads), simulator)
+        self.assertEqual(targets, [["C", "F"], ["G", "D"], ["E", "B"], ["A"]])
+        self.assertIn(frozenset({"t", "D", "F", "G"}), seen)
+        self.assertEqual(len(seen), len(set(seen)))
+
+
+    def test_moves_between_different_shards_are_simulated_together(self):
+        # x1 joins x0 and y1 joins y0: four different shards, one call.
+        imps = {"x": [], "y": [], "x0": ["x"], "x1": ["x"], "y0": ["y"], "y1": ["y"],
+                "a": [], "b": [], "c": [], "d": []}
+        cost = {m: (60.0 if m in "xy" else 1.0) for m in imps}
+        closure = shards.closures(imps)
+        targets = [["x0", "a"], ["x1", "b"], ["y0", "c"], ["y1", "d"]]
+        built = [set().union(*(closure[t] for t in ts)) for ts in targets]
+        loads = [shards.build_time(imps, {m: cost[m] for m in part}) for part in built]
+        calls = []
+
+        def simulate(parts):
+            calls.append(len(parts))
+            return [shards.build_time(imps, {m: cost[m] for m in part}) for part in parts]
+
+        _, targets, built = shards.refine(imps, closure, cost, shards.paths(imps, cost),
+                                          (loads, targets, built), 1000.0, None, simulate)
+        self.assertEqual(calls[0], 4)
+        self.assertEqual(sorted(fam for part in built for fam in "xy" if fam in part), ["x", "y"])
+
+
+@mock.patch.object(shards, "SHARD_OVERHEAD", 0.0)
+class RefineBudget(Project):
+    def test_refining_never_makes_the_chosen_packing_slower(self):
+        # Whatever SLACK allows in choosing among packings, refine gets the
+        # packing's own estimate as its budget.
+        limits = []
+        real = shards.refine
+
+        def refine(imps, closure, cost, path, packed, limit, *args):
+            limits.append((limit, max(packed[0])))
+            return real(imps, closure, cost, path, packed, limit, *args)
+
+        imps = {f"S{i}": [] for i in range(4)}
+        imps.update({f"T{i}": [f"S{i % 4}"] for i in range(12)})
+        times = {m: (40.0 if m.startswith("S") else 300.0) for m in imps}
+        with mock.patch.object(shards, "refine", side_effect=refine):
+            shards.schedule(imps, shards.closures(imps), set(imps), times)
+        self.assertTrue(limits)
+        for limit, slowest in limits:
+            self.assertEqual(limit, slowest)
 
 
 @mock.patch.object(shards, "SHARD_OVERHEAD", 0.0)

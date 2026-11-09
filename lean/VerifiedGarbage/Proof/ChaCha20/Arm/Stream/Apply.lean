@@ -486,12 +486,14 @@ theorem blocksArgs_eq : blocksArgs = copyWords .r0 .r4 .r4 0 192 16 ++ ctrInstrs
 theorem shr_nb {nb : Nat} (h : 64 * nb < 2 ^ 32) : BitVec.ofNat 32 (64 * nb) >>> 6 = BitVec.ofNat 32 nb := by
   rw [VG.Proof.MdStream.Arm.shr6 h, show 64 * nb / 64 = nb by omega_arith]
 
-/-- The arguments of the call of `vg_chacha20_xor`. -/
+/-- The arguments of the call of `vg_chacha20_xor`, in place (`dst`, in
+`r5`, is `src`). -/
 structure Args (s₀ s : State) : Prop where
   r0 : s.gpr .r0 = ST s₀ + BitVec.ofNat 32 192
   r1 : s.gpr .r1 = DP s₀ + BitVec.ofNat 32 (H s₀)
   r2 : s.gpr .r2 = BitVec.ofNat 32 (64 * NB s₀)
   r3 : s.gpr .r3 = ST s₀ + BitVec.ofNat 32 256
+  r5 : s.gpr .r5 = DP s₀ + BitVec.ofNat 32 (H s₀)
   r7 : s.gpr .r7 = BitVec.ofNat 32 (64 * NB s₀)
   rd : s.rd = []
   wr : s.wr = [stR s₀, dR s₀]
@@ -574,7 +576,9 @@ theorem args_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) :
     exact h.mid.keep i (by omega_arith)
   have fc : Frame [cpR s₀, ⟨st s₀ + BitVec.ofNat 64 48, 4⟩] s.mem s₉.mem :=
     (f₁.mono (by simp)).trans (f₉.mono (by simp))
-  exact ⟨⟨x0, x1, r2₉, x3, x7, hrd₉, hwr₉⟩, g, hsp₉, st₉, cp₉, fc⟩
+  have x5 : s₉.gpr .r5 = DP s₀ + BitVec.ofNat 32 (H s₀) := by
+    rw [g _ (by decide) (by decide) (by decide) (by decide), h.r5]
+  exact ⟨⟨x0, x1, r2₉, x3, x5, x7, hrd₉, hwr₉⟩, g, hsp₉, st₉, cp₉, fc⟩
 
 theorem blocks_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) (hnb : 0 < NB s₀) :
     WP isa (.seq (.block blocksArgs) (.seq (.call "vg_chacha20_xor" Impl.ChaCha20.Arm.Xor.xor)
@@ -585,7 +589,7 @@ theorem blocks_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) (h
   have hT := T_eq s₀
   have hst := hp.st_fit
   have hd := hp.d_fit
-  refine WP.seq (WP.mono (args_ok hp h) fun s₉ ⟨⟨x0, x1, r2₉, x3, x7, hrd₉, hwr₉⟩, g, hsp₉, st₉, cp₉, fc⟩ =>
+  refine WP.seq (WP.mono (args_ok hp h) fun s₉ ⟨⟨x0, x1, r2₉, x3, x5, x7, hrd₉, hwr₉⟩, g, hsp₉, st₉, cp₉, fc⟩ =>
     ?_)
   have r4₉ : s₉.gpr .r4 = ST s₀ := by rw [g _ (by decide) (by decide) (by decide) (by decide), h.r4]
   have e192 := hp.eaS (d := 192) (by decide)
@@ -602,7 +606,7 @@ theorem blocks_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) (h
     · exact ⟨stR s₀, by simp, 192, rfl, by simp⟩
     · exact ⟨dR s₀, by simp, H s₀, rfl, hHNB⟩
     · exact ⟨stR s₀, by simp, 256, rfl, by simp⟩
-  refine WP.seq (xor_call (n := 64 * NB s₀) x0 x1 r2₉ x3 (by omega_arith)
+  refine WP.seq (xor_call (n := 64 * NB s₀) x0 x1 r2₉ x3 x5 (by omega_arith)
     (by rw [e192, eH]; exact dSD) (by rw [e192, e256]; exact dSB) (by rw [eH, e256]; exact dDB)
     (by rw [hp.sNat (by decide)]; omega_arith) (by rw [hp.dNat (by omega_arith)]; omega_arith) (by rw [hp.sNat (by decide)]; omega_arith)
     (by rw [hrd₉, hwr₉, List.nil_append, List.nil_append, e192, eH, e256]; exact Covers.of_sub hcov)

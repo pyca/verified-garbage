@@ -7,8 +7,6 @@ public import VerifiedGarbage.Impl.ChaCha20.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Spec.ChaCha20.Contract
-public import VerifiedGarbage.Proof.ChaCha20.Contract
-meta import VerifiedGarbage.Proof.ChaCha20.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -29,6 +27,10 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
+meta import VerifiedGarbage.Spec.ChaCha20
+meta import VerifiedGarbage.TCB.Artifact
 
 @[expose] public section
 
@@ -794,19 +796,6 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   rw [hm']
   exact block_post fun j hj => by simpa [hj] using hA.out j hj
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | _ => 0
-  sp := 0x4000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := [⟨0x1000, 64⟩]
-  wr := [⟨0x2000, 256⟩]
-
 theorem block_correct (s : State) (hs : Proof.ChaCha20.blockArm.pre s) :
     ∃ t s', Exec isa block s t s' ∧ abiPreserved s s' ∧ Proof.ChaCha20.blockArm.post s s' := by
   obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
@@ -819,12 +808,5 @@ theorem block_ct :
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl <;> with_reducible assumption
-
-theorem block_verified :
-    Verified Arm.target Impl.ChaCha20.Arm.block (Proof.ChaCha20.blockContract Arm.abi) :=
-  Verified.of_correct block_correct block_ct (by
-    sig_implies [Proof.ChaCha20.blockContract, Proof.ChaCha20.blockSig, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Proof.ChaCha20.blockArm, State.addr]
-      [satState] using satState)
 
 end VG.Proof.ChaCha20.Arm

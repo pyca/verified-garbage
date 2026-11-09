@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTD
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Small
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTUnits
@@ -31,7 +32,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 `smallMask` (`smallMask_ct`): the constant 1, word `w` of `[aC]` set
 (`smallBlk_k`, whose base the taint analysis sees from `w` and the stride),
 `ltA`, and `kOk` and'ed in; the facts after it from `smallMask_k`
-(`KG FF`, which is `KFront` but for `KS`: `FF.front`). The mask in `x15`,
+(`KG FF`, which is `KFront` but for `KS`). The mask in `x15`,
 on which the code branches, is the status' (`FF.x15`).
 -/
 
@@ -48,9 +49,6 @@ open VG.Impl.RsaKeyGen.AArch64.Candidate (loadE kE kElen)
 abbrev FF : KIn → State → Prop := fun I t => PF I t ∧ DRes I I.E I.L t.mem ∧
   ∃ ok : Bool, word t.mem I.B (8 * kOk) = mask ok ∧ ((∃ d, Spec.Rsa.inverse I.E I.L = some d) ↔ ok = true) ∧
     t.gpr .x15 = mask (decide (av I t.mem aDd ≤ 2 ^ (8 * I.pl)) && ok)
-
-theorem FF.front {I : KIn} {s₀ t : State} (h : KS I s₀ t) (hf : FF I t) : KFront I s₀ t :=
-  ⟨h, hf.1.1, hf.1.2.1, hf.1.2.2.1, hf.1.2.2.2.1, hf.1.2.2.2.2.1, hf.2.1, hf.2.2⟩
 
 theorem smallMask_eq : smallMask = constA 1 ++ (([.block (ws ++ (base aC .x16 ++ ([.lsr .x .x3 .x12 1,
     .lsl .x .x3 .x3 3, .add .x .x16 .x16 .x3, movi .x3 1, st .x3 .x16] : List Instr)))] : List (Prog isa)) ++
@@ -111,7 +109,7 @@ theorem KIn.st_two {I : KIn} : I.st = 2 ↔ ∃ d, Spec.Rsa.inverse I.E I.L = so
   simp only [KIn.st]
   constructor
   · intro h2
-    unfold Spec.RsaKeyGen.keyOp at h2
+    unfold Proof.RsaKeyGen.keyOp at h2
     generalize hk : Spec.RsaKeyGen.keyFromPrimes (16 * I.pl) (Spec.Rsa.os2ip I.eb) (Spec.Rsa.os2ip I.pb)
       (Spec.Rsa.os2ip I.qb) = r at h2
     unfold Spec.RsaKeyGen.keyFromPrimes at hk
@@ -119,7 +117,7 @@ theorem KIn.st_two {I : KIn} : I.st = 2 ↔ ∃ d, Spec.Rsa.inverse I.E I.L = so
     dsimp only at hk
     rw [show Nat.lcm (I.P - 1) (I.Q - 1) = I.L from rfl, ← hW] at hk
     rcases hi : Spec.Rsa.inverse I.E I.L with _ | d
-    · rw [hi] at hk; subst hk; simp [Spec.RsaKeyGen.keyStatus] at h2
+    · rw [hi] at hk; subst hk; simp [Proof.RsaKeyGen.keyStatus] at h2
     · rw [hi] at hk
       dsimp only at hk
       by_cases hd : d ≤ 2 ^ (8 * I.pl)
@@ -130,7 +128,7 @@ theorem KIn.st_two {I : KIn} : I.st = 2 ↔ ∃ d, Spec.Rsa.inverse I.E I.L = so
           split
           · exact ⟨_, rfl⟩
           · split <;> exact ⟨_, rfl⟩
-        cases x <;> simp [Spec.RsaKeyGen.keyStatus] at h2
+        cases x <;> simp [Proof.RsaKeyGen.keyStatus] at h2
   · rintro ⟨d, hd, hsm⟩
     have hr : Spec.RsaKeyGen.keyFromPrimes (16 * I.pl) (Spec.Rsa.os2ip I.eb) (Spec.Rsa.os2ip I.pb)
         (Spec.Rsa.os2ip I.qb) = .inr () := by
@@ -140,7 +138,7 @@ theorem KIn.st_two {I : KIn} : I.st = 2 ↔ ∃ d, Spec.Rsa.inverse I.E I.L = so
       rw [show Nat.lcm (I.P - 1) (I.Q - 1) = I.L from rfl, hd, ← hW]
       dsimp only
       rw [ite_eq_left hsm]
-    unfold Spec.RsaKeyGen.keyOp
+    unfold Proof.RsaKeyGen.keyOp
     rw [hr]
     rfl
 

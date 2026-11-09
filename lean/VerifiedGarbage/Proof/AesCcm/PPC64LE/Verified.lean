@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesCcm.Rounds
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.TopCT
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Open
@@ -69,11 +70,11 @@ theorem seal_verified :
       { pre := by
           intro s h
           sig_pre [Proof.AesCcm.sealScratchContract, Proof.AesCcm.sealScratchSig, Spec.Ccm.sealPre,
-            Spec.Ccm.sealPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
+            Proof.AesCcm.sealRoundsPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
             PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range, List.range.loop] at h
           sig_split h
           sig_reduce [Proof.AesCcm.sealScratchContract, Proof.AesCcm.sealScratchSig, Spec.Ccm.sealPre,
-            Spec.Ccm.sealPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
+            Proof.AesCcm.sealRoundsPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
             PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range, List.range.loop]
           sig_and_intros
           sig_close
@@ -84,15 +85,15 @@ theorem seal_verified :
             | bv_omega_arith
         post := by
           sig_implies_post [Proof.AesCcm.sealScratchContract, Proof.AesCcm.sealScratchSig, Spec.Ccm.sealPre,
-            Spec.Ccm.sealPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
+            Proof.AesCcm.sealRoundsPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
             PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range, List.range.loop]
         pub := by
           sig_implies_pub [Proof.AesCcm.sealScratchContract, Proof.AesCcm.sealScratchSig, Spec.Ccm.sealPre,
-            Spec.Ccm.sealPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
+            Proof.AesCcm.sealRoundsPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
             PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range, List.range.loop]
         sat := by
           sig_implies_sat [Proof.AesCcm.sealScratchContract, Proof.AesCcm.sealScratchSig, Spec.Ccm.sealPre,
-            Spec.Ccm.sealPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
+            Proof.AesCcm.sealRoundsPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
             PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range, List.range.loop]
             [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat }
 
@@ -102,12 +103,12 @@ theorem open_verified :
       { pre := by
           intro s h
           sig_pre [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
-            Spec.Ccm.openPost, Spec.Ccm.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes, openLeak, args,
+            Proof.AesCcm.openRoundsPost, Spec.Ccm.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes, openLeak, args,
             rounds, PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range,
             List.range.loop] at h
           sig_split h
           sig_reduce [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
-            Spec.Ccm.openPost, Spec.Ccm.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes, openLeak, args,
+            Proof.AesCcm.openRoundsPost, Spec.Ccm.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes, openLeak, args,
             rounds, PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range,
             List.range.loop]
           sig_and_intros
@@ -119,17 +120,17 @@ theorem open_verified :
             | bv_omega_arith
         post := by
           sig_implies_post [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
-            Spec.Ccm.openPost, Spec.Ccm.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes, openLeak, args,
+            Proof.AesCcm.openRoundsPost, Spec.Ccm.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes, openLeak, args,
             rounds, PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range,
             List.range.loop]
         pub := by
           sig_implies_pub [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
-            Spec.Ccm.openPost, Spec.Ccm.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes, openLeak, args,
+            Proof.AesCcm.openRoundsPost, Spec.Ccm.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes, openLeak, args,
             rounds, PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range,
             List.range.loop]
         sat := by
           sig_implies_sat [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
-            Spec.Ccm.openPost, Spec.Ccm.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes, openLeak, args,
+            Proof.AesCcm.openRoundsPost, Spec.Ccm.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes, openLeak, args,
             rounds, PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range,
             List.range.loop]
             [openSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat }
@@ -142,18 +143,18 @@ def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 7⟩, ⟨0x3000, 0⟩, ⟨0x8060, 16⟩],
                  wr := [⟨0x4000, 0⟩, ⟨0x5000, 4⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.Ccm.sealContract PPC64LE.abi 2688).pre s := by
-  implies_sat [Spec.Ccm.sealContract, Spec.Ccm.sealSig, Spec.Ccm.sealPre, Spec.Ccm.sealPost,
+theorem sealFrameSat_pre : ∃ s, (Proof.AesCcm.sealRoundsContract PPC64LE.abi 2688).pre s := by
+  implies_sat [Proof.AesCcm.sealRoundsContract, Spec.Ccm.sealSig, Spec.Ccm.sealPre, Proof.AesCcm.sealRoundsPost,
     PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range,
     List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
 theorem seal_framed :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 «seal»)
-      (Spec.Ccm.sealContract PPC64LE.abi 2688) :=
+      (Proof.AesCcm.sealRoundsContract PPC64LE.abi 2688) :=
   Verified.stackScratchArgs (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.sealPre PPC64LE.abi.ptrBits)
-    (post := Spec.Ccm.sealPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2688) (m := 2)
+    (post := Proof.AesCcm.sealRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2688) (m := 2)
     seal_verified (by decide) (by decide) (Proof.AesCcm.sealPre_local _) (Proof.AesCcm.sealPost_local _)
     sealFrameSat_pre
 
@@ -163,18 +164,18 @@ def openFrameSat : State :=
   { openSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 7⟩, ⟨0x3000, 0⟩, ⟨0x5000, 4⟩, ⟨0x8060, 16⟩],
                  wr := [⟨0x4000, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.Ccm.openContract PPC64LE.abi 2688).pre s := by
-  implies_sat [Spec.Ccm.openContract, Spec.Ccm.openSig, Spec.Ccm.openPre, Spec.Ccm.openPost,
+theorem openFrameSat_pre : ∃ s, (Proof.AesCcm.openRoundsContract PPC64LE.abi 2688).pre s := by
+  implies_sat [Proof.AesCcm.openRoundsContract, Spec.Ccm.openSig, Spec.Ccm.openPre, Proof.AesCcm.openRoundsPost,
     Spec.Ccm.openLeak, PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr,
     List.getD, List.range, List.range.loop] [openFrameSat, openSat, sealSat, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using openFrameSat
 
 theorem open_framed :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 «open»)
-      (Spec.Ccm.openContract PPC64LE.abi 2688) :=
+      (Proof.AesCcm.openRoundsContract PPC64LE.abi 2688) :=
   Verified.stackScratchArgs (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.openPre PPC64LE.abi.ptrBits)
-    (post := Spec.Ccm.openPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2688) (m := 2)
+    (post := Proof.AesCcm.openRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2688) (m := 2)
     (leak := some (Spec.Ccm.openLeak PPC64LE.abi.ptrBits))
     open_verified (by decide) (by decide) (Proof.AesCcm.openPre_local _) (Proof.AesCcm.openPost_local _)
     openFrameSat_pre (hleak := Proof.AesCcm.openLeak_local _)

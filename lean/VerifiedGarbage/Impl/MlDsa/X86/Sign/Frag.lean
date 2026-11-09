@@ -57,7 +57,9 @@ functions' working space at 200 (640 bytes); the words `OK`, `CNT`, `KAP`
 and `ONES` at 840, 844, 848 and 852; the seed of `RejNTTPoly` (`RS`, 34
 bytes) at 856; `K ‖ rnd` (`HIN`, 64 bytes) at 896; the seed of
 `ExpandMask` (`MS`, `ρ″` and two bytes) at 960; `c̃` (`CT`, up to 64 bytes)
-at 1040; the encoding of `w₁` (`W1`, up to 1024 bytes) at 2048; the working
+at 1040; the word `KEYS` at 1104, which says whether `scratch` already
+holds `ŝ₁`, `ŝ₂` and `t̂₀` (nonzero) or they are to be decoded from `sk` (0);
+the encoding of `w₁` (`W1`, up to 1024 bytes) at 2048; the working
 space of the primitives (`PS`, 2048 bytes) at 3072; and polynomials of 1024
 bytes from 5120 (`P i`). -/
 
@@ -72,6 +74,7 @@ def oRS : Nat := 856
 def oHIN : Nat := 896
 def oMS : Nat := 960
 def oCT : Nat := 1040
+def oKEYS : Nat := 1104
 def oW1 : Nat := 2048
 def oPS : Nat := 3072
 def oST : Nat := 0
@@ -140,6 +143,10 @@ def addOnes : List Instr :=
 /-- `t` if `OK ≠ 0`, and `e` otherwise. -/
 def ifOkElse (t e : Prog isa) : Prog isa :=
   .seq (.block [.mov .eax (.mem (at_ .esi oOK)), .alu .test .eax (.reg .eax)]) (.ite .ne t e)
+
+/-- `t` if `KEYS ≠ 0`, and `e` otherwise. -/
+def ifKeysElse (t e : Prog isa) : Prog isa :=
+  .seq (.block [.mov .eax (.mem (at_ .esi oKEYS)), .alu .test .eax (.reg .eax)]) (.ite .ne t e)
 
 /-- `c` if `OK ≠ 0`. -/
 def ifOk (c : Prog isa) : Prog isa := ifOkElse c (.block [])

@@ -7,6 +7,301 @@
 vg_ecdsa_brainpoolp512r1_verify:
 	.option push
 	.option arch, +m, +c
+	addi sp, sp, -80
+	addi a5, sp, 0
+	addi t0, zero, 64
+	bltu a2, t0, 20f
+	lbu t1, 0(a1)
+	sb t1, 0(a5)
+	lbu t1, 1(a1)
+	sb t1, 1(a5)
+	lbu t1, 2(a1)
+	sb t1, 2(a5)
+	lbu t1, 3(a1)
+	sb t1, 3(a5)
+	lbu t1, 4(a1)
+	sb t1, 4(a5)
+	lbu t1, 5(a1)
+	sb t1, 5(a5)
+	lbu t1, 6(a1)
+	sb t1, 6(a5)
+	lbu t1, 7(a1)
+	sb t1, 7(a5)
+	lbu t1, 8(a1)
+	sb t1, 8(a5)
+	lbu t1, 9(a1)
+	sb t1, 9(a5)
+	lbu t1, 10(a1)
+	sb t1, 10(a5)
+	lbu t1, 11(a1)
+	sb t1, 11(a5)
+	lbu t1, 12(a1)
+	sb t1, 12(a5)
+	lbu t1, 13(a1)
+	sb t1, 13(a5)
+	lbu t1, 14(a1)
+	sb t1, 14(a5)
+	lbu t1, 15(a1)
+	sb t1, 15(a5)
+	lbu t1, 16(a1)
+	sb t1, 16(a5)
+	lbu t1, 17(a1)
+	sb t1, 17(a5)
+	lbu t1, 18(a1)
+	sb t1, 18(a5)
+	lbu t1, 19(a1)
+	sb t1, 19(a5)
+	lbu t1, 20(a1)
+	sb t1, 20(a5)
+	lbu t1, 21(a1)
+	sb t1, 21(a5)
+	lbu t1, 22(a1)
+	sb t1, 22(a5)
+	lbu t1, 23(a1)
+	sb t1, 23(a5)
+	lbu t1, 24(a1)
+	sb t1, 24(a5)
+	lbu t1, 25(a1)
+	sb t1, 25(a5)
+	lbu t1, 26(a1)
+	sb t1, 26(a5)
+	lbu t1, 27(a1)
+	sb t1, 27(a5)
+	lbu t1, 28(a1)
+	sb t1, 28(a5)
+	lbu t1, 29(a1)
+	sb t1, 29(a5)
+	lbu t1, 30(a1)
+	sb t1, 30(a5)
+	lbu t1, 31(a1)
+	sb t1, 31(a5)
+	lbu t1, 32(a1)
+	sb t1, 32(a5)
+	lbu t1, 33(a1)
+	sb t1, 33(a5)
+	lbu t1, 34(a1)
+	sb t1, 34(a5)
+	lbu t1, 35(a1)
+	sb t1, 35(a5)
+	lbu t1, 36(a1)
+	sb t1, 36(a5)
+	lbu t1, 37(a1)
+	sb t1, 37(a5)
+	lbu t1, 38(a1)
+	sb t1, 38(a5)
+	lbu t1, 39(a1)
+	sb t1, 39(a5)
+	lbu t1, 40(a1)
+	sb t1, 40(a5)
+	lbu t1, 41(a1)
+	sb t1, 41(a5)
+	lbu t1, 42(a1)
+	sb t1, 42(a5)
+	lbu t1, 43(a1)
+	sb t1, 43(a5)
+	lbu t1, 44(a1)
+	sb t1, 44(a5)
+	lbu t1, 45(a1)
+	sb t1, 45(a5)
+	lbu t1, 46(a1)
+	sb t1, 46(a5)
+	lbu t1, 47(a1)
+	sb t1, 47(a5)
+	lbu t1, 48(a1)
+	sb t1, 48(a5)
+	lbu t1, 49(a1)
+	sb t1, 49(a5)
+	lbu t1, 50(a1)
+	sb t1, 50(a5)
+	lbu t1, 51(a1)
+	sb t1, 51(a5)
+	lbu t1, 52(a1)
+	sb t1, 52(a5)
+	lbu t1, 53(a1)
+	sb t1, 53(a5)
+	lbu t1, 54(a1)
+	sb t1, 54(a5)
+	lbu t1, 55(a1)
+	sb t1, 55(a5)
+	lbu t1, 56(a1)
+	sb t1, 56(a5)
+	lbu t1, 57(a1)
+	sb t1, 57(a5)
+	lbu t1, 58(a1)
+	sb t1, 58(a5)
+	lbu t1, 59(a1)
+	sb t1, 59(a5)
+	lbu t1, 60(a1)
+	sb t1, 60(a5)
+	lbu t1, 61(a1)
+	sb t1, 61(a5)
+	lbu t1, 62(a1)
+	sb t1, 62(a5)
+	lbu t1, 63(a1)
+	sb t1, 63(a5)
+	j 21f
+20:
+	addi t1, zero, 0
+	sb t1, 0(a5)
+	addi t1, zero, 0
+	sb t1, 1(a5)
+	addi t1, zero, 0
+	sb t1, 2(a5)
+	addi t1, zero, 0
+	sb t1, 3(a5)
+	addi t1, zero, 0
+	sb t1, 4(a5)
+	addi t1, zero, 0
+	sb t1, 5(a5)
+	addi t1, zero, 0
+	sb t1, 6(a5)
+	addi t1, zero, 0
+	sb t1, 7(a5)
+	addi t1, zero, 0
+	sb t1, 8(a5)
+	addi t1, zero, 0
+	sb t1, 9(a5)
+	addi t1, zero, 0
+	sb t1, 10(a5)
+	addi t1, zero, 0
+	sb t1, 11(a5)
+	addi t1, zero, 0
+	sb t1, 12(a5)
+	addi t1, zero, 0
+	sb t1, 13(a5)
+	addi t1, zero, 0
+	sb t1, 14(a5)
+	addi t1, zero, 0
+	sb t1, 15(a5)
+	addi t1, zero, 0
+	sb t1, 16(a5)
+	addi t1, zero, 0
+	sb t1, 17(a5)
+	addi t1, zero, 0
+	sb t1, 18(a5)
+	addi t1, zero, 0
+	sb t1, 19(a5)
+	addi t1, zero, 0
+	sb t1, 20(a5)
+	addi t1, zero, 0
+	sb t1, 21(a5)
+	addi t1, zero, 0
+	sb t1, 22(a5)
+	addi t1, zero, 0
+	sb t1, 23(a5)
+	addi t1, zero, 0
+	sb t1, 24(a5)
+	addi t1, zero, 0
+	sb t1, 25(a5)
+	addi t1, zero, 0
+	sb t1, 26(a5)
+	addi t1, zero, 0
+	sb t1, 27(a5)
+	addi t1, zero, 0
+	sb t1, 28(a5)
+	addi t1, zero, 0
+	sb t1, 29(a5)
+	addi t1, zero, 0
+	sb t1, 30(a5)
+	addi t1, zero, 0
+	sb t1, 31(a5)
+	addi t1, zero, 0
+	sb t1, 32(a5)
+	addi t1, zero, 0
+	sb t1, 33(a5)
+	addi t1, zero, 0
+	sb t1, 34(a5)
+	addi t1, zero, 0
+	sb t1, 35(a5)
+	addi t1, zero, 0
+	sb t1, 36(a5)
+	addi t1, zero, 0
+	sb t1, 37(a5)
+	addi t1, zero, 0
+	sb t1, 38(a5)
+	addi t1, zero, 0
+	sb t1, 39(a5)
+	addi t1, zero, 0
+	sb t1, 40(a5)
+	addi t1, zero, 0
+	sb t1, 41(a5)
+	addi t1, zero, 0
+	sb t1, 42(a5)
+	addi t1, zero, 0
+	sb t1, 43(a5)
+	addi t1, zero, 0
+	sb t1, 44(a5)
+	addi t1, zero, 0
+	sb t1, 45(a5)
+	addi t1, zero, 0
+	sb t1, 46(a5)
+	addi t1, zero, 0
+	sb t1, 47(a5)
+	addi t1, zero, 0
+	sb t1, 48(a5)
+	addi t1, zero, 0
+	sb t1, 49(a5)
+	addi t1, zero, 0
+	sb t1, 50(a5)
+	addi t1, zero, 0
+	sb t1, 51(a5)
+	addi t1, zero, 0
+	sb t1, 52(a5)
+	addi t1, zero, 0
+	sb t1, 53(a5)
+	addi t1, zero, 0
+	sb t1, 54(a5)
+	addi t1, zero, 0
+	sb t1, 55(a5)
+	addi t1, zero, 0
+	sb t1, 56(a5)
+	addi t1, zero, 0
+	sb t1, 57(a5)
+	addi t1, zero, 0
+	sb t1, 58(a5)
+	addi t1, zero, 0
+	sb t1, 59(a5)
+	addi t1, zero, 0
+	sb t1, 60(a5)
+	addi t1, zero, 0
+	sb t1, 61(a5)
+	addi t1, zero, 0
+	sb t1, 62(a5)
+	addi t1, zero, 0
+	sb t1, 63(a5)
+	addi t1, zero, 0
+	sb t1, 64(a5)
+	addi t1, zero, 0
+	sb t1, 65(a5)
+	addi t1, zero, 0
+	sb t1, 66(a5)
+	addi t1, zero, 0
+	sb t1, 67(a5)
+	addi t1, zero, 0
+	sb t1, 68(a5)
+	addi t1, zero, 0
+	sb t1, 69(a5)
+	addi t1, zero, 0
+	sb t1, 70(a5)
+	addi t1, zero, 0
+	sb t1, 71(a5)
+	addi t2, a5, 64
+	sub t2, t2, a2
+	beqz a2, 22f
+24:
+	lbu t1, 0(a1)
+	sb t1, 0(t2)
+	addi a1, a1, 1
+	addi t2, t2, 1
+	addi a2, a2, -1
+	bnez a2, 24b
+	j 23f
+22:
+23:
+21:
+	addi a1, a5, 0
+	addi a2, a3, 0
+	addi a3, a4, 0
 	sd s0, 0(a3)
 	sd s1, 8(a3)
 	sd s2, 16(a3)
@@ -2205,81 +2500,6 @@ vg_ecdsa_brainpoolp512r1_verify:
 	ld t0, 1145(t0)
 	sd t0, 1976(s0)
 	addi s1, zero, 4
-20:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 1920
-	call {vg_brainpoolp512r1_mul_mod_n}
-	bnez s1, 20b
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 2047
-	addi a3, a3, 1089
-	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
-21:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 1920
-	call {vg_brainpoolp512r1_mul_mod_n}
-	bnez s1, 21b
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 2047
-	addi a3, a3, 1345
-	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
-22:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 1920
-	call {vg_brainpoolp512r1_mul_mod_n}
-	bnez s1, 22b
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 2047
-	addi a3, a3, 1345
-	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
-23:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 1920
-	call {vg_brainpoolp512r1_mul_mod_n}
-	bnez s1, 23b
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 2047
-	addi a3, a3, 1217
-	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
-24:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 1920
-	call {vg_brainpoolp512r1_mul_mod_n}
-	bnez s1, 24b
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 2047
-	addi a3, a3, 1345
-	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
 25:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2292,9 +2512,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 1
+	addi s1, zero, 5
 26:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2307,9 +2527,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 4
 27:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2337,9 +2557,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 4
 29:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2352,9 +2572,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 210:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2367,9 +2587,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 2
+	addi s1, zero, 1
 211:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2382,7 +2602,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_n}
 	addi s1, zero, 7
 212:
@@ -2397,9 +2617,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 4
 213:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2414,7 +2634,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 3
 214:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2427,9 +2647,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 5
 215:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2442,9 +2662,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 2
 216:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2457,9 +2677,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 7
 217:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2472,9 +2692,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 7
 218:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2487,9 +2707,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1345
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 6
 219:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2502,9 +2722,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 1
+	addi s1, zero, 4
 220:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2517,9 +2737,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 221:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2532,9 +2752,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 5
 222:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2547,7 +2767,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_n}
 	addi s1, zero, 6
 223:
@@ -2562,9 +2782,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 5
 224:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2577,9 +2797,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 2
+	addi s1, zero, 1
 225:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2592,9 +2812,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 11
+	addi s1, zero, 5
 226:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2607,9 +2827,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 6
 227:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2622,9 +2842,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 6
 228:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2637,7 +2857,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_n}
 	addi s1, zero, 4
 229:
@@ -2652,9 +2872,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 2
 230:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2667,9 +2887,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 11
 231:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2682,7 +2902,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1345
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_n}
 	addi s1, zero, 4
 232:
@@ -2697,9 +2917,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 3
 233:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2712,9 +2932,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 4
 234:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2729,7 +2949,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 5
 235:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2742,9 +2962,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 7
 236:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2757,7 +2977,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_n}
 	addi s1, zero, 4
 237:
@@ -2772,9 +2992,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1345
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 5
 238:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2787,9 +3007,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 8
+	addi s1, zero, 3
 239:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2802,9 +3022,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 6
 240:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2817,9 +3037,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1345
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 6
 241:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2832,7 +3052,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_n}
 	addi s1, zero, 4
 242:
@@ -2847,9 +3067,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 3
 243:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2862,9 +3082,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 8
 244:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2879,7 +3099,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 5
 245:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2892,9 +3112,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 3
 246:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2907,9 +3127,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 247:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2922,9 +3142,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 8
+	addi s1, zero, 6
 248:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2937,9 +3157,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 5
 249:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2952,9 +3172,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 250:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2967,9 +3187,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 5
 251:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2982,9 +3202,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 8
+	addi s1, zero, 5
 252:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2997,9 +3217,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 8
 253:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3012,9 +3232,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 4
 254:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3027,9 +3247,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 5
 255:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3042,9 +3262,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 7
 256:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3059,7 +3279,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 8
 257:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3072,9 +3292,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 8
+	addi s1, zero, 4
 258:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3089,7 +3309,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 6
 259:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3102,9 +3322,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 260:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3117,9 +3337,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 261:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3132,9 +3352,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 4
 262:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3147,9 +3367,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 1
+	addi s1, zero, 8
 263:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3162,9 +3382,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 4
 264:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3194,7 +3414,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 5
 266:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3207,7 +3427,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_n}
 	addi s1, zero, 6
 267:
@@ -3222,9 +3442,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 1
 268:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3237,9 +3457,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 6
 269:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3252,7 +3472,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
 	addi s1, zero, 5
 270:
@@ -3267,9 +3487,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 7
 271:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3282,9 +3502,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 6
 272:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3297,7 +3517,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
 	addi s1, zero, 4
 273:
@@ -3312,9 +3532,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1345
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 5
 274:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3327,9 +3547,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 5
 275:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3342,7 +3562,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
 	addi s1, zero, 6
 276:
@@ -3357,9 +3577,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 4
 277:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3372,9 +3592,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 4
 278:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3387,9 +3607,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 3
 279:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3402,9 +3622,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1345
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 1
+	addi s1, zero, 6
 280:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3432,9 +3652,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 6
 282:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3447,9 +3667,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 2
+	addi s1, zero, 6
 283:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3462,9 +3682,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 5
 284:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3477,9 +3697,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 1
 285:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3494,7 +3714,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 8
+	addi s1, zero, 6
 286:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3507,9 +3727,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 5
 287:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3522,9 +3742,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 2
 288:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3537,9 +3757,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 7
 289:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3552,9 +3772,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 5
 290:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3567,9 +3787,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 8
 291:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3582,9 +3802,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1345
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 4
 292:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3597,9 +3817,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 4
 293:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3612,9 +3832,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 8
+	addi s1, zero, 5
 294:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3627,9 +3847,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 4
 295:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3642,9 +3862,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 2
+	addi s1, zero, 5
 296:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3657,9 +3877,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 8
+	addi s1, zero, 3
 297:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3674,7 +3894,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 3
 298:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3687,9 +3907,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 8
 299:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3702,9 +3922,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 6
 2100:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3717,9 +3937,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 11
+	addi s1, zero, 2
 2101:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3732,9 +3952,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 8
 2102:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3743,6 +3963,81 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 1920
 	call {vg_brainpoolp512r1_mul_mod_n}
 	bnez s1, 2102b
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 2047
+	addi a3, a3, 1089
+	call {vg_brainpoolp512r1_mul_mod_n}
+	addi s1, zero, 5
+2103:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 1920
+	call {vg_brainpoolp512r1_mul_mod_n}
+	bnez s1, 2103b
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 2047
+	addi a3, a3, 1153
+	call {vg_brainpoolp512r1_mul_mod_n}
+	addi s1, zero, 5
+2104:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 1920
+	call {vg_brainpoolp512r1_mul_mod_n}
+	bnez s1, 2104b
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 2047
+	addi a3, a3, 1089
+	call {vg_brainpoolp512r1_mul_mod_n}
+	addi s1, zero, 5
+2105:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 1920
+	call {vg_brainpoolp512r1_mul_mod_n}
+	bnez s1, 2105b
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 2047
+	addi a3, a3, 1217
+	call {vg_brainpoolp512r1_mul_mod_n}
+	addi s1, zero, 11
+2106:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 1920
+	call {vg_brainpoolp512r1_mul_mod_n}
+	bnez s1, 2106b
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 2047
+	addi a3, a3, 1025
+	call {vg_brainpoolp512r1_mul_mod_n}
+	addi s1, zero, 5
+2107:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 1920
+	call {vg_brainpoolp512r1_mul_mod_n}
+	bnez s1, 2107b
 	addi a0, s0, 0
 	addi a1, zero, 1920
 	addi a2, zero, 1920
@@ -7883,7 +8178,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	ld t0, 312(s0)
 	sd t0, 1144(s0)
 	addi s1, zero, 256
-2103:
+2108:
 	addi s1, s1, -1
 	srli t1, s1, 5
 	slli t1, t1, 3
@@ -10143,7 +10438,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a2, zero, 1088
 	addi a3, zero, 1536
 	call {vg_brainpoolp512r1_add_mod_p}
-	bnez s1, 2103b
+	bnez s1, 2108b
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 961
@@ -10239,81 +10534,6 @@ vg_ecdsa_brainpoolp512r1_verify:
 	ld t0, 1145(t0)
 	sd t0, 1976(s0)
 	addi s1, zero, 4
-2104:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 1920
-	call {vg_brainpoolp512r1_mul_mod_p}
-	bnez s1, 2104b
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 2047
-	addi a3, a3, 1089
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
-2105:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 1920
-	call {vg_brainpoolp512r1_mul_mod_p}
-	bnez s1, 2105b
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 2047
-	addi a3, a3, 1345
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
-2106:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 1920
-	call {vg_brainpoolp512r1_mul_mod_p}
-	bnez s1, 2106b
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 2047
-	addi a3, a3, 1345
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
-2107:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 1920
-	call {vg_brainpoolp512r1_mul_mod_p}
-	bnez s1, 2107b
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 2047
-	addi a3, a3, 1217
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
-2108:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 1920
-	call {vg_brainpoolp512r1_mul_mod_p}
-	bnez s1, 2108b
-	addi a0, s0, 0
-	addi a1, zero, 1920
-	addi a2, zero, 1920
-	addi a3, zero, 2047
-	addi a3, a3, 1345
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
 2109:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10326,9 +10546,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 1
+	addi s1, zero, 5
 2110:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10341,9 +10561,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 7
+	addi s1, zero, 4
 2111:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10371,9 +10591,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 3
+	addi s1, zero, 4
 2113:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10386,9 +10606,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 4
 2114:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10401,9 +10621,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 2
+	addi s1, zero, 1
 2115:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10416,7 +10636,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi s1, zero, 7
 2116:
@@ -10431,9 +10651,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 7
+	addi s1, zero, 4
 2117:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10448,7 +10668,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 6
+	addi s1, zero, 3
 2118:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10461,9 +10681,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 5
 2119:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10476,9 +10696,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 2
 2120:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10491,9 +10711,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 7
 2121:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10506,9 +10726,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 6
+	addi s1, zero, 7
 2122:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10521,9 +10741,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1345
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 6
 2123:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10536,9 +10756,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 1
+	addi s1, zero, 4
 2124:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10551,9 +10771,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 4
 2125:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10566,9 +10786,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 6
+	addi s1, zero, 5
 2126:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10581,7 +10801,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi s1, zero, 6
 2127:
@@ -10596,9 +10816,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 5
 2128:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10611,9 +10831,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 2
+	addi s1, zero, 1
 2129:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10626,9 +10846,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 11
+	addi s1, zero, 5
 2130:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10641,9 +10861,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 6
 2131:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10656,9 +10876,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 3
+	addi s1, zero, 6
 2132:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10671,7 +10891,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi s1, zero, 4
 2133:
@@ -10686,9 +10906,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 2
 2134:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10701,9 +10921,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 7
+	addi s1, zero, 11
 2135:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10716,7 +10936,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1345
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi s1, zero, 4
 2136:
@@ -10731,9 +10951,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 3
 2137:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10746,9 +10966,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 3
+	addi s1, zero, 4
 2138:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10763,7 +10983,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 6
+	addi s1, zero, 5
 2139:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10776,9 +10996,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 6
+	addi s1, zero, 7
 2140:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10791,7 +11011,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi s1, zero, 4
 2141:
@@ -10806,9 +11026,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1345
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 3
+	addi s1, zero, 5
 2142:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10821,9 +11041,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 8
+	addi s1, zero, 3
 2143:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10836,9 +11056,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 6
 2144:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10851,9 +11071,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1345
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 3
+	addi s1, zero, 6
 2145:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10866,7 +11086,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi s1, zero, 4
 2146:
@@ -10881,9 +11101,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 6
+	addi s1, zero, 3
 2147:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10896,9 +11116,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 8
 2148:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10913,7 +11133,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 5
 2149:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10926,9 +11146,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 3
 2150:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10941,9 +11161,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 4
 2151:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10956,9 +11176,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 8
+	addi s1, zero, 6
 2152:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10971,9 +11191,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 5
 2153:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -10986,9 +11206,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 4
 2154:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11001,9 +11221,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 7
+	addi s1, zero, 5
 2155:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11016,9 +11236,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 7
+	addi s1, zero, 5
 2156:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11031,9 +11251,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 3
+	addi s1, zero, 8
 2157:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11046,7 +11266,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi s1, zero, 4
 2158:
@@ -11061,9 +11281,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 6
+	addi s1, zero, 5
 2159:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11076,9 +11296,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1345
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 7
 2160:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11091,9 +11311,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 7
 2161:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11108,7 +11328,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 12
+	addi s1, zero, 3
 2162:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11121,7 +11341,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi s1, zero, 4
 2163:
@@ -11136,9 +11356,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 2
+	addi s1, zero, 6
 2164:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11151,9 +11371,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 4
 2165:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11166,9 +11386,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 6
+	addi s1, zero, 4
 2166:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11181,9 +11401,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1345
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 12
 2167:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11196,9 +11416,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 7
+	addi s1, zero, 4
 2168:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11211,9 +11431,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 2
 2169:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11226,9 +11446,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 5
 2170:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11241,7 +11461,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi s1, zero, 6
 2171:
@@ -11258,7 +11478,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 3
+	addi s1, zero, 5
 2172:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11271,9 +11491,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 8
+	addi s1, zero, 7
 2173:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11286,9 +11506,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 5
 2174:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11301,7 +11521,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi s1, zero, 4
 2175:
@@ -11316,7 +11536,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi s1, zero, 6
 2176:
@@ -11333,7 +11553,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 2
+	addi s1, zero, 3
 2177:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11346,9 +11566,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 6
+	addi s1, zero, 8
 2178:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11361,9 +11581,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 10
+	addi s1, zero, 4
 2179:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11376,7 +11596,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi s1, zero, 4
 2180:
@@ -11391,7 +11611,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi s1, zero, 6
 2181:
@@ -11406,9 +11626,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 2
 2182:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11423,7 +11643,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 10
+	addi s1, zero, 6
 2183:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11436,9 +11656,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 10
 2184:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11451,7 +11671,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1153
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi s1, zero, 4
 2185:
@@ -11466,9 +11686,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 6
 2186:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11481,9 +11701,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 6
+	addi s1, zero, 4
 2187:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11496,9 +11716,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 961
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 3
+	addi s1, zero, 10
 2188:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11511,9 +11731,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 9
+	addi s1, zero, 4
 2189:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11526,9 +11746,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 7
+	addi s1, zero, 4
 2190:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11541,9 +11761,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1345
+	addi a3, a3, 1217
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 7
+	addi s1, zero, 5
 2191:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11556,9 +11776,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1409
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 6
 2192:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11571,9 +11791,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 6
+	addi s1, zero, 3
 2193:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11586,9 +11806,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 9
 2194:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11601,9 +11821,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1089
+	addi a3, a3, 1281
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 7
 2195:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11616,9 +11836,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1345
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 9
+	addi s1, zero, 7
 2196:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11633,7 +11853,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 3
+	addi s1, zero, 5
 2197:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11646,7 +11866,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1025
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi s1, zero, 6
 2198:
@@ -11661,9 +11881,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1281
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 8
+	addi s1, zero, 4
 2199:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11676,9 +11896,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1153
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 4
 2200:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11691,9 +11911,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1217
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 3
+	addi s1, zero, 9
 2201:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11706,9 +11926,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 961
+	addi a3, a3, 1089
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 7
+	addi s1, zero, 3
 2202:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11721,9 +11941,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a1, zero, 1920
 	addi a2, zero, 1920
 	addi a3, zero, 2047
-	addi a3, a3, 1409
+	addi a3, a3, 1025
 	call {vg_brainpoolp512r1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 6
 2203:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -11732,6 +11952,81 @@ vg_ecdsa_brainpoolp512r1_verify:
 	addi a3, zero, 1920
 	call {vg_brainpoolp512r1_mul_mod_p}
 	bnez s1, 2203b
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 2047
+	addi a3, a3, 1281
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi s1, zero, 8
+2204:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 1920
+	call {vg_brainpoolp512r1_mul_mod_p}
+	bnez s1, 2204b
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 2047
+	addi a3, a3, 1153
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi s1, zero, 5
+2205:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 1920
+	call {vg_brainpoolp512r1_mul_mod_p}
+	bnez s1, 2205b
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 2047
+	addi a3, a3, 1217
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi s1, zero, 3
+2206:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 1920
+	call {vg_brainpoolp512r1_mul_mod_p}
+	bnez s1, 2206b
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 2047
+	addi a3, a3, 961
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi s1, zero, 7
+2207:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 1920
+	call {vg_brainpoolp512r1_mul_mod_p}
+	bnez s1, 2207b
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 2047
+	addi a3, a3, 1409
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi s1, zero, 4
+2208:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1920
+	addi a2, zero, 1920
+	addi a3, zero, 1920
+	call {vg_brainpoolp512r1_mul_mod_p}
+	bnez s1, 2208b
 	addi a0, s0, 0
 	addi a1, zero, 1920
 	addi a2, zero, 1920
@@ -11828,5 +12123,742 @@ vg_ecdsa_brainpoolp512r1_verify:
 	ld s1, 8(s0)
 	ld s3, 32(s0)
 	ld s0, 0(s0)
+	addi sp, sp, 80
+	ret
+	.option pop
+
+vg_ecdsa_brainpoolp512r1_sign:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -512
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd s0, 8(t0)
+	sd s1, 16(t0)
+	sd s2, 24(t0)
+	sd s3, 32(t0)
+	sd s4, 40(t0)
+	sd s5, 48(t0)
+	sd s6, 56(t0)
+	sd s7, 64(t0)
+	sd s8, 72(t0)
+	sd s9, 80(t0)
+	addi s1, t0, 0
+	addi s2, a0, 0
+	addi s3, a1, 0
+	addi s4, a2, 0
+	addi s0, a4, 0
+	addi s6, a5, 0
+	ld s7, 32(a5)
+	ld s8, 40(a5)
+	addi t0, zero, 0
+	sd t0, 232(s1)
+	sd t0, 240(s1)
+	sd t0, 248(s1)
+	sd t0, 256(s1)
+	sd t0, 264(s1)
+	sd t0, 272(s1)
+	sd t0, 280(s1)
+	sd t0, 288(s1)
+	sd t0, 296(s1)
+	addi t1, zero, 64
+	sub t2, s7, t1
+	srli t3, t2, 63
+	addi t4, zero, 0
+	sub t3, t4, t3
+	and t2, t2, t3
+	add a6, t1, t2
+	addi a4, s4, 0
+	addi a5, s1, 296
+	sub a5, a5, a6
+20:
+	lbu t1, 0(a4)
+	sb t1, 0(a5)
+	addi a4, a4, 1
+	addi a5, a5, 1
+	addi a6, a6, -1
+	bnez a6, 20b
+	lbu t0, 232(s1)
+	slli t0, t0, 8
+	lbu t1, 233(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 234(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 235(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 236(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 237(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 238(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 239(s1)
+	or t0, t0, t1
+	sd t0, 56(s0)
+	lbu t0, 240(s1)
+	slli t0, t0, 8
+	lbu t1, 241(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 242(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 243(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 244(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 245(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 246(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 247(s1)
+	or t0, t0, t1
+	sd t0, 48(s0)
+	lbu t0, 248(s1)
+	slli t0, t0, 8
+	lbu t1, 249(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 250(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 251(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 252(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 253(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 254(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 255(s1)
+	or t0, t0, t1
+	sd t0, 40(s0)
+	lbu t0, 256(s1)
+	slli t0, t0, 8
+	lbu t1, 257(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 258(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 259(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 260(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 261(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 262(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 263(s1)
+	or t0, t0, t1
+	sd t0, 32(s0)
+	lbu t0, 264(s1)
+	slli t0, t0, 8
+	lbu t1, 265(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 266(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 267(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 268(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 269(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 270(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 271(s1)
+	or t0, t0, t1
+	sd t0, 24(s0)
+	lbu t0, 272(s1)
+	slli t0, t0, 8
+	lbu t1, 273(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 274(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 275(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 276(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 277(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 278(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 279(s1)
+	or t0, t0, t1
+	sd t0, 16(s0)
+	lbu t0, 280(s1)
+	slli t0, t0, 8
+	lbu t1, 281(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 282(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 283(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 284(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 285(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 286(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 287(s1)
+	or t0, t0, t1
+	sd t0, 8(s0)
+	lbu t0, 288(s1)
+	slli t0, t0, 8
+	lbu t1, 289(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 290(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 291(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 292(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 293(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 294(s1)
+	or t0, t0, t1
+	slli t0, t0, 8
+	lbu t1, 295(s1)
+	or t0, t0, t1
+	sd t0, 0(s0)
+	lui t0, 0
+	addiw t0, t0, 0
+	slli t0, t0, 32
+	lui t1, 0
+	addiw t1, t1, 0
+	add t0, t0, t1
+	sd t0, 64(s0)
+	lui t0, 0
+	addiw t0, t0, 0
+	slli t0, t0, 32
+	lui t1, 0
+	addiw t1, t1, 0
+	add t0, t0, t1
+	sd t0, 72(s0)
+	lui t0, 0
+	addiw t0, t0, 0
+	slli t0, t0, 32
+	lui t1, 0
+	addiw t1, t1, 0
+	add t0, t0, t1
+	sd t0, 80(s0)
+	lui t0, 0
+	addiw t0, t0, 0
+	slli t0, t0, 32
+	lui t1, 0
+	addiw t1, t1, 0
+	add t0, t0, t1
+	sd t0, 88(s0)
+	lui t0, 0
+	addiw t0, t0, 0
+	slli t0, t0, 32
+	lui t1, 0
+	addiw t1, t1, 0
+	add t0, t0, t1
+	sd t0, 96(s0)
+	lui t0, 0
+	addiw t0, t0, 0
+	slli t0, t0, 32
+	lui t1, 0
+	addiw t1, t1, 0
+	add t0, t0, t1
+	sd t0, 104(s0)
+	lui t0, 0
+	addiw t0, t0, 0
+	slli t0, t0, 32
+	lui t1, 0
+	addiw t1, t1, 0
+	add t0, t0, t1
+	sd t0, 112(s0)
+	lui t0, 0
+	addiw t0, t0, 0
+	slli t0, t0, 32
+	lui t1, 0
+	addiw t1, t1, 0
+	add t0, t0, t1
+	sd t0, 120(s0)
+	addi a0, s0, 0
+	addi a1, zero, 128
+	addi a2, zero, 0
+	addi a3, zero, 64
+	call {vg_brainpoolp512r1_add_mod_n}
+	addi a7, zero, -1
+	ld t0, 184(s0)
+	and t0, t0, a7
+	srli t1, t0, 56
+	sb t1, 304(s1)
+	srli t1, t0, 48
+	sb t1, 305(s1)
+	srli t1, t0, 40
+	sb t1, 306(s1)
+	srli t1, t0, 32
+	sb t1, 307(s1)
+	srli t1, t0, 24
+	sb t1, 308(s1)
+	srli t1, t0, 16
+	sb t1, 309(s1)
+	srli t1, t0, 8
+	sb t1, 310(s1)
+	srli t1, t0, 0
+	sb t1, 311(s1)
+	ld t0, 176(s0)
+	and t0, t0, a7
+	srli t1, t0, 56
+	sb t1, 312(s1)
+	srli t1, t0, 48
+	sb t1, 313(s1)
+	srli t1, t0, 40
+	sb t1, 314(s1)
+	srli t1, t0, 32
+	sb t1, 315(s1)
+	srli t1, t0, 24
+	sb t1, 316(s1)
+	srli t1, t0, 16
+	sb t1, 317(s1)
+	srli t1, t0, 8
+	sb t1, 318(s1)
+	srli t1, t0, 0
+	sb t1, 319(s1)
+	ld t0, 168(s0)
+	and t0, t0, a7
+	srli t1, t0, 56
+	sb t1, 320(s1)
+	srli t1, t0, 48
+	sb t1, 321(s1)
+	srli t1, t0, 40
+	sb t1, 322(s1)
+	srli t1, t0, 32
+	sb t1, 323(s1)
+	srli t1, t0, 24
+	sb t1, 324(s1)
+	srli t1, t0, 16
+	sb t1, 325(s1)
+	srli t1, t0, 8
+	sb t1, 326(s1)
+	srli t1, t0, 0
+	sb t1, 327(s1)
+	ld t0, 160(s0)
+	and t0, t0, a7
+	srli t1, t0, 56
+	sb t1, 328(s1)
+	srli t1, t0, 48
+	sb t1, 329(s1)
+	srli t1, t0, 40
+	sb t1, 330(s1)
+	srli t1, t0, 32
+	sb t1, 331(s1)
+	srli t1, t0, 24
+	sb t1, 332(s1)
+	srli t1, t0, 16
+	sb t1, 333(s1)
+	srli t1, t0, 8
+	sb t1, 334(s1)
+	srli t1, t0, 0
+	sb t1, 335(s1)
+	ld t0, 152(s0)
+	and t0, t0, a7
+	srli t1, t0, 56
+	sb t1, 336(s1)
+	srli t1, t0, 48
+	sb t1, 337(s1)
+	srli t1, t0, 40
+	sb t1, 338(s1)
+	srli t1, t0, 32
+	sb t1, 339(s1)
+	srli t1, t0, 24
+	sb t1, 340(s1)
+	srli t1, t0, 16
+	sb t1, 341(s1)
+	srli t1, t0, 8
+	sb t1, 342(s1)
+	srli t1, t0, 0
+	sb t1, 343(s1)
+	ld t0, 144(s0)
+	and t0, t0, a7
+	srli t1, t0, 56
+	sb t1, 344(s1)
+	srli t1, t0, 48
+	sb t1, 345(s1)
+	srli t1, t0, 40
+	sb t1, 346(s1)
+	srli t1, t0, 32
+	sb t1, 347(s1)
+	srli t1, t0, 24
+	sb t1, 348(s1)
+	srli t1, t0, 16
+	sb t1, 349(s1)
+	srli t1, t0, 8
+	sb t1, 350(s1)
+	srli t1, t0, 0
+	sb t1, 351(s1)
+	ld t0, 136(s0)
+	and t0, t0, a7
+	srli t1, t0, 56
+	sb t1, 352(s1)
+	srli t1, t0, 48
+	sb t1, 353(s1)
+	srli t1, t0, 40
+	sb t1, 354(s1)
+	srli t1, t0, 32
+	sb t1, 355(s1)
+	srli t1, t0, 24
+	sb t1, 356(s1)
+	srli t1, t0, 16
+	sb t1, 357(s1)
+	srli t1, t0, 8
+	sb t1, 358(s1)
+	srli t1, t0, 0
+	sb t1, 359(s1)
+	ld t0, 128(s0)
+	and t0, t0, a7
+	srli t1, t0, 56
+	sb t1, 360(s1)
+	srli t1, t0, 48
+	sb t1, 361(s1)
+	srli t1, t0, 40
+	sb t1, 362(s1)
+	srli t1, t0, 32
+	sb t1, 363(s1)
+	srli t1, t0, 24
+	sb t1, 364(s1)
+	srli t1, t0, 16
+	sb t1, 365(s1)
+	srli t1, t0, 8
+	sb t1, 366(s1)
+	srli t1, t0, 0
+	sb t1, 367(s1)
+	addi t0, zero, 257
+	slli t1, t0, 16
+	or t0, t0, t1
+	slli t1, t0, 32
+	or t0, t0, t1
+	addi t1, zero, 0
+	sd t1, 96(s1)
+	sd t0, 160(s1)
+	sd t1, 104(s1)
+	sd t0, 168(s1)
+	sd t1, 112(s1)
+	sd t0, 176(s1)
+	sd t1, 120(s1)
+	sd t0, 184(s1)
+	sd t1, 128(s1)
+	sd t0, 192(s1)
+	sd t1, 136(s1)
+	sd t0, 200(s1)
+	sd t1, 144(s1)
+	sd t0, 208(s1)
+	sd t1, 152(s1)
+	sd t0, 216(s1)
+	add t0, s1, s7
+	addi t1, zero, 0
+	sb t1, 160(t0)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	addi a2, s1, 96
+	addi a3, s7, 0
+	ld t1, 0(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s8, 0
+	addi a2, s1, 160
+	addi a3, s7, 1
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	add a1, s8, s7
+	addi a1, a1, 1
+	addi a2, s3, 0
+	addi a3, zero, 64
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	add a1, s8, s7
+	addi a1, a1, 65
+	addi a2, s1, 304
+	addi a3, zero, 64
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	add a2, s8, s7
+	addi a2, a2, 129
+	addi a3, s1, 96
+	ld t1, 16(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	addi a2, s1, 96
+	addi a3, s7, 0
+	ld t1, 0(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s8, 0
+	addi a2, s1, 160
+	addi a3, s7, 0
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	add a2, s8, s7
+	addi a2, a2, 0
+	addi a3, s1, 160
+	ld t1, 16(s6)
+	jalr ra, 0(t1)
+	add t0, s1, s7
+	addi t1, zero, 1
+	sb t1, 160(t0)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	addi a2, s1, 96
+	addi a3, s7, 0
+	ld t1, 0(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s8, 0
+	addi a2, s1, 160
+	addi a3, s7, 1
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	add a1, s8, s7
+	addi a1, a1, 1
+	addi a2, s3, 0
+	addi a3, zero, 64
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	add a1, s8, s7
+	addi a1, a1, 65
+	addi a2, s1, 304
+	addi a3, zero, 64
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	add a2, s8, s7
+	addi a2, a2, 129
+	addi a3, s1, 96
+	ld t1, 16(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	addi a2, s1, 96
+	addi a3, s7, 0
+	ld t1, 0(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s8, 0
+	addi a2, s1, 160
+	addi a3, s7, 0
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	add a2, s8, s7
+	addi a2, a2, 0
+	addi a3, s1, 160
+	ld t1, 16(s6)
+	jalr ra, 0(t1)
+	addi s5, zero, 128
+21:
+	addi s9, zero, 0
+22:
+	addi a0, s0, 0
+	addi a1, s0, 192
+	addi a2, s1, 96
+	addi a3, s7, 0
+	ld t1, 0(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s8, 0
+	addi a2, s1, 160
+	addi a3, s7, 0
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	add a2, s8, s7
+	addi a2, a2, 0
+	addi a3, s1, 160
+	ld t1, 16(s6)
+	jalr ra, 0(t1)
+	addi a4, s1, 160
+	addi a5, s1, 368
+	add a5, a5, s9
+	addi a6, s7, 0
+23:
+	lbu t1, 0(a4)
+	sb t1, 0(a5)
+	addi a4, a4, 1
+	addi a5, a5, 1
+	addi a6, a6, -1
+	bnez a6, 23b
+	add s9, s9, s7
+	addi t0, zero, 64
+	sltu t6, s9, t0
+	bnez t6, 22b
+	addi a0, s2, 0
+	addi a1, s3, 0
+	addi a2, s1, 232
+	addi a3, s1, 368
+	addi a4, s0, 0
+	call {vg_ecdsa_brainpoolp512r1_sign_k}
+	addi s5, s5, -1
+	andi t0, a0, 1
+	addi t0, t0, -1
+	and t6, t0, s5
+	bnez t6, 24f
+	addi t6, zero, 0
+	j 25f
+24:
+	add t0, s1, s7
+	addi t1, zero, 0
+	sb t1, 160(t0)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	addi a2, s1, 96
+	addi a3, s7, 0
+	ld t1, 0(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s8, 0
+	addi a2, s1, 160
+	addi a3, s7, 1
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	add a2, s8, s7
+	addi a2, a2, 1
+	addi a3, s1, 96
+	ld t1, 16(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	addi a2, s1, 96
+	addi a3, s7, 0
+	ld t1, 0(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s8, 0
+	addi a2, s1, 160
+	addi a3, s7, 0
+	ld t1, 8(s6)
+	jalr ra, 0(t1)
+	addi a0, s0, 0
+	addi a1, s0, 192
+	add a2, s8, s7
+	addi a2, a2, 0
+	addi a3, s1, 160
+	ld t1, 16(s6)
+	jalr ra, 0(t1)
+	addi t6, zero, 1
+25:
+	bnez t6, 21b
+	addi t0, zero, 0
+	sd t0, 96(s1)
+	sd t0, 104(s1)
+	sd t0, 112(s1)
+	sd t0, 120(s1)
+	sd t0, 128(s1)
+	sd t0, 136(s1)
+	sd t0, 144(s1)
+	sd t0, 152(s1)
+	sd t0, 160(s1)
+	sd t0, 168(s1)
+	sd t0, 176(s1)
+	sd t0, 184(s1)
+	sd t0, 192(s1)
+	sd t0, 200(s1)
+	sd t0, 208(s1)
+	sd t0, 216(s1)
+	sd t0, 224(s1)
+	sd t0, 232(s1)
+	sd t0, 240(s1)
+	sd t0, 248(s1)
+	sd t0, 256(s1)
+	sd t0, 264(s1)
+	sd t0, 272(s1)
+	sd t0, 280(s1)
+	sd t0, 288(s1)
+	sd t0, 296(s1)
+	sd t0, 304(s1)
+	sd t0, 312(s1)
+	sd t0, 320(s1)
+	sd t0, 328(s1)
+	sd t0, 336(s1)
+	sd t0, 344(s1)
+	sd t0, 352(s1)
+	sd t0, 360(s1)
+	sd t0, 368(s1)
+	sd t0, 376(s1)
+	sd t0, 384(s1)
+	sd t0, 392(s1)
+	sd t0, 400(s1)
+	sd t0, 408(s1)
+	sd t0, 416(s1)
+	sd t0, 424(s1)
+	sd t0, 432(s1)
+	sd t0, 440(s1)
+	sd t0, 448(s1)
+	sd t0, 456(s1)
+	sd t0, 464(s1)
+	sd t0, 472(s1)
+	sd t0, 480(s1)
+	sd t0, 488(s1)
+	sd t0, 496(s1)
+	ld ra, 0(s1)
+	ld s0, 8(s1)
+	ld s2, 24(s1)
+	ld s3, 32(s1)
+	ld s4, 40(s1)
+	ld s5, 48(s1)
+	ld s6, 56(s1)
+	ld s7, 64(s1)
+	ld s8, 72(s1)
+	ld s9, 80(s1)
+	ld s1, 16(s1)
+	addi sp, sp, 512
 	ret
 	.option pop

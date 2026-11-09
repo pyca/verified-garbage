@@ -36,33 +36,6 @@ open VG.Proof.Rsa.KeyWorkspace (arr S num slot arr_disj)
 /-- The `w + 1` digits of array `j`. -/
 abbrev num1 (m : Mem) (B : Addr) (w j : Nat) : Nat := val32 m B (arr w j) (w + 1)
 
-/-- The pointer of an array into `r5` and the count `w + c` into `r8`, for
-the loops of the division. -/
-theorem ptrCount_ok {s : State} {B : Addr} {Z w N j c : Nat} (h : Ws s B Z w N) (hj : j < N)
-    (hN : N ≤ 256) (hc : c ≤ 1) {extra : List Instr} {Q : State → Prop}
-    (hx : extra = [.addi .r8 .r29 c] ∨ extra = [.addi .r8 .r29 c, .li .r9 0])
-    (k : ∀ u, u.gpr .r5 = off B (arr w j) → u.gpr .r8 = BitVec.ofNat 64 (w + c) →
-      (extra.length = 2 → u.gpr .r9 = 0) → (extra.length = 1 → u.gpr .r9 = s.gpr .r9) →
-      u.mem = s.mem → Keep [.r5, .r8, .r9] s u → Q u) :
-    WP isa (.block (ptr .r5 j ++ extra)) s Q := by
-  have := h.wle
-  refine ptr_ok h (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega_arith) ?_
-  have h1 : Ws (s.write .r5 (off B (arr w j))) B Z w N := h.of_keep (Keep.write _ _ _)
-  rcases hx with rfl | rfl
-  · refine WP.mono (WP.keep [.r8] (Q := fun u => u.gpr .r5 = off B (arr w j) ∧
-      u.gpr .r8 = BitVec.ofNat 64 (w + c) ∧ u.gpr .r9 = s.gpr .r9 ∧ u.mem = s.mem) ?_ (by rfl))
-      fun u ⟨⟨u5, u8, u9, um⟩, ku⟩ => k u u5 u8 (by simp) (fun _ => u9) um
-        (((Keep.write _ _ _).trans ku).mono)
-    prun [h.r29, exec_addi (show Reg.r29 ≠ .r0 by decide) (show c < 2 ^ 15 by omega_arith),
-      BitVec.ofNat_add]
-  · refine WP.mono (WP.keep [.r8, .r9] (Q := fun u => u.gpr .r5 = off B (arr w j) ∧
-      u.gpr .r8 = BitVec.ofNat 64 (w + c) ∧ u.gpr .r9 = 0 ∧ u.mem = s.mem) ?_ (by rfl))
-      fun u ⟨⟨u5, u8, u9, um⟩, ku⟩ => k u u5 u8 (fun _ => u9) (by simp) um
-        (((Keep.write _ _ _).trans ku).mono)
-    prun [h.r29, exec_addi (show Reg.r29 ≠ .r0 by decide) (show c < 2 ^ 15 by omega_arith),
-      BitVec.ofNat_add]
-    rfl
-
 /-- A digit of the left shift on its own (`shlBody`). -/
 theorem shlDigit_ok {s : State} {B : Addr} {Z d : Nat} (hs : Scr s B Z) (h5 : s.gpr .r5 = off B d)
     (h9 : (s.gpr .r9).toNat ≤ 1) (hd : d + 4 ≤ Z) :

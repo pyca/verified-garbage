@@ -13,6 +13,7 @@ public import VerifiedGarbage.TCB.X86.Isa
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Functional correctness and cdecl preservation of precomputed public RSA at a run-time width
 
@@ -108,8 +109,8 @@ structure TopABI (s : State) : Prop where
   room : CallRoom (s.gpr .esp) (argumentPointer s 8) ((arg s 9).toNat * 8)
   outArgs : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argAddr s 0, 40⟩
 
-theorem topABI_of {s : State} (h : (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pre s) : TopABI s := by
-  sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
+theorem topABI_of {s : State} (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 96).pre s) : TopABI s := by
+  sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
     argBytes, stackBelow] at h
   sig_split h
   have low : 96 ≤ (s.gpr .esp).toNat := by with_reducible assumption
@@ -180,12 +181,12 @@ theorem operation_ok {s : State} (A : TopABI s) :
   rw [EB, XB] at Result
   exact Result
 
-theorem correct (s : State) (h : (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pre s) :
+theorem correct (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 96).pre s) :
     ∃ trace t, Exec isa PrecomputedRt.code s trace t ∧ abiPreserved s t ∧
-      (Spec.Rsa.publicPrecomputedCheckedContract abi 96).post s t := by
+      (Proof.Rsa.publicPrecomputedCheckedContract abi 96).post s t := by
   obtain ⟨trace, t, E, V, A⟩ := operation_ok (topABI_of h)
   refine ⟨trace, t, E, A, ?_⟩
-  sig_post [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
+  sig_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
     argBytes]
   rw [BitVec.setWidth_append_eq_right]
   exact V

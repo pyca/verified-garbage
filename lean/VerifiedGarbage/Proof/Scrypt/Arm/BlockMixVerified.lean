@@ -33,7 +33,6 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Proof.Scrypt.Contract
 
 /-!
 # The Salsa20/8 Core on 32-bit ARM
@@ -443,39 +442,11 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
       Spec.Scrypt.salsa (Spec.Scrypt.bytesAt s₀.mem (bA s₀) 64)
     exact post_of fun j hj => by rw [hF.out j hj, ite_pos' hj]
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | _ => 0
-  sp := 0x4000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 64⟩, ⟨0x2000, 64⟩]
-
 theorem salsa_correct (s : State) (hs : Proof.Scrypt.salsaArm.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.Arm.salsa s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.salsaArm.post s s' := by
   obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
   exact ⟨t, s', he, ⟨h₁, Exec.sp he⟩, h₂⟩
-
-theorem salsa_ct : ConstantTime isa Proof.Scrypt.salsaArm.pre Proof.Scrypt.salsaArm.pub
-    Impl.Scrypt.Arm.salsa := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ ⟨h1, h2, _⟩
-  refine Taint.agree_ofRegs fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> with_reducible assumption
-
-theorem salsa_verified :
-    Verified Arm.target Impl.Scrypt.Arm.salsa (Proof.Scrypt.salsaContract Arm.abi) :=
-  Verified.of_correct salsa_correct salsa_ct (by
-    sig_implies [Proof.Scrypt.salsaContract, Proof.Scrypt.salsaSig, Proof.Scrypt.salsaArm, Arm.abi,
-      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [Proof.Scrypt.Arm.satState]
-      using Proof.Scrypt.Arm.satState)
 
 end VG.Proof.Scrypt.Arm
 
@@ -511,12 +482,6 @@ theorem toNat_add32 {p : BitVec 32} {o : Nat} (h : p.toNat + o < 2 ^ 32) :
 theorem add32 (p : BitVec 32) (o j : Nat) :
     p + BitVec.ofNat 32 o + BitVec.ofNat 32 j = p + BitVec.ofNat 32 (o + j) := by
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-
-/-- A pointer plus two offsets, as an address. -/
-theorem addr_add2 {p : BitVec 32} {o j : Nat} (h : p.toNat + o + j < 2 ^ 32) :
-    State.addr (p + BitVec.ofNat 32 o + BitVec.ofNat 32 j) =
-      State.addr p + BitVec.ofNat 64 o + BitVec.ofNat 64 j := by
-  rw [add32, addr_add (by omega_arith), BitVec.add_assoc, ← BitVec.ofNat_add]
 
 theorem sub32 (p : BitVec 32) {o : Nat} (h : 64 ≤ o) :
     p + BitVec.ofNat 32 o - 64 = p + BitVec.ofNat 32 (o - 64) := by
@@ -1467,20 +1432,6 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Scrypt.blockMixArm.pre s₁)
     rw [argByte_eq, argByte_eq, Mem.readW_byte s₁.mem _ hk, Mem.readW_byte s₂.mem _ hk]
     exact congrArg _ a0
 
-/-- A state satisfying the precondition: `b` at `0x1000`, `y` at `0x2000`
-and the scratch space at `0x3000`, passed on the stack at `0x5000`. -/
-def bmSat : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 1 | .r2 => 0x2000 | .r3 => 1 | _ => 0
-  sp := 0x5000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem a := bif Nat.beq a.toNat 0x5001 then 0x30 else 0
-  rd := [⟨0x1000, 128⟩, ⟨0x5000, 4⟩]
-  wr := [⟨0x2000, 128⟩, ⟨0x3000, 128⟩]
-
 theorem blockMix_correct (s : State) (hs : Proof.Scrypt.blockMixArm.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.Arm.blockMix s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.blockMixArm.post s s' := by
@@ -1491,27 +1442,5 @@ theorem blockMix_ct : ConstantTime isa Proof.Scrypt.blockMixArm.pre Proof.Scrypt
     Impl.Scrypt.Arm.blockMix := by
   exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
     (by taint_decide)
-
-theorem blockMix_verified :
-    Verified Arm.target Impl.Scrypt.Arm.blockMix (Proof.Scrypt.blockMixContract Arm.abi) :=
-  Verified.of_correct blockMix_correct blockMix_ct
-    { pre := by
-        sig_implies_pre [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-          Arm.State.addr]
-      post := by
-        sig_implies_post [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-          Arm.State.addr]
-      pub := by
-        sig_implies_pub [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-          Arm.State.addr]
-      sat := by
-        implies_sat [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-          Arm.State.addr]
-          [Proof.Scrypt.Arm.BlockMix.bmSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
-          using Proof.Scrypt.Arm.BlockMix.bmSat }
 
 end VG.Proof.Scrypt.Arm.BlockMix

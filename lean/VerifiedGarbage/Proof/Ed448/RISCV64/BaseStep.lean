@@ -36,15 +36,6 @@ open VG.Spec.Ed448 (Point pointAdd basePoint)
 /-- `p` or, if `sw = 1`, `q`. -/
 abbrev pick {α : Type} (sw : Nat) (p q : α) : α := VG.Proof.X25519.sel sw p q
 
-theorem pick_X (sw : Nat) (p q : Point) : (pick sw p q).X = pick sw p.X q.X := by
-  unfold pick VG.Proof.X25519.sel; split <;> rfl
-
-theorem pick_Y (sw : Nat) (p q : Point) : (pick sw p q).Y = pick sw p.Y q.Y := by
-  unfold pick VG.Proof.X25519.sel; split <;> rfl
-
-theorem pick_Z (sw : Nat) (p q : Point) : (pick sw p q).Z = pick sw p.Z q.Z := by
-  unfold pick VG.Proof.X25519.sel; split <;> rfl
-
 /-! ## The slots -/
 
 /-- The elements of `R = r`, `P = p` and `d`. -/
@@ -88,13 +79,6 @@ theorem addV_vals (r p : Point) :
 /-! ## Bits -/
 
 section
-
-theorem par_shift (x : Nat) (hx : x < 2 ^ 64) :
-    (BitVec.ofNat 64 x <<< 63) >>> 63 = BitVec.ofNat 64 (x % 2) := by
-  apply BitVec.eq_of_toNat_eq
-  have := bit_shift (BitVec.ofNat 64 x) (j := 0) (by decide)
-  rw [Nat.sub_zero, Nat.shiftRight_zero, toNat_imm hx, Nat.and_one_is_mod] at this
-  rw [this, toNat_imm (by omega_arith)]
 
 theorem wp_or {is : List Instr} {s : State} {Q : State → Prop} {d n m : Reg}
     (k : ∀ s', Upd s s' d (s.gpr n ||| s.gpr m) → WP isa (.block is) s' Q) :

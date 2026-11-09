@@ -34,44 +34,6 @@ open VG VG.X86 VG.Impl.Ed25519.X86 VG.Proof.Ed25519 Edwards
 
 /-! ## Frames -/
 
-/-- A word outside the regions `[o, o + n)` and `[o', o' + n')` of the workspace. -/
-theorem wd_frame2 {x : BitVec 32} {m m' : Mem} {o n o' n' d : Nat}
-    (hf : Frame [sub x o n, sub x o' n'] m m') (hx : x.toNat + 8192 ≤ 2 ^ 32)
-    (ho : o + n ≤ 8192) (ho' : o' + n' ≤ 8192) (hd : d + 4 ≤ 8192)
-    (h1 : d + 4 ≤ o ∨ o + n ≤ d) (h2 : d + 4 ≤ o' ∨ o' + n' ≤ d) : wd m' x d = wd m x d :=
-  wd_frame hf fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact sub_disj (by omega_arith) (by omega_arith) h1
-    · exact sub_disj (by omega_arith) (by omega_arith) h2
-
-theorem tablePoint_frame2 {x : BitVec 32} {m m' : Mem} {o n o' n' a : Nat}
-    (hf : Frame [sub x o n, sub x o' n'] m m') (hx : x.toNat + 8192 ≤ 2 ^ 32)
-    (ho : o + n ≤ 8192) (ho' : o' + n' ≤ 8192) (ha : a + 128 ≤ 8192)
-    (h1 : a + 128 ≤ o ∨ o + n ≤ a) (h2 : a + 128 ≤ o' ∨ o' + n' ≤ a) :
-    tablePoint m' x a = tablePoint m x a :=
-  table_point_of_words fun k hk => wd_frame2 hf hx ho ho' (by omega_arith) (by omega_arith) (by omega_arith)
-
-theorem env_frame2 {x : BitVec 32} {m m' : Mem} {o n o' n' : Nat}
-    (hf : Frame [sub x o n, sub x o' n'] m m') (hx : x.toNat + 8192 ≤ 2 ^ 32)
-    (ho : o + n ≤ 8192) (ho' : o' + n' ≤ 8192) (i : Slot)
-    (h1 : offset i + 32 ≤ o ∨ o + n ≤ offset i) (h2 : offset i + 32 ≤ o' ∨ o' + n' ≤ offset i) :
-    env m' x i = env m x i := by
-  have hi := i.isLt
-  exact congrArg VG.Proof.X25519.toFe (fe_frame fun k hk =>
-    wd_frame2 hf hx ho ho' (by simp only [offset] at h1 ⊢; omega_arith) (by omega_arith) (by omega_arith))
-
-/-- A frame of slots and of a region is one of slots and of a larger region. -/
-theorem frame2_widen {x : BitVec 32} {m m' : Mem} {o n o' n' : Nat}
-    (hf : Frame [sub x o n, sub x o' n'] m m') (hx : x.toNat + 8192 ≤ 2 ^ 32) {p q p' q' : Nat}
-    (h1 : p ≤ o) (h2 : o + n ≤ p + q) (h3 : p' ≤ o') (h4 : o' + n' ≤ p' + q') (h5 : o < 8192)
-    (h6 : o' < 8192) : Frame [sub x p q, sub x p' q'] m m' :=
-  hf.sub fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact ⟨_, List.mem_cons_self, sub_sub hx h1 h2 h5⟩
-    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, sub_sub hx h3 h4 h6⟩
-
 /-- A frame of one region as one of two. -/
 theorem frame1_two {x : BitVec 32} {m m' : Mem} {o n : Nat} (hf : Frame [sub x o n] m m')
     (hx : x.toNat + 8192 ≤ 2 ^ 32) {p q p' q' : Nat} (h1 : p ≤ o) (h2 : o + n ≤ p + q) (h5 : o < 8192) :
@@ -119,14 +81,6 @@ theorem Frame.oneS {x : BitVec 32} {s : State} {m m' : Mem} {o n p q p' q' : Nat
 theorem Frame.one' {x : BitVec 32} {s : State} {m m' : Mem} {o n p q p' q' : Nat}
     (hf : Frame [sub x o n] m m') (hx : x.toNat + 8192 ≤ 2 ^ 32) (h1 : p' ≤ o)
     (h2 : o + n ≤ p' + q') (h5 : o < 8192) : Frame [sub x p q, sub x p' q', callStk s] m m' :=
-  hf.sub fun r hr => by
-    rw [List.mem_singleton.mp hr]
-    exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, sub_sub hx h1 h2 h5⟩
-
-/-- A frame of one region as the second of two. -/
-theorem frame1_two' {x : BitVec 32} {m m' : Mem} {o n : Nat} (hf : Frame [sub x o n] m m')
-    (hx : x.toNat + 8192 ≤ 2 ^ 32) {p q p' q' : Nat} (h1 : p' ≤ o) (h2 : o + n ≤ p' + q') (h5 : o < 8192) :
-    Frame [sub x p q, sub x p' q'] m m' :=
   hf.sub fun r hr => by
     rw [List.mem_singleton.mp hr]
     exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, sub_sub hx h1 h2 h5⟩

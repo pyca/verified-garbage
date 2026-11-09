@@ -18,7 +18,7 @@
 ))]
 
 use crate::json_struct;
-use verified_garbage::aes_siv::{AesSiv, Error};
+use verified_garbage::aead::aes_siv::{AesSiv, Error};
 
 use super::harness::{self, Count, Expectation, Hex};
 use super::schema::{AeadCase, SizesGroup};

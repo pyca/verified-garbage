@@ -87,27 +87,6 @@ theorem jacAddress_ok (K : WinCfg) {s : State} {base : Addr} {a : Nat}
   · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
     simp only [RegUpd.gpr_write,hr.1,hr.2.1,hr.2.2,ite_false]
 
-/-- A complete public lookup returns all twelve words of the selected
-Jacobian point and writes only the destination point. -/
-theorem jacPublicEntry_ok (K : WinCfg) {s : State} {base : Addr} {size a : Nat}
-    (hs : Scr s base size) (h2 : s.gpr .x2 = BitVec.ofNat 64 a)
-    (ha : 1 ≤ a) (ht : K.tbl < 4096)
-    (hd : K.E.x+96 ≤ size) (hd8 : K.E.x%8=0)
-    (htbl : K.tbl+96*(a-1)+96 ≤ size)
-    (hap : K.E.x+96 ≤ K.tbl+96*(a-1) ∨ K.tbl+96*(a-1)+96 ≤ K.E.x) :
-    WP isa (.block (Jacobian.publicEntry K)) s fun t =>
-      (∀ i < 12, word t.mem base (K.E.x+8*i) =
-        word s.mem base (K.tbl+96*(a-1)+8*i)) ∧
-      KeepRegs [.x2,.x4,.x16,.x17] s t ∧ Outside base K.E.x 96 s.mem t.mem := by
-  rw [Jacobian.publicEntry,WP.block_append_iff]
-  refine WP.mono (jacAddress_ok K hs.x0 h2 ha ht) fun s₁ ⟨h16,k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
-  refine WP.mono (jacWords_ok (n := 12) hs₁ h16 hd hd8 htbl hap 12 (Nat.le_refl _))
-    fun t ⟨hv,hk,ho⟩ => ⟨?_,?_,?_⟩
-  · simpa only [k₁.mem] using hv
-  · exact ((Keeps.regs k₁).mono (by sub_regs)).trans (hk.mono (by sub_regs))
-  · simpa only [k₁.mem] using ho
-
 /-- The twelve-word copy preserves each four-word field element. -/
 theorem jacWords_coord {m m' : Mem} {base : Addr} {dst src c : Nat}
     (hc : c < 3)

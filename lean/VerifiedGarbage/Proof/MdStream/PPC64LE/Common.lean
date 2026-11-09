@@ -132,11 +132,6 @@ theorem saved_offset (hd : Dims P) {p : Reg × Nat} (hp : p ∈ saved P) : P.so 
   simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega
 
-/-- `std`'s displacement: a multiple of 4 below 2¹⁵. -/
-theorem so_ds (hd : Dims P) {d : Nat} (hd₁ : d ≤ 40) (hd₂ : d % 8 = 0) :
-    P.so + d < 2 ^ 15 ∧ (P.so + d) % 4 = 0 := by
-  have := hd.so; omega
-
 /-- Saving `r26`–`r31` with the scratch pointer in `b`. -/
 theorem save_ok (hd : Dims P) {b : Reg} (hb : b ≠ .r0) {rest : List Instr} {s : State} {Q : State → Prop}
     (hin : ∀ d, P.so ≤ d → d + 8 ≤ P.so + 48 → InRegions s.wr (s.gpr b + BitVec.ofNat 64 d) 8)

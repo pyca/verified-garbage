@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingle
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRetryCT
@@ -28,13 +29,13 @@ theorem random_call_key_source {extra : Nat} {s t : State} (_h : RandomSignABI e
   rw [hkb]
   rfl
 
-theorem random_signer_retry_pre (v : Backend) {s t : State} {fuel : Nat} {h : RandomSignABI v.stack s}
+theorem random_signer_retry_pre (S : Signer) {s t : State} {fuel : Nat} {h : RandomSignABI S.stack s}
     (hc : RandomSignCallState h t)
     (hn : word t.mem (randomBase s) Random.oAttempts = BitVec.ofNat 64 fuel)
-    (hpos : 0 < fuel) (hbound : fuel < 2 ^ 64) :
-    WP isa (.call (randomSignerName v) (SignVerify.sign v.mul)) t
+    (hpos : 0 < fuel) (hbound : fuel < 2 ^ 64) (hv : RandomValid S s) :
+    WP isa (.call S.name S.code) t
       (RandomRetryPre ⟨randomBase s, (randomCallResult s t).isSome, fuel⟩) := by
-  refine WP.mono (random_signer_outcome v h hc.sp hc.args hc.di hc.si hc.dx hc.cx hc.r8 hc.r9 hc.x6 hc.x7 hc.rd hc.wr)
+  refine WP.mono (random_signer_outcome S h hc.sp hc.args hc.di hc.si hc.dx hc.cx hc.r8 hc.r9 hc.x6 hc.x7 hc.rd hc.wr hc.key hv)
     fun u ⟨_, huw, husp, _, hf, hstatus, _, _⟩ => ?_
   refine ⟨(random_alloc_scr h).congr (huw.trans hc.wr), husp.trans hc.sp,
     ?_, (random_frame_words (random_call_frameBytes h hf) (by decide)).trans hn, hpos, hbound⟩
@@ -42,7 +43,7 @@ theorem random_signer_retry_pre (v : Backend) {s t : State} {fuel : Nat} {h : Ra
   rw [hstatus]
   cases randomCallResult s t <;> rfl
 
-theorem random_callArgs_observe (v : Backend) {s t : State} {h : RandomSignABI v.stack s}
+theorem random_callArgs_observe (S : Signer) {s t : State} {h : RandomSignABI S.stack s}
     {hq : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {used fuel k : Nat}
     (hr : RandomSignRunning h hq used fuel t)
     (hnonce : Spec.Rsa.bytesAt t.mem (off (randomBase s) Random.oNonce) (s.gpr .x6).toNat =
@@ -62,10 +63,11 @@ theorem random_callArgs_observe (v : Backend) {s t : State} {h : RandomSignABI v
     have hl := h.lengths
     unfold Spec.Dsa.lengthsValid at hl
     omega
+  have hkeyA' : Spec.Rsa.bytesAt a.mem (s.gpr .x3) (s.gpr .x4).toNat = (randomInput s).key := by
+    simpa only [randomInput, bytesAt_length] using sourceBytes_eq hkeyA
   have hres : randomCallResult s a = randomSingleResult s k := by
     rw [random_callResult_plain h hspA]
-    have hkey : Spec.Rsa.bytesAt a.mem (s.gpr .x3) (s.gpr .x4).toNat = (randomInput s).key := by
-      simpa only [randomInput, bytesAt_length] using sourceBytes_eq hkeyA
+    have hkey := hkeyA'
     have hdigest : Spec.Rsa.bytesAt a.mem (s.gpr .x7) (stackArg s 0).toNat = (randomInput s).digest := by
       simpa only [randomInput, bytesAt_length] using sourceBytes_eq hdigestA
     have hnonceA := (random_outside_bytes hargs
@@ -75,7 +77,7 @@ theorem random_callArgs_observe (v : Backend) {s t : State} {h : RandomSignABI v
     rfl
   have hna : word a.mem (randomBase s) Random.oAttempts = BitVec.ofNat 64 fuel :=
     (hargs.word (by decide) (by decide)).trans hr.attempts
-  exact ⟨⟨hspA, hw, hdi, hsi, hdx, hcx, h8, h9, h6, h7, hka.rd.trans hr.rd, hka.wr.trans hr.wr⟩,
+  exact ⟨⟨hspA, hw, hdi, hsi, hdx, hcx, h8, h9, h6, h7, hka.rd.trans hr.rd, hka.wr.trans hr.wr, hkeyA'⟩,
     hres, random_call_key_source h hspA hkeyA, hna⟩
 
 end VG.Proof.Dsa.AArch64

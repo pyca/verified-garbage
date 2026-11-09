@@ -132,34 +132,4 @@ theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signBrainpoolP512r1 :
 theorem signU_ct : ConstantTime isa signArm.pre signArm.pub signBrainpoolP512r1U :=
   VG.Taint.constantTime (A := taintU) τ₀ (fun _ _ hs ht h => agree_τ₀ hs ht h) (by taint_decide)
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | .r3 => 0x4000 | _ => 0
-  sp := 0x20000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem a := if a = 0x20001 then 0x80 else 0
-  rd := [⟨0x2000, 64⟩, ⟨0x3000, 64⟩, ⟨0x4000, 64⟩, ⟨0x20000, 4⟩]
-  wr := [⟨0x1000, 128⟩, ⟨0x8000, 8192⟩]
-
-theorem signWith_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (u : Bool)
-    (hct : ConstantTime isa signArm.pre signArm.pub (signBrainpoolP512r1With u)) :
-    Verified Arm.target (signBrainpoolP512r1With u) (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP512r1.inst Arm.abi) :=
-  Verified.of_correct (sign_arm hL u) hct (by
-    sig_implies [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
-      Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, signArm, sig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-      Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero]
-      [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState)
-
-theorem sign_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
-    Verified Arm.target signBrainpoolP512r1 (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP512r1.inst Arm.abi) :=
-  signWith_verified hL false sign_ct
-
-theorem signU_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
-    Verified Arm.target signBrainpoolP512r1U (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP512r1.inst Arm.abi) :=
-  signWith_verified hL true signU_ct
-
 end VG.Proof.Ecdsa.Arm.BrainpoolP512r1

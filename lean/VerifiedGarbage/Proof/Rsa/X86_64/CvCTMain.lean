@@ -5,6 +5,10 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.CvMain
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCT
@@ -12,9 +16,12 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.CvMain
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-
 /-!
 # `vg_rsa_crt_values` on x86-64: constant time, `main`
 
@@ -85,20 +92,74 @@ theorem loads_ct : RelCT isa (Two GA) (seqs (loadA aN Impl.Bignum.X86_64.Public.
 
 /-! ## The arithmetic -/
 
+/-- A cleared product accumulator, for the multiplication. -/
+def GZ (p : CvP) (s : State) : Prop :=
+  GA p s ∧ wv s.mem p.B (slot (wk p.k) aU) (2 * wk p.k + 2) = 0
+
+/-- Array-only changes to the two contiguous product slots preserve `GA`. -/
+theorem GA.product {p : CvP} {s t : State} (h : GA p s)
+    (ho : Outside p.B (slot (wk p.k) aU) (8 * (2 * wk p.k + 2)) s.mem t.mem)
+    {rs : List Reg} (hk : Keep rs s t) (hr : .rdi ∉ rs ∧ .rsp ∉ rs) : GA p t := by
+  obtain ⟨I, m₀, c, rfl, h, L, O, hm⟩ := h
+  refine ⟨I, m₀, c, rfl, h.product ho hk hr, L, O, ?_⟩
+  change Outside I.B (slot (wk I.k) aU) (8 * (2 * wk I.k + 2)) s.mem t.mem at ho
+  rw [mword_out ho, hm]
+
+/-- The product's zeroing uses only the public workspace dimensions. -/
+theorem productZero_ct : RelCT isa (Two GA) (seqs Impl.Rsa.X86_64.Crt.zeroAccs) (Two GZ) := by
+  refine two_post (two_map (fun p : CvP => (⟨p.B, p.Z, wk p.k⟩ : VG.Proof.Bignum.X86_64.Ws))
+    (fun _ _ h => ⟨_, h.ws.good⟩) zeroAccs_ct) fun p s h => ?_
+  have hw := h.ws.w2
+  exact WP.mono (zeroAccs_ok h.ws.good.1 h.ws.good.2 (by omega)) fun t ⟨hz, ho, hk⟩ =>
+    ⟨h.product ho hk (by decide), wv_zero hz⟩
+
+/-- The multiplication is checked after pinning its width and array bases. -/
+theorem product_ct : RelCT isa (Two GZ)
+    (.seq (.block productSetup) Impl.Rsa.X86_64.Crt.mulRows) (Two GA) := by
+  unfold productSetup
+  simp only [List.append_assoc]
+  refine ws_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.1.ws) (by taint_decide) fun p s h => ?_
+  exact WP.mono (product_ok h.1.ws h.2) fun t ⟨_, ho, hk⟩ => h.1.product ho hk (by decide)
+
+/-- The public registers the full-product comparison reads. -/
+def ProductEq (p : CvP) (s : State) : Prop :=
+  s.gpr .rdi = p.B ∧ s.gpr .r12 = BitVec.ofNat 64 (wk p.k) ∧
+  s.gpr .rbx = off p.B (slot (wk p.k) aU) ∧ s.gpr .r10 = off p.B (slot (wk p.k) aN)
+
+theorem productEq_ct : RelCT isa (Two GA) (seqs Impl.Rsa.X86_64.Crt.eqCheck) fun _ _ => True := by
+  unfold Impl.Rsa.X86_64.Crt.eqCheck
+  simp only [seqs, show Impl.Bignum.X86_64.Public.aAcc = aU from rfl]
+  refine RelCT.seq (two_piece (Ψ := ProductEq) [.rdi] pins_GA (by taint_decide) fun p s h => ?_)
+    (two_taint [.rdi, .r12, .rbx, .r10] (pins_of (fun (p : CvP) r => if r = .rdi then p.B else
+      if r = .r12 then BitVec.ofNat 64 (wk p.k) else if r = .rbx then off p.B (slot (wk p.k) aU) else
+      off p.B (slot (wk p.k) aN)) fun _ _ h r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl
+        · exact h.1
+        · exact h.2.1
+        · exact h.2.2.1
+        · exact h.2.2.2) (by taint_decide))
+  have hw := h.ws
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.B (8 * i)) 8 := fun i hi =>
+    hw.scr.ld (by have := hw.h256; omega)
+  exact WP.mono (WP.keep [.r12, .rbx, .r10, .rbp] (Q := fun t =>
+    t.gpr .r12 = BitVec.ofNat 64 (wk p.k) ∧ t.gpr .rbx = off p.B (slot (wk p.k) aU) ∧
+    t.gpr .r10 = off p.B (slot (wk p.k) aN)) (by
+      xrun [State.ea, hdr, hw.rdi, hdrOff, hl sW (by decide), hl (sArr aU) (by decide),
+        hl (sArr aN) (by decide), hw.hw, hw.harr aU (by decide), hw.harr aN (by decide)]) rfl)
+    fun t ⟨ht, hk⟩ => ⟨(hk.gpr (by decide)).trans hw.rdi, ht⟩
+
 theorem pqCheck_ct : RelCT isa (Two GA) (seqs pqCheck) (Two GA) := by
-  unfold pqCheck
-  exact ct_app (by simp) (by simp)
-    (ct_app (by simp) (by simp [eqA])
-      (ct_app (by simp) (by simp)
-        (ct_app (by simp) (by simp [eqA])
-          (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
-            (ct_cons (by simp) (copyA_ct (by decide) (by decide) (by decide) (by taint_decide))
-              (ct_one (divmod_ct (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-                (by decide) (by decide) (by decide) (by decide) (by taint_decide)))))
-          (eqA_ct (by decide) (by decide) (by taint_decide)))
-        (ct_cons (by simp) andZero_ct (ct_one (zeroA_ct (by decide) (by taint_decide)))))
-      (eqA_ct (by decide) (by decide) (by taint_decide)))
-    (ct_cons (by simp) andZero_ct (ct_one (andOdd_ct (by decide) (by taint_decide))))
+  refine two_post ?_ fun p s h => ?_
+  · unfold pqCheck
+    rw [List.append_assoc]
+    exact RelCT.seqs_append (by simp [Impl.Rsa.X86_64.Crt.zeroAccs]) (by simp)
+      (RelCT.seq productZero_ct (by
+        change RelCT isa (Two GZ) (.seq (.block productSetup) (.seq Impl.Rsa.X86_64.Crt.mulRows
+          (seqs Impl.Rsa.X86_64.Crt.eqCheck))) _
+        exact RelCT.assoc (RelCT.seq product_ct productEq_ct)))
+  · obtain ⟨I, m₀, c, rfl, h, L, O, hm⟩ := h
+    exact WP.mono (cvCheck_ok h L hm) fun t ⟨ht, hmt, _⟩ => ⟨I, m₀, _, rfl, ht, L, O, hmt⟩
 
 theorem divisor_ct {j : Nat} (hj : j < 16) (hjC : aC ≠ j) {hc₁ : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (base j .rsi ++ base aC .rbx)) copyWords)

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
 public import VerifiedGarbage.Impl.Ffdh.AArch64.ParameterCandidate
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Search
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Contract
-public import VerifiedGarbage.Spec.Ffdh.GenerationContract
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
 import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Correct
 import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Implies
 import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.CTCode
@@ -31,12 +31,12 @@ open VG.Proof.MillerRabin.AArch64 (RoundImpl)
 
 theorem search_verified_of (c : Cand) :
     Verified target (Impl.Ffdh.AArch64.Generation.Search.code c.call)
-      (Spec.Ffdh.parameterSearchContract abi stackUse) :=
+      (Spec.Ffdh.sievedParameterSearchContract abi stackUse) :=
   Verified.of_correct (search_correct c) (search_constantTime c) search_implies
 
 theorem candidate_noFrames (v : RoundImpl) : (code v.mont.mm v.kernel.run).noFrames = true := by
-  simp only [code, main, tests, test, phase, shapeP, residue, sieve, halveQ, montPrep, millerRabin, draw, round,
-    pResult, qResult, Impl.Rsa.AArch64.Keys.loadA, Impl.RsaKeyGen.AArch64.Candidate.trialEntry,
+  simp only [code, main, tests, testQ, testRest, test, firstCheck, restChecks, phase, shapeP, residue, sieve, halveQ,
+    montPrep, millerRabin, draw, round, pResult, qResult, Impl.Rsa.AArch64.Keys.loadA, Impl.RsaKeyGen.AArch64.Candidate.trialEntry,
     Impl.RsaKeyGen.AArch64.Candidate.halfPass, Impl.RsaKeyGen.AArch64.Candidate.subA,
     Impl.RsaKeyGen.AArch64.Candidate.expSetup, Impl.Rsa.AArch64.r2Steps, Impl.Rsa.AArch64.r2StepsOld, Impl.Rsa.AArch64.sqs,
     Impl.Bignum.AArch64.R2Div.choice,
@@ -47,10 +47,10 @@ theorem candidate_noFrames (v : RoundImpl) : (code v.mont.mm v.kernel.run).noFra
   and_intros
   all_goals first | exact v.noFrames | rfl
 
-/-- `vg_ffdh_parameter_candidate` calling the shared round `v`, as the search
-calls it. -/
+/-- `vg_ffdh_parameter_candidate_sieved` calling the shared round `v`, as the
+search calls it. -/
 def Cand.ofRound (v : RoundImpl) : Cand where
-  name := "vg_ffdh_parameter_candidate" ++ v.suffix
+  name := "vg_ffdh_parameter_candidate_sieved" ++ v.suffix
   code := Impl.Ffdh.AArch64.ParameterCandidate.code v.mont.mm v.kernel.run
   noFrames := candidate_noFrames v
   correct := ParameterCandidate.code_correct v.mont v.kernel
@@ -60,6 +60,6 @@ def Cand.ofRound (v : RoundImpl) : Cand where
 abbrev searchCode (v : RoundImpl) : Prog isa := Impl.Ffdh.AArch64.Generation.Search.code (Cand.ofRound v).call
 
 theorem search_verified (v : RoundImpl) :
-    Verified target (searchCode v) (Spec.Ffdh.parameterSearchContract abi stackUse) :=
+    Verified target (searchCode v) (Spec.Ffdh.sievedParameterSearchContract abi stackUse) :=
   search_verified_of (Cand.ofRound v)
 end VG.Proof.Ffdh.AArch64.Generation

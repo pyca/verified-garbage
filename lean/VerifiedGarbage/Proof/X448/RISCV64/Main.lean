@@ -37,6 +37,18 @@ def x448RISCV64 : Contract RISCV64.isa where
   pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
     s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.sp = s₂.sp
 
+/-- `vg_x448_base(out = a0, scalar = a1, scratch = a2)`. -/
+def x448BaseRISCV64 : Contract RISCV64.isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .a0, 56⟩
+    let sc : Region := ⟨s.gpr .a1, 56⟩
+    let ws : Region := ⟨s.gpr .a2, 8192⟩
+    s.rd = [sc] ∧ s.wr = [out, ws] ∧ out.Disjoint sc ∧ out.Disjoint ws ∧ sc.Disjoint ws
+  post s s' := bytesAt s'.mem (s.gpr .a0) 56 =
+    VG.Spec.X448.x448 (bytesAt s.mem (s.gpr .a1) 56) VG.Spec.X448.basePoint
+  pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+    s₁.sp = s₂.sp
+
 theorem XPre.of {s : State} (h : x448RISCV64.pre s) : XPre s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩

@@ -121,9 +121,6 @@ theorem St.congr {o s : State} {ds : List Nat} {f g : Nat → BitVec 32} (h : St
     (e : ∀ d ∈ ds, f d = g d) : St o ds g s :=
   ⟨h.abi, h.rd, h.wr, h.syms, h.esp, h.esi, h.saved, h.frame, h.words.congr e⟩
 
-/-- The output's region. -/
-theorem oR_eq {o : State} : oR o = ⟨(arg o 0).setWidth 64, (arg o 1).toNat⟩ := rfl
-
 theorem len_pos {o : State} (A : PSearchABI o) : 64 ≤ (arg o 1).toNat ∧ (arg o 1).toNat ≤ 1024 := by
   have := A.outLen
   have := A.bitsLow

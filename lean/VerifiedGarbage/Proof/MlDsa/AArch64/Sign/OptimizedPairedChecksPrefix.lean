@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedChecks
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintState
@@ -9,9 +8,14 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0Timing
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChallenge
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedLow
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedZ
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedHintFinish
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedResponse
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedLow
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
@@ -20,7 +24,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedChecks
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksInit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintState
@@ -29,7 +32,6 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0Timing
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChallenge
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
@@ -40,57 +42,17 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedLow
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedZ
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedHintFinish
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedResponse
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedLow
 import Mathlib.Tactic.FinCases
 
 /-! ## From `OptimizedChecksPrefix.lean` -/
 
 @[expose] public section
-
-section
-
-namespace VG.Proof.MlDsa.AArch64.Sign
-open VG VG.AArch64 VG.Spec.MlDsa
-open VG.Impl.MlDsa.AArch64.Sign
-
-/-- A sampled challenge runs every z and r0 check before entering the hint phase. -/
-theorem positiveChecksPrefix_ok {p : Params} {S : Nat} {σ s : State} {t : Nat}
-    (hp : Ok3 p) (hc : ksChk p=true) (h : PositiveIB p S σ t s)
-    (h1 : (s.gpr .x0).setWidth 32=1) :
-    WP isa (Impl.MlDsa.AArch64.Sign.Optimized.checksPrefix p) s
-      (PositiveIH p S σ t 0) := by
-  refine WP.seq (WP.mono (positiveChallengeZ_ok hp hc h h1) fun u hu=>?_)
-  exact WP.mono (optimizedR0_vector_ok hp (positiveIR_of_IZ hu)) fun v hv=>positiveIH_of_IR hv
-
-end VG.Proof.MlDsa.AArch64.Sign
-
-end
-
-/-! ## From `OptimizedPairedR0Vector.lean` -/
-
-section
-
-namespace VG.Proof.MlDsa.AArch64.Sign
-open VG VG.AArch64 VG.Spec.MlDsa
-open VG.Impl.MlDsa.AArch64.Sign
-
-theorem optimizedR0_paired_vector_ok {p : Params} {S : Nat} {σ s : State} {t : Nat}
-    (hp : Ok3 p) (roots : PairedRoots S s) (h : PositiveIR p S σ t 0 s) :
-    WP isa (Impl.MlDsa.AArch64.Sign.Optimized.pairedLowPhase p) s fun u =>
-      PositiveIR p S σ t p.k u ∧ PairedRoots S u := by
-  have heven : p.k%2=0 := by rcases hp with rfl|rfl|rfl <;> decide
-  unfold Impl.MlDsa.AArch64.Sign.Optimized.pairedLowPhase
-  rw [ite_eq_left heven]
-  refine WP.seq (WP.mono (seqR_ok (I:=fun j s => PositiveIR p S σ t (2*j) s ∧ PairedRoots S s)
-    (p.k/2) 0 (fun j _ hj a ha => ?_) s ⟨by simpa only [Nat.mul_zero] using h,roots⟩) ?_)
-  · simpa only [Nat.mul_add,Nat.mul_one] using optimizedR0_pair_ok hp (by omega : 2*j+1<p.k) ha.2 ha.1
-  · intro a ha
-    have he : 2*(p.k/2)=p.k := by omega
-    simp only [Nat.zero_add,he] at ha
-    exact WP.block_nil ha
-
-end VG.Proof.MlDsa.AArch64.Sign
-
-end
 
 /-! ## From `OptimizedChecksPrefixTiming.lean` -/
 
@@ -122,17 +84,6 @@ theorem positiveChallenge_tr {p : Params} {S : Nat} (hp : Ok3 p)
     exact ⟨ls.nwp hr,roots.nttTableAt (ls.inW hw),(hs.ok h1).1.1,
       Covers.cons roots.forward.readable (ls.cR hr),ls.cW hw⟩
   exact ⟨ready σ x hx.1 hx.2,ready τ y hy.1 hy.2,L.pa (by decide),L.sp,h.2.1⟩
-
-theorem positiveChecksPrefix_tr {p : Params} {S : Nat} (hp : Ok3 p) (hc : ksChk p=true)
-    {t : Nat} {E : State → State → Prop} :
-    RelCT isa (RootRS p S E fun σ s=>PositiveIB p S σ t s ∧ (s.gpr .x0).setWidth 32=1)
-      (Impl.MlDsa.AArch64.Sign.Optimized.checksPrefix p)
-      (RootRS p S E (PositiveIH p S · t 0)) := by
-  refine RelCT.seq (RelCT.seq (positiveChallenge_tr hp)
-    (RelCT.seq (positiveChecksInit_tr hp hc) (optimizedZ_vector_tr hp))) ?_
-  exact RelCT.mono (optimizedR0_vector_tr hp)
-    (fun _ _ h=>h.mono (fun _ _ hz=>positiveIR_of_IZ hz))
-    (fun _ _ h=>h.mono (fun _ _ hr=>positiveIH_of_IR hr))
 
 end VG.Proof.MlDsa.AArch64.Sign
 
@@ -211,21 +162,6 @@ theorem optimizedR0_pair_tr {p : Params} {S : Nat} (hp : Ok3 p) {t r : Nat} (hr 
       (Impl.MlDsa.AArch64.Sign.Optimized.r0Pair p r) (PairedRS p S E (PositiveIR p S · t (r+2))) :=
   liftPairedR (fun _ _ _ h roots=>optimizedR0_pair_ok hp hr roots h) (optimizedR0_pair_trace hp hr)
 
-theorem optimizedR0_paired_vector_tr {p : Params} {S : Nat} (hp : Ok3 p) {t : Nat}
-    {E : State → State → Prop} :
-    RelCT isa (PairedRS p S E (PositiveIR p S · t 0))
-      (Impl.MlDsa.AArch64.Sign.Optimized.pairedLowPhase p) (PairedRS p S E (PositiveIR p S · t p.k)) := by
-  have heven : p.k%2=0 := by rcases hp with rfl|rfl|rfl <;> decide
-  unfold Impl.MlDsa.AArch64.Sign.Optimized.pairedLowPhase
-  rw [ite_eq_left heven]
-  refine RelCT.seq (RelCT.mono (seqR_tr (Q:=fun j=>PairedRS p S E (PositiveIR p S · t (2*j)))
-    (p.k/2) 0 (fun j _ hj=>?_)) (fun _ _ h=>by simpa only [Nat.mul_zero] using h)
-    (fun _ _ h=>by simpa only [Nat.zero_add] using h)) ?_
-  · simpa only [Nat.mul_add,Nat.mul_one] using optimizedR0_pair_tr hp (by omega : 2*j+1<p.k)
-  · have he : 2*(p.k/2)=p.k := by omega
-    rw [he]
-    exact RelCT.block_nil (fun _ _ h=>h)
-
 end VG.Proof.MlDsa.AArch64.Sign
 
 end
@@ -255,18 +191,6 @@ theorem positivePairedChecksInit_ok {p : Params} {S : Nat} {σ s : State} {t : N
   apply WP.pairedRoots (positiveChecksInit_ok hp hc h) roots _ h.c.masks.l.st.lay.s64
   change 0≤S
   exact Nat.zero_le _
-
-theorem positivePairedChecksPrefix_ok {p : Params} {S : Nat} {σ s : State} {t : Nat}
-    (hp : Ok3 p) (hc : ksChk p=true) (h16 : 16≤S) (roots : PairedRoots S s)
-    (h : PositiveIB p S σ t s) (h1 : (s.gpr .x0).setWidth 32=1) :
-    WP isa (Impl.MlDsa.AArch64.Sign.Optimized.pairedChecksPrefix p) s fun u=>
-      PositiveIH p S σ t 0 u ∧ PairedRoots S u := by
-  unfold Impl.MlDsa.AArch64.Sign.Optimized.pairedChecksPrefix
-  refine WP.seq (WP.seq (WP.mono (positivePairedChallenge_ok hp h16 roots h h1) fun a ha=>?_))
-  refine WP.seq (WP.mono (positivePairedChecksInit_ok hp hc ha.2 ha.1) fun b hb=>?_)
-  refine WP.mono (optimizedZ_paired_vector_ok hp hb.2 hb.1) fun c hc=>?_
-  exact WP.mono (optimizedR0_paired_vector_ok hp hc.2 (positiveIR_of_IZ hc.1)) fun d hd=>
-    ⟨positiveIH_of_IR hd.1,hd.2⟩
 
 end VG.Proof.MlDsa.AArch64.Sign
 

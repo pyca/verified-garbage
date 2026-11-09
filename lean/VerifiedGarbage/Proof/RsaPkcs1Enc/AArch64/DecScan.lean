@@ -76,8 +76,6 @@ theorem x16_neg (n : Nat) :
   apply BitVec.eq_of_toNat_eq
   simp [bm]
 
-theorem bm_or_true (x : BitVec 64) : BitVec.allOnes 64 ||| x = BitVec.allOnes 64 := BitVec.allOnes_or
-
 theorem firstZero_succ (EM : List Byte) (j : Nat) :
     firstZero EM (2 + (j + 1)) = match firstZero EM (2 + j) with
       | some i => some i

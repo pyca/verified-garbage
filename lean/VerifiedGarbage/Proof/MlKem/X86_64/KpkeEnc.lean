@@ -32,8 +32,7 @@ open VG.Spec.Sha3 (bytesAt)
 /-- The size of `vg_mlkem*_kpke_encrypt`'s `scratch`. -/
 abbrev kScrE : Nat := 20480
 
-/-- The ciphertext of `K-PKE.Encrypt` of the inputs in `m`, as
-`Params.kpkeEncryptContract` states it. -/
+/-- The ciphertext of `K-PKE.Encrypt` of the inputs in `m`. -/
 def encCt (L : Kem) (m : Mem) (a t r msg : Addr) : List Byte :=
   let tHat := decodeVec L.k (bytesAt m t (384 * L.k))
   let ŷ := (vecAtW 16 m r L.k).map ntt
@@ -261,7 +260,6 @@ theorem KT.aW {s : State} (h : KT L σ s) {e : Nat} (he : e < L.k * L.k) :
     exacts [E.aS.sub_left hs, E.cA.symm.sub_left hs]
   · have := E.redA e he
     rwa [show 32 * 16 * e = 512 * e by omega_arith] at this
-
 
 /-! ## The prologue and the epilogue -/
 
@@ -588,11 +586,6 @@ theorem mul_ok (W : KeWf L) {mul : Nat → Prog isa}
 /-! ## `u` and `v` -/
 
 omit E in
-theorem EU.keepW {nu : Nat} {s s' : State} (h : EU L σ nu s) {W : List Region} (hP : IPost s s' W) {i : Nat} (hi : i < L.k + 1)
-    (hd : ∀ r ∈ W, (pR (σ.gpr .r9 + BitVec.ofNat 64 (oQ (2 * L.k + i)))).Disjoint r) (hn : nu ≤ i) :
-    PolyIs s'.mem (σ.gpr .r9 + BitVec.ofNat 64 (oQ (2 * L.k + i))) ((prods L σ).getD i zero) :=
-  polyIs_frame hP.frame hd (h.w i hi hn)
-
 omit E in
 theorem pa_r15 {s : State} (h : KT L σ s) (o : Nat) : pa s (.r15, o) = σ.gpr .rdi + BitVec.ofNat 64 o := by
   simp only [pa, h.r15]
@@ -668,7 +661,6 @@ theorem u_ok {A : Prims} {wc wd : List Nat} (K : KemCalls L wc wd) (W : KeWf L)
         bytesAt_frame hP2.frame (dq (by omega_arith)) (by omega_arith)]
       exact h.u i' hi''
     · exact hq3
-
 
 omit E in
 /-- `k` consecutive pieces of `c` bytes. -/

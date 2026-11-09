@@ -73,7 +73,7 @@ structure MultLay (N size acc a b mo inv mult : Nat) : Prop where
   smo : mo + 4 * N ≤ mult ∨ mult + 4 ≤ mo
   sinv : inv + 4 ≤ mult ∨ mult + 4 ≤ inv
 
-/-- The invariant of the loop of `mul` after `i` rows, as `LoopInv`. -/
+/-- The invariant of the multiplication's loop after `i` rows. -/
 structure LoopInvW (base : Addr) (N acc a b m mult i : Nat) (s t : State) : Prop where
   ebp : t.gpr .ebp = t.gpr .edi + BitVec.ofNat 32 (4 * i)
   out : Outs base [(acc, 4 * (2 * N + 1)), (mult, 4)] s.mem t.mem

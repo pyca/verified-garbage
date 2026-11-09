@@ -158,12 +158,4 @@ theorem xorData_ok (ix : Bool) : ∀ (regs : List XReg) (j : Nat) (s : State), r
     · simp only [List.mem_cons, not_or] at hr'
       rw [hx r hr'.2 l hl, x₁ r hr'.1 l hl]
 
-/-- In place, block `j + a` is apart from block `j + b` for `a ≠ b`. -/
-theorem xorData_sep_inplace (s : State) (j n : Nat) (hw : (s.gpr .rdx).toNat + 16 * (j + n) ≤ 2 ^ 64) :
-    ∀ a b, a < b → b < n → Region.Disjoint
-      ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (j + a)), 16⟩ ⟨srcAddr s false (16 * (j + b)), 16⟩ := by
-  intro a b hab hb
-  rw [srcAddr_false]
-  exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
-
 end VG.Proof.Gcm.X86_64.StitchAvx8

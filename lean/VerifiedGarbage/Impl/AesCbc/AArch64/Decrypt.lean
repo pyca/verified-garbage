@@ -5,11 +5,12 @@ public import VerifiedGarbage.Impl.Aes.AArch64.AeseBlocks
 /-!
 # CBC decryption with resident round keys and seven independent AES states
 
-For FEAT_AES and FEAT_SHA3. The signature and workspace are the existing
-CBC decryption interface. The schedule is converted once per call. Key-size
+For FEAT_AES, with FEAT_SHA3 (`code`) or without (`codeAes`). The signature
+and workspace are the existing CBC decryption interface. The schedule is converted once per call. Key-size
 dispatch is outside the loops; each loop decrypts seven independent blocks.
 The original ciphertext is loaded before each plaintext store, retaining the
-chaining value in v31. EOR3 combines the final round-key and chaining XORs.
+chaining value in v31. EOR3 combines the final round-key and chaining XORs
+(two EORs without FEAT_SHA3).
 
 Only caller-saved registers are written. No stack or scratch space is used.
 -/
@@ -30,13 +31,18 @@ def rounds (nr : Nat) (regs : List VReg) : Prog isa :=
     (List.range 8).flatMap (fun j => drnd regs (kreg (9-j))) ++
     regs.map (fun b => .vop (.aesd b .v17)))
 
-/-- Finish one block and retain its original ciphertext for its successor. -/
-def finish (b : VReg) (i : Nat) : List Instr :=
-  [.vop (.eor3 b b .v16 .v31), .ldrq .v31 .x2 (16*i), .strq b .x2 (16*i)]
+/-- `b ⊕ v16 ⊕ v31` into `b`: the final round key and the chaining value. -/
+def xorChain (sha3 : Bool) (b : VReg) : List Instr :=
+  if sha3 then [.vop (.eor3 b b .v16 .v31)]
+  else [.vop (.logic .eor b b .v16), .vop (.logic .eor b b .v31)]
 
-def finishData : List VReg → Nat → List Instr
+/-- Finish one block and retain its original ciphertext for its successor. -/
+def finish (sha3 : Bool) (b : VReg) (i : Nat) : List Instr :=
+  xorChain sha3 b ++ [.ldrq .v31 .x2 (16*i), .strq b .x2 (16*i)]
+
+def finishData (sha3 : Bool) : List VReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, i => finish b i ++ finishData bs (i + 1)
+  | b :: bs, i => finish sha3 b i ++ finishData sha3 bs (i + 1)
 
 def regs7 : List VReg := [.v0,.v1,.v2,.v3,.v4,.v5,.v6]
 
@@ -45,36 +51,42 @@ def checkEnough : List Instr :=
   [.subImm .x .x9 .x3 7, .lsr .x .x13 .x9 63]
 
 /-- Seven blocks; x3 counts remaining blocks and x13 records the next loop guard. -/
-def batch (nr : Nat) : Prog isa :=
+def batch (sha3 : Bool) (nr : Nat) : Prog isa :=
   .seq (.block (ldData regs7 0))
     (.seq (rounds nr regs7)
-      (.block (finishData regs7 0 ++
+      (.block (finishData sha3 regs7 0 ++
         [.addImm .x .x2 .x2 112, .subImm .x .x3 .x3 7] ++ checkEnough)))
 
 /-- The remaining zero to six blocks, without loading the keys again. -/
-def tail (nr : Nat) : Prog isa :=
+def tail (sha3 : Bool) (nr : Nat) : Prog isa :=
   .seq (.block (ldData [.v0] 0))
     (.seq (rounds nr [.v0])
-      (.block (finish .v0 0 ++ [.addImm .x .x2 .x2 16, .subImm .x .x3 .x3 1])))
+      (.block (finish sha3 .v0 0 ++ [.addImm .x .x2 .x2 16, .subImm .x .x3 .x3 1])))
 
 def adaptArgs : List Instr :=
   [.addImm .x .x11 .x2 0, .addImm .x .x2 .x3 0,
     .addImm .x .x3 .x4 0, .addImm .x .x4 .x5 0, .ldrq .v31 .x11 0]
 
-def loops (nr : Nat) : Prog isa :=
+def loops (sha3 : Bool) (nr : Nat) : Prog isa :=
   .seq (.block checkEnough)
     (.seq (.ite (.nonzero .x .x13) (.block [])
-        (.seq (.block [.align 4]) (.loop (batch nr) (.zero .x .x13))))
+        (.seq (.block [.align 4]) (.loop (batch sha3 nr) (.zero .x .x13))))
       (.ite (.zero .x .x3) (.block [])
-        (.seq (.block [.align 4]) (.loop (tail nr) (.nonzero .x .x3)))))
+        (.seq (.block [.align 4]) (.loop (tail sha3 nr) (.nonzero .x .x3)))))
 
 /-- The original argument order is schedule, rounds, IV, data, n, scratch. -/
-def body (nr : Nat) : Prog isa :=
+def body (sha3 : Bool) (nr : Nat) : Prog isa :=
   .seq (.block (adaptArgs ++ decSetup))
-    (.seq (loops nr) (.block [.strq .v31 .x11 0]))
+    (.seq (loops sha3 nr) (.block [.strq .v31 .x11 0]))
 
-def code : Prog isa :=
+def codeWith (sha3 : Bool) : Prog isa :=
   .seq (.block [.subImm .x .x9 .x1 10, .subImm .x .x10 .x1 12])
-    (.ite (.zero .x .x9) (body 10) (.ite (.zero .x .x10) (body 12) (body 14)))
+    (.ite (.zero .x .x9) (body sha3 10) (.ite (.zero .x .x10) (body sha3 12) (body sha3 14)))
+
+/-- With FEAT_SHA3's EOR3. -/
+def code : Prog isa := codeWith true
+
+/-- Without FEAT_SHA3. -/
+def codeAes : Prog isa := codeWith false
 
 end VG.Impl.AesCbc.AArch64.Decrypt

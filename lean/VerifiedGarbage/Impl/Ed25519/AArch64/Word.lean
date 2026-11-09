@@ -71,8 +71,6 @@ def carry38 : List Instr :=
     .adcs .x .x6 .x6 .x10, .adcs .x .x7 .x7 .x10] ++
     carryValue38 ++ [.add .x .x4 .x4 .x8]
 
-def fold : List Instr := [.mul .x .x8 .x20 .x11] ++ carry38
-
 /-- `t0 + 2⁶⁴ t1 + 2¹²⁸ t2 + 2¹⁹² t3 + a · (b0 + … + 2¹⁹² b3)` into `t0`–`t4`,
 with x10 = 0: the low halves of the products added in one carry chain, and
 the high halves one word up in another. -/
@@ -160,15 +158,6 @@ def fieldMul (o a b : Nat) : List Instr :=
 def fieldSqr (o a : Nat) : List Instr :=
   [.movz .w .x10 0 0] ++ sqrWide a ++ reduceWide ++ store4 o
 
-/-- x4–x7 into x12–x15. -/
-def movB : List Instr := [mov .x12 .x4, mov .x13 .x5, mov .x14 .x6, mov .x15 .x7]
-
-/-- `[o] := [a] · [b]²`: the square of `[b]` goes from the registers it is reduced
-into straight to the product's operand registers, without a store and a load
-between them. -/
-def fieldSqrMul (o a b : Nat) : List Instr :=
-  [.movz .w .x10 0 0] ++ sqrWide b ++ reduceWide ++ movB ++ mulRows a ++ reduceWide ++ store4 o
-
 def fieldAddWords (a b : Nat) : List Instr :=
   [ld .x4 a, ld .x9 b, .adds .x .x4 .x4 .x9,
     ld .x5 (a + 8), ld .x9 (b + 8), .adcs .x .x5 .x5 .x9,
@@ -238,18 +227,5 @@ def select4 : List Instr :=
 def freeze (a : Nat) : List Instr :=
   [.movz .w .x10 0 0, .movz .w .x11 19 0] ++ const64 .x2 low63 ++
     loads a .x4 .x5 .x6 .x7 ++ freezeFold ++ freezeCandidate ++ select4
-
-def swapWord (a b : Reg) : List Instr :=
-  [.logic .eor .x .x8 a b, .logic .and .x .x8 .x8 .x3,
-    .logic .eor .x a a .x8, .logic .eor .x b b .x8]
-
-def swapWords : List Instr :=
-  [(Reg.x4, Reg.x21), (.x5, .x22), (.x6, .x23), (.x7, .x24)].flatMap fun (a, b) => swapWord a b
-
-/-- Swap two field elements if x3 is all ones, leaving them if it is zero. -/
-def cswap (x y : Nat) : List Instr :=
-  loads x .x4 .x5 .x6 .x7 ++ loads y .x21 .x22 .x23 .x24 ++
-    swapWords ++
-    store4 x ++ stores y .x21 .x22 .x23 .x24
 
 end VG.Impl.Ed25519.AArch64

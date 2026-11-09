@@ -42,13 +42,4 @@ theorem inputs_value {s : State} {m : Mem} {B : Addr} {e n : Nat}
     rw [Square.value, wv, ih (fun i h => hi i (by omega)), hi n (by omega),
       ← Nat.pow_mul, Nat.mul_comm (word m B (e + 8*n)).toNat]
 
-theorem inputs_cross {s : State} {m : Mem} {B : Addr} {e n : Nat}
-    (hi : ∀ i < n, s.gpr inputs[i]! = word m B (e + 8*i)) :
-    Square.cross (2 ^ 64) (fun i => (s.gpr inputs[i]!).toNat) n = Square.crossValue m B e n := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-    rw [Square.cross, Square.crossValue_succ, ih (fun i h => hi i (by omega)),
-      inputs_value (fun i h => hi i (by omega)), hi n (by omega), ← Nat.pow_mul]
-
 end VG.Proof.Bignum.AArch64.SquareEight

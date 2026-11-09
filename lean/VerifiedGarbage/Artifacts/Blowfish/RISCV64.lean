@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Blowfish.RISCV64.EcbVerified
 public import VerifiedGarbage.Proof.Blowfish.RISCV64.KeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Blowfish.RISCV64.Lit
 
 /-! # Blowfish on RISC-V -/

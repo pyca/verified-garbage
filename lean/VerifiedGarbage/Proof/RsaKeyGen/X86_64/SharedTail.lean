@@ -28,7 +28,7 @@ def SharedTestEnd (s t : State) (B sp : Addr) (Z : Nat) (op up : Addr) (k : Nat)
   | some (true, rest) => SharedKEnd s t B sp Z op up k 1 (r.length - rest.length) (some c)
   | some (false, rest) => SharedKEnd s t B sp Z op up k 3 (r.length - rest.length) none
 
-/-- `montSetup`, `millerRabin` and `mrResult`, for the candidate `c` in
+/-- `montSetup`, `millerRabinWith` and `mrResult`, for the candidate `c` in
 `aN`, from offset `8 w` of `rand`. -/
 theorem sharedKTail_ok (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) {s : State} {B sp : Addr} {Z w : Nat} {mi : BitVec 64} {c : Nat} {op up rp : Addr}
     {r : List Byte} (henv : SharedEnv B Z sp s) (hZ28 : slot w 28 ≤ Z) (hg : Good s B Z w mi) (hZ : slot w 8 ≤ Z) (hXZ : slot w aRm1 + 8 * (w + 2) ≤ Z) (hw4 : 4 ≤ w)

@@ -28,8 +28,6 @@ open VG.X86 hiding frameBytes
 /-- Whether a string of bytes has a zero byte, as the mask the code computes. -/
 def zm (bs : List Byte) : BitVec 32 := if bs.all (· != 0) = true then 0#32 else BitVec.allOnes 32
 
-theorem zm_nil : zm [] = 0 := rfl
-
 theorem zm_snoc (bs : List Byte) (b : Byte) :
     zm (bs ++ [b]) = zm bs |||
       (if decide ((b.setWidth 32).toNat < (1 : BitVec 32).toNat) = true then BitVec.allOnes 32 else 0) := by
@@ -51,9 +49,6 @@ abbrev enc (P : EP) (σ : State) : List Byte := Spec.RsaPkcs1Enc.encode (msgB P 
 
 theorem enc_length (P : EP) (σ : State) : (enc P σ).length = P.pl + P.ml + 3 := by
   simp only [enc, Spec.RsaPkcs1Enc.encode, List.length_append, Proof.RsaPkcs1Sig.bytesAt_len]; simp; omega
-
-theorem enc0 (P : EP) (σ : State) : (enc P σ).getD 0 0 = 0 := rfl
-theorem enc1 (P : EP) (σ : State) : (enc P σ).getD 1 0 = 2 := rfl
 
 theorem enc_getD_ps (P : EP) (σ : State) {i : Nat} (hi : i < P.pl) :
     (enc P σ).getD (2 + i) 0 = σ.mem (P.ps.setWidth 64 + BitVec.ofNat 64 i) := by

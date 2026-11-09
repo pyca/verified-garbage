@@ -72,7 +72,7 @@ theorem derivePublicABI_of {s : State} (h : (Spec.Ffdh.derivePublicContract abi 
 
 theorem wrapABI {s : State} (A : DerivePublicABI s) : WrapABI Impl.Ffdh.X86.DerivePublic.args 9 s where
   below := ⟨(fun _ h => by cases h; decide), by decide, by decide, by decide, (fun _ h => by cases h),
-    (fun _ h => by cases h; decide), by decide⟩
+    (fun _ h => by cases h; decide), by decide, (fun _ h => by cases h)⟩
   stackLow := A.stackLow
   stackBound := by have := A.stackBound; omega
   argsIn := by rw [A.wr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))

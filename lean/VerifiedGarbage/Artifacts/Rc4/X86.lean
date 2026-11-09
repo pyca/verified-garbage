@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rc4.X86.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Rc4.X86.Lit
 
 /-! # Raw RC4 on baseline x86 -/

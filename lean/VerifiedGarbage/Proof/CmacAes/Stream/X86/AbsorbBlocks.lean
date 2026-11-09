@@ -94,7 +94,7 @@ abbrev ascR : Region := ⟨(aSc s₀).setWidth 64, 2304⟩
 abbrev aaR : Region := ⟨argAddr s₀ 0, 28⟩
 
 /-- Where the function writes: the state, the scratch buffer and the stack. -/
-abbrev ABig : List Region := [astR s₀, ascR s₀, below (aE s₀) 56]
+abbrev ABig : List Region := [astR s₀, ascR s₀, below (aE s₀) 60]
 
 end
 
@@ -109,13 +109,13 @@ structure APre (s₀ : State) : Prop where
   a_s : (aaR s₀).Disjoint (ascR s₀)
   ret_st : (⟨(aE s₀).setWidth 64, 4⟩ : Region).Disjoint (astR s₀)
   ret_s : (⟨(aE s₀).setWidth 64, 4⟩ : Region).Disjoint (ascR s₀)
-  b_st' : (⟨(aE s₀).setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region).Disjoint (astR s₀)
-  b_d' : (⟨(aE s₀).setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region).Disjoint (adR s₀)
-  b_s' : (⟨(aE s₀).setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region).Disjoint (ascR s₀)
+  b_st' : (⟨(aE s₀).setWidth 64 - BitVec.ofNat 64 60, 60⟩ : Region).Disjoint (astR s₀)
+  b_d' : (⟨(aE s₀).setWidth 64 - BitVec.ofNat 64 60, 60⟩ : Region).Disjoint (adR s₀)
+  b_s' : (⟨(aE s₀).setWidth 64 - BitVec.ofNat 64 60, 60⟩ : Region).Disjoint (ascR s₀)
   fSt : (aSt s₀).toNat + 304 ≤ 2 ^ 32
   fD : (aD s₀).toNat + aL s₀ ≤ 2 ^ 32
   fS : (aSc s₀).toNat + 2304 ≤ 2 ^ 32
-  esp56 : 56 ≤ (aE s₀).toNat
+  esp60 : 60 ≤ (aE s₀).toNat
   espfit : (aE s₀).toNat + 32 ≤ 2 ^ 32
   rounds : aR s₀ = 10 ∨ aR s₀ = 12 ∨ aR s₀ = 14
 
@@ -127,9 +127,9 @@ namespace APre
 variable {s₀ : State} (hp : APre s₀)
 include hp
 
-theorem b_st : (below (aE s₀) 56).Disjoint (astR s₀) := by rw [below_eq hp.esp56]; exact hp.b_st'
-theorem b_d : (below (aE s₀) 56).Disjoint (adR s₀) := by rw [below_eq hp.esp56]; exact hp.b_d'
-theorem b_s : (below (aE s₀) 56).Disjoint (ascR s₀) := by rw [below_eq hp.esp56]; exact hp.b_s'
+theorem b_st : (below (aE s₀) 60).Disjoint (astR s₀) := by rw [below_eq hp.esp60]; exact hp.b_st'
+theorem b_d : (below (aE s₀) 60).Disjoint (adR s₀) := by rw [below_eq hp.esp60]; exact hp.b_d'
+theorem b_s : (below (aE s₀) 60).Disjoint (ascR s₀) := by rw [below_eq hp.esp60]; exact hp.b_s'
 
 theorem fit : (s₀.gpr .esp).toNat + 4 + 4 * 7 ≤ 2 ^ 32 := by have := hp.espfit; omega_arith
 
@@ -144,7 +144,7 @@ theorem keep {m : Mem} (hf : Frame (ABig s₀) s₀.mem m) {i : Nat} (hi : i < 7
     rcases hr with rfl | rfl | rfl
     · exact hp.a_st.sub_left (arg_sub hp.fit hi)
     · exact hp.a_s.sub_left (arg_sub hp.fit hi)
-    · exact (args_below hp.fit (by decide) hp.esp56).symm.sub_left (arg_sub hp.fit hi)
+    · exact (args_below hp.fit (by decide) hp.esp60).symm.sub_left (arg_sub hp.fit hi)
 
 theorem argsOut : ArgsOut 7 s₀ := by
   refine ⟨by have := hp.espfit; omega_arith, ?_⟩
@@ -259,7 +259,7 @@ theorem APre.uargs {s₀ s : State} (hp : APre s₀) {Dd : BitVec 32} {n : Nat}
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hn : 16 * n < 2 ^ 32)
     (hdc : (⟨Dd.setWidth 64, 16 * n⟩ : Region).Disjoint ⟨(aSt s₀).setWidth 64 + BitVec.ofNat 64 272, 16⟩)
     (hds : (⟨Dd.setWidth 64, 16 * n⟩ : Region).Disjoint ⟨(aSc s₀).setWidth 64, 2176⟩)
-    (hstk : (below (aE s₀) 56).Disjoint ⟨Dd.setWidth 64, 16 * n⟩) (hfD : Dd.toNat + 16 * n ≤ 2 ^ 32)
+    (hstk : (below (aE s₀) 60).Disjoint ⟨Dd.setWidth 64, 16 * n⟩) (hfD : Dd.toNat + 16 * n ≤ 2 ^ 32)
     (hcov : ∃ r' ∈ s₀.rd ++ s₀.wr, ∃ off, Dd.setWidth 64 = r'.base + BitVec.ofNat 64 off ∧ off + 16 * n ≤ r'.len) :
     UArgs s (aSt s₀) (aSt s₀ + BitVec.ofNat 32 272) Dd (aSc s₀) (aR s₀) n := by
   have fSt : (aSt s₀).toNat + 304 ≤ 2 ^ 32 := hp.fSt
@@ -270,7 +270,7 @@ theorem APre.uargs {s₀ s : State} (hp : APre s₀) {Dd : BitVec 32} {n : Nat}
     rw [p272]; exact Offset.sub_base _ (by decide)
   exact
   { eax := heax, ecx := hecx, edx := hedx, ebx := hebx, esi := hesi, edi := hedi, rounds := hp.rounds, hn := hn
-    esp := by rw [hesp]; exact hp.esp56
+    esp := by rw [hesp]; exact hp.esp60
     wc := by rw [p272]; exact Offset.base_disjoint _ (by decide) (by omega_arith)
     ws := (hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide))
     dc := by rw [p272]; exact hdc

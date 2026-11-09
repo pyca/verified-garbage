@@ -44,18 +44,6 @@ def mov (d n : Reg) : Instr := .addImm .x d n 0
 def bmSaved : List (Reg × Nat) :=
   [(.x19, 64), (.x20, 72), (.x21, 80), (.x23, 88), (.x24, 96), (.x22, 104)]
 
-/-- Word `k` (of 8 bytes) of `[dst] ← [x] xor [src]`. -/
-def xorW (dst x src : Reg) (k : Nat) : List Instr :=
-  [.ldr .x .x9 x (8 * k), .ldr .x .x10 src (8 * k), .logic .eor .x .x9 .x9 .x10,
-    .str .x .x9 dst (8 * k)]
-
-/-- The 64 bytes `[dst] ← [x] xor [src]`. -/
-def xor64 (dst x src : Reg) : List Instr := (List.range 8).flatMap (xorW dst x src)
-
-/-- `vg_salsa20_8(dst, scratch)`. -/
-def salsaAt (salsa : Prog isa) (dst : Reg) : Prog isa :=
-  .seq (.block [mov .x0 dst, mov .x1 .x22]) (.call "vg_salsa20_8" salsa)
-
 /-- Saving our caller's registers and setting up ours: `x21 = y + 64 r`,
 `x24 = b + 128 r - 64` (`B[2r - 1]`). -/
 def bmPrologue : List Instr :=
@@ -64,27 +52,8 @@ def bmPrologue : List Instr :=
      .lsl .x .x9 .x1 6, .add .x .x21 .x2 .x9,
      .lsl .x .x9 .x1 7, .add .x .x24 .x0 .x9, .subImm .x .x24 .x24 64]
 
-/-- One pair: `Y[2k]` from `X` and `B[2k]`, then `Y[2k + 1]` from it and
-`B[2k + 1]`; then the pointers move on and the count goes down. -/
-def bmBody (salsa : Prog isa) : Prog isa :=
-  .seq (.block (xor64 .x20 .x24 .x19)) <|
-  .seq (salsaAt salsa .x20) <|
-  .seq (.block (.addImm .x .x19 .x19 64 :: xor64 .x21 .x20 .x19)) <|
-  .seq (salsaAt salsa .x21)
-    (.block [mov .x24 .x21, .addImm .x .x19 .x19 64, .addImm .x .x20 .x20 64,
-      .addImm .x .x21 .x21 64, .subImm .x .x23 .x23 1])
-
 /-- Restoring our caller's registers. -/
 def bmEpilogue : List Instr := bmSaved.map fun (r, d) => .ldr .x r .x22 d
-
-def blockMixMain (salsa : Prog isa) : Prog isa :=
-  .seq (.block bmPrologue) (.seq (.loop (bmBody salsa) (.nonzero .x .x23)) (.block bmEpilogue))
-
-def blockMixWith (salsa : Prog isa) : Prog isa :=
-  .frame (.push .x30) (blockMixMain salsa) (.pop .x30)
-
-/-- The original call-based implementation, retained for the generic proof helpers. -/
-def referenceBlockMix : Prog isa := blockMixWith salsa
 
 /-- The production implementation retains the Salsa state in scalar registers. -/
 def blockMix : Prog isa := Resident.code

@@ -66,8 +66,6 @@ theorem drawFin_check : ACheck (.block [.mov .eax (.mem (sc stOff)), .alu .cmp .
   dsimp only [ACheck]; taint_decide
 
 theorem cutRest13_check : PCheck [.ecx, .edx] (cutRest 13 false) := by dsimp only [PCheck]; taint_decide
-theorem cutRest9_check : PCheck [.ecx, .edx] (cutRest 9 true) := by dsimp only [PCheck]; taint_decide
-
 variable {Ex : List Region → List Region → Prop} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
   {sp : BitVec 32}
 

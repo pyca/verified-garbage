@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
 public import VerifiedGarbage.Proof.MlKem.Mem
 
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Pre
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec

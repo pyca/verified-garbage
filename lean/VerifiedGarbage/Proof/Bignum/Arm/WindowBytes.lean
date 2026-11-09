@@ -30,13 +30,6 @@ theorem KeepsPtr.trans {base : BitVec 32} {m₁ m₂ m₃ : Mem} (h₁ : KeepsPt
 theorem KeepsExp.ptr {base : BitVec 32} {m m' : Mem} (h : KeepsExp base m m') : KeepsPtr base m m' :=
   fun e he => h e (by simp only [List.mem_cons, List.not_mem_nil, or_false] at he ⊢; omega)
 
-theorem KeepsPtr.of_write (m : Mem) (base : BitVec 32) {d : Nat} (v : BitVec 32) (hd : 136 ≤ d)
-    (hd' : d + 4 ≤ 256) : KeepsPtr base m (m.writeW (off (State.addr base) d) v) := by
-  intro e he
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at he
-  have outside := writeW32_outside m (State.addr base) (d := d) v (by omega)
-  exact outside_read32 outside (by omega) (by omega)
-
 /-- The byte and the count of its bits, two header writes. -/
 theorem windowByteSave_ok (s : State) {base : BitVec 32} {len w : Nat} {v : BitVec 32}
     (h : ArithmeticReady base len w s) (value : s.gpr .r1 = v) :

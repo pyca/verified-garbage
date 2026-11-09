@@ -31,9 +31,6 @@ theorem _root_.VG.Proof.Bignum.Arrays.mask_eq {m m' : Mem} {js : List Nat} (ha :
   ha.word_eq (fun j _ => .inl (hdr_lt_slot w j (by decide)))
     (by have := hdr_lt_slot w 8 (show sMask < 32 by decide); omega)
 
-theorem KCtx.word {h : KCtx s t B Z w minv N} {i : Nat} (hi : i < 32) (hi' : i ≠ sMask) :
-    word t.mem B (8 * i) = word s.mem B (8 * i) := h.hdr i hi hi'
-
 theorem loadK (h : KCtx s t B Z w minv N) {j : Nat} (hj : j < 8) (hjN : j ≠ aN) (hj1 : j ≠ aOne)
     {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) (hsp' : sp ≠ sMask) (hsl' : sl ≠ sMask) {p : Addr}
     {bs : List Byte} (hp : word s.mem B (8 * sp) = p) (hl : word s.mem B (8 * sl) = BitVec.ofNat 64 bs.length)
@@ -79,36 +76,6 @@ theorem mulXRK (h : KCtx s t B Z w minv N) :
       Arrays B w [aAcc, aTmp] t.mem t'.mem :=
   WP.mono (mulXR_ok h.good h.hZ h.w1 h.w2) fun _ ⟨hv, ha, hk⟩ =>
     ⟨h.arr ha (by decide) (by decide) (by decide) hk, hv, ha⟩
-
-theorem cntE_ok (t : State) (h : t.gpr .r13 = BitVec.ofNat 64 w) :
-    WP isa (.block cntE) t fun t' => t'.gpr .r13 = BitVec.ofNat 64 (w + 2) ∧ t'.mem = t.mem ∧ Keep [.r13] t t' := by
-  refine WP.mono (WP.keep [.r13] (Q := fun t' => t'.gpr .r13 = BitVec.ofNat 64 (w + 2) ∧ t'.mem = t.mem) (by
-    xrun [cntE, h]
-    rw [show (2 : BitVec 64) = BitVec.ofNat 64 2 from rfl, BitVec.ofNat_add_ofNat]) rfl) fun _ ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
-
-theorem cntXR_ok (t : State) (h : t.gpr .r13 = BitVec.ofNat 64 w) :
-    WP isa (.block cntXR) t fun t' => t'.gpr .r13 = BitVec.ofNat 64 (2 * w + 2) ∧ t'.mem = t.mem ∧
-      Keep [.r13] t t' := by
-  refine WP.mono (WP.keep [.r13] (Q := fun t' => t'.gpr .r13 = BitVec.ofNat 64 (2 * w + 2) ∧ t'.mem = t.mem) (by
-    xrun [cntXR, h]
-    rw [show (2 : BitVec 64) = BitVec.ofNat 64 2 from rfl, BitVec.ofNat_add_ofNat, BitVec.ofNat_add_ofNat]
-    congr 1; omega) rfl) fun _ ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
-
-theorem reduceEK (h : KCtx s t B Z w minv N) :
-    WP isa (seqs (reduce cntE)) t fun t' => KCtx s t' B Z w minv N ∧
-      (0 < wv t.mem B (slot w aM) w →
-        wv t'.mem B (slot w aR) w = wv t.mem B (slot w aAcc) (w + 2) % wv t.mem B (slot w aM) w) ∧
-      Arrays B w [aR, aX, aT] t.mem t'.mem :=
-  WP.mono (reduce_ok (fun t ht => cntE_ok t ht) h.good h.hZ h.w1 h.w2 (by omega)
-    (by omega)) fun _ ⟨_, hv, ha, hk⟩ => ⟨h.arr ha (by decide) (by decide) (by decide) hk, hv, ha⟩
-
-theorem reduceXRK (h : KCtx s t B Z w minv N) :
-    WP isa (seqs (reduce cntXR)) t fun t' => KCtx s t' B Z w minv N ∧
-      (0 < wv t.mem B (slot w aM) w →
-        wv t'.mem B (slot w aR) w = wv t.mem B (slot w aAcc) (2 * w + 2) % wv t.mem B (slot w aM) w) ∧
-      Arrays B w [aR, aX, aT] t.mem t'.mem :=
-  WP.mono (reduce_ok (fun t ht => cntXR_ok t ht) h.good h.hZ h.w1 h.w2 (by omega)
-    (by omega)) fun _ ⟨_, hv, ha, hk⟩ => ⟨h.arr ha (by decide) (by decide) (by decide) hk, hv, ha⟩
 
 end
 

@@ -37,8 +37,6 @@ open VG.Proof.Mont VG.Proof.Mont.PPC64LE VG.Proof.Weierstrass VG.Proof.Weierstra
 
 variable {c : Cfg}
 
-theorem mulLadder_eq (c : Cfg) : c.mulLadder = ladderAt c ACC PT := rfl
-
 /-- What `mulBody` writes besides the ladder: `ACC`, `PT` and the table of
 the bits of `k`. -/
 abbrev mulBX (c : Cfg) : List (Nat × Nat) := slW c [ACC, PT] ++ [(bitsAt c.n 0, 64 * c.n)]

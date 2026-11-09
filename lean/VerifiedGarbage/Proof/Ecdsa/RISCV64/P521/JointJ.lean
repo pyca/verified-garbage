@@ -77,18 +77,11 @@ structure KC (base : Addr) (s : State) : Prop where
   zero : wordsVal s.mem base (c.sl ZERO) 9 = 0
   onep : wordsVal s.mem base (c.sl ONEP) 9 = 2 ^ 576 % W.p
 
-theorem KC.of_eq {base : Addr} {s s' : State} (h : KC base s)
-    (e : ∀ d ∈ [c.sl AP, c.sl 40, c.sl ZERO, c.sl ONEP], wordsVal s'.mem base d 9 = wordsVal s.mem base d 9) :
-    KC base s' :=
-  ⟨(e _ (by simp)).trans h.ap, (e _ (by simp)).trans h.bp, (e _ (by simp)).trans h.zero, (e _ (by simp)).trans h.onep⟩
-
 /-! ## `R = 16 R` -/
 
 theorem dblJ_apart_DT : RcbApart S (c.pt DX DY DZ) (c.pt DX DY DZ) (c.pt TX TY TZ) := ⟨by decide, by decide⟩
 theorem dblJ_apart_TD : RcbApart S (c.pt TX TY TZ) (c.pt TX TY TZ) (c.pt DX DY DZ) := ⟨by decide, by decide⟩
 theorem toJ_apart : RcbApart S (c.pt RX RY RZ) (WindowA.Cfg.zeroPt c) (c.pt DX DY DZ) := ⟨by decide, by decide⟩
-theorem fromJ_apart : RcbApart S (c.pt DX DY DZ) (WindowA.Cfg.zeroPt c) (c.pt RX RY RZ) := ⟨by decide, by decide⟩
-
 /-- A Jacobian doubling from `p` to `o` (`D` to `T` or back), on `InvJ`. -/
 theorem dblStep_ok (hL : Law W) {base : Addr} {s : State} {p o : Pt} (hA : RcbApart S p p o)
     (hsl : ∀ x ∈ rcbW S o ++ rcbR S p p, x ∈ wSl) {V : List Nat} {E : Nat → Fe W}

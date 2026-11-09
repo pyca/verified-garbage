@@ -175,16 +175,6 @@ theorem apart_winX {i : Nat} (hi : i < 45) (hT : i ≠ TMP := by sl_ne) :
   · exact Or.inl (sl_lt c (show i < WK by unfold WK; omega_arith) hT)
   · exact Or.inl (sl_lt c (show i < WB by unfold WB; omega_arith) hT)
 
-/-- For four words, every slot below `45` is apart from the recoded scalar's areas. -/
-theorem apart_winX4 (hn4 : c.n ≤ 4) {i : Nat} (hi : i < 45) :
-    ∀ w ∈ winX c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
-  intro w hw
-  simp only [winX, List.mem_cons, List.not_mem_nil, or_false] at hw
-  have := Nat.mul_le_mul_left (8 * c.n) (show i + 1 ≤ 53 by omega_arith)
-  rw [Nat.mul_succ] at this
-  rcases hw with rfl | rfl <;> refine Or.inl ?_ <;>
-    simp only [Cfg.winK, Cfg.winBits, sl_eq4 c hn4, WK, WB] <;> omega_arith
-
 /-- The flag word survives the window method and the power. -/
 theorem flag_unch_win (hc : BaseCfgOk c) {base : Addr} {l₁ : List Nat} {m m' : Mem}
     (hu : Unch base (winX c ++ (slW c l₁ ++ chainWc c)) m m') (h7 : c.n < 10) (h0 : 0 < c.n)

@@ -51,9 +51,6 @@ theorem mulI_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.
   WP.mono (fieldOp_ok hc hl (.mul o a b)) fun _ ⟨hk, hlt, he⟩ =>
     ⟨⟨hk.rest.mono (by decide), hk.frame⟩, hlt, hk.rest.gpr _ (by decide), he⟩
 
-theorem mulI (base : BitVec 32) (o a b : Slot) : ISpec base (mulP o a b) (opMul o a b) :=
-  fun _ hc hl => WP.mono (mulI_ok hc hl o a b) fun _ ⟨hk, hlt, _, he⟩ => ⟨hk, hlt, he⟩
-
 theorem decR10_ok {s : State} {k : Nat} (hk : k < 2 ^ 32)
     (hb : s.gpr .r10 = BitVec.ofNat 32 (k + 1)) :
     WP isa (.block [.subs .r10 .r10 (.imm 1)]) s fun t =>
@@ -122,22 +119,6 @@ theorem sqnLoopI (base : BitVec 32) (o : Slot) (n : Nat) (hn : 1 ≤ n) (hn' : n
     (by rw [h1.mem]; exact hl) b1 ?_) fun t ⟨kt, lt, et⟩ => ⟨kt, lt, et⟩
   rw [h1.mem, Nat.sub_self]
   exact (Function.update_eq_self _ _).symm
-
-theorem sqnI (base : BitVec 32) (o a : Slot) (n : Nat) (hn : 2 ≤ n) (hn' : n < 65536) :
-    ISpec base (Impl.Ed25519.Arm.sqn o a n) (opSqn o a n) := by
-  intro s hc hl
-  refine WP.seq (WP.mono (mulI_ok hc hl o a a) fun s1 ⟨k1, l1, _, e1⟩ => ?_)
-  refine WP.seq (wp_movw fun s2 h2 => WP.block_nil ?_)
-  have b2 : s2.gpr .r10 = BitVec.ofNat 32 (n - 1) := by
-    rw [h2.gpr]
-    apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega : n - 1 < 2 ^ 16)]
-  have k2 : IKeep base s s2 := k1.trans (IKeep.of_counter (h2.rest (by decide)) h2.mem)
-  refine sqLoop_ok hc o (env s.mem base a) n hn' (n - 1) s2 (by omega) (by omega) k2
-    (by rw [h2.mem]; exact l1) b2 ?_
-  rw [h2.mem, e1, show n - (n - 1) = 1 by omega]
-  rfl
 
 end VG.Proof.Ed25519.Arm
 end
@@ -312,15 +293,5 @@ theorem invEnv_eval (e : Env) : invEnv e 15 = VG.Proof.X25519.invert (e 2) := by
 theorem rootEnv_eval (e : Env) : rootEnv e 15 = VG.Proof.Ed25519.rootPower (e 2) := by
   simp only [↓reduceIte, rootEnv, power250Env, opMul, opSqn, Function.update_apply]
   rfl
-
-theorem invert_ok {s : State} {base : BitVec 32} (hs : Ctx base s) (hl : AllLim s.mem base) :
-    WP isa invert s fun t => IKeep base s t ∧ AllLim t.mem base ∧
-      env t.mem base 15 = VG.Proof.X25519.invert (env s.mem base 2) :=
-  WP.mono (invert_spec base s hs hl) fun _ ⟨hk, hlt, hv⟩ => ⟨hk, hlt, by rw [hv, invEnv_eval]⟩
-
-theorem rootPower_ok {s : State} {base : BitVec 32} (hs : Ctx base s) (hl : AllLim s.mem base) :
-    WP isa Impl.Ed25519.Arm.rootPower s fun t => IKeep base s t ∧ AllLim t.mem base ∧
-      env t.mem base 15 = VG.Proof.Ed25519.rootPower (env s.mem base 2) :=
-  WP.mono (rootPower_spec base s hs hl) fun _ ⟨hk, hlt, hv⟩ => ⟨hk, hlt, by rw [hv, rootEnv_eval]⟩
 
 end VG.Proof.Ed25519.Arm

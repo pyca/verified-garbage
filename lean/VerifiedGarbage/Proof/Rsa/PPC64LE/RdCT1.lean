@@ -74,13 +74,6 @@ theorem D0.bytes {d : RdD} {s₁ s₂ : State} (h₁ : D0 d s₁) (h₂ : D0 d s
 theorem D0.nV {d : RdD} {s₁ s₂ : State} (h₁ : D0 d s₁) (h₂ : D0 d s₂) : nV s₁ = nV s₂ :=
   congrArg Spec.Rsa.os2ip (h₁.bytes h₂).1
 
-theorem D0.eV {d : RdD} {s₁ s₂ : State} (h₁ : D0 d s₁) (h₂ : D0 d s₂) : eV s₁ = eV s₂ :=
-  congrArg Spec.Rsa.os2ip (h₁.bytes h₂).2
-
-theorem D0.cB {d : RdD} {s₁ s₂ : State} (h₁ : D0 d s₁) (h₂ : D0 d s₂) : cB s₁ = cB s₂ := by
-  show 8 * ((s₁.gpr .r10).toNat + (PPC64LE.stackArg s₁ 1).toNat) = 8 * ((s₂.gpr .r10).toNat + (PPC64LE.stackArg s₂ 1).toNat)
-  rw [h₁.reg h₂ (r := .r10) (by decide), h₁.arg h₂ (i := 1) (by decide)]
-
 /-! ## The entry -/
 
 theorem rd_entry_split : entry = VG.Impl.Rsa.PPC64LE.CrtValues.stackArg .r11 2 ++ entry.drop 2 := rfl

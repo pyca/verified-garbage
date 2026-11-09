@@ -21,6 +21,4 @@ def high (offset : Nat) : List Instr :=
 bit of word `k − 1` cleared. -/
 def codeAt (k src : Nat) : List Instr := low src ++ high (src + 4 * k - 4)
 
-def code (w src : Nat) : List Instr := codeAt (2 * w) src
-
 end VG.Impl.RsaKeyGen.X86.WitnessFallback

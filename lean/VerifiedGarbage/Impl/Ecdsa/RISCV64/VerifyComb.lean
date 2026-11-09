@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Comb
 public import VerifiedGarbage.Impl.Ecdh.P256.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.P384.RISCV64Window
 
 /-!
 # ECDSA verification on RISC-V, `[u]G` by the comb and `[v]Q` by windows
@@ -79,5 +80,10 @@ end Cfg
 def verifyP256 : Prog isa :=
   Cfg.verify p256 p256Order "vg_p256_check_point" checkP256 "vg_p256_mul" Window.mulP256
     Comb.mulGP256Name Comb.mulGP256
+
+/-- `vg_ecdsa_p384_verify`, with `vg_p384_mul` and `vg_p384_mul_g`. -/
+def verifyP384 : Prog isa :=
+  Cfg.verify p384 p384Order "vg_p384_check_point" checkP384 "vg_p384_mul" mulP384
+    Comb.mulGP384Name Comb.mulGP384
 
 end VG.Impl.Ecdsa.RISCV64.VerifyComb

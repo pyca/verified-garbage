@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 `ArgFar`: the bytes a memory operand reads lie past the working space, so it
 reads the same while code writes only ranges of the working space
 (`readSrc_keep`, `ArgFar.keep`); and the reads of pointers into it
-(`readSrc_ptr`) and through an update of another register (`readSrc_upd`).
+through an update of another register (`readSrc_upd`).
 -/
 
 @[expose] public section
@@ -45,17 +45,6 @@ theorem ArgFar.keep {s t : State} {base : Addr} {size : Nat} {m : MemOp} (hf : A
   have he : t.ea m = s.ea m := by simp only [State.ea, hb]
   rw [he]; exact hf j hj
 
-/-- A load through a register `D` bytes into the working space. -/
-theorem readSrc_ptr {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {r : Reg} {D : Nat}
-    (hp : s.gpr r = s.gpr .edi + BitVec.ofNat 32 D) (hD : D + 4 ≤ size) :
-    readSrc s (.mem { base := r }) = some (s.mem.readW (off base D) 32) := by
-  have he : s.ea { base := r } = off base D := by
-    change ((s.gpr r + BitVec.ofNat 32 0).setWidth 64) = _
-    rw [BitVec.add_zero, hp]
-    exact hs.ea (by omega)
-  show s.load32 (s.ea _) = _
-  rw [he, State.load32, ite_eq_left_iff.mpr fun h => absurd (hs.read hD) h]
-
 /-- A memory operand reads the same after a write of another register. -/
 theorem readSrc_upd {s t : State} {d : Reg} {v : BitVec 32} (u : Upd s t d v) {m : MemOp} (h : m.base ≠ d) :
     readSrc t (.mem m) = readSrc s (.mem m) := by
@@ -63,9 +52,5 @@ theorem readSrc_upd {s t : State} {d : Reg} {v : BitVec 32} (u : Upd s t d v) {m
   have he : t.ea m = s.ea m := by simp only [State.ea, u.other _ h]
   rw [he]
   simp only [State.load32, u.mem, u.rd, u.wr]
-
-theorem add_ofNat (x : BitVec 32) (d e : Nat) :
-    x + BitVec.ofNat 32 d + BitVec.ofNat 32 e = x + BitVec.ofNat 32 (d + e) := by
-  rw [BitVec.add_assoc, BitVec.ofNat_add]
 
 end VG.Proof.Mont.X86.Dynamic

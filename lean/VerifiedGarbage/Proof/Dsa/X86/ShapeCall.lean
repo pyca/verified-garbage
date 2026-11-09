@@ -28,20 +28,6 @@ structure ShapedCall (L : CallLayout) (digestLen : Nat) (s : State) : Prop where
   mask : flagW L.base (Layout.field .mask) s = BitVec.allOnes 32
   prefixLength : (pointerValue L.base s (.input .digestPrefixLen)).toNat = min digestLen (Spec.Dsa.bitLength L.q / 8)
 
-theorem CallReady.compare {L : CallLayout} {s t : State} (R : CallReady L s)
-    (K : Keeps [.eax] s t) (O : t.mem = s.mem) : CallReady L t := by
-  exact R.keep ⟨K.mono (by decide), by rw [O]; exact StackOuts.refl _ _ _ _⟩
-
-theorem ShapedCall.compare {L : CallLayout} {digestLen : Nat} {s t : State} (R : ShapedCall L digestLen s)
-    (K : Keeps [.eax] s t) (O : t.mem = s.mem) : ShapedCall L digestLen t :=
-  ⟨R.ready.compare K O, by simpa only [flagW, O] using R.mask,
-    by simpa only [pointerValue, O] using R.prefixLength⟩
-
-theorem shapedCall_compare (L : CallLayout) (digestLen : Nat) :
-    CompareInvariant L.base L.size (fun s t => ShapedCall L digestLen s ∧ ShapedCall L digestLen t) :=
-  ⟨fun _ _ H => ⟨H.1.ready.moduli.scr, H.2.ready.moduli.scr⟩,
-    fun _ _ _ _ H K1 K2 O1 O2 => ⟨H.1.compare K1 O1, H.2.compare K2 O2⟩⟩
-
 theorem shapeCall_ok {L : CallLayout} {digestLen : Nat} {s : State}
     (R : ShapeCallReady L digestLen s)
     (P : (.input .p, L.pLen) ∈ L.inputs) (Q : (.input .q, L.qLen) ∈ L.inputs)

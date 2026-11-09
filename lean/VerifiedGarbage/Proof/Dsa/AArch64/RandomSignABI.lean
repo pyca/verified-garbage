@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Dsa.RandomSign
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
@@ -53,10 +54,10 @@ structure RandomSignABI (extra : Nat) (s : State) : Prop where
   scratchLength : Spec.Dsa.randomSignScratchWords (s.gpr .x5).toNat ≤ (stackArg s 4).toNat
 
 theorem randomSignABI_of {extra : Nat} {s : State}
-    (h : (Spec.Dsa.randomSignContract abi (extra + 256)).pre s) : RandomSignABI extra s := by
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, randomSignStackArgs,
+    (h : (randomSignCheckedContract abi (extra + 256)).pre s) : RandomSignABI extra s := by
+  sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argRegs, randomSignStackArgs,
     show extra + 256 = (extra + 255) + 1 from rfl] at h
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, randomSignStackArgs] at h
+  sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argRegs, randomSignStackArgs] at h
   sig_split h
   constructor <;> with_reducible assumption
 

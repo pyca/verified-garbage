@@ -8,16 +8,11 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
-# RSAES-PKCS1-v1_5 encryption on x86-64: the contracts on the registers
+# RSAES-PKCS1-v1_5 encryption on x86-64: the contract on the registers
 
 `encK` states the shared contract `Spec.RsaPkcs1Enc.encryptContract` (with
 the stack the frame and the call use, `encStack`) on the registers and the
-stack (`encrypt_implies`).
-
-`pubChkK` is the contract of `vg_rsa_public_checked` on the registers: that
-of `vg_rsa_public` (`pubContract`), with BoringSSL's limits on `e`
-(`Spec.Rsa.publicOpChecked`). A `PubImpl` is an implementation of it, which
-the proof of encryption is written for.
+stack.
 -/
 
 @[expose] public section
@@ -26,28 +21,6 @@ namespace VG.Proof.RsaPkcs1Enc.X86_64
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
-/-! ## `vg_rsa_public_checked` -/
-
-/-- `pubContract`, with BoringSSL's limits on `e` (`publicOpChecked`). -/
-def pubChkK : Contract isa where
-  pre := pubContract.pre
-  pub := pubContract.pub
-  post s s' := Spec.Rsa.written s'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((s'.gpr .rax).setWidth 32)
-      (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
-        (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
-        (Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rcx).toNat))
-
-/-- An implementation of `vg_rsa_public_checked`: its symbol and code,
-correct and constant time under `pubChkK`, making no calls and using no
-stack. -/
-structure PubImpl where
-  name : String
-  code : Prog isa
-  ok : ∀ s, pubChkK.pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ pubChkK.post s s'
-  ct : ConstantTime isa pubChkK.pre pubChkK.pub code
-  nosp : NoSp code
-  depth : code.depth = 0
-  spSafe : code.all (fun i => !isa.writesSp i) = true
 
 /-! ## Encryption -/
 
@@ -122,28 +95,5 @@ def encSatState : State where
     else if a = 0x1002A then 0x02 else if a = 0x10031 then 0x04 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 0⟩, ⟨0x4100, 61⟩, ⟨0x10008, 48⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x20000, 8448⟩]
-
-theorem encrypt_implies : encK.Implies (Spec.RsaPkcs1Enc.encryptContract abi encStack) where
-  pre := by
-    intro s h
-    -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.RsaPkcs1Enc.encryptContract, Spec.RsaPkcs1Enc.encryptSig, abi, argRegs, encK, encStack, Impl.RsaPkcs1Enc.X86_64.Encrypt.frameBytes, stackArgs_six, List.append_eq] at h
-    sig_pre [Spec.RsaPkcs1Enc.encryptContract, Spec.RsaPkcs1Enc.encryptSig, abi, argRegs, encK, encStack, Impl.RsaPkcs1Enc.X86_64.Encrypt.frameBytes, stackArgs_six, List.append_eq] at h
-    sig_split h
-    sig_reduce [Spec.RsaPkcs1Enc.encryptContract, Spec.RsaPkcs1Enc.encryptSig, abi, argRegs, encK, encStack, Impl.RsaPkcs1Enc.X86_64.Encrypt.frameBytes, stackArgs_six, List.append_eq]
-    sig_and_intros
-    sig_close
-    all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.RsaPkcs1Enc.encryptContract, Spec.RsaPkcs1Enc.encryptSig, abi, argRegs, encK, encStack, Impl.RsaPkcs1Enc.X86_64.Encrypt.frameBytes, stackArgs_six, List.append_eq]
-  pub := by
-    rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPkcs1Enc.encryptContract, Spec.RsaPkcs1Enc.encryptSig, abi, argRegs, encK, encStack, Impl.RsaPkcs1Enc.X86_64.Encrypt.frameBytes, stackArgs_six, List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
-    obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5⟩ := h
-    obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, hcx]) hl
-    refine ⟨?_, by simp only [stackArgs_six, a0, a1, a2, a3, a4, a5], hn, he⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
-  sat := by sig_implies_sat [Spec.RsaPkcs1Enc.encryptContract, Spec.RsaPkcs1Enc.encryptSig, abi, argRegs, encK, encStack, Impl.RsaPkcs1Enc.X86_64.Encrypt.frameBytes, stackArgs_six, List.append_eq] [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState
 
 end VG.Proof.RsaPkcs1Enc.X86_64

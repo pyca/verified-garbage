@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.X86_64.Block
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Cast5.Memory
@@ -23,7 +24,7 @@ open VG.Impl.Cast5 (table s1234 s5678 s1234Sym s5678Sym ecbConsts keyConsts)
 open VG.Proof.MlKem.X86_64 (Keep sx_ofNat WP.keep writesOnly wp_countdown)
 
 /-- The facts of the ECB functions' precondition on this target (the shared
-contract's, `Spec.Cast5.ecbContract`, with the table `VG_CAST5_S1234`). -/
+contract's, `Proof.Cast5.ecbRoundsContract`, with the table `VG_CAST5_S1234`). -/
 structure EPre (s : State) : Prop where
   rd : s.rd = [⟨s.gpr .rdi, 128⟩, ⟨s.syms s1234Sym, 4096⟩]
   wr : s.wr = [⟨s.gpr .rdx, (s.gpr .rcx).toNat * 8⟩, ⟨s.gpr .r8, 256⟩]

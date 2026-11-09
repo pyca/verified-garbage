@@ -948,27 +948,4 @@ theorem VerifyPublic.sBytes {m : Mem} {b pk sig challenge : BitVec 32} {s : Stat
   have he := congrArg (List.drop 32) h.sigBytes
   simpa only [signatureBytes_drop] using he
 
-theorem VerifyPublic.eqResult {m : Mem} {b pk sig challenge : BitVec 32} {s : State}
-    (h : VerifyPublic m b pk sig challenge s) (a r : Spec.Ed25519.Point) :
-    equationResult s.mem sig challenge a r = equationResult m sig challenge a r := by
-  unfold equationResult
-  rw [h.sBytes, h.challengeBytes]
-
-theorem VerifyPublic.withR {m : Mem} {b pk sig challenge : BitVec 32} {s : State}
-    (h : VerifyPublic m b pk sig challenge s) (a : Spec.Ed25519.Point) :
-    equationWithR s.mem sig challenge a = equationWithR m sig challenge a := by
-  unfold equationWithR
-  rw [h.rBytes]
-  split
-  · rfl
-  · exact h.eqResult _ _
-
-theorem VerifyPublic.decoded {m : Mem} {b pk sig challenge : BitVec 32} {s : State}
-    (h : VerifyPublic m b pk sig challenge s) : decodedEquation s.mem pk sig challenge = decodedEquation m pk sig challenge := by
-  unfold decodedEquation
-  rw [h.pkBytes]
-  split
-  · rfl
-  · exact h.withR _
-
 end VG.Proof.Ed25519.Arm

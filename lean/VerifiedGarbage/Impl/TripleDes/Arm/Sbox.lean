@@ -28,7 +28,6 @@ out (and `#guard` checks that it is what `compile` produces) so that the kernel,
 evaluates the code in the proofs, does not have to run the allocator. -/
 
 /-! Short forms of the instructions, on slots of the scratch buffer at `r2`. -/
-def movR (d n : Reg) : Instr := .mov d (.reg n)
 def eorR (d n m : Reg) : Instr := .dp .eor d n (.reg m)
 def andR (d n m : Reg) : Instr := .dp .and d n (.reg m)
 def ldS (d : Reg) (k : Nat) : Instr := .ldr d .r2 (4 * k)

@@ -33,33 +33,4 @@ theorem inverse_array_layout {s : State} {B : Addr} {Z n k a b : Nat}
   · unfold S at fb
     omega
 
-theorem inverse_preserves_num {m m' : Mem} {B : Addr} {n k j : Nat}
-    (width : k ≤ n) (persistent : 15 ≤ j) (fit : arr n j + S n ≤ 2 ^ 64)
-    (changed : Outs B (inverseRanges k invSlots) m m') : num m' B n j = num m B n j := by
-  apply changed.val32 _ (by unfold S at fit; omega)
-  intro r hr
-  simp only [inverseRanges, invSlots, List.map_cons, List.map_nil,
-    List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · have endBound := inverse_end_le width persistent
-    have endEq : arr k 15 = hdr + 4 * (15 * (k + 2)) := by unfold arr S; omega
-    rw [endEq] at endBound
-    exact Or.inr endBound
-  all_goals have lower : hdr ≤ arr n j := Nat.le_add_right ..
-  all_goals simp only [sOdd, sB, sC, hdr] at lower ⊢
-  all_goals omega
-
-theorem inverse_preserves_slot {m m' : Mem} {B : Addr} {k d : Nat}
-    (bound : d + 4 ≤ 100) (changed : Outs B (inverseRanges k invSlots) m m') :
-    slot m' B d = slot m B d := by
-  have value : val32 m' B d 1 = val32 m B d 1 := by
-    apply changed.val32 _ (by omega)
-    intro r hr
-    simp only [inverseRanges, invSlots, List.map_cons, List.map_nil,
-      List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    all_goals simp only [sOdd, sB, sC, hdr]
-    all_goals omega
-  simpa only [val32, Nat.mul_zero, Nat.add_zero] using value
-
 end VG.Proof.RsaKeyGen.X86.Key

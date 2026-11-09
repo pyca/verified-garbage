@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.X25519.Arm.Main
 import VerifiedGarbage.Proof.X25519.Arm.CT
 import VerifiedGarbage.Proof.Framework.Contract
@@ -46,9 +47,9 @@ def x25519Sat : State where
   wr := [⟨0x1000, 32⟩, ⟨0x4000, 4096⟩]
 
 theorem x25519_verified :
-    Verified Arm.target Impl.X25519.Arm.x25519 (Spec.X25519.x25519Contract Arm.abi) :=
+    Verified Arm.target Impl.X25519.Arm.x25519 (Proof.X25519.x25519Contract Arm.abi) :=
   Verified.of_correct x25519_ok x25519_ct' (by
-    sig_implies [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, Proof.X25519.Arm.x25519Arm, Arm.abi,
+    sig_implies [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, Proof.X25519.Arm.x25519Arm, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [Proof.X25519.Arm.x25519Sat,
       Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using Proof.X25519.Arm.x25519Sat)
 
@@ -62,9 +63,9 @@ theorem x25519Umaal_ct' : ConstantTime isa x25519Arm.pre x25519Arm.pub Impl.X255
     rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem x25519Umaal_verified :
-    Verified Arm.target Impl.X25519.Arm.x25519Umaal (Spec.X25519.x25519Contract Arm.abi) :=
+    Verified Arm.target Impl.X25519.Arm.x25519Umaal (Proof.X25519.x25519Contract Arm.abi) :=
   Verified.of_correct x25519Umaal_ok x25519Umaal_ct' (by
-    sig_implies [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, Proof.X25519.Arm.x25519Arm, Arm.abi,
+    sig_implies [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, Proof.X25519.Arm.x25519Arm, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [Proof.X25519.Arm.x25519Sat,
       Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using Proof.X25519.Arm.x25519Sat)
 

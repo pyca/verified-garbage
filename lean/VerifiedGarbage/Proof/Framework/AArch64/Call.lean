@@ -48,9 +48,6 @@ theorem State.callEntry_gpr (s : State) {r : Reg} (h : r ∉ linkRegs) : s.callE
   simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at h
   simp [State.callEntry, h.1, h.2.1, h.2.2]
 
-theorem State.callEntry_withRegions (s : State) (rd wr : List Region) :
-    (s.withRegions rd wr).callEntry = s.callEntry.withRegions rd wr := rfl
-
 /-- Calls change none of the callee-saved registers but `x30`. -/
 theorem preserved_not_link : ∀ r ∈ preserved, r ≠ .x30 → r ∉ linkRegs := by decide
 
@@ -190,10 +187,6 @@ theorem read_write_self (m : Mem) (a : Addr) (v : BitVec (8 * 8)) : (m.write a 8
 
 /-- The `n` bytes below `sp`. -/
 abbrev below (sp : Addr) (n : Nat) : Region := ⟨sp - BitVec.ofNat 64 n, n⟩
-
-theorem ofNat_split {a b : Nat} (hab : a ≤ b) :
-    BitVec.ofNat 64 b = BitVec.ofNat 64 a + BitVec.ofNat 64 (b - a) := by
-  rw [← BitVec.ofNat_add]; congr 1; omega_using [hab]
 
 theorem below_sub {sp : Addr} {a b : Nat} (hab : a ≤ b) (hb : b < 2 ^ 64) :
     Region.Sub (below sp a) (below sp b) := by

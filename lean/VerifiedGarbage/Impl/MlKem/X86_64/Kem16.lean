@@ -122,7 +122,4 @@ def kem768w : Kem16 where
   oW := 12288
   oPR := 20480
 
-/-- `vg_mlkem768_encaps_h`. -/
-abbrev encapsH (c : Callee4) : Prog isa := kemEncapsHSel kem768w c
-
 end VG.Impl.MlKem.X86_64

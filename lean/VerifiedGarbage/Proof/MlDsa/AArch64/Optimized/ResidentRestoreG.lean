@@ -177,8 +177,6 @@ open VG.Proof.MlKem.AArch64 (Only wp_ldrx)
 open VG.Impl.MlDsa.AArch64.Optimized.ResidentMask (saved)
 
 private theorem saved_inj : ∀ i<10, ∀ j<10, saved[i]! = saved[j]! ↔ i=j := by decide
-private theorem saved_ne19 : ∀ i<9, saved[i+1]! ≠ Reg.x19 := by decide
-
 /-- Restore x20 through x28 before restoring the scratch base in x19. -/
 theorem restoreG_ok (s : State)
     (hr : ∀ i<9, InRegions (s.rd++s.wr) (s.gpr .x19+BitVec.ofNat 64 (7976+8*i)) 8) :

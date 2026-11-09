@@ -61,38 +61,6 @@ def scanAfter (bs : List Byte) : Nat → Nat × Byte
   | 0 => (0, 0)
   | j + 1 => scanNext (scanAfter bs j) (bs.length - j) (bs.getD j 0)
 
-theorem scanAfter_bound (bs : List Byte) (hl : bs.length < 2 ^ 32) :
-    ∀ j, (scanAfter bs j).1 < 2 ^ 32 ∧ ((scanAfter bs j).1 = 0 → (scanAfter bs j).2 = 0)
-  | 0 => ⟨by simp [scanAfter], fun _ => rfl⟩
-  | j + 1 => by
-    have ih := scanAfter_bound bs hl j
-    unfold scanAfter scanNext
-    split
-    · rename_i hc
-      refine ⟨by simp only; omega, fun e => ?_⟩
-      simp only at e
-      exfalso; apply hc.2
-      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega)]; rfl
-    · exact ih
-
-/-- After all of `bs`, the scan is `significant bs`. -/
-theorem scanAfter_finish (bs : List Byte) (hl : bs.length < 2 ^ 32) :
-    ∀ j ≤ bs.length, scanFinish (scanAfter bs j) (bs.drop j) = significant bs
-  | 0, _ => by simp [scanAfter, scanFinish]
-  | j + 1, hj => by
-    have ih := scanAfter_finish bs hl j (by omega)
-    have hd : bs.drop j = bs[j] :: bs.drop (j + 1) := List.drop_eq_getElem_cons (by omega)
-    rw [hd, ← scanFinish_step] at ih
-    have hl' : (bs.drop (j + 1)).length + 1 = bs.length - j := by rw [List.length_drop]; omega
-    rw [hl', show bs[j] = bs.getD j 0 by
-      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]; rfl] at ih
-    exact ih
-
-theorem scanAfter_length (bs : List Byte) (hl : bs.length < 2 ^ 32) :
-    scanAfter bs bs.length = significant bs := by
-  have := scanAfter_finish bs hl bs.length (Nat.le_refl _)
-  rwa [List.drop_length, scanFinish_nil (scanAfter_bound bs hl _).2] at this
-
 /-! ## The mask of the leading byte -/
 
 /-- The mask that keeps the significant bits of the leading byte `n`. -/

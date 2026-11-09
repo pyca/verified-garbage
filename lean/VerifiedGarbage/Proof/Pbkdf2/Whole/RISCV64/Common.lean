@@ -91,8 +91,6 @@ abbrev frR : Region := ⟨s₀.sp, F.frB⟩
 abbrev itR : Region := sR s₀ F.frB F.itB
 /-- The stack below the frames the functions we call use. -/
 abbrev stk : Region := below s₀.sp F.X
-/-- The save area. -/
-abbrev svR : Region := sR s₀ 0 64
 /-- Everything the code writes. -/
 abbrev wrs : List Region := [frR F s₀, itR F s₀, outR s₀, stk F s₀]
 
@@ -192,13 +190,6 @@ theorem in_fr' {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ F.f
     InRegions (s.rd ++ s.wr) (sA s₀ o) n :=
   ⟨_, List.mem_append_right _ (fr_wr hp hwr), part_contains (s₀ := s₀) h hr⟩
 
-/-- A part of the inner frame is covered by its regions. -/
-theorem cov_part {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ F.frB) :
-    RISCV64.Covers [sR s₀ o n] s.wr :=
-  VG.Covers.of_sub fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, fr_wr hp hwr, o, rfl, h⟩
-
 /-- The two frames are apart from each other and from the stack below them. -/
 theorem f_i : (frR F s₀).Disjoint (itR F s₀) := by
   have := hp.top
@@ -207,9 +198,6 @@ theorem f_i : (frR F s₀).Disjoint (itR F s₀) := by
 
 theorem f_s : (frR F s₀).Disjoint (stk F s₀) :=
   Offset.base_disjoint_below _ (by have := hp.top; have := hp.spX; have := s₀.sp.isLt; omega)
-
-theorem i_s : (itR F s₀).Disjoint (stk F s₀) :=
-  Offset.disjoint_below _ (by have := hp.top; have := hp.spX; have := s₀.sp.isLt; omega)
 
 /-- The stack below the stack pointer, within `stk`. -/
 theorem below_stk {n : Nat} (hn : n ≤ F.X) : Region.Sub (below s₀.sp n) (stk F s₀) :=

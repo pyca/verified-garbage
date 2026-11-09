@@ -560,12 +560,6 @@ theorem flag_eq (x : BitVec 64) :
     simp only [flagW, ht, ite_true]
     decide
 
-/-- The scratch after `setup`'s saves, counter and flag word. -/
-def setupMem (m : Mem) (p : Addr) (g : Reg → BitVec 64) (t : BitVec 64) (f : Bool) : Mem :=
-  (((Spill.saveMem m p g saved).writeW (p + BitVec.ofNat 64 loOff) t).writeW
-    (p + BitVec.ofNat 64 hiOff) (BitVec.ofNat 64 0)).writeW (p + BitVec.ofNat 64 fOff) (flagW 64 f)
-
-theorem save_eq : Impl.Blake2.RISCV64.save = Spill.saveCode SB saved := rfl
 theorem restore_eq : Impl.Blake2.RISCV64.restore = Spill.restoreCode SB saved := rfl
 
 theorem saved_fits : ∀ p ∈ saved, p.2 % 8 = 0 ∧ p.2 < 2048 := by decide
@@ -626,9 +620,6 @@ theorem ctrF_ok (s : State) (p : Addr) (hp : s.gpr SB = p) (hal : p.toNat % 8 = 
 `cpIn` and `cpBlk`. -/
 def cpGen (w : Nat) (src : Reg) (o j : Nat) : List Instr :=
   ldLE w T (wreg 0) (wreg 1) src (ws w * j) ++ ([.store (wd w) T SB (o + ws w * j)] : List Instr)
-
-theorem cpIn_eq (w : Nat) : Impl.Blake2.RISCV64.cpIn (w := w) = cpGen w .a0 hOff := rfl
-theorem cpBlk_eq (w : Nat) : Impl.Blake2.RISCV64.cpBlk (w := w) = cpGen w .a1 mOff := rfl
 
 /-- After copying words `0 … k-1` from `src` to offset `o` of the scratch space. -/
 structure CpI (z : Size) (src : Reg) (o : Nat) (s₁ : State) (k : Nat) (s : State) : Prop where
@@ -927,12 +918,6 @@ structure Common (s₀ : State) (i : Nat) (s : State) : Prop where
 structure LInv (s₀ : State) (i : Nat) (s : State) : Prop extends Common P s₀ i s where
   a1 : s.gpr .a1 = blkAddr z s₀ i
   a2 : s.gpr .a2 = BitVec.ofNat 64 (nb s₀ - i)
-
-theorem Common.scr {s₀ : State} (hp : Pre z s₀) {i : Nat} {s : State} (h : Common P s₀ i s) :
-    Scr (sb s₀) (t₀ s₀ + i * Spec.Blake2.blockBytes z.bits) (flagW 64 (fl s₀)) s :=
-  ⟨h.base, sb_al s₀, by rw [h.rd, h.wr]; exact hp.in_cell (by decide),
-    by rw [h.rd, h.wr]; exact hp.in_cell (by decide), by rw [h.rd, h.wr]; exact hp.in_cell (by decide),
-    h.lo, h.hi, h.f⟩
 
 theorem hcell_bound (z : Size) {k : Nat} (hk : k < 8) : hOff + zB z * k + zB z ≤ 144 := by
   have := zB_mul_le z hk; have := zB_le z; simp only [hOff]; omega

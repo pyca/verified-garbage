@@ -200,9 +200,9 @@ theorem shortTail_ok {s : State} (he : Env c w sp R s) {P : BitVec 32} {n : Nat}
 
 omit L in
 /-- The CMAC of one block. -/
-theorem cmacWith_one (ciph : Spec.Cmac.Cipher) (k1 k2 T : List Byte) (hT : T.length = 16) :
-    Spec.Siv.cmacWith ciph k1 k2 T = ciph (Spec.Cmac.xor (Spec.Cmac.lastBlock 16 k1 k2 T) (Spec.Cmac.zeros 16)) := by
-  rw [Siv.cmacWith_chained, hT, show Spec.Cmac.chainedLen 16 16 = 0 from rfl, List.take_zero, List.drop_zero,
+theorem macWith_one (ciph : Spec.Cmac.Cipher) (k1 k2 T : List Byte) (hT : T.length = 16) :
+    Spec.Cmac.macWith ciph 16 k1 k2 T = ciph (Spec.Cmac.xor (Spec.Cmac.lastBlock 16 k1 k2 T) (Spec.Cmac.zeros 16)) := by
+  rw [Siv.macWith_chained, hT, show Spec.Cmac.chainedLen 16 16 = 0 from rfl, List.take_zero, List.drop_zero,
     chain_blocks_nil, Proof.Cmac.xor_comm]
 
 /-- `shortArgs out`: the state at `W + out` zeroed, and the arguments of
@@ -307,7 +307,7 @@ theorem shortMac_ok {s : State} (he : Env c w sp R s) (hR : R = 10 ∨ R = 12 �
       rw [m₂, Proof.Cmac.zero4_bytes]
     have out₃ := h₃.out
     rw [eO, eT, sch, cK (d := 240) (k := 16) (by decide), cK (d := 256) (k := 16) (by decide), tl, z] at out₃
-    rw [out₃, Spec.Siv.ctxMac, Spec.Siv.schedCiph, cmacWith_one _ _ _ _ (Proof.Cmac.bytesAt_length _ _ _)]
+    rw [out₃, Spec.Siv.ctxMac, Spec.Siv.schedCiph, macWith_one _ _ _ _ (Proof.Cmac.bytesAt_length _ _ _)]
     rfl
 
 /-- S2V's end for a string `P` shorter than a block, into `W + out`. -/

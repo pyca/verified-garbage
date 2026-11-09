@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 

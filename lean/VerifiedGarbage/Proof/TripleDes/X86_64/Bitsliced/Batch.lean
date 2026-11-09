@@ -49,13 +49,6 @@ theorem DataOk.congr {s s' : State} {D : Addr} {k : Nat} (h : DataOk s D k)
   sep := by simp only [scratchR, hc]; exact h.sep
   fit := h.fit
 
-theorem DataOk.mono {s : State} {D : Addr} {k n : Nat} (h : DataOk s D n) (hk : k ≤ n) :
-    DataOk s D k where
-  read i hi := h.read i (by omega)
-  write i hi := h.write i (by omega)
-  sep := h.sep.sub_left (Region.sub_prefix (by omega))
-  fit := by have := h.fit; omega
-
 theorem word_sub {D : Addr} {b k : Nat} (hb : b < k) :
     Region.Sub ⟨wAt D b, 8⟩ ⟨D, 8 * k⟩ :=
   Offset.sub_base D (by omega)

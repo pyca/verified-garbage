@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Vmx4.Xor
 
 /-!
 # Streaming ChaCha20 on PPC64LE: `apply`, correctness
@@ -72,11 +73,6 @@ theorem wp_and {d n m : Reg}
     (k : ∀ s', Upd s s' d (s.gpr n &&& s.gpr m) → WP isa (.block is) s' Q) :
     WP isa (.block (.logic .and d n m :: is)) s Q :=
   Proof.ChaCha20.PPC64LE.Xor.WP.cons exec_logic (k _ (Upd.write _ _ _))
-
-theorem wp_add {d n m : Reg}
-    (k : ∀ s', Upd s s' d (s.gpr n + s.gpr m) → WP isa (.block is) s' Q) :
-    WP isa (.block (.add d n m :: is)) s Q :=
-  Proof.ChaCha20.PPC64LE.Xor.WP.cons exec_add (k _ (Upd.write _ _ _))
 
 theorem wp_lsl {d n : Reg} {sh : Nat} (h : sh < 64)
     (k : ∀ s', Upd s s' d (s.gpr n <<< sh) → WP isa (.block is) s' Q) :
@@ -602,7 +598,7 @@ theorem args_exec {s : State} {p : Addr} (hr24 : s.gpr .r24 = p)
     WP isa (.block blocksArgs) s fun s' => s'.mem = copyMem s.mem p ((s.gpr .r5 >>> 6).setWidth 32) ∧
       s'.gpr .r3 = p + BitVec.ofNat 64 192 ∧ s'.gpr .r4 = s.gpr .r25 ∧ s'.gpr .r6 = p + BitVec.ofNat 64 256 ∧
       s'.gpr .r5 = s.gpr .r5 ∧ s'.gpr .r25 = s.gpr .r25 + s.gpr .r5 ∧
-      s'.gpr .r26 = s.gpr .r26 - s.gpr .r5 ∧ s'.gpr .r24 = p ∧
+      s'.gpr .r26 = s.gpr .r26 - s.gpr .r5 ∧ s'.gpr .r24 = p ∧ s'.gpr .r7 = s.gpr .r25 ∧
       (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have i : ∀ d, d + 8 ≤ 768 → InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 d) 8 := fun d hd => by
     rw [hrd, List.nil_append]; exact hw d hd
@@ -720,16 +716,16 @@ theorem blR_sub (s₀ : State) : Region.Sub (blR s₀) (dR s₀) := Offset.sub_b
 theorem kept_preserved : ∀ r ∈ kept, r ∈ preserved := by decide
 
 theorem blocks_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) (hnb : 0 < NB s₀) :
-    WP isa (.seq (.block blocksArgs) (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Xor.xor)) s (Q2 s₀) := by
+    WP isa (.seq (.block blocksArgs) (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Vmx4.xor)) s (Q2 s₀) := by
   have hL := L_lt s₀
   have hH := H_le s₀
   have hHNB := HNB_le s₀
   have hT := T_eq s₀
   refine WP.seq (WP.mono (args_exec h.r24 (h.w hp) (by rw [h.rd, hp.rd])) fun s₁ ⟨m₁, r3₁, r4₁, r6₁, r5₁,
-    r25₁, r26₁, r24₁, k₁, rd₁, wr₁⟩ => ?_)
+    r25₁, r26₁, r24₁, r7₁, k₁, rd₁, wr₁⟩ => ?_)
   rw [h.r5, shr_eq (by omega_arith)] at m₁
   rw [h.r5] at r5₁
-  rw [h.r25] at r4₁
+  rw [h.r25] at r4₁ r7₁
   have hwr₁ : s₁.wr = [stR s₀, dR s₀] := by rw [wr₁, h.wr, hp.wr]
   have hrd₁ : s₁.rd = [] := by rw [rd₁, h.rd, hp.rd]
   have dSB : (cpR s₀).Disjoint (wkR s₀) := Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
@@ -748,7 +744,7 @@ theorem blocks_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) (h
     rw [BitVec.toNat_add, toNat_ofNat_lt (by omega_arith)]
     omega_arith
   refine xor_call (S := st s₀ + BitVec.ofNat 64 192) (D := dp s₀ + BitVec.ofNat 64 (H s₀))
-    (B := st s₀ + BitVec.ofNat 64 256) (n := 64 * NB s₀) r3₁ r4₁ r5₁ r6₁ (by omega_arith) dSD dSB dDB hwrap
+    (B := st s₀ + BitVec.ofNat 64 256) (n := 64 * NB s₀) r3₁ r4₁ r5₁ r6₁ r7₁ (by omega_arith) dSD dSB dDB hwrap
     (by rw [hrd₁, hwr₁, List.nil_append, List.nil_append]; exact Covers.of_sub hcov)
     (by rw [hwr₁]; exact Covers.of_sub hcov) ?_
   intro s₂ k₂ x₂

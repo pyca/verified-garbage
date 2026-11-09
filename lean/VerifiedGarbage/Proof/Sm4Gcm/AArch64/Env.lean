@@ -126,11 +126,6 @@ theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 76
     (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
 
-/-- The callees' stack is apart from the parts of the context, the state
-and `W`. -/
-theorem stk_ctx {a n : Nat} (ha : a + n ≤ 256) : (stk SP).Disjoint ⟨Ctx + BitVec.ofNat 64 a, n⟩ :=
-  L.kc.sub_right (ctxSub ha)
-
 theorem stk_st {a n : Nat} (ha : a + n ≤ 80) : (stk SP).Disjoint ⟨St + BitVec.ofNat 64 a, n⟩ :=
   L.ks.sub_right (stSub ha)
 
@@ -143,9 +138,6 @@ namespace Perm
 
 variable {Ctx St W : Addr} {s : State} (P : Perm Ctx St W s)
 include P
-
-theorem ctxR {d n : Nat} (h : d + n ≤ 256) : InRegions (s.rd ++ s.wr) (Ctx + BitVec.ofNat 64 d) n :=
-  in_off P.ctx h (by decide)
 
 theorem stW {d n : Nat} (h : d + n ≤ 80) : InRegions s.wr (St + BitVec.ofNat 64 d) n :=
   in_off P.st h (by decide)

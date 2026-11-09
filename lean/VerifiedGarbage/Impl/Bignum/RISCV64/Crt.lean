@@ -31,10 +31,11 @@ table, `ModExp.powWin`) of `max(2, ⌈len / 8⌉)` words for `p` and `q`.
   p` (`r2Prime`: `64 w + w` doublings from 1, then six squares by `sqrTail`),
   `c mod p` (`reduceIn`: Montgomery multiplications, a chunk of `c`'s words at
   a time), then `m₁ = c^dP mod p` (`ModExp.powWin`).
-* `h = (m₁ - m₂ mod p) qInv mod p`: `m₂`'s bytes into `X` array 1, reduced
-  modulo `p` (`ModArith.reduce64`), subtracted with `subMod64` and `p` added
-  back under its borrow mask (`ModArith.addMask64`), then two Montgomery
-  multiplications (by `qInv`, then by `R² mod p`).
+* `h = (m₁ - m₂ mod p) qInv mod p`: `m₂` into `X`'s array 6, zero-extended
+  (`widen`); in `P`, `m₁` moved to array 9, `m₂ mod p` by `reduceIn` (with
+  the `R² mod p` that `power` left in array 1), subtracted with `subMod64` and
+  `p` added back under its borrow mask (`ModArith.addMask64`), then two
+  Montgomery multiplications (by `qInv`, then by `R² mod p`).
 * In `X`: `q h` exactly (Montgomery multiplication modulo `M`), plus `m₂`
   (`addMask64` with an all-ones mask), written to `out` most significant first
   under the mask (`PublicChecked.output`), which returns 1 or 0.
@@ -246,28 +247,19 @@ def power (xj oD oLen : Nat) : Prog isa :=
   (.seq (r2Prime 4) (.seq reduceIn
   (.seq (.block [.load .d .s9 .s6 oD, .load .d .s10 .s6 oLen]) ModExp.powWin)))))
 
-/-- `m₂`'s `q_len` bytes, most significant first, from `Q`'s array 4 into
-`X`'s array 1. -/
-def exportM2 : Prog isa :=
-  .seq (.block (base .t4 4 ++ [.load .d .t5 .s6 oQLen, .add .t4 .t4 .t5, .addi .t4 .t4 (-1)] ++ xb .t3 1))
-    (countLoop .t5 [.load .b .s0 .t4 0, .store .b .s0 .t3 0, .addi .t3 .t3 1, .addi .t4 .t4 (-1)])
-
 /-- In `P`: `h = (m₁ - m₂ mod p) qInv mod p` into array 4, from `m₁` in array
-4. -/
+4, `R² mod p` in array 1 (left by `power`) and `m₂` in `X`'s array 6. -/
 def recombineP : Prog isa :=
-  -- `q_len` first; `-p⁻¹ mod 2⁶⁴`; `R² mod p` (which `powWin` overwrote) into array 7, its squares'
-  -- temporary array 5 (array 4 holds `m₁`); `m₂ mod p` into array 1.
-  .seq (.block [.load .d .s10 .s6 oQLen])
-  (.seq (.block (Precompute.minv ++ base .a2 1 ++ base .a5 2 ++ base .a6 3)) (.seq (r2Prime 5)
-  (.seq (.block (base .t3 7 ++ base .t4 1)) (.seq copyN
-  (.seq (.block (xb .s9 1)) (.seq ModArith.reduce64
+  -- `m₁` into array 9; `-p⁻¹ mod 2⁶⁴`; `m₂ mod p` into array 4 (`reduceIn`).
+  .seq (.block (base .t3 9 ++ base .t4 4)) (.seq copyN
+  (.seq (.block (Precompute.minv ++ base .a2 1 ++ base .a5 2 ++ base .a6 3)) (.seq reduceIn
   -- `m₁ - m₂ mod p` into array 3, `p` added back under the borrow.
-  (.seq (.block (base .t3 4 ++ [.add .t3 .t3 .s5, .addi .t3 .t3 (-16), .li .s0 0, .store .d .s0 .t3 0] ++
-      base .a5 4 ++ base .a6 3 ++ base .a7 1))
+  (.seq (.block (base .t3 9 ++ [.add .t3 .t3 .s5, .addi .t3 .t3 (-16), .li .s0 0, .store .d .s0 .t3 0] ++
+      base .a5 9 ++ base .a6 3 ++ base .a7 4))
   (.seq subMod64 (.seq (.block ([.addi .a7 .ra 0] ++ base .t3 3 ++ base .t4 0)) (.seq ModArith.addMask64
   -- `qInv` into array 6; `h` into array 4.
   (.seq (.block (base .t3 6 ++ xb .t4 7)) (.seq copyN
-  (.seq (montOp 5 3 6) (montOp 4 5 7))))))))))))))
+  (.seq (montOp 5 3 6) (montOp 4 5 1)))))))))))
 
 /-- `t0 := W`, `X`'s words, from its arrays' size `s11 = 8 W + 16`. -/
 def wX : List Instr := [.addi .t0 .s11 (-16), .shift .srl .d .t0 .t0 3]
@@ -291,7 +283,7 @@ def recombineX : Prog isa :=
 def crt : Prog isa :=
   .seq (.block (save ++ args ++ setupX)) (.seq loadX (.seq checks (.seq loadIn
   (.seq (.block (setupP oBP oPLen)) (.seq (power 4 oDP oPLen)
-  (.seq (.block (setupP oBQ oQLen)) (.seq (power 5 oDQ oQLen) (.seq exportM2
+  (.seq (.block (setupP oBQ oQLen)) (.seq (power 5 oDQ oQLen) (.seq (widen oBQ oQLen 6)
   (.seq (.block (setupP oBP oPLen)) (.seq recombineP (.seq recombineX
   (.seq (.block [.addi .a7 .s6 hdrBytes, .addi .s5 .s11 0, .load .d .s10 .s6 oOut, .load .d .s11 .s6 oNLen,
       .load .d .s9 .s6 oMask])

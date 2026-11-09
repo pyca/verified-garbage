@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
 import VerifiedGarbage.Proof.Bignum.X86.ByteOps
 import VerifiedGarbage.TCB.X86.State
 import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 
 /-! # Resources provided by the shared private RSA contract on i686 -/
@@ -74,8 +75,8 @@ structure PrivABI (s : State) : Prop where
   dqLen : (arg s 15).toNat = (arg s 11).toNat
   space : Spec.Rsa.scratchWords (arg s 3).toNat ≤ (arg s 19).toNat
 
-theorem privateABI_of {s : State} (h : (Spec.Rsa.privateCheckedContract abi stackBytes).pre s) : PrivABI s := by
-  sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+theorem privateABI_of {s : State} (h : (Proof.Rsa.privateCheckedContract abi stackBytes).pre s) : PrivABI s := by
+  sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> simp only [stackBytes] at * <;> with_reducible assumption
 end VG.Proof.Rsa.X86.PrivChecked

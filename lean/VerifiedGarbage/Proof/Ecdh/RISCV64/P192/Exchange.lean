@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P192.Tail
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.Num0
 public import VerifiedGarbage.Spec.Ecdh.P192
-import VerifiedGarbage.Proof.Ecdh.RISCV64.P192.CheckVerified
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P192.CheckLit
 public import VerifiedGarbage.Proof.Ecdh.Exchange
 import VerifiedGarbage.Proof.EcKey.PublicKey

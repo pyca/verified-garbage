@@ -21,7 +21,7 @@ structure KeyConfig (base : State) (P S : Addr) (K : Nat) : Prop where
 
 structure CopyInv (base : State) (P S : Addr) (K c : Nat) (s : State) : Prop where
   bound : 8*c ≤ K
-  keep : Keep [.r3, .r4, .r5, .r8] base s
+  keep : Keep [.r0, .r3, .r4, .r5, .r8] base s
   ptr : s.gpr .r3 = P + BitVec.ofNat 64 (8*c)
   out : s.gpr .r5 = S + BitVec.ofNat 64 (8*c)
   left : s.gpr .r4 = BitVec.ofNat 64 (K-8*c)

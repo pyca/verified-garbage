@@ -21,18 +21,6 @@ namespace VG.Proof.Sha1
 
 open VG.Spec VG.Spec.Sha1
 
-/-- `vg_sha1_compress(state: *mut [u32; 5], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 14])`.
-`scratch` is working space. -/
-def compressSig : Sig where
-  params := [("state", .array true .u32 5), ("blocks", .slice false (.array .u8 64) "n"),
-    ("scratch", .array true .u64 14)]
-
-/-- Updates the hash value at `state` with the `n` 64-byte blocks at
-`blocks`. The hash value and the blocks are secret. -/
-def compressContract {M : ISA} (A : Abi M) : Contract M :=
-  compressSig.contract A (post := fun state blocks n _scratch m m' _ =>
-    stateAt m' state = compressBlocks (stateAt m state) m blocks n.toNat)
-
 /-- `vg_sha1_update_scratch(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20])`:
 `vg_sha1_update` with its working space passed in `scratch`, for functions
 that call it with theirs (HMAC's, PBKDF2's). -/

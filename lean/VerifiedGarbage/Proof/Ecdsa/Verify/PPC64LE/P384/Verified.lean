@@ -1,5 +1,12 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Hash
+public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Hash
+meta import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P384.Contract
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.PPC64LE
@@ -62,29 +69,39 @@ def satState : State where
   wr := [⟨0x8000, 8192⟩]
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P384.curve) :
-    Verified PPC64LE.target verifyP384 (Spec.Ecdsa.P384.inst.verifyContract PPC64LE.abi) :=
+    Verified PPC64LE.target verifyP384 (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst PPC64LE.abi) :=
   Verified.of_correct (verify_ppc hL) verify_ct
     { pre := by
-        sig_implies_pre [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P384.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
+        sig_implies_pre [Spec.Ecdsa.P384.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P384.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
           PPC64LE.abi, PPC64LE.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P384.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
+        sig_post [Spec.Ecdsa.P384.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P384.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
           PPC64LE.abi, PPC64LE.argRegs]
         simp only [verifyPPC, vf, Spec.P384.curve] at h
         revert h
         split <;> rename_i hv <;> simp only [hv, ite_true, ite_false, Bool.false_eq_true] <;>
           exact fun h => by rw [h]; rfl
       pub := by
-        sig_implies_pub [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P384.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
+        sig_implies_pub [Spec.Ecdsa.P384.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P384.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
           PPC64LE.abi, PPC64LE.argRegs]
       sat := by
-        sig_implies_sat [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P384.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
+        sig_implies_sat [Spec.Ecdsa.P384.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P384.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
           PPC64LE.abi, PPC64LE.argRegs]
           [satState] using satState }
+
+/-- `vg_ecdsa_p384_verify`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash
+(`Hash.verifyHash_verified`). -/
+theorem verifyHash_verified (hL : Weierstrass.Law Spec.P384.curve) :
+    Verified PPC64LE.target
+      (Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false verifyP384)
+      (Spec.Ecdsa.P384.inst.verifyHashContract PPC64LE.abi 112) :=
+  Proof.Ecdsa.Verify.PPC64LE.Hash.verifyHash_verified Proof.Ecdsa.Verify.p384_len (by decide)
+    (verify_verified hL) (by taint_decide)
 
 end VG.Proof.Ecdsa.Verify.PPC64LE.P384

@@ -5,7 +5,6 @@
 // gives.
 
 vg_mldsa_commit_tail65:
-	.arch_extension sha3
 	str q8, [x3, #0]
 	str q9, [x3, #16]
 	str q10, [x3, #32]
@@ -2224,5 +2223,4 @@ vg_mldsa_commit_tail65:
 	ldr x21, [x3, #144]
 	ldr x30, [x3, #152]
 	ret
-	.arch_extension nosha3
 	.p2align 6

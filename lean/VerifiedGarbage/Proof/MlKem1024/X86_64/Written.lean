@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.Top
 import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
@@ -36,7 +37,7 @@ def writtenEnc (v : Sample4Impl) : List (String × Nat) :=
   if v.callee.s16.isSome && v.callee.batchH16.isSome then [("scratch", scr16)] else []
 
 theorem keyGen1024_written (v : Sample4Impl) (s : State) (t : List Leak) (s' : State)
-    (hs : (Spec.MlKem1024.keyGenContract X86_64.abi 32).pre s) (he : Exec isa (keyGen1024 v.callee) s t s') :
+    (hs : (Proof.MlKem.Scrubbed.keyGen1024BodyContract X86_64.abi 32).pre s) (he : Exec isa (keyGen1024 v.callee) s t s') :
     Sig.writtenWithin (X86_64.abi.withConsts []) Spec.MlKem1024.keyGenSig (written v) s s' := by
   unfold written
   match hm : v.callee.s16 with
@@ -52,7 +53,7 @@ theorem keyGen1024_written (v : Sample4Impl) (s : State) (t : List Leak) (s' : S
       (by simp only [Elem.size] at h2; exact h2)
 
 theorem encapsH1024_written (v : Sample4Impl) (s : State) (t : List Leak) (s' : State)
-    (hs : (Spec.MlKem1024.encapsHContract X86_64.abi 32).pre s) (he : Exec isa (encapsH1024 v.callee) s t s') :
+    (hs : (Proof.MlKem.Scrubbed.encapsH1024BodyContract X86_64.abi 32).pre s) (he : Exec isa (encapsH1024 v.callee) s t s') :
     Sig.writtenWithin (X86_64.abi.withConsts []) Spec.MlKem1024.encapsHSig (written v) s s' := by
   unfold written
   match hm : v.callee.s16 with
@@ -68,7 +69,7 @@ theorem encapsH1024_written (v : Sample4Impl) (s : State) (t : List Leak) (s' : 
       (by simp only [Elem.size] at h2; exact h2)
 
 theorem encaps1024_written (v : Sample4Impl) (s : State) (t : List Leak) (s' : State)
-    (hs : (Spec.MlKem1024.encapsContract X86_64.abi 32).pre s) (he : Exec isa (encaps1024 v.callee) s t s') :
+    (hs : (Proof.MlKem.Scrubbed.encaps1024BodyContract X86_64.abi 32).pre s) (he : Exec isa (encaps1024 v.callee) s t s') :
     Sig.writtenWithin (X86_64.abi.withConsts []) Spec.MlKem1024.encapsSig (writtenEnc v) s s' := by
   unfold writtenEnc
   match hm : v.callee.s16, hb : v.callee.batchH16 with
@@ -86,7 +87,7 @@ theorem encaps1024_written (v : Sample4Impl) (s : State) (t : List Leak) (s' : S
       (by simp only [Elem.size] at h2; exact h2)
 
 theorem decaps1024_written (v : Sample4Impl) (s : State) (t : List Leak) (s' : State)
-    (hs : (Spec.MlKem1024.decapsContract X86_64.abi 32).pre s) (he : Exec isa (decaps1024 v.callee) s t s') :
+    (hs : (Proof.MlKem.Scrubbed.decaps1024BodyContract X86_64.abi 32).pre s) (he : Exec isa (decaps1024 v.callee) s t s') :
     Sig.writtenWithin (X86_64.abi.withConsts []) Spec.MlKem1024.decapsSig (writtenEnc v) s s' := by
   unfold writtenEnc
   match hm : v.callee.s16, hb : v.callee.batchH16 with

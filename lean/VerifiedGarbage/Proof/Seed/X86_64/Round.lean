@@ -24,8 +24,6 @@ open VG VG.X86_64 VG.X86_64.Straight VG.X86_64.RegUpd VG.Impl.Seed.X86_64
 
 theorem room_ok_gCfg {s : State} (h : Room s) : Ok gCfg s := ok_of_room h rfl (by decide) rfl
 
-theorem sb_eq : Impl.Aes.X86_64.sb = .r9 := rfl
-
 /-- `g16` on the lanes: `G` of `G`'s words, the other arrays kept. -/
 theorem g16_lanes {s : State} (h : Room s) (hm : MasksIn s) :
     ∃ s', runBlock isa g16 s = some s' ∧

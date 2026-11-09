@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.Sha256.X86_64.Variant
 public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
-public import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Hmac.Scratch
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
@@ -63,7 +62,7 @@ structure StreamFn where
   stack : Nat := 0
   verified : Verified X86_64.target code contract
   ofSig : ∃ pre post leak,
-      contract = api.sig.contract X86_64.target.abi pre post api.writeArgs stack leak := by
+      contract = api.sig.contract (X86_64.target.abi.withMode api.pubMode) pre post api.writeArgs stack leak := by
     exact ⟨_, _, _, rfl⟩
   ofApi : contract = api.contract X86_64.target.abi stack := by exact rfl
   spSafe : code.all (fun i => !X86_64.target.isa.writesSp i) = true
@@ -120,9 +119,6 @@ structure MdHash where
   K : Callees H
   /-- The hash function as RSA's padding takes it. -/
   mgf : MgfLink H ok
-  /-- RSASSA-PSS's taint checks of the pieces of its code that depend on the
-  hash function, once for each hash function. -/
-  pss : Proof.RsaPss.X86_64.PssChecks H.P H.D
   hmacInit : Verified X86_64.target H.hmacInit (Proof.Hmac.Instance.initScratchContract I X86_64.abi 16)
   hmacFin : Verified X86_64.target H.hmacFin (Proof.Hmac.Instance.finalizeScratchContract I X86_64.abi 16)
   iterate : Verified X86_64.target H.iterate (Proof.Pbkdf2.Instance.iterateContract I X86_64.abi 8)
@@ -146,6 +142,15 @@ structure MdHash where
   pbkdf2F : Verified X86_64.target
     (Impl.StackScratch.X86_64.withStackArgScratch (pbkdf2Frame I) 1 H.pbkdf2)
     (I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame I))
+  /-- What the kernel checked of the code HMAC and PBKDF2 add to the hash
+  function's (`CoreOK`), and that the instance's streaming hash function is
+  the code's (its state's representation and its working space): what a
+  function generic over the variant that calls HMAC's `_scratch` functions
+  needs (deterministic ECDSA's, through a table of `Hmac`,
+  `Proof/HmacTable/X86_64.lean`). -/
+  C : CoreOK (core H)
+  hSH : ok.SH = I.S
+  hW : H.W = I.scratch
   /-- What the names of the functions emitted for it end with (e.g.
   `_shani`; nothing for the baseline implementation). -/
   suffix : String
@@ -156,26 +161,6 @@ structure MdHash where
   the compression function, when no other variant shares them (otherwise
   they are in the hash function's registration file). -/
   stream : List StreamFn
-  /-- For SHA-512's variants, the implementation of the compression
-  function, from which the functions built on SHA-512 alone (Ed25519's) are
-  made (`Generic/MdHash/X86_64/Ed25519.lean`); `none` for the other hash
-  functions. -/
-  sha512 : Option Proof.Sha512.X86_64.Compress := none
-  /-- For SHA-256's variants, the implementation of the compression
-  function, from which the functions built on SHA-256 alone (scrypt's) are
-  made (`Generic/MdHash/X86_64/Scrypt.lean`); `none` for the other hash
-  functions. -/
-  sha256 : Option Proof.Sha256.X86_64.Compress := none
-  /-- For SHA-384's variants, the implementation of the compression
-  function, from which the functions built on SHA-384 alone (deterministic
-  ECDSA's) are made (`Generic/MdHash/P256/X86_64/EcdsaP256Sha384.lean`); `none`
-  for the other hash functions. -/
-  sha384 : Option Proof.Sha512.X86_64.Compress := none
-  /-- For SHA-224's variants, the implementation of SHA-256's compression
-  function, from which the functions built on SHA-224 alone (deterministic
-  ECDSA's) are made (`Generic/MdHash/P224/X86_64/EcdsaP224Sha224.lean`);
-  `none` for the other hash functions. -/
-  sha224 : Option Proof.Sha256.X86_64.Compress := none
 
 namespace MdHash
 
@@ -301,7 +286,7 @@ end MdHash
 /-- The variant of hash function `H`, of instance `I`, from what the proofs
 need of it and the satisfiability of the shared contracts. -/
 def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (core H)) (K : Callees H)
-    (mgf : MgfLink H hH) (pss : Proof.RsaPss.X86_64.PssChecks H.P H.D) (hSH : hH.SH = I.S) (hW : H.W = I.scratch)
+    (mgf : MgfLink H hH) (hSH : hH.SH = I.S) (hW : H.W = I.scratch)
     (hsI : ∃ s, (Proof.Hmac.Instance.initScratchContract I X86_64.abi 16).pre s)
     (hsF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract I X86_64.abi 16).pre s)
     (hsT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract I X86_64.abi 8).pre s)
@@ -320,7 +305,6 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   ok := hH
   K := K
   mgf := mgf
-  pss := pss
   hmacInit := MdHash.hmacInit_of hH C K hSH hW hsI
   hmacFin := MdHash.hmacFin_of hH C K hSH hW hsF
   iterate := MdHash.iterate_of hH C K hSH hW hsT
@@ -333,6 +317,9 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   hmacInitFSp := MdHash.hmacInitFSp_of C K A
   hmacFinF := MdHash.hmacFinF_of hH C K hSH hW hsF hs hsFF
   pbkdf2F := MdHash.pbkdf2F_of hH C K hSH hW hsI hsF hsT hsP hp hsPF
+  C := C
+  hSH := hSH
+  hW := hW
   suffix := suffix
   features := features
   stream := stream

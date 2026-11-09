@@ -41,7 +41,7 @@ open VG.Impl.Aes.AArch64 (sb t0 kp movR)
 open VG.Proof.Modes.AArch64 (ScrIn coreRegion bufRegion bufAddr Layout CoreSpec modeRegs dup_ok umov_ok
   extract_ofVDwords vSafe keepsV_of_vSafe runBlock_app)
 open VG.Proof.Camellia (schedWords schedWords_getD wordAt_frame bytesAt_eq_blockAt ofFn_toList blockFn)
-open VG.Spec.Camellia.Prepared (Holds Keeps)
+open VG.Proof.Camellia.Prepared (Holds Keeps)
 
 /-- The number of rounds in `x1` and the schedule at `x0`, outside the
 regions `rs`. -/
@@ -257,7 +257,7 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Nat 
   refine WP.seq (WP.of_runBlock ⟨s₄, by rw [runBlock_app, keepHead_ok, Option.bind_some]; exact eargs, ?_⟩)
   have hsep : Region.Disjoint ⟨p, 272⟩ ⟨B, 8 * slots⟩ :=
     (hdis _ hR).sub_right (Region.sub_prefix (by rw [total_eq]; omega_arith))
-  have w : WP isa (.call (Spec.Camellia.Prepared.prepareApi layout).name prepareKeys) s₄ fun s' =>
+  have w : WP isa (.call "vg_camellia_prepare_keys" prepareKeys) s₄ fun s' =>
       s'.rd = s₄.rd ∧ s'.wr = s₄.wr ∧ Frame [⟨B, 8 * slots⟩] s₄.mem s'.mem ∧
       Holds layout s'.mem B R (schedWords s.mem p R) (specDir d) := by
     refine WP.call (k := prepAArch64) prep_correct (rd := [⟨p, 272⟩]) (wr := [⟨B, 8 * slots⟩]) ?_
@@ -293,7 +293,7 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Nat 
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs), x0₄]
       have g1 : ((s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x1).toNat = R := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs), x1₄, toNat_rounds hRr]
-      have g2 : Spec.Camellia.Prepared.directionOf
+      have g2 : Proof.Camellia.Prepared.directionOf
           ((s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x2).toNat = specDir d := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), x2₄]
         cases d <;> rfl
@@ -376,7 +376,7 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Nat × List (BitVec 64)} 
     refine holds_of_words ?_
     rw [ofSpecDir_specDir]
     exact words_of_readyAt hready
-  have w : WP isa (.call (Spec.Camellia.Prepared.cryptApi layout).name cryptPrepared) s₄ fun s' =>
+  have w : WP isa (.call "vg_camellia_crypt_prepared" cryptPrepared) s₄ fun s' =>
       s'.rd = s₄.rd ∧ s'.wr = s₄.wr ∧ Frame [⟨B, 8 * slots⟩] s₄.mem s'.mem ∧
       Spec.Camellia.blocksAt s'.mem (B + BitVec.ofNat 64 layout.buf) layout.blocks =
         Spec.Camellia.ecb (Spec.Camellia.subkeysOfWords R ws) (specDir d)

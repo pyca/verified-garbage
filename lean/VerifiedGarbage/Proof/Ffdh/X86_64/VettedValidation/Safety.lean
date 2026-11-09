@@ -12,7 +12,7 @@ namespace VG.Proof.Ffdh.X86_64.VettedValidation
 open VG VG.X86_64 VG.Proof.MillerRabin.X86_64
 open VG.Impl.Ffdh.X86_64.VettedValidation
 
-theorem sp_safe (v : RoundImpl) : (emittedCode v).all (fun i => !isa.writesSp i) = true := by
+theorem sp_safe (v : RoundImpl) (e : ExpImpl) : (emittedCode v e).all (fun i => !isa.writesSp i) = true := by
   have safePrefix : (recognizeCode.all (fun i => !isa.writesSp i)) = true := by
     apply Code.all_of_allInstrs
     decide +kernel
@@ -21,8 +21,8 @@ theorem sp_safe (v : RoundImpl) : (emittedCode v).all (fun i => !isa.writesSp i)
     decide +kernel
   change (recognizeCode.all (fun i => !isa.writesSp i) &&
     (true && (true && ((Code.block restore : Prog isa).all (fun i => !isa.writesSp i) &&
-      (CheckDomain.domainCode v).all (fun i => !isa.writesSp i))))) = true
-  rw [safePrefix, restoreSafe, CheckDomain.domainCode_sp v]
+      (CheckDomain.domainCode v e).all (fun i => !isa.writesSp i))))) = true
+  rw [safePrefix, restoreSafe, CheckDomain.domainCode_sp v e]
   rfl
 
 end VG.Proof.Ffdh.X86_64.VettedValidation

@@ -172,15 +172,11 @@ theorem whole_pre (hs : gatherPre s) : Whole.gatherPre e := by
   have g (r : Reg) (hr : r ≠ .rax) := h.gpr r hr
   obtain ⟨rd, wr, kd, kt, nd, nt, ad, at_, dt, dds, dls, darg, rdd, rt, bk, bn, ba, bd, bt, bds, bls, ok, on, oa,
     od, ot, ods, ol, w₁, w₂, hgl, hpm, -, -⟩ := he
-  have sub : (Whole.stkR e).Sub (stkR e) := by
-    show Region.Sub (below (e.gpr .rsp) 1816) (below (e.gpr .rsp) 1880)
-    simp only [below]
-    rw [show e.gpr .rsp - BitVec.ofNat 64 1816 = e.gpr .rsp - BitVec.ofNat 64 1880 + BitVec.ofNat 64 64 by
-      rw [Offset.sub_ofNat_eq _ (show 1816 ≤ 1880 by decide)]]
-    exact Offset.sub_base _ (by decide)
+  have sub : (Whole.stkR e).Sub (stkR e) :=
+    below_sub (a := 1832) (b := 1880) (by decide) (by decide)
   exact ⟨rd, wr, kd, kt, nd, nt, ad, at_, dt, dds, dls, darg, rdd, rt, bk.sub_left sub, bn.sub_left sub,
     ba.sub_left sub, bd.sub_left sub, bt.sub_left sub, bds.sub_left sub, fun r hr => (bls r hr).sub_left sub,
-    ok, on, oa, od, ot, ods, ol, by have : 1880 ≤ (e.gpr .rsp).toNat := w₁; show 1816 ≤ (e.gpr .rsp).toNat; omega, w₂, hgl, hpm⟩
+    ok, on, oa, od, ot, ods, ol, by have : 1880 ≤ (e.gpr .rsp).toNat := w₁; show 1832 ≤ (e.gpr .rsp).toNat; omega, w₂, hgl, hpm⟩
 
 /-- What the code leaves, from `s` or from the state after the comparison. -/
 theorem post_same {z : State} : gatherPost e z ↔ gatherPost s z := by

@@ -36,9 +36,6 @@ structure Ws (s : State) (B : Addr) (Z w N : Nat) : Prop where
   r30 : s.gpr .r30 = BitVec.ofNat 64 (S w)
   r31 : s.gpr .r31 = B
 
-/-- The registers the key operations keep. -/
-abbrev wsRegs : List Reg := [.r29, .r30, .r31]
-
 theorem Ws.of_keep {s t : State} {B : Addr} {Z w N : Nat} {rs : List Reg} (h : Ws s B Z w N)
     (k : Keep rs s t) (h29 : .r29 ∉ rs := by decide) (h30 : .r30 ∉ rs := by decide)
     (h31 : .r31 ∉ rs := by decide) : Ws t B Z w N :=

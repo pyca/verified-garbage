@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Syms
-import VerifiedGarbage.Proof.Dsa.X86.Generation.ABIEnv
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingBase
 import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT

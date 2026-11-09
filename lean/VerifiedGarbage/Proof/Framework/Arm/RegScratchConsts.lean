@@ -33,8 +33,6 @@ variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}
   {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
   {stack bytes words : Nat} {r : Reg} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
 
-theorem narrowR_syms (s : State) : (narrowR e n bytes r s).syms = s.syms := rfl
-
 theorem stripConsts_narrowR (K : List (String × List (BitVec 64))) (s : State) :
     stripConsts K (narrowR e n bytes r s) = narrowR e n bytes r (stripConsts K s) := rfl
 

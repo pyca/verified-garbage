@@ -34,7 +34,7 @@ and timing may depend on it (`leak`). The function is otherwise constant
 time.
 
 `vg_rsa_mont_mul` reduces its result below `m` and takes `b` below `m`;
-`vg_rsa_lazy_mont_mul` (`mulLazyContract`) takes and returns any numbers of
+`vg_rsa_lazy_mont_mul` takes and returns any numbers of
 `w` words, congruent to the same value, which saves a pass over the result in
 every multiplication of an exponentiation. Its callers reduce once, where they
 need a value below `m`.
@@ -113,29 +113,6 @@ def mulContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
       let M := numAt m ws w aM
       numAt m' ws w o.toNat < M ∧
         numAt m' ws w o.toNat * 2 ^ (64 * w) % M = numAt m ws w a.toNat * numAt m ws w b.toNat % M ∧
-        Keeps ws wsLen.toNat w o.toNat m m')
-    (stack := stack)
-    (leak := some fun ws _ _ _ _ m => [wOf m ws])
-
-/-- The lazy Montgomery multiplication: for `-m⁻¹ mod 2⁶⁴` in the header (so
-`m` is odd), the number at `o` is congruent to `a b R⁻¹` modulo `m`,
-`R = 2^(64 w)`, that is, its product with `R` is congruent to `a b`. Neither
-the operands nor the result need be below `m`: they are any numbers of `w`
-words (below `R`). With `a, b < R` and `m < R`, `(a b + q m) / R` is below
-`R + m`, so one subtraction of `m`, when that sum reaches `R`, brings it
-below `R`; a caller reduces below `m` once, where it needs to. `mulContract`
-implies it. -/
-def mulLazyContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  sig.contract A
-    (pre := fun ws wsLen o a b m =>
-      let w := wOf m ws
-      Layout m ws wsLen.toNat ∧ Operand o.toNat ∧ Operand a.toNat ∧ Operand b.toNat ∧
-        ((m.readW (ws + BitVec.ofNat 64 (arrAt w aM)) 64).toNat * (wordAt m ws minvWord).toNat + 1) %
-          2 ^ 64 = 0)
-    (post := fun ws wsLen o a b m m' _ =>
-      let w := wOf m ws
-      let M := numAt m ws w aM
-      numAt m' ws w o.toNat * 2 ^ (64 * w) % M = numAt m ws w a.toNat * numAt m ws w b.toNat % M ∧
         Keeps ws wsLen.toNat w o.toNat m m')
     (stack := stack)
     (leak := some fun ws _ _ _ _ m => [wOf m ws])

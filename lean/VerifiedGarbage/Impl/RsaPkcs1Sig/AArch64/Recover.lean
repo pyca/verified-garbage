@@ -68,24 +68,4 @@ def copyOut : Prog isa :=
 /-- The arguments of `compare`: `EM₁`, `EM₂` and `k`. -/
 def cmpArgs : List Instr := [.addSp .x14 oEM1, .addSp .x15 oEM2, mov .x13 .x21]
 
-/-- After the comparison, its result in `x12`. -/
-def release : Prog isa := .ite (.nonzero .x .x12) zeroKept copyOut
-
-/-- After the encoding. -/
-def tail : Prog isa :=
-  .ite (.zero .x .x0) zeroKept (.seq (.block cmpArgs) (.seq compare release))
-
-/-- After the call. -/
-def afterPub : Prog isa :=
-  .ite (.zero .w .x0) zeroKept (.seq (.block encArgs) (.seq encode tail))
-
-def body (pubName : String) (pub : Prog isa) : Prog isa :=
-  .seq (.block pubArgs) (.seq (.call pubName pub) (.seq afterPub (.block restore)))
-
-/-- `vg_rsa_pkcs1_recover`, calling `vg_rsa_public_checked` (`pub`) by its
-name. -/
-def code (pubName : String) (pub : Prog isa) : Prog isa :=
-  .seq (.block lenCheck)
-    (.ite (.nonzero .x .x8) zeroArgs (.frame (.alloc frameBytes) (body pubName pub) (.free frameBytes)))
-
 end VG.Impl.RsaPkcs1Sig.AArch64.Recover

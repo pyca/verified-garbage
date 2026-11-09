@@ -129,6 +129,112 @@ vg_sha224_finalize:
 	addi %r1, %r1, 640
 	blr
 
+vg_sha224_digest:
+	stdu %r1, -416(%r1)
+	addi %r6, %r1, 32
+	mflr %r0
+	stdu %r1, -48(%r1)
+	std %r0, 32(%r1)
+	std %r20, 336(%r6)
+	std %r21, 344(%r6)
+	std %r22, 352(%r6)
+	std %r23, 360(%r6)
+	std %r24, 368(%r6)
+	std %r25, 376(%r6)
+	addi %r21, %r6, 0
+	addi %r22, %r5, 0
+	addi %r23, %r3, 0
+	addi %r24, %r4, 0
+	addi %r20, %r6, 208
+	addi %r3, %r20, 0
+	bl {vg_sha224_init}
+	addi %r3, %r20, 0
+	li %r4, 0
+	addi %r5, %r23, 0
+	addi %r6, %r24, 0
+	addi %r7, %r21, 0
+	bl {vg_sha256_update_scratch}
+	addi %r3, %r20, 0
+	addi %r4, %r24, 0
+	addi %r5, %r21, 304
+	addi %r6, %r21, 0
+	bl {vg_sha256_finalize_scratch}
+	lwz %r8, 304(%r21)
+	stw %r8, 0(%r22)
+	lwz %r8, 308(%r21)
+	stw %r8, 4(%r22)
+	lwz %r8, 312(%r21)
+	stw %r8, 8(%r22)
+	lwz %r8, 316(%r21)
+	stw %r8, 12(%r22)
+	lwz %r8, 320(%r21)
+	stw %r8, 16(%r22)
+	lwz %r8, 324(%r21)
+	stw %r8, 20(%r22)
+	lwz %r8, 328(%r21)
+	stw %r8, 24(%r22)
+	ld %r20, 336(%r21)
+	ld %r22, 352(%r21)
+	ld %r23, 360(%r21)
+	ld %r24, 368(%r21)
+	ld %r25, 376(%r21)
+	ld %r21, 344(%r21)
+	ld %r0, 32(%r1)
+	addi %r1, %r1, 48
+	mtlr %r0
+	addi %r12, %r1, 32
+	li %r11, 0
+	std %r11, 0(%r12)
+	std %r11, 8(%r12)
+	std %r11, 16(%r12)
+	std %r11, 24(%r12)
+	std %r11, 32(%r12)
+	std %r11, 40(%r12)
+	std %r11, 48(%r12)
+	std %r11, 56(%r12)
+	std %r11, 64(%r12)
+	std %r11, 72(%r12)
+	std %r11, 80(%r12)
+	std %r11, 88(%r12)
+	std %r11, 96(%r12)
+	std %r11, 104(%r12)
+	std %r11, 112(%r12)
+	std %r11, 120(%r12)
+	std %r11, 128(%r12)
+	std %r11, 136(%r12)
+	std %r11, 144(%r12)
+	std %r11, 152(%r12)
+	std %r11, 160(%r12)
+	std %r11, 168(%r12)
+	std %r11, 176(%r12)
+	std %r11, 184(%r12)
+	std %r11, 192(%r12)
+	std %r11, 200(%r12)
+	std %r11, 208(%r12)
+	std %r11, 216(%r12)
+	std %r11, 224(%r12)
+	std %r11, 232(%r12)
+	std %r11, 240(%r12)
+	std %r11, 248(%r12)
+	std %r11, 256(%r12)
+	std %r11, 264(%r12)
+	std %r11, 272(%r12)
+	std %r11, 280(%r12)
+	std %r11, 288(%r12)
+	std %r11, 296(%r12)
+	std %r11, 304(%r12)
+	std %r11, 312(%r12)
+	std %r11, 320(%r12)
+	std %r11, 328(%r12)
+	std %r11, 336(%r12)
+	std %r11, 344(%r12)
+	std %r11, 352(%r12)
+	std %r11, 360(%r12)
+	std %r11, 368(%r12)
+	std %r11, 376(%r12)
+	addi %r1, %r1, 416
+	blr
+
 vg_sha256_init:
 	lis %r8, 27145
 	ori %r8, %r8, 58983
@@ -388,4 +494,112 @@ vg_sha256_finalize:
 	addi %r1, %r1, 48
 	mtlr %r0
 	addi %r1, %r1, 640
+	blr
+
+vg_sha256_digest:
+	stdu %r1, -416(%r1)
+	addi %r6, %r1, 32
+	mflr %r0
+	stdu %r1, -48(%r1)
+	std %r0, 32(%r1)
+	std %r20, 336(%r6)
+	std %r21, 344(%r6)
+	std %r22, 352(%r6)
+	std %r23, 360(%r6)
+	std %r24, 368(%r6)
+	std %r25, 376(%r6)
+	addi %r21, %r6, 0
+	addi %r22, %r5, 0
+	addi %r23, %r3, 0
+	addi %r24, %r4, 0
+	addi %r20, %r6, 208
+	addi %r3, %r20, 0
+	bl {vg_sha256_init}
+	addi %r3, %r20, 0
+	li %r4, 0
+	addi %r5, %r23, 0
+	addi %r6, %r24, 0
+	addi %r7, %r21, 0
+	bl {vg_sha256_update_scratch}
+	addi %r3, %r20, 0
+	addi %r4, %r24, 0
+	addi %r5, %r21, 304
+	addi %r6, %r21, 0
+	bl {vg_sha256_finalize_scratch}
+	lwz %r8, 304(%r21)
+	stw %r8, 0(%r22)
+	lwz %r8, 308(%r21)
+	stw %r8, 4(%r22)
+	lwz %r8, 312(%r21)
+	stw %r8, 8(%r22)
+	lwz %r8, 316(%r21)
+	stw %r8, 12(%r22)
+	lwz %r8, 320(%r21)
+	stw %r8, 16(%r22)
+	lwz %r8, 324(%r21)
+	stw %r8, 20(%r22)
+	lwz %r8, 328(%r21)
+	stw %r8, 24(%r22)
+	lwz %r8, 332(%r21)
+	stw %r8, 28(%r22)
+	ld %r20, 336(%r21)
+	ld %r22, 352(%r21)
+	ld %r23, 360(%r21)
+	ld %r24, 368(%r21)
+	ld %r25, 376(%r21)
+	ld %r21, 344(%r21)
+	ld %r0, 32(%r1)
+	addi %r1, %r1, 48
+	mtlr %r0
+	addi %r12, %r1, 32
+	li %r11, 0
+	std %r11, 0(%r12)
+	std %r11, 8(%r12)
+	std %r11, 16(%r12)
+	std %r11, 24(%r12)
+	std %r11, 32(%r12)
+	std %r11, 40(%r12)
+	std %r11, 48(%r12)
+	std %r11, 56(%r12)
+	std %r11, 64(%r12)
+	std %r11, 72(%r12)
+	std %r11, 80(%r12)
+	std %r11, 88(%r12)
+	std %r11, 96(%r12)
+	std %r11, 104(%r12)
+	std %r11, 112(%r12)
+	std %r11, 120(%r12)
+	std %r11, 128(%r12)
+	std %r11, 136(%r12)
+	std %r11, 144(%r12)
+	std %r11, 152(%r12)
+	std %r11, 160(%r12)
+	std %r11, 168(%r12)
+	std %r11, 176(%r12)
+	std %r11, 184(%r12)
+	std %r11, 192(%r12)
+	std %r11, 200(%r12)
+	std %r11, 208(%r12)
+	std %r11, 216(%r12)
+	std %r11, 224(%r12)
+	std %r11, 232(%r12)
+	std %r11, 240(%r12)
+	std %r11, 248(%r12)
+	std %r11, 256(%r12)
+	std %r11, 264(%r12)
+	std %r11, 272(%r12)
+	std %r11, 280(%r12)
+	std %r11, 288(%r12)
+	std %r11, 296(%r12)
+	std %r11, 304(%r12)
+	std %r11, 312(%r12)
+	std %r11, 320(%r12)
+	std %r11, 328(%r12)
+	std %r11, 336(%r12)
+	std %r11, 344(%r12)
+	std %r11, 352(%r12)
+	std %r11, 360(%r12)
+	std %r11, 368(%r12)
+	std %r11, 376(%r12)
+	addi %r1, %r1, 416
 	blr

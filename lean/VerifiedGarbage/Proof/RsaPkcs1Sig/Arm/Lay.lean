@@ -89,14 +89,6 @@ namespace Lay
 
 variable {L : Lay}
 
-theorem Ok.fr_toNat {σ : State} (h : L.Ok σ) {d : Nat} (hd : d < L.F + 56 + L.A) :
-    (L.fr d).toNat = L.B.toNat + d := by
-  have := h.fit
-  simp only [fr, Q]
-  rw [BitVec.toNat_add, Proof.X25519.Arm.addr_toNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := d) (by omega)]
-  exact Nat.mod_eq_of_lt (by omega)
-
 /-- `B + d` as an address. -/
 theorem Ok.addrB {σ : State} (h : L.Ok σ) {d : Nat} (hd : d < L.F + 56 + L.A) :
     State.addr (L.B + BitVec.ofNat 32 d) = L.fr d :=

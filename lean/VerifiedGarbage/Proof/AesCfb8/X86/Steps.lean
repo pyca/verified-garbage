@@ -45,9 +45,6 @@ theorem decPost_eq : decPost = .mov .ebp (argOp 5) :: (decByte ++ (.mov .ebx (ar
 theorem low_xor (a b : Byte) : (a.setWidth 32 ^^^ b.setWidth 32).setWidth 8 = a ^^^ b := by
   ext i hi; simp
 
-theorem low_zext (a : Byte) : (a.setWidth 32).setWidth 8 = a := by
-  ext i hi; simp
-
 theorem encByte_ok (s : State) {P T : Addr} (hp : addr (s.gpr .esi) 0 = P) (ht : addr (s.gpr .ebp) 2048 = T)
     (rP : InRegions (s.rd ++ s.wr) P 1) (rT : InRegions (s.rd ++ s.wr) T 1) (wP : InRegions s.wr P 1) :
     ∃ s', runBlock isa encByte s = some s' ∧ (s'.gpr .eax).setWidth 8 = s.mem P ^^^ s.mem T ∧

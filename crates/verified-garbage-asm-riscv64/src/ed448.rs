@@ -15,7 +15,7 @@
 /// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `out`, `seed` and `scratch` may overlap the 1328 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -111,9 +111,9 @@ call {vg_ed448_scalar_base}
 .insn 2, 0x610d
 .insn 2, 0x8082
 .option pop",
-        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
-        vg_keccak_pad = sym super::sha3::vg_keccak_pad,
-        vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
+        vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
+        vg_keccak_squeeze = sym super::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
     )
 }
@@ -135,7 +135,7 @@ call {vg_ed448_scalar_base}
 /// * `out` and `scratch` must not overlap each other, `seed`, `pk`, `context` or `message` (distinct Rust objects never do).
 /// * None of `out`, `seed`, `pk`, `context`, `message` and `scratch` may overlap the 1696 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -543,9 +543,9 @@ call {vg_ed448_scalar_mul_add}
 .insn 4, 0x21010113
 .insn 2, 0x8082
 .option pop",
-        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
-        vg_keccak_pad = sym super::sha3::vg_keccak_pad,
-        vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
+        vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
+        vg_keccak_squeeze = sym super::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
         vg_ed448_scalar_mul_add = sym super::ed448::vg_ed448_scalar_mul_add::vg_ed448_scalar_mul_add,
@@ -565,7 +565,7 @@ call {vg_ed448_scalar_mul_add}
 /// * `scratch` must not overlap `pk`, `context`, `message` or `signature` (distinct Rust objects never do).
 /// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the 1616 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -1029,13 +1029,17 @@ call {vg_ed448_verify_equation}
 .insn 2, 0x6139
 .insn 2, 0x8082
 .option pop",
-        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
-        vg_keccak_pad = sym super::sha3::vg_keccak_pad,
-        vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
+        vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
+        vg_keccak_squeeze = sym super::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
         vg_ed448_verify_equation = sym super::ed448::vg_ed448_verify_equation::vg_ed448_verify_equation,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_ed448_decode_core.rs"]
+pub(crate) mod vg_ed448_decode_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ed448_scalar_base.rs"]
@@ -1054,5 +1058,17 @@ pub(crate) mod vg_ed448_scalar_reduce;
 pub(crate) mod vg_ed448_verify_equation;
 
 #[rustfmt::skip]
+#[path = "internal/vg_keccak_absorb.rs"]
+pub(crate) mod vg_keccak_absorb;
+
+#[rustfmt::skip]
 #[path = "internal/vg_keccak_f1600.rs"]
 pub(crate) mod vg_keccak_f1600;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_pad.rs"]
+pub(crate) mod vg_keccak_pad;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_squeeze.rs"]
+pub(crate) mod vg_keccak_squeeze;

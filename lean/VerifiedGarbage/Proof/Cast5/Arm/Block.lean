@@ -243,10 +243,6 @@ theorem nextT_up (i : Nat) : nextT true (i % 3 + 1) = (i + 1) % 3 + 1 := by
   simp only [nextT, ite_true]
   split <;> omega_arith
 
-theorem nextT_down {i : Nat} (hi : 1 ≤ i) : nextT false ((i - 1 + 1) % 3 + 1) = (i - 1) % 3 + 1 := by
-  simp only [nextT, Bool.false_eq_true, ite_false]
-  split <;> omega_arith
-
 /-! ## The block function -/
 
 /-- Storing the word read: nothing changes. -/

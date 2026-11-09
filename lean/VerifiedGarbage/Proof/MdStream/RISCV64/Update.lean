@@ -200,7 +200,8 @@ theorem Pending.compress_ok (hf : CalleeOk H code) {s₀ : State} (hp : Pre P s�
     rcases h.src with h' | ⟨c₀, h', hc₀⟩
     · exact .inl (h' ▸ Offset.sub_base (d := P.N) (n := 64) (k := P.N + 64) _ (by omega_arith))
     · exact .inr (h' ▸ Offset.sub_base (d := c₀) (n := 64) (k := len s₀) _ (by omega_arith))
-  refine compressAt_ok hf h.s1 h.s2 rfl ((hp.st_scr.sub_left e32).sub_right e80) ?_ ?_ ?_ ?_ ?_
+  refine compressAt_ok hf h.s1 h.s2 rfl ((hp.st_scr.sub_left e32).sub_right e80) ?_ ?_
+    (by have := hp.scr_al; omega) ?_ ?_ ?_
   · rcases h.src with h' | ⟨c₀, h', hc₀⟩
     · rw [h']
       exact Offset.disjoint_base (st s₀) (d := P.N) (n := 64) (k := P.N) (by omega_arith) (by omega_arith)

@@ -339,8 +339,6 @@ theorem data_argument (s : State) : dataArg s = arg s 1 := (argument_word s 1).s
 
 theorem scratch_argument (s : State) : scratchArg s 3 = arg s 2 := (argument_word s 2).symm
 
-theorem schedule_argument (s : State) : scheduleArg s = arg s 0 := (argument_word s 0).symm
-
 theorem headPre_of_contract (d : Direction) (s : State) (hs : (blockContract d).pre s) :
     HeadPre (Spec.TripleDes.componentSchedule (Spec.TripleDes.scheduleAt s.mem (addr32 (arg s 0))))
       (arg s 0) s := by

@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Cmac.Stream
 
 How the implementations compute the functions of `Spec/Siv.lean`:
 
-* `cmacWith_split`: CMAC with given subkeys (`cmacWith`) of a message of
+* `macWith_split`: CMAC with given subkeys (`Spec.Cmac.macWith`) of a message of
   whole blocks followed by its last bytes is the cipher of the chaining value
   of the whole blocks XORed with the last block, as `vg_cmac_aes_update` and
   `vg_cmac_aes_finalize` compute it (`Proof.Cmac.macFull_split` for the
@@ -33,45 +33,33 @@ open VG.Spec.Cmac (chain blocks lastBlock zeros)
 
 /-- SP 800-38B §6.2 steps 3–6 with the subkeys `k1` and `k2`, for a message of
 whole blocks `msg` followed by `last`. -/
-theorem cmacWith_split (ciph : Spec.Cmac.Cipher) (k1 k2 : List Byte) {msg last : List Byte}
+theorem macWith_split (ciph : Spec.Cmac.Cipher) (k1 k2 : List Byte) {msg last : List Byte}
     (hm : msg.length % 16 = 0) (hl : last.length ≤ 16) (hne : msg = [] ∨ 0 < last.length) :
-    Spec.Siv.cmacWith ciph k1 k2 (msg ++ last) =
-      ciph (Spec.Cmac.xor (chain ciph (zeros 16) (blocks 16 msg)) (lastBlock 16 k1 k2 last)) := by
-  obtain ⟨q, hq⟩ : ∃ q, msg.length = 16 * q := ⟨msg.length / 16, by omega⟩
-  have hn : (if (msg ++ last).length = 0 then 1 else ((msg ++ last).length + 16 - 1) / 16) = q + 1 := by
-    rw [List.length_append]
-    split
-    · omega
-    · have hl0 : 0 < last.length := by
-        rcases hne with h | h
-        · subst h; simp only [List.length_nil] at *; omega
-        · exact h
-      omega
-  simp only [Spec.Siv.cmacWith, hn, Nat.add_sub_cancel]
-  rw [Proof.Cmac.blocks_eq hm last q hq, Proof.Cmac.chain_append, Proof.Cmac.chain_single,
-    List.drop_append_of_le_length (by omega), List.drop_eq_nil_of_le (by omega), List.nil_append]
+    Spec.Cmac.macWith ciph 16 k1 k2 (msg ++ last) =
+      ciph (Spec.Cmac.xor (chain ciph (zeros 16) (blocks 16 msg)) (lastBlock 16 k1 k2 last)) :=
+  Proof.Cmac.macWith_split ciph k1 k2 hm hl hne
 
 /-- A message of whole blocks, then more whole blocks, then its last bytes. -/
-theorem cmacWith_split₂ (ciph : Spec.Cmac.Cipher) (k1 k2 : List Byte) {a b last : List Byte}
+theorem macWith_split₂ (ciph : Spec.Cmac.Cipher) (k1 k2 : List Byte) {a b last : List Byte}
     (ha : a.length % 16 = 0) (hb : b.length % 16 = 0) (hl : last.length ≤ 16)
     (hne : a ++ b = [] ∨ 0 < last.length) :
-    Spec.Siv.cmacWith ciph k1 k2 (a ++ b ++ last) =
+    Spec.Cmac.macWith ciph 16 k1 k2 (a ++ b ++ last) =
       ciph (Spec.Cmac.xor (chain ciph (chain ciph (zeros 16) (blocks 16 a)) (blocks 16 b))
         (lastBlock 16 k1 k2 last)) := by
-  rw [cmacWith_split ciph k1 k2 (by simp [List.length_append]; omega) hl hne,
+  rw [macWith_split ciph k1 k2 (by simp [List.length_append]; omega) hl hne,
     Proof.Cmac.Stream.blocks_append ha, Proof.Cmac.chain_append]
 
 /-- The CMAC of a string `S`: the chaining value of its whole blocks but its
 last 1 to 16 bytes (`chainedLen 16 L` bytes; none of the empty string), and
 the rest. -/
-theorem cmacWith_chained (ciph : Spec.Cmac.Cipher) (k1 k2 S : List Byte) :
-    Spec.Siv.cmacWith ciph k1 k2 S =
+theorem macWith_chained (ciph : Spec.Cmac.Cipher) (k1 k2 S : List Byte) :
+    Spec.Cmac.macWith ciph 16 k1 k2 S =
       ciph (Spec.Cmac.xor (chain ciph (zeros 16) (blocks 16 (S.take (Spec.Cmac.chainedLen 16 S.length))))
         (lastBlock 16 k1 k2 (S.drop (Spec.Cmac.chainedLen 16 S.length)))) := by
   conv => lhs; rw [← List.take_append_drop (Spec.Cmac.chainedLen 16 S.length) S]
   have hc := Proof.Cmac.Stream.chainedLen_add_held S.length
   have hh := Proof.Cmac.Stream.held_le S.length
-  refine cmacWith_split ciph k1 k2 ?_ ?_ ?_
+  refine macWith_split ciph k1 k2 ?_ ?_ ?_
   · rw [List.length_take, Nat.min_eq_left (by omega)]; exact Proof.Cmac.Stream.chainedLen_mod _
   · rw [List.length_drop]; unfold Proof.Cmac.Stream.held at hh; omega
   · by_cases h0 : S.length = 0

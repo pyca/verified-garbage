@@ -83,14 +83,4 @@ theorem WP.tablesDepth {s : State} {c : Prog isa} {Q : State→Prop}
  obtain ⟨tr,t,he,hq⟩:=h
  exact ⟨tr,t,he,hq,ht.execDepth he hn⟩
 
-theorem Tables.exec {s t : State} {c : Prog isa} {tr : List Leak}
- (h : Tables s) (he : Exec isa c s tr t) (hn : c.noFrames=true) : Tables t := by
- obtain ⟨hr,hw,hsp,hf⟩:=VG.AArch64.Exec.regions he hn
- exact h.frame (VG.AArch64.Exec.syms he) hr hw hsp hf
-
-theorem WP.tables {s : State} {c : Prog isa} {Q : State→Prop}
- (h : WP isa c s Q) (ht : Tables s) (hn : c.noFrames=true) :
- WP isa c s fun t=>Q t ∧ Tables t := by
- obtain ⟨tr,t,he,hq⟩:=h
- exact ⟨tr,t,he,hq,ht.exec he hn⟩
 end VG.Proof.MlKem.AArch64.Optimized

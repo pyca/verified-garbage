@@ -5,7 +5,6 @@
 // gives.
 
 vg_aes_xts_encrypt_unit_aes:
-	.arch_extension aes
 	str x19, [x6, #2208]
 	str x20, [x6, #2216]
 	str x21, [x6, #2224]
@@ -72,11 +71,9 @@ vg_aes_xts_encrypt_unit_aes:
 	ldr x30, [x24, #2248]
 	ldr x24, [x24, #2256]
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_xts_decrypt_unit_aes:
-	.arch_extension aes
 	str x19, [x6, #2208]
 	str x20, [x6, #2216]
 	str x21, [x6, #2224]
@@ -180,7 +177,6 @@ vg_aes_xts_decrypt_unit_aes:
 	ldr x30, [x24, #2248]
 	ldr x24, [x24, #2256]
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_xts_encrypt_unit:

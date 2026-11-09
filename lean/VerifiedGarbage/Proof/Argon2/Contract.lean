@@ -38,22 +38,4 @@ def compressContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (post := fun x y out _scratch m m' _ => blockAt m' out = compress (blockAt m x) (blockAt m y))
     (writeArgs := true) (stack := stack)
 
-/-- `vg_argon2_hprime(input: *const u8, input_len: usize, out: *mut u8,
-out_len: usize, scratch: *mut [u64; 2048])`.
-H′ with a runtime output length, including the LE32 length prefix. -/
-def hPrimeSig : Sig where
-  params := [("input", .slice false .u8 "input_len"), ("out", .slice true .u8 "out_len"),
-    ("scratch", .array true .u64 2048)]
-
-/-- For `input_len < 2³²` and `1 ≤ out_len < 2³²`: writes H′ of the
-`input_len` bytes at `input` to the `out_len` bytes at `out`. The input and
-the output are secret. -/
-def hPrimeContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  hPrimeSig.contract A
-    (pre := fun _input inputLen _out outLen _scratch _m =>
-      inputLen.toNat < 2 ^ 32 ∧ 1 ≤ outLen.toNat ∧ outLen.toNat < 2 ^ 32)
-    (post := fun input inputLen out outLen _scratch m m' _ =>
-      bytesAt m' out outLen.toNat = hPrime outLen.toNat (bytesAt m input inputLen.toNat))
-    (writeArgs := true) (stack := stack)
-
 end VG.Proof.Argon2

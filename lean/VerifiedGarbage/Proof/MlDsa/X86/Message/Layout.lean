@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.MlKem.X86.Leaf
 import VerifiedGarbage.TCB.X86.State
 
 /-!
-# ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: where everything is
+# ML-DSA on x86 (32-bit), `sign_message` and `verify_message_cached`: where everything is
 
 Untrusted: everything here is checked by Lean. The stack pointer on entry,
 the function's arguments, the `N` bytes of stack below it its contract gives
@@ -33,11 +33,6 @@ open VG VG.X86 VG.Impl.MlDsa.X86.Message
 open VG.Proof.MlDsa.Message
 open VG.Proof.MlKem.X86 (E0 P0 frameR retR)
 open VG.Spec.Sha3 (bytesAt)
-
-theorem covers_of_within {rs rs' : List Region} (h : ∀ r ∈ rs, ∃ R ∈ rs', Within r R) : Covers rs rs' :=
-  Covers.of_sub fun r hr => by
-    obtain ⟨R, hR, o, hb, hl⟩ := h r hr
-    exact ⟨R, hR, o, hb, hl⟩
 
 /-! ## The layout -/
 
@@ -152,11 +147,6 @@ theorem stk_sub (h : L.Ok) : Region.Sub L.STK (below L.SP L.N) := by
   rw [Lay.STK, Lay.E1]
   exact below_inner (by omega) (by omega)
 
-/-- The leaf's frame lies in the contract's stack. -/
-theorem fr_sub (h : L.Ok) : Region.Sub (below L.SP 16) (below L.SP L.N) := by
-  have := h.nSP; have := h.hN
-  exact below_sub (by omega) (by omega)
-
 theorem kSC (h : L.Ok) : L.STK.Disjoint L.SC := (h.kAll _ (by simp)).sub_left h.stk_sub
 theorem kKey (h : L.Ok) : L.STK.Disjoint L.KEY := (h.kAll _ (by simp)).sub_left h.stk_sub
 theorem kMsg (h : L.Ok) : L.STK.Disjoint L.MSG := (h.kAll _ (by simp)).sub_left h.stk_sub
@@ -261,12 +251,6 @@ theorem bytesAt_eq (hc : Ctx L m₁ t) {p : Addr} {n : Nat} (hx : L.SC.Disjoint 
     rcases hr with rfl | rfl
     · exact hx.symm
     · exact hk.symm) hn hi
-
-/-- Bytes of `X` are readable. -/
-theorem inX (hc : Ctx L m₁ t) (hL : L.Ok) {e k : Nat} (h₂ : e + k ≤ 1024) :
-    InRegions (t.rd ++ t.wr) (L.X + BitVec.ofNat 64 e) k := by
-  obtain ⟨R, hR, hc'⟩ := hL.inW h₂
-  exact ⟨R, by rw [hc.rd, hc.wr]; exact List.mem_append_right _ (List.mem_cons_of_mem _ hR), hc'⟩
 
 end Ctx
 

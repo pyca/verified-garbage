@@ -1,5 +1,5 @@
 name = "Argon2d"
 family = "KDFs"
 specs = ["Argon2"]
-modules = ["src/argon2.rs"]
+modules = ["src/kdf/argon2.rs"]
 asm = ["argon2"]

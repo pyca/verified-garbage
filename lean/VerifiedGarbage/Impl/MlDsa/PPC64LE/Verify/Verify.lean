@@ -1,12 +1,22 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.KeyGen.Frag
+public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Copy
 public import VerifiedGarbage.Spec.MlDsa
 
 /-!
-# ML-DSA on PPC64LE: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
+# ML-DSA on PPC64LE: `vg_mldsa{44,65,87}_verify`, `_verify_prepared` and `_verify_with_cache`
 
 As on 32-bit ARM (`Impl/MlDsa/Arm/Verify/Verify.lean`).
+
+`withCache P p (pk = r3, mu = r4, sig = r5, scratch = r6, cache = r7,
+cache_len = r8) -> r3`, the internal function `vg_mldsa*_verify_with_cache`,
+keeps `cache` in `r14` and `cache_len` in `r15`, in the frames saving them
+(`Arith.saving`), and runs `verify P p`. The entries
+`vg_mldsa*_verify(pk, mu, sig, scratch)` and
+`vg_mldsa*_verify_prepared(pk, mu, sig, scratch)` (`entry`) call it with an
+empty cache, or with the `k` polynomials `NTT(t₁ · 2ᵈ)` a prepared public
+key (`Spec/MlDsa/PreparedKey.lean`) holds after its encoded key.
 
 `verify P p (pk = r3, mu = r4, sig = r5, scratch = r6) -> r3`:
 `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with the message
@@ -35,7 +45,8 @@ polynomials of 1024 bytes from 8192 (`oP j`): the hint `h` (polynomials 0 to
    sampler's result is ANDed into `r24`, and its output masked with it
    (`sampled`).
 4. `ẑ[i] = NTT(z[i])`, `ĉ = NTT(c)`; for each row `r`:
-   `w′ = NTT⁻¹(Σₛ Â[r, s] ẑ[s] - ĉ · NTT(t₁[r] · 2ᵈ))` (polynomial 18),
+   `w′ = NTT⁻¹(Σₛ Â[r, s] ẑ[s] - ĉ · NTT(t₁[r] · 2ᵈ))` (polynomial 18), with
+   `NTT(t₁[r] · 2ᵈ)` copied from polynomial `r` at `r14` if `r15 ≠ 0`,
    `w′₁ = UseHint(h[r], w′)` (polynomial 19), and its `SimpleBitPack` to
    `1024 + r · 32 bitlen b`.
 5. `c̃′ = H(μ ‖ w1Encode(w′₁), λ/4)` to `2048`, and `r24 ← 0` unless
@@ -53,6 +64,7 @@ namespace VG.Impl.MlDsa.PPC64LE.Verify
 open VG.PPC64LE
 open VG.Impl.MlKem.PPC64LE (hash copy topEnd cmpBody)
 open VG.Impl.MlDsa.PPC64LE.KeyGen (Ptr Arg callAt setB seqR and24 sampled pro)
+open VG.Impl.Sha3.PPC64LE.Stream (mov)
 open VG.Spec.MlDsa
 
 /-- The code of the primitives `vg_mldsa_*` that verification calls. -/
@@ -206,11 +218,16 @@ def samples : Prog isa :=
 def dot (r : Nat) : Prog isa :=
   .seq (mulAt P pW (pA r 0) (pZ 0)) (seqR (fun s => mulAddAt P pW (pA r s) (pZ s)) 1 (p.ℓ - 1))
 
+/-- `NTT(t₁[r] · 2ᵈ)` to `T`: copied from polynomial `r` at `r14` if
+`r15 ≠ 0`, and computed from `pk` otherwise. -/
+def keyRow (r : Nat) : Prog isa :=
+  .ite (.nonzero .d .r15) (copyW (.r14, 1024 * r) pT 128) (.seq (unpackT1At P (.r30, 32 + 320 * r) pT) (nttAt P pT))
+
 /-- Row `r` of `w′`, `w′₁`, packed to `B`. -/
 def row (r : Nat) : Prog isa :=
-  .seq (dot P p r) (.seq (unpackT1At P (.r30, 32 + 320 * r) pT) (.seq (nttAt P pT)
+  .seq (dot P p r) (.seq (keyRow P r)
     (.seq (mulAt P pT2 pC pT) (.seq (subAt P pW pT2) (.seq (invNttAt P pW)
-      (.seq (useHintAt P (pH r) pW p.γ₂ pW1) (sbpAt P pW1 (w1Max p) (sc (oB + w1Len p * r)) (w1Len p))))))))
+      (.seq (useHintAt P (pH r) pW p.γ₂ pW1) (sbpAt P pW1 (w1Max p) (sc (oB + w1Len p * r)) (w1Len p)))))))
 
 /-- The NTTs of `z` and `c`, the rows, the hash and the comparison. -/
 def compute : Prog isa :=
@@ -221,8 +238,22 @@ def compute : Prog isa :=
 def body : Prog isa :=
   .seq (hint P p) (ifOk (.seq (seqR (zOne P p) 0 p.ℓ) (ifOk (.seq (samples P p) (compute P p)))))
 
-/-- `vg_mldsa*_verify` for the parameter set `p`, calling the primitives `P`. -/
+/-- Verification for the parameter set `p`, calling the primitives `P`, with
+the polynomials of the key at `r14` if `r15 ≠ 0`. -/
 def verify : Prog isa := .seq (.block pro) (.seq (body P p) (.block topEnd))
+
+/-- `vg_mldsa*_verify_with_cache`: `cache` (`r7`) to `r14` and `cache_len`
+(`r8`) to `r15`, in the frames saving them, then `verify P p`. -/
+def withCache : Prog isa := Arith.saving (.seq (.block [mov .r14 .r7, mov .r15 .r8]) (verify P p))
+
+/-- An entry calling `code`, named `name`, the kernel `withCache`: with the
+`k` polynomials after the encoded key of a prepared public key at `pk`
+(`vg_mldsa*_verify_prepared`), or with none (`vg_mldsa*_verify`). It saves
+the link register (in `r0`) in a frame. -/
+def entry (name : String) (code : Prog isa) (prepared : Bool) : Prog isa :=
+  .seq (.block [.mflr .r0]) (.seq (.frame (.push .r0)
+    (.seq (.block (if prepared then [.addi .r7 .r3 p.pkLen, .li .r8 (1024 * p.k)]
+      else [mov .r7 .r3, .li .r8 0])) (.call name code)) (.pop .r0)) (.block [.mtlr .r0]))
 
 end
 

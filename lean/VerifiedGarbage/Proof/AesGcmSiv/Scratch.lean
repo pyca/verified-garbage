@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.GcmSiv.Contract
+public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
 import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Proof.Framework.Scratch
 
@@ -40,7 +40,7 @@ def sealScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Con
     (pre := fun sch rounds nonce aad aadLen data len tag _work =>
       sealPre A.ptrBits sch rounds nonce aad aadLen data len tag)
     (post := fun sch rounds nonce aad aadLen data len tag _work =>
-      sealPost A.ptrBits sch rounds nonce aad aadLen data len tag)
+      sealRoundsPost A.ptrBits sch rounds nonce aad aadLen data len tag)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_siv_open` with `work: *mut [u64; n]`. -/
@@ -56,22 +56,22 @@ def openScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Con
     (pre := fun sch rounds nonce aad aadLen data len tag _work =>
       openPre A.ptrBits sch rounds nonce aad aadLen data len tag)
     (post := fun sch rounds nonce aad aadLen data len tag _work =>
-      openPost A.ptrBits sch rounds nonce aad aadLen data len tag)
+      openRoundsPost A.ptrBits sch rounds nonce aad aadLen data len tag)
     (writeArgs := true) (stack := stack)
     (leak := some fun sch rounds nonce aad aadLen data len tag _work =>
       openLeak A.ptrBits sch rounds nonce aad aadLen data len tag)
 
 /-- `openScratchContract` is the shared scratch contract, proved once for any
-ABI: checking it on a target's instance unfolds `openPost` and evaluates
+ABI: checking it on a target's instance unfolds `openRoundsPost` and evaluates
 `decryptWith` on symbolic memory (seconds). -/
 theorem openScratchContract_eq {M : ISA} (A : Abi M) (n stack : Nat) :
     openScratchContract A n stack = Sig.scratchContract A openSig "work" .u64 n (openPre A.ptrBits)
-      (openPost A.ptrBits) true stack (some (openLeak A.ptrBits)) := rfl
+      (openRoundsPost A.ptrBits) true stack (some (openLeak A.ptrBits)) := rfl
 
 theorem Verified.of_openScratch {T : Target} {c : Prog T.isa} {A : Abi T.isa} {n stack : Nat}
     (h : Verified T c (openScratchContract A n stack)) :
     Verified T c (Sig.scratchContract A openSig "work" .u64 n (openPre A.ptrBits)
-      (openPost A.ptrBits) true stack (some (openLeak A.ptrBits))) :=
+      (openRoundsPost A.ptrBits) true stack (some (openLeak A.ptrBits))) :=
   openScratchContract_eq A n stack ▸ h
 
 /-! ## Locality -/
@@ -124,8 +124,8 @@ private theorem inputs_local {pb : Nat} {m₁ m₂ : Mem}
 
 theorem sealPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealSig.words pb).length →
     (∀ b ∈ Sig.bufs sealSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (sealSig.words pb) (sealPost pb) vs m₁ m' r →
-      Curry.apply (sealSig.words pb) (sealPost pb) vs m₂ m' r := by
+    Curry.apply (sealSig.words pb) (sealRoundsPost pb) vs m₁ m' r →
+      Curry.apply (sealSig.words pb) (sealRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨sch, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 7) hlen
   replace hlen := Nat.succ.inj hlen
@@ -147,10 +147,10 @@ theorem sealPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealSig.words pb).l
   simp only [sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb,
-    ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealPost pb) _ m₁ m' r at h
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealRoundsPost pb) _ m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb,
-    ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealPost pb) _ m₂ m' r
-  dsimp only [Curry.apply, sealPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealRoundsPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, sealRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   intro hr
   obtain ⟨e₁, e₂, e₃, e₄, -⟩ := inputs_local (pb := pb) (tag := tag) (le14 hr)
     (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
@@ -173,8 +173,8 @@ theorem openPre_local : ∀ vs m₁ m₂, vs.length = (openSig.words pb).length 
 
 theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).length →
     (∀ b ∈ Sig.bufs openSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (openSig.words pb) (openPost pb) vs m₁ m' r →
-      Curry.apply (openSig.words pb) (openPost pb) vs m₂ m' r := by
+    Curry.apply (openSig.words pb) (openRoundsPost pb) vs m₁ m' r →
+      Curry.apply (openSig.words pb) (openRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨sch, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 7) hlen
   replace hlen := Nat.succ.inj hlen
@@ -196,10 +196,10 @@ theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).l
   simp only [openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb,
-    ArgWord.addr, ArgWord.int pb, ArgWord.addr] (openPost pb) _ m₁ m' r at h
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr] (openRoundsPost pb) _ m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb,
-    ArgWord.addr, ArgWord.int pb, ArgWord.addr] (openPost pb) _ m₂ m' r
-  dsimp only [Curry.apply, openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr] (openRoundsPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, openRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   -- `decryptWith` generalized: tactics that put the `match` on it in weak
   -- head normal form would evaluate it on symbolic memory (seconds each).
   generalize hd₂ : decryptWith (ctxCiph m₂ _ _) _ _ _ _ _ = d₂

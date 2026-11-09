@@ -196,7 +196,6 @@ theorem allOkD_of {K : KemLay} (hK : K.WF) {W : List (Nat × Nat × Nat)}
     rw [okD, Bool.and_eq_true]
     exact ⟨okW_of hK this.1, sepB_mono (sepB_scr this.2 hK.scr) (inB_len (ct_le hK)) (inB_refl w)⟩
 
-
 /-! ### The offsets the phases use, proven in a small context -/
 
 theorem ctLen_split (K : KemLay) : K.ctLen = K.uLen * K.k + 32 * K.dv := rfl

@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Jacobian
 import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
 
-
 /-! Width-five NAF multiplication for public verification scalars. -/
 
 @[expose] public section
@@ -55,28 +54,5 @@ def digitRead (K : WinCfg) : List Instr :=
 def publicEntry (K : WinCfg) : List Instr :=
   [.mov .rax (.reg .r8),.alu .sub .rax (.imm 1),.shift .shr .rax 1] ++ tableAddress K.M.n K.tbl ++
   copyPieces ((3*K.M.n+1)/2) (fun i => tblAt (pieceOff K.M.n i)) (fun i => sc (K.E.x+pieceOff K.M.n i))
-
-def signedEntry (K : WinCfg) : Prog isa :=
-  .seq (.block [.alu .cmp .r8 (.imm 128)]) <|
-    .ite .b (.block (publicEntry K)) (.block (
-      [.mov32 .rax (.imm 256),.alu .sub .rax (.reg .r8),.mov .r8 (.reg .rax)] ++
-      publicEntry K ++ Mont.X86_64.sub K.M K.E.y K.zero K.E.y))
-
-def digit (K : WinCfg) : Prog isa :=
-  .seq (.block (digitRead K)) <|
-    .ite .e (.block []) (.seq (signedEntry K) <|
-      .seq (jacAdd K K.R K.E K.D) (.block (copyPt K.M.n K.R K.D)))
-
-def windowStep (K : WinCfg) : Prog isa :=
-  .seq (.block [.alu .sub .rbx (.imm 1)]) <|
-  .seq (fprogB K.M (dblJMul K.S K.R K.D)) <|
-  .seq (.block (copyPt K.M.n K.R K.D)) <|
-  .seq (digit K) (.block [.alu .test .rbx (.reg .rbx)])
-
-/-- The result remains in Jacobian coordinates for the final verification sum. -/
-def window (K : WinCfg) : Prog isa :=
-  .seq (table K) <|
-    .seq (.block (infinity K K.R ++ [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*K.M.n)))])) <|
-      .seq (digit K) (.loop (windowStep K) .ne)
 
 end VG.Impl.Weierstrass.X86_64.Naf

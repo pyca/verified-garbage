@@ -6,6 +6,8 @@ public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_private_checked` on RISC-V: correctness
@@ -88,7 +90,7 @@ def fnPost (s s' : State) : Prop :=
       (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 3).toNat)
       (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 1).toNat))
 
-theorem code_correct (s : State) (hpre : (Spec.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre s) :
+theorem code_correct (s : State) (hpre : (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre s) :
     ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t := by
   show WP isa code s fun t => abiPreserved s t ∧ fnPost s t
   have h := preP_of hpre

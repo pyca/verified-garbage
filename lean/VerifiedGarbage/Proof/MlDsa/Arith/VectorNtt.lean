@@ -24,8 +24,8 @@ theorem blockN_add (op : Poly → Nat → Nat → Zq → Poly) (f : Poly) (len :
     blockN op f len z st (t + t') = blockN op (blockN op f len z st t) len z (st + t) t' := by
   simp only [blockN]; rw [← List.foldl_append, List.range'_append_1]
 
-/-- `blockN_bfly_get`, for the butterflies of the block up to `start + t`
-only. -/
+/-- What each coefficient is after the butterflies of the block up to
+`start + t` only. -/
 theorem blockN_bfly_get' (w : Poly) {len : Nat} {z : Zq} {start t : Nat} (hlen : 0 < len) (ht : t ≤ len)
     (hs : start + len + t ≤ n) {i : Nat} (hi : i < n) :
     (blockN bfly w len z start t)[i]! =
@@ -43,7 +43,7 @@ theorem blockN_bfly_get' (w : Poly) {len : Nat} {z : Zq} {start t : Nat} (hlen :
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
       simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
 
-/-- `blockN_bflyInv_get`, for the butterflies of the block up to
+/-- What each coefficient is after the inverse butterflies of the block up to
 `start + t` only. -/
 theorem blockN_bflyInv_get' (w : Poly) {len : Nat} {z : Zq} {start t : Nat} (hlen : 0 < len) (ht : t ≤ len)
     (hs : start + len + t ≤ n) {i : Nat} (hi : i < n) :

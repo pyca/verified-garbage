@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # The RSA public-key operation on PPC64LE: Montgomery multiplications
 
 `base_ok`: an array's base from array 0's and the arrays' size. `montOp_ok`:
-`MontCore.lean`'s `tail_ok`, with the bases.
+the multiplication after loading the bases (`MontCore.lean`), with the bases.
 -/
 
 @[expose] public section

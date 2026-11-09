@@ -35,7 +35,7 @@ theorem encrypt_eq {nB eB M PS : List Byte} (hM : M.length + 11 ≤ nB.length)
 
 theorem spec_sp {s : State} (h : spec.pre s) :
     stackBytes ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 ≤ 2 ^ 32 := by
-  sig_pre [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
+  sig_pre [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
     argVal, argBytes, stackBelow] at h
   obtain ⟨hsp, hsa, -⟩ := h
   exact ⟨hsp, by omega⟩
@@ -61,7 +61,7 @@ theorem code_ok (c : Ver.PublicImpl) {s : State} (h : spec.pre s) :
   · have ok := hin.ok
     rw [ep_lay] at ok
     have ro := fun {R : Region} (hR : R ∈ (ep s).ro) => entered_ro hsp ok hR
-    sig_post [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
+    sig_post [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
       argVal, argBytes]
     rw [BitVec.setWidth_append_eq_right]
     intro hp
@@ -85,7 +85,7 @@ theorem map_toNat_inj {w : Nat} {a b : List (BitVec w)} (h : a.map (·.toNat) = 
 
 /-- Two entry states with the same public data have the same public parameters. -/
 theorem ep_eq {s₁ s₂ : State} (hp : spec.pub s₁ s₂) : ep s₁ = ep s₂ := by
-  sig_pub [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
+  sig_pub [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
     argVal, argBytes] at hp
   obtain ⟨hsp, hl, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13⟩ := hp
   obtain ⟨hab, hc⟩ := List.append_inj hl (by simp [Proof.RsaPkcs1Sig.bytesAt_len, a3, a5])
@@ -101,7 +101,7 @@ theorem code_ct (c : Ver.PublicImpl) : ConstantTime isa spec.pre spec.pub (code 
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂
   have hep := ep_eq hp
   have hsp : s₁.gpr .esp = s₂.gpr .esp := by
-    sig_pub [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
+    sig_pub [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
       argVal, argBytes] at hp
     exact hp.1
   refine (wrap_ct (F := frameBytes) (body_noSp c) (P := fun a b => a = s₁ ∧ b = s₂)
@@ -144,7 +144,7 @@ theorem sat : ∃ s, spec.pre s := by
   have a13 : arg satState 13 = 16 := by decide
   have e : argAddr satState 0 = 0x20004 := by decide
   have esp : satState.gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi,
+  sig_implies_sat [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi,
     argSlots, argVal, argBytes, stackBelow]
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, e, esp, satState, stackBytes, frameBytes,
       Spec.Rsa.lenValid, Spec.Rsa.publicScratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords,
@@ -152,9 +152,6 @@ theorem sat : ∃ s, spec.pre s := by
 
 theorem code_noSp (c : Ver.PublicImpl) : NoSp (code c.name c.code) :=
   noSp_frame rfl rfl (noSp_seq (noSp_frame rfl rfl (body_noSp c)) restore_noSp)
-
-theorem code_sp (c : Ver.PublicImpl) : (code c.name c.code).all (fun i => !isa.writesSp i) = true :=
-  Proof.Rsa.X86.PrivChecked.noSp_allStack (code_noSp c)
 
 /-- `vg_rsa_pkcs1_encrypt_precomputed`, calling `c`, meets the shared contract. -/
 theorem code_verified (c : Ver.PublicImpl) : Verified target (code c.name c.code) spec :=

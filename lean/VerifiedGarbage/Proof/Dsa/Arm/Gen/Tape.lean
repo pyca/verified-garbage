@@ -49,7 +49,7 @@ theorem copyBytes_vp {P Q : State → State → Prop} {src dst : BitVec 32} {n :
 /-- `n` bytes from the address `x` in the frame word `o`, readable and apart
 from `scratch`, to `scratch + dst`. -/
 theorem copyR_vp {P Q : State → State → Prop} {c : State → Cfg} {L dst n o : Nat} {x : BitVec 32}
-    (hF : ∀ σ s, P σ s → SS G σ (c σ) s) (hL : L = G.pLen) (ho : o + 4 ≤ F + 32) (h4 : o % 4 = 0)
+    (hF : ∀ σ s, P σ s → SS G σ (c σ) s) (hL : L = G.pLen) (ho : o + 4 ≤ F + 16) (h4 : o % 4 = 0)
     (hx : ∀ σ s, P σ s → fw s.mem G o = x) (hn : 0 < n) (hn16 : n < 2 ^ 16) (hd : dst + n ≤ sK L)
     (hsrc : ∀ σ s, P σ s → InRegions s.rd (State.addr x) n ∧ Region.Disjoint ⟨State.addr x, n⟩ G.rScr ∧
       x.toNat + n ≤ 2 ^ 32)
@@ -125,20 +125,13 @@ theorem GI.tape_apart {σ s : State} {V : Nat → BitVec 32} {LS : List Nat} (h 
   · exact hsc
   · exact hst.sub_right h.belowSub
 
-theorem GI.seeds_apart {σ s : State} {V : Nat → BitVec 32} {LS : List Nat} (h : GI G σ V LS s) :
-    ∀ r ∈ G.chg, G.rSeeds.Disjoint r := by
-  have a := h.pre.fS; have b := h.pre.sC; rw [h.hG] at a b
-  exact h.tape_apart a.symm b
-
-theorem GI.hs_apart {σ s : State} {V : Nat → BitVec 32} {LS : List Nat} (h : GI G σ V LS s) :
-    ∀ r ∈ G.chg, G.rHs.Disjoint r := by
-  have a := h.pre.fH; have b := h.pre.hC; rw [h.hG] at a b
-  exact h.tape_apart a.symm b
-
 theorem GI.wit_apart {σ s : State} {V : Nat → BitVec 32} {LS : List Nat} (h : GI G σ V LS s) :
     ∀ r ∈ G.chg, G.rWit.Disjoint r := by
   have a := h.pre.fW; have b := h.pre.wC; rw [h.hG] at a b
   exact h.tape_apart a.symm b
+
+theorem GI.seeds_apart {σ s : State} {V : Nat → BitVec 32} {LS : List Nat} (h : GI G σ V LS s) :
+    ∀ r ∈ G.chg, G.rSeeds.Disjoint r := h.wit_apart
 
 end
 

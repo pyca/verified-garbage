@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.RsaPss.Params
 /-!
 # RSASSA-PSS verification on AArch64: the result, by cases
 
-`verifyOut G s`: what the contract asks of a call from `s`. It is `false`
+`verifyOut Hs Gs s`: what the contract asks of a call from `s`. It is `false`
 if the modulus' first byte is zero (`verifyOut_zero`), and otherwise that
 RSAVP1's result, or zeros, starts with `lo` zero bytes and ends with a
 consistent encoding of `emBits = 8 (k - 1) + log₂ n₀` bits
@@ -40,7 +40,7 @@ structure Mid (s t : State) : Prop where
 abbrev pubX (s : State) : List Byte := (pubOut s).getD (Spec.RsaPss.zeros (s.gpr .x1).toNat)
 
 /-- The salt length `verify` expects. -/
-abbrev sLenV (s : State) : Option Nat := if anyV s = 0 then some (s.gpr .x7).toNat else none
+abbrev sLenV (s : State) : Option Nat := if anyV s = 0 then some (stackArg s 0).toNat else none
 
 /-- `emBits`, `emLen` and `lo` of a call from `s`. -/
 abbrev ebS (s : State) : Nat := ebV (s.gpr .x1).toNat (s.mem (s.gpr .x0)).toNat
@@ -53,16 +53,17 @@ theorem pubX_length (s : State) : (pubX s).length = (s.gpr .x1).toNat := by
   | none => simp [Spec.RsaPss.zeros]
   | some y => rw [Option.getD_some, RsaPss.publicOpChecked_length' h, bytesAt_length]
 
-variable (G : Spec.Mgf1.Hash)
+variable (Hs Gs : Spec.Mgf1.Hash)
 
-/-- The result `verifyContract.post` asks for. -/
+/-- The result `verifyPrecomputedTableContract.post` asks for, with the hash
+function `Hs` and MGF1's `Gs`. -/
 def verifyOut (s : State) : Bool :=
-  Spec.RsaPss.verify G G (Spec.Rsa.bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat)
-    (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .x4) G.len)
-    (Spec.Rsa.bytesAt s.mem (s.gpr .x5) (s.gpr .x1).toNat)
-    (Spec.RsaPss.expectedSaltLen (s.gpr .x7) ((stackArg s 0).setWidth 32))
+  Spec.RsaPss.verify Hs Gs (Spec.Rsa.bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat)
+    (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .x4) Hs.len)
+    (Spec.Rsa.bytesAt s.mem (s.gpr .x6) (s.gpr .x1).toNat)
+    (Spec.RsaPss.expectedSaltLen (stackArg s 0) ((stackArg s 1).setWidth 32))
 
-theorem anyV_eq (s : State) : anyV s = 0 ↔ (stackArg s 0).setWidth 32 = 0 := by
+theorem anyV_eq (s : State) : anyV s = 0 ↔ (stackArg s 1).setWidth 32 = 0 := by
   constructor
   · intro h
     apply BitVec.eq_of_toNat_eq
@@ -74,17 +75,17 @@ theorem anyV_eq (s : State) : anyV s = 0 ↔ (stackArg s 0).setWidth 32 = 0 := b
   · intro h; unfold anyV; rw [h]; rfl
 
 theorem expected_eq (s : State) :
-    Spec.RsaPss.expectedSaltLen (s.gpr .x7) ((stackArg s 0).setWidth 32) = sLenV s := by
+    Spec.RsaPss.expectedSaltLen (stackArg s 0) ((stackArg s 1).setWidth 32) = sLenV s := by
   unfold Spec.RsaPss.expectedSaltLen sLenV
   by_cases h : anyV s = 0
   · rw [ite_eq_left h, ite_eq_left ((anyV_eq s).mp h)]
   · rw [ite_eq_right h, ite_eq_right (fun e => h ((anyV_eq s).mpr e))]
 
 theorem verifyOut_zero {s : State} (hk : 1 ≤ (s.gpr .x1).toNat) (h0 : s.mem (s.gpr .x0) = 0) :
-    verifyOut G s = false := by
+    verifyOut Hs Gs s = false := by
   unfold verifyOut
   rw [bytesAt_cons _ _ hk, h0]
-  exact RsaPss.verify_zero G ..
+  exact RsaPss.verify_zero₂ Gs Hs ..
 
 section
 variable {s : State} (hk1 : 64 ≤ (s.gpr .x1).toNat) (hk2 : (s.gpr .x1).toNat ≤ 1024)
@@ -106,13 +107,13 @@ theorem emBits_of :
 
 /-- Verifying: `lo` zero bytes, then a consistent encoding. -/
 theorem verifyOut_enc :
-    verifyOut G s = ((pubX s).take (loS s) == Spec.RsaPss.zeros (loS s) &&
-      Spec.RsaPss.verifyEncoding G G (Spec.Rsa.bytesAt s.mem (s.gpr .x4) G.len) ((pubX s).drop (loS s)) (ebS s)
+    verifyOut Hs Gs s = ((pubX s).take (loS s) == Spec.RsaPss.zeros (loS s) &&
+      Spec.RsaPss.verifyEncoding Hs Gs (Spec.Rsa.bytesAt s.mem (s.gpr .x4) Hs.len) ((pubX s).drop (loS s)) (ebS s)
         (sLenV s)) := by
   obtain ⟨hb1, -, hlok, -⟩ := eb_bounds hk1 hk2 h0
   have hel : 1 ≤ elS s := by unfold elS Spec.RsaPss.emLength; omega
   unfold verifyOut pubX pubOut
-  rw [expected_eq, RsaPss.verify_encode G (emBits_of hk1 h0) (by rw [bytesAt_length, bytesAt_length])
+  rw [expected_eq, RsaPss.verify_encode₂ Hs Gs (emBits_of hk1 h0) (by rw [bytesAt_length, bytesAt_length])
     (by rw [bytesAt_length]; unfold elS at hlok hel; omega), bytesAt_length]
 
 end

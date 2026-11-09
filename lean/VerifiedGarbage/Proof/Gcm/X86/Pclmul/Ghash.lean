@@ -47,8 +47,6 @@ theorem psrldq8 (v : BitVec 128) : XShiftOp.eval .psrldq v 8 = v >>> 64 := rfl
 
 theorem pslldq8 (v : BitVec 128) : XShiftOp.eval .pslldq v 8 = v <<< 64 := rfl
 
-theorem rev_eq : Impl.Gcm.X86.Pclmul.revMask = VG.Proof.Gcm.X86.revMask := rfl
-
 /-- `s'` differs from `s` at most in the SSE registers `rs`. -/
 structure Only (rs : List XReg) (s s' : State) : Prop where
   gpr : s'.gpr = s.gpr
@@ -239,8 +237,6 @@ theorem args_in {s : State} (hp : GPre s) {i : Nat} (hi : i < 5) :
     List.not_mem_nil, or_false, or_true, true_or], ?_⟩
   exact Proof.Aes.X86.part_contains (N := 24) (a := 4) (k := 20)
     hp.fSp (by decide) (by omega) (by omega) (by decide)
-
-theorem ea_arg (s : State) (i : Nat) : s.ea (argOp i) = argAddr s i := rfl
 
 theorem movArg_exec {s₀ s : State} (hp : GPre s₀) {i : Nat} (hi : i < 5)
     (hsp : s.gpr .esp = s₀.gpr .esp) (hm : s.mem = s₀.mem)
@@ -637,21 +633,5 @@ theorem gh_correct (s₀ : State) (hp : GPre s₀) :
 theorem ghash_correct (s : State) (hs : Proof.Gcm.ghashX86.pre s) :
     ∃ t s', Exec isa Impl.Gcm.X86.Pclmul.ghash s t s' ∧ abiPreserved s s' ∧
       Proof.Gcm.ghashX86.post s s' := gh_correct s (GPre.of hs)
-
-theorem ghash_verified :
-    Verified X86.target Impl.Gcm.X86.Pclmul.ghash (Proof.Gcm.ghashContract X86.abi) :=
-  Verified.of_correct ghash_correct ghash_ct
-    (by
-      open VG.Proof.Gcm.X86 in
-      have a0 : arg ghSat 0 = 0x1000 := by decide
-      have a1 : arg VG.Proof.Gcm.X86.ghSat 1 = 0x2000 := by decide
-      have a2 : arg VG.Proof.Gcm.X86.ghSat 2 = 0x3000 := by decide
-      have a3 : arg VG.Proof.Gcm.X86.ghSat 3 = 0 := by decide
-      have a4 : arg VG.Proof.Gcm.X86.ghSat 4 = 0x4000 := by decide
-      have e : argAddr VG.Proof.Gcm.X86.ghSat 0 = 0x8004 := by decide
-      have esp : VG.Proof.Gcm.X86.ghSat.gpr .esp = 0x8000 := rfl
-      sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, X86.abi, X86.argSlots,
-        X86.argVal, X86.argBytes, Proof.Gcm.ghashX86]
-        [a0, a1, a2, a3, a4, e, esp] using VG.Proof.Gcm.X86.ghSat)
 
 end VG.Proof.Gcm.X86.Pclmul

@@ -52,9 +52,6 @@ theorem KEnv.keep {K S W : Addr} {len bits : Nat} {key : List Byte} {g : Reg →
     by rw [k.gpr h.2.2.2.1]; exact E.r6, E.pi.keep k h.2.2.2.2 hm, by rw [k.2.1]; exact E.rd,
     by rw [k.2.2]; exact E.wr, by rw [hm]; exact E.key, by rw [hm]; exact E.saved⟩
 
-theorem keyTemps_ok : Reg.r3 ∉ keyTemps ∧ Reg.r4 ∉ keyTemps ∧ Reg.r5 ∉ keyTemps ∧ Reg.r6 ∉ keyTemps ∧
-    Reg.r7 ∉ keyTemps := by decide
-
 /-- After a step that writes byte `i` of `L`. -/
 theorem KEnv.write {K S W : Addr} {len bits : Nat} {key : List Byte} {g : Reg → BitVec 64} {s t : State}
     (E : KEnv K S W len bits key g s) (R : KRegions K S W len) (k : Keep keyTemps s t) {i : Nat} (hi : i < 128)
@@ -63,7 +60,7 @@ theorem KEnv.write {K S W : Addr} {len bits : Nat} {key : List Byte} {g : Reg �
     rw [hm]; exact (Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
   refine ⟨by rw [k.gpr (by decide)]; exact E.r3, by rw [k.gpr (by decide)]; exact E.r4,
     by rw [k.gpr (by decide)]; exact E.r5, by rw [k.gpr (by decide)]; exact E.r6,
-    ⟨by rw [k.gpr (by decide)]; exact E.pi.r7, fun j hj => by rw [k.2.1, k.2.2]; exact E.pi.rd j hj, fun j hj => ?_⟩,
+    ⟨by rw [k.gpr (by decide)]; exact E.pi.r7, fun o n h => by rw [k.2.1, k.2.2]; exact E.pi.rd o n h, fun j hj => ?_⟩,
     by rw [k.2.1]; exact E.rd, by rw [k.2.2]; exact E.wr, fun c hc => ?_, E.saved.frame F fun p hp r hr => ?_⟩
   · rw [F.readW (r := ⟨W, 512⟩) (Offset.contains_base _ (by rw [Proof.Rc2.piQuads_length] at hj; omega_arith)
       (by rw [Proof.Rc2.piQuads_length] at hj; omega_arith)) (by simpa using R.SW.symm) (by decide)]

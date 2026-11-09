@@ -38,11 +38,6 @@ theorem pair_word (a b : BitVec 32) (z : Int) {bound : Int}
   · exact addWord_int a b (by omega) (by omega)
   · rw [fastMulWord_int,subWord_int a b (by omega) (by omega)]
 
-theorem pair_field (a b z : Int) :
-    ofInt (pair a b z).1 = ofInt a+ofInt b ∧
-    ofInt (pair a b z).2 = (ofInt a-ofInt b)*ofInt z := by
-  exact ⟨ofInt_add a b, (fastMul_field (a-b) z).trans (congrArg (· * ofInt z) (ofInt_sub a b))⟩
-
 /-- The selected final multiplier always leaves its result in (-q,2q),
 so sign correction followed by one subtraction is sufficient. -/
 def canonical (x : Int) : Int :=
@@ -62,10 +57,5 @@ theorem canonical_field (x : Int) : ofInt (canonical x) = ofInt x := by
   unfold ofInt
   change Fin.ofNat q (canonical x % 8380417).toNat = Fin.ofNat q (x % 8380417).toNat
   rw [canonical_mod]
-
-theorem scaled_canonical_bounds (x : BitVec 32) (z : Int) :
-    0≤canonical (fastMul x.toInt z) ∧ canonical (fastMul x.toInt z)<8380417 :=
-  canonical_bounds (fastMul_bounds (z := z) (BitVec.le_toInt x) (BitVec.toInt_lt (x := x))).1
-    (fastMul_bounds (z := z) (BitVec.le_toInt x) (BitVec.toInt_lt (x := x))).2
 
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse

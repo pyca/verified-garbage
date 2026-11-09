@@ -6,6 +6,7 @@ public import VerifiedGarbage.Spec.Ffdh.GenerationContract
 import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.EntropyRequest
 
 /-! # Verified native parameter-generation initialization -/
 
@@ -24,8 +25,9 @@ def initPost (s t : State) : Prop :=
   match Spec.Ffdh.parameterInit (s.gpr .rsi).toNat ((s.gpr .rdx).setWidth 32).toNat with
   | none => ((t.gpr .rax).setWidth 32).toNat = 0 ∧
       Spec.Rsa.wordsAt t.mem (s.gpr .rdi) 4 = List.replicate 4 0
-  | some values => ((t.gpr .rax).setWidth 32).toNat = 1 ∧
-      Spec.Rsa.wordsAt t.mem (s.gpr .rdi) 4 = values.map (BitVec.ofNat 64)
+  | some values => ((t.gpr .rax).setWidth 32).toNat = 1 ∧ ∃ first,
+      Spec.Rsa.wordsAt t.mem (s.gpr .rdi) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
+      Spec.Entropy.RequestValid (Spec.Ffdh.parameterEntropy (s.gpr .rsi).toNat) 0 first
 
 def initContract : Contract isa where
   pre := initPre
@@ -34,11 +36,13 @@ def initContract : Contract isa where
 
 private theorem init_values {bits generator : Nat} {values : List Nat}
     (h : Spec.Ffdh.parameterInit bits generator = some values) :
-    values = [Spec.Ffdh.parameterAttempts bits, (bits + 7) / 8,
-      Spec.Ffdh.parameterEntropy bits, 512 * ((bits + 7) / 8)] := by
+    values = [Spec.Ffdh.parameterAttempts bits, (bits + 7) / 8, Spec.Ffdh.parameterEntropy bits] ∧
+      512 ≤ bits := by
   unfold Spec.Ffdh.parameterInit at h
   split at h
-  · exact (Option.some.inj h).symm
+  · rename_i hc
+    simp only [Bool.and_eq_true, decide_eq_true_eq] at hc
+    exact ⟨(Option.some.inj h).symm, hc.1.1⟩
   · cases h
 
 private theorem result_post {s t : State}
@@ -54,9 +58,10 @@ private theorem result_post {s t : State}
     · rw [h.2]; exact cleared_words _ _
   | some values =>
     simp only [he] at h
-    refine ⟨?_, ?_⟩
+    obtain ⟨hv, hb⟩ := init_values he
+    refine ⟨?_, _, ?_, Proof.Ffdh.first_valid hb⟩
     · rw [h.1]; rfl
-    · rw [h.2, init_values he]
+    · rw [h.2, hv]
       exact initialized_words _ _ _
 
 theorem init_correct (s : State) (h : initPre s) :

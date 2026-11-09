@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Pbkdf2.Hmac
 import VerifiedGarbage.Proof.Rc2.Memory
 
 /-!
@@ -260,9 +259,6 @@ theorem macFin_vp {o tl : Nat} (ho : 192 ≤ o) (ho' : o + 32 ≤ 8448) {F G : S
 
 /-! ## `KDK` -/
 
-theorem dhKey {σ s : State} (h : H6 P σ s) :
-    Spec.Rsa.bytesAt s.mem (sc P sDH 32).base 32 = dhV P σ := h.2
-
 theorem kdkUpdArgs_wp {σ s : State} (h : K2 P σ s) : WP isa (.block kdkUpdArgs) s (K3 P σ) := by
   obtain ⟨hb, md⟩ := h
   have hs := hb.1
@@ -341,9 +337,6 @@ theorem kdkFinArgs_wp {σ s : State} (h : K4 P σ s) : WP isa (.block kdkFinArgs
 
 theorem hash_length (x : List Byte) : (Spec.Sha256.hash x).length = 32 := by
   rw [Proof.Sha256.hash_eq]; exact Proof.Sha256.md.digest_length _
-
-theorem K1.of {σ s : State} (h : H6 P σ s)
-    (ha : HiArgs s P.scr (P.scr + BitVec.ofNat 32 sOuter) (P.scr + BitVec.ofNat 32 sDH) 32) : K1 P σ s := ⟨h, ha⟩
 
 theorem kdkInit_vp : VP (K1 P) (.call decFns.hiN decFns.hiC) (K2 P) :=
   macInit_vp (key := sDH) (by decide) (by decide) (fun _ _ h => ⟨h.1.1.1, h.2⟩) fun σ s t h st fr md => by

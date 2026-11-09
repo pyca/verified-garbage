@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Joint
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Cross
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Normalize
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Front
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.KLoop
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
@@ -23,6 +22,12 @@ import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Spec
 import VerifiedGarbage.Proof.Ed448.Group.Decode
 import VerifiedGarbage.Proof.Ed448.Group.Projective
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
 /-! Complete sparse verification: decoding, the unreduced joint equation,
 cofactoring, canonical checks and restoration of every callee-saved register. -/
 

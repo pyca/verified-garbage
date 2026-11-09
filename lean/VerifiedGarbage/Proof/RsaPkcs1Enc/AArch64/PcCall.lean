@@ -68,10 +68,6 @@ theorem arg_keep {L : Lay} (hL : L.Ok) (hA : L.al = 48) {g : Reg → BitVec 64} 
     rw [q_add L.Q L.P d]
     exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
 
-theorem pre_in {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
-    (hc : Ctx L g vv m₀ t) (hp : PreOk L m₀) : PRE L m₀ ∈ t.rd := by
-  rw [hc.rd, hp.hx]; simp
-
 theorem pre_ok {L : Lay} (hL : L.Ok) {m₀ : Mem} (hp : PreOk L m₀) :
     (PRE L m₀).Disjoint L.OUT ∧ (PRE L m₀).Disjoint L.SCR ∧ L.STK.Disjoint (PRE L m₀) ∧
       (preW L m₀).toNat + (prlW L m₀).toNat * 8 ≤ 2 ^ 64 := by

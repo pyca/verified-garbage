@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
 
 /-! # The parameter search on i686: what its cdecl contract supplies
 
-`vg_ffdh_generate_parameters_sieved(out, out_len, used, bits, generator, rand, rand_len, scratch,
+`vg_ffdh_generate_parameters(out, out_len, used, bits, generator, rand, rand_len, scratch,
 scratch_len, state)`: ten arguments on the stack, and RSA's table of primes as a constant. The
 controller uses 212 bytes of stack: its attempt's frame of 36, the call's return address and the
 candidate's own 172.

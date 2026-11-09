@@ -88,7 +88,7 @@ theorem end_ok {X : Mem → Prop} {s : State} (h : PCW w16 X σ 4 s) :
 /-- Everything after the prologue, the round constants and the padded seeds. -/
 theorem body_ok {fast : Bool} {s : State} (h : SqInvW w16 σ 0 s) :
     WP isa (.seq (squeezes 0 3 fast) (.seq (.block tabAddr)
-      (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (.seq (run1 3 w16) (tail4 fast w16))))))) s fun s' =>
+      (.seq (run1 0 w16 fast) (.seq (run1 1 w16 fast) (.seq (run1 2 w16 fast) (.seq (run1 3 w16 fast) (tail4 fast w16))))))) s fun s' =>
       (sample4KW w16).post σ s' ∧ gprPreserved σ s' := by
   refine WP.seq (WP.mono (sqTs_ok (fast := fast) hp (by decide) (by decide) (sqT_of h)) fun _ ⟨q₃, _⟩ =>
     WP.seq (WP.mono (p1_zero_ok q₃) fun _ p₀ => ?_))

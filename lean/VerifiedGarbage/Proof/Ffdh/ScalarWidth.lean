@@ -48,12 +48,4 @@ theorem cut_value {r : List Byte} {bits : Nat} (nonempty : 0 < r.length)
   rw [parts.2] at value
   exact value
 
-theorem cut_length {r : List Byte} {bits : Nat} (nonempty : 0 < r.length)
-    (fits : bits ≤ 8 * r.length) :
-    (KeyScalar.cut r (r.length - width bits) (mask bits)).length = r.length := by
-  apply KeyScalar.cut_length
-  have := width_le nonempty fits
-  have := width_pos bits
-  omega
-
 end VG.Proof.Ffdh.ScalarWidth

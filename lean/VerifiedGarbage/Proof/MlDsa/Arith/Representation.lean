@@ -36,17 +36,6 @@ def accumulateContract {M : ISA} (mont : Bool) (A : Abi M) (stack : Nat := 0) : 
 def inverseContract {M : ISA} (mont : Bool) (A : Abi M) (stack : Nat := 0) : Contract M :=
   inPlaceContract A (inverse mont) stack
 
-theorem productContract_false {M : ISA} (A : Abi M) (s : Nat) : productContract false A s = mulContract A s := rfl
-theorem productContract_true {M : ISA} (A : Abi M) (s : Nat) :
-    productContract true A s = montgomeryMulContract A s := rfl
-theorem accumulateContract_false {M : ISA} (A : Abi M) (s : Nat) :
-    accumulateContract false A s = mulAddContract A s := rfl
-theorem accumulateContract_true {M : ISA} (A : Abi M) (s : Nat) :
-    accumulateContract true A s = montgomeryMulAddContract A s := rfl
-theorem inverseContract_false {M : ISA} (A : Abi M) (s : Nat) : inverseContract false A s = nttInvContract A s := rfl
-theorem inverseContract_true {M : ISA} (A : Abi M) (s : Nat) :
-    inverseContract true A s = montgomeryNttInvContract A s := rfl
-
 theorem inverse_encode (mont : Bool) (f : Poly) : inverse mont (encode mont f) = nttInv f := by
   cases mont
   · rfl
@@ -61,10 +50,6 @@ theorem encode_sub (mont : Bool) (f g : Poly) : encode mont (sub f g) = sub (enc
   cases mont
   · rfl
   · exact Montgomery.scale_sub _ f g
-
-theorem accumulate_encode (mont : Bool) (h f g : Poly) :
-    accumulate mont (encode mont h) f g = encode mont (add h (multiplyNTT f g)) :=
-  (encode_add mont h (multiplyNTT f g)).symm
 
 theorem inverse_product (mont : Bool) (f g : Poly) :
     inverse mont (product mont f g) = nttInv (multiplyNTT f g) := inverse_encode mont _

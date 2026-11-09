@@ -22,7 +22,7 @@ pub fn bench(c: &mut Criterion) {
     };
     use criterion::{BenchmarkId, Throughput};
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::aes_ecb::AesEcb;
+    use verified_garbage::cipher::aes::AesEcb;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 

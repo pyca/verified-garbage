@@ -36,8 +36,6 @@ structure StFr (s t : State) : Prop where
 theorem StFr.trans {s t u : State} (h : StFr s t) (h' : StFr t u) : StFr s u :=
   ⟨h'.gpr.trans h.gpr, h'.v.trans h.v, h'.rd.trans h.rd, h'.wr.trans h.wr, h'.sp.trans h.sp⟩
 
-theorem StFr.refl (s : State) : StFr s s := ⟨rfl, rfl, rfl, rfl, rfl⟩
-
 /-- `a` and `b` stored at `x3 + o`, coefficients `t … t + 7`. -/
 theorem wp_strq2 {s : State} {p : Addr} {m₀ : Mem} {a b : VReg} {o t : Nat} {Gf old : Nat → BitVec 32}
     {is : List Instr} {Q : State → Prop}

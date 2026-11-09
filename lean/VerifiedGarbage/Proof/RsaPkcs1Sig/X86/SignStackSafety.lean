@@ -29,16 +29,4 @@ theorem code_sp (v : CrtImpl) :
     (code (privName v) (privCode v)).all (fun i => !isa.writesSp i) = true :=
   VG.Proof.Rsa.X86.PrivChecked.noSp_allStack (code_noSp v)
 
-theorem code_stack (v : CrtImpl) : stackUse (code (privName v) (privCode v)) ≤ sigStack := by
-  have priv := VG.Proof.Rsa.X86.PrivChecked.code_stack v
-  simp only [VG.Proof.Rsa.X86.PrivChecked.stackBytes] at priv
-  have enc : stackUse VG.Impl.RsaPkcs1Sig.X86.encode = 0 := by decide +kernel
-  have bound : stackUse (body (privName v) (privCode v)) ≤ 3448 := by
-    simp only [body, afterEnc, zeroOut, wipe, stackUse, enc, Nat.max_le]
-    repeat apply And.intro
-    all_goals omega
-  simp only [code, stackUse, VG.X86.frameBytes, List.length_cons, List.length_nil,
-    VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes, sigStack]
-  omega
-
 end VG.Proof.RsaPkcs1Sig.X86.Sgn

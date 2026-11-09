@@ -52,6 +52,7 @@ materialize_code Impl.Gcm.X86_64.StitchAvx8.encRS
 materialize_code Impl.Gcm.X86_64.StitchAvx8.decRS
 materialize_code Impl.Gcm.X86_64.StitchAvx8.encTo
 materialize_code Impl.Gcm.X86_64.StitchAvx8.encToR
+materialize_code Impl.Gcm.X86_64.StitchAvx8.decToR
 
 end VG
 
@@ -59,12 +60,13 @@ namespace VG.Proof.Gcm.X86_64.StitchAvx8
 
 open VG VG.X86_64
 open VG.Proof.AesGcm.X86_64 (Piece PieceTo)
-open VG.Impl.Gcm.X86_64.StitchAvx8 (enc dec encR decR encRS decRS encTo encToR)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (enc dec encR decR encRS decRS encTo encToR decToR)
 
-/-- The eight loops' checks, in one kernel evaluation (`taint_decide_all`). -/
+/-- The nine loops' checks, in one kernel evaluation (`taint_decide_all`). -/
 theorem pieces : Piece enc false true ∧ Piece dec ∧ Piece encR true true ∧ Piece decR true true ∧
-    Piece encRS true true ∧ Piece decRS true true ∧ PieceTo encTo false true ∧ PieceTo encToR true true := by
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩⟩
+    Piece encRS true true ∧ Piece decRS true true ∧ PieceTo encTo false true ∧ PieceTo encToR true true ∧
+    PieceTo decToR true false := by
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩⟩
   taint_decide_all
 
 theorem enc_piece : Piece enc false true := pieces.1
@@ -74,6 +76,7 @@ theorem decR_piece : Piece decR true true := pieces.2.2.2.1
 theorem encRS_piece : Piece encRS true true := pieces.2.2.2.2.1
 theorem decRS_piece : Piece decRS true true := pieces.2.2.2.2.2.1
 theorem encTo_piece : PieceTo encTo false true := pieces.2.2.2.2.2.2.1
-theorem encToR_piece : PieceTo encToR true true := pieces.2.2.2.2.2.2.2
+theorem encToR_piece : PieceTo encToR true true := pieces.2.2.2.2.2.2.2.1
+theorem decToR_piece : PieceTo decToR true false := pieces.2.2.2.2.2.2.2.2
 
 end VG.Proof.Gcm.X86_64.StitchAvx8

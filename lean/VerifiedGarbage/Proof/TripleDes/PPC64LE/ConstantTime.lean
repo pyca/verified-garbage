@@ -25,18 +25,6 @@ all memory contents, including the key, schedule, and data, may differ. -/
 def PublicRegs (rs : List Reg) (s₁ s₂ : State) : Prop :=
   s₁.sp = s₂.sp ∧ ∀ r ∈ rs, s₁.gpr r = s₂.gpr r
 
-theorem encryptBlock_constantTime (pre : State → Prop) :
-    ConstantTime isa pre (PublicRegs [.r3, .r4, .r5]) encryptBlock := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ hp
-  exact ⟨hp.1, fun r hr => hp.2 r (Taint.mem_ofRegs.mp hr)⟩
-
-theorem decryptBlock_constantTime (pre : State → Prop) :
-    ConstantTime isa pre (PublicRegs [.r3, .r4, .r5]) decryptBlock := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ hp
-  exact ⟨hp.1, fun r hr => hp.2 r (Taint.mem_ofRegs.mp hr)⟩
-
 theorem expandKey_constantTime (pre : State → Prop) :
     ConstantTime isa pre (PublicRegs [.r3, .r4, .r5]) Key.expandKey := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5]) ?_ (by taint_decide)

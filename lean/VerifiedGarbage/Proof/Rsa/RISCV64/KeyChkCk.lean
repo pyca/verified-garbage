@@ -386,10 +386,6 @@ theorem keyValid_mont {k n e d p q dP dQ qI w : Nat} (hm : modulusValid n k = tr
 theorem lt_pow_of_len (bs : List VG.Byte) {k : Nat} (h : bs.length < k) : Spec.Rsa.os2ip bs < 256 ^ (k - 1) :=
   Nat.lt_of_lt_of_le (VG.Proof.Rsa.lt_of_os2ip bs) (Nat.pow_le_pow_right (by decide) (by omega))
 
-/-- A number of `a` bytes is below `2^(8 a)`. -/
-theorem lt_pow8_of_len (bs : List VG.Byte) {a : Nat} (h : bs.length = a) : Spec.Rsa.os2ip bs < 2 ^ (8 * a) := by
-  rw [Nat.pow_mul, ← h]; exact VG.Proof.Rsa.lt_of_os2ip bs
-
 /-- `2^(64 w)` for `w = ⌈k / 8⌉` is at least `256^k`. -/
 theorem pow_kw (k : Nat) : 256 ^ k ≤ 2 ^ (64 * ((k + 7) / 8)) := by
   rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]

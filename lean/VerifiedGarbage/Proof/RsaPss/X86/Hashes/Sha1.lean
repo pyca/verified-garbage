@@ -23,7 +23,7 @@ def sha1Shape : Impl.Pbkdf2.Md.X86.Hash :=
 
 theorem sha1Certs : Certs sha1Shape := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    NoSp.of_all (by decide +kernel)⟩ <;> exact ⟨_, by taint_decide⟩
+    ?_, ?_, NoSp.of_all (by decide +kernel), NoSp.of_all (by decide +kernel)⟩ <;> exact ⟨_, by taint_decide⟩
 
 /-- SHA-1 with the backend `v`, as RSASSA-PSS on x86 uses it. -/
 def sha1 (v : Backend) : PssHash where

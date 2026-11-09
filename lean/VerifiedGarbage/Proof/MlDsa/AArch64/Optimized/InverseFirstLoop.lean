@@ -107,10 +107,4 @@ theorem firstLoop_ok {s : State}
         rfl
   · exact ⟨Keep.refl _ _,hq,by simp,by simp,rfl⟩
 
-theorem firstLoop_eq :
-    .loop (.block VG.Impl.MlDsa.AArch64.Optimized.Inverse.firstBlock) (.nonzero .x .x11)=
-      (.loop (.block (fiveSliceCode++firstAdvance)) (.nonzero .x .x11) : Prog isa) := by
-  rw [firstBlock_eq]
-  simp only [fiveSliceCode,List.append_assoc]
-
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Cmac.Contract
-public import VerifiedGarbage.Proof.Cmac.Contract
 import VerifiedGarbage.Proof.CmacAes.X86_64.FinalizeCorrect
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Subkeys
 import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
@@ -11,7 +10,6 @@ import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Spec.Cmac.Contract
-meta import VerifiedGarbage.Proof.Cmac.Contract
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.FinalizeCorrect
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.Subkeys
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
@@ -400,59 +398,5 @@ theorem finalize_correct (v : Ctr32Impl) (s : State) (hs : finalizeX86_64.pre s)
     ∃ t s', Exec isa (finalize v.callee) s t s' ∧ abiPreserved s s' ∧ finalizeX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := finalize_wp v hs
   exact ⟨t, s', he, abiPreserved_of_exec (finalize_mx v) he hg, hp⟩
-
-/-- A state satisfying `vg_cmac_aes_update`'s precondition (with no blocks). -/
-def updSat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 10 | .rdx => 0x2000 | .rcx => 0x3000 | .r9 => 0x4000 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 240⟩, ⟨0x3000, 0⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x4000, 2176⟩]
-
-theorem update_verified (v : Ctr32Impl) :
-    Verified X86_64.target (update v.callee) (Proof.Cmac.aesUpdateContract X86_64.abi 8) :=
-  Verified.of_correct (update_correct v) (update_ct v) (by
-    sig_implies [Proof.Cmac.aesUpdateContract, Proof.Cmac.aesUpdateSig, updateX86_64, X86_64.abi,
-      X86_64.argRegs] [updSat] using updSat)
-
-/-- A state satisfying `vg_cmac_aes_subkeys`'s precondition. -/
-def subSat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 10 | .rdx => 0x2000 | .rcx => 0x4000 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 240⟩]
-  wr := [⟨0x2000, 32⟩, ⟨0x4000, 2176⟩]
-
-theorem subkeys_verified (v : Ctr32Impl) :
-    Verified X86_64.target (subkeys v.callee) (Proof.Cmac.aesSubkeysContract X86_64.abi 8) :=
-  Verified.of_correct (subkeys_correct v) (subkeys_ct v) (by
-    sig_implies [Proof.Cmac.aesSubkeysContract, Proof.Cmac.aesSubkeysSig, subkeysX86_64, X86_64.abi,
-      X86_64.argRegs] [subSat] using subSat)
-
-/-- A state satisfying `vg_cmac_aes_finalize`'s precondition (with no last bytes). -/
-def finSat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 10 | .rdx => 0x2000 | .rcx => 0x3000 | .r9 => 0x4000 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 272⟩, ⟨0x3000, 0⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x4000, 2176⟩]
-
-theorem finalize_verified (v : Ctr32Impl) :
-    Verified X86_64.target (finalize v.callee) (Proof.Cmac.aesFinalizeContract X86_64.abi 8) :=
-  Verified.of_correct (finalize_correct v) (finalize_ct v) (by
-    sig_implies [Proof.Cmac.aesFinalizeContract, Proof.Cmac.aesFinalizeSig, finalizeX86_64, X86_64.abi,
-      X86_64.argRegs] [finSat] using finSat)
 
 end VG.Proof.CmacAes.X86_64

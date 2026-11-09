@@ -1,5 +1,4 @@
-//! Constant-time comparison, for the checks of MACs, tags and shared secrets
-//! that the Rust code around the verified primitives does.
+//! Constant-time comparison, for checking MACs, tags and shared secrets.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -10,14 +9,23 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::ct::vg_ct_eq;
+use crate::arch::dispatch::ct::vg_ct_eq_auto;
 
 /// Whether `a` and `b` are equal. The verified comparison leaks only their
 /// pointers and lengths; it does not branch on their contents.
-pub(crate) fn eq(a: &[u8], b: &[u8]) -> bool {
+pub(crate) fn eq(dit: crate::dit::Dit<'_>, a: &[u8], b: &[u8]) -> bool {
     // SAFETY: both slices are readable for their lengths and cannot wrap.
     // The buffers may overlap. Live slices lie outside the callee’s stack frame.
-    unsafe { vg_ct_eq(a.as_ptr(), a.len(), b.as_ptr(), b.len()) != 0 }
+    unsafe { vg_ct_eq_auto(dit, a.as_ptr(), a.len(), b.as_ptr(), b.len()) != 0 }
+}
+
+/// Whether every byte of `a` is zero, by the verified comparison with as many
+/// zeros: it leaks only `a`'s length, not which byte is not zero. RSA and
+/// FFDH check with it that a secret given in more bytes than its fixed width
+/// has only zeros before them.
+#[cfg(feature = "alloc")]
+pub(crate) fn is_zero(dit: crate::dit::Dit<'_>, a: &[u8]) -> bool {
+    eq(dit, a, &alloc::vec![0; a.len()])
 }
 
 /// Fails to compile unless `N`, the length of a key a password KDF's
@@ -60,29 +68,46 @@ pub(crate) use assert_verify_len;
 #[cfg(test)]
 mod tests {
     use super::eq;
+    #[cfg(feature = "alloc")]
+    use super::is_zero;
 
     #[test]
     fn compares() {
-        assert!(eq(&[], &[]));
-        assert!(eq(&[1, 2, 3], &[1, 2, 3]));
-        assert!(!eq(&[1, 2, 3], &[1, 2, 4]));
-        assert!(!eq(&[0, 2, 3], &[1, 2, 3]));
-        assert!(!eq(&[1, 2, 3], &[1, 2]));
-        assert!(!eq(&[], &[0]));
-        assert!(!eq(&[0], &[]));
+        let dit = crate::dit::public(crate::dit::Why::Test);
+        assert!(eq(dit, &[], &[]));
+        assert!(eq(dit, &[1, 2, 3], &[1, 2, 3]));
+        assert!(!eq(dit, &[1, 2, 3], &[1, 2, 4]));
+        assert!(!eq(dit, &[0, 2, 3], &[1, 2, 3]));
+        assert!(!eq(dit, &[1, 2, 3], &[1, 2]));
+        assert!(!eq(dit, &[], &[0]));
+        assert!(!eq(dit, &[0], &[]));
+    }
+
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn zeros() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
+        assert!(is_zero(dit, &[]));
+        assert!(is_zero(dit, &[0; 33]));
+        for i in 0..33 {
+            let mut a = [0; 33];
+            a[i] = 0x80;
+            assert!(!is_zero(dit, &a));
+        }
     }
 
     #[test]
     fn overlaps_and_each_difference() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         let bytes = [0xa5; 257];
         for len in [0, 1, 3, 4, 7, 8, 15, 16, 31, 32, 63, 64, 255, 256] {
-            assert!(eq(&bytes[..len], &bytes[..len]));
-            assert!(eq(&bytes[..len], &bytes[1..=len]));
+            assert!(eq(dit, &bytes[..len], &bytes[..len]));
+            assert!(eq(dit, &bytes[..len], &bytes[1..=len]));
             let mut changed = bytes;
             for i in 0..len {
                 for bit in 0..8 {
                     changed[i] ^= 1 << bit;
-                    assert!(!eq(&bytes[..len], &changed[..len]));
+                    assert!(!eq(dit, &bytes[..len], &changed[..len]));
                     changed[i] ^= 1 << bit;
                 }
             }

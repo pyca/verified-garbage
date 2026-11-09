@@ -61,6 +61,7 @@ def L1024 : KemLay where
 
 def keyGen : Prog isa := leaf (kgBody L1024)
 def encaps : Prog isa := leaf (encapsBody L1024)
+def encapsH : Prog isa := leaf (encapsHBody L1024)
 def decaps : Prog isa := leaf (decapsBody L1024)
 def checkEk : Prog isa := checkEkN 512
 

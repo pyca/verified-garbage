@@ -144,23 +144,4 @@ theorem correct (s : State) (hs : compressEncodeAArch64.pre s) :
       rcases mem_compressWidths hd with h | h | h <;> rw [h] at hlen <;> omega
     exact width_ok (w := width10) hs e k₃ (by rw [h₃.mem, m₂]) fun _ hp => loop10_ok hp
 
-theorem ct : ConstantTime isa compressEncodeAArch64.pre compressEncodeAArch64.pub compressEncode :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x2, .x3])
-    (fun _ _ _ _ ⟨h0, h2, h3, hsp⟩ => agree_of hsp (by simp [h0, h2, h3])) (by taint_decide)
-
-/-- A state satisfying the precondition. -/
-def sat : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 4 | .x2 => 0x2000 | .x3 => 128 | _ => 0
-  sp := 0x10000
-  mem _ := 0
-  rd := [⟨0x1000, 1024⟩]
-  wr := [⟨0x2000, 128⟩]
-
-theorem compressEncode_verified :
-    Verified AArch64.target compressEncode (Proof.MlKem.compressEncodeContract AArch64.abi) :=
-  Verified.of_correct correct ct (by
-    mlkem_implies [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig,
-      compressEncodeAArch64, AArch64.abi, AArch64.argRegs] [sat] using sat)
-
 end VG.Proof.MlKem.AArch64.CE

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Calls
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.KemLay
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.HashTop
@@ -17,6 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Covers
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 public import VerifiedGarbage.Impl.MlKem.PPC64LE.Top
 
 /-!
@@ -86,11 +88,14 @@ theorem mulT : ConstantTime isa (fun _ => True) (regsEq [.r3, .r4, .r5, .r6]) Im
   Add.ctRegs (k := kT [.r3, .r4, .r5, .r6]) [.r3, .r4, .r5, .r6] (fun _ _ h => h.2) (fun _ _ h => h.1)
     (by taint_decide)
 
+/-- The vector NTT and its inverse, by the analysis that follows vector registers. -/
 theorem nttT : ConstantTime isa (fun _ => True) (regsEq [.r3, .r4]) Impl.MlKem.PPC64LE.ntt :=
-  Add.ctRegs (k := kT [.r3, .r4]) [.r3, .r4] (fun _ _ h => h.2) (fun _ _ h => h.1) (by taint_decide)
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4])
+    (fun _ _ _ _ hp => ⟨hp.1, fun r hr => hp.2 r (Taint.mem_ofRegs.mp hr)⟩) (by taint_decide)
 
 theorem nttInvT : ConstantTime isa (fun _ => True) (regsEq [.r3, .r4]) Impl.MlKem.PPC64LE.nttInv :=
-  Add.ctRegs (k := kT [.r3, .r4]) [.r3, .r4] (fun _ _ h => h.2) (fun _ _ h => h.1) (by taint_decide)
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4])
+    (fun _ _ _ _ hp => ⟨hp.1, fun r hr => hp.2 r (Taint.mem_ofRegs.mp hr)⟩) (by taint_decide)
 
 theorem cbd2T : ConstantTime isa (fun _ => True) (regsEq [.r3, .r4]) Impl.MlKem.PPC64LE.cbd2 :=
   Add.ctRegs (k := kT [.r3, .r4]) [.r3, .r4] (fun _ _ h => h.2) (fun _ _ h => h.1) (by taint_decide)

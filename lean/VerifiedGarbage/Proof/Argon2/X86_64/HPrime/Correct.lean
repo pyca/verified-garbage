@@ -28,20 +28,6 @@ namespace VG.Proof.Argon2.X86_64.HPrime
 
 open VG VG.X86_64 VG.Impl.Argon2.X86_64.HPrime
 
-theorem saved_read {m m' : Mem} (p sp : Addr)
-    (frame : Frame [⟨p, 832⟩, below sp 16] m m')
-    (stack : (below sp 16).Disjoint ⟨p, 16384⟩)
-    (d : Nat) (lo : 832 ≤ d) (hi : d + 8 ≤ 16384) :
-    m'.readW (p + BitVec.ofNat 64 d) 64 = m.readW (p + BitVec.ofNat 64 d) 64 := by
-  apply frame.readW (r := ⟨p + BitVec.ofNat 64 d, 8⟩) ?_ ?_ (by decide)
-  · simpa only [BitVec.add_zero] using
-      Offset.contains_base (p + BitVec.ofNat 64 d) (d := 0) (n := 8) (k := 8) (by decide) (by decide)
-  · intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact (Offset.base_disjoint p lo (by omega_arith)).symm
-    · exact (stack.sub_right (Offset.sub_base p hi)).symm
-
 theorem restore_ok (original s : State) (base : s.gpr .rbx = original.gpr .r8)
     (sp : s.gpr .rsp = original.gpr .rsp)
     (readable : (⟨original.gpr .r8, 16384⟩ : Region) ∈ s.rd ++ s.wr)

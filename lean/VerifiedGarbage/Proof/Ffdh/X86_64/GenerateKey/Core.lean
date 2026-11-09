@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Scalar
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Outputs
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Outputs
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Work
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.OutputBytes
@@ -20,60 +20,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Sample
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Math
 import VerifiedGarbage.Proof.Ffdh.Domain
 /-! # FFDH on x86-64: scalar rejection and generated public values -/
-
--- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/GenerateKey/Tail.lean`, which only this module imported.
-section
-
-/-! # FFDH on x86-64: exponentiate a sampled scalar and finish both outputs -/
-
-section
-
-namespace VG.Proof.Ffdh.X86_64.GenerateKey
-
-open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
-open VG.Impl.Ffdh.X86_64.Domain VG.Impl.Ffdh.X86_64.Domain.GenerateKey
-open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 VG.Proof.MlKem.X86_64
-
-theorem tail_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M)
-    {p : GkP} {rb : List Byte} {mi : BitVec 64} {s : State}
-    (h : CheckPrivate.Work p.kp (p.xb rb) mi s) (hd : s.gpr .rdi = off p.B (inner p.w))
-    (hm : p.mv = true) (hx : Src s p.B p.Z p.xp (p.cut rb))
-    (hoX : OutOk s p.B p.Z p.xp p.k) (hoY : OutOk s p.B p.Z p.yp p.k)
-    (ha : Apart p.xp p.k p.yp p.k) (hlen : (p.cut rb).length = p.k) (hld : p.ld < p.k) :
-    WP isa (seqs (VG.Impl.Ffdh.X86_64.Domain.GenerateKey.tail M.mm E.code (.seq (.block r2Head) R.code))) s (PowerPost p rb s) := by
-  have hZ : 128 * p.k + 256 ≤ p.Z := h.base.hZ
-  have hk : p.k ≤ 1024 := h.base.k2
-  unfold VG.Impl.Ffdh.X86_64.Domain.GenerateKey.tail
-  simp only [List.append_assoc]
-  refine wp_seqs_append (a := [.seq (.block r2Head) R.code]) (by simp) (by simp)
-    (WP.mono (CheckPrivate.work_ready M R h hd hm) fun u ⟨hu, hi₁, hs₁, k₁⟩ => ?_)
-  refine wp_seqs_append (a := pow M.mm E.code sG sK sX sXl)
-    (b := publicOutput ++ [maskX, .block status]) (by simp [pow]) (by simp)
-    (WP.mono (CheckPrivate.ready_value M E hu) fun v ⟨hv, hi₂, hs₂, k₂⟩ => ?_)
-  have hxy := (hx.congrK hi₁ k₁).congrK hi₂ k₂
-  have hyv : OutOk v p.B p.Z p.yp p.k :=
-    ⟨fun i hi => by rw [k₂.2.2, k₁.2.2]; exact hoY.wr i hi, hoY.sep⟩
-  refine wp_seqs_append (a := publicOutput) (b := [maskX, .block status]) (by simp [publicOutput]) (by simp)
-    (WP.mono (publicOutput_ok hv hxy hyv ha hlen) fun z hz => ?_)
-  have hz' := hz
-  obtain ⟨_, _, _, _, _, _, _, _, hs₃, hf₃, k₃⟩ := hz
-  have hox : OutOk z p.B p.Z p.xp p.k :=
-    ⟨fun i hi => by rw [k₃.2.2, k₂.2.2, k₁.2.2]; exact hoX.wr i hi, hoX.sep⟩
-  have hoy : OutOk z p.B p.Z p.yp p.k :=
-    ⟨fun i hi => by rw [k₃.2.2, k₂.2.2, k₁.2.2]; exact hoY.wr i hi, hoY.sep⟩
-  refine WP.mono (outputs_ok hz' hox hoy ha (by omega) (by omega) hld hlen)
-    fun t ⟨hret, hdi, hX, hY, hs₄, hf₄, k₄⟩ => ?_
-  refine ⟨hret, hdi, hX, hY, ?_, ?_, (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)⟩
-  · intro i hi
-    have a₁ : word u.mem p.B (8 * i) = word s.mem p.B (8 * i) := hs₁ i hi
-    have a₂ : word v.mem p.B (8 * i) = word u.mem p.B (8 * i) := hs₂ i hi
-    exact (hs₄ i hi).trans ((hs₃ i hi).trans (a₂.trans a₁))
-  · exact (RunFrame.of_scr hi₁).trans ((RunFrame.of_scr hi₂).trans (hf₃.trans hf₄))
-
-end VG.Proof.Ffdh.X86_64.GenerateKey
-end
-
-end
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/GenerateKey/Reject.lean`, which only this module imported.
 section
@@ -197,23 +143,28 @@ def AttemptPost (p : GkP) (rb : List Byte) (s t : State) : Prop :=
     Spec.Rsa.bytesAt t.mem p.yp p.k = Spec.Rsa.i2osp (if resultStatus p rb = 1 then p.z rb else 0) p.k ∧
     (∀ i < 6, word t.mem p.B (8 * i) = word s.mem p.B (8 * i)) ∧ RunFrame p s.mem t.mem ∧ Keep (.rdi :: mmRegs) s t
 
-theorem core_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M)
+/-- The core of an attempt with any tail that computes the power from a
+checked scalar. -/
+theorem coreWith_ok {tl : List (Prog isa)}
     {p : GkP} {rb : List Byte} {s : State}
+    (htail : ∀ mi u, CheckPrivate.Work p.kp (p.xb rb) mi u → u.gpr .rdi = off p.B (inner p.w) →
+      Src u p.B p.Z p.xp (p.cut rb) → OutOk u p.B p.Z p.xp p.k → OutOk u p.B p.Z p.yp p.k →
+      InScr p.B p.Z s.mem u.mem → Keep (.rdi :: mmRegs) s u → WP isa (seqs tl) u (PowerPost p rb u))
     (h : CheckPrivate.Base p.kp (p.xb rb) s) (hd : s.gpr .rdi = p.B)
     (hG : word s.mem p.B (8 * sG) = off p.dp p.k) (hQ : word s.mem p.B (8 * sQ) = off p.dp (2 * p.k))
     (hm : p.mv = true) (hx : Src s p.B p.Z p.xp (p.cut rb))
     (hoX : OutOk s p.B p.Z p.xp p.k) (hoY : OutOk s p.B p.Z p.yp p.k)
     (ha : Apart p.xp p.k p.yp p.k) (hlen : (p.cut rb).length = p.k) (hld : p.ld < p.k) :
-    WP isa (seqs (core M.mm E.code (.seq (.block r2Head) R.code))) s (AttemptPost p rb s) := by
+    WP isa (seqs (([.block VG.Impl.Rsa.X86_64.head] : List (Prog isa)) ++ pSetup ++ VG.Impl.Rsa.X86_64.Crt.loadArr aXm sX sXl ++
+      VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.scalarRange ++ ([.block [.alu .test .rax (.reg .rax)],
+        .ite .e (seqs [.block [VG.Impl.Rsa.X86_64.Crt.leave], maskX, ret 2]) (seqs tl)] : List (Prog isa)))) s (AttemptPost p rb s) := by
   have hk : 64 ≤ p.k := h.k1
   have hodd := (valid_facts hm hk).1
-  unfold core
   simp only [List.append_assoc]
   refine wp_seqs_append
     (a := ([.block VG.Impl.Rsa.X86_64.head] ++ pSetup ++ VG.Impl.Rsa.X86_64.Crt.loadArr aXm sX sXl))
     (b := VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.scalarRange ++ [.block [.alu .test .rax (.reg .rax)],
-      .ite .e (seqs [.block [VG.Impl.Rsa.X86_64.Crt.leave], maskX, ret 2])
-        (seqs (VG.Impl.Ffdh.X86_64.Domain.GenerateKey.tail M.mm E.code (.seq (.block r2Head) R.code)))])
+      .ite .e (seqs [.block [VG.Impl.Rsa.X86_64.Crt.leave], maskX, ret 2]) (seqs tl)])
     (by simp [pSetup]) (by simp)
     (WP.mono (CheckPrivate.setup_work h hd hG hQ hm) fun u₁ S₁ => ?_)
   obtain ⟨mi, hw₁, hd₁⟩ := S₁.1
@@ -250,7 +201,7 @@ theorem core_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M)
       have hH : word u₃.mem p.B (8 * i) = word s.mem p.B (8 * i) := H.2.2.1 i hi
       exact (hs i hi).trans hH
   · have hsv : p.sv = true := by cases h : p.sv <;> simp_all
-    refine WP.mono (tail_ok M E R hw₃ hd₃ hm hx₃ hox₃ hoy₃ ha hlen hld)
+    refine WP.mono (htail mi u₃ hw₃ hd₃ hx₃ hox₃ hoy₃ H.2.1 H.2.2.2)
       fun t ⟨hr, hd, hX, hY, hs, hf, kt⟩ => ?_
     have hres : resultStatus p rb = if p.fl rb then 1 else 3 := by
       simp only [resultStatus, hsv, Bool.true_eq_false, ↓reduceIte]

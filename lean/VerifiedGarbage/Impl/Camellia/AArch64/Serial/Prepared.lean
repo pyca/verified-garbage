@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Camellia.AArch64.Serial.Core
-public import VerifiedGarbage.Spec.Camellia.Prepared
+public import VerifiedGarbage.Spec.Camellia
 
 /-!
 # The serial Camellia core as two functions, and the modes' calls of them
 
 `vg_camellia_prepare_encrypt_keys` and `vg_camellia_encrypt_prepared`
-(`Proof/Camellia/PreparedEncrypt.lean`): the serial core's two halves
+(`Proof/Camellia/Prepared.lean`): the serial core's two halves
 (`Core.lean`) as functions of the working space, which the feedback modes
 and CBC encryption call (`Fb.lean`) rather than each inlining the core.
 
@@ -38,21 +38,6 @@ def prepareEncrypt : Prog isa :=
 /-- `vg_camellia_encrypt_prepared`. -/
 def encryptPrepared : Prog isa :=
   .seq (.block [movR sb .x1, movR .x1 .x0]) core.crypt
-
-/-! ## The layout -/
-
-/-- The S-box's table, then the schedule's words as stored (the most
-significant byte first), then the block at byte 768. -/
-def layout : Spec.Camellia.Prepared.Layout where
-  table rounds := [(0, 256), (256, 8 * Spec.Camellia.scheduleLength rounds)]
-  encode _ w _ i :=
-    if i < 256 then Spec.Camellia.sbox1Table.getD i 0
-    else (Spec.Camellia.wordBytes (w.getD ((i - 256) / 8) 0)).getD ((i - 256) % 8) 0
-  buf := 768
-  blocks := 1
-  prepScratch := [(0, 528)]
-  cryptScratch := [(768, 16)]
-  size := 8 * core.total
 
 /-! ## The calls -/
 

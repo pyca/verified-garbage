@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesCfb.Rounds
 public import VerifiedGarbage.Impl.AesCfb.RISCV64
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
 public import VerifiedGarbage.Proof.AesCfb.Spec
@@ -54,14 +55,14 @@ theorem decrypt_ct : ConstantTime isa (modeRISCV64 (cfbMode false)).pre (modeRIS
     wrap_ct Proof.Aes.RISCV64.cfbDecWide_k "vg_aes_cfb_dec_wide" _ _ _ _ _ _ (encrypt_wpre h₁) (encrypt_wpre h₂)
       hq e₁ e₂
 
-theorem encrypt_verified : Verified RISCV64.target encrypt (Spec.Cfb.aesEncryptContract RISCV64.abi) :=
+theorem encrypt_verified : Verified RISCV64.target encrypt (Proof.AesCfb.encryptRoundsContract RISCV64.abi) :=
   Verified.of_correct encrypt_correct encrypt_ct (by
-    sig_implies [Spec.Cfb.aesEncryptContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeRISCV64, cfbMode, cfb, cts,
+    sig_implies [Proof.AesCfb.encryptRoundsContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeRISCV64, cfbMode, cfb, cts,
       RISCV64.abi, RISCV64.argRegs] [sat] using sat)
 
-theorem decrypt_verified : Verified RISCV64.target decrypt (Spec.Cfb.aesDecryptContract RISCV64.abi) :=
+theorem decrypt_verified : Verified RISCV64.target decrypt (Proof.AesCfb.decryptRoundsContract RISCV64.abi) :=
   Verified.of_correct decrypt_correct decrypt_ct (by
-    sig_implies [Spec.Cfb.aesDecryptContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeRISCV64, cfbMode, cfb, cts,
+    sig_implies [Proof.AesCfb.decryptRoundsContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeRISCV64, cfbMode, cfb, cts,
       RISCV64.abi, RISCV64.argRegs] [sat] using sat)
 
 end VG.Proof.AesCfb.RISCV64

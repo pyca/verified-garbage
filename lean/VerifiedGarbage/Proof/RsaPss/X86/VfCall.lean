@@ -72,17 +72,17 @@ def Slots (P : EP) (m : Mem) (k : Nat) : Prop :=
 /-- During the call's arguments. -/
 abbrev A0 (P : EP) (σ s : State) (k : Nat) : Prop := M0 h P σ s ∧ Slots h P s.mem k
 
-theorem vf_arg {j : Nat} (hj : j < 13) {P : EP} : j < ((P.lay h.D).argv).length := by simp; omega_arith
+theorem vf_arg {j : Nat} (hj : j < 16) {P : EP} : j < ((P.lay h.D).argv).length := by simp; omega_arith
 
 /-- A word stored below the slots keeps them. -/
 theorem keepSlot {P : EP} {m : Mem} {d : Nat} (hd : d + 4 ≤ sLo) (v : BitVec 32) (hb : Bm h P m) :
     Bm h P (m.writeW ((P.lay h.D).fr d) v) :=
   hb.keep h (slot_frame (P.lay h.D) m d v) fun r hr e he => by
     simp only [List.mem_singleton] at hr; subst hr
-    have e1 : sLo = 80 := rfl
-    have e2 : sC = 84 := rfl
-    have e3 : sDb = 88 := rfl
-    have e4 : sAny = 132 := rfl
+    have e1 : sLo = 40 := rfl
+    have e2 : sC = 44 := rfl
+    have e3 : sDb = 48 := rfl
+    have e4 : sAny = 52 := rfl
     simp only [List.mem_cons, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl | rfl <;> exact slotSep (by decide) (by unfold frameBytes; omega_arith) (by omega_arith)
 
@@ -96,7 +96,7 @@ theorem slots_next {P : EP} {m : Mem} {i : Nat} (hs : Slots h P m i) (hi : i < 1
 
 /-- `mov eax, [arg j]; mov [esp + 4 i], eax`: argument `j` to the call's argument `i`. -/
 theorem copySlot {P : EP} {σ s : State} {i j : Nat} (ha : A0 h P σ s i) (hi : i < 10)
-    (hj : j < 13) (hv : P.argv.getD j 0 = (outv P).getD i 0) {is : List Instr} {Q : State → Prop}
+    (hj : j < 16) (hv : (P.argv h.D).getD j 0 = (outv P).getD i 0) {is : List Instr} {Q : State → Prop}
     (kk : ∀ t, A0 h P σ t (i + 1) → WP isa (.block is) t Q) :
     WP isa (.block (copyArg j i ++ is)) s Q := by
   obtain ⟨⟨hc, hin, hf, hb⟩, hs⟩ := ha
@@ -125,9 +125,9 @@ theorem scrSlot {P : EP} {σ s : State} {i o : Nat} (ha : A0 h P σ s i) (hi : i
   · rw [m3.mem, u2.mem, u1.mem, u2.gpr, u1.gpr, hc.ebp]
     exact slots_next h hs hi _ hv
 
-theorem pubArgs_eq : pubArgs = (atS .eax oEm ++ [st .eax (4 * 0)]) ++ copyArg 1 1 ++ copyArg 11 2 ++
-    copyArg 12 3 ++ copyArg 2 4 ++ copyArg 3 5 ++ copyArg 5 6 ++ copyArg 1 7 ++
-    (atS .eax oRsa ++ [st .eax (4 * 8)]) ++ [ld .eax (arg 10), .alu .sub .eax (.imm 1024), st .eax (4 * 9)] := by
+theorem pubArgs_eq : pubArgs = (atS .eax oEm ++ [st .eax (4 * 0)]) ++ copyArg 1 1 ++ copyArg 12 2 ++
+    copyArg 13 3 ++ copyArg 2 4 ++ copyArg 3 5 ++ copyArg 6 6 ++ copyArg 1 7 ++
+    (atS .eax oRsa ++ [st .eax (4 * 8)]) ++ [ld .eax (arg 11), .alu .sub .eax (.imm 1024), st .eax (4 * 9)] := by
   simp only [pubArgs, List.append_assoc]; rfl
 
 /-- Before the call. -/
@@ -146,17 +146,17 @@ theorem pa_vp (P : EP) : VP (M0 h P) (.block pubArgs) (V1 h P) := by
   have z0 : A0 h P σ s 0 := ⟨hm, fun _ hi => absurd hi (Nat.not_lt_zero _)⟩
   refine scrSlot h z0 (by decide) (by simp [outv, pubArgv]) fun t1 z1 => ?_
   refine copySlot h z1 (by decide) (j := 1) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t2 z2 => ?_
-  refine copySlot h z2 (by decide) (j := 11) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t3 z3 => ?_
-  refine copySlot h z3 (by decide) (j := 12) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t4 z4 => ?_
+  refine copySlot h z2 (by decide) (j := 12) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t3 z3 => ?_
+  refine copySlot h z3 (by decide) (j := 13) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t4 z4 => ?_
   refine copySlot h z4 (by decide) (j := 2) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t5 z5 => ?_
   refine copySlot h z5 (by decide) (j := 3) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t6 z6 => ?_
-  refine copySlot h z6 (by decide) (j := 5) (by decide) (by simp [EP.argv, outv, pubArgv, hi.glK]) fun t7 z7 => ?_
+  refine copySlot h z6 (by decide) (j := 6) (by decide) (by simp [EP.argv, outv, pubArgv, hi.glK]) fun t7 z7 => ?_
   refine copySlot h z7 (by decide) (j := 1) (by decide) (by simp [EP.argv, outv, pubArgv]) fun t8 z8 => ?_
   rw [← List.append_assoc (atS .eax oRsa)]
   refine scrSlot h z8 (by decide) (by simp [outv, pubArgv]) fun t9 z9 => ?_
   obtain ⟨⟨c9, -, hf9, b9⟩, s9⟩ := z9
   simp only [ld, st]
-  refine c9.wp_arg hg (vf_arg h (j := 10) (by decide)) (by decide) (by decide) fun t10 c10 u10 =>
+  refine c9.wp_arg hg (vf_arg h (j := 11) (by decide)) (by decide) (by decide) fun t10 c10 u10 =>
     wp_subi fun t11 u11 _ _ => (c10.upd u11 (by decide) (by decide)).wp_st hg (d := 4 * 9) (by decide)
       fun t12 c12 m12 => WP.block_nil ?_
   have v : t11.gpr .eax = BitVec.ofNat 32 (P.scl - 1024) := by
@@ -375,7 +375,7 @@ theorem call_vp (P : EP) (c : Ver.PublicImpl) : VP (V1 h P) (.call c.name c.code
     have st : (P.lay h.D).St σ s' := hs.write fr hw rd wr (cs .esp (by simp [calleeSaved]))
     have hct : Ctx (P.lay h.D) P.scr σ s' := ⟨st, by rw [cs .ebp (by simp [calleeSaved]), hc.ebp]⟩
     have hb' : Bm h P s'.mem := hb.keep h fr fun r hr d hd => by
-      have hd' : 80 ≤ d ∧ d + 4 ≤ frameBytes := by
+      have hd' : 40 ≤ d ∧ d + 4 ≤ frameBytes := by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
         rcases hd with rfl | rfl | rfl | rfl <;> decide
       simp only [pubWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -1,9 +1,4 @@
-//! HMAC-MD5: `vg_hmac_md5_init`, `vg_md5_update` and `vg_hmac_md5_finalize`
-//! (contracts `VG.Spec.Hmac.Instance.initAnyKeyContract` of
-//! `VG.Spec.Hmac.md5I`, `VG.Spec.Md5.updateContract` and
-//! `VG.Spec.Hmac.Instance.finalizeContract`) compute HMAC with a key of any
-//! length, `H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖ text))` (`VG.Spec.Hmac.hmac`),
-//! keeping the two MD5 streaming states.
+//! HMAC-MD5.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -14,13 +9,13 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::hmac_md5::{vg_hmac_md5_finalize, vg_hmac_md5_init};
-use crate::hashes::md5::{Md5, Md5Backend};
+use crate::arch::dispatch::hmac_md5::{vg_hmac_md5_finalize_auto, vg_hmac_md5_init_auto};
+use crate::hashes::md5::Md5;
 
 super::streaming_hmac!(
-    Md5 (Md5Backend) {
-        Scalar => (vg_hmac_md5_init, vg_hmac_md5_finalize),
-    },
+    Md5,
+    init: vg_hmac_md5_init_auto,
+    finalize: vg_hmac_md5_finalize_auto,
     state: 80,
     output: 16,
 );

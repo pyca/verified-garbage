@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecMain
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
 
 import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCorrect
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
@@ -83,10 +83,6 @@ theorem DW.words (h : DW s t) : ∀ k ∈ decKs, word t.mem (fb s) (8 * k) = dec
   rw [R.fr k (decKs_lt k hk)]
   exact hW k hk
 
-omit hp in
-theorem DWM.dw {src srcLen dst dstLen : Nat} (h : DWM s t src srcLen dst dstLen) : DW s t :=
-  let ⟨V, W, R, hW, _⟩ := h.rep; ⟨h.he, h.L, V, W, R, hW⟩
-
 /-- The label, where `hashLabel` finds it. -/
 theorem DW.lab (h : DW s t) {W : Nat → BitVec 64} (hW : ArgsD s W) :
     LabAt t (fb s) (stackArg s 15) W (stackArg s 11) (stackArg s 12).toNat := by
@@ -105,11 +101,15 @@ section
 variable {s : State} (hp : DPre s)
 include hp
 
-theorem dw_hashLabel {Hm : Hash} (hH : HashOK Hm) (KH : Callees Hm) (mH : MgfLink Hm hH) {t : State}
-    (h : DW s t) : WP isa (hashLabel Hm.stream oLh) t (DW s) := by
+theorem dw_hashLabelT {Hm : Hash} (hH : HashOK Hm) (mH : MgfLink Hm hH) {f : Impl.Mgf1.X86_64.Table.Fns}
+    (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd) (hgf : Table.FnsGood f.fin) {t : State}
+    (h : DW s t) (h35 : word t.mem (fb s) (8 * 35) = stackArg s 17)
+    (T : Table.Tab Hm.stream f (fb s) (stackArg s 17) (frameBytes + 8 + 8 * 17) t) :
+    WP isa (hashLabelT f oLh) t (DW s) := by
   obtain ⟨V, W, R, hW⟩ := h.rep
-  exact WP.mono (wp_good (hashLabel_good (HGood.of hH KH) oLh)
-    (hashLabel_ok hH.stream (Hs := mH.G) mH.hash h.L R (h.lab hp hW) (Or.inr rfl)))
+  exact WP.mono (wp_good (hashLabelT_good hgi hgu hgf oLh)
+    (hashLabelT_ok hH.stream hgi hgu (Hs := mH.G) mH.hash T (Table.TJ.refl t _) rfl rfl h.L R
+      ((R.fr 35 (by decide)).symm.trans h35) (h.lab hp hW) (Or.inr rfl)))
     fun t3 ⟨⟨L3, rd3, wr3, cs3, V3, R3, _, _⟩, sp3, mx3, f3⟩ =>
       ⟨h.he.step rd3 wr3 sp3 (fun r hr _ => cs3 r hr) mx3 f3, L3, V3, W, R3, hW⟩
 
@@ -138,16 +138,19 @@ theorem dw_dbArgs {Hm : Stream} (hD : Hm.D < 2 ^ 30) (hkD : Hm.D + 1 ≤ (s.gpr 
         fun k hk => (mW_other (by have := decKs_iff hk; omega)).trans (hW k hk), mW_args _ _ _ _ _ _⟩
 
 omit hp in
-theorem dw_mgf {Gm : Hash} (hG : HashOK Gm) (KG : Callees Gm) (mG : MgfLink Gm hG) {src srcLen dst dstLen : Nat}
-    (hf : MFit src srcLen dst dstLen) {t : State} (h : DWM s t src srcLen dst dstLen) :
-    WP isa (mgfXor lay Gm.stream) t (DW s) := by
+theorem dw_mgfT {Gm : Hash} (hG : HashOK Gm) (mG : MgfLink Gm hG) {f : Impl.Mgf1.X86_64.Table.Fns}
+    (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd) (hgf : Table.FnsGood f.fin)
+    {src srcLen dst dstLen : Nat} (hf : MFit src srcLen dst dstLen) {t : State}
+    (h : DWM s t src srcLen dst dstLen)
+    (T : Table.Tab Gm.stream f (fb s) (stackArg s 18) (frameBytes + 8 + 8 * 18) t) :
+    WP isa (mgfT f 18) t (DW s) := by
   obtain ⟨V, W, R, hW, A⟩ := h.rep
-  exact WP.mono (wp_good (mgfXor_good (HGood.of hG KG)) (mgfXor_ok hG.stream mG.hash mG.len
-    (valid_of_link hG mG) h.L R hf A))
+  exact WP.mono (wp_good (Table.mgfT_good hgi hgu hgf _) (Table.mgfXorT_ok hG.stream hgi hgu hgf mG.hash mG.len
+    (valid_of_link hG mG) T h.L R hf A))
     fun t1 ⟨⟨L1, rd1, wr1, cs1, V1, W1, R1, hW1, _⟩, sp1, mx1, f1⟩ =>
       ⟨h.he.step rd1 wr1 sp1 (fun r hr _ => cs1 r hr) mx1 f1, L1, V1, W1, R1, fun k hk => by
         have := decKs_iff hk
-        rw [hW1 k (decKs_lt k hk) (by omega) (by omega)]
+        rw [hW1 k (decKs_lt k hk) (by omega) (by omega) (by omega) (by omega)]
         exact hW k hk⟩
 
 /-- `lHash'`'s check, the scan, and `T` shifted into the buffer. -/

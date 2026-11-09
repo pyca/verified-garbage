@@ -24,10 +24,10 @@ Each function meets a contract by register (`mulRV`, `addRV`, `subRV`: `ws` in
 `a0`, aligned, as a `[u64]` is, and the offsets' low words in `a1`–`a3`),
 from `fn_ok` (`numAt` of an offset is the four doublewords there,
 `numAt_d4`; the regions the function writes keep every other byte,
-`keeps_of_frame`), which the shared contracts of `Proof/Weierstrass/MontContract.lean`
-imply. They are constant time: the zero-extension is related by its
-results (`mulZext_rel`), after which only `a0`–`a3` are public, and the
-taint analysis finds every branch and address depends on them alone.
+`keeps_of_frame`). A function is constant time (`fn_ct`) when the taint
+analysis finds every branch and address of its core depends only on
+`a0`–`a3`, which are public after the zero-extension, related by its
+results (`mulZext_rel`).
 -/
 
 @[expose] public section
@@ -141,21 +141,6 @@ theorem fn_ct {core : Prog isa} {Pre : State → Prop} {Pub : State → State �
   refine RelCT.seq (mulZext_rel.mono (fun _ _ ⟨h₁, h₂, hp⟩ => hpub _ _ h₁ h₂ hp) fun _ _ h => h) ?_
   exact h.mono (fun _ _ ⟨hsp, hr⟩ => ⟨hsp, fun r h => hr r (by simpa using h)⟩) fun _ _ h => h
 
-theorem mulFn_ct {Pre : State → Prop} {Pub : State → State → Prop}
-    (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → mulAgreeLo s₁ s₂) :
-    ConstantTime isa Pre Pub mulFn :=
-  fn_ct hpub (RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) (fun _ _ h => h) (by taint_decide))
-
-theorem addFn_ct {Pre : State → Prop} {Pub : State → State → Prop}
-    (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → mulAgreeLo s₁ s₂) :
-    ConstantTime isa Pre Pub addFn :=
-  fn_ct hpub (RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) (fun _ _ h => h) (by taint_decide))
-
-theorem subFn_ct {Pre : State → Prop} {Pub : State → State → Prop}
-    (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → mulAgreeLo s₁ s₂) :
-    ConstantTime isa Pre Pub subFn :=
-  fn_ct hpub (RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) (fun _ _ h => h) (by taint_decide))
-
 theorem rvPub_agree : ∀ s₁ s₂ : State, rvPre p256p s₁ → rvPre p256p s₂ → rvPub s₁ s₂ → mulAgreeLo s₁ s₂ :=
   fun _ _ _ _ ⟨h0, h1, h2, h3, hsp⟩ => ⟨hsp, h0, fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -174,67 +159,5 @@ def satWs : State where
   mem _ := 0
   rd := []
   wr := [⟨0x1000, 8192⟩]
-
-theorem sat_pre : rvPre p256p satWs ∧ arg p256p satWs .a2 = 0 ∧ arg p256p satWs .a3 = 0 := by
-  refine ⟨⟨rfl, rfl, by decide, ⟨?_, ?_, ?_⟩, by decide⟩, read_zero _ _, read_zero _ _⟩ <;>
-    simp [Fits, VG.Proof.Weierstrass.RISCV64.rvOwn, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes, satWs,
-      offArg, p256p]
-
-theorem mul_verified : Verified RISCV64.target mulFn (p256p.mulContract RISCV64.abi) :=
-  Verified.of_correct mul_rv (mulFn_ct (Pre := (mulRV p256p).pre) fun s₁ s₂ h₁ h₂ hp => rvPub_agree s₁ s₂ h₁.1 h₂.1 hp)
-    { pre := by sig_implies_pre [Impl.Weierstrass.Mont.Modulus.mulContract, Impl.Weierstrass.Mont.sig, arg, mulRV,
-        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
-        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
-      post := by sig_implies_post [Impl.Weierstrass.Mont.Modulus.mulContract, Impl.Weierstrass.Mont.sig, arg,
-        mulRV, rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
-        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
-      pub := by sig_implies_pub [Impl.Weierstrass.Mont.Modulus.mulContract, Impl.Weierstrass.Mont.sig, arg, mulRV,
-        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
-        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
-      sat := ⟨satWs, by
-        sig_reduce [Sig.wfPre, Impl.Weierstrass.Mont.sig, RISCV64.abi, RISCV64.argRegs, satWs]
-        obtain ⟨⟨-, -, -, hfit, -⟩, -, -⟩ := sat_pre
-        refine ⟨⟨by decide, trivial, .inl (by decide)⟩, rfl, rfl, by simp, by simp, by simp, ?_⟩
-        simp only [Bool.cond_true]
-        refine ⟨⟨hfit, ?_⟩, by simp⟩
-        rw [numAt, read_zero]; decide⟩ }
-
-theorem add_verified : Verified RISCV64.target addFn (p256p.addContract RISCV64.abi) :=
-  Verified.of_correct add_rv (addFn_ct (Pre := (addRV p256p).pre) fun s₁ s₂ h₁ h₂ hp => rvPub_agree s₁ s₂ h₁.1 h₂.1 hp)
-    { pre := by sig_implies_pre [Impl.Weierstrass.Mont.Modulus.addContract, Impl.Weierstrass.Mont.sig, arg, addRV,
-        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
-        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
-      post := by sig_implies_post [Impl.Weierstrass.Mont.Modulus.addContract, Impl.Weierstrass.Mont.sig, arg,
-        addRV, rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
-        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
-      pub := by sig_implies_pub [Impl.Weierstrass.Mont.Modulus.addContract, Impl.Weierstrass.Mont.sig, arg, addRV,
-        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
-        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
-      sat := ⟨satWs, by
-        sig_reduce [Sig.wfPre, Impl.Weierstrass.Mont.sig, RISCV64.abi, RISCV64.argRegs, satWs]
-        obtain ⟨⟨-, -, -, hfit, -⟩, -, -⟩ := sat_pre
-        refine ⟨⟨by decide, trivial, .inl (by decide)⟩, rfl, rfl, by simp, by simp, by simp, ?_⟩
-        simp only [Bool.cond_true]
-        refine ⟨⟨hfit, ?_⟩, by simp⟩
-        rw [numAt, read_zero]; decide⟩ }
-
-theorem sub_verified : Verified RISCV64.target subFn (p256p.subContract RISCV64.abi) :=
-  Verified.of_correct sub_rv (subFn_ct (Pre := (subRV p256p).pre) fun s₁ s₂ h₁ h₂ hp => rvPub_agree s₁ s₂ h₁.1 h₂.1 hp)
-    { pre := by sig_implies_pre [Impl.Weierstrass.Mont.Modulus.subContract, Impl.Weierstrass.Mont.sig, arg, subRV,
-        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
-        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
-      post := by sig_implies_post [Impl.Weierstrass.Mont.Modulus.subContract, Impl.Weierstrass.Mont.sig, arg,
-        subRV, rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
-        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
-      pub := by sig_implies_pub [Impl.Weierstrass.Mont.Modulus.subContract, Impl.Weierstrass.Mont.sig, arg, subRV,
-        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
-        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
-      sat := ⟨satWs, by
-        sig_reduce [Sig.wfPre, Impl.Weierstrass.Mont.sig, RISCV64.abi, RISCV64.argRegs, satWs]
-        obtain ⟨⟨-, -, -, hfit, -⟩, -, -⟩ := sat_pre
-        refine ⟨⟨by decide, trivial, .inl (by decide)⟩, rfl, rfl, by simp, by simp, by simp, ?_⟩
-        simp only [Bool.cond_true]
-        refine ⟨⟨hfit, ?_⟩, by simp⟩
-        rw [numAt, read_zero]; decide⟩ }
 
 end VG.Proof.Weierstrass.RISCV64.P256Field

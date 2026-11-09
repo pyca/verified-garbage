@@ -6,12 +6,15 @@ import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.RsaKeyGen.TrialFilter
 
 /-!
 # An FFDH parameter candidate on PPC64LE: its shape
 
 `shape_iff`: the flags of the congruence, the sieves of p and q and q's
-parity are all clear exactly when the specification's shape checks pass.
+parity are all clear exactly when the specification's shape checks pass;
+`trial_shape_iff`: so are the congruence, q's parity and RSA's trial
+division of p and q, whose first 53 entries are the sieve's primes.
 -/
 
 @[expose] public section
@@ -60,5 +63,86 @@ theorem shape_iff {bits g x : Nat} (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8192) (h
       unfold Spec.Ffdh.primeShape; simp [hqo]
     rw [hf]
     simp [hqo]
+
+/-- The entries of RSA's table trial division uses for a candidate of
+`bits` bits: 512, or 1024 above 1024 bits. -/
+def trialN (bits : Nat) : Nat := if (bits + 63) / 64 ≤ 16 then 512 else 1024
+
+/-- Trial division by them is `obviouslyComposite` for `bits`. -/
+theorem trialN_spec {bits c : Nat} (large : 8161 < c) :
+    VG.Proof.RsaKeyGen.trialPrefix c (trialN bits) = Spec.RsaKeyGen.obviouslyComposite bits c := by
+  unfold trialN
+  rw [VG.Proof.RsaKeyGen.trialPrefix_spec large]
+  unfold Spec.RsaKeyGen.obviouslyComposite Spec.RsaKeyGen.trialPrimes
+  have : (1024 < 64 * ((bits + 63) / 64)) = (1024 < bits) := propext (by omega)
+  simp only [this]
+
+/-- The shape's flags, and trial division of p and q, all clear exactly when
+the sieved specification's shape checks pass. -/
+theorem sieved_shape_iff {bits g x : Nat} (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8192) (hg : g = 2 ∨ g = 5) :
+    (goodRes g (Spec.Ffdh.candidateOf bits x) ∧ (∀ d ∈ oddPrimes256, Spec.Ffdh.candidateOf bits x % d ≠ 0) ∧
+        VG.Proof.RsaKeyGen.trialPrefix (Spec.Ffdh.candidateOf bits x) (trialN bits) = false ∧
+        Spec.Ffdh.candidateOf bits x / 2 % 2 = 1 ∧ (∀ d ∈ oddPrimes256, Spec.Ffdh.candidateOf bits x / 2 % d ≠ 0) ∧
+        VG.Proof.RsaKeyGen.trialPrefix (Spec.Ffdh.candidateOf bits x / 2) (trialN bits) = false) ↔
+      (Spec.Ffdh.generationShape bits g (Spec.Ffdh.candidateOf bits x) &&
+        Spec.Ffdh.primeShape (Spec.Ffdh.candidateOf bits x) &&
+        Spec.Ffdh.primeShape ((Spec.Ffdh.candidateOf bits x - 1) / 2) &&
+        !Spec.RsaKeyGen.obviouslyComposite bits (Spec.Ffdh.candidateOf bits x) &&
+        !Spec.RsaKeyGen.obviouslyComposite bits ((Spec.Ffdh.candidateOf bits x - 1) / 2)) = true := by
+  have hs := shape_iff (x := x) hb1 hb2 hg
+  obtain ⟨ho, hl, hu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := bits) (by omega_arith) x
+  obtain ⟨hql, _⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape (by omega_arith) ho hl hu
+  generalize Spec.Ffdh.candidateOf bits x = c at hs ho hl hu hql ⊢
+  have hq : (c - 1) / 2 = c / 2 := by omega_arith
+  have big : 8161 < c := Nat.lt_of_lt_of_le (by decide : 8161 < 2 ^ 13)
+    (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_arith : 13 ≤ bits - 1)) hl)
+  have bigq : 8161 < c / 2 := by
+    rw [← hq]
+    exact Nat.lt_of_lt_of_le (by decide : 8161 < 2 ^ 13)
+      (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_arith : 13 ≤ bits - 2)) hql)
+  rw [trialN_spec big, trialN_spec bigq, ← hq]
+  rw [hq] at hs
+  simp only [Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true] at hs ⊢
+  rw [hq]
+  constructor
+  · rintro ⟨a, b, c', d, e, f⟩
+    exact ⟨⟨hs.mp ⟨a, b, d, e⟩, c'⟩, f⟩
+  · rintro ⟨⟨h1, c'⟩, f⟩
+    obtain ⟨a, b, d, e⟩ := hs.mpr h1
+    exact ⟨a, b, c', d, e, f⟩
+
+/-- Trial division by at least 53 entries clears the sieve of the odd
+primes below 256, its first 53. -/
+theorem trial_sieve {c n : Nat} (hn : 53 ≤ n) (h : VG.Proof.RsaKeyGen.trialPrefix c n = false) :
+    ∀ d ∈ oddPrimes256, c % d ≠ 0 := by
+  rw [oddPrimes_eq]
+  intro d hd h0
+  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hd
+  have hit := VG.Proof.RsaKeyGen.trialPrefix_hit (c := c) (n := n)
+    (Nat.lt_of_lt_of_le (List.mem_range.mp hi) hn)
+    (by simp only [VG.Proof.RsaKeyGen.entryDivides, h0, decide_true])
+  rw [h] at hit
+  exact Bool.false_ne_true hit
+
+theorem trialN_ge (bits : Nat) : 53 ≤ trialN bits := by unfold trialN; split <;> decide
+
+/-- The congruence, q's parity and trial division of p and q all pass
+exactly when the sieved specification's shape checks do. -/
+theorem trial_shape_iff {bits g x : Nat} (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8192) (hg : g = 2 ∨ g = 5) :
+    (goodRes g (Spec.Ffdh.candidateOf bits x) ∧
+        VG.Proof.RsaKeyGen.trialPrefix (Spec.Ffdh.candidateOf bits x) (trialN bits) = false ∧
+        Spec.Ffdh.candidateOf bits x / 2 % 2 = 1 ∧
+        VG.Proof.RsaKeyGen.trialPrefix (Spec.Ffdh.candidateOf bits x / 2) (trialN bits) = false) ↔
+      (Spec.Ffdh.generationShape bits g (Spec.Ffdh.candidateOf bits x) &&
+        Spec.Ffdh.primeShape (Spec.Ffdh.candidateOf bits x) &&
+        Spec.Ffdh.primeShape ((Spec.Ffdh.candidateOf bits x - 1) / 2) &&
+        !Spec.RsaKeyGen.obviouslyComposite bits (Spec.Ffdh.candidateOf bits x) &&
+        !Spec.RsaKeyGen.obviouslyComposite bits ((Spec.Ffdh.candidateOf bits x - 1) / 2)) = true := by
+  rw [← sieved_shape_iff hb1 hb2 hg]
+  constructor
+  · rintro ⟨a, b, c, d⟩
+    exact ⟨a, trial_sieve (trialN_ge _) b, b, c, trial_sieve (trialN_ge _) d, d⟩
+  · rintro ⟨a, -, b, c, -, d⟩
+    exact ⟨a, b, c, d⟩
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

@@ -23,12 +23,13 @@ space has twice the stride, and its array `j` is the narrow arrays `2 j` and
 is that wide number.
 
 * `n` is checked as `vg_rsa_public_precompute` checks it (`Precompute.check`),
-  the only branch on data; an invalid modulus writes zeros at once.
+  an invalid modulus writes zeros at once.
 * `d e` by `mulMod` modulo `2^(64 W - 1)` over the `8 e_len` bits of `e`
   (wide), `x = d e - 1` and whether `d e ≥ 2`;
-* `64 w` steps that halve `u = n - 1` while it is even, and while `x` is
+* At most `64 w` steps that halve `u = n - 1` while it is even, and while `x` is
   even too halve it and double `2^k x` (`u` and `x` narrow, `2^k x` wide),
-  each a masked pass (`halfIf`, `dblIf`);
+  each a masked pass (`halfIf`, `dblIf`); when the public low byte of
+  `n - 1` is nonzero, eight steps suffice and all later steps are identities;
 * `gcd(u, x)`, `u` odd, by batches of divsteps on `f` and `g` alone
   (`InvBatch.gcd`, on narrow arrays, `2 w` digits), with 1 where `u = 1`,
   which it leaves to its caller;
@@ -260,7 +261,15 @@ def dblIf (j sl : Nat) : Prog isa :=
 def twosBody : Prog isa := seqs [.block twosFlags, halfIf aU sEven, halfIf aX2 sBoth, .block ctxW,
   dblIf wX3 sBoth, .block (ctxw ++ next)]
 
-def twos : Prog isa := seqs [twosInit, .loop twosBody (.nonzero .s7)]
+/-- The low byte of the public `u = n - 1`. If nonzero, at most eight
+halvings make `u` odd; otherwise retain the full-width bound. -/
+def twosLow : List Instr := ptr .t0 aU ++ [.load .d .t4 .t0 0, .logicImm .and .t4 .t4 255]
+
+def twosCount : Prog isa := .ite (.zero .t4) (.block []) (.block [.li .s7 8])
+
+def twosLoop : Prog isa := .loop twosBody (.nonzero .s7)
+
+def twos : Prog isa := seqs [twosInit, .block twosLow, twosCount, twosLoop]
 
 /-! ## The GCD (narrow) -/
 

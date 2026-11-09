@@ -5,7 +5,6 @@
 // gives.
 
 vg_cmac_aes_subkeys_aes:
-	.arch_extension aes
 	str x19, [x3, #2064]
 	str x20, [x3, #2072]
 	str x30, [x3, #2080]
@@ -61,5 +60,4 @@ vg_cmac_aes_subkeys_aes:
 	ldr x19, [x20, #2064]
 	ldr x20, [x20, #2072]
 	ret
-	.arch_extension noaes
 	.p2align 6

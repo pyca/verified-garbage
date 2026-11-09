@@ -29,12 +29,6 @@ theorem of_any {c : Prog isa} {hint : VG.Taint.Hint VG.X86.Taint.T}
   | none => rw [result] at checked; cases checked
   | some out => exact ⟨hint, out, result, by simpa only [result, Option.any_some] using checked⟩
 
-theorem Public.seq {a b : Prog isa} (ha : Public a) (hb : Public b) : Public (.seq a b) := by
-  obtain ⟨ah, ao, ac, al⟩ := ha
-  obtain ⟨bh, bo, bc, bl⟩ := hb
-  exact ⟨.seq runtimeTaint ah bh, bo,
-    VG.Proof.Mont.X86.Dynamic.exponent_check_seq sseTaint ac al bc, bl⟩
-
 theorem public_trace {c : Prog isa} (H : Public c) :
     RelCT isa (VG.X86.Taint.Agree runtimeTaint) c (VG.X86.Taint.Agree runtimeTaint) := by
   obtain ⟨hint, out, checked, lower⟩ := H

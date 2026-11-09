@@ -63,9 +63,6 @@ theorem lay (len B : Nat) (hB : len * B = 128) (hBp : 0 < B) (hk : 128 / len + B
 /-- The input polynomial. -/
 abbrev F (s₀ : State) : Poly := polyAt s₀.mem (fA s₀)
 
-theorem nttLayer_eq (f : Poly) (len : Nat) : nttLayer f len = layerN bfly f len (zf zetas kf len) (128 / len) :=
-  rfl
-
 example : True := by
   have := lay 128 1 (by decide) (by decide) (by decide) F (by native_taint_decide) (by native_taint_decide)
     (by native_taint_decide) (by native_taint_decide)

@@ -189,9 +189,6 @@ theorem pre_of (s₀ : State) (h : (compressX86 Spec.Blake2.b).pre s₀) : Pre s
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
 
-theorem addr_ofNat {x : BitVec 32} {d : Nat} (h : x.toNat + d < 2 ^ 32) :
-    addr x d = x.setWidth 64 + BitVec.ofNat 64 d := addr_eq h
-
 namespace Pre
 variable {s₀ : State} (hp : Pre s₀)
 include hp
@@ -293,13 +290,6 @@ theorem high_frame64 {m m' : Mem}
     rd64 m' (scr s₀) d = rd64 m (scr s₀) d := by
   simp only [rd64]
   rw [hp.high_frame hf hd (by omega_arith), hp.high_frame hf (by omega_arith) hd']
-
-/-- The state's words are unchanged while only `scratch` is written. -/
-theorem st_frame {m m' : Mem} (hf : Frame [scrR s₀] m m') {d : Nat} (hd : d + 4 ≤ 64) :
-    m'.readW (addr (st s₀) d) 32 = m.readW (addr (st s₀) d) 32 := by
-  refine hf.readW (contains_addr (len := 64) hd (by omega_arith) hp.st_fits) ?_ (by decide)
-  simp only [List.mem_singleton, forall_eq]
-  exact hp.st_scr
 
 end Pre
 

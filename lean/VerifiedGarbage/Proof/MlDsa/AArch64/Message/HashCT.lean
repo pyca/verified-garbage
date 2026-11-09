@@ -10,13 +10,13 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
-# ML-DSA on AArch64, `sign_message` and `verify_message`: two runs of the hashing
+# ML-DSA on AArch64, `sign_message` and `verify_message_cached`: two runs of the hashing
 
 Untrusted: everything here is checked by Lean. In two runs with the same
 layout (`Two`), zeroing the state and each call of a sponge function leak
 the same: their addresses and arguments are functions of the layout alone,
 and the sponge functions' public data are those arguments (`zeroSt_tr`,
-`kabs_tr`, `kpad_tr`, `ksqz_tr`); so do `muHash` and `trHash`.
+`kabs_tr`, `kpad_tr`, `ksqz_tr`); so does `muHash`.
 -/
 
 @[expose] public section
@@ -27,7 +27,6 @@ open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Message
 open VG.Proof.MlDsa.Message
 open VG.Proof.MlKem.AArch64 (Only)
 open VG.Spec.Sha3 (rates)
-open VG.Spec.MlDsa (Params)
 
 section
 variable {I : Lay → Mem → Mem → Prop}
@@ -354,38 +353,6 @@ theorem muHash_tr (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → Sta
     obtain ⟨L, g₁, g₂, v₁, v₂, m₁, m₂, hL, hi, c₁, c₂, φ₁, φ₂⟩ := h
     exact ⟨L, g₁, g₂, v₁, v₂, m₁, m₂, hL, hi, c₁, c₂, ⟨trivial, φ₁⟩, ⟨trivial, φ₂⟩⟩
   · intro _ _ _; trivial
-
-theorem trHash_tr (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hk : p.pkLen < 2 ^ 16)
-    {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t → L.keyLen = p.pkLen) :
-    RelCT isa (Two I Φ) (trHash v.callee p) fun _ _ => True := by
-  have keySide : ∀ L : Lay, L.Ok → 0 < 136 ∧ L.keyLen < 2 ^ 64 ∧
-      (∃ R ∈ L.rd ++ L.wr, Within ⟨L.key, L.keyLen⟩ R) ∧
-      Region.Disjoint ⟨L.key, L.keyLen⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨L.key, L.keyLen⟩ ⟨L.KS, 640⟩ ∧
-      L.STK.Disjoint ⟨L.key, L.keyLen⟩ := fun L hL =>
-    ⟨by decide, by have := hL.hKey.2; omega, ⟨L.KEY, List.mem_append_left _ hL.inKey, within_self _⟩,
-      by have := hL.x_r hL.xKey (e := 0) (k := 200) (by decide); simpa only [x0] using this.symm,
-      (hL.x_r hL.xKey (e := 200) (k := 640) (by decide)).symm, hL.kKey⟩
-  have z := two_wp (I := I) (Φ := Φ) (Ψ := fun L _ _ => L.keyLen = p.pkLen) zeroSt_tr
-    fun L g vv m₀ t hL hc hφ => WP.mono (zeroSt_ok hL hc) fun t' ⟨hc', _⟩ => ⟨hc', hΦ L m₀ t hφ⟩
-  have a1 := two_wp (I := I) (Φ := fun L _ _ => L.keyLen = p.pkLen) (Ψ := fun _ _ _ => True)
-    (kabs_tr v (src := .slot fKey) (len := .imm p.pkLen) (pos := .imm 0)
-      (absOk rfl (by simp only [Arg.ok, decide_eq_true_eq]; omega) rfl rfl rfl) (fun L => L.key) (fun L => L.keyLen)
-      (fun _ => 0) (fun L g vv m t _ hc hφ => ⟨by rw [hc.slotV (f := fKey) (j := 0) rfl (by omega)]; rfl,
-        by rw [hφ]; rfl, rfl⟩) keySide)
-    fun L g vv m₀ t hL hc hφ => by
-      obtain ⟨a, b, c, d, e, f⟩ := keySide L hL
-      exact WP.mono (kabs_ok v hL hc (src := .slot fKey) (len := .imm p.pkLen) (pos := .imm 0)
-        (n := L.keyLen) (q := 0) (absOk rfl (by simp only [Arg.ok, decide_eq_true_eq]; omega) rfl rfl rfl)
-        (by rw [hc.slotV (f := fKey) (j := 0) rfl (by omega)]; rfl) (by rw [hφ]; rfl) rfl a b c d e f)
-        fun t' ⟨hc', _⟩ => ⟨hc', trivial⟩
-  have pd := kpad_tr v (I := I) (Φ := fun _ _ _ => True) (pos := .imm (p.pkLen % 136))
-    (padOk (by simp only [Arg.ok, decide_eq_true_eq]; omega)) (fun _ => p.pkLen % 136)
-    (fun _ _ _ _ _ _ _ _ => rfl) fun _ _ => Nat.mod_lt _ (by decide)
-  have pd' := two_wp (I := I) (Φ := fun _ _ _ => True) (Ψ := fun _ _ _ => True) pd
-    fun L g vv m₀ t hL hc _ => WP.mono (kpad_ok v hL hc (pos := .imm (p.pkLen % 136))
-      (padOk (by simp only [Arg.ok, decide_eq_true_eq]; omega)) rfl (Nat.mod_lt _ (by decide)))
-      fun t' ⟨hc', _⟩ => ⟨hc', trivial⟩
-  exact RelCT.seq z (a1.seq (pd'.seq (ksqz_tr v)))
 
 end
 

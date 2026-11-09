@@ -34,14 +34,12 @@ meta import VerifiedGarbage.Proof.Sm4.Prepared
 /-!
 # SM4's prepared round keys and batches on x86 (32-bit) meet their contracts
 
-`prepare_verified` and `crypt_verified`: `vg_sm4_prepare_keys` and
+`prep_correct` and `crypt_correct`: `vg_sm4_prepare_keys` and
 `vg_sm4_crypt_prepared` against `Proof.Sm4.Prepared`, with `layout`, from
 the bodies' runs (`prepareBody_wp`, `cryptBody_wp`). A batch's blocks are
 ECB in the direction and under the round keys of any table encoding that its
 working space holds: the run from it is the run from the table the
-precondition gives (`Exec.det`). Constant time by the taint analysis, which
-starts with `esp` and the argument words public, and knows the working
-space's word as its region's base.
+precondition gives (`Exec.det`).
 -/
 
 @[expose] public section
@@ -144,69 +142,6 @@ theorem prep_correct (s : State) (hs : prepX86.pre s) :
     simp only at this
     omega
 
-/-- The initial taint: `esp` and the argument words public, and the working
-space's word known as its region's base. -/
-def prepTaint : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [4 * slots], argLen := 20, argBases := [(12, 0)] }
-
-theorem prepTaint_wf {s : State} (hp : prepX86.pre s) : VG.X86.Taint.Wf prepTaint s := by
-  obtain ⟨_, hwr, _, dAW, dRW, _, fitW, fitE, _, hsz⟩ := hp
-  rw [size_eq] at hsz
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [prepTaint]; omega, ?_⟩, ?_⟩
-  · rw [hwr]
-    exact .cons (by simp only; omega) .nil
-  · simp only [hwr, List.pairwise_cons, List.not_mem_nil, List.Pairwise.nil, and_true]
-    exact fun _ h => h.elim
-  · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r rfl; simp only [setWidth_toNat]; omega
-  · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r rfl
-    exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) dRW dAW
-  · intro p hp'
-    simp only [prepTaint, List.mem_cons, List.not_mem_nil, or_false] at hp'
-    subst hp'
-    refine ⟨by decide, ?_⟩
-    simp [VG.X86.Taint.region, hwr, addr, arg, argAddr]
-
-theorem prepTaint_agree {s₁ s₂ : State} (h₁ : prepX86.pre s₁) (h₂ : prepX86.pre s₂) (hpub : prepX86.pub s₁ s₂) :
-    VG.X86.Taint.Agree prepTaint s₁ s₂ := by
-  obtain ⟨hesp, ha⟩ := hpub
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, prepTaint_wf h₁, prepTaint_wf h₂,
-    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp, fun k h4 hk => ?_⟩
-  · simp only [prepTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    subst hr; exact hesp
-  · rw [h₁.2.1, h₂.2.1, ha 2 (by omega), ha 3 (by omega)]
-  · simp only [prepTaint] at hk
-    rw [show VG.X86.Taint.depth prepTaint.stk = 0 from rfl, Nat.zero_add]
-    rw [VG.X86.Taint.argByte_eq (n := 20) h₁.2.2.2.2.2.2.2.1 h4 hk,
-      VG.X86.Taint.argByte_eq (n := 20) h₂.2.2.2.2.2.2.2.1 h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    exact congrArg _ (ha _ (by omega))
-
-theorem prep_ct : ConstantTime isa prepX86.pre prepX86.pub prepareKeys :=
-  VG.Taint.constantTime (A := VG.X86.taint) prepTaint (fun _ _ h₁ h₂ hp => prepTaint_agree h₁ h₂ hp)
-    (by native_taint_decide)
-
-/-- Memory holding the arguments `0x1000, 0, 0x4000, 179` at `0x8004`. -/
-def prepSat : State where
-  gpr r := if r = .esp then 0x8000 else 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem a := if a = 0x8005 then 0x10 else if a = 0x800D then 0x40 else if a = 0x8010 then 0xB3 else 0
-  rd := [⟨0x1000, 128⟩, ⟨0x8004, 16⟩]
-  wr := [⟨0x4000, 179 * 8⟩]
-
-theorem prepare_verified :
-    Verified X86.target prepareKeys (Proof.Sm4.Prepared.prepareContract layout X86.abi) :=
-  Verified.of_correct prep_correct prep_ct (by
-    sig_implies [Proof.Sm4.Prepared.prepareContract, Proof.Sm4.Prepared.prepareSig, prepX86, X86.abi,
-      X86.argSlots, X86.argVal, X86.argBytes, size_eq, slots]
-      [prepSat, arg, argAddr, Mem.readW, Mem.read] using prepSat)
-
 /-! ## A batch -/
 
 /-- `vg_sm4_crypt_prepared` on x86. -/
@@ -273,115 +208,5 @@ theorem crypt_correct (s : State) (hs : cryptX86.pre s) :
       simp only [Region.Contains, slots_eq] at hc
       rw [Mem.sub_ofNat_toNat _ (by omega)] at hc
       omega
-
-/-- The initial taint: `esp` and the argument words public, and the working
-space's word known as its region's base. -/
-def cryptTaint : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [4 * slots], argLen := 12, argBases := [(4, 0)] }
-
-theorem cryptTaint_wf {s : State} (hp : cryptX86.pre s) : VG.X86.Taint.Wf cryptTaint s := by
-  obtain ⟨_, hwr, dAW, dRW, fitW, fitE, hsz, _⟩ := hp
-  rw [size_eq] at hsz
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [cryptTaint]; omega, ?_⟩, ?_⟩
-  · rw [hwr]
-    exact .cons (by simp only; omega) .nil
-  · simp only [hwr, List.pairwise_cons, List.not_mem_nil, List.Pairwise.nil, and_true]
-    exact fun _ h => h.elim
-  · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r rfl; simp only [setWidth_toNat]; omega
-  · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r rfl
-    exact VG.X86.Taint.frame_disjoint (n := 8) (by omega) dRW dAW
-  · intro p hp'
-    simp only [cryptTaint, List.mem_cons, List.not_mem_nil, or_false] at hp'
-    subst hp'
-    refine ⟨by decide, ?_⟩
-    simp [VG.X86.Taint.region, hwr, addr, arg, argAddr]
-
-theorem cryptTaint_agree {s₁ s₂ : State} (h₁ : cryptX86.pre s₁) (h₂ : cryptX86.pre s₂) (hpub : cryptX86.pub s₁ s₂) :
-    VG.X86.Taint.Agree cryptTaint s₁ s₂ := by
-  obtain ⟨hesp, ha⟩ := hpub
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, cryptTaint_wf h₁, cryptTaint_wf h₂,
-    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp, fun k h4 hk => ?_⟩
-  · simp only [cryptTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    subst hr; exact hesp
-  · rw [h₁.2.1, h₂.2.1, ha 0 (by omega), ha 1 (by omega)]
-  · simp only [cryptTaint] at hk
-    rw [show VG.X86.Taint.depth cryptTaint.stk = 0 from rfl, Nat.zero_add]
-    rw [VG.X86.Taint.argByte_eq (n := 12) h₁.2.2.2.2.2.1 h4 hk,
-      VG.X86.Taint.argByte_eq (n := 12) h₂.2.2.2.2.2.1 h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    exact congrArg _ (ha _ (by omega))
-
-theorem crypt_ct : ConstantTime isa cryptX86.pre cryptX86.pub cryptPrepared :=
-  VG.Taint.constantTime (A := VG.X86.taint) cryptTaint (fun _ _ h₁ h₂ hp => cryptTaint_agree h₁ h₂ hp)
-    (by native_taint_decide)
-
-/-- Round keys of zeros, whose planes are zeros. -/
-def zeroSchedule : Spec.Sm4.Schedule := Vector.replicate 32 0
-
-theorem encode_zero (i : Nat) : layout.encode zeroSchedule .encrypt i = 0 := by
-  show (Impl.Sm4.planeOf32 (keyEntry zeroSchedule .encrypt ((i / 4 - tableSlot) / 8)) _).extractLsb' _ 8 = 0
-  have : keyEntry zeroSchedule .encrypt ((i / 4 - tableSlot) / 8) = 0 := by
-    simp only [keyEntry, zeroSchedule, Vector.getD, Vector.replicate]
-    unfold Array.getD
-    split <;> simp
-  rw [this]
-  simp [Impl.Sm4.planeOf32, Impl.Sm4.planeBits]
-
-/-- Memory holding the arguments `0x4000, 179` at `0x8004`, and zeros
-elsewhere: the table of `zeroSchedule`. -/
-def cryptSat : State where
-  gpr r := if r = .esp then 0x8000 else 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem a := if a = 0x8005 then 0x40 else if a = 0x8008 then 0xB3 else 0
-  rd := [⟨0x8004, 8⟩]
-  wr := [⟨0x4000, 179 * 8⟩]
-
-theorem cryptSat_holds : Holds layout cryptSat.mem ((0x4000 : BitVec 32).setWidth 64) zeroSchedule .encrypt := by
-  intro r hr i hi
-  rw [layout_table, List.mem_singleton] at hr
-  subst hr
-  dsimp only at hi ⊢
-  rw [encode_zero]
-  have ha : ((0x4000 : BitVec 32).setWidth 64 + BitVec.ofNat 64 (384 + i)).toNat = 0x4000 + 384 + i := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, show ((0x4000 : BitVec 32).setWidth 64).toNat = 0x4000 from rfl]
-    omega
-  have h1 : (0x4000 : BitVec 32).setWidth 64 + BitVec.ofNat 64 (384 + i) ≠ 0x8005 := fun h => by
-    have := congrArg BitVec.toNat h; rw [ha] at this; simp at this; omega
-  have h2 : (0x4000 : BitVec 32).setWidth 64 + BitVec.ofNat 64 (384 + i) ≠ 0x8008 := fun h => by
-    have := congrArg BitVec.toNat h; rw [ha] at this; simp at this; omega
-  simp only [cryptSat, h1, h2, ite_false]
-
-theorem crypt_implies : cryptX86.Implies (Proof.Sm4.Prepared.cryptContract layout X86.abi) where
-  pre := by
-    sig_implies_pre [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptX86, X86.abi,
-      X86.argSlots, X86.argVal, X86.argBytes]
-  post := by
-    sig_implies_post [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptX86, X86.abi,
-      X86.argSlots, X86.argVal, X86.argBytes]
-  pub := by
-    sig_implies_pub [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptX86, X86.abi,
-      X86.argSlots, X86.argVal, X86.argBytes]
-  sat := by
-    refine ⟨cryptSat, ?_⟩
-    sig_pre [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, X86.abi, X86.argSlots, X86.argVal,
-      X86.argBytes]
-    sig_and_intros
-    all_goals first
-      | decide
-      | exact Region.disjoint_of_sep (by decide)
-      | exact ⟨_, _, cryptSat_holds⟩
-      | (rw [size_eq, slots_eq]; decide)
-      | simp [cryptSat, arg, argAddr, Mem.readW, Mem.read]
-
-theorem crypt_verified :
-    Verified X86.target cryptPrepared (Proof.Sm4.Prepared.cryptContract layout X86.abi) :=
-  Verified.of_correct crypt_correct crypt_ct crypt_implies
 
 end VG.Proof.Sm4.X86

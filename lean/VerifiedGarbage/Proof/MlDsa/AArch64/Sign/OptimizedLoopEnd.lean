@@ -90,12 +90,4 @@ theorem positiveBallFailure_ok {S : Nat} {p : Params} (hp : Ok3 p) (hc : lChk p=
     by rw [hv.get .x24,hflag],
     by rw [hpv.pa (by decide),hm,Mem.readW_writeW_self64]; rfl,h.c.masks.l.t_lt,h.c.masks.l.rej⟩
 
-/-- A successful loop exit supplies accepted signed responses for packing. -/
-theorem PositiveXS.outputReady {p : Params} {S : Nat} {σ s : State}
-    (h : PositiveXS p S σ s) (h1 : s.gpr .x24=1) :
-    ∃t,AcceptedConversion p S σ (p.ℓ*t) (-(q:Int)+1) ((q:Int)-1) 0 s ∧ PassV p σ (p.ℓ*t) := by
-  obtain ⟨t,_,_,_,hpass,hct,hz,hh⟩ := h.pass h1
-  exact ⟨t,⟨⟨⟨h.k.d.im.st,h.k.d.roots⟩,by intro j hj; omega,
-    fun j _ hj => hz j hj,h1⟩,hct,hh⟩,hpass⟩
-
 end VG.Proof.MlDsa.AArch64.Sign

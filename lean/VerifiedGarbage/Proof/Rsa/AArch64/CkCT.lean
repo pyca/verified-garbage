@@ -123,24 +123,6 @@ theorem zeroA_ckct {j : Nat} (hj : j < 16) {hc : VG.Taint.Hint VG.AArch64.Taint.
     rw [← e]
     exact WP.mono (zeroA_ok h.ws hj) fun _ ⟨_, o, _, _, _, k⟩ => h.arr hj (Nat.le_refl _) o k (by decide)
 
-theorem divmod_ckct {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht₁ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block (base aRem .x8 ++ [movi .x7 0])) zeroAcc)
-      hc₁).isSome = true)
-    {hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht₂ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block [.lsl .x .x6 .x12 6])
-      (.loop (VG.Impl.Rsa.AArch64.Keys.divStep aA aRem aM aT) (.nonzero .x .x6))) hc₂).isSome = true) :
-    RelCT isa (Two GK) (divmod aA aRem aM aT) (Two GK) := by
-  have e : divmod aA aRem aM aT = .seq (zeroA aRem) (.seq (.block [.lsl .x .x6 .x12 6])
-      (.loop (VG.Impl.Rsa.AArch64.Keys.divStep aA aRem aM aT) (.nonzero .x .x6))) := rfl
-  rw [e]
-  refine pin_seq [.x0, .x12, .x11] (fun p => wsVal p.B (wW p.cap))
-    ((zeroA_ckct (by decide) ht₁).mono (fun _ _ h => h) fun _ _ _ => trivial) (fun _ _ h => ?_) ht₂ fun _ _ h => ?_
-  · exact WP.mono (zeroA_ok h.ws (j := aRem) (by decide)) fun _ ⟨_, _, h12, h11, _, k⟩ =>
-      wsVal_of ((k.gpr .x0 (by decide)).trans h.ws.x0) h12 h11
-  · rw [← e]
-    obtain ⟨I, m₀, c, rfl, hs, L, hm⟩ := id h
-    exact WP.mono (ckDivmod_ok hs) fun _ ⟨ht, mt, _⟩ => ⟨I, m₀, c, rfl, ht, L, mt.trans hm⟩
-
 theorem eqA_ckct {a b : Nat} (ha : a < 16) (hb : b < 16) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block [movi .x9 0, mov .x14 .x12])
       (.seq (.block (base a .x16 ++ base b .x17)) (countLoop .x14 xorBody))) hc).isSome = true) :
@@ -175,8 +157,6 @@ theorem decA_ckct {j : Nat} (hj : j < 16) {hc : VG.Taint.Hint VG.AArch64.Taint.T
 /-- `GK`, with the arrays of `js` below `2^(64 w)`. -/
 def GKb (js : List Nat) (p : CkP) (s : State) : Prop :=
   GK p s ∧ ∀ j ∈ js, wv s.mem p.B (slot (wW p.cap) j) (wW p.cap) < 2 ^ (64 * wk p.cap)
-
-theorem pins_GKb (js : List Nat) : Pins (GKb js) [.x0] := fun a s₁ s₂ h₁ h₂ => pins_GK a s₁ s₂ h₁.1 h₂.1
 
 theorem GKb.ws {js : List Nat} {p : CkP} {s : State} (h : GKb js p s) : Ws s p.B p.Z (wW p.cap) := h.1.ws
 

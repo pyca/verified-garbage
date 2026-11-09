@@ -28,6 +28,7 @@ deriving instance Lean.ToExpr for VCmpOp
 deriving instance Lean.ToExpr for Sha1Op
 deriving instance Lean.ToExpr for VOp
 deriving instance Lean.ToExpr for CondCode
+deriving instance Lean.ToExpr for Barrier
 deriving instance Lean.ToExpr for Instr
 deriving instance Lean.ToExpr for Cond
 

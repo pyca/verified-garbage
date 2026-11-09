@@ -46,13 +46,6 @@ def context (L : Layout) (p g : Nat) : List (BitVec 64) :=
   Rsa.toWords p L.n ++ Rsa.toWords (2 ^ (128 * L.n) % p) L.n ++
     Rsa.FixedBaseComb.table p g (32 * L.e) L.n
 
-/-- The context matches this call's modulus, base and exponent width.
-In particular, a table from different parameters cannot satisfy this by
-merely having the right length. -/
-def contextAt (L : Layout) (m : Mem) (ws : Addr) : Prop :=
-  Rsa.wordsAt m (ws + BitVec.ofNat 64 L.context) (contextWords L) =
-    context L (numAt m ws L.modulus (8 * L.n)) (numAt m ws L.base (8 * L.n))
-
 /-- Layout bounds and context separation are independent of secret values.
 The private helper's scratch cannot overlap the retained context. -/
 def LayoutValid (L : Layout) : Prop :=
@@ -62,47 +55,5 @@ def LayoutValid (L : Layout) : Prop :=
         (L.exponent, 4 * L.e), (L.result, 8 * L.n)] ++ L.scratch,
       r.1 + r.2 ≤ L.size ∧
         (r.1 + r.2 ≤ L.context ∨ L.context + 8 * contextWords L ≤ r.1))
-
-/-- All arithmetic is defined for every odd modulus above one; primality,
-normalization and a subgroup-order relation are not preconditions. -/
-def arithmeticPre (L : Layout) (ws : Addr) (wsLen : Nat) (m : Mem) : Prop :=
-  LayoutValid L ∧ L.size ≤ 8 * wsLen ∧
-    numAt m ws L.modulus (8 * L.n) % 2 = 1 ∧
-    1 < numAt m ws L.modulus (8 * L.n)
-
-/-- The ordinary modular-power result, expressed in terms of entry memory. -/
-def powerResult (L : Layout) (ws : Addr) (m m' : Mem) : Prop :=
-  numAt m' ws L.result (8 * L.n) =
-    numAt m ws L.base (8 * L.n) ^ numAt m ws L.exponent (4 * L.e) %
-      numAt m ws L.modulus (8 * L.n)
-
-/-- Initialize the context and compute the public exponentiation. The
-caller may inspect the result to check g^q = 1 before using the context
-for a private exponent. The context is defined even when that check fails. -/
-def prepareContract {I : ISA} (L : Layout) (A : Abi I) (stack : Nat := 0) : Contract I :=
-  ModPow.sig.contract A
-    (pre := fun ws wsLen m => arithmeticPre L ws wsLen.toNat m)
-    (post := fun ws wsLen m m' _ =>
-      powerResult L ws m m' ∧
-      Rsa.wordsAt m' (ws + BitVec.ofNat 64 L.context) (contextWords L) =
-        context L (numAt m ws L.modulus (8 * L.n)) (numAt m ws L.base (8 * L.n)) ∧
-      Keeps ws wsLen.toNat (L.scratch ++ [(L.context, 8 * contextWords L)]) m m')
-    (stack := stack)
-    (leak := some fun ws _ m =>
-      [numAt m ws L.modulus (8 * L.n), numAt m ws L.base (8 * L.n),
-        numAt m ws L.exponent (4 * L.e)])
-
-/-- Use the retained public context with a secret exponent. Only the
-modulus and base may affect timing; neither exponent bits, leading zeros,
-nor the power result are declassified. The context and all other bytes
-outside the arithmetic scratch keep their values. -/
-def powerContract {I : ISA} (L : Layout) (A : Abi I) (stack : Nat := 0) : Contract I :=
-  ModPow.sig.contract A
-    (pre := fun ws wsLen m => arithmeticPre L ws wsLen.toNat m ∧ contextAt L m ws)
-    (post := fun ws wsLen m m' _ =>
-      powerResult L ws m m' ∧ Keeps ws wsLen.toNat L.scratch m m')
-    (stack := stack)
-    (leak := some fun ws _ m =>
-      [numAt m ws L.modulus (8 * L.n), numAt m ws L.base (8 * L.n)])
 
 end VG.Proof.Dsa.FixedBaseComb

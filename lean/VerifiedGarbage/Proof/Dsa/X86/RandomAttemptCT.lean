@@ -42,8 +42,11 @@ open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86
 open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.Random VG.Impl.Dsa.X86.RandomSign
 open VG.Proof.Dsa (randomSignRemaining randomSamplingTrace randomSigningTrace)
 
-/-- What two runs share before an attempt. -/
-structure AttPub where
+variable {V : Nat → Nat → List Byte → Bool}
+
+/-- What two runs share before an attempt, for a signer that accepts the
+keys `V` accepts. -/
+structure AttPub (V : Nat → Nat → List Byte → Bool) where
   pub : Pub
   leak : List Nat
   used : Nat
@@ -53,33 +56,34 @@ structure AttPub where
   status : Nat
 
 /-- Whether the attempt's sampling finds a nonce. -/
-def AttPub.ok (a : AttPub) : Bool := (randomSamplingTrace a.tr).getLast? == some 1
+def AttPub.ok (a : AttPub V) : Bool := (randomSamplingTrace a.tr).getLast? == some 1
 
 /-- Whether signing with it succeeds. -/
-def AttPub.signed (a : AttPub) : Bool := randomSigningTrace a.tr == [5]
+def AttPub.signed (a : AttPub V) : Bool := randomSigningTrace a.tr == [5]
 
 /-- What the attempt keeps of its entry. -/
-structure AttFacts (a : AttPub) (s₀ : State) : Prop where
+structure AttFacts (a : AttPub V) (s₀ : State) : Prop where
   q : 1 < rq s₀
   pos : 1 ≤ a.fuel
   le : a.fuel ≤ 8
   leak : keyLeak s₀ = a.leak
   tr : (randomSignRemaining (rInput s₀) a.used a.fuel).trace = a.tr
+  valid : KeyValid V s₀
 
 /-- Before an attempt. -/
-def AttAt (a : AttPub) (s₀ t : State) : Prop := AttFacts a s₀ ∧ Att s₀ a.used a.fuel t
+def AttAt (a : AttPub V) (s₀ t : State) : Prop := AttFacts a s₀ ∧ Att s₀ a.used a.fuel t
 
-theorem AttFacts.spl_trace {a : AttPub} {s₀ : State} (F : AttFacts a s₀) :
+theorem AttFacts.spl_trace {a : AttPub V} {s₀ : State} (F : AttFacts a s₀) :
     (spl s₀ 128 a.used).trace = randomSamplingTrace a.tr := by
   obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by have := F.pos; omega⟩
   rw [← F.tr, hf]
   exact (VG.Proof.Dsa.random_sign_trace_draw _ _ _).symm
 
-theorem AttFacts.ok {a : AttPub} {s₀ : State} (F : AttFacts a s₀) :
+theorem AttFacts.ok {a : AttPub V} {s₀ : State} (F : AttFacts a s₀) :
     (spl s₀ 128 a.used).scalar.isSome = a.ok := by
   rw [(VG.Proof.Dsa.Random.sample_trace_result _ _ _).2, F.spl_trace]; rfl
 
-theorem AttFacts.status {a : AttPub} {s₀ : State} (F : AttFacts a s₀) :
+theorem AttFacts.status {a : AttPub V} {s₀ : State} (F : AttFacts a s₀) :
     decide (VG.Proof.Dsa.Random.sampleStatus (spl s₀ 128 a.used) = 1) = a.ok := by
   rw [← F.ok]
   unfold VG.Proof.Dsa.Random.sampleStatus
@@ -87,7 +91,7 @@ theorem AttFacts.status {a : AttPub} {s₀ : State} (F : AttFacts a s₀) :
   · next h => simp [h]
   · next h => simp only [h, Option.isSome_none]; split <;> decide
 
-theorem AttFacts.signed {a : AttPub} {s₀ : State} (F : AttFacts a s₀) {k : Nat}
+theorem AttFacts.signed {a : AttPub V} {s₀ : State} (F : AttFacts a s₀) {k : Nat}
     (hk : (spl s₀ 128 a.used).scalar = some k) :
     (Spec.Dsa.signBytes (rInput s₀).pLen (rInput s₀).qLen (rInput s₀).key
       (Spec.Dsa.encodeBE (rInput s₀).qLen k) (rInput s₀).digest).isSome = a.signed := by
@@ -102,13 +106,13 @@ theorem AttFacts.signed {a : AttPub} {s₀ : State} (F : AttFacts a s₀) {k : N
   | none => rw [VG.Proof.Dsa.random_sign_trace_retry _ _ _ _ hk hs]; simp
 
 /-- After sampling. -/
-structure Sampled (a : AttPub) (s₀ t : State) : Prop where
+structure Sampled (a : AttPub V) (s₀ t : State) : Prop where
   facts : AttFacts a s₀
   out : SampleOut s₀ a.used (spl s₀ 128 a.used) t
   ready : Ready s₀ t
   attempts : slot t.mem (rBase s₀) oAttempts = BitVec.ofNat 32 a.fuel
 
-theorem sample_sampled {a : AttPub} {s₀ t : State} (A : RandomSignABI s₀) (h : AttAt a s₀ t) :
+theorem sample_sampled {a : AttPub V} {s₀ t : State} (A : RandomSignABI s₀) (h : AttAt a s₀ t) :
     WP isa sample t fun u => Sampled a s₀ u ∧
       u.gpr .eax = BitVec.ofNat 32 (VG.Proof.Dsa.Random.sampleStatus (spl s₀ 128 a.used)) := by
   obtain ⟨F, T⟩ := h
@@ -117,10 +121,10 @@ theorem sample_sampled {a : AttPub} {s₀ t : State} (A : RandomSignABI s₀) (h
     ⟨⟨F, O, h₁, (slot_outs o₁ (by decide) (by decide)).trans T.attempts⟩, eax₁⟩
 
 /-- After the test of the sampling's status. -/
-def Tested (a : AttPub) (s₀ t : State) : Prop := Sampled a s₀ t ∧ t.zf = some a.ok
+def Tested (a : AttPub V) (s₀ t : State) : Prop := Sampled a s₀ t ∧ t.zf = some a.ok
 
 /-- After storing the signer's arguments. -/
-structure Args (a : AttPub) (s₀ t : State) : Prop where
+structure Args (a : AttPub V) (s₀ t : State) : Prop where
   facts : AttFacts a s₀
   ready : Ready s₀ t
   slots : CallSlots s₀ t
@@ -128,7 +132,7 @@ structure Args (a : AttPub) (s₀ t : State) : Prop where
     Spec.Rsa.bytesAt t.mem (off (rBase s₀) oNonce) (rQBytes s₀).length = Spec.Dsa.encodeBE (rQBytes s₀).length k
   attempts : slot t.mem (rBase s₀) oAttempts = BitVec.ofNat 32 a.fuel
 
-theorem args_ok {a : AttPub} {s₀ t : State} (A : RandomSignABI s₀) (h : Tested a s₀ t)
+theorem args_ok {a : AttPub V} {s₀ t : State} (A : RandomSignABI s₀) (h : Tested a s₀ t)
     (hok : a.ok = true) : WP isa (.block callArgs) t (Args a s₀) := by
   obtain ⟨S, -⟩ := h
   have hql := rQBytes_le A
@@ -146,33 +150,34 @@ theorem args_ok {a : AttPub} {s₀ t : State} (A : RandomSignABI s₀) (h : Test
   · rw [outs_high o₃ (e := 44) (by decide) (by decide) (by decide)]; exact S.attempts
 
 /-- After the call. -/
-structure Called (a : AttPub) (s₀ t : State) : Prop where
+structure Called (a : AttPub V) (s₀ t : State) : Prop where
   pos : 1 ≤ a.fuel
   le : a.fuel ≤ 8
   ready : Ready s₀ t
   eax : t.gpr .eax = BitVec.ofNat 32 (if a.signed then 1 else 0)
   attempts : slot t.mem (rBase s₀) oAttempts = BitVec.ofNat 32 a.fuel
 
-theorem Args.status {a : AttPub} {s₀ t : State} (A : RandomSignABI s₀) (h : Args a s₀ t) :
+theorem Args.status {a : AttPub V} {s₀ t : State} (A : RandomSignABI s₀) (h : Args a s₀ t) :
     Spec.Dsa.signStatus (callResult s₀ t) = if a.signed then 1 else 0 := by
   obtain ⟨k, hk, hn⟩ := h.nonce
   rw [callResult_eq A h.ready hn, Spec.Dsa.signStatus, h.facts.signed hk]
 
-theorem call_called (F : SignFn) {a : AttPub} {s₀ t : State} (A : RandomSignABI s₀) (h : Args a s₀ t) :
+theorem call_called (F : SignFn) {a : AttPub F.valid} {s₀ t : State} (A : RandomSignABI s₀) (h : Args a s₀ t) :
     WP isa (.call F.name F.code) t (Called a s₀) :=
-  WP.mono (call_ok F A h.ready h.slots) fun u ⟨h₄, f₄, _, eax₄, _⟩ =>
+  WP.mono (call_ok F A h.ready h.slots h.facts.valid) fun u ⟨h₄, f₄, _, eax₄, _⟩ =>
     ⟨h.facts.pos, h.facts.le, h₄, by rw [eax₄, h.status A],
       by rw [call_frame_slot A f₄ (by decide) (by decide)]; exact h.attempts⟩
 
 /-- After recording the signer's status. -/
-def Recorded (a : AttPub) (s₀ t : State) : Prop :=
+def Recorded (a : AttPub V) (s₀ t : State) : Prop :=
   Ready s₀ t ∧ t.zf = some (!a.signed) ∧ slot t.mem (rBase s₀) oAttempts = BitVec.ofNat 32 a.fuel ∧
     1 ≤ a.fuel ∧ a.fuel ≤ 8
 
 /-- After spending an attempt. -/
-def Spent' (a : AttPub) (s₀ t : State) : Prop := Ready s₀ t ∧ t.zf = some (decide (a.fuel - 1 = 0))
+def Spent' (a : AttPub V) (s₀ t : State) : Prop := Ready s₀ t ∧ t.zf = some (decide (a.fuel - 1 = 0))
 
-theorem callFinish_ct : RelCT isa (Two fun a => At (Called a) a.pub) callFinish fun _ _ => True := by
+theorem callFinish_ct : RelCT isa (Two fun (a : AttPub V) => At (Called a) a.pub) callFinish
+    fun _ _ => True := by
   unfold callFinish
   refine RelCT.seq (two_piece (Ψ := fun a => At (Recorded a) a.pub) [.esp]
     (pins_at AttPub.pub fun _ _ _ h => h.ready) (by taint_decide) fun a t ⟨s₀, A, e, C⟩ => ?_) ?_
@@ -193,14 +198,17 @@ theorem callFinish_ct : RelCT isa (Two fun a => At (Called a) a.pub) callFinish 
       · exact two_taint [] (fun _ _ _ _ _ _ h => by cases h) (by taint_decide)
   · exact two_taint [] (fun _ _ _ _ _ _ h => by cases h) (by taint_decide)
 
-theorem signerCall_ct (F : SignFn) : RelCT isa (Two fun a => At (Args a) a.pub) (.call F.name F.code)
+theorem signerCall_ct (F : SignFn) :
+    RelCT isa (Two fun (a : AttPub F.valid) => At (Args a) a.pub) (.call F.name F.code)
     fun _ _ => True :=
   (call_ct F).mono (fun t₁ t₂ ⟨a, ⟨s₁, A₁, e₁, h₁⟩, ⟨s₂, A₂, e₂, h₂⟩⟩ =>
     ⟨s₁, s₂, A₁, A₂, e₁.trans e₂.symm, h₁.facts.leak.trans h₂.facts.leak.symm, h₁.ready, h₂.ready,
-      h₁.slots, h₂.slots, by rw [h₁.status A₁, h₂.status A₂]⟩) fun _ _ h => h
+      h₁.slots, h₂.slots, by rw [h₁.status A₁, h₂.status A₂], h₁.facts.valid, h₂.facts.valid⟩)
+    fun _ _ h => h
 
 theorem attempt_ct (F : SignFn) :
-    RelCT isa (Two fun a => At (AttAt a) a.pub) (attempt F.name F.code) fun _ _ => True := by
+    RelCT isa (Two fun (a : AttPub F.valid) => At (AttAt a) a.pub) (attempt F.name F.code)
+      fun _ _ => True := by
   unfold attempt
   refine RelCT.seq (two_post (Ψ := fun a => At (fun s₀ t => Sampled a s₀ t ∧
       t.gpr .eax = BitVec.ofNat 32 (VG.Proof.Dsa.Random.sampleStatus (spl s₀ 128 a.used))) a.pub)

@@ -258,7 +258,8 @@ theorem spro_ok {p : Params} (hF : SFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ
     · simp [Lay.buf, slay1]
     · exact absurd rfl hi1
   · show _ ∈ s.rd ++ s.wr
-    rw [rd, rd₁, wr, wr₁, hp.rd, hp.wr]
+    obtain ⟨X, hX⟩ := hp.rd
+    rw [rd, rd₁, wr, wr₁, hX, hp.wr]
     rcases (by omega_arith : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, slay1]
   · rw [m]; exact Mem.readW_writeW_self64 _ _ _
   · rw [hin (i := 2) (l := p.skLen) (.inl rfl) rfl]; exact ek

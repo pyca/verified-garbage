@@ -48,7 +48,7 @@ macro_rules
   | `(tactic| brun) => `(tactic| brun [])
   | `(tactic| brun [$ls,*]) => `(tactic|
       crun [List.cons_append, List.nil_append, ↓read_one, ↓read_four, ↓read_eight, write_eight,
-        write_four, false_implies, zero, sch, xL, xR, fReg, pPtr, qReg, acc, mReg, tmp, lane, rowPtr,
+        write_four, false_implies, zero, sch, xL, xR, fReg, pPtr, qReg, acc, tmp, rowPtr, o16, o256, o272,
         ptr, cnt, $ls,*])
 
 theorem WP.reassoc {a b c : Prog isa} {s : State} {Q : State → Prop}
@@ -72,11 +72,6 @@ theorem lo_xor (x y : BitVec 64) : lo (x ^^^ y) = lo x ^^^ lo y := by
 theorem lo_add (x y : BitVec 64) : lo (x + y) = lo x + lo y := lo32_add x y
 
 theorem lo_ext (x : BitVec 32) : lo (x.setWidth 64) = x := lo32_ext x
-
-theorem lo_ofNat (n : Nat) : lo (BitVec.ofNat 64 n) = BitVec.ofNat 32 n := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  rw [Nat.mod_mod_of_dvd _ (by decide)]
 
 /-- Whether bit `c` of `q` is set, as the mask `0 - ((q << (63 - c)) >> 63)`. -/
 theorem bitMask_eq (q : BitVec 64) {c : Nat} (hc : c < 64) :

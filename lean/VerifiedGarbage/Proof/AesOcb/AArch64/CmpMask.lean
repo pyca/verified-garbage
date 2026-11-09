@@ -234,11 +234,6 @@ theorem length_mask (m : Mem) (P : Addr) (c : Bool) (j : Nat) :
     (if c then bytesAt m P j else zeros j).length = j := by
   cases c <;> simp [zeros, length_bytesAt]
 
-theorem mask_succ (m : Mem) (P : Addr) (c : Bool) (j : Nat) :
-    (if c then bytesAt m P (j + 1) else zeros (j + 1)) =
-      (if c then bytesAt m P j else zeros j) ++ [if c then m (P + BitVec.ofNat 64 j) else 0] := by
-  cases c <;> simp [zeros, bytesAt_succ, List.replicate_succ']
-
 theorem maskVector_ok (s : State) {P : Addr} {c : Bool} (h23 : s.gpr .x23 = P)
     (h10 : s.gpr .x10 = 0#64 - (if c then 1#64 else 0#64))
     (rq : InRegions (s.rd ++ s.wr) P 16) (wq : InRegions s.wr P 16) :
