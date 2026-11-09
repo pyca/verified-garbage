@@ -11,12 +11,6 @@ vg_p224_mul_mod_p:
 	add %r4, %r3, %r4
 	add %r5, %r3, %r5
 	add %r6, %r3, %r6
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 3912(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 3916(%r3)
 	std %r15, 3840(%r3)
 	std %r16, 3848(%r3)
 	std %r17, 3856(%r3)
@@ -26,6 +20,9 @@ vg_p224_mul_mod_p:
 	std %r21, 3888(%r3)
 	std %r22, 3896(%r3)
 	std %r23, 3904(%r3)
+	std %r24, 3912(%r3)
+	lis %r24, -1
+	ori %r24, %r24, 65535
 	li %r15, 0
 	li %r16, 0
 	li %r17, 0
@@ -71,8 +68,7 @@ vg_p224_mul_mod_p:
 	mulhdu %r11, %r9, %r23
 	adde %r19, %r19, %r11
 	addze %r12, %r12
-	ld %r11, 3912(%r3)
-	mulld %r9, %r15, %r11
+	mulld %r9, %r15, %r24
 	mulld %r11, %r9, %r6
 	addc %r15, %r15, %r11
 	mulld %r11, %r9, %r7
@@ -96,34 +92,26 @@ vg_p224_mul_mod_p:
 	addi %r8, %r8, -1
 	cmpldi %cr0, %r8, 0
 	bne %cr0, 20b
-	subfc %r11, %r6, %r15
-	std %r11, 3912(%r3)
-	subfe %r11, %r7, %r16
-	std %r11, 3920(%r3)
-	subfe %r11, %r10, %r17
-	std %r11, 3928(%r3)
-	subfe %r11, %r0, %r18
-	std %r11, 3936(%r3)
+	subfc %r20, %r6, %r15
+	subfe %r21, %r7, %r16
+	subfe %r22, %r10, %r17
+	subfe %r23, %r0, %r18
 	addze %r10, %r19
 	li %r11, 0
 	subf %r10, %r10, %r11
-	ld %r12, 3912(%r3)
-	xor %r12, %r12, %r15
+	xor %r12, %r20, %r15
 	and %r12, %r12, %r10
 	xor %r11, %r15, %r12
 	std %r11, 0(%r4)
-	ld %r12, 3920(%r3)
-	xor %r12, %r12, %r16
+	xor %r12, %r21, %r16
 	and %r12, %r12, %r10
 	xor %r11, %r16, %r12
 	std %r11, 8(%r4)
-	ld %r12, 3928(%r3)
-	xor %r12, %r12, %r17
+	xor %r12, %r22, %r17
 	and %r12, %r12, %r10
 	xor %r11, %r17, %r12
 	std %r11, 16(%r4)
-	ld %r12, 3936(%r3)
-	xor %r12, %r12, %r18
+	xor %r12, %r23, %r18
 	and %r12, %r12, %r10
 	xor %r11, %r18, %r12
 	std %r11, 24(%r4)
@@ -136,4 +124,5 @@ vg_p224_mul_mod_p:
 	ld %r21, 3888(%r3)
 	ld %r22, 3896(%r3)
 	ld %r23, 3904(%r3)
+	ld %r24, 3912(%r3)
 	blr
