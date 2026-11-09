@@ -17,5 +17,5 @@ mod ofb;
 
 pub use cbc::{BlowfishCbcDecryptor, BlowfishCbcEncryptor};
 pub use cfb::{BlowfishCfb64Decryptor, BlowfishCfb64Encryptor};
-pub use ecb::{BlowfishEcbDecryptor, BlowfishEcbEncryptor};
+pub use ecb::BlowfishEcb;
 pub use ofb::BlowfishOfb;
