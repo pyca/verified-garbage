@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Verified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.CheckPrivate.Verified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.PcCT
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.AttemptVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
@@ -46,9 +45,6 @@ def direct : List Artifact := [
   Spec.Ffdh.generationPrecomputeApi.artifact PPC64LE.target {
     code := Impl.Ffdh.PPC64LE.Cached.Precompute.code
     verified := Proof.Ffdh.PPC64LE.Cached.pc_verified },
-  Spec.Ffdh.cachedGenerateKeyApi.artifact PPC64LE.target {
-    code := Impl.Ffdh.PPC64LE.Cached.Generate.code
-    verified := Proof.Ffdh.PPC64LE.Cached.cg_verified },
   Spec.Ffdh.cachedKeySearchApi.artifact PPC64LE.target {
     stack := 192
     code := Proof.Ffdh.PPC64LE.Cached.SearchProof.keyCode

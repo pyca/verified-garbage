@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Spec.Ffdh.VettedKeyGenerationContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 
@@ -93,7 +94,7 @@ def searchStack (policy : GenerationPolicy) : Nat := 24 + policy.argumentBytes +
 
 def attemptContract (policy : GenerationPolicy) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   match policy with
-  | .cached => Spec.Ffdh.cachedGenerateKeyContract A stack
+  | .cached => Proof.Ffdh.cachedGenerateKeyContract A stack
   | .full | .vetted => legacyAttemptContract policy A stack
 
 def searchContract (policy : GenerationPolicy) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.AttemptCTBody
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.AttemptImplies
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -290,7 +291,7 @@ theorem cg_ct : ConstantTime isa cgContract.pre cgContract.pub Generate.code :=
     ⟨cgOf s, ⟨hs, rfl⟩, ⟨ht, (cgOf_eq hs ht h3 h5 h7 h8 h9 h10 a1 a2 a3 hl).symm⟩, hsp⟩) fun _ _ h => h)
 
 /-- `vg_ffdh_generate_key_cached`. -/
-theorem cg_verified : Verified target Generate.code (Spec.Ffdh.cachedGenerateKeyContract abi) :=
+theorem cg_verified : Verified target Generate.code (Proof.Ffdh.cachedGenerateKeyContract abi) :=
   Verified.of_correct cg_correct cg_ct cg_implies
 
 end VG.Proof.Ffdh.PPC64LE.Cached

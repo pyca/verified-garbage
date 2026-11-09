@@ -34,7 +34,7 @@ structure Attempt where
  depth : (Impl.Ffdh.AArch64.Cached.Generate.code M.mm).aarch64Depth=0
 
 abbrev Attempt.code (a : Attempt) : Prog isa := Impl.Ffdh.AArch64.Cached.Generate.code a.M.mm
-abbrev Attempt.call (a : Attempt) : Prog isa := .call Spec.Ffdh.cachedGenerateKeyApi.name a.code
+abbrev Attempt.call (a : Attempt) : Prog isa := .call "vg_ffdh_generate_key_cached" a.code
 
 def inX (s : State) : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat⟩
 def inY (s : State) : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩

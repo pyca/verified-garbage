@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 import VerifiedGarbage.Proof.Ffdh.X86.Cached.AttemptVerified
 import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 meta import VerifiedGarbage.Proof.Rsa.X86.StackTactic
@@ -125,7 +126,7 @@ theorem ctx_frame {o : State} (A : KeySearchABI o) {m : Mem} (F : Frame (frameR 
 theorem call_pre {o t : State} {used : Nat} (A : KeySearchABI o) (hu : used + (arg o 7).toNat ≤ (arg o 9).toNat)
     (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) (ha : ArgsAt o used 13 t.mem)
     (F : Frame (frameR o) o.mem t.mem) :
-    (Spec.Ffdh.cachedGenerateKeyContract abi Proof.Ffdh.X86.stack).pre
+    (Proof.Ffdh.cachedGenerateKeyContract abi Proof.Ffdh.X86.stack).pre
       (t.callEntry.withRegions (callRd o used) (callWr o)) := by
   have h1 : 228 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
@@ -208,7 +209,7 @@ theorem call_pre {o t : State} {used : Nat} (A : KeySearchABI o) (hu : used + (a
   have st : Proof.Ffdh.X86.stack ≤ (o.gpr .esp - BitVec.ofNat 32 56).toNat := by
     rw [hs4n]; show 172 ≤ _; omega
   have st' : (o.gpr .esp - BitVec.ofNat 32 56).toNat + 4 + 52 ≤ 2 ^ 32 := by rw [hs4n]; omega
-  sig_pre [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
+  sig_pre [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
     argSlots, argVal, argBytes, stackBelow, Spec.Ffdh.generationContextAt]
   simp only [hs4, ha0, Nat.reduceEqDiff, Nat.reduceSub, ↓reduceIte, BitVec.add_sub_cancel, ce_arg A he ha _ _ (show 0 < 13 by decide), ce_arg A he ha _ _ (show 1 < 13 by decide),
     ce_arg A he ha _ _ (show 2 < 13 by decide), ce_arg A he ha _ _ (show 3 < 13 by decide),
@@ -355,7 +356,7 @@ theorem entry_bytes {o t : State} {ds : List Nat} {f : Nat → BitVec 32} {used 
 theorem call_ok {o t : State} {e : BitVec 32} {used keys scalars : Nat}
     (h : Fr o liveDs (liveF (ofState o) e used keys scalars) t)
     (hu : used + (arg o 7).toNat ≤ (arg o 9).toNat) (ha : ArgsAt o used 13 t.mem) :
-    WP isa (.call Spec.Ffdh.cachedGenerateKeyApi.name Impl.Ffdh.X86.Cached.Generate.code) t fun u =>
+    WP isa (.call "vg_ffdh_generate_key_cached" Impl.Ffdh.X86.Cached.Generate.code) t fun u =>
       Fr o liveDs (liveF (ofState o) e used keys scalars) u ∧
       u.gpr .eax = BitVec.ofNat 32 (attemptStatus .cached (ofState o).a (arg o 7).toNat ((randOf o).drop used)) ∧
       AttemptOut o used u.mem := by
@@ -368,7 +369,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used keys scalars : Nat}
   refine WP.call Proof.Ffdh.X86.Cached.verified.1 callee_noSp (by rw [callee_stack, hn]; omega)
     (call_pre A hu h.esp ha h.frame) hc hcw fun u hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ => ?_
   have hp := hpost
-  sig_post [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi, argSlots, argVal, argBytes] at hp
+  sig_post [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi, argSlots, argVal, argBytes] at hp
   simp only [ce_arg A h.esp ha _ _ (show 0 < 13 by decide),
     ce_arg A h.esp ha _ _ (show 2 < 13 by decide), ce_arg A h.esp ha _ _ (show 4 < 13 by decide), ce_arg A h.esp ha _ _ (show 5 < 13 by decide),
     ce_arg A h.esp ha _ _ (show 6 < 13 by decide), ce_arg A h.esp ha _ _ (show 7 < 13 by decide),
@@ -411,7 +412,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used keys scalars : Nat}
   · rw [← hm₂]; exact hout
 
 theorem body_noSp :
-    NoSp (Code.seq (.block arguments) (.call Spec.Ffdh.cachedGenerateKeyApi.name Impl.Ffdh.X86.Cached.Generate.code) :
+    NoSp (Code.seq (.block arguments) (.call "vg_ffdh_generate_key_cached" Impl.Ffdh.X86.Cached.Generate.code) :
       Prog isa) := NoSp.of_all (by rsa_stack_shape)
 
 /-- Back from the frame. -/

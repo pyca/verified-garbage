@@ -44,11 +44,6 @@ def artifactsFor (v : Proof.Bignum.Arm.MontBackend) : List Artifact :=
     stack := 176
     code := Proof.Ffdh.Arm.combPrecomputeCalledCode v
     verified := Proof.Ffdh.Arm.combPrecomputeCalled_verified v },
-  Spec.Ffdh.cachedGenerateKeyApi.artifact VG.Arm.target {
-    suffix := v.suffix
-    stack := 176
-    code := (Proof.Ffdh.Arm.CachedKeyGenerate.backend v).generateKey
-    verified := (Proof.Ffdh.Arm.CachedKeyGenerate.backend v).generateKey_verified },
   Spec.Ffdh.cachedKeySearchApi.artifact VG.Arm.target {
     suffix := v.suffix
     stack := Proof.Ffdh.Arm.KeySearch.stackUse .cached

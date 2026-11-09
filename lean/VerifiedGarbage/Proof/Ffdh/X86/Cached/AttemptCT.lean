@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Proof.Ffdh.X86.Cached.AttemptTop
 public import VerifiedGarbage.Proof.Ffdh.X86.Cached.CombCT
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyGenCT
@@ -346,9 +347,9 @@ abbrev status (s : State) : Nat :=
   Spec.Ffdh.keyStatus (Spec.Ffdh.domainOf (arg s 6).toNat (entryDom s))
     (Spec.Ffdh.vettedScalarOfOctets (Spec.Ffdh.domainOf (arg s 6).toNat (entryDom s)) (entryRand s))
 
-theorem pub_facts {s t : State} (H : (Spec.Ffdh.cachedGenerateKeyContract abi stack).pub s t) :
+theorem pub_facts {s t : State} (H : (Proof.Ffdh.cachedGenerateKeyContract abi stack).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ (∀ i < 13, arg s i = arg t i) ∧ entryDom s = entryDom t ∧ status s = status t := by
-  sig_pub [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
+  sig_pub [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
     argSlots, argVal, argBytes] at H
   obtain ⟨SP, L, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12⟩ := H
   have inj : ∀ {l l' : List Byte}, l.map (fun x => x.toNat) = l'.map (fun x => x.toNat) → l = l' :=
@@ -412,8 +413,8 @@ theorem kAt_of {s f : State} (A : CachedABI s) (Bf : BodyAt (Rd s) gArgs s f) :
     rfl
 
 
-theorem constantTime : ConstantTime isa (Spec.Ffdh.cachedGenerateKeyContract abi stack).pre
-    (Spec.Ffdh.cachedGenerateKeyContract abi stack).pub Impl.Ffdh.X86.Cached.Generate.code := by
+theorem constantTime : ConstantTime isa (Proof.Ffdh.cachedGenerateKeyContract abi stack).pre
+    (Proof.Ffdh.cachedGenerateKeyContract abi stack).pub Impl.Ffdh.X86.Cached.Generate.code := by
   intro s t tr ur sf tf S T H E F
   have A := cachedABI_of S
   have B := cachedABI_of T

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -62,13 +63,13 @@ def attemptContract : Contract isa where
 theorem stackArgs_five (s : State) :
  (List.range 5).map (stackArg s)=[stackArg s 0,stackArg s 1,stackArg s 2,stackArg s 3,stackArg s 4] :=rfl
 
-theorem attempt_shared_pre {s : State} (h : (cachedGenerateKeyContract abi).pre s) : attemptPre s :=by
- sig_pre [cachedGenerateKeyContract,cachedGenerateKeySig,generateKeySig,abi,argRegs,attemptPre,stackArgs_five,List.append_eq,
+theorem attempt_shared_pre {s : State} (h : (Proof.Ffdh.cachedGenerateKeyContract abi).pre s) : attemptPre s :=by
+ sig_pre [Proof.Ffdh.cachedGenerateKeyContract,Proof.Ffdh.cachedGenerateKeySig,generateKeySig,abi,argRegs,attemptPre,stackArgs_five,List.append_eq,
   pLenValid,domainLenValid, List.range, List.range.loop] at h
- sig_pre [cachedGenerateKeyContract,cachedGenerateKeySig,generateKeySig,abi,argRegs,attemptPre,stackArgs_five,List.append_eq,
+ sig_pre [Proof.Ffdh.cachedGenerateKeyContract,Proof.Ffdh.cachedGenerateKeySig,generateKeySig,abi,argRegs,attemptPre,stackArgs_five,List.append_eq,
   pLenValid,domainLenValid, List.range, List.range.loop] at h
  sig_split h
- sig_reduce [cachedGenerateKeyContract,cachedGenerateKeySig,generateKeySig,abi,argRegs,attemptPre,stackArgs_five,
+ sig_reduce [Proof.Ffdh.cachedGenerateKeyContract,Proof.Ffdh.cachedGenerateKeySig,generateKeySig,abi,argRegs,attemptPre,stackArgs_five,
   List.append_eq,pLenValid,domainLenValid, List.range, List.range.loop]
  sig_and_intros
  sig_close
