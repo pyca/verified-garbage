@@ -95,29 +95,10 @@ def redEnter : List Instr := enterQ ++ redPtrs ++ minv
 /-- The Q space back into `r31`. -/
 def redExit : List Instr := [.addi .r31 .r23 0]
 
-/-- `Crt.chunkStep` in the Q space, whose array 0 is `r23 + hdrBytes` (`Crt`
-reads it from `r21`, which holds `S` here): the next 4 words of `c` (at `r30`)
-into array 6; `T := C q R⁻¹ mod q` into array 7 and `q := q R² R⁻¹ mod q`;
-`S := S - T mod q`; `r31 -= 4`, and `r3 :=` 1 if any words remain. -/
-def chunkStepQ : Prog isa :=
-  .seq (.block (base .r14 6 ++ [.addi .r15 .r30 0])) (.seq Crt.copyN
-  (.seq (.block [.addi .r30 .r15 0]) (.seq (montOp 7 6 5) (.seq (montOp 5 5 1)
-  (.seq (.block (base .r14 4 ++ [.add .r14 .r14 .r29, .subi .r14 .r14 16, .li .r0 0,
-      .store .d .r0 .r14 0] ++ base .r8 4 ++ base .r9 3 ++ base .r10 7))
-  (.seq subMod (.seq (.block ([.addi .r10 .r23 hdrBytes] ++ base .r15 3 ++ base .r16 0))
-  (.seq Crt.addMask (.seq (.block (base .r14 4 ++ base .r15 3)) (.seq Crt.copyN
-  (.block [.lsr .d .r3 .r11 1, .sub .r31 .r31 .r3, .subi .r3 .r31 1, .lsr .d .r3 .r3 63, .li .r0 1,
-    .logic .xor .r3 .r3 .r0])))))))))))
-
 /-- `c mod q` into array 4, for `c`'s `r31` words at `r30` (`redEnter`), with
-`R² mod q` in array 1: `Crt.reduceIn`'s steps, `q − 1` into array 8, `−R mod q`
-into array 5 and 0 into array 4, then `chunkStepQ` for each chunk of 4
-words. -/
-def reduceQ : Prog isa :=
-  .seq (.block (base .r14 8 ++ [.addi .r15 .r10 0])) (.seq Crt.copyN
-  (.seq (.block (base .r14 8 ++ [.load .d .r3 .r14 0, .subi .r3 .r3 1, .store .d .r3 .r14 0]))
-  (.seq (montOp 5 1 8) (.seq (.block (base .r14 4)) (.seq Precompute.zeroWords
-    (.loop chunkStepQ (.nonzero .d .r3)))))))
+`R² mod q` in array 1: `Crt.reduceFrom` in the Q space, whose array 0 is
+`r23 + hdrBytes` (`r21` holds `S` here), with the pointers already set. -/
+def reduceQ : Prog isa := Crt.reduceFrom [.addi .r10 .r23 hdrBytes] []
 
 /-- `v mod q` into the Q space's array 4, for `v` in the P space's array 6:
 `redEnter`, `reduceQ`, `redExit`. -/

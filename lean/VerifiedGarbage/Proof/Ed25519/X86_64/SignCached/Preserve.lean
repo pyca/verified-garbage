@@ -173,7 +173,7 @@ theorem init_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : InitArgs
   simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega_arith) (by omega_arith)
 
 theorem init_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : InitArgs L t) :
-    WP isa (.call Spec.Sha512.init512Api.name (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512)) t
+    WP isa (.call "vg_sha512_init_core" (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512)) t
       fun t' => Ctx L g mx m₀ t' ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 t'.mem L.scr [] ∧ Frame (initWr L ++ [⟨L.B, 16⟩]) t.mem t'.mem := by
   refine call_ok hL (Proof.Sha512.X86_64.Stream.init_verified _).1 (nosp_init _) (by decide) hc
     (init_pre hL hc ha) ?_ ?_ fun s' hc' hf _ ⟨s₂, hm, _, hpost⟩ => ⟨hc', ?_, hf⟩

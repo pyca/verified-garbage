@@ -9,8 +9,9 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
 /-! # The narrow CRT workspace: its width, and the shared state around it
 
 Each factor's exponentiation runs in the narrow workspace with
-`max(2, ⌈len/8⌉)` limbs for the factor's public byte length. Work there
-preserves the main and both full-width factor workspaces.
+`max(⌈len/8⌉, ⌈w/2⌉)` limbs for the factor's public byte length and the
+modulus's `w` limbs, so that a number of `w` limbs is two of the narrow
+width's. Work there preserves the main and both full-width factor workspaces.
 -/
 
 @[expose] public section
@@ -20,11 +21,13 @@ open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
 open VG.Proof.Rsa.Mont (arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
-/-- The limbs of a factor of `k` bytes in the narrow workspace. -/
-def narrowWords (k : Nat) : Nat := max 2 ((k + 7) / 8)
+/-- The limbs of a factor of `k` bytes in the narrow workspace, for a modulus of `w` limbs. -/
+def narrowWords (k w : Nat) : Nat := max ((k + 7) / 8) ((w + 1) / 2)
 
-theorem narrowWords_bounds {k n : Nat} (positive : 0 < k) (short : k < n) (hn : 2 ≤ Spec.Rsa.modulusWords n) :
-    2 ≤ narrowWords k ∧ narrowWords k ≤ Spec.Rsa.modulusWords n ∧ k ≤ 8 * narrowWords k := by
+theorem narrowWords_bounds {k n w : Nat} (positive : 0 < k) (short : k < n) (hn : 64 ≤ n)
+    (hw : w = Spec.Rsa.modulusWords n) :
+    2 ≤ narrowWords k w ∧ narrowWords k w ≤ w ∧ k ≤ 8 * narrowWords k w ∧ w ≤ 2 * narrowWords k w := by
+  subst hw
   simp only [narrowWords, Spec.Rsa.modulusWords] at *
   omega
 
@@ -36,17 +39,18 @@ theorem CrtShared.narrow_member {s : State} {g : CrtGeometry} {bs : Fin 7 → Li
 /-- The factor's limbs fit the narrow workspace, which the full width sizes. -/
 theorem CrtShared.narrow_fits {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtShared g bs s)
     (j : Fin 6) (prime : j = 1 ∨ j = 2) :
-    2 ≤ narrowWords (g.sourceLength j.succ) ∧ narrowWords (g.sourceLength j.succ) ≤ g.words ∧
-      g.sourceLength j.succ ≤ 8 * narrowWords (g.sourceLength j.succ) ∧ 0 < g.sourceLength j.succ ∧
+    2 ≤ narrowWords (g.sourceLength j.succ) g.words ∧ narrowWords (g.sourceLength j.succ) g.words ≤ g.words ∧
+      g.sourceLength j.succ ≤ 8 * narrowWords (g.sourceLength j.succ) g.words ∧ 0 < g.sourceLength j.succ ∧
       g.sourceLength j.succ ≤ 1024 ∧
-      arrAt (narrowWords (g.sourceLength j.succ)) 8 ≤ 8 * workspaceWords g.words := by
+      arrAt (narrowWords (g.sourceLength j.succ) g.words) 8 ≤ 8 * workspaceWords g.words ∧
+      g.words ≤ 2 * narrowWords (g.sourceLength j.succ) g.words := by
   have valid := crt_width_valid h.buffers.lengthValid
   have bounds : 0 < g.sourceLength j.succ ∧ g.sourceLength j.succ < g.length := by
     rcases prime with rfl | rfl
     · exact ⟨h.buffers.pPositive, h.buffers.pShort⟩
     · exact ⟨h.buffers.qPositive, h.buffers.qShort⟩
-  obtain ⟨two, le, fit⟩ := narrowWords_bounds bounds.1 bounds.2 valid.1
-  refine ⟨two, le, fit, bounds.1, by have := h.buffers.lengthValid.2; omega, ?_⟩
+  obtain ⟨two, le, fit, half⟩ := narrowWords_bounds (w := g.words) bounds.1 bounds.2 h.buffers.lengthValid.1 rfl
+  refine ⟨two, le, fit, bounds.1, by have := h.buffers.lengthValid.2; omega, ?_, half⟩
   have arrays := h.buffers.context.arraysFit
   simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at arrays ⊢
   change _ ≤ g.words at le

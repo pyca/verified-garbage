@@ -56,9 +56,12 @@ def finalizeArgs : List Instr :=
     .alu .add .rsi (.imm 64), .mov .rdx (.reg .rsp),
     .alu .add .rdx (.imm 64)] : List Instr) ++ scrPtr .rcx shaScratch
 
-/-- Produce the 64-byte digest in the frame at `rsp + 64`. -/
+/-- Produce the 64-byte digest in the frame at `rsp + 64`, calling
+`vg_sha512_init`'s code as the internal `vg_sha512_init_core`: the function
+exported as `vg_sha512_init` also clears what it leaves, which this caller,
+which clears its own, does not need. -/
 def hash (f : Callee) (suffix : String) : Prog isa :=
-  .seq (callWith initArgs Spec.Sha512.init512Api.name
+  .seq (callWith initArgs "vg_sha512_init_core"
       (Sha512.X86_64.Stream.init Spec.Sha512.H0_512))
     (.seq (callWith (prefixArgs fSignature 0) ("vg_sha512_update_scratch" ++ suffix)
       (Sha512.X86_64.Stream.update f))

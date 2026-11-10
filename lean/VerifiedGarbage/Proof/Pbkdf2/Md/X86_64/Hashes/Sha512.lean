@@ -50,7 +50,11 @@ open Spec.Sha512 (H0_384 H0_512 H0_512_224 H0_512_256)
 
 /-- The member of the SHA-512 family of instance `I`, with a `D`-byte digest,
 initial hash value `iv` and streaming `init` named `initN`, calling the
-implementation `v` of the compression function, named with its suffix. -/
+implementation `v` of the compression function, named with its suffix. Its
+instances call `init`'s code as the internal `vg_<alg>_init_core`: the
+function exported as `vg_<alg>_init` also clears what it leaves
+(`Proof.Sha512.X86_64.init512Reg`), which its callers, which clear their own,
+do not need. -/
 def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) (v : Compress) :
     Hash where
   P := Impl.Sha512.X86_64.Stream.params
@@ -325,7 +329,7 @@ theorem sha384_coreOK : CoreOK (coreH 48) := coreOK 48 (Or.inr (Or.inr (Or.inl r
 theorem sha384_anyOK : Any.AnyOK (coreH 48) := anyOK 48 (Or.inr (Or.inr (Or.inl rfl)))
 
 /-- SHA-384's functions, with the implementation `v` of the compression function. -/
-abbrev sha384H (v : Compress) : Hash := hash Spec.Hmac.sha384I 48 Spec.Sha512.init384Api.name H0_384 v
+abbrev sha384H (v : Compress) : Hash := hash Spec.Hmac.sha384I 48 "vg_sha384_init_core" H0_384 v
 
 theorem sha384K (v : Compress) : Callees (sha384H v) := callees (Or.inl rfl) v
 
@@ -387,7 +391,7 @@ theorem sha512_coreOK : CoreOK (coreH 64) := coreOK 64 (Or.inr (Or.inr (Or.inr r
 theorem sha512_anyOK : Any.AnyOK (coreH 64) := anyOK 64 (Or.inr (Or.inr (Or.inr rfl)))
 
 /-- SHA-512's functions, with the implementation `v` of the compression function. -/
-abbrev sha512H (v : Compress) : Hash := hash Spec.Hmac.sha512I 64 Spec.Sha512.init512Api.name H0_512 v
+abbrev sha512H (v : Compress) : Hash := hash Spec.Hmac.sha512I 64 "vg_sha512_init_core" H0_512 v
 
 theorem sha512K (v : Compress) : Callees (sha512H v) := callees (Or.inr (Or.inl rfl)) v
 
@@ -451,8 +455,8 @@ theorem sha512_224_anyOK : Any.AnyOK (coreH 28) := anyOK 28 (Or.inl rfl)
 
 /-- SHA-512/224 with the implementation `v` of the compression function. -/
 def sha512_224 (v : Compress) (stream : List StreamFn := []) : MdHash :=
-  have C : CoreOK (core (hash Spec.Hmac.sha512_224I 28 Spec.Sha512.init512_224Api.name H0_512_224 v)) := sha512_224_coreOK
-  have K : Callees (hash Spec.Hmac.sha512_224I 28 Spec.Sha512.init512_224Api.name H0_512_224 v) := callees (Or.inr (Or.inr (Or.inl rfl))) v
+  have C : CoreOK (core (hash Spec.Hmac.sha512_224I 28 "vg_sha512_224_init_core" H0_512_224 v)) := sha512_224_coreOK
+  have K : Callees (hash Spec.Hmac.sha512_224I 28 "vg_sha512_224_init_core" H0_512_224 v) := callees (Or.inr (Or.inr (Or.inl rfl))) v
   MdHash.of (ok C K rfl (fun _ => rfl) rfl rfl rfl (Or.inl rfl) rfl) C K ⟨Spec.Mgf1.sha512_224, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl
     sha512_224_satI sha512_224_satF sha512_224_satT sha512_224_satP (by decide)
     sha512_224_anyOK sha512_224_satA (by decide) Proof.Hmac.sha512_224_local
@@ -505,8 +509,8 @@ theorem sha512_256_anyOK : Any.AnyOK (coreH 32) := anyOK 32 (Or.inr (Or.inl rfl)
 
 /-- SHA-512/256 with the implementation `v` of the compression function. -/
 def sha512_256 (v : Compress) (stream : List StreamFn := []) : MdHash :=
-  have C : CoreOK (core (hash Spec.Hmac.sha512_256I 32 Spec.Sha512.init512_256Api.name H0_512_256 v)) := sha512_256_coreOK
-  have K : Callees (hash Spec.Hmac.sha512_256I 32 Spec.Sha512.init512_256Api.name H0_512_256 v) := callees (Or.inr (Or.inr (Or.inr rfl))) v
+  have C : CoreOK (core (hash Spec.Hmac.sha512_256I 32 "vg_sha512_256_init_core" H0_512_256 v)) := sha512_256_coreOK
+  have K : Callees (hash Spec.Hmac.sha512_256I 32 "vg_sha512_256_init_core" H0_512_256 v) := callees (Or.inr (Or.inr (Or.inr rfl))) v
   MdHash.of (ok C K rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inl rfl)) rfl) C K ⟨Spec.Mgf1.sha512_256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl
     sha512_256_satI sha512_256_satF sha512_256_satT sha512_256_satP (by decide)
     sha512_256_anyOK sha512_256_satA (by decide) Proof.Hmac.sha512_256_local

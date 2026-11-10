@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInit
+public import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInitScrub
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -23,9 +24,7 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 namespace VG.Artifacts.Dsa.X86_64
 
 def direct : List Artifact := [
-  Spec.Dsa.parameterInitApi.artifact X86_64.target {
-    code := Impl.Dsa.X86_64.ParameterSearch.init
-    verified := Proof.Dsa.X86_64.ParameterSearchInit.init_verified }]
+  Spec.Dsa.parameterInitApi.artifact X86_64.target Proof.Dsa.X86_64.ParameterSearchInit.initReg]
 
 end VG.Artifacts.Dsa.X86_64
 

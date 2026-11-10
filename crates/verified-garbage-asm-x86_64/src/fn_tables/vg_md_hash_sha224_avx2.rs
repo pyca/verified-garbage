@@ -5,8 +5,8 @@
 /// The CPU features `VG_MD_HASH_SHA224_AVX2` requires (`VG.FnTable`).
 pub const VG_MD_HASH_SHA224_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
-/// The table of functions `VG_MD_HASH_SHA224_AVX2` of the interface `MdHash`: `vg_sha224_init`, `vg_sha256_update_scratch_avx2`, `vg_sha256_finalize_scratch_avx2`, `vg_sha256_compress_avx2`, `vg_sha256_state_digest`, then the data 2, 28, 64, 8, 96, 1.
+/// The table of functions `VG_MD_HASH_SHA224_AVX2` of the interface `MdHash`: `vg_sha224_init_core`, `vg_sha256_update_scratch_avx2`, `vg_sha256_finalize_scratch_avx2`, `vg_sha256_compress_avx2`, `vg_sha256_state_digest`, then the data 2, 28, 64, 8, 96, 1.
 pub static VG_MD_HASH_SHA224_AVX2: super::MdHash = super::MdHash {
-    fns: [crate::sha256::vg_sha224_init as *const (), crate::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2 as *const (), crate::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2 as *const (), crate::sha256::vg_sha256_compress_avx2::vg_sha256_compress_avx2 as *const (), crate::sha256::vg_sha256_state_digest::vg_sha256_state_digest as *const ()],
+    fns: [crate::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core as *const (), crate::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2 as *const (), crate::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2 as *const (), crate::sha256::vg_sha256_compress_avx2::vg_sha256_compress_avx2 as *const (), crate::sha256::vg_sha256_state_digest::vg_sha256_state_digest as *const ()],
     data: [2, 28, 64, 8, 96, 1],
 };

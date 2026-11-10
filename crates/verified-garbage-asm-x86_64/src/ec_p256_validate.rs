@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.validatePublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 65 bytes.
@@ -19,7 +21,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ec_p256_validate_public_key(public: *con
     core::arch::naked_asm!(
         r#".base64 "SYnwSYn5SIn5SIPBAUiJzkiJykmJGEmJaAhNiWAQTYloGE2JcCBNiXgoSYn+TInHSItBGEgPyEiJhyAEAABIi0EQSA/ISImHKAQAAEiLQQhID8hIiYcwBAAASIsBSA/ISImHOAQAAEiLRhhID8hIiYdABAAASItGEEgPyEiJh0gEAABIi0YISA/ISImHUAQAAEiLBkgPyEiJh1gEAABIi0IYSA/ISImHYAQAAEiLQhBID8hIiYdoBAAASItCCEgPyEiJh3AEAABIiwJID8hIiYd4BAAASLj//////////0iJR0BIuP////8AAAAASIlHSEi4AAAAAAAAAABIiUdQSLgBAAAA/////0iJR1hIuFElY/zCyrnzSIlHYEi4hJ4Xp6365rxIiUdoSLj//////////0iJR3BIuAAAAAD/////SIlHeEi4AAAAAAAAAABIiYegAAAASLgAAAAAAAAAAEiJh6gAAABIuAAAAAAAAAAASImHsAAAAEi4AAAAAAAAAABIiYe4AAAASLgBAAAAAAAAAEiJh8AAAABIuAAAAAAAAAAASImHyAAAAEi4AAAAAAAAAABIiYfQAAAASLgAAAAAAAAAAEiJh9gAAABIuAEAAAAAAAAASImH4AAAAEi4AAAAAP////9IiYfoAAAASLj//////////0iJh/AAAABIuP7///8AAAAASImH+AAAAEi4/P////////9IiYcAAQAASLj/////AwAAAEiJhwgBAABIuAAAAAAAAAAASImHEAEAAEi4BAAAAPz///9IiYcYAQAASLifOU59Jp7WiUiJhyABAABIuLKRjGlmEdAGSImHKAEAAEi4hIxj5QNi5rBIiYcwAQAASLic2JUNWRKQlEiJhzgBAABIuDwUqRjUMOd5SImHQAEAAEi4AbbtX/yVunVIiYdIAQAASLgQJWJ3K3P7eUiJh1ABAABIuMZVN6V2X5AYSImHWAEAAEi4ClaVzldT8t1IiYdgAQAASLhc5Bm65LhKi0iJh2gBAABIuCXzId2IhujSSImHcAEAAEi4hV2IJRj/cYVIiYd4AQAASLii7nm+lUwkg0iJh4ABAABIuKZvvUmceZlGSImHiAEAAEi4WexrKzmyRShIiYeQAQAASLggVtnzlC3hZkiJh5gBAABIuK/anAM9NUYMSImHoAEAAEi4e2HoWFIFGUNIiYeoAQAASLgAAAAAAAAAAEiJh7ABAABIuP////8AAAAASImHuAEAAEi4/f////////9IiYfAAQAASLj/////AAAAAEiJh8gBAABIuAAAAAAAAAAASImH0AEAAEi4AQAAAP////9IiYfYAQAASLhPJWP8wsq580iJh+ABAABIuISeF6et+ua8SImH6AEAAEi4//////////9IiYfwAQAASLgAAAAA/////0iJh/gBAABIuAAAAAAAAAAASImHAAIAAEi4AAAAAAAAAABIiYcIAgAASLgAAAAAAAAAAEiJhxACAABIuAAAAAAAAAAASImHGAIAAEi4AQAAAAAAAABIiYcgAgAASLgAAAAA/////0iJhygCAABIuP//////////SImHMAIAAEi4/v///wAAAABIiYc4AgAASLgAAAAAAAAAAEiJh0ACAABIuAAAAAAAAAAASImHSAIAAEi4AAAAAAAAAABIiYdQAgAASLgAAAAAAAAAAEiJh1gCAABIuP//////////SImHwAUAAEyJ9ki4AwAAAAAAAABIiYcgBQAASLj/////+////0iJhygFAABIuP7/////////SImHMAUAAEi4/f///wQAAABIiYc4BQAASLjfvcQpYt+c2EiJh0AFAABIuJAwhHjNBfCsSImHSAUAAEi41i4h96sgouVIiYdQBQAASLg0SIcEHQYw3EiJh1gFAABMicpIg8IhSItCGEgPyEiJh8AEAABIi0IQSA/ISImHyAQAAEiLQghID8hIiYfQBAAASIsCSA/ISImH2AQAAEEPthFIg/IESIP6AUgZ0kiLh8AFAABIIdBIiYfABQAA"
 call {vg_p256_check_point}
-.base64 "SIuPwAUAAEiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
+.base64 "SIuPwAUAAEiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0iNZCT4SI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_p256_check_point = sym super::ec_p256_compressed::vg_p256_check_point::vg_p256_check_point,
     )
@@ -31,6 +33,8 @@ pub const VG_EC_P256_VALIDATE_PUBLIC_KEY_ADX_FEATURES: verified_garbage_cpu::Fea
 /// P-256 public-key validation (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): returns 1 if `public` is a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first), and 0 otherwise. Checks the encoding tag, both coordinates below the field prime and the curve equation; rejects infinity and compressed or hybrid encodings. The curve has cofactor one, so no scalar multiplication is required.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.validatePublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -45,7 +49,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ec_p256_validate_public_key_adx(public: 
     core::arch::naked_asm!(
         r#".base64 "SYnwSYn5SIn5SIPBAUiJzkiJykmJGEmJaAhNiWAQTYloGE2JcCBNiXgoSYn+TInHSItBGEgPyEiJhyAEAABIi0EQSA/ISImHKAQAAEiLQQhID8hIiYcwBAAASIsBSA/ISImHOAQAAEiLRhhID8hIiYdABAAASItGEEgPyEiJh0gEAABIi0YISA/ISImHUAQAAEiLBkgPyEiJh1gEAABIi0IYSA/ISImHYAQAAEiLQhBID8hIiYdoBAAASItCCEgPyEiJh3AEAABIiwJID8hIiYd4BAAASLj//////////0iJR0BIuP////8AAAAASIlHSEi4AAAAAAAAAABIiUdQSLgBAAAA/////0iJR1hIuFElY/zCyrnzSIlHYEi4hJ4Xp6365rxIiUdoSLj//////////0iJR3BIuAAAAAD/////SIlHeEi4AAAAAAAAAABIiYegAAAASLgAAAAAAAAAAEiJh6gAAABIuAAAAAAAAAAASImHsAAAAEi4AAAAAAAAAABIiYe4AAAASLgBAAAAAAAAAEiJh8AAAABIuAAAAAAAAAAASImHyAAAAEi4AAAAAAAAAABIiYfQAAAASLgAAAAAAAAAAEiJh9gAAABIuAEAAAAAAAAASImH4AAAAEi4AAAAAP////9IiYfoAAAASLj//////////0iJh/AAAABIuP7///8AAAAASImH+AAAAEi4/P////////9IiYcAAQAASLj/////AwAAAEiJhwgBAABIuAAAAAAAAAAASImHEAEAAEi4BAAAAPz///9IiYcYAQAASLifOU59Jp7WiUiJhyABAABIuLKRjGlmEdAGSImHKAEAAEi4hIxj5QNi5rBIiYcwAQAASLic2JUNWRKQlEiJhzgBAABIuDwUqRjUMOd5SImHQAEAAEi4AbbtX/yVunVIiYdIAQAASLgQJWJ3K3P7eUiJh1ABAABIuMZVN6V2X5AYSImHWAEAAEi4ClaVzldT8t1IiYdgAQAASLhc5Bm65LhKi0iJh2gBAABIuCXzId2IhujSSImHcAEAAEi4hV2IJRj/cYVIiYd4AQAASLii7nm+lUwkg0iJh4ABAABIuKZvvUmceZlGSImHiAEAAEi4WexrKzmyRShIiYeQAQAASLggVtnzlC3hZkiJh5gBAABIuK/anAM9NUYMSImHoAEAAEi4e2HoWFIFGUNIiYeoAQAASLgAAAAAAAAAAEiJh7ABAABIuP////8AAAAASImHuAEAAEi4/f////////9IiYfAAQAASLj/////AAAAAEiJh8gBAABIuAAAAAAAAAAASImH0AEAAEi4AQAAAP////9IiYfYAQAASLhPJWP8wsq580iJh+ABAABIuISeF6et+ua8SImH6AEAAEi4//////////9IiYfwAQAASLgAAAAA/////0iJh/gBAABIuAAAAAAAAAAASImHAAIAAEi4AAAAAAAAAABIiYcIAgAASLgAAAAAAAAAAEiJhxACAABIuAAAAAAAAAAASImHGAIAAEi4AQAAAAAAAABIiYcgAgAASLgAAAAA/////0iJhygCAABIuP//////////SImHMAIAAEi4/v///wAAAABIiYc4AgAASLgAAAAAAAAAAEiJh0ACAABIuAAAAAAAAAAASImHSAIAAEi4AAAAAAAAAABIiYdQAgAASLgAAAAAAAAAAEiJh1gCAABIuP//////////SImHwAUAAEyJ9ki4AwAAAAAAAABIiYcgBQAASLj/////+////0iJhygFAABIuP7/////////SImHMAUAAEi4/f///wQAAABIiYc4BQAASLjfvcQpYt+c2EiJh0AFAABIuJAwhHjNBfCsSImHSAUAAEi41i4h96sgouVIiYdQBQAASLg0SIcEHQYw3EiJh1gFAABMicpIg8IhSItCGEgPyEiJh8AEAABIi0IQSA/ISImHyAQAAEiLQghID8hIiYfQBAAASIsCSA/ISImH2AQAAEEPthFIg/IESIP6AUgZ0kiLh8AFAABIIdBIiYfABQAA"
 call {vg_p256_check_point_adx}
-.base64 "SIuPwAUAAEiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
+.base64 "SIuPwAUAAEiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0iNZCT4SI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_p256_check_point_adx = sym super::ec_p256_compressed::vg_p256_check_point_adx::vg_p256_check_point_adx,
     )

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Md5.initContract`. The streaming state is the MD buffer followed by a buffered partial block (`VG.Spec.Md5.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 80 bytes.
@@ -14,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_md5_init(state: *mut [u8; 80]) {
     core::arch::naked_asm!(
-        r#".base64 "uAEjRWeJB7iJq83viUcEuP7cupiJRwi4dlQyEIlHDMM="
+        r#".base64 "uAEjRWeJB7iJq83viUcEuP7cupiJRwi4dlQyEIlHDDHARTHbww=="
 .p2align 6"#,
     )
 }
@@ -207,6 +209,10 @@ pub(crate) mod vg_md5_compress;
 #[rustfmt::skip]
 #[path = "internal/vg_md5_finalize_scratch.rs"]
 pub(crate) mod vg_md5_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_md5_init_core.rs"]
+pub(crate) mod vg_md5_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_md5_state_digest.rs"]

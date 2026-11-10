@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_camellia_cbc_encrypt_chained`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -28,6 +30,8 @@ pub unsafe fn vg_camellia_cbc_encrypt_chained_auto(_dit: verified_garbage_cpu::D
 /// Contract: `VG.Spec.Camellia.cbcDecryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
 /// It runs `vg_camellia_cbc_decrypt_chained`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

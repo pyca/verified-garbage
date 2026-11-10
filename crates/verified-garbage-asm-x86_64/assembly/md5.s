@@ -13,6 +13,8 @@ vg_md5_init:
 	mov DWORD PTR [rdi+8], eax
 	mov eax, 271733878
 	mov DWORD PTR [rdi+12], eax
+	xor eax, eax
+	xor r11d, r11d
 	ret
 	.p2align 6
 

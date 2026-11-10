@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Lit
 public import VerifiedGarbage.Proof.X448.X86_64.Instances
 public import VerifiedGarbage.Proof.X448.X86_64.Exchange
+public import VerifiedGarbage.Proof.X448.X86_64.Scrub
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.Curve448Field.X86_64
 
@@ -22,10 +23,6 @@ def artifacts : List Artifact :=
       code := Impl.Xdh.X86_64.exchange ("vg_x448" ++ v.suffix) (Proof.X448.X86_64.code v) 56
       stack := 24
       verified := Proof.X448.X86_64.Exchange.exchange_variant v },
-    Spec.X448.x448BaseApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Proof.X448.X86_64.codeBase v
-      stack := 8
-      verified := Proof.X448.X86_64.codeBase_verified v }]
+    Spec.X448.x448BaseApi.artifact X86_64.target (Proof.X448.X86_64.baseReg v)]
 
 end VG.Artifacts.X448.X86_64

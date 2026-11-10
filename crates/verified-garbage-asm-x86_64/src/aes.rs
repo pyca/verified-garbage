@@ -10,6 +10,8 @@ pub const VG_AES_EXPAND_KEY_AESNI_FEATURES: verified_garbage_cpu::Features = ver
 ///
 /// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -35,7 +37,7 @@ jmp 21f
 20:
 .base64 "8w9vD/MPb1cIZg9z2gjzD38K8w9/UhBmD3DaVWYPc9sBZg9w2wBmDzjd3WYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf0oYZg9w2f9mD2/iZg9z/ARmD+/UZg/v0/MPf1IoZg9w2lVmD3PbAWYPcNsAZg843d5mD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD39KMGYPcNn/Zg9v4mYPc/wEZg/v1GYP79PzD39SQGYPcNpVZg9z2wFmD3DbAGYPON3fZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/SkhmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/UlhmD3DaVWYPc9sBZg9w2wBmQQ843dhmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD39KYGYPcNn/Zg9v4mYPc/wEZg/v1GYP79PzD39ScGYPcNpVZg9z2wFmD3DbAGZBDzjd2WYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf0p4Zg9w2f9mD2/iZg9z/ARmD+/UZg/v0/MPf5KIAAAAZg9w2lVmD3PbAWYPcNsAZkEPON3aZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/ipAAAABmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/kqAAAABmD3DaVWYPc9sBZg9w2wBmQQ843dtmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD3+KqAAAAGYPcNn/Zg9v4mYPc/wEZg/v1GYP79PzD3+SuAAAAGYPcNpVZg9z2wFmD3DbAGZBDzjd3GYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf4rAAAAA"
 21:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAx9sM="
 .p2align 6"#,
     )
 }
@@ -43,6 +45,8 @@ jmp 21f
 /// The AES key expansion (FIPS 197 §5.2, `KEYEXPANSION`): writes the key schedule of the `key_len`-byte key at `key`, the words `w[0] … w[4 * Nr + 3]` for `Nr = key_len / 4 + 6` rounds, each as its 4 bytes (`16 * (Nr + 1)` bytes in all), to the start of `*schedule`.
 ///
 /// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -86,7 +90,7 @@ jmp 29f
 29:
 .base64 "SYPoAQ=="
 jne 21b
-.base64 "SYuZgAEAAEmLqYgBAABNi6GQAQAATYupmAEAAE2LsaABAABNi7moAQAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABIjaQkCAIAAMM="
+.base64 "SYuZgAEAAEmLqYgBAABNi6GQAQAATYupmAEAAE2LsaABAABNi7moAQAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABIjaQkCAIAAGYP78BFMdtIjaQk+P3//0yJHCRIjaQkCAIAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
     )
 }

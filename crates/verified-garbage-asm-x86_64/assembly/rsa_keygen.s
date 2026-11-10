@@ -71,6 +71,14 @@ vg_rsa_generate_init:
 	mov QWORD PTR [rdi+32], r11
 	mov QWORD PTR [rdi+40], r10
 	mov QWORD PTR [rdi+48], r9
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
