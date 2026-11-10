@@ -213,5 +213,67 @@ theorem copyPrimes_relCT (A₁ : PPABI s₁) (A₂ : PPABI s₂) (P : Pub s₁ s
       WP.mono (copyPrime_ok A₂ h.2 (j := 17) (by decide) (.inr rfl) (.inr rfl) (by omega)) fun _ h => h.1⟩) ?_
   exact espCT (fun x y h => Body.esp P h.1 h.2) (by taint_decide)
 
+theorem wrapBody_relCT {pcName prName : String} {pc : Prog isa}
+    (pv : Verified target pc (Spec.Rsa.publicPrecomputeContract abi 96)) (pst : stackUse pc ≤ 96) (pns : NoSp pc)
+    (prst : stackUse primes ≤ 96) (prns : NoSp primes)
+    (A₁ : PPABI s₁) (A₂ : PPABI s₂) (P : Pub s₁ s₂) :
+    RelCT isa (fun x y => x = allocFrame Impl.Bignum.X86.PrivPre.frameBytes s₁ ∧
+      y = allocFrame Impl.Bignum.X86.PrivPre.frameBytes s₂) (body pcName pc prName primes) fun _ _ => True := by
+  unfold body
+  -- the callee's arguments of `vg_rsa_public_precompute`
+  refine seqCT (F₁ := fun u => Body s₁ u ∧ ∀ j < 6, u.mem.readW (slot s₁ (4 * j)) 32 = pubVal s₁ j)
+    (F₂ := fun u => Body s₂ u ∧ ∀ j < 6, u.mem.readW (slot s₂ (4 * j)) 32 = pubVal s₂ j)
+    (espCT (fun x y ⟨hx, hy⟩ => by subst hx hy; simp only [allocFrame_esp, P.sp]) (by taint_decide))
+    (fun x y ⟨hx, hy⟩ => by
+      subst hx hy
+      exact ⟨WP.mono (publicArgs_ok A₁ Body.start) fun _ ⟨B, _, _, V⟩ => ⟨B, V⟩,
+        WP.mono (publicArgs_ok A₂ Body.start) fun _ ⟨B, _, _, V⟩ => ⟨B, V⟩⟩) ?_
+  -- the call of `vg_rsa_public_precompute`
+  refine seqCT (F₁ := Body s₁) (F₂ := Body s₂)
+    (RelCT.call pv.1 pv.2.1 (pcRd s₁) (pcWr s₁) fun x y ⟨⟨Bx, Vx⟩, ⟨By, Vy⟩⟩ => ?_)
+    (fun x y ⟨⟨Bx, Vx⟩, ⟨By, Vy⟩⟩ => ⟨WP.mono (pc_call pv pst pns A₁ Bx Vx) fun _ h => h.1,
+      WP.mono (pc_call pv pst pns A₂ By Vy) fun _ h => h.1⟩) ?_
+  · rw [P.pcRd_eq, P.pcWr_eq]
+    exact ⟨by rw [← P.pcRd_eq, ← P.pcWr_eq]; exact pc_pre A₁ Bx Vx, pc_pre A₂ By Vy,
+      pc_pub A₁ A₂ P Bx By Vx Vy, by rw [← P.pcRd_eq, ← P.pcWr_eq]; exact (pc_covers A₁ Bx).1,
+      by rw [← P.pcWr_eq]; exact (pc_covers A₁ Bx).2, (pc_covers A₂ By).1, (pc_covers A₂ By).2,
+      Body.esp P Bx By⟩
+  -- `primes`' arguments
+  refine seqCT (F₁ := fun u => Body s₁ u ∧ ∀ j < 18, u.mem.readW (slot s₁ (4 * j)) 32 = primesVal s₁ j)
+    (F₂ := fun u => Body s₂ u ∧ ∀ j < 18, u.mem.readW (slot s₂ (4 * j)) 32 = primesVal s₂ j)
+    (espCT (fun x y h => Body.esp P h.1 h.2) (by taint_decide))
+    (fun x y h => ⟨WP.mono (primesArgs_ok A₁ h.1) fun _ ⟨B, _, _, _, V⟩ => ⟨B, V⟩,
+      WP.mono (primesArgs_ok A₂ h.2) fun _ ⟨B, _, _, _, V⟩ => ⟨B, V⟩⟩) ?_
+  -- the call of `primes`
+  refine seqCT (F₁ := Body s₁) (F₂ := Body s₂)
+    (RelCT.call primes_verified.1 primes_verified.2.1 (prRd s₁) (prWr s₁) fun x y ⟨⟨Bx, Vx⟩, ⟨By, Vy⟩⟩ => ?_)
+    (fun x y ⟨⟨Bx, Vx⟩, ⟨By, Vy⟩⟩ => ⟨WP.mono (pr_call prst prns A₁ Bx Vx) fun _ h => h.1,
+      WP.mono (pr_call prst prns A₂ By Vy) fun _ h => h.1⟩) ?_
+  · exact ⟨pr_pre A₁ Bx Vx, by rw [P.prRd_eq, P.prWr_eq]; exact pr_pre A₂ By Vy,
+      pr_pub A₁ A₂ P Bx By Vx Vy, (pr_covers A₁ Bx).1, (pr_covers A₁ Bx).2,
+      by rw [P.prRd_eq, P.prWr_eq]; exact (pr_covers A₂ By).1, by rw [P.prWr_eq]; exact (pr_covers A₂ By).2,
+      Body.esp P Bx By⟩
+  -- the result, the copies, and the mask
+  refine seqCT (F₁ := Body s₁) (F₂ := Body s₂) (espCT (fun x y h => Body.esp P h.1 h.2) (by taint_decide))
+    (fun x y h => ⟨WP.mono (status_ok A₁ h.1) fun _ h => h.1, WP.mono (status_ok A₂ h.2) fun _ h => h.1⟩) ?_
+  refine seqCT (F₁ := Body s₁) (F₂ := Body s₂) (copyPrimes_relCT A₁ A₂ P)
+    (fun x y h => ⟨WP.mono (copyPrimes_ok A₁ h.1) fun _ h => h.1, WP.mono (copyPrimes_ok A₂ h.2) fun _ h => h.1⟩) ?_
+  refine seqCT (F₁ := fun u => Body s₁ u ∧ u.gpr .edx = arg s₁ 0 ∧ (u.gpr .ecx).toNat = (arg s₁ 1).toNat * 8)
+    (F₂ := fun u => Body s₂ u ∧ u.gpr .edx = arg s₂ 0 ∧ (u.gpr .ecx).toNat = (arg s₂ 1).toNat * 8)
+    (espCT (fun x y h => Body.esp P h.1 h.2) (by taint_decide))
+    (fun x y h => ⟨WP.mono (maskArgs_ok A₁ h.1) fun _ ⟨B, _, _, _, D, C⟩ => ⟨B, D, C⟩,
+      WP.mono (maskArgs_ok A₂ h.2) fun _ ⟨B, _, _, _, D, C⟩ => ⟨B, D, C⟩⟩) ?_
+  refine seqCT (F₁ := Body s₁) (F₂ := Body s₂)
+    (RelCT.taint (A := taint) (τr [.esp, .edx, .ecx])
+      (fun x y ⟨⟨Bx, Dx, Cx⟩, ⟨By, Dy, Cy⟩⟩ => agree_regs fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact Body.esp P Bx By
+        · rw [Dx, Dy, P.args 0 (by decide)]
+        · exact BitVec.eq_of_toNat_eq (by rw [Cx, Cy, P.args 1 (by decide)])) (by taint_decide))
+    (fun x y ⟨⟨Bx, Dx, Cx⟩, ⟨By, Dy, Cy⟩⟩ => ⟨WP.mono (maskLoop_ok A₁ Bx Dx Cx) fun _ h => h.1,
+      WP.mono (maskLoop_ok A₂ By Dy Cy) fun _ h => h.1⟩) ?_
+  exact espCT (fun x y h => Body.esp P h.1 h.2) (by taint_decide)
+
 end
 end VG.Proof.Bignum.X86.PrivPre
