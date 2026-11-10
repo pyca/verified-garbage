@@ -127,12 +127,37 @@ theorem masked_facts {s₀ : State} (hP : PF s₀) :
     exact ⟨⟨hp1, hpo, Nat.lt_of_lt_of_le (Crt.os2ip_lt' _ (VG.Proof.Bignum.bytesAt_length _ _ _)) (Crt.pow256_le hpw)⟩,
       ⟨hq1, hqo, Nat.lt_of_lt_of_le (Crt.os2ip_lt' _ (VG.Proof.Bignum.bytesAt_length _ _ _)) (Crt.pow256_le hqw)⟩⟩
 
-/-- After the checks, the factors' values to `pre`. -/
-theorem partB_ok {s₀ t : State} (hP : PF s₀) (hA : A s₀ t) {c : Prog isa} {Q : State → Prop}
-    (hc : ∀ u, B s₀ u → WP isa c u Q) :
+/-- The registers of `p`'s working space and where its values go, after the
+first block of the factors. -/
+structure B1 (s₀ t v : State) : Prop where
+  r30 : v.gpr .r30 = off (s₀.gpr .r3) (16 * cw s₀)
+  r10 : v.gpr .r10 = off (off (cS s₀) (slot (cwX s₀) 8)) (slot (cwP s₀) 0)
+  r21 : v.gpr .r21 = off (off (cS s₀) (slot (cwX s₀) 8)) (slot (cwP s₀) 0)
+  r29 : v.gpr .r29 = BitVec.ofNat 64 (8 * (cwP s₀ + 2))
+  r11 : v.gpr .r11 = BitVec.ofNat 64 (2 * cwP s₀)
+  mem : v.mem = t.mem
+  keep : Keep ([.r30, .r3] ++ [.r0, .r3, .r4, .r10, .r11, .r21, .r29]) t v
+
+/-- After `p`'s values (`x`) and `q`'s working space's registers (`y`). -/
+structure B2 (s₀ t x y : State) : Prop where
+  xw : ∀ i < cwP s₀, word x.mem (s₀.gpr .r3) (16 * cw s₀ + 8 * i) =
+    r2Word (cb s₀) (cwP s₀) (if cb s₀ then cP s₀ else 3) i
+  x30 : x.gpr .r30 = off (s₀.gpr .r3) (16 * cw s₀ + 8 * cwP s₀)
+  xF : Frame [⟨off (s₀.gpr .r3) (16 * cw s₀), 8 * cwP s₀⟩, ⟨off (cS s₀) (slot (cwX s₀) 8), slot (cwP s₀) 24⟩]
+    t.mem x.mem
+  xk : Keep (([.r30, .r3] ++ [.r0, .r3, .r4, .r10, .r11, .r21, .r29]) ++ primeAllRegs) t x
+  y10 : y.gpr .r10 = off (off (cS s₀) (slot (cwX s₀) 8 + slot (cwP s₀) 24)) (slot (cwQ s₀) 0)
+  y21 : y.gpr .r21 = off (off (cS s₀) (slot (cwX s₀) 8 + slot (cwP s₀) 24)) (slot (cwQ s₀) 0)
+  y29 : y.gpr .r29 = BitVec.ofNat 64 (8 * (cwQ s₀ + 2))
+  y11 : y.gpr .r11 = BitVec.ofNat 64 (2 * cwQ s₀)
+  ym : y.mem = x.mem
+  yk : Keep [.r0, .r3, .r4, .r10, .r11, .r21, .r29] x y
+
+/-- The factors' first block: `r30 := pre + 16 w`, `p`'s working space. -/
+theorem partB1_ok {s₀ t : State} (hP : PF s₀) (hA : A s₀ t) {c : Prog isa} {Q : State → Prop}
+    (hc : ∀ v, B1 s₀ t v → WP isa c v Q) :
     WP isa (.seq (.block (([.load .d .r30 .r23 oOut, .load .d .r3 .r23 oNLen, .addi .r3 .r3 7, .lsr .d .r3 .r3 3,
-      .lsl .r3 .r3 4, .add .r30 .r30 .r3] : List Instr) ++ setupP oBP oPLen)) (.seq (PrivPre.prime 4)
-      (.seq (.block (setupP oBQ oQLen)) (.seq (PrivPre.prime 5) c)))) t Q := by
+      .lsl .r3 .r3 4, .add .r30 .r30 .r3] : List Instr) ++ setupP oBP oPLen)) c) t Q := by
   have hn := hP.nw
   have hnP := hP.pre.nowrap
   have room := hP.room
@@ -173,19 +198,39 @@ theorem partB_ok {s₀ t : State} (hP : PF s₀) (hA : A s₀ t) {c : Prog isa} 
     ((uk.gpr _ (by decide)).trans hA.r23) (by decide) (by decide) (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith)
     (by rw [um]; exact hA.hBP) (by rw [um, hA.hPL]; exact (ofNat_toNat64 _).symm) hP.p1 (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith))
     fun v ⟨⟨v10, v21, v29, v11, _, vm⟩, vk⟩ => ?_
-  have kv := (hA.keep.trans uk).trans vk
-  have tv := uk.trans vk
-  have hmv : v.mem = t.mem := vm.trans um
+  exact hc v ⟨by rw [vk.gpr _ (by decide)]; exact u30, v10, v21, v29, v11, vm.trans um, uk.trans vk⟩
+
+/-- `p`'s values, then `q`'s working space's registers. -/
+theorem partB2_ok {s₀ t v : State} (hP : PF s₀) (hA : A s₀ t) (V : B1 s₀ t v) {c : Prog isa} {Q : State → Prop}
+    (hc : ∀ x y, B2 s₀ t x y → WP isa c y Q) :
+    WP isa (.seq (PrivPre.prime 4) (.seq (.block (setupP oBQ oQLen)) c)) v Q := by
+  have hn := hP.nw
+  have hnP := hP.pre.nowrap
+  have room := hP.room
+  have pq := hP.pq
+  have hpl := hP.preLen
+  have k64 := hP.k64; have k1024 := hP.k1024
+  have pk := hP.pk; have qk := hP.qk; have p1 := hP.p1; have q1 := hP.q1
+  have e : ∀ w j, slot w j = 256 + j * (8 * (w + 2)) := fun _ _ => rfl
+  have dX : cwX s₀ = 2 * cw s₀ := rfl
+  have dw : cw s₀ = (ck s₀ + 7) / 8 := rfl
+  have wP2 : 2 ≤ cwP s₀ := by unfold cwP wsWords; omega_arith
+  have wQ2 : 2 ≤ cwQ s₀ := by unfold cwQ wsWords; omega_arith
+  have eX8 := e (cwX s₀) 8; have eP24 := e (cwP s₀) 24; have eQ24 := e (cwQ s₀) 24
+  obtain ⟨⟨mP2, mPo, mPb⟩, ⟨mQ2, mQo, mQb⟩⟩ := masked_facts hP
+  have u30 := V.r30; have v10 := V.r10; have v29 := V.r29; have v11 := V.r11
+  have tv := V.keep
+  have kv := hA.keep.trans tv
+  have hmv : v.mem = t.mem := V.mem
   -- `p`'s values.
   refine WP.seq (WP.mono (prime_ok (b := cb s₀) (Pv := if cb s₀ then cP s₀ else 3) (xj := 4)
     (o := 16 * cw s₀) (wX := cwX s₀) (hA.scr.congr tv.wr) (hP.pre.congr kv.wr) hP.sepPre (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith)
     (Nat.le_refl _) wP2 (by unfold cwP wsWords; omega_arith) (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith) (by decide) v10 v29 v11
     (by rw [tv.gpr _ (by decide)]; exact hA.r27) (by rw [tv.gpr _ (by decide)]; exact hA.r28)
-    (by rw [vk.gpr _ (by decide)]; exact u30) (by rw [tv.gpr _ (by decide)]; exact hA.r26)
+    u30 (by rw [tv.gpr _ (by decide)]; exact hA.r26)
     (by rw [hpl]; simp only [cwP, cw] at *; omega_arith)
     (by rw [hmv]; exact Crt.wv_low (by rw [← Pre.val32_eq_wv]; exact hA.x4) mPb (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith)) mP2 mPo)
     fun x ⟨⟨xw, x30, xF⟩, xk⟩ => ?_)
-  have kx := kv.trans xk
   have tx := tv.trans xk
   have hPS := hP.sepPre
   -- What `p`'s values left as they were.
@@ -198,6 +243,36 @@ theorem partB_ok {s₀ t : State} (hP : PF s₀) (hA : A s₀ t) {c : Prog isa} 
     (by rw [xh _ (by decide)]; exact hA.hBQ) (by rw [xh _ (by decide), hA.hQL]; exact (ofNat_toNat64 _).symm)
     hP.q1 (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith))
     fun y ⟨⟨y10, y21, y29, y11, _, ym⟩, yk⟩ => ?_
+  exact hc x y ⟨xw, x30, by rw [hmv] at xF; exact xF, tx, y10, y21, y29, y11, ym, yk⟩
+
+/-- After the checks, the factors' values to `pre`. -/
+theorem partB_ok {s₀ t : State} (hP : PF s₀) (hA : A s₀ t) {c : Prog isa} {Q : State → Prop}
+    (hc : ∀ u, B s₀ u → WP isa c u Q) :
+    WP isa (.seq (.block (([.load .d .r30 .r23 oOut, .load .d .r3 .r23 oNLen, .addi .r3 .r3 7, .lsr .d .r3 .r3 3,
+      .lsl .r3 .r3 4, .add .r30 .r30 .r3] : List Instr) ++ setupP oBP oPLen)) (.seq (PrivPre.prime 4)
+      (.seq (.block (setupP oBQ oQLen)) (.seq (PrivPre.prime 5) c)))) t Q := by
+  have hn := hP.nw
+  have hnP := hP.pre.nowrap
+  have room := hP.room
+  have pq := hP.pq
+  have hpl := hP.preLen
+  have k64 := hP.k64; have k1024 := hP.k1024
+  have pk := hP.pk; have qk := hP.qk; have p1 := hP.p1; have q1 := hP.q1
+  have e : ∀ w j, slot w j = 256 + j * (8 * (w + 2)) := fun _ _ => rfl
+  have dX : cwX s₀ = 2 * cw s₀ := rfl
+  have dw : cw s₀ = (ck s₀ + 7) / 8 := rfl
+  have wP2 : 2 ≤ cwP s₀ := by unfold cwP wsWords; omega_arith
+  have wQ2 : 2 ≤ cwQ s₀ := by unfold cwQ wsWords; omega_arith
+  have eX8 := e (cwX s₀) 8; have eP24 := e (cwP s₀) 24; have eQ24 := e (cwQ s₀) 24
+  obtain ⟨⟨mP2, mPo, mPb⟩, ⟨mQ2, mQo, mQb⟩⟩ := masked_facts hP
+  refine partB1_ok hP hA fun v V => partB2_ok hP hA V fun x y X => ?_
+  have xw := X.xw; have x30 := X.x30; have xF := X.xF; have tx := X.xk
+  have kx := hA.keep.trans tx
+  have y10 := X.y10; have y29 := X.y29; have y11 := X.y11; have ym := X.ym; have yk := X.yk
+  have hPS := hP.sepPre
+  -- What `p`'s values left as they were.
+  have xh : ∀ d, d + 8 ≤ 256 → word x.mem (cS s₀) d = word t.mem (cS s₀) d := fun d hd => by
+    rw [frame_word xF hPS (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith) (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith) (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith) hn hnP (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith) (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith)]
   have ky := kx.trans yk
   have ty := tx.trans yk
   refine WP.seq (WP.mono (prime_ok (b := cb s₀) (Pv := if cb s₀ then cQ s₀ else 3) (xj := 5)
@@ -207,7 +282,7 @@ theorem partB_ok {s₀ t : State} (hP : PF s₀) (hA : A s₀ t) {c : Prog isa} 
     (by rw [yk.gpr _ (by decide), x30])
     (by rw [ty.gpr _ (by decide)]; exact hA.r26)
     (by rw [hpl]; simp only [cwP, cwQ, cw] at *; omega_arith)
-    (by rw [ym, frame_wv xF hPS (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith) (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith) (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith) hn hnP (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith) (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith), hmv]
+    (by rw [ym, frame_wv xF hPS (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith) (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith) (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith) hn hnP (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith) (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith)]
         exact Crt.wv_low (by rw [← Pre.val32_eq_wv]; exact hA.x5) mQb (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith)) mQ2 mQo)
     fun z ⟨⟨zw, _, zF⟩, zk⟩ => ?_)
   have kz := ky.trans zk
@@ -249,7 +324,6 @@ theorem partB_ok {s₀ t : State} (hP : PF s₀) (hA : A s₀ t) {c : Prog isa} 
       xF (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith) (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith)
     have F2 := fr (o := 16 * cw s₀ + 8 * cwP s₀) (n := 8 * cwQ s₀) (oA := slot (cwX s₀) 8 + slot (cwP s₀) 24)
       (L := slot (cwQ s₀) 24) zF (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith) (by simp (config := { failIfUnchanged := false }) only [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith)
-    rw [hmv] at F1
     rw [ym] at F2
     exact (hA.frame.trans F1).trans F2
 

@@ -181,6 +181,68 @@ theorem wordsAt_eq {m m' : Mem} {P : Addr} {n : Nat} (h : ∀ i < n, word m P (8
 local macro "oa" : tactic => `(tactic| (simp (config := { failIfUnchanged := false }) only
   [cwP, cwQ, cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes] at *; omega_arith))
 
+/-- `pre`'s first `16 w` bytes, in a state with `s₀`'s writable regions. -/
+theorem pre16 {s₀ s : State} (hP : PF s₀) (h : s.wr = s₀.wr) : Scr s (s₀.gpr .r3) (16 * cw s₀) := by
+  have hpl := hP.preLen
+  have hnP := hP.pre.nowrap
+  exact ⟨let ⟨B0, o, L, hm, hb, hL, hL'⟩ := hP.pre.wr; ⟨B0, o, L, by rw [h]; exact hm, hb, by
+      simp (config := { failIfUnchanged := false }) only [cw, ck, cpL, cqL] at *; omega_arith, hL'⟩,
+      by simp (config := { failIfUnchanged := false }) only [cw, ck] at *; omega_arith⟩
+
+/-- The working space is apart from `pre`'s first `16 w` bytes. -/
+theorem sep16 {s₀ : State} (hP : PF s₀) : ∀ x, ofs (cS s₀) x < cZ s₀ → 16 * cw s₀ ≤ ofs (s₀.gpr .r3) x :=
+  fun x hx => by
+    have hpl := hP.preLen
+    refine Nat.le_of_not_lt fun hc => ?_
+    have := hP.sepPre x (by rw [hpl]; omega_arith)
+    omega_arith
+
+/-- After `n`'s values (`Precompute.core`), from the state `u` after the factors. -/
+structure CC (s₀ u t : State) : Prop where
+  out : Pre.preOut (nB s₀) (s₀.gpr .r3) (2 * cw s₀) (t.gpr .r3) t.mem
+  frame : Frame [Pre.arrR (cS s₀) (cw s₀), ⟨s₀.gpr .r3, 16 * cw s₀⟩] u.mem t.mem
+  keep : Keep (nRegs ++ Pre.coreRegs) u t
+
+/-- After the factors, `n`'s values. -/
+theorem partC1_ok {s₀ u : State} (hP : PF s₀) (hB : B s₀ u) {c : Prog isa} {Q : State → Prop}
+    (hc : ∀ t, CC s₀ u t → WP isa c t Q) :
+    WP isa (.seq (.block PrivPre.setupN) (.seq Precompute.core c)) u Q := by
+  have room := hP.room
+  have k64 := hP.k64; have k1024 := hP.k1024
+  have dw : cw s₀ = (ck s₀ + 7) / 8 := rfl
+  refine WP.seq (WP.mono (setupN_ok hP hB) fun v ⟨⟨v19, v12, v6, v21, v11, v10, v5, v8, v9, vm⟩, kv⟩ => ?_)
+  have kBv := hB.keep.trans kv
+  have bN : Spec.Rsa.bytesAt v.mem (s₀.gpr .r5) (ck s₀) = nB s₀ := by
+    rw [vm]
+    exact bytes_frame hB.frame hP.dN (Nat.le_of_lt (BitVec.isLt _))
+  refine WP.seq (WP.mono (Pre.core_ok (hB.scr.congr kv.wr) (pre16 hP kBv.wr) dw k64 k1024 (by oa) v19 v6 v12 v10
+    v5 v8 v9 v11 v21 (by rw [kBv.rd, kBv.wr]; exact hP.rN) hP.sN (sep16 hP)) fun t ⟨⟨tO, tF⟩, kt⟩ =>
+    hc t ⟨by rw [bN] at tO; exact tO, by rw [vm] at tF; exact tF, kv.trans kt⟩)
+
+/-- `maskN`'s first block: `pre` and `2 w` from the header. -/
+theorem maskBlk_ok {s₀ t : State} (hP : PF s₀) (hst : Scr t (cS s₀) (cZ s₀)) (t23 : t.gpr .r23 = cS s₀)
+    (hO : word t.mem (cS s₀) oOut = s₀.gpr .r3) (hK : word t.mem (cS s₀) oNLen = s₀.gpr .r6) :
+    WP isa (.block [.load .d .r14 .r23 oOut, .load .d .r17 .r23 oNLen, .addi .r17 .r17 7, .lsr .d .r17 .r17 3,
+      .lsl .r17 .r17 1]) t fun t3 =>
+      (t3.gpr .r14 = off (s₀.gpr .r3) 0 ∧ t3.gpr .r17 = BitVec.ofNat 64 (2 * cw s₀) ∧ t3.mem = t.mem) ∧
+        Keep [.r14, .r17] t t3 := by
+  have hn := hP.nw; have room := hP.room; have k64 := hP.k64; have k1024 := hP.k1024
+  rw [show ([.load .d .r14 .r23 oOut, .load .d .r17 .r23 oNLen, .addi .r17 .r17 7, .lsr .d .r17 .r17 3,
+      .lsl .r17 .r17 1] : List Instr) = [.load .d .r14 .r23 oOut] ++ ([.load .d .r17 .r23 oNLen] ++
+      [.addi .r17 .r17 7, .lsr .d .r17 .r17 3, .lsl .r17 .r17 1]) from rfl, WP.block_append_iff]
+  refine WP.mono (ldH_ok hst t23 (by simp (config := { failIfUnchanged := false }) only [cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes, oOut] at *; omega_arith) (by decide)) fun t1 ⟨⟨a14, m1⟩, k1⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (ldH_ok (hst.congr k1.wr) ((k1.gpr _ (by decide)).trans t23) (by simp (config := { failIfUnchanged := false }) only [cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes, oNLen] at *; omega_arith) (by decide))
+    fun t2 ⟨⟨a17, m2⟩, k2⟩ => ?_
+  obtain ⟨K, hKe⟩ : ∃ K, ck s₀ = K := ⟨_, rfl⟩
+  have e17 : t2.gpr .r17 = BitVec.ofNat 64 K := by
+    rw [a17, m1, hK, ← hKe]; exact (ofNat_toNat64 _).symm
+  refine WP.mono (WP.keep [.r17] (Q := fun x => x.gpr .r17 = BitVec.ofNat 64 (2 * cw s₀) ∧ x.mem = t2.mem) (by
+      prun [e17, Pre.ofNat_add7_shr3 K (by oa), Pre.ofNat_shl1]
+      simp only [cw, hKe]) (by decide)) fun t3 ⟨⟨b17, m3⟩, k3⟩ =>
+    ⟨⟨by rw [k3.gpr _ (by decide), k2.gpr _ (by decide), a14, hO]; simp [off], b17, by rw [m3, m2, m1]⟩,
+      ((k1.trans k2).trans k3).mono (by decide)⟩
+
 /-- After the factors, `n`'s values, the mask and the result. -/
 theorem partC_ok {s₀ u : State} (hP : PF s₀) (hB : B s₀ u) {c : Prog isa} {Q : State → Prop}
     (hc : ∀ v, C s₀ v → WP isa c v Q) :
@@ -191,70 +253,40 @@ theorem partC_ok {s₀ u : State} (hP : PF s₀) (hB : B s₀ u) {c : Prog isa} 
   have hpl := hP.preLen
   have k64 := hP.k64; have k1024 := hP.k1024
   have hPS := hP.sepPre
-  have dw : cw s₀ = (ck s₀ + 7) / 8 := rfl
-  refine WP.seq (WP.mono (setupN_ok hP hB) fun v ⟨⟨v19, v12, v6, v21, v11, v10, v5, v8, v9, vm⟩, kv⟩ => ?_)
-  have kBv := hB.keep.trans kv
-  have hpv : Scr v (s₀.gpr .r3) (16 * cw s₀) :=
-    ⟨let ⟨B0, o, L, hm, hb, hL, hL'⟩ := hP.pre.wr; ⟨B0, o, L, by rw [kBv.wr]; exact hm, hb, by
-      simp (config := { failIfUnchanged := false }) only [cw, ck, cpL, cqL] at *; omega_arith, hL'⟩,
-      by simp (config := { failIfUnchanged := false }) only [cw, ck] at *; omega_arith⟩
-  have bN : Spec.Rsa.bytesAt v.mem (s₀.gpr .r5) (ck s₀) = nB s₀ := by
-    rw [vm]
-    exact bytes_frame hB.frame hP.dN (Nat.le_of_lt (BitVec.isLt _))
-  have hsv : Scr v (cS s₀) (cZ s₀) := hB.scr.congr kv.wr
-  have hPS' : ∀ x, ofs (cS s₀) x < cZ s₀ → 16 * cw s₀ ≤ ofs (s₀.gpr .r3) x := fun x hx => by
-    refine Nat.le_of_not_lt fun hc => ?_
-    have := hPS x (by rw [hpl]; omega_arith)
-    omega_arith
-  refine WP.seq (WP.mono (Pre.core_ok hsv hpv dw k64 k1024 (by oa) v19 v6 v12 v10 v5 v8 v9 v11 v21
-    (by rw [kBv.rd, kBv.wr]; exact hP.rN) hP.sN hPS') fun t ⟨⟨tO, tF⟩, kt⟩ => ?_)
-  have th : ∀ d, d + 8 ≤ 256 → word t.mem (cS s₀) d = word u.mem (cS s₀) d := fun d hd => by
-    rw [core_word_hdr tF hPS hd (by rw [hpl]; omega_arith) (by oa) hn (by omega_arith), vm]
+  refine partC1_ok hP hB fun t T => ?_
+  have hPS' := sep16 hP
+  have kt := T.keep
+  have th : ∀ d, d + 8 ≤ 256 → word t.mem (cS s₀) d = word u.mem (cS s₀) d := fun d hd =>
+    core_word_hdr T.frame hPS hd (by rw [hpl]; omega_arith) (by oa) hn (by omega_arith)
   have tp : ∀ d, 16 * cw s₀ ≤ d → d + 8 ≤ (s₀.gpr .r4).toNat * 8 →
-      word t.mem (s₀.gpr .r3) d = word u.mem (s₀.gpr .r3) d := fun d hd hd' => by
-    rw [core_word_pre tF hPS hd hd' (by oa) hn hnP, vm]
-  have t23 : t.gpr .r23 = cS s₀ := (kt.gpr _ (by decide)).trans ((kv.gpr _ (by decide)).trans hB.r23)
-  have t26 : t.gpr .r26 = Crt.bmask (cb s₀) := (kt.gpr _ (by decide)).trans ((kv.gpr _ (by decide)).trans hB.r26)
-  have hst : Scr t (cS s₀) (cZ s₀) := hsv.congr kt.wr
+      word t.mem (s₀.gpr .r3) d = word u.mem (s₀.gpr .r3) d := fun d hd hd' =>
+    core_word_pre T.frame hPS hd hd' (by oa) hn hnP
+  have t23 : t.gpr .r23 = cS s₀ := (kt.gpr _ (by decide)).trans hB.r23
+  have t26 : t.gpr .r26 = Crt.bmask (cb s₀) := (kt.gpr _ (by decide)).trans hB.r26
+  have hst : Scr t (cS s₀) (cZ s₀) := hB.scr.congr kt.wr
   refine WP.seq ?_
   unfold PrivPre.maskN
-  rw [show ([.load .d .r14 .r23 oOut, .load .d .r17 .r23 oNLen, .addi .r17 .r17 7, .lsr .d .r17 .r17 3,
-      .lsl .r17 .r17 1] : List Instr) = [.load .d .r14 .r23 oOut] ++ ([.load .d .r17 .r23 oNLen] ++
-      [.addi .r17 .r17 7, .lsr .d .r17 .r17 3, .lsl .r17 .r17 1]) from rfl]
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (ldH_ok hst t23 (by simp (config := { failIfUnchanged := false }) only [cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes, oOut] at *; omega_arith) (by decide)) fun t1 ⟨⟨a14, m1⟩, k1⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (ldH_ok (hst.congr k1.wr) ((k1.gpr _ (by decide)).trans t23) (by simp (config := { failIfUnchanged := false }) only [cwX, cw, ck, cpL, cqL, cZ, slot, hdrBytes, oNLen] at *; omega_arith) (by decide))
-    fun t2 ⟨⟨a17, m2⟩, k2⟩ => ?_
-  obtain ⟨K, hKe⟩ : ∃ K, ck s₀ = K := ⟨_, rfl⟩
-  have e17 : t2.gpr .r17 = BitVec.ofNat 64 K := by
-    rw [a17, m1, th _ (by decide), hB.hNL, ← hKe]; exact (ofNat_toNat64 _).symm
-  refine WP.mono (WP.keep [.r17] (Q := fun x => x.gpr .r17 = BitVec.ofNat 64 (2 * cw s₀) ∧ x.mem = t2.mem) (by
-      prun [e17, Pre.ofNat_add7_shr3 K (by oa), Pre.ofNat_shl1]
-      simp only [cw, hKe]) (by decide)) fun t3 ⟨⟨b17, m3⟩, k3⟩ => ?_
-  have k13 := (k1.trans k2).trans k3
-  have hp3 : Scr t3 (s₀.gpr .r3) (16 * cw s₀) := hpv.congr (kt.trans k13).wr
-  have e14 : t3.gpr .r14 = off (s₀.gpr .r3) 0 := by
-    rw [k3.gpr _ (by decide), k2.gpr _ (by decide), a14, th _ (by decide), hB.hOut]; simp [off]
+  refine WP.seq (WP.mono (maskBlk_ok hP hst t23 (by rw [th _ (by decide), hB.hOut]) (by rw [th _ (by decide), hB.hNL]))
+    fun t3 ⟨⟨e14, b17, m13⟩, k13⟩ => ?_)
+  have hp3 : Scr t3 (s₀.gpr .r3) (16 * cw s₀) := pre16 hP ((hB.keep.trans kt).trans k13).wr
   refine WP.seq (WP.mono (maskIn_ok (b := cb s₀) hp3 e14 b17 ((k13.gpr _ (by decide)).trans t26) (by oa) (by oa)
     (Nat.le_of_eq (by omega_arith))) fun t4 ⟨⟨w4, o4⟩, k4⟩ => ?_)
   refine WP.mono (WP.keep [.r3] (Q := fun x => x.gpr .r3 = BitVec.ofNat 64 (if cb s₀ then 1 else 0) ∧
       x.mem = t4.mem) (by
         prun [(k4.gpr _ (by decide)).trans ((k13.gpr _ (by decide)).trans t26), one_and_bmask]) (by decide))
     fun t5 ⟨⟨c3, m5⟩, k5⟩ => ?_
-  have kall := (((kBv.trans kt).trans k13).trans k4).trans k5
+  have kall := (((hB.keep.trans kt).trans k13).trans k4).trans k5
   -- The words of `pre` after the mask, and the header.
   have mh : ∀ d, d + 8 ≤ 256 → word t5.mem (cS s₀) d = word u.mem (cS s₀) d := fun d hd => by
-    rw [m5, VG.Proof.Bignum.PPC64LE.Outside.word_sep o4 hPS' (by omega_arith) (by oa) (by omega_arith), m3, m2, m1, th d hd]
+    rw [m5, VG.Proof.Bignum.PPC64LE.Outside.word_sep o4 hPS' (by omega_arith) (by oa) (by omega_arith), m13, th d hd]
   have mp : ∀ d, 16 * cw s₀ ≤ d → d + 8 ≤ (s₀.gpr .r4).toNat * 8 →
       word t5.mem (s₀.gpr .r3) d = word u.mem (s₀.gpr .r3) d := fun d hd hd' => by
-    rw [m5, o4.word (Or.inr (by omega_arith)) (by omega_arith), m3, m2, m1, tp d hd hd']
+    rw [m5, o4.word (Or.inr (by omega_arith)) (by omega_arith), m13, tp d hd hd']
   have mn : ∀ i < 2 * cw s₀, word t5.mem (s₀.gpr .r3) (8 * i) =
       if cb s₀ then word t.mem (s₀.gpr .r3) (8 * i) else 0 := fun i hi => by
-    rw [m5, w4 i hi, m3, m2, m1]
+    rw [m5, w4 i hi, m13]
   have hlen : (nB s₀).length = ck s₀ := bytesAt_length _ _ _
-  rw [bN] at tO
+  have tO := T.out
   refine hc t5 ⟨c3, fun hb => ?_, fun hb i hi => by rw [mn i hi, hb]; rfl, fun i hi => ?_, fun i hi => ?_,
     (k5.gpr _ (by decide)).trans ((k4.gpr _ (by decide)).trans ((k13.gpr _ (by decide)).trans t23)),
     kall.mono (by decide +kernel), fun i hi => ?_, ?_⟩
@@ -276,19 +308,18 @@ theorem partC_ok {s₀ u : State} (hP : PF s₀) (hB : B s₀ u) {c : Prog isa} 
     have h1 := hB.sav i hi
     rw [e] at h1
     exact h1
-  · have F1 : Frame [preR s₀, scrR s₀] v.mem t.mem := tF.sub fun r hr => by
+  · have F1 : Frame [preR s₀, scrR s₀] u.mem t.mem := T.frame.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨scrR s₀, List.mem_cons_of_mem _ (List.mem_singleton_self _), Offset.sub_base _ (by oa)⟩
       · exact ⟨preR s₀, List.mem_cons_self .., sub_len (by rw [hpl]; omega_arith)⟩
     have F2 : Frame [preR s₀, scrR s₀] t.mem t5.mem := by
-      rw [m5, ← m1, ← m2, ← m3]
+      rw [m5, ← m13]
       refine (Pre.frame_of_outside o4 (d := 0) (L := 16 * cw s₀) (Nat.le_refl _) (by omega_arith) (Z := (s₀.gpr .r4).toNat * 8)
         (by rw [hpl]; unfold wsWords; oa) hnP).sub fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr
       exact ⟨preR s₀, List.mem_cons_self .., Offset.sub_base _ (by rw [hpl]; oa)⟩
-    rw [vm] at F1
     exact (hB.frame.trans F1).trans F2
 
 end VG.Proof.Bignum.PPC64LE.PrivPre

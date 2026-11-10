@@ -179,11 +179,39 @@ theorem bytes_frame {m m' : Mem} {rs : List Region} (F : Frame rs m m') {A : Add
 
 theorem saved_ne11 : ∀ i < 18, Crt.saved i ≠ .r11 := by decide
 
-/-- From the entry to the checks. -/
-theorem partA_ok {s₀ : State} (h : fnContract.pre s₀) {c : Prog isa} {Q : State → Prop}
-    (hc : ∀ t, A s₀ t → WP isa c t Q) :
-    WP isa (.seq (.block (PrivPre.save ++ PrivPre.args)) (.seq PrivPre.zeroIn (.seq (.block setupX)
-      (.seq Crt.loadX (.seq Crt.checks c))))) s₀ Q := by
+/-- The registers written up to `setupX`. -/
+def a0Regs : List Reg := [.r11, .r23] ++ [.r0, .r14, .r17, .r11] ++ [.r0, .r3, .r4, .r5, .r10, .r11, .r21, .r27, .r28, .r29]
+
+/-- What holds after `setupX`, from the entry state `s₀`. -/
+structure A0 (s₀ s : State) : Prop where
+  scr : Scr s (cS s₀) (cZ s₀)
+  hOut : word s.mem (cS s₀) oOut = s₀.gpr .r3
+  hN : word s.mem (cS s₀) oN = s₀.gpr .r5
+  hNL : word s.mem (cS s₀) oNLen = s₀.gpr .r6
+  hIn : word s.mem (cS s₀) oIn = s₀.gpr .r3
+  hP : word s.mem (cS s₀) oP = s₀.gpr .r7
+  hPL : word s.mem (cS s₀) oPLen = s₀.gpr .r8
+  hQ : word s.mem (cS s₀) oQ = s₀.gpr .r9
+  hQL : word s.mem (cS s₀) oQLen = s₀.gpr .r10
+  hQI : word s.mem (cS s₀) oQInv = s₀.gpr .r3
+  hBP : word s.mem (cS s₀) oBP = off (cS s₀) (slot (cwX s₀) 8)
+  hBQ : word s.mem (cS s₀) oBQ = off (cS s₀) (slot (cwX s₀) 8 + slot (wsWords (cpL s₀)) 24)
+  r23 : s.gpr .r23 = cS s₀
+  r10 : s.gpr .r10 = off (cS s₀) (slot (cwX s₀) 0)
+  r21 : s.gpr .r21 = off (cS s₀) (slot (cwX s₀) 0)
+  r29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (cwX s₀ + 2))
+  r11 : s.gpr .r11 = BitVec.ofNat 64 (2 * cwX s₀)
+  r27 : s.gpr .r27 = off (cS s₀) (slot (cwX s₀) 0)
+  r28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (cwX s₀ + 2))
+  keep : Keep a0Regs s₀ s
+  sav : ∀ i < 18, s.mem.readW (off (Crt.savW (cS s₀)) (8 * i)) 64 = s₀.gpr (Crt.saved i)
+  frame : Frame [preR s₀, scrR s₀] s₀.mem s.mem
+  wz : ∀ i < cw s₀, word s.mem (s₀.gpr .r3) (8 * i) = 0
+
+/-- From the entry to `setupX`. -/
+theorem partA0_ok {s₀ : State} (h : fnContract.pre s₀) {c : Prog isa} {Q : State → Prop}
+    (hc : ∀ x, A0 s₀ x → WP isa c x Q) :
+    WP isa (.seq (.block (PrivPre.save ++ PrivPre.args)) (.seq PrivPre.zeroIn (.seq (.block setupX) c))) s₀ Q := by
   have hpre0 := h
   obtain ⟨hsp, hrd, hwr, dPN, dPP, dPQ, dPS, dPA, dNS, dpS, dqS, dSA, nwPre, nwN, nwP, nwQ, nwS, ⟨hk, hk'⟩,
     hp1, hpk, hq1, hqk, hpl, hsl⟩ := h
@@ -274,24 +302,59 @@ theorem partA_ok {s₀ : State} (h : fnContract.pre s₀) {c : Prog isa} {Q : St
   have hP := pre_facts hpre0
   have hx : ∀ d, d + 8 ≤ 96 → word x.mem (cS s₀) d = word u.mem (cS s₀) d := fun d hd => by
     rw [Ox.word (Or.inl hd) (by omega_arith), hhv d (by omega_arith)]
-  have rd0 : x.rd ++ x.wr = s₀.rd ++ s₀.wr := by rw [kx'.rd, kx'.wr]
+  refine hc x ⟨hscr.congr kx'.wr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, xBP, xBQ,
+    (kx.gpr _ (by decide)).trans (((zk.trans vk).gpr _ (by decide)).trans ((ku.gpr _ (by decide)).trans t23)),
+    x10, x21, x29, x11, x27, x28, kx'.mono (by decide), fun i hi => ?_, F3, fun i hi => ?_⟩
+  · rw [hx _ (by decide), w0, kt.gpr _ (by decide)]
+  · rw [hx _ (by decide), w1, kt.gpr _ (by decide)]
+  · rw [hx _ (by decide), w2, kt.gpr _ (by decide)]
+  · rw [hx _ (by decide), w3, kt.gpr _ (by decide)]
+  · rw [hx _ (by decide), w4, kt.gpr _ (by decide)]
+  · rw [hx _ (by decide), w5, kt.gpr _ (by decide)]
+  · rw [hx _ (by decide), w6, kt.gpr _ (by decide)]
+  · rw [hx _ (by decide), w7, kt.gpr _ (by decide)]
+  · rw [hx _ (by decide), w8, kt.gpr _ (by decide)]
+  · have e : Mont.off (Crt.savW (cS s₀)) (8 * i) = Mont.off (cS s₀) (112 + 8 * i) := by
+      simp only [Mont.off, Crt.savW]; rw [Offset.add_add]
+    have h1 := hSv.saved i hi
+    rw [a11, k1.gpr _ (fun h => saved_ne11 i hi (List.mem_singleton.mp h))] at h1
+    change t.mem.readW (Mont.off (Crt.savW (cS s₀)) (8 * i)) 64 = _ at h1
+    change x.mem.readW (Mont.off (Crt.savW (cS s₀)) (8 * i)) 64 = _
+    rw [e] at h1 ⊢
+    change word x.mem (cS s₀) (112 + 8 * i) = _
+    change word t.mem (cS s₀) (112 + 8 * i) = _ at h1
+    rw [Ox.word (Or.inr (by omega_arith)) (by omega_arith), hhv _ (by omega_arith),
+      Ou.word (Or.inr (by omega_arith)) (by omega_arith)]
+    exact h1
+  · rw [← vz i hi, Nat.zero_add]
+    refine Mem.readW_congr fun j hj => Ox _ (Or.inr ?_)
+    have := hP.sepPre (off (s₀.gpr .r3) (8 * i) + BitVec.ofNat 64 j) (by
+      simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith)
+    simp only [ofs, cS, cZ] at this ⊢
+    omega_arith
+
+/-- From the entry to the checks. -/
+theorem partA_ok {s₀ : State} (h : fnContract.pre s₀) {c : Prog isa} {Q : State → Prop}
+    (hc : ∀ t, A s₀ t → WP isa c t Q) :
+    WP isa (.seq (.block (PrivPre.save ++ PrivPre.args)) (.seq PrivPre.zeroIn (.seq (.block setupX)
+      (.seq Crt.loadX (.seq Crt.checks c))))) s₀ Q := by
+  have hpre0 := h
+  obtain ⟨hsp, hrd, hwr, dPN, dPP, dPQ, dPS, dPA, dNS, dpS, dqS, dSA, nwPre, nwN, nwP, nwQ, nwS, ⟨hk, hk'⟩,
+    hp1, hpk, hq1, hqk, hpl, hsl⟩ := h
+  have hP := pre_facts hpre0
+  have hn := hP.nw
+  refine partA0_ok hpre0 fun x X => ?_
+  have rd0 : x.rd ++ x.wr = s₀.rd ++ s₀.wr := by rw [X.keep.rd, X.keep.wr]
   have z : ∀ a : Addr, a = off a 0 := fun a => (BitVec.add_zero a).symm
   have e6 : s₀.gpr .r6 = BitVec.ofNat 64 (ck s₀) := (ofNat_toNat64 _).symm
   have e8 : s₀.gpr .r8 = BitVec.ofNat 64 (cpL s₀) := (ofNat_toNat64 _).symm
   have e10 : s₀.gpr .r10 = BitVec.ofNat 64 (cqL s₀) := (ofNat_toNat64 _).symm
   refine Crt.wp_reassoc2 (WP.seq (WP.mono (Crt.phaseA_ok (Na := s₀.gpr .r5) (Pa := s₀.gpr .r7) (Qa := s₀.gpr .r9)
     (Ia := s₀.gpr .r3) (QIa := s₀.gpr .r3) (k := ck s₀) (pL := cpL s₀) (qL := cqL s₀)
-    (hscr.congr kx'.wr) (by have := hP.room; simp only [cwX, cw] at this; omega_arith) hP.k64 hP.k1024
-    ((kx.gpr _ (by decide)).trans (((zk.trans vk).gpr _ (by decide)).trans ((ku.gpr _ (by decide)).trans t23)))
-    x10 x21 x29 x11
-    (by rw [hx _ (by decide), w1, kt.gpr _ (by decide)]; exact z _)
-    (by rw [hx _ (by decide), w2, kt.gpr _ (by decide)]; exact e6)
-    (by rw [hx _ (by decide), w4, kt.gpr _ (by decide)]; exact z _)
-    (by rw [hx _ (by decide), w5, kt.gpr _ (by decide)]; exact e8)
-    (by rw [hx _ (by decide), w6, kt.gpr _ (by decide)]; exact z _)
-    (by rw [hx _ (by decide), w7, kt.gpr _ (by decide)]; exact e10)
-    (by rw [hx _ (by decide), w3, kt.gpr _ (by decide)]; exact z _)
-    (by rw [hx _ (by decide), w8, kt.gpr _ (by decide)]; exact z _)
+    X.scr (by have := hP.room; simp only [cwX, cw] at this; omega_arith) hP.k64 hP.k1024
+    X.r23 X.r10 X.r21 X.r29 X.r11
+    (by rw [X.hN]; exact z _) (by rw [X.hNL]; exact e6) (by rw [X.hP]; exact z _) (by rw [X.hPL]; exact e8)
+    (by rw [X.hQ]; exact z _) (by rw [X.hQL]; exact e10) (by rw [X.hIn]; exact z _) (by rw [X.hQI]; exact z _)
     hP.p1 hP.pk hP.q1 hP.qk
     (by rw [rd0]; exact hP.rN) hP.sN (by rw [rd0]; exact hP.rP) hP.sP (by rw [rd0]; exact hP.rQ) hP.sQ
     (by rw [rd0]; exact hP.rPre) hP.sPre (fun i hi => by rw [rd0]; exact hP.rPre i (by have := hP.pk; omega_arith))
@@ -299,25 +362,24 @@ theorem partA_ok {s₀ : State} (h : fnContract.pre s₀) {c : Prog isa} {Q : St
     fun y ⟨⟨t26, _, _, v4, v5, _, O1, _⟩, kT⟩ => ?_))
   have room := hP.room
   simp only [cwX, cw] at room
-  have F4 : Frame [preR s₀, scrR s₀] s₀.mem y.mem := F3.trans (frS O1 (by unfold slot hdrBytes at room ⊢; omega_arith))
-  have kA := kx'.trans kT
+  have frS : ∀ {m m' : Mem} {o n : Nat}, Outside (cS s₀) o n m m' → o + n ≤ cZ s₀ →
+      Frame [preR s₀, scrR s₀] m m' := fun {m m' o n} h hon x hx => by
+    refine h x ?_
+    have := hx (scrR s₀) (List.mem_cons_of_mem _ (List.mem_singleton_self _))
+    simp only [Region.Contains, ofs, cS, cZ] at this hon ⊢
+    omega_arith
+  have F4 : Frame [preR s₀, scrR s₀] s₀.mem y.mem := X.frame.trans (frS O1 (by unfold slot hdrBytes at room ⊢; omega_arith))
+  have kA := X.keep.trans kT
   have dis : ∀ {A : Addr} {L : Nat}, (preR s₀).Disjoint ⟨A, L⟩ → (⟨A, L⟩ : Region).Disjoint (scrR s₀) →
       ∀ r ∈ [preR s₀, scrR s₀], (⟨A, L⟩ : Region).Disjoint r := fun h1 h2 r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact h1.symm
     · exact h2
-  have bN : Spec.Rsa.bytesAt x.mem (s₀.gpr .r5) (ck s₀) = nB s₀ := bytes_frame F3 (dis dPN dNS) (Nat.le_of_lt (BitVec.isLt _))
-  have bP : Spec.Rsa.bytesAt x.mem (s₀.gpr .r7) (cpL s₀) = pB s₀ := bytes_frame F3 (dis dPP dpS) (Nat.le_of_lt (BitVec.isLt _))
-  have bQ : Spec.Rsa.bytesAt x.mem (s₀.gpr .r9) (cqL s₀) = qB s₀ := bytes_frame F3 (dis dPQ dqS) (Nat.le_of_lt (BitVec.isLt _))
-  -- `pre`'s first words, zero, are not in the working space.
-  have wz : ∀ i < cw s₀, word x.mem (s₀.gpr .r3) (8 * i) = 0 := fun i hi => by
-    rw [← vz i hi, Nat.zero_add]
-    refine Mem.readW_congr fun j hj => Ox _ (Or.inr ?_)
-    have := hP.sepPre (off (s₀.gpr .r3) (8 * i) + BitVec.ofNat 64 j) (by
-      simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith)
-    simp only [ofs, cS, cZ] at this ⊢
-    omega_arith
+  have bN : Spec.Rsa.bytesAt x.mem (s₀.gpr .r5) (ck s₀) = nB s₀ := bytes_frame X.frame (dis dPN dNS) (Nat.le_of_lt (BitVec.isLt _))
+  have bP : Spec.Rsa.bytesAt x.mem (s₀.gpr .r7) (cpL s₀) = pB s₀ := bytes_frame X.frame (dis dPP dpS) (Nat.le_of_lt (BitVec.isLt _))
+  have bQ : Spec.Rsa.bytesAt x.mem (s₀.gpr .r9) (cqL s₀) = qB s₀ := bytes_frame X.frame (dis dPQ dqS) (Nat.le_of_lt (BitVec.isLt _))
+  have wz := X.wz
   have bI : Spec.Rsa.os2ip (Spec.Rsa.bytesAt x.mem (s₀.gpr .r3) (ck s₀)) = 0 :=
     os2ip_zero_words wz (by simp only [cw]; omega_arith)
   have bQI : Spec.Rsa.os2ip (Spec.Rsa.bytesAt x.mem (s₀.gpr .r3) (cpL s₀)) = 0 :=
@@ -325,29 +387,27 @@ theorem partA_ok {s₀ : State} (h : fnContract.pre s₀) {c : Prog isa} {Q : St
   rw [bN, bP, bQ, bI, bQI, crtMask_zero] at t26 v4 v5
   have ht : ∀ d, d + 8 ≤ 256 → word y.mem (cS s₀) d = word x.mem (cS s₀) d := fun d hd =>
     O1.word (Or.inl hd) (by omega_arith)
-  refine hc y ⟨hscr.congr kA.wr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, t26, ?_, ?_, v4, v5, kA.mono (by decide), ?_, F4⟩
-  · rw [ht _ (by decide), hx _ (by decide), w0, kt.gpr _ (by decide)]
-  · rw [ht _ (by decide), hx _ (by decide), w1, kt.gpr _ (by decide)]
-  · rw [ht _ (by decide), hx _ (by decide), w2, kt.gpr _ (by decide)]
-  · rw [ht _ (by decide), hx _ (by decide), w5, kt.gpr _ (by decide)]
-  · rw [ht _ (by decide), hx _ (by decide), w7, kt.gpr _ (by decide)]
-  · rw [ht _ (by decide), xBP]
-  · rw [ht _ (by decide), xBQ]
-  · rw [kT.gpr _ (by decide), kx.gpr _ (by decide), (zk.trans vk).gpr _ (by decide), ku.gpr _ (by decide), t23]
-  · rw [kT.gpr _ (by decide), x27]
-  · rw [kT.gpr _ (by decide), x28]
+  refine hc y ⟨X.scr.congr kT.wr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, t26, ?_, ?_, v4, v5, kA.mono (by decide), ?_, F4⟩
+  · rw [ht _ (by decide), X.hOut]
+  · rw [ht _ (by decide), X.hN]
+  · rw [ht _ (by decide), X.hNL]
+  · rw [ht _ (by decide), X.hPL]
+  · rw [ht _ (by decide), X.hQL]
+  · rw [ht _ (by decide), X.hBP]
+  · rw [ht _ (by decide), X.hBQ]
+  · rw [kT.gpr _ (by decide), X.r23]
+  · rw [kT.gpr _ (by decide), X.r27]
+  · rw [kT.gpr _ (by decide), X.r28]
   · intro i hi
     have e : Mont.off (Crt.savW (cS s₀)) (8 * i) = Mont.off (cS s₀) (112 + 8 * i) := by
       simp only [Mont.off, Crt.savW]; rw [Offset.add_add]
-    have h1 := hSv.saved i hi
-    rw [a11, k1.gpr _ (fun h => saved_ne11 i hi (List.mem_singleton.mp h))] at h1
-    change t.mem.readW (Mont.off (Crt.savW (cS s₀)) (8 * i)) 64 = _ at h1
+    have h1 := X.sav i hi
+    change x.mem.readW (Mont.off (Crt.savW (cS s₀)) (8 * i)) 64 = _ at h1
     change y.mem.readW (Mont.off (Crt.savW (cS s₀)) (8 * i)) 64 = _
     rw [e] at h1 ⊢
     change word y.mem (cS s₀) (112 + 8 * i) = _
-    change word t.mem (cS s₀) (112 + 8 * i) = _ at h1
-    rw [ht _ (by omega_arith), Ox.word (Or.inr (by omega_arith)) (by omega_arith), hhv _ (by omega_arith),
-      Ou.word (Or.inr (by omega_arith)) (by omega_arith)]
+    change word x.mem (cS s₀) (112 + 8 * i) = _ at h1
+    rw [ht _ (by omega_arith)]
     exact h1
 
 end VG.Proof.Bignum.PPC64LE.PrivPre
