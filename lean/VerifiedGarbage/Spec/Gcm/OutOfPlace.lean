@@ -16,9 +16,6 @@ it there to encrypt it in place:
   by `gathered`), as a vector of I/O buffers gives it: a record split into
   pieces, and TLS 1.3's content-type byte after it, are encrypted in one
   call, the ciphertext written to one buffer.
-* `vg_aes_gcm_seal_gather_precomputed` is the same with a key context of
-  `vg_aes_gcm_init_precomputed`, as the `_precomputed` functions of
-  `Spec/Gcm/Precomputed.lean` are those without it.
 * `vg_aes_gcm_open_to` is `vg_aes_gcm_open` (`openContract`) that reads the
   ciphertext from `src` and writes the plaintext to `dst`, so that a caller
   holding the ciphertext in a buffer it does not own (a TLS record layer
@@ -27,8 +24,6 @@ it there to encrypt it in place:
   as it was), so that an implementation may decrypt into `dst` as it hashes
   `src`, and wipe what it wrote when the tag turns out wrong; it leaks what
   `vg_aes_gcm_open` leaks, whether the tag is right (`openToLeak`).
-  `vg_aes_gcm_open_to_precomputed` is the same with a key context of
-  `vg_aes_gcm_init_precomputed`.
 
 The output and the input are different buffers: the signatures make the
 output overlap no other buffer (`Sig.contract`), so it never overlaps the
@@ -122,43 +117,6 @@ def sealGatherApi : Api where
 
 /-! ## With the powers of the hash subkey -/
 
-/-- `vg_aes_gcm_seal_gather_precomputed(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16])`:
-`sealGatherSig` with the larger key context. -/
-def sealGatherPrecomputedSig : Sig where
-  params := [("ctx", .array false .u64 128), ("rounds", .int .usize true),
-    ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
-    ("src", .slices .u8 "src_count"), ("dst", .slice true .u8 "len"),
-    ("tag", .array true .u8 16)]
-
-/-- `sealGatherPre`, and the key context at `ctx` holds the powers of its
-hash subkey. -/
-def sealGatherPrecomputedPre (pb : Nat) :
-    Curry (sealGatherPrecomputedSig.words pb) (Mem → Prop) :=
-  fun ctx rounds _nonce _nonceLen _aad _aadLen src srcCount _dst len _tag m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
-      gatheredLen pb m src srcCount.toNat = len.toNat ∧ PowersRepr m ctx
-
-/-- `sealGatherContract`, with the larger key context. -/
-def sealGatherPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealGatherPrecomputedSig.contract A (pre := sealGatherPrecomputedPre A.ptrBits)
-    (post := sealGatherPost A.ptrBits) (writeArgs := true) (stack := stack)
-
-/-- `vg_aes_gcm_seal_gather_precomputed` on every target. -/
-def sealGatherPrecomputedApi : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_seal_gather_precomputed"
-  sig := sealGatherPrecomputedSig
-  writeArgs := true
-  contracts := some fun A stack => sealGatherPrecomputedContract A stack
-  summary := "`vg_aes_gcm_seal_gather` with a key context of `vg_aes_gcm_init_precomputed`: \
-    with the key context `*ctx` that `vg_aes_gcm_init_precomputed` wrote for `rounds` rounds, \
-    does exactly what `vg_aes_gcm_seal_gather` does with its first 256 bytes (see \
-    `vg_aes_gcm_seal_gather`), and may read the powers of the hash subkey that it holds \
-    instead of computing them. Its constant-time guarantee is `vg_aes_gcm_seal_gather`'s, \
-    the powers being as secret as the rest of the key context.\n\n\
-    Contract: `VG.Spec.Gcm.sealGatherPrecomputedContract`."
-  safety := sealGatherApi.safety ++ [powersSafety]
-
 /-! ## Decryption out of place -/
 
 /-- `vg_aes_gcm_open_to(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32`:
@@ -240,44 +198,5 @@ def openToApi : Api where
     pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may \
     affect timing, not the key context, the nonce, the additional data, the data or the tag."
   safety := ["`rounds` must be 10, 12 or 14.", openToSafety]
-
-/-- `vg_aes_gcm_open_to_precomputed(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32`:
-`openToSig` with the larger key context. -/
-def openToPrecomputedSig : Sig where
-  params := [("ctx", .array false .u64 128), ("rounds", .int .usize true),
-    ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
-    ("src", .slice false .u8 "len"), ("dst", .slice true .u8 "dst_len"),
-    ("tag", .slice false .u8 "tag_len")]
-  ret := some .u32
-
-/-- `openToPre`, and the key context at `ctx` holds the powers of its hash
-subkey. -/
-def openToPrecomputedPre (pb : Nat) : Curry (openToPrecomputedSig.words pb) (Mem → Prop) :=
-  fun ctx rounds _nonce _nonceLen _aad _aadLen _src len _dst dstLen _tag _tagLen m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
-      dstLen.toNat = len.toNat ∧ PowersRepr m ctx
-
-/-- `openToContract`, with the larger key context; it may leak what
-`openToContract` may (`openToLeak`). -/
-def openToPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openToPrecomputedSig.contract A (pre := openToPrecomputedPre A.ptrBits)
-    (post := openToPost A.ptrBits)
-    (writeArgs := true) (stack := stack) (leak := some (openToLeak A.ptrBits))
-
-/-- `vg_aes_gcm_open_to_precomputed` on every target. -/
-def openToPrecomputedApi : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_open_to_precomputed"
-  sig := openToPrecomputedSig
-  writeArgs := true
-  contracts := some fun A stack => openToPrecomputedContract A stack
-  summary := "`vg_aes_gcm_open_to` with a key context of `vg_aes_gcm_init_precomputed`: with \
-    the key context `*ctx` that `vg_aes_gcm_init_precomputed` wrote for `rounds` rounds, does \
-    exactly what `vg_aes_gcm_open_to` does with its first 256 bytes (see \
-    `vg_aes_gcm_open_to`), and may read the powers of the hash subkey that it holds instead \
-    of computing them. Its constant-time guarantee is `vg_aes_gcm_open_to`'s, the powers \
-    being as secret as the rest of the key context.\n\n\
-    Contract: `VG.Spec.Gcm.openToPrecomputedContract`."
-  safety := openToApi.safety ++ [powersSafety]
 
 end VG.Spec.Gcm
