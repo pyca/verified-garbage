@@ -1410,9 +1410,10 @@ theorem rounds8_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s
   unfold rounds8
   exact roundsWith_ok Mont4.round8_spec hs h6 h8 h7 h9 h10 h11 h4 hm h22 hw hw' hlay ha hA hB hM daA dBA hz hb
 
-/-- What the rounds do (`rounds_ok`), of any code `R`: so that `tail`'s proof
-serves both `tail` and the kernel's `tail8`. -/
-def RoundsSpec (R : Prog isa) : Prop :=
+/-- What the rounds do (`rounds_ok`), of any code `R` that writes at most the
+registers `rr`: so that `tail`'s proof serves both `tail` and the kernel's
+`tail8`. -/
+def RoundsSpecW (rr : List Reg) (R : Prog isa) : Prop :=
   ∀ {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat}, Scr s₀ B Z →
     s₀.gpr .r6 = off B da → s₀.gpr .r8 = off B dA → s₀.gpr .r7 = off B dB →
     s₀.gpr .r9 = off B (dA + 8 * (w + 2)) → s₀.gpr .r10 = off B dM → s₀.gpr .r11 = BitVec.ofNat 64 (2 * w) →
@@ -1428,7 +1429,10 @@ def RoundsSpec (R : Prog isa) : Prop :=
         2 ^ (64 * w) * wordsVal s.mem B dA (w + 1) % wordsVal s₀.mem B dM w =
           wordsVal s₀.mem B da w * wordsVal s₀.mem B dB w % wordsVal s₀.mem B dM w ∧
         Outside B dA (8 * (w + 2)) s₀.mem s.mem ∧ s.gpr .r22 = s₀.gpr .r22) ∧
-      Keep roundsRegs s₀ s
+      Keep rr s₀ s
+
+/-- `RoundsSpecW` of the rounds' registers (`roundsRegs`). -/
+abbrev RoundsSpec (R : Prog isa) : Prop := RoundsSpecW roundsRegs R
 
 theorem rounds_spec : RoundsSpec rounds := fun hs h6 h8 h7 h9 h10 h11 h4 hm h22 hw hw' hlay ha hA hB hM daA dBA hz hb =>
   rounds_ok hs h6 h8 h7 h9 h10 h11 h4 hm h22 hw hw' hlay ha hA hB hM daA dBA hz hb

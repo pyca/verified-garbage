@@ -76,6 +76,8 @@ pub const VG_HMAC_SHA1_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features =
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.
@@ -92,7 +94,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize_shani(inner: *mut [u8
 call {vg_sha1_finalize_scratch_shani}
 .base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi4fQAAAAiUMUQYuH1AAAAIlDGEGLh9gAAACJQxxBi4fcAAAAiUMgQYuH4AAAAIlDJEiJ3UiDxRS4gAAAAIlFFLgAAAAAiUUYiUUciUUgiUUkiUUoiUUsiUUwiUU0QbxUAAAATIngSAHASAHASAHASA/ISIlDTEiJ7kiJ37oBAAAATIn5"
 call {vg_sha1_compress_shani}
-.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAADD"
+.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkKP7///MPf4Qk+AAAAPMPf4Qk6AAAAEiNpCTYAQAAMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
@@ -172,6 +174,8 @@ pub const VG_HMAC_SHA1_FINALIZE_AVX_BMI_FEATURES: verified_garbage_cpu::Features
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.
@@ -188,7 +192,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize_avx_bmi(inner: *mut [
 call {vg_sha1_finalize_scratch_avx_bmi}
 .base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi4fQAAAAiUMUQYuH1AAAAIlDGEGLh9gAAACJQxxBi4fcAAAAiUMgQYuH4AAAAIlDJEiJ3UiDxRS4gAAAAIlFFLgAAAAAiUUYiUUciUUgiUUkiUUoiUUsiUUwiUU0QbxUAAAATIngSAHASAHASAHASA/ISIlDTEiJ7kiJ37oBAAAATIn5"
 call {vg_sha1_compress_avx_bmi}
-.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAADD"
+.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkKP7///MPf4Qk+AAAAPMPf4Qk6AAAAPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEiNpCTYAQAAMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_sha1_finalize_scratch_avx_bmi = sym super::sha1::vg_sha1_finalize_scratch_avx_bmi::vg_sha1_finalize_scratch_avx_bmi,
         vg_sha1_compress_avx_bmi = sym super::sha1::vg_sha1_compress_avx_bmi::vg_sha1_compress_avx_bmi,
@@ -261,6 +265,8 @@ jmp 21b
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.
@@ -276,7 +282,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84],
 call {vg_sha1_finalize_scratch}
 .base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi4fQAAAAiUMUQYuH1AAAAIlDGEGLh9gAAACJQxxBi4fcAAAAiUMgQYuH4AAAAIlDJEiJ3UiDxRS4gAAAAIlFFLgAAAAAiUUYiUUciUUgiUUkiUUoiUUsiUUwiUU0QbxUAAAATIngSAHASAHASAHASA/ISIlDTEiJ7kiJ37oBAAAATIn5"
 call {vg_sha1_compress}
-.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAADD"
+.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkKP7///MPf4Qk+AAAAPMPf4Qk6AAAAPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEiNpCTYAQAAMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,

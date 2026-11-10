@@ -34,8 +34,8 @@ def soutPre : Prog isa :=
 
 /-- The body up to the load of `out`. -/
 def spre : Prog isa :=
-  .seq (.block markValid) (.seq gk (.seq rRanges (.seq Verify.rrQ (.seq Verify.qMinus2 (.seq inverseK
-    (.seq sValue soutPre))))))
+  .seq (.block markValid) (.seq gk (.seq rRanges (.seq Verify.qMinus2 (.seq inverseK
+    (.seq sValue soutPre)))))
 
 theorem soutPre_ok {s : State} {L : Lay} {key nonce dig out : Addr} {b : Bool} (hL : L.Ok)
     (h : QS s L key nonce dig) (hw : word s.mem L.S hOut = out) (hm : word s.mem L.S hMask = mask b) :

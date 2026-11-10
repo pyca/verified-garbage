@@ -11,7 +11,9 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 # `vg_rsa_private_checked` on PPC64LE: the blocks' taint
 
 The blocks between the calls address only the frame, through `r12 = r1`
-(`setup_taint`, `preArgs_taint`, `pubArgs_taint`); the rest, from the
+(`setup_taint`, `preArgs_taint`, `preArgsP_taint`, `pubArgs_taint`); the copy
+of `n`'s values from `pre` addresses `pre` and the frame and counts its words
+(`preCopy_taint`); the rest, from the
 public operation's status on, also addresses `out` and the input and counts
 `k`, which `r24`, `r29` and `r26` hold (`tail_taint`).
 -/
@@ -40,6 +42,23 @@ theorem preArgs_taint {α : Type} (Φ : α → State → Prop) :
 theorem pubArgs_taint {α : Type} (Φ : α → State → Prop) :
     RelCT isa (Two Φ) (.block pubArgs) fun _ _ => True :=
   two_taint [] (pins_nil Φ) (by taint_decide)
+
+theorem preArgsP_taint {α : Type} (Φ : α → State → Prop) :
+    RelCT isa (Two Φ) (.block preArgsP) fun _ _ => True :=
+  two_taint [] (pins_nil Φ) (by taint_decide)
+
+theorem crtPtr_taint {α : Type} (Φ : α → State → Prop) :
+    RelCT isa (Two Φ) (.block crtPtr) fun _ _ => True :=
+  two_taint [] (pins_nil Φ) (by taint_decide)
+
+theorem crtRestore_taint {α : Type} (Φ : α → State → Prop) :
+    RelCT isa (Two Φ) (.block crtRestore) fun _ _ => True :=
+  two_taint [] (pins_nil Φ) (by taint_decide)
+
+/-- The copy from `pre`, from its address and the count. -/
+theorem preCopy_taint {α : Type} {Φ : α → State → Prop} (hp : Pins Φ [.r3, .r4, .r5]) :
+    RelCT isa (Two Φ) preCopy fun _ _ => True :=
+  two_taint _ hp (by taint_decide)
 
 theorem tail_taint {α : Type} {Φ : α → State → Prop} (hp : Pins Φ [.r24, .r26, .r29]) :
     RelCT isa (Two Φ) tail fun _ _ => True :=

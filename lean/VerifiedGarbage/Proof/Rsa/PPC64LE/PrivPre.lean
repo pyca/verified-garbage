@@ -37,7 +37,14 @@ abbrev dpR (s : State) : Region := ⟨stackArg s 4, (stackArg s 5).toNat⟩
 abbrev dqR (s : State) : Region := ⟨stackArg s 6, (stackArg s 7).toNat⟩
 abbrev qiR (s : State) : Region := ⟨stackArg s 8, (stackArg s 9).toNat⟩
 abbrev sR (s : State) : Region := ⟨stackArg s 10, (stackArg s 11).toNat * 8⟩
-abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 96⟩
+/-- The stack arguments: 12, or with `pc` (`vg_rsa_private_checked_precomputed`) 14. -/
+abbrev aR (pc : Bool) (s : State) : Region := ⟨stackArgAddr s 0, if pc then 112 else 96⟩
+/-- With `pc`, the key's precomputed values, `pre_len` words. -/
+abbrev preR (s : State) : Region := ⟨stackArg s 12, (stackArg s 13).toNat * 8⟩
+
+/-- The buffers the function reads. -/
+abbrev rdL (pc : Bool) (s : State) : List Region :=
+  [nR s, eR s, iR s, pR s, qR s, dpR s, dqR s, qiR s] ++ (if pc then [preR s] else []) ++ [aR pc s]
 
 /-- The frame's base: the stack pointer in the frame. -/
 abbrev fb (s : State) : Addr := s.sp - BitVec.ofNat 64 frameBytes
@@ -46,10 +53,10 @@ abbrev fb (s : State) : Addr := s.sp - BitVec.ofNat 64 frameBytes
 abbrev kR (s : State) : Region := ⟨fb s, frameBytes⟩
 
 /-- What the code needs of `privateCheckedContract.pre`, by name. -/
-structure PreP (s : State) : Prop where
+structure PreP (pc : Bool) (s : State) : Prop where
   sp1 : frameBytes ≤ s.sp.toNat
   sp2 : s.sp.toNat + 192 ≤ 2 ^ 64
-  hrd : s.rd = [nR s, eR s, iR s, pR s, qR s, dpR s, dqR s, qiR s, aR s]
+  hrd : s.rd = rdL pc s
   hwr : s.wr = [oR s, sR s]
   on : (oR s).Disjoint (nR s)
   oe : (oR s).Disjoint (eR s)
@@ -60,7 +67,7 @@ structure PreP (s : State) : Prop where
   odq : (oR s).Disjoint (dqR s)
   oqi : (oR s).Disjoint (qiR s)
   os : (oR s).Disjoint (sR s)
-  oa : (oR s).Disjoint (aR s)
+  oa : (oR s).Disjoint (aR pc s)
   ns : (nR s).Disjoint (sR s)
   es : (eR s).Disjoint (sR s)
   is : (iR s).Disjoint (sR s)
@@ -69,7 +76,7 @@ structure PreP (s : State) : Prop where
   dps : (dpR s).Disjoint (sR s)
   dqs : (dqR s).Disjoint (sR s)
   qis : (qiR s).Disjoint (sR s)
-  sa : (sR s).Disjoint (aR s)
+  sa : (sR s).Disjoint (aR pc s)
   ko : (kR s).Disjoint (oR s)
   kn : (kR s).Disjoint (nR s)
   ke : (kR s).Disjoint (eR s)
@@ -80,7 +87,7 @@ structure PreP (s : State) : Prop where
   kdq : (kR s).Disjoint (dqR s)
   kqi : (kR s).Disjoint (qiR s)
   ks : (kR s).Disjoint (sR s)
-  ka : (kR s).Disjoint (aR s)
+  ka : (kR s).Disjoint (aR pc s)
   wo : (s.gpr .r3).toNat + (s.gpr .r4).toNat ≤ 2 ^ 64
   wn : (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64
   we : (s.gpr .r7).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64
@@ -106,7 +113,7 @@ structure PreP (s : State) : Prop where
   h7 : (stackArg s 7).toNat = (stackArg s 3).toNat
   hs : Spec.Rsa.scratchWords (s.gpr .r6).toNat ≤ (stackArg s 11).toNat
 
-theorem preP_of {s : State} (h : (Proof.Rsa.privateCheckedContract abi frameBytes).pre s) : PreP s := by
+theorem preP_of {s : State} (h : (Proof.Rsa.privateCheckedContract abi frameBytes).pre s) : PreP false s := by
   have e : frameBytes = 3327 + 1 := rfl
   rw [e] at h
   sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs,
@@ -118,7 +125,7 @@ theorem preP_of {s : State} (h : (Proof.Rsa.privateCheckedContract abi frameByte
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h4, h10, e1,
     e2, p1, p2, q1, q2, h5, h9, h7, hs⟩
 
-theorem pre_of_preP {s : State} (h : PreP s) : (Proof.Rsa.privateCheckedContract abi frameBytes).pre s := by
+theorem pre_of_preP {s : State} (h : PreP false s) : (Proof.Rsa.privateCheckedContract abi frameBytes).pre s := by
   obtain ⟨sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h4, h10, e1,
     e2, p1, p2, q1, q2, h5, h9, h7, hs⟩ := h

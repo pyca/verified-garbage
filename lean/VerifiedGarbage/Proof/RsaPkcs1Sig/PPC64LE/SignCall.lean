@@ -43,7 +43,7 @@ theorem callE_addr {s t : State} {em : List Byte} (A : AtCall s t em) :
   rw [stackArgAddr, show (callE s t).sp = fb s from A.sp]
 
 theorem preP_entry {s t : State} {em : List Byte} (h : SPre s) (A : AtCall s t em) :
-    Rsa.PPC64LE.Priv.PreP (callE s t) := by
+    Rsa.PPC64LE.Priv.PreP false (callE s t) := by
   have hk := h.k2
   have fbt := fb_toNat h
   have kbt := kb_toNat h
@@ -93,7 +93,7 @@ theorem preP_entry {s t : State} {em : List Byte} (h : SPre s) (A : AtCall s t e
     simp only [Rsa.PPC64LE.Priv.qiR, sa 8 (by decide), sa 9 (by decide)]
   have hS : Rsa.PPC64LE.Priv.sR (callE s t) = sR s := by
     simp only [Rsa.PPC64LE.Priv.sR, sa 10 (by decide), sa 11 (by decide)]
-  have hA : Rsa.PPC64LE.Priv.aR (callE s t) = psaR s := by simp only [Rsa.PPC64LE.Priv.aR, callE_addr A]
+  have hA : Rsa.PPC64LE.Priv.aR false (callE s t) = psaR s := by simp only [Rsa.PPC64LE.Priv.aR, callE_addr A, Bool.false_eq_true, ↓reduceIte]
   have s1 := sa 1 (by decide)
   have s3 := sa 3 (by decide)
   have s5 := sa 5 (by decide)
@@ -104,7 +104,7 @@ theorem preP_entry {s t : State} {em : List Byte} (h : SPre s) (A : AtCall s t e
   refine ⟨by rw [hsp]; unfold Impl.Rsa.PPC64LE.Priv.frameBytes; omega, by rw [hsp]; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [hN, hE, hI, hP, hQ, hDP, hDQ, hQI, hA]; rfl
+  · simp only [Rsa.PPC64LE.Priv.rdL, hN, hE, hI, hP, hQ, hDP, hDQ, hQI, hA]; rfl
   · rw [hO, hS, ← hOo]; rfl
   · rw [hO, hN]; exact h.on
   · rw [hO, hE]; exact h.oe

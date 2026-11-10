@@ -40,41 +40,33 @@ def sha256Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.S
 
 def sha256ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha256ShaNi.variant
 
-def sha384 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha384 .scalar Proof.Variants.MdHash.X86_64.Sha512.stream384
+def sha384 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant384
 
 def sha384Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha384 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream384 .avx2)
 
-def sha384ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha384 .shani Proof.Variants.MdHash.X86_64.Sha512ShaNi.stream384
+def sha384ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant384
 
-def sha512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha512 .scalar Proof.Variants.MdHash.X86_64.Sha512.stream
+def sha512 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant512
 
 def sha512Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream .avx2)
 
-def sha512ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha512 .shani Proof.Variants.MdHash.X86_64.Sha512ShaNi.stream
+def sha512ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512
 
-def sha512_224 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .scalar Proof.Variants.MdHash.X86_64.Sha512.stream512_224
+def sha512_224 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant512_224
 
 def sha512_224Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream512_224 .avx2)
 
-def sha512_224ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .shani Proof.Variants.MdHash.X86_64.Sha512ShaNi.stream512_224
+def sha512_224ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512_224
 
-def sha512_256 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 .scalar Proof.Variants.MdHash.X86_64.Sha512.stream512_256
+def sha512_256 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant512_256
 
 def sha512_256Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream512_256 .avx2)
 
-def sha512_256ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 .shani Proof.Variants.MdHash.X86_64.Sha512ShaNi.stream512_256
+def sha512_256ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512_256
 
 /-- The implementations of MD5, best first. -/
 def md5Variants := [md5]

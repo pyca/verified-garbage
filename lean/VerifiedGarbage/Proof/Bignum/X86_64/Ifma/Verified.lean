@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Terms
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTFin
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTP
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
@@ -57,11 +58,11 @@ variable (M : Mont)
 
 /-- `vg_rsa_private_crt_ifma` leaks the same in runs that agree on the public
 data, given that `main`'s parts do. -/
-theorem code_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M (CrtExpL.w4 M)) (hP : PPhaseCT M (CrtExpL.w4 M))
+theorem code_ct {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M (CrtExpL.w4 M)) (hP : PPhaseCT M (CrtExpL.w4 M))
     (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hR2 : RedcCT M Public.aR2)
     (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    RelCT isa (Two CCRel) (CrtIfma.code M.mm) fun _ _ => True := by
+    RelCT isa (Two CCRel) (CrtIfma.code l2 M.mm) fun _ _ => True := by
   unfold CrtIfma.code
   refine RelCT.seq (R := Two CC3) (RelCT.block_append (RelCT.seq (R := Two CC2) ?_ ?_)) ?_
   · rw [crtEntry_split]
@@ -135,16 +136,16 @@ theorem code_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M (CrtExpL.w4 M)) 
       have hv : Spec.Rsa.modulusValid p.m.N p.m.k = true := by
         simp only [eval, hz] at he; simpa using he
       exact ⟨t, xb, pb, qb, dpb, dqb, qib, hpre, hv, rfl⟩
-    exact (main_ct M hS hC hQ hP hF hR2 hXm hL hpost).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ =>
+    exact (main_ct h2 M hS hC hQ hP hF hR2 hXm hL hpost).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ =>
       ⟨p.m, toM p t₁ h₁, toM p t₂ h₂⟩) h) fun _ _ h => h
 
 /-- `vg_rsa_private_crt_ifma` is constant time but for `n`. -/
-theorem code_constantTime_of (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M (CrtExpL.w4 M)) (hP : PPhaseCT M (CrtExpL.w4 M))
+theorem code_constantTime_of {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M (CrtExpL.w4 M)) (hP : PPhaseCT M (CrtExpL.w4 M))
     (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hR2 : RedcCT M Public.aR2)
     (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    ConstantTime isa crtContract.pre crtContract.pub (CrtIfma.code M.mm) := by
-  refine RelCT.constantTime ((code_ct M hS hC hQ hP hF hR2 hXm hL hpost).mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨ccPubOf s₁, ?_, ?_⟩)
+    ConstantTime isa crtContract.pre crtContract.pub (CrtIfma.code l2 M.mm) := by
+  refine RelCT.constantTime ((code_ct M h2 hS hC hQ hP hF hR2 hXm hL hpost).mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨ccPubOf s₁, ?_, ?_⟩)
     fun _ _ h => h)
   · exact ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
   · obtain ⟨hr, a0, a1, a2, a3, a4, -, a6, -, a8, -, a10, a11, hn⟩ := hp
@@ -156,10 +157,10 @@ theorem code_constantTime_of (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M (Cr
 section
 
 /-- `vg_rsa_private_crt_ifma` is constant time but for `n`. -/
-theorem code_constantTime (M : Mont)
+theorem code_constantTime {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (M : Mont)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    ConstantTime isa crtContract.pre crtContract.pub (CrtIfma.code M.mm) :=
-  code_constantTime_of M setup_ct checks_ct
+    ConstantTime isa crtContract.pre crtContract.pub (CrtIfma.code l2 M.mm) :=
+  code_constantTime_of M h2 setup_ct checks_ct
     (qPhase_ct M (CrtExpL.w4 M) (unit_ct M (gPow_ct_Q M) (redc_ct_Y M) (by taint_decide))
       (pow_ct M (CrtExpL.w4 M) (redc_ct_Y M) (CrtExpL.w4_ct M).2 (by taint_decide)))
     (pPhase_ct M (CrtExpL.w4 M) (unit_ct M (gPow_ct_P M) (redc_ct_Y M) (by taint_decide))

@@ -13,6 +13,7 @@ public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Hmac.Scratch
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
@@ -164,6 +165,11 @@ structure MdHash where
   the compression function, when no other variant shares them (otherwise
   they are in the hash function's registration file). -/
   stream : List StreamFn
+  /-- The residue analysis of HMAC's `finalize` (`hmacFinF`), if the analysis
+  handles it: that function then returns without secret residue
+  (`MdHash.hmacFinReg`). -/
+  hmacFinRes : Option (RScrub.Analysed I.finalizeApi.sig (16 + hmacFrame I) []
+    (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacFin)) := none
 
 namespace MdHash
 

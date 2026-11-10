@@ -116,8 +116,9 @@ def UOk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop := l = lay2048 ∨ l = pay20
 variable {l} in
 /-- `ammMul`'s choice: the look-ahead where the roles take at most 10 registers. -/
 theorem UOk.of_amm (hl : AmmOk l) (h : l.nl * l.R ≤ 10) : UOk l := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl
+  rcases hl with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl
   · exact .inl rfl
+  · exact absurd h (by decide)
   · exact absurd h (by decide)
   · exact absurd h (by decide)
   · exact .inr (.inl rfl)

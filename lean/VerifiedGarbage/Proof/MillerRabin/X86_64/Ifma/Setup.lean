@@ -476,7 +476,7 @@ theorem setup_ok (hl : MrOk l) {s : State} {H : Addr} {n c bR : Nat}
     (by omega_arith) (by omega_arith) o2 (.inr (by omega_arith)) (.inr (by omega_arith)) (.inr (by omega_arith))
     o15 o16 S₁.1 (by rw [S₁.2]; exact hR)) fun t₂ ⟨S₂, vS₂, F₂, k₂, x₂⟩ => ?_)
   rw [S₁.2, pow_mod_shift (show l.dbls + 64 * l.W = 104 * l.S - 64 * l.W by
-    simp only [VG.Impl.Rsa.X86_64.CrtIfma.Lay.dbls]; omega_arith)] at vS₂
+    simp only [VG.Impl.Rsa.X86_64.CrtIfma.Lay.dbls, hl.z, Bool.false_eq_true, ↓reduceIte]; omega_arith)] at vS₂
   have m₂ := mod_frm hl m₁ F₂ (two_r (p := fun r => l.NB + 32 ≤ r.1) (by omega_arith) (by omega_arith)) hN31
   have T0₂ := num_frm hl F₂ T0₁ (two_r (p := fun r => oT l 0 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 0)
     (.inr (by omega_arith)) (.inr (by omega_arith))) (by omega_arith)

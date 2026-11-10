@@ -69,6 +69,8 @@ jmp 21b
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 80 bytes.
@@ -84,7 +86,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], 
 call {vg_md5_finalize_scratch}
 .base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYuHoAAAAIlDEEGLh6QAAACJQxRBi4eoAAAAiUMYQYuHrAAAAIlDHEiJ3UiDxRC4gAAAAIlFELgAAAAAiUUUiUUYiUUciUUgiUUkiUUoiUUsiUUwiUU0QbxQAAAATIngSAHASAHASAHASIlDSEiJ7kiJ37oBAAAATIn5"
 call {vg_md5_compress}
-.base64 "SIn7SYnPTIntiwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJi19wSYtveE2Lp4AAAABNi6+IAAAATYu3kAAAAE2Lv5gAAABIjaQkiAEAAMM="
+.base64 "SIn7SYnPTIntiwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJi19wSYtveE2Lp4AAAABNi6+IAAAATYu3kAAAAE2Lv5gAAABIjaQkiAEAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCRo/v//8w9/hCTIAAAA8w9/hCS4AAAASI2kJJgBAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
