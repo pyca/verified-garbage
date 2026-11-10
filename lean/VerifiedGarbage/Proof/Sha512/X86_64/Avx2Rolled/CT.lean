@@ -84,7 +84,7 @@ theorem agreeR {s₁ s₂ : State} (hrcx : s₁.gpr .rcx = s₂.gpr .rcx) : A.Ag
 /-! ## The parts -/
 
 theorem first_rel {P : State → State → Prop} (hp : ∀ s₁ s₂, P s₁ s₂ → A.Agree τA s₁ s₂) :
-    RelCT isa P (first Impl.Sha512.X86_64.Avx2.schedule) fun _ _ => True :=
+    RelCT isa P first fun _ _ => True :=
   RelCT.taint (A := A) τA hp (by taint_decide)
 
 theorem rest_rel {P : State → State → Prop} (hp : ∀ s₁ s₂, P s₁ s₂ → A.Agree τA s₁ s₂) :
@@ -123,11 +123,8 @@ theorem st_scr' {s₀ s : State} (hp : Pre s₀) (hrdi : s.gpr .rdi = st s₀) (
     Region.Disjoint ⟨s.gpr .rdi, 64⟩ ⟨s.gpr .rcx, 1328⟩ := by
   rw [hrdi, hrcx]; exact hp.st_scr
 
-theorem compress_relWith {sch : Nat → List Instr} (hS : SchedOk sch)
-    (hfirst : ∀ {P : State → State → Prop}, (∀ s₁ s₂, P s₁ s₂ → A.Agree τA s₁ s₂) →
-      RelCT isa P (first sch) fun _ _ => True)
-    {σ₁ σ₂ : State} (h₁ : Pre σ₁) (h₂ : Pre σ₂) (hpub : PubK σ₁ σ₂) :
-    RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) (compressWith sch) fun _ _ => True := by
+theorem compress_rel {σ₁ σ₂ : State} (h₁ : Pre σ₁) (h₂ : Pre σ₂) (hpub : PubK σ₁ σ₂) :
+    RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) compress fun _ _ => True := by
   obtain ⟨e_rdi, e_rsi, e_rdx, e_rcx⟩ := hpub
   have hnb : nb σ₂ = nb σ₁ := by simp only [nb, e_rdx]
   have hpro := (pro_rel (P := fun a b => a = σ₁ ∧ b = σ₂) fun a b ⟨ha, hb⟩ => by
@@ -174,7 +171,7 @@ theorem compress_relWith {sch : Nat → List Instr} (hS : SchedOk sch)
             · rw [l₁.rcx, l₂.rcx]; exact e_rcx)
           (wr_eq h₁ l₁.wr l₁.rdi l₁.rcx) (wr_eq h₂ l₂.wr l₂.rdi l₂.rcx) (st_scr' h₁ l₁.rdi l₁.rcx)
           (st_scr' h₂ l₂.rdi l₂.rcx)
-      have hstep : ∀ n, RelCT isa (I n) (body sch) fun a b => isa.eval .ne a = isa.eval .ne b ∧
+      have hstep : ∀ n, RelCT isa (I n) body fun a b => isa.eval .ne a = isa.eval .ne b ∧
           (isa.eval .ne a = some false → Common σ₁ (nb σ₁) a ∧ Common σ₂ (nb σ₂) b) ∧
           (isa.eval .ne a = some true → ∃ m < n, I m a b) := by
         intro n
@@ -187,9 +184,9 @@ theorem compress_relWith {sch : Nat → List Instr} (hS : SchedOk sch)
         · exact RelCT.of_false fun _ _ h => hn h.1
         have hi₂ : i < nb σ₂ := by rw [hnb]; exact hi
         refine RelCT.seq (R := fun a b => AtLeave σ₁ i a ∧ AtLeave σ₂ i b) ?_ ?_
-        · exact ((hfirst (P := fun a b => n = nb σ₁ - i ∧ i < nb σ₁ ∧ LInv σ₁ i a ∧ LInv σ₂ i b)
+        · exact ((first_rel (P := fun a b => n = nb σ₁ - i ∧ i < nb σ₁ ∧ LInv σ₁ i a ∧ LInv σ₂ i b)
             fun a b h => agL h.2.2.1 h.2.2.2).wp (F₁ := AtLeave σ₁ i) (F₂ := AtLeave σ₂ i)
-            fun a b h => ⟨prefix_ok hS h₁ hi h.2.2.1, prefix_ok hS h₂ hi₂ h.2.2.2⟩).mono (fun _ _ h => h)
+            fun a b h => ⟨prefix_ok h₁ hi h.2.2.1, prefix_ok h₂ hi₂ h.2.2.2⟩).mono (fun _ _ h => h)
             fun _ _ h => h.2
         · refine ((rest_rel (P := fun a b => AtLeave σ₁ i a ∧ AtLeave σ₂ i b) fun a b h => agA h.1 h.2).wp
             (F₁ := BodyPost σ₁ i) (F₂ := BodyPost σ₂ i)
@@ -217,12 +214,7 @@ theorem compress_relWith {sch : Nat → List Instr} (hS : SchedOk sch)
         { c₂ with rsi := by rw [hg₂ _ (by decide)]; simp [blkAddr], rdx := by rw [hg₂ _ (by decide)]; simp [nb] }⟩
   · exact res_rel fun a b ⟨c₁, c₂⟩ => agreeR (by rw [c₁.rcx, c₂.rcx]; exact e_rcx)
 
-theorem compress_ctWith {sch : Nat → List Instr} (hS : SchedOk sch)
-    (hfirst : ∀ {P : State → State → Prop}, (∀ s₁ s₂, P s₁ s₂ → A.Agree τA s₁ s₂) →
-      RelCT isa P (first sch) fun _ _ => True) : ConstantTime isa Pre PubK (compressWith sch) :=
-  fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => (compress_relWith hS hfirst h₁ h₂ hp _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
-
 theorem compress_ct : ConstantTime isa Pre PubK compress :=
-  compress_ctWith schedOk first_rel
+  fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => (compress_rel h₁ h₂ hp _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.Sha512.X86_64.Avx2.Rolled

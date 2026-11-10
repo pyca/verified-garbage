@@ -136,12 +136,18 @@ at `rsi`), then the outer's (`r12`). -/
 def compTwice (N : Nat) (compN : String) (compC : Prog isa) : Prog isa :=
   .seq (compressAt compN compC) (.seq (.block (outerArgs N)) (compressAt compN compC))
 
-/-- The same with a function that compresses two blocks into two hash
+/-- The arguments of a function that compresses two blocks into two hash
 values at once, `code (state₀ = rdi, block₀ = rsi, state₁ = rdx, block₁ =
-rcx, scratch = r8)`: the two blocks do not depend on each other. -/
+rcx, scratch = r8)`, from the inner state at `rbx` with its block at `rsi`
+and the outer state at `r12`. -/
+def pairArgs (N : Nat) : List Instr :=
+  [.mov .rdi (.reg .rbx), .mov .rdx (.reg .r12), .mov .rcx (.reg .r12),
+    .alu .add .rcx (.imm (BitVec.ofNat 32 N)), .mov .r8 (.reg .r15)]
+
+/-- HMAC's `init` compressing its two padded keys with one call of such a
+function: the two blocks do not depend on each other. -/
 def compPair (N : Nat) (name : String) (code : Prog isa) : Prog isa :=
-  .seq (.block [.mov .rdi (.reg .rbx), .mov .rdx (.reg .r12), .mov .rcx (.reg .r12),
-    .alu .add .rcx (.imm (BitVec.ofNat 32 N)), .mov .r8 (.reg .r15)]) (.call name code)
+  .seq (.block (pairArgs N)) (.call name code)
 
 /-- A Merkle–Damgård hash function's x86-64 functions, as HMAC and PBKDF2
 call them. -/

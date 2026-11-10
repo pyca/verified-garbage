@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Rounds
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Weave
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Weave
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
@@ -207,34 +207,11 @@ theorem x1415_ne (r : XReg) (h : r = .xmm14 ∨ r = .xmm15) (n : Nat) :
   exact key _ (Nat.mod_lt _ (by decide)) r (by
     rcases h with rfl | rfl <;> simp only [List.mem_cons, true_or, or_true])
 
-/-- What the code needs of its schedule steps `sch`: step `n` computes, in
-each lane of `msg n`, what `xupd` says, and stores the register
-(`scheduleR_ok`), and a step and the two rounds it is woven into do not
-read what the other writes (`group_indeps`). -/
-structure SchedOk (sch : Nat → List Instr) : Prop where
-  run : ∀ (n : Nat) (s : State) (a b c d e a' b' c' d' e' : BitVec 128),
-    s.xmm (msg n) = a → s.xmm (msg (n + 1)) = b → s.xmm (msg (n + 4)) = c →
-    s.xmm (msg (n + 5)) = d → s.xmm (msg (n + 7)) = e →
-    s.ymmHi (msg n) = a' → s.ymmHi (msg (n + 1)) = b' → s.ymmHi (msg (n + 4)) = c' →
-    s.ymmHi (msg (n + 5)) = d' → s.ymmHi (msg (n + 7)) = e' →
-    InRegions s.wr (s.ea (sSlot n)) 32 →
-    WP isa (.block (scheduleR sch n)) s fun s' =>
-      s'.xmm (msg n) = xupd a b c d e ∧ s'.ymmHi (msg n) = xupd a' b' c' d' e' ∧
-      (∀ r, r ≠ msg n → r ≠ t0 → r ≠ t1 → r ≠ t2 → r ≠ t3 → s'.xmm r = s.xmm r ∧ s'.ymmHi r = s.ymmHi r) ∧
-      s'.gpr = s.gpr ∧
-      s'.mem = s.mem.writeW (s.ea (sSlot n)) (xupd a' b' c' d' e' ++ xupd a b c d e) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr
-  indeps : ∀ n < 8,
-    VG.Interleave.Indeps isa fps.Inv (scheduleR sch (n + 8)) (roundR 0 (2 * n) ++ roundR 0 (2 * n + 1))
-
-/-- The steps of `Impl.Sha512.X86_64.Avx2.schedule`. -/
-theorem schedOk : SchedOk schedule := ⟨scheduleR_ok, fun _ hn => group_indeps hn⟩
-
 /-- The schedule step `n + 8` of iteration `j`: words `2N+16, 2N+17`, `N = 8 j + n`. -/
-theorem schedR_step {sch : Nat → List Instr} (hS : SchedOk sch) {M₀ M₁ : Block} {scr : Addr} {sB : State} (hrcx : sB.gpr .rcx = scr)
+theorem schedR_step {M₀ M₁ : Block} {scr : Addr} {sB : State} (hrcx : sB.gpr .rcx = scr)
     (hR : (⟨scr, 1328⟩ : Region) ∈ sB.wr) {j n : Nat} (hn : n < 8) (hN : 8 * j + n < 32) {s : State}
     (hI : s.gpr .rdx = idx j) (h : SchedR M₀ M₁ scr sB (8 * j + n) s) :
-    WP isa (.block (scheduleR sch (n + 8))) s fun s' =>
+    WP isa (.block (scheduleR (n + 8))) s fun s' =>
       SchedR M₀ M₁ scr sB (8 * j + n + 1) s' ∧ s'.gpr = s.gpr := by
   have hrcx' : s.gpr .rcx = scr := (h.pub .rcx (by decide)).trans hrcx
   have m : ∀ q < 8, s.xmm (msg (n + 8 + q)) = pair M₀ (8 * j + n + q) ∧
@@ -250,7 +227,7 @@ theorem schedR_step {sch : Nat → List Instr} (hS : SchedOk sch) {M₀ M₁ : B
   simp only [Nat.add_zero] at ma ma'
   have ea := sSlot_ea s hI (n + 8)
   rw [hrcx', show 8 * j + (n + 8) = 8 * j + n + 8 by omega_arith] at ea
-  refine VG.X86_64.WP.mono_syms (hS.run (n + 8) s _ _ _ _ _ _ _ _ _ _ ma mb mc md me ma' mb' mc' md' me'
+  refine VG.X86_64.WP.mono_syms (scheduleR_ok (n + 8) s _ _ _ _ _ _ _ _ _ _ ma mb mc md me ma' mb' mc' md' me'
     (by rw [ea, h.wr]; exact in_scr hR (by omega_arith)))
     fun s' ⟨ex, ey, hx, hg, hm, hrd, hwr⟩ hsy => ⟨?_, hg⟩
   rw [xupd_pair] at ex ey
@@ -295,17 +272,17 @@ def GInvR (H : HashValue) (M₀ M₁ : Block) (scr : Addr) (sB : State) (j n : N
   Vars (2 * n) s (Spec.Sha512.rounds H M₀ (16 * j + 2 * n)) ∧ SchedR M₀ M₁ scr sB (8 * j + n) s ∧
     s.gpr .rdx = idx j
 
-theorem groupsR_ok {sch : Nat → List Instr} (hS : SchedOk sch) (H : HashValue) (M₀ M₁ : Block) (scr kb : Addr) (sB : State) (hrcx : sB.gpr .rcx = scr)
+theorem groupsR_ok (H : HashValue) (M₀ M₁ : Block) (scr kb : Addr) (sB : State) (hrcx : sB.gpr .rcx = scr)
     (hR : (⟨scr, 1328⟩ : Region) ∈ sB.wr) (hkb : sB.gpr .rsi = kb) (hk : ∀ t < 80, KOk kb sB t)
     {j : Nat} (hj : j < 4) {s₀ : State} (h₀ : GInvR H M₀ M₁ scr sB j 0 s₀) :
-    ∀ n ≤ 8, WP isa (groupsR sch n) s₀ (GInvR H M₀ M₁ scr sB j n) := by
+    ∀ n ≤ 8, WP isa (groupsR n) s₀ (GInvR H M₀ M₁ scr sB j n) := by
   intro n hn
   induction n with
   | zero => exact WP.block_nil h₀
   | succ n ih =>
     refine WP.seq (WP.mono (ih (by omega_arith)) fun s ⟨hv, hs, hI⟩ => ?_)
-    refine VG.Interleave.WP.weave (hS.indeps _ (by omega_arith)) trivial ?_
-    refine WP.mono (schedR_step hS hrcx hR (by omega_arith) (by omega_arith) hI hs) fun s₁ ⟨hs₁, hg₁⟩ => ?_
+    refine VG.Interleave.WP.weave (group_indeps (by omega_arith)) trivial ?_
+    refine WP.mono (schedR_step hrcx hR (by omega_arith) (by omega_arith) hI hs) fun s₁ ⟨hs₁, hg₁⟩ => ?_
     have hv₁ : Vars (2 * n) s₁ (Spec.Sha512.rounds H M₀ (16 * j + 2 * n)) := by
       simp only [Vars, hg₁]; exact hv
     have hI₁ : Idx kb j s₁ := ⟨by rw [hg₁]; exact hI, by rw [hs₁.pub .rsi (by decide)]; exact hkb⟩
@@ -349,16 +326,16 @@ theorem step512 : step 512 = step (512 : BitVec 32).toNat := rfl
 theorem step640 : step 640 = step (640 : BitVec 32).toNat := rfl
 
 /-- The first block's loop: rounds 0–63, and the schedule of both blocks. -/
-theorem loop1_ok {sch : Nat → List Instr} (hS : SchedOk sch) (H : HashValue) (M₀ M₁ : Block) (scr kb : Addr) (sB : State) (hrcx : sB.gpr .rcx = scr)
+theorem loop1_ok (H : HashValue) (M₀ M₁ : Block) (scr kb : Addr) (sB : State) (hrcx : sB.gpr .rcx = scr)
     (hR : (⟨scr, 1328⟩ : Region) ∈ sB.wr) (hkb : sB.gpr .rsi = kb) (hk : ∀ t < 80, KOk kb sB t)
     (h₀ : GInvR H M₀ M₁ scr sB 0 0 sB) :
-    WP isa (.loop (.seq (groupsR sch 8) (.block (step 512))) .ne) sB (GInvR H M₀ M₁ scr sB 4 0) := by
+    WP isa (.loop (.seq (groupsR 8) (.block (step 512))) .ne) sB (GInvR H M₀ M₁ scr sB 4 0) := by
   let Inv : Nat → State → Prop := fun m s => ∃ j, m = 4 - j ∧ j < 4 ∧ GInvR H M₀ M₁ scr sB j 0 s
-  have hstep : ∀ m s, Inv m s → WP isa (.seq (groupsR sch 8) (.block (step 512))) s (fun s' =>
+  have hstep : ∀ m s, Inv m s → WP isa (.seq (groupsR 8) (.block (step 512))) s (fun s' =>
       (eval .ne s' = some false ∧ GInvR H M₀ M₁ scr sB 4 0 s') ∨
       (eval .ne s' = some true ∧ ∃ m' < m, Inv m' s')) := by
     rintro m s ⟨j, rfl, hj, hG⟩
-    refine WP.seq (WP.mono (groupsR_ok hS H M₀ M₁ scr kb sB hrcx hR hkb hk hj hG 8 (Nat.le_refl _))
+    refine WP.seq (WP.mono (groupsR_ok H M₀ M₁ scr kb sB hrcx hR hkb hk hj hG 8 (Nat.le_refl _))
       fun s₁ ⟨hv₁, hs₁, hI₁⟩ => ?_)
     rw [step512]
     refine VG.X86_64.WP.mono_syms (step_ok 512 s₁) fun s₂ ⟨he, hrdx, hg, hm, hrd, hwr, hx, hy⟩ hsy => ?_
@@ -645,8 +622,8 @@ structure AtLeave (s₀ : State) (i : Nat) (s : State) : Prop where
   syms : s.syms = s₀.syms
 
 /-- The first block of an iteration, up to getting back `rsi` and `rdx`. -/
-theorem prefix_ok {sch : Nat → List Instr} (hS : SchedOk sch) {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s : State} (hL : LInv s₀ i s) :
-    WP isa (Impl.Sha512.X86_64.Avx2Rolled.first sch) s (AtLeave s₀ i) := by
+theorem prefix_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s : State} (hL : LInv s₀ i s) :
+    WP isa Impl.Sha512.X86_64.Avx2Rolled.first s (AtLeave s₀ i) := by
   have := hp.nb_lt
   have hscr : (⟨scr s₀, 1328⟩ : Region) ∈ s₀.wr := by simp [hp.wr]
   have hj : nxt s₀ i < nb s₀ := by simp only [nxt]; split <;> omega_arith
@@ -729,7 +706,7 @@ theorem prefix_ok {sch : Nat → List Instr} (hS : SchedOk sch) {s₀ : State} (
     ⟨fun _ _ => rfl, rfl, rfl, by rw [Masks, hxB, hyB, hx₅, hy₅]; exact ld.masks, Frame.refl _ _,
       fun k hk hk' => wmem_frame hp hk (by rw [hm₅]; exact ld.wmem k (by omega_arith)) (.inr hspB),
       fun k _ hk _ => by rw [hxB, hyB, hx₅, hy₅]; exact ld.msgs k (by omega_arith), rfl, rfl, rfl⟩
-  refine WP.seq (VG.X86_64.WP.mono_syms (loop1_ok hS _ _ _ (scr s₀) (kb s₀) sB hrcxB hRB hrdiB hkB
+  refine WP.seq (VG.X86_64.WP.mono_syms (loop1_ok _ _ _ (scr s₀) (kb s₀) sB hrcxB hRB hrdiB hkB
     ⟨hvB, hSB, hrdxB⟩) fun s₆ h₆ hsy₆ => ?_)
   refine WP.seq (VG.X86_64.WP.mono_syms (tail_ok _ _ _ (scr s₀) (kb s₀) sB hrcxB hRB hrdiB hkB h₆)
     fun s₇ ⟨hv₇, hS₇, hrdx₇⟩ hsy₇ => ?_)
@@ -964,9 +941,9 @@ theorem rest_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
     rw [BitVec.add_assoc, show (256 : BitVec 64) = BitVec.ofNat 64 256 from rfl, ← BitVec.ofNat_add,
       show 128 * (i + 2) = 128 * i + 256 by omega_arith]
 
-theorem body_ok {sch : Nat → List Instr} (hS : SchedOk sch) {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s : State} (hL : LInv s₀ i s) :
-    WP isa (Impl.Sha512.X86_64.Avx2Rolled.body sch) s (BodyPost s₀ i) :=
-  WP.seq (WP.mono (prefix_ok hS hp hi hL) fun _ hA => rest_ok hp hi hA)
+theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s : State} (hL : LInv s₀ i s) :
+    WP isa Impl.Sha512.X86_64.Avx2Rolled.body s (BodyPost s₀ i) :=
+  WP.seq (WP.mono (prefix_ok hp hi hL) fun _ hA => rest_ok hp hi hA)
 
 /-! ## The prologue and the epilogue -/
 
@@ -1031,8 +1008,8 @@ theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hc : Common s₀ 
 
 /-! ## The whole function -/
 
-theorem correctWith {sch : Nat → List Instr} (hS : SchedOk sch) {s₀ : State} (hp : Pre s₀) :
-    WP isa (Impl.Sha512.X86_64.Avx2Rolled.compressWith sch) s₀ fun s' =>
+theorem correct {s₀ : State} (hp : Pre s₀) :
+    WP isa Impl.Sha512.X86_64.Avx2Rolled.compress s₀ fun s' =>
       gprPreserved s₀ s' ∧ Proof.Sha512.compressWideX86_64.post s₀ s' := by
   refine WP.seq (VG.X86_64.WP.mono_syms (prologue_ok hp) fun s₁ ⟨hg, hrd, hwr, hm, _, hzf, hk, h14, h15⟩ hsy => ?_)
   refine WP.seq (WP.mono (Q := Common s₀ (nb s₀)) ?_ fun s₂ hc => restore_ok hp hc)
@@ -1044,11 +1021,11 @@ theorem correctWith {sch : Nat → List Instr} (hS : SchedOk sch) {s₀ : State}
       simp only [BitVec.and_self, beq_eq_false_iff_ne, ne_eq] at h
       exact Nat.pos_of_ne_zero fun h' => h (BitVec.eq_of_toNat_eq (by simpa using h'))
     let Inv : Nat → State → Prop := fun m s => ∃ i, m = nb s₀ - i ∧ i < nb s₀ ∧ LInv s₀ i s
-    have hstep : ∀ m s, Inv m s → WP isa (Impl.Sha512.X86_64.Avx2Rolled.body sch) s (fun s' =>
+    have hstep : ∀ m s, Inv m s → WP isa Impl.Sha512.X86_64.Avx2Rolled.body s (fun s' =>
         (eval .ne s' = some false ∧ Common s₀ (nb s₀) s') ∨
         (eval .ne s' = some true ∧ ∃ m' < m, Inv m' s')) := by
       rintro m s ⟨i, rfl, hi, hL⟩
-      refine WP.mono (body_ok hS hp hi hL) fun s' h => ?_
+      refine WP.mono (body_ok hp hi hL) fun s' h => ?_
       rcases h with ⟨_, he, hc⟩ | ⟨hi', he, hL'⟩
       · exact .inl ⟨he, hc⟩
       · exact .inr ⟨he, nb s₀ - nxtI s₀ i, by simp only [nxtI]; split <;> omega_arith, nxtI s₀ i, rfl, hi', hL'⟩
@@ -1057,10 +1034,5 @@ theorem correctWith {sch : Nat → List Instr} (hS : SchedOk sch) {s₀ : State}
         rsi := by rw [hg _ (by decide)]; simp [blkAddr]
         rdx := by rw [hg _ (by decide)]; simp [nb] }
     exact WP.loop (M := isa) Inv hstep (nb s₀) s₁ ⟨0, rfl, hpos, hL₀⟩
-
-theorem correct {s₀ : State} (hp : Pre s₀) :
-    WP isa Impl.Sha512.X86_64.Avx2Rolled.compress s₀ fun s' =>
-      gprPreserved s₀ s' ∧ Proof.Sha512.compressWideX86_64.post s₀ s' :=
-  correctWith schedOk hp
 
 end VG.Proof.Sha512.X86_64.Avx2.Rolled

@@ -45,12 +45,16 @@ def sha384 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha51
 def sha384Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha384 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream384 .avx2)
 
+def sha384Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Pbkdf2.Md.X86_64.Sha512.sha384 .avx512
+
 def sha384ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant384
 
 def sha512 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant512
 
 def sha512Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream .avx2)
+
+def sha512Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Pbkdf2.Md.X86_64.Sha512.sha512 .avx512
 
 def sha512ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512
 
@@ -59,12 +63,16 @@ def sha512_224 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.S
 def sha512_224Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream512_224 .avx2)
 
+def sha512_224Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .avx512
+
 def sha512_224ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512_224
 
 def sha512_256 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant512_256
 
 def sha512_256Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream512_256 .avx2)
+
+def sha512_256Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 .avx512
 
 def sha512_256ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512_256
 
@@ -81,16 +89,16 @@ def sha224Variants := [sha224ShaNi, sha224Avx2, sha224]
 def sha256Variants := [sha256ShaNi, sha256Avx2, sha256]
 
 /-- The implementations of SHA-384, best first. -/
-def sha384Variants := [sha384ShaNi, sha384Avx2, sha384]
+def sha384Variants := [sha384ShaNi, sha384Avx512, sha384Avx2, sha384]
 
 /-- The implementations of SHA-512, best first. -/
-def sha512Variants := [sha512ShaNi, sha512Avx2, sha512]
+def sha512Variants := [sha512ShaNi, sha512Avx512, sha512Avx2, sha512]
 
 /-- The implementations of SHA-512/224, best first. -/
-def sha512_224Variants := [sha512_224ShaNi, sha512_224Avx2, sha512_224]
+def sha512_224Variants := [sha512_224ShaNi, sha512_224Avx512, sha512_224Avx2, sha512_224]
 
 /-- The implementations of SHA-512/256, best first. -/
-def sha512_256Variants := [sha512_256ShaNi, sha512_256Avx2, sha512_256]
+def sha512_256Variants := [sha512_256ShaNi, sha512_256Avx512, sha512_256Avx2, sha512_256]
 
 /-- Every implementation, best first: each function generic over them is
 emitted with each (the registration files that import this), and its

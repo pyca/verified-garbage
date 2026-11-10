@@ -1,20 +1,15 @@
 module
 
-public import VerifiedGarbage.Impl.Sha512.X86_64.Avx2Rolled
+public import VerifiedGarbage.Impl.Sha512.X86_64.Avx2
 
 /-!
-# SHA-512 compression function: x86-64 implementations with AVX-512VL
+# SHA-512 compression function: two at once, with AVX-512VL on x86-64
 
-Two functions, for CPUs with AVX512F and AVX512VL:
-
-* `compress`, the compression function of `Impl.Sha512.X86_64.Avx2Rolled`
-  with its message schedule computed with `vprorq` and `vpternlogd`
-  (`schedule`): a rotation is one instruction, not two shifts and an xor,
-  and each of `σ₀` and `σ₁` is two rotations, a shift and one three-way xor.
-* `compress2`, the compression function on two hash values and two blocks
-  at once, for callers with two blocks that do not depend on each other
-  (HMAC's two padded keys). Each `xmm` register holds a 64-bit value of
-  each: the first's in quadword 0 and the second's in quadword 1.
+`compress2` is the compression function on two hash values and two blocks
+at once, for callers with two blocks that do not depend on each other
+(HMAC's two padded keys), for CPUs with AVX512F and AVX512VL. Each `xmm`
+register holds a 64-bit value of each: the first's in quadword 0 and the
+second's in quadword 1.
 
 ## `compress2 (state₀ = rdi, block₀ = rsi, state₁ = rdx, block₁ = rcx, scratch = r8)`
 
@@ -45,28 +40,6 @@ namespace VG.Impl.Sha512.X86_64.Avx512
 open VG.X86_64
 open VG.Impl.Sha512.X86_64.Avx2 (at_ msg t0 t1 t2 t3 vb vs bswapMask)
 
-/-! ## The message schedule of `compress` -/
-
-def vror (d a : XReg) (n : BitVec 8) : Instr := .vop (.vprorq .l256 d a n)
-def vxor3 (d a b : XReg) : Instr := .vop (.vpternlogd .l256 d a b 0x96)
-
-/-- `Impl.Sha512.X86_64.Avx2.schedule i` with AVX-512VL: `W₂ᵢ` and `W₂ᵢ₊₁`
-of both blocks into `msg i` (for `i ≥ 8`), and stored. -/
-def schedule (i : Nat) : List Instr :=
-  let x0 := msg i; let x1 := msg (i + 1); let x4 := msg (i + 4); let x5 := msg (i + 5)
-  let x7 := msg (i + 7)
-  [ .vop (.vpalignr .l256 t0 x1 x0 8),      -- W₂ᵢ₋₁₅, W₂ᵢ₋₁₄
-    .vop (.vpalignr .l256 t1 x5 x4 8),      -- W₂ᵢ₋₇, W₂ᵢ₋₆
-    vb .vpaddq x0 x0 t1,                    -- W₂ᵢ₋₁₆ + W₂ᵢ₋₇, …
-    vror t2 t0 1, vror t3 t0 8, vs .psrlq t0 t0 7, vxor3 t2 t3 t0,       -- σ₀
-    vb .vpaddq x0 x0 t2,
-    vror t2 x7 19, vror t3 x7 61, vs .psrlq t0 x7 6, vxor3 t2 t3 t0,     -- σ₁
-    vb .vpaddq x0 x0 t2,                    -- W₂ᵢ, W₂ᵢ₊₁
-    .vmovdquStore .l256 (at_ .rcx (32 * i)) x0]
-
-/-- `vg_sha512_compress_avx512`. -/
-def compress : Prog isa := Avx2Rolled.compressWith schedule
-
 /-! ## Two compressions at once -/
 
 /-- The registers holding the working variables of both. -/
@@ -90,6 +63,9 @@ def mB : XReg := .xmm15
 def xb (op : VBinOp) (d a b : XReg) : Instr := .vop (.vbin op .l128 d a b)
 def xror (d a : XReg) (n : BitVec 8) : Instr := .vop (.vprorq .l128 d a n)
 def xtern (d a b : XReg) (imm : BitVec 8) : Instr := .vop (.vpternlogd .l128 d a b imm)
+/-- The same on `ymm` registers, two words of both: a rotation, and the xor of three. -/
+def vror (d a : XReg) (n : BitVec 8) : Instr := .vop (.vprorq .l256 d a n)
+def vxor3 (d a b : XReg) : Instr := .vop (.vpternlogd .l256 d a b 0x96)
 
 /-- Round `t` of both, with `Kₜ + Wₜ` in `kw`: `T₁ = h + Kₜ + Wₜ + Ch(e, f, g)
 + Σ₁(e)`, `T₂ = Σ₀(a) + Maj(a, b, c)`. -/

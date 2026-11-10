@@ -23,7 +23,6 @@ The compression functions as literals (`materialize_code`,
 
 namespace VG
 
-materialize_code Impl.Sha512.X86_64.Avx512.compress
 materialize_code Impl.Sha512.X86_64.Avx512.compress2
 
 end VG

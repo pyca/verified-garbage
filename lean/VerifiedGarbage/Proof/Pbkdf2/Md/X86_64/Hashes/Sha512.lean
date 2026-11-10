@@ -65,6 +65,9 @@ def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.H
   hmacInitN := s!"vg_hmac_{I.rust}_init_scratch" ++ v.suffix
   hmacFinN := s!"vg_hmac_{I.rust}_finalize_scratch" ++ v.suffix
   iterN := s!"vg_pbkdf2_hmac_{I.rust}_iterate" ++ v.suffix
+  compBoth := match v.pair with
+    | none => Impl.Pbkdf2.Md.X86_64.compTwice Impl.Sha512.X86_64.Stream.params.N v.callee.name v.callee.code
+    | some p => Impl.Pbkdf2.Md.X86_64.compPair Impl.Sha512.X86_64.Stream.params.N p.name p.code
 
 /-- A member of the family without the functions it calls, the same for
 every `v`. -/
@@ -121,21 +124,26 @@ theorem anyOK (D : Nat) (hD : D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64) : Any.Any
 /-- The initial hash values of the family. -/
 abbrev IVs (iv : Spec.Sha512.HashValue) : Prop := iv = H0_384 ∨ iv = H0_512 ∨ iv = H0_512_224 ∨ iv = H0_512_256
 
+/-- The arguments of a function that compresses two blocks at once are set
+up from registers that hold nothing secret. -/
+theorem pairArgs_taint : ∃ hc, (Taint.check taint (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r15, .rsp])
+    (.block (Impl.Pbkdf2.Md.X86_64.pairArgs Impl.Sha512.X86_64.Stream.params.N)) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
 theorem callees {I : Spec.Hmac.Instance} {D : Nat} {initN : String} {iv : Spec.Sha512.HashValue} (hiv : IVs iv)
-    (v : Compress) : Callees (hash I D initN iv v) :=
-  .ofTwice rfl
-    (cMx := v.mxcsr)
-    (cSp := allInstrs_of_all v.spSafe)
-    (cNs := by
-      show v.callee.code.allInstrs _ = true
-      rw [Code.allInstrs_eq]; exact List.all_eq_true.mpr fun i hi => by simp [v.ok.nosp i hi])
-    (cD := v.ok.depth)
-    (iMx := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel)
-    (iSp := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel)
-    (iNs := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel)
-    (iD := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel)
-    (cXD := v.noStack)
-    (iXD := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel)
+    (v : Compress) : Callees (hash I D initN iv v) := by
+  have cMx := v.mxcsr
+  have cSp := allInstrs_of_all v.spSafe
+  have cNs : v.callee.code.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
+    rw [Code.allInstrs_eq]; exact List.all_eq_true.mpr fun i hi => by simp [v.ok.nosp i hi]
+  have b : BothFacts (hash I D initN iv v) := by
+    cases hv : v.pair with
+    | none => exact .twice (by simp only [hash, hv]) cMx cSp cNs v.ok.depth v.noStack
+    | some p =>
+      exact .pair (name := p.name) (code := p.code) (by simp only [hash, hv]) p.mxcsr p.spSafe p.noSp
+        p.ok.depth p.noStack
+  refine ⟨cMx, cSp, cNs, v.ok.depth, ?_, ?_, ?_, ?_, v.noStack, ?_, b⟩ <;>
+    (simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel)
 
 /-- `HashOK` for the member of instance `I`, whose specification is the
 family's from `iv`, with its digest the first `D` bytes. -/
@@ -149,6 +157,10 @@ def ok {I : Spec.Hmac.Instance} {D : Nat} {initN : String} {iv : Spec.Sha512.Has
   shape := Proof.Sha512.X86_64.Stream.shape
   taints := Proof.Sha512.X86_64.Stream.taints
   comp := v.ok
+  both := by
+    cases hv : v.pair with
+    | none => exact .inl (by simp only [hash, hv])
+    | some p => exact .inr ⟨p.name, p.code, by simp only [hash, hv], p.ok, pairArgs_taint⟩
   reloc m m' p q h := by
     apply Vector.ext
     intro j hj

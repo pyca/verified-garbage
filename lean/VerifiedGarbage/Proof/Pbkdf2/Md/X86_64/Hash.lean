@@ -42,6 +42,15 @@ structure HashOK (H : Hash) where
   taints : Taints H.P
   /-- The compression function is verified. -/
   comp : CalleeOk md H.compC
+  /-- `H.compBoth`, the code of HMAC's `init` that compresses the blocks of
+  its two states, is the compression function twice, or one call of a
+  verified function that compresses two blocks at once, whose arguments are
+  set up from registers that hold nothing secret. -/
+  both : H.compBoth = Impl.Pbkdf2.Md.X86_64.compTwice H.P.N H.compN H.compC ∨
+    ∃ name code, H.compBoth = Impl.Pbkdf2.Md.X86_64.compPair H.P.N name code ∧ PairOk md code ∧
+      ∃ hc, (Taint.check taint (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r15, .rsp])
+        (.block (Impl.Pbkdf2.Md.X86_64.pairArgs H.P.N)) hc).isSome = true := by
+      exact .inl rfl
   /-- The hash value is determined by its bytes, wherever they are. -/
   reloc : ∀ (m m' : Mem) (p q : Addr), (∀ i < H.P.N, m' (q + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) →
     md.stateAt m' q = md.stateAt m p

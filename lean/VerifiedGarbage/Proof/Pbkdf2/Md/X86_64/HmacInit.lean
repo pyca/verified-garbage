@@ -35,7 +35,7 @@ open VG.Proof.MdStream.X86_64 (add_ofNat sx_ofNat zx_ofNat wp_mov wp_mov32i wp_a
   wp_store8 wp_movzx8 wp_cmp wp_test Upd CallOk compressAt_ok compressAt_rel ea_at ofInt_natCast setWidth32
   ofNat_succ sub_beq)
 open VG.Impl.MdStream.X86_64 (compressAt at_)
-open VG.Impl.Pbkdf2.Md.X86_64 (Hash byteAt)
+open VG.Impl.Pbkdf2.Md.X86_64 (Hash byteAt pairArgs)
 open VG.Proof.Pbkdf2.X86_64 (ea_off)
 open VG.Proof.Pbkdf2.Md.X86_64.Calls (initG rel_taint rel_wp init_call init_rel SavedRegs saveR save_ok
   restore_ok count_loop ea_byteAt sx_one wp_xor32i xor_byte PubEq args repr_keep)
@@ -867,11 +867,6 @@ theorem BothOk.twice (hc : Checks H)
 
 /-! ## Both compressions at once -/
 
-/-- The arguments of a function that compresses both blocks at once. -/
-abbrev pairArgs (N : Nat) : List Instr :=
-  [.mov .rdi (.reg .rbx), .mov .rdx (.reg .r12), .mov .rcx (.reg .r12),
-    .alu .add .rcx (.imm (BitVec.ofNat 32 N)), .mov .r8 (.reg .r15)]
-
 /-- `s` is `t` with the arguments of such a function set up. -/
 structure PairArgs (N : Nat) (t s : State) : Prop where
   rdi : s.gpr .rdi = t.gpr .rbx
@@ -1061,6 +1056,12 @@ theorem BothOk.pair {name : String} {code : Prog isa} (hf : MdStream.X86_64.Pair
       (fun s ⟨k, si⟩ => pair_ok hH hp hf k si fun s' k' _ _ => k')
       (fun s ⟨k, si⟩ => pair_ok hH hp' hf (ei ▸ k) (by rw [si, ei]) fun s' k' _ _ => ei ▸ k')).mono
         (fun _ _ h => h) fun _ _ h => ⟨_, h⟩
+
+/-- What `init` needs of `H.compBoth`, whichever of the two it is. -/
+theorem bothOk (hc : Checks H) : BothOk H hH := by
+  rcases hH.both with h | ⟨name, code, h, hf, hta⟩
+  · exact .twice hH hc h
+  · exact .pair hH hf hta h
 
 /-- HMAC's `init` is verified against `initG`, given the taint checks and the
 facts about its code that the kernel checks for each hash function. -/

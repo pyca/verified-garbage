@@ -232,17 +232,15 @@ structure CoreOK (C : Hash) : Prop where
   fitI : C.stream.buf ≤ 8 * C.W
   fitF : C.stream.buf + C.stream.F ≤ 8 * C.W
 
-/-- What the proofs need of `compBoth`, the code of HMAC's `init` that
-compresses the blocks of its two states: the kernel's checks of its
-instructions, that it is one level of calls using no stack, and what
-`init` needs of it. -/
+/-- What the kernel checks of `compBoth`, the code of HMAC's `init` that
+compresses the blocks of its two states: its instructions, and that it is
+one level of calls using no stack. -/
 structure BothFacts (H : Hash) : Prop where
   bMx : H.compBoth.allInstrs (fun i => !loadsMxcsr i) = true
   bSp : H.compBoth.allInstrs (fun i => !isa.writesSp i) = true
   bNs : H.compBoth.allInstrs (fun i => !Taint.clobbers i .rsp) = true
   bD : H.compBoth.depth = 1
   bXD : H.compBoth.x86_64Depth = 8
-  both : ∀ hH : HashOK H, HmacInit.Checks H → HmacInit.BothOk H hH
 
 /-- `compBoth` as the compression function twice (`compTwice`), from the
 checks of the compression function. -/
@@ -277,7 +275,35 @@ theorem BothFacts.twice {H : Hash}
     simp only [Impl.Pbkdf2.Md.X86_64.compTwice, Impl.MdStream.X86_64.compressAt,
       Impl.MdStream.X86_64.compressWith, Code.x86_64Depth, cXD]
     rfl
-  both hH hc := HmacInit.BothOk.twice hH hc h
+
+/-- `compBoth` as one call of a function that compresses two blocks at once
+(`compPair`), from the checks of that function. -/
+theorem BothFacts.pair {H : Hash} {name : String} {code : Prog isa}
+    (h : H.compBoth = Impl.Pbkdf2.Md.X86_64.compPair H.P.N name code)
+    (pMx : code.allInstrs (fun i => !loadsMxcsr i) = true)
+    (pSp : code.allInstrs (fun i => !isa.writesSp i) = true)
+    (pNs : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
+    (pD : code.depth = 0) (pXD : code.x86_64Depth = 0) : BothFacts H where
+  bMx := by
+    rw [h]
+    simp only [Impl.Pbkdf2.Md.X86_64.compPair, Impl.Pbkdf2.Md.X86_64.pairArgs, Code.allInstrs, pMx, Bool.and_true]
+    rfl
+  bSp := by
+    rw [h]
+    simp only [Impl.Pbkdf2.Md.X86_64.compPair, Impl.Pbkdf2.Md.X86_64.pairArgs, Code.allInstrs, pSp, Bool.and_true]
+    rfl
+  bNs := by
+    rw [h]
+    simp only [Impl.Pbkdf2.Md.X86_64.compPair, Impl.Pbkdf2.Md.X86_64.pairArgs, Code.allInstrs, pNs, Bool.and_true]
+    rfl
+  bD := by
+    rw [h]
+    simp only [Impl.Pbkdf2.Md.X86_64.compPair, Impl.Pbkdf2.Md.X86_64.pairArgs, Code.depth, pD]
+    rfl
+  bXD := by
+    rw [h]
+    simp only [Impl.Pbkdf2.Md.X86_64.compPair, Impl.Pbkdf2.Md.X86_64.pairArgs, Code.x86_64Depth, pXD]
+    rfl
 
 /-- What the kernel checks of the functions a hash function's code calls:
 its compression function and its streaming `init`. -/
@@ -358,7 +384,7 @@ include hH C K
 
 theorem hmacInit_ok (hsat : ∃ s, (Proof.Hmac.initScratchContract hH.SH H.W X86_64.abi 16).pre s) :
     Verified X86_64.target H.hmacInit (initG hH.SH H.W) :=
-  HmacInit.verified hH (K.b.both hH (HmacInit.Checks.of_core C.hinit)) (HmacInit.Checks.of_core C.hinit) C.fitI
+  HmacInit.verified hH (HmacInit.bothOk hH (HmacInit.Checks.of_core C.hinit)) (HmacInit.Checks.of_core C.hinit) C.fitI
     (core_hmacInit K.iMx K.b.bMx C.hinitMx)
     (initImp _ _ hsat).sat_left
 

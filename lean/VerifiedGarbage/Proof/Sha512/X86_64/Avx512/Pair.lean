@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx512.Compress
+public import VerifiedGarbage.Impl.Sha512.X86_64.Avx512
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.CT
+import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Spec
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx512.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -16,7 +18,8 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintSum
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx512.Compress
+meta import VerifiedGarbage.Impl.Sha512.X86_64.Avx512
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.CT
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx512.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Lit
@@ -42,6 +45,38 @@ open VG.Spec.Sha512 (HashValue Word Block K W bsig0 bsig1 ch maj ssig0 ssig1)
 open VG.Proof.Sha512.X86_64 (ofInt_natCast contains_offset contains_offset')
 open VG.Proof.Sha512 (roundKW rounds_succ round_eq roundKW_0 roundKW_1 roundKW_2 roundKW_3 roundKW_4 roundKW_5
   roundKW_6 roundKW_7)
+
+/-! ## `vprorq` and `vpternlogd`, on quadwords -/
+
+theorem ror_eq (hi lo : Word) (n : BitVec 8) :
+    rorQwords (hi ++ lo) n = hi.rotateRight (n.toNat % 64) ++ lo.rotateRight (n.toNat % 64) := by
+  simp only [rorQwords, qword_append_0, qword_append_1]
+
+/-- `0x96`: the xor of the three. -/
+theorem tern96 (a b c : BitVec 128) : ternlog a b c 0x96 = a ^^^ b ^^^ c := by
+  simp only [ternlog, List.range, List.range.loop, List.foldl,
+    show (0x96 : BitVec 8).getLsbD 0 = false from rfl, show (0x96 : BitVec 8).getLsbD 1 = true from rfl,
+    show (0x96 : BitVec 8).getLsbD 2 = true from rfl, show (0x96 : BitVec 8).getLsbD 3 = false from rfl,
+    show (0x96 : BitVec 8).getLsbD 4 = true from rfl, show (0x96 : BitVec 8).getLsbD 5 = false from rfl,
+    show (0x96 : BitVec 8).getLsbD 6 = false from rfl, show (0x96 : BitVec 8).getLsbD 7 = true from rfl,
+    Nat.testBit, Nat.reduceShiftRight, Nat.reduceAnd, Nat.reduceBNe, Bool.false_eq_true, ↓reduceIte]
+  apply BitVec.eq_of_getLsbD_eq; intro j hj
+  simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_xor, BitVec.getLsbD_not,
+    show (0 : BitVec 128).getLsbD j = false from BitVec.getLsbD_zero, hj, decide_true, Bool.true_and]
+  generalize a.getLsbD j = x; generalize b.getLsbD j = y; generalize c.getLsbD j = z
+  revert x y z; decide
+
+theorem tern96_eq (a b c d e f : Word) :
+    ternlog (a ++ b) (c ++ d) (e ++ f) 0x96 = (a ^^^ c ^^^ e) ++ (b ^^^ d ^^^ f) := by
+  rw [tern96, BitVec.xor_append, BitVec.xor_append]
+
+theorem append_qwords (x : BitVec 128) : qword x 1 ++ qword x 0 = x := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [qword, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb', Nat.mul_zero, Nat.zero_add, Nat.mul_one]
+  by_cases h : i < 64
+  · simp only [h, ite_true, decide_true, Bool.true_and]
+  · simp only [h, ite_false, show i - 64 < 64 by omega, decide_true, Bool.true_and,
+      show 64 + (i - 64) = i by omega]
 
 /-! ## `vpternlogd`, on quadwords -/
 
