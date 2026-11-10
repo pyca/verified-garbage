@@ -76,6 +76,8 @@ pub const VG_HMAC_SHA224_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 96 bytes.
@@ -92,7 +94,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha224_finalize_shani(inner: *mut [
 call {vg_sha256_finalize_scratch_shani}
 .base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi0QkFIlDFEGLRCQYiUMYQYtEJByJQxxBi4eQAgAAiUMgQYuHlAIAAIlDJEGLh5gCAACJQyhBi4ecAgAAiUMsQYuHoAIAAIlDMEGLh6QCAACJQzRBi4eoAgAAiUM4SIndSIPFILiAAAAAiUUcuAAAAACJRSCJRSSJRSiJRSyJRTCJRTRBvFwAAABMieBIAcBIAcBIAcBID8hIiUNYSInuSInfugEAAABMifk="
 call {vg_sha256_compress_shani}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUci0UAQYlFAItFBEGJRQSLRQhBiUUIi0UMQYlFDItFEEGJRRCLRRRBiUUUi0UYQYlFGEmLn2ACAABJi69oAgAATYuncAIAAE2Lr3gCAABNi7eAAgAATYu/iAIAAEiNpCRIAwAAww=="
+.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUci0UAQYlFAItFBEGJRQSLRQhBiUUIi0UMQYlFDItFEEGJRRCLRRRBiUUUi0UYQYlFGEmLn2ACAABJi69oAgAATYuncAIAAE2Lr3gCAABNi7eAAgAATYu/iAIAAEiNpCRIAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJKj8///zD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAABIjaQkWAMAADHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
@@ -172,6 +174,8 @@ pub const VG_HMAC_SHA224_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features 
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 96 bytes.
@@ -188,7 +192,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha224_finalize_avx2(inner: *mut [u
 call {vg_sha256_finalize_scratch_avx2}
 .base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi0QkFIlDFEGLRCQYiUMYQYtEJByJQxxBi4eQAgAAiUMgQYuHlAIAAIlDJEGLh5gCAACJQyhBi4ecAgAAiUMsQYuHoAIAAIlDMEGLh6QCAACJQzRBi4eoAgAAiUM4SIndSIPFILiAAAAAiUUcuAAAAACJRSCJRSSJRSiJRSyJRTCJRTRBvFwAAABMieBIAcBIAcBIAcBID8hIiUNYSInuSInfugEAAABMifk="
 call {vg_sha256_compress_avx2}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUci0UAQYlFAItFBEGJRQSLRQhBiUUIi0UMQYlFDItFEEGJRRCLRRRBiUUUi0UYQYlFGEmLn2ACAABJi69oAgAATYuncAIAAE2Lr3gCAABNi7eAAgAATYu/iAIAAEiNpCRIAwAAww=="
+.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUci0UAQYlFAItFBEGJRQSLRQhBiUUIi0UMQYlFDItFEEGJRRCLRRRBiUUUi0UYQYlFGEmLn2ACAABJi69oAgAATYuncAIAAE2Lr3gCAABNi7eAAgAATYu/iAIAAEiNpCRIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKj8///zD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhIjaQkWAMAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
         vg_sha256_compress_avx2 = sym super::sha256::vg_sha256_compress_avx2::vg_sha256_compress_avx2,
@@ -261,6 +265,8 @@ jmp 21b
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 96 bytes.
@@ -276,7 +282,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96
 call {vg_sha256_finalize_scratch}
 .base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi0QkFIlDFEGLRCQYiUMYQYtEJByJQxxBi4eQAgAAiUMgQYuHlAIAAIlDJEGLh5gCAACJQyhBi4ecAgAAiUMsQYuHoAIAAIlDMEGLh6QCAACJQzRBi4eoAgAAiUM4SIndSIPFILiAAAAAiUUcuAAAAACJRSCJRSSJRSiJRSyJRTCJRTRBvFwAAABMieBIAcBIAcBIAcBID8hIiUNYSInuSInfugEAAABMifk="
 call {vg_sha256_compress}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUci0UAQYlFAItFBEGJRQSLRQhBiUUIi0UMQYlFDItFEEGJRRCLRRRBiUUUi0UYQYlFGEmLn2ACAABJi69oAgAATYuncAIAAE2Lr3gCAABNi7eAAgAATYu/iAIAAEiNpCRIAwAAww=="
+.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUci0UAQYlFAItFBEGJRQSLRQhBiUUIi0UMQYlFDItFEEGJRRCLRRRBiUUUi0UYQYlFGEmLn2ACAABJi69oAgAATYuncAIAAE2Lr3gCAABNi7eAAgAATYu/iAIAAEiNpCRIAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJKj8///zD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhIjaQkWAMAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
