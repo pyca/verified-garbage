@@ -21,8 +21,11 @@ returns 0.
   `CrtRt.wideProduct`), and for each factor, in the context of its width
   (at half the modulus's if its length fits, as `CrtRt.power` chooses), the
   factor made safe and its constants (`CrtRt.prepBase`), then one doubled
-  `128 w_p` times (`r2Prime`): `2^(128 w_p) mod p`, whose `8 w_p` bytes it
-  copies to the output, little-endian, which is `w_p` words.
+  `128 w_p` times (`r2Prime`): `2^(128 w_p) mod p`, which it leaves in the
+  working space's wide slot 16 (17 for `q`). `pre` is not its output: it may
+  write only `n_len` bytes there, as `vg_rsa_private_crt`'s output.
+* The `8 w_p` bytes of each, little-endian, which is `w_p` words, copied to
+  `pre` after `n`'s values (`copyPrimes`).
 * The results and-ed together, and `pre` cleared unless it is 1.
 
 Only the public lengths choose branches and loop counts: the factors' values
@@ -41,15 +44,16 @@ def shl (r : Reg) : Nat → List Instr
   | 0 => []
   | k + 1 => .alu .add r (.reg r) :: shl r k
 
-/-- `r = w_p = max(2, ⌈len / 8⌉)` for the length `len`, argument `i`; `t` changes. -/
-def primeWords (i : Nat) (r t : Reg) : List Instr :=
-  [.mov r (.mem (argAt 0 i)), .alu .add r (.imm 7), .shift .shr r 3,
+/-- `r = w_p = max(2, ⌈len / 8⌉)` for the length `len`, argument `i` with
+`k` words pushed; `t` changes. -/
+def primeWords (k i : Nat) (r t : Reg) : List Instr :=
+  [.mov r (.mem (argAt k i)), .alu .add r (.imm 7), .shift .shr r 3,
     .mov t (.reg r), .alu .sub t (.imm 2), .shift .shr t 31, .alu .add r (.reg t)]
 
 /-- `2^(128 w_p) mod M` in slot 4: one, doubled `128 w_p` times. -/
 def r2Prime (i : Nat) (c : Ctx) : Prog isa :=
   .seq (setSmall (.slot c 4) (one c) 1) <|
-  .seq (.block (primeWords i .esi .eax ++ shl .esi 7)) (.loop (doubleStep c) .ne)
+  .seq (.block (primeWords 0 i .esi .eax ++ shl .esi 7)) (.loop (doubleStep c) .ne)
 
 /-- The factor in the wide slot `f`, in the context `c`: made safe, with its
 constants (`prepBase`), and its `R_p² mod p` (`Bc` bytes of the context)
@@ -116,12 +120,42 @@ def primesArgs : List Instr :=
   copyArgument 4 10 ++ copyArgument 5 11 ++ copyArgument 6 12 ++ copyArgument 7 13 ++
   copyArgument 4 14 ++ copyArgument 5 15 ++ copyArgument 8 16 ++ copyArgument 9 17
 
-/-- The result, `1` if both are, into `eax` and the frame; the mask, all ones
-if it is 1, at `statusOffset + 4`; `edx` at `pre` and `ecx` its `8 pre_len`
-bytes. -/
+/-- The result, `1` if both are, into the frame. -/
+def status : List Instr :=
+  [.alu .and .eax (.mem (stackAt statusOffset)), .alu .and .eax (.imm 1), .store (stackAt statusOffset) .eax]
+
+/-- Where `esi` and `ebp` are kept while the factors' values are copied. -/
+def saveOffset : Nat := 88
+
+/-- `esi` at the wide slot `j` of the working space (argument 8): `numBase`
+and `j` strides of `16 ⌈n_len / 8⌉ + 32` bytes in; `ecx` changes. -/
+def slotSrc (j : Nat) : List Instr :=
+  [.mov .ecx (.mem (incoming 3)), .alu .add .ecx (.imm 7), .shift .shr .ecx 3] ++ shl .ecx 4 ++
+    [.alu .add .ecx (.imm 32), .mov .esi (.mem (incoming 8)),
+      .alu .add .esi (.imm (BitVec.ofNat 32 numBase))] ++ List.replicate j (.alu .add .esi (.reg .ecx))
+
+/-- `ecx` words of 32 bits from `esi` to `ebp`, both advanced (as `PrecomputeFn.copyOut`). -/
+def copyLoop : Prog isa :=
+  .loop (.block [.mov .eax (.mem (at_ .esi 0)), .store (at_ .ebp 0) .eax, .alu .add .esi (.imm 4),
+    .alu .add .ebp (.imm 4), .alu .sub .ecx (.imm 4)]) .ne
+
+/-- The `8 w_p` bytes of the wide slot `j`, for the length of argument `i`, to `ebp`. -/
+def copyPrime (j i : Nat) : Prog isa :=
+  .seq (.block (slotSrc j ++ primeWords (frameBytes / 4) i .ecx .eax ++ shl .ecx 3)) copyLoop
+
+/-- `R_p² mod p` (the wide slot 16) and `R_q² mod q` (17) to `pre`, after its
+`16 ⌈n_len / 8⌉` bytes of `n`'s values; `esi` and `ebp` kept. -/
+def copyPrimes : Prog isa :=
+  .seq (.block ([.store (stackAt saveOffset) .esi, .store (stackAt (saveOffset + 4)) .ebp,
+    .mov .ebp (.mem (incoming 3)), .alu .add .ebp (.imm 7), .shift .shr .ebp 3] ++ shl .ebp 4 ++
+    [.alu .add .ebp (.mem (incoming 0))])) <|
+  .seq (copyPrime 16 5) <|
+  .seq (copyPrime 17 7) (.block [.mov .esi (.mem (stackAt saveOffset)), .mov .ebp (.mem (stackAt (saveOffset + 4)))])
+
+/-- The mask, all ones if the result is 1, at `statusOffset + 4`; `edx` at
+`pre` and `ecx` its `8 pre_len` bytes. -/
 def maskArgs : List Instr :=
-  [.alu .and .eax (.mem (stackAt statusOffset)), .alu .and .eax (.imm 1), .store (stackAt statusOffset) .eax,
-    .mov .ecx (.imm 0), .alu .sub .ecx (.reg .eax), .store (stackAt (statusOffset + 4)) .ecx,
+  [.mov .eax (.mem (stackAt statusOffset)), .mov .ecx (.imm 0), .alu .sub .ecx (.reg .eax), .store (stackAt (statusOffset + 4)) .ecx,
     .mov .edx (.mem (incoming 0)), .mov .ecx (.mem (incoming 1))] ++ shl .ecx 3
 
 def maskStep : List Instr :=
@@ -135,6 +169,8 @@ def body (publicName : String) (publicCode : Prog isa) (primesName : String) (pr
   .seq (.call publicName publicCode) <|
   .seq (.block primesArgs) <|
   .seq (.call primesName primesCode) <|
+  .seq (.block status) <|
+  .seq copyPrimes <|
   .seq (.block maskArgs) (.seq maskLoop (.block [.mov .eax (.mem (stackAt statusOffset))]))
 
 def code (publicName : String) (publicCode : Prog isa) (primesName : String) (primesCode : Prog isa) :
