@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_384`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -14,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha384_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        r#".base64 "SLjYngXBXZ27y0iJB0i4B9V8NiopmmJIiUcISLgX3XAwWgFZkUiJRxBIuDlZDvfY7C8VSIlHGEi4MQvA/2cmM2dIiUcgSLgRFVhoh0q0jkiJRyhIuKeP+WQNLgzbSIlHMEi4pE/6vh1ItUdIiUc4ww=="
+        r#".base64 "SLjYngXBXZ27y0iJB0i4B9V8NiopmmJIiUcISLgX3XAwWgFZkUiJRxBIuDlZDvfY7C8VSIlHGEi4MQvA/2cmM2dIiUcgSLgRFVhoh0q0jkiJRyhIuKeP+WQNLgzbSIlHMEi4pE/6vh1ItUdIiUc4McBFMdvD"
 .p2align 6"#,
     )
 }
@@ -23,6 +25,8 @@ pub(crate) unsafe extern "sysv64" fn vg_sha384_init(state: *mut [u8; 192]) {
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -30,7 +34,7 @@ pub(crate) unsafe extern "sysv64" fn vg_sha384_init(state: *mut [u8; 192]) {
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        r#".base64 "SLgIybzzZ+YJakiJB0i4O6fKhIWuZ7tIiUcISLgr+JT+cvNuPEiJRxBIuPE2HV869U+lSIlHGEi40YLmrX9SDlFIiUcgSLgfbD4rjGgFm0iJRyhIuGu9Qfur2YMfSIlHMEi4eSF+ExnN4FtIiUc4ww=="
+        r#".base64 "SLgIybzzZ+YJakiJB0i4O6fKhIWuZ7tIiUcISLgr+JT+cvNuPEiJRxBIuPE2HV869U+lSIlHGEi40YLmrX9SDlFIiUcgSLgfbD4rjGgFm0iJRyhIuGu9Qfur2YMfSIlHMEi4eSF+ExnN4FtIiUc4McBFMdvD"
 .p2align 6"#,
     )
 }
@@ -39,6 +43,8 @@ pub(crate) unsafe extern "sysv64" fn vg_sha512_init(state: *mut [u8; 192]) {
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512_224`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -46,7 +52,7 @@ pub(crate) unsafe extern "sysv64" fn vg_sha512_init(state: *mut [u8; 192]) {
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_224_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        r#".base64 "SLiiTVQZyDc9jEiJB0i41tTciWaZ4XNIiUcISLiCnP8yrrf6HUiJRxBIuM+fL1gU1Z1nSIlHGEi4qE3Ue2krbQ9IiUcgSLhCicQEc2/jd0iJRyhIuMg2HWqohZ0/SIlHMEi4oZLWka3mEhFIiUc4ww=="
+        r#".base64 "SLiiTVQZyDc9jEiJB0i41tTciWaZ4XNIiUcISLiCnP8yrrf6HUiJRxBIuM+fL1gU1Z1nSIlHGEi4qE3Ue2krbQ9IiUcgSLhCicQEc2/jd0iJRyhIuMg2HWqohZ0/SIlHMEi4oZLWka3mEhFIiUc4McBFMdvD"
 .p2align 6"#,
     )
 }
@@ -55,6 +61,8 @@ pub(crate) unsafe extern "sysv64" fn vg_sha512_224_init(state: *mut [u8; 192]) {
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512_256`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -62,7 +70,7 @@ pub(crate) unsafe extern "sysv64" fn vg_sha512_224_init(state: *mut [u8; 192]) {
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_256_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        r#".base64 "SLgs9yv8lCExIkiJB0i4wmRMyKNfVZ9IiUcISLhRsVNva7iTI0iJRxBIuL3qQFkZdziWSIlHGEi44/+OqOI+KJZIiUcgSLiSOYZTJR5evkiJRyhIuKq4hSz8mQErSIlHMEi4oizFgdwttw5IiUc4ww=="
+        r#".base64 "SLgs9yv8lCExIkiJB0i4wmRMyKNfVZ9IiUcISLhRsVNva7iTI0iJRxBIuL3qQFkZdziWSIlHGEi44/+OqOI+KJZIiUcgSLiSOYZTJR5evkiJRyhIuKq4hSz8mQErSIlHMEi4oizFgdwttw5IiUc4McBFMdvD"
 .p2align 6"#,
     )
 }
@@ -744,6 +752,8 @@ pub const VG_SHA512_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `data` must be valid for reads of `len` bytes.
@@ -807,7 +817,7 @@ call {vg_sha512_compress_shani}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress_shani}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4Zg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQ8w9/Q2DzD39DcPMPf4OAAAAA8w9/g5AAAADzD3+DoAAAAPMPf4OwAAAASYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJDgGAADD"
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4Zg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQ8w9/Q2DzD39DcPMPf4OAAAAA8w9/g5AAAADzD3+DoAAAAPMPf4OwAAAASYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJDgGAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkwPn///MPf4Qk0AAAAPMPfwQkSI2kJEAGAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
@@ -1261,6 +1271,8 @@ je 22b
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `data` must be valid for reads of `len` bytes.
@@ -1323,7 +1335,7 @@ call {vg_sha512_compress}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4Zg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQ8w9/Q2DzD39DcPMPf4OAAAAA8w9/g5AAAADzD3+DoAAAAPMPf4OwAAAASYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJDgGAADD"
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4Zg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQ8w9/Q2DzD39DcPMPf4OAAAAA8w9/g5AAAADzD3+DoAAAAPMPf4OwAAAASYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJDgGAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkwPn///MPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPfwQkSI2kJEAGAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -2290,6 +2302,14 @@ call {vg_sha512_compress}
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_sha512_224_init_core.rs"]
+pub(crate) mod vg_sha512_224_init_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_256_init_core.rs"]
+pub(crate) mod vg_sha512_256_init_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sha512_compress.rs"]
 pub(crate) mod vg_sha512_compress;
 
@@ -2302,6 +2322,18 @@ pub(crate) mod vg_sha512_compress_avx2;
 pub(crate) mod vg_sha512_compress_shani;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sha512_digest_avx2_core.rs"]
+pub(crate) mod vg_sha512_digest_avx2_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_digest_core.rs"]
+pub(crate) mod vg_sha512_digest_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_digest_shani_core.rs"]
+pub(crate) mod vg_sha512_digest_shani_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sha512_finalize_scratch.rs"]
 pub(crate) mod vg_sha512_finalize_scratch;
 
@@ -2312,6 +2344,10 @@ pub(crate) mod vg_sha512_finalize_scratch_avx2;
 #[rustfmt::skip]
 #[path = "internal/vg_sha512_finalize_scratch_shani.rs"]
 pub(crate) mod vg_sha512_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_init_core.rs"]
+pub(crate) mod vg_sha512_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha512_state_digest.rs"]

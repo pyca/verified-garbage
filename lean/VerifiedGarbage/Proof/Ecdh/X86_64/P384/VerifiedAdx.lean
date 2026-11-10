@@ -1,5 +1,13 @@
 module
 
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Ecdh.P384
+meta import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Spec.Ecdh.P384
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
 
@@ -116,5 +124,29 @@ theorem ecdh_verified_adx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstra
     Verified X86_64.target exchangeP384Adx (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst X86_64.abi 8) :=
   Verified.of_inline_ct ecdh_inlineOk_adx (ecdh_x86_adx hL hI hO) ecdh_ct_adx implies8
     (fun _ h => Sig.clear_of_pre h) ecdh_patch
+
+/-! ## Without secret residue -/
+
+/-- The granules of its stack that `vg_ecdh_p384_adx` must wipe on return, from the
+residue analysis (`X86_64.RScrub.keepFor`). -/
+def scrubKsAdx : List Nat := keep_for% Spec.Ecdh.P384.exchangeApi.sig 8 exchangeP384Adx []
+
+theorem scrubOkAdx : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ecdh.P384.exchangeApi.sig 8 []) exchangeP384Adx h).any
+      (RScrub.resOkB · 8 scrubKsAdx (Impl.Scrub.X86_64.chunks 8)) = true :=
+  RScrub.Analysed.ok_of _ (by taint_decide)
+
+/-- `vg_ecdh_p384_adx`, followed by `Impl.Scrub.X86_64.scrubTail`
+(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
+def scrubRegAdx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
+    (hO : Weierstrass.PrimeOrder Spec.P384.curve) :
+    Registration Spec.Ecdh.P384.exchangeApi X86_64.target :=
+  RScrub.withScrub {
+    suffix := "_adx"
+    code := exchangeP384Adx
+    stack := 8
+    verified := ecdh_verified_adx hL hI hO }
+    (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _) [] (RScrub.pubOk_nil _)
+    (some ⟨scrubKsAdx, scrubOkAdx⟩)
 
 end VG.Proof.Ecdh.X86_64.P384

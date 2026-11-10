@@ -40,7 +40,8 @@ theorem gk_ok {s : State} {L : Lay} {key nonce dig : Addr} {p : Nat} (hL : L.Ok)
       (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.pl) = gOf s.mem L key ^ kOf s.mem L nonce % p ∧
         InP t L ∧ Body L s.mem t.mem ∧ Outside L.Q 1600 (2 ^ 64 - 1600) s.mem t.mem ∧
         arrP t.mem L 0 = arrP s.mem L 0 ∧ arrP t.mem L 24 = arrP s.mem L 24 ∧
-        word t.mem L.S (slot L.wp 0 + 8 * L.wp) = word s.mem L.S (slot L.wp 0 + 8 * L.wp)) ∧
+        word t.mem L.S (slot L.wp 0 + 8 * L.wp) = word s.mem L.S (slot L.wp 0 + 8 * L.wp) ∧
+        arrP t.mem L 4 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.pl)) ∧
         Keep gkRegs s t := by
   have hZ := hL.z256
   have hw := hL.wp_ge
@@ -96,7 +97,7 @@ theorem gk_ok {s : State} {L : Lay} {key nonce dig : Addr} {p : Nat} (hL : L.Ok)
   have kall := (k13.trans k35).trans kt
   refine ⟨⟨?_, ⟨in3.env.keep (k35.trans kt) (by decide), (kall.gpr .r21 (by decide)).trans hin.h21,
       (kall.gpr .r23 (by decide)).trans hin.h23⟩, (Body.ofP hL o3 (by omega_arith) (by omega_arith)).trans (Body.ofBuf hL ot (by omega_arith)),
-    (comb_pbody_keepQ hL (o3.mono (by omega_arith) (by omega_arith))).trans (combBufKeepQ ot (by omega_arith)), ?_, ?_, ?_⟩,
+    (comb_pbody_keepQ hL (o3.mono (by omega_arith) (by omega_arith))).trans (combBufKeepQ ot (by omega_arith)), ?_, ?_, ?_, ?_⟩,
     kall.mono (by decide)⟩
   · rw [vt, read_low (w := L.wp) _ _ (by omega_arith) (by rw [v4']; exact Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hplt), v4']
   · show val32 t.mem L.S (slot L.wp 0) (2 * L.wp) = val32 s.mem L.S (slot L.wp 0) (2 * L.wp)
@@ -104,5 +105,9 @@ theorem gk_ok {s : State} {L : Lay} {key nonce dig : Addr} {p : Nat} (hL : L.Ok)
   · show val32 t.mem L.S (slot L.wp 24) (2 * L.wp) = val32 s.mem L.S (slot L.wp 24) (2 * L.wp)
     rw [Outside.val32 oP (by omega_arith) (by omega_arith), Outside.val32 o3 (by omega_arith) (by omega_arith)]
   · rw [Outside.word oP (by omega_arith) (by omega_arith), Outside.word o3 (by omega_arith) (by omega_arith)]
+
+  · rw [vt, read_low (w := L.wp) _ _ (by omega_arith) (by rw [v4']; exact Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hplt)]
+    show val32 t.mem L.S (slot L.wp 4) (2 * L.wp) = val32 s₃.mem L.S (slot L.wp 4) (2 * L.wp)
+    rw [Outside.val32 oP (by omega_arith) (by omega_arith)]
 
 end VG.Proof.Dsa.PPC64LE

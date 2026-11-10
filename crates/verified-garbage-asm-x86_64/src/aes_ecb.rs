@@ -25,11 +25,11 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_decrypt_vaes(schedule: *const [u
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_aes_decrypt_blocks_vaes}
 .base64 "SIkEJEiLfCQIvuAAAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_aes_decrypt_blocks_vaes = sym super::aes::vg_aes_decrypt_blocks_vaes::vg_aes_decrypt_blocks_vaes,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -138,11 +138,11 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_decrypt_aesni_avx(schedule: *con
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_aes_decrypt_blocks_aesni}
 .base64 "SIkEJEiLfCQIvuAAAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_aes_decrypt_blocks_aesni = sym super::aes::vg_aes_decrypt_blocks_aesni::vg_aes_decrypt_blocks_aesni,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -232,11 +232,11 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_decrypt_aesni(schedule: *const [
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_aes_decrypt_blocks_aesni}
 .base64 "SIkEJEiLfCQIvuAAAAA="
-call {vg_zeroize}
+call {vg_zeroize_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_aes_decrypt_blocks_aesni = sym super::aes::vg_aes_decrypt_blocks_aesni::vg_aes_decrypt_blocks_aesni,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
@@ -262,11 +262,11 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_encrypt_avx(schedule: *const [u8
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_aes_encrypt_blocks}
 .base64 "SIkEJEiLfCQIvgAIAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -292,11 +292,11 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_decrypt_avx(schedule: *const [u8
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_aes_decrypt_blocks}
 .base64 "SIkEJEiLfCQIvgAIAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -318,11 +318,11 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_encrypt(schedule: *const [u8; 24
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_aes_encrypt_blocks}
 .base64 "SIkEJEiLfCQIvgAIAAA="
-call {vg_zeroize}
+call {vg_zeroize_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
@@ -344,10 +344,10 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_decrypt(schedule: *const [u8; 24
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_aes_decrypt_blocks}
 .base64 "SIkEJEiLfCQIvgAIAAA="
-call {vg_zeroize}
+call {vg_zeroize_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }

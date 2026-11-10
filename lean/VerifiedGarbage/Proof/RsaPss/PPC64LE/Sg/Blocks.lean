@@ -20,6 +20,8 @@ first byte, read again.
 
 namespace VG.Proof.RsaPss.PPC64LE.Sg
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.RsaPss.PPC64LE.Sign
 open VG.Impl.RsaOaep.PPC64LE (oEm oRsa)
 open VG.Proof.RsaOaep.PPC64LE (Base Fits SC off off_off view view_w8 fx hiRegs kR sc_in sc_inW S_fits)
@@ -28,7 +30,7 @@ open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep MemTo wp_li wp_addi wp_subi wp_add 
   wp_or wp_and wp_stb wp_nil)
 
 section
-variable {D : Nat} {s : State} (P : PreS D s)
+variable {D : Nat} {s : State} (P : PreS pc D s)
 include P
 
 omit P in

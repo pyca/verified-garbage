@@ -12,9 +12,9 @@
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_224_init_scratch_avx2() {
     core::arch::naked_asm!(
         r#".base64 "SYmYYAUAAEmJqGgFAABNiaBwBQAATYmoeAUAAE2JsIAFAABNibiIBQAASIn7SYn0TYnHSInVSYnNSInf"
-call {vg_sha512_224_init}
+call {vg_sha512_224_init_core}
 .base64 "TInn"
-call {vg_sha512_224_init}
+call {vg_sha512_224_init_core}
 .base64 "uDY2NjaJQ0CJQ0SJQ0iJQ0yJQ1CJQ1SJQ1iJQ1yJQ2CJQ2SJQ2iJQ2yJQ3CJQ3SJQ3iJQ3yJg4AAAACJg4QAAACJg4gAAACJg4wAAACJg5AAAACJg5QAAACJg5gAAACJg5wAAACJg6AAAACJg6QAAACJg6gAAACJg6wAAACJg7AAAACJg7QAAACJg7gAAACJg7wAAABBvgAAAABNhe0="
 je 20f
 22:
@@ -29,7 +29,7 @@ call {vg_sha512_compress_avx2}
 call {vg_sha512_compress_avx2}
 .base64 "SIn7SYnPSYufYAUAAEmLr2gFAABNi6dwBQAATYuveAUAAE2Lt4AFAABNi7+IBQAAww=="
 .p2align 6"#,
-        vg_sha512_224_init = sym crate::sha512::vg_sha512_224_init,
+        vg_sha512_224_init_core = sym crate::sha512::vg_sha512_224_init_core::vg_sha512_224_init_core,
         vg_sha512_compress_avx2 = sym crate::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
 }

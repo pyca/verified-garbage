@@ -55,14 +55,14 @@ theorem lval_trunc {b : Nat → Nat} {S : Nat} : ∀ n, S ≤ n → lval b n < 2
     exact lval_trunc n (by omega_arith) hl
 
 theorem LayOk.D_ge (hl : LayOk l) : l.NB + 32 ≤ l.D := by
-  rcases hl with rfl | rfl | rfl <;> decide
+  rcases hl with rfl | rfl | rfl | rfl <;> decide
 
 theorem AmmOk.D_ge (hl : AmmOk l) : l.NB + 32 ≤ l.D := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- The CRT's layouts have the two primes' lanes. -/
 theorem LayOk.nl (hl : LayOk l) : l.nl = 2 := by
-  rcases hl with rfl | rfl | rfl <;> rfl
+  rcases hl with rfl | rfl | rfl | rfl <;> rfl
 
 /-- The CRT's layouts' two regions. -/
 theorem LayOk.nlD (hl : LayOk l) : l.nl * l.D = 2 * l.D := by rw [hl.nl]
@@ -75,8 +75,21 @@ theorem OutN.rebaseN {B : Addr} {o n : Nat} {m m' : Mem} (h : OutN l (off B o) 0
   · rcases hx p hp with h3 | h3 <;> omega_arith
   · omega_arith
 
-/-- A multiplication `c` (`ammCore`, or `ammCoreU`) with `r8`, `r9`, `r11` at offsets `a`, `b`, `o` of `B = rbx`. -/
-theorem ammCoreSpecN_ok (hl : AmmOk l) {c : Prog isa} (hc : CoreOk l c) {s : State} {B : Addr} {Z o a b : Nat} {k : Nat → Nat}
+/-- The product of numbers below `2 M` fits, with a multiple of `M`, when `4 M ≤ R`. -/
+theorem fit_of_lt {A B M R T : Nat} (hA : A < 2 * M) (hB : B < 2 * M) (hM : 4 * M ≤ R) (hRT : R ≤ T) :
+    A * B + M * R < R * T := by
+  have h1 : A * B ≤ R * M := by
+    have := Nat.mul_le_mul (Nat.le_of_lt hA) (Nat.le_of_lt hB)
+    have e : 2 * M * (2 * M) = 4 * M * M := by grind
+    exact Nat.le_trans (e ▸ this) (Nat.mul_le_mul_right _ hM)
+  have h2 : R * (2 * M) < R * T := Nat.mul_lt_mul_of_pos_left (by omega) (by omega)
+  rw [show R * (2 * M) = R * M + M * R by rw [Nat.mul_comm M R, ← Nat.mul_add]; congr 1; omega] at h2
+  omega
+
+/-- A multiplication `c` (`ammCore`, or `ammCoreU`) with `r8`, `r9`, `r11` at offsets `a`, `b`, `o` of
+`B = rbx`: for a second operand below `2^(52 S)` and a product that fits, the result times `2^(52 S)` is
+the product plus a multiple `M U` of the modulus, with `U < 2^(52 S)`. -/
+theorem ammCoreSpecN_eq (hl : AmmOk l) {c : Prog isa} (hc : CoreOk l c) {s : State} {B : Addr} {Z o a b : Nat} {k : Nat → Nat}
     (hB : s.gpr .rbx = B) (r8₃ : s.gpr .r8 = off B a) (r9₃ : s.gpr .r9 = off B b) (r11₃ : s.gpr .r11 = off B o)
     (hs : Scr s B Z) (hZ : l.D * (l.nl - 1) + l.NB + 32 ≤ Z) (hZb : Z ≤ 2 ^ 63)
     (ho : o + l.D * (l.nl - 1) + l.NB ≤ Z) (ha : a + l.D * (l.nl - 1) + l.NB ≤ Z)
@@ -87,12 +100,11 @@ theorem ammCoreSpecN_ok (hl : AmmOk l) {c : Prog isa} (hc : CoreOk l c) {s : Sta
     (hklt : ∀ p < l.nl, k p < 2 ^ 52) (hk0 : ∀ p < l.nl, (limb l s.mem B (l.D * p + oM) 0 * k p + 1) % 2 ^ 52 = 0) :
     WP isa c s fun s' => (∀ p < l.nl,
       (∀ j < l.L, limb l s'.mem B (l.D * p + o) j < 2 ^ 52) ∧
-      (val52 l s.mem B (l.D * p + a) < 2 * val52 l s.mem B (l.D * p + oM) →
-        val52 l s.mem B (l.D * p + b) < 2 * val52 l s.mem B (l.D * p + oM) →
-        4 * val52 l s.mem B (l.D * p + oM) ≤ 2 ^ (52 * l.S) →
-        val52 l s'.mem B (l.D * p + o) < 2 * val52 l s.mem B (l.D * p + oM) ∧
-        val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.S) % val52 l s.mem B (l.D * p + oM) =
-          val52 l s.mem B (l.D * p + a) * val52 l s.mem B (l.D * p + b) % val52 l s.mem B (l.D * p + oM))) ∧
+      (val52 l s.mem B (l.D * p + b) < 2 ^ (52 * l.S) →
+        val52 l s.mem B (l.D * p + a) * val52 l s.mem B (l.D * p + b) +
+          val52 l s.mem B (l.D * p + oM) * 2 ^ (52 * l.S) < 2 ^ (52 * l.S) * 2 ^ (52 * l.L) →
+        ∃ U, U < 2 ^ (52 * l.S) ∧ val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.S) =
+          val52 l s.mem B (l.D * p + a) * val52 l s.mem B (l.D * p + b) + val52 l s.mem B (l.D * p + oM) * U)) ∧
       OutN l B o l.NB s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
       s'.gpr .r12 = mask52 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
@@ -147,7 +159,7 @@ theorem ammCoreSpecN_ok (hl : AmmOk l) {c : Prog isa} (hc : CoreOk l c) {s : Sta
       Nat.mod_eq_of_lt (by have := carried_lt (lm l A M k Bl p l.S) j; omega_arith)]
   have hv : val52 l s'.mem B (l.D * p + o) = lval (carried (lm l A M k Bl p l.S)) l.L := by
     unfold val52; exact lval_congr hq
-  refine ⟨fun j hj => (hq j hj) ▸ carried_lt _ j, fun hA' hB' hM' => ?_⟩
+  refine ⟨fun j hj => (hq j hj) ▸ carried_lt _ j, fun hBv hfit => ?_⟩
   have ok : Amm52N.Ok l.L (ops A M k p) :=
     ⟨fun j hj => (hlt p hp j hj).1, fun j hj => (hlt p hp j hj).2.2, hk0 p hp⟩
   have hst := hl.steps
@@ -160,26 +172,56 @@ theorem ammCoreSpecN_ok (hl : AmmOk l) {c : Prog isa} (hc : CoreOk l c) {s : Sta
     lval_lt fun j _ => lo_lt _ _
   have hcv := carried_val (lm l A M k Bl p l.S) l.L
   rw [hv]
-  unfold val52 at hA' hB' hM' ⊢
+  unfold val52 at hBv hfit ⊢
   change lval (lm l A M k Bl p l.S) l.L * _ = lval (A p) l.L * lval (Bl p) l.S + lval (M p) l.L * _ at he
-  change lval (A p) l.L < 2 * lval (M p) l.L at hA'
-  change lval (Bl p) l.L < 2 * lval (M p) l.L at hB'
-  change 4 * lval (M p) l.L ≤ _ at hM'
-  have hbS : lval (Bl p) l.L = lval (Bl p) l.S := lval_trunc _ hst.2.2.2.1 (by omega_arith)
-  rw [hbS] at hB'
-  have hSL : 2 ^ (52 * l.S) ≤ 2 ^ (52 * l.L) := Nat.pow_le_pow_right (by decide) (by omega_arith)
-  have hlt2 := amm_lt he hU hA' hB' hM'
+  change lval (Bl p) l.L < _ at hBv
+  change lval (A p) l.L * lval (Bl p) l.L + lval (M p) l.L * _ < _ at hfit
+  have hbS : lval (Bl p) l.L = lval (Bl p) l.S := lval_trunc _ hst.2.2.2.1 hBv
+  rw [hbS] at hfit
+  generalize lval (Amm52N.stepsU l.L (ops A M k p) (Bl p) fun _ => 0) l.S = U at he hU
   have hz : lval (lm l A M k Bl p l.S) l.L < 2 ^ (52 * l.L) := by
-    generalize 2 ^ (52 * l.L) = R at hSL ⊢; generalize 2 ^ (52 * l.S) = R' at hM' hSL; omega_arith
-  rw [Amm52N.carryIn_zero hz] at hcv
-  replace hcv : lval (carried (lm l A M k Bl p l.S)) l.L = lval (lm l A M k Bl p l.S) l.L := by
-    generalize 2 ^ (52 * l.L) = R at hcv; omega_arith
+    have h1 : lval (M p) l.L * U ≤ lval (M p) l.L * 2 ^ (52 * l.S) := Nat.mul_le_mul_left _ (Nat.le_of_lt hU)
+    refine Nat.lt_of_mul_lt_mul_left (a := 2 ^ (52 * l.S)) ?_
+    rw [Nat.mul_comm]
+    generalize 2 ^ (52 * l.S) * 2 ^ (52 * l.L) = T at hfit ⊢
+    omega_arith
+  rw [Amm52N.carryIn_zero hz, Nat.zero_mul, Nat.add_zero] at hcv
+  refine ⟨U, hU, ?_⟩
   rw [hcv]
-  refine ⟨hlt2, ?_⟩
-  rw [he, hbS, Nat.add_mul_mod_self_left]
+  show lval (lm l A M k Bl p l.S) l.L * _ = lval (A p) l.L * lval (Bl p) l.L + lval (M p) l.L * U
+  rw [hbS]; exact he
+
+/-- `ammCoreSpecN_eq` for operands below twice the modulus: so is the result, and it is congruent to
+their product over `2^(52 S)`. -/
+theorem ammCoreSpecN_ok (hl : AmmOk l) {c : Prog isa} (hc : CoreOk l c) {s : State} {B : Addr} {Z o a b : Nat} {k : Nat → Nat}
+    (hB : s.gpr .rbx = B) (r8₃ : s.gpr .r8 = off B a) (r9₃ : s.gpr .r9 = off B b) (r11₃ : s.gpr .r11 = off B o)
+    (hs : Scr s B Z) (hZ : l.D * (l.nl - 1) + l.NB + 32 ≤ Z) (hZb : Z ≤ 2 ^ 63)
+    (ho : o + l.D * (l.nl - 1) + l.NB ≤ Z) (ha : a + l.D * (l.nl - 1) + l.NB ≤ Z)
+    (hb : b + l.D * (l.nl - 1) + l.NB ≤ Z)
+    (hlt : ∀ p < l.nl, ∀ j < l.L, limb l s.mem B (l.D * p + a) j < 2 ^ 52 ∧ limb l s.mem B (l.D * p + b) j < 2 ^ 52 ∧
+      limb l s.mem B (l.D * p + oM) j < 2 ^ 52)
+    (hk : ∀ p < l.nl, ∀ t < 4, word s.mem B (l.D * p + l.oK0 + 8 * t) = BitVec.ofNat 64 (k p))
+    (hklt : ∀ p < l.nl, k p < 2 ^ 52) (hk0 : ∀ p < l.nl, (limb l s.mem B (l.D * p + oM) 0 * k p + 1) % 2 ^ 52 = 0) :
+    WP isa c s fun s' => (∀ p < l.nl,
+      (∀ j < l.L, limb l s'.mem B (l.D * p + o) j < 2 ^ 52) ∧
+      (val52 l s.mem B (l.D * p + a) < 2 * val52 l s.mem B (l.D * p + oM) →
+        val52 l s.mem B (l.D * p + b) < 2 * val52 l s.mem B (l.D * p + oM) →
+        4 * val52 l s.mem B (l.D * p + oM) ≤ 2 ^ (52 * l.S) →
+        val52 l s'.mem B (l.D * p + o) < 2 * val52 l s.mem B (l.D * p + oM) ∧
+        val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.S) % val52 l s.mem B (l.D * p + oM) =
+          val52 l s.mem B (l.D * p + a) * val52 l s.mem B (l.D * p + b) % val52 l s.mem B (l.D * p + oM))) ∧
+      OutN l B o l.NB s.mem s'.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
+      s'.gpr .r12 = mask52 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  refine WP.mono (ammCoreSpecN_eq hl hc hB r8₃ r9₃ r11₃ hs hZ hZb ho ha hb hlt hk hklt hk0) fun s' ⟨hv, rest⟩ =>
+    ⟨fun p hp => ⟨(hv p hp).1, fun hA hB' hM => ?_⟩, rest⟩
+  have hSL : 2 ^ (52 * l.S) ≤ 2 ^ (52 * l.L) :=
+    Nat.pow_le_pow_right (by decide) (by have := hl.steps; omega_arith)
+  obtain ⟨U, hU, he⟩ := (hv p hp).2 (by omega_arith) (fit_of_lt hA hB' hM hSL)
+  exact ⟨amm_lt he hU hA hB' hM, by rw [he, Nat.add_mul_mod_self_left]⟩
 
 /-- The layout's multiplication with `r8`, `r9`, `r11` at offsets `a`, `b`, `o` of `B = rbx`. -/
-theorem ammCoreSpec_ok (hl : AmmOk l) {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
+theorem ammCoreSpec_ok (hl : AmmOk l) (hz : l.z = false) {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
     (hB : s.gpr .rbx = B) (r8₃ : s.gpr .r8 = off B a) (r9₃ : s.gpr .r9 = off B b) (r11₃ : s.gpr .r11 = off B o)
     (hs : Scr s B (l.nl * l.D))
     (ho : o + l.NB ≤ l.D) (ha : a + l.NB ≤ l.D) (hb : b + l.NB ≤ l.D)
@@ -203,13 +245,13 @@ theorem ammCoreSpec_ok (hl : AmmOk l) {s : State} {B : Addr} {o a b : Nat} {k : 
   have hD' := hl.D_ge
   have hnl := hl.nl_le
   have hDn : l.D * (l.nl - 1) ≤ l.D := D_le hl (show l.nl - 1 < l.nl by omega_arith)
-  refine WP.mono (ammCoreSpecN_ok hl (ammMul_core hl) hB r8₃ r9₃ r11₃ hs (by omega_arith) (by omega_arith)
+  refine WP.mono (ammCoreSpecN_ok hl (ammMul_core hl hz) hB r8₃ r9₃ r11₃ hs (by omega_arith) (by omega_arith)
     (by omega_arith) (by omega_arith) (by omega_arith) hlt hk hklt hk0) fun s' ⟨hv, hf, hg, _, hrd, hwr, hx⟩ =>
     ⟨fun p hp => let h := hv p hp; ⟨h.1, (h.2 (hA p hp) (hBv p hp) (hM p hp)).1,
       (h.2 (hA p hp) (hBv p hp) (hM p hp)).2⟩, hf.out2, hg, hrd, hwr, hx⟩
 
 /-- `[o] := [a] [b] / 2^(208 R)` for each lane. -/
-theorem amm_ok (hl : AmmOk l) {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
+theorem amm_ok (hl : AmmOk l) (hz : l.z = false) {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
     (hB : s.gpr .rbx = B) (hs : Scr s B (l.nl * l.D))
     (ho : o + l.NB ≤ l.D) (ha : a + l.NB ≤ l.D) (hb : b + l.NB ≤ l.D)
     (hlt : ∀ p < l.nl, ∀ j < l.L, limb l s.mem B (l.D * p + a) j < 2 ^ 52 ∧ limb l s.mem B (l.D * p + b) j < 2 ^ 52 ∧
@@ -244,7 +286,7 @@ theorem amm_ok (hl : AmmOk l) {s : State} {B : Addr} {o a b : Nat} {k : Nat → 
   have g₃ : ∀ r, r ≠ .r8 → r ≠ .r9 → r ≠ .r11 → s₃.gpr r = s.gpr r := fun r h8 h9 h11 => by
     rw [u₃.other _ h11, u₂.other _ h9, u₁.other _ h8]
   rw [← m₃] at hlt hk hk0 hA hBv hM ⊢
-  refine WP.mono (ammCoreSpec_ok hl rbx₃ r8₃ r9₃ u₃.self (hs.congr wr₃) ho ha hb hlt hk hklt hk0 hA hBv hM)
+  refine WP.mono (ammCoreSpec_ok hl hz rbx₃ r8₃ r9₃ u₃.self (hs.congr wr₃) ho ha hb hlt hk hklt hk0 hA hBv hM)
     fun s' ⟨hv, hf, hg, hrd, hwr, hx⟩ => ⟨hv, hf, fun r h1 h2 h3 h4 h5 h6 h7 h8 h9 => ?_,
       hrd.trans rd₃, hwr.trans wr₃, by rw [hx, u₃.mxcsr, u₂.mxcsr, u₁.mxcsr]⟩
   rw [hg r h1 h2 h3 h4 h6 h7 h9, g₃ r h5 h6 h8]

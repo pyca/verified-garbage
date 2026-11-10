@@ -178,7 +178,7 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
     (mask_arrP hL wo hj).trans (qa₁.qbuf.arrP hL hj)
   have k₁₂ := k₁.trans k₂
   -- `R² mod q`.
-  refine WP.seq (WP.mono (rrQ_ok Q₂ (by rw [q0₂]; omega_arith)) fun s₃ ⟨⟨Q₃, h8₃, qa₃, _⟩, k₃⟩ => ?_)
+  refine WP.seq (WP.mono (rrQ_ok Q₂ (by rw [q0₂]; omega_arith) (by rw [q0₂]; exact hqo)) fun s₃ ⟨⟨Q₃, h8₃, qa₃, _, _⟩, k₃⟩ => ?_)
   rw [q0₂] at h8₃
   have q0₃ : arrQ s₃.mem L 0 = q := qa₃.arr0.trans q0₂
   -- `q − 2`.
@@ -202,7 +202,8 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
       hnq hd ((hdg.keep k₁₅.rd k₁₅.wr).take (Nat.min_le_left d n))
       (by rw [q0₅]; omega_arith) (by rw [q0₅]; exact hqo) (by rw [q0₅]; exact hqlt)
       (by rw [a8₅, a8₄, h8₃, q0₅]) w4₅ (by rw [q0₅]; exact Nat.mod_lt _ (by omega_arith)))
-    fun s₆ ⟨⟨Q₆, u1₆, u2₆, qb₆⟩, k₆⟩ => ?_)
+    fun s₆ ⟨⟨Q₆, u1₆, u2₆, qb₆, a1₆⟩, k₆⟩ => ?_)
+  rw [q0₅] at a1₆
   rw [q0₅, (sig_kept hsg hdg K₅.out (Nat.min_le_left d n)).2.2] at u1₆
   rw [q0₅, (sig_kept hsg hdg K₅.out (Nat.zero_le d)).1] at u2₆
   have k₁₆ := k₁₅.trans k₆
@@ -214,7 +215,7 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
   refine WP.seq (WP.mono (combine_ok hL Q₆.scr Q₆.regs (hk.keep k₁₆.rd k₁₆.wr)
       ((qb₂₆.arrP hL (by decide)).trans ((pw 0 (by decide)).trans p0)) (by omega_arith) hpo
       ((qb₂₆.arrP hL (by decide)).trans ((pw 24 (by decide)).trans p8)))
-    fun s₇ ⟨⟨v₇, ip₇, B₇, Qk₇⟩, k₇⟩ => ?_)
+    fun s₇ ⟨⟨v₇, a4₇, ip₇, B₇, Qk₇⟩, k₇⟩ => ?_)
   rw [u1₆, u2₆, eg₆, ey₆, hgg, hyy] at v₇
   have k₁₇ := k₁₆.trans k₇
   have q0₇ : arrQ s₇.mem L 0 = q := by
@@ -224,7 +225,10 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
       (0 < sOf s.mem L sig ∧ sOf s.mem L sig < q))) := by
     rw [Outside.word (B₂₆.trans B₇) (Or.inl (by decide)) (by simp only [hMask]; omega_arith)]; exact hm₂
   -- The comparison.
-  refine WP.mono (compare_ok hL (scr.congr k₁₇.wr) (regs.keep k₁₇) (hsg.keep k₁₇.rd k₁₇.wr) (by rw [q0₇]; omega_arith)
+  have q1₇ : arrQ s₇.mem L 1 = 2 ^ (128 * 4) % q := by
+    rw [arrQ, arr, Outside.val32 Qk₇ (by decide) (by decide)]; exact a1₆
+  refine WP.mono (compare_ok hL (scr.congr k₁₇.wr) (regs.keep k₁₇) (hsg.keep k₁₇.rd k₁₇.wr) ip₇
+      (by rw [q0₇]; omega_arith) (by rw [q0₇]; exact hqo) (by rw [q1₇, q0₇]) a4₇
       hm₇) fun t ⟨⟨r3, Bt⟩, kt⟩ => ?_
   rw [q0₇, v₇, (sig_kept hsg hdg K₇.out (Nat.zero_le d)).1] at r3
   refine ⟨⟨?_, K₂.trans (Kept.ofBody hL ((B₂₆.trans B₇).trans Bt)), (kt.gpr .r21 (by decide)).trans ip₇.h21,

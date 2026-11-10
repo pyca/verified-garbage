@@ -15,6 +15,8 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use super::{BigUint, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
+#[cfg(target_arch = "powerpc64")]
+use crate::arch::dispatch::rsa::vg_rsa_private_precompute_auto;
 use crate::arch::dispatch::rsa::{
     vg_rsa_check_key_auto, vg_rsa_crt_values_auto, vg_rsa_recover_primes_det_auto,
 };
@@ -108,6 +110,10 @@ pub struct PrivateKey {
     pub(crate) dp: Vec<u8>,
     pub(crate) dq: Vec<u8>,
     pub(crate) qinv: Vec<u8>,
+    /// The key's precomputed values (`VG.Spec.Rsa.privatePrecompute`),
+    /// which the `_precomputed` private-key operations take.
+    #[cfg(target_arch = "powerpc64")]
+    pub(crate) pre: Vec<u64>,
 }
 
 impl fmt::Debug for PrivateKey {
@@ -128,6 +134,8 @@ impl Drop for PrivateKey {
         ] {
             crate::zeroize::zeroize(x);
         }
+        #[cfg(target_arch = "powerpc64")]
+        crate::zeroize::zeroize(&mut self.pre);
     }
 }
 
@@ -258,7 +266,7 @@ impl PrivateKey {
             return Err(Error::InvalidPrivateKey);
         }
         let [d, dp, dq, qinv] = values.map(Option::unwrap_or_default);
-        let key = PrivateKey {
+        let mut key = PrivateKey {
             n: n.to_vec(),
             e: e.to_vec(),
             d,
@@ -267,8 +275,10 @@ impl PrivateKey {
             dp,
             dq,
             qinv,
+            #[cfg(target_arch = "powerpc64")]
+            pre: Vec::new(),
         };
-        if key.valid(dit) {
+        if key.valid(dit) && key.precompute(dit) {
             Ok(key)
         } else {
             Err(Error::InvalidPrivateKey)
@@ -316,6 +326,53 @@ impl PrivateKey {
         // The working space holds the private key.
         crate::zeroize::zeroize(&mut scratch);
         r == 1
+    }
+
+    /// Computes the key's precomputed values, where the private-key
+    /// operations take them, by the verified `vg_rsa_private_precompute`:
+    /// whether it accepted the key, which it does for every key `valid`
+    /// accepts (a valid modulus and `p q = n`).
+    pub(crate) fn precompute(&mut self, dit: crate::dit::Dit<'_>) -> bool {
+        #[cfg(target_arch = "powerpc64")]
+        {
+            let k = self.n.len();
+            let prime_words = |len: usize| len.div_ceil(8).max(2);
+            let mut pre =
+                vec![
+                    0u64;
+                    2 * k.div_ceil(8) + prime_words(self.p.len()) + prime_words(self.q.len())
+                ];
+            let mut scratch = super::Scratch::new(scratch_words(k));
+            // SAFETY: each pointer is valid for its length (`pre` and
+            // `scratch` for writes), and none overlaps another or wraps
+            // around, as they are distinct Rust allocations; `from_crt`'s
+            // checks give `64 ≤ n_len ≤ 1024` and `1 ≤ p_len, q_len < n_len`,
+            // and `pre_len = 2 ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) +
+            // max(2, ⌈q_len / 8⌉)` and `scratch_len = 16 n_len + 32`; the
+            // key's `Drop` wipes `pre`, and `Scratch`'s `scratch`.
+            let r = unsafe {
+                vg_rsa_private_precompute_auto(
+                    dit,
+                    pre.as_mut_ptr(),
+                    pre.len(),
+                    self.n.as_ptr(),
+                    k,
+                    self.p.as_ptr(),
+                    self.p.len(),
+                    self.q.as_ptr(),
+                    self.q.len(),
+                    scratch.as_mut_ptr(),
+                    scratch.len(),
+                )
+            };
+            self.pre = pre;
+            r == 1
+        }
+        #[cfg(not(target_arch = "powerpc64"))]
+        {
+            let _ = dit;
+            true
+        }
     }
 
     /// [`from_primes`](Self::from_primes) of the values' big-endian bytes

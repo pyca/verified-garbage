@@ -31,11 +31,12 @@ open VG.Proof.Bignum.X86_64.AmmSym (wrList writeW256_outside word_wrList_unique 
 
 variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
-/-- The offsets of a region, in `NB`, the table's `T NB` and `XE`. -/
+/-- The offsets of a region, in `NB`, the table's `T NB`, `XE`, and the
+bytes `zx` of the numbers only `ammCoreZ`'s layouts have, at its end. -/
 theorem lay_offs (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : l.oK0 = l.NB ∧ l.oY = l.NB + 32 ∧ l.oX = 2 * l.NB + 32 ∧ l.oS = 3 * l.NB + 32 ∧
     l.oTab = 4 * l.NB + 32 ∧ l.oE = 4 * l.NB + 32 + l.T * l.NB ∧ l.oK1 = 4 * l.NB + 32 + l.T * l.NB + l.XE ∧
     l.oV = 5 * l.NB + 32 + l.T * l.NB + l.XE ∧ l.oFin = 5 * l.NB + 64 + l.T * l.NB + l.XE ∧
-    l.D = 6 * l.NB + 64 + l.T * l.NB + l.XE := by
+    l.D = 6 * l.NB + 64 + l.T * l.NB + l.XE + l.zx := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     simp only [Lay.D, Lay.oFin, Lay.oV, Lay.oK1, Lay.oE, Lay.oTab, Lay.oS, Lay.oX, Lay.oY, Lay.oK0] <;> omega_using []
 
@@ -52,7 +53,7 @@ theorem dec_T (hl : AmmOk l) {i : Nat} (h : i + 1 < 16) : decide (i + 1 = l.T) =
 
 /-- Entries of the table at the same offset are the same. -/
 theorem nb_mul_inj (hl : AmmOk l) {i j : Nat} (h : l.NB * i = l.NB * j) : i = j := by
-  have : 0 < l.NB := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
+  have : 0 < l.NB := by rcases hl with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
   exact Nat.eq_of_mul_eq_mul_left this h
 
 theorem vy_setVy_self (s : State) (d : VReg) (v : BitVec 256) : (s.setVy d v).vy d = v := by
@@ -172,9 +173,13 @@ theorem copyN_ok (hl : AmmOk l) {s : State} {B : Addr} {o a : Nat} (hB : s.gpr .
       exact ⟨p, hp, by dsimp only; omega_using [], by dsimp only; omega_using [hNB, hk]⟩
 
 theorem NB_le (hl : AmmOk l) : l.NB ≤ 640 ∧ 160 ≤ l.NB := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
-theorem dbl_le (hl : AmmOk l) : 64 * l.W ≤ 104 * l.S := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
+theorem dbl_le (hl : AmmOk l) : l.cv ≤ 104 * l.S := by rcases hl with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
+
+/-- The base and 1 come times `R_X` to the exponentiations of the layouts without `ammCoreZ`. -/
+theorem cv_eq (hz : l.z = false) : l.cv = 64 * l.W := by
+  unfold Lay.cv; rw [hz, ite_eq_right (by decide)]
 
 /-! ## The pieces of `convTabBody` -/
 
@@ -347,7 +352,7 @@ theorem tabIter_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → N
     rw [me₁]; exact (h.tab (i - 1) (by omega_using [hi]) p hp).1
   refine WP.seq (WP.mono (ammCore2_ok hl (o := l.oTab + l.NB * i) (k := k) rbx₁ h8 h9 h11
     (h.scr.congr (by rw [k₁.2.2, hf.2.2.2.1]))
-    (by rw [me₁]; exact h.ar) (by omega_using [o5, o10, hNi]) (by omega_using [o2, o5])
+    (by rw [me₁]; exact h.ar) (by omega_using [o2, o5]) (by omega_using [o5, o9, hNi])
         (by omega_using [o5, o10, hNi, hNi1]) (by omega_using [o3, o10]) hg
     (fun p hp => by rw [me₁]; exact h.xg p hp))
     fun t₂ ⟨hv₂, f₂, ar₂, g₂, rd₂, wr₂, x₂⟩ => ?_)
@@ -412,9 +417,9 @@ structure ConvPre (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (B : Addr)
   gx : ∀ p < l.nl, Good l s₀.mem B M l.oX p
   gy : ∀ p < l.nl, Good l s₀.mem B M l.oY p
   gk : ∀ p < l.nl, Good l s₀.mem B M l.oK1 p
-  vx : Q → ∀ p < l.nl, val52 l s₀.mem B (l.D * p + l.oX) % M p = x p * 2 ^ (64 * l.W) % M p
-  vy : Q → ∀ p < l.nl, val52 l s₀.mem B (l.D * p + l.oY) % M p = 1 * 2 ^ (64 * l.W) % M p
-  vk : Q → ∀ p < l.nl, val52 l s₀.mem B (l.D * p + l.oK1) % M p = 2 ^ (104 * l.S - 64 * l.W) % M p
+  vx : Q → ∀ p < l.nl, val52 l s₀.mem B (l.D * p + l.oX) % M p = x p * 2 ^ l.cv % M p
+  vy : Q → ∀ p < l.nl, val52 l s₀.mem B (l.D * p + l.oY) % M p = 1 * 2 ^ l.cv % M p
+  vk : Q → ∀ p < l.nl, val52 l s₀.mem B (l.D * p + l.oK1) % M p = 2 ^ (104 * l.S - l.cv) % M p
 
 /-- The state before entry 0, from `s₀`. -/
 structure At0 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ t : State) : Prop where
@@ -454,8 +459,8 @@ theorem conv0_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat
   have me : t₁.mem = s₀.mem := by rw [me₁, hf.2.1, h.mem]
   have rbx₁ : t₁.gpr .rbx = B := by rw [k₁.gpr (by decide)]; exact hB₀
   refine WP.seq (WP.mono (ammCore2_ok hl (o := l.oY) (M := M) (k := k) rbx₁ h8 h9 h11
-    (hc.scr.congr (by rw [k₁.2.2, hf.2.2.2.1, h.wr])) (by rw [me]; exact hc.ar) (by omega_using [o2, o10])
-    (by omega_using []) (by omega_using [o2, o10]) (by omega_using [o7, o10])
+    (hc.scr.congr (by rw [k₁.2.2, hf.2.2.2.1, h.wr])) (by rw [me]; exact hc.ar) (by omega_using [])
+    (by omega_using [o2, o9]) (by omega_using [o2, o10]) (by omega_using [o7, o10])
     (by rw [me]; exact hc.gy) (by rw [me]; exact hc.gk))
     fun t₂ ⟨hv₂, f₂, ar₂, g₂, rd₂, wr₂, x₂⟩ => ?_)
   have r13₂ : t₂.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * 0) := by
@@ -475,7 +480,7 @@ theorem conv1_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat
     WP isa (convTabBody l) t fun t' => TabInv l s₀ B M k x Q 2 t' ∧ t'.zf = some false := by
   have hD := hl.D_bounds
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  have e2 : 2 ^ (64 * l.W) * 2 ^ (104 * l.S - 64 * l.W) = 2 ^ (52 * l.S) * 2 ^ (52 * l.S) := by
+  have e2 : 2 ^ l.cv * 2 ^ (104 * l.S - l.cv) = 2 ^ (52 * l.S) * 2 ^ (52 * l.S) := by
     have := dbl_le hl
     rw [← Nat.pow_add, ← Nat.pow_add]; congr 1; omega_using [this]
   have hB : t.gpr .rbx = B := by
@@ -495,8 +500,8 @@ theorem conv1_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat
   have me : t₁.mem = t.mem := by rw [me₁, hf.2.1]
   have rbx₁ : t₁.gpr .rbx = B := by rw [k₁.gpr (by decide)]; exact hB₀
   refine WP.seq (WP.mono (ammCore2_ok hl (o := l.oX) (M := M) (k := k) rbx₁ h8 h9 h11
-    (hc.scr.congr (by rw [k₁.2.2, hf.2.2.2.1, h.wr])) (by rw [me]; exact h.ar) (by omega_using [o3, o10])
-    (by omega_using [o2, o3]) (by omega_using [o3, o10]) (by omega_using [o7, o10])
+    (hc.scr.congr (by rw [k₁.2.2, hf.2.2.2.1, h.wr])) (by rw [me]; exact h.ar) (by omega_using [o2, o3])
+    (by omega_using [o3, o9]) (by omega_using [o3, o10]) (by omega_using [o7, o10])
     (by rw [me]; exact gx) (by rw [me]; exact gk))
     fun t₂ ⟨hv₂, f₂, ar₂, g₂, rd₂, wr₂, x₂⟩ => ?_)
   rw [me] at hv₂ f₂
@@ -553,7 +558,8 @@ theorem conv1_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat
     fun hq p hp => by rw [(keepY (by omega_using [o3, o5]) p hp).2]; exact vx₂ hq p hp, ?_, ?_, ?_, ?_, ?_⟩
   · rw [k₆.gpr (by decide), g₅, g₄, hg₃]; exact hB₂
   · rw [me₆]
-    exact (ar₂.of_out2 hl f₄ (by omega_using [o2, o5]) hoD).of_out2 hl f₅ (by omega_using [o2, o5]) hoD'
+    exact (ar₂.of_out2 hl f₄ (by omega_using [o2, o5]) (by omega_using [o5, o9])).of_out2 hl f₅
+      (by omega_using [o2, o5]) (by omega_using [o5, o9])
   · rw [me₆]
     rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl
     · rw [Nat.mul_zero, Nat.add_zero]
