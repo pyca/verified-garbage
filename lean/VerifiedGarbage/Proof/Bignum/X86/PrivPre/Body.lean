@@ -146,5 +146,23 @@ theorem wp_slot {is : List Instr} {Q : State → Prop} {r : Reg} (A : PPABI s) (
   refine (Frame.refl _ _).writeW (r := topR s) (by simp) _ ?_
   exact Offset.contains_base _ (by simp only [stackBytes]; omega) (by omega)
 
+theorem Body.readSlot (A : PPABI s) (B : Body s t) {d : Nat} (hd : d + 4 ≤ 96) :
+    readSrc t (.mem (stackAt d)) = some (t.mem.readW (slot s d) 32) := by
+  show t.load32 (t.ea (stackAt d)) = _
+  rw [slot_ea A B (by omega)]
+  have hin : InRegions (t.rd ++ t.wr) (slot s d) 4 :=
+    ⟨frameR s, by rw [B.wr]; simp, by rw [frame_base A]; exact Offset.contains _ (by omega) (by omega) (by omega)⟩
+  simp only [State.load32, hin, ite_true]
+
+/-- A word of the frame, kept by writes to `pre` and the working space. -/
+theorem slot_keep (A : PPABI s) {m m' : Mem} (F : Frame [preR s, wsR s] m m') {d : Nat} (hd : d + 4 ≤ 96) :
+    m'.readW (slot s d) 32 = m.readW (slot s d) 32 := by
+  refine F.readW (r := topR s) (Offset.contains_base _ (by simp [stackBytes]; omega) (by omega)) (fun r hr => ?_)
+    (by decide)
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact A.belowPre
+  · exact A.belowWs
+
 end
 end VG.Proof.Bignum.X86.PrivPre
