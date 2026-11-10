@@ -331,10 +331,25 @@ theorem preX_at {t : State} {em : List Byte} (P' : PreS true D s) (X : PreXS s) 
       Impl.Rsa.PPC64LE.Priv.frameBytes⟩ := by
     simp only [Rsa.PPC64LE.Priv.kR, Rsa.PPC64LE.Priv.fb, hsp, pb_base, BitVec.add_sub_cancel]
   refine ⟨by rw [hO, hPre]; exact X.oP, by rw [hS, hPre]; exact X.sP.sub_left (rs_sub P'),
-    by rw [hK, hPre]; exact X.kP.sub_left kD'_sub, ?_, ?_, ?_⟩
+    by rw [hK, hPre]; exact X.kP.sub_left kD'_sub, ?_, ?_, ?_, ?_⟩
   · rw [sa 12 (by decide), sa 13 (by decide)]; exact X.wP
   · rw [sa 13 (by decide), sa 1 (by decide), sa 3 (by decide), callE_gpr s t (r := .r6), A.r6]; exact X.pl
   · rw [hsp, hpbt]; have := P'.sp2; omega
+  · -- `pre`'s values, as the caller's precondition gives them.
+    have hb := fun {p : Addr} {len : Nat} (hd : (kS true s).Disjoint ⟨p, len⟩) (hs : (scR s).Disjoint ⟨p, len⟩)
+      (hl : len ≤ 2 ^ 64) => bytes_at A (R := ⟨p, len⟩) hd (hs.sub_left (sc_sub P')) hl
+    have hw := VG.Proof.Rsa.PPC64LE.Priv.words_of_frame A.mem (p := stackArg s 16) (n := (stackArg s 17).toNat)
+      (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · rw [Nat.mul_comm]; exact X.kP.symm
+        · rw [Nat.mul_comm]; exact (X.sP.sub_left (sc_sub P')).symm) (by have := X.wP; omega)
+    simp only [Rsa.PPC64LE.Priv.PreHyp, State.withRegions_mem, State.callEntry_mem, callE_gpr s t (r := .r5),
+      callE_gpr s t (r := .r6), A.r5, A.r6, sa 0 (by decide), sa 1 (by decide), sa 2 (by decide),
+      sa 3 (by decide), sa 12 (by decide), sa 13 (by decide), psa, hw]
+    rw [hb P'.kn P'.ns.symm (by have := P'.wn; omega), hb P'.kp P'.ps.symm (by have := P'.wp; omega),
+      hb P'.kq P'.qs.symm (by have := P'.wq; omega)]
+    exact X.hyp rfl
 
 /-- The call of `vg_rsa_private_checked`, or with `pc` of
 `vg_rsa_private_checked_precomputed`. -/
@@ -342,8 +357,7 @@ theorem call_priv {u : State} {em : List Byte} (X : pc = true → PreXS s) (A : 
     WP isa (privCall pc) u fun v => v.rd = u.rd ∧ v.wr = u.wr ∧ v.sp = u.sp ∧
       Frame (callWr s ++ [below (pb pc s) Impl.Rsa.PPC64LE.Priv.frameBytes]) u.mem v.mem ∧
       (∀ r ∈ preserved, v.gpr r = u.gpr r) ∧
-      ((pc = true → Rsa.PPC64LE.Priv.PreHyp (callE pc s u)) →
-        Rsa.PPC64LE.Priv.fnPost (callE pc s u) (v.withRegions (callRd pc s) (callWr s))) := by
+      Rsa.PPC64LE.Priv.fnPost (callE pc s u) (v.withRegions (callRd pc s) (callWr s)) := by
   obtain ⟨hc, hw⟩ := call_covers P A
   cases pc with
   | false =>
@@ -351,13 +365,13 @@ theorem call_priv {u : State} {em : List Byte} (X : pc = true → PreXS s) (A : 
       (Rsa.PPC64LE.Priv.pre_of_preP (preP_at P A)) hc hw (fun v hrd hwr hsp' hf hpres hpost => ?_)
       (by rw [priv_sdepth]; decide)
     rw [priv_sdepth, A.sp] at hf
-    exact ⟨hrd, hwr, hsp', hf, hpres, fun _ => hpost⟩
+    exact ⟨hrd, hwr, hsp', hf, hpres, hpost⟩
   | true =>
     refine WP.callAny (k := Rsa.PPC64LE.Priv.fnContractP) Rsa.PPC64LE.Priv.codeP_correct
       (Rsa.PPC64LE.Priv.pre_of_prePX (preP_at P A) (preX_at P (X rfl) A)) hc hw
       (fun v hrd hwr hsp' hf hpres hpost => ?_) (by rw [privP_sdepth]; decide)
     rw [privP_sdepth, A.sp] at hf
-    exact ⟨hrd, hwr, hsp', hf, hpres, fun hh => hpost (hh rfl)⟩
+    exact ⟨hrd, hwr, hsp', hf, hpres, hpost⟩
 
 /-- After the private operation. -/
 def AfterS (pc : Bool) (s : State) (em : List Byte) (w : State) : Prop :=
@@ -391,23 +405,6 @@ theorem priv_ok {t : State} (X : pc = true → PreXS s) (h : Base Ss vS s t) {em
     rw [hf.readW (Region.contains_self _ _) (slot_dis P (by decide)) (by decide)]; exact A.ls
   refine ⟨⟨fsp, fwr, fun r hr => ?_, svs, lss⟩, by show v.rd = _; exact hrd.trans A.rd, fun hyp => ?_⟩
   · show v.gpr r = _; rw [hpres r (by revert r; decide)]; exact A.hi r hr
-  -- The outcome, given `pre`'s values at the call.
-  have hpost := hpost fun hpc => by
-    subst hpc
-    have X' := X rfl
-    have hw := VG.Proof.Rsa.PPC64LE.Priv.words_of_frame A.mem (p := stackArg s 16) (n := (stackArg s 17).toNat)
-      (fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · rw [Nat.mul_comm]; exact X'.kP.symm
-        · rw [Nat.mul_comm]; exact (X'.sP.sub_left (sc_sub P)).symm) (by have := X'.wP; omega)
-    have sa' := fun i (hi : i < 14) => callE_stackArg A (i := i) hi
-    simp only [Rsa.PPC64LE.Priv.PreHyp, State.withRegions_mem, State.callEntry_mem, callE_gpr s u (r := .r5),
-      callE_gpr s u (r := .r6), A.r5, A.r6, sa' 0 (by decide), sa' 1 (by decide), sa' 2 (by decide),
-      sa' 3 (by decide), sa' 12 (by decide), sa' 13 (by decide), psa, hw]
-    rw [hb P.kn P.ns.symm (by have := P.wn; omega), hb P.kp P.ps.symm (by have := P.wp; omega),
-      hb P.kq P.qs.symm (by have := P.wq; omega)]
-    exact hyp rfl
   simp only [Rsa.PPC64LE.Priv.fnPost, State.withRegions_mem, State.withRegions_gpr,
     State.callEntry_mem, callE_gpr s u (r := .r3), callE_gpr s u (r := .r5), callE_gpr s u (r := .r6),
     callE_gpr s u (r := .r7), callE_gpr s u (r := .r8), callE_gpr s u (r := .r9), A.r3, A.r5, A.r6, A.r7, A.r8,
