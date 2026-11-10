@@ -20,6 +20,8 @@ it on what `Base` fixes (`signOk`).
 
 namespace VG.Proof.RsaPss.PPC64LE.Sg
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.RsaOaep.PPC64LE VG.Impl.RsaPss.PPC64LE.Sign
 open VG.Proof.RsaOaep.PPC64LE (Agree Ok B fx)
 open VG.Proof.RsaPkcs1Sig (bytesAt_length)
@@ -42,7 +44,7 @@ theorem pubS_of {hs gs : List FnTable} {s₁ s₂ : State} (h : (signSpec hs gs)
         Abi.tableHeld 64 s₂.mem (stackArg s₂ 14) (FnTable.words isa s₂ T))) ∧
       ∀ T ∈ gs, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 15) (FnTable.words isa s₁ T) ↔
         Abi.tableHeld 64 s₂.mem (stackArg s₂ 15) (FnTable.words isa s₂ T)) := by
-  have e : stackBytes = 3775 + 1 := rfl
+  have e : stackBytes pc = 3775 + 1 := rfl
   unfold signSpec at h
   rw [e] at h
   sig_pub [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig,
@@ -105,7 +107,7 @@ def PubK (a s : State) : Prop := PubS a s ∧ 1 ≤ kk s
 
 /-- `PubK` gives what the shared code needs, for an entry state with
 `PreS`. -/
-theorem signOk (D : Nat) {Pre : State → Prop} {Pub : State → State → Prop} (hP : ∀ {s}, Pre s → PreS D s)
+theorem signOk (D : Nat) {Pre : State → Prop} {Pub : State → State → Prop} (hP : ∀ {s}, Pre s → PreS pc D s)
     (hQ : ∀ {a s}, Pub a s → PubK a s) : Ok Ss vS Pre Pub where
   fits P := fits (hP P)
   agree p := (hQ p).1.agree (hQ p).2

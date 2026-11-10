@@ -27,6 +27,8 @@ depends only on the pointers, the lengths and `n₀`: the digest, the salt,
 
 namespace VG.Proof.RsaPss.PPC64LE.Sg
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.RsaPss.PPC64LE.Sign VG.Proof.RsaPkcs1Sig.PPC64LE
 open VG.Impl.RsaOaep.PPC64LE (save)
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
@@ -96,7 +98,7 @@ theorem dbArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block (dbArgs H)) f
 theorem clearTop_taint (h : Pins Φ [.r14, .r20, .r23]) : RelCT isa (Two Φ) (.block clearTop) fun _ _ => True :=
   two_taint [.r14, .r20, .r23] h (by taint_decide)
 
-theorem privArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block privArgs) fun _ _ => True :=
+theorem privArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block privArgs pc) fun _ _ => True :=
   two_taint [] h (by taint_decide)
 
 end

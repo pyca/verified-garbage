@@ -24,6 +24,8 @@ lengths, the modulus and the public exponent.
 
 namespace VG.Proof.RsaPss.PPC64LE.Sg
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.RsaOaep.PPC64LE VG.Impl.RsaPss.PPC64LE.Sign
 open VG.Proof.RsaOaep.PPC64LE (B B.sp pins_of two_seq allocated_sp fb)
 open VG.Proof.RsaPkcs1Sig.PPC64LE (Two two_alloc)
@@ -39,17 +41,17 @@ theorem psa_pub {a s : State} (p : PubS a s) {i : Nat} (hi : i < 12) : psa s i =
       p.args _ (by decide : (13 : Nat) < 16)]
 
 /-- At the call, from an entry state with `a`'s public data. -/
-def APriv (D : Nat) (a u : State) : Prop := ∃ s em, PreS D s ∧ PubK a s ∧ AtPriv s em u
+def APriv (D : Nat) (a u : State) : Prop := ∃ s em, PreS pc D s ∧ PubK a s ∧ AtPriv s em u
 
 theorem priv_pub {D : Nat} {a u₁ u₂ : State} (h₁ : APriv D a u₁) (h₂ : APriv D a u₂) :
-    ∃ s₁ s₂ em₁ em₂, PreS D s₁ ∧ AtPriv s₁ em₁ u₁ ∧ PreS D s₂ ∧ AtPriv s₂ em₂ u₂ ∧
+    ∃ s₁ s₂ em₁ em₂, PreS pc D s₁ ∧ AtPriv s₁ em₁ u₁ ∧ PreS pc D s₂ ∧ AtPriv s₂ em₂ u₂ ∧
       Rsa.PPC64LE.Priv.fnContract.pub (callE s₁ u₁) (callE s₂ u₂) := by
   obtain ⟨s₁, em₁, P₁, ⟨p₁, _⟩, A₁⟩ := h₁
   obtain ⟨s₂, em₂, P₂, ⟨p₂, _⟩, A₂⟩ := h₂
   refine ⟨s₁, s₂, em₁, em₂, P₁, A₁, P₂, A₂, ?_⟩
   have m : ∀ {s u : State}, (callE s u).mem = u.mem := fun {_ _} => rfl
-  have hb := fun {s u : State} {em : List Byte} (P : PreS D s) (A : AtPriv s em u) {p : Addr} {len : Nat}
-    (hd : (kS s).Disjoint ⟨p, len⟩) (hs : (VG.Proof.RsaOaep.PPC64LE.SC Ss s).Disjoint ⟨p, len⟩)
+  have hb := fun {s u : State} {em : List Byte} (P : PreS pc D s) (A : AtPriv s em u) {p : Addr} {len : Nat}
+    (hd : (kS pc s).Disjoint ⟨p, len⟩) (hs : (VG.Proof.RsaOaep.PPC64LE.SC Ss s).Disjoint ⟨p, len⟩)
     (hl : len ≤ 2 ^ 64) => bytes_at A (R := ⟨p, len⟩) hd hs hl
   refine Rsa.PPC64LE.Priv.pub_of (by rw [callE_sp, callE_sp, A₁.sp, A₂.sp, pb, pb, fb, fb, p₁.sp, p₂.sp])
     (fun r hr => ?_) (fun i hi => by rw [callE_stackArg A₁ hi, callE_stackArg A₂ hi, psa_pub p₁ hi, psa_pub p₂ hi])
@@ -74,8 +76,8 @@ theorem priv_pub {D : Nat} {a u₁ u₂ : State} (h₁ : APriv D a u₁) (h₂ :
       hb P₁ A₁ P₁.ke ((P₁.es.symm).sub_left (sc_sub P₁)) (by have := P₁.we; omega),
       hb P₂ A₂ P₂.ke ((P₂.es.symm).sub_left (sc_sub P₂)) (by have := P₂.we; omega), p₁.e, p₂.e]
 
-theorem call_ct {D : Nat} : RelCT isa (Two (APriv D)) privCall fun _ _ => True := by
-  unfold privCall
+theorem call_ct {D : Nat} : RelCT isa (Two (APriv D)) privCall pc fun _ _ => True := by
+  unfold privCall pc
   refine VG.PPC64LE.RelCT.callEx (k := Rsa.PPC64LE.Priv.fnContract) Rsa.PPC64LE.Priv.code_correct
     Rsa.PPC64LE.Priv.code_ct fun u₁ u₂ ⟨a, h₁, h₂⟩ => ?_
   obtain ⟨s₁, s₂, em₁, em₂, P₁, A₁, P₂, A₂, hp⟩ := priv_pub h₁ h₂
@@ -85,10 +87,10 @@ theorem call_ct {D : Nat} : RelCT isa (Two (APriv D)) privCall fun _ _ => True :
 
 /-- The private operation, in both runs, from states with `Base` for entry
 states with `PreS` and `PubK`. -/
-theorem priv_ct {D : Nat} {Pre : State → Prop} {Pub : State → State → Prop} (hP : ∀ {s}, Pre s → PreS D s)
-    (hQ : ∀ {a s}, Pub a s → PubK a s) : RelCT isa (Two (B Ss vS Pre Pub)) priv fun _ _ => True := by
+theorem priv_ct {D : Nat} {Pre : State → Prop} {Pub : State → State → Prop} (hP : ∀ {s}, Pre s → PreS pc D s)
+    (hQ : ∀ {a s}, Pub a s → PubK a s) : RelCT isa (Two (B Ss vS Pre Pub)) priv pc fun _ _ => True := by
   have X := signOk D hP hQ
-  unfold priv
+  unfold priv pc
   refine two_alloc (R := fun _ _ => True) (pins_of X (an := id) (fun _ _ h => h) []) ?_
   refine two_seq (Ψ := APriv D) (privArgs_taint fun a u₁ u₂ ⟨t₁, h₁, e₁⟩ ⟨t₂, h₂, e₂⟩ =>
       ⟨by rw [e₁, e₂, allocated_sp, allocated_sp, h₁.sp X, h₂.sp X], fun _ h => nomatch h⟩)

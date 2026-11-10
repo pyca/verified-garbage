@@ -26,6 +26,8 @@ sizes, through `byIdx`.
 
 namespace VG.Proof.RsaPss.PPC64LE.Sg
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.RsaPss.PPC64LE.Sign
 open VG.Impl.RsaOaep.PPC64LE (frameBytes restore Fns tword)
 open VG.Impl.RsaPss.PPC64LE (MdFns byIdx idxs shapeOf)
@@ -62,7 +64,7 @@ theorem body_D {H H' : Hash} (hD : H.D = H'.D) (f : MdFns) (g : Fns) : body H f 
     Impl.RsaPss.PPC64LE.hashFixed, hD]
 
 section
-variable {Gs Gm : Spec.Mgf1.Hash} {s : State} (P : PreS Gs.len s)
+variable {Gs Gm : Spec.Mgf1.Hash} {s : State} (P : PreS pc Gs.len s)
 include P
 
 theorem fail_done {t : State} (h : Base Ss vS s t) (hv : signOut Gs Gm s = .invalid) :

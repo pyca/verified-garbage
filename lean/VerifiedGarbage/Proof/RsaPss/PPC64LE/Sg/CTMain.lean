@@ -44,6 +44,8 @@ passed, `Ck`) follows from correctness.
 
 namespace VG.Proof.RsaPss.PPC64LE.Sg
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.RsaPss.PPC64LE.Sign
 open VG.Impl.RsaOaep.PPC64LE (oEm oRsa copyLoop restore mgfXorT frameBytes arg tword)
 open VG.Impl.RsaPss.PPC64LE (oY byIdx idxs shapeOf)
@@ -72,7 +74,7 @@ def SymsAg (Z : Tabs) (a s : State) : Prop :=
     s.syms Z.H.finN = a.syms Z.H.finN ∧ s.syms Z.cn = a.syms Z.cn ∧ s.syms Z.dn = a.syms Z.dn
 
 /-- An entry state, with the tables. -/
-abbrev PreT (Z : Tabs) (D : Nat) (s : State) : Prop := PreS D s ∧ STabsOn Z s
+abbrev PreT (Z : Tabs) (D : Nat) (s : State) : Prop := PreS pc D s ∧ STabsOn Z s
 
 /-- The anchor's public data and addresses of the tables' functions. -/
 abbrev PubT (Z : Tabs) (a s : State) : Prop := PubK a s ∧ SymsAg Z a s
@@ -101,7 +103,7 @@ theorem ck_s {a s : State} (p : PubT Z a s) (C : Ck D a) :
 
 /-- A step keeping `Base`, from the entry state of a run. -/
 theorem M.step {c : Prog isa} {a t : State} (h : M D Z a t)
-    (k : ∀ s, PreS D s → PubK a s → Base Ss vS s t → s.mem (s.gpr .r5) ≠ 0 →
+    (k : ∀ s, PreS pc D s → PubK a s → Base Ss vS s t → s.mem (s.gpr .r5) ≠ 0 →
       D + (stackArg s 11).toNat + 2 ≤ kk s - loN s → WP isa c t fun t' => Base Ss vS s t') :
     WP isa c t (M D Z a) :=
   let ⟨⟨s, P, p, b, sy⟩, C⟩ := h
@@ -212,7 +214,7 @@ theorem mgf_ct {D : Nat} : RelCT isa (Two fun a t => MgfL D Z a t ∧ Ck D a) (m
     (fun _ _ ⟨a, h₁, h₂⟩ => ⟨⟨qD D a, qD_fit h₁.2⟩, a, h₁.1, h₂.1⟩) fun _ _ h => h
 
 include hH cH hGl hG cG hGmh hGml hGmv in
-theorem main_ct : RelCT isa (Two (M Gs.len Z)) (signMain Z.H Z.f Z.g) fun _ _ => True := by
+theorem main_ct : RelCT isa (Two (M Gs.len Z)) (signMain Z.H Z.f Z.g) pc fun _ _ => True := by
   have hD0 : 0 < Gs.len := hGl ▸ hH.hD0
   have hD64 : Gs.len ≤ 64 := hGl ▸ hH.hD64
   have hE : oEm = 0 := rfl
