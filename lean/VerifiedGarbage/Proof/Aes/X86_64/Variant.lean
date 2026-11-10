@@ -5,6 +5,12 @@ public import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 public import VerifiedGarbage.Impl.Aes.X86_64.Callee
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Spec.Cmac.Contract
+public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
+public import VerifiedGarbage.Impl.AesGcm.X86_64
+public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
@@ -22,7 +28,10 @@ interface `AesCtr32` on x86-64 (`Variants/AesCtr32/X86_64/`), and each caller
 `Proof.Aes.ctr32X86_64`, and makes no calls. It comes with the
 implementation of `vg_aes_expand_key` that goes with it (with the same
 suffix and CPU features), for the callers that also expand the key, proven
-against `Proof.Aes.expandKeyX86_64`.
+against `Proof.Aes.expandKeyX86_64`. It also gives the residue analyses
+of the functions over it that the analysis handles (`cmacFinishRes`,
+`gcmInitRes`): those instances then return without secret residue
+(`X86_64.RScrub.withScrub`).
 -/
 
 @[expose] public section
@@ -49,6 +58,20 @@ structure Ctr32ToImpl where
   spSafe : callee.code.all (fun i => !isa.writesSp i) = true
   /-- It uses no stack. -/
   noStack : callee.code.x86_64Depth = 0 := by lit_decide
+
+/-- The implementation of `vg_aes_expand_key_scratch` that AES-GCM calls with
+an implementation of `vg_aes_ctr32` of the CPU features `features`. -/
+def gcmKey (features : List String) : Impl.AesGcm.X86_64.Fn :=
+  if features.isEmpty then ⟨"vg_aes_expand_key_scratch", Impl.Aes.X86_64.expandKey⟩
+  else ⟨"vg_aes_expand_key_scratch_aesni", Impl.Aes.X86_64.AesNi.expandKey⟩
+
+/-- `vg_aes_gcm_init`'s code over `callee`, of the CPU features `features`:
+it calls only it and the key expansion (`gcmKey`), so the other functions of
+its callees are left empty. -/
+def gcmInitCode (callee : Impl.Aes.X86_64.Ctr32) (features : List String) : Prog isa :=
+  Impl.StackScratch.X86_64.withStackScratch 2568 .rcx
+    (Impl.AesGcm.X86_64.init ⟨⟨callee.name, callee.code⟩, gcmKey features, ⟨"", .block []⟩,
+      ⟨"", .block []⟩, ⟨"", .block []⟩⟩)
 
 /-- An implementation of `vg_aes_ctr32` on x86-64. -/
 structure Ctr32Impl where
@@ -85,6 +108,14 @@ structure Ctr32Impl where
   /-- Its form out of place (`vg_aes_ctr32_to`), with the same CPU features:
   AES-GCM's `open_to` decrypts with it in one pass. -/
   ctrTo : Ctr32ToImpl
+  /-- The residue analysis of `vg_cmac_aes_finish` over it, if the analysis
+  handles it. -/
+  cmacFinishRes : Option (RScrub.Analysed Spec.Cmac.aesFinishApi.sig 2328 []
+    (Impl.StackScratch.X86_64.withStackScratch 2312 .r8 (Impl.CmacAes.Stream.X86_64.finish callee suffix))) :=
+    none
+  /-- The residue analysis of `vg_aes_gcm_init` over it, if the analysis
+  handles it. -/
+  gcmInitRes : Option (RScrub.Analysed Spec.Gcm.initApi.sig 2576 [] (gcmInitCode callee features)) := none
 
 namespace Ctr32Impl
 

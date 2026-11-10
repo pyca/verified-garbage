@@ -40,6 +40,8 @@ pub const VG_AES_ECB_ENCRYPT_VAES_FEATURES: verified_garbage_cpu::Features = ver
 ///
 /// Contract: `VG.Spec.AesEcb.encryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -109,7 +111,7 @@ jne 216b
 jmp 215f
 214:
 215:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//McAxyTHSMfZFMdLD"
 .p2align 6"#,
     )
 }
@@ -150,6 +152,8 @@ pub const VG_AES_ECB_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// AES-ECB encryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its encryption by AES (FIPS 197 §5.1, `CIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added. Each byte of `scratch` is unchanged or zero on return.
 ///
 /// Contract: `VG.Spec.AesEcb.encryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -201,7 +205,7 @@ jne 29b
 jmp 28f
 27:
 28:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAxyTHSMfZFMdLD"
 .p2align 6"#,
     )
 }

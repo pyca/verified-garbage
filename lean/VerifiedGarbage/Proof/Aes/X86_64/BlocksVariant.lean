@@ -2,6 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Aes.X86_64.Variant
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Blocks
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Spec.Cfb8.Contract
+public import VerifiedGarbage.Spec.AesEcb.Contract
+public import VerifiedGarbage.Spec.Ocb.Contract
+public import VerifiedGarbage.Impl.AesCfb8.X86_64
+public import VerifiedGarbage.Impl.AesOcb.X86_64
+public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
@@ -22,6 +29,10 @@ and make no calls. Each states how much of `scratch` its functions may write
 (`encWritten`, `decWritten`), so that its callers zero only that. They come with the implementation of `vg_aes_expand_key`
 that goes with them (with the same suffix and CPU features), for the callers
 that also expand the key, proven against `Proof.Aes.expandKeyX86_64`.
+An implementation also gives the residue analyses of the functions over it
+that the analysis handles (`cfb8EncRes`, `cfb8DecRes`, `ecbEncRes`,
+`ocbInitRes`): those instances then return without secret residue
+(`X86_64.RScrub.withScrub`).
 -/
 
 @[expose] public section
@@ -84,6 +95,21 @@ structure BlocksImpl where
   expandMxcsr : expand.code.allInstrs (fun i => !loadsMxcsr i) = true
   expandSpSafe : expand.code.all (fun i => !isa.writesSp i) = true
   expandNoStack : expand.code.x86_64Depth = 0
+  /-- The residue analysis of `vg_aes_cfb8_encrypt` over it, if the analysis
+  handles it. -/
+  cfb8EncRes : Option (RScrub.Analysed Spec.Cfb8.aesEncryptApi.sig 8 []
+    (Impl.AesCfb8.X86_64.encrypt enc)) := none
+  /-- The residue analysis of `vg_aes_cfb8_decrypt` over it, if the analysis
+  handles it. -/
+  cfb8DecRes : Option (RScrub.Analysed Spec.Cfb8.aesDecryptApi.sig 8 []
+    (Impl.AesCfb8.X86_64.decrypt enc)) := none
+  /-- The residue analysis of `vg_aes_ecb_encrypt` as its `enc` alone, if
+  the analysis handles it. -/
+  ecbEncRes : Option (RScrub.Analysed Spec.AesEcb.encryptApi.sig 0 [] enc.code) := none
+  /-- The residue analysis of `vg_aes_ocb_init` over it, if the analysis
+  handles it. -/
+  ocbInitRes : Option (RScrub.Analysed Spec.Ocb.initApi.sig 2576 []
+    (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesOcb.X86_64.init ⟨enc, dec, expand⟩))) := none
 
 namespace BlocksImpl
 

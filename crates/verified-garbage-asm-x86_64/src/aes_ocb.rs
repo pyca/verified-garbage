@@ -4,11 +4,13 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_aes_ocb_init_vaes` requires (`Artifact.features`).
-pub const VG_AES_OCB_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
+pub const VG_AES_OCB_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
 
 /// The AES-OCB key setup (RFC 7253 §4.1): writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and `L_* = ENCIPHER(K, zeros(128))` in bytes 240–255. The other bytes are unspecified. The other `vg_aes_ocb_*` functions read it, with `Nr` as their `rounds`.
 ///
 /// Contract: `VG.Spec.Ocb.initContract`. The key context is `VG.Spec.Ocb.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -17,7 +19,7 @@ pub const VG_AES_OCB_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verifi
 /// * `key_len` must be 16, 24 or 32.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+/// * The CPU must support the `avx`, `aes`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
@@ -25,7 +27,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init_vaes(key: *const u8, key_le
 call {vg_aes_expand_key_scratch_aesni}
 .base64 "SDHASImD8AAAAEiJg/gAAABIid9Iie5IidpIgcLwAAAASMfBAQAAAE2J4EmBwAACAAA="
 call {vg_aes_encrypt_blocks_vaes}
-.base64 "SYscJEmLbCQITYtkJBBIjaQkCAoAAMM="
+.base64 "SYscJEmLbCQITYtkJBBIjaQkCAoAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNpCTw9f//8w9/hCQACgAA8w9/hCTwCQAA8w9/hCTgCQAA8w9/hCTQCQAA8w9/hCTACQAA8w9/hCSwCQAA8w9/hCSgCQAA8w9/hCSQCQAA8w9/hCSACQAA8w9/hCRwCQAA8w9/hCRgCQAA8w9/hCRQCQAA8w9/hCRACQAA8w9/hCQwCQAA8w9/hCQgCQAA8w9/hCQQCQAA8w9/hCQACQAA8w9/hCTwCAAA8w9/hCTgCAAA8w9/hCTQCAAA8w9/hCTACAAA8w9/hCSwCAAA8w9/hCSgCAAA8w9/hCSQCAAA8w9/hCSACAAA8w9/hCRwCAAA8w9/hCRgCAAA8w9/hCRQCAAA8w9/hCRACAAA8w9/hCQwCAAA8w9/hCQgCAAA8w9/hCQQCAAA8w9/hCQACAAA8w9/hCTwBwAA8w9/hCTgBwAA8w9/hCTQBwAA8w9/hCTABwAA8w9/hCSwBwAA8w9/hCSgBwAA8w9/hCSQBwAA8w9/hCSABwAA8w9/hCRwBwAA8w9/hCRgBwAA8w9/hCRQBwAA8w9/hCRABwAA8w9/hCQwBwAA8w9/hCQgBwAA8w9/hCQQBwAA8w9/hCQABwAA8w9/hCTwBgAA8w9/hCTgBgAA8w9/hCTQBgAA8w9/hCTABgAA8w9/hCSwBgAA8w9/hCSgBgAA8w9/hCSQBgAA8w9/hCSABgAA8w9/hCRwBgAA8w9/hCRgBgAA8w9/hCRQBgAA8w9/hCRABgAA8w9/hCQwBgAA8w9/hCQgBgAA8w9/hCQQBgAA8w9/hCQABgAA8w9/hCTwBQAA8w9/hCTgBQAA8w9/hCTQBQAA8w9/hCTABQAA8w9/hCSwBQAA8w9/hCSgBQAA8w9/hCSQBQAA8w9/hCSABQAA8w9/hCRwBQAA8w9/hCRgBQAA8w9/hCRQBQAA8w9/hCRABQAA8w9/hCQwBQAA8w9/hCQgBQAA8w9/hCQQBQAA8w9/hCQABQAA8w9/hCTwBAAA8w9/hCTgBAAA8w9/hCTQBAAA8w9/hCTABAAA8w9/hCSwBAAA8w9/hCSgBAAA8w9/hCSQBAAA8w9/hCSABAAA8w9/hCRwBAAA8w9/hCRgBAAA8w9/hCRQBAAA8w9/hCRABAAA8w9/hCQwBAAA8w9/hCQgBAAA8w9/hCQQBAAA8w9/hCQABAAA8w9/hCTwAwAA8w9/hCTgAwAA8w9/hCTQAwAA8w9/hCTAAwAA8w9/hCSwAwAA8w9/hCSgAwAA8w9/hCSQAwAA8w9/hCSAAwAA8w9/hCRwAwAA8w9/hCRgAwAA8w9/hCRQAwAA8w9/hCRAAwAA8w9/hCQwAwAA8w9/hCQgAwAA8w9/hCQQAwAA8w9/hCQAAwAA8w9/hCTwAgAA8w9/hCTgAgAA8w9/hCTQAgAA8w9/hCTAAgAA8w9/hCSwAgAA8w9/hCSgAgAA8w9/hCSQAgAA8w9/hCSAAgAA8w9/hCRwAgAA8w9/hCRgAgAA8w9/hCRQAgAA8w9/hCRAAgAA8w9/hCQwAgAA8w9/hCQgAgAA8w9/hCQQAgAA8w9/hCQAAgAA8w9/hCTwAQAA8w9/hCTgAQAA8w9/hCTQAQAA8w9/hCTAAQAA8w9/hCSwAQAA8w9/hCSgAQAA8w9/hCSQAQAA8w9/hCSAAQAA8w9/hCRwAQAA8w9/hCRgAQAA8w9/hCRQAQAA8w9/hCRAAQAA8w9/hCQwAQAA8w9/hCQgAQAA8w9/hCQQAQAA8w9/hCQAAQAA8w9/hCTwAAAA8w9/hCTgAAAA8w9/hCTQAAAA8w9/hCTAAAAA8w9/hCSwAAAA8w9/hCSgAAAA8w9/hCSQAAAA8w9/hCSAAAAA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjaQkEAoAADHAMckx0jH2Mf9FMcBFMdLD"
 .p2align 6"#,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
@@ -339,6 +341,8 @@ pub const VG_AES_OCB_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 ///
 /// Contract: `VG.Spec.Ocb.initContract`. The key context is `VG.Spec.Ocb.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -354,7 +358,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init_aesni(key: *const u8, key_l
 call {vg_aes_expand_key_scratch_aesni}
 .base64 "SDHASImD8AAAAEiJg/gAAABIid9Iie5IidpIgcLwAAAASMfBAQAAAE2J4EmBwAACAAA="
 call {vg_aes_encrypt_blocks_aesni}
-.base64 "SYscJEmLbCQITYtkJBBIjaQkCAoAAMM="
+.base64 "SYscJEmLbCQITYtkJBBIjaQkCAoAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCTw9f//8w9/hCQACgAA8w9/hCTwCQAA8w9/hCTgCQAA8w9/hCTQCQAA8w9/hCTACQAA8w9/hCSwCQAA8w9/hCSgCQAA8w9/hCSQCQAA8w9/hCSACQAA8w9/hCRwCQAA8w9/hCRgCQAA8w9/hCRQCQAA8w9/hCRACQAA8w9/hCQwCQAA8w9/hCQgCQAA8w9/hCQQCQAA8w9/hCQACQAA8w9/hCTwCAAA8w9/hCTgCAAA8w9/hCTQCAAA8w9/hCTACAAA8w9/hCSwCAAA8w9/hCSgCAAA8w9/hCSQCAAA8w9/hCSACAAA8w9/hCRwCAAA8w9/hCRgCAAA8w9/hCRQCAAA8w9/hCRACAAA8w9/hCQwCAAA8w9/hCQgCAAA8w9/hCQQCAAA8w9/hCQACAAA8w9/hCTwBwAA8w9/hCTgBwAA8w9/hCTQBwAA8w9/hCTABwAA8w9/hCSwBwAA8w9/hCSgBwAA8w9/hCSQBwAA8w9/hCSABwAA8w9/hCRwBwAA8w9/hCRgBwAA8w9/hCRQBwAA8w9/hCRABwAA8w9/hCQwBwAA8w9/hCQgBwAA8w9/hCQQBwAA8w9/hCQABwAA8w9/hCTwBgAA8w9/hCTgBgAA8w9/hCTQBgAA8w9/hCTABgAA8w9/hCSwBgAA8w9/hCSgBgAA8w9/hCSQBgAA8w9/hCSABgAA8w9/hCRwBgAA8w9/hCRgBgAA8w9/hCRQBgAA8w9/hCRABgAA8w9/hCQwBgAA8w9/hCQgBgAA8w9/hCQQBgAA8w9/hCQABgAA8w9/hCTwBQAA8w9/hCTgBQAA8w9/hCTQBQAA8w9/hCTABQAA8w9/hCSwBQAA8w9/hCSgBQAA8w9/hCSQBQAA8w9/hCSABQAA8w9/hCRwBQAA8w9/hCRgBQAA8w9/hCRQBQAA8w9/hCRABQAA8w9/hCQwBQAA8w9/hCQgBQAA8w9/hCQQBQAA8w9/hCQABQAA8w9/hCTwBAAA8w9/hCTgBAAA8w9/hCTQBAAA8w9/hCTABAAA8w9/hCSwBAAA8w9/hCSgBAAA8w9/hCSQBAAA8w9/hCSABAAA8w9/hCRwBAAA8w9/hCRgBAAA8w9/hCRQBAAA8w9/hCRABAAA8w9/hCQwBAAA8w9/hCQgBAAA8w9/hCQQBAAA8w9/hCQABAAA8w9/hCTwAwAA8w9/hCTgAwAA8w9/hCTQAwAA8w9/hCTAAwAA8w9/hCSwAwAA8w9/hCSgAwAA8w9/hCSQAwAA8w9/hCSAAwAA8w9/hCRwAwAA8w9/hCRgAwAA8w9/hCRQAwAA8w9/hCRAAwAA8w9/hCQwAwAA8w9/hCQgAwAA8w9/hCQQAwAA8w9/hCQAAwAA8w9/hCTwAgAA8w9/hCTgAgAA8w9/hCTQAgAA8w9/hCTAAgAA8w9/hCSwAgAA8w9/hCSgAgAA8w9/hCSQAgAA8w9/hCSAAgAA8w9/hCRwAgAA8w9/hCRgAgAA8w9/hCRQAgAA8w9/hCRAAgAA8w9/hCQwAgAA8w9/hCQgAgAA8w9/hCQQAgAA8w9/hCQAAgAA8w9/hCTwAQAA8w9/hCTgAQAA8w9/hCTQAQAA8w9/hCTAAQAA8w9/hCSwAQAA8w9/hCSgAQAA8w9/hCSQAQAA8w9/hCSAAQAA8w9/hCRwAQAA8w9/hCRgAQAA8w9/hCRQAQAA8w9/hCRAAQAA8w9/hCQwAQAA8w9/hCQgAQAA8w9/hCQQAQAA8w9/hCQAAQAA8w9/hCTwAAAA8w9/hCTgAAAA8w9/hCTQAAAA8w9/hCTAAAAA8w9/hCSwAAAA8w9/hCSgAAAA8w9/hCSQAAAA8w9/hCSAAAAA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjaQkEAoAADHAMckx0jH2Mf9FMcBFMdLD"
 .p2align 6"#,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,

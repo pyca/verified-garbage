@@ -28,11 +28,7 @@ x86_64 vg_aes_cfb128_encrypt_final_aesni
 x86_64 vg_aes_cfb128_encrypt_final_vaes
 x86_64 vg_aes_cfb128_encrypt_vaes
 x86_64 vg_aes_cfb8_decrypt
-x86_64 vg_aes_cfb8_decrypt_aesni
-x86_64 vg_aes_cfb8_decrypt_vaes
 x86_64 vg_aes_cfb8_encrypt
-x86_64 vg_aes_cfb8_encrypt_aesni
-x86_64 vg_aes_cfb8_encrypt_vaes
 x86_64 vg_aes_ctr
 x86_64 vg_aes_ctr_aesni
 x86_64 vg_aes_ctr_final
@@ -45,14 +41,8 @@ x86_64 vg_aes_ecb_decrypt_aesni_avx
 x86_64 vg_aes_ecb_decrypt_avx
 x86_64 vg_aes_ecb_decrypt_vaes
 x86_64 vg_aes_ecb_encrypt
-x86_64 vg_aes_ecb_encrypt_aesni
 x86_64 vg_aes_ecb_encrypt_avx
-x86_64 vg_aes_ecb_encrypt_vaes
-x86_64 vg_aes_expand_key
-x86_64 vg_aes_expand_key_aesni
 x86_64 vg_aes_gcm_init
-x86_64 vg_aes_gcm_init_aesni
-x86_64 vg_aes_gcm_init_vaes
 x86_64 vg_aes_gcm_open_prepared
 x86_64 vg_aes_gcm_open_prepared_aesni
 x86_64 vg_aes_gcm_open_prepared_aesni_pclmul
@@ -67,10 +57,6 @@ x86_64 vg_aes_gcm_open_to_prepared_aesni_pclmul_avx
 x86_64 vg_aes_gcm_open_to_prepared_pclmul
 x86_64 vg_aes_gcm_open_to_prepared_vaes_vpclmul
 x86_64 vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512
-x86_64 vg_aes_gcm_prepare
-x86_64 vg_aes_gcm_prepare_pclmul_avx
-x86_64 vg_aes_gcm_prepare_vpclmul
-x86_64 vg_aes_gcm_prepare_vpclmul_avx512
 x86_64 vg_aes_gcm_seal_gather_prepared
 x86_64 vg_aes_gcm_seal_gather_prepared_aesni
 x86_64 vg_aes_gcm_seal_gather_prepared_aesni_pclmul
@@ -138,8 +124,6 @@ x86_64 vg_aes_gcm_stream_verify_vaes_vpclmul
 x86_64 vg_aes_gcm_wipe_prepared
 x86_64 vg_aes_gcm_wipe_prepared_avx
 x86_64 vg_aes_ocb_init
-x86_64 vg_aes_ocb_init_aesni
-x86_64 vg_aes_ocb_init_vaes
 x86_64 vg_aes_ocb_open
 x86_64 vg_aes_ocb_open_aesni
 x86_64 vg_aes_ocb_open_vaes
@@ -250,10 +234,6 @@ x86_64 vg_chacha20_poly1305_seal_ifma
 x86_64 vg_chacha20_poly1305_seal_ssse3
 x86_64 vg_chacha20_set_nonce
 x86_64 vg_cmac_aes_absorb
-x86_64 vg_cmac_aes_absorb_aesni
-x86_64 vg_cmac_aes_finish
-x86_64 vg_cmac_aes_finish_aesni
-x86_64 vg_cmac_aes_finish_vaes
 x86_64 vg_cmac_aes_init
 x86_64 vg_cmac_aes_init_aesni
 x86_64 vg_cmac_aes_init_vaes

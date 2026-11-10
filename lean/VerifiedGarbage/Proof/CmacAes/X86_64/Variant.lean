@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Impl.CmacAes.X86_64.Callee
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
 public import VerifiedGarbage.Proof.CmacAes.X86_64.AesNi
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Spec.Cmac.Contract
+public import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
+public import VerifiedGarbage.Impl.StackScratch.X86_64
 
 /-!
 # Implementations of `vg_cmac_aes_update` on x86-64
@@ -25,7 +29,9 @@ implementation of `vg_aes_ctr32` that goes with it (`ctr`), for the callers
 that also run counter mode or call the other CMAC functions (AES-CCM,
 AES-SIV): the one it is built on, or for the chaining in registers,
 `vg_aes_ctr32_aesni`, which needs no CPU features the AES-NI CPUs it is
-chosen for lack.
+chosen for lack. It also gives the residue analysis of `vg_cmac_aes_absorb`
+over it, if the analysis handles it (`absorbRes`): that instance then
+returns without secret residue (`X86_64.RScrub.withScrub`).
 -/
 
 @[expose] public section
@@ -59,6 +65,10 @@ structure UpdateImpl where
   /-- The implementation of `vg_aes_ctr32` that goes with it, for callers
   that also call it or the other CMAC functions made with it. -/
   ctr : Ctr32Impl
+  /-- The residue analysis of `vg_cmac_aes_absorb` over it, if the analysis
+  handles it. -/
+  absorbRes : Option (RScrub.Analysed Spec.Cmac.aesAbsorbApi.sig 2328 []
+    (Impl.StackScratch.X86_64.withStackScratch 2312 .r9 (Impl.CmacAes.Stream.X86_64.absorb callee))) := none
 
 theorem update_nosp (v : Ctr32Impl) : NoSp (Impl.CmacAes.X86_64.update v.callee) := by
   have h : (Impl.CmacAes.X86_64.update v.callee).allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
