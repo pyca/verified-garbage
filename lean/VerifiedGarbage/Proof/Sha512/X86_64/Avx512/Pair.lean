@@ -29,7 +29,7 @@ namespace VG.Proof.Sha512.X86_64.Avx512
 open VG VG.X86_64 VG.Impl.Sha512.X86_64.Avx512
 open VG.Proof.Sha512.X86_64.Avx2 (qword_append_0 qword_append_1 paddq_eq psrlq_eq)
 open VG.Spec.Sha512 (HashValue Word Block K W bsig0 bsig1 ch maj ssig0 ssig1)
-open VG.Proof.Sha512.X86_64 (ofInt_natCast contains_offset)
+open VG.Proof.Sha512.X86_64 (ofInt_natCast contains_offset contains_offset')
 open VG.Proof.Sha512 (roundKW rounds_succ round_eq roundKW_0 roundKW_1 roundKW_2 roundKW_3 roundKW_4 roundKW_5
   roundKW_6 roundKW_7)
 
@@ -891,5 +891,151 @@ theorem word_of_block (m : Mem) (p : Addr) {t : Nat} (ht : t < 16) :
 theorem zip_get! (R H : HashValue) {k : Nat} (hk : k < 8) :
     (Vector.zipWith (· + ·) R H)[k]! = R[k]! + H[k]! := by
   rw [getElem!_pos _ k hk, getElem!_pos R k hk, getElem!_pos H k hk, Vector.getElem_zipWith]
+
+/-! ## The function -/
+
+/-- The contract of `compress2`: the hash values at `rdi` and `rdx` are
+compressed with the blocks at `rsi` and `rcx`, with scratch space `r8`. -/
+def compress2X86_64 : Contract X86_64.isa where
+  pre s :=
+    let st₀ : Region := ⟨s.gpr .rdi, 64⟩
+    let b₀ : Region := ⟨s.gpr .rsi, 128⟩
+    let st₁ : Region := ⟨s.gpr .rdx, 64⟩
+    let b₁ : Region := ⟨s.gpr .rcx, 128⟩
+    let scratch : Region := ⟨s.gpr .r8, 1328⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [b₀, b₁] ∧ s.wr = [st₀, st₁, scratch] ∧
+    st₀.Disjoint st₁ ∧ st₀.Disjoint scratch ∧ st₁.Disjoint scratch ∧
+    b₀.Disjoint st₀ ∧ b₀.Disjoint st₁ ∧ b₀.Disjoint scratch ∧
+    b₁.Disjoint st₀ ∧ b₁.Disjoint st₁ ∧ b₁.Disjoint scratch ∧
+    ret.Disjoint st₀ ∧ ret.Disjoint st₁ ∧ ret.Disjoint scratch
+  post s s' :=
+    Spec.Sha512.stateAt s'.mem (s.gpr .rdi) =
+      Spec.Sha512.compress (Spec.Sha512.stateAt s.mem (s.gpr .rdi)) (Spec.Sha512.blockAt s.mem (s.gpr .rsi)) ∧
+    Spec.Sha512.stateAt s'.mem (s.gpr .rdx) =
+      Spec.Sha512.compress (Spec.Sha512.stateAt s.mem (s.gpr .rdx)) (Spec.Sha512.blockAt s.mem (s.gpr .rcx))
+  pub s₁ s₂ :=
+    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8
+
+/-- The variables of round 0, from their registers. -/
+theorem vars2_zero {s : State} {H₀ H₁ : HashValue}
+    (h : s.xmm .xmm0 = H₁[2 * 0]! ++ H₀[2 * 0]! ∧ s.xmm .xmm1 = H₁[2 * 0 + 1]! ++ H₀[2 * 0 + 1]! ∧
+      s.xmm .xmm2 = H₁[2 * 1]! ++ H₀[2 * 1]! ∧ s.xmm .xmm3 = H₁[2 * 1 + 1]! ++ H₀[2 * 1 + 1]! ∧
+      s.xmm .xmm4 = H₁[2 * 2]! ++ H₀[2 * 2]! ∧ s.xmm .xmm5 = H₁[2 * 2 + 1]! ++ H₀[2 * 2 + 1]! ∧
+      s.xmm .xmm6 = H₁[2 * 3]! ++ H₀[2 * 3]! ∧ s.xmm .xmm7 = H₁[2 * 3 + 1]! ++ H₀[2 * 3 + 1]!) :
+    Vars2 0 s H₀ H₁ := h
+
+/-- The registers of round 0, pair by pair. -/
+theorem vars2_pairs {s : State} {V₀ V₁ : HashValue} (h : Vars2 0 s V₀ V₁) :
+    ∀ j < 4, s.xmm (sv 0 (2 * j)) = V₁[2 * j]! ++ V₀[2 * j]! ∧
+      s.xmm (sv 0 (2 * j + 1)) = V₁[2 * j + 1]! ++ V₀[2 * j + 1]! := by
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := h
+  intro j hj
+  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+  · exact ⟨h0, h1⟩
+  · exact ⟨h2, h3⟩
+  · exact ⟨h4, h5⟩
+  · exact ⟨h6, h7⟩
+
+theorem rounds_zero (H : HashValue) (M : Block) : Spec.Sha512.rounds H M 0 = H := rfl
+
+theorem correct2 {s₀ : State} (hp : compress2X86_64.pre s₀) :
+    WP isa compress2 s₀ fun s' => gprPreserved s₀ s' ∧ compress2X86_64.post s₀ s' := by
+  obtain ⟨hrd, hwr, d01, d0s, d1s, c00, c01, c0s, c10, c11, c1s, r0, r1, rs⟩ := hp
+  obtain ⟨H₀, eH₀⟩ : ∃ H, Spec.Sha512.stateAt s₀.mem (s₀.gpr .rdi) = H := ⟨_, rfl⟩
+  obtain ⟨H₁, eH₁⟩ : ∃ H, Spec.Sha512.stateAt s₀.mem (s₀.gpr .rdx) = H := ⟨_, rfl⟩
+  obtain ⟨M₀, eM₀⟩ : ∃ M, Spec.Sha512.blockAt s₀.mem (s₀.gpr .rsi) = M := ⟨_, rfl⟩
+  obtain ⟨M₁, eM₁⟩ : ∃ M, Spec.Sha512.blockAt s₀.mem (s₀.gpr .rcx) = M := ⟨_, rfl⟩
+  have w₀ : (⟨s₀.gpr .rdi, 64⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  have w₁ : (⟨s₀.gpr .rdx, 64⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  have ws : (⟨s₀.gpr .r8, 1328⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  have rb₀ : (⟨s₀.gpr .rsi, 128⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
+  have rb₁ : (⟨s₀.gpr .rcx, 128⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
+  have sub80 : Region.Sub ⟨s₀.gpr .r8, 1280⟩ ⟨s₀.gpr .r8, 1328⟩ := Region.sub_prefix (by decide)
+  have pA : ∀ j < 4, s₀.mem.readW (s₀.gpr .rdi + BitVec.ofInt 64 ((16 * j : Nat) : Int)) 128 =
+      H₀[2 * j + 1]! ++ H₀[2 * j]! := fun j hj => by
+    rw [ofInt_natCast, getElem!_pos H₀ (2 * j + 1) (by omega), getElem!_pos H₀ (2 * j) (by omega), ← eH₀]
+    exact state_pair s₀.mem _ hj
+  have pB : ∀ j < 4, s₀.mem.readW (s₀.gpr .rdx + BitVec.ofInt 64 ((16 * j : Nat) : Int)) 128 =
+      H₁[2 * j + 1]! ++ H₁[2 * j]! := fun j hj => by
+    rw [ofInt_natCast, getElem!_pos H₁ (2 * j + 1) (by omega), getElem!_pos H₁ (2 * j) (by omega), ← eH₁]
+    exact state_pair s₀.mem _ hj
+  unfold compress2
+  refine WP.seq (VG.X86_64.WP.mono_syms (start_ok s₀ (fun j => H₀[2 * j]!) (fun j => H₀[2 * j + 1]!)
+    (fun j => H₁[2 * j]!) (fun j => H₁[2 * j + 1]!)
+    (fun j hj => ⟨_, List.mem_append_right _ w₀, contains_offset' (by omega) (by omega)⟩)
+    (fun j hj => ⟨_, List.mem_append_right _ w₁, contains_offset' (by omega) (by omega)⟩) pA pB)
+    fun s₁ ⟨hv, hmk, hmk', hax, h9, hg, hm, hrd₁, hwr₁⟩ hsy => ?_)
+  have hB : Base M₀ M₁ (s₀.gpr .rsi) (s₀.gpr .rcx) (s₀.gpr .r8) s₁ := {
+    rsi := hg _ (by decide) (by decide)
+    rcx := hg _ (by decide) (by decide)
+    r8 := hg _ (by decide) (by decide)
+    rax := by rw [hax, hsy]
+    scrW := by rw [hwr₁]; exact ws
+    in₀ := fun i hi => by
+      rw [hrd₁]; exact ⟨_, List.mem_append_left _ rb₀, contains_offset' (by omega) (by omega)⟩
+    in₁ := fun i hi => by
+      rw [hrd₁]; exact ⟨_, List.mem_append_left _ rb₁, contains_offset' (by omega) (by omega)⟩
+    blk₀ := fun m hf t ht => by
+      rw [hf.readW (r := ⟨s₀.gpr .rsi, 128⟩) (contains_offset' (by omega) (by omega))
+        (by simpa using c0s.sub_right sub80) (by decide), hm, ← eM₀]
+      exact word_of_block _ _ ht
+    blk₁ := fun m hf t ht => by
+      rw [hf.readW (r := ⟨s₀.gpr .rcx, 128⟩) (contains_offset' (by omega) (by omega))
+        (by simpa using c1s.sub_right sub80) (by decide), hm, ← eM₁]
+      exact word_of_block _ _ ht }
+  have h₀ : SInv H₀ H₁ M₀ M₁ (s₀.gpr .r8) s₁ 0 0 s₁ := {
+    vars := vars2_zero hv
+    wmem := fun t ht => absurd ht (by omega)
+    gpr := fun _ _ => rfl
+    r9 := h9
+    rd := rfl
+    wr := rfl
+    frame := Frame.refl _ _
+    mask := ⟨hmk, hmk'⟩
+    syms := rfl }
+  refine WP.seq (WP.mono (rounds_ok hB h₀) fun s₂ h₂ => ?_)
+  have g₂ : ∀ r, r ≠ .rax → r ≠ .r9 → s₂.gpr r = s₀.gpr r := fun r a b => (h₂.gpr r b).trans (hg r a b)
+  have fr₂ : Frame [⟨s₀.gpr .r8, 1280⟩] s₀.mem s₂.mem := hm ▸ h₂.frame
+  have pm : ∀ {p : Addr} {H : HashValue}, Spec.Sha512.stateAt s₀.mem p = H →
+      Region.Disjoint ⟨p, 64⟩ ⟨s₀.gpr .r8, 1328⟩ → PairsAt s₂.mem p fun j => H[2 * j + 1]! ++ H[2 * j]! := by
+    intro p H e hd j hj
+    show s₂.mem.readW (qAddr p j) 128 = H[2 * j + 1]! ++ H[2 * j]!
+    rw [fr₂.readW (r := ⟨p, 64⟩) (qAddr_contains p hj) (by simpa using hd.sub_right sub80) (by decide),
+      state_pair s₀.mem p hj, e, getElem!_pos H (2 * j + 1) (by omega), getElem!_pos H (2 * j) (by omega)]
+  rw [addState_eq, WP.block_append_iff]
+  refine WP.mono (aqs_ok (fun k => (Spec.Sha512.rounds H₀ M₀ 80)[k]!) (fun k => (Spec.Sha512.rounds H₁ M₁ 80)[k]!)
+    (fun k => H₀[k]!) (fun k => H₁[k]!) (g₂ _ (by decide) (by decide)) (g₂ _ (by decide) (by decide)) d01
+    (by rw [h₂.wr, hwr₁]; exact w₀) (by rw [h₂.wr, hwr₁]; exact w₁) (vars2_pairs h₂.vars) (pm eH₀ d0s) (pm eH₁ d1s)
+    4 (Nat.le_refl _)) fun s₃ ⟨q₀, q₁, f₃, _, hg₃, hrd₃, hwr₃⟩ => ?_
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpExec, Option.some.injEq, exists_eq_left']
+  have fin : ∀ {p : Addr} {R H : HashValue}, PairsAt s₃.mem p (fun j => if j < 4 then
+      (R[2 * j + 1]! + H[2 * j + 1]!) ++ (R[2 * j]! + H[2 * j]!) else H[2 * j + 1]! ++ H[2 * j]!) →
+      Spec.Sha512.stateAt s₃.mem p = Vector.zipWith (· + ·) R H := by
+    intro p R H h
+    refine stateAt_of_pairs fun j hj => ?_
+    rw [h j hj]
+    simp only [hj, ↓reduceIte, zip_get! R H (show 2 * j + 1 < 8 by omega), zip_get! R H (show 2 * j < 8 by omega)]
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, ?_⟩
+  · show s₃.gpr r = s₀.gpr r
+    rw [hg₃]
+    exact g₂ r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)
+  · show s₃.mem.readW (s₀.gpr .rsp) 64 = s₀.mem.readW (s₀.gpr .rsp) 64
+    rw [f₃.readW (r := ⟨s₀.gpr .rsp, 8⟩) (Region.contains_self _ _) (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false]
+        rintro r (rfl | rfl)
+        · exact r0
+        · exact r1) (by decide),
+      fr₂.readW (r := ⟨s₀.gpr .rsp, 8⟩) (Region.contains_self _ _) (by simpa using rs.sub_right sub80) (by decide)]
+  · show Spec.Sha512.stateAt s₃.mem (s₀.gpr .rdi) = Spec.Sha512.compress
+      (Spec.Sha512.stateAt s₀.mem (s₀.gpr .rdi)) (Spec.Sha512.blockAt s₀.mem (s₀.gpr .rsi))
+    rw [eH₀, eM₀]
+    exact fin q₀
+  · show Spec.Sha512.stateAt s₃.mem (s₀.gpr .rdx) = Spec.Sha512.compress
+      (Spec.Sha512.stateAt s₀.mem (s₀.gpr .rdx)) (Spec.Sha512.blockAt s₀.mem (s₀.gpr .rcx))
+    rw [eH₁, eM₁]
+    exact fin q₁
 
 end VG.Proof.Sha512.X86_64.Avx512

@@ -174,9 +174,7 @@ def step : List Instr := [.alu .add .r9 (.imm 256), .alu .cmp .r9 (.imm 1280)]
 /-- `vg_sha512_compress2_avx512`. -/
 def compress2 : Prog isa :=
   .seq (.block (const mB bswapMask ++ loadState ++ ([.leaSym .rax kSym, .mov .r9 (.imm 0)] : List Instr)))
-  (.seq (steps0 8)
-  (.seq (.block step)
-  (.seq (.loop (.seq (steps 8) (.block step)) .ne)
-    (.block (addState ++ ([.vop .vzeroupper] : List Instr))))))
+  (.seq (.seq (steps0 8) (.seq (.block step) (.loop (.seq (steps 8) (.block step)) .ne)))
+    (.block (addState ++ ([.vop .vzeroupper] : List Instr))))
 
 end VG.Impl.Sha512.X86_64.Avx512
