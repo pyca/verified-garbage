@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Prime
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Validate
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # An RSA private key's precomputed values on x86: the factors' values
 
@@ -120,6 +121,7 @@ theorem init_ok (h : RIn base bytes len args s) :
       Outside base outOff 16 s.mem u.mem ∧
       w32 u.mem base outOff = ((args 0).toNat + 16 * Spec.Rsa.modulusWords len) % 2 ^ 32 ∧
       w32 u.mem base lenOff = (args 7).toNat ∧
+      w32 u.mem base accOff = w32 s.mem base accOff ∧
       Keeps [.eax, .ecx] s u := by
   have nw := h.scratch.nowrap
   have hup := h.upper'
@@ -162,7 +164,7 @@ theorem init_ok (h : RIn base bytes len args s) :
   have mu : u.mem = (s.mem.writeW (off base outOff) (u₆.gpr .eax)).writeW (off base lenOff) (args 7) := by
     rw [s₉.mem, a₈.mem, s₇.mem, m₆, a₈.gpr]
   have hw : ∀ d, d + 4 ≤ 20 → d + 4 ≤ bytes := fun d hd => by omega_arith
-  refine ⟨?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · rw [mu]
     exact ((writeW32_outside _ _ _ (by simp only [outOff, winOff]; omega_arith)).mono
       (by simp only [outOff, winOff]; omega) (by simp only [outOff, winOff]; omega)).trans
@@ -171,8 +173,26 @@ theorem init_ok (h : RIn base bytes len args s) :
   · rw [mu, w32_write_ne nw (hw lenOff (by simp only [lenOff]; omega)) (hw outOff (by simp only [outOff, winOff]; omega))
       (by simp only [outOff, winOff, lenOff]; omega), w32_write_self, eax₆]
   · rw [mu, w32_write_self]
+  · rw [mu, w32_write_ne nw (hw lenOff (by simp only [lenOff]; omega)) (hw accOff (by simp only [accOff]; omega))
+      (by simp only [accOff, lenOff]; omega), w32_write_ne nw (hw outOff (by simp only [outOff, winOff]; omega))
+      (hw accOff (by simp only [accOff]; omega)) (by simp only [accOff, outOff, winOff]; omega)]
   · exact (K₆.trans ((s₇.keeps []).mono (by decide))).trans
       ((a₈.keeps.mono (by decide)).trans ((s₉.keeps []).mono (by decide)))
+
+/-- A frame of the working space's ranges (and of the stack below `sp`)
+keeps a region apart from both. -/
+theorem val32_frameR_apart {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem}
+    (F : Frame (frameR base sp ws) m m') (hfit : ∀ p ∈ ws, p.1 + p.2 ≤ bytes)
+    {P : Addr} {L' : Nat} (hap : Region.Disjoint ⟨P, L'⟩ ⟨base, bytes⟩)
+    (hs : Region.Disjoint ⟨P, L'⟩ (below sp 96)) (hPn : L' < 2 ^ 64) {d k : Nat} (hd : d + 4 * k ≤ L') :
+    val32 m' P d k = val32 m P d k := by
+  rw [← VG.Proof.Bignum.read_eq_val32, ← VG.Proof.Bignum.read_eq_val32]
+  refine congrArg BitVec.toNat (F.read (r := ⟨off P d, 4 * k⟩) (Region.contains_self _ _) (fun r hr => ?_) (by omega))
+  have sub : Region.Sub ⟨off P d, 4 * k⟩ ⟨P, L'⟩ := Offset.sub_base P (by omega)
+  simp only [frameR, List.mem_cons, List.mem_map] at hr
+  rcases hr with rfl | ⟨q, hq, rfl⟩
+  · exact hs.sub_left sub
+  · exact (hap.sub_left sub).sub_right (Offset.sub_base base (hfit q hq))
 
 end
 
