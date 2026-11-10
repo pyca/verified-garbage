@@ -10,6 +10,8 @@ meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: constant time
@@ -173,5 +175,82 @@ theorem dec_spSafe (v : Compress) (pv : PrivImpl) :
   simp only [code, body, dBuild, hashD, kdkMac, clLoop, amLoop, prfBody, maskPart, alPart, scanPart, selPart,
     Code.all, hI, hF, hU, hFi, hIn, pv.spSafe, Bool.and_true, Bool.true_and]
   decide +kernel
+
+/-! ## Without secret residue
+
+`vg_rsa_pkcs1_decrypt`'s registration scrubs it with `X86_64.Scrub.withScrubAll`,
+which clears the registers its code writes and wipes all the stack its
+frames and calls use: the residue analysis (`X86_64.RTaint`) does not follow
+its code, so nothing of that stack is kept. This is what that needs of the
+contract. -/
+
+/-- The postcondition reads the memory on return only in `out` and
+`msg_len`. -/
+theorem dec_postOut (stack : Nat) :
+    VG.X86_64.Scrub.PostOut (Spec.RsaPkcs1Enc.decryptContract abi stack) (Spec.RsaPkcs1Enc.decryptSig.retBits 64) :=
+  VG.X86_64.Scrub.postOut_of_local_pre (leak := some _) VG.X86_64.Scrub.ScrubAbi.plain
+    fun vs m m₁ m₂ r hlen hpre hb h => by
+    obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 22) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨outLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨msgLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨nLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨e, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨eLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨d, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨input, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨inputLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨p, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨pLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨q, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨qLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dp, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dpLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dq, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dqLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨qinv, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨qinvLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨scratch, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨scratchLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero hlen
+    simp only [Spec.RsaPkcs1Enc.decryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq] at hb
+    have hol : outLen.toNat = nLen.toNat := hpre.2.1
+    have hby : Spec.Rsa.bytesAt m₂ out nLen.toNat = Spec.Rsa.bytesAt m₁ out nLen.toNat :=
+      VG.Proof.Rsa.X86_64.bytesAt_agree (by simp only [Elem.size]; omega)
+        (by have := outLen.isLt; simp only [Elem.size]; omega) hb.1
+    have hw : Spec.Rsa.wordsAt m₂ msgLen 1 = Spec.Rsa.wordsAt m₁ msgLen 1 := by
+      simp only [Spec.Rsa.wordsAt, List.range, List.range.loop, List.map_cons, List.map_nil, Nat.mul_zero,
+        BitVec.add_zero]
+      rw [VG.Proof.Rsa.X86_64.readW_agree (by decide) (by decide) hb.2.1]
+    replace h : Spec.RsaPkcs1Enc.writtenMsg m₁ out msgLen nLen.toNat r _ := h
+    show Spec.RsaPkcs1Enc.writtenMsg m₂ out msgLen nLen.toNat r _
+    revert h
+    generalize Spec.RsaPkcs1Enc.decrypt _ _ _ _ _ _ _ _ _ = o
+    cases o <;> simp only [Spec.RsaPkcs1Enc.writtenMsg, hby, hw] <;> exact id
 
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec

@@ -5,17 +5,30 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 /-!
 # RSA with the CRT private key on x86-64, with AVX512_IFMA, for any size
 
-`vg_rsa_private_crt_ifma`: `vg_rsa_private_crt_adx`'s code, but for a
+`vg_rsa_private_crt_ifma` and `vg_rsa_private_crt_ifma512`:
+`vg_rsa_private_crt_adx`'s code, but for a
 modulus of `2 W` words and primes of `W` words each, whose two
 exponentiations (modulo `p` and modulo `q`) run at once, in radix `2⁵²`,
 with AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq`, with numbers of `4 R`
-limbs in `R` 256-bit registers each (`Lay`): `R = 5`, `W = 16` for
-2048-bit keys, `R = 8`, `W = 24` for 3072-bit keys, `R = 10`, `W = 32` for
-4096-bit keys. The two accumulators take `2 R`
-registers, with the two broadcast limbs, the two `u`, a zero and a
-temporary: `2 R + 6` of the thirty-two, named through `VReg` and the
-`EVEX.256` instructions of `TCB/X86_64/Evex.lean`, which reach
-`ymm16`–`ymm31`.
+limbs in `R` rows of four (`Lay`): `R = 5`, `W = 16` for 2048-bit keys,
+`R = 8`, `W = 24` for 3072-bit keys, `R = 10`, `W = 32` for 4096-bit keys.
+Each prime's rows are 256-bit registers: the
+two accumulators take `2 R` registers, with the two broadcast limbs, the
+two `u`, a zero and a temporary: `2 R + 6` of the thirty-two, named through
+`VReg` and the `EVEX.256` instructions of `TCB/X86_64/Evex.lean`, which
+reach `ymm16`–`ymm31`.
+
+The two functions differ for 2048-bit keys alone, where
+`vg_rsa_private_crt_ifma512` has `R = 6` (`lay2048z`): the two primes' rows
+are the halves of 512-bit registers, and the exponentiations multiply
+modulo a multiple of each prime that is `-1` modulo `2¹⁰⁴` (`ammCoreZ`, and
+`zPre` and `zPost` around the exponentiations), which takes about 1.3 times
+the multiplications of 52-bit limbs and no multiplication for a quotient
+digit. It is the faster where two 512-bit multipliers run them (Intel's
+Xeons from Sapphire Rapids on), and the slower where a 512-bit
+multiplication is two of 256 bits (AMD's Zen 4), so the functions that
+call it are chosen only with AVX512_FP16 (`CrtImpl.extra`), which the first
+have and the second do not.
 
 * A number below `2^(208 R)` is `4 R` limbs below `2⁵²`, limb `j` in
   quadword `j / R` of the 32-byte vector `j % R` (`32 R` bytes): the stride
@@ -62,6 +75,9 @@ structure Lay where
   S : Nat
   w : Nat
   nl : Nat
+  /-- Whether the multiplications of the exponentiation are modulo a
+  multiple of the prime that is `-1` modulo `2¹⁰⁴` (`ammCoreZ`). -/
+  z : Bool
   deriving DecidableEq, Repr
 
 namespace Lay
@@ -88,9 +104,14 @@ def k0 : Nat := 8 * (l.P - l.E) / l.w
 bytes. -/
 def XE : Nat := (l.P + 31) / 32 * 32 + (if l.w = 4 then 0 else (l.ND + 31) / 32 * 32)
 
+/-- The bytes of the two numbers only `ammCoreZ`'s layouts have. -/
+def zx : Nat := if l.z then 2 * l.NB else 0
+
 /-! In a prime's region: the modulus, `k₀` in each quadword, `Y`, the base
 `X`, the selected entry, the table, the padded exponent, its digits (a byte
-each), `2^(104 S - 64 W) mod X`, the digit being read, the last multiplier. -/
+each), `2^(104 S - 64 W) mod X`, the digit being read, the last multiplier;
+and with `ammCoreZ` the multiple of the prime plus one and the last
+multiplier's copy. -/
 def oK0 : Nat := l.NB
 def oY : Nat := l.NB + 32
 def oX : Nat := l.oY + l.NB
@@ -102,12 +123,22 @@ def oK1 : Nat := l.oE + l.XE
 def oV : Nat := l.oK1 + l.NB
 /-- The last multiplier: 1 for `q`, `R mod p` for `p`. -/
 def oFin : Nat := l.oV + 32
+def oMs : Nat := l.oFin + l.NB
+def oF2 : Nat := l.oFin + 2 * l.NB
 /-- `q`'s region from `p`'s. -/
-def D : Nat := l.oFin + l.NB
+def D : Nat := l.oFin + l.NB + l.zx
 /-- The caller's MXCSR (its bits 15:0) and `0x1FBF`, after the regions. -/
 def oMx : Nat := l.nl * l.D
-/-- The doublings of `R_X mod X` that make `2^(104 S - 64 W) mod X`. -/
-def dbls : Nat := 104 * l.S - 128 * l.W
+/-- The doublings of `R_X mod X` that make `2^(104 S - 64 W) mod X`; with
+`ammCoreZ`, those after which a multiplication by `2^(52 L - 1)` leaves
+`2^(104 S - cv)`. -/
+def dbls : Nat := if l.z then 208 * l.S + 2 - 104 * l.L - 128 * l.W else 104 * l.S - 128 * l.W
+/-- The base and 1 come to the exponentiation times `2^cv`: `R_X`, and with
+`ammCoreZ` a multiplication by `2^(52 L - 1)` more. -/
+def cv : Nat := if l.z then 52 * l.L - 1 + 64 * l.W - 52 * l.S else 64 * l.W
+/-- With `ammCoreZ`: the limb of `2^(52 zE)`, whose square over `2^(52 S)`
+is `2^(-104)`. -/
+def zE : Nat := (l.S - 2) / 2
 
 /-- The quadword of limb `j` in the stride layout. -/
 def off (j : Nat) : Nat := 32 * (j % l.R) + 8 * (j / l.R)
@@ -116,14 +147,18 @@ end Lay
 
 /-- 2048-bit keys: primes of 16 words, numbers of 20 limbs, windows of 4
 bits. -/
-def lay2048 : Lay := ⟨5, 16, 20, 4, 2⟩
+def lay2048 : Lay := ⟨5, 16, 20, 4, 2, false⟩
+/-- 2048-bit keys with `ammCoreZ`: primes of 16 words, numbers of 24 limbs,
+of which 22 hold the multiple of the prime and a multiplication's 22 steps,
+windows of 4 bits. -/
+def lay2048z : Lay := ⟨6, 16, 22, 4, 2, true⟩
 /-- 3072-bit keys: primes of 24 words, numbers of 32 limbs, of which 30
 hold the primes' 1536 bits and a multiplication's 30 steps, windows of 5
 bits. -/
-def lay3072 : Lay := ⟨8, 24, 30, 5, 2⟩
+def lay3072 : Lay := ⟨8, 24, 30, 5, 2, false⟩
 /-- 4096-bit keys: primes of 32 words, numbers of 40 limbs, windows of 5
 bits. -/
-def lay4096 : Lay := ⟨10, 32, 40, 5, 2⟩
+def lay4096 : Lay := ⟨10, 32, 40, 5, 2, false⟩
 
 /-- In the prime workspaces: the base of the IFMA area, and a counter. -/
 def sIfma : Nat := sFn 13
@@ -294,16 +329,141 @@ def ammCore : Prog isa :=
           .evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k (l.S % l.R))) ++
         ([.movImm64 .r12 mask52] : List Instr) ++ carryOut l)))
 
-/-- The multiplication of a layout: with the look-ahead where the lanes'
-roles take at most 10 registers (2048 bits, the CRT's and the public
-operation's), whose multiplications the chain of `u`s bounds. -/
-def ammMul : Prog isa := if l.nl * l.R ≤ 10 then ammCoreU l else ammCore l
+/-! ### The multiplication modulo a number that is `-1` modulo `2¹⁰⁴`
+
+`ammCoreZ`: both lanes at once, lane `p` in quadwords `4 p` to `4 p + 3`
+of 512-bit registers (`TCB/X86_64/Evex.lean`'s `E5Op`), modulo the number
+`X = 2¹⁰⁴ m - 1` for the `m` at `oMs`, of at most `4 R - 2` limbs: `X + 1`
+is `m` two limbs up, with limbs 0 and 1 zero. So the digit `u` of a step is
+limb 0 of the accumulator, with no multiplication by `k₀`, and none of
+`u`'s products reaches limbs 0 and 1: the chain from one `u` to the next is
+the addition of the two halves of limb 0 (`zU 0` and `zB 0`), and the
+step's products run beside it.
+
+The accumulator is two sets of `R` registers, the products of the second
+operand's limbs with the first operand (`zB`) and those of the `u`s with
+`X + 1` (`zU`), which change roles as `ammCore`'s do; the operands' rows
+stay in registers (`zA`, `zM`). A step adds the two registers of role 0,
+takes `u` from the sum's quadword 0 of each lane, carries each of its
+quadwords into role 1 (`zC`), and moves its other three quadwords down one
+(`vpermq`, their low 52 bits kept by `zK`) into the `zU` register that
+becomes the top role, with the products of `u` and of the step before's
+`u` that belong there: those of limbs `R c` and `R c + 1` of `X + 1`, from
+`zM R` and `zM (R + 1)`, rows 0 and 1 moved down a quadword, which are
+`m`'s last two rows (and rows 0 and 1 are those moved up a quadword, their
+last quadword, zero, first). After the last step, the last `u`'s products
+of rows 0 and 1 are still to add (`zFin`). The first product of the next limb of the second operand goes
+into role 1 a step early, as `ammCoreU`'s. -/
+
+/-- The registers: role `k` of the two sets at step `i`, the limb of the
+second operand and `u` of a step of parity `par`, the carries, the first
+operand's row `k`, row `k` of `X + 1` (`1 ≤ k < R`; `R` and `R + 1` are
+rows 0 and 1 moved down a quadword), the mask of the three low quadwords'
+52 bits, and a temporary. -/
+def zB (k i : Nat) : VReg := vreg ((k + i) % l.R)
+def zU (k i : Nat) : VReg := vreg (l.R + (k + i) % l.R)
+def zBq (par : Nat) : VReg := vreg (2 * l.R + par)
+def zUq (par : Nat) : VReg := vreg (2 * l.R + 2 + par)
+def zC : VReg := vreg (2 * l.R + 4)
+def zA (k : Nat) : VReg := vreg (2 * l.R + 5 + k)
+def zM (k : Nat) : VReg := vreg (3 * l.R + 4 + k)
+def zK : VReg := vreg (4 * l.R + 6)
+def zT : VReg := vreg (4 * l.R + 7)
+
+/-- `r := ` the rows at `[b + d]` and `[b + D + d]`, a lane each. -/
+def zLoad (r : VReg) (b : Reg) (d : Nat) : List Instr :=
+  [.evLoad r (at_ b d), .e5InsertLoad r r (at_ b (l.D + d)) 1]
+
+/-- `zBq par := ` the limbs at `[r9 + d]` and `[r9 + D + d]`, in every
+quadword of their lanes. -/
+def zBLoad (par d : Nat) : List Instr :=
+  [.evBroadcastLoad (zBq l par) (at_ .r9 d), .evBroadcastLoad (zT l) (at_ .r9 (l.D + d)),
+    .e5op (.vinserti64x4 (zBq l par) (zBq l par) (zT l) 1)]
+
+/-- Step `i` of a block (`last`: no limb of the second operand follows). -/
+def zStep (i : Nat) (last : Bool) : List Instr :=
+  let par := i % 2
+  let nxt := (i + 1) % 2
+  let B := zBq l par
+  let U := zUq l par
+  let Up := zUq l nxt
+  let B0 := zB l 0 i
+  let B1 := zB l 1 i
+  let U0 := zU l 0 i
+  let lo (d x y : VReg) : Instr := .e5op (.vpmadd52 false d x y)
+  let hi (d x y : VReg) : Instr := .e5op (.vpmadd52 true d x y)
+  ([.e5op (.bin .vpaddq U0 U0 B0), .e5op (.vpermq U U0 0), .e5op (.shift .vpsrlq (zC l) U0 52)] : List Instr) ++
+  (if last then [] else zBLoad l nxt (l.off (i + 1)) ++ [lo B1 (zBq l nxt) (zA l 0)]) ++
+  [lo B1 B (zA l 1), hi B1 B (zA l 0), .e5op (.bin .vpaddq B1 B1 (zC l)),
+    .e5op (.vpermq U0 U0 0xF9), .e5op (.bin .vpandq U0 U0 (zK l)), .e5op (.bin .vpxorq B0 B0 B0),
+    hi U0 Up (zM l l.R), lo U0 Up (zM l (l.R + 1)), lo U0 U (zM l l.R)] ++
+  (List.range (l.R - 2)).flatMap (fun j =>
+    [lo (zB l (j + 2) i) B (zA l (j + 2)), hi (zB l (j + 2) i) B (zA l (j + 1)),
+      lo (zU l (j + 2) i) U (zM l (j + 2)), hi (zU l (j + 2) i) U (zM l (j + 1))]) ++
+  [hi B0 B (zA l (l.R - 1)), hi U0 U (zM l (l.R - 1))]
+
+/-- The start: the mask, the operands' rows, the accumulators and the `u`
+before the first zeroed, the second operand's first limb and its first
+product. -/
+def zStart : List Instr :=
+  ([.mov .r10 (.reg .rbx), .mov32 .rcx (.imm (BitVec.ofNat 32 (l.S / l.R))), .movImm64 .rax mask52,
+    .eop (.vmovq (zK l) .rax), .e5op (.vpermq (zK l) (zK l) 0x40),
+    .e5op (.vinserti64x4 (zK l) (zK l) (zK l) 1)] : List Instr) ++
+  (List.range l.R).flatMap (fun k => zLoad l (zA l k) .r8 (32 * k)) ++
+  (List.range l.R).flatMap (fun k => zLoad l (zM l (k + 2)) .r10 (l.oMs + 32 * k)) ++
+  [.e5op (.vpermq (zM l 1) (zM l (l.R + 1)) 0x93)] ++
+  (List.range (2 * l.R)).map (fun r => .e5op (.bin .vpxorq (vreg r) (vreg r) (vreg r))) ++
+  [.e5op (.bin .vpxorq (zUq l 1) (zUq l 1) (zUq l 1))] ++
+  zBLoad l 0 0 ++ [.e5op (.vpmadd52 false (zB l 0 0) (zBq l 0) (zA l 0))]
+
+/-- A block: `R` steps, then the next block's limbs of the second operand
+and the count of blocks. -/
+def zBlock : List Instr :=
+  (List.range l.R).flatMap (fun i => zStep l i false) ++
+    ([.alu .add .r9 (.imm 8), .alu .sub .rcx (.imm 1)] : List Instr)
+
+/-- The end: the last `u`'s products of rows 0 and 1 of `X + 1`, and the
+two sets added. -/
+def zFin : List Instr :=
+  let i := l.S % l.R
+  let U := zUq l ((l.S - 1) % 2)
+  [.e5op (.vpermq (zT l) (zM l l.R) 0x93),
+    .e5op (.vpmadd52 true (zU l 0 i) U (zT l)), .e5op (.vpmadd52 false (zU l 0 i) U (zM l 1))] ++
+  (List.range l.R).map fun k => .e5op (.bin .vpaddq (zB l k i) (zB l k i) (zU l k i))
+
+/-- The sums stored, a lane at `r11` and the other at `r11 + D`. -/
+def zStores : List Instr :=
+  (List.range l.R).flatMap fun k =>
+    [.evStore (at_ .r11 (32 * k)) (zB l k (l.S % l.R)),
+      .e5ExtractStore (at_ .r11 (l.D + 32 * k)) (zB l k (l.S % l.R)) 1]
+
+/-- `[r11] := [r8] [r9] 2^(-52 S)` modulo `2¹⁰⁴ m - 1` for the `m` at `oMs`
+(`rbx` the area), for both lanes: `S / R` blocks, then the `S % R` steps
+left (at least one, the last). -/
+def ammCoreZ : Prog isa :=
+  .seq (.block (zStart l))
+    (.seq (.loop (.block (zBlock l)) .ne)
+      (.block ((List.range (l.S % l.R)).flatMap (fun i => zStep l i (i + 1 = l.S % l.R)) ++ zFin l ++
+        zStores l ++ ([.movImm64 .r12 mask52] : List Instr) ++ carryOut l)))
+
+/-- The multiplication of a layout: `ammCoreZ` where the layout says so;
+else with the look-ahead where the lanes' roles take at most 10 registers
+(2048 bits, the public operation's), whose multiplications the chain of
+`u`s bounds. -/
+def ammMul : Prog isa :=
+  if l.z then ammCoreZ l else if l.nl * l.R ≤ 10 then ammCoreU l else ammCore l
+
+/-- A multiplication's operands: `r8`, `r9` and `r11` at offsets `a`, `b`
+and `o` of the area. -/
+def ammOps (o a b : Nat) : List Instr :=
+  [.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 a)), .mov .r9 (.reg .rbx),
+    .alu .add .r9 (.imm (BitVec.ofNat 32 b)), .mov .r11 (.reg .rbx), .alu .add .r11 (.imm (BitVec.ofNat 32 o))]
 
 /-- `[o] := [a] [b] 2^(-52 S)`, the offsets in `p`'s region. -/
-def amm (o a b : Nat) : Prog isa :=
-  .seq (.block [.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 a)), .mov .r9 (.reg .rbx),
-      .alu .add .r9 (.imm (BitVec.ofNat 32 b)), .mov .r11 (.reg .rbx), .alu .add .r11 (.imm (BitVec.ofNat 32 o))])
-    (ammMul l)
+def amm (o a b : Nat) : Prog isa := .seq (.block (ammOps o a b)) (ammMul l)
+
+/-- `amm` modulo the prime at `oM`, by `ammCore`. -/
+def ammP (o a b : Nat) : Prog isa := .seq (.block (ammOps o a b)) (ammCore l)
 
 /-! ## Moving numbers between the layouts -/
 
@@ -535,10 +695,48 @@ def withMxcsr (c : Prog isa) : Prog isa :=
         .ldmxcsr (at_ .rbx (l.oMx + 4)), .lfence]) (.seq c (.block [.lfence])))
       (.block [.ldmxcsr (at_ .rbx l.oMx), .vop .vzeroupper]))
 
+/-! ### Around the exponentiations with `ammCoreZ`
+
+The exponentiations run modulo `X = 2¹⁰⁴ m - 1` for `m = 2^(-104)` modulo
+the prime, a multiple of the prime: `zPre` makes `m`, as
+`2^(52 zE) 2^(52 zE) 2^(-52 S)` by `ammCore` (`ammP`), at `oMs`. Its
+results are below `2 X`, not `2 p`, so the multiplication by
+the last multiplier is `ammCore`'s, after the exponentiations (`zPost`),
+which multiply by 1 in Montgomery form in its place.
+
+A multiplication modulo `X` leaves a number of the size of `X` or of its
+operands' product over `2^(52 S)`, whichever is larger, so it only moves
+the region's numbers, which are below the prime, to the radix `2^(52 S)`
+when they are multiplied by a number above it: by `2^(52 L - 1)`, which
+leaves them times `2^cv`, and `2^dbls R_X` then becomes `2^(104 S - cv)`,
+which `convTab` multiplies them by. -/
+
+/-- The number whose limb `j` is `v` and the others zero, at offset `o` of
+every region (through `rax`). -/
+def litN (o j : Nat) (v : BitVec 64) : List Instr :=
+  (List.range l.nl).flatMap fun p =>
+    ([.mov32 .rax (.imm 0)] : List Instr) ++
+    (List.range l.L).map (fun q => .store (at_ .rbx (l.D * p + o + l.off q)) .rax) ++
+    [.movImm64 .rax v, .store (at_ .rbx (l.D * p + o + l.off j)) .rax]
+
+/-- Before the exponentiations: `m` at `oMs`; `[oK1]`, `Y` and the
+base times `2^(52 L - 1) 2^(-52 S)`; the last multiplier at `oF2`, and
+`Y [oK1] 2^(-52 S)`, 1 in Montgomery form, in its place. -/
+def zPre : List (Prog isa) :=
+  [.block (litN l l.oS l.zE 1), ammP l l.oMs l.oS l.oS,
+    .block (litN l l.oS (l.L - 1) (BitVec.ofNat 64 (2 ^ 51))),
+    amm l l.oK1 l.oS l.oK1, amm l l.oY l.oS l.oY, amm l l.oX l.oS l.oX,
+    .block (copyN l l.oF2 l.oFin), amm l l.oFin l.oY l.oK1]
+
+/-- After the exponentiations: `Y` times the last multiplier, modulo the
+prime. -/
+def zPost : Prog isa := ammP l l.oY l.oY l.oF2
+
 /-- The vector code: the exponentiations (`Y` and `X` into Montgomery form
 with the table), the results multiplied by `oFin`. -/
 def vec : Prog isa :=
-  withMxcsr l (seqs (expLoop l))
+  if l.z then withMxcsr l (.seq (seqs (zPre l)) (.seq (seqs (expLoop l)) (zPost l)))
+  else withMxcsr l (seqs (expLoop l))
 
 /-- In a prime's workspace: the result into `aY`, reduced below `X`. -/
 def result (p : Nat) : List (Prog isa) :=
@@ -603,23 +801,25 @@ def anySizes : Prog isa :=
     (.seq (.block (sizes lay3072)) (.ite .e (.block []) (.block (sizes lay4096)))))
 
 /-- The vector code of the layout whose sizes the key has (one of them, by
-`anySizes`). -/
-def ifmaAny : Prog isa :=
-  .seq (.block (sizes lay2048)) (.ite .e (seqs (ifma lay2048))
+`anySizes`), with the layout `l2` for 2048-bit keys (`lay2048` or
+`lay2048z`, which have the same sizes). -/
+def ifmaAny (l2 : Lay) : Prog isa :=
+  .seq (.block (sizes lay2048)) (.ite .e (seqs (ifma l2))
     (.seq (.block (sizes lay3072)) (.ite .e (seqs (ifma lay3072)) (seqs (ifma lay4096)))))
 
 /-- The IFMA computation for 2048-, 3072- and 4096-bit keys, the CRT one
 otherwise: `pre` and `post` do not depend on the layout, so only the vector
 code is chosen by it. -/
-def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+def main (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   seqs (nSetup mul ++ primesSetup ++ checks ++
-    [.seq anySizes (.ite .e (seqs (pre mul ++ [ifmaAny] ++ post mul))
+    [.seq anySizes (.ite .e (seqs (pre mul ++ [ifmaAny l2] ++ post mul))
       (seqs (qPhase mul (Crt.expLoop mul tabSelect) ++ pPhase mul (Crt.expLoop mul tabSelect))))] ++
     finish)
 
-/-- `vg_rsa_private_crt_ifma`. -/
-def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+/-- `vg_rsa_private_crt_ifma` (`l2 = lay2048`) and
+`vg_rsa_private_crt_ifma512` (`l2 = lay2048z`). -/
+def code (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (.block (Crt.entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
-    (.ite .ne fail (main mul))
+    (.ite .ne fail (main l2 mul))
 
 end VG.Impl.Rsa.X86_64.CrtIfma

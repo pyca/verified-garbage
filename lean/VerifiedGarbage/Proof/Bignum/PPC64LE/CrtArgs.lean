@@ -174,4 +174,34 @@ theorem args_ok {s : State} {S : Addr} {Z : Nat} (hs : Scr s S Z) (hZ : 256 ≤ 
   · rw [oDQ, R11.word (Or.inl (by omega_arith)) (by omega_arith), w11]; exact g10.2
   · rw [oQInv, w12]; exact g11.2
 
+/-- `argsG pc`: `args`, and with `pc` the cached values' address (`r31`)
+into the header's `oR2`. -/
+theorem argsG_ok {pc : Bool} {s : State} {S : Addr} {Z : Nat} (hs : Scr s S Z) (hZ : 256 ≤ Z)
+    (h23 : s.gpr .r23 = S) (hrd : ∀ i < 10, InRegions (s.rd ++ s.wr) (stackArgAddr s i) 8)
+    (hsep : ∀ j < 10, ∀ i < 8, ∀ x, ofs S x < Z → stackArgAddr s j + BitVec.ofNat 64 i ≠ x) :
+    WP isa (.block (argsG pc)) s fun t =>
+      (word t.mem S oOut = s.gpr .r3 ∧ word t.mem S oN = s.gpr .r5 ∧ word t.mem S oNLen = s.gpr .r6 ∧
+        word t.mem S oIn = s.gpr .r7 ∧ word t.mem S oP = s.gpr .r9 ∧ word t.mem S oPLen = s.gpr .r10 ∧
+        word t.mem S oQ = stackArg s 0 ∧ word t.mem S oQLen = stackArg s 1 ∧ word t.mem S oDP = stackArg s 2 ∧
+        word t.mem S oDQ = stackArg s 4 ∧ word t.mem S oQInv = stackArg s 6 ∧ Outside S 0 96 s.mem t.mem ∧
+        (pc = true → word t.mem S oR2 = s.gpr .r31)) ∧
+      Keep [.r0, .r11] s t := by
+  have hn := hs.nowrap
+  cases pc
+  · exact WP.mono (args_ok hs hZ h23 hrd hsep) fun t ⟨⟨w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, O⟩, k⟩ =>
+      ⟨⟨w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, O.mono (by omega_arith) (by omega_arith), nofun⟩, k⟩
+  · show WP isa (.block (Crt.args ++ [.store .d .r31 .r23 oR2])) s _
+    rw [WP.block_append_iff]
+    refine WP.mono (args_ok hs hZ h23 hrd hsep) fun t ⟨⟨w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, O⟩, k⟩ => ?_
+    refine WP.mono (st1_ok (r := .r31) (hs.congr k.wr) ((k.gpr _ (by decide)).trans h23)
+      (by unfold oR2; omega_arith) (by decide)) fun u ⟨⟨u88, F⟩, ku⟩ => ?_
+    have hw : ∀ d, d + 8 ≤ 88 → word u.mem S d = word t.mem S d := fun d hd =>
+      F.word (Or.inl hd) (by omega_arith)
+    refine ⟨⟨by rw [hw _ (by decide)]; exact w0, by rw [hw _ (by decide)]; exact w1,
+      by rw [hw _ (by decide)]; exact w2, by rw [hw _ (by decide)]; exact w3, by rw [hw _ (by decide)]; exact w4,
+      by rw [hw _ (by decide)]; exact w5, by rw [hw _ (by decide)]; exact w6, by rw [hw _ (by decide)]; exact w7,
+      by rw [hw _ (by decide)]; exact w8, by rw [hw _ (by decide)]; exact w9, by rw [hw _ (by decide)]; exact w10,
+      (O.mono (by omega_arith) (by omega_arith)).trans (F.mono (by unfold oR2; omega_arith) (by unfold oR2; omega_arith)),
+      fun _ => u88.trans (k.gpr _ (by decide))⟩, (k.trans ku).mono⟩
+
 end VG.Proof.Bignum.PPC64LE.Crt

@@ -74,7 +74,7 @@ theorem amm_ok (hl : MrOk l) {s : State} {B : Addr} {Z c k o a b : Nat} (hB : s.
   have hp : ∀ p < l.nl, p = 0 := fun p hp => by omega_arith
   have h0 : ∀ c, l.D * 0 + c = c := fun c => by rw [Nat.mul_zero, Nat.zero_add]
   have hM : val52 l s.mem B VG.Impl.Rsa.X86_64.CrtIfma.oM = c := hm.val
-  refine WP.mono (VG.Proof.Bignum.X86_64.Ifma.ammCoreSpecN_ok hl.amm (VG.Proof.Bignum.X86_64.Ifma.ammMul_core hl.amm)
+  refine WP.mono (VG.Proof.Bignum.X86_64.Ifma.ammCoreSpecN_ok hl.amm (VG.Proof.Bignum.X86_64.Ifma.ammMul_core hl.amm hl.z)
     (Z := Z) (k := fun _ => k) hB r8 r9 r11 hs
     (by rw [hn]; simp only [Nat.sub_self, Nat.mul_zero]; omega_arith) (by omega_arith)
     (by rw [hn]; simp only [Nat.sub_self, Nat.mul_zero]; omega_arith)

@@ -31,23 +31,23 @@ def StreamFn.scrub (f : StreamFn) (v : VecLevel) (ks : List Nat)
     (hd : f.code.x86_64Depth ≤ f.stack) (hst : f.stack + 8 < 2 ^ 64) (h8 : f.stack % 8 = 0)
     (hlv : f.code.all (fun i => decide (i.vecLevel ≤ v.level)) = true)
     (hrb : f.retBits ≤ 32 ∨ f.retBits = 64) (hpost : PostOut f.contract f.retBits)
-    (hres : ResOk f.code f.contract f.stack ks (chunks f.stack)) : StreamFn where
+    (hres : ResOk f.code f.contract f.stack ks (chunks f.stack)) (hne : v ≠ .evex := by decide) : StreamFn where
   api := f.api
-  code := (scrubReg f.reg v ks hd hst h8 hlv hrb hpost hres rfl).code
+  code := (scrubReg f.reg v ks hd hst h8 hlv hrb hpost hres rfl hne).code
   contract := f.contract
   stack := f.stack
-  verified := (scrubReg f.reg v ks hd hst h8 hlv hrb hpost hres rfl).verified
+  verified := (scrubReg f.reg v ks hd hst h8 hlv hrb hpost hres rfl hne).verified
   ofSig := f.ofSig
   ofApi := f.ofApi
-  spSafe := (scrubReg f.reg v ks hd hst h8 hlv hrb hpost hres rfl).spSafe
-  residue := (scrubReg f.reg v ks hd hst h8 hlv hrb hpost hres rfl).residue
+  spSafe := (scrubReg f.reg v ks hd hst h8 hlv hrb hpost hres rfl hne).spSafe
+  residue := (scrubReg f.reg v ks hd hst h8 hlv hrb hpost hres rfl hne).residue
 
 theorem StreamFn.scrub_noResidue (f : StreamFn) (v : VecLevel) (ks : List Nat)
     (hd : f.code.x86_64Depth ≤ f.stack) (hst : f.stack + 8 < 2 ^ 64) (h8 : f.stack % 8 = 0)
     (hlv : f.code.all (fun i => decide (i.vecLevel ≤ v.level)) = true)
     (hrb : f.retBits ≤ 32 ∨ f.retBits = 64) (hpost : PostOut f.contract f.retBits)
-    (hres : ResOk f.code f.contract f.stack ks (chunks f.stack)) :
-    NoResidue (f.scrub v ks hd hst h8 hlv hrb hpost hres).code f.contract f.retBits :=
-  scrubReg_noResidue f.reg v ks hd hst h8 hlv hrb hpost hres rfl
+    (hres : ResOk f.code f.contract f.stack ks (chunks f.stack)) (hne : v ≠ .evex := by decide) :
+    NoResidue (f.scrub v ks hd hst h8 hlv hrb hpost hres hne).code f.contract f.retBits :=
+  scrubReg_noResidue f.reg v ks hd hst h8 hlv hrb hpost hres rfl hne
 
 end VG.Proof.Pbkdf2.Md.X86_64

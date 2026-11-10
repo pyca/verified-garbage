@@ -23,6 +23,8 @@ writable. `saveRegs_ok`: the saves of `r24`–`r29` and of the return address.
 
 namespace VG.Proof.Rsa.PPC64LE.Priv
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.Rsa.PPC64LE.Priv
 open VG.Proof.Bignum.PPC64LE (Keep)
 
@@ -70,8 +72,8 @@ theorem stackArgAddr_eq (s : State) (j : Nat) :
   simp only [stackArgAddr, Nat.add_zero]
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, show 32 + 8 * 8 + 8 * j = 32 + 8 * (8 + j) by omega]
 
-theorem in_aR {s : State} {j : Nat} (hj : j < 12) : (aR s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+theorem in_aR {s : State} {j : Nat} (hj : j < 12) : (aR pc s).Contains (stackArgAddr s j) 8 := by
+  rw [stackArgAddr_eq s j]; cases pc <;> exact Offset.contains_base _ (by simp only [Bool.false_eq_true, ↓reduceIte]; omega) (by omega)
 
 /-! ## The saves -/
 

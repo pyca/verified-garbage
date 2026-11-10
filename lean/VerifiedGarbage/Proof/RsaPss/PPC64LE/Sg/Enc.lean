@@ -27,6 +27,8 @@ operation that follows.
 
 namespace VG.Proof.RsaPss.PPC64LE.Sg
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.RsaPss.PPC64LE.Sign VG.WriteBytes
 open VG.Impl.RsaOaep.PPC64LE (oEm oSt oDig oW oRsa)
 open VG.Impl.RsaPss.PPC64LE (oY)
@@ -41,7 +43,7 @@ open VG.Proof.Mgf1 (ifp ifn)
 open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 
 section
-variable {Gs Gm : Spec.Mgf1.Hash} {s : State} (P : PreS Gs.len s) {H : Hash} (hH : HashOK H)
+variable {Gs Gm : Spec.Mgf1.Hash} {s : State} (P : PreS pc Gs.len s) {H : Hash} (hH : HashOK H)
   (hGl : Gs.len = H.D) {G : Hash} (hG : HashOK G) {g : Fns} (Tg : TabS G g gArg Ss s (stackArg s 15))
   (hGmh : ∀ x, Gm.hash x = hG.SH.H.hash x) (hGml : Gm.len = G.D) (hGmv : Proof.Mgf1.Valid Gm)
   {cn dn : String} {cc dc : Prog isa} {f : MdFns} (T : MdTabS H cn cc dn dc f hArg Ss s (stackArg s 14))
@@ -50,8 +52,8 @@ include P hH hGl hG Tg hGmh hGml hGmv T
 theorem signEnc_ok (hGh : ∀ x, Gs.hash x = hH.SH.H.hash x) {t : State} (E : Entered s t) (sy : t.syms = s.syms)
     (h0 : s.mem (s.gpr .r5) ≠ 0) (hfit : Gs.len + (stackArg s 11).toNat + 2 ≤ kk s - loN s) {Q : State → Prop}
     (k : ∀ t', Base Ss vS s t' → t'.syms = s.syms → Spec.Rsa.bytesAt t'.mem (off (Ss s) oEm) (kk s) = encEm Gs Gm s →
-      WP isa priv t' Q) :
-    WP isa (signMain H f g) t Q := by
+      WP isa (priv pc) t' Q) :
+    WP isa (signMain H f g pc) t Q := by
   have F := fits P
   have hD0 : 0 < Gs.len := hGl ▸ hH.hD0
   have hD64 : Gs.len ≤ 64 := hGl ▸ hH.hD64

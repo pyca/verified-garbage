@@ -149,6 +149,25 @@ mod tests {
         }
     }
 
+    /// AVX512_FP16 is leaf 7's EDX bit 23 (Intel SDM Vol. 2, "CPUID": "Bit
+    /// 23: AVX512_FP16"), reported only where the operating system saves
+    /// the `zmm` state, as the other AVX-512 features are.
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[test]
+    fn decode_avx512fp16() {
+        let mut leaves = [[0; 4]; 8];
+        leaves[0][0] = 7;
+        leaves[1][2] = 1 << 27 | 1 << 28;
+        leaves[7][3] = 1 << 23;
+        for (xcr0, want) in [
+            (0b1110_0111, feature::AVX | feature::AVX512FP16),
+            (0b111, feature::AVX),
+        ] {
+            let f = decode(|leaf, _| leaves[leaf as usize], || xcr0);
+            assert_eq!(Features(f), Features(want));
+        }
+    }
+
     /// Detection returns the CPU's features, restricted as
     /// `VG_CPU_FEATURES` says, but for those the compilation target enables,
     /// which it cannot remove.
@@ -299,6 +318,7 @@ mod tests {
         assert_eq!(parse("adx"), Some(1 << 12));
         assert_eq!(parse("avx512bw"), Some(1 << 19));
         assert_eq!(parse("umaal"), Some(1 << 20));
+        assert_eq!(parse("avx512fp16"), Some(1 << 23));
         for bad in ["avx512vbmi", "aes,", "aes,none", " aes", "AES"] {
             assert_eq!(parse(bad), None, "{bad}");
         }

@@ -127,52 +127,73 @@ def clearTop : List Instr :=
 /-! ## The private operation -/
 
 /-- The frame from which `vg_rsa_private_checked` is called: its Parameter
-Save Area, with its twelve stack arguments at `r1 + 96`. -/
-def privBytes : Nat := 192
+Save Area, with its twelve stack arguments at `r1 + 96`; with `pc`, that of
+`vg_rsa_private_checked_precomputed`, with its fourteen. -/
+def privBytes (pc : Bool) : Nat := if pc then 208 else 192
 
 /-- Our stack argument `j`, from that frame. -/
-def argP (j : Nat) : Nat := privBytes + arg j
+def argP (pc : Bool) (j : Nat) : Nat := privBytes pc + arg j
 
-/-- `vg_rsa_private_checked`. -/
-def privCall : Prog isa := .call "vg_rsa_private_checked" Impl.Rsa.PPC64LE.Priv.code
+/-- `vg_rsa_private_checked`, or with `pc` `vg_rsa_private_checked_precomputed`. -/
+def privCall : Bool → Prog isa
+  | false => .call "vg_rsa_private_checked" Impl.Rsa.PPC64LE.Priv.code
+  | true => .call "vg_rsa_private_checked_precomputed" Impl.Rsa.PPC64LE.Priv.codeP
+
+/-- With `pc`, the key's precomputed values, our stack arguments 16 and 17
+(`pre`, `pre_len`), to the call's stack arguments 12 and 13. -/
+def preArgs : Bool → List Instr
+  | false => []
+  | true => [.load .d .r0 .r12 (argP true 16), .store .d .r0 .r12 192, .load .d .r0 .r12 (argP true 17),
+      .store .d .r0 .r12 200]
 
 /-- Its arguments, with `r12 = r1` in its frame: on the stack `p` and `p_len`
 (`r17`, `r18`), our stack arguments 0 to 7 (`q` to `qinv_len`), then the
-rest of `scratch` from `oRsa` and `scratch_len - 1024`; in the registers
-`out` (`k` bytes), `n`, `e` and `EM` (`k` bytes). -/
-def privArgs : List Instr :=
+rest of `scratch` from `oRsa` and `scratch_len - 1024`, and with `pc` `pre`
+and `pre_len`; in the registers `out` (`k` bytes), `n`, `e` and `EM` (`k`
+bytes). -/
+def privArgs (pc : Bool) : List Instr :=
   [.addSp .r12 0, .store .d .r17 .r12 96, .store .d .r18 .r12 104] ++
-    (List.range 8).flatMap (fun j => [.load .d .r0 .r12 (argP j), .store .d .r0 .r12 (112 + 8 * j)]) ++
-    [.li .r0 oRsa, .add .r0 .r14 .r0, .store .d .r0 .r12 176, .load .d .r11 .r12 (argP 13),
-      .subi .r11 .r11 1024, .store .d .r11 .r12 184, mov .r3 .r16, mov .r4 .r15, mov .r5 .r20, mov .r6 .r15,
-      mov .r7 .r21, mov .r8 .r22, .addi .r9 .r14 oEm, mov .r10 .r15]
+    (List.range 8).flatMap (fun j => [.load .d .r0 .r12 (argP pc j), .store .d .r0 .r12 (112 + 8 * j)]) ++
+    [.li .r0 oRsa, .add .r0 .r14 .r0, .store .d .r0 .r12 176, .load .d .r11 .r12 (argP pc 13),
+      .subi .r11 .r11 1024, .store .d .r11 .r12 184] ++ preArgs pc ++
+    [mov .r3 .r16, mov .r4 .r15, mov .r5 .r20, mov .r6 .r15, mov .r7 .r21, mov .r8 .r22, .addi .r9 .r14 oEm,
+      mov .r10 .r15]
 
 /-- The private operation, from its frame. -/
-def priv : Prog isa := .frame (.alloc privBytes) (.seq (.block privArgs) privCall) (.free privBytes)
+def priv (pc : Bool) : Prog isa :=
+  .frame (.alloc (privBytes pc)) (.seq (.block (privArgs pc)) (privCall pc)) (.free (privBytes pc))
 
 /-! ## The function -/
 
 /-- After the checks: `M'` and `H`, `EM`, and the private operation. -/
-def signMain : Prog isa :=
+def signMain (pc : Bool) : Prog isa :=
   .seq (mPrime H) (.seq (hashFixed H f hArg) (.seq clearEm (.seq (putSalt H) (.seq (putH H)
-    (.seq (.block (dbArgs H)) (.seq (mgfXorT g gArg) (.seq (.block clearTop) priv)))))))
+    (.seq (.block (dbArgs H)) (.seq (mgfXorT g gArg) (.seq (.block clearTop) (priv pc))))))))
 
 /-- The checks, then `signMain`. -/
-def checks : Prog isa :=
+def checks (pc : Bool) : Prog isa :=
   .ite (.zero .d .r9) encFail
     (.seq (.block (chkEm H)) (.ite (.nonzero .d .r3) encFail
-      (.seq (.block (chkSalt H)) (.ite (.nonzero .d .r3) encFail (signMain H f g)))))
+      (.seq (.block (chkSalt H)) (.ite (.nonzero .d .r3) encFail (signMain H f g pc)))))
 
 /-- The frame's body, for the hash function's sizes. -/
-def body : Prog isa := .seq (.block (save ++ prologue)) (.seq (checks H f g) (.block restore))
+def body (pc : Bool) : Prog isa := .seq (.block (save ++ prologue)) (.seq (checks H f g pc) (.block restore))
 
 /-- The index of the table `hash`'s hash function (its word 5) to `r11`,
 then the frame's body for its sizes. -/
-def signBody : Prog isa := .seq (.block (tword .r11 hArg 5)) (byIdx (fun i => body (shapeOf i).1 f g) idxs)
+def signBody (pc : Bool) : Prog isa :=
+  .seq (.block (tword .r11 hArg 5)) (byIdx (fun i => body (shapeOf i).1 f g pc) idxs)
 
 /-- `vg_rsa_pss_sign`, with the hash function the table that is its stack
 argument 14 (`hash`) and MGF1's the table that is its stack argument 15
-(`mgf1`). -/
-def sign : Prog isa := .frame (.alloc frameBytes) (signBody f g) (.free frameBytes)
+(`mgf1`); with `pc`, `vg_rsa_pss_sign_precomputed`, with the key's
+precomputed values its stack arguments 16 and 17 (`pre`, `pre_len`). -/
+def signG (pc : Bool) : Prog isa := .frame (.alloc frameBytes) (signBody f g pc) (.free frameBytes)
+
+/-- `vg_rsa_pss_sign`. -/
+abbrev sign : Prog isa := signG f g false
+
+/-- `vg_rsa_pss_sign_precomputed`. -/
+abbrev signP : Prog isa := signG f g true
 
 end VG.Impl.RsaPss.PPC64LE.Sign

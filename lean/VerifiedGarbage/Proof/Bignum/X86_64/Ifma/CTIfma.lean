@@ -63,7 +63,7 @@ structure IfT (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop where
   mid : TOk [.rdi, .r11, .r8] (.block (resMid l))
 
 theorem ifT (hl : LayOk l) : IfT l := by
-  rcases hl with rfl | rfl | rfl <;>
+  rcases hl with rfl | rfl | rfl | rfl <;>
     exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 /-! ## The head block -/

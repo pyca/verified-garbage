@@ -29,8 +29,9 @@ table, `ModExp.powWin`) of `max(2, ⌈len / 8⌉)` words for `p` and `q`.
   a chunk of `c`'s words at a time), then
   `m₁ = c^dP mod p` (`ModExp.powWin`: four-bit windows over `dP`'s bytes,
   each digit's table entry selected by a masked scan of the table).
-* `h = (m₁ - m₂ mod p) qInv mod p`: `m₂`'s bytes into `X` array 1, reduced
-  modulo `p` (`ModArith.reduce64`, a doubling on 64-bit words per bit), subtracted with `subMod` and `p` added back under its borrow
+* `h = (m₁ - m₂ mod p) qInv mod p`: `m₂` into `X`'s array 6, zero-extended
+  (`exportM2`); in `P`, `R² mod p` again, `m₁` moved to array 9, `m₂ mod p`
+  by `reduceIn`, subtracted with `subMod` and `p` added back under its borrow
   mask (`addMask`), then two Montgomery multiplications (by `qInv`, then by
   `R² mod p`).
 * In `X`: `q h` exactly (Montgomery multiplication modulo `M`), plus `m₂`
@@ -65,6 +66,9 @@ def oDQ : Nat := 72
 def oQInv : Nat := 80
 def oBP : Nat := 96
 def oBQ : Nat := 104
+/-- In `vg_rsa_private_crt_precomputed`, the address of the primes' cached
+`R² mod p` and `R² mod q`, which it takes in `r31`. -/
+def oR2 : Nat := 88
 
 /-- The nonvolatile registers saved, `r23` (the working space) last. -/
 def saved (i : Nat) : Reg :=
@@ -92,6 +96,12 @@ def args : List Instr :=
     .load .d .r0 .r11 0, .store .d .r0 .r23 oQ, .load .d .r0 .r11 8, .store .d .r0 .r23 oQLen,
     .load .d .r0 .r11 16, .store .d .r0 .r23 oDP, .load .d .r0 .r11 32, .store .d .r0 .r23 oDQ,
     .load .d .r0 .r11 48, .store .d .r0 .r23 oQInv]
+
+/-- The arguments into the header, and with `pc` the cached values' address
+(`r31`). -/
+def argsG : Bool → List Instr
+  | false => args
+  | true => args ++ [.store .d .r31 .r23 oR2]
 
 /-- `rd := ⌈rs / 8⌉`, at least 2 (`rs` at least 1): `(rs + 7) / 8`, plus 1
 if that is 1. -/
@@ -229,36 +239,72 @@ def reduceIn : Prog isa :=
   (.seq (.block (xb .r30 6 ++ [.addi .r31 .r25 7, .lsr .d .r31 .r31 3]))
     (.loop chunkStep (.nonzero .d .r3))))))))
 
+/-- `R² mod p` into array 1 from the `w` words (`r11 / 2`) at `r30`, under
+the mask `r26`: each word `&= r26`, and the lowest one `|= 1` if the mask is
+clear, when the prime is 3 and `R² mod 3 = 1`. -/
+def r2Copy : Prog isa :=
+  .seq (.block (PublicChecked.base .r14 1 ++ [.li .r3 0, .subi .r3 .r3 1, .logic .xor .r3 .r3 .r26, .li .r4 1,
+      .logic .and .r3 .r3 .r4, .lsr .d .r17 .r11 1]))
+    (Precompute.countLoop .r17 [.load .d .r0 .r30 0, .logic .and .r0 .r0 .r26, .logic .or .r0 .r0 .r3,
+      .store .d .r0 .r14 0, .li .r3 0, .addi .r14 .r14 8, .addi .r30 .r30 8])
+
+/-- The address of the cached `R² mod p` into `r30`, or with `q`, of
+`R² mod q`, after `R² mod p`'s `max(2, ⌈p_len / 8⌉)` words. -/
+def r2Src : Bool → List Instr
+  | false => [.load .d .r30 .r23 oR2]
+  | true => [.load .d .r3 .r23 oPLen] ++ words .r4 .r3 ++ [.load .d .r30 .r23 oR2, .lsl .r4 .r4 3,
+      .add .r30 .r30 .r4]
+
+/-- With `pc`, the address of the cached value (`r2Src`), at the end of a
+block that loads from the header, so that the address is public where the
+code is cut for the timing proof. -/
+def r2Ptr : Bool → Bool → List Instr
+  | false, _ => []
+  | true, q => r2Src q
+
+/-- `R² mod p` into array 1: computed (`Precompute.r2Prime`), or with `pc`
+the cached one at `r30` (`r2Copy`). -/
+def r2Step : Bool → Prog isa
+  | false => Precompute.r2Prime
+  | true => r2Copy
+
 /-- In a prime's working space, the prime from `X`'s array `xj`,
-`-p⁻¹ mod 2³²` in `r12`, `R² mod p` in array 1 (`Precompute.r2Prime`),
+`-p⁻¹ mod 2³²` in `r12`, `R² mod p` in array 1 (`Precompute.r2Prime`, or
+with `pc` the cached one of `q` if `q`, whose address the first block loads),
 `c mod p` in array 4 (`reduceIn`), then `c^d mod p` in array 4 for `d` at
 `oD` of the prime's length at `oLen` (`ModExp.powWin`, with its table in
 arrays 8 to 23). `k` is loaded into `r25` first, which nothing before
 `reduceIn` writes. -/
-def power (xj oD oLen : Nat) : Prog isa :=
-  .seq (.block ([.load .d .r25 .r23 oNLen, .addi .r14 .r10 0] ++ xb .r15 xj)) (.seq copyN
+def powerG (pc q : Bool) (xj oD oLen : Nat) : Prog isa :=
+  .seq (.block ([.load .d .r25 .r23 oNLen, .addi .r14 .r10 0] ++ xb .r15 xj ++ r2Ptr pc q)) (.seq copyN
   (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
       PublicChecked.base .r9 3))
-  (.seq Precompute.r2Prime (.seq reduceIn
+  (.seq (r2Step pc) (.seq reduceIn
   (.seq (.block [.load .d .r30 .r23 oD, .load .d .r31 .r23 oLen]) ModExp.powWin)))))
 
-/-- `m₂`'s `q_len` bytes, most significant first, from `Q`'s array 4 into
-`X`'s array 1. -/
+/-- `powerG` computing `R² mod p`. -/
+abbrev power (xj oD oLen : Nat) : Prog isa := powerG false false xj oD oLen
+
+/-- `m₂` (`Q`'s array 4) into `X`'s array 6, zero-extended to `X`'s words,
+for `reduceIn` in `P`. -/
 def exportM2 : Prog isa :=
-  .seq (.block (PublicChecked.base .r15 4 ++ [.load .d .r17 .r23 oQLen, .add .r15 .r15 .r17,
-      .subi .r15 .r15 1] ++ xb .r16 1))
-    (Precompute.countLoop .r17 [.lbz .r0 .r15 0, .stb .r0 .r16 0, .addi .r16 .r16 1, .subi .r15 .r15 1])
+  .seq (.block (setupP oBQ oQLen ++ PublicChecked.base .r15 4 ++ [.addi .r22 .r11 0] ++ xb .r14 6 ++
+      [.addi .r11 .r28 0, .subi .r11 .r11 16, .lsr .d .r11 .r11 2]))
+  (.seq Precompute.zeroWords (.seq (.block (xb .r14 6 ++ [.addi .r11 .r22 0])) copyN))
 
 /-- In `P`: `h = (m₁ - m₂ mod p) qInv mod p` into array 4, from `m₁` in array
 4. -/
-def recombineP : Prog isa :=
-  -- `q_len` first; `-p⁻¹ mod 2³²`; `R² mod p` (which `powSecret` overwrote) into array 7; `m₂ mod p`
-  -- into array 1.
-  .seq (.block [.load .d .r31 .r23 oQLen])
+def recombinePG (pc : Bool) : Prog isa :=
+  -- `k` first; `-p⁻¹ mod 2³²`; `R² mod p` (which `powSecret` overwrote) into array 1; `m₁` into array 9;
+  -- `m₂ mod p` into array 4 (`reduceIn`, from `X`'s array 6); then `R² mod p` into array 7, `m₂ mod p`
+  -- into array 1 and `m₁` back into array 4.
+  .seq (.block ([.load .d .r25 .r23 oNLen] ++ r2Ptr pc false))
   (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
-      PublicChecked.base .r9 3)) (.seq Precompute.r2Prime
+      PublicChecked.base .r9 3)) (.seq (r2Step pc)
+  (.seq (.block (PublicChecked.base .r14 9 ++ PublicChecked.base .r15 4)) (.seq copyN (.seq reduceIn
   (.seq (.block (PublicChecked.base .r14 7 ++ PublicChecked.base .r15 1)) (.seq copyN
-  (.seq (.block (xb .r30 1)) (.seq ModArith.reduce64
+  (.seq (.block (PublicChecked.base .r14 1 ++ PublicChecked.base .r15 4)) (.seq copyN
+  (.seq (.block (PublicChecked.base .r14 4 ++ PublicChecked.base .r15 9)) (.seq copyN
   -- `m₁ - m₂ mod p` into array 3, `p` added back under the borrow.
   (.seq (.block (PublicChecked.base .r14 4 ++ [.add .r14 .r14 .r29, .subi .r14 .r14 16, .li .r0 0,
       .store .d .r0 .r14 0] ++ PublicChecked.base .r8 4 ++ PublicChecked.base .r9 3 ++
@@ -267,7 +313,10 @@ def recombineP : Prog isa :=
       PublicChecked.base .r16 0)) (.seq addMask
   -- `qInv` into array 6; `h` into array 4.
   (.seq (.block (PublicChecked.base .r14 6 ++ xb .r15 7)) (.seq copyN
-  (.seq (PublicChecked.montOp 5 3 6) (PublicChecked.montOp 4 5 7))))))))))))))
+  (.seq (PublicChecked.montOp 5 3 6) (PublicChecked.montOp 4 5 7)))))))))))))))))))
+
+/-- `recombinePG` computing `R² mod p`. -/
+abbrev recombineP : Prog isa := recombinePG false
 
 /-- In `X`: `m = q h + m₂` into array 4, from `h` in `P`'s array 4 and `m₂`
 in `Q`'s. -/
@@ -285,13 +334,21 @@ def recombineX : Prog isa :=
   (.seq (PublicChecked.montOp 4 5 7) (.seq (.block (xb .r15 4 ++ xb .r16 6 ++ [.li .r20 0,
       .subi .r20 .r20 1])) addMask))))))))))
 
-/-- `vg_rsa_private_crt`. -/
-def crt : Prog isa :=
-  .seq (.block (save ++ args ++ setupX)) (.seq loadX (.seq checks (.seq loadIn
-  (.seq (.block (setupP oBP oPLen)) (.seq (power 4 oDP oPLen)
-  (.seq (.block (setupP oBQ oQLen)) (.seq (power 5 oDQ oQLen) (.seq exportM2
-  (.seq (.block (setupP oBP oPLen)) (.seq recombineP (.seq recombineX
+/-- `vg_rsa_private_crt`, or with `pc` `vg_rsa_private_crt_precomputed`,
+which takes in `r31` the address of the cached `R² mod p` and `R² mod q`
+(`max(2, ⌈len / 8⌉)` words each, least significant first). -/
+def crtG (pc : Bool) : Prog isa :=
+  .seq (.block (save ++ argsG pc ++ setupX)) (.seq loadX (.seq checks (.seq loadIn
+  (.seq (.block (setupP oBP oPLen)) (.seq (powerG pc false 4 oDP oPLen)
+  (.seq (.block (setupP oBQ oQLen)) (.seq (powerG pc true 5 oDQ oQLen) (.seq exportM2
+  (.seq (.block (setupP oBP oPLen)) (.seq (recombinePG pc) (.seq recombineX
   (.seq (.block [.addi .r10 .r27 0, .addi .r29 .r28 0, .load .d .r27 .r23 oOut, .load .d .r28 .r23 oNLen])
     (.seq PublicChecked.output (.block restore))))))))))))))
+
+/-- `vg_rsa_private_crt`. -/
+abbrev crt : Prog isa := crtG false
+
+/-- `vg_rsa_private_crt_precomputed`. -/
+abbrev crtP : Prog isa := crtG true
 
 end VG.Impl.Bignum.PPC64LE.Crt

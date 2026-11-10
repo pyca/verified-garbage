@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 public import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Implementations of `vg_rsa_private_crt` on x86-64
@@ -58,6 +59,27 @@ structure CrtImpl where
   /-- The CPU features its code and that of the public operation require,
   which `vg_rsa_private_checked` requires too. -/
   features : List String
+  /-- The CPU features it is chosen only with, besides those its code
+  requires (`Registration.extra` of the functions that call it). -/
+  extra : List String := []
 
+/-! ## Octets and words of a buffer, in memories that agree on it
+
+For the postconditions of the functions that return without secret residue
+(`X86_64.Scrub.PostOut`), which read the memory on return only in their
+buffers. -/
+
+theorem bytesAt_agree {m₁ m₂ : Mem} {p : Addr} {n k : Nat} (hk : k ≤ n) (hn : n < 2 ^ 64)
+    (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 → m₁ a = m₂ a) :
+    Spec.Rsa.bytesAt m₂ p k = Spec.Rsa.bytesAt m₁ p k := by
+  unfold Spec.Rsa.bytesAt
+  refine List.map_congr_left fun i hi => ?_
+  have := List.mem_range.mp hi
+  exact (h _ (Offset.contains_base _ (by omega) (by omega))).symm
+
+theorem readW_agree {m₁ m₂ : Mem} {p : Addr} {n : Nat} (hk : 8 ≤ n) (hn : n < 2 ^ 64)
+    (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 → m₁ a = m₂ a) :
+    m₂.readW p 64 = m₁.readW p 64 :=
+  Mem.readW_congr fun i hi => (h _ (Offset.contains_base _ (by omega) (by omega))).symm
 
 end VG.Proof.Rsa.X86_64

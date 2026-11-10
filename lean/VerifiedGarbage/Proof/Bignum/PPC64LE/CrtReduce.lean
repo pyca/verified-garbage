@@ -270,6 +270,7 @@ structure ChunkI (s : State) (BX : Addr) (Z oA w wX K Pv R2 i : Nat) (t : State)
   slt : val32 t.mem (off BX oA) (slot w 4) (2 * w) < Pv
   sv : val32 t.mem (off BX oA) (slot w 4) (2 * w) % Pv = wv s.mem BX (slot wX 6) (w * i) % Pv
   out : Outside BX oA (slot w 24) s.mem t.mem
+  wk : Mont.Outside (off BX oA) (slot w 2) (7 * (8 * (w + 2))) s.mem t.mem
   keep : Keep chunkRegs s t
 
 /-- One chunk. -/
@@ -427,6 +428,7 @@ theorem chunkStep_ok {s t : State} {BX : Addr} {Z oA w wX K Pv R2 i : Nat}
     by rw [q5]; exact Q6, by rw [q5]; exact chunk_q hR Q6e hR2' I.q,
     by rw [s4]; exact Nat.mod_lt _ (by omega_arith), ?_,
     I.out.trans (out_sub (fun x hx => Wt x hx) (by omega_arith) (by omega_arith) (by omega_arith)),
+    I.wk.trans (Wt.mono (by omega_arith) (by omega_arith)),
     (I.keep.trans kall).mono (by decide +kernel)⟩, ?_⟩
   · rw [ku.gpr .r10 (by decide), k10.gpr .r10 (by decide), k9.gpr .r10 (by decide), k8.gpr .r10 (by decide), a10]
   · rw [ku.gpr .r30 (by decide), k10.gpr .r30 (by decide), k79.gpr .r30 (by decide), b30, hwi1, Nat.mul_add,
@@ -478,7 +480,7 @@ theorem pm1_ok {t : State} {B : Addr} {Z w Pv : Nat} (hs : Scr t B Z) (hZ : slot
 /-- `reduceIn`, in `p`'s working space `off BX oA` of `w` words, for `c` the
 first `w n` words of `X`'s array 6 (`n` chunks of the `⌈k / 8⌉` words): `c mod p`
 into array 4, changing only arrays 2–8. -/
-theorem reduceIn_ok {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
+theorem reduceIn_ok' {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
     (hs : Scr s BX Z) (hA : oA + slot w 24 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
     (hn : w * nChunks ((k + 7) / 8) w ≤ wX)
     (h10 : s.gpr .r10 = off (off BX oA) (slot w 0)) (h21 : s.gpr .r21 = off (off BX oA) (slot w 0))
@@ -494,7 +496,8 @@ theorem reduceIn_ok {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
       (val32 t.mem (off BX oA) (slot w 4) (2 * w) = Cv % Pv ∧ val32 t.mem (off BX oA) (slot w 0) (2 * w) = Pv ∧
         val32 t.mem (off BX oA) (slot w 1) (2 * w) = 2 ^ (128 * w) % Pv ∧ (t.gpr .r12).toNat < 2 ^ 32 ∧
         (w32 t.mem (off BX oA) (slot w 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 ∧
-        Outside BX oA (slot w 24) s.mem t.mem ∧ t.gpr .r10 = off (off BX oA) (slot w 0)) ∧ Keep chunkRegs s t := by
+        Outside BX oA (slot w 24) s.mem t.mem ∧ t.gpr .r10 = off (off BX oA) (slot w 0) ∧
+        Mont.Outside (off BX oA) (slot w 2) (7 * (8 * (w + 2))) s.mem t.mem) ∧ Keep chunkRegs s t := by
   have hn' := hs.nowrap
   have e : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
   have e0 := e 0; have e1 := e 1; have e2 := e 2; have e4 := e 4; have e5 := e 5; have e8 := e 8
@@ -595,7 +598,7 @@ theorem reduceIn_ok {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
     o8'.val32 (Or.inr (by omega_arith)) (by omega_arith)
   have I0 : ChunkI s BX Z oA w wX K Pv (2 ^ (128 * w) % Pv) 0 s₁₀ := by
     refine ⟨hs.congr k110.wr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by rw [hm10]; exact Oall,
-      k110.mono (by decide +kernel)⟩
+      by rw [hm10]; exact Wall, k110.mono (by decide +kernel)⟩
     · rw [k10.gpr .r10 (by decide), k9.gpr .r10 (by decide), g8 .r10 (by decide), h10]
     · rw [k10.gpr .r21 (by decide), k9.gpr .r21 (by decide), g8 .r21 (by decide), h21]
     · rw [k10.gpr .r29 (by decide), k9.gpr .r29 (by decide), g8 .r29 (by decide), h29]
@@ -615,7 +618,29 @@ theorem reduceIn_ok {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
   refine WP.mono (count_loop (cr := .r3) (nChunks_pos (by omega_arith) hK1)
     (fun j u => ChunkI s BX Z oA w wX K Pv (2 ^ (128 * w) % Pv) j u)
     (fun j hj u I => chunkStep_ok hA hX hw2 hw' hK1 hK' hP2 hodd (Nat.mod_lt _ (by omega_arith)) hR2' hj I) I0)
-    fun t I => ⟨⟨?_, I.p0, I.p1, I.r12, I.inv, I.out, I.r10⟩, I.keep⟩
+    fun t I => ⟨⟨?_, I.p0, I.p1, I.r12, I.inv, I.out, I.r10, I.wk⟩, I.keep⟩
   rw [← Nat.mod_eq_of_lt I.slt, I.sv, hC]
+
+
+/-- `reduceIn_ok'` without its frame of arrays 2–8. -/
+theorem reduceIn_ok {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
+    (hs : Scr s BX Z) (hA : oA + slot w 24 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
+    (hn : w * nChunks ((k + 7) / 8) w ≤ wX)
+    (h10 : s.gpr .r10 = off (off BX oA) (slot w 0)) (h21 : s.gpr .r21 = off (off BX oA) (slot w 0))
+    (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (h27 : s.gpr .r27 = off BX (slot wX 0)) (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))
+    (h25 : s.gpr .r25 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k < 2 ^ 40)
+    (h12 : (s.gpr .r12).toNat < 2 ^ 32)
+    (hinv : (w32 s.mem (off BX oA) (slot w 0) * (s.gpr .r12).toNat + 1) % 2 ^ 32 = 0)
+    (hP : val32 s.mem (off BX oA) (slot w 0) (2 * w) = Pv) (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1)
+    (hR2 : val32 s.mem (off BX oA) (slot w 1) (2 * w) = 2 ^ (128 * w) % Pv)
+    (hC : wv s.mem BX (slot wX 6) (w * nChunks ((k + 7) / 8) w) = Cv) :
+    WP isa reduceIn s fun t =>
+      (val32 t.mem (off BX oA) (slot w 4) (2 * w) = Cv % Pv ∧ val32 t.mem (off BX oA) (slot w 0) (2 * w) = Pv ∧
+        val32 t.mem (off BX oA) (slot w 1) (2 * w) = 2 ^ (128 * w) % Pv ∧ (t.gpr .r12).toNat < 2 ^ 32 ∧
+        (w32 t.mem (off BX oA) (slot w 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 ∧
+        Outside BX oA (slot w 24) s.mem t.mem ∧ t.gpr .r10 = off (off BX oA) (slot w 0)) ∧ Keep chunkRegs s t :=
+  WP.mono (reduceIn_ok' hs hA hXA hw2 hw' hn h10 h21 h29 h11 h27 h28 h25 hk hk' h12 hinv hP hP2 hodd hR2 hC)
+    fun _ ⟨⟨a, b, c, d, e, f, g, _⟩, k⟩ => ⟨⟨a, b, c, d, e, f, g⟩, k⟩
 
 end VG.Proof.Bignum.PPC64LE.Crt

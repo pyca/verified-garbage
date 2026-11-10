@@ -6,7 +6,9 @@
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES`); `vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_ADX_FEATURES`); `vg_rsa_pkcs1_decrypt_sha256_shani` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES`); `vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES`); `vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_ADX_FEATURES`); `vg_rsa_pkcs1_decrypt_sha256_avx2` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_FEATURES`); `vg_rsa_pkcs1_decrypt_crt_ifma` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_CRT_IFMA_FEATURES`); `vg_rsa_pkcs1_decrypt_crt_adx` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_CRT_ADX_FEATURES`); or else `vg_rsa_pkcs1_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma512` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA512_FEATURES`) and it also supports `avx512fp16`; `vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES`); `vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_ADX_FEATURES`); `vg_rsa_pkcs1_decrypt_sha256_shani` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES`); `vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma512` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA512_FEATURES`) and it also supports `avx512fp16`; `vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES`); `vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_ADX_FEATURES`); `vg_rsa_pkcs1_decrypt_sha256_avx2` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_FEATURES`); `vg_rsa_pkcs1_decrypt_crt_ifma512` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_CRT_IFMA512_FEATURES`) and it also supports `avx512fp16`; `vg_rsa_pkcs1_decrypt_crt_ifma` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_CRT_IFMA_FEATURES`); `vg_rsa_pkcs1_decrypt_crt_adx` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_CRT_ADX_FEATURES`); or else `vg_rsa_pkcs1_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -41,6 +43,11 @@ pub unsafe fn vg_rsa_pkcs1_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, out
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16)) }
+            || cpu.contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16))
+        {
+            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma512;
+        }
         if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES) }
             || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES)
         {
@@ -56,6 +63,11 @@ pub unsafe fn vg_rsa_pkcs1_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, out
         {
             return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani;
         }
+        if const { verified_garbage_cpu::target_contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16)) }
+            || cpu.contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16))
+        {
+            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma512;
+        }
         if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES) }
             || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES)
         {
@@ -70,6 +82,11 @@ pub unsafe fn vg_rsa_pkcs1_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, out
             || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_FEATURES)
         {
             return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16)) }
+            || cpu.contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16))
+        {
+            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_crt_ifma512;
         }
         if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_CRT_IFMA_FEATURES) }
             || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_CRT_IFMA_FEATURES)

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Verified
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.SignP
 public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
@@ -11,7 +12,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.RsaPss.PPC64LE
 
-open VG.Proof.RsaPss.PPC64LE (OK verify_ok' sign_ok')
+open VG.Proof.RsaPss.PPC64LE (OK verify_ok' sign_ok' signP_ok')
 open VG.Proof.MdHashTable.PPC64LE (mvars tables fnsOf fns3)
 
 def artifacts : List Artifact :=
@@ -25,7 +26,12 @@ def artifacts : List Artifact :=
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaPss.PPC64LE.Sign.sign (fnsOf mvars) (fns3 mvars)
       stack := 3776
-      verified := sign_ok' h }]
+      verified := sign_ok' h },
+    Spec.RsaPss.signPrecomputedMdTableApi.artifact PPC64LE.target {
+      tables := [("hash", tables mvars), ("mgf1", tables mvars)]
+      code := Impl.RsaPss.PPC64LE.Sign.signP (fnsOf mvars) (fns3 mvars)
+      stack := 3792
+      verified := signP_ok' h }]
   else []
 
 end VG.Artifacts.RsaPss.PPC64LE
