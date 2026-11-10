@@ -594,4 +594,73 @@ theorem steps_ok {H₀ H₁ : HashValue} {M₀ M₁ : Block} {p₀ p₁ scr : Ad
     refine step_ok hB.rax (by omega) h ?_
     exact sched_ok s n hj (by omega) M₀ M₁ ((h.gpr _ (by decide)).trans hB.r8) h.r9 (h.wr ▸ hB.scrW) h.wmem
 
+/-! ## The loop -/
+
+theorem e256 : BitVec.signExtend 64 (256 : BitVec 32) = 256 := by decide
+
+theorem stepIdx_ok (s : State) :
+    WP isa (.block step) s fun s' =>
+      eval .ne s' = some (!(s.gpr .r9 + 256 - BitVec.signExtend 64 (1280 : BitVec 32) == 0)) ∧
+      s'.gpr .r9 = s.gpr .r9 + 256 ∧ (∀ r, r ≠ .r9 → s'.gpr r = s.gpr r) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi := by
+  apply WP.of_runBlock
+  simp only [step, ↓reduceIte, Nat.reducePow, and_self, runBlock_cons, runStep_some,
+    runBlock_nil, exec, execAlu, readSrc, isa, State.setReg, arithFlags, State.setFlags, e256,
+    Option.bind_some, Option.some.injEq, exists_eq_left']
+  exact ⟨by simp [eval], trivial, fun r h => by simp [h], trivial⟩
+
+/-- The loop stops after iteration 4: `256 (j + 1) = 1280`. -/
+theorem step_idx2 {j : Nat} (hj : j < 5) :
+    (idx2 j + 256 - BitVec.signExtend 64 (1280 : BitVec 32) == 0) = (j + 1 == 5) := by
+  revert j; decide
+
+theorem idx2_succ (j : Nat) : idx2 j + 256 = idx2 (j + 1) := by
+  simp only [idx2]
+  rw [show (256 : BitVec 64) = BitVec.ofNat 64 256 from rfl, ← BitVec.ofNat_add]
+  congr 1
+
+/-- From an iteration to the next. -/
+theorem next_ok {H₀ H₁ : HashValue} {M₀ M₁ : Block} {scr : Addr} {sB : State} {j : Nat} (hj : j < 5)
+    {s : State} (h : SInv H₀ H₁ M₀ M₁ scr sB j 8 s) :
+    WP isa (.block step) s fun s' =>
+      eval .ne s' = some (!(j + 1 == 5)) ∧ SInv H₀ H₁ M₀ M₁ scr sB (j + 1) 0 s' := by
+  refine VG.X86_64.WP.mono_syms (stepIdx_ok s) fun s' ⟨he, h9, hg, hm, hrd, hwr, hx, hy⟩ hsy => ?_
+  rw [h.r9, step_idx2 hj] at he
+  refine ⟨he, ?_⟩
+  exact {
+    vars := by
+      have hv := h.vars
+      rw [show 2 * 8 = 16 * 1 + 0 by omega, vars2_add16] at hv
+      rw [show 16 * (j + 1) + 2 * 0 = 16 * j + 2 * 8 by omega]
+      simp only [Vars2, hx] at hv ⊢
+      exact hv
+    wmem := fun t ht => by rw [hm]; exact h.wmem t (by omega)
+    gpr := fun r hr => (hg r hr).trans (h.gpr r hr)
+    r9 := by rw [h9, h.r9, idx2_succ]
+    rd := hrd.trans h.rd
+    wr := hwr.trans h.wr
+    frame := by rw [hm]; exact h.frame
+    mask := by rw [hx, hy]; exact h.mask
+    syms := hsy.trans h.syms }
+
+/-- The eighty rounds of both. -/
+theorem rounds_ok {H₀ H₁ : HashValue} {M₀ M₁ : Block} {p₀ p₁ scr : Addr} {sB : State}
+    (hB : Base M₀ M₁ p₀ p₁ scr sB) {s₀ : State} (h₀ : SInv H₀ H₁ M₀ M₁ scr sB 0 0 s₀) :
+    WP isa (.seq (steps0 8) (.seq (.block step) (.loop (.seq (steps 8) (.block step)) .ne))) s₀
+      (SInv H₀ H₁ M₀ M₁ scr sB 5 0) := by
+  refine WP.seq (WP.mono (steps0_ok hB h₀ 8 (Nat.le_refl _)) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono (next_ok (by decide) h₁) fun s₂ ⟨_, h₂⟩ => ?_)
+  let Inv : Nat → State → Prop := fun m s => ∃ j, m = 5 - j ∧ 1 ≤ j ∧ j < 5 ∧ SInv H₀ H₁ M₀ M₁ scr sB j 0 s
+  have hstep : ∀ m s, Inv m s → WP isa (.seq (steps 8) (.block step)) s (fun s' =>
+      (eval .ne s' = some false ∧ SInv H₀ H₁ M₀ M₁ scr sB 5 0 s') ∨
+      (eval .ne s' = some true ∧ ∃ m' < m, Inv m' s')) := by
+    rintro m s ⟨j, rfl, hj1, hj5, hS⟩
+    refine WP.seq (WP.mono (steps_ok hB hj1 hj5 hS 8 (Nat.le_refl _)) fun s₃ h₃ => ?_)
+    refine WP.mono (next_ok hj5 h₃) fun s₄ ⟨he, h₄⟩ => ?_
+    by_cases hl : j + 1 = 5
+    · refine .inl ⟨by rw [he]; simp [hl], ?_⟩
+      rw [hl] at h₄; exact h₄
+    · exact .inr ⟨by rw [he, show (j + 1 == 5) = false from beq_eq_false_iff_ne.mpr hl]; rfl, 5 - (j + 1), by omega, j + 1, rfl, by omega, by omega, h₄⟩
+  exact WP.loop (M := isa) Inv hstep 4 s₂ ⟨1, rfl, Nat.le_refl _, by decide, h₂⟩
+
 end VG.Proof.Sha512.X86_64.Avx512
