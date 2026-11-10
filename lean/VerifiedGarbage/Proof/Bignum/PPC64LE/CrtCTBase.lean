@@ -32,8 +32,8 @@ open VG.Proof.Bignum.PPC64LE (Two Pins two_post two_taint)
 variable {pc : Bool}
 
 /-- The argument registers of `vg_rsa_private_crt`, and with `pc`, of
-`vg_rsa_private_crt_precomputed`: `r12` too. -/
-abbrev argRegsG (pc : Bool) : List Reg := if pc then argRegs ++ [.r12] else argRegs
+`vg_rsa_private_crt_precomputed`: `r31` too. -/
+abbrev argRegsG (pc : Bool) : List Reg := if pc then argRegs ++ [.r31] else argRegs
 
 /-- The public data of a run. -/
 def dataOf (pc : Bool) (s : State) : List (BitVec 64) × List (BitVec 64) × List Byte :=
@@ -69,7 +69,7 @@ structure DataEq (pc : Bool) (s₀ s₀' : State) : Prop where
   r8 : s₀.gpr .r8 = s₀'.gpr .r8
   r9 : s₀.gpr .r9 = s₀'.gpr .r9
   r10 : s₀.gpr .r10 = s₀'.gpr .r10
-  r12 : pc = true → s₀.gpr .r12 = s₀'.gpr .r12
+  r31 : pc = true → s₀.gpr .r31 = s₀'.gpr .r31
   sa : ∀ i < 10, stackArg s₀ i = stackArg s₀' i
   nb : Spec.Rsa.bytesAt s₀.mem (s₀.gpr .r5) (s₀.gpr .r6).toNat =
     Spec.Rsa.bytesAt s₀'.mem (s₀'.gpr .r5) (s₀'.gpr .r6).toNat

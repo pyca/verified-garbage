@@ -49,7 +49,7 @@ theorem crt_wp (pc : Bool) (s : State) {X : List Region} (h : preCore (baseRd s 
   simp only [Spec.Rsa.scratchWords] at hsl
   unfold crtG
   refine WP.seq (WP.mono (front_okG pc s h) fun s₁ ⟨hF, hhd⟩ => ?_)
-  have hR2 : pc = true → R2F s ∧ word s₁.mem (cS s) oR2 = s.gpr .r12 := fun hp => ⟨hR hp, hhd hp⟩
+  have hR2 : pc = true → R2F s ∧ word s₁.mem (cS s) oR2 = s.gpr .r31 := fun hp => ⟨hR hp, hhd hp⟩
   refine mid1_ok hP hF hR2 fun t t26 v0 w0 v5 v7 p0 p4 q4 t10 t29 O1 k1 => ?_
   refine mid2_ok hP hF hR2 t26 v0 w0 v5 v7 p0 p4 q4 t10 t29 O1 k1 fun u ub u3 uF ku => ?_
   have kfu := hF.keep.trans ku

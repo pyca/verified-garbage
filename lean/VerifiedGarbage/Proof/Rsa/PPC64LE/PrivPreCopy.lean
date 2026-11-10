@@ -26,6 +26,13 @@ theorem stackArgs_fourteen (s : State) :
       stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10,
       stackArg s 11, stackArg s 12, stackArg s 13] := rfl
 
+/-- `pre` holds the key's precomputed values. -/
+abbrev PreHyp (s : State) : Prop :=
+  Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat)
+      (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
+      (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat) =
+    some (Spec.Rsa.wordsAt s.mem (stackArg s 12) (stackArg s 13).toNat)
+
 /-- What `vg_rsa_private_checked_precomputed`'s precondition adds: `pre`'s facts. -/
 structure PreX (s : State) : Prop where
   oP : (oR s).Disjoint (preR s)
@@ -35,6 +42,7 @@ structure PreX (s : State) : Prop where
   pl : (stackArg s 13).toNat =
     Spec.Rsa.privatePrecomputedWords (s.gpr .r6).toNat (stackArg s 1).toNat (stackArg s 3).toNat
   sp3 : s.sp.toNat + 208 ≤ 2 ^ 64
+  hyp : PreHyp s
 
 theorem preP_ofP {s : State} (h : (Proof.Rsa.privateCheckedPrecomputedContract abi frameBytes).pre s) :
     PreP true s ∧ PreX s := by
@@ -44,24 +52,24 @@ theorem preP_ofP {s : State} (h : (Proof.Rsa.privateCheckedPrecomputedContract a
     Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_fourteen, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oP, oa, ns, es, is, ps, qs, dps, dqs, qis, sP,
     sa, ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, kP, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, wP, ⟨k1, k2⟩,
-    h4, h10, e1, e2, p1, p2, q1, q2, h5, h9, h7, hs, hpl⟩ := h
+    h4, h10, e1, e2, p1, p2, q1, q2, h5, h9, h7, hs, hpl, hk⟩ := h
   exact ⟨⟨sp1, by omega, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h4, h10, e1,
-    e2, p1, p2, q1, q2, h5, h9, h7, hs⟩, ⟨oP, sP, kP, wP, hpl, by omega⟩⟩
+    e2, p1, p2, q1, q2, h5, h9, h7, hs⟩, ⟨oP, sP, kP, wP, hpl, by omega, hk⟩⟩
 
 theorem pre_of_prePX {s : State} (h : PreP true s) (X : PreX s) :
     (Proof.Rsa.privateCheckedPrecomputedContract abi frameBytes).pre s := by
   obtain ⟨sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h4, h10, e1,
     e2, p1, p2, q1, q2, h5, h9, h7, hs⟩ := h
-  obtain ⟨oP, sP, kP, wP, hpl, sp3⟩ := X
+  obtain ⟨oP, sP, kP, wP, hpl, sp3, hk⟩ := X
   have e : frameBytes = 3327 + 1 := rfl
   rw [e]
   sig_pre [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
     Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_fourteen, List.append_eq, List.range, List.range.loop]
   exact ⟨sp1, by omega, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oP, oa, ns, es, is, ps, qs, dps, dqs, qis, sP,
     sa, ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, kP, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, wP, ⟨k1, k2⟩,
-    h4, h10, e1, e2, p1, p2, q1, q2, h5, h9, h7, hs, hpl⟩
+    h4, h10, e1, e2, p1, p2, q1, q2, h5, h9, h7, hs, hpl, hk⟩
 
 theorem in_aR14 {s : State} {j : Nat} (hj : j < 14) : (aR true s).Contains (stackArgAddr s j) 8 := by
   rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by simp only [↓reduceIte]; omega) (by omega)
@@ -229,13 +237,6 @@ theorem preCopy_ok {s t : State} (h : PreP true s) (X : PreX s) (A : AtCopy s t)
 theorem step_true (s : State) (h : PreP true s) (X : PreX s) : StepOk true s := fun _ _ _ M C hc =>
   WP.seq (WP.seq (WP.mono (preArgsP_ok h M C) fun _ A => WP.mono (preCopy_ok h X A) hc))
 
-/-- `pre` holds the key's precomputed values. -/
-abbrev PreHyp (s : State) : Prop :=
-  Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat)
-      (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
-      (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat) =
-    some (Spec.Rsa.wordsAt s.mem (stackArg s 12) (stackArg s 13).toNat)
-
 theorem wordsAt_take (m : Mem) (p : Addr) {n L : Nat} (h : n ≤ L) :
     Spec.Rsa.wordsAt m p n = (Spec.Rsa.wordsAt m p L).take n := by
   simp only [Spec.Rsa.wordsAt, ← List.map_take, List.take_range, Nat.min_eq_left h]
@@ -261,6 +262,112 @@ theorem preValOk_of {s : State} (X : PreX s) (hp : PreHyp s) : PreValOk true s :
     simp only [↓reduceIte]
     rw [wordsAt_take _ _ (pw_le_pre X), ← hpre, List.append_assoc, List.take_left' hl]
   · cases hpre
+
+/-- `crtPtr`: `r12 :=` the primes' values in `pre`, after `n`'s. -/
+theorem crtPtr_ok {s t : State} (h : PreP true s) (A : AtCrt s t) :
+    WP isa (.block crtPtr) t fun u =>
+      (u.gpr .r12 = stackArg s 12 + BitVec.ofNat 64 (8 * Spec.Rsa.precomputedWords (s.gpr .r6).toNat) ∧
+        u.mem = t.mem ∧ u.sp = t.sp) ∧ Keep [.r0, .r12] t u := by
+  have hk := h.k2
+  have a12 : t.mem.readW (fb s + BitVec.ofNat 64 (arg 12)) 64 = stackArg s 12 := by
+    rw [← stackArgAddr_fb]
+    exact A.mem.readW (in_aR14 (by decide)) (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.ka.symm)
+      (by decide)
+  have i12 := arg_inP h A.rd (j := 12) (by decide)
+  have c4 : arg 12 < 2 ^ 15 := by decide
+  have c6 : arg 12 % 4 = 0 := by decide
+  have e26 : t.gpr .r26 = BitVec.ofNat 64 (s.gpr .r6).toNat := A.r26.trans (gpr_ofNat _)
+  have ev : (BitVec.ofNat 64 (s.gpr .r6).toNat + BitVec.ofNat 64 7) >>> 3 <<< 4 =
+      BitVec.ofNat 64 (8 * Spec.Rsa.precomputedWords (s.gpr .r6).toNat) := by
+    rw [Proof.Bignum.PPC64LE.Pre.ofNat_add7_shr3 _ (by omega_arith)]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq, Spec.Rsa.precomputedWords,
+      Spec.Rsa.modulusWords]
+    rw [Nat.mod_eq_of_lt (a := ((s.gpr .r6).toNat + 7) / 8) (by omega_arith)]
+    omega_arith
+  refine VG.Proof.Bignum.PPC64LE.WP.keep _ ?_ (by decide)
+  unfold crtPtr
+  prun [A.r12, e26, i12, a12, c4, c6, ev]
+
+/-- The words from the `n`th of `wordsAt`. -/
+theorem wordsAt_off (m : Mem) (p : Addr) (n k : Nat) :
+    Spec.Rsa.wordsAt m (p + BitVec.ofNat 64 (8 * n)) k = (Spec.Rsa.wordsAt m p (n + k)).drop n := by
+  simp only [Spec.Rsa.wordsAt, List.range_add, List.map_append, List.map_map]
+  rw [List.drop_left' (by simp)]
+  refine List.map_congr_left fun i _ => ?_
+  simp only [Function.comp_apply]
+  rw [Nat.mul_add, ← BitVec.ofNat_add_ofNat, BitVec.add_assoc]
+
+/-- The words after `n`'s in `pre`, when `pre` holds the key's precomputed values. -/
+theorem primes_of_hyp {s : State} (X : PreX s) {m : Mem}
+    (hm : Spec.Rsa.wordsAt m (stackArg s 12) (stackArg s 13).toNat =
+      Spec.Rsa.wordsAt s.mem (stackArg s 12) (stackArg s 13).toNat) :
+    Spec.Rsa.wordsAt m (stackArg s 12 + BitVec.ofNat 64 (8 * Spec.Rsa.precomputedWords (s.gpr .r6).toNat))
+        (Spec.Rsa.primeWords (stackArg s 1).toNat + Spec.Rsa.primeWords (stackArg s 3).toNat) =
+      Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat) ++
+        Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat) := by
+  have hpre := X.hyp
+  simp only [PreHyp, Spec.Rsa.privatePrecompute] at hpre
+  split at hpre
+  · cases hw : Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) with
+    | none => rw [hw] at hpre; cases hpre
+    | some ws =>
+      rw [hw, Option.map_some, Option.some.injEq] at hpre
+      have hl : ws.length = Spec.Rsa.precomputedWords (s.gpr .r6).toNat := by
+        rw [publicPrecompute_length hw, Proof.Rsa.bytesAt_length']
+      have hL : (stackArg s 13).toNat = Spec.Rsa.precomputedWords (s.gpr .r6).toNat +
+          (Spec.Rsa.primeWords (stackArg s 1).toNat + Spec.Rsa.primeWords (stackArg s 3).toNat) := by
+        rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+      rw [wordsAt_off, ← hL, hm, ← hpre, List.append_assoc, ← hl, List.drop_left]
+  · cases hpre
+
+/-- The primes' values in `pre`, after `n`'s. -/
+abbrev r2Rs (s : State) : Region :=
+  ⟨stackArg s 12 + BitVec.ofNat 64 (8 * Spec.Rsa.precomputedWords (s.gpr .r6).toNat),
+    8 * (Proof.Bignum.wsWords (stackArg s 1).toNat + Proof.Bignum.wsWords (stackArg s 3).toNat)⟩
+
+theorem r2Rs_sub {s : State} (X : PreX s) : Region.Sub (r2Rs s) (preR s) := by
+  refine Offset.sub_base _ ?_
+  rw [X.pl]
+  unfold Spec.Rsa.privatePrecomputedWords Spec.Rsa.primeWords Proof.Bignum.wsWords
+  omega
+
+/-- `vg_rsa_private_crt_precomputed`'s precondition at the call, after
+`crtPtr`. -/
+theorem crt_preP {s t u : State} (h : PreP true s) (X : PreX s) (A : AtCrt s t) (k : Keep [.r0, .r12] t u)
+    (hm : u.mem = t.mem) (hsp : u.sp = t.sp)
+    (h12 : u.gpr .r12 = stackArg s 12 + BitVec.ofNat 64 (8 * Spec.Rsa.precomputedWords (s.gpr .r6).toNat)) :
+    Proof.Bignum.PPC64LE.Crt.fnContractP.pre (crtEntryG s u [r2Rs s]) := by
+  have hc := crt_preG (X := [r2Rs s]) h A k hm hsp
+  have g : ∀ r, r ∉ linkRegs → r ∉ [Reg.r0, .r12] → (crtEntryG s u [r2Rs s]).gpr r = t.gpr r := fun r h1 h2 =>
+    (State.callEntry_gpr u h1).trans (k.gpr _ h2)
+  have e12 : (crtEntryG s u [r2Rs s]).gpr .r12 = stackArg s 12 +
+      BitVec.ofNat 64 (8 * Spec.Rsa.precomputedWords (s.gpr .r6).toNat) :=
+    (State.callEntry_gpr u (by decide)).trans h12
+  have sa := fun i hi => crtEntryG_stackArg A hm hsp (X := [r2Rs s]) (i := i) hi
+  have hr : Proof.Bignum.PPC64LE.Crt.r2R (crtEntryG s u [r2Rs s]) = r2Rs s := by
+    simp only [Proof.Bignum.PPC64LE.Crt.r2R, e12, g .r10 (by decide) (by decide), A.r10, sa 1 (by decide)]
+  have sub := r2Rs_sub X
+  have hk := h.k2
+  have mk : Region.Sub (mR s) (kR s) := frame_sub s (by unfold oM frameBytes; omega_arith)
+  have wP := X.wP
+  have hpl := X.pl
+  refine ⟨hr ▸ hc, ?_, ?_, ?_, ?_⟩
+  · rw [hr]
+    simp only [g .r3 (by decide) (by decide), g .r4 (by decide) (by decide), A.r3, A.r4]
+    exact (X.kP.sub_left mk).sub_right sub
+  · rw [hr, sa 8 (by decide), sa 9 (by decide)]
+    exact (X.sP.sub_right sub).symm
+  · rw [hr]
+    show (stackArg s 12 + BitVec.ofNat 64 (8 * Spec.Rsa.precomputedWords (s.gpr .r6).toNat)).toNat +
+      8 * (Proof.Bignum.wsWords (stackArg s 1).toNat + Proof.Bignum.wsWords (stackArg s 3).toNat) ≤ 2 ^ 64
+    rw [hpl] at wP
+    unfold Spec.Rsa.privatePrecomputedWords Spec.Rsa.primeWords at wP
+    unfold Proof.Bignum.wsWords
+    rw [Offset.toNat_add_ofNat]
+    · omega_arith
+    · omega_arith
+  · sorry
 
 theorem codeP_correct (s : State) (hpre : (Proof.Rsa.privateCheckedPrecomputedContract abi frameBytes).pre s) :
     ∃ tr t, Exec isa codeP s tr t ∧ abiPreserved s t ∧ (PreHyp s → fnPost s t) := by

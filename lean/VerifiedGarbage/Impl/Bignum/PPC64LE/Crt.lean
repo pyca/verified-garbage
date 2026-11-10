@@ -66,7 +66,7 @@ def oQInv : Nat := 80
 def oBP : Nat := 96
 def oBQ : Nat := 104
 /-- In `vg_rsa_private_crt_precomputed`, the address of the primes' cached
-`R² mod p` and `R² mod q`, which it takes in `r12`. -/
+`R² mod p` and `R² mod q`, which it takes in `r31`. -/
 def oR2 : Nat := 88
 
 /-- The nonvolatile registers saved, `r23` (the working space) last. -/
@@ -97,10 +97,10 @@ def args : List Instr :=
     .load .d .r0 .r11 48, .store .d .r0 .r23 oQInv]
 
 /-- The arguments into the header, and with `pc` the cached values' address
-(`r12`). -/
+(`r31`). -/
 def argsG : Bool → List Instr
   | false => args
-  | true => args ++ [.store .d .r12 .r23 oR2]
+  | true => args ++ [.store .d .r31 .r23 oR2]
 
 /-- `rd := ⌈rs / 8⌉`, at least 2 (`rs` at least 1): `(rs + 7) / 8`, plus 1
 if that is 1. -/
@@ -331,7 +331,7 @@ def recombineX : Prog isa :=
       .subi .r20 .r20 1])) addMask))))))))))
 
 /-- `vg_rsa_private_crt`, or with `pc` `vg_rsa_private_crt_precomputed`,
-which takes in `r12` the address of the cached `R² mod p` and `R² mod q`
+which takes in `r31` the address of the cached `R² mod p` and `R² mod q`
 (`max(2, ⌈len / 8⌉)` words each, least significant first). -/
 def crtG (pc : Bool) : Prog isa :=
   .seq (.block (save ++ argsG pc ++ setupX)) (.seq loadX (.seq checks (.seq loadIn

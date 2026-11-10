@@ -40,6 +40,10 @@ theorem freed_lr (b : Nat) (s : State) : (freed b s).lr = s.lr := rfl
 theorem freed_gpr (b : Nat) (s : State) : (freed b s).gpr = s.gpr := rfl
 theorem freed_mem (b : Nat) (s : State) : (freed b s).mem = s.mem := rfl
 
+/-- The CRT's result in the frame, from the state after the setup. -/
+def CrtOk (pc : Bool) (s : State) : Prop :=
+  ∀ t (Q : State → Prop), AtCrt s t → (∀ u, Mid s u → crtOut s u → Q u) → WP isa (crtStep pc) t Q
+
 /-- `n`'s values put in the frame, from the state after `vg_rsa_private_crt`. -/
 def StepOk (pc : Bool) (s : State) : Prop :=
   ∀ t (c : Prog isa) (Q : State → Prop), Mid s t → crtOut s t → (∀ u, AtPub pc s u → WP isa c u Q) →
@@ -50,14 +54,14 @@ abbrev PreValOk (pc : Bool) (s : State) : Prop :=
   ∀ ws, Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) = some ws →
     preVal pc s = ws
 
-theorem codeG_correct {pc : Bool} (s : State) (h : PreP pc s) (hstep : StepOk pc s) :
+theorem codeG_correct {pc : Bool} (s : State) (h : PreP pc s) (hcrt : CrtOk pc s) (hstep : StepOk pc s) :
     WP isa (.frame (.alloc frameBytes) (bodyG pc) (.free frameBytes)) s fun t =>
       abiPreserved s t ∧ (PreValOk pc s → fnPost s t) := by
   have hk := h.k2
   refine WP.alloc ⟨by decide, by decide, by decide⟩ h.sp1 ?_
   unfold bodyG
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
-  refine WP.seq (crtCall_ok h A fun t₂ M C => ?_)
+  refine WP.seq (hcrt t₁ _ A fun t₂ M C => ?_)
   refine hstep t₂ _ _ M C fun t₄ Q4 => ?_
   refine WP.seq (WP.mono (pubArgs_ok h Q4) fun t₅ R => ?_)
   refine WP.seq (pubCall_ok h R fun t₆ C6 => ?_)
@@ -103,7 +107,7 @@ theorem step_false (s : State) (h : PreP false s) : StepOk false s := fun _ _ _ 
 theorem code_correct (s : State) (hpre : (Proof.Rsa.privateCheckedContract abi frameBytes).pre s) :
     ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t := by
   have h := preP_of hpre
-  exact WP.mono (codeG_correct s h (step_false s h)) fun t ⟨ha, hf⟩ =>
+  exact WP.mono (codeG_correct s h (fun _ _ A hQ => crtCall_ok h A hQ) (step_false s h)) fun t ⟨ha, hf⟩ =>
     ⟨ha, hf fun ws hw => by simp only [preVal, Bool.false_eq_true, ↓reduceIte, hw, Option.getD_some]⟩
 
 end VG.Proof.Rsa.PPC64LE.Priv

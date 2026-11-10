@@ -14,7 +14,7 @@ public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 input_len = r8, p = r9, p_len = r10, q, q_len, dp, dp_len, dq, dq_len,
 qinv, qinv_len, scratch, scratch_len)`, the last ten on the stack
 (`fnContract`); `vg_rsa_private_crt_precomputed`, which also takes the
-primes' cached `R² mod p` and `R² mod q` in `r12` (`fnContractP`).
+primes' cached `R² mod p` and `R² mod q` in `r31` (`fnContractP`).
 -/
 
 @[expose] public section
@@ -90,20 +90,20 @@ theorem preCore_nil {s : State} (h : fnContract.pre s) : preCore (baseRd s ++ []
   rw [List.append_nil]; exact h
 
 /-- The cached `R² mod p` and `R² mod q` of `vg_rsa_private_crt_precomputed`,
-at `r12`: `max(2, ⌈len / 8⌉)` words each. -/
+at `r31`: `max(2, ⌈len / 8⌉)` words each. -/
 def r2R (s : State) : Region :=
-  ⟨s.gpr .r12, 8 * (wsWords (s.gpr .r10).toNat + wsWords (stackArg s 1).toNat)⟩
+  ⟨s.gpr .r31, 8 * (wsWords (s.gpr .r10).toNat + wsWords (stackArg s 1).toNat)⟩
 
-/-- `vg_rsa_private_crt_precomputed`, which takes in `r12` the address of
+/-- `vg_rsa_private_crt_precomputed`, which takes in `r31` the address of
 the primes' `R² mod p` and `R² mod q` (`Spec.Rsa.primeR2`), and computes
 what `vg_rsa_private_crt` does. -/
 def fnContractP : Contract isa where
   pre s := preCore (baseRd s ++ [r2R s]) s ∧ (⟨s.gpr .r3, (s.gpr .r4).toNat⟩ : Region).Disjoint (r2R s) ∧
-    (r2R s).Disjoint ⟨stackArg s 8, (stackArg s 9).toNat * 8⟩ ∧ (s.gpr .r12).toNat + (r2R s).len ≤ 2 ^ 64 ∧
-    Spec.Rsa.wordsAt s.mem (s.gpr .r12) (wsWords (s.gpr .r10).toNat + wsWords (stackArg s 1).toNat) =
+    (r2R s).Disjoint ⟨stackArg s 8, (stackArg s 9).toNat * 8⟩ ∧ (s.gpr .r31).toNat + (r2R s).len ≤ 2 ^ 64 ∧
+    Spec.Rsa.wordsAt s.mem (s.gpr .r31) (wsWords (s.gpr .r10).toNat + wsWords (stackArg s 1).toNat) =
       Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat) ++
         Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
   post := postCore
-  pub s₁ s₂ := pubCore s₁ s₂ ∧ s₁.gpr .r12 = s₂.gpr .r12
+  pub s₁ s₂ := pubCore s₁ s₂ ∧ s₁.gpr .r31 = s₂.gpr .r31
 
 end VG.Proof.Bignum.PPC64LE.Crt

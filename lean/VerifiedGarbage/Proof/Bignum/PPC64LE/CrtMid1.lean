@@ -83,11 +83,11 @@ theorem masked_facts {s₀ : State} (hP : PF s₀) :
 /-- With `pc`, the cached `R² mod p` and `R² mod q` at the entry's `r12`:
 readable, apart from the working space, and the primes' under the mask. -/
 structure R2F (s₀ : State) : Prop where
-  hS : (s₀.gpr .r12).toNat + 8 * (cwP s₀ + cwQ s₀) ≤ 2 ^ 64
-  rd : ∀ i < cwP s₀ + cwQ s₀, InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .r12) (8 * i)) 8
-  sep : ∀ x, ofs (s₀.gpr .r12) x < 8 * (cwP s₀ + cwQ s₀) → cZ s₀ ≤ ofs (cS s₀) x
-  val : cb s₀ = true → wv s₀.mem (s₀.gpr .r12) 0 (cwP s₀) = 2 ^ (128 * cwP s₀) % vP s₀ ∧
-    wv s₀.mem (s₀.gpr .r12) (8 * cwP s₀) (cwQ s₀) = 2 ^ (128 * cwQ s₀) % vQ s₀
+  hS : (s₀.gpr .r31).toNat + 8 * (cwP s₀ + cwQ s₀) ≤ 2 ^ 64
+  rd : ∀ i < cwP s₀ + cwQ s₀, InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .r31) (8 * i)) 8
+  sep : ∀ x, ofs (s₀.gpr .r31) x < 8 * (cwP s₀ + cwQ s₀) → cZ s₀ ≤ ofs (cS s₀) x
+  val : cb s₀ = true → wv s₀.mem (s₀.gpr .r31) 0 (cwP s₀) = 2 ^ (128 * cwP s₀) % vP s₀ ∧
+    wv s₀.mem (s₀.gpr .r31) (8 * cwP s₀) (cwQ s₀) = 2 ^ (128 * cwQ s₀) % vQ s₀
 
 /-- Memory apart from the working space, as at entry. -/
 theorem wv_entry {s₀ s t : State} (hF : Front s₀ s) (ho : Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem)
@@ -99,9 +99,9 @@ theorem wv_entry {s₀ s t : State} (hF : Front s₀ s) (ho : Outside (cS s₀) 
 
 /-- Where `r2Copy` copies `R² mod p` from, from `R2F`, under the mask of `b`. -/
 theorem R2F.pS {s₀ s t : State} {b : Bool} (F : R2F s₀) (hP : PF s₀)
-    (hhd : word s.mem (cS s₀) oR2 = s₀.gpr .r12) (ho : Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem)
+    (hhd : word s.mem (cS s₀) oR2 = s₀.gpr .r31) (ho : Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem)
     (hrw : t.rd ++ t.wr = s₀.rd ++ s₀.wr) (h26 : t.gpr .r26 = bmask b) :
-    R2S false t (cS s₀) (s₀.gpr .r12) (cZ s₀) (cwP s₀) (cpL s₀) b where
+    R2S false t (cS s₀) (s₀.gpr .r31) (cZ s₀) (cwP s₀) (cpL s₀) b where
   src := by
     rw [ho.word (Or.inl (by unfold oR2; omega_arith)) (by unfold oR2; omega_arith), hhd]
     simp only [Bool.false_eq_true, ↓reduceIte, BitVec.add_zero]
@@ -115,28 +115,28 @@ theorem R2F.pS {s₀ s t : State} {b : Bool} (F : R2F s₀) (hP : PF s₀)
 
 /-- Where `r2Copy` copies `R² mod q` from, from `R2F`: after `p`'s words. -/
 theorem R2F.qS {s₀ s t : State} {b : Bool} (F : R2F s₀) (hP : PF s₀) (hF : Front s₀ s)
-    (hhd : word s.mem (cS s₀) oR2 = s₀.gpr .r12) (ho : Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem)
+    (hhd : word s.mem (cS s₀) oR2 = s₀.gpr .r31) (ho : Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem)
     (hrw : t.rd ++ t.wr = s₀.rd ++ s₀.wr) (h26 : t.gpr .r26 = bmask b) :
-    R2S true t (cS s₀) (off (s₀.gpr .r12) (8 * cwP s₀)) (cZ s₀) (cwQ s₀) (cpL s₀) b where
+    R2S true t (cS s₀) (off (s₀.gpr .r31) (8 * cwP s₀)) (cZ s₀) (cwQ s₀) (cpL s₀) b where
   src := by
     rw [ho.word (Or.inl (by unfold oR2; omega_arith)) (by unfold oR2; omega_arith), hhd]
     simp only [↓reduceIte]
   pl _ := by rw [ho.word (Or.inl (by unfold oPLen; omega_arith)) (by unfold oPLen; omega_arith)]; exact hF.hPL
   pl1 := hP.p1
   pl2 := by have := hP.pk; have := hP.k1024; omega_arith
-  hS := by have := F.hS; have := toNat_off_le (s₀.gpr .r12) (8 * cwP s₀); omega_arith
+  hS := by have := F.hS; have := toNat_off_le (s₀.gpr .r31) (8 * cwP s₀); omega_arith
   rd i hi := by rw [hrw, off_off, ← Nat.mul_add]; exact F.rd (cwP s₀ + i) (by omega_arith)
   sep x hx := F.sep x (by
-    rcases ofs_rebase (s₀.gpr .r12) x (o := 8 * cwP s₀) (by have := F.hS; omega_arith) with ⟨_, h2⟩ | ⟨h1, _⟩
-    · change ofs (off (s₀.gpr .r12) (8 * cwP s₀)) x < _ at hx; omega_arith
+    rcases ofs_rebase (s₀.gpr .r31) x (o := 8 * cwP s₀) (by have := F.hS; omega_arith) with ⟨_, h2⟩ | ⟨h1, _⟩
+    · change ofs (off (s₀.gpr .r31) (8 * cwP s₀)) x < _ at hx; omega_arith
     · omega_arith)
   r26 := h26
 
 /-- `R2C` for `p`: under the mask, the cached value is `R² mod p`. -/
 theorem R2F.p {s₀ s t : State} (F : R2F s₀) (hP : PF s₀) (hF : Front s₀ s)
-    (hhd : word s.mem (cS s₀) oR2 = s₀.gpr .r12) (ho : Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem)
+    (hhd : word s.mem (cS s₀) oR2 = s₀.gpr .r31) (ho : Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem)
     (hrw : t.rd ++ t.wr = s₀.rd ++ s₀.wr) (h26 : t.gpr .r26 = bmask (cb s₀)) :
-    R2C false t (cS s₀) (s₀.gpr .r12) (cZ s₀) (cwP s₀) (mP s₀) (cpL s₀) (cb s₀) where
+    R2C false t (cS s₀) (s₀.gpr .r31) (cZ s₀) (cwP s₀) (mP s₀) (cpL s₀) (cb s₀) where
   toR2S := F.pS hP hhd ho hrw h26
   val hb := by
     rw [wv_entry hF ho (by have := hP.room; unfold slot hdrBytes at this; omega_arith)
@@ -146,9 +146,9 @@ theorem R2F.p {s₀ s t : State} (F : R2F s₀) (hP : PF s₀) (hF : Front s₀ 
 
 /-- `R2C` for `q`. -/
 theorem R2F.q {s₀ s t : State} (F : R2F s₀) (hP : PF s₀) (hF : Front s₀ s)
-    (hhd : word s.mem (cS s₀) oR2 = s₀.gpr .r12) (ho : Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem)
+    (hhd : word s.mem (cS s₀) oR2 = s₀.gpr .r31) (ho : Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem)
     (hrw : t.rd ++ t.wr = s₀.rd ++ s₀.wr) (h26 : t.gpr .r26 = bmask (cb s₀)) :
-    R2C true t (cS s₀) (off (s₀.gpr .r12) (8 * cwP s₀)) (cZ s₀) (cwQ s₀) (mQ s₀) (cpL s₀) (cb s₀) where
+    R2C true t (cS s₀) (off (s₀.gpr .r31) (8 * cwP s₀)) (cZ s₀) (cwQ s₀) (mQ s₀) (cpL s₀) (cb s₀) where
   toR2S := F.qS hP hF hhd ho hrw h26
   val hb := by
     rw [wv_off, Nat.add_zero, wv_entry hF ho (by have := hP.room; unfold slot hdrBytes at this; omega_arith)
@@ -261,7 +261,7 @@ structure XP (s₀ s t : State) extends XL s₀ s t where
 
 /-- `m₁`, after `X`'s checks. -/
 theorem mid1B_ok {pc : Bool} {s₀ s t₁ : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀)
-    (hF : Front s₀ s) (hR2 : pc = true → R2F s₀ ∧ word s.mem (cS s₀) oR2 = s₀.gpr .r12)
+    (hF : Front s₀ s) (hR2 : pc = true → R2F s₀ ∧ word s.mem (cS s₀) oR2 = s₀.gpr .r31)
     (X : XL s₀ s t₁) {rs : List Reg} (k1 : Keep rs s t₁) (h23 : Reg.r23 ∉ rs) (h27 : Reg.r27 ∉ rs)
     (h28 : Reg.r28 ∉ rs)
     (hc : ∀ t, XP s₀ s t → Keep (rs ++ (([.r0, .r3, .r4, .r10, .r11, .r21, .r29] : List Reg) ++ powerRegs)) s t →
@@ -323,7 +323,7 @@ theorem mid1B_ok {pc : Bool} {s₀ s t₁ : State} {c : Prog isa} {Q : State →
     by rw [O2.wv (Or.inl (by omega_arith)) (by omega_arith)]; exact X.v6⟩, p0, p4⟩ (k1.trans k2)
 
 theorem mid1_ok {pc : Bool} {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀) (hF : Front s₀ s)
-    (hR2 : pc = true → R2F s₀ ∧ word s.mem (cS s₀) oR2 = s₀.gpr .r12)
+    (hR2 : pc = true → R2F s₀ ∧ word s.mem (cS s₀) oR2 = s₀.gpr .r31)
     (hc : ∀ t, t.gpr .r26 = bmask (cb s₀) →
       Mont.val32 t.mem (cS s₀) (slot (cwX s₀) 0) (2 * cwX s₀) = 2 ^ (64 * cwX s₀) - 1 →
       word t.mem (cS s₀) (slot (cwX s₀) 0) = BitVec.allOnes 64 →

@@ -37,23 +37,39 @@ abbrev crtWr (s : State) : List Region := [mR s, sR s]
 /-- The call's narrowed entry state. -/
 abbrev crtEntry (s t : State) : State := t.callEntry.withRegions (crtRd s) (crtWr s)
 
+/-- The narrowed entry state of a call from `u`, with the regions `X` read
+too. -/
+abbrev crtEntryG (s u : State) (X : List Region) : State := u.callEntry.withRegions (crtRd s ++ X) (crtWr s)
+
+theorem crtEntryG_stackArg {s t u : State} (A : AtCrt s t) (hm : u.mem = t.mem) (hsp : u.sp = t.sp)
+    {X : List Region} {i : Nat} (hi : i < 10) : stackArg (crtEntryG s u X) i = stackArg s (2 + i) := by
+  show u.mem.readW (stackArgAddr (crtEntryG s u X) i) 64 = _
+  rw [stackArgAddr_in, show (crtEntryG s u X).sp = fb s from hsp.trans A.sp, hm]
+  exact A.psa i hi
+
 theorem crtEntry_stackArg {s t : State} (A : AtCrt s t) {i : Nat} (hi : i < 10) :
     stackArg (crtEntry s t) i = stackArg s (2 + i) := by
   show t.mem.readW (stackArgAddr (crtEntry s t) i) 64 = _
   rw [stackArgAddr_in, show (crtEntry s t).sp = fb s from A.sp]
   exact A.psa i hi
 
-theorem crt_pre {s t : State} (h : PreP pc s) (A : AtCrt s t) :
-    Proof.Bignum.PPC64LE.Crt.fnContract.pre (crtEntry s t) := by
-  have g : ∀ r, r ∉ linkRegs → (crtEntry s t).gpr r = t.gpr r := fun r hr => State.callEntry_gpr t hr
-  have sa := fun i hi => crtEntry_stackArg A (i := i) hi
-  have hsp : (crtEntry s t).sp = fb s := A.sp
-  have ha : stackArgAddr (crtEntry s t) 0 = fb s + BitVec.ofNat 64 96 := by rw [stackArgAddr_in, hsp]
-  simp only [Proof.Bignum.PPC64LE.Crt.fnContract, g .r3 (by decide), g .r4 (by decide), g .r5 (by decide),
-    g .r6 (by decide), g .r7 (by decide), g .r8 (by decide), g .r9 (by decide), g .r10 (by decide),
+/-- `vg_rsa_private_crt`'s precondition but its regions, at the call from `u`
+(as `t` but for `r0` and `r12`), with the regions `X` read too. -/
+theorem crt_preG {s t u : State} (h : PreP pc s) (A : AtCrt s t) (k : Keep [.r0, .r12] t u)
+    (hm : u.mem = t.mem) (hsp : u.sp = t.sp) {X : List Region} :
+    Proof.Bignum.PPC64LE.Crt.preCore (Proof.Bignum.PPC64LE.Crt.baseRd (crtEntryG s u X) ++ X) (crtEntryG s u X) := by
+  have g : ∀ r, r ∉ linkRegs → r ∉ [Reg.r0, .r12] → (crtEntryG s u X).gpr r = t.gpr r := fun r h1 h2 =>
+    (State.callEntry_gpr u h1).trans (k.gpr _ h2)
+  have sa := fun i hi => crtEntryG_stackArg A hm hsp (X := X) (i := i) hi
+  have hsp' : (crtEntryG s u X).sp = fb s := hsp.trans A.sp
+  have ha : stackArgAddr (crtEntryG s u X) 0 = fb s + BitVec.ofNat 64 96 := by rw [stackArgAddr_in, hsp']
+  simp only [Proof.Bignum.PPC64LE.Crt.preCore,
+    Proof.Bignum.PPC64LE.Crt.baseRd, g .r3 (by decide) (by decide), g .r4 (by decide) (by decide),
+    g .r5 (by decide) (by decide), g .r6 (by decide) (by decide), g .r7 (by decide) (by decide),
+    g .r8 (by decide) (by decide), g .r9 (by decide) (by decide), g .r10 (by decide) (by decide),
     A.r3, A.r4, A.r5, A.r6, A.r7, A.r8, A.r9, A.r10, sa 0 (by decide), sa 1 (by decide), sa 2 (by decide),
     sa 3 (by decide), sa 4 (by decide), sa 5 (by decide), sa 6 (by decide), sa 7 (by decide), sa 8 (by decide),
-    sa 9 (by decide), hsp, ha, State.withRegions_rd, State.withRegions_wr, Nat.reduceAdd]
+    sa 9 (by decide), hsp', ha, State.withRegions_rd, State.withRegions_wr, Nat.reduceAdd]
   have hk := h.k2
   have fbt := fb_toNat h.sp1
   unfold frameBytes at fbt
@@ -67,6 +83,12 @@ theorem crt_pre {s t : State} (h : PreP pc s) (A : AtCrt s t) :
     h.dps, h.dqs, h.qis, (h.ks.sub_left pk).symm, ?_, h.wn, by rw [← h.h10]; exact h.wi, h.wp, h.wq, h.wdp, h.wdq, h.wqi, h.ws,
     ⟨h.k1, h.k2⟩, trivial, trivial, h.p1, h.p2, h.q1, h.q2, h.h5, h.h9, h.h7, h.hs⟩
   · rw [Offset.toNat_add_ofNat]; unfold oM at *; omega_arith
+
+theorem crt_pre {s t : State} (h : PreP pc s) (A : AtCrt s t) :
+    Proof.Bignum.PPC64LE.Crt.fnContract.pre (crtEntry s t) := by
+  have := crt_preG (X := []) h A (Keep.refl _ _) rfl rfl
+  simp only [List.append_nil] at this
+  exact this
 
 /-- The bytes of `m` after the call: `vg_rsa_private_crt`'s result for the
 caller's buffers, and its status. -/
@@ -133,7 +155,8 @@ theorem crtCall_ok {s t : State} (h : PreP pc s) (A : AtCrt s t) {Q : State → 
     · rw [hf.readW (Region.contains_self _ _) (fun r hr => below_apart h (by decide) hr) (by decide)]; exact A.ls
   · have g : ∀ r, r ∉ linkRegs → (crtEntry s t).gpr r = t.gpr r := fun r hr => State.callEntry_gpr t hr
     have sa := fun i hi => crtEntry_stackArg A (i := i) hi
-    simp only [Proof.Bignum.PPC64LE.Crt.fnContract, g .r3 (by decide), g .r5 (by decide), g .r6 (by decide),
+    simp only [Proof.Bignum.PPC64LE.Crt.fnContract, Proof.Bignum.PPC64LE.Crt.postCore, g .r3 (by decide),
+      g .r5 (by decide), g .r6 (by decide),
       g .r7 (by decide), g .r9 (by decide), g .r10 (by decide), A.r3, A.r5, A.r6, A.r7, A.r9, A.r10,
       sa 0 (by decide), sa 1 (by decide), sa 2 (by decide), sa 4 (by decide), sa 6 (by decide),
       State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem, Nat.reduceAdd] at hpost

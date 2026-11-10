@@ -148,8 +148,8 @@ abbrev ix (pc : Bool) (a b : Nat) : Nat := if pc then b else a
 
 /-- With `pc`, the cached values (`R2F`) and the header's word of their address. -/
 theorem c0_r2 {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ s : State} (h : C0 pc d s₀)
-    (hhd : pc = true → word s.mem (cS s₀) oR2 = s₀.gpr .r12) :
-    pc = true → R2F s₀ ∧ word s.mem (cS s₀) oR2 = s₀.gpr .r12 := fun hp => by
+    (hhd : pc = true → word s.mem (cS s₀) oR2 = s₀.gpr .r31) :
+    pc = true → R2F s₀ ∧ word s.mem (cS s₀) oR2 = s₀.gpr .r31 := fun hp => by
   subst hp; exact ⟨r2F_of h.1, hhd rfl⟩
 
 /-- The front, `loadX` and `checks`, then `c`. -/
@@ -187,7 +187,7 @@ theorem pins100 : Pins (At (C0 pc) (crtF pc) 100) (pwRegs pc) := by
       off (cS s₀) (oPa s₀ + slot (cwP s₀) 0), off (cS s₀) (slot (cwX s₀) 4),
       off (off (cS s₀) (oPa s₀)) (slot (cwP s₀) 0), cS s₀, BitVec.ofNat 64 (ck s₀), off (cS s₀) (slot (cwX s₀) 0),
       BitVec.ofNat 64 (8 * (cwX s₀ + 2)), BitVec.ofNat 64 (8 * (cwP s₀ + 2))] ++
-      if pc then [s₀.gpr .r12] else [])
+      if pc then [s₀.gpr .r31] else [])
     (fun _ s₀ h => WP.of_flat (c := NL pc (.seq (.block (setupP oBP oPLen)) (.block (PW1 4 ++ r2Ptr pc false))))
       (by cases pc <;> decide +kernel)
       (WP.seq (WP.mono (front_okG pc s₀ (preG_core h.1)) fun s ⟨F, hhd⟩ => ?_))) fun _ _ _ h h' => ?_
@@ -212,7 +212,7 @@ theorem pins100 : Pins (At (C0 pc) (crtF pc) 100) (pwRegs pc) := by
     have E := two_data h h'
     cases pc
     · simp only [eS, eX, eP, eoP, ek, Bool.false_eq_true, ↓reduceIte]
-    · simp only [eS, eX, eP, eoP, ek, E.r12 rfl, ↓reduceIte]
+    · simp only [eS, eX, eP, eoP, ek, E.r31 rfl, ↓reduceIte]
 
 /-- The front through `p`'s power head and its exponent's registers. -/
 theorem pins124 : Pins (At (C0 pc) (crtF pc) (ix pc 124 118)) [.r10, .r11, .r23, .r29, .r30, .r31] := by
@@ -266,7 +266,7 @@ theorem pins148 : Pins (At (C0 pc) (crtF pc) (ix pc 148 142)) (pwRegs pc) := by
       off (cS s₀) (oQa s₀ + slot (cwQ s₀) 0), off (cS s₀) (slot (cwX s₀) 5),
       off (off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 0), cS s₀, BitVec.ofNat 64 (ck s₀), off (cS s₀) (slot (cwX s₀) 0),
       BitVec.ofNat 64 (8 * (cwX s₀ + 2)), BitVec.ofNat 64 (8 * (cwQ s₀ + 2))] ++
-      if pc then [s₀.gpr .r12 + BitVec.ofNat 64 (8 * cwP s₀)] else [])
+      if pc then [s₀.gpr .r31 + BitVec.ofNat 64 (8 * cwP s₀)] else [])
     (fun _ s₀ h => WP.of_flat (c := NP pc (.seq (.block (setupP oBQ oQLen)) (.block (PW1 5 ++ r2Ptr pc true))))
       (by cases pc <;> decide +kernel)
       (WP.seq (WP.mono (front_okG pc s₀ (preG_core h.1)) fun s ⟨F, hhd⟩ => ?_))) fun _ _ _ h h' => ?_
@@ -293,7 +293,7 @@ theorem pins148 : Pins (At (C0 pc) (crtF pc) (ix pc 148 142)) (pwRegs pc) := by
     have E := two_data h h'
     cases pc
     · simp only [eS, eX, eQ, eoQ, ek, Bool.false_eq_true, ↓reduceIte]
-    · simp only [eS, eX, eP, eQ, eoQ, ek, E.r12 rfl, ↓reduceIte]
+    · simp only [eS, eX, eP, eQ, eoQ, ek, E.r31 rfl, ↓reduceIte]
 
 theorem pins172 : Pins (At (C0 pc) (crtF pc) (ix pc 172 160)) [.r10, .r11, .r23, .r29, .r30, .r31] := by
   refine pins_at_list (fun s₀ => [off (off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 0), BitVec.ofNat 64 (2 * cwQ s₀), cS s₀,
@@ -395,7 +395,7 @@ theorem pins198 : Pins (At (C0 pc) (crtF pc) (ix pc 198 186))
   refine pins_at_list (fun s₀ => [off (off (cS s₀) (oPa s₀)) (slot (cwP s₀) 0), BitVec.ofNat 64 (2 * cwP s₀),
       off (off (cS s₀) (oPa s₀)) (slot (cwP s₀) 0), cS s₀, off (cS s₀) (slot (cwX s₀) 0),
       BitVec.ofNat 64 (8 * (cwX s₀ + 2)), BitVec.ofNat 64 (8 * (cwP s₀ + 2)), BitVec.ofNat 64 (cqL s₀)] ++
-      if pc then [s₀.gpr .r12] else [])
+      if pc then [s₀.gpr .r31] else [])
     (fun _ s₀ h => WP.of_flat (c := NE pc (.block ([.load .d .r31 .r23 oQLen] ++ r2Ptr pc false)))
       (by cases pc <;> decide +kernel)
       (WP.seq (WP.mono (front_okG pc s₀ (preG_core h.1)) fun s ⟨F, hhd⟩ => ?_))) fun _ _ _ h h' => ?_
@@ -456,7 +456,7 @@ theorem pins198 : Pins (At (C0 pc) (crtF pc) (ix pc 198 186))
     have E := two_data h h'
     cases pc
     · simp only [eS, eX, eP, eoP, eq, Bool.false_eq_true, ↓reduceIte]
-    · simp only [eS, eX, eP, eoP, eq, E.r12 rfl, ↓reduceIte]
+    · simp only [eS, eX, eP, eoP, eq, E.r31 rfl, ↓reduceIte]
 
 /-- Through `recombineP`, from the initial state. -/
 theorem pre_rec {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ : State} {c : Prog isa}

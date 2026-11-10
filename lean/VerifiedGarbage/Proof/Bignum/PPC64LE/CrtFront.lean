@@ -88,7 +88,7 @@ theorem saved_ne11 : ∀ i < 18, Crt.saved i ≠ .r11 := by decide
 header. -/
 theorem front_okG (pc : Bool) {X : List Region} (s₀ : State) (h : preCore (baseRd s₀ ++ X) s₀) :
     WP isa (.block (Crt.save ++ argsG pc ++ setupX)) s₀ fun s =>
-      Front s₀ s ∧ (pc = true → word s.mem (cS s₀) oR2 = s₀.gpr .r12) := by
+      Front s₀ s ∧ (pc = true → word s.mem (cS s₀) oR2 = s₀.gpr .r31) := by
   obtain ⟨hsp, hrd, hwr, dON, dOI, dOP, dOQ, dODP, dODQ, dOQI, dOS, dOA, dNS, dIS, dPS, dQS, dDPS, dDQS, dQIS,
     dSA, nwO, nwN, nwI, nwP, nwQ, nwDP, nwDQ, nwQI, nwS, ⟨hk, hk'⟩, hOL, hIL, hp1, hpk, hq1, hqk, hdpl, hqil, hdql,
     hsl⟩ := h

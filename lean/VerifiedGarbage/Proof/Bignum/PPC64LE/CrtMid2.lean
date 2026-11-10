@@ -71,7 +71,7 @@ structure XR (s₀ s u : State) : Prop where
 
 /-- `exportM2`, `setupP` and `recombineP`: `h`. -/
 theorem mid2A_ok {pc : Bool} {s₀ s t : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀)
-    (hF : Front s₀ s) (hR2 : pc = true → R2F s₀ ∧ word s.mem (cS s₀) oR2 = s₀.gpr .r12)
+    (hF : Front s₀ s) (hR2 : pc = true → R2F s₀ ∧ word s.mem (cS s₀) oR2 = s₀.gpr .r31)
     (t26 : t.gpr .r26 = bmask (cb s₀))
     (v0 : Mont.val32 t.mem (cS s₀) (slot (cwX s₀) 0) (2 * cwX s₀) = 2 ^ (64 * cwX s₀) - 1)
     (w0 : word t.mem (cS s₀) (slot (cwX s₀) 0) = BitVec.allOnes 64)
@@ -147,7 +147,7 @@ theorem mid2A_ok {pc : Bool} {s₀ s t : State} {c : Prog isa} {Q : State → Pr
     by rw [xv (Or.inr ⟨by omega_arith, by omega_arith⟩)]; exact v5, h4, hq4, OT⟩ k12
 
 theorem mid2_ok {pc : Bool} {s₀ s t : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀)
-    (hF : Front s₀ s) (hR2 : pc = true → R2F s₀ ∧ word s.mem (cS s₀) oR2 = s₀.gpr .r12)
+    (hF : Front s₀ s) (hR2 : pc = true → R2F s₀ ∧ word s.mem (cS s₀) oR2 = s₀.gpr .r31)
     (t26 : t.gpr .r26 = bmask (cb s₀))
     (v0 : Mont.val32 t.mem (cS s₀) (slot (cwX s₀) 0) (2 * cwX s₀) = 2 ^ (64 * cwX s₀) - 1)
     (w0 : word t.mem (cS s₀) (slot (cwX s₀) 0) = BitVec.allOnes 64)
