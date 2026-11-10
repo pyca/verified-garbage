@@ -65,6 +65,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 
 /-! # RSAES-PKCS1-v1_5 (RFC 8017) on x86-64 -/
 
@@ -77,12 +78,12 @@ open VG.Proof.RsaPkcs1Enc.X86_64.Dec (HH dec_verified dec_spSafe)
 
 def artifacts (h : Proof.Sha256.X86_64.Compress) (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact :=
   [
-    Spec.RsaPkcs1Enc.decryptApi.artifact X86_64.target {
+    Spec.RsaPkcs1Enc.decryptApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
       suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
       code := Impl.RsaPkcs1Enc.X86_64.Decrypt.code (HH h) (privOf c).name (privOf c).code
       stack := decStack
       verified := dec_verified h (privOf c)
-      spSafe := dec_spSafe h (privOf c) }]
+      spSafe := dec_spSafe h (privOf c) } (VG.Proof.RsaPkcs1Enc.X86_64.Dec.dec_postOut decStack))]
 
 end VG.Artifacts.RsaPkcs1Enc.X86_64.Sha256RsaPrivateCrt
 

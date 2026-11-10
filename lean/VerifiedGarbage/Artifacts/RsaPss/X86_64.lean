@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 
 /-! # RSASSA-PSS (RFC 8017) on x86-64 -/
 
@@ -21,7 +22,7 @@ open VG.Proof.RsaPss.X86_64 (signStack sign_ok signC_spAll enc_safe OK)
 
 def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaPss.signMdTableApi.artifact X86_64.target {
+    Spec.RsaPss.signMdTableApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
       suffix := qualifiedName "" [("crt", c.suffix)]
       tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.MdHashTable.X86_64.tables vs)]
       code := Impl.RsaPss.X86_64.signC (Proof.MdHashTable.X86_64.fnsOf vs) (Proof.HashTable.X86_64.fnsOf vs)
@@ -29,7 +30,7 @@ def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.M
       stack := signStack
       verified := sign_ok h (privOf c).ok (privOf c).ct (X86_64.SpSafe.of_all (privOf c).spSafe) (privOf c).depth
       spSafe := Code.all_of_allInstrs (signC_spAll (fun i hi => (enc_safe h i hi).1) (fun i hi => (enc_safe h i hi).2)
-        (X86_64.SpSafe.of_all (privOf c).spSafe)) }]
+        (X86_64.SpSafe.of_all (privOf c).spSafe)) } (VG.Proof.RsaPss.X86_64.signC_postOut _ _))]
   else []
 
 end VG.Artifacts.RsaPss.X86_64.RsaPrivateCrtAllMdHash

@@ -103,7 +103,17 @@ instructions in an ISA model) go in their own PR before either.
    cannot place): change the code so it can, as the Merkle–Damgård
    streaming code clamps its indices, and ChaCha20's `apply` keeps the data
    and its length in `r14` and `r15` and takes its state back from the
-   buffer `vg_chacha20_xor` returns.
+   buffer `vg_chacha20_xor` returns. Code the analysis does not follow at
+   all (RSA's private-key functions, most of whose pointers and lengths
+   are arguments on the stack) is scrubbed with
+   `X86_64.Scrub.withScrubAll`, which wipes all the stack its frames and
+   calls use and needs only that its postcondition reads the memory on
+   return in its buffers alone (`PostOut`); its level `evex` also clears
+   `zmm16`–`zmm31` and MXCSR's status flags, for code that writes those.
+   It leaves a function as it is when the clearing would need a CPU
+   feature the function does not: one that needs no AVX and may run an AVX2
+   hash function through a table it takes (`vg_rsa_pss_sign`,
+   `vg_rsa_oaep_decrypt`).
    A function that calls another one with several implementations (e.g.
    scalar and SHA-NI compression) is proven once for any of them, and its
    registration file applies it to each: the implementations of the callee
