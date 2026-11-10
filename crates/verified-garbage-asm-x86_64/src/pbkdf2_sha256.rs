@@ -28,7 +28,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "TIn/SIHHoAQAAA=="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "TIn/SIHHoAQAAL4AAAAASInaSInpTYn4"
 call {vg_sha256_update_scratch_shani}
 .base64 "TIn/SIHHoAQAAEiJ7kyJ+kiBwkAFAABMifk="
@@ -77,7 +77,7 @@ jmp 24f
 24:
 .base64 "SYufQAMAAEmLr0gDAABNi6dQAwAATYuvWAMAAE2Lt2ADAABNi79oAwAASI2kJFgGAADD"
 .p2align 6"#,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani::vg_hmac_sha256_init_scratch_shani,
@@ -111,7 +111,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "TIn/SIHHoAQAAA=="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "TIn/SIHHoAQAAL4AAAAASInaSInpTYn4"
 call {vg_sha256_update_scratch_avx2}
 .base64 "TIn/SIHHoAQAAEiJ7kyJ+kiBwkAFAABMifk="
@@ -160,7 +160,7 @@ jmp 24f
 24:
 .base64 "SYufQAMAAEmLr0gDAABNi6dQAwAATYuvWAMAAE2Lt2ADAABNi79oAwAASI2kJFgGAADD"
 .p2align 6"#,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
         vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
         vg_hmac_sha256_init_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_avx2::vg_hmac_sha256_init_scratch_avx2,
@@ -190,7 +190,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "TIn/SIHHoAQAAA=="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "TIn/SIHHoAQAAL4AAAAASInaSInpTYn4"
 call {vg_sha256_update_scratch}
 .base64 "TIn/SIHHoAQAAEiJ7kyJ+kiBwkAFAABMifk="
@@ -239,7 +239,7 @@ jmp 24f
 24:
 .base64 "SYufQAMAAEmLr0gDAABNi6dQAwAATYuvWAMAAE2Lt2ADAABNi79oAwAASI2kJFgGAADD"
 .p2align 6"#,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,

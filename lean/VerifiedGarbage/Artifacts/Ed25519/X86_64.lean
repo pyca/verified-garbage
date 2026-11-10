@@ -51,14 +51,15 @@ def signExpandedWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     verified := Proof.Ed25519.X86_64.SignCached.verifiedE c
     spSafe := Proof.Ed25519.X86_64.SignCached.spSafeE c }
 
-/-- Key-pair derivation with the SHA-512 implementation `c`'s one-shot digest, calling
-`vg_ed25519_public_key_expanded` with the suffix `fs`, whose base-point multiplication is
-`bs`. -/
+/-- Key-pair derivation with the SHA-512 implementation `c`'s one-shot digest, whose code
+it calls as the internal `vg_sha512_digest<suffix>_core` (the exported digest also clears
+what it leaves), calling `vg_ed25519_public_key_expanded` with the suffix `fs`, whose
+base-point multiplication is `bs`. -/
 def keyPairWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     [Proof.Ed25519.X86_64.EdBase bs] (fs : String) : Artifact :=
   Spec.Ed25519.keyPairApi.artifact X86_64.target {
     suffix := c.suffix ++ fs
-    code := Impl.Ed25519.X86_64.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ c.suffix)
+    code := Impl.Ed25519.X86_64.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ c.suffix ++ "_core")
       (Proof.Ed25519.X86_64.KeyPair.dgCode c) ("vg_ed25519_public_key_expanded" ++ fs)
       (Impl.Ed25519.X86_64.publicKeyExpanded bs fs)
     stack := 1632

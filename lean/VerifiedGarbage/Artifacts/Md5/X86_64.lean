@@ -32,9 +32,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.Md5.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Md5.initApi.artifact X86_64.target {
-    code := Impl.Md5.X86_64.Stream.init
-    verified := Proof.Md5.X86_64.Shared.init },
+  Spec.Md5.initApi.artifact X86_64.target Proof.Md5.X86_64.initReg,
   Spec.Md5.updateApi.artifact X86_64.target Proof.Md5.X86_64.updateReg,
   Spec.Md5.finalizeApi.artifact X86_64.target Proof.Md5.X86_64.finalizeReg] ++
   (VG.Proof.Variants.MdHash.X86_64.md5Variants.flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>

@@ -22,7 +22,7 @@ pub const VG_ED25519_VERIFY_SHANI_IFMA_FEATURES: verified_garbage_cpu::Features 
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch_shani}
 .base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
@@ -37,7 +37,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation_ifma}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -67,7 +67,7 @@ pub const VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES: verified_garbage_cpu::Fe
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
 call {vg_sha512_update_scratch_shani}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -79,7 +79,7 @@ call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
 call {vg_ed25519_scalar_base_ifma}
 .base64 "SIu8JMgAAAA="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch_shani}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -94,7 +94,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -124,12 +124,12 @@ pub const VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES: verified_garbage_cpu::Feature
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_shani_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
-call {vg_sha512_digest_shani}
+call {vg_sha512_digest_shani_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded_ifma}
 .base64 "WFhYww=="
 .p2align 6"#,
-        vg_sha512_digest_shani = sym super::sha512::vg_sha512_digest_shani,
+        vg_sha512_digest_shani_core = sym super::sha512::vg_sha512_digest_shani_core::vg_sha512_digest_shani_core,
         vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
     )
 }
@@ -153,7 +153,7 @@ pub const VG_ED25519_VERIFY_SHANI_ADX_FEATURES: verified_garbage_cpu::Features =
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch_shani}
 .base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
@@ -168,7 +168,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation_adx}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -198,7 +198,7 @@ pub const VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES: verified_garbage_cpu::Fea
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
 call {vg_sha512_update_scratch_shani}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -210,7 +210,7 @@ call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
 call {vg_ed25519_scalar_base_adx}
 .base64 "SIu8JMgAAAA="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch_shani}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -225,7 +225,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -255,12 +255,12 @@ pub const VG_ED25519_KEY_PAIR_SHANI_ADX_FEATURES: verified_garbage_cpu::Features
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_shani_adx(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
-call {vg_sha512_digest_shani}
+call {vg_sha512_digest_shani_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded_adx}
 .base64 "WFhYww=="
 .p2align 6"#,
-        vg_sha512_digest_shani = sym super::sha512::vg_sha512_digest_shani,
+        vg_sha512_digest_shani_core = sym super::sha512::vg_sha512_digest_shani_core::vg_sha512_digest_shani_core,
         vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
     )
 }
@@ -284,7 +284,7 @@ pub const VG_ED25519_VERIFY_SHANI_FEATURES: verified_garbage_cpu::Features = ver
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch_shani}
 .base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
@@ -299,7 +299,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -329,7 +329,7 @@ pub const VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES: verified_garbage_cpu::Feature
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
 call {vg_sha512_update_scratch_shani}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -341,7 +341,7 @@ call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
 call {vg_ed25519_scalar_base}
 .base64 "SIu8JMgAAAA="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch_shani}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -356,7 +356,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -386,12 +386,12 @@ pub const VG_ED25519_KEY_PAIR_SHANI_FEATURES: verified_garbage_cpu::Features = v
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_shani(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
-call {vg_sha512_digest_shani}
+call {vg_sha512_digest_shani_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded}
 .base64 "WFhYww=="
 .p2align 6"#,
-        vg_sha512_digest_shani = sym super::sha512::vg_sha512_digest_shani,
+        vg_sha512_digest_shani_core = sym super::sha512::vg_sha512_digest_shani_core::vg_sha512_digest_shani_core,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
@@ -415,7 +415,7 @@ pub const VG_ED25519_VERIFY_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features =
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch_avx2}
 .base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
@@ -430,7 +430,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation_ifma}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
         vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -460,7 +460,7 @@ pub const VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES: verified_garbage_cpu::Fea
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
 call {vg_sha512_update_scratch_avx2}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -472,7 +472,7 @@ call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
 call {vg_ed25519_scalar_base_ifma}
 .base64 "SIu8JMgAAAA="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch_avx2}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -487,7 +487,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
         vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -517,12 +517,12 @@ pub const VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
-call {vg_sha512_digest_avx2}
+call {vg_sha512_digest_avx2_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded_ifma}
 .base64 "WFhYww=="
 .p2align 6"#,
-        vg_sha512_digest_avx2 = sym super::sha512::vg_sha512_digest_avx2,
+        vg_sha512_digest_avx2_core = sym super::sha512::vg_sha512_digest_avx2_core::vg_sha512_digest_avx2_core,
         vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
     )
 }
@@ -546,7 +546,7 @@ pub const VG_ED25519_VERIFY_AVX2_ADX_FEATURES: verified_garbage_cpu::Features = 
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch_avx2}
 .base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
@@ -561,7 +561,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation_adx}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
         vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -591,7 +591,7 @@ pub const VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES: verified_garbage_cpu::Feat
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
 call {vg_sha512_update_scratch_avx2}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -603,7 +603,7 @@ call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
 call {vg_ed25519_scalar_base_adx}
 .base64 "SIu8JMgAAAA="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch_avx2}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -618,7 +618,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
         vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -648,12 +648,12 @@ pub const VG_ED25519_KEY_PAIR_AVX2_ADX_FEATURES: verified_garbage_cpu::Features 
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2_adx(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
-call {vg_sha512_digest_avx2}
+call {vg_sha512_digest_avx2_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded_adx}
 .base64 "WFhYww=="
 .p2align 6"#,
-        vg_sha512_digest_avx2 = sym super::sha512::vg_sha512_digest_avx2,
+        vg_sha512_digest_avx2_core = sym super::sha512::vg_sha512_digest_avx2_core::vg_sha512_digest_avx2_core,
         vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
     )
 }
@@ -677,7 +677,7 @@ pub const VG_ED25519_VERIFY_AVX2_FEATURES: verified_garbage_cpu::Features = veri
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch_avx2}
 .base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
@@ -692,7 +692,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
         vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -722,7 +722,7 @@ pub const VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES: verified_garbage_cpu::Features
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
 call {vg_sha512_update_scratch_avx2}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -734,7 +734,7 @@ call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
 call {vg_ed25519_scalar_base}
 .base64 "SIu8JMgAAAA="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch_avx2}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -749,7 +749,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
         vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -779,12 +779,12 @@ pub const VG_ED25519_KEY_PAIR_AVX2_FEATURES: verified_garbage_cpu::Features = ve
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
-call {vg_sha512_digest_avx2}
+call {vg_sha512_digest_avx2_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded}
 .base64 "WFhYww=="
 .p2align 6"#,
-        vg_sha512_digest_avx2 = sym super::sha512::vg_sha512_digest_avx2,
+        vg_sha512_digest_avx2_core = sym super::sha512::vg_sha512_digest_avx2_core::vg_sha512_digest_avx2_core,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
@@ -808,7 +808,7 @@ pub const VG_ED25519_VERIFY_IFMA_FEATURES: verified_garbage_cpu::Features = veri
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch}
 .base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
@@ -823,7 +823,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation_ifma}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -853,7 +853,7 @@ pub const VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES: verified_garbage_cpu::Features
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
 call {vg_sha512_update_scratch}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -865,7 +865,7 @@ call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
 call {vg_ed25519_scalar_base_ifma}
 .base64 "SIu8JMgAAAA="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -880,7 +880,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -910,12 +910,12 @@ pub const VG_ED25519_KEY_PAIR_IFMA_FEATURES: verified_garbage_cpu::Features = ve
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
-call {vg_sha512_digest}
+call {vg_sha512_digest_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded_ifma}
 .base64 "WFhYww=="
 .p2align 6"#,
-        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
+        vg_sha512_digest_core = sym super::sha512::vg_sha512_digest_core::vg_sha512_digest_core,
         vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
     )
 }
@@ -939,7 +939,7 @@ pub const VG_ED25519_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = verif
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch}
 .base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
@@ -954,7 +954,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation_adx}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -984,7 +984,7 @@ pub const VG_ED25519_SIGN_EXPANDED_ADX_FEATURES: verified_garbage_cpu::Features 
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
 call {vg_sha512_update_scratch}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -996,7 +996,7 @@ call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
 call {vg_ed25519_scalar_base_adx}
 .base64 "SIu8JMgAAAA="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -1011,7 +1011,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -1041,12 +1041,12 @@ pub const VG_ED25519_KEY_PAIR_ADX_FEATURES: verified_garbage_cpu::Features = ver
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_adx(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
-call {vg_sha512_digest}
+call {vg_sha512_digest_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded_adx}
 .base64 "WFhYww=="
 .p2align 6"#,
-        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
+        vg_sha512_digest_core = sym super::sha512::vg_sha512_digest_core::vg_sha512_digest_core,
         vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
     )
 }
@@ -1066,7 +1066,7 @@ call {vg_ed25519_public_key_expanded_adx}
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch}
 .base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
@@ -1081,7 +1081,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -1107,7 +1107,7 @@ call {vg_ed25519_verify_equation}
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
 call {vg_sha512_update_scratch}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -1119,7 +1119,7 @@ call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
 call {vg_ed25519_scalar_base}
 .base64 "SIu8JMgAAAA="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
 call {vg_sha512_update_scratch}
 .base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -1134,7 +1134,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -1160,12 +1160,12 @@ call {vg_ed25519_scalar_mul_add}
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
-call {vg_sha512_digest}
+call {vg_sha512_digest_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded}
 .base64 "WFhYww=="
 .p2align 6"#,
-        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
+        vg_sha512_digest_core = sym super::sha512::vg_sha512_digest_core::vg_sha512_digest_core,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }

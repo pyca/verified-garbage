@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sha1.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha1.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 84 bytes.
@@ -14,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha1_init(state: *mut [u8; 84]) {
     core::arch::naked_asm!(
-        r#".base64 "uAEjRWeJB7iJq83viUcEuP7cupiJRwi4dlQyEIlHDLjw4dLDiUcQww=="
+        r#".base64 "uAEjRWeJB7iJq83viUcEuP7cupiJRwi4dlQyEIlHDLjw4dLDiUcQMcBFMdvD"
 .p2align 6"#,
     )
 }
@@ -831,6 +833,10 @@ pub(crate) mod vg_sha1_finalize_scratch_avx_bmi;
 #[rustfmt::skip]
 #[path = "internal/vg_sha1_finalize_scratch_shani.rs"]
 pub(crate) mod vg_sha1_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_init_core.rs"]
+pub(crate) mod vg_sha1_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha1_state_digest.rs"]

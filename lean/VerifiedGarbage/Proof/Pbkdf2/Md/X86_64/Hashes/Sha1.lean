@@ -47,14 +47,17 @@ open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 open VG.Proof.Sha1.X86_64 (Compress)
 
 /-- SHA-1's functions, calling the implementation `v` of the compression
-function, named with its suffix. -/
+function, named with its suffix. They call `vg_sha1_init`'s code as the
+internal `vg_sha1_init_core`: the function exported as `vg_sha1_init` also
+clears what it leaves (`Proof.Sha1.X86_64.initReg`), which its callers,
+which clear their own, do not need. -/
 def hash (v : Compress) : Hash where
   P := Impl.Sha1.X86_64.Stream.params
   D := 20
   W := Spec.Hmac.sha1I.scratch
   compN := v.callee.name
   compC := v.callee.code
-  initN := Spec.Sha1.initApi.name
+  initN := "vg_sha1_init_core"
   initC := Impl.Sha1.X86_64.Stream.init
   updN := "vg_sha1_update_scratch" ++ v.suffix
   finN := "vg_sha1_finalize_scratch" ++ v.suffix

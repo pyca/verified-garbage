@@ -22,9 +22,9 @@ vg_hmac_sha512_256_init_shani:
 	mov rbp, rdx
 	mov r13, rcx
 	mov rdi, rbx
-	call {vg_sha512_256_init}
+	call {vg_sha512_256_init_core}
 	mov rdi, r12
-	call {vg_sha512_256_init}
+	call {vg_sha512_256_init_core}
 	mov eax, 909522486
 	mov DWORD PTR [rbx+64], eax
 	mov DWORD PTR [rbx+68], eax
@@ -216,7 +216,7 @@ vg_hmac_sha512_256_init_shani:
 25:
 	mov rdi, r15
 	add rdi, 2512
-	call {vg_sha512_256_init}
+	call {vg_sha512_256_init_core}
 	mov rdi, r15
 	add rdi, 2512
 	mov esi, 0
@@ -825,9 +825,9 @@ vg_hmac_sha512_256_init_avx512:
 	mov rbp, rdx
 	mov r13, rcx
 	mov rdi, rbx
-	call {vg_sha512_256_init}
+	call {vg_sha512_256_init_core}
 	mov rdi, r12
-	call {vg_sha512_256_init}
+	call {vg_sha512_256_init_core}
 	mov eax, 909522486
 	mov DWORD PTR [rbx+64], eax
 	mov DWORD PTR [rbx+68], eax
@@ -1155,7 +1155,7 @@ vg_hmac_sha512_256_init_avx512:
 25:
 	mov rdi, r15
 	add rdi, 2512
-	call {vg_sha512_256_init}
+	call {vg_sha512_256_init_core}
 	mov rdi, r15
 	add rdi, 2512
 	mov esi, 0
@@ -1876,9 +1876,9 @@ vg_hmac_sha512_256_init_avx2:
 	mov rbp, rdx
 	mov r13, rcx
 	mov rdi, rbx
-	call {vg_sha512_256_init}
+	call {vg_sha512_256_init_core}
 	mov rdi, r12
-	call {vg_sha512_256_init}
+	call {vg_sha512_256_init_core}
 	mov eax, 909522486
 	mov DWORD PTR [rbx+64], eax
 	mov DWORD PTR [rbx+68], eax
@@ -2070,7 +2070,7 @@ vg_hmac_sha512_256_init_avx2:
 25:
 	mov rdi, r15
 	add rdi, 2512
-	call {vg_sha512_256_init}
+	call {vg_sha512_256_init_core}
 	mov rdi, r15
 	add rdi, 2512
 	mov esi, 0
@@ -2647,9 +2647,9 @@ vg_hmac_sha512_256_init:
 	mov rbp, rdx
 	mov r13, rcx
 	mov rdi, rbx
-	call {vg_sha512_256_init}
+	call {vg_sha512_256_init_core}
 	mov rdi, r12
-	call {vg_sha512_256_init}
+	call {vg_sha512_256_init_core}
 	mov eax, 909522486
 	mov DWORD PTR [rbx+64], eax
 	mov DWORD PTR [rbx+68], eax
@@ -2841,7 +2841,7 @@ vg_hmac_sha512_256_init:
 25:
 	mov rdi, r15
 	add rdi, 2512
-	call {vg_sha512_256_init}
+	call {vg_sha512_256_init_core}
 	mov rdi, r15
 	add rdi, 2512
 	mov esi, 0
