@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 
@@ -29,9 +30,9 @@ theorem encSpecPrepared16_pre {s : State} (h : encCallPre CtxMode.prepared16 s) 
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁
   have a₂₂ := h
   clear h
-  sig_pre [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPrecomputedSig, Spec.Gcm.streamCryptPrecomputedSig,
+  sig_pre [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig,
     Proof.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs]
-  sig_reduce [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPrecomputedSig, Spec.Gcm.streamCryptPrecomputedSig,
+  sig_reduce [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig,
     Proof.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
     VG.X86_64.below]
@@ -43,18 +44,18 @@ theorem encSpecPrepared16_pre {s : State} (h : encCallPre CtxMode.prepared16 s) 
 theorem encSpecPrepared16_post {s s' : State} (hR : Proof.AesGcm.rounds s)
     (h : (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).post s s') :
     Proof.AesGcm.streamEncryptX86_64.post s s' := by
-  sig_post [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPrecomputedSig, Spec.Gcm.streamCryptPrecomputedSig,
+  sig_post [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig,
     Proof.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.streamEncryptRoundsPost] at h
-  sig_reduce [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPrecomputedSig, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
+  sig_reduce [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig, X86_64.abi,
     X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hR
 
 theorem encSpecPrepared16_pub {s₁ s₂ : State} (h : encCallPub s₁ s₂) :
     (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩ := h
-  sig_pub [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPrecomputedSig, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
+  sig_pub [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig, X86_64.abi,
     X86_64.argRegs]
-  sig_reduce [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPrecomputedSig, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
+  sig_reduce [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig, X86_64.abi,
     X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg]
   simp only [Proof.AesGcm.arg, X86_64.stackArg, X86_64.stackArgAddr] at a₈
   sig_and_intros
