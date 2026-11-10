@@ -70,7 +70,7 @@ vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx:
 	mov QWORD PTR [rsp+224], rax
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -279,7 +279,7 @@ vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx:
 	shr rax, 8
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -445,7 +445,7 @@ vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx:
 	shr rax, 8
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -611,7 +611,7 @@ vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx:
 	shr rax, 8
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -777,7 +777,7 @@ vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx:
 	shr rax, 8
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -943,7 +943,7 @@ vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx:
 	shr rax, 8
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -1109,7 +1109,7 @@ vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx:
 	shr rax, 8
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -1275,7 +1275,7 @@ vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx:
 	shr rax, 8
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0

@@ -61,7 +61,10 @@ def finalizeArgs (prefixLen : Nat) (withMessage : Bool) : List Instr :=
      else [.mov32 .rsi (.imm (BitVec.ofNat 32 prefixLen))]) ++
     framePtr .rdx 128 ++ scrPtr .rcx shaScratch
 
-def init : Prog isa := callWith initArgs Spec.Sha512.init512Api.name
+/-- `vg_sha512_init`'s code, called as the internal `vg_sha512_init_core`:
+the function exported as `vg_sha512_init` also clears what it leaves, which
+this caller, which clears its own, does not need. -/
+def init : Prog isa := callWith initArgs "vg_sha512_init_core"
   (Sha512.X86_64.Stream.init Spec.Sha512.H0_512)
 
 def update (f : Callee) (suffix : String) (args : List Instr) : Prog isa :=

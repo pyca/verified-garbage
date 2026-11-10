@@ -43,14 +43,17 @@ open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 open VG.Proof.Sha256.X86_64 (Compress)
 
 /-- SHA-224's functions, calling the implementation `v` of the compression
-function, named with its suffix. -/
+function, named with its suffix. They call `vg_sha224_init`'s code as the
+internal `vg_sha224_init_core`: the function exported as `vg_sha224_init` also
+clears what it leaves (`Proof.Sha256.X86_64.init224Reg`), which its callers,
+which clear their own, do not need. -/
 def hash (v : Compress) : Hash where
   P := Impl.Sha256.X86_64.Stream.params
   D := 28
   W := Spec.Hmac.sha224I.scratch
   compN := v.callee.name
   compC := v.callee.code
-  initN := Spec.Sha256.init224Api.name
+  initN := "vg_sha224_init_core"
   initC := Impl.Sha256.X86_64.Stream.init224
   updN := "vg_sha256_update_scratch" ++ v.suffix
   finN := "vg_sha256_finalize_scratch" ++ v.suffix

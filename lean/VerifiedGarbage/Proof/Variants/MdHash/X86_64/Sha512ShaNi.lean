@@ -57,6 +57,17 @@ def finalize : StreamFn := (finFn compress).scrub .avx finalizeKs (by lit_decide
 theorem finalize_noResidue : NoResidue finalize.code (finFn compress).contract (finFn compress).retBits :=
   StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
 
+def digestKs : List Nat := keep_for% Spec.Sha512.digest512Api.sig (digFn compress).stack (digFn compress).code
+
+theorem digestRes : ResOk (digFn compress).code (digFn compress).contract (digFn compress).stack digestKs (chunks (digFn compress).stack) :=
+  RScrub.resOk_reg0 (digFn compress).reg digestKs (by taint_decide)
+
+def digest : StreamFn := (digFn compress).scrub .avx digestKs (by lit_decide) (by decide) (by decide)
+  (by lit_decide) (by decide) (digOut compress) digestRes
+
+theorem digest_noResidue : NoResidue digest.code (digFn compress).contract (digFn compress).retBits :=
+  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
+
 def finalize384Ks : List Nat := keep_for% Spec.Sha512.finalize384Api.sig (fin384Fn compress).stack (fin384Fn compress).code
 
 theorem finalize384Res : ResOk (fin384Fn compress).code (fin384Fn compress).contract (fin384Fn compress).stack finalize384Ks (chunks (fin384Fn compress).stack) :=
@@ -125,10 +136,10 @@ theorem digest512_224_noResidue : NoResidue digest512_224.code (dig512_224Fn com
 
 end Scrub
 
-/-- The streaming `update` and `finalize`, and SHA-512's one-shot `digest`,
-which is not scrubbed: Ed25519's key-pair generation calls its code. -/
-def stream : List Proof.Pbkdf2.Md.X86_64.StreamFn :=
-  [update, finalize, Proof.Pbkdf2.Md.X86_64.Sha512.digFn compress]
+/-- The streaming `update` and `finalize`, and SHA-512's one-shot `digest`.
+Ed25519's key-pair generation calls the digest's code as the internal
+`vg_sha512_digest<suffix>_core`. -/
+def stream : List Proof.Pbkdf2.Md.X86_64.StreamFn := [update, finalize, digest]
 
 /-- SHA-384's `finalize` and one-shot `digest`. -/
 def stream384 : List Proof.Pbkdf2.Md.X86_64.StreamFn := [finalize384, digest384]

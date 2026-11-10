@@ -37,14 +37,17 @@ namespace VG.Proof.Pbkdf2.Md.X86_64.Md5
 open VG.X86_64
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
-/-- MD5's functions. -/
+/-- MD5's functions. They call `vg_md5_init`'s code as the internal
+`vg_md5_init_core`: the function exported as `vg_md5_init` also clears what
+it leaves (`Proof.Md5.X86_64.initReg`), which its callers, which clear their
+own, do not need. -/
 def hash : Hash where
   P := Impl.Md5.X86_64.Stream.params
   D := 16
   W := Spec.Hmac.md5I.scratch
   compN := "vg_md5_compress"
   compC := Impl.Md5.X86_64.compress
-  initN := Spec.Md5.initApi.name
+  initN := "vg_md5_init_core"
   initC := Impl.Md5.X86_64.Stream.init
   updN := "vg_md5_update_scratch"
   finN := "vg_md5_finalize_scratch"

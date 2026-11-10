@@ -75,11 +75,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen_avx512(seed: *const [u8;
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_keygen_body_avx512}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_keygen_body_avx512 = sym super::mlkem768::vg_mlkem768_keygen_body_avx512::vg_mlkem768_keygen_body_avx512,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -111,11 +111,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx512(ek: *const [u8;
         r#".base64 "SI1kJPBMiUwkCA=="
 call {vg_mlkem768_encaps_h_body_avx512}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_encaps_h_body_avx512 = sym super::mlkem768::vg_mlkem768_encaps_h_body_avx512::vg_mlkem768_encaps_h_body_avx512,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -145,11 +145,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_avx512(ek: *const [u8; 1
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_mlkem768_encaps_body_avx512}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_encaps_body_avx512 = sym super::mlkem768::vg_mlkem768_encaps_body_avx512::vg_mlkem768_encaps_body_avx512,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -177,11 +177,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps_avx512(dk: *const [u8; 2
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_decaps_body_avx512}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_decaps_body_avx512 = sym super::mlkem768::vg_mlkem768_decaps_body_avx512::vg_mlkem768_decaps_body_avx512,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -209,11 +209,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen_avx2(seed: *const [u8; 6
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_keygen_body_avx2}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_keygen_body_avx2 = sym super::mlkem768::vg_mlkem768_keygen_body_avx2::vg_mlkem768_keygen_body_avx2,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -245,11 +245,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx2(ek: *const [u8; 1
         r#".base64 "SI1kJPBMiUwkCA=="
 call {vg_mlkem768_encaps_h_body_avx2}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_encaps_h_body_avx2 = sym super::mlkem768::vg_mlkem768_encaps_h_body_avx2::vg_mlkem768_encaps_h_body_avx2,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -279,11 +279,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_avx2(ek: *const [u8; 118
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_mlkem768_encaps_body_avx2}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_encaps_body_avx2 = sym super::mlkem768::vg_mlkem768_encaps_body_avx2::vg_mlkem768_encaps_body_avx2,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -311,11 +311,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps_avx2(dk: *const [u8; 240
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_decaps_body_avx2}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_decaps_body_avx2 = sym super::mlkem768::vg_mlkem768_decaps_body_avx2::vg_mlkem768_decaps_body_avx2,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -343,11 +343,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen_avx(seed: *const [u8; 64
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_keygen_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_keygen_body = sym super::mlkem768::vg_mlkem768_keygen_body::vg_mlkem768_keygen_body,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -379,11 +379,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx(ek: *const [u8; 11
         r#".base64 "SI1kJPBMiUwkCA=="
 call {vg_mlkem768_encaps_h_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_encaps_h_body = sym super::mlkem768::vg_mlkem768_encaps_h_body::vg_mlkem768_encaps_h_body,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -413,11 +413,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_avx(ek: *const [u8; 1184
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_mlkem768_encaps_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_encaps_body = sym super::mlkem768::vg_mlkem768_encaps_body::vg_mlkem768_encaps_body,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -445,11 +445,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps_avx(dk: *const [u8; 2400
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_decaps_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize_avx}
+call {vg_zeroize_avx_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_decaps_body = sym super::mlkem768::vg_mlkem768_decaps_body::vg_mlkem768_decaps_body,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -473,11 +473,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen(seed: *const [u8; 64], e
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_keygen_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize}
+call {vg_zeroize_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_keygen_body = sym super::mlkem768::vg_mlkem768_keygen_body::vg_mlkem768_keygen_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
@@ -505,11 +505,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184],
         r#".base64 "SI1kJPBMiUwkCA=="
 call {vg_mlkem768_encaps_h_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize}
+call {vg_zeroize_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_encaps_h_body = sym super::mlkem768::vg_mlkem768_encaps_h_body::vg_mlkem768_encaps_h_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
@@ -535,11 +535,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_mlkem768_encaps_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize}
+call {vg_zeroize_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_encaps_body = sym super::mlkem768::vg_mlkem768_encaps_body::vg_mlkem768_encaps_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
@@ -563,11 +563,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps(dk: *const [u8; 2400], c
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_decaps_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
-call {vg_zeroize}
+call {vg_zeroize_core}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_mlkem768_decaps_body = sym super::mlkem768::vg_mlkem768_decaps_body::vg_mlkem768_decaps_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 

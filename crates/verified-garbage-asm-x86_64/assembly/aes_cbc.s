@@ -11,7 +11,7 @@ vg_aes_cbc_decrypt_vaes_avx512:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 224
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -24,7 +24,7 @@ vg_aes_cbc_decrypt_vaes:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 224
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -37,7 +37,7 @@ vg_aes_cbc_decrypt_aesni_avx:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 224
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -157,7 +157,7 @@ vg_aes_cbc_decrypt_aesni:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 224
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -170,7 +170,7 @@ vg_aes_cbc_encrypt_avx:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 2176
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -183,7 +183,7 @@ vg_aes_cbc_decrypt_avx:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 2176
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -196,7 +196,7 @@ vg_aes_cbc_encrypt:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 2176
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -209,7 +209,7 @@ vg_aes_cbc_decrypt:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 2176
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret

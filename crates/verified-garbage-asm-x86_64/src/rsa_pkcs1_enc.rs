@@ -48,7 +48,7 @@ jne 20b
 .base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
 jne 21b
 .base64 "SIu8JLgAAAA="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
@@ -98,7 +98,7 @@ jne 27b
 .base64 "SIuEJMAAAABIjaQk2AAAAMM="
 .p2align 6"#,
         vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma::vg_rsa_private_checked_ifma,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani::vg_hmac_sha256_init_scratch_shani,
@@ -151,7 +151,7 @@ jne 20b
 .base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
 jne 21b
 .base64 "SIu8JLgAAAA="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
@@ -201,7 +201,7 @@ jne 27b
 .base64 "SIuEJMAAAABIjaQk2AAAAMM="
 .p2align 6"#,
         vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx::vg_rsa_private_checked_adx,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani::vg_hmac_sha256_init_scratch_shani,
@@ -254,7 +254,7 @@ jne 20b
 .base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
 jne 21b
 .base64 "SIu8JLgAAAA="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
@@ -304,7 +304,7 @@ jne 27b
 .base64 "SIuEJMAAAABIjaQk2AAAAMM="
 .p2align 6"#,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani::vg_hmac_sha256_init_scratch_shani,
@@ -357,7 +357,7 @@ jne 20b
 .base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
 jne 21b
 .base64 "SIu8JLgAAAA="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
 call {vg_sha256_update_scratch_avx2}
 .base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
@@ -407,7 +407,7 @@ jne 27b
 .base64 "SIuEJMAAAABIjaQk2AAAAMM="
 .p2align 6"#,
         vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma::vg_rsa_private_checked_ifma,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
         vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
         vg_hmac_sha256_init_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_avx2::vg_hmac_sha256_init_scratch_avx2,
@@ -460,7 +460,7 @@ jne 20b
 .base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
 jne 21b
 .base64 "SIu8JLgAAAA="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
 call {vg_sha256_update_scratch_avx2}
 .base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
@@ -510,7 +510,7 @@ jne 27b
 .base64 "SIuEJMAAAABIjaQk2AAAAMM="
 .p2align 6"#,
         vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx::vg_rsa_private_checked_adx,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
         vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
         vg_hmac_sha256_init_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_avx2::vg_hmac_sha256_init_scratch_avx2,
@@ -563,7 +563,7 @@ jne 20b
 .base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
 jne 21b
 .base64 "SIu8JLgAAAA="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
 call {vg_sha256_update_scratch_avx2}
 .base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
@@ -613,7 +613,7 @@ jne 27b
 .base64 "SIuEJMAAAABIjaQk2AAAAMM="
 .p2align 6"#,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
         vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
         vg_hmac_sha256_init_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_avx2::vg_hmac_sha256_init_scratch_avx2,
@@ -666,7 +666,7 @@ jne 20b
 .base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
 jne 21b
 .base64 "SIu8JLgAAAA="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
 call {vg_sha256_update_scratch}
 .base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
@@ -716,7 +716,7 @@ jne 27b
 .base64 "SIuEJMAAAABIjaQk2AAAAMM="
 .p2align 6"#,
         vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma::vg_rsa_private_checked_ifma,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
@@ -769,7 +769,7 @@ jne 20b
 .base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
 jne 21b
 .base64 "SIu8JLgAAAA="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
 call {vg_sha256_update_scratch}
 .base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
@@ -819,7 +819,7 @@ jne 27b
 .base64 "SIuEJMAAAABIjaQk2AAAAMM="
 .p2align 6"#,
         vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx::vg_rsa_private_checked_adx,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
@@ -868,7 +868,7 @@ jne 20b
 .base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
 jne 21b
 .base64 "SIu8JLgAAAA="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
 call {vg_sha256_update_scratch}
 .base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
@@ -918,7 +918,7 @@ jne 27b
 .base64 "SIuEJMAAAABIjaQk2AAAAMM="
 .p2align 6"#,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,

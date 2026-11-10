@@ -24,9 +24,9 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_shani(inner: *mut [u8; 84
         r#".base64 "SIP5QQ=="
 jae 20f
 .base64 "SI2kJDj+//9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0TYnHSInVSYnNSInf"
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "TInn"
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "uDY2NjaJQxSJQxiJQxyJQyCJQySJQyiJQyyJQzCJQzSJQziJQzyJQ0CJQ0SJQ0iJQ0yJQ1BBvgAAAABNhe0="
 je 22f
 24:
@@ -49,7 +49,7 @@ jae 25f
 jmp 26f
 25:
 .base64 "TIn/SIHH/AIAAA=="
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "TIn/SIHH/AIAAL4AAAAASInaSInpTYn4"
 call {vg_sha1_update_scratch_shani}
 .base64 "TIn/SIHH/AIAAEiJ7kyJ+kiBwngDAABMifk="
@@ -61,7 +61,7 @@ call {vg_hmac_sha1_init_scratch_shani}
 .base64 "SYufwAEAAEmLr8gBAABNi6fQAQAATYuv2AEAAE2Lt+ABAABNi7/oAQAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABMiZwk0AMAAEyJnCTYAwAATImcJOADAABMiZwk6AMAAEyJnCTwAwAATImcJPgDAABMiZwkAAQAAEyJnCQIBAAATImcJBAEAABMiZwkGAQAAEyJnCQgBAAATImcJCgEAABMiZwkMAQAAEyJnCQ4BAAATImcJEAEAABMiZwkSAQAAEyJnCRQBAAATImcJFgEAABMiZwkYAQAAEiNpCRoBAAA"
 jmp 21b
 .p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
         vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
         vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
@@ -120,9 +120,9 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_avx_bmi(inner: *mut [u8; 
         r#".base64 "SIP5QQ=="
 jae 20f
 .base64 "SI2kJDj+//9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0TYnHSInVSYnNSInf"
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "TInn"
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "uDY2NjaJQxSJQxiJQxyJQyCJQySJQyiJQyyJQzCJQzSJQziJQzyJQ0CJQ0SJQ0iJQ0yJQ1BBvgAAAABNhe0="
 je 22f
 24:
@@ -145,7 +145,7 @@ jae 25f
 jmp 26f
 25:
 .base64 "TIn/SIHH/AIAAA=="
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "TIn/SIHH/AIAAL4AAAAASInaSInpTYn4"
 call {vg_sha1_update_scratch_avx_bmi}
 .base64 "TIn/SIHH/AIAAEiJ7kyJ+kiBwngDAABMifk="
@@ -157,7 +157,7 @@ call {vg_hmac_sha1_init_scratch_avx_bmi}
 .base64 "SYufwAEAAEmLr8gBAABNi6fQAQAATYuv2AEAAE2Lt+ABAABNi7/oAQAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABMiZwk0AMAAEyJnCTYAwAATImcJOADAABMiZwk6AMAAEyJnCTwAwAATImcJPgDAABMiZwkAAQAAEyJnCQIBAAATImcJBAEAABMiZwkGAQAAEyJnCQgBAAATImcJCgEAABMiZwkMAQAAEyJnCQ4BAAATImcJEAEAABMiZwkSAQAAEyJnCRQBAAATImcJFgEAABMiZwkYAQAAEiNpCRoBAAA"
 jmp 21b
 .p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_compress_avx_bmi = sym super::sha1::vg_sha1_compress_avx_bmi::vg_sha1_compress_avx_bmi,
         vg_sha1_update_scratch_avx_bmi = sym super::sha1::vg_sha1_update_scratch_avx_bmi::vg_sha1_update_scratch_avx_bmi,
         vg_sha1_finalize_scratch_avx_bmi = sym super::sha1::vg_sha1_finalize_scratch_avx_bmi::vg_sha1_finalize_scratch_avx_bmi,
@@ -212,9 +212,9 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init(inner: *mut [u8; 84], out
         r#".base64 "SIP5QQ=="
 jae 20f
 .base64 "SI2kJDj+//9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0TYnHSInVSYnNSInf"
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "TInn"
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "uDY2NjaJQxSJQxiJQxyJQyCJQySJQyiJQyyJQzCJQzSJQziJQzyJQ0CJQ0SJQ0iJQ0yJQ1BBvgAAAABNhe0="
 je 22f
 24:
@@ -237,7 +237,7 @@ jae 25f
 jmp 26f
 25:
 .base64 "TIn/SIHH/AIAAA=="
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "TIn/SIHH/AIAAL4AAAAASInaSInpTYn4"
 call {vg_sha1_update_scratch}
 .base64 "TIn/SIHH/AIAAEiJ7kyJ+kiBwngDAABMifk="
@@ -249,7 +249,7 @@ call {vg_hmac_sha1_init_scratch}
 .base64 "SYufwAEAAEmLr8gBAABNi6fQAQAATYuv2AEAAE2Lt+ABAABNi7/oAQAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABMiZwk0AMAAEyJnCTYAwAATImcJOADAABMiZwk6AMAAEyJnCTwAwAATImcJPgDAABMiZwkAAQAAEyJnCQIBAAATImcJBAEAABMiZwkGAQAAEyJnCQgBAAATImcJCgEAABMiZwkMAQAAEyJnCQ4BAAATImcJEAEAABMiZwkSAQAAEyJnCRQBAAATImcJFgEAABMiZwkYAQAAEiNpCRoBAAA"
 jmp 21b
 .p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,

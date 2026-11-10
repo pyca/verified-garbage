@@ -180,3 +180,11 @@ pub(crate) mod vg_brainpoolp256r1_inv_mod_n;
 #[rustfmt::skip]
 #[path = "internal/vg_ecdsa_brainpoolp256r1_sign_k.rs"]
 pub(crate) mod vg_ecdsa_brainpoolp256r1_sign_k;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha224_init_core.rs"]
+pub(crate) mod vg_sha224_init_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha384_init_core.rs"]
+pub(crate) mod vg_sha384_init_core;

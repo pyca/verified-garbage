@@ -18,7 +18,7 @@ je 21f
 .base64 "SItMJHhIKcFIg/kg"
 jb 23f
 .base64 "SItMJGhIAcFIiUwkCEiDwCBIiYQkgAAAAEiLRCQoSAVAYwAASIkEJEiLRCQISImEJNgAAAC4IAAAAEiJhCTgAAAASIt8JHBIgccADAAA"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIt8JHBIgccADAAAvgAAAABIi5Qk2AAAAEiLjCTgAAAATItEJHBJgcAAEAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIt8JHBIgccADAAASIu0JOAAAABIi1QkcEiBwgANAABIi0wkcEiBwQAQAAA="
@@ -46,7 +46,7 @@ jmp 29f
 .base64 "D7ZMFv9IAciIRBf/SMHoCEiD6gE="
 jne 211b
 .base64 "SIt8JHBIgccADAAA"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIt8JHBIgccADAAAvgAAAABIi5Qk2AAAAEiLjCTgAAAATItEJHBJgcAAEAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIt8JHBIgccADAAASIu0JOAAAABIi1QkcEiBwgANAABIi0wkcEiBwQAQAAA="
@@ -60,7 +60,7 @@ jne 212b
 .base64 "D7ZMFv9IAciIRBf/SMHoCEiD6gE="
 jne 213b
 .base64 "SIt8JHBIgccADAAA"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIt8JHBIgccADAAAvgAAAABIi5Qk2AAAAEiLjCTgAAAATItEJHBJgcAAEAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIt8JHBIgccADAAASIu0JOAAAABIi1QkcEiBwgANAABIi0wkcEiBwQAQAAA="
@@ -74,7 +74,7 @@ jne 214b
 .base64 "D7ZMFv9IAciIRBf/SMHoCEiD6gE="
 jne 215b
 .base64 "SIt8JHBIgccADAAA"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIt8JHBIgccADAAAvgAAAABIi5Qk2AAAAEiLjCTgAAAATItEJHBJgcAAEAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIt8JHBIgccADAAASIu0JOAAAABIi1QkcEiBwgANAABIi0wkcEiBwQAQAAA="
@@ -88,7 +88,7 @@ jne 216b
 .base64 "D7ZMFv9IAciIRBf/SMHoCEiD6gE="
 jne 217b
 .base64 "SIt8JHBIgccADAAA"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIt8JHBIgccADAAAvgAAAABIi5Qk2AAAAEiLjCTgAAAATItEJHBJgcAAEAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIt8JHBIgccADAAASIu0JOAAAABIi1QkcEiBwgANAABIi0wkcEiBwQAQAAA="
@@ -102,7 +102,7 @@ jne 218b
 .base64 "D7ZMFv9IAciIRBf/SMHoCEiD6gE="
 jne 219b
 .base64 "SIt8JHBIgccADAAA"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIt8JHBIgccADAAAvgAAAABIi5Qk2AAAAEiLjCTgAAAATItEJHBJgcAAEAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIt8JHBIgccADAAASIu0JOAAAABIi1QkcEiBwgANAABIi0wkcEiBwQAQAAA="
@@ -116,7 +116,7 @@ jne 220b
 .base64 "D7ZMFv9IAciIRBf/SMHoCEiD6gE="
 jne 221b
 .base64 "SIt8JHBIgccADAAA"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIt8JHBIgccADAAAvgAAAABIi5Qk2AAAAEiLjCTgAAAATItEJHBJgcAAEAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIt8JHBIgccADAAASIu0JOAAAABIi1QkcEiBwgANAABIi0wkcEiBwQAQAAA="
@@ -130,7 +130,7 @@ jne 222b
 .base64 "D7ZMFv9IAciIRBf/SMHoCEiD6gE="
 jne 223b
 .base64 "SIt8JHBIgccADAAA"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIt8JHBIgccADAAAvgAAAABIi5Qk2AAAAEiLjCTgAAAATItEJHBJgcAAEAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIt8JHBIgccADAAASIu0JOAAAABIi1QkcEiBwgANAABIi0wkcEiBwQAQAAA="
@@ -144,7 +144,7 @@ jne 224b
 .base64 "D7ZMFv9IAciIRBf/SMHoCEiD6gE="
 jne 225b
 .base64 "SIt8JHBIgccADAAA"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIt8JHBIgccADAAAvgAAAABIi5Qk2AAAAEiLjCTgAAAATItEJHBJgcAAEAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIt8JHBIgccADAAASIu0JOAAAABIi1QkcEiBwgANAABIi0wkcEiBwQAQAAA="
@@ -158,7 +158,7 @@ jne 226b
 .base64 "D7ZMFv9IAciIRBf/SMHoCEiD6gE="
 jne 227b
 .base64 "SIt8JHBIgccADAAA"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIt8JHBIgccADAAAvgAAAABIi5Qk2AAAAEiLjCTgAAAATItEJHBJgcAAEAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIt8JHBIgccADAAASIu0JOAAAABIi1QkcEiBwgANAABIi0wkcEiBwQAQAAA="
@@ -172,7 +172,7 @@ jne 228b
 .base64 "D7ZMFv9IAciIRBf/SMHoCEiD6gE="
 jne 229b
 .base64 "SIt8JHBIgccADAAA"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIt8JHBIgccADAAAvgAAAABIi5Qk2AAAAEiLjCTgAAAATItEJHBJgcAAEAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIt8JHBIgccADAAASIu0JOAAAABIi1QkcEiBwgANAABIi0wkcEiBwQAQAAA="
@@ -186,7 +186,7 @@ jne 230b
 .base64 "D7ZMFv9IAciIRBf/SMHoCEiD6gE="
 jne 231b
 .base64 "SIt8JHBIgccADAAA"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIt8JHBIgccADAAAvgAAAABIi5Qk2AAAAEiLjCTgAAAATItEJHBJgcAAEAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIt8JHBIgccADAAASIu0JOAAAABIi1QkcEiBwgANAABIi0wkcEiBwQAQAAA="
@@ -200,7 +200,7 @@ jne 232b
 .base64 "D7ZMFv9IAciIRBf/SMHoCEiD6gE="
 jne 233b
 .base64 "SIt8JHBIgccADAAA"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "SIt8JHBIgccADAAAvgAAAABIi5Qk2AAAAEiLjCTgAAAATItEJHBJgcAAEAAA"
 call {vg_sha256_update_scratch_shani}
 .base64 "SIt8JHBIgccADAAASIu0JOAAAABIi1QkcEiBwgANAABIi0wkcEiBwQAQAAA="
@@ -1219,7 +1219,7 @@ jmp 2307f
 2307:
 .base64 "SI2kJCgBAABIjWQkIEiLHCRIi2wkCEyLZCQQTItsJBhMi3QkIEyLfCQoSI1kJDDD"
 .p2align 6"#,
-        vg_sha256_init = sym crate::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym crate::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch_shani = sym crate::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym crate::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_dsa_probable_prime = sym crate::dsa::vg_dsa_probable_prime::vg_dsa_probable_prime,
