@@ -239,7 +239,9 @@ pclmulqdq,ssse3 | aes_gcm aes_gcm_siv sm4_gcm cpu
 """
 
 # AVX-512F and AVX512VL (with Argon2's vg_argon2_compress_avx512
-# and BLAKE2b's vg_blake2b_compress_avx512); BMI2 and ADX, which are
+# and BLAKE2b's vg_blake2b_compress_avx512, and HMAC's `init` over the
+# SHA-512 family with vg_sha512_compress2_avx512, in `sha384` and `sha512`,
+# which hsw runs with AVX2's `init`); BMI2 and ADX, which are
 # detected only with AVX2 (`REPORTED_WITH` in crates/verified-garbage-cpu/src/detect.rs), without AVX-512F (FFDH's,
 # DSA's and Ed448's ADX functions, RSA's ADX functions, whose
 # private-key operation selects its table's entries with AVX2, and

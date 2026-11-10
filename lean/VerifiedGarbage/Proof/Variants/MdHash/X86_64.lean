@@ -45,6 +45,9 @@ def sha384 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha51
 def sha384Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha384 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream384 .avx2)
 
+/-- SHA-384 with AVX2's functions, but HMAC's `init`, which compresses its two
+padded keys at once with AVX-512VL (`vg_sha512_compress2_avx512`) and clears
+what it leaves. -/
 def sha384Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   { Proof.Pbkdf2.Md.X86_64.Sha512.sha384 .avx512 with initScrub := true, initOnly := true }
 
@@ -55,6 +58,9 @@ def sha512 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha51
 def sha512Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream .avx2)
 
+/-- SHA-512 with AVX2's functions, but HMAC's `init`, which compresses its two
+padded keys at once with AVX-512VL (`vg_sha512_compress2_avx512`) and clears
+what it leaves. -/
 def sha512Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   { Proof.Pbkdf2.Md.X86_64.Sha512.sha512 .avx512 with initScrub := true, initOnly := true }
 
@@ -65,6 +71,9 @@ def sha512_224 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.S
 def sha512_224Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream512_224 .avx2)
 
+/-- SHA-512/224 with AVX2's functions, but HMAC's `init`, which compresses its two
+padded keys at once with AVX-512VL (`vg_sha512_compress2_avx512`) and clears
+what it leaves. -/
 def sha512_224Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   { Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .avx512 with initScrub := true, initOnly := true }
 
@@ -75,6 +84,9 @@ def sha512_256 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.S
 def sha512_256Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream512_256 .avx2)
 
+/-- SHA-512/256 with AVX2's functions, but HMAC's `init`, which compresses its two
+padded keys at once with AVX-512VL (`vg_sha512_compress2_avx512`) and clears
+what it leaves. -/
 def sha512_256Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   { Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 .avx512 with initScrub := true, initOnly := true }
 

@@ -38,9 +38,7 @@ second's in quadword 1.
 namespace VG.Impl.Sha512.X86_64.Avx512
 
 open VG.X86_64
-open VG.Impl.Sha512.X86_64.Avx2 (at_ msg t0 t1 t2 t3 vb vs bswapMask)
-
-/-! ## Two compressions at once -/
+open VG.Impl.Sha512.X86_64.Avx2 (at_ bswapMask)
 
 /-- The registers holding the working variables of both. -/
 def work : List XReg := [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7]

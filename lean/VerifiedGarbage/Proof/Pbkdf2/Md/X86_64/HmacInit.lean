@@ -18,8 +18,12 @@ HMAC's `init` (`Impl/Pbkdf2/Md/X86_64.lean`) saves our caller's registers
 (`callInit_ok`), writes `K₀ ⊕ ipad` into the inner state's buffer and
 `K₀ ⊕ opad` into the outer one's (`keys_ok`: `ipad` a word at a time, the
 key's bytes XORed in, then the outer buffer from the inner one a word at a
-time), compresses each buffer into its state's hash value (`cmp_ok`), and
-loads our caller's registers back. A state whose initial hash value has
+time), compresses each buffer into its state's hash value, and loads our
+caller's registers back. The compressions are `Hash.compBoth`, of which
+`init` needs `BothOk`: the compression function on each buffer in turn
+(`BothOk.twice`, from `cmp_ok`), or one call of a function that compresses
+both at once (`BothOk.pair`, from `MdStream.X86_64.PairOk`), whichever the
+hash function's code has (`HashOK.both`, `bothOk`). A state whose initial hash value has
 absorbed the block in its buffer represents that block
 (`Md.repr_block`). Constant time: the taint analysis checks the pieces
 between the calls (`Checks`); the calls are constant time by the callees'
