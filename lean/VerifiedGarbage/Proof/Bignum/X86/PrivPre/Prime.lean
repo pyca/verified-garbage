@@ -445,6 +445,20 @@ theorem factorR_props (h : In Ex base bytes len args s) {o : Nat} (ho16 : 16 ≤
       .inr ⟨rfl, Nat.le_refl _⟩⟩
   · exact ⟨primeR2_fit h q hq', (primeR2_below h q hq').2, .inl (primeR2_below h q hq').1⟩
 
+/-- `factorR`'s ranges miss bytes 32 to 48 of the working space. -/
+theorem factorR_saved {o : Nat} : ∀ q ∈ factorR len o, 48 ≤ q.1 ∨ q.1 + q.2 ≤ 32 := by
+  have lo0 : ∀ c j, numBase ≤ lo len (.slot c j) := fun c j => by simp [lo]
+  have nb : numBase = 3336 := rfl
+  intro q hq
+  rcases List.mem_cons.mp hq with rfl | hq
+  · exact .inl (by have := lo0 .wide o; dsimp only; omega)
+  rcases List.mem_cons.mp hq with rfl | hq
+  · exact .inl (by have := lo0 .wide o; dsimp only; omega)
+  rcases List.mem_append.mp hq with hq | hq <;>
+    simp only [primeR, baseR, List.mem_cons, List.not_mem_nil, or_false] at hq <;>
+    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> (try simp only [invOff]) <;>
+    first | exact .inr (by decide) | exact .inl (Nat.le_trans (by decide : (48 : Nat) ≤ numBase) (lo0 _ _))
+
 end
 
 end VG.Proof.Bignum.X86.PrivPre
