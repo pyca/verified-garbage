@@ -383,8 +383,8 @@ theorem signT_ct (hC : CurveT R T) :
 theorem fnsOk_of (vs : List MdHash) : FnsOk (fnsOf vs).init ∧ FnsOk (fnsOf vs).upd ∧ FnsOk (fnsOf vs).fin := by
   refine ⟨fun q hq => ?_, fun q hq => ?_, fun q hq => ?_⟩ <;> obtain ⟨w, -, rfl⟩ := List.mem_map.mp hq
   · exact VG.Proof.RsaOaep.X86_64.okI_all_of
-      (Proof.Pbkdf2.Md.X86_64.nosp_of (Proof.Pbkdf2.Md.X86_64.core_hmacInit w.K.cNs w.K.iNs w.C.hinitNs))
-      (Proof.Pbkdf2.Md.X86_64.core_hmacInit w.K.cMx w.K.iMx w.C.hinitMx)
+      (Proof.Pbkdf2.Md.X86_64.nosp_of (Proof.Pbkdf2.Md.X86_64.core_hmacInit w.K.iNs w.K.b.bNs w.C.hinitNs))
+      (Proof.Pbkdf2.Md.X86_64.core_hmacInit w.K.iMx w.K.b.bMx w.C.hinitMx)
   · exact (Proof.RsaOaep.X86_64.HGood.of w.ok w.K).upd
   · exact VG.Proof.RsaOaep.X86_64.okI_all_of
       (Proof.Pbkdf2.Md.X86_64.nosp_of (Proof.Pbkdf2.Md.X86_64.core_hmacFin w.K.cNs w.C.hfinNs))

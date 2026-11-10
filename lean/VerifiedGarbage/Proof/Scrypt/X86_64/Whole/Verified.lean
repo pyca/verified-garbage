@@ -725,7 +725,7 @@ open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
 /-- How deeply calls nest in `pbkdf2`, from its own code. -/
 theorem core_pbkdf2_depth {H : Hash} (hc : H.compC.depth = 0) (hi : H.initC.depth = 0)
-    (h : (core H).pbkdf2.depth ≤ 3) : H.pbkdf2.depth ≤ 3 := by
+    (hb : H.compBoth.depth = 1) (h : (core H).pbkdf2.depth ≤ 3) : H.pbkdf2.depth ≤ 3 := by
   simp only [Hash.pbkdf2, Hash.key, Hash.hashKey, Hash.setup, Hash.block, Hash.outLen, Hash.outLoop,
     Hash.hmacInit, Hash.hmacFin, Hash.iterate, Impl.Pbkdf2.X86_64.iterate, Impl.Pbkdf2.X86_64.body,
     Impl.Pbkdf2.X86_64.compressBlock, Hash.updC, Hash.finC, Hash.stream, Hash.initKeys,
@@ -733,7 +733,7 @@ theorem core_pbkdf2_depth {H : Hash} (hc : H.compC.depth = 0) (hi : H.initC.dept
     Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody, Impl.MdStream.X86_64.updateTail,
     Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
     Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
-    core, Code.depth, hc, hi] at h ⊢
+    core, Proof.Pbkdf2.Md.X86_64.coreBoth, Code.depth, hc, hi, hb] at h ⊢
   exact h
 
 variable (c : Proof.Sha256.X86_64.Compress)
@@ -750,18 +750,18 @@ theorem pbk_verified :
 
 theorem pbk_nosp : NoSp (pbkOf c) :=
   nosp_of (core_pbkdf2 (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).cNs
-    (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).iNs
+    (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).iNs (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).b.bNs
     (by decide +kernel : Proof.Pbkdf2.Md.X86_64.Sha256.coreH.pbkdf2.allInstrs
       (fun i => !Taint.clobbers i .rsp) = true))
 
 theorem pbk_depth : (pbkOf c).depth ≤ 3 :=
   core_pbkdf2_depth (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).cD
-    (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).iD
+    (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).iD (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).b.bD
     (by decide +kernel : Proof.Pbkdf2.Md.X86_64.Sha256.coreH.pbkdf2.depth ≤ 3)
 
 theorem pbk_mx : (pbkOf c).allInstrs (fun i => !loadsMxcsr i) = true :=
   core_pbkdf2 (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).cMx (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).iMx
-    Proof.Pbkdf2.Md.X86_64.Sha256.coreOK.pbkMx
+    (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).b.bMx Proof.Pbkdf2.Md.X86_64.Sha256.coreOK.pbkMx
 
 theorem scrypt_mx : (scrypt (pbkName c) (pbkOf c)).allInstrs (fun i => !loadsMxcsr i) = true := by
   have hr : Impl.Scrypt.X86_64.roMixDirect.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide
