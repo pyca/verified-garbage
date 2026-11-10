@@ -20,6 +20,8 @@ call by the callee's contract on its registers (`Pre.fnContract`,
 
 namespace VG.Proof.Rsa.PPC64LE.Priv
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.Rsa.PPC64LE.Priv
 open VG.Proof.Bignum.PPC64LE (Keep)
 
@@ -71,10 +73,10 @@ theorem Mid.store {s t : State} (M : Mid s t) {d : Nat} (hd : oLr + 8 ≤ d ∨ 
     exact M.ls
 
 /-- Our stack argument `j`, after the frame and the working space changed. -/
-theorem arg_read2 {s : State} (h : PreP s) {m : Mem} (hm : Frame [kR s, sR s] s.mem m) {j : Nat} (hj : j < 12) :
+theorem arg_read2 {s : State} (h : PreP pc s) {m : Mem} (hm : Frame [kR s, sR s] s.mem m) {j : Nat} (hj : j < 12) :
     m.readW (fb s + BitVec.ofNat 64 (arg j)) 64 = stackArg s j := by
   rw [← stackArgAddr_fb]
-  refine hm.readW (in_aR hj) (fun r hr => ?_) (by decide)
+  refine hm.readW (in_aR (pc := pc) hj) (fun r hr => ?_) (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact h.ka.symm
@@ -96,7 +98,7 @@ theorem preLen_val {k : Nat} (hk : k ≤ 1024) :
     (BitVec.ofNat 64 k + BitVec.ofNat 64 7) >>> 3 <<< 1 = BitVec.ofNat 64 (Spec.Rsa.precomputedWords k) := by
   rw [Proof.Bignum.PPC64LE.Pre.ofNat_add7_shr3 k (by omega_arith), Proof.Bignum.PPC64LE.Pre.ofNat_shl1]; rfl
 
-theorem preArgs_ok {s t : State} (h : PreP s) (M : Mid s t) (C : crtOut s t) :
+theorem preArgs_ok {s t : State} (h : PreP pc s) (M : Mid s t) (C : crtOut s t) :
     WP isa (.block preArgs) t (AtPre s) := by
   have hk := h.k2
   have e26 : t.gpr .r26 = BitVec.ofNat 64 (s.gpr .r6).toNat := M.r26.trans (gpr_ofNat _)
@@ -156,11 +158,11 @@ abbrev preWr (s : State) : List Region := [pwR s, sR s]
 theorem pw_le {k : Nat} (hk : k ≤ 1024) : Spec.Rsa.precomputedWords k ≤ 256 := by
   unfold Spec.Rsa.precomputedWords Spec.Rsa.modulusWords; omega_arith
 
-theorem pwR_sub {s : State} (h : PreP s) : Region.Sub (pwR s) (kR s) :=
+theorem pwR_sub {s : State} (h : PreP pc s) : Region.Sub (pwR s) (kR s) :=
   frame_sub s (by have := pw_le h.k2; unfold oPre frameBytes; omega_arith)
 
 /-- The frame below `n`'s values is apart from what the call writes. -/
-theorem below_pre {s : State} (h : PreP s) {d n : Nat} (hd : d + n ≤ oPre) {r : Region} (hr : r ∈ preWr s) :
+theorem below_pre {s : State} (h : PreP pc s) {d n : Nat} (hd : d + n ≤ oPre) {r : Region} (hr : r ∈ preWr s) :
     Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, n⟩ r := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -176,7 +178,7 @@ structure AtPub (s u : State) : Prop extends Mid s u where
 
 theorem pre_noFrames : Impl.Bignum.PPC64LE.Precompute.precompute.noFrames = true := by decide +kernel
 
-theorem pre_covers {s t : State} (h : PreP s) (A : AtPre s t) :
+theorem pre_covers {s t : State} (h : PreP pc s) (A : AtPre s t) :
     Covers ([nR s] ++ preWr s) (t.rd ++ t.wr) ∧ Covers (preWr s) t.wr := by
   have hk := h.k2
   have pwl := pw_le hk
@@ -190,13 +192,13 @@ theorem pre_covers {s t : State} (h : PreP s) (A : AtPre s t) :
   refine ⟨Covers.append_left (Covers.of_mem fun r hr => ?_) (Covers.right hw), hw⟩
   rw [List.mem_singleton.mp hr, A.rd, h.hrd]; simp
 
-theorem pre_toNat {s : State} (h : PreP s) :
+theorem pre_toNat {s : State} (h : PreP pc s) :
     (BitVec.ofNat 64 (Spec.Rsa.precomputedWords (s.gpr .r6).toNat)).toNat =
       Spec.Rsa.precomputedWords (s.gpr .r6).toNat := by
   have := pw_le h.k2
   rw [BitVec.toNat_ofNat]; omega_arith
 
-theorem pre_pre {s t : State} (h : PreP s) (A : AtPre s t) :
+theorem pre_pre {s t : State} (h : PreP pc s) (A : AtPre s t) :
     Proof.Bignum.PPC64LE.Pre.fnContract.pre (t.callEntry.withRegions [nR s] (preWr s)) := by
   have hk := h.k2
   have pk := pwR_sub h
@@ -214,7 +216,7 @@ theorem pre_pre {s t : State} (h : PreP s) (A : AtPre s t) :
   · have := h.hs; have := h.k1; unfold Spec.Rsa.scratchWords at *
     unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; omega_arith
 
-theorem preCall_ok {s t : State} (h : PreP s) (A : AtPre s t) {Q : State → Prop}
+theorem preCall_ok {s t : State} (h : PreP pc s) (A : AtPre s t) {Q : State → Prop}
     (hQ : ∀ u, AtPub s u → Q u) : WP isa preCall t Q := by
   have hk := h.k2
   have pk := pwR_sub h

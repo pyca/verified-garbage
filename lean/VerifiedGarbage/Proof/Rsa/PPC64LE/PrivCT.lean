@@ -105,11 +105,11 @@ theorem pub_of {s₁ s₂ : State} (hsp : s₁.sp = s₂.sp) (hr : ∀ r ∈ arg
 
 /-! ## The calls -/
 
-theorem crt_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP s₁) (h₂ : PreP s₂) (S : Same s₁ s₂) (A₁ : AtCrt s₁ t₁)
+theorem crt_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP false s₁) (h₂ : PreP false s₂) (S : Same s₁ s₂) (A₁ : AtCrt s₁ t₁)
     (A₂ : AtCrt s₂ t₂) : Proof.Bignum.PPC64LE.Crt.fnContract.pub (crtEntry s₁ t₁) (crtEntry s₂ t₂) := by
   have g : ∀ {s t : State}, ∀ r, r ∉ linkRegs → (crtEntry s t).gpr r = t.gpr r :=
     fun r hr => State.callEntry_gpr _ hr
-  have hn : ∀ {s t : State}, PreP s → AtCrt s t →
+  have hn : ∀ {s t : State}, PreP false s → AtCrt s t →
       Spec.Rsa.bytesAt t.mem (s.gpr .r5) (s.gpr .r6).toNat = Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat :=
     fun h A => bytes_of_frame A.mem (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.kn.symm)
       (by have := h.wn; omega)
@@ -136,12 +136,12 @@ theorem crt_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP s₁) (h₂ : PreP s�
     rw [g .r5 (by decide), g .r6 (by decide), g .r5 (by decide), g .r6 (by decide), A₁.r5, A₁.r6, A₂.r5,
       A₂.r6, hn h₁ A₁, hn h₂ A₂, S.n]
 
-theorem pre_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP s₁) (h₂ : PreP s₂) (S : Same s₁ s₂) (A₁ : AtPre s₁ t₁)
+theorem pre_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP false s₁) (h₂ : PreP false s₂) (S : Same s₁ s₂) (A₁ : AtPre s₁ t₁)
     (A₂ : AtPre s₂ t₂) : Proof.Bignum.PPC64LE.Pre.fnContract.pub (t₁.callEntry.withRegions [nR s₁] (preWr s₁))
       (t₂.callEntry.withRegions [nR s₂] (preWr s₂)) := by
   have g : ∀ {s t : State}, ∀ r, r ∉ linkRegs → (t.callEntry.withRegions [nR s] (preWr s)).gpr r = t.gpr r :=
     fun r hr => State.callEntry_gpr _ hr
-  have hn : ∀ {s t : State}, PreP s → AtPre s t →
+  have hn : ∀ {s t : State}, PreP false s → AtPre s t →
       Spec.Rsa.bytesAt t.mem (s.gpr .r5) (s.gpr .r6).toNat = Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat :=
     fun h A => bytes_of_frame A.mem (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -156,11 +156,11 @@ theorem pre_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP s₁) (h₂ : PreP s�
     S.arg 11 (by decide)]
   exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
-theorem pub_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP s₁) (h₂ : PreP s₂) (S : Same s₁ s₂) (A₁ : AtPubC s₁ t₁)
+theorem pub_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP false s₁) (h₂ : PreP false s₂) (S : Same s₁ s₂) (A₁ : AtPubC s₁ t₁)
     (A₂ : AtPubC s₂ t₂) : Proof.Bignum.PPC64LE.Pub.fnContract.pub (pubEntry s₁ t₁) (pubEntry s₂ t₂) := by
   have g : ∀ {s t : State}, ∀ r, r ∉ linkRegs → (pubEntry s t).gpr r = t.gpr r :=
     fun r hr => State.callEntry_gpr _ hr
-  have he : ∀ {s t : State}, PreP s → AtPubC s t →
+  have he : ∀ {s t : State}, PreP false s → AtPubC s t →
       Spec.Rsa.bytesAt t.mem (s.gpr .r7) (s.gpr .r8).toNat = Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat :=
     fun h A => bytes_of_frame A.mem (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

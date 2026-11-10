@@ -21,6 +21,8 @@ contract on its registers and stack (`Pub.fnContract`, `Pub.fn_correct`):
 
 namespace VG.Proof.Rsa.PPC64LE.Priv
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.Rsa.PPC64LE.Priv
 open VG.Proof.Bignum.PPC64LE (Keep)
 
@@ -61,7 +63,7 @@ structure AtPubC (s u : State) : Prop extends Mid s u where
   psa0 : u.mem.readW (fb s + BitVec.ofNat 64 96) 64 = stackArg s 10
   psa1 : u.mem.readW (fb s + BitVec.ofNat 64 104) 64 = stackArg s 11
 
-theorem pubArgs_ok {s t : State} (h : PreP s) (A : AtPub s t) :
+theorem pubArgs_ok {s t : State} (h : PreP pc s) (A : AtPub s t) :
     WP isa (.block pubArgs) t (AtPubC s) := by
   have hk := h.k2
   have e26 : t.gpr .r26 = BitVec.ofNat 64 (s.gpr .r6).toNat := A.r26.trans (gpr_ofNat _)
@@ -127,7 +129,7 @@ theorem pubArgs_ok {s t : State} (h : PreP s) (A : AtPub s t) :
 /-- `out`, of `k` bytes. -/
 abbrev outR (s : State) : Region := ⟨s.gpr .r3, (s.gpr .r6).toNat⟩
 
-theorem outR_eq {s : State} (h : PreP s) : outR s = oR s := by simp only [outR, oR, h.h4]
+theorem outR_eq {s : State} (h : PreP pc s) : outR s = oR s := by simp only [outR, oR, h.h4]
 
 /-- The regions the call reads and writes. -/
 abbrev pubRd (s : State) : List Region := [pwR s, eR s, mR s, ⟨fb s + BitVec.ofNat 64 96, 16⟩]
@@ -135,7 +137,7 @@ abbrev pubRd (s : State) : List Region := [pwR s, eR s, mR s, ⟨fb s + BitVec.o
 abbrev pubWr (s : State) : List Region := [outR s, sR s]
 
 /-- The frame is apart from what the call writes. -/
-theorem frame_pub {s : State} (h : PreP s) {d n : Nat} (hd : d + n ≤ frameBytes) {r : Region}
+theorem frame_pub {s : State} (h : PreP pc s) {d n : Nat} (hd : d + n ≤ frameBytes) {r : Region}
     (hr : r ∈ pubWr s) : Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, n⟩ r := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -184,7 +186,7 @@ theorem pubEntry_sa {s t : State} (A : AtPubC s t) :
   · show t.mem.readW _ 64 = _; rw [stackArgAddr_in, hsp]; exact A.psa0
   · show t.mem.readW _ 64 = _; rw [stackArgAddr_in, hsp]; exact A.psa1
 
-theorem pub_pre {s t : State} (h : PreP s) (A : AtPubC s t) :
+theorem pub_pre {s t : State} (h : PreP pc s) (A : AtPubC s t) :
     Proof.Bignum.PPC64LE.Pub.fnContract.pre (pubEntry s t) ∧ Covers (pubRd s ++ pubWr s) (t.rd ++ t.wr) ∧
       Covers (pubWr s) t.wr := by
   have hk := h.k2
@@ -234,7 +236,7 @@ theorem pub_pre {s t : State} (h : PreP s) (A : AtPubC s t) :
   · have := h.hs; have := h.k1; unfold Spec.Rsa.scratchWords at *
     unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; omega_arith
 
-theorem pubCall_ok {s t : State} (h : PreP s) (A : AtPubC s t) {Q : State → Prop}
+theorem pubCall_ok {s t : State} (h : PreP pc s) (A : AtPubC s t) {Q : State → Prop}
     (hQ : ∀ u, AtCmp s u → Q u) : WP isa pubCall t Q := by
   have hk := h.k2
   have pwl := pw_le hk

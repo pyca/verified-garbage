@@ -20,6 +20,8 @@ OR of their bytes' XORs (`cmpAcc`), zero exactly if they are equal.
 
 namespace VG.Proof.Rsa.PPC64LE.Priv
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.Rsa.PPC64LE.Priv
 open VG.Proof.Bignum.PPC64LE (Keep)
 
@@ -67,7 +69,7 @@ structure AtLoop (s u : State) : Prop extends Late s u where
   r5 : u.gpr .r5 = 0
   r6 : u.gpr .r6 = s.gpr .r6
 
-theorem cmpArgs_ok {s t : State} (h : PreP s) (A : AtCmp s t) :
+theorem cmpArgs_ok {s t : State} (h : PreP pc s) (A : AtCmp s t) :
     WP isa (.block cmpArgs) t (AtLoop s) := by
   have hk := h.k2
   have ho : InRegions t.wr (fb s + BitVec.ofNat 64 oEs) 8 := by
@@ -153,7 +155,7 @@ theorem add_ofNat_one (p : Addr) (j : Nat) :
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 /-- The comparison: the OR of the XORs of `out`'s bytes and the input's in `r5`. -/
-theorem compare_ok {s t : State} (h : PreP s) (A : AtLoop s t) :
+theorem compare_ok {s t : State} (h : PreP pc s) (A : AtLoop s t) :
     WP isa compare t fun u => u.gpr .r5 = cmpAcc t.mem (s.gpr .r3) (s.gpr .r9) (s.gpr .r6).toNat ∧
       u.mem = t.mem ∧ Keep [.r3, .r4, .r5, .r6, .r7, .r8] t u := by
   have hk := h.k2
