@@ -65,12 +65,12 @@ theorem importComponents_ok (h : RIn base bytes len args s) :
     WP isa importComponents s fun u =>
       VG.Proof.Mont.Outside base (lo len (.slot .wide 9)) (7 * st len .wide) s.mem u.mem ∧
       val32 u.mem base (lo len (.slot .wide 9)) (2 * cwc len .wide) = componentValue s.mem args 2 ∧
-      val32 u.mem base (lo len (.slot .wide 15)) (cwc len .wide) = componentValue s.mem args 4 ∧
+      val32 u.mem base (lo len (.slot .wide 15)) (2 * cwc len .wide) = componentValue s.mem args 4 ∧
       val32 u.mem base (lo len (.slot .wide 10)) (cwc len .wide) = componentValue s.mem args 6 ∧
       val32 u.mem base (lo len (.slot .wide 11)) (cwc len .wide) = componentValue s.mem args 8 ∧
       val32 u.mem base (lo len (.slot .wide 12)) (cwc len .wide) = componentValue s.mem args 10 ∧
       val32 u.mem base (lo len (.slot .wide 13)) (cwc len .wide) = componentValue s.mem args 12 ∧
-      val32 u.mem base (lo len (.slot .wide 14)) (cwc len .wide) = componentValue s.mem args 14 ∧
+      val32 u.mem base (lo len (.slot .wide 14)) (2 * cwc len .wide) = componentValue s.mem args 14 ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
   have f := h.slot_fit .wide (j := 19) (by decide)
   have bl := h.bytes_lt
@@ -109,9 +109,9 @@ theorem importComponents_ok (h : RIn base bytes len args s) :
     fun u₁ ⟨V₁, O₁, K₁⟩ => ?_)
   have O₁' := within (by decide) (by decide) n2 O₁
   have h₁ := h.keep K₁ (by decide) (by decide) (wide (t := s) O₁')
-  refine WP.seq (WP.mono (loadComp_ok h₁ (j := 15) (by decide) (one_ok .wide) n1 l1 (i := 4) (by decide))
+  refine WP.seq (WP.mono (loadComp_ok h₁ (j := 15) (by decide) (two_ok .wide) n2 l2 (i := 4) (by decide))
     fun u₂ ⟨V₂, O₂, K₂⟩ => ?_)
-  have O₂' := O₁'.trans (within (by decide) (by decide) n1 O₂)
+  have O₂' := O₁'.trans (within (by decide) (by decide) n2 O₂)
   have h₂ := h.keep (K₁.trans K₂) (by decide) (by decide) (wide (t := s) O₂')
   refine WP.seq (WP.mono (loadComp_ok h₂ (j := 10) (by decide) (one_ok .wide) n1 l1 (i := 6) (by decide))
     fun u₃ ⟨V₃, O₃, K₃⟩ => ?_)
@@ -130,11 +130,11 @@ theorem importComponents_ok (h : RIn base bytes len args s) :
   have O₆' := O₅'.trans (within (by decide) (by decide) n1 O₆)
   have h₆ := h.keep (((((K₁.trans K₂).trans K₃).trans K₄).trans K₅).trans K₆) (by decide) (by decide)
     (wide (t := s) O₆')
-  refine WP.mono (loadComp_ok h₆ (j := 14) (by decide) (one_ok .wide) n1 l1 (i := 14) (by decide))
+  refine WP.mono (loadComp_ok h₆ (j := 14) (by decide) (two_ok .wide) n2 l2 (i := 14) (by decide))
     fun u ⟨V₇, O₇, K₇⟩ => ?_
-  have O₇' := O₆'.trans (within (by decide) (by decide) n1 O₇)
-  rw [cw2] at V₁
-  rw [cw1] at V₂ V₃ V₄ V₅ V₆ V₇
+  have O₇' := O₆'.trans (within (by decide) (by decide) n2 O₇)
+  rw [cw2] at V₁ V₂ V₇
+  rw [cw1] at V₃ V₄ V₅ V₆
   rw [cv (wide (t := s) O₁') (by decide)] at V₂
   rw [cv (wide (t := s) O₂') (by decide)] at V₃
   rw [cv (wide (t := s) O₃') (by decide)] at V₄
@@ -145,19 +145,23 @@ theorem importComponents_ok (h : RIn base bytes len args s) :
       VG.Proof.Mont.Outside base (lo len (.slot .wide a)) (cb len (one .wide)) m m' →
       val32 m' base (lo len (.slot .wide b)) k = val32 m base (lo len (.slot .wide b)) k :=
     fun _ hb hab hk O => wide_keep h hb hab n1 hk O
+  have kw2 : ∀ {a b k : Nat} {m m' : Mem}, a ≤ 19 → b ≤ 19 → a ≠ b → 4 * k ≤ st len .wide →
+      VG.Proof.Mont.Outside base (lo len (.slot .wide a)) (cb len (two .wide)) m m' →
+      val32 m' base (lo len (.slot .wide b)) k = val32 m base (lo len (.slot .wide b)) k :=
+    fun _ hb hab hk O => wide_keep h hb hab n2 hk O
   refine ⟨O₇', ?_, ?_, ?_, ?_, ?_, ?_, ?_, ((((((K₁.trans K₂).trans K₃).trans K₄).trans K₅).trans K₆).trans K₇)⟩
-  · rw [kw (by decide) (by decide) (by decide) k2 O₇, kw (by decide) (by decide) (by decide) k2 O₆,
+  · rw [kw2 (by decide) (by decide) (by decide) k2 O₇, kw (by decide) (by decide) (by decide) k2 O₆,
       kw (by decide) (by decide) (by decide) k2 O₅, kw (by decide) (by decide) (by decide) k2 O₄,
-      kw (by decide) (by decide) (by decide) k2 O₃, kw (by decide) (by decide) (by decide) k2 O₂, V₁]
-  · rw [kw (by decide) (by decide) (by decide) k1 O₇, kw (by decide) (by decide) (by decide) k1 O₆,
-      kw (by decide) (by decide) (by decide) k1 O₅, kw (by decide) (by decide) (by decide) k1 O₄,
-      kw (by decide) (by decide) (by decide) k1 O₃, V₂]
-  · rw [kw (by decide) (by decide) (by decide) k1 O₇, kw (by decide) (by decide) (by decide) k1 O₆,
+      kw (by decide) (by decide) (by decide) k2 O₃, kw2 (by decide) (by decide) (by decide) k2 O₂, V₁]
+  · rw [kw2 (by decide) (by decide) (by decide) k2 O₇, kw (by decide) (by decide) (by decide) k2 O₆,
+      kw (by decide) (by decide) (by decide) k2 O₅, kw (by decide) (by decide) (by decide) k2 O₄,
+      kw (by decide) (by decide) (by decide) k2 O₃, V₂]
+  · rw [kw2 (by decide) (by decide) (by decide) k1 O₇, kw (by decide) (by decide) (by decide) k1 O₆,
       kw (by decide) (by decide) (by decide) k1 O₅, kw (by decide) (by decide) (by decide) k1 O₄, V₃]
-  · rw [kw (by decide) (by decide) (by decide) k1 O₇, kw (by decide) (by decide) (by decide) k1 O₆,
+  · rw [kw2 (by decide) (by decide) (by decide) k1 O₇, kw (by decide) (by decide) (by decide) k1 O₆,
       kw (by decide) (by decide) (by decide) k1 O₅, V₄]
-  · rw [kw (by decide) (by decide) (by decide) k1 O₇, kw (by decide) (by decide) (by decide) k1 O₆, V₅]
-  · rw [kw (by decide) (by decide) (by decide) k1 O₇, V₆]
+  · rw [kw2 (by decide) (by decide) (by decide) k1 O₇, kw (by decide) (by decide) (by decide) k1 O₆, V₅]
+  · rw [kw2 (by decide) (by decide) (by decide) k1 O₇, V₆]
   · exact V₇
 
 end
