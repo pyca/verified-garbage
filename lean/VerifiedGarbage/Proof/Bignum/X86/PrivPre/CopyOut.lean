@@ -162,6 +162,50 @@ theorem slotSrc_ok (A : PPABI s) (B : Body s t) {j : Nat}
     simp only [CrtRt.lo]
     omega
 
+/-- A wide slot's first `8 w` bytes, for `w` at most the modulus's words, lie in the working space. -/
+theorem slot_fit (A : PPABI s) {j w : Nat} (hj : j ≤ 17) (hw : w ≤ Spec.Rsa.modulusWords (arg s 3).toNat) :
+    CrtRt.lo (arg s 3).toNat (.slot .wide j) + 4 * (2 * w) ≤ (arg s 9).toNat * 8 := by
+  have l := A.lengths
+  simp only [Spec.Rsa.lenValid] at l
+  have nd := CrtRt.need_le l.1 A.scratchLength
+  simp only [CrtRt.need, CrtRt.lo, CrtRt.st, CrtRt.bc, CrtRt.mw, Impl.Bignum.X86.CrtRt.numBase] at nd ⊢
+  simp only [Spec.Rsa.modulusWords] at hw nd ⊢
+  have : j * (2 * (8 * (((arg s 3).toNat + 7) / 8)) + 32) ≤ 17 * (2 * (8 * (((arg s 3).toNat + 7) / 8)) + 32) :=
+    Nat.mul_le_mul_right _ hj
+  omega
+
+/-- The block of `copyPrime`: `esi` at the slot, `ebp` at `pre`'s part, `ecx` its bytes. -/
+theorem copyBlock_ok (A : PPABI s) (B : Body s t) {j i : Nat} {skip : Option Nat}
+    (hi : i = 5 ∨ i = 7) (hs : skip = none ∨ skip = some 5) :
+    WP isa (.block (dstAt skip ++ slotSrc j ++
+      primeWords (Impl.Bignum.X86.PrivPre.frameBytes / 4) i .ecx .eax ++ shl .ecx 3)) t fun u =>
+      Body s u ∧ Keeps [.eax, .ecx, .ebp, .esi] t u ∧ u.mem = t.mem ∧
+      PtrAt u (argumentPointer s 8) .esi (CrtRt.lo (arg s 3).toNat (.slot .wide j)) ∧
+      PtrAt u (argumentPointer s 0) .ebp (dstOff s skip) ∧
+      (u.gpr .ecx).toNat = 4 * (2 * Spec.Rsa.primeWords (arg s i).toNat) := by
+  have l := A.lengths
+  simp only [Spec.Rsa.lenValid] at l
+  have hL : 1 ≤ (arg s i).toNat ∧ (arg s i).toNat < (arg s 3).toNat := by
+    rcases hi with rfl | rfl
+    · exact ⟨A.pPositive, A.pLength⟩
+    · exact ⟨A.qPositive, A.qLength⟩
+  have pw : Spec.Rsa.primeWords (arg s i).toNat ≤ Spec.Rsa.modulusWords (arg s 3).toNat := by
+    simp only [Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega
+  rw [show dstAt skip ++ slotSrc j ++ primeWords (Impl.Bignum.X86.PrivPre.frameBytes / 4) i .ecx .eax ++ shl .ecx 3 =
+    dstAt skip ++ (slotSrc j ++ (primeWords (Impl.Bignum.X86.PrivPre.frameBytes / 4) i .ecx .eax ++
+      (shl .ecx 3 ++ []))) by simp]
+  refine dstAt_ok A B hs fun u₁ B₁ K₁ m₁ P₁ => slotSrc_ok A B₁ fun u₂ K₂ m₂ P₂ => ?_
+  have B₂ : Body s u₂ := B₁.next (K₂.1 _ (by decide)) K₂.2.1 K₂.2.2 (by rw [m₂]; exact Frame.refl _ _)
+  refine primeWordsF_ok A B₂ (by rcases hi with rfl | rfl <;> decide) hL.1 (by omega) (r := .ecx) (r₂ := .eax)
+    (by decide) fun u₃ K₃ m₃ e₃ => shl_ok 3 fun u₄ K₄ m₄ e₄ => WP.block_nil ?_
+  have K : Keeps [.eax, .ecx, .ebp, .esi] t u₄ :=
+    (((K₁.mono (by simp)).trans (K₂.mono (by simp))).trans (K₃.mono (by simp))).trans (K₄.mono (by simp))
+  have M : u₄.mem = t.mem := by rw [m₄, m₃, m₂, m₁]
+  refine ⟨B.next (K.1 _ (by decide)) K.2.1 K.2.2 (by rw [M]; exact Frame.refl _ _), K, M, ?_, ?_, ?_⟩
+  · rw [PtrAt, K₄.1 _ (by decide), K₃.1 _ (by decide)]; exact P₂
+  · rw [PtrAt, K₄.1 _ (by decide), K₃.1 _ (by decide), K₂.1 _ (by decide)]; exact P₁
+  · rw [e₄, e₃]; simp only [Spec.Rsa.modulusWords] at pw; omega
+
 theorem copyPrime_ok (A : PPABI s) (B : Body s t) {j i : Nat} {skip : Option Nat} (hj : j ≤ 17)
     (hi : i = 5 ∨ i = 7) (hs : skip = none ∨ skip = some 5)
     (hfit : dstOff s skip + 8 * Spec.Rsa.primeWords (arg s i).toNat ≤ (arg s 1).toNat * 8) :
@@ -178,40 +222,20 @@ theorem copyPrime_ok (A : PPABI s) (B : Body s t) {j i : Nat} {skip : Option Nat
     · exact ⟨A.qPositive, A.qLength⟩
   have pw : Spec.Rsa.primeWords (arg s i).toNat ≤ Spec.Rsa.modulusWords (arg s 3).toNat := by
     simp only [Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega
-  have nd := CrtRt.need_le l.1 A.scratchLength
   unfold copyPrime
-  rw [show dstAt skip ++ slotSrc j ++ primeWords (Impl.Bignum.X86.PrivPre.frameBytes / 4) i .ecx .eax ++ shl .ecx 3 =
-    dstAt skip ++ (slotSrc j ++ (primeWords (Impl.Bignum.X86.PrivPre.frameBytes / 4) i .ecx .eax ++
-      (shl .ecx 3 ++ []))) by simp]
-  refine WP.seq (dstAt_ok A B hs fun u₁ B₁ K₁ m₁ P₁ => slotSrc_ok A B₁ fun u₂ K₂ m₂ P₂ => ?_)
-  have B₂ : Body s u₂ := B₁.next (K₂.1 _ (by decide)) K₂.2.1 K₂.2.2 (by rw [m₂]; exact Frame.refl _ _)
-  refine primeWordsF_ok A B₂ (by rcases hi with rfl | rfl <;> decide) hL.1 (by omega) (r := .ecx) (r₂ := .eax)
-    (by decide) fun u₃ K₃ m₃ e₃ => shl_ok 3 fun u₄ K₄ m₄ e₄ => WP.block_nil ?_
-  have K : Keeps [.eax, .ecx, .ebp, .esi] t u₄ :=
-    (((K₁.mono (by simp)).trans (K₂.mono (by simp))).trans (K₃.mono (by simp))).trans (K₄.mono (by simp))
-  have M : u₄.mem = t.mem := by rw [m₄, m₃, m₂, m₁]
+  refine WP.seq (WP.mono (copyBlock_ok A B (j := j) hi hs) fun u₄ ⟨_, K, M, hesi, hebp, hecx⟩ => ?_)
   have hw : Ws u₄ (argumentPointer s 8) ((arg s 9).toNat * 8) :=
     ⟨by rw [K.2.2, B.wr, A.wr]; simp, by rw [p8_toNat]; exact A.wsBound⟩
   have hpw : InRegions u₄.wr (argumentPointer s 0) ((arg s 1).toNat * 8) :=
     ⟨preR s, by rw [K.2.2, B.wr, A.wr]; simp, Region.contains_self _ _⟩
-  have hesi : PtrAt u₄ (argumentPointer s 8) .esi (CrtRt.lo (arg s 3).toNat (.slot .wide j)) := by
-    rw [PtrAt, K₄.1 _ (by decide), K₃.1 _ (by decide)]; exact P₂
-  have hebp : PtrAt u₄ (argumentPointer s 0) .ebp (dstOff s skip) := by
-    rw [PtrAt, K₄.1 _ (by decide), K₃.1 _ (by decide), K₂.1 _ (by decide)]; exact P₁
-  have hecx : (u₄.gpr .ecx).toNat = 4 * (2 * Spec.Rsa.primeWords (arg s i).toNat) := by
-    rw [e₄, e₃]; simp only [Spec.Rsa.modulusWords] at pw; omega
   refine WP.mono (PrecomputeRt.copyOutLoop_ok hw hpw (by rw [p0_toNat]; exact A.preBound) A.preWs
-    (by simp only [Spec.Rsa.primeWords]; omega) ?_ (by omega) hesi hebp hecx) fun u ⟨O, V, Ku⟩ => ?_
-  · simp only [CrtRt.need, CrtRt.lo, CrtRt.st, CrtRt.bc, CrtRt.mw, Impl.Bignum.X86.CrtRt.numBase] at nd ⊢
-    simp only [Spec.Rsa.modulusWords] at pw nd ⊢
-    have : j * (2 * (8 * (((arg s 3).toNat + 7) / 8)) + 32) ≤ 17 * (2 * (8 * (((arg s 3).toNat + 7) / 8)) + 32) :=
-      Nat.mul_le_mul_right _ hj
-    omega
-  · rw [M] at O V
-    refine ⟨B.next ((Ku.1 _ (by decide)).trans (K.1 _ (by decide))) (Ku.2.1.trans K.2.1) (Ku.2.2.trans K.2.2)
-      ((VG.Proof.Bignum.outside_frame O (by omega)).sub fun r hr => ?_), K.trans Ku, O, V⟩
-    obtain rfl := List.mem_singleton.mp hr
-    exact ⟨preR s, by simp, Offset.sub_base _ (by omega)⟩
+    (by simp only [Spec.Rsa.primeWords]; omega) (slot_fit A hj pw) (by omega) hesi hebp hecx)
+    fun u ⟨O, V, Ku⟩ => ?_
+  rw [M] at O V
+  refine ⟨B.next ((Ku.1 _ (by decide)).trans (K.1 _ (by decide))) (Ku.2.1.trans K.2.1) (Ku.2.2.trans K.2.2)
+    ((VG.Proof.Bignum.outside_frame O (by omega)).sub fun r hr => ?_), K.trans Ku, O, V⟩
+  obtain rfl := List.mem_singleton.mp hr
+  exact ⟨preR s, by simp, Offset.sub_base _ (by omega)⟩
 
 /-- Numbers in the working space, kept by writes elsewhere. -/
 theorem ws_keep {m m' : Mem} {rs : List Region} (F : Frame rs m m')
@@ -224,18 +248,6 @@ theorem pre_parts (A : PPABI s) : (arg s 1).toNat * 8 = dstOff s (some 5) + 8 * 
   have hl := A.preLength
   simp only [Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords] at hl
   simp only [dstOff]; omega
-
-/-- A wide slot's first `8 w` bytes, for `w` at most the modulus's words, lie in the working space. -/
-theorem slot_fit (A : PPABI s) {j w : Nat} (hj : j ≤ 17) (hw : w ≤ Spec.Rsa.modulusWords (arg s 3).toNat) :
-    CrtRt.lo (arg s 3).toNat (.slot .wide j) + 4 * (2 * w) ≤ (arg s 9).toNat * 8 := by
-  have l := A.lengths
-  simp only [Spec.Rsa.lenValid] at l
-  have nd := CrtRt.need_le l.1 A.scratchLength
-  simp only [CrtRt.need, CrtRt.lo, CrtRt.st, CrtRt.bc, CrtRt.mw, Impl.Bignum.X86.CrtRt.numBase] at nd ⊢
-  simp only [Spec.Rsa.modulusWords] at hw nd ⊢
-  have : j * (2 * (8 * (((arg s 3).toNat + 7) / 8)) + 32) ≤ 17 * (2 * (8 * (((arg s 3).toNat + 7) / 8)) + 32) :=
-    Nat.mul_le_mul_right _ hj
-  omega
 
 theorem copyPrimes_ok (A : PPABI s) (B : Body s t) :
     WP isa copyPrimes t fun u => Body s u ∧ Keeps [.eax, .ecx] t u ∧
