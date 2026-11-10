@@ -89,7 +89,7 @@ def LF (d : List (BitVec 64) × List (BitVec 64) × List Byte) (s : State) : Pro
 theorem loadS_L1 {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s : State} (h : C0 d s) :
     WP isa (.block [.addSp .r11 160, .load .d .r11 .r11 0]) s (L1 d) := by
   have hp := h.1
-  refine WP.mono (loadS_ok s ⟨⟨stackArgAddr s 0, 80⟩, List.mem_append_left _ (by rw [hp.2.1]; simp), ?_⟩)
+  refine WP.mono (loadS_ok s ⟨⟨stackArgAddr s 0, 80⟩, List.mem_append_left _ (by rw [hp.2.1]; simp [baseRd]), ?_⟩)
     fun t ⟨⟨a11, _, _⟩, k⟩ => ⟨s, h, a11, k⟩
   show Region.Contains _ (s.sp + BitVec.ofNat 64 (32 + 8 * (8 + 8))) 8
   rw [show s.sp + BitVec.ofNat 64 (32 + 8 * (8 + 8)) = (s.sp + BitVec.ofNat 64 (32 + 8 * (8 + 0))) +

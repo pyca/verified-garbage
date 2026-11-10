@@ -159,7 +159,7 @@ theorem pins124 : Pins (At C0 crtF 124) [.r10, .r11, .r23, .r29, .r30, .r31] := 
       (by decide) fun t X _ k1 => ?_
     have hd : ∀ d, d + 8 ≤ 256 → word t.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
       X.out.word (Or.inl hd) (by omega_arith)
-    refine phasePA_ok (wX := cwX s₀) (xj := 4) (oA := oPa s₀) (L := cpL s₀) (k := ck s₀) (Pv := mP pc s₀) (Cv := vC s₀)
+    refine phasePA_ok (pc := false) (q := false) (hR2 := nofun) (wX := cwX s₀) (xj := 4) (oA := oPa s₀) (L := cpL s₀) (k := ck s₀) (Pv := mP s₀) (Cv := vC s₀)
       (F.scr.congr k1.wr) (by omega_arith) (Nat.le_refl _) rfl (by unfold wsWords; omega_arith) hwX (by decide)
       ((k1.gpr _ (by decide)).trans F.r23) ((k1.gpr _ (by decide)).trans F.r27) ((k1.gpr _ (by decide)).trans F.r28)
       (by decide) (by decide) (by rw [hd _ (by decide)]; exact F.hBP) (by rw [hd _ (by decide)]; exact F.hPL)
@@ -193,7 +193,7 @@ theorem pins148 : Pins (At C0 crtF 148) [.r10, .r11, .r14, .r15, .r21, .r23, .r2
     have hn := hP.nw; have room := hP.room; have q1 := hP.q1; have qk := hP.qk; have k1024 := hP.k1024
     have e8 : slot (cwX s₀) 8 = 256 + 8 * (8 * (cwX s₀ + 2)) := rfl
     refine mid1A_ok hP F fun t₀ X₀ a10 k0 => mid1L_ok hP F X₀ a10 k0 (by decide) (by decide) (by decide)
-      (by decide) fun t₁ X _ k1 => mid1B_ok hP F X k1 (by decide) (by decide) (by decide) fun t Y k2 => ?_
+      (by decide) fun t₁ X _ k1 => mid1B_ok (pc := false) hP F nofun X k1 (by decide) (by decide) (by decide) fun t Y k2 => ?_
     have hd : ∀ d, d + 8 ≤ 256 → word t.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
       Y.out.word (Or.inl hd) (by omega_arith)
     exact pw1_ok (F.scr.congr k2.wr) (by omega_arith) ((k2.gpr _ (by decide)).trans F.r23)
@@ -222,10 +222,10 @@ theorem pins172 : Pins (At C0 crtF 172) [.r10, .r11, .r23, .r29, .r30, .r31] := 
     have hwX : cwX s₀ < 2 ^ 31 := by rw [dX]; omega_arith
     obtain ⟨_, _, _, mQo, _, mQb, _, _, _⟩ := masked_facts hP
     refine mid1A_ok hP F fun t₀ X₀ a10 k0 => mid1L_ok hP F X₀ a10 k0 (by decide) (by decide) (by decide)
-      (by decide) fun t₁ X _ k1 => mid1B_ok hP F X k1 (by decide) (by decide) (by decide) fun t Y k2 => ?_
+      (by decide) fun t₁ X _ k1 => mid1B_ok (pc := false) hP F nofun X k1 (by decide) (by decide) (by decide) fun t Y k2 => ?_
     have hd : ∀ d, d + 8 ≤ 256 → word t.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
       Y.out.word (Or.inl hd) (by omega_arith)
-    refine phasePA_ok (wX := cwX s₀) (xj := 5) (oA := oQa s₀) (L := cqL s₀) (k := ck s₀) (Pv := mQ pc s₀) (Cv := vC s₀)
+    refine phasePA_ok (pc := false) (q := true) (hR2 := nofun) (wX := cwX s₀) (xj := 5) (oA := oQa s₀) (L := cqL s₀) (k := ck s₀) (Pv := mQ s₀) (Cv := vC s₀)
       (F.scr.congr k2.wr) (by omega_arith) (by omega_arith) rfl (by unfold wsWords; omega_arith) hwX (by decide)
       ((k2.gpr _ (by decide)).trans F.r23) ((k2.gpr _ (by decide)).trans F.r27) ((k2.gpr _ (by decide)).trans F.r28)
       (by decide) (by decide) (by rw [hd _ (by decide)]; exact F.hBQ) (by rw [hd _ (by decide)]; exact F.hQL)
@@ -283,7 +283,7 @@ theorem pins195 : Pins (At C0 crtF 195) [.r15, .r16, .r17, .r23] := by
   · have hP := pre_facts h.1
     have hn := hP.nw; have room := hP.room; have q1 := hP.q1; have qk := hP.qk; have k1024 := hP.k1024
     have e8 : slot (cwX s₀) 8 = 256 + 8 * (8 * (cwX s₀ + 2)) := rfl
-    refine mid1_ok hP F fun t _ _ _ _ _ _ _ _ t10 t29 O1 k1 => ?_
+    refine mid1_ok (pc := false) hP F nofun fun t _ _ _ _ _ _ _ _ t10 t29 O1 k1 => ?_
     have hd : ∀ d, d + 8 ≤ 256 → word t.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
       O1.word (Or.inl hd) (by omega_arith)
     exact ex1_ok (F.scr.congr k1.wr) (by omega_arith) t10 t29 ((k1.gpr _ (by decide)).trans F.r23)
@@ -312,7 +312,7 @@ theorem pins198 : Pins (At C0 crtF 198) [.r10, .r11, .r21, .r23, .r27, .r28, .r2
     have doQ : oQa s₀ = slot (cwX s₀) 8 + slot (cwP s₀) 24 := rfl
     have hqw : cqL s₀ ≤ 8 * cwQ s₀ := by unfold cwQ wsWords; omega_arith
     have hwQ : cwQ s₀ ≤ cwX s₀ := by have := hP.pq; unfold cwQ; omega_arith
-    refine mid1_ok hP F fun t _ _ _ _ _ _ _ _ t10 t29 O1 k1 => ?_
+    refine mid1_ok (pc := false) hP F nofun fun t _ _ _ _ _ _ _ _ t10 t29 O1 k1 => ?_
     have hs := F.scr.congr k1.wr
     have h23 := (k1.gpr _ (by decide)).trans F.r23
     have hd : ∀ d, d + 8 ≤ 256 → word t.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
@@ -348,8 +348,8 @@ theorem pre_rec {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ : 
       Keep (mid1Regs ++ (([.r0, .r15, .r16, .r17, .r3, .r4, .r11, .r21, .r29] : List Reg) ++ recRegs)) s u → WP isa c u Q) :
     WP isa (NE (.seq recombineP c)) s₀ Q :=
   WP.seq (WP.mono (front_ok s₀ h.1) fun s F =>
-    mid1_ok (pre_facts h.1) F fun _ t26 v0 w0 v5 v7 p0 p4 q4 t10 t29 O1 k1 =>
-      mid2A_ok (pre_facts h.1) F t26 v0 w0 v5 v7 p0 p4 q4 t10 t29 O1 k1 fun u R k => hc s u (pre_facts h.1) F R k)
+    mid1_ok (pc := false) (pre_facts h.1) F nofun fun _ t26 v0 w0 v5 v7 p0 p4 q4 t10 t29 O1 k1 =>
+      mid2A_ok (pc := false) (pre_facts h.1) F nofun t26 v0 w0 v5 v7 p0 p4 q4 t10 t29 O1 k1 fun u R k => hc s u (pre_facts h.1) F R k)
 
 /-- `recombineX`'s first block. -/
 abbrev X1 : List Instr :=

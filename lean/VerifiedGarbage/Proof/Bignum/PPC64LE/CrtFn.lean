@@ -95,16 +95,15 @@ def r2R (s : State) : Region :=
   ⟨s.gpr .r12, 8 * (wsWords (s.gpr .r10).toNat + wsWords (stackArg s 1).toNat)⟩
 
 /-- `vg_rsa_private_crt_precomputed`, which takes in `r12` the address of
-the primes' `R² mod p` and `R² mod q` (`Spec.Rsa.primeR2`): with them, what
-`vg_rsa_private_crt` computes. -/
+the primes' `R² mod p` and `R² mod q` (`Spec.Rsa.primeR2`), and computes
+what `vg_rsa_private_crt` does. -/
 def fnContractP : Contract isa where
   pre s := preCore (baseRd s ++ [r2R s]) s ∧ (⟨s.gpr .r3, (s.gpr .r4).toNat⟩ : Region).Disjoint (r2R s) ∧
-    (r2R s).Disjoint ⟨stackArg s 8, (stackArg s 9).toNat * 8⟩ ∧ (s.gpr .r12).toNat + (r2R s).len ≤ 2 ^ 64
-  post s s' :=
+    (r2R s).Disjoint ⟨stackArg s 8, (stackArg s 9).toNat * 8⟩ ∧ (s.gpr .r12).toNat + (r2R s).len ≤ 2 ^ 64 ∧
     Spec.Rsa.wordsAt s.mem (s.gpr .r12) (wsWords (s.gpr .r10).toNat + wsWords (stackArg s 1).toNat) =
-        Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat) ++
-          Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat) →
-      postCore s s'
+      Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat) ++
+        Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
+  post := postCore
   pub s₁ s₂ := pubCore s₁ s₂ ∧ s₁.gpr .r12 = s₂.gpr .r12
 
 end VG.Proof.Bignum.PPC64LE.Crt

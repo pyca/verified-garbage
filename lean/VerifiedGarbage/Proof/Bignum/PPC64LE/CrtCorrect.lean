@@ -29,8 +29,6 @@ namespace VG.Proof.Bignum.PPC64LE.Crt
 open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Bignum.PPC64LE.Crt
 open VG.Proof.Bignum.PPC64LE
 
-variable {pc : Bool}
-
 theorem pres_cases : ∀ r ∈ preserved, (∀ i < 18, r ≠ Crt.saved i) →
     r ∉ frontRegs ∧ r ∉ mid1Regs ++ mid2Regs := by
   decide
@@ -38,10 +36,10 @@ theorem pres_cases : ∀ r ∈ preserved, (∀ i < 18, r ≠ Crt.saved i) →
 theorem toNat_flag (b : Bool) : BitVec.ofNat 64 (if b then 1 else 0) = BitVec.ofNat 64 b.toNat := by
   cases b <;> rfl
 
-/-- `crtG pc`, with the mask `cb pc` (`fnContract`'s when it is `cb false`'s). -/
+/-- `crtG pc`: with `pc`, given the cached values (`R2F`). -/
 theorem crt_wp (pc : Bool) (s : State) {X : List Region} (h : preCore (baseRd s ++ X) s)
     (hR : pc = true → R2F s) :
-    WP isa (crtG pc) s fun t => abiPreserved s t ∧ (cb pc s = cb0 s → postCore s t) := by
+    WP isa (crtG pc) s fun t => abiPreserved s t ∧ postCore s t := by
   have hP := pre_factsG h
   have hn := hP.nw
   have hpre := h
@@ -80,7 +78,7 @@ theorem crt_wp (pc : Bool) (s : State) {X : List Region} (h : preCore (baseRd s 
         exact dOS'.symm.sub_left sub
   refine WP.mono (restore_ok u (S := cS s) (v := fun i => s.gpr (Crt.saved i))
     (by rw [ku.gpr .r23 (by decide)]; exact hF.r23) hin hsav)
-    fun w ⟨wrs, wot, wm, _, _, wsp, wlr⟩ => ⟨⟨fun r hr => ?_, ?_, ?_⟩, fun hE => ?_⟩
+    fun w ⟨wrs, wot, wm, _, _, wsp, wlr⟩ => ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · by_cases hs' : ∃ i < 18, r = Crt.saved i
     · obtain ⟨i, hi, rfl⟩ := hs'
       exact wrs i hi
@@ -93,24 +91,24 @@ theorem crt_wp (pc : Bool) (s : State) {X : List Region} (h : preCore (baseRd s 
     rw [wm, wot .r3 (by decide), u3]
     refine VG.Proof.Bignum.crtWritten_of (VG.Proof.Bignum.bytesAt_length _ _ _) ub (toNat_flag _)
       (fun hv => ?_) (fun hv => ?_)
-    · have hcb : cb pc s = (decide (vC s < vN s) && decide (vQI s < vP s) && decide (vP s * vQ s = vN s)) := by
-        rw [hE]; simp only [cb0, crtMask, hv, Bool.true_and]
+    · have hcb : cb s = (decide (vC s < vN s) && decide (vQI s < vP s) && decide (vP s * vQ s = vN s)) := by
+        simp only [cb, crtMask, hv, Bool.true_and]
       refine ⟨?_, ?_⟩
       · rw [hcb]
         simp only [Bool.and_eq_true, decide_eq_true_eq]
         exact ⟨fun ⟨⟨a, b⟩, c⟩ => ⟨a, c, b⟩, fun ⟨a, c, b⟩ => ⟨⟨a, b⟩, c⟩⟩
       · unfold vr
-        cases hb : cb pc s
+        cases hb : cb s
         · rfl
         · obtain ⟨_, _, _, _, hp1', _, _, _⟩ := mask_true hP.k64
             (by rw [VG.Proof.Bignum.bytesAt_length]; exact hP.pk) (by rw [VG.Proof.Bignum.bytesAt_length]; exact hP.qk)
-            (cb_cb0 hb)
+            hb
           simp only [↓reduceIte, VG.Proof.Bignum.crtResult]
           rw [VG.Proof.Bignum.crt_coefficient_natural (Nat.lt_trans Nat.zero_lt_one hp1')]
           unfold vh vm1 vm2 mQ mP mQI
           simp only [hb, ↓reduceIte]
           exact Nat.add_comm _ _
-    · have hcb : cb pc s = false := by rw [hE]; simp only [cb0, crtMask, hv, Bool.false_and]
+    · have hcb : cb s = false := by simp only [cb, crtMask, hv, Bool.false_and]
       exact ⟨hcb, by unfold vr; rw [hcb]; rfl⟩
 
 /-- A cache of two numbers of `a` and `b` words, as their words. -/
@@ -134,41 +132,31 @@ theorem cache_words {m : Mem} {P : Addr} {a b X Y : Nat}
 
 /-- `R2F` from `fnContractP`'s precondition. -/
 theorem r2F_of {s : State} (h : fnContractP.pre s) : R2F s where
-  hS := h.2.2.2
+  hS := h.2.2.2.1
   rd i hi := by
     have hi' : i < wsWords (s.gpr .r10).toNat + wsWords (stackArg s 1).toNat := hi
-    have := h.2.2.2; simp only [r2R] at this
+    have := h.2.2.2.1; simp only [r2R] at this
     exact ⟨r2R s, List.mem_append_left _ (by rw [h.1.2.1]; exact List.mem_append_right _ (List.mem_singleton_self _)),
       Offset.contains_base _ (show 8 * i + 8 ≤ 8 * (wsWords (s.gpr .r10).toNat + wsWords (stackArg s 1).toNat) by
         omega_arith) (by omega_arith)⟩
   sep x hx := Pub.sep_of_disjoint h.2.2.1 x hx
-
-/-- With the cache `fnContractP` asks for, the checks' mask is `cb false`'s. -/
-theorem cb_of_r2 {s : State} (hP : PF s)
-    (hw : Spec.Rsa.wordsAt s.mem (s.gpr .r12) (wsWords (s.gpr .r10).toNat + wsWords (stackArg s 1).toNat) =
-      Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat) ++
-        Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)) :
-    cb true s = cb0 s := by
-  have ew : ∀ n, Spec.Rsa.primeWords n = wsWords n := fun _ => rfl
-  simp only [Spec.Rsa.primeR2, VG.Proof.Bignum.bytesAt_length, ew] at hw
-  obtain ⟨mP1, _, mQ1, _, mPb, mQb, _, _, _⟩ := masked_facts (pc := false) hP
-  simp only [cb, cxP, cxQ]
-  rcases Bool.eq_false_or_eq_true (cb0 s) with h0 | h0
-  · have eP : mP false s = vP s := by simp only [mP, show cb false s = true from h0, ↓reduceIte]
-    have eQ : mQ false s = vQ s := by simp only [mQ, show cb false s = true from h0, ↓reduceIte]
+  val hb := by
+    have hw := h.2.2.2.2
+    have ew : ∀ n, Spec.Rsa.primeWords n = wsWords n := fun _ => rfl
+    simp only [Spec.Rsa.primeR2, VG.Proof.Bignum.bytesAt_length, ew] at hw
+    obtain ⟨mP1, _, mQ1, _, mPb, mQb, _, _, _⟩ := masked_facts (pre_factsG h.1)
+    have eP : mP s = vP s := by simp only [mP, hb, ↓reduceIte]
+    have eQ : mQ s = vQ s := by simp only [mQ, hb, ↓reduceIte]
     rw [eP] at mP1 mPb; rw [eQ] at mQ1 mQb
-    obtain ⟨w1, w2⟩ := cache_words hw (Nat.lt_trans (Nat.mod_lt _ (Nat.lt_trans Nat.zero_lt_one mP1)) mPb)
+    exact cache_words hw (Nat.lt_trans (Nat.mod_lt _ (Nat.lt_trans Nat.zero_lt_one mP1)) mPb)
       (Nat.lt_trans (Nat.mod_lt _ (Nat.lt_trans Nat.zero_lt_one mQ1)) mQb)
-    simp only [h0, ↓reduceIte, Bool.true_and, decide_eq_true_eq, Bool.and_eq_true]
-    exact ⟨w1, w2⟩
-  · simp only [h0, Bool.false_and]
 
 theorem fn_correct (s : State) (h : fnContract.pre s) :
     ∃ tr t, Exec isa crt s tr t ∧ abiPreserved s t ∧ fnContract.post s t :=
-  WP.mono (crt_wp false s (preCore_nil h) nofun) fun _ ⟨a, p⟩ => ⟨a, p rfl⟩
+  crt_wp false s (preCore_nil h) nofun
 
 theorem fn_correctP (s : State) (h : fnContractP.pre s) :
     ∃ tr t, Exec isa crtP s tr t ∧ abiPreserved s t ∧ fnContractP.post s t :=
-  WP.mono (crt_wp true s h.1 fun _ => r2F_of h) fun _ ⟨a, p⟩ => ⟨a, fun hw => p (cb_of_r2 (pre_factsG h.1) hw)⟩
+  crt_wp true s h.1 fun _ => r2F_of h
 
 end VG.Proof.Bignum.PPC64LE.Crt
