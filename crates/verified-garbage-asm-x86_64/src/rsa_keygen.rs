@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.RsaKeyGen.keyInitContract`. Timing may depend on `bits` and `e`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 56 bytes.
@@ -24,7 +26,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "uAEAAABBuAIAAABIgf4AAgAASQ9CwEiB/gEgAABJD0PAQbgAAAAATYXSSQ9FwE2Jy0mD4wFJD0TASYP5AUkPRMBIifFIwekHSMHhA0iJykjB4gNJidNIweICTAHaSYnLScHjBkmD+QNJD0TTSInOSMHmD0gBzkmJyEnB4AVBugQAAABJD8lBuwAAAABIg/gBSQ9Fy0kPRdNJD0XzTQ9Fw00PRdNND0XLSIkXSIlPCEiJdxBMiUcYTIlfIEyJVyhMiU8www=="
+.base64 "uAEAAABBuAIAAABIgf4AAgAASQ9CwEiB/gEgAABJD0PAQbgAAAAATYXSSQ9FwE2Jy0mD4wFJD0TASYP5AUkPRMBIifFIwekHSMHhA0iJykjB4gNJidNIweICTAHaSYnLScHjBkmD+QNJD0TTSInOSMHmD0gBzkmJyEnB4AVBugQAAABJD8lBuwAAAABIg/gBSQ9Fy0kPRdNJD0XzTQ9Fw00PRdNND0XLSIkXSIlPCEiJdxBMiUcYTIlfIEyJVyhMiU8wicAxyTHSMfZFMcBFMclFMdJFMdvD"
 .p2align 6"#,
     )
 }

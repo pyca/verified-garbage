@@ -14,6 +14,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.ApplyCT
 public import VerifiedGarbage.Proof.Variants.ChaCha20Xor.X86_64
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Scrub
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.ScrubInit
 
 /-! # ChaCha20 (RFC 8439) on x86-64 -/
 
@@ -22,12 +23,8 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.Scrub
 namespace VG.Artifacts.ChaCha20.X86_64
 
 def direct : List Artifact := [
-  Spec.ChaCha20.initApi.artifact X86_64.target {
-    code := Impl.ChaCha20.X86_64.Stream.init
-    verified := Proof.ChaCha20.X86_64.Stream.init_verified },
-  Spec.ChaCha20.setNonceApi.artifact X86_64.target {
-    code := Impl.ChaCha20.X86_64.Stream.setNonce
-    verified := Proof.ChaCha20.X86_64.Stream.setNonce_verified }]
+  Spec.ChaCha20.initApi.artifact X86_64.target Proof.ChaCha20.X86_64.Scrub.initReg,
+  Spec.ChaCha20.setNonceApi.artifact X86_64.target Proof.ChaCha20.X86_64.Scrub.setNonceReg]
 
 def artifacts : List Artifact :=
   direct ++

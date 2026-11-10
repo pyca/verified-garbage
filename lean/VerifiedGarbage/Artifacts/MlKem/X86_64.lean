@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
+public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEkScrub
 public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
 public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEkAvx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
@@ -33,13 +34,8 @@ public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeDecV
 namespace VG.Artifacts.MlKem.X86_64
 
 def direct : List Artifact := [
-  Spec.MlKem.checkEkApi.artifact X86_64.target {
-    code := Impl.MlKem.X86_64.checkEk
-    verified := Proof.MlKem.X86_64.checkEk_verified },
-  Spec.MlKem.checkEkApi.artifact X86_64.target {
-    suffix := "_avx2"
-    code := Impl.MlKem.X86_64.checkEkAvx2
-    verified := Proof.MlKem.X86_64.checkEkAvx2_verified }]
+  Spec.MlKem.checkEkApi.artifact X86_64.target Proof.MlKem.X86_64.Scrub.checkEkReg,
+  Spec.MlKem.checkEkApi.artifact X86_64.target Proof.MlKem.X86_64.Scrub.checkEkAvx2Reg]
 
 end VG.Artifacts.MlKem.X86_64
 
@@ -111,12 +107,7 @@ def artifacts : List Artifact :=
   direct ++
   (VG.Proof.Variants.MlKemSample4.X86_64.variants.flatMap fun v => VG.Proof.Variants.Zeroize.X86_64.variants.flatMap fun v2 => MlKemSample4Zeroize.artifacts v v2) ++
   [
-    Spec.MlKem1024.checkEkApi.artifact X86_64.target {
-      code := Impl.MlKem1024.X86_64.checkEk1024
-      verified := Proof.MlKem1024.X86_64.checkEk1024_verified },
-    Spec.MlKem1024.checkEkApi.artifact X86_64.target {
-      suffix := "_avx2"
-      code := Impl.MlKem1024.X86_64.checkEk1024Avx2
-      verified := Proof.MlKem1024.X86_64.checkEk1024Avx2_verified }]
+    Spec.MlKem1024.checkEkApi.artifact X86_64.target Proof.MlKem.X86_64.Scrub.checkEk1024Reg,
+    Spec.MlKem1024.checkEkApi.artifact X86_64.target Proof.MlKem.X86_64.Scrub.checkEk1024Avx2Reg]
 
 end VG.Artifacts.MlKem.X86_64
