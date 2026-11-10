@@ -29,8 +29,9 @@ table, `ModExp.powWin`) of `max(2, ⌈len / 8⌉)` words for `p` and `q`.
   a chunk of `c`'s words at a time), then
   `m₁ = c^dP mod p` (`ModExp.powWin`: four-bit windows over `dP`'s bytes,
   each digit's table entry selected by a masked scan of the table).
-* `h = (m₁ - m₂ mod p) qInv mod p`: `m₂`'s bytes into `X` array 1, reduced
-  modulo `p` (`ModArith.reduce64`, a doubling on 64-bit words per bit), subtracted with `subMod` and `p` added back under its borrow
+* `h = (m₁ - m₂ mod p) qInv mod p`: `m₂` into `X`'s array 6, zero-extended
+  (`exportM2`); in `P`, `R² mod p` again, `m₁` moved to array 9, `m₂ mod p`
+  by `reduceIn`, subtracted with `subMod` and `p` added back under its borrow
   mask (`addMask`), then two Montgomery multiplications (by `qInv`, then by
   `R² mod p`).
 * In `X`: `q h` exactly (Montgomery multiplication modulo `M`), plus `m₂`
@@ -284,23 +285,26 @@ def powerG (pc q : Bool) (xj oD oLen : Nat) : Prog isa :=
 /-- `powerG` computing `R² mod p`. -/
 abbrev power (xj oD oLen : Nat) : Prog isa := powerG false false xj oD oLen
 
-/-- `m₂`'s `q_len` bytes, most significant first, from `Q`'s array 4 into
-`X`'s array 1. -/
+/-- `m₂` (`Q`'s array 4) into `X`'s array 6, zero-extended to `X`'s words,
+for `reduceIn` in `P`. -/
 def exportM2 : Prog isa :=
-  .seq (.block (PublicChecked.base .r15 4 ++ [.load .d .r17 .r23 oQLen, .add .r15 .r15 .r17,
-      .subi .r15 .r15 1] ++ xb .r16 1))
-    (Precompute.countLoop .r17 [.lbz .r0 .r15 0, .stb .r0 .r16 0, .addi .r16 .r16 1, .subi .r15 .r15 1])
+  .seq (.block (setupP oBQ oQLen ++ PublicChecked.base .r15 4 ++ [.addi .r22 .r11 0] ++ xb .r14 6 ++
+      [.addi .r11 .r28 0, .subi .r11 .r11 16, .lsr .d .r11 .r11 2]))
+  (.seq Precompute.zeroWords (.seq (.block (xb .r14 6 ++ [.addi .r11 .r22 0])) copyN))
 
 /-- In `P`: `h = (m₁ - m₂ mod p) qInv mod p` into array 4, from `m₁` in array
 4. -/
 def recombinePG (pc : Bool) : Prog isa :=
-  -- `q_len` first; `-p⁻¹ mod 2³²`; `R² mod p` (which `powSecret` overwrote) into array 7; `m₂ mod p`
-  -- into array 1.
-  .seq (.block ([.load .d .r31 .r23 oQLen] ++ r2Ptr pc false))
+  -- `k` first; `-p⁻¹ mod 2³²`; `R² mod p` (which `powSecret` overwrote) into array 1; `m₁` into array 9;
+  -- `m₂ mod p` into array 4 (`reduceIn`, from `X`'s array 6); then `R² mod p` into array 7, `m₂ mod p`
+  -- into array 1 and `m₁` back into array 4.
+  .seq (.block ([.load .d .r25 .r23 oNLen] ++ r2Ptr pc false))
   (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
       PublicChecked.base .r9 3)) (.seq (r2Step pc)
+  (.seq (.block (PublicChecked.base .r14 9 ++ PublicChecked.base .r15 4)) (.seq copyN (.seq reduceIn
   (.seq (.block (PublicChecked.base .r14 7 ++ PublicChecked.base .r15 1)) (.seq copyN
-  (.seq (.block (xb .r30 1)) (.seq ModArith.reduce64
+  (.seq (.block (PublicChecked.base .r14 1 ++ PublicChecked.base .r15 4)) (.seq copyN
+  (.seq (.block (PublicChecked.base .r14 4 ++ PublicChecked.base .r15 9)) (.seq copyN
   -- `m₁ - m₂ mod p` into array 3, `p` added back under the borrow.
   (.seq (.block (PublicChecked.base .r14 4 ++ [.add .r14 .r14 .r29, .subi .r14 .r14 16, .li .r0 0,
       .store .d .r0 .r14 0] ++ PublicChecked.base .r8 4 ++ PublicChecked.base .r9 3 ++
@@ -309,7 +313,7 @@ def recombinePG (pc : Bool) : Prog isa :=
       PublicChecked.base .r16 0)) (.seq addMask
   -- `qInv` into array 6; `h` into array 4.
   (.seq (.block (PublicChecked.base .r14 6 ++ xb .r15 7)) (.seq copyN
-  (.seq (PublicChecked.montOp 5 3 6) (PublicChecked.montOp 4 5 7))))))))))))))
+  (.seq (PublicChecked.montOp 5 3 6) (PublicChecked.montOp 4 5 7)))))))))))))))))))
 
 /-- `recombinePG` computing `R² mod p`. -/
 abbrev recombineP : Prog isa := recombinePG false

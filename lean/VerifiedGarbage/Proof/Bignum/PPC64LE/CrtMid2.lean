@@ -80,8 +80,6 @@ theorem mid2A_ok {pc : Bool} {s₀ s t : State} {c : Prog isa} {Q : State → Pr
     (p0 : Mont.val32 t.mem (off (cS s₀) (oPa s₀)) (slot (cwP s₀) 0) (2 * cwP s₀) = mP s₀)
     (p4 : Mont.val32 t.mem (off (cS s₀) (oPa s₀)) (slot (cwP s₀) 4) (2 * cwP s₀) = vm1 s₀)
     (q4 : Mont.val32 t.mem (off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 4) (2 * cwQ s₀) = vm2 s₀)
-    (t10 : t.gpr .r10 = off (off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 0))
-    (t29 : t.gpr .r29 = BitVec.ofNat 64 (8 * (cwQ s₀ + 2)))
     (O1 : Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem) (k1 : Keep mid1Regs s t)
     (hc : ∀ u, XR s₀ s u →
       Keep (mid1Regs ++ (([.r0, .r15, .r16, .r17, .r3, .r4, .r11, .r21, .r29] : List Reg) ++ recRegs)) s u → WP isa c u Q) :
@@ -93,6 +91,7 @@ theorem mid2A_ok {pc : Bool} {s₀ s t : State} {c : Prog isa} {Q : State → Pr
   have qk := hP.qk
   have e : ∀ w j, slot w j = 256 + j * (8 * (w + 2)) := fun _ _ => rfl
   have eX0 := e (cwX s₀) 0; have eX1 := e (cwX s₀) 1; have eX2 := e (cwX s₀) 2; have eX5 := e (cwX s₀) 5
+  have eX6 := e (cwX s₀) 6; have eX7 := e (cwX s₀) 7
   have eX8 := e (cwX s₀) 8
   have eP0 := e (cwP s₀) 0; have eP4 := e (cwP s₀) 4; have eP8 := e (cwP s₀) 24
   have eQ4 := e (cwQ s₀) 4; have eQ8 := e (cwQ s₀) 24
@@ -112,26 +111,31 @@ theorem mid2A_ok {pc : Bool} {s₀ s t : State} {c : Prog isa} {Q : State → Pr
   have hdt : ∀ d, d + 8 ≤ 256 → word t.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
     O1.word (Or.inl hd) (by omega_arith)
   have hm2b : vm2 s₀ < 256 ^ cqL s₀ := Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_arith)) mQle
+  have hnw : cwP s₀ * nChunks ((ck s₀ + 7) / 8) (cwP s₀) ≤ cwX s₀ := by
+    rw [dX]; exact chunks_le (by rw [dP]; unfold wsWords; omega_arith) (by
+      rw [dP]; exact Nat.max_le.mpr ⟨by omega_arith, Nat.div_le_div_right (by omega_arith)⟩)
   -- `h`.
   refine wp_reassoc3 (WP.seq (WP.mono (phaseD_ok (oP := oPa s₀) (oQ := oQa s₀) (wX := cwX s₀) (pL := cpL s₀)
     (qL := cqL s₀) (Pv := mP s₀) (m1 := vm1 s₀) (M2 := vm2 s₀) (QI := mQI s₀) (hF.scr.congr k1.wr) (by omega_arith)
-    (Nat.le_refl _) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hwX t10 t29
+    (Nat.le_refl _) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hwX
     ((k1.gpr _ (by decide)).trans hF.r23) ((k1.gpr _ (by decide)).trans hF.r27)
     ((k1.gpr _ (by decide)).trans hF.r28) (by rw [hdt _ (by decide)]; exact hF.hBP)
-    (by rw [hdt _ (by decide)]; exact hF.hPL) (by rw [hdt _ (by decide)]; exact hF.hQL) p1 (by omega_arith) q1
-    (by omega_arith) p0 (by omega_arith) mPo p4 (Nat.mod_lt _ (by omega_arith)) q4 hm2b v7 mQIb mQIP
+    (by rw [hdt _ (by decide)]; exact hF.hPL) (by rw [hdt _ (by decide)]; exact hF.hBQ)
+    (by rw [hdt _ (by decide)]; exact hF.hQL) (by rw [hdt _ (by decide)]; exact hF.hNL) p1 (by omega_arith) q1
+    (by omega_arith) (Nat.le_of_lt qk) (by omega_arith) hnw p0 (by omega_arith) mPo p4 (Nat.mod_lt _ (by omega_arith)) q4 hm2b v7 mQIb mQIP
     (fun hp => by subst hp; exact ⟨_, _, _, (hR2 rfl).1.p hP hF (hR2 rfl).2 O1 (by rw [k1.rd, k1.wr, hF.keep.rd, hF.keep.wr]) t26⟩))
     fun t₂ ⟨⟨h4, OD⟩, k2⟩ => ?_))
   have k12 := k1.trans k2
-  have FD : Frm (cS s₀) [(slot (cwX s₀) 1, cqL s₀), (oPa s₀, slot (cwP s₀) 24)] t.mem t₂.mem := fun x hx => OD x hx
-  have fr : ∀ {d n : Nat}, d + n ≤ slot (cwX s₀) 1 ∨ (slot (cwX s₀) 2 ≤ d ∧ d + n ≤ oPa s₀) ∨ oQa s₀ ≤ d →
-      ∀ r ∈ [(slot (cwX s₀) 1, cqL s₀), (oPa s₀, slot (cwP s₀) 24)], d + n ≤ r.1 ∨ r.1 + r.2 ≤ d := by
+  have FD : Frm (cS s₀) [(slot (cwX s₀) 6, 8 * cwX s₀), (oPa s₀, slot (cwP s₀) 24)] t.mem t₂.mem :=
+    fun x hx => OD x hx
+  have fr : ∀ {d n : Nat}, d + n ≤ slot (cwX s₀) 6 ∨ (slot (cwX s₀) 7 ≤ d ∧ d + n ≤ oPa s₀) ∨ oQa s₀ ≤ d →
+      ∀ r ∈ [(slot (cwX s₀) 6, 8 * cwX s₀), (oPa s₀, slot (cwP s₀) 24)], d + n ≤ r.1 ∨ r.1 + r.2 ≤ d := by
     intro d n hd r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> simp only <;> omega_arith
   have hd2 : ∀ d, d + 8 ≤ 256 → word t₂.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd => by
     rw [FD.word_eq (fr (Or.inl (by omega_arith))) (by omega_arith)]; exact hdt d hd
-  have xv : ∀ {d : Nat}, d + 8 * cwX s₀ ≤ slot (cwX s₀) 1 ∨ (slot (cwX s₀) 2 ≤ d ∧ d + 8 * cwX s₀ ≤ oPa s₀) →
+  have xv : ∀ {d : Nat}, d + 8 * cwX s₀ ≤ slot (cwX s₀) 6 ∨ (slot (cwX s₀) 7 ≤ d ∧ d + 8 * cwX s₀ ≤ oPa s₀) →
       Mont.val32 t₂.mem (cS s₀) d (2 * cwX s₀) = Mont.val32 t.mem (cS s₀) d (2 * cwX s₀) := fun hd => by
     rw [Pre.val32_eq_wv, Pre.val32_eq_wv, FD.wv_eq (fr (by omega_arith)) (by omega_arith)]
   have hq4 : Mont.val32 t₂.mem (off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 4) (2 * cwQ s₀) = vm2 s₀ := by
@@ -144,7 +148,7 @@ theorem mid2A_ok {pc : Bool} {s₀ s t : State} {c : Prog isa} {Q : State → Pr
     rcases hr with rfl | rfl <;> simp only <;> omega_arith
   exact hc t₂ ⟨(k2.gpr _ (by decide)).trans t26, by rw [xv (Or.inl (by omega_arith))]; exact v0,
     by rw [FD.word_eq (fr (Or.inl (by omega_arith))) (by omega_arith)]; exact w0,
-    by rw [xv (Or.inr ⟨by omega_arith, by omega_arith⟩)]; exact v5, h4, hq4, OT⟩ k12
+    by rw [xv (Or.inl (by omega_arith))]; exact v5, h4, hq4, OT⟩ k12
 
 theorem mid2_ok {pc : Bool} {s₀ s t : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀)
     (hF : Front s₀ s) (hR2 : pc = true → R2F s₀ ∧ word s.mem (cS s₀) oR2 = s₀.gpr .r31)
@@ -156,8 +160,6 @@ theorem mid2_ok {pc : Bool} {s₀ s t : State} {c : Prog isa} {Q : State → Pro
     (p0 : Mont.val32 t.mem (off (cS s₀) (oPa s₀)) (slot (cwP s₀) 0) (2 * cwP s₀) = mP s₀)
     (p4 : Mont.val32 t.mem (off (cS s₀) (oPa s₀)) (slot (cwP s₀) 4) (2 * cwP s₀) = vm1 s₀)
     (q4 : Mont.val32 t.mem (off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 4) (2 * cwQ s₀) = vm2 s₀)
-    (t10 : t.gpr .r10 = off (off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 0))
-    (t29 : t.gpr .r29 = BitVec.ofNat 64 (8 * (cwQ s₀ + 2)))
     (O1 : Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem) (k1 : Keep mid1Regs s t)
     (hc : ∀ u, Spec.Rsa.bytesAt u.mem (s₀.gpr .r3) (ck s₀) = Spec.Rsa.i2osp (vr s₀) (ck s₀) →
       u.gpr .r3 = BitVec.ofNat 64 (if cb s₀ then 1 else 0) →
@@ -192,7 +194,7 @@ theorem mid2_ok {pc : Bool} {s₀ s t : State} {c : Prog isa} {Q : State → Pro
   have hdt : ∀ d, d + 8 ≤ 256 → word t.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
     O1.word (Or.inl hd) (by omega_arith)
   have hm2b : vm2 s₀ < 256 ^ cqL s₀ := Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_arith)) mQle
-  refine mid2A_ok hP hF hR2 t26 v0 w0 v5 v7 p0 p4 q4 t10 t29 O1 k1 fun t₂ R k12 => ?_
+  refine mid2A_ok hP hF hR2 t26 v0 w0 v5 v7 p0 p4 q4 O1 k1 fun t₂ R k12 => ?_
   have hdR : ∀ d, d + 8 ≤ 256 → word t₂.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
     R.out.word (Or.inl hd) (by omega_arith)
   have hv : cb s₀ = true → mQ s₀ * vh s₀ + vm2 s₀ < 256 ^ ck s₀ := fun hb => by
