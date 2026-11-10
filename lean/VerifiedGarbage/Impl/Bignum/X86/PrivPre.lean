@@ -105,20 +105,26 @@ def incoming (i : Nat) : MemOp := stackAt (frameBytes + 4 + 4 * i)
 
 def copyArgument (i j : Nat) : List Instr := [.mov .eax (.mem (incoming i)), .store (stackAt (4 * j)) .eax]
 
+/-- Arguments `i` to the callee's arguments `j`, for the pairs `(i, j)`. -/
+def copies (l : List (Nat × Nat)) : List Instr := l.flatMap fun p => copyArgument p.1 p.2
+
+/-- `2 ⌈n_len / 8⌉`, from argument 3, to the callee's argument 1. -/
+def preWords : List Instr :=
+  [.mov .eax (.mem (incoming 3)), .alu .add .eax (.imm 7), .shift .shr .eax 3, .alu .add .eax (.reg .eax),
+    .store (stackAt 4) .eax]
+
 /-- `vg_rsa_public_precompute(pre, 2 w, n, n_len, scratch, scratch_len)`. -/
 def publicArgs : List Instr :=
-  copyArgument 0 0 ++
-  [.mov .eax (.mem (incoming 3)), .alu .add .eax (.imm 7), .shift .shr .eax 3, .alu .add .eax (.reg .eax),
-    .store (stackAt 4) .eax] ++
-  copyArgument 2 2 ++ copyArgument 3 3 ++ copyArgument 8 4 ++ copyArgument 9 5
+  copies [(0, 0)] ++ preWords ++ copies [(2, 2), (3, 3), (8, 4), (9, 5)]
 
-/-- `primes(pre, n_len, n, n_len, n, n_len, p, p_len, q, q_len, p, p_len, q, q_len, p, p_len,
-scratch, scratch_len)`, after the first result is saved. -/
-def primesArgs : List Instr :=
-  [.store (stackAt statusOffset) .eax] ++ copyArgument 0 0 ++ copyArgument 3 1 ++ copyArgument 2 2 ++ copyArgument 3 3 ++ copyArgument 2 4 ++ copyArgument 3 5 ++
-  copyArgument 4 6 ++ copyArgument 5 7 ++ copyArgument 6 8 ++ copyArgument 7 9 ++
-  copyArgument 4 10 ++ copyArgument 5 11 ++ copyArgument 6 12 ++ copyArgument 7 13 ++
-  copyArgument 4 14 ++ copyArgument 5 15 ++ copyArgument 8 16 ++ copyArgument 9 17
+/-- `primes`' arguments, as pairs: `(pre, n_len, n, n_len, n, n_len, p, p_len, q, q_len, p, p_len, q,
+q_len, p, p_len, scratch, scratch_len)`. -/
+def primesPairs : List (Nat × Nat) :=
+  [(0, 0), (3, 1), (2, 2), (3, 3), (2, 4), (3, 5), (4, 6), (5, 7), (6, 8), (7, 9), (4, 10), (5, 11), (6, 12),
+    (7, 13), (4, 14), (5, 15), (8, 16), (9, 17)]
+
+/-- `primes`' arguments, after the first result is saved. -/
+def primesArgs : List Instr := [.store (stackAt statusOffset) .eax] ++ copies primesPairs
 
 /-- The result, `1` if both are, into the frame. -/
 def status : List Instr :=
