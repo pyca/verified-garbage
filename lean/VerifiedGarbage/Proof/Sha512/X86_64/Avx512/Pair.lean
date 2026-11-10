@@ -13,6 +13,16 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx512.Compress
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx512.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # SHA-512 with AVX-512VL on x86-64: two compressions at once
@@ -1037,5 +1047,50 @@ theorem correct2 {s₀ : State} (hp : compress2X86_64.pre s₀) :
       (Spec.Sha512.stateAt s₀.mem (s₀.gpr .rdx)) (Spec.Sha512.blockAt s₀.mem (s₀.gpr .rcx))
     rw [eH₁, eM₁]
     exact fin q₁
+
+/-! ## Constant time, and the contract -/
+
+/-- The pointers are public. -/
+def τ2 : X86_64.Taint.T := { regs := .ofList [.rdi, .rsi, .rdx, .rcx, .r8], flags := false }
+
+theorem agree2 {s₁ s₂ : State} (h : compress2X86_64.pub s₁ s₂) : taint.Agree τ2 s₁ s₂ := by
+  obtain ⟨e1, e2, e3, e4, e5⟩ := h
+  refine ⟨⟨fun r hr' => ?_, fun h => by cases h⟩, fun h => absurd rfl h, ⟨fun h => absurd rfl h, ?_⟩,
+    ⟨fun h => absurd rfl h, ?_⟩, ?_, ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
+  · simp only [τ2, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr'
+    rcases hr' with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+  · intro p hp; simp [τ2] at hp
+  · intro p hp; simp [τ2] at hp
+  · intro sl h; simp [τ2] at h
+  · intro sl h; simp [τ2] at h
+
+theorem compress2_rel {P : State → State → Prop} (hp : ∀ s₁ s₂, P s₁ s₂ → taint.Agree τ2 s₁ s₂) :
+    RelCT isa P compress2 fun _ _ => True :=
+  RelCT.taint (A := taint) τ2 hp (by taint_decide)
+
+theorem compress2_ct : ConstantTime isa compress2X86_64.pre compress2X86_64.pub compress2 :=
+  fun _ _ _ _ _ _ _ _ hp e₁ e₂ =>
+    (compress2_rel (P := fun a b => compress2X86_64.pub a b) (fun _ _ h => agree2 h) _ _ _ _ _ _ hp e₁ e₂).1
+
+/-- A state satisfying the precondition. -/
+def satState2 : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 0x4000 | .r8 => 0x5000 | .rsp => 0x8000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem _ := 0
+  rd := [⟨0x2000, 128⟩, ⟨0x4000, 128⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x3000, 64⟩, ⟨0x5000, 1328⟩]
+
+/-- `vg_sha512_compress2_avx512` is verified. -/
+theorem compress2_verified : Verified X86_64.target compress2 compress2X86_64 := by
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, ?_⟩
+  · obtain ⟨t, s', he, h⟩ := correct2 hs
+    exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
+  · exact compress2_ct s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂
+  · refine ⟨satState2, rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    exact Region.disjoint_of_sep (by decide)
 
 end VG.Proof.Sha512.X86_64.Avx512
