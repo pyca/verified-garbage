@@ -15,7 +15,7 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use super::{BigUint, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
-#[cfg(any(target_arch = "powerpc64", target_arch = "x86"))]
+#[cfg(target_arch = "powerpc64")]
 use crate::arch::dispatch::rsa::vg_rsa_private_precompute_auto;
 use crate::arch::dispatch::rsa::{
     vg_rsa_check_key_auto, vg_rsa_crt_values_auto, vg_rsa_recover_primes_det_auto,
@@ -112,7 +112,7 @@ pub struct PrivateKey {
     pub(crate) qinv: Vec<u8>,
     /// The key's precomputed values (`VG.Spec.Rsa.privatePrecompute`),
     /// which the `_precomputed` private-key operations take.
-    #[cfg(any(target_arch = "powerpc64", target_arch = "x86"))]
+    #[cfg(target_arch = "powerpc64")]
     pub(crate) pre: Vec<u64>,
 }
 
@@ -134,7 +134,7 @@ impl Drop for PrivateKey {
         ] {
             crate::zeroize::zeroize(x);
         }
-        #[cfg(any(target_arch = "powerpc64", target_arch = "x86"))]
+        #[cfg(target_arch = "powerpc64")]
         crate::zeroize::zeroize(&mut self.pre);
     }
 }
@@ -275,7 +275,7 @@ impl PrivateKey {
             dp,
             dq,
             qinv,
-            #[cfg(any(target_arch = "powerpc64", target_arch = "x86"))]
+            #[cfg(target_arch = "powerpc64")]
             pre: Vec::new(),
         };
         if key.valid(dit) && key.precompute(dit) {
@@ -333,7 +333,7 @@ impl PrivateKey {
     /// whether it accepted the key, which it does for every key `valid`
     /// accepts (a valid modulus and `p q = n`).
     pub(crate) fn precompute(&mut self, dit: crate::dit::Dit<'_>) -> bool {
-        #[cfg(any(target_arch = "powerpc64", target_arch = "x86"))]
+        #[cfg(target_arch = "powerpc64")]
         {
             let k = self.n.len();
             let prime_words = |len: usize| len.div_ceil(8).max(2);
@@ -368,7 +368,7 @@ impl PrivateKey {
             self.pre = pre;
             r == 1
         }
-        #[cfg(not(any(target_arch = "powerpc64", target_arch = "x86")))]
+        #[cfg(not(target_arch = "powerpc64"))]
         {
             let _ = dit;
             true
