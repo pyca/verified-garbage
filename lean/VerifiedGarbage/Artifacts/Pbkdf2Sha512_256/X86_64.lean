@@ -35,7 +35,8 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.Pbkdf2Sha512_256.X86_64
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.MdHash.X86_64.sha512_256Variants.flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) => [
+  (VG.Proof.Variants.MdHash.X86_64.sha512_256Variants.filter fun v => !v.initOnly).flatMap
+    fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) => [
     v.I.pbkdf2Api.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86_64.withStackArgScratch (Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.I) 1 v.H.pbkdf2

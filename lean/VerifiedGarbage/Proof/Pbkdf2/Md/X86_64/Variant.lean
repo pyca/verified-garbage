@@ -138,6 +138,22 @@ structure MdHash where
   frame of its own (`hmacFin` is its `_scratch` form). -/
   hmacInitF : Verified X86_64.target (initCode H I) (I.initAnyKeyContract X86_64.abi (24 + anyFrame I))
   hmacInitFSp : (initCode H I).all (fun i => !isa.writesSp i) = true
+  /-- The two branches of `initCode`, each verified against its contract:
+  what `hmacInitF` is made of, for `MdHash.hmacInitReg`, which clears after
+  each. -/
+  hmacShortF : Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacInit)
+    (I.initContract X86_64.abi (16 + hmacFrame I))
+  hmacShortFSp : (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacInit).all
+    (fun i => !isa.writesSp i) = true
+  hmacAnyF : Verified X86_64.target
+    (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame I) .r8 I.initAnyKeyScratch H.hmacInitAny)
+    (I.initAnyKeyContract X86_64.abi (24 + anyFrame I))
+  hmacAnyFSp : (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame I) .r8 I.initAnyKeyScratch
+    H.hmacInitAny).all (fun i => !isa.writesSp i) = true
+  /-- The streaming states represent a message by their bytes alone, and a
+  block's size is small. -/
+  reprLocal : Proof.Hmac.ReprLocal I.S
+  hBlock : I.S.H.blockSize + 1 < 2 ^ 31
   hmacFinF : Verified X86_64.target
     (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacFin)
     (I.finalizeContract X86_64.abi (16 + hmacFrame I))
@@ -170,6 +186,14 @@ structure MdHash where
   (`MdHash.hmacFinReg`). -/
   hmacFinRes : Option (RScrub.Analysed I.finalizeApi.sig (16 + hmacFrame I) []
     (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacFin)) := none
+  /-- Whether HMAC's `init` clears what it leaves, after each of its branches
+  (`MdHash.hmacInitReg`): it then returns without secret residue. -/
+  initScrub : Bool := false
+  /-- Whether this variant differs from the next of its list only in HMAC's
+  `init` (the code compressing its two padded keys, `Hash.compBoth`): the
+  other functions emitted for a variant would be the next one's again, so
+  only `init` is emitted for it. -/
+  initOnly : Bool := false
 
 namespace MdHash
 
@@ -255,6 +279,12 @@ theorem hmacInitF_of (A : Any.AnyOK (core H)) (hsI : ∃ s, (Proof.Hmac.Instance
     (by simp only [hmacFrame, anyFrame, Spec.Hmac.Instance.initAnyKeyScratch]; omega_arith) hB hsat
 
 omit hH hSH hW in
+theorem hmacShortFSp_of :
+    (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacInit).all
+      (fun i => !isa.writesSp i) = true :=
+  X86_64.withStackScratch_spSafe_of (r := .r8) (hmacInit_sp C K)
+
+omit hH hSH hW in
 theorem hmacInitFSp_of (A : Any.AnyOK (core H)) :
     (initCode H I).all (fun i => !isa.writesSp i) = true := by
   have hs : (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacInit).all
@@ -324,6 +354,12 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   pbkdf2Sp := pbkdf2_sp C K
   hmacInitF := MdHash.hmacInitF_of hH C K hSH hW A hsI hs hsIF hsA ha hR hB hsAF
   hmacInitFSp := MdHash.hmacInitFSp_of C K A
+  hmacShortF := MdHash.hmacShortF_of hH C K hSH hW hsI hs hsIF
+  hmacShortFSp := MdHash.hmacShortFSp_of C K
+  hmacAnyF := MdHash.hmacInitAnyF_of hH C K hSH hW A hsI hsA ha hR hsAF
+  hmacAnyFSp := MdHash.hmacInitAnySp_of K A
+  reprLocal := hR
+  hBlock := hB
   hmacFinF := MdHash.hmacFinF_of hH C K hSH hW hsF hs hsFF
   pbkdf2F := MdHash.pbkdf2F_of hH C K hSH hW hsI hsF hsT hsP hp hsPF
   C := C
