@@ -53,10 +53,6 @@ theorem wordsAt_zero {m : Mem} {D : Addr} {L : Nat} (h : ∀ j < L * 8, m (D + B
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   exact h _ (by omega)
 
-/-- `x = p + (x - p)`. -/
-theorem eq_add_ofs (p x : Addr) : x = p + BitVec.ofNat 64 (ofs p x) := by
-  unfold ofs
-  rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
 
 /-- The callee-saved registers and the return address, from the header the
 entry wrote and the memory outside `pre` and the working space. -/

@@ -91,6 +91,17 @@ theorem copyMasked_ok {s : State} {S D : Addr} {eS eD w : Nat} {v : BitVec 64}
   refine WP.mono (wordLoop_ok (start := 0) (N := w) (by omega) hw' (MCopyInv s S D eS eD v) h0
     (fun j _ hj t hI => copyMaskedStep_ok hsi hbx h12 h15 (by omega) hD hrd hwr hsep hj hI)) fun t hI => ?_
   exact ⟨hI.done, hI.frame, hI.keep⟩
+/-- `x = p + (x - p)`. -/
+theorem eq_add_ofs (p x : Addr) : x = p + BitVec.ofNat 64 (ofs p x) := by
+  unfold ofs
+  rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+
+/-- A byte of a workspace at `o` is one of the working space. -/
+theorem ofs_lt_of_sub {B x : Addr} {o n Z : Nat} (ho : o + n ≤ Z) (hZ : B.toNat + Z ≤ 2 ^ 64)
+    (hx : ofs (off B o) x < n) : ofs B x < Z := by
+  have e := eq_add_ofs (off B o) x
+  generalize ofs (off B o) x = m at hx e
+  rw [e, ofs_off B (by omega)]; omega
 
 theorem off_add_ofNat (D : Addr) (e a : Nat) : off D e + BitVec.ofNat 64 a = off D (e + a) := by
   simp only [off, BitVec.add_assoc, BitVec.ofNat_add]
