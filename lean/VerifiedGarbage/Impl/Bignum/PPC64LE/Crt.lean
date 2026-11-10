@@ -238,39 +238,47 @@ def reduceIn : Prog isa :=
   (.seq (.block (xb .r30 6 ++ [.addi .r31 .r25 7, .lsr .d .r31 .r31 3]))
     (.loop chunkStep (.nonzero .d .r3))))))))
 
-/-- `R² mod p` into array 1 from the `w` words (`r11 / 2`) at `r15`, under
+/-- `R² mod p` into array 1 from the `w` words (`r11 / 2`) at `r30`, under
 the mask `r26`: each word `&= r26`, and the lowest one `|= 1` if the mask is
 clear, when the prime is 3 and `R² mod 3 = 1`. -/
 def r2Copy : Prog isa :=
   .seq (.block (PublicChecked.base .r14 1 ++ [.li .r3 0, .subi .r3 .r3 1, .logic .xor .r3 .r3 .r26, .li .r4 1,
       .logic .and .r3 .r3 .r4, .lsr .d .r17 .r11 1]))
-    (Precompute.countLoop .r17 [.load .d .r0 .r15 0, .logic .and .r0 .r0 .r26, .logic .or .r0 .r0 .r3,
-      .store .d .r0 .r14 0, .li .r3 0, .addi .r14 .r14 8, .addi .r15 .r15 8])
+    (Precompute.countLoop .r17 [.load .d .r0 .r30 0, .logic .and .r0 .r0 .r26, .logic .or .r0 .r0 .r3,
+      .store .d .r0 .r14 0, .li .r3 0, .addi .r14 .r14 8, .addi .r30 .r30 8])
 
-/-- The address of the cached `R² mod p` into `r15`, or with `q`, of
+/-- The address of the cached `R² mod p` into `r30`, or with `q`, of
 `R² mod q`, after `R² mod p`'s `max(2, ⌈p_len / 8⌉)` words. -/
 def r2Src : Bool → List Instr
-  | false => [.load .d .r15 .r23 oR2]
-  | true => [.load .d .r3 .r23 oPLen] ++ words .r4 .r3 ++ [.load .d .r15 .r23 oR2, .lsl .r4 .r4 3,
-      .add .r15 .r15 .r4]
+  | false => [.load .d .r30 .r23 oR2]
+  | true => [.load .d .r3 .r23 oPLen] ++ words .r4 .r3 ++ [.load .d .r30 .r23 oR2, .lsl .r4 .r4 3,
+      .add .r30 .r30 .r4]
+
+/-- With `pc`, the address of the cached value (`r2Src`), at the end of a
+block that loads from the header, so that the address is public where the
+code is cut for the timing proof. -/
+def r2Ptr : Bool → Bool → List Instr
+  | false, _ => []
+  | true, q => r2Src q
 
 /-- `R² mod p` into array 1: computed (`Precompute.r2Prime`), or with `pc`
-the cached one, of `q` if `q` (`r2Copy`). -/
-def r2Step : Bool → Bool → Prog isa
-  | false, _ => Precompute.r2Prime
-  | true, q => .seq (.block (r2Src q)) r2Copy
+the cached one at `r30` (`r2Copy`). -/
+def r2Step : Bool → Prog isa
+  | false => Precompute.r2Prime
+  | true => r2Copy
 
 /-- In a prime's working space, the prime from `X`'s array `xj`,
-`-p⁻¹ mod 2³²` in `r12`, `R² mod p` in array 1 (`Precompute.r2Prime`),
+`-p⁻¹ mod 2³²` in `r12`, `R² mod p` in array 1 (`Precompute.r2Prime`, or
+with `pc` the cached one of `q` if `q`, whose address the first block loads),
 `c mod p` in array 4 (`reduceIn`), then `c^d mod p` in array 4 for `d` at
 `oD` of the prime's length at `oLen` (`ModExp.powWin`, with its table in
 arrays 8 to 23). `k` is loaded into `r25` first, which nothing before
 `reduceIn` writes. -/
 def powerG (pc q : Bool) (xj oD oLen : Nat) : Prog isa :=
-  .seq (.block ([.load .d .r25 .r23 oNLen, .addi .r14 .r10 0] ++ xb .r15 xj)) (.seq copyN
+  .seq (.block ([.load .d .r25 .r23 oNLen, .addi .r14 .r10 0] ++ xb .r15 xj ++ r2Ptr pc q)) (.seq copyN
   (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
       PublicChecked.base .r9 3))
-  (.seq (r2Step pc q) (.seq reduceIn
+  (.seq (r2Step pc) (.seq reduceIn
   (.seq (.block [.load .d .r30 .r23 oD, .load .d .r31 .r23 oLen]) ModExp.powWin)))))
 
 /-- `powerG` computing `R² mod p`. -/
@@ -288,9 +296,9 @@ def exportM2 : Prog isa :=
 def recombinePG (pc : Bool) : Prog isa :=
   -- `q_len` first; `-p⁻¹ mod 2³²`; `R² mod p` (which `powSecret` overwrote) into array 7; `m₂ mod p`
   -- into array 1.
-  .seq (.block [.load .d .r31 .r23 oQLen])
+  .seq (.block ([.load .d .r31 .r23 oQLen] ++ r2Ptr pc false))
   (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
-      PublicChecked.base .r9 3)) (.seq (r2Step pc false)
+      PublicChecked.base .r9 3)) (.seq (r2Step pc)
   (.seq (.block (PublicChecked.base .r14 7 ++ PublicChecked.base .r15 1)) (.seq copyN
   (.seq (.block (xb .r30 1)) (.seq ModArith.reduce64
   -- `m₁ - m₂ mod p` into array 3, `p` added back under the borrow.

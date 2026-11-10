@@ -55,8 +55,8 @@ theorem phasePA_ok {pc q : Bool} {s : State} {BX : Addr} {Z oA wX xj k L Pv Cv o
       t.gpr .r21 = off (off BX oA) (slot (wsWords L) 0) → t.gpr .r29 = BitVec.ofNat 64 (8 * (wsWords L + 2)) →
       Keep (([.r0, .r3, .r4, .r10, .r11, .r21, .r29] : List Reg) ++ powerRegs) s t → WP isa c t Q) :
     WP isa (.seq (.block (setupP oB oLen)) (.seq (.block (([.load .d .r25 .r23 oNLen, .addi .r14 .r10 0] : List Instr) ++
-      xb .r15 xj)) (.seq copyN (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++
-      PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3)) (.seq (r2Step pc q) (.seq reduceIn c)))))) s Q := by
+      xb .r15 xj ++ r2Ptr pc q)) (.seq copyN (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++
+      PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3)) (.seq (r2Step pc) (.seq reduceIn c)))))) s Q := by
   have hn := hs.nowrap
   have e8 : slot wX 8 = 256 + 8 * (8 * (wX + 2)) := rfl
   have hw2 : 2 ≤ wsWords L := by unfold wsWords; omega_arith
