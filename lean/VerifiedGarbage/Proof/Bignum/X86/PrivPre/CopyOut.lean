@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Prime
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeRt.Copy
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Top
 public import VerifiedGarbage.Proof.Bignum.MemoryFrame
+public import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.Instr
@@ -20,7 +21,7 @@ values and, for `q`, `p`'s (`copyPrime_ok`).
 namespace VG.Proof.Bignum.X86.PrivPre
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
 open VG.Proof.Dsa.X86 (argumentPointer)
-open VG.Impl.Bignum.X86.PrivPre (shl primeWords dstAt slotSrc copyPrime copyLoop incoming)
+open VG.Impl.Bignum.X86.PrivPre (shl primeWords dstAt slotSrc copyPrime copyLoop copyPrimes incoming)
 open VG.Impl.Bignum.X86.PublicRt (argAt)
 
 section
@@ -211,6 +212,107 @@ theorem copyPrime_ok (A : PPABI s) (B : Body s t) {j i : Nat} {skip : Option Nat
       ((VG.Proof.Bignum.outside_frame O (by omega)).sub fun r hr => ?_), K.trans Ku, O, V⟩
     obtain rfl := List.mem_singleton.mp hr
     exact ⟨preR s, by simp, Offset.sub_base _ (by omega)⟩
+
+/-- Numbers in the working space, kept by writes elsewhere. -/
+theorem ws_keep {m m' : Mem} {rs : List Region} (F : Frame rs m m')
+    (hd : ∀ r ∈ rs, (wsR s).Disjoint r) {x n : Nat} (hx : x + 4 * n ≤ (arg s 9).toNat * 8) :
+    val32 m' (argumentPointer s 8) x n = val32 m (argumentPointer s 8) x n := by
+  rw [← read_eq_val32, ← read_eq_val32, F.read (r := wsR s) (Offset.contains_base _ hx (by omega)) hd (by omega)]
+
+/-- The sizes of `pre`'s parts. -/
+theorem pre_parts (A : PPABI s) : (arg s 1).toNat * 8 = dstOff s (some 5) + 8 * Spec.Rsa.primeWords (arg s 7).toNat := by
+  have hl := A.preLength
+  simp only [Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords] at hl
+  simp only [dstOff]; omega
+
+theorem copyPrimes_ok (A : PPABI s) (B : Body s t) :
+    WP isa copyPrimes t fun u => Body s u ∧ Keeps [.eax, .ecx] t u ∧
+      Frame [⟨slot s 88, 8⟩, ⟨off (argumentPointer s 0) (dstOff s none),
+        8 * Spec.Rsa.primeWords (arg s 5).toNat + 8 * Spec.Rsa.primeWords (arg s 7).toNat⟩] t.mem u.mem ∧
+      val32 u.mem (argumentPointer s 0) (dstOff s none) (2 * Spec.Rsa.primeWords (arg s 5).toNat) =
+        val32 t.mem (argumentPointer s 8) (CrtRt.lo (arg s 3).toNat (.slot .wide 16))
+          (2 * Spec.Rsa.primeWords (arg s 5).toNat) ∧
+      val32 u.mem (argumentPointer s 0) (dstOff s (some 5)) (2 * Spec.Rsa.primeWords (arg s 7).toNat) =
+        val32 t.mem (argumentPointer s 8) (CrtRt.lo (arg s 3).toNat (.slot .wide 17))
+          (2 * Spec.Rsa.primeWords (arg s 7).toNat) := by
+  have parts := pre_parts A
+  have l := A.lengths
+  simp only [Spec.Rsa.lenValid] at l
+  have nd := CrtRt.need_le l.1 A.scratchLength
+  have pw5 : Spec.Rsa.primeWords (arg s 5).toNat ≤ Spec.Rsa.modulusWords (arg s 3).toNat := by
+    have := A.pLength; simp only [Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega
+  have pw7 : Spec.Rsa.primeWords (arg s 7).toNat ≤ Spec.Rsa.modulusWords (arg s 3).toNat := by
+    have := A.qLength; simp only [Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega
+  have fit : ∀ j ≤ 17, ∀ w ≤ Spec.Rsa.modulusWords (arg s 3).toNat,
+      CrtRt.lo (arg s 3).toNat (.slot .wide j) + 4 * (2 * w) ≤ (arg s 9).toNat * 8 := fun j hj w hw => by
+    simp only [CrtRt.need, CrtRt.lo, CrtRt.st, CrtRt.bc, CrtRt.mw, Impl.Bignum.X86.CrtRt.numBase] at nd ⊢
+    simp only [Spec.Rsa.modulusWords] at hw nd ⊢
+    have : j * (2 * (8 * (((arg s 3).toNat + 7) / 8)) + 32) ≤ 17 * (2 * (8 * (((arg s 3).toNat + 7) / 8)) + 32) :=
+      Nat.mul_le_mul_right _ hj
+    omega
+  have wsTop : ∀ {d n : Nat}, d + n ≤ 196 → (wsR s).Disjoint ⟨bot s + BitVec.ofNat 64 d, n⟩ :=
+    fun h => (A.belowWs.sub_left (Offset.sub_base _ (by simpa [stackBytes] using h))).symm
+  have wsPre : (wsR s).Disjoint (preR s) := A.preWs.symm
+  unfold copyPrimes
+  refine WP.seq (wp_slot A B (d := 88) (r := .esi) (by decide) fun u₁ B₁ M₁ =>
+    wp_slot A B₁ (d := 92) (r := .ebp) (by decide) fun u₂ B₂ M₂ => WP.block_nil ?_)
+  have F₂ : Frame [⟨slot s 88, 8⟩] t.mem u₂.mem := by
+    rw [M₂.mem, M₁.mem]
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))).writeW
+      (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
+  have s88 : u₂.mem.readW (slot s 88) 32 = t.gpr .esi := by
+    rw [M₂.mem, Frame.readW (rs := [⟨slot s 92, 4⟩]) ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (Region.contains_self _ _)) (r := ⟨slot s 88, 4⟩) (Region.contains_self _ _) (fun r hr => by
+        obtain rfl := List.mem_singleton.mp hr; exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by decide),
+      M₁.mem, Mem.readW_writeW_self32]
+  have s92 : u₂.mem.readW (slot s 92) 32 = t.gpr .ebp := by
+    rw [M₂.mem, Mem.readW_writeW_self32, M₁.gpr]
+  have esi₂ : u₂.gpr .esi = t.gpr .esi := by rw [M₂.gpr, M₁.gpr]
+  refine WP.seq (WP.mono (copyPrime_ok A B₂ (j := 16) (i := 5) (skip := none) (by decide) (.inl rfl) (.inl rfl)
+    (by simp only [dstOff] at parts ⊢; omega)) fun u₃ ⟨B₃, K₃, O₃, V₃⟩ => ?_)
+  refine WP.seq (WP.mono (copyPrime_ok A B₃ (j := 17) (i := 7) (skip := some 5) (by decide) (.inr rfl) (.inr rfl)
+    (by omega)) fun u₄ ⟨B₄, K₄, O₄, V₄⟩ => ?_)
+  have F₃ := VG.Proof.Bignum.outside_frame O₃ (by simp only [dstOff] at parts ⊢; omega)
+  have F₄ := VG.Proof.Bignum.outside_frame O₄ (by omega)
+  have sub₃ : Region.Sub ⟨off (argumentPointer s 0) (dstOff s none), 4 * (2 * Spec.Rsa.primeWords (arg s 5).toNat)⟩
+      (preR s) := Offset.sub_base _ (by simp only [dstOff] at parts ⊢; omega)
+  have sub₄ : Region.Sub ⟨off (argumentPointer s 0) (dstOff s (some 5)), 4 * (2 * Spec.Rsa.primeWords (arg s 7).toNat)⟩
+      (preR s) := Offset.sub_base _ (by omega)
+  have F₂₄ : Frame [preR s, wsR s] u₂.mem u₄.mem :=
+    (F₃.sub fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact ⟨_, by simp, sub₃⟩).trans
+      (F₄.sub fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact ⟨_, by simp, sub₄⟩)
+  refine wp_movS (B₄.readSlot A (d := 88) (by decide)) fun u₅ a₅ _ => ?_
+  have B₅ : Body s u₅ := B₄.next (a₅.other _ (by decide)) a₅.rd a₅.wr (by rw [a₅.mem]; exact Frame.refl _ _)
+  refine wp_movS (B₅.readSlot A (d := 92) (by decide)) fun u₆ a₆ _ => WP.block_nil ?_
+  have m₆ : u₆.mem = u₄.mem := by rw [a₆.mem, a₅.mem]
+  refine ⟨B₅.next (a₆.other _ (by decide)) a₆.rd a₆.wr (by rw [a₆.mem]; exact Frame.refl _ _),
+    ⟨fun r hr => ?_, by rw [a₆.rd, a₅.rd, K₄.2.1, K₃.2.1, M₂.rd, M₁.rd],
+      by rw [a₆.wr, a₅.wr, K₄.2.2, K₃.2.2, M₂.wr, M₁.wr]⟩, ?_, ?_, ?_⟩
+  · by_cases h5 : r = .esi
+    · subst h5
+      rw [a₆.other _ (by decide), a₅.gpr, slot_keep A F₂₄ (by decide), s88]
+    · by_cases h6 : r = .ebp
+      · subst h6
+        rw [a₆.gpr, a₅.mem, slot_keep A F₂₄ (by decide), s92]
+      · rw [a₆.other _ h6, a₅.other _ h5, K₄.1 _ (by simp_all), K₃.1 _ (by simp_all), M₂.gpr, M₁.gpr]
+  · rw [m₆]
+    refine (F₂.mono fun r hr => by simp_all).trans ((F₃.sub fun r hr => ?_).trans (F₄.sub fun r hr => ?_))
+    · obtain rfl := List.mem_singleton.mp hr
+      exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Offset.sub _ (by omega) (by omega)⟩
+    · obtain rfl := List.mem_singleton.mp hr
+      exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), by
+        simp only [dstOff, off]
+        rw [show 16 * Spec.Rsa.modulusWords (arg s 3).toNat + 8 * Spec.Rsa.primeWords (arg s 5).toNat =
+          16 * Spec.Rsa.modulusWords (arg s 3).toNat + (8 * Spec.Rsa.primeWords (arg s 5).toNat) from rfl]
+        exact Offset.sub _ (by omega) (by omega)⟩
+  · rw [m₆, VG.Proof.Mont.Outside.val32 O₄ (.inl (by simp only [dstOff]; omega))
+      (by simp only [dstOff] at parts ⊢; omega), V₃,
+      ws_keep F₂ (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact wsTop (by omega))
+        (fit 16 (by decide) _ pw5)]
+  · rw [m₆, V₄, ws_keep F₃ (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact wsPre.sub_right sub₃)
+        (fit 17 (by decide) _ pw7),
+      ws_keep F₂ (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact wsTop (by omega))
+        (fit 17 (by decide) _ pw7)]
 
 end
 end VG.Proof.Bignum.X86.PrivPre
