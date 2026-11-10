@@ -133,6 +133,7 @@ structure PF (s₀ : State) : Prop where
   sQ : ∀ i < cqL s₀, ∀ x, ofs (cS s₀) x < cZ s₀ → off (s₀.gpr .r9) i ≠ x
   rPre : ∀ i < ck s₀, InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .r3) i) 1
   sPre : ∀ i < ck s₀, ∀ x, ofs (cS s₀) x < cZ s₀ → off (s₀.gpr .r3) i ≠ x
+  dN : ∀ r ∈ [preR s₀, scrR s₀], (nR s₀).Disjoint r
 
 theorem wsWords_eq (len : Nat) : wsWords len = Spec.Rsa.primeWords len := by
   unfold wsWords Spec.Rsa.primeWords Spec.Rsa.modulusWords; omega_arith
@@ -158,12 +159,16 @@ theorem pre_facts {s₀ : State} (h : fnContract.pre s₀) : PF s₀ := by
     Pub.ne_of_disjoint dqS (Nat.le_of_lt (BitVec.isLt _)),
     fun i hi => ⟨preR s₀, List.mem_append_right _ (by rw [hwr]; exact List.mem_cons_self ..),
       Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
-    fun i hi => Pub.ne_of_disjoint dPS' (by omega_arith) i (by omega_arith)⟩
+    fun i hi => Pub.ne_of_disjoint dPS' (by omega_arith) i (by omega_arith), fun r hr => ?_⟩
   · show slot (2 * (((s₀.gpr .r6).toNat + 7) / 8)) 8 + slot (wsWords (s₀.gpr .r8).toNat) 24 +
       slot (wsWords (s₀.gpr .r10).toNat) 24 ≤ (stackArg s₀ 1).toNat * 8
     unfold slot wsWords hdrBytes; omega_arith
   · show wsWords (s₀.gpr .r8).toNat + wsWords (s₀.gpr .r10).toNat ≤ 2 * (((s₀.gpr .r6).toNat + 7) / 8)
     unfold wsWords; omega_arith
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact dPN.symm
+    · exact dNS
 
 /-- A buffer apart from what changed is as it was. -/
 theorem bytes_frame {m m' : Mem} {rs : List Region} (F : Frame rs m m') {A : Addr} {L : Nat}
