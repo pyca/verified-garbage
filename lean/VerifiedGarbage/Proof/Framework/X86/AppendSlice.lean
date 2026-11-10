@@ -141,7 +141,7 @@ theorem verified_withSlice {sig : Sig} {nm ln : String} {e : Elem}
   have hpubA : ∀ (s₁ s₂ : State) r₁ w₁ r₂ w₂, abi.pub s₁ s₂ → abi.pub (s₁.withRegions r₁ w₁) (s₂.withRegions r₂ w₂) :=
     fun _ _ _ _ _ _ h => h
   exact Verified.withSlice (T := target) regionModel (fun _ _ _ _ h => h) abi abi rfl (fun _ => rfl) (fun _ => rfl)
-    (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) hret hpubA hres rfl rfl
+    (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) hret hpubA hres rfl
     (sig := sig) (nm := nm) (e := e) (ln := ln) (vals := wordVals (sig.words 32).length)
     (X := fun s => argVal s 32 (sig.words 32).length) (Y := fun s => argVal s 32 ((sig.words 32).length + 1))
     ha ha' (fun s => wordVals_length _ s) (fun _ _ _ => rfl)
@@ -224,7 +224,7 @@ theorem verified_withSlice_tables {sig : Sig} {nm ln : String} {e : Elem} {t : S
       rw [← harg s₁ t'.1 k hk hlt] at e₁'
       rw [← harg s₂ t'.1 k hk hlt] at e₂'
       exact h₃ t' ht' p₁ p₂ e₁' e₂' T hT)
-    hres rfl rfl
+    hres rfl
     (sig := sig) (nm := nm) (e := e) (ln := ln) (vals := wordVals (sig.words 32).length)
     (X := fun s => argVal s 32 (sig.words 32).length) (Y := fun s => argVal s 32 ((sig.words 32).length + 1))
     ha ha' (fun s => wordVals_length _ s) (fun _ _ _ => rfl)
