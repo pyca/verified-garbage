@@ -70,17 +70,48 @@ def table : Prog isa :=
         (.block [.addi .r24 .r24 1, .subi .r4 .r24 16])))) (.nonzero .d .r4))
       (copy 6 8))))))
 
-/-- `r20 :=` all ones if `r19 = r18`, else 0 (both below 16). -/
-def isDigit : List Instr :=
-  [.logic .xor .r3 .r19 .r18, .subi .r3 .r3 1, .lsr .d .r3 .r3 63, .li .r0 0, .sub .r20 .r0 .r3]
+/-- `r20 :=` 0 if `r19 = r18`, else all ones (both below 16): `r19 ^ r18`
+is 0 exactly when its value less one has its top bit set. -/
+def notDigit : List Instr :=
+  [.logic .xor .r3 .r19 .r18, .subi .r3 .r3 1, .lsr .d .r3 .r3 63, .subi .r20 .r3 1]
 
-/-- `T_d` into array 5, `d` in `r18`: for each pair of entries `j`, `j + 1`,
-array 3 `:= j = d ? T_j : [5]`, then array 5 `:= j + 1 = d ? T_(j+1) : [3]`. -/
+/-- The accumulator of word `c` of a group of `select`. -/
+def acc (c : Nat) : Reg := [.r14, .r15, .r16, .r17].getD c .r14
+
+/-- Word `c` of the group at `r8` into its accumulator: `acc c &= [r8 + 8 c]
+| r20`. -/
+def pick (c : Nat) : List Instr :=
+  [.load .d .r0 .r8 (8 * c), .logic .or .r0 .r0 .r20, .logic .and (acc c) (acc c) .r0]
+
+/-- Table entry `r19` for a group of `k` words at `r8`: each word into its
+accumulator under `notDigit`'s mask, which leaves it as it is unless the
+entry is the digit's; then `r8` to the next entry and `r19 += 1`. -/
+def selEntry (k : Nat) : List Instr :=
+  notDigit ++ (List.range k).flatMap pick ++ [.add .r8 .r8 .r29, .addi .r19 .r19 1]
+
+/-- The group of `k` words at `r5` in array 5, the counter `cnt` (of
+groups): the accumulators := all ones; `r8 :=` the same words of `T_0`
+(array 8, three arrays above array 5); every entry (`selEntry`), which
+leaves in each accumulator its word of `T_d`; the accumulators stored, `r5`
+to the next group, `cnt -= 1`. -/
+def selGroup (k : Nat) (cnt : Reg) : List Instr :=
+  (List.range k).flatMap (fun c => [.li (acc c) 0, .subi (acc c) (acc c) 1]) ++
+    [.li .r19 0, .add .r8 .r5 .r29, .add .r8 .r8 .r29, .add .r8 .r8 .r29] ++
+    (List.replicate 16 (selEntry k)).flatten ++
+    (List.range k).flatMap (fun c => [.store .d (acc c) .r5 (8 * c)]) ++
+    [.addi .r5 .r5 (8 * k), .subi cnt cnt 1]
+
+/-- `n` groups (`cnt = n`, none if 0) of `selGroup k cnt`. -/
+def selGroups (k : Nat) (cnt : Reg) : Prog isa :=
+  .ite (.zero .d cnt) (.block []) (.loop (.block (selGroup k cnt)) (.nonzero .d cnt))
+
+/-- `T_d` into array 5, `d` in `r18`, word-major: the `w = r11 / 2` words
+of array 5 by groups of four (`r4 = ⌊w / 4⌋` of them), then the `w mod 4`
+left one at a time (`r9`), each group's words gathered from every entry of
+the table in registers, so that no address depends on `d`. -/
 def select : Prog isa :=
-  .seq (.block [.li .r19 0])
-    (.loop (.seq (.block (isDigit ++ entry ++ base .r9 5 ++ base .r5 3)) (.seq selectAcc64
-      (.seq (.block ([.addi .r19 .r19 1] ++ isDigit ++ entry ++ base .r9 3 ++ base .r5 5)) (.seq selectAcc64
-        (.block [.addi .r19 .r19 1, .subi .r4 .r19 16]))))) (.nonzero .d .r4))
+  .seq (.block ([.lsr .d .r4 .r11 3, .lsr .d .r0 .r11 1, .li .r9 3, .logic .and .r9 .r0 .r9] ++ base .r5 5))
+    (.seq (selGroups 4 .r4) (selGroups 1 .r9))
 
 /-- One window, its digit at the top of `r24`: four squares, `a := a T_d`,
 then `r24 := r24 << 4`. -/
