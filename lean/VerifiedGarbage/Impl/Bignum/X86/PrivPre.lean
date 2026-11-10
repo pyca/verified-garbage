@@ -84,15 +84,16 @@ def factor (f : Nat) : Prog isa :=
 /-- Argument `i`, a factor's length, into the header word at `lenOff`. -/
 def setLen (i : Nat) : List Instr := [.mov .eax (.mem (argAt 0 i)), .store (sc lenOff) .eax]
 
-/-- `n` in the wide slot 9, `p` in 10 and `q` in 11, and the acceptance
-`p q = n`. -/
-def check : Prog isa :=
-  .seq (load (.slot .wide 9) (two .wide) 2 3) <|
-  .seq (load (.slot .wide 10) (one .wide) 6 7) <|
-  .seq (load (.slot .wide 11) (one .wide) 8 9) <|
+/-- `p q = n` for the factor `p` in the wide slot 10, `q` in 11 and `n` in 9 (`two .wide`
+words): its mask at `accOff`. -/
+def pqCheck : Prog isa :=
   .seq (copy (.slot .wide 10) mulA (one .wide)) <|
   .seq (wideProduct (.slot .wide 11)) <|
   .seq (equal prod (.slot .wide 9) (two .wide)) (.block [.store (sc accOff) .ecx])
+
+/-- The components (as `vg_rsa_private_crt` loads them: `n` in the wide slot
+9, `p` in 10 and `q` in 11), and the acceptance `p q = n`. -/
+def check : Prog isa := .seq importComponents pqCheck
 
 /-- Where the first factor's values go, `16 ⌈n_len / 8⌉` bytes into the
 output (argument 0), after `n`'s values. -/
