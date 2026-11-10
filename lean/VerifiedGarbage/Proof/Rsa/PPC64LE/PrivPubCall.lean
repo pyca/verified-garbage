@@ -35,23 +35,10 @@ theorem words_of_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p :
   have hi := List.mem_range.mp hi
   exact hf.readW (Offset.contains_base p (by omega_arith) (by omega_arith)) hd (by decide)
 
-/-- `n`'s values, or zeros if they are invalid. -/
-abbrev preW (s : State) (m : Mem) : Prop :=
-  Spec.Rsa.wordsAt m (fb s + BitVec.ofNat 64 oPre) (Spec.Rsa.precomputedWords (s.gpr .r6).toNat) =
-    (Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat)).getD
-      (List.replicate (Spec.Rsa.precomputedWords (s.gpr .r6).toNat) 0)
-
-theorem preW_of {s : State} {r : BitVec 64} {m : Mem}
-    (h : Proof.Bignum.PPC64LE.Pre.preOut (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat)
-      (fb s + BitVec.ofNat 64 oPre) (Spec.Rsa.precomputedWords (s.gpr .r6).toNat) r m) : preW s m := by
-  unfold preW
-  cases hw : Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) <;>
-    simp only [Proof.Bignum.PPC64LE.Pre.preOut, hw] at h <;> exact h.2
-
 /-- At the call of `vg_rsa_public_precomputed_checked`. -/
-structure AtPubC (s u : State) : Prop extends Mid s u where
+structure AtPubC (pc : Bool) (s u : State) : Prop extends Mid s u where
   crt : crtOutM s u
-  pre : preW s u.mem
+  pre : preW pc s u.mem
   r3 : u.gpr .r3 = s.gpr .r3
   r4 : u.gpr .r4 = s.gpr .r6
   r5 : u.gpr .r5 = fb s + BitVec.ofNat 64 oPre
@@ -63,8 +50,8 @@ structure AtPubC (s u : State) : Prop extends Mid s u where
   psa0 : u.mem.readW (fb s + BitVec.ofNat 64 96) 64 = stackArg s 10
   psa1 : u.mem.readW (fb s + BitVec.ofNat 64 104) 64 = stackArg s 11
 
-theorem pubArgs_ok {s t : State} (h : PreP pc s) (A : AtPub s t) :
-    WP isa (.block pubArgs) t (AtPubC s) := by
+theorem pubArgs_ok {s t : State} (h : PreP pc s) (A : AtPub pc s t) :
+    WP isa (.block pubArgs) t (AtPubC pc s) := by
   have hk := h.k2
   have e26 : t.gpr .r26 = BitVec.ofNat 64 (s.gpr .r6).toNat := A.r26.trans (gpr_ofNat _)
   have rdm : t.rd = s.rd := A.rd
@@ -121,7 +108,7 @@ theorem pubArgs_ok {s t : State} (h : PreP pc s) (A : AtPub s t) :
       exact written_congr (bytes_of_frame (s := t) fw (ap (by decide) (by omega_arith)) (by omega_arith)) A.crt
     · show Spec.Rsa.wordsAt _ _ _ = _
       rw [words_of_frame fw (ap (by decide) (by omega_arith)) (by omega_arith)]
-      exact preW_of A.pre
+      exact A.pre
     · rw [um, Mem.readW_writeW_sep (Offset.sep _ (.inl (by decide)) (by decide) (by decide)) (by decide),
         Mem.readW_writeW_self64]
     · rw [um, Mem.readW_writeW_self64]
@@ -145,8 +132,8 @@ theorem frame_pub {s : State} (h : PreP pc s) {d n : Nat} (hd : d + n ≤ frameB
   · exact h.ks.sub_left (frame_sub s hd)
 
 /-- `m^e mod n` in `out`, if `n`'s values are valid. -/
-abbrev pubOut (s u : State) : Prop :=
-  ∀ ws, Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) = some ws →
+abbrev pubOut (pc : Bool) (s u : State) : Prop :=
+  ∀ ws, Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) = some ws → preVal pc s = ws →
     Spec.Rsa.written u.mem (s.gpr .r3) (s.gpr .r6).toNat ((u.gpr .r3).setWidth 32)
       (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat)
@@ -170,23 +157,23 @@ structure Late (s u : State) : Prop where
   ls : u.mem.readW (fb s + BitVec.ofNat 64 oLr) 64 = s.lr
 
 /-- After the call of `vg_rsa_public_precomputed_checked`. -/
-structure AtCmp (s u : State) : Prop extends Late s u where
+structure AtCmp (pc : Bool) (s u : State) : Prop extends Late s u where
   crt : crtOutM s u
-  pub : pubOut s u
+  pub : pubOut pc s u
 
 theorem pub_noFrames : Impl.Bignum.PPC64LE.PublicChecked.publicChecked.noFrames = true := by decide +kernel
 
 /-- The call's narrowed entry state. -/
 abbrev pubEntry (s t : State) : State := t.callEntry.withRegions (pubRd s) (pubWr s)
 
-theorem pubEntry_sa {s t : State} (A : AtPubC s t) :
+theorem pubEntry_sa {s t : State} (A : AtPubC pc s t) :
     stackArg (pubEntry s t) 0 = stackArg s 10 ∧ stackArg (pubEntry s t) 1 = stackArg s 11 := by
   have hsp : (pubEntry s t).sp = fb s := A.sp
   refine ⟨?_, ?_⟩
   · show t.mem.readW _ 64 = _; rw [stackArgAddr_in, hsp]; exact A.psa0
   · show t.mem.readW _ 64 = _; rw [stackArgAddr_in, hsp]; exact A.psa1
 
-theorem pub_pre {s t : State} (h : PreP pc s) (A : AtPubC s t) :
+theorem pub_pre {s t : State} (h : PreP pc s) (A : AtPubC pc s t) :
     Proof.Bignum.PPC64LE.Pub.fnContract.pre (pubEntry s t) ∧ Covers (pubRd s ++ pubWr s) (t.rd ++ t.wr) ∧
       Covers (pubWr s) t.wr := by
   have hk := h.k2
@@ -236,8 +223,8 @@ theorem pub_pre {s t : State} (h : PreP pc s) (A : AtPubC s t) :
   · have := h.hs; have := h.k1; unfold Spec.Rsa.scratchWords at *
     unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; omega_arith
 
-theorem pubCall_ok {s t : State} (h : PreP pc s) (A : AtPubC s t) {Q : State → Prop}
-    (hQ : ∀ u, AtCmp s u → Q u) : WP isa pubCall t Q := by
+theorem pubCall_ok {s t : State} (h : PreP pc s) (A : AtPubC pc s t) {Q : State → Prop}
+    (hQ : ∀ u, AtCmp pc s u → Q u) : WP isa pubCall t Q := by
   have hk := h.k2
   have pwl := pw_le hk
   obtain ⟨hpre, hc, hw⟩ := pub_pre h A
@@ -273,7 +260,7 @@ theorem pubCall_ok {s t : State} (h : PreP pc s) (A : AtPubC s t) {Q : State →
     · show Spec.Rsa.written _ _ _ _ _
       rw [hf.readW (Region.contains_self _ _) (fun r hr => frame_pub h (by decide) hr) (by decide)]
       exact written_congr hm A.crt
-    · intro ws hw
+    · intro ws hw hv
       have he : Spec.Rsa.bytesAt t.mem (s.gpr .r7) (s.gpr .r8).toNat =
           Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat :=
         bytes_of_frame A.mem (fun r hr => by
@@ -285,4 +272,4 @@ theorem pubCall_ok {s t : State} (h : PreP pc s) (A : AtPubC s t) {Q : State →
         g .r6 (by decide), g .r7 (by decide), g .r8 (by decide), g .r9 (by decide), A.r3, A.r4, A.r5, A.r6,
         A.r7, A.r8, A.r9, e6, State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem, he] at hpost
       rw [hm]
-      exact hpost _ (by simp [Spec.Rsa.bytesAt]) (by rw [A.pre, hw]; rfl)
+      exact hpost _ (by simp [Spec.Rsa.bytesAt]) (by rw [A.pre, hv, hw])

@@ -170,11 +170,28 @@ theorem below_pre {s : State} (h : PreP pc s) {d n : Nat} (hd : d + n ≤ oPre) 
       (by have := pw_le h.k2; unfold oPre; omega_arith)
   · exact h.ks.sub_left (frame_sub s (by unfold oPre frameBytes at *; omega_arith))
 
-/-- After the call of `vg_rsa_public_precompute`. -/
-structure AtPub (s u : State) : Prop extends Mid s u where
+/-- `n`'s values: computed (`publicPrecompute`, or zeros if they are
+invalid), or, with `pc`, the first words of `pre`. -/
+abbrev preVal (pc : Bool) (s : State) : List (BitVec 64) :=
+  if pc then Spec.Rsa.wordsAt s.mem (stackArg s 12) (Spec.Rsa.precomputedWords (s.gpr .r6).toNat)
+  else (Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat)).getD
+    (List.replicate (Spec.Rsa.precomputedWords (s.gpr .r6).toNat) 0)
+
+/-- `n`'s values in the frame. -/
+abbrev preW (pc : Bool) (s : State) (m : Mem) : Prop :=
+  Spec.Rsa.wordsAt m (fb s + BitVec.ofNat 64 oPre) (Spec.Rsa.precomputedWords (s.gpr .r6).toNat) = preVal pc s
+
+theorem preW_of {s : State} {r : BitVec 64} {m : Mem}
+    (h : Proof.Bignum.PPC64LE.Pre.preOut (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat)
+      (fb s + BitVec.ofNat 64 oPre) (Spec.Rsa.precomputedWords (s.gpr .r6).toNat) r m) : preW false s m := by
+  simp only [preW, preVal, Bool.false_eq_true, ↓reduceIte]
+  cases hw : Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) <;>
+    simp only [Proof.Bignum.PPC64LE.Pre.preOut, hw] at h <;> exact h.2
+
+/-- After `n`'s values. -/
+structure AtPub (pc : Bool) (s u : State) : Prop extends Mid s u where
   crt : crtOutM s u
-  pre : Proof.Bignum.PPC64LE.Pre.preOut (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat)
-    (fb s + BitVec.ofNat 64 oPre) (Spec.Rsa.precomputedWords (s.gpr .r6).toNat) (u.gpr .r3) u.mem
+  pre : preW pc s u.mem
 
 theorem pre_noFrames : Impl.Bignum.PPC64LE.Precompute.precompute.noFrames = true := by decide +kernel
 
@@ -217,7 +234,7 @@ theorem pre_pre {s t : State} (h : PreP pc s) (A : AtPre s t) :
     unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; omega_arith
 
 theorem preCall_ok {s t : State} (h : PreP pc s) (A : AtPre s t) {Q : State → Prop}
-    (hQ : ∀ u, AtPub s u → Q u) : WP isa preCall t Q := by
+    (hQ : ∀ u, AtPub false s u → Q u) : WP isa preCall t Q := by
   have hk := h.k2
   have pk := pwR_sub h
   obtain ⟨hc, hw⟩ := pre_covers h A
@@ -258,6 +275,6 @@ theorem preCall_ok {s t : State} (h : PreP pc s) (A : AtPre s t) {Q : State → 
     · simp only [Proof.Bignum.PPC64LE.Pre.fnContract, g .r3 (by decide), g .r4 (by decide), g .r5 (by decide),
         g .r6 (by decide), A.r3, A.r4, A.r5, A.r6, e4, State.withRegions_mem, State.withRegions_gpr,
         State.callEntry_mem, hn] at hpost
-      exact hpost
+      exact preW_of hpost
 
 end VG.Proof.Rsa.PPC64LE.Priv

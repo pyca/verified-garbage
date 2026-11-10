@@ -156,11 +156,11 @@ theorem pre_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP false s₁) (h₂ : P
     S.arg 11 (by decide)]
   exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
-theorem pub_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP false s₁) (h₂ : PreP false s₂) (S : Same s₁ s₂) (A₁ : AtPubC s₁ t₁)
-    (A₂ : AtPubC s₂ t₂) : Proof.Bignum.PPC64LE.Pub.fnContract.pub (pubEntry s₁ t₁) (pubEntry s₂ t₂) := by
+theorem pub_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP false s₁) (h₂ : PreP false s₂) (S : Same s₁ s₂) (A₁ : AtPubC false s₁ t₁)
+    (A₂ : AtPubC false s₂ t₂) : Proof.Bignum.PPC64LE.Pub.fnContract.pub (pubEntry s₁ t₁) (pubEntry s₂ t₂) := by
   have g : ∀ {s t : State}, ∀ r, r ∉ linkRegs → (pubEntry s t).gpr r = t.gpr r :=
     fun r hr => State.callEntry_gpr _ hr
-  have he : ∀ {s t : State}, PreP false s → AtPubC s t →
+  have he : ∀ {s t : State}, PreP false s → AtPubC false s t →
       Spec.Rsa.bytesAt t.mem (s.gpr .r7) (s.gpr .r8).toNat = Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat :=
     fun h A => bytes_of_frame A.mem (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -174,7 +174,9 @@ theorem pub_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP false s₁) (h₂ : P
     A₁.r5, A₁.r6, A₁.r7, A₁.r8, A₁.r9, A₁.r10, A₂.r3, A₂.r4, A₂.r5, A₂.r6, A₂.r7, A₂.r8, A₂.r9, A₂.r10, a₁, b₁, a₂,
     b₂, State.withRegions_mem, State.callEntry_mem, State.withRegions_sp, State.callEntry_sp, A₁.sp, A₂.sp,
     pre_toNat h₁, pre_toNat h₂]
-  rw [A₁.pre, A₂.pre, he h₁ A₁, he h₂ A₂, S.n, S.e, fb_same S, r_same S (r := .r3), r_same S (r := .r6),
+  rw [A₁.pre, A₂.pre, he h₁ A₁, he h₂ A₂]
+  simp only [preVal, Bool.false_eq_true, ↓reduceIte]
+  rw [S.n, S.e, fb_same S, r_same S (r := .r3), r_same S (r := .r6),
     r_same S (r := .r7), r_same S (r := .r8), S.arg 10 (by decide), S.arg 11 (by decide)]
   exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
@@ -187,9 +189,9 @@ def Φ1 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ u = allocated frameB
 def Ψ1 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ AtCrt s u
 def Ψ2 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ Mid s u ∧ crtOut s u
 def Ψ3 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ AtPre s u
-def Ψ4 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ AtPub s u
-def Ψ5 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ AtPubC s u
-def Ψ6 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ AtCmp s u
+def Ψ4 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ AtPub false s u
+def Ψ5 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ AtPubC false s u
+def Ψ6 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ AtCmp false s u
 
 theorem crt_rel : RelCT isa (Two Ψ1) crtCall fun _ _ => True := by
   unfold crtCall
