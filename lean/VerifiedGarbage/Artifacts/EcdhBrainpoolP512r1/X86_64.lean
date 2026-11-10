@@ -58,9 +58,7 @@ namespace VG.Artifacts.EcdhBrainpoolP512r1.X86_64
 open VG.Proof.BrainpoolP512r1.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.BrainpoolP512r1.exchangeApi.artifact X86_64.target {
-    code := Impl.Ecdh.X86_64.exchangeBrainpoolP512r1
-    stack := 8
-    verified := Proof.Ecdh.X86_64.BrainpoolP512r1.ecdh_verified hasLaw.law hasLaw.inv }]
+  Spec.Ecdh.BrainpoolP512r1.exchangeApi.artifact X86_64.target
+    (Proof.Ecdh.X86_64.BrainpoolP512r1.scrubReg hasLaw.law hasLaw.inv)]
 
 end VG.Artifacts.EcdhBrainpoolP512r1.X86_64

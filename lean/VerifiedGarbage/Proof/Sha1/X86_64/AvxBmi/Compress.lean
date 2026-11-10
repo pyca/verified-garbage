@@ -642,7 +642,7 @@ open VG.Impl.Sha1.X86_64 (at_ save restore load update advance saved)
 open VG.Spec.Sha1 (HashValue Word Block K W stateAt blockAt compressBlocks compress)
 open VG.Proof.Sha1.X86_64 (Vars pubRegs Pre pre_of st bp nb scr stR blR scrR retR H₀ blkAddr blk blk_word
   compressBlocks_succ contains_offset contains_offset' ofInt_natCast stateAt_get stateAt_eq writeState
-  stateAt_writeState frame_writeState winRegion win_sub Saved saveMem saveMem_saved saveMem_frame restore_ok
+  stateAt_writeState frame_writeState winRegion win_sub Saved saveMem saveMem_saved saveMem_frame
   saved_frame saved_bound vars0 load_eq update_eq Common LInv)
 
 /-! ## Loading the block -/
@@ -912,6 +912,24 @@ theorem prologue_ok {s₀ : State} (hp : Pre s₀) :
   simp only [reduceCtorEq, ↓reduceIte, Consts, kreg_0, kreg_1, kreg_2, kreg_3, mBswap, VBinOp.sse, movq_const, and_self]
 
 /-! ## The whole function -/
+
+/-- The callee-saved registers restored, then `vzeroupper`. -/
+theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hc : Common s₀ (nb s₀) s) :
+    WP isa (.block (restore ++ ([.vop .vzeroupper] : List Instr))) s fun s' =>
+      gprPreserved s₀ s' ∧ Proof.Sha1.compressX86_64.post s₀ s' := by
+  have hret : s.mem.readW (s₀.gpr .rsp) 64 = s₀.mem.readW (s₀.gpr .rsp) 64 :=
+    hc.frame.readW (Region.contains_self _ _) (by simpa using ⟨hp.ret_st, hp.ret_scr⟩) (by decide)
+  refine Spill.restore_then .rcx saved s₀.gpr (by decide) (fun p hp' => ?_)
+    (by rw [hc.rcx]; exact hc.saved) ?_
+  · have := saved_bound p hp'
+    rw [hc.rcx, hc.rd, hc.wr]
+    exact ⟨scrR s₀, by simp [hp.wr], Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  have hm := (Spill.restoreState_mem s₀.gpr s saved).1
+  have hg := Spill.restoreState_calleeSaved (l := saved) (by decide) hc.rsp
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec, Option.some.injEq,
+    exists_eq_left']
+  exact ⟨⟨hg, by rw [hm]; exact hret⟩, by show stateAt _ _ = _; rw [hm]; exact hc.state⟩
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa compress s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Sha1.compressX86_64.post s₀ s' := by

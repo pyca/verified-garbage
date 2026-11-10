@@ -1,5 +1,13 @@
 module
 
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Ecdh.P224
+meta import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Spec.Ecdh.P224
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
@@ -134,5 +142,27 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.X
     Verified X86_64.target exchangeP224 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst X86_64.abi 8) :=
   Verified.of_inline_ct ecdh_inlineOk (ecdh_x86 hL hI) ecdh_ct implies8
     (fun _ h => Sig.clear_of_pre h) ecdh_patch
+
+/-! ## Without secret residue -/
+
+/-- The granules of its stack that `vg_ecdh_p224` must wipe on return, from the
+residue analysis (`X86_64.RScrub.keepFor`). -/
+def scrubKs : List Nat := keep_for% Spec.Ecdh.P224.exchangeApi.sig 8 exchangeP224 []
+
+theorem scrubOk : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ecdh.P224.exchangeApi.sig 8 []) exchangeP224 h).any
+      (RScrub.resOkB · 8 scrubKs (Impl.Scrub.X86_64.chunks 8)) = true :=
+  RScrub.Analysed.ok_of _ (by taint_decide)
+
+/-- `vg_ecdh_p224`, followed by `Impl.Scrub.X86_64.scrubTail`
+(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
+def scrubReg (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.X86_64.InvSounds) :
+    Registration Spec.Ecdh.P224.exchangeApi X86_64.target :=
+  RScrub.withScrub {
+    code := exchangeP224
+    stack := 8
+    verified := ecdh_verified hL hI }
+    (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _) [] (RScrub.pubOk_nil _)
+    (some ⟨scrubKs, scrubOk⟩)
 
 end VG.Proof.Ecdh.X86_64.P224
