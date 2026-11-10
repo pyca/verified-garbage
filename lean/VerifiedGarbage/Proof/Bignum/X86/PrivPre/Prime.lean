@@ -6,6 +6,7 @@ public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeRt.Copy
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Key
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Validate
 
 /-! # A factor's `R² mod p` at a run-time width (x86)
 
@@ -23,7 +24,7 @@ variable {Ex : List Region → List Region → Prop}
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt
-open VG.Impl.Bignum.X86.PrivPre (shl primeWords r2Prime writePrime copyWords outOff)
+open VG.Impl.Bignum.X86.PrivPre (shl primeWords r2Prime writePrime copyWords outOff primeIn)
 open VG.Proof.Bignum.X86.PublicRt (count1_zf countLoop)
 
 theorem dbl_pow (x k : Nat) : (x + x) * 2 ^ k = x * 2 ^ (k + 1) := by
@@ -270,6 +271,124 @@ theorem writePrime_ok (h : In Ex base bytes len args s) (c : Ctx) {P : Addr} {L'
       rw [w32_val32_one, w32_val32_one, mt, w32_write_self, BitVec.toNat_ofNat] at this
       exact this
 
+/-- The ranges of the working space `primeIn` changes: `prepBase`'s (the
+factor into slot 0 among them), and the header word at `outOff`. -/
+abbrev primeR (len : Nat) (c : Ctx) : List (Nat × Nat) := (outOff, 4) :: baseR len c
+
+theorem primeIn_ok (h : In Ex base bytes len args s) (c : Ctx) {p : Nat}
+    (hx : lo len (.slot .wide 10) + bc len c ≤ bytes)
+    (hxd : Apart (lo len (.slot c 0)) (bc len c) (lo len (.slot .wide 10)) (bc len c))
+    (hp : val32 s.mem base (lo len (.slot .wide 10)) (cwc len c) = p)
+    (hL1 : 1 ≤ w32 s.mem base lenOff) (hL : w32 s.mem base lenOff ≤ len)
+    (hpL : p < 2 ^ (8 * w32 s.mem base lenOff))
+    (hb : 8 * Spec.Rsa.primeWords (w32 s.mem base lenOff) ≤ bc len c)
+    {P : Addr} {L' y : Nat} (hpw : InRegions s.wr P L') (hn : P.toNat + L' ≤ 2 ^ 32)
+    (hap : Region.Disjoint ⟨P, L'⟩ ⟨base, bytes⟩) (ho : w32 s.mem base outOff = P.toNat + y)
+    (hy : y + 8 * Spec.Rsa.primeWords (w32 s.mem base lenOff) ≤ L') :
+    WP isa (primeIn c) s fun u =>
+      (∃ m₁, Frame (frameR base (s.gpr .esp) (primeR len c)) s.mem m₁ ∧
+        Outside P y (8 * Spec.Rsa.primeWords (w32 s.mem base lenOff)) m₁ u.mem) ∧
+      val32 u.mem P y (2 * Spec.Rsa.primeWords (w32 s.mem base lenOff)) =
+        2 ^ r2Exp (w32 s.mem base lenOff) % safeM p ∧
+      w32 u.mem base outOff = (P.toNat + y + 8 * Spec.Rsa.primeWords (w32 s.mem base lenOff)) % 2 ^ 32 ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
+  have nw' := h.scratch.nowrap
+  have f8 := h.slot_fit c (j := 8) (by decide)
+  have g := bc_ge h.lower' c
+  have bw := bc_eq_cwc len c
+  have s01 : lo len (.slot c 0) + st len c ≤ lo len (.slot c 1) := sl_le (len := len) c (by decide)
+  have s13 : lo len (.slot c 1) + st len c ≤ lo len (.slot c 3) := sl_le (len := len) c (by decide)
+  have s34 : lo len (.slot c 3) + st len c ≤ lo len (.slot c 4) := sl_le (len := len) c (by decide)
+  have s47 : lo len (.slot c 4) + st len c ≤ lo len (.slot c 7) := sl_le (len := len) c (by decide)
+  have s78 : lo len (.slot c 7) + st len c ≤ lo len (.slot c 8) := sl_le (len := len) c (by decide)
+  have est : st len c = 2 * bc len c + 32 := rfl
+  have lo0 : numBase ≤ lo len (.slot c 0) := by simp [lo]
+  have nb : numBase = 3336 := rfl
+  have hup := h.upper'
+  have cb1 : cb len (one c) = bc len c := by simp [cb, one]
+  have cw1 : cw len (one c) = cwc len c := by simp [cw, cwc, cb, one]
+  have fitB : ∀ q ∈ baseR len c, q.1 + q.2 ≤ bytes := by
+    intro q hq
+    simp only [baseR, List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> (try simp only [invOff]) <;> omega_arith
+  have fitP : ∀ q ∈ primeR len c, q.1 + q.2 ≤ bytes := by
+    intro q hq
+    rcases List.mem_cons.mp hq with rfl | hq
+    · simp only [outOff, winOff]; omega_arith
+    · exact fitB q hq
+  -- The header words `lenOff` and `outOff` are outside every range `prepBase` changes.
+  have hdr : ∀ {d : Nat}, 4 ≤ d → d + 4 ≤ numBase → ∀ {sp : BitVec 32} {m m' : Mem},
+      CallRoom sp base bytes → Frame (frameR base sp (baseR len c)) m m' → w32 m' base d = w32 m base d := by
+    intro d hd4 hdn sp m m' R F
+    have := frameR_val32 (d := d) (k := 1) F R nw' (by omega_arith) (by
+      intro q hq
+      simp only [baseR, List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> (try simp only [invOff]) <;> omega_arith)
+      fitB
+    simpa only [w32_val32_one] using this
+  have powSub : ∀ q ∈ powR len c, q ∈ baseR len c := by
+    intro q hq; simp only [powR, baseR, List.mem_cons, List.not_mem_nil, or_false] at hq ⊢
+    rcases hq with rfl | rfl <;> simp
+  have baseSub : ∀ q ∈ baseR len c, q ∈ primeR len c := fun q hq => List.mem_cons_of_mem _ hq
+  let L := w32 s.mem base lenOff
+  let w := Spec.Rsa.primeWords L
+  have pw2 : 2 ≤ w := by simp only [w, Spec.Rsa.primeWords]; omega_arith
+  have pwL : 8 * L ≤ 64 * w := by
+    simp only [w, Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega_arith
+  unfold primeIn
+  -- The factor into slot 0.
+  refine WP.seq (WP.mono (copy_ok h (x := .slot .wide 10) (d := .slot c 0) (one_ok c) (by rw [cb1]; exact hx)
+    (by rw [cb1]; omega_arith) (by rw [cb1]; exact hxd)) fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
+  rw [cb1] at O₁
+  rw [cw1, hp] at V₁
+  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
+  have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
+  have F₁ : Frame (frameR base (s.gpr .esp) (primeR len c)) s.mem u₁.mem :=
+    frameR_of_outside O₁ (by omega_arith) (by simp [primeR, baseR])
+  have hdr₁ : ∀ {d : Nat}, 4 ≤ d → d + 4 ≤ numBase → w32 u₁.mem base d = w32 s.mem base d := by
+    intro d hd4 hdn
+    have := O₁.val32 (d := d) (k := 1) (.inl (by omega_arith)) (by omega_arith)
+    simpa only [w32_val32_one] using this
+  -- Made safe, with its constants.
+  refine WP.seq (WP.mono (prepBase_ok h₁ c) fun u₂ ⟨F₂, M₂, _, _, _, K₂⟩ => ?_)
+  have h₂ := h₁.keepF K₂ (by decide) (by decide) F₂ fitB
+  have sp₂ : u₂.gpr .esp = s.gpr .esp := (K₂.1 _ (by decide)).trans sp₁
+  rw [sp₁] at F₂
+  have hdr₂ : ∀ {d : Nat}, 4 ≤ d → d + 4 ≤ numBase → w32 u₂.mem base d = w32 s.mem base d :=
+    fun hd4 hdn => (hdr hd4 hdn h.room F₂).trans (hdr₁ hd4 hdn)
+  have L₂ : w32 u₂.mem base lenOff = L := hdr₂ (by decide) (by decide)
+  have M₂' : sv u₂.mem base len c 0 = safeM p := by rw [M₂]; simp only [sv]; rw [V₁]
+  -- `R_p² mod p` in slot 4.
+  refine WP.seq (WP.mono (r2Prime_ok h₂ c (by rw [M₂']; exact safeM_gt p) (by rw [L₂]; exact hL1)
+    (by rw [L₂]; exact hL)) fun u₃ ⟨F₃, V₃, K₃⟩ => ?_)
+  rw [sp₂] at F₃
+  rw [L₂, M₂'] at V₃
+  have h₃ := h₂.keepF K₃ (by decide) (by decide) (by rw [sp₂]; exact F₃) fun q hq => fitB q (powSub q hq)
+  have sp₃ : u₃.gpr .esp = s.gpr .esp := (K₃.1 _ (by decide)).trans sp₂
+  have hdr₃ : ∀ {d : Nat}, 4 ≤ d → d + 4 ≤ numBase → w32 u₃.mem base d = w32 s.mem base d :=
+    fun hd4 hdn => (hdr hd4 hdn h.room (frameR_mono F₃ powSub)).trans (hdr₂ hd4 hdn)
+  have L₃ : w32 u₃.mem base lenOff = L := hdr₃ (by decide) (by decide)
+  have o₃ : w32 u₃.mem base outOff = P.toNat + y := (hdr₃ (by decide) (by decide)).trans ho
+  have wr₃ : u₃.wr = s.wr := by rw [K₃.2.2, K₂.2.2, K₁.2.2]
+  -- Written to `P + y`.
+  refine WP.mono (writePrime_ok h₃ c (by rw [wr₃]; exact hpw) hn hap (by rw [L₃]; exact hL1) (by rw [L₃]; exact hL)
+    o₃ (by rw [L₃]; exact hy) (by rw [L₃]; exact hb)) fun u ⟨⟨m₂, Oh, OP⟩, V, W, K⟩ => ?_
+  rw [L₃] at OP V W
+  have Fh : Frame (frameR base (s.gpr .esp) (primeR len c)) u₃.mem m₂ :=
+    frameR_of_outside Oh (by simp only [outOff, winOff]; omega_arith) (List.mem_cons_self ..)
+  refine ⟨⟨m₂, ((F₁.trans (frameR_mono F₂ baseSub)).trans (frameR_mono F₃ fun q hq => baseSub q (powSub q hq))).trans Fh,
+    OP⟩, ?_, W, (((K₁.mono (by decide)).trans K₂).trans K₃).trans (K.mono (by decide))⟩
+  rw [V]
+  have hV : 2 ^ r2Exp L % safeM p < 2 ^ (32 * (2 * w)) := by
+    have hs : safeM p < 2 ^ (32 * (2 * w)) := by
+      unfold safeM; split
+      · exact Nat.lt_of_lt_of_le hpL (Nat.pow_le_pow_right (by decide) (by omega_arith))
+      · exact Nat.lt_of_lt_of_le (by decide : 3 < 2 ^ 4) (Nat.pow_le_pow_right (by decide) (by omega_arith))
+    exact Nat.lt_trans (Nat.mod_lt _ (by have := safeM_gt p; omega_arith)) hs
+  refine val32_low (b := cwc len c - 2 * w) ?_ hV
+  have ew : w = Spec.Rsa.primeWords (w32 s.mem base lenOff) := rfl
+  rw [show 2 * w + (cwc len c - 2 * w) = cwc len c by rw [ew]; omega_arith]
+  exact V₃
 end
 
 end VG.Proof.Bignum.X86.PrivPre
