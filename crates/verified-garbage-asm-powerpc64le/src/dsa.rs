@@ -5472,15 +5472,3 @@ pub(crate) mod vg_dsa_sign_prevalidated;
 #[rustfmt::skip]
 #[path = "internal/vg_miller_rabin_round.rs"]
 pub(crate) mod vg_miller_rabin_round;
-
-#[rustfmt::skip]
-#[path = "internal/vg_rsa_mont_kernel.rs"]
-pub(crate) mod vg_rsa_mont_kernel;
-
-#[rustfmt::skip]
-#[path = "internal/vg_sha1_compress.rs"]
-pub(crate) mod vg_sha1_compress;
-
-#[rustfmt::skip]
-#[path = "internal/vg_sha256_compress.rs"]
-pub(crate) mod vg_sha256_compress;
