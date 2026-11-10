@@ -388,7 +388,7 @@ theorem tabs_of (hc : MdHashTable.PPC64LE.Coh vs) (hc' : MdHashTable.PPC64LE.Coh
       Spec.MdHashTable.hashAt 64 s.mem (stackArg s 14) = some w.l.G ∧
       Spec.MdHashTable.hashAt 64 s.mem (stackArg s 15) = some w'.l.G ∧
       s.mem.readW (stackArg s 14 + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (MdHashTable.PPC64LE.idx w) ∧
-      ∀ {D : Nat}, PreS D s → STabsOn (tabsOf vs gs w w') s := by
+      ∀ {D : Nat}, PreS false D s → STabsOn false (tabsOf vs gs w w') s := by
   obtain ⟨⟨T, hT, hh⟩, ⟨T', hT', hh'⟩, hpw⟩ := spec_tabS h
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
   obtain ⟨w', hw', rfl⟩ := List.mem_map.mp hT'
@@ -396,12 +396,12 @@ theorem tabs_of (hc : MdHashTable.PPC64LE.Coh vs) (hc' : MdHashTable.PPC64LE.Coh
   have hpG := hpw.sublist (List.sublist_append_right _ _)
   have hi := (MdHashTable.PPC64LE.held_tableOf hh).2.2.2
   refine ⟨w, hw, w', hw', hh, hh', MdHashTable.PPC64LE.hashAt_tableOf hi,
-    MdHashTable.PPC64LE.hashAt_tableOf (MdHashTable.PPC64LE.held_tableOf hh').2.2.2, hi, fun P => ⟨?_, ?_⟩⟩
-  · exact MdHashTable.PPC64LE.tabS_of (by decide) rfl (A := aR s) (by rw [P.hrd]; simp)
-      (in_aR (by decide)) (in_aR_sub (by decide)) (P.ka.sub_left kR_sub) (P.sa.sub_left (sc_sub P))
+    MdHashTable.PPC64LE.hashAt_tableOf (MdHashTable.PPC64LE.held_tableOf hh').2.2.2, hi, fun P => ⟨?_, ?_, fun h => nomatch h⟩⟩
+  · exact MdHashTable.PPC64LE.tabS_of (by decide) rfl (A := aR false s) (by rw [P.hrd]; simp)
+      (in_aR (pc := false) (by decide)) (in_aR_sub (pc := false) (by decide)) (P.ka.sub_left kR_sub) (P.sa.sub_left (sc_sub P))
       (show tGR s ∈ s.rd by rw [P.hrd]; simp) (P.ktg.sub_left kR_sub) (P.stg.sub_left (sc_sub P)) hc' hpG hw' hh'
-  · exact MdHashTable.PPC64LE.mdTabS_of (by decide) rfl (A := aR s) (by rw [P.hrd]; simp)
-      (in_aR (by decide)) (in_aR_sub (by decide)) (P.ka.sub_left kR_sub) (P.sa.sub_left (sc_sub P))
+  · exact MdHashTable.PPC64LE.mdTabS_of (by decide) rfl (A := aR false s) (by rw [P.hrd]; simp)
+      (in_aR (pc := false) (by decide)) (in_aR_sub (pc := false) (by decide)) (P.ka.sub_left kR_sub) (P.sa.sub_left (sc_sub P))
       (show tHR s ∈ s.rd by rw [P.hrd]; simp) (P.kth.sub_left kR_sub) (P.sth.sub_left (sc_sub P)) hc hpH hw hh
 
 /-- The correctness of `vg_rsa_pss_sign`, against its contract, for the
@@ -412,11 +412,11 @@ theorem code_correct (hc : MdHashTable.PPC64LE.Coh vs) (hc' : MdHashTable.PPC64L
       abiPreserved s s' ∧ (signSpec (MdHashTable.PPC64LE.tables vs) (MdHashTable.PPC64LE.tables gs)).post s s' := by
   obtain ⟨w, hw, w', hw', hh, hh', hH, hG, hi, hT⟩ := tabs_of hc hc' h
   have P := preS_of h hH
-  obtain ⟨Tg, T⟩ := hT P
+  obtain ⟨Tg, T, -⟩ := hT P
   obtain ⟨t, s', he, habi, hr⟩ := sign_ok P w.l.ok w.l.hash w.l.len w.l.valid w'.l.ok Tg w'.l.hash w'.l.len
-    w'.l.valid T hi w.sh.1 w.sh.2.1
+    w'.l.valid T (fun h => nomatch h) hi w.sh.1 w.sh.2.1
   refine ⟨t, s', he, habi, ?_⟩
-  have e : stackBytes = 3775 + 1 := rfl
+  have e : stackBytes false = 3775 + 1 := rfl
   unfold signSpec
   rw [e]
   sig_post [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, Spec.MdHashTable.param,
@@ -426,7 +426,7 @@ theorem code_correct (hc : MdHashTable.PPC64LE.Coh vs) (hc' : MdHashTable.PPC64L
   rw [hG] at hG'
   cases hH'
   cases hG'
-  exact hr
+  exact hr (fun h => nomatch h)
 
 /-- Constant time: the tables of the first run, which the public data makes
 the second's, at the same addresses with their functions at the same
@@ -445,22 +445,22 @@ theorem code_constantTime (hc : MdHashTable.PPC64LE.Coh vs) (hc' : MdHashTable.P
   have P₁ := preS_of h₁ hH₁
   have P₂ := preS_of h₂ hH₂
   have hpw₂ := (spec_tabS h₂).2.2
-  have T₂ : STabsOn (tabsOf vs gs w w') s₂ :=
-    ⟨MdHashTable.PPC64LE.tabS_of (by decide) rfl (A := aR s₂) (by rw [P₂.hrd]; simp)
-      (in_aR (by decide)) (in_aR_sub (by decide)) (P₂.ka.sub_left kR_sub) (P₂.sa.sub_left (sc_sub P₂))
+  have T₂ : STabsOn false (tabsOf vs gs w w') s₂ :=
+    ⟨MdHashTable.PPC64LE.tabS_of (by decide) rfl (A := aR false s₂) (by rw [P₂.hrd]; simp)
+      (in_aR (pc := false) (by decide)) (in_aR_sub (pc := false) (by decide)) (P₂.ka.sub_left kR_sub) (P₂.sa.sub_left (sc_sub P₂))
       (show tGR s₂ ∈ s₂.rd by rw [P₂.hrd]; simp) (P₂.ktg.sub_left kR_sub) (P₂.stg.sub_left (sc_sub P₂)) hc'
       (hpw₂.sublist (List.sublist_append_right _ _)) hw' hh₂',
-    MdHashTable.PPC64LE.mdTabS_of (by decide) rfl (A := aR s₂) (by rw [P₂.hrd]; simp)
-      (in_aR (by decide)) (in_aR_sub (by decide)) (P₂.ka.sub_left kR_sub) (P₂.sa.sub_left (sc_sub P₂))
+    MdHashTable.PPC64LE.mdTabS_of (by decide) rfl (A := aR false s₂) (by rw [P₂.hrd]; simp)
+      (in_aR (pc := false) (by decide)) (in_aR_sub (pc := false) (by decide)) (P₂.ka.sub_left kR_sub) (P₂.sa.sub_left (sc_sub P₂))
       (show tHR s₂ ∈ s₂.rd by rw [P₂.hrd]; simp) (P₂.kth.sub_left kR_sub) (P₂.sth.sub_left (sc_sub P₂)) hc
-      (hpw₂.sublist (List.sublist_append_left _ _)) hw hh₂⟩
+      (hpw₂.sublist (List.sublist_append_left _ _)) hw hh₂, fun h => nomatch h⟩
   have hn := MdHashTable.PPC64LE.mem_names hw
   have hn' := MdHashTable.PPC64LE.mem_names hw'
   have sH : ∀ {f}, f ∈ MdHashTable.PPC64LE.names vs → s₂.syms f = s₁.syms f := fun hf =>
     (hsy _ (List.mem_append_left _ hf)).symm
   have sG : ∀ {f}, f ∈ MdHashTable.PPC64LE.names gs → s₂.syms f = s₁.syms f := fun hf =>
     (hsy _ (List.mem_append_right _ hf)).symm
-  have hk : ∀ {s}, PreS w.l.G.len s → 1 ≤ kk s := fun P => Nat.le_trans (by decide) P.k1
+  have hk : ∀ {s}, PreS false w.l.G.len s → 1 ≤ kk s := fun P => Nat.le_trans (by decide) P.k1
   exact code_ct (Z := tabsOf vs gs w w') w.l.ok w.l.ct w.l.len w'.l.ok w'.l.ct w'.l.hash w'.l.len w'.l.valid
     w.l.hash w.l.valid w.sh.1 w.sh.2.1 _ _ _ _ _ _
     ⟨s₁, ⟨⟨⟨P₁, hT₁ P₁⟩, ⟨pubS_refl s₁, hk P₁⟩, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩, hi₁⟩,
@@ -738,7 +738,7 @@ theorem sign_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : S
       fun f g => f ≠ g → s.syms f ≠ s.syms g)
     (hd : Spec.RsaPss.digestLenOk 64 s.mem 0x300000 (BitVec.ofNat 64 dl)) :
     (Sg.signSpec tsH tsG).pre s := by
-  have e : Sg.stackBytes = 3775 + 1 := rfl
+  have e : Sg.stackBytes false = 3775 + 1 := rfl
   unfold Sg.signSpec
   rw [e]
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig,
