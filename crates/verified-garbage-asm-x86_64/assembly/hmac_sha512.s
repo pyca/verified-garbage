@@ -676,136 +676,6 @@ vg_hmac_sha512_init_shani:
 	jmp 21b
 	.p2align 6
 
-vg_hmac_sha512_finalize_shani:
-	lea rsp, [rsp-1880]
-	mov r8, rsp
-	add r8, 8
-	mov QWORD PTR [r8+1376], rbx
-	mov QWORD PTR [r8+1384], rbp
-	mov QWORD PTR [r8+1392], r12
-	mov QWORD PTR [r8+1400], r13
-	mov QWORD PTR [r8+1408], r14
-	mov QWORD PTR [r8+1416], r15
-	mov rbx, rdi
-	mov r12, rsi
-	mov r13, rcx
-	mov r15, r8
-	mov rsi, rdx
-	mov rdx, r15
-	add rdx, 1424
-	mov rcx, r15
-	call {vg_sha512_finalize_scratch_shani}
-	movdqu xmm0, XMMWORD PTR [r12]
-	movdqu XMMWORD PTR [rbx], xmm0
-	movdqu xmm0, XMMWORD PTR [r12+16]
-	movdqu XMMWORD PTR [rbx+16], xmm0
-	movdqu xmm0, XMMWORD PTR [r12+32]
-	movdqu XMMWORD PTR [rbx+32], xmm0
-	movdqu xmm0, XMMWORD PTR [r12+48]
-	movdqu XMMWORD PTR [rbx+48], xmm0
-	movdqu xmm0, XMMWORD PTR [r15+1424]
-	movdqu XMMWORD PTR [rbx+64], xmm0
-	movdqu xmm0, XMMWORD PTR [r15+1440]
-	movdqu XMMWORD PTR [rbx+80], xmm0
-	movdqu xmm0, XMMWORD PTR [r15+1456]
-	movdqu XMMWORD PTR [rbx+96], xmm0
-	movdqu xmm0, XMMWORD PTR [r15+1472]
-	movdqu XMMWORD PTR [rbx+112], xmm0
-	mov rbp, rbx
-	add rbp, 64
-	mov eax, 128
-	movq xmm1, rax
-	movdqu XMMWORD PTR [rbp+64], xmm1
-	pxor xmm0, xmm0
-	movdqu XMMWORD PTR [rbp+80], xmm0
-	movdqu XMMWORD PTR [rbp+96], xmm0
-	mov r12d, 192
-	mov rax, r12
-	shr rax, 61
-	bswap rax
-	movq xmm7, rax
-	mov rax, r12
-	add rax, rax
-	add rax, rax
-	add rax, rax
-	bswap rax
-	movq xmm8, rax
-	punpcklqdq xmm7, xmm8
-	movdqu XMMWORD PTR [rbp+112], xmm7
-	mov rsi, rbp
-	mov rdi, rbx
-	mov edx, 1
-	mov rcx, r15
-	call {vg_sha512_compress_shani}
-	mov rbx, rdi
-	mov r15, rcx
-	mov rbp, r13
-	mov rax, QWORD PTR [rbx]
-	bswap rax
-	mov QWORD PTR [rbp], rax
-	mov rax, QWORD PTR [rbx+8]
-	bswap rax
-	mov QWORD PTR [rbp+8], rax
-	mov rax, QWORD PTR [rbx+16]
-	bswap rax
-	mov QWORD PTR [rbp+16], rax
-	mov rax, QWORD PTR [rbx+24]
-	bswap rax
-	mov QWORD PTR [rbp+24], rax
-	mov rax, QWORD PTR [rbx+32]
-	bswap rax
-	mov QWORD PTR [rbp+32], rax
-	mov rax, QWORD PTR [rbx+40]
-	bswap rax
-	mov QWORD PTR [rbp+40], rax
-	mov rax, QWORD PTR [rbx+48]
-	bswap rax
-	mov QWORD PTR [rbp+48], rax
-	mov rax, QWORD PTR [rbx+56]
-	bswap rax
-	mov QWORD PTR [rbp+56], rax
-	mov rbx, QWORD PTR [r15+1376]
-	mov rbp, QWORD PTR [r15+1384]
-	mov r12, QWORD PTR [r15+1392]
-	mov r13, QWORD PTR [r15+1400]
-	mov r14, QWORD PTR [r15+1408]
-	mov r15, QWORD PTR [r15+1416]
-	lea rsp, [rsp+1880]
-	vpxor xmm0, xmm0, xmm0
-	vpxor xmm1, xmm1, xmm1
-	vpxor xmm2, xmm2, xmm2
-	vpxor xmm3, xmm3, xmm3
-	vpxor xmm4, xmm4, xmm4
-	vpxor xmm5, xmm5, xmm5
-	vpxor xmm6, xmm6, xmm6
-	vpxor xmm7, xmm7, xmm7
-	vpxor xmm8, xmm8, xmm8
-	vpxor xmm9, xmm9, xmm9
-	vpxor xmm10, xmm10, xmm10
-	vpxor xmm11, xmm11, xmm11
-	vpxor xmm12, xmm12, xmm12
-	vpxor xmm13, xmm13, xmm13
-	vpxor xmm14, xmm14, xmm14
-	vpxor xmm15, xmm15, xmm15
-	xor r11d, r11d
-	lea rsp, [rsp-1896]
-	movdqu XMMWORD PTR [rsp+1512], xmm0
-	movdqu XMMWORD PTR [rsp+1496], xmm0
-	movdqu XMMWORD PTR [rsp+1480], xmm0
-	movdqu XMMWORD PTR [rsp+1464], xmm0
-	movdqu XMMWORD PTR [rsp+1448], xmm0
-	lea rsp, [rsp+1896]
-	xor eax, eax
-	xor ecx, ecx
-	xor edx, edx
-	xor esi, esi
-	xor edi, edi
-	xor r8d, r8d
-	xor r9d, r9d
-	xor r10d, r10d
-	ret
-	.p2align 6
-
 vg_hmac_sha512_init_avx512:
 	cmp rcx, 129
 	jae 20f
@@ -2529,104 +2399,6 @@ vg_hmac_sha512_init_avx2:
 	jmp 21b
 	.p2align 6
 
-vg_hmac_sha512_finalize_avx2:
-	lea rsp, [rsp-1880]
-	mov r8, rsp
-	add r8, 8
-	mov QWORD PTR [r8+1376], rbx
-	mov QWORD PTR [r8+1384], rbp
-	mov QWORD PTR [r8+1392], r12
-	mov QWORD PTR [r8+1400], r13
-	mov QWORD PTR [r8+1408], r14
-	mov QWORD PTR [r8+1416], r15
-	mov rbx, rdi
-	mov r12, rsi
-	mov r13, rcx
-	mov r15, r8
-	mov rsi, rdx
-	mov rdx, r15
-	add rdx, 1424
-	mov rcx, r15
-	call {vg_sha512_finalize_scratch_avx2}
-	movdqu xmm0, XMMWORD PTR [r12]
-	movdqu XMMWORD PTR [rbx], xmm0
-	movdqu xmm0, XMMWORD PTR [r12+16]
-	movdqu XMMWORD PTR [rbx+16], xmm0
-	movdqu xmm0, XMMWORD PTR [r12+32]
-	movdqu XMMWORD PTR [rbx+32], xmm0
-	movdqu xmm0, XMMWORD PTR [r12+48]
-	movdqu XMMWORD PTR [rbx+48], xmm0
-	movdqu xmm0, XMMWORD PTR [r15+1424]
-	movdqu XMMWORD PTR [rbx+64], xmm0
-	movdqu xmm0, XMMWORD PTR [r15+1440]
-	movdqu XMMWORD PTR [rbx+80], xmm0
-	movdqu xmm0, XMMWORD PTR [r15+1456]
-	movdqu XMMWORD PTR [rbx+96], xmm0
-	movdqu xmm0, XMMWORD PTR [r15+1472]
-	movdqu XMMWORD PTR [rbx+112], xmm0
-	mov rbp, rbx
-	add rbp, 64
-	mov eax, 128
-	movq xmm1, rax
-	movdqu XMMWORD PTR [rbp+64], xmm1
-	pxor xmm0, xmm0
-	movdqu XMMWORD PTR [rbp+80], xmm0
-	movdqu XMMWORD PTR [rbp+96], xmm0
-	mov r12d, 192
-	mov rax, r12
-	shr rax, 61
-	bswap rax
-	movq xmm7, rax
-	mov rax, r12
-	add rax, rax
-	add rax, rax
-	add rax, rax
-	bswap rax
-	movq xmm8, rax
-	punpcklqdq xmm7, xmm8
-	movdqu XMMWORD PTR [rbp+112], xmm7
-	mov rsi, rbp
-	mov rdi, rbx
-	mov edx, 1
-	mov rcx, r15
-	call {vg_sha512_compress_avx2}
-	mov rbx, rdi
-	mov r15, rcx
-	mov rbp, r13
-	mov rax, QWORD PTR [rbx]
-	bswap rax
-	mov QWORD PTR [rbp], rax
-	mov rax, QWORD PTR [rbx+8]
-	bswap rax
-	mov QWORD PTR [rbp+8], rax
-	mov rax, QWORD PTR [rbx+16]
-	bswap rax
-	mov QWORD PTR [rbp+16], rax
-	mov rax, QWORD PTR [rbx+24]
-	bswap rax
-	mov QWORD PTR [rbp+24], rax
-	mov rax, QWORD PTR [rbx+32]
-	bswap rax
-	mov QWORD PTR [rbp+32], rax
-	mov rax, QWORD PTR [rbx+40]
-	bswap rax
-	mov QWORD PTR [rbp+40], rax
-	mov rax, QWORD PTR [rbx+48]
-	bswap rax
-	mov QWORD PTR [rbp+48], rax
-	mov rax, QWORD PTR [rbx+56]
-	bswap rax
-	mov QWORD PTR [rbp+56], rax
-	mov rbx, QWORD PTR [r15+1376]
-	mov rbp, QWORD PTR [r15+1384]
-	mov r12, QWORD PTR [r15+1392]
-	mov r13, QWORD PTR [r15+1400]
-	mov r14, QWORD PTR [r15+1408]
-	mov r15, QWORD PTR [r15+1416]
-	lea rsp, [rsp+1880]
-	ret
-	.p2align 6
-
 vg_hmac_sha512_init:
 	cmp rcx, 129
 	jae 20f
@@ -3297,6 +3069,234 @@ vg_hmac_sha512_init:
 	mov QWORD PTR [rsp+3408], r11
 	lea rsp, [rsp+3416]
 	jmp 21b
+	.p2align 6
+
+vg_hmac_sha512_finalize_shani:
+	lea rsp, [rsp-1880]
+	mov r8, rsp
+	add r8, 8
+	mov QWORD PTR [r8+1376], rbx
+	mov QWORD PTR [r8+1384], rbp
+	mov QWORD PTR [r8+1392], r12
+	mov QWORD PTR [r8+1400], r13
+	mov QWORD PTR [r8+1408], r14
+	mov QWORD PTR [r8+1416], r15
+	mov rbx, rdi
+	mov r12, rsi
+	mov r13, rcx
+	mov r15, r8
+	mov rsi, rdx
+	mov rdx, r15
+	add rdx, 1424
+	mov rcx, r15
+	call {vg_sha512_finalize_scratch_shani}
+	movdqu xmm0, XMMWORD PTR [r12]
+	movdqu XMMWORD PTR [rbx], xmm0
+	movdqu xmm0, XMMWORD PTR [r12+16]
+	movdqu XMMWORD PTR [rbx+16], xmm0
+	movdqu xmm0, XMMWORD PTR [r12+32]
+	movdqu XMMWORD PTR [rbx+32], xmm0
+	movdqu xmm0, XMMWORD PTR [r12+48]
+	movdqu XMMWORD PTR [rbx+48], xmm0
+	movdqu xmm0, XMMWORD PTR [r15+1424]
+	movdqu XMMWORD PTR [rbx+64], xmm0
+	movdqu xmm0, XMMWORD PTR [r15+1440]
+	movdqu XMMWORD PTR [rbx+80], xmm0
+	movdqu xmm0, XMMWORD PTR [r15+1456]
+	movdqu XMMWORD PTR [rbx+96], xmm0
+	movdqu xmm0, XMMWORD PTR [r15+1472]
+	movdqu XMMWORD PTR [rbx+112], xmm0
+	mov rbp, rbx
+	add rbp, 64
+	mov eax, 128
+	movq xmm1, rax
+	movdqu XMMWORD PTR [rbp+64], xmm1
+	pxor xmm0, xmm0
+	movdqu XMMWORD PTR [rbp+80], xmm0
+	movdqu XMMWORD PTR [rbp+96], xmm0
+	mov r12d, 192
+	mov rax, r12
+	shr rax, 61
+	bswap rax
+	movq xmm7, rax
+	mov rax, r12
+	add rax, rax
+	add rax, rax
+	add rax, rax
+	bswap rax
+	movq xmm8, rax
+	punpcklqdq xmm7, xmm8
+	movdqu XMMWORD PTR [rbp+112], xmm7
+	mov rsi, rbp
+	mov rdi, rbx
+	mov edx, 1
+	mov rcx, r15
+	call {vg_sha512_compress_shani}
+	mov rbx, rdi
+	mov r15, rcx
+	mov rbp, r13
+	mov rax, QWORD PTR [rbx]
+	bswap rax
+	mov QWORD PTR [rbp], rax
+	mov rax, QWORD PTR [rbx+8]
+	bswap rax
+	mov QWORD PTR [rbp+8], rax
+	mov rax, QWORD PTR [rbx+16]
+	bswap rax
+	mov QWORD PTR [rbp+16], rax
+	mov rax, QWORD PTR [rbx+24]
+	bswap rax
+	mov QWORD PTR [rbp+24], rax
+	mov rax, QWORD PTR [rbx+32]
+	bswap rax
+	mov QWORD PTR [rbp+32], rax
+	mov rax, QWORD PTR [rbx+40]
+	bswap rax
+	mov QWORD PTR [rbp+40], rax
+	mov rax, QWORD PTR [rbx+48]
+	bswap rax
+	mov QWORD PTR [rbp+48], rax
+	mov rax, QWORD PTR [rbx+56]
+	bswap rax
+	mov QWORD PTR [rbp+56], rax
+	mov rbx, QWORD PTR [r15+1376]
+	mov rbp, QWORD PTR [r15+1384]
+	mov r12, QWORD PTR [r15+1392]
+	mov r13, QWORD PTR [r15+1400]
+	mov r14, QWORD PTR [r15+1408]
+	mov r15, QWORD PTR [r15+1416]
+	lea rsp, [rsp+1880]
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-1896]
+	movdqu XMMWORD PTR [rsp+1512], xmm0
+	movdqu XMMWORD PTR [rsp+1496], xmm0
+	movdqu XMMWORD PTR [rsp+1480], xmm0
+	movdqu XMMWORD PTR [rsp+1464], xmm0
+	movdqu XMMWORD PTR [rsp+1448], xmm0
+	lea rsp, [rsp+1896]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	ret
+	.p2align 6
+
+vg_hmac_sha512_finalize_avx2:
+	lea rsp, [rsp-1880]
+	mov r8, rsp
+	add r8, 8
+	mov QWORD PTR [r8+1376], rbx
+	mov QWORD PTR [r8+1384], rbp
+	mov QWORD PTR [r8+1392], r12
+	mov QWORD PTR [r8+1400], r13
+	mov QWORD PTR [r8+1408], r14
+	mov QWORD PTR [r8+1416], r15
+	mov rbx, rdi
+	mov r12, rsi
+	mov r13, rcx
+	mov r15, r8
+	mov rsi, rdx
+	mov rdx, r15
+	add rdx, 1424
+	mov rcx, r15
+	call {vg_sha512_finalize_scratch_avx2}
+	movdqu xmm0, XMMWORD PTR [r12]
+	movdqu XMMWORD PTR [rbx], xmm0
+	movdqu xmm0, XMMWORD PTR [r12+16]
+	movdqu XMMWORD PTR [rbx+16], xmm0
+	movdqu xmm0, XMMWORD PTR [r12+32]
+	movdqu XMMWORD PTR [rbx+32], xmm0
+	movdqu xmm0, XMMWORD PTR [r12+48]
+	movdqu XMMWORD PTR [rbx+48], xmm0
+	movdqu xmm0, XMMWORD PTR [r15+1424]
+	movdqu XMMWORD PTR [rbx+64], xmm0
+	movdqu xmm0, XMMWORD PTR [r15+1440]
+	movdqu XMMWORD PTR [rbx+80], xmm0
+	movdqu xmm0, XMMWORD PTR [r15+1456]
+	movdqu XMMWORD PTR [rbx+96], xmm0
+	movdqu xmm0, XMMWORD PTR [r15+1472]
+	movdqu XMMWORD PTR [rbx+112], xmm0
+	mov rbp, rbx
+	add rbp, 64
+	mov eax, 128
+	movq xmm1, rax
+	movdqu XMMWORD PTR [rbp+64], xmm1
+	pxor xmm0, xmm0
+	movdqu XMMWORD PTR [rbp+80], xmm0
+	movdqu XMMWORD PTR [rbp+96], xmm0
+	mov r12d, 192
+	mov rax, r12
+	shr rax, 61
+	bswap rax
+	movq xmm7, rax
+	mov rax, r12
+	add rax, rax
+	add rax, rax
+	add rax, rax
+	bswap rax
+	movq xmm8, rax
+	punpcklqdq xmm7, xmm8
+	movdqu XMMWORD PTR [rbp+112], xmm7
+	mov rsi, rbp
+	mov rdi, rbx
+	mov edx, 1
+	mov rcx, r15
+	call {vg_sha512_compress_avx2}
+	mov rbx, rdi
+	mov r15, rcx
+	mov rbp, r13
+	mov rax, QWORD PTR [rbx]
+	bswap rax
+	mov QWORD PTR [rbp], rax
+	mov rax, QWORD PTR [rbx+8]
+	bswap rax
+	mov QWORD PTR [rbp+8], rax
+	mov rax, QWORD PTR [rbx+16]
+	bswap rax
+	mov QWORD PTR [rbp+16], rax
+	mov rax, QWORD PTR [rbx+24]
+	bswap rax
+	mov QWORD PTR [rbp+24], rax
+	mov rax, QWORD PTR [rbx+32]
+	bswap rax
+	mov QWORD PTR [rbp+32], rax
+	mov rax, QWORD PTR [rbx+40]
+	bswap rax
+	mov QWORD PTR [rbp+40], rax
+	mov rax, QWORD PTR [rbx+48]
+	bswap rax
+	mov QWORD PTR [rbp+48], rax
+	mov rax, QWORD PTR [rbx+56]
+	bswap rax
+	mov QWORD PTR [rbp+56], rax
+	mov rbx, QWORD PTR [r15+1376]
+	mov rbp, QWORD PTR [r15+1384]
+	mov r12, QWORD PTR [r15+1392]
+	mov r13, QWORD PTR [r15+1400]
+	mov r14, QWORD PTR [r15+1408]
+	mov r15, QWORD PTR [r15+1416]
+	lea rsp, [rsp+1880]
+	ret
 	.p2align 6
 
 vg_hmac_sha512_finalize:
