@@ -394,7 +394,7 @@ theorem primeIn_ok (h : In Ex base bytes len args s) (f : Nat) (c : Ctx) {p : Na
 /-- `In`, after code that changes the registers `regs` and the memory only
 within `[P + y, P + y + n)` of a region `⟨P, L'⟩` apart from the stack
 arguments. -/
-theorem In.keepOut (h : In Ex base bytes len args s) {t : State} {regs : List Reg} (K : Keeps regs s t)
+theorem in_keepOut (h : In Ex base bytes len args s) {t : State} {regs : List Reg} (K : Keeps regs s t)
     (di : .edi ∉ regs) (sp : .esp ∉ regs) {P : Addr} {y n L' : Nat} (O : Outside P y n s.mem t.mem)
     (hyn : y + n ≤ L') (hPa : ∀ i < 18, Region.Disjoint ⟨VG.Proof.Dsa.X86.stackAddress s i, 4⟩ ⟨P, L'⟩) :
     In Ex base bytes len args t := by
@@ -498,6 +498,25 @@ theorem factor_ok (h : In Ex base bytes len args s) {f : Nat} (hf9 : 9 ≤ f) (h
     exact WP.mono (primeIn_ok h₄ f .wide (by omega_arith) (by rw [e0]; exact .inl (by omega_arith)) hp'
       (by rw [m₄]; exact hL1) (by rw [m₄]; exact hL) (by rw [m₄]; exact hpL) (by rw [m₄]; exact pw)
       (by rw [wr₄]; exact hpw) hn hap (by rw [m₄]; exact ho) (by rw [m₄]; exact hy)) (finish .wide)
+
+/-- `In`, after code that changes the registers `regs`, the working space's
+ranges `ws` (and the stack below it), then the memory within
+`[P + y, P + y + n)` of a region apart from the stack arguments. -/
+theorem in_keepFOut (h : In Ex base bytes len args s) {t : State} {regs : List Reg} (K : Keeps regs s t)
+    (di : .edi ∉ regs) (sp : .esp ∉ regs) {ws : List (Nat × Nat)} {m₁ : Mem}
+    (F : Frame (frameR base (s.gpr .esp) ws) s.mem m₁) (hfit : ∀ p ∈ ws, p.1 + p.2 ≤ bytes)
+    {P : Addr} {y n L' : Nat} (O : Outside P y n m₁ t.mem) (hyn : y + n ≤ L')
+    (hPa : ∀ i < 18, Region.Disjoint ⟨VG.Proof.Dsa.X86.stackAddress s i, 4⟩ ⟨P, L'⟩) :
+    In Ex base bytes len args t := by
+  let t' : State := { t with mem := m₁ }
+  have K' : Keeps regs s t' := ⟨K.1, K.2.1, K.2.2⟩
+  have h' := h.keepF K' di sp F hfit
+  have hPa' : ∀ i < 18, Region.Disjoint ⟨VG.Proof.Dsa.X86.stackAddress t' i, 4⟩ ⟨P, L'⟩ := by
+    intro i hi
+    rw [show VG.Proof.Dsa.X86.stackAddress t' i = VG.Proof.Dsa.X86.stackAddress s i by
+      simp only [VG.Proof.Dsa.X86.stackAddress, t', K.1 _ sp]]
+    exact hPa i hi
+  exact in_keepOut h' (regs := []) ⟨fun _ _ => rfl, rfl, rfl⟩ (by decide) (by decide) O hyn hPa'
 
 end
 
