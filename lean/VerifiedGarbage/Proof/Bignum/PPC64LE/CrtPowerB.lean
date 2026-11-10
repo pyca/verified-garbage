@@ -88,7 +88,7 @@ theorem powerB_ok {s : State} {BX D : Addr} {Z oA wA L Pv x oD oLen : Nat}
 the prime `P` (`w_A` words of `X`'s array `xj`) and the input `c` (the first
 `w_A n` words of `X`'s array 6), array 4 holds `c^d mod P` for the exponent
 `d` (`L` bytes at `D`), with `k`, `D` and `L` from the header. -/
-theorem power_ok {s : State} {BX D : Addr} {Z oA wA wX xj k L Pv Cv oD oLen : Nat}
+theorem power_ok {pc q : Bool} {s : State} {BX D : Addr} {Z oA wA wX xj k L Pv Cv oD oLen : Nat}
     (hs : Scr s BX Z) (hA : oA + slot wA 24 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wA) (hw' : wA < 2 ^ 31)
     (hwx : wA ≤ wX) (hxj : xj < 8)
     (h10 : s.gpr .r10 = off (off BX oA) (slot wA 0)) (h21 : s.gpr .r21 = off (off BX oA) (slot wA 0))
@@ -102,16 +102,17 @@ theorem power_ok {s : State} {BX D : Addr} {Z oA wA wX xj k L Pv Cv oD oLen : Na
     (hL' : L < 2 ^ 63) (hrdD : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
     (hsepD : ∀ i < L, ∀ x, ofs BX x < Z → off D i ≠ x)
     (hP : wv s.mem BX (slot wX xj) wA = Pv) (hP2 : 2 ≤ Pv) (hPodd : Pv % 2 = 1)
-    (hC : wv s.mem BX (slot wX 6) (wA * nChunks ((k + 7) / 8) wA) = Cv) :
-    WP isa (power xj oD oLen) s fun t =>
+    (hC : wv s.mem BX (slot wX 6) (wA * nChunks ((k + 7) / 8) wA) = Cv)
+    (hR2 : pc = true → ∃ S pL b, R2C q s BX S Z wA Pv pL b) :
+    WP isa (powerG pc q xj oD oLen) s fun t =>
       (val32 t.mem (off BX oA) (slot wA 0) (2 * wA) = Pv ∧
         val32 t.mem (off BX oA) (slot wA 4) (2 * wA) = Cv ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
         Outside BX oA (slot wA 24) s.mem t.mem ∧ t.gpr .r10 = off (off BX oA) (slot wA 0)) ∧
       Keep (.r10 :: powerRegs) s t := by
   have eX8 : slot wX 8 = hdrBytes + 8 * (8 * (wX + 2)) := rfl
   have hh : hdrBytes = 256 := rfl
-  unfold power
-  refine powerA_ok hs hA hXA hw2 hw' hwx hxj h10 h21 h29 h11 h23 h27 h28 hK hk hk' hn hP hP2 hPodd hC
+  unfold powerG
+  refine powerA_ok hs hA hXA hw2 hw' hwx hxj h10 h21 h29 h11 h23 h27 h28 hK hk hk' hn hP hP2 hPodd hC hR2
     fun t v0 v1 v4 t12 tinv out t10 k => ?_
   have hb : Spec.Rsa.bytesAt t.mem D L = Spec.Rsa.bytesAt s.mem D L := bytesAt_out out hA hsepD
   have hd : ∀ d, d + 8 ≤ 256 → word t.mem BX d = word s.mem BX d := fun d hd' =>

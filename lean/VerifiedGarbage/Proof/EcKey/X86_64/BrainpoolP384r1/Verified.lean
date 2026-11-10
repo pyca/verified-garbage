@@ -1,5 +1,12 @@
 module
 
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
 public import VerifiedGarbage.Proof.EcKey.X86_64.Main
 public import VerifiedGarbage.Proof.EcKey.X86_64.BrainpoolP384r1.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
@@ -143,5 +150,26 @@ theorem pk_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (hI : Weie
     Verified X86_64.target publicKeyBrainpoolP384r1 (Spec.EcKey.BrainpoolP384r1.inst.publicKeyContract X86_64.abi 8) :=
   Verified.of_inline_ct pk_inlineOk (pk_x86 hL hI) pk_ct implies8
     (fun _ h => Sig.clear_of_pre h) pk_patch
+
+/-! ## Without secret residue -/
+
+/-- The granules of its stack that `vg_ec_brainpoolp384r1_public_key` must wipe on
+return, from the residue analysis (`X86_64.RScrub.keepFor`). -/
+def scrubKs : List Nat := keep_for% Spec.EcKey.BrainpoolP384r1.publicKeyApi.sig 8 publicKeyBrainpoolP384r1 []
+
+theorem scrubOk : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.EcKey.BrainpoolP384r1.publicKeyApi.sig 8 []) publicKeyBrainpoolP384r1 h).any
+      (RScrub.resOkB · 8 scrubKs (Impl.Scrub.X86_64.chunks 8)) = true :=
+  RScrub.Analysed.ok_of _ (by taint_decide)
+
+/-- `vg_ec_brainpoolp384r1_public_key`, followed by `Impl.Scrub.X86_64.scrubTail`
+(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
+def scrubReg (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (hI : Weierstrass.X86_64.InvSounds) :
+    Registration Spec.EcKey.BrainpoolP384r1.publicKeyApi X86_64.target :=
+  RScrub.withScrub {
+    code := publicKeyBrainpoolP384r1
+    stack := 8
+    verified := pk_verified hL hI }
+    (EcKey.X86_64.Scrub.publicKeyOut _ _) [] (RScrub.pubOk_nil _) (some ⟨scrubKs, scrubOk⟩)
 
 end VG.Proof.EcKey.X86_64.BrainpoolP384r1

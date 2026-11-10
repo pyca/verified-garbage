@@ -180,13 +180,13 @@ theorem products_ok {s : State} {L : Lay} {key sig dig : Addr} {qb d W : Nat} (h
         Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.ql) =
           Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d qb)) * W % arrQ s.mem L 0 ∧
         Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (off L.Buf L.ql) L.ql) = rOf s.mem L sig * W % arrQ s.mem L 0 ∧
-        QBuf L s.mem t.mem) ∧ Keep prodRegs s t := by
+        QBuf L s.mem t.mem ∧ arrQ t.mem L 1 = 2 ^ (128 * 4) % arrQ s.mem L 0) ∧ Keep prodRegs s t := by
   have hq := hL.ql
   have hpl := hL.pl
   have hn : slot 4 28 ≤ 2 ^ 64 := by decide
   have hcop : Nat.Coprime (2 ^ (64 * 4)) (arrQ s.mem L 0) := VG.Proof.Bignum.coprime_pow2 hqo _
   have hRR := pow_sq_eq 4
-  generalize (2 : Nat) ^ (128 * 4) = R2 at h8 hRR
+  generalize (2 : Nat) ^ (128 * 4) = R2 at h8 hRR ⊢
   unfold products
   -- The digest's scalar into array 6, r into array 5, `R² mod q` into array 1.
   refine WP.seq (WP.mono (prod_scalar_ok h hL h2 hqb hd hdg) fun s₁ ⟨⟨Q1, v6, o1⟩, k1⟩ => ?_)
@@ -309,7 +309,15 @@ theorem products_ok {s : State} {L : Lay} {key sig dig : Addr} {qb d W : Nat} (h
   have otq := outside_shift ot' (by omega_arith) (by decide)
   have u2' : arr s₁₁.mem L.Q 4 5 = rOf s.mem L sig * W % arrQ s.mem L 0 :=
     (Outside.val32 otq (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith)).trans u2
-  refine ⟨⟨Q11.step (k12'.trans kt) (by decide), ?_, ?_, qa9.qbuf.trans (qb11.trans qbt)⟩,
+  have a1t : arrQ t.mem L 1 = R2 % arrQ s.mem L 0 := by
+    have e9' : arr s₉.mem L.Q 4 1 = R2 % arrQ s.mem L 0 :=
+      (Outs.arrEq_mont o9 (by decide) (by decide) (by decide) (by decide) hn).trans d1
+    have s11 : arr s₁₁.mem L.Q 4 1 = arr s₉.mem L.Q 4 1 :=
+      Outside.val32 otq (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith)
+    have otq2 := outside_shift (B := L.Q) (a := 1600) (by rw [← buf_eq]; exact ot2b) (by omega_arith) (by decide)
+    exact (Outside.val32 otq2 (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith)).trans
+      (s11.trans e9')
+  refine ⟨⟨Q11.step (k12'.trans kt) (by decide), ?_, ?_, qa9.qbuf.trans (qb11.trans qbt), a1t⟩,
     kall.mono (by decide)⟩
   · rw [prod_bytes_keep ot2b (by omega_arith) (by omega_arith)]
     refine (vt.trans (read_low (w := 4) _ _ (by omega_arith) ?_)).trans u1'

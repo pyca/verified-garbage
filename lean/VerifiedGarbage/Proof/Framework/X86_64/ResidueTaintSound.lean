@@ -675,7 +675,7 @@ theorem step_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     by rw [r₁]; exact inv.room, by rw [r₁]; exact inv.top, ?_, ?_, inv.rasIn, inv.rasSorted, ?_, ?_,
     fun e he => by rw [hl]; exact hfit e he,
     ⟨ub_step inv.one₁ e₁, fl_step e₁, mb_step inv.base.wf₁ inv.one₁ inv.mbFit e₁⟩,
-    ⟨ub_step inv.one₂ e₂, fl_step e₂, mb_step inv.base.wf₂ inv.one₂ inv.mbFit e₂⟩⟩⟩
+    ⟨ub_step inv.one₂ e₂, fl_step e₂, mb_step inv.base.wf₂ inv.one₂ inv.mbFit e₂⟩, ?_⟩⟩
   · intro i hi; simp only [region, w₁, r₁]; exact inv.frames i hi
   · intro i h₁ h₂; simp only [region, w₁, wb, r₁]; rw [w₁] at h₂; exact inv.others i h₁ h₂
   · intro j hj i hi; simp only [region, raSlot, wa, wb, w₁, r₁]; exact inv.rasFr j hj i hi
@@ -685,6 +685,7 @@ theorem step_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     rw [w₁, r₁] at hw
     rw [r₁, r₂, f₁ _ hw, f₂ _ (by rw [← inv.wr, ← inv.rsp]; exact hw)]
     exact d hw
+  · intro i hi; simp only [region, wa, wb, w₁, r₁]; exact inv.fw i hi
 
 /-! ## Soundness: branches, joins and order -/
 
@@ -699,7 +700,7 @@ theorem RInv.weaken {τ σ : FT} {s₁ s₂ : State} (inv : RInv τ s₁ s₂) (
     (hb : Taint.Agree σ.t s₁ s₂) (hl : σ.t.lens = τ.t.lens)
     (hsec : ∀ j, ¬ InSec σ.sec j → ¬ InSec τ.sec j)
     (hub : ∀ p ∈ σ.ub, ∃ n, (p.1, n) ∈ τ.ub ∧ n ≤ p.2) (hfl : σ.fl = none ∨ σ.fl = τ.fl)
-    (hmb : ∀ e ∈ σ.mb, e ∈ τ.mb) : RInv σ s₁ s₂ := by
+    (hmb : ∀ e ∈ σ.mb, e ∈ τ.mb) (hfw : σ.fw = τ.fw) : RInv σ s₁ s₂ := by
   have e : ∀ s, wa s σ = wa s τ := fun s => by funext j; simp only [wa, wb, hr]
   have e' : ∀ s, raSlot s σ = raSlot s τ := fun s => by funext j; simp only [raSlot, e]
   have one : ∀ {s}, One τ s → One σ s := fun o =>
@@ -712,7 +713,7 @@ theorem RInv.weaken {τ σ : FT} {s₁ s₂ : State} (inv : RInv τ s₁ s₂) (
       · exact o.fl a b (h' ▸ h),
      fun e he => o.mb e (hmb e he)⟩
   refine ⟨hb, inv.rsp, inv.unk, inv.wr, fun x => inv.lens (hl ▸ x), hn ▸ inv.nfr, hr ▸ inv.room,
-    hd ▸ inv.top, ?_, ?_, ?_, hra ▸ inv.rasSorted, ?_, ?_, ?_, one inv.one₁, one inv.one₂⟩
+    hd ▸ inv.top, ?_, ?_, ?_, hra ▸ inv.rasSorted, ?_, ?_, ?_, one inv.one₁, one inv.one₂, ?_⟩
   · rw [hn, hd]; exact inv.frames
   · intro i h₁ h₂; simp only [wb, hr, hd]; exact inv.others i (hn ▸ h₁) h₂
   · rw [hra, hr, hd]; exact inv.rasIn
@@ -721,6 +722,9 @@ theorem RInv.weaken {τ σ : FT} {s₁ s₂ : State} (inv : RInv τ s₁ s₂) (
     rw [e] at hw ⊢; rw [e]
     exact inv.dead j (hr ▸ hd ▸ hj) (hsec j hnot) hw
   · intro e he; rw [hl]; exact inv.mbFit e (hmb e he)
+  · intro i hi
+    rw [e, List.getElem_of_eq hfw hi]
+    exact inv.fw i (hfw ▸ hi)
 
 theorem inSec_append_left {l₁ l₂ : List (Nat × Nat)} {j : Nat} (h : ¬ InSec (l₁ ++ l₂) j) : ¬ InSec l₁ j :=
   fun ⟨p, hp, h'⟩ => h ⟨p, List.mem_append_left _ hp, h'⟩
@@ -740,11 +744,11 @@ theorem meet_left {τ₁ τ₂ : FT} {s₁ s₂ : State} (h : Agree τ₁ s₁ s
   split
   · rename_i hc
     simp only [Bool.and_eq_true, beq_iff_eq] at hc
-    obtain ⟨⟨⟨⟨⟨⟨h1, -⟩, -⟩, -⟩, -⟩, -⟩, hl⟩ := hc
+    obtain ⟨⟨⟨⟨⟨⟨⟨h1, -⟩, -⟩, -⟩, -⟩, -⟩, hl⟩, -⟩ := hc
     intro _
     refine (h h1).weaken rfl rfl rfl rfl (Taint.meet_left (h h1).base) (by simp [Taint.meet, hl])
       (fun j hn => inSec_append_left hn) (fun p hp => (mem_ubMeet hp).1) ?_
-      (fun e he => (List.mem_filter.mp he).1)
+      (fun e he => (List.mem_filter.mp he).1) rfl
     simp only
     split <;> [exact .inr rfl; exact .inl rfl]
   · exact fun h => absurd h (by decide)
@@ -754,11 +758,11 @@ theorem meet_right {τ₁ τ₂ : FT} {s₁ s₂ : State} (h : Agree τ₂ s₁ 
   split
   · rename_i hc
     simp only [Bool.and_eq_true, beq_iff_eq] at hc
-    obtain ⟨⟨⟨⟨⟨⟨-, h2⟩, hn⟩, hd⟩, hr⟩, hra⟩, hl⟩ := hc
+    obtain ⟨⟨⟨⟨⟨⟨⟨-, h2⟩, hn⟩, hd⟩, hr⟩, hra⟩, hl⟩, hfw⟩ := hc
     intro _
     refine (h h2).weaken hn hd hr hra (Taint.meet_right (h h2).base) (by simp [Taint.meet, hl])
       (fun j hn => inSec_append_right hn) (fun p hp => (mem_ubMeet hp).2) ?_
-      (fun e he => by simpa using (List.mem_filter.mp he).2)
+      (fun e he => by simpa using (List.mem_filter.mp he).2) hfw
     simp only
     split
     · rename_i hf; simp only [beq_iff_eq] at hf; exact .inr hf
@@ -769,13 +773,13 @@ theorem le_sound {τ σ : FT} {s₁ s₂ : State} (hle : le τ σ = true) (h : A
   intro hτ
   simp only [le, hτ, Bool.not_true, Bool.false_or, Bool.and_eq_true, beq_iff_eq, List.all_eq_true,
     List.contains_iff_mem] at hle
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨hs, hn⟩, hd⟩, hr⟩, hra⟩, hb⟩, hsec⟩, hub⟩, hfl⟩, hmb⟩ := hle
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hs, hn⟩, hd⟩, hr⟩, hra⟩, hb⟩, hsec⟩, hub⟩, hfl⟩, hmb⟩, hfw⟩ := hle
   have inv := h hs
   have hbase := Taint.le_sound (Taint.leK_eq ▸ hb) inv.base
   have hl : τ.t.lens = σ.t.lens := by
     have hb' := hb
     rw [Taint.leK_eq] at hb'; simp only [Taint.le, Bool.and_eq_true, beq_iff_eq] at hb'; exact hb'.1.1.1.1.2
-  refine inv.weaken hn hd hr hra hbase hl (fun j hnot ⟨p, hp, h'⟩ => hnot ⟨p, hsec p hp, h'⟩) ?_ ?_ hmb
+  refine inv.weaken hn hd hr hra hbase hl (fun j hnot ⟨p, hp, h'⟩ => hnot ⟨p, hsec p hp, h'⟩) ?_ ?_ hmb hfw
   · intro p hp
     have h := hub p hp
     cases hn : ubOf σ.ub p.1 with
@@ -989,7 +993,7 @@ theorem call_sound {τ τ' : FT} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ 
       c₁.wr c₂.wr hm,
     by rw [c₁.sp, c₂.sp, inv.rsp], by rw [c₁.unk, c₂.unk, inv.unk], by rw [c₁.wr, c₂.wr, inv.wr],
     fun h => by rw [c₁.wr]; exact inv.lens h, by rw [c₁.wr]; exact inv.nfr,
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, inv.mbFit, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, inv.mbFit, ?_, ?_, ?_⟩
   · dsimp only; rw [c₁.sp]; omega
   · dsimp only; rw [c₁.sp]; omega
   · intro i hi
@@ -1040,6 +1044,7 @@ theorem call_sound {τ τ' : FT} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ 
       rw [c₂.gpr _ hp.2]; exact inv.one₂.ub p hp.1
     · exact mb_out (τ := τ) inv.base.wf₂ inv.one₂ inv.mbFit c₂.wr
         (fun y ⟨r, hr, hc⟩ => hout₂ y (fun hy => hfree₁ y hy r (inv.wr ▸ hr) hc))
+  · intro i hi; simp only [hrg, wa, wb]; rw [hsh₁]; exact inv.fw i hi
 
 theorem retFx {a b c : State} (h : isa.ret a b = some c) :
     c.gpr .rsp = b.gpr .rsp + BitVec.ofNat 64 8 ∧ (∀ r, r ≠ .rsp → c.gpr r = b.gpr r) ∧
@@ -1078,11 +1083,44 @@ theorem ret_sound {τ τ' : FT} {a₁ a₂ b₁ b₂ c₁ c₂ : State} (ha : Ag
   have hr8 : (b₁.gpr .rsp + BitVec.ofNat 64 8).toNat = (b₁.gpr .rsp).toNat + 8 := toNat_add_ofNat _ (by omega)
   have hwaR : wa b₁ τ τ.room = b₁.gpr .rsp := by simp only [wa, wb, BitVec.sub_add_cancel]
   have hrg : ∀ i, region c₁ i = region b₁ i := fun i => by simp only [region, w₁]
-  refine ⟨agree_killSp inv.base (by rw [sp₁, sp₂, inv.rsp]) g₁ g₂ f₁ f₂ x₁ x₂ w₁ w₂
-      (fun y => .inl ⟨by rw [m₁], by rw [m₂]⟩),
+  -- The stack pointer after the return, in the innermost frame (`spBase`).
+  have hsp₁ : ∀ p ∈ spBase τ, c₁.gpr p.1 = (region c₁ p.2.1).base + BitVec.ofNat 64 p.2.2 := by
+    intro p hp
+    unfold spBase at hp
+    split at hp <;> [rename_i a ha; cases hp]
+    split at hp <;> [rename_i hle; cases hp]
+    rcases List.mem_singleton.mp hp with rfl
+    obtain ⟨tl, hfw⟩ : ∃ tl, τ.fw = a :: tl := by
+      cases h : τ.fw with
+      | nil => rw [h] at ha; cases ha
+      | cons x tl => rw [h] at ha; cases ha; exact ⟨tl, rfl⟩
+    have h0 := inv.fw 0 (by rw [hfw]; exact Nat.succ_pos _)
+    rw [List.getElem_of_eq hfw, List.getElem_cons_zero] at h0
+    dsimp only
+    rw [hrg, h0, sp₁, wa, wb, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' hle,
+      BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]
+  have hsp₂ : ∀ p ∈ spBase τ, c₂.gpr p.1 = (region c₂ p.2.1).base + BitVec.ofNat 64 p.2.2 := by
+    intro p hp
+    have h := hsp₁ p hp
+    have hr : p.1 = .rsp := by
+      unfold spBase at hp
+      split at hp <;> [skip; cases hp]
+      split at hp <;> [skip; cases hp]
+      rw [List.mem_singleton.mp hp]
+    rw [hr] at h ⊢
+    rw [show region c₂ p.2.1 = region c₁ p.2.1 by simp only [region, w₁, w₂, inv.wr], sp₂, ← inv.rsp, ← sp₁]
+    exact h
+  have hk := agree_killSp inv.base (by rw [sp₁, sp₂, inv.rsp]) g₁ g₂ f₁ f₂ x₁ x₂ w₁ w₂
+      (fun y => .inl ⟨by rw [m₁], by rw [m₂]⟩)
+  have hbase : Taint.Agree { killSp τ.t with bases := spBase τ ++ kill τ.t .rsp } c₁ c₂ :=
+    ⟨hk.rf, hk.wr,
+      ⟨hk.wf₁.1, fun p hp => (List.mem_append.mp hp).elim (hsp₁ p) (hk.wf₁.2 p)⟩,
+      ⟨hk.wf₂.1, fun p hp => (List.mem_append.mp hp).elim (hsp₂ p) (hk.wf₂.2 p)⟩,
+      hk.ok, hk.slots, hk.lo, hk.xr⟩
+  refine ⟨hbase,
     by rw [sp₁, sp₂, inv.rsp], by rw [u₁, u₂, inv.unk], by rw [w₁, w₂, inv.wr],
     fun h => by rw [w₁]; exact inv.lens h, by rw [w₁]; exact inv.nfr,
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, inv.mbFit, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, inv.mbFit, ?_, ?_, ?_⟩
   · dsimp only; rw [sp₁]; omega
   · dsimp only; rw [sp₁]; omega
   · intro i hi
@@ -1127,6 +1165,7 @@ theorem ret_sound {τ τ' : FT} {a₁ a₂ b₁ b₂ c₁ c₂ : State} (ha : Ag
     · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
       rw [g₂ _ hp.2]; exact inv.one₂.ub p hp.1
     · exact mb_out (τ := τ) inv.base.wf₂ inv.one₂ inv.mbFit w₂ (fun y _ => by rw [m₂])
+  · intro i hi; simp only [hrg, wa, wb]; rw [hsh₁]; exact inv.fw i hi
 
 /-! ## Soundness: frames -/
 
@@ -1276,7 +1315,7 @@ theorem push_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
         exact inv.base.slots q hq k hk₁ hk₂
   refine ⟨hbase, by rw [c₁.sp, c₂.sp, inv.rsp], by rw [c₁.unk, c₂.unk, inv.unk], hwr₂.symm,
     fun h => by simp [shiftIn] at h, by rw [c₁.wr]; simp only [List.length_cons]; have := inv.nfr; omega,
-    ?_, ?_, ?_, ?_, ?_, inv.rasSorted, ?_, ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, inv.rasSorted, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · dsimp only; rw [c₁.sp]; omega
   · dsimp only; rw [c₁.sp]; omega
   · intro i hi
@@ -1332,6 +1371,16 @@ theorem push_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
       obtain ⟨e, he, rfl⟩ := he
       simp only [hba₂, hrs₂, c₂.mem]
       exact inv.one₂.mb e he
+  · intro i hi
+    simp only [wa, wb]
+    rw [hsh₁]
+    cases i with
+    | zero =>
+      have := hwab 0
+      simp only [wa, wb, Nat.add_zero, BitVec.add_zero] at this
+      rw [hr0, List.getElem_cons_zero]
+      exact this.symm
+    | succ i => rw [hrs, List.getElem_cons_succ]; exact inv.fw i (Nat.lt_of_succ_lt_succ hi)
 
 /-- What the free of a frame of `b` bytes does to the state. -/
 structure FreeFx (b : Nat) (s s' : State) : Prop where
@@ -1452,7 +1501,7 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
       rw [hba, hba₂, c₁'.mem, c₂'.mem, Nat.sub_add_cancel (by omega)]
       exact inv.base.slots q hq k hk₁ hk₂
   refine ⟨hbase, by rw [c₁'.sp, c₂'.sp, inv.rsp], by rw [c₁'.unk, c₂'.unk, inv.unk], hwr₂.symm,
-    ?_, by dsimp only; have := inv.nfr; omega, ?_, ?_, ?_, ?_, ?_, inv.rasSorted, ?_, ?_, ?_, ?_, ?_⟩
+    ?_, by dsimp only; have := inv.nfr; omega, ?_, ?_, ?_, ?_, ?_, inv.rasSorted, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro h
     have hF' := hF
     rw [hw1, hlt] at hF'
@@ -1555,6 +1604,10 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
       simp only
       rw [hba₂, hrt₂, c₂'.mem, Nat.sub_add_cancel (by omega), Nat.sub_add_cancel (by omega)]
       exact inv.one₂.mb q hq
+  · intro i hi
+    simp only [hrt, wa, wb]
+    rw [hsh₁, List.getElem_tail]
+    exact inv.fw (i + 1) (by simp only [List.length_tail] at hi; omega)
 
 /-! ## The analysis -/
 

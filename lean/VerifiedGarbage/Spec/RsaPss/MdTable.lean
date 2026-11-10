@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
 public import VerifiedGarbage.Spec.MdHashTable
+public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 
 /-!
 # RSASSA-PSS with both of its hash functions given as tables of `MdHash`
@@ -15,6 +16,8 @@ digest and of EMSA-PSS, and `mgf1`, naming MGF1's `G`
 
 * `vg_rsa_pss_sign`: `RSASSA-PSS-SIGN` of a digest with a salt, with the
   private key checked against the public exponent (`RsaPss.sign H G`);
+* `vg_rsa_pss_sign_precomputed`: `vg_rsa_pss_sign` given the key's
+  precomputed values (`Rsa.privatePrecompute`, `Spec/Rsa/PrivatePrecompute.lean`);
 * `vg_rsa_pss_verify_precomputed`: `RSASSA-PSS-VERIFY` of a signature for a
   digest (`RsaPss.verify H G`), expecting a salt length or any, given the
   modulus' `Rsa.publicPrecompute` values `pre`.
@@ -234,5 +237,70 @@ def verifyPrecomputedMdTableApi : Api where
     "`pre_len` must be `2 * ⌈n_len / 8⌉`.",
     "For the result to be signature verification's, `pre` must hold what \
       `vg_rsa_public_precompute` wrote for `n` (returning 1).", hashSafety, mgf1Safety]
+
+/-! ## `vg_rsa_pss_sign_precomputed` -/
+
+/-- The parameters of `vg_rsa_pss_sign` with the key's precomputed values
+`pre: *const u64, pre_len: usize` last. -/
+def signPrecomputedMdTableSig : Sig where
+  params := [("out", .slice true .u8 "out_len"), ("n", .slice false .u8 "n_len"),
+    ("e", .slice false .u8 "e_len"), ("p", .slice false .u8 "p_len"),
+    ("q", .slice false .u8 "q_len"), ("dp", .slice false .u8 "dp_len"),
+    ("dq", .slice false .u8 "dq_len"), ("qinv", .slice false .u8 "qinv_len"),
+    ("digest", .slice false .u8 "digest_len"), ("salt", .slice false .u8 "salt_len"),
+    ("scratch", .slice true .u64 "scratch_len"), ("hash", MdHashTable.param),
+    ("mgf1", MdHashTable.param), ("pre", .slice false .u64 "pre_len")]
+  ret := some .u32
+
+/-- `signMdTableContract`, given the key's precomputed values `pre`
+(`Rsa.privatePrecompute`): what `vg_rsa_pss_sign` computes, given `pre` holding
+them. Constant time but for the public key and the modulus' values in
+`pre`. -/
+def signPrecomputedMdTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  signPrecomputedMdTableSig.contract A
+    (pre := fun _out outLen n nLen _e eLen p pLen q qLen _dp dpLen _dq dqLen _qinv qinvLen
+        _digest digestLen _salt _saltLen _scratch scratchLen hash _mgf1 pre preLen m =>
+      lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧
+        1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
+        1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
+        dpLen.toNat = pLen.toNat ∧ qinvLen.toNat = pLen.toNat ∧ dqLen.toNat = qLen.toNat ∧
+        scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        preLen.toNat = Rsa.privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat ∧
+        Rsa.privatePrecompute (bytesAt m n nLen.toNat) (bytesAt m p pLen.toNat)
+          (bytesAt m q qLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) ∧
+        digestLenOk A.ptrBits m hash digestLen)
+    (post := fun out _outLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv _qinvLen
+        digest _digestLen salt saltLen _scratch _scratchLen hash mgf1 _pre _preLen m m' r =>
+      ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
+        MdHashTable.hashAt A.ptrBits m mgf1 = some G →
+        writtenOutcome m' out nLen.toNat r
+          (sign H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
+            (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat) (bytesAt m dq qLen.toNat)
+            (bytesAt m qinv pLen.toNat) (bytesAt m digest H.len)
+            (bytesAt m salt saltLen.toNat)))
+    (writeArgs := true) (stack := stack)
+    (leak := some fun _out _outLen n nLen e eLen _p _pLen _q _qLen _dp _dpLen _dq _dqLen _qinv
+        _qinvLen _digest _digestLen _salt _saltLen _scratch _scratchLen _hash _mgf1 pre _preLen m =>
+      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat) ++
+        Rsa.privatePrecomputedLeak m pre nLen.toNat)
+
+/-- `vg_rsa_pss_sign_precomputed` on every target. -/
+def signPrecomputedMdTableApi : Api where
+  module := "rsa_pss"
+  name := "vg_rsa_pss_sign_precomputed"
+  sig := signPrecomputedMdTableSig
+  writeArgs := true
+  contracts := some fun A stack => signPrecomputedMdTableContract A stack
+  summary := "`vg_rsa_pss_sign`, given the key's precomputed values `pre`: computes and \
+    returns what `vg_rsa_pss_sign` does with the same arguments. " ++
+    Rsa.privatePrecomputedDoc ++ ".\n\n\
+    Contract: `VG.Spec.RsaPss.signPrecomputedMdTableContract`. Constant time but for the \
+    public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, \
+    the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables \
+    `hash` and `mgf1` are, not on the private key, the rest of `pre`, the digest or the salt."
+  safety := ["`n_len` must be in 64..=1024.", "`out_len` must be `n_len`.",
+    "`e_len` must be in 1..=`n_len`.", "`p_len` and `q_len` must be in 1..`n_len`.",
+    "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.",
+    digestLenSafety] ++ scratchSafety ++ Rsa.privatePrecomputedSafety ++ [hashSafety, mgf1Safety]
 
 end VG.Spec.RsaPss

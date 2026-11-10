@@ -22,6 +22,8 @@ otherwise the private operation (`privOut`) on the encoding `encEm`, with
 
 namespace VG.Proof.RsaPss.PPC64LE.Sg
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE
 open VG.Proof.RsaPss.PPC64LE (cmB byte_ok)
 

@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.RsaPss.signMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the digest or the salt.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pss_sign_crt_ifma` if the CPU supports its features (`VG_RSA_PSS_SIGN_CRT_IFMA_FEATURES`); `vg_rsa_pss_sign_crt_adx` if the CPU supports its features (`VG_RSA_PSS_SIGN_CRT_ADX_FEATURES`); or else `vg_rsa_pss_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pss_sign_crt_ifma512` if the CPU supports its features (`VG_RSA_PSS_SIGN_CRT_IFMA512_FEATURES`) and it also supports `avx512fp16`; `vg_rsa_pss_sign_crt_ifma` if the CPU supports its features (`VG_RSA_PSS_SIGN_CRT_IFMA_FEATURES`); `vg_rsa_pss_sign_crt_adx` if the CPU supports its features (`VG_RSA_PSS_SIGN_CRT_ADX_FEATURES`); or else `vg_rsa_pss_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -47,6 +47,11 @@ pub unsafe fn vg_rsa_pss_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mu
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(verified_garbage_cpu::Features(crate::rsa_pss::VG_RSA_PSS_SIGN_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16)) }
+            || cpu.contains(verified_garbage_cpu::Features(crate::rsa_pss::VG_RSA_PSS_SIGN_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16))
+        {
+            return crate::rsa_pss::vg_rsa_pss_sign_crt_ifma512;
+        }
         if const { verified_garbage_cpu::target_contains(crate::rsa_pss::VG_RSA_PSS_SIGN_CRT_IFMA_FEATURES) }
             || cpu.contains(crate::rsa_pss::VG_RSA_PSS_SIGN_CRT_IFMA_FEATURES)
         {

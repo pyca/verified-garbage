@@ -43,11 +43,15 @@ theorem subAdd_val {A B P T T' N c : Nat} (hA : A < P) (hB : B < P) (hP : P < 2 
     rw [h', show T + P = (A + P - B) + 2 ^ N by omega_arith, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith),
       Nat.mod_eq_of_lt (by omega_arith)]
 
-/-- `recombineP`'s middle: `(m₁ + p - b) mod p` into array 3, changing only
-arrays 3 and 4 (above `m₁`). -/
-theorem recP2a_ok {s : State} {B : Addr} {Z w Pv m1 b bj : Nat} {c : Prog isa} {Q : State → Prop}
+/-- `recombineP`'s middle, with `a0` putting array 0's address back into `r10`
+after the subtraction: `(m₁ + p - b) mod p` into array 3, changing only arrays 3
+and 4 (above `m₁`). -/
+theorem recP2aFrom_ok {s : State} {B : Addr} {Z w Pv m1 b bj : Nat} {a0 : List Instr} {c : Prog isa}
+    {Q : State → Prop}
     (hs : Scr s B Z) (hZ : slot w 8 ≤ Z) (hbj : bj < 8) (hbj3 : bj ≠ 3) (hbj4 : bj ≠ 4) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
-    (h10 : s.gpr .r10 = off B (slot w 0)) (h21 : s.gpr .r21 = off B (slot w 0))
+    (h10 : s.gpr .r10 = off B (slot w 0))
+    (ha0 : ∀ t, Keep [.r0, .r3, .r8, .r9, .r10, .r14, .r15, .r16, .r17, .r20, .r24] s t →
+      WP isa (.block a0) t fun u => (u.gpr .r10 = off B (slot w 0) ∧ u.mem = t.mem) ∧ Keep [.r10] t u)
     (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
     (hP : val32 s.mem B (slot w 0) (2 * w) = Pv) (hb : val32 s.mem B (slot w bj) (2 * w) = b)
     (hm1 : val32 s.mem B (slot w 4) (2 * w) = m1) (hbP : b < Pv) (hm1P : m1 < Pv)
@@ -56,7 +60,7 @@ theorem recP2a_ok {s : State} {B : Addr} {Z w Pv m1 b bj : Nat} {c : Prog isa} {
       t.gpr .r10 = off B (slot w 0) → Keep [.r0, .r3, .r8, .r9, .r10, .r14, .r15, .r16, .r17, .r20, .r24] s t → WP isa c t Q) :
     WP isa (.seq (.block (PublicChecked.base .r14 4 ++ ([.add .r14 .r14 .r29, .subi .r14 .r14 16, .li .r0 0,
       .store .d .r0 .r14 0] : List Instr) ++ PublicChecked.base .r8 4 ++ PublicChecked.base .r9 3 ++
-      PublicChecked.base .r10 bj)) (.seq subMod (.seq (.block (([.addi .r10 .r21 0] : List Instr) ++
+      PublicChecked.base .r10 bj)) (.seq subMod (.seq (.block (a0 ++
       PublicChecked.base .r15 3 ++ PublicChecked.base .r16 0)) (.seq addMask c)))) s Q := by
   have hnw := hs.nowrap
   have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
@@ -118,8 +122,7 @@ theorem recP2a_ok {s : State} {B : Addr} {Z w Pv m1 b bj : Nat} {c : Prog isa} {
   have v0' : val32 s₆.mem B (slot w 0) (2 * w) = Pv := by rw [out6'.val32 (Or.inl (by omega_arith)) (by omega_arith), v0]
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.r10] (Q := fun t => t.gpr .r10 = off B (slot w 0) ∧ t.mem = s₆.mem)
-    (by prun [(k16.gpr .r21 (by decide)).trans h21]) (by decide)) fun s₇ ⟨⟨a10', m7⟩, k7⟩ => ?_
+  refine WP.mono (ha0 s₆ (k16.mono (by decide))) fun s₇ ⟨⟨a10', m7⟩, k7⟩ => ?_
   have k17 := k16.trans k7
   rw [WP.block_append_iff]
   refine WP.mono (Pub.base_ok (rd := .r15) (by decide) (by decide) a10' ((k17.gpr _ (by decide)).trans h29) 3)
@@ -145,5 +148,25 @@ theorem recP2a_ok {s : State} {B : Addr} {Z w Pv m1 b bj : Nat} {c : Prog isa} {
   have h3' : ofs B x < slot w 3 ∨ slot w 3 + 8 * (w + 2) ≤ ofs B x := h3
   have h4' : ofs B x < slot w 4 ∨ slot w 4 + 8 * (w + 2) ≤ ofs B x := h4
   rw [outT x (by omega_arith), out6 x (by omega_arith), m2', ow x (by omega_arith)]
+
+
+/-- `recP2aFrom_ok` with array 0's address in `r21` (`recombineP`, `Crt.chunkStep`). -/
+theorem recP2a_ok {s : State} {B : Addr} {Z w Pv m1 b bj : Nat} {c : Prog isa} {Q : State → Prop}
+    (hs : Scr s B Z) (hZ : slot w 8 ≤ Z) (hbj : bj < 8) (hbj3 : bj ≠ 3) (hbj4 : bj ≠ 4) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
+    (h10 : s.gpr .r10 = off B (slot w 0)) (h21 : s.gpr .r21 = off B (slot w 0))
+    (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (hP : val32 s.mem B (slot w 0) (2 * w) = Pv) (hb : val32 s.mem B (slot w bj) (2 * w) = b)
+    (hm1 : val32 s.mem B (slot w 4) (2 * w) = m1) (hbP : b < Pv) (hm1P : m1 < Pv)
+    (hc : ∀ t, val32 t.mem B (slot w 3) (2 * w) = (m1 + Pv - b) % Pv →
+      Outs B [(slot w 3, 8 * (w + 2)), (slot w 4, 8 * (w + 2))] s.mem t.mem →
+      t.gpr .r10 = off B (slot w 0) → Keep [.r0, .r3, .r8, .r9, .r10, .r14, .r15, .r16, .r17, .r20, .r24] s t → WP isa c t Q) :
+    WP isa (.seq (.block (PublicChecked.base .r14 4 ++ ([.add .r14 .r14 .r29, .subi .r14 .r14 16, .li .r0 0,
+      .store .d .r0 .r14 0] : List Instr) ++ PublicChecked.base .r8 4 ++ PublicChecked.base .r9 3 ++
+      PublicChecked.base .r10 bj)) (.seq subMod (.seq (.block (([.addi .r10 .r21 0] : List Instr) ++
+      PublicChecked.base .r15 3 ++ PublicChecked.base .r16 0)) (.seq addMask c)))) s Q :=
+  recP2aFrom_ok hs hZ hbj hbj3 hbj4 hw2 hw' h10
+    (fun t kt => WP.keep [.r10] (Q := fun u => u.gpr .r10 = off B (slot w 0) ∧ u.mem = t.mem)
+      (by prun [(kt.gpr .r21 (by decide)).trans h21]) (by decide))
+    h29 h11 hP hb hm1 hbP hm1P hc
 
 end VG.Proof.Bignum.PPC64LE.Crt

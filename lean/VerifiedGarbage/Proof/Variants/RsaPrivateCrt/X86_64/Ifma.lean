@@ -277,10 +277,10 @@ open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 def variant : CrtImpl where
   name := "vg_rsa_private_crt" ++ "_ifma"
-  code := Impl.Rsa.X86_64.CrtIfma.code CallMont.adx.mm
+  code := Impl.Rsa.X86_64.CrtIfma.code Impl.Rsa.X86_64.CrtIfma.lay2048 CallMont.adx.mm
   depth := by lit_decide
-  ok := crt_call_ok (by lit_decide) (Ifma.code_correct Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
-  ct := crt_call_ct (by lit_decide) (Ifma.code_correct Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.code_constantTime Mont.fnAdx (by decide +kernel))
+  ok := crt_call_ok (by lit_decide) (Ifma.code_correct (.inl rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
+  ct := crt_call_ct (by lit_decide) (Ifma.code_correct (.inl rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.code_constantTime (.inl rfl) Mont.fnAdx (by decide +kernel))
   nosp := noSp_of (by lit_decide)
   spSafe := Code.all_of_allInstrs (by lit_decide)
   montSuffix := "_adx"
@@ -294,5 +294,29 @@ def variant : CrtImpl where
   pcSpSafe := Code.all_of_allInstrs (by decide +kernel)
   suffix := "_ifma"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
+
+/-- With `ammCoreZ` for 2048-bit keys, where the CPU also has AVX512_FP16:
+of the CPUs with AVX512_IFMA, those that multiply in two 512-bit units,
+where it is the faster. -/
+def variant512 : CrtImpl where
+  name := "vg_rsa_private_crt" ++ "_ifma512"
+  code := Impl.Rsa.X86_64.CrtIfma.code Impl.Rsa.X86_64.CrtIfma.lay2048z CallMont.adx.mm
+  depth := by lit_decide
+  ok := crt_call_ok (by lit_decide) (Ifma.code_correct (.inr rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
+  ct := crt_call_ct (by lit_decide) (Ifma.code_correct (.inr rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.code_constantTime (.inr rfl) Mont.fnAdx (by decide +kernel))
+  nosp := noSp_of (by lit_decide)
+  spSafe := Code.all_of_allInstrs (by lit_decide)
+  montSuffix := "_adx"
+  pc := Impl.Rsa.X86_64.Precompute.code CallMont.adx.mm (Impl.Bignum.X86_64.R2Adx.choice CallMont.adx.mm)
+  pcOk := pc_call_ok Mont.fnAdx (R2Impl.adx _) (by decide +kernel) rfl (by decide +kernel)
+  pcCt := pc_call_ct Mont.fnAdx (R2Impl.adx _) (by decide +kernel) rfl (by decide +kernel)
+  pcMx := by decide +kernel
+  pubOp := VG.Proof.Variants.RsaPublicPrecomputed.X86_64.Ifma.variant
+  pcNosp := noSp_of (by decide +kernel)
+  pcDepth := by decide +kernel
+  pcSpSafe := Code.all_of_allInstrs (by decide +kernel)
+  suffix := "_ifma512"
+  features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
+  extra := ["avx512fp16"]
 
 end VG.Proof.Variants.RsaPrivateCrt.X86_64.Ifma

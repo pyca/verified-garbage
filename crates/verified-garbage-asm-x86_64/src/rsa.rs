@@ -1962,6 +1962,10 @@ pub(crate) mod vg_rsa_private_checked_adx;
 pub(crate) mod vg_rsa_private_checked_ifma;
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_private_checked_ifma512.rs"]
+pub(crate) mod vg_rsa_private_checked_ifma512;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_private_crt.rs"]
 pub(crate) mod vg_rsa_private_crt;
 
@@ -1972,6 +1976,10 @@ pub(crate) mod vg_rsa_private_crt_adx;
 #[rustfmt::skip]
 #[path = "internal/vg_rsa_private_crt_ifma.rs"]
 pub(crate) mod vg_rsa_private_crt_ifma;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_crt_ifma512.rs"]
+pub(crate) mod vg_rsa_private_crt_ifma512;
 
 #[rustfmt::skip]
 #[path = "internal/vg_rsa_public_precomputed_checked.rs"]
