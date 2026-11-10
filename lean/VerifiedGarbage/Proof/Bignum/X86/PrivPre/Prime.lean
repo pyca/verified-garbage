@@ -540,6 +540,33 @@ theorem primeR2_fit (h : In Ex base bytes len args s) :
   · exact primeR_fit h .half q hq
   · exact primeR_fit h .wide q hq
 
+/-- `primeR`'s ranges end below the wide slot 9, and miss the word at `accOff`. -/
+theorem primeR_below (h : In Ex base bytes len args s) (c : Ctx) : ∀ q ∈ primeR len c,
+    q.1 + q.2 ≤ lo len (.slot .wide 9) ∧ (accOff + 4 ≤ q.1 ∨ q.1 + q.2 ≤ accOff) := by
+  have hw : lo len (.slot c 8) + st len c ≤ lo len (.slot .wide 9) := by
+    cases c
+    · have := sl_le (len := len) .wide (i := 8) (j := 9) (by decide); exact this
+    · exact half_in_wide h (by decide)
+  have s01 : lo len (.slot c 0) + st len c ≤ lo len (.slot c 1) := sl_le (len := len) c (by decide)
+  have s13 : lo len (.slot c 1) + st len c ≤ lo len (.slot c 3) := sl_le (len := len) c (by decide)
+  have s34 : lo len (.slot c 3) + st len c ≤ lo len (.slot c 4) := sl_le (len := len) c (by decide)
+  have s47 : lo len (.slot c 4) + st len c ≤ lo len (.slot c 7) := sl_le (len := len) c (by decide)
+  have s78 : lo len (.slot c 7) + st len c ≤ lo len (.slot c 8) := sl_le (len := len) c (by decide)
+  have est : st len c = 2 * bc len c + 32 := rfl
+  have lo0 : numBase ≤ lo len (.slot c 0) := by simp [lo]
+  have nb : numBase = 3336 := rfl
+  intro q hq
+  simp only [primeR, baseR, List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;>
+    (try simp only [invOff, outOff, winOff, accOff]) <;> omega_arith
+
+theorem primeR2_below (h : In Ex base bytes len args s) : ∀ q ∈ primeR len .half ++ primeR len .wide,
+    q.1 + q.2 ≤ lo len (.slot .wide 9) ∧ (accOff + 4 ≤ q.1 ∨ q.1 + q.2 ≤ accOff) := by
+  intro q hq
+  rcases List.mem_append.mp hq with hq | hq
+  · exact primeR_below h .half q hq
+  · exact primeR_below h .wide q hq
+
 end
 
 end VG.Proof.Bignum.X86.PrivPre
