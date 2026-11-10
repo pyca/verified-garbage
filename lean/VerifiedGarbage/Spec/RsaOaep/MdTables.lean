@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.RsaOaep.Contract
 public import VerifiedGarbage.Spec.MdHashTable
+public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 
 /-!
 # RSAES-OAEP with both of its hash functions given as tables of `MdHash`
@@ -16,7 +17,9 @@ the label and the seed and MGF1's `G` (`MdHashTable.hashAt`):
   `Rsa.publicPrecompute` values `pre`;
 * `vg_rsa_oaep_decrypt`: `RSAES-OAEP-DECRYPT` of a ciphertext with a label,
   with the private key checked against the public exponent
-  (`RsaOaep.decrypt H G`).
+  (`RsaOaep.decrypt H G`);
+* `vg_rsa_oaep_decrypt_precomputed`: `vg_rsa_oaep_decrypt` given the key's
+  precomputed values (`Rsa.privatePrecompute`, `Spec/Rsa/PrivatePrecompute.lean`).
 
 So one function serves every pair of hash functions, with every
 implementation of each, rather than a function for each.
@@ -209,5 +212,66 @@ def decryptMdTablesApi : Api where
     "`e_len` must be in 1..=`n_len`.", "`p_len` and `q_len` must be in 1..`n_len`.",
     "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++
     scratchSafety ++ [hashSafety, mgf1Safety]
+
+/-! ## `vg_rsa_oaep_decrypt_precomputed` -/
+
+/-- The parameters of decryption (`decryptSig`), then the key's precomputed
+values `pre: *const u64, pre_len: usize`, then `hash` and `mgf1`, tables of
+`MdHash`. -/
+def decryptPrecomputedMdTablesSig : Sig where
+  params := decryptSig.params ++ [("pre", .slice false .u64 "pre_len"), ("hash", MdHashTable.param),
+    ("mgf1", MdHashTable.param)]
+  ret := some .u32
+
+/-- `decryptMdTablesContract`, given the key's precomputed values `pre`
+(`Rsa.privatePrecompute`): what `vg_rsa_oaep_decrypt` computes, if `pre`
+holds them. -/
+def decryptPrecomputedMdTablesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  decryptPrecomputedMdTablesSig.contract A
+    (pre := fun _out outLen _msgLen _n nLen _e eLen _p pLen _q qLen _dp dpLen _dq dqLen _qinv
+        qinvLen _label _labelLen _ct ctLen _scratch scratchLen _pre preLen _hash _mgf1 _ =>
+      lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ ctLen.toNat = nLen.toNat ∧
+        1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
+        1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
+        dpLen.toNat = pLen.toNat ∧ qinvLen.toNat = pLen.toNat ∧ dqLen.toNat = qLen.toNat ∧
+        scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        preLen.toNat = Rsa.privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat)
+    (post := fun out _outLen msgLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv
+        _qinvLen label labelLen ct _ctLen _scratch _scratchLen pre preLen hash mgf1 m m' r =>
+      ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
+        MdHashTable.hashAt A.ptrBits m mgf1 = some G →
+        Rsa.privatePrecompute (bytesAt m n nLen.toNat) (bytesAt m p pLen.toNat)
+            (bytesAt m q qLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
+        writtenDecrypt m' out msgLen nLen.toNat r
+          (decrypt H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
+            (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat)
+            (bytesAt m dq qLen.toNat) (bytesAt m qinv pLen.toNat)
+            (bytesAt m label labelLen.toNat) (bytesAt m ct nLen.toNat)))
+    (writeArgs := true) (stack := stack)
+    (leak := some fun _out _outLen _msgLen n nLen e eLen _p _pLen _q _qLen _dp _dpLen _dq
+        _dqLen _qinv _qinvLen _label _labelLen _ct _ctLen _scratch _scratchLen pre _preLen _hash
+        _mgf1 m =>
+      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat) ++
+        Rsa.privatePrecomputedLeak m pre nLen.toNat)
+
+/-- `vg_rsa_oaep_decrypt_precomputed` on every target. -/
+def decryptPrecomputedMdTablesApi : Api where
+  module := "rsa_oaep"
+  name := "vg_rsa_oaep_decrypt_precomputed"
+  sig := decryptPrecomputedMdTablesSig
+  writeArgs := true
+  contracts := some fun A stack => decryptPrecomputedMdTablesContract A stack
+  summary := "`vg_rsa_oaep_decrypt`, given the key's precomputed values `pre`: computes \
+    and returns what `vg_rsa_oaep_decrypt` does with the same arguments. " ++
+    Rsa.privatePrecomputedDoc ++ ".\n\n\
+    Contract: `VG.Spec.RsaOaep.decryptPrecomputedMdTablesContract`. Constant time but for \
+    the public key: timing may depend on the pointers, the lengths, the contents of `n` and \
+    `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables \
+    `hash` and `mgf1` are, not on the private key, the rest of `pre`, the label, the \
+    ciphertext, whether its decoding is valid or the message's length."
+  safety := ["`n_len` must be in 64..=1024.", "`out_len` and `ct_len` must be `n_len`.",
+    "`e_len` must be in 1..=`n_len`.", "`p_len` and `q_len` must be in 1..`n_len`.",
+    "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++
+    scratchSafety ++ Rsa.privatePrecomputedSafety ++ [hashSafety, mgf1Safety]
 
 end VG.Spec.RsaOaep

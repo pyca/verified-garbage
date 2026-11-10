@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Enc
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 
 /-!
 # RSAES-PKCS1-v1_5 with implicit rejection: the contracts, on every target
@@ -9,7 +10,9 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 **Trusted** (as every file in `Spec/`). In the module `rsa_pkcs1_enc`,
 `vg_rsa_pkcs1_decrypt`: RSAES-PKCS1-V1_5-DECRYPT with implicit rejection
 (`RsaPkcs1Enc.decrypt`), with RSADP checked against `e`
-(`Rsa.privateChecked`). Encryption, `vg_rsa_pkcs1_encrypt_random`, is in
+(`Rsa.privateChecked`); and `vg_rsa_pkcs1_decrypt_precomputed`, the same
+given the key's precomputed values (`Rsa.privatePrecompute`,
+`Spec/Rsa/PrivatePrecompute.lean`). Encryption, `vg_rsa_pkcs1_encrypt_random`, is in
 `Spec/RsaPkcs1Enc/Random.lean`; the arguments it shares with decryption are
 as here.
 
@@ -133,5 +136,59 @@ def decryptApi : Api where
     "`e_len` and `d_len` must be in 1..=`n_len`.", "`p_len` and `q_len` must be in 1..`n_len`.",
     "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++
     scratchSafety
+
+/-! ## `vg_rsa_pkcs1_decrypt_precomputed` -/
+
+/-- The parameters of `vg_rsa_pkcs1_decrypt`, then the key's precomputed
+values `pre: *const u64, pre_len: usize`. -/
+def decryptPrecomputedSig : Sig where
+  params := decryptSig.params ++ [("pre", .slice false .u64 "pre_len")]
+  ret := some .u32
+
+/-- `decryptContract`, given the key's precomputed values `pre`
+(`Rsa.privatePrecompute`): what `vg_rsa_pkcs1_decrypt` computes, if `pre`
+holds them. -/
+def decryptPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  decryptPrecomputedSig.contract A
+    (pre := fun _out outLen _msgLen _n nLen _e eLen _d dLen _input inputLen _p pLen _q qLen _dp
+        dpLen _dq dqLen _qinv qinvLen _scratch scratchLen _pre preLen _ =>
+      lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ inputLen.toNat = nLen.toNat ∧
+        1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧ 1 ≤ dLen.toNat ∧ dLen.toNat ≤ nLen.toNat ∧
+        1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
+        dpLen.toNat = pLen.toNat ∧ qinvLen.toNat = pLen.toNat ∧ dqLen.toNat = qLen.toNat ∧
+        scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        preLen.toNat = Rsa.privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat)
+    (post := fun out _outLen msgLen n nLen e eLen d dLen input _inputLen p pLen q qLen dp _dpLen
+        dq _dqLen qinv _qinvLen _scratch _scratchLen pre preLen m m' r =>
+      Rsa.privatePrecompute (bytesAt m n nLen.toNat) (bytesAt m p pLen.toNat)
+          (bytesAt m q qLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
+        writtenMsg m' out msgLen nLen.toNat r
+          (decrypt (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m d dLen.toNat)
+            (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat)
+            (bytesAt m dq qLen.toNat) (bytesAt m qinv pLen.toNat) (bytesAt m input nLen.toNat)))
+    (writeArgs := true) (stack := stack)
+    (leak := some fun _out _outLen _msgLen n nLen e eLen _d _dLen _input _inputLen _p _pLen _q
+        _qLen _dp _dpLen _dq _dqLen _qinv _qinvLen _scratch _scratchLen pre _preLen m =>
+      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat) ++
+        Rsa.privatePrecomputedLeak m pre nLen.toNat)
+
+def decryptPrecomputedApi : Api where
+  module := "rsa_pkcs1_enc"
+  name := "vg_rsa_pkcs1_decrypt_precomputed"
+  sig := decryptPrecomputedSig
+  writeArgs := true
+  contracts := some fun A stack => decryptPrecomputedContract A stack
+  summary := "`vg_rsa_pkcs1_decrypt`, given the key's precomputed values `pre`: computes \
+    and returns what `vg_rsa_pkcs1_decrypt` does with the same arguments. " ++
+    Rsa.privatePrecomputedDoc ++ ".\n\n\
+    Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`. Constant time but for the \
+    public key: timing may depend on the pointers, the lengths, the contents of `n` and \
+    `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the \
+    ciphertext, the private key, the rest of `pre`, the validity of the padding, the length \
+    of the message or which message is returned."
+  safety := ["`n_len` must be in 64..=1024.", "`out_len` and `input_len` must be `n_len`.",
+    "`e_len` and `d_len` must be in 1..=`n_len`.", "`p_len` and `q_len` must be in 1..`n_len`.",
+    "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++
+    scratchSafety ++ Rsa.privatePrecomputedSafety
 
 end VG.Spec.RsaPkcs1Enc
