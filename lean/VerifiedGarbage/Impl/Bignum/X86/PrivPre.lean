@@ -67,21 +67,22 @@ def writePrime (c : Ctx) : Prog isa :=
     [.mov .ebp (.mem (sc outOff)), .mov .eax (.reg .ebp), .alu .add .eax (.reg .ecx), .store (sc outOff) .eax]))
     copyWords
 
-/-- The factor in the wide slot 10, in the context `c`: made safe, with its
+/-- The factor in the wide slot `f`, in the context `c`: made safe, with its
 constants (`prepBase`), its `R_p² mod p`, written. -/
-def primeIn (c : Ctx) : Prog isa :=
-  .seq (copy (.slot .wide 10) (.slot c 0) (one c)) <|
+def primeIn (f : Nat) (c : Ctx) : Prog isa :=
+  .seq (copy (.slot .wide f) (.slot c 0) (one c)) <|
   .seq (prepBase c) <|
   .seq (r2Prime c) (writePrime c)
 
-/-- The factor at half the width if its length fits it (as `power`); then the
-factors and their lengths exchanged, one factor fewer left: ZF after the
-last. -/
-def primeStep : Prog isa :=
+/-- The factor in the wide slot `f`, whose length is the header word at
+`lenOff`, at half the width if its length fits it (as `power`). -/
+def factor (f : Nat) : Prog isa :=
   .seq (.block ([.mov .eax (.mem (sc lenOff))] ++ widthC 0 .half .edx ++
     [.alu .add .edx (.imm 1), .alu .cmp .eax (.reg .edx)])) <|
-  .seq (.ite .b (primeIn .half) (primeIn .wide)) <|
-  .seq (swap 10 11 (one .wide)) (.block factorNext)
+  .ite .b (primeIn f .half) (primeIn f .wide)
+
+/-- Argument `i`, a factor's length, into the header word at `lenOff`. -/
+def setLen (i : Nat) : List Instr := [.mov .eax (.mem (argAt 0 i)), .store (sc lenOff) .eax]
 
 /-- `n` in the wide slot 9, `p` in 10 and `q` in 11, and the acceptance
 `p q = n`. -/
@@ -94,15 +95,17 @@ def check : Prog isa :=
   .seq (equal prod (.slot .wide 9) (two .wide)) (.block [.store (sc accOff) .ecx])
 
 /-- Where the first factor's values go, `16 ⌈n_len / 8⌉` bytes into the
-output (argument 0), after `n`'s values, and two factors left. -/
+output (argument 0), after `n`'s values. -/
 def primesInit : List Instr :=
   [.mov .ecx (.mem (argAt 0 3)), .alu .add .ecx (.imm 7), .shift .shr .ecx 3] ++ shl .ecx 4 ++
-    [.mov .eax (.mem (argAt 0 0)), .alu .add .eax (.reg .ecx), .store (sc outOff) .eax] ++ factorsInit
+    [.mov .eax (.mem (argAt 0 0)), .alu .add .eax (.reg .ecx), .store (sc outOff) .eax]
 
 def primesBody : Prog isa :=
   .seq check <|
-  .seq (.block primesInit) <|
-  .seq (.loop primeStep .ne) (.block [.mov .eax (.mem (sc accOff)), .alu .and .eax (.imm 1)])
+  .seq (.block (primesInit ++ setLen 7)) <|
+  .seq (factor 10) <|
+  .seq (.block (setLen 9)) <|
+  .seq (factor 11) (.block [.mov .eax (.mem (sc accOff)), .alu .and .eax (.imm 1)])
 
 /-- The factors' values, with `vg_rsa_private_crt`'s arguments: the output
 (`pre`, whose factors' values start `16 ⌈n_len / 8⌉` bytes in), its length (`n_len`), `n`, `n_len`, the input (unread) and its length, `p`,
