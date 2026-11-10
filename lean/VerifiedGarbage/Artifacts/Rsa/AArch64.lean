@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdVerified
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMont
 public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedCallMont
+public import VerifiedGarbage.Proof.Bignum.AArch64.PrivPreVerified
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
@@ -22,6 +23,9 @@ def artifacts : List Artifact := [
   Spec.Rsa.publicPrecomputeApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.Precompute.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Bignum.AArch64.precompute_verified _ },
+  Spec.Rsa.privatePrecomputeApi.artifact AArch64.target {
+    code := Impl.Rsa.AArch64.PrivPre.code Proof.Bignum.AArch64.Mont.base.mm
+    verified := Proof.Bignum.AArch64.PrivPre.privPre_verified _ },
   Spec.Rsa.crtValuesApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.Keys.CrtValues.code
     verified := Proof.Rsa.AArch64.cv_verified },
