@@ -20,9 +20,9 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_md5_init(inner: *mut [u8; 80], oute
         r#".base64 "SIP5QQ=="
 jae 20f
 .base64 "SI2kJHj+//9JieBJg8AISYlYcEmJaHhNiaCAAAAATYmoiAAAAE2JsJAAAABNibiYAAAASIn7SYn0TYnHSInVSYnNSInf"
-call {vg_md5_init}
+call {vg_md5_init_core}
 .base64 "TInn"
-call {vg_md5_init}
+call {vg_md5_init_core}
 .base64 "uDY2NjaJQxCJQxSJQxiJQxyJQyCJQySJQyiJQyyJQzCJQzSJQziJQzyJQ0CJQ0SJQ0iJQ0xBvgAAAABNhe0="
 je 22f
 24:
@@ -45,7 +45,7 @@ jae 25f
 jmp 26f
 25:
 .base64 "TIn/SIHHsAIAAA=="
-call {vg_md5_init}
+call {vg_md5_init_core}
 .base64 "TIn/SIHHsAIAAL4AAAAASInaSInpTYn4"
 call {vg_md5_update_scratch}
 .base64 "TIn/SIHHsAIAAEiJ7kyJ+kiBwiADAABMifk="
@@ -57,7 +57,7 @@ call {vg_hmac_md5_init_scratch}
 .base64 "SYufgAEAAEmLr4gBAABNi6eQAQAATYuvmAEAAE2Lt6ABAABNi7+oAQAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABMiZwk0AMAAEyJnCTYAwAATImcJOADAABMiZwk6AMAAEyJnCTwAwAATImcJPgDAABMiZwkAAQAAEiNpCQIBAAA"
 jmp 21b
 .p2align 6"#,
-        vg_md5_init = sym super::md5::vg_md5_init,
+        vg_md5_init_core = sym super::md5::vg_md5_init_core::vg_md5_init_core,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,

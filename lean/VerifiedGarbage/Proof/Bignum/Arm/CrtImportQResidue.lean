@@ -24,19 +24,16 @@ open VG VG.Arm VG.Proof.Mont
 open VG.Proof.Rsa.Mont (numAt arrAt Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
-theorem CrtPoweredState.after_transfer {s t : State} {base : BitVec 32} {len w M value : Nat}
-    (h : CrtPoweredState base len w M value s.mem) (selected : LayoutFrameReady base len w s)
-    (ptr : t.gpr .r0 = base) (keeps : Keeps (State.addr base) len w 1 s.mem t.mem)
-    (frame : Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem) (rest : Rest roundClobbers s t) :
-    CrtPoweredState base len w M value t.mem := by
+theorem CrtPoweredState.after_transfer {m m' : Mem} {base : BitVec 32} {len w M value : Nat}
+    (h : CrtPoweredState base len w M value m) (keeps : Keeps (State.addr base) len w 1 m m') :
+    CrtPoweredState base len w M value m' := by
   have fit : arrAt w 8 ≤ 8 * len := h.layout.width ▸ h.layout.layout.2.2.1
-  obtain ⟨ready, modulus⟩ := (h.ready selected).after_array (by decide : 1 ≠ 0) keeps frame rest ptr
-  have op (j : Nat) (hj : j = 4 ∨ j = 6 ∨ j = 7) : Operand j := by
-    rcases hj with rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
-  exact CrtPoweredState.of_ready ready (modulus.trans h.modulus)
-    ((keeps_array_num keeps fit (op 6 (by simp)) (by decide)).trans h.result)
-    ((keeps_array_num keeps fit (op 4 (by simp)) (by decide)).trans h.r2)
-    ((keeps_array_num keeps fit (op 7 (by simp)) (by decide)).trans h.one)
+  have op (j : Nat) (hj : j = 0 ∨ j = 6) : Operand j := by
+    rcases hj with rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have kl := keeps_layout h.layout.layout (by rw [h.layout.width]; exact keeps)
+  exact ⟨⟨kl.2, kl.1.trans h.layout.width⟩, h.positive,
+    (keeps_array_num keeps fit (op 0 (by simp)) (by decide)).trans h.modulus,
+    (keeps_array_num keeps fit (op 6 (by simp)) (by decide)).trans h.result⟩
 
 end VG.Proof.Bignum.Arm
 end
@@ -70,7 +67,7 @@ theorem crt_importQResidue_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List
   refine WP.mono (transferArray_ok u input (by decide : 1 < 8) (by decide : 6 < 8)) ?_
   rintro t ⟨readyT, value, keeps, frame, rest⟩
   have sharedT := sharedU.after_p (frame.mono (by simp)) rest ⟨readyT.layout, readyT.width⟩
-  have poweredT := poweredU.after_transfer readyU readyT.ptr keeps frame rest
+  have poweredT := poweredU.after_transfer keeps
   rw [memU] at value frame
   exact ⟨sharedT, readyT, poweredT, value, frame, (restU.mono (by decide)).trans rest⟩
 

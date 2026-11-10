@@ -51,7 +51,7 @@ theorem crt_powerStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
       sharedU.power_sources i exponent member⟩
   rw [WP.seq_iff]
   refine WP.mono ((crt_narrowPower_ok (kernel := kernel)) u sharedU kind j i pair input (by rw [modulusU]; exact prime)) ?_
-  rintro v ⟨sharedV, _, powered, flagV, frameV, restV⟩
+  rintro v ⟨sharedV, powered, flagV, frameV, restV⟩
   rw [flagU, modulusU] at powered
   refine WP.mono (crt_selectMain_ready v sharedV) ?_
   rintro t ⟨sharedT, readyT, frameT, restT⟩

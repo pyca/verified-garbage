@@ -36,7 +36,7 @@ vg_pbkdf2_hmac_sha1_shani:
 20:
 	mov rdi, r15
 	add rdi, 764
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, r15
 	add rdi, 764
 	mov esi, 0
@@ -190,7 +190,7 @@ vg_pbkdf2_hmac_sha1_avx_bmi:
 20:
 	mov rdi, r15
 	add rdi, 764
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, r15
 	add rdi, 764
 	mov esi, 0
@@ -344,7 +344,7 @@ vg_pbkdf2_hmac_sha1:
 20:
 	mov rdi, r15
 	add rdi, 764
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, r15
 	add rdi, 764
 	mov esi, 0

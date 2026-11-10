@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sha256.init224Contract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.ReprFrom`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -14,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha224_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        r#".base64 "SLjYngXBB9V8NmZID27ASLgX3XAwOVkO92ZID27IZg9swfMPfwdIuDELwP8RFVhoZkgPbsBIuKeP+WSkT/q+ZkgPbshmD2zB8w9/RxDD"
+        r#".base64 "SLjYngXBB9V8NmZID27ASLgX3XAwOVkO92ZID27IZg9swfMPfwdIuDELwP8RFVhoZkgPbsBIuKeP+WSkT/q+ZkgPbshmD2zB8w9/RxBmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/8xwEUx28M="
 .p2align 6"#,
     )
 }
@@ -23,6 +25,8 @@ pub(crate) unsafe extern "sysv64" fn vg_sha224_init(state: *mut [u8; 96]) {
 ///
 /// Contract: `VG.Spec.Sha256.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -30,7 +34,7 @@ pub(crate) unsafe extern "sysv64" fn vg_sha224_init(state: *mut [u8; 96]) {
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha256_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        r#".base64 "SLhn5glqha5nu2ZID27ASLhy8248OvVPpWZID27IZg9swfMPfwdIuH9SDlGMaAWbZkgPbsBIuKvZgx8ZzeBbZkgPbshmD2zB8w9/RxDD"
+        r#".base64 "SLhn5glqha5nu2ZID27ASLhy8248OvVPpWZID27IZg9swfMPfwdIuH9SDlGMaAWbZkgPbsBIuKvZgx8ZzeBbZkgPbshmD2zB8w9/RxBmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/8xwEUx28M="
 .p2align 6"#,
     )
 }
@@ -1328,6 +1332,10 @@ pub(crate) mod vg_sha256_finalize_scratch_avx2;
 #[rustfmt::skip]
 #[path = "internal/vg_sha256_finalize_scratch_shani.rs"]
 pub(crate) mod vg_sha256_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_init_core.rs"]
+pub(crate) mod vg_sha256_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha256_state_digest.rs"]

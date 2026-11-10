@@ -98,7 +98,7 @@ vg_mlkem768_keygen_avx512:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -111,7 +111,7 @@ vg_mlkem768_encaps_h_avx512:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -124,7 +124,7 @@ vg_mlkem768_encaps_avx512:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -137,7 +137,7 @@ vg_mlkem768_decaps_avx512:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -150,7 +150,7 @@ vg_mlkem768_keygen_avx2:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -163,7 +163,7 @@ vg_mlkem768_encaps_h_avx2:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -176,7 +176,7 @@ vg_mlkem768_encaps_avx2:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -189,7 +189,7 @@ vg_mlkem768_decaps_avx2:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -202,7 +202,7 @@ vg_mlkem768_keygen_avx:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -215,7 +215,7 @@ vg_mlkem768_encaps_h_avx:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -228,7 +228,7 @@ vg_mlkem768_encaps_avx:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -241,7 +241,7 @@ vg_mlkem768_decaps_avx:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize_avx}
+	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -254,7 +254,7 @@ vg_mlkem768_keygen:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -267,7 +267,7 @@ vg_mlkem768_encaps_h:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -280,7 +280,7 @@ vg_mlkem768_encaps:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret
@@ -293,7 +293,7 @@ vg_mlkem768_decaps:
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 32768
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret

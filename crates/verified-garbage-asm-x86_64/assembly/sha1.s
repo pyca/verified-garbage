@@ -15,6 +15,8 @@ vg_sha1_init:
 	mov DWORD PTR [rdi+12], eax
 	mov eax, -1009589776
 	mov DWORD PTR [rdi+16], eax
+	xor eax, eax
+	xor r11d, r11d
 	ret
 	.p2align 6
 

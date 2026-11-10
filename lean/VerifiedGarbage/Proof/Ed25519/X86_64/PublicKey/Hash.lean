@@ -419,7 +419,7 @@ variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}
 
 /-- SHA-512 with the compression function `v`, as `MdHash` builds it. -/
 abbrev hashOf (v : Compress) : Impl.Pbkdf2.Md.X86_64.Hash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.hash Spec.Hmac.sha512I 64 Spec.Sha512.init512Api.name
+  Proof.Pbkdf2.Md.X86_64.Sha512.hash Spec.Hmac.sha512I 64 "vg_sha512_init_core"
     Spec.Sha512.H0_512 v
 
 theorem callees (v : Compress) : Proof.Pbkdf2.Md.X86_64.Callees (hashOf v) :=

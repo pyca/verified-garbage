@@ -70,7 +70,7 @@ vg_dsa_parameter_search_3072:
 	mov QWORD PTR [rsp+224], rax
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -207,7 +207,7 @@ vg_dsa_parameter_search_3072:
 	jne 211b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -301,7 +301,7 @@ vg_dsa_parameter_search_3072:
 	jne 213b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -395,7 +395,7 @@ vg_dsa_parameter_search_3072:
 	jne 215b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -489,7 +489,7 @@ vg_dsa_parameter_search_3072:
 	jne 217b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -583,7 +583,7 @@ vg_dsa_parameter_search_3072:
 	jne 219b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -677,7 +677,7 @@ vg_dsa_parameter_search_3072:
 	jne 221b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -771,7 +771,7 @@ vg_dsa_parameter_search_3072:
 	jne 223b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -865,7 +865,7 @@ vg_dsa_parameter_search_3072:
 	jne 225b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -959,7 +959,7 @@ vg_dsa_parameter_search_3072:
 	jne 227b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -1053,7 +1053,7 @@ vg_dsa_parameter_search_3072:
 	jne 229b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -1147,7 +1147,7 @@ vg_dsa_parameter_search_3072:
 	jne 231b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -1241,7 +1241,7 @@ vg_dsa_parameter_search_3072:
 	jne 233b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0

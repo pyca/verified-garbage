@@ -69,8 +69,11 @@ theorem crt_narrowAddress_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
 theorem crt_narrowWidth_ct (slot : Nat) :
     RelCT isa (fun s t => s.sp = t.sp) (.block (narrowWidth slot)) (fun _ _ => True) := by
   have rest : RelCT isa (fun s t => s.sp = t.sp)
-      (.block [.dp .add .r7 .r7 (.imm 7), .mov .r7 (.shifted .r7 .lsr 3), .dp .sub .r1 .r7 (.imm 2),
-        .mov .r1 (.shifted .r1 .lsr 31), .dp .add .r7 .r7 (.reg .r1), .mov .r3 (.imm 0)]) (fun _ _ => True) := by
+      (.block [.dp .add .r7 .r7 (.imm 7), .mov .r7 (.shifted .r7 .lsr 3),
+        .dp .add .r2 .r2 (.imm 8), .mov .r2 (.shifted .r2 .lsr 5),
+        .dp .sub .r1 .r7 (.reg .r2), .mov .r1 (.shifted .r1 .lsr 31), .mov .r3 (.imm 0),
+        .dp .sub .r1 .r3 (.reg .r1), .dp .sub .r2 .r2 (.reg .r7), .dp .and .r2 .r2 (.reg .r1),
+        .dp .add .r7 .r7 (.reg .r2)]) (fun _ _ => True) := by
     apply RelCT.taint (A := taint) (Taint.ofRegs []) _ (by taint_decide)
     intro s t _
     exact Taint.agree_ofRegs (by simp)
@@ -80,21 +83,23 @@ theorem crt_enterNarrow_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (j 
     RelCT isa (fun s t => CrtShared g bs1 s ∧ CrtShared g bs2 t ∧ s.sp = t.sp)
       (enterNarrow (56 + 8 * j.val + 4)) (fun _ _ => True) := by
   have hj := j.isLt
-  let Addressed := fun (bs : Fin 7 → List Byte) (s : State) => CrtShared g bs s ∧ s.gpr .r0 = crtN g.base g.words
+  let Addressed := fun (bs : Fin 7 → List Byte) (s : State) => CrtShared g bs s ∧ s.gpr .r0 = crtN g.base g.words ∧
+    s.gpr .r2 = BitVec.ofNat 32 g.words <<< 4 + 8
   have addressWP (s : State) {bs : Fin 7 → List Byte} (h : CrtShared g bs s) :
       WP isa (.block narrowAddress) s (Addressed bs) :=
-    (crt_narrowAddress_ok s h).mono fun _ j => ⟨h.of_mem j.2.1 j.2.2, j.1⟩
+    (crt_narrowAddress_ok s h).mono fun _ j => ⟨h.of_mem j.2.2.1 j.2.2.2, j.1, j.2.1⟩
   let Sized := fun (bs : Fin 7 → List Byte) (s : State) => CrtShared g bs s ∧ s.gpr .r0 = crtN g.base g.words ∧
-    s.gpr .r7 = BitVec.ofNat 32 (narrowWords (g.sourceLength j.succ)) ∧ s.gpr .r3 = 0
+    s.gpr .r7 = BitVec.ofNat 32 (narrowWords (g.sourceLength j.succ) g.words) ∧ s.gpr .r3 = 0
   have widthWP (s : State) {bs : Fin 7 → List Byte} (h : Addressed bs s) :
       WP isa (.block (narrowWidth (56 + 8 * j.val + 4))) s (Sized bs) := by
-    obtain ⟨_, _, _, positive, small, _⟩ := h.1.narrow_fits j prime
+    obtain ⟨_, _, _, _, small, _, _⟩ := h.1.narrow_fits j prime
+    have words : g.words ≤ 128 := (crt_width_valid h.1.buffers.lengthValid).2.1
     refine WP.mono (crt_narrowWidth_ok s (slot := 56 + 8 * j.val + 4) (by omega)
       (by have := h.1.stack.nowrap; omega) (h.1.stack.read (by omega))
       (by simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega] using h.1.stack.length j)
-      positive (by omega)) ?_
+      h.2.2 (by omega) (by omega)) ?_
     rintro t ⟨width, zero, mem, rest⟩
-    exact ⟨h.1.of_mem mem rest, (rest.gpr .r0 (by simp)).trans h.2, width, zero⟩
+    exact ⟨h.1.of_mem mem rest, (rest.gpr .r0 (by simp)).trans h.2.1, width, zero⟩
   have widthCT : RelCT isa (fun s t => Addressed bs1 s ∧ Addressed bs2 t ∧ s.sp = t.sp)
       (.block (narrowWidth (56 + 8 * j.val + 4))) (fun _ _ => True) :=
     (crt_narrowWidth_ct _).mono (fun _ _ h => h.2.2) (fun _ _ _ => trivial)
@@ -102,7 +107,7 @@ theorem crt_enterNarrow_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (j 
     intro s t tr1 tr2 u v h e1 e2
     exact ⟨setup_ct s t tr1 tr2 u v trivial trivial (h.1.2.1.trans h.2.1.2.1.symm) e1 e2, trivial⟩
   have setupWP (s : State) {bs : Fin 7 → List Byte} (h : Sized bs s) : WP isa setup s (fun _ => True) := by
-    obtain ⟨two, le, _, _, _, arrays⟩ := h.1.narrow_fits j prime
+    obtain ⟨two, le, _, _, _, arrays, _⟩ := h.1.narrow_fits j prime
     have words := (crt_width_valid h.1.buffers.lengthValid).2.1
     change _ ≤ Spec.Rsa.modulusWords g.length at le
     exact (setup_frame_ok s h.1.buffers.context.narrow two (by omega) arrays h.2.1 h.2.2.1 h.2.2.2).mono
