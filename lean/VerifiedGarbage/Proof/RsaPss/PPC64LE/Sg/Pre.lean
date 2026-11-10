@@ -63,8 +63,8 @@ abbrev preR (s : State) : Region := ⟨stackArg s 16, (stackArg s 17).toNat * 8�
 
 /-- The buffers the function reads. -/
 abbrev rdS (pc : Bool) (D : Nat) (s : State) : List Region :=
-  [nR s, eR s, pR s, qR s, dpR s, dqR s, qiR s, dgR D s, sR s, tHR s, tGR s] ++ (if pc then [preR s] else []) ++
-    [aR pc s]
+  [nR s, eR s, pR s, qR s, dpR s, dqR s, qiR s, dgR D s, sR s] ++ (if pc then [preR s] else []) ++
+    [tHR s, tGR s, aR pc s]
 
 /-- The stack the function uses. -/
 abbrev kS (pc : Bool) (s : State) : Region := ⟨s.sp - BitVec.ofNat 64 (stackBytes pc), stackBytes pc⟩

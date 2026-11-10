@@ -872,8 +872,10 @@ theorem verify_ok' {vs : List MVar} {gs : List MVar} (h : OK vs gs) :
 /-- `vg_rsa_pss_sign`, with the tables of `vs` and `gs`. -/
 theorem sign_ok' {vs : List MVar} {gs : List MVar} (h : OK vs gs) :
     Verified PPC64LE.target (Impl.RsaPss.PPC64LE.Sign.sign (MdHashTable.PPC64LE.fnsOf vs)
-      (MdHashTable.PPC64LE.fns3 gs)) (Sg.signSpec (MdHashTable.PPC64LE.tables vs) (MdHashTable.PPC64LE.tables gs)) :=
+      (MdHashTable.PPC64LE.fns3 gs)) (Spec.RsaPss.signMdTableContract
+        (abi.withTables Spec.RsaPss.signMdTableSig [("hash", MdHashTable.PPC64LE.tables vs),
+          ("mgf1", MdHashTable.PPC64LE.tables gs)]) 3776) :=
   let ⟨_, hw, _, hw'⟩ := ok_mem h
-  Sg.sign_verified h.1 h.2.1 (sign_sat hw hw' h.2.2.2.2)
+  Sg.stackBytes_eq ▸ Sg.sign_verified h.1 h.2.1 (sign_sat hw hw' h.2.2.2.2)
 
 end VG.Proof.RsaPss.PPC64LE
