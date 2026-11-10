@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Inst
+public import VerifiedGarbage.Proof.RsaOaep.RISCV64.DecPrecomputed
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.TCB.RISCV64.Print
 
@@ -21,6 +22,11 @@ def artifacts : List Artifact :=
       code := Impl.RsaOaep.RISCV64.Dec.decrypt (fns3 vars)
       stack := 3472
       verified := dec_ok vars h },
+    Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact RISCV64.target {
+      tables := [("hash", tables vars), ("mgf1", tables vars)]
+      code := Impl.RsaOaep.RISCV64.Dec.decrypt (fns3 vars)
+      stack := 3472
+      verified := Proof.RsaOaep.RISCV64.Dec.decPrecomputed_verified h },
     Spec.RsaOaep.encryptMdTablesApi.artifact RISCV64.target {
       tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaOaep.RISCV64.encrypt (fns3 vars)

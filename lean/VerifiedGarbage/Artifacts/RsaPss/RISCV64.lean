@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Sat
+public import VerifiedGarbage.Proof.RsaPss.RISCV64.SgPrecomputed
 public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.TCB.RISCV64.Print
 
@@ -26,7 +27,12 @@ def artifacts : List Artifact :=
       tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaPss.RISCV64.Sign.sign (fnsOf vars) (fns3 vars)
       stack := 3472
-      verified := sign_ok h }]
+      verified := sign_ok h },
+    Spec.RsaPss.signPrecomputedMdTableApi.artifact RISCV64.target {
+      tables := [("hash", tables vars), ("mgf1", tables vars)]
+      code := Impl.RsaPss.RISCV64.Sign.sign (fnsOf vars) (fns3 vars)
+      stack := 3472
+      verified := Proof.RsaPss.RISCV64.signPrecomputed_ok h }]
   else []
 
 end VG.Artifacts.RsaPss.RISCV64

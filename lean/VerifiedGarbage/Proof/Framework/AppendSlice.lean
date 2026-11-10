@@ -283,6 +283,19 @@ theorem Sig.wordIndex_append : ∀ (ps q : List (String × Param)) (x : String) 
       obtain ⟨k', hk', rfl⟩ := Option.map_eq_some_iff.mp h
       rw [Sig.wordIndex_append ps q x k' hk']; rfl
 
+/-- The precondition part of a contract's `bif` on the buffers' alignment. -/
+theorem cond_left {b : Bool} {P Q : Prop} (h : bif b then P ∧ Q else P) : P := by
+  cases b
+  · exact h
+  · exact h.1
+
+/-- A contract's `bif` on the buffers' alignment, weakened in each part. -/
+theorem cond_weaken {b : Bool} {P P' Q Q' : Prop} (hp : P' → P) (hq : Q' → Q)
+    (h : bif b then P' ∧ Q' else P') : bif b then P ∧ Q else P := by
+  cases b
+  · exact hp h
+  · exact ⟨hp h.1, hq h.2⟩
+
 /-- A function verified against `sig.contract A pre post …` is verified against
 the contract of `sig.withSlice nm e ln` (one more, last, parameter, a read-only
 slice its code need not read) whose precondition implies `pre`, whose
@@ -291,7 +304,9 @@ the code runs as it does from the state permitted the shorter contract's
 memory, which the longer one's covers (`RegionModel.verified_narrowTo`). The
 calling convention `T.abi` must pass the slice's two words after the others,
 with an argument area at least as long, and ignore the permissions in what it
-reads of a state. -/
+reads of a state. Both conventions require aligned buffers, or neither; if
+they do, the slice's alignment is one more fact the longer precondition
+asks. -/
 theorem Verified.withSlice {T : Target} (R : RegionModel T.isa)
     (habi : ∀ s s₁ r w, T.abiPreserved (R.withRegions s r w) s₁ →
       T.abiPreserved s (R.withRegions s₁ (R.rd s) (R.wr s)))
@@ -302,7 +317,7 @@ theorem Verified.withSlice {T : Target} (R : RegionModel T.isa)
     (hret : ∀ s r w, A.ret (R.withRegions s r w) = A'.ret s)
     (hpubA : ∀ s₁ s₂ r₁ w₁ r₂ w₂, A'.pub s₁ s₂ → A.pub (R.withRegions s₁ r₁ w₁) (R.withRegions s₂ r₂ w₂))
     (hres : ∀ n s r w, A.reserved n (R.withRegions s r w) = A'.reserved n s)
-    (halign : A.alignsBufs = false) (halign' : A'.alignsBufs = false)
+    (halign : A'.alignsBufs = A.alignsBufs)
     {sig : Sig} {nm ln : String} {e : Elem}
     {vals : T.isa.State → List (BitVec 64)} {X Y : T.isa.State → BitVec 64}
     (hargs : A.args ((sig.words A.ptrBits).map (·.bits A.ptrBits)) = some vals)
@@ -337,8 +352,8 @@ theorem Verified.withSlice {T : Target} (R : RegionModel T.isa)
     (hsat : ∃ s, ((sig.withSlice nm e ln).contract A' pre' post' writeArgs stack leak').pre s) :
     Verified T c ((sig.withSlice nm e ln).contract A' pre' post' writeArgs stack leak') := by
   obtain ⟨pb', args', argArea', reserved', wf', pub', mem', rd', wr', ret', sym', align', mode'⟩ := A'
-  dsimp only at hpb hrd hwr hmem' hret hpubA hres halign' hargs' hwf harea hpre hpost hleak
-  subst hpb
+  dsimp only at hpb hrd hwr hmem' hret hpubA hres halign hargs' hwf harea hpre hpost hleak
+  subst hpb halign
   have hl : ∀ s, (vals s).length = (sig.params.flatMap fun p => p.2.words A.ptrBits).length := hlen
   have hB : ∀ s, Sig.bufs (sig.withSlice nm e ln).params (vals s ++ [X s, Y s]) =
       Sig.bufs sig.params (vals s) ++ [(⟨X s, (Y s).toNat * e.size⟩, false)] := fun s =>
@@ -381,8 +396,7 @@ theorem Verified.withSlice {T : Target} (R : RegionModel T.isa)
     simp only [Sig.contract, hargs, hargs'] at hs ⊢
     rw [hB, hMM, hL] at hs
     obtain ⟨wf, rd, wr, pw, rs, bd, hp⟩ := hs
-    simp only [halign', Bool.cond_false] at hp
-    simp only [hrdA, hwrA, R.rd_with, R.wr_with, hvals, hM, harea_with, halign, hres, Bool.cond_false]
+    simp only [hrdA, hwrA, R.rd_with, R.wr_with, hvals, hM, harea_with, hres]
     refine ⟨hwf _ _ _ _ wf, rfl, rfl, pairwise_below (hrel s) ((pw.sublist (hsub s))), ?_, ?_, ?_⟩
     · intro r hr a ha
       obtain ⟨b, hb, hab⟩ := hbelow s a ha
@@ -392,7 +406,10 @@ theorem Verified.withSlice {T : Target} (R : RegionModel T.isa)
       rcases List.mem_append.mp ha with h | h
       · exact List.mem_append_left _ (List.mem_append_left _ h)
       · exact List.mem_append_right _ h
-    · exact hpre s (by rw [hMM]; exact hp)
+    · refine cond_weaken (fun h => hpre s (by rw [hMM]; exact h)) (fun h p hp' => h p ?_) hp
+      rw [show (sig.withSlice nm e ln).params = sig.params ++ [(nm, .slice false e ln)] from rfl,
+        Sig.alignedBufs_append_slice A.ptrBits nm e ln _ _ sig.params (vals s) (hl s)]
+      exact List.mem_append_left _ hp'
   · intro s hs
     simp only [Sig.contract, hargs'] at hs
     rw [hB, hMM, hL] at hs
@@ -412,17 +429,17 @@ theorem Verified.withSlice {T : Target} (R : RegionModel T.isa)
     rw [hB, hMM, hL] at hs
     simp only [hvals, hM, hret] at hq
     obtain ⟨-, -, -, -, -, -, hp⟩ := hs
-    simp only [halign', Bool.cond_false] at hp
+    replace hp := cond_left hp
     have := hpost s (A.mem s') (ret' s') (by rw [hMM]; exact hp) hq
     simp only [hMM] at this ⊢
     exact this
   · intro s₁ s₂ h₁ h₂ hp
     simp only [Sig.contract, hargs, hargs'] at h₁ h₂ hp ⊢
     rw [hB, hMM, hL] at h₁ h₂
-    simp only [hvals, hM, halign', Bool.cond_false] at h₁ h₂ ⊢
+    simp only [hvals, hM] at h₁ h₂ ⊢
     rw [hD, hMM, hMM] at hp
-    have p₁ := h₁.2.2.2.2.2.2
-    have p₂ := h₂.2.2.2.2.2.2
+    have p₁ := cond_left h₁.2.2.2.2.2.2
+    have p₂ := cond_left h₂.2.2.2.2.2.2
     obtain ⟨hpA, hpi, hpd⟩ := hp
     have hpo : ∀ i, (sig.params.flatMap (·.2.pubs)).getD i false = true →
         ((vals s₁).getD i 0).setWidth (((sig.words A.ptrBits).map (·.bits A.ptrBits)).getD i 64) =
