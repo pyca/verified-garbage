@@ -26,6 +26,10 @@ import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.AnyKeyEntry
 (`MdHash.hmacFinRes`). Its postcondition reads the memory on return only
 within `out` (`hmacFinOut`).
 
+`scrubAllCode`: code followed by the clearing with every granule of its stack
+wiped, as `Scrub.scrubRegAll` does of a registered function, for code that
+is part of one (`scrubAllCode_ok`).
+
 `MdHash.hmacInitReg`: HMAC's `init` over a variant, with the clearing after
 each of its two branches where the variant asks for it
 (`MdHash.initScrub`), every granule of the branch's own frame wiped
@@ -106,6 +110,37 @@ def MdHash.hmacFinReg (v : MdHash) : Registration v.I.finalizeApi target :=
     withScrub r (hmacFinOut v.I hD _) [] (pubOk_nil _) v.hmacFinRes
   else r
 
+/-- `c` followed by the clearing (`scrub`) at the level `v`, with every granule
+of its `stack` bytes of stack wiped: for code that is part of a function (a
+branch of it, verified against a contract of its own). -/
+def scrubAllCode (v : VecLevel) (rb stack : Nat) (c : Prog isa) : Prog isa :=
+  scrub v rb (xsOf c (allKs (chunks stack))) (psOf (allKs (chunks stack))) (gsOf Taint.clobbers c)
+    (allKs (chunks stack)) (chunks stack) c
+
+/-- `scrubAllCode` is verified against the contract of its code, and returns
+without secret residue, below the level `evex`. -/
+theorem scrubAllCode_ok {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
+    {pre : Curry (sig.words A.ptrBits) (Mem → Prop)} {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa} {v : VecLevel}
+    (hne : v ≠ .evex) (h : Verified target c (sig.contract A pre post wa stack leak))
+    (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ stack) (hst : stack + 8 < 2 ^ 64)
+    (h8 : stack % 8 = 0) (hlv : c.all (fun i => decide (i.vecLevel ≤ v.level)) = true)
+    (hrb : sig.retBits A.ptrBits ≤ 32 ∨ sig.retBits A.ptrBits = 64)
+    (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :
+    Verified target (scrubAllCode v (sig.retBits A.ptrBits) stack c) (sig.contract A pre post wa stack leak) ∧
+      NoResidue (scrubAllCode v (sig.retBits A.ptrBits) stack c) (sig.contract A pre post wa stack leak)
+        (sig.retBits A.ptrBits) :=
+  have he := evexReg_of_ne (c := c) (ks := allKs (chunks stack)) (stack := stack) hne
+  Verified.scrub hA h (SpSafe.of_all hsp) hd (chunks_sum stack) hst (chunks_valid h8)
+    (fun i hi => by simpa using Code.all_instrs hlv i hi) hrb hpost (resOk_all _ _ h8) (tailOk_of _ _ _)
+    (xs_of _ _) he.1 he.2 (gs_of _ _)
+
+theorem scrubAllCode_spSafe (v : VecLevel) (rb stack : Nat) {c : Prog isa}
+    (h : c.all (fun i => !isa.writesSp i) = true) :
+    (scrubAllCode v rb stack c).all (fun i => !isa.writesSp i) = true :=
+  scrub_spSafe v _ _ _ _ _ _ (tailOk_of 0 c (allKs (chunks stack))).psOk
+    (tailOk_of 0 c (allKs (chunks stack))).gsOk h
+
 /-- HMAC's `init`'s postcondition reads the memory on return only within
 its two states, for a key of at most a block and of any length. -/
 theorem hmacInitOut (I : Spec.Hmac.Instance) (hR : Proof.Hmac.ReprLocal I.S) (hS : I.S.stateBytes < 2 ^ 64)
@@ -144,10 +179,10 @@ theorem initCodeS_ok (v : MdHash) {lv : VecLevel} (hne : lv ≠ .evex) (hS : v.I
     Verified target (initCodeS lv v.H v.I) (v.I.initAnyKeyContract abi (24 + anyFrame v.I)) ∧
       NoResidue (initCodeS lv v.H v.I) (v.I.initAnyKeyContract abi (24 + anyFrame v.I))
         ((Spec.Hmac.initSig v.I.S).retBits 64) := by
-  have s := Verified.scrubAll (A := abi) ScrubAbi.plain (sig := Spec.Hmac.initSig v.I.S)
+  have s := scrubAllCode_ok (A := abi) ScrubAbi.plain (sig := Spec.Hmac.initSig v.I.S)
     (pre := Spec.Hmac.initPre v.I.S abi.ptrBits) (post := Spec.Hmac.initPost v.I.S abi.ptrBits) (wa := true)
     (leak := none) hne v.hmacShortF v.hmacShortFSp hd₁ (by omega) h8₁ hl₁ hrb (hmacInitOut v.I v.reprLocal hS _)
-  have l := Verified.scrubAll (A := abi) ScrubAbi.plain (sig := Spec.Hmac.initSig v.I.S)
+  have l := scrubAllCode_ok (A := abi) ScrubAbi.plain (sig := Spec.Hmac.initSig v.I.S)
     (post := Spec.Hmac.initPost v.I.S abi.ptrBits) (wa := true)
     (leak := none) hne v.hmacAnyF v.hmacAnyFSp hd₂ hst h8₂ hl₂ hrb (hmacInitAnyOut v.I v.reprLocal hS _)
   exact ⟨initEntry_verified s.1 l.1 (by omega) hn v.hBlock v.hmacInitF.2.2,

@@ -1452,37 +1452,6 @@ theorem evexReg_all {c : Prog isa} {v : VecLevel} {stack : Nat} (h8 : stack % 8 
   · exact evexOk_all v (fun b hb => (chunks_valid h8 b hb).2.2) (by rw [chunks_sum]; exact (hev e).1)
       (by rw [chunks_sum]; omega) hp e
 
-/-- `c` followed by the clearing (`scrub`) at the level `v`, with every granule
-of its `stack` bytes of stack wiped: for code that is part of a function (a
-branch of it, verified against a contract of its own). -/
-def scrubAllCode (v : VecLevel) (rb stack : Nat) (c : Prog isa) : Prog isa :=
-  scrub v rb (xsOf c (allKs (chunks stack))) (psOf (allKs (chunks stack))) (gsOf Taint.clobbers c)
-    (allKs (chunks stack)) (chunks stack) c
-
-/-- `scrubAllCode` is verified against the contract of its code, and returns
-without secret residue, below the level `evex`. -/
-theorem Verified.scrubAll {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
-    {pre : Curry (sig.words A.ptrBits) (Mem → Prop)} {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
-    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa} {v : VecLevel}
-    (hne : v ≠ .evex) (h : Verified target c (sig.contract A pre post wa stack leak))
-    (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ stack) (hst : stack + 8 < 2 ^ 64)
-    (h8 : stack % 8 = 0) (hlv : c.all (fun i => decide (i.vecLevel ≤ v.level)) = true)
-    (hrb : sig.retBits A.ptrBits ≤ 32 ∨ sig.retBits A.ptrBits = 64)
-    (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :
-    Verified target (scrubAllCode v (sig.retBits A.ptrBits) stack c) (sig.contract A pre post wa stack leak) ∧
-      NoResidue (scrubAllCode v (sig.retBits A.ptrBits) stack c) (sig.contract A pre post wa stack leak)
-        (sig.retBits A.ptrBits) :=
-  have he := evexReg_of_ne (c := c) (ks := allKs (chunks stack)) (stack := stack) hne
-  Verified.scrub hA h (SpSafe.of_all hsp) hd (chunks_sum stack) hst (chunks_valid h8)
-    (fun i hi => by simpa using Code.all_instrs hlv i hi) hrb hpost (resOk_all _ _ h8) (tailOk_of _ _ _)
-    (xs_of _ _) he.1 he.2 (gs_of _ _)
-
-theorem scrubAllCode_spSafe (v : VecLevel) (rb stack : Nat) {c : Prog isa}
-    (h : c.all (fun i => !isa.writesSp i) = true) :
-    (scrubAllCode v rb stack c).all (fun i => !isa.writesSp i) = true :=
-  scrub_spSafe v _ _ _ _ _ _ (tailOk_of 0 c (allKs (chunks stack))).psOk
-    (tailOk_of 0 c (allKs (chunks stack))).gsOk h
-
 /-- `r`'s code, scrubbed as `scrubRegE` does, returns without secret residue. -/
 theorem scrubCodeE_noResidue {api : Api} (r : Registration api target) (v : VecLevel) (ks : List Nat)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
