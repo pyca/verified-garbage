@@ -4373,6 +4373,10 @@ vg_ffdh_parameter_generation_init:
 	mov QWORD PTR [rdi+16], rax
 	mov QWORD PTR [rdi+24], rax
 21:
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
 	ret
 	.p2align 6
 
@@ -4403,6 +4407,8 @@ vg_ffdh_key_generation_init:
 	mov QWORD PTR [rdi+16], rax
 	mov QWORD PTR [rdi+24], rax
 21:
+	mov eax, eax
+	xor esi, esi
 	ret
 	.p2align 6
 

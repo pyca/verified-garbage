@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.MlKem.checkEkContract`. Constant time: only the pointer may affect timing.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1184 bytes.
@@ -18,7 +20,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_check_ek(ek: *const [u8; 1184])
 20:
 .base64 "D7YHD7ZXAcHKGAHQD7ZXAsHKEAHQicIl/w8AAMHqDD0BDQAASYPQAIH6AQ0AAEmD0ABIg8cDSIPpAQ=="
 jne 20b
-.base64 "SYH4AAMAAEgZwEiDwAHD"
+.base64 "SYH4AAMAAEgZwEiDwAGJwDHJMdIx/0UxwMM="
 .p2align 6"#,
     )
 }
@@ -29,6 +31,8 @@ pub const VG_MLKEM768_CHECK_EK_AVX2_FEATURES: verified_garbage_cpu::Features = v
 /// The ML-KEM-768 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1152 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem768_encaps`.
 ///
 /// Contract: `VG.Spec.MlKem.checkEkContract`. Constant time: only the pointer may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -45,7 +49,7 @@ lea rax, [rip + {VG_MLKEM_YCONSTS}]
 20:
 .base64 "xOJ9WgfEwn0AwMTCfUXBxa3bwMTBffrDxe3b0EiDxwxIg+kB"
 jne 20b
-.base64 "xe1y4h/F/dfCSIPAAUjB6CDF+HfD"
+.base64 "xe1y4h/F/dfCSIPAAUjB6CDF+HfF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/+JwDHJMf/D"
 .p2align 6"#,
         VG_MLKEM_YCONSTS = sym super::consts::VG_MLKEM_YCONSTS,
     )
