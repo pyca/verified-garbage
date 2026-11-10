@@ -451,7 +451,8 @@ def fixMx (v : VecLevel) (x : BitVec 32) : BitVec 32 :=
 /-- The trace of `mxFix v` from `rsp = p`. -/
 def mxTr (v : VecLevel) (p : Addr) : List Leak :=
   match v with
-  | .evex => [.addr (p - 16#64), .addr (p - 16#64), .addr (p - 16#64), .addr (p - 16#64)]
+  | .evex => [.addr (p - 16#64), .addr (p - 16#64), .addr (p - 16#64), .addr (p - 16#64 + 4#64),
+      .addr (p - 16#64 + 4#64), .addr (p - 16#64)]
   | _ => []
 
 theorem ctl_hi (x : BitVec 32) : (x &&& 0xFFC0#32).extractLsb' 16 16 = 0 := by
@@ -487,12 +488,12 @@ theorem fixMx_congr (v : VecLevel) {x y : BitVec 32} (hv : v = .evex)
 
 /-- `mxFix v`, where `r11` is zero and the flags are those of an `xor` of a
 register with itself (what clearing `ps` leaves): MXCSR as `fixMx` says, and
-at the level `evex` 4 bytes of the 16 below the stack pointer. -/
+at the level `evex` 8 bytes of the 16 below the stack pointer. -/
 theorem mxFix_run (v : VecLevel) (u : State) (h16 : v = .evex → 16 ≤ (u.gpr .rsp).toNat)
     (hr : v = .evex → u.gpr .r11 = 0 ∧ u.cf = some false ∧ u.of = some false ∧ u.zf = some true ∧
       u.sf = some false) :
     ∃ m', Exec isa (mxFix v) u (mxTr v (u.gpr .rsp)) { u with mem := m', mxcsr := fixMx v u.mxcsr } ∧
-      ∀ x, ¬ (v = .evex ∧ (x - (u.gpr .rsp - 16#64)).toNat < 4) → m' x = u.mem x := by
+      ∀ x, ¬ (v = .evex ∧ (x - (u.gpr .rsp - 16#64)).toNat < 8) → m' x = u.mem x := by
   cases v
   · exact ⟨u.mem, .block rfl, fun _ _ => rfl⟩
   · exact ⟨u.mem, .block rfl, fun _ _ => rfl⟩
@@ -512,12 +513,27 @@ theorem mxFix_run (v : VecLevel) (u : State) (h16 : v = .evex → 16 ≤ (u.gpr 
       obtain ⟨r, hr, hc⟩ := hin; exact ⟨r, List.mem_append_right _ hr, hc⟩
     have hea : u₁.gpr .rsp + BitVec.ofInt 64 0 = q := by rw [hq]; show q + 0#64 = q; rw [BitVec.add_zero]
     let w : BitVec 32 := u.mxcsr &&& 0xFFC0#32
-    let m₂ : Mem := (u.mem.writeW q u.mxcsr).writeW q w
+    let m₂ : Mem := ((u.mem.writeW q u.mxcsr).writeW q w).writeW (q + 4#64) (0x1FBF#32)
     have hw : w.extractLsb' 16 16 = 0 := ctl_hi _
+    have hin4 : InRegions u₁.wr (q + 4#64) 4 := by
+      refine ⟨⟨q, 16⟩, by simp [u₁], ?_⟩
+      simp only [Region.Contains]
+      bv_omega
+    have hin4' : InRegions (u₁.rd ++ u₁.wr) (q + 4#64) 4 := by
+      obtain ⟨r, hr, hc⟩ := hin4; exact ⟨r, List.mem_append_right _ hr, hc⟩
+    have hea4 : u₁.gpr .rsp + BitVec.ofInt 64 4 = q + 4#64 := by rw [hq]; rfl
+    have hsep : Mem.Sep q (32 / 8) (q + 4#64) (32 / 8) := by
+      intro x hx
+      have hx : (x - q).toNat < 4 := hx
+      show ¬ (x - (q + 4#64)).toNat < 4
+      bv_omega
     have hb : execBlock isa [.stmxcsr { base := .rsp }, .mov32 .r11 (.mem { base := .rsp }),
-        .alu32 .and .r11 (.imm 0xFFC0), .store32 { base := .rsp } .r11, .ldmxcsr { base := .rsp },
+        .alu32 .and .r11 (.imm 0xFFC0), .store32 { base := .rsp } .r11,
+        .mov32 .r11 (.imm 0x1FBF), .store32 { base := .rsp, disp := 4 } .r11,
+        .ldmxcsr { base := .rsp, disp := 4 }, .lfence, .lfence, .ldmxcsr { base := .rsp },
         .alu32 .xor .r11 (.reg .r11)] u₁ =
-        some ({ u₁ with mem := m₂, mxcsr := w }, [.addr q, .addr q, .addr q, .addr q]) := by
+        some ({ u₁ with mem := m₂, mxcsr := w },
+          [.addr q, .addr q, .addr q, .addr (q + 4#64), .addr (q + 4#64), .addr q]) := by
       have h11 : u₁.gpr .r11 = 0 := by simp [u₁, State.setReg, h0]
       have sw : ∀ x : BitVec 32, (x.setWidth 64).setWidth 32 = x := fun x => by
         apply BitVec.eq_of_toNat_eq
@@ -525,17 +541,19 @@ theorem mxFix_run (v : VecLevel) (u : State) (h16 : v = .evex → 16 ≤ (u.gpr 
         have := x.isLt
         omega
       simp only [execBlock, isa, reduceExec, State.store32, State.load32, State.ea, execAlu32, readSrc32, addrs,
-        srcAddrs, arithFlags, State.setFlags, State.setReg32, State.setReg, reduceCtorEq, ↓reduceIte, hea, hin,
-        hin', Option.bind_some, Option.map_some, Mem.readW_writeW_self32, sw, BitVec.xor_self,
+        srcAddrs, arithFlags, State.setFlags, State.setReg32, State.setReg, reduceCtorEq, ↓reduceIte, hea, hea4,
+        hin, hin', hin4, hin4', Option.bind_some, Option.map_some, Mem.readW_writeW_self32,
+        Mem.readW_writeW_sep hsep (by decide), sw, BitVec.xor_self,
         show u₁.mxcsr = u.mxcsr from rfl, show u₁.mem = u.mem from rfl,
         show (u.mxcsr &&& 65472).extractLsb' 16 16 = 0 from hw,
+        show (8127 : BitVec 32).extractLsb' 16 16 = 0 from by decide,
         List.map_cons, List.map_nil, List.cons_append, List.nil_append, Option.some.injEq, Prod.mk.injEq, and_true]
       simp only [State.mk.injEq, and_true, true_and]
       refine ⟨?_, hcf.symm, ?_, ?_, hof.symm, rfl, rfl⟩
       · funext r
         by_cases hr : r = .r11
         · subst hr; rw [ite_eq_left rfl, h11]; rfl
-        · rw [ite_eq_right hr, ite_eq_right hr, ite_eq_right hr]
+        · rw [ite_eq_right hr, ite_eq_right hr, ite_eq_right hr, ite_eq_right hr]
       · exact hzf.symm
       · exact hsf.symm
     let u₂ : State := { u₁ with mem := m₂, mxcsr := w }
@@ -553,14 +571,16 @@ theorem mxFix_run (v : VecLevel) (u : State) (h16 : v = .evex → 16 ≤ (u.gpr 
     refine ⟨m₂, ?_, fun x hx => ?_⟩
     · have e := Exec.frame (M := isa) hpush (.block hb) hpop
       have htr : mxTr .evex p = (isa.addrs (.alloc 16) u).map Leak.addr ++
-          [.addr q, .addr q, .addr q, .addr q] ++ (isa.addrs (.free 16) u₂).map Leak.addr := by
+          [.addr q, .addr q, .addr q, .addr (q + 4#64), .addr (q + 4#64), .addr q] ++
+          (isa.addrs (.free 16) u₂).map Leak.addr := by
         simp [mxTr, addrs, q]
       rw [show mxTr .evex (u.gpr .rsp) = mxTr .evex p from rfl, htr]
       exact e
-    · have hx' : ¬ (x - q).toNat < 4 := fun h => hx ⟨rfl, h⟩
-      show ((u.mem.writeW q u.mxcsr).writeW q w) x = u.mem x
+    · have hx' : ¬ (x - q).toNat < 8 := fun h => hx ⟨rfl, h⟩
+      have hx4 : ¬ (x - (q + 4#64)).toNat < 4 := by bv_omega
+      show (((u.mem.writeW q u.mxcsr).writeW q w).writeW (q + 4#64) (0x1FBF#32)) x = u.mem x
       simp only [Mem.writeW, Mem.write]
-      rw [ite_eq_right (by omega), ite_eq_right (by omega)]
+      rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
 
 /-- The state `scrubTail v rb xs ps gs ks cs` leaves, given the memory `m'` its wipe leaves. -/
 def finState (v : VecLevel) (rb : Nat) (xs : List XReg) (ps gs : List Reg) (m' : Mem) (u : State) : State :=
@@ -581,7 +601,7 @@ structure TailOk (rb : Nat) (xs : List XReg) (ps gs : List Reg) (ks : List Nat) 
 /-- What the level `evex` needs of the wipe from `rsp = p`: that it zeroes
 the bytes `mxFix` stores, in the 16 below the stack pointer. -/
 def EvexOk (v : VecLevel) (ks cs : List Nat) (p : Addr) : Prop :=
-  v = .evex → ks ≠ [] ∧ 16 ≤ cs.sum ∧ ∀ x, (x - (p - 16#64)).toNat < 4 → WCov ks cs p x
+  v = .evex → ks ≠ [] ∧ 16 ≤ cs.sum ∧ ∀ x, (x - (p - 16#64)).toNat < 8 → WCov ks cs p x
 
 /-- The trace of `scrubTail` from `rsp = p`. -/
 def tailTr (v : VecLevel) (ks cs : List Nat) (p : Addr) : List Leak := mxTr v p ++ wipeTr ks cs p

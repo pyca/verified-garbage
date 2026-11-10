@@ -68,11 +68,17 @@ def clearHigh : VecLevel → List Instr
 
 /-- At the level `evex`: MXCSR with its status flags (bits 5:0) and its
 reserved bits (31:16, as the code that restores it clears them: see "MXCSR"
-in `TCB/X86_64/Isa.lean`) cleared, through 4 bytes of a frame of 16 below
-the stack pointer; `r11` is left zero, as the wipe expects it. -/
+in `TCB/X86_64/Isa.lean`) cleared, through 8 bytes of a frame of 16 below
+the stack pointer; `r11` is left zero, as the wipe expects it. The only way
+the generated code writes MXCSR is Intel's sequence around the instructions
+MCDT affects (`ci/check_mcdt.py`), so this is that sequence, around none:
+`stmxcsr` saves MXCSR, whose saved value is masked; the prologue loads
+`0x1FBF`; and the epilogue loads the saved value. -/
 def mxFix : VecLevel → Prog isa
   | .evex => .frame (.alloc 16) (.block [.stmxcsr { base := .rsp }, .mov32 .r11 (.mem { base := .rsp }),
-      .alu32 .and .r11 (.imm 0xFFC0), .store32 { base := .rsp } .r11, .ldmxcsr { base := .rsp },
+      .alu32 .and .r11 (.imm 0xFFC0), .store32 { base := .rsp } .r11,
+      .mov32 .r11 (.imm 0x1FBF), .store32 { base := .rsp, disp := 4 } .r11,
+      .ldmxcsr { base := .rsp, disp := 4 }, .lfence, .lfence, .ldmxcsr { base := .rsp },
       .alu32 .xor .r11 (.reg .r11)]) (.free 16)
   | _ => .block []
 

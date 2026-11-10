@@ -27,14 +27,6 @@ Intel's sequence, exactly:
   caller's is proven: MXCSR's control bits are callee-saved in the
   contracts.)
 
-Outside a region, the only other code that may write MXCSR is the clearing
-of its status flags that ends a function returning without secret residue
-(`Impl.Scrub.X86_64.mxFix`), exactly: `stmxcsr DWORD PTR [m]`,
-`mov r32, DWORD PTR [m]`, `and r32, 65472` (`0xFFC0`),
-`mov DWORD PTR [m], r32` and `ldmxcsr DWORD PTR [m]`, one after the other
-in straight-line code. It loads the MXCSR the code left with bits 5:0
-cleared, so it changes no control bit, and no region contains it.
-
 A region is only entered through its prologue: no jump from outside it may
 land inside it, and it may not contain a `call` or `ret`. So a cold branch
 (`Code.iteCold`) may not start inside a region either: its code lies after
@@ -66,9 +58,6 @@ AFFECTED = {
 FN = re.compile(r"^(vg_\w+):$")
 LABEL = re.compile(r"^(\d+):$")
 MXCSR_VALUE = {"8127", "0x1FBF", "0x1fbf"}
-# MXCSR's bits but its status flags (5:0), as `Impl.Scrub.X86_64.mxFix` masks it.
-STATUS_MASK = "65472"
-REG32 = re.compile(r"e[a-z]{2}|r\d+d")
 
 
 def functions(text):
@@ -153,29 +142,6 @@ def prologue(instrs, i, labels):
     return None, "not preceded by stmxcsr in the same straight-line code"
 
 
-def status_clear(instrs, i, labels):
-    """Whether `instrs[i]` is the `ldmxcsr` of the clearing of MXCSR's
-    status flags (`Impl.Scrub.X86_64.mxFix`): the value `stmxcsr` saved to
-    its operand, masked with `STATUS_MASK` in a register and stored back."""
-    if i < 4:
-        return False
-    (slot,) = operands(instrs[i])
-    save, load, mask, store = instrs[i - 4 : i]
-    reg = operands(load)[0] if operands(load) else ""
-    return (
-        REG32.fullmatch(reg) is not None
-        and mnemonic(save) == "stmxcsr"
-        and operands(save) == [slot]
-        and mnemonic(load) == "mov"
-        and operands(load) == [reg, slot]
-        and mnemonic(mask) == "and"
-        and operands(mask) == [reg, STATUS_MASK]
-        and mnemonic(store) == "mov"
-        and operands(store) == [slot, reg]
-        and straight(instrs, i - 4, i + 1, labels)
-    )
-
-
 def check_function(name, instrs, lines, labels):
     errors = []
 
@@ -189,9 +155,6 @@ def check_function(name, instrs, lines, labels):
     i = 0
     while i < len(instrs):
         if mnemonics[i] == "ldmxcsr":
-            if status_clear(instrs, i, labels):
-                i += 1
-                continue
             saved, why = prologue(instrs, i, labels)
             if why:
                 errors.append(f"{at(i)}: `{instrs[i]}` is not Intel's MCDT prologue: {why}")

@@ -2389,6 +2389,11 @@ vg_rsa_oaep_decrypt_crt_ifma:
 	mov r11d, DWORD PTR [rsp]
 	and r11d, 65472
 	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
 	ldmxcsr DWORD PTR [rsp]
 	xor r11d, r11d
 	lea rsp, [rsp+16]
