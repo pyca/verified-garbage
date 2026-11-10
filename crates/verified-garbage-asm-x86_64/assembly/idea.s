@@ -328,6 +328,9 @@ vg_idea_expand_key:
 	and rdx, rcx
 	xor rax, rdx
 	mov QWORD PTR [rsi+96], rax
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
 	ret
 	.p2align 6
 
@@ -1371,6 +1374,13 @@ vg_idea_invert_key:
 	shl rdx, 48
 	or r10, rdx
 	mov QWORD PTR [rsi+96], r10
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -2250,5 +2260,19 @@ vg_idea_ecb:
 20:
 21:
 	lea rsp, [rsp+24]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-24]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+24]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
