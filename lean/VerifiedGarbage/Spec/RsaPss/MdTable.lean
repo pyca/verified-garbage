@@ -253,26 +253,26 @@ def signPrecomputedMdTableSig : Sig where
   ret := some .u32
 
 /-- `signMdTableContract`, given the key's precomputed values `pre`
-(`Rsa.privatePrecompute`): what `vg_rsa_pss_sign` computes, if `pre` holds
+(`Rsa.privatePrecompute`): what `vg_rsa_pss_sign` computes, given `pre` holding
 them. Constant time but for the public key and the modulus' values in
 `pre`. -/
 def signPrecomputedMdTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   signPrecomputedMdTableSig.contract A
-    (pre := fun _out outLen _n nLen _e eLen _p pLen _q qLen _dp dpLen _dq dqLen _qinv qinvLen
-        _digest digestLen _salt _saltLen _scratch scratchLen hash _mgf1 _pre preLen m =>
+    (pre := fun _out outLen n nLen _e eLen p pLen q qLen _dp dpLen _dq dqLen _qinv qinvLen
+        _digest digestLen _salt _saltLen _scratch scratchLen hash _mgf1 pre preLen m =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧
         1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
         1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
         dpLen.toNat = pLen.toNat ∧ qinvLen.toNat = pLen.toNat ∧ dqLen.toNat = qLen.toNat ∧
         scratchWords nLen.toNat ≤ scratchLen.toNat ∧
         preLen.toNat = Rsa.privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat ∧
+        Rsa.privatePrecompute (bytesAt m n nLen.toNat) (bytesAt m p pLen.toNat)
+          (bytesAt m q qLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) ∧
         digestLenOk A.ptrBits m hash digestLen)
     (post := fun out _outLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv _qinvLen
-        digest _digestLen salt saltLen _scratch _scratchLen hash mgf1 pre preLen m m' r =>
+        digest _digestLen salt saltLen _scratch _scratchLen hash mgf1 _pre _preLen m m' r =>
       ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
         MdHashTable.hashAt A.ptrBits m mgf1 = some G →
-        Rsa.privatePrecompute (bytesAt m n nLen.toNat) (bytesAt m p pLen.toNat)
-            (bytesAt m q qLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
         writtenOutcome m' out nLen.toNat r
           (sign H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
             (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat) (bytesAt m dq qLen.toNat)

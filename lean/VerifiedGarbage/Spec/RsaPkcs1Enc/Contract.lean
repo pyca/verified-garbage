@@ -146,26 +146,26 @@ def decryptPrecomputedSig : Sig where
   ret := some .u32
 
 /-- `decryptContract`, given the key's precomputed values `pre`
-(`Rsa.privatePrecompute`): what `vg_rsa_pkcs1_decrypt` computes, if `pre`
-holds them. -/
+(`Rsa.privatePrecompute`): what `vg_rsa_pkcs1_decrypt` computes, given `pre`
+holding them. -/
 def decryptPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   decryptPrecomputedSig.contract A
-    (pre := fun _out outLen _msgLen _n nLen _e eLen _d dLen _input inputLen _p pLen _q qLen _dp
-        dpLen _dq dqLen _qinv qinvLen _scratch scratchLen _pre preLen _ =>
+    (pre := fun _out outLen _msgLen n nLen _e eLen _d dLen _input inputLen p pLen q qLen _dp
+        dpLen _dq dqLen _qinv qinvLen _scratch scratchLen pre preLen m =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ inputLen.toNat = nLen.toNat ∧
         1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧ 1 ≤ dLen.toNat ∧ dLen.toNat ≤ nLen.toNat ∧
         1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
         dpLen.toNat = pLen.toNat ∧ qinvLen.toNat = pLen.toNat ∧ dqLen.toNat = qLen.toNat ∧
         scratchWords nLen.toNat ≤ scratchLen.toNat ∧
-        preLen.toNat = Rsa.privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat)
+        preLen.toNat = Rsa.privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat ∧
+        Rsa.privatePrecompute (bytesAt m n nLen.toNat) (bytesAt m p pLen.toNat)
+          (bytesAt m q qLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat))
     (post := fun out _outLen msgLen n nLen e eLen d dLen input _inputLen p pLen q qLen dp _dpLen
-        dq _dqLen qinv _qinvLen _scratch _scratchLen pre preLen m m' r =>
-      Rsa.privatePrecompute (bytesAt m n nLen.toNat) (bytesAt m p pLen.toNat)
-          (bytesAt m q qLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
-        writtenMsg m' out msgLen nLen.toNat r
-          (decrypt (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m d dLen.toNat)
-            (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat)
-            (bytesAt m dq qLen.toNat) (bytesAt m qinv pLen.toNat) (bytesAt m input nLen.toNat)))
+        dq _dqLen qinv _qinvLen _scratch _scratchLen _pre _preLen m m' r =>
+      writtenMsg m' out msgLen nLen.toNat r
+        (decrypt (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m d dLen.toNat)
+          (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat)
+          (bytesAt m dq qLen.toNat) (bytesAt m qinv pLen.toNat) (bytesAt m input nLen.toNat)))
     (writeArgs := true) (stack := stack)
     (leak := some fun _out _outLen _msgLen n nLen e eLen _d _dLen _input _inputLen _p _pLen _q
         _qLen _dp _dpLen _dq _dqLen _qinv _qinvLen _scratch _scratchLen pre _preLen m =>
