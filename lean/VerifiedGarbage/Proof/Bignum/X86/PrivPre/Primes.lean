@@ -22,7 +22,7 @@ variable {Ex : List Region → List Region → Prop}
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt
-open VG.Impl.Bignum.X86.PrivPre (pqCheck setLen primesBody check factor)
+open VG.Impl.Bignum.X86.PrivPre (pqCheck primesBody check factor)
 open VG.Proof.Bignum.X86.Crt (componentValue componentArguments)
 
 section
@@ -126,29 +126,7 @@ theorem component_lt (m : Mem) (args : Nat → BitVec 32) (i : Nat) :
 
 /-- The ranges of the working space the body changes. -/
 abbrev bodyR (len : Nat) : List (Nat × Nat) :=
-  (lo len (.slot .wide 9), 7 * st len .wide) :: (lenOff, 4) :: (valR len ++ factorR len 16 ++ factorR len 17)
-
-/-- A factor's length (argument `i`) into the header word at `lenOff`. -/
-theorem setLen_ok (h : In Ex base bytes len args s) {i : Nat} (hi : i < 18) {is : List Instr} {Q : State → Prop}
-    (k : ∀ u, In Ex base bytes len args u → VG.Proof.Mont.Outside base lenOff 4 s.mem u.mem →
-      w32 u.mem base lenOff = (args i).toNat → Keeps [.eax] s u → WP isa (.block is) u Q) :
-    WP isa (.block (setLen i ++ is)) s Q := by
-  have nw := h.scratch.nowrap
-  have bl : 3336 ≤ bytes := by
-    have := h.slot_fit .wide (j := 0) (by decide)
-    have e0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
-    simp only [numBase] at e0; omega_arith
-  simp only [setLen, List.cons_append]
-  refine wp_movS (h.arg hi) fun v₁ b₁ _ => ?_
-  have hv₁ := h.regs b₁.keeps b₁.mem
-  refine wp_storeS (hv₁.scratch.ea (d := lenOff) (by simp only [lenOff]; omega_arith))
-    (hv₁.scratch.write (d := lenOff) (by simp only [lenOff]; omega_arith)) fun u s₅ => ?_
-  have m : u.mem = s.mem.writeW (off base lenOff) (args i) := by rw [s₅.mem, b₁.mem, b₁.gpr]
-  have O : VG.Proof.Mont.Outside base lenOff 4 s.mem u.mem := by
-    rw [m]; exact writeW32_outside _ _ _ (by simp only [lenOff]; omega_arith)
-  refine k u (hv₁.keep (s₅.keeps []) (by decide) (by decide)
-    (by rw [b₁.mem]; exact O.mono (Nat.zero_le _) (by simp only [lenOff]; omega_arith))) O
-    (by rw [m, w32_write_self]) (b₁.keeps.trans ((s₅.keeps []).mono (by decide)))
+  (lo len (.slot .wide 9), 7 * st len .wide) :: (valR len ++ factorR len 16 ++ factorR len 17)
 
 /-- The body of the factors' values, after the entry: `n`, `p` and `q`
 loaded, the mask of `p q = n`, then each factor's `R² mod p` into the wide
@@ -223,42 +201,27 @@ theorem primesBody_ok (h : RIn base bytes len args s) :
   have k₂ : ∀ {d k}, numBase ≤ d → d + 4 * k ≤ bytes → val32 u₂.mem base d k = val32 u₁.mem base d k :=
     fun hd hk => valR_keep h₁ F₂ h₁.room hd hk
   -- The factor `p`.
-  refine WP.seq (setLen_ok h₂ (i := 7) (by decide) fun u₃ h₃ O₃ l₃ K₃ => WP.block_nil ?_)
-  have sp₃ : u₃.gpr .esp = s.gpr .esp := (K₃.1 _ (by decide)).trans sp₂
-  have k₃ : ∀ {d k}, numBase ≤ d → d + 4 * k ≤ bytes → val32 u₃.mem base d k = val32 u₁.mem base d k :=
-    fun hd hk => by
-      rw [VG.Proof.Mont.Outside.val32 O₃ (.inr (by simp only [lenOff]; omega_arith)) (by omega_arith)]
-      exact k₂ hd hk
-  refine WP.seq (WP.mono (factor_ok h₃ (f := 10) (o := 16) (p := componentValue s.mem args 6) (by decide)
-    (by decide) (by decide) (by decide) (by rw [k₃ (by omega_arith) (by omega_arith), p₁])
-    (by rw [l₃]; omega) (by rw [l₃]; exact b7) (by rw [l₃]; exact component_lt s.mem args 6))
-    fun u₄ ⟨F₄, V₄, L₄, K₄⟩ => ?_)
-  rw [l₃] at V₄
-  have h₄ := h₃.keepF K₄ (by decide) (by decide) F₄ (fun q hq => (factorR_props h₃ (by decide) (by decide) q hq).1)
-  have sp₄ : u₄.gpr .esp = s.gpr .esp := (K₄.1 _ (by decide)).trans sp₃
-  rw [sp₃] at F₄
+  refine WP.seq (WP.mono (factor_ok h₂ (f := 10) (i := 7) (o := 16) (p := componentValue s.mem args 6) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rw [k₂ (by omega_arith) (by omega_arith), p₁])
+    (by omega) b7 (component_lt s.mem args 6))
+    fun u₄ ⟨F₄, V₄, K₄⟩ => ?_)
+  have h₄ := h₂.keepF K₄ (by decide) (by decide) F₄ (fun q hq => (factorR_props h₂ (by decide) (by decide) q hq).1)
+  have sp₄ : u₄.gpr .esp = s.gpr .esp := (K₄.1 _ (by decide)).trans sp₂
+  rw [sp₂] at F₄
   -- The factor `q`.
-  refine WP.seq (setLen_ok h₄ (i := 9) (by decide) fun u₅ h₅ O₅ l₅ K₅ => WP.block_nil ?_)
-  have sp₅ : u₅.gpr .esp = s.gpr .esp := (K₅.1 _ (by decide)).trans sp₄
-  have q₅ : val32 u₅.mem base (lo len (.slot .wide 11)) (cwc len .wide) = componentValue s.mem args 8 := by
-    rw [VG.Proof.Mont.Outside.val32 O₅ (.inr (by simp only [lenOff]; omega_arith)) (by omega_arith),
-      keepR (o := 16) (by decide) (by decide) h₃ h.room F₄ (by omega_arith) (by omega_arith) (.inl (by omega_arith)),
-      k₃ (by omega_arith) (by omega_arith), q₁]
-  refine WP.seq (WP.mono (factor_ok h₅ (f := 11) (o := 17) (p := componentValue s.mem args 8) (by decide)
-    (by decide) (by decide) (by decide) q₅
-    (by rw [l₅]; omega) (by rw [l₅]; exact b9) (by rw [l₅]; exact component_lt s.mem args 8))
-    fun u₆ ⟨F₆, V₆, _, K₆⟩ => ?_)
-  rw [l₅] at V₆
-  rw [sp₅] at F₆
-  have h₆ := h₅.keepF K₆ (by decide) (by decide) (by rw [sp₅]; exact F₆)
-    (fun q hq => (factorR_props h₅ (by decide) (by decide) q hq).1)
+  have q₄ : val32 u₄.mem base (lo len (.slot .wide 11)) (cwc len .wide) = componentValue s.mem args 8 := by
+    rw [keepR (o := 16) (by decide) (by decide) h₂ h.room F₄ (by omega_arith) (by omega_arith) (.inl (by omega_arith)),
+      k₂ (by omega_arith) (by omega_arith), q₁]
+  refine WP.seq (WP.mono (factor_ok h₄ (f := 11) (i := 9) (o := 17) (p := componentValue s.mem args 8) (by decide)
+    (by decide) (by decide) (by decide) (by decide) q₄ (by omega) b9 (component_lt s.mem args 8))
+    fun u₆ ⟨F₆, V₆, K₆⟩ => ?_)
+  rw [sp₄] at F₆
+  have h₆ := h₄.keepF K₆ (by decide) (by decide) (by rw [sp₄]; exact F₆)
+    (fun q hq => (factorR_props h₄ (by decide) (by decide) q hq).1)
   -- The result.
   have acc : w32 u₆.mem base accOff = (cmask (decide (componentValue s.mem args 6 * componentValue s.mem args 8 =
       componentValue s.mem args 2))).toNat := by
-    rw [keepA (o := 17) (by decide) (by decide) h₅ h.room F₆,
-      VG.Proof.Mont.Outside.w32 O₅ (.inl (by simp only [accOff, lenOff]; omega)) (by simp only [accOff]; omega),
-      keepA (o := 16) (by decide) (by decide) h₃ h.room F₄,
-      VG.Proof.Mont.Outside.w32 O₃ (.inl (by simp only [accOff, lenOff]; omega)) (by simp only [accOff]; omega),
+    rw [keepA (o := 17) (by decide) (by decide) h₄ h.room F₆, keepA (o := 16) (by decide) (by decide) h₂ h.room F₄,
       A₂]
   refine wp_movS (readSrc_sc h₆.scratch (d := accOff) (by simp only [accOff]; omega_arith)) fun u₇ a₇ _ => ?_
   refine VG.X86.Wp.wp_andi fun u a => WP.block_nil ?_
@@ -267,16 +230,13 @@ theorem primesBody_ok (h : RIn base bytes len args s) :
   · rw [sp₁] at F₂
     rw [mu]
     have mem : ∀ {q : Nat × Nat}, q ∈ valR len ++ factorR len 16 ++ factorR len 17 → q ∈ bodyR len :=
-      fun hq => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hq)
-    exact (((((frameR_of_outside O₁ (by omega_arith) (List.mem_cons_self ..)).trans
+      fun hq => List.mem_cons_of_mem _ hq
+    exact (((frameR_of_outside O₁ (by omega_arith) (List.mem_cons_self ..)).trans
       (frameR_mono F₂ fun q hq => mem (List.mem_append_left _ (List.mem_append_left _ hq)))).trans
-      (frameR_of_outside O₃ (by simp only [lenOff]; omega_arith) (List.mem_cons_of_mem _ (List.mem_cons_self ..)))).trans
       (frameR_mono F₄ fun q hq => mem (List.mem_append_left _ (List.mem_append_right _ hq)))).trans
-      (frameR_of_outside O₅ (by simp only [lenOff]; omega_arith) (List.mem_cons_of_mem _ (List.mem_cons_self ..)))).trans
       (frameR_mono F₆ fun q hq => mem (List.mem_append_right _ hq))
-  · rw [mu, keepR (o := 17) (by decide) (by decide) h₅ h.room F₆ (by omega_arith) (by omega_arith)
-      (.inl (by omega_arith)),
-      VG.Proof.Mont.Outside.val32 O₅ (.inr (by simp only [lenOff]; omega_arith)) (by omega_arith)]
+  · rw [mu, keepR (o := 17) (by decide) (by decide) h₄ h.room F₆ (by omega_arith) (by omega_arith)
+      (.inl (by omega_arith))]
     exact V₄
   · rw [mu]; exact V₆
   · rw [a.gpr, a₇.gpr]
@@ -284,8 +244,8 @@ theorem primesBody_ok (h : RIn base bytes len args s) :
         componentValue s.mem args 8 = componentValue s.mem args 2)) := BitVec.eq_of_toNat_eq acc
     rw [e]
     cases decide (componentValue s.mem args 6 * componentValue s.mem args 8 = componentValue s.mem args 2) <;> rfl
-  · exact (((((((K₁.mono (by decide)).trans K₂).trans (K₃.mono (by decide))).trans K₄).trans
-      (K₅.mono (by decide))).trans K₆).trans (a₇.keeps.mono (by decide))).trans (a.keeps.mono (by decide))
+  · exact (((((K₁.mono (by decide)).trans K₂).trans K₄).trans K₆).trans (a₇.keeps.mono (by decide))).trans
+      (a.keeps.mono (by decide))
 
 /-- `bodyR`'s ranges fit the working space and miss bytes 32 to 48 of it,
 where the entry saved the callee-saved registers. -/
@@ -301,8 +261,6 @@ theorem bodyR_props (h : RIn base bytes len args s) :
   intro q hq
   rcases List.mem_cons.mp hq with rfl | hq
   · exact ⟨by dsimp only; omega_arith, .inl (by dsimp only; omega_arith)⟩
-  rcases List.mem_cons.mp hq with rfl | hq
-  · exact ⟨by dsimp only; simp only [lenOff]; omega_arith, .inr (by dsimp only; simp only [lenOff]; omega)⟩
   rcases List.mem_append.mp hq with hq | hq
   · rcases List.mem_append.mp hq with hq | hq
     · refine ⟨valR_fit h q hq, ?_⟩

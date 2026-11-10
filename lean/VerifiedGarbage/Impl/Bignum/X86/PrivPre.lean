@@ -41,34 +41,31 @@ def shl (r : Reg) : Nat → List Instr
   | 0 => []
   | k + 1 => .alu .add r (.reg r) :: shl r k
 
-/-- `r = w_p = max(2, ⌈len / 8⌉)` for the length at `lenOff`; `t` changes. -/
-def primeWords (r t : Reg) : List Instr :=
-  [.mov r (.mem (sc lenOff)), .alu .add r (.imm 7), .shift .shr r 3,
+/-- `r = w_p = max(2, ⌈len / 8⌉)` for the length `len`, argument `i`; `t` changes. -/
+def primeWords (i : Nat) (r t : Reg) : List Instr :=
+  [.mov r (.mem (argAt 0 i)), .alu .add r (.imm 7), .shift .shr r 3,
     .mov t (.reg r), .alu .sub t (.imm 2), .shift .shr t 31, .alu .add r (.reg t)]
 
 /-- `2^(128 w_p) mod M` in slot 4: one, doubled `128 w_p` times. -/
-def r2Prime (c : Ctx) : Prog isa :=
+def r2Prime (i : Nat) (c : Ctx) : Prog isa :=
   .seq (setSmall (.slot c 4) (one c) 1) <|
-  .seq (.block (primeWords .esi .eax ++ shl .esi 7)) (.loop (doubleStep c) .ne)
+  .seq (.block (primeWords i .esi .eax ++ shl .esi 7)) (.loop (doubleStep c) .ne)
 
 /-- The factor in the wide slot `f`, in the context `c`: made safe, with its
 constants (`prepBase`), and its `R_p² mod p` (`Bc` bytes of the context)
 into the wide slot `o`. -/
-def primeIn (f o : Nat) (c : Ctx) : Prog isa :=
+def primeIn (f i o : Nat) (c : Ctx) : Prog isa :=
   .seq (copy (.slot .wide f) (.slot c 0) (one c)) <|
   .seq (prepBase c) <|
-  .seq (r2Prime c) (copy (.slot c 4) (.slot .wide o) (one c))
+  .seq (r2Prime i c) (copy (.slot c 4) (.slot .wide o) (one c))
 
 /-- The factor in the wide slot `f`, whose length is the header word at
 `lenOff`, at half the width if its length fits it (as `power`); its
 `R_p² mod p` into the wide slot `o`. -/
-def factor (f o : Nat) : Prog isa :=
-  .seq (.block ([.mov .eax (.mem (sc lenOff))] ++ widthC 0 .half .edx ++
+def factor (f i o : Nat) : Prog isa :=
+  .seq (.block ([.mov .eax (.mem (argAt 0 i))] ++ widthC 0 .half .edx ++
     [.alu .add .edx (.imm 1), .alu .cmp .eax (.reg .edx)])) <|
-  .ite .b (primeIn f o .half) (primeIn f o .wide)
-
-/-- Argument `i`, a factor's length, into the header word at `lenOff`. -/
-def setLen (i : Nat) : List Instr := [.mov .eax (.mem (argAt 0 i)), .store (sc lenOff) .eax]
+  .ite .b (primeIn f i o .half) (primeIn f i o .wide)
 
 /-- `p q = n` for the factor `p` in the wide slot 10, `q` in 11 and `n` in 9 (`two .wide`
 words): its mask at `accOff`. -/
@@ -83,10 +80,8 @@ def check : Prog isa := .seq importComponents pqCheck
 
 def primesBody : Prog isa :=
   .seq check <|
-  .seq (.block (setLen 7)) <|
-  .seq (factor 10 16) <|
-  .seq (.block (setLen 9)) <|
-  .seq (factor 11 17) (.block [.mov .eax (.mem (sc accOff)), .alu .and .eax (.imm 1)])
+  .seq (factor 10 7 16) <|
+  .seq (factor 11 9 17) (.block [.mov .eax (.mem (sc accOff)), .alu .and .eax (.imm 1)])
 
 /-- The factors' values, with `vg_rsa_private_crt`'s arguments: the output
 (`pre`, whose factors' values start `16 ⌈n_len / 8⌉` bytes in), its length (`n_len`), `n`, `n_len`, the input (unread) and its length, `p`,
