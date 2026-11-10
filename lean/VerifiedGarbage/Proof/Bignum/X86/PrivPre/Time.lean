@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Bignum.X86.CrtResources
 (`body_check`), on runs narrowed to the output and the working space as
 `CrtRt.sized`'s (`body_relCT`); the entry and the return are private CRT's
 (`Crt.entry_relCT`, `Crt.restore_relCT`): `primes` is constant time
-(`constantTime`), and with `primes_ok`, `verified`.
+(`primes_constantTime`), and with `primes_ok`, `primes_verified`.
 -/
 
 @[expose] public section
@@ -134,17 +134,17 @@ theorem primes_trace {s t : State} (A : TopABI s) (B : TopABI t)
           have T3 := (Crt.restore_relCT _ _ _ _ _ _ Agree E3 F3).1
           rw [T1, T2, T3]
 
-theorem constantTime : ConstantTime isa primesContract.pre primesContract.pub primes := by
+theorem primes_constantTime : ConstantTime isa primesContract.pre primesContract.pub primes := by
   intro s t tr ur sf tf S T H E F
   have Args := Crt.arguments H
   exact primes_trace (topABI_of S) (topABI_of T) Args.2 Args.1 E F
 
-theorem correct (s : State) (h : primesContract.pre s) :
+theorem primes_correct (s : State) (h : primesContract.pre s) :
     ∃ trace t, Exec isa primes s trace t ∧ abiPreserved s t ∧ primesContract.post s t := by
   obtain ⟨trace, t, E, P, R⟩ := primes_ok (crtABI_of h)
   exact ⟨trace, t, E, R, P⟩
 
-theorem verified : Verified target primes primesContract :=
-  ⟨correct, constantTime, CrtRt.satisfiable⟩
+theorem primes_verified : Verified target primes primesContract :=
+  ⟨primes_correct, primes_constantTime, CrtRt.satisfiable⟩
 
 end VG.Proof.Bignum.X86.PrivPre

@@ -289,7 +289,7 @@ theorem pr_call {prName : String} (st : stackUse primes ≤ 96) (ns : NoSp prime
     exact Covers.left (Covers.of_mem fun r hr => by
       simp only [prRd, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp)
-  refine WP.mono (body_call verified.1 st ns A B (pr_pre A B V) cr cw fun r hr => ?_)
+  refine WP.mono (body_call primes_verified.1 st ns A B (pr_pre A B V) cr cw fun r hr => ?_)
     fun v ⟨Bv, K, F, w, M, G, post⟩ => ⟨Bv, K, ?_, ?_⟩
   · simp only [prWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
