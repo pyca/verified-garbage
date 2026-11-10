@@ -1,5 +1,12 @@
 module
 
+meta import VerifiedGarbage.Spec.EcKey.Secp256k1
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+meta import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.DecompressMain
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.InverseVerified
 public import VerifiedGarbage.Spec.EcKey.Secp256k1
@@ -82,5 +89,27 @@ theorem verified (hL : Law Spec.Secp256k1.curve) (hI : InvSounds) (adx : Bool) :
     (ct adx) himp (fun _ hs => Sig.clear_of_pre hs) ?_
   intro s b hv u hs hp
   exact decompress_post_patch _ _ s b hv u (himp.pre s hs) (Sig.clear_of_pre hs) hp
+
+/-! ## Without secret residue -/
+
+/-- The granules of its stack that `vg_ec_secp256k1_decompress_public_key` must wipe on
+return, from the residue analysis (`X86_64.RScrub.keepFor`). -/
+def scrubKs : List Nat :=
+  keep_for% Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.sig 8 (code false) []
+
+theorem scrubOk : ∃ h : VG.Taint.Hint X86_64.RTaint.FT,
+    (VG.Taint.check X86_64.RTaint.rtaint (X86_64.RScrub.init Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.sig 8 [])
+      (code false) h).any (X86_64.RScrub.resOkB · 8 scrubKs (Impl.Scrub.X86_64.chunks 8)) = true :=
+  X86_64.RScrub.Analysed.ok_of _ (by taint_decide)
+
+/-- `vg_ec_secp256k1_decompress_public_key`, followed by `Impl.Scrub.X86_64.scrubTail`
+(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
+def scrubReg (hL : Law Spec.Secp256k1.curve) (hI : InvSounds) :
+    Registration Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi target :=
+  X86_64.RScrub.withScrub {
+    code := code false
+    verified := verified hL hI false
+    stack := 8 }
+    (EcKey.X86_64.Scrub.decompressOut _ _) [] (X86_64.RScrub.pubOk_nil _) (some ⟨scrubKs, scrubOk⟩)
 
 end VG.Proof.EcKey.Compressed.X86_64.Secp256k1Decompress

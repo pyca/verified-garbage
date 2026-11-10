@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 48 bytes.
@@ -315,7 +317,7 @@ call {vg_p384_inv_mod_p}
 call {vg_p384_mul_mod_p}
 .base64 "TInmSYn0vtAGAAC6oAYAALkAAQAA"
 call {vg_p384_mul_mod_p}
-.base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAASIuH0AYAAEghyEgPyEiJRihIi4fYBgAASCHISA/ISIlGIEiLh+AGAABIIchID8hIiUYYSIuH6AYAAEghyEgPyEiJRhBIi4fwBgAASCHISA/ISIlGCEiLh/gGAABIIchID8hIiQZIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
+.base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAASIuH0AYAAEghyEgPyEiJRihIi4fYBgAASCHISA/ISIlGIEiLh+AGAABIIchID8hIiUYYSIuH6AYAAEghyEgPyEiJRhBIi4fwBgAASCHISA/ISIlGCEiLh/gGAABIIchID8hIiQZIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9IjWQk+EiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_p384_check_point = sym super::ec_p384_compressed::vg_p384_check_point::vg_p384_check_point,
         vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
@@ -329,6 +331,8 @@ pub const VG_ECDH_P384_ADX_FEATURES: verified_garbage_cpu::Features = verified_g
 /// ECDH over P-384 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 48 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (48 bytes, most significant first) for the private key `d` at `d` (48 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -639,7 +643,7 @@ call {vg_p384_inv_mod_p_adx}
 call {vg_p384_mul_mod_p_adx}
 .base64 "TInmSYn0vtAGAAC6oAYAALkAAQAA"
 call {vg_p384_mul_mod_p_adx}
-.base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAASIuH0AYAAEghyEgPyEiJRihIi4fYBgAASCHISA/ISIlGIEiLh+AGAABIIchID8hIiUYYSIuH6AYAAEghyEgPyEiJRhBIi4fwBgAASCHISA/ISIlGCEiLh/gGAABIIchID8hIiQZIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
+.base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAASIuH0AYAAEghyEgPyEiJRihIi4fYBgAASCHISA/ISIlGIEiLh+AGAABIIchID8hIiUYYSIuH6AYAAEghyEgPyEiJRhBIi4fwBgAASCHISA/ISIlGCEiLh/gGAABIIchID8hIiQZIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9IjWQk+EiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_p384_check_point_adx = sym super::ec_p384_compressed::vg_p384_check_point_adx::vg_p384_check_point_adx,
         vg_p384_mul_mod_p_adx = sym super::ec_p384::vg_p384_mul_mod_p_adx::vg_p384_mul_mod_p_adx,

@@ -102,11 +102,8 @@ namespace VG.Artifacts.EcdsaP192.X86_64
 open VG.Proof.P192.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P192.verifyHashApi.artifact X86_64.target {
-    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
-      Impl.Ecdsa.Verify.X86_64.verifyP192
-    stack := 96
-    verified := Proof.Ecdsa.Verify.X86_64.P192.verifyHash_verified hasLaw.law hasLaw.inv }] ++
+  Spec.Ecdsa.P192.verifyHashApi.artifact X86_64.target
+    (Proof.Ecdsa.Verify.X86_64.P192.scrubReg hasLaw.law hasLaw.inv)] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP192.X86_64

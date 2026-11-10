@@ -74,27 +74,16 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.P384Decompress
 namespace VG.Artifacts.EcP384.X86_64.Compressed
 
 open VG.Proof.P384.X86_64 (hasLaw)
-open VG.Proof.EcKey.Compressed.X86_64.P384
 
 def artifacts : List Artifact := [
-  Spec.EcKey.P384.inst.compressPublicKeyApi.artifact X86_64.target {
-    code := code false
-    verified := verified hasLaw.inv false
-    stack := 8 },
-  Spec.EcKey.P384.inst.decompressPublicKeyApi.artifact X86_64.target {
-    code := Proof.EcKey.Compressed.X86_64.P384Decompress.code false
-    verified := Proof.EcKey.Compressed.X86_64.P384Decompress.verified hasLaw.law hasLaw.inv false
-    stack := 8 },
-  Spec.EcKey.P384.inst.compressPublicKeyApi.artifact X86_64.target {
-    suffix := "_adx"
-    code := code true
-    verified := verified hasLaw.inv true
-    stack := 8 },
-  Spec.EcKey.P384.inst.decompressPublicKeyApi.artifact X86_64.target {
-    suffix := "_adx"
-    code := Proof.EcKey.Compressed.X86_64.P384Decompress.code true
-    verified := Proof.EcKey.Compressed.X86_64.P384Decompress.verified hasLaw.law hasLaw.inv true
-    stack := 8 }]
+  Spec.EcKey.P384.inst.compressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.P384.scrubReg hasLaw.inv false),
+  Spec.EcKey.P384.inst.decompressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.P384Decompress.scrubReg hasLaw.law hasLaw.inv false),
+  Spec.EcKey.P384.inst.compressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.P384.scrubReg hasLaw.inv true),
+  Spec.EcKey.P384.inst.decompressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.P384Decompress.scrubReg hasLaw.law hasLaw.inv true)]
 
 end VG.Artifacts.EcP384.X86_64.Compressed
 
@@ -102,18 +91,12 @@ end VG.Artifacts.EcP384.X86_64.Compressed
 namespace VG.Artifacts.EcP384.X86_64.Validate
 
 open VG.Proof.P384.X86_64 (hasLaw)
-open VG.Proof.EcKey.Validate.X86_64.P384
 
 def artifacts : List Artifact := [
-  Spec.EcKey.P384.inst.validatePublicKeyApi.artifact X86_64.target {
-    code := code false
-    verified := verified hasLaw.inv false
-    stack := 8 },
-  Spec.EcKey.P384.inst.validatePublicKeyApi.artifact X86_64.target {
-    suffix := "_adx"
-    code := code true
-    verified := verified hasLaw.inv true
-    stack := 8 }]
+  Spec.EcKey.P384.inst.validatePublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Validate.X86_64.P384.scrubReg hasLaw.inv false),
+  Spec.EcKey.P384.inst.validatePublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Validate.X86_64.P384.scrubReg hasLaw.inv true)]
 
 end VG.Artifacts.EcP384.X86_64.Validate
 
