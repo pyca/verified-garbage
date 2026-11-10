@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Prime
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Validate
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
+import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -19,7 +21,8 @@ variable {Ex : List Region → List Region → Prop}
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt
-open VG.Impl.Bignum.X86.PrivPre (pqCheck primesInit setLen outOff shl)
+open VG.Impl.Bignum.X86.PrivPre (pqCheck primesInit setLen outOff shl primesBody check factor)
+open VG.Proof.Bignum.X86.Crt (componentValue componentArguments)
 
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
@@ -193,6 +196,93 @@ theorem val32_frameR_apart {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem
   rcases hr with rfl | ⟨q, hq, rfl⟩
   · exact hs.sub_left sub
   · exact (hap.sub_left sub).sub_right (Offset.sub_base base (hfit q hq))
+
+/-- A factor's value is below `2^(8 L)` for its length `L`. -/
+theorem component_lt (m : Mem) (args : Nat → BitVec 32) (i : Nat) :
+    componentValue m args i < 2 ^ (8 * (args (i + 1)).toNat) := by
+  have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt m (byteAddr (args i)) (args (i + 1)).toNat)
+  rwa [VG.Proof.Bignum.bytesAt_length, VG.Proof.Bignum.pow256_eq] at this
+
+/-- The body of the factors' values, after the entry: `n`, `p` and `q`
+loaded, the mask of `p q = n`, then each factor's `R² mod p` written to
+`pre` after `n`'s values, and the mask's low bit in `eax`. -/
+theorem primesBody_ok (h : RIn base bytes len args s) {L' : Nat}
+    (hpw : InRegions s.wr (byteAddr (args 0)) L') (hn : (args 0).toNat + L' ≤ 2 ^ 32)
+    (hap : Region.Disjoint ⟨byteAddr (args 0), L'⟩ ⟨base, bytes⟩)
+    (hPa : ∀ i < 18, Region.Disjoint ⟨VG.Proof.Dsa.X86.stackAddress s i, 4⟩ ⟨byteAddr (args 0), L'⟩)
+    (hs : Region.Disjoint ⟨byteAddr (args 0), L'⟩ (below (s.gpr .esp) 96))
+    (hfit : 16 * Spec.Rsa.modulusWords len + 8 * Spec.Rsa.primeWords (args 7).toNat +
+      8 * Spec.Rsa.primeWords (args 9).toNat ≤ L') :
+    WP isa primesBody s fun u =>
+      Frame [below (s.gpr .esp) 96, ⟨base, bytes⟩, ⟨byteAddr (args 0), L'⟩] s.mem u.mem ∧
+      val32 u.mem (byteAddr (args 0)) (16 * Spec.Rsa.modulusWords len)
+          (2 * Spec.Rsa.primeWords (args 7).toNat) =
+        2 ^ r2Exp (args 7).toNat % safeM (componentValue s.mem args 6) ∧
+      val32 u.mem (byteAddr (args 0)) (16 * Spec.Rsa.modulusWords len + 8 * Spec.Rsa.primeWords (args 7).toNat)
+          (2 * Spec.Rsa.primeWords (args 9).toNat) =
+        2 ^ r2Exp (args 9).toNat % safeM (componentValue s.mem args 8) ∧
+      u.gpr .eax = BitVec.ofNat 32 (decide (componentValue s.mem args 6 * componentValue s.mem args 8 =
+        componentValue s.mem args 2)).toNat ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
+  have nw := h.scratch.nowrap
+  have bl := h.bytes_lt
+  have pf := h.prod_fit
+  have hup := h.upper'
+  have f18 := h.slot_fit .wide (j := 18) (by decide)
+  have bw := bc_eq_cwc len .wide
+  have est : st len .wide = 2 * bc len .wide + 32 := rfl
+  have el : ∀ j, lo len (.slot .wide j) = numBase + j * st len .wide := fun _ => rfl
+  have nb : numBase = 3336 := rfl
+  have pn : (byteAddr (args 0)).toNat = (args 0).toNat := VG.Proof.Bignum.X86.PublicRt.setWidth_toNat _
+  have L64 : L' < 2 ^ 64 := by omega
+  have p7 : 0 < (args 7).toNat := h.extra.positive 6 (by simp [componentArguments])
+  have b7 : (args 7).toNat ≤ len := h.extra.bounded 6 (by simp [componentArguments])
+  have p9 : 0 < (args 9).toNat := h.extra.positive 8 (by simp [componentArguments])
+  have b9 : (args 9).toNat ≤ len := h.extra.bounded 8 (by simp [componentArguments])
+  let W := Spec.Rsa.modulusWords len
+  let wp := Spec.Rsa.primeWords (args 7).toNat
+  let wq := Spec.Rsa.primeWords (args 9).toNat
+  have wp2 : 2 ≤ wp := by simp only [wp, Spec.Rsa.primeWords]; omega
+  have wq2 : 2 ≤ wq := by simp only [wq, Spec.Rsa.primeWords]; omega
+  have e9 := el 9
+  have e10 := el 10
+  have e11 := el 11
+  have e18 := el 18
+  unfold primesBody check
+  -- `n`, `p` and `q` (and the rest of the components).
+  refine WP.seq (WP.seq (WP.mono (importComponents_ok h) fun u₁ ⟨O₁, n₁, _, p₁, q₁, _, _, _, K₁⟩ => ?_))
+  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
+  -- `p q = n`.
+  refine WP.mono (pqCheck_ok h₁ n₁ p₁ q₁) fun u₂ ⟨F₂, A₂, K₂⟩ => ?_
+  have h₂ := h₁.keepF K₂ (by decide) (by decide) F₂ (valR_fit h₁)
+  have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
+  have k₂ : ∀ {d k}, numBase ≤ d → d + 4 * k ≤ bytes → val32 u₂.mem base d k = val32 u₁.mem base d k :=
+    fun hd hk => valR_keep h₁ F₂ h₁.room hd hk
+  -- The header.
+  refine WP.seq (WP.mono (init_ok h₂) fun u₃ ⟨O₃, o₃, l₃, a₃, K₃⟩ => ?_)
+  have h₃ := h₂.keep K₃ (by decide) (by decide) (O₃.mono (Nat.zero_le _) (by simp only [outOff, winOff]; omega_arith))
+  have k₃ : ∀ {d k}, numBase ≤ d → d + 4 * k ≤ bytes → val32 u₃.mem base d k = val32 u₁.mem base d k :=
+    fun hd hk => by
+      rw [VG.Proof.Mont.Outside.val32 O₃ (.inr (by simp only [outOff, winOff]; omega_arith))
+        (by omega_arith)]; exact k₂ hd hk
+  have sp₃ : u₃.gpr .esp = s.gpr .esp := by rw [K₃.1 _ (by decide), K₂.1 _ (by decide), sp₁]
+  have wr₃ : u₃.wr = s.wr := by rw [K₃.2.2, K₂.2.2, K₁.2.2]
+  have sa₃ : ∀ i, VG.Proof.Dsa.X86.stackAddress u₃ i = VG.Proof.Dsa.X86.stackAddress s i := fun i => by
+    simp only [VG.Proof.Dsa.X86.stackAddress, sp₃]
+  -- The factor `p`.
+  have W16 : (args 0).toNat + 16 * W < 2 ^ 32 := by omega
+  refine WP.seq (WP.mono (factor_ok h₃ (f := 10) (p := componentValue s.mem args 6) (by decide) (by decide)
+    (by rw [k₃ (by omega_arith) (by omega_arith), p₁])
+    (by rw [l₃]; omega) (by rw [l₃]; exact b7) (by rw [l₃]; exact component_lt s.mem args 6)
+    (P := byteAddr (args 0)) (L' := L') (y := 16 * W) (by rw [wr₃]; exact hpw) (by rw [pn]; exact hn) hap
+    (by rw [o₃, pn]; exact Nat.mod_eq_of_lt W16) (by rw [l₃]; omega))
+    fun u₄ ⟨⟨m₄, F₄, O₄⟩, V₄, W₄, K₄⟩ => ?_)
+  rw [l₃] at O₄ V₄ W₄
+  have eW : W = Spec.Rsa.modulusWords len := rfl
+  have h₄ := in_keepFOut h₃ K₄ (by decide) (by decide) F₄ (primeR2_fit h₃) (L' := L') O₄ (by rw [eW]; omega)
+    fun i hi => by rw [sa₃]; exact hPa i hi
+  sorry
+
 
 end
 
