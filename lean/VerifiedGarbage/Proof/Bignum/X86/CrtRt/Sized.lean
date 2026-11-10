@@ -81,12 +81,12 @@ variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 `m_q` (of `2 B` bytes). -/
 structure Comps (base : Addr) (len : Nat) (args : Nat → BitVec 32) (m₀ m : Mem) : Prop where
   n : val32 m base (lo len (.slot .wide 9)) (2 * cwc len .wide) = componentValue m₀ args 2
-  x : val32 m base (lo len (.slot .wide 15)) (cwc len .wide) = componentValue m₀ args 4
+  x : val32 m base (lo len (.slot .wide 15)) (2 * cwc len .wide) = componentValue m₀ args 4
   p : val32 m base (lo len (.slot .wide 10)) (cwc len .wide) = componentValue m₀ args 6
   q : val32 m base (lo len (.slot .wide 11)) (cwc len .wide) = componentValue m₀ args 8
   dp : val32 m base (lo len (.slot .wide 12)) (cwc len .wide) = componentValue m₀ args 10
   dq : val32 m base (lo len (.slot .wide 13)) (cwc len .wide) = componentValue m₀ args 12
-  qi : val32 m base (lo len (.slot .wide 14)) (cwc len .wide) = componentValue m₀ args 14
+  qi : val32 m base (lo len (.slot .wide 14)) (2 * cwc len .wide) = componentValue m₀ args 14
 
 /-- The components kept by changes to the bytes below the wide slot 9 or from 16 on. -/
 theorem Comps.keep {m₀ m m' : Mem} (c : Comps base len args m₀ m)
@@ -94,9 +94,9 @@ theorem Comps.keep {m₀ m m' : Mem} (c : Comps base len args m₀ m)
       val32 m' base (lo len (.slot .wide j)) w = val32 m base (lo len (.slot .wide j)) w) :
     Comps base len args m₀ m' :=
   ⟨by rw [k (by decide) (by decide) (Nat.le_refl _)]; exact c.n,
-    by rw [k (by decide) (by decide) (by omega)]; exact c.x, by rw [k (by decide) (by decide) (by omega)]; exact c.p,
+    by rw [k (by decide) (by decide) (Nat.le_refl _)]; exact c.x, by rw [k (by decide) (by decide) (by omega)]; exact c.p,
     by rw [k (by decide) (by decide) (by omega)]; exact c.q, by rw [k (by decide) (by decide) (by omega)]; exact c.dp,
-    by rw [k (by decide) (by decide) (by omega)]; exact c.dq, by rw [k (by decide) (by decide) (by omega)]; exact c.qi⟩
+    by rw [k (by decide) (by decide) (by omega)]; exact c.dq, by rw [k (by decide) (by decide) (Nat.le_refl _)]; exact c.qi⟩
 
 /-- The wide slots 9 to 17, within the working space. -/
 theorem wide_hi (h : RIn base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 17) (hw : w ≤ 2 * cwc len .wide) :
@@ -110,6 +110,15 @@ theorem wide_hi (h : RIn base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj 
   have := Nat.mul_le_mul_right (st len .wide) (show j + 1 ≤ 18 by omega)
   rw [Nat.succ_mul] at this
   omega
+
+/-- A component below `2^(32 W)` for the modulus's words `W` of 32 bits. -/
+theorem comp_wide (h : RIn base bytes len args s) (m : Mem) {i : Nat} (hi : i ∈ componentArguments) :
+    componentValue m args i < 2 ^ (32 * cwc len .wide) := by
+  have := comp_lt m args i
+  have b := h.crt.bounded i hi
+  have lb := len_le_bc len
+  have bw := bc_eq_cwc len .wide
+  exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
 
 /-- The components read and the key and input accepted or not. -/
 theorem front_ok (h : RIn base bytes len args s) {P : Prog isa} {Q : State → Prop}
@@ -131,7 +140,11 @@ theorem front_ok (h : RIn base bytes len args s) {P : Prog isa} {Q : State → P
   have nlt : componentValue s.mem args 2 < 2 ^ (32 * cwc len .wide) := by
     have := h.crt.modulus_bound
     exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
-  refine WP.seq (WP.mono (validate_ok h₁ N₁ nlt P₁ Q₁ QI₁ X₁) fun u₂ ⟨F₂, A₂, K₂⟩ => ?_)
+  have X₁' : val32 u₁.mem base (lo len (.slot .wide 15)) (cwc len .wide) = componentValue s.mem args 4 :=
+    val32_low (b := cwc len .wide) (by rw [← Nat.two_mul]; exact X₁) (comp_wide h s.mem (by decide))
+  have QI₁' : val32 u₁.mem base (lo len (.slot .wide 14)) (cwc len .wide) = componentValue s.mem args 14 :=
+    val32_low (b := cwc len .wide) (by rw [← Nat.two_mul]; exact QI₁) (comp_wide h s.mem (by decide))
+  refine WP.seq (WP.mono (validate_ok h₁ N₁ nlt P₁ Q₁ QI₁' X₁') fun u₂ ⟨F₂, A₂, K₂⟩ => ?_)
   have h₂ := h₁.keepF K₂ (by decide) (by decide) F₂ (valR_fit h₁)
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   rw [sp₁] at F₂
@@ -243,7 +256,7 @@ theorem factorStep_ok (h : RIn base bytes len args s) {A B dA dB x r LA LB k : N
     (hB : val32 s.mem base (lo len (.slot .wide 11)) (cwc len .wide) = B)
     (hdA : val32 s.mem base (lo len (.slot .wide 12)) (cwc len .wide) = dA)
     (hdB : val32 s.mem base (lo len (.slot .wide 13)) (cwc len .wide) = dB)
-    (hx : val32 s.mem base (lo len (.slot .wide 15)) (cwc len .wide) = x)
+    (hx : val32 s.mem base (lo len (.slot .wide 15)) (2 * cwc len .wide) = x) (hxn : x < 2 ^ (32 * cwc len .wide))
     (hr : val32 s.mem base (lo len (.slot .wide 17)) (2 * cwc len .wide) = r)
     (hLA : w32 s.mem base lenOff = LA) (hLB : w32 s.mem base otherLenOff = LB)
     (hk : w32 s.mem base leftOff = k + 1)
@@ -283,7 +296,7 @@ theorem factorStep_ok (h : RIn base bytes len args s) {A B dA dB x r LA LB k : N
   unfold factorStep
   -- The power.
   refine WP.seq (WP.mono (power_ok h (f := 10) (e := 12) (o := 16) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) hA hdA hx (by rw [hLA]; exact fits)) fun u₁ ⟨F₁, V₁, K₁⟩ => ?_)
+    (by decide) (by decide) hA hdA hx hxn (by rw [hLA]; exact fits)) fun u₁ ⟨F₁, V₁, K₁⟩ => ?_)
   have h₁ := h.keepF K₁ (by decide) (by decide) F₁ (stR_fit h (by decide))
   have S₁ : ∀ {j v : Nat}, 9 ≤ j → j ≤ 17 → j ≠ 16 → v ≤ 2 * cwc len .wide →
       val32 u₁.mem base (lo len (.slot .wide j)) v = val32 s.mem base (lo len (.slot .wide j)) v := by
@@ -527,8 +540,9 @@ theorem facStep_ok {m₀ : Mem} (c : Comps base len args m₀ s.mem) (dpl : args
     {j : Nat} {t : State} (hj : j < 2) (I : FacInv base bytes len args m₀ s j t) :
     WP isa factorStep t fun u => FacInv base bytes len args m₀ s (j + 1) u ∧ u.zf = some (decide (j + 1 = 2)) := by
   have sp : t.gpr .esp = s.gpr .esp := I.keeps.1 _ (by decide)
-  have hx : val32 t.mem base (lo len (.slot .wide 15)) (cwc len .wide) = componentValue m₀ args 4 :=
-    (I.comps 15 _ (.inr (.inr rfl)) (by omega_arith)).trans c.x
+  have hx : val32 t.mem base (lo len (.slot .wide 15)) (2 * cwc len .wide) = componentValue m₀ args 4 :=
+    (I.comps 15 _ (.inr (.inr rfl)) (Nat.le_refl _)).trans c.x
+  have hxn := comp_wide I.inp m₀ (i := 4) (by decide)
   have keepComps : ∀ {u : State}, (∀ i v, (i = 9 ∨ i = 14 ∨ i = 15) → v ≤ 2 * cwc len .wide →
       val32 u.mem base (lo len (.slot .wide i)) v = val32 t.mem base (lo len (.slot .wide i)) v) →
       ∀ i v, (i = 9 ∨ i = 14 ∨ i = 15) → v ≤ 2 * cwc len .wide →
@@ -536,7 +550,7 @@ theorem facStep_ok {m₀ : Mem} (c : Comps base len args m₀ s.mem) (dpl : args
     fun C i v hi hv => (C i v hi hv).trans (I.comps i v hi hv)
   obtain rfl | rfl : j = 0 ∨ j = 1 := by omega_arith
   · refine WP.mono (factorStep_ok I.inp (A := componentValue m₀ args 6) (B := componentValue m₀ args 8)
-      (dA := componentValue m₀ args 10) (dB := componentValue m₀ args 12) (k := 1) I.f₁ I.f₂ I.e₁ I.e₂ hx rfl I.l₁
+      (dA := componentValue m₀ args 10) (dB := componentValue m₀ args 12) (k := 1) I.f₁ I.f₂ I.e₁ I.e₂ hx hxn rfl I.l₁
       I.l₂ I.left (fun hl => ⟨fits_half hl, fits_half (args := args) (len := len) (m := m₀) (i := 10)
         (show (args 11).toNat ≤ _ by rw [dpl]; exact hl)⟩))
       fun u ⟨hu, Fu, Cu, Au, F1, F2, E1, E2, _, R17, L1, L2, Lk, Z, Ku⟩ => ⟨?_, Z⟩
@@ -544,7 +558,7 @@ theorem facStep_ok {m₀ : Mem} (c : Comps base len args m₀ s.mem) (dpl : args
     exact ⟨hu, I.frame.trans Fu, keepComps Cu, Au.trans I.acc, F1, F2, E1, E2, L1, L2, Lk, fun _ => R17,
       fun e => absurd e (by decide), I.keeps.trans Ku⟩
   · refine WP.mono (factorStep_ok I.inp (A := componentValue m₀ args 8) (B := componentValue m₀ args 6)
-      (dA := componentValue m₀ args 12) (dB := componentValue m₀ args 10) (k := 0) I.f₁ I.f₂ I.e₁ I.e₂ hx
+      (dA := componentValue m₀ args 12) (dB := componentValue m₀ args 10) (k := 0) I.f₁ I.f₂ I.e₁ I.e₂ hx hxn
       (I.one rfl) I.l₁ I.l₂ I.left (fun hl => ⟨fits_half hl, fits_half (args := args) (len := len) (m := m₀)
         (i := 12) (show (args 13).toNat ≤ _ by rw [dql]; exact hl)⟩))
       fun u ⟨hu, Fu, Cu, Au, F1, F2, E1, E2, R16, R17, L1, L2, Lk, Z, Ku⟩ => ⟨?_, Z⟩
@@ -562,14 +576,15 @@ theorem powers_ok (h : RIn base bytes len args s) {m₀ : Mem} (c : Comps base l
         componentValue m₀ args 4 ^ componentValue m₀ args 10 % safeM (componentValue m₀ args 6) →
       val32 u.mem base (lo len (.slot .wide 17)) (2 * cwc len .wide) =
         componentValue m₀ args 4 ^ componentValue m₀ args 12 % safeM (componentValue m₀ args 8) →
+      w32 u.mem base lenOff = (args 7).toNat →
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u → WP isa P u Q) :
     WP isa (.seq (.block factorsInit) (.seq (.loop factorStep .ne) P)) s Q := by
   refine WP.seq (WP.mono (factorsInit_ok h c) fun u₀ I₀ => ?_)
   refine WP.seq (WP.mono (PublicRt.countLoop (N := 2) (by decide) (fun j t => FacInv base bytes len args m₀ s j t)
     (fun j t hj I => facStep_ok c dpl dql hj I) I₀) fun u I => ?_)
   exact k u I.inp I.frame ⟨(I.comps 9 _ (.inl rfl) (Nat.le_refl _)).trans c.n,
-    (I.comps 15 _ (.inr (.inr rfl)) (by omega_arith)).trans c.x, I.f₁, I.f₂, I.e₁, I.e₂,
-    (I.comps 14 _ (.inr (.inl rfl)) (by omega_arith)).trans c.qi⟩ I.acc (I.two rfl).1 (I.two rfl).2 I.keeps
+    (I.comps 15 _ (.inr (.inr rfl)) (Nat.le_refl _)).trans c.x, I.f₁, I.f₂, I.e₁, I.e₂,
+    (I.comps 14 _ (.inr (.inl rfl)) (Nat.le_refl _)).trans c.qi⟩ I.acc (I.two rfl).1 (I.two rfl).2 I.l₁ I.keeps
 
 /-- Changes to ranges apart from the acceptance mask keep it. -/
 theorem acc_keep (h : RIn base bytes len args s) {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem}
@@ -588,9 +603,9 @@ theorem acc_keep (h : RIn base bytes len args s) {sp : BitVec 32} {ws : List (Na
 /-- The coefficient, the recombination and the result written out. -/
 theorem back_ok (h : RIn base bytes len args s) {m₀ : Mem} (c : Comps base len args m₀ s.mem) {mp mq : Nat}
     (hmp : val32 s.mem base (lo len (.slot .wide 16)) (2 * cwc len .wide) = mp)
-    (hmpl : mp < safeM (componentValue m₀ args 6)) (hmpb : mp < 2 ^ (32 * cwc len .wide))
+    (hmpl : mp < safeM (componentValue m₀ args 6))
     (hmq : val32 s.mem base (lo len (.slot .wide 17)) (2 * cwc len .wide) = mq) (hmqb : mq < 2 ^ (32 * cwc len .wide))
-    {cb : Bool} (hacc : s.mem.readW (off base accOff) 32 = cmask cb) :
+    (hlen : w32 s.mem base lenOff = (args 7).toNat) {cb : Bool} (hacc : s.mem.readW (off base accOff) 32 = cmask cb) :
     let p := componentValue m₀ args 6
     let r := mq + componentValue m₀ args 8 *
       ((mp + safeM p - mq % safeM p) % safeM p * componentValue m₀ args 14 % safeM p)
@@ -621,8 +636,9 @@ theorem back_ok (h : RIn base bytes len args s) {m₀ : Mem} (c : Comps base len
   have e11 : lo len (.slot .wide 11) = numBase + 11 * st len .wide := rfl
   have split : cwc len .wide + cwc len .wide = 2 * cwc len .wide := by omega_arith
   -- The coefficient.
-  refine WP.seq (WP.mono (coefficient_ok h c.p (val32_low (b := cwc len .wide) (by rw [split]; exact hmp) hmpb)
-    hmpl (val32_low (b := cwc len .wide) (by rw [split]; exact hmq) hmqb) c.qi) fun u₁ ⟨F₁, V₁, K₁⟩ => ?_)
+  refine WP.seq (WP.mono (coefficient_ok h c.p hmp hmpl hmq hmqb c.qi (comp_wide h m₀ (by decide))
+    (comp_wide h m₀ (by decide)) (fun hl => fits_half (i := 6) (by rw [← hlen]; exact hl)))
+    fun u₁ ⟨F₁, V₁, K₁⟩ => ?_)
   have h₁ := h.keepF K₁ (by decide) (by decide) F₁ (coR_fit h)
   have k₁ : ∀ {d k : Nat}, lo len (.slot .wide 9) ≤ d → d + 4 * k ≤ bytes →
       val32 u₁.mem base d k = val32 s.mem base d k := fun hd hk => coR_keep h F₁ h.room hd hk
@@ -703,7 +719,7 @@ theorem sized_ok (h : RIn base bytes len args s)
   have pow : 2 ^ (8 * len) ≤ 2 ^ (32 * cwc len .wide) := Nat.pow_le_pow_right (by decide) (by omega)
   unfold sized
   refine front_ok h fun u₁ h₁ F₁ c₁ A₁ K₁ => ?_
-  refine powers_ok h₁ c₁ h.crt.dpLen h.crt.dqLen fun u₂ h₂ F₂ c₂ A₂ MP MQ K₂ => ?_
+  refine powers_ok h₁ c₁ h.crt.dpLen h.crt.dqLen fun u₂ h₂ F₂ c₂ A₂ MP MQ L₂ K₂ => ?_
   have pl : (componentValue s.mem args 6) < 2 ^ (32 * cwc len .wide) :=
     Nat.lt_of_lt_of_le (Nat.lt_trans facts.2.1 nB) pow
   have ql : (componentValue s.mem args 8) < 2 ^ (32 * cwc len .wide) :=
@@ -712,7 +728,7 @@ theorem sized_ok (h : RIn base bytes len args s)
   have sq := safeM_lt ql (by omega)
   have mpl : (componentValue s.mem args 4) ^ componentValue s.mem args 10 % safeM (componentValue s.mem args 6) < safeM (componentValue s.mem args 6) := Nat.mod_lt _ (by have := safeM_gt (componentValue s.mem args 6); omega)
   have mql : (componentValue s.mem args 4) ^ componentValue s.mem args 12 % safeM (componentValue s.mem args 8) < safeM (componentValue s.mem args 8) := Nat.mod_lt _ (by have := safeM_gt (componentValue s.mem args 8); omega)
-  refine WP.mono (back_ok h₂ c₂ MP mpl (by omega) MQ (by omega) (cb := decide (accepted s.mem args))
+  refine WP.mono (back_ok h₂ c₂ MP mpl MQ (by omega) L₂ (cb := decide (accepted s.mem args))
     (by rw [A₂, A₁])) fun t ⟨B, E, F, K⟩ => ⟨?_, E, ?_, ?_⟩
   · by_cases acc : accepted s.mem args
     · obtain ⟨R, Rlt⟩ := accepted_result (dp := componentValue s.mem args 10)

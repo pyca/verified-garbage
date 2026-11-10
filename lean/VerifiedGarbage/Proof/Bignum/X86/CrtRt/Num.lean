@@ -215,6 +215,59 @@ theorem copy_ok (h : In Ex base bytes len args s) {x d : Loc} {n : Cnt} (N : Cnt
   refine WP.mono (select_ok hu N hx hd hxd (k := true) (by rw [uu.gpr]; rfl)) fun t ⟨O, V, K⟩ => ?_
   refine ⟨by rw [← uu.mem]; exact O, by rw [V, uu.mem]; rfl, (uu.keeps.mono (by decide)).trans (K.mono (by decide))⟩
 
+
+/-- The top half of the wide slot `j` (`Bh` bytes from byte `Bh`) into the half slot `d`. -/
+theorem copyHigh_ok (h : In Ex base bytes len args s) {j d : Nat}
+    (hx : lo len (.slot .wide j) + 2 * bc len .half ≤ bytes) (hd : lo len (.slot .half d) + bc len .half ≤ bytes)
+    (hxd : lo len (.slot .half d) + bc len .half ≤ lo len (.slot .wide j)) :
+    WP isa (copyHigh j d) s fun u => Outside base (lo len (.slot .half d)) (bc len .half) s.mem u.mem ∧
+      val32 u.mem base (lo len (.slot .half d)) (cw len (one .half)) =
+        val32 s.mem base (lo len (.slot .wide j) + bc len .half) (cw len (one .half)) ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u := by
+  have bl := h.bytes_lt
+  have N := one_ok .half
+  have ce := cb_eq (len := len) N
+  have cb1 : cb len (one .half) = bc len .half := by simp [cb, one]
+  have bhl := bc_le h.upper' .half
+  unfold copyHigh
+  simp only [List.append_assoc, List.cons_append, List.nil_append]
+  refine WP.seq (wp_movS rfl fun u₀ a₀ _ => ?_)
+  have h₀ := h.regs a₀.keeps a₀.mem
+  refine ptrTo_ok (r := .ebp) (t := .edx) (by decide) (by decide) h₀.edi h₀.width h.upper' (by omega)
+    fun u₁ K₁ m₁ p₁ => ?_
+  have h₁ := h₀.regs K₁ m₁
+  refine widthC_ok (k := 0) h₁.width h.upper' fun u₂ K₂ m₂ e₂ => wp_addS rfl fun u₃ a₃ _ => ?_
+  have K₃ : Keeps [.ebp, .edx] u₁ u₃ := (K₂.mono (by decide)).trans (a₃.keeps.mono (by decide))
+  have m₃ : u₃.mem = u₁.mem := by rw [a₃.mem, m₂]
+  have p₃ : PtrAt u₃ base .ebp (lo len (.slot .wide j) + bc len .half) := by
+    rw [PtrAt, a₃.gpr, K₂.1 _ (by decide), e₂, ptr_add p₁, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := bc len .half) (by omega)]
+  have h₃ := h₁.regs K₃ m₃
+  refine ptrTo_ok (r := .ebx) (t := .edx) (by decide) (by decide) h₃.edi h₃.width h.upper' (by omega)
+    fun u₄ K₄ m₄ p₄ => ?_
+  have h₄ := h₃.regs K₄ m₄
+  rw [← List.append_nil (cntTo (one .half) .edi)]
+  refine cntTo_ok (r := .edi) h₄.width h.upper' N.extra fun u₅ K₅ m₅ c₅ => WP.block_nil ?_
+  have Kw' : Keeps [.ebx, .ecx, .edx, .ebp, .edi] s u₅ :=
+    ((((a₀.keeps.mono (by decide)).trans (K₁.mono (by decide))).trans (K₃.mono (by decide))).trans
+      (K₄.mono (by decide))).trans (K₅.mono (by decide))
+  have mw' : u₅.mem = s.mem := by rw [m₅, m₄, m₃, m₁, a₀.mem]
+  have ecx₅ : u₅.gpr .ecx = cmask true := by
+    rw [K₅.1 _ (by decide), K₄.1 _ (by decide), K₃.1 _ (by decide), K₁.1 _ (by decide), a₀.gpr]; rfl
+  refine WP.seq (WP.mono (selectLoop_ok (h.ws.of_keeps Kw') (x := lo len (.slot .wide j) + bc len .half)
+    (d := lo len (.slot .half d)) (N := cw len (one .half)) true
+    (by have := bc_ge h.lower' .half; omega) (by omega) (by omega) (.inl (by omega))
+    (by rw [PtrAt, K₅.1 _ (by decide), K₄.1 _ (by decide)]; exact p₃)
+    (by rw [PtrAt, K₅.1 _ (by decide)]; exact p₄)
+    (cnt_toNat h.upper' N c₅) ecx₅)
+    fun t ⟨O, V, _, Kt⟩ => ?_)
+  have Kall : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s t := (Kw'.mono (by decide)).trans (Kt.mono (by decide))
+  have Oall : Outside base 0 bytes s.mem t.mem := by rw [← mw']; exact O.mono (Nat.zero_le _) (by omega)
+  refine wp_movS ((h.stack 16 (by decide)).keep Kall (by decide) Oall).readSrc fun t₁ u₁ _ => WP.block_nil ?_
+  have e : t₁.gpr .edi = s.gpr .edi := by rw [u₁.gpr]; exact h.edi_eq
+  refine ⟨by rw [u₁.mem, ← mw', show 4 * cw len (one .half) = bc len .half by omega] at *; exact O,
+    by rw [u₁.mem, V, mw']; rfl,
+    PublicRt.Keeps.drop_edi (rs := [.eax, .ebx, .ecx, .edx, .ebp]) (Kall.trans (u₁.keeps.mono (by decide))) e⟩
+
 end
 
 end VG.Proof.Bignum.X86.CrtRt

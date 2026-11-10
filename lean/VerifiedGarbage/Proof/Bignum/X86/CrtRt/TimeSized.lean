@@ -35,7 +35,7 @@ structure SizedChecks : Prop where
   back : ACheck (.seq recombine exportResult)
 
 theorem sizedChecks : SizedChecks := by
-  refine ⟨?_, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩ <;>
+  refine ⟨?_, ?_, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩ <;>
     (try dsimp only [MulCheck, ACheck]) <;> taint_decide
 
 section
@@ -58,38 +58,47 @@ theorem Keeps.of_common {rs : List Reg} {s₀ t u : State} (K₁ : Keeps rs s₀
 otherwise. -/
 abbrev LoopPost (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (n : Nat) (u : State) : Prop :=
   Run (CrtExtra base bytes len args) base bytes len args sp u ∧ (n = 1 ∨ n = 2) ∧
-    u.zf = some (decide (n = 1)) ∧ (n = 2 → LoopSt base bytes len args 1 u)
+    u.zf = some (decide (n = 1)) ∧ (n = 2 → LoopSt base bytes len args 1 u) ∧
+    (n = 1 → w32 u.mem base lenOff = (args 7).toNat)
 
 theorem loopStep_ok {n : Nat} {t : State} (R : Run (CrtExtra base bytes len args) base bytes len args sp t)
     (L : LoopSt base bytes len args n t) : WP isa factorStep t (LoopPost base bytes len args sp n) := by
   obtain ⟨h1, h2, m₀, s₀, c, I⟩ := L
   refine WP.mono (facStep_ok c I.inp.crt.dpLen I.inp.crt.dqLen (by omega_arith) I) fun u ⟨I', Z⟩ => ?_
   have K := Keeps.of_common I.keeps I'.keeps
-  refine ⟨⟨I'.inp, R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩, by omega_arith, ?_, fun e => ?_⟩
+  refine ⟨⟨I'.inp, R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩, by omega_arith, ?_, fun e => ?_, fun e => ?_⟩
   · rw [Z]; congr 1; apply decide_eq_decide.mpr; omega_arith
   · subst e; exact ⟨Nat.le_refl _, by decide, m₀, s₀, c, I'⟩
+  · subst e; exact I'.l₁
 
 /-- The factors' loop, from runs with as many factors left. -/
 theorem loop_relCT (hc : SizedChecks) (n : Nat) :
     RelCT isa (Both fun t => Run (CrtExtra base bytes len args) base bytes len args sp t ∧ LoopSt base bytes len args n t)
-      (.loop factorStep .ne) (Both (Run (CrtExtra base bytes len args) base bytes len args sp)) := by
+      (.loop factorStep .ne) (Both fun t => Run (CrtExtra base bytes len args) base bytes len args sp t ∧
+        w32 t.mem base lenOff = (args 7).toNat) := by
   refine VG.RelCT.loop (M := isa) (fun n => Both fun t => Run (CrtExtra base bytes len args) base bytes len args sp t ∧
     LoopSt base bytes len args n t) (fun n => ?_) n
   have tr : RelCT isa (Both fun t => Run (CrtExtra base bytes len args) base bytes len args sp t ∧
       LoopSt base bytes len args n t) factorStep fun _ _ => True := by
     unfold factorStep
     refine VG.RelCT.seq ((power_relCT (Ex := CrtExtra base bytes len args) (base := base) (bytes := bytes) (len := len)
-      (args := args) (sp := sp) hc.p (by decide) (by decide) (by decide) (by decide) (by decide)
+      (args := args) (sp := sp) hc.p rhChecks.1 (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide)).mono (fun s₁ s₂ h => ?_) fun _ _ h => h) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2)
       hc.swaps)
     obtain ⟨⟨R₁, _, _, _, _, _, I₁⟩, ⟨R₂, _, _, _, _, _, I₂⟩⟩ := h
     exact ⟨_, ⟨R₁, I₁.l₁⟩, ⟨R₂, I₂.l₁⟩⟩
   refine (tr.wp (F₁ := LoopPost base bytes len args sp n) (F₂ := LoopPost base bytes len args sp n)
     fun s₁ s₂ h => ⟨loopStep_ok h.1.1 h.1.2, loopStep_ok h.2.1 h.2.2⟩).mono (fun _ _ h => h) ?_
-  rintro s₁ s₂ ⟨_, ⟨R₁, N₁, Z₁, L₁⟩, ⟨R₂, _, Z₂, L₂⟩⟩
-  refine ⟨?_, fun _ => ⟨R₁, R₂⟩, fun e => ?_⟩
+  rintro s₁ s₂ ⟨_, ⟨R₁, N₁, Z₁, L₁, W₁⟩, ⟨R₂, _, Z₂, L₂, W₂⟩⟩
+  refine ⟨?_, fun x => ?_, fun e => ?_⟩
   · show s₁.zf.map (!·) = s₂.zf.map (!·)
     rw [Z₁, Z₂]
+  · have n1 : n = 1 := by
+      by_contra hn
+      have hn2 : n = 2 := by omega_arith
+      have : s₁.zf.map (!·) = some false := x
+      rw [Z₁, hn2] at this; cases this
+    exact ⟨⟨R₁, W₁ n1⟩, ⟨R₂, W₂ n1⟩⟩
   · have e' : n ≠ 1 := fun h => by
       have : s₁.zf.map (!·) = some true := e
       rw [Z₁, h] at this; cases this
@@ -108,7 +117,8 @@ theorem sized_relCT (sp : BitVec 32) :
     WP.mono (factorsInit_ok R.1 c) fun u I => ⟨⟨I.inp, R.2.1.keep I.keeps, (I.keeps.1 _ (by decide)).trans R.2.2⟩,
       by decide, by decide, m₀, t, c, I⟩) ?_
   refine VG.RelCT.seq (loop_relCT hc 2) ?_
-  refine VG.RelCT.seq (coefficient_relCT hc.co) ?_
+  refine VG.RelCT.seq ((coefficient_relCT hc.co rhChecks.2.1 rhChecks.2.2).mono
+    (fun _ _ h => ⟨_, ⟨h.1.1, h.1.2⟩, ⟨h.2.1, h.2.2⟩⟩) fun _ _ h => h) ?_
   exact RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) hc.back
 
 /-- The permissions of `sized`'s narrowed runs: everything readable, the output and the working space
