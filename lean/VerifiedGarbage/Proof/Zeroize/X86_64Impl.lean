@@ -21,7 +21,11 @@ open VG VG.X86_64 VG.Impl.Zeroize.X86_64
 
 /-- An implementation of `vg_zeroize` on x86-64, for the functions that call it. -/
 structure ZeroizeImpl where
-  /-- Its symbol, the artifact's (`Artifacts/Zeroize/X86_64.lean`), and its code. -/
+  /-- Its symbol and its code: the code of the artifact
+  (`Artifacts/Zeroize/X86_64.lean`), called as an internal function of its
+  own, `<artifact>_core`, since the artifact also clears what it leaves
+  (`Proof.Zeroize.X86_64.zeroizeReg`), which its callers, which clear their
+  own, do not need. -/
   name : String
   code : Prog isa
   verified : Verified target code (Spec.Zeroize.zeroizeContract abi)
@@ -34,9 +38,9 @@ structure ZeroizeImpl where
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
 
-/-- `vg_zeroize`. -/
+/-- `vg_zeroize`'s code. -/
 def ZeroizeImpl.scalar : ZeroizeImpl where
-  name := "vg_zeroize"
+  name := "vg_zeroize_core"
   code := zeroize
   verified := Proof.Zeroize.X86_64.verified
   spSafe := Code.all_of_allInstrs (by decide)
@@ -44,9 +48,9 @@ def ZeroizeImpl.scalar : ZeroizeImpl where
   suffix := ""
   features := []
 
-/-- `vg_zeroize_avx`. -/
+/-- `vg_zeroize_avx`'s code. -/
 def ZeroizeImpl.avx : ZeroizeImpl where
-  name := "vg_zeroize_avx"
+  name := "vg_zeroize_avx_core"
   code := zeroizeAvx
   verified := Proof.Zeroize.X86_64.verifiedAvx
   spSafe := Code.all_of_allInstrs (by decide)

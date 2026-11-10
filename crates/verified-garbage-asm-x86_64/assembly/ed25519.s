@@ -27,7 +27,7 @@ vg_ed25519_verify_shani_ifma:
 	push rax
 	push rax
 	mov rdi, QWORD PTR [rsp+128]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+128]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+136]
@@ -167,7 +167,7 @@ vg_ed25519_sign_expanded_shani_ifma:
 	mov QWORD PTR [rsp+48], r10
 	mov QWORD PTR [rsp+56], r11
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, rsp
@@ -203,7 +203,7 @@ vg_ed25519_sign_expanded_shani_ifma:
 	mov rdx, QWORD PTR [rsp+200]
 	call {vg_ed25519_scalar_base_ifma}
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+240]
@@ -315,7 +315,7 @@ vg_ed25519_key_pair_shani_ifma:
 	mov rdi, rdx
 	mov rdx, rsi
 	mov esi, 32
-	call {vg_sha512_digest_shani}
+	call {vg_sha512_digest_shani_core}
 	mov rdi, QWORD PTR [rsp+16]
 	mov rsi, QWORD PTR [rsp+8]
 	mov rdx, QWORD PTR [rsp]
@@ -349,7 +349,7 @@ vg_ed25519_verify_shani_adx:
 	push rax
 	push rax
 	mov rdi, QWORD PTR [rsp+128]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+128]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+136]
@@ -489,7 +489,7 @@ vg_ed25519_sign_expanded_shani_adx:
 	mov QWORD PTR [rsp+48], r10
 	mov QWORD PTR [rsp+56], r11
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, rsp
@@ -525,7 +525,7 @@ vg_ed25519_sign_expanded_shani_adx:
 	mov rdx, QWORD PTR [rsp+200]
 	call {vg_ed25519_scalar_base_adx}
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+240]
@@ -637,7 +637,7 @@ vg_ed25519_key_pair_shani_adx:
 	mov rdi, rdx
 	mov rdx, rsi
 	mov esi, 32
-	call {vg_sha512_digest_shani}
+	call {vg_sha512_digest_shani_core}
 	mov rdi, QWORD PTR [rsp+16]
 	mov rsi, QWORD PTR [rsp+8]
 	mov rdx, QWORD PTR [rsp]
@@ -671,7 +671,7 @@ vg_ed25519_verify_shani:
 	push rax
 	push rax
 	mov rdi, QWORD PTR [rsp+128]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+128]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+136]
@@ -811,7 +811,7 @@ vg_ed25519_sign_expanded_shani:
 	mov QWORD PTR [rsp+48], r10
 	mov QWORD PTR [rsp+56], r11
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, rsp
@@ -847,7 +847,7 @@ vg_ed25519_sign_expanded_shani:
 	mov rdx, QWORD PTR [rsp+200]
 	call {vg_ed25519_scalar_base}
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+240]
@@ -959,7 +959,7 @@ vg_ed25519_key_pair_shani:
 	mov rdi, rdx
 	mov rdx, rsi
 	mov esi, 32
-	call {vg_sha512_digest_shani}
+	call {vg_sha512_digest_shani_core}
 	mov rdi, QWORD PTR [rsp+16]
 	mov rsi, QWORD PTR [rsp+8]
 	mov rdx, QWORD PTR [rsp]
@@ -993,7 +993,7 @@ vg_ed25519_verify_avx2_ifma:
 	push rax
 	push rax
 	mov rdi, QWORD PTR [rsp+128]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+128]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+136]
@@ -1133,7 +1133,7 @@ vg_ed25519_sign_expanded_avx2_ifma:
 	mov QWORD PTR [rsp+48], r10
 	mov QWORD PTR [rsp+56], r11
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, rsp
@@ -1169,7 +1169,7 @@ vg_ed25519_sign_expanded_avx2_ifma:
 	mov rdx, QWORD PTR [rsp+200]
 	call {vg_ed25519_scalar_base_ifma}
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+240]
@@ -1281,7 +1281,7 @@ vg_ed25519_key_pair_avx2_ifma:
 	mov rdi, rdx
 	mov rdx, rsi
 	mov esi, 32
-	call {vg_sha512_digest_avx2}
+	call {vg_sha512_digest_avx2_core}
 	mov rdi, QWORD PTR [rsp+16]
 	mov rsi, QWORD PTR [rsp+8]
 	mov rdx, QWORD PTR [rsp]
@@ -1315,7 +1315,7 @@ vg_ed25519_verify_avx2_adx:
 	push rax
 	push rax
 	mov rdi, QWORD PTR [rsp+128]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+128]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+136]
@@ -1455,7 +1455,7 @@ vg_ed25519_sign_expanded_avx2_adx:
 	mov QWORD PTR [rsp+48], r10
 	mov QWORD PTR [rsp+56], r11
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, rsp
@@ -1491,7 +1491,7 @@ vg_ed25519_sign_expanded_avx2_adx:
 	mov rdx, QWORD PTR [rsp+200]
 	call {vg_ed25519_scalar_base_adx}
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+240]
@@ -1603,7 +1603,7 @@ vg_ed25519_key_pair_avx2_adx:
 	mov rdi, rdx
 	mov rdx, rsi
 	mov esi, 32
-	call {vg_sha512_digest_avx2}
+	call {vg_sha512_digest_avx2_core}
 	mov rdi, QWORD PTR [rsp+16]
 	mov rsi, QWORD PTR [rsp+8]
 	mov rdx, QWORD PTR [rsp]
@@ -1637,7 +1637,7 @@ vg_ed25519_verify_avx2:
 	push rax
 	push rax
 	mov rdi, QWORD PTR [rsp+128]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+128]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+136]
@@ -1777,7 +1777,7 @@ vg_ed25519_sign_expanded_avx2:
 	mov QWORD PTR [rsp+48], r10
 	mov QWORD PTR [rsp+56], r11
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, rsp
@@ -1813,7 +1813,7 @@ vg_ed25519_sign_expanded_avx2:
 	mov rdx, QWORD PTR [rsp+200]
 	call {vg_ed25519_scalar_base}
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+240]
@@ -1925,7 +1925,7 @@ vg_ed25519_key_pair_avx2:
 	mov rdi, rdx
 	mov rdx, rsi
 	mov esi, 32
-	call {vg_sha512_digest_avx2}
+	call {vg_sha512_digest_avx2_core}
 	mov rdi, QWORD PTR [rsp+16]
 	mov rsi, QWORD PTR [rsp+8]
 	mov rdx, QWORD PTR [rsp]
@@ -1959,7 +1959,7 @@ vg_ed25519_verify_ifma:
 	push rax
 	push rax
 	mov rdi, QWORD PTR [rsp+128]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+128]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+136]
@@ -2099,7 +2099,7 @@ vg_ed25519_sign_expanded_ifma:
 	mov QWORD PTR [rsp+48], r10
 	mov QWORD PTR [rsp+56], r11
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, rsp
@@ -2135,7 +2135,7 @@ vg_ed25519_sign_expanded_ifma:
 	mov rdx, QWORD PTR [rsp+200]
 	call {vg_ed25519_scalar_base_ifma}
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+240]
@@ -2247,7 +2247,7 @@ vg_ed25519_key_pair_ifma:
 	mov rdi, rdx
 	mov rdx, rsi
 	mov esi, 32
-	call {vg_sha512_digest}
+	call {vg_sha512_digest_core}
 	mov rdi, QWORD PTR [rsp+16]
 	mov rsi, QWORD PTR [rsp+8]
 	mov rdx, QWORD PTR [rsp]
@@ -2281,7 +2281,7 @@ vg_ed25519_verify_adx:
 	push rax
 	push rax
 	mov rdi, QWORD PTR [rsp+128]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+128]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+136]
@@ -2421,7 +2421,7 @@ vg_ed25519_sign_expanded_adx:
 	mov QWORD PTR [rsp+48], r10
 	mov QWORD PTR [rsp+56], r11
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, rsp
@@ -2457,7 +2457,7 @@ vg_ed25519_sign_expanded_adx:
 	mov rdx, QWORD PTR [rsp+200]
 	call {vg_ed25519_scalar_base_adx}
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+240]
@@ -2569,7 +2569,7 @@ vg_ed25519_key_pair_adx:
 	mov rdi, rdx
 	mov rdx, rsi
 	mov esi, 32
-	call {vg_sha512_digest}
+	call {vg_sha512_digest_core}
 	mov rdi, QWORD PTR [rsp+16]
 	mov rsi, QWORD PTR [rsp+8]
 	mov rdx, QWORD PTR [rsp]
@@ -2603,7 +2603,7 @@ vg_ed25519_verify:
 	push rax
 	push rax
 	mov rdi, QWORD PTR [rsp+128]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+128]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+136]
@@ -2743,7 +2743,7 @@ vg_ed25519_sign_expanded:
 	mov QWORD PTR [rsp+48], r10
 	mov QWORD PTR [rsp+56], r11
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, rsp
@@ -2779,7 +2779,7 @@ vg_ed25519_sign_expanded:
 	mov rdx, QWORD PTR [rsp+200]
 	call {vg_ed25519_scalar_base}
 	mov rdi, QWORD PTR [rsp+200]
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov rdi, QWORD PTR [rsp+200]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+240]
@@ -2891,7 +2891,7 @@ vg_ed25519_key_pair:
 	mov rdi, rdx
 	mov rdx, rsi
 	mov esi, 32
-	call {vg_sha512_digest}
+	call {vg_sha512_digest_core}
 	mov rdi, QWORD PTR [rsp+16]
 	mov rsi, QWORD PTR [rsp+8]
 	mov rdx, QWORD PTR [rsp]

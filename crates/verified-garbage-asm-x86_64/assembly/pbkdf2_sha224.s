@@ -36,7 +36,7 @@ vg_pbkdf2_hmac_sha224_shani:
 20:
 	mov rdi, r15
 	add rdi, 1184
-	call {vg_sha224_init}
+	call {vg_sha224_init_core}
 	mov rdi, r15
 	add rdi, 1184
 	mov esi, 0
@@ -190,7 +190,7 @@ vg_pbkdf2_hmac_sha224_avx2:
 20:
 	mov rdi, r15
 	add rdi, 1184
-	call {vg_sha224_init}
+	call {vg_sha224_init_core}
 	mov rdi, r15
 	add rdi, 1184
 	mov esi, 0
@@ -344,7 +344,7 @@ vg_pbkdf2_hmac_sha224:
 20:
 	mov rdi, r15
 	add rdi, 1184
-	call {vg_sha224_init}
+	call {vg_sha224_init_core}
 	mov rdi, r15
 	add rdi, 1184
 	mov esi, 0

@@ -620,12 +620,12 @@ open VG.Proof.Ed25519.X86_64.PublicKey
 open VG.Proof.Sha512.X86_64 (Compress)
 
 theorem init_ct : RelCT isa (Two fun _ _ _ => True)
-    (Impl.Ed25519.X86_64.callWith initArgs Spec.Sha512.init512Api.name
+    (Impl.Ed25519.X86_64.callWith initArgs "vg_sha512_init_core"
       (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512)) (Two fun _ _ _ => True) := by
   have b : RelCT isa (Two fun _ _ _ => True) (.block initArgs) (Two fun L _ => InitArgs L) :=
     two_blk (by taint_decide) fun _ _ _ _ _ _ hc _ =>
       WP.mono (initArgs_ok hc) fun _ ⟨hc', _, ha⟩ => ⟨hc', ha⟩
-  have c := two_callP (n := Spec.Sha512.init512Api.name) (Φ := fun L _ => InitArgs L)
+  have c := two_callP (n := "vg_sha512_init_core") (Φ := fun L _ => InitArgs L)
     (Proof.Sha512.X86_64.Stream.init_verified _).1 (Proof.Sha512.X86_64.Stream.init_verified _).2.1
     (nosp_init _) (by decide) (fun _ => initRd) initWr (fun _ _ _ _ _ hL hc ha => init_pre hL hc ha)
     (fun L t₁ t₂ _ _ _ _ _ _ _ _ _ a₁ a₂ =>

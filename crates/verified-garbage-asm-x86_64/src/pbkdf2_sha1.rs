@@ -28,7 +28,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "TIn/SIHH/AIAAA=="
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "TIn/SIHH/AIAAL4AAAAASInaSInpTYn4"
 call {vg_sha1_update_scratch_shani}
 .base64 "TIn/SIHH/AIAAEiJ7kyJ+kiBwngDAABMifk="
@@ -77,7 +77,7 @@ jmp 24f
 24:
 .base64 "SYufwAEAAEmLr8gBAABNi6fQAQAATYuv2AEAAE2Lt+ABAABNi7/oAQAASI2kJHgEAADD"
 .p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
         vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
         vg_hmac_sha1_init_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_shani::vg_hmac_sha1_init_scratch_shani,
@@ -111,7 +111,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "TIn/SIHH/AIAAA=="
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "TIn/SIHH/AIAAL4AAAAASInaSInpTYn4"
 call {vg_sha1_update_scratch_avx_bmi}
 .base64 "TIn/SIHH/AIAAEiJ7kyJ+kiBwngDAABMifk="
@@ -160,7 +160,7 @@ jmp 24f
 24:
 .base64 "SYufwAEAAEmLr8gBAABNi6fQAQAATYuv2AEAAE2Lt+ABAABNi7/oAQAASI2kJHgEAADD"
 .p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_update_scratch_avx_bmi = sym super::sha1::vg_sha1_update_scratch_avx_bmi::vg_sha1_update_scratch_avx_bmi,
         vg_sha1_finalize_scratch_avx_bmi = sym super::sha1::vg_sha1_finalize_scratch_avx_bmi::vg_sha1_finalize_scratch_avx_bmi,
         vg_hmac_sha1_init_scratch_avx_bmi = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_avx_bmi::vg_hmac_sha1_init_scratch_avx_bmi,
@@ -190,7 +190,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "TIn/SIHH/AIAAA=="
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "TIn/SIHH/AIAAL4AAAAASInaSInpTYn4"
 call {vg_sha1_update_scratch}
 .base64 "TIn/SIHH/AIAAEiJ7kyJ+kiBwngDAABMifk="
@@ -239,7 +239,7 @@ jmp 24f
 24:
 .base64 "SYufwAEAAEmLr8gBAABNi6fQAQAATYuv2AEAAE2Lt+ABAABNi7/oAQAASI2kJHgEAADD"
 .p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch::vg_hmac_sha1_init_scratch,

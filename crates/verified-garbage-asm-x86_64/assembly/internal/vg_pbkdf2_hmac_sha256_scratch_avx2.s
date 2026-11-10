@@ -30,7 +30,7 @@ vg_pbkdf2_hmac_sha256_scratch_avx2:
 20:
 	mov rdi, r15
 	add rdi, 1184
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, r15
 	add rdi, 1184
 	mov esi, 0

@@ -17,9 +17,9 @@ vg_hmac_sha384_init_scratch_shani:
 	mov rbp, rdx
 	mov r13, rcx
 	mov rdi, rbx
-	call {vg_sha384_init}
+	call {vg_sha384_init_core}
 	mov rdi, r12
-	call {vg_sha384_init}
+	call {vg_sha384_init_core}
 	mov eax, 909522486
 	mov DWORD PTR [rbx+64], eax
 	mov DWORD PTR [rbx+68], eax

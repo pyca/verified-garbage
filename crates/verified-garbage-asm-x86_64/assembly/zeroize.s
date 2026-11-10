@@ -46,6 +46,9 @@ vg_zeroize:
 	jmp 27f
 26:
 27:
+	xor eax, eax
+	xor edx, edx
+	xor edi, edi
 	ret
 	.p2align 6
 
@@ -91,5 +94,24 @@ vg_zeroize_avx:
 26:
 27:
 	vzeroupper
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor eax, eax
+	xor edx, edx
+	xor edi, edi
 	ret
 	.p2align 6

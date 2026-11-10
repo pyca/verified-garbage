@@ -36,7 +36,7 @@ vg_pbkdf2_hmac_md5:
 20:
 	mov rdi, r15
 	add rdi, 688
-	call {vg_md5_init}
+	call {vg_md5_init_core}
 	mov rdi, r15
 	add rdi, 688
 	mov esi, 0

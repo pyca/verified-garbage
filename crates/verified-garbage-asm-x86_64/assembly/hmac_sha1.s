@@ -22,9 +22,9 @@ vg_hmac_sha1_init_shani:
 	mov rbp, rdx
 	mov r13, rcx
 	mov rdi, rbx
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, r12
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov eax, 909522486
 	mov DWORD PTR [rbx+20], eax
 	mov DWORD PTR [rbx+24], eax
@@ -152,7 +152,7 @@ vg_hmac_sha1_init_shani:
 25:
 	mov rdi, r15
 	add rdi, 764
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, r15
 	add rdi, 764
 	mov esi, 0
@@ -465,9 +465,9 @@ vg_hmac_sha1_init_avx_bmi:
 	mov rbp, rdx
 	mov r13, rcx
 	mov rdi, rbx
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, r12
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov eax, 909522486
 	mov DWORD PTR [rbx+20], eax
 	mov DWORD PTR [rbx+24], eax
@@ -595,7 +595,7 @@ vg_hmac_sha1_init_avx_bmi:
 25:
 	mov rdi, r15
 	add rdi, 764
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, r15
 	add rdi, 764
 	mov esi, 0
@@ -913,9 +913,9 @@ vg_hmac_sha1_init:
 	mov rbp, rdx
 	mov r13, rcx
 	mov rdi, rbx
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, r12
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov eax, 909522486
 	mov DWORD PTR [rbx+20], eax
 	mov DWORD PTR [rbx+24], eax
@@ -1043,7 +1043,7 @@ vg_hmac_sha1_init:
 25:
 	mov rdi, r15
 	add rdi, 764
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	mov rdi, r15
 	add rdi, 764
 	mov esi, 0

@@ -78,7 +78,7 @@ vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma512:
 	cmp r10, rcx
 	jne 21b
 	mov rdi, QWORD PTR [rsp+184]
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+184]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+184]
@@ -712,7 +712,7 @@ vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma:
 	cmp r10, rcx
 	jne 21b
 	mov rdi, QWORD PTR [rsp+184]
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+184]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+184]
@@ -1346,7 +1346,7 @@ vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx:
 	cmp r10, rcx
 	jne 21b
 	mov rdi, QWORD PTR [rsp+184]
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+184]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+184]
@@ -1951,7 +1951,7 @@ vg_rsa_pkcs1_decrypt_sha256_shani:
 	cmp r10, rcx
 	jne 21b
 	mov rdi, QWORD PTR [rsp+184]
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+184]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+184]
@@ -2556,7 +2556,7 @@ vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma512:
 	cmp r10, rcx
 	jne 21b
 	mov rdi, QWORD PTR [rsp+184]
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+184]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+184]
@@ -3190,7 +3190,7 @@ vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma:
 	cmp r10, rcx
 	jne 21b
 	mov rdi, QWORD PTR [rsp+184]
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+184]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+184]
@@ -3824,7 +3824,7 @@ vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx:
 	cmp r10, rcx
 	jne 21b
 	mov rdi, QWORD PTR [rsp+184]
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+184]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+184]
@@ -4429,7 +4429,7 @@ vg_rsa_pkcs1_decrypt_sha256_avx2:
 	cmp r10, rcx
 	jne 21b
 	mov rdi, QWORD PTR [rsp+184]
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+184]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+184]
@@ -5034,7 +5034,7 @@ vg_rsa_pkcs1_decrypt_crt_ifma512:
 	cmp r10, rcx
 	jne 21b
 	mov rdi, QWORD PTR [rsp+184]
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+184]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+184]
@@ -5668,7 +5668,7 @@ vg_rsa_pkcs1_decrypt_crt_ifma:
 	cmp r10, rcx
 	jne 21b
 	mov rdi, QWORD PTR [rsp+184]
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+184]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+184]
@@ -6302,7 +6302,7 @@ vg_rsa_pkcs1_decrypt_crt_adx:
 	cmp r10, rcx
 	jne 21b
 	mov rdi, QWORD PTR [rsp+184]
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+184]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+184]
@@ -6907,7 +6907,7 @@ vg_rsa_pkcs1_decrypt:
 	cmp r10, rcx
 	jne 21b
 	mov rdi, QWORD PTR [rsp+184]
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	mov rdi, QWORD PTR [rsp+184]
 	mov esi, 0
 	mov rdx, QWORD PTR [rsp+184]

@@ -28,7 +28,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "TIn/SIHH0AkAAA=="
-call {vg_sha384_init}
+call {vg_sha384_init_core}
 .base64 "TIn/SIHH0AkAAL4AAAAASInaSInpTYn4"
 call {vg_sha512_update_scratch_shani}
 .base64 "TIn/SIHH0AkAAEiJ7kyJ+kiBwvAKAABMifk="
@@ -77,7 +77,7 @@ jmp 24f
 24:
 .base64 "SYufUAcAAEmLr1gHAABNi6dgBwAATYuvaAcAAE2Lt3AHAABNi794BwAASI2kJGgNAADD"
 .p2align 6"#,
-        vg_sha384_init = sym super::sha512::vg_sha384_init,
+        vg_sha384_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha384_init_core::vg_sha384_init_core,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_hmac_sha384_init_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_shani::vg_hmac_sha384_init_scratch_shani,
@@ -111,7 +111,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "TIn/SIHH0AkAAA=="
-call {vg_sha384_init}
+call {vg_sha384_init_core}
 .base64 "TIn/SIHH0AkAAL4AAAAASInaSInpTYn4"
 call {vg_sha512_update_scratch_avx2}
 .base64 "TIn/SIHH0AkAAEiJ7kyJ+kiBwvAKAABMifk="
@@ -160,7 +160,7 @@ jmp 24f
 24:
 .base64 "SYufUAcAAEmLr1gHAABNi6dgBwAATYuvaAcAAE2Lt3AHAABNi794BwAASI2kJGgNAADD"
 .p2align 6"#,
-        vg_sha384_init = sym super::sha512::vg_sha384_init,
+        vg_sha384_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha384_init_core::vg_sha384_init_core,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
         vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_hmac_sha384_init_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_avx2::vg_hmac_sha384_init_scratch_avx2,
@@ -190,7 +190,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "TIn/SIHH0AkAAA=="
-call {vg_sha384_init}
+call {vg_sha384_init_core}
 .base64 "TIn/SIHH0AkAAL4AAAAASInaSInpTYn4"
 call {vg_sha512_update_scratch}
 .base64 "TIn/SIHH0AkAAEiJ7kyJ+kiBwvAKAABMifk="
@@ -239,7 +239,7 @@ jmp 24f
 24:
 .base64 "SYufUAcAAEmLr1gHAABNi6dgBwAATYuvaAcAAE2Lt3AHAABNi794BwAASI2kJGgNAADD"
 .p2align 6"#,
-        vg_sha384_init = sym super::sha512::vg_sha384_init,
+        vg_sha384_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha384_init_core::vg_sha384_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
