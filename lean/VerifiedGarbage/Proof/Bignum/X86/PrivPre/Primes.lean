@@ -315,7 +315,83 @@ theorem primesBody_ok (h : RIn base bytes len args s) {L' : Nat}
   have K₅ : Keeps [.eax] u₄ u₅ := b₁.keeps.trans ((s₅.keeps []).mono (by decide))
   have sp₅ : u₅.gpr .esp = s.gpr .esp := by rw [K₅.1 _ (by decide), sp₄]
   have hw20 : ∀ d, d + 4 ≤ 20 → d + 4 ≤ bytes := fun d hd => by omega_arith
-  sorry
+  have l₅ : w32 u₅.mem base lenOff = (args 9).toNat := by rw [m₅, w32_write_self]
+  have W16p : (args 0).toNat + 16 * W + 8 * wp < 2 ^ 32 := by omega
+  have o₅ : w32 u₅.mem base outOff = (byteAddr (args 0)).toNat + (16 * W + 8 * wp) := by
+    rw [m₅, w32_write_ne nw (hw20 lenOff (by simp only [lenOff]; omega)) (hw20 outOff (by simp only [outOff, winOff]; omega))
+      (by simp only [outOff, winOff, lenOff]; omega), W₄, pn, Nat.mod_eq_of_lt W16p]
+    omega
+  have hq₅ : val32 u₅.mem base (lo len (.slot .wide 11)) (cwc len .wide) = componentValue s.mem args 8 := by
+    rw [VG.Proof.Mont.Outside.val32 O₅ (.inr (by simp only [lenOff]; omega_arith)) (by omega_arith),
+      F₄w (by omega_arith) (by omega_arith), k₃ (by omega_arith) (by omega_arith), q₁]
+  have sa₅ : ∀ i, VG.Proof.Dsa.X86.stackAddress u₅ i = VG.Proof.Dsa.X86.stackAddress s i := fun i => by
+    simp only [VG.Proof.Dsa.X86.stackAddress, sp₅]
+  have wr₅ : u₅.wr = s.wr := by rw [K₅.2.2, K₄.2.2, wr₃]
+  -- The factor `q`.
+  refine WP.seq (WP.mono (factor_ok h₅ (f := 11) (p := componentValue s.mem args 8) (by decide) (by decide) hq₅
+    (by rw [l₅]; omega) (by rw [l₅]; exact b9) (by rw [l₅]; exact component_lt s.mem args 8)
+    (P := byteAddr (args 0)) (L' := L') (y := 16 * W + 8 * wp) (by rw [wr₅]; exact hpw) (by rw [pn]; exact hn) hap
+    o₅ (by rw [l₅]; omega))
+    fun u₆ ⟨⟨m₆, F₆, O₆⟩, V₆, _, K₆⟩ => ?_)
+  rw [l₅] at O₆ V₆
+  rw [sp₅] at F₆
+  -- The result.
+  have A₆ : w32 u₆.mem base accOff = w32 u₅.mem base accOff := by
+    rw [← w32_val32_one, ← w32_val32_one,
+      PrecomputedRt.val32_apart (base := byteAddr (args 0)) (P := base) (L := bytes) O₆ (by omega)
+        hap.symm (by simp only [accOff]; omega_arith)]
+    exact frameR_val32 F₆ h.room nw (by simp only [accOff]; omega_arith)
+      (fun q hq => by have := (primeR2_below h₅ q hq).2; simpa using this) (primeR2_fit h₅)
+  have acc : w32 u₆.mem base accOff = (cmask (decide (componentValue s.mem args 6 * componentValue s.mem args 8 =
+      componentValue s.mem args 2))).toNat := by
+    rw [A₆, m₅, w32_write_ne nw (hw20 lenOff (by simp only [lenOff]; omega)) (hw20 accOff (by simp only [accOff]; omega))
+      (by simp only [accOff, lenOff]; omega), A₄, a₃, A₂]
+  have h₆ := in_keepFOut h₅ K₆ (by decide) (by decide) (by rw [sp₅]; exact F₆) (primeR2_fit h₅) (L' := L') O₆ (by omega)
+    fun i hi => by rw [sa₅]; exact hPa i hi
+  refine wp_movS (readSrc_sc h₆.scratch (d := accOff) (by simp only [accOff]; omega_arith)) fun u₇ a₇ _ => ?_
+  refine VG.X86.Wp.wp_andi fun u a => WP.block_nil ?_
+  have eax : u.gpr .eax = BitVec.ofNat 32 (decide (componentValue s.mem args 6 * componentValue s.mem args 8 =
+      componentValue s.mem args 2)).toNat := by
+    rw [a.gpr, a₇.gpr]
+    have e : u₆.mem.readW (off base accOff) 32 = cmask (decide (componentValue s.mem args 6 *
+        componentValue s.mem args 8 = componentValue s.mem args 2)) := BitVec.eq_of_toNat_eq acc
+    rw [e]
+    cases decide (componentValue s.mem args 6 * componentValue s.mem args 8 = componentValue s.mem args 2) <;> rfl
+  have mu : u.mem = u₆.mem := by rw [a.mem, a₇.mem]
+  -- The frames, as regions of the stack, the working space and `pre`.
+  let R : List Region := [below (s.gpr .esp) 96, ⟨base, bytes⟩, ⟨byteAddr (args 0), L'⟩]
+  have ofR : ∀ {ws : List (Nat × Nat)} {m m' : Mem}, (∀ q ∈ ws, q.1 + q.2 ≤ bytes) →
+      Frame (frameR base (s.gpr .esp) ws) m m' → Frame R m m' := fun fit F => F.sub fun r hr => by
+    simp only [frameR, List.mem_cons, List.mem_map] at hr
+    rcases hr with rfl | ⟨q, hq, rfl⟩
+    · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+    · exact ⟨⟨base, bytes⟩, by simp [R], Offset.sub_base base (fit q hq)⟩
+  have ofB : ∀ {o n : Nat} {m m' : Mem}, o + n ≤ bytes → VG.Proof.Mont.Outside base o n m m' → Frame R m m' := by
+    intro o n m m' hon O
+    refine (outside_frame O (by omega)).sub fun r hr => ?_
+    rw [List.mem_singleton.mp hr]
+    exact ⟨⟨base, bytes⟩, by simp [R], Offset.sub_base base hon⟩
+  have ofP : ∀ {o n : Nat} {m m' : Mem}, o + n ≤ L' → VG.Proof.Mont.Outside (byteAddr (args 0)) o n m m' →
+      Frame R m m' := by
+    intro o n m m' hon O
+    refine (outside_frame O (by omega)).sub fun r hr => ?_
+    rw [List.mem_singleton.mp hr]
+    exact ⟨⟨byteAddr (args 0), L'⟩, by simp [R], Offset.sub_base _ hon⟩
+  rw [sp₁] at F₂
+  refine ⟨?_, ?_, ?_, eax, ?_⟩
+  · rw [mu]
+    refine (((((((ofB (by omega_arith) O₁).trans (ofR (valR_fit h₁) F₂)).trans
+      (ofB (by simp only [outOff, winOff]; omega_arith) O₃)).trans (ofR (primeR2_fit h₃) F₄)).trans
+      (ofP (by rw [eW]; omega) O₄)).trans (ofB (by simp only [lenOff]; omega_arith) O₅)).trans
+      (ofR (primeR2_fit h₅) F₆)).trans (ofP (by omega) O₆)
+  · rw [mu, VG.Proof.Mont.Outside.val32 O₆ (.inl (by omega)) (by omega),
+      val32_frameR_apart F₆ (primeR2_fit h₅) hap hs L64 (by omega),
+      PrecomputedRt.val32_apart (base := base) (P := byteAddr (args 0)) (L := L') O₅
+        (by simp only [lenOff]; omega_arith) hap (by omega)]
+    exact V₄
+  · rw [mu]; exact V₆
+  · exact ((((((((K₁.mono (by decide)).trans K₂).trans (K₃.mono (by decide))).trans K₄).trans
+      (K₅.mono (by decide))).trans K₆).trans (a₇.keeps.mono (by decide))).trans (a.keeps.mono (by decide)))
 
 
 end
