@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtRecX
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubLoad
+import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCopy
 
 /-!
 # The RSA private-key operation on PPC64LE: the powers
@@ -74,6 +76,69 @@ theorem masked_facts {s₀ : State} (hP : PF s₀) :
       Nat.lt_of_lt_of_le (os2ip_lt' _ (VG.Proof.Bignum.bytesAt_length _ _ _)) (pow256_le hqw),
       Nat.le_of_lt (os2ip_lt' _ (VG.Proof.Bignum.bytesAt_length _ _ _)), hi,
       Nat.lt_of_lt_of_le (os2ip_lt' _ (VG.Proof.Bignum.bytesAt_length _ _ _)) (pow256_le hpw)⟩
+
+/-- With `pc`, the cached `R² mod p` and `R² mod q` at the entry's `r12`:
+readable, apart from the working space, and the masked primes' if the
+checks pass. -/
+structure R2F (s₀ : State) : Prop where
+  hS : (s₀.gpr .r12).toNat + 8 * (cwP s₀ + cwQ s₀) ≤ 2 ^ 64
+  rd : ∀ i < cwP s₀ + cwQ s₀, InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .r12) (8 * i)) 8
+  sep : ∀ x, ofs (s₀.gpr .r12) x < 8 * (cwP s₀ + cwQ s₀) → cZ s₀ ≤ ofs (cS s₀) x
+  vp : cb s₀ = true → wv s₀.mem (s₀.gpr .r12) 0 (cwP s₀) = 2 ^ (128 * cwP s₀) % mP s₀
+  vq : cb s₀ = true → wv s₀.mem (s₀.gpr .r12) (8 * cwP s₀) (cwQ s₀) = 2 ^ (128 * cwQ s₀) % mQ s₀
+
+/-- Memory apart from the working space, as at entry. -/
+theorem wv_entry {s₀ s t : State} (hF : Front s₀ s) (ho : Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem)
+    (hZ : 256 ≤ cZ s₀) {S : Addr} {n d : Nat} (hS : S.toNat + (d + 8 * n) ≤ 2 ^ 64)
+    (hsep : ∀ x, ofs S x < d + 8 * n → cZ s₀ ≤ ofs (cS s₀) x) : wv t.mem S d n = wv s₀.mem S d n := by
+  have O : Outside (cS s₀) 0 (cZ s₀) s₀.mem t.mem :=
+    (hF.mem.mono (by omega_arith) (by omega_arith)).trans (ho.mono (by omega_arith) (by omega_arith))
+  exact wv_congr2 fun i hi => Pub.Outside.word_apart O hsep (by omega_arith) (by omega_arith) hS
+
+/-- `R2C` for `p`, from `R2F`. -/
+theorem R2F.p {s₀ s t : State} (F : R2F s₀) (hP : PF s₀) (hF : Front s₀ s)
+    (hhd : word s.mem (cS s₀) oR2 = s₀.gpr .r12) (ho : Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem)
+    (hrw : t.rd ++ t.wr = s₀.rd ++ s₀.wr) (h26 : t.gpr .r26 = bmask (cb s₀)) :
+    R2C false t (cS s₀) (s₀.gpr .r12) (cZ s₀) (cwP s₀) (mP s₀) (cpL s₀) (cb s₀) where
+  src := by
+    rw [ho.word (Or.inl (by unfold oR2; omega_arith)) (by unfold oR2; omega_arith), hhd]
+    simp only [Bool.false_eq_true, ↓reduceIte, BitVec.add_zero]
+  pl := nofun
+  pl1 := hP.p1
+  pl2 := by have := hP.pk; have := hP.k1024; omega_arith
+  hS := by have := F.hS; omega_arith
+  rd i hi := by rw [hrw]; exact F.rd i (by omega_arith)
+  sep x hx := F.sep x (by omega_arith)
+  r26 := h26
+  val hb := by
+    rw [wv_entry hF ho (by have := hP.room; unfold slot hdrBytes at this; omega_arith)
+      (by have := F.hS; omega_arith) fun x hx => F.sep x (by omega_arith)]
+    exact F.vp hb
+  three hb := by simp [mP, hb]
+
+/-- `R2C` for `q`, from `R2F`: after `p`'s words. -/
+theorem R2F.q {s₀ s t : State} (F : R2F s₀) (hP : PF s₀) (hF : Front s₀ s)
+    (hhd : word s.mem (cS s₀) oR2 = s₀.gpr .r12) (ho : Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem)
+    (hrw : t.rd ++ t.wr = s₀.rd ++ s₀.wr) (h26 : t.gpr .r26 = bmask (cb s₀)) :
+    R2C true t (cS s₀) (off (s₀.gpr .r12) (8 * cwP s₀)) (cZ s₀) (cwQ s₀) (mQ s₀) (cpL s₀) (cb s₀) where
+  src := by
+    rw [ho.word (Or.inl (by unfold oR2; omega_arith)) (by unfold oR2; omega_arith), hhd]
+    simp only [↓reduceIte]
+  pl _ := by rw [ho.word (Or.inl (by unfold oPLen; omega_arith)) (by unfold oPLen; omega_arith)]; exact hF.hPL
+  pl1 := hP.p1
+  pl2 := by have := hP.pk; have := hP.k1024; omega_arith
+  hS := by have := F.hS; have := toNat_off_le (s₀.gpr .r12) (8 * cwP s₀); omega_arith
+  rd i hi := by rw [hrw, off_off, ← Nat.mul_add]; exact F.rd (cwP s₀ + i) (by omega_arith)
+  sep x hx := F.sep x (by
+    rcases ofs_rebase (s₀.gpr .r12) x (o := 8 * cwP s₀) (by have := F.hS; omega_arith) with ⟨_, h2⟩ | ⟨h1, _⟩
+    · change ofs (off (s₀.gpr .r12) (8 * cwP s₀)) x < _ at hx; omega_arith
+    · omega_arith)
+  r26 := h26
+  val hb := by
+    rw [wv_off, Nat.add_zero, wv_entry hF ho (by have := hP.room; unfold slot hdrBytes at this; omega_arith)
+      (by have := F.hS; omega_arith) fun x hx => F.sep x (by omega_arith)]
+    exact F.vq hb
+  three hb := by simp [mQ, hb]
 
 theorem xval {m m' : Mem} {B : Addr} {a n d w : Nat} (h : Outside B a n m m') (hd : d + 8 * w ≤ a ∨ a + n ≤ d)
     (hd' : d + 8 * w ≤ 2 ^ 64) : Mont.val32 m' B d (2 * w) = Mont.val32 m B d (2 * w) := by
@@ -177,12 +242,13 @@ structure XP (s₀ s t : State) extends XL s₀ s t where
   p4 : Mont.val32 t.mem (off (cS s₀) (oPa s₀)) (slot (cwP s₀) 4) (2 * cwP s₀) = vC s₀ ^ vDP s₀ % mP s₀
 
 /-- `m₁`, after `X`'s checks. -/
-theorem mid1B_ok {s₀ s t₁ : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀) (hF : Front s₀ s)
+theorem mid1B_ok {pc : Bool} {s₀ s t₁ : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀)
+    (hF : Front s₀ s) (hR2 : pc = true → R2F s₀ ∧ word s.mem (cS s₀) oR2 = s₀.gpr .r12)
     (X : XL s₀ s t₁) {rs : List Reg} (k1 : Keep rs s t₁) (h23 : Reg.r23 ∉ rs) (h27 : Reg.r27 ∉ rs)
     (h28 : Reg.r28 ∉ rs)
     (hc : ∀ t, XP s₀ s t → Keep (rs ++ (([.r0, .r3, .r4, .r10, .r11, .r21, .r29] : List Reg) ++ powerRegs)) s t →
       WP isa c t Q) :
-    WP isa (.seq (.block (setupP oBP oPLen)) (.seq (power 4 oDP oPLen) c)) t₁ Q := by
+    WP isa (.seq (.block (setupP oBP oPLen)) (.seq (powerG pc false 4 oDP oPLen) c)) t₁ Q := by
   have hn := hP.nw
   have room := hP.room
   have pq := hP.pq
@@ -225,7 +291,8 @@ theorem mid1B_ok {s₀ s t₁ : State} {c : Prog isa} {Q : State → Prop} (hP :
     (by rw [hd1 _ (by decide)]; exact hF.hNL)
     (by rw [hd1 _ (by decide)]; exact hF.hDP) p1 (by omega_arith) (by omega_arith) (by omega_arith)
     (by rw [rd1]; exact hP.rDP) hP.sDP
-    X.v4 mPb (by omega_arith) mPo X.v6 (os2ip_lt' _ (VG.Proof.Bignum.bytesAt_length _ _ _)))
+    X.v4 mPb (by omega_arith) mPo X.v6 (os2ip_lt' _ (VG.Proof.Bignum.bytesAt_length _ _ _))
+    (fun hp => ⟨_, _, _, (hR2 hp).1.p hP hF (hR2 hp).2 X.out rd1 X.r26⟩))
     fun t₂ ⟨⟨p0, p4, O2, _, _, _, _⟩, k2⟩ => ?_))
   rw [hb1 hP.sDP] at p4
   exact hc t₂ ⟨⟨⟨(k2.gpr _ (by decide)).trans X.r26,
@@ -237,7 +304,8 @@ theorem mid1B_ok {s₀ s t₁ : State} {c : Prog isa} {Q : State → Prop} (hP :
     X.out.trans (O2.mono (by omega_arith) (by omega_arith))⟩,
     by rw [O2.wv (Or.inl (by omega_arith)) (by omega_arith)]; exact X.v6⟩, p0, p4⟩ (k1.trans k2)
 
-theorem mid1_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀) (hF : Front s₀ s)
+theorem mid1_ok {pc : Bool} {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀) (hF : Front s₀ s)
+    (hR2 : pc = true → R2F s₀ ∧ word s.mem (cS s₀) oR2 = s₀.gpr .r12)
     (hc : ∀ t, t.gpr .r26 = bmask (cb s₀) →
       Mont.val32 t.mem (cS s₀) (slot (cwX s₀) 0) (2 * cwX s₀) = 2 ^ (64 * cwX s₀) - 1 →
       word t.mem (cS s₀) (slot (cwX s₀) 0) = BitVec.allOnes 64 →
@@ -250,8 +318,8 @@ theorem mid1_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s�
       t.gpr .r29 = BitVec.ofNat 64 (8 * (cwQ s₀ + 2)) →
       Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem →
       Keep mid1Regs s t → WP isa c t Q) :
-    WP isa (.seq loadX (.seq checks (.seq loadIn (.seq (.block (setupP oBP oPLen)) (.seq (power 4 oDP oPLen)
-      (.seq (.block (setupP oBQ oQLen)) (.seq (power 5 oDQ oQLen) c))))))) s Q := by
+    WP isa (.seq loadX (.seq checks (.seq loadIn (.seq (.block (setupP oBP oPLen)) (.seq (powerG pc false 4 oDP oPLen)
+      (.seq (.block (setupP oBQ oQLen)) (.seq (powerG pc true 5 oDQ oQLen) c))))))) s Q := by
   have hn := hP.nw
   have room := hP.room
   have pq := hP.pq
@@ -281,7 +349,7 @@ theorem mid1_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s�
   obtain ⟨mP1, mPo, mQ1, mQo, mPb, mQb, _, mQIP, mQIb⟩ := masked_facts hP
   refine mid1A_ok hP hF fun t₀ X₀ a10 k0' => ?_
   refine mid1L_ok hP hF X₀ a10 k0' (by decide) (by decide) (by decide) (by decide) fun t₁ X _ k1 => ?_
-  refine mid1B_ok hP hF X k1 (by decide) (by decide) (by decide) fun t₂ Y k12 => ?_
+  refine mid1B_ok hP hF hR2 X k1 (by decide) (by decide) (by decide) fun t₂ Y k12 => ?_
   have hd2 : ∀ d, d + 8 ≤ 256 → word t₂.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
     Y.out.word (Or.inl hd) (by omega_arith)
   have hb2 : ∀ {A : Addr} {L : Nat}, (∀ i < L, ∀ x, ofs (cS s₀) x < cZ s₀ → off A i ≠ x) →
@@ -297,7 +365,8 @@ theorem mid1_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s�
     (by rw [hd2 _ (by decide)]; exact hF.hNL)
     (by rw [hd2 _ (by decide)]; exact hF.hDQ) q1 (by omega_arith) (by omega_arith) (by omega_arith)
     (by rw [k12.rd, k12.wr, rd0]; exact hP.rDQ) hP.sDQ
-    Y.v5 mQb (by omega_arith) mQo Y.v6 (os2ip_lt' _ (VG.Proof.Bignum.bytesAt_length _ _ _)))
+    Y.v5 mQb (by omega_arith) mQo Y.v6 (os2ip_lt' _ (VG.Proof.Bignum.bytesAt_length _ _ _))
+    (fun hp => ⟨_, _, _, (hR2 hp).1.q hP hF (hR2 hp).2 Y.out (by rw [k12.rd, k12.wr, rd0]) Y.r26⟩))
     fun t₃ ⟨⟨_, q4, O3, c10, _, c29, _⟩, k3⟩ => ?_))
   rw [hb2 hP.sDQ] at q4
   have k13 := k12.trans k3

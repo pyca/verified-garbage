@@ -86,7 +86,7 @@ theorem saved_ne11 : ∀ i < 18, Crt.saved i ≠ .r11 := by decide
 
 /-- The front of `crtG pc`, and with `pc` the cached values' address in the
 header. -/
-theorem front_okG (pc : Bool) (s₀ : State) (h : fnContract.pre s₀) :
+theorem front_okG (pc : Bool) {X : List Region} (s₀ : State) (h : preCore (baseRd s₀ ++ X) s₀) :
     WP isa (.block (Crt.save ++ argsG pc ++ setupX)) s₀ fun s =>
       Front s₀ s ∧ (pc = true → word s.mem (cS s₀) oR2 = s₀.gpr .r12) := by
   obtain ⟨hsp, hrd, hwr, dON, dOI, dOP, dOQ, dODP, dODQ, dOQI, dOS, dOA, dNS, dIS, dPS, dQS, dDPS, dDQS, dQIS,
@@ -98,7 +98,7 @@ theorem front_okG (pc : Bool) (s₀ : State) (h : fnContract.pre s₀) :
   have hn := hscr.nowrap
   have hZ : 128 * ck s₀ + 256 ≤ cZ s₀ := by
     show 128 * (s₀.gpr .r6).toNat + 256 ≤ (stackArg s₀ 9).toNat * 8; omega_arith
-  have hargs : (⟨stackArgAddr s₀ 0, 80⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
+  have hargs : (⟨stackArgAddr s₀ 0, 80⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp [baseRd]
   have sa : ∀ i, stackArgAddr s₀ i = stackArgAddr s₀ 0 + BitVec.ofNat 64 (8 * i) := fun i => by
     simp only [stackArgAddr]; rw [BitVec.add_assoc]; congr 1
     apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
@@ -175,6 +175,6 @@ theorem front_okG (pc : Bool) (s₀ : State) (h : fnContract.pre s₀) :
 
 theorem front_ok (s₀ : State) (h : fnContract.pre s₀) :
     WP isa (.block (Crt.save ++ Crt.args ++ setupX)) s₀ (Front s₀) :=
-  WP.mono (front_okG false s₀ h) fun _ h => h.1
+  WP.mono (front_okG false s₀ (preCore_nil h)) fun _ h => h.1
 
 end VG.Proof.Bignum.PPC64LE.Crt
