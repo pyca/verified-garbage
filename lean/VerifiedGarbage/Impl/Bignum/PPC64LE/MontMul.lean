@@ -101,8 +101,8 @@ else they need is derived from those (`8 w` is the distance `r16 - r10`
 moves over a round, the accumulator's base `r10 + 16 (w + 2)`) or is
 secret, as `m'`, kept in the accumulator's word `w + 1` (`mPrime`). The
 callers' registers `r21` and `r23`–`r31` are never written by `rounds`, and
-the kernel's `rounds8` writes only `r27` and `r28`–`r31`, which the kernel
-restores from vector registers: so a caller's public register stays
+the kernel's rounds (`roundsK`) write only `r2` and `r23`–`r31`, which the
+kernel restores from vector registers: so a caller's public register stays
 public.
 
 Registers in the rounds: `r6` `a` (advancing), `r14` the accumulator, at
@@ -206,8 +206,8 @@ def rounds : Prog isa :=
 
 /-! ### The kernel's rounds: blocks of eight words
 
-The kernel (`kernel`) saves `r27` and `r28`–`r31` in vector registers, so
-its rounds can use them: words `1` to `w - 1` in one block of `(w - 1) mod 4`
+For `w` not a multiple of 4 (`roundsK`), the kernel (`kernel`), which saves
+`r27` and `r28`–`r31` in vector registers, runs the rounds with them: words `1` to `w - 1` in one block of `(w - 1) mod 4`
 (`remBlock`, counted by `r9`, which every block uses as a temporary), one
 block of four if `w - 1` has bit 2 (`quadBlock`, the bit in `r27`, which no
 block writes), then blocks of eight (`octLoop`, in `sreg 0` to `sreg 7`). -/
@@ -234,6 +234,128 @@ def round8 : Prog isa :=
 /-- The `w` rounds, by blocks of up to eight words. -/
 def rounds8 : Prog isa :=
   .seq (.block roundsInit) (.seq (.loop round8 (.nonzero .d .r9)) (.block roundsFini))
+
+/-! ### The kernel's rounds: four rows at a time
+
+For `w` a multiple of 4, the kernel (`kernel`) runs the rounds four words
+of `a` at a time, as `w / 4` groups: a group replaces `T` with `(T + A b + U
+m) / 2²⁵⁶`, for `A` the group's four words of `a` and `U` four words chosen
+so that `T + A b + U m` is a multiple of `2²⁵⁶`. A group goes over `T`, `b`
+and `m` in chunks of four words, and over its four words of `a` (its rows) in
+each chunk, so that each word of `T`, `b` and `m` is loaded once a group,
+not once a word of `a`: the chunk's four words of `b` and `m` in registers,
+the window of `T` it adds to in five accumulators, `r27`–`r31` (`accR`).
+
+A row adds `aᵢ b + uᵢ m`, for the chunk's words of `b` and `m`, to the
+window, and moves it down a word (`mulB`, `loM`, `shiftM`). In the first
+chunk (`chunk0`), the row computes `uᵢ` from the window's low word and `m'`,
+which zeroes that word, and stores `uᵢ` in the word of `T` the chunk has
+loaded, for the next chunks; in the others (`chunkT`), the low word is a
+word of the new `T`, stored a chunk down, and the row moves `uᵢ` a chunk up,
+to the word the chunk has loaded. The group's top (`groupEnd`) adds `T`'s
+top word, `t_w`, to the window, and stores it as the new `T`'s four top
+words, and its carry as `t_w`. The kernel's callers' registers that the
+rounds write, `r2` and `r23`–`r31`, are kept in vector registers
+(`kernelSave`, `kernelRestore`).
+
+Registers: `r0` zero, `r6` `a` (advancing a group at a time), `r7` and `r12`
+the chunk's words of `b` and `m`, `r9` `T`, a chunk down, `r3` the chunks
+left and `r4` the groups left; `r14`–`r17` the words of `b` (`bR`) and `r18`,
+`r19`, `r20`, `r2` those of `m` (`mR`), `r23` `m'`, `r24` `aᵢ`, `r25` `uᵢ`,
+`r26` the carry out of the window (with CA, the window's weight-`2²⁵⁶` part),
+`r22` a temporary. -/
+
+/-- The window, from its low word. -/
+def accR (j : Nat) : Reg := [.r27, .r28, .r29, .r30, .r31].getD j .r31
+
+/-- The chunk's words of `b`. -/
+def bR (j : Nat) : Reg := [.r14, .r15, .r16, .r17].getD j .r17
+
+/-- The chunk's words of `m`. -/
+def mR (j : Nat) : Reg := [.r18, .r19, .r20, .r2].getD j .r2
+
+/-- `dst := src + (lo or hi) (p x)` over four words, as a carry chain (the
+first word with `addc`), the products in `r22`. -/
+def prodChain (hi : Bool) (x : Reg) (p dst src : Nat → Reg) : List Instr :=
+  (List.range 4).flatMap fun j =>
+    [(if hi then Instr.mulhu else Instr.mul) .r22 (p j) x, (if j = 0 then Instr.addc else Instr.adde) (dst j) (src j) .r22]
+
+/-- The window's low four words += `aᵢ b` (`aᵢ` in `r24`), into five words. -/
+def mulB : List Instr :=
+  prodChain false .r24 bR accR accR ++ ([.addze (accR 4) .r0] : List Instr) ++
+    prodChain true .r24 bR (fun j => accR (j + 1)) (fun j => accR (j + 1))
+
+/-- The window += the low words of `uᵢ m` (`uᵢ` in `r25`), with `r26` added at
+word 4 and its carry into `r26`. -/
+def loM : List Instr :=
+  prodChain false .r25 mR accR accR ++ ([.adde (accR 4) (accR 4) .r26, .addze .r26 .r0] : List Instr)
+
+/-- The window moved down a word, the high words of `uᵢ m` added: the carry
+out in CA. -/
+def shiftM : List Instr := prodChain true .r25 mR accR (fun j => accR (j + 1))
+
+/-- Row `r` of the first chunk: `uᵢ` from the window's low word and `m'`,
+stored at word `r` of `T` (`r9`). -/
+def row0 (r : Nat) : List Instr :=
+  ([.addze .r26 .r26, .load .d .r24 .r6 (8 * r)] : List Instr) ++ mulB ++
+    ([.mul .r25 .r27 .r23, .store .d .r25 .r9 (8 * r)] : List Instr) ++ loM ++ shiftM
+
+/-- Row `r` of a later chunk: `uᵢ` moved from word `r` of the chunk below
+(`r9`) to word `r` of this chunk, and the window's low word stored there. -/
+def rowT (r : Nat) : List Instr :=
+  ([.addze .r26 .r26, .load .d .r24 .r6 (8 * r), .load .d .r25 .r9 (8 * r), .store .d .r25 .r9 (8 * r + 32)] :
+    List Instr) ++ mulB ++ loM ++ ([.store .d .r27 .r9 (8 * r)] : List Instr) ++ shiftM
+
+/-- The chunk's words of `b` and `m` loaded, and their pointers advanced. -/
+def loadBM : List Instr :=
+  (List.range 4).map (fun j => .load .d (bR j) .r7 (8 * j)) ++ (List.range 4).map (fun j => .load .d (mR j) .r12 (8 * j)) ++
+    ([.addi .r7 .r7 32, .addi .r12 .r12 32] : List Instr)
+
+/-- The first chunk of a group: `r9` and `r12` at the bases of `T` and `m`,
+`m'` from the accumulator's word `w + 1`, the chunks left, `w / 4 - 1`, into
+`r3`, the window `T`'s low four words, and its four rows. -/
+def chunk0 : List Instr :=
+  ([.addi .r9 .r8 0, .addi .r12 .r10 0, .lsl .r22 .r11 2, .add .r22 .r22 .r8, .load .d .r23 .r22 8,
+      .lsr .d .r3 .r11 3, .subi .r3 .r3 1] : List Instr) ++
+    loadBM ++ (List.range 4).map (fun j => .load .d (accR j) .r9 (8 * j)) ++
+    ([.li .r26 0, .addc .r27 .r27 .r0] : List Instr) ++ (List.range 4).flatMap row0
+
+/-- The chunk's four words of `T` added to the window. -/
+def addT : List Instr :=
+  .addze .r26 .r26 :: (List.range 4).flatMap fun j =>
+    [.load .d .r22 .r9 (8 * j + 32), (if j = 0 then Instr.addc else Instr.adde) (accR j) (accR j) .r22]
+
+/-- A later chunk: its words of `T` added to the window, its four rows, and
+`r9` a chunk up. -/
+def chunkT : List Instr :=
+  addT ++ loadBM ++ (List.range 4).flatMap rowT ++ ([.addi .r9 .r9 32] : List Instr)
+
+/-- The chunks after the first, counted by `r3`. -/
+def chunkLoop : Prog isa :=
+  .ite (.zero .d .r3) (.block []) (countLoop .r3 chunkT)
+
+/-- The group's top: `t_w` added to the window, its four words stored at
+words `w - 4` to `w - 1` of `T` and its carry at word `w`; `b`'s pointer
+back to its base, `a`'s a group on, and one group less in `r4`. -/
+def groupEnd : List Instr :=
+  [.addze .r26 .r26, .load .d .r22 .r9 32, .addc .r27 .r27 .r22, .addze .r28 .r28, .addze .r29 .r29,
+    .addze .r30 .r30, .addze .r26 .r26, .store .d .r27 .r9 0, .store .d .r28 .r9 8, .store .d .r29 .r9 16,
+    .store .d .r30 .r9 24, .store .d .r26 .r9 32, .lsl .r22 .r11 2, .sub .r7 .r7 .r22, .addi .r6 .r6 32,
+    .subi .r4 .r4 1]
+
+/-- One group. -/
+def group : Prog isa := .seq (.block chunk0) (.seq chunkLoop (.block groupEnd))
+
+/-- The `w / 4` groups, from `r0 := 0` and the count in `r4`; then the
+temporary's base back in `r9`, and `m'` in `r22`. -/
+def rounds4 : Prog isa :=
+  .seq (.block [.li .r0 0, .lsr .d .r4 .r11 3]) (.seq (.loop group (.nonzero .d .r4))
+    (.block [.lsl .r22 .r11 2, .add .r9 .r8 .r22, .load .d .r22 .r9 8, .addi .r9 .r9 16]))
+
+/-- The kernel's rounds: `rounds4` if `w` is a multiple of 4 (`w mod 4`, from
+`n = 2 w`, in `r3`), else `rounds8`. -/
+def roundsK : Prog isa :=
+  .seq (.block [.lsl .r3 .r11 61, .lsr .d .r3 .r3 62]) (.ite (.zero .d .r3) rounds4 rounds8)
 
 /-! ## The final subtraction -/
 
@@ -283,9 +405,9 @@ def selectAcc64 : Prog isa :=
 /-- The arithmetic, after the bases are loaded. -/
 def tail : Prog isa := .seq zeroAcc (.seq rounds (.seq subMod64M selectAcc64))
 
-/-- `tail` with the rounds by blocks of up to eight words (`rounds8`), which
-write `r27` and `r28`–`r31`: the kernel's. -/
-def tail8 : Prog isa := .seq zeroAcc (.seq rounds8 (.seq subMod64M selectAcc64))
+/-- `tail` with the kernel's rounds (`roundsK`), which write `r2` and
+`r23`–`r31`: the kernel's. -/
+def tail8 : Prog isa := .seq zeroAcc (.seq roundsK (.seq subMod64M selectAcc64))
 
 /-! ## The shared kernel
 
@@ -307,7 +429,9 @@ def kernelExit : List Instr := [.lsl .r3 .r11 2, .add .r3 .r9 .r3, .load .d .r14
 
 /-- The callers' registers that `tail8` writes, and the vector registers
 the kernel keeps them in. -/
-def kernelSaved : List (VReg × Reg) := [(.v0, .r27), (.v1, .r28), (.v2, .r29), (.v3, .r30), (.v4, .r31)]
+def kernelSaved : List (VReg × Reg) :=
+  [(.v0, .r27), (.v1, .r28), (.v2, .r29), (.v3, .r30), (.v4, .r31), (.v5, .r2), (.v6, .r23), (.v7, .r24),
+    (.v8, .r25), (.v9, .r26)]
 
 /-- `kernelSaved`'s registers into their vector registers (`mtvsrd`). -/
 def kernelSave : List Instr := kernelSaved.map fun (v, r) => .mtvsrd v r
