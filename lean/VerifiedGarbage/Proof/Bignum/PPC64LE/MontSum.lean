@@ -54,7 +54,7 @@ restores, and the call none. -/
 def kernelKeep : T := ofRegs [.r2, .r5, .r10, .r21, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30, .r31]
 
 /-- The callers' registers that no instruction of the kernel writes. -/
-def kernelKeepW : T := ofRegs [.r2, .r5, .r10, .r21, .r23, .r24, .r25, .r26]
+def kernelKeepW : T := ofRegs [.r5, .r10, .r21]
 
 /-- The call of the kernel, its code and its summary. -/
 def kernelCall : Prog isa := .call kernelName kernel
@@ -125,13 +125,9 @@ theorem kernel_run {s s' : State} {t : List Leak} (e : Exec isa kernelCall s t s
             have hS := block_post (kernelSave_ok _) h₁
             have hR := block_post (kernelRestore_ok _) h₃
             have tS := execBlock_noLeaks (fun i hi s => by
-              simp only [kernelSave, kernelSaved, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
-                or_false] at hi
-              rcases hi with rfl | rfl | rfl | rfl | rfl <;> rfl) h₁
+              obtain ⟨p, -, rfl⟩ := List.mem_map.mp hi; rfl) h₁
             have tR := execBlock_noLeaks (fun i hi s => by
-              simp only [kernelRestore, kernelSaved, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
-                or_false] at hi
-              rcases hi with rfl | rfl | rfl | rfl | rfl <;> rfl) h₃
+              obtain ⟨p, -, rfl⟩ := List.mem_map.mp hi; rfl) h₃
             subst tS tR
             exact ⟨_, _, _, _, _, hc, fun r => hS.1.gpr r (by simp), hS.1.sp, hS.2.2, eB, fun r hr => hR.1.gpr r hr,
               hR.1.sp, hR.2.2, hr, by simp⟩
@@ -146,8 +142,8 @@ theorem kernel_keeps {s s' : State} {t : List Leak} (e : Exec isa kernelCall s t
   · exact Exec.gpr (fun i hi => kernel_keep i hi r hw) e (.inr hl)
   obtain ⟨c, x, tb, y, d, hc, -, -, xv, eB, -, -, dv, hrt, -⟩ := kernel_run e
   have yv : y.vpr = x.vpr := Exec.vpr
-    (by unfold kernelBody kernelEntry kernelExit tail8 zeroAcc rounds8 subMod64M selectAcc64; decide +kernel)
-    (by unfold kernelBody kernelEntry kernelExit tail8 zeroAcc rounds8 subMod64M selectAcc64; decide +kernel) eB
+    (by unfold kernelBody kernelEntry kernelExit tail8 zeroAcc roundsK subMod64M selectAcc64; decide +kernel)
+    (by unfold kernelBody kernelEntry kernelExit tail8 zeroAcc roundsK subMod64M selectAcc64; decide +kernel) eB
   have hp : ∃ v, (v, r) ∈ kernelSaved := by
     simp only [kernelKeep, kernelKeepW, mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr hw
     simp only [kernelSaved, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq]

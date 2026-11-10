@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRounds
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRows
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish64
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
@@ -56,16 +57,21 @@ theorem minv_restore (m y : BitVec 64) (hy : y.toNat < 2 ^ 32) (h : (m.toNat % 2
 def tailRegs : List Reg :=
   [.r0, .r3, .r4, .r6, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22]
 
-/-- The registers `tail8` writes. -/
+/-- The registers `tail` writes, with its rounds' blocks of eight words. -/
 def tailRegs8 : List Reg := tailRegs ++ [.r27, .r28, .r29, .r30, .r31]
 
+/-- The registers the kernel's `tail8` writes. -/
+def tailRegsK : List Reg := tailRegs8 ++ [.r2, .r23, .r24, .r25, .r26]
+
 /-- Everything the multiplication does after loading the bases, with any rounds
-`R` that do what the rounds do (`RoundsSpec`): `[o] < m` and
+`R` that do what the rounds do (`RoundsSpecW`), writing at most `rr`: `[o] < m` and
 `[o] 2^(64 w) ≡ [a] [b] (mod m)`, with only arrays 2, 3 and `o` changed. The
 code sets the rounds' count itself, and computes `-m⁻¹ mod 2⁶⁴` from any
 `r12` that `hinv` holds of: the hypotheses on `r4` and on the size of `r12`
 (`_i4`, `_i12`) are those its callers prove. -/
-theorem tailWith_ok {R : Prog isa} (hR : RoundsSpec R) {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
+theorem tailWith_ok {R : Prog isa} {rr out : List Reg} (hR : RoundsSpecW rr R)
+    (hk : ∀ r ∈ [Reg.r5, .r8, .r9, .r10, .r11], r ∉ rr) (hrr : ∀ r ∈ rr, r ∈ .r12 :: out)
+    (hout : ∀ r ∈ tailRegs8, r ∈ out) {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     {n o a b : Nat} (hn : 4 ≤ n) (ho : o < n) (ha : a < n) (hb : b < n) (ho2 : o ≠ 2) (ho3 : o ≠ 3) (ha2 : a ≠ 2)
     (hb2 : b ≠ 2) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w n ≤ Z)
     (i5 : s.gpr .r5 = off B (slot w o)) (i6 : s.gpr .r6 = off B (slot w a))
@@ -81,7 +87,7 @@ theorem tailWith_ok {R : Prog isa} (hR : RoundsSpec R) {s : State} {B : Addr} {Z
           val32 s.mem B (slot w a) (2 * w) * val32 s.mem B (slot w b) (2 * w) %
             val32 s.mem B (slot w 0) (2 * w) ∧
         Outs B [(slot w 2, 8 * (w + 2)), (slot w 3, 8 * w), (slot w o, 8 * (w + 2))] s.mem t.mem) ∧
-      Keep tailRegs8 s t := by
+      Keep out s t := by
   have hnw := hs.nowrap
   have sl : ∀ j < n, slot w j + 8 * (w + 2) ≤ Z := fun j hj => by
     have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ n by omega_using [hj])
@@ -142,7 +148,8 @@ theorem tailWith_ok {R : Prog isa} (hR : RoundsSpec R) {s : State} {B : Addr} {Z
   rw [wordsVal_succ_top] at tlt teq
   have hs₃ := hs₂'.congr k₃.wr
   have g₃ : ∀ r ∈ [Reg.r5, .r8, .r9, .r10, .r11], s₃.gpr r = s.gpr r := fun r hr => by
-    rw [k₃.gpr r (by revert r hr; decide), g₂' r (by revert r hr; decide)]
+    rw [k₃.gpr r (fun h => (List.mem_append.mp h).elim (hk r hr) fun h' => by
+      rw [List.mem_singleton] at h'; subst h'; revert hr; decide), g₂' r (by revert r hr; decide)]
   have v₃ : ∀ {j}, j < n → j ≠ 2 → wordsVal s₃.mem B (slot w j) w = wordsVal s.mem B (slot w j) w :=
     fun hj hne => (out₃.wordsVal (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)).trans
       (v₂ hj hne)
@@ -185,7 +192,15 @@ theorem tailWith_ok {R : Prog isa} (hR : RoundsSpec R) {s : State} {B : Addr} {Z
       (out₃.mono (Nat.le_refl _) (by omega_arith)) (by simp)) ?_
     refine Outs.trans (Outs.of_outside (o := slot w 3) (n := 8 * w) out₄ (by simp)) ?_
     exact Outs.of_outside (o := slot w o) (n := 8 * (w + 2)) (out₅.mono (Nat.le_refl _) (by omega_arith)) (by simp)
-  · have K : Keep (.r12 :: tailRegs8) s t := (((k₂'.trans k₃).trans k₄).trans k₅).mono (by decide)
+  · have K₁ : Keep (.r12 :: tailRegs8) s s₂' := k₂'.mono (by decide)
+    have K₂ : Keep (.r12 :: tailRegs8) s₃' t := ((k₃''.trans k₄).trans k₅).mono (by decide)
+    have m8 : ∀ {r}, r ∈ Reg.r12 :: tailRegs8 → r ∈ Reg.r12 :: out := fun h =>
+      (List.mem_cons.mp h).elim (fun e => e ▸ List.mem_cons_self ..) fun h => List.mem_cons_of_mem _ (hout _ h)
+    have K : Keep (.r12 :: out) s t := ((K₁.trans k₃').trans K₂).mono fun r hr => by
+      rcases List.mem_append.mp hr with h | h
+      · rcases List.mem_append.mp h with h | h
+        exacts [m8 h, hrr r h]
+      · exact m8 h
     have t12 : t.gpr .r12 = s.gpr .r12 := by
       rw [k₅.gpr .r12 (by decide), k₄.gpr .r12 (by decide), r12₃]
     refine ⟨fun r hr => ?_, K.rd, K.wr, K.sp, K.lr⟩
@@ -216,7 +231,7 @@ theorem tailW_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
             val32 s.mem B (slot w 0) (2 * w) ∧
         Outs B [(slot w 2, 8 * (w + 2)), (slot w 3, 8 * w), (slot w o, 8 * (w + 2))] s.mem t.mem) ∧
       Keep tailRegs s t := by
-  have h := tailWith_ok rounds_spec hs hn ho ha hb ho2 ho3 ha2 hb2 hw2 hw' hZ i5 i6 i7 i8 i9 i10 i11 _i4 _i12 hinv hB
+  have h := tailWith_ok rounds_spec (by decide) (by decide) (fun _ h => h) hs hn ho ha hb ho2 ho3 ha2 hb2 hw2 hw' hZ i5 i6 i7 i8 i9 i10 i11 _i4 _i12 hinv hB
   have h₁ := WP.gpr h (r := .r27) (by unfold zeroAcc rounds subMod64M selectAcc64; decide +kernel)
   have h₂ := WP.gpr h₁ (r := .r28) (by unfold zeroAcc rounds subMod64M selectAcc64; decide +kernel)
   have h₃ := WP.gpr h₂ (r := .r29) (by unfold zeroAcc rounds subMod64M selectAcc64; decide +kernel)
@@ -230,7 +245,7 @@ theorem tailW_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     · rcases hr' with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
   · exact k.gpr r hr'
 
-/-- `tailW_ok`, of the kernel's `tail8`, which also writes `r27` and `r28`–`r31`. -/
+/-- `tailW_ok`, of the kernel's `tail8`, which also writes `r2` and `r23`–`r31`. -/
 theorem tail8W_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     {n o a b : Nat} (hn : 4 ≤ n) (ho : o < n) (ha : a < n) (hb : b < n) (ho2 : o ≠ 2) (ho3 : o ≠ 3) (ha2 : a ≠ 2)
     (hb2 : b ≠ 2) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w n ≤ Z)
@@ -247,9 +262,9 @@ theorem tail8W_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
           val32 s.mem B (slot w a) (2 * w) * val32 s.mem B (slot w b) (2 * w) %
             val32 s.mem B (slot w 0) (2 * w) ∧
         Outs B [(slot w 2, 8 * (w + 2)), (slot w 3, 8 * w), (slot w o, 8 * (w + 2))] s.mem t.mem) ∧
-      Keep tailRegs8 s t := by
+      Keep tailRegsK s t := by
   unfold tail8
-  exact tailWith_ok rounds8_spec hs hn ho ha hb ho2 ho3 ha2 hb2 hw2 hw' hZ i5 i6 i7 i8 i9 i10 i11 _i4 _i12 hinv hB
+  exact tailWith_ok roundsK_spec (by decide) (by decide) (fun r h => by simp [tailRegsK, h]) hs hn ho ha hb ho2 ho3 ha2 hb2 hw2 hw' hZ i5 i6 i7 i8 i9 i10 i11 _i4 _i12 hinv hB
 
 /-- `tailW_ok` with all of the temporary changed. -/
 theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
@@ -283,7 +298,7 @@ theorem shl2_ofNat (w : Nat) : BitVec.ofNat 64 (2 * w) <<< 2 = BitVec.ofNat 64 (
   omega_arith
 
 /-- The registers the kernel's body writes. -/
-def kernelRegs8 : List Reg := .r11 :: .r12 :: tailRegs8
+def kernelRegs8 : List Reg := .r11 :: .r12 :: tailRegsK
 
 /-! ## The vector registers the kernel keeps callers' registers in -/
 
@@ -385,47 +400,49 @@ theorem wp_mtvsrd {is : List Instr} {s : State} {Q : State → Prop} (d : VReg) 
     (by simp only [State.writeV, ite_true]; exact vdword_append _ _)
     fun d' hd => by simp only [State.writeV, ite_eq_right_iff]; exact fun e => absurd e hd⟩
 
+/-- Registers into the high halves of vector registers, one `mtvsrd` each:
+no register written, and each one in its vector register. -/
+theorem saves_ok : ∀ (L : List (VReg × Reg)), (L.map (·.1)).Nodup → ∀ s : State,
+    WP isa (.block (L.map fun (v, r) => .mtvsrd v r)) s fun u => Keep [] s u ∧ u.mem = s.mem ∧
+      (∀ p ∈ L, vdword (u.vpr p.1) 0 = s.gpr p.2) ∧ ∀ v, v ∉ L.map (·.1) → u.vpr v = s.vpr v
+  | [], _, s => WP.block_nil ⟨Keep.refl _ _, rfl, fun _ h => absurd h List.not_mem_nil, fun _ _ => rfl⟩
+  | (v, r) :: L, hL, s => by
+    rw [List.map_cons, List.map_cons, List.nodup_cons] at *
+    refine wp_mtvsrd v r fun u₁ k₁ m₁ e₁ f₁ => WP.mono (saves_ok L hL.2 u₁) fun u ⟨k, m, e, f⟩ =>
+      ⟨k₁.trans k |>.mono (by simp), by rw [m, m₁], fun p hp => ?_, fun v' hv' => ?_⟩
+    · rcases List.mem_cons.mp hp with rfl | hp
+      · rw [f _ hL.1, e₁]
+      · rw [e p hp, k₁.gpr _ (by simp)]
+    · rw [List.mem_cons, not_or] at hv'
+      rw [f _ hv'.2, f₁ _ hv'.1]
+
+/-- Registers from the high halves of vector registers, one `mfvsrd` each: only
+they written, each from its vector register. -/
+theorem restores_ok : ∀ (L : List (VReg × Reg)), (L.map (·.2)).Nodup → ∀ s : State,
+    WP isa (.block (L.map fun (v, r) => .mfvsrd r v)) s fun t => Keep (L.map (·.2)) s t ∧ t.mem = s.mem ∧
+      (∀ p ∈ L, t.gpr p.2 = vdword (s.vpr p.1) 0) ∧ t.vpr = s.vpr
+  | [], _, s => WP.block_nil ⟨Keep.refl _ _, rfl, fun _ h => absurd h List.not_mem_nil, rfl⟩
+  | (v, r) :: L, hL, s => by
+    rw [List.map_cons, List.map_cons, List.nodup_cons] at *
+    refine WP.block_cons_iff.mpr ⟨_, mfvsrd_eq _ _ _, WP.mono (restores_ok L hL.2 _) fun t ⟨k, m, e, f⟩ =>
+      ⟨((Mont4.W1.write s r _).keep.trans k).mono (by simp), m, fun p hp => ?_, f⟩⟩
+    rcases List.mem_cons.mp hp with rfl | hp
+    · rw [k.gpr _ hL.1, gpr_write, ite_eq_left rfl]
+    · rw [e p hp]; rfl
+
 /-- `kernelSave`: no register written, and each saved register in the high
 half of its vector register. -/
 theorem kernelSave_ok (s : State) :
     WP isa (.block kernelSave) s fun u => Keep [] s u ∧ u.mem = s.mem ∧
-      ∀ p ∈ kernelSaved, vdword (u.vpr p.1) 0 = s.gpr p.2 := by
-  unfold kernelSave kernelSaved
-  simp only [List.map_cons, List.map_nil]
-  refine wp_mtvsrd .v0 .r27 fun u₁ k₁ m₁ e₁ f₁ => ?_
-  refine wp_mtvsrd .v1 .r28 fun u₂ k₂ m₂ e₂ f₂ => ?_
-  refine wp_mtvsrd .v2 .r29 fun u₃ k₃ m₃ e₃ f₃ => ?_
-  refine wp_mtvsrd .v3 .r30 fun u₄ k₄ m₄ e₄ f₄ => ?_
-  refine wp_mtvsrd .v4 .r31 fun u₅ k₅ m₅ e₅ f₅ => WP.block_nil ?_
-  have g : ∀ r, u₄.gpr r = s.gpr r := fun r => by
-    rw [k₄.gpr r (by simp), k₃.gpr r (by simp), k₂.gpr r (by simp), k₁.gpr r (by simp)]
-  refine ⟨(((k₁.trans k₂).trans k₃).trans k₄).trans k₅ |>.mono (by simp), by rw [m₅, m₄, m₃, m₂, m₁], ?_⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-  refine ⟨?_, ?_, ?_, ?_, ?_⟩
-  · rw [f₅ _ (by decide), f₄ _ (by decide), f₃ _ (by decide), f₂ _ (by decide), e₁]
-  · rw [f₅ _ (by decide), f₄ _ (by decide), f₃ _ (by decide), e₂, k₁.gpr _ (by simp)]
-  · rw [f₅ _ (by decide), f₄ _ (by decide), e₃, k₂.gpr _ (by simp), k₁.gpr _ (by simp)]
-  · rw [f₅ _ (by decide), e₄, k₃.gpr _ (by simp), k₂.gpr _ (by simp), k₁.gpr _ (by simp)]
-  · rw [e₅, g]
+      ∀ p ∈ kernelSaved, vdword (u.vpr p.1) 0 = s.gpr p.2 :=
+  WP.mono (saves_ok kernelSaved (by decide) s) fun _ h => ⟨h.1, h.2.1, h.2.2.1⟩
 
 /-- `kernelRestore`: each saved register from the high half of its vector
 register, and no other register written. -/
 theorem kernelRestore_ok (s : State) :
     WP isa (.block kernelRestore) s fun t => Keep (kernelSaved.map (·.2)) s t ∧ t.mem = s.mem ∧
-      ∀ p ∈ kernelSaved, t.gpr p.2 = vdword (s.vpr p.1) 0 := by
-  unfold kernelRestore kernelSaved
-  simp only [List.map_cons, List.map_nil]
-  refine WP.block_cons_iff.mpr ⟨_, mfvsrd_eq _ _ _, ?_⟩
-  refine WP.block_cons_iff.mpr ⟨_, mfvsrd_eq _ _ _, ?_⟩
-  refine WP.block_cons_iff.mpr ⟨_, mfvsrd_eq _ _ _, ?_⟩
-  refine WP.block_cons_iff.mpr ⟨_, mfvsrd_eq _ _ _, ?_⟩
-  refine WP.block_cons_iff.mpr ⟨_, mfvsrd_eq _ _ _, WP.block_nil ?_⟩
-  refine ⟨⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩, rfl, ?_⟩
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [gpr_write, ite_eq_right hr.1, ite_eq_right hr.2.1, ite_eq_right hr.2.2.1, ite_eq_right hr.2.2.2.1,
-      ite_eq_right hr.2.2.2.2]
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, gpr_write]
-    refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp only [reduceCtorEq, ite_true, ite_false] <;> rfl
+      ∀ p ∈ kernelSaved, t.gpr p.2 = vdword (s.vpr p.1) 0 :=
+  WP.mono (restores_ok kernelSaved (by decide) s) fun _ h => ⟨h.1, h.2.1, h.2.2.1⟩
 
 theorem kernelRegs8_sub : ∀ r, r ∈ kernelRegs8 → r ∈ Reg.r11 :: .r12 :: tailRegs ∨ r ∈ kernelSaved.map (·.2) := by
   decide
@@ -520,7 +537,7 @@ theorem kernelBody_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   · exact ((ku.trans kt).trans kt').mono (by decide)
 
 /-- The shared kernel (`kernel`), as `montOp` calls it: `kernelBody_ok`, and
-`r27` and `r28`–`r31`, which the body writes, restored from the vector
+`r2` and `r23`–`r31`, which the body writes, restored from the vector
 registers that `kernelSave` kept them in. -/
 theorem kernel_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     {n o a b : Nat} (hn : 4 ≤ n) (ho : o < n) (ha : a < n) (hb : b < n) (ho2 : o ≠ 2) (ho3 : o ≠ 3) (ha2 : a ≠ 2)
@@ -546,8 +563,8 @@ theorem kernel_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
       (by rw [gu]; exact i5) (by rw [gu]; exact i6) (by rw [gu]; exact i7) (by rw [gu]; exact i8)
       (by rw [gu]; exact i9) (by rw [gu]; exact i10) (by rw [gu]; exact i4) (by rw [gu]; exact i3)
       (by rw [um, gu]; exact hinv) (by rw [um]; exact hB))
-    (by unfold kernelBody kernelEntry kernelExit tail8 zeroAcc rounds8 subMod64M selectAcc64; decide +kernel)
-    (by unfold kernelBody kernelEntry kernelExit tail8 zeroAcc rounds8 subMod64M selectAcc64; decide +kernel)
+    (by unfold kernelBody kernelEntry kernelExit tail8 zeroAcc roundsK subMod64M selectAcc64; decide +kernel)
+    (by unfold kernelBody kernelEntry kernelExit tail8 zeroAcc roundsK subMod64M selectAcc64; decide +kernel)
   refine WP.seq (WP.mono hb fun t ⟨⟨⟨tlt, teq, tout, t14, t11, t12⟩, kt⟩, tv⟩ => ?_)
   refine WP.mono (kernelRestore_ok t) fun t' ⟨kt', tm, tg⟩ => ?_
   rw [um] at tlt teq tout
@@ -555,15 +572,10 @@ theorem kernel_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     by rw [kt'.gpr _ (by decide), t14, gu], by rw [kt'.gpr _ (by decide), t11],
     by rw [kt'.gpr _ (by decide), t12, gu]⟩, ⟨fun r hr => ?_, ?_, ?_, ?_, ?_⟩⟩
   · by_cases hs' : r ∈ kernelSaved.map (·.2)
-    · simp only [kernelSaved, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hs'
-      have e : ∀ p ∈ kernelSaved, t'.gpr p.2 = s.gpr p.2 := fun p hp => by
+    · have e : ∀ p ∈ kernelSaved, t'.gpr p.2 = s.gpr p.2 := fun p hp => by
         rw [tg p hp, tv, uv p hp]
-      rcases hs' with rfl | rfl | rfl | rfl | rfl
-      · exact e (.v0, .r27) (by decide)
-      · exact e (.v1, .r28) (by decide)
-      · exact e (.v2, .r29) (by decide)
-      · exact e (.v3, .r30) (by decide)
-      · exact e (.v4, .r31) (by decide)
+      obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hs'
+      exact e p hp
     · rw [kt'.gpr r hs', kt.gpr r (fun h => ((kernelRegs8_sub r h).elim hr hs')), gu]
   · rw [kt'.rd, kt.rd, ku.rd]
   · rw [kt'.wr, kt.wr, ku.wr]
