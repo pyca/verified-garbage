@@ -47,14 +47,14 @@ theorem mem_regUnion {a b : T} {r : Reg} : r ∈ regUnion a b ↔ r ∈ a ∨ r 
 def kernelPre : T := ofRegs [.r4, .r5, .r6, .r7, .r8, .r9, .r10]
 
 /-- What the kernel's analysis from `kernelPre` leaves public. -/
-def kernelPost : T := ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r15, .r16, .r17]
+def kernelPost : T := ofRegs [.r3, .r5, .r6, .r7, .r8, .r9, .r11, .r15, .r16, .r17]
 
 /-- The callers' registers: the kernel writes only `kernelSaved`'s, which it
 restores, and the call none. -/
 def kernelKeep : T := ofRegs [.r2, .r5, .r10, .r21, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30, .r31]
 
 /-- The callers' registers that no instruction of the kernel writes. -/
-def kernelKeepW : T := ofRegs [.r5, .r10, .r21]
+def kernelKeepW : T := ofRegs [.r5, .r21]
 
 /-- The call of the kernel, its code and its summary. -/
 def kernelCall : Prog isa := .call kernelName kernel
@@ -132,6 +132,16 @@ theorem kernel_run {s s' : State} {t : List Leak} (e : Exec isa kernelCall s t s
             exact ⟨_, _, _, _, _, hc, fun r => hS.1.gpr r (by simp), hS.1.sp, hS.2.2, eB, fun r hr => hR.1.gpr r hr,
               hR.1.sp, hR.2.2, hr, by simp⟩
 
+private theorem kernelBody_noCalls : Code.noCalls kernelBody = true := by
+  unfold kernelBody kernelEntry kernelExit tail8 sqrFlag sqr8 sqrInit sqrTri sqrDbl sqrRed sqrCopy zeroAcc roundsK
+    subMod64M selectAcc64
+  decide +kernel
+
+private theorem kernelBody_noV : ∀ i ∈ instrs kernelBody, vWrites i = false := by
+  unfold kernelBody kernelEntry kernelExit tail8 sqrFlag sqr8 sqrInit sqrTri sqrDbl sqrRed sqrCopy zeroAcc roundsK
+    subMod64M selectAcc64
+  decide +kernel
+
 /-- The callers' registers keep their values over a run of the kernel's call. -/
 theorem kernel_keeps {s s' : State} {t : List Leak} (e : Exec isa kernelCall s t s') {r : Reg} (hr : r ∈ kernelKeep) :
     s'.gpr r = s.gpr r := by
@@ -141,9 +151,7 @@ theorem kernel_keeps {s s' : State} {t : List Leak} (e : Exec isa kernelCall s t
   by_cases hw : r ∈ kernelKeepW
   · exact Exec.gpr (fun i hi => kernel_keep i hi r hw) e (.inr hl)
   obtain ⟨c, x, tb, y, d, hc, -, -, xv, eB, -, -, dv, hrt, -⟩ := kernel_run e
-  have yv : y.vpr = x.vpr := Exec.vpr
-    (by unfold kernelBody kernelEntry kernelExit tail8 zeroAcc roundsK subMod64M selectAcc64; decide +kernel)
-    (by unfold kernelBody kernelEntry kernelExit tail8 zeroAcc roundsK subMod64M selectAcc64; decide +kernel) eB
+  have yv : y.vpr = x.vpr := Exec.vpr kernelBody_noV kernelBody_noCalls eB
   have hp : ∃ v, (v, r) ∈ kernelSaved := by
     simp only [kernelKeep, kernelKeepW, mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr hw
     simp only [kernelSaved, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq]
@@ -153,7 +161,7 @@ theorem kernel_keeps {s s' : State} {t : List Leak} (e : Exec isa kernelCall s t
 
 theorem kernelPost_unsaved : ∀ r ∈ kernelPost, r ∉ kernelSaved.map (·.2) := fun r hr => by
   simp only [kernelPost, mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem kernelSum_ok : kernelSum.Ok taint := by
   intro τ hle s₁ s₂ t₁ t₂ s₁' s₂' ha e₁ e₂

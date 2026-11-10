@@ -357,6 +357,178 @@ def rounds4 : Prog isa :=
 def roundsK : Prog isa :=
   .seq (.block [.lsl .r3 .r11 61, .lsr .d .r3 .r3 62]) (.ite (.zero .d .r3) rounds4 rounds8)
 
+/-! ### The kernel's squaring: rows of eight words
+
+When `a` and `b` are the same array, not the temporary, and `w` is a
+multiple of 8 (`sqrFlag`), the kernel squares (`sqr8`) instead of running
+`zeroAcc` and `roundsK`: `S = a²` into `2 w` words from the accumulator's
+base (its array and the temporary's, which are adjacent), then `S` reduced,
+`T = (S + U m) / 2^(64 w)`, into the accumulator, as the rounds leave it.
+
+* The triangle (`triBlock`): `S = Σ_{i<j} aᵢ aⱼ 2^(64 (i + j))`, by blocks of
+  eight words `B_k` of `a` (in `smr`): the products within the block (rows of
+  the block's words, `triRow0`), then the block times the words of `a` above
+  it, eight rows at a time (`triRow`), each row one word of `a` times the
+  block, into a window of eight words of `S` (`sacc`), with `r4` and CA the
+  word above it. Every eight rows the window takes in the next eight words of
+  `S` (`boundary8`).
+* The doubling (`dblBody`): `S := 2 S + Σ aᵢ² 2^(128 i)`, which is `a²`.
+* The reduction (`redBlock`): by blocks of eight words of `S`, the rows of the
+  block's first chunk choosing `uᵢ` (`redRow0`, which stores them in `S`'s
+  words of the block) and the later chunks adding `uᵢ m` (`redRow`); the
+  block's top carry, in `r8`, goes to the next.
+* `T` is `S`'s top `w` words and the top carry (`sqrCopy`).
+
+`m'` is in `S`'s word `2 w + 1`, which `S` does not use, and `r31` in the
+reduction. Every branch depends on `w` and the pointers only. -/
+
+/-- The window of the squaring's rows. -/
+def sacc (c : Nat) : Reg := [.r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29].getD c .r29
+
+/-- The eight words a row multiplies. -/
+def smr (c : Nat) : Reg := [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r2].getD c .r2
+
+/-- The window moved down a word: word `c + 1`, and the word above the window
+(`r4`) at the top. -/
+def sshift (c : Nat) : Reg := if c < 7 then sacc (c + 1) else .r4
+
+/-- `dst := src + (lo or hi) (p x)` over eight words, as a carry chain, the
+products in `r30`; a word whose `p` is `r0` (0) adds only the carry. -/
+def chain8 (hi : Bool) (x : Reg) (p dst src : Nat → Reg) : List Instr :=
+  (List.range 8).flatMap fun j =>
+    if p j = .r0 then [if j = 0 then Instr.addc (dst j) (src j) .r0 else Instr.addze (dst j) (src j)]
+    else [(if hi then Instr.mulhu else Instr.mul) .r30 (p j) x, (if j = 0 then Instr.addc else Instr.adde) (dst j) (src j) .r30]
+
+/-- A row: the word above the window, `r4`, from CA and `start`; `mid`; the
+window += the low words of `x p`; `out` (the store of the window's low word);
+the window moved down a word, the high words added. -/
+def row8 (x : Reg) (p : Nat → Reg) (start : Reg) (mid out : List Instr) : List Instr :=
+  ([.addze .r4 start] : List Instr) ++ mid ++ chain8 false x p sacc sacc ++ ([.addze .r4 .r4] : List Instr) ++ out ++
+    chain8 true x p sacc sshift
+
+/-- The eight words at `ptr` into the window, from the word above it (CA into
+`r4`, which takes the carry out). -/
+def boundary8 (ptr : Reg) : List Instr :=
+  ([.addze .r4 .r0] : List Instr) ++ (List.range 8).flatMap (fun c =>
+    [.load .d .r30 ptr (8 * c), (if c = 0 then Instr.addc else Instr.adde) (sacc c) (sacc c) .r30]) ++
+    ([.addze .r4 .r4] : List Instr)
+
+/-- Eight words at `ptr` into `f 0`, …, `f 7`. -/
+def load8 (f : Nat → Reg) (ptr : Reg) : List Instr := (List.range 8).map fun c => .load .d (f c) ptr (8 * c)
+
+/-- `f 0`, …, `f 7` stored at `ptr`. -/
+def store8 (f : Nat → Reg) (ptr : Reg) : List Instr := (List.range 8).map fun c => .store .d (f c) ptr (8 * c)
+
+/-- Row `r` within a block: its word `smr r` times the block's words below it. -/
+def triRow0 (r : Nat) : List Instr :=
+  row8 (smr r) (fun c => if c < r then smr c else .r0) (if r = 0 then .r4 else .r0) []
+    [.store .d (sacc 0) .r12 (8 * r)]
+
+/-- Row `r` of a group of eight: the word of `a` at `r7 + 8 r` times the block. -/
+def triRow (r : Nat) : List Instr :=
+  row8 .r3 smr (if r = 0 then .r4 else .r0) [.load .d .r3 .r7 (8 * r)] [.store .d (sacc 0) .r12 (8 * r)]
+
+/-- The groups of eight rows after a block's own, counted by `r9`'s low half. -/
+def triGroups : Prog isa :=
+  .ite (.zero .w .r9) (.block []) (.loop (.block ((List.range 8).flatMap triRow ++
+    ([.addi .r12 .r12 64, .addi .r7 .r7 64] : List Instr) ++ boundary8 .r12 ++ ([.subi .r9 .r9 1] : List Instr)))
+    (.nonzero .w .r9))
+
+/-- One block of the triangle, `r6` at its words of `a`, `r10` at `S`'s words
+`16 k`: the window `S`'s words `16 k` to `16 k + 7`, the rows within the
+block, then the groups above it; the window and the word above it stored,
+and one block less in `r9`'s high half. -/
+def triBlock : Prog isa :=
+  .seq (.block (load8 smr .r6 ++ ([.addi .r12 .r10 0] : List Instr) ++ load8 sacc .r12 ++
+      ([.li .r4 0, .addc .r30 .r0 .r0] : List Instr) ++ (List.range 8).flatMap triRow0 ++
+      ([.addi .r12 .r12 64] : List Instr) ++ boundary8 .r12 ++
+      ([.lsr .d .r30 .r9 32, .subi .r30 .r30 1, .logic .or .r9 .r9 .r30, .addi .r7 .r6 64] : List Instr)))
+    (.seq triGroups (.block (store8 sacc .r12 ++ ([.store .d .r4 .r12 64, .addi .r6 .r6 64, .addi .r10 .r10 128,
+      .li .r30 1, .lsl .r30 .r30 32, .sub .r9 .r9 .r30, .lsr .d .r30 .r9 32] : List Instr))))
+
+/-- `m'` into `S`'s word `2 w + 1`, and `S`'s first `2 w + 1` words := 0. -/
+def sqrInit : Prog isa :=
+  .seq (.block [.li .r0 0, .load .d .r3 .r10 0, .mul .r3 .r3 .r12, .addi .r3 .r3 2, .mul .r3 .r3 .r12,
+      .lsl .r30 .r11 3, .add .r31 .r8 .r30, .store .d .r3 .r31 8, .store .d .r0 .r31 0, .addi .r31 .r8 0,
+      .lsr .d .r3 .r11 4])
+    (countLoop .r3 ((List.range 16).map (fun c => .store .d .r0 .r31 (8 * c)) ++ ([.addi .r31 .r31 128] : List Instr)))
+
+/-- The triangle: `w / 8` blocks, counted by `r9`'s high half; then `r6` and
+`r10` back at `a` and `S`. -/
+def sqrTri : Prog isa :=
+  .seq (.block [.addi .r10 .r8 0, .lsr .d .r30 .r11 4, .lsl .r9 .r30 32])
+    (.seq (.loop triBlock (.nonzero .d .r30)) (.block [.lsl .r30 .r11 2, .sub .r6 .r6 .r30, .sub .r10 .r10 .r30,
+      .sub .r10 .r10 .r30]))
+
+/-- A step of the doubling: `S`'s words `2 i` and `2 i + 1` doubled, the bit
+shifted out kept in `r3`, and `aᵢ²` added, the carry in CA. -/
+def dblBody : List Instr :=
+  [.load .d (sacc 0) .r12 0, .load .d (sacc 1) .r12 8, .load .d (sacc 2) .r7 0, .mul (sacc 3) (sacc 2) (sacc 2),
+    .mulhu (sacc 4) (sacc 2) (sacc 2), .lsl (sacc 5) (sacc 0) 1, .logic .or (sacc 5) (sacc 5) .r3,
+    .lsr .d (sacc 6) (sacc 0) 63, .lsl (sacc 7) (sacc 1) 1, .logic .or (sacc 7) (sacc 7) (sacc 6),
+    .lsr .d .r3 (sacc 1) 63, .adde (sacc 5) (sacc 5) (sacc 3), .adde (sacc 7) (sacc 7) (sacc 4),
+    .store .d (sacc 5) .r12 0, .store .d (sacc 7) .r12 8, .addi .r12 .r12 16, .addi .r7 .r7 8]
+
+/-- The doubling, over `w` steps. -/
+def sqrDbl : Prog isa :=
+  .seq (.block [.addi .r12 .r10 0, .addi .r7 .r6 0, .lsr .d .r9 .r11 1, .li .r3 0, .addc .r30 .r0 .r0])
+    (countLoop .r9 dblBody)
+
+/-- Row `r` of a block's first chunk: `uᵢ` from the window's low word and `m'`
+(`r31`), stored at `S`'s word `8 q + r` (`r10`). -/
+def redRow0 (r : Nat) : List Instr :=
+  row8 .r3 smr (if r = 0 then .r4 else .r0) [.mul .r3 (sacc 0) .r31, .store .d .r3 .r10 (8 * r)] []
+
+/-- Row `r` of a later chunk: `uᵢ` from `S`'s word `8 q + r`, and the window's
+low word stored at the chunk's word `r` (`r12`). -/
+def redRow (r : Nat) : List Instr :=
+  row8 .r3 smr (if r = 0 then .r4 else .r0) [.load .d .r3 .r10 (8 * r)] [.store .d (sacc 0) .r12 (8 * r)]
+
+/-- The chunks after a block's first, counted by `r9`'s low half. -/
+def redChunks : Prog isa :=
+  .ite (.zero .w .r9) (.block []) (.loop (.block (boundary8 .r12 ++ load8 smr .r7 ++ (List.range 8).flatMap redRow ++
+    ([.addi .r12 .r12 64, .addi .r7 .r7 64, .subi .r9 .r9 1] : List Instr))) (.nonzero .w .r9))
+
+/-- One block of the reduction, `r10` at `S`'s word `8 q`, `r7` at `m`: the
+window `S`'s words `8 q` to `8 q + 7`, the first chunk's rows, the later
+chunks; at the window's last position, `S`'s words there and the top carry
+(`r8`) of the block below added, the window stored, its carry the new top. -/
+def redBlock : Prog isa :=
+  .seq (.block (load8 sacc .r10 ++ load8 smr .r7 ++ ([.li .r4 0, .addc .r30 .r0 .r0, .lsl .r31 .r11 4,
+      .add .r31 .r31 .r7, .load .d .r31 .r31 40] : List Instr) ++ (List.range 8).flatMap redRow0 ++
+      ([.addi .r7 .r7 64, .addi .r12 .r10 64, .lsr .d .r30 .r11 4, .subi .r30 .r30 1, .logic .or .r9 .r9 .r30] :
+        List Instr)))
+    (.seq redChunks (.block (boundary8 .r12 ++ ([.addc (sacc 0) (sacc 0) .r8] : List Instr) ++
+      (List.range 7).map (fun c => .addze (sacc (c + 1)) (sacc (c + 1))) ++ ([.addze .r4 .r4] : List Instr) ++
+      store8 sacc .r12 ++ ([.addi .r8 .r4 0, .lsl .r30 .r11 2, .sub .r7 .r7 .r30, .addi .r10 .r10 64, .li .r30 1,
+        .lsl .r30 .r30 32, .sub .r9 .r9 .r30, .lsr .d .r30 .r9 32] : List Instr))))
+
+/-- The reduction: `w / 8` blocks, counted by `r9`'s high half, `m` at `S - 16 (w + 2)`. -/
+def sqrRed : Prog isa :=
+  .seq (.block [.lsl .r30 .r11 3, .sub .r7 .r10 .r30, .subi .r7 .r7 32, .li .r8 0, .lsr .d .r30 .r11 4,
+      .lsl .r9 .r30 32])
+    (.loop redBlock (.nonzero .d .r30))
+
+/-- `T := S`'s words `w` to `2 w - 1` and the top carry, then the bases and `m'`
+back where the rounds leave them. -/
+def sqrCopy : Prog isa :=
+  .seq (.block [.lsl .r30 .r11 2, .sub .r12 .r10 .r30, .lsr .d .r9 .r11 4, .addi .r31 .r12 0])
+    (.seq (countLoop .r9 (load8 sacc .r10 ++ store8 sacc .r31 ++ ([.addi .r10 .r10 64, .addi .r31 .r31 64] : List Instr)))
+      (.block [.store .d .r8 .r31 0, .addi .r8 .r12 0, .lsl .r30 .r11 2, .add .r9 .r8 .r30, .addi .r9 .r9 16,
+        .lsl .r30 .r11 3, .sub .r10 .r8 .r30, .subi .r10 .r10 32, .lsl .r30 .r11 2, .add .r30 .r9 .r30,
+        .subi .r30 .r30 8, .load .d .r22 .r30 0, .addi .r7 .r6 0]))
+
+/-- The squaring. -/
+def sqr8 : Prog isa := .seq sqrInit (.seq sqrTri (.seq sqrDbl (.seq sqrRed sqrCopy)))
+
+/-- `r3 := 0` iff `a` and `b` are the same array (`r6 = r7`), `w` is a multiple
+of 8 (`2 w mod 16 = 0`), and `a` is not the temporary (`r6 ≠ r9`: `x = r6 - r9`
+is 0 iff the top bit of `x | -x` is clear). -/
+def sqrFlag : List Instr :=
+  [.li .r0 0, .sub .r3 .r6 .r7, .lsl .r4 .r11 60, .lsr .d .r4 .r4 60, .logic .or .r3 .r3 .r4, .sub .r4 .r6 .r9,
+    .sub .r30 .r0 .r4, .logic .or .r4 .r4 .r30, .lsr .d .r4 .r4 63, .li .r30 1, .sub .r4 .r30 .r4,
+    .logic .or .r3 .r3 .r4]
+
 /-! ## The final subtraction -/
 
 /-- `[tmp] = T - m` over `n` digits, the borrow in `r20` (the sign bit of each
@@ -405,9 +577,11 @@ def selectAcc64 : Prog isa :=
 /-- The arithmetic, after the bases are loaded. -/
 def tail : Prog isa := .seq zeroAcc (.seq rounds (.seq subMod64M selectAcc64))
 
-/-- `tail` with the kernel's rounds (`roundsK`), which write `r2` and
-`r23`–`r31`: the kernel's. -/
-def tail8 : Prog isa := .seq zeroAcc (.seq roundsK (.seq subMod64M selectAcc64))
+/-- `tail` with the kernel's rounds (`roundsK`), or its squaring (`sqr8`), which
+write `r2` and `r23`–`r31`: the kernel's. -/
+def tail8 : Prog isa :=
+  .seq (.block sqrFlag) (.ite (.zero .d .r3) (.seq sqr8 (.seq subMod64M selectAcc64))
+    (.seq zeroAcc (.seq roundsK (.seq subMod64M selectAcc64))))
 
 /-! ## The shared kernel
 
@@ -428,10 +602,10 @@ def kernelEntry : List Instr :=
 def kernelExit : List Instr := [.lsl .r3 .r11 2, .add .r3 .r9 .r3, .load .d .r14 .r3 8]
 
 /-- The callers' registers that `tail8` writes, and the vector registers
-the kernel keeps them in. -/
+the kernel keeps them in (`r10`, which the squaring moves and puts back, too). -/
 def kernelSaved : List (VReg × Reg) :=
   [(.v0, .r27), (.v1, .r28), (.v2, .r29), (.v3, .r30), (.v4, .r31), (.v5, .r2), (.v6, .r23), (.v7, .r24),
-    (.v8, .r25), (.v9, .r26)]
+    (.v8, .r25), (.v9, .r26), (.v10, .r10)]
 
 /-- `kernelSaved`'s registers into their vector registers (`mtvsrd`). -/
 def kernelSave : List Instr := kernelSaved.map fun (v, r) => .mtvsrd v r
