@@ -266,11 +266,3 @@ b 24f
         vg_rc2_decrypt_block = sym super::rc2::vg_rc2_decrypt_block::vg_rc2_decrypt_block,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_rc2_cbc_decrypt.rs"]
-pub(crate) mod vg_rc2_cbc_decrypt;
-
-#[rustfmt::skip]
-#[path = "internal/vg_rc2_cbc_encrypt.rs"]
-pub(crate) mod vg_rc2_cbc_encrypt;

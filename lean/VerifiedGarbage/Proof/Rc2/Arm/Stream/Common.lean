@@ -314,138 +314,6 @@ theorem key_rel {K KL E O S sp₀ T₀ : BitVec 32} {P : State → State → Pro
 
 /-! ## The CBC functions -/
 
-theorem cbc_correct' (d : Spec.Rc2.Direction) (s : State) (hs : (Cbc.contract d).pre s) :
-    ∃ t s', Exec isa (Impl.Rc2.Arm.Cbc.cbc d) s t s' ∧ abiPreserved s s' ∧ (Cbc.contract d).post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := Cbc.cbc_body_correct d s hs
-  exact ⟨t, s', he, ⟨ha, VG.Arm.Exec.sp he⟩, hp⟩
-
-theorem cbc_noFrames (d : Spec.Rc2.Direction) : (Impl.Rc2.Arm.Cbc.cbc d).noFrames = true := by
-  cases d <;> decide +kernel
-
-/-- The name of the CBC function. -/
-def cbcName : Spec.Rc2.Direction → String
-  | .encrypt => "vg_rc2_cbc_encrypt"
-  | .decrypt => "vg_rc2_cbc_decrypt"
-
-theorem cbcCall_eq (d : Spec.Rc2.Direction) : Stream.cbcCall d =
-    .frame (.push [.r12, .lr]) (.call (cbcName d) (Impl.Rc2.Arm.Cbc.cbc d)) (.pop .r12 8) := by
-  cases d <;> rfl
-
-/-- What the call of the CBC function needs. -/
-structure CbcPre (s : State) (K I D N S : BitVec 32) : Prop where
-  r0 : s.gpr .r0 = K
-  r1 : s.gpr .r1 = I
-  r2 : s.gpr .r2 = D
-  r3 : s.gpr .r3 = N
-  r12 : s.gpr .r12 = S
-  hsp : 8 ≤ s.sp.toNat
-  ki : (⟨State.addr K, 128⟩ : Region).Disjoint ⟨State.addr I, 8⟩
-  kd : (⟨State.addr K, 128⟩ : Region).Disjoint ⟨State.addr D, 8 * N.toNat⟩
-  ks : (⟨State.addr K, 128⟩ : Region).Disjoint ⟨State.addr S, 512⟩
-  id : (⟨State.addr I, 8⟩ : Region).Disjoint ⟨State.addr D, 8 * N.toNat⟩
-  is : (⟨State.addr I, 8⟩ : Region).Disjoint ⟨State.addr S, 512⟩
-  ds : (⟨State.addr D, 8 * N.toNat⟩ : Region).Disjoint ⟨State.addr S, 512⟩
-  bk : (below s).Disjoint ⟨State.addr K, 128⟩
-  bi : (below s).Disjoint ⟨State.addr I, 8⟩
-  bd : (below s).Disjoint ⟨State.addr D, 8 * N.toNat⟩
-  bs : (below s).Disjoint ⟨State.addr S, 512⟩
-  hK : K.toNat + 128 ≤ 2 ^ 32
-  hI : I.toNat + 8 ≤ 2 ^ 32
-  hD : D.toNat + 8 * N.toNat ≤ 2 ^ 32
-  hS : S.toNat + 512 ≤ 2 ^ 32
-  reads : Covers [⟨State.addr K, 128⟩] (s.rd ++ s.wr)
-  writes : Covers [⟨State.addr I, 8⟩, ⟨State.addr D, 8 * N.toNat⟩, ⟨State.addr S, 512⟩] s.wr
-
-/-- What the call of the CBC function leaves. -/
-structure CbcPost (d : Spec.Rc2.Direction) (s : State) (K I D N S : BitVec 32) (s' : State) : Prop where
-  rd : s'.rd = s.rd
-  wr : s'.wr = s.wr
-  sp : s'.sp = s.sp
-  saved : ∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r
-  frame : Frame [⟨State.addr I, 8⟩, ⟨State.addr D, 8 * N.toNat⟩, ⟨State.addr S, 512⟩, below s] s.mem s'.mem
-  data : Spec.Rc2.blocksAt s'.mem (State.addr D) N.toNat =
-    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (State.addr K)) d (Spec.Rc2.blockAt s.mem (State.addr I))
-      (Spec.Rc2.blocksAt s.mem (State.addr D) N.toNat)).1
-  iv : Spec.Rc2.blockAt s'.mem (State.addr I) =
-    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (State.addr K)) d (Spec.Rc2.blockAt s.mem (State.addr I))
-      (Spec.Rc2.blocksAt s.mem (State.addr D) N.toNat)).2
-
-abbrev cbcRd (s : State) (K : BitVec 32) : List Region := [⟨State.addr K, 128⟩, argR s]
-abbrev cbcWr (I D N S : BitVec 32) : List Region :=
-  [⟨State.addr I, 8⟩, ⟨State.addr D, 8 * N.toNat⟩, ⟨State.addr S, 512⟩]
-
-theorem CbcPre.pre {d : Spec.Rc2.Direction} {s : State} {K I D N S : BitVec 32} (h : CbcPre s K I D N S) :
-    (Cbc.contract d).pre (view s (cbcRd s K) (cbcWr I D N S)) := by
-  have hv := view_sp h.hsp (cbcRd s K) (cbcWr I D N S)
-  simp only [Cbc.contract, arg0 h.hsp, sa0 h.hsp, view_gpr _ _ _ .r0 (by decide), view_gpr _ _ _ .r1 (by decide),
-    view_gpr _ _ _ .r2 (by decide), view_gpr _ _ _ .r3 (by decide), h.r0, h.r1, h.r2, h.r3, h.r12,
-    State.withRegions_rd, State.withRegions_wr, hv]
-  refine ⟨trivial, trivial, h.ki, h.kd, h.ks, h.id, h.is, h.ds, ?_, ?_, ?_, h.hK, h.hI, h.hS,
-    by have := s.sp.isLt; omega_arith, h.hD⟩
-  · exact (h.bi.sub_left (Region.sub_prefix (by decide))).symm
-  · exact (h.bd.sub_left (Region.sub_prefix (by decide))).symm
-  · exact (h.bs.sub_left (Region.sub_prefix (by decide))).symm
-
-theorem cbc_call {d : Spec.Rc2.Direction} {s : State} {K I D N S : BitVec 32} (h : CbcPre s K I D N S) :
-    WP isa (Stream.cbcCall d) s (CbcPost d s K I D N S) := by
-  rw [cbcCall_eq]
-  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
-  refine WP.callCalls (k := Cbc.contract d) (cbc_correct' d) (rd := cbcRd s K) (wr := cbcWr I D N S) h.pre
-    (cov h.hsp h.reads h.writes) (covW h.writes) ?_ (cbc_noFrames d)
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
-  have fK := Proof.Rc2.scheduleAt_frame (fA h.hsp) (State.addr K) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact h.bk.symm)
-  have fI := Proof.Rc2.blockAt_frame (fA h.hsp) (State.addr I) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact h.bi.symm)
-  have fD := Proof.Rc2.blocksAt_frame (fA h.hsp) (State.addr D) N.toNat (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact h.bd.symm)
-  obtain ⟨p₁, p₂⟩ := hpost
-  simp only [State.withRegions_mem, State.callEntry_mem, view_gpr _ _ _ .r0 (by decide),
-    view_gpr _ _ _ .r1 (by decide), view_gpr _ _ _ .r2 (by decide), view_gpr _ _ _ .r3 (by decide),
-    h.r0, h.r1, h.r2, h.r3, fK, fI, fD] at p₁ p₂
-  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_, ?_⟩
-  · rw [popped_rd, hrd₂, pushed_rd]
-  · rw [popped_wr, hwr₂, pushed_wr]; rfl
-  · rw [popped_sp, hsp₂, pushed_sp, e8]; exact BitVec.sub_add_cancel _ _
-  · have : r ≠ .r12 := by intro e; subst e; simp [preserved] at hr
-    rw [popped_gpr this, hcs r hr hlr, pushed_gpr]
-  · rw [popped_mem]
-    refine ((fA h.hsp).sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
-      (hf.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩)
-  · rw [popped_mem]; exact p₁
-  · rw [popped_mem]; exact p₂
-
-theorem cbc_rel {d : Spec.Rc2.Direction} {K I D N S sp₀ : BitVec 32} {P : State → State → Prop}
-    (h : ∀ s₁ s₂, P s₁ s₂ → CbcPre s₁ K I D N S ∧ CbcPre s₂ K I D N S ∧ s₁.sp = sp₀ ∧ s₂.sp = sp₀) :
-    RelCT isa P (Stream.cbcCall d) fun _ _ => True := by
-  rw [cbcCall_eq]
-  refine RelCT.frame (fun s₁ s₂ hp => by obtain ⟨_, _, h₁, h₂⟩ := h _ _ hp; rw [h₁, h₂]) ?_
-  refine RelCT.call (cbc_correct' d) (Cbc.cbc_constantTime d)
-    [⟨State.addr K, 128⟩, ⟨State.addr sp₀ - 8, 4⟩] (cbcWr I D N S) fun a b ⟨s₁, s₂, hp, pa, pb⟩ => ?_
-  obtain ⟨h₁, h₂, sp₁, sp₂⟩ := h _ _ hp
-  rw [push_pushed rfl (by simpa using h₁.hsp), Option.some.injEq] at pa
-  rw [push_pushed rfl (by simpa using h₂.hsp), Option.some.injEq] at pb
-  subst pa pb
-  have e₁ : cbcRd s₁ K = [⟨State.addr K, 128⟩, ⟨State.addr sp₀ - 8, 4⟩] := by rw [← sp₁]
-  have e₂ : cbcRd s₂ K = [⟨State.addr K, 128⟩, ⟨State.addr sp₀ - 8, 4⟩] := by rw [← sp₂]
-  have p₁ := h₁.pre (d := d)
-  have p₂ := h₂.pre (d := d)
-  have c₁ := cov h₁.hsp h₁.reads h₁.writes
-  have c₂ := cov h₂.hsp h₂.reads h₂.writes
-  rw [show argR s₁ = ⟨State.addr sp₀ - 8, 4⟩ by rw [← sp₁]] at c₁
-  rw [show argR s₂ = ⟨State.addr sp₀ - 8, 4⟩ by rw [← sp₂]] at c₂
-  have a₁ := arg0 h₁.hsp (cbcRd s₁ K) (cbcWr I D N S)
-  have a₂ := arg0 h₂.hsp (cbcRd s₂ K) (cbcWr I D N S)
-  rw [view, e₁] at p₁ a₁
-  rw [view, e₂] at p₂ a₂
-  refine ⟨p₁, p₂, ?_, c₁, covW h₁.writes, c₂, covW h₂.writes⟩
-  simp only [Cbc.contract, a₁, a₂, State.withRegions_gpr, State.withRegions_sp,
-    State.callEntry_sp, pushed_sp, State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
-    State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs),
-    State.callEntry_gpr _ (by decide : Reg.r3 ∉ linkRegs), pushed_gpr, h₁.r0, h₁.r1, h₁.r2, h₁.r3, h₂.r0, h₂.r1,
-    h₂.r2, h₂.r3, h₁.r12, h₂.r12, sp₁, sp₂]
-  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
-
 end VG.Proof.Rc2.Arm.Stream
 
 end
@@ -468,123 +336,6 @@ open VG.Proof.MdStream.Arm (Upd Mupd Fupd op2_imm op2_reg wp_mov wp_add wp_sub w
   wp_str wp_ldrb wp_strb wp_ldrSp eval_eq eval_ne ofNat_beq_zero sub_ofNat cmp0)
 open VG.WriteBytes (writeBytes writeBytes_nil writeBytes_snoc writeBytes_frame)
 
-theorem byte_rt32 (b : BitVec 8) : (b.setWidth 32).setWidth 8 = b := by
-  apply BitVec.eq_of_toNat_eq
-  have := b.isLt
-  simp only [BitVec.toNat_setWidth]
-  omega_arith
-
-/-- The address of byte `i` of a buffer at `p + o` that does not wrap around. -/
-theorem addr_off {p : BitVec 32} {i o : Nat} (h : p.toNat + o + i < 2 ^ 32) :
-    State.addr (p + BitVec.ofNat 32 i + BitVec.ofNat 32 o) =
-      State.addr p + BitVec.ofNat 64 o + BitVec.ofNat 64 i := by
-  rw [Offset.add_add, Offset.add_add, Nat.add_comm i o, addr_add (by omega_arith)]
-
-/-- What a copy leaves. -/
-structure CopyPost (s : State) (src dst cnt : Reg) (A B : Addr) (L : Nat) (s' : State) : Prop where
-  mem : s'.mem = writeBytes s.mem B (Spec.Rc2.bytesAt s.mem A L)
-  srcv : s'.gpr src = s.gpr src + BitVec.ofNat 32 L
-  dstv : s'.gpr dst = s.gpr dst + BitVec.ofNat 32 L
-  keep : ∀ r, r ≠ src → r ≠ dst → r ≠ cnt → r ≠ .r12 → s'.gpr r = s.gpr r
-  sp : s'.sp = s.sp
-  rd : s'.rd = s.rd
-  wr : s'.wr = s.wr
-
-theorem copy_wp {s : State} {src dst cnt : Reg} {so dd L : Nat}
-    (h1 : src ≠ dst) (h2 : src ≠ cnt) (h3 : dst ≠ cnt) (h4 : src ≠ .r12) (h5 : dst ≠ .r12)
-    (h6 : cnt ≠ .r12) (hso : so < 4096) (hdd : dd < 4096)
-    (hc : s.gpr cnt = BitVec.ofNat 32 L) (hL : L < 2 ^ 32)
-    (fp : (s.gpr src).toNat + so + L ≤ 2 ^ 32) (fd : (s.gpr dst).toNat + dd + L ≤ 2 ^ 32)
-    (hr : 0 < L → Covers [⟨State.addr (s.gpr src) + BitVec.ofNat 64 so, L⟩] (s.rd ++ s.wr))
-    (hw : 0 < L → Covers [⟨State.addr (s.gpr dst) + BitVec.ofNat 64 dd, L⟩] s.wr)
-    (hd : 0 < L → (⟨State.addr (s.gpr src) + BitVec.ofNat 64 so, L⟩ : Region).Disjoint
-      ⟨State.addr (s.gpr dst) + BitVec.ofNat 64 dd, L⟩) :
-    WP isa (copy src so dst dd cnt) s (CopyPost s src dst cnt
-      (State.addr (s.gpr src) + BitVec.ofNat 64 so) (State.addr (s.gpr dst) + BitVec.ofNat 64 dd) L) := by
-  generalize hP : s.gpr src = P at *
-  generalize hD : s.gpr dst = D at *
-  generalize hA : State.addr P + BitVec.ofNat 64 so = A at *
-  generalize hB : State.addr D + BitVec.ofNat 64 dd = B at *
-  rw [copy]
-  refine WP.seq (wp_cmp (op2_imm (by decide)) fun t₀ f₀ z₀ => WP.block_nil ?_)
-  have hz : t₀.z = decide (L = 0) := by rw [z₀, hc, cmp0 (by omega_arith)]
-  refine WP.ite (decide (L = 0)) (by rw [← hz]; rfl) (fun hL0 => WP.block_nil ?_) fun hL0 => ?_
-  · have hL0 : L = 0 := of_decide_eq_true hL0
-    subst hL0
-    refine ⟨?_, ?_, ?_, fun r _ _ _ _ => ?_, f₀.sp, f₀.rd, f₀.wr⟩
-    · rw [f₀.mem]; simp [Spec.Rc2.bytesAt, writeBytes_nil]
-    · rw [f₀.gpr, hP]; exact (BitVec.add_zero P).symm
-    · rw [f₀.gpr, hD]; exact (BitVec.add_zero D).symm
-    · rw [f₀.gpr]
-  have hL₀ : 0 < L := by have := of_decide_eq_false hL0; omega_arith
-  have hr := hr hL₀
-  have hw := hw hL₀
-  have hd := hd hL₀
-  refine WP.loop (M := isa) (body := .block (copyBody src so dst dd cnt)) (c := .ne)
-    (fun (n : Nat) (t : State) => ∃ i, n = L - i ∧ i < L ∧ t.gpr src = P + BitVec.ofNat 32 i ∧
-      t.gpr dst = D + BitVec.ofNat 32 i ∧ t.gpr cnt = BitVec.ofNat 32 (L - i) ∧
-      t.mem = writeBytes s.mem B (Spec.Rc2.bytesAt s.mem A i) ∧
-      (∀ r, r ≠ src → r ≠ dst → r ≠ cnt → r ≠ .r12 → t.gpr r = s.gpr r) ∧
-      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ (L - 0) _
-    ⟨0, rfl, hL₀, by rw [f₀.gpr, hP]; exact (BitVec.add_zero P).symm,
-      by rw [f₀.gpr, hD]; exact (BitVec.add_zero D).symm, by rw [f₀.gpr, hc, Nat.sub_zero],
-      by rw [f₀.mem]; simp [Spec.Rc2.bytesAt, writeBytes_nil], fun r _ _ _ _ => by rw [f₀.gpr],
-      f₀.sp, f₀.rd, f₀.wr⟩
-  rintro n t ⟨i, rfl, hi, xs, xd, xc, mem, g, sp, rd, wr⟩
-  refine wp_ldrb (a := A + BitVec.ofNat 64 i) hso (by rw [xs, ← hA]; exact addr_off (by omega_arith))
-    (by rw [rd, wr]; exact hr _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
-    fun t₁ u₁ => ?_
-  refine wp_strb (a := B + BitVec.ofNat 64 i) hdd
-    (by rw [u₁.other _ h5, xd, ← hB]; exact addr_off (by omega_arith))
-    (by rw [u₁.wr, wr]; exact hw _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
-    fun t₂ v₂ => ?_
-  refine wp_add (op2_imm (by decide)) fun t₃ u₃ => wp_add (op2_imm (by decide)) fun t₄ u₄ =>
-    wp_subs (op2_imm (by decide)) fun t₅ u₅ z₅ => WP.block_nil ?_
-  have hlen : (Spec.Rc2.bytesAt s.mem A i).length = i := Proof.Rc2.bytesAt_length _ _ _
-  have hx : writeBytes s.mem B (Spec.Rc2.bytesAt s.mem A i) (A + BitVec.ofNat 64 i) =
-      s.mem (A + BitVec.ofNat 64 i) :=
-    (writeBytes_frame s.mem B _ (R := ⟨B, i⟩) (by rw [hlen]; exact Region.contains_self _ _)) _
-      fun r hr hcon => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact hd _ (Offset.contains_base _ (by omega_arith) (by omega_arith)) (Region.sub_prefix (by omega_arith) _ hcon)
-  have hmem : t₅.mem = writeBytes s.mem B (Spec.Rc2.bytesAt s.mem A (i + 1)) := by
-    rw [u₅.mem, u₄.mem, u₃.mem, v₂.mem, u₁.gpr, u₁.mem, mem, byte_rt32, hx, Proof.Rc2.bytesAt_succ,
-      writeBytes_snoc s.mem _ _ _ (by rw [hlen]; omega_arith), hlen]
-  have e1 : (1 : BitVec 32) = BitVec.ofNat 32 1 := rfl
-  have cs : t₄.gpr cnt = BitVec.ofNat 32 (L - i) := by
-    rw [u₄.other _ (Ne.symm h3), u₃.other _ (Ne.symm h2), v₂.gpr, u₁.other _ h6, xc]
-  have xc' : t₅.gpr cnt = BitVec.ofNat 32 (L - (i + 1)) := by
-    rw [u₅.gpr, cs, e1, sub_ofNat (by omega_arith)]; rfl
-  have ev : isa.eval .ne t₅ = some !decide (L - (i + 1) = 0) := by
-    show VG.Arm.eval .ne t₅ = _
-    rw [eval_ne, z₅, cs, e1, sub_ofNat (by omega_arith), Nat.sub_sub, ofNat_beq_zero (by omega_arith)]
-  have gg : ∀ r, r ≠ src → r ≠ dst → r ≠ cnt → r ≠ .r12 → t₅.gpr r = s.gpr r := fun r a b c d => by
-    rw [u₅.other _ c, u₄.other _ b, u₃.other _ a, v₂.gpr, u₁.other _ d, g r a b c d]
-  have xd' : t₅.gpr dst = D + BitVec.ofNat 32 (i + 1) := by
-    rw [u₅.other _ h3, u₄.gpr, u₃.other _ (Ne.symm h1), v₂.gpr, u₁.other _ h5, xd, e1, Offset.add_add]
-  have xs' : t₅.gpr src = P + BitVec.ofNat 32 (i + 1) := by
-    rw [u₅.other _ h2, u₄.other _ h1, u₃.gpr, v₂.gpr, u₁.other _ h4, xs, e1, Offset.add_add]
-  have sp' : t₅.sp = s.sp := by rw [u₅.sp, u₄.sp, u₃.sp, v₂.sp, u₁.sp, sp]
-  have rd' : t₅.rd = s.rd := by rw [u₅.rd, u₄.rd, u₃.rd, v₂.rd, u₁.rd, rd]
-  have wr' : t₅.wr = s.wr := by rw [u₅.wr, u₄.wr, u₃.wr, v₂.wr, u₁.wr, wr]
-  by_cases he : i + 1 = L
-  · left
-    refine ⟨by rw [ev]; simp [he], ⟨by rw [hmem, he], by rw [xs', he, hP], by rw [xd', he, hD], gg,
-      sp', rd', wr'⟩⟩
-  · right
-    exact ⟨by rw [ev]; simp; omega_arith, L - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, xs', xd', xc', hmem, gg,
-      sp', rd', wr'⟩
-
-theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) {xs : List Byte} {n : Nat} (hn : xs.length = n)
-    (h : n < 2 ^ 64) : Spec.Rc2.bytesAt (writeBytes m q xs) q n = xs := by
-  subst hn
-  apply List.ext_getElem (by simp [Spec.Rc2.bytesAt])
-  intro i h1 _
-  simp only [Spec.Rc2.bytesAt, List.length_map, List.length_range] at h1
-  simp only [Spec.Rc2.bytesAt, List.getElem_map, List.getElem_range, writeBytes, Offset.add_sub_cancel_left,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_arith), h1, ↓reduceIte,
-    List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h1, Option.getD_some]
-
 end VG.Proof.Rc2.Arm.Stream
 
 end
@@ -594,10 +345,9 @@ section
 /-!
 # Streaming RC2-CBC on ARMv7: the contracts, spelled out
 
-The contracts of `vg_rc2_cbc_init` and the update functions with their facts
-written out for ARMv7 and a stack of 8 bytes (`initContract`,
-`updateContract`), which imply the shared ones (`init_implies`,
-`update_implies`).
+The contract of `vg_rc2_cbc_init` with its facts written out for ARMv7 and a
+stack of 8 bytes (`initContract`), which implies the shared one
+(`init_implies`).
 -/
 
 namespace VG.Proof.Rc2.Arm.Stream
@@ -632,32 +382,6 @@ def initContract0 : Contract isa where
     s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧
     stackArg s₁ 1 = stackArg s₂ 1 ∧ stackArg s₁ 2 = stackArg s₂ 2
 
-def updateContract (d : Spec.Rc2.Direction) : Contract isa where
-  pre s :=
-    let ctx : Region := ⟨State.addr (s.gpr .r0), 144⟩
-    let data : Region := ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩
-    let out : Region := ⟨State.addr (stackArg s 0), (stackArg s 1).toNat⟩
-    let scr : Region := ⟨State.addr (stackArg s 2), 576⟩
-    let args : Region := ⟨stackArgAddr s 0, 12⟩
-    let below : Region := ⟨State.addr s.sp - 8, 8⟩
-    8 ≤ s.sp.toNat ∧ s.sp.toNat + 12 ≤ 2 ^ 32 ∧ s.rd = [data, args] ∧ s.wr = [ctx, out, scr] ∧
-      ctx.Disjoint data ∧ ctx.Disjoint out ∧ ctx.Disjoint scr ∧ ctx.Disjoint args ∧
-      data.Disjoint out ∧ data.Disjoint scr ∧ out.Disjoint scr ∧ out.Disjoint args ∧
-      scr.Disjoint args ∧ below.Disjoint ctx ∧ below.Disjoint data ∧ below.Disjoint out ∧
-      below.Disjoint scr ∧ below.Disjoint args ∧
-      (s.gpr .r0).toNat + 144 ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + (s.gpr .r3).toNat ≤ 2 ^ 32 ∧
-      (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 32 ∧ (stackArg s 2).toNat + 576 ≤ 2 ^ 32 ∧
-      (s.gpr .r1).toNat < 8 ∧ (stackArg s 1).toNat = ((s.gpr .r1).toNat + (s.gpr .r3).toNat) / 8 * 8
-  post s s' :=
-    let result := Spec.Rc2.update (Spec.Rc2.contextAt s.mem (State.addr (s.gpr .r0)) d (s.gpr .r1).toNat)
-      (Spec.Rc2.bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
-    Spec.Rc2.contextAt s'.mem (State.addr (s.gpr .r0)) d (((s.gpr .r1).toNat + (s.gpr .r3).toNat) % 8) =
-        result.1 ∧
-      Spec.Rc2.bytesAt s'.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat = result.2
-  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧
-    s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧
-    stackArg s₁ 1 = stackArg s₂ 1 ∧ stackArg s₁ 2 = stackArg s₂ 2
-
 def initSatState : State where
   gpr r := match r with
     | .r0 => 0x1000 | .r3 => 0x2000 | _ => 0
@@ -669,18 +393,6 @@ def initSatState : State where
   mem a := if a = 0x6005 then 0x30 else if a = 0x6009 then 0x40 else 0
   rd := [⟨0x1000, 0⟩, ⟨0x2000, 0⟩, ⟨0x6000, 12⟩]
   wr := [⟨0x3000, 144⟩, ⟨0x4000, 576⟩]
-
-def updateSatState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r2 => 0x2000 | _ => 0
-  sp := 0x6000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem a := if a = 0x6001 then 0x30 else if a = 0x6009 then 0x40 else 0
-  rd := [⟨0x2000, 0⟩, ⟨0x6000, 12⟩]
-  wr := [⟨0x1000, 144⟩, ⟨0x3000, 0⟩, ⟨0x4000, 576⟩]
 
 theorem init_implies0 : initContract0.Implies (Proof.Rc2.cbcInitScratchContract abi 8) := by
   sig_implies [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argRegs,
@@ -800,12 +512,6 @@ theorem init_implies : initContractC.Implies (Proof.Rc2.cbcInitScratchContract (
     symAddr_eq_iff.mp ((pub_consts.mp hp).2 _ List.mem_cons_self)⟩
   sat := ⟨initSatC, initSat_pre⟩
 
-theorem update_implies (d : Spec.Rc2.Direction) :
-    (updateContract d).Implies (Proof.Rc2.cbcUpdateScratchContract abi d 8) := by
-  sig_implies [Proof.Rc2.cbcUpdateScratchContract, Proof.Rc2.cbcUpdateScratchSig, Spec.Rc2.cbcUpdatePre, Spec.Rc2.cbcUpdatePost, abi, argRegs,
-    Arm.reduceClassify, Arm.Loc.val, State.addr, updateContract]
-    [updateSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using updateSatState
-
 end VG.Proof.Rc2.Arm.Stream
 
 end
@@ -813,13 +519,17 @@ end
 /-!
 # Streaming RC2-CBC on ARMv7: facts shared by the proofs
 
-Sub-ranges of buffers, stack arguments, and the preconditions of `update` and
-`init` by name (`UPre`, `IPre`).
+Sub-ranges of buffers and stack arguments.
 -/
 
 namespace VG.Proof.Rc2.Arm.Stream
 
 open VG VG.Arm
+
+theorem ivSub (C : BitVec 32) : Region.Sub ⟨State.addr C + BitVec.ofNat 64 128, 8⟩ ⟨State.addr C, 144⟩ :=
+  Offset.sub_base _ (by decide)
+theorem lrSub (S : BitVec 32) : Region.Sub ⟨State.addr S + BitVec.ofNat 64 512, 4⟩ ⟨State.addr S, 576⟩ :=
+  Offset.sub_base _ (by decide)
 
 theorem ofNat_toNat32 (x : BitVec 32) : x = BitVec.ofNat 32 x.toNat := by simp
 
@@ -872,23 +582,5 @@ structure Keep (s t : State) : Prop where
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   sp : t.sp = s.sp
-
-/-- `copy_wp`, with the buffers' addresses named. -/
-theorem copy_ok {s : State} {src dst cnt : Reg} {so dd L : Nat} {A B : Addr}
-    (h1 : src ≠ dst) (h2 : src ≠ cnt) (h3 : dst ≠ cnt) (h4 : src ≠ .r12) (h5 : dst ≠ .r12)
-    (h6 : cnt ≠ .r12) (hso : so < 4096) (hdd : dd < 4096)
-    (hc : s.gpr cnt = BitVec.ofNat 32 L) (hL : L < 2 ^ 32)
-    (fp : (s.gpr src).toNat + so + L ≤ 2 ^ 32) (fd : (s.gpr dst).toNat + dd + L ≤ 2 ^ 32)
-    (hA : State.addr (s.gpr src) + BitVec.ofNat 64 so = A)
-    (hB : State.addr (s.gpr dst) + BitVec.ofNat 64 dd = B)
-    (hr : 0 < L → Covers [⟨A, L⟩] (s.rd ++ s.wr)) (hw : 0 < L → Covers [⟨B, L⟩] s.wr)
-    (hd : 0 < L → (⟨A, L⟩ : Region).Disjoint ⟨B, L⟩) :
-    WP isa (Impl.Rc2.Arm.Stream.copy src so dst dd cnt) s (CopyPost s src dst cnt A B L) := by
-  subst hA hB
-  exact copy_wp h1 h2 h3 h4 h5 h6 hso hdd hc hL fp fd hr hw hd
-
-theorem writeBytes_frame' (m : Mem) (q : Addr) (xs : List Byte) {n : Nat} (hn : xs.length = n) :
-    Frame [⟨q, n⟩] m (VG.WriteBytes.writeBytes m q xs) :=
-  VG.WriteBytes.writeBytes_frame _ _ _ (by rw [hn]; exact Region.contains_self _ _)
 
 end VG.Proof.Rc2.Arm.Stream

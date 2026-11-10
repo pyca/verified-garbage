@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Prep
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Contract
 public import VerifiedGarbage.Proof.Rc2.AArch64.Key
 public import VerifiedGarbage.Impl.Rc2.AArch64.Stream
@@ -8,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Rc2.AArch64.Lit
 import VerifiedGarbage.Proof.Rc2.CbcMemory
 import VerifiedGarbage.Proof.Rc2.Stream
+public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Copy
 import VerifiedGarbage.Proof.MdStream.AArch64.Common
 import VerifiedGarbage.Proof.Rc2.Memory
@@ -33,6 +33,12 @@ open VG VG.AArch64
 open VG.Impl.Rc2.AArch64.Stream (init initMain initArgs keyCall checkKey checkBits checkIv)
 open VG.Proof.MdStream.AArch64 (Upd Mupd wp_mov wp_movz wp_subImm wp_lsr wp_ldr wp_str toNat_ofNat_lt
   eval_nonzero sub_beq)
+
+theorem ofNat_toNat' (x : BitVec 64) : x = BitVec.ofNat 64 x.toNat := by
+  rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+theorem inR {rs : List Region} {R : Region} {a : Addr} {n : Nat} (hR : R ∈ rs) (hc : R.Contains a n) :
+    InRegions rs a n := ⟨R, hR, hc⟩
 
 /-- `(x - 1) >> sh` is nonzero unless `x` is in `1..=2^sh`. -/
 theorem chk (x : BitVec 64) {sh p : Nat} (hs : sh < 64) (hp : 2 ^ sh = p) :

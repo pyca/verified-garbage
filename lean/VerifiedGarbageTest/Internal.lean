@@ -4,44 +4,52 @@ import VerifiedGarbage.TCB.Rust
 meta import VerifiedGarbage.TCB.Rust
 import VerifiedGarbage.Artifacts.Rc2.AArch64
 meta import VerifiedGarbage.Artifacts.Rc2.AArch64
+import VerifiedGarbage.Artifacts.Aes.AArch64
+meta import VerifiedGarbage.Artifacts.Aes.AArch64
+import VerifiedGarbage.Artifacts.AesXts.AArch64
+meta import VerifiedGarbage.Artifacts.AesXts.AArch64
 
 /-!
 # Internal functions (`Rust.Internal`)
 
-RC2's AArch64 artifacts, the streaming functions: they call
-`vg_rc2_expand_key`, `vg_rc2_cbc_encrypt` and `vg_rc2_cbc_decrypt`, which
-call `vg_rc2_encrypt_block` and `vg_rc2_decrypt_block`, none of them an
-artifact. The emitter emits each as an internal function, from the code the
-calls run: a file of its own, `internal/<name>.rs`, its text in
-`assembly/internal/<name>.s`, which `rc2.rs` (the module of the artifacts
-calling them, and of the algorithm their names start with) declares as
-modules private to the crate, and the callers naming them there.
+RC2's AArch64 artifacts: `init` calls `vg_rc2_expand_key`, and the CBC
+functions (`rc2_cbc`) call `vg_rc2_encrypt_block` and `vg_rc2_decrypt_block`,
+none of them an artifact. The emitter emits each as an internal function,
+from the code the calls run: a file of its own, `internal/<name>.rs`, its
+text in `assembly/internal/<name>.s`, which `rc2.rs` (the module of the
+algorithm their names start with) declares as modules private to the crate,
+and the callers naming them there. AES-XTS's internal functions call AES's
+block functions, internal too: an internal function names another.
 -/
 
 namespace VG.Test.Internal
 open VG
 
--- Keep this fixture scoped to the streaming functions in `rc2`, whose
--- internal calls it checks, independently of the public `rc2_cbc` functions.
-def arts : List Artifact := Artifacts.Rc2.AArch64.artifacts.filter (·.module == "rc2")
+def arts : List Artifact := Artifacts.Rc2.AArch64.artifacts
 
-def out : List (String × String) := match Rust.files arts with
+def filesOf (as : List Artifact) : List (String × String) := match Rust.files as with
   | .ok fs => fs
   | .error e => [("error", e)]
 
-def file (n : String) : String := ((out.find? (·.1 == s!"verified-garbage-asm-aarch64/{n}")).map (·.2)).getD ""
+def out : List (String × String) := filesOf arts
+
+def fileIn (fs : List (String × String)) (n : String) : String :=
+  ((fs.find? (·.1 == s!"verified-garbage-asm-aarch64/{n}")).map (·.2)).getD ""
+
+def file (n : String) : String := fileIn out n
 
 def has (text part : String) : Bool := (text.splitOn part).length > 1
 
-def internal : List String := ["vg_rc2_cbc_decrypt", "vg_rc2_cbc_encrypt", "vg_rc2_decrypt_block",
-  "vg_rc2_encrypt_block", "vg_rc2_expand_key"]
+def internal : List String := ["vg_rc2_decrypt_block", "vg_rc2_encrypt_block", "vg_rc2_expand_key"]
 
 #guard out.map (·.1) == ["verified-garbage-asm-aarch64/src/lib.rs",
     "verified-garbage-asm-aarch64/src/dispatch/mod.rs",
-    "verified-garbage-asm-aarch64/src/dispatch/rc2.rs"] ++
+    "verified-garbage-asm-aarch64/src/dispatch/rc2.rs",
+    "verified-garbage-asm-aarch64/src/dispatch/rc2_cbc.rs"] ++
   internal.flatMap (fun n => [s!"verified-garbage-asm-aarch64/src/internal/{n}.rs",
     s!"verified-garbage-asm-aarch64/assembly/internal/{n}.s"]) ++
-  ["verified-garbage-asm-aarch64/src/rc2.rs", "verified-garbage-asm-aarch64/assembly/rc2.s"]
+  ["verified-garbage-asm-aarch64/src/rc2.rs", "verified-garbage-asm-aarch64/assembly/rc2.s",
+    "verified-garbage-asm-aarch64/src/rc2_cbc.rs", "verified-garbage-asm-aarch64/assembly/rc2_cbc.s"]
 
 -- `rc2.rs` declares their modules, private to the crate; `lib.rs` names
 -- none of them.
@@ -57,12 +65,15 @@ def internal : List String := ["vg_rc2_cbc_decrypt", "vg_rc2_cbc_encrypt", "vg_r
 #guard Rust.internalOwner "vg_aes_gcm_ghash" ["aes", "aes_gcm", "chacha20"] ["aes_gcm"] == "aes_gcm"
 #guard Rust.internalOwner "vg_keccak_f1600" ["mlkem768", "sha3"] ["sha3", "mlkem768"] == "mlkem768"
 
--- Callers name them in their modules, from the crate's modules and from
--- another internal function's.
+-- Callers name them in their modules, from the module declaring them, from
+-- another of the crate's modules, and from another internal function's.
 #guard has (file "src/rc2.rs")
-  "vg_rc2_cbc_encrypt = sym super::rc2::vg_rc2_cbc_encrypt::vg_rc2_cbc_encrypt,\n"
-#guard has (file "src/internal/vg_rc2_cbc_encrypt.rs")
-  "vg_rc2_encrypt_block = sym crate::rc2::vg_rc2_encrypt_block::vg_rc2_encrypt_block,\n"
+  "vg_rc2_expand_key = sym super::rc2::vg_rc2_expand_key::vg_rc2_expand_key,\n"
+#guard has (file "src/rc2_cbc.rs")
+  "vg_rc2_encrypt_block = sym super::rc2::vg_rc2_encrypt_block::vg_rc2_encrypt_block,\n"
+#guard has (fileIn (filesOf (Artifacts.Aes.AArch64.artifacts ++ Artifacts.AesXts.AArch64.artifacts))
+    "src/internal/vg_aes_xts_encrypt.rs")
+  "vg_aes_encrypt_blocks = sym crate::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,\n"
 #guard has (file "src/internal/vg_rc2_encrypt_block.rs")
   "#[unsafe(naked)]\npub(crate) unsafe extern \"C\" fn vg_rc2_encrypt_block() {\n"
 #guard !has (file "src/rc2.rs") "fn vg_rc2_encrypt_block"

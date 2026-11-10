@@ -21,7 +21,5 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 namespace VG
 
 materialize_code Impl.Rc2.X86_64.Stream.init
-materialize_code Impl.Rc2.X86_64.Stream.encryptUpdate
-materialize_code Impl.Rc2.X86_64.Stream.decryptUpdate
 
 end VG

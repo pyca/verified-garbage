@@ -22,14 +22,6 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.RISCV64.withStackScratchWiped 608 .a6 72 Impl.Rc2.RISCV64.Stream.init
     stack := 608
     verified := Proof.Rc2.RISCV64.Stream.init_framed },
-  Spec.Rc2.cbcEncryptUpdateApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 608 .a6 72 Impl.Rc2.RISCV64.Stream.encryptUpdate
-    stack := 608
-    verified := Proof.Rc2.RISCV64.Stream.encryptUpdate_framed },
-  Spec.Rc2.cbcDecryptUpdateApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 608 .a6 72 Impl.Rc2.RISCV64.Stream.decryptUpdate
-    stack := 608
-    verified := Proof.Rc2.RISCV64.Stream.decryptUpdate_framed },
   Spec.Rc2.cbcEncryptChainedApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a4 64 Impl.Rc2.RISCV64.Cbc.encrypt
     stack := 512

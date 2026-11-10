@@ -13,18 +13,11 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 /-!
 # Streaming RC2-CBC: the contracts from memory facts
 
-Target-independent lemmas that reduce the postconditions of `vg_rc2_cbc_init`
-and the update functions (`Spec.Rc2.cbcInitContract`,
-`Spec.Rc2.cbcUpdateContract`) to facts about the memory an implementation
-leaves, for implementations that
-
-* `init`: check the lengths in order, and on success copy the IV to
-  `ctx + 128` and expand the key into `ctx` (`init_post`, `init_post_error`);
-* `update`: if there is no complete block (`out_len = 0`), append the data to
-  the pending bytes (`update_post_short`); otherwise copy the pending bytes
-  and the first `out_len - pending_len` bytes of data to `out`, the rest of
-  the data to `ctx + 136`, and run CBC on `out` in place, with the schedule
-  at `ctx` and the chaining value at `ctx + 128` (`update_post_long`).
+Target-independent lemmas that reduce the postcondition of `vg_rc2_cbc_init`
+(`Spec.Rc2.cbcInitContract`) to facts about the memory an implementation
+leaves, for implementations that check the lengths in order, and on success
+copy the IV to `ctx + 128` and expand the key into `ctx` (`init_post`,
+`init_post_error`).
 -/
 
 @[expose] public section
@@ -77,47 +70,10 @@ theorem bytesAt_eight (m : Mem) (p : Addr) :
     simp only [Spec.Rc2.bytesAt, Spec.Rc2.blockAt, List.getElem_map, List.getElem_range,
       Vector.getElem_toList, Vector.getElem_ofFn]
 
-theorem flatMap_blocksAt (m : Mem) (p : Addr) (n : Nat) :
-    (Spec.Rc2.blocksAt m p n).flatMap Vector.toList = Spec.Rc2.bytesAt m p (8 * n) := by
-  induction n generalizing p with
-  | zero => simp [Spec.Rc2.blocksAt, Spec.Rc2.bytesAt]
-  | succ n ih =>
-    rw [blocksAt_cons, List.flatMap_cons, ih, show 8 * (n + 1) = 8 + 8 * n by omega, bytesAt_add,
-      bytesAt_eight]
-    rfl
+/-! ## `cbcBlocks` is CBC
 
-theorem blocks_bytesAt (m : Mem) (p : Addr) (n : Nat) :
-    Spec.Rc2.blocks (Spec.Rc2.bytesAt m p (8 * n)) = Spec.Rc2.blocksAt m p n := by
-  simp only [Spec.Rc2.blocks, Spec.Rc2.blocksAt, bytesAt_length, Nat.mul_div_cancel_left _ (by decide : 0 < 8)]
-  apply List.map_congr_left
-  intro j hj
-  have hj := List.mem_range.mp hj
-  apply Vector.ext
-  intro i hi
-  simp only [Vector.getElem_ofFn, Spec.Rc2.blockAt, Spec.Rc2.bytesAt]
-  rw [getD_of_lt _ _ (by simp; omega), List.getElem_map, List.getElem_range, Offset.add_add]
-
-/-- Only whole blocks: the blocks of `xs` are those of its first `8 ⌊|xs| / 8⌋` bytes. -/
-theorem blocks_take (xs : List Byte) :
-    Spec.Rc2.blocks xs = Spec.Rc2.blocks (xs.take (8 * (xs.length / 8))) := by
-  have hl : (xs.take (8 * (xs.length / 8))).length = 8 * (xs.length / 8) := by
-    simp only [List.length_take]; omega
-  simp only [Spec.Rc2.blocks, hl, Nat.mul_div_cancel_left _ (by decide : 0 < 8)]
-  apply List.map_congr_left
-  intro j hj
-  have hj := List.mem_range.mp hj
-  apply Vector.ext
-  intro i hi
-  simp only [Vector.getElem_ofFn]
-  rw [getD_of_lt _ _ (by omega), getD_of_lt _ _ (by omega), List.getElem_take]
-
-/-! ## `update` -/
-
-/-! ### `cbcBlocks` is CBC
-
-`Spec.Rc2.update` is stated with `Spec.Cbc.encrypt` and `Spec.Cbc.decrypt`
-on blocks as lists of bytes; the internal functions' contracts, with `cbcBlocks`
-on vectors. -/
+`Spec.Cbc.encrypt` and `Spec.Cbc.decrypt` work on blocks as lists of bytes;
+the internal functions' contracts, with `cbcBlocks` on vectors. -/
 
 theorem ofFn_getD_toList (b : Spec.Rc2.Block) : (Vector.ofFn fun i => b.toList.getD i.val 0) = b := by
   apply Vector.ext
@@ -155,90 +111,6 @@ theorem cbc_decrypt_eq (k : Spec.Rc2.Schedule) (iv : Spec.Rc2.Block) (bs : List 
     simp only [cbcBlocks, cbcStep, List.map_cons, Spec.Cbc.decrypt, Spec.Rc2.invCipher, xor_toList,
       ofFn_getD_toList, h₁, h₂, true_and]
     cases bs <;> rfl
-
-theorem next_toList (iv : Spec.Rc2.Block) (bs : List Spec.Rc2.Block) :
-    (Vector.ofFn fun i => (Spec.Cbc.next iv.toList (bs.map Vector.toList)).getD i.val 0) =
-      bs.getLastD iv := by
-  have h : Spec.Cbc.next iv.toList (bs.map Vector.toList) = (bs.getLastD iv).toList := by
-    induction bs generalizing iv with
-    | nil => rfl
-    | cons b bs ih =>
-      simp only [Spec.Cbc.next, List.map_cons, List.getLastD_cons] at ih ⊢
-      exact ih b
-  rw [h, ofFn_getD_toList]
-
-/-- `update`, with CBC as `cbcBlocks`. -/
-theorem update_eq (ctx : Spec.Rc2.Context) (data : List Byte) :
-    Spec.Rc2.update ctx data =
-      let input := ctx.pending ++ data
-      let r := cbcBlocks ctx.schedule ctx.direction ctx.iv (Spec.Rc2.blocks input)
-      ({ ctx with iv := r.2, pending := input.drop (8 * (input.length / 8)) },
-        r.1.flatMap Vector.toList) := by
-  obtain ⟨k, d, iv, pending⟩ := ctx
-  cases d
-  · obtain ⟨h₁, h₂⟩ := cbc_encrypt_eq k iv (Spec.Rc2.blocks (pending ++ data))
-    simp only [Spec.Rc2.update, ← h₁, next_toList, ← h₂, List.flatMap_def]
-  · obtain ⟨h₁, h₂⟩ := cbc_decrypt_eq k iv (Spec.Rc2.blocks (pending ++ data))
-    simp only [Spec.Rc2.update, ← h₁, next_toList, ← h₂, List.flatMap_def]
-
-/-- With no complete block, the data is appended to the pending bytes, and
-the schedule and chaining value are unchanged. -/
-theorem update_post_short {m m' : Mem} {ctx data out : Addr} {d : Spec.Rc2.Direction} {p len : Nat}
-    (hshort : p + len < 8)
-    (hs : Spec.Rc2.scheduleAt m' ctx = Spec.Rc2.scheduleAt m ctx)
-    (hiv : Spec.Rc2.blockAt m' (ctx + 128) = Spec.Rc2.blockAt m (ctx + 128))
-    (hpend : Spec.Rc2.bytesAt m' (ctx + 136) (p + len) =
-      Spec.Rc2.bytesAt m (ctx + 136) p ++ Spec.Rc2.bytesAt m data len) :
-    let result := Spec.Rc2.update (Spec.Rc2.contextAt m ctx d p) (Spec.Rc2.bytesAt m data len)
-    Spec.Rc2.contextAt m' ctx d ((p + len) % 8) = result.1 ∧
-      Spec.Rc2.bytesAt m' out ((p + len) / 8 * 8) = result.2 := by
-  have hlen : (Spec.Rc2.bytesAt m (ctx + 136) p ++ Spec.Rc2.bytesAt m data len).length / 8 = 0 := by
-    simp only [List.length_append, bytesAt_length]; omega
-  have hb : Spec.Rc2.blocks (Spec.Rc2.bytesAt m (ctx + 136) p ++ Spec.Rc2.bytesAt m data len) = [] := by
-    simp only [Spec.Rc2.blocks, hlen, List.range_zero, List.map_nil]
-  simp only [update_eq, Spec.Rc2.contextAt, hb, cbcBlocks, hlen, Nat.mul_zero, List.drop_zero,
-    List.flatMap_nil, Nat.mod_eq_of_lt hshort, Nat.div_eq_of_lt hshort, Nat.zero_mul, hs, hiv, hpend]
-  simp [Spec.Rc2.bytesAt]
-
-/-- With complete blocks, from the memory `m₁` after the copies (the pending
-bytes and the first `out_len - p` bytes of data at `out`, the rest of the
-data at `ctx + 136`) and the memory `m'` after CBC on `out`. -/
-theorem update_post_long {m m₁ m' : Mem} {ctx data out : Addr} {d : Spec.Rc2.Direction} {p len : Nat}
-    (hp : p < 8) (hlong : 8 ≤ p + len)
-    (hout : Spec.Rc2.bytesAt m₁ out ((p + len) / 8 * 8) =
-      Spec.Rc2.bytesAt m (ctx + 136) p ++ Spec.Rc2.bytesAt m data ((p + len) / 8 * 8 - p))
-    (hs₁ : Spec.Rc2.scheduleAt m₁ ctx = Spec.Rc2.scheduleAt m ctx)
-    (hiv₁ : Spec.Rc2.blockAt m₁ (ctx + 128) = Spec.Rc2.blockAt m (ctx + 128))
-    (hpend : Spec.Rc2.bytesAt m' (ctx + 136) ((p + len) % 8) =
-      Spec.Rc2.bytesAt m (data + BitVec.ofNat 64 ((p + len) / 8 * 8 - p)) ((p + len) % 8))
-    (hs : Spec.Rc2.scheduleAt m' ctx = Spec.Rc2.scheduleAt m₁ ctx)
-    (hc₁ : Spec.Rc2.blocksAt m' out ((p + len) / 8) = (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt m₁ ctx) d
-      (Spec.Rc2.blockAt m₁ (ctx + 128)) (Spec.Rc2.blocksAt m₁ out ((p + len) / 8))).1)
-    (hc₂ : Spec.Rc2.blockAt m' (ctx + 128) = (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt m₁ ctx) d
-      (Spec.Rc2.blockAt m₁ (ctx + 128)) (Spec.Rc2.blocksAt m₁ out ((p + len) / 8))).2) :
-    let result := Spec.Rc2.update (Spec.Rc2.contextAt m ctx d p) (Spec.Rc2.bytesAt m data len)
-    Spec.Rc2.contextAt m' ctx d ((p + len) % 8) = result.1 ∧
-      Spec.Rc2.bytesAt m' out ((p + len) / 8 * 8) = result.2 := by
-  have hO : (p + len) / 8 * 8 = 8 * ((p + len) / 8) := Nat.mul_comm _ _
-  have hk : (p + len) / 8 * 8 - p + (p + len) % 8 = len := by omega
-  have hsplit : Spec.Rc2.bytesAt m data len = Spec.Rc2.bytesAt m data ((p + len) / 8 * 8 - p) ++
-      Spec.Rc2.bytesAt m (data + BitVec.ofNat 64 ((p + len) / 8 * 8 - p)) ((p + len) % 8) := by
-    rw [← bytesAt_add, hk]
-  have hl : (Spec.Rc2.bytesAt m (ctx + 136) p ++ Spec.Rc2.bytesAt m data len).length = p + len := by
-    simp [bytesAt_length]
-  have htake : (Spec.Rc2.bytesAt m (ctx + 136) p ++ Spec.Rc2.bytesAt m data len).take
-      (8 * ((p + len) / 8)) = Spec.Rc2.bytesAt m₁ out (8 * ((p + len) / 8)) := by
-    rw [← hO, hout, hsplit, ← List.append_assoc, List.take_left' (by simp [bytesAt_length]; omega)]
-  have hdrop : (Spec.Rc2.bytesAt m (ctx + 136) p ++ Spec.Rc2.bytesAt m data len).drop
-      (8 * ((p + len) / 8)) = Spec.Rc2.bytesAt m' (ctx + 136) ((p + len) % 8) := by
-    rw [hpend, hsplit, ← List.append_assoc, List.drop_left' (by simp [bytesAt_length]; omega)]
-  have hblocks : Spec.Rc2.blocks (Spec.Rc2.bytesAt m (ctx + 136) p ++ Spec.Rc2.bytesAt m data len) =
-      Spec.Rc2.blocksAt m₁ out ((p + len) / 8) := by
-    rw [blocks_take, hl, htake, blocks_bytesAt]
-  simp only [update_eq, Spec.Rc2.contextAt, hl, hblocks, hdrop, ← hs₁, ← hiv₁]
-  refine ⟨?_, ?_⟩
-  · rw [hs, ← hc₂]
-  · rw [← hc₁, flatMap_blocksAt, hO]
 
 /-! ## `init` -/
 

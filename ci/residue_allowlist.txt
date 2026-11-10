@@ -656,9 +656,7 @@ x86_64 vg_poly1305_update_avx2
 x86_64 vg_poly1305_update_avx512
 x86_64 vg_poly1305_update_ifma
 x86_64 vg_rc2_cbc_decrypt_chained
-x86_64 vg_rc2_cbc_decrypt_update
 x86_64 vg_rc2_cbc_encrypt_chained
-x86_64 vg_rc2_cbc_encrypt_update
 x86_64 vg_rc2_cbc_init
 x86_64 vg_rc4_apply
 x86_64 vg_rc4_init
