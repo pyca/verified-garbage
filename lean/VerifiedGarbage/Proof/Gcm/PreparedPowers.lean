@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 public import VerifiedGarbage.Spec.Gcm.Prepared
 
 /-!
@@ -38,68 +39,68 @@ def prepare16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   prepare16Sig.contract A (post := prepare16Post A.ptrBits) (writeArgs := true) (stack := stack)
 
 /-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def sealPrepared16Pre (pb : Nat) : Curry (sealPrecomputedSig.words pb) (Mem → Prop) :=
+def sealPrepared16Pre (pb : Nat) : Curry (Proof.Gcm.sealPrecomputedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen _data _len _tag m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       PreparedPowers16Repr m ctx
 
 /-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def openPrepared16Pre (pb : Nat) : Curry (openPrecomputedSig.words pb) (Mem → Prop) :=
+def openPrepared16Pre (pb : Nat) : Curry (Proof.Gcm.openPrecomputedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen _data _len _tag _tagLen m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       PreparedPowers16Repr m ctx
 
 /-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def streamCryptPrepared16Pre (pb : Nat) : Curry (streamCryptPrecomputedSig.words pb) (Mem → Prop) :=
+def streamCryptPrepared16Pre (pb : Nat) : Curry (Proof.Gcm.streamCryptPrecomputedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _state _aadLen _textLen _data _len m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       PreparedPowers16Repr m ctx
 
 /-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def sealGatherPrepared16Pre (pb : Nat) : Curry (sealGatherPrecomputedSig.words pb) (Mem → Prop) :=
+def sealGatherPrepared16Pre (pb : Nat) : Curry (Proof.Gcm.sealGatherPrecomputedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen src srcCount _dst len _tag m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       gatheredLen pb m src srcCount.toNat = len.toNat ∧ PreparedPowers16Repr m ctx
 
 /-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def openToPrepared16Pre (pb : Nat) : Curry (openToPrecomputedSig.words pb) (Mem → Prop) :=
+def openToPrepared16Pre (pb : Nat) : Curry (Proof.Gcm.openToPrecomputedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen _src len _dst dstLen _tag _tagLen m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       dstLen.toNat = len.toNat ∧ PreparedPowers16Repr m ctx
 
 /-- The unchanged `sealContract` postcondition with 16 prepared powers. -/
 def sealPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealPrecomputedSig.contract A (pre := sealPrepared16Pre A.ptrBits)
+  Proof.Gcm.sealPrecomputedSig.contract A (pre := sealPrepared16Pre A.ptrBits)
     (post := sealPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
 /-- The unchanged `openContract` postcondition with 16 prepared powers. -/
 def openPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openPrecomputedSig.contract A (pre := openPrepared16Pre A.ptrBits)
+  Proof.Gcm.openPrecomputedSig.contract A (pre := openPrepared16Pre A.ptrBits)
     (post := openPost A.ptrBits)
     (writeArgs := true) (stack := stack) (leak := some (openLeak A.ptrBits))
 
 /-- The unchanged `streamEncryptContract` postcondition with 16 prepared powers. -/
 def streamEncryptPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamCryptPrecomputedSig.contract A (pre := streamCryptPrepared16Pre A.ptrBits)
+  Proof.Gcm.streamCryptPrecomputedSig.contract A (pre := streamCryptPrepared16Pre A.ptrBits)
     (post := streamEncryptPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
 /-- The unchanged `streamDecryptContract` postcondition with 16 prepared powers. -/
 def streamDecryptPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamCryptPrecomputedSig.contract A (pre := streamCryptPrepared16Pre A.ptrBits)
+  Proof.Gcm.streamCryptPrecomputedSig.contract A (pre := streamCryptPrepared16Pre A.ptrBits)
     (post := streamDecryptPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
 /-- The unchanged `sealGatherContract` postcondition with 16 prepared powers. -/
 def sealGatherPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealGatherPrecomputedSig.contract A (pre := sealGatherPrepared16Pre A.ptrBits)
+  Proof.Gcm.sealGatherPrecomputedSig.contract A (pre := sealGatherPrepared16Pre A.ptrBits)
     (post := sealGatherPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
 /-- The unchanged `openToContract` postcondition with 16 prepared powers. -/
 def openToPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openToPrecomputedSig.contract A (pre := openToPrepared16Pre A.ptrBits)
+  Proof.Gcm.openToPrecomputedSig.contract A (pre := openToPrepared16Pre A.ptrBits)
     (post := openToPost A.ptrBits)
     (writeArgs := true) (stack := stack) (leak := some (openToLeak A.ptrBits))
 
@@ -114,68 +115,68 @@ def preparePowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
   prepare16Sig.contract A (post := preparePowersPost A.ptrBits) (writeArgs := true) (stack := stack)
 
 /-- The existing round-count and length requirements, plus the 48 prepared powers. -/
-def sealPowersPre (pb : Nat) : Curry (sealPrecomputedSig.words pb) (Mem → Prop) :=
+def sealPowersPre (pb : Nat) : Curry (Proof.Gcm.sealPrecomputedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen _data _len _tag m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       PreparedPowersRepr m ctx
 
 /-- The existing round-count and length requirements, plus the 48 prepared powers. -/
-def openPowersPre (pb : Nat) : Curry (openPrecomputedSig.words pb) (Mem → Prop) :=
+def openPowersPre (pb : Nat) : Curry (Proof.Gcm.openPrecomputedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen _data _len _tag _tagLen m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       PreparedPowersRepr m ctx
 
 /-- The existing round-count and length requirements, plus the 48 prepared powers. -/
-def streamCryptPowersPre (pb : Nat) : Curry (streamCryptPrecomputedSig.words pb) (Mem → Prop) :=
+def streamCryptPowersPre (pb : Nat) : Curry (Proof.Gcm.streamCryptPrecomputedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _state _aadLen _textLen _data _len m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       PreparedPowersRepr m ctx
 
 /-- The existing round-count and length requirements, plus the 48 prepared powers. -/
-def sealGatherPowersPre (pb : Nat) : Curry (sealGatherPrecomputedSig.words pb) (Mem → Prop) :=
+def sealGatherPowersPre (pb : Nat) : Curry (Proof.Gcm.sealGatherPrecomputedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen src srcCount _dst len _tag m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       gatheredLen pb m src srcCount.toNat = len.toNat ∧ PreparedPowersRepr m ctx
 
 /-- The existing round-count and length requirements, plus the 48 prepared powers. -/
-def openToPowersPre (pb : Nat) : Curry (openToPrecomputedSig.words pb) (Mem → Prop) :=
+def openToPowersPre (pb : Nat) : Curry (Proof.Gcm.openToPrecomputedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen _src len _dst dstLen _tag _tagLen m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       dstLen.toNat = len.toNat ∧ PreparedPowersRepr m ctx
 
 /-- The unchanged contract with the 48 prepared powers. -/
 def sealPowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealPrecomputedSig.contract A (pre := sealPowersPre A.ptrBits)
+  Proof.Gcm.sealPrecomputedSig.contract A (pre := sealPowersPre A.ptrBits)
     (post := sealPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
 /-- The unchanged contract with the 48 prepared powers. -/
 def openPowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openPrecomputedSig.contract A (pre := openPowersPre A.ptrBits)
+  Proof.Gcm.openPrecomputedSig.contract A (pre := openPowersPre A.ptrBits)
     (post := openPost A.ptrBits)
     (writeArgs := true) (stack := stack) (leak := some (openLeak A.ptrBits))
 
 /-- The unchanged contract with the 48 prepared powers. -/
 def streamEncryptPowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamCryptPrecomputedSig.contract A (pre := streamCryptPowersPre A.ptrBits)
+  Proof.Gcm.streamCryptPrecomputedSig.contract A (pre := streamCryptPowersPre A.ptrBits)
     (post := streamEncryptPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
 /-- The unchanged contract with the 48 prepared powers. -/
 def streamDecryptPowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamCryptPrecomputedSig.contract A (pre := streamCryptPowersPre A.ptrBits)
+  Proof.Gcm.streamCryptPrecomputedSig.contract A (pre := streamCryptPowersPre A.ptrBits)
     (post := streamDecryptPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
 /-- The unchanged contract with the 48 prepared powers. -/
 def sealGatherPowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealGatherPrecomputedSig.contract A (pre := sealGatherPowersPre A.ptrBits)
+  Proof.Gcm.sealGatherPrecomputedSig.contract A (pre := sealGatherPowersPre A.ptrBits)
     (post := sealGatherPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
 /-- The unchanged contract with the 48 prepared powers. -/
 def openToPowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openToPrecomputedSig.contract A (pre := openToPowersPre A.ptrBits)
+  Proof.Gcm.openToPrecomputedSig.contract A (pre := openToPowersPre A.ptrBits)
     (post := openToPost A.ptrBits)
     (writeArgs := true) (stack := stack) (leak := some (openToLeak A.ptrBits))
 

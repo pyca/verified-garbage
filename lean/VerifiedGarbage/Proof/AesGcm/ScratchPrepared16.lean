@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.ScratchP
 public import VerifiedGarbage.Spec.Gcm.Prepared
@@ -81,10 +82,10 @@ theorem preparedPowers16Repr_of_zeroMem {m : Mem} {p : Addr} (h : ∀ i < 128 * 
 
 variable (pb : Nat)
 
-theorem sealPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.sealPrecomputedSig.words pb).length →
-    (∀ b ∈ Sig.bufs Spec.Gcm.sealPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (Spec.Gcm.sealPrecomputedSig.words pb) (Proof.Gcm.sealPrepared16Pre pb) vs m₁ →
-      Curry.apply (Spec.Gcm.sealPrecomputedSig.words pb) (Proof.Gcm.sealPrepared16Pre pb) vs m₂ := by
+theorem sealPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Proof.Gcm.sealPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.sealPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.sealPrecomputedSig.words pb) (Proof.Gcm.sealPrepared16Pre pb) vs m₁ →
+      Curry.apply (Proof.Gcm.sealPrecomputedSig.words pb) (Proof.Gcm.sealPrepared16Pre pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 8) hlen
   replace hlen := Nat.succ.inj hlen
@@ -92,7 +93,7 @@ theorem sealPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.sealPr
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [Spec.Gcm.sealPrecomputedSig, sealPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
@@ -102,10 +103,10 @@ theorem sealPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.sealPr
   dsimp only [Curry.apply, Proof.Gcm.sealPrepared16Pre, ArgWord.ofRaw] at h ⊢
   exact ⟨h.1, preparedPowers16Repr_congr hc h.2⟩
 
-theorem openPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.openPrecomputedSig.words pb).length →
-    (∀ b ∈ Sig.bufs Spec.Gcm.openPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (Spec.Gcm.openPrecomputedSig.words pb) (Proof.Gcm.openPrepared16Pre pb) vs m₁ →
-      Curry.apply (Spec.Gcm.openPrecomputedSig.words pb) (Proof.Gcm.openPrepared16Pre pb) vs m₂ := by
+theorem openPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Proof.Gcm.openPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.openPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.openPrecomputedSig.words pb) (Proof.Gcm.openPrepared16Pre pb) vs m₁ →
+      Curry.apply (Proof.Gcm.openPrecomputedSig.words pb) (Proof.Gcm.openPrepared16Pre pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
   replace hlen := Nat.succ.inj hlen
@@ -113,7 +114,7 @@ theorem openPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.openPr
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [Spec.Gcm.openPrecomputedSig, openPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [Proof.Gcm.openPrecomputedSig, Proof.Gcm.openPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
@@ -125,10 +126,10 @@ theorem openPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.openPr
   dsimp only [Curry.apply, Proof.Gcm.openPrepared16Pre, ArgWord.ofRaw] at h ⊢
   exact ⟨h.1, preparedPowers16Repr_congr hc h.2⟩
 
-theorem streamCryptPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.streamCryptPrecomputedSig.words pb).length →
-    (∀ b ∈ Sig.bufs Spec.Gcm.streamCryptPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (Spec.Gcm.streamCryptPrecomputedSig.words pb) (Proof.Gcm.streamCryptPrepared16Pre pb) vs m₁ →
-      Curry.apply (Spec.Gcm.streamCryptPrecomputedSig.words pb) (Proof.Gcm.streamCryptPrepared16Pre pb) vs m₂ := by
+theorem streamCryptPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Proof.Gcm.streamCryptPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.streamCryptPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.streamCryptPrecomputedSig.words pb) (Proof.Gcm.streamCryptPrepared16Pre pb) vs m₁ →
+      Curry.apply (Proof.Gcm.streamCryptPrecomputedSig.words pb) (Proof.Gcm.streamCryptPrepared16Pre pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
   replace hlen := Nat.succ.inj hlen
@@ -136,7 +137,7 @@ theorem streamCryptPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [Spec.Gcm.streamCryptPrecomputedSig, streamCryptPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,

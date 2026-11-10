@@ -2,6 +2,7 @@ module
 
 -- separate module: target-independent, for every target's proof of `vg_aes_gcm_open_to`; in `Rounds.lean` it would rebuild every AES-GCM proof
 
+public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 
@@ -50,13 +51,13 @@ def openToRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :
 
 /-- The unchanged `openToRoundsContract` postcondition with prepared powers. -/
 def openToPreparedRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  Spec.Gcm.openToPrecomputedSig.contract A (pre := Proof.Gcm.openToPowersPre A.ptrBits)
+  Proof.Gcm.openToPrecomputedSig.contract A (pre := Proof.Gcm.openToPowersPre A.ptrBits)
     (post := openToRoundsPost A.ptrBits)
     (writeArgs := true) (stack := stack) (leak := some (openToLeak A.ptrBits))
 
 /-- The unchanged `openToRoundsContract` postcondition with 16 prepared powers. -/
 def openToPrepared16RoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  Spec.Gcm.openToPrecomputedSig.contract A (pre := Proof.Gcm.openToPrepared16Pre A.ptrBits)
+  Proof.Gcm.openToPrecomputedSig.contract A (pre := Proof.Gcm.openToPrepared16Pre A.ptrBits)
     (post := openToRoundsPost A.ptrBits)
     (writeArgs := true) (stack := stack) (leak := some (openToLeak A.ptrBits))
 

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Flag
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Flagged
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamCallee
@@ -200,7 +201,7 @@ def encFn (v : GcmImpl) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
 /-- The instance of `vg_aes_gcm_stream_encrypt_precomputed` calling the
 implementations `v`. -/
 def encFnP (v : GcmImpl) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
-  .ofPowers ⟨Spec.Gcm.streamEncryptPrecomputedApi.name ++ v.suffix,
+  .ofPowers ⟨"vg_aes_gcm_stream_encrypt_precomputed" ++ v.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2584 1
         (Impl.AesGcm.X86_64.streamEncrypt (v.withBlk v.blkP))⟩
     (streamEncryptP_framed v) (X86_64.withStackArgScratch_spSafe (streamEncryptM_spSafe v v.blkP))
@@ -310,7 +311,7 @@ def sealFn (v : GcmImpl) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
 
 /-- The instance of `vg_aes_gcm_seal_precomputed` calling the implementations `v`. -/
 def sealFnP (v : GcmImpl) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
-  .ofPowers ⟨Spec.Gcm.sealPrecomputedApi.name ++ v.suffix,
+  .ofPowers ⟨"vg_aes_gcm_seal_precomputed" ++ v.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode (v.withBlk v.blkP))⟩
     (sealSelP_framed v Short.shortFacts) (X86_64.withStackArgScratch_spSafe (sealCode_spSafe v v.blkP))
     (StreamTo.framed_xdepth (sealCode_xdepth v v.blkP)) (StreamTo.framed_mx (sealCode_mx v v.blkP))

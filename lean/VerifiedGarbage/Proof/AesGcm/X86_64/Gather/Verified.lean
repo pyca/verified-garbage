@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCT
@@ -318,7 +319,7 @@ theorem gatherPreP_of {s : State}
     (h : (Proof.AesGcm.sealGatherPrecomputedScratchContract X86_64.abi 4888).pre s) :
     Proof.AesGcm.sealGatherPreM CtxMode.powers s := by
   sig_pre [Proof.AesGcm.sealGatherPrecomputedScratchContract, Proof.AesGcm.sealGatherPrecomputedScratchSig,
-    Spec.Gcm.sealGatherPrecomputedPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq] at h
+    Proof.Gcm.sealGatherPrecomputedPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq] at h
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h
   simp only [List.map_append, List.filter_append, List.filter_map, List.map_map, List.filterMap_append,
     List.filterMap_map, List.map_cons, List.map_nil, List.filter_cons, List.filter_nil, Function.comp_def,
@@ -361,7 +362,7 @@ theorem gatherPubP_of {s₁ s₂ : State}
     (hp : (Proof.AesGcm.sealGatherPrecomputedScratchContract X86_64.abi 4888).pub s₁ s₂) :
     Proof.AesGcm.sealGatherPub s₁ s₂ := by
   sig_pub [Proof.AesGcm.sealGatherPrecomputedScratchContract, Proof.AesGcm.sealGatherPrecomputedScratchSig,
-    Spec.Gcm.sealGatherPrecomputedPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq] at hp
+    Proof.Gcm.sealGatherPrecomputedPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
   obtain ⟨q₇, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := hp
   exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, fun i hi => hd i (by simpa using hi)⟩
@@ -400,7 +401,7 @@ def gatherSatP : State :=
 theorem gatherSatP_pre : ∃ s, (Proof.AesGcm.sealGatherPrecomputedScratchContract X86_64.abi 4888).pre s := by
   refine ⟨gatherSatP, ?_⟩
   sig_pre [Proof.AesGcm.sealGatherPrecomputedScratchContract, Proof.AesGcm.sealGatherPrecomputedScratchSig,
-    Spec.Gcm.sealGatherPrecomputedPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq,
+    Proof.Gcm.sealGatherPrecomputedPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq,
     gatherSatP, gatherSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
   sig_and_intros
   all_goals first
@@ -464,8 +465,8 @@ def gatherFrameSatP : State :=
 
 theorem gatherFrameSatP_pre : ∃ s, (Proof.AesGcm.sealGatherPrecomputedRoundsContract X86_64.abi 5128).pre s := by
   refine ⟨gatherFrameSatP, ?_⟩
-  sig_pre [Proof.AesGcm.sealGatherPrecomputedRoundsContract, Spec.Gcm.sealGatherPrecomputedSig,
-    Spec.Gcm.sealGatherPrecomputedPre, X86_64.abi, X86_64.argRegs, stackArgs_five, List.append_eq,
+  sig_pre [Proof.AesGcm.sealGatherPrecomputedRoundsContract, Proof.Gcm.sealGatherPrecomputedSig,
+    Proof.Gcm.sealGatherPrecomputedPre, X86_64.abi, X86_64.argRegs, stackArgs_five, List.append_eq,
     gatherFrameSatP, gatherFrameSat, gatherSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
   sig_and_intros
   all_goals first
@@ -479,8 +480,8 @@ theorem sealGatherP_framed (Sh : ShortFn CtxMode.powers) (I : InitFn) (A : AadFn
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5 (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn))
       (Proof.AesGcm.sealGatherPrecomputedRoundsContract X86_64.abi 5128) :=
-  X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
-    (n := 23) (pre := Spec.Gcm.sealGatherPrecomputedPre X86_64.abi.ptrBits)
+  X86_64.Verified.stackArgScratchL (sig := Proof.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
+    (n := 23) (pre := Proof.Gcm.sealGatherPrecomputedPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.sealGatherRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
     (sealGatherP_core Sh I A T F) (by decide) (by decide) (by decide) (sealGather_spAll Sh I A T F)
     (sealGather_xdepth Sh I A T F) (Proof.AesGcm.sealGatherPrecomputedPre_local _)

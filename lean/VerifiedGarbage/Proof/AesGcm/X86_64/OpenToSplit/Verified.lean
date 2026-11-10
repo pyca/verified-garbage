@@ -2,6 +2,7 @@ module
 
 -- separate module: the proof, which needs none of the variants' instances (`Instances.lean`), so that a change to them does not rebuild it
 
+public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.AesGcm.Flag
 public import VerifiedGarbage.Proof.AesGcm.ScratchOpenTo
@@ -196,7 +197,7 @@ theorem openToSplitPrepared_core (F : OpenSplitFn CtxMode.prepared) :
 
 theorem toSatP2776_pre : ∃ s, (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776).pre s := by
   refine ⟨OpenTo.toSatP, ?_⟩
-  sig_pre [Proof.AesGcm.openToPreparedRoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_pre [Proof.AesGcm.openToPreparedRoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Proof.Gcm.openToPowersPre, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq, OpenTo.toSatP,
     OpenTo.toSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
   sig_and_intros
@@ -211,7 +212,7 @@ theorem openToSplitPrepared_framed (F : OpenSplitFn CtxMode.prepared) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn))
       (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openToPrecomputedSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.openToPrecomputedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.Gcm.openToPowersPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.openToRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 152)
     (leak := some (Spec.Gcm.openToLeak X86_64.abi.ptrBits)) (bytes := 2624) (openToSplitPrepared_core F)
@@ -243,7 +244,7 @@ theorem Same.abi {s u s' : State} (h : Same s u) (a : abiPreserved u s') : abiPr
 precondition, with 2728. -/
 theorem toPre2776_prepared {s : State} (h : (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776).pre s) :
     OpenTo.ToPre CtxMode.prepared s := by
-  sig_pre [Proof.AesGcm.openToPreparedRoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_pre [Proof.AesGcm.openToPreparedRoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Proof.Gcm.openToPowersPre, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at h
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h
   simp only [List.map_append, List.filter_append, List.filter_map, List.map_map, List.filterMap_append,
@@ -262,7 +263,7 @@ theorem toPre2776_prepared {s : State} (h : (Proof.AesGcm.openToPreparedRoundsCo
 
 theorem toPub2776_prepared {s₁ s₂ : State}
     (hp : (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776).pub s₁ s₂) : OpenTo.toPub s₁ s₂ := by
-  sig_pub [Proof.AesGcm.openToPreparedRoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_pub [Proof.AesGcm.openToPreparedRoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
   obtain ⟨q₇, hl, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅⟩ := hp
@@ -279,7 +280,7 @@ theorem toPub2776_prepared {s₁ s₂ : State}
 theorem pre2776_congr {s u : State} (h : Same s u)
     (hs : (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776).pre s) :
     (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776).pre u := by
-  sig_pre [Proof.AesGcm.openToPreparedRoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_pre [Proof.AesGcm.openToPreparedRoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Proof.Gcm.openToPowersPre, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at hs ⊢
   simp only [h.sa, h.saa, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
     h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.gpr .rsp (by decide), h.mem, h.rd, h.wr]
@@ -288,7 +289,7 @@ theorem pre2776_congr {s u : State} (h : Same s u)
 theorem post2776_congr {s u s' : State} (h : Same s u)
     (q : (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776).post u s') :
     (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776).post s s' := by
-  sig_post [Proof.AesGcm.openToPreparedRoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_post [Proof.AesGcm.openToPreparedRoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Proof.AesGcm.openToRoundsPost, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at q ⊢
   simp only [h.sa, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
     h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.mem] at q
@@ -297,7 +298,7 @@ theorem post2776_congr {s u s' : State} (h : Same s u)
 theorem pub2776_congr {s u s' u' : State} (h : Same s u) (h' : Same s' u')
     (q : (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776).pub s s') :
     (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776).pub u u' := by
-  sig_pub [Proof.AesGcm.openToPreparedRoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_pub [Proof.AesGcm.openToPreparedRoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at q ⊢
   simp only [h.sa, h.saa, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
     h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.gpr .rsp (by decide), h.mem,
@@ -307,7 +308,7 @@ theorem pub2776_congr {s u s' u' : State} (h : Same s u) (h' : Same s' u')
 
 theorem pre_narrow {s : State} (h : (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776).pre s) :
     (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2728).pre s := by
-  sig_pre [Proof.AesGcm.openToPreparedRoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_pre [Proof.AesGcm.openToPreparedRoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Proof.Gcm.openToPowersPre, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at h ⊢
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h ⊢
   simp only [List.map_append, List.filter_append, List.filter_map, List.map_map, List.filterMap_append,
@@ -324,7 +325,7 @@ theorem pre_narrow {s : State} (h : (Proof.AesGcm.openToPreparedRoundsContract X
 theorem post_widen {s u s' : State} (h : Same s u)
     (q : (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2728).post u s') :
     (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776).post s s' := by
-  sig_post [Proof.AesGcm.openToPreparedRoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_post [Proof.AesGcm.openToPreparedRoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Proof.AesGcm.openToRoundsPost, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at q ⊢
   simp only [h.sa, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
     h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.mem] at q
@@ -334,7 +335,7 @@ theorem pub_narrow {s u s' u' : State} (h : Same s u) (h' : Same s' u')
     (q : (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776).pub s s') :
     (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2728).pub u u' := by
   have q' := pub2776_congr h h' q
-  sig_pub [Proof.AesGcm.openToPreparedRoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_pub [Proof.AesGcm.openToPreparedRoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at q' ⊢
   exact q'
 
@@ -442,7 +443,7 @@ theorem openToSplitPrepared16_core (F : OpenSplitFn CtxMode.prepared16) :
 
 theorem toSatP16_2776_pre : ∃ s, (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).pre s := by
   refine ⟨OpenTo.toSatP, ?_⟩
-  sig_pre [Proof.AesGcm.openToPrepared16RoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_pre [Proof.AesGcm.openToPrepared16RoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Proof.Gcm.openToPrepared16Pre, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq, OpenTo.toSatP,
     OpenTo.toSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
   sig_and_intros
@@ -457,7 +458,7 @@ theorem openToSplitPrepared16_framed (F : OpenSplitFn CtxMode.prepared16) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn))
       (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openToPrecomputedSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.openToPrecomputedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.Gcm.openToPrepared16Pre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.openToRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 152)
     (leak := some (Spec.Gcm.openToLeak X86_64.abi.ptrBits)) (bytes := 2624) (openToSplitPrepared16_core F)
@@ -469,7 +470,7 @@ theorem openToSplitPrepared16_framed (F : OpenSplitFn CtxMode.prepared16) :
 precondition, with 2728. -/
 theorem toPre2776_prepared16 {s : State} (h : (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).pre s) :
     OpenTo.ToPre CtxMode.prepared16 s := by
-  sig_pre [Proof.AesGcm.openToPrepared16RoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_pre [Proof.AesGcm.openToPrepared16RoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Proof.Gcm.openToPrepared16Pre, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at h
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h
   simp only [List.map_append, List.filter_append, List.filter_map, List.map_map, List.filterMap_append,
@@ -488,7 +489,7 @@ theorem toPre2776_prepared16 {s : State} (h : (Proof.AesGcm.openToPrepared16Roun
 
 theorem toPub2776_prepared16 {s₁ s₂ : State}
     (hp : (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).pub s₁ s₂) : OpenTo.toPub s₁ s₂ := by
-  sig_pub [Proof.AesGcm.openToPrepared16RoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_pub [Proof.AesGcm.openToPrepared16RoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
   obtain ⟨q₇, hl, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅⟩ := hp
@@ -505,7 +506,7 @@ theorem toPub2776_prepared16 {s₁ s₂ : State}
 theorem pre2776_congr16 {s u : State} (h : Same s u)
     (hs : (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).pre s) :
     (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).pre u := by
-  sig_pre [Proof.AesGcm.openToPrepared16RoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_pre [Proof.AesGcm.openToPrepared16RoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Proof.Gcm.openToPrepared16Pre, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at hs ⊢
   simp only [h.sa, h.saa, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
     h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.gpr .rsp (by decide), h.mem, h.rd, h.wr]
@@ -514,7 +515,7 @@ theorem pre2776_congr16 {s u : State} (h : Same s u)
 theorem post2776_congr16 {s u s' : State} (h : Same s u)
     (q : (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).post u s') :
     (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).post s s' := by
-  sig_post [Proof.AesGcm.openToPrepared16RoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_post [Proof.AesGcm.openToPrepared16RoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Proof.AesGcm.openToRoundsPost, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at q ⊢
   simp only [h.sa, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
     h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.mem] at q
@@ -523,7 +524,7 @@ theorem post2776_congr16 {s u s' : State} (h : Same s u)
 theorem pub2776_congr16 {s u s' u' : State} (h : Same s u) (h' : Same s' u')
     (q : (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).pub s s') :
     (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).pub u u' := by
-  sig_pub [Proof.AesGcm.openToPrepared16RoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_pub [Proof.AesGcm.openToPrepared16RoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at q ⊢
   simp only [h.sa, h.saa, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
     h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.gpr .rsp (by decide), h.mem,
@@ -533,7 +534,7 @@ theorem pub2776_congr16 {s u s' u' : State} (h : Same s u) (h' : Same s' u')
 
 theorem pre_narrow16 {s : State} (h : (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).pre s) :
     (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2728).pre s := by
-  sig_pre [Proof.AesGcm.openToPrepared16RoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_pre [Proof.AesGcm.openToPrepared16RoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Proof.Gcm.openToPrepared16Pre, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at h ⊢
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h ⊢
   simp only [List.map_append, List.filter_append, List.filter_map, List.map_map, List.filterMap_append,
@@ -550,7 +551,7 @@ theorem pre_narrow16 {s : State} (h : (Proof.AesGcm.openToPrepared16RoundsContra
 theorem post_widen16 {s u s' : State} (h : Same s u)
     (q : (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2728).post u s') :
     (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).post s s' := by
-  sig_post [Proof.AesGcm.openToPrepared16RoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_post [Proof.AesGcm.openToPrepared16RoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Proof.AesGcm.openToRoundsPost, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at q ⊢
   simp only [h.sa, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
     h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.mem] at q
@@ -560,7 +561,7 @@ theorem pub_narrow16 {s u s' u' : State} (h : Same s u) (h' : Same s' u')
     (q : (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).pub s s') :
     (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2728).pub u u' := by
   have q' := pub2776_congr16 h h' q
-  sig_pub [Proof.AesGcm.openToPrepared16RoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+  sig_pub [Proof.AesGcm.openToPrepared16RoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig,
     Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at q' ⊢
   exact q'
 
