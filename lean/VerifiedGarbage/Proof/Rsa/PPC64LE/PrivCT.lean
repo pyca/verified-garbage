@@ -271,13 +271,17 @@ theorem step_rel_true (hE : EntryOk true E) (hX : ∀ d s, E d s → PreX s) :
     (two_post (preCopy_taint (pins_ΨC hE)) fun _ _ ⟨s, φ, A⟩ =>
       WP.mono (preCopy_ok (hE.pre _ _ φ) (hX _ _ φ) A) fun _ B => ⟨s, φ, B⟩)
 
-theorem body_rel (hE : EntryOk pc E) (hstep : RelCT isa (Two (Ψ2 E)) (preStep pc) (Two (Ψ4 E pc))) :
+/-- `vg_rsa_private_crt`. -/
+theorem crt_step_rel_false (hE : EntryOk false E) : RelCT isa (Two (Ψ1 E)) (crtStep false) (Two (Ψ2 E)) :=
+  two_post (crt_rel hE) fun _ _ ⟨s, φ, A⟩ => crtCall_ok (hE.pre _ _ φ) A fun _ M C => ⟨s, φ, M, C⟩
+
+theorem body_rel (hE : EntryOk pc E) (hcrt : RelCT isa (Two (Ψ1 E)) (crtStep pc) (Two (Ψ2 E)))
+    (hstep : RelCT isa (Two (Ψ2 E)) (preStep pc) (Two (Ψ4 E pc))) :
     RelCT isa (Two (Φ1 E)) (bodyG pc) fun _ _ => True := by
   unfold bodyG
   refine RelCT.seq (two_post (Ψ := Ψ1 E) (setup_taint (Φ1 E)) fun d u ⟨s, φ, e⟩ =>
     e ▸ WP.mono (setup_ok (hE.pre _ _ φ)) fun v A => ⟨s, φ, A⟩) ?_
-  refine RelCT.seq (two_post (Ψ := Ψ2 E) (crt_rel hE) fun d u ⟨s, φ, A⟩ =>
-    crtCall_ok (hE.pre _ _ φ) A fun v M C => ⟨s, φ, M, C⟩) ?_
+  refine RelCT.seq hcrt ?_
   refine RelCT.seq hstep ?_
   refine RelCT.seq (two_post (Ψ := Ψ5 E pc) (pubArgs_taint (Ψ4 E pc)) fun d u ⟨s, φ, A⟩ =>
     WP.mono (pubArgs_ok (hE.pre _ _ φ) A) fun v B => ⟨s, φ, B⟩) ?_
@@ -285,9 +289,10 @@ theorem body_rel (hE : EntryOk pc E) (hstep : RelCT isa (Two (Ψ2 E)) (preStep p
     pubCall_ok (hE.pre _ _ φ) A fun v B => ⟨s, φ, B⟩) ?_
   exact tail_taint (pins_Ψ6 hE)
 
-theorem codeG_rel (hE : EntryOk pc E) (hstep : RelCT isa (Two (Ψ2 E)) (preStep pc) (Two (Ψ4 E pc))) :
+theorem codeG_rel (hE : EntryOk pc E) (hcrt : RelCT isa (Two (Ψ1 E)) (crtStep pc) (Two (Ψ2 E)))
+    (hstep : RelCT isa (Two (Ψ2 E)) (preStep pc) (Two (Ψ4 E pc))) :
     RelCT isa (Two E) (.frame (.alloc frameBytes) (bodyG pc) (.free frameBytes)) fun _ _ => True :=
-  RelCT.alloc (fun _ _ ⟨_, _, _, hsp⟩ => hsp) ((body_rel hE hstep).mono
+  RelCT.alloc (fun _ _ ⟨_, _, _, hsp⟩ => hsp) ((body_rel hE hcrt hstep).mono
     (fun a b ⟨s, t, ⟨d, φs, φt, hsp⟩, ea, eb⟩ =>
       ⟨d, ⟨s, φs, ea⟩, ⟨t, φt, eb⟩, by rw [ea, eb]; simp only [allocated, hsp]⟩) fun _ _ h => h)
 
@@ -296,7 +301,7 @@ end
 theorem entry_ok : EntryOk false Φ0 := ⟨fun _ _ φ => preP_of φ.1, fun _ _ _ φ₁ φ₂ => same φ₁ φ₂⟩
 
 theorem code_rel : RelCT isa (Two Φ0) code fun _ _ => True :=
-  codeG_rel entry_ok (step_rel_false entry_ok)
+  codeG_rel entry_ok (crt_step_rel_false entry_ok) (step_rel_false entry_ok)
 
 theorem code_ct : ConstantTime isa (Proof.Rsa.privateCheckedContract abi frameBytes).pre
     (Proof.Rsa.privateCheckedContract abi frameBytes).pub code :=

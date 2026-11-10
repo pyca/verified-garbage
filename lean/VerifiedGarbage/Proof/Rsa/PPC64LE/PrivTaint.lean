@@ -47,6 +47,14 @@ theorem preArgsP_taint {α : Type} (Φ : α → State → Prop) :
     RelCT isa (Two Φ) (.block preArgsP) fun _ _ => True :=
   two_taint [] (pins_nil Φ) (by taint_decide)
 
+theorem crtPtr_taint {α : Type} (Φ : α → State → Prop) :
+    RelCT isa (Two Φ) (.block crtPtr) fun _ _ => True :=
+  two_taint [] (pins_nil Φ) (by taint_decide)
+
+theorem crtRestore_taint {α : Type} (Φ : α → State → Prop) :
+    RelCT isa (Two Φ) (.block crtRestore) fun _ _ => True :=
+  two_taint [] (pins_nil Φ) (by taint_decide)
+
 /-- The copy from `pre`, from its address and the count. -/
 theorem preCopy_taint {α : Type} {Φ : α → State → Prop} (hp : Pins Φ [.r3, .r4, .r5]) :
     RelCT isa (Two Φ) preCopy fun _ _ => True :=

@@ -39,7 +39,7 @@ theorem Scr.le {s : State} {B : Addr} {Z n : Nat} (hs : Scr s B Z) (h : n ≤ Z)
 at `off BX oQ` (its registers set, `m₂` below `256^qL` in array 4) and `p`'s
 at `off BX oP` (`P` in array 0, `m₁ < P` in array 4), `qInv < P` in `X`'s
 array 7: `h` into `p`'s array 4. -/
-theorem phaseD_ok {s : State} {BX : Addr} {Z oP oQ wX pL qL Pv m1 M2 QI : Nat}
+theorem phaseD_ok {pc : Bool} {s : State} {BX : Addr} {Z oP oQ wX pL qL Pv m1 M2 QI : Nat}
     (hs : Scr s BX Z) (hPZ : oP + slot (wsWords pL) 24 ≤ Z) (hXP : slot wX 8 ≤ oP)
     (hQZ : oQ + slot (wsWords qL) 24 ≤ Z) (hXQ : slot wX 8 ≤ oQ) (_hPQ : oP + slot (wsWords pL) 24 ≤ oQ)
     (hwP : wsWords pL ≤ wX) (hwQ : wsWords qL ≤ wX) (hwX : wX < 2 ^ 31)
@@ -53,8 +53,9 @@ theorem phaseD_ok {s : State} {BX : Addr} {Z oP oQ wX pL qL Pv m1 M2 QI : Nat}
     (hPodd : Pv % 2 = 1) (hm1 : Mont.val32 s.mem (off BX oP) (slot (wsWords pL) 4) (2 * wsWords pL) = m1)
     (hm1P : m1 < Pv) (hm2 : Mont.val32 s.mem (off BX oQ) (slot (wsWords qL) 4) (2 * wsWords qL) = M2)
     (hm2b : M2 < 256 ^ qL) (hQI : Mont.val32 s.mem BX (slot wX 7) (2 * wX) = QI)
-    (hQIb : QI < 2 ^ (64 * wsWords pL)) (hQP : QI < Pv) :
-    WP isa (.seq exportM2 (.seq (.block (setupP oBP oPLen)) recombineP)) s fun t =>
+    (hQIb : QI < 2 ^ (64 * wsWords pL)) (hQP : QI < Pv)
+    (hR2 : pc = true → ∃ S pL' b, R2C false s BX S Z (wsWords pL) Pv pL' b) :
+    WP isa (.seq exportM2 (.seq (.block (setupP oBP oPLen)) (recombinePG pc))) s fun t =>
       (Mont.val32 t.mem (off BX oP) (slot (wsWords pL) 4) (2 * wsWords pL) =
           (m1 + Pv - M2 % Pv) % Pv * QI % Pv ∧
         Mont.Outs BX [(slot wX 1, qL), (oP, slot (wsWords pL) 24)] s.mem t.mem) ∧
@@ -85,7 +86,10 @@ theorem phaseD_ok {s : State} {BX : Addr} {Z oP oQ wX pL qL Pv m1 M2 QI : Nat}
     (by rw [m2, val32_off_eq o1 (Or.inr (by omega_arith)) (by omega_arith), hP0]) hP2 hPodd
     (by rw [m2, val32_off_eq o1 (Or.inr (by omega_arith)) (by omega_arith), hm1]) hm1P (by rw [m2]; exact hbytes)
     (by rw [m2, o1.wv (Or.inr (by omega_arith)) (by omega_arith)]
-        exact wv_low (by rw [← Pre.val32_eq_wv]; exact hQI) hQIb hwP) hQP)
+        exact wv_low (by rw [← Pre.val32_eq_wv]; exact hQI) hQIb hwP) hQP
+    (fun hp => let ⟨S, pL', b, C⟩ := hR2 hp
+      ⟨S, pL', b, (C.mono (oA := slot wX 1) (n := qL) o1 (by omega_arith) (by omega_arith)
+        (by rw [k1.rd, k1.wr]) (k1.gpr _ (by decide))).of_mem m2 (by rw [k2.rd, k2.wr]) (k2.gpr _ (by decide))⟩))
     fun t ⟨⟨v4, o2⟩, k3⟩ => ⟨⟨v4, fun x hx => ?_⟩, (k12.trans k3).mono⟩
   have h1 := hx _ (List.mem_cons_self ..)
   have h2 := hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))

@@ -11,9 +11,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_private_checked_precomputed() {
     core::arch::naked_asm!(
-        r#".base64 "AfMh+AAAgTmwAAz7uAAs+8AATPvIAGz70ACM+9gArPumAgh84AAM+HgbeHx4K7l8eDPafHg7+3x4Qxx9eEs9ffgAbDh400R/eOunf3jTSH9gDSzpaA1M6XANDOhgAAz4eA0M6GgADPiADQzocAAM+IgNDOh4AAz4kA0M6IAADPiYDQzoiAAM+KANDOiQAAz4qA0M6JgADPiwDQzooAAM+LgNDOioAAz4"
-bl {vg_rsa_private_crt}
-.base64 "AACBOegAbPjADWzo+ASMOAcAujjC6KV4pA+leA=="
+        r#".base64 "AfMh+AAAgTmwAAz7uAAs+8AATPvIAGz70ACM+9gArPumAgh84AAM+HgbeHx4K7l8eDPafHg7+3x4Qxx9eEs9ffgAbDh400R/eOunf3jTSH9gDSzpaA1M6XANDOhgAAz4eA0M6GgADPiADQzocAAM+IgNDOh4AAz4kA0M6IAADPiYDQzoiAAM+KANDOiQAAz4qA0M6JgADPiwDQzooAAM+LgNDOioAAz4AACBOfgM7PvADezrBwAaOMLoAHjkJgB4FAL/fw=="
+bl {vg_rsa_private_crt_precomputed}
+.base64 "AACBOfgM7OsAAIE56ABs+MANbOj4BIw4BwC6OMLopXikD6V4"
 20:
 .base64 "AAAD6AAABPgIAGM4CACEOP//pTgAACUo"
 bne %cr0, 20b
@@ -28,7 +28,7 @@ bne %cr0, 21b
 .base64 "AAAIiDhIAHwAAAeYAAAAOAAACJgBAOc4AQAIOf//xjgAACYo"
 bne %cr0, 22b
 .base64 "AACBOeAADOimAwh8sAAM67gALOvAAEzryABs69AAjOvYAKzrAA0hOCAAgE4=""#,
-        vg_rsa_private_crt = sym crate::rsa::vg_rsa_private_crt::vg_rsa_private_crt,
+        vg_rsa_private_crt_precomputed = sym crate::rsa::vg_rsa_private_crt_precomputed::vg_rsa_private_crt_precomputed,
         vg_rsa_public_precomputed_checked = sym crate::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }

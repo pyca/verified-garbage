@@ -47,7 +47,16 @@ vg_rsa_private_checked_precomputed:
 	std %r0, 160(%r12)
 	ld %r0, 3512(%r12)
 	std %r0, 168(%r12)
-	bl {vg_rsa_private_crt}
+	addi %r12, %r1, 0
+	std %r31, 3320(%r12)
+	ld %r31, 3520(%r12)
+	addi %r0, %r26, 7
+	rldicl %r0, %r0, 61, 3
+	rldicr %r0, %r0, 4, 59
+	add %r31, %r31, %r0
+	bl {vg_rsa_private_crt_precomputed}
+	addi %r12, %r1, 0
+	ld %r31, 3320(%r12)
 	addi %r12, %r1, 0
 	std %r3, 232(%r12)
 	ld %r3, 3520(%r12)

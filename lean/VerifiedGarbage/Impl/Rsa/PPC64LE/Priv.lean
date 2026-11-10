@@ -15,7 +15,9 @@ dq_len, qinv, qinv_len, scratch, scratch_len)`, the last twelve on the stack
 `rsa_default_private_transform`:
 
 1. `vg_rsa_private_crt` writes the result `m` (or zeros) to the frame, and
-   its status (1 if the key and the input are valid) is kept in the frame;
+   its status (1 if the key and the input are valid) is kept in the frame
+   (with the key's precomputed values, `vg_rsa_private_crt_precomputed`,
+   given the primes' values in them);
 2. `vg_rsa_public_precompute` writes `n`'s values to the frame;
 3. `vg_rsa_public_precomputed_checked` writes `m^e mod n` to `out`, and its
    status (1 if `e` is valid) is kept in the frame;
@@ -33,8 +35,9 @@ The frame (`stdu r1, -frameBytes(r1)`) holds the Parameter Save Area of the
 calls (the ten stack arguments of `vg_rsa_private_crt`, at `r1 + 96`); our
 caller's `r24`–`r29` and our return address, which each call (`bl`)
 overwrites in the link register (`oSave`, `oLr`); the two statuses (`oSt`,
-`oEs`); `m`, of up to 1024 bytes (`oM`); and `n`'s values, of up to 256
-words (`oPre`). Our own stack arguments are then at
+`oEs`); `m`, of up to 1024 bytes (`oM`); `n`'s values, of up to 256
+words (`oPre`); and with the key's precomputed values, our caller's `r31`
+(`oR31`). Our own stack arguments are then at
 `r1 + frameBytes + 96 + 8 i` (`arg i`).
 -/
 
@@ -64,6 +67,9 @@ def arg (i : Nat) : Nat := frameBytes + 96 + 8 * i
 /-- `vg_rsa_private_crt`. -/
 def crtCall : Prog isa := .call "vg_rsa_private_crt" Impl.Bignum.PPC64LE.Crt.crt
 
+/-- `vg_rsa_private_crt_precomputed`. -/
+def crtCallP : Prog isa := .call "vg_rsa_private_crt_precomputed" Impl.Bignum.PPC64LE.Crt.crtP
+
 /-- `vg_rsa_public_precompute`. -/
 def preCall : Prog isa := .call "vg_rsa_public_precompute" Impl.Bignum.PPC64LE.Precompute.precompute
 
@@ -89,6 +95,26 @@ def crtArgs : List Instr :=
   [.addi .r3 .r12 oM, mov .r4 .r26, mov .r7 .r29, mov .r8 .r26, .load .d .r9 .r12 (arg 0),
     .load .d .r10 .r12 (arg 1)] ++
   (List.range 10).flatMap argCopy
+
+/-- Our caller's `r31`, with the key's precomputed values, while `r31`
+holds the primes' values for `vg_rsa_private_crt_precomputed`. -/
+def oR31 : Nat := 3320
+
+/-- With the key's precomputed values `pre` (our stack argument 12): our
+caller's `r31` into the frame, and `r31 :=` the primes' values, after `n`'s
+`2 ⌈k / 8⌉` words. -/
+def crtPtr : List Instr :=
+  [.addSp .r12 0, .store .d .r31 .r12 oR31, .load .d .r31 .r12 (arg 12), .addi .r0 .r26 7, .lsr .d .r0 .r0 3,
+    .lsl .r0 .r0 4, .add .r31 .r31 .r0]
+
+/-- Our caller's `r31` back. -/
+def crtRestore : List Instr := [.addSp .r12 0, .load .d .r31 .r12 oR31]
+
+/-- `vg_rsa_private_crt`, or with `pc` `vg_rsa_private_crt_precomputed`
+given the primes' values. -/
+def crtStep : Bool → Prog isa
+  | false => crtCall
+  | true => .seq (.block crtPtr) (.seq crtCallP (.block crtRestore))
 
 /-- `r4 := 2 ⌈k / 8⌉`, the words of `n`'s values. -/
 def preLen : List Instr := [.addi .r4 .r26 7, .lsr .d .r4 .r4 3, .lsl .r4 .r4 1]
@@ -158,7 +184,7 @@ def preStep : Bool → Prog isa
 
 /-- The body of the frame. -/
 def bodyG (pc : Bool) : Prog isa :=
-  .seq (.block (save ++ crtArgs)) (.seq crtCall (.seq (preStep pc) (.seq (.block pubArgs)
+  .seq (.block (save ++ crtArgs)) (.seq (crtStep pc) (.seq (preStep pc) (.seq (.block pubArgs)
     (.seq pubCall (.seq (.block cmpArgs) (.seq compare (.seq (.block result) (.seq release
       (.block restore)))))))))
 

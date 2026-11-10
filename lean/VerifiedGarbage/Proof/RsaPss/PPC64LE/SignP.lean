@@ -58,8 +58,8 @@ theorem preS_ofP {hs gs : List FnTable} {s : State} (h : (signPSpec hs gs).pre s
   obtain ⟨sp1, sp2, -, -, -, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oP, oth, otg, oa, ns, es, ps, qs,
     dps, dqs, qis, dgs, sls, sP, sth, stg, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, kP, kth, ktg, ka, wo, wn,
     we, wp, wq, wdp, wdq, wqi, wdg, wsl, wsc, wP, wth, wtg, ⟨k1, k2⟩, ok, e1, e2, p1, p2, q1, q2, h3, h7, h5, hs, hpl,
-    -, hl⟩ := h
-  refine ⟨⟨oP, sP, kP, wP, hpl⟩, fun {H} hH => ?_⟩
+    hk, hl⟩ := h
+  refine ⟨⟨oP, sP, kP, wP, hpl, fun _ => hk⟩, fun {H} hH => ?_⟩
   have hl := hl H hH
   rw [hl] at hrd odg dgs kdg wdg
   exact ⟨sp1, by omega, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oth, otg, oa, ns, es, ps, qs, dps,

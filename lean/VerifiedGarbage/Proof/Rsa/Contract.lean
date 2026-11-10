@@ -152,27 +152,27 @@ def privateCheckedPrecomputedSig : Sig where
   ret := some .u32
 
 /-- `privateCheckedContract`, given the key's precomputed values `pre`
-(`privatePrecompute`): what `vg_rsa_private_checked` computes, if `pre`
-holds them. Constant time but for the public key and the modulus' values in
+(`privatePrecompute`), which it requires: what `vg_rsa_private_checked`
+computes. Constant time but for the public key and the modulus' values in
 `pre`. -/
 def privateCheckedPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   privateCheckedPrecomputedSig.contract A
-    (pre := fun _out outLen _n nLen _e eLen _input inputLen _p pLen _q qLen _dp dpLen _dq dqLen
-        _qinv qinvLen _scratch scratchLen _pre preLen _ =>
+    (pre := fun _out outLen n nLen _e eLen _input inputLen p pLen q qLen _dp dpLen _dq dqLen
+        _qinv qinvLen _scratch scratchLen pre preLen m =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ inputLen.toNat = nLen.toNat ∧
         1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
         1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
         dpLen.toNat = pLen.toNat ∧ qinvLen.toNat = pLen.toNat ∧ dqLen.toNat = qLen.toNat ∧
         scratchWords nLen.toNat ≤ scratchLen.toNat ∧
-        preLen.toNat = privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat)
+        preLen.toNat = privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat ∧
+        privatePrecompute (bytesAt m n nLen.toNat) (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat) =
+          some (wordsAt m pre preLen.toNat))
     (post := fun out _outLen n nLen e eLen input _inputLen p pLen q qLen dp _dpLen dq _dqLen qinv
-        _qinvLen _scratch _scratchLen pre preLen m m' r =>
-      privatePrecompute (bytesAt m n nLen.toNat) (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat) =
-          some (wordsAt m pre preLen.toNat) →
-        writtenOutcome m' out nLen.toNat r
-          (privateChecked (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
-            (bytesAt m input nLen.toNat) (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat)
-            (bytesAt m dp pLen.toNat) (bytesAt m dq qLen.toNat) (bytesAt m qinv pLen.toNat)))
+        _qinvLen _scratch _scratchLen _pre _preLen m m' r =>
+      writtenOutcome m' out nLen.toNat r
+        (privateChecked (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
+          (bytesAt m input nLen.toNat) (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat)
+          (bytesAt m dp pLen.toNat) (bytesAt m dq qLen.toNat) (bytesAt m qinv pLen.toNat)))
     (writeArgs := true) (stack := stack)
     (leak := some fun _out _outLen n nLen e eLen _input _inputLen _p _pLen _q _qLen _dp _dpLen
         _dq _dqLen _qinv _qinvLen _scratch _scratchLen pre _preLen m =>
