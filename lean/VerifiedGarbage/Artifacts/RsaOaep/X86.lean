@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaOaep.X86.Inst
+public import VerifiedGarbage.Proof.RsaOaep.X86.DecPrecomputed
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
@@ -48,6 +49,13 @@ def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) (vs1 : List Proof.Sha1.X86
       code := Proof.RsaOaep.X86.Dec.decCode (vars vs1 vs256) c
       stack := Proof.RsaOaep.X86.Dec.stackBytes
       verified := dec_ok _ h c
+      spSafe := Proof.RsaOaep.X86.Dec.code_sp c },
+    Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact X86.target {
+      suffix := qualifiedName "" [("crt", c.suffix)]
+      tables := [("hash", tables (vars vs1 vs256)), ("mgf1", tables (vars vs1 vs256))]
+      code := Proof.RsaOaep.X86.Dec.decCode (vars vs1 vs256) c
+      stack := Proof.RsaOaep.X86.Dec.stackBytes
+      verified := Proof.RsaOaep.X86.Dec.decPrecomputed_verified h c
       spSafe := Proof.RsaOaep.X86.Dec.code_sp c }]
   else []
 

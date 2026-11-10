@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPss.X86.SgPrecomputed
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.X86.Inst
@@ -51,6 +52,14 @@ def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) (vs1 : List Proof.Sha1.X86
       code := Proof.RsaPss.X86.Sg.signCode (mvars vs1 vs256) (vars vs1 vs256) c
       stack := Proof.RsaPss.X86.Sg.stackBytes
       verified := sign_ok _ _ h c
+      spSafe := Proof.RsaPss.X86.Sg.code_sp h c },
+    Spec.RsaPss.signPrecomputedMdTableApi.artifact X86.target {
+      suffix := qualifiedName "" [("crt", c.suffix)]
+      tables := [("hash", Proof.MdHashTable.X86.tables (mvars vs1 vs256)),
+        ("mgf1", Proof.HashTable.X86.tables (vars vs1 vs256))]
+      code := Proof.RsaPss.X86.Sg.signCode (mvars vs1 vs256) (vars vs1 vs256) c
+      stack := Proof.RsaPss.X86.Sg.stackBytes
+      verified := Proof.RsaPss.X86.Sg.signPrecomputed_verified h c
       spSafe := Proof.RsaPss.X86.Sg.code_sp h c }]
   else []
 
