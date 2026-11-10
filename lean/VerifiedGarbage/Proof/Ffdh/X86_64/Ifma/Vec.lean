@@ -100,8 +100,8 @@ theorem Out2.word_hi (hl : AmmOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : Out
 
 /-- The vector code, from what the region holds (as `vecR_ok`), from the
 digit `i₀` at `oSt`, before which the exponents' digits are zero. -/
-theorem vec_ok (hl : AmmOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x e : Nat → Nat} {mi : Nat → BitVec 64}
-    {Q : Prop} {w R i₀ : Nat}
+theorem vec_ok (hl : AmmOk l) (hz0 : l.z = false) {s : State} {F : Addr} {M K1 Xc Y Fin x e : Nat → Nat}
+    {mi : Nat → BitVec 64} {Q : Prop} {w R i₀ : Nat}
     (hw : w = l.W) (hR : R = 2 ^ (64 * w)) (hB : s.gpr .rbx = F) (hs : Scr s F (oSt l + 8))
     (hM : LimbsAt l s.mem F oM M) (hK : LimbsAt l s.mem F l.oK1 K1) (hX : LimbsAt l s.mem F l.oX Xc)
     (hY : LimbsAt l s.mem F l.oY Y) (hF : LimbsAt l s.mem F l.oFin Fin)
@@ -117,7 +117,7 @@ theorem vec_ok (hl : AmmOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x e : Nat �
     (hz : ∀ p < l.nl, e p / l.T ^ (l.ND - i₀) = 0)
     (hd : ∀ p < l.nl, ∀ i < l.ND, dig l s.mem F p i = digit l (e p) i) :
     WP isa (Impl.Ffdh.X86_64.Ifma.vec l) s fun s' =>
-      (∀ p < l.nl, Good l s'.mem F M l.oY p ∧
+      (∀ p < l.nl, GoodS l s'.mem F M l.oY p ∧
         (Q → val52 l s'.mem F (l.D * p + l.oY) % M p = x p ^ e p * Fin p % M p)) ∧
       Outside F 0 (l.nl * l.D + 8) s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
@@ -134,7 +134,7 @@ theorem vec_ok (hl : AmmOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x e : Nat �
   have hv : ∀ {c} {v : Nat → Nat}, LimbsAt l s.mem F c v → ∀ p < l.nl, v p < 2 * M p →
       val52 l s.mem F (l.D * p + c) = v p :=
     fun h p hp hlt => val52_of hl (h p hp) (by have := two_mul_lt (hMlt p hp); omega_arith)
-  have ar : Ar l s.mem F M (fun p => (mi p &&& mask52).toNat) := by
+  have ar : Ar0 l s.mem F M (fun p => (mi p &&& mask52).toNat) := by
     refine ⟨fun p hp j hj => ?_, fun p hp => hv hM p hp (by have := hModd p hp; omega_arith), fun p hp t ht => ?_,
       fun p hp => ?_, fun p hp => ?_, fun p hp => ?_⟩
     · rw [limb_of (hM p hp) hj]; exact limbN_lt _ _
@@ -146,8 +146,8 @@ theorem vec_ok (hl : AmmOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x e : Nat �
         have := hMlt p hp
         rw [Nat.pow_succ, Nat.pow_succ]; omega_arith
       exact Nat.le_trans h4 (pow2_le (by omega_arith))
-  have e2 : 2 ^ (104 * l.S - 64 * l.W) = 2 ^ l.dbls * 2 ^ (64 * l.W) := by
-    rw [← Nat.pow_add]; congr 1; simp only [Lay.dbls]; omega_arith
+  have e2 := dbls_eq hl hz0
+  have ge : ∀ p, M p ≤ gb l (M p) := fun p => Nat.le_of_eq (gb_eq hz0 _).symm
   unfold Impl.Ffdh.X86_64.Ifma.vec withMx
   refine WP.mx_shape (WP.mono (pro_ok (d := l.oMx) hB hs (by omega_using [hMx, hSt])) fun s₁ ⟨m₁, r14₁, k₁, x₁⟩ => ?_)
   have hB₁ : s₁.gpr .rbx = F := by rw [k₁.gpr (by decide)]; exact hB
@@ -156,23 +156,25 @@ theorem vec_ok (hl : AmmOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x e : Nat �
     rw [m₁, hMx]
     exact ((writeW32_outside _ F _ (by omega_using [hn, hSt])).mono (by omega_using []) (by omega_using [])).trans
       ((writeW32_outside _ F _ (by omega_using [hn, hSt])).mono (by omega_using []) (by omega_using []))
-  have gx := fun p hp => (good_of hl (hX p hp) (by have := hXlt p hp; omega_arith) (hMlt p hp)).of_hi hl O hp
-    (by omega_using [o3, o10])
-  have gy := fun p hp => (good_of hl (hY p hp) (by have := hYlt p hp; omega_arith) (hMlt p hp)).of_hi hl O hp
-    (by omega_using [o2, o10])
-  have gk := fun p hp => (good_of hl (hK p hp) (by have := hKlt p hp; omega_arith) (hMlt p hp)).of_hi hl O hp
-    (by omega_using [o7, o10])
-  have gf := fun p hp => (good_of hl (hF p hp) (hFlt p hp) (hMlt p hp)).of_hi hl O hp (by omega_using [o9, o10])
+  have gx := fun p hp => ((good_of hl (hX p hp) (by have := hXlt p hp; omega_arith) (hMlt p hp)).of_hi hl O hp
+    (by omega_using [o3, o10])).good (ge p)
+  have gy := fun p hp => ((good_of hl (hY p hp) (by have := hYlt p hp; omega_arith) (hMlt p hp)).of_hi hl O hp
+    (by omega_using [o2, o10])).good (ge p)
+  have gk := fun p hp => ((good_of hl (hK p hp) (by have := hKlt p hp; omega_arith) (hMlt p hp)).of_hi hl O hp
+    (by omega_using [o7, o10])).good (ge p)
+  have gf := fun p hp => ((good_of hl (hF p hp) (hFlt p hp) (hMlt p hp)).of_hi hl O hp
+    (by omega_using [o9, o10])).good (ge p)
   have hst₁ : s₁.gpr .rbp = BitVec.ofNat 64 i₀ := by rw [k₁.gpr (by decide)]; exact hst
   refine WP.mono (expLoopFrom_ok hl (st := [.mov .r13 (.reg .rbp)]) (x := x) (e := e) (Q := Q)
-    ⟨hB₁, VG.Proof.Bignum.X86_64.AmmSym.Scr.mono hs₁ (by omega_using [hSt]), Ar.of_hi hl O ar, fun p hp => cop2 (hModd p hp) _, gx, gy, gk,
+    ⟨hB₁, VG.Proof.Bignum.X86_64.AmmSym.Scr.mono hs₁ (by omega_using [hSt]), ⟨Ar0.of_hi hl O ar, fun h => absurd h (by rw [hz0]; decide)⟩, fun p hp => cop2 (hModd p hp) _, gx, gy, gk,
       fun q p hp => by
-        rw [hi_val hl O hp (by omega_using [o3, o10]), hv hX p hp (by have := hXlt p hp; omega_arith)]; exact vx q p hp,
+        rw [cv_eq hz0, hi_val hl O hp (by omega_using [o3, o10]), hv hX p hp (by have := hXlt p hp; omega_arith)]
+        exact vx q p hp,
       fun q p hp => by
-        rw [hi_val hl O hp (by omega_using [o2, o10]), Nat.one_mul, ← vy q p hp,
+        rw [cv_eq hz0, hi_val hl O hp (by omega_using [o2, o10]), Nat.one_mul, ← vy q p hp,
           hv hY p hp (by have := hYlt p hp; omega_arith)],
       fun q p hp => by
-        rw [hi_val hl O hp (by omega_using [o7, o10]), e2, ← vk q p hp,
+        rw [cv_eq hz0, hi_val hl O hp (by omega_using [o7, o10]), e2, ← vk q p hp,
           hv hK p hp (by have := hKlt p hp; omega_arith)]⟩ gf hi₀ hz
     (fun p hp i hi => by rw [dig_of_hi hl O hp hi]; exact hd p hp i hi)
     fun t _ hpt _ _ _ => start_ok (hpt.trans hst₁))
@@ -189,7 +191,7 @@ theorem vec_ok (hl : AmmOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x e : Nat �
   · have O₃ : Outside F (l.nl * l.D) 8 s₂.mem s₃.mem := by
       rw [m₃, hMx]
       exact (writeW32_outside _ F _ (by omega_using [hn, hSt])).mono (by omega_using []) (by omega_using [])
-    refine ⟨(v₂ p hp).1.of_hi hl O₃ hp (by omega_using [o2, o10]), fun hq => ?_⟩
+    refine ⟨((v₂ p hp).1.of_hi hl O₃ hp (by omega_using [o2, o10])).strong hz0, fun hq => ?_⟩
     rw [hi_val hl O₃ hp (by omega_using [o2, o10]), (v₂ p hp).2 hq, hi_val hl O hp (by omega_using [o9, o10]),
       hv hF p hp (hFlt p hp)]
   · have O₃ : Outside F 0 (l.nl * l.D + 8) s₂.mem s₃.mem := by

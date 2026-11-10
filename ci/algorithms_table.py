@@ -72,6 +72,7 @@ FEATURES = {
     "avx512ifma": "AVX-512 IFMA",
     "avx512vl": "AVX-512VL",
     "avx512bw": "AVX-512BW",
+    "avx512fp16": "AVX-512 FP16",
     "avx2": "AVX2",
     "avx": "AVX",
     "bmi1": "BMI1",

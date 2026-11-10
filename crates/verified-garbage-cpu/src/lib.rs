@@ -46,6 +46,7 @@ pub mod feature {
     pub const UMAAL: u32 = 1 << 20;
     pub const DIT: u32 = 1 << 21;
     pub const SB: u32 = 1 << 22;
+    pub const AVX512FP16: u32 = 1 << 23;
 }
 
 /// A set of CPU features.

@@ -19,9 +19,12 @@ def base : CrtImpl := Proof.Variants.RsaPrivateCrt.X86_64.Base.variant
 open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 in
 def ifma : CrtImpl := Proof.Variants.RsaPrivateCrt.X86_64.Ifma.variant
 
+open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 in
+def ifma512 : CrtImpl := Proof.Variants.RsaPrivateCrt.X86_64.Ifma.variant512
+
 /-- Every implementation, best first: each function generic over them is
 emitted with each (the registration files that import this), and its
 dispatcher tries them in this order. -/
-def variants := [ifma, adx, base]
+def variants := [ifma512, ifma, adx, base]
 
 end VG.Proof.Variants.RsaPrivateCrt.X86_64

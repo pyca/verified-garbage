@@ -356,14 +356,23 @@ aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
 # Diamond Rapids: the SHA512 extension and AVX512_IFMA, for
 # Ed25519's verification with both (vg_ed25519_verify_shani_ifma)
 # and RSASSA-PSS signing and RSAES-OAEP decryption with both (with
-# MGF1 over SHA-1 with its SHA extensions or its baseline code).
-# RSA's IFMA arithmetic runs in full on icx, so only the small RSA groups
-# that reach each hash's implementation run here.
+# MGF1 over SHA-1 with its SHA extensions or its baseline code); and
+# AVX512_FP16, with which RSA's private-key operations choose
+# vg_rsa_private_checked_ifma512: the unrestricted line runs RSA's suite
+# with it (the focused group, as on every SDE host without AVX512_IFMA),
+# and the two lines with it and without the SHA extensions run
+# RSAES-PKCS1-v1_5 decryption with SHA-256's other implementations (its
+# AVX2 code with BMI1, its baseline code without). The line without
+# AVX512_FP16 keeps vg_rsa_private_checked_ifma with the SHA512 extension;
+# that arithmetic runs in full on icx.
 [[cpu]]
 chip = "dmr"
+shards = 2
 runs = """
-- | ed25519 rsa_pss_hashes rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+- | ed25519 rsa rsa_pss_hashes rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx2,sha512,avx512f,bmi2,adx,avx512ifma,avx512vl | rsa_oaep_pairs cpu
+avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl,avx512fp16 | rsa_pkcs1_hashes cpu
+avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl,avx512fp16 | rsa_pkcs1_hashes cpu
 """
 
 # The `rust` job runs every test with the runner's features, detected at

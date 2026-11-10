@@ -3,6 +3,226 @@
 //! `assembly/rsa_pkcs1_sig.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_rsa_pkcs1_sign_ifma512` requires (`Artifact.features`).
+pub const VG_RSA_PKCS1_SIGN_IFMA512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// RSASSA-PKCS1-v1_5 signature generation (RFC 8017 §8.2.1) of a hash value, as BoringSSL's `RSA_sign` does it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and the private key `(p, q, dP, dQ, qInv)` (as `vg_rsa_private_checked` takes it), encodes `digest` with EMSA-PKCS1-v1_5 (RFC 8017 §9.2: `0x00 0x01`, bytes `0xff`, `0x00` and the DER encoding of its `DigestInfo`) to `n_len` bytes and computes the signature from it as `vg_rsa_private_checked` does: writes it to `out` (`n_len` bytes, most significant first) and returns 1; writes zeros and returns 0 if `hash` names no hash function, `digest` is not as long as its values, `n_len` is less than the encoding's 11 bytes more than the `DigestInfo`, or `vg_rsa_private_checked` refuses the key; and writes zeros and returns 2 (an internal error) if the signature fails the check against `e`, which is the case for no hash value if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. A signature it writes is one `vg_rsa_pkcs1_verify` accepts. `hash` names the hash function: 0 MD5, 1 SHA-1, 2 SHA-224, 3 SHA-256, 4 SHA-384, 5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, 11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
+///
+/// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 4456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx512f`, `avx512vl`, `avx512ifma`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_sign_ifma512(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJFj7//9IiXwkcEiJdCR4SImUJIAAAABIiYwkiAAAAEyJhCSQAAAATImMJJgAAABJieBJgcCgAAAASIuUJLAEAACJ0kiLtCS4BAAATIuMJMAEAACD+gA="
+je 20f
+.base64 "g/oB"
+je 22f
+.base64 "g/oC"
+je 24f
+.base64 "g/oD"
+je 26f
+.base64 "g/oE"
+je 28f
+.base64 "g/oF"
+je 210f
+.base64 "g/oG"
+je 212f
+.base64 "g/oH"
+je 214f
+.base64 "g/oI"
+je 216f
+.base64 "g/oJ"
+je 218f
+.base64 "g/oK"
+je 220f
+.base64 "g/oL"
+je 222f
+.base64 "QboACAAAQbsAAAAA"
+jmp 223f
+222:
+.base64 "QbpTAAAAQbtAAAAA"
+223:
+jmp 221f
+220:
+.base64 "QbpDAAAAQbswAAAA"
+221:
+jmp 219f
+218:
+.base64 "QbozAAAAQbsgAAAA"
+219:
+jmp 217f
+216:
+.base64 "QbovAAAAQbscAAAA"
+217:
+jmp 215f
+214:
+.base64 "QbozAAAAQbsgAAAA"
+215:
+jmp 213f
+212:
+.base64 "QbovAAAAQbscAAAA"
+213:
+jmp 211f
+210:
+.base64 "QbpTAAAAQbtAAAAA"
+211:
+jmp 29f
+28:
+.base64 "QbpDAAAAQbswAAAA"
+29:
+jmp 27f
+26:
+.base64 "QbozAAAAQbsgAAAA"
+27:
+jmp 25f
+24:
+.base64 "QbovAAAAQbscAAAA"
+25:
+jmp 23f
+22:
+.base64 "QbojAAAAQbsUAAAA"
+23:
+jmp 21f
+20:
+.base64 "QboiAAAAQbsQAAAA"
+21:
+.base64 "TTnZ"
+jne 224f
+.base64 "TInQSIPAC0g5wQ=="
+jb 226f
+.base64 "TInHuAAAAACIB0iDxwG4AQAAAIgHSIPHAUiJyEwp0EiD6ANJicK4/wAAAA=="
+228:
+.base64 "iAdIg8cBSYPqAQ=="
+jne 228b
+.base64 "uAAAAACIB0iDxwGD+gA="
+je 229f
+.base64 "g/oB"
+je 231f
+.base64 "g/oC"
+je 233f
+.base64 "g/oD"
+je 235f
+.base64 "g/oE"
+je 237f
+.base64 "g/oF"
+je 239f
+.base64 "g/oG"
+je 241f
+.base64 "g/oH"
+je 243f
+.base64 "g/oI"
+je 245f
+.base64 "g/oJ"
+je 247f
+.base64 "g/oK"
+je 249f
+.base64 "g/oL"
+je 251f
+jmp 252f
+251:
+.base64 "uDAAAACIB0iDxwG4UQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgKAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuEAAAACIB0iDxwE="
+252:
+jmp 250f
+249:
+.base64 "uDAAAACIB0iDxwG4QQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgJAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuDAAAACIB0iDxwE="
+250:
+jmp 248f
+247:
+.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgIAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
+248:
+jmp 246f
+245:
+.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgHAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
+246:
+jmp 244f
+243:
+.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgGAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
+244:
+jmp 242f
+241:
+.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgFAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
+242:
+jmp 240f
+239:
+.base64 "uDAAAACIB0iDxwG4UQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgDAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuEAAAACIB0iDxwE="
+240:
+jmp 238f
+237:
+.base64 "uDAAAACIB0iDxwG4QQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgCAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuDAAAACIB0iDxwE="
+238:
+jmp 236f
+235:
+.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgBAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
+236:
+jmp 234f
+233:
+.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgEAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
+234:
+jmp 232f
+231:
+.base64 "uDAAAACIB0iDxwG4IQAAAIgHSIPHAbgwAAAAiAdIg8cBuAkAAACIB0iDxwG4BgAAAIgHSIPHAbgFAAAAiAdIg8cBuCsAAACIB0iDxwG4DgAAAIgHSIPHAbgDAAAAiAdIg8cBuAIAAACIB0iDxwG4GgAAAIgHSIPHAbgFAAAAiAdIg8cBuAAAAACIB0iDxwG4BAAAAIgHSIPHAbgUAAAAiAdIg8cB"
+232:
+jmp 230f
+229:
+.base64 "uDAAAACIB0iDxwG4IAAAAIgHSIPHAbgwAAAAiAdIg8cBuAwAAACIB0iDxwG4BgAAAIgHSIPHAbgIAAAAiAdIg8cBuCoAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuIYAAACIB0iDxwG49wAAAIgHSIPHAbgNAAAAiAdIg8cBuAIAAACIB0iDxwG4BQAAAIgHSIPHAbgFAAAAiAdIg8cBuAAAAACIB0iDxwG4BAAAAIgHSIPHAbgQAAAAiAdIg8cB"
+230:
+253:
+.base64 "D7YGiAdIg8YBSIPHAUmD6QE="
+jne 253b
+.base64 "uAEAAAA="
+jmp 227f
+226:
+.base64 "uAAAAAA="
+227:
+jmp 225f
+224:
+.base64 "uAAAAAA="
+225:
+.base64 "g/gA"
+je 254f
+.base64 "SIt8JHBIi3QkeEiLlCSAAAAASIuMJIgAAABMi4QkkAAAAEyLjCSYAAAASIngSAWgAAAASIkEJEiJTCQISIuEJMgEAABIiUQkEEiLhCTQBAAASIlEJBhIi4Qk2AQAAEiJRCQgSIuEJOAEAABIiUQkKEiLhCToBAAASIlEJDBIi4Qk8AQAAEiJRCQ4SIuEJPgEAABIiUQkQEiLhCQABQAASIlEJEhIi4QkCAUAAEiJRCRQSIuEJBAFAABIiUQkWEiLhCQYBQAASIlEJGBIi4QkIAUAAEiJRCRo"
+call {vg_rsa_private_checked_ifma512}
+.base64 "TIucJIgAAAC6AAAAAEmJ4kmBwqAAAAA="
+256:
+.base64 "QYgSSYPCAUmD6wE="
+jne 256b
+jmp 255f
+254:
+.base64 "SIt8JHBIi3QkeEmJ+EmJ8rgAAAAA"
+257:
+.base64 "iAdIg8cBSYPqAQ=="
+jne 257b
+255:
+.base64 "SI2kJKgEAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9iof1A78BiofVA78lioe1A79JioeVA79tiod1A7+RiodVA7+1ioc1A7/ZiocVA7/9iAb1A78BiAbVA78liAa1A79JiAaVA79tiAZ1A7+RiAZVA7+1iAY1A7/ZiAYVA7/9FMdtIjWQk8A+uHCREixwkQYHjwP8AAESJHCRBu78fAABEiVwkBA+uVCQED67oD67oD64UJEUx20iNZCQQSI2kJBDw///zD3+EJOAPAADzD3+EJNAPAADzD3+EJMAPAADzD3+EJLAPAADzD3+EJKAPAADzD3+EJJAPAADzD3+EJIAPAADzD3+EJHAPAADzD3+EJGAPAADzD3+EJFAPAADzD3+EJEAPAADzD3+EJDAPAADzD3+EJCAPAADzD3+EJBAPAADzD3+EJAAPAADzD3+EJPAOAADzD3+EJOAOAADzD3+EJNAOAADzD3+EJMAOAADzD3+EJLAOAADzD3+EJKAOAADzD3+EJJAOAADzD3+EJIAOAADzD3+EJHAOAADzD3+EJGAOAADzD3+EJFAOAADzD3+EJEAOAADzD3+EJDAOAADzD3+EJCAOAADzD3+EJBAOAADzD3+EJAAOAADzD3+EJPANAADzD3+EJOANAADzD3+EJNANAADzD3+EJMANAADzD3+EJLANAADzD3+EJKANAADzD3+EJJANAADzD3+EJIANAADzD3+EJHANAADzD3+EJGANAADzD3+EJFANAADzD3+EJEANAADzD3+EJDANAADzD3+EJCANAADzD3+EJBANAADzD3+EJAANAADzD3+EJPAMAADzD3+EJOAMAADzD3+EJNAMAADzD3+EJMAMAADzD3+EJLAMAADzD3+EJKAMAADzD3+EJJAMAADzD3+EJIAMAADzD3+EJHAMAADzD3+EJGAMAADzD3+EJFAMAADzD3+EJEAMAADzD3+EJDAMAADzD3+EJCAMAADzD3+EJBAMAADzD3+EJAAMAADzD3+EJPALAADzD3+EJOALAADzD3+EJNALAADzD3+EJMALAADzD3+EJLALAADzD3+EJKALAADzD3+EJJALAADzD3+EJIALAADzD3+EJHALAADzD3+EJGALAADzD3+EJFALAADzD3+EJEALAADzD3+EJDALAADzD3+EJCALAADzD3+EJBALAADzD3+EJAALAADzD3+EJPAKAADzD3+EJOAKAADzD3+EJNAKAADzD3+EJMAKAADzD3+EJLAKAADzD3+EJKAKAADzD3+EJJAKAADzD3+EJIAKAADzD3+EJHAKAADzD3+EJGAKAADzD3+EJFAKAADzD3+EJEAKAADzD3+EJDAKAADzD3+EJCAKAADzD3+EJBAKAADzD3+EJAAKAADzD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCSI/v//8w9/hCRoAQAA8w9/hCRYAQAA8w9/hCRIAQAA8w9/hCQ4AQAA8w9/hCQoAQAA8w9/hCQYAQAA8w9/hCQIAQAA8w9/hCT4AAAA8w9/hCToAAAA8w9/hCTYAAAA8w9/hCTIAAAA8w9/hCS4AAAA8w9/hCSoAAAA8w9/hCSYAAAA8w9/hCSIAAAA8w9/RCR48w9/RCRo8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNpCR4AQAASI2kJPAPAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.p2align 6"#,
+        vg_rsa_private_checked_ifma512 = sym super::rsa::vg_rsa_private_checked_ifma512::vg_rsa_private_checked_ifma512,
+    )
+}
+
 /// The CPU features `vg_rsa_pkcs1_sign_ifma` requires (`Artifact.features`).
 pub const VG_RSA_PKCS1_SIGN_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
