@@ -2910,5 +2910,81 @@ b 22f
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_mul_1_1_4.rs"]
+pub(crate) mod vg_rsa_mul_1_1_4;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_mul_1_1_6.rs"]
+pub(crate) mod vg_rsa_mul_1_1_6;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_mul_4_4_7.rs"]
+pub(crate) mod vg_rsa_mul_4_4_7;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_mul_5_1_4.rs"]
+pub(crate) mod vg_rsa_mul_5_1_4;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_mul_5_1_7.rs"]
+pub(crate) mod vg_rsa_mul_5_1_7;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_mul_5_5_4.rs"]
+pub(crate) mod vg_rsa_mul_5_5_4;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_mul_6_4_6.rs"]
+pub(crate) mod vg_rsa_mul_6_4_6;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_mul_6_4_7.rs"]
+pub(crate) mod vg_rsa_mul_6_4_7;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_mul_6_5_1.rs"]
+pub(crate) mod vg_rsa_mul_6_5_1;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_mul_6_5_6.rs"]
+pub(crate) mod vg_rsa_mul_6_5_6;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_mul_6_6_5.rs"]
+pub(crate) mod vg_rsa_mul_6_6_5;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_mul_6_6_7.rs"]
+pub(crate) mod vg_rsa_mul_6_6_7;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_encrypt_precomputed.rs"]
+pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_prime_search.rs"]
+pub(crate) mod vg_rsa_prime_search;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_checked.rs"]
+pub(crate) mod vg_rsa_private_checked;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_crt.rs"]
+pub(crate) mod vg_rsa_private_crt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_public_precomputed_checked.rs"]
+pub(crate) mod vg_rsa_public_precomputed_checked;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_square_4_4.rs"]
 pub(crate) mod vg_rsa_square_4_4;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_square_6_6.rs"]
+pub(crate) mod vg_rsa_square_6_6;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_square_window5.rs"]
+pub(crate) mod vg_rsa_square_window5;
