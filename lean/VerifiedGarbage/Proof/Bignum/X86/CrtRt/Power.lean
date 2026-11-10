@@ -43,29 +43,36 @@ theorem zero_sub_cmask (c : Bool) : (0 : BitVec 32) - cmask c = BitVec.ofNat 32 
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
-theorem doubleStep_ok (h : In Ex base bytes len args s) (c : Ctx)
-    (hT : sv s.mem base len c 4 < sv s.mem base len c 0) :
-    WP isa (doubleStep c) s fun u =>
-      Frame (frameR base (s.gpr .esp) [(lo len (.slot c 1), bc len c + 4), (lo len (.slot c 4), bc len c)]) s.mem u.mem ∧
-      sv u.mem base len c 4 = (sv s.mem base len c 4 + sv s.mem base len c 4) % sv s.mem base len c 0 ∧
-      u.gpr .esi = s.gpr .esi - 1 ∧ u.zf = some (s.gpr .esi - 1 == 0) ∧
-      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
+theorem addMod_ok (h : In Ex base bytes len args s) (c : Ctx) {o a b : Nat}
+    (ho2 : 2 ≤ o) (ho : o ≤ 8) (ha2 : 2 ≤ a) (ha : a ≤ 8) (hb2 : 2 ≤ b) (hb : b ≤ 8)
+    (hA : sv s.mem base len c a < sv s.mem base len c 0) (hB : sv s.mem base len c b < sv s.mem base len c 0) :
+    WP isa (addMod c o a b) s fun u =>
+      Frame (frameR base (s.gpr .esp) [(lo len (.slot c 1), bc len c + 4), (lo len (.slot c o), bc len c)]) s.mem u.mem ∧
+      sv u.mem base len c o = (sv s.mem base len c a + sv s.mem base len c b) % sv s.mem base len c 0 ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u := by
   have nw' := h.scratch.nowrap
   have bl := h.bytes_lt
   have f8 := h.slot_fit c (j := 8) (by decide)
   have g := bc_ge h.lower' c
   have bw := bc_eq_cwc len c
   have s01 : lo len (.slot c 0) + st len c ≤ lo len (.slot c 1) := sl_le (len := len) c (by decide)
-  have s14 : lo len (.slot c 1) + st len c ≤ lo len (.slot c 4) := sl_le (len := len) c (by decide)
-  have s48 : lo len (.slot c 4) + st len c ≤ lo len (.slot c 8) := sl_le (len := len) c (by decide)
+  have s1o : lo len (.slot c 1) + st len c ≤ lo len (.slot c o) := sl_le (len := len) c (by omega_arith)
+  have s1a : lo len (.slot c 1) + st len c ≤ lo len (.slot c a) := sl_le (len := len) c (by omega_arith)
+  have s1b : lo len (.slot c 1) + st len c ≤ lo len (.slot c b) := sl_le (len := len) c (by omega_arith)
+  have so8 : lo len (.slot c o) ≤ lo len (.slot c 8) := by
+    have := Nat.mul_le_mul_right (st len c) ho; simp only [lo]; omega_arith
+  have sa8 : lo len (.slot c a) ≤ lo len (.slot c 8) := by
+    have := Nat.mul_le_mul_right (st len c) ha; simp only [lo]; omega_arith
+  have sb8 : lo len (.slot c b) ≤ lo len (.slot c 8) := by
+    have := Nat.mul_le_mul_right (st len c) hb; simp only [lo]; omega_arith
   have z0 : lo len (.slot c 0) = numBase := sl_zero len c
   have est : st len c = 2 * bc len c + 32 := rfl
   have N1 := one_ok c
   have cb1 : cb len (one c) = bc len c := by simp [cb, one]
   have cw1 : cw len (one c) = cwc len c := by simp [cw, cwc, cb, one]
-  unfold doubleStep
+  unfold addMod
   -- The sum into slot 1.
-  refine WP.seq (WP.mono (chainAdd_ok (o := .slot c 1) (a := .slot c 4) (b := .slot c 4) h N1
+  refine WP.seq (WP.mono (chainAdd_ok (o := .slot c 1) (a := .slot c a) (b := .slot c b) h N1
     (by simp only [cb1]; omega_arith) (by simp only [cb1]; omega_arith) (by simp only [cb1]; omega_arith)
     (by simp only [cb1]; omega_arith) (by simp only [cb1]; omega_arith)) fun u₁ ⟨O₁, _, ⟨c₁, ec₁, V₁⟩, K₁⟩ => ?_)
   simp only [cb1, cw1] at O₁ V₁
@@ -104,9 +111,9 @@ theorem doubleStep_ok (h : In Ex base bytes len args s) (c : Ctx)
   have M₇ : val32 u₇.mem base numBase (cwc len c) = val32 s.mem base numBase (cwc len c) := by
     rw [W₇.val32 (by omega_arith) (by omega_arith), O₁.val32 (by omega_arith) (by omega_arith)]
   -- The sum less `M` into slot 4.
-  refine WP.seq (WP.mono (chainSub_ok (o := .slot c 4) (a := .slot c 1) (b := .slot c 0) h₇ N1
-    (by simp only [cb1]; omega_arith) (by simp only [cb1]; omega_arith) (by simp only [cb1, lo]; omega_arith)
-    (by simp only [cb1]; omega_arith) (by simp only [cb1, lo]; omega_arith)) fun u₈ ⟨O₈, P₈, ⟨b₁, eb₁, V₈⟩, K₈⟩ => ?_)
+  refine WP.seq (WP.mono (chainSub_ok (o := .slot c o) (a := .slot c 1) (b := .slot c 0) h₇ N1
+    (by simp only [cb1]; omega_arith) (by simp only [cb1]; omega_arith) (by simp only [cb1]; omega_arith)
+    (by simp only [cb1]; omega_arith) (by simp only [cb1]; omega_arith)) fun u₈ ⟨O₈, P₈, ⟨b₁, eb₁, V₈⟩, K₈⟩ => ?_)
   simp only [cb1, cw1] at O₈ V₈ P₈
   have K₈' := K₇.trans K₈
   have ws₈ := h.ws.of_keeps K₈'
@@ -129,37 +136,49 @@ theorem doubleStep_ok (h : In Ex base bytes len args s) (c : Ctx)
     rw [m₅]; exact ((O₁.mono (Nat.zero_le _) (by omega_arith)).trans (W₇.mono (Nat.zero_le _) (by omega_arith))).trans
       (O₈.mono (Nat.zero_le _) (by omega_arith)))
   -- The sum back where it is below `M`.
-  refine WP.seq (WP.mono (selectX_ok (x := .slot c 1) (d := .slot c 4) h₅ N1 (by simp only [cb1]; omega_arith)
-    (by simp only [cb1]; omega_arith) (by simp only [cb1]; omega_arith) (by simp only [cw1]; omega_arith) ecx₅) fun u₉ ⟨O₉, V₉, K₉⟩ => ?_)
+  refine WP.mono (selectX_ok (x := .slot c 1) (d := .slot c o) h₅ N1 (by simp only [cb1]; omega_arith)
+    (by simp only [cb1]; omega_arith) (by simp only [cb1]; omega_arith) (by simp only [cw1]; omega_arith) ecx₅) fun u₉ ⟨O₉, V₉, K₉⟩ => ?_
   simp only [cb1, cw1] at O₉ V₉
-  refine wp_subZ rfl fun u₁₀ e₁₀ z₁₀ => WP.block_nil ?_
-  have esi₉ : u₉.gpr .esi = s.gpr .esi := by rw [K₉.1 _ (by decide), K₅'.1 _ (by decide)]
   have M₈ : val32 u₈.mem base numBase (cwc len c) = val32 s.mem base numBase (cwc len c) := by
     rw [O₈.val32 (by omega_arith) (by omega_arith), M₇]
-  refine ⟨?_, ?_, by rw [e₁₀.gpr, esi₉], by rw [z₁₀, esi₉], ?_⟩
-  · rw [e₁₀.mem]
-    have F₁ := frameR_of_outside (sp := s.gpr .esp) (ws := [(lo len (.slot c 1), bc len c + 4), (lo len (.slot c 4), bc len c)])
+  refine ⟨?_, ?_, ?_⟩
+  · have F₁ := frameR_of_outside (sp := s.gpr .esp) (ws := [(lo len (.slot c 1), bc len c + 4), (lo len (.slot c o), bc len c)])
       (O₁.mono (Nat.le_refl _) (by omega_arith) : Outside base (lo len (.slot c 1)) (bc len c + 4) s.mem u₁.mem) (by omega_arith)
       (by simp)
-    have F₇ := frameR_of_outside (sp := s.gpr .esp) (ws := [(lo len (.slot c 1), bc len c + 4), (lo len (.slot c 4), bc len c)])
+    have F₇ := frameR_of_outside (sp := s.gpr .esp) (ws := [(lo len (.slot c 1), bc len c + 4), (lo len (.slot c o), bc len c)])
       (W₇.mono (by omega_arith) (by omega_arith) : Outside base (lo len (.slot c 1)) (bc len c + 4) u₁.mem u₇.mem) (by omega_arith)
       (by simp)
-    have F₈ := frameR_of_outside (sp := s.gpr .esp) (ws := [(lo len (.slot c 1), bc len c + 4), (lo len (.slot c 4), bc len c)])
+    have F₈ := frameR_of_outside (sp := s.gpr .esp) (ws := [(lo len (.slot c 1), bc len c + 4), (lo len (.slot c o), bc len c)])
       O₈ (by omega_arith) (by simp)
-    have F₉ := frameR_of_outside (sp := s.gpr .esp) (ws := [(lo len (.slot c 1), bc len c + 4), (lo len (.slot c 4), bc len c)])
+    have F₉ := frameR_of_outside (sp := s.gpr .esp) (ws := [(lo len (.slot c 1), bc len c + 4), (lo len (.slot c o), bc len c)])
       O₉ (by omega_arith) (by simp)
     rw [m₅] at F₉
     exact ((F₁.trans F₇).trans F₈).trans F₉
   · have key := select_mod' (X := 2 ^ (32 * cwc len c)) (Tl := val32 u₁.mem base (lo len (.slot c 1)) (cwc len c))
-      (D := val32 u₈.mem base (lo len (.slot c 4)) (cwc len c)) (top := c₁.toNat) (c := b₁)
+      (D := val32 u₈.mem base (lo len (.slot c o)) (cwc len c)) (top := c₁.toNat) (c := b₁)
       (M := val32 s.mem base numBase (cwc len c)) (val32_lt _ _ _ _) (val32_lt _ _ _ _)
-      (by rw [V₁]; simp only [sv, sl_zero] at hT; omega_arith) (by have V := V₈; rw [S₇, z0, M₇] at V; exact V)
+      (by rw [V₁]; simp only [sv, sl_zero] at hA hB; omega_arith) (by have V := V₈; rw [S₇, z0, M₇] at V; exact V)
     simp only [sv, sl_zero]
-    rw [e₁₀.mem, V₉, m₅]
+    rw [V₉, m₅]
     rw [show val32 u₈.mem base (lo len (.slot c 1)) (cwc len c) =
         val32 u₁.mem base (lo len (.slot c 1)) (cwc len c) by rw [O₈.val32 (by omega_arith) (by omega_arith), S₇]]
     rw [key, V₁]
-  · exact (K₅'.mono (by decide)).trans ((K₉.mono (by decide)).trans (e₁₀.keeps.mono (by decide)))
+  · exact K₅'.trans (K₉.mono (by decide))
+
+theorem doubleStep_ok (h : In Ex base bytes len args s) (c : Ctx)
+    (hT : sv s.mem base len c 4 < sv s.mem base len c 0) :
+    WP isa (doubleStep c) s fun u =>
+      Frame (frameR base (s.gpr .esp) [(lo len (.slot c 1), bc len c + 4), (lo len (.slot c 4), bc len c)]) s.mem u.mem ∧
+      sv u.mem base len c 4 = (sv s.mem base len c 4 + sv s.mem base len c 4) % sv s.mem base len c 0 ∧
+      u.gpr .esi = s.gpr .esi - 1 ∧ u.zf = some (s.gpr .esi - 1 == 0) ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
+  unfold doubleStep
+  refine WP.seq (WP.mono (addMod_ok h c (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hT hT)
+    fun u₁ ⟨F₁, V₁, K₁⟩ => ?_)
+  refine wp_subZ rfl fun u₂ e₂ z₂ => WP.block_nil ?_
+  have esi₁ : u₁.gpr .esi = s.gpr .esi := K₁.1 _ (by decide)
+  refine ⟨by rw [e₂.mem]; exact F₁, by rw [e₂.mem]; exact V₁, by rw [e₂.gpr, esi₁], by rw [z₂, esi₁], ?_⟩
+  exact (K₁.mono (by decide)).trans (e₂.keeps.mono (by decide))
 
 end
 

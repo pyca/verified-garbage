@@ -160,7 +160,8 @@ theorem prepCtx_ok (h : In Ex base bytes len args s) (c : Ctx) :
   · exact K.trans (Kt.mono (by decide))
 
 /-- A power's result (slot 6 of `c`) into the wide slot `o`, zero-extended to `2 B` bytes. -/
-theorem saveResult_ok (h : In Ex base bytes len args s) (c : Ctx) {o : Nat} (ho9 : 9 ≤ o) (ho : o ≤ 19) :
+theorem saveResultAt_ok (h : In Ex base bytes len args s) (c : Ctx) {o : Nat} (ho : o ≤ 19)
+    (e69 : lo len (.slot c 6) + bc len c ≤ lo len (.slot .wide o)) :
     WP isa (saveResult c o) s fun u =>
       Outside base (lo len (.slot .wide o)) (2 * bc len .wide) s.mem u.mem ∧
       val32 u.mem base (lo len (.slot .wide o)) (2 * cwc len .wide) = sv s.mem base len c 6 ∧
@@ -173,18 +174,6 @@ theorem saveResult_ok (h : In Ex base bytes len args s) (c : Ctx) {o : Nat} (ho9
   have g := bc_ge h.lower' .wide
   have hcw : bc len c ≤ bc len .wide := by cases c <;> omega
   have bl := h.bytes_lt
-  have e69 : lo len (.slot c 6) + bc len c ≤ lo len (.slot .wide o) := by
-    have e6 : lo len (.slot c 6) + st len c ≤ lo len (.slot c 8) := sl_le c (by decide)
-    have e89 : lo len (.slot c 8) + st len c ≤ lo len (.slot .wide 9) := by
-      cases c with
-      | half => exact half_in_wide h (j := 8) (by decide)
-      | wide => exact sl_le (i := 8) (j := 9) .wide (by decide)
-    have : lo len (.slot .wide 9) ≤ lo len (.slot .wide o) := by
-      have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
-      have eo : lo len (.slot .wide o) = numBase + o * st len .wide := rfl
-      have := Nat.mul_le_mul_right (st len .wide) ho9; omega
-    have est : st len c = 2 * bc len c + 32 := rfl
-    omega
   have cb2 : cb len (two .wide) = 2 * bc len .wide := by simp [cb, two]
   have cw2 : cw len (two .wide) = 2 * cwc len .wide := by
     have := bc_dvd len .wide; simp [cw, cb, two, cwc]; omega
@@ -210,6 +199,24 @@ theorem saveResult_ok (h : In Ex base bytes len args s) (c : Ctx) {o : Nat} (ho9
     simp only [sv]
     exact O₁.val32 (.inl (by omega)) (by omega)
   · exact (K₁.mono (by decide)).trans K₂
+
+theorem saveResult_ok (h : In Ex base bytes len args s) (c : Ctx) {o : Nat} (ho9 : 9 ≤ o) (ho : o ≤ 19) :
+    WP isa (saveResult c o) s fun u =>
+      Outside base (lo len (.slot .wide o)) (2 * bc len .wide) s.mem u.mem ∧
+      val32 u.mem base (lo len (.slot .wide o)) (2 * cwc len .wide) = sv s.mem base len c 6 ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u := by
+  refine saveResultAt_ok h c ho ?_
+  have e6 : lo len (.slot c 6) + st len c ≤ lo len (.slot c 8) := sl_le c (by decide)
+  have e89 : lo len (.slot c 8) + st len c ≤ lo len (.slot .wide 9) := by
+    cases c with
+    | half => exact half_in_wide h (j := 8) (by decide)
+    | wide => exact sl_le (i := 8) (j := 9) .wide (by decide)
+  have : lo len (.slot .wide 9) ≤ lo len (.slot .wide o) := by
+    have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
+    have eo : lo len (.slot .wide o) = numBase + o * st len .wide := rfl
+    have := Nat.mul_le_mul_right (st len .wide) ho9; omega
+  have est : st len c = 2 * bc len c + 32 := rfl
+  omega
 
 end
 
