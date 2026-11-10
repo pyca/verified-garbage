@@ -21,7 +21,7 @@ open VG.Spec.Rc2
 The internal CBC functions' contracts are stated with `cbcBlocks`, on blocks as
 vectors, returning the chaining value to continue from;
 `Proof/Rc2/Stream.lean` proves it is CBC (`Spec.Cbc.encrypt`,
-`Spec.Cbc.decrypt`), as `Spec.Rc2.update` states it. -/
+`Spec.Cbc.decrypt`). -/
 
 def xorBlock (a b : Block) : Block :=
   Vector.ofFn fun i => a[i] ^^^ b[i]

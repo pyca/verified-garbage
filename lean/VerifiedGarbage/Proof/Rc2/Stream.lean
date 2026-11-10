@@ -70,17 +70,6 @@ theorem bytesAt_eight (m : Mem) (p : Addr) :
     simp only [Spec.Rc2.bytesAt, Spec.Rc2.blockAt, List.getElem_map, List.getElem_range,
       Vector.getElem_toList, Vector.getElem_ofFn]
 
-theorem blocks_bytesAt (m : Mem) (p : Addr) (n : Nat) :
-    Spec.Rc2.blocks (Spec.Rc2.bytesAt m p (8 * n)) = Spec.Rc2.blocksAt m p n := by
-  simp only [Spec.Rc2.blocks, Spec.Rc2.blocksAt, bytesAt_length, Nat.mul_div_cancel_left _ (by decide : 0 < 8)]
-  apply List.map_congr_left
-  intro j hj
-  have hj := List.mem_range.mp hj
-  apply Vector.ext
-  intro i hi
-  simp only [Vector.getElem_ofFn, Spec.Rc2.blockAt, Spec.Rc2.bytesAt]
-  rw [getD_of_lt _ _ (by simp; omega), List.getElem_map, List.getElem_range, Offset.add_add]
-
 /-! ## `cbcBlocks` is CBC
 
 `Spec.Cbc.encrypt` and `Spec.Cbc.decrypt` work on blocks as lists of bytes;
