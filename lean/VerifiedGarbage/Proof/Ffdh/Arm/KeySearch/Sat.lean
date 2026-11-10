@@ -109,10 +109,10 @@ private theorem searchSat_control (W : List (BitVec 64)) {a : Addr}
 private theorem vetted_satAux (W : List (BitVec 64)) (length : W.length = 2218) :
     ∃ s, (GenerationPolicy.vetted.searchContract (abi.withConsts [(VG.Impl.Ffdh.Arm.VettedGroups.tableSym, W)]) (stackUse .vetted)).pre s := by
   rw [GenerationPolicy.searchContract_vetted]
-  unfold Spec.Ffdh.vettedKeySearchContract
+  unfold GenerationPolicy.legacySearchContract
   refine ⟨searchSat W, pre_consts.mpr ⟨?_, ?_⟩⟩
   · have args (i : Nat) (hi : i < 9) := searchSat_arg W hi
-    sig_pre [Spec.Ffdh.vettedKeySearchContract, keySearchSig, pLenValid, domainLenValid,
+    sig_pre [GenerationPolicy.legacySearchContract, keySearchSig, pLenValid, domainLenValid,
       abi, argRegs, reduceClassify, Loc.val, State.addr]
     simp only [show ∀ (K : List (String × List (BitVec 64))) (s : State) (i : Nat),
       stackArg (stripConsts K s) i = stackArg s i by intros; rfl]

@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
-public import VerifiedGarbage.Spec.Ffdh.VettedKeyGenerationContract
+public import VerifiedGarbage.Spec.Ffdh.VettedKeyGeneration
+public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 
 /-! A proof-side policy index shares the native controller across the two
@@ -106,7 +107,7 @@ theorem searchContract_full {M : ISA} (A : Abi M) (stack : Nat) :
     searchContract .full A stack = keySearchContract A stack := rfl
 
 theorem searchContract_vetted {M : ISA} (A : Abi M) (stack : Nat) :
-    searchContract .vetted A stack = vettedKeySearchContract A stack := rfl
+    searchContract .vetted A stack = legacySearchContract .vetted A stack := rfl
 
 end GenerationPolicy
 end VG.Proof.Ffdh
