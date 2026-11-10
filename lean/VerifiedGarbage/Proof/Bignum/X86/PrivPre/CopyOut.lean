@@ -225,6 +225,18 @@ theorem pre_parts (A : PPABI s) : (arg s 1).toNat * 8 = dstOff s (some 5) + 8 * 
   simp only [Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords] at hl
   simp only [dstOff]; omega
 
+/-- A wide slot's first `8 w` bytes, for `w` at most the modulus's words, lie in the working space. -/
+theorem slot_fit (A : PPABI s) {j w : Nat} (hj : j ≤ 17) (hw : w ≤ Spec.Rsa.modulusWords (arg s 3).toNat) :
+    CrtRt.lo (arg s 3).toNat (.slot .wide j) + 4 * (2 * w) ≤ (arg s 9).toNat * 8 := by
+  have l := A.lengths
+  simp only [Spec.Rsa.lenValid] at l
+  have nd := CrtRt.need_le l.1 A.scratchLength
+  simp only [CrtRt.need, CrtRt.lo, CrtRt.st, CrtRt.bc, CrtRt.mw, Impl.Bignum.X86.CrtRt.numBase] at nd ⊢
+  simp only [Spec.Rsa.modulusWords] at hw nd ⊢
+  have : j * (2 * (8 * (((arg s 3).toNat + 7) / 8)) + 32) ≤ 17 * (2 * (8 * (((arg s 3).toNat + 7) / 8)) + 32) :=
+    Nat.mul_le_mul_right _ hj
+  omega
+
 theorem copyPrimes_ok (A : PPABI s) (B : Body s t) :
     WP isa copyPrimes t fun u => Body s u ∧ Keeps [.eax, .ecx] t u ∧
       Frame [⟨slot s 88, 8⟩, ⟨off (argumentPointer s 0) (dstOff s none),
@@ -243,13 +255,7 @@ theorem copyPrimes_ok (A : PPABI s) (B : Body s t) :
     have := A.pLength; simp only [Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega
   have pw7 : Spec.Rsa.primeWords (arg s 7).toNat ≤ Spec.Rsa.modulusWords (arg s 3).toNat := by
     have := A.qLength; simp only [Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega
-  have fit : ∀ j ≤ 17, ∀ w ≤ Spec.Rsa.modulusWords (arg s 3).toNat,
-      CrtRt.lo (arg s 3).toNat (.slot .wide j) + 4 * (2 * w) ≤ (arg s 9).toNat * 8 := fun j hj w hw => by
-    simp only [CrtRt.need, CrtRt.lo, CrtRt.st, CrtRt.bc, CrtRt.mw, Impl.Bignum.X86.CrtRt.numBase] at nd ⊢
-    simp only [Spec.Rsa.modulusWords] at hw nd ⊢
-    have : j * (2 * (8 * (((arg s 3).toNat + 7) / 8)) + 32) ≤ 17 * (2 * (8 * (((arg s 3).toNat + 7) / 8)) + 32) :=
-      Nat.mul_le_mul_right _ hj
-    omega
+  have fit := fun j (hj : j ≤ 17) w (hw : w ≤ Spec.Rsa.modulusWords (arg s 3).toNat) => slot_fit A hj hw
   have wsTop : ∀ {d n : Nat}, d + n ≤ 196 → (wsR s).Disjoint ⟨bot s + BitVec.ofNat 64 d, n⟩ :=
     fun h => (A.belowWs.sub_left (Offset.sub_base _ (by simpa [stackBytes] using h))).symm
   have wsPre : (wsR s).Disjoint (preR s) := A.preWs.symm
