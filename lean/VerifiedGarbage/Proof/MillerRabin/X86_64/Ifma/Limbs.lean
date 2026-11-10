@@ -56,6 +56,8 @@ theorem MrOk.amm (hl : MrOk l) : VG.Proof.Bignum.X86_64.Ifma.AmmOk l := by
 
 theorem MrOk.nl (hl : MrOk l) : l.nl = 1 := by rcases hl with rfl | rfl | rfl | rfl | rfl <;> rfl
 
+theorem MrOk.z (hl : MrOk l) : l.z = false := by rcases hl with rfl | rfl | rfl | rfl | rfl <;> rfl
+
 /-- The limbs of the number at offset `o` are below `2⁵²`. -/
 def Canon (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (o : Nat) : Prop :=
   ∀ j < l.L, limb l m B o j < 2 ^ 52

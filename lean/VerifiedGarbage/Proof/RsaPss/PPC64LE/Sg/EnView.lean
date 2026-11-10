@@ -25,6 +25,8 @@ our part of `scratch` (`view`): `M'`'s bytes after `mPrime` (`mPrime_bytes`);
 
 namespace VG.Proof.RsaPss.PPC64LE.Sg
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.WriteBytes
 open VG.Impl.RsaOaep.PPC64LE (oEm oRsa)
 open VG.Impl.RsaPss.PPC64LE (oY)

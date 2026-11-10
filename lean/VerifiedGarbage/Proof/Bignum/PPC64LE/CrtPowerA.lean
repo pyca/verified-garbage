@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtR2
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.Layout
@@ -62,7 +63,7 @@ of `X`'s array `xj`, `w_A` words) into array 0 of the working space
 `off BX oA`, `-p⁻¹ mod 2³²` into `r12`, `R² mod p` into array 1
 (`r2Prime`), and `c mod p` into array 4 (`reduceIn`), for `c` the first
 `w_A n` words of `X`'s array 6. -/
-theorem powerA_ok {s : State} {BX : Addr} {Z oA wA wX xj k Pv Cv : Nat} {c : Prog isa}
+theorem powerA_ok {pc q : Bool} {s : State} {BX : Addr} {Z oA wA wX xj k Pv Cv : Nat} {c : Prog isa}
     {Q : State → Prop}
     (hs : Scr s BX Z) (hA : oA + slot wA 24 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wA) (hw' : wA < 2 ^ 31)
     (hwx : wA ≤ wX) (hxj : xj < 8)
@@ -74,15 +75,17 @@ theorem powerA_ok {s : State} {BX : Addr} {Z oA wA wX xj k Pv Cv : Nat} {c : Pro
     (hn : wA * nChunks ((k + 7) / 8) wA ≤ wX)
     (hP : wv s.mem BX (slot wX xj) wA = Pv) (hP2 : 2 ≤ Pv) (hPodd : Pv % 2 = 1)
     (hC : wv s.mem BX (slot wX 6) (wA * nChunks ((k + 7) / 8) wA) = Cv)
+    (hR2 : pc = true → ∃ S pL b, R2C q s BX S Z wA Pv pL b)
     (hc : ∀ t, val32 t.mem (off BX oA) (slot wA 0) (2 * wA) = Pv →
       val32 t.mem (off BX oA) (slot wA 1) (2 * wA) = 2 ^ (128 * wA) % Pv →
       val32 t.mem (off BX oA) (slot wA 4) (2 * wA) = Cv % Pv →
       (t.gpr .r12).toNat < 2 ^ 32 → (w32 t.mem (off BX oA) (slot wA 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 →
       Outside BX oA (slot wA 24) s.mem t.mem → t.gpr .r10 = off (off BX oA) (slot wA 0) →
       Keep (.r10 :: powerRegs) s t → WP isa c t Q) :
-    WP isa (.seq (.block (([.load .d .r25 .r23 oNLen, .addi .r14 .r10 0] : List Instr) ++ xb .r15 xj)) (.seq copyN
+    WP isa (.seq (.block (([.load .d .r25 .r23 oNLen, .addi .r14 .r10 0] : List Instr) ++ xb .r15 xj ++
+      r2Ptr pc q)) (.seq copyN
       (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
-        PublicChecked.base .r9 3)) (.seq Precompute.r2Prime (.seq reduceIn c))))) s Q := by
+        PublicChecked.base .r9 3)) (.seq (r2Step pc) (.seq reduceIn c))))) s Q := by
   have hn' := hs.nowrap
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl
@@ -91,13 +94,18 @@ theorem powerA_ok {s : State} {BX : Addr} {Z oA wA wX xj k Pv Cv : Nat} {c : Pro
   have hK' : s.mem.readW (off BX 16) 64 = BitVec.ofNat 64 k := hK
   have hsA := hs.sub hA
   refine WP.seq ?_
-  rw [WP.block_append_iff]
+  rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (WP.keep [.r25, .r14] (Q := fun t => t.gpr .r25 = BitVec.ofNat 64 k ∧
     t.gpr .r14 = off BX (oA + slot wA 0) ∧ t.mem = s.mem) (by
       prun [h23, h10, oNLen, hs.ld (show 16 + 8 ≤ Z by omega_arith), hK', BitVec.add_zero, off_off]) rfl)
     fun s₁ ⟨⟨a25, a14, m1⟩, k1⟩ => ?_
   refine WP.mono (xb_ok (rd := .r15) (by decide) (by decide) ((k1.gpr _ (by decide)).trans h27)
-    ((k1.gpr _ (by decide)).trans h28) xj) fun s₂ ⟨⟨a15, m2⟩, k2⟩ => ?_
+    ((k1.gpr _ (by decide)).trans h28) xj) fun s₂' ⟨⟨a15', m2'⟩, k2'⟩ => ?_
+  refine WP.mono (r2Ptr_ok (hs.congr (k1.trans k2').wr) (by omega_arith)
+    ((k1.trans k2').gpr _ (by decide) |>.trans h23) (m2'.trans m1) hR2) fun s₂ ⟨⟨p30, mp⟩, kp⟩ => ?_
+  have a15 : s₂.gpr .r15 = _ := (kp.gpr _ (by decide)).trans a15'
+  have m2 : s₂.mem = s₁.mem := mp.trans m2'
+  have k2 := k2'.trans kp
   have k12 := k1.trans k2
   -- The prime.
   refine WP.seq (WP.mono (copySub_ok (hs.congr k12.wr) a15 ((k2.gpr _ (by decide)).trans a14)
@@ -131,10 +139,21 @@ theorem powerA_ok {s : State} {BX : Addr} {Z oA wA wX xj k Pv Cv : Nat} {c : Pro
   have g12 : s₇.gpr .r12 = s₄.gpr .r12 := by
     rw [k7.gpr .r12 (by decide), k6.gpr .r12 (by decide), k5.gpr .r12 (by decide)]
   -- `R² mod p`.
-  refine WP.seq (WP.mono (Pre.r2Prime_ok (hsA.congr k17.wr) ((k7.gpr _ (by decide)).trans a8) a9
+  have hsepB : ∀ S : Addr, (∀ x, ofs S x < 8 * wA → Z ≤ ofs BX x) →
+      ∀ x, ofs S x < 8 * wA → slot wA 24 ≤ ofs (off BX oA) x := fun S hS x hx => by
+    have := hS x hx
+    rcases ofs_rebase BX x (o := oA) (by omega_arith) with ⟨_, h2⟩ | ⟨h1, _⟩ <;> omega_arith
+  refine WP.seq (WP.mono (r2Step_ok (hsA.congr k17.wr) hsepB
+    ((k7.gpr _ (by decide)).trans a8) a9
     ((k17.gpr _ (by decide)).trans h10) ((k7.gpr _ (by decide)).trans ((k6.gpr _ (by decide)).trans a5))
-    ((k17.gpr _ (by decide)).trans h11) hw2 hw' (by simp only [e]; omega_arith) (by rw [g12]; exact i12)
-    (by rw [g12, hm7]; exact iinv) (by rw [hm7, v0]; exact hP2) (by rw [hm7, v0]; exact hPodd))
+    ((k17.gpr _ (by decide)).trans h11) ((k17.gpr _ (by decide)).trans h29)
+    hw2 hw' (by simp only [e]; omega_arith) (by rw [g12]; exact i12)
+    (by rw [g12, hm7]; exact iinv) (by rw [hm7, v0]; exact hP2) (by rw [hm7, v0]; exact hPodd)
+    (fun hp => let ⟨S, pL, b, C, a30⟩ := p30 hp; ⟨S, pL, b, by
+      rw [hm7, v0]
+      exact C.mono (oA := oA) (n := slot wA 24) (by rw [hm7]; exact out3.mono (by omega_arith) (by omega_arith))
+        (by omega_arith) hA (by rw [k17.rd, k17.wr]) (k17.gpr _ (by decide)),
+      ((((k3.trans k4).trans k5).trans k6).trans k7 |>.gpr _ (by decide)).trans a30⟩))
     fun s₈ ⟨h1, out8, k8⟩ => ?_)
   have k18 := k17.trans k8
   rw [hm7, v0] at h1

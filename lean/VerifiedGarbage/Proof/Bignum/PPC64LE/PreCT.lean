@@ -186,10 +186,9 @@ theorem TB {d : PD} {s : State} (h : C4 d s ∧ s.gpr .r0 ≠ 0) :
 
 /-! ## Constant time -/
 
-theorem fn_rel : RelCT isa (Two C0) precompute fun _ _ => True := by
-  unfold precompute
-  refine RelCT.seq (two_post (two_taint _ pins_C0 (by taint_decide)) fun _ _ h => T01 h)
-    (RelCT.seq ?_ (two_taint _ pins_C5 (by taint_decide)))
+/-- `core`, from `C1`: its branches on `n`'s first byte and its validity
+are on facts that `n` fixes. -/
+theorem core_rel : RelCT isa (Two C1) core (Two C5) := by
   unfold core
   refine RelCT.seq (two_post (two_taint _ pins_C1 (by taint_decide)) fun _ _ h => T12 h)
     (RelCT.seq (R := Two C4) ?_ ?_)
@@ -212,6 +211,11 @@ theorem fn_rel : RelCT isa (Two C0) precompute fun _ _ => True := by
     · rw [eval_zero] at hc
       have h0 : s₁.gpr .r0 ≠ 0 := by simpa using hc
       exact ⟨d, ⟨h₁, h0⟩, ⟨h₂, fun e => h0 (h₁.2.2.mpr (h₂.2.2.mp e))⟩, hsp⟩
+
+theorem fn_rel : RelCT isa (Two C0) precompute fun _ _ => True := by
+  unfold precompute
+  exact RelCT.seq (two_post (two_taint _ pins_C0 (by taint_decide)) fun _ _ h => T01 h)
+    (RelCT.seq core_rel (two_taint _ pins_C5 (by taint_decide)))
 
 theorem fn_ct : ConstantTime isa fnContract.pre fnContract.pub precompute :=
   RelCT.constantTime (fn_rel.mono (fun s t ⟨hs, ht, hsp, hb, h3, h4, h5, h6, h7, h8⟩ =>

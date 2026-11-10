@@ -184,8 +184,8 @@ theorem satPF :
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi,
     X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
-/-- MD5, as a variant of `MdHash`. -/
-def variant : MdHash :=
+/-- `variant` before the residue analysis of HMAC's `finalize`. -/
+def unscrubbed : MdHash :=
   MdHash.of ok coreOK callees ⟨Spec.Mgf1.md5, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
     anyOK satA (by decide) Proof.Hmac.md5_local
     (by
@@ -200,5 +200,23 @@ def variant : MdHash :=
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
     "" [] []
+
+/-- HMAC's `finalize` over `unscrubbed`, followed by `Impl.Scrub.X86_64.scrubTail`,
+which wipes the registers and the granules of its stack that the residue
+analysis of its code finds may hold secrets (`MdHash.hmacFinReg`). -/
+def hmacFinKs : List Nat := keep_for% unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I)
+  (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) .r8
+      unscrubbed.H.hmacFin) []
+
+theorem hmacFinOk : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) [])
+      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) .r8
+      unscrubbed.H.hmacFin) h).any
+      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) hmacFinKs (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I))) = true :=
+  VG.X86_64.RScrub.Analysed.ok_of hmacFinKs (by taint_decide)
+
+/-- MD5, as a variant of `MdHash`. -/
+def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  { unscrubbed with hmacFinRes := some ⟨hmacFinKs, hmacFinOk⟩ }
 
 end VG.Proof.Pbkdf2.Md.X86_64.Md5

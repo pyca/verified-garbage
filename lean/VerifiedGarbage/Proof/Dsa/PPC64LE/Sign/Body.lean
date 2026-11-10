@@ -106,8 +106,8 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Na
         (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength (qOf s₀.mem L key) / 8))))
         (sigR (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key) (kOf s.mem L nonce)) →
       Keep bodyRegs s t → WP isa c t Q) :
-    WP isa (.seq (.block markValid) (.seq gk (.seq rRanges (.seq Verify.rrQ (.seq Verify.qMinus2 (.seq inverseK
-      (.seq sValue c))))))) s Q := by
+    WP isa (.seq (.block markValid) (.seq gk (.seq rRanges (.seq Verify.qMinus2 (.seq inverseK
+      (.seq sValue c)))))) s Q := by
   have hZ := hL.z256
   have hpl := hL.pl
   have hql := hL.ql
@@ -158,7 +158,7 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Na
   -- `g^k mod p` to the buffer.
   refine WP.seq (WP.mono (gk_ok (p := p) hL (scr.congr k₁.wr) (regs.keep k₁) ip₁ (hk.keep k₁.rd k₁.wr)
       (hn.keep k₁.rd k₁.wr) (p0₁.trans p0) (by omega_arith) hpo (p8₁.trans p8))
-    fun s₂ ⟨⟨gk₂, _, B₂, Qk₂, _, _, _⟩, k₂⟩ => ?_)
+    fun s₂ ⟨⟨gk₂, ip₂, B₂, Qk₂, _, _, _, a4₂⟩, k₂⟩ => ?_)
   rw [(vals K₁).2.2.1, (vals K₁).2.1] at gk₂
   have K₂ := K₁.trans (Kept.ofBody hL B₂)
   have k₁₂ := k₁.trans k₂
@@ -166,40 +166,35 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Na
     rw [arrQ, arr, Outside.val32 Qk₂ (by decide) (by decide)]; exact q0₁
   have mx₂ : word s₂.mem L.S hMask = mask true := (Body.hMask B₂).trans mx₁
   have hout₂ : word s₂.mem L.S hOut = out := ((Body.hOut B₂).trans hout₁).trans hw
-  -- r, and the masks of the ranges.
+  -- r, and the masks of the ranges; `R² mod q`.
   refine WP.seq (WP.mono (rRanges_ok hL (scr.congr k₁₂.wr) ((regs.keep k₁).keep k₂) (hk.keep k₁₂.rd k₁₂.wr)
-      (hn.keep k₁₂.rd k₁₂.wr) (by rw [q0₂]; omega_arith) mx₂)
-    fun s₃ ⟨⟨Q₃, r9₃, m₃, mf, fa, fb⟩, k₃⟩ => ?_)
+      (hn.keep k₁₂.rd k₁₂.wr) ip₂ a4₂ (by rw [q0₂]; omega_arith) (by rw [q0₂]; exact hqo) mx₂)
+    fun s₃ ⟨⟨Q₃, r9₃, m₃, h8₃, a0₃, mf, Bf, fb⟩, k₃⟩ => ?_)
   rw [q0₂, gk₂] at r9₃
   rw [q0₂, gk₂, (vals K₂).1, (vals K₂).2.1, Bool.true_and] at m₃
-  have qa₃ : QArr L s₂.mem mf := QArr.of fa (Nat.le_refl _) (by decide)
-  have K₃ := (K₂.trans (Kept.ofBody hL (qa₃.qbody.body hL))).trans (Kept.ofMask hL fb)
+  rw [q0₂] at h8₃
+  have K₃ := (K₂.trans (Kept.ofBody hL Bf)).trans (Kept.ofMask hL fb)
   have k₁₃ := k₁₂.trans k₃
-  have q0₃ : arrQ s₃.mem L 0 = q := by
-    rw [arrQ, arr, Outside.val32 (mask_keepQ hL fb) (by decide) (by decide)]; exact qa₃.arr0.trans q0₂
+  have q0₃ : arrQ s₃.mem L 0 = q := a0₃.trans q0₂
   have hout₃ : word s₃.mem L.S hOut = out := by
-    rw [Outside.word fb (Or.inr (by decide)) (by decide), Body.hOut (qa₃.qbody.body hL)]; exact hout₂
-  -- `R² mod q`.
-  refine WP.seq (WP.mono (rrQ_ok Q₃ (by rw [q0₃]; omega_arith)) fun s₄ ⟨⟨Q₄, h8₄, qa₄, a9₄⟩, k₄⟩ => ?_)
-  rw [q0₃] at h8₄
-  have q0₄ : arrQ s₄.mem L 0 = q := qa₄.arr0.trans q0₃
+    rw [Outside.word fb (Or.inr (by decide)) (by decide), Body.hOut Bf]; exact hout₂
   -- `q − 2`.
-  refine WP.seq (WP.mono (qMinus2_ok Q₄ hL (by rw [q0₄]; omega_arith) (by rw [q0₄]; exact hqlt))
+  refine WP.seq (WP.mono (qMinus2_ok Q₃ hL (by rw [q0₃]; omega_arith) (by rw [q0₃]; exact hqlt))
     fun s₅ ⟨⟨Q₅, bq₅, a8₅, qb₅, a9₅⟩, k₅⟩ => ?_)
-  rw [q0₄] at bq₅
-  have q0₅ : arrQ s₅.mem L 0 = q := qb₅.arr0.trans q0₄
-  have B₃₅ : Body L s₃.mem s₅.mem := (qa₄.qbody.body hL).trans (qb₅.body hL)
+  rw [q0₃] at bq₅
+  have q0₅ : arrQ s₅.mem L 0 = q := qb₅.arr0.trans q0₃
+  have B₃₅ : Body L s₃.mem s₅.mem := qb₅.body hL
   have K₅ := K₃.trans (Kept.ofBody hL B₃₅)
-  have k₁₅ := (k₁₃.trans k₄).trans k₅
+  have k₁₅ := k₁₃.trans k₅
   -- `w = k^(q − 2) mod q`.
   refine WP.seq (WP.mono (inverseK_ok Q₅ hL (hn.keep k₁₅.rd k₁₅.wr) (by rw [q0₅]; omega_arith) (by rw [q0₅]; exact hqo)
-      (by rw [a8₅, h8₄, q0₅])) fun s₆ ⟨⟨Q₆, w4₆, a8₆, qa₆, a9₆⟩, k₆⟩ => ?_)
+      (by rw [a8₅, h8₃, q0₅])) fun s₆ ⟨⟨Q₆, w4₆, a8₆, qa₆, a9₆⟩, k₆⟩ => ?_)
   rw [q0₅, bq₅, (vals K₅).2.1] at w4₆
   have q0₆ : arrQ s₆.mem L 0 = q := qa₆.arr0.trans q0₅
   have B₃₆ := B₃₅.trans (qa₆.qbody.body hL)
   have K₆ := K₃.trans (Kept.ofBody hL B₃₆)
   have k₁₆ := k₁₅.trans k₆
-  have r9₆ : arrQ s₆.mem L 9 = g ^ K % p % q := a9₆.trans (a9₅.trans (a9₄.trans r9₃))
+  have r9₆ : arrQ s₆.mem L 9 = g ^ K % p % q := a9₆.trans (a9₅.trans r9₃)
   -- s.
   have hz : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s₆.mem dig (min d n)) < 2 * arrQ s₆.mem L 0 := by
     rw [(vals K₆).2.2.2, q0₆]
@@ -211,7 +206,7 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Na
     exact this
   refine WP.seq (WP.mono (sValue_ok Q₆ hL ((k₁₆.gpr .r2 (by decide)).trans r2) hnq hd
       (hdgn.keep k₁₆.rd k₁₆.wr) (hk.keep k₁₆.rd k₁₆.wr) (by rw [q0₆]; omega_arith) (by rw [q0₆]; exact hqo)
-      (by rw [a8₆, a8₅, h8₄, q0₆]) (by rw [w4₆, q0₆]; exact Nat.mod_lt _ (by omega_arith))
+      (by rw [a8₆, a8₅, h8₃, q0₆]) (by rw [w4₆, q0₆]; exact Nat.mod_lt _ (by omega_arith))
       (by rw [r9₆, q0₆]; exact Nat.mod_lt _ (by omega_arith)) hz)
     fun s₇ ⟨⟨Q₇, s6₇, a9₇, qa₇⟩, k₇⟩ => ?_)
   rw [q0₆, w4₆, r9₆, (vals K₆).1, (vals K₆).2.2.2] at s6₇

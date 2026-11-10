@@ -329,9 +329,9 @@ theorem vecI_ok (hl : LayOk l) {t : State} {B : Addr} {Z w op oq a wp : Nat} {mi
     (vyp : K → Yp % P = 2 ^ (64 * wp) % P) (vyq : K → Yq % Q = 2 ^ (64 * wp) % Q)
     (hLp : ebp.length ≤ l.E) (hLq : ebq.length ≤ l.E) :
     WP isa (seqs [.block [.mov .rbx (.mem (hdr sIfma))], vec l]) t fun t' =>
-      (Good l t'.mem (off B a) (two P Q) l.oY 0 ∧
+      (GoodS l t'.mem (off B a) (two P Q) l.oY 0 ∧
         (K → val52 l t'.mem (off B a) (l.D * 0 + l.oY) % P = C ^ Spec.Rsa.os2ip ebp * Yp % P)) ∧
-      (Good l t'.mem (off B a) (two P Q) l.oY 1 ∧
+      (GoodS l t'.mem (off B a) (two P Q) l.oY 1 ∧
         (K → val52 l t'.mem (off B a) (l.D * 1 + l.oY) % Q = C ^ Spec.Rsa.os2ip ebq * 1 % Q)) ∧
       Outside (off B a) 0 (2 * l.D + 8) t.mem t'.mem ∧ t'.gpr .rdi = t.gpr .rdi ∧
       t'.rd = t.rd ∧ t'.wr = t.wr ∧ t'.mxcsr = t.mxcsr &&& 0xFFFF ∧ Keep mmRegs t t' := by
@@ -409,9 +409,9 @@ theorem leaveB_ok {u : State} {B : Addr} {Z o : Nat} (hs : Scr u B Z) (hdi : u.g
 
 /-- A region's `Y` after changes below the area. -/
 theorem goodY_below (hl : LayOk l) {m m' : Mem} {B : Addr} {a p : Nat} {M : Nat → Nat} {rs : List (Nat × Nat)}
-    (g : Good l m (off B a) M l.oY p) (hf : Frm B rs m m') (hr : ∀ r ∈ rs, r.1 + r.2 ≤ a) (hp : p < 2)
+    (g : GoodS l m (off B a) M l.oY p) (hf : Frm B rs m m') (hr : ∀ r ∈ rs, r.1 + r.2 ≤ a) (hp : p < 2)
     (hz : a + 2 * l.D ≤ 2 ^ 64) :
-    Good l m' (off B a) M l.oY p ∧ val52 l m' (off B a) (l.D * p + l.oY) = val52 l m (off B a) (l.D * p + l.oY) := by
+    GoodS l m' (off B a) M l.oY p ∧ val52 l m' (off B a) (l.D * p + l.oY) = val52 l m (off B a) (l.D * p + l.oY) := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   obtain ⟨hW1, hW2⟩ := W_bounds hl
@@ -442,7 +442,7 @@ theorem resI_ok (hl : LayOk l) {t : State} {B : Addr} {Z w op oq a : Nat} {minv 
     {ep eq : Addr} {lp lq : Nat} (hs : Scr t B Z) (hdi : t.gpr .rdi = off B oq)
     (hm : IMem l t.mem B w op oq a minv mp mq mk P Q ep eq lp lq) (hlo : slot w 8 ≤ op)
     (hpq : op + slot l.W 8 + wsTab l.W ≤ oq) (hqa : oq + slot l.W 8 + wsTab l.W ≤ a) (haZ : a + 2 * l.D + 8 ≤ Z)
-    (gp : Good l t.mem (off B a) (two P Q) l.oY 0) (gq : Good l t.mem (off B a) (two P Q) l.oY 1) :
+    (gp : GoodS l t.mem (off B a) (two P Q) l.oY 0) (gq : GoodS l t.mem (off B a) (two P Q) l.oY 1) :
     WP isa (seqs (result l 1 ++ (([.block [leave, enterP]] : List (Prog isa)) ++
       (result l 0 ++ ([.block [leave]] : List (Prog isa)))))) t fun t' =>
       IMem l t'.mem B w op oq a minv mp mq mk P Q ep eq lp lq ∧
@@ -504,11 +504,11 @@ theorem ifmaA_mx (hl : LayOk l) : (seqs ((([.block (([.mov .rdx (.mem (hdr sWsQ)
         .store (ws .rdx sIfma) .rax, enterP] : List Instr))] : List (Prog isa)) ++ (region l 0 sDp sPlen ++
       (([.block [leave, enterQ]] : List (Prog isa)) ++ region l 1 sDq sQlen))))).allInstrs
       (fun i => !loadsMxcsr i) = true := by
-  rcases hl with rfl | rfl | rfl <;> decide +kernel
+  rcases hl with rfl | rfl | rfl | rfl <;> decide +kernel
 
 theorem resI_mx (hl : LayOk l) : (seqs (result l 1 ++ (([.block [leave, enterP]] : List (Prog isa)) ++
       (result l 0 ++ ([.block [leave]] : List (Prog isa)))))).allInstrs (fun i => !loadsMxcsr i) = true := by
-  rcases hl with rfl | rfl | rfl <;> decide +kernel
+  rcases hl with rfl | rfl | rfl | rfl <;> decide +kernel
 
 /-- `ifma`: `q`'s result `C^dq mod q` in its `aY`, `p`'s `C^dp R_p` in its. -/
 theorem ifma_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a wp : Nat} {minv mp mq mk : BitVec 64} {P Q C : Nat}

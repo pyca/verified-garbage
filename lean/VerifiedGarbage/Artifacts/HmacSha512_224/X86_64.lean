@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.ScrubStream
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
@@ -43,11 +44,6 @@ def artifacts : List Artifact :=
       stack := 24 + Proof.Pbkdf2.Md.X86_64.anyFrame v.I
       verified := v.hmacInitF
       spSafe := v.hmacInitFSp },
-    v.I.finalizeApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame v.I) .r8 v.H.hmacFin
-      stack := 16 + Proof.Pbkdf2.Md.X86_64.hmacFrame v.I
-      verified := v.hmacFinF
-      spSafe := X86_64.withStackScratch_spSafe_of v.hmacFinSp }]
+    v.I.finalizeApi.artifact X86_64.target v.hmacFinReg]
 
 end VG.Artifacts.HmacSha512_224.X86_64

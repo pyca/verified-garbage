@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Blake2.X86_64.Backend
+public import VerifiedGarbage.Proof.Blake2.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Blake2.Spec
@@ -34,17 +35,7 @@ def artifacts : List Artifact := [
     code := Impl.Blake2.X86_64.Stream.init Spec.Blake2.b
     verified := Proof.Blake2.X86_64.Stream.initB_verified }] ++
   (VG.Proof.Variants.Blake2b.X86_64.variants.flatMap fun (v : Proof.Blake2.X86_64.Backend) => [
-    Spec.Blake2.updateBApi.artifact VG.X86_64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackScratch 584 .r8 v.update
-      stack := 8 + 584
-      verified := v.update_framed
-      spSafe := X86_64.withStackScratch_spSafe_of v.updateSpSafe },
-    Spec.Blake2.finalizeBApi.artifact VG.X86_64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackScratch 584 .rcx v.finalize
-      stack := 8 + 584
-      verified := v.finalize_framed
-      spSafe := X86_64.withStackScratch_spSafe_of v.finalizeSpSafe }])
+    Spec.Blake2.updateBApi.artifact VG.X86_64.target (Proof.Blake2.X86_64.updateBReg v),
+    Spec.Blake2.finalizeBApi.artifact VG.X86_64.target (Proof.Blake2.X86_64.finalizeBReg v)])
 
 end VG.Artifacts.Blake2b.X86_64

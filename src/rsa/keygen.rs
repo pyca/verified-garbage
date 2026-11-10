@@ -21,6 +21,8 @@
 ))]
 
 use alloc::vec;
+#[cfg(target_arch = "powerpc64")]
+use alloc::vec::Vec;
 use core::fmt;
 
 use crate::arch::dispatch::rsa_keygen::vg_rsa_generate_auto;
@@ -161,7 +163,7 @@ fn generate_counted(
     // The working space holds the primes and the key.
     crate::zeroize::zeroize(&mut scratch);
     let r = match served {
-        Ok(()) => Ok(key_from(&key, len, public_exponent)),
+        Ok(()) => Ok(key_from(dit, &key, len, public_exponent)),
         Err(Stop::Fill(e)) => Err(e),
         Err(Stop::Failed) if status == 2 => Err(Error::InvalidKey),
         Err(Stop::Failed) => Err(Error::TooManyIterations),
@@ -174,12 +176,17 @@ fn generate_counted(
 /// of `2 len` octets, then `p`, `q`, `dP`, `dQ` and `qInv` of `len`, a key
 /// `PrivateKey` holds (`VG.Spec.RsaKeyGen.keyValid`, and one BoringSSL's
 /// `RSA_check_key` accepts), with the exponent `vg_rsa_generate_init`
-/// accepted.
-fn key_from(key: &[u8], len: usize, public_exponent: &[u8]) -> PrivateKey {
+/// accepted, and its precomputed values.
+fn key_from(
+    dit: crate::dit::Dit<'_>,
+    key: &[u8],
+    len: usize,
+    public_exponent: &[u8],
+) -> PrivateKey {
     let (n, rest) = key.split_at(2 * len);
     let (d, rest) = rest.split_at(2 * len);
     let [p, q, dp, dq, qinv] = core::array::from_fn(|i| rest[i * len..][..len].to_vec());
-    PrivateKey {
+    let mut private = PrivateKey {
         n: n.to_vec(),
         e: crate::rsa::trim(public_exponent).to_vec(),
         d: d.to_vec(),
@@ -188,7 +195,13 @@ fn key_from(key: &[u8], len: usize, public_exponent: &[u8]) -> PrivateKey {
         dp,
         dq,
         qinv,
-    }
+        #[cfg(target_arch = "powerpc64")]
+        pre: Vec::new(),
+    };
+    // A valid key's modulus is valid and `p q = n`, which is all
+    // `vg_rsa_private_precompute` checks.
+    assert!(private.precompute(dit));
+    private
 }
 
 /// [`generate`], with its random octets drawn from `random`.

@@ -57,7 +57,7 @@ def allX : RegSet XReg := RegSet.ofList
 def init (sig : Sig) (stack : Nat) (pubs : List (Nat × Nat × Nat) := []) : FT :=
   let ws := wrInfo sig.params 0
   let t : Taint.T := ⟨allRegs, true, ws.map (·.2), basesAux ws 0, pubs, .empty, allX⟩
-  ⟨true, t, 0, 0, stack, [], [], [], none, []⟩
+  ⟨true, t, 0, 0, stack, [], [], [], none, [], []⟩
 
 /-- The writable buffers. -/
 def wrOf (ps : List (String × Param)) (vs : List (BitVec 64)) : List Region :=
@@ -302,7 +302,8 @@ theorem init_agree (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} (hfit : p
     hgr .rsp, hu, hwr, ?_, Nat.zero_le _, ?_, (by simp [init]; omega), fun _ h => absurd h (Nat.not_lt_zero _), ?_,
     fun _ h => (by cases h), List.Pairwise.nil, fun _ h => (by cases h), ?_, fun _ h => (by cases h),
     ⟨fun _ h => (by cases h), fun _ _ h => (by cases h), fun _ h => (by cases h)⟩,
-    ⟨fun _ h => (by cases h), fun _ _ h => (by cases h), fun _ h => (by cases h)⟩⟩
+    ⟨fun _ h => (by cases h), fun _ _ h => (by cases h), fun _ h => (by cases h)⟩,
+    fun _ h => absurd h (Nat.not_lt_zero _)⟩
   · intro h
     rw [h] at hF
     exact List.eq_nil_of_length_eq_zero (forall₂_length hF)
@@ -427,6 +428,9 @@ nothing in it writes bits 511:128 of a vector register, else `vpxor`. -/
 def levelFor (code : Prog isa) : VecLevel :=
   if code.all (fun i => decide (i.vecLevel ≤ VecLevel.sse.level)) then .sse else .avx
 
+theorem levelFor_ne (code : Prog isa) : levelFor code ≠ .evex := by
+  unfold levelFor; split <;> exact VecLevel.noConfusion
+
 /-- The residue analysis of the code `code` of signature `sig`, whose frames
 and calls use `stack` bytes, from `init` with the bytes `pubs` of its buffers
 public: the granules `ks` that `scrub` wipes, and the analysis's success
@@ -468,7 +472,7 @@ def withScrub {api : Api} (r : Registration api target)
         api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
     if hw : r.written = [] then
       scrubReg r v a.ks hd hst h8 hlv hrb hpost
-        (by obtain ⟨_, hc⟩ := a.ok; exact resOk_reg r a.ks hfit hpub hc) hw
+        (by obtain ⟨_, hc⟩ := a.ok; exact resOk_reg r a.ks hfit hpub hc) hw (levelFor_ne _)
     else r else r else r else r else r else r else r
 
 end VG.X86_64.RScrub

@@ -20,6 +20,8 @@ address (`restore_ok`).
 
 namespace VG.Proof.Rsa.PPC64LE.Priv
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.Rsa.PPC64LE.Priv
 open VG.Proof.Bignum.PPC64LE (Keep)
 
@@ -32,14 +34,14 @@ theorem Late.keep {s t u : State} (L : Late s t) {rs : List Reg} (k : Keep rs t 
     fun r hr => (k.gpr r (hrs r (by revert r; decide))).trans (L.hi r hr), hm ▸ L.mem, hm ▸ L.sv, hm ▸ L.ls⟩
 
 /-- The frame's words are apart from `out` and `m`. -/
-theorem slot_apart {s : State} (h : PreP s) {d : Nat} (hd : d + 8 ≤ oM) {r : Region} (hr : r ∈ [oR s, mR s]) :
+theorem slot_apart {s : State} (h : PreP pc s) {d : Nat} (hd : d + 8 ≤ oM) {r : Region} (hr : r ∈ [oR s, mR s]) :
     Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, 8⟩ r := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact h.ko.sub_left (frame_sub s (by unfold oM frameBytes at *; omega))
   · exact Offset.disjoint _ (.inl hd) (by unfold oM at hd; omega) (by have := h.k2; unfold oM; omega)
 
-theorem Late.release {s t u : State} (h : PreP s) (L : Late s t) (k : Keep [.r0, .r6, .r7, .r8] t u)
+theorem Late.release {s t u : State} (h : PreP pc s) (L : Late s t) (k : Keep [.r0, .r6, .r7, .r8] t u)
     (hf : Frame [oR s, mR s] t.mem u.mem) : Late s u := by
   have mk : Region.Sub (mR s) (kR s) := frame_sub s (by have := h.k2; unfold oM frameBytes; omega)
   refine ⟨k.sp.trans L.sp, k.rd.trans L.rd, k.wr.trans L.wr, (k.gpr _ (by decide)).trans L.r24,
