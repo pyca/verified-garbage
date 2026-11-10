@@ -84,8 +84,11 @@ theorem frame_sub {m m' : Mem} {B : Addr} {o n : Nat} (h : Frame [⟨off B o, n�
 
 theorem saved_ne11 : ∀ i < 18, Crt.saved i ≠ .r11 := by decide
 
-theorem front_ok (s₀ : State) (h : fnContract.pre s₀) :
-    WP isa (.block (Crt.save ++ Crt.args ++ setupX)) s₀ (Front s₀) := by
+/-- The front of `crtG pc`, and with `pc` the cached values' address in the
+header. -/
+theorem front_okG (pc : Bool) (s₀ : State) (h : fnContract.pre s₀) :
+    WP isa (.block (Crt.save ++ argsG pc ++ setupX)) s₀ fun s =>
+      Front s₀ s ∧ (pc = true → word s.mem (cS s₀) oR2 = s₀.gpr .r12) := by
   obtain ⟨hsp, hrd, hwr, dON, dOI, dOP, dOQ, dODP, dODQ, dOQI, dOS, dOA, dNS, dIS, dPS, dQS, dDPS, dDQS, dQIS,
     dSA, nwO, nwN, nwI, nwP, nwQ, nwDP, nwDQ, nwQI, nwS, ⟨hk, hk'⟩, hOL, hIL, hp1, hpk, hq1, hqk, hdpl, hqil, hdql,
     hsl⟩ := h
@@ -130,9 +133,10 @@ theorem front_ok (s₀ : State) (h : fnContract.pre s₀) :
       rw [sa i]; exact Offset.sub_base _ (by omega_arith)
     exact (dSA.symm.sub_left argSub).sub_right savSub
   rw [WP.block_append_iff]
-  refine WP.mono (args_ok (hscr.congr kt.wr) (by omega_arith) t23 (fun i hi => by rw [tsp, kt.rd, kt.wr]; exact hst i hi)
+  refine WP.mono (argsG_ok (pc := pc) (hscr.congr kt.wr) (by omega_arith) t23
+    (fun i hi => by rw [tsp, kt.rd, kt.wr]; exact hst i hi)
     (fun j hj i hi x hx => by rw [tsp]; exact hsep j hj i hi x hx))
-    fun u ⟨⟨w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, Ou⟩, ku⟩ => ?_
+    fun u ⟨⟨w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, Ou, w12⟩, ku⟩ => ?_
   have ktu := kt.trans ku
   refine WP.mono (setupX_ok (k := ck s₀) (pL := cpL s₀) (hscr.congr ktu.wr) (by omega_arith) ((ku.gpr _ (by decide)).trans t23)
     (by rw [ktu.gpr _ (by decide)]; exact (VG.Proof.Bignum.ofNat_toNat64 _).symm) hk'
@@ -143,8 +147,9 @@ theorem front_ok (s₀ : State) (h : fnContract.pre s₀) :
   have hw : ∀ d, d + 8 ≤ 96 → word v.mem (cS s₀) d = word u.mem (cS s₀) d := fun d hd =>
     Ov.word (Or.inl hd) (by omega_arith)
   have z : ∀ x : Addr, x = off x 0 := fun x => (BitVec.add_zero x).symm
-  refine ⟨hscr.congr k.wr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, vBP, vBQ, (kv.gpr _ (by decide)).trans
-    ((ku.gpr _ (by decide)).trans t23), v10, v21, v29, v11, v27, v28, k.mono, fun i hi => ?_, ?_⟩
+  refine ⟨⟨hscr.congr k.wr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, vBP, vBQ, (kv.gpr _ (by decide)).trans
+    ((ku.gpr _ (by decide)).trans t23), v10, v21, v29, v11, v27, v28, k.mono, fun i hi => ?_, ?_⟩,
+    fun hp => by rw [hw _ (by decide), w12 hp, kt.gpr _ (by decide)]⟩
   · rw [hw _ (by decide), w0, kt.gpr _ (by decide)]; exact z _
   · rw [hw _ (by decide), w1, kt.gpr _ (by decide)]; exact z _
   · rw [hw _ (by decide), w2, kt.gpr _ (by decide)]; exact (VG.Proof.Bignum.ofNat_toNat64 _).symm
@@ -167,5 +172,9 @@ theorem front_ok (s₀ : State) (h : fnContract.pre s₀) :
     rw [h1, h2]; exact hs1
   · exact (((frame_sub (o := 112) fr (by omega_arith) (by decide)).mono (by omega_arith) (by omega_arith)).trans
       (Ou.mono (by omega_arith) (by omega_arith))).trans (Ov.mono (by omega_arith) (by omega_arith))
+
+theorem front_ok (s₀ : State) (h : fnContract.pre s₀) :
+    WP isa (.block (Crt.save ++ Crt.args ++ setupX)) s₀ (Front s₀) :=
+  WP.mono (front_okG false s₀ h) fun _ h => h.1
 
 end VG.Proof.Bignum.PPC64LE.Crt

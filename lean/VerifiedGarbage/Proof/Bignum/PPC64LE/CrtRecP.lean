@@ -26,7 +26,7 @@ open VG.Proof.Bignum.PPC64LE
 
 /-- `recombineP`, in `p`'s working space `off BX oA` (`P` in array 0, `m₁` in
 array 4), for `m₂`'s `qL` bytes in `X`'s array 1 and `qInv` in its array 7. -/
-theorem recombineP_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 QI : Nat}
+theorem recombineP_ok {pc : Bool} {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 QI : Nat}
     (hs : Scr s BX Z) (hA : oA + slot wP 24 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wP) (hw' : wP < 2 ^ 31)
     (hwx : wP ≤ wX) (hwX : wX < 2 ^ 31)
     (h10 : s.gpr .r10 = off (off BX oA) (slot wP 0)) (h21 : s.gpr .r21 = off (off BX oA) (slot wP 0))
@@ -37,8 +37,9 @@ theorem recombineP_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 QI : Nat}
     (hP : val32 s.mem (off BX oA) (slot wP 0) (2 * wP) = Pv) (hP2 : 2 ≤ Pv) (hPodd : Pv % 2 = 1)
     (hm1 : val32 s.mem (off BX oA) (slot wP 4) (2 * wP) = m1) (hm1P : m1 < Pv)
     (hm2 : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off BX (slot wX 1)) qL) = m2)
-    (hQ : wv s.mem BX (slot wX 7) wP = QI) (hQP : QI < Pv) :
-    WP isa recombineP s fun t =>
+    (hQ : wv s.mem BX (slot wX 7) wP = QI) (hQP : QI < Pv)
+    (hR2 : pc = true → ∃ S pL b, R2C false s BX S Z wP Pv pL b) :
+    WP isa (recombinePG pc) s fun t =>
       (val32 t.mem (off BX oA) (slot wP 4) (2 * wP) = (m1 + Pv - m2 % Pv) % Pv * QI % Pv ∧
         Outside BX oA (slot wP 24) s.mem t.mem) ∧ Keep recRegs s t := by
   have hn := hs.nowrap
@@ -46,8 +47,8 @@ theorem recombineP_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 QI : Nat}
   have hh : hdrBytes = 256 := rfl
   have eA0 := e wP 0; have eA3 := e wP 3; have eA4 := e wP 4; have eA7 := e wP 7; have eA8 := e wP 24
   have sX7 := slot_le (w := wX) (show 7 < 8 by decide)
-  unfold recombineP
-  refine recP1_ok hs hA hXA hw2 hw' h10 h29 h11 h23 h27 h28 hQL hq1 hqx hwX hP hP2 hPodd hm1 hm2
+  unfold recombinePG
+  refine recP1_ok hs hA hXA hw2 hw' h10 h29 h11 h23 h27 h28 hQL hq1 hqx hwX hP hP2 hPodd hm1 hm2 hR2
     fun t₁ v0 v1 v4 v7 i12 iinv out1 k1 => ?_
   have hsA := (hs.congr k1.wr).sub hA
   refine recP2a_ok (bj := 1) hsA (by unfold slot; omega_arith) (by decide) (by decide) (by decide) hw2 hw' ((k1.gpr _ (by decide)).trans h10)
