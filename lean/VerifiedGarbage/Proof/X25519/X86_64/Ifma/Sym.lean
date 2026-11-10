@@ -191,6 +191,67 @@ theorem qword256_madd (h : Bool) (d a b : BitVec 256) {k : Nat} (hk : k < 4) :
   rw [qword256_halves _ _ hk, ← qword256_lane d hk, ← qword256_lane a hk, ← qword256_lane b hk]
   split <;> exact qword_madd52 _ _ _ _ (mod2_lt k)
 
+/-! ## `vpermd` -/
+
+theorem extract_extract {w : Nat} (x : BitVec w) (a b n m : Nat) (h : b + m ≤ n) :
+    (x.extractLsb' a n).extractLsb' b m = x.extractLsb' (a + b) m := by
+  apply BitVec.eq_of_getLsbD_eq; intro j hj
+  simp only [BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
+    decide_eq_true (show b + j < n by omega)]
+  exact congrArg _ (by omega)
+
+/-- A bit of eight doublewords. -/
+theorem getLsbD_dwords (d : Nat → BitVec 32) {p : Nat} (hp : p < 256) :
+    (d 7 ++ d 6 ++ d 5 ++ d 4 ++ d 3 ++ d 2 ++ d 1 ++ d 0).getLsbD p = (d (p / 32)).getLsbD (p % 32) := by
+  simp only [BitVec.getLsbD_append]
+  have hq : p / 32 = 0 ∨ p / 32 = 1 ∨ p / 32 = 2 ∨ p / 32 = 3 ∨ p / 32 = 4 ∨ p / 32 = 5 ∨ p / 32 = 6 ∨
+      p / 32 = 7 := by omega
+  rcases hq with h | h | h | h | h | h | h | h <;> rw [h] <;>
+    (repeat (first | rw [ite_eq_left (by omega)] | rw [ite_eq_right (by omega)])) <;>
+    exact congrArg _ (by omega)
+
+/-- Quadword `k` of eight doublewords. -/
+theorem qword256_dwords (d : Nat → BitVec 32) {k : Nat} (hk : k < 4) :
+    qword256 (d 7 ++ d 6 ++ d 5 ++ d 4 ++ d 3 ++ d 2 ++ d 1 ++ d 0) k = d (2 * k + 1) ++ d (2 * k) := by
+  apply BitVec.eq_of_getLsbD_eq; intro j hj
+  rw [qword256, BitVec.getLsbD_extractLsb', getLsbD_dwords d (by omega), BitVec.getLsbD_append]
+  simp only [hj, decide_true, Bool.true_and]
+  by_cases h : j < 32
+  · rw [ite_eq_left h, show (64 * k + j) / 32 = 2 * k by omega, show (64 * k + j) % 32 = j by omega]
+  · rw [ite_eq_right h, show (64 * k + j) / 32 = 2 * k + 1 by omega,
+      show (64 * k + j) % 32 = j - 32 by omega]
+
+/-- Doubleword `n` of four quadwords. -/
+def dsel (f : Nat → BitVec 64) (n : Nat) : BitVec 32 := (f (n / 2)).extractLsb' (32 * (n % 2)) 32
+
+/-- A quadword of `vpermd`'s result: the doublewords of the source's quadwords
+`f` at the indices in the low three bits of the two doublewords of the index
+`i`. -/
+def pdq (i : BitVec 64) (f : Nat → BitVec 64) : BitVec 64 :=
+  dsel f (i.extractLsb' 32 3).toNat ++ dsel f (i.extractLsb' 0 3).toNat
+
+theorem pdq_congr (i : BitVec 64) {f g : Nat → BitVec 64} (h : ∀ q < 4, f q = g q) : pdq i f = pdq i g := by
+  have e : ∀ x : BitVec 3, dsel f x.toNat = dsel g x.toNat := fun x => by
+    rw [dsel, dsel, h _ (by have := x.isLt; omega)]
+  rw [pdq, pdq, e, e]
+
+theorem qword256_permDwords (I X : BitVec 256) {k : Nat} (hk : k < 4) :
+    qword256 (permDwords I X) k = pdq (qword256 I k) (qword256 X) := by
+  have hd : ∀ n, dsel (qword256 X) n = X.extractLsb' (32 * n) 32 := fun n => by
+    rw [dsel, qword256, extract_extract _ _ _ _ _ (by omega)]
+    exact congrArg (fun a => X.extractLsb' a 32) (by omega)
+  refine (qword256_dwords (fun i => X.extractLsb' (32 * (I.extractLsb' (32 * i) 3).toNat) 32) hk).trans ?_
+  rw [pdq, hd, hd, qword256, extract_extract _ _ _ _ _ (by omega), extract_extract _ _ _ _ _ (by omega)]
+  simp only [show 32 * (2 * k + 1) = 64 * k + 32 by omega, show 32 * (2 * k) = 64 * k + 0 by omega]
+
+theorem qw_vpermd (s : State) (d i a r : XReg) {k : Nat} (hk : k < 4) :
+    qw ((VOp.vpermd d i a).exec s) r k = if r = d then pdq (qw s i k) (qw s a) else qw s r k := by
+  simp only [VOp.exec, qw_setV256]
+  split
+  · rw [qword256_extract _ hk, qword256_permDwords _ _ hk, qword256_ymm _ _ hk]
+    exact pdq_congr _ fun q hq => qword256_ymm s a hq
+  · rfl
+
 /-! ## Terms -/
 
 /-- A quadword, in terms of those where the code starts. -/
@@ -225,6 +286,8 @@ inductive T
   | low (a : T)
   /-- Quadword `k` of `ymm (16 + r)`. -/
   | hreg (r : Nat)
+  /-- `vpermd`: the doublewords of `a` at the indices `i`. -/
+  | pd (i a : T)
   deriving DecidableEq
 
 def T.eval (s₀ : State) : T → Nat → BitVec 64
@@ -250,6 +313,7 @@ def T.eval (s₀ : State) : T → Nat → BitVec 64
     else b.eval s₀ (if hi then k else k - 2)
   | .low a, k => if k < 2 then a.eval s₀ k else 0
   | .hreg r, k => qwH s₀ (hr r) k
+  | .pd i a, k => pdq (i.eval s₀ k) (a.eval s₀)
 
 /-- The 256 bits of four quadwords. -/
 def T.val (s₀ : State) (t : T) : BitVec 256 :=
@@ -309,6 +373,7 @@ def Sym.vop (σ : Sym) : VOp → Option Sym
   | .vpbroadcastq .l256 d a => some (σ.set d (.bc (σ.reg (xi a))))
   | .vmovq d r => some (σ.set d (.lane0 (.gpr r)))
   | .vpermq d a o => some (σ.set d (.perm (σ.reg (xi a)) o.toNat))
+  | .vpermd d i a => some (σ.set d (.pd (σ.reg (xi i)) (σ.reg (xi a))))
   | .vpmadd52luq .l256 d a b =>
     some (σ.set d (.mad false (σ.reg (xi d)) (σ.reg (xi a)) (σ.reg (xi b))))
   | .vpmadd52huq .l256 d a b =>
@@ -321,11 +386,13 @@ def Sym.vop (σ : Sym) : VOp → Option Sym
   | _ => none
 
 /-- The `EVEX.256` instructions: a copy (`vporq` of a register with itself),
-a clear (`vpxorq` of a register with itself into it), `vpermq` and
-`vpmadd52luq`, `vpmadd52huq`. -/
+a clear (`vpxorq` of a register with itself into it), `vpaddq`, `vpsllq`,
+`vpermq` and `vpmadd52luq`, `vpmadd52huq`. -/
 def Sym.eop (σ : Sym) : EOp → Option Sym
   | .bin .vporq d a b => if a = b then some (σ.setV d (σ.get a)) else none
   | .bin .vpxorq d a b => if a = b ∧ d = a then some (σ.setV d .zero) else none
+  | .bin .vpaddq d a b => some (σ.setV d (.add (σ.get a) (σ.get b)))
+  | .shift .vpsllq d a n => if n.toNat < 64 then some (σ.setV d (.shl (σ.get a) n.toNat)) else none
   | .vpermq d a o => some (σ.setV d (.perm (σ.get a) o.toNat))
   | .vpmadd52 h d a b => some (σ.setV d (.mad h (σ.get d) (σ.get a) (σ.get b)))
   | _ => none
@@ -560,6 +627,12 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State}
       exact ⟨h.set (hv_of (fun k hk => by
           rw [qw_vpermq _ _ _ _ _ hk, ite_eq_left rfl]; simp only [T.eval]; rw [hR a _ (sel4_lt _ _)])
         (fun r hr k hk => by rw [qw_vpermq _ _ _ _ _ hk, ite_eq_right hr])) he hm hh, hs⟩
+    · rename_i d i a
+      cases e
+      exact ⟨h.set (hv_of (fun k hk => by
+          rw [qw_vpermd _ _ _ _ _ hk, ite_eq_left rfl]; simp only [T.eval]; rw [hR i k hk]
+          exact pdq_congr _ fun q hq => (hR a q hq).symm)
+        (fun r hr k hk => by rw [qw_vpermd _ _ _ _ _ hk, ite_eq_right hr])) he hm hh, hs⟩
     · rename_i d a b
       cases e
       have q := fun r k (hk : k < 4) => qw_lo s d a b r hk
@@ -617,6 +690,21 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State}
         refine ⟨h.setV d _ fun k hk => ?_, by cases d <;> exact hs⟩
         rw [qword256_lanes _ _ _ hk]
         simp [EBinOp.sse, reduceXBinOpEval, T.eval, qword]
+      · cases e
+    · rename_i d a b
+      cases e
+      refine ⟨h.setV d _ fun k hk => ?_, by cases d <;> exact hs⟩
+      rw [qword256_lanes _ _ _ hk]
+      simp only [EBinOp.sse, T.eval]
+      rw [qword_paddq _ _ (mod2_lt k), qword256_lane _ hk, qword256_lane _ hk, h.get a hk, h.get b hk]
+    · rename_i d a n
+      split at e
+      · rename_i hn
+        cases e
+        refine ⟨h.setV d _ fun k hk => ?_, by cases d <;> exact hs⟩
+        rw [qword256_lanes _ _ _ hk]
+        simp only [ZShiftOp.sse, T.eval]
+        rw [qword_psllq _ hn (mod2_lt k), qword256_lane _ hk, h.get a hk]
       · cases e
     · rename_i d a o
       cases e

@@ -176,4 +176,13 @@ theorem mulNat_mod (a b : Nat → Nat) :
   congr 1
   omega
 
+/-- `mulG`'s limbs are `mul4`'s, summed in another order, plus what it starts from. -/
+theorem mulNatG_eq (p : Nat) (a b : Nat → Nat) : ∀ k < 5, mulNatG p a b k = p + mulNat a b k := by
+  intro k hk
+  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    simp only [mulNatG, gColH, gLoN, gHiN, mulNat, accLo, accHi, List.range, List.range.loop, List.foldl,
+      Nat.zero_add, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceLT, Nat.reduceAdd, and_self, and_true, and_false,
+      false_and, ↓reduceIte] <;>
+    omega
+
 end VG.Proof.X25519.X86_64.Ifma

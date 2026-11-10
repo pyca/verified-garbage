@@ -87,6 +87,7 @@ def T.bnd (B : Bnds) : T → Nat → Nat
   | .p2 a b hi, k => if k < 2 then a.bnd B (if hi then k + 2 else k) else b.bnd B (if hi then k else k - 2)
   | .low a, k => if k < 2 then a.bnd B k else 0
   | .hreg r, _ => min (B.h r) (2 ^ 64 - 1)
+  | .pd _ _, _ => 2 ^ 64 - 1
 
 /-- A lower bound. -/
 def T.lb (B : Bnds) : T → Nat → Nat
@@ -129,6 +130,7 @@ def T.nat (E : Env) : T → Nat → Nat
   | .p2 a b hi, k => if k < 2 then a.nat E (if hi then k + 2 else k) else b.nat E (if hi then k else k - 2)
   | .low a, k => if k < 2 then a.nat E k else 0
   | .hreg r, k => E.h r k
+  | .pd _ _, _ => 0
 
 /-- Nothing in `t` wraps, by the bounds `B`, and every blend picks whole
 quadwords. -/
@@ -149,6 +151,7 @@ def T.ok (B : Bnds) : T → Nat → Bool
   | .mad true c a b, k => c.bnd B k + hiB (a.bnd B k) (b.bnd B k) < 2 ^ 64 && c.ok B k && a.ok B k && b.ok B k
   | .p2 a b hi, k => if k < 2 then a.ok B (if hi then k + 2 else k) else b.ok B (if hi then k else k - 2)
   | .low a, k => if k < 2 then a.ok B k else true
+  | .pd _ _, _ => false
 
 /-- What a block starts from is within `B`. -/
 structure EnvOK (s₀ : State) (B : Bnds) : Prop where
@@ -367,6 +370,9 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     split
     · rename_i h; rw [ite_eq_left h] at ho; exact ⟨(ih hk ho).1, (ih hk ho).2.1, Nat.zero_le _⟩
     · simp
+  | pd i a _ _ =>
+    intro k _ ho
+    simp only [T.ok, Bool.false_eq_true] at ho
 
 theorem SRel.nat {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) {B : Bnds} (hE : EnvOK s₀ B) {r : XReg}
     {k : Nat} (hk : k < 4) (ho : (σ.reg (xi r)).ok B k = true) :
