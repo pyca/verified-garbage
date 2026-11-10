@@ -2710,804 +2710,15651 @@ bne %cr0, 2238b
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_dsa_verify_prevalidated(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "YABhOQAAa+loAMv5cADr+XgAC/qAACv6iABL+pAAa/qYAIv6oADL+qgA6/qwAAv7uAAr+8AAS/vIAGv70ACL+9gAq/vgAMv76ADr+/AAS/j4AKv6AACrOgAAYzsAAIc7AABJO4LRRHkAAAA4UACEfOAPhHhQAIR8QAAAOHgCQH04IAB8eAJEfcaDhHjkg8B4FAJFfBQiQnwAAJs5xoNGeCCExngAAMw5AAAmOgAA4DkAAAA6"
+        r#"// addi %r11, %r1, 96
+.long 0x39610060
+// ld %r11, 0(%r11)
+.long 0xe96b0000
+// std %r14, 104(%r11)
+.long 0xf9cb0068
+// std %r15, 112(%r11)
+.long 0xf9eb0070
+// std %r16, 120(%r11)
+.long 0xfa0b0078
+// std %r17, 128(%r11)
+.long 0xfa2b0080
+// std %r18, 136(%r11)
+.long 0xfa4b0088
+// std %r19, 144(%r11)
+.long 0xfa6b0090
+// std %r20, 152(%r11)
+.long 0xfa8b0098
+// std %r22, 160(%r11)
+.long 0xfacb00a0
+// std %r23, 168(%r11)
+.long 0xfaeb00a8
+// std %r24, 176(%r11)
+.long 0xfb0b00b0
+// std %r25, 184(%r11)
+.long 0xfb2b00b8
+// std %r26, 192(%r11)
+.long 0xfb4b00c0
+// std %r27, 200(%r11)
+.long 0xfb6b00c8
+// std %r28, 208(%r11)
+.long 0xfb8b00d0
+// std %r29, 216(%r11)
+.long 0xfbab00d8
+// std %r30, 224(%r11)
+.long 0xfbcb00e0
+// std %r31, 232(%r11)
+.long 0xfbeb00e8
+// std %r2, 240(%r11)
+.long 0xf84b00f0
+// std %r21, 248(%r11)
+.long 0xfaab00f8
+// addi %r21, %r11, 0
+.long 0x3aab0000
+// addi %r27, %r3, 0
+.long 0x3b630000
+// addi %r28, %r7, 0
+.long 0x3b870000
+// addi %r26, %r9, 0
+.long 0x3b490000
+// rldicl %r4, %r10, 58, 6
+.long 0x7944d182
+// li %r0, 0
+.long 0x38000000
+// subf %r4, %r4, %r0
+.long 0x7c840050
+// rldicl %r4, %r4, 1, 63
+.long 0x78840fe0
+// subf %r4, %r4, %r0
+.long 0x7c840050
+// li %r0, 64
+.long 0x38000040
+// xor %r0, %r10, %r0
+.long 0x7d400278
+// and %r0, %r0, %r4
+.long 0x7c002038
+// xor %r4, %r10, %r0
+.long 0x7d440278
+// rldicr %r4, %r4, 48, 15
+.long 0x788483c6
+// rldicr %r0, %r6, 16, 47
+.long 0x78c083e4
+// add %r2, %r5, %r0
+.long 0x7c450214
+// add %r2, %r2, %r4
+.long 0x7c422214
+// addi %r12, %r27, 0
+.long 0x399b0000
+// rldicr %r6, %r2, 48, 15
+.long 0x784683c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// addi %r14, %r12, 0
+.long 0x39cc0000
+// addi %r17, %r6, 0
+.long 0x3a260000
+// li %r15, 0
+.long 0x39e00000
+// li %r16, 0
+.long 0x3a000000
 20:
-.base64 "AAAOiHgD730AAGA4UBhvfOAPY3gUGhB+AQDOOf//MToAADEo"
+// lbz %r0, 0(%r14)
+.long 0x880e0000
+// or %r15, %r15, %r0
+.long 0x7def0378
+// li %r3, 0
+.long 0x38600000
+// subf %r3, %r15, %r3
+.long 0x7c6f1850
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// add %r16, %r16, %r3
+.long 0x7e101a14
+// addi %r14, %r14, 1
+.long 0x39ce0001
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 20b
-.base64 "AAAwKA=="
+// cmpldi %cr0, %r16, 0
+.long 0x28300000
 beq %cr0, 21f
-.base64 "FDLMfVBw0H0AAA6IwskAeAEAYDh4GgB8"
+// add %r14, %r12, %r6
+.long 0x7dcc3214
+// subf %r14, %r16, %r14
+.long 0x7dd07050
+// lbz %r0, 0(%r14)
+.long 0x880e0000
+// rldicl %r0, %r0, 57, 7
+.long 0x7800c9c2
+// li %r3, 1
+.long 0x38600001
+// xor %r0, %r0, %r3
+.long 0x7c001a78
 b 22f
 21:
-.base64 "AQAAOA=="
+// li %r0, 1
+.long 0x38000001
 22:
-.base64 "AAAgKA=="
+// cmpldi %cr0, %r0, 0
+.long 0x28200000
 beq %cr0, 23f
-.base64 "AABgOA=="
+// li %r3, 0
+.long 0x38600000
 b 24f
 23:
-.base64 "AAAQO8aDQHgghAB4FAKbfcYHRngghMZ4AADMOQAAJjoAAOA5AAAAOg=="
+// addi %r24, %r16, 0
+.long 0x3b100000
+// rldicr %r0, %r2, 48, 15
+.long 0x784083c6
+// rldicl %r0, %r0, 16, 48
+.long 0x78008420
+// add %r12, %r27, %r0
+.long 0x7d9b0214
+// rldicr %r6, %r2, 32, 31
+.long 0x784607c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// addi %r14, %r12, 0
+.long 0x39cc0000
+// addi %r17, %r6, 0
+.long 0x3a260000
+// li %r15, 0
+.long 0x39e00000
+// li %r16, 0
+.long 0x3a000000
 25:
-.base64 "AAAOiHgD730AAGA4UBhvfOAPY3gUGhB+AQDOOf//MToAADEo"
+// lbz %r0, 0(%r14)
+.long 0x880e0000
+// or %r15, %r15, %r0
+.long 0x7def0378
+// li %r3, 0
+.long 0x38600000
+// subf %r3, %r15, %r3
+.long 0x7c6f1850
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// add %r16, %r16, %r3
+.long 0x7e101a14
+// addi %r14, %r14, 1
+.long 0x39ce0001
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 25b
-.base64 "AAAwKA=="
+// cmpldi %cr0, %r16, 0
+.long 0x28300000
 beq %cr0, 26f
-.base64 "FDLMfVBw0H0AAA6IwskAeAEAYDh4GgB8"
+// add %r14, %r12, %r6
+.long 0x7dcc3214
+// subf %r14, %r16, %r14
+.long 0x7dd07050
+// lbz %r0, 0(%r14)
+.long 0x880e0000
+// rldicl %r0, %r0, 57, 7
+.long 0x7800c9c2
+// li %r3, 1
+.long 0x38600001
+// xor %r0, %r0, %r3
+.long 0x7c001a78
 b 27f
 26:
-.base64 "AQAAOA=="
+// li %r0, 1
+.long 0x38000001
 27:
-.base64 "AAAgKA=="
+// cmpldi %cr0, %r0, 0
+.long 0x28200000
 beq %cr0, 28f
-.base64 "AABgOA=="
+// li %r3, 0
+.long 0x38600000
 b 29f
 28:
-.base64 "AAAwO8YHAHoUAkJ8AQAAOID/eDjs/5k4eCNjfAAAIyg="
+// addi %r25, %r16, 0
+.long 0x3b300000
+// rldicr %r0, %r16, 32, 31
+.long 0x7a0007c6
+// add %r2, %r2, %r0
+.long 0x7c420214
+// li %r0, 1
+.long 0x38000001
+// addi %r3, %r24, -128
+.long 0x3878ff80
+// addi %r4, %r25, -20
+.long 0x3899ffec
+// or %r3, %r3, %r4
+.long 0x7c632378
+// cmpldi %cr0, %r3, 0
+.long 0x28230000
 beq %cr0, 210f
 b 211f
 210:
-.base64 "AAAAOA=="
+// li %r0, 0
+.long 0x38000000
 211:
-.base64 "AP94OOz/mTh4I2N8AAAjKA=="
+// addi %r3, %r24, -256
+.long 0x3878ff00
+// addi %r4, %r25, -20
+.long 0x3899ffec
+// or %r3, %r3, %r4
+.long 0x7c632378
+// cmpldi %cr0, %r3, 0
+.long 0x28230000
 beq %cr0, 212f
 b 213f
 212:
-.base64 "AAAAOA=="
+// li %r0, 0
+.long 0x38000000
 213:
-.base64 "AP94OOT/mTh4I2N8AAAjKA=="
+// addi %r3, %r24, -256
+.long 0x3878ff00
+// addi %r4, %r25, -28
+.long 0x3899ffe4
+// or %r3, %r3, %r4
+.long 0x7c632378
+// cmpldi %cr0, %r3, 0
+.long 0x28230000
 beq %cr0, 214f
 b 215f
 214:
-.base64 "AAAAOA=="
+// li %r0, 0
+.long 0x38000000
 215:
-.base64 "AP94OOD/mTh4I2N8AAAjKA=="
+// addi %r3, %r24, -256
+.long 0x3878ff00
+// addi %r4, %r25, -32
+.long 0x3899ffe0
+// or %r3, %r3, %r4
+.long 0x7c632378
+// cmpldi %cr0, %r3, 0
+.long 0x28230000
 beq %cr0, 216f
 b 217f
 216:
-.base64 "AAAAOA=="
+// li %r0, 0
+.long 0x38000000
 217:
-.base64 "gP54OOD/mTh4I2N8AAAjKA=="
+// addi %r3, %r24, -384
+.long 0x3878fe80
+// addi %r4, %r25, -32
+.long 0x3899ffe0
+// or %r3, %r3, %r4
+.long 0x7c632378
+// cmpldi %cr0, %r3, 0
+.long 0x28230000
 beq %cr0, 218f
 b 219f
 218:
-.base64 "AAAAOA=="
+// li %r0, 0
+.long 0x38000000
 219:
-.base64 "AAAgKA=="
+// cmpldi %cr0, %r0, 0
+.long 0x28200000
 beq %cr0, 220f
-.base64 "AABgOA=="
+// li %r3, 0
+.long 0x38600000
 b 221f
 220:
-.base64 "xoNXeCCE93ocAGA50ln3fsAC9zoUqvd+AAD3OwABVzkIAGA5MACgO8aDQHgghAB4FAKbfcYHRngghMZ4AABKOQAAyjlC+HF5AAAAOA=="
+// rldicr %r23, %r2, 48, 15
+.long 0x785783c6
+// rldicl %r23, %r23, 16, 48
+.long 0x7af78420
+// li %r11, 28
+.long 0x3960001c
+// mulld %r23, %r23, %r11
+.long 0x7ef759d2
+// addi %r23, %r23, 704
+.long 0x3af702c0
+// add %r23, %r23, %r21
+.long 0x7ef7aa14
+// addi %r31, %r23, 0
+.long 0x3bf70000
+// addi %r10, %r23, 256
+.long 0x39570100
+// li %r11, 8
+.long 0x39600008
+// li %r29, 48
+.long 0x3ba00030
+// rldicr %r0, %r2, 48, 15
+.long 0x784083c6
+// rldicl %r0, %r0, 16, 48
+.long 0x78008420
+// add %r12, %r27, %r0
+.long 0x7d9b0214
+// rldicr %r6, %r2, 32, 31
+.long 0x784607c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// addi %r10, %r10, 0
+.long 0x394a0000
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 222:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 222b
-.base64 "FDLqff//7zkAAAw6AAAmOg=="
+// add %r15, %r10, %r6
+.long 0x7dea3214
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r16, %r12, 0
+.long 0x3a0c0000
+// addi %r17, %r6, 0
+.long 0x3a260000
 223:
-.base64 "AAAQiAAAD5gBABA6///vOf//MToAADEo"
+// lbz %r0, 0(%r16)
+.long 0x88100000
+// stb %r0, 0(%r15)
+.long 0x980f0000
+// addi %r16, %r16, 1
+.long 0x3a100001
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 223b
-.base64 "FOrKffD/zjkAAAA4AAAO+AABXzkAAPU6AAD1OwABVTnGg0t4IIRrecLoa3kkH315EAC9O6QPa3kAAJs5xoNGeCCExngAAEo5AADKOUL4cXkAAAA4"
+// add %r14, %r10, %r29
+.long 0x7dcaea14
+// addi %r14, %r14, -16
+.long 0x39cefff0
+// li %r0, 0
+.long 0x38000000
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r10, %r31, 256
+.long 0x395f0100
+// addi %r23, %r21, 0
+.long 0x3af50000
+// addi %r31, %r21, 0
+.long 0x3bf50000
+// addi %r10, %r21, 256
+.long 0x39550100
+// rldicr %r11, %r2, 48, 15
+.long 0x784b83c6
+// rldicl %r11, %r11, 16, 48
+.long 0x796b8420
+// rldicl %r11, %r11, 61, 3
+.long 0x796be8c2
+// rldicr %r29, %r11, 3, 60
+.long 0x797d1f24
+// addi %r29, %r29, 16
+.long 0x3bbd0010
+// rldicr %r11, %r11, 1, 62
+.long 0x796b0fa4
+// addi %r12, %r27, 0
+.long 0x399b0000
+// rldicr %r6, %r2, 48, 15
+.long 0x784683c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// addi %r10, %r10, 0
+.long 0x394a0000
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 224:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 224b
-.base64 "FDLqff//7zkAAAw6AAAmOg=="
+// add %r15, %r10, %r6
+.long 0x7dea3214
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r16, %r12, 0
+.long 0x3a0c0000
+// addi %r17, %r6, 0
+.long 0x3a260000
 225:
-.base64 "AAAQiAAAD5gBABA6///vOf//MToAADEo"
+// lbz %r0, 0(%r16)
+.long 0x88100000
+// stb %r0, 0(%r15)
+.long 0x980f0000
+// addi %r16, %r16, 1
+.long 0x3a100001
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 225b
-.base64 "FOrKffD/zjkAAAA4AAAO+AABXzkAAAroAACK6dJhYHwCAIA4UCBjfNIZjH3SYWB8AgCAOFAgY3zSGYx90mFgfAIAgDhQIGN80hmMfdJhYHwCAIA4UCBjfNIZjH0AAGA4UBiMfcYHjHkiAIx5AACqOBTqpXwAAAo5FOoIfRTqCH0AACo5FOopfRTqKX0U6il9ZBdjeRQaanz4/2M4AABj6AAAIyg="
+// add %r14, %r10, %r29
+.long 0x7dcaea14
+// addi %r14, %r14, -16
+.long 0x39cefff0
+// li %r0, 0
+.long 0x38000000
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r10, %r31, 256
+.long 0x395f0100
+// ld %r0, 0(%r10)
+.long 0xe80a0000
+// ld %r12, 0(%r10)
+.long 0xe98a0000
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// li %r3, 0
+.long 0x38600000
+// subf %r12, %r12, %r3
+.long 0x7d8c1850
+// rldicr %r12, %r12, 32, 31
+.long 0x798c07c6
+// rldicl %r12, %r12, 32, 32
+.long 0x798c0022
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// rldicr %r3, %r11, 2, 61
+.long 0x79631764
+// add %r3, %r10, %r3
+.long 0x7c6a1a14
+// addi %r3, %r3, -8
+.long 0x3863fff8
+// ld %r3, 0(%r3)
+.long 0xe8630000
+// cmpldi %cr0, %r3, 0
+.long 0x28230000
 beq %cr0, 226f
-.base64 "AADFOUL4cXkAAAA4"
+// addi %r14, %r5, 0
+.long 0x39c50000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 228:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 228b
-.base64 "ZBdueRQqzn34/845AQAAOAAADvhC+GR5QACEOA=="
+// rldicr %r14, %r11, 2, 61
+.long 0x796e1764
+// add %r14, %r14, %r5
+.long 0x7dce2a14
+// addi %r14, %r14, -8
+.long 0x39cefff8
+// li %r0, 1
+.long 0x38000001
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// rldicl %r4, %r11, 63, 1
+.long 0x7964f842
+// addi %r4, %r4, 64
+.long 0x38840040
 229:
-.base64 "AADIOQAA5TkAACs6AACAOg=="
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r5, 0
+.long 0x39e50000
+// addi %r17, %r11, 0
+.long 0x3a2b0000
+// li %r20, 0
+.long 0x3a800000
 230:
-.base64 "AAAPgBQCAHwUogB8AAAOkCIAFHgEAM45BADvOf//MToAADEo"
+// lwz %r0, 0(%r15)
+.long 0x800f0000
+// add %r0, %r0, %r0
+.long 0x7c000214
+// add %r0, %r0, %r20
+.long 0x7c00a214
+// stw %r0, 0(%r14)
+.long 0x900e0000
+// rldicl %r20, %r0, 32, 32
+.long 0x78140022
+// addi %r14, %r14, 4
+.long 0x39ce0004
+// addi %r15, %r15, 4
+.long 0x39ef0004
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 230b
-.base64 "AACOkgAAyDkAAOk5AAAKOgAAKzoAAIA6"
+// stw %r20, 0(%r14)
+.long 0x928e0000
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// addi %r17, %r11, 0
+.long 0x3a2b0000
+// li %r20, 0
+.long 0x3a800000
 231:
-.base64 "AAAOgAAAcIBQAAN8UAAUfAAAD5DgDxR4BADOOQQA7zkEABA6//8xOgAAMSg="
+// lwz %r0, 0(%r14)
+.long 0x800e0000
+// lwz %r3, 0(%r16)
+.long 0x80700000
+// subf %r0, %r3, %r0
+.long 0x7c030050
+// subf %r0, %r20, %r0
+.long 0x7c140050
+// stw %r0, 0(%r15)
+.long 0x900f0000
+// rldicl %r20, %r0, 1, 63
+.long 0x78140fe0
+// addi %r14, %r14, 4
+.long 0x39ce0004
+// addi %r15, %r15, 4
+.long 0x39ef0004
+// addi %r16, %r16, 4
+.long 0x3a100004
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 231b
-.base64 "AAAOgFAAFHzgDwB4AABgOFAYgH4AAMg5AADpOQAABToAACs6"
+// lwz %r0, 0(%r14)
+.long 0x800e0000
+// subf %r0, %r20, %r0
+.long 0x7c140050
+// rldicl %r0, %r0, 1, 63
+.long 0x78000fe0
+// li %r3, 0
+.long 0x38600000
+// subf %r20, %r0, %r3
+.long 0x7e801850
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// addi %r17, %r11, 0
+.long 0x3a2b0000
 232:
-.base64 "AAAPgAAAboB4AmN8OKBjfHgCY3wAAHCQBADOOQQA7zkEABA6//8xOgAAMSg="
+// lwz %r0, 0(%r15)
+.long 0x800f0000
+// lwz %r3, 0(%r14)
+.long 0x806e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// stw %r3, 0(%r16)
+.long 0x90700000
+// addi %r14, %r14, 4
+.long 0x39ce0004
+// addi %r15, %r15, 4
+.long 0x39ef0004
+// addi %r16, %r16, 4
+.long 0x3a100004
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 232b
-.base64 "//+EOAAAJCg="
+// addi %r4, %r4, -1
+.long 0x3884ffff
+// cmpldi %cr0, %r4, 0
+.long 0x28240000
 bne %cr0, 229b
-.base64 "ZBdjeRAAYzgAAKo4FBqlfAAAyjgUGsZ8AADqOBQa53wAAAo5FBoIfRQaCH0AACo5FBopfRQaKX0UGil9AACLOAAAaujSYcN+AgDWOtJh1n5kF255FELOfQgAzvpC+GR5AADIOQEAJDoAAGA4"
+// rldicr %r3, %r11, 2, 61
+.long 0x79631764
+// addi %r3, %r3, 16
+.long 0x38630010
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r3
+.long 0x7ca51a14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r3
+.long 0x7cc61a14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r3
+.long 0x7ce71a14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r3
+.long 0x7d081a14
+// add %r8, %r8, %r3
+.long 0x7d081a14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// addi %r4, %r11, 0
+.long 0x388b0000
+// ld %r3, 0(%r10)
+.long 0xe86a0000
+// mulld %r22, %r3, %r12
+.long 0x7ec361d2
+// addi %r22, %r22, 2
+.long 0x3ad60002
+// mulld %r22, %r22, %r12
+.long 0x7ed661d2
+// rldicr %r14, %r11, 2, 61
+.long 0x796e1764
+// add %r14, %r14, %r8
+.long 0x7dce4214
+// std %r22, 8(%r14)
+.long 0xface0008
+// rldicl %r4, %r11, 63, 1
+.long 0x7964f842
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r17, %r4, 1
+.long 0x3a240001
+// li %r3, 0
+.long 0x38600000
 233:
-.base64 "AABu+AgAzjn//zE6AAAxKA=="
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 233b
-.base64 "ZBdpeRRKCn4USud9xgeReA=="
+// rldicr %r9, %r11, 2, 61
+.long 0x79691764
+// add %r16, %r10, %r9
+.long 0x7e0a4a14
+// add %r15, %r7, %r9
+.long 0x7de74a14
+// rldicr %r17, %r4, 32, 31
+.long 0x789107c6
 234:
-.base64 "UIAqfQAACjpQeOl9FEppfBRSY3wgAMM5FEqDfCgAZOrC6Cd5///nOILw6HgUQjF+RvDpeKAXKXkAAEbqCADGOAAAbugAAA/oEgCSftIBEnwUAGN8EGGMfdIZc34AABDoEgDTftIBE3wUAGN8EFlrfQgA7zkIABA6AAApKA=="
+// subf %r9, %r10, %r16
+.long 0x7d2a8050
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// subf %r15, %r9, %r15
+.long 0x7de97850
+// add %r3, %r9, %r9
+.long 0x7c694a14
+// add %r3, %r3, %r10
+.long 0x7c635214
+// addi %r14, %r3, 32
+.long 0x39c30020
+// add %r4, %r3, %r9
+.long 0x7c834a14
+// ld %r19, 40(%r4)
+.long 0xea640028
+// rldicl %r7, %r9, 61, 3
+.long 0x7927e8c2
+// addi %r7, %r7, -1
+.long 0x38e7ffff
+// rldicl %r8, %r7, 62, 2
+.long 0x78e8f082
+// add %r17, %r17, %r8
+.long 0x7e314214
+// rldicr %r9, %r7, 62, 1
+.long 0x78e9f046
+// rldicl %r9, %r9, 2, 62
+.long 0x792917a0
+// ld %r18, 0(%r6)
+.long 0xea460000
+// addi %r6, %r6, 8
+.long 0x38c60008
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r20, %r18, %r0
+.long 0x7e920012
+// mulld %r0, %r18, %r0
+.long 0x7c1201d2
+// addc %r3, %r3, %r0
+.long 0x7c630014
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// mulld %r19, %r19, %r3
+.long 0x7e7319d2
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r22, %r19, %r0
+.long 0x7ed30012
+// mulld %r0, %r19, %r0
+.long 0x7c1301d2
+// addc %r3, %r3, %r0
+.long 0x7c630014
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 235f
-.base64 "//8pOQAAKSg="
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 237f
-.base64 "//8pOQAAKSg="
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 239f
-.base64 "CABu6BAAjugYAO7oEFCMfQAAL+nSSRJ8FAFjfAgAL+nSSRJ8FAGEfBAAL+nSSRJ8FAHnfBJIMn0QYYx9FKBjfAAAD+gSABJ8FAGEfAgAD+gSABJ8FAHnfJQBiX4QUGt9AAAw6dJJE3wUAWN8CAAw6dJJE3wUAYR8EAAw6dJJE3wUAed8EkgzfRBZa30UsGN8AAAQ6BIAE3wUAYR8CAAQ6BIAE3wUAed8lAHJfgAAbvgIAI74EADu+BgAzjkYAO85GAAQOg=="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// ld %r7, 24(%r14)
+.long 0xe8ee0018
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r15)
+.long 0xe92f0010
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r15)
+.long 0xe80f0008
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r16)
+.long 0xe9300010
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r16)
+.long 0xe8100008
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// std %r7, 16(%r14)
+.long 0xf8ee0010
+// addi %r14, %r14, 24
+.long 0x39ce0018
+// addi %r15, %r15, 24
+.long 0x39ef0018
+// addi %r16, %r16, 24
+.long 0x3a100018
 b 240f
 239:
-.base64 "CABu6BAAjugQUIx9AAAv6dJJEnwUAWN8CAAv6dJJEnwUAYR8EkgyfRBhjH0UoGN8AAAP6BIAEnwUAYR8lAGJfhBQa30AADDp0kkTfBQBY3wIADDp0kkTfBQBhHwSSDN9EFlrfRSwY3wAABDoEgATfBQBhHyUAcl+AABu+AgAjvgQAM45EADvORAAEDo="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// addi %r14, %r14, 16
+.long 0x39ce0010
+// addi %r15, %r15, 16
+.long 0x39ef0010
+// addi %r16, %r16, 16
+.long 0x3a100010
 240:
 b 238f
 237:
-.base64 "CABu6BBQjH0AAC/p0kkSfBQBY3wSSDJ9EGGMfRSgY3yUAYl+EFBrfQAAMOnSSRN8FAFjfBJIM30QWWt9FLBjfJQByX4AAG74CADOOQgA7zkIABA6"
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
 238:
 b 236f
 235:
 236:
-.base64 "AAARKA=="
+// cmplwi %cr0, %r17, 0
+.long 0x28110000
 beq %cr0, 241f
 243:
-.base64 "CABu6BAAjugYAO7oIAAO6RBQjH0AAC/p0kkSfBQBY3wIAC/p0kkSfBQBhHwQAC/p0kkSfBQB53wYAC/p0kkSfBQBCH0SSDJ9EGGMfRSgY3wAAA/oEgASfBQBhHwIAA/oEgASfBQB53wQAA/oEgASfBQBCH2UAYl+EFBrfQAAMOnSSRN8FAFjfAgAMOnSSRN8FAGEfBAAMOnSSRN8FAHnfBgAMOnSSRN8FAEIfRJIM30QWWt9FLBjfAAAEOgSABN8FAGEfAgAEOgSABN8FAHnfBAAEOgSABN8FAEIfZQByX4AAG74CACO+BAA7vgYAA75IADOOSAA7zkgABA6//8xOgAAESg="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// ld %r7, 24(%r14)
+.long 0xe8ee0018
+// ld %r8, 32(%r14)
+.long 0xe90e0020
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r15)
+.long 0xe92f0010
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r9, 24(%r15)
+.long 0xe92f0018
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r15)
+.long 0xe80f0008
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r0, 16(%r15)
+.long 0xe80f0010
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r16)
+.long 0xe9300010
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r9, 24(%r16)
+.long 0xe9300018
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r16)
+.long 0xe8100008
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r0, 16(%r16)
+.long 0xe8100010
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// std %r7, 16(%r14)
+.long 0xf8ee0010
+// std %r8, 24(%r14)
+.long 0xf90e0018
+// addi %r14, %r14, 32
+.long 0x39ce0020
+// addi %r15, %r15, 32
+.long 0x39ef0020
+// addi %r16, %r16, 32
+.long 0x3a100020
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmplwi %cr0, %r17, 0
+.long 0x28110000
 bne %cr0, 243b
 b 242f
 241:
 242:
-.base64 "CABu6AAAgDgQUIx9FKFjfJQBhHwQUGt9FLFjfJQBhHwAAG74CACO+AEAIDnGByl5UIgpfiIAKXoAACko"
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// li %r4, 0
+.long 0x38800000
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// adde %r3, %r3, %r20
+.long 0x7c63a114
+// addze %r4, %r4
+.long 0x7c840194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// adde %r3, %r3, %r22
+.long 0x7c63b114
+// addze %r4, %r4
+.long 0x7c840194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// li %r9, 1
+.long 0x39200001
+// rldicr %r9, %r9, 32, 31
+.long 0x792907c6
+// subf %r17, %r9, %r17
+.long 0x7e298850
+// rldicl %r9, %r17, 32, 32
+.long 0x7a290022
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 bne %cr0, 234b
-.base64 "UIBqfILwa3hQeON8FBoDfRRSCH0gAAg5FBoofRAAKTkUGoh8CADE6sYHzHoiAIx5AADIOQAA6TkAAAo6QvhxeRAAAHw="
+// subf %r3, %r10, %r16
+.long 0x7c6a8050
+// rldicl %r11, %r3, 62, 2
+.long 0x786bf082
+// subf %r7, %r3, %r15
+.long 0x7ce37850
+// add %r8, %r3, %r3
+.long 0x7d031a14
+// add %r8, %r8, %r10
+.long 0x7d085214
+// addi %r8, %r8, 32
+.long 0x39080020
+// add %r9, %r8, %r3
+.long 0x7d281a14
+// addi %r9, %r9, 16
+.long 0x39290010
+// add %r4, %r8, %r3
+.long 0x7c881a14
+// ld %r22, 8(%r4)
+.long 0xeac40008
+// rldicr %r12, %r22, 32, 31
+.long 0x7acc07c6
+// rldicl %r12, %r12, 32, 32
+.long 0x798c0022
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// subfc %r0, %r0, %r0
+.long 0x7c000010
 244:
-.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// ld %r3, 0(%r16)
+.long 0xe8700000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// std %r0, 0(%r15)
+.long 0xf80f0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 244b
-.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// li %r3, 0
+.long 0x38600000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// subfe %r20, %r20, %r20
+.long 0x7e94a110
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 245:
-.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 245b
-.base64 "ZBdjeRAAYzgAAKo4FBqlfAAAyjgUGsZ8AADqOBQa53wAAAo5FBoIfRQaCH0AACo5FBopfRQaKX0UGil9AACLOAAAaujSYcN+AgDWOtJh1n5kF255FELOfQgAzvpC+GR5AADIOQEAJDoAAGA4"
+// rldicr %r3, %r11, 2, 61
+.long 0x79631764
+// addi %r3, %r3, 16
+.long 0x38630010
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r3
+.long 0x7ca51a14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r3
+.long 0x7cc61a14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r3
+.long 0x7ce71a14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r3
+.long 0x7d081a14
+// add %r8, %r8, %r3
+.long 0x7d081a14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// addi %r4, %r11, 0
+.long 0x388b0000
+// ld %r3, 0(%r10)
+.long 0xe86a0000
+// mulld %r22, %r3, %r12
+.long 0x7ec361d2
+// addi %r22, %r22, 2
+.long 0x3ad60002
+// mulld %r22, %r22, %r12
+.long 0x7ed661d2
+// rldicr %r14, %r11, 2, 61
+.long 0x796e1764
+// add %r14, %r14, %r8
+.long 0x7dce4214
+// std %r22, 8(%r14)
+.long 0xface0008
+// rldicl %r4, %r11, 63, 1
+.long 0x7964f842
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r17, %r4, 1
+.long 0x3a240001
+// li %r3, 0
+.long 0x38600000
 246:
-.base64 "AABu+AgAzjn//zE6AAAxKA=="
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 246b
-.base64 "ZBdpeRRKCn4USud9xgeReA=="
+// rldicr %r9, %r11, 2, 61
+.long 0x79691764
+// add %r16, %r10, %r9
+.long 0x7e0a4a14
+// add %r15, %r7, %r9
+.long 0x7de74a14
+// rldicr %r17, %r4, 32, 31
+.long 0x789107c6
 247:
-.base64 "UIAqfQAACjpQeOl9FEppfBRSY3wgAMM5FEqDfCgAZOrC6Cd5///nOILw6HgUQjF+RvDpeKAXKXkAAEbqCADGOAAAbugAAA/oEgCSftIBEnwUAGN8EGGMfdIZc34AABDoEgDTftIBE3wUAGN8EFlrfQgA7zkIABA6AAApKA=="
+// subf %r9, %r10, %r16
+.long 0x7d2a8050
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// subf %r15, %r9, %r15
+.long 0x7de97850
+// add %r3, %r9, %r9
+.long 0x7c694a14
+// add %r3, %r3, %r10
+.long 0x7c635214
+// addi %r14, %r3, 32
+.long 0x39c30020
+// add %r4, %r3, %r9
+.long 0x7c834a14
+// ld %r19, 40(%r4)
+.long 0xea640028
+// rldicl %r7, %r9, 61, 3
+.long 0x7927e8c2
+// addi %r7, %r7, -1
+.long 0x38e7ffff
+// rldicl %r8, %r7, 62, 2
+.long 0x78e8f082
+// add %r17, %r17, %r8
+.long 0x7e314214
+// rldicr %r9, %r7, 62, 1
+.long 0x78e9f046
+// rldicl %r9, %r9, 2, 62
+.long 0x792917a0
+// ld %r18, 0(%r6)
+.long 0xea460000
+// addi %r6, %r6, 8
+.long 0x38c60008
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r20, %r18, %r0
+.long 0x7e920012
+// mulld %r0, %r18, %r0
+.long 0x7c1201d2
+// addc %r3, %r3, %r0
+.long 0x7c630014
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// mulld %r19, %r19, %r3
+.long 0x7e7319d2
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r22, %r19, %r0
+.long 0x7ed30012
+// mulld %r0, %r19, %r0
+.long 0x7c1301d2
+// addc %r3, %r3, %r0
+.long 0x7c630014
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 248f
-.base64 "//8pOQAAKSg="
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 250f
-.base64 "//8pOQAAKSg="
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 252f
-.base64 "CABu6BAAjugYAO7oEFCMfQAAL+nSSRJ8FAFjfAgAL+nSSRJ8FAGEfBAAL+nSSRJ8FAHnfBJIMn0QYYx9FKBjfAAAD+gSABJ8FAGEfAgAD+gSABJ8FAHnfJQBiX4QUGt9AAAw6dJJE3wUAWN8CAAw6dJJE3wUAYR8EAAw6dJJE3wUAed8EkgzfRBZa30UsGN8AAAQ6BIAE3wUAYR8CAAQ6BIAE3wUAed8lAHJfgAAbvgIAI74EADu+BgAzjkYAO85GAAQOg=="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// ld %r7, 24(%r14)
+.long 0xe8ee0018
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r15)
+.long 0xe92f0010
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r15)
+.long 0xe80f0008
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r16)
+.long 0xe9300010
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r16)
+.long 0xe8100008
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// std %r7, 16(%r14)
+.long 0xf8ee0010
+// addi %r14, %r14, 24
+.long 0x39ce0018
+// addi %r15, %r15, 24
+.long 0x39ef0018
+// addi %r16, %r16, 24
+.long 0x3a100018
 b 253f
 252:
-.base64 "CABu6BAAjugQUIx9AAAv6dJJEnwUAWN8CAAv6dJJEnwUAYR8EkgyfRBhjH0UoGN8AAAP6BIAEnwUAYR8lAGJfhBQa30AADDp0kkTfBQBY3wIADDp0kkTfBQBhHwSSDN9EFlrfRSwY3wAABDoEgATfBQBhHyUAcl+AABu+AgAjvgQAM45EADvORAAEDo="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// addi %r14, %r14, 16
+.long 0x39ce0010
+// addi %r15, %r15, 16
+.long 0x39ef0010
+// addi %r16, %r16, 16
+.long 0x3a100010
 253:
 b 251f
 250:
-.base64 "CABu6BBQjH0AAC/p0kkSfBQBY3wSSDJ9EGGMfRSgY3yUAYl+EFBrfQAAMOnSSRN8FAFjfBJIM30QWWt9FLBjfJQByX4AAG74CADOOQgA7zkIABA6"
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
 251:
 b 249f
 248:
 249:
-.base64 "AAARKA=="
+// cmplwi %cr0, %r17, 0
+.long 0x28110000
 beq %cr0, 254f
 256:
-.base64 "CABu6BAAjugYAO7oIAAO6RBQjH0AAC/p0kkSfBQBY3wIAC/p0kkSfBQBhHwQAC/p0kkSfBQB53wYAC/p0kkSfBQBCH0SSDJ9EGGMfRSgY3wAAA/oEgASfBQBhHwIAA/oEgASfBQB53wQAA/oEgASfBQBCH2UAYl+EFBrfQAAMOnSSRN8FAFjfAgAMOnSSRN8FAGEfBAAMOnSSRN8FAHnfBgAMOnSSRN8FAEIfRJIM30QWWt9FLBjfAAAEOgSABN8FAGEfAgAEOgSABN8FAHnfBAAEOgSABN8FAEIfZQByX4AAG74CACO+BAA7vgYAA75IADOOSAA7zkgABA6//8xOgAAESg="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// ld %r7, 24(%r14)
+.long 0xe8ee0018
+// ld %r8, 32(%r14)
+.long 0xe90e0020
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r15)
+.long 0xe92f0010
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r9, 24(%r15)
+.long 0xe92f0018
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r15)
+.long 0xe80f0008
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r0, 16(%r15)
+.long 0xe80f0010
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r16)
+.long 0xe9300010
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r9, 24(%r16)
+.long 0xe9300018
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r16)
+.long 0xe8100008
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r0, 16(%r16)
+.long 0xe8100010
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// std %r7, 16(%r14)
+.long 0xf8ee0010
+// std %r8, 24(%r14)
+.long 0xf90e0018
+// addi %r14, %r14, 32
+.long 0x39ce0020
+// addi %r15, %r15, 32
+.long 0x39ef0020
+// addi %r16, %r16, 32
+.long 0x3a100020
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmplwi %cr0, %r17, 0
+.long 0x28110000
 bne %cr0, 256b
 b 255f
 254:
 255:
-.base64 "CABu6AAAgDgQUIx9FKFjfJQBhHwQUGt9FLFjfJQBhHwAAG74CACO+AEAIDnGByl5UIgpfiIAKXoAACko"
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// li %r4, 0
+.long 0x38800000
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// adde %r3, %r3, %r20
+.long 0x7c63a114
+// addze %r4, %r4
+.long 0x7c840194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// adde %r3, %r3, %r22
+.long 0x7c63b114
+// addze %r4, %r4
+.long 0x7c840194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// li %r9, 1
+.long 0x39200001
+// rldicr %r9, %r9, 32, 31
+.long 0x792907c6
+// subf %r17, %r9, %r17
+.long 0x7e298850
+// rldicl %r9, %r17, 32, 32
+.long 0x7a290022
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 bne %cr0, 247b
-.base64 "UIBqfILwa3hQeON8FBoDfRRSCH0gAAg5FBoofRAAKTkUGoh8CADE6sYHzHoiAIx5AADIOQAA6TkAAAo6QvhxeRAAAHw="
+// subf %r3, %r10, %r16
+.long 0x7c6a8050
+// rldicl %r11, %r3, 62, 2
+.long 0x786bf082
+// subf %r7, %r3, %r15
+.long 0x7ce37850
+// add %r8, %r3, %r3
+.long 0x7d031a14
+// add %r8, %r8, %r10
+.long 0x7d085214
+// addi %r8, %r8, 32
+.long 0x39080020
+// add %r9, %r8, %r3
+.long 0x7d281a14
+// addi %r9, %r9, 16
+.long 0x39290010
+// add %r4, %r8, %r3
+.long 0x7c881a14
+// ld %r22, 8(%r4)
+.long 0xeac40008
+// rldicr %r12, %r22, 32, 31
+.long 0x7acc07c6
+// rldicl %r12, %r12, 32, 32
+.long 0x798c0022
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// subfc %r0, %r0, %r0
+.long 0x7c000010
 257:
-.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// ld %r3, 0(%r16)
+.long 0xe8700000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// std %r0, 0(%r15)
+.long 0xf80f0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 257b
-.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// li %r3, 0
+.long 0x38600000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// subfe %r20, %r20, %r20
+.long 0x7e94a110
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 258:
-.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 258b
-.base64 "ZBdjeRAAYzgAAKo4FBqlfAAAyjgUGsZ8AADqOBQa53wAAAo5FBoIfRQaCH0AACo5FBopfRQaKX0UGil9AACLOAAAaujSYcN+AgDWOtJh1n5kF255FELOfQgAzvpC+GR5AADIOQEAJDoAAGA4"
+// rldicr %r3, %r11, 2, 61
+.long 0x79631764
+// addi %r3, %r3, 16
+.long 0x38630010
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r3
+.long 0x7ca51a14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r3
+.long 0x7cc61a14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r3
+.long 0x7ce71a14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r3
+.long 0x7d081a14
+// add %r8, %r8, %r3
+.long 0x7d081a14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// addi %r4, %r11, 0
+.long 0x388b0000
+// ld %r3, 0(%r10)
+.long 0xe86a0000
+// mulld %r22, %r3, %r12
+.long 0x7ec361d2
+// addi %r22, %r22, 2
+.long 0x3ad60002
+// mulld %r22, %r22, %r12
+.long 0x7ed661d2
+// rldicr %r14, %r11, 2, 61
+.long 0x796e1764
+// add %r14, %r14, %r8
+.long 0x7dce4214
+// std %r22, 8(%r14)
+.long 0xface0008
+// rldicl %r4, %r11, 63, 1
+.long 0x7964f842
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r17, %r4, 1
+.long 0x3a240001
+// li %r3, 0
+.long 0x38600000
 259:
-.base64 "AABu+AgAzjn//zE6AAAxKA=="
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 259b
-.base64 "ZBdpeRRKCn4USud9xgeReA=="
+// rldicr %r9, %r11, 2, 61
+.long 0x79691764
+// add %r16, %r10, %r9
+.long 0x7e0a4a14
+// add %r15, %r7, %r9
+.long 0x7de74a14
+// rldicr %r17, %r4, 32, 31
+.long 0x789107c6
 260:
-.base64 "UIAqfQAACjpQeOl9FEppfBRSY3wgAMM5FEqDfCgAZOrC6Cd5///nOILw6HgUQjF+RvDpeKAXKXkAAEbqCADGOAAAbugAAA/oEgCSftIBEnwUAGN8EGGMfdIZc34AABDoEgDTftIBE3wUAGN8EFlrfQgA7zkIABA6AAApKA=="
+// subf %r9, %r10, %r16
+.long 0x7d2a8050
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// subf %r15, %r9, %r15
+.long 0x7de97850
+// add %r3, %r9, %r9
+.long 0x7c694a14
+// add %r3, %r3, %r10
+.long 0x7c635214
+// addi %r14, %r3, 32
+.long 0x39c30020
+// add %r4, %r3, %r9
+.long 0x7c834a14
+// ld %r19, 40(%r4)
+.long 0xea640028
+// rldicl %r7, %r9, 61, 3
+.long 0x7927e8c2
+// addi %r7, %r7, -1
+.long 0x38e7ffff
+// rldicl %r8, %r7, 62, 2
+.long 0x78e8f082
+// add %r17, %r17, %r8
+.long 0x7e314214
+// rldicr %r9, %r7, 62, 1
+.long 0x78e9f046
+// rldicl %r9, %r9, 2, 62
+.long 0x792917a0
+// ld %r18, 0(%r6)
+.long 0xea460000
+// addi %r6, %r6, 8
+.long 0x38c60008
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r20, %r18, %r0
+.long 0x7e920012
+// mulld %r0, %r18, %r0
+.long 0x7c1201d2
+// addc %r3, %r3, %r0
+.long 0x7c630014
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// mulld %r19, %r19, %r3
+.long 0x7e7319d2
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r22, %r19, %r0
+.long 0x7ed30012
+// mulld %r0, %r19, %r0
+.long 0x7c1301d2
+// addc %r3, %r3, %r0
+.long 0x7c630014
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 261f
-.base64 "//8pOQAAKSg="
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 263f
-.base64 "//8pOQAAKSg="
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 265f
-.base64 "CABu6BAAjugYAO7oEFCMfQAAL+nSSRJ8FAFjfAgAL+nSSRJ8FAGEfBAAL+nSSRJ8FAHnfBJIMn0QYYx9FKBjfAAAD+gSABJ8FAGEfAgAD+gSABJ8FAHnfJQBiX4QUGt9AAAw6dJJE3wUAWN8CAAw6dJJE3wUAYR8EAAw6dJJE3wUAed8EkgzfRBZa30UsGN8AAAQ6BIAE3wUAYR8CAAQ6BIAE3wUAed8lAHJfgAAbvgIAI74EADu+BgAzjkYAO85GAAQOg=="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// ld %r7, 24(%r14)
+.long 0xe8ee0018
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r15)
+.long 0xe92f0010
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r15)
+.long 0xe80f0008
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r16)
+.long 0xe9300010
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r16)
+.long 0xe8100008
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// std %r7, 16(%r14)
+.long 0xf8ee0010
+// addi %r14, %r14, 24
+.long 0x39ce0018
+// addi %r15, %r15, 24
+.long 0x39ef0018
+// addi %r16, %r16, 24
+.long 0x3a100018
 b 266f
 265:
-.base64 "CABu6BAAjugQUIx9AAAv6dJJEnwUAWN8CAAv6dJJEnwUAYR8EkgyfRBhjH0UoGN8AAAP6BIAEnwUAYR8lAGJfhBQa30AADDp0kkTfBQBY3wIADDp0kkTfBQBhHwSSDN9EFlrfRSwY3wAABDoEgATfBQBhHyUAcl+AABu+AgAjvgQAM45EADvORAAEDo="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// addi %r14, %r14, 16
+.long 0x39ce0010
+// addi %r15, %r15, 16
+.long 0x39ef0010
+// addi %r16, %r16, 16
+.long 0x3a100010
 266:
 b 264f
 263:
-.base64 "CABu6BBQjH0AAC/p0kkSfBQBY3wSSDJ9EGGMfRSgY3yUAYl+EFBrfQAAMOnSSRN8FAFjfBJIM30QWWt9FLBjfJQByX4AAG74CADOOQgA7zkIABA6"
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
 264:
 b 262f
 261:
 262:
-.base64 "AAARKA=="
+// cmplwi %cr0, %r17, 0
+.long 0x28110000
 beq %cr0, 267f
 269:
-.base64 "CABu6BAAjugYAO7oIAAO6RBQjH0AAC/p0kkSfBQBY3wIAC/p0kkSfBQBhHwQAC/p0kkSfBQB53wYAC/p0kkSfBQBCH0SSDJ9EGGMfRSgY3wAAA/oEgASfBQBhHwIAA/oEgASfBQB53wQAA/oEgASfBQBCH2UAYl+EFBrfQAAMOnSSRN8FAFjfAgAMOnSSRN8FAGEfBAAMOnSSRN8FAHnfBgAMOnSSRN8FAEIfRJIM30QWWt9FLBjfAAAEOgSABN8FAGEfAgAEOgSABN8FAHnfBAAEOgSABN8FAEIfZQByX4AAG74CACO+BAA7vgYAA75IADOOSAA7zkgABA6//8xOgAAESg="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// ld %r7, 24(%r14)
+.long 0xe8ee0018
+// ld %r8, 32(%r14)
+.long 0xe90e0020
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r15)
+.long 0xe92f0010
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r9, 24(%r15)
+.long 0xe92f0018
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r15)
+.long 0xe80f0008
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r0, 16(%r15)
+.long 0xe80f0010
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r16)
+.long 0xe9300010
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r9, 24(%r16)
+.long 0xe9300018
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r16)
+.long 0xe8100008
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r0, 16(%r16)
+.long 0xe8100010
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// std %r7, 16(%r14)
+.long 0xf8ee0010
+// std %r8, 24(%r14)
+.long 0xf90e0018
+// addi %r14, %r14, 32
+.long 0x39ce0020
+// addi %r15, %r15, 32
+.long 0x39ef0020
+// addi %r16, %r16, 32
+.long 0x3a100020
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmplwi %cr0, %r17, 0
+.long 0x28110000
 bne %cr0, 269b
 b 268f
 267:
 268:
-.base64 "CABu6AAAgDgQUIx9FKFjfJQBhHwQUGt9FLFjfJQBhHwAAG74CACO+AEAIDnGByl5UIgpfiIAKXoAACko"
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// li %r4, 0
+.long 0x38800000
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// adde %r3, %r3, %r20
+.long 0x7c63a114
+// addze %r4, %r4
+.long 0x7c840194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// adde %r3, %r3, %r22
+.long 0x7c63b114
+// addze %r4, %r4
+.long 0x7c840194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// li %r9, 1
+.long 0x39200001
+// rldicr %r9, %r9, 32, 31
+.long 0x792907c6
+// subf %r17, %r9, %r17
+.long 0x7e298850
+// rldicl %r9, %r17, 32, 32
+.long 0x7a290022
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 bne %cr0, 260b
-.base64 "UIBqfILwa3hQeON8FBoDfRRSCH0gAAg5FBoofRAAKTkUGoh8CADE6sYHzHoiAIx5AADIOQAA6TkAAAo6QvhxeRAAAHw="
+// subf %r3, %r10, %r16
+.long 0x7c6a8050
+// rldicl %r11, %r3, 62, 2
+.long 0x786bf082
+// subf %r7, %r3, %r15
+.long 0x7ce37850
+// add %r8, %r3, %r3
+.long 0x7d031a14
+// add %r8, %r8, %r10
+.long 0x7d085214
+// addi %r8, %r8, 32
+.long 0x39080020
+// add %r9, %r8, %r3
+.long 0x7d281a14
+// addi %r9, %r9, 16
+.long 0x39290010
+// add %r4, %r8, %r3
+.long 0x7c881a14
+// ld %r22, 8(%r4)
+.long 0xeac40008
+// rldicr %r12, %r22, 32, 31
+.long 0x7acc07c6
+// rldicl %r12, %r12, 32, 32
+.long 0x798c0022
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// subfc %r0, %r0, %r0
+.long 0x7c000010
 270:
-.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// ld %r3, 0(%r16)
+.long 0xe8700000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// std %r0, 0(%r15)
+.long 0xf80f0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 270b
-.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// li %r3, 0
+.long 0x38600000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// subfe %r20, %r20, %r20
+.long 0x7e94a110
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 271:
-.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 271b
-.base64 "ZBdjeRAAYzgAAKo4FBqlfAAAyjgUGsZ8AADqOBQa53wAAAo5FBoIfRQaCH0AACo5FBopfRQaKX0UGil9AACLOAAAaujSYcN+AgDWOtJh1n5kF255FELOfQgAzvpC+GR5AADIOQEAJDoAAGA4"
+// rldicr %r3, %r11, 2, 61
+.long 0x79631764
+// addi %r3, %r3, 16
+.long 0x38630010
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r3
+.long 0x7ca51a14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r3
+.long 0x7cc61a14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r3
+.long 0x7ce71a14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r3
+.long 0x7d081a14
+// add %r8, %r8, %r3
+.long 0x7d081a14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// addi %r4, %r11, 0
+.long 0x388b0000
+// ld %r3, 0(%r10)
+.long 0xe86a0000
+// mulld %r22, %r3, %r12
+.long 0x7ec361d2
+// addi %r22, %r22, 2
+.long 0x3ad60002
+// mulld %r22, %r22, %r12
+.long 0x7ed661d2
+// rldicr %r14, %r11, 2, 61
+.long 0x796e1764
+// add %r14, %r14, %r8
+.long 0x7dce4214
+// std %r22, 8(%r14)
+.long 0xface0008
+// rldicl %r4, %r11, 63, 1
+.long 0x7964f842
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r17, %r4, 1
+.long 0x3a240001
+// li %r3, 0
+.long 0x38600000
 272:
-.base64 "AABu+AgAzjn//zE6AAAxKA=="
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 272b
-.base64 "ZBdpeRRKCn4USud9xgeReA=="
+// rldicr %r9, %r11, 2, 61
+.long 0x79691764
+// add %r16, %r10, %r9
+.long 0x7e0a4a14
+// add %r15, %r7, %r9
+.long 0x7de74a14
+// rldicr %r17, %r4, 32, 31
+.long 0x789107c6
 273:
-.base64 "UIAqfQAACjpQeOl9FEppfBRSY3wgAMM5FEqDfCgAZOrC6Cd5///nOILw6HgUQjF+RvDpeKAXKXkAAEbqCADGOAAAbugAAA/oEgCSftIBEnwUAGN8EGGMfdIZc34AABDoEgDTftIBE3wUAGN8EFlrfQgA7zkIABA6AAApKA=="
+// subf %r9, %r10, %r16
+.long 0x7d2a8050
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// subf %r15, %r9, %r15
+.long 0x7de97850
+// add %r3, %r9, %r9
+.long 0x7c694a14
+// add %r3, %r3, %r10
+.long 0x7c635214
+// addi %r14, %r3, 32
+.long 0x39c30020
+// add %r4, %r3, %r9
+.long 0x7c834a14
+// ld %r19, 40(%r4)
+.long 0xea640028
+// rldicl %r7, %r9, 61, 3
+.long 0x7927e8c2
+// addi %r7, %r7, -1
+.long 0x38e7ffff
+// rldicl %r8, %r7, 62, 2
+.long 0x78e8f082
+// add %r17, %r17, %r8
+.long 0x7e314214
+// rldicr %r9, %r7, 62, 1
+.long 0x78e9f046
+// rldicl %r9, %r9, 2, 62
+.long 0x792917a0
+// ld %r18, 0(%r6)
+.long 0xea460000
+// addi %r6, %r6, 8
+.long 0x38c60008
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r20, %r18, %r0
+.long 0x7e920012
+// mulld %r0, %r18, %r0
+.long 0x7c1201d2
+// addc %r3, %r3, %r0
+.long 0x7c630014
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// mulld %r19, %r19, %r3
+.long 0x7e7319d2
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r22, %r19, %r0
+.long 0x7ed30012
+// mulld %r0, %r19, %r0
+.long 0x7c1301d2
+// addc %r3, %r3, %r0
+.long 0x7c630014
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 274f
-.base64 "//8pOQAAKSg="
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 276f
-.base64 "//8pOQAAKSg="
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 278f
-.base64 "CABu6BAAjugYAO7oEFCMfQAAL+nSSRJ8FAFjfAgAL+nSSRJ8FAGEfBAAL+nSSRJ8FAHnfBJIMn0QYYx9FKBjfAAAD+gSABJ8FAGEfAgAD+gSABJ8FAHnfJQBiX4QUGt9AAAw6dJJE3wUAWN8CAAw6dJJE3wUAYR8EAAw6dJJE3wUAed8EkgzfRBZa30UsGN8AAAQ6BIAE3wUAYR8CAAQ6BIAE3wUAed8lAHJfgAAbvgIAI74EADu+BgAzjkYAO85GAAQOg=="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// ld %r7, 24(%r14)
+.long 0xe8ee0018
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r15)
+.long 0xe92f0010
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r15)
+.long 0xe80f0008
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r16)
+.long 0xe9300010
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r16)
+.long 0xe8100008
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// std %r7, 16(%r14)
+.long 0xf8ee0010
+// addi %r14, %r14, 24
+.long 0x39ce0018
+// addi %r15, %r15, 24
+.long 0x39ef0018
+// addi %r16, %r16, 24
+.long 0x3a100018
 b 279f
 278:
-.base64 "CABu6BAAjugQUIx9AAAv6dJJEnwUAWN8CAAv6dJJEnwUAYR8EkgyfRBhjH0UoGN8AAAP6BIAEnwUAYR8lAGJfhBQa30AADDp0kkTfBQBY3wIADDp0kkTfBQBhHwSSDN9EFlrfRSwY3wAABDoEgATfBQBhHyUAcl+AABu+AgAjvgQAM45EADvORAAEDo="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// addi %r14, %r14, 16
+.long 0x39ce0010
+// addi %r15, %r15, 16
+.long 0x39ef0010
+// addi %r16, %r16, 16
+.long 0x3a100010
 279:
 b 277f
 276:
-.base64 "CABu6BBQjH0AAC/p0kkSfBQBY3wSSDJ9EGGMfRSgY3yUAYl+EFBrfQAAMOnSSRN8FAFjfBJIM30QWWt9FLBjfJQByX4AAG74CADOOQgA7zkIABA6"
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
 277:
 b 275f
 274:
 275:
-.base64 "AAARKA=="
+// cmplwi %cr0, %r17, 0
+.long 0x28110000
 beq %cr0, 280f
 282:
-.base64 "CABu6BAAjugYAO7oIAAO6RBQjH0AAC/p0kkSfBQBY3wIAC/p0kkSfBQBhHwQAC/p0kkSfBQB53wYAC/p0kkSfBQBCH0SSDJ9EGGMfRSgY3wAAA/oEgASfBQBhHwIAA/oEgASfBQB53wQAA/oEgASfBQBCH2UAYl+EFBrfQAAMOnSSRN8FAFjfAgAMOnSSRN8FAGEfBAAMOnSSRN8FAHnfBgAMOnSSRN8FAEIfRJIM30QWWt9FLBjfAAAEOgSABN8FAGEfAgAEOgSABN8FAHnfBAAEOgSABN8FAEIfZQByX4AAG74CACO+BAA7vgYAA75IADOOSAA7zkgABA6//8xOgAAESg="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// ld %r7, 24(%r14)
+.long 0xe8ee0018
+// ld %r8, 32(%r14)
+.long 0xe90e0020
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r15)
+.long 0xe92f0010
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r9, 24(%r15)
+.long 0xe92f0018
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r15)
+.long 0xe80f0008
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r0, 16(%r15)
+.long 0xe80f0010
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r16)
+.long 0xe9300010
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r9, 24(%r16)
+.long 0xe9300018
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r16)
+.long 0xe8100008
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r0, 16(%r16)
+.long 0xe8100010
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// std %r7, 16(%r14)
+.long 0xf8ee0010
+// std %r8, 24(%r14)
+.long 0xf90e0018
+// addi %r14, %r14, 32
+.long 0x39ce0020
+// addi %r15, %r15, 32
+.long 0x39ef0020
+// addi %r16, %r16, 32
+.long 0x3a100020
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmplwi %cr0, %r17, 0
+.long 0x28110000
 bne %cr0, 282b
 b 281f
 280:
 281:
-.base64 "CABu6AAAgDgQUIx9FKFjfJQBhHwQUGt9FLFjfJQBhHwAAG74CACO+AEAIDnGByl5UIgpfiIAKXoAACko"
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// li %r4, 0
+.long 0x38800000
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// adde %r3, %r3, %r20
+.long 0x7c63a114
+// addze %r4, %r4
+.long 0x7c840194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// adde %r3, %r3, %r22
+.long 0x7c63b114
+// addze %r4, %r4
+.long 0x7c840194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// li %r9, 1
+.long 0x39200001
+// rldicr %r9, %r9, 32, 31
+.long 0x792907c6
+// subf %r17, %r9, %r17
+.long 0x7e298850
+// rldicl %r9, %r17, 32, 32
+.long 0x7a290022
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 bne %cr0, 273b
-.base64 "UIBqfILwa3hQeON8FBoDfRRSCH0gAAg5FBoofRAAKTkUGoh8CADE6sYHzHoiAIx5AADIOQAA6TkAAAo6QvhxeRAAAHw="
+// subf %r3, %r10, %r16
+.long 0x7c6a8050
+// rldicl %r11, %r3, 62, 2
+.long 0x786bf082
+// subf %r7, %r3, %r15
+.long 0x7ce37850
+// add %r8, %r3, %r3
+.long 0x7d031a14
+// add %r8, %r8, %r10
+.long 0x7d085214
+// addi %r8, %r8, 32
+.long 0x39080020
+// add %r9, %r8, %r3
+.long 0x7d281a14
+// addi %r9, %r9, 16
+.long 0x39290010
+// add %r4, %r8, %r3
+.long 0x7c881a14
+// ld %r22, 8(%r4)
+.long 0xeac40008
+// rldicr %r12, %r22, 32, 31
+.long 0x7acc07c6
+// rldicl %r12, %r12, 32, 32
+.long 0x798c0022
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// subfc %r0, %r0, %r0
+.long 0x7c000010
 283:
-.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// ld %r3, 0(%r16)
+.long 0xe8700000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// std %r0, 0(%r15)
+.long 0xf80f0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 283b
-.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// li %r3, 0
+.long 0x38600000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// subfe %r20, %r20, %r20
+.long 0x7e94a110
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 284:
-.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 284b
-.base64 "ZBdjeRAAYzgAAKo4FBqlfAAAyjgUGsZ8AADqOBQa53wAAAo5FBoIfRQaCH0AACo5FBopfRQaKX0UGil9AACLOAAAaujSYcN+AgDWOtJh1n5kF255FELOfQgAzvpC+GR5AADIOQEAJDoAAGA4"
+// rldicr %r3, %r11, 2, 61
+.long 0x79631764
+// addi %r3, %r3, 16
+.long 0x38630010
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r3
+.long 0x7ca51a14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r3
+.long 0x7cc61a14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r3
+.long 0x7ce71a14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r3
+.long 0x7d081a14
+// add %r8, %r8, %r3
+.long 0x7d081a14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// addi %r4, %r11, 0
+.long 0x388b0000
+// ld %r3, 0(%r10)
+.long 0xe86a0000
+// mulld %r22, %r3, %r12
+.long 0x7ec361d2
+// addi %r22, %r22, 2
+.long 0x3ad60002
+// mulld %r22, %r22, %r12
+.long 0x7ed661d2
+// rldicr %r14, %r11, 2, 61
+.long 0x796e1764
+// add %r14, %r14, %r8
+.long 0x7dce4214
+// std %r22, 8(%r14)
+.long 0xface0008
+// rldicl %r4, %r11, 63, 1
+.long 0x7964f842
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r17, %r4, 1
+.long 0x3a240001
+// li %r3, 0
+.long 0x38600000
 285:
-.base64 "AABu+AgAzjn//zE6AAAxKA=="
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 285b
-.base64 "ZBdpeRRKCn4USud9xgeReA=="
+// rldicr %r9, %r11, 2, 61
+.long 0x79691764
+// add %r16, %r10, %r9
+.long 0x7e0a4a14
+// add %r15, %r7, %r9
+.long 0x7de74a14
+// rldicr %r17, %r4, 32, 31
+.long 0x789107c6
 286:
-.base64 "UIAqfQAACjpQeOl9FEppfBRSY3wgAMM5FEqDfCgAZOrC6Cd5///nOILw6HgUQjF+RvDpeKAXKXkAAEbqCADGOAAAbugAAA/oEgCSftIBEnwUAGN8EGGMfdIZc34AABDoEgDTftIBE3wUAGN8EFlrfQgA7zkIABA6AAApKA=="
+// subf %r9, %r10, %r16
+.long 0x7d2a8050
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// subf %r15, %r9, %r15
+.long 0x7de97850
+// add %r3, %r9, %r9
+.long 0x7c694a14
+// add %r3, %r3, %r10
+.long 0x7c635214
+// addi %r14, %r3, 32
+.long 0x39c30020
+// add %r4, %r3, %r9
+.long 0x7c834a14
+// ld %r19, 40(%r4)
+.long 0xea640028
+// rldicl %r7, %r9, 61, 3
+.long 0x7927e8c2
+// addi %r7, %r7, -1
+.long 0x38e7ffff
+// rldicl %r8, %r7, 62, 2
+.long 0x78e8f082
+// add %r17, %r17, %r8
+.long 0x7e314214
+// rldicr %r9, %r7, 62, 1
+.long 0x78e9f046
+// rldicl %r9, %r9, 2, 62
+.long 0x792917a0
+// ld %r18, 0(%r6)
+.long 0xea460000
+// addi %r6, %r6, 8
+.long 0x38c60008
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r20, %r18, %r0
+.long 0x7e920012
+// mulld %r0, %r18, %r0
+.long 0x7c1201d2
+// addc %r3, %r3, %r0
+.long 0x7c630014
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// mulld %r19, %r19, %r3
+.long 0x7e7319d2
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r22, %r19, %r0
+.long 0x7ed30012
+// mulld %r0, %r19, %r0
+.long 0x7c1301d2
+// addc %r3, %r3, %r0
+.long 0x7c630014
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 287f
-.base64 "//8pOQAAKSg="
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 289f
-.base64 "//8pOQAAKSg="
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 291f
-.base64 "CABu6BAAjugYAO7oEFCMfQAAL+nSSRJ8FAFjfAgAL+nSSRJ8FAGEfBAAL+nSSRJ8FAHnfBJIMn0QYYx9FKBjfAAAD+gSABJ8FAGEfAgAD+gSABJ8FAHnfJQBiX4QUGt9AAAw6dJJE3wUAWN8CAAw6dJJE3wUAYR8EAAw6dJJE3wUAed8EkgzfRBZa30UsGN8AAAQ6BIAE3wUAYR8CAAQ6BIAE3wUAed8lAHJfgAAbvgIAI74EADu+BgAzjkYAO85GAAQOg=="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// ld %r7, 24(%r14)
+.long 0xe8ee0018
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r15)
+.long 0xe92f0010
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r15)
+.long 0xe80f0008
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r16)
+.long 0xe9300010
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r16)
+.long 0xe8100008
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// std %r7, 16(%r14)
+.long 0xf8ee0010
+// addi %r14, %r14, 24
+.long 0x39ce0018
+// addi %r15, %r15, 24
+.long 0x39ef0018
+// addi %r16, %r16, 24
+.long 0x3a100018
 b 292f
 291:
-.base64 "CABu6BAAjugQUIx9AAAv6dJJEnwUAWN8CAAv6dJJEnwUAYR8EkgyfRBhjH0UoGN8AAAP6BIAEnwUAYR8lAGJfhBQa30AADDp0kkTfBQBY3wIADDp0kkTfBQBhHwSSDN9EFlrfRSwY3wAABDoEgATfBQBhHyUAcl+AABu+AgAjvgQAM45EADvORAAEDo="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// addi %r14, %r14, 16
+.long 0x39ce0010
+// addi %r15, %r15, 16
+.long 0x39ef0010
+// addi %r16, %r16, 16
+.long 0x3a100010
 292:
 b 290f
 289:
-.base64 "CABu6BBQjH0AAC/p0kkSfBQBY3wSSDJ9EGGMfRSgY3yUAYl+EFBrfQAAMOnSSRN8FAFjfBJIM30QWWt9FLBjfJQByX4AAG74CADOOQgA7zkIABA6"
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
 290:
 b 288f
 287:
 288:
-.base64 "AAARKA=="
+// cmplwi %cr0, %r17, 0
+.long 0x28110000
 beq %cr0, 293f
 295:
-.base64 "CABu6BAAjugYAO7oIAAO6RBQjH0AAC/p0kkSfBQBY3wIAC/p0kkSfBQBhHwQAC/p0kkSfBQB53wYAC/p0kkSfBQBCH0SSDJ9EGGMfRSgY3wAAA/oEgASfBQBhHwIAA/oEgASfBQB53wQAA/oEgASfBQBCH2UAYl+EFBrfQAAMOnSSRN8FAFjfAgAMOnSSRN8FAGEfBAAMOnSSRN8FAHnfBgAMOnSSRN8FAEIfRJIM30QWWt9FLBjfAAAEOgSABN8FAGEfAgAEOgSABN8FAHnfBAAEOgSABN8FAEIfZQByX4AAG74CACO+BAA7vgYAA75IADOOSAA7zkgABA6//8xOgAAESg="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// ld %r7, 24(%r14)
+.long 0xe8ee0018
+// ld %r8, 32(%r14)
+.long 0xe90e0020
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r15)
+.long 0xe92f0010
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r9, 24(%r15)
+.long 0xe92f0018
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r15)
+.long 0xe80f0008
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r0, 16(%r15)
+.long 0xe80f0010
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r16)
+.long 0xe9300010
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r9, 24(%r16)
+.long 0xe9300018
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r16)
+.long 0xe8100008
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r0, 16(%r16)
+.long 0xe8100010
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// std %r7, 16(%r14)
+.long 0xf8ee0010
+// std %r8, 24(%r14)
+.long 0xf90e0018
+// addi %r14, %r14, 32
+.long 0x39ce0020
+// addi %r15, %r15, 32
+.long 0x39ef0020
+// addi %r16, %r16, 32
+.long 0x3a100020
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmplwi %cr0, %r17, 0
+.long 0x28110000
 bne %cr0, 295b
 b 294f
 293:
 294:
-.base64 "CABu6AAAgDgQUIx9FKFjfJQBhHwQUGt9FLFjfJQBhHwAAG74CACO+AEAIDnGByl5UIgpfiIAKXoAACko"
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// li %r4, 0
+.long 0x38800000
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// adde %r3, %r3, %r20
+.long 0x7c63a114
+// addze %r4, %r4
+.long 0x7c840194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// adde %r3, %r3, %r22
+.long 0x7c63b114
+// addze %r4, %r4
+.long 0x7c840194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// li %r9, 1
+.long 0x39200001
+// rldicr %r9, %r9, 32, 31
+.long 0x792907c6
+// subf %r17, %r9, %r17
+.long 0x7e298850
+// rldicl %r9, %r17, 32, 32
+.long 0x7a290022
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 bne %cr0, 286b
-.base64 "UIBqfILwa3hQeON8FBoDfRRSCH0gAAg5FBoofRAAKTkUGoh8CADE6sYHzHoiAIx5AADIOQAA6TkAAAo6QvhxeRAAAHw="
+// subf %r3, %r10, %r16
+.long 0x7c6a8050
+// rldicl %r11, %r3, 62, 2
+.long 0x786bf082
+// subf %r7, %r3, %r15
+.long 0x7ce37850
+// add %r8, %r3, %r3
+.long 0x7d031a14
+// add %r8, %r8, %r10
+.long 0x7d085214
+// addi %r8, %r8, 32
+.long 0x39080020
+// add %r9, %r8, %r3
+.long 0x7d281a14
+// addi %r9, %r9, 16
+.long 0x39290010
+// add %r4, %r8, %r3
+.long 0x7c881a14
+// ld %r22, 8(%r4)
+.long 0xeac40008
+// rldicr %r12, %r22, 32, 31
+.long 0x7acc07c6
+// rldicl %r12, %r12, 32, 32
+.long 0x798c0022
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// subfc %r0, %r0, %r0
+.long 0x7c000010
 296:
-.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// ld %r3, 0(%r16)
+.long 0xe8700000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// std %r0, 0(%r15)
+.long 0xf80f0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 296b
-.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// li %r3, 0
+.long 0x38600000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// subfe %r20, %r20, %r20
+.long 0x7e94a110
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 297:
-.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 297b
-.base64 "ZBdjeRAAYzgAAKo4FBqlfAAAyjgUGsZ8AADqOBQa53wAAAo5FBoIfRQaCH0AACo5FBopfRQaKX0UGil9AACLOAAAaujSYcN+AgDWOtJh1n5kF255FELOfQgAzvpC+GR5AADIOQEAJDoAAGA4"
+// rldicr %r3, %r11, 2, 61
+.long 0x79631764
+// addi %r3, %r3, 16
+.long 0x38630010
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r3
+.long 0x7ca51a14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r3
+.long 0x7cc61a14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r3
+.long 0x7ce71a14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r3
+.long 0x7d081a14
+// add %r8, %r8, %r3
+.long 0x7d081a14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// addi %r4, %r11, 0
+.long 0x388b0000
+// ld %r3, 0(%r10)
+.long 0xe86a0000
+// mulld %r22, %r3, %r12
+.long 0x7ec361d2
+// addi %r22, %r22, 2
+.long 0x3ad60002
+// mulld %r22, %r22, %r12
+.long 0x7ed661d2
+// rldicr %r14, %r11, 2, 61
+.long 0x796e1764
+// add %r14, %r14, %r8
+.long 0x7dce4214
+// std %r22, 8(%r14)
+.long 0xface0008
+// rldicl %r4, %r11, 63, 1
+.long 0x7964f842
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r17, %r4, 1
+.long 0x3a240001
+// li %r3, 0
+.long 0x38600000
 298:
-.base64 "AABu+AgAzjn//zE6AAAxKA=="
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 298b
-.base64 "ZBdpeRRKCn4USud9xgeReA=="
+// rldicr %r9, %r11, 2, 61
+.long 0x79691764
+// add %r16, %r10, %r9
+.long 0x7e0a4a14
+// add %r15, %r7, %r9
+.long 0x7de74a14
+// rldicr %r17, %r4, 32, 31
+.long 0x789107c6
 299:
-.base64 "UIAqfQAACjpQeOl9FEppfBRSY3wgAMM5FEqDfCgAZOrC6Cd5///nOILw6HgUQjF+RvDpeKAXKXkAAEbqCADGOAAAbugAAA/oEgCSftIBEnwUAGN8EGGMfdIZc34AABDoEgDTftIBE3wUAGN8EFlrfQgA7zkIABA6AAApKA=="
+// subf %r9, %r10, %r16
+.long 0x7d2a8050
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// subf %r15, %r9, %r15
+.long 0x7de97850
+// add %r3, %r9, %r9
+.long 0x7c694a14
+// add %r3, %r3, %r10
+.long 0x7c635214
+// addi %r14, %r3, 32
+.long 0x39c30020
+// add %r4, %r3, %r9
+.long 0x7c834a14
+// ld %r19, 40(%r4)
+.long 0xea640028
+// rldicl %r7, %r9, 61, 3
+.long 0x7927e8c2
+// addi %r7, %r7, -1
+.long 0x38e7ffff
+// rldicl %r8, %r7, 62, 2
+.long 0x78e8f082
+// add %r17, %r17, %r8
+.long 0x7e314214
+// rldicr %r9, %r7, 62, 1
+.long 0x78e9f046
+// rldicl %r9, %r9, 2, 62
+.long 0x792917a0
+// ld %r18, 0(%r6)
+.long 0xea460000
+// addi %r6, %r6, 8
+.long 0x38c60008
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r20, %r18, %r0
+.long 0x7e920012
+// mulld %r0, %r18, %r0
+.long 0x7c1201d2
+// addc %r3, %r3, %r0
+.long 0x7c630014
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// mulld %r19, %r19, %r3
+.long 0x7e7319d2
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r22, %r19, %r0
+.long 0x7ed30012
+// mulld %r0, %r19, %r0
+.long 0x7c1301d2
+// addc %r3, %r3, %r0
+.long 0x7c630014
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 2100f
-.base64 "//8pOQAAKSg="
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 2102f
-.base64 "//8pOQAAKSg="
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 2104f
-.base64 "CABu6BAAjugYAO7oEFCMfQAAL+nSSRJ8FAFjfAgAL+nSSRJ8FAGEfBAAL+nSSRJ8FAHnfBJIMn0QYYx9FKBjfAAAD+gSABJ8FAGEfAgAD+gSABJ8FAHnfJQBiX4QUGt9AAAw6dJJE3wUAWN8CAAw6dJJE3wUAYR8EAAw6dJJE3wUAed8EkgzfRBZa30UsGN8AAAQ6BIAE3wUAYR8CAAQ6BIAE3wUAed8lAHJfgAAbvgIAI74EADu+BgAzjkYAO85GAAQOg=="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// ld %r7, 24(%r14)
+.long 0xe8ee0018
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r15)
+.long 0xe92f0010
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r15)
+.long 0xe80f0008
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r16)
+.long 0xe9300010
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r16)
+.long 0xe8100008
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// std %r7, 16(%r14)
+.long 0xf8ee0010
+// addi %r14, %r14, 24
+.long 0x39ce0018
+// addi %r15, %r15, 24
+.long 0x39ef0018
+// addi %r16, %r16, 24
+.long 0x3a100018
 b 2105f
 2104:
-.base64 "CABu6BAAjugQUIx9AAAv6dJJEnwUAWN8CAAv6dJJEnwUAYR8EkgyfRBhjH0UoGN8AAAP6BIAEnwUAYR8lAGJfhBQa30AADDp0kkTfBQBY3wIADDp0kkTfBQBhHwSSDN9EFlrfRSwY3wAABDoEgATfBQBhHyUAcl+AABu+AgAjvgQAM45EADvORAAEDo="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// addi %r14, %r14, 16
+.long 0x39ce0010
+// addi %r15, %r15, 16
+.long 0x39ef0010
+// addi %r16, %r16, 16
+.long 0x3a100010
 2105:
 b 2103f
 2102:
-.base64 "CABu6BBQjH0AAC/p0kkSfBQBY3wSSDJ9EGGMfRSgY3yUAYl+EFBrfQAAMOnSSRN8FAFjfBJIM30QWWt9FLBjfJQByX4AAG74CADOOQgA7zkIABA6"
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
 2103:
 b 2101f
 2100:
 2101:
-.base64 "AAARKA=="
+// cmplwi %cr0, %r17, 0
+.long 0x28110000
 beq %cr0, 2106f
 2108:
-.base64 "CABu6BAAjugYAO7oIAAO6RBQjH0AAC/p0kkSfBQBY3wIAC/p0kkSfBQBhHwQAC/p0kkSfBQB53wYAC/p0kkSfBQBCH0SSDJ9EGGMfRSgY3wAAA/oEgASfBQBhHwIAA/oEgASfBQB53wQAA/oEgASfBQBCH2UAYl+EFBrfQAAMOnSSRN8FAFjfAgAMOnSSRN8FAGEfBAAMOnSSRN8FAHnfBgAMOnSSRN8FAEIfRJIM30QWWt9FLBjfAAAEOgSABN8FAGEfAgAEOgSABN8FAHnfBAAEOgSABN8FAEIfZQByX4AAG74CACO+BAA7vgYAA75IADOOSAA7zkgABA6//8xOgAAESg="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// ld %r7, 24(%r14)
+.long 0xe8ee0018
+// ld %r8, 32(%r14)
+.long 0xe90e0020
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r15)
+.long 0xe92f0010
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r9, 24(%r15)
+.long 0xe92f0018
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r15)
+.long 0xe80f0008
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r0, 16(%r15)
+.long 0xe80f0010
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r16)
+.long 0xe9300010
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r9, 24(%r16)
+.long 0xe9300018
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r16)
+.long 0xe8100008
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r0, 16(%r16)
+.long 0xe8100010
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// std %r7, 16(%r14)
+.long 0xf8ee0010
+// std %r8, 24(%r14)
+.long 0xf90e0018
+// addi %r14, %r14, 32
+.long 0x39ce0020
+// addi %r15, %r15, 32
+.long 0x39ef0020
+// addi %r16, %r16, 32
+.long 0x3a100020
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmplwi %cr0, %r17, 0
+.long 0x28110000
 bne %cr0, 2108b
 b 2107f
 2106:
 2107:
-.base64 "CABu6AAAgDgQUIx9FKFjfJQBhHwQUGt9FLFjfJQBhHwAAG74CACO+AEAIDnGByl5UIgpfiIAKXoAACko"
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// li %r4, 0
+.long 0x38800000
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// adde %r3, %r3, %r20
+.long 0x7c63a114
+// addze %r4, %r4
+.long 0x7c840194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// adde %r3, %r3, %r22
+.long 0x7c63b114
+// addze %r4, %r4
+.long 0x7c840194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// li %r9, 1
+.long 0x39200001
+// rldicr %r9, %r9, 32, 31
+.long 0x792907c6
+// subf %r17, %r9, %r17
+.long 0x7e298850
+// rldicl %r9, %r17, 32, 32
+.long 0x7a290022
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 bne %cr0, 299b
-.base64 "UIBqfILwa3hQeON8FBoDfRRSCH0gAAg5FBoofRAAKTkUGoh8CADE6sYHzHoiAIx5AADIOQAA6TkAAAo6QvhxeRAAAHw="
+// subf %r3, %r10, %r16
+.long 0x7c6a8050
+// rldicl %r11, %r3, 62, 2
+.long 0x786bf082
+// subf %r7, %r3, %r15
+.long 0x7ce37850
+// add %r8, %r3, %r3
+.long 0x7d031a14
+// add %r8, %r8, %r10
+.long 0x7d085214
+// addi %r8, %r8, 32
+.long 0x39080020
+// add %r9, %r8, %r3
+.long 0x7d281a14
+// addi %r9, %r9, 16
+.long 0x39290010
+// add %r4, %r8, %r3
+.long 0x7c881a14
+// ld %r22, 8(%r4)
+.long 0xeac40008
+// rldicr %r12, %r22, 32, 31
+.long 0x7acc07c6
+// rldicl %r12, %r12, 32, 32
+.long 0x798c0022
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// subfc %r0, %r0, %r0
+.long 0x7c000010
 2109:
-.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// ld %r3, 0(%r16)
+.long 0xe8700000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// std %r0, 0(%r15)
+.long 0xf80f0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2109b
-.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// li %r3, 0
+.long 0x38600000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// subfe %r20, %r20, %r20
+.long 0x7e94a110
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 2110:
-.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2110b
-.base64 "AACAOv//lDoAAAo5FOoIfQAAKjkU6il9AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyDkAAOk5AAAFOkL4cXk="
+// li %r20, 0
+.long 0x3a800000
+// addi %r20, %r20, -1
+.long 0x3a94ffff
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 2111:
-.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2111b
 b 227f
 226:
-.base64 "AADFOUL4cXkAAAA4"
+// addi %r14, %r5, 0
+.long 0x39c50000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 2112:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2112b
-.base64 "AQAAOAAABZCkLmR5QvhjeRQahHw="
+// li %r0, 1
+.long 0x38000001
+// stw %r0, 0(%r5)
+.long 0x90050000
+// rldicr %r4, %r11, 5, 58
+.long 0x79642ea4
+// rldicl %r3, %r11, 63, 1
+.long 0x7963f842
+// add %r4, %r4, %r3
+.long 0x7c841a14
 2113:
-.base64 "AACAOgAAyDkAAOU5QvhxeQ=="
+// li %r20, 0
+.long 0x3a800000
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r5, 0
+.long 0x39e50000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 2114:
-.base64 "AAAP6KQPA3gUomN84A8UeAAAbvgIAM45CADvOf//MToAADEo"
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// rldicr %r3, %r0, 1, 62
+.long 0x78030fa4
+// add %r3, %r3, %r20
+.long 0x7c63a214
+// rldicl %r20, %r0, 1, 63
+.long 0x78140fe0
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2114b
-.base64 "AACO+gAAyDkAAOk5AAAKOkL4cXkQAAB8"
+// std %r20, 0(%r14)
+.long 0xfa8e0000
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// subfc %r0, %r0, %r0
+.long 0x7c000010
 2115:
-.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// ld %r3, 0(%r16)
+.long 0xe8700000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// std %r0, 0(%r15)
+.long 0xf80f0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2115b
-.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// li %r3, 0
+.long 0x38600000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// subfe %r20, %r20, %r20
+.long 0x7e94a110
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 2116:
-.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2116b
-.base64 "//+EOAAAJCg="
+// addi %r4, %r4, -1
+.long 0x3884ffff
+// cmpldi %cr0, %r4, 0
+.long 0x28240000
 bne %cr0, 2113b
-.base64 "BgAAOw=="
+// li %r24, 6
+.long 0x3b000006
 2117:
-.base64 "ZBdjeRAAYzgAAKo4FBqlfAAAyjgUGsZ8AADqOBQa53wAAAo5FBoIfRQaCH0AACo5FBopfRQaKX0UGil9AACLOAAAaujSYcN+AgDWOtJh1n5kF255FELOfQgAzvpC+GR5AADIOQEAJDoAAGA4"
+// rldicr %r3, %r11, 2, 61
+.long 0x79631764
+// addi %r3, %r3, 16
+.long 0x38630010
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r3
+.long 0x7ca51a14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r3
+.long 0x7cc61a14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r3
+.long 0x7ce71a14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r3
+.long 0x7d081a14
+// add %r8, %r8, %r3
+.long 0x7d081a14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// add %r9, %r9, %r3
+.long 0x7d291a14
+// addi %r4, %r11, 0
+.long 0x388b0000
+// ld %r3, 0(%r10)
+.long 0xe86a0000
+// mulld %r22, %r3, %r12
+.long 0x7ec361d2
+// addi %r22, %r22, 2
+.long 0x3ad60002
+// mulld %r22, %r22, %r12
+.long 0x7ed661d2
+// rldicr %r14, %r11, 2, 61
+.long 0x796e1764
+// add %r14, %r14, %r8
+.long 0x7dce4214
+// std %r22, 8(%r14)
+.long 0xface0008
+// rldicl %r4, %r11, 63, 1
+.long 0x7964f842
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r17, %r4, 1
+.long 0x3a240001
+// li %r3, 0
+.long 0x38600000
 2118:
-.base64 "AABu+AgAzjn//zE6AAAxKA=="
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2118b
-.base64 "ZBdpeRRKCn4USud9xgeReA=="
+// rldicr %r9, %r11, 2, 61
+.long 0x79691764
+// add %r16, %r10, %r9
+.long 0x7e0a4a14
+// add %r15, %r7, %r9
+.long 0x7de74a14
+// rldicr %r17, %r4, 32, 31
+.long 0x789107c6
 2119:
-.base64 "UIAqfQAACjpQeOl9FEppfBRSY3wgAMM5FEqDfCgAZOrC6Cd5///nOILw6HgUQjF+RvDpeKAXKXkAAEbqCADGOAAAbugAAA/oEgCSftIBEnwUAGN8EGGMfdIZc34AABDoEgDTftIBE3wUAGN8EFlrfQgA7zkIABA6AAApKA=="
+// subf %r9, %r10, %r16
+.long 0x7d2a8050
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// subf %r15, %r9, %r15
+.long 0x7de97850
+// add %r3, %r9, %r9
+.long 0x7c694a14
+// add %r3, %r3, %r10
+.long 0x7c635214
+// addi %r14, %r3, 32
+.long 0x39c30020
+// add %r4, %r3, %r9
+.long 0x7c834a14
+// ld %r19, 40(%r4)
+.long 0xea640028
+// rldicl %r7, %r9, 61, 3
+.long 0x7927e8c2
+// addi %r7, %r7, -1
+.long 0x38e7ffff
+// rldicl %r8, %r7, 62, 2
+.long 0x78e8f082
+// add %r17, %r17, %r8
+.long 0x7e314214
+// rldicr %r9, %r7, 62, 1
+.long 0x78e9f046
+// rldicl %r9, %r9, 2, 62
+.long 0x792917a0
+// ld %r18, 0(%r6)
+.long 0xea460000
+// addi %r6, %r6, 8
+.long 0x38c60008
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r20, %r18, %r0
+.long 0x7e920012
+// mulld %r0, %r18, %r0
+.long 0x7c1201d2
+// addc %r3, %r3, %r0
+.long 0x7c630014
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// mulld %r19, %r19, %r3
+.long 0x7e7319d2
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r22, %r19, %r0
+.long 0x7ed30012
+// mulld %r0, %r19, %r0
+.long 0x7c1301d2
+// addc %r3, %r3, %r0
+.long 0x7c630014
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 2120f
-.base64 "//8pOQAAKSg="
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 2122f
-.base64 "//8pOQAAKSg="
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 beq %cr0, 2124f
-.base64 "CABu6BAAjugYAO7oEFCMfQAAL+nSSRJ8FAFjfAgAL+nSSRJ8FAGEfBAAL+nSSRJ8FAHnfBJIMn0QYYx9FKBjfAAAD+gSABJ8FAGEfAgAD+gSABJ8FAHnfJQBiX4QUGt9AAAw6dJJE3wUAWN8CAAw6dJJE3wUAYR8EAAw6dJJE3wUAed8EkgzfRBZa30UsGN8AAAQ6BIAE3wUAYR8CAAQ6BIAE3wUAed8lAHJfgAAbvgIAI74EADu+BgAzjkYAO85GAAQOg=="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// ld %r7, 24(%r14)
+.long 0xe8ee0018
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r15)
+.long 0xe92f0010
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r15)
+.long 0xe80f0008
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r16)
+.long 0xe9300010
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r16)
+.long 0xe8100008
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// std %r7, 16(%r14)
+.long 0xf8ee0010
+// addi %r14, %r14, 24
+.long 0x39ce0018
+// addi %r15, %r15, 24
+.long 0x39ef0018
+// addi %r16, %r16, 24
+.long 0x3a100018
 b 2125f
 2124:
-.base64 "CABu6BAAjugQUIx9AAAv6dJJEnwUAWN8CAAv6dJJEnwUAYR8EkgyfRBhjH0UoGN8AAAP6BIAEnwUAYR8lAGJfhBQa30AADDp0kkTfBQBY3wIADDp0kkTfBQBhHwSSDN9EFlrfRSwY3wAABDoEgATfBQBhHyUAcl+AABu+AgAjvgQAM45EADvORAAEDo="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// addi %r14, %r14, 16
+.long 0x39ce0010
+// addi %r15, %r15, 16
+.long 0x39ef0010
+// addi %r16, %r16, 16
+.long 0x3a100010
 2125:
 b 2123f
 2122:
-.base64 "CABu6BBQjH0AAC/p0kkSfBQBY3wSSDJ9EGGMfRSgY3yUAYl+EFBrfQAAMOnSSRN8FAFjfBJIM30QWWt9FLBjfJQByX4AAG74CADOOQgA7zkIABA6"
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
 2123:
 b 2121f
 2120:
 2121:
-.base64 "AAARKA=="
+// cmplwi %cr0, %r17, 0
+.long 0x28110000
 beq %cr0, 2126f
 2128:
-.base64 "CABu6BAAjugYAO7oIAAO6RBQjH0AAC/p0kkSfBQBY3wIAC/p0kkSfBQBhHwQAC/p0kkSfBQB53wYAC/p0kkSfBQBCH0SSDJ9EGGMfRSgY3wAAA/oEgASfBQBhHwIAA/oEgASfBQB53wQAA/oEgASfBQBCH2UAYl+EFBrfQAAMOnSSRN8FAFjfAgAMOnSSRN8FAGEfBAAMOnSSRN8FAHnfBgAMOnSSRN8FAEIfRJIM30QWWt9FLBjfAAAEOgSABN8FAGEfAgAEOgSABN8FAHnfBAAEOgSABN8FAEIfZQByX4AAG74CACO+BAA7vgYAA75IADOOSAA7zkgABA6//8xOgAAESg="
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// ld %r4, 16(%r14)
+.long 0xe88e0010
+// ld %r7, 24(%r14)
+.long 0xe8ee0018
+// ld %r8, 32(%r14)
+.long 0xe90e0020
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// ld %r9, 0(%r15)
+.long 0xe92f0000
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r15)
+.long 0xe92f0008
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r15)
+.long 0xe92f0010
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r9, 24(%r15)
+.long 0xe92f0018
+// mulld %r0, %r18, %r9
+.long 0x7c1249d2
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// mulhdu %r9, %r18, %r9
+.long 0x7d324812
+// subfe %r12, %r12, %r12
+.long 0x7d8c6110
+// addc %r3, %r3, %r20
+.long 0x7c63a014
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r15)
+.long 0xe80f0008
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r0, 16(%r15)
+.long 0xe80f0010
+// mulhdu %r0, %r18, %r0
+.long 0x7c120012
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// addze %r20, %r9
+.long 0x7e890194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// ld %r9, 0(%r16)
+.long 0xe9300000
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r3, %r3, %r0
+.long 0x7c630114
+// ld %r9, 8(%r16)
+.long 0xe9300008
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r9, 16(%r16)
+.long 0xe9300010
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r9, 24(%r16)
+.long 0xe9300018
+// mulld %r0, %r19, %r9
+.long 0x7c1349d2
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// mulhdu %r9, %r19, %r9
+.long 0x7d334812
+// subfe %r11, %r11, %r11
+.long 0x7d6b5910
+// addc %r3, %r3, %r22
+.long 0x7c63b014
+// ld %r0, 0(%r16)
+.long 0xe8100000
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r4, %r4, %r0
+.long 0x7c840114
+// ld %r0, 8(%r16)
+.long 0xe8100008
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r7, %r7, %r0
+.long 0x7ce70114
+// ld %r0, 16(%r16)
+.long 0xe8100010
+// mulhdu %r0, %r19, %r0
+.long 0x7c130012
+// adde %r8, %r8, %r0
+.long 0x7d080114
+// addze %r22, %r9
+.long 0x7ec90194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// std %r7, 16(%r14)
+.long 0xf8ee0010
+// std %r8, 24(%r14)
+.long 0xf90e0018
+// addi %r14, %r14, 32
+.long 0x39ce0020
+// addi %r15, %r15, 32
+.long 0x39ef0020
+// addi %r16, %r16, 32
+.long 0x3a100020
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmplwi %cr0, %r17, 0
+.long 0x28110000
 bne %cr0, 2128b
 b 2127f
 2126:
 2127:
-.base64 "CABu6AAAgDgQUIx9FKFjfJQBhHwQUGt9FLFjfJQBhHwAAG74CACO+AEAIDnGByl5UIgpfiIAKXoAACko"
+// ld %r3, 8(%r14)
+.long 0xe86e0008
+// li %r4, 0
+.long 0x38800000
+// subfc %r12, %r12, %r10
+.long 0x7d8c5010
+// adde %r3, %r3, %r20
+.long 0x7c63a114
+// addze %r4, %r4
+.long 0x7c840194
+// subfc %r11, %r11, %r10
+.long 0x7d6b5010
+// adde %r3, %r3, %r22
+.long 0x7c63b114
+// addze %r4, %r4
+.long 0x7c840194
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// std %r4, 8(%r14)
+.long 0xf88e0008
+// li %r9, 1
+.long 0x39200001
+// rldicr %r9, %r9, 32, 31
+.long 0x792907c6
+// subf %r17, %r9, %r17
+.long 0x7e298850
+// rldicl %r9, %r17, 32, 32
+.long 0x7a290022
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 bne %cr0, 2119b
-.base64 "UIBqfILwa3hQeON8FBoDfRRSCH0gAAg5FBoofRAAKTkUGoh8CADE6sYHzHoiAIx5AADIOQAA6TkAAAo6QvhxeRAAAHw="
+// subf %r3, %r10, %r16
+.long 0x7c6a8050
+// rldicl %r11, %r3, 62, 2
+.long 0x786bf082
+// subf %r7, %r3, %r15
+.long 0x7ce37850
+// add %r8, %r3, %r3
+.long 0x7d031a14
+// add %r8, %r8, %r10
+.long 0x7d085214
+// addi %r8, %r8, 32
+.long 0x39080020
+// add %r9, %r8, %r3
+.long 0x7d281a14
+// addi %r9, %r9, 16
+.long 0x39290010
+// add %r4, %r8, %r3
+.long 0x7c881a14
+// ld %r22, 8(%r4)
+.long 0xeac40008
+// rldicr %r12, %r22, 32, 31
+.long 0x7acc07c6
+// rldicl %r12, %r12, 32, 32
+.long 0x798c0022
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// subfc %r0, %r0, %r0
+.long 0x7c000010
 2129:
-.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// ld %r3, 0(%r16)
+.long 0xe8700000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// std %r0, 0(%r15)
+.long 0xf80f0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2129b
-.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// li %r3, 0
+.long 0x38600000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// subfe %r20, %r20, %r20
+.long 0x7e94a110
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 2130:
-.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2130b
-.base64 "//8YOwAAOCg="
+// addi %r24, %r24, -1
+.long 0x3b18ffff
+// cmpldi %cr0, %r24, 0
+.long 0x28380000
 bne %cr0, 2117b
-.base64 "AACAOv//lDoAAAo5FOoIfQAAKjkU6il9AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyDkAAOk5AAAFOkL4cXk="
+// li %r20, 0
+.long 0x3a800000
+// addi %r20, %r20, -1
+.long 0x3a94ffff
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 2131:
-.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2131b
 227:
-.base64 "xoNXeCCE93ocAGA50ln3fsAC9zoUqvd+AAD3OwABVzkIAGA5MACgOwAAnDnGB0Z4IITGeAAASjkU6kp9FOpKfRTqSn0U6kp9FOpKfQAAyjlC+HF5AAAAOA=="
+// rldicr %r23, %r2, 48, 15
+.long 0x785783c6
+// rldicl %r23, %r23, 16, 48
+.long 0x7af78420
+// li %r11, 28
+.long 0x3960001c
+// mulld %r23, %r23, %r11
+.long 0x7ef759d2
+// addi %r23, %r23, 704
+.long 0x3af702c0
+// add %r23, %r23, %r21
+.long 0x7ef7aa14
+// addi %r31, %r23, 0
+.long 0x3bf70000
+// addi %r10, %r23, 256
+.long 0x39570100
+// li %r11, 8
+.long 0x39600008
+// li %r29, 48
+.long 0x3ba00030
+// addi %r12, %r28, 0
+.long 0x399c0000
+// rldicr %r6, %r2, 32, 31
+.long 0x784607c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// addi %r10, %r10, 0
+.long 0x394a0000
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 2132:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2132b
-.base64 "FDLqff//7zkAAAw6AAAmOg=="
+// add %r15, %r10, %r6
+.long 0x7dea3214
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r16, %r12, 0
+.long 0x3a0c0000
+// addi %r17, %r6, 0
+.long 0x3a260000
 2133:
-.base64 "AAAQiAAAD5gBABA6///vOf//MToAADEo"
+// lbz %r0, 0(%r16)
+.long 0x88100000
+// stb %r0, 0(%r15)
+.long 0x980f0000
+// addi %r16, %r16, 1
+.long 0x3a100001
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2133b
-.base64 "FOrKffD/zjkAAAA4AAAO+AABXzkAAJw5xgdGeCCExngUMox9AABKORTqSn0U6kp9FOpKfRTqSn0U6kp9FOpKfQAAyjlC+HF5AAAAOA=="
+// add %r14, %r10, %r29
+.long 0x7dcaea14
+// addi %r14, %r14, -16
+.long 0x39cefff0
+// li %r0, 0
+.long 0x38000000
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r10, %r31, 256
+.long 0x395f0100
+// addi %r12, %r28, 0
+.long 0x399c0000
+// rldicr %r6, %r2, 32, 31
+.long 0x784607c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// add %r12, %r12, %r6
+.long 0x7d8c3214
+// addi %r10, %r10, 0
+.long 0x394a0000
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 2134:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2134b
-.base64 "FDLqff//7zkAAAw6AAAmOg=="
+// add %r15, %r10, %r6
+.long 0x7dea3214
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r16, %r12, 0
+.long 0x3a0c0000
+// addi %r17, %r6, 0
+.long 0x3a260000
 2135:
-.base64 "AAAQiAAAD5gBABA6///vOf//MToAADEo"
+// lbz %r0, 0(%r16)
+.long 0x88100000
+// stb %r0, 0(%r15)
+.long 0x980f0000
+// addi %r16, %r16, 1
+.long 0x3a100001
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2135b
-.base64 "FOrKffD/zjkAAAA4AAAO+AABXzkAAMo5FOrOfRTqzn0U6s59FOrOfRTqzn0U6s59FOrOfUL4cXkAAAA4"
+// add %r14, %r10, %r29
+.long 0x7dcaea14
+// addi %r14, %r14, -16
+.long 0x39cefff0
+// li %r0, 0
+.long 0x38000000
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r10, %r31, 256
+.long 0x395f0100
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 2136:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2136b
-.base64 "AADAOv//1joAAAo5FOoIfRTqCH0U6gh9FOoIfRTqCH0AACo5FOopfRTqKX0U6il9AADIOQAA6TkAAAo6AAArOgAAgDo="
+// li %r22, 0
+.long 0x3ac00000
+// addi %r22, %r22, -1
+.long 0x3ad6ffff
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// addi %r17, %r11, 0
+.long 0x3a2b0000
+// li %r20, 0
+.long 0x3a800000
 2137:
-.base64 "AAAOgAAAcIBQAAN8UAAUfAAAD5DgDxR4BADOOQQA7zkEABA6//8xOgAAMSg="
+// lwz %r0, 0(%r14)
+.long 0x800e0000
+// lwz %r3, 0(%r16)
+.long 0x80700000
+// subf %r0, %r3, %r0
+.long 0x7c030050
+// subf %r0, %r20, %r0
+.long 0x7c140050
+// stw %r0, 0(%r15)
+.long 0x900f0000
+// rldicl %r20, %r0, 1, 63
+.long 0x78140fe0
+// addi %r14, %r14, 4
+.long 0x39ce0004
+// addi %r15, %r15, 4
+.long 0x39ef0004
+// addi %r16, %r16, 4
+.long 0x3a100004
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2137b
-.base64 "AAAOgFAAFHzgDwB4AABgOFAYgH4AAMo5FOrOfRTqzn0U6s59FOrOfRTqzn0AAOo5FOrvfRTq730U6u99FOrvfRTq730U6u99FOrvfUL4cXkAAGA4"
+// lwz %r0, 0(%r14)
+.long 0x800e0000
+// subf %r0, %r20, %r0
+.long 0x7c140050
+// rldicl %r0, %r0, 1, 63
+.long 0x78000fe0
+// li %r3, 0
+.long 0x38600000
+// subf %r20, %r0, %r3
+.long 0x7e801850
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// addi %r15, %r10, 0
+.long 0x39ea0000
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r3, 0
+.long 0x38600000
 2138:
-.base64 "AAAO6AAAj+h4IgB8eANjfAgAzjkIAO85//8xOgAAMSg="
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// ld %r4, 0(%r15)
+.long 0xe88f0000
+// xor %r0, %r0, %r4
+.long 0x7c002278
+// or %r3, %r3, %r0
+.long 0x7c630378
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2138b
-.base64 "AAAAOBAAY3yUAWB8UABjfniblH54mpR+OKDWfgAACjkU6gh9FOoIfRTqCH0U6gh9FOoIfRTqCH0AACo5FOopfRTqKX0U6il9AADIOQAA6TkAAAo6AAArOgAAgDo="
+// li %r0, 0
+.long 0x38000000
+// subfc %r3, %r3, %r0
+.long 0x7c630010
+// addze %r3, %r0
+.long 0x7c600194
+// subf %r19, %r3, %r0
+.long 0x7e630050
+// or %r20, %r20, %r19
+.long 0x7e949b78
+// xor %r20, %r20, %r19
+.long 0x7e949a78
+// and %r22, %r22, %r20
+.long 0x7ed6a038
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// addi %r17, %r11, 0
+.long 0x3a2b0000
+// li %r20, 0
+.long 0x3a800000
 2139:
-.base64 "AAAOgAAAcIBQAAN8UAAUfAAAD5DgDxR4BADOOQQA7zkEABA6//8xOgAAMSg="
+// lwz %r0, 0(%r14)
+.long 0x800e0000
+// lwz %r3, 0(%r16)
+.long 0x80700000
+// subf %r0, %r3, %r0
+.long 0x7c030050
+// subf %r0, %r20, %r0
+.long 0x7c140050
+// stw %r0, 0(%r15)
+.long 0x900f0000
+// rldicl %r20, %r0, 1, 63
+.long 0x78140fe0
+// addi %r14, %r14, 4
+.long 0x39ce0004
+// addi %r15, %r15, 4
+.long 0x39ef0004
+// addi %r16, %r16, 4
+.long 0x3a100004
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2139b
-.base64 "AAAOgFAAFHzgDwB4AABgOFAYgH4AAMo5FOrOfRTqzn0U6s59FOrOfRTqzn0U6s59AADqORTq730U6u99FOrvfRTq730U6u99FOrvfRTq731C+HF5AABgOA=="
+// lwz %r0, 0(%r14)
+.long 0x800e0000
+// subf %r0, %r20, %r0
+.long 0x7c140050
+// rldicl %r0, %r0, 1, 63
+.long 0x78000fe0
+// li %r3, 0
+.long 0x38600000
+// subf %r20, %r0, %r3
+.long 0x7e801850
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// addi %r15, %r10, 0
+.long 0x39ea0000
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r3, 0
+.long 0x38600000
 2140:
-.base64 "AAAO6AAAj+h4IgB8eANjfAgAzjkIAO85//8xOgAAMSg="
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// ld %r4, 0(%r15)
+.long 0xe88f0000
+// xor %r0, %r0, %r4
+.long 0x7c002278
+// or %r3, %r3, %r0
+.long 0x7c630378
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2140b
-.base64 "AAAAOBAAY3yUAWB8UABjfniblH54mpR+OKDWfgAA1foAAKo4FOqlfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAMU5QvhxeQAAADg="
-2141:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
-bne %cr0, 2141b
-.base64 "AQAAOAAABZBkNmR5"
-2142:
-.base64 "AADIOQAA5TkAACs6AACAOg=="
+// li %r0, 0
+.long 0x38000000
+// subfc %r3, %r3, %r0
+.long 0x7c630010
+// addze %r3, %r0
+.long 0x7c600194
+// subf %r19, %r3, %r0
+.long 0x7e630050
+// or %r20, %r20, %r19
+.long 0x7e949b78
+// xor %r20, %r20, %r19
+.long 0x7e949a78
+// and %r22, %r22, %r20
+.long 0x7ed6a038
+// std %r22, 0(%r21)
+.long 0xfad50000
+// ld %r0, 0(%r10)
+.long 0xe80a0000
+// ld %r12, 0(%r10)
+.long 0xe98a0000
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// li %r3, 0
+.long 0x38600000
+// subf %r12, %r12, %r3
+.long 0x7d8c1850
+// rldicr %r12, %r12, 32, 31
+.long 0x798c07c6
+// rldicl %r12, %r12, 32, 32
+.long 0x798c0022
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// rldicr %r3, %r11, 2, 61
+.long 0x79631764
+// add %r3, %r10, %r3
+.long 0x7c6a1a14
+// addi %r3, %r3, -8
+.long 0x3863fff8
+// ld %r3, 0(%r3)
+.long 0xe8630000
+// cmpldi %cr0, %r3, 0
+.long 0x28230000
+beq %cr0, 2141f
+// addi %r14, %r5, 0
+.long 0x39c50000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 2143:
-.base64 "AAAPgBQCAHwUogB8AAAOkCIAFHgEAM45BADvOf//MToAADEo"
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2143b
-.base64 "AACOkgAAyDkAAOk5AAAKOgAAKzoAAIA6"
+// rldicr %r14, %r11, 2, 61
+.long 0x796e1764
+// add %r14, %r14, %r5
+.long 0x7dce2a14
+// addi %r14, %r14, -8
+.long 0x39cefff8
+// li %r0, 1
+.long 0x38000001
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// rldicl %r4, %r11, 63, 1
+.long 0x7964f842
+// addi %r4, %r4, 64
+.long 0x38840040
 2144:
-.base64 "AAAOgAAAcIBQAAN8UAAUfAAAD5DgDxR4BADOOQQA7zkEABA6//8xOgAAMSg="
-bne %cr0, 2144b
-.base64 "AAAOgFAAFHzgDwB4AABgOFAYgH4AAMg5AADpOQAABToAACs6"
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r5, 0
+.long 0x39e50000
+// addi %r17, %r11, 0
+.long 0x3a2b0000
+// li %r20, 0
+.long 0x3a800000
 2145:
-.base64 "AAAPgAAAboB4AmN8OKBjfHgCY3wAAHCQBADOOQQA7zkEABA6//8xOgAAMSg="
+// lwz %r0, 0(%r15)
+.long 0x800f0000
+// add %r0, %r0, %r0
+.long 0x7c000214
+// add %r0, %r0, %r20
+.long 0x7c00a214
+// stw %r0, 0(%r14)
+.long 0x900e0000
+// rldicl %r20, %r0, 32, 32
+.long 0x78140022
+// addi %r14, %r14, 4
+.long 0x39ce0004
+// addi %r15, %r15, 4
+.long 0x39ef0004
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2145b
-.base64 "//+EOAAAJCg="
-bne %cr0, 2142b
-.base64 "AACAOv//lDoAAAo5FOoIfQAAKjkU6il9AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8AADIOQAA6TkAAAU6QvhxeQ=="
+// stw %r20, 0(%r14)
+.long 0x928e0000
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// addi %r17, %r11, 0
+.long 0x3a2b0000
+// li %r20, 0
+.long 0x3a800000
 2146:
-.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+// lwz %r0, 0(%r14)
+.long 0x800e0000
+// lwz %r3, 0(%r16)
+.long 0x80700000
+// subf %r0, %r3, %r0
+.long 0x7c030050
+// subf %r0, %r20, %r0
+.long 0x7c140050
+// stw %r0, 0(%r15)
+.long 0x900f0000
+// rldicl %r20, %r0, 1, 63
+.long 0x78140fe0
+// addi %r14, %r14, 4
+.long 0x39ce0004
+// addi %r15, %r15, 4
+.long 0x39ef0004
+// addi %r16, %r16, 4
+.long 0x3a100004
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2146b
-.base64 "AADKORTqzn0U6s59FOrOfRTqzn0U6s59FOrOfRTqzn1C+HF5AAAAOA=="
+// lwz %r0, 0(%r14)
+.long 0x800e0000
+// subf %r0, %r20, %r0
+.long 0x7c140050
+// rldicl %r0, %r0, 1, 63
+.long 0x78000fe0
+// li %r3, 0
+.long 0x38600000
+// subf %r20, %r0, %r3
+.long 0x7e801850
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// addi %r17, %r11, 0
+.long 0x3a2b0000
 2147:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+// lwz %r0, 0(%r15)
+.long 0x800f0000
+// lwz %r3, 0(%r14)
+.long 0x806e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// stw %r3, 0(%r16)
+.long 0x90700000
+// addi %r14, %r14, 4
+.long 0x39ce0004
+// addi %r15, %r15, 4
+.long 0x39ef0004
+// addi %r16, %r16, 4
+.long 0x3a100004
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2147b
-.base64 "AADKORTqzn0U6s59FOrOfRTqzn0U6s59FOrOfRTqzn0BAAA4AAAOkAAACjkAACo5FOopfRTqKX0U6il9FOopfQAASjkU6kp9FOpKfRTqSn0U6kp9FOpKfRTqSn0U6kp9AADIOQAA6TkAAAo6AAArOgAAgDo="
+// addi %r4, %r4, -1
+.long 0x3884ffff
+// cmpldi %cr0, %r4, 0
+.long 0x28240000
+bne %cr0, 2144b
+b 2142f
+2141:
+// addi %r14, %r5, 0
+.long 0x39c50000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 2148:
-.base64 "AAAOgAAAcIBQAAN8UAAUfAAAD5DgDxR4BADOOQQA7zkEABA6//8xOgAAMSg="
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2148b
-.base64 "AAAOgFAAFHzgDwB4AABgOFAYgH4AAV85AAAKORTqCH0U6gh9FOoIfRTqCH0AACo5FOopfRTqKX0U6il9FOopfRTqKX0U6il9AABKORTqSn0U6kp9FOpKfRTqSn0U6kp9FOpKfRTqSn0AAMg5AADpOQAACjoAACs6AACAOg=="
+// li %r0, 1
+.long 0x38000001
+// stw %r0, 0(%r5)
+.long 0x90050000
+// rldicr %r4, %r11, 5, 58
+.long 0x79642ea4
+// rldicl %r3, %r11, 63, 1
+.long 0x7963f842
+// add %r4, %r4, %r3
+.long 0x7c841a14
 2149:
-.base64 "AAAOgAAAcIBQAAN8UAAUfAAAD5DgDxR4BADOOQQA7zkEABA6//8xOgAAMSg="
-bne %cr0, 2149b
-.base64 "AAAOgFAAFHzgDwB4AABgOFAYgH4AAV85xoNMeCCEjHkcAAA40gGMfcACjDkUqox9QAaMOcYHRngghMZ4AADqORTq730U6u99FOrvfRTq730U6u99FOrvfRQy733//+85AAAMOgAAJjo="
+// li %r20, 0
+.long 0x3a800000
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r5, 0
+.long 0x39e50000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 2150:
-.base64 "AAAPiAAAEJgBABA6///vOf//MToAADEo"
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// rldicr %r3, %r0, 1, 62
+.long 0x78030fa4
+// add %r3, %r3, %r20
+.long 0x7c63a214
+// rldicl %r20, %r0, 1, 63
+.long 0x78140fe0
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2150b
-.base64 "AACcOcYHRngghMZ4FDKMfQAASjkU6kp9FOpKfRTqSn0U6kp9AADKOUL4cXkAAAA4"
+// std %r20, 0(%r14)
+.long 0xfa8e0000
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// subfc %r0, %r0, %r0
+.long 0x7c000010
 2151:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// ld %r3, 0(%r16)
+.long 0xe8700000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// std %r0, 0(%r15)
+.long 0xf80f0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2151b
-.base64 "FDLqff//7zkAAAw6AAAmOg=="
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// li %r3, 0
+.long 0x38600000
+// subfe %r0, %r3, %r0
+.long 0x7c030110
+// subfe %r20, %r20, %r20
+.long 0x7e94a110
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 2152:
-.base64 "AAAQiAAAD5gBABA6///vOf//MToAADEo"
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2152b
-.base64 "FOrKffD/zjkAAAA4AAAO+AABXzkAAIA6//+UOgAACjkU6gh9FOoIfRTqCH0U6gh9FOoIfRTqCH0U6gh9FOoIfQAAKjkU6il9FOopfRTqKX0U6il9FOopfRTqKX0U6il9FOopfQAAqjgU6qV8AADIOQAA6TkAAAU6QvhxeQ=="
+// addi %r4, %r4, -1
+.long 0x3884ffff
+// cmpldi %cr0, %r4, 0
+.long 0x28240000
+bne %cr0, 2149b
+2142:
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// li %r20, 0
+.long 0x3a800000
+// addi %r20, %r20, -1
+.long 0x3a94ffff
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 2153:
-.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2153b
-.base64 "xoNMeCCEjHkcAAA40gGMfcACjDkUqox9QAaMOcYHRngghMZ4AADMOwAA5jsAAAroAACK6dJhYHwCAIA4UCBjfNIZjH3SYWB8AgCAOFAgY3zSGYx90mFgfAIAgDhQIGN80hmMfdJhYHwCAIA4UCBjfNIZjH0AAGA4UBiMfcYHjHkiAIx5AADKORTqzn0U6s59FOrOfRTqzn0U6s59FOrOfRTqzn1C+HF5AAAAOA=="
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 2154:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2154b
-.base64 "AADKORTqzn0U6s59FOrOfRTqzn0U6s59FOrOfRTqzn0BAAA4AAAOkKYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8AADKOBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8AADqOBTq53wAAAo5FOoIfRTqCH0AACo5FOopfRTqKX0U6il9AACLOA=="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfQ=="
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// li %r0, 1
+.long 0x38000001
+// stw %r0, 0(%r14)
+.long 0x900e0000
+// addi %r8, %r10, 0
+.long 0x390a0000
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r10, %r10, 0
+.long 0x394a0000
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// addi %r17, %r11, 0
+.long 0x3a2b0000
+// li %r20, 0
+.long 0x3a800000
 2155:
-.base64 "AAAei8bBGHsBAN47CAAgOw=="
-2156:
-.base64 "pgLIfQAAbDgAAKo4FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfAAA6jgU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwAAMo4FOrGfBTqxnwU6sZ8FOrGfAAA6jgU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wAAAo5FOoIfRTqCH0AACo5FOopfRTqKX0U6il9AACLOA=="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfeAPAHsAAGA4UBiAfqQPGHsAAAo5FOoIfQAAKjkU6il9FOopfRTqKX0U6il9AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8AADIOQAA6TkAAAU6AAArOg=="
-2157:
-.base64 "AAAPgAAAboB4AmN8OKBjfHgCY3wAAHCQBADOOQQA7zkEABA6//8xOgAAMSg="
-bne %cr0, 2157b
-.base64 "//85OwAAOSg="
-bne %cr0, 2156b
-.base64 "////OwAAPyg="
+// lwz %r0, 0(%r14)
+.long 0x800e0000
+// lwz %r3, 0(%r16)
+.long 0x80700000
+// subf %r0, %r3, %r0
+.long 0x7c030050
+// subf %r0, %r20, %r0
+.long 0x7c140050
+// stw %r0, 0(%r15)
+.long 0x900f0000
+// rldicl %r20, %r0, 1, 63
+.long 0x78140fe0
+// addi %r14, %r14, 4
+.long 0x39ce0004
+// addi %r15, %r15, 4
+.long 0x39ef0004
+// addi %r16, %r16, 4
+.long 0x3a100004
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2155b
-.base64 "pgLIfQAAbDgAAKo4FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfAAA6jgU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizg="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfQAA9zvkg0Z4IITGeCCEQHhQMGB84A9jeAAAIyg="
-beq %cr0, 2158f
-b 2159f
+// lwz %r0, 0(%r14)
+.long 0x800e0000
+// subf %r0, %r20, %r0
+.long 0x7c140050
+// rldicl %r0, %r0, 1, 63
+.long 0x78000fe0
+// li %r3, 0
+.long 0x38600000
+// subf %r20, %r0, %r3
+.long 0x7e801850
+// addi %r10, %r31, 256
+.long 0x395f0100
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r10, %r10, 0
+.long 0x394a0000
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// addi %r17, %r11, 0
+.long 0x3a2b0000
+// li %r20, 0
+.long 0x3a800000
+2156:
+// lwz %r0, 0(%r14)
+.long 0x800e0000
+// lwz %r3, 0(%r16)
+.long 0x80700000
+// subf %r0, %r3, %r0
+.long 0x7c030050
+// subf %r0, %r20, %r0
+.long 0x7c140050
+// stw %r0, 0(%r15)
+.long 0x900f0000
+// rldicl %r20, %r0, 1, 63
+.long 0x78140fe0
+// addi %r14, %r14, 4
+.long 0x39ce0004
+// addi %r15, %r15, 4
+.long 0x39ef0004
+// addi %r16, %r16, 4
+.long 0x3a100004
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2156b
+// lwz %r0, 0(%r14)
+.long 0x800e0000
+// subf %r0, %r20, %r0
+.long 0x7c140050
+// rldicl %r0, %r0, 1, 63
+.long 0x78000fe0
+// li %r3, 0
+.long 0x38600000
+// subf %r20, %r0, %r3
+.long 0x7e801850
+// addi %r10, %r31, 256
+.long 0x395f0100
+// rldicr %r12, %r2, 48, 15
+.long 0x784c83c6
+// rldicl %r12, %r12, 16, 48
+.long 0x798c8420
+// li %r0, 28
+.long 0x3800001c
+// mulld %r12, %r12, %r0
+.long 0x7d8c01d2
+// addi %r12, %r12, 704
+.long 0x398c02c0
+// add %r12, %r12, %r21
+.long 0x7d8caa14
+// addi %r12, %r12, 1600
+.long 0x398c0640
+// rldicr %r6, %r2, 32, 31
+.long 0x784607c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// addi %r15, %r10, 0
+.long 0x39ea0000
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r6
+.long 0x7def3214
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r16, %r12, 0
+.long 0x3a0c0000
+// addi %r17, %r6, 0
+.long 0x3a260000
+2157:
+// lbz %r0, 0(%r15)
+.long 0x880f0000
+// stb %r0, 0(%r16)
+.long 0x98100000
+// addi %r16, %r16, 1
+.long 0x3a100001
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2157b
+// addi %r12, %r28, 0
+.long 0x399c0000
+// rldicr %r6, %r2, 32, 31
+.long 0x784607c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// add %r12, %r12, %r6
+.long 0x7d8c3214
+// addi %r10, %r10, 0
+.long 0x394a0000
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 2158:
-.base64 "eAMGfA=="
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2158b
+// add %r15, %r10, %r6
+.long 0x7dea3214
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r16, %r12, 0
+.long 0x3a0c0000
+// addi %r17, %r6, 0
+.long 0x3a260000
 2159:
-.base64 "AACaOQAAJig="
-beq %cr0, 2160f
-.base64 "AABKORTqSn0U6kp9FOpKfRTqSn0U6kp9FOpKfQAAyjlC+HF5AAAAOA=="
-2162:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
-bne %cr0, 2162b
-.base64 "FDLqff//7zkAAAw6AAAmOg=="
-2163:
-.base64 "AAAQiAAAD5gBABA6///vOf//MToAADEo"
-bne %cr0, 2163b
-.base64 "FOrKffD/zjkAAAA4AAAO+AABXzk="
-b 2161f
+// lbz %r0, 0(%r16)
+.long 0x88100000
+// stb %r0, 0(%r15)
+.long 0x980f0000
+// addi %r16, %r16, 1
+.long 0x3a100001
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2159b
+// add %r14, %r10, %r29
+.long 0x7dcaea14
+// addi %r14, %r14, -16
+.long 0x39cefff0
+// li %r0, 0
+.long 0x38000000
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r10, %r31, 256
+.long 0x395f0100
+// li %r20, 0
+.long 0x3a800000
+// addi %r20, %r20, -1
+.long 0x3a94ffff
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 2160:
-.base64 "AADKORTqzn0U6s59FOrOfRTqzn0U6s59FOrOfUL4cXkAAAA4"
-2164:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
-bne %cr0, 2164b
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2160b
+// rldicr %r12, %r2, 48, 15
+.long 0x784c83c6
+// rldicl %r12, %r12, 16, 48
+.long 0x798c8420
+// li %r0, 28
+.long 0x3800001c
+// mulld %r12, %r12, %r0
+.long 0x7d8c01d2
+// addi %r12, %r12, 704
+.long 0x398c02c0
+// add %r12, %r12, %r21
+.long 0x7d8caa14
+// addi %r12, %r12, 1600
+.long 0x398c0640
+// rldicr %r6, %r2, 32, 31
+.long 0x784607c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// addi %r30, %r12, 0
+.long 0x3bcc0000
+// addi %r31, %r6, 0
+.long 0x3be60000
+// ld %r0, 0(%r10)
+.long 0xe80a0000
+// ld %r12, 0(%r10)
+.long 0xe98a0000
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// li %r3, 0
+.long 0x38600000
+// subf %r12, %r12, %r3
+.long 0x7d8c1850
+// rldicr %r12, %r12, 32, 31
+.long 0x798c07c6
+// rldicl %r12, %r12, 32, 32
+.long 0x798c0022
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 2161:
-.base64 "AACcOcYHRngghMZ4AABKORTqSn0U6kp9FOpKfRTqSn0U6kp9AADKOUL4cXkAAAA4"
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2161b
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// li %r0, 1
+.long 0x38000001
+// stw %r0, 0(%r14)
+.long 0x900e0000
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+2162:
+// lbz %r24, 0(%r30)
+.long 0x8b1e0000
+// rldicr %r24, %r24, 56, 7
+.long 0x7b18c1c6
+// addi %r30, %r30, 1
+.long 0x3bde0001
+// li %r25, 8
+.long 0x3b200008
+2163:
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// rldicl %r0, %r24, 1, 63
+.long 0x7b000fe0
+// li %r3, 0
+.long 0x38600000
+// subf %r20, %r0, %r3
+.long 0x7e801850
+// rldicr %r24, %r24, 1, 62
+.long 0x7b180fa4
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// addi %r17, %r11, 0
+.long 0x3a2b0000
+2164:
+// lwz %r0, 0(%r15)
+.long 0x800f0000
+// lwz %r3, 0(%r14)
+.long 0x806e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// stw %r3, 0(%r16)
+.long 0x90700000
+// addi %r14, %r14, 4
+.long 0x39ce0004
+// addi %r15, %r15, 4
+.long 0x39ef0004
+// addi %r16, %r16, 4
+.long 0x3a100004
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2164b
+// addi %r25, %r25, -1
+.long 0x3b39ffff
+// cmpldi %cr0, %r25, 0
+.long 0x28390000
+bne %cr0, 2163b
+// addi %r31, %r31, -1
+.long 0x3bffffff
+// cmpldi %cr0, %r31, 0
+.long 0x283f0000
+bne %cr0, 2162b
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// addi %r31, %r23, 0
+.long 0x3bf70000
+// rldicr %r6, %r2, 16, 47
+.long 0x784683e4
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// rldicl %r0, %r2, 16, 48
+.long 0x78408420
+// subf %r3, %r0, %r6
+.long 0x7c603050
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// cmpldi %cr0, %r3, 0
+.long 0x28230000
+beq %cr0, 2165f
+b 2166f
 2165:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
-bne %cr0, 2165b
-.base64 "FDLqff//7zkAAAw6AAAmOg=="
+// or %r6, %r0, %r0
+.long 0x7c060378
 2166:
-.base64 "AAAQiAAAD5gBABA6///vOf//MToAADEo"
-bne %cr0, 2166b
-.base64 "FOrKffD/zjkAAAA4AAAO+AABXzkAAIA6//+UOgAACjkU6gh9FOoIfRTqCH0U6gh9FOoIfRTqCH0U6gh9FOoIfQAAKjkU6il9FOopfRTqKX0U6il9FOopfRTqKX0U6il9FOopfQAAqjgU6qV8AADIOQAA6TkAAAU6QvhxeQ=="
-2167:
-.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
-bne %cr0, 2167b
-.base64 "AAAK6AAAiunSYWB8AgCAOFAgY3zSGYx90mFgfAIAgDhQIGN80hmMfdJhYHwCAIA4UCBjfNIZjH3SYWB8AgCAOFAgY3zSGYx9AABgOFAYjH3GB4x5IgCMeaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwAAOo4FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8AADKOBTqxnwU6sZ8FOrGfBTqxnwU6sZ8AADqOBTq53wU6ud8FOrnfBTq53wAAAo5FOoIfRTqCH0AACo5FOopfRTqKX0U6il9AACLOA=="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8AADKOBTqxnwU6sZ8FOrGfBTqxnwU6sZ8AADqOBTq53wAAAo5FOoIfRTqCH0AACo5FOopfRTqKX0U6il9AACLOA=="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfcaDTHgghIx5HAAAONIBjH3AAow5FKqMfUAGjDnGB0Z4IITGeAAA6jkU6u99FOrvfRTq730U6u99FOrvfRTq730UMu99///vOQAADDoAACY6"
-2168:
-.base64 "AAAPiAAAEJgBABA6///vOf//MToAADEo"
-bne %cr0, 2168b
-.base64 "xoNMeCCEjHkcAAA40gGMfcACjDkUqox9QAaMOcYHRngghMZ4FDKMfQAA6jkU6u99FOrvfRTq730U6u99FOrvfRQy733//+85AAAMOgAAJjo="
+// addi %r12, %r26, 0
+.long 0x399a0000
+// cmpldi %cr0, %r6, 0
+.long 0x28260000
+beq %cr0, 2167f
+// addi %r10, %r10, 0
+.long 0x394a0000
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 2169:
-.base64 "AAAPiAAAEJgBABA6///vOf//MToAADEo"
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2169b
-.base64 "AAD1OgAA9TsAAVU5xoNLeCCEa3nC6Gt5JB99eRAAvTukD2t5xoNGeCCExnjGB0B4IIQAeBQym30UAox9AABKORTqSn0U6kp9FOpKfRTqSn0AAMo5QvhxeQAAADg="
+// add %r15, %r10, %r6
+.long 0x7dea3214
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r16, %r12, 0
+.long 0x3a0c0000
+// addi %r17, %r6, 0
+.long 0x3a260000
 2170:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+// lbz %r0, 0(%r16)
+.long 0x88100000
+// stb %r0, 0(%r15)
+.long 0x980f0000
+// addi %r16, %r16, 1
+.long 0x3a100001
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2170b
-.base64 "FDLqff//7zkAAAw6AAAmOg=="
+// add %r14, %r10, %r29
+.long 0x7dcaea14
+// addi %r14, %r14, -16
+.long 0x39cefff0
+// li %r0, 0
+.long 0x38000000
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r10, %r31, 256
+.long 0x395f0100
+b 2168f
+2167:
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 2171:
-.base64 "AAAQiAAAD5gBABA6///vOf//MToAADEo"
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2171b
-.base64 "FOrKffD/zjkAAAA4AAAO+AABXznGg0Z4IITGeMYHQHgghAB4FDKbfRQCjH0UMox9AABKORTqSn0U6kp9FOpKfRTqSn0U6kp9AADKOUL4cXkAAAA4"
+2168:
+// addi %r12, %r28, 0
+.long 0x399c0000
+// rldicr %r6, %r2, 32, 31
+.long 0x784607c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// addi %r10, %r10, 0
+.long 0x394a0000
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 2172:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2172b
-.base64 "FDLqff//7zkAAAw6AAAmOg=="
+// add %r15, %r10, %r6
+.long 0x7dea3214
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r16, %r12, 0
+.long 0x3a0c0000
+// addi %r17, %r6, 0
+.long 0x3a260000
 2173:
-.base64 "AAAQiAAAD5gBABA6///vOf//MToAADEo"
+// lbz %r0, 0(%r16)
+.long 0x88100000
+// stb %r0, 0(%r15)
+.long 0x980f0000
+// addi %r16, %r16, 1
+.long 0x3a100001
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2173b
-.base64 "FOrKffD/zjkAAAA4AAAO+AABXzkAAIA6//+UOgAACjkU6gh9FOoIfRTqCH0U6gh9FOoIfRTqCH0U6gh9FOoIfRTqCH0U6gh9FOoIfRTqCH0U6gh9FOoIfRTqCH0U6gh9FOoIfRTqCH0U6gh9FOoIfRTqCH0U6gh9FOoIfRTqCH0AACo5FOopfRTqKX0U6il9FOopfRTqKX0U6il9FOopfRTqKX0U6il9FOopfRTqKX0U6il9FOopfRTqKX0U6il9FOopfRTqKX0U6il9FOopfRTqKX0U6il9FOopfRTqKX0U6il9AACqOBTqpXwAAMg5AADpOQAABTpC+HF5"
+// add %r14, %r10, %r29
+.long 0x7dcaea14
+// addi %r14, %r14, -16
+.long 0x39cefff0
+// li %r0, 0
+.long 0x38000000
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r10, %r31, 256
+.long 0x395f0100
+// li %r20, 0
+.long 0x3a800000
+// addi %r20, %r20, -1
+.long 0x3a94ffff
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 2174:
-.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2174b
-.base64 "xoNMeCCEjHkcAAA40gGMfcACjDkUqox9QAaMOcYHRngghMZ4AADMOxQyLH8AAOY7AAAK6AAAiunSYWB8AgCAOFAgY3zSGYx90mFgfAIAgDhQIGN80hmMfdJhYHwCAIA4UCBjfNIZjH3SYWB8AgCAOFAgY3zSGYx9AABgOFAYjH3GB4x5IgCMeQAAyjkU6s59FOrOfRTqzn0U6s59FOrOfRTqzn0U6s59QvhxeQAAADg="
+// ld %r0, 0(%r10)
+.long 0xe80a0000
+// ld %r12, 0(%r10)
+.long 0xe98a0000
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// li %r3, 0
+.long 0x38600000
+// subf %r12, %r12, %r3
+.long 0x7d8c1850
+// rldicr %r12, %r12, 32, 31
+.long 0x798c07c6
+// rldicl %r12, %r12, 32, 32
+.long 0x798c0022
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// rldicr %r12, %r2, 48, 15
+.long 0x784c83c6
+// rldicl %r12, %r12, 16, 48
+.long 0x798c8420
+// li %r0, 28
+.long 0x3800001c
+// mulld %r12, %r12, %r0
+.long 0x7d8c01d2
+// addi %r12, %r12, 704
+.long 0x398c02c0
+// add %r12, %r12, %r21
+.long 0x7d8caa14
+// addi %r12, %r12, 1600
+.long 0x398c0640
+// rldicr %r6, %r2, 32, 31
+.long 0x784607c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// addi %r15, %r10, 0
+.long 0x39ea0000
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r6
+.long 0x7def3214
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r16, %r12, 0
+.long 0x3a0c0000
+// addi %r17, %r6, 0
+.long 0x3a260000
 2175:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+// lbz %r0, 0(%r15)
+.long 0x880f0000
+// stb %r0, 0(%r16)
+.long 0x98100000
+// addi %r16, %r16, 1
+.long 0x3a100001
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2175b
-.base64 "AADKORTqzn0U6s59FOrOfRTqzn0U6s59FOrOfRTqzn0BAAA4AAAOkKYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8AADKOBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8AADqOBTq53wAAAo5FOoIfRTqCH0AACo5FOopfRTqKX0U6il9AACLOA=="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfAAA6jgU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizg="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwAAMo4FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8AADqOBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8AADKOBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizg="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwAAMo4FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8AADqOBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8AADKOBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfAAA6jgU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizg="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wAAAo5FOoIfRTqCH0AACo5FOopfRTqKX0U6il9AACLOA=="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwAAMo4FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8AADqOBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8AADKOBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizg="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8AADqOBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wAAAo5FOoIfRTqCH0AACo5FOopfRTqKX0U6il9AACLOA=="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwAAMo4FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfAAA6jgU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8AADKOBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizg="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfAAA6jgU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wAAAo5FOoIfRTqCH0AACo5FOopfRTqKX0U6il9AACLOA=="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwAAMo4FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8AADKOBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8AADqOBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizg="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfQAAgDr//5Q6AAAKORTqCH0U6gh9FOoIfRTqCH0U6gh9FOoIfRTqCH0U6gh9AAAqORTqKX0U6il9FOopfRTqKX0U6il9FOopfRTqKX0U6il9AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyDkAAOk5AAAFOkL4cXk="
+// rldicr %r12, %r2, 48, 15
+.long 0x784c83c6
+// rldicl %r12, %r12, 16, 48
+.long 0x798c8420
+// li %r0, 28
+.long 0x3800001c
+// mulld %r12, %r12, %r0
+.long 0x7d8c01d2
+// addi %r12, %r12, 704
+.long 0x398c02c0
+// add %r12, %r12, %r21
+.long 0x7d8caa14
+// addi %r12, %r12, 1600
+.long 0x398c0640
+// rldicr %r6, %r2, 32, 31
+.long 0x784607c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// add %r12, %r12, %r6
+.long 0x7d8c3214
+// addi %r15, %r10, 0
+.long 0x39ea0000
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r6
+.long 0x7def3214
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r16, %r12, 0
+.long 0x3a0c0000
+// addi %r17, %r6, 0
+.long 0x3a260000
 2176:
-.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+// lbz %r0, 0(%r15)
+.long 0x880f0000
+// stb %r0, 0(%r16)
+.long 0x98100000
+// addi %r16, %r16, 1
+.long 0x3a100001
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2176b
+// addi %r23, %r21, 0
+.long 0x3af50000
+// addi %r31, %r21, 0
+.long 0x3bf50000
+// addi %r10, %r21, 256
+.long 0x39550100
+// rldicr %r11, %r2, 48, 15
+.long 0x784b83c6
+// rldicl %r11, %r11, 16, 48
+.long 0x796b8420
+// rldicl %r11, %r11, 61, 3
+.long 0x796be8c2
+// rldicr %r29, %r11, 3, 60
+.long 0x797d1f24
+// addi %r29, %r29, 16
+.long 0x3bbd0010
+// rldicr %r11, %r11, 1, 62
+.long 0x796b0fa4
+// rldicr %r6, %r2, 48, 15
+.long 0x784683c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// rldicr %r0, %r2, 32, 31
+.long 0x784007c6
+// rldicl %r0, %r0, 16, 48
+.long 0x78008420
+// add %r12, %r27, %r6
+.long 0x7d9b3214
+// add %r12, %r12, %r0
+.long 0x7d8c0214
+// addi %r10, %r10, 0
+.long 0x394a0000
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 2177:
-.base64 "AAAei8bBGHsAABmIxoMAeBQCGH8BAN47AQA5O6YCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizg="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizg="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaAXEnvkRQN7oBdjeGQXY3gUGlJ+wuhkeUL4YHkDACA5OEgJfAAAqjgU6qV8FOqlfBTqpXwU6qV8FOqlfAAAJCg="
-beq %cr0, 2178f
-2180:
-.base64 "AADAOf//zjkAAOA5///vOQAAADr//xA6AAAgOv//MToAAGA6FOoFfRTqCH0U6gh9eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6AADF+QgA5fkQAAX6GAAl+iAApTj//4Q4AAAkKA=="
-bne %cr0, 2180b
-b 2179f
-2178:
-2179:
-.base64 "AAApKA=="
-beq %cr0, 2181f
-2183:
-.base64 "AADAOf//zjkAAGA6FOoFfRTqCH0U6gh9eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6AADF+QgApTj//yk5AAApKA=="
-bne %cr0, 2183b
-b 2182f
-2181:
-2182:
-.base64 "pgLIfQAAbDgAAKo4FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8AADKOBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfAAA6jgU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfWQXGHumAsh9AABsOAAAqjgU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwAAMo4FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8AADqOBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizg="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaAXEnvkRQN7oBdjeGQXY3gUGlJ+wuhkeUL4YHkDACA5OEgJfAAAqjgU6qV8FOqlfBTqpXwU6qV8FOqlfAAAJCg="
-beq %cr0, 2184f
-2186:
-.base64 "AADAOf//zjkAAOA5///vOQAAADr//xA6AAAgOv//MToAAGA6FOoFfRTqCH0U6gh9eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6AADF+QgA5fkQAAX6GAAl+iAApTj//4Q4AAAkKA=="
-bne %cr0, 2186b
-b 2185f
-2184:
-2185:
-.base64 "AAApKA=="
-beq %cr0, 2187f
-2189:
-.base64 "AADAOf//zjkAAGA6FOoFfRTqCH0U6gh9eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6AADF+QgApTj//yk5AAApKA=="
-bne %cr0, 2189b
-b 2188f
-2187:
-2188:
-.base64 "pgLIfQAAbDgAAKo4FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8AADKOBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfAAA6jgU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfWQXGHumAsh9AABsOAAAqjgU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwAAMo4FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8AADqOBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizg="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaAXEnvkRQN7oBdjeGQXY3gUGlJ+wuhkeUL4YHkDACA5OEgJfAAAqjgU6qV8FOqlfBTqpXwU6qV8FOqlfAAAJCg="
-beq %cr0, 2190f
-2192:
-.base64 "AADAOf//zjkAAOA5///vOQAAADr//xA6AAAgOv//MToAAGA6FOoFfRTqCH0U6gh9eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6AADF+QgA5fkQAAX6GAAl+iAApTj//4Q4AAAkKA=="
-bne %cr0, 2192b
-b 2191f
-2190:
-2191:
-.base64 "AAApKA=="
-beq %cr0, 2193f
-2195:
-.base64 "AADAOf//zjkAAGA6FOoFfRTqCH0U6gh9eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6AADF+QgApTj//yk5AAApKA=="
-bne %cr0, 2195b
-b 2194f
-2193:
-2194:
-.base64 "pgLIfQAAbDgAAKo4FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8AADKOBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfAAA6jgU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfWQXGHumAsh9AABsOAAAqjgU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwAAMo4FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8AADqOBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaYCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizg="
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfaAXEnvkRQN7oBdjeGQXY3gUGlJ+wuhkeUL4YHkDACA5OEgJfAAAqjgU6qV8FOqlfBTqpXwU6qV8FOqlfAAAJCg="
-beq %cr0, 2196f
-2198:
-.base64 "AADAOf//zjkAAOA5///vOQAAADr//xA6AAAgOv//MToAAGA6FOoFfRTqCH0U6gh9eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfQgACOh4owB8OADvfRAACOh4owB8OAAQfhgACOh4owB8OAAxfhTqCH0BAHM6AADF+QgA5fkQAAX6GAAl+iAApTj//4Q4AAAkKA=="
-bne %cr0, 2198b
-b 2197f
-2196:
-2197:
-.base64 "AAApKA=="
-beq %cr0, 2199f
-2201:
-.base64 "AADAOf//zjkAAGA6FOoFfRTqCH0U6gh9eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6eJJjfv//YzjgD2N4//+DOgAACOh4owB8OADOfRTqCH0BAHM6AADF+QgApTj//yk5AAApKA=="
-bne %cr0, 2201b
-b 2200f
-2199:
-2200:
-.base64 "pgLIfQAAbDgAAKo4FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8AADKOBTqxnwU6sZ8FOrGfBTqxnwU6sZ8FOrGfAAA6jgU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4"
-bl {vg_rsa_mont_kernel}
-.base64 "pgPIfWQXGHv///87AAA/KA=="
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2177b
-.base64 "AAD3O6YCyH0AAGw4AACqOBTqpXwU6qV8FOqlfBTqpXwAAMo4FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8AADqOBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wAAAo5FOoIfRTqCH0AACo5FOopfRTqKX0U6il9AACLOA=="
+// add %r15, %r10, %r6
+.long 0x7dea3214
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r16, %r12, 0
+.long 0x3a0c0000
+// addi %r17, %r6, 0
+.long 0x3a260000
+2178:
+// lbz %r0, 0(%r16)
+.long 0x88100000
+// stb %r0, 0(%r15)
+.long 0x980f0000
+// addi %r16, %r16, 1
+.long 0x3a100001
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2178b
+// add %r14, %r10, %r29
+.long 0x7dcaea14
+// addi %r14, %r14, -16
+.long 0x39cefff0
+// li %r0, 0
+.long 0x38000000
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r10, %r31, 256
+.long 0x395f0100
+// rldicr %r6, %r2, 48, 15
+.long 0x784683c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// rldicr %r0, %r2, 32, 31
+.long 0x784007c6
+// rldicl %r0, %r0, 16, 48
+.long 0x78008420
+// add %r12, %r27, %r6
+.long 0x7d9b3214
+// add %r12, %r12, %r0
+.long 0x7d8c0214
+// add %r12, %r12, %r6
+.long 0x7d8c3214
+// addi %r10, %r10, 0
+.long 0x394a0000
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
+2179:
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2179b
+// add %r15, %r10, %r6
+.long 0x7dea3214
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r16, %r12, 0
+.long 0x3a0c0000
+// addi %r17, %r6, 0
+.long 0x3a260000
+2180:
+// lbz %r0, 0(%r16)
+.long 0x88100000
+// stb %r0, 0(%r15)
+.long 0x980f0000
+// addi %r16, %r16, 1
+.long 0x3a100001
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2180b
+// add %r14, %r10, %r29
+.long 0x7dcaea14
+// addi %r14, %r14, -16
+.long 0x39cefff0
+// li %r0, 0
+.long 0x38000000
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r10, %r31, 256
+.long 0x395f0100
+// li %r20, 0
+.long 0x3a800000
+// addi %r20, %r20, -1
+.long 0x3a94ffff
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+2181:
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2181b
+// rldicr %r12, %r2, 48, 15
+.long 0x784c83c6
+// rldicl %r12, %r12, 16, 48
+.long 0x798c8420
+// li %r0, 28
+.long 0x3800001c
+// mulld %r12, %r12, %r0
+.long 0x7d8c01d2
+// addi %r12, %r12, 704
+.long 0x398c02c0
+// add %r12, %r12, %r21
+.long 0x7d8caa14
+// addi %r12, %r12, 1600
+.long 0x398c0640
+// rldicr %r6, %r2, 32, 31
+.long 0x784607c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// addi %r30, %r12, 0
+.long 0x3bcc0000
+// add %r25, %r12, %r6
+.long 0x7f2c3214
+// addi %r31, %r6, 0
+.long 0x3be60000
+// ld %r0, 0(%r10)
+.long 0xe80a0000
+// ld %r12, 0(%r10)
+.long 0xe98a0000
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// li %r3, 0
+.long 0x38600000
+// subf %r12, %r12, %r3
+.long 0x7d8c1850
+// rldicr %r12, %r12, 32, 31
+.long 0x798c07c6
+// rldicl %r12, %r12, 32, 32
+.long 0x798c0022
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
+2182:
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2182b
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// li %r0, 1
+.long 0x38000001
+// stw %r0, 0(%r14)
+.long 0x900e0000
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
 bl {vg_rsa_mont_kernel}
-.base64 "pgPIfcaDTHgghIx5HAAAONIBjH3AAow5FKqMfUAGjDnGg0Z4IITGeAAA6jkU6u99FOrvfRTq730U6u99FDLvff//7zkAAAw6AAAmOg=="
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// li %r20, 0
+.long 0x3a800000
+// addi %r20, %r20, -1
+.long 0x3a94ffff
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r5, 0
+.long 0x3a050000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+2183:
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// std %r3, 0(%r16)
+.long 0xf8700000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r16, %r16, 8
+.long 0x3a100008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2183b
+2184:
+// lbz %r24, 0(%r30)
+.long 0x8b1e0000
+// rldicr %r24, %r24, 56, 7
+.long 0x7b18c1c6
+// lbz %r0, 0(%r25)
+.long 0x88190000
+// rldicr %r0, %r0, 48, 15
+.long 0x780083c6
+// add %r24, %r24, %r0
+.long 0x7f180214
+// addi %r30, %r30, 1
+.long 0x3bde0001
+// addi %r25, %r25, 1
+.long 0x3b390001
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// rldicl %r18, %r24, 2, 62
+.long 0x7b1217a0
+// rldicr %r3, %r24, 8, 55
+.long 0x7b0345e4
+// rldicl %r3, %r3, 2, 62
+.long 0x786317a0
+// rldicr %r3, %r3, 2, 61
+.long 0x78631764
+// add %r18, %r18, %r3
+.long 0x7e521a14
+// rldicl %r4, %r11, 61, 3
+.long 0x7964e8c2
+// rldicl %r0, %r11, 63, 1
+.long 0x7960f842
+// li %r9, 3
+.long 0x39200003
+// and %r9, %r0, %r9
+.long 0x7c094838
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// cmpldi %cr0, %r4, 0
+.long 0x28240000
+beq %cr0, 2185f
+2187:
+// li %r14, 0
+.long 0x39c00000
+// addi %r14, %r14, -1
+.long 0x39ceffff
+// li %r15, 0
+.long 0x39e00000
+// addi %r15, %r15, -1
+.long 0x39efffff
+// li %r16, 0
+.long 0x3a000000
+// addi %r16, %r16, -1
+.long 0x3a10ffff
+// li %r17, 0
+.long 0x3a200000
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// li %r19, 0
+.long 0x3a600000
+// add %r8, %r5, %r29
+.long 0x7d05ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// std %r14, 0(%r5)
+.long 0xf9c50000
+// std %r15, 8(%r5)
+.long 0xf9e50008
+// std %r16, 16(%r5)
+.long 0xfa050010
+// std %r17, 24(%r5)
+.long 0xfa250018
+// addi %r5, %r5, 32
+.long 0x38a50020
+// addi %r4, %r4, -1
+.long 0x3884ffff
+// cmpldi %cr0, %r4, 0
+.long 0x28240000
+bne %cr0, 2187b
+b 2186f
+2185:
+2186:
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
+beq %cr0, 2188f
+2190:
+// li %r14, 0
+.long 0x39c00000
+// addi %r14, %r14, -1
+.long 0x39ceffff
+// li %r19, 0
+.long 0x3a600000
+// add %r8, %r5, %r29
+.long 0x7d05ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// std %r14, 0(%r5)
+.long 0xf9c50000
+// addi %r5, %r5, 8
+.long 0x38a50008
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
+bne %cr0, 2190b
+b 2189f
+2188:
+2189:
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// rldicr %r24, %r24, 2, 61
+.long 0x7b181764
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// rldicl %r18, %r24, 2, 62
+.long 0x7b1217a0
+// rldicr %r3, %r24, 8, 55
+.long 0x7b0345e4
+// rldicl %r3, %r3, 2, 62
+.long 0x786317a0
+// rldicr %r3, %r3, 2, 61
+.long 0x78631764
+// add %r18, %r18, %r3
+.long 0x7e521a14
+// rldicl %r4, %r11, 61, 3
+.long 0x7964e8c2
+// rldicl %r0, %r11, 63, 1
+.long 0x7960f842
+// li %r9, 3
+.long 0x39200003
+// and %r9, %r0, %r9
+.long 0x7c094838
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// cmpldi %cr0, %r4, 0
+.long 0x28240000
+beq %cr0, 2191f
+2193:
+// li %r14, 0
+.long 0x39c00000
+// addi %r14, %r14, -1
+.long 0x39ceffff
+// li %r15, 0
+.long 0x39e00000
+// addi %r15, %r15, -1
+.long 0x39efffff
+// li %r16, 0
+.long 0x3a000000
+// addi %r16, %r16, -1
+.long 0x3a10ffff
+// li %r17, 0
+.long 0x3a200000
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// li %r19, 0
+.long 0x3a600000
+// add %r8, %r5, %r29
+.long 0x7d05ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// std %r14, 0(%r5)
+.long 0xf9c50000
+// std %r15, 8(%r5)
+.long 0xf9e50008
+// std %r16, 16(%r5)
+.long 0xfa050010
+// std %r17, 24(%r5)
+.long 0xfa250018
+// addi %r5, %r5, 32
+.long 0x38a50020
+// addi %r4, %r4, -1
+.long 0x3884ffff
+// cmpldi %cr0, %r4, 0
+.long 0x28240000
+bne %cr0, 2193b
+b 2192f
+2191:
+2192:
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
+beq %cr0, 2194f
+2196:
+// li %r14, 0
+.long 0x39c00000
+// addi %r14, %r14, -1
+.long 0x39ceffff
+// li %r19, 0
+.long 0x3a600000
+// add %r8, %r5, %r29
+.long 0x7d05ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// std %r14, 0(%r5)
+.long 0xf9c50000
+// addi %r5, %r5, 8
+.long 0x38a50008
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
+bne %cr0, 2196b
+b 2195f
+2194:
+2195:
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// rldicr %r24, %r24, 2, 61
+.long 0x7b181764
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// rldicl %r18, %r24, 2, 62
+.long 0x7b1217a0
+// rldicr %r3, %r24, 8, 55
+.long 0x7b0345e4
+// rldicl %r3, %r3, 2, 62
+.long 0x786317a0
+// rldicr %r3, %r3, 2, 61
+.long 0x78631764
+// add %r18, %r18, %r3
+.long 0x7e521a14
+// rldicl %r4, %r11, 61, 3
+.long 0x7964e8c2
+// rldicl %r0, %r11, 63, 1
+.long 0x7960f842
+// li %r9, 3
+.long 0x39200003
+// and %r9, %r0, %r9
+.long 0x7c094838
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// cmpldi %cr0, %r4, 0
+.long 0x28240000
+beq %cr0, 2197f
+2199:
+// li %r14, 0
+.long 0x39c00000
+// addi %r14, %r14, -1
+.long 0x39ceffff
+// li %r15, 0
+.long 0x39e00000
+// addi %r15, %r15, -1
+.long 0x39efffff
+// li %r16, 0
+.long 0x3a000000
+// addi %r16, %r16, -1
+.long 0x3a10ffff
+// li %r17, 0
+.long 0x3a200000
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// li %r19, 0
+.long 0x3a600000
+// add %r8, %r5, %r29
+.long 0x7d05ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// std %r14, 0(%r5)
+.long 0xf9c50000
+// std %r15, 8(%r5)
+.long 0xf9e50008
+// std %r16, 16(%r5)
+.long 0xfa050010
+// std %r17, 24(%r5)
+.long 0xfa250018
+// addi %r5, %r5, 32
+.long 0x38a50020
+// addi %r4, %r4, -1
+.long 0x3884ffff
+// cmpldi %cr0, %r4, 0
+.long 0x28240000
+bne %cr0, 2199b
+b 2198f
+2197:
+2198:
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
+beq %cr0, 2200f
 2202:
-.base64 "AAAPiAAAEJgBABA6///vOf//MToAADEo"
+// li %r14, 0
+.long 0x39c00000
+// addi %r14, %r14, -1
+.long 0x39ceffff
+// li %r19, 0
+.long 0x3a600000
+// add %r8, %r5, %r29
+.long 0x7d05ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// std %r14, 0(%r5)
+.long 0xf9c50000
+// addi %r5, %r5, 8
+.long 0x38a50008
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
 bne %cr0, 2202b
-.base64 "xoNXeCCE93ocAGA50ln3fsAC9zoUqvd+AAD3OwABVzkIAGA5MACgO8aDXngghN57HAAAONIB3n/AAt47FKref0AG3jvGg194IIT/ewAAyjkU6s59QvhxeQAAADg="
-2203:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
-bne %cr0, 2203b
-.base64 "AACqOBTqpXwAAAo5FOoIfRTqCH0AACo5FOopfRTqKX0U6il9"
-2204:
-.base64 "AAAei8bBGHsBAN47CAAgOw=="
+b 2201f
+2200:
+2201:
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// rldicr %r24, %r24, 2, 61
+.long 0x7b181764
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// rldicl %r18, %r24, 2, 62
+.long 0x7b1217a0
+// rldicr %r3, %r24, 8, 55
+.long 0x7b0345e4
+// rldicl %r3, %r3, 2, 62
+.long 0x786317a0
+// rldicr %r3, %r3, 2, 61
+.long 0x78631764
+// add %r18, %r18, %r3
+.long 0x7e521a14
+// rldicl %r4, %r11, 61, 3
+.long 0x7964e8c2
+// rldicl %r0, %r11, 63, 1
+.long 0x7960f842
+// li %r9, 3
+.long 0x39200003
+// and %r9, %r0, %r9
+.long 0x7c094838
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// cmpldi %cr0, %r4, 0
+.long 0x28240000
+beq %cr0, 2203f
 2205:
-.base64 "AADIOQAA5TkAACs64A8Ue6QPGHs="
-2206:
-.base64 "AAAPgBQCAHwUogB8AAAOkCIAFHgEAM45BADvOf//MToAADEo"
-bne %cr0, 2206b
-.base64 "AACOkgAAyDkAAOk5AAAKOgAAKzoAAIA6"
-2207:
-.base64 "AAAOgAAAcIBQAAN8UAAUfAAAD5DgDxR4BADOOQQA7zkEABA6//8xOgAAMSg="
-bne %cr0, 2207b
-.base64 "AAAOgFAAFHzgDwB4AABgOFAYgH4AAMg5AADpOQAABToAACs6"
-2208:
-.base64 "AAAPgAAAboB4AmN8OKBjfHgCY3wAAHCQBADOOQQA7zkEABA6//8xOgAAMSg="
-bne %cr0, 2208b
-.base64 "//85OwAAOSg="
+// li %r14, 0
+.long 0x39c00000
+// addi %r14, %r14, -1
+.long 0x39ceffff
+// li %r15, 0
+.long 0x39e00000
+// addi %r15, %r15, -1
+.long 0x39efffff
+// li %r16, 0
+.long 0x3a000000
+// addi %r16, %r16, -1
+.long 0x3a10ffff
+// li %r17, 0
+.long 0x3a200000
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// li %r19, 0
+.long 0x3a600000
+// add %r8, %r5, %r29
+.long 0x7d05ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// ld %r0, 8(%r8)
+.long 0xe8080008
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r15, %r15, %r0
+.long 0x7def0038
+// ld %r0, 16(%r8)
+.long 0xe8080010
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r16, %r16, %r0
+.long 0x7e100038
+// ld %r0, 24(%r8)
+.long 0xe8080018
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r17, %r17, %r0
+.long 0x7e310038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// std %r14, 0(%r5)
+.long 0xf9c50000
+// std %r15, 8(%r5)
+.long 0xf9e50008
+// std %r16, 16(%r5)
+.long 0xfa050010
+// std %r17, 24(%r5)
+.long 0xfa250018
+// addi %r5, %r5, 32
+.long 0x38a50020
+// addi %r4, %r4, -1
+.long 0x3884ffff
+// cmpldi %cr0, %r4, 0
+.long 0x28240000
 bne %cr0, 2205b
-.base64 "////OwAAPyg="
-bne %cr0, 2204b
-.base64 "AAD3OwAAnDnGB0Z4IITGeAAASjkU6kp9FOpKfRTqSn0U6kp9FOpKfQAAyjlC+HF5AAAAOA=="
+b 2204f
+2203:
+2204:
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
+beq %cr0, 2206f
+2208:
+// li %r14, 0
+.long 0x39c00000
+// addi %r14, %r14, -1
+.long 0x39ceffff
+// li %r19, 0
+.long 0x3a600000
+// add %r8, %r5, %r29
+.long 0x7d05ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// xor %r3, %r19, %r18
+.long 0x7e639278
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// addi %r20, %r3, -1
+.long 0x3a83ffff
+// ld %r0, 0(%r8)
+.long 0xe8080000
+// or %r0, %r0, %r20
+.long 0x7c00a378
+// and %r14, %r14, %r0
+.long 0x7dce0038
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r19, %r19, 1
+.long 0x3a730001
+// std %r14, 0(%r5)
+.long 0xf9c50000
+// addi %r5, %r5, 8
+.long 0x38a50008
+// addi %r9, %r9, -1
+.long 0x3929ffff
+// cmpldi %cr0, %r9, 0
+.long 0x28290000
+bne %cr0, 2208b
+b 2207f
+2206:
+2207:
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// rldicr %r24, %r24, 2, 61
+.long 0x7b181764
+// addi %r31, %r31, -1
+.long 0x3bffffff
+// cmpldi %cr0, %r31, 0
+.long 0x283f0000
+bne %cr0, 2184b
+// addi %r31, %r23, 0
+.long 0x3bf70000
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// rldicr %r12, %r2, 48, 15
+.long 0x784c83c6
+// rldicl %r12, %r12, 16, 48
+.long 0x798c8420
+// li %r0, 28
+.long 0x3800001c
+// mulld %r12, %r12, %r0
+.long 0x7d8c01d2
+// addi %r12, %r12, 704
+.long 0x398c02c0
+// add %r12, %r12, %r21
+.long 0x7d8caa14
+// addi %r12, %r12, 1600
+.long 0x398c0640
+// rldicr %r6, %r2, 48, 15
+.long 0x784683c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// addi %r15, %r10, 0
+.long 0x39ea0000
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r6
+.long 0x7def3214
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r16, %r12, 0
+.long 0x3a0c0000
+// addi %r17, %r6, 0
+.long 0x3a260000
 2209:
-.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+// lbz %r0, 0(%r15)
+.long 0x880f0000
+// stb %r0, 0(%r16)
+.long 0x98100000
+// addi %r16, %r16, 1
+.long 0x3a100001
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2209b
-.base64 "FDLqff//7zkAAAw6AAAmOg=="
+// rldicr %r30, %r2, 48, 15
+.long 0x785e83c6
+// rldicl %r30, %r30, 16, 48
+.long 0x7bde8420
+// addi %r30, %r30, 16
+.long 0x3bde0010
+// rldicr %r30, %r30, 2, 61
+.long 0x7bde1764
+// add %r30, %r30, %r21
+.long 0x7fdeaa14
+// addi %r30, %r30, 256
+.long 0x3bde0100
+// rldicr %r23, %r2, 48, 15
+.long 0x785783c6
+// rldicl %r23, %r23, 16, 48
+.long 0x7af78420
+// li %r11, 28
+.long 0x3960001c
+// mulld %r23, %r23, %r11
+.long 0x7ef759d2
+// addi %r23, %r23, 704
+.long 0x3af702c0
+// add %r23, %r23, %r21
+.long 0x7ef7aa14
+// addi %r31, %r23, 0
+.long 0x3bf70000
+// addi %r10, %r23, 256
+.long 0x39570100
+// li %r11, 8
+.long 0x39600008
+// li %r29, 48
+.long 0x3ba00030
+// rldicr %r31, %r2, 48, 15
+.long 0x785f83c6
+// rldicl %r31, %r31, 16, 48
+.long 0x7bff8420
+// rldicl %r31, %r31, 61, 3
+.long 0x7bffe8c2
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// addi %r15, %r10, 0
+.long 0x39ea0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
 2210:
-.base64 "AAAQiAAAD5gBABA6///vOf//MToAADEo"
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2210b
-.base64 "FOrKffD/zjkAAAA4AAAO+AABXzkAAMo5FOrOfQAA6jkU6u99FOrvfRTq730U6u99FOrvfUL4cXkAAGA4"
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// ld %r3, 0(%r14)
+.long 0xe86e0000
+// addi %r3, %r3, -1
+.long 0x3863ffff
+// std %r3, 0(%r14)
+.long 0xf86e0000
+// ld %r0, 0(%r10)
+.long 0xe80a0000
+// ld %r12, 0(%r10)
+.long 0xe98a0000
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// mulld %r3, %r0, %r12
+.long 0x7c6061d2
+// li %r4, 2
+.long 0x38800002
+// subf %r3, %r3, %r4
+.long 0x7c632050
+// mulld %r12, %r12, %r3
+.long 0x7d8c19d2
+// li %r3, 0
+.long 0x38600000
+// subf %r12, %r12, %r3
+.long 0x7d8c1850
+// rldicr %r12, %r12, 32, 31
+.long 0x798c07c6
+// rldicl %r12, %r12, 32, 32
+.long 0x798c0022
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
 2211:
-.base64 "AAAO6AAAj+h4IgB8eANjfAgAzjkIAO85//8xOgAAMSg="
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
 bne %cr0, 2211b
-.base64 "AAAAOBAAY3yUAWB8UABjfAAAleg4IGN8AQAAODgAY3w="
+2212:
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// addi %r15, %r30, 0
+.long 0x39fe0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+2213:
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2213b
+// addi %r30, %r15, 0
+.long 0x3bcf0000
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// mflr %r14
+.long 0x7dc802a6
+// addi %r3, %r12, 0
+.long 0x386c0000
+// addi %r5, %r10, 0
+.long 0x38aa0000
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// add %r5, %r5, %r29
+.long 0x7ca5ea14
+// addi %r6, %r10, 0
+.long 0x38ca0000
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// add %r6, %r6, %r29
+.long 0x7cc6ea14
+// addi %r7, %r10, 0
+.long 0x38ea0000
+// add %r7, %r7, %r29
+.long 0x7ce7ea14
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r4, %r11, 0
+.long 0x388b0000
+bl {vg_rsa_mont_kernel}
+// mtlr %r14
+.long 0x7dc803a6
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// addi %r14, %r14, -16
+.long 0x39cefff0
+// li %r0, 0
+.long 0x38000000
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r8, %r10, 0
+.long 0x390a0000
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// add %r8, %r8, %r29
+.long 0x7d08ea14
+// addi %r9, %r10, 0
+.long 0x392a0000
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// add %r9, %r9, %r29
+.long 0x7d29ea14
+// addi %r10, %r10, 0
+.long 0x394a0000
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// addi %r14, %r8, 0
+.long 0x39c80000
+// addi %r15, %r9, 0
+.long 0x39e90000
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// addi %r17, %r11, 0
+.long 0x3a2b0000
+// li %r20, 0
+.long 0x3a800000
+2214:
+// lwz %r0, 0(%r14)
+.long 0x800e0000
+// lwz %r3, 0(%r16)
+.long 0x80700000
+// subf %r0, %r3, %r0
+.long 0x7c030050
+// subf %r0, %r20, %r0
+.long 0x7c140050
+// stw %r0, 0(%r15)
+.long 0x900f0000
+// rldicl %r20, %r0, 1, 63
+.long 0x78140fe0
+// addi %r14, %r14, 4
+.long 0x39ce0004
+// addi %r15, %r15, 4
+.long 0x39ef0004
+// addi %r16, %r16, 4
+.long 0x3a100004
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2214b
+// lwz %r0, 0(%r14)
+.long 0x800e0000
+// subf %r0, %r20, %r0
+.long 0x7c140050
+// rldicl %r0, %r0, 1, 63
+.long 0x78000fe0
+// li %r3, 0
+.long 0x38600000
+// subf %r20, %r0, %r3
+.long 0x7e801850
+// addi %r10, %r23, 256
+.long 0x39570100
+// addi %r15, %r10, 0
+.long 0x39ea0000
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// addi %r16, %r10, 0
+.long 0x3a0a0000
+// addi %r17, %r11, 0
+.long 0x3a2b0000
+// li %r24, 0
+.long 0x3b000000
+2215:
+// lwz %r0, 0(%r15)
+.long 0x800f0000
+// lwz %r3, 0(%r16)
+.long 0x80700000
+// and %r3, %r3, %r20
+.long 0x7c63a038
+// add %r0, %r0, %r3
+.long 0x7c001a14
+// add %r0, %r0, %r24
+.long 0x7c00c214
+// stw %r0, 0(%r15)
+.long 0x900f0000
+// rldicl %r24, %r0, 32, 32
+.long 0x78180022
+// addi %r15, %r15, 4
+.long 0x39ef0004
+// addi %r16, %r16, 4
+.long 0x3a100004
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2215b
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// addi %r15, %r10, 0
+.long 0x39ea0000
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+2216:
+// ld %r0, 0(%r15)
+.long 0xe80f0000
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2216b
+// rldicl %r3, %r11, 63, 1
+.long 0x7963f842
+// subf %r31, %r3, %r31
+.long 0x7fe3f850
+// addi %r3, %r31, -1
+.long 0x387fffff
+// rldicl %r3, %r3, 1, 63
+.long 0x78630fe0
+// li %r0, 1
+.long 0x38000001
+// xor %r3, %r3, %r0
+.long 0x7c630278
+// cmpldi %cr0, %r3, 0
+.long 0x28230000
+bne %cr0, 2212b
+// addi %r31, %r23, 0
+.long 0x3bf70000
+// addi %r12, %r28, 0
+.long 0x399c0000
+// rldicr %r6, %r2, 32, 31
+.long 0x784607c6
+// rldicl %r6, %r6, 16, 48
+.long 0x78c68420
+// addi %r10, %r10, 0
+.long 0x394a0000
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// add %r10, %r10, %r29
+.long 0x7d4aea14
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r0, 0
+.long 0x38000000
+2217:
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2217b
+// add %r15, %r10, %r6
+.long 0x7dea3214
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r16, %r12, 0
+.long 0x3a0c0000
+// addi %r17, %r6, 0
+.long 0x3a260000
+2218:
+// lbz %r0, 0(%r16)
+.long 0x88100000
+// stb %r0, 0(%r15)
+.long 0x980f0000
+// addi %r16, %r16, 1
+.long 0x3a100001
+// addi %r15, %r15, -1
+.long 0x39efffff
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2218b
+// add %r14, %r10, %r29
+.long 0x7dcaea14
+// addi %r14, %r14, -16
+.long 0x39cefff0
+// li %r0, 0
+.long 0x38000000
+// std %r0, 0(%r14)
+.long 0xf80e0000
+// addi %r10, %r31, 256
+.long 0x395f0100
+// addi %r14, %r10, 0
+.long 0x39ca0000
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// add %r14, %r14, %r29
+.long 0x7dceea14
+// addi %r15, %r10, 0
+.long 0x39ea0000
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// add %r15, %r15, %r29
+.long 0x7defea14
+// rldicl %r17, %r11, 63, 1
+.long 0x7971f842
+// li %r3, 0
+.long 0x38600000
+2219:
+// ld %r0, 0(%r14)
+.long 0xe80e0000
+// ld %r4, 0(%r15)
+.long 0xe88f0000
+// xor %r0, %r0, %r4
+.long 0x7c002278
+// or %r3, %r3, %r0
+.long 0x7c630378
+// addi %r14, %r14, 8
+.long 0x39ce0008
+// addi %r15, %r15, 8
+.long 0x39ef0008
+// addi %r17, %r17, -1
+.long 0x3a31ffff
+// cmpldi %cr0, %r17, 0
+.long 0x28310000
+bne %cr0, 2219b
+// li %r0, 0
+.long 0x38000000
+// subfc %r3, %r3, %r0
+.long 0x7c630010
+// addze %r3, %r0
+.long 0x7c600194
+// subf %r3, %r3, %r0
+.long 0x7c630050
+// ld %r4, 0(%r21)
+.long 0xe8950000
+// and %r3, %r3, %r4
+.long 0x7c632038
+// li %r0, 1
+.long 0x38000001
+// and %r3, %r3, %r0
+.long 0x7c630038
 221:
 29:
 24:
-.base64 "aADV6XAA9el4ABXqgAA16ogAVeqQAHXqmACV6qAA1eqoAPXqsAAV67gANevAAFXryAB169AAlevYALXr4ADV6+gA9evwAFXo+AC16iAAgE4=""#,
+// ld %r14, 104(%r21)
+.long 0xe9d50068
+// ld %r15, 112(%r21)
+.long 0xe9f50070
+// ld %r16, 120(%r21)
+.long 0xea150078
+// ld %r17, 128(%r21)
+.long 0xea350080
+// ld %r18, 136(%r21)
+.long 0xea550088
+// ld %r19, 144(%r21)
+.long 0xea750090
+// ld %r20, 152(%r21)
+.long 0xea950098
+// ld %r22, 160(%r21)
+.long 0xead500a0
+// ld %r23, 168(%r21)
+.long 0xeaf500a8
+// ld %r24, 176(%r21)
+.long 0xeb1500b0
+// ld %r25, 184(%r21)
+.long 0xeb3500b8
+// ld %r26, 192(%r21)
+.long 0xeb5500c0
+// ld %r27, 200(%r21)
+.long 0xeb7500c8
+// ld %r28, 208(%r21)
+.long 0xeb9500d0
+// ld %r29, 216(%r21)
+.long 0xebb500d8
+// ld %r30, 224(%r21)
+.long 0xebd500e0
+// ld %r31, 232(%r21)
+.long 0xebf500e8
+// ld %r2, 240(%r21)
+.long 0xe85500f0
+// ld %r21, 248(%r21)
+.long 0xeab500f8
+// blr
+.long 0x4e800020"#,
         vg_rsa_mont_kernel = sym super::rsa::vg_rsa_mont_kernel::vg_rsa_mont_kernel,
     )
 }

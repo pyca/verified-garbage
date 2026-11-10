@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Common
+public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
 
 /-!
 # DSA verification on PPC64LE
@@ -78,9 +79,40 @@ def ranges : Prog isa :=
 /-- The mask into the header's word `hMask` (secret: it stays in memory). -/
 def keepMask : List Instr := [.store .d .r22 .r21 hMask]
 
+/-- PROTOTYPE: `65 w` doublings of 1 on 64-bit words: `2^w R mod q`. -/
+def r2PrimeDbl : Prog isa :=
+  .seq Precompute.one (.seq (.block [.lsl .r4 .r11 5, .lsr .d .r3 .r11 1, .add .r4 .r4 .r3])
+    (.loop (.seq Precompute.doubleMod64 (.block [.subi .r4 .r4 1])) (.nonzero .d .r4)))
+
+/-- PROTOTYPE: the P space's array 4, `S + hdrBytes + 4 (p_len + 16)`, into `r30`. -/
+def pArr4 : List Instr :=
+  getP .r30 ++ [.addi .r30 .r30 16, .lsl .r30 .r30 2, .add .r30 .r30 .r21, .addi .r30 .r30 hdrBytes]
+
+/-- PROTOTYPE: `Crt.chunkStep` in the Q space (array 0 from `r23`). -/
+def chunkStepQ : Prog isa :=
+  .seq (.block (base .r14 6 ++ [.addi .r15 .r30 0])) (.seq Crt.copyN
+  (.seq (.block [.addi .r30 .r15 0]) (.seq (montOp 7 6 5) (.seq (montOp 5 5 1)
+  (.seq (.block (base .r14 4 ++ [.add .r14 .r14 .r29, .subi .r14 .r14 16, .li .r0 0,
+      .store .d .r0 .r14 0] ++ base .r8 4 ++ base .r9 3 ++ base .r10 7))
+  (.seq subMod (.seq (.block ([.addi .r10 .r23 hdrBytes] ++ base .r15 3 ++ base .r16 0))
+  (.seq Crt.addMask (.seq (.block (base .r14 4 ++ base .r15 3)) (.seq Crt.copyN
+  (.block [.lsr .d .r3 .r11 1, .sub .r31 .r31 .r3, .subi .r3 .r31 1, .lsr .d .r3 .r3 63, .li .r0 1,
+    .logic .xor .r3 .r3 .r0])))))))))))
+
+/-- PROTOTYPE: `c mod q` into array 4, for `c`'s `r31` words (a multiple of 4) at `r30`,
+with `R² mod q` in array 1: `Crt.reduceIn`'s chunks. -/
+def reduceQ : Prog isa :=
+  .seq (.block (base .r14 8 ++ [.addi .r15 .r10 0])) (.seq Crt.copyN
+  (.seq (.block (base .r14 8 ++ [.load .d .r3 .r14 0, .subi .r3 .r3 1, .store .d .r3 .r14 0] ++ minv))
+  (.seq (montOp 5 1 8) (.seq (.block (base .r14 4)) (.seq Precompute.zeroWords
+    (.loop chunkStepQ (.nonzero .d .r3)))))))
+
 /-- `R² mod q` into array 1 and array 8. -/
 def rrQ : Prog isa :=
-  .seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2 (copy 8 1))
+  .seq (.block (minv ++ base .r5 1 ++ base .r8 2 ++ base .r9 3 ++ topWord))
+    (.seq (.ite (.zero .d .r3) r2PrimeDbl Precompute.r2HiDbl)
+      (.seq (montOp 1 1 1) (.seq (montOp 1 1 1) (.seq (montOp 1 1 1) (.seq (montOp 1 1 1)
+        (.seq (montOp 1 1 1) (.seq (montOp 1 1 1) (copy 8 1))))))))
 
 /-- `q − 2` to the buffer: 1 into array 7, `[4] := [0] − [7]` and `[6] := [4] − [7]`
 (`subMod`). -/
@@ -167,8 +199,8 @@ def combine : Prog isa :=
 array 1, r into array 5, and `r3 :=` 1 if they are equal and the mask in
 `hMask` is all ones, else 0. -/
 def compare : Prog isa :=
-  .seq (.block (enterQ ++ bufBase .r30 .r0 ++ getP .r31)) (.seq ModArith.reduce
-    (.seq (.block ([.addi .r31 .r23 0] ++ ptrR)) (.seq (loadArr 5) (.seq (eqMask .r3 1 5)
+  .seq (.block (pArr4 ++ enterQ ++ getP .r31 ++ [.lsr .d .r31 .r31 3])) (.seq reduceQ
+    (.seq (.block ([.addi .r31 .r23 0] ++ ptrR)) (.seq (loadArr 5) (.seq (eqMask .r3 4 5)
       (.block [.load .d .r4 .r21 hMask, .logic .and .r3 .r3 .r4, .li .r0 1, .logic .and .r3 .r3 .r0])))))
 
 /-- The verification, after the check of the key. -/
