@@ -240,17 +240,19 @@ def mulArgs (c : Ctx) (o a b : Nat) : List Instr :=
 def mul (c : Ctx) (o a b : Nat) : Prog isa :=
   .frame (.alloc 36) (.seq (.block (mulArgs c o a b)) (.call "vg_rsa_mont_mul_at" Sse2.atBody)) (.free 36)
 
-/-- `T = 2 T mod M` for `T` in slot 4: the sum into slot 1 with its carry in the
-word after it, the sum minus `M` into slot 4, and the sum back where it is
-below `M`; `esi` down one. -/
-def doubleStep (c : Ctx) : Prog isa :=
-  .seq (chain .adc (.slot c 1) (.slot c 4) (.slot c 4) (one c)) <|
+/-- `[o] = [a] + [b] mod M` for `a` and `b` below `M`: the sum into slot 1 with
+its carry in the word after it, the sum minus `M` into `o`, and the sum back
+where it is below `M`. -/
+def addMod (c : Ctx) (o a b : Nat) : Prog isa :=
+  .seq (chain .adc (.slot c 1) (.slot c a) (.slot c b) (one c)) <|
   .seq (.block (ptrTo (.slot c 1) .eax .edx ++ cntTo (one c) .edx ++
     [.alu .add .eax (.reg .edx), .mov .edx (.imm 0), .alu .sub .edx (.reg .ecx), .store (at_ .eax 0) .edx])) <|
-  .seq (chain .sbb (.slot c 4) (.slot c 1) (.slot c 0) (one c)) <|
+  .seq (chain .sbb (.slot c o) (.slot c 1) (.slot c 0) (one c)) <|
   .seq (.block [.mov .eax (.mem (at_ .ebp 0)), .alu .add .ecx (.reg .ecx), .alu .sbb .eax (.imm 0),
-    .alu .sbb .eax (.reg .eax), .mov .ecx (.reg .eax)]) <|
-  .seq (selectX (.slot c 1) (.slot c 4) (one c)) (.block [.alu .sub .esi (.imm 1)])
+    .alu .sbb .eax (.reg .eax), .mov .ecx (.reg .eax)]) (selectX (.slot c 1) (.slot c o) (one c))
+
+/-- `T = 2 T mod M` for `T` in slot 4; `esi` down one. -/
+def doubleStep (c : Ctx) : Prog isa := .seq (addMod c 4 4 4) (.block [.alu .sub .esi (.imm 1)])
 
 /-- `2^(8 Bc + Bc / 8) mod M` in slot 4: one, doubled `8 Bc + Bc / 8` times. -/
 def powerTwo (c : Ctx) : Prog isa :=
@@ -363,7 +365,7 @@ def lenCount (l : Nat) : List Instr := [.mov .esi (.mem (argAt 0 l)), .alu .add 
 /-- The modulus (2 B bytes), the input and the key's components. -/
 def importComponents : Prog isa :=
   .seq (load (.slot .wide 9) (two .wide) 2 3) <|
-  .seq (load (.slot .wide 15) (one .wide) 4 5) <|
+  .seq (load (.slot .wide 15) (two .wide) 4 5) <|
   .seq (load (.slot .wide 10) (one .wide) 6 7) <|
   .seq (load (.slot .wide 11) (one .wide) 8 9) <|
   .seq (load (.slot .wide 12) (one .wide) 10 11) <|
@@ -398,20 +400,32 @@ def validate : Prog isa :=
 def saveResult (c : Ctx) (o : Nat) : Prog isa :=
   .seq (zero (.slot .wide o) (two .wide)) (copy (.slot c 6) (.slot .wide o) (one c))
 
+/-- The top half of the wide slot `j` (from byte `Bh`, `Bh` bytes) into the half slot `d`. -/
+def copyHigh (j d : Nat) : Prog isa :=
+  .seq (.block ([.mov .ecx (.imm (BitVec.allOnes 32))] ++ ptrTo (.slot .wide j) .ebp .edx ++
+      widthC 0 .half .edx ++ [.alu .add .ebp (.reg .edx)] ++ ptrTo (.slot .half d) .ebx .edx ++
+      cntTo (one .half) .edi))
+    (.seq selectLoop (.block restoreEdi))
+
+/-- The number of `2 Bh` bytes in the wide slot `j` modulo the half context's
+modulus into the half slot 5, with `R² mod M` in slot 4 and one in slot 3:
+its low half `l` and high half `h` (through slot 6) as `l R² R⁻¹ R⁻¹ +
+h R² R⁻¹ = h R + l`. -/
+def reduceHalf (j : Nat) : Prog isa :=
+  .seq (copy (.slot .wide j) (.slot .half 5) (one .half)) <|
+  .seq (copyHigh j 6) <|
+  .seq (mul .half 5 5 4) <|
+  .seq (mul .half 5 5 3) <|
+  .seq (mul .half 6 6 4) (addMod .half 5 5 6)
+
 /-- The input modulo the factor in slot `f`, the exponent in slot `e`, into
-slot `o`, at half the width: the input reduced modulo the factor at the
-modulus's width, then raised at half the width. -/
+slot `o`, at half the width: the input (`2 Bh` bytes) reduced modulo the
+factor and raised at half the width. -/
 def narrowPower (f e o : Nat) : Prog isa :=
-  .seq (copy (.slot .wide f) (.slot .wide 0) (one .wide)) <|
-  .seq (copy (.slot .wide 15) (.slot .wide 5) (one .wide)) <|
-  .seq (prepare .wide) <|
-  .seq (mul .wide 5 5 4) <|
-  .seq (mul .wide 5 5 3) <|
-  .seq (copy (.slot .wide 5) (.slot .wide o) (one .wide)) <|
   .seq (copy (.slot .wide f) (.slot .half 0) (one .half)) <|
-  .seq (copy (.slot .wide o) (.slot .half 5) (one .half)) <|
   .seq (copy (.slot .wide e) (.slot .half 8) (one .half)) <|
   .seq (prepare .half) <|
+  .seq (reduceHalf 15) <|
   .seq (windowPower .half) (saveResult .half o)
 
 /-- The same at the modulus's width. -/
@@ -429,7 +443,7 @@ def power (f e o : Nat) : Prog isa :=
     (.ite .b (narrowPower f e o) (widePower f e o))
 
 /-- `h = (m_p - m_q) qInv mod p` into slot 7, in the context of `p`. -/
-def coefficient : Prog isa :=
+def wideCoefficient : Prog isa :=
   .seq (copy (.slot .wide 10) (.slot .wide 0) (one .wide)) <|
   .seq (prepare .wide) <|
   .seq (copy (.slot .wide 16) (.slot .wide 6) (one .wide)) <|
@@ -439,6 +453,23 @@ def coefficient : Prog isa :=
   .seq (mul .wide 5 5 3) <|
   .seq (subMod .wide 7 6 5) <|
   .seq (mul .wide 8 8 4) (mul .wide 7 7 8)
+
+/-- The same at half the width, into the wide slot 7. -/
+def narrowCoefficient : Prog isa :=
+  .seq (copy (.slot .wide 10) (.slot .half 0) (one .half)) <|
+  .seq (prepare .half) <|
+  .seq (reduceHalf 17) <|
+  .seq (copy (.slot .wide 16) (.slot .half 6) (one .half)) <|
+  .seq (copy (.slot .wide 14) (.slot .half 8) (one .half)) <|
+  .seq (subMod .half 7 6 5) <|
+  .seq (mul .half 8 8 4) <|
+  .seq (mul .half 6 7 8) (saveResult .half 7)
+
+/-- The coefficient, at half the width if `p`'s length (the header word at `lenOff`) fits it. -/
+def coefficient : Prog isa :=
+  .seq (.block ([.mov .eax (.mem (sc lenOff))] ++ widthC 0 .half .edx ++
+    [.alu .add .edx (.imm 1), .alu .cmp .eax (.reg .edx)]))
+    (.ite .b narrowCoefficient wideCoefficient)
 
 /-- `m = m_q + q h` into the wide slot 19. -/
 def recombine : Prog isa :=
