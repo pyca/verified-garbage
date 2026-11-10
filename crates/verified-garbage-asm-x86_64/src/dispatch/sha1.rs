@@ -25,6 +25,8 @@ pub unsafe fn vg_sha1_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha1_update_shani` if the CPU supports its features (`VG_SHA1_UPDATE_SHANI_FEATURES`); `vg_sha1_update_avx_bmi` if the CPU supports its features (`VG_SHA1_UPDATE_AVX_BMI_FEATURES`); or else `vg_sha1_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 84 bytes.
@@ -77,6 +79,8 @@ pub unsafe fn vg_sha1_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *m
 /// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha1_finalize_shani` if the CPU supports its features (`VG_SHA1_FINALIZE_SHANI_FEATURES`); `vg_sha1_finalize_avx_bmi` if the CPU supports its features (`VG_SHA1_FINALIZE_AVX_BMI_FEATURES`); or else `vg_sha1_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -131,6 +135,8 @@ pub unsafe fn vg_sha1_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
 /// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha1_digest_shani` if the CPU supports its features (`VG_SHA1_DIGEST_SHANI_FEATURES`); `vg_sha1_digest_avx_bmi` if the CPU supports its features (`VG_SHA1_DIGEST_AVX_BMI_FEATURES`); or else `vg_sha1_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

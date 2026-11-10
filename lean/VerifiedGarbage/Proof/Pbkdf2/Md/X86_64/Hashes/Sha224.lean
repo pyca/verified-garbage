@@ -193,14 +193,17 @@ theorem satPF :
     X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 /-- SHA-224's `finalize` made with `v`, which writes its digest (`finalize224`). -/
-def stream : List StreamFn := [
+def finFn : StreamFn :=
   { api := Spec.Sha256.finalize224Api
     code := Impl.StackScratch.X86_64.withStackScratch 616 .rcx (Impl.Sha256.X86_64.Stream.finalize224 v.callee)
     contract := Spec.Sha256.finalize224Contract X86_64.abi (8 + 616)
     stack := 8 + 616
     verified := Proof.Sha256.X86_64.Shared.finalize224Stack v.ok v.mxcsr v.spSafe v.noStack
     spSafe := X86_64.withStackScratch_spSafe (by decide)
-      (Proof.Sha256.X86_64.Shared.finalize224_spSafe v.spSafe) },
+      (Proof.Sha256.X86_64.Shared.finalize224_spSafe v.spSafe) }
+
+/-- SHA-224's one-shot `digest` made with `v`. -/
+def digFn : StreamFn :=
   { api := Spec.Sha256.digest224Api
     code := Proof.Sha256.X86_64.OneShot.digest (Impl.MdStream.X86_64.out32 7 true) Spec.Sha256.H0_224 v.callee
     contract := Spec.Sha256.digestContract X86_64.abi 28 Spec.Sha256.sha224 (8 + Proof.Sha256.X86_64.OneShot.frame)
@@ -208,7 +211,10 @@ def stream : List StreamFn := [
     verified := Proof.Sha256.X86_64.OneShot.verified Proof.Sha256.X86_64.OneShot.code224
       Proof.Sha256.X86_64.OneShot.init_check224 Proof.Sha256.X86_64.OneShot.sha224_take v.ok v.mxcsr v.spSafe
       v.noStack
-    spSafe := Proof.Sha256.X86_64.OneShot.spSafe Proof.Sha256.X86_64.OneShot.code224 Spec.Sha256.H0_224 v.spSafe }]
+    spSafe := Proof.Sha256.X86_64.OneShot.spSafe Proof.Sha256.X86_64.OneShot.code224 Spec.Sha256.H0_224 v.spSafe }
+
+/-- SHA-224's `finalize` and one-shot `digest` made with `v`. -/
+def stream : List StreamFn := [finFn v, digFn v]
 
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
 Its streaming `update` is SHA-256's, which SHA-256's variant with `v`

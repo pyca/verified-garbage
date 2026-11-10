@@ -196,29 +196,39 @@ theorem satPF :
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi,
     X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
-/-- The streaming `update` and `finalize` made with `v`, which keep their
-working space in a frame of their own, and the one-shot `digest`. -/
-def stream : List StreamFn := [
+/-- The streaming `update` made with `v`, which keeps its working space in a
+frame of its own. -/
+def updFn : StreamFn :=
   { api := Spec.Sha1.updateApi
     code := Impl.StackScratch.X86_64.withStackScratch 168 .r8 (Impl.Sha1.X86_64.Stream.update v.callee)
     contract := Spec.Sha1.updateContract X86_64.abi (8 + 168)
     stack := 8 + 168
     verified := Proof.Sha1.X86_64.Shared.update v.ok v.mxcsr v.spSafe v.noStack
     spSafe := X86_64.withStackScratch_spSafe (by decide)
-      (Proof.Sha1.X86_64.Shared.update_spSafe v.spSafe) },
+      (Proof.Sha1.X86_64.Shared.update_spSafe v.spSafe) }
+
+/-- The streaming `finalize` made with `v`, likewise. -/
+def finFn : StreamFn :=
   { api := Spec.Sha1.finalizeApi
     code := Impl.StackScratch.X86_64.withStackScratch 168 .rcx (Impl.Sha1.X86_64.Stream.finalize v.callee)
     contract := Spec.Sha1.finalizeContract X86_64.abi (8 + 168)
     stack := 8 + 168
     verified := Proof.Sha1.X86_64.Shared.finalize v.ok v.mxcsr v.spSafe v.noStack
     spSafe := X86_64.withStackScratch_spSafe (by decide)
-      (Proof.Sha1.X86_64.Shared.finalize_spSafe v.spSafe) },
+      (Proof.Sha1.X86_64.Shared.finalize_spSafe v.spSafe) }
+
+/-- The one-shot `digest` made with `v`. -/
+def digFn : StreamFn :=
   { api := Spec.Sha1.digestApi
     code := Proof.Sha1.X86_64.OneShot.digest v.callee
     contract := Spec.Sha1.digestContract X86_64.abi (8 + Proof.Sha1.X86_64.OneShot.frame)
     stack := 8 + Proof.Sha1.X86_64.OneShot.frame
     verified := Proof.Sha1.X86_64.OneShot.verified v.ok v.mxcsr v.spSafe v.noStack
-    spSafe := Proof.Sha1.X86_64.OneShot.spSafe v.spSafe }]
+    spSafe := Proof.Sha1.X86_64.OneShot.spSafe v.spSafe }
+
+/-- The streaming `update` and `finalize` made with `v`, and the one-shot
+`digest`. -/
+def stream : List StreamFn := [updFn v, finFn v, digFn v]
 
 /-- SHA-1 with the implementation `v` of its compression function. -/
 def variant : MdHash :=
