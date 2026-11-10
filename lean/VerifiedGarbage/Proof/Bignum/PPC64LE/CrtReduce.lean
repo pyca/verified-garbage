@@ -251,11 +251,12 @@ def chunkRegs : List Reg :=
 /-- Between the chunks of `reduceIn`, after `i` of them: in `p`'s working space
 `off BX oA` of `w` words, `p` (`Pv`), `R² mod p` (`R2`), `p - 1`,
 `q ≡ -R^(i+1)` in array 5 and `S ≡` the first `w i` words of `X`'s array 6 in
-array 4; the next chunk at `r30`, the words left in `r31`. -/
-structure ChunkI (s : State) (BX : Addr) (Z oA w wX K Pv R2 i : Nat) (t : State) : Prop where
+array 4; the next chunk at `r30`, the words left in `r31`; and `Hb`, from which
+the chunk step's `a0` finds array 0 (`chunkStepFrom_ok`). -/
+structure ChunkI (Hb : State → Prop) (s : State) (BX : Addr) (Z oA w wX K Pv R2 i : Nat) (t : State) : Prop where
   scr : Scr t BX Z
   r10 : t.gpr .r10 = off (off BX oA) (slot w 0)
-  r21 : t.gpr .r21 = off (off BX oA) (slot w 0)
+  hb : Hb t
   r29 : t.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))
   r11 : t.gpr .r11 = BitVec.ofNat 64 (2 * w)
   r12 : (t.gpr .r12).toNat < 2 ^ 32
@@ -273,13 +274,17 @@ structure ChunkI (s : State) (BX : Addr) (Z oA w wX K Pv R2 i : Nat) (t : State)
   wk : Mont.Outside (off BX oA) (slot w 2) (7 * (8 * (w + 2))) s.mem t.mem
   keep : Keep chunkRegs s t
 
-/-- One chunk. -/
-theorem chunkStep_ok {s t : State} {BX : Addr} {Z oA w wX K Pv R2 i : Nat}
+/-- One chunk of `chunkStepFrom a0`, for `a0` putting array 0's address back
+into `r10` from what `Hb` says, which the chunk's registers keep. -/
+theorem chunkStepFrom_ok {s t : State} {BX : Addr} {Z oA w wX K Pv R2 i : Nat} {a0 : List Instr}
+    {Hb : State → Prop} (hHb : ∀ t u, Hb t → Keep chunkRegs t u → Hb u)
+    (ha0 : ∀ t, Hb t → WP isa (.block a0) t fun u =>
+      (u.gpr .r10 = off (off BX oA) (slot w 0) ∧ u.mem = t.mem) ∧ Keep [.r10] t u)
     (hA : oA + slot w 24 ≤ Z) (hX : slot wX 6 + 8 * (w * nChunks K w) ≤ oA) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
     (hK : 1 ≤ K) (hK' : K < 2 ^ 40) (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1) (hR2 : R2 < Pv)
     (hR2' : R2 % Pv = 2 ^ (64 * w) * 2 ^ (64 * w) % Pv) (hi : i < nChunks K w)
-    (I : ChunkI s BX Z oA w wX K Pv R2 i t) :
-    WP isa chunkStep t fun u => ChunkI s BX Z oA w wX K Pv R2 (i + 1) u ∧
+    (I : ChunkI Hb s BX Z oA w wX K Pv R2 i t) :
+    WP isa (chunkStepFrom a0) t fun u => ChunkI Hb s BX Z oA w wX K Pv R2 (i + 1) u ∧
       ((u.gpr .r3).toNat ≠ 0 ↔ i + 1 ≠ nChunks K w) := by
   have hn := I.scr.nowrap
   have e : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
@@ -375,8 +380,9 @@ theorem chunkStep_ok {s t : State} {BX : Addr} {Z oA w wX K Pv R2 i : Nat}
   have hT6 : val32 t₆.mem (off BX oA) (slot w 7) (2 * w) = val32 t₅.mem (off BX oA) (slot w 7) (2 * w) :=
     u6 7 (by decide)
   -- `S - T mod p` into array 3.
-  refine recP2a_ok (bj := 7) (hsA.congr k16.wr) (by omega_arith) (by decide) (by decide) (by decide) hw2 hw'
-    ((g6 .r10 (by decide)).trans I.r10) ((g6 .r21 (by decide)).trans I.r21) ((g6 .r29 (by decide)).trans I.r29)
+  refine recP2aFrom_ok (bj := 7) (hsA.congr k16.wr) (by omega_arith) (by decide) (by decide) (by decide) hw2 hw'
+    ((g6 .r10 (by decide)).trans I.r10)
+    (fun t' kt' => ha0 t' (hHb _ _ (hHb _ _ I.hb (k16.mono (by decide))) (kt'.mono (by decide)))) ((g6 .r29 (by decide)).trans I.r29)
     ((g6 .r11 (by decide)).trans I.r11) (by rw [u6 0 (by decide), u5 0 (by decide), v0]) hT6 hS6 T5 I.slt
     fun t₇ v3 o7 a10 k7 => ?_
   have hsA7 := hsA.congr (k16.trans k7).wr
@@ -418,7 +424,7 @@ theorem chunkStep_ok {s t : State} {BX : Addr} {Z oA w wX K Pv R2 i : Nat}
   have hTC := chunk_t hR T5e I.q
   have hwi1 : w * (i + 1) = w * i + w := Nat.mul_succ _ _
   have hpow : (2 ^ (64 * w)) ^ i = 2 ^ (64 * (w * i)) := by rw [← Nat.pow_mul, Nat.mul_assoc]
-  refine ⟨⟨I.scr.congr kall.wr, ?_, by rw [gu .r21 (by decide)]; exact I.r21,
+  refine ⟨⟨I.scr.congr kall.wr, ?_, hHb _ _ I.hb (kall.mono (by decide)),
     by rw [gu .r29 (by decide)]; exact I.r29, by rw [gu .r11 (by decide)]; exact I.r11,
     by rw [gu .r12 (by decide)]; exact I.r12,
     by rw [gu .r12 (by decide), Wt.w32 (Or.inl (by omega_arith)) (by omega_arith)]; exact I.inv, ?_, ?_,
@@ -477,22 +483,30 @@ theorem pm1_ok {t : State} {B : Addr} {Z w Pv : Nat} (hs : Scr t B Z) (hZ : slot
   rw [hx]
   omega
 
-/-- `reduceIn`, in `p`'s working space `off BX oA` of `w` words, for `c` the
-first `w n` words of `X`'s array 6 (`n` chunks of the `⌈k / 8⌉` words): `c mod p`
-into array 4, changing only arrays 2–8. -/
-theorem reduceIn_ok' {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
+/-- The registers `reduceFrom`'s setup writes, before its pointers. -/
+def setupRegs : List Reg :=
+  [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22, .r24]
+
+/-- `reduceFrom a0 ptrs`, in `p`'s working space `off BX oA` of `w` words, for
+`c` the first `w n` words of `BX`'s array 6 (`n` chunks of `K` words), whose
+address `ptrs` puts into `r30` and its words into `r31`: `c mod p` into array
+4, changing only arrays 2–8. -/
+theorem reduceFrom_ok {s : State} {BX : Addr} {Z oA w wX K Pv Cv : Nat} {a0 ptrs : List Instr}
+    {Hb : State → Prop}
     (hs : Scr s BX Z) (hA : oA + slot w 24 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
-    (hn : w * nChunks ((k + 7) / 8) w ≤ wX)
-    (h10 : s.gpr .r10 = off (off BX oA) (slot w 0)) (h21 : s.gpr .r21 = off (off BX oA) (slot w 0))
+    (hn : w * nChunks K w ≤ wX) (hK1 : 1 ≤ K) (hK' : K < 2 ^ 40)
+    (h10 : s.gpr .r10 = off (off BX oA) (slot w 0)) (hb : Hb s) (hHb : ∀ t u, Hb t → Keep chunkRegs t u → Hb u)
+    (ha0 : ∀ t, Hb t → WP isa (.block a0) t fun u =>
+      (u.gpr .r10 = off (off BX oA) (slot w 0) ∧ u.mem = t.mem) ∧ Keep [.r10] t u)
+    (hptrs : ∀ t, Keep setupRegs s t → WP isa (.block ptrs) t fun u =>
+      (u.gpr .r30 = off BX (slot wX 6) ∧ u.gpr .r31 = BitVec.ofNat 64 K ∧ u.mem = t.mem) ∧ Keep [.r30, .r31] t u)
     (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
-    (h27 : s.gpr .r27 = off BX (slot wX 0)) (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))
-    (h25 : s.gpr .r25 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k < 2 ^ 40)
     (h12 : (s.gpr .r12).toNat < 2 ^ 32)
     (hinv : (w32 s.mem (off BX oA) (slot w 0) * (s.gpr .r12).toNat + 1) % 2 ^ 32 = 0)
     (hP : val32 s.mem (off BX oA) (slot w 0) (2 * w) = Pv) (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1)
     (hR2 : val32 s.mem (off BX oA) (slot w 1) (2 * w) = 2 ^ (128 * w) % Pv)
-    (hC : wv s.mem BX (slot wX 6) (w * nChunks ((k + 7) / 8) w) = Cv) :
-    WP isa reduceIn s fun t =>
+    (hC : wv s.mem BX (slot wX 6) (w * nChunks K w) = Cv) :
+    WP isa (reduceFrom a0 ptrs) s fun t =>
       (val32 t.mem (off BX oA) (slot w 4) (2 * w) = Cv % Pv ∧ val32 t.mem (off BX oA) (slot w 0) (2 * w) = Pv ∧
         val32 t.mem (off BX oA) (slot w 1) (2 * w) = 2 ^ (128 * w) % Pv ∧ (t.gpr .r12).toNat < 2 ^ 32 ∧
         (w32 t.mem (off BX oA) (slot w 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 ∧
@@ -506,9 +520,6 @@ theorem reduceIn_ok' {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
   have eX8 : slot wX 8 = 256 + 8 * (8 * (wX + 2)) := rfl
   have hR := VG.Proof.Bignum.coprime_pow2 hodd (64 * w)
   have hsA := hs.sub hA
-  generalize hKd : (k + 7) / 8 = K at hn hC
-  have hK1 : 1 ≤ K := by omega_arith
-  have hK' : K < 2 ^ 40 := by omega_arith
   have hX : slot wX 6 + 8 * (w * nChunks K w) ≤ oA := by omega_arith
   -- `p` into array 8.
   refine WP.seq ?_
@@ -579,34 +590,25 @@ theorem reduceIn_ok' {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
   have Wall : Mont.Outside (off BX oA) (slot w 2) (7 * (8 * (w + 2))) s.mem s₈.mem :=
     ((O5.mono (by omega_arith) (by omega_arith)).trans (W6.mono (by omega_arith) (by omega_arith))).trans (o8'.mono (by omega_arith) (by omega_arith))
   have Oall : Outside BX oA (slot w 24) s.mem s₈.mem := out_sub (fun x hx => Wall x hx) (by omega_arith) (by omega_arith) (by omega_arith)
-  have g8 : ∀ r ∈ [Reg.r10, .r11, .r12, .r21, .r27, .r28, .r29], s₈.gpr r = s.gpr r := fun r hr =>
+  have g8 : ∀ r ∈ [Reg.r10, .r11, .r12, .r29], s₈.gpr r = s.gpr r := fun r hr =>
     k18.gpr r (by revert r hr; decide)
   -- `r30` and `r31`.
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (xb_ok (rd := .r30) (by decide) (by decide) ((g8 .r27 (by decide)).trans h27)
-    ((g8 .r28 (by decide)).trans h28) 6) fun s₉ ⟨⟨a30, m9⟩, k9⟩ => ?_
-  refine WP.mono (WP.keep [.r31] (Q := fun u => u.gpr .r31 = BitVec.ofNat 64 K ∧ u.mem = s₉.mem) (by
-      prun [(k9.gpr .r25 (by decide)).trans ((k18.gpr .r25 (by decide)).trans h25)]
-      rw [← hKd]
-      apply BitVec.eq_of_toNat_eq
-      simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-      omega_arith) (by decide)) fun s₁₀ ⟨⟨a31, m10⟩, k10⟩ => ?_
-  have k110 := (k18.trans k9).trans k10
-  have hm10 : s₁₀.mem = s₈.mem := by rw [m10, m9]
+  refine WP.seq (WP.mono (hptrs s₈ (k18.mono (by decide))) fun s₁₀ ⟨⟨a30, a31, m10⟩, k10⟩ => ?_)
+  have k110 := k18.trans k10
+  have hm10 : s₁₀.mem = s₈.mem := m10
   have v5 : val32 s₈.mem (off BX oA) (slot w 5) (2 * w) = val32 s₆.mem (off BX oA) (slot w 5) (2 * w) :=
     o8'.val32 (Or.inr (by omega_arith)) (by omega_arith)
-  have I0 : ChunkI s BX Z oA w wX K Pv (2 ^ (128 * w) % Pv) 0 s₁₀ := by
+  have I0 : ChunkI Hb s BX Z oA w wX K Pv (2 ^ (128 * w) % Pv) 0 s₁₀ := by
     refine ⟨hs.congr k110.wr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by rw [hm10]; exact Oall,
       by rw [hm10]; exact Wall, k110.mono (by decide +kernel)⟩
-    · rw [k10.gpr .r10 (by decide), k9.gpr .r10 (by decide), g8 .r10 (by decide), h10]
-    · rw [k10.gpr .r21 (by decide), k9.gpr .r21 (by decide), g8 .r21 (by decide), h21]
-    · rw [k10.gpr .r29 (by decide), k9.gpr .r29 (by decide), g8 .r29 (by decide), h29]
-    · rw [k10.gpr .r11 (by decide), k9.gpr .r11 (by decide), g8 .r11 (by decide), h11]
-    · rw [k10.gpr .r12 (by decide), k9.gpr .r12 (by decide), g8 .r12 (by decide)]; exact h12
-    · rw [k10.gpr .r12 (by decide), k9.gpr .r12 (by decide), g8 .r12 (by decide), hm10,
+    · rw [k10.gpr .r10 (by decide), g8 .r10 (by decide), h10]
+    · exact hHb _ _ hb (k110.mono (by decide +kernel))
+    · rw [k10.gpr .r29 (by decide), g8 .r29 (by decide), h29]
+    · rw [k10.gpr .r11 (by decide), g8 .r11 (by decide), h11]
+    · rw [k10.gpr .r12 (by decide), g8 .r12 (by decide)]; exact h12
+    · rw [k10.gpr .r12 (by decide), g8 .r12 (by decide), hm10,
         Wall.w32 (Or.inl (by omega_arith)) (by omega_arith)]; exact hinv
-    · rw [k10.gpr .r30 (by decide), a30, Nat.mul_zero, Nat.mul_zero, Nat.add_zero]
+    · rw [a30, Nat.mul_zero, Nat.mul_zero, Nat.add_zero]
     · rw [a31, Nat.mul_zero]; exact (BitVec.sub_zero _).symm
     · rw [hm10, Wall.val32 (Or.inl (by omega_arith)) (by omega_arith), hP]
     · rw [hm10, Wall.val32 (Or.inl (by omega_arith)) (by omega_arith), hR2]
@@ -616,11 +618,47 @@ theorem reduceIn_ok' {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
     · rw [hm10, v4]; omega_arith
     · rw [hm10, v4, Nat.mul_zero]; rfl
   refine WP.mono (count_loop (cr := .r3) (nChunks_pos (by omega_arith) hK1)
-    (fun j u => ChunkI s BX Z oA w wX K Pv (2 ^ (128 * w) % Pv) j u)
-    (fun j hj u I => chunkStep_ok hA hX hw2 hw' hK1 hK' hP2 hodd (Nat.mod_lt _ (by omega_arith)) hR2' hj I) I0)
+    (fun j u => ChunkI Hb s BX Z oA w wX K Pv (2 ^ (128 * w) % Pv) j u)
+    (fun j hj u I => chunkStepFrom_ok hHb ha0 hA hX hw2 hw' hK1 hK' hP2 hodd (Nat.mod_lt _ (by omega_arith)) hR2' hj I) I0)
     fun t I => ⟨⟨?_, I.p0, I.p1, I.r12, I.inv, I.out, I.r10, I.wk⟩, I.keep⟩
   rw [← Nat.mod_eq_of_lt I.slt, I.sv, hC]
 
+
+/-- `reduceFrom_ok` for `reduceIn`, with `p`'s array 0 in `r21` and `c` in `X`'s
+array 6 (`n` chunks of the `⌈k / 8⌉` words). -/
+theorem reduceIn_ok' {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
+    (hs : Scr s BX Z) (hA : oA + slot w 24 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
+    (hn : w * nChunks ((k + 7) / 8) w ≤ wX)
+    (h10 : s.gpr .r10 = off (off BX oA) (slot w 0)) (h21 : s.gpr .r21 = off (off BX oA) (slot w 0))
+    (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (h27 : s.gpr .r27 = off BX (slot wX 0)) (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))
+    (h25 : s.gpr .r25 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k < 2 ^ 40)
+    (h12 : (s.gpr .r12).toNat < 2 ^ 32)
+    (hinv : (w32 s.mem (off BX oA) (slot w 0) * (s.gpr .r12).toNat + 1) % 2 ^ 32 = 0)
+    (hP : val32 s.mem (off BX oA) (slot w 0) (2 * w) = Pv) (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1)
+    (hR2 : val32 s.mem (off BX oA) (slot w 1) (2 * w) = 2 ^ (128 * w) % Pv)
+    (hC : wv s.mem BX (slot wX 6) (w * nChunks ((k + 7) / 8) w) = Cv) :
+    WP isa reduceIn s fun t =>
+      (val32 t.mem (off BX oA) (slot w 4) (2 * w) = Cv % Pv ∧ val32 t.mem (off BX oA) (slot w 0) (2 * w) = Pv ∧
+        val32 t.mem (off BX oA) (slot w 1) (2 * w) = 2 ^ (128 * w) % Pv ∧ (t.gpr .r12).toNat < 2 ^ 32 ∧
+        (w32 t.mem (off BX oA) (slot w 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 ∧
+        Outside BX oA (slot w 24) s.mem t.mem ∧ t.gpr .r10 = off (off BX oA) (slot w 0) ∧
+        Mont.Outside (off BX oA) (slot w 2) (7 * (8 * (w + 2))) s.mem t.mem) ∧ Keep chunkRegs s t :=
+  reduceFrom_ok (Hb := fun t => t.gpr .r21 = off (off BX oA) (slot w 0)) hs hA hXA hw2 hw' hn
+    (by omega_arith) (by omega_arith) h10 h21 (fun _ _ h k => (k.gpr .r21 (by decide)).trans h)
+    (fun t h => WP.keep [.r10] (Q := fun u => u.gpr .r10 = off (off BX oA) (slot w 0) ∧ u.mem = t.mem)
+      (by prun [h]) (by decide))
+    (fun t kt => by
+      rw [WP.block_append_iff]
+      refine WP.mono (xb_ok (rd := .r30) (by decide) (by decide) ((kt.gpr .r27 (by decide)).trans h27)
+        ((kt.gpr .r28 (by decide)).trans h28) 6) fun u ⟨⟨a30, mu⟩, ku⟩ => ?_
+      refine WP.mono (WP.keep [.r31] (Q := fun v => v.gpr .r31 = BitVec.ofNat 64 ((k + 7) / 8) ∧ v.mem = u.mem) (by
+          prun [(ku.gpr .r25 (by decide)).trans ((kt.gpr .r25 (by decide)).trans h25)]
+          apply BitVec.eq_of_toNat_eq
+          simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+          omega_arith) (by decide)) fun v ⟨⟨a31, mv⟩, kv⟩ => ?_
+      exact ⟨⟨(kv.gpr .r30 (by decide)).trans a30, a31, by rw [mv, mu]⟩, (ku.trans kv).mono (by decide)⟩)
+    h29 h11 h12 hinv hP hP2 hodd hR2 hC
 
 /-- `reduceIn_ok'` without its frame of arrays 2–8. -/
 theorem reduceIn_ok {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}

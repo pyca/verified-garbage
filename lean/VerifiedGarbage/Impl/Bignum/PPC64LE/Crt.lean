@@ -212,32 +212,42 @@ def addMask : Prog isa :=
 reductions modulo the primes. -/
 def loadIn : Prog isa := .seq (.block [.load .d .r12 .r23 oIn, .load .d .r6 .r23 oNLen]) (loadArr 6)
 
-/-- One chunk of `reduceIn`: the next `w` words of `c` (at `r30`) into array
+/-- One chunk of `reduceFrom`: the next `w` words of `c` (at `r30`) into array
 6; `T := C q R⁻¹ mod p` into array 7 and `q := q R² R⁻¹ mod p`; `S := S - T
-mod p` (into array 3, `p` added back under the borrow, then back into array
-4); `r31 -= w`, and `r3 :=` 1 if any words remain (`r31 > 0`), else 0. -/
-def chunkStep : Prog isa :=
+mod p` (into array 3, `p` added back under the borrow, with array 0's address
+put back into `r10` by `a0`, then back into array 4); `r31 -= w`, and `r3 :=`
+1 if any words remain (`r31 > 0`), else 0. -/
+def chunkStepFrom (a0 : List Instr) : Prog isa :=
   .seq (.block (PublicChecked.base .r14 6 ++ [.addi .r15 .r30 0])) (.seq copyN
   (.seq (.block [.addi .r30 .r15 0]) (.seq (PublicChecked.montOp 7 6 5) (.seq (PublicChecked.montOp 5 5 1)
   (.seq (.block (PublicChecked.base .r14 4 ++ [.add .r14 .r14 .r29, .subi .r14 .r14 16, .li .r0 0,
       .store .d .r0 .r14 0] ++ PublicChecked.base .r8 4 ++ PublicChecked.base .r9 3 ++ PublicChecked.base .r10 7))
-  (.seq subMod (.seq (.block ([.addi .r10 .r21 0] ++ PublicChecked.base .r15 3 ++ PublicChecked.base .r16 0))
+  (.seq subMod (.seq (.block (a0 ++ PublicChecked.base .r15 3 ++ PublicChecked.base .r16 0))
   (.seq addMask (.seq (.block (PublicChecked.base .r14 4 ++ PublicChecked.base .r15 3)) (.seq copyN
   (.block [.lsr .d .r3 .r11 1, .sub .r31 .r31 .r3, .subi .r3 .r31 1, .lsr .d .r3 .r3 63, .li .r0 1,
     .logic .xor .r3 .r3 .r0])))))))))))
+
+/-- `chunkStepFrom` in a prime's working space, whose array 0 `r21` holds. -/
+def chunkStep : Prog isa := chunkStepFrom [.addi .r10 .r21 0]
 
 /-- `c mod p` into array 4, for `c` in `X`'s array 6 (`⌈k / 8⌉` words of
 `R = 2^(64 w)`, for `k` in `r25`), `p` in array 0, `R² mod p` in array 1 and `-p⁻¹ mod 2³²` in
 `r12`: `p - 1` into array 8 (`p` is odd), `q := (p - 1) R² R⁻¹ = -R mod p`
 into array 5, `S := 0` in array 4, then `chunkStep` for each chunk `C_i` of
 `w` words from the bottom, which keeps `q ≡ -R^(i+1)` and adds
-`C_i R^i ≡ -C_i q R⁻¹` to `S`. -/
-def reduceIn : Prog isa :=
+`C_i R^i ≡ -C_i q R⁻¹` to `S`. `reduceFrom a0 ptrs`, with `a0` putting
+array 0's address back into `r10` (`chunkStepFrom`), and `ptrs` `c`'s address
+into `r30` and its words into `r31`. -/
+def reduceFrom (a0 ptrs : List Instr) : Prog isa :=
   .seq (.block (PublicChecked.base .r14 8 ++ [.addi .r15 .r10 0])) (.seq copyN
   (.seq (.block (PublicChecked.base .r14 8 ++ [.load .d .r3 .r14 0, .subi .r3 .r3 1, .store .d .r3 .r14 0]))
   (.seq (PublicChecked.montOp 5 1 8) (.seq (.block (PublicChecked.base .r14 4)) (.seq Precompute.zeroWords
-  (.seq (.block (xb .r30 6 ++ [.addi .r31 .r25 7, .lsr .d .r31 .r31 3]))
-    (.loop chunkStep (.nonzero .d .r3))))))))
+  (.seq (.block ptrs) (.loop (chunkStepFrom a0) (.nonzero .d .r3))))))))
+
+/-- `reduceFrom` in a prime's working space (array 0 in `r21`), for `c` in `X`'s
+array 6 of `⌈k / 8⌉` words (`k` in `r25`). -/
+def reduceIn : Prog isa :=
+  reduceFrom [.addi .r10 .r21 0] (xb .r30 6 ++ [.addi .r31 .r25 7, .lsr .d .r31 .r31 3])
 
 /-- `R² mod p` into array 1 from the `w` words (`r11 / 2`) at `r30`, under
 the mask `r26`: each word `&= r26`, and the lowest one `|= 1` if the mask is
