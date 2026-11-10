@@ -18,7 +18,7 @@ variable {Ex : List Region → List Region → Prop}
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt
-open VG.Impl.Bignum.X86.PrivPre (pqCheck)
+open VG.Impl.Bignum.X86.PrivPre (pqCheck primesInit setLen outOff shl)
 
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
@@ -112,6 +112,67 @@ theorem pqCheck_ok (h : In Ex base bytes len args s) {n p q : Nat}
   have F₄ : Frame (frameR base (s.gpr .esp) (valR len)) u₂.mem u₄.mem := by
     rw [← M₃]; exact frameR_of_outside O₄ (by omega_arith) (by simp)
   exact (F₁.trans F₂').trans F₄
+
+/-- The header: where the first factor's values go, `16 w` bytes into the
+output, and the first factor's length. -/
+theorem init_ok (h : RIn base bytes len args s) :
+    WP isa (.block (primesInit ++ setLen 7)) s fun u =>
+      Outside base outOff 16 s.mem u.mem ∧
+      w32 u.mem base outOff = ((args 0).toNat + 16 * Spec.Rsa.modulusWords len) % 2 ^ 32 ∧
+      w32 u.mem base lenOff = (args 7).toNat ∧
+      Keeps [.eax, .ecx] s u := by
+  have nw := h.scratch.nowrap
+  have hup := h.upper'
+  have pf := h.prod_fit
+  have nb : numBase = 3336 := rfl
+  have bl : 3336 ≤ bytes := by
+    have := h.slot_fit .wide (j := 0) (by decide); simp only [lo] at this; omega_arith
+  simp only [primesInit, setLen, List.append_assoc, List.cons_append, List.nil_append]
+  refine wp_movS (h.arg (i := 3) (by decide)) fun u₁ a₁ _ => ?_
+  refine wp_addS rfl fun u₂ a₂ _ => wp_shr (by decide) fun u₃ a₃ _ => ?_
+  refine PrivPre.shl_ok 4 fun u₄ K₄ m₄ e₄ => ?_
+  have K₄' : Keeps [.ecx] s u₄ :=
+    (((a₁.keeps.mono (by decide)).trans (a₂.keeps.mono (by decide))).trans (a₃.keeps.mono (by decide))).trans K₄
+  have m₄' : u₄.mem = s.mem := by rw [m₄, a₃.mem, a₂.mem, a₁.mem]
+  have h₄ := h.regs K₄' m₄'
+  refine wp_movS (h₄.arg (i := 0) (by decide)) fun u₅ a₅ _ => wp_addS rfl fun u₆ a₆ _ => ?_
+  have K₆ : Keeps [.eax, .ecx] s u₆ :=
+    ((K₄'.mono (by decide)).trans (a₅.keeps.mono (by decide))).trans (a₆.keeps.mono (by decide))
+  have m₆ : u₆.mem = s.mem := by rw [a₆.mem, a₅.mem, m₄']
+  have h₆ := h.regs K₆ m₆
+  refine wp_storeS (h₆.scratch.ea (d := outOff) (by simp only [outOff, winOff]; omega_arith))
+    (h₆.scratch.write (d := outOff) (by simp only [outOff, winOff]; omega_arith)) fun u₇ s₇ => ?_
+  have O₇ : Outside base 0 bytes u₆.mem u₇.mem := by
+    rw [s₇.mem]
+    exact (writeW32_outside _ _ _ (by simp only [outOff, winOff]; omega_arith)).mono (Nat.zero_le _)
+      (by simp only [outOff, winOff]; omega_arith)
+  have h₇ := h₆.keep (s₇.keeps []) (by decide) (by decide) O₇
+  refine wp_movS (h₇.arg (i := 7) (by decide)) fun u₈ a₈ _ => ?_
+  have h₈ := h₇.regs a₈.keeps a₈.mem
+  refine wp_storeS (h₈.scratch.ea (d := lenOff) (by simp only [lenOff]; omega_arith))
+    (h₈.scratch.write (d := lenOff) (by simp only [lenOff]; omega_arith)) fun u s₉ => WP.block_nil ?_
+  have ecx₄ : (u₄.gpr .ecx).toNat = 16 * Spec.Rsa.modulusWords len := by
+    rw [e₄, a₃.gpr, a₂.gpr, a₁.gpr, h.extra.nLen]
+    simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+      Spec.Rsa.modulusWords]
+    rw [show (7 : BitVec 32).toNat = 7 from rfl]
+    omega_arith
+  have eax₆ : (u₆.gpr .eax).toNat = ((args 0).toNat + 16 * Spec.Rsa.modulusWords len) % 2 ^ 32 := by
+    rw [a₆.gpr, a₅.gpr, BitVec.toNat_add, a₅.other _ (by decide), ecx₄]
+  have mu : u.mem = (s.mem.writeW (off base outOff) (u₆.gpr .eax)).writeW (off base lenOff) (args 7) := by
+    rw [s₉.mem, a₈.mem, s₇.mem, m₆, a₈.gpr]
+  have hw : ∀ d, d + 4 ≤ 20 → d + 4 ≤ bytes := fun d hd => by omega_arith
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [mu]
+    exact ((writeW32_outside _ _ _ (by simp only [outOff, winOff]; omega_arith)).mono
+      (by simp only [outOff, winOff]; omega) (by simp only [outOff, winOff]; omega)).trans
+      ((writeW32_outside _ _ _ (by simp only [lenOff]; omega_arith)).mono
+        (by simp only [outOff, winOff, lenOff]; omega) (by simp only [outOff, winOff, lenOff]; omega))
+  · rw [mu, w32_write_ne nw (hw lenOff (by simp only [lenOff]; omega)) (hw outOff (by simp only [outOff, winOff]; omega))
+      (by simp only [outOff, winOff, lenOff]; omega), w32_write_self, eax₆]
+  · rw [mu, w32_write_self]
+  · exact (K₆.trans ((s₇.keeps []).mono (by decide))).trans
+      ((a₈.keeps.mono (by decide)).trans ((s₉.keeps []).mono (by decide)))
 
 end
 
