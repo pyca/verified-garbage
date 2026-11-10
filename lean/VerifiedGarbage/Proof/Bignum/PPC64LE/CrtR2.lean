@@ -6,6 +6,11 @@ public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubLoad
+public import VerifiedGarbage.Proof.Bignum.CrtFrame
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Prime
+public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtSetup
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -15,6 +20,9 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 `r2Copy_ok`: `vg_rsa_private_crt_precomputed`'s `R² mod p` into array 1 of
 a prime's working space, from `w` words of a read-only buffer apart from it,
 under the mask `r26` of `b`: the buffer's number if `b`, else 1.
+`r2Step_ok`: `R² mod p` into array 1 as `Pre.r2Prime_ok` gives it, either
+computed or, with `pc`, copied from the cached values (`R2C`): with the
+mask clear, the prime is 3, and `R² mod 3 = 1`.
 -/
 
 @[expose] public section
@@ -23,6 +31,7 @@ namespace VG.Proof.Bignum.PPC64LE.Crt
 
 open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Bignum.PPC64LE.Crt
 open VG.Proof.Bignum.PPC64LE
+open VG.Proof.Mont (val32 w32)
 
 /-- `n` words, the lowest 1 and the others 0, are 1. -/
 theorem wv_one_low {m : Mem} {p : Addr} {d : Nat} :
@@ -134,5 +143,92 @@ theorem r2Copy_ok {s : State} {B P : Addr} {Z w : Nat} {b : Bool} (hs : Scr s B 
   · exact jk.trans' ((((((((Keep.write _ _ _).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).trans
       (Keep.mem _ _)).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).trans
       (Keep.write _ _ _)).mono
+
+/-- `R² mod 3 = 1`. -/
+theorem pow128_mod3 (w : Nat) : 2 ^ (128 * w) % 3 = 1 := by
+  rw [Nat.pow_mul, Nat.pow_mod, show 2 ^ 128 % 3 = 1 by decide, Nat.one_pow]
+
+/-- With `pc`, what `r2Step pc q` needs, in a state whose header is at
+`BX` (of `Zs` bytes of working space): the cached `R² mod p`, `w` words at
+`S`, readable and apart from the working space, at the header's `oR2` (with
+`q`, after `p`'s `wsWords pL` words, `pL` at `oPLen`); the mask of `b` in
+`r26`; and the prime `Pv` whose `R² mod p` it is if `b`, else 3. -/
+structure R2C (q : Bool) (s : State) (BX S : Addr) (Zs w Pv pL : Nat) (b : Bool) : Prop where
+  src : S = word s.mem BX oR2 + BitVec.ofNat 64 (if q then 8 * wsWords pL else 0)
+  pl : q = true → word s.mem BX oPLen = BitVec.ofNat 64 pL
+  pl1 : 1 ≤ pL
+  pl2 : pL < 2 ^ 60
+  hS : S.toNat + 8 * w ≤ 2 ^ 64
+  rd : ∀ i < w, InRegions (s.rd ++ s.wr) (off S (8 * i)) 8
+  sep : ∀ x, ofs S x < 8 * w → Zs ≤ ofs BX x
+  r26 : s.gpr .r26 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0)
+  val : b = true → wv s.mem S 0 w = 2 ^ (128 * w) % Pv
+  three : b = false → Pv = 3
+
+/-- The source's address, from the header. -/
+theorem r2Src_ok {q : Bool} {s : State} {BX : Addr} {Zs pL : Nat} (hX : Scr s BX Zs) (hZ : 256 ≤ Zs)
+    (h23 : s.gpr .r23 = BX) (hpl : q = true → word s.mem BX oPLen = BitVec.ofNat 64 pL) (hp1 : 1 ≤ pL)
+    (hp2 : pL < 2 ^ 60) :
+    WP isa (.block (r2Src q)) s fun t =>
+      (t.gpr .r15 = word s.mem BX oR2 + BitVec.ofNat 64 (if q then 8 * wsWords pL else 0) ∧ t.mem = s.mem) ∧
+        Keep [.r0, .r3, .r4, .r15] s t := by
+  cases q
+  · refine WP.keep _ ?_ (by decide)
+    simp only [r2Src, Bool.false_eq_true, ↓reduceIte, BitVec.add_zero]
+    prun [h23, oR2, hX.ld (show 88 + 8 ≤ Zs by omega_arith)]
+  · simp only [r2Src, ↓reduceIte]
+    rw [List.append_assoc, WP.block_append_iff]
+    refine WP.mono (WP.keep [.r3] (Q := fun t => t.gpr .r3 = BitVec.ofNat 64 pL ∧ t.mem = s.mem) (by
+      have hpl' : s.mem.readW (off BX 40) 64 = BitVec.ofNat 64 pL := hpl rfl
+      prun [h23, oPLen, hX.ld (show 40 + 8 ≤ Zs by omega_arith), hpl']) rfl) fun s₁ ⟨⟨a3, m1⟩, k1⟩ => ?_
+    rw [WP.block_append_iff]
+    refine WP.mono (words_ok a3 hp1 hp2) fun s₂ ⟨⟨a4, m2⟩, k2⟩ => ?_
+    refine WP.mono (WP.keep [.r4, .r15] (Q := fun t => t.gpr .r15 =
+        word s.mem BX oR2 + BitVec.ofNat 64 (8 * wsWords pL) ∧ t.mem = s.mem) (by
+      prun [(k2.gpr .r23 (by decide)).trans ((k1.gpr .r23 (by decide)).trans h23), a4,
+        oR2, (hX.congr ((k1.trans k2).wr)).ld (show 88 + 8 ≤ Zs by omega_arith), m2, m1]
+      congr 1
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+      have : wsWords pL < 2 ^ 58 := by unfold wsWords; omega_arith
+      rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith) rfl) fun t ⟨⟨t15, tm⟩, k3⟩ => ⟨⟨by simpa using t15, tm⟩, ((k1.trans k2).trans k3).mono⟩
+
+/-- `r2Step pc q`: `R² mod p` into array 1, as `Pre.r2Prime_ok` gives it,
+with `pc` from the cached values (`R2C`). -/
+theorem r2Step_ok {pc q : Bool} {s : State} {BX B : Addr} {Z Zs w : Nat} (hX : Scr s BX Zs) (hZs : 256 ≤ Zs)
+    (hs : Scr s B Z) (hsepB : ∀ S : Addr, (∀ x, ofs S x < 8 * w → Zs ≤ ofs BX x) →
+      ∀ x, ofs S x < 8 * w → Z ≤ ofs B x)
+    (h8 : s.gpr .r8 = off B (slot w 2)) (h9 : s.gpr .r9 = off B (slot w 3))
+    (h10 : s.gpr .r10 = off B (slot w 0)) (h5 : s.gpr .r5 = off B (slot w 1))
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (h23 : s.gpr .r23 = BX)
+    (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
+    (hZ : slot w 8 ≤ Z) (h12 : (s.gpr .r12).toNat < 2 ^ 32)
+    (hinv : (w32 s.mem B (slot w 0) * (s.gpr .r12).toNat + 1) % 2 ^ 32 = 0)
+    (hN : 2 ≤ val32 s.mem B (slot w 0) (2 * w)) (hodd : val32 s.mem B (slot w 0) (2 * w) % 2 = 1)
+    (hC : pc = true → ∃ S pL b, R2C q s BX S Zs w (val32 s.mem B (slot w 0) (2 * w)) pL b) :
+    WP isa (r2Step pc q) s fun t =>
+      val32 t.mem B (slot w 1) (2 * w) = 2 ^ (128 * w) % val32 s.mem B (slot w 0) (2 * w) ∧
+      Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem ∧ Keep Pre.r2PrimeRegs s t := by
+  cases pc
+  · exact Pre.r2Prime_ok hs h8 h9 h10 h5 h11 hw hw' hZ h12 hinv hN hodd
+  obtain ⟨S, pL, b, C⟩ := hC rfl
+  have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
+  have e1 := e 1; have e2 := e 2; have e8 := e 8
+  have hh : hdrBytes = 256 := rfl
+  refine WP.seq (WP.mono (r2Src_ok hX hZs h23 C.pl C.pl1 C.pl2) fun s₁ ⟨⟨a15, m1⟩, k1⟩ => ?_)
+  rw [← C.src] at a15
+  refine WP.mono (r2Copy_ok (b := b) (hs.congr k1.wr) C.hS (fun i hi => by rw [k1.rd, k1.wr]; exact C.rd i hi)
+    (hsepB S C.sep) (by rw [a15]; simp [off]) ((k1.gpr _ (by decide)).trans h10)
+    ((k1.gpr _ (by decide)).trans h29) ((k1.gpr _ (by decide)).trans h11)
+    ((k1.gpr _ (by decide)).trans C.r26) (by omega_arith) hw' (by omega_arith)) fun t ⟨⟨tv, tout⟩, k2⟩ => ?_
+  rw [m1] at tv tout
+  refine ⟨?_, fun x hx => tout x (by
+    have ex : Mont.ofs B x = ofs B x := rfl
+    rw [ex] at hx; exact hx.imp id fun h => by omega_arith), (k1.trans k2).mono (by decide)⟩
+  rw [Pre.val32_eq_wv, tv]
+  cases b
+  · rw [C.three rfl, pow128_mod3]; rfl
+  · exact C.val rfl
 
 end VG.Proof.Bignum.PPC64LE.Crt
