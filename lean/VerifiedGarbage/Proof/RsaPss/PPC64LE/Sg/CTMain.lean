@@ -214,7 +214,7 @@ theorem mgf_ct {D : Nat} : RelCT isa (Two fun a t => MgfL D Z a t ∧ Ck D a) (m
     (fun _ _ ⟨a, h₁, h₂⟩ => ⟨⟨qD D a, qD_fit h₁.2⟩, a, h₁.1, h₂.1⟩) fun _ _ h => h
 
 include hH cH hGl hG cG hGmh hGml hGmv in
-theorem main_ct : RelCT isa (Two (M Gs.len Z)) (signMain Z.H Z.f Z.g) pc fun _ _ => True := by
+theorem main_ct : RelCT isa (Two (M Gs.len Z)) (signMain Z.H Z.f Z.g pc) fun _ _ => True := by
   have hD0 : 0 < Gs.len := hGl ▸ hH.hD0
   have hD64 : Gs.len ≤ 64 := hGl ▸ hH.hD64
   have hE : oEm = 0 := rfl

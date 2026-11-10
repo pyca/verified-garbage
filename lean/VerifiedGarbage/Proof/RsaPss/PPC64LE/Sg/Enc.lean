@@ -52,8 +52,8 @@ include P hH hGl hG Tg hGmh hGml hGmv T
 theorem signEnc_ok (hGh : ∀ x, Gs.hash x = hH.SH.H.hash x) {t : State} (E : Entered s t) (sy : t.syms = s.syms)
     (h0 : s.mem (s.gpr .r5) ≠ 0) (hfit : Gs.len + (stackArg s 11).toNat + 2 ≤ kk s - loN s) {Q : State → Prop}
     (k : ∀ t', Base Ss vS s t' → t'.syms = s.syms → Spec.Rsa.bytesAt t'.mem (off (Ss s) oEm) (kk s) = encEm Gs Gm s →
-      WP isa priv pc t' Q) :
-    WP isa (signMain H f g) pc t Q := by
+      WP isa (priv pc) t' Q) :
+    WP isa (signMain H f g pc) t Q := by
   have F := fits P
   have hD0 : 0 < Gs.len := hGl ▸ hH.hD0
   have hD64 : Gs.len ≤ 64 := hGl ▸ hH.hD64
