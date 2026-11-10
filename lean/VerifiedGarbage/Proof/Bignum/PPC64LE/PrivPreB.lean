@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCopy
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtExport
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -31,6 +32,10 @@ namespace VG.Proof.Bignum.PPC64LE.PrivPre
 open VG VG.PPC64LE VG.Proof.Mont VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Bignum.PPC64LE.Crt
 open VG.Proof.Bignum.PPC64LE VG.Proof.Bignum.PPC64LE.Crt
 
+/-- The registers `prime`'s head writes. -/
+def primeRegs : List Reg :=
+  [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22, .r24]
+
 /-- `prime`'s head: `power`'s, without its input. -/
 theorem primeA_ok {s : State} {BX : Addr} {Z oA wA wX xj Pv : Nat} {c : Prog isa}
     {Q : State → Prop}
@@ -46,7 +51,7 @@ theorem primeA_ok {s : State} {BX : Addr} {Z oA wA wX xj Pv : Nat} {c : Prog isa
       (t.gpr .r12).toNat < 2 ^ 32 → (w32 t.mem (off BX oA) (slot wA 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 →
       Outside BX oA (slot wA 24) s.mem t.mem → t.gpr .r10 = off (off BX oA) (slot wA 0) →
       t.gpr .r29 = BitVec.ofNat 64 (8 * (wA + 2)) → t.gpr .r11 = BitVec.ofNat 64 (2 * wA) →
-      Keep (.r10 :: Crt.powerRegs) s t → WP isa c t Q) :
+      Keep primeRegs s t → WP isa c t Q) :
     WP isa (.seq (.block (([.addi .r14 .r10 0] : List Instr) ++ xb .r15 xj)) (.seq copyN
       (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
         PublicChecked.base .r9 3)) (.seq Precompute.r2Prime c)))) s Q := by
@@ -134,7 +139,7 @@ theorem phasePrime_ok {s : State} {BX : Addr} {Z oA wX xj L Pv oB oLen : Nat} {c
       Outside BX oA (slot (wsWords L) 24) s.mem t.mem →
       t.gpr .r10 = off (off BX oA) (slot (wsWords L) 0) → t.gpr .r11 = BitVec.ofNat 64 (2 * wsWords L) →
       t.gpr .r29 = BitVec.ofNat 64 (8 * (wsWords L + 2)) →
-      Keep (([.r0, .r3, .r4, .r10, .r11, .r21, .r29] : List Reg) ++ (.r10 :: Crt.powerRegs)) s t → WP isa c t Q) :
+      Keep (([.r0, .r3, .r4, .r10, .r11, .r21, .r29] : List Reg) ++ primeRegs) s t → WP isa c t Q) :
     WP isa (.seq (.block (setupP oB oLen)) (.seq (.block (([.addi .r14 .r10 0] : List Instr) ++
       xb .r15 xj)) (.seq copyN (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++
       PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3)) (.seq Precompute.r2Prime c))))) s Q := by
@@ -207,5 +212,82 @@ theorem maskLoop_ok {s : State} {B P : Addr} {Z L d o w : Nat} {b : Bool} (hs : 
   · rw [lm]
     exact (jout.mono (Nat.le_refl _) (by omega_arith)).trans
       ((writeW_outside _ P (d := o + 8 * i) _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
+
+/-- An address not in the region at `B + o` of `n` bytes is outside those
+offsets. -/
+theorem out_of_not {B y : Addr} {o n : Nat} (h : ¬ (⟨off B o, n⟩ : Region).Contains y 1) (ho : o < 2 ^ 64) :
+    ofs B y < o ∨ o + n ≤ ofs B y := by
+  simp only [Region.Contains, off] at h
+  simp only [ofs]
+  have h1 := (y - B).isLt
+  have e1 : (y - B).toNat = (2 ^ 64 - B.toNat + y.toNat) % 2 ^ 64 := BitVec.toNat_sub _ _
+  have e2 : (y - (B + BitVec.ofNat 64 o)).toNat = (2 ^ 64 - (B.toNat + o) % 2 ^ 64 + y.toNat) % 2 ^ 64 := by
+    rw [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show o < 2 ^ 64 from ho)]
+  rw [e2] at h
+  rw [e1]
+  have := B.isLt; have := y.isLt
+  omega_arith
+
+/-- The words of `prime`'s result: `R² mod p`'s, or zeros. -/
+abbrev r2Word (b : Bool) (w Pv i : Nat) : BitVec 64 :=
+  if b then BitVec.ofNat 64 (2 ^ (128 * w) % Pv / 2 ^ (64 * i)) else 0
+
+/-- The registers `prime` writes. -/
+def primeAllRegs : List Reg := primeRegs ++ [.r0, .r15, .r17, .r30]
+
+/-- `prime xj`: for the factor `Pv` in `X`'s array `xj`, its working space
+at `off BX oA` (set up), the mask of `b` in `r26`: `R² mod Pv`'s `w_A` words,
+or zeros, to `pre` at `P + o` (`r30`), which is advanced past them; only
+those words and the working space changed. -/
+theorem prime_ok {s : State} {BX P : Addr} {Z L oA wA wX xj Pv o : Nat} {b : Bool}
+    (hs : Scr s BX Z) (hp : Scr s P L) (hsep : ∀ x, ofs P x < L → Z ≤ ofs BX x)
+    (hA : oA + slot wA 24 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wA) (hw' : wA < 2 ^ 31)
+    (hwx : wA ≤ wX) (hxj : xj < 8)
+    (h10 : s.gpr .r10 = off (off BX oA) (slot wA 0))
+    (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wA + 2)))
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wA))
+    (h27 : s.gpr .r27 = off BX (slot wX 0)) (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))
+    (h30 : s.gpr .r30 = off P o) (h26 : s.gpr .r26 = Crt.bmask b) (ho : o + 8 * wA ≤ L)
+    (hP : wv s.mem BX (slot wX xj) wA = Pv) (hP2 : 2 ≤ Pv) (hPodd : Pv % 2 = 1) :
+    WP isa (PrivPre.prime xj) s fun t =>
+      ((∀ i < wA, word t.mem P (o + 8 * i) = r2Word b wA Pv i) ∧ t.gpr .r30 = off P (o + 8 * wA) ∧
+        Frame [⟨off P o, 8 * wA⟩, ⟨off BX oA, slot wA 24⟩] s.mem t.mem) ∧
+      Keep primeAllRegs s t := by
+  have hnB := hs.nowrap
+  have hnP := hp.nowrap
+  have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
+  have hh : hdrBytes = 256 := rfl
+  have eA1 := e wA 1; have eA24 := e wA 24
+  unfold PrivPre.prime
+  refine primeA_ok hs hA hXA hw2 hw' hwx hxj h10 h29 h11 h27 h28 hP hP2 hPodd
+    fun t _ h1 _ _ out t10 t29 t11 kt => ?_
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (Pub.base_ok (rd := .r15) (by decide) (by decide) t10 t29 1) fun u ⟨⟨u15, um⟩, uk⟩ => ?_
+  refine WP.mono (WP.keep [.r17] (Q := fun v => v.gpr .r17 = BitVec.ofNat 64 wA ∧ v.mem = u.mem ∧
+      v.gpr .r15 = u.gpr .r15) (by
+        prun [(uk.gpr _ (by decide)).trans t11, mont_ofNat_shr1 (show wA < 2 ^ 63 by omega_arith)]) rfl)
+    fun v ⟨⟨v17, vm, v15⟩, vk⟩ => ?_
+  have kv := (kt.trans uk).trans vk
+  have hm : v.mem = t.mem := vm.trans um
+  refine WP.mono (maskLoop_ok (b := b) (d := oA + slot wA 1) (o := o) (w := wA) (hs.congr kv.wr) (hp.congr kv.wr) hsep
+    (by rw [v15, u15, off_off]) (by rw [kv.gpr _ (by decide)]; exact h30) v17
+    (by rw [kv.gpr _ (by decide)]; exact h26) (by omega_arith) hw' (by omega_arith) ho)
+    fun x ⟨⟨xw, x30, xo⟩, xk⟩ => ⟨⟨fun i hi => ?_, x30, fun y hy => ?_⟩, (kv.trans xk).mono (by decide)⟩
+  · rw [xw i hi, hm]
+    unfold r2Word
+    split
+    · apply BitVec.eq_of_toNat_eq
+      have hw := word_of_wv t.mem (off BX oA) (slot wA 1) wA hi
+      rw [← Pre.val32_eq_wv, h1] at hw
+      rw [show oA + slot wA 1 + 8 * i = oA + (slot wA 1 + 8 * i) by omega_arith,
+        show word t.mem BX (oA + (slot wA 1 + 8 * i)) = word t.mem (off BX oA) (slot wA 1 + 8 * i) by
+          simp only [word]; rw [off_off], BitVec.toNat_ofNat]
+      exact hw
+    · rfl
+  · have y1 := out_of_not (hy _ (List.mem_cons_self ..)) (by omega_arith)
+    have y2 := out_of_not (hy _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))) (by omega_arith)
+    rw [xo y y1, hm, out y y2]
+
 
 end VG.Proof.Bignum.PPC64LE.PrivPre
