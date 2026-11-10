@@ -42,6 +42,25 @@ theorem pub_dataP {s₁ s₂ : State} (h : (Proof.Rsa.privateCheckedPrecomputedC
   simp only [argRegs, List.map_cons, List.map_nil, stackArgs_fourteen, h3, h4, h5, h6, h7, h8, h9, h10, a0,
     a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, hsp]
 
+/-- The public data, from its facts. -/
+theorem pub_ofP {s₁ s₂ : State} (hsp : s₁.sp = s₂.sp) (hr : ∀ r ∈ argRegs, s₁.gpr r = s₂.gpr r)
+    (ha : ∀ i < 14, stackArg s₁ i = stackArg s₂ i)
+    (hn : Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r5) (s₁.gpr .r6).toNat = Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r5) (s₂.gpr .r6).toNat)
+    (he : Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r7) (s₁.gpr .r8).toNat = Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r7) (s₂.gpr .r8).toNat)
+    (hp : Spec.Rsa.privatePrecomputedLeak s₁.mem (stackArg s₁ 12) (s₁.gpr .r6).toNat =
+      Spec.Rsa.privatePrecomputedLeak s₂.mem (stackArg s₂ 12) (s₂.gpr .r6).toNat) :
+    (Proof.Rsa.privateCheckedPrecomputedContract abi frameBytes).pub s₁ s₂ := by
+  have e : frameBytes = 3327 + 1 := rfl
+  rw [e]
+  sig_pub [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
+    Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_fourteen, List.append_eq]
+  simp only [List.getD_cons_succ, List.getD_cons_zero]
+  exact ⟨hsp, by rw [hn, he, hp], hr .r3 (by decide), hr .r4 (by decide), hr .r5 (by decide), hr .r6 (by decide),
+    hr .r7 (by decide), hr .r8 (by decide), hr .r9 (by decide), hr .r10 (by decide), ha 0 (by decide),
+    ha 1 (by decide), ha 2 (by decide), ha 3 (by decide), ha 4 (by decide), ha 5 (by decide), ha 6 (by decide),
+    ha 7 (by decide), ha 8 (by decide), ha 9 (by decide), ha 10 (by decide), ha 11 (by decide), ha 12 (by decide),
+    ha 13 (by decide)⟩
+
 theorem same_ofP {s₁ s₂ : State} (h : dataOfP s₁ = dataOfP s₂) : Same true s₁ s₂ := by
   simp only [dataOfP, Prod.mk.injEq] at h
   obtain ⟨hr, ha, hb, hsp⟩ := h
