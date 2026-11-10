@@ -236,10 +236,9 @@ theorem body_rel : RelCT isa (Two Φ1) body fun _ _ => True := by
     e ▸ WP.mono (setup_ok (preP_of φ.1)) fun v A => ⟨s, φ, A⟩) ?_
   refine RelCT.seq (two_post (Ψ := Ψ2) crt_rel fun d u ⟨s, φ, A⟩ =>
     crtCall_ok (preP_of φ.1) A fun v M C => ⟨s, φ, M, C⟩) ?_
-  refine RelCT.seq (two_post (Ψ := Ψ3) (preArgs_taint Ψ2) fun d u ⟨s, φ, M, C⟩ =>
-    WP.mono (preArgs_ok (preP_of φ.1) M C) fun v A => ⟨s, φ, A⟩) ?_
-  refine RelCT.seq (two_post (Ψ := Ψ4) pre_rel fun d u ⟨s, φ, A⟩ =>
-    preCall_ok (preP_of φ.1) A fun v B => ⟨s, φ, B⟩) ?_
+  refine RelCT.seq (RelCT.seq (two_post (Ψ := Ψ3) (preArgs_taint Ψ2) fun d u ⟨s, φ, M, C⟩ =>
+    WP.mono (preArgs_ok (preP_of φ.1) M C) fun v A => ⟨s, φ, A⟩) (two_post (Ψ := Ψ4) pre_rel
+      fun d u ⟨s, φ, A⟩ => preCall_ok (preP_of φ.1) A fun v B => ⟨s, φ, B⟩)) ?_
   refine RelCT.seq (two_post (Ψ := Ψ5) (pubArgs_taint Ψ4) fun d u ⟨s, φ, A⟩ =>
     WP.mono (pubArgs_ok (preP_of φ.1) A) fun v B => ⟨s, φ, B⟩) ?_
   refine RelCT.seq (two_post (Ψ := Ψ6) pub_rel fun d u ⟨s, φ, A⟩ =>

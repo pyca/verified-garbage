@@ -50,8 +50,7 @@ theorem code_correct (s : State) (hpre : (Proof.Rsa.privateCheckedContract abi f
   unfold body
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
   refine WP.seq (crtCall_ok h A fun t₂ M C => ?_)
-  refine WP.seq (WP.mono (preArgs_ok h M C) fun t₃ P => ?_)
-  refine WP.seq (preCall_ok h P fun t₄ Q4 => ?_)
+  refine WP.seq (WP.seq (WP.mono (preArgs_ok h M C) fun t₃ P => preCall_ok h P fun t₄ Q4 => ?_))
   refine WP.seq (WP.mono (pubArgs_ok h Q4) fun t₅ R => ?_)
   refine WP.seq (pubCall_ok h R fun t₆ C6 => ?_)
   refine WP.seq (WP.mono (cmpArgs_ok h C6) fun t₇ L => ?_)
