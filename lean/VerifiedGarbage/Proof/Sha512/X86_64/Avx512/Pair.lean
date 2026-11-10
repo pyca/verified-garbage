@@ -202,4 +202,77 @@ theorem exec_kSlot2 (s : State) {j : Nat} (i : Nat) (h9 : s.gpr .r9 = idx2 j)
   simp only [X86_64.exec, e, e', show (kSlot i).base = .rax from rfl, hb, Nat.mul_mod_right,
     Nat.mul_div_right (4 * (8 * j + i)) (by decide : 0 < 8), hl, and_self, ↓reduceIte, g0, g1, g2, g3]
 
+/-! ## Two rounds from their words -/
+
+/-- The round constants of step `i` of iteration `j`, added to its words. -/
+theorem kw_ok (s : State) {j : Nat} (i : Nat) (h9 : s.gpr .r9 = idx2 j) (hb : s.gpr .rax = s.syms kSym)
+    (hn : 8 * j + i < 40) (a₀ a₁ b₀ b₁ : Word) (ha : s.xmm w0 = a₁ ++ a₀) (hbb : s.ymmHi w0 = b₁ ++ b₀) :
+    WP isa (.block [.vmovdquTbl w1 (kSlot i) kSym Ks2, .vop (.vbin .vpaddq .l256 w0 w0 w1),
+      .vop (.vextracti128 w1 w0 1)]) s fun s' =>
+      s'.xmm w0 = (a₁ + K (16 * j + 2 * i)) ++ (a₀ + K (16 * j + 2 * i)) ∧
+      s'.xmm w1 = (b₁ + K (16 * j + 2 * i + 1)) ++ (b₀ + K (16 * j + 2 * i + 1)) ∧
+      (∀ r, r ≠ w0 → r ≠ w1 → s'.xmm r = s.xmm r ∧ s'.ymmHi r = s.ymmHi r) ∧
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  apply WP.of_runBlock
+  rw [runBlock_cons, exec_kSlot2 s i h9 hb hn]
+  simp only [w0] at ha hbb
+  simp only [w0, w1, reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
+    reduceVOpExec, isa, RegUpd.xmm_setV, RegUpd.ymmHi_setV_256, RegUpd.ymmHi_setV_128, RegUpd.gpr_setV,
+    RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV, State.lane, ha, hbb, Option.some.injEq,
+    exists_eq_left', paddq_eq, reduceVBinOpSse, show (1 : BitVec 8).getLsbD 0 = true from rfl]
+  exact ⟨trivial, trivial, fun r h0 h1 => by simp [h0, h1], trivial, trivial, trivial, trivial⟩
+
+theorem sv_add16 (j t k : Nat) : sv (16 * j + t) k = sv t k := by
+  simp only [sv]; congr 1; omega
+
+theorem vars2_add16 (j t : Nat) (s : State) (v₀ v₁ : HashValue) : Vars2 (16 * j + t) s v₀ v₁ ↔ Vars2 t s v₀ v₁ := by
+  simp only [Vars2, sv_add16]
+
+/-- A working variable's register is neither `w0` nor `w1`. -/
+theorem sv_ne (t k : Nat) : sv t k ≠ w0 ∧ sv t k ≠ w1 := by
+  simp only [sv]
+  have h8 := Nat.mod_lt (k + 8 - t % 8) (show 8 > 0 by omega)
+  generalize (k + 8 - t % 8) % 8 = c at *
+  revert h8; revert c; decide
+
+/-- The working variables, when their registers are kept. -/
+theorem Vars2.of_xmm {t : Nat} {s s' : State} {v₀ v₁ : HashValue} (h : Vars2 t s v₀ v₁)
+    (hx : ∀ r, r ≠ w0 → r ≠ w1 → s'.xmm r = s.xmm r) : Vars2 t s' v₀ v₁ := by
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := h
+  exact ⟨(hx _ (sv_ne t 0).1 (sv_ne t 0).2).trans h0, (hx _ (sv_ne t 1).1 (sv_ne t 1).2).trans h1,
+    (hx _ (sv_ne t 2).1 (sv_ne t 2).2).trans h2, (hx _ (sv_ne t 3).1 (sv_ne t 3).2).trans h3,
+    (hx _ (sv_ne t 4).1 (sv_ne t 4).2).trans h4, (hx _ (sv_ne t 5).1 (sv_ne t 5).2).trans h5,
+    (hx _ (sv_ne t 6).1 (sv_ne t 6).2).trans h6, (hx _ (sv_ne t 7).1 (sv_ne t 7).2).trans h7⟩
+
+/-- What the steps keep: the pointers and the index, the memory, and the
+`pshufb` mask. -/
+def Kept (s s' : State) : Prop :=
+  s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+    s'.xmm mB = s.xmm mB ∧ s'.ymmHi mB = s.ymmHi mB
+
+/-- Rounds `t` and `t + 1` (`t = 16 j + 2 i`) of both, from their words in `w0`. -/
+theorem rounds2_ok (s : State) {j : Nat} (i : Nat) (hn : 8 * j + i < 40) (H₀ H₁ : HashValue) (M₀ M₁ : Block)
+    (h9 : s.gpr .r9 = idx2 j) (hb : s.gpr .rax = s.syms kSym)
+    (hv : Vars2 (2 * i) s (Spec.Sha512.rounds H₀ M₀ (16 * j + 2 * i)) (Spec.Sha512.rounds H₁ M₁ (16 * j + 2 * i)))
+    (ha : s.xmm w0 = W M₁ (16 * j + 2 * i) ++ W M₀ (16 * j + 2 * i))
+    (hbb : s.ymmHi w0 = W M₁ (16 * j + 2 * i + 1) ++ W M₀ (16 * j + 2 * i + 1)) :
+    WP isa (.block (rounds2 i)) s fun s' =>
+      Vars2 (2 * i + 2) s' (Spec.Sha512.rounds H₀ M₀ (16 * j + 2 * i + 2))
+        (Spec.Sha512.rounds H₁ M₁ (16 * j + 2 * i + 2)) ∧ Kept s s' := by
+  rw [rounds2, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (kw_ok s i h9 hb hn _ _ _ _ ha hbb) fun s₁ ⟨x0, x1, hx, hg, hm, hrd, hwr⟩ => ?_
+  have hv₁ := hv.of_xmm fun r a b => (hx r a b).1
+  refine WP.mono (round2_ok (2 * i) w0 (.inl rfl) s₁ _ _ (K (16 * j + 2 * i)) _ _ hv₁ x0) fun s₂ ⟨hv₂, k₂⟩ => ?_
+  rw [← round_eq, ← round_eq, ← rounds_succ, ← rounds_succ] at hv₂
+  refine WP.mono (round2_ok (2 * i + 1) w1 (.inr rfl) s₂ _ _ (K (16 * j + 2 * i + 1))
+    (W M₀ (16 * j + 2 * i + 1)) (W M₁ (16 * j + 2 * i + 1)) hv₂
+    (by rw [(k₂.2.2.2.2 w1 (.inr (.inl rfl))).1]; exact x1)) fun s₃ ⟨hv₃, k₃⟩ => ?_
+  rw [← round_eq, ← round_eq, ← rounds_succ, ← rounds_succ] at hv₃
+  have m1 := hx mB (by decide) (by decide)
+  have m2 := k₂.2.2.2.2 mB (.inr (.inr rfl))
+  have m3 := k₃.2.2.2.2 mB (.inr (.inr rfl))
+  exact ⟨hv₃, k₃.2.2.2.1.trans (k₂.2.2.2.1.trans hg), k₃.1.trans (k₂.1.trans hm),
+    k₃.2.1.trans (k₂.2.1.trans hrd), k₃.2.2.1.trans (k₂.2.2.1.trans hwr),
+    m3.1.trans (m2.1.trans m1.1), m3.2.trans (m2.2.trans m1.2)⟩
+
 end VG.Proof.Sha512.X86_64.Avx512
