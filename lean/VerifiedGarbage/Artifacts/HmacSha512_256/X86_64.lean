@@ -37,8 +37,16 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.HmacSha512_256.X86_64
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.MdHash.X86_64.sha512_256Variants.flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
-    v.I.initAnyKeyApi.artifact X86_64.target v.hmacInitReg ::
-      (if v.initOnly then [] else [v.I.finalizeApi.artifact X86_64.target v.hmacFinReg])
+  (VG.Proof.Variants.MdHash.X86_64.sha512_256Inits.map fun v =>
+    Spec.Hmac.sha512_256I.initAnyKeyApi.artifact X86_64.target {
+      suffix := v.suffix
+      extra := v.extra
+      code := v.code
+      stack := 24 + Proof.Pbkdf2.Md.X86_64.anyFrame Spec.Hmac.sha512_256I
+      verified := v.verified
+      spSafe := v.spSafe
+      residue := v.residue }) ++
+  (VG.Proof.Variants.MdHash.X86_64.sha512_256Variants.map fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
+    v.I.finalizeApi.artifact X86_64.target v.hmacFinReg)
 
 end VG.Artifacts.HmacSha512_256.X86_64

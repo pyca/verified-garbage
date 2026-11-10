@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256ShaNi
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha512
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512ShaNi
+public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512Avx512
 
 /-! # The implementations of `MdHash` on x86-64 -/
 
@@ -45,26 +46,12 @@ def sha384 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha51
 def sha384Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha384 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream384 .avx2)
 
-/-- SHA-384 with AVX2's functions, but HMAC's `init`, which compresses its two
-padded keys at once with AVX-512VL (`vg_sha512_compress2_avx512`) and clears
-what it leaves; chosen with AVX512_FP16 (`MdHash.extra`). -/
-def sha384Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { Proof.Pbkdf2.Md.X86_64.Sha512.sha384 .avx512 with
-    initScrub := true, initOnly := true, extra := ["avx512fp16"] }
-
 def sha384ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant384
 
 def sha512 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant512
 
 def sha512Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream .avx2)
-
-/-- SHA-512 with AVX2's functions, but HMAC's `init`, which compresses its two
-padded keys at once with AVX-512VL (`vg_sha512_compress2_avx512`) and clears
-what it leaves; chosen with AVX512_FP16 (`MdHash.extra`). -/
-def sha512Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { Proof.Pbkdf2.Md.X86_64.Sha512.sha512 .avx512 with
-    initScrub := true, initOnly := true, extra := ["avx512fp16"] }
 
 def sha512ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512
 
@@ -73,26 +60,12 @@ def sha512_224 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.S
 def sha512_224Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream512_224 .avx2)
 
-/-- SHA-512/224 with AVX2's functions, but HMAC's `init`, which compresses its two
-padded keys at once with AVX-512VL (`vg_sha512_compress2_avx512`) and clears
-what it leaves; chosen with AVX512_FP16 (`MdHash.extra`). -/
-def sha512_224Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .avx512 with
-    initScrub := true, initOnly := true, extra := ["avx512fp16"] }
-
 def sha512_224ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512_224
 
 def sha512_256 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant512_256
 
 def sha512_256Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream512_256 .avx2)
-
-/-- SHA-512/256 with AVX2's functions, but HMAC's `init`, which compresses its two
-padded keys at once with AVX-512VL (`vg_sha512_compress2_avx512`) and clears
-what it leaves; chosen with AVX512_FP16 (`MdHash.extra`). -/
-def sha512_256Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 .avx512 with
-    initScrub := true, initOnly := true, extra := ["avx512fp16"] }
 
 def sha512_256ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512_256
 
@@ -109,26 +82,42 @@ def sha224Variants := [sha224ShaNi, sha224Avx2, sha224]
 def sha256Variants := [sha256ShaNi, sha256Avx2, sha256]
 
 /-- The implementations of SHA-384, best first. -/
-def sha384Variants := [sha384ShaNi, sha384Avx512, sha384Avx2, sha384]
+def sha384Variants := [sha384ShaNi, sha384Avx2, sha384]
 
 /-- The implementations of SHA-512, best first. -/
-def sha512Variants := [sha512ShaNi, sha512Avx512, sha512Avx2, sha512]
+def sha512Variants := [sha512ShaNi, sha512Avx2, sha512]
 
 /-- The implementations of SHA-512/224, best first. -/
-def sha512_224Variants := [sha512_224ShaNi, sha512_224Avx512, sha512_224Avx2, sha512_224]
+def sha512_224Variants := [sha512_224ShaNi, sha512_224Avx2, sha512_224]
 
 /-- The implementations of SHA-512/256, best first. -/
-def sha512_256Variants := [sha512_256ShaNi, sha512_256Avx512, sha512_256Avx2, sha512_256]
+def sha512_256Variants := [sha512_256ShaNi, sha512_256Avx2, sha512_256]
 
-/-- Every implementation, best first, but those that differ from the next
-only in HMAC's `init` (`MdHash.initOnly`), whose other functions are the
-next one's: each function generic over them is emitted with each (the
-registration files that import this), a function that takes the hash
-functions or HMAC through a table takes them all, and its dispatcher tries
-them in this order. HMAC's own registration files take each hash function's
-list above, with those. -/
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants :=
-  (md5Variants ++ sha1Variants ++ sha224Variants ++ sha256Variants ++ sha384Variants ++
-    sha512Variants ++ sha512_224Variants ++ sha512_256Variants).filter fun v => !v.initOnly
+  md5Variants ++ sha1Variants ++ sha224Variants ++ sha256Variants ++ sha384Variants ++
+    sha512Variants ++ sha512_224Variants ++ sha512_256Variants
+
+/-! ## HMAC's `init`
+
+The implementations of `vg_hmac_<hash>_init` over the SHA-512 family, best
+first: each variant's above, and one more, AVX2's with its two padded keys
+compressed at once with AVX-512VL (`Sha512Avx512`). -/
+
+open Proof.Pbkdf2.Md.X86_64 (InitImpl)
+
+def sha384Inits : List (InitImpl Spec.Hmac.sha384I) :=
+  [sha384ShaNi.init, Sha512Avx512.init384, sha384Avx2.init, sha384.init]
+
+def sha512Inits : List (InitImpl Spec.Hmac.sha512I) :=
+  [sha512ShaNi.init, Sha512Avx512.init512, sha512Avx2.init, sha512.init]
+
+def sha512_224Inits : List (InitImpl Spec.Hmac.sha512_224I) :=
+  [sha512_224ShaNi.init, Sha512Avx512.init512_224, sha512_224Avx2.init, sha512_224.init]
+
+def sha512_256Inits : List (InitImpl Spec.Hmac.sha512_256I) :=
+  [sha512_256ShaNi.init, Sha512Avx512.init512_256, sha512_256Avx2.init, sha512_256.init]
 
 end VG.Proof.Variants.MdHash.X86_64
