@@ -1,4 +1,5 @@
 module
+-- separate module: correctness through the frame, apart from the timing proofs
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Post
 import VerifiedGarbage.Proof.Framework.Offset

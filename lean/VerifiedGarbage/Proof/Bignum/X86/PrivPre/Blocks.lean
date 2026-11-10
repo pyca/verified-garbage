@@ -1,4 +1,5 @@
 module
+-- separate module: the result and mask blocks, apart from the body's composition
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Body
 public import VerifiedGarbage.Proof.Mont.X86.Words

@@ -1,4 +1,5 @@
 module
+-- separate module: the timing and witness, apart from the instance the registration binds
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.WrapTime
 import VerifiedGarbage.Proof.Framework.Sig

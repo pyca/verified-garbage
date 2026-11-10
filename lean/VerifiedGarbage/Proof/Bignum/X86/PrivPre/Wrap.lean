@@ -1,4 +1,5 @@
 module
+-- separate module: the body's proof, apart from the arithmetic of its result
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.PrimesCall
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.CopyOut

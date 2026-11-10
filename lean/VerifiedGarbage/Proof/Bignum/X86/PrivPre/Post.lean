@@ -1,4 +1,5 @@
 module
+-- separate module: the arithmetic of the result, apart from the code's proofs
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Wrap
 import VerifiedGarbage.Proof.Bignum.Octets

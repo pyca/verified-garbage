@@ -1,4 +1,5 @@
 module
+-- separate module: the mask loop's proof, rebuilt only when it changes
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Body
 public import VerifiedGarbage.Spec.Rsa.Contract

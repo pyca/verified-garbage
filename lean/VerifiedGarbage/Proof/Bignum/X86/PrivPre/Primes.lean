@@ -1,4 +1,5 @@
 module
+-- separate module: primes' body, a long proof, apart from its entry and return
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Prime
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Validate
