@@ -41,11 +41,13 @@ abbrev crtEntry (s t : State) : State := t.callEntry.withRegions (crtRd s) (crtW
 too. -/
 abbrev crtEntryG (s u : State) (X : List Region) : State := u.callEntry.withRegions (crtRd s ++ X) (crtWr s)
 
-theorem crtEntryG_stackArg {s t u : State} (A : AtCrt s t) (hm : u.mem = t.mem) (hsp : u.sp = t.sp)
-    {X : List Region} {i : Nat} (hi : i < 10) : stackArg (crtEntryG s u X) i = stackArg s (2 + i) := by
+theorem crtEntryG_stackArg {s t u : State} (A : AtCrt s t)
+    (hpsa : ∀ i < 10, u.mem.readW (fb s + BitVec.ofNat 64 (96 + 8 * i)) 64 = stackArg s (2 + i))
+    (hsp : u.sp = t.sp) {X : List Region} {i : Nat} (hi : i < 10) :
+    stackArg (crtEntryG s u X) i = stackArg s (2 + i) := by
   show u.mem.readW (stackArgAddr (crtEntryG s u X) i) 64 = _
-  rw [stackArgAddr_in, show (crtEntryG s u X).sp = fb s from hsp.trans A.sp, hm]
-  exact A.psa i hi
+  rw [stackArgAddr_in, show (crtEntryG s u X).sp = fb s from hsp.trans A.sp]
+  exact hpsa i hi
 
 theorem crtEntry_stackArg {s t : State} (A : AtCrt s t) {i : Nat} (hi : i < 10) :
     stackArg (crtEntry s t) i = stackArg s (2 + i) := by
@@ -54,13 +56,15 @@ theorem crtEntry_stackArg {s t : State} (A : AtCrt s t) {i : Nat} (hi : i < 10) 
   exact A.psa i hi
 
 /-- `vg_rsa_private_crt`'s precondition but its regions, at the call from `u`
-(as `t` but for `r0` and `r12`), with the regions `X` read too. -/
-theorem crt_preG {s t u : State} (h : PreP pc s) (A : AtCrt s t) (k : Keep [.r0, .r12] t u)
-    (hm : u.mem = t.mem) (hsp : u.sp = t.sp) {X : List Region} :
+(with `t`'s arguments), with the regions `X` read too. -/
+theorem crt_preG {s t u : State} (h : PreP pc s) (A : AtCrt s t)
+    (k : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10], u.gpr r = t.gpr r)
+    (hpsa : ∀ i < 10, u.mem.readW (fb s + BitVec.ofNat 64 (96 + 8 * i)) 64 = stackArg s (2 + i))
+    (hsp : u.sp = t.sp) {X : List Region} :
     Proof.Bignum.PPC64LE.Crt.preCore (Proof.Bignum.PPC64LE.Crt.baseRd (crtEntryG s u X) ++ X) (crtEntryG s u X) := by
-  have g : ∀ r, r ∉ linkRegs → r ∉ [Reg.r0, .r12] → (crtEntryG s u X).gpr r = t.gpr r := fun r h1 h2 =>
-    (State.callEntry_gpr u h1).trans (k.gpr _ h2)
-  have sa := fun i hi => crtEntryG_stackArg A hm hsp (X := X) (i := i) hi
+  have g : ∀ r, r ∉ linkRegs → r ∈ [Reg.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10] →
+      (crtEntryG s u X).gpr r = t.gpr r := fun r h1 h2 => (State.callEntry_gpr u h1).trans (k r h2)
+  have sa := fun i hi => crtEntryG_stackArg A hpsa hsp (X := X) (i := i) hi
   have hsp' : (crtEntryG s u X).sp = fb s := hsp.trans A.sp
   have ha : stackArgAddr (crtEntryG s u X) 0 = fb s + BitVec.ofNat 64 96 := by rw [stackArgAddr_in, hsp']
   simp only [Proof.Bignum.PPC64LE.Crt.preCore,
@@ -86,7 +90,7 @@ theorem crt_preG {s t u : State} (h : PreP pc s) (A : AtCrt s t) (k : Keep [.r0,
 
 theorem crt_pre {s t : State} (h : PreP pc s) (A : AtCrt s t) :
     Proof.Bignum.PPC64LE.Crt.fnContract.pre (crtEntry s t) := by
-  have := crt_preG (X := []) h A (Keep.refl _ _) rfl rfl
+  have := crt_preG (X := []) h A (fun _ _ => rfl) A.psa rfl
   simp only [List.append_nil] at this
   exact this
 

@@ -35,8 +35,9 @@ The frame (`stdu r1, -frameBytes(r1)`) holds the Parameter Save Area of the
 calls (the ten stack arguments of `vg_rsa_private_crt`, at `r1 + 96`); our
 caller's `r24`–`r29` and our return address, which each call (`bl`)
 overwrites in the link register (`oSave`, `oLr`); the two statuses (`oSt`,
-`oEs`); `m`, of up to 1024 bytes (`oM`); and `n`'s values, of up to 256
-words (`oPre`). Our own stack arguments are then at
+`oEs`); `m`, of up to 1024 bytes (`oM`); `n`'s values, of up to 256
+words (`oPre`); and with the key's precomputed values, our caller's `r31`
+(`oR31`). Our own stack arguments are then at
 `r1 + frameBytes + 96 + 8 i` (`arg i`).
 -/
 
@@ -95,16 +96,25 @@ def crtArgs : List Instr :=
     .load .d .r10 .r12 (arg 1)] ++
   (List.range 10).flatMap argCopy
 
-/-- With the key's precomputed values `pre` (our stack argument 12):
-`r12 :=` the primes' values, after `n`'s `2 ⌈k / 8⌉` words. -/
+/-- Our caller's `r31`, with the key's precomputed values, while `r31`
+holds the primes' values for `vg_rsa_private_crt_precomputed`. -/
+def oR31 : Nat := 3320
+
+/-- With the key's precomputed values `pre` (our stack argument 12): our
+caller's `r31` into the frame, and `r31 :=` the primes' values, after `n`'s
+`2 ⌈k / 8⌉` words. -/
 def crtPtr : List Instr :=
-  [.load .d .r12 .r12 (arg 12), .addi .r0 .r26 7, .lsr .d .r0 .r0 3, .lsl .r0 .r0 4, .add .r12 .r12 .r0]
+  [.addSp .r12 0, .store .d .r31 .r12 oR31, .load .d .r31 .r12 (arg 12), .addi .r0 .r26 7, .lsr .d .r0 .r0 3,
+    .lsl .r0 .r0 4, .add .r31 .r31 .r0]
+
+/-- Our caller's `r31` back. -/
+def crtRestore : List Instr := [.addSp .r12 0, .load .d .r31 .r12 oR31]
 
 /-- `vg_rsa_private_crt`, or with `pc` `vg_rsa_private_crt_precomputed`
 given the primes' values. -/
 def crtStep : Bool → Prog isa
   | false => crtCall
-  | true => .seq (.block crtPtr) crtCallP
+  | true => .seq (.block crtPtr) (.seq crtCallP (.block crtRestore))
 
 /-- `r4 := 2 ⌈k / 8⌉`, the words of `n`'s values. -/
 def preLen : List Instr := [.addi .r4 .r26 7, .lsr .d .r4 .r4 3, .lsl .r4 .r4 1]

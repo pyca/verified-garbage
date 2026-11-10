@@ -94,7 +94,7 @@ theorem codeP_ct : ConstantTime isa (Proof.Rsa.privateCheckedPrecomputedContract
 /-- The contract, its postcondition on the registers and the stack. -/
 def fnContractP : Contract isa where
   pre := (Proof.Rsa.privateCheckedPrecomputedContract abi frameBytes).pre
-  post s t := PreHyp s → fnPost s t
+  post := fnPost
   pub := (Proof.Rsa.privateCheckedPrecomputedContract abi frameBytes).pub
 
 end VG.Proof.Rsa.PPC64LE.Priv
