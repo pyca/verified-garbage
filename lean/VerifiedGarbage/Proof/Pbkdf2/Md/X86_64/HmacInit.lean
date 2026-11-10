@@ -579,13 +579,52 @@ theorem mid_ok {s : State} (hk : KR H s₀ (inn s₀) s) :
     by rw [hm]; exact hk.saved, by rw [hm]; exact hk.ret, fun i hi => by rw [hm]; exact hk.key i hi⟩,
     by rw [u₃.gpr, u₂.gpr, u₁.other _ (by decide), hk.r12, sx_ofNat (by omega_using [hN])], hm⟩
 
+end
+
+/-- What `init` needs of `H.compBoth`, the code compressing the blocks of
+its two states: from the inner state at `rbx` with its block at `rsi`, both
+hash values are compressed with the blocks in their buffers, and what the
+prologue set up is kept (`rbx` may be either state); and it is constant
+time. -/
+structure BothOk (H : Hash) (hH : HashOK H) : Prop where
+  ok : ∀ {sc : Nat} {s₀ : State}, Pre H sc s₀ → ∀ {t : State}, KR H s₀ (inn s₀) t →
+    t.gpr .rsi = bufOf H (inn s₀) → ∀ {Q : State → Prop},
+    (∀ s' b, KR H s₀ b s' →
+      hH.md.stateAt s'.mem (inn s₀) =
+        hH.md.compress (hH.md.stateAt t.mem (inn s₀)) (hH.md.blockAt t.mem (bufOf H (inn s₀))) →
+      hH.md.stateAt s'.mem (out s₀) =
+        hH.md.compress (hH.md.stateAt t.mem (out s₀)) (hH.md.blockAt t.mem (bufOf H (out s₀))) →
+      Q s') → WP isa H.compBoth t Q
+  rel : ∀ {sc : Nat} {s₀ s₀' : State}, Pre H sc s₀ → Pre H sc s₀' → PubEq s₀ s₀' →
+    RelCT isa (fun s s' => (KR H s₀ (inn s₀) s ∧ s.gpr .rsi = bufOf H (inn s₀)) ∧
+        (KR H s₀' (inn s₀) s' ∧ s'.gpr .rsi = bufOf H (inn s₀)))
+      H.compBoth fun s s' => ∃ b, KR H s₀ b s ∧ KR H s₀' b s'
+
+section
+variable {sc : Nat} {s₀ : State} (hp : Pre H sc s₀)
+include hH hp
+
+/-- A hash value away from what was written is the same. -/
+theorem stateAt_keep {rs : List Region} {m m' : Mem} {p : Addr} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, H.P.N⟩ r) : hH.md.stateAt m' p = hH.md.stateAt m p := by
+  obtain ⟨-, -, hN, -⟩ := sizes hH hp
+  exact hH.md.stateAt_congr fun i hi =>
+    hf.bytes (R := ⟨_, H.P.N⟩) hd (by show H.P.N ≤ 2 ^ 64; omega_using [hN]) hi
+
+/-- A block away from what was written is the same. -/
+theorem blockAt_keep {rs : List Region} {m m' : Mem} {p : Addr} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, H.P.B⟩ r) : hH.md.blockAt m' p = hH.md.blockAt m p := by
+  obtain ⟨-, -, -, -, hB, -⟩ := sizes hH hp
+  exact hH.md.parse_congr fun k hk =>
+    hf.bytes (R := ⟨_, H.P.B⟩) hd (by show H.P.B ≤ 2 ^ 64; omega_using [hB]) hk
+
 /-! ## Correctness -/
 
 theorem blockKey_eq : blockKey hH.SH.H (bytesAt s₀.mem (kp s₀) (kl s₀)) = k0 H s₀ := by
   have := hp.kl_le
   simp only [blockKey, k0, K0, bytesAt_length, hH.hB, show ¬ (H.P.B < kl s₀) by omega_using [this], ↓reduceIte]
 
-theorem correct : WP isa H.hmacInit s₀ fun s' => gprPreserved s₀ s' ∧ (initG hH.SH sc).post s₀ s' := by
+theorem correct (hbo : BothOk H hH) : WP isa H.hmacInit s₀ fun s' => gprPreserved s₀ s' ∧ (initG hH.SH sc).post s₀ s' := by
   obtain ⟨-, -, hN, hB0, hB, -, -, hW, hL, -⟩ := sizes hH hp
   have hkl := hp.kl_le
   have si := stOk_in (H := H) hp
@@ -595,9 +634,7 @@ theorem correct : WP isa H.hmacInit s₀ fun s' => gprPreserved s₀ s' ∧ (ini
   refine WP.seq (callInit_ok hH hp k₁ (st := .rbx) k₁.rbx si fun s₂ k₂ f₂ r₂ => ?_)
   refine WP.seq (callInit_ok hH hp k₂ (st := .r12) k₂.r12 so fun s₃ k₃ f₃ r₃ => ?_)
   refine WP.seq (WP.mono (keys_ok hH hp k₃) fun s₄ ⟨k₄, si₄, f₄, bI₄, bO₄⟩ => ?_)
-  refine WP.seq (cmp_ok hH hp si k₄ si₄ fun s₅ k₅ f₅ e₅ => ?_)
-  refine WP.seq (WP.mono (mid_ok hH hp k₅) fun s₆ ⟨k₆, si₆, m₆⟩ => ?_)
-  refine WP.seq (cmp_ok hH hp so k₆ si₆ fun s₇ k₇ f₇ e₇ => ?_)
+  refine WP.seq (hbo.ok hp k₄ si₄ fun s₇ b k₇ eI eO => ?_)
   refine WP.mono (restore_ok H.stream k₇.r15 hW k₇.saved (by rw [k₇.wr]; exact hsc) hL)
     fun s' ⟨hm, _, _, hg, ho⟩ => ⟨⟨fun r hr => ?_, by rw [hm, k₇.ret]⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -637,41 +674,20 @@ theorem correct : WP isa H.hmacInit s₀ fun s' => gprPreserved s₀ s' ∧ (ini
         · exact hp.stk_i.symm.sub_left hvI), iv r₂]
   have hl : (xorPad (k0 H s₀) ipad).length = H.P.B := by
     rw [Proof.Hmac.Common.xorPad_length, K0_length _ _ hkl]
-  have rI₅ := Md.repr_block (H := hH.md) (iv := hH.iv) hB0 hl bI₄ (e₅.trans (congrArg (hH.md.compress · _) iv₄))
+  have rI := Md.repr_block (H := hH.md) (iv := hH.iv) hB0 hl bI₄ (eI.trans (congrArg (hH.md.compress · _) iv₄))
   -- The outer state.
-  have iv₆ : hH.md.stateAt s₆.mem (out s₀) = hH.iv := by
-    rw [m₆, keepS f₅ (by
-        simp only [List.mem_cons, List.not_mem_nil, or_false]
-        rintro r (rfl | rfl | rfl)
-        · exact (hp.i_o.symm.sub_left hvO).sub_right hvI
-        · exact (so.sc.sub_left hvO).sub_right (cal_sub hH hp)
-        · exact so.stk.symm.sub_left hvO),
-      keepS f₄ (by
+  have ivO₄ : hH.md.stateAt s₄.mem (out s₀) = hH.iv := by
+    rw [keepS f₄ (by
         simp only [List.mem_cons, List.not_mem_nil, or_false]
         rintro r (rfl | rfl)
         · exact (hp.i_o.symm.sub_left hvO).sub_right bI
         · exact nb _), iv r₃]
-  have bO₆ : bytesAt s₆.mem (bufOf H (out s₀)) H.P.B = xorPad (k0 H s₀) opad := by
-    rw [m₆, bytes_keep f₅ (by
-        simp only [List.mem_cons, List.not_mem_nil, or_false]
-        rintro r (rfl | rfl | rfl)
-        · exact (hp.i_o.symm.sub_left bO).sub_right hvI
-        · exact (so.sc.sub_left bO).sub_right (cal_sub hH hp)
-        · exact so.stk.symm.sub_left bO) (by omega_using [hB]), bO₄]
   have hl' : (xorPad (k0 H s₀) opad).length = H.P.B := by
     rw [Proof.Hmac.Common.xorPad_length, K0_length _ _ hkl]
-  have rO₇ := Md.repr_block (H := hH.md) (iv := hH.iv) hB0 hl' bO₆ (e₇.trans (congrArg (hH.md.compress · _) iv₆))
-  -- The inner state, kept by the outer compression.
-  have rI₇ : hH.SH.Repr s₇.mem (inn s₀) (xorPad (k0 H s₀) ipad) :=
-    repr_keep hH.stream f₇ (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl | rfl)
-      · exact hp.i_o.sub_right hvO
-      · exact hp.i_s.sub_right (cal_sub hH hp)
-      · exact hp.stk_i.symm) (m₆ ▸ (hH.repr _ _ _).2 rI₅)
+  have rO := Md.repr_block (H := hH.md) (iv := hH.iv) hB0 hl' bO₄ (eO.trans (congrArg (hH.md.compress · _) ivO₄))
   show hH.SH.Repr s'.mem (inn s₀) _ ∧ hH.SH.Repr s'.mem (out s₀) _
   rw [hm, blockKey_eq hH hp]
-  exact ⟨rI₇, (hH.repr _ _ _).2 rO₇⟩
+  exact ⟨(hH.repr _ _ _).2 rI, (hH.repr _ _ _).2 rO⟩
 
 end
 
@@ -751,7 +767,19 @@ theorem cmp_rel {p : Addr} (hs : StOk (H := H) (sc := sc) (s₀ := s₀) p)
     (fun s ⟨k, si⟩ => cmp_ok hH hp hs k si fun s' k' _ _ => k')
     (fun s ⟨k, si⟩ => cmp_ok hH hp' hs' k si fun s' k' _ _ => k')
 
-theorem ct (hc : Checks H) : RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') H.hmacInit fun _ _ => True := by
+/-- From the inner state to the outer one. -/
+theorem mid_rel (hc : Checks H) :
+    RelCT isa (fun s s' => KR H s₀ (inn s₀) s ∧ KR H s₀' (inn s₀) s') (.block H.initOuter)
+      fun s s' => (KR H s₀ (out s₀) s ∧ s.gpr .rsi = bufOf H (out s₀)) ∧
+        (KR H s₀' (out s₀) s' ∧ s'.gpr .rsi = bufOf H (out s₀)) := by
+  have ei : inn s₀' = inn s₀ := hq.rdi.symm
+  have eo : out s₀' = out s₀ := hq.rsi.symm
+  exact rel_taint kregs (fun _ _ h h' => kr_agree hq h h') hc.mid
+    (fun _ h => WP.mono (mid_ok hH hp h) fun _ h => ⟨h.1, h.2.1⟩)
+    (fun _ h => WP.mono (mid_ok hH hp' (ei ▸ h)) fun _ h => ⟨eo ▸ h.1, by rw [h.2.1, eo]⟩)
+
+theorem ct (hbo : BothOk H hH) (hc : Checks H) :
+    RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') H.hmacInit fun _ _ => True := by
   have ei : inn s₀' = inn s₀ := hq.rdi.symm
   have eo : out s₀' = out s₀ := hq.rsi.symm
   have si := stOk_in (H := H) hp
@@ -782,31 +810,70 @@ theorem ct (hc : Checks H) : RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') H.h
     rel_taint kregs (fun _ _ h h' => kr_agree hq h h') hc.keys
       (fun _ h => WP.mono (keys_ok hH hp h) fun _ h => ⟨h.1, h.2.1⟩)
       (fun _ h => WP.mono (keys_ok hH hp' (ei ▸ h)) fun _ h => ⟨ei ▸ h.1, by rw [h.2.1, ei]⟩)
-  have mid : RelCT isa (fun s s' => KR H s₀ (inn s₀) s ∧ KR H s₀' (inn s₀) s') (.block H.initOuter)
-      fun s s' => (KR H s₀ (out s₀) s ∧ s.gpr .rsi = bufOf H (out s₀)) ∧
-        (KR H s₀' (out s₀) s' ∧ s'.gpr .rsi = bufOf H (out s₀)) :=
-    rel_taint kregs (fun _ _ h h' => kr_agree hq h h') hc.mid
-      (fun _ h => WP.mono (mid_ok hH hp h) fun _ h => ⟨h.1, h.2.1⟩)
-      (fun _ h => WP.mono (mid_ok hH hp' (ei ▸ h)) fun _ h => ⟨eo ▸ h.1, by rw [h.2.1, eo]⟩)
   obtain ⟨_, hr⟩ := hc.restore
-  have restore : RelCT isa (fun s s' => KR H s₀ (out s₀) s ∧ KR H s₀' (out s₀) s') (.block H.stream.restore)
+  have restore : RelCT isa (fun s s' => ∃ b, KR H s₀ b s ∧ KR H s₀' b s') (.block H.stream.restore)
       fun _ _ => True :=
-    RelCT.taint (A := taint) (Taint.ofRegs kregs) (fun _ _ h => Taint.agree_ofRegs (kr_agree hq h.1 h.2)) hr
-  exact pro.seq (c₁.seq (c₂.seq (keys.seq ((cmp_rel hH hp hp' hq si si').seq (mid.seq
-    ((cmp_rel hH hp hp' hq so so').seq restore))))))
+    RelCT.taint (A := taint) (Taint.ofRegs kregs)
+      (fun _ _ ⟨_, h, h'⟩ => Taint.agree_ofRegs (kr_agree hq h h')) hr
+  exact pro.seq (c₁.seq (c₂.seq (keys.seq ((hbo.rel hp hp' hq).seq restore))))
 
 end
 
+/-- `compBoth` as the compression function on the inner state's block and
+then on the outer's (`compTwice`). -/
+theorem BothOk.twice (hc : Checks H)
+    (h : H.compBoth = Impl.Pbkdf2.Md.X86_64.compTwice H.P.N H.compN H.compC) : BothOk H hH where
+  ok {sc s₀} hp {t} hk hsi {Q} k := by
+    have si := stOk_in (H := H) hp
+    have so := stOk_out (H := H) hp
+    have hvI : Region.Sub ⟨inn s₀, H.P.N⟩ (inR H s₀) :=
+      Region.sub_prefix (by show H.P.N ≤ H.P.N + H.P.B; omega_using [])
+    have hvO : Region.Sub ⟨out s₀, H.P.N⟩ (outR H s₀) :=
+      Region.sub_prefix (by show H.P.N ≤ H.P.N + H.P.B; omega_using [])
+    have bO : Region.Sub ⟨bufOf H (out s₀), H.P.B⟩ (outR H s₀) := Offset.sub_base _ (Nat.le_refl _)
+    rw [h]
+    refine WP.seq (cmp_ok hH hp si hk hsi fun s₅ k₅ f₅ e₅ => ?_)
+    refine WP.seq (WP.mono (mid_ok hH hp k₅) fun s₆ ⟨k₆, si₆, m₆⟩ => ?_)
+    refine cmp_ok hH hp so k₆ si₆ fun s₇ k₇ f₇ e₇ => k s₇ _ k₇ ?_ ?_
+    · rw [stateAt_keep hH hp f₇ (by
+          simp only [List.mem_cons, List.not_mem_nil, or_false]
+          rintro r (rfl | rfl | rfl)
+          · exact (hp.i_o.sub_right hvO).sub_left hvI
+          · exact (hp.i_s.sub_right (cal_sub hH hp)).sub_left hvI
+          · exact hp.stk_i.symm.sub_left hvI), m₆, e₅]
+    · rw [e₇, m₆, stateAt_keep hH hp f₅ (by
+          simp only [List.mem_cons, List.not_mem_nil, or_false]
+          rintro r (rfl | rfl | rfl)
+          · exact (hp.i_o.symm.sub_left hvO).sub_right hvI
+          · exact (so.sc.sub_left hvO).sub_right (cal_sub hH hp)
+          · exact so.stk.symm.sub_left hvO),
+        blockAt_keep hH hp f₅ (by
+          simp only [List.mem_cons, List.not_mem_nil, or_false]
+          rintro r (rfl | rfl | rfl)
+          · exact (hp.i_o.symm.sub_left bO).sub_right hvI
+          · exact (so.sc.sub_left bO).sub_right (cal_sub hH hp)
+          · exact so.stk.symm.sub_left bO)]
+  rel {sc s₀ s₀'} hp hp' hq := by
+    have ei : inn s₀' = inn s₀ := hq.rdi.symm
+    have eo : out s₀' = out s₀ := hq.rsi.symm
+    have si := stOk_in (H := H) hp
+    have so := stOk_out (H := H) hp
+    have si' : StOk (H := H) (sc := sc) (s₀ := s₀') (inn s₀) := ei ▸ stOk_in (H := H) hp'
+    have so' : StOk (H := H) (sc := sc) (s₀ := s₀') (out s₀) := eo ▸ stOk_out (H := H) hp'
+    rw [h]
+    exact ((cmp_rel hH hp hp' hq si si').seq ((mid_rel hH hp hp' hq hc).seq
+      (cmp_rel hH hp hp' hq so so'))).mono (fun _ _ h => h) fun _ _ h => ⟨_, h⟩
+
 /-- HMAC's `init` is verified against `initG`, given the taint checks and the
 facts about its code that the kernel checks for each hash function. -/
-theorem verified {sc : Nat} (hc : Checks H) (hfit : H.stream.buf ≤ 8 * sc)
+theorem verified {sc : Nat} (hbo : BothOk H hH) (hc : Checks H) (hfit : H.stream.buf ≤ 8 * sc)
     (hmx : H.hmacInit.allInstrs (fun i => !loadsMxcsr i) = true) (hsat : ∃ s, (initG hH.SH sc).pre s) :
     Verified X86_64.target H.hmacInit (initG hH.SH sc) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, hsat⟩
-  · obtain ⟨t, s', he, hg, hpost⟩ := correct hH (pre_of hH hs hfit)
+  · obtain ⟨t, s', he, hg, hpost⟩ := correct hH (pre_of hH hs hfit) hbo
     exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hpost⟩
   · obtain ⟨h1, h2, h3, h4, h5, h6⟩ := hpub
-    exact (ct hH (pre_of hH h₁ hfit) (pre_of hH h₂ hfit) ⟨h1, h2, h3, h4, h5, h6⟩ hc
+    exact (ct hH (pre_of hH h₁ hfit) (pre_of hH h₂ hfit) ⟨h1, h2, h3, h4, h5, h6⟩ hbo hc
       _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.Pbkdf2.Md.X86_64.HmacInit

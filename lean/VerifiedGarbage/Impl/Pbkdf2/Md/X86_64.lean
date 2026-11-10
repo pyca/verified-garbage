@@ -125,6 +125,24 @@ def finPrologue : List Instr :=
 
 end Stream
 
+/-- The outer state's hash value and block, for the compression function:
+`r12` is the outer state, of `N` bytes of hash value and then its buffer. -/
+def outerArgs (N : Nat) : List Instr :=
+  [.mov .rbx (.reg .r12), .mov .rsi (.reg .r12), .alu .add .rsi (.imm (BitVec.ofNat 32 N))]
+
+/-- HMAC's `init` compressing its two padded keys with the compression
+function `compC`, one after the other: the inner state's (`rbx`, its block
+at `rsi`), then the outer's (`r12`). -/
+def compTwice (N : Nat) (compN : String) (compC : Prog isa) : Prog isa :=
+  .seq (compressAt compN compC) (.seq (.block (outerArgs N)) (compressAt compN compC))
+
+/-- The same with a function that compresses two blocks into two hash
+values at once, `code (state₀ = rdi, block₀ = rsi, state₁ = rdx, block₁ =
+rcx, scratch = r8)`: the two blocks do not depend on each other. -/
+def compPair (N : Nat) (name : String) (code : Prog isa) : Prog isa :=
+  .seq (.block [.mov .rdi (.reg .rbx), .mov .rdx (.reg .r12), .mov .rcx (.reg .r12),
+    .alu .add .rcx (.imm (BitVec.ofNat 32 N)), .mov .r8 (.reg .r15)]) (.call name code)
+
 /-- A Merkle–Damgård hash function's x86-64 functions, as HMAC and PBKDF2
 call them. -/
 structure Hash where
@@ -149,6 +167,9 @@ structure Hash where
   hmacInitN : String
   hmacFinN : String
   iterN : String
+  /-- HMAC's `init` compressing the blocks of its two states (`compTwice`,
+  or `compPair` with a function that compresses both at once). -/
+  compBoth : Prog isa := compTwice P.N compN compC
 
 namespace Hash
 
@@ -196,7 +217,7 @@ Registers: `rbx` = `inner`, `r12` = `outer`, `r15` = `scratch`, `rbp` =
 `key`, `r13` = `key_len`, `r14` = the byte index. Each state's buffer
 receives its padded key, `K₀ ⊕ ipad` at `rbx + N` and `K₀ ⊕ opad` at
 `r12 + N`, after `init` has set its hash value; then one compression each
-makes the state represent that block. -/
+makes the state represent that block (`compBoth`). -/
 
 /-- Saving our caller's registers, and setting up ours. -/
 def initPrologue : List Instr :=
@@ -233,18 +254,15 @@ def initKeys : Prog isa :=
   .seq (.block H.ipadFill) (.seq (.ite .e (.block []) H.keyLoop) (.block H.opadFill))
 
 /-- The outer state's hash value and block, for the compression function. -/
-def initOuter : List Instr :=
-  [.mov .rbx (.reg .r12), .mov .rsi (.reg .r12), .alu .add .rsi (.imm (BitVec.ofNat 32 H.P.N))]
+def initOuter : List Instr := outerArgs H.P.N
 
 def hmacInit : Prog isa :=
   .seq (.block H.initPrologue)
   (.seq (H.stream.callInit .rbx)
   (.seq (H.stream.callInit .r12)
   (.seq H.initKeys
-  (.seq (compressAt H.compN H.compC)
-  (.seq (.block H.initOuter)
-  (.seq (compressAt H.compN H.compC)
-    (.block H.stream.restore)))))))
+  (.seq H.compBoth
+    (.block H.stream.restore)))))
 
 /-! ## HMAC's `finalize`
 

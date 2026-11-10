@@ -250,25 +250,26 @@ section
 variable {p : Instr → Bool} (hc : H.compC.allInstrs p = true) (hi : H.initC.allInstrs p = true)
 include hc hi
 
-theorem core_hmacInitAny (h : (core H).hmacInitAny.allInstrs p = true) : H.hmacInitAny.allInstrs p = true := by
+theorem core_hmacInitAny (hb : H.compBoth.allInstrs p = true) (h : (core H).hmacInitAny.allInstrs p = true) :
+    H.hmacInitAny.allInstrs p = true := by
   simp only [Hash.hmacInitAny, Hash.key, Hash.hashKey, Hash.hmacInit, Hash.initKeys, Hash.updC, Hash.finC,
     Hash.stream, Impl.Pbkdf2.Md.X86_64.Stream.callInit,
     Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody, Impl.MdStream.X86_64.updateTail,
     Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
     Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
-    core, Code.allInstrs, hc, hi, Bool.and_true, Bool.true_and] at h ⊢
+    core, coreBoth, Code.allInstrs, hc, hi, hb, Bool.and_true, Bool.true_and] at h ⊢
   exact h
 
 end
 
 theorem core_hmacInitAny_xdepth (hc : H.compC.x86_64Depth = 0) (hi : H.initC.x86_64Depth = 0)
-    (h : (core H).hmacInitAny.x86_64Depth ≤ 24) : H.hmacInitAny.x86_64Depth ≤ 24 := by
+    (hb : H.compBoth.x86_64Depth = 8) (h : (core H).hmacInitAny.x86_64Depth ≤ 24) : H.hmacInitAny.x86_64Depth ≤ 24 := by
   simp only [Hash.hmacInitAny, Hash.key, Hash.hashKey, Hash.hmacInit, Hash.initKeys, Hash.updC, Hash.finC,
     Hash.stream, Impl.Pbkdf2.Md.X86_64.Stream.callInit,
     Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody, Impl.MdStream.X86_64.updateTail,
     Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
     Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
-    core, Code.x86_64Depth, hc, hi] at h ⊢
+    core, coreBoth, Code.x86_64Depth, hc, hi, hb] at h ⊢
   exact h
 
 section
@@ -281,16 +282,16 @@ theorem hmacInitAny_ok
     (hsat : ∃ s, (anyG hH.SH (H.W + H.S)).pre s) :
     Verified X86_64.target H.hmacInitAny (anyG hH.SH (H.W + H.S)) :=
   verified hH hH.psizes (Pbk.Checks.of_core C.pbk) A.entry A.args (VG.Proof.Pbkdf2.Md.X86_64.hmacInit_ok hH C K hsI)
-    (nosp_of (VG.Proof.Pbkdf2.Md.X86_64.core_hmacInit K.cNs K.iNs C.hinitNs))
-    (VG.Proof.Pbkdf2.Md.X86_64.core_hmacInit_depth K.cD K.iD C.hinitD)
-    (core_hmacInitAny K.cMx K.iMx A.mx) hsat
+    (nosp_of (VG.Proof.Pbkdf2.Md.X86_64.core_hmacInit K.iNs K.b.bNs C.hinitNs))
+    (VG.Proof.Pbkdf2.Md.X86_64.core_hmacInit_depth K.iD K.b.bD C.hinitD)
+    (core_hmacInitAny K.cMx K.iMx K.b.bMx A.mx) hsat
 
 omit hH C in
 theorem hmacInitAny_sp : H.hmacInitAny.all (fun i => !isa.writesSp i) = true :=
-  Code.all_of_allInstrs (core_hmacInitAny K.cSp K.iSp A.sp)
+  Code.all_of_allInstrs (core_hmacInitAny K.cSp K.iSp K.b.bSp A.sp)
 
 omit hH C in
-theorem hmacInitAny_xd : H.hmacInitAny.x86_64Depth ≤ 24 := core_hmacInitAny_xdepth K.cXD K.iXD A.xd
+theorem hmacInitAny_xd : H.hmacInitAny.x86_64Depth ≤ 24 := core_hmacInitAny_xdepth K.cXD K.iXD K.b.bXD A.xd
 
 end
 

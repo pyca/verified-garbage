@@ -54,7 +54,7 @@ def hash : Hash where
 
 /-- `hash` without the functions it calls. -/
 def coreH : Hash := ⟨Impl.Md5.X86_64.Stream.params, 16, 48, "", .block [], "", .block [], "", "", "", "",
-  ""⟩
+  "", Proof.Pbkdf2.Md.X86_64.coreBoth⟩
 
 theorem coreOK : CoreOK coreH := by
   refine {
@@ -102,17 +102,18 @@ theorem anyOK : Any.AnyOK coreH := by
   refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
   taint_decide_all
 
-theorem callees : Callees hash where
-  cMx := by simp only [hash]; lit_decide
-  cSp := by simp only [hash]; lit_decide
-  cNs := by simp only [hash]; lit_decide
-  cD := Proof.Md5.X86_64.Stream.callee.depth
-  iMx := by simp only [hash] <;> decide +kernel
-  iSp := by simp only [hash] <;> decide +kernel
-  iNs := by simp only [hash] <;> decide +kernel
-  iD := by simp only [hash] <;> decide +kernel
-  cXD := by simp only [hash]; lit_decide
-  iXD := by simp only [hash] <;> decide +kernel
+theorem callees : Callees hash :=
+  .ofTwice rfl
+    (cMx := by simp only [hash]; lit_decide)
+    (cSp := by simp only [hash]; lit_decide)
+    (cNs := by simp only [hash]; lit_decide)
+    (cD := Proof.Md5.X86_64.Stream.callee.depth)
+    (iMx := by simp only [hash] <;> decide +kernel)
+    (iSp := by simp only [hash] <;> decide +kernel)
+    (iNs := by simp only [hash] <;> decide +kernel)
+    (iD := by simp only [hash] <;> decide +kernel)
+    (cXD := by simp only [hash]; lit_decide)
+    (iXD := by simp only [hash] <;> decide +kernel)
 
 def ok : HashOK hash where
   md := Proof.Md5.md

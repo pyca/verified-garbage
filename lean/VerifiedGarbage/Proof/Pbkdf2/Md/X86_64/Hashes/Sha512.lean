@@ -69,7 +69,7 @@ def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.H
 /-- A member of the family without the functions it calls, the same for
 every `v`. -/
 def coreH (D : Nat) : Hash :=
-  ⟨Impl.Sha512.X86_64.Stream.params, D, 234, "", .block [], "", .block [], "", "", "", "", ""⟩
+  ⟨Impl.Sha512.X86_64.Stream.params, D, 234, "", .block [], "", .block [], "", "", "", "", "", Proof.Pbkdf2.Md.X86_64.coreBoth⟩
 
 theorem coreOK (D : Nat) (hD : D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64) : CoreOK (coreH D) := by
   rcases hD with rfl | rfl | rfl | rfl <;> refine {
@@ -122,19 +122,20 @@ theorem anyOK (D : Nat) (hD : D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64) : Any.Any
 abbrev IVs (iv : Spec.Sha512.HashValue) : Prop := iv = H0_384 ∨ iv = H0_512 ∨ iv = H0_512_224 ∨ iv = H0_512_256
 
 theorem callees {I : Spec.Hmac.Instance} {D : Nat} {initN : String} {iv : Spec.Sha512.HashValue} (hiv : IVs iv)
-    (v : Compress) : Callees (hash I D initN iv v) where
-  cMx := v.mxcsr
-  cSp := allInstrs_of_all v.spSafe
-  cNs := by
-    show v.callee.code.allInstrs _ = true
-    rw [Code.allInstrs_eq]; exact List.all_eq_true.mpr fun i hi => by simp [v.ok.nosp i hi]
-  cD := v.ok.depth
-  iMx := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel
-  iSp := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel
-  iNs := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel
-  iD := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel
-  cXD := v.noStack
-  iXD := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel
+    (v : Compress) : Callees (hash I D initN iv v) :=
+  .ofTwice rfl
+    (cMx := v.mxcsr)
+    (cSp := allInstrs_of_all v.spSafe)
+    (cNs := by
+      show v.callee.code.allInstrs _ = true
+      rw [Code.allInstrs_eq]; exact List.all_eq_true.mpr fun i hi => by simp [v.ok.nosp i hi])
+    (cD := v.ok.depth)
+    (iMx := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel)
+    (iSp := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel)
+    (iNs := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel)
+    (iD := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel)
+    (cXD := v.noStack)
+    (iXD := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel)
 
 /-- `HashOK` for the member of instance `I`, whose specification is the
 family's from `iv`, with its digest the first `D` bytes. -/
