@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
 import VerifiedGarbage.Proof.MdStream.X86_64.Words
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
@@ -863,6 +864,203 @@ theorem BothOk.twice (hc : Checks H)
     rw [h]
     exact ((cmp_rel hH hp hp' hq si si').seq ((mid_rel hH hp hp' hq hc).seq
       (cmp_rel hH hp hp' hq so so'))).mono (fun _ _ h => h) fun _ _ h => ⟨_, h⟩
+
+/-! ## Both compressions at once -/
+
+/-- The arguments of a function that compresses both blocks at once. -/
+abbrev pairArgs (N : Nat) : List Instr :=
+  [.mov .rdi (.reg .rbx), .mov .rdx (.reg .r12), .mov .rcx (.reg .r12),
+    .alu .add .rcx (.imm (BitVec.ofNat 32 N)), .mov .r8 (.reg .r15)]
+
+/-- `s` is `t` with the arguments of such a function set up. -/
+structure PairArgs (N : Nat) (t s : State) : Prop where
+  rdi : s.gpr .rdi = t.gpr .rbx
+  rdx : s.gpr .rdx = t.gpr .r12
+  rcx : s.gpr .rcx = t.gpr .r12 + BitVec.ofNat 64 N
+  r8 : s.gpr .r8 = t.gpr .r15
+  other : ∀ r, r ≠ .rdi → r ≠ .rdx → r ≠ .rcx → r ≠ .r8 → s.gpr r = t.gpr r
+  mem : s.mem = t.mem
+  rd : s.rd = t.rd
+  wr : s.wr = t.wr
+
+omit hH in
+theorem pairArgs_ok (N : Nat) (hN : N < 2 ^ 31) (s : State) :
+    WP isa (.block (pairArgs N)) s (PairArgs N s) := by
+  refine wp_mov fun s₁ u₁ _ _ => wp_mov fun s₂ u₂ _ _ => wp_mov fun s₃ u₃ _ _ => wp_addi fun s₄ u₄ =>
+    wp_mov fun s₅ u₅ _ _ => WP.block_nil ⟨?_, ?_, ?_, ?_, fun r h1 h2 h3 h4 => ?_, ?_, ?_, ?_⟩
+  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr]
+  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide)]
+  · rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), sx_ofNat hN]
+  · rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
+  · rw [u₅.other r h4, u₄.other r h3, u₃.other r h3, u₂.other r h2, u₁.other r h1]
+  · rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  · rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
+  · rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+
+section
+variable {sc : Nat} {s₀ : State} (hp : Pre H sc s₀)
+include hH hp
+
+/-- The precondition of a function that compresses both blocks at once, in
+the state `s₁` with its arguments, set up from `t`. -/
+theorem pair_pre {t s₁ : State} (hk : KR H s₀ (inn s₀) t) (hsi : t.gpr .rsi = bufOf H (inn s₀))
+    (ha : PairArgs H.P.N t s₁) :
+    (MdStream.X86_64.compress2K hH.md).pre (s₁.callEntry.withRegions
+      [⟨bufOf H (inn s₀), H.P.B⟩, ⟨bufOf H (out s₀), H.P.B⟩] [⟨inn s₀, H.P.N⟩, ⟨out s₀, H.P.N⟩, calR H s₀]) ∧
+    Covers ([⟨bufOf H (inn s₀), H.P.B⟩, ⟨bufOf H (out s₀), H.P.B⟩] ++ [⟨inn s₀, H.P.N⟩, ⟨out s₀, H.P.N⟩, calR H s₀])
+      (s₁.rd ++ s₁.wr) ∧
+    Covers [⟨inn s₀, H.P.N⟩, ⟨out s₀, H.P.N⟩, calR H s₀] s₁.wr := by
+  obtain ⟨e1, e2, e3, e4, eo, -, erd, ewr⟩ := ha
+  obtain ⟨_, s₆, _, k₆, si₆, m₆⟩ := mid_ok hH hp hk
+  have c₀ := callOk hH hp (stOk_in (H := H) hp) hk hsi
+  have c₁ := callOk hH hp (stOk_out (H := H) hp) k₆ si₆
+  have hne : ∀ r : Reg, r ≠ .rsp → s₁.callEntry.gpr r = s₁.gpr r := fun r h => State.callEntry_gpr _ h
+  simp only [MdStream.X86_64.compress2K, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
+    State.callEntry_rsp, hne _ (by decide : Reg.rdi ≠ .rsp), hne _ (by decide : Reg.rsi ≠ .rsp),
+    hne _ (by decide : Reg.rdx ≠ .rsp), hne _ (by decide : Reg.rcx ≠ .rsp), hne _ (by decide : Reg.r8 ≠ .rsp),
+    e1, e2, e3, e4, eo .rsi (by decide) (by decide) (by decide) (by decide),
+    eo .rsp (by decide) (by decide) (by decide) (by decide), hk.rbx, hk.r12, hk.r15, hsi]
+  obtain ⟨-, -, hN, -, hB, -⟩ := sizes hH hp
+  have hvI : Region.Sub ⟨inn s₀, H.P.N⟩ (inR H s₀) :=
+    Region.sub_prefix (by show H.P.N ≤ H.P.N + H.P.B; omega_using [])
+  have hvO : Region.Sub ⟨out s₀, H.P.N⟩ (outR H s₀) :=
+    Region.sub_prefix (by show H.P.N ≤ H.P.N + H.P.B; omega_using [])
+  have bI : Region.Sub ⟨bufOf H (inn s₀), H.P.B⟩ (inR H s₀) := Offset.sub_base _ (Nat.le_refl _)
+  have bO : Region.Sub ⟨bufOf H (out s₀), H.P.B⟩ (outR H s₀) := Offset.sub_base _ (Nat.le_refl _)
+  have r₁ : s₆.gpr .rsp = t.gpr .rsp := k₆.rsp.trans hk.rsp.symm
+  have cv : ∀ {X : List Region}, Covers [⟨bufOf H (inn s₀), H.P.B⟩, ⟨inn s₀, H.P.N⟩, calR H s₀] X →
+      Covers [⟨bufOf H (out s₀), H.P.B⟩, ⟨out s₀, H.P.N⟩, calR H s₀] X →
+      Covers ([⟨bufOf H (inn s₀), H.P.B⟩, ⟨bufOf H (out s₀), H.P.B⟩] ++
+        [⟨inn s₀, H.P.N⟩, ⟨out s₀, H.P.N⟩, calR H s₀]) X := by
+    intro X h₀ h₁ a n ⟨r, hr, hc⟩
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact h₀ a n ⟨_, by simp, hc⟩
+    · exact h₁ a n ⟨_, by simp, hc⟩
+    · exact h₀ a n ⟨_, by simp, hc⟩
+    · exact h₁ a n ⟨_, by simp, hc⟩
+    · exact h₀ a n ⟨_, by simp, hc⟩
+  have cw : ∀ {X : List Region}, Covers [⟨inn s₀, H.P.N⟩, calR H s₀] X → Covers [⟨out s₀, H.P.N⟩, calR H s₀] X →
+      Covers [⟨inn s₀, H.P.N⟩, ⟨out s₀, H.P.N⟩, calR H s₀] X := by
+    intro X h₀ h₁ a n ⟨r, hr, hc⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact h₀ a n ⟨_, by simp, hc⟩
+    · exact h₁ a n ⟨_, by simp, hc⟩
+    · exact h₀ a n ⟨_, by simp, hc⟩
+  refine ⟨⟨trivial, trivial, (hp.i_o.sub_left hvI).sub_right hvO, c₀.d₁, c₁.d₁, c₀.d₂,
+    (hp.i_o.sub_left bI).sub_right hvO, c₀.d₃, (hp.i_o.symm.sub_left bO).sub_right hvI, c₁.d₂, c₁.d₃, c₀.d₄,
+    r₁ ▸ c₁.d₄, c₀.d₅⟩, ?_, ?_⟩
+  · rw [erd, ewr]
+    exact cv c₀.hc (by rw [hk.rd, hk.wr, ← k₆.rd, ← k₆.wr]; exact c₁.hc)
+  · rw [ewr]
+    exact cw c₀.hw (by rw [hk.wr, ← k₆.wr]; exact c₁.hw)
+
+/-- The call of a function that compresses both blocks at once. -/
+theorem pair_ok {name : String} {code : Prog isa} (hf : MdStream.X86_64.PairOk hH.md code) {t : State}
+    (hk : KR H s₀ (inn s₀) t) (hsi : t.gpr .rsi = bufOf H (inn s₀)) {Q : State → Prop}
+    (k : ∀ s', KR H s₀ (inn s₀) s' →
+      hH.md.stateAt s'.mem (inn s₀) =
+        hH.md.compress (hH.md.stateAt t.mem (inn s₀)) (hH.md.blockAt t.mem (bufOf H (inn s₀))) →
+      hH.md.stateAt s'.mem (out s₀) =
+        hH.md.compress (hH.md.stateAt t.mem (out s₀)) (hH.md.blockAt t.mem (bufOf H (out s₀))) →
+      Q s') :
+    WP isa (Impl.Pbkdf2.Md.X86_64.compPair H.P.N name code) t Q := by
+  obtain ⟨-, -, hN, -, hB, -⟩ := sizes hH hp
+  have si := stOk_in (H := H) hp
+  have so := stOk_out (H := H) hp
+  have hvI : Region.Sub ⟨inn s₀, H.P.N⟩ (inR H s₀) :=
+    Region.sub_prefix (by show H.P.N ≤ H.P.N + H.P.B; omega_using [])
+  have hvO : Region.Sub ⟨out s₀, H.P.N⟩ (outR H s₀) :=
+    Region.sub_prefix (by show H.P.N ≤ H.P.N + H.P.B; omega_using [])
+  have bI : Region.Sub ⟨bufOf H (inn s₀), H.P.B⟩ (inR H s₀) := Offset.sub_base _ (Nat.le_refl _)
+  have bO : Region.Sub ⟨bufOf H (out s₀), H.P.B⟩ (outR H s₀) := Offset.sub_base _ (Nat.le_refl _)
+  have b8 : Region.Sub (below (t.gpr .rsp) 8) (stkR s₀) := by
+    rw [hk.rsp]; exact Offset.sub_below _ (by omega_using []) (by omega_using [])
+  show WP isa (.seq (.block (pairArgs H.P.N)) (.call name code)) t Q
+  refine WP.seq (WP.mono (pairArgs_ok H.P.N (by omega_using [hN]) t) fun s₁ ha => ?_)
+  obtain ⟨hpre, hc, hw⟩ := pair_pre hH hp hk hsi ha
+  have hsp : s₁.gpr .rsp = t.gpr .rsp := ha.other _ (by decide) (by decide) (by decide) (by decide)
+  refine WP.call (k := MdStream.X86_64.compress2K hH.md) hf.verified hf.nosp (by rw [hf.depth]; decide)
+    hpre hc hw ?_
+  intro s₂ hrd hwr hcs hfr _ ⟨s₃, hm₃, _, hpost⟩
+  have hne : ∀ r : Reg, r ≠ .rsp → s₁.callEntry.gpr r = s₁.gpr r := fun r h => State.callEntry_gpr _ h
+  simp only [MdStream.X86_64.compress2K, State.withRegions_gpr, State.withRegions_mem,
+    hne _ (by decide : Reg.rdi ≠ .rsp), hne _ (by decide : Reg.rsi ≠ .rsp), hne _ (by decide : Reg.rdx ≠ .rsp),
+    hne _ (by decide : Reg.rcx ≠ .rsp), ha.rdi, ha.rdx, ha.rcx,
+    ha.other .rsi (by decide) (by decide) (by decide) (by decide), hk.rbx, hk.r12, hsi, hm₃] at hpost
+  have f : Frame [⟨inn s₀, H.P.N⟩, ⟨out s₀, H.P.N⟩, calR H s₀, stkR s₀] t.mem s₂.mem := by
+    rw [hf.depth, hsp, ha.mem] at hfr
+    exact hfr.sub fun r hr => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact ⟨_, by simp, fun _ h => h⟩
+      · exact ⟨⟨out s₀, H.P.N⟩, by simp, fun _ h => h⟩
+      · exact ⟨calR H s₀, by simp, fun _ h => h⟩
+      · exact ⟨stkR s₀, by simp, b8⟩
+  have fe : Frame [below (t.gpr .rsp) 8] t.mem s₁.callEntry.mem := by
+    rw [← hsp, ← ha.mem]
+    exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega) (by omega))
+  have one : ∀ {X : Region}, (below (t.gpr .rsp) 8).Disjoint X → ∀ r ∈ [below (t.gpr .rsp) 8], X.Disjoint r :=
+    fun h r hr => by rw [List.mem_singleton.mp hr]; exact h.symm
+  rw [stateAt_keep hH hp fe (one ((si.stk.sub_left b8).sub_right hvI)),
+    blockAt_keep hH hp fe (one ((si.stk.sub_left b8).sub_right bI)),
+    stateAt_keep hH hp fe (one ((so.stk.sub_left b8).sub_right hvO)),
+    blockAt_keep hH hp fe (one ((so.stk.sub_left b8).sub_right bO))] at hpost
+  refine k s₂ (hk.keep (hrd.trans ha.rd) (hwr.trans ha.wr) (fun r hr => ?_) f ?_) hpost.1 hpost.2
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;>
+      exact (hcs _ (by simp [calleeSaved])).trans (ha.other _ (by decide) (by decide) (by decide) (by decide))
+  · simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl | rfl)
+    · exact away_st hH hp si hvI
+    · exact away_st hH hp so hvO
+    · exact away_cal hH hp
+    · exact away_stk hH hp (fun _ h => h)
+
+end
+
+/-- `compBoth` as one call of a function that compresses both blocks at once
+(`compPair`). -/
+theorem BothOk.pair {name : String} {code : Prog isa} (hf : MdStream.X86_64.PairOk hH.md code)
+    (hta : ∃ hc, (Taint.check taint (Taint.ofRegs kregs) (.block (pairArgs H.P.N)) hc).isSome = true)
+    (h : H.compBoth = Impl.Pbkdf2.Md.X86_64.compPair H.P.N name code) : BothOk H hH where
+  ok {sc s₀} hp {t} hk hsi {Q} k := by
+    rw [h]; exact pair_ok hH hp hf hk hsi fun s' k' e₁ e₂ => k s' _ k' e₁ e₂
+  rel {sc s₀ s₀'} hp hp' hq := by
+    have ei : inn s₀' = inn s₀ := hq.rdi.symm
+    have eo : out s₀' = out s₀ := hq.rsi.symm
+    obtain ⟨-, -, hN, -⟩ := sizes hH hp
+    rw [h]
+    have args : RelCT isa (fun s s' => (KR H s₀ (inn s₀) s ∧ s.gpr .rsi = bufOf H (inn s₀)) ∧
+          (KR H s₀' (inn s₀) s' ∧ s'.gpr .rsi = bufOf H (inn s₀))) (.block (pairArgs H.P.N))
+        fun s s' => (∃ t, (KR H s₀ (inn s₀) t ∧ t.gpr .rsi = bufOf H (inn s₀)) ∧ PairArgs H.P.N t s) ∧
+          (∃ t, (KR H s₀' (inn s₀) t ∧ t.gpr .rsi = bufOf H (inn s₀)) ∧ PairArgs H.P.N t s') :=
+      rel_taint kregs (fun _ _ h h' => kr_agree hq h.1 h'.1) hta
+        (fun s h => WP.mono (pairArgs_ok H.P.N (by omega_using [hN]) s) fun _ a => ⟨s, h, a⟩)
+        (fun s h => WP.mono (pairArgs_ok H.P.N (by omega_using [hN]) s) fun _ a => ⟨s, h, a⟩)
+    have call := VG.X86_64.RelCT.callEx (n := name) (k := MdStream.X86_64.compress2K hH.md)
+      (P := fun s s' => (∃ t, (KR H s₀ (inn s₀) t ∧ t.gpr .rsi = bufOf H (inn s₀)) ∧ PairArgs H.P.N t s) ∧
+        (∃ t, (KR H s₀' (inn s₀) t ∧ t.gpr .rsi = bufOf H (inn s₀)) ∧ PairArgs H.P.N t s'))
+      hf.verified hf.ct fun s₁ s₂ ⟨⟨t, ⟨k, si⟩, a⟩, ⟨t', ⟨k', si'⟩, a'⟩⟩ => by
+        obtain ⟨p₁, c₁, w₁⟩ := pair_pre hH hp k si a
+        obtain ⟨p₂, c₂, w₂⟩ := pair_pre hH hp' (ei ▸ k') (by rw [si', ei]) a'
+        refine ⟨_, _, _, _, p₁, p₂, ?_, c₁, w₁, c₂, w₂, ?_⟩
+        · simp only [MdStream.X86_64.compress2K, State.withRegions_gpr,
+            State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
+            State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
+            State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp)]
+          exact ⟨by rw [a.rdi, a'.rdi, k.rbx, k'.rbx],
+            by rw [a.other .rsi (by decide) (by decide) (by decide) (by decide),
+              a'.other .rsi (by decide) (by decide) (by decide) (by decide), si, si'],
+            by rw [a.rdx, a'.rdx, k.r12, k'.r12, eo], by rw [a.rcx, a'.rcx, k.r12, k'.r12, eo],
+            by rw [a.r8, a'.r8, k.r15, k'.r15, scr, scr, hq.r8]⟩
+        · rw [a.other .rsp (by decide) (by decide) (by decide) (by decide),
+            a'.other .rsp (by decide) (by decide) (by decide) (by decide), k.rsp, k'.rsp, hq.rsp]
+    exact (rel_wp (c := Impl.Pbkdf2.Md.X86_64.compPair H.P.N name code) (args.seq call)
+      (fun s ⟨k, si⟩ => pair_ok hH hp hf k si fun s' k' _ _ => k')
+      (fun s ⟨k, si⟩ => pair_ok hH hp' hf (ei ▸ k) (by rw [si, ei]) fun s' k' _ _ => ei ▸ k')).mono
+        (fun _ _ h => h) fun _ _ h => ⟨_, h⟩
 
 /-- HMAC's `init` is verified against `initG`, given the taint checks and the
 facts about its code that the kernel checks for each hash function. -/
