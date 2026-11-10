@@ -13,7 +13,10 @@ a function uses: the `stack` bytes below the stack pointer on entry (the
 of pushed registers are not handled) as writable regions at the head of `wr`,
 whose public bytes the base analysis tracks as slots, and the calls and
 returns of the code, whose return addresses it keeps apart from the frames
-(`ras`). The bytes of the window outside every writable region are equal in
+(`ras`). It keeps the window index of each frame's base (`fw`), so that after
+a return, whose stack pointer the base analysis forgets as a call does, it
+knows the stack pointer again as an offset into the innermost frame
+(`spBase`), and stores through it after a call reach that frame's slots. The bytes of the window outside every writable region are equal in
 both runs but those listed in `sec` (window indices from its base, the stack
 pointer on entry minus `stack`): when a frame is freed, its bytes that are
 not public are added to `sec`. So at the end of a function, the bytes of its
@@ -111,6 +114,8 @@ structure FT where
   /-- `(i, d, j, k)`: the 8 bytes at offset `d` of region `i` hold the address
   of byte `k` of region `j`, in both runs. -/
   mb : List (Nat × Nat × Nat × Nat) := []
+  /-- The window index of the base of each frame, innermost first. -/
+  fw : List Nat := []
   deriving DecidableEq, Lean.ToExpr
 
 /-- The base of the window. -/
@@ -148,11 +153,12 @@ structure RInv (τ : FT) (s₁ s₂ : State) : Prop where
   mbFit : ∀ e ∈ τ.mb, e.2.1 + 8 ≤ τ.t.lens.getD e.1 0
   one₁ : One τ s₁
   one₂ : One τ s₂
+  fw : ∀ i (h : i < τ.fw.length), (region s₁ i).base = wa s₁ τ τ.fw[i]
 
 def Agree (τ : FT) (s₁ s₂ : State) : Prop := τ.ok = true → RInv τ s₁ s₂
 
 /-- No knowledge. -/
-def none' : FT := ⟨false, {regs := .empty, flags := false}, 0, 0, 0, [], [], [], none, []⟩
+def none' : FT := ⟨false, {regs := .empty, flags := false}, 0, 0, 0, [], [], [], none, [], []⟩
 
 /-! ## Transfer functions -/
 
@@ -301,7 +307,7 @@ def step (τ : FT) (i : Instr) : Option FT :=
 
 def meet (τ₁ τ₂ : FT) : FT :=
   if τ₁.ok && τ₂.ok && τ₁.nfr == τ₂.nfr && τ₁.depth == τ₂.depth && τ₁.room == τ₂.room &&
-      τ₁.ras == τ₂.ras && τ₁.t.lens == τ₂.t.lens then
+      τ₁.ras == τ₂.ras && τ₁.t.lens == τ₂.t.lens && τ₁.fw == τ₂.fw then
     { τ₁ with
       t := Taint.meet τ₁.t τ₂.t
       sec := τ₁.sec ++ τ₂.sec
@@ -314,7 +320,7 @@ def le (τ σ : FT) : Bool :=
   !τ.ok || (σ.ok && τ.nfr == σ.nfr && τ.depth == σ.depth && τ.room == σ.room && τ.ras == σ.ras &&
     Taint.leK τ.t σ.t && σ.sec.all (τ.sec.contains ·) &&
     τ.ub.all (fun p => (ubOf σ.ub p.1).any (· ≤ p.2)) &&
-    (τ.fl.isNone || τ.fl == σ.fl) && τ.mb.all (σ.mb.contains ·))
+    (τ.fl.isNone || τ.fl == σ.fl) && τ.mb.all (σ.mb.contains ·) && τ.fw == σ.fw)
 
 /-- The base taint after a write of the stack pointer by a call or a return. -/
 def killSp (t : Taint.T) : Taint.T := { t with bases := kill t .rsp, lo := .empty }
@@ -322,13 +328,21 @@ def killSp (t : Taint.T) : Taint.T := { t with bases := kill t .rsp, lo := .empt
 def callF (τ : FT) : Option FT :=
   if τ.ok && 8 ≤ τ.room then
     some ⟨true, killSp τ.t, τ.nfr, τ.depth + 8, τ.room - 8, τ.sec, (τ.room - 8) :: τ.ras,
-      τ.ub.filter (·.1 != .rsp), none, τ.mb⟩
+      τ.ub.filter (·.1 != .rsp), none, τ.mb, τ.fw⟩
   else none
+
+/-- The stack pointer after a return, as an offset into the innermost frame
+(region 0) if it is at or above that frame's base: the window index of the
+stack pointer is then `room + 8`. -/
+def spBase (τ : FT) : List (Reg × Nat × Nat) :=
+  match τ.fw.head? with
+  | some a => if a ≤ τ.room + 8 then [(.rsp, 0, τ.room + 8 - a)] else []
+  | none => []
 
 def retF (τ : FT) : Option FT :=
   if τ.ok && τ.ras.head? == some τ.room && 8 ≤ τ.depth then
-    some ⟨true, killSp τ.t, τ.nfr, τ.depth - 8, τ.room + 8, τ.sec, τ.ras.tail,
-      τ.ub.filter (·.1 != .rsp), none, τ.mb⟩
+    some ⟨true, { killSp τ.t with bases := spBase τ ++ kill τ.t .rsp }, τ.nfr, τ.depth - 8, τ.room + 8,
+      τ.sec, τ.ras.tail, τ.ub.filter (·.1 != .rsp), none, τ.mb, τ.fw⟩
   else none
 
 /-- The base taint with a frame of `b` bytes pushed at the head of the
@@ -364,7 +378,8 @@ def pushF (τ : FT) : Instr → Option FT
   | .alloc b =>
     if τ.ok && 0 < b && b < 4096 && b % 8 == 0 && b ≤ τ.room then
       some ⟨true, shiftIn τ.t b (newSlots τ.sec (τ.room - b) b), τ.nfr + 1, τ.depth + b, τ.room - b, τ.sec,
-        τ.ras, τ.ub.filter (·.1 != .rsp), none, τ.mb.map fun e => (e.1 + 1, e.2.1, e.2.2.1 + 1, e.2.2.2)⟩
+        τ.ras, τ.ub.filter (·.1 != .rsp), none, τ.mb.map fun e => (e.1 + 1, e.2.1, e.2.2.1 + 1, e.2.2.2),
+        (τ.room - b) :: τ.fw⟩
     else none
   | _ => none
 
@@ -379,7 +394,7 @@ def popF (τ : FT) : Instr → Option FT
       let mb' := τ.mb.filterMap fun e =>
         if e.1 = 0 ∨ e.2.2.1 = 0 then none else some (e.1 - 1, e.2.1, e.2.2.1 - 1, e.2.2.2)
       some ⟨true, shiftOut τ.t, τ.nfr - 1, τ.depth - b, τ.room + b, sec', τ.ras,
-        τ.ub.filter (·.1 != .rsp), none, mb'⟩
+        τ.ub.filter (·.1 != .rsp), none, mb', τ.fw.tail⟩
     else none
   | _ => none
 
