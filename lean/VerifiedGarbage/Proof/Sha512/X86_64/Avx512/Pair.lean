@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha512.X86_64.Avx512.Compress
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Spec
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx512.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
@@ -437,5 +438,49 @@ theorem sched_ok (s : State) {j : Nat} (i : Nat) (hj : 1 ≤ j) (hn : 8 * j + i 
   · rw [hmem]; exact wmem2_store (by omega) hm
   · rw [hmem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_offset (by omega) (by omega))
+
+/-! ## The words of the blocks -/
+
+/-- `vpermq` with `0xD8`: the middle quadwords exchanged, which makes two
+words of each block the two blocks' words. -/
+theorem permD8 (a b c d : Word) :
+    (permQwords ((d ++ c : BitVec 128) ++ (b ++ a : BitVec 128)) 0xD8).extractLsb' 0 128 = c ++ a ∧
+    (permQwords ((d ++ c : BitVec 128) ++ (b ++ a : BitVec 128)) 0xD8).extractLsb' 128 128 = d ++ b := by
+  have e0 : ((0xD8 : BitVec 8).extractLsb' (2 * 0) 2).toNat = 0 := rfl
+  have e1 : ((0xD8 : BitVec 8).extractLsb' (2 * 1) 2).toNat = 2 := rfl
+  have e2 : ((0xD8 : BitVec 8).extractLsb' (2 * 2) 2).toNat = 1 := rfl
+  have e3 : ((0xD8 : BitVec 8).extractLsb' (2 * 3) 2).toNat = 3 := rfl
+  simp only [permQwords, e0, e1, e2, e3, ShaNi.qword256_0, ShaNi.qword256_1, ShaNi.qword256_2,
+    ShaNi.qword256_3, ShaNi.lo4, ShaNi.hi4]
+  exact ⟨trivial, trivial⟩
+
+/-- Words `2i` and `2i+1` of the two blocks, loaded and stored. -/
+theorem load2_ok {i : Nat} (hi : i < 8) (s : State) {p₀ p₁ pO : Addr} {M₀ M₁ : Block}
+    (hrsi : s.gpr .rsi = p₀) (hrcx : s.gpr .rcx = p₁) (eO : s.ea (wSlot i) = pO)
+    (hin₀ : InRegions (s.rd ++ s.wr) (p₀ + BitVec.ofInt 64 ((16 * i : Nat) : Int)) 16)
+    (hin₁ : InRegions (s.rd ++ s.wr) (p₁ + BitVec.ofInt 64 ((16 * i : Nat) : Int)) 16)
+    (hout : InRegions s.wr pO 32)
+    (hm : s.xmm mB = Impl.Sha512.X86_64.Avx2.bswapMask) (hm' : s.ymmHi mB = Impl.Sha512.X86_64.Avx2.bswapMask)
+    (hb₀ : ∀ t : Nat, t < 16 → bswap64 (s.mem.readW (p₀ + BitVec.ofInt 64 ((8 * t : Nat) : Int)) 64) = W M₀ t)
+    (hb₁ : ∀ t : Nat, t < 16 → bswap64 (s.mem.readW (p₁ + BitVec.ofInt 64 ((8 * t : Nat) : Int)) 64) = W M₁ t) :
+    WP isa (.block (load i)) s fun s' =>
+      s'.xmm w0 = W M₁ (2 * i) ++ W M₀ (2 * i) ∧ s'.ymmHi w0 = W M₁ (2 * i + 1) ++ W M₀ (2 * i + 1) ∧
+      s'.mem = s.mem.writeW pO ((W M₁ (2 * i + 1) ++ W M₀ (2 * i + 1)) ++ (W M₁ (2 * i) ++ W M₀ (2 * i))) ∧
+      (∀ r, r ≠ w0 → r ≠ w1 → s'.xmm r = s.xmm r ∧ s'.ymmHi r = s.ymmHi r) ∧
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have q₀ := Proof.Sha512.X86_64.Avx2.load_pair M₀ s.mem p₀ hi hb₀
+  have q₁ := Proof.Sha512.X86_64.Avx2.load_pair M₁ s.mem p₁ hi hb₁
+  have pd := permD8 (W M₀ (2 * i)) (W M₀ (2 * i + 1)) (W M₁ (2 * i)) (W M₁ (2 * i + 1))
+  simp only [Proof.Sha512.X86_64.Avx2.pair] at q₀ q₁
+  simp only [State.ea, wSlot] at eO
+  simp only [mB] at hm hm'
+  apply WP.of_runBlock
+  simp only [load, wSlot, w0, w1, mB, reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil,
+    reduceExec, reduceVOpExec, isa, State.load128, State.store256, State.ea, State.ymm, State.lane,
+    Impl.Sha512.X86_64.Avx2.at_, RegUpd.xmm_setV, RegUpd.ymmHi_setV_256, RegUpd.ymmHi_setV_128,
+    RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV, hrsi, hrcx, eO, hin₀, hin₁, hout, hm, hm',
+    q₀, q₁, pd, Option.map_some, Option.some.injEq, exists_eq_left', reduceVBinOpSse,
+    show (1 : BitVec 8).getLsbD 0 = true from rfl]
+  exact ⟨trivial, trivial, trivial, fun r h0 h1 => by simp [h0, h1], trivial, trivial, trivial⟩
 
 end VG.Proof.Sha512.X86_64.Avx512
