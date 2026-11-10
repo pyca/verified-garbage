@@ -118,9 +118,10 @@ theorem tailW_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   -- The rounds.
   refine WP.seq (WP.mono (rounds_ok (w := w) (da := slot w a) (dA := slot w 2) (dB := slot w b) (dM := slot w 0) hs₂'
     (by rw [g₂' .r6 (by decide), i6]) (by rw [g₂' .r8 (by decide), i8]) (by rw [g₂' .r7 (by decide), i7])
+    (by rw [g₂' .r9 (by decide), i9, show slot w 2 + 8 * (w + 2) = slot w 3 by unfold slot; omega_arith])
     (by rw [g₂' .r10 (by decide), i10]) (by rw [g₂' .r11 (by decide), i11]) j4
-    (by rw [m0₂, e22]; exact mont_newton64 _ _ hinv') w22.symm hw2 hw' (by omega_arith)
-    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hz
+    (by rw [m0₂, e22]; exact mont_newton64 _ _ hinv') w22.symm hw2 hw' (by unfold slot; omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hz
     (by rw [v₂ hb hb2, v₂ (by omega) (by decide), wv, wv]; exact hB))
     fun s₃' ⟨⟨tlt, teq, out₃, r22₃⟩, k₃'⟩ => ?_)
   -- `r12` back, at the start of `T - m`.

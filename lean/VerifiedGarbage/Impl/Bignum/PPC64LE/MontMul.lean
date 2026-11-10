@@ -12,29 +12,27 @@ arrays of `w + 2` words, the modulus `m` in array 0, the accumulator in
 array 2 and a temporary in array 3.
 
 The multiplication is finely integrated operand scanning (FIOS) in radix
-`2⁶⁴`, with the carries through `XER`'s CA (`addc`, `addze`). The
-accumulator `T` is `w + 1` words: for each word `aᵢ` of `a`, one pass over
-`T`, `b` and `m` computes `T := (T + aᵢ b + u m) / 2⁶⁴`:
+`2⁶⁴`. The accumulator `T` is `w + 1` words: for each word `aᵢ` of `a`, one
+pass over `T`, `b` and `m` computes `T := (T + aᵢ b + u m) / 2⁶⁴`:
 
-* word 0: `s₀ = t₀ + aᵢ b₀ mod 2⁶⁴` and the first carry `c`, the high word
-  of `t₀ + aᵢ b₀`; `u = s₀ (-m⁻¹) mod 2⁶⁴`, so that `s₀ + u m₀` is a multiple
-  of `2⁶⁴`, and the second carry `d = (s₀ + u m₀) / 2⁶⁴`;
-* words `j = 1` to `w - 1`: `x = tⱼ + aᵢ bⱼ + c` and `y = x mod 2⁶⁴ + u mⱼ +
-  d`, each below `2¹²⁸` (`(2⁶⁴ - 1)² + 2 (2⁶⁴ - 1) = 2¹²⁸ - 1`), `c` and `d`
-  their high words and the low word of `y` stored at word `j - 1`, so that
-  each word of `T` is loaded and stored once; `(w - 1) mod 4` words one at a
-  time, then the others four at a time. Each sum adds the product's low
-  word to the other addend first and the carry from the previous word
-  last, so that the carries `c` and `d` each pass through two dependent
-  instructions per word (`addc`, `addze`);
-* word `w`: `t_w + c + d`, stored at words `w - 1` and `w`.
+* word 0 (`head`): `s₀ = t₀ + lo(aᵢ b₀)`; `u = s₀ (-m⁻¹) mod 2⁶⁴`, so that
+  `s₀ + lo(u m₀)` is a multiple of `2⁶⁴`;
+* words `1` to `w - 1` in blocks of `k ≤ 4` words (`block`): one block of
+  `(w - 1) mod 4` words, then blocks of four. A block adds `aᵢ b + u m` to
+  its words with four carry chains, each one `adde` per word: the low words
+  of `aᵢ bⱼ`, their high words (one word up), the low words of `u mⱼ` and
+  their high words. What a chain leaves for the next block is pending: the
+  carries of the two low chains (in `r12` and `r11`, as `CA - 1`), and the
+  last high words, with the carries of the high chains added (`r20` and
+  `r22`). Each word is loaded and stored once, one word down;
+* word `w` (`top`): `t_w` plus the pending values, stored at words `w - 1`
+  and `w`.
 
 `m' = -m⁻¹ mod 2⁶⁴` is computed once (`mPrime`), from the header's `-m⁻¹ mod
 2³²` (`y`, in `r12`) by one step of Newton's iteration, `y (2 + m₀ y) mod
-2⁶⁴`, since `m₀ y (2 + m₀ y) + 1 = (m₀ y + 1)²`, into `r22` and the
-accumulator's word `w + 1`, which `T` does not use; each round uses it in
-`r22` and loads it from there again at its end, so that `r12` is free for
-the steps. After the rounds `r12 := m' mod 2³²`, which is `y` again
+2⁶⁴`, since `m₀ y (2 + m₀ y) + 1 = (m₀ y + 1)²`, into the accumulator's word
+`w + 1`, which `T` does not use, and each round loads it from there. After
+the rounds, `r22 := m'` and `r12 := m' mod 2³²`, which is `y` again
 (`restoreMinv`).
 
 After the `w` rounds, `T < 2 m` and `T 2^(64 w) ≡ a b (mod m)`. Then `T -
@@ -42,23 +40,16 @@ m` is computed into the temporary word by word, with the borrow in CA
 (`subfc`, `subfe`), and the borrow out of the top word `t_w` selects `T` or
 `T - m` with a mask (`subfe` of a register from itself: all ones or 0).
 
-Every loop counts a register down from a public count (`w + 1`, `w`, `(w -
-1) mod 4`, `(w - 1) / 4`, from `n = 2 w`), every address is a pointer plus a
-constant, and the pointers are the header's (loaded once, at the start,
-before any store) advanced by 8 per word, so only the pointers and `w`
-affect timing.
-
-The code takes a scratch buffer (`r8`, 72 bytes) where it saves the
-nonvolatile `r14`–`r22`, keeping its address in `r21`.
+Every loop counts down from a public count (`w + 1`, `w`, `(w - 1) mod 4`,
+`(w - 1) / 4`, from `n = 2 w`), every address is a pointer plus a constant,
+and the pointers are the arguments' advanced by 8 per word, so only the
+pointers and `w` affect timing.
 
 Registers: `r5` `o`'s base, `r6` (advancing over) `a`, `r7` `b`'s base, `r8`
-the accumulator's, `r9` the temporary's, `r10` `m`'s, `r11` `n`, `r12`
-`-m⁻¹ mod 2³²` (but in the rounds); in the rounds, `r4` the rounds left,
-`r14`, `r15`, `r3` the pointers into the accumulator, `b` and `m`, `r16` the
-words (or groups of four) left, `r17` `aᵢ`, `r0` `u`, `r22` `m'` at the start
-of a round, `r18` and `r22` the carries `c` and `d` in it, `r12`, `r19`,
-`r20` temporaries; in the final subtraction, `r14`–`r16` the pointers,
-`r17` the words left, `r20` the mask, and `r0`, `r3` temporaries.
+the accumulator's, `r9` the temporary's, `r10` `m`'s, `r11` `n`, `r12` `-m⁻¹
+mod 2³²`, but in the rounds (see "A round"); in the final subtraction,
+`r14`–`r16` the pointers, `r17` the words left, `r20` the mask, and `r0`,
+`r3` temporaries.
 -/
 
 @[expose] public section
@@ -101,68 +92,112 @@ rounds' count `w` into `r4`. -/
 def zeroAcc : Prog isa :=
   .seq (.block (mPrime ++ zeroAccPre)) (countLoop .r17 [.store .d .r3 .r14 0, .addi .r14 .r14 8])
 
-/-! ## A round -/
+/-! ## A round
 
-/-- The start of a round, for `aᵢ` at `r6` (advanced): `aᵢ` into `r17`; `s₀ =
-t₀ + aᵢ b₀ mod 2⁶⁴` into `r20` and the high word of `t₀ + aᵢ b₀` (the first
-carry, `c`) into `r18`; `u = s₀ m' mod 2⁶⁴` into `r0`, for `m' = -m⁻¹ mod
-2⁶⁴` in `r22`; `(s₀ + u m₀) / 2⁶⁴` (the
-second carry, `d`: the low word is 0) into `r22`; the pointers `r14`, `r15`,
-`r3` at word 0 of `T`, `b` and `m`. -/
-def fiosHead : List Instr :=
-  [.load .d .r17 .r6 0, .addi .r6 .r6 8, .load .d .r19 .r7 0, .load .d .r20 .r8 0,
-    .mul .r18 .r17 .r19, .mulhu .r19 .r17 .r19, .addc .r20 .r20 .r18, .addze .r18 .r19,
-    .load .d .r3 .r10 0, .mul .r0 .r20 .r22, .mul .r22 .r0 .r3, .mulhu .r19 .r0 .r3, .addc .r22 .r22 .r20, .addze .r22 .r19,
-    .addi .r14 .r8 0, .addi .r15 .r7 0, .addi .r3 .r10 0]
+The rounds keep in registers only the values that the taint analysis of
+their callers must see as public, or that the code computes from public
+ones: the pointers, the counts, `m`'s base `r10` and `o`'s `r5`. Everything
+else they need is derived from those (`8 w` is the distance `r16 - r10`
+moves over a round, the accumulator's base `r10 + 16 (w + 2)`) or is
+secret, as `m'`, kept in the accumulator's word `w + 1` (`mPrime`). The
+callers' registers `r21` and `r23`–`r31` are never written, so a caller's
+public register stays public.
 
-/-- Word `j` of a round, the pointers at word `j - 1` less `k`: `x = (tⱼ + aᵢ
-bⱼ) + c` (the words at `r14 + k + 8` and `r15 + k + 8`), `c` := its high word
-and `y = (u mⱼ + x mod 2⁶⁴) + d` (`mⱼ` at `r3 + k + 8`), `d` := its high
-word, and its low word stored at `r14 + k`: word `j - 1` of `(T + aᵢ b + u m) /
-2⁶⁴`. Each sum fits in 128 bits, `(2⁶⁴ - 1)² + 2 (2⁶⁴ - 1) = 2¹²⁸ - 1`, and
-each high word of a product is at most `2⁶⁴ - 2`, so that adding a carry
-to it does not carry. -/
-def fiosStep (k : Nat) : List Instr :=
-  [.load .d .r19 .r14 (k + 8), .load .d .r20 .r15 (k + 8), .mul .r12 .r17 .r20, .mulhu .r20 .r17 .r20,
-    .addc .r19 .r19 .r12, .addze .r20 .r20, .addc .r19 .r19 .r18, .addze .r18 .r20,
-    .load .d .r20 .r3 (k + 8), .mul .r12 .r0 .r20, .mulhu .r20 .r0 .r20,
-    .addc .r12 .r12 .r19, .addze .r20 .r20, .addc .r12 .r12 .r22, .addze .r22 .r20, .store .d .r12 .r14 k]
+Registers in the rounds: `r6` `a` (advancing), `r14` the accumulator, at
+word `j - 1` of `T` while word `j` is next, `r15` and `r16` `b` and `m`, at
+word `j`, `r17` the rounds left in its high half and, in its low half, the
+blocks of four words left; `r18` `aᵢ` and `r19` `u`; `r20`, `r12`, `r22`,
+`r11` the pending values (below): `r3`, `r4`, `r7`, `r8` the words of a
+block (`sreg`), `r9` and `r0` temporaries. -/
 
-/-- `U` words of a round, and the pointers advanced past them. -/
-def fiosGroup (U : Nat) : List Instr :=
-  (List.range U).flatMap (fun k => fiosStep (8 * k)) ++
-    [.addi .r14 .r14 (8 * U), .addi .r15 .r15 (8 * U), .addi .r3 .r3 (8 * U)]
+/-- The registers of the words of a block. -/
+def sreg (i : Nat) : Reg := [.r3, .r4, .r7, .r8].getD i .r8
 
-/-- The words of a round are done four at a time. -/
-def unroll : Nat := 4
+/-- Word `i` of a block's low products: `S i += lo(x pᵢ) + CA`, `pᵢ` loaded
+into `r9`. -/
+def loStep (x p : Reg) (i : Nat) : List Instr :=
+  [.load .d .r9 p (8 * i), .mul .r0 x .r9, .adde (sreg i) (sreg i) .r0]
 
-/-- `(w - 1) mod 4`, from `n = 2 w`, into `r16`. -/
-def fiosRem : List Instr := [.lsr .d .r16 .r11 1, .subi .r16 .r16 1, .lsl .r16 .r16 62, .lsr .d .r16 .r16 62]
+/-- Word `i + 1` of a block's high products: `S (i + 1) += hi(x pᵢ) + CA`. -/
+def hiStep (x p : Reg) (i : Nat) : List Instr :=
+  [.load .d .r0 p (8 * i), .mulhu .r0 x .r0, .adde (sreg (i + 1)) (sreg (i + 1)) .r0]
 
-/-- `(w - 1) / 4` into `r16`. -/
-def fiosQuot : List Instr := [.lsr .d .r16 .r11 1, .subi .r16 .r16 1, .lsr .d .r16 .r16 2]
+/-- Half of a block of `k` words: `S += x p + c + h` for the `k` words `p`
+at the register `p`. Two carry chains, each one pass of `adde` over the
+block's words: the low words of the products, with the carry `c` in and
+out, kept in `c` as `CA - 1` (`subfe c, c, c`: 0 or all ones, restored by
+`subfc c, c, r10`, which carries iff `c` is 0, `r10` not being all ones),
+and the high words, one word up, from the pending high word `h` and into
+it, `h := hi(x pₖ₋₁) + CA`, which does not overflow (a high word is at
+most `2⁶⁴ - 2`). -/
+def half (c x p h : Reg) (k : Nat) : List Instr :=
+  [.subc c .r10 c] ++ (List.range k).flatMap (loStep x p) ++ ([.mulhu .r9 x .r9, .sube c c c, .addc .r3 .r3 h] : List Instr) ++
+    (List.range (k - 1)).flatMap (hiStep x p) ++ ([.addze h .r9] : List Instr)
 
-/-- Word `w` (above `r14`, at word `w - 1`) plus both carries, stored at
-words `w - 1` and `w`; then `m'` back into `r22`, from word `w + 1`. -/
-def fiosTop : List Instr :=
-  [.load .d .r19 .r14 8, .addc .r18 .r18 .r19, .li .r19 0, .addze .r19 .r19, .addc .r18 .r18 .r22,
-    .addze .r19 .r19, .store .d .r18 .r14 0, .store .d .r19 .r14 8, .load .d .r22 .r14 16]
+/-- A block of `k ≤ 4` words: words `j` to `j + k - 1` of `T`, loaded,
+`T + aᵢ b + u m` added (`half` with `aᵢ` and `b`, then `u` and `m`), stored
+one word down, and the pointers advanced. -/
+def block (k : Nat) : List Instr :=
+  (List.range k).map (fun i => .load .d (sreg i) .r14 (8 * i + 8)) ++ half .r12 .r18 .r15 .r20 k ++
+    half .r11 .r19 .r16 .r22 k ++ (List.range k).map (fun i => .store .d (sreg i) .r14 (8 * i)) ++
+    ([.addi .r14 .r14 (8 * k), .addi .r15 .r15 (8 * k), .addi .r16 .r16 (8 * k)] : List Instr)
 
-/-- `if r16 ≠ 0` then `r16` times `body`. -/
-def countLoop? (body : List Instr) : Prog isa :=
-  .ite (.zero .d .r16) (.block []) (countLoop .r16 body)
+/-- The start of a round, `r16` and `r15` at word `w` of `m` and `b`: `8 w`
+into `r9`, the pointers at word 0 (`r14` at the accumulator's base, `r10 + 2
+(8 w) + 32`), `m'` from the accumulator's word `w + 1` into `r19`, `(w - 1) /
+4` added to `r17` and `(w - 1) mod 4` into `r9`. -/
+def roundStart : List Instr :=
+  [.sub .r9 .r16 .r10, .addi .r16 .r10 0, .sub .r15 .r15 .r9, .add .r3 .r9 .r9, .add .r3 .r3 .r10,
+    .addi .r14 .r3 32, .add .r4 .r3 .r9, .load .d .r19 .r4 40, .lsr .d .r7 .r9 3, .subi .r7 .r7 1,
+    .lsr .d .r8 .r7 2, .add .r17 .r17 .r8, .lsl .r9 .r7 62, .lsr .d .r9 .r9 62]
 
-/-- One round: `T := (T + aᵢ b + u m) / 2⁶⁴`, finely integrated (FIOS): words
-`1` to `w - 1` one at a time (`(w - 1) mod 4` of them), then four at a
-time. -/
+/-- Word 0: `aᵢ` into `r18` (`r6` advanced); `s₀ = t₀ + lo(aᵢ b₀)` into `r3`,
+its carry kept in `r12` and `hi(aᵢ b₀)` in `r20`; `u = s₀ m'` into `r19`;
+`s₀ + lo(u m₀)`, a multiple of `2⁶⁴`, its carry kept in `r11` and
+`hi(u m₀)` in `r22`; `b`'s and `m`'s pointers at word 1. -/
+def head : List Instr :=
+  [.load .d .r18 .r6 0, .addi .r6 .r6 8, .load .d .r3 .r14 0, .load .d .r0 .r15 0, .mulhu .r20 .r18 .r0,
+    .mul .r0 .r18 .r0, .addc .r3 .r3 .r0, .sube .r12 .r12 .r12, .mul .r19 .r19 .r3, .load .d .r0 .r16 0,
+    .mulhu .r22 .r19 .r0, .mul .r0 .r19 .r0, .addc .r3 .r3 .r0, .sube .r11 .r11 .r11, .addi .r15 .r15 8,
+    .addi .r16 .r16 8]
+
+/-- Words `1` to `(w - 1) mod 4` (`r9`), one block of that many. -/
+def remBlock : Prog isa :=
+  .ite (.zero .d .r9) (.block []) (.seq (.block [.subi .r9 .r9 1]) (.ite (.zero .d .r9) (.block (block 1))
+    (.seq (.block [.subi .r9 .r9 1]) (.ite (.zero .d .r9) (.block (block 2)) (.block (block 3))))))
+
+/-- The other words, four at a time, counted by `r17`'s low half. -/
+def quadLoop : Prog isa :=
+  .ite (.zero .w .r17) (.block []) (.loop (.block (block 4 ++ ([.subi .r17 .r17 1] : List Instr))) (.nonzero .w .r17))
+
+/-- Word `w` (above `r14`, at word `w - 1`) plus the pending values, stored
+at words `w - 1` and `w`; then one round less in `r17`'s high half, and
+`r9` := the rounds left. -/
+def top : List Instr :=
+  [.load .d .r3 .r14 8, .li .r4 0, .subc .r12 .r10 .r12, .adde .r3 .r3 .r20, .addze .r4 .r4,
+    .subc .r11 .r10 .r11, .adde .r3 .r3 .r22, .addze .r4 .r4, .store .d .r3 .r14 0, .store .d .r4 .r14 8,
+    .li .r9 1, .lsl .r9 .r9 32, .sub .r17 .r17 .r9, .lsr .d .r9 .r17 32]
+
+/-- One round: `T := (T + aᵢ b + u m) / 2⁶⁴`, by blocks of words with four
+carry chains. -/
 def round : Prog isa :=
-  .seq (.block (fiosHead ++ fiosRem))
-    (.seq (countLoop? (fiosGroup 1)) (.seq (.block fiosQuot) (.seq (countLoop? (fiosGroup unroll))
-      (.block fiosTop))))
+  .seq (.block (roundStart ++ head)) (.seq remBlock (.seq quadLoop (.block top)))
 
-/-- The `w` rounds, counted by `r4`. -/
+/-- Before the rounds: `r16` and `r15` at word `w` of `m` and `b`, as a round
+leaves them, and `w` rounds in `r17`'s high half, from `r4 = w`. -/
+def roundsInit : List Instr :=
+  [.lsl .r9 .r11 2, .add .r16 .r10 .r9, .add .r15 .r7 .r9, .lsl .r17 .r4 32]
+
+/-- After the rounds: `2 w` back in `r11`, the bases of `b`, the accumulator
+and the temporary back in `r7`, `r8` and `r9`, all from `8 w = r16 - r10`,
+and `m'` in `r22`. -/
+def roundsFini : List Instr :=
+  [.sub .r3 .r16 .r10, .lsr .d .r11 .r3 2, .sub .r7 .r15 .r3, .add .r8 .r3 .r3, .add .r8 .r8 .r10,
+    .addi .r8 .r8 32, .add .r9 .r8 .r3, .addi .r9 .r9 16, .add .r4 .r8 .r3, .load .d .r22 .r4 8]
+
+/-- The `w` rounds. -/
 def rounds : Prog isa :=
-  .loop (.seq round (.block [.subi .r4 .r4 1])) (.nonzero .d .r4)
+  .seq (.block roundsInit) (.seq (.loop round (.nonzero .d .r9)) (.block roundsFini))
 
 /-! ## The final subtraction -/
 
