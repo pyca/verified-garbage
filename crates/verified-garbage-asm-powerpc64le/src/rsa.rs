@@ -4312,5 +4312,9 @@ pub(crate) mod vg_rsa_private_checked_precomputed;
 pub(crate) mod vg_rsa_private_crt;
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_private_crt_precomputed.rs"]
+pub(crate) mod vg_rsa_private_crt_precomputed;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_public_precomputed_checked.rs"]
 pub(crate) mod vg_rsa_public_precomputed_checked;
