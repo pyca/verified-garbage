@@ -227,7 +227,7 @@ theorem tailW_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   · simp only [tailRegs8, tailRegs, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr' hr
     rcases hr' with hr' | hr'
     · exact absurd hr' hr
-    · rcases hr' with rfl | rfl | rfl | rfl | rfl <;> assumption
+    · rcases hr' with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
   · exact k.gpr r hr'
 
 /-- `tailW_ok`, of the kernel's `tail8`, which also writes `r27` and `r28`–`r31`. -/

@@ -30,10 +30,16 @@ values left pending for word 1), words `1` to `w - 1` in blocks
 rounds used as pointers and counts back in `r7`–`r9` and `r11`
 (`roundsFini_ok`).
 
+The kernel's round (`round8_ok`) is the same but for its blocks: one of
+`(w - 1) mod 4` words, one of four if bit 2 of `w - 1` is set (`quadBlock_ok`,
+the bit in `r27`), then blocks of eight (`octLoop_ok`). The rounds' proof is
+generic in the round (`RoundSpec`, `roundsWith_ok`), and gives both `rounds_ok`
+and `rounds8_ok`.
+
 ## Blocks
 
-A block of `k ≤ 8` words (`block`) holds the words in `sreg 0`, …, `sreg (k -
-1)` and adds `x p` to them twice (`half`), each time in two carry chains:
+A block of `k ≤ 8` words (`block`; only the kernel's rounds have blocks of
+more than four) holds the words in `sreg 0`, …, `sreg (k - 1)` and adds `x p` to them twice (`half`), each time in two carry chains:
 the low words of the products (`lo_ok`, one `loStep` per word) and their
 high words, one word up (`hi_ok`, one `hiStep` per word). `half_ok` puts the
 two together with the pending values a chain leaves for the next block (a
