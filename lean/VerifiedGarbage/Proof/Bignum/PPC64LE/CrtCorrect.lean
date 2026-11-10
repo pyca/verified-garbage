@@ -28,6 +28,8 @@ namespace VG.Proof.Bignum.PPC64LE.Crt
 open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Bignum.PPC64LE.Crt
 open VG.Proof.Bignum.PPC64LE
 
+variable {pc : Bool}
+
 theorem pres_cases : ∀ r ∈ preserved, (∀ i < 18, r ≠ Crt.saved i) →
     r ∉ frontRegs ∧ r ∉ mid1Regs ++ mid2Regs := by
   decide
@@ -88,14 +90,14 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
     rw [wm, wot .r3 (by decide), u3]
     refine VG.Proof.Bignum.crtWritten_of (VG.Proof.Bignum.bytesAt_length _ _ _) ub (toNat_flag _)
       (fun hv => ?_) (fun hv => ?_)
-    · have hcb : cb s = (decide (vC s < vN s) && decide (vQI s < vP s) && decide (vP s * vQ s = vN s)) := by
+    · have hcb : cb pc s = (decide (vC s < vN s) && decide (vQI s < vP s) && decide (vP s * vQ s = vN s)) := by
         simp only [cb, crtMask, hv, Bool.true_and]
       refine ⟨?_, ?_⟩
       · rw [hcb]
         simp only [Bool.and_eq_true, decide_eq_true_eq]
         exact ⟨fun ⟨⟨a, b⟩, c⟩ => ⟨a, c, b⟩, fun ⟨a, c, b⟩ => ⟨⟨a, b⟩, c⟩⟩
       · unfold vr
-        cases hb : cb s
+        cases hb : cb pc s
         · rfl
         · obtain ⟨_, _, _, _, hp1', _, _, _⟩ := mask_true hP.k64
             (by rw [VG.Proof.Bignum.bytesAt_length]; exact hP.pk) (by rw [VG.Proof.Bignum.bytesAt_length]; exact hP.qk)
@@ -105,7 +107,7 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
           unfold vh vm1 vm2 mQ mP mQI
           simp only [hb, ↓reduceIte]
           exact Nat.add_comm _ _
-    · have hcb : cb s = false := by simp only [cb, crtMask, hv, Bool.false_and]
+    · have hcb : cb pc s = false := by simp only [cb, crtMask, hv, Bool.false_and]
       exact ⟨hcb, by unfold vr; rw [hcb]; rfl⟩
 
 end VG.Proof.Bignum.PPC64LE.Crt

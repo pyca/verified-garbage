@@ -159,7 +159,7 @@ theorem pins124 : Pins (At C0 crtF 124) [.r10, .r11, .r23, .r29, .r30, .r31] := 
       (by decide) fun t X _ k1 => ?_
     have hd : ∀ d, d + 8 ≤ 256 → word t.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
       X.out.word (Or.inl hd) (by omega_arith)
-    refine phasePA_ok (wX := cwX s₀) (xj := 4) (oA := oPa s₀) (L := cpL s₀) (k := ck s₀) (Pv := mP s₀) (Cv := vC s₀)
+    refine phasePA_ok (wX := cwX s₀) (xj := 4) (oA := oPa s₀) (L := cpL s₀) (k := ck s₀) (Pv := mP pc s₀) (Cv := vC s₀)
       (F.scr.congr k1.wr) (by omega_arith) (Nat.le_refl _) rfl (by unfold wsWords; omega_arith) hwX (by decide)
       ((k1.gpr _ (by decide)).trans F.r23) ((k1.gpr _ (by decide)).trans F.r27) ((k1.gpr _ (by decide)).trans F.r28)
       (by decide) (by decide) (by rw [hd _ (by decide)]; exact F.hBP) (by rw [hd _ (by decide)]; exact F.hPL)
@@ -225,7 +225,7 @@ theorem pins172 : Pins (At C0 crtF 172) [.r10, .r11, .r23, .r29, .r30, .r31] := 
       (by decide) fun t₁ X _ k1 => mid1B_ok hP F X k1 (by decide) (by decide) (by decide) fun t Y k2 => ?_
     have hd : ∀ d, d + 8 ≤ 256 → word t.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
       Y.out.word (Or.inl hd) (by omega_arith)
-    refine phasePA_ok (wX := cwX s₀) (xj := 5) (oA := oQa s₀) (L := cqL s₀) (k := ck s₀) (Pv := mQ s₀) (Cv := vC s₀)
+    refine phasePA_ok (wX := cwX s₀) (xj := 5) (oA := oQa s₀) (L := cqL s₀) (k := ck s₀) (Pv := mQ pc s₀) (Cv := vC s₀)
       (F.scr.congr k2.wr) (by omega_arith) (by omega_arith) rfl (by unfold wsWords; omega_arith) hwX (by decide)
       ((k2.gpr _ (by decide)).trans F.r23) ((k2.gpr _ (by decide)).trans F.r27) ((k2.gpr _ (by decide)).trans F.r28)
       (by decide) (by decide) (by rw [hd _ (by decide)]; exact F.hBQ) (by rw [hd _ (by decide)]; exact F.hQL)
