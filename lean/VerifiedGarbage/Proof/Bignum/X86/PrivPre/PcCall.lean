@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Args
+public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Call
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
@@ -207,6 +208,85 @@ theorem pc_pre (A : PPABI s) (B : Body s u) (V : ∀ j < 6, u.mem.readW (slot s 
     belowTop (A.belowPre.sub_right preSub), belowTop A.belowN, belowTop A.belowWs,
     (Offset.base_disjoint _ (by omega) (by omega)), by have := A.preBound; omega, A.nBound, A.wsBound, lv,
     by rw [w]; rfl, VG.Proof.Rsa.publicScratch_le lv A.scratchLength⟩
+
+/-- What `vg_rsa_public_precompute` leaves: its result, and `n`'s values at `pre`. -/
+def PcOut (s v : State) : Prop :=
+  match Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (argumentPointer s 2) (arg s 3).toNat) with
+  | some ws => v.gpr .eax = 1 ∧
+      Spec.Rsa.wordsAt v.mem (argumentPointer s 0) (2 * Spec.Rsa.modulusWords (arg s 3).toNat) = ws
+  | none => v.gpr .eax = 0 ∧
+      Spec.Rsa.wordsAt v.mem (argumentPointer s 0) (2 * Spec.Rsa.modulusWords (arg s 3).toNat) =
+        List.replicate (2 * Spec.Rsa.modulusWords (arg s 3).toNat) 0
+
+/-- `n`'s bytes, apart from what the body writes. -/
+theorem n_apart (A : PPABI s) : ∀ r ∈ bodyW s, (⟨argumentPointer s 2, (arg s 3).toNat⟩ : Region).Disjoint r := by
+  intro r hr
+  simp only [bodyW, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact A.preN.symm
+  · exact A.nWs
+  · exact A.belowN.symm
+
+theorem Body.nBytes (A : PPABI s) (B : Body s u) :
+    Spec.Rsa.bytesAt u.mem (argumentPointer s 2) (arg s 3).toNat =
+      Spec.Rsa.bytesAt s.mem (argumentPointer s 2) (arg s 3).toNat := by
+  unfold Spec.Rsa.bytesAt
+  refine List.map_congr_left fun i hi => ?_
+  have := (arg s 3).isLt
+  exact B.frame.bytes (R := ⟨argumentPointer s 2, (arg s 3).toNat⟩) (n_apart A) (by simp; omega)
+    (List.mem_range.mp hi)
+
+theorem pc_call {pcName : String} {pc : Prog isa}
+    (pv : Verified target pc (Spec.Rsa.publicPrecomputeContract abi 96)) (pst : stackUse pc ≤ 96) (pns : NoSp pc)
+    (A : PPABI s) (B : Body s u) (V : ∀ j < 6, u.mem.readW (slot s (4 * j)) 32 = pubVal s j) :
+    WP isa (.call pcName pc) u fun v => Body s v ∧ Keeps [.eax, .ecx, .edx] u v ∧
+      Frame (pcWr s ++ [⟨bot s, 100⟩]) u.mem v.mem ∧ PcOut s v := by
+  have w := wW_toNat A
+  have hl := A.preLength
+  simp only [Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords] at hl
+  have preSub : Region.Sub ⟨argumentPointer s 0, (wW s).toNat * 8⟩ (preR s) := Region.sub_prefix (by omega)
+  have argsSub : Region.Sub ⟨slot s 0, 24⟩ (frameR s) := by
+    rw [frame_base A]; exact Offset.sub _ (by omega) (by omega)
+  have cw : Covers (pcWr s) u.wr := by
+    rw [B.wr, A.wr]
+    refine Covers.of_forall fun r hr => ?_
+    simp only [pcWr, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact Covers.one ⟨preR s, by simp, by
+        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; omega⟩
+    · exact Covers.of_mem fun r hr => by simp at hr; subst hr; simp
+    · exact Covers.one ⟨frameR s, by simp, by
+        rw [frame_base A]; exact Offset.contains _ (by omega) (by omega) (by omega)⟩
+  have cr : Covers (pcRd s ++ pcWr s) (u.rd ++ u.wr) := by
+    refine Covers.append_left ?_ (Covers.right cw)
+    rw [B.rd, A.rd]
+    exact Covers.left (Covers.of_mem fun r hr => by simp [pcRd] at hr; subst hr; simp)
+  refine WP.mono (body_call pv.1 pst pns A B (pc_pre A B V) cr cw fun r hr => ?_) fun v ⟨Bv, K, F, x, M, G, post⟩ =>
+    ⟨Bv, K, F, ?_⟩
+  · simp only [pcWr, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨preR s, by simp, preSub⟩
+    · exact ⟨wsR s, by simp, fun _ h => h⟩
+    · exact ⟨topR s, by simp, Offset.sub_base _ (by simp [stackBytes])⟩
+  have hv : ∀ j < 6, arg (u.callEntry.withRegions (pcRd s) (pcWr s)) j = pubVal s j := fun j hj => by
+    rw [callee_arg A B (by omega)]; exact V j hj
+  sig_post [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argSlots, argVal, argBytes] at post
+  simp only [hv 0 (by decide), hv 1 (by decide), hv 2 (by decide), hv 3 (by decide), pubVal, w] at post
+  rw [BitVec.setWidth_append_eq_right, M, G .eax (by decide)] at post
+  have hb : Spec.Rsa.bytesAt (u.mem.writeW ((u.gpr .esp - 4).setWidth 64) (u.unknowns 0)) (argumentPointer s 2)
+      (arg s 3).toNat = Spec.Rsa.bytesAt s.mem (argumentPointer s 2) (arg s 3).toNat := by
+    rw [← B.nBytes A]
+    unfold Spec.Rsa.bytesAt
+    refine List.map_congr_left fun i hi => ?_
+    have := (arg s 3).isLt
+    refine Frame.bytes (rs := [⟨(u.gpr .esp - 4).setWidth 64, 4⟩])
+      ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
+      (R := ⟨argumentPointer s 2, (arg s 3).toNat⟩) (fun r hr => ?_) (by simp; omega) (List.mem_range.mp hi)
+    obtain rfl := List.mem_singleton.mp hr
+    rw [sp4 A B, e100_sw A]
+    exact (top_apart (d := 96) (n := 4) (by decide) A.belowN).symm
+  rw [hb] at post
+  exact post
 
 end
 end VG.Proof.Bignum.X86.PrivPre
