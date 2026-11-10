@@ -189,7 +189,7 @@ theorem scheduleR_ok (n : Nat) (s : State) (a b c d e a' b' c' d' e' : BitVec 12
     (ha' : s.ymmHi (msg n) = a') (hb' : s.ymmHi (msg (n + 1)) = b') (hc' : s.ymmHi (msg (n + 4)) = c')
     (hd' : s.ymmHi (msg (n + 5)) = d') (he' : s.ymmHi (msg (n + 7)) = e')
     (hout : InRegions s.wr (s.ea (sSlot n)) 32) :
-    WP isa (.block (scheduleR n)) s fun s' =>
+    WP isa (.block (scheduleR schedule n)) s fun s' =>
       s'.xmm (msg n) = xupd a b c d e ∧ s'.ymmHi (msg n) = xupd a' b' c' d' e' ∧
       (∀ r, r ≠ msg n → r ≠ t0 → r ≠ t1 → r ≠ t2 → r ≠ t3 → s'.xmm r = s.xmm r ∧ s'.ymmHi r = s.ymmHi r) ∧
       s'.gpr = s.gpr ∧

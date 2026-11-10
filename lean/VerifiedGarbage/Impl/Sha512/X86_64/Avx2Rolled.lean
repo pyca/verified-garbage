@@ -76,21 +76,23 @@ def roundR (j t' : Nat) : List Instr :=
     .mov y (.reg a), .alu .xor y (.reg b), .alu .and x (.reg y), .alu .xor x (.reg b),
     .alu .add h (.reg x)]
 
-/-- `Impl.Sha512.X86_64.Avx2.schedule i`, storing its words through the index. -/
-def scheduleR (i : Nat) : List Instr :=
-  (schedule i).dropLast ++ [.vmovdquStore .l256 (sSlot i) (msg i)]
+/-- The schedule step `sch i` (`Impl.Sha512.X86_64.Avx2.schedule i`, or
+another computation of the same words in `msg i` that ends with their
+store), storing its words through the index. -/
+def scheduleR (sch : Nat → List Instr) (i : Nat) : List Instr :=
+  (sch i).dropLast ++ [.vmovdquStore .l256 (sSlot i) (msg i)]
 
 /-- Group `i'` (`< 8`) of an iteration of the first block: words `2i'+16`
 and `2i'+17` of the iteration's schedule, woven into rounds `2i'` and
 `2i'+1` (`Impl.Weave.weave`, as OpenSSL spreads its schedule across its
 rounds), so that the vector and integer units both have work throughout. -/
-def groupR (i' : Nat) : List Instr :=
-  VG.Impl.Weave.weave (scheduleR (i' + 8)) (roundR 0 (2 * i') ++ roundR 0 (2 * i' + 1))
+def groupR (sch : Nat → List Instr) (i' : Nat) : List Instr :=
+  VG.Impl.Weave.weave (scheduleR sch (i' + 8)) (roundR 0 (2 * i') ++ roundR 0 (2 * i' + 1))
 
 /-- Groups `0 … n-1` of an iteration. -/
-def groupsR : Nat → Prog isa
+def groupsR (sch : Nat → List Instr) : Nat → Prog isa
   | 0 => .block []
-  | n + 1 => .seq (groupsR n) (.block (groupR n))
+  | n + 1 => .seq (groupsR sch n) (.block (groupR sch n))
 
 /-- Rounds `0 … n-1` of an iteration of block `j`. -/
 def roundsR (j : Nat) : Prog isa → Nat → Prog isa
@@ -115,12 +117,12 @@ def leave : List Instr := [.mov .rsi (.mem (at_ .rcx 1312)), .mov .rdx (.mem (at
 `rsi` and `rdx`. The second block is at `rsi + 128` if there is one
 (`rdx ≥ 2`), and otherwise the first is loaded twice; `r15` points at it
 while the words are loaded. -/
-def first : Prog isa :=
+def first (sch : Nat → List Instr) : Prog isa :=
   .seq (.block [.mov T (.reg .rsi), .alu .cmp .rdx (.imm 1)])
   (.seq (.ite .e (.block []) (.block [.alu .add T (.imm 128)]))
   (.seq (.block (load 0 ++ load 1 ++ load 2 ++ load 3 ++ load 4 ++ load 5 ++ load 6 ++ load 7 ++
     loadState ++ initCarry ++ enter))
-  (.seq (.loop (.seq (groupsR 8) (.block (step 512))) .ne)
+  (.seq (.loop (.seq (groupsR sch 8) (.block (step 512))) .ne)
   (.seq (rounds16 0) (.block leave)))))
 
 /-- The rest of an iteration: the first block's hash value, and the second
@@ -134,7 +136,7 @@ def rest : Prog isa :=
       (.block (leave ++ addState ++ ([.alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 2)] : List Instr))))))
 
 /-- One iteration: two blocks, or the last one. -/
-def body : Prog isa := .seq first rest
+def body (sch : Nat → List Instr) : Prog isa := .seq (first sch) rest
 
 /-- The callee-saved registers saved in the scratch space, and where; `r14`
 and `r15` are saved in `xmm14` and `xmm15`. -/
@@ -147,8 +149,11 @@ def restore : List Instr :=
   saved.map (fun (r, d) => .mov r (.mem (at_ .rcx d))) ++
     [.vop .vzeroupper, .movqR .r14 .xmm14, .movqR .r15 .xmm15]
 
-def compress : Prog isa :=
+/-- The compression function with the schedule steps `sch`. -/
+def compressWith (sch : Nat → List Instr) : Prog isa :=
   .seq (.block (save ++ const mBswap bswapMask ++ ([.alu .test .rdx (.reg .rdx)] : List Instr)))
-    (.seq (.ite .e (.block []) (.loop body .ne)) (.block restore))
+    (.seq (.ite .e (.block []) (.loop (body sch) .ne)) (.block restore))
+
+def compress : Prog isa := compressWith schedule
 
 end VG.Impl.Sha512.X86_64.Avx2Rolled

@@ -10,7 +10,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 Untrusted: everything here is checked by Lean. The x86-64 instance of
 `Proof/Framework/Interleave.lean`. Each instruction of a class (the scalar
 `mov` and ALU instructions, `andn`, `rorx`, `aluTbl`, the AVX2 lane-wise
-binary operations, shifts and `vpalignr`, and `vmovdqu` loads and stores at
+binary operations, shifts and `vpalignr`, AVX-512VL's `vprorq` and
+`vpternlogd`, and `vmovdqu` loads and stores at
 `[b + ix * sc + disp]` for a fixed base `b`, index `ix` and scale `sc`) has a
 *footprint* (`Fp`): the general-purpose and vector registers (by
 `ctorIdx`), the flags, and the bytes (at offsets from `b + ix * sc`) it may
@@ -103,7 +104,8 @@ def memIx (m : MemOp) : Nat := gbit m.base ||| (match m.index with | some i => g
 
 def VOp.fp : VOp → Option Fp
   | .vbin _ _ d x y | .vpalignr _ d x y _ => some (vecFp (xbit x ||| xbit y) (xbit d))
-  | .vshift _ _ d x _ => some (vecFp (xbit x) (xbit d))
+  | .vshift _ _ d x _ | .vprorq _ d x _ => some (vecFp (xbit x) (xbit d))
+  | .vpternlogd _ d x y _ => some (vecFp (xbit d ||| xbit x ||| xbit y) (xbit d))
   | _ => none
 
 def lenBytes : VLen → Nat
@@ -578,6 +580,16 @@ theorem VOp.det {op : VOp} {F : Fp} (hf : VOp.fp op = some F) {s t : State} (h :
     obtain ⟨x0, x1⟩ := lanes_eq h (r := x) (by simp [vecFp, Nat.testBit_or])
     obtain ⟨y0, y1⟩ := lanes_eq h (r := y) (by simp [vecFp, Nat.testBit_or])
     simp only [reduceVOpExec, x0, x1, y0, y1]
+    exact Writes.setV _ _ _ _ (fun r hr => only_xbit hr) rfl rfl rfl
+  case vprorq len d x n =>
+    obtain ⟨x0, x1⟩ := lanes_eq h (r := x) (by simp [vecFp])
+    simp only [reduceVOpExec, x0, x1]
+    exact Writes.setV _ _ _ _ (fun r hr => only_xbit hr) rfl rfl rfl
+  case vpternlogd len d x y n =>
+    obtain ⟨d0, d1⟩ := lanes_eq h (r := d) (by simp [vecFp, Nat.testBit_or])
+    obtain ⟨x0, x1⟩ := lanes_eq h (r := x) (by simp [vecFp, Nat.testBit_or])
+    obtain ⟨y0, y1⟩ := lanes_eq h (r := y) (by simp [vecFp, Nat.testBit_or])
+    simp only [reduceVOpExec, d0, d1, x0, x1, y0, y1]
     exact Writes.setV _ _ _ _ (fun r hr => only_xbit hr) rfl rfl rfl
 
 theorem store_writes {F : Fp} {s t : State} {o : Nat} {w : Nat} (v : BitVec w) (hw8 : w / 8 < 2 ^ 64)
