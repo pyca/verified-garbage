@@ -1167,14 +1167,14 @@ vg_hmac_sha512_224_init_avx512:
 	mov rdx, rbx
 	mov rcx, rbp
 	mov r8, r15
-	call {vg_sha512_update_scratch_avx512}
+	call {vg_sha512_update_scratch_avx2}
 	mov rdi, r15
 	add rdi, 2512
 	mov rsi, rbp
 	mov rdx, r15
 	add rdx, 2760
 	mov rcx, r15
-	call {vg_sha512_finalize_scratch_avx512}
+	call {vg_sha512_finalize_scratch_avx2}
 	mov rdx, r15
 	add rdx, 2760
 	mov ecx, 28

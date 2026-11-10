@@ -149,9 +149,9 @@ jmp 26f
 .base64 "TIn/SIHH0AkAAA=="
 call {vg_sha512_256_init}
 .base64 "TIn/SIHH0AkAAL4AAAAASInaSInpTYn4"
-call {vg_sha512_update_scratch_avx512}
+call {vg_sha512_update_scratch_avx2}
 .base64 "TIn/SIHH0AkAAEiJ7kyJ+kiBwtAKAABMifk="
-call {vg_sha512_finalize_scratch_avx512}
+call {vg_sha512_finalize_scratch_avx2}
 .base64 "TIn6SIHC0AoAALkgAAAA"
 26:
 .base64 "TInnTInuTYn4"
@@ -161,8 +161,8 @@ jmp 21b
 .p2align 6"#,
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
         vg_sha512_compress2_avx512 = sym super::sha512::vg_sha512_compress2_avx512::vg_sha512_compress2_avx512,
-        vg_sha512_update_scratch_avx512 = sym super::sha512::vg_sha512_update_scratch_avx512::vg_sha512_update_scratch_avx512,
-        vg_sha512_finalize_scratch_avx512 = sym super::sha512::vg_sha512_finalize_scratch_avx512::vg_sha512_finalize_scratch_avx512,
+        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_hmac_sha512_256_init_scratch_avx512 = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch_avx512::vg_hmac_sha512_256_init_scratch_avx512,
     )
 }
@@ -360,10 +360,6 @@ pub(crate) mod vg_hmac_sha512_256_finalize_scratch;
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha512_256_finalize_scratch_avx2.rs"]
 pub(crate) mod vg_hmac_sha512_256_finalize_scratch_avx2;
-
-#[rustfmt::skip]
-#[path = "internal/vg_hmac_sha512_256_finalize_scratch_avx512.rs"]
-pub(crate) mod vg_hmac_sha512_256_finalize_scratch_avx512;
 
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha512_256_finalize_scratch_shani.rs"]

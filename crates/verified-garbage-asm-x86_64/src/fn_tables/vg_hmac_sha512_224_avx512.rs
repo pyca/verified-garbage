@@ -5,8 +5,8 @@
 /// The CPU features `VG_HMAC_SHA512_224_AVX512` requires (`VG.FnTable`).
 pub const VG_HMAC_SHA512_224_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
-/// The table of functions `VG_HMAC_SHA512_224_AVX512` of the interface `Hmac`: `vg_hmac_sha512_224_init_scratch_avx512`, `vg_sha512_update_scratch_avx512`, `vg_hmac_sha512_224_finalize_scratch_avx512`, then the data 6, 28, 128.
+/// The table of functions `VG_HMAC_SHA512_224_AVX512` of the interface `Hmac`: `vg_hmac_sha512_224_init_scratch_avx512`, `vg_sha512_update_scratch_avx2`, `vg_hmac_sha512_224_finalize_scratch_avx2`, then the data 6, 28, 128.
 pub static VG_HMAC_SHA512_224_AVX512: super::Hmac = super::Hmac {
-    fns: [crate::hmac_sha512_224::vg_hmac_sha512_224_init_scratch_avx512::vg_hmac_sha512_224_init_scratch_avx512 as *const (), crate::sha512::vg_sha512_update_scratch_avx512::vg_sha512_update_scratch_avx512 as *const (), crate::hmac_sha512_224::vg_hmac_sha512_224_finalize_scratch_avx512::vg_hmac_sha512_224_finalize_scratch_avx512 as *const ()],
+    fns: [crate::hmac_sha512_224::vg_hmac_sha512_224_init_scratch_avx512::vg_hmac_sha512_224_init_scratch_avx512 as *const (), crate::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2 as *const (), crate::hmac_sha512_224::vg_hmac_sha512_224_finalize_scratch_avx2::vg_hmac_sha512_224_finalize_scratch_avx2 as *const ()],
     data: [6, 28, 128],
 };
