@@ -564,6 +564,7 @@ theorem combine_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.
       (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.pl) =
           gOf s.mem L key ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem L.Buf L.ql) % p *
             (yOf s.mem L key ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off L.Buf L.ql) L.ql) % p) % p ∧
+        arrP t.mem L 4 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.pl) ∧
         InP t L ∧ Body L s.mem t.mem ∧ Outside L.Q 1600 (2 ^ 64 - 1600) s.mem t.mem) ∧ Keep combRegs s t := by
   have hZ := hL.hdr
   have hw := hL.wp_ge
@@ -721,14 +722,19 @@ theorem combine_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.
   have hplt : p < 2 ^ (8 * L.pl) := by
     rw [← p8, ← hw8, show 8 * (8 * L.wp) = 32 * (2 * L.wp) by omega_arith]; exact val32_lt _ _ _ _
   have Kt := K3.trans kt
-  refine ⟨⟨?_, ⟨env2.keep (k3'.trans kt) (by decide), (Kt.gpr .r21 (by decide)).trans hr.r21,
+  have a4 : arrP t.mem L 4 = Win.A u₂.mem L.S L.wp 4 := by
+    have o' := outside_shift (B := L.S) (a := L.bOff) ot (by simp only [Lay.bOff, Lay.qOff, slot_eq] at *; omega_arith)
+      (by simp only [Lay.bOff, Lay.qOff, slot_eq] at *; omega_arith)
+    exact Outside.val32 o' (Or.inl (by simp only [Lay.bOff, Lay.qOff, slot_eq] at *; omega_arith))
+      (by simp only [Lay.bOff, Lay.qOff, slot_eq] at *; omega_arith)
+  have bt : Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.pl) = Win.A u₂.mem L.S L.wp 4 := by
+    rw [vt, read_low (w := L.wp) _ _ (by omega_arith)
+      (by show Win.A u₂.mem L.S L.wp 4 < _; rw [V]; exact Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hplt)]
+  refine ⟨⟨?_, a4.trans bt.symm, ⟨env2.keep (k3'.trans kt) (by decide), (Kt.gpr .r21 (by decide)).trans hr.r21,
       (((ku1.trans k4').trans (k3'.trans kt)).gpr .r23 (by decide)).trans u23⟩,
     (pa2.pbody.body hL).trans (Body.ofBuf hL ot (by omega_arith)),
     (comb_pbody_keepQ hL pa2.pbody).trans (combBufKeepQ ot (by omega_arith))⟩, ?_⟩
-  · rw [vt, read_low (w := L.wp) _ _ (by omega_arith)
-      (by show Win.A u₂.mem L.S L.wp 4 < _; rw [V]; exact Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hplt)]
-    show Win.A u₂.mem L.S L.wp 4 = _
-    rw [V]
+  · rw [bt, V]
     exact Nat.mul_mod _ _ _
   · exact (((((((((((((((k1.mono (rs' := combRegs) (by decide))).trans' (k2.mono (by decide))).trans'
       (k3.mono (by decide))).trans' (k4.mono (by decide))).trans' (k5.mono (by decide))).trans'
