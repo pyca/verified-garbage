@@ -100,18 +100,23 @@ ones: the pointers, the counts, `m`'s base `r10` and `o`'s `r5`. Everything
 else they need is derived from those (`8 w` is the distance `r16 - r10`
 moves over a round, the accumulator's base `r10 + 16 (w + 2)`) or is
 secret, as `m'`, kept in the accumulator's word `w + 1` (`mPrime`). The
-callers' registers `r21` and `r23`–`r31` are never written, so a caller's
-public register stays public.
+callers' registers `r21` and `r23`–`r31` are never written by `rounds`, and
+the kernel's `rounds8` writes only `r27` and `r28`–`r31`, which the kernel
+restores from vector registers: so a caller's public register stays
+public.
 
 Registers in the rounds: `r6` `a` (advancing), `r14` the accumulator, at
 word `j - 1` of `T` while word `j` is next, `r15` and `r16` `b` and `m`, at
 word `j`, `r17` the rounds left in its high half and, in its low half, the
-blocks of four words left; `r18` `aᵢ` and `r19` `u`; `r20`, `r12`, `r22`,
-`r11` the pending values (below): `r3`, `r4`, `r7`, `r8` the words of a
-block (`sreg`), `r9` and `r0` temporaries. -/
+blocks of four (or, in `rounds8`, eight) words left; `r18` `aᵢ` and `r19`
+`u`; `r20`, `r12`, `r22`, `r11` the pending values (below): `r3`, `r4`,
+`r7`, `r8` (and `r28`–`r31` in a block of eight) the words of a block
+(`sreg`), `r9` and `r0` temporaries. -/
 
-/-- The registers of the words of a block. -/
-def sreg (i : Nat) : Reg := [.r3, .r4, .r7, .r8].getD i .r8
+/-- The registers of the words of a block: `r28`–`r31` only in blocks of
+eight, which only the kernel's rounds (`rounds8`) run, between its saves and
+restores of them (`kernelSave`, `kernelRestore`). -/
+def sreg (i : Nat) : Reg := [.r3, .r4, .r7, .r8, .r28, .r29, .r30, .r31].getD i .r8
 
 /-- Word `i` of a block's low products: `S i += lo(x pᵢ) + CA`, `pᵢ` loaded
 into `r9`. -/
@@ -134,7 +139,7 @@ def half (c x p h : Reg) (k : Nat) : List Instr :=
   [.subc c .r10 c] ++ (List.range k).flatMap (loStep x p) ++ ([.mulhu .r9 x .r9, .sube c c c, .addc .r3 .r3 h] : List Instr) ++
     (List.range (k - 1)).flatMap (hiStep x p) ++ ([.addze h .r9] : List Instr)
 
-/-- A block of `k ≤ 4` words: words `j` to `j + k - 1` of `T`, loaded,
+/-- A block of `k ≤ 8` words: words `j` to `j + k - 1` of `T`, loaded,
 `T + aᵢ b + u m` added (`half` with `aᵢ` and `b`, then `u` and `m`), stored
 one word down, and the pointers advanced. -/
 def block (k : Nat) : List Instr :=
@@ -199,6 +204,37 @@ def roundsFini : List Instr :=
 def rounds : Prog isa :=
   .seq (.block roundsInit) (.seq (.loop round (.nonzero .d .r9)) (.block roundsFini))
 
+/-! ### The kernel's rounds: blocks of eight words
+
+The kernel (`kernel`) saves `r27` and `r28`–`r31` in vector registers, so
+its rounds can use them: words `1` to `w - 1` in one block of `(w - 1) mod 4`
+(`remBlock`, counted by `r9`, which every block uses as a temporary), one
+block of four if `w - 1` has bit 2 (`quadBlock`, the bit in `r27`, which no
+block writes), then blocks of eight (`octLoop`, in `sreg 0` to `sreg 7`). -/
+
+/-- `roundStart`, with `(w - 1) / 8` added to `r17` and bit 2 of `w - 1` into
+`r27`. -/
+def roundStart8 : List Instr :=
+  [.sub .r9 .r16 .r10, .addi .r16 .r10 0, .sub .r15 .r15 .r9, .add .r3 .r9 .r9, .add .r3 .r3 .r10,
+    .addi .r14 .r3 32, .add .r4 .r3 .r9, .load .d .r19 .r4 40, .lsr .d .r7 .r9 3, .subi .r7 .r7 1,
+    .lsr .d .r8 .r7 3, .add .r17 .r17 .r8, .lsl .r27 .r7 61, .lsr .d .r27 .r27 63, .lsl .r9 .r7 62,
+    .lsr .d .r9 .r9 62]
+
+/-- One block of four words if `r27` is not 0. -/
+def quadBlock : Prog isa := .ite (.zero .d .r27) (.block []) (.block (block 4))
+
+/-- The other words, eight at a time, counted by `r17`'s low half. -/
+def octLoop : Prog isa :=
+  .ite (.zero .w .r17) (.block []) (.loop (.block (block 8 ++ ([.subi .r17 .r17 1] : List Instr))) (.nonzero .w .r17))
+
+/-- `round`, by blocks of up to eight words. -/
+def round8 : Prog isa :=
+  .seq (.block (roundStart8 ++ head)) (.seq remBlock (.seq quadBlock (.seq octLoop (.block top))))
+
+/-- The `w` rounds, by blocks of up to eight words. -/
+def rounds8 : Prog isa :=
+  .seq (.block roundsInit) (.seq (.loop round8 (.nonzero .d .r9)) (.block roundsFini))
+
 /-! ## The final subtraction -/
 
 /-- `[tmp] = T - m` over `n` digits, the borrow in `r20` (the sign bit of each
@@ -247,6 +283,10 @@ def selectAcc64 : Prog isa :=
 /-- The arithmetic, after the bases are loaded. -/
 def tail : Prog isa := .seq zeroAcc (.seq rounds (.seq subMod64M selectAcc64))
 
+/-- `tail` with the rounds by blocks of up to eight words (`rounds8`), which
+write `r27` and `r28`–`r31`: the kernel's. -/
+def tail8 : Prog isa := .seq zeroAcc (.seq rounds8 (.seq subMod64M selectAcc64))
+
 /-! ## The shared kernel
 
 `montOp` (`PublicChecked.lean`) calls `tail` as one function, `kernel`,
@@ -265,8 +305,21 @@ def kernelEntry : List Instr :=
 /-- `r14` loaded again from the temporary's word `w + 1`. -/
 def kernelExit : List Instr := [.lsl .r3 .r11 2, .add .r3 .r9 .r3, .load .d .r14 .r3 8]
 
-/-- The kernel: `tail` between `kernelEntry` and `kernelExit`. -/
-def kernel : Prog isa := .seq (.block kernelEntry) (.seq tail (.block kernelExit))
+/-- The callers' registers that `tail8` writes, and the vector registers
+the kernel keeps them in. -/
+def kernelSaved : List (VReg × Reg) := [(.v0, .r27), (.v1, .r28), (.v2, .r29), (.v3, .r30), (.v4, .r31)]
+
+/-- `kernelSaved`'s registers into their vector registers (`mtvsrd`). -/
+def kernelSave : List Instr := kernelSaved.map fun (v, r) => .mtvsrd v r
+
+/-- `kernelSaved`'s registers back from their vector registers (`mfvsrd`). -/
+def kernelRestore : List Instr := kernelSaved.map fun (v, r) => .mfvsrd r v
+
+/-- `tail8` between `kernelEntry` and `kernelExit`. -/
+def kernelBody : Prog isa := .seq (.block kernelEntry) (.seq tail8 (.block kernelExit))
+
+/-- The kernel: `kernelBody` between `kernelSave` and `kernelRestore`. -/
+def kernel : Prog isa := .seq (.block kernelSave) (.seq kernelBody (.block kernelRestore))
 
 /-- The name of the kernel's function. -/
 def kernelName : String := "vg_rsa_mont_kernel"
