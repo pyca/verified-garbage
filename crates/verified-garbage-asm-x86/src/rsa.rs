@@ -3476,7 +3476,7 @@ jne 2419b
 21:
 .base64 "ix+LbwSLdwiLfwzD"
 .p2align 6"#,
-        vg_rsa_keygen_inverse = sym super::rsa::vg_rsa_keygen_inverse::vg_rsa_keygen_inverse,
+        vg_rsa_keygen_inverse = sym super::rsa_keygen::vg_rsa_keygen_inverse::vg_rsa_keygen_inverse,
     )
 }
 
@@ -3606,13 +3606,33 @@ jne 22b
 }
 
 #[rustfmt::skip]
-#[path = "internal/vg_rsa_keygen_inverse.rs"]
-pub(crate) mod vg_rsa_keygen_inverse;
+#[path = "internal/vg_rsa_mont_mul.rs"]
+pub(crate) mod vg_rsa_mont_mul;
 
 #[rustfmt::skip]
 #[path = "internal/vg_rsa_mont_mul_at.rs"]
 pub(crate) mod vg_rsa_mont_mul_at;
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_encrypt_precomputed.rs"]
+pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_prime_search.rs"]
+pub(crate) mod vg_rsa_prime_search;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_checked.rs"]
+pub(crate) mod vg_rsa_private_checked;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_crt.rs"]
+pub(crate) mod vg_rsa_private_crt;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_private_precompute_primes.rs"]
 pub(crate) mod vg_rsa_private_precompute_primes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_public_precomputed_checked.rs"]
+pub(crate) mod vg_rsa_public_precomputed_checked;
