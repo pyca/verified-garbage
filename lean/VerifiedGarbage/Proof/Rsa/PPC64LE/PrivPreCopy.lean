@@ -34,6 +34,7 @@ structure PreX (s : State) : Prop where
   wP : (stackArg s 12).toNat + (stackArg s 13).toNat * 8 ≤ 2 ^ 64
   pl : (stackArg s 13).toNat =
     Spec.Rsa.privatePrecomputedWords (s.gpr .r6).toNat (stackArg s 1).toNat (stackArg s 3).toNat
+  sp3 : s.sp.toNat + 208 ≤ 2 ^ 64
 
 theorem preP_ofP {s : State} (h : (Proof.Rsa.privateCheckedPrecomputedContract abi frameBytes).pre s) :
     PreP true s ∧ PreX s := by
@@ -46,7 +47,21 @@ theorem preP_ofP {s : State} (h : (Proof.Rsa.privateCheckedPrecomputedContract a
     h4, h10, e1, e2, p1, p2, q1, q2, h5, h9, h7, hs, hpl⟩ := h
   exact ⟨⟨sp1, by omega, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h4, h10, e1,
-    e2, p1, p2, q1, q2, h5, h9, h7, hs⟩, ⟨oP, sP, kP, wP, hpl⟩⟩
+    e2, p1, p2, q1, q2, h5, h9, h7, hs⟩, ⟨oP, sP, kP, wP, hpl, by omega⟩⟩
+
+theorem pre_of_prePX {s : State} (h : PreP true s) (X : PreX s) :
+    (Proof.Rsa.privateCheckedPrecomputedContract abi frameBytes).pre s := by
+  obtain ⟨sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
+    ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h4, h10, e1,
+    e2, p1, p2, q1, q2, h5, h9, h7, hs⟩ := h
+  obtain ⟨oP, sP, kP, wP, hpl, sp3⟩ := X
+  have e : frameBytes = 3327 + 1 := rfl
+  rw [e]
+  sig_pre [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
+    Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_fourteen, List.append_eq, List.range, List.range.loop]
+  exact ⟨sp1, by omega, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oP, oa, ns, es, is, ps, qs, dps, dqs, qis, sP,
+    sa, ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, kP, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, wP, ⟨k1, k2⟩,
+    h4, h10, e1, e2, p1, p2, q1, q2, h5, h9, h7, hs, hpl⟩
 
 theorem in_aR14 {s : State} {j : Nat} (hj : j < 14) : (aR true s).Contains (stackArgAddr s j) 8 := by
   rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by simp only [↓reduceIte]; omega) (by omega)

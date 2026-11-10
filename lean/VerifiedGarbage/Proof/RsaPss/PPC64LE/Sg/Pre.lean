@@ -142,6 +142,22 @@ structure PreS (pc : Bool) (D : Nat) (s : State) : Prop where
   h5 : (stackArg s 5).toNat = (stackArg s 1).toNat
   hs : Spec.RsaPss.scratchWords (s.gpr .r6).toNat ≤ (stackArg s 13).toNat
 
+/-- What `vg_rsa_pss_sign_precomputed`'s precondition adds: `pre`'s facts. -/
+structure PreXS (s : State) : Prop where
+  oP : (oR s).Disjoint (preR s)
+  sP : (scR s).Disjoint (preR s)
+  kP : (kS true s).Disjoint (preR s)
+  wP : (stackArg s 16).toNat + (stackArg s 17).toNat * 8 ≤ 2 ^ 64
+  pl : (stackArg s 17).toNat =
+    Spec.Rsa.privatePrecomputedWords (s.gpr .r6).toNat (s.gpr .r10).toNat (stackArg s 1).toNat
+
+/-- With `pc`, `pre` holds the key's precomputed values. -/
+abbrev HypS (pc : Bool) (s : State) : Prop :=
+  pc = true → Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat)
+      (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat)
+      (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat) =
+    some (Spec.Rsa.wordsAt s.mem (stackArg s 16) (stackArg s 17).toNat)
+
 /-- The shared contract, with the hash function's table one of `hs` and
 MGF1's one of `gs`, and the stack of the frames and of
 `vg_rsa_private_checked`. -/
