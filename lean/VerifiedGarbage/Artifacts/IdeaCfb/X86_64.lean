@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.X86_64.FbVerified
-public import VerifiedGarbage.Proof.Idea.X86_64.FbFinalVerified
+public import VerifiedGarbage.Proof.Idea.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
@@ -14,21 +13,9 @@ import VerifiedGarbage.Proof.Idea.X86_64.FbFinalLit
 namespace VG.Artifacts.IdeaCfb.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Idea.cfbEncryptApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 184 .r8 22 Impl.Idea.X86_64.cfbEncrypt
-    stack := 184
-    verified := Proof.Idea.X86_64.cfbEncrypt_framed },
-  Spec.Idea.cfbDecryptApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 184 .r8 22 Impl.Idea.X86_64.cfbDecrypt
-    stack := 184
-    verified := Proof.Idea.X86_64.cfbDecrypt_framed },
-  Spec.Idea.cfbEncryptFinalApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 184 .r8 22 Impl.Idea.X86_64.cfbEncryptFinal
-    stack := 184
-    verified := Proof.Idea.X86_64.cfbEncryptFinal_framed },
-  Spec.Idea.cfbDecryptFinalApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 184 .r8 22 Impl.Idea.X86_64.cfbDecryptFinal
-    stack := 184
-    verified := Proof.Idea.X86_64.cfbDecryptFinal_framed }]
+  Spec.Idea.cfbEncryptApi.artifact X86_64.target Proof.Idea.X86_64.Scrub.cfbEncryptReg,
+  Spec.Idea.cfbDecryptApi.artifact X86_64.target Proof.Idea.X86_64.Scrub.cfbDecryptReg,
+  Spec.Idea.cfbEncryptFinalApi.artifact X86_64.target Proof.Idea.X86_64.Scrub.cfbEncryptFinalReg,
+  Spec.Idea.cfbDecryptFinalApi.artifact X86_64.target Proof.Idea.X86_64.Scrub.cfbDecryptFinalReg]
 
 end VG.Artifacts.IdeaCfb.X86_64

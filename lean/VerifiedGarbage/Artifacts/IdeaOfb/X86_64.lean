@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.X86_64.FbVerified
-public import VerifiedGarbage.Proof.Idea.X86_64.FbFinalVerified
+public import VerifiedGarbage.Proof.Idea.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
@@ -14,13 +13,7 @@ import VerifiedGarbage.Proof.Idea.X86_64.FbFinalLit
 namespace VG.Artifacts.IdeaOfb.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Idea.ofbApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 184 .r8 22 Impl.Idea.X86_64.ofb
-    stack := 184
-    verified := Proof.Idea.X86_64.ofb_framed },
-  Spec.Idea.ofbFinalApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 184 .r8 22 Impl.Idea.X86_64.ofbFinal
-    stack := 184
-    verified := Proof.Idea.X86_64.ofbFinal_framed }]
+  Spec.Idea.ofbApi.artifact X86_64.target Proof.Idea.X86_64.Scrub.ofbReg,
+  Spec.Idea.ofbFinalApi.artifact X86_64.target Proof.Idea.X86_64.Scrub.ofbFinalReg]
 
 end VG.Artifacts.IdeaOfb.X86_64
