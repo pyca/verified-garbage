@@ -3,9 +3,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
@@ -395,10 +392,11 @@ theorem code_spSafe (v : CrtImpl) : (code (privName v) (privCode v)).all (fun i 
 
 /-! ## Without secret residue
 
-`vg_rsa_pkcs1_sign`, followed by `Impl.Scrub.X86_64.scrubTail`, which clears
-the registers its code writes and wipes all the stack its frames and calls
-use: the residue analysis (`X86_64.RTaint`) does not follow its code, so
-nothing of that stack is kept. -/
+`vg_rsa_pkcs1_sign`'s registration scrubs it with `X86_64.Scrub.withScrubAll`,
+which clears the registers its code writes and wipes all the stack its
+frames and calls use: the residue analysis (`X86_64.RTaint`) does not follow
+its code, so nothing of that stack is kept. This is what that needs of the
+contract. -/
 
 /-- The postcondition reads the memory on return only in `out`. -/
 theorem sign_postOut (stack : Nat) :
@@ -459,14 +457,5 @@ theorem sign_postOut (stack : Nat) :
     revert h
     generalize Spec.RsaPkcs1Sig.signId _ _ _ _ _ _ _ _ _ = o
     cases o <;> simp only [Spec.Rsa.writtenOutcome, hby] <;> exact id
-
-/-- `vg_rsa_pkcs1_sign` with `v`, scrubbed: without secret residue. -/
-def reg (v : CrtImpl) : Registration Spec.RsaPkcs1Sig.signApi target :=
-  VG.X86_64.Scrub.withScrubAll
-    { suffix := v.suffix
-      code := code (privName v) (privCode v)
-      stack := sigStack
-      verified := code_verified v
-      spSafe := code_spSafe v } (sign_postOut sigStack)
 
 end VG.Proof.RsaPkcs1Sig.X86_64.Sgn

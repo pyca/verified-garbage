@@ -55,6 +55,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncEM
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 
 /-! # RSASSA-PKCS1-v1_5 (RFC 8017) on x86-64 -/
 
@@ -69,7 +70,12 @@ open VG.Proof.RsaPkcs1Sig.X86_64
 
 def artifacts : List Artifact :=
   (VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap fun (v : CrtImpl) => [
-    Spec.RsaPkcs1Sig.signApi.artifact X86_64.target (Sgn.reg v)]) ++
+    Spec.RsaPkcs1Sig.signApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+      suffix := v.suffix
+      code := Impl.RsaPkcs1Sig.X86_64.Sign.code (Sgn.privName v) (Sgn.privCode v)
+      stack := sigStack
+      verified := Sgn.code_verified v
+      spSafe := Sgn.code_spSafe v } (Sgn.sign_postOut sigStack))]) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap fun (v : PublicImpl) => [
     Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact X86_64.target {
       suffix := v.suffix

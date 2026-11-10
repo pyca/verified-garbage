@@ -12,9 +12,6 @@ meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: constant time
@@ -181,10 +178,11 @@ theorem dec_spSafe (v : Compress) (pv : PrivImpl) :
 
 /-! ## Without secret residue
 
-`vg_rsa_pkcs1_decrypt`, followed by `Impl.Scrub.X86_64.scrubTail`, which
-clears the registers its code writes and wipes all the stack its frames and
-calls use: the residue analysis (`X86_64.RTaint`) does not follow its code,
-so nothing of that stack is kept. -/
+`vg_rsa_pkcs1_decrypt`'s registration scrubs it with `X86_64.Scrub.withScrubAll`,
+which clears the registers its code writes and wipes all the stack its
+frames and calls use: the residue analysis (`X86_64.RTaint`) does not follow
+its code, so nothing of that stack is kept. This is what that needs of the
+contract. -/
 
 /-- The postcondition reads the memory on return only in `out` and
 `msg_len`. -/
@@ -254,15 +252,5 @@ theorem dec_postOut (stack : Nat) :
     revert h
     generalize Spec.RsaPkcs1Enc.decrypt _ _ _ _ _ _ _ _ _ = o
     cases o <;> simp only [Spec.RsaPkcs1Enc.writtenMsg, hby, hw] <;> exact id
-
-/-- `vg_rsa_pkcs1_decrypt` with `v` and `pv`, named with `suffix`, scrubbed:
-without secret residue. -/
-def reg (suffix : String) (v : Compress) (pv : PrivImpl) : Registration Spec.RsaPkcs1Enc.decryptApi target :=
-  VG.X86_64.Scrub.withScrubAll
-    { suffix := suffix
-      code := code (HH v) pv.name pv.code
-      stack := decStack
-      verified := dec_verified v pv
-      spSafe := dec_spSafe v pv } (dec_postOut decStack)
 
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec

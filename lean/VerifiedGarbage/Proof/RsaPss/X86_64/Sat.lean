@@ -4,9 +4,6 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.Instances
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
 /-!
 # RSASSA-PSS on x86-64 with the tables of `vs`: the contracts are satisfiable
@@ -435,24 +432,6 @@ theorem signC_postOut (tsH tsG : List FnTable) :
     revert h'
     generalize Spec.RsaPss.sign _ _ _ _ _ _ _ _ _ _ _ = o
     cases o <;> simp only [Spec.Rsa.writtenOutcome, hby] <;> exact id
-
-/-- `vg_rsa_pss_sign`, with the tables of `vs`, calling the private-key
-operation `privC`, named with `suffix`, followed by
-`Impl.Scrub.X86_64.scrubTail`, which clears the registers its code writes
-and wipes all the stack its frames and calls use (the residue analysis,
-`X86_64.RTaint`, does not follow its code): without secret residue. -/
-def signReg (hok : OK vs) (suffix : String) (privN : String) {privC : Prog isa}
-    (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ chkContract.post s s')
-    (hct : ConstantTime isa chkContract.pre chkContract.pub privC) (hspC : SpSafe privC)
-    (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes) : Registration Spec.RsaPss.signMdTableApi X86_64.target :=
-  VG.X86_64.Scrub.withScrubAll
-    { suffix := suffix
-      tables := [("hash", MdHashTable.X86_64.tables vs), ("mgf1", MdHashTable.X86_64.tables vs)]
-      code := Impl.RsaPss.X86_64.signC (MdHashTable.X86_64.fnsOf vs) (HashTable.X86_64.fnsOf vs) privN privC
-      stack := signStack
-      verified := sign_ok hok hv hct hspC hdC
-      spSafe := Code.all_of_allInstrs (signC_spAll (fun i hi => (enc_safe hok i hi).1)
-        (fun i hi => (enc_safe hok i hi).2) hspC) } (signC_postOut _ _)
 
 /-- `vg_rsa_pss_verify_precomputed`, with the tables of `vs`, calling the
 public-key operation `v`. -/

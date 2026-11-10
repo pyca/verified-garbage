@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcCT
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.X86_64.Registration
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
 
 /-!
 # RSAES-OAEP on x86-64 with both hash functions as tables: the instances
@@ -292,21 +288,6 @@ theorem dec_postOut (ts : List FnTable) :
     revert h'
     generalize Spec.RsaOaep.decrypt _ _ _ _ _ _ _ _ _ _ _ = o
     cases o <;> simp only [Spec.RsaOaep.writtenDecrypt, hby, hw] <;> exact id
-
-/-- `vg_rsa_oaep_decrypt`, with the tables of `vs`, named with `suffix`,
-followed by `Impl.Scrub.X86_64.scrubTail`, which clears the registers its
-code writes and wipes all the stack its frames and calls use (the residue
-analysis, `X86_64.RTaint`, does not follow its code): without secret
-residue. -/
-def decReg (vs : List MdHash) (h : OK vs) (suffix : String) (v : PrivImpl) :
-    Registration Spec.RsaOaep.decryptMdTablesApi target :=
-  VG.X86_64.Scrub.withScrubAll
-    { suffix := suffix
-      tables := [("hash", tables vs), ("mgf1", tables vs)]
-      code := Impl.RsaOaep.X86_64.decrypt (fnsOf vs) v.name v.code
-      stack := decStack
-      verified := dec_ok vs h v
-      spSafe := dec_spSafe vs v } (dec_postOut _)
 
 /-- `vg_rsa_oaep_encrypt_precomputed`, with the tables of `vs`. -/
 theorem enc_ok (vs : List MdHash) (h : OK vs) (v : PublicImpl) :
