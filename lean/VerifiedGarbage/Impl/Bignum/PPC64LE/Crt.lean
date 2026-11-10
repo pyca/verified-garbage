@@ -260,6 +260,36 @@ def r2Step : Bool → Bool → Prog isa
   | false, _ => Precompute.r2Prime
   | true, q => .seq (.block (r2Src q)) r2Copy
 
+/-- In a prime's working space (its registers set), with
+`vg_rsa_private_crt_precomputed`: `r26 &=` all ones if the cached
+`R² mod p` (of `q` if `q`) is the prime's (from `X`'s array `xj`), else 0.
+The prime into array 0 and `-p⁻¹ mod 2³²` into `r12`; the cached value `x`
+into array 1 (`r2Copy`); 1 into array 7; `x R⁻²` into array 6 by two
+Montgomery multiplications by 1; their top words zeroed; then `x < p` and
+`x R⁻² mod p = 1`, which together hold exactly when `x = R² mod p`: neither
+array 6 nor array 7 is below the other. -/
+def checkR2 (q : Bool) (xj : Nat) : Prog isa :=
+  .seq (.block ([.addi .r14 .r10 0] ++ xb .r15 xj)) (.seq copyN
+  (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
+      PublicChecked.base .r9 3))
+  (.seq (r2Step true q) (.seq PublicChecked.one
+  (.seq (PublicChecked.montOp 5 1 7) (.seq (PublicChecked.montOp 6 5 7)
+  (.seq (.block ((([1, 6, 7] : List Nat).flatMap fun j => PublicChecked.base .r14 j ++
+      [.add .r14 .r14 .r29, .subi .r14 .r14 16, .li .r0 0, .store .d .r0 .r14 0])))
+  (.seq (checkLt 1 0) (.seq (cmpLt 6 7) (.seq (.block [.addi .r24 .r20 0]) (.seq (cmpLt 7 6)
+    (.block [.logic .or .r0 .r24 .r20, .li .r3 0, .subi .r3 .r3 1, .logic .xor .r0 .r0 .r3,
+      .logic .and .r26 .r26 .r0]))))))))))))
+
+/-- `checks`, and with `pc` the cached values checked (`checkR2`) into the
+mask, `X`'s registers back, and `p`, `q` and `qInv` masked again. -/
+def checksG : Bool → Prog isa
+  | false => checks
+  | true => .seq checks (.seq (.block (setupP oBP oPLen)) (.seq (checkR2 false 4)
+      (.seq (.block (setupP oBQ oQLen)) (.seq (checkR2 true 5)
+      (.seq (.block [.addi .r10 .r27 0, .addi .r21 .r27 0, .addi .r29 .r28 0, .addi .r11 .r28 0,
+          .subi .r11 .r11 16, .lsr .d .r11 .r11 2])
+      (.seq (orThree 4) (.seq (orThree 5) (.seq (.block (PublicChecked.base .r14 7)) maskWords))))))))
+
 /-- In a prime's working space, the prime from `X`'s array `xj`,
 `-p⁻¹ mod 2³²` in `r12`, `R² mod p` in array 1 (`Precompute.r2Prime`),
 `c mod p` in array 4 (`reduceIn`), then `c^d mod p` in array 4 for `d` at
@@ -326,7 +356,7 @@ def recombineX : Prog isa :=
 which takes in `r12` the address of the cached `R² mod p` and `R² mod q`
 (`max(2, ⌈len / 8⌉)` words each, least significant first). -/
 def crtG (pc : Bool) : Prog isa :=
-  .seq (.block (save ++ argsG pc ++ setupX)) (.seq loadX (.seq checks (.seq loadIn
+  .seq (.block (save ++ argsG pc ++ setupX)) (.seq loadX (.seq (checksG pc) (.seq loadIn
   (.seq (.block (setupP oBP oPLen)) (.seq (powerG pc false 4 oDP oPLen)
   (.seq (.block (setupP oBQ oQLen)) (.seq (powerG pc true 5 oDQ oQLen) (.seq exportM2
   (.seq (.block (setupP oBP oPLen)) (.seq (recombinePG pc) (.seq recombineX

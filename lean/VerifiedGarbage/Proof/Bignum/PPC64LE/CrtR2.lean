@@ -148,12 +148,12 @@ theorem r2Copy_ok {s : State} {B P : Addr} {Z w : Nat} {b : Bool} (hs : Scr s B 
 theorem pow128_mod3 (w : Nat) : 2 ^ (128 * w) % 3 = 1 := by
   rw [Nat.pow_mul, Nat.pow_mod, show 2 ^ 128 % 3 = 1 by decide, Nat.one_pow]
 
-/-- With `pc`, what `r2Step pc q` needs, in a state whose header is at
-`BX` (of `Zs` bytes of working space): the cached `R² mod p`, `w` words at
-`S`, readable and apart from the working space, at the header's `oR2` (with
-`q`, after `p`'s `wsWords pL` words, `pL` at `oPLen`); the mask of `b` in
-`r26`; and the prime `Pv` whose `R² mod p` it is if `b`, else 3. -/
-structure R2C (q : Bool) (s : State) (BX S : Addr) (Zs w Pv pL : Nat) (b : Bool) : Prop where
+/-- With `pc`, where `r2Step pc q` copies from, in a state whose header is
+at `BX` (of `Zs` bytes of working space): the cached `R² mod p`, `w` words
+at `S`, readable and apart from the working space, at the header's `oR2`
+(with `q`, after `p`'s `wsWords pL` words, `pL` at `oPLen`); and the mask of
+`b` in `r26`. -/
+structure R2S (q : Bool) (s : State) (BX S : Addr) (Zs w pL : Nat) (b : Bool) : Prop where
   src : S = word s.mem BX oR2 + BitVec.ofNat 64 (if q then 8 * wsWords pL else 0)
   pl : q = true → word s.mem BX oPLen = BitVec.ofNat 64 pL
   pl1 : 1 ≤ pL
@@ -162,6 +162,11 @@ structure R2C (q : Bool) (s : State) (BX S : Addr) (Zs w Pv pL : Nat) (b : Bool)
   rd : ∀ i < w, InRegions (s.rd ++ s.wr) (off S (8 * i)) 8
   sep : ∀ x, ofs S x < 8 * w → Zs ≤ ofs BX x
   r26 : s.gpr .r26 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0)
+
+/-- `R2S`, with the prime `Pv` whose `R² mod p` the buffer holds if `b`,
+else 3. -/
+structure R2C (q : Bool) (s : State) (BX S : Addr) (Zs w Pv pL : Nat) (b : Bool) : Prop
+    extends R2S q s BX S Zs w pL b where
   val : b = true → wv s.mem S 0 w = 2 ^ (128 * w) % Pv
   three : b = false → Pv = 3
 
