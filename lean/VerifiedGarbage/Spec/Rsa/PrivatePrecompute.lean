@@ -45,9 +45,15 @@ def primeR2 (pB : List Byte) : List (BitVec 64) :=
 
 /-- The precomputed values of a private key with the factors `pB` and `qB`
 of the modulus `nB` (`k` octets): `publicPrecompute nB`, then `primeR2 pB`
-and `primeR2 qB`; or `none` if the modulus is not valid. -/
+and `primeR2 qB`; or `none` if the modulus is not valid or `p q ≠ n`.
+
+With `p q = n` for a valid (odd) modulus, `p` and `q` are odd, and so
+`R² mod p` is what Montgomery arithmetic modulo `p` computes; with `p` and
+`q` of fewer octets than `n`, as the functions take them, neither is 1. -/
 def privatePrecompute (nB pB qB : List Byte) : Option (List (BitVec 64)) :=
-  (publicPrecompute nB).map fun ws => ws ++ primeR2 pB ++ primeR2 qB
+  if os2ip pB * os2ip qB = os2ip nB then
+    (publicPrecompute nB).map fun ws => ws ++ primeR2 pB ++ primeR2 qB
+  else none
 
 /-- The words of `privatePrecompute` for a modulus of `nLen` octets and
 factors of `pLen` and `qLen`. -/
@@ -87,7 +93,8 @@ def privatePrecomputeSig : Sig where
   ret := some .u32
 
 /-- The precomputed values of the private key with the factors `p` and `q`
-of the modulus `n` (`privatePrecompute`). Constant time but for `n`. -/
+of the modulus `n` (`privatePrecompute`). Constant time but for `n`: in
+particular, not whether `p q = n`. -/
 def privatePrecomputeContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   privatePrecomputeSig.contract A
     (pre := fun _pre preLen _n nLen _p pLen _q qLen _scratch scratchLen _ =>
@@ -119,9 +126,8 @@ def privatePrecomputeApi : Api where
     first: `n` and `R² mod n` for `R = 2^(64 w)` (`w` words each, what \
     `vg_rsa_public_precompute` writes), then `R_p² mod p` for `R_p = 2^(64 w_p)` and \
     `w_p = max(2, ⌈p_len / 8⌉)` (`w_p` words), then the same for `q`; and returns 1. \
-    Writes zeros and returns 0 if `n` is not such a modulus. Nothing checks that `p` and \
-    `q` are the key's factors: the key is checked when it is loaded \
-    (`vg_rsa_check_key`).\n\n\
+    Writes zeros and returns 0 if `n` is not such a modulus or `p q ≠ n`. The rest of the \
+    key is checked when it is loaded (`vg_rsa_check_key`).\n\n\
     Contract: `VG.Spec.Rsa.privatePrecomputeContract`. Constant time but for the modulus: \
     timing may depend on the pointers, the lengths and the contents of `n`, not on `p` or \
     `q`."
