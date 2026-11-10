@@ -16,12 +16,14 @@ AVX512VL): each multiplies the low 52 bits of two quadwords and adds the low
   its residue modulo `p`, and four of them are five `ymm` registers (limb
   `i` of lane `l` in quadword `l` of register `i`), or five 32-byte slots of
   the working space.
-* `mul4`: the lanes of five registers times those of a slot, lane by lane
-  (`mul4H`: of five other registers).
+* `mulG`: the lanes of `ymm10–ymm14` times those of `ymm5–ymm9`, lane by
+  lane (`mul4`, which Ed25519's code runs: of a slot and `ymm5–ymm9`).
   Each product `a_i b_j` of two limbs below `2⁵²` is `lo + 2⁵² hi`, so
   `lo` goes to column `i + j` and `2 hi` to column `i + j + 1`; column `c ≥
   5` is folded into `c - 5` as 19 times itself (`2²⁵⁵ ≡ 19`). The result is
-  five limbs below `2⁶¹`, not carried.
+  five limbs below `2⁶¹`, not carried. With `pre`, lanes 0 and 1 of the
+  result are added to what they held (limbs below `2⁶¹`, so the sums are
+  below `2⁶²`).
 * `carry`: each limb keeps its low 51 bits and passes the rest to the next,
   the last one's times 19 to the first (with `vpmadd52luq`), all at once:
   limbs below `2⁶³` become limbs below `2⁵²`, which `vpmadd52luq` and
@@ -30,21 +32,24 @@ AVX512VL): each multiplies the low 52 bits of two quadwords and adds the low
   never goes negative for limbs `y` below `2⁶¹`.
 
 An iteration of the ladder (`vstep`), with `(x₂, z₂, x₃, z₃)` in the lanes of
-`ymm0–ymm4` (in the lanes 0–3), swaps the pairs `(x₂, z₂)`, `(x₃, z₃)` with
-the mask `-swap` (as RFC 7748 §5 describes), then:
+`ymm0–ymm4` (in the lanes 0–3), has three products, of which only one
+operand each, or the sums the next one's are made of, are carried. With the
+pairs `(x₂, z₂)`, `(x₃, z₃)` swapped by the mask `-swap` (as RFC 7748 §5
+describes), which stage 1 does as it orders its operands (`vpermd`, with
+indices from the mask):
 
-1. `(A, B, C, D) = (x₂ + z₂, x₂ - z₂, x₃ + z₃, x₃ - z₃)`, carried, and
-   multiplied lane by lane: `(A, B, D, C) · (A, B, A, B) = (AA, BB, DA, CB)`;
-2. `(DA + CB, DA - CB, AA, E = AA - BB) · (DA + CB, DA - CB, BB, a24) =
-   (x₃', t, x₂', a24 E)`;
-3. `(x₂', E, x₃', t) · (1, AA + a24 E, 1, x₁) = (x₂', z₂', x₃', z₃')`.
+1. `(B, A, D, C) = (x₂ - z₂, x₂ + z₂, x₃ - z₃, x₃ + z₃)`, carried, and
+   multiplied lane by lane: `(B, A, C, D) · (B, A, B, A) = (BB, AA, CB, DA)`;
+2. `(AA, E = AA - BB, DA + CB, DA - CB)`, carried, times
+   `(0, a24, DA + CB, DA - CB)`, plus `(BB, AA, 0, 0)`:
+   `(BB, AA + a24 E, x₃', t)`;
+3. that, carried, gives `(AA, E, x₃', t) · (BB, AA + a24 E, 1, x₁) =
+   (x₂', z₂', x₃', z₃')`.
 
-The first operand of each product is in `ymm16–ymm20` (which only
-EVEX-encoded instructions name), rather than stored and loaded back right
-away (a load of what a store just wrote waits for it), the second in
-`ymm5–ymm9`; stage 2's first operand is also stored to `OPV`, which stage 3
-reads. The constants (`KM`, `K19`, …) are in the working space, and
-`vfinish` clears `ymm16–ymm20`.
+Both operands of each product are in registers (`ymm10–ymm14` and
+`ymm5–ymm9`), and a column's sums in `ymm0–ymm4` and `ymm16–ymm18` (which
+only EVEX-encoded instructions name). The constants (`KM`, `K19`, …) are in
+the working space.
 
 Before the loop `vsetup` sets the constants, splits `x₁` into limbs and sets
 the lanes; after it `vfinish` carries the lanes and puts each back into four
@@ -67,9 +72,15 @@ namespace Ifma
 
 /-! ## The layout of the working space beyond `BITS` -/
 
-/-- The first operands of the products. -/
+/-- The first operands of Ed25519's products (`mul4`). -/
 def OPL : Nat := 1024
 def OPV : Nat := 1184
+/-- 4 in each doubleword (`vidx`). -/
+def K4D : Nat := 1568
+/-- The doublewords `0, 1, 2, 3, 6, 7, 4, 5`: of the lanes `(0, 1, 3, 2)`. -/
+def KIU : Nat := 1600
+/-- The doublewords `0, 1, 2, 3, 0, 1, 2, 3`: of the lanes `(0, 1, 0, 1)`. -/
+def KIV : Nat := 1632
 /-- `2⁵¹ - 1` in each quadword. -/
 def KM : Nat := 1664
 /-- 19 in each quadword. -/
@@ -77,7 +88,7 @@ def K19 : Nat := 1696
 /-- The limbs of `bias = 2¹¹ p`, limb 0 and the others, in each quadword. -/
 def KB0 : Nat := 1728
 def KB1 : Nat := 1760
-/-- `(0, 0, 0, a24)`, five limbs. -/
+/-- `(0, a24, 0, 0)`, five limbs. -/
 def KA24 : Nat := 1792
 /-- `(1, 0, 1, x₁)`, five limbs. -/
 def KX1 : Nat := 1952
@@ -106,17 +117,6 @@ def lo (d a b : Nat) : Instr := .vop (.vpmadd52luq .l256 (y d) (y a) (y b))
 def hi (d a b : Nat) : Instr := .vop (.vpmadd52huq .l256 (y d) (y a) (y b))
 def zero (d : Nat) : Instr := v .vpxor d d d
 def mov (d a : Nat) : Instr := .vop (.vmovdqa .l256 (y d) (y a))
-
-/-- `ymm (16 + i)`, which only EVEX-encoded instructions can name: the
-first operand's limb `i` of the products (`mul4`). -/
-def h : Nat → HReg
-  | 0 => .xmm16 | 1 => .xmm17 | 2 => .xmm18 | 3 => .xmm19 | _ => .xmm20
-
-/-- `ymm (16 + i) = ymm r` (`vporq`). -/
-def cpH (i r : Nat) : Instr := .eop (.bin .vporq (.hi (h i)) (.lo (y r)) (.lo (y r)))
-
-/-- `vpmadd52luq` (`hi = false`) or `vpmadd52huq` of `ymm d`, `ymm (16 + a)` and `ymm b`. -/
-def madH (hi : Bool) (d a b : Nat) : Instr := .eop (.vpmadd52 hi (.lo (y d)) (.hi (h a)) (.lo (y b)))
 
 /-- `vpblendd`'s selectors of the quadwords (lanes) `l`. -/
 def lanes (l0 l1 l2 l3 : Bool) : BitVec 8 :=
@@ -165,98 +165,133 @@ are kept. -/
 def mul4 (a : Nat) : List Instr :=
   mulCol a 0 ++ mulCol a 1 ++ mulCol a 2 ++ mulCol a 3 ++ mulCol a 4
 
-/-- `maddLo` with `a_i` in `ymm (16 + i)`. -/
-def maddLoH (acc i c : Nat) : List Instr :=
-  if i ≤ c ∧ c - i < 5 then [madH false acc i (5 + (c - i))] else []
+/-! ## The ladder's products -/
 
-/-- `maddHi` with `a_i` in `ymm (16 + i)`. -/
-def maddHiH (acc i c : Nat) : List Instr :=
-  if i + 1 ≤ c ∧ c - (i + 1) < 5 then [madH true acc i (5 + (c - (i + 1)))] else []
+/-- The accumulators of a column of `mulG` but its low halves', which only
+EVEX-encoded instructions name: the high halves of the column (`ymm16`), and
+the low and high halves of the column five above (`ymm17`, `ymm18`). -/
+def aLh : VReg := .hi .xmm16
+def aH : VReg := .hi .xmm17
+def aHh : VReg := .hi .xmm18
 
-/-- `mulCol` with `a` in `ymm16–ymm20`. -/
-def mulColH (k : Nat) : List Instr :=
-  [zero 11, zero 12, zero 13, zero 14] ++
-  ((List.range 5).flatMap fun i =>
-    maddLoH 11 i k ++ maddHiH 12 i k ++ maddLoH 13 i (k + 5) ++ maddHiH 14 i (k + 5)) ++
-  [sll 12 12 1, v .vpaddq 11 11 12, sll 14 14 1, v .vpaddq 13 13 14, v .vpaddq 11 11 13,
-    sll 12 13 1, v .vpaddq 11 11 12, sll 12 13 4, v .vpaddq k 11 12]
+/-- `ymm r`, as an operand of an `EVEX.256` instruction. -/
+def yl (r : Nat) : VReg := .lo (y r)
 
-/-- `mul4` with the first operand in registers: `ymm0–ymm4 = ymm16–ymm20 ·
-ymm5–ymm9`, lane by lane, not carried; `ymm5–ymm9` and `ymm16–ymm20` are
-kept. The ladder's products, whose first operand a stage has just computed
-(Ed25519's IFMA code uses `mul4`). -/
-def mul4H : List Instr :=
-  mulColH 0 ++ mulColH 1 ++ mulColH 2 ++ mulColH 3 ++ mulColH 4
+/-- `acc += a + b` (`vpaddq`), of any registers. -/
+def eadd (d a b : VReg) : Instr := .eop (.bin .vpaddq d a b)
+
+/-- `vpmadd52luq` (`hi = false`) or `vpmadd52huq` of `acc`, `ymm (10 + i)` and `ymm (5 + j)`. -/
+def gmad (hi : Bool) (acc : VReg) (i j : Nat) : Instr := .eop (.vpmadd52 hi acc (yl (10 + i)) (yl (5 + j)))
+
+/-- The low half of `a_i b_j` with `i + j = c` into `acc` (`a` in `ymm10–ymm14`,
+`b` in `ymm5–ymm9`), if there is such a `j`. -/
+def gLo (acc : VReg) (i c : Nat) : List Instr :=
+  if i ≤ c ∧ c - i < 5 then [gmad false acc i (c - i)] else []
+
+/-- The high half of `a_i b_j` with `i + j + 1 = c` into `acc`, likewise. -/
+def gHi (acc : VReg) (i c : Nat) : List Instr :=
+  if i + 1 ≤ c ∧ c - (i + 1) < 5 then [gmad true acc i (c - (i + 1))] else []
+
+/-- `ymm k = r_k`: column `k` plus 19 times column `k + 5` of `a · b`, `a` in
+`ymm10–ymm14` and `b` in `ymm5–ymm9`: the low halves of column `k` accumulated
+in `ymm k` itself, from zero, or with `pre` from lanes 0 and 1 of what it held
+(and zero in lanes 2 and 3, of `ymm15`, which `mulG` zeroes), and the other
+halves in `ymm16–ymm18`. The products of `a_0`, which a carry gives last, come
+last, and a sum is doubled by an addition (`vpaddq`, which more ports run than
+a shift). -/
+def mulColG (pre : Bool) (k : Nat) : List Instr :=
+  [if pre then blend k 15 k (lanes true true false false) else zero k,
+    .eop (.bin .vpxorq aLh aLh aLh), .eop (.bin .vpxorq aH aH aH), .eop (.bin .vpxorq aHh aHh aHh)] ++
+  ([1, 2, 3, 4, 0].flatMap fun i =>
+    gLo (yl k) i k ++ gHi aLh i k ++ gLo aH i (k + 5) ++ gHi aHh i (k + 5)) ++
+  [eadd aLh aLh aLh, eadd (yl k) (yl k) aLh, eadd aHh aHh aHh, eadd aH aH aHh, eadd (yl k) (yl k) aH,
+    eadd aHh aH aH, eadd (yl k) (yl k) aHh, .eop (.shift .vpsllq aHh aH 4), eadd (yl k) (yl k) aHh]
+
+/-- `ymm0–ymm4 = ymm10–ymm14 · ymm5–ymm9`, lane by lane, not carried, plus with
+`pre` lanes 0 and 1 of what `ymm0–ymm4` held (with `ymm15` zeroed first); both
+operands are kept. -/
+def mulG (pre : Bool) : List Instr :=
+  (if pre then [zero 15] else []) ++
+  mulColG pre 0 ++ mulColG pre 1 ++ mulColG pre 2 ++ mulColG pre 3 ++ mulColG pre 4
 
 /-- The bias for limb `j`. -/
 def kb (j : Nat) : Nat := if j = 0 then KB0 else KB1
 
+/-- `carry` with the scratch registers `ymm t₀`, `ymm t₁`, `ymm t₂`. -/
+def carryT (r : Nat → Nat) (t0 t1 t2 : Nat) : List Instr :=
+  [ld t0 KM, srl t1 (r 4) 51, v .vpand (r 4) (r 4) t0] ++
+  ([3, 2, 1, 0].flatMap fun k =>
+    [srl t2 (r k) 51, v .vpand (r k) (r k) t0, v .vpaddq (r (k + 1)) (r (k + 1)) t2]) ++
+  [ld t2 K19, lo (r 0) t1 t2]
+
 /-! ## An iteration -/
 
-/-- Swaps lanes 0, 1 with 2, 3 of `ymm0–ymm4` if the mask `ymm15` is all
-ones. -/
-def vswap : List Instr :=
-  (List.range 5).flatMap fun j =>
-    [perm 10 j (ord 2 3 0 1), v .vpxor 10 10 j, v .vpand 10 10 15, v .vpxor j j 10]
-
-/-- `(A, B, C, D) = (x₂ + z₂, x₂ - z₂, x₃ + z₃, x₃ - z₃)` into `ymm0–ymm4`,
-not carried. -/
+/-- `(B, A, D, C) = (x₂ - z₂, x₂ + z₂, x₃ - z₃, x₃ + z₃)` into `ymm0–ymm4`, not
+carried, from `(x₂, z₂, x₃, z₃)` there. -/
 def stage1a : List Instr :=
   (List.range 5).flatMap fun j =>
-    [perm 10 j (ord 0 0 2 2), perm 11 j (ord 1 1 3 3), ld 12 (kb j), v .vpsubq 12 12 11,
-      blend 11 11 12 (lanes false true false true), v .vpaddq j 10 11]
+    [v .vpunpcklqdq 10 j j, v .vpunpckhqdq 11 j j, ld 12 (kb j), v .vpsubq 12 12 11,
+      blend 11 11 12 (lanes true false true false), v .vpaddq j 10 11]
 
-/-- `(A, B, D, C)` into `ymm16–ymm20` and `(A, B, A, B)` into `ymm5–ymm9`. -/
+/-- The orders of the doublewords of stage 1's operands (`vpermd`'s indices),
+from the mask `ymm15 = -swap`: `ymm5`, the lanes `(0, 1, 3, 2)`, or with `swap`
+`(2, 3, 1, 0)`; and `ymm15`, the lanes `(0, 1, 0, 1)`, or with `swap`
+`(2, 3, 2, 3)`. -/
+def vidx : List Instr :=
+  [ld 5 K4D, v .vpand 15 15 5, ld 5 KIU, v .vpxor 5 15 5, ld 6 KIV, v .vpxor 15 15 6]
+
+/-- From `(B, A, D, C)` in `ymm0–ymm4`, with the pairs `(B, A)` and `(D, C)`
+swapped if the mask `ymm15` is all ones (the ladder's swap of `(x₂, z₂)` and
+`(x₃, z₃)`): `(B, A, C, D)` into `ymm10–ymm14` and `(B, A, B, A)` into
+`ymm5–ymm9`. Their product is `(BB, AA, CB, DA)`. -/
 def stage1b : List Instr :=
-  (List.range 5).flatMap fun j =>
-    [.eop (.vpermq (.hi (h j)) (.lo (y j)) (ord 0 1 3 2)), perm (5 + j) j (ord 0 1 0 1)]
+  vidx ++ ((List.range 5).map fun j => .vop (.vpermd (y (10 + j)) (y 5) (y j))) ++
+    ((List.range 5).map fun j => .vop (.vpermd (y (5 + j)) (y 15) (y j)))
 
-/-- Stage 1's operands, from `(x₂, z₂, x₃, z₃)` in `ymm0–ymm4`. -/
+/-- Stage 1's operands, from `(x₂, z₂, x₃, z₃)` in `ymm0–ymm4` and the mask in
+`ymm15`. -/
 def stage1 : List Instr := stage1a ++ carry id ++ stage1b
 
-/-- From `(AA, BB, DA, CB)` in `ymm0–ymm4`: `(DA + CB, DA - CB, AA, AA - BB)`
-into `ymm5–ymm9` and `(DA + CB, DA - CB, BB, a24)` into `ymm0–ymm4` (with
-`ymm13` zero), neither carried. -/
+/-- From `(BB, AA, CB, DA)` in `ymm0–ymm4`, which it keeps:
+`(AA, E, DA + CB, DA - CB)` with `E = AA - BB` into `ymm10–ymm14`, not carried. -/
 def stage2a : List Instr :=
-  [zero 13] ++
   (List.range 5).flatMap fun j =>
-    [perm 10 j (ord 2 2 0 0), perm 11 j (ord 3 3 1 1), ld 12 (kb j), v .vpsubq 12 12 11,
-      blend 11 11 12 (lanes false true false true), blend 11 11 13 (lanes false false true false),
-      v .vpaddq (5 + j) 10 11,
-      perm 10 j (ord 0 0 1 0), blend j (5 + j) 10 (lanes false false true false),
-      ld 11 (KA24 + 32 * j), blend j j 11 (lanes false false false true)]
+    [v .vpunpcklqdq 15 j j, v .vpunpckhqdq (10 + j) j j, ld (5 + j) (kb j), v .vpsubq (5 + j) (5 + j) 15,
+      blend 15 15 (5 + j) (lanes false true false true), v .vpaddq 15 (10 + j) 15,
+      blend (10 + j) 15 (10 + j) (lanes true false false false)]
 
-/-- The first to `OPV` (which stage 3 reads) and into `ymm16–ymm20`, and the
-second into `ymm5–ymm9`. -/
+/-- `(0, a24, DA + CB, DA - CB)` into `ymm5–ymm9`, from the first operand,
+carried, in `ymm10–ymm14`. -/
 def stage2b : List Instr :=
-  (List.range 5).flatMap fun j => [st (OPV + 32 * j) (5 + j), cpH j (5 + j), mov (5 + j) j]
-
-/-- Stage 2's operands, both carried. -/
-def stage2 : List Instr := stage2a ++ carry (5 + ·) ++ carry id ++ stage2b
-
-/-- From `(x₃', t, x₂', a24 E)` in `ymm0–ymm4` and stage 2's first operand
-at `OPV`: `(1, AA + a24 E, 1, x₁)` into `ymm5–ymm9` and `(x₂', E, x₃', t)` into
-`ymm0–ymm4`, neither carried. -/
-def stage3a : List Instr :=
   (List.range 5).flatMap fun j =>
-    [ld 10 (OPV + 32 * j), perm 11 10 (ord 2 2 2 2), perm 12 j (ord 3 3 3 3), v .vpaddq 11 11 12,
-      ld 12 (KX1 + 32 * j), blend (5 + j) 12 11 (lanes false true false false),
-      perm 11 j (ord 2 0 0 1), perm 12 10 (ord 3 3 3 3), blend j 11 12 (lanes false true false false)]
+    [ld (5 + j) (KA24 + 32 * j), blend (5 + j) (10 + j) (5 + j) (lanes true true false false)]
 
-/-- The second into `ymm16–ymm20`. -/
-def stage3b : List Instr := (List.range 5).map fun j => cpH j j
+/-- Stage 2's operands, the first carried: its product, from `(BB, AA)` in lanes
+0 and 1 (`mulG true`), is `(BB, AA + a24 E, x₃', t)`. -/
+def stage2 : List Instr := stage2a ++ carryT (10 + ·) 15 5 6 ++ stage2b
 
-/-- Stage 3's operands, both carried. -/
-def stage3 : List Instr := stage3a ++ carry (5 + ·) ++ carry id ++ stage3b
+/-- From `(BB, T, x₃', t)` in `ymm0–ymm4`, with `T = AA + a24 E`, carried, and
+stage 2's first operand `(AA, E, …)` in `ymm10–ymm14`: `(AA, E, x₃', t)` into
+`ymm10–ymm14` and `(BB, T, 1, x₁)` into `ymm5–ymm9`. -/
+def stage3b : List Instr :=
+  (List.range 5).flatMap fun j =>
+    [blend (10 + j) (10 + j) j (lanes false false true true), ld (5 + j) (KX1 + 32 * j),
+      blend (5 + j) j (5 + j) (lanes false false true true)]
+
+/-- Stage 3's operands, from stage 2's product, which it carries. Their
+product is `(x₂', z₂', x₃', z₃')`. -/
+def stage3 : List Instr := carryT id 15 5 6 ++ stage3b
+
+/-- The mask `-swap`, from `rcx`, into `ymm15`. -/
+def vmask : List Instr := [.vop (.vmovq (y 15) .rcx), .vop (.vpbroadcastq .l256 (y 15) (y 15))]
 
 /-- One iteration, for the bit `t = rbx - 1`: `swap ^= k_t` into the mask
-`ymm15 = -swap` (as `step`), the swap, then the three stages. -/
+`ymm15 = -swap` (as `step`), then the three stages, the first of which swaps. -/
 def vstep : List Instr :=
   [.alu .sub .rbx (.imm 1), .movzx8 .rax { base := .rdi, index := some .rbx, disp := BITS },
     .mov .rdx (.mem (sc SWAP)), .alu .xor .rdx (.reg .rax), .store (sc SWAP) .rax,
-    .mov32 .rcx (.imm 0), .alu .sub .rcx (.reg .rdx),
-    .vop (.vmovq (y 15) .rcx), .vop (.vpbroadcastq .l256 (y 15) (y 15))] ++
-  vswap ++ stage1 ++ mul4H ++ stage2 ++ mul4H ++ stage3 ++ mul4H ++
+    .mov32 .rcx (.imm 0), .alu .sub .rcx (.reg .rdx)] ++ vmask ++
+  stage1 ++ mulG false ++ stage2 ++ mulG true ++ stage3 ++ mulG false ++
   [.alu .test .rbx (.reg .rbx)]
 
 /-! ## Before and after the loop -/
@@ -275,7 +310,7 @@ def consts : List Instr :=
 
 /-- The constants into the working space, and the ladder's first state
 `(1, 0, x₁, 1)` into `ymm0–ymm4`, with `ymm9 = 2⁵¹ - 1`, `ymm13 = (1, 0, 0,
-1)`, `ymm14 = (1, 0, 1, 0)`, `ymm15 = (0, 0, 0, a24)` and `ymm12 = 0`: the
+1)`, `ymm14 = (1, 0, 1, 0)`, `ymm15 = (0, a24, 0, 0)` and `ymm12 = 0`: the
 limbs of `x₁`, from its words `w₀–w₃` at `X1` (`x₁₀ = w₀ mod 2⁵¹`,
 `x₁₁ = w₀ >> 51 | (w₁ mod 2³⁸) << 13`, …, `x₁₄ = w₃ >> 12`), each in every
 quadword of `ymm0–ymm4`, then blended with the constants. -/
@@ -284,7 +319,7 @@ def vinit : List Instr :=
   bcast 10 .rbp ++ [st KB1 10] ++ bcast 10 .r8 ++ [st K13 10] ++ bcast 10 .r9 ++ [st K26 10] ++
   bcast 10 .r10 ++ [st K39 10] ++
   [.vop (.vmovq (y 10) .r11), perm 13 10 (ord 0 1 1 0), perm 14 10 (ord 0 1 0 1),
-    .vop (.vmovq (y 10) .r12), perm 15 10 (ord 1 1 1 0), zero 12,
+    .vop (.vmovq (y 10) .r12), perm 15 10 (ord 1 0 1 1), zero 12,
     ld 10 X1, perm 5 10 (ord 0 0 0 0), perm 6 10 (ord 1 1 1 1), perm 7 10 (ord 2 2 2 2),
     perm 8 10 (ord 3 3 3 3),
     v .vpand 0 5 9,
@@ -297,8 +332,23 @@ def vinit : List Instr :=
       st (KA24 + 32 * j) (if j = 0 then 15 else 12),
       blend j (if j = 0 then 13 else 12) j (lanes false false true false)])
 
+/-- The constants of `vidx`'s orders into general-purpose registers: the
+doublewords `(0, 1)`, `(2, 2)` and `(4, 4)`. -/
+def consts2 : List Instr :=
+  [.movImm64 .rax 0x0000000100000000, .movImm64 .rcx 0x0000000200000002, .movImm64 .rdx 0x0000000400000004]
+
+/-- `vidx`'s constants into the working space: with the doublewords `(0, 1)`,
+`(2, 2)` and `(4, 4)` in each quadword of `ymm5`, `ymm6` and `ymm7`, `K4D`,
+`KIU = (0, 1) + (0, 2, 2, 0) + (0, 0, 4, 4)` and `KIV = (0, 1) + (0, 2, 0, 2)`,
+lane by lane. -/
+def vinit2 : List Instr :=
+  bcast 5 .rax ++ bcast 6 .rcx ++ bcast 7 .rdx ++
+  [st K4D 7, zero 11, blend 8 11 6 (lanes false true true false), blend 9 11 7 (lanes false false true true),
+    v .vpaddq 10 5 8, v .vpaddq 10 10 9, st KIU 10,
+    blend 8 11 6 (lanes false true false true), v .vpaddq 10 5 8, st KIV 10]
+
 /-- The constants, and the ladder's first state. -/
-def vsetup : List Instr := consts ++ vinit
+def vsetup : List Instr := consts2 ++ vinit2 ++ consts ++ vinit
 
 /-- `vfinish` after the carries. -/
 def vpack : List Instr :=

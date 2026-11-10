@@ -24,7 +24,7 @@ namespace VG.Proof.X25519.X86_64.Ifma
 
 open VG VG.X86_64 VG.Impl.X25519.X86_64 VG.Impl.X25519.X86_64.Ifma VG.Proof.X25519 VG.Spec.X25519
 open VG.Proof.X25519.X86_64 (Scr Outside Outside.mono ofs off word val4 F E fe)
-open VG.Proof.Poly1305.X86_64.Avx2 (xr qw)
+open VG.Proof.Poly1305.X86_64.Avx2 (xr qw pick2)
 
 /-! ## The constants into registers -/
 
@@ -45,6 +45,48 @@ theorem consts_wp (s : State) :
   simp only [cregs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_setReg, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1,
     hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2, ite_false]
+
+theorem consts2_wp (s : State) :
+    WP isa (.block consts2) s fun s' =>
+      s'.gpr .rax = 0x0000000100000000 ∧ s'.gpr .rcx = 0x0000000200000002 ∧
+      s'.gpr .rdx = 0x0000000400000004 ∧
+      (∀ r, r ∉ cregs → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.mxcsr = s.mxcsr := by
+  apply WP.of_runBlock
+  simp only [consts2, runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, rfl, rfl, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
+  simp only [cregs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_setReg, hr.1, hr.2.1, hr.2.2.1, ite_false]
+
+/-! ## The orders of `vidx` -/
+
+def init2S : Sym := symOf vinit2
+
+/-- The term `vinit2` stores at `d`. -/
+def init2T (d : Nat) : T := ((init2S.st.find? fun x => x.1 == d).getD (0, .zero)).2
+
+theorem init2T_mem : ∀ d ∈ [K4D, KIU, KIV], (d, init2T d) ∈ init2S.st := by decide +kernel
+theorem init2S_small : ∀ x ∈ init2S.st, x.1 < 2 ^ 62 := by decide +kernel
+theorem init2S_apart : Apart init2S.st := by decide +kernel
+theorem init2S_range : ∀ x ∈ init2S.st, 1568 ≤ x.1 ∧ x.1 + 32 ≤ 1568 + 96 := by decide +kernel
+
+theorem init2_vals {s₀ : State} (ha : s₀.gpr .rax = 0x0000000100000000)
+    (hc : s₀.gpr .rcx = 0x0000000200000002) (hd : s₀.gpr .rdx = 0x0000000400000004) : ∀ l < 4,
+    (init2T K4D).eval s₀ l = 0x0000000400000004 ∧ (init2T KIU).eval s₀ l = kiu l ∧
+      (init2T KIV).eval s₀ l = kiv l := by
+  intro l hl
+  have p : ∀ (a b : BitVec 64) (c : Bool), pick2 a b c c = if c then b else a := fun a b c => by
+    cases c <;> [exact pick2_ff a b; exact pick2_tt a b]
+  have e4 : (init2T K4D).eval s₀ l = s₀.gpr .rdx := rfl
+  have eu : (init2T KIU).eval s₀ l = s₀.gpr .rax +
+      pick2 0 (s₀.gpr .rcx) (decide (l = 1 ∨ l = 2)) (decide (l = 1 ∨ l = 2)) +
+      pick2 0 (s₀.gpr .rdx) (decide (2 ≤ l)) (decide (2 ≤ l)) := by
+    rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
+  have ev : (init2T KIV).eval s₀ l = s₀.gpr .rax +
+      pick2 0 (s₀.gpr .rcx) (decide (l = 1 ∨ l = 3)) (decide (l = 1 ∨ l = 3)) := by
+    rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
+  rw [e4, eu, ev, p, p, p, ha, hc, hd]
+  rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> decide
 
 /-! ## The vector block -/
 
@@ -79,7 +121,7 @@ theorem initT_kx1 (E : Env) : ∀ j < 5, ∀ l < 4, (initT (KX1 + 32 * j)).nat E
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
 
 theorem initT_a24 (E : Env) : ∀ j < 5, ∀ l < 4, (initT (KA24 + 32 * j)).nat E l =
-    if j = 0 ∧ l = 3 then E.g .r12 else 0 := by
+    if j = 0 ∧ l = 1 then E.g .r12 else 0 := by
   intro j hj l hl
   rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
@@ -134,14 +176,26 @@ theorem stores_const {s₀ : State} {base : Addr} {m : Mem} {st : List (Nat × T
     mq (stores s₀ base st m) base (d + 8 * l) = s₀.gpr r := by
   rw [stores_mq _ _ _ _ h hl hs ha]; simp only [T.eval, ite_true]
 
-/-- `vsetup`: the constants, and `(1, 0, x₁, 1)` in the lanes. -/
-theorem vsetup_wp {s : State} {base : Addr} (hs : Scr s base) :
-    WP isa (.block vsetup) s fun s' => (∀ r, r ∉ cregs → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
+theorem limbNat_congr {w w' : Nat → Nat} (m : Nat) (h : ∀ k < 4, w k = w' k) : limbNat w m = limbNat w' m := by
+  funext j
+  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ 4 ≤ j) with rfl | rfl | rfl | rfl | h4
+  · simp only [limbNat, h 0 (by decide)]
+  · simp only [limbNat, h 0 (by decide), h 1 (by decide)]
+  · simp only [limbNat, h 1 (by decide), h 2 (by decide)]
+  · simp only [limbNat, h 2 (by decide), h 3 (by decide)]
+  · obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le h4
+    simp only [Nat.add_comm 4 j, limbNat, h 3 (by decide)]
+
+/-- `consts` and `vinit`: the constants, and `(1, 0, x₁, 1)` in the lanes. -/
+theorem vinit_wp {s : State} {base : Addr} (hs : Scr s base)
+    (k4 : ∀ l < 4, mq s.mem base (K4D + 8 * l) = 0x0000000400000004)
+    (ku : ∀ l < 4, mq s.mem base (KIU + 8 * l) = kiu l) (kv : ∀ l < 4, mq s.mem base (KIV + 8 * l) = kiv l) :
+    WP isa (.block (consts ++ vinit)) s fun s' => (∀ r, r ∉ cregs → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr ∧ Outside base 1664 544 s.mem s'.mem ∧
       Consts s'.mem base (xl s.mem base) ∧
       (∀ l < 4, ∀ i < 5, lanes s' 0 l i =
         if l = 2 then xl s.mem base i else if i = 0 ∧ (l = 0 ∨ l = 3) then 1 else 0) := by
-  rw [vsetup, WP.block_append_iff]
+  rw [WP.block_append_iff]
   refine WP.mono (consts_wp s) fun s₁ ⟨ha, hc, hd, hb, h8, h9, h10, h11, h12, g₁, m₁, rd₁, wr₁, _, _, x₁⟩ => ?_
   have hs₁ : Scr s₁ base := ⟨by rw [g₁ _ (by decide)]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
   have hE := initB_env ha h11 h12
@@ -170,7 +224,7 @@ theorem vsetup_wp {s : State} {base : Addr} (hs : Scr s base) :
         rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;> decide) l hl)).1,
       initT_kx1 _ j hj l hl, hxl, hg, hg, ha, h11]
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> simp [xl]
-  have ka : ∀ j < 5, ∀ l < 4, slotv s₂.mem base KA24 l j = if j = 0 ∧ l = 3 then 121665 else 0 :=
+  have ka : ∀ j < 5, ∀ l < 4, slotv s₂.mem base KA24 l j = if j = 0 ∧ l = 1 then 121665 else 0 :=
     fun j hj l hl => by
       have hm := initT_mem (KA24 + 32 * j) (by
         rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;> decide)
@@ -186,10 +240,12 @@ theorem vsetup_wp {s : State} {base : Addr} (hs : Scr s base) :
     simp only [lanes, Nat.zero_add] at this ⊢
     rw [this, initS_regs _ i hi l hl, hxl, hg, hg, ha, h11]
     rfl
+  have O : Outside base 1664 544 s.mem s₂.mem := by
+    rw [hmem, m₁]; exact stores_outside _ _ _ (by decide) _ initS_range
   refine ⟨fun r hr => by rw [vm_gpr h.eq, g₁ r hr], by rw [vm_rd h.eq, rd₁], by rw [vm_wr h.eq, wr₁],
-    by rw [h.mxcsr, x₁], ?_, ⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, ka, kx,
-      fun i hi => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_⟩, lan⟩
-  · rw [hmem, m₁]; exact stores_outside _ _ _ (by decide) _ initS_range
+    by rw [h.mxcsr, x₁], O, ⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, ka, kx,
+      fun i hi => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_,
+      fun l hl => ?_⟩, lan⟩
   · rw [cst KM .rax l (by decide) hl, ha]; rfl
   · rw [cst K19 .rcx l (by decide) hl, hc]; rfl
   · rw [cst KB0 .rdx l (by decide) hl, hd]; rfl
@@ -202,5 +258,40 @@ theorem vsetup_wp {s : State} {base : Addr} (hs : Scr s base) :
   · rw [cst K13 .r8 l (by decide) hl, h8]; rfl
   · rw [cst K26 .r9 l (by decide) hl, h9]; rfl
   · rw [cst K39 .r10 l (by decide) hl, h10]; rfl
+  · rw [mq_eq_word, O.word (by simp only [K4D]; omega) (by simp only [K4D]; omega)]; exact k4 l hl
+  · rw [mq_eq_word, O.word (by simp only [KIU]; omega) (by simp only [KIU]; omega)]; exact ku l hl
+  · rw [mq_eq_word, O.word (by simp only [KIV]; omega) (by simp only [KIV]; omega)]; exact kv l hl
+
+/-- `vsetup`: the constants, and `(1, 0, x₁, 1)` in the lanes. -/
+theorem vsetup_wp {s : State} {base : Addr} (hs : Scr s base) :
+    WP isa (.block vsetup) s fun s' => (∀ r, r ∉ cregs → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr ∧ Outside base 1568 640 s.mem s'.mem ∧
+      Consts s'.mem base (xl s.mem base) ∧
+      (∀ l < 4, ∀ i < 5, lanes s' 0 l i =
+        if l = 2 then xl s.mem base i else if i = 0 ∧ (l = 0 ∨ l = 3) then 1 else 0) := by
+  simp only [vsetup, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (consts2_wp s) fun sa ⟨ha, hc, hd, ga, ma, rda, wra, xa⟩ => ?_
+  have hsa : Scr sa base := ⟨by rw [ga _ (by decide)]; exact hs.rdi, by rw [wra]; exact hs.wr, hs.nowrap⟩
+  have e : Sym.init.run vinit2 = some init2S := symOf_eq _ _
+  rw [WP.block_append_iff]
+  refine WP.mono (run_ok (scr_ctx hsa) e) fun sb h => ?_
+  have hmem : sb.mem = stores sa base init2S.st sa.mem := by rw [h.mem, hsa.rdi]
+  have hsb := scr_of hsa (vm_gpr h.eq) (vm_wr h.eq)
+  have O : Outside base 1568 96 s.mem sb.mem := by
+    rw [hmem, ma]; exact stores_outside _ _ _ (by decide) _ init2S_range
+  have vals := init2_vals ha hc hd
+  have st : ∀ d ∈ [K4D, KIU, KIV], ∀ l < 4, mq sb.mem base (d + 8 * l) = (init2T d).eval sa l := fun d hd l hl => by
+    rw [hmem, stores_mq _ _ _ _ (init2T_mem d hd) hl init2S_small init2S_apart]
+  have hx : xl sb.mem base = xl s.mem base :=
+    limbNat_congr _ fun k hk => congrArg BitVec.toNat (O.word (by simp only [X1]; omega) (by simp only [X1]; omega))
+  refine WP.mono (vinit_wp hsb (fun l hl => (st K4D (by decide) l hl).trans (vals l hl).1)
+    (fun l hl => (st KIU (by decide) l hl).trans (vals l hl).2.1)
+    (fun l hl => (st KIV (by decide) l hl).trans (vals l hl).2.2))
+    fun s' ⟨g', rd', wr', mx', o', hk', l'⟩ => ?_
+  rw [hx] at hk' l'
+  exact ⟨fun r hr => by rw [g' r hr, vm_gpr h.eq, ga r hr], by rw [rd', vm_rd h.eq, rda],
+    by rw [wr', vm_wr h.eq, wra], by rw [mx', h.mxcsr, xa],
+    (O.mono (by decide) (by decide)).trans (o'.mono (by decide) (by decide)), hk', l'⟩
 
 end VG.Proof.X25519.X86_64.Ifma

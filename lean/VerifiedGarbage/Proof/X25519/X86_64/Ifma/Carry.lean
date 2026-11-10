@@ -84,4 +84,42 @@ theorem carryF_keep : ∀ r < 16, ¬ ((5 ≤ r ∧ r < 13)) → carryF.reg r = .
 theorem carryI_st : carryI.st = [] := by decide +kernel
 theorem carryF_st : carryF.st = [] := by decide +kernel
 
+/-! ## The carries of stages 2 and 3 (`carryT`) -/
+
+/-- Stage 2's carry, of its first operand in `ymm10–ymm14`. -/
+def carryU : Sym := (Sym.init.run (carryT (10 + ·) 15 5 6)).get (by decide +kernel)
+/-- Stage 3's carry, of stage 2's product in `ymm0–ymm4`. -/
+def carryR : Sym := (Sym.init.run (carryT id 15 5 6)).get (by decide +kernel)
+
+theorem carryU_eq : Sym.init.run (carryT (10 + ·) 15 5 6) = some carryU := (Option.some_get _).symm
+theorem carryR_eq : Sym.init.run (carryT id 15 5 6) = some carryR := (Option.some_get _).symm
+
+theorem carryU_nat (E : Env) (l : Nat) : ∀ k < 5,
+    (carryU.reg (10 + k)).nat E l = carryNat (E.m KM l) (E.m K19 l) (fun i => E.v (10 + i) l) k
+  | 0, _ => rfl
+  | 1, _ => rfl
+  | 2, _ => rfl
+  | 3, _ => rfl
+  | 4, _ => rfl
+
+theorem carryR_nat (E : Env) (l : Nat) : ∀ k < 5,
+    (carryR.reg k).nat E l = carryNat (E.m KM l) (E.m K19 l) (fun i => E.v i l) k
+  | 0, _ => rfl
+  | 1, _ => rfl
+  | 2, _ => rfl
+  | 3, _ => rfl
+  | 4, _ => rfl
+
+theorem carryU_ok : ∀ k < 5, ∀ l < 4, (carryU.reg (10 + k)).ok (carryB (10 + ·)) l = true ∧
+    (carryU.reg (10 + k)).bnd (carryB (10 + ·)) l < 2 ^ 52 := by decide +kernel
+
+theorem carryR_ok : ∀ k < 5, ∀ l < 4, (carryR.reg k).ok (carryB id) l = true ∧
+    (carryR.reg k).bnd (carryB id) l < 2 ^ 52 := by decide +kernel
+
+theorem carryU_keep : ∀ r < 16, ¬ ((5 ≤ r ∧ r < 7) ∨ 10 ≤ r) → carryU.reg r = .reg r := by decide +kernel
+theorem carryR_keep : ∀ r < 16, ¬ (r < 7 ∨ r = 15) → carryR.reg r = .reg r := by decide +kernel
+
+theorem carryU_st : carryU.st = [] := by decide +kernel
+theorem carryR_st : carryR.st = [] := by decide +kernel
+
 end VG.Proof.X25519.X86_64.Ifma
