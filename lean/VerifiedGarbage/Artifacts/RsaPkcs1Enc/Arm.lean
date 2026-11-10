@@ -1,6 +1,7 @@
 module
 
 public meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.PcVerified
+public meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecPrecomputed
 public meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.RndVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.PcBase
 public import VerifiedGarbage.TCB.Arm.Target
@@ -11,6 +12,7 @@ public import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Precomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
 public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.PcVerified
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecPrecomputed
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.RndVerified
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Random
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -34,6 +36,11 @@ def artifacts : List Artifact :=
       code := Proof.RsaPkcs1Enc.Arm.Dec.decryptCode v
       stack := 3584
       verified := (Proof.RsaPkcs1Enc.Arm.Dec.code_verified v) },
+    Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Proof.RsaPkcs1Enc.Arm.Dec.decryptCode v
+      stack := 3584
+      verified := (Proof.RsaPkcs1Enc.Arm.Dec.decryptPrecomputed_verified v) },
     Spec.RsaPkcs1Enc.encryptRandomApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Enc.Arm.Random.code ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix)

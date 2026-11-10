@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPrecomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -40,7 +41,12 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.AArch64.Sign.code (privOf v).name (privOf v).code
       stack := Sgn.stk (privOf v).stack
-      verified := Sgn.code_verified (privOf v) }]) ++
+      verified := Sgn.code_verified (privOf v) },
+    Spec.RsaPkcs1Sig.signPrecomputedApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.RsaPkcs1Sig.AArch64.Sign.code (privOf v).name (privOf v).code
+      stack := Sgn.stk (privOf v).stack
+      verified := Sgn.signPrecomputed_verified (privOf v) }]) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.flatMap fun (v : PublicImpl) => [
     Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact AArch64.target {
       suffix := v.suffix

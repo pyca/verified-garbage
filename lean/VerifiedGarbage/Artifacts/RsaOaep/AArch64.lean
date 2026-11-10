@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Inst
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecPrecomputed
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.Proof.HashTable.AArch64
 import Mathlib.Data.Finset.Attr
@@ -46,7 +47,13 @@ def artifacts (c : Proof.Rsa.AArch64.CrtImpl) (vs : List Proof.Pbkdf2.Md.AArch64
       tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Impl.RsaOaep.AArch64.decrypt (fnsOf vs) (privOf c).name (privOf c).code
       stack := decStack (privOf c)
-      verified := dec_ok vs h c }]
+      verified := dec_ok vs h c },
+    Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact AArch64.target {
+      suffix := qualifiedName "" [("crt", c.suffix)]
+      tables := [("hash", tables vs), ("mgf1", tables vs)]
+      code := Impl.RsaOaep.AArch64.decrypt (fnsOf vs) (privOf c).name (privOf c).code
+      stack := decStack (privOf c)
+      verified := Proof.RsaOaep.AArch64.decPrecomputed_ok vs h c }]
   else []
 
 end VG.Artifacts.RsaOaep.AArch64.RsaPrivateCrtAllMdHash

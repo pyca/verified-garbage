@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.Arm.Inst
+public import VerifiedGarbage.Proof.RsaPss.Arm.SgPrecomputed
 public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
 public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.TCB.Arm.Print
@@ -26,6 +27,13 @@ def artifacts : List Artifact :=
         code := Proof.RsaPss.Arm.Sg.signCode Proof.MdHashTable.Arm.vars Proof.HashTable.Arm.vars v
         stack := 3624
         verified := sign_ok h v },
+      Spec.RsaPss.signPrecomputedMdTableApi.artifact Arm.target {
+        suffix := v.suffix
+        tables := [("hash", Proof.MdHashTable.Arm.tables Proof.MdHashTable.Arm.vars),
+          ("mgf1", Proof.HashTable.Arm.tables Proof.HashTable.Arm.vars)]
+        code := Proof.RsaPss.Arm.Sg.signCode Proof.MdHashTable.Arm.vars Proof.HashTable.Arm.vars v
+        stack := 3624
+        verified := Proof.RsaPss.Arm.Sg.signPrecomputed_verified h v },
       Spec.RsaPss.verifyPrecomputedMdTableApi.artifact Arm.target {
         suffix := v.suffix
         tables := [("hash", Proof.MdHashTable.Arm.tables Proof.MdHashTable.Arm.vars),

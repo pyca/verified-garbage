@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignPrecomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCT
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -76,7 +77,14 @@ def artifacts : List Artifact :=
       code := Impl.RsaPkcs1Sig.X86_64.Sign.code (Sgn.privName v) (Sgn.privCode v)
       stack := sigStack
       verified := Sgn.code_verified v
-      spSafe := Sgn.code_spSafe v } (Sgn.sign_postOut sigStack))]) ++
+      spSafe := Sgn.code_spSafe v } (Sgn.sign_postOut sigStack)),
+    Spec.RsaPkcs1Sig.signPrecomputedApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+      suffix := v.suffix
+      extra := v.extra
+      code := Impl.RsaPkcs1Sig.X86_64.Sign.code (Sgn.privName v) (Sgn.privCode v)
+      stack := sigStack
+      verified := Sgn.signPrecomputed_verified v
+      spSafe := Sgn.code_spSafe v } (Sgn.signPrecomputed_postOut sigStack))]) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap fun (v : PublicImpl) => [
     Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact X86_64.target {
       suffix := v.suffix
