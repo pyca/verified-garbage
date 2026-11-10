@@ -100,7 +100,7 @@ theorem front_C1 {d : FD} {s : State} (h : C0 d s) : WP isa (.block (Impl.Miller
 theorem fn_rel : RelCT isa (Two C0) Impl.MillerRabin.PPC64LE.round fun _ _ => True := by
   unfold Impl.MillerRabin.PPC64LE.round
   exact RelCT.seq (two_post (two_taint _ pins_C0 (by taint_decide)) fun _ _ h => front_C1 h)
-    (two_taint _ pins_C1 (by taint_decide))
+    (two_taintR _ pins_C1 (by taint_decide_rel))
 
 theorem fn_ct : ConstantTime isa fnContract.pre fnContract.pub Impl.MillerRabin.PPC64LE.round :=
   RelCT.constantTime (fn_rel.mono (fun s t ⟨hs, ht, hsp, h3, h4, h5, hw⟩ =>

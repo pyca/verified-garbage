@@ -69,7 +69,7 @@ theorem t5 : RelCT isa (Two (FixR (coreRegs ++ envRegs'))) (.seq (.seq (.block p
     fun _ _ => True :=
   two_taint _ (pins_fixR _) (by taint_decide)
 theorem t6 : RelCT isa (Two (FixR (coreRegs ++ envRegs'))) elemOrder fun _ _ => True :=
-  two_taint _ (pins_fixR _) (by taint_decide)
+  two_taintR _ (pins_fixR _) (by taint_decide_rel)
 theorem t8 : RelCT isa (Two (FixR (coreRegs ++ envRegs'))) (.seq (.seq (.block ptrY) (loadArr 4)) elemRange)
     fun _ _ => True :=
   two_taint _ (pins_fixR _) (by taint_decide)

@@ -51,8 +51,9 @@ theorem le_ofs_off {S x : Addr} {a Z : Nat} (ha0 : a < 2 ^ 64) (ha : a + Z ≤ 2
 abbrev GP.pS (G : GP) : Addr := off G.scr pB
 
 /-- The certificate of `powC`. -/
-abbrev CertC (pLen qLen : Nat) : Prop := ∃ hc, (VG.Taint.check VG.PPC64LE.taint
-  (Taint.ofRegs [.r28, .r12, .r6, .r10, .r11, .r21, .r23, .r29, .r31]) (powC pLen qLen) hc).isSome = true
+abbrev CertC (pLen qLen : Nat) : Prop := ∃ hc, (VG.Taint.checkR VG.PPC64LE.taint VG.Proof.Bignum.PPC64LE.montSums
+  (Taint.ofRegs [.r28, .r12, .r6, .r10, .r11, .r21, .r23, .r29, .r31]) (powC pLen qLen) hc).isSome = true ∧
+  VG.Taint.fillR VG.Proof.Bignum.PPC64LE.montSums (powC pLen qLen) hc = powC pLen qLen
 
 section
 variable {G : GP} {STK : Nat} {σ : State} {V : Nat → BitVec 64} {LS : List Nat} {s : State}
@@ -183,7 +184,7 @@ theorem powC_vp {pv ev : Nat} {H : Addr} {hb : List Byte} (cert : CertC G.pLen G
     VP (PE G c X pv H) (powC G.pLen G.qLen) (fun σ t => St G c X σ t ∧ Env t G.pS (pZ G.pLen) (pw G.pLen) ∧
       arr t.mem G.pS (pw G.pLen) 4 = Spec.Rsa.os2ip hb ^ ev % pv ∧
       (t.gpr .r0 = 0 ↔ 1 < arr t.mem G.pS (pw G.pLen) 4 ∧ arr t.mem G.pS (pw G.pLen) 4 < pv)) := by
-  refine VP.taint _ cert (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by
+  refine VP.taintR _ cert (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by
       rw [(SS.pub (G := G) (fun σ s (h : PE G c X pv H σ s) => h.1.1.1) σ₁ s₁ h₁).2,
         (SS.pub (G := G) (fun σ s (h : PE G c X pv H σ s) => h.1.1.1) σ₂ s₂ h₂).2])
     (fun σ₁ σ₂ s₁ s₂ ⟨⟨⟨h₁, _⟩, e₁, b21, b23, _⟩, c12, c6⟩ ⟨⟨⟨h₂, _⟩, e₂, d21, d23, _⟩, f12, f6⟩ r hr => by

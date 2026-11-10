@@ -164,7 +164,7 @@ theorem call_ct (R : RoundImpl) {n : Nat} : RelCT isa (Two (LC n)) (.call R.name
 theorem roundCall_ct (R : RoundImpl) {n : Nat} :
     RelCT isa (Two (LR n)) (roundCall R.name R.code) fun _ _ => True := by
   unfold roundCall
-  refine RelCT.assoc (RelCT.assoc (RelCT.seq (two_post (Ψ := LC n) (two_taint _ pins_LR (by taint_decide))
+  refine RelCT.assoc (RelCT.assoc (RelCT.seq (two_post (Ψ := LC n) (two_taintR _ pins_LR (by taint_decide_rel))
     fun ⟨a, k⟩ s ⟨s0, q, sD, h, p⟩ => WP.mono (preCall_wp p.prep p.wr p.sp p.stk) fun t ht =>
       ⟨s0, h.lc.krel, ht⟩) (RelCT.seq (two_post (Ψ := LC' n) (call_ct R) fun ⟨a, k⟩ s ⟨s0, k₀, c⟩ =>
       WP.mono (call_wp R c) fun t ht => ⟨s0, k₀, ht.trans c.prep.env.h31⟩)

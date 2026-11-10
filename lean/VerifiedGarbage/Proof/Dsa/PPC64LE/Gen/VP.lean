@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontSum
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 
 /-! # DSA parameter generation on PPC64LE: pieces proven correct and constant time at once
@@ -67,6 +68,19 @@ theorem taint {c : Prog isa} (rs : List Reg)
   exact of_ct (fun σ₁ σ₂ => RelCT.taint (A := VG.PPC64LE.taint) (Taint.ofRegs rs)
     (fun s t h => ⟨sp _ _ _ _ h.1 h.2, fun r hr => regs _ _ _ _ h.1 h.2 r
       (by simpa [Taint.ofRegs] using RegSet.mem_ofList.mp hr)⟩) hc) wp
+
+/-- `taint`, with the Montgomery kernel's summary in place of its code
+(`Proof/Bignum/PPC64LE/MontSum.lean`). -/
+theorem taintR {c : Prog isa} (rs : List Reg)
+    (cert : ∃ hc, (VG.Taint.checkR VG.PPC64LE.taint VG.Proof.Bignum.PPC64LE.montSums (Taint.ofRegs rs) c
+      hc).isSome = true ∧ VG.Taint.fillR VG.Proof.Bignum.PPC64LE.montSums c hc = c)
+    (sp : ∀ σ₁ σ₂ s₁ s₂, F σ₁ s₁ → F σ₂ s₂ → s₁.sp = s₂.sp)
+    (regs : ∀ σ₁ σ₂ s₁ s₂, F σ₁ s₁ → F σ₂ s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r)
+    (wp : ∀ σ s, F σ s → WP isa c s (G σ)) : VP F c G := by
+  obtain ⟨_, hc, hf⟩ := cert
+  exact of_ct (fun σ₁ σ₂ => RelCT.taintR VG.Proof.Bignum.PPC64LE.montSums_ok (Taint.ofRegs rs)
+    (fun s t h => ⟨sp _ _ _ _ h.1 h.2, fun r hr => regs _ _ _ _ h.1 h.2 r
+      (by simpa [Taint.ofRegs] using RegSet.mem_ofList.mp hr)⟩) hf hc) wp
 
 theorem mono {F' G' : State → State → Prop} {c : Prog isa} (h : VP F c G)
     (hF : ∀ σ s, F' σ s → F σ s) (hG : ∀ σ s, G σ s → G' σ s) : VP F' c G' :=

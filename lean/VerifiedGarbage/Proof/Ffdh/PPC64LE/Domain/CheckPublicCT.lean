@@ -514,7 +514,7 @@ theorem subgroup_rel {Φ : CD → State → Prop} (hΦ : ∀ d s, Φ d s → Sub
             rcases hr with rfl | rfl <;> decide)) (by taint_decide))
           SL)
         (fun s₁ s₂ ⟨d, h₁, h₂, hsp⟩ => ⟨(d, 0), h₁, h₂, hsp⟩) fun _ _ h => h)
-      (two_taint subScanRegs (fun _ _ _ h₁ h₂ => ScanJ.pins h₁ h₂) (by taint_decide)))
+      (two_taintR subScanRegs (fun _ _ _ h₁ h₂ => ScanJ.pins h₁ h₂) (by taint_decide_rel)))
 
 /-! ## Constant time -/
 

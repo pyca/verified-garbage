@@ -7,6 +7,8 @@ meta import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFn
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontSum
+public meta import VerifiedGarbage.Proof.Framework.TaintRel
 
 /-!
 # Montgomery multiplication on PPC64LE: constant time
@@ -51,5 +53,13 @@ theorem two_taint {α : Type} {Φ : α → State → Prop} {c : Prog isa} (rs : 
     RelCT isa (Two Φ) c fun _ _ => True :=
   RelCT.taint (A := taint) (ofRegs rs)
     (fun _ _ ⟨a, h₁, h₂, hsp⟩ => ⟨hsp, fun r hr => hpin a _ _ h₁ h₂ r (RegSet.mem_ofList.mp hr)⟩) h
+
+/-- `two_taint`, with the kernel's summary in place of its code. -/
+theorem two_taintR {α : Type} {Φ : α → State → Prop} {c : Prog isa} (rs : List Reg) (hpin : Pins Φ rs)
+    {hc : VG.Taint.RHint T} (h : (taint.checkR montSums (ofRegs rs) c hc).isSome = true)
+    (hf : VG.Taint.fillR montSums c hc = c := by rfl) :
+    RelCT isa (Two Φ) c fun _ _ => True :=
+  RelCT.taintR montSums_ok (ofRegs rs)
+    (fun _ _ ⟨a, h₁, h₂, hsp⟩ => ⟨hsp, fun r hr => hpin a _ _ h₁ h₂ r (RegSet.mem_ofList.mp hr)⟩) hf h
 
 end VG.Proof.Bignum.PPC64LE

@@ -363,9 +363,10 @@ theorem ms_rel {V V' C' : PQ → State → Prop} {a R : Prog isa} (rs : List Reg
     exact WP.mono (WP.and hc hw) fun t ⟨⟨hv, hc'⟩, hr⟩ => ⟨hv, hc', s₀, h0, hr⟩
 
 theorem ms_last {V : PQ → State → Prop} {a : Prog isa} (rs : List Reg) (hp : Pins V rs)
-    {hc : VG.Taint.Hint T} (ht : (taint.check (ofRegs rs) a hc).isSome = true) :
+    {hc : VG.Taint.RHint T} (ht : (taint.checkR montSums (ofRegs rs) a hc).isSome = true)
+    (hf : VG.Taint.fillR montSums a hc = a := by rfl) :
     RelCT isa (Two (MS V (fun _ _ => True) a)) a (Two F5) :=
-  two_post (two_taint rs (fun q s₁ s₂ h₁ h₂ => hp q s₁ s₂ h₁.1 h₂.1) ht) fun _ _ ⟨_, _, s₀, h0, hw⟩ =>
+  two_post (two_taintR rs (fun q s₁ s₂ h₁ h₂ => hp q s₁ s₂ h₁.1 h₂.1) ht hf) fun _ _ ⟨_, _, s₀, h0, hw⟩ =>
     WP.mono hw fun _ ht => ⟨s₀, h0, ht⟩
 
 theorem pins_BV : Pins BV baseRegs := fun _ _ _ h₁ h₂ => BV.pins h₁ h₂
@@ -434,7 +435,7 @@ theorem mainG_rel : RelCT isa (Two (MS BV C0 mainG)) mainG (Two F5) := by
             (RelCT.seq (ms_rel (V' := V6) (C' := C6) _ pins_V4 (by taint_decide))
               (RelCT.seq (ms_rel (V' := V7) (C' := C7) _ pins_V6 (by taint_decide))
                 (RelCT.seq (ms_rel (V' := V8) (C' := fun _ _ => True) _ pins_V7 (by taint_decide))
-                  (ms_last _ pins_V8 (by taint_decide)))))))))
+                  (ms_last _ pins_V8 (by taint_decide_rel)))))))))
 
 /-- `main`'s entry: p valid. -/
 def M0 (q : PQ) (s : State) : Prop := F4 q s ∧ s.gpr .r0 = 0

@@ -36,7 +36,7 @@ theorem fail_rel {Φ : VD → State → Prop} (h : ∀ v s, Φ v s → Base v s)
     (by taint_decide)) (fun v s hs => (h v s hs).regs.r21) (by decide)
 
 theorem body_rel : RelCT isa (Two K9) Verify.body (Two End) :=
-  rel_end (two_taint _ (pins_fixL _ _ fun _ => rfl) (by taint_decide)) (fun _ _ h => h.1.regs.r21)
+  rel_end (two_taintR _ (pins_fixL _ _ fun _ => rfl) (by taint_decide_rel)) (fun _ _ h => h.1.regs.r21)
     (by rw [← Code.allInstrs_eq]; decide +kernel)
 
 /-- The check of the key, then `rest`, or 0. -/

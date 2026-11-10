@@ -104,7 +104,7 @@ theorem sbody_rel : RelCT isa (Two fun v s => K9 v s ∧ SG v) Sign.body (Two En
   refine rel_end ?_ (fun _ _ h => h.1.1.regs.r21) (by rw [← Code.allInstrs_eq]; decide +kernel)
   unfold Sign.body Sign.output
   iterate 13 refine RelCT.assoc ?_
-  refine RelCT.seq (two_post (two_taint _ pins_K9 (by taint_decide))
+  refine RelCT.seq (two_post (two_taintR _ pins_K9 (by taint_decide_rel))
     fun _ _ h => ?_) (two_taint _ pins_Mid (by taint_decide))
   iterate 12 refine WP.assoc' ?_
   exact k9_mid h

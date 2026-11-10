@@ -49,7 +49,7 @@ open VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.Domain VG.Impl.F
 open VG.Impl.Ffdh.PPC64LE.CheckPrivate
 open VG.Proof.Ffdh.PPC64LE.Domain VG.Proof.Ffdh.PPC64LE.Derive
 open VG.Proof.Bignum (slot)
-open VG.Proof.Bignum.PPC64LE (Two Pins two_post two_taint)
+open VG.Proof.Bignum.PPC64LE (Two Pins two_post two_taint two_taintR)
 
 /-- g's address, the bound and x's range, as the data has them. -/
 def InvK (d : KD) (s : State) : Prop :=
@@ -343,7 +343,7 @@ theorem kp_rel : RelCT isa (Two K0) checkPrivate fun _ _ => True := by
       exact RelCT.seq (two_post (two_taint _ (pins_kbase (Φ := fun d s => KR2 d s ∧ s.gpr .r26 ≠ 0)
           fun _ _ h => h.1.1) (by taint_decide)) fun _ _ h => KG1 h)
         (RelCT.seq (RelCT.seq (two_post (two_taint _ pins_KG2 (by taint_decide)) fun _ _ h => KG3 h)
-          (two_post (two_taint _ pins_V5 (by taint_decide)) fun _ _ h => h.2))
+          (two_post (two_taintR _ pins_V5 (by taint_decide_rel)) fun _ _ h => h.2))
           (RelCT.seq (two_post (two_taint _ pins_V6 (by taint_decide)) fun _ _ h => h.2)
             (two_post (two_taint _ pins_V7 (by taint_decide)) fun _ _ h => h.2)))
 
