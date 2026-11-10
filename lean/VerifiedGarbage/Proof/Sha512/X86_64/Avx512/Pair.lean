@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 
@@ -750,5 +753,143 @@ theorem start_ok (s : State) (A₀ A₁ B₀ B₁ : Nat → Word)
     show (1 : BitVec 8).getLsbD 0 = true from rfl]
   exact ⟨⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩, by decide, by decide, rfl,
     by decide, fun r h0 h1 => by simp [h0, h1], trivial, trivial, trivial⟩
+
+/-! ## Adding the variables into the hash values -/
+
+open VG.Impl.Sha512.X86_64.Avx2 (at_) in
+/-- Words `2j` and `2j+1` of both hash values: `addState`'s instructions for them. -/
+def aq (j : Nat) : List Instr :=
+  [ xb .vpunpcklqdq u0 (sv 0 (2 * j)) (sv 0 (2 * j + 1)), xb .vpunpckhqdq u1 (sv 0 (2 * j)) (sv 0 (2 * j + 1)),
+    .vbinLoad .vpaddq .l128 u0 u0 (at_ .rdi (16 * j)), .vbinLoad .vpaddq .l128 u1 u1 (at_ .rdx (16 * j)),
+    .vmovdquStore .l128 (at_ .rdi (16 * j)) u0, .vmovdquStore .l128 (at_ .rdx (16 * j)) u1 ]
+
+/-- `addState`'s instructions for the first `n` pairs of words. -/
+def aqs (n : Nat) : List Instr := (List.range n).flatMap aq
+
+theorem addState_eq : addState = aqs 4 := rfl
+
+theorem aqs_succ (n : Nat) : aqs (n + 1) = aqs n ++ aq n := by
+  simp only [aqs, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+
+open VG.Impl.Sha512.X86_64.Avx2 (at_) in
+theorem aq_ok (j : Nat) (s : State) (pa pb : Addr) (x₀ x₁ y₀ y₁ a₀ a₁ b₀ b₁ : Word)
+    (ea : s.gpr .rdi + BitVec.ofInt 64 ((16 * j : Nat) : Int) = pa)
+    (eb : s.gpr .rdx + BitVec.ofInt 64 ((16 * j : Nat) : Int) = pb)
+    (hx : s.xmm (sv 0 (2 * j)) = x₁ ++ x₀) (hy : s.xmm (sv 0 (2 * j + 1)) = y₁ ++ y₀)
+    (ha : s.mem.readW pa 128 = a₁ ++ a₀) (hb : s.mem.readW pb 128 = b₁ ++ b₀)
+    (hia : InRegions (s.rd ++ s.wr) pa 16) (hib : InRegions (s.rd ++ s.wr) pb 16)
+    (hoa : InRegions s.wr pa 16) (hob : InRegions s.wr pb 16) :
+    WP isa (.block (aq j)) s fun s' =>
+      s'.mem = (s.mem.writeW pa ((y₀ + a₁) ++ (x₀ + a₀))).writeW pb ((y₁ + b₁) ++ (x₁ + b₀)) ∧
+      (∀ r, r ≠ u0 → r ≠ u1 → s'.xmm r = s.xmm r) ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have nx := sv_ne' 0 (2 * j)
+  have ny := sv_ne' 0 (2 * j + 1)
+  apply WP.of_runBlock
+  simp only [aq, xb]
+  generalize sv 0 (2 * j) = rx at *
+  generalize sv 0 (2 * j + 1) = ry at *
+  simp only [u0, u1] at nx ny ⊢
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpExec, isa,
+    State.load128, State.store128, State.ea, State.lane, at_, RegUpd.xmm_setV, RegUpd.gpr_setV, RegUpd.mem_setV,
+    RegUpd.rd_setV, RegUpd.wr_setV, nx, ny, ea, eb, hx, hy, ha, hb, hia, hib, hoa, hob, punpckl_eq, punpckh_eq,
+    paddq_eq, Option.map_some, Option.some.injEq, exists_eq_left', reduceVBinOpSse]
+  exact ⟨trivial, fun r h0 h1 => by simp [h0, h1], trivial, trivial, trivial⟩
+
+theorem qAddr_contains (p : Addr) {j : Nat} (hj : j < 4) : (⟨p, 64⟩ : Region).Contains (qAddr p j) 16 :=
+  contains_offset (by omega) (by omega)
+
+/-- Storing pair `n` of the hash values at `p` and `q`. -/
+theorem pairs_step {m : Mem} {p q : Addr} (hd : Region.Disjoint ⟨p, 64⟩ ⟨q, 64⟩) {N O N' O' : Nat → BitVec 128}
+    {n : Nat} (hn : n < 4) (hf : PairsAt m p fun j => if j < n then N j else O j)
+    (hg : PairsAt m q fun j => if j < n then N' j else O' j) :
+    PairsAt ((m.writeW (qAddr p n) (N n)).writeW (qAddr q n) (N' n)) p (fun j => if j < n + 1 then N j else O j) ∧
+    PairsAt ((m.writeW (qAddr p n) (N n)).writeW (qAddr q n) (N' n)) q
+      (fun j => if j < n + 1 then N' j else O' j) := by
+  have fq : Frame [⟨q, 64⟩] (m.writeW (qAddr p n) (N n)) ((m.writeW (qAddr p n) (N n)).writeW (qAddr q n) (N' n)) :=
+    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (qAddr_contains q hn)
+  have fp : Frame [⟨p, 64⟩] m (m.writeW (qAddr p n) (N n)) :=
+    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (qAddr_contains p hn)
+  refine ⟨fun j hj => ?_, fun j hj => ?_⟩
+  · have hfj : m.readW (qAddr p j) 128 = if j < n then N j else O j := hf j hj
+    show _ = if j < n + 1 then N j else O j
+    rw [fq.readW (r := ⟨p, 64⟩) (qAddr_contains p hj) (by simpa using hd) (by decide)]
+    rcases (by omega : j = n ∨ j < n ∨ n < j) with rfl | h | h
+    · simp only [Nat.lt_succ_self, ↓reduceIte]
+      exact Mem.readW_writeW_self m _ 16 _ (by decide)
+    · simp only [h, show j < n + 1 by omega, ↓reduceIte] at hfj ⊢
+      exact (readW_writeW_off m p _ (d := 16 * j) (e := 16 * n) (n := 16) (by omega) (by omega) (by omega)).trans hfj
+    · simp only [show ¬ j < n by omega, show ¬ j < n + 1 by omega, ↓reduceIte] at hfj ⊢
+      exact (readW_writeW_off m p _ (d := 16 * j) (e := 16 * n) (n := 16) (by omega) (by omega) (by omega)).trans hfj
+  · have hgj : m.readW (qAddr q j) 128 = if j < n then N' j else O' j := hg j hj
+    show _ = if j < n + 1 then N' j else O' j
+    rcases (by omega : j = n ∨ j < n ∨ n < j) with rfl | h | h
+    · simp only [Nat.lt_succ_self, ↓reduceIte]
+      exact Mem.readW_writeW_self _ _ 16 _ (by decide)
+    · simp only [h, show j < n + 1 by omega, ↓reduceIte] at hgj ⊢
+      exact ((readW_writeW_off (m.writeW (qAddr p n) (N n)) q (N' n) (d := 16 * j) (e := 16 * n) (n := 16)
+        (by omega) (by omega) (by omega)).trans
+        (fp.readW (r := ⟨q, 64⟩) (qAddr_contains q hj) (by simpa using hd.symm) (by decide))).trans hgj
+    · simp only [show ¬ j < n by omega, show ¬ j < n + 1 by omega, ↓reduceIte] at hgj ⊢
+      exact ((readW_writeW_off (m.writeW (qAddr p n) (N n)) q (N' n) (d := 16 * j) (e := 16 * n) (n := 16)
+        (by omega) (by omega) (by omega)).trans
+        (fp.readW (r := ⟨q, 64⟩) (qAddr_contains q hj) (by simpa using hd.symm) (by decide))).trans hgj
+
+open VG.Impl.Sha512.X86_64.Avx2 (at_) in
+/-- The first `n` pairs of words of both hash values, added and stored. -/
+theorem aqs_ok {s : State} {p₀ p₁ : Addr} (v₀ v₁ h₀ h₁ : Nat → Word)
+    (hrdi : s.gpr .rdi = p₀) (hrdx : s.gpr .rdx = p₁) (hd : Region.Disjoint ⟨p₀, 64⟩ ⟨p₁, 64⟩)
+    (hw₀ : (⟨p₀, 64⟩ : Region) ∈ s.wr) (hw₁ : (⟨p₁, 64⟩ : Region) ∈ s.wr)
+    (hx : ∀ j < 4, s.xmm (sv 0 (2 * j)) = v₁ (2 * j) ++ v₀ (2 * j) ∧
+      s.xmm (sv 0 (2 * j + 1)) = v₁ (2 * j + 1) ++ v₀ (2 * j + 1))
+    (hm₀ : PairsAt s.mem p₀ fun j => h₀ (2 * j + 1) ++ h₀ (2 * j))
+    (hm₁ : PairsAt s.mem p₁ fun j => h₁ (2 * j + 1) ++ h₁ (2 * j)) :
+    ∀ n ≤ 4, WP isa (.block (aqs n)) s fun s' =>
+      PairsAt s'.mem p₀ (fun j => if j < n then (v₀ (2 * j + 1) + h₀ (2 * j + 1)) ++ (v₀ (2 * j) + h₀ (2 * j))
+        else h₀ (2 * j + 1) ++ h₀ (2 * j)) ∧
+      PairsAt s'.mem p₁ (fun j => if j < n then (v₁ (2 * j + 1) + h₁ (2 * j + 1)) ++ (v₁ (2 * j) + h₁ (2 * j))
+        else h₁ (2 * j + 1) ++ h₁ (2 * j)) ∧
+      Frame [⟨p₀, 64⟩, ⟨p₁, 64⟩] s.mem s'.mem ∧
+      (∀ r, r ≠ u0 → r ≠ u1 → s'.xmm r = s.xmm r) ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  intro n hn
+  induction n with
+  | zero =>
+    exact WP.block_nil ⟨fun j hj => by simpa using hm₀ j hj, fun j hj => by simpa using hm₁ j hj, Frame.refl _ _,
+      fun _ _ _ => rfl, rfl, rfl, rfl⟩
+  | succ n ih =>
+    rw [aqs_succ, WP.block_append_iff]
+    refine WP.mono (ih (by omega)) fun s₁ ⟨q₀, q₁, f₁, hx₁, hg₁, hrd₁, hwr₁⟩ => ?_
+    have ea : s₁.gpr .rdi + BitVec.ofInt 64 ((16 * n : Nat) : Int) = qAddr p₀ n := by
+      rw [hg₁, hrdi, ofInt_natCast]; rfl
+    have eb : s₁.gpr .rdx + BitVec.ofInt 64 ((16 * n : Nat) : Int) = qAddr p₁ n := by
+      rw [hg₁, hrdx, ofInt_natCast]; rfl
+    have a := q₀ n (by omega)
+    have b := q₁ n (by omega)
+    simp only [Nat.lt_irrefl, ↓reduceIte] at a b
+    obtain ⟨x, y⟩ := hx n (by omega)
+    have w₀ : (⟨p₀, 64⟩ : Region) ∈ s₁.wr := hwr₁ ▸ hw₀
+    have w₁ : (⟨p₁, 64⟩ : Region) ∈ s₁.wr := hwr₁ ▸ hw₁
+    refine WP.mono (aq_ok n s₁ _ _ _ _ _ _ _ _ _ _ ea eb
+      ((hx₁ _ (sv_ne' 0 (2 * n)).1 (sv_ne' 0 (2 * n)).2).trans x)
+      ((hx₁ _ (sv_ne' 0 (2 * n + 1)).1 (sv_ne' 0 (2 * n + 1)).2).trans y) a b
+      ⟨_, List.mem_append_right _ w₀, qAddr_contains p₀ (by omega)⟩
+      ⟨_, List.mem_append_right _ w₁, qAddr_contains p₁ (by omega)⟩
+      ⟨_, w₀, qAddr_contains p₀ (by omega)⟩ ⟨_, w₁, qAddr_contains p₁ (by omega)⟩)
+      fun s₂ ⟨hm₂, hx₂, hg₂, hrd₂, hwr₂⟩ => ?_
+    obtain ⟨r₀, r₁⟩ := pairs_step hd (by omega : n < 4) q₀ q₁
+    rw [hm₂]
+    refine ⟨r₀, r₁, ?_, fun r a b => (hx₂ r a b).trans (hx₁ r a b), hg₂.trans hg₁, hrd₂.trans hrd₁,
+      hwr₂.trans hwr₁⟩
+    exact (f₁.writeW (by simp) _ (qAddr_contains p₀ (by omega))).writeW (by simp) _
+      (qAddr_contains p₁ (by omega))
+
+/-- A word of the block in memory. -/
+theorem word_of_block (m : Mem) (p : Addr) {t : Nat} (ht : t < 16) :
+    bswap64 (m.readW (p + BitVec.ofInt 64 ((8 * t : Nat) : Int)) 64) = W (Spec.Sha512.blockAt m p) t := by
+  rw [Proof.Sha512.W_lt _ ht, bswap64_readW, ofInt_natCast]
+  simp only [Spec.Sha512.blockAt, Spec.Sha512.parseBlock, Offset.add_ofNat_add_one, Nat.add_assoc, Nat.reduceAdd]
+
+theorem zip_get! (R H : HashValue) {k : Nat} (hk : k < 8) :
+    (Vector.zipWith (· + ·) R H)[k]! = R[k]! + H[k]! := by
+  rw [getElem!_pos _ k hk, getElem!_pos R k hk, getElem!_pos H k hk, Vector.getElem_zipWith]
 
 end VG.Proof.Sha512.X86_64.Avx512
