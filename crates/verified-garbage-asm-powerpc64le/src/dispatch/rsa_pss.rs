@@ -81,7 +81,7 @@ pub unsafe fn vg_rsa_pss_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mu
     unsafe { crate::rsa_pss::vg_rsa_pss_sign(out, out_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, digest, digest_len, salt, salt_len, scratch, scratch_len, hash, mgf1) }
 }
 
-/// `vg_rsa_pss_sign`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pss_sign` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1); with other values, the result is unspecified, but memory safety and the timing guarantee still apply.
+/// `vg_rsa_pss_sign`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pss_sign` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
 /// Contract: `VG.Spec.RsaPss.signPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the digest or the salt.
 ///
@@ -112,7 +112,7 @@ pub unsafe fn vg_rsa_pss_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mu
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
-/// * For the result to be the operation's, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
