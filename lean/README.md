@@ -202,12 +202,13 @@ is built (`TCB/AuditRecords.lean`; the `lean-modules` skill), so they run on
 a build restored without those parts ([Without the private
 parts](#without-the-private-parts)).
 
-On Linux, `Emit.lean` needs `vm.max_map_count` above the default of many
-distributions (65,530): it maps every module its drivers import. It refuses
-to start below eight regions of memory per `.olean` and names the command to
-raise the limit, `sudo sysctl -w vm.max_map_count=262144`, which CI runs
-(`EmitOne.lean` loads far fewer). Past the limit Lean would fail with
-`failed to read file '….olean'`.
+On Linux, each of `Emit.lean`'s drivers maps every `.olean` it imports, and
+a process may map at most `vm.max_map_count` regions of memory (65,530 by
+default on many distributions). The largest driver needs well under that
+(about 38,000), but CI raises the limit to 262,144 so that it never depends on
+the margin. If a driver ever passes the limit, Lean fails with
+`failed to read file '….olean'`: raise it with
+`sudo sysctl -w vm.max_map_count=262144`.
 
 Every module records a profile of its build, kept in its `.trace` file
 (`moreLeanArgs` in `lakefile.toml`), which Lake prints again for each module

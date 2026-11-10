@@ -51,37 +51,6 @@ def nativeTCB : IO (List System.FilePath) := do
   return (sharedLib "VerifiedGarbage_NativeTCB") ::
     (targets.qsort (· < ·)).toList.map fun t => sharedLib s!"VerifiedGarbage_NativeTCB{t}"
 
-/-- How many `.olean` files the driver may load: those of this project and
-of its packages. -/
-partial def oleanCount (dir : System.FilePath) : IO Nat := do
-  if !(← dir.isDir) then return 0
-  let mut n := 0
-  for e in ← dir.readDir do
-    if ← e.path.isDir then n := n + (← oleanCount e.path)
-    else if e.path.extension == some "olean" then n := n + 1
-  return n
-
-/-- On Linux, a process may map at most `vm.max_map_count` regions of memory,
-and the driver maps each module it imports. Past the limit, Lean fails with
-`failed to read file '….olean'`, naming whichever module it was loading.
-When the driver was not a module, and also mapped every private part, it
-needed about six regions per `.olean` (80,144 for 13,700); require eight.
-`none` if the limit is high enough, or not Linux. -/
-def mapCountProblem : IO (Option String) := do
-  let limitFile : System.FilePath := "/proc/sys/vm/max_map_count"
-  unless System.Platform.isLinux && (← limitFile.pathExists) do return none
-  let some limit := (← IO.FS.readFile limitFile).trimAscii.toString.toNat? | return none
-  let mut oleans ← oleanCount (".lake" / "build" / "lib" / "lean")
-  let packages : System.FilePath := ".lake" / "packages"
-  if ← packages.isDir then
-    for e in ← packages.readDir do
-      oleans := oleans + (← oleanCount (e.path / ".lake" / "build" / "lib" / "lean"))
-  let needed := 8 * oleans
-  if limit ≥ needed then return none
-  return some s!"vm.max_map_count is {limit}, and the driver may map about {needed} \
-    regions of memory ({oleans} .olean files): raise it, e.g. \
-    `sudo sysctl -w vm.max_map_count=262144` (see lean/README.md)"
-
 /-- Writes Lake's setup for the module `file` (`lake setup-file`, which builds what it
 imports) to `out`. -/
 def setupFile (file out : System.FilePath) : IO UInt32 := do
@@ -98,9 +67,6 @@ def main (args : List String) : IO UInt32 := do
     unless ← lib.pathExists do
       IO.eprintln s!"{lib} is missing: run `lake build` first"
       return 1
-  if let some problem ← mapCountProblem then
-    IO.eprintln problem
-    return 1
   let some (check, none, _) := VG.Emit.parseArgs args
     | IO.eprintln VG.Emit.usage; return 2
   let parts ← match VG.Emit.parts (← VG.Emit.registrations) with
