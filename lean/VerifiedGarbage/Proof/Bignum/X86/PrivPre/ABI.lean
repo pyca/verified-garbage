@@ -1,4 +1,5 @@
 module
+-- separate module: the contract's facts by `sig_pre`, rebuilt only when the contract changes
 
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI

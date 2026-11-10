@@ -1,4 +1,5 @@
 module
+-- separate module: the argument copies, rebuilt only when they change
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Body
 public import VerifiedGarbage.Proof.Mont.X86.Words

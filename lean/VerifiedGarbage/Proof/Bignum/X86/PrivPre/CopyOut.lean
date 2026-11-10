@@ -1,4 +1,5 @@
 module
+-- separate module: the copies' proofs, rebuilt only when they change
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Body
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Prime
@@ -80,7 +81,8 @@ def dstOff (s : State) : Option Nat → Nat
 theorem width16_ok (A : PPABI s) (B : Body s t) {r : Reg}
     (k : ∀ u, Keeps [r] t u → u.mem = t.mem → (u.gpr r).toNat = 16 * Spec.Rsa.modulusWords (arg s 3).toNat →
       WP isa (.block is) u Q) :
-    WP isa (.block ([.mov r (.mem (incoming 3)), .alu .add r (.imm 7), .shift .shr r 3] ++ shl r 4 ++ is)) t Q := by
+    WP isa (.block (([.mov r (.mem (incoming 3)), .alu .add r (.imm 7), .shift .shr r 3] : List Instr) ++ shl r 4 ++ is))
+      t Q := by
   have l := A.lengths
   simp only [Spec.Rsa.lenValid] at l
   simp only [List.cons_append, List.nil_append]

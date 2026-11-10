@@ -1,4 +1,5 @@
 module
+-- separate module: the call of the public precompute, apart from primes' call, which builds on it
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Args
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Call

@@ -1,4 +1,5 @@
 module
+-- separate module: the generic call from the body, apart from the public precompute's arguments
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Body
 public import VerifiedGarbage.Proof.Mont.X86.Words
