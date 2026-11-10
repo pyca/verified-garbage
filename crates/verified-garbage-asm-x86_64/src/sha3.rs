@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 144. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -41,7 +43,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAAww=="
+.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI1kJPhIjWQkCDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -77,6 +79,8 @@ call {vg_keccak_squeeze_scratch}
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 136. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -111,7 +115,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAAww=="
+.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI1kJPhIjWQkCDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -147,6 +151,8 @@ call {vg_keccak_squeeze_scratch}
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 104. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -181,7 +187,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAAww=="
+.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI1kJPhIjWQkCDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -217,6 +223,8 @@ call {vg_keccak_squeeze_scratch}
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 72. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -251,7 +259,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAAww=="
+.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI1kJPhIjWQkCDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -287,6 +295,8 @@ call {vg_keccak_squeeze_scratch}
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 168. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -321,7 +331,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAAww=="
+.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI1kJPhIjWQkCDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -330,6 +340,8 @@ jmp 21f
 /// Finishes absorbing a SHAKE128 message: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, as `vg_shake128_update` leaves it), it becomes a state that, squeezed by `vg_shake128_squeeze` from position 0, gives the output of SHAKE128 of that message (`VG.Spec.Sha3.shake128`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
 ///
 /// Contract: `VG.Spec.Sha3.xofFinalizeContract` for `VG.Spec.Sha3.xofShake128`. Constant time: only the pointer and `pos` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -341,7 +353,7 @@ pub(crate) unsafe extern "sysv64" fn vg_shake128_finalize(state: *mut [u64; 25],
     core::arch::naked_asm!(
         r#".base64 "SI2kJHj9//9IieJIg8IISYnQSInyvqgAAAC5HwAAAA+2BBdIMciIBBcPtkQ3/0g1gAAAAIhEN/9MicY="
 call {vg_keccak_f1600}
-.base64 "SI2kJIgCAADD"
+.base64 "SI2kJIgCAABmD+/ARTHbSI2kJHD9///zD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCSQAgAAMcAxyTHSMfZFMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -350,6 +362,8 @@ call {vg_keccak_f1600}
 /// Squeezes SHAKE128 output: if the state `*state`, from position `pos`, continues the output of SHAKE128 of a message (`VG.Spec.Sha3.shake128`) after its first `n` bytes (`VG.Spec.Sha3.XofRepr`), writes the next `outlen` bytes of that output to `out`, and leaves in `*state` a state, and returns a position, that continue it after its first `n + outlen` bytes. Start from the state `vg_shake128_finalize` leaves and position 0.
 ///
 /// Contract: `VG.Spec.Sha3.xofSqueezeContract` for `VG.Spec.Sha3.xofShake128`. Constant time: only the pointers, `pos` and `outlen` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -383,7 +397,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJIgCAADD"
+.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJIgCAABmD+/ARTHbSI2kJHD9///zD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCSQAgAAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -392,6 +406,8 @@ jmp 21f
 /// Finishes absorbing a SHAKE256 message: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHAKE256's rate, as `vg_sha3_256_update` leaves it), it becomes a state that, squeezed by `vg_shake256_squeeze` from position 0, gives the output of SHAKE256 of that message (`VG.Spec.Sha3.shake256`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
 ///
 /// Contract: `VG.Spec.Sha3.xofFinalizeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointer and `pos` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -403,7 +419,7 @@ pub(crate) unsafe extern "sysv64" fn vg_shake256_finalize(state: *mut [u64; 25],
     core::arch::naked_asm!(
         r#".base64 "SI2kJHj9//9IieJIg8IISYnQSInyvogAAAC5HwAAAA+2BBdIMciIBBcPtkQ3/0g1gAAAAIhEN/9MicY="
 call {vg_keccak_f1600}
-.base64 "SI2kJIgCAADD"
+.base64 "SI2kJIgCAABmD+/ARTHbSI2kJHD9///zD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCSQAgAAMcAxyTHSMfZFMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -412,6 +428,8 @@ call {vg_keccak_f1600}
 /// Squeezes SHAKE256 output: if the state `*state`, from position `pos`, continues the output of SHAKE256 of a message (`VG.Spec.Sha3.shake256`) after its first `n` bytes (`VG.Spec.Sha3.XofRepr`), writes the next `outlen` bytes of that output to `out`, and leaves in `*state` a state, and returns a position, that continue it after its first `n + outlen` bytes. Start from the state `vg_shake256_finalize` leaves and position 0.
 ///
 /// Contract: `VG.Spec.Sha3.xofSqueezeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointers, `pos` and `outlen` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -445,7 +463,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJIgCAADD"
+.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJIgCAABmD+/ARTHbSI2kJHD9///zD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCSQAgAAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )

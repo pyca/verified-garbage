@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.Offset
 
 -- separate module: generic over the hash functions, of which SHA-256 is the first to use it
 
@@ -14,6 +18,11 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 (`RScrub.resOk_reg`), verified against the same contract
 (`X86_64.Scrub.Verified.scrub`) and without secret residue
 (`StreamFn.scrub_noResidue`).
+
+`MdHash.hmacFinReg`: HMAC's `finalize` over a variant, followed by
+`scrubTail` where the variant gives the residue analysis of its code
+(`MdHash.hmacFinRes`). Its postcondition reads the memory on return only
+within `out` (`hmacFinOut`).
 -/
 
 @[expose] public section
@@ -49,5 +58,43 @@ theorem StreamFn.scrub_noResidue (f : StreamFn) (v : VecLevel) (ks : List Nat)
     (hres : ResOk f.code f.contract f.stack ks (chunks f.stack)) :
     NoResidue (f.scrub v ks hd hst h8 hlv hrb hpost hres).code f.contract f.retBits :=
   scrubReg_noResidue f.reg v ks hd hst h8 hlv hrb hpost hres rfl
+
+/-- HMAC's `finalize`'s postcondition reads the memory on return only within
+`out`, the HMAC's bytes. -/
+theorem hmacFinOut (I : Spec.Hmac.Instance) (hD : I.S.digestBytes < 2 ^ 64) (stack : Nat) :
+    PostOut (I.finalizeContract abi stack) ((Spec.Hmac.finalizeSig I.S).retBits 64) := by
+  unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+  exact postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    obtain ⟨inn, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨otr, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨ct, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
+    simp only [Spec.Hmac.finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+    have ho : ∀ i < I.S.digestBytes, m₂ (out + BitVec.ofNat 64 i) = m₁ (out + BitVec.ofNat 64 i) :=
+      fun i hi => (hb.2.2 _ (Offset.contains_base _ (by omega) (by omega))).symm
+    intro k0 text h1 h2 hri hc hro
+    show Spec.Sha256.bytesAt m₂ out I.S.digestBytes = _
+    rw [Sha256.Stream.bytesAt_congr ho]
+    exact h k0 text h1 h2 hri hc hro
+
+open RScrub in
+/-- HMAC's `finalize` over the variant `v`: `finalize_scratch` with its
+working space in a frame of its own, without secret residue where `v` gives
+its analysis (`MdHash.hmacFinRes`). -/
+def MdHash.hmacFinReg (v : MdHash) : Registration v.I.finalizeApi target :=
+  let r : Registration v.I.finalizeApi target := {
+    suffix := v.suffix
+    code := Impl.StackScratch.X86_64.withStackScratch (hmacFrame v.I) .r8 v.H.hmacFin
+    stack := 16 + hmacFrame v.I
+    verified := v.hmacFinF
+    spSafe := X86_64.withStackScratch_spSafe_of v.hmacFinSp }
+  if hD : v.I.S.digestBytes < 2 ^ 64 then
+    withScrub r (hmacFinOut v.I hD _) [] (pubOk_nil _) v.hmacFinRes
+  else r
 
 end VG.Proof.Pbkdf2.Md.X86_64

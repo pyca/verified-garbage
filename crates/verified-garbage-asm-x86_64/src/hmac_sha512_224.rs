@@ -76,6 +76,8 @@ pub const VG_HMAC_SHA512_224_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Feat
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
@@ -92,7 +94,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_224_finalize_shani(inner: *m
 call {vg_sha512_finalize_scratch_shani}
 .base64 "80EPbwQk8w9/A/NBD29EJBDzD39DEPNBD29EJCDzD39DIPNBD29EJDDzD39DMPNBD2+HkAUAAPMPf0NASYuHoAUAAEiJQ1BBi4eoBQAAiUNYSIndSIPFQLiAAAAAiUUcuAAAAABmD+/A8w9/RSDzD39FMPMPf0VA8w9/RVDzD39FYEG8nAAAAEyJ4EjB6D1ID8hmSA9u+EyJ4EgBwEgBwEgBwEgPyGZMD27AZkEPbPjzD399cEiJ7kiJ37oBAAAATIn5"
 call {vg_sha512_compress_shani}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU48w9vRQDzQQ9/RQBIi0UQSYlFEItFGEGJRRhJi59gBQAASYuvaAUAAE2Lp3AFAABNi694BQAATYu3gAUAAE2Lv4gFAABIjaQkWAcAAMM="
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU48w9vRQDzQQ9/RQBIi0UQSYlFEItFGEGJRRhJi59gBQAASYuvaAUAAE2Lp3AFAABNi694BQAATYu3gAUAAE2Lv4gFAABIjaQkWAcAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNpCSY+P//8w9/hCToBQAA8w9/hCTYBQAA8w9/hCTIBQAA8w9/hCS4BQAA8w9/hCSoBQAASI2kJGgHAAAxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
@@ -261,6 +263,8 @@ jmp 21b
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
@@ -276,7 +280,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_224_finalize(inner: *mut [u8
 call {vg_sha512_finalize_scratch}
 .base64 "80EPbwQk8w9/A/NBD29EJBDzD39DEPNBD29EJCDzD39DIPNBD29EJDDzD39DMPNBD2+HkAUAAPMPf0NASYuHoAUAAEiJQ1BBi4eoBQAAiUNYSIndSIPFQLiAAAAAiUUcuAAAAABmD+/A8w9/RSDzD39FMPMPf0VA8w9/RVDzD39FYEG8nAAAAEyJ4EjB6D1ID8hmSA9u+EyJ4EgBwEgBwEgBwEgPyGZMD27AZkEPbPjzD399cEiJ7kiJ37oBAAAATIn5"
 call {vg_sha512_compress}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU48w9vRQDzQQ9/RQBIi0UQSYlFEItFGEGJRRhJi59gBQAASYuvaAUAAE2Lp3AFAABNi694BQAATYu3gAUAAE2Lv4gFAABIjaQkWAcAAMM="
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU48w9vRQDzQQ9/RQBIi0UQSYlFEItFGEGJRRhJi59gBQAASYuvaAUAAE2Lp3AFAABNi694BQAATYu3gAUAAE2Lv4gFAABIjaQkWAcAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCSY+P//8w9/hCToBQAA8w9/hCTYBQAA8w9/hCTIBQAA8w9/hCS4BQAA8w9/hCSoBQAA8w9/hCSIAAAA8w9/RCR48w9/RCRo8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQISI2kJGgHAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
