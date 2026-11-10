@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Prepare
 public import VerifiedGarbage.Impl.Bignum.X86.PrivPre
 public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeRt.Copy
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Key
 
 /-! # A factor's `R² mod p` at a run-time width (x86)
 
@@ -21,7 +23,7 @@ variable {Ex : List Region → List Region → Prop}
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt
-open VG.Impl.Bignum.X86.PrivPre (shl primeWords r2Prime)
+open VG.Impl.Bignum.X86.PrivPre (shl primeWords r2Prime writePrime copyWords outOff)
 open VG.Proof.Bignum.X86.PublicRt (count1_zf countLoop)
 
 theorem dbl_pow (x k : Nat) : (x + x) * 2 ^ k = x * 2 ^ (k + 1) := by
@@ -160,6 +162,113 @@ theorem r2Prime_ok (h : In Ex base bytes len args s) (c : Ctx) (hM : 1 < sv s.me
     refine ⟨?_, Vt, K₈s.trans Kt⟩
     rw [← m₈'] at O₀
     exact (frameR_of_outside O₀ (by omega_arith) (by simp [powR])).trans Ft
+
+/-- The `8 w_p` bytes of slot 4 to `P + y`, where the header word at
+`outOff` points, which then points past them. -/
+theorem writePrime_ok (h : In Ex base bytes len args s) (c : Ctx) {P : Addr} {L' y : Nat}
+    (hpw : InRegions s.wr P L') (hn : P.toNat + L' ≤ 2 ^ 32) (hap : Region.Disjoint ⟨P, L'⟩ ⟨base, bytes⟩)
+    (hL1 : 1 ≤ w32 s.mem base lenOff) (hL : w32 s.mem base lenOff ≤ len)
+    (ho : w32 s.mem base outOff = P.toNat + y)
+    (hy : y + 8 * Spec.Rsa.primeWords (w32 s.mem base lenOff) ≤ L')
+    (hb : 8 * Spec.Rsa.primeWords (w32 s.mem base lenOff) ≤ bc len c) :
+    WP isa (writePrime c) s fun u =>
+      (∃ m₁, Outside base outOff 4 s.mem m₁ ∧
+        Outside P y (8 * Spec.Rsa.primeWords (w32 s.mem base lenOff)) m₁ u.mem) ∧
+      val32 u.mem P y (2 * Spec.Rsa.primeWords (w32 s.mem base lenOff)) =
+        val32 s.mem base (lo len (.slot c 4)) (2 * Spec.Rsa.primeWords (w32 s.mem base lenOff)) ∧
+      w32 u.mem base outOff = (P.toNat + y + 8 * Spec.Rsa.primeWords (w32 s.mem base lenOff)) % 2 ^ 32 ∧
+      Keeps [.eax, .ecx, .edx, .ebp, .esi] s u := by
+  have nw' := h.scratch.nowrap
+  have f8 := h.slot_fit c (j := 8) (by decide)
+  have g := bc_ge h.lower' c
+  have s48 : lo len (.slot c 4) + st len c ≤ lo len (.slot c 8) := sl_le (len := len) c (by decide)
+  have est : st len c = 2 * bc len c + 32 := rfl
+  have nb : numBase = 3336 := rfl
+  have oo : outOff = 4 := rfl
+  have hup := h.upper'
+  have f0 := h.slot_fit c (j := 0) (by decide)
+  have lo0 : numBase ≤ lo len (.slot c 0) := by simp [lo]
+  have s04 : lo len (.slot c 0) + st len c ≤ lo len (.slot c 4) := sl_le (len := len) c (by decide)
+  let L := w32 s.mem base lenOff
+  let w := Spec.Rsa.primeWords L
+  have pw : w ≤ 128 := by simp only [w, Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega_arith
+  have pw2 : 2 ≤ w := by simp only [w, Spec.Rsa.primeWords]; omega_arith
+  have hP := P.isLt
+  unfold writePrime
+  simp only [primeWords, List.append_assoc, List.cons_append]
+  refine WP.seq (WP.mono (Q := fun (t : State) => Keeps [.eax, .ecx, .edx, .ebp, .esi] s t ∧
+    t.mem = s.mem.writeW (off base outOff) (BitVec.ofNat 32 (P.toNat + y + 8 * w)) ∧
+    PtrAt t base .esi (lo len (.slot c 4)) ∧ PtrAt t P .ebp y ∧ (t.gpr .ecx).toNat = 4 * (2 * w)) ?_
+    fun t ⟨Kt, mt, esit, ebpt, ecxt⟩ => ?_)
+  · refine ptrTo_ok (r := .esi) (t := .edx) (by decide) (by decide) h.edi h.width h.upper' (by omega_arith)
+      fun u₁ K₁ m₁ P₁ => ?_
+    have h₁ := h.regs (K₁.mono (by decide) : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u₁) m₁
+    refine wp_movS (readSrc_sc h₁.scratch (d := lenOff) (by simp only [lenOff]; omega_arith))
+      fun u₂ a₂ _ => ?_
+    refine wp_addS rfl fun u₃ a₃ _ => wp_shr (by decide) fun u₄ a₄ _ => wp_movS rfl fun u₅ a₅ _ => ?_
+    refine wp_subS rfl fun u₆ a₆ _ => wp_shr (by decide) fun u₇ a₇ _ => wp_addS rfl fun u₈ a₈ _ => ?_
+    refine shl_ok 3 fun u₉ K₉ m₉ e₉ => ?_
+    have K₉' : Keeps [.edx, .esi, .ecx, .eax] s u₉ :=
+      (((((((((K₁.mono (by decide)).trans (a₂.keeps.mono (by decide))).trans (a₃.keeps.mono (by decide))).trans
+        (a₄.keeps.mono (by decide))).trans (a₅.keeps.mono (by decide))).trans (a₆.keeps.mono (by decide))).trans
+        (a₇.keeps.mono (by decide))).trans (a₈.keeps.mono (by decide))).trans (K₉.mono (by decide)))
+    have m₉' : u₉.mem = s.mem := by rw [m₉, a₈.mem, a₇.mem, a₆.mem, a₅.mem, a₄.mem, a₃.mem, a₂.mem, m₁]
+    have h₉ := h.regs (K₉'.mono (by decide) : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u₉) m₉'
+    refine wp_movS (readSrc_sc h₉.scratch (d := outOff) (by simp only [outOff, winOff]; omega_arith))
+      fun u₁₀ a₁₀ _ => wp_movS rfl fun u₁₁ a₁₁ _ => wp_addS rfl fun u₁₂ a₁₂ _ => ?_
+    have K₁₂ : Keeps [.edx, .esi, .ecx, .eax, .ebp] s u₁₂ :=
+      ((K₉'.mono (by decide)).trans (a₁₀.keeps.mono (by decide))).trans
+        ((a₁₁.keeps.mono (by decide)).trans (a₁₂.keeps.mono (by decide)))
+    have m₁₂ : u₁₂.mem = s.mem := by rw [a₁₂.mem, a₁₁.mem, a₁₀.mem, m₉']
+    have h₁₂ := h.regs (K₁₂.mono (by decide) : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u₁₂) m₁₂
+    refine wp_storeS (h₁₂.scratch.ea (d := outOff) (by simp only [outOff, winOff]; omega_arith))
+      (h₁₂.scratch.write (d := outOff) (by simp only [outOff, winOff]; omega_arith)) fun u₁₃ s₁₃ => WP.block_nil ?_
+    have r₂ : u₂.gpr .ecx = BitVec.ofNat 32 L := by
+      apply BitVec.eq_of_toNat_eq
+      rw [a₂.gpr, BitVec.toNat_ofNat, m₁]
+      simp only [L, w32]
+      exact (Nat.mod_eq_of_lt (BitVec.isLt _)).symm
+    have e₈ : u₈.gpr .ecx = u₄.gpr .ecx + (u₄.gpr .ecx - 2) >>> 31 := by
+      rw [a₈.gpr, a₇.other _ (by decide), a₆.other _ (by decide), a₅.other _ (by decide), a₇.gpr, a₆.gpr,
+        a₅.gpr]
+    have r₄ : u₄.gpr .ecx = (BitVec.ofNat 32 L + 7) >>> 3 := by rw [a₄.gpr, a₃.gpr, r₂]
+    have pv := primeWords_val L hL1 (by omega_arith)
+    have ecx₁₂ : (u₁₂.gpr .ecx).toNat = 4 * (2 * w) := by
+      rw [a₁₂.other _ (by decide), a₁₁.other _ (by decide), a₁₀.other _ (by decide), e₉, e₈, r₄, pv]
+      omega_arith
+    have ebp₁₀ : (u₁₀.gpr .ebp).toNat = P.toNat + y := by rw [a₁₀.gpr, m₉', ← ho]
+    have ebp₁₂ : (u₁₂.gpr .ebp).toNat = P.toNat + y := by
+      rw [a₁₂.other _ (by decide), a₁₁.other _ (by decide), ebp₁₀]
+    have ecx₁₁ : (u₁₁.gpr .ecx).toNat = 4 * (2 * w) := by rw [← ecx₁₂, a₁₂.other _ (by decide)]
+    have eax₁₂ : u₁₂.gpr .eax = BitVec.ofNat 32 (P.toNat + y + 8 * w) := by
+      apply BitVec.eq_of_toNat_eq
+      rw [a₁₂.gpr, a₁₁.gpr, BitVec.toNat_add, ebp₁₀, ecx₁₁, BitVec.toNat_ofNat]
+      omega_arith
+    refine ⟨(K₁₂.mono (by decide)).trans ((s₁₃.keeps []).mono fun _ h => by simp at h), by rw [s₁₃.mem, m₁₂, eax₁₂], ?_, ?_, ?_⟩
+    · show (u₁₃.gpr .esi).toNat = _
+      rw [s₁₃.gpr, a₁₂.other _ (by decide), a₁₁.other _ (by decide), a₁₀.other _ (by decide), K₉.1 _ (by decide),
+        a₈.other _ (by decide), a₇.other _ (by decide), a₆.other _ (by decide), a₅.other _ (by decide),
+        a₄.other _ (by decide), a₃.other _ (by decide), a₂.other _ (by decide)]
+      exact P₁
+    · show (u₁₃.gpr .ebp).toNat = _
+      rw [s₁₃.gpr, ebp₁₂, Nat.mod_eq_of_lt (by omega_arith)]
+    · rw [s₁₃.gpr]; exact ecx₁₂
+  · have ew : w = Spec.Rsa.primeWords (w32 s.mem base lenOff) := rfl
+    have ht : Ws t base bytes := ⟨by rw [Kt.2.2]; exact h.ws.wr, h.ws.nowrap⟩
+    refine WP.mono (PrecomputeRt.copyOutLoop_ok (W := base) (L := bytes) ht (by rw [Kt.2.2]; exact hpw) hn hap
+      (by omega_arith) (by rw [ew]; omega_arith) (by rw [ew]; omega_arith) esit ebpt ecxt) fun u ⟨Ou, Vu, Ku⟩ => ?_
+    have hw4 : 4 * (2 * w) = 8 * w := by omega_arith
+    rw [hw4] at Ou
+    have Oh := writeW32_outside s.mem base (d := outOff) (BitVec.ofNat 32 (P.toNat + y + 8 * w))
+      (by simp only [outOff, winOff]; omega)
+    rw [← mt] at Oh
+    refine ⟨⟨t.mem, Oh, Ou⟩, ?_, ?_, Kt.trans (Ku.mono (by decide))⟩
+    · rw [Vu]
+      exact Oh.val32 (.inr (by simp only [outOff, winOff]; omega_arith)) (by rw [ew]; omega_arith)
+    · have := PrecomputedRt.val32_apart (base := P) (P := base) (L := bytes) (d := outOff) (k := 1) Ou (by omega_arith) hap.symm
+        (by simp only [outOff, winOff]; omega_arith)
+      rw [w32_val32_one, w32_val32_one, mt, w32_write_self, BitVec.toNat_ofNat] at this
+      exact this
 
 end
 

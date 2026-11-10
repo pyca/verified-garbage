@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.CrtRt
-public import VerifiedGarbage.Impl.Bignum.X86.CopyBytes
 
 /-!
 # An RSA private key's precomputed values on x86
@@ -55,12 +54,18 @@ def r2Prime (c : Ctx) : Prog isa :=
   .seq (setSmall (.slot c 4) (one c) 1) <|
   .seq (.block (primeWords .esi .eax ++ shl .esi 7)) (.loop (doubleStep c) .ne)
 
+/-- `ecx` bytes, a multiple of four, from `esi` to `ebp`, four at a time
+(`PrecomputeFn.copyOut`'s loop). -/
+def copyWords : Prog isa :=
+  .loop (.block [.mov .eax (.mem (at_ .esi 0)), .store (at_ .ebp 0) .eax, .alu .add .esi (.imm 4),
+    .alu .add .ebp (.imm 4), .alu .sub .ecx (.imm 4)]) .ne
+
 /-- The `8 w_p` bytes of slot 4 to where the header word at `outOff` points,
-which moves past them. -/
+which is first moved past them. -/
 def writePrime (c : Ctx) : Prog isa :=
-  .seq (.block (ptrTo (.slot c 4) .esi .edx ++ primeWords .ecx .eax ++
-    shl .ecx 3 ++ [.mov .ebx (.mem (sc outOff))])) <|
-  .seq copyBytes (.block [.store (sc outOff) .ebx])
+  .seq (.block (ptrTo (.slot c 4) .esi .edx ++ primeWords .ecx .eax ++ shl .ecx 3 ++
+    [.mov .ebp (.mem (sc outOff)), .mov .eax (.reg .ebp), .alu .add .eax (.reg .ecx), .store (sc outOff) .eax]))
+    copyWords
 
 /-- The factor in the wide slot 10, in the context `c`: made safe, with its
 constants (`prepBase`), its `R_p² mod p`, written. -/
