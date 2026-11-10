@@ -38,7 +38,7 @@ theorem wv_low {m : Mem} {B : Addr} {d wA wX v : Nat} (h : wv m B d wX = v) (hv 
     omega_arith
 
 /-- `setupP oB oLen` and `power`'s head (`powerA_ok`), then `c`. -/
-theorem phasePA_ok {s : State} {BX : Addr} {Z oA wX xj k L Pv Cv oB oLen : Nat} {c : Prog isa}
+theorem phasePA_ok {pc q : Bool} {s : State} {BX : Addr} {Z oA wX xj k L Pv Cv oB oLen : Nat} {c : Prog isa}
     {Q : State → Prop}
     (hs : Scr s BX Z) (hA : oA + slot (wsWords L) 24 ≤ Z) (hXA : slot wX 8 ≤ oA)
     (hwX2 : wX = 2 * ((k + 7) / 8)) (hwk : wsWords L ≤ (k + 7) / 8) (hwX : wX < 2 ^ 31) (hxj : xj < 8)
@@ -49,13 +49,14 @@ theorem phasePA_ok {s : State} {BX : Addr} {Z oA wX xj k L Pv Cv oB oLen : Nat} 
     (hK : word s.mem BX oNLen = BitVec.ofNat 64 k) (hL : 1 ≤ L) (hL' : L < 2 ^ 60) (hk : 1 ≤ k) (hk' : k < 2 ^ 40)
     (hP : Mont.val32 s.mem BX (slot wX xj) (2 * wX) = Pv) (hPb : Pv < 2 ^ (64 * wsWords L)) (hP2 : 2 ≤ Pv)
     (hPodd : Pv % 2 = 1) (hC : wv s.mem BX (slot wX 6) wX = Cv) (hCb : Cv < 256 ^ k)
+    (hR2 : pc = true → ∃ S pL b, R2C q s BX S Z (wsWords L) Pv pL b)
     (hc : ∀ t, Outside BX oA (slot (wsWords L) 24) s.mem t.mem →
       t.gpr .r10 = off (off BX oA) (slot (wsWords L) 0) → t.gpr .r11 = BitVec.ofNat 64 (2 * wsWords L) →
       t.gpr .r21 = off (off BX oA) (slot (wsWords L) 0) → t.gpr .r29 = BitVec.ofNat 64 (8 * (wsWords L + 2)) →
       Keep (([.r0, .r3, .r4, .r10, .r11, .r21, .r29] : List Reg) ++ powerRegs) s t → WP isa c t Q) :
     WP isa (.seq (.block (setupP oB oLen)) (.seq (.block (([.load .d .r25 .r23 oNLen, .addi .r14 .r10 0] : List Instr) ++
       xb .r15 xj)) (.seq copyN (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++
-      PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3)) (.seq Precompute.r2Prime (.seq reduceIn c)))))) s Q := by
+      PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3)) (.seq (r2Step pc q) (.seq reduceIn c)))))) s Q := by
   have hn := hs.nowrap
   have e8 : slot wX 8 = 256 + 8 * (8 * (wX + 2)) := rfl
   have hw2 : 2 ≤ wsWords L := by unfold wsWords; omega_arith
@@ -66,6 +67,8 @@ theorem phasePA_ok {s : State} {BX : Addr} {Z oA wX xj k L Pv Cv oB oLen : Nat} 
     (by rw [m1]; exact hK) hk hk' (by rw [hwX2]; exact chunks_le (by omega_arith) hwk)
     (by rw [m1]; exact wv_low (by rw [← Pre.val32_eq_wv]; exact hP) hPb (by omega_arith)) hP2 hPodd
     (by rw [m1]; exact chunks_val (by omega_arith) hwk (by rw [← hwX2]; exact hC) hCb)
+    (fun hp => let ⟨S, pL, b, C⟩ := hR2 hp
+      ⟨S, pL, b, C.of_mem m1 (by rw [k1.rd, k1.wr]) (k1.gpr _ (by decide))⟩)
     fun t _ _ _ _ _ out t10 k => hc t (by rw [← m1]; exact out) t10 ((k.gpr _ (by decide)).trans a11)
       ((k.gpr _ (by decide)).trans a21) ((k.gpr _ (by decide)).trans a29) ((k1.trans k).mono (by decide +kernel))
 
@@ -73,7 +76,7 @@ theorem phasePA_ok {s : State} {BX : Addr} {Z oA wX xj k L Pv Cv oB oLen : Nat} 
 `xj` (below `2^(64 w_A)`, `w_A` the words of its length `L`) and the input `c`
 (`k` bytes) in `X`'s array 6, its working space at `off BX oA` (the header's
 word `oB`) holds `P` in array 0 and `c^d mod P` in array 4. -/
-theorem phaseP_ok {s : State} {BX D : Addr} {Z oA wX xj k L Pv Cv oB oLen oD : Nat}
+theorem phaseP_ok {pc q : Bool} {s : State} {BX D : Addr} {Z oA wX xj k L Pv Cv oB oLen oD : Nat}
     (hs : Scr s BX Z) (hA : oA + slot (wsWords L) 24 ≤ Z) (hXA : slot wX 8 ≤ oA)
     (hwX2 : wX = 2 * ((k + 7) / 8)) (hwk : wsWords L ≤ (k + 7) / 8) (hwX : wX < 2 ^ 31) (hxj : xj < 8)
     (h23 : s.gpr .r23 = BX) (h27 : s.gpr .r27 = off BX (slot wX 0))
@@ -84,8 +87,9 @@ theorem phaseP_ok {s : State} {BX D : Addr} {Z oA wX xj k L Pv Cv oB oLen oD : N
     (hDp : word s.mem BX oD = off D 0) (hL : 1 ≤ L) (hL' : L < 2 ^ 60) (hk : 1 ≤ k) (hk' : k < 2 ^ 40)
     (hrdD : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1) (hsepD : ∀ i < L, ∀ x, ofs BX x < Z → off D i ≠ x)
     (hP : Mont.val32 s.mem BX (slot wX xj) (2 * wX) = Pv) (hPb : Pv < 2 ^ (64 * wsWords L)) (hP2 : 2 ≤ Pv)
-    (hPodd : Pv % 2 = 1) (hC : wv s.mem BX (slot wX 6) wX = Cv) (hCb : Cv < 256 ^ k) :
-    WP isa (.seq (.block (setupP oB oLen)) (power xj oD oLen)) s fun t =>
+    (hPodd : Pv % 2 = 1) (hC : wv s.mem BX (slot wX 6) wX = Cv) (hCb : Cv < 256 ^ k)
+    (hR2 : pc = true → ∃ S pL b, R2C q s BX S Z (wsWords L) Pv pL b) :
+    WP isa (.seq (.block (setupP oB oLen)) (powerG pc q xj oD oLen)) s fun t =>
       (Mont.val32 t.mem (off BX oA) (slot (wsWords L) 0) (2 * wsWords L) = Pv ∧
         Mont.val32 t.mem (off BX oA) (slot (wsWords L) 4) (2 * wsWords L) =
           Cv ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
@@ -104,7 +108,9 @@ theorem phaseP_ok {s : State} {BX D : Addr} {Z oA wX xj k L Pv Cv oB oLen oD : N
     (by rw [hwX2]; exact chunks_le (by omega_arith) hwk) hoD hoL (by rw [m1]; exact hDp)
     (by rw [m1]; exact hLw) hL (by omega_arith) (fun i hi => by rw [k1.rd, k1.wr]; exact hrdD i hi) hsepD
     (by rw [m1]; exact wv_low (by rw [← Pre.val32_eq_wv]; exact hP) hPb (by omega_arith)) hP2 hPodd
-    (by rw [m1]; exact chunks_val (by omega_arith) hwk (by rw [← hwX2]; exact hC) hCb))
+    (by rw [m1]; exact chunks_val (by omega_arith) hwk (by rw [← hwX2]; exact hC) hCb)
+    (fun hp => let ⟨S, pL, b, C⟩ := hR2 hp
+      ⟨S, pL, b, C.of_mem m1 (by rw [k1.rd, k1.wr]) (k1.gpr _ (by decide))⟩))
     fun t ⟨⟨v0, v4, o, t10⟩, k2⟩ => ⟨⟨v0, by rw [v4, m1], by rw [← m1]; exact o, t10,
       (k2.gpr _ (by decide)).trans a21, (k2.gpr _ (by decide)).trans a29, (k2.gpr _ (by decide)).trans a11⟩,
       (k1.trans k2).mono (by decide +kernel)⟩

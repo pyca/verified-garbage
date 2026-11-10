@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtR2
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.Layout
@@ -62,7 +63,7 @@ of `X`'s array `xj`, `w_A` words) into array 0 of the working space
 `off BX oA`, `-p⁻¹ mod 2³²` into `r12`, `R² mod p` into array 1
 (`r2Prime`), and `c mod p` into array 4 (`reduceIn`), for `c` the first
 `w_A n` words of `X`'s array 6. -/
-theorem powerA_ok {s : State} {BX : Addr} {Z oA wA wX xj k Pv Cv : Nat} {c : Prog isa}
+theorem powerA_ok {pc q : Bool} {s : State} {BX : Addr} {Z oA wA wX xj k Pv Cv : Nat} {c : Prog isa}
     {Q : State → Prop}
     (hs : Scr s BX Z) (hA : oA + slot wA 24 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wA) (hw' : wA < 2 ^ 31)
     (hwx : wA ≤ wX) (hxj : xj < 8)
@@ -74,6 +75,7 @@ theorem powerA_ok {s : State} {BX : Addr} {Z oA wA wX xj k Pv Cv : Nat} {c : Pro
     (hn : wA * nChunks ((k + 7) / 8) wA ≤ wX)
     (hP : wv s.mem BX (slot wX xj) wA = Pv) (hP2 : 2 ≤ Pv) (hPodd : Pv % 2 = 1)
     (hC : wv s.mem BX (slot wX 6) (wA * nChunks ((k + 7) / 8) wA) = Cv)
+    (hR2 : pc = true → ∃ S pL b, R2C q s BX S Z wA Pv pL b)
     (hc : ∀ t, val32 t.mem (off BX oA) (slot wA 0) (2 * wA) = Pv →
       val32 t.mem (off BX oA) (slot wA 1) (2 * wA) = 2 ^ (128 * wA) % Pv →
       val32 t.mem (off BX oA) (slot wA 4) (2 * wA) = Cv % Pv →
@@ -82,7 +84,7 @@ theorem powerA_ok {s : State} {BX : Addr} {Z oA wA wX xj k Pv Cv : Nat} {c : Pro
       Keep (.r10 :: powerRegs) s t → WP isa c t Q) :
     WP isa (.seq (.block (([.load .d .r25 .r23 oNLen, .addi .r14 .r10 0] : List Instr) ++ xb .r15 xj)) (.seq copyN
       (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
-        PublicChecked.base .r9 3)) (.seq Precompute.r2Prime (.seq reduceIn c))))) s Q := by
+        PublicChecked.base .r9 3)) (.seq (r2Step pc q) (.seq reduceIn c))))) s Q := by
   have hn' := hs.nowrap
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl
@@ -131,10 +133,20 @@ theorem powerA_ok {s : State} {BX : Addr} {Z oA wA wX xj k Pv Cv : Nat} {c : Pro
   have g12 : s₇.gpr .r12 = s₄.gpr .r12 := by
     rw [k7.gpr .r12 (by decide), k6.gpr .r12 (by decide), k5.gpr .r12 (by decide)]
   -- `R² mod p`.
-  refine WP.seq (WP.mono (Pre.r2Prime_ok (hsA.congr k17.wr) ((k7.gpr _ (by decide)).trans a8) a9
+  have hsepB : ∀ S : Addr, (∀ x, ofs S x < 8 * wA → Z ≤ ofs BX x) →
+      ∀ x, ofs S x < 8 * wA → slot wA 24 ≤ ofs (off BX oA) x := fun S hS x hx => by
+    have := hS x hx
+    rcases ofs_rebase BX x (o := oA) (by omega_arith) with ⟨_, h2⟩ | ⟨h1, _⟩ <;> omega_arith
+  refine WP.seq (WP.mono (r2Step_ok (hs.congr k17.wr) (by omega_arith) (hsA.congr k17.wr) hsepB
+    ((k7.gpr _ (by decide)).trans a8) a9
     ((k17.gpr _ (by decide)).trans h10) ((k7.gpr _ (by decide)).trans ((k6.gpr _ (by decide)).trans a5))
-    ((k17.gpr _ (by decide)).trans h11) hw2 hw' (by simp only [e]; omega_arith) (by rw [g12]; exact i12)
-    (by rw [g12, hm7]; exact iinv) (by rw [hm7, v0]; exact hP2) (by rw [hm7, v0]; exact hPodd))
+    ((k17.gpr _ (by decide)).trans h11) ((k17.gpr _ (by decide)).trans h23) ((k17.gpr _ (by decide)).trans h29)
+    hw2 hw' (by simp only [e]; omega_arith) (by rw [g12]; exact i12)
+    (by rw [g12, hm7]; exact iinv) (by rw [hm7, v0]; exact hP2) (by rw [hm7, v0]; exact hPodd)
+    (fun hp => let ⟨S, pL, b, C⟩ := hR2 hp; ⟨S, pL, b, by
+      rw [hm7, v0]
+      exact C.mono (oA := oA) (n := slot wA 24) (by rw [hm7]; exact out3.mono (by omega_arith) (by omega_arith))
+        (by omega_arith) hA (by rw [k17.rd, k17.wr]) (k17.gpr _ (by decide))⟩))
     fun s₈ ⟨h1, out8, k8⟩ => ?_)
   have k18 := k17.trans k8
   rw [hm7, v0] at h1

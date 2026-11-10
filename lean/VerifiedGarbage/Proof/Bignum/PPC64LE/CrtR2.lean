@@ -165,6 +165,39 @@ structure R2C (q : Bool) (s : State) (BX S : Addr) (Zs w Pv pL : Nat) (b : Bool)
   val : b = true → wv s.mem S 0 w = 2 ^ (128 * w) % Pv
   three : b = false → Pv = 3
 
+/-- `R2C` after steps that write only the working space past its header,
+keeping `r26` and the regions. -/
+theorem R2C.mono {q : Bool} {s t : State} {BX S : Addr} {Zs w Pv pL oA n : Nat} {b : Bool}
+    (C : R2C q s BX S Zs w Pv pL b) (ho : Outside BX oA n s.mem t.mem) (h1 : 96 ≤ oA) (h2 : oA + n ≤ Zs)
+    (hrw : t.rd ++ t.wr = s.rd ++ s.wr) (h26 : t.gpr .r26 = s.gpr .r26) : R2C q t BX S Zs w Pv pL b where
+  src := by rw [ho.word (Or.inl (by unfold oR2; omega_arith)) (by unfold oR2; omega_arith)]; exact C.src
+  pl hq := by rw [ho.word (Or.inl (by unfold oPLen; omega_arith)) (by unfold oPLen; omega_arith)]; exact C.pl hq
+  pl1 := C.pl1
+  pl2 := C.pl2
+  hS := C.hS
+  rd i hi := by rw [hrw]; exact C.rd i hi
+  sep := C.sep
+  r26 := h26.trans C.r26
+  val hb := by
+    rw [← C.val hb]
+    exact wv_congr2 fun i hi => Pub.Outside.word_apart ho C.sep h2 (by omega_arith) C.hS
+  three := C.three
+
+/-- `R2C` after steps that write only registers but `r26`. -/
+theorem R2C.of_mem {q : Bool} {s t : State} {BX S : Addr} {Zs w Pv pL : Nat} {b : Bool}
+    (C : R2C q s BX S Zs w Pv pL b) (hm : t.mem = s.mem) (hrw : t.rd ++ t.wr = s.rd ++ s.wr)
+    (h26 : t.gpr .r26 = s.gpr .r26) : R2C q t BX S Zs w Pv pL b where
+  src := by rw [hm]; exact C.src
+  pl hq := by rw [hm]; exact C.pl hq
+  pl1 := C.pl1
+  pl2 := C.pl2
+  hS := C.hS
+  rd i hi := by rw [hrw]; exact C.rd i hi
+  sep := C.sep
+  r26 := h26.trans C.r26
+  val hb := by rw [hm]; exact C.val hb
+  three := C.three
+
 /-- The source's address, from the header. -/
 theorem r2Src_ok {q : Bool} {s : State} {BX : Addr} {Zs pL : Nat} (hX : Scr s BX Zs) (hZ : 256 ≤ Zs)
     (h23 : s.gpr .r23 = BX) (hpl : q = true → word s.mem BX oPLen = BitVec.ofNat 64 pL) (hp1 : 1 ≤ pL)
