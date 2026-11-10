@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaOaep.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.AppendSlice
 public import VerifiedGarbage.Proof.Rsa.PreKey
 import VerifiedGarbage.Proof.Rsa.PrivCheck
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # `vg_rsa_oaep_decrypt_precomputed` on x86-64
@@ -73,7 +74,7 @@ def preState : State where
   of := none
   mem := preMem
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4200, 32⟩, ⟨0x4300, 32⟩, ⟨0x4400, 32⟩, ⟨0x4500, 32⟩, ⟨0x4600, 32⟩,
-    ⟨0x4700, 0⟩, ⟨0x4100, 64⟩, ⟨0x300000, 88⟩, ⟨0x300000, 88⟩, ⟨0x4800, 192⟩, ⟨0x10008, 168⟩]
+    ⟨0x4700, 0⟩, ⟨0x4100, 64⟩, ⟨0x4800, 192⟩, ⟨0x300000, 88⟩, ⟨0x300000, 88⟩, ⟨0x10008, 168⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1800, 8⟩, ⟨0x20000, 2080 * 8⟩]
 
 theorem preState_key (vs : List MdHash) (w : MdHash) :
@@ -101,16 +102,18 @@ theorem stackArgs_twentyone (s : State) :
 
 theorem pre_args : ∀ j < 21, stackArg preState j = BitVec.ofNat 64 (preArgs.getD j 0) := by decide
 
-theorem preSat {vs : List MdHash} {w : MdHash} (hw : w ∈ vs) (hl : (names vs).length < 2 ^ 32) :
-    ∃ s, (pspec (tables vs)).pre s := by
-  refine ⟨withTable preState vs w, ?_⟩
-  have hK := preState_key vs w
-  have hA : ∀ j < 21, (stackArgAddr preState j).toNat + 8 ≤ 0x300000 := fun j hj => by
-    have c0 : (0x10000 : Addr).toNat = 65536 := rfl
-    simp only [stackArgAddr, preState, BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
-  have ha : ∀ j < 21, stackArg (withTable preState vs w) j = BitVec.ofNat 64 (preArgs.getD j 0) :=
-    fun j hj => (withTable_arg _ vs w (hA j hj)).trans (pre_args j hj)
+/-- The precondition, from the facts of a state. -/
+theorem dec_pre_of {ts : List FnTable} {s : State} (hg : s.gpr = preState.gpr)
+    (ha : ∀ j < 21, stackArg s j = BitVec.ofNat 64 (preArgs.getD j 0))
+    (hrd : s.rd = preState.rd) (hwr : s.wr = preState.wr)
+    (hH : ∃ T ∈ ts, Abi.tableHeld 64 s.mem 0x300000 (FnTable.words isa s T))
+    (hsy : ((ts.map (·.fns)).flatten ++ (ts.map (·.fns)).flatten).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g)
+    (hK : Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt s.mem 0x2000 64) (Spec.Rsa.bytesAt s.mem 0x4200 32)
+      (Spec.Rsa.bytesAt s.mem 0x4300 32) = some (Spec.Rsa.wordsAt s.mem 0x4800 24)) :
+    (pspec ts).pre s := by
+  have hsp : s.gpr .rsp = 0x10000 := by rw [hg]; rfl
+  have hA : ∀ j, stackArgAddr s j = 0x10000 + BitVec.ofNat 64 (8 * (j + 1)) := fun j => by
+    simp only [stackArgAddr, hsp]
   sig_pre [Spec.RsaOaep.decryptPrecomputedMdTablesContract, Spec.RsaOaep.decryptPrecomputedMdTablesSig,
     Spec.RsaOaep.decryptSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
     Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, decStack, RsaPkcs1Enc.X86_64.privStack,
@@ -119,27 +122,32 @@ theorem preSat {vs : List MdHash} {w : MdHash} (hw : w ∈ vs) (hl : (names vs).
     ha 5 (by decide), ha 6 (by decide), ha 7 (by decide), ha 8 (by decide), ha 9 (by decide), ha 10 (by decide),
     ha 11 (by decide), ha 12 (by decide), ha 13 (by decide), ha 14 (by decide), ha 15 (by decide),
     ha 16 (by decide), ha 17 (by decide), ha 18 (by decide), ha 19 (by decide), ha 20 (by decide), preArgs,
-    List.getD_cons_succ, List.getD_cons_zero]
+    List.getD_cons_succ, List.getD_cons_zero, hg, hrd, hwr, hA]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
-    List.getD_cons_zero, Option.some.injEq, exists_eq_left', withTable_addr]
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left']
   sig_pre [Spec.RsaOaep.decryptPrecomputedMdTablesContract, Spec.RsaOaep.decryptPrecomputedMdTablesSig,
     Spec.RsaOaep.decryptSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
     Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, decStack, RsaPkcs1Enc.X86_64.privStack,
     Impl.RsaOaep.X86_64.frameBytes, stackArgs_twentyone, List.append_eq]
   sig_and_intros
-  all_goals try (exact ⟨tableOf w, List.mem_map_of_mem hw, held_twL _ _ _ rfl⟩)
-  all_goals try (exact Region.disjoint_of_sep (by decide))
-  all_goals try (exact symsOf_distinct2 hl)
-  all_goals try (simp only [Spec.Rsa.lenValid]; decide)
-  all_goals try rfl
-  all_goals try decide
-  all_goals try (rw [show BitVec.toNat (64 : BitVec 64) = 64 from rfl, show BitVec.toNat (32 : BitVec 64) = 32 from rfl,
-    show BitVec.toNat (24 : BitVec 64) = 24 from rfl]; exact hK)
-  all_goals try (intro a h₁ h₂
-                 set_option linter.unusedSimpArgs false in
-                 sig_simp_only [Region.Contains, withTable, preState, stackArg, stackArgAddr, Mem.readW, Mem.read]
-                   at h₁ h₂
-                 bv_omega)
+  all_goals first
+    | exact hK
+    | exact hH
+    | exact hsy
+    | exact Region.disjoint_of_sep (by decide)
+    | (simp only [Spec.Rsa.lenValid]; decide)
+    | rfl
+    | decide
+
+theorem preSat {vs : List MdHash} {w : MdHash} (hw : w ∈ vs) (hl : (names vs).length < 2 ^ 32) :
+    ∃ s, (pspec (tables vs)).pre s := by
+  have hA : ∀ j < 21, (stackArgAddr preState j).toNat + 8 ≤ 0x300000 := fun j hj => by
+    have c0 : (0x10000 : Addr).toNat = 65536 := rfl
+    simp only [stackArgAddr, preState, BitVec.toNat_add, BitVec.toNat_ofNat]
+    omega
+  exact ⟨withTable preState vs w, dec_pre_of rfl
+    (fun j hj => (withTable_arg _ vs w (hA j hj)).trans (pre_args j hj)) rfl rfl
+    ⟨tableOf w, List.mem_map_of_mem hw, withTable_held _ vs w⟩ (symsOf_distinct2 hl) (preState_key vs w)⟩
 
 /-! ## The code -/
 

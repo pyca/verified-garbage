@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.Sat
 public import VerifiedGarbage.Proof.Framework.X86_64.AppendSlice
 public import VerifiedGarbage.Proof.Rsa.PreKey
 import VerifiedGarbage.Proof.Rsa.PrivCheck
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # `vg_rsa_pss_sign_precomputed` on x86-64
@@ -56,7 +57,7 @@ def preState (D : Nat) : State where
   of := none
   mem := preMem D
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4200, 32⟩, ⟨0x4300, 32⟩, ⟨0x4400, 32⟩, ⟨0x4500, 32⟩, ⟨0x4600, 32⟩,
-    ⟨0x5000, D⟩, ⟨0x5100, 0⟩, ⟨0x300000, 88⟩, ⟨0x300100, 88⟩, ⟨0x4800, 192⟩, ⟨0x10008, 160⟩]
+    ⟨0x5000, D⟩, ⟨0x5100, 0⟩, ⟨0x4800, 192⟩, ⟨0x300000, 88⟩, ⟨0x300100, 88⟩, ⟨0x10008, 160⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x20000, 2080 * 8⟩]
 
 /-- Its stack arguments. -/
