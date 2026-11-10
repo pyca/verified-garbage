@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPre
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtMid1
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtSave
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtVals
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Bignum.CrtResult
 import VerifiedGarbage.Proof.Bignum.CrtNatural
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -37,20 +38,22 @@ theorem pres_cases : ∀ r ∈ preserved, (∀ i < 18, r ≠ Crt.saved i) →
 theorem toNat_flag (b : Bool) : BitVec.ofNat 64 (if b then 1 else 0) = BitVec.ofNat 64 b.toNat := by
   cases b <;> rfl
 
-theorem fn_correct (s : State) (h : fnContract.pre s) :
-    ∃ tr t, Exec isa crt s tr t ∧ abiPreserved s t ∧ fnContract.post s t := by
-  show WP isa crt s fun t => abiPreserved s t ∧ fnContract.post s t
-  have hP := pre_facts h
+/-- `crtG pc`, with the mask `cb pc` (`fnContract`'s when it is `cb false`'s). -/
+theorem crt_wp (pc : Bool) (s : State) {X : List Region} (h : preCore (baseRd s ++ X) s)
+    (hR : pc = true → R2F s) :
+    WP isa (crtG pc) s fun t => abiPreserved s t ∧ (cb pc s = cb0 s → postCore s t) := by
+  have hP := pre_factsG h
   have hn := hP.nw
   have hpre := h
   obtain ⟨hsp, hrd, hwr, dON, dOI, dOP, dOQ, dODP, dODQ, dOQI, dOS, dOA, dNS, dIS, dPS, dQS, dDPS, dDQS, dQIS,
     dSA, nwO, nwN, nwI, nwP, nwQ, nwDP, nwDQ, nwQI, nwS, ⟨hk, hk'⟩, hOL, hIL, hp1, hpk, hq1, hqk, hdpl, hqil, hdql,
     hsl⟩ := hpre
   simp only [Spec.Rsa.scratchWords] at hsl
-  unfold crt
-  refine WP.seq (WP.mono (front_ok s h) fun s₁ hF => ?_)
-  refine mid1_ok hP hF fun t t26 v0 w0 v5 v7 p0 p4 q4 t10 t29 O1 k1 => ?_
-  refine mid2_ok hP hF t26 v0 w0 v5 v7 p0 p4 q4 t10 t29 O1 k1 fun u ub u3 uF ku => ?_
+  unfold crtG
+  refine WP.seq (WP.mono (front_okG pc s h) fun s₁ ⟨hF, hhd⟩ => ?_)
+  have hR2 : pc = true → R2F s ∧ word s₁.mem (cS s) oR2 = s.gpr .r12 := fun hp => ⟨hR hp, hhd hp⟩
+  refine mid1_ok hP hF hR2 fun t t26 v0 w0 v5 v7 p0 p4 q4 t10 t29 O1 k1 => ?_
+  refine mid2_ok hP hF hR2 t26 v0 w0 v5 v7 p0 p4 q4 t10 t29 O1 k1 fun u ub u3 uF ku => ?_
   have kfu := hF.keep.trans ku
   have hS : (⟨cS s, cZ s⟩ : Region) ∈ s.wr := by rw [hwr]; simp
   have hin : ∀ i < 18, InRegions u.wr (off (savW (cS s)) (8 * i)) 8 := fun i hi => by
@@ -77,7 +80,7 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
         exact dOS'.symm.sub_left sub
   refine WP.mono (restore_ok u (S := cS s) (v := fun i => s.gpr (Crt.saved i))
     (by rw [ku.gpr .r23 (by decide)]; exact hF.r23) hin hsav)
-    fun w ⟨wrs, wot, wm, _, _, wsp, wlr⟩ => ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
+    fun w ⟨wrs, wot, wm, _, _, wsp, wlr⟩ => ⟨⟨fun r hr => ?_, ?_, ?_⟩, fun hE => ?_⟩
   · by_cases hs' : ∃ i < 18, r = Crt.saved i
     · obtain ⟨i, hi, rfl⟩ := hs'
       exact wrs i hi
@@ -91,7 +94,7 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
     refine VG.Proof.Bignum.crtWritten_of (VG.Proof.Bignum.bytesAt_length _ _ _) ub (toNat_flag _)
       (fun hv => ?_) (fun hv => ?_)
     · have hcb : cb pc s = (decide (vC s < vN s) && decide (vQI s < vP s) && decide (vP s * vQ s = vN s)) := by
-        simp only [cb, crtMask, hv, Bool.true_and]
+        rw [hE]; simp only [cb0, crtMask, hv, Bool.true_and]
       refine ⟨?_, ?_⟩
       · rw [hcb]
         simp only [Bool.and_eq_true, decide_eq_true_eq]
@@ -101,13 +104,71 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
         · rfl
         · obtain ⟨_, _, _, _, hp1', _, _, _⟩ := mask_true hP.k64
             (by rw [VG.Proof.Bignum.bytesAt_length]; exact hP.pk) (by rw [VG.Proof.Bignum.bytesAt_length]; exact hP.qk)
-            hb
+            (cb_cb0 hb)
           simp only [↓reduceIte, VG.Proof.Bignum.crtResult]
           rw [VG.Proof.Bignum.crt_coefficient_natural (Nat.lt_trans Nat.zero_lt_one hp1')]
           unfold vh vm1 vm2 mQ mP mQI
           simp only [hb, ↓reduceIte]
           exact Nat.add_comm _ _
-    · have hcb : cb pc s = false := by simp only [cb, crtMask, hv, Bool.false_and]
+    · have hcb : cb pc s = false := by rw [hE]; simp only [cb0, crtMask, hv, Bool.false_and]
       exact ⟨hcb, by unfold vr; rw [hcb]; rfl⟩
+
+/-- A cache of two numbers of `a` and `b` words, as their words. -/
+theorem cache_words {m : Mem} {P : Addr} {a b X Y : Nat}
+    (h : Spec.Rsa.wordsAt m P (a + b) = Spec.Rsa.toWords X a ++ Spec.Rsa.toWords Y b)
+    (hX : X < 2 ^ (64 * a)) (hY : Y < 2 ^ (64 * b)) : wv m P 0 a = X ∧ wv m P (8 * a) b = Y := by
+  rw [Spec.Rsa.wordsAt, Spec.Rsa.toWords, Spec.Rsa.toWords, List.range_add, List.map_append, List.map_map] at h
+  obtain ⟨h1, h2⟩ := List.append_inj h (by simp)
+  rw [List.map_inj_left] at h1 h2
+  refine ⟨?_, ?_⟩
+  · rw [← Nat.mod_eq_of_lt hX]
+    refine wv_of_words fun i hi => ?_
+    show (m.readW (P + BitVec.ofNat 64 (0 + 8 * i)) 64).toNat = _
+    rw [Nat.zero_add, h1 i (List.mem_range.mpr hi), BitVec.toNat_ofNat]
+  · rw [← Nat.mod_eq_of_lt hY]
+    refine wv_of_words fun i hi => ?_
+    have := h2 i (List.mem_range.mpr hi)
+    simp only [Function.comp_apply] at this
+    show (m.readW (P + BitVec.ofNat 64 (8 * a + 8 * i)) 64).toNat = _
+    rw [show 8 * a + 8 * i = 8 * (a + i) by omega_arith, this, BitVec.toNat_ofNat]
+
+/-- `R2F` from `fnContractP`'s precondition. -/
+theorem r2F_of {s : State} (h : fnContractP.pre s) : R2F s where
+  hS := h.2.2.2
+  rd i hi := by
+    have hi' : i < wsWords (s.gpr .r10).toNat + wsWords (stackArg s 1).toNat := hi
+    have := h.2.2.2; simp only [r2R] at this
+    exact ⟨r2R s, List.mem_append_left _ (by rw [h.1.2.1]; exact List.mem_append_right _ (List.mem_singleton_self _)),
+      Offset.contains_base _ (show 8 * i + 8 ≤ 8 * (wsWords (s.gpr .r10).toNat + wsWords (stackArg s 1).toNat) by
+        omega_arith) (by omega_arith)⟩
+  sep x hx := Pub.sep_of_disjoint h.2.2.1 x hx
+
+/-- With the cache `fnContractP` asks for, the checks' mask is `cb false`'s. -/
+theorem cb_of_r2 {s : State} (hP : PF s)
+    (hw : Spec.Rsa.wordsAt s.mem (s.gpr .r12) (wsWords (s.gpr .r10).toNat + wsWords (stackArg s 1).toNat) =
+      Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat) ++
+        Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)) :
+    cb true s = cb0 s := by
+  have ew : ∀ n, Spec.Rsa.primeWords n = wsWords n := fun _ => rfl
+  simp only [Spec.Rsa.primeR2, VG.Proof.Bignum.bytesAt_length, ew] at hw
+  obtain ⟨mP1, _, mQ1, _, mPb, mQb, _, _, _⟩ := masked_facts (pc := false) hP
+  simp only [cb, cxP, cxQ]
+  rcases Bool.eq_false_or_eq_true (cb0 s) with h0 | h0
+  · have eP : mP false s = vP s := by simp only [mP, show cb false s = true from h0, ↓reduceIte]
+    have eQ : mQ false s = vQ s := by simp only [mQ, show cb false s = true from h0, ↓reduceIte]
+    rw [eP] at mP1 mPb; rw [eQ] at mQ1 mQb
+    obtain ⟨w1, w2⟩ := cache_words hw (Nat.lt_trans (Nat.mod_lt _ (Nat.lt_trans Nat.zero_lt_one mP1)) mPb)
+      (Nat.lt_trans (Nat.mod_lt _ (Nat.lt_trans Nat.zero_lt_one mQ1)) mQb)
+    simp only [h0, ↓reduceIte, Bool.true_and, decide_eq_true_eq, Bool.and_eq_true]
+    exact ⟨w1, w2⟩
+  · simp only [h0, Bool.false_and]
+
+theorem fn_correct (s : State) (h : fnContract.pre s) :
+    ∃ tr t, Exec isa crt s tr t ∧ abiPreserved s t ∧ fnContract.post s t :=
+  WP.mono (crt_wp false s (preCore_nil h) nofun) fun _ ⟨a, p⟩ => ⟨a, p rfl⟩
+
+theorem fn_correctP (s : State) (h : fnContractP.pre s) :
+    ∃ tr t, Exec isa crtP s tr t ∧ abiPreserved s t ∧ fnContractP.post s t :=
+  WP.mono (crt_wp true s h.1 fun _ => r2F_of h) fun _ ⟨a, p⟩ => ⟨a, fun hw => p (cb_of_r2 (pre_factsG h.1) hw)⟩
 
 end VG.Proof.Bignum.PPC64LE.Crt

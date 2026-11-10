@@ -197,7 +197,7 @@ theorem mid2_ok {pc : Bool} {s₀ s t : State} {c : Prog isa} {Q : State → Pro
     R.out.word (Or.inl hd) (by omega_arith)
   have hv : cb pc s₀ = true → mQ pc s₀ * vh pc s₀ + vm2 pc s₀ < 256 ^ ck s₀ := fun hb => by
     obtain ⟨_, _, _, hpq', hp1', _, hq1', _⟩ := mask_true hP.k64
-      (by rw [VG.Proof.Bignum.bytesAt_length]; exact hP.pk) (by rw [VG.Proof.Bignum.bytesAt_length]; exact hP.qk) hb
+      (by rw [VG.Proof.Bignum.bytesAt_length]; exact hP.pk) (by rw [VG.Proof.Bignum.bytesAt_length]; exact hP.qk) (cb_cb0 hb)
     have hN := os2ip_lt' (Spec.Rsa.bytesAt s₀.mem (s₀.gpr .r5) (ck s₀)) (VG.Proof.Bignum.bytesAt_length _ _ _)
     unfold vh vm1 vm2 mQ mP mQI
     simp only [hb, ↓reduceIte]
