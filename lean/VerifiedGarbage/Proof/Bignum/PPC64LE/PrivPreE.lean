@@ -33,7 +33,7 @@ theorem wordsAt_three (m : Mem) (P : Addr) (a b c : Nat) :
   simp only [Spec.Rsa.wordsAt, List.range_add, List.map_append, List.map_map, Function.comp_def, e1, e2]
 
 theorem pres_cases : ∀ r ∈ preserved, (∀ i < 18, r ≠ Crt.saved i) →
-    r ∉ bRegs ++ nRegs ++ Pre.coreRegs ++ [.r14, .r17, .r0, .r3] := by
+    r ∉ bRegs ++ nRegs ++ Pre.coreRegs ++ ([.r14, .r17, .r0, .r3] : List Reg) := by
   decide
 
 theorem toWords_r2 (w P : Nat) :

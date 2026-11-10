@@ -1,4 +1,5 @@
 module
+-- separate module: the precomputation's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPreC
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore

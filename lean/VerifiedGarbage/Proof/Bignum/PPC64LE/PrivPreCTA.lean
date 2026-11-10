@@ -1,4 +1,5 @@
 module
+-- separate module: the precomputation's constant-time proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPreE
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
@@ -123,7 +124,7 @@ theorem front1_ok {s₀ : State} (h : fnContract.pre s₀) :
 
 /-- `Code.seqL` of a list and an empty block, as of the list. -/
 theorem wp_seqL_nil {l : List (Prog isa)} {s : State} {Q : State → Prop}
-    (h : WP isa (Code.seqL (l ++ [.block []])) s Q) : WP isa (Code.seqL l) s Q := by
+    (h : WP isa (Code.seqL (l ++ ([.block []] : List (Prog isa)))) s Q) : WP isa (Code.seqL l) s Q := by
   obtain ⟨t, s', e, hq⟩ := h
   obtain ⟨_, _, u, -, e₁, e₂⟩ := exec_seqL_append.mp e
   cases e₂ with
