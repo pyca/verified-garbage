@@ -9,6 +9,9 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 meta import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Impl.Bignum.X86.PrivPre
 
 /-! # `vg_rsa_private_precompute` on x86: constant time but for `n`
@@ -24,6 +27,8 @@ counts public, which the runs agree on.
 namespace VG.Proof.Bignum.X86.PrivPre
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Dsa.X86 (argumentPointer)
+open VG.Impl.Bignum.X86.PrivPre (body code copyPrimes copyPrime copyLoop dstAt slotSrc primeWords shl maskLoop
+  primes statusOffset)
 
 /-- What two runs agree on. -/
 structure Pub (s₁ s₂ : State) : Prop where
@@ -150,6 +155,63 @@ theorem pr_pub (A₁ : PPABI s₁) (A₂ : PPABI s₂) (P : Pub s₁ s₂) {u₁
   simp only [primesVal]
   rw [cb₁, cb₂]
   exact congrArg _ P.n
+
+/-- `copyPrimes`' first block: `esi` and `ebp` saved in the frame. -/
+theorem saves_ok {s t : State} (A : PPABI s) (B : Body s t) :
+    WP isa (.block [.store (Impl.Bignum.X86.PrivPre.stackAt Impl.Bignum.X86.PrivPre.saveOffset) .esi,
+      .store (Impl.Bignum.X86.PrivPre.stackAt (Impl.Bignum.X86.PrivPre.saveOffset + 4)) .ebp]) t (Body s) :=
+  wp_slot A B (d := 88) (by decide) fun _ B₁ _ => wp_slot A B₁ (d := 92) (by decide) fun _ B₂ _ =>
+    WP.block_nil B₂
+
+/-- What `copyPrime`'s block leaves. -/
+def CB (s : State) (j i : Nat) (skip : Option Nat) (u : State) : Prop :=
+  Body s u ∧ Rt.PtrAt u (argumentPointer s 8) .esi (CrtRt.lo (arg s 3).toNat (.slot .wide j)) ∧
+    Rt.PtrAt u (argumentPointer s 0) .ebp (dstOff s skip) ∧
+    (u.gpr .ecx).toNat = 4 * (2 * Spec.Rsa.primeWords (arg s i).toNat)
+
+theorem copyPrime_relCT (A₁ : PPABI s₁) (A₂ : PPABI s₂) (P : Pub s₁ s₂) {j i : Nat} {skip : Option Nat}
+    (hj : j = 16 ∨ j = 17) (hi : i = 5 ∨ i = 7) (hs : skip = none ∨ skip = some 5) :
+    RelCT isa (fun x y => Body s₁ x ∧ Body s₂ y) (copyPrime j i skip) fun _ _ => True := by
+  unfold copyPrime
+  refine seqCT (F₁ := CB s₁ j i skip) (F₂ := CB s₂ j i skip) (espCT (fun x y h => Body.esp P h.1 h.2) (by
+      rcases hj with rfl | rfl <;> rcases hi with rfl | rfl <;> rcases hs with rfl | rfl <;> taint_decide))
+    (fun x y h => ⟨WP.mono (copyBlock_ok A₁ h.1 (j := j) hi hs) fun _ ⟨B, _, _, S, E, C⟩ => ⟨B, S, E, C⟩,
+      WP.mono (copyBlock_ok A₂ h.2 (j := j) hi hs) fun _ ⟨B, _, _, S, E, C⟩ => ⟨B, S, E, C⟩⟩) ?_
+  refine RelCT.taint (A := taint) (τr [.esp, .esi, .ebp, .ecx])
+    (fun x y ⟨⟨Bx, Sx, Ex, Cx⟩, ⟨By, Sy, Ey, Cy⟩⟩ => agree_regs fun r hr => ?_) (by taint_decide)
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact Body.esp P Bx By
+  · apply BitVec.eq_of_toNat_eq
+    rw [Sx, Sy, P.ptr (by decide), P.args 3 (by decide)]
+  · apply BitVec.eq_of_toNat_eq
+    rw [Ex, Ey, P.ptr (by decide)]
+    rcases hs with rfl | rfl
+    · simp only [dstOff, P.args 3 (by decide)]
+    · simp only [dstOff, P.args 3 (by decide), P.args 5 (by decide)]
+  · apply BitVec.eq_of_toNat_eq
+    rw [Cx, Cy]
+    rcases hi with rfl | rfl
+    · rw [P.args 5 (by decide)]
+    · rw [P.args 7 (by decide)]
+
+theorem copyPrimes_relCT (A₁ : PPABI s₁) (A₂ : PPABI s₂) (P : Pub s₁ s₂) :
+    RelCT isa (fun x y => Body s₁ x ∧ Body s₂ y) copyPrimes fun _ _ => True := by
+  have parts₁ := pre_parts A₁
+  have parts₂ := pre_parts A₂
+  unfold copyPrimes
+  refine seqCT (espCT (fun x y h => Body.esp P h.1 h.2) (by taint_decide))
+    (fun x y h => ⟨saves_ok A₁ h.1, saves_ok A₂ h.2⟩) ?_
+  refine seqCT (copyPrime_relCT A₁ A₂ P (j := 16) (.inl rfl) (.inl rfl) (.inl rfl))
+    (fun x y h => ⟨WP.mono (copyPrime_ok A₁ h.1 (j := 16) (by decide) (.inl rfl) (.inl rfl)
+        (by simp only [dstOff] at parts₁ ⊢; omega)) fun _ h => h.1,
+      WP.mono (copyPrime_ok A₂ h.2 (j := 16) (by decide) (.inl rfl) (.inl rfl)
+        (by simp only [dstOff] at parts₂ ⊢; omega)) fun _ h => h.1⟩) ?_
+  refine seqCT (copyPrime_relCT A₁ A₂ P (j := 17) (.inr rfl) (.inr rfl) (.inr rfl))
+    (fun x y h => ⟨WP.mono (copyPrime_ok A₁ h.1 (j := 17) (by decide) (.inr rfl) (.inr rfl) (by omega))
+        fun _ h => h.1,
+      WP.mono (copyPrime_ok A₂ h.2 (j := 17) (by decide) (.inr rfl) (.inr rfl) (by omega)) fun _ h => h.1⟩) ?_
+  exact espCT (fun x y h => Body.esp P h.1 h.2) (by taint_decide)
 
 end
 end VG.Proof.Bignum.X86.PrivPre
