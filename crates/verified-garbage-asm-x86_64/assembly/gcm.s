@@ -31239,6 +31239,24 @@ vg_aes_gcm_prepare_vpclmul_avx512:
 	vpternlogd zmm10, zmm9, zmm11, 150
 	vmovdqu32 ZMMWORD PTR [r11+704], zmm10
 	vzeroupper
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor eax, eax
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -31397,6 +31415,24 @@ vg_aes_gcm_prepare_vpclmul:
 	vpxor ymm3, ymm10, ymm9
 	vmovdqu YMMWORD PTR [rdi+480], ymm3
 	vzeroupper
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor eax, eax
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -31611,12 +31647,32 @@ vg_aes_gcm_prepare_pclmul_avx:
 	vpxor xmm8, xmm8, xmm11
 	vpxor xmm6, xmm10, xmm8
 	vmovdqu XMMWORD PTR [rdi+480], xmm6
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor eax, eax
+	xor r11d, r11d
 	ret
 	.p2align 6
 
 vg_aes_gcm_prepare:
 	mov rax, 0
 	mov QWORD PTR [rdi+1024], rax
+	xor eax, eax
+	xor r11d, r11d
 	ret
 	.p2align 6
 

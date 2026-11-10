@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
+public import VerifiedGarbage.Proof.Aes.X86_64.BlocksResidue
 
 /-! # The implementations of `AesBlocks` on x86-64 -/
 
@@ -8,11 +9,23 @@ public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 
 namespace VG.Proof.Variants.AesBlocks.X86_64
 
-def aesNi : Proof.Aes.X86_64.BlocksImpl := .aesni
+open VG.Proof.Aes.X86_64
 
-def scalar : Proof.Aes.X86_64.BlocksImpl := .scalar
+/-- AES-NI, with the residue analyses of the functions over it. -/
+def aesNi : BlocksImpl :=
+  { BlocksImpl.aesni with
+    cfb8EncRes := some BlocksResidue.encAesni
+    cfb8DecRes := some BlocksResidue.decAesni
+    ecbEncRes := some BlocksResidue.ecbAesni }
 
-def vaes : Proof.Aes.X86_64.BlocksImpl := .vaes
+def scalar : BlocksImpl := .scalar
+
+/-- VAES, with the residue analyses of the functions over it. -/
+def vaes : BlocksImpl :=
+  { BlocksImpl.vaes with
+    cfb8EncRes := some BlocksResidue.encVaes
+    cfb8DecRes := some BlocksResidue.decVaes
+    ecbEncRes := some BlocksResidue.ecbVaes }
 
 /-- Every implementation, best first: each function generic over them is
 emitted with each (the registration files that import this), and its

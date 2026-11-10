@@ -119,6 +119,8 @@ pub unsafe fn vg_ffdh_generate_key_search_cached_auto(_dit: verified_garbage_cpu
 ///
 /// It runs `vg_ffdh_parameter_generation_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
@@ -133,6 +135,8 @@ pub unsafe fn vg_ffdh_parameter_generation_init_auto(_dit: verified_garbage_cpu:
 /// Initialize native finite-field Diffie–Hellman key generation. Returns 1 for a domain width in 64..=1024 bytes, initializing the rejection budgets and first entropy request; returns 0 and clears the first four state words otherwise. The remaining state words are private workspace. Contract: `VG.Spec.Ffdh.keyInitContract`.
 ///
 /// It runs `vg_ffdh_key_generation_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

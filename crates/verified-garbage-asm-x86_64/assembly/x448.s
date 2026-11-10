@@ -5020,6 +5020,17 @@ vg_x448_base_adx:
 	mov r13, QWORD PTR [rdi+24]
 	mov r14, QWORD PTR [rdi+32]
 	mov r15, QWORD PTR [rdi+40]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp+8]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -11239,5 +11250,16 @@ vg_x448_base:
 	mov r13, QWORD PTR [rdi+24]
 	mov r14, QWORD PTR [rdi+32]
 	mov r15, QWORD PTR [rdi+40]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp+8]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6

@@ -28,5 +28,9 @@ vg_ct_eq:
 	sub rax, 1
 	shr rax, 63
 21:
+	mov eax, eax
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
 	ret
 	.p2align 6

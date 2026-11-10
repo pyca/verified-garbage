@@ -32,6 +32,12 @@ vg_chacha20_init:
 	add rcx, rcx
 	add rcx, rcx
 	mov QWORD PTR [rdi+128], rcx
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor r8d, r8d
+	xor r9d, r9d
 	ret
 	.p2align 6
 
@@ -54,6 +60,9 @@ vg_chacha20_set_nonce:
 	add rcx, rcx
 	add rcx, rcx
 	mov QWORD PTR [rdi+128], rcx
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
 	ret
 	.p2align 6
 

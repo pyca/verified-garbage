@@ -1193,6 +1193,18 @@ vg_seed_expand_key:
 	mov QWORD PTR [rsp+1048], r11
 	mov QWORD PTR [rsp+1056], r11
 	lea rsp, [rsp+1064]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-1064]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+1064]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1339,6 +1351,20 @@ vg_seed_ecb_encrypt:
 	mov QWORD PTR [rsp+1080], r11
 	mov QWORD PTR [rsp+1088], r11
 	lea rsp, [rsp+1096]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-1104]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+1104]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1485,5 +1511,19 @@ vg_seed_ecb_decrypt:
 	mov QWORD PTR [rsp+1080], r11
 	mov QWORD PTR [rsp+1088], r11
 	lea rsp, [rsp+1096]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-1104]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+1104]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6

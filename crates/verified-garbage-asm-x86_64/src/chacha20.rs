@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.ChaCha20.initContract`. The streaming state is opaque (`VG.Spec.ChaCha20.keyAt`, `VG.Spec.ChaCha20.restAt`). Constant time: only the pointers may affect timing, not the key or the nonce.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 768 bytes.
@@ -17,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SIsGSItOCEyLRhBMi04YSIlHEEiJTxhMiUcgTIlPKEiJ1kiLBkiLTgiLFkiJRzBIiU84SLhleHBhbmQgM0iJB0i4Mi1ieXRlIGtIiUcISLkAAAAAAQAAAEgp0UgByUgByUgByUgByUgByUgByUiJj4AAAADD"
+        r#".base64 "SIsGSItOCEyLRhBMi04YSIlHEEiJTxhMiUcgTIlPKEiJ1kiLBkiLTgiLFkiJRzBIiU84SLhleHBhbmQgM0iJB0i4Mi1ieXRlIGtIiUcISLkAAAAAAQAAAEgp0UgByUgByUgByUgByUgByUgByUiJj4AAAAAxwDHJMdIx9kUxwEUxycM="
 .p2align 6"#,
     )
 }
@@ -25,6 +27,8 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_init(state: *mut [u64; 96], key
 /// Restarts a ChaCha20 keystream with the same key: makes the streaming state `*state` represent the whole keystream of its key for the 16-byte nonce `*nonce` (as `vg_chacha20_init` does), discarding what was left of the previous one.
 ///
 /// Contract: `VG.Spec.ChaCha20.setNonceContract`. Constant time: only the pointers may affect timing, not the key or the nonce.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -35,7 +39,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_init(state: *mut [u64; 96], key
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SIsGSItOCIsWSIlHMEiJTzhIuGV4cGFuZCAzSIkHSLgyLWJ5dGUga0iJRwhIuQAAAAABAAAASCnRSAHJSAHJSAHJSAHJSAHJSAHJSImPgAAAAMM="
+        r#".base64 "SIsGSItOCIsWSIlHMEiJTzhIuGV4cGFuZCAzSIkHSLgyLWJ5dGUga0iJRwhIuQAAAAABAAAASCnRSAHJSAHJSAHJSAHJSAHJSAHJSImPgAAAADHAMckx0sM="
 .p2align 6"#,
     )
 }

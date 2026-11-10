@@ -58,6 +58,8 @@ vg_dsa_parameter_search_init:
 	mov QWORD PTR [rdi+24], rax
 	mov eax, 1
 21:
+	mov eax, eax
+	xor esi, esi
 	ret
 	.p2align 6
 
