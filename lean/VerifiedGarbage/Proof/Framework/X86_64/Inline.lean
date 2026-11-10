@@ -134,6 +134,10 @@ theorem setVy_withRegions (s : State) (rd wr : List Region) (r : VReg) (v : BitV
     (s.withRegions rd wr).setVy r v = (s.setVy r v).withRegions rd wr := by
   cases r <;> rfl
 
+theorem setVz_withRegions (s : State) (rd wr : List Region) (r : VReg) (l0 l1 l2 l3 : BitVec 128) :
+    (s.withRegions rd wr).setVz r l0 l1 l2 l3 = (s.setVz r l0 l1 l2 l3).withRegions rd wr := by
+  cases r <;> rfl
+
 theorem store256_widen (hc : Covers s.wr wr) {a : Addr} {v : BitVec 256} (h : s.store256 a v = some s') :
     (s.withRegions rd wr).store256 a v = some (s'.withRegions rd wr) := by
   simp only [State.store256] at h
@@ -304,7 +308,23 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, load256_widen hc hv, Option.map_some,
       setVy_withRegions]
     rfl
-  | evStore m r => exact store256_widen hw h
+  | evStore m r | e5ExtractStore m r _ => exact store256_widen hw h
+  | e5op op =>
+    simp only [reduceExec, Option.some.injEq] at h ⊢; subst h
+    cases op <;> exact setVz_withRegions _ _ _ _ _ _ _ _
+  | evBroadcastLoad d m =>
+    simp only [reduceExec, Option.map_eq_some_iff] at h
+    obtain ⟨v, hv, rfl⟩ := h
+    simp only [reduceExec]
+    rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, load64_widen hc hv, Option.map_some,
+      setVy_withRegions]
+  | e5InsertLoad d a m n =>
+    simp only [reduceExec, Option.map_eq_some_iff] at h
+    obtain ⟨v, hv, rfl⟩ := h
+    simp only [reduceExec]
+    rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, load256_widen hc hv, Option.map_some,
+      setVz_withRegions]
+    rfl
   | kLoad k d m =>
     simp only [reduceExec, Option.map_eq_some_iff] at h
     obtain ⟨v, hv, rfl⟩ := h
@@ -454,9 +474,11 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') : s'.rd = s.rd ∧ s'.
     simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]; exact ⟨rfl, rfl⟩
   | eop op =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]; exact ⟨rfl, rfl⟩
-  | evLoad d m | evMadd52Load _ d _ m =>
+  | e5op op =>
+    simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.E5Op.exec_eq op s]; exact ⟨rfl, rfl⟩
+  | evLoad d m | evMadd52Load _ d _ m | evBroadcastLoad d m | e5InsertLoad d _ m _ =>
     simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> exact ⟨rfl, rfl⟩
-  | evStore m r =>
+  | evStore m r | e5ExtractStore m r _ =>
     simp only [reduceExec, State.store256] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
   | kLoad k d m | kLoad8 k d m =>
     simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl⟩
@@ -525,9 +547,11 @@ theorem exec_frame {i : Instr} (h : exec i s = some s') : Frame s.wr s.mem s'.me
     simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]; exact Frame.refl _ _
   | eop op =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]; exact Frame.refl _ _
-  | evLoad d m | evMadd52Load _ d _ m =>
+  | e5op op =>
+    simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.E5Op.exec_eq op s]; exact Frame.refl _ _
+  | evLoad d m | evMadd52Load _ d _ m | evBroadcastLoad d m | e5InsertLoad d _ m _ =>
     simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> exact Frame.refl _ _
-  | evStore m r =>
+  | evStore m r | e5ExtractStore m r _ =>
     simp only [reduceExec, State.store256] at h; split at h <;> cases h
     rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
   | kLoad k d m | kLoad8 k d m =>
@@ -749,6 +773,13 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) {s s' :
     · simp only [reduceExec, State.store256] at h; split at h <;> cases h; rfl
     · simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h
       rw [Taint.setVy_eq]
+    · simp only [reduceExec, Option.some.injEq] at h; subst h; rename_i op
+      rw [Taint.E5Op.exec_eq op s]
+    · simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h
+      rw [Taint.setVy_eq]
+    · simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h
+      rw [Taint.setVz_eq]
+    · simp only [reduceExec, State.store256] at h; split at h <;> cases h; rfl
     · simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
     · obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl
     · simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl

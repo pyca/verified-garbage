@@ -310,6 +310,9 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
   | eop op =>
     simp only [exec, Option.map_some]; congr 1
     cases op <;> simp only [EOp.exec, State.setVy] <;> (try split) <;> rfl
+  | e5op op =>
+    simp only [exec, Option.map_some]; congr 1
+    cases op <;> simp only [E5Op.exec, State.setVz] <;> (try split) <;> rfl
   | vmovdqu32Load d m =>
     simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load512_patch hc]; rfl
   | vmovdqu32Store m r => exact store512_patch hc _ _
@@ -326,7 +329,13 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
   | evLoad d m =>
     simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]
     congr 1; funext v; cases d <;> rfl
-  | evStore m r => exact store256_patch hc _ _
+  | evStore m r | e5ExtractStore m r _ => exact store256_patch hc _ _
+  | evBroadcastLoad d m =>
+    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load64_patch hc]
+    congr 1; funext v; cases d <;> rfl
+  | e5InsertLoad d a m n =>
+    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]
+    congr 1; funext v; cases d <;> cases a <;> rfl
   | kLoad k d m =>
     simp only [exec, Option.map_map]
     rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).gpr k = s.gpr k from rfl,

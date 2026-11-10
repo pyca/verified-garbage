@@ -64,9 +64,11 @@ theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms 
   | vop op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.VOp.exec_eq op s]
   | zop op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]
   | eop op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]
-  | evLoad d m | evMadd52Load _ d _ m =>
+  | e5op op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.E5Op.exec_eq op s]
+  | evLoad d m | evMadd52Load _ d _ m | evBroadcastLoad d m | e5InsertLoad d _ m _ =>
     simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> rfl
-  | evStore m r => simp only [reduceExec, State.store256] at h; split at h <;> cases h; rfl
+  | evStore m r | e5ExtractStore m r _ =>
+    simp only [reduceExec, State.store256] at h; split at h <;> cases h; rfl
   | kLoad k d m | kLoad8 k d m => simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
   | kStore m k r => obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl
   | kStore8 m k r => obtain ⟨_, rfl⟩ := State.storeMasked512B_eq h; rfl

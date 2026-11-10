@@ -182,7 +182,7 @@ def storeW : Instr → Option (MemOp × Nat)
   | .vmovdquStore .l128 m _ => some (m, 16)
   | .vmovdquStore .l256 m _ => some (m, 32)
   | .vmovdqu32Store m _ => some (m, 64)
-  | .evStore m _ => some (m, 32)
+  | .evStore m _ | .e5ExtractStore m _ _ => some (m, 32)
   | .stmxcsr m => some (m, 4)
   | _ => none
 

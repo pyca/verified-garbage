@@ -482,4 +482,201 @@ def cmplt (a b : XReg) : Option (BitVec 64) := (exec (.vpcmpltuw .rax a b) sC).m
 #guard Instr.encode (.vpcmpltuw .r11 .xmm12 .xmm9) ==
   some [[0x62, 0xd3, 0x9d, 0x48, 0x3e, 0xc9, 0x01], [0xc5, 0x7b, 0x93, 0xd9]]
 
+/-! ## `EVEX.512` forms on `zmm0`–`zmm31` (`E5Op`), and the memory forms beside them
+
+Each expected value was computed on an Intel Xeon with AVX512_IFMA (Granite
+Rapids), by the instruction itself in C inline assembly, with `A` in
+`zmm16`, `B` in `zmm17`, all ones in `zmm18` and `zmm20`, and the 64 bytes
+`B` in memory. -/
+
+/-- `s` with `A` in `zmm16`, `B` in `zmm17`, all ones in `zmm18` and `zmm20`,
+and the 64 bytes `B` at address `0x100`. -/
+def sE : State :=
+  { s with
+    ymmH := fun r => if r = .xmm16 then A.extractLsb' 0 256 else if r = .xmm17 then B.extractLsb' 0 256
+      else if r = .xmm18 ∨ r = .xmm20 then -1 else 0
+    zmmHiH := fun r => if r = .xmm16 then A.extractLsb' 256 256 else if r = .xmm17 then B.extractLsb' 256 256
+      else if r = .xmm18 ∨ r = .xmm20 then -1 else 0
+    mem := fun addr => if 0x100 ≤ addr.toNat ∧ addr.toNat < 0x140 then
+      B.extractLsb' (8 * (addr.toNat - 0x100)) 8 else 0 }
+
+/-- The 512 bits of `zmm` register `r`, of all thirty-two. -/
+def z5 (t : State) (r : VReg) : BitVec 512 := t.vz r 3 ++ t.vz r 2 ++ t.vz r 1 ++ t.vz r 0
+
+def h16 : VReg := .hi .xmm16
+def h17 : VReg := .hi .xmm17
+def h18 : VReg := .hi .xmm18
+def h20 : VReg := .hi .xmm20
+
+#guard z5 sE h16 == A && z5 sE h17 == B && z5 sE h18 == -1 && z5 sE (.lo .xmm0) == A && z5 sE (.lo .xmm1) == B
+#guard sE.mem.readW 0x100 512 == B
+
+/-- `zmm r` after `op`. -/
+def e5 (op : E5Op) (r : VReg) : BitVec 512 := z5 (op.exec sE) r
+
+#guard e5 (.bin .vpaddq h20 h16 h17) h20 == 0x1abcff1defdeebbe3403699933f4ccba797b7d7f818385861368be1268be1357104172a3d5063767a280a0e05295607289abcdee812345677edcba9788888888#512
+#guard e5 (.bin .vpxorq h20 h16 h17) h20 == 0x04a2ff020e1d0a3e8bf8144533f3332278787878787878781346b9ec603dca970e3d685bc2f1a4971d7f5f1f4d681f0a76543210812345678123456764606468#512
+#guard e5 (.bin .vpandq h20 h16 h17) h20 == 0x0b0d000df0e0f0c05405aaaa0000cccc8081828384858687001102130440246001020524090a4968c280a0e08296a0b489abcdef000000007edcba9812141210#512
+#guard e5 (.bin .vporq h20 h16 h17) h20 == 0x0fafff0ffefdfafedffdbeef33f3ffeef8f9fafbfcfdfeff1357bbff647deef70f3f6d7fcbfbedffdfffffffcffebfbeffffffff81234567ffffffff76747678#512
+-- Of `zmm0`–`zmm15` and of both halves of the registers together.
+#guard e5 (.bin .vpaddq (.lo .xmm5) (.lo .xmm0) (.lo .xmm1)) (.lo .xmm5) == 0x1abcff1defdeebbe3403699933f4ccba797b7d7f818385861368be1268be1357104172a3d5063767a280a0e05295607289abcdee812345677edcba9788888888#512
+#guard e5 (.bin .vpaddq (.lo .xmm5) h16 (.lo .xmm1)) (.lo .xmm5) == 0x1abcff1defdeebbe3403699933f4ccba797b7d7f818385861368be1268be1357104172a3d5063767a280a0e05295607289abcdee812345677edcba9788888888#512
+#guard e5 (.bin .vpaddq h20 (.lo .xmm0) h17) h20 == 0x1abcff1defdeebbe3403699933f4ccba797b7d7f818385861368be1268be1357104172a3d5063767a280a0e05295607289abcdee812345677edcba9788888888#512
+#guard e5 (.shift .vpsllq h20 h16 0) h20 == A
+#guard e5 (.shift .vpsllq h20 h16 1) h20 == 0x175be01bfddbf59cbd5b7dde0181ffdc1133557799bbddfe0022446688aaccee1e3c5a7896b4d2f087a5c3e10f2d4b6813579bde02468acefdb97530eca86420#512
+#guard e5 (.shift .vpsllq h20 h16 13) h20 == 0xbe01bfddbf59c000b7dde0181ffdc0003557799bbddfe0002446688aaccee000c5a7896b4d2f00005c3e10f2d4b6800079bde02468ace00097530eca86420000#512
+#guard e5 (.shift .vpsllq h20 h16 63) h20 == 0x00000000000000000000000000000000800000000000000080000000000000000000000000000000000000000000000080000000000000000000000000000000#512
+#guard e5 (.shift .vpsllq h20 h16 64) h20 == 0
+#guard e5 (.shift .vpsrlq h20 h16 1) h20 == 0x05d6f806ff76fd676f56df7780607ff7444cd55de66ef77f00089119a22ab33b078f169e25ad34bc61e970f843cb52da44d5e6f78091a2b37f6e5d4c3b2a1908#512
+#guard e5 (.shift .vpsrlq h20 h16 52) h20 == 0x00000000000000ba0000000000000dea0000000000000889000000000000000100000000000000f10000000000000c3d000000000000089a0000000000000fed#512
+#guard e5 (.shift .vpsrlq h20 h16 63) h20 == 0x00000000000000000000000000000001000000000000000100000000000000000000000000000000000000000000000100000000000000010000000000000001#512
+#guard e5 (.shift .vpsrlq h20 h16 200) h20 == 0
+#guard e5 (.shift .vpsrlq (.lo .xmm5) (.lo .xmm0) 52) (.lo .xmm5) == 0x00000000000000ba0000000000000dea0000000000000889000000000000000100000000000000f10000000000000c3d000000000000089a0000000000000fed#512
+#guard e5 (.vpermq h20 h16 0x1b) h20 == 0x00112233445566778899aabbccddeeffdeadbeef00c0ffee0badf00dfeedfacefedcba987654321089abcdef01234567c3d2e1f08796a5b40f1e2d3c4b5a6978#512
+#guard e5 (.vpermq h20 h16 0xf9) h20 == 0x0badf00dfeedface0badf00dfeedfacedeadbeef00c0ffee8899aabbccddeeff0f1e2d3c4b5a69780f1e2d3c4b5a6978c3d2e1f08796a5b489abcdef01234567#512
+#guard e5 (.vpermq h20 h16 0x00) h20 == 0x0011223344556677001122334455667700112233445566770011223344556677fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210#512
+#guard e5 (.vpermq h16 h16 0x93) h16 == 0xdeadbeef00c0ffee8899aabbccddeeff00112233445566770badf00dfeedfacec3d2e1f08796a5b489abcdef01234567fedcba98765432100f1e2d3c4b5a6978#512
+#guard e5 (.vpermq (.lo .xmm5) (.lo .xmm0) 0xf9) (.lo .xmm5) == 0x0badf00dfeedface0badf00dfeedfacedeadbeef00c0ffee8899aabbccddeeff0f1e2d3c4b5a69780f1e2d3c4b5a6978c3d2e1f08796a5b489abcdef01234567#512
+#guard e5 (.vpmadd52 false h18 h16 h17) h18 == 0x00020a6c5b5c411f00023489cc2799a700036466696d72780007728887e99c1f000502bf6b058f070004244c86cbc397000e5d4c7fffffff000c71c70b88d77f#512
+#guard e5 (.vpmadd52 true h18 h16 h17) h18 == 0x000d1e2c0f0dedde0004de49944cd4f900011a02dba45d0400008a018dca3e700002e5fa1f559cf3000279f9a9ffce0a000bcdeea2b3cd5c000cba97b9263968#512
+#guard e5 (.vpmadd52 false h16 h16 h16) h16 == 0x0bb4c3e51e10f892debd76d3e59d0132889ff492b8431100001b0c89b05e71c80f21e736ef2e11b8c3e036daf9c82c4489b9a5a7dc1df4d8fee927701a9e7310#512
+#guard e5 (.vpmadd52 true h17 h17 h17) h17 == 0x0f1d3b5c02a85a655557ac70fb06ba3cf0e207f485da0f43135b3a30e3cdb7720123f09b6ceda61ddeb98e1c01fb968f000ffffe80000400800ffffd369d1136#512
+#guard e5 (.vpmadd52 false (.lo .xmm5) (.lo .xmm0) h17) (.lo .xmm5) == 0x00020a6c5b5c411f00023489cc2799a700036466696d72780007728887e99c1f000502bf6b058f070004244c86cbc397000e5d4c7fffffff000c71c70b88d77f#512
+#guard e5 (.vinserti64x4 h20 h16 h17 0) h20 == 0x0badf00dfeedfacedeadbeef00c0ffee8899aabbccddeeff00112233445566770123456789abcdefdeadbeefcafebabeffffffff800000007fffffff12345678#512
+#guard e5 (.vinserti64x4 h20 h16 h17 1) h20 == 0x0123456789abcdefdeadbeefcafebabeffffffff800000007fffffff123456780f1e2d3c4b5a6978c3d2e1f08796a5b489abcdef01234567fedcba9876543210#512
+-- Only bit 0 of the immediate selects.
+#guard e5 (.vinserti64x4 h20 h16 h17 2) h20 == 0x0badf00dfeedfacedeadbeef00c0ffee8899aabbccddeeff00112233445566770123456789abcdefdeadbeefcafebabeffffffff800000007fffffff12345678#512
+#guard e5 (.vinserti64x4 h20 h16 h17 255) h20 == 0x0123456789abcdefdeadbeefcafebabeffffffff800000007fffffff123456780f1e2d3c4b5a6978c3d2e1f08796a5b489abcdef01234567fedcba9876543210#512
+#guard e5 (.vinserti64x4 h16 h16 h16 1) h16 == 0x0f1e2d3c4b5a6978c3d2e1f08796a5b489abcdef01234567fedcba98765432100f1e2d3c4b5a6978c3d2e1f08796a5b489abcdef01234567fedcba9876543210#512
+#guard e5 (.vinserti64x4 (.lo .xmm5) (.lo .xmm0) (.lo .xmm1) 1) (.lo .xmm5) == 0x0123456789abcdefdeadbeefcafebabeffffffff800000007fffffff123456780f1e2d3c4b5a6978c3d2e1f08796a5b489abcdef01234567fedcba9876543210#512
+-- Nothing but the destination changes.
+#guard (fun t : State => (z5 t h16, z5 t h17, z5 t h18, z5 t (.lo .xmm0), z5 t (.lo .xmm5), t.gpr .rdi,
+    t.mem.readW 0x100 512, t.cf, t.mxcsr)) ((E5Op.vpmadd52 true h20 h16 h17).exec sE) ==
+  (A, B, -1, A, -1, 0x100, B, none, 0x1F80)
+
+/-- `zmm20` after the instruction `i`. -/
+def m5 (i : Instr) : Option (BitVec 512) := (exec i sE).map fun t => z5 t h20
+
+#guard m5 (.e5op (.bin .vpaddq h20 h16 h17)) == some 0x1abcff1defdeebbe3403699933f4ccba797b7d7f818385861368be1268be1357104172a3d5063767a280a0e05295607289abcdee812345677edcba9788888888#512
+-- `vpbroadcastq ymm20, [rdi + 8]`: bits 511:256 are zeroed.
+#guard m5 (.evBroadcastLoad h20 { base := .rdi, disp := 8 }) == some 0x0000000000000000000000000000000000000000000000000000000000000000ffffffff80000000ffffffff80000000ffffffff80000000ffffffff80000000#512
+#guard (exec (.evBroadcastLoad (.lo .xmm5) { base := .rdi, disp := 8 }) sE).map (fun t => z5 t (.lo .xmm5)) ==
+  some 0x0000000000000000000000000000000000000000000000000000000000000000ffffffff80000000ffffffff80000000ffffffff80000000ffffffff80000000#512
+#guard m5 (.e5InsertLoad h20 h16 { base := .rdi } 0) == some 0x0badf00dfeedfacedeadbeef00c0ffee8899aabbccddeeff00112233445566770123456789abcdefdeadbeefcafebabeffffffff800000007fffffff12345678#512
+#guard m5 (.e5InsertLoad h20 h16 { base := .rdi } 1) == some 0x0123456789abcdefdeadbeefcafebabeffffffff800000007fffffff123456780f1e2d3c4b5a6978c3d2e1f08796a5b489abcdef01234567fedcba9876543210#512
+#guard m5 (.e5InsertLoad h20 h16 { base := .rdi } 254) == some 0x0badf00dfeedfacedeadbeef00c0ffee8899aabbccddeeff00112233445566770123456789abcdefdeadbeefcafebabeffffffff800000007fffffff12345678#512
+-- The loads must be readable: 8 bytes and 32 bytes.
+#guard (m5 (.evBroadcastLoad h20 { base := .rdi, disp := -8 })).isNone
+#guard (m5 (.evBroadcastLoad h20 { base := .rdi, disp := 56 })).isSome
+#guard (m5 (.evBroadcastLoad h20 { base := .rdi, disp := 57 })).isNone
+#guard (m5 (.e5InsertLoad h20 h16 { base := .rdi, disp := 32 } 1)).isSome
+#guard (m5 (.e5InsertLoad h20 h16 { base := .rdi, disp := 33 } 1)).isNone
+
+/-- The 32 bytes at `0x200` after `vextracti64x4 [rdi + 0x100], zmm r, imm8`. -/
+def x5 (r : VReg) (imm : BitVec 8) : Option (BitVec 256) :=
+  (exec (.e5ExtractStore { base := .rdi, disp := 0x100 } r imm) sE).map fun t => t.mem.readW 0x200 256
+
+#guard x5 h17 0 == some 0x0123456789abcdefdeadbeefcafebabeffffffff800000007fffffff12345678#256
+#guard x5 h17 1 == some 0x0f0f0f0ff0f0f0f05555aaaa3333ccccf0e1d2c3b4a5968713579bdf2468ace0#256
+#guard x5 h16 3 == some 0x0badf00dfeedfacedeadbeef00c0ffee8899aabbccddeeff0011223344556677#256
+#guard x5 (.lo .xmm0) 1 == some 0x0badf00dfeedfacedeadbeef00c0ffee8899aabbccddeeff0011223344556677#256
+-- Only the 32 bytes are written, which must be writable, and no register changes.
+#guard (exec (.e5ExtractStore { base := .rdi, disp := 0x100 } h17 1) sE).map
+  (fun t => (t.mem.readW 0x220 256, z5 t h17, z5 t h16, t.mem.readW 0x100 512)) == some (0, B, A, B)
+#guard (x5 h17 0).isSome && (exec (.e5ExtractStore { base := .rdi } h17 0) sE).isNone
+#guard (exec (.e5ExtractStore { base := .rdi, disp := 0x120 } h17 0) sE).isSome
+#guard (exec (.e5ExtractStore { base := .rdi, disp := 0x121 } h17 0) sE).isNone
+
+/-! ### Printing, encoding and CPU features -/
+
+#guard Instr.asm (.e5op (.bin .vpaddq h20 h16 h17)) == ["vpaddq zmm20, zmm16, zmm17"]
+#guard Instr.asm (.e5op (.bin .vpxorq (.lo .xmm0) (.lo .xmm0) (.lo .xmm0))) == ["vpxorq zmm0, zmm0, zmm0"]
+#guard Instr.asm (.e5op (.bin .vpandq (.lo .xmm9) (.hi .xmm25) (.lo .xmm14))) == ["vpandq zmm9, zmm25, zmm14"]
+#guard Instr.asm (.e5op (.bin .vporq (.hi .xmm30) (.lo .xmm1) (.lo .xmm8))) == ["vporq zmm30, zmm1, zmm8"]
+#guard Instr.asm (.e5op (.shift .vpsllq h20 h16 13)) == ["vpsllq zmm20, zmm16, 13"]
+#guard Instr.asm (.e5op (.shift .vpsrlq (.lo .xmm5) (.hi .xmm31) 52)) == ["vpsrlq zmm5, zmm31, 52"]
+#guard Instr.asm (.e5op (.vpermq h20 h16 249)) == ["vpermq zmm20, zmm16, 249"]
+#guard Instr.asm (.e5op (.vpmadd52 false h18 h16 h17)) == ["vpmadd52luq zmm18, zmm16, zmm17"]
+#guard Instr.asm (.e5op (.vpmadd52 true (.hi .xmm31) (.lo .xmm5) (.lo .xmm9))) == ["vpmadd52huq zmm31, zmm5, zmm9"]
+#guard Instr.asm (.e5op (.vinserti64x4 h20 h16 h17 1)) == ["vinserti64x4 zmm20, zmm16, ymm17, 1"]
+#guard Instr.asm (.evBroadcastLoad h20 { base := .rdi }) == ["vpbroadcastq ymm20, QWORD PTR [rdi]"]
+#guard Instr.asm (.e5InsertLoad h17 h17 { base := .r8, disp := 3744 } 1) ==
+  ["vinserti64x4 zmm17, zmm17, YMMWORD PTR [r8+3744], 1"]
+#guard Instr.asm (.e5ExtractStore { base := .r11, disp := 3712 } (.lo .xmm0) 1) ==
+  ["vextracti64x4 YMMWORD PTR [r11+3712], zmm0, 1"]
+
+-- The bytes GNU as 2.42 assembles the printed text to (the memory form of
+-- `vpbroadcastq` with `{evex}`, as the model's is the EVEX form of every
+-- register).
+#guard Instr.encode (.e5op (.bin .vpaddq h20 h16 h17)) == some [[0x62, 0xa1, 0xfd, 0x40, 0xd4, 0xe1]]
+#guard Instr.encode (.e5op (.bin .vpaddq (.lo .xmm1) (.lo .xmm2) (.lo .xmm3))) ==
+  some [[0x62, 0xf1, 0xed, 0x48, 0xd4, 0xcb]]
+#guard Instr.encode (.e5op (.bin .vpxorq (.lo .xmm0) (.lo .xmm0) (.lo .xmm0))) ==
+  some [[0x62, 0xf1, 0xfd, 0x48, 0xef, 0xc0]]
+#guard Instr.encode (.e5op (.bin .vpxorq (.hi .xmm31) (.hi .xmm31) (.hi .xmm31))) ==
+  some [[0x62, 0x01, 0x85, 0x40, 0xef, 0xff]]
+#guard Instr.encode (.e5op (.bin .vpandq (.lo .xmm9) (.hi .xmm25) (.lo .xmm14))) ==
+  some [[0x62, 0x51, 0xb5, 0x40, 0xdb, 0xce]]
+#guard Instr.encode (.e5op (.bin .vporq (.hi .xmm30) (.lo .xmm1) (.lo .xmm8))) ==
+  some [[0x62, 0x41, 0xf5, 0x48, 0xeb, 0xf0]]
+#guard Instr.encode (.e5op (.shift .vpsllq h20 h16 13)) == some [[0x62, 0xb1, 0xdd, 0x40, 0x73, 0xf0, 0x0d]]
+#guard Instr.encode (.e5op (.shift .vpsrlq (.lo .xmm5) (.hi .xmm31) 52)) ==
+  some [[0x62, 0x91, 0xd5, 0x48, 0x73, 0xd7, 0x34]]
+#guard Instr.encode (.e5op (.shift .vpsrlq h16 (.lo .xmm0) 52)) == some [[0x62, 0xf1, 0xfd, 0x40, 0x73, 0xd0, 0x34]]
+#guard Instr.encode (.e5op (.vpermq h20 h16 249)) == some [[0x62, 0xa3, 0xfd, 0x48, 0x00, 0xe0, 0xf9]]
+#guard Instr.encode (.e5op (.vpermq (.lo .xmm3) (.lo .xmm12) 27)) ==
+  some [[0x62, 0xd3, 0xfd, 0x48, 0x00, 0xdc, 0x1b]]
+#guard Instr.encode (.e5op (.vpmadd52 false h18 h16 h17)) == some [[0x62, 0xa2, 0xfd, 0x40, 0xb4, 0xd1]]
+#guard Instr.encode (.e5op (.vpmadd52 true h18 h16 h17)) == some [[0x62, 0xa2, 0xfd, 0x40, 0xb5, 0xd1]]
+#guard Instr.encode (.e5op (.vpmadd52 false (.lo .xmm0) (.lo .xmm14) (.hi .xmm23))) ==
+  some [[0x62, 0xb2, 0x8d, 0x48, 0xb4, 0xc7]]
+#guard Instr.encode (.e5op (.vpmadd52 true (.hi .xmm31) (.lo .xmm5) (.lo .xmm9))) ==
+  some [[0x62, 0x42, 0xd5, 0x48, 0xb5, 0xf9]]
+#guard Instr.encode (.e5op (.vinserti64x4 h20 h16 h17 1)) == some [[0x62, 0xa3, 0xfd, 0x40, 0x3a, 0xe1, 0x01]]
+#guard Instr.encode (.e5op (.vinserti64x4 (.lo .xmm12) (.lo .xmm12) (.hi .xmm31) 1)) ==
+  some [[0x62, 0x13, 0x9d, 0x48, 0x3a, 0xe7, 0x01]]
+#guard Instr.encode (.e5op (.vinserti64x4 (.lo .xmm3) h20 (.lo .xmm1) 0)) ==
+  some [[0x62, 0xf3, 0xdd, 0x40, 0x3a, 0xd9, 0x00]]
+-- A displacement that is a multiple of the operand's size and fits a byte
+-- once divided by it is one byte (`disp8*N`: `N = 8` for the quadword, 32
+-- for the 32 bytes).
+#guard Instr.encode (.evBroadcastLoad h20 { base := .rdi }) == some [[0x62, 0xe2, 0xfd, 0x28, 0x59, 0x27]]
+#guard Instr.encode (.evBroadcastLoad (.hi .xmm31) { base := .r9, disp := 8 }) ==
+  some [[0x62, 0x42, 0xfd, 0x28, 0x59, 0x79, 0x01]]
+#guard Instr.encode (.evBroadcastLoad (.lo .xmm12) { base := .r9, disp := 3712 }) ==
+  some [[0x62, 0x52, 0xfd, 0x28, 0x59, 0xa1, 0x80, 0x0e, 0x00, 0x00]]
+#guard Instr.encode (.evBroadcastLoad (.lo .xmm3) { base := .rax, index := some .rcx, scale := 8, disp := 16 }) ==
+  some [[0x62, 0xf2, 0xfd, 0x28, 0x59, 0x5c, 0xc8, 0x02]]
+#guard Instr.encode (.evBroadcastLoad (.lo .xmm3) { base := .rdi, disp := 2040 }) ==
+  some [[0x62, 0xf2, 0xfd, 0x28, 0x59, 0x9f, 0xf8, 0x07, 0x00, 0x00]]
+#guard Instr.encode (.e5InsertLoad h20 h16 { base := .rdi } 1) == some [[0x62, 0xe3, 0xfd, 0x40, 0x3a, 0x27, 0x01]]
+#guard Instr.encode (.e5InsertLoad h17 h17 { base := .r8, disp := 3744 } 1) ==
+  some [[0x62, 0xc3, 0xf5, 0x40, 0x3a, 0x48, 0x75, 0x01]]
+#guard Instr.encode (.e5InsertLoad (.lo .xmm2) (.lo .xmm2) { base := .r10, disp := 32 } 1) ==
+  some [[0x62, 0xd3, 0xed, 0x48, 0x3a, 0x52, 0x01, 0x01]]
+#guard Instr.encode (.e5InsertLoad (.lo .xmm2) (.lo .xmm9) { base := .r10, disp := 16 } 0) ==
+  some [[0x62, 0xd3, 0xb5, 0x48, 0x3a, 0x92, 0x10, 0x00, 0x00, 0x00, 0x00]]
+#guard Instr.encode (.e5ExtractStore { base := .rsi } h17 1) == some [[0x62, 0xe3, 0xfd, 0x48, 0x3b, 0x0e, 0x01]]
+#guard Instr.encode (.e5ExtractStore { base := .r11, disp := 3712 } (.lo .xmm0) 1) ==
+  some [[0x62, 0xd3, 0xfd, 0x48, 0x3b, 0x43, 0x74, 0x01]]
+#guard Instr.encode (.e5ExtractStore { base := .r11, disp := 64 } (.hi .xmm29) 1) ==
+  some [[0x62, 0x43, 0xfd, 0x48, 0x3b, 0x6b, 0x02, 0x01]]
+#guard Instr.encode (.e5ExtractStore { base := .r11, disp := 8 } (.lo .xmm5) 0) ==
+  some [[0x62, 0xd3, 0xfd, 0x48, 0x3b, 0xab, 0x08, 0x00, 0x00, 0x00, 0x00]]
+
+#guard isa.requires (.e5op (.bin .vpaddq h20 h16 h17)) == ["avx512f"]
+#guard isa.requires (.e5op (.shift .vpsrlq h20 h16 52)) == ["avx512f"]
+#guard isa.requires (.e5op (.vpermq h20 h16 0)) == ["avx512f"]
+#guard isa.requires (.e5op (.vinserti64x4 h20 h16 h17 1)) == ["avx512f"]
+#guard isa.requires (.e5op (.vpmadd52 false h18 h16 h17)) == ["avx512ifma", "avx512f"]
+#guard isa.requires (.e5op (.vpmadd52 true h18 h16 h17)) == ["avx512ifma", "avx512f"]
+#guard isa.requires (.evBroadcastLoad h20 { base := .rdi }) == ["avx512f", "avx512vl"]
+#guard isa.requires (.e5InsertLoad h20 h16 { base := .rdi } 1) == ["avx512f"]
+#guard isa.requires (.e5ExtractStore { base := .rdi } h17 1) == ["avx512f"]
+-- Each memory form's address is observed.
+#guard addrs (.evBroadcastLoad h20 { base := .rdi, disp := 8 }) sE == [0x108]
+#guard addrs (.e5InsertLoad h20 h16 { base := .rdi, disp := 32 } 1) sE == [0x120]
+#guard addrs (.e5ExtractStore { base := .rdi, disp := 0x100 } h17 1) sE == [0x200]
+#guard addrs (.e5op (.vpmadd52 true h18 h16 h17)) sE == []
+
 end VG.Test.Avx512

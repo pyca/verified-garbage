@@ -49,10 +49,13 @@ theorem exec_unknowns_pres (i : Instr) (s : State) :
   case zop op => simp only [reduceExec]; rw [Taint.ZOp.exec_eq]; exact Pres.some' rfl
   case xop op => simp only [reduceExec]; rw [Taint.XOp.exec_eq]; exact Pres.some' rfl
   case eop op => simp only [reduceExec]; rw [Taint.EOp.exec_eq]; exact Pres.some' rfl
+  case e5op op => simp only [reduceExec]; rw [Taint.E5Op.exec_eq]; exact Pres.some' rfl
   case vmovdquLoad len _ _ | vmovdquStore len _ _ | vbinLoad _ len _ _ _ =>
     cases len <;> simp only [reduceExec, State.store128, State.store256] <;> uk_go
-  case evLoad d _ | evMadd52Load _ d _ _ =>
+  case evLoad d _ | evMadd52Load _ d _ _ | evBroadcastLoad d _ =>
     simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVy_eq]
+  case e5InsertLoad d _ _ _ =>
+    simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVz_eq]
   all_goals simp only [reduceExec, execAlu, execAluW, execAlu32, execShift32, execShift, execRorx32,
       execRorx, execShld, execBtr, execMulx, execAdcx, execAdox, execCmov, State.store64,
       State.store32, State.store8, State.store16, State.store128, State.store256, State.store512,
@@ -79,10 +82,13 @@ theorem exec_mem_pres (i : Instr) (s : State) (h : writesMem i = false) :
   case zop op => simp only [reduceExec]; rw [Taint.ZOp.exec_eq]; exact Pres.some' rfl
   case xop op => simp only [reduceExec]; rw [Taint.XOp.exec_eq]; exact Pres.some' rfl
   case eop op => simp only [reduceExec]; rw [Taint.EOp.exec_eq]; exact Pres.some' rfl
+  case e5op op => simp only [reduceExec]; rw [Taint.E5Op.exec_eq]; exact Pres.some' rfl
   case vmovdquLoad len _ _ | vbinLoad _ len _ _ _ => cases len <;> simp only [reduceExec] <;> uk_go
   case vmovdquStore len _ _ => cases len <;> simp at h
-  case evLoad d _ | evMadd52Load _ d _ _ =>
+  case evLoad d _ | evMadd52Load _ d _ _ | evBroadcastLoad d _ =>
     simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVy_eq]
+  case e5InsertLoad d _ _ _ =>
+    simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVz_eq]
   all_goals simp only [reduceExec, execAlu, execAluW, execAlu32, execShift32, execShift, execRorx32,
       execRorx, execShld, execBtr, execMulx, execAdcx, execAdox, execCmov]
   all_goals uk_go
