@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeRt.Copy
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Key
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Validate
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # A factor's `R² mod p` at a run-time width (x86)
 
@@ -389,6 +390,25 @@ theorem primeIn_ok (h : In Ex base bytes len args s) (c : Ctx) {p : Nat}
   have ew : w = Spec.Rsa.primeWords (w32 s.mem base lenOff) := rfl
   rw [show 2 * w + (cwc len c - 2 * w) = cwc len c by rw [ew]; omega_arith]
   exact V₃
+/-- `In`, after code that changes the registers `regs` and the memory only
+within `[P + y, P + y + n)` of a region `⟨P, L'⟩` apart from the stack
+arguments. -/
+theorem In.keepOut (h : In Ex base bytes len args s) {t : State} {regs : List Reg} (K : Keeps regs s t)
+    (di : .edi ∉ regs) (sp : .esp ∉ regs) {P : Addr} {y n L' : Nat} (O : Outside P y n s.mem t.mem)
+    (hyn : y + n ≤ L') (hPa : ∀ i < 18, Region.Disjoint ⟨VG.Proof.Dsa.X86.stackAddress s i, 4⟩ ⟨P, L'⟩) :
+    In Ex base bytes len args t := by
+  refine ⟨h.scratch.of_keeps K di sp, h.lower, h.upper, fun i hi => ⟨(h.stack i hi).stack.keep K sp, ?_⟩,
+    h.outLen, by rw [K.1 _ sp]; exact h.room, by rw [K.1 _ sp]; exact h.top, h.need, h.hbase, h.hbytes,
+    by rw [K.2.1, K.2.2]; exact h.extra⟩
+  rw [← (h.stack i hi).value]
+  unfold VG.Proof.Dsa.X86.stackValue
+  rw [show VG.Proof.Dsa.X86.stackAddress t i = VG.Proof.Dsa.X86.stackAddress s i by
+    simp only [VG.Proof.Dsa.X86.stackAddress, K.1 _ sp]]
+  apply Mem.readW_congr
+  intro j hj
+  exact PrecomputedRt.outside_apart O hyn fun hc =>
+    hPa i hi _ (Offset.contains_base _ (by omega) (by omega)) hc
+
 end
 
 end VG.Proof.Bignum.X86.PrivPre
