@@ -16,8 +16,7 @@ def aesNi : BlocksImpl :=
   { BlocksImpl.aesni with
     cfb8EncRes := some BlocksResidue.encAesni
     cfb8DecRes := some BlocksResidue.decAesni
-    ecbEncRes := some BlocksResidue.ecbAesni
-    ocbInitRes := some BlocksResidue.ocbAesni }
+    ecbEncRes := some BlocksResidue.ecbAesni }
 
 def scalar : BlocksImpl := .scalar
 
@@ -26,8 +25,7 @@ def vaes : BlocksImpl :=
   { BlocksImpl.vaes with
     cfb8EncRes := some BlocksResidue.encVaes
     cfb8DecRes := some BlocksResidue.decVaes
-    ecbEncRes := some BlocksResidue.ecbVaes
-    ocbInitRes := some BlocksResidue.ocbVaes }
+    ecbEncRes := some BlocksResidue.ecbVaes }
 
 /-- Every implementation, best first: each function generic over them is
 emitted with each (the registration files that import this), and its

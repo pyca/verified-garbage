@@ -5,9 +5,6 @@ public import VerifiedGarbage.Spec.Cfb8.Contract
 public import VerifiedGarbage.Impl.AesCfb8.X86_64
 public import VerifiedGarbage.Impl.Aes.X86_64.Callee
 public import VerifiedGarbage.Spec.AesEcb.Contract
-public import VerifiedGarbage.Spec.Ocb.Contract
-public import VerifiedGarbage.Impl.AesOcb.X86_64
-public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Lit
@@ -16,9 +13,6 @@ public meta import VerifiedGarbage.Spec.Cfb8.Contract
 public meta import VerifiedGarbage.Impl.AesCfb8.X86_64
 public meta import VerifiedGarbage.Impl.Aes.X86_64.Callee
 public meta import VerifiedGarbage.Spec.AesEcb.Contract
-public meta import VerifiedGarbage.Spec.Ocb.Contract
-public meta import VerifiedGarbage.Impl.AesOcb.X86_64
-public meta import VerifiedGarbage.Impl.StackScratch.X86_64
 meta import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 meta import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public meta import VerifiedGarbage.Proof.Framework.Lit
@@ -34,11 +28,10 @@ The functions generic over the implementations of `vg_aes_encrypt_blocks`
 and `vg_aes_decrypt_blocks` (`Aes.X86_64.BlocksImpl`) that the residue
 analysis handles over the AES-NI and VAES implementations, analysed for what
 they may leave of secrets (`X86_64.RScrub.Analysed`): AES-CFB8's
-`vg_aes_cfb8_encrypt` and `vg_aes_cfb8_decrypt`, `vg_aes_ecb_encrypt` (the
+`vg_aes_cfb8_encrypt` and `vg_aes_cfb8_decrypt`, and `vg_aes_ecb_encrypt` (the
 code of `vg_aes_encrypt_blocks` itself) and `vg_aes_ocb_init`.
 `Variants/AesBlocks/X86_64.lean` gives them to those implementations
-(`BlocksImpl.cfb8EncRes`, `BlocksImpl.cfb8DecRes`, `BlocksImpl.ecbEncRes`,
-`BlocksImpl.ocbInitRes`).
+(`BlocksImpl.cfb8EncRes`, `BlocksImpl.cfb8DecRes`, `BlocksImpl.ecbEncRes`).
 -/
 
 @[expose] public section
@@ -119,50 +112,5 @@ def ecbAesni : RScrub.Analysed Spec.AesEcb.encryptApi.sig 0 [] Blocks.encAesni.c
 
 /-- The analysis of `vg_aes_ecb_encrypt_vaes`. -/
 def ecbVaes : RScrub.Analysed Spec.AesEcb.encryptApi.sig 0 [] Blocks.encVaes.code := ⟨ecbVaesKs, ecbVaes_ok⟩
-
-/-! ## AES-OCB's key setup -/
-
-end VG.Proof.Aes.X86_64.BlocksResidue
-
-namespace VG.Impl.AesOcb.X86_64
-materialize_code initAesni := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx
-  (Impl.AesOcb.X86_64.init ⟨Impl.Aes.X86_64.Blocks.encAesni, Impl.Aes.X86_64.Blocks.decAesni,
-    Impl.Aes.X86_64.ExpandKey.aesni⟩)
-materialize_code initVaes := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx
-  (Impl.AesOcb.X86_64.init ⟨Impl.Aes.X86_64.Blocks.encVaes, Impl.Aes.X86_64.Blocks.decVaes,
-    Impl.Aes.X86_64.ExpandKey.aesni⟩)
-end VG.Impl.AesOcb.X86_64
-
-namespace VG.Proof.Aes.X86_64.BlocksResidue
-
-open VG.X86_64 VG.Impl.Aes.X86_64
-
-def ocbAesniKs : List Nat := keep_for% Spec.Ocb.initApi.sig 2576
-  (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesOcb.X86_64.init ⟨Blocks.encAesni, Blocks.decAesni, ExpandKey.aesni⟩)) []
-
-theorem ocbAesni_ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ocb.initApi.sig 2576 [])
-      (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesOcb.X86_64.init ⟨Blocks.encAesni, Blocks.decAesni, ExpandKey.aesni⟩)) h).any
-      (RScrub.resOkB · 2576 ocbAesniKs (Impl.Scrub.X86_64.chunks 2576)) = true :=
-  RScrub.Analysed.ok_of ocbAesniKs (by taint_decide)
-
-def ocbVaesKs : List Nat := keep_for% Spec.Ocb.initApi.sig 2576
-  (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesOcb.X86_64.init ⟨Blocks.encVaes, Blocks.decVaes, ExpandKey.aesni⟩)) []
-
-theorem ocbVaes_ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ocb.initApi.sig 2576 [])
-      (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesOcb.X86_64.init ⟨Blocks.encVaes, Blocks.decVaes, ExpandKey.aesni⟩)) h).any
-      (RScrub.resOkB · 2576 ocbVaesKs (Impl.Scrub.X86_64.chunks 2576)) = true :=
-  RScrub.Analysed.ok_of ocbVaesKs (by taint_decide)
-
-/-- The analysis of `vg_aes_ocb_init_aesni`. -/
-def ocbAesni : RScrub.Analysed Spec.Ocb.initApi.sig 2576 []
-    (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx
-      (Impl.AesOcb.X86_64.init ⟨Blocks.encAesni, Blocks.decAesni, ExpandKey.aesni⟩)) := ⟨ocbAesniKs, ocbAesni_ok⟩
-
-/-- The analysis of `vg_aes_ocb_init_vaes`. -/
-def ocbVaes : RScrub.Analysed Spec.Ocb.initApi.sig 2576 []
-    (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx
-      (Impl.AesOcb.X86_64.init ⟨Blocks.encVaes, Blocks.decVaes, ExpandKey.aesni⟩)) := ⟨ocbVaesKs, ocbVaes_ok⟩
 
 end VG.Proof.Aes.X86_64.BlocksResidue

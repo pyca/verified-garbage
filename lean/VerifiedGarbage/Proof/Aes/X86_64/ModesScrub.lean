@@ -1,28 +1,24 @@
 module
 
 public import VerifiedGarbage.Spec.Cfb8.Contract
-public import VerifiedGarbage.Spec.Ocb.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 public import VerifiedGarbage.Proof.AesCfb8.X86_64.Verified
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
-import VerifiedGarbage.Proof.Aes.X86_64.Scrub
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
-# AES-CFB8 and AES-OCB's key setup on x86-64, without secret residue
+# AES-CFB8 on x86-64, without secret residue
 
-`vg_aes_cfb8_encrypt`, `vg_aes_cfb8_decrypt` and `vg_aes_ocb_init` over an
-implementation of the AES block functions (`Aes.X86_64.BlocksImpl`), each
-followed by `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`) where the
+`vg_aes_cfb8_encrypt` and `vg_aes_cfb8_decrypt` over an implementation of the
+AES block functions (`Aes.X86_64.BlocksImpl`), each followed by
+`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`) where the
 implementation gives the residue analysis of the instance (`cfb8EncRes`,
-`cfb8DecRes`, `ocbInitRes`). Their postconditions read the memory on return
-only within the buffers (`X86_64.Scrub.PostOut`): the data and the input
-block, or the key context (for a key of the lengths the precondition allows).
+`cfb8DecRes`). Their postconditions read the memory on return only within the
+buffers (`X86_64.Scrub.PostOut`): the data and the input block.
 -/
 
 @[expose] public section
@@ -93,27 +89,6 @@ theorem cfb8DecryptOut (stack : Nat) :
       rw [bytesAt_of0 hb.2.2.1 (len_le1 ln), bytesAt_of0 (n := 16) hb.2.1 (Nat.le_refl _)]
       exact h key hk
 
-theorem ocbInitOut (stack : Nat) :
-    PostOut (Spec.Ocb.initContract X86_64.abi stack) (Spec.Ocb.initSig.retBits 64) :=
-  Scrub.postOut_of_local_pre fun vs m m₁ m₂ r hlen hpre hb h => by
-    match vs, hlen with
-    | [k, ln, ctx], _ =>
-      simp only [Spec.Ocb.initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-        forall_eq] at hb
-      change Spec.Ocb.KeyRepr m₁ ctx _ at h
-      change Spec.Ocb.KeyRepr m₂ ctx _
-      change _ ∨ _ at hpre
-      obtain ⟨h1, h2⟩ := h
-      refine ⟨?_, ?_⟩
-      · rw [bytesAt_of0 hb.2 ?_]
-        · exact h1
-        · simp only [Spec.Aes.bytesAt, List.length_map, List.length_range, Spec.Aes.rounds, Elem.size]
-          rcases hpre with h | h | h <;> rw [h] <;> decide
-      · simp only [Spec.Ocb.ctxLstar, Spec.Ocb.blockAtMem] at h2 ⊢
-        rw [show (240 : BitVec 64) = BitVec.ofNat 64 240 from rfl] at h2 ⊢
-        rw [bytesAt_of hb.2 (by decide)]
-        exact h2
-
 /-! ## The registrations -/
 
 open VG.X86_64.RScrub VG.Proof.Aes.X86_64
@@ -135,15 +110,5 @@ def cfb8DecryptReg (v : BlocksImpl) : Registration Spec.Cfb8.aesDecryptApi X86_6
     stack := 8
     verified := Proof.AesCfb8.decrypt_keyed (Proof.AesCfb8.X86_64.decrypt_verified v)
     spSafe := Proof.AesCfb8.X86_64.decrypt_spSafe v } (cfb8DecryptOut _) [] (pubOk_nil _) v.cfb8DecRes
-
-/-- `vg_aes_ocb_init` over `v`. -/
-def ocbInitReg (v : BlocksImpl) : Registration Spec.Ocb.initApi X86_64.target :=
-  withScrub {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesOcb.X86_64.init ⟨v.enc, v.dec, v.expand⟩)
-    stack := 2576
-    verified := Proof.AesOcb.X86_64.init_framed v
-    spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.AesOcb.X86_64.init_spSafe v) }
-    (ocbInitOut _) [] (pubOk_nil _) v.ocbInitRes
 
 end VG.Proof.Aes.X86_64.ModesScrub

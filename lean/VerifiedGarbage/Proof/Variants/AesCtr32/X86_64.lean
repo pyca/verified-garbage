@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86_64.Variant
-public import VerifiedGarbage.Proof.Aes.X86_64.Ctr32Residue
 
 /-! # The implementations of `AesCtr32` on x86-64 -/
 
@@ -9,23 +8,11 @@ public import VerifiedGarbage.Proof.Aes.X86_64.Ctr32Residue
 
 namespace VG.Proof.Variants.AesCtr32.X86_64
 
-open VG.Proof.Aes.X86_64
+def aesNi : Proof.Aes.X86_64.Ctr32Impl := .aesni
 
-/-- AES-NI, with the residue analyses of the functions over it. -/
-def aesNi : Ctr32Impl :=
-  { Ctr32Impl.aesni with
-    cmacFinishRes := some Ctr32Residue.finishAesni
-    gcmInitRes := some Ctr32Residue.gcmAesni }
+def scalar : Proof.Aes.X86_64.Ctr32Impl := .scalar
 
-/-- The baseline implementation, with the residue analyses of the functions
-over it. -/
-def scalar : Ctr32Impl := { Ctr32Impl.scalar with cmacFinishRes := some Ctr32Residue.finishScalar }
-
-/-- VAES, with the residue analyses of the functions over it. -/
-def vaes : Ctr32Impl :=
-  { Ctr32Impl.vaes with
-    cmacFinishRes := some Ctr32Residue.finishVaes
-    gcmInitRes := some Ctr32Residue.gcmVaes }
+def vaes : Proof.Aes.X86_64.Ctr32Impl := .vaes
 
 /-- Every implementation, best first: each function generic over them is
 emitted with each (the registration files that import this), and its

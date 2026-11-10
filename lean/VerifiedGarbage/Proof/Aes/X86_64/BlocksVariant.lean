@@ -5,10 +5,7 @@ public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Blocks
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Spec.Cfb8.Contract
 public import VerifiedGarbage.Spec.AesEcb.Contract
-public import VerifiedGarbage.Spec.Ocb.Contract
 public import VerifiedGarbage.Impl.AesCfb8.X86_64
-public import VerifiedGarbage.Impl.AesOcb.X86_64
-public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
@@ -30,9 +27,8 @@ and make no calls. Each states how much of `scratch` its functions may write
 that goes with them (with the same suffix and CPU features), for the callers
 that also expand the key, proven against `Proof.Aes.expandKeyX86_64`.
 An implementation also gives the residue analyses of the functions over it
-that the analysis handles (`cfb8EncRes`, `cfb8DecRes`, `ecbEncRes`,
-`ocbInitRes`): those instances then return without secret residue
-(`X86_64.RScrub.withScrub`).
+that the analysis handles (`cfb8EncRes`, `cfb8DecRes`, `ecbEncRes`): those
+instances then return without secret residue (`X86_64.RScrub.withScrub`).
 -/
 
 @[expose] public section
@@ -106,10 +102,6 @@ structure BlocksImpl where
   /-- The residue analysis of `vg_aes_ecb_encrypt` as its `enc` alone, if
   the analysis handles it. -/
   ecbEncRes : Option (RScrub.Analysed Spec.AesEcb.encryptApi.sig 0 [] enc.code) := none
-  /-- The residue analysis of `vg_aes_ocb_init` over it, if the analysis
-  handles it. -/
-  ocbInitRes : Option (RScrub.Analysed Spec.Ocb.initApi.sig 2576 []
-    (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesOcb.X86_64.init ⟨enc, dec, expand⟩))) := none
 
 namespace BlocksImpl
 

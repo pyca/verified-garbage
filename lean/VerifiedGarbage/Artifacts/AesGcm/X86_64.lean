@@ -10,7 +10,6 @@ public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.AesCtr32.X86_64
 public import VerifiedGarbage.Proof.Variants.Ghash.X86_64
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareScrub
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Scrub
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
@@ -68,7 +67,16 @@ open VG.Proof.Aes.X86_64 (Ctr32Impl)
 /-- The artifacts calling the implementation `c` of `vg_aes_ctr32`, with the
 key expansion for the same CPUs, and no GHASH. -/
 def artifacts (c : Ctr32Impl) : List Artifact :=
-  [Spec.Gcm.initApi.artifact X86_64.target (Proof.AesGcm.X86_64.Scrub.initReg c)]
+  let v : GcmImpl :=
+    { ctr := c, key := if c.features.isEmpty then KeyImpl.scalar else KeyImpl.aesni,
+      gh := GhashName.scalar.impl }
+  [
+  Spec.Gcm.initApi.artifact X86_64.target {
+    suffix := c.suffix
+    code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.init v.callees)
+    stack := 2576
+    verified := init_framed v
+    spSafe := X86_64.withStackScratch_spSafe_of (init_spSafe v) }]
 
 end VG.Artifacts.AesGcm.X86_64.AesCtr32
 
