@@ -103,6 +103,10 @@ theorem ofs_lt_of_sub {B x : Addr} {o n Z : Nat} (ho : o + n ≤ Z) (hZ : B.toNa
   generalize ofs (off B o) x = m at hx e
   rw [e, ofs_off B (by omega)]; omega
 
+theorem times8 (r : BitVec 64) {L : Nat} (h : r = BitVec.ofNat 64 L) :
+    r + r + (r + r) + (r + r + (r + r)) = BitVec.ofNat 64 (L * 8) := by
+  subst h; simp only [BitVec.ofNat_add_ofNat]; congr 1; omega
+
 theorem off_add_ofNat (D : Addr) (e a : Nat) : off D e + BitVec.ofNat 64 a = off D (e + a) := by
   simp only [off, BitVec.add_assoc, BitVec.ofNat_add]
 
@@ -136,8 +140,8 @@ theorem outArr_ok {s : State} {X D : Addr} {Zx wx eD : Nat} {mx v : BitVec 64} {
   have hbx₂ : s₂.gpr .rbx = off D eD := ((k₁.trans k₂).gpr (by decide)).trans hbx
   refine WP.mono (WP.keep [.rax, .rbx] (Q := fun t => t.gpr .rbx = off D (eD + 8 * wx) ∧ t.mem = s₂.mem)
     (by
-      xrun [eightW, List.cons_append, List.nil_append, h12₂, hbx₂, eight_w _ h12₂, off_add_ofNat]
-      rw [eight_w _ rfl, off_add_ofNat]; congr 2; omega) rfl) fun t ⟨⟨hbx', hm⟩, k₃⟩ => ?_
+      xrun [eightW, List.cons_append, List.nil_append, h12₂, hbx₂, times8 _ h12₂, off_add_ofNat]
+      rw [times8 _ rfl, off_add_ofNat]; congr 2; omega) rfl) fun t ⟨⟨hbx', hm⟩, k₃⟩ => ?_
   refine ⟨fun i hi => by rw [hm, hd₂ i hi, hm₁], by rw [hm, ← hm₁]; exact ho₂, hbx',
     ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 

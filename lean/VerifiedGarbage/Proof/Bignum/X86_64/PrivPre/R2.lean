@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.PrivPre.Head
+public import VerifiedGarbage.Impl.Rsa.X86_64.PrivPre
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks

@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.PrivPre.Out
+public import VerifiedGarbage.Proof.Bignum.X86_64.PrivPre.Head
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
-import VerifiedGarbage.Proof.Bignum.X86_64.PrivPre.Post
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
 import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
 import VerifiedGarbage.Proof.Bignum.X86_64.Valid
@@ -14,6 +14,9 @@ import VerifiedGarbage.Proof.Bignum.CrtResult
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # `vg_rsa_private_precompute` on x86-64: correctness
@@ -22,7 +25,8 @@ From a state `ppContract` allows, `PrivPre.code` writes `privatePrecompute`
 of `n`, `p` and `q` to `pre` and returns whether it is `some`
 (`code_correct`): on an invalid modulus `fail` writes zeros to its first
 `k` bytes of the zeros `zeroPre` wrote; otherwise the mask is that of
-`p q = n`, and `pre`'s words those `out` writes (`wordsAt_out`).
+`p q = n`, and `pre`'s words those `out` writes, from its four parts, each
+word and-ed with the mask (`wordsAt_out`).
 -/
 
 @[expose] public section
@@ -32,7 +36,51 @@ namespace VG.Proof.Bignum.X86_64.PrivPre
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64
 open VG.Impl.Rsa.X86_64.Crt VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
+theorem wordsAt_append (m : Mem) (p : Addr) (a b : Nat) :
+    Spec.Rsa.wordsAt m p (a + b) =
+      Spec.Rsa.wordsAt m p a ++ Spec.Rsa.wordsAt m (p + BitVec.ofNat 64 (8 * a)) b := by
+  rw [Spec.Rsa.wordsAt, Spec.Rsa.wordsAt, Spec.Rsa.wordsAt, List.range_add, List.map_append, List.map_map]
+  refine congrArg _ (List.map_congr_left fun i _ => ?_)
+  simp only [Function.comp_apply]
+  rw [Offset.add_add, Nat.mul_add]
 
+/-- A part of `pre`, word by word. -/
+theorem seg_eq {m : Mem} {D : Addr} {e n : Nat} {f : Nat → BitVec 64}
+    (h : ∀ i < n, word m D (e + 8 * i) = f i) :
+    Spec.Rsa.wordsAt m (D + BitVec.ofNat 64 e) n = (List.range n).map f := by
+  refine List.map_congr_left fun i hi => ?_
+  rw [Offset.add_add]
+  exact h i (List.mem_range.mp hi)
+
+theorem and_mask (x : BitVec 64) (c : Bool) : x &&& mask c = if c then x else 0 := by
+  cases c
+  · simp [mask_false]
+  · rw [mask_true, BitVec.and_allOnes]; rfl
+
+/-- `pre`'s words, from its four parts. -/
+theorem wordsAt_out {m : Mem} {D : Addr} {w wp wq : Nat} {M : Bool} {VN VR VP VQ : Nat}
+    (hN : ∀ i < w, word m D (8 * i) = BitVec.ofNat 64 (VN / 2 ^ (64 * i)) &&& mask M)
+    (hR : ∀ i < w, word m D (8 * w + 8 * i) = BitVec.ofNat 64 (VR / 2 ^ (64 * i)) &&& mask M)
+    (hP : ∀ i < wp, word m D (16 * w + 8 * i) = BitVec.ofNat 64 (VP / 2 ^ (64 * i)) &&& mask M)
+    (hQ : ∀ i < wq, word m D (16 * w + 8 * wp + 8 * i) = BitVec.ofNat 64 (VQ / 2 ^ (64 * i)) &&& mask M) :
+    Spec.Rsa.wordsAt m D (2 * w + wp + wq) = if M then
+      Spec.Rsa.toWords VN w ++ Spec.Rsa.toWords VR w ++ Spec.Rsa.toWords VP wp ++ Spec.Rsa.toWords VQ wq
+    else List.replicate (2 * w + wp + wq) 0 := by
+  rw [show 2 * w + wp + wq = w + w + wp + wq by omega, wordsAt_append, wordsAt_append, wordsAt_append]
+  have h0 : Spec.Rsa.wordsAt m D w = (List.range w).map fun i => BitVec.ofNat 64 (VN / 2 ^ (64 * i)) &&& mask M := by
+    have := seg_eq (m := m) (D := D) (e := 0) (n := w) (f := fun i => BitVec.ofNat 64 (VN / 2 ^ (64 * i)) &&& mask M)
+      (fun i hi => by rw [Nat.zero_add]; exact hN i hi)
+    simpa using this
+  have eP : 8 * (w + w) = 16 * w := by omega
+  have eQ : 8 * (w + w + wp) = 16 * w + 8 * wp := by omega
+  rw [eP, eQ]
+  rw [h0, seg_eq (f := fun i => BitVec.ofNat 64 (VR / 2 ^ (64 * i)) &&& mask M) hR,
+    seg_eq (f := fun i => BitVec.ofNat 64 (VP / 2 ^ (64 * i)) &&& mask M) hP,
+    seg_eq (f := fun i => BitVec.ofNat 64 (VQ / 2 ^ (64 * i)) &&& mask M) hQ]
+  cases M
+  · simp only [and_mask, Bool.false_eq_true, ↓reduceIte, List.map_const', List.length_range,
+      List.replicate_append_replicate]
+  · simp only [and_mask, ↓reduceIte, Spec.Rsa.toWords]
 theorem os2ip_replicate_zero (n : Nat) : Spec.Rsa.os2ip (List.replicate n 0) = 0 := by
   unfold Spec.Rsa.os2ip
   induction n with
@@ -225,5 +273,4 @@ theorem code_correct (M : Mont) (hmx : (PrivPre.code M.mm).allInstrs (fun i => !
     ∃ t s', Exec isa (PrivPre.code M.mm) s t s' ∧ abiPreserved s s' ∧ ppContract.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := code_wp M (ppCtx_of h)
   exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hp⟩
-
 end VG.Proof.Bignum.X86_64.PrivPre

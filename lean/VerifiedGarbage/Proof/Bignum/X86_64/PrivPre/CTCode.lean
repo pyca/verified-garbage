@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.PrivPre.CTMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.PrivPre.Correct
+public import VerifiedGarbage.Proof.Bignum.X86_64.PrivPre.Head
 import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PrivPre.CTMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PrivPre.Correct
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PrivPre.Head
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
 meta import VerifiedGarbage.Proof.Bignum.Octets
