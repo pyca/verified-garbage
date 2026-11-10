@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Prime
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Validate
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Key
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -281,6 +282,39 @@ theorem primesBody_ok (h : RIn base bytes len args s) {L' : Nat}
   have eW : W = Spec.Rsa.modulusWords len := rfl
   have h₄ := in_keepFOut h₃ K₄ (by decide) (by decide) F₄ (primeR2_fit h₃) (L' := L') O₄ (by rw [eW]; omega)
     fun i hi => by rw [sa₃]; exact hPa i hi
+  have sp₄ : u₄.gpr .esp = s.gpr .esp := by rw [K₄.1 _ (by decide), sp₃]
+  rw [sp₃] at F₄
+  -- What the factor `p`'s step keeps: the slots from the wide slot 9 on, the word at `accOff`, and `pre`
+  -- outside its values.
+  have F₄w : ∀ {d k}, lo len (.slot .wide 9) ≤ d → d + 4 * k ≤ bytes → val32 u₄.mem base d k = val32 u₃.mem base d k :=
+    fun hd hk => by
+      rw [PrecomputedRt.val32_apart (base := byteAddr (args 0)) (P := base) (L := bytes) O₄ (by rw [eW]; omega)
+        hap.symm hk]
+      exact frameR_val32 F₄ h.room nw hk (fun q hq => .inr (Nat.le_trans (primeR2_below h₃ q hq).1 hd)) (primeR2_fit h₃)
+  have A₄ : w32 u₄.mem base accOff = w32 u₃.mem base accOff := by
+    rw [← w32_val32_one, ← w32_val32_one,
+      PrecomputedRt.val32_apart (base := byteAddr (args 0)) (P := base) (L := bytes) O₄ (by rw [eW]; omega)
+        hap.symm (by simp only [accOff]; omega_arith)]
+    exact frameR_val32 F₄ h.room nw (by simp only [accOff]; omega_arith)
+      (fun q hq => by have := (primeR2_below h₃ q hq).2; simpa using this) (primeR2_fit h₃)
+  have P₄ : ∀ {d k}, d + 4 * k ≤ 16 * W → val32 u₄.mem (byteAddr (args 0)) d k = val32 u₃.mem (byteAddr (args 0)) d k :=
+    fun hd => by
+      rw [VG.Proof.Mont.Outside.val32 O₄ (.inl hd) (by omega)]
+      exact val32_frameR_apart F₄ (primeR2_fit h₃) hap hs L64 (by omega)
+  -- The second factor's length.
+  unfold setLen
+  refine WP.seq (wp_movS (h₄.arg (i := 9) (by decide)) fun v₁ b₁ _ => ?_)
+  have hv₁ := h₄.regs b₁.keeps b₁.mem
+  refine wp_storeS (hv₁.scratch.ea (d := lenOff) (by simp only [lenOff]; omega_arith))
+    (hv₁.scratch.write (d := lenOff) (by simp only [lenOff]; omega_arith)) fun u₅ s₅ => WP.block_nil ?_
+  have m₅ : u₅.mem = u₄.mem.writeW (off base lenOff) (args 9) := by rw [s₅.mem, b₁.mem, b₁.gpr]
+  have O₅ : VG.Proof.Mont.Outside base lenOff 4 u₄.mem u₅.mem := by
+    rw [m₅]; exact writeW32_outside _ _ _ (by simp only [lenOff]; omega_arith)
+  have h₅ := hv₁.keep (s₅.keeps []) (by decide) (by decide)
+    (by rw [b₁.mem]; exact O₅.mono (Nat.zero_le _) (by simp only [lenOff]; omega_arith))
+  have K₅ : Keeps [.eax] u₄ u₅ := b₁.keeps.trans ((s₅.keeps []).mono (by decide))
+  have sp₅ : u₅.gpr .esp = s.gpr .esp := by rw [K₅.1 _ (by decide), sp₄]
+  have hw20 : ∀ d, d + 4 ≤ 20 → d + 4 ≤ bytes := fun d hd => by omega_arith
   sorry
 
 
