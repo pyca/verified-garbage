@@ -401,7 +401,7 @@ theorem ex_rel : RelCT isa (Two X0) exchange fun _ _ => True := by
     unfold exPower exOut
     exact RelCT.seq (RelCT.seq (two_post (two_taint _ (pins_XB (Φ := fun x s => X4 x s ∧ s.gpr .r0 = 0)
         fun _ _ h => h.1.1) (by taint_decide)) fun _ _ h => T5 h)
-      (two_post (two_taint _ pins_X5 (by taint_decide)) fun _ _ h => h.2))
+      (two_post (two_taintR _ pins_X5 (by taint_decide_rel)) fun _ _ h => h.2))
       (RelCT.seq (two_post (two_taint _ pins_X6 (by taint_decide)) fun _ _ h => h.2)
         (two_post (two_taint _ pins_X7 (by taint_decide)) fun _ _ h => h.2))
 

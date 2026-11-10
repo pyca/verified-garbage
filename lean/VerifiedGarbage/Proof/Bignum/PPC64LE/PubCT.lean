@@ -126,7 +126,7 @@ theorem prep_rel : RelCT isa (Two MidE) prep (Two Pw) := by
 
 theorem fn_rel : RelCT isa (Two C0) publicChecked fun _ _ => True := by
   unfold publicChecked
-  exact RelCT.seq front_rel (RelCT.seq prep_rel (two_taint _ pins_Pw (by taint_decide)))
+  exact RelCT.seq front_rel (RelCT.seq prep_rel (two_taintR _ pins_Pw (by taint_decide_rel)))
 
 /-- Equal public data give equal bytes of `e`. -/
 theorem e_eq {s t : State} {n : Nat} {p q : Addr} {a b : Addr} {l : Nat}

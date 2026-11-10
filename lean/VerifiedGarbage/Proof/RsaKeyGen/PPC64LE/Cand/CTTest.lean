@@ -306,7 +306,7 @@ theorem test_ct {trial : Prog isa} (D : DivOk trial) (R : RoundImpl) :
     fun a s ⟨s0, g, h⟩ => WP.mono (argsS h) fun t ht => ⟨s0, g, ht⟩)
     (RelCT.seq (two_post (Ψ := TB) (trialDiv_ct D) fun a s ⟨s0, g, h⟩ => WP.mono (trialS D h) fun t ht => ⟨s0, g, ht⟩)
       (two_ite comp_eval (two_taint _ (pins_and pins_TB) (by taint_decide))
-        (RelCT.seq (two_post (Ψ := L3) (two_taint _ (pins_and pins_TB) (by taint_decide))
+        (RelCT.seq (two_post (Ψ := L3) (two_taintR _ (pins_and pins_TB) (by taint_decide_rel))
           fun a s ⟨⟨s0, g, h⟩, ev⟩ => ?_)
           (RelCT.seq (two_post (Ψ := TR) (mr_ct R) fun a s ⟨s0, C⟩ =>
             WP.mono (mrStage R C.t3) fun t ht => ⟨s0, ⟨s, C⟩, ht⟩) result_ct))))

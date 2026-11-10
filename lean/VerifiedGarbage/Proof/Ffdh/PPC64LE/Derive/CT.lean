@@ -47,7 +47,7 @@ open VG VG.PPC64LE VG.PPC64LE.Taint VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Pro
 open VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.Domain VG.Impl.Ffdh.PPC64LE.Derive
 open VG.Proof.Ffdh.PPC64LE.Domain
 open VG.Proof.Bignum (slot)
-open VG.Proof.Bignum.PPC64LE (Two Pins two_post two_taint)
+open VG.Proof.Bignum.PPC64LE (Two Pins two_post two_taint two_taintR)
 
 /-- The public data of a run: the exchange's, the bound on x, and whether x
 is within it. -/
@@ -395,7 +395,7 @@ theorem dpBody_rel : RelCT isa (Two fun (d : DD) s => Z4 d s ∧ s.gpr .r0 = 0) 
         fun _ _ h => h.1.1) (by taint_decide)) fun _ _ h => TG1 h)
       (RelCT.seq (RelCT.seq (two_post (two_taint _ (pins_xb (Φ := G2) fun _ _ h => h.1) (by taint_decide))
           fun _ _ h => TG2 h)
-        (two_post (two_taint _ (pins_x pins_X5) (by taint_decide)) fun _ _ h => h.2))
+        (two_post (two_taintR _ (pins_x pins_X5) (by taint_decide_rel)) fun _ _ h => h.2))
         (RelCT.seq (RelCT.seq (two_post (two_taint _ (pins_x pins_X6) (by taint_decide)) fun _ _ h => h.2)
             (two_post (two_taint _ (pins_x pins_X7) (by taint_decide)) fun _ _ h => h.2))
           (two_post (two_taint _ pins_ZCF (by taint_decide)) fun _ _ h => TSt h)))

@@ -43,16 +43,16 @@ theorem fn_rel : RelCT isa (Two C0) crt fun _ _ => True := by
   refine chain_cons crt_run (m := 37) (by decide) (two_taint _ pins29 (by taint_decide)) ?_
   refine chain_cons crt_run (m := 45) (by decide) (two_taint _ pins37 (by taint_decide)) ?_
   refine chain_cons crt_run (m := 46) (by decide) (two_taint _ pins45 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 91) (by decide) (two_taint _ pins46 (by taint_decide)) ?_
+  refine chain_cons crt_run (m := 91) (by decide) (two_taintR _ pins46 (by taint_decide_rel)) ?_
   refine chain_cons crt_run (m := 100) (by decide) (two_taint _ pins91 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 124) (by decide) (two_taint _ pins100 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 148) (by decide) (two_taint _ pins124 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 172) (by decide) (two_taint _ pins148 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 195) (by decide) (two_taint _ pins172 (by taint_decide)) ?_
+  refine chain_cons crt_run (m := 124) (by decide) (two_taintR _ pins100 (by taint_decide_rel)) ?_
+  refine chain_cons crt_run (m := 148) (by decide) (two_taintR _ pins124 (by taint_decide_rel)) ?_
+  refine chain_cons crt_run (m := 172) (by decide) (two_taintR _ pins148 (by taint_decide_rel)) ?_
+  refine chain_cons crt_run (m := 195) (by decide) (two_taintR _ pins172 (by taint_decide_rel)) ?_
   refine chain_cons crt_run (m := 198) (by decide) (two_taint _ pins195 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 233) (by decide) (two_taint _ pins198 (by taint_decide)) ?_
+  refine chain_cons crt_run (m := 233) (by decide) (two_taintR _ pins198 (by taint_decide_rel)) ?_
   refine chain_cons crt_run (m := 239) (by decide) (two_taint _ pins233 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 252) (by decide) (two_taint _ pins239 (by taint_decide)) ?_
+  refine chain_cons crt_run (m := 252) (by decide) (two_taintR _ pins239 (by taint_decide_rel)) ?_
   exact two_taint _ pins252 (by taint_decide)
 
 theorem fn_ct : ConstantTime isa fnContract.pre fnContract.pub crt :=

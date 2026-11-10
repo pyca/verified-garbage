@@ -95,7 +95,7 @@ theorem dentry_rel : RelCT isa (Two DC0) (.block Derive.entry) (Two S0) :=
   two_post (two_taint _ pins_DC0 (by taint_decide)) fun _ _ h => dfront_S0 h
 
 theorem dbody_rel : RelCT isa (Two fun v s => K8 v s ∧ True) Derive.body (Two End) :=
-  rel_end (two_taint _ (pins_and (pins_PP _)) (by taint_decide)) (fun _ _ h => h.1.1.regs.r21)
+  rel_end (two_taintR _ (pins_and (pins_PP _)) (by taint_decide_rel)) (fun _ _ h => h.1.1.regs.r21)
     (by rw [← Code.allInstrs_eq]; decide +kernel)
 
 /-- `out` and its length, to zero it. -/

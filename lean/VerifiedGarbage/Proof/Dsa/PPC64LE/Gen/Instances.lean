@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Backend
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Verified
 import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Framework.TaintRel
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Verified
 
 /-! # DSA parameter generation on PPC64LE: the three geometries
@@ -107,9 +108,9 @@ def geo1 (v : RoundImpl) (ck : Prog isa) : Geo := geo 128 20 sha1 v ck
 def geo2 (v : RoundImpl) (ck : Prog isa) : Geo := geo 256 32 sha256 v ck
 def geo3 (v : RoundImpl) (ck : Prog isa) : Geo := geo 384 32 sha256 v ck
 
-theorem cert1 : CertC 128 20 := ⟨_, by taint_decide⟩
-theorem cert2 : CertC 256 32 := ⟨_, by taint_decide⟩
-theorem cert3 : CertC 384 32 := ⟨_, by taint_decide⟩
+theorem cert1 : CertC 128 20 := ⟨_, by taint_decide_rel, by rfl⟩
+theorem cert2 : CertC 256 32 := ⟨_, by taint_decide_rel, by rfl⟩
+theorem cert3 : CertC 384 32 := ⟨_, by taint_decide_rel, by rfl⟩
 
 def geoOk1 (v : RoundImpl) {ck : Prog isa} (hck : CheckOk ck) : GeoOk (geo1 v ck) 128 20 where
   HO := sha1Ok

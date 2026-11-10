@@ -134,7 +134,7 @@ def mrOf (d : TD) : MrD :=
 
 theorem testCore_ct (R : RoundImpl) :
     RelCT isa (Two TC) (.seq montPrep (millerRabin R.name R.code)) (Two ME) :=
-  RelCT.seq (two_post (two_taint _ pins_TC (by taint_decide)) (Ψ := fun d => MI0 (mrOf d)) fun _ _ ⟨sv, toc, h⟩ =>
+  RelCT.seq (two_post (two_taintR _ pins_TC (by taint_decide_rel)) (Ψ := fun d => MI0 (mrOf d)) fun _ _ ⟨sv, toc, h⟩ =>
       WP.mono (montPrep_mst h.st h.ph h.mb1 h.mb2 h.n h.odd h.n3) fun _ ⟨M, _, h152⟩ =>
         ⟨⟨sv, toc, M, h152.trans h.used⟩, h.ul, rfl, rfl, h.bl⟩)
     (two_map mrOf (fun _ _ h => h) (millerRabin_ct R))

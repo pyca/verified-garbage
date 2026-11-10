@@ -50,7 +50,7 @@ open VG.Proof.Ffdh.KeyScalar (cut)
 open VG.Proof.MillerRabin.PPC64LE (Env arr)
 open VG.Proof.Bignum (slot)
 open VG.Proof.Bignum.PPC64LE.Win (mask)
-open VG.Proof.Bignum.PPC64LE (Two Pins two_post two_taint)
+open VG.Proof.Bignum.PPC64LE (Two Pins two_post two_taint two_taintR)
 open VG.Proof.Ffdh.PPC64LE.ParameterCandidate (two_ite')
 
 section
@@ -513,7 +513,7 @@ theorem ite_rel : RelCT isa (Two XIc) (.ite (.zero .d .r26) Derive.dpBad good) (
     exact RelCT.seq (R := Two GD2) (RelCT.seq (R := Two GD1)
         (two_post (two_taint _ (pins_XIc fun _ _ h => h.1) (by taint_decide)) fun _ _ ⟨h, _⟩ =>
           good_ok h)
-        (two_post (two_taint _ pins_GD1 (by taint_decide)) fun _ _ h => h.2))
+        (two_post (two_taintR _ pins_GD1 (by taint_decide_rel)) fun _ _ h => h.2))
       (RelCT.seq (R := Two fun (q : CG) s => FinB q Derive.status s) (RelCT.seq (R := Two GD3)
           (two_post (two_taint _ (pins_X6p fun _ _ h => h.1) (by taint_decide)) fun _ _ h => h.2)
           (two_post (two_taint _ (pins_X7p fun _ _ h => h.1) (by taint_decide)) fun _ _ h => h.2))
