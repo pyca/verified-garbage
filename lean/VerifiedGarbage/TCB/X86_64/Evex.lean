@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86_64.Avx512
 
 /-!
-# x86-64 EVEX-encoded instructions on 256-bit registers, `ymm0`–`ymm31`
+# x86-64 EVEX-encoded instructions on `ymm0`–`ymm31` and `zmm0`–`zmm31`
 
 **Trusted.** The EVEX-encoded instructions of the x86-64 model in
 `TCB/X86_64/Isa.lean` whose operands are 256-bit (`ymm`) vector registers,
@@ -21,6 +21,10 @@ Bits 511:256 of `zmm16`–`zmm31` are held in `zmmHiH`: these instructions zero
 them. For `xmm0`–`xmm15` the state's
 `xmm`, `ymmHi` and `zmmHi` hold the register, as for the VEX-encoded
 instructions (`State.setV`), whose results these EVEX forms compute.
+
+The last section has `EVEX.512` forms (`E5Op`), likewise unmasked, of all
+thirty-two `zmm` registers: they write all 512 bits of their destination
+(`State.setVz`).
 -/
 
 @[expose] public section
@@ -172,5 +176,96 @@ def EOp.exec : EOp → State → State
     s.setVy d (ternlog (lane256 dv 1) (lane256 av 1) (lane256 bv 1) n ++
       ternlog (lane256 dv 0) (lane256 av 0) (lane256 bv 0) n)
   | .vprorq d a n, s => s.setVy d (lanes256 (fun x _ => rorQwords x n) (s.vy a) (s.vy a))
+
+/-! ## `EVEX.512` forms, on `zmm0`–`zmm31`
+
+The forms with 512-bit operands (`EVEX.L'L = 10`) of instructions above, and
+`vinserti64x4`, of all thirty-two registers (`VReg`), unmasked and without
+embedded broadcast: each writes all 512 bits of its destination. -/
+
+namespace State
+
+/-- Lane `i` (bits `128i+127:128i`, `i` from 0 to 3) of `zmm` register `r`,
+of all thirty-two. -/
+def vz (s : State) : VReg → Nat → BitVec 128
+  | .lo r, i => s.zlane r i
+  | .hi r, i => s.zlaneH r i
+
+/-- Write the four lanes of the destination of an unmasked `EVEX.512`
+instruction, of all thirty-two registers (`setZ`, `setZH`). -/
+def setVz (s : State) (r : VReg) (l0 l1 l2 l3 : BitVec 128) : State :=
+  match r with
+  | .lo r => s.setZ r l0 l1 l2 l3
+  | .hi r => s.setZH r l0 l1 l2 l3
+
+end State
+
+/-- SDM Vol. 2, "VINSERTI128/VINSERTI32x4/VINSERTI64x2/VINSERTI32x8/
+VINSERTI64x4—Insert Packed Integer Values", "VINSERTI64x4 (EVEX.512 Encoded
+Version)", no write mask: `TEMP_DEST[VL-1:0] := SRC1[VL-1:0]; CASE (imm8[0])
+OF 0: TMP_DEST[255:0] := SRC2[255:0]; 1: TMP_DEST[511:256] := SRC2[255:0];
+ESAC`, and `DEST` is `TMP_DEST`. Here `a i` is lane `i` of `SRC1`, `b` the
+256 bits of `SRC2` (`ymm3/m256`), and the result is lane `j` of `DEST`. -/
+def insert64x4 (a : Nat → BitVec 128) (b : BitVec 256) (imm : BitVec 8) (j : Nat) : BitVec 128 :=
+  if imm.getLsbD 0 then (if j < 2 then a j else lane256 b (j - 2))
+  else (if j < 2 then lane256 b j else a j)
+
+/-- EVEX-encoded instructions with 512-bit operands (for `vinserti64x4`, a
+256-bit second source) that write only a vector register. -/
+inductive E5Op
+  /-- `vop zmm1, zmm2, zmm3`: `vpaddq` (`EVEX.512.66.0F.W1 D4 /r`), `vpxorq`
+  (`EF /r`), `vpandq` (`DB /r`) or `vporq` (`EB /r`) -/
+  | bin (op : EBinOp) (dst src1 src2 : VReg)
+  /-- `vpsllq zmm1, zmm2, imm8` (`EVEX.512.66.0F.W1 73 /6 ib`) or `vpsrlq
+  zmm1, zmm2, imm8` (`EVEX.512.66.0F.W1 73 /2 ib`) -/
+  | shift (op : ZShiftOp) (dst src : VReg) (count : BitVec 8)
+  /-- `vpermq zmm1, zmm2, imm8` (`EVEX.512.66.0F3A.W1 00 /r ib`) -/
+  | vpermq (dst src : VReg) (order : BitVec 8)
+  /-- `vpmadd52luq zmm1, zmm2, zmm3` (`EVEX.512.66.0F38.W1 B4 /r`), or with
+  `hi` `vpmadd52huq zmm1, zmm2, zmm3` (`EVEX.512.66.0F38.W1 B5 /r`) -/
+  | vpmadd52 (hi : Bool) (dst src1 src2 : VReg)
+  /-- `vinserti64x4 zmm1, zmm2, ymm3, imm8` (`EVEX.512.66.0F3A.W1 3A /r ib`) -/
+  | vinserti64x4 (dst src1 src2 : VReg) (imm : BitVec 8)
+  deriving DecidableEq, Repr
+
+/-- Semantics of the `EVEX.512` instructions on registers: what `ZOp.exec`
+gives the forms it has for `zmm0`–`zmm15`, of all thirty-two registers. SDM
+Vol. 2 (no flags are affected, there is no write mask, and all of
+`DEST[511:0]` is written):
+
+* `bin`: `EBinOp.sse` on each lane: the "EVEX encoded versions" pseudocode
+  of "PADDB/PADDW/PADDD/PADDQ", "PXOR", "PAND" and "POR" with `(KL, VL) =
+  (8, 512)` and a register `SRC2`, `DEST[i+63:i] := SRC1[i+63:i] op
+  SRC2[i+63:i]` for each of the eight quadwords.
+* `shift`: "PSLLW/PSLLD/PSLLQ" and "PSRLW/PSRLD/PSRLQ", "VPSLLQ (EVEX
+  versions, imm8)" and "VPSRLQ (EVEX versions, imm8)" with `(KL, VL) = (8,
+  512)` and a register source: each quadword shifted by `imm8` (a count above
+  63 gives zero), which on each lane is what PSLLQ and PSRLQ compute
+  (`ZShiftOp.sse`).
+* `vpermq`: "VPERMQ—Qwords Element Permutation", "VPERMQ (EVEX - imm8 control
+  forms)" with `VL = 512` (quoted at `ZOp.exec`): each 256-bit half of `DEST`
+  is the same half of `SRC` permuted as the VEX.256 form permutes a register
+  (`permQwords`).
+* `vpmadd52`: "VPMADD52LUQ" and "VPMADD52HUQ" with `(KL, VL) = (8, 512)` and a
+  register `SRC3` (quoted at `ZOp.exec`): `madd52` on each lane.
+* `vinserti64x4`: `insert64x4`, with `SRC2` the 256 bits of `ymm3`. -/
+def E5Op.exec : E5Op → State → State
+  | .bin op d a b, s =>
+    let f (i : Nat) := op.sse.eval (s.vz a i) (s.vz b i)
+    s.setVz d (f 0) (f 1) (f 2) (f 3)
+  | .shift op d r n, s =>
+    let f (i : Nat) := op.sse.eval (s.vz r i) n
+    s.setVz d (f 0) (f 1) (f 2) (f 3)
+  | .vpermq d r o, s =>
+    let lo := permQwords (s.vz r 1 ++ s.vz r 0) o
+    let hi := permQwords (s.vz r 3 ++ s.vz r 2) o
+    s.setVz d (lo.extractLsb' 0 128) (lo.extractLsb' 128 128) (hi.extractLsb' 0 128)
+      (hi.extractLsb' 128 128)
+  | .vpmadd52 hi d a b, s =>
+    let f (i : Nat) := madd52 hi (s.vz d i) (s.vz a i) (s.vz b i)
+    s.setVz d (f 0) (f 1) (f 2) (f 3)
+  | .vinserti64x4 d a b n, s =>
+    let f := insert64x4 (s.vz a) (s.vy b) n
+    s.setVz d (f 0) (f 1) (f 2) (f 3)
 
 end VG.X86_64

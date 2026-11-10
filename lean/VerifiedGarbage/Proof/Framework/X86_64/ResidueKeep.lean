@@ -33,7 +33,8 @@ def _root_.VG.X86_64.Instr.vecLevel : Instr → Nat
   | .vop _ | .vmovdquLoad .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad ..
   | .vpmadd52Load .. | .zop _ | .vmovdqu32Load .. | .vbroadcasti32x4 .. | .zbcst ..
   | .vpbroadcastdZ .. | .zbcstd .. | .kLoad .. | .kLoad8 .. => 1
-  | .vbroadcasti32x4H .. | .eop _ | .evLoad .. | .evMadd52Load .. | .ldmxcsr _ => 2
+  | .vbroadcasti32x4H .. | .eop _ | .evLoad .. | .evMadd52Load .. | .ldmxcsr _
+  | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. => 2
   | _ => 0
 
 /-- What an instruction of level `l` keeps. -/

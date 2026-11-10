@@ -202,10 +202,12 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | zbcst _ _ _ m | vpbroadcastdZ _ m | zbcstd _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vpmadd52Load _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vmovdqu32Store m _ => exact storeStepKD_nil h hs
-  | eop _ => cases hs; exact nx
+  | eop _ | e5op _ => cases hs; exact nx
   | evLoad _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | evMadd52Load _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
-  | evStore m _ => exact storeStepKD_nil h hs
+  | evBroadcastLoad _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
+  | e5InsertLoad _ _ m _ => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
+  | evStore m _ | e5ExtractStore m _ _ => exact storeStepKD_nil h hs
   | kLoad _ _ m | kLoad8 _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | kStore m k _ | kStore8 m k _ =>
     simp only [stepKD, stepKDFn] at hs

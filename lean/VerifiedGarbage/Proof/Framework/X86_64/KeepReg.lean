@@ -32,7 +32,8 @@ def writesVec : Instr → Bool
   | .movdquLoad .. | .movdquTbl .. | .xop _ | .vop _ | .vmovdquLoad .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad ..
   | .zop _
   | .vmovdqu32Load .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpbroadcastdZ .. | .zbcstd .. | .vpmadd52Load ..
-  | .eop _ | .evLoad .. | .evMadd52Load .. | .kLoad .. | .kLoad8 .. => true
+  | .eop _ | .evLoad .. | .evMadd52Load .. | .kLoad .. | .kLoad8 ..
+  | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. => true
   | _ => false
 
 /-- What is known of `r` after an instruction. -/

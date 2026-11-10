@@ -494,6 +494,24 @@ def EOp.encode : EOp → Option (List Nat)
   | .vpternlogq d a b n => evex 1 3 true 1 (vreg a) 0x25 (vreg d) (.reg (vreg b)) (imm := [n.toNat])
   | .vprorq d s n => evex 1 1 true 1 (vreg d) 0x72 0 (.reg (vreg s)) (imm := [n.toNat])
 
+/-- The bytes of an `EVEX.512` instruction (`EVEX.L'L = 10`). -/
+def E5Op.encode : E5Op → Option (List Nat)
+  -- "PADDQ" (`EVEX.512.66.0F.W1 D4 /r`), "PXOR" (`EVEX.512.66.0F.W1 EF /r`,
+  -- VPXORQ), "PAND" (`DB`, VPANDQ), "POR" (`EB`, VPORQ).
+  | .bin op d a b =>
+    let o := match op with | .vpaddq => 0xD4 | .vpxorq => 0xEF | .vpandq => 0xDB | .vporq => 0xEB
+    evex 1 1 true 2 (vreg a) o (vreg d) (.reg (vreg b))
+  -- "PSLLQ"/"PSRLQ" (`EVEX.512.66.0F.W1 73 /6`, `/2 ib`).
+  | .shift op d s n =>
+    let digit := match op with | .vpsllq => 6 | .vpsrlq => 2
+    evex 1 1 true 2 (vreg d) 0x73 digit (.reg (vreg s)) (imm := [n.toNat])
+  -- "VPERMQ" (`EVEX.512.66.0F3A.W1 00 /r ib`).
+  | .vpermq d s o => evex 1 3 true 2 0 0x00 (vreg d) (.reg (vreg s)) (imm := [o.toNat])
+  -- "VPMADD52LUQ"/"VPMADD52HUQ" (`EVEX.512.66.0F38.W1 B4`/`B5 /r`).
+  | .vpmadd52 hi d a b => evex 1 2 true 2 (vreg a) (if hi then 0xB5 else 0xB4) (vreg d) (.reg (vreg b))
+  -- "VINSERTI64X4" (`EVEX.512.66.0F3A.W1 3A /r ib`).
+  | .vinserti64x4 d a b n => evex 1 3 true 2 (vreg a) 0x3A (vreg d) (.reg (vreg b)) (imm := [n.toNat])
+
 /-- The bytes of each instruction `Instr.asm` (`Print.lean`) names, in
 order; `none` if an operand does not fit its field (see the module docs),
 or for `leaSym`, which is text. -/
@@ -586,6 +604,16 @@ def Instr.encode : Instr → Option (List (List Nat))
   | .evStore m r => (evex 2 1 true 1 0 0x7F (vreg r) (.mem m) 32).map ([·])
   | .evMadd52Load hi d a m =>
     (evex 1 2 true 1 (vreg a) (if hi then 0xB5 else 0xB4) (vreg d) (.mem m) 32).map ([·])
+  | .e5op op => op.encode.map ([·])
+  -- "VPBROADCASTQ" (`EVEX.256.66.0F38.W1 59 /r`, Tuple1 Scalar: `N = 8`).
+  | .evBroadcastLoad d m => (evex 1 2 true 1 0 0x59 (vreg d) (.mem m) 8).map ([·])
+  -- "VINSERTI64X4" (`EVEX.512.66.0F3A.W1 3A /r ib`) and "VEXTRACTI64X4"
+  -- (`EVEX.512.66.0F3A.W1 3B /r ib`, the register in `ModRM.reg`), Tuple4:
+  -- `N = 32`.
+  | .e5InsertLoad d a m n =>
+    (evex 1 3 true 2 (vreg a) 0x3A (vreg d) (.mem m) 32 (imm := [n.toNat])).map ([·])
+  | .e5ExtractStore m r n =>
+    (evex 1 3 true 2 0 0x3B (vreg r) (.mem m) 32 (imm := [n.toNat])).map ([·])
   -- "KMOVW" (`VEX.L0.0F.W0 92 /r`), "KMOVQ" (`VEX.L0.F2.0F.W1 92 /r`), into
   -- `k1`; then "MOVDQU64" (`EVEX.512.F3.0F.W1 6F`/`7F /r`) or "MOVDQU8"
   -- (`EVEX.512.F2.0F.W0 6F`/`7F /r`), masked by `k1` (`aaa = 001`), zeroing

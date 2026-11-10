@@ -228,6 +228,8 @@ def VReg.name : VReg → String
 
 /-- The name of the `ymm` register of a `VReg`. -/
 def VReg.yname (r : VReg) : String := "y" ++ (r.name.drop 1).toString
+/-- The name of the `zmm` register of a `VReg`. -/
+def VReg.zname (r : VReg) : String := "z" ++ (r.name.drop 1).toString
 
 def EBinOp.name : EBinOp → String
   | .vpaddq => "vpaddq" | .vpxorq => "vpxorq" | .vpandq => "vpandq" | .vporq => "vporq"
@@ -248,6 +250,13 @@ def EOp.asm : EOp → String
   | .vpmadd52 hi d a b => s!"vpmadd52{if hi then "h" else "l"}uq {d.yname}, {a.yname}, {b.yname}"
   | .vpternlogq d a b n => s!"vpternlogq {d.yname}, {a.yname}, {b.yname}, {n.toNat}"
   | .vprorq d r n => s!"vprorq {d.yname}, {r.yname}, {n.toNat}"
+
+def E5Op.asm : E5Op → String
+  | .bin op d a b => s!"{op.name} {d.zname}, {a.zname}, {b.zname}"
+  | .shift op d r n => s!"{op.name} {d.zname}, {r.zname}, {n.toNat}"
+  | .vpermq d r o => s!"vpermq {d.zname}, {r.zname}, {o.toNat}"
+  | .vpmadd52 hi d a b => s!"vpmadd52{if hi then "h" else "l"}uq {d.zname}, {a.zname}, {b.zname}"
+  | .vinserti64x4 d a b n => s!"vinserti64x4 {d.zname}, {a.zname}, {b.yname}, {n.toNat}"
 
 def Src.str : Src → String
   | .reg r => r.name
@@ -328,6 +337,10 @@ def Instr.asm : Instr → List String
   | .evStore m r => [s!"vmovdqu64 {m.strV .l256}, {r.yname}"]
   | .evMadd52Load hi d a m =>
     [s!"vpmadd52{if hi then "h" else "l"}uq {d.yname}, {a.yname}, {m.strV .l256}"]
+  | .e5op op => [op.asm]
+  | .evBroadcastLoad d m => [s!"vpbroadcastq {d.yname}, {m.str}"]
+  | .e5InsertLoad d a m n => [s!"vinserti64x4 {d.zname}, {a.zname}, {m.strV .l256}, {n.toNat}"]
+  | .e5ExtractStore m r n => [s!"vextracti64x4 {m.strV .l256}, {r.zname}, {n.toNat}"]
   | .kLoad k d m => [s!"kmovw k1, {k.name32}", s!"vmovdqu64 {d.zname} " ++ "{k1}{z}" ++ s!", {m.str512}"]
   | .kStore m k r => [s!"kmovw k1, {k.name32}", s!"vmovdqu64 {m.str512} " ++ "{k1}" ++ s!", {r.zname}"]
   | .kLoad8 k d m => [s!"kmovq k1, {k.name}", s!"vmovdqu8 {d.zname} " ++ "{k1}{z}" ++ s!", {m.str512}"]
@@ -378,11 +391,11 @@ def Instr.memOps : Instr → List MemOp
   | .vmovdqu32Load _ m | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m
   | .vpbroadcastdZ _ m | .zbcstd _ _ _ m
   | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m | .kLoad _ _ m | .kStore m _ _
-  | .kLoad8 _ _ m | .kStore8 m _ _
+  | .kLoad8 _ _ m | .kStore8 m _ _ | .evBroadcastLoad _ m | .e5InsertLoad _ _ m _ | .e5ExtractStore m _ _
   | .stmxcsr m | .ldmxcsr m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
   | .shift .. | .shiftCl .. | .shiftx .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _
-  | .vpmovmskb .. | .zop _ | .eop _ | .vpcmpltuw ..
+  | .vpmovmskb .. | .zop _ | .eop _ | .e5op _ | .vpcmpltuw ..
   | .lfence | .mul _ | .imul .. | .imul3 .. | .shld .. | .btr ..
   | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => []
 
