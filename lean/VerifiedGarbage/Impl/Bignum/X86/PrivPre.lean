@@ -145,18 +145,28 @@ def copyLoop : Prog isa :=
   .loop (.block [.mov .eax (.mem (at_ .esi 0)), .store (at_ .ebp 0) .eax, .alu .add .esi (.imm 4),
     .alu .add .ebp (.imm 4), .alu .sub .ecx (.imm 4)]) .ne
 
-/-- The `8 w_p` bytes of the wide slot `j`, for the length of argument `i`, to `ebp`. -/
-def copyPrime (j i : Nat) : Prog isa :=
-  .seq (.block (slotSrc j ++ primeWords (frameBytes / 4) i .ecx .eax ++ shl .ecx 3)) copyLoop
+/-- `ebp` at `pre` (argument 0), after its `16 ⌈n_len / 8⌉` bytes of `n`'s
+values, and the `8 w_p` bytes of the factor of argument `i` if `skip` is
+`some i`; `eax` and `ecx` change. -/
+def dstAt (skip : Option Nat) : List Instr :=
+  [.mov .ebp (.mem (incoming 3)), .alu .add .ebp (.imm 7), .shift .shr .ebp 3] ++ shl .ebp 4 ++
+    [.alu .add .ebp (.mem (incoming 0))] ++
+    match skip with
+    | none => []
+    | some i => primeWords (frameBytes / 4) i .eax .ecx ++ shl .eax 3 ++ [.alu .add .ebp (.reg .eax)]
+
+/-- The `8 w_p` bytes of the wide slot `j`, for the length of argument `i`, to
+`pre` at `dstAt skip`. -/
+def copyPrime (j i : Nat) (skip : Option Nat) : Prog isa :=
+  .seq (.block (dstAt skip ++ slotSrc j ++ primeWords (frameBytes / 4) i .ecx .eax ++ shl .ecx 3)) copyLoop
 
 /-- `R_p² mod p` (the wide slot 16) and `R_q² mod q` (17) to `pre`, after its
 `16 ⌈n_len / 8⌉` bytes of `n`'s values; `esi` and `ebp` kept. -/
 def copyPrimes : Prog isa :=
-  .seq (.block ([.store (stackAt saveOffset) .esi, .store (stackAt (saveOffset + 4)) .ebp,
-    .mov .ebp (.mem (incoming 3)), .alu .add .ebp (.imm 7), .shift .shr .ebp 3] ++ shl .ebp 4 ++
-    [.alu .add .ebp (.mem (incoming 0))])) <|
-  .seq (copyPrime 16 5) <|
-  .seq (copyPrime 17 7) (.block [.mov .esi (.mem (stackAt saveOffset)), .mov .ebp (.mem (stackAt (saveOffset + 4)))])
+  .seq (.block [.store (stackAt saveOffset) .esi, .store (stackAt (saveOffset + 4)) .ebp]) <|
+  .seq (copyPrime 16 5 none) <|
+  .seq (copyPrime 17 7 (some 5))
+    (.block [.mov .esi (.mem (stackAt saveOffset)), .mov .ebp (.mem (stackAt (saveOffset + 4)))])
 
 /-- The mask, all ones if the result is 1, at `statusOffset + 4`; `edx` at
 `pre` and `ecx` its `8 pre_len` bytes. -/
