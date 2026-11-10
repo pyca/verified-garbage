@@ -115,5 +115,51 @@ class ColdBranch(unittest.TestCase):
         self.assertIn("f:11: `jmp 21b` jumps into the MCDT region at line 5 from outside it", errors)
 
 
+class StatusClear(unittest.TestCase):
+    CLEAR = [
+        "stmxcsr DWORD PTR [rsp]",
+        "mov r11d, DWORD PTR [rsp]",
+        "and r11d, 65472",
+        "mov DWORD PTR [rsp], r11d",
+        "ldmxcsr DWORD PTR [rsp]",
+    ]
+
+    def check(self, instrs, labels=None):
+        return check_mcdt.check_function("f", instrs, list(range(len(instrs))), labels or {})
+
+    def test_after_a_region(self):
+        # The scrub's clearing of MXCSR's status flags, after the code's
+        # last region: it is no prologue, and starts no region.
+        instrs = ColdBranch.PROLOGUE + ["pmuludq xmm0, xmm1"] + ColdBranch.EPILOGUE[:2] + self.CLEAR + ["ret"]
+        self.assertEqual(self.check(instrs), ([], 1))
+        self.assertEqual(self.check(self.CLEAR + ["ret"]), ([], 0))
+
+    def test_protects_nothing(self):
+        errors, _ = self.check(self.CLEAR + ["pmuludq xmm0, xmm1", "ret"])
+        self.assertEqual(errors, ["f:5: `pmuludq xmm0, xmm1` is outside Intel's MXCSR prologue and "
+                                  "epilogue (MCDT, see lean/VerifiedGarbage/TCB/X86_64/Isa.lean)"])
+
+    def test_not_inside_a_region(self):
+        instrs = ColdBranch.PROLOGUE + self.CLEAR + ColdBranch.EPILOGUE
+        errors, _ = self.check(instrs)
+        self.assertIn("f:4: the MCDT region after this prologue has no epilogue", errors)
+
+    def test_only_the_exact_sequence(self):
+        other = "`ldmxcsr DWORD PTR [rsp]` is not Intel's MCDT prologue"
+        for k, line in [(0, "stmxcsr DWORD PTR [rsp+4]"), (1, "mov r11d, DWORD PTR [rsp+4]"),
+                        (1, "mov r11, DWORD PTR [rsp]"), (2, "and r11d, 65535"), (2, "or r11d, 65472"),
+                        (2, "and r10d, 65472"), (3, "mov DWORD PTR [rsp], r10d"),
+                        (3, "mov DWORD PTR [rsp+4], r11d")]:
+            instrs = self.CLEAR[:k] + [line] + self.CLEAR[k + 1:] + ["ret"]
+            errors, _ = self.check(instrs)
+            self.assertTrue(any(other in e for e in errors), line)
+        # A label inside it: a jump could skip the masking.
+        errors, _ = self.check(self.CLEAR + ["ret"], {"20": [3]})
+        self.assertTrue(any(other in e for e in errors))
+        # Too close to the function's start to be the sequence.
+        errors, _ = self.check(self.CLEAR[2:] + ["ret"])
+        self.assertTrue(any(other in e for e in errors))
+
+
 if __name__ == "__main__":
     unittest.main()

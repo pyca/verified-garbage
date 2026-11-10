@@ -11,7 +11,10 @@ where its Rust caller cannot clear it (`X86_64.NoResidue`):
 * the SSE registers, with `pxor x, x` (`v = .sse`, for code without VEX or
   EVEX instructions, which leaves their upper halves as the caller left
   them) or `vpxor x, x, x` (`v = .avx`, which also zeroes bits 511:128 of
-  `zmm0`–`zmm15`);
+  `zmm0`–`zmm15`); with `v = .evex`, for code that may write `zmm16`–`zmm31`
+  or MXCSR, those registers too (`vpxorq z, z, z`), and MXCSR's status
+  flags and reserved bits (`mxFix`), which leaves in it its control bits
+  alone, those the code keeps (`abiPreserved`);
 * the stack below the stack pointer, within its `cs.sum` bytes (the stack
   `c`'s frames and calls use), in nested frames of the sizes `cs` (each
   less than a page, as `alloc` requires): the granules (16 bytes of `xmm0`,
@@ -37,15 +40,41 @@ inductive VecLevel
   | sse
   /-- `vpxor` (VEX.128): zeroes bits 511:128 of `zmm0`–`zmm15` too. -/
   | avx
+  /-- As `avx`, with `vpxorq` (EVEX.512) of `zmm16`–`zmm31` and MXCSR's
+  status flags cleared: for code that may write those. -/
+  | evex
   deriving DecidableEq, Repr
 
 def xregs : List XReg :=
   [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7,
    .xmm8, .xmm9, .xmm10, .xmm11, .xmm12, .xmm13, .xmm14, .xmm15]
 
+def hregs : List HReg :=
+  [.xmm16, .xmm17, .xmm18, .xmm19, .xmm20, .xmm21, .xmm22, .xmm23,
+   .xmm24, .xmm25, .xmm26, .xmm27, .xmm28, .xmm29, .xmm30, .xmm31]
+
 def zeroX : VecLevel → XReg → Instr
   | .sse, x => .xop (.bin .pxor x x)
   | .avx, x => .vop (.vbin .vpxor .l128 x x x)
+  | .evex, x => .vop (.vbin .vpxor .l128 x x x)
+
+/-- `vpxorq zmm, zmm, zmm`, of one of `zmm16`–`zmm31`. -/
+def zeroH (h : HReg) : Instr := .e5op (.bin .vpxorq (.hi h) (.hi h) (.hi h))
+
+/-- `zmm16`–`zmm31` zeroed, at the level `evex` alone. -/
+def clearHigh : VecLevel → List Instr
+  | .evex => hregs.map zeroH
+  | _ => []
+
+/-- At the level `evex`: MXCSR with its status flags (bits 5:0) and its
+reserved bits (31:16, as the code that restores it clears them: see "MXCSR"
+in `TCB/X86_64/Isa.lean`) cleared, through 4 bytes of a frame of 16 below
+the stack pointer; `r11` is left zero, as the wipe expects it. -/
+def mxFix : VecLevel → Prog isa
+  | .evex => .frame (.alloc 16) (.block [.stmxcsr { base := .rsp }, .mov32 .r11 (.mem { base := .rsp }),
+      .alu32 .and .r11 (.imm 0xFFC0), .store32 { base := .rsp } .r11, .ldmxcsr { base := .rsp },
+      .alu32 .xor .r11 (.reg .r11)]) (.free 16)
+  | _ => .block []
 
 def clearVec (v : VecLevel) : List Instr := xregs.map (zeroX v)
 
@@ -102,12 +131,15 @@ def chunksAux : Nat → Nat → List Nat
 
 def chunks (n : Nat) : List Nat := chunksAux (n / 4080 + 1) n
 
-/-- The clearing: the SSE registers `xs` and the general-purpose registers
-`ps` (`xmm0` and `r11`, which the wipe stores, if it stores any), the stack,
+/-- The clearing: the SSE registers `xs`, at the level `evex` `zmm16`–`zmm31`
+too, and the general-purpose registers
+`ps` (`xmm0` and `r11`, which the wipe stores, if it stores any), at the
+level `evex` MXCSR's status flags, the stack,
 then the result's upper bits and the general-purpose registers `gs`. -/
 def scrubTail (v : VecLevel) (retBits : Nat) (xs : List XReg) (ps gs : List Reg) (ks cs : List Nat) :
     Prog isa :=
-  .seq (.block (xs.map (zeroX v) ++ ps.map zeroR)) (.seq (wipe ks cs) (.block (retFix retBits ++ gs.map zeroR)))
+  .seq (.block (xs.map (zeroX v) ++ clearHigh v ++ ps.map zeroR))
+    (.seq (mxFix v) (.seq (wipe ks cs) (.block (retFix retBits ++ gs.map zeroR))))
 
 /-- `c`, then the clearing. -/
 def scrub (v : VecLevel) (retBits : Nat) (xs : List XReg) (ps gs : List Reg) (ks cs : List Nat) (c : Prog isa) :

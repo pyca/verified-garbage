@@ -69,12 +69,7 @@ open VG.Proof.RsaPkcs1Sig.X86_64
 
 def artifacts : List Artifact :=
   (VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap fun (v : CrtImpl) => [
-    Spec.RsaPkcs1Sig.signApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.RsaPkcs1Sig.X86_64.Sign.code (Sgn.privName v) (Sgn.privCode v)
-      stack := sigStack
-      verified := Sgn.code_verified v
-      spSafe := Sgn.code_spSafe v }]) ++
+    Spec.RsaPkcs1Sig.signApi.artifact X86_64.target (Sgn.reg v)]) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap fun (v : PublicImpl) => [
     Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact X86_64.target {
       suffix := v.suffix

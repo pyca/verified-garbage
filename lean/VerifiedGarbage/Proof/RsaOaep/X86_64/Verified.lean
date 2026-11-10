@@ -3,6 +3,12 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCT
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcCT
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
 
 /-!
 # RSAES-OAEP on x86-64 with both hash functions as tables: the instances
@@ -215,6 +221,92 @@ theorem OK.mem {vs : List MdHash} (h : OK vs) : ∃ w, w ∈ vs := List.exists_m
 theorem dec_ok (vs : List MdHash) (h : OK vs) (v : PrivImpl) :
     Verified target (Impl.RsaOaep.X86_64.decrypt (fnsOf vs) v.name v.code) (decC (tables vs)) :=
   dec_verified h.1 v (let ⟨_, hw⟩ := h.mem; dec_sat hw h.2.1)
+
+/-- `vg_rsa_oaep_decrypt`'s postcondition reads the memory on return only in
+`out` and `msg_len`. -/
+theorem dec_postOut (ts : List FnTable) :
+    VG.X86_64.Scrub.PostOut (decC ts) (Spec.RsaOaep.decryptMdTablesSig.retBits 64) :=
+  VG.X86_64.Scrub.postOut_of_local_pre (leak := some _) (VG.X86_64.Scrub.ScrubAbi.plain.tables _ _)
+    fun vs m m₁ m₂ r hlen hpre hb h => by
+    obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 24) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨outLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨msgLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨nLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨e, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨eLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨p, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨pLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨q, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨qLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dp, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dpLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dq, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dqLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨qinv, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨qinvLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨label, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨labelLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨ct, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨ctLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨scratch, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨scratchLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨hash, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨mgf1, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero hlen
+    simp only [Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig, List.cons_append, List.nil_append,
+      Sig.bufs, List.mem_cons, forall_eq_or_imp] at hb
+    have hol : outLen.toNat = nLen.toNat := hpre.2.1
+    have hby : Spec.Rsa.bytesAt m₂ out nLen.toNat = Spec.Rsa.bytesAt m₁ out nLen.toNat :=
+      VG.Proof.Rsa.X86_64.bytesAt_agree (by simp only [Elem.size]; omega)
+        (by have := outLen.isLt; simp only [Elem.size]; omega) hb.1
+    have hw : m₂.readW msgLen 64 = m₁.readW msgLen 64 := VG.Proof.Rsa.X86_64.readW_agree (by decide) (by decide) hb.2.1
+    intro H G hH hG
+    have h' : Spec.RsaOaep.writtenDecrypt m₁ out msgLen nLen.toNat r _ := h H G hH hG
+    show Spec.RsaOaep.writtenDecrypt m₂ out msgLen nLen.toNat r _
+    revert h'
+    generalize Spec.RsaOaep.decrypt _ _ _ _ _ _ _ _ _ _ _ = o
+    cases o <;> simp only [Spec.RsaOaep.writtenDecrypt, hby, hw] <;> exact id
+
+/-- `vg_rsa_oaep_decrypt`, with the tables of `vs`, named with `suffix`,
+followed by `Impl.Scrub.X86_64.scrubTail`, which clears the registers its
+code writes and wipes all the stack its frames and calls use (the residue
+analysis, `X86_64.RTaint`, does not follow its code): without secret
+residue. -/
+def decReg (vs : List MdHash) (h : OK vs) (suffix : String) (v : PrivImpl) :
+    Registration Spec.RsaOaep.decryptMdTablesApi target :=
+  VG.X86_64.Scrub.withScrubAll
+    { suffix := suffix
+      tables := [("hash", tables vs), ("mgf1", tables vs)]
+      code := Impl.RsaOaep.X86_64.decrypt (fnsOf vs) v.name v.code
+      stack := decStack
+      verified := dec_ok vs h v
+      spSafe := dec_spSafe vs v } (dec_postOut _)
 
 /-- `vg_rsa_oaep_encrypt_precomputed`, with the tables of `vs`. -/
 theorem enc_ok (vs : List MdHash) (h : OK vs) (v : PublicImpl) :

@@ -106,13 +106,8 @@ open VG.Proof.HashTable.X86_64 (fnsOf)
 
 def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaOaep.decryptMdTablesApi.artifact X86_64.target {
-      suffix := qualifiedName "" [("crt", c.suffix)]
-      tables := [("hash", tables vs), ("mgf1", tables vs)]
-      code := Impl.RsaOaep.X86_64.decrypt (fnsOf vs) (privOf c).name (privOf c).code
-      stack := decStack
-      verified := dec_ok vs h (privOf c)
-      spSafe := dec_spSafe vs (privOf c) }]
+    Spec.RsaOaep.decryptMdTablesApi.artifact X86_64.target
+      (VG.Proof.RsaOaep.X86_64.decReg vs h (qualifiedName "" [("crt", c.suffix)]) (privOf c))]
   else []
 
 end VG.Artifacts.RsaOaep.X86_64.RsaPrivateCrtAllMdHash

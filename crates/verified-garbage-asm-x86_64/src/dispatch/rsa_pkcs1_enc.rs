@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES`); `vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_ADX_FEATURES`); `vg_rsa_pkcs1_decrypt_sha256_shani` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES`); `vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES`); `vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_ADX_FEATURES`); `vg_rsa_pkcs1_decrypt_sha256_avx2` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_FEATURES`); `vg_rsa_pkcs1_decrypt_crt_ifma` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_CRT_IFMA_FEATURES`); `vg_rsa_pkcs1_decrypt_crt_adx` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_CRT_ADX_FEATURES`); or else `vg_rsa_pkcs1_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.

@@ -77,12 +77,8 @@ open VG.Proof.RsaPkcs1Enc.X86_64.Dec (HH dec_verified dec_spSafe)
 
 def artifacts (h : Proof.Sha256.X86_64.Compress) (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact :=
   [
-    Spec.RsaPkcs1Enc.decryptApi.artifact X86_64.target {
-      suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
-      code := Impl.RsaPkcs1Enc.X86_64.Decrypt.code (HH h) (privOf c).name (privOf c).code
-      stack := decStack
-      verified := dec_verified h (privOf c)
-      spSafe := dec_spSafe h (privOf c) }]
+    Spec.RsaPkcs1Enc.decryptApi.artifact X86_64.target
+      (VG.Proof.RsaPkcs1Enc.X86_64.Dec.reg (qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]) h (privOf c))]
 
 end VG.Artifacts.RsaPkcs1Enc.X86_64.Sha256RsaPrivateCrt
 

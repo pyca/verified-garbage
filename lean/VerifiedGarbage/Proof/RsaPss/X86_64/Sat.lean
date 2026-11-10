@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Instances
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
 /-!
 # RSASSA-PSS on x86-64 with the tables of `vs`: the contracts are satisfiable
@@ -363,6 +368,91 @@ theorem sign_ok (hok : OK vs) {privN : String} {privC : Prog isa}
       (signC (MdHashTable.X86_64.tables vs) (MdHashTable.X86_64.tables vs)) :=
   signC_verified (fun _ h => sgood_of hok h) (fun i hi => (enc_safe hok i hi).1) (fun i hi => (enc_safe hok i hi).2)
     hct hdC (ckH Impl.Md5.X86_64.Stream.params 16) (sign_sat hok) hv hspC
+
+/-- `vg_rsa_pss_sign`'s postcondition reads the memory on return only in
+`out`. -/
+theorem signC_postOut (tsH tsG : List FnTable) :
+    VG.X86_64.Scrub.PostOut (signC tsH tsG) (Spec.RsaPss.signMdTableSig.retBits 64) :=
+  VG.X86_64.Scrub.postOut_of_local_pre (leak := some _) (VG.X86_64.Scrub.ScrubAbi.plain.tables _ _)
+    fun vs m m₁ m₂ r hlen hpre hb h => by
+    obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 23) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨outLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨nLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨e, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨eLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨p, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨pLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨q, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨qLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dp, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dpLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dq, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dqLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨qinv, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨qinvLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨digest, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨digestLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨salt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨saltLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨scratch, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨scratchLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨hash, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨mgf1, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero hlen
+    simp only [Spec.RsaPss.signMdTableSig, Sig.bufs, List.mem_cons, forall_eq_or_imp] at hb
+    have hol : outLen.toNat = nLen.toNat := hpre.2.1
+    have hby : Spec.Rsa.bytesAt m₂ out nLen.toNat = Spec.Rsa.bytesAt m₁ out nLen.toNat :=
+      VG.Proof.Rsa.X86_64.bytesAt_agree (by simp only [Elem.size]; omega)
+        (by have := outLen.isLt; simp only [Elem.size]; omega) hb.1
+    intro H G hH hG
+    have h' : Spec.Rsa.writtenOutcome m₁ out nLen.toNat r _ := h H G hH hG
+    show Spec.Rsa.writtenOutcome m₂ out nLen.toNat r _
+    revert h'
+    generalize Spec.RsaPss.sign _ _ _ _ _ _ _ _ _ _ _ = o
+    cases o <;> simp only [Spec.Rsa.writtenOutcome, hby] <;> exact id
+
+/-- `vg_rsa_pss_sign`, with the tables of `vs`, calling the private-key
+operation `privC`, named with `suffix`, followed by
+`Impl.Scrub.X86_64.scrubTail`, which clears the registers its code writes
+and wipes all the stack its frames and calls use (the residue analysis,
+`X86_64.RTaint`, does not follow its code): without secret residue. -/
+def signReg (hok : OK vs) (suffix : String) (privN : String) {privC : Prog isa}
+    (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ chkContract.post s s')
+    (hct : ConstantTime isa chkContract.pre chkContract.pub privC) (hspC : SpSafe privC)
+    (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes) : Registration Spec.RsaPss.signMdTableApi X86_64.target :=
+  VG.X86_64.Scrub.withScrubAll
+    { suffix := suffix
+      tables := [("hash", MdHashTable.X86_64.tables vs), ("mgf1", MdHashTable.X86_64.tables vs)]
+      code := Impl.RsaPss.X86_64.signC (MdHashTable.X86_64.fnsOf vs) (HashTable.X86_64.fnsOf vs) privN privC
+      stack := signStack
+      verified := sign_ok hok hv hct hspC hdC
+      spSafe := Code.all_of_allInstrs (signC_spAll (fun i hi => (enc_safe hok i hi).1)
+        (fun i hi => (enc_safe hok i hi).2) hspC) } (signC_postOut _ _)
 
 /-- `vg_rsa_pss_verify_precomputed`, with the tables of `vs`, calling the
 public-key operation `v`. -/
