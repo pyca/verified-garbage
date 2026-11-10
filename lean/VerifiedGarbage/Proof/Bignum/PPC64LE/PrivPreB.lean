@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCopy
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtExport
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # An RSA private key's precomputed values on PPC64LE: a factor's `R² mod p`
@@ -146,5 +147,65 @@ theorem phasePrime_ok {s : State} {BX : Addr} {Z oA wX xj L Pv oB oLen : Nat} {c
     a11 ((k1.gpr _ (by decide)).trans h27) ((k1.gpr _ (by decide)).trans h28)
     (by rw [m1]; exact wv_low (by rw [← Pre.val32_eq_wv]; exact hP) hPb hwL) hP2 hPodd
     fun t _ h1 _ _ out t10 t29 t11 k => hc t h1 (by rw [← m1]; exact out) t10 t11 t29 ((k1.trans k).mono)
+
+theorem and_bmask (x : BitVec 64) (b : Bool) : x &&& Crt.bmask b = if b then x else 0 := by
+  cases b
+  · rw [show Crt.bmask false = 0#64 from rfl, BitVec.and_zero]; rfl
+  · rw [show Crt.bmask true = BitVec.allOnes 64 from rfl, BitVec.and_allOnes]; rfl
+
+/-- The loop of `prime`'s end: the `w` words at `r15` (`d` in the working
+space at `B`), and-ed with the mask of `b`, to `r30` (`o` in `pre` at `P`,
+apart from the working space), both advanced past them. -/
+theorem maskLoop_ok {s : State} {B P : Addr} {Z L d o w : Nat} {b : Bool} (hs : Scr s B Z)
+    (hp : Scr s P L) (hsep : ∀ x, ofs P x < L → Z ≤ ofs B x)
+    (h15 : s.gpr .r15 = off B d) (h30 : s.gpr .r30 = off P o) (h17 : s.gpr .r17 = BitVec.ofNat 64 w)
+    (h26 : s.gpr .r26 = Crt.bmask b) (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hd : d + 8 * w ≤ Z) (ho : o + 8 * w ≤ L) :
+    WP isa (Precompute.countLoop .r17 [.load .d .r0 .r15 0, .logic .and .r0 .r0 .r26, .store .d .r0 .r30 0,
+      .addi .r15 .r15 8, .addi .r30 .r30 8]) s fun t =>
+      ((∀ i < w, word t.mem P (o + 8 * i) = if b then word s.mem B (d + 8 * i) else 0) ∧
+        t.gpr .r30 = off P (o + 8 * w) ∧ Outside P o (8 * w) s.mem t.mem) ∧ Keep [.r0, .r15, .r17, .r30] s t := by
+  have hnB := hs.nowrap
+  have hnP := hp.nowrap
+  -- The working space's words are apart from `pre`'s.
+  have keepB : ∀ {m m' : Mem} {o' n : Nat}, Outside P o' n m m' → o' + n ≤ L → ∀ e, e + 8 ≤ Z →
+      word m' B e = word m B e := fun {m m' o' n} h hn e he => Mem.readW_congr fun i hi => h _ (by
+    by_contra hc
+    have hc' : ofs P (off B e + BitVec.ofNat 64 i) < L := by simp only [ofs] at hc ⊢; omega_arith
+    have := hsep _ hc'
+    rw [ofs, Offset.add_add, Mem.sub_ofNat_toNat _ (by omega_arith)] at this
+    omega_arith)
+  let Inv : Nat → State → Prop := fun i t =>
+    t.gpr .r15 = off B (d + 8 * i) ∧ t.gpr .r30 = off P (o + 8 * i) ∧ t.gpr .r26 = Crt.bmask b ∧
+      (∀ j < i, word t.mem P (o + 8 * j) = if b then word s.mem B (d + 8 * j) else 0) ∧
+      Outside P o (8 * i) s.mem t.mem ∧ Keep [.r0, .r15, .r17, .r30] s t
+  refine WP.mono (wp_countdown (body := .block ([.load .d .r0 .r15 0, .logic .and .r0 .r0 .r26,
+      .store .d .r0 .r30 0, .addi .r15 .r15 8, .addi .r30 .r30 8] ++ ([.subi .r17 .r17 1] : List Instr)))
+    (cnt := .r17) (N := w) (by omega_arith) (by omega_arith) Inv (fun i hi t ⟨j15, j30, j26, jw, jout, jk⟩ _ => ?_)
+    ⟨by rw [h15]; rfl, by rw [h30]; rfl, h26, fun _ h => absurd h (Nat.not_lt_zero _), Outside.refl _ _ _ _,
+      (Keep.refl [] s).mono (by decide)⟩ h17)
+    fun t ⟨_, t30, _, tw, tout, tk⟩ => ⟨⟨tw, t30, tout⟩, tk⟩
+  have hst : WP isa (.block [.load .d .r0 .r15 0, .logic .and .r0 .r0 .r26, .store .d .r0 .r30 0,
+      .addi .r15 .r15 8, .addi .r30 .r30 8, .subi .r17 .r17 1]) t fun t' =>
+      (t'.gpr .r15 = off B (d + 8 * i + 8) ∧ t'.gpr .r30 = off P (o + 8 * i + 8) ∧
+        t'.gpr .r17 = t.gpr .r17 - BitVec.ofNat 64 1 ∧
+        t'.mem = t.mem.writeW (off P (o + 8 * i)) (word t.mem B (d + 8 * i) &&& Crt.bmask b)) ∧
+      Keep [.r0, .r15, .r17, .r30] t t' := by
+    refine WP.keep _ ?_ (by decide)
+    prun [j15, j30, j26, (hs.congr jk.wr).ld (show d + 8 * i + 8 ≤ Z by omega_arith),
+      (hp.congr jk.wr).st (show o + 8 * i + 8 ≤ L by omega_arith)]
+  refine WP.mono hst fun t' ⟨⟨l15, l30, l17, lm⟩, lk⟩ => ⟨⟨?_, ?_, (lk.gpr _ (by decide)).trans j26, fun j hj => ?_,
+    ?_, jk.trans' lk⟩, l17⟩
+  · rw [l15, show d + 8 * i + 8 = d + 8 * (i + 1) by omega_arith]
+  · rw [l30, show o + 8 * i + 8 = o + 8 * (i + 1) by omega_arith]
+  · have wB : word t.mem B (d + 8 * i) = word s.mem B (d + 8 * i) :=
+      keepB jout (by omega_arith) _ (by omega_arith)
+    rw [lm]
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
+    · rw [(writeW_outside t.mem P (d := o + 8 * i) _ (by omega_arith)).word (by omega_arith) (by omega_arith),
+        jw j hj]
+    · rw [word_writeW_self, wB, and_bmask]
+  · rw [lm]
+    exact (jout.mono (Nat.le_refl _) (by omega_arith)).trans
+      ((writeW_outside _ P (d := o + 8 * i) _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
 
 end VG.Proof.Bignum.PPC64LE.PrivPre
