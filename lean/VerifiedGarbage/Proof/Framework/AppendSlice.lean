@@ -271,6 +271,18 @@ theorem covers_filter {l l' : List (Region × Bool)} (h : ∀ a ∈ l, ∃ b ∈
   obtain ⟨hb', hl⟩ := hab.1
   simp only [Region.Contains, ← hb'] at hc ⊢; omega
 
+/-- A parameter's word index, in a longer parameter list. -/
+theorem Sig.wordIndex_append : ∀ (ps q : List (String × Param)) (x : String) (k : Nat),
+    Sig.wordIndex ps x = some k → Sig.wordIndex (ps ++ q) x = some k
+  | [], _, _, _, h => by simp [Sig.wordIndex] at h
+  | (n, p) :: ps, q, x, k, h => by
+    simp only [Sig.wordIndex, List.cons_append] at h ⊢
+    split at h
+    · simp only [↓reduceIte, *] at h ⊢
+    · simp only [↓reduceIte, *]
+      obtain ⟨k', hk', rfl⟩ := Option.map_eq_some_iff.mp h
+      rw [Sig.wordIndex_append ps q x k' hk']; rfl
+
 /-- A function verified against `sig.contract A pre post …` is verified against
 the contract of `sig.withSlice nm e ln` (one more, last, parameter, a read-only
 slice its code need not read) whose precondition implies `pre`, whose

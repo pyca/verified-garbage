@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Inst
+public import VerifiedGarbage.Proof.RsaOaep.Arm.DecPrecomputed
 public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.TCB.Arm.Print
@@ -26,6 +27,12 @@ def artifacts : List Artifact :=
         code := Proof.RsaOaep.Arm.Dec.decCode vars v
         stack := 3624
         verified := dec_ok vars h v },
+      Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact Arm.target {
+        suffix := v.suffix
+        tables := [("hash", tables vars), ("mgf1", tables vars)]
+        code := Proof.RsaOaep.Arm.Dec.decCode vars v
+        stack := 3624
+        verified := Proof.RsaOaep.Arm.Dec.decPrecomputed_verified h v },
       Spec.RsaOaep.encryptMdTablesApi.artifact Arm.target {
         suffix := v.suffix
         tables := [("hash", tables vars), ("mgf1", tables vars)]

@@ -57,17 +57,6 @@ theorem wordVals_length (n : Nat) (s : State) : (wordVals n s).length = n := by 
 theorem wordVals_withRegions (n : Nat) (s : State) (r w : List Region) :
     wordVals n (s.withRegions r w) = wordVals n s := rfl
 
-theorem Sig.wordIndex_append : ∀ (ps q : List (String × Param)) (x : String) (k : Nat),
-    Sig.wordIndex ps x = some k → Sig.wordIndex (ps ++ q) x = some k
-  | [], _, _, _, h => by simp [Sig.wordIndex] at h
-  | (n, p) :: ps, q, x, k, h => by
-    simp only [Sig.wordIndex, List.cons_append] at h ⊢
-    split at h
-    · simp only [↓reduceIte, *] at h ⊢
-    · simp only [↓reduceIte, *]
-      obtain ⟨k', hk', rfl⟩ := Option.map_eq_some_iff.mp h
-      rw [Sig.wordIndex_append ps q x k' hk']; rfl
-
 theorem argBytes_append2 (ws : List Nat) : argBytes (ws ++ [32, 32]) = argBytes ws + 8 := by
   simp [argBytes, List.map_append, List.sum_append]; omega
 
