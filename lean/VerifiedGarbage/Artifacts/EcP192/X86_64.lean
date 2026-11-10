@@ -62,17 +62,12 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.P192Decompress
 namespace VG.Artifacts.EcP192.X86_64.Compressed
 
 open VG.Proof.P192.X86_64 (hasLaw)
-open VG.Proof.EcKey.Compressed.X86_64.P192
 
 def artifacts : List Artifact :=
-  [Spec.EcKey.P192.inst.compressPublicKeyApi.artifact X86_64.target {
-    code := code false
-    verified := verified hasLaw.inv false
-    stack := 8 },
-    Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact X86_64.target {
-      code := Proof.EcKey.Compressed.X86_64.P192Decompress.code false
-      verified := Proof.EcKey.Compressed.X86_64.P192Decompress.verified hasLaw.law hasLaw.inv false
-      stack := 8 }]
+  [Spec.EcKey.P192.inst.compressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.P192.scrubReg hasLaw.inv),
+    Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact X86_64.target
+      (Proof.EcKey.Compressed.X86_64.P192Decompress.scrubReg hasLaw.law hasLaw.inv)]
 
 end VG.Artifacts.EcP192.X86_64.Compressed
 
@@ -80,13 +75,10 @@ end VG.Artifacts.EcP192.X86_64.Compressed
 namespace VG.Artifacts.EcP192.X86_64.Validate
 
 open VG.Proof.P192.X86_64 (hasLaw)
-open VG.Proof.EcKey.Validate.X86_64.P192
 
 def artifacts : List Artifact :=
-  [Spec.EcKey.P192.inst.validatePublicKeyApi.artifact X86_64.target {
-    code := code false
-    verified := verified hasLaw.inv false
-    stack := 8 }]
+  [Spec.EcKey.P192.inst.validatePublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Validate.X86_64.P192.scrubReg hasLaw.inv)]
 
 end VG.Artifacts.EcP192.X86_64.Validate
 
@@ -97,10 +89,8 @@ open VG.Proof.P192.X86_64 (hasLaw)
 def artifacts : List Artifact :=
   Compressed.artifacts ++
   [
-    Spec.EcKey.P192.publicKeyApi.artifact X86_64.target {
-      code := Impl.EcKey.X86_64.publicKeyP192
-      stack := 8
-      verified := Proof.EcKey.X86_64.P192.pk_verified hasLaw.law hasLaw.inv }] ++
+    Spec.EcKey.P192.publicKeyApi.artifact X86_64.target
+      (Proof.EcKey.X86_64.P192.scrubReg hasLaw.law hasLaw.inv)] ++
   Validate.artifacts
 
 end VG.Artifacts.EcP192.X86_64

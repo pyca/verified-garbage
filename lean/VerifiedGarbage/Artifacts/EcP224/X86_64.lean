@@ -67,17 +67,12 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.P224Decompress
 namespace VG.Artifacts.EcP224.X86_64.Compressed
 
 open VG.Proof.P224.X86_64 (hasLaw)
-open VG.Proof.EcKey.Compressed.X86_64.P224
 
 def artifacts : List Artifact :=
-  [Spec.EcKey.P224.inst.compressPublicKeyApi.artifact X86_64.target {
-    code := code false
-    verified := verified hasLaw.inv false
-    stack := 8 },
-    Spec.EcKey.P224.inst.decompressPublicKeyApi.artifact X86_64.target {
-      code := Proof.EcKey.Compressed.X86_64.P224Decompress.code false
-      verified := Proof.EcKey.Compressed.X86_64.P224Decompress.verified hasLaw.law hasLaw.inv false
-      stack := 8 }]
+  [Spec.EcKey.P224.inst.compressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.P224.scrubReg hasLaw.inv),
+    Spec.EcKey.P224.inst.decompressPublicKeyApi.artifact X86_64.target
+      (Proof.EcKey.Compressed.X86_64.P224Decompress.scrubReg hasLaw.law hasLaw.inv)]
 
 end VG.Artifacts.EcP224.X86_64.Compressed
 
@@ -85,13 +80,10 @@ end VG.Artifacts.EcP224.X86_64.Compressed
 namespace VG.Artifacts.EcP224.X86_64.Validate
 
 open VG.Proof.P224.X86_64 (hasLaw)
-open VG.Proof.EcKey.Validate.X86_64.P224
 
 def artifacts : List Artifact :=
-  [Spec.EcKey.P224.inst.validatePublicKeyApi.artifact X86_64.target {
-    code := code false
-    verified := verified hasLaw.inv false
-    stack := 8 }]
+  [Spec.EcKey.P224.inst.validatePublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Validate.X86_64.P224.scrubReg hasLaw.inv)]
 
 end VG.Artifacts.EcP224.X86_64.Validate
 
