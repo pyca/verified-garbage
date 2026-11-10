@@ -391,7 +391,7 @@ theorem pins195 : Pins (At (C0 pc) (crtF pc) (ix pc 195 183)) [.r15, .r16, .r17,
 abbrev NE (pc : Bool) (c : Prog isa) : Prog isa := NQ pc (.seq exportM2 (.seq (.block (setupP oBP oPLen)) c))
 
 theorem pins198 : Pins (At (C0 pc) (crtF pc) (ix pc 198 186))
-    ([.r10, .r11, .r21, .r23, .r27, .r28, .r29, .r31] ++ if pc then [.r30] else []) := by
+    (([.r10, .r11, .r21, .r23, .r27, .r28, .r29, .r31] : List Reg) ++ if pc then [.r30] else []) := by
   refine pins_at_list (fun s₀ => [off (off (cS s₀) (oPa s₀)) (slot (cwP s₀) 0), BitVec.ofNat 64 (2 * cwP s₀),
       off (off (cS s₀) (oPa s₀)) (slot (cwP s₀) 0), cS s₀, off (cS s₀) (slot (cwX s₀) 0),
       BitVec.ofNat 64 (8 * (cwX s₀ + 2)), BitVec.ofNat 64 (8 * (cwP s₀ + 2)), BitVec.ofNat 64 (cqL s₀)] ++

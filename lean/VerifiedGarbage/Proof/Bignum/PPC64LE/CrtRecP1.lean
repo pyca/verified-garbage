@@ -179,7 +179,7 @@ theorem recP1_ok {pc : Bool} {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : N
       val32 t.mem (off BX oA) (slot wP 7) (2 * wP) = 2 ^ (64 * wP) * 2 ^ (64 * wP) % Pv →
       (t.gpr .r12).toNat < 2 ^ 32 → (w32 t.mem (off BX oA) (slot wP 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 →
       Outside BX oA (slot wP 24) s.mem t.mem → Keep powerRegs s t → WP isa c t Q) :
-    WP isa (.seq (.block ([.load .d .r31 .r23 oQLen] ++ r2Ptr pc false)) (.seq (.block (PublicChecked.minv ++
+    WP isa (.seq (.block (([.load .d .r31 .r23 oQLen] : List Instr) ++ r2Ptr pc false)) (.seq (.block (PublicChecked.minv ++
       PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3)) (.seq (r2Step pc)
       (.seq (.block (PublicChecked.base .r14 7 ++ PublicChecked.base .r15 1)) (.seq copyN
       (.seq (.block (xb .r30 1)) (.seq ModArith.reduce64 c))))))) s Q := by
