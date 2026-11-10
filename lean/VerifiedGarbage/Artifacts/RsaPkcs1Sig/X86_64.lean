@@ -72,6 +72,7 @@ def artifacts : List Artifact :=
   (VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap fun (v : CrtImpl) => [
     Spec.RsaPkcs1Sig.signApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
       suffix := v.suffix
+      extra := v.extra
       code := Impl.RsaPkcs1Sig.X86_64.Sign.code (Sgn.privName v) (Sgn.privCode v)
       stack := sigStack
       verified := Sgn.code_verified v

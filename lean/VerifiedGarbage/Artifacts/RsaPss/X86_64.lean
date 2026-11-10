@@ -24,6 +24,7 @@ def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.M
   if h : OK vs then [
     Spec.RsaPss.signMdTableApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
       suffix := qualifiedName "" [("crt", c.suffix)]
+      extra := c.extra
       tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.MdHashTable.X86_64.tables vs)]
       code := Impl.RsaPss.X86_64.signC (Proof.MdHashTable.X86_64.fnsOf vs) (Proof.HashTable.X86_64.fnsOf vs)
         (privOf c).name (privOf c).code

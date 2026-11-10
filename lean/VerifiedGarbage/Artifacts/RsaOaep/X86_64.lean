@@ -109,6 +109,7 @@ def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.M
   if h : OK vs then [
     Spec.RsaOaep.decryptMdTablesApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
       suffix := qualifiedName "" [("crt", c.suffix)]
+      extra := c.extra
       tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Impl.RsaOaep.X86_64.decrypt (fnsOf vs) (privOf c).name (privOf c).code
       stack := decStack

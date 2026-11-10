@@ -59,6 +59,9 @@ structure CrtImpl where
   /-- The CPU features its code and that of the public operation require,
   which `vg_rsa_private_checked` requires too. -/
   features : List String
+  /-- The CPU features it is chosen only with, besides those its code
+  requires (`Registration.extra` of the functions that call it). -/
+  extra : List String := []
 
 /-! ## Octets and words of a buffer, in memories that agree on it
 

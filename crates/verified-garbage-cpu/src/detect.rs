@@ -53,7 +53,7 @@ use crate::feature;
 
 /// Each feature's name and bit, for reading `VG_CPU_FEATURES` and for the
 /// tests: bit `i` is `NAMES[i]`'s.
-pub const NAMES: [(&str, u32); 23] = [
+pub const NAMES: [(&str, u32); 24] = [
     ("ssse3", feature::SSSE3),
     ("sha", feature::SHA),
     ("aes", feature::AES),
@@ -77,6 +77,7 @@ pub const NAMES: [(&str, u32); 23] = [
     ("umaal", feature::UMAAL),
     ("dit", feature::DIT),
     ("sb", feature::SB),
+    ("avx512fp16", feature::AVX512FP16),
 ];
 
 /// Each feature that `decode` reports only with others, and those others:
@@ -164,7 +165,8 @@ pub const COMPILED: Features = Features(
         | (cfg!(target_feature = "avx512vl") as u32 * feature::AVX512VL)
         | (cfg!(target_feature = "vaes") as u32 * feature::VAES)
         | (cfg!(target_feature = "vpclmulqdq") as u32 * feature::VPCLMULQDQ)
-        | (cfg!(target_feature = "avx512bw") as u32 * feature::AVX512BW),
+        | (cfg!(target_feature = "avx512bw") as u32 * feature::AVX512BW)
+        | (cfg!(target_feature = "avx512fp16") as u32 * feature::AVX512FP16),
 );
 
 /// The features the compilation target enables, which every CPU running
@@ -325,13 +327,13 @@ pub fn parse(names: &str) -> Option<u32> {
 /// AES, bit 1 PCLMULQDQ, bit 27 OSXSAVE and bit 28 AVX; leaf 7 sub-leaf 0 EBX
 /// bit 29 is SHA, bit 5 AVX2, bit 3 BMI1, bit 8 BMI2, bit 16 AVX512F, bit 19
 /// ADX, bit 21 AVX512_IFMA and bit 31 AVX512VL, its ECX bit 9 VAES and bit 10
-/// VPCLMULQDQ, and its EAX the highest sub-leaf; leaf 7 sub-leaf 1 EAX bit 0
-/// is SHA512; AMD reports them in the same bits). AVX, AVX2, SHA512, VAES and
+/// VPCLMULQDQ, its EDX bit 23 AVX512_FP16, and its EAX the highest sub-leaf;
+/// leaf 7 sub-leaf 1 EAX bit 0 is SHA512; AMD reports them in the same bits). AVX, AVX2, SHA512, VAES and
 /// VPCLMULQDQ (whose instructions are VEX.256-encoded, so also need AVX,
 /// Intel SDM Vol. 2, "VSHA512RNDS2", "AESENC" and "PCLMULQDQ") also need the
 /// operating system to save the `ymm` registers: XCR0 bits 1 and 2, read with
 /// `xgetbv` only if OSXSAVE says it may be (Intel SDM Vol. 1, §14.3,
-/// "Detection of Intel AVX Instructions"); AVX512F, AVX512_IFMA, AVX512VL and AVX512BW (whose instructions
+/// "Detection of Intel AVX Instructions"); AVX512F, AVX512_IFMA, AVX512VL, AVX512BW and AVX512_FP16 (whose instructions
 /// are EVEX-encoded) also need the opmask and `zmm` state, XCR0 bits 5, 6 and 7
 /// (§15.2, "Detection of AVX-512 Foundation Instructions", and §15.4 for the
 /// other AVX-512 instruction groups).
@@ -373,7 +375,7 @@ pub fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) ->
     let ymm = u32::from(xcr0 & 0b110 == 0b110);
     let zmm = u32::from(xcr0 & 0b1110_0110 == 0b1110_0110);
     let avx = (ecx >> 28) & ymm;
-    let [sub, ebx, ecx7, _] = if max >= 7 { cpuid(7, 0) } else { [0; 4] };
+    let [sub, ebx, ecx7, edx7] = if max >= 7 { cpuid(7, 0) } else { [0; 4] };
     let eax1 = if max >= 7 && sub >= 1 {
         cpuid(7, 1)[0]
     } else {
@@ -391,6 +393,7 @@ pub fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) ->
     let vaes = (ecx7 >> 9) & avx & aes;
     let vpclmulqdq = (ecx7 >> 10) & avx;
     let avx512bw = (ebx >> 30) & avx & zmm;
+    let avx512fp16 = (edx7 >> 23) & avx & zmm;
     (ssse3 * feature::SSSE3)
         | (sha * feature::SHA)
         | (aes * feature::AES)
@@ -407,6 +410,7 @@ pub fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) ->
         | (vaes * feature::VAES)
         | (vpclmulqdq * feature::VPCLMULQDQ)
         | (avx512bw * feature::AVX512BW)
+        | (avx512fp16 * feature::AVX512FP16)
 }
 
 /// AArch64 feature groups, using the same Rust names as the generated

@@ -3,6 +3,125 @@
 //! `assembly/rsa_pss.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_rsa_pss_sign_crt_ifma512` requires (`Artifact.features`).
+pub const VG_RSA_PSS_SIGN_CRT_IFMA512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, of a digest of the former, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the `digest_len`-byte digest `digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - digest_len - 2`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
+///
+/// Contract: `VG.Spec.RsaPss.signMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the digest or the salt.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `digest_len` must be the digest length of the hash function `hash` names.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
+/// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash` and `mgf1` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * The CPU must support the `avx`, `avx512f`, `avx512vl`, `avx512ifma`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sign_crt_ifma512(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJHj+//9IiZwkSAEAAEiJrCRQAQAATImkJFgBAABIibwkgAAAAEiJlCSQAAAASImMJIgAAABMiYQkmAAAAEyJjCSgAAAASIuEJOABAABIiYQkKAEAAEiLhCTwAQAASImEJDgBAABIi4Qk+AEAAEiJhCRAAQAASIuEJAACAABIiYQkqAAAAEiLhCQIAgAASImEJLAAAABIi7QkkAAAAA+2BkiFwEyLnCQQAgAATYtbKEyJnCR4AQAA"
+je 20f
+.base64 "SIuUJIgAAABIweIDSIPqAUiD+AJIg9oASIP4BEiD2gBIg/gISIPaAEiD+BBIg9oASIP4IEiD2gBIg/hASIPaAEg9gAAAAEiD2gBIiZQk2AAAAEiJ0EiDwAdIwegDSImEJOAAAABMi4QkiAAAAEkpwEyJhCTQAAAASIu8JKgAAABIgccACgAAuAAAAACIB0gDvCTQAAAASIu0JOAAAABIi5QkKAEAAEiLjCQ4AQAATIuEJEABAABMi4wk2AAAAEiLhCSoAAAASAUAEAAASIkEJEiLhCSwAAAASC0AAgAASIlEJAhIi4QkEAIAAEiJRCQQSIuEJBgCAABIiUQkGEyLnCR4AQAASYP7AA=="
+je 22f
+.base64 "SYP7AQ=="
+je 24f
+.base64 "SYP7Ag=="
+je 26f
+.base64 "SYP7Aw=="
+je 28f
+.base64 "SYP7BA=="
+je 210f
+.base64 "SYP7BQ=="
+je 212f
+.base64 "SYP7Bg=="
+je 214f
+call {vg_rsa_pss_sha512_256_encode}
+jmp 215f
+214:
+call {vg_rsa_pss_sha512_224_encode}
+215:
+jmp 213f
+212:
+call {vg_rsa_pss_sha512_encode}
+213:
+jmp 211f
+210:
+call {vg_rsa_pss_sha384_encode}
+211:
+jmp 29f
+28:
+call {vg_rsa_pss_sha256_encode}
+29:
+jmp 27f
+26:
+call {vg_rsa_pss_sha224_encode}
+27:
+jmp 25f
+24:
+call {vg_rsa_pss_sha1_encode}
+25:
+jmp 23f
+22:
+call {vg_rsa_pss_md5_encode}
+23:
+.base64 "hcA="
+je 216f
+.base64 "SIuEJJABAABIiUQkEEiLhCSYAQAASIlEJBhIi4QkoAEAAEiJRCQgSIuEJKgBAABIiUQkKEiLhCSwAQAASIlEJDBIi4QkuAEAAEiJRCQ4SIuEJMABAABIiUQkQEiLhCTIAQAASIlEJEhIi4Qk0AEAAEiJRCRQSIuEJNgBAABIiUQkWEiLhCSoAAAASAUACgAASIkEJEiLhCSIAAAASIlEJAhIi4QkqAAAAEgFACAAAEiJRCRgSIuEJLAAAABILQAEAABIiUQkaEiLvCSAAAAASIu0JIgAAABIi5QkkAAAAEiLjCSIAAAATIuEJJgAAABMi4wkoAAAAA=="
+call {vg_rsa_private_checked_ifma512}
+jmp 217f
+216:
+.base64 "SIu8JIAAAABMi5QkiAAAALgAAAAAQbgAAAAA"
+218:
+.base64 "QogEB0mDwAFNOdA="
+jne 218b
+217:
+jmp 21f
+20:
+.base64 "SIu8JIAAAABMi5QkiAAAALgAAAAAQbgAAAAA"
+219:
+.base64 "QogEB0mDwAFNOdA="
+jne 219b
+21:
+.base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9iof1A78BiofVA78lioe1A79JioeVA79tiod1A7+RiodVA7+1ioc1A7/ZiocVA7/9iAb1A78BiAbVA78liAa1A79JiAaVA79tiAZ1A7+RiAZVA7+1iAY1A7/ZiAYVA7/9FMdtIjWQk8A+uHCREixwkQYHjwP8AAESJHCRBu78fAABEiVwkBA+uVCQED67oD67oD64UJEUx20iNZCQQSI2kJLjx///zD3+EJDgOAADzD3+EJCgOAADzD3+EJBgOAADzD3+EJAgOAADzD3+EJPgNAADzD3+EJOgNAADzD3+EJNgNAADzD3+EJMgNAADzD3+EJLgNAADzD3+EJKgNAADzD3+EJJgNAADzD3+EJIgNAADzD3+EJHgNAADzD3+EJGgNAADzD3+EJFgNAADzD3+EJEgNAADzD3+EJDgNAADzD3+EJCgNAADzD3+EJBgNAADzD3+EJAgNAADzD3+EJPgMAADzD3+EJOgMAADzD3+EJNgMAADzD3+EJMgMAADzD3+EJLgMAADzD3+EJKgMAADzD3+EJJgMAADzD3+EJIgMAADzD3+EJHgMAADzD3+EJGgMAADzD3+EJFgMAADzD3+EJEgMAADzD3+EJDgMAADzD3+EJCgMAADzD3+EJBgMAADzD3+EJAgMAADzD3+EJPgLAADzD3+EJOgLAADzD3+EJNgLAADzD3+EJMgLAADzD3+EJLgLAADzD3+EJKgLAADzD3+EJJgLAADzD3+EJIgLAADzD3+EJHgLAADzD3+EJGgLAADzD3+EJFgLAADzD3+EJEgLAADzD3+EJDgLAADzD3+EJCgLAADzD3+EJBgLAADzD3+EJAgLAADzD3+EJPgKAADzD3+EJOgKAADzD3+EJNgKAADzD3+EJMgKAADzD3+EJLgKAADzD3+EJKgKAADzD3+EJJgKAADzD3+EJIgKAADzD3+EJHgKAADzD3+EJGgKAADzD3+EJFgKAADzD3+EJEgKAADzD3+EJDgKAADzD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJEgOAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.p2align 6"#,
+        vg_rsa_pss_sha512_256_encode = sym super::rsa_pss::vg_rsa_pss_sha512_256_encode::vg_rsa_pss_sha512_256_encode,
+        vg_rsa_pss_sha512_224_encode = sym super::rsa_pss::vg_rsa_pss_sha512_224_encode::vg_rsa_pss_sha512_224_encode,
+        vg_rsa_pss_sha512_encode = sym super::rsa_pss::vg_rsa_pss_sha512_encode::vg_rsa_pss_sha512_encode,
+        vg_rsa_pss_sha384_encode = sym super::rsa_pss::vg_rsa_pss_sha384_encode::vg_rsa_pss_sha384_encode,
+        vg_rsa_pss_sha256_encode = sym super::rsa_pss::vg_rsa_pss_sha256_encode::vg_rsa_pss_sha256_encode,
+        vg_rsa_pss_sha224_encode = sym super::rsa_pss::vg_rsa_pss_sha224_encode::vg_rsa_pss_sha224_encode,
+        vg_rsa_pss_sha1_encode = sym super::rsa_pss::vg_rsa_pss_sha1_encode::vg_rsa_pss_sha1_encode,
+        vg_rsa_pss_md5_encode = sym super::rsa_pss::vg_rsa_pss_md5_encode::vg_rsa_pss_md5_encode,
+        vg_rsa_private_checked_ifma512 = sym super::rsa::vg_rsa_private_checked_ifma512::vg_rsa_private_checked_ifma512,
+    )
+}
+
 /// The CPU features `vg_rsa_pss_sign_crt_ifma` requires (`Artifact.features`).
 pub const VG_RSA_PSS_SIGN_CRT_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 

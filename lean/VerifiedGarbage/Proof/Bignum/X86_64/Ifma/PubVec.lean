@@ -43,6 +43,8 @@ theorem PubOk.amm (hl : PubOk l) : AmmOk l :=
 
 theorem PubOk.nl (hl : PubOk l) : l.nl = 1 := by rcases hl with rfl | rfl | rfl <;> rfl
 
+theorem PubOk.z (hl : PubOk l) : l.z = false := by rcases hl with rfl | rfl | rfl <;> rfl
+
 /-- The area: the modulus and `k₀` before `A`, then `A`, `B` and the MXCSR
 slots within six arrays of `W + 2` words; `2^kb` one limb; the radix
 `R' = 2^(52 S)` with `S = L`, above `4 n` for `n` below `2^(64 W)`. -/
@@ -201,7 +203,7 @@ theorem core_ok (hl : PubOk l) {s : State} {B : Addr} {M k a b : Nat} (hB : s.gp
   have hp : ∀ p < l.nl, p = 0 := fun p hp => by omega_arith
   have h0 : ∀ c, l.D * 0 + c = c := fun c => by rw [Nat.mul_zero, Nat.zero_add]
   have hM : val52 l s.mem B oM = M := hm.val
-  refine WP.mono (ammCoreSpecN_ok hl.amm (ammMul_core hl.amm) (Z := 48 * (l.W + 2)) (k := fun _ => k) hB r8 r9 r11 hs
+  refine WP.mono (ammCoreSpecN_ok hl.amm (ammMul_core hl.amm hl.z) (Z := 48 * (l.W + 2)) (k := fun _ => k) hB r8 r9 r11 hs
     (by rw [hn]; simp only [Nat.sub_self, Nat.mul_zero]; omega_arith) (by omega_arith)
     (by rw [hn]; simp only [Nat.sub_self, Nat.mul_zero]; omega_arith)
     (by rw [hn]; simp only [Nat.sub_self, Nat.mul_zero]; omega_arith)
