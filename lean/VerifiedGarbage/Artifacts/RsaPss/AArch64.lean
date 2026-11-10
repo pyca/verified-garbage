@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Sat
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPrecomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.AArch64
@@ -27,7 +28,14 @@ def artifacts (c : Proof.Rsa.AArch64.CrtImpl) (vs : List Proof.Pbkdf2.Md.AArch64
       code := Impl.RsaPss.AArch64.signC (Proof.MdHashTable.AArch64.fnsOf vs) (Proof.HashTable.AArch64.fnsOf vs)
         (privOf c).name (privOf c).code
       stack := Proof.RsaPss.AArch64.Sgn.stk (privOf c).stack
-      verified := sign_ok h c }]
+      verified := sign_ok h c },
+    Spec.RsaPss.signPrecomputedMdTableApi.artifact AArch64.target {
+      suffix := qualifiedName "" [("crt", c.suffix)]
+      tables := [("hash", Proof.MdHashTable.AArch64.tables vs), ("mgf1", Proof.MdHashTable.AArch64.tables vs)]
+      code := Impl.RsaPss.AArch64.signC (Proof.MdHashTable.AArch64.fnsOf vs) (Proof.HashTable.AArch64.fnsOf vs)
+        (privOf c).name (privOf c).code
+      stack := Proof.RsaPss.AArch64.Sgn.stk (privOf c).stack
+      verified := Proof.RsaPss.AArch64.signPrecomputed_ok h c }]
   else []
 
 end VG.Artifacts.RsaPss.AArch64.RsaPrivateCrtAllMdHash
