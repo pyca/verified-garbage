@@ -32,7 +32,7 @@ rounds used as pointers and counts back in `r7`–`r9` and `r11`
 
 ## Blocks
 
-A block of `k ≤ 4` words (`block`) holds the words in `sreg 0`, …, `sreg (k -
+A block of `k ≤ 8` words (`block`) holds the words in `sreg 0`, …, `sreg (k -
 1)` and adds `x p` to them twice (`half`), each time in two carry chains:
 the low words of the products (`lo_ok`, one `loStep` per word) and their
 high words, one word up (`hi_ok`, one `hiStep` per word). `half_ok` puts the
@@ -180,20 +180,20 @@ theorem wp_restore {c : Reg} {b : Bool} {is : List Instr} {s : State} {Q : State
 
 /-! ## The words of a block -/
 
-theorem sreg_mem (i : Nat) : sreg i ∈ [Reg.r3, .r4, .r7, .r8] := by
-  rcases i with _ | _ | _ | _ | i <;> simp [sreg]
+theorem sreg_mem (i : Nat) : sreg i ∈ [Reg.r3, .r4, .r7, .r8, .r28, .r29, .r30, .r31] := by
+  rcases i with _ | _ | _ | _ | _ | _ | _ | _ | i <;> simp [sreg]
 
-theorem sreg_inj : ∀ i < 4, ∀ j < 4, sreg i = sreg j → i = j := by decide
+theorem sreg_inj : ∀ i < 8, ∀ j < 8, sreg i = sreg j → i = j := by decide
 
 /-- The registers the chains write, but the halves' own. -/
-def blkRegs : List Reg := [.r0, .r9, .r3, .r4, .r7, .r8]
+def blkRegs : List Reg := [.r0, .r9, .r3, .r4, .r7, .r8, .r28, .r29, .r30, .r31]
 
-theorem sreg_ne {r : Reg} (hr : r ∉ [Reg.r3, .r4, .r7, .r8]) (i : Nat) : sreg i ≠ r := fun e => hr (e ▸ sreg_mem i)
+theorem sreg_ne {r : Reg} (hr : r ∉ [Reg.r3, .r4, .r7, .r8, .r28, .r29, .r30, .r31]) (i : Nat) : sreg i ≠ r := fun e => hr (e ▸ sreg_mem i)
 
 theorem sreg_blk (i : Nat) : sreg i ∈ blkRegs := by
   have := sreg_mem i
   simp only [blkRegs, List.mem_cons, List.not_mem_nil, or_false] at this ⊢
-  rcases this with h | h | h | h <;> simp [h]
+  rcases this with h | h | h | h | h | h | h | h <;> simp [h]
 
 theorem keep_step {s t : State} {r₁ r₂ : Reg} {i : Nat} (h : Keep [r₁, r₂, sreg i] s t)
     (h₁ : r₁ ∈ blkRegs := by decide) (h₂ : r₂ ∈ blkRegs := by decide) : Keep blkRegs s t :=
@@ -203,8 +203,8 @@ theorem keep_step {s t : State} {r₁ r₂ : Reg} {i : Nat} (h : Keep [r₁, r�
     exacts [h₁, h₂, sreg_blk i]
 
 /-- `sreg j` is not written by a step of word `i ≠ j`. -/
-theorem sreg_notin {i j : Nat} (hi : i < 4) (hj : j < 4) (h : j ≠ i) {r₁ r₂ : Reg}
-    (h₁ : r₁ ∉ [Reg.r3, .r4, .r7, .r8] := by decide) (h₂ : r₂ ∉ [Reg.r3, .r4, .r7, .r8] := by decide) :
+theorem sreg_notin {i j : Nat} (hi : i < 8) (hj : j < 8) (h : j ≠ i) {r₁ r₂ : Reg}
+    (h₁ : r₁ ∉ [Reg.r3, .r4, .r7, .r8, .r28, .r29, .r30, .r31] := by decide) (h₂ : r₂ ∉ [Reg.r3, .r4, .r7, .r8, .r28, .r29, .r30, .r31] := by decide) :
     sreg j ∉ [r₁, r₂, sreg i] := by
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
   exact ⟨sreg_ne h₁ j, sreg_ne h₂ j, fun e => h (sreg_inj j hj i hi e)⟩
@@ -246,7 +246,7 @@ theorem chain_step {P₁ P₀ L c₀ c₁ Q S' c' S l : Nat} (h₁ : P₁ + Q * 
 
 /-- Word `i` of the low chain: `S i += lo(x pᵢ) + CA`, `pᵢ` left in `r9`. -/
 theorem loStep_ok {s : State} {B : Addr} {Z d i : Nat} {x p : Reg} (hs : Scr s B Z)
-    (hp : s.gpr p = off B d) (hpr : p ≠ .r0) (hi : i < 4) (hd : d + 8 * i + 8 ≤ Z) (hx : x ∉ blkRegs) :
+    (hp : s.gpr p = off B d) (hpr : p ≠ .r0) (hi : i < 8) (hd : d + 8 * i + 8 ≤ Z) (hx : x ∉ blkRegs) :
     WP isa (.block (loStep x p i)) s fun t =>
       (sv t 0 i + 2 ^ 64 * t.ca.toNat = sv s 0 i + (s.gpr x * word s.mem B (d + 8 * i)).toNat + s.ca.toNat ∧
         t.gpr .r9 = word s.mem B (d + 8 * i) ∧ t.mem = s.mem) ∧ Keep [.r9, .r0, sreg i] s t := by
@@ -266,14 +266,14 @@ theorem loSteps_succ (x p : Reg) (i : Nat) :
     (List.range (i + 1)).flatMap (loStep x p) = (List.range i).flatMap (loStep x p) ++ loStep x p i := by
   simp only [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
 
-/-- The low chain over `i ≤ 4` words. -/
+/-- The low chain over `i ≤ 8` words. -/
 theorem lo_ok {B : Addr} {Z d : Nat} {x p : Reg} (hpr : p ≠ .r0) (hx : x ∉ blkRegs) (hp' : p ∉ blkRegs) :
-    ∀ (i : Nat) {s : State}, Scr s B Z → s.gpr p = off B d → i ≤ 4 → d + 8 * i ≤ Z →
+    ∀ (i : Nat) {s : State}, Scr s B Z → s.gpr p = off B d → i ≤ 8 → d + 8 * i ≤ Z →
     WP isa (.block ((List.range i).flatMap (loStep x p))) s fun t =>
       (psum (sv t 0) i + 2 ^ (64 * i) * t.ca.toNat =
           psum (sv s 0) i + psum (fun j => (s.gpr x * word s.mem B (d + 8 * j)).toNat) i + s.ca.toNat ∧
         (0 < i → t.gpr .r9 = word s.mem B (d + 8 * (i - 1))) ∧
-        (∀ j, i ≤ j → j < 4 → t.gpr (sreg j) = s.gpr (sreg j)) ∧ t.mem = s.mem) ∧ Keep blkRegs s t
+        (∀ j, i ≤ j → j < 8 → t.gpr (sreg j) = s.gpr (sreg j)) ∧ t.mem = s.mem) ∧ Keep blkRegs s t
   | 0, s, _, _, _, _ => WP.block_nil ⟨⟨by simp [psum], fun h => absurd h (by decide), fun _ _ _ => rfl, rfl⟩,
       Keep.refl _ _⟩
   | i + 1, s, hs, hp, hi, hd => by
@@ -302,7 +302,7 @@ abbrev hiw (x y : BitVec 64) : Nat := x.toNat * y.toNat / 2 ^ 64
 
 /-- Word `i + 1` of the high chain: `S (i + 1) += hi(x pᵢ) + CA`. -/
 theorem hiStep_ok {s : State} {B : Addr} {Z d i : Nat} {x p : Reg} (hs : Scr s B Z)
-    (hp : s.gpr p = off B d) (hpr : p ≠ .r0) (hi : i < 3) (hd : d + 8 * i + 8 ≤ Z) (hx : x ∉ blkRegs) :
+    (hp : s.gpr p = off B d) (hpr : p ≠ .r0) (hi : i < 7) (hd : d + 8 * i + 8 ≤ Z) (hx : x ∉ blkRegs) :
     WP isa (.block (hiStep x p i)) s fun t =>
       (sv t 1 i + 2 ^ 64 * t.ca.toNat = sv s 1 i + hiw (s.gpr x) (word s.mem B (d + 8 * i)) + s.ca.toNat ∧
         t.mem = s.mem) ∧ Keep [.r0, .r0, sreg (i + 1)] s t := by
@@ -320,14 +320,14 @@ theorem hiSteps_succ (x p : Reg) (i : Nat) :
     (List.range (i + 1)).flatMap (hiStep x p) = (List.range i).flatMap (hiStep x p) ++ hiStep x p i := by
   simp only [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
 
-/-- The high chain over words `1` to `i ≤ 3`, of the products of words `0` to
+/-- The high chain over words `1` to `i ≤ 7`, of the products of words `0` to
 `i - 1`. -/
 theorem hi_ok {B : Addr} {Z d : Nat} {x p : Reg} (hpr : p ≠ .r0) (hx : x ∉ blkRegs) (hp' : p ∉ blkRegs) :
-    ∀ (i : Nat) {s : State}, Scr s B Z → s.gpr p = off B d → i ≤ 3 → d + 8 * i ≤ Z →
+    ∀ (i : Nat) {s : State}, Scr s B Z → s.gpr p = off B d → i ≤ 7 → d + 8 * i ≤ Z →
     WP isa (.block ((List.range i).flatMap (hiStep x p))) s fun t =>
       (psum (sv t 1) i + 2 ^ (64 * i) * t.ca.toNat =
           psum (sv s 1) i + psum (fun j => hiw (s.gpr x) (word s.mem B (d + 8 * j))) i + s.ca.toNat ∧
-        t.gpr .r9 = s.gpr .r9 ∧ (∀ j, (j = 0 ∨ i < j) → j < 4 → t.gpr (sreg j) = s.gpr (sreg j)) ∧
+        t.gpr .r9 = s.gpr .r9 ∧ (∀ j, (j = 0 ∨ i < j) → j < 8 → t.gpr (sreg j) = s.gpr (sreg j)) ∧
         t.mem = s.mem) ∧ Keep blkRegs s t
   | 0, s, _, _, _, _ => WP.block_nil ⟨⟨by simp [psum], rfl, fun _ _ _ => rfl, rfl⟩, Keep.refl _ _⟩
   | i + 1, s, hs, hp, hi, hd => by
@@ -384,7 +384,7 @@ def halfRegs (c h : Reg) : List Reg := c :: h :: blkRegs
 (c + h) = S + c + h + x p` for the carry `c` (kept as `cenc`) and the pending
 high word `h` on entry and on exit. -/
 theorem half_ok {s : State} {B : Addr} {Z d k : Nat} {c x p h : Reg} {b : Bool} (hs : Scr s B Z)
-    (hp : s.gpr p = off B d) (hk : 1 ≤ k) (hk4 : k ≤ 4) (hd : d + 8 * k ≤ Z)
+    (hp : s.gpr p = off B d) (hk : 1 ≤ k) (hk4 : k ≤ 8) (hd : d + 8 * k ≤ Z)
     (hc : s.gpr c = cenc b) (h10 : (s.gpr .r10).toNat < 2 ^ 64 - 1)
     (hcb : c ∉ blkRegs) (hxb : x ∉ blkRegs) (hpb : p ∉ blkRegs) (hhb : h ∉ blkRegs)
     (hcx : c ≠ x) (hcp : c ≠ p) (hch : c ≠ h) (hpr : p ≠ .r0) :
@@ -392,7 +392,7 @@ theorem half_ok {s : State} {B : Addr} {Z d k : Nat} {c x p h : Reg} {b : Bool} 
       (∃ b' : Bool, t.gpr c = cenc b' ∧
         psum (sv t 0) k + 2 ^ (64 * k) * (b'.toNat + (t.gpr h).toNat) =
           psum (sv s 0) k + b.toNat + (s.gpr h).toNat + (s.gpr x).toNat * wordsVal s.mem B d k) ∧
-        (∀ j, k ≤ j → j < 4 → t.gpr (sreg j) = s.gpr (sreg j)) ∧ t.mem = s.mem ∧ Keep (halfRegs c h) s t := by
+        (∀ j, k ≤ j → j < 8 → t.gpr (sreg j) = s.gpr (sreg j)) ∧ t.mem = s.mem ∧ Keep (halfRegs c h) s t := by
   obtain ⟨n, rfl⟩ : ∃ n, k = n + 1 := ⟨k - 1, by omega⟩
   have hs3 : ∀ {r : Reg}, r ∉ blkRegs → Reg.r3 ≠ r := fun hr e => hr (by simp [← e, blkRegs])
   have hs9 : ∀ {r : Reg}, r ∉ blkRegs → Reg.r9 ≠ r := fun hr e => hr (by simp [← e, blkRegs])
@@ -474,10 +474,10 @@ theorem map_succ {α : Type} (f : Nat → α) (i : Nat) :
   rw [List.range_succ, List.map_append, List.map_cons, List.map_nil]
 
 /-- The words of a block, loaded from `r14 + 8` on. -/
-theorem loads_ok {B : Addr} {Z dT : Nat} : ∀ (i : Nat) {s : State}, Scr s B Z → s.gpr .r14 = off B dT → i ≤ 4 →
+theorem loads_ok {B : Addr} {Z dT : Nat} : ∀ (i : Nat) {s : State}, Scr s B Z → s.gpr .r14 = off B dT → i ≤ 8 →
     dT + 8 * i + 8 ≤ Z →
     WP isa (.block ((List.range i).map fun j => .load .d (sreg j) .r14 (8 * j + 8))) s fun t =>
-      (psum (sv t 0) i = wordsVal s.mem B (dT + 8) i ∧ t.mem = s.mem) ∧ Keep [.r3, .r4, .r7, .r8] s t
+      (psum (sv t 0) i = wordsVal s.mem B (dT + 8) i ∧ t.mem = s.mem) ∧ Keep [.r3, .r4, .r7, .r8, .r28, .r29, .r30, .r31] s t
   | 0, s, _, _, _, _ => WP.block_nil ⟨⟨rfl, rfl⟩, Keep.refl _ _⟩
   | i + 1, s, hs, h14, hi, hd => by
     rw [map_succ, WP.block_append_iff]
@@ -494,7 +494,7 @@ theorem loads_ok {B : Addr} {Z dT : Nat} : ∀ (i : Nat) {s : State}, Scr s B Z 
     rw [e, m₁, show dT + (8 * i + 8) = dT + 8 + 8 * i by omega]
 
 /-- The words of a block, stored from `r14` on. -/
-theorem stores_ok {B : Addr} {Z dT : Nat} : ∀ (i : Nat) {s : State}, Scr s B Z → s.gpr .r14 = off B dT → i ≤ 4 →
+theorem stores_ok {B : Addr} {Z dT : Nat} : ∀ (i : Nat) {s : State}, Scr s B Z → s.gpr .r14 = off B dT → i ≤ 8 →
     dT + 8 * i ≤ Z →
     WP isa (.block ((List.range i).map fun j => .store .d (sreg j) .r14 (8 * j))) s fun t =>
       (wordsVal t.mem B dT i = psum (sv s 0) i ∧ Outside B dT (8 * i) s.mem t.mem) ∧ Keep [] s t
@@ -521,7 +521,7 @@ def Pend (s : State) (C : Nat) : Prop :=
     C = bA.toNat + (s.gpr .r20).toNat + bC.toNat + (s.gpr .r22).toNat
 
 /-- The registers a block writes. -/
-def blockRegs : List Reg := [.r0, .r9, .r3, .r4, .r7, .r8, .r11, .r12, .r20, .r22, .r14, .r15, .r16]
+def blockRegs : List Reg := [.r0, .r9, .r3, .r4, .r7, .r8, .r28, .r29, .r30, .r31, .r11, .r12, .r20, .r22, .r14, .r15, .r16]
 
 theorem block_arith {T P₀ P₁ P₂ W Q a b u m bA hA bC hC bA' hA' bC' hC' : Nat} (hT : P₀ = T)
     (eA : P₁ + Q * (bA' + hA') = P₀ + bA + hA + a * b) (eC : P₂ + Q * (bC' + hC') = P₁ + bC + hC + u * m)
@@ -536,7 +536,7 @@ pending before it, for the `k` words of `T`, `b` and `m` from `dT + 8`,
 `dB` and `dM`, `aᵢ` in `r18` and `u` in `r19`; the pointers advanced. -/
 theorem block_ok {s : State} {B : Addr} {Z dT dB dM k C : Nat} (hs : Scr s B Z)
     (h14 : s.gpr .r14 = off B dT) (h15 : s.gpr .r15 = off B dB) (h16 : s.gpr .r16 = off B dM)
-    (hk : 1 ≤ k) (hk4 : k ≤ 4) (hT : dT + 8 * k + 8 ≤ Z) (hB : dB + 8 * k ≤ Z) (hM : dM + 8 * k ≤ Z)
+    (hk : 1 ≤ k) (hk4 : k ≤ 8) (hT : dT + 8 * k + 8 ≤ Z) (hB : dB + 8 * k ≤ Z) (hM : dM + 8 * k ≤ Z)
     (h10 : (s.gpr .r10).toNat < 2 ^ 64 - 1) (hC : Pend s C) :
     WP isa (.block (block k)) s fun t =>
       ((∃ C', Pend t C' ∧ wordsVal t.mem B dT k + 2 ^ (64 * k) * C' =
@@ -728,7 +728,7 @@ theorem Wd.zero {B : Addr} {dA dB dM C₀ : Nat} {s₁ : State} (h14 : s₁.gpr 
 
 /-- A block of `k` words after `j` words. -/
 theorem Wd.step {B : Addr} {Z dA dB dM C₀ w j k : Nat} {s₁ t : State} (hs : Scr s₁ B Z)
-    (hW : Wd B dA dB dM C₀ s₁ j t) (hk : 1 ≤ k) (hk4 : k ≤ 4) (hjk : j + k + 1 ≤ w)
+    (hW : Wd B dA dB dM C₀ s₁ j t) (hk : 1 ≤ k) (hk4 : k ≤ 8) (hjk : j + k + 1 ≤ w)
     (h10 : (s₁.gpr .r10).toNat < 2 ^ 64 - 1)
     (hA : dA + 8 * (w + 1) ≤ Z) (hB : dB + 8 * w ≤ Z) (hM : dM + 8 * w ≤ Z)
     (dBA : dB + 8 * w ≤ dA ∨ dA + 8 * (w + 1) ≤ dB) (dMA : dM + 8 * w ≤ dA ∨ dA + 8 * (w + 1) ≤ dM) :
@@ -773,7 +773,7 @@ theorem remBlock_ok {B : Addr} {Z dA dB dM C₀ w N : Nat} {s₁ t : State} (hs 
     (dBA : dB + 8 * w ≤ dA ∨ dA + 8 * (w + 1) ≤ dB) (dMA : dM + 8 * w ≤ dA ∨ dA + 8 * (w + 1) ≤ dM) :
     WP isa remBlock t fun u => Wd B dA dB dM C₀ s₁ N u ∧ u.gpr .r17 = t.gpr .r17 := by
   have step := fun {j k : Nat} {t' : State} (h : Wd B dA dB dM C₀ s₁ j t') (e : t'.gpr .r17 = t.gpr .r17)
-    (hk : 1 ≤ k) (hk4 : k ≤ 4) (hjk : j + k + 1 ≤ w) =>
+    (hk : 1 ≤ k) (hk4 : k ≤ 8) (hjk : j + k + 1 ≤ w) =>
     WP.mono (Wd.step hs h hk hk4 hjk h10 hA hB hM dBA dMA) fun _ h => And.intro h.1 (h.2.trans e)
   unfold remBlock
   refine WP.ite _ (eval_zero_ofNat _ _ (by omega) h9) (fun hz => ?_) (fun hz => ?_)
@@ -943,7 +943,8 @@ theorem top_ok {s : State} {B : Addr} {Z dT C R : Nat} (hs : Scr s B Z) (h14 : s
 
 /-- The registers a round writes. -/
 def roundRegs : List Reg :=
-  [.r0, .r3, .r4, .r6, .r7, .r8, .r9, .r11, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22]
+  [.r0, .r3, .r4, .r6, .r7, .r8, .r9, .r11, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r28, .r29,
+    .r30, .r31]
 
 /-- A round (`round`), for `aᵢ` at `da` (`r6`, advanced), `T` (`w + 1` words) at
 `dA = dM + 16 (w + 2)`, `m'` above it, `b` and `m` (`w` words) at `dB` and `dM`,
@@ -1015,6 +1016,207 @@ theorem round_ok {s : State} {B : Addr} {Z da dA dB dM w R : Nat} (hs : Scr s B 
       wordsVal_succ_top s.mem B (dA + 8) (w - 1), fios_wordsVal_pred s.mem B dB hw, fios_wordsVal_pred s.mem B dM hw]
     exact fios_round_sum (c := C) (d := 0) (by rw [Nat.add_zero]; exact eC) e₀ (by rw [txy]; omega)
 
+/-! ## The kernel's round: blocks of eight words -/
+
+theorem quot8 (n : Nat) (h : n < 2 ^ 64) : BitVec.ofNat 64 n >>> 3 = BitVec.ofNat 64 (n / 8) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  omega
+
+/-- Bit 2 of `n`, by shifts. -/
+theorem bit2 (n : Nat) : BitVec.ofNat 64 n <<< 61 >>> 63 = BitVec.ofNat 64 (n / 4 % 2) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
+    Nat.shiftRight_eq_div_pow]
+  omega
+
+/-- The start of the kernel's round (`roundStart8`): `roundStart`, with `(w -
+1) / 8` blocks in `r17`'s low half and bit 2 of `w - 1` in `r21`. -/
+theorem roundStart8_ok {s : State} {B : Addr} {Z dA dB dM w R : Nat} (hs : Scr s B Z)
+    (h10 : s.gpr .r10 = off B dM) (h15 : s.gpr .r15 = off B (dB + 8 * w)) (h16 : s.gpr .r16 = off B (dM + 8 * w))
+    (h17 : s.gpr .r17 = BitVec.ofNat 64 (R * 2 ^ 32)) (hlay : dA = dM + 16 * (w + 2))
+    (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hA : dA + 8 * (w + 2) ≤ Z) :
+    WP isa (.block roundStart8) s fun t =>
+      (t.gpr .r9 = BitVec.ofNat 64 ((w - 1) % 4) ∧ t.gpr .r21 = BitVec.ofNat 64 ((w - 1) / 4 % 2) ∧
+        t.gpr .r14 = off B dA ∧ t.gpr .r15 = off B dB ∧
+        t.gpr .r16 = off B dM ∧ t.gpr .r19 = word s.mem B (dA + 8 * (w + 1)) ∧
+        t.gpr .r17 = BitVec.ofNat 64 (R * 2 ^ 32 + (w - 1) / 8) ∧ t.mem = s.mem) ∧
+      Keep [.r9, .r16, .r15, .r3, .r14, .r4, .r19, .r7, .r8, .r17, .r21] s t := by
+  have hnw := hs.nowrap
+  refine VG.Proof.Bignum.PPC64LE.WP.keep _ ?_ (by decide)
+  unfold roundStart8
+  have e9 : off B (dM + 8 * w) - off B dM = BitVec.ofNat 64 (8 * w) := by
+    rw [VG.Offset.add_sub_add _ (by omega), Nat.add_sub_cancel_left]
+  have e3 : BitVec.ofNat 64 (8 * w) + BitVec.ofNat 64 (8 * w) + off B dM = off B (dM + 16 * w) := by
+    rw [BitVec.ofNat_add_ofNat, BitVec.add_comm, off_add]; congr 2; omega
+  have e17 : BitVec.ofNat 64 (R * 4294967296) + BitVec.ofNat 64 ((w - 1) / 8) =
+      BitVec.ofNat 64 (R * 4294967296 + (w - 1) / 8) := BitVec.ofNat_add_ofNat _ _
+  have e15 : off B (dB + 8 * w) - BitVec.ofNat 64 (8 * w) = off B dB := by
+    rw [VG.Offset.add_ofNat_sub _ (by omega), Nat.add_sub_cancel]
+  prun [h10, h15, h16, h17, e9, e3, e15, exec_lsr_d, shr3_8 w (by omega), ofNat_sub_one hw (by omega),
+    quot8 (w - 1) (by omega), bit2 (w - 1), fios_rem (w - 1), e17,
+    hs.ld (show dM + 16 * w + 8 * w + 40 + 8 ≤ Z by omega)]
+  subst hlay
+  rw [show dM + 16 * w + 32 = dM + 16 * (w + 2) by omega,
+    show dM + 16 * w + 8 * w + 40 = dM + 16 * (w + 2) + 8 * (w + 1) by omega]
+  exact ⟨rfl, rfl⟩
+
+/-- One block of four words if `r21` holds 1 (`quadBlock`), after `j` words. -/
+theorem quadBlock_ok {B : Addr} {Z dA dB dM C₀ w j q : Nat} {s₁ t : State} (hs : Scr s₁ B Z)
+    (hW : Wd B dA dB dM C₀ s₁ j t) (h21 : t.gpr .r21 = BitVec.ofNat 64 q) (hq : q < 2) (hjq : j + 4 * q + 1 ≤ w)
+    (h10 : (s₁.gpr .r10).toNat < 2 ^ 64 - 1)
+    (hA : dA + 8 * (w + 1) ≤ Z) (hB : dB + 8 * w ≤ Z) (hM : dM + 8 * w ≤ Z)
+    (dBA : dB + 8 * w ≤ dA ∨ dA + 8 * (w + 1) ≤ dB) (dMA : dM + 8 * w ≤ dA ∨ dA + 8 * (w + 1) ≤ dM) :
+    WP isa quadBlock t fun u => Wd B dA dB dM C₀ s₁ (j + 4 * q) u ∧ u.gpr .r17 = t.gpr .r17 := by
+  unfold quadBlock
+  refine WP.ite _ (eval_zero_ofNat _ _ (by omega) h21) (fun hz => ?_) (fun hz => ?_)
+  · have : q = 0 := of_decide_eq_true hz
+    subst this
+    exact WP.block_nil ⟨hW, rfl⟩
+  · have : q = 1 := by have := of_decide_eq_false hz; omega
+    subst this
+    exact Wd.step hs hW (by decide) (by decide) (by omega) h10 hA hB hM dBA dMA
+
+/-- The blocks of eight words: `N` of them, counted by `r17`'s low half, after `j`
+words. -/
+theorem octLoop_ok {B : Addr} {Z dA dB dM C₀ w R j N : Nat} {s₁ t : State} (hs : Scr s₁ B Z)
+    (hW : Wd B dA dB dM C₀ s₁ j t) (h17 : t.gpr .r17 = BitVec.ofNat 64 (R * 2 ^ 32 + N)) (hR : R < 2 ^ 31)
+    (hN : N < 2 ^ 31) (hjN : j + 8 * N + 1 ≤ w) (h10 : (s₁.gpr .r10).toNat < 2 ^ 64 - 1)
+    (hA : dA + 8 * (w + 1) ≤ Z) (hB : dB + 8 * w ≤ Z) (hM : dM + 8 * w ≤ Z)
+    (dBA : dB + 8 * w ≤ dA ∨ dA + 8 * (w + 1) ≤ dB) (dMA : dM + 8 * w ≤ dA ∨ dA + 8 * (w + 1) ≤ dM) :
+    WP isa octLoop t fun t' => Wd B dA dB dM C₀ s₁ (j + 8 * N) t' ∧ t'.gpr .r17 = BitVec.ofNat 64 (R * 2 ^ 32) := by
+  unfold octLoop
+  refine WP.ite _ (eval_w17 h17 (by omega)).1 (fun hz => ?_) (fun hz => ?_)
+  · have : N = 0 := of_decide_eq_true hz
+    subst this
+    exact WP.block_nil ⟨hW, by rw [h17, Nat.add_zero]⟩
+  have hN0 : N ≠ 0 := of_decide_eq_false hz
+  refine WP.loop (M := isa) (fun (m : Nat) (s : State) => ∃ i, m = N - i ∧ i < N ∧ Wd B dA dB dM C₀ s₁ (j + 8 * i) s ∧
+      s.gpr .r17 = BitVec.ofNat 64 (R * 2 ^ 32 + (N - i))) (fun (m : Nat) (s : State) ⟨i, hm, hi, hW', h17'⟩ => ?_) N t
+    ⟨0, by omega, by omega, hW, by rw [h17, Nat.sub_zero]⟩
+  rw [WP.block_append_iff]
+  refine WP.mono (Wd.step (k := 8) hs hW' (by decide) (by decide) (by omega) h10 hA hB hM dBA dMA)
+    fun u ⟨hu, u17'⟩ => ?_
+  have u17 : u.gpr .r17 = BitVec.ofNat 64 (R * 2 ^ 32 + (N - i)) := u17'.trans h17'
+  refine WP.mono (subi_ok u .r17 (by decide)) fun u' e => ?_
+  subst e
+  have e17 : (u.write .r17 (u.gpr .r17 - BitVec.ofNat 64 1)).gpr .r17 = BitVec.ofNat 64 (R * 2 ^ 32 + (N - (i + 1))) := by
+    rw [gpr_write, ite_eq_left rfl, u17, ofNat_sub_one (by omega) (by omega)]
+    congr 1; omega
+  have hW₂ := hu.write (r := .r17) (u.gpr .r17 - BitVec.ofNat 64 1)
+  rw [show j + 8 * i + 8 = j + 8 * (i + 1) by omega] at hW₂
+  by_cases hl : i + 1 = N
+  · refine .inl ⟨by rw [(eval_w17 e17 (by omega)).2, decide_eq_false (by omega)], ?_, ?_⟩
+    · rw [← hl]; exact hW₂
+    · rw [e17, hl, Nat.sub_self, Nat.add_zero]
+  · exact .inr ⟨by rw [(eval_w17 e17 (by omega)).2, decide_eq_true (by omega)], N - (i + 1), by omega, i + 1, rfl,
+      by omega, hW₂, e17⟩
+
+
+/-- The kernel's round (`round8`): `round_ok`, with the words after word 0 in a
+block of `(w - 1) mod 4`, a block of four if bit 2 of `w - 1` is set, and
+blocks of eight. -/
+theorem round8_ok {s : State} {B : Addr} {Z da dA dB dM w R : Nat} (hs : Scr s B Z)
+    (h6 : s.gpr .r6 = off B da) (h10 : s.gpr .r10 = off B dM) (h15 : s.gpr .r15 = off B (dB + 8 * w))
+    (h16 : s.gpr .r16 = off B (dM + 8 * w)) (h17 : s.gpr .r17 = BitVec.ofNat 64 (R * 2 ^ 32))
+    (hlay : dA = dM + 16 * (w + 2))
+    (hm : ((word s.mem B dM).toNat * (word s.mem B (dA + 8 * (w + 1))).toNat + 1) % 2 ^ 64 = 0)
+    (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hR : 1 ≤ R) (hR' : R < 2 ^ 31)
+    (ha : da + 8 ≤ Z) (hA : dA + 8 * (w + 2) ≤ Z) (hB : dB + 8 * w ≤ Z) (hM : dM + 8 * w ≤ Z)
+    (dBA : dB + 8 * w ≤ dA ∨ dA + 8 * (w + 1) ≤ dB) :
+    WP isa round8 s fun t =>
+      (t.gpr .r6 = off B (da + 8) ∧ t.gpr .r15 = off B (dB + 8 * w) ∧ t.gpr .r16 = off B (dM + 8 * w) ∧
+        t.gpr .r17 = BitVec.ofNat 64 ((R - 1) * 2 ^ 32) ∧ t.gpr .r9 = BitVec.ofNat 64 (R - 1) ∧
+        Outside B dA (8 * (w + 1)) s.mem t.mem ∧
+        ∃ u < 2 ^ 64, 2 ^ 64 * wordsVal t.mem B dA (w + 1) =
+          wordsVal s.mem B dA (w + 1) + (word s.mem B da).toNat * wordsVal s.mem B dB w +
+            u * wordsVal s.mem B dM w) ∧
+      Keep roundRegs s t := by
+  have hnw := hs.nowrap
+  have h10' : (s.gpr .r10).toNat < 2 ^ 64 - 1 := by
+    rw [h10, VG.Offset.toNat_add_ofNat]; omega
+  have dMA : dM + 8 * w ≤ dA ∨ dA + 8 * (w + 1) ≤ dM := .inl (by omega)
+  have hK : (w - 1) % 4 + 4 * ((w - 1) / 4 % 2) + 8 * ((w - 1) / 8) = w - 1 := by omega
+  generalize hN₁ : (w - 1) % 4 = N₁ at hK
+  generalize hq : (w - 1) / 4 % 2 = q at hK
+  generalize hN₂ : (w - 1) / 8 = N₂ at hK
+  have hN₁4 : N₁ < 4 := hN₁ ▸ Nat.mod_lt _ (by decide)
+  have hq2 : q < 2 := hq ▸ Nat.mod_lt _ (by decide)
+  unfold round8
+  rw [WP.seq_iff, WP.block_append_iff]
+  -- The pointers and counts, then word 0.
+  refine WP.mono (roundStart8_ok hs h10 h15 h16 h17 hlay hw hw' hA)
+    fun s₁ ⟨⟨i9, i21, i14, i15, i16, i19, i17, im⟩, k₁⟩ => ?_
+  refine WP.mono (head_ok (da := da) (dA := dA) (dB := dB) (dM := dM) (hs.congr k₁.wr) (by rw [k₁.gpr _ (by decide), h6]) i14
+    i15 i16 (by rw [i19, im]; exact hm) ha (by omega) (by omega) (by omega))
+    fun s₂ ⟨⟨⟨C₀, hC₀, e₀⟩, j18, j6, j14, j15, j16, jm⟩, k₂⟩ => ?_
+  rw [hN₁] at i9
+  rw [hq] at i21
+  have g₂ : ∀ r ∈ [Reg.r9, .r10, .r17, .r21], s₂.gpr r = s₁.gpr r := fun r hr => k₂.gpr r (by revert r hr; decide)
+  have hs₂ : Scr s₂ B Z := hs.congr (k₂.wr.trans k₁.wr)
+  have h10₂ : (s₂.gpr .r10).toNat < 2 ^ 64 - 1 := by rw [g₂ _ (by decide), k₁.gpr _ (by decide)]; exact h10'
+  -- Words `1` to `N₁`, then four words if `q` is 1, then the rest, eight at a time.
+  refine WP.seq (WP.mono (remBlock_ok (w := w) hs₂ (Wd.zero j14 j15 j16 hC₀) (by rw [g₂ _ (by decide), i9]) hN₁4
+    (by omega) h10₂ (by omega) hB hM dBA dMA) fun s₃ ⟨hW₃, e₃⟩ => ?_)
+  have e21 : s₃.gpr .r21 = BitVec.ofNat 64 q := by
+    rw [hW₃.2.2.2.2.2.gpr _ (by decide), g₂ _ (by decide), i21]
+  refine WP.seq (WP.mono (quadBlock_ok (q := q) hs₂ hW₃ e21 hq2 (by omega) h10₂ (by omega) hB hM dBA dMA)
+    fun s₃' ⟨hW₃', e₃'⟩ => ?_)
+  refine WP.seq (WP.mono (octLoop_ok (R := R) (N := N₂) hs₂ hW₃' (by rw [e₃', e₃, g₂ _ (by decide), i17, ← hN₂])
+    (by omega) (by omega) (by omega) h10₂ (by omega) hB hM dBA dMA) fun s₄ ⟨hW₄, e₄⟩ => ?_)
+  obtain ⟨n14, n15, n16, o₄, ⟨C, hC, eC⟩, k₄⟩ := hW₄
+  rw [show N₁ + 4 * q + 8 * N₂ = w - 1 by omega] at n14 n15 n16 o₄ eC
+  -- Word `w`.
+  refine WP.mono (top_ok (dT := dA + 8 * (w - 1)) (hs₂.congr k₄.wr) n14 (by omega) hC
+    (by rw [k₄.gpr _ (by decide)]; exact h10₂) e₄ hR hR') fun t ⟨⟨⟨x, y, tm, txy⟩, t17, t9⟩, k₅⟩ => ?_
+  have m₂ : s₂.mem = s.mem := jm.trans im
+  have g₄ : ∀ r ∈ [Reg.r6, .r19], t.gpr r = s₂.gpr r := fun r hr => by
+    rw [k₅.gpr r (by revert r hr; decide), k₄.gpr r (by revert r hr; decide)]
+  have o₄' : Outside B dA (8 * (w - 1)) s.mem s₄.mem := m₂ ▸ o₄
+  refine ⟨⟨by rw [g₄ _ (by decide), j6], by rw [k₅.gpr _ (by decide), n15, show dB + 8 + 8 * (w - 1) = dB + 8 * w by omega],
+    by rw [k₅.gpr _ (by decide), n16, show dM + 8 + 8 * (w - 1) = dM + 8 * w by omega], t17, t9, ?_, (s₂.gpr .r19).toNat, (s₂.gpr .r19).isLt, ?_⟩,
+    (((k₁.trans k₂).trans k₄).trans k₅).mono (by decide)⟩
+  · rw [tm]
+    exact (o₄'.mono (Nat.le_refl _) (by omega)).trans
+      (((writeW_outside _ B _ (by omega)).mono (by omega) (by omega)).trans
+        ((writeW_outside _ B _ (by omega)).mono (by omega) (by omega)))
+  · -- The words the blocks and the top read are those on entry.
+    have tw : word s₄.mem B (dA + 8 * (w - 1) + 8) = word s.mem B (dA + 8 + 8 * (w - 1)) := by
+      rw [o₄'.word (by omega) (by omega), show dA + 8 * (w - 1) + 8 = dA + 8 + 8 * (w - 1) by omega]
+    rw [tw] at txy
+    rw [m₂, j18, im] at eC
+    rw [im] at e₀
+    rw [tm, show w + 1 = w - 1 + 2 by omega, fios_wordsVal_write2 _ _ _ _ _ _ (by omega),
+      fios_wordsVal_pred s.mem B dA (show 1 ≤ w - 1 + 2 by omega), show w - 1 + 2 - 1 = w - 1 + 1 by omega,
+      wordsVal_succ_top s.mem B (dA + 8) (w - 1), fios_wordsVal_pred s.mem B dB hw, fios_wordsVal_pred s.mem B dM hw]
+    exact fios_round_sum (c := C) (d := 0) (by rw [Nat.add_zero]; exact eC) e₀ (by rw [txy]; omega)
+
+
+/-- What a round does (`round_ok`), of any code `Rd`: so that the rounds'
+proof (`roundsWith_ok`) serves both `round` and the kernel's `round8`. -/
+def RoundSpec (Rd : Prog isa) : Prop :=
+  ∀ {s : State} {B : Addr} {Z da dA dB dM w R : Nat}, Scr s B Z →
+    s.gpr .r6 = off B da → s.gpr .r10 = off B dM → s.gpr .r15 = off B (dB + 8 * w) →
+    s.gpr .r16 = off B (dM + 8 * w) → s.gpr .r17 = BitVec.ofNat 64 (R * 2 ^ 32) → dA = dM + 16 * (w + 2) →
+    ((word s.mem B dM).toNat * (word s.mem B (dA + 8 * (w + 1))).toNat + 1) % 2 ^ 64 = 0 →
+    1 ≤ w → w < 2 ^ 31 → 1 ≤ R → R < 2 ^ 31 →
+    da + 8 ≤ Z → dA + 8 * (w + 2) ≤ Z → dB + 8 * w ≤ Z → dM + 8 * w ≤ Z →
+    (dB + 8 * w ≤ dA ∨ dA + 8 * (w + 1) ≤ dB) →
+    WP isa Rd s fun t =>
+      (t.gpr .r6 = off B (da + 8) ∧ t.gpr .r15 = off B (dB + 8 * w) ∧ t.gpr .r16 = off B (dM + 8 * w) ∧
+        t.gpr .r17 = BitVec.ofNat 64 ((R - 1) * 2 ^ 32) ∧ t.gpr .r9 = BitVec.ofNat 64 (R - 1) ∧
+        Outside B dA (8 * (w + 1)) s.mem t.mem ∧
+        ∃ u < 2 ^ 64, 2 ^ 64 * wordsVal t.mem B dA (w + 1) =
+          wordsVal s.mem B dA (w + 1) + (word s.mem B da).toNat * wordsVal s.mem B dB w +
+            u * wordsVal s.mem B dM w) ∧
+      Keep roundRegs s t
+
+theorem round_spec : RoundSpec round := fun hs h6 h10 h15 h16 h17 hlay hm hw hw' hR hR' ha hA hB hM dBA =>
+  round_ok hs h6 h10 h15 h16 h17 hlay hm hw hw' hR hR' ha hA hB hM dBA
+
+theorem round8_spec : RoundSpec round8 := fun hs h6 h10 h15 h16 h17 hlay hm hw hw' hR hR' ha hA hB hM dBA =>
+  round8_ok hs h6 h10 h15 h16 h17 hlay hm hw hw' hR hR' ha hA hB hM dBA
+
 /-! ## The rounds -/
 
 theorem shl2_8 (w : Nat) : BitVec.ofNat 64 (2 * w) <<< 2 = BitVec.ofNat 64 (8 * w) := by
@@ -1070,23 +1272,26 @@ theorem roundsFini_ok {s : State} {B : Addr} {Z dA dB dM w : Nat} (hs : Scr s B 
     show dM + 16 * w + 32 = dM + 16 * (w + 2) by omega]
   exact ⟨rfl, rfl, rfl⟩
 
+
 end VG.Proof.Bignum.PPC64LE.Mont4
 
 namespace VG.Proof.Bignum.PPC64LE
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Impl.Bignum.PPC64LE
 open VG.Proof.Bignum (round_lt round_step)
-open VG.Proof.Bignum.PPC64LE.Mont4 (roundsInit_ok roundsFini_ok round_ok)
+open VG.Proof.Bignum.PPC64LE.Mont4 (roundsInit_ok roundsFini_ok)
 
 /-- The registers the rounds write: those a round writes, but `r7`–`r9` and
 `r11`, which they set back. -/
-def roundsRegs : List Reg := [.r0, .r3, .r4, .r6, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22]
+def roundsRegs : List Reg :=
+  [.r0, .r3, .r4, .r6, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r28, .r29, .r30, .r31]
 
-/-- The `w` rounds (`rounds`), over the words of `a` (at `da` of `B`, pointed to
-by `r6`), from the accumulator 0 (at `dA = dM + 16 (w + 2)`, the temporary
-after it): `T < 2m` and `T 2^(64 w) ≡ a b (mod m)`, for `b < m` (`w` words
-each, at `dB` and `dM`), only the accumulator's `w + 2` words changed. -/
-theorem rounds_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s₀ B Z)
+/-- The `w` rounds of any round `Rd` that does what a round does
+(`RoundSpec`), over the words of `a` (at `da` of `B`, pointed to by `r6`),
+from the accumulator 0 (at `dA = dM + 16 (w + 2)`, the temporary after it):
+`T < 2m` and `T 2^(64 w) ≡ a b (mod m)`, for `b < m` (`w` words each, at `dB`
+and `dM`), only the accumulator's `w + 2` words changed. -/
+theorem roundsWith_ok {Rd : Prog isa} (hR : Mont4.RoundSpec Rd) {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s₀ B Z)
     (h6 : s₀.gpr .r6 = off B da) (h8 : s₀.gpr .r8 = off B dA) (h7 : s₀.gpr .r7 = off B dB)
     (h9 : s₀.gpr .r9 = off B (dA + 8 * (w + 2)))
     (h10 : s₀.gpr .r10 = off B dM) (h11 : s₀.gpr .r11 = BitVec.ofNat 64 (2 * w))
@@ -1097,7 +1302,7 @@ theorem rounds_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s�
     (ha : da + 8 * w ≤ Z) (hA : dA + 8 * (w + 2) ≤ Z) (hB : dB + 8 * w ≤ Z) (hM : dM + 8 * w ≤ Z)
     (daA : da + 8 * w ≤ dA ∨ dA + 8 * (w + 2) ≤ da) (dBA : dB + 8 * w ≤ dA ∨ dA + 8 * (w + 2) ≤ dB)
     (hz : wordsVal s₀.mem B dA (w + 1) = 0) (hb : wordsVal s₀.mem B dB w < wordsVal s₀.mem B dM w) :
-    WP isa rounds s₀ fun s =>
+    WP isa (.seq (.block roundsInit) (.seq (.loop Rd (.nonzero .d .r9)) (.block roundsFini))) s₀ fun s =>
       (wordsVal s.mem B dA (w + 1) < 2 * wordsVal s₀.mem B dM w ∧
         2 ^ (64 * w) * wordsVal s.mem B dA (w + 1) % wordsVal s₀.mem B dM w =
           wordsVal s₀.mem B da w * wordsVal s₀.mem B dB w % wordsVal s₀.mem B dM w ∧
@@ -1106,7 +1311,6 @@ theorem rounds_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s�
   have hnw := hs.nowrap
   let M := wordsVal s₀.mem B dM w
   let Bv := wordsVal s₀.mem B dB w
-  unfold rounds
   refine WP.seq (WP.mono (roundsInit_ok h7 h10 h11 h4) fun s₁ ⟨⟨i16, i15, i17, im⟩, k₁⟩ => ?_)
   let J : Nat → State → Prop := fun i s =>
     s.gpr .r6 = off B (da + 8 * i) ∧ s.gpr .r15 = off B (dB + 8 * w) ∧ s.gpr .r16 = off B (dM + 8 * w) ∧
@@ -1126,7 +1330,7 @@ theorem rounds_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s�
     have vB : wordsVal s.mem B dB w = Bv := jout.wordsVal (by omega) (by omega)
     have wM : word s.mem B dM = word s₀.mem B dM := jout.word (by omega) (by omega)
     have wa : word s.mem B (da + 8 * i) = word s₀.mem B (da + 8 * i) := jout.word (by omega) (by omega)
-    refine WP.mono (round_ok (R := w - i) (da := da + 8 * i) (dA := dA) (dB := dB) (dM := dM) (w := w)
+    refine WP.mono (hR (R := w - i) (da := da + 8 * i) (dA := dA) (dB := dB) (dM := dM) (w := w)
       (hs.congr jk.wr) j6 g10 j15 j16 j17 hlay (by rw [jw, wM, ← h22]; exact hm) (by omega) hw' (by omega) (by omega)
       (by omega) hA hB hM (by omega)) fun s' ⟨⟨k6, k15, k16, k17, k9, kout, u, hu, keq⟩, k'⟩ => ⟨⟨?_, k15, k16, ?_, ?_, ?_, ?_,
         ?_, jk.trans' k'⟩, ?_⟩
@@ -1157,5 +1361,73 @@ theorem rounds_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s�
   · subst e11; rw [t11, h11]
   rw [kt.gpr r (by simp only [List.mem_cons, List.not_mem_nil, or_false]; simp_all [roundsRegs]),
     jk.gpr r (by simp only [Mont4.roundRegs, List.mem_cons, List.not_mem_nil, or_false]; simp_all [roundsRegs])]
+
+/-- The `w` rounds (`rounds`). -/
+theorem rounds_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s₀ B Z)
+    (h6 : s₀.gpr .r6 = off B da) (h8 : s₀.gpr .r8 = off B dA) (h7 : s₀.gpr .r7 = off B dB)
+    (h9 : s₀.gpr .r9 = off B (dA + 8 * (w + 2)))
+    (h10 : s₀.gpr .r10 = off B dM) (h11 : s₀.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (h4 : s₀.gpr .r4 = BitVec.ofNat 64 w)
+    (hm : ((word s₀.mem B dM).toNat * (s₀.gpr .r22).toNat + 1) % 2 ^ 64 = 0)
+    (h22 : s₀.gpr .r22 = word s₀.mem B (dA + 8 * (w + 1)))
+    (hw : 2 ≤ w) (hw' : w < 2 ^ 31) (hlay : dA = dM + 16 * (w + 2))
+    (ha : da + 8 * w ≤ Z) (hA : dA + 8 * (w + 2) ≤ Z) (hB : dB + 8 * w ≤ Z) (hM : dM + 8 * w ≤ Z)
+    (daA : da + 8 * w ≤ dA ∨ dA + 8 * (w + 2) ≤ da) (dBA : dB + 8 * w ≤ dA ∨ dA + 8 * (w + 2) ≤ dB)
+    (hz : wordsVal s₀.mem B dA (w + 1) = 0) (hb : wordsVal s₀.mem B dB w < wordsVal s₀.mem B dM w) :
+    WP isa rounds s₀ fun s =>
+      (wordsVal s.mem B dA (w + 1) < 2 * wordsVal s₀.mem B dM w ∧
+        2 ^ (64 * w) * wordsVal s.mem B dA (w + 1) % wordsVal s₀.mem B dM w =
+          wordsVal s₀.mem B da w * wordsVal s₀.mem B dB w % wordsVal s₀.mem B dM w ∧
+        Outside B dA (8 * (w + 2)) s₀.mem s.mem ∧ s.gpr .r22 = s₀.gpr .r22) ∧
+      Keep roundsRegs s₀ s := by
+  unfold rounds
+  exact roundsWith_ok Mont4.round_spec hs h6 h8 h7 h9 h10 h11 h4 hm h22 hw hw' hlay ha hA hB hM daA dBA hz hb
+
+/-- `rounds_ok`, of the kernel's rounds by blocks of up to eight words. -/
+theorem rounds8_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s₀ B Z)
+    (h6 : s₀.gpr .r6 = off B da) (h8 : s₀.gpr .r8 = off B dA) (h7 : s₀.gpr .r7 = off B dB)
+    (h9 : s₀.gpr .r9 = off B (dA + 8 * (w + 2)))
+    (h10 : s₀.gpr .r10 = off B dM) (h11 : s₀.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (h4 : s₀.gpr .r4 = BitVec.ofNat 64 w)
+    (hm : ((word s₀.mem B dM).toNat * (s₀.gpr .r22).toNat + 1) % 2 ^ 64 = 0)
+    (h22 : s₀.gpr .r22 = word s₀.mem B (dA + 8 * (w + 1)))
+    (hw : 2 ≤ w) (hw' : w < 2 ^ 31) (hlay : dA = dM + 16 * (w + 2))
+    (ha : da + 8 * w ≤ Z) (hA : dA + 8 * (w + 2) ≤ Z) (hB : dB + 8 * w ≤ Z) (hM : dM + 8 * w ≤ Z)
+    (daA : da + 8 * w ≤ dA ∨ dA + 8 * (w + 2) ≤ da) (dBA : dB + 8 * w ≤ dA ∨ dA + 8 * (w + 2) ≤ dB)
+    (hz : wordsVal s₀.mem B dA (w + 1) = 0) (hb : wordsVal s₀.mem B dB w < wordsVal s₀.mem B dM w) :
+    WP isa rounds8 s₀ fun s =>
+      (wordsVal s.mem B dA (w + 1) < 2 * wordsVal s₀.mem B dM w ∧
+        2 ^ (64 * w) * wordsVal s.mem B dA (w + 1) % wordsVal s₀.mem B dM w =
+          wordsVal s₀.mem B da w * wordsVal s₀.mem B dB w % wordsVal s₀.mem B dM w ∧
+        Outside B dA (8 * (w + 2)) s₀.mem s.mem ∧ s.gpr .r22 = s₀.gpr .r22) ∧
+      Keep roundsRegs s₀ s := by
+  unfold rounds8
+  exact roundsWith_ok Mont4.round8_spec hs h6 h8 h7 h9 h10 h11 h4 hm h22 hw hw' hlay ha hA hB hM daA dBA hz hb
+
+/-- What the rounds do (`rounds_ok`), of any code `R`: so that `tail`'s proof
+serves both `tail` and the kernel's `tail8`. -/
+def RoundsSpec (R : Prog isa) : Prop :=
+  ∀ {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat}, Scr s₀ B Z →
+    s₀.gpr .r6 = off B da → s₀.gpr .r8 = off B dA → s₀.gpr .r7 = off B dB →
+    s₀.gpr .r9 = off B (dA + 8 * (w + 2)) → s₀.gpr .r10 = off B dM → s₀.gpr .r11 = BitVec.ofNat 64 (2 * w) →
+    s₀.gpr .r4 = BitVec.ofNat 64 w →
+    ((word s₀.mem B dM).toNat * (s₀.gpr .r22).toNat + 1) % 2 ^ 64 = 0 →
+    s₀.gpr .r22 = word s₀.mem B (dA + 8 * (w + 1)) →
+    2 ≤ w → w < 2 ^ 31 → dA = dM + 16 * (w + 2) →
+    da + 8 * w ≤ Z → dA + 8 * (w + 2) ≤ Z → dB + 8 * w ≤ Z → dM + 8 * w ≤ Z →
+    (da + 8 * w ≤ dA ∨ dA + 8 * (w + 2) ≤ da) → (dB + 8 * w ≤ dA ∨ dA + 8 * (w + 2) ≤ dB) →
+    wordsVal s₀.mem B dA (w + 1) = 0 → wordsVal s₀.mem B dB w < wordsVal s₀.mem B dM w →
+    WP isa R s₀ fun s =>
+      (wordsVal s.mem B dA (w + 1) < 2 * wordsVal s₀.mem B dM w ∧
+        2 ^ (64 * w) * wordsVal s.mem B dA (w + 1) % wordsVal s₀.mem B dM w =
+          wordsVal s₀.mem B da w * wordsVal s₀.mem B dB w % wordsVal s₀.mem B dM w ∧
+        Outside B dA (8 * (w + 2)) s₀.mem s.mem ∧ s.gpr .r22 = s₀.gpr .r22) ∧
+      Keep roundsRegs s₀ s
+
+theorem rounds_spec : RoundsSpec rounds := fun hs h6 h8 h7 h9 h10 h11 h4 hm h22 hw hw' hlay ha hA hB hM daA dBA hz hb =>
+  rounds_ok hs h6 h8 h7 h9 h10 h11 h4 hm h22 hw hw' hlay ha hA hB hM daA dBA hz hb
+
+theorem rounds8_spec : RoundsSpec rounds8 := fun hs h6 h8 h7 h9 h10 h11 h4 hm h22 hw hw' hlay ha hA hB hM daA dBA hz hb =>
+  rounds8_ok hs h6 h8 h7 h9 h10 h11 h4 hm h22 hw hw' hlay ha hA hB hM daA dBA hz hb
 
 end VG.Proof.Bignum.PPC64LE
