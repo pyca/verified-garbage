@@ -66,15 +66,14 @@ def privatePrecomputedWords (nLen pLen qLen : Nat) : Nat :=
 `pre` of its key. -/
 def privatePrecomputedSafety : List String :=
   ["`pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.",
-    "For the result to be the operation's, `pre` must hold what `vg_rsa_private_precompute` \
-      wrote for `n`, `p` and `q` (returning 1)."]
+    "`pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning \
+      1), and not have changed since."]
 
 /-- The documentation of `pre`, for the summaries of the operations given
 it. -/
 def privatePrecomputedDoc : String :=
   "`pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and \
-    `q` (returning 1); with other values, the result is unspecified, but memory safety and \
-    the timing guarantee still apply"
+    `q` (returning 1), as `n`, `p` and `q` must be valid"
 
 /-- What an operation given `pre` may leak of it: the modulus' values, its
 first `precomputedWords nLen` words. -/

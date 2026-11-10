@@ -224,24 +224,24 @@ def decryptPrecomputedMdTablesSig : Sig where
   ret := some .u32
 
 /-- `decryptMdTablesContract`, given the key's precomputed values `pre`
-(`Rsa.privatePrecompute`): what `vg_rsa_oaep_decrypt` computes, if `pre`
-holds them. -/
+(`Rsa.privatePrecompute`): what `vg_rsa_oaep_decrypt` computes, given `pre`
+holding them. -/
 def decryptPrecomputedMdTablesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   decryptPrecomputedMdTablesSig.contract A
-    (pre := fun _out outLen _msgLen _n nLen _e eLen _p pLen _q qLen _dp dpLen _dq dqLen _qinv
-        qinvLen _label _labelLen _ct ctLen _scratch scratchLen _hash _mgf1 _pre preLen _ =>
+    (pre := fun _out outLen _msgLen n nLen _e eLen p pLen q qLen _dp dpLen _dq dqLen _qinv
+        qinvLen _label _labelLen _ct ctLen _scratch scratchLen _hash _mgf1 pre preLen m =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ ctLen.toNat = nLen.toNat ∧
         1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
         1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
         dpLen.toNat = pLen.toNat ∧ qinvLen.toNat = pLen.toNat ∧ dqLen.toNat = qLen.toNat ∧
         scratchWords nLen.toNat ≤ scratchLen.toNat ∧
-        preLen.toNat = Rsa.privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat)
+        preLen.toNat = Rsa.privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat ∧
+        Rsa.privatePrecompute (bytesAt m n nLen.toNat) (bytesAt m p pLen.toNat)
+          (bytesAt m q qLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat))
     (post := fun out _outLen msgLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv
-        _qinvLen label labelLen ct _ctLen _scratch _scratchLen hash mgf1 pre preLen m m' r =>
+        _qinvLen label labelLen ct _ctLen _scratch _scratchLen hash mgf1 _pre _preLen m m' r =>
       ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
         MdHashTable.hashAt A.ptrBits m mgf1 = some G →
-        Rsa.privatePrecompute (bytesAt m n nLen.toNat) (bytesAt m p pLen.toNat)
-            (bytesAt m q qLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
         writtenDecrypt m' out msgLen nLen.toNat r
           (decrypt H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
             (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat)
