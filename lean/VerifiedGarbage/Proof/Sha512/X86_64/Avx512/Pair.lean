@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 
@@ -23,8 +24,8 @@ namespace VG.Proof.Sha512.X86_64.Avx512
 
 open VG VG.X86_64 VG.Impl.Sha512.X86_64.Avx512
 open VG.Proof.Sha512.X86_64.Avx2 (qword_append_0 qword_append_1 paddq_eq psrlq_eq)
-open VG.Spec.Sha512 (HashValue Word Block K W bsig0 bsig1 ch maj)
-open VG.Proof.Sha512.X86_64 (ofInt_natCast)
+open VG.Spec.Sha512 (HashValue Word Block K W bsig0 bsig1 ch maj ssig0 ssig1)
+open VG.Proof.Sha512.X86_64 (ofInt_natCast contains_offset)
 open VG.Proof.Sha512 (roundKW rounds_succ round_eq roundKW_0 roundKW_1 roundKW_2 roundKW_3 roundKW_4 roundKW_5
   roundKW_6 roundKW_7)
 
@@ -274,5 +275,167 @@ theorem rounds2_ok (s : State) {j : Nat} (i : Nat) (hn : 8 * j + i < 40) (H₀ H
   exact ⟨hv₃, k₃.2.2.2.1.trans (k₂.2.2.2.1.trans hg), k₃.1.trans (k₂.1.trans hm),
     k₃.2.1.trans (k₂.2.1.trans hrd), k₃.2.2.1.trans (k₂.2.2.1.trans hwr),
     m3.1.trans (m2.1.trans m1.1), m3.2.trans (m2.2.trans m1.2)⟩
+
+/-! ## The words in the scratch space -/
+
+/-- Where words `t` of both blocks are kept. -/
+def wAddr2 (scr : Addr) (t : Nat) : Addr := scr + BitVec.ofNat 64 (16 * t)
+
+/-- Words `t` of both blocks are in the scratch space. -/
+def WMem2 (m : Mem) (scr : Addr) (M₀ M₁ : Block) (t : Nat) : Prop :=
+  m.readW (wAddr2 scr t) 128 = W M₁ t ++ W M₀ t
+
+theorem wAddr2_succ (scr : Addr) (t : Nat) : wAddr2 scr t + BitVec.ofNat 64 16 = wAddr2 scr (t + 1) := by
+  simp only [wAddr2]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 16 * t + 16 = 16 * (t + 1) by omega]
+
+theorem read256_lo (m : Mem) (a : Addr) : (m.readW a 256).extractLsb' 0 128 = m.readW a 128 := by
+  have e := readW_extract m a (w := 256) (k := 0) (n := 16) (by decide)
+  rw [show a + BitVec.ofNat 64 0 = a from BitVec.add_zero a] at e
+  exact e
+
+theorem read256_hi (m : Mem) (a : Addr) :
+    (m.readW a 256).extractLsb' 128 128 = m.readW (a + BitVec.ofNat 64 16) 128 :=
+  readW_extract m a (w := 256) (k := 16) (n := 16) (by decide)
+
+theorem append_lo (hi lo : BitVec 128) : (hi ++ lo).extractLsb' 0 128 = lo := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi'
+  simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi', decide_true, Bool.true_and, Nat.zero_add,
+    ite_true]
+
+theorem append_hi (hi lo : BitVec 128) : (hi ++ lo).extractLsb' 128 128 = hi := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi'
+  simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi', decide_true, Bool.true_and,
+    show ¬ 128 + i < 128 by omega, ite_false, show 128 + i - 128 = i by omega]
+
+/-- The two words at `t` and `t + 1`, as one 256-bit load. -/
+theorem read256_words {m : Mem} {scr : Addr} {M₀ M₁ : Block} {t : Nat} (h₀ : WMem2 m scr M₀ M₁ t)
+    (h₁ : WMem2 m scr M₀ M₁ (t + 1)) :
+    (m.readW (wAddr2 scr t) 256).extractLsb' 0 128 = W M₁ t ++ W M₀ t ∧
+    (m.readW (wAddr2 scr t) 256).extractLsb' 128 128 = W M₁ (t + 1) ++ W M₀ (t + 1) := by
+  rw [read256_lo, read256_hi, wAddr2_succ]; exact ⟨h₀, h₁⟩
+
+theorem wSlot_ea (s : State) {j : Nat} (h9 : s.gpr .r9 = idx2 j) (i : Nat) (d : Int) (t : Nat)
+    (ht : ((256 * j + 32 * i : Nat) : Int) + d = ((16 * t : Nat) : Int)) :
+    s.ea (wSlot i d) = wAddr2 (s.gpr .r8) t := by
+  simp only [State.ea, wSlot, h9, idx2, BitVec.mul_one, wAddr2]
+  rw [BitVec.add_assoc, ← ofInt_natCast (256 * j), ← BitVec.ofInt_add, ← ofInt_natCast (16 * t)]
+  refine congrArg _ (congrArg _ ?_)
+  omega
+
+/-! ## A schedule step -/
+
+/-- What `sched` computes in one lane, from the lane's four loads, as its
+instructions do. -/
+def sl (a b c d : BitVec 128) : BitVec 128 :=
+  XBinOp.eval .paddq (XBinOp.eval .paddq (XBinOp.eval .paddq
+    (ternlog (XShiftOp.eval .psrlq a 7) (rorQwords a 1) (rorQwords a 8) 0x96) c) d)
+    (ternlog (XShiftOp.eval .psrlq b 6) (rorQwords b 19) (rorQwords b 61) 0x96)
+
+theorem xor3_rot (p q r : Word) : p ^^^ q ^^^ r = q ^^^ r ^^^ p := by
+  rw [BitVec.xor_comm p q, BitVec.xor_assoc, BitVec.xor_comm p r, ← BitVec.xor_assoc]
+
+theorem sl_eq (a₀ a₁ b₀ b₁ c₀ c₁ d₀ d₁ : Word) :
+    sl (a₁ ++ a₀) (b₁ ++ b₀) (c₁ ++ c₀) (d₁ ++ d₀) =
+      (ssig1 b₁ + d₁ + ssig0 a₁ + c₁) ++ (ssig1 b₀ + d₀ + ssig0 a₀ + c₀) := by
+  simp only [sl, ror_eq, tern96_eq, paddq_eq, psrlq_eq _ _ _ (by decide : (7 : BitVec 8).toNat < 64),
+    psrlq_eq _ _ _ (by decide : (6 : BitVec 8).toNat < 64), BitVec.reduceToNat, Nat.reduceMod, xor3_rot (_ >>> _)]
+  congr 1 <;> (simp only [Spec.Sha512.ssig0, Spec.Sha512.ssig1]; ac_rfl)
+
+/-- `sched`, on the four values it loads. -/
+theorem sched_run (i : Nat) (s : State) (pA pB pC pD pO : Addr)
+    (eA : s.ea (wSlot i (-240)) = pA) (eB : s.ea (wSlot i (-32)) = pB) (eC : s.ea (wSlot i (-256)) = pC)
+    (eD : s.ea (wSlot i (-112)) = pD) (eO : s.ea (wSlot i) = pO)
+    (hA : InRegions (s.rd ++ s.wr) pA 32) (hB : InRegions (s.rd ++ s.wr) pB 32)
+    (hC : InRegions (s.rd ++ s.wr) pC 32) (hD : InRegions (s.rd ++ s.wr) pD 32) (hO : InRegions s.wr pO 32) :
+    WP isa (.block (sched i)) s fun s' =>
+      s'.xmm w0 = sl ((s.mem.readW pA 256).extractLsb' 0 128) ((s.mem.readW pB 256).extractLsb' 0 128)
+        ((s.mem.readW pC 256).extractLsb' 0 128) ((s.mem.readW pD 256).extractLsb' 0 128) ∧
+      s'.ymmHi w0 = sl ((s.mem.readW pA 256).extractLsb' 128 128) ((s.mem.readW pB 256).extractLsb' 128 128)
+        ((s.mem.readW pC 256).extractLsb' 128 128) ((s.mem.readW pD 256).extractLsb' 128 128) ∧
+      s'.mem = s.mem.writeW pO (s'.ymmHi w0 ++ s'.xmm w0) ∧
+      (∀ r, r ≠ w0 → r ≠ w1 → r ≠ u0 → r ≠ u1 → s'.xmm r = s.xmm r ∧ s'.ymmHi r = s.ymmHi r) ∧
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  simp only [State.ea, wSlot] at eA eB eC eD eO
+  apply WP.of_runBlock
+  simp only [sched, vror, vxor3, wSlot, u0, u1, w0, w1, reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some,
+    runBlock_nil, reduceExec, reduceVOpExec, isa, State.load256, State.store256, State.ea, State.ymm, State.lane,
+    RegUpd.xmm_setV, RegUpd.ymmHi_setV_256, RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV,
+    eA, eB, eC, eD, eO, hA, hB, hC, hD, hO, Option.map_some, Option.some.injEq, exists_eq_left', reduceVBinOpSse]
+  exact ⟨rfl, rfl, trivial, fun r h0 h1 h2 h3 => by simp [h0, h1, h2, h3], trivial, trivial, trivial⟩
+
+/-- The scratch space holds words `t` of both at `wAddr2 scr t`, `32` bytes
+from there readable and writable. -/
+theorem in_scr2 {s : State} {scr : Addr} (hR : (⟨scr, 1328⟩ : Region) ∈ s.wr) {t : Nat} (ht : t < 79) :
+    InRegions s.wr (wAddr2 scr t) 32 ∧ InRegions (s.rd ++ s.wr) (wAddr2 scr t) 32 :=
+  ⟨⟨_, hR, contains_offset (by omega) (by omega)⟩,
+    ⟨_, List.mem_append_right _ hR, contains_offset (by omega) (by omega)⟩⟩
+
+/-- A stored pair of words: the two words, and the earlier ones kept. -/
+theorem wmem2_store {m : Mem} {scr : Addr} {M₀ M₁ : Block} {T : Nat} (hT : T < 79)
+    (hm : ∀ t < T, WMem2 m scr M₀ M₁ t) :
+    ∀ t < T + 2, WMem2 (m.writeW (wAddr2 scr T) ((W M₁ (T + 1) ++ W M₀ (T + 1)) ++ (W M₁ T ++ W M₀ T)))
+      scr M₀ M₁ t := by
+  intro t ht
+  rcases (by omega : t < T ∨ t = T ∨ t = T + 1) with h | rfl | rfl
+  · exact (readW_writeW_off m scr _ (d := 16 * t) (e := 16 * T) (n := 16) (by omega) (by omega)
+      (by omega)).trans (hm t h)
+  · have e := readW_writeW_inside m (wAddr2 scr t)
+      ((W M₁ (t + 1) ++ W M₀ (t + 1)) ++ (W M₁ t ++ W M₀ t)) (k := 0) (n := 16) (by decide) (by decide)
+    rw [show wAddr2 scr t + BitVec.ofNat 64 0 = wAddr2 scr t from BitVec.add_zero _] at e
+    exact e.trans (append_lo _ _)
+  · have e := readW_writeW_inside m (wAddr2 scr T)
+      ((W M₁ (T + 1) ++ W M₀ (T + 1)) ++ (W M₁ T ++ W M₀ T)) (k := 16) (n := 16) (by decide) (by decide)
+    rw [wAddr2_succ] at e
+    exact e.trans (append_hi _ _)
+
+/-- Step `i` of iteration `j ≥ 1` computes words `t` and `t + 1`
+(`t = 16 j + 2 i`) of both from the earlier ones, and stores them. -/
+theorem sched_ok (s : State) {j : Nat} (i : Nat) (hj : 1 ≤ j) (hn : 8 * j + i < 40) {scr : Addr}
+    (M₀ M₁ : Block) (h8 : s.gpr .r8 = scr) (h9 : s.gpr .r9 = idx2 j) (hR : (⟨scr, 1328⟩ : Region) ∈ s.wr)
+    (hm : ∀ t < 16 * j + 2 * i, WMem2 s.mem scr M₀ M₁ t) :
+    WP isa (.block (sched i)) s fun s' =>
+      s'.xmm w0 = W M₁ (16 * j + 2 * i) ++ W M₀ (16 * j + 2 * i) ∧
+      s'.ymmHi w0 = W M₁ (16 * j + 2 * i + 1) ++ W M₀ (16 * j + 2 * i + 1) ∧
+      (∀ t < 16 * j + 2 * i + 2, WMem2 s'.mem scr M₀ M₁ t) ∧
+      Frame [⟨scr, 1280⟩] s.mem s'.mem ∧
+      (∀ r, r ≠ w0 → r ≠ w1 → r ≠ u0 → r ≠ u1 → s'.xmm r = s.xmm r ∧ s'.ymmHi r = s.ymmHi r) ∧
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨T, hT⟩ : ∃ T, T = 16 * j + 2 * i := ⟨_, rfl⟩
+  rw [← hT] at hm ⊢
+  have eA := wSlot_ea s h9 i (-240) (T - 15) (by omega)
+  have eB := wSlot_ea s h9 i (-32) (T - 2) (by omega)
+  have eC := wSlot_ea s h9 i (-256) (T - 16) (by omega)
+  have eD := wSlot_ea s h9 i (-112) (T - 7) (by omega)
+  have eO := wSlot_ea s h9 i 0 T (by omega)
+  rw [h8] at eA eB eC eD eO
+  refine WP.mono (sched_run i s _ _ _ _ _ eA eB eC eD eO (in_scr2 hR (by omega)).2 (in_scr2 hR (by omega)).2
+    (in_scr2 hR (by omega)).2 (in_scr2 hR (by omega)).2 (in_scr2 hR (by omega)).1)
+    fun s' ⟨hx, hy, hmem, hk, hg, hrd, hwr⟩ => ?_
+  obtain ⟨a0, a1⟩ := read256_words (hm (T - 15) (by omega)) (by rw [show T - 15 + 1 = T - 14 by omega]; exact hm _ (by omega))
+  obtain ⟨b0, b1⟩ := read256_words (hm (T - 2) (by omega)) (by rw [show T - 2 + 1 = T - 1 by omega]; exact hm _ (by omega))
+  obtain ⟨c0, c1⟩ := read256_words (hm (T - 16) (by omega)) (by rw [show T - 16 + 1 = T - 15 by omega]; exact hm _ (by omega))
+  obtain ⟨d0, d1⟩ := read256_words (hm (T - 7) (by omega)) (by rw [show T - 7 + 1 = T - 6 by omega]; exact hm _ (by omega))
+  rw [a0, b0, c0, d0, sl_eq] at hx
+  rw [a1, b1, c1, d1, sl_eq] at hy
+  simp only [show T - 15 + 1 = T - 14 by omega, show T - 2 + 1 = T - 1 by omega,
+    show T - 16 + 1 = T - 15 by omega, show T - 7 + 1 = T - 6 by omega] at hy
+  have w0e : W M₁ T ++ W M₀ T = s'.xmm w0 := by
+    rw [hx]
+    have e := fun M => Proof.Sha512.X86_64.Avx2.W_ge' M (T - 16)
+    simp only [show T - 16 + 16 = T by omega, show T - 16 + 14 = T - 2 by omega,
+      show T - 16 + 9 = T - 7 by omega, show T - 16 + 1 = T - 15 by omega] at e
+    rw [e M₀, e M₁]
+  have w1e : W M₁ (T + 1) ++ W M₀ (T + 1) = s'.ymmHi w0 := by
+    rw [hy]
+    have e := fun M => Proof.Sha512.X86_64.Avx2.W_ge' M (T - 15)
+    simp only [show T - 15 + 16 = T + 1 by omega, show T - 15 + 14 = T - 1 by omega,
+      show T - 15 + 9 = T - 6 by omega, show T - 15 + 1 = T - 14 by omega] at e
+    rw [e M₀, e M₁]
+  rw [← w0e, ← w1e] at hmem
+  refine ⟨w0e.symm, w1e.symm, ?_, ?_, hk, hg, hrd, hwr⟩
+  · rw [hmem]; exact wmem2_store (by omega) hm
+  · rw [hmem]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_offset (by omega) (by omega))
 
 end VG.Proof.Sha512.X86_64.Avx512
