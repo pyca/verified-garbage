@@ -237,6 +237,12 @@ theorem sv_ne (t k : Nat) : sv t k ≠ w0 ∧ sv t k ≠ w1 := by
   generalize (k + 8 - t % 8) % 8 = c at *
   revert h8; revert c; decide
 
+theorem sv_ne' (t k : Nat) : sv t k ≠ u0 ∧ sv t k ≠ u1 := by
+  simp only [sv]
+  have h8 := Nat.mod_lt (k + 8 - t % 8) (show 8 > 0 by omega)
+  generalize (k + 8 - t % 8) % 8 = c at *
+  revert h8; revert c; decide
+
 /-- The working variables, when their registers are kept. -/
 theorem Vars2.of_xmm {t : Nat} {s s' : State} {v₀ v₁ : HashValue} (h : Vars2 t s v₀ v₁)
     (hx : ∀ r, r ≠ w0 → r ≠ w1 → s'.xmm r = s.xmm r) : Vars2 t s' v₀ v₁ := by
@@ -482,5 +488,110 @@ theorem load2_ok {i : Nat} (hi : i < 8) (s : State) {p₀ p₁ pO : Addr} {M₀ 
     q₀, q₁, pd, Option.map_some, Option.some.injEq, exists_eq_left', reduceVBinOpSse,
     show (1 : BitVec 8).getLsbD 0 = true from rfl]
   exact ⟨trivial, trivial, trivial, fun r h0 h1 => by simp [h0, h1], trivial, trivial, trivial⟩
+
+/-! ## The iterations -/
+
+/-- What a step's first part (`load` or `sched`) leaves for its rounds:
+words `T` and `T + 1` of both in `w0` and in the scratch space. -/
+def Words (M₀ M₁ : Block) (scr : Addr) (T : Nat) (s s' : State) : Prop :=
+  s'.xmm w0 = W M₁ T ++ W M₀ T ∧ s'.ymmHi w0 = W M₁ (T + 1) ++ W M₀ (T + 1) ∧
+  (∀ t < T + 2, WMem2 s'.mem scr M₀ M₁ t) ∧ Frame [⟨scr, 1280⟩] s.mem s'.mem ∧
+  (∀ r, r ≠ w0 → r ≠ w1 → r ≠ u0 → r ≠ u1 → s'.xmm r = s.xmm r ∧ s'.ymmHi r = s.ymmHi r) ∧
+  s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr
+
+/-- After `n` steps of iteration `j`, from the state `sB` the rounds started in. -/
+structure SInv (H₀ H₁ : HashValue) (M₀ M₁ : Block) (scr : Addr) (sB : State) (j n : Nat) (s : State) : Prop where
+  vars : Vars2 (2 * n) s (Spec.Sha512.rounds H₀ M₀ (16 * j + 2 * n)) (Spec.Sha512.rounds H₁ M₁ (16 * j + 2 * n))
+  wmem : ∀ t < 16 * j + 2 * n, WMem2 s.mem scr M₀ M₁ t
+  gpr : ∀ r, r ≠ .r9 → s.gpr r = sB.gpr r
+  r9 : s.gpr .r9 = idx2 j
+  rd : s.rd = sB.rd
+  wr : s.wr = sB.wr
+  frame : Frame [⟨scr, 1280⟩] sB.mem s.mem
+  mask : s.xmm mB = Impl.Sha512.X86_64.Avx2.bswapMask ∧ s.ymmHi mB = Impl.Sha512.X86_64.Avx2.bswapMask
+  syms : s.syms = sB.syms
+
+/-- A step: its words, then its two rounds. -/
+theorem step_ok {B : List Instr} {H₀ H₁ : HashValue} {M₀ M₁ : Block} {scr : Addr} {sB : State} {j n : Nat}
+    (hax : sB.gpr .rax = sB.syms kSym) (hn : 8 * j + n < 40) {s : State}
+    (h : SInv H₀ H₁ M₀ M₁ scr sB j n s)
+    (hw : WP isa (.block B) s (Words M₀ M₁ scr (16 * j + 2 * n) s)) :
+    WP isa (.block (B ++ rounds2 n)) s (SInv H₀ H₁ M₀ M₁ scr sB j (n + 1)) := by
+  rw [WP.block_append_iff]
+  refine VG.X86_64.WP.mono_syms hw fun s₁ ⟨x0, x1, hm₁, hf₁, hx₁, hg₁, hrd₁, hwr₁⟩ hsy₁ => ?_
+  have hv₁ : Vars2 (2 * n) s₁ (Spec.Sha512.rounds H₀ M₀ (16 * j + 2 * n))
+      (Spec.Sha512.rounds H₁ M₁ (16 * j + 2 * n)) := by
+    obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := h.vars
+    have k := fun q => (hx₁ _ (sv_ne (2 * n) q).1 (sv_ne (2 * n) q).2 (sv_ne' (2 * n) q).1 (sv_ne' (2 * n) q).2).1
+    exact ⟨(k 0).trans h0, (k 1).trans h1, (k 2).trans h2, (k 3).trans h3, (k 4).trans h4, (k 5).trans h5,
+      (k 6).trans h6, (k 7).trans h7⟩
+  have h9₁ : s₁.gpr .r9 = idx2 j := by rw [hg₁]; exact h.r9
+  have hax₁ : s₁.gpr .rax = s₁.syms kSym := by
+    rw [hg₁, h.gpr _ (by decide), hsy₁, h.syms]; exact hax
+  refine VG.X86_64.WP.mono_syms (rounds2_ok s₁ n hn H₀ H₁ M₀ M₁ h9₁ hax₁ hv₁ x0 x1)
+    fun s₂ ⟨hv₂, hg₂, hm₂, hrd₂, hwr₂, hk₂, hk₂'⟩ hsy₂ => ?_
+  have mk := hx₁ mB (by decide) (by decide) (by decide) (by decide)
+  exact {
+    vars := by rw [show 2 * (n + 1) = 2 * n + 2 by omega, show 16 * j + (2 * n + 2) = 16 * j + 2 * n + 2 by omega]; exact hv₂
+    wmem := fun t ht => by rw [hm₂]; exact hm₁ t (by omega)
+    gpr := fun r hr => by rw [hg₂, hg₁]; exact h.gpr r hr
+    r9 := by rw [hg₂]; exact h9₁
+    rd := hrd₂.trans (hrd₁.trans h.rd)
+    wr := hwr₂.trans (hwr₁.trans h.wr)
+    frame := by rw [hm₂]; exact h.frame.trans hf₁
+    mask := ⟨hk₂.trans (mk.1.trans h.mask.1), hk₂'.trans (mk.2.trans h.mask.2)⟩
+    syms := hsy₂.trans (hsy₁.trans h.syms) }
+
+/-- What the code has of the blocks and the scratch space when its rounds
+start, in `sB`. -/
+structure Base (M₀ M₁ : Block) (p₀ p₁ scr : Addr) (sB : State) : Prop where
+  rsi : sB.gpr .rsi = p₀
+  rcx : sB.gpr .rcx = p₁
+  r8 : sB.gpr .r8 = scr
+  rax : sB.gpr .rax = sB.syms kSym
+  scrW : (⟨scr, 1328⟩ : Region) ∈ sB.wr
+  in₀ : ∀ i < 8, InRegions (sB.rd ++ sB.wr) (p₀ + BitVec.ofInt 64 ((16 * i : Nat) : Int)) 16
+  in₁ : ∀ i < 8, InRegions (sB.rd ++ sB.wr) (p₁ + BitVec.ofInt 64 ((16 * i : Nat) : Int)) 16
+  blk₀ : ∀ m, Frame [⟨scr, 1280⟩] sB.mem m → ∀ t : Nat, t < 16 →
+    bswap64 (m.readW (p₀ + BitVec.ofInt 64 ((8 * t : Nat) : Int)) 64) = W M₀ t
+  blk₁ : ∀ m, Frame [⟨scr, 1280⟩] sB.mem m → ∀ t : Nat, t < 16 →
+    bswap64 (m.readW (p₁ + BitVec.ofInt 64 ((8 * t : Nat) : Int)) 64) = W M₁ t
+
+/-- The steps of the first iteration, whose words are the blocks'. -/
+theorem steps0_ok {H₀ H₁ : HashValue} {M₀ M₁ : Block} {p₀ p₁ scr : Addr} {sB : State}
+    (hB : Base M₀ M₁ p₀ p₁ scr sB) {s₀ : State} (h₀ : SInv H₀ H₁ M₀ M₁ scr sB 0 0 s₀) :
+    ∀ n ≤ 8, WP isa (steps0 n) s₀ (SInv H₀ H₁ M₀ M₁ scr sB 0 n) := by
+  intro n hn
+  induction n with
+  | zero => exact WP.block_nil h₀
+  | succ n ih =>
+    refine WP.seq (WP.mono (ih (by omega)) fun s h => ?_)
+    refine step_ok hB.rax (by omega) h ?_
+    have h8 : s.gpr .r8 = scr := (h.gpr _ (by decide)).trans hB.r8
+    have hR : (⟨scr, 1328⟩ : Region) ∈ s.wr := h.wr ▸ hB.scrW
+    have eO := wSlot_ea s h.r9 n 0 (2 * n) (by omega)
+    rw [h8] at eO
+    refine WP.mono (load2_ok (by omega) s ((h.gpr _ (by decide)).trans hB.rsi) ((h.gpr _ (by decide)).trans hB.rcx)
+      eO (by rw [h.rd, h.wr]; exact hB.in₀ n (by omega)) (by rw [h.rd, h.wr]; exact hB.in₁ n (by omega))
+      (in_scr2 hR (by omega)).1 h.mask.1 h.mask.2 (hB.blk₀ _ h.frame) (hB.blk₁ _ h.frame))
+      fun s₁ ⟨x0, x1, hm, hx, hg, hrd, hwr⟩ => ?_
+    rw [show 16 * 0 + 2 * n = 2 * n by omega]
+    refine ⟨x0, x1, ?_, ?_, fun r a b _ _ => hx r a b, hg, hrd, hwr⟩
+    · rw [hm]; exact wmem2_store (by omega) (by simpa using h.wmem)
+    · rw [hm]
+      exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_offset (by omega) (by omega))
+
+/-- The steps of a later iteration, whose words are computed. -/
+theorem steps_ok {H₀ H₁ : HashValue} {M₀ M₁ : Block} {p₀ p₁ scr : Addr} {sB : State}
+    (hB : Base M₀ M₁ p₀ p₁ scr sB) {j : Nat} (hj : 1 ≤ j) (hj5 : j < 5) {s₀ : State}
+    (h₀ : SInv H₀ H₁ M₀ M₁ scr sB j 0 s₀) :
+    ∀ n ≤ 8, WP isa (steps n) s₀ (SInv H₀ H₁ M₀ M₁ scr sB j n) := by
+  intro n hn
+  induction n with
+  | zero => exact WP.block_nil h₀
+  | succ n ih =>
+    refine WP.seq (WP.mono (ih (by omega)) fun s h => ?_)
+    refine step_ok hB.rax (by omega) h ?_
+    exact sched_ok s n hj (by omega) M₀ M₁ ((h.gpr _ (by decide)).trans hB.r8) h.r9 (h.wr ▸ hB.scrW) h.wmem
 
 end VG.Proof.Sha512.X86_64.Avx512
