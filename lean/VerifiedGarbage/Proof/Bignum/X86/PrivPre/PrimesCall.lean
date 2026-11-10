@@ -264,13 +264,8 @@ def PrOut (s v : State) : Prop :=
       (2 * Spec.Rsa.primeWords (arg s 7).toNat) =
     2 ^ r2Exp (arg s 7).toNat % CrtRt.safeM (valueAt s 6)
 
-theorem pr_call {prName : String} (st : stackUse primes ≤ 96) (ns : NoSp primes)
-    (A : PPABI s) (B : Body s u) (V : ∀ j < 18, u.mem.readW (slot s (4 * j)) 32 = primesVal s j) :
-    WP isa (.call prName primes) u fun v => Body s v ∧ Keeps [.eax, .ecx, .edx] u v ∧
-      Frame [wsR s, ⟨bot s, 100⟩] u.mem v.mem ∧ PrOut s v := by
-  have os := out_sub A
-  have argsSub : Region.Sub ⟨slot s 0, 72⟩ (frameR s) := by
-    rw [frame_base A]; exact Offset.sub _ (by omega) (by omega)
+theorem pr_covers (A : PPABI s) (B : Body s u) :
+    Covers (prRd s ++ prWr s) (u.rd ++ u.wr) ∧ Covers (prWr s) u.wr := by
   have cw : Covers (prWr s) u.wr := by
     rw [B.wr, A.wr]
     refine Covers.of_forall fun r hr => ?_
@@ -289,6 +284,16 @@ theorem pr_call {prName : String} (st : stackUse primes ≤ 96) (ns : NoSp prime
     exact Covers.left (Covers.of_mem fun r hr => by
       simp only [prRd, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp)
+  exact ⟨cr, cw⟩
+
+theorem pr_call {prName : String} (st : stackUse primes ≤ 96) (ns : NoSp primes)
+    (A : PPABI s) (B : Body s u) (V : ∀ j < 18, u.mem.readW (slot s (4 * j)) 32 = primesVal s j) :
+    WP isa (.call prName primes) u fun v => Body s v ∧ Keeps [.eax, .ecx, .edx] u v ∧
+      Frame [wsR s, ⟨bot s, 100⟩] u.mem v.mem ∧ PrOut s v := by
+  have os := out_sub A
+  have argsSub : Region.Sub ⟨slot s 0, 72⟩ (frameR s) := by
+    rw [frame_base A]; exact Offset.sub _ (by omega) (by omega)
+  obtain ⟨cr, cw⟩ := pr_covers A B
   refine WP.mono (body_call primes_verified.1 st ns A B (pr_pre A B V) cr cw fun r hr => ?_)
     fun v ⟨Bv, K, F, w, M, G, post⟩ => ⟨Bv, K, ?_, ?_⟩
   · simp only [prWr, List.mem_cons, List.not_mem_nil, or_false] at hr

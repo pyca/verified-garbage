@@ -236,17 +236,11 @@ theorem Body.nBytes (A : PPABI s) (B : Body s u) :
   exact B.frame.bytes (R := ⟨argumentPointer s 2, (arg s 3).toNat⟩) (n_apart A) (by simp; omega)
     (List.mem_range.mp hi)
 
-theorem pc_call {pcName : String} {pc : Prog isa}
-    (pv : Verified target pc (Spec.Rsa.publicPrecomputeContract abi 96)) (pst : stackUse pc ≤ 96) (pns : NoSp pc)
-    (A : PPABI s) (B : Body s u) (V : ∀ j < 6, u.mem.readW (slot s (4 * j)) 32 = pubVal s j) :
-    WP isa (.call pcName pc) u fun v => Body s v ∧ Keeps [.eax, .ecx, .edx] u v ∧
-      Frame (pcWr s ++ [⟨bot s, 100⟩]) u.mem v.mem ∧ PcOut s v := by
+theorem pc_covers (A : PPABI s) (B : Body s u) :
+    Covers (pcRd s ++ pcWr s) (u.rd ++ u.wr) ∧ Covers (pcWr s) u.wr := by
   have w := wW_toNat A
   have hl := A.preLength
   simp only [Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords] at hl
-  have preSub : Region.Sub ⟨argumentPointer s 0, (wW s).toNat * 8⟩ (preR s) := Region.sub_prefix (by omega)
-  have argsSub : Region.Sub ⟨slot s 0, 24⟩ (frameR s) := by
-    rw [frame_base A]; exact Offset.sub _ (by omega) (by omega)
   have cw : Covers (pcWr s) u.wr := by
     rw [B.wr, A.wr]
     refine Covers.of_forall fun r hr => ?_
@@ -261,6 +255,20 @@ theorem pc_call {pcName : String} {pc : Prog isa}
     refine Covers.append_left ?_ (Covers.right cw)
     rw [B.rd, A.rd]
     exact Covers.left (Covers.of_mem fun r hr => by simp [pcRd] at hr; subst hr; simp)
+  exact ⟨cr, cw⟩
+
+theorem pc_call {pcName : String} {pc : Prog isa}
+    (pv : Verified target pc (Spec.Rsa.publicPrecomputeContract abi 96)) (pst : stackUse pc ≤ 96) (pns : NoSp pc)
+    (A : PPABI s) (B : Body s u) (V : ∀ j < 6, u.mem.readW (slot s (4 * j)) 32 = pubVal s j) :
+    WP isa (.call pcName pc) u fun v => Body s v ∧ Keeps [.eax, .ecx, .edx] u v ∧
+      Frame (pcWr s ++ [⟨bot s, 100⟩]) u.mem v.mem ∧ PcOut s v := by
+  have w := wW_toNat A
+  have hl := A.preLength
+  simp only [Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords] at hl
+  have preSub : Region.Sub ⟨argumentPointer s 0, (wW s).toNat * 8⟩ (preR s) := Region.sub_prefix (by omega)
+  have argsSub : Region.Sub ⟨slot s 0, 24⟩ (frameR s) := by
+    rw [frame_base A]; exact Offset.sub _ (by omega) (by omega)
+  obtain ⟨cr, cw⟩ := pc_covers A B
   refine WP.mono (body_call pv.1 pst pns A B (pc_pre A B V) cr cw fun r hr => ?_) fun v ⟨Bv, K, F, x, M, G, post⟩ =>
     ⟨Bv, K, F, ?_⟩
   · simp only [pcWr, List.mem_cons, List.not_mem_nil, or_false] at hr
