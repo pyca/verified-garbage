@@ -23,6 +23,8 @@ namespace VG.Proof.RsaPkcs1Enc.PPC64LE.Dec
 open VG VG.PPC64LE VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 open VG.Proof.Bignum.PPC64LE (Keep)
 
+variable {pc : Bool}
+
 /-- The result's 32 bits, zero-extended. -/
 def rOf (x : BitVec 64) : BitVec 64 := (x.setWidth 32).setWidth 64
 
@@ -50,7 +52,7 @@ theorem readW_oR {s : State} {m : Mem} (v : BitVec 64) {d : Nat}
     (by unfold frameBytes at hn; omega) (by decide)) (by decide)
 
 /-- The private-key operation's result to its slot, the zeros' address and `k`. -/
-theorem dPtrs₁_inv {s u : State} (h : DPre s) (A : AtD s u) :
+theorem dPtrs₁_inv {s u : State} (h : DPre pc s) (A : AtD s u) :
     WP isa (.block dPtrs₁) u fun t =>
       ZInv s (rOf (u.gpr .r3)) (Spec.Rsa.bytesAt u.mem (s.gpr .r3) (s.gpr .r7).toNat) 0 t ∧ t.gpr .r9 = s.gpr .r7 := by
   have hsp : u.sp = fb s := A.sp
@@ -100,7 +102,7 @@ theorem zBody_ok {t : State} (hw : InRegions t.wr (t.gpr .r11 + BitVec.ofNat 64 
   have c : (0 : Nat) < 2 ^ 15 := by decide
   prun [exec_stb (show Reg.r11 ≠ .r0 by decide) c hw, exec_addi (show Reg.r11 ≠ .r0 by decide) (show 1 < 2 ^ 15 by decide)]
 
-theorem zeroLoop_ok {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hz : ZInv s R EM 0 t)
+theorem zeroLoop_ok {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte} {t : State} (hz : ZInv s R EM 0 t)
     (h9 : t.gpr .r9 = s.gpr .r7) : WP isa zeroLoop t (ZInv s R EM (s.gpr .r7).toNat) := by
   have hk := h.k2
   have hk1 := h.k1
@@ -141,7 +143,7 @@ structure CInv (s : State) (R : BitVec 64) (EM : List Byte) (j : Nat) (t : State
   z : ∀ i < (s.gpr .r7).toNat - (stackArg s 0).toNat, t.mem (scA s (sD + i)) = 0
   c : ∀ i < j, t.mem (scA s (sD + ((s.gpr .r7).toNat - (stackArg s 0).toNat) + i)) = s.mem (s.gpr .r10 + BitVec.ofNat 64 i)
 
-theorem dPtrs₂_inv {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte} {t : State}
+theorem dPtrs₂_inv {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte} {t : State}
     (hz : ZInv s R EM (s.gpr .r7).toNat t) :
     WP isa (.block dPtrs₂) t fun u => CInv s R EM 0 u ∧ u.gpr .r9 = stackArg s 0 := by
   have hc := hz.post
@@ -182,7 +184,7 @@ theorem cBody_ok {t : State} (hr : InRegions (t.rd ++ t.wr) (t.gpr .r10 + BitVec
     exec_addi (show Reg.r10 ≠ .r0 by decide) c1, exec_addi (show Reg.r11 ≠ .r0 by decide) c1,
     VG.Proof.Bignum.PPC64LE.read_one']
 
-theorem copyLoop_ok {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : CInv s R EM 0 t)
+theorem copyLoop_ok {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : CInv s R EM 0 t)
     (h9 : t.gpr .r9 = stackArg s 0) : WP isa copyLoop t (CInv s R EM ((stackArg s 0).toNat)) := by
   have hk := h.k2
   have hdk := h.d2
@@ -228,7 +230,7 @@ structure DB (s : State) (R : BitVec 64) (EM : List Byte) (t : State) : Prop whe
   D : Spec.Rsa.bytesAt t.mem (scA s sD) (s.gpr .r7).toNat =
     Spec.Rsa.i2osp (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r10) ((stackArg s 0).toNat))) (s.gpr .r7).toNat
 
-theorem cinv_db {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte} {u : State}
+theorem cinv_db {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte} {u : State}
     (hu : CInv s R EM ((stackArg s 0).toNat) u) : DB s R EM u := by
   refine ⟨hu.post, ?_⟩
   have hdk := h.d2
@@ -243,7 +245,7 @@ theorem cinv_db {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte} {u : S
     have := hu.c (i - ((s.gpr .r7).toNat - (stackArg s 0).toNat)) (by simp at h₁; omega)
     rw [Offset.add_add, show sD + i = sD + ((s.gpr .r7).toNat - (stackArg s 0).toNat) + (i - ((s.gpr .r7).toNat - (stackArg s 0).toNat)) by omega, this]
 
-theorem dBuild_ok {s u : State} (h : DPre s) (A : AtD s u) :
+theorem dBuild_ok {s u : State} (h : DPre pc s) (A : AtD s u) :
     WP isa dBuild u (DB s (rOf (u.gpr .r3)) (Spec.Rsa.bytesAt u.mem (s.gpr .r3) (s.gpr .r7).toNat)) := by
   refine WP.seq (WP.mono (dPtrs₁_inv h A) fun _ ⟨h₁, e₁⟩ => ?_)
   refine WP.seq (WP.mono (zeroLoop_ok h h₁ e₁) fun _ h₂ => ?_)

@@ -21,6 +21,8 @@ namespace VG.Proof.RsaPkcs1Enc.PPC64LE.Dec
 open VG VG.PPC64LE VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 open VG.Proof.Bignum.PPC64LE (Keep)
 
+variable {pc : Bool}
+
 /-- The ciphertext. -/
 abbrev cOf (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (stackArg s 1) (s.gpr .r7).toNat
 
@@ -92,7 +94,7 @@ theorem kdkFinArgs_ok {t : State} (hc : Post s R EM t) :
 end
 
 section
-variable {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte}
+variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte}
 include h
 
 /-- The ciphertext misses `scratch` and the stack. -/
