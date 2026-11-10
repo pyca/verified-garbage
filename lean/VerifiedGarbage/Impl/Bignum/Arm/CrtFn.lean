@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.MergeAcceptance
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtValidateProduct
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtCoefficient
+public import VerifiedGarbage.Impl.Bignum.Arm.TransferArray
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtRecombine
 public import VerifiedGarbage.Impl.Bignum.Arm.ExportBufferMasked
 
@@ -14,9 +15,11 @@ public import VerifiedGarbage.Impl.Bignum.Arm.ExportBufferMasked
 
 The 56-byte frame retains the public lengths and argument pointers. After
 importing n, slot 8 holds the main workspace; slot 0 follows the active
-workspace. The only conditional branch validates the public modulus.
+workspace. Its conditional branches test public values only: the modulus
+check, and whether a factor's width leaves high limbs of the input to copy.
 All secret validation bits accumulate at slot 48 and mask the final output.
-Each factor's power runs in the narrow workspace at the factor's own width.
+Each factor's power, and the coefficient, run in the narrow workspace at a
+factor's own width.
 -/
 
 @[expose] public section
@@ -40,8 +43,11 @@ def validate : Prog isa :=
 def powerWith (phase : Prog isa) (slot primeSlot exponentSlot : Nat) : Prog isa :=
   .seq (selectChild slot) (.seq (narrowPowerWith phase slot primeSlot exponentSlot) selectMain)
 def qSource : List Instr := [.ldrSp .r1 8, .ldr .r1 .r1 228]
+/-- `m_q` and `qInv` into arrays 1 and 4 of p's full workspace, and array 5 cleared for `h`. -/
+def coefficientInput : Prog isa :=
+  .seq (.block qSource) (.seq (transferArray 1 6) (.seq (savedOperand 4 96 100) (clearOperandBuffer 104)))
 def coefficientPhase : Prog isa := .seq (selectChild 224)
-  (.seq (.block qSource) (.seq (transferArray 1 6) (.seq coefficient selectMain)))
+  (.seq coefficientInput (.seq (enterNarrow 68) (.seq (narrowPrime 64) (.seq coefficient selectMain))))
 def outputArgs : List Instr := [.ldr .r1 .r0 232, .ldrSp .r4 4, .ldrSp .r6 12]
 def finish : Prog isa := .seq (.block qSource) (.seq (transferArray 1 6)
   (.seq recombine (.seq (.block outputArgs) exportBufferMasked)))
