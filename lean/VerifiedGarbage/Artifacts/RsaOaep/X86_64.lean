@@ -142,7 +142,7 @@ end VG.Artifacts.RsaOaep.X86_64.RsaPublicPrecomputedAllMdHash
 namespace VG.Artifacts.RsaOaep.X86_64
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap fun v => RsaPrivateCrtAllMdHash.artifacts v VG.Proof.Variants.MdHash.X86_64.hashVariants) ++
-  (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap fun v => RsaPublicPrecomputedAllMdHash.artifacts v VG.Proof.Variants.MdHash.X86_64.hashVariants)
+  (VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap fun v => RsaPrivateCrtAllMdHash.artifacts v VG.Proof.Variants.MdHash.X86_64.variants) ++
+  (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap fun v => RsaPublicPrecomputedAllMdHash.artifacts v VG.Proof.Variants.MdHash.X86_64.variants)
 
 end VG.Artifacts.RsaOaep.X86_64

@@ -47,9 +47,10 @@ def sha384Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
 
 /-- SHA-384 with AVX2's functions, but HMAC's `init`, which compresses its two
 padded keys at once with AVX-512VL (`vg_sha512_compress2_avx512`) and clears
-what it leaves. -/
+what it leaves; chosen with AVX512_FP16 (`MdHash.extra`). -/
 def sha384Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { Proof.Pbkdf2.Md.X86_64.Sha512.sha384 .avx512 with initScrub := true, initOnly := true }
+  { Proof.Pbkdf2.Md.X86_64.Sha512.sha384 .avx512 with
+    initScrub := true, initOnly := true, extra := ["avx512fp16"] }
 
 def sha384ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant384
 
@@ -60,9 +61,10 @@ def sha512Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
 
 /-- SHA-512 with AVX2's functions, but HMAC's `init`, which compresses its two
 padded keys at once with AVX-512VL (`vg_sha512_compress2_avx512`) and clears
-what it leaves. -/
+what it leaves; chosen with AVX512_FP16 (`MdHash.extra`). -/
 def sha512Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { Proof.Pbkdf2.Md.X86_64.Sha512.sha512 .avx512 with initScrub := true, initOnly := true }
+  { Proof.Pbkdf2.Md.X86_64.Sha512.sha512 .avx512 with
+    initScrub := true, initOnly := true, extra := ["avx512fp16"] }
 
 def sha512ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512
 
@@ -73,9 +75,10 @@ def sha512_224Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
 
 /-- SHA-512/224 with AVX2's functions, but HMAC's `init`, which compresses its two
 padded keys at once with AVX-512VL (`vg_sha512_compress2_avx512`) and clears
-what it leaves. -/
+what it leaves; chosen with AVX512_FP16 (`MdHash.extra`). -/
 def sha512_224Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .avx512 with initScrub := true, initOnly := true }
+  { Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .avx512 with
+    initScrub := true, initOnly := true, extra := ["avx512fp16"] }
 
 def sha512_224ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512_224
 
@@ -86,9 +89,10 @@ def sha512_256Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
 
 /-- SHA-512/256 with AVX2's functions, but HMAC's `init`, which compresses its two
 padded keys at once with AVX-512VL (`vg_sha512_compress2_avx512`) and clears
-what it leaves. -/
+what it leaves; chosen with AVX512_FP16 (`MdHash.extra`). -/
 def sha512_256Avx512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 .avx512 with initScrub := true, initOnly := true }
+  { Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 .avx512 with
+    initScrub := true, initOnly := true, extra := ["avx512fp16"] }
 
 def sha512_256ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512_256
 
@@ -116,17 +120,15 @@ def sha512_224Variants := [sha512_224ShaNi, sha512_224Avx512, sha512_224Avx2, sh
 /-- The implementations of SHA-512/256, best first. -/
 def sha512_256Variants := [sha512_256ShaNi, sha512_256Avx512, sha512_256Avx2, sha512_256]
 
-/-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this), and its
-dispatcher tries them in this order. -/
+/-- Every implementation, best first, but those that differ from the next
+only in HMAC's `init` (`MdHash.initOnly`), whose other functions are the
+next one's: each function generic over them is emitted with each (the
+registration files that import this), a function that takes the hash
+functions or HMAC through a table takes them all, and its dispatcher tries
+them in this order. HMAC's own registration files take each hash function's
+list above, with those. -/
 def variants :=
-  md5Variants ++ sha1Variants ++ sha224Variants ++ sha256Variants ++ sha384Variants ++
-    sha512Variants ++ sha512_224Variants ++ sha512_256Variants
-
-/-- The implementations of the hash functions themselves, best first: every
-variant but those that differ from the next only in HMAC's `init`
-(`MdHash.initOnly`), whose hash functions are the next one's. A function
-that takes the hash functions alone, through a table, takes these. -/
-def hashVariants := variants.filter fun v => !v.initOnly
+  (md5Variants ++ sha1Variants ++ sha224Variants ++ sha256Variants ++ sha384Variants ++
+    sha512Variants ++ sha512_224Variants ++ sha512_256Variants).filter fun v => !v.initOnly
 
 end VG.Proof.Variants.MdHash.X86_64

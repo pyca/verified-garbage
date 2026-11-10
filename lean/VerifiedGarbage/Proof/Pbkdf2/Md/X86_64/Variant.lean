@@ -189,6 +189,11 @@ structure MdHash where
   /-- Whether HMAC's `init` clears what it leaves, after each of its branches
   (`MdHash.hmacInitReg`): it then returns without secret residue. -/
   initScrub : Bool := false
+  /-- CPU features HMAC's `init` is chosen only with, beyond those its code
+  needs (`Registration.extra`): for an `init` that is faster only on some of
+  the CPUs that can run it, which a feature its code does not use tells
+  apart. -/
+  extra : List String := []
   /-- Whether this variant differs from the next of its list only in HMAC's
   `init` (the code compressing its two padded keys, `Hash.compBoth`): the
   other functions emitted for a variant would be the next one's again, so

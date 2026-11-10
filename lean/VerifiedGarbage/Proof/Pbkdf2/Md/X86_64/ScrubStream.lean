@@ -169,7 +169,8 @@ def MdHash.hmacInitReg (v : MdHash) : Registration v.I.initAnyKeyApi target :=
     code := initCode v.H v.I
     stack := 24 + anyFrame v.I
     verified := v.hmacInitF
-    spSafe := v.hmacInitFSp }
+    spSafe := v.hmacInitFSp
+    extra := v.extra }
   let lv := levelFor (initCode v.H v.I)
   if v.initScrub then
   if hS : v.I.S.stateBytes < 2 ^ 64 then
@@ -191,6 +192,7 @@ def MdHash.hmacInitReg (v : MdHash) : Registration v.I.initAnyKeyApi target :=
       stack := 24 + anyFrame v.I
       verified := (initCodeS_ok v (levelFor_ne _) hS hd₁ hd₂ hst hn h8₁ h8₂ hl₁ hl₂ hrb).1
       spSafe := initCodeS_spSafe v lv
+      extra := v.extra
       residue := some ⟨(initCodeS_ok v (levelFor_ne _) hS hd₁ hd₂ hst hn h8₁ h8₂ hl₁ hl₂ hrb).2⟩ }
   else r else r else r else r else r else r else r else r else r else r
   else r

@@ -81,10 +81,6 @@ mod vg_hmac_sha384_shani;
 pub use vg_hmac_sha384_shani::{VG_HMAC_SHA384_SHANI, VG_HMAC_SHA384_SHANI_FEATURES};
 
 #[rustfmt::skip]
-mod vg_hmac_sha384_avx512;
-pub use vg_hmac_sha384_avx512::{VG_HMAC_SHA384_AVX512, VG_HMAC_SHA384_AVX512_FEATURES};
-
-#[rustfmt::skip]
 mod vg_hmac_sha384_avx2;
 pub use vg_hmac_sha384_avx2::{VG_HMAC_SHA384_AVX2, VG_HMAC_SHA384_AVX2_FEATURES};
 
@@ -95,10 +91,6 @@ pub use vg_hmac_sha384::VG_HMAC_SHA384;
 #[rustfmt::skip]
 mod vg_hmac_sha512_shani;
 pub use vg_hmac_sha512_shani::{VG_HMAC_SHA512_SHANI, VG_HMAC_SHA512_SHANI_FEATURES};
-
-#[rustfmt::skip]
-mod vg_hmac_sha512_avx512;
-pub use vg_hmac_sha512_avx512::{VG_HMAC_SHA512_AVX512, VG_HMAC_SHA512_AVX512_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hmac_sha512_avx2;
@@ -113,10 +105,6 @@ mod vg_hmac_sha512_224_shani;
 pub use vg_hmac_sha512_224_shani::{VG_HMAC_SHA512_224_SHANI, VG_HMAC_SHA512_224_SHANI_FEATURES};
 
 #[rustfmt::skip]
-mod vg_hmac_sha512_224_avx512;
-pub use vg_hmac_sha512_224_avx512::{VG_HMAC_SHA512_224_AVX512, VG_HMAC_SHA512_224_AVX512_FEATURES};
-
-#[rustfmt::skip]
 mod vg_hmac_sha512_224_avx2;
 pub use vg_hmac_sha512_224_avx2::{VG_HMAC_SHA512_224_AVX2, VG_HMAC_SHA512_224_AVX2_FEATURES};
 
@@ -127,10 +115,6 @@ pub use vg_hmac_sha512_224::VG_HMAC_SHA512_224;
 #[rustfmt::skip]
 mod vg_hmac_sha512_256_shani;
 pub use vg_hmac_sha512_256_shani::{VG_HMAC_SHA512_256_SHANI, VG_HMAC_SHA512_256_SHANI_FEATURES};
-
-#[rustfmt::skip]
-mod vg_hmac_sha512_256_avx512;
-pub use vg_hmac_sha512_256_avx512::{VG_HMAC_SHA512_256_AVX512, VG_HMAC_SHA512_256_AVX512_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hmac_sha512_256_avx2;
