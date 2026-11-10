@@ -663,4 +663,92 @@ theorem rounds_ok {H₀ H₁ : HashValue} {M₀ M₁ : Block} {p₀ p₁ scr : A
     · exact .inr ⟨by rw [he, show (j + 1 == 5) = false from beq_eq_false_iff_ne.mpr hl]; rfl, 5 - (j + 1), by omega, j + 1, rfl, by omega, by omega, h₄⟩
   exact WP.loop (M := isa) Inv hstep 4 s₂ ⟨1, rfl, Nat.le_refl _, by decide, h₂⟩
 
+/-! ## The hash values -/
+
+theorem punpckl_eq (a₀ a₁ b₀ b₁ : Word) : XBinOp.eval .punpcklqdq (a₁ ++ a₀) (b₁ ++ b₀) = b₀ ++ a₀ := by
+  simp only [reduceXBinOpEval, qword_append_0]
+
+theorem punpckh_eq (a₀ a₁ b₀ b₁ : Word) : XBinOp.eval .punpckhqdq (a₁ ++ a₀) (b₁ ++ b₀) = b₁ ++ a₁ := by
+  simp only [reduceXBinOpEval, qword_append_1]
+
+/-- Where words `2j` and `2j+1` of the hash value at `p` are. -/
+def qAddr (p : Addr) (j : Nat) : Addr := p + BitVec.ofNat 64 (16 * j)
+
+/-- Words `2j` and `2j+1` of a hash value in memory, as one 128-bit load. -/
+theorem state_pair (m : Mem) (p : Addr) {j : Nat} (hj : j < 4) :
+    m.readW (qAddr p j) 128 = (Spec.Sha512.stateAt m p)[2 * j + 1] ++ (Spec.Sha512.stateAt m p)[2 * j] := by
+  rw [← append_qwords (m.readW (qAddr p j) 128)]
+  have e₁ : qword (m.readW (qAddr p j) 128) 1 = m.readW (qAddr p j + BitVec.ofNat 64 8) 64 :=
+    readW_extract m (qAddr p j) (w := 128) (k := 8) (n := 8) (by decide)
+  have e₀ : qword (m.readW (qAddr p j) 128) 0 = m.readW (qAddr p j + BitVec.ofNat 64 0) 64 :=
+    readW_extract m (qAddr p j) (w := 128) (k := 0) (n := 8) (by decide)
+  rw [e₁, e₀]
+  simp only [Spec.Sha512.stateAt, Vector.getElem_ofFn, qAddr]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, BitVec.add_assoc, ← BitVec.ofNat_add,
+    show 16 * j + 8 = 8 * (2 * j + 1) by omega, show 16 * j + 0 = 8 * (2 * j) by omega]
+
+/-- The pairs of words of the hash value at `p` are `f`. -/
+def PairsAt (m : Mem) (p : Addr) (f : Nat → BitVec 128) : Prop := ∀ j < 4, m.readW (qAddr p j) 128 = f j
+
+/-- A hash value from its pairs of words. -/
+theorem stateAt_of_pairs {m : Mem} {p : Addr} {V : HashValue}
+    (h : PairsAt m p fun j => V[2 * j + 1]! ++ V[2 * j]!) : Spec.Sha512.stateAt m p = V := by
+  apply Vector.ext
+  intro k hk
+  have hp := h (k / 2) (by omega)
+  rw [state_pair m p (by omega)] at hp
+  have e0 := congrArg (fun x => qword x 0) hp
+  have e1 := congrArg (fun x => qword x 1) hp
+  simp only [qword_append_0, qword_append_1] at e0 e1
+  rcases Nat.mod_two_eq_zero_or_one k with h2 | h2
+  · have ek : 2 * (k / 2) = k := by omega
+    simp only [ek] at e0
+    rw [e0, getElem!_pos V k hk]
+  · have ek : 2 * (k / 2) + 1 = k := by omega
+    simp only [ek] at e1
+    rw [e1, getElem!_pos V k hk]
+
+open VG.Impl.Sha512.X86_64.Avx2 (at_ bswapMask) in
+theorem loadState_eq : loadState = [
+    .vmovdquLoad .l128 .xmm8 (at_ .rdi (16 * 0)), .vmovdquLoad .l128 .xmm9 (at_ .rdx (16 * 0)),
+    .vop (.vbin .vpunpcklqdq .l128 .xmm0 .xmm8 .xmm9), .vop (.vbin .vpunpckhqdq .l128 .xmm1 .xmm8 .xmm9),
+    .vmovdquLoad .l128 .xmm8 (at_ .rdi (16 * 1)), .vmovdquLoad .l128 .xmm9 (at_ .rdx (16 * 1)),
+    .vop (.vbin .vpunpcklqdq .l128 .xmm2 .xmm8 .xmm9), .vop (.vbin .vpunpckhqdq .l128 .xmm3 .xmm8 .xmm9),
+    .vmovdquLoad .l128 .xmm8 (at_ .rdi (16 * 2)), .vmovdquLoad .l128 .xmm9 (at_ .rdx (16 * 2)),
+    .vop (.vbin .vpunpcklqdq .l128 .xmm4 .xmm8 .xmm9), .vop (.vbin .vpunpckhqdq .l128 .xmm5 .xmm8 .xmm9),
+    .vmovdquLoad .l128 .xmm8 (at_ .rdi (16 * 3)), .vmovdquLoad .l128 .xmm9 (at_ .rdx (16 * 3)),
+    .vop (.vbin .vpunpcklqdq .l128 .xmm6 .xmm8 .xmm9), .vop (.vbin .vpunpckhqdq .l128 .xmm7 .xmm8 .xmm9)] := by
+  decide
+
+open VG.Impl.Sha512.X86_64.Avx2 (at_ bswapMask) in
+/-- The mask, both hash values in the variables of round 0, the table's
+address and the index of the first iteration. -/
+theorem start_ok (s : State) (A₀ A₁ B₀ B₁ : Nat → Word)
+    (hinA : ∀ j < 4, InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofInt 64 ((16 * j : Nat) : Int)) 16)
+    (hinB : ∀ j < 4, InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofInt 64 ((16 * j : Nat) : Int)) 16)
+    (hA : ∀ j < 4, s.mem.readW (s.gpr .rdi + BitVec.ofInt 64 ((16 * j : Nat) : Int)) 128 = A₁ j ++ A₀ j)
+    (hB : ∀ j < 4, s.mem.readW (s.gpr .rdx + BitVec.ofInt 64 ((16 * j : Nat) : Int)) 128 = B₁ j ++ B₀ j) :
+    WP isa (.block (const mB bswapMask ++ loadState ++ ([.leaSym .rax kSym, .mov .r9 (.imm 0)] : List Instr))) s
+      fun s' =>
+      (s'.xmm .xmm0 = B₀ 0 ++ A₀ 0 ∧ s'.xmm .xmm1 = B₁ 0 ++ A₁ 0 ∧ s'.xmm .xmm2 = B₀ 1 ++ A₀ 1 ∧
+        s'.xmm .xmm3 = B₁ 1 ++ A₁ 1 ∧ s'.xmm .xmm4 = B₀ 2 ++ A₀ 2 ∧ s'.xmm .xmm5 = B₁ 2 ++ A₁ 2 ∧
+        s'.xmm .xmm6 = B₀ 3 ++ A₀ 3 ∧ s'.xmm .xmm7 = B₁ 3 ++ A₁ 3) ∧
+      s'.xmm mB = bswapMask ∧ s'.ymmHi mB = bswapMask ∧ s'.gpr .rax = s.syms kSym ∧ s'.gpr .r9 = 0 ∧
+      (∀ r, r ≠ .rax → r ≠ .r9 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have a0 := hA 0 (by decide); have a1 := hA 1 (by decide); have a2 := hA 2 (by decide); have a3 := hA 3 (by decide)
+  have b0 := hB 0 (by decide); have b1 := hB 1 (by decide); have b2 := hB 2 (by decide); have b3 := hB 3 (by decide)
+  have i0 := hinA 0 (by decide); have i1 := hinA 1 (by decide); have i2 := hinA 2 (by decide); have i3 := hinA 3 (by decide)
+  have j0 := hinB 0 (by decide); have j1 := hinB 1 (by decide); have j2 := hinB 2 (by decide); have j3 := hinB 3 (by decide)
+  apply WP.of_runBlock
+  simp only [const, loadState_eq, List.cons_append, List.nil_append, mB, w1]
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpExec, isa,
+    readSrc, State.load128, State.ea, State.lane, at_, RegUpd.xmm_setV, RegUpd.ymmHi_setV_256, RegUpd.ymmHi_setV_128,
+    RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV, RegUpd.gpr_setReg, RegUpd.mem_setReg,
+    RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.xmm_setReg, RegUpd.ymmHi_setReg,
+    a0, a1, a2, a3, b0, b1, b2, b3, i0, i1, i2, i3, j0, j1, j2, j3, punpckl_eq, punpckh_eq,
+    Option.map_some, Option.some.injEq, exists_eq_left', reduceVBinOpSse,
+    show (1 : BitVec 8).getLsbD 0 = true from rfl]
+  exact ⟨⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩, by decide, by decide, rfl,
+    by decide, fun r h0 h1 => by simp [h0, h1], trivial, trivial, trivial⟩
+
 end VG.Proof.Sha512.X86_64.Avx512
