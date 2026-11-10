@@ -68,7 +68,7 @@ theorem em_rs : (emR s).Disjoint (rsR s) := by
     (by have := P.k2; unfold kk oRsa; omega) (by have := P.wsc; have := scLen P; unfold oRsa at *; omega)
   exact h.symm
 
-theorem preP_at {t : State} (A : AtPriv s t) : Rsa.PPC64LE.Priv.PreP (callE s t) := by
+theorem preP_at {t : State} (A : AtPriv s t) : Rsa.PPC64LE.Priv.PreP false (callE s t) := by
   have hk := P.k2
   have hk1 := P.k1
   have sa := fun i hi => callE_stackArg A (i := i) hi
@@ -106,7 +106,7 @@ theorem preP_at {t : State} (A : AtPriv s t) : Rsa.PPC64LE.Priv.PreP (callE s t)
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (stackArg s 14).isLt; omega)]
   have hS : Rsa.PPC64LE.Priv.sR (callE s t) = rsR s := by
     simp only [Rsa.PPC64LE.Priv.sR, sa 10 (by decide), sa 11 (by decide), psa, w11]
-  have hA : Rsa.PPC64LE.Priv.aR (callE s t) = psaR s := by simp only [Rsa.PPC64LE.Priv.aR, callE_addr A]
+  have hA : Rsa.PPC64LE.Priv.aR false (callE s t) = psaR s := by simp only [Rsa.PPC64LE.Priv.aR, callE_addr A, Bool.false_eq_true, ↓reduceIte]
   have hK : Rsa.PPC64LE.Priv.kR (callE s t) = ⟨s.sp - BitVec.ofNat 64 stackBytes,
       Impl.Rsa.PPC64LE.Priv.frameBytes⟩ := by
     simp only [Rsa.PPC64LE.Priv.kR, Rsa.PPC64LE.Priv.fb, hsp, pb_base, BitVec.add_sub_cancel]
@@ -138,7 +138,7 @@ theorem preP_at {t : State} (A : AtPriv s t) : Rsa.PPC64LE.Priv.PreP (callE s t)
   have q2 : (callE s t).sp.toNat + 192 ≤ 2 ^ 64 := by rw [hsp, hpbt]; have := P.sp2; omega
   have hkk : kk s = (s.gpr .r7).toNat := rfl
   refine ⟨q1, q2, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [hN, hE, hI, hP, hQ, hDP, hDQ, hQI, hA, ← hI']; rfl
+  · simp only [Rsa.PPC64LE.Priv.rdL, Bool.false_eq_true, ↓reduceIte, List.append_nil]; rw [hN, hE, hI, hP, hQ, hDP, hDQ, hQI, hA, ← hI']; rfl
   · rw [hO, hS]; rfl
   · rw [hO, hN]; exact (P.ns.sub_right es).symm
   · rw [hO, hE]; exact (P.es.sub_right es).symm

@@ -22,6 +22,8 @@ returns 0.
 
 namespace VG.Proof.RsaPss.PPC64LE.Sg
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.RsaPss.PPC64LE.Sign VG.WriteBytes
 open VG.Impl.RsaOaep.PPC64LE (encFail)
 open VG.Proof.RsaOaep.PPC64LE (Base Fits fx hiRegs Saves kR ne_zero_ltBit msgBit zero_ok slR_sub)
@@ -41,7 +43,7 @@ theorem lo_eq {s : State} (h0 : s.mem (s.gpr .r5) ≠ 0) : loS s = BitVec.ofNat 
   exact this
 
 section
-variable {D : Nat} {s : State} (P : PreS D s)
+variable {D : Nat} {s : State} (P : PreS pc D s)
 include P
 
 theorem Entered.only {t t' : State} {rs : List Reg} (E : Entered s t) (o : Only rs t t')

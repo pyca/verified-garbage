@@ -139,13 +139,38 @@ def restore : List Instr :=
     .load .d .r26 .r12 (oSave + 16), .load .d .r27 .r12 (oSave + 24), .load .d .r28 .r12 (oSave + 32),
     .load .d .r29 .r12 (oSave + 40)]
 
+/-- With the key's precomputed values `pre` (our stack argument 12): the
+status kept, and `r3 := pre`, `r4 :=` `n`'s values in the frame, `r5 := 2 ⌈k / 8⌉`. -/
+def preArgsP : List Instr :=
+  [.addSp .r12 0, .store .d .r3 .r12 oSt, .load .d .r3 .r12 (arg 12), .addi .r4 .r12 oPre] ++
+    [.addi .r5 .r26 7, .lsr .d .r5 .r5 3, .lsl .r5 .r5 1]
+
+/-- `pre`'s first `r5` words, `n`'s values, to the frame. -/
+def preCopy : Prog isa :=
+  Impl.Bignum.PPC64LE.Precompute.countLoop .r5
+    [.load .d .r0 .r3 0, .store .d .r0 .r4 0, .addi .r3 .r3 8, .addi .r4 .r4 8]
+
+/-- `n`'s values into the frame: computed (`vg_rsa_public_precompute`), or,
+with `pc`, copied from `pre`. -/
+def preStep : Bool → Prog isa
+  | false => .seq (.block preArgs) preCall
+  | true => .seq (.block preArgsP) preCopy
+
 /-- The body of the frame. -/
-def body : Prog isa :=
-  .seq (.block (save ++ crtArgs)) (.seq crtCall (.seq (.block preArgs) (.seq preCall (.seq (.block pubArgs)
+def bodyG (pc : Bool) : Prog isa :=
+  .seq (.block (save ++ crtArgs)) (.seq crtCall (.seq (preStep pc) (.seq (.block pubArgs)
     (.seq pubCall (.seq (.block cmpArgs) (.seq compare (.seq (.block result) (.seq release
-      (.block restore))))))))))
+      (.block restore)))))))))
+
+/-- The body of `vg_rsa_private_checked`'s frame. -/
+abbrev body : Prog isa := bodyG false
 
 /-- `vg_rsa_private_checked`. -/
 def code : Prog isa := .frame (.alloc frameBytes) body (.free frameBytes)
+
+/-- `vg_rsa_private_checked_precomputed`: `vg_rsa_private_checked` with the
+key's precomputed values `pre` (stack arguments 12 and 13, `pre_len`), whose
+first `2 ⌈k / 8⌉` words are `n`'s values. -/
+def codeP : Prog isa := .frame (.alloc frameBytes) (bodyG true) (.free frameBytes)
 
 end VG.Impl.Rsa.PPC64LE.Priv

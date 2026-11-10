@@ -1677,3 +1677,674 @@ bne %cr0, 2181b
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
     )
 }
+
+/// `vg_rsa_pss_sign`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pss_sign` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
+///
+/// Contract: `VG.Spec.RsaPss.signPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the digest or the salt.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `digest_len` must be the digest length of the hash function `hash` names.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
+/// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
+/// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3792 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pss_sign_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11], pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "Af8h+AAAYTnQAWvpKABr6QAAizkAACwo"
+beq %cr0, 20f
+.base64 "//+LOQAALCg="
+beq %cr0, 22f
+.base64 "/v+LOQAALCg="
+beq %cr0, 24f
+.base64 "/f+LOQAALCg="
+beq %cr0, 26f
+.base64 "/P+LOQAALCg="
+beq %cr0, 28f
+.base64 "+/+LOQAALCg="
+beq %cr0, 210f
+.base64 "+v+LOQAALCg="
+beq %cr0, 212f
+.base64 "AACBOXAAzPl4AOz5gAAM+ogALPqQAEz6mABs+qAAjPqoAKz6sADM+rgA7PrAAAz7yAAs+9AATPvYAGz74ACM++gArPumAgh88AAM+MABzOl4M898eBtwfHhLMX14U1J9uAFs6ngrtHx4O/V8eEMWfQAAJYlC+Cp5QvhLeXhbSn2C8Et5eFtKfQLhS3l4W0p9//9qOeAPa3l4W3d9AAApKA=="
+beq %cr0, 214f
+.base64 "UHh3fN7/YzjgD2N4AAAjKA=="
+bne %cr0, 216f
+.base64 "UHh3fN7/YzhQGHN84A9jeOAPZXp4K2N8AAAjKA=="
+bne %cr0, 218f
+.base64 "AAqOOAgAoDgAAMA4"
+220:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 220b
+.base64 "AACBOaABjOgICq44IADAOA=="
+221:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 221b
+.base64 "KAquOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 222f
+b 223f
+222:
+224:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 224b
+223:
+.base64 "AARuOAAAgTnQAYzpAACM6aYDiX0hBIBOAACAOAAKrjgoANM4AARuOEgF7jgAAIE50AGM6QgAjOmmA4l9IQSATigAkzgABG44AAWuOEgFzjgAAIE50AGM6RAAjOmmA4l9IQSATgAAjjh4e+V9AADAOA=="
+225:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 225b
+.base64 "AACOOBR6hHxQIJN83v+EOAEAoDgAAKSYAQCkOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 226f
+b 227f
+226:
+228:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 228b
+227:
+.base64 "AAWOOAAArjgUeqV83/+lOCAAwDg="
+229:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 229b
+.base64 "AACOOBR6hHz//4Q4vACgOAAApJgAAA47FHoYf9//GDsgACA7AABOOxS6Wn9QeHd/3/97OwAAgDsAAKA7"
+230:
+.base64 "AARuOAAAgTnYAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE52AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE52AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE52AGM6RAAjOmmA4l9IQSATgAAITnYASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+231:
+.base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
+bne %cr0, 231b
+.base64 "AACBOdgBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+bne %cr0, 230b
+.base64 "AAA0iUL4KnlC+Et5eFtKfYLwS3l4W0p9AuFLeXhbSn3//2o54A9reQAAADlQQAt9/wDgODg4CH14Q0p9AACOOBS6hHwAAKSIOFClfAAApJgx/yH4AACBOWAALPpoAEz6MAIM6HAADPg4AgzoeAAM+EACDOiAAAz4SAIM6IgADPhQAgzokAAM+FgCDOiYAAz4YAIM6KAADPhoAgzoqAAM+AAgADgUAg58sAAM+JgCbOkA/Gs5uABs+bACDOjAAAz4uAIM6MgADPh4gwN+eHvkfXijhX54e+Z9eKunfnizyH4AAC45eHvqfQ=="
+bl {vg_rsa_private_checked_precomputed}
+.base64 "0AAhOA=="
+b 219f
+218:
+.base64 "eIMEfnh75X0AAMA4"
+232:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 232b
+.base64 "AABgOA=="
+219:
+b 217f
+216:
+.base64 "eIMEfnh75X0AAMA4"
+233:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 233b
+.base64 "AABgOA=="
+217:
+b 215f
+214:
+.base64 "eIMEfnh75X0AAMA4"
+234:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 234b
+.base64 "AABgOA=="
+215:
+.base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6w=="
+b 213f
+212:
+.base64 "AACBOXAAzPl4AOz5gAAM+ogALPqQAEz6mABs+qAAjPqoAKz6sADM+rgA7PrAAAz7yAAs+9AATPvYAGz74ACM++gArPumAgh88AAM+MABzOl4M898eBtwfHhLMX14U1J9uAFs6ngrtHx4O/V8eEMWfQAAJYlC+Cp5QvhLeXhbSn2C8Et5eFtKfQLhS3l4W0p9//9qOeAPa3l4W3d9AAApKA=="
+beq %cr0, 235f
+.base64 "UHh3fOL/YzjgD2N4AAAjKA=="
+bne %cr0, 237f
+.base64 "UHh3fOL/YzhQGHN84A9jeOAPZXp4K2N8AAAjKA=="
+bne %cr0, 239f
+.base64 "AAqOOAgAoDgAAMA4"
+241:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 241b
+.base64 "AACBOaABjOgICq44HADAOA=="
+242:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 242b
+.base64 "JAquOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 243f
+b 244f
+243:
+245:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 245b
+244:
+.base64 "AARuOAAAgTnQAYzpAACM6aYDiX0hBIBOAACAOAAKrjgkANM4AARuOEgF7jgAAIE50AGM6QgAjOmmA4l9IQSATiQAkzgABG44AAWuOEgFzjgAAIE50AGM6RAAjOmmA4l9IQSATgAAjjh4e+V9AADAOA=="
+246:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 246b
+.base64 "AACOOBR6hHxQIJN84v+EOAEAoDgAAKSYAQCkOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 247f
+b 248f
+247:
+249:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 249b
+248:
+.base64 "AAWOOAAArjgUeqV84/+lOBwAwDg="
+250:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 250b
+.base64 "AACOOBR6hHz//4Q4vACgOAAApJgAAA47FHoYf+P/GDscACA7AABOOxS6Wn9QeHd/4/97OwAAgDsAAKA7"
+251:
+.base64 "AARuOAAAgTnYAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE52AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE52AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE52AGM6RAAjOmmA4l9IQSATgAAITnYASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+252:
+.base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
+bne %cr0, 252b
+.base64 "AACBOdgBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+bne %cr0, 251b
+.base64 "AAA0iUL4KnlC+Et5eFtKfYLwS3l4W0p9AuFLeXhbSn3//2o54A9reQAAADlQQAt9/wDgODg4CH14Q0p9AACOOBS6hHwAAKSIOFClfAAApJgx/yH4AACBOWAALPpoAEz6MAIM6HAADPg4AgzoeAAM+EACDOiAAAz4SAIM6IgADPhQAgzokAAM+FgCDOiYAAz4YAIM6KAADPhoAgzoqAAM+AAgADgUAg58sAAM+JgCbOkA/Gs5uABs+bACDOjAAAz4uAIM6MgADPh4gwN+eHvkfXijhX54e+Z9eKunfnizyH4AAC45eHvqfQ=="
+bl {vg_rsa_private_checked_precomputed}
+.base64 "0AAhOA=="
+b 240f
+239:
+.base64 "eIMEfnh75X0AAMA4"
+253:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 253b
+.base64 "AABgOA=="
+240:
+b 238f
+237:
+.base64 "eIMEfnh75X0AAMA4"
+254:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 254b
+.base64 "AABgOA=="
+238:
+b 236f
+235:
+.base64 "eIMEfnh75X0AAMA4"
+255:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 255b
+.base64 "AABgOA=="
+236:
+.base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6w=="
+213:
+b 211f
+210:
+.base64 "AACBOXAAzPl4AOz5gAAM+ogALPqQAEz6mABs+qAAjPqoAKz6sADM+rgA7PrAAAz7yAAs+9AATPvYAGz74ACM++gArPumAgh88AAM+MABzOl4M898eBtwfHhLMX14U1J9uAFs6ngrtHx4O/V8eEMWfQAAJYlC+Cp5QvhLeXhbSn2C8Et5eFtKfQLhS3l4W0p9//9qOeAPa3l4W3d9AAApKA=="
+beq %cr0, 256f
+.base64 "UHh3fL7/YzjgD2N4AAAjKA=="
+bne %cr0, 258f
+.base64 "UHh3fL7/YzhQGHN84A9jeOAPZXp4K2N8AAAjKA=="
+bne %cr0, 260f
+.base64 "AAqOOAgAoDgAAMA4"
+262:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 262b
+.base64 "AACBOaABjOgICq44QADAOA=="
+263:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 263b
+.base64 "SAquOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 264f
+b 265f
+264:
+266:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 266b
+265:
+.base64 "AARuOAAAgTnQAYzpAACM6aYDiX0hBIBOAACAOAAKrjhIANM4AARuOEgF7jgAAIE50AGM6QgAjOmmA4l9IQSATkgAkzgABG44AAWuOEgFzjgAAIE50AGM6RAAjOmmA4l9IQSATgAAjjh4e+V9AADAOA=="
+267:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 267b
+.base64 "AACOOBR6hHxQIJN8vv+EOAEAoDgAAKSYAQCkOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 268f
+b 269f
+268:
+270:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 270b
+269:
+.base64 "AAWOOAAArjgUeqV8v/+lOEAAwDg="
+271:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 271b
+.base64 "AACOOBR6hHz//4Q4vACgOAAApJgAAA47FHoYf7//GDtAACA7AABOOxS6Wn9QeHd/v/97OwAAgDsAAKA7"
+272:
+.base64 "AARuOAAAgTnYAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE52AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE52AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE52AGM6RAAjOmmA4l9IQSATgAAITnYASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+273:
+.base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
+bne %cr0, 273b
+.base64 "AACBOdgBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+bne %cr0, 272b
+.base64 "AAA0iUL4KnlC+Et5eFtKfYLwS3l4W0p9AuFLeXhbSn3//2o54A9reQAAADlQQAt9/wDgODg4CH14Q0p9AACOOBS6hHwAAKSIOFClfAAApJgx/yH4AACBOWAALPpoAEz6MAIM6HAADPg4AgzoeAAM+EACDOiAAAz4SAIM6IgADPhQAgzokAAM+FgCDOiYAAz4YAIM6KAADPhoAgzoqAAM+AAgADgUAg58sAAM+JgCbOkA/Gs5uABs+bACDOjAAAz4uAIM6MgADPh4gwN+eHvkfXijhX54e+Z9eKunfnizyH4AAC45eHvqfQ=="
+bl {vg_rsa_private_checked_precomputed}
+.base64 "0AAhOA=="
+b 261f
+260:
+.base64 "eIMEfnh75X0AAMA4"
+274:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 274b
+.base64 "AABgOA=="
+261:
+b 259f
+258:
+.base64 "eIMEfnh75X0AAMA4"
+275:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 275b
+.base64 "AABgOA=="
+259:
+b 257f
+256:
+.base64 "eIMEfnh75X0AAMA4"
+276:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 276b
+.base64 "AABgOA=="
+257:
+.base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6w=="
+211:
+b 29f
+28:
+.base64 "AACBOXAAzPl4AOz5gAAM+ogALPqQAEz6mABs+qAAjPqoAKz6sADM+rgA7PrAAAz7yAAs+9AATPvYAGz74ACM++gArPumAgh88AAM+MABzOl4M898eBtwfHhLMX14U1J9uAFs6ngrtHx4O/V8eEMWfQAAJYlC+Cp5QvhLeXhbSn2C8Et5eFtKfQLhS3l4W0p9//9qOeAPa3l4W3d9AAApKA=="
+beq %cr0, 277f
+.base64 "UHh3fM7/YzjgD2N4AAAjKA=="
+bne %cr0, 279f
+.base64 "UHh3fM7/YzhQGHN84A9jeOAPZXp4K2N8AAAjKA=="
+bne %cr0, 281f
+.base64 "AAqOOAgAoDgAAMA4"
+283:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 283b
+.base64 "AACBOaABjOgICq44MADAOA=="
+284:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 284b
+.base64 "OAquOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 285f
+b 286f
+285:
+287:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 287b
+286:
+.base64 "AARuOAAAgTnQAYzpAACM6aYDiX0hBIBOAACAOAAKrjg4ANM4AARuOEgF7jgAAIE50AGM6QgAjOmmA4l9IQSATjgAkzgABG44AAWuOEgFzjgAAIE50AGM6RAAjOmmA4l9IQSATgAAjjh4e+V9AADAOA=="
+288:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 288b
+.base64 "AACOOBR6hHxQIJN8zv+EOAEAoDgAAKSYAQCkOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 289f
+b 290f
+289:
+291:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 291b
+290:
+.base64 "AAWOOAAArjgUeqV8z/+lODAAwDg="
+292:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 292b
+.base64 "AACOOBR6hHz//4Q4vACgOAAApJgAAA47FHoYf8//GDswACA7AABOOxS6Wn9QeHd/z/97OwAAgDsAAKA7"
+293:
+.base64 "AARuOAAAgTnYAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE52AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE52AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE52AGM6RAAjOmmA4l9IQSATgAAITnYASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+294:
+.base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
+bne %cr0, 294b
+.base64 "AACBOdgBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+bne %cr0, 293b
+.base64 "AAA0iUL4KnlC+Et5eFtKfYLwS3l4W0p9AuFLeXhbSn3//2o54A9reQAAADlQQAt9/wDgODg4CH14Q0p9AACOOBS6hHwAAKSIOFClfAAApJgx/yH4AACBOWAALPpoAEz6MAIM6HAADPg4AgzoeAAM+EACDOiAAAz4SAIM6IgADPhQAgzokAAM+FgCDOiYAAz4YAIM6KAADPhoAgzoqAAM+AAgADgUAg58sAAM+JgCbOkA/Gs5uABs+bACDOjAAAz4uAIM6MgADPh4gwN+eHvkfXijhX54e+Z9eKunfnizyH4AAC45eHvqfQ=="
+bl {vg_rsa_private_checked_precomputed}
+.base64 "0AAhOA=="
+b 282f
+281:
+.base64 "eIMEfnh75X0AAMA4"
+295:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 295b
+.base64 "AABgOA=="
+282:
+b 280f
+279:
+.base64 "eIMEfnh75X0AAMA4"
+296:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 296b
+.base64 "AABgOA=="
+280:
+b 278f
+277:
+.base64 "eIMEfnh75X0AAMA4"
+297:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 297b
+.base64 "AABgOA=="
+278:
+.base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6w=="
+29:
+b 27f
+26:
+.base64 "AACBOXAAzPl4AOz5gAAM+ogALPqQAEz6mABs+qAAjPqoAKz6sADM+rgA7PrAAAz7yAAs+9AATPvYAGz74ACM++gArPumAgh88AAM+MABzOl4M898eBtwfHhLMX14U1J9uAFs6ngrtHx4O/V8eEMWfQAAJYlC+Cp5QvhLeXhbSn2C8Et5eFtKfQLhS3l4W0p9//9qOeAPa3l4W3d9AAApKA=="
+beq %cr0, 298f
+.base64 "UHh3fN7/YzjgD2N4AAAjKA=="
+bne %cr0, 2100f
+.base64 "UHh3fN7/YzhQGHN84A9jeOAPZXp4K2N8AAAjKA=="
+bne %cr0, 2102f
+.base64 "AAqOOAgAoDgAAMA4"
+2104:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2104b
+.base64 "AACBOaABjOgICq44IADAOA=="
+2105:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2105b
+.base64 "KAquOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 2106f
+b 2107f
+2106:
+2108:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2108b
+2107:
+.base64 "AARuOAAAgTnQAYzpAACM6aYDiX0hBIBOAACAOAAKrjgoANM4AARuOEgF7jgAAIE50AGM6QgAjOmmA4l9IQSATigAkzgABG44AAWuOEgFzjgAAIE50AGM6RAAjOmmA4l9IQSATgAAjjh4e+V9AADAOA=="
+2109:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2109b
+.base64 "AACOOBR6hHxQIJN83v+EOAEAoDgAAKSYAQCkOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 2110f
+b 2111f
+2110:
+2112:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2112b
+2111:
+.base64 "AAWOOAAArjgUeqV83/+lOCAAwDg="
+2113:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2113b
+.base64 "AACOOBR6hHz//4Q4vACgOAAApJgAAA47FHoYf9//GDsgACA7AABOOxS6Wn9QeHd/3/97OwAAgDsAAKA7"
+2114:
+.base64 "AARuOAAAgTnYAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE52AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE52AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE52AGM6RAAjOmmA4l9IQSATgAAITnYASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+2115:
+.base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
+bne %cr0, 2115b
+.base64 "AACBOdgBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+bne %cr0, 2114b
+.base64 "AAA0iUL4KnlC+Et5eFtKfYLwS3l4W0p9AuFLeXhbSn3//2o54A9reQAAADlQQAt9/wDgODg4CH14Q0p9AACOOBS6hHwAAKSIOFClfAAApJgx/yH4AACBOWAALPpoAEz6MAIM6HAADPg4AgzoeAAM+EACDOiAAAz4SAIM6IgADPhQAgzokAAM+FgCDOiYAAz4YAIM6KAADPhoAgzoqAAM+AAgADgUAg58sAAM+JgCbOkA/Gs5uABs+bACDOjAAAz4uAIM6MgADPh4gwN+eHvkfXijhX54e+Z9eKunfnizyH4AAC45eHvqfQ=="
+bl {vg_rsa_private_checked_precomputed}
+.base64 "0AAhOA=="
+b 2103f
+2102:
+.base64 "eIMEfnh75X0AAMA4"
+2116:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2116b
+.base64 "AABgOA=="
+2103:
+b 2101f
+2100:
+.base64 "eIMEfnh75X0AAMA4"
+2117:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2117b
+.base64 "AABgOA=="
+2101:
+b 299f
+298:
+.base64 "eIMEfnh75X0AAMA4"
+2118:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2118b
+.base64 "AABgOA=="
+299:
+.base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6w=="
+27:
+b 25f
+24:
+.base64 "AACBOXAAzPl4AOz5gAAM+ogALPqQAEz6mABs+qAAjPqoAKz6sADM+rgA7PrAAAz7yAAs+9AATPvYAGz74ACM++gArPumAgh88AAM+MABzOl4M898eBtwfHhLMX14U1J9uAFs6ngrtHx4O/V8eEMWfQAAJYlC+Cp5QvhLeXhbSn2C8Et5eFtKfQLhS3l4W0p9//9qOeAPa3l4W3d9AAApKA=="
+beq %cr0, 2119f
+.base64 "UHh3fOL/YzjgD2N4AAAjKA=="
+bne %cr0, 2121f
+.base64 "UHh3fOL/YzhQGHN84A9jeOAPZXp4K2N8AAAjKA=="
+bne %cr0, 2123f
+.base64 "AAqOOAgAoDgAAMA4"
+2125:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2125b
+.base64 "AACBOaABjOgICq44HADAOA=="
+2126:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2126b
+.base64 "JAquOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 2127f
+b 2128f
+2127:
+2129:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2129b
+2128:
+.base64 "AARuOAAAgTnQAYzpAACM6aYDiX0hBIBOAACAOAAKrjgkANM4AARuOEgF7jgAAIE50AGM6QgAjOmmA4l9IQSATiQAkzgABG44AAWuOEgFzjgAAIE50AGM6RAAjOmmA4l9IQSATgAAjjh4e+V9AADAOA=="
+2130:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2130b
+.base64 "AACOOBR6hHxQIJN84v+EOAEAoDgAAKSYAQCkOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 2131f
+b 2132f
+2131:
+2133:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2133b
+2132:
+.base64 "AAWOOAAArjgUeqV84/+lOBwAwDg="
+2134:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2134b
+.base64 "AACOOBR6hHz//4Q4vACgOAAApJgAAA47FHoYf+P/GDscACA7AABOOxS6Wn9QeHd/4/97OwAAgDsAAKA7"
+2135:
+.base64 "AARuOAAAgTnYAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE52AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE52AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE52AGM6RAAjOmmA4l9IQSATgAAITnYASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+2136:
+.base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
+bne %cr0, 2136b
+.base64 "AACBOdgBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+bne %cr0, 2135b
+.base64 "AAA0iUL4KnlC+Et5eFtKfYLwS3l4W0p9AuFLeXhbSn3//2o54A9reQAAADlQQAt9/wDgODg4CH14Q0p9AACOOBS6hHwAAKSIOFClfAAApJgx/yH4AACBOWAALPpoAEz6MAIM6HAADPg4AgzoeAAM+EACDOiAAAz4SAIM6IgADPhQAgzokAAM+FgCDOiYAAz4YAIM6KAADPhoAgzoqAAM+AAgADgUAg58sAAM+JgCbOkA/Gs5uABs+bACDOjAAAz4uAIM6MgADPh4gwN+eHvkfXijhX54e+Z9eKunfnizyH4AAC45eHvqfQ=="
+bl {vg_rsa_private_checked_precomputed}
+.base64 "0AAhOA=="
+b 2124f
+2123:
+.base64 "eIMEfnh75X0AAMA4"
+2137:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2137b
+.base64 "AABgOA=="
+2124:
+b 2122f
+2121:
+.base64 "eIMEfnh75X0AAMA4"
+2138:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2138b
+.base64 "AABgOA=="
+2122:
+b 2120f
+2119:
+.base64 "eIMEfnh75X0AAMA4"
+2139:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2139b
+.base64 "AABgOA=="
+2120:
+.base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6w=="
+25:
+b 23f
+22:
+.base64 "AACBOXAAzPl4AOz5gAAM+ogALPqQAEz6mABs+qAAjPqoAKz6sADM+rgA7PrAAAz7yAAs+9AATPvYAGz74ACM++gArPumAgh88AAM+MABzOl4M898eBtwfHhLMX14U1J9uAFs6ngrtHx4O/V8eEMWfQAAJYlC+Cp5QvhLeXhbSn2C8Et5eFtKfQLhS3l4W0p9//9qOeAPa3l4W3d9AAApKA=="
+beq %cr0, 2140f
+.base64 "UHh3fOr/YzjgD2N4AAAjKA=="
+bne %cr0, 2142f
+.base64 "UHh3fOr/YzhQGHN84A9jeOAPZXp4K2N8AAAjKA=="
+bne %cr0, 2144f
+.base64 "AAqOOAgAoDgAAMA4"
+2146:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2146b
+.base64 "AACBOaABjOgICq44FADAOA=="
+2147:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2147b
+.base64 "HAquOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 2148f
+b 2149f
+2148:
+2150:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2150b
+2149:
+.base64 "AARuOAAAgTnQAYzpAACM6aYDiX0hBIBOAACAOAAKrjgcANM4AARuOEgF7jgAAIE50AGM6QgAjOmmA4l9IQSAThwAkzgABG44AAWuOEgFzjgAAIE50AGM6RAAjOmmA4l9IQSATgAAjjh4e+V9AADAOA=="
+2151:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2151b
+.base64 "AACOOBR6hHxQIJN86v+EOAEAoDgAAKSYAQCkOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 2152f
+b 2153f
+2152:
+2154:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2154b
+2153:
+.base64 "AAWOOAAArjgUeqV86/+lOBQAwDg="
+2155:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2155b
+.base64 "AACOOBR6hHz//4Q4vACgOAAApJgAAA47FHoYf+v/GDsUACA7AABOOxS6Wn9QeHd/6/97OwAAgDsAAKA7"
+2156:
+.base64 "AARuOAAAgTnYAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE52AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE52AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE52AGM6RAAjOmmA4l9IQSATgAAITnYASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+2157:
+.base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
+bne %cr0, 2157b
+.base64 "AACBOdgBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+bne %cr0, 2156b
+.base64 "AAA0iUL4KnlC+Et5eFtKfYLwS3l4W0p9AuFLeXhbSn3//2o54A9reQAAADlQQAt9/wDgODg4CH14Q0p9AACOOBS6hHwAAKSIOFClfAAApJgx/yH4AACBOWAALPpoAEz6MAIM6HAADPg4AgzoeAAM+EACDOiAAAz4SAIM6IgADPhQAgzokAAM+FgCDOiYAAz4YAIM6KAADPhoAgzoqAAM+AAgADgUAg58sAAM+JgCbOkA/Gs5uABs+bACDOjAAAz4uAIM6MgADPh4gwN+eHvkfXijhX54e+Z9eKunfnizyH4AAC45eHvqfQ=="
+bl {vg_rsa_private_checked_precomputed}
+.base64 "0AAhOA=="
+b 2145f
+2144:
+.base64 "eIMEfnh75X0AAMA4"
+2158:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2158b
+.base64 "AABgOA=="
+2145:
+b 2143f
+2142:
+.base64 "eIMEfnh75X0AAMA4"
+2159:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2159b
+.base64 "AABgOA=="
+2143:
+b 2141f
+2140:
+.base64 "eIMEfnh75X0AAMA4"
+2160:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2160b
+.base64 "AABgOA=="
+2141:
+.base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6w=="
+23:
+b 21f
+20:
+.base64 "AACBOXAAzPl4AOz5gAAM+ogALPqQAEz6mABs+qAAjPqoAKz6sADM+rgA7PrAAAz7yAAs+9AATPvYAGz74ACM++gArPumAgh88AAM+MABzOl4M898eBtwfHhLMX14U1J9uAFs6ngrtHx4O/V8eEMWfQAAJYlC+Cp5QvhLeXhbSn2C8Et5eFtKfQLhS3l4W0p9//9qOeAPa3l4W3d9AAApKA=="
+beq %cr0, 2161f
+.base64 "UHh3fO7/YzjgD2N4AAAjKA=="
+bne %cr0, 2163f
+.base64 "UHh3fO7/YzhQGHN84A9jeOAPZXp4K2N8AAAjKA=="
+bne %cr0, 2165f
+.base64 "AAqOOAgAoDgAAMA4"
+2167:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2167b
+.base64 "AACBOaABjOgICq44EADAOA=="
+2168:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2168b
+.base64 "GAquOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 2169f
+b 2170f
+2169:
+2171:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2171b
+2170:
+.base64 "AARuOAAAgTnQAYzpAACM6aYDiX0hBIBOAACAOAAKrjgYANM4AARuOEgF7jgAAIE50AGM6QgAjOmmA4l9IQSAThgAkzgABG44AAWuOEgFzjgAAIE50AGM6RAAjOmmA4l9IQSATgAAjjh4e+V9AADAOA=="
+2172:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2172b
+.base64 "AACOOBR6hHxQIJN87v+EOAEAoDgAAKSYAQCkOAAAgTmwAYzoeJtmfgAAJig="
+bne %cr0, 2173f
+b 2174f
+2173:
+2175:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2175b
+2174:
+.base64 "AAWOOAAArjgUeqV87/+lOBAAwDg="
+2176:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 2176b
+.base64 "AACOOBR6hHz//4Q4vACgOAAApJgAAA47FHoYf+//GDsQACA7AABOOxS6Wn9QeHd/7/97OwAAgDsAAKA7"
+2177:
+.base64 "AARuOAAAgTnYAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE52AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE52AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE52AGM6RAAjOmmA4l9IQSATgAAITnYASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+2178:
+.base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
+bne %cr0, 2178b
+.base64 "AACBOdgBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+bne %cr0, 2177b
+.base64 "AAA0iUL4KnlC+Et5eFtKfYLwS3l4W0p9AuFLeXhbSn3//2o54A9reQAAADlQQAt9/wDgODg4CH14Q0p9AACOOBS6hHwAAKSIOFClfAAApJgx/yH4AACBOWAALPpoAEz6MAIM6HAADPg4AgzoeAAM+EACDOiAAAz4SAIM6IgADPhQAgzokAAM+FgCDOiYAAz4YAIM6KAADPhoAgzoqAAM+AAgADgUAg58sAAM+JgCbOkA/Gs5uABs+bACDOjAAAz4uAIM6MgADPh4gwN+eHvkfXijhX54e+Z9eKunfnizyH4AAC45eHvqfQ=="
+bl {vg_rsa_private_checked_precomputed}
+.base64 "0AAhOA=="
+b 2166f
+2165:
+.base64 "eIMEfnh75X0AAMA4"
+2179:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2179b
+.base64 "AABgOA=="
+2166:
+b 2164f
+2163:
+.base64 "eIMEfnh75X0AAMA4"
+2180:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2180b
+.base64 "AABgOA=="
+2164:
+b 2162f
+2161:
+.base64 "eIMEfnh75X0AAMA4"
+2181:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 2181b
+.base64 "AABgOA=="
+2162:
+.base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6w=="
+21:
+.base64 "AAEhOCAAgE4=""#,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
+    )
+}

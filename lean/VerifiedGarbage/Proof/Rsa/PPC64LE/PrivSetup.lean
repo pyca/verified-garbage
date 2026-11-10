@@ -18,6 +18,8 @@ ours (`setup_ok`, into `AtCrt`).
 
 namespace VG.Proof.Rsa.PPC64LE.Priv
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.Rsa.PPC64LE.Priv
 open VG.Proof.Bignum.PPC64LE (Keep)
 open VG.PPC64LE.RegUpd (gpr_write_self gpr_write_of_ne mem_write)
@@ -128,19 +130,19 @@ theorem save_ok {s : State} {rest : List Instr} {Q : State → Prop}
     rw [gpr_write_of_ne _ _ h0, g₂, ← hu, gpr_write_of_ne _ _ h12]; rfl
 
 /-- Our stack argument `j` is in the arguments' region, apart from the frame. -/
-theorem arg_read {s : State} (h : PreP s) {m : Mem} (hm : Frame [kR s] s.mem m) {j : Nat} (hj : j < 12) :
+theorem arg_read {s : State} (h : PreP pc s) {m : Mem} (hm : Frame [kR s] s.mem m) {j : Nat} (hj : j < 12) :
     m.readW (fb s + BitVec.ofNat 64 (arg j)) 64 = stackArg s j := by
   rw [← stackArgAddr_fb]
-  exact hm.readW (in_aR hj) (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.ka.symm) (by decide)
+  exact hm.readW (in_aR (pc := pc) hj) (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.ka.symm) (by decide)
 
-theorem arg_in {s t : State} (h : PreP s) (hrd : t.rd = s.rd) {j : Nat} (hj : j < 12) :
+theorem arg_in {s t : State} (h : PreP pc s) (hrd : t.rd = s.rd) {j : Nat} (hj : j < 12) :
     InRegions (t.rd ++ t.wr) (fb s + BitVec.ofNat 64 (arg j)) 8 := by
   rw [← stackArgAddr_fb, hrd, h.hrd]
-  exact ⟨_, List.mem_append_left _ (by simp), in_aR hj⟩
+  exact ⟨aR pc s, List.mem_append_left _ (by simp), in_aR hj⟩
 
 /-- The values kept in `r24`–`r29` and `vg_rsa_private_crt`'s arguments in
 registers. -/
-theorem head_ok {s v : State} (h : PreP s) (F : Fr s v) (h12 : v.gpr .r12 = fb s)
+theorem head_ok {s v : State} (h : PreP pc s) (F : Fr s v) (h12 : v.gpr .r12 = fb s)
     (hg : ∀ r, r ≠ .r12 → r ≠ .r0 → v.gpr r = s.gpr r) :
     WP isa (.block (([.logic .or .r24 .r3 .r3, .logic .or .r25 .r5 .r5, .logic .or .r26 .r6 .r6,
       .logic .or .r27 .r7 .r7, .logic .or .r28 .r8 .r8, .logic .or .r29 .r9 .r9] : List Instr) ++
@@ -174,7 +176,7 @@ structure CI (s w : State) (n : Nat) (t : State) : Prop where
   mem : Frame [psaR s] w.mem t.mem
   psa : ∀ i < n, t.mem.readW (fb s + BitVec.ofNat 64 (96 + 8 * i)) 64 = stackArg s (2 + i)
 
-theorem copy_step {s w : State} (h : PreP s) (hw12 : w.gpr .r12 = fb s) (hrd : w.rd = s.rd)
+theorem copy_step {s w : State} (h : PreP pc s) (hw12 : w.gpr .r12 = fb s) (hrd : w.rd = s.rd)
     (hwr : w.wr = fr s :: s.wr) (hm : Frame [kR s] s.mem w.mem) {n : Nat} (hn : n < 10) {t : State}
     (hc : CI s w n t) : WP isa (.block (argCopy n)) t (CI s w (n + 1)) := by
   have t12 : t.gpr .r12 = fb s := (hc.keep.gpr _ (by decide)).trans hw12
@@ -203,13 +205,13 @@ theorem copy_step {s w : State} (h : PreP s) (hw12 : w.gpr .r12 = fb s) (hrd : w
       exact hc.psa i hi
     · rw [Mem.readW_writeW_self64]
 
-theorem copies_ok {s w : State} (h : PreP s) (hw12 : w.gpr .r12 = fb s) (hrd : w.rd = s.rd)
+theorem copies_ok {s w : State} (h : PreP pc s) (hw12 : w.gpr .r12 = fb s) (hrd : w.rd = s.rd)
     (hwr : w.wr = fr s :: s.wr) (hm : Frame [kR s] s.mem w.mem) :
     WP isa (.block ((List.range 10).flatMap argCopy)) w (CI s w 10) :=
   wp_range_flatMap (M := isa) (CI s w) (fun _ _ hn hc => copy_step h hw12 hrd hwr hm hn hc) 10 (Nat.le_refl _) w
     ⟨Keep.refl _ _, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
 
-theorem setup_ok {s : State} (h : PreP s) :
+theorem setup_ok {s : State} (h : PreP pc s) :
     WP isa (.block (save ++ crtArgs)) (allocated frameBytes s) (AtCrt s) := by
   have e : save ++ crtArgs = ([.addSp .r12 0] : List Instr) ++ Spill.saveCode .r12 saved ++
       ([.mflr .r0, .store .d .r0 .r12 oLr] : List Instr) ++

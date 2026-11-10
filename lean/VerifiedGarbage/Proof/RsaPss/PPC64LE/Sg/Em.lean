@@ -20,6 +20,8 @@ Untrusted: everything here is checked by Lean. The writes to our part of
 
 namespace VG.Proof.RsaPss.PPC64LE.Sg
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.RsaPss.PPC64LE.Sign VG.WriteBytes
 open VG.Impl.RsaOaep.PPC64LE (oEm oSt oDig oW oRsa copyLoop zeroLoop arg)
 open VG.Impl.RsaPss.PPC64LE (oY)
@@ -35,7 +37,7 @@ abbrev digB (D : Nat) (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (stackAr
 abbrev saltB (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (stackArg s 10) (stackArg s 11).toNat
 
 section
-variable {D : Nat} {s : State} (P : PreS D s)
+variable {D : Nat} {s : State} (P : PreS pc D s)
 include P
 
 theorem scR_contains {o n : Nat} (h : o + n ≤ oRsa) : (scR s).Contains (off (Ss s) o) n :=
