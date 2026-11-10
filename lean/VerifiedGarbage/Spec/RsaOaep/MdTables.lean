@@ -215,12 +215,12 @@ def decryptMdTablesApi : Api where
 
 /-! ## `vg_rsa_oaep_decrypt_precomputed` -/
 
-/-- The parameters of decryption (`decryptSig`), then the key's precomputed
-values `pre: *const u64, pre_len: usize`, then `hash` and `mgf1`, tables of
-`MdHash`. -/
+/-- The parameters of decryption (`decryptSig`), then `hash` and `mgf1`,
+tables of `MdHash`, then the key's precomputed values `pre: *const u64,
+pre_len: usize`. -/
 def decryptPrecomputedMdTablesSig : Sig where
-  params := decryptSig.params ++ [("pre", .slice false .u64 "pre_len"), ("hash", MdHashTable.param),
-    ("mgf1", MdHashTable.param)]
+  params := decryptSig.params ++ [("hash", MdHashTable.param), ("mgf1", MdHashTable.param),
+    ("pre", .slice false .u64 "pre_len")]
   ret := some .u32
 
 /-- `decryptMdTablesContract`, given the key's precomputed values `pre`
@@ -229,7 +229,7 @@ holds them. -/
 def decryptPrecomputedMdTablesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   decryptPrecomputedMdTablesSig.contract A
     (pre := fun _out outLen _msgLen _n nLen _e eLen _p pLen _q qLen _dp dpLen _dq dqLen _qinv
-        qinvLen _label _labelLen _ct ctLen _scratch scratchLen _pre preLen _hash _mgf1 _ =>
+        qinvLen _label _labelLen _ct ctLen _scratch scratchLen _hash _mgf1 _pre preLen _ =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ ctLen.toNat = nLen.toNat ∧
         1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
         1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
@@ -237,7 +237,7 @@ def decryptPrecomputedMdTablesContract {M : ISA} (A : Abi M) (stack : Nat := 0) 
         scratchWords nLen.toNat ≤ scratchLen.toNat ∧
         preLen.toNat = Rsa.privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat)
     (post := fun out _outLen msgLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv
-        _qinvLen label labelLen ct _ctLen _scratch _scratchLen pre preLen hash mgf1 m m' r =>
+        _qinvLen label labelLen ct _ctLen _scratch _scratchLen hash mgf1 pre preLen m m' r =>
       ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
         MdHashTable.hashAt A.ptrBits m mgf1 = some G →
         Rsa.privatePrecompute (bytesAt m n nLen.toNat) (bytesAt m p pLen.toNat)
@@ -249,8 +249,8 @@ def decryptPrecomputedMdTablesContract {M : ISA} (A : Abi M) (stack : Nat := 0) 
             (bytesAt m label labelLen.toNat) (bytesAt m ct nLen.toNat)))
     (writeArgs := true) (stack := stack)
     (leak := some fun _out _outLen _msgLen n nLen e eLen _p _pLen _q _qLen _dp _dpLen _dq
-        _dqLen _qinv _qinvLen _label _labelLen _ct _ctLen _scratch _scratchLen pre _preLen _hash
-        _mgf1 m =>
+        _dqLen _qinv _qinvLen _label _labelLen _ct _ctLen _scratch _scratchLen _hash _mgf1
+        pre _preLen m =>
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat) ++
         Rsa.privatePrecomputedLeak m pre nLen.toNat)
 

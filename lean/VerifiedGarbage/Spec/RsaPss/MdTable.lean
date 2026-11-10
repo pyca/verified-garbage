@@ -241,15 +241,15 @@ def verifyPrecomputedMdTableApi : Api where
 /-! ## `vg_rsa_pss_sign_precomputed` -/
 
 /-- The parameters of `vg_rsa_pss_sign` with the key's precomputed values
-`pre: *const u64, pre_len: usize` after `scratch`. -/
+`pre: *const u64, pre_len: usize` last. -/
 def signPrecomputedMdTableSig : Sig where
   params := [("out", .slice true .u8 "out_len"), ("n", .slice false .u8 "n_len"),
     ("e", .slice false .u8 "e_len"), ("p", .slice false .u8 "p_len"),
     ("q", .slice false .u8 "q_len"), ("dp", .slice false .u8 "dp_len"),
     ("dq", .slice false .u8 "dq_len"), ("qinv", .slice false .u8 "qinv_len"),
     ("digest", .slice false .u8 "digest_len"), ("salt", .slice false .u8 "salt_len"),
-    ("scratch", .slice true .u64 "scratch_len"), ("pre", .slice false .u64 "pre_len"),
-    ("hash", MdHashTable.param), ("mgf1", MdHashTable.param)]
+    ("scratch", .slice true .u64 "scratch_len"), ("hash", MdHashTable.param),
+    ("mgf1", MdHashTable.param), ("pre", .slice false .u64 "pre_len")]
   ret := some .u32
 
 /-- `signMdTableContract`, given the key's precomputed values `pre`
@@ -259,7 +259,7 @@ them. Constant time but for the public key and the modulus' values in
 def signPrecomputedMdTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   signPrecomputedMdTableSig.contract A
     (pre := fun _out outLen _n nLen _e eLen _p pLen _q qLen _dp dpLen _dq dqLen _qinv qinvLen
-        _digest digestLen _salt _saltLen _scratch scratchLen _pre preLen hash _mgf1 m =>
+        _digest digestLen _salt _saltLen _scratch scratchLen hash _mgf1 _pre preLen m =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧
         1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
         1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
@@ -268,7 +268,7 @@ def signPrecomputedMdTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Co
         preLen.toNat = Rsa.privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat ∧
         digestLenOk A.ptrBits m hash digestLen)
     (post := fun out _outLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv _qinvLen
-        digest _digestLen salt saltLen _scratch _scratchLen pre preLen hash mgf1 m m' r =>
+        digest _digestLen salt saltLen _scratch _scratchLen hash mgf1 pre preLen m m' r =>
       ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
         MdHashTable.hashAt A.ptrBits m mgf1 = some G →
         Rsa.privatePrecompute (bytesAt m n nLen.toNat) (bytesAt m p pLen.toNat)
@@ -280,7 +280,7 @@ def signPrecomputedMdTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Co
             (bytesAt m salt saltLen.toNat)))
     (writeArgs := true) (stack := stack)
     (leak := some fun _out _outLen n nLen e eLen _p _pLen _q _qLen _dp _dpLen _dq _dqLen _qinv
-        _qinvLen _digest _digestLen _salt _saltLen _scratch _scratchLen pre _preLen _hash _mgf1 m =>
+        _qinvLen _digest _digestLen _salt _saltLen _scratch _scratchLen _hash _mgf1 pre _preLen m =>
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat) ++
         Rsa.privatePrecomputedLeak m pre nLen.toNat)
 
