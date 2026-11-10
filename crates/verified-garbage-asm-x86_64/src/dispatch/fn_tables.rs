@@ -59,7 +59,7 @@ pub fn vg_hmac_sha256_auto() -> &'static crate::fn_tables::Hmac {
     &crate::fn_tables::VG_HMAC_SHA256
 }
 
-/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA384`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HMAC_SHA384_SHANI` if the CPU supports its features (`VG_HMAC_SHA384_SHANI_FEATURES`); `VG_HMAC_SHA384_AVX2` if the CPU supports its features (`VG_HMAC_SHA384_AVX2_FEATURES`); or else `VG_HMAC_SHA384`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA384`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HMAC_SHA384_SHANI` if the CPU supports its features (`VG_HMAC_SHA384_SHANI_FEATURES`); `VG_HMAC_SHA384_AVX512` if the CPU supports its features (`VG_HMAC_SHA384_AVX512_FEATURES`); `VG_HMAC_SHA384_AVX2` if the CPU supports its features (`VG_HMAC_SHA384_AVX2_FEATURES`); or else `VG_HMAC_SHA384`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
 #[inline]
 pub fn vg_hmac_sha384_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
@@ -67,6 +67,11 @@ pub fn vg_hmac_sha384_auto() -> &'static crate::fn_tables::Hmac {
         || cpu.contains(crate::fn_tables::VG_HMAC_SHA384_SHANI_FEATURES)
     {
         return &crate::fn_tables::VG_HMAC_SHA384_SHANI;
+    }
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA384_AVX512_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA384_AVX512_FEATURES)
+    {
+        return &crate::fn_tables::VG_HMAC_SHA384_AVX512;
     }
     if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA384_AVX2_FEATURES) }
         || cpu.contains(crate::fn_tables::VG_HMAC_SHA384_AVX2_FEATURES)
@@ -76,7 +81,7 @@ pub fn vg_hmac_sha384_auto() -> &'static crate::fn_tables::Hmac {
     &crate::fn_tables::VG_HMAC_SHA384
 }
 
-/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA512`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HMAC_SHA512_SHANI` if the CPU supports its features (`VG_HMAC_SHA512_SHANI_FEATURES`); `VG_HMAC_SHA512_AVX2` if the CPU supports its features (`VG_HMAC_SHA512_AVX2_FEATURES`); or else `VG_HMAC_SHA512`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA512`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HMAC_SHA512_SHANI` if the CPU supports its features (`VG_HMAC_SHA512_SHANI_FEATURES`); `VG_HMAC_SHA512_AVX512` if the CPU supports its features (`VG_HMAC_SHA512_AVX512_FEATURES`); `VG_HMAC_SHA512_AVX2` if the CPU supports its features (`VG_HMAC_SHA512_AVX2_FEATURES`); or else `VG_HMAC_SHA512`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
 #[inline]
 pub fn vg_hmac_sha512_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
@@ -84,6 +89,11 @@ pub fn vg_hmac_sha512_auto() -> &'static crate::fn_tables::Hmac {
         || cpu.contains(crate::fn_tables::VG_HMAC_SHA512_SHANI_FEATURES)
     {
         return &crate::fn_tables::VG_HMAC_SHA512_SHANI;
+    }
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA512_AVX512_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA512_AVX512_FEATURES)
+    {
+        return &crate::fn_tables::VG_HMAC_SHA512_AVX512;
     }
     if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA512_AVX2_FEATURES) }
         || cpu.contains(crate::fn_tables::VG_HMAC_SHA512_AVX2_FEATURES)
@@ -93,7 +103,7 @@ pub fn vg_hmac_sha512_auto() -> &'static crate::fn_tables::Hmac {
     &crate::fn_tables::VG_HMAC_SHA512
 }
 
-/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA512_224`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HMAC_SHA512_224_SHANI` if the CPU supports its features (`VG_HMAC_SHA512_224_SHANI_FEATURES`); `VG_HMAC_SHA512_224_AVX2` if the CPU supports its features (`VG_HMAC_SHA512_224_AVX2_FEATURES`); or else `VG_HMAC_SHA512_224`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA512_224`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HMAC_SHA512_224_SHANI` if the CPU supports its features (`VG_HMAC_SHA512_224_SHANI_FEATURES`); `VG_HMAC_SHA512_224_AVX512` if the CPU supports its features (`VG_HMAC_SHA512_224_AVX512_FEATURES`); `VG_HMAC_SHA512_224_AVX2` if the CPU supports its features (`VG_HMAC_SHA512_224_AVX2_FEATURES`); or else `VG_HMAC_SHA512_224`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
 #[inline]
 pub fn vg_hmac_sha512_224_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
@@ -101,6 +111,11 @@ pub fn vg_hmac_sha512_224_auto() -> &'static crate::fn_tables::Hmac {
         || cpu.contains(crate::fn_tables::VG_HMAC_SHA512_224_SHANI_FEATURES)
     {
         return &crate::fn_tables::VG_HMAC_SHA512_224_SHANI;
+    }
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA512_224_AVX512_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA512_224_AVX512_FEATURES)
+    {
+        return &crate::fn_tables::VG_HMAC_SHA512_224_AVX512;
     }
     if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA512_224_AVX2_FEATURES) }
         || cpu.contains(crate::fn_tables::VG_HMAC_SHA512_224_AVX2_FEATURES)
@@ -110,7 +125,7 @@ pub fn vg_hmac_sha512_224_auto() -> &'static crate::fn_tables::Hmac {
     &crate::fn_tables::VG_HMAC_SHA512_224
 }
 
-/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA512_256`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HMAC_SHA512_256_SHANI` if the CPU supports its features (`VG_HMAC_SHA512_256_SHANI_FEATURES`); `VG_HMAC_SHA512_256_AVX2` if the CPU supports its features (`VG_HMAC_SHA512_256_AVX2_FEATURES`); or else `VG_HMAC_SHA512_256`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA512_256`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HMAC_SHA512_256_SHANI` if the CPU supports its features (`VG_HMAC_SHA512_256_SHANI_FEATURES`); `VG_HMAC_SHA512_256_AVX512` if the CPU supports its features (`VG_HMAC_SHA512_256_AVX512_FEATURES`); `VG_HMAC_SHA512_256_AVX2` if the CPU supports its features (`VG_HMAC_SHA512_256_AVX2_FEATURES`); or else `VG_HMAC_SHA512_256`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
 #[inline]
 pub fn vg_hmac_sha512_256_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
@@ -118,6 +133,11 @@ pub fn vg_hmac_sha512_256_auto() -> &'static crate::fn_tables::Hmac {
         || cpu.contains(crate::fn_tables::VG_HMAC_SHA512_256_SHANI_FEATURES)
     {
         return &crate::fn_tables::VG_HMAC_SHA512_256_SHANI;
+    }
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA512_256_AVX512_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA512_256_AVX512_FEATURES)
+    {
+        return &crate::fn_tables::VG_HMAC_SHA512_256_AVX512;
     }
     if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA512_256_AVX2_FEATURES) }
         || cpu.contains(crate::fn_tables::VG_HMAC_SHA512_256_AVX2_FEATURES)

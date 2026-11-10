@@ -66,6 +66,10 @@ structure Compress where
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
+  /-- What the names of its callers' instances that do not run `pair` end
+  with: `suffix`, unless the implementation is another one with a `pair`,
+  whose instances those are. -/
+  baseSuffix : String := suffix
   /-- A function that compresses two blocks at once, if the implementation
   has one: HMAC's `init` then calls it once for its two padded keys. -/
   pair : Option Pair := none
@@ -113,6 +117,7 @@ AVX512VL too. -/
 def avx512 : Compress :=
   { avx2 with
     suffix := "_avx512"
+    baseSuffix := avx2.suffix
     features := ["avx", "avx2", "bmi1", "bmi2", "avx512f", "avx512vl"]
     pair := some
       { name := "vg_sha512_compress2_avx512"

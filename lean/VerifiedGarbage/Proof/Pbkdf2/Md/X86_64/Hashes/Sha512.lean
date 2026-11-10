@@ -50,7 +50,9 @@ open Spec.Sha512 (H0_384 H0_512 H0_512_224 H0_512_256)
 
 /-- The member of the SHA-512 family of instance `I`, with a `D`-byte digest,
 initial hash value `iv` and streaming `init` named `initN`, calling the
-implementation `v` of the compression function, named with its suffix. -/
+implementation `v` of the compression function, named with its suffix
+(`init`'s alone, for an implementation that is another one with a function
+compressing two blocks at once: the rest are that one's). -/
 def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) (v : Compress) :
     Hash where
   P := Impl.Sha512.X86_64.Stream.params
@@ -60,11 +62,11 @@ def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.H
   compC := v.callee.code
   initN := initN
   initC := Impl.Sha512.X86_64.Stream.init iv
-  updN := "vg_sha512_update_scratch" ++ v.suffix
-  finN := "vg_sha512_finalize_scratch" ++ v.suffix
+  updN := "vg_sha512_update_scratch" ++ v.baseSuffix
+  finN := "vg_sha512_finalize_scratch" ++ v.baseSuffix
   hmacInitN := s!"vg_hmac_{I.rust}_init_scratch" ++ v.suffix
-  hmacFinN := s!"vg_hmac_{I.rust}_finalize_scratch" ++ v.suffix
-  iterN := s!"vg_pbkdf2_hmac_{I.rust}_iterate" ++ v.suffix
+  hmacFinN := s!"vg_hmac_{I.rust}_finalize_scratch" ++ v.baseSuffix
+  iterN := s!"vg_pbkdf2_hmac_{I.rust}_iterate" ++ v.baseSuffix
   compBoth := match v.pair with
     | none => Impl.Pbkdf2.Md.X86_64.compTwice Impl.Sha512.X86_64.Stream.params.N v.callee.name v.callee.code
     | some p => Impl.Pbkdf2.Md.X86_64.compPair Impl.Sha512.X86_64.Stream.params.N p.name p.code

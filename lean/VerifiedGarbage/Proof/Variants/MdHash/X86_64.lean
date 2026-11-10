@@ -111,4 +111,10 @@ def variants :=
   md5Variants ++ sha1Variants ++ sha224Variants ++ sha256Variants ++ sha384Variants ++
     sha512Variants ++ sha512_224Variants ++ sha512_256Variants
 
+/-- The implementations of the hash functions themselves, best first: every
+variant but those that differ from the next only in HMAC's `init`
+(`MdHash.initOnly`), whose hash functions are the next one's. A function
+that takes the hash functions alone, through a table, takes these. -/
+def hashVariants := variants.filter fun v => !v.initOnly
+
 end VG.Proof.Variants.MdHash.X86_64
