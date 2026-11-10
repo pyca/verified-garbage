@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.X86_64.CbcVerified
+public import VerifiedGarbage.Proof.Sm4.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
@@ -12,13 +12,7 @@ import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
 namespace VG.Artifacts.Sm4Cbc.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Sm4.cbcEncryptChainedApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 3208 .r8 400 Impl.Sm4.X86_64.cbcEncryptChained
-    stack := 3216
-    verified := Proof.Sm4.X86_64.cbcEncryptChained_framed },
-  Spec.Sm4.cbcDecryptChainedApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 3208 .r8 400 Impl.Sm4.X86_64.cbcDecryptChained
-    stack := 3216
-    verified := Proof.Sm4.X86_64.cbcDecryptChained_framed }]
+  Spec.Sm4.cbcEncryptChainedApi.artifact X86_64.target Proof.Sm4.X86_64.Scrub.cbcEncryptReg,
+  Spec.Sm4.cbcDecryptChainedApi.artifact X86_64.target Proof.Sm4.X86_64.Scrub.cbcDecryptReg]
 
 end VG.Artifacts.Sm4Cbc.X86_64

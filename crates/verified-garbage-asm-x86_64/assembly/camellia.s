@@ -3036,6 +3036,16 @@ vg_camellia_expand_key:
 	mov QWORD PTR [rsp+3200], r11
 	mov QWORD PTR [rsp+3208], r11
 	lea rsp, [rsp+3216]
+	lea rsp, [rsp-3216]
+	lea rsp, [rsp+3216]
+	xor eax, eax
+	xor ecx, ecx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -6290,6 +6300,20 @@ vg_camellia_ecb_encrypt:
 	mov QWORD PTR [rsp+3200], r11
 	mov QWORD PTR [rsp+3208], r11
 	lea rsp, [rsp+3216]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-3216]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+3216]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -11334,5 +11358,19 @@ vg_camellia_ecb_decrypt:
 	mov QWORD PTR [rsp+3200], r11
 	mov QWORD PTR [rsp+3208], r11
 	lea rsp, [rsp+3216]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-3216]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+3216]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6

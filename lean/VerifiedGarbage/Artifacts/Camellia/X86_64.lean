@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86_64.Verified
-public import VerifiedGarbage.Proof.Camellia.X86_64.KeyVerified
+public import VerifiedGarbage.Proof.Camellia.X86_64.Scrub
 import VerifiedGarbage.Proof.Camellia.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
@@ -13,19 +12,8 @@ public import VerifiedGarbage.TCB.X86_64.Print
 namespace VG.Artifacts.Camellia.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Camellia.expandKeyApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 3216 .rcx 401 Impl.Camellia.X86_64.expandKey
-    stack := 3216
-    verified := Proof.Camellia.X86_64.expandKey_framed },
-  Spec.Camellia.ecbEncryptApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 3216 .r8 401
-      (Impl.Camellia.X86_64.ecb .encrypt)
-    stack := 3216
-    verified := Proof.Camellia.X86_64.ecb_framed .encrypt },
-  Spec.Camellia.ecbDecryptApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 3216 .r8 401
-      (Impl.Camellia.X86_64.ecb .decrypt)
-    stack := 3216
-    verified := Proof.Camellia.X86_64.ecb_framed .decrypt }]
+  Spec.Camellia.expandKeyApi.artifact X86_64.target Proof.Camellia.X86_64.Scrub.expandKeyReg,
+  Spec.Camellia.ecbEncryptApi.artifact X86_64.target Proof.Camellia.X86_64.Scrub.ecbEncryptReg,
+  Spec.Camellia.ecbDecryptApi.artifact X86_64.target Proof.Camellia.X86_64.Scrub.ecbDecryptReg]
 
 end VG.Artifacts.Camellia.X86_64
