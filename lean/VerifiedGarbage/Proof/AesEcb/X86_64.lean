@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.X86_64Impl
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 
 /-!
 # AES-ECB on x86-64
@@ -25,7 +27,10 @@ Which of these are emitted, for each `v` and `z` (`encryptRegs`,
 once (with the `z` of no suffix); the call wiped with `z` where `v` needs
 AVX, only with the `z` that needs it (so the instance has `v`'s suffix and
 needs no more than `v`'s features); and otherwise the call wiped with each
-`z`, named by both suffixes.
+`z`, named by both suffixes. `v`'s code alone is followed by
+`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`) where `v` gives its
+residue analysis (`BlocksImpl.ecbEncRes`): its postcondition reads the
+memory on return only within the data and `scratch` (`encryptOut`).
 -/
 
 @[expose] public section
@@ -110,15 +115,33 @@ theorem encrypt_spSafe (v : BlocksImpl) (z : ZeroizeImpl) :
 theorem decrypt_spSafe (v : BlocksImpl) (z : ZeroizeImpl) :
     (wiped z v.decWritten v.dec).all (fun i => !isa.writesSp i) = true := wiped_spSafe v.decSpSafe
 
+/-- The postcondition of `vg_aes_ecb_encrypt` reads the memory on return only
+within the buffers. -/
+theorem encryptOut (stack : Nat) :
+    Scrub.PostOut (Spec.AesEcb.encryptContract abi stack) (Spec.Aes.blocksSig.retBits 64) := by
+  rw [encrypt_eq]
+  exact Scrub.postOut_of_local (leak := none) Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
+    obtain ⟨a, b, c, d, e, rfl⟩ := vs_eq hlen
+    rw [bufs_eq] at hb
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
+    obtain ⟨h1, h2⟩ := h
+    refine ⟨fun key hk => ?_, fun z hz => ?_⟩
+    · show Spec.Aes.statesAt m₂ c (d.setWidth abi.ptrBits).toNat = _
+      have hd := agree_of hb.2.1
+      rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := abi.ptrBits) d; omega)]
+      exact h1 key hk
+    · rw [← hb.2.2 z hz]
+      exact h2 z hz
+
 /-- The implementations of `vg_aes_ecb_encrypt` over `v` that are emitted with
 `z` (see the module's documentation). -/
 def encryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.AesEcb.encryptApi target) :=
   if h : v.encWritten = 0 then
-    if z.suffix = "" then [{
+    if z.suffix = "" then [RScrub.withScrub {
       suffix := v.suffix
       code := v.enc.code
       verified := encrypt_free v h
-      spSafe := v.encSpSafe }]
+      spSafe := v.encSpSafe } (encryptOut _) [] (RScrub.pubOk_nil _) v.ecbEncRes]
     else []
   else if v.features.contains "avx" then
     if z.features = ["avx"] then [{
