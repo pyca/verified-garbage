@@ -62,17 +62,12 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.BrainpoolP384r1Decom
 namespace VG.Artifacts.EcBrainpoolP384r1.X86_64.Compressed
 
 open VG.Proof.BrainpoolP384r1.X86_64 (hasLaw)
-open VG.Proof.EcKey.Compressed.X86_64.BrainpoolP384r1
 
 def artifacts : List Artifact :=
-  [Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi.artifact X86_64.target {
-    code := code false
-    verified := verified hasLaw.inv false
-    stack := 8 },
-    Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi.artifact X86_64.target {
-      code := Proof.EcKey.Compressed.X86_64.BrainpoolP384r1Decompress.code false
-      verified := Proof.EcKey.Compressed.X86_64.BrainpoolP384r1Decompress.verified hasLaw.law hasLaw.inv false
-      stack := 8 }]
+  [Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.BrainpoolP384r1.scrubReg hasLaw.inv),
+    Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi.artifact X86_64.target
+      (Proof.EcKey.Compressed.X86_64.BrainpoolP384r1Decompress.scrubReg hasLaw.law hasLaw.inv)]
 
 end VG.Artifacts.EcBrainpoolP384r1.X86_64.Compressed
 
@@ -80,13 +75,10 @@ end VG.Artifacts.EcBrainpoolP384r1.X86_64.Compressed
 namespace VG.Artifacts.EcBrainpoolP384r1.X86_64.Validate
 
 open VG.Proof.BrainpoolP384r1.X86_64 (hasLaw)
-open VG.Proof.EcKey.Validate.X86_64.BrainpoolP384r1
 
 def artifacts : List Artifact :=
-  [Spec.EcKey.BrainpoolP384r1.inst.validatePublicKeyApi.artifact X86_64.target {
-    code := code false
-    verified := verified hasLaw.inv false
-    stack := 8 }]
+  [Spec.EcKey.BrainpoolP384r1.inst.validatePublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Validate.X86_64.BrainpoolP384r1.scrubReg hasLaw.inv)]
 
 end VG.Artifacts.EcBrainpoolP384r1.X86_64.Validate
 
@@ -95,10 +87,8 @@ namespace VG.Artifacts.EcBrainpoolP384r1.X86_64
 open VG.Proof.BrainpoolP384r1.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.BrainpoolP384r1.publicKeyApi.artifact X86_64.target {
-    code := Impl.EcKey.X86_64.publicKeyBrainpoolP384r1
-    stack := 8
-    verified := Proof.EcKey.X86_64.BrainpoolP384r1.pk_verified hasLaw.law hasLaw.inv }] ++
+  Spec.EcKey.BrainpoolP384r1.publicKeyApi.artifact X86_64.target
+    (Proof.EcKey.X86_64.BrainpoolP384r1.scrubReg hasLaw.law hasLaw.inv)] ++
   Compressed.artifacts ++
   Validate.artifacts
 

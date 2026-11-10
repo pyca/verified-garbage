@@ -1,5 +1,13 @@
 module
 
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Ecdh.P384
+meta import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Spec.Ecdh.P384
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Lit
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Lit
 
@@ -143,5 +151,28 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X
     Verified X86_64.target exchangeP384 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst X86_64.abi 8) :=
   Verified.of_inline_ct ecdh_inlineOk (ecdh_x86 hL hI hO) ecdh_ct implies8
     (fun _ h => Sig.clear_of_pre h) ecdh_patch
+
+/-! ## Without secret residue -/
+
+/-- The granules of its stack that `vg_ecdh_p384` must wipe on return, from the
+residue analysis (`X86_64.RScrub.keepFor`). -/
+def scrubKs : List Nat := keep_for% Spec.Ecdh.P384.exchangeApi.sig 8 exchangeP384 []
+
+theorem scrubOk : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ecdh.P384.exchangeApi.sig 8 []) exchangeP384 h).any
+      (RScrub.resOkB · 8 scrubKs (Impl.Scrub.X86_64.chunks 8)) = true :=
+  RScrub.Analysed.ok_of _ (by taint_decide)
+
+/-- `vg_ecdh_p384`, followed by `Impl.Scrub.X86_64.scrubTail`
+(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
+def scrubReg (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
+    (hO : Weierstrass.PrimeOrder Spec.P384.curve) :
+    Registration Spec.Ecdh.P384.exchangeApi X86_64.target :=
+  RScrub.withScrub {
+    code := exchangeP384
+    stack := 8
+    verified := ecdh_verified hL hI hO }
+    (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _) [] (RScrub.pubOk_nil _)
+    (some ⟨scrubKs, scrubOk⟩)
 
 end VG.Proof.Ecdh.X86_64.P384

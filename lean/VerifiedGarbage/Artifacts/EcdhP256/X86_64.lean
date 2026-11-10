@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 import VerifiedGarbage.Impl.Ecdh.P256.X86_64
-import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
 import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
 public import VerifiedGarbage.Proof.Ecdh.X86_64.VerifiedAdx
 import VerifiedGarbage.Proof.Ecdh.X86_64.LitAdx
@@ -88,14 +88,9 @@ namespace VG.Artifacts.EcdhP256.X86_64
 open VG.Proof.P256.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.P256.exchangeApi.artifact X86_64.target {
-    code := Impl.Ecdh.X86_64.exchangeP256
-    stack := 8
-    verified := Proof.Ecdh.X86_64.ecdh_verified hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed },
-  Spec.Ecdh.P256.exchangeApi.artifact X86_64.target {
-    suffix := "_adx"
-    code := Impl.Ecdh.X86_64.exchangeP256Adx
-    stack := 8
-    verified := Proof.Ecdh.X86_64.ecdh_verified_adx hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed }]
+  Spec.Ecdh.P256.exchangeApi.artifact X86_64.target
+    (Proof.Ecdh.X86_64.scrubReg hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed),
+  Spec.Ecdh.P256.exchangeApi.artifact X86_64.target
+    (Proof.Ecdh.X86_64.scrubRegAdx hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed)]
 
 end VG.Artifacts.EcdhP256.X86_64

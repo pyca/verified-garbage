@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.EcKey.Generic
 public import VerifiedGarbage.Spec.EcKey.Validate
 public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+public import VerifiedGarbage.Spec.Ecdh.Generic
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -12,8 +13,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 For every curve (`Spec.EcKey.Instance`), the postconditions of
 `vg_ec_<name>_public_key`, `_compress_public_key`, `_decompress_public_key`
-and `_validate_public_key` read the memory on return only within `out`, and
-that of `vg_ecdsa_<name>_verify` does not read it (`X86_64.Scrub.PostOut`),
+and `_validate_public_key`, and of `vg_ecdh_<name>`, read the memory on return
+only within `out`, and that of `vg_ecdsa_<name>_verify` does not read it (`X86_64.Scrub.PostOut`),
 as `X86_64.RScrub.withScrub` needs to scrub their implementations.
 -/
 
@@ -97,6 +98,28 @@ theorem validateOut :
     replace hlen := Nat.succ.inj hlen
     obtain ⟨sc, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
+    exact h
+
+theorem exchangeOut :
+    PostOut (Spec.Ecdh.Instance.exchangeContract I X86_64.abi stack)
+      ((Spec.Ecdh.Instance.exchangeSig I).retBits 64) :=
+  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨d, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨peer, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨sc, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
+    simp only [Spec.Ecdh.Instance.exchangeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq] at hb
+    have e := bytesAt_congr (n := I.curve.len) (by simp only [Elem.size]; omega) hb.1
+    change match Spec.Ecdh.exchange I.curve (Spec.Weierstrass.ofBytes (bytesAt m d I.curve.len))
+          (bytesAt m peer (2 * I.curve.len + 1)) with
+      | some z => r = 1 ∧ bytesAt m₂ out I.curve.len = z
+      | none => r = 0 ∧ bytesAt m₂ out I.curve.len = List.replicate I.curve.len 0
+    rw [e]
     exact h
 
 theorem verifyHashOut (J : Spec.Ecdsa.Instance) :

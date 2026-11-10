@@ -47,14 +47,9 @@ namespace VG.Artifacts.EcdhP521.X86_64
 open VG.Proof.P521.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.P521.exchangeApi.artifact X86_64.target {
-    code := Impl.Ecdh.X86_64.exchangeP521
-    stack := 8
-    verified := Proof.Ecdh.X86_64.P521.ecdh_verified hasLaw.law hasLaw.inv hasLaw.prime },
-  Spec.Ecdh.P521.exchangeApi.artifact X86_64.target {
-    suffix := "_adx"
-    code := Impl.Ecdh.X86_64.exchangeP521Adx
-    stack := 8
-    verified := Proof.Ecdh.X86_64.P521.ecdh_verified_adx hasLaw.law hasLaw.inv hasLaw.prime }]
+  Spec.Ecdh.P521.exchangeApi.artifact X86_64.target
+    (Proof.Ecdh.X86_64.P521.scrubReg hasLaw.law hasLaw.inv hasLaw.prime),
+  Spec.Ecdh.P521.exchangeApi.artifact X86_64.target
+    (Proof.Ecdh.X86_64.P521.scrubRegAdx hasLaw.law hasLaw.inv hasLaw.prime)]
 
 end VG.Artifacts.EcdhP521.X86_64
