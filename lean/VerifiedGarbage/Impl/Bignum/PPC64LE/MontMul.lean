@@ -101,7 +101,7 @@ else they need is derived from those (`8 w` is the distance `r16 - r10`
 moves over a round, the accumulator's base `r10 + 16 (w + 2)`) or is
 secret, as `m'`, kept in the accumulator's word `w + 1` (`mPrime`). The
 callers' registers `r21` and `r23`–`r31` are never written by `rounds`, and
-the kernel's `rounds8` writes only `r21` and `r28`–`r31`, which the kernel
+the kernel's `rounds8` writes only `r27` and `r28`–`r31`, which the kernel
 restores from vector registers: so a caller's public register stays
 public.
 
@@ -206,22 +206,22 @@ def rounds : Prog isa :=
 
 /-! ### The kernel's rounds: blocks of eight words
 
-The kernel (`kernel`) saves `r21` and `r28`–`r31` in vector registers, so
+The kernel (`kernel`) saves `r27` and `r28`–`r31` in vector registers, so
 its rounds can use them: words `1` to `w - 1` in one block of `(w - 1) mod 4`
 (`remBlock`, counted by `r9`, which every block uses as a temporary), one
-block of four if `w - 1` has bit 2 (`quadBlock`, the bit in `r21`, which no
+block of four if `w - 1` has bit 2 (`quadBlock`, the bit in `r27`, which no
 block writes), then blocks of eight (`octLoop`, in `sreg 0` to `sreg 7`). -/
 
 /-- `roundStart`, with `(w - 1) / 8` added to `r17` and bit 2 of `w - 1` into
-`r21`. -/
+`r27`. -/
 def roundStart8 : List Instr :=
   [.sub .r9 .r16 .r10, .addi .r16 .r10 0, .sub .r15 .r15 .r9, .add .r3 .r9 .r9, .add .r3 .r3 .r10,
     .addi .r14 .r3 32, .add .r4 .r3 .r9, .load .d .r19 .r4 40, .lsr .d .r7 .r9 3, .subi .r7 .r7 1,
-    .lsr .d .r8 .r7 3, .add .r17 .r17 .r8, .lsl .r21 .r7 61, .lsr .d .r21 .r21 63, .lsl .r9 .r7 62,
+    .lsr .d .r8 .r7 3, .add .r17 .r17 .r8, .lsl .r27 .r7 61, .lsr .d .r27 .r27 63, .lsl .r9 .r7 62,
     .lsr .d .r9 .r9 62]
 
-/-- One block of four words if `r21` is not 0. -/
-def quadBlock : Prog isa := .ite (.zero .d .r21) (.block []) (.block (block 4))
+/-- One block of four words if `r27` is not 0. -/
+def quadBlock : Prog isa := .ite (.zero .d .r27) (.block []) (.block (block 4))
 
 /-- The other words, eight at a time, counted by `r17`'s low half. -/
 def octLoop : Prog isa :=
@@ -284,7 +284,7 @@ def selectAcc64 : Prog isa :=
 def tail : Prog isa := .seq zeroAcc (.seq rounds (.seq subMod64M selectAcc64))
 
 /-- `tail` with the rounds by blocks of up to eight words (`rounds8`), which
-write `r21` and `r28`–`r31`: the kernel's. -/
+write `r27` and `r28`–`r31`: the kernel's. -/
 def tail8 : Prog isa := .seq zeroAcc (.seq rounds8 (.seq subMod64M selectAcc64))
 
 /-! ## The shared kernel
@@ -307,7 +307,7 @@ def kernelExit : List Instr := [.lsl .r3 .r11 2, .add .r3 .r9 .r3, .load .d .r14
 
 /-- The callers' registers that `tail8` writes, and the vector registers
 the kernel keeps them in. -/
-def kernelSaved : List (VReg × Reg) := [(.v0, .r21), (.v1, .r28), (.v2, .r29), (.v3, .r30), (.v4, .r31)]
+def kernelSaved : List (VReg × Reg) := [(.v0, .r27), (.v1, .r28), (.v2, .r29), (.v3, .r30), (.v4, .r31)]
 
 /-- `kernelSaved`'s registers into their vector registers (`mtvsrd`). -/
 def kernelSave : List Instr := kernelSaved.map fun (v, r) => .mtvsrd v r

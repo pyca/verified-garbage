@@ -57,7 +57,7 @@ def tailRegs : List Reg :=
   [.r0, .r3, .r4, .r6, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22]
 
 /-- The registers `tail8` writes. -/
-def tailRegs8 : List Reg := tailRegs ++ [.r21, .r28, .r29, .r30, .r31]
+def tailRegs8 : List Reg := tailRegs ++ [.r27, .r28, .r29, .r30, .r31]
 
 /-- Everything the multiplication does after loading the bases, with any rounds
 `R` that do what the rounds do (`RoundsSpec`): `[o] < m` and
@@ -217,7 +217,7 @@ theorem tailW_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
         Outs B [(slot w 2, 8 * (w + 2)), (slot w 3, 8 * w), (slot w o, 8 * (w + 2))] s.mem t.mem) ∧
       Keep tailRegs s t := by
   have h := tailWith_ok rounds_spec hs hn ho ha hb ho2 ho3 ha2 hb2 hw2 hw' hZ i5 i6 i7 i8 i9 i10 i11 _i4 _i12 hinv hB
-  have h₁ := WP.gpr h (r := .r21) (by unfold zeroAcc rounds subMod64M selectAcc64; decide +kernel)
+  have h₁ := WP.gpr h (r := .r27) (by unfold zeroAcc rounds subMod64M selectAcc64; decide +kernel)
   have h₂ := WP.gpr h₁ (r := .r28) (by unfold zeroAcc rounds subMod64M selectAcc64; decide +kernel)
   have h₃ := WP.gpr h₂ (r := .r29) (by unfold zeroAcc rounds subMod64M selectAcc64; decide +kernel)
   have h₄ := WP.gpr h₃ (r := .r30) (by unfold zeroAcc rounds subMod64M selectAcc64; decide +kernel)
@@ -230,7 +230,7 @@ theorem tailW_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     · rcases hr' with rfl | rfl | rfl | rfl | rfl <;> assumption
   · exact k.gpr r hr'
 
-/-- `tailW_ok`, of the kernel's `tail8`, which also writes `r21` and `r28`–`r31`. -/
+/-- `tailW_ok`, of the kernel's `tail8`, which also writes `r27` and `r28`–`r31`. -/
 theorem tail8W_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     {n o a b : Nat} (hn : 4 ≤ n) (ho : o < n) (ha : a < n) (hb : b < n) (ho2 : o ≠ 2) (ho3 : o ≠ 3) (ha2 : a ≠ 2)
     (hb2 : b ≠ 2) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w n ≤ Z)
@@ -392,7 +392,7 @@ theorem kernelSave_ok (s : State) :
       ∀ p ∈ kernelSaved, vdword (u.vpr p.1) 0 = s.gpr p.2 := by
   unfold kernelSave kernelSaved
   simp only [List.map_cons, List.map_nil]
-  refine wp_mtvsrd .v0 .r21 fun u₁ k₁ m₁ e₁ f₁ => ?_
+  refine wp_mtvsrd .v0 .r27 fun u₁ k₁ m₁ e₁ f₁ => ?_
   refine wp_mtvsrd .v1 .r28 fun u₂ k₂ m₂ e₂ f₂ => ?_
   refine wp_mtvsrd .v2 .r29 fun u₃ k₃ m₃ e₃ f₃ => ?_
   refine wp_mtvsrd .v3 .r30 fun u₄ k₄ m₄ e₄ f₄ => ?_
@@ -520,7 +520,7 @@ theorem kernelBody_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   · exact ((ku.trans kt).trans kt').mono (by decide)
 
 /-- The shared kernel (`kernel`), as `montOp` calls it: `kernelBody_ok`, and
-`r21` and `r28`–`r31`, which the body writes, restored from the vector
+`r27` and `r28`–`r31`, which the body writes, restored from the vector
 registers that `kernelSave` kept them in. -/
 theorem kernel_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     {n o a b : Nat} (hn : 4 ≤ n) (ho : o < n) (ha : a < n) (hb : b < n) (ho2 : o ≠ 2) (ho3 : o ≠ 3) (ha2 : a ≠ 2)
@@ -559,7 +559,7 @@ theorem kernel_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
       have e : ∀ p ∈ kernelSaved, t'.gpr p.2 = s.gpr p.2 := fun p hp => by
         rw [tg p hp, tv, uv p hp]
       rcases hs' with rfl | rfl | rfl | rfl | rfl
-      · exact e (.v0, .r21) (by decide)
+      · exact e (.v0, .r27) (by decide)
       · exact e (.v1, .r28) (by decide)
       · exact e (.v2, .r29) (by decide)
       · exact e (.v3, .r30) (by decide)

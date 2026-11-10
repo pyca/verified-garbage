@@ -943,7 +943,7 @@ theorem top_ok {s : State} {B : Addr} {Z dT C R : Nat} (hs : Scr s B Z) (h14 : s
 
 /-- The registers a round writes. -/
 def roundRegs : List Reg :=
-  [.r0, .r3, .r4, .r6, .r7, .r8, .r9, .r11, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r28, .r29,
+  [.r0, .r3, .r4, .r6, .r7, .r8, .r9, .r11, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r27, .r22, .r28, .r29,
     .r30, .r31]
 
 /-- A round (`round`), for `aᵢ` at `da` (`r6`, advanced), `T` (`w + 1` words) at
@@ -1031,17 +1031,17 @@ theorem bit2 (n : Nat) : BitVec.ofNat 64 n <<< 61 >>> 63 = BitVec.ofNat 64 (n / 
   omega
 
 /-- The start of the kernel's round (`roundStart8`): `roundStart`, with `(w -
-1) / 8` blocks in `r17`'s low half and bit 2 of `w - 1` in `r21`. -/
+1) / 8` blocks in `r17`'s low half and bit 2 of `w - 1` in `r27`. -/
 theorem roundStart8_ok {s : State} {B : Addr} {Z dA dB dM w R : Nat} (hs : Scr s B Z)
     (h10 : s.gpr .r10 = off B dM) (h15 : s.gpr .r15 = off B (dB + 8 * w)) (h16 : s.gpr .r16 = off B (dM + 8 * w))
     (h17 : s.gpr .r17 = BitVec.ofNat 64 (R * 2 ^ 32)) (hlay : dA = dM + 16 * (w + 2))
     (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hA : dA + 8 * (w + 2) ≤ Z) :
     WP isa (.block roundStart8) s fun t =>
-      (t.gpr .r9 = BitVec.ofNat 64 ((w - 1) % 4) ∧ t.gpr .r21 = BitVec.ofNat 64 ((w - 1) / 4 % 2) ∧
+      (t.gpr .r9 = BitVec.ofNat 64 ((w - 1) % 4) ∧ t.gpr .r27 = BitVec.ofNat 64 ((w - 1) / 4 % 2) ∧
         t.gpr .r14 = off B dA ∧ t.gpr .r15 = off B dB ∧
         t.gpr .r16 = off B dM ∧ t.gpr .r19 = word s.mem B (dA + 8 * (w + 1)) ∧
         t.gpr .r17 = BitVec.ofNat 64 (R * 2 ^ 32 + (w - 1) / 8) ∧ t.mem = s.mem) ∧
-      Keep [.r9, .r16, .r15, .r3, .r14, .r4, .r19, .r7, .r8, .r17, .r21] s t := by
+      Keep [.r9, .r16, .r15, .r3, .r14, .r4, .r19, .r7, .r8, .r17, .r27] s t := by
   have hnw := hs.nowrap
   refine VG.Proof.Bignum.PPC64LE.WP.keep _ ?_ (by decide)
   unfold roundStart8
@@ -1061,9 +1061,9 @@ theorem roundStart8_ok {s : State} {B : Addr} {Z dA dB dM w R : Nat} (hs : Scr s
     show dM + 16 * w + 8 * w + 40 = dM + 16 * (w + 2) + 8 * (w + 1) by omega]
   exact ⟨rfl, rfl⟩
 
-/-- One block of four words if `r21` holds 1 (`quadBlock`), after `j` words. -/
+/-- One block of four words if `r27` holds 1 (`quadBlock`), after `j` words. -/
 theorem quadBlock_ok {B : Addr} {Z dA dB dM C₀ w j q : Nat} {s₁ t : State} (hs : Scr s₁ B Z)
-    (hW : Wd B dA dB dM C₀ s₁ j t) (h21 : t.gpr .r21 = BitVec.ofNat 64 q) (hq : q < 2) (hjq : j + 4 * q + 1 ≤ w)
+    (hW : Wd B dA dB dM C₀ s₁ j t) (h21 : t.gpr .r27 = BitVec.ofNat 64 q) (hq : q < 2) (hjq : j + 4 * q + 1 ≤ w)
     (h10 : (s₁.gpr .r10).toNat < 2 ^ 64 - 1)
     (hA : dA + 8 * (w + 1) ≤ Z) (hB : dB + 8 * w ≤ Z) (hM : dM + 8 * w ≤ Z)
     (dBA : dB + 8 * w ≤ dA ∨ dA + 8 * (w + 1) ≤ dB) (dMA : dM + 8 * w ≤ dA ∨ dA + 8 * (w + 1) ≤ dM) :
@@ -1152,13 +1152,13 @@ theorem round8_ok {s : State} {B : Addr} {Z da dA dB dM w R : Nat} (hs : Scr s B
     fun s₂ ⟨⟨⟨C₀, hC₀, e₀⟩, j18, j6, j14, j15, j16, jm⟩, k₂⟩ => ?_
   rw [hN₁] at i9
   rw [hq] at i21
-  have g₂ : ∀ r ∈ [Reg.r9, .r10, .r17, .r21], s₂.gpr r = s₁.gpr r := fun r hr => k₂.gpr r (by revert r hr; decide)
+  have g₂ : ∀ r ∈ [Reg.r9, .r10, .r17, .r27], s₂.gpr r = s₁.gpr r := fun r hr => k₂.gpr r (by revert r hr; decide)
   have hs₂ : Scr s₂ B Z := hs.congr (k₂.wr.trans k₁.wr)
   have h10₂ : (s₂.gpr .r10).toNat < 2 ^ 64 - 1 := by rw [g₂ _ (by decide), k₁.gpr _ (by decide)]; exact h10'
   -- Words `1` to `N₁`, then four words if `q` is 1, then the rest, eight at a time.
   refine WP.seq (WP.mono (remBlock_ok (w := w) hs₂ (Wd.zero j14 j15 j16 hC₀) (by rw [g₂ _ (by decide), i9]) hN₁4
     (by omega) h10₂ (by omega) hB hM dBA dMA) fun s₃ ⟨hW₃, e₃⟩ => ?_)
-  have e21 : s₃.gpr .r21 = BitVec.ofNat 64 q := by
+  have e21 : s₃.gpr .r27 = BitVec.ofNat 64 q := by
     rw [hW₃.2.2.2.2.2.gpr _ (by decide), g₂ _ (by decide), i21]
   refine WP.seq (WP.mono (quadBlock_ok (q := q) hs₂ hW₃ e21 hq2 (by omega) h10₂ (by omega) hB hM dBA dMA)
     fun s₃' ⟨hW₃', e₃'⟩ => ?_)
@@ -1284,7 +1284,7 @@ open VG.Proof.Bignum.PPC64LE.Mont4 (roundsInit_ok roundsFini_ok)
 /-- The registers the rounds write: those a round writes, but `r7`–`r9` and
 `r11`, which they set back. -/
 def roundsRegs : List Reg :=
-  [.r0, .r3, .r4, .r6, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r28, .r29, .r30, .r31]
+  [.r0, .r3, .r4, .r6, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r27, .r22, .r28, .r29, .r30, .r31]
 
 /-- The `w` rounds of any round `Rd` that does what a round does
 (`RoundSpec`), over the words of `a` (at `da` of `B`, pointed to by `r6`),

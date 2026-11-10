@@ -54,7 +54,7 @@ restores, and the call none. -/
 def kernelKeep : T := ofRegs [.r2, .r5, .r10, .r21, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30, .r31]
 
 /-- The callers' registers that no instruction of the kernel writes. -/
-def kernelKeepW : T := ofRegs [.r2, .r5, .r10, .r23, .r24, .r25, .r26, .r27]
+def kernelKeepW : T := ofRegs [.r2, .r5, .r10, .r21, .r23, .r24, .r25, .r26]
 
 /-- The call of the kernel, its code and its summary. -/
 def kernelCall : Prog isa := .call kernelName kernel
