@@ -79,8 +79,7 @@ theorem core_ok {s : State} {P N S : Addr} {Z k w : Nat} (hs : Scr s S Z) (hp : 
     (hw : w = (k + 7) / 8) (hk : 64 ≤ k) (hk' : k ≤ 1024) (hZ : slot w 8 ≤ Z)
     (h19 : s.gpr .r19 = P) (h6 : s.gpr .r6 = BitVec.ofNat 64 k) (h12 : s.gpr .r12 = N)
     (h10 : s.gpr .r10 = off S (slot w 0)) (h5 : s.gpr .r5 = off S (slot w 1))
-    (h8 : s.gpr .r8 = off S (slot w 2)) (h9 : s.gpr .r9 = off S (slot w 3))
-    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (h9 : s.gpr .r9 = off S (slot w 3)) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
     (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off N i) 1)
     (hNS : ∀ i < k, ∀ x, ofs S x < Z → off N i ≠ x) (hPS : ∀ x, ofs S x < Z → 16 * w ≤ ofs P x) :
     WP isa core s fun t =>
@@ -119,7 +118,7 @@ theorem core_ok {s : State} {P N S : Addr} {Z k w : Nat} (hs : Scr s S Z) (hp : 
       hc₂.mp (by simpa using hb)
     have hf := valid_facts hv hk
     rw [← hw] at hf
-    refine WP.seq (WP.mono (r2Fast_ok hs₂ (by rw [g .r8 (by decide), h8]) (by rw [g .r9 (by decide), h9])
+    refine WP.seq (WP.mono (r2Fast_ok hs₂ (by rw [g .r9 (by decide), h9])
       (by rw [g .r10 (by decide), h10]) (by rw [g .r5 (by decide), h5]) (by rw [g .r11 (by decide), h11])
       (by omega_arith) hw' (by omega_arith) (by rw [m₂, hv₁]; exact hf.2.2)
       (by rw [m₂, hv₁]; exact hf.1)) fun s₃ ⟨hx₃, out₃, k₃⟩ => ?_)
@@ -240,7 +239,7 @@ theorem core_C1 {d : PD} {s : State} (h : C1 d s) :
       (preOut d.nb d.P (2 * d.w) (t.gpr .r3) t.mem ∧ Frame [arrR d.S d.w, ⟨d.P, 16 * d.w⟩] s.mem t.mem) ∧
         Keep coreRegs s t := by
   have hb := h.base
-  refine WP.mono (core_ok hb.scr hb.pre rfl hb.k64 hb.k1024 hb.hZ hb.r19 hb.r6 hb.r12 hb.r10 hb.r5 hb.r8
+  refine WP.mono (core_ok hb.scr hb.pre rfl hb.k64 hb.k1024 hb.hZ hb.r19 hb.r6 hb.r12 hb.r10 hb.r5
     hb.r9 hb.r11 h.rd h.sep hb.hPS) fun t ⟨⟨ho, hf⟩, k⟩ => ⟨⟨?_, hf⟩, k⟩
   rwa [h.bytesAt] at ho
 
