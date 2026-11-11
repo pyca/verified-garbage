@@ -92,7 +92,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Poly1305.Limbs64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
-public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
 
 /-! # RSAES-OAEP (RFC 8017) on x86-64 -/
 
@@ -107,7 +107,7 @@ open VG.Proof.HashTable.X86_64 (fnsOf)
 
 def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaOaep.decryptMdTablesApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+    Spec.RsaOaep.decryptMdTablesApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
       suffix := qualifiedName "" [("crt", c.suffix)]
       extra := c.extra
       tables := [("hash", tables vs), ("mgf1", tables vs)]

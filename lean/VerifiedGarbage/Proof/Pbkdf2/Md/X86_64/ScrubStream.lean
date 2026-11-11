@@ -134,9 +134,7 @@ theorem scrubAllCode_ok {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
         (sig.retBits A.ptrBits) :=
   have he := evexReg_of_ne (c := c) (ks := allKs (chunks stack)) (stack := stack) hne
   Verified.scrub hA h (SpSafe.of_all hsp) hd (chunks_sum stack) hst (chunks_valid h8)
-    (lv1_of_level (fun i hi => by simpa using Code.all_instrs hlv i hi))
-    (upperOk_of_level (fun i hi => by simpa using Code.all_instrs hlv i hi) (xs_of _ _) he.1)
-    hrb hpost (resOk_all _ _ h8) (tailOk_of _ _ _)
+    (fun i hi => by simpa using Code.all_instrs hlv i hi) hrb hpost (resOk_all _ _ h8) (tailOk_of _ _ _)
     (xs_of _ _) he.1 he.2 (gs_of _ _)
 
 theorem scrubAllCode_spSafe (v : VecLevel) (rb stack : Nat) {c : Prog isa}

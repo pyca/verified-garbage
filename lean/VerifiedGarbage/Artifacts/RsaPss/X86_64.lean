@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
-public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
 
 /-! # RSASSA-PSS (RFC 8017) on x86-64 -/
 
@@ -22,7 +22,7 @@ open VG.Proof.RsaPss.X86_64 (signStack sign_ok signC_spAll enc_safe OK)
 
 def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaPss.signMdTableApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+    Spec.RsaPss.signMdTableApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
       suffix := qualifiedName "" [("crt", c.suffix)]
       extra := c.extra
       tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.MdHashTable.X86_64.tables vs)]
