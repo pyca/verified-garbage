@@ -124,15 +124,18 @@ def region (c : Prog isa) : Prog isa :=
         (.seq c (.block [.lfence])))
       (.block [.store32 (sc MX) .r12, .ldmxcsr (sc MX)]))
 
-/-- The number in lane `l` of the first five slots, below `2 p`, reduced modulo `p` into the words at `dst`. -/
-def packLane (M : Mod) (l dst : Nat) : List Instr :=
-  let L (i : Nat) : MemOp := sc (SL + 32 * i + 8 * l)
+/-- The number in lane `l` of five slots at `sl`, below `2 p`, reduced modulo `p` into the words at `dst`. -/
+def packLaneAt (sl : Nat) (M : Mod) (l dst : Nat) : List Instr :=
+  let L (i : Nat) : MemOp := sc (sl + 32 * i + 8 * l)
   [.mov .r8 (.mem (L 0)), .mov .rax (.mem (L 1)), .mov .r9 (.reg .rax), .shift .shl .rax 52, .alu .or .r8 (.reg .rax),
     .shift .shr .r9 12, .mov .rax (.mem (L 2)), .mov .r10 (.reg .rax), .shift .shl .rax 40, .alu .or .r9 (.reg .rax),
     .shift .shr .r10 24, .mov .rax (.mem (L 3)), .mov .r11 (.reg .rax), .shift .shl .rax 28, .alu .or .r10 (.reg .rax),
     .shift .shr .r11 36, .mov .rax (.mem (L 4)), .mov .r12 (.reg .rax), .shift .shl .rax 16, .alu .or .r11 (.reg .rax),
     .shift .shr .r12 48] ++
   csub M [.r8, .r9, .r10, .r11] .r12 ++ stores [.r8, .r9, .r10, .r11] dst
+
+/-- `packLaneAt`, of the first five slots. -/
+def packLane (M : Mod) (l dst : Nat) : List Instr := packLaneAt SL M l dst
 
 /-- `R` from the slots, if the accumulator was set (`rbx`, which keeps `r11`). -/
 def packR (c : Joint.Cfg) : Prog isa :=
