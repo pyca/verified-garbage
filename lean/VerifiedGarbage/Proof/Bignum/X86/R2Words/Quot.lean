@@ -158,7 +158,7 @@ theorem quot_ok {s : State} {base : Addr} {bytes : Nat} {u2 u1 d : Nat}
     (hd1 : 2 ^ 31 ≤ d) (hd2 : d < 2 ^ 32) (hu2 : u2 ≤ d) (hu1 : u1 < 2 ^ 32) :
     WP isa (.block quot) s fun t =>
       w32 t.mem base oQ = (if u2 = d then 2 ^ 32 - 1 else (u2 * 2 ^ 32 + u1) / d) ∧
-      Outside base oMask 12 s.mem t.mem ∧ Keeps k6 s t := by
+      Outside base oMask 12 s.mem t.mem ∧ w32 t.mem base oSteps = w32 s.mem base oSteps ∧ Keeps k6 s t := by
   have nw := ws.nowrap
   have hu2' : u2 < 2 ^ 32 := by omega
   have pt : ∀ {t : State}, Keeps k6 s t → PtrAt t base .edi 0 := fun K => by rw [PtrAt, K.1 _ (by decide)]; exact di
@@ -329,7 +329,7 @@ theorem quot_ok {s : State} {base : Addr} {bytes : Nat} {u2 u1 d : Nat}
     (ws_write (wt K₃₀) (by simp only [oQ]; omega)) fun t₃₁ M₃₁ => WP.block_nil ?_
   have m₃₁ : t₃₁.mem = (s.mem.writeW (off base oMask) (BitVec.ofNat 32 (if u2 = d then 2 ^ 32 - 1 else 0))).writeW
       (off base oQ) (t₃₀.gpr .ebx) := by rw [M₃₁.mem, U₃₀.mem, m₂₉, m₇, Nat.zero_add, Nat.zero_add]
-  refine ⟨?_, ?_, K₃₀.trans (M₃₁.keeps _)⟩
+  refine ⟨?_, ?_, ?_, K₃₀.trans (M₃₁.keeps _)⟩
   · rw [m₃₁, w32_write_self, U₃₀.gpr, m₂₉, m₇, Nat.zero_add, Mem.readW_writeW_self32]
     by_cases e : u2 = d
     · rw [ite_eq_left e, ite_eq_left e, show BitVec.ofNat 32 (2 ^ 32 - 1) = BitVec.allOnes 32 from rfl,
@@ -341,5 +341,8 @@ theorem quot_ok {s : State} {base : Addr} {bytes : Nat} {u2 u1 d : Nat}
       (by simp only [oMask]; omega)).trans
       ((writeW32_outside _ base _ (d := oQ) (by simp only [oQ]; omega)).mono (by simp only [oMask, oQ]; omega)
         (by simp only [oMask, oQ]; omega))
+  · rw [m₃₁, w32_write_ne (size := bytes) nw (by simp only [oQ]; omega) (by simp only [oSteps]; omega)
+      (by simp only [oQ, oSteps]; omega), w32_write_ne (size := bytes) nw (by simp only [oMask]; omega)
+      (by simp only [oSteps]; omega) (by simp only [oMask, oSteps]; omega)]
 
 end VG.Proof.Bignum.X86.R2Words

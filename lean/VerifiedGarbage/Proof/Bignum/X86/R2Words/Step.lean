@@ -96,6 +96,7 @@ structure StepFrame (base : Addr) (len : Nat) (m m' : Mem) : Prop where
   out : Outside base oMask (numAt len 5 + 4 * (wp len + 1) - oMask) m m'
   mid : ∀ o, oQ + 4 ≤ o → o + 4 ≤ numAt len 4 → w32 m' base o = w32 m base o
   up : ∀ o, numAt len 4 + 4 * wp len ≤ o → o + 4 ≤ numAt len 5 → w32 m' base o = w32 m base o
+  steps : w32 m' base oSteps = w32 m base oSteps
 
 /-- A step: `x := x 2^32 mod M`, for the header's `p = 2^z`, `d` (`2^z M`'s
 top word) and `v`. -/
@@ -157,7 +158,7 @@ theorem step_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
   have h₁ := h.keep K₁ (by decide) (by decide) (by rw [m₁]; exact Outside.refl _ _ _ _)
   have di₁ : PtrAt t₁ base .edi 0 := by rw [PtrAt, Nat.add_zero, Nat.mod_eq_of_lt (by omega)]; exact h₁.edi
   refine WP.mono (quot_ok h₁.ws di₁ (by omega) ax₁ bp₁ (by rw [m₁]; exact hD) (by rw [m₁]; exact hV) hd1 hd2 hud hu1')
-    fun s₁ ⟨hq₁, O₁, K₁'⟩ => ?_
+    fun s₁ ⟨hq₁, O₁, C₁, K₁'⟩ => ?_
   rw [qhat_min hud hu1' (by omega)] at hq₁
   rw [m₁] at O₁
   have K₀₁ : Keeps k6 s s₁ := K₁.trans K₁'
@@ -199,7 +200,7 @@ theorem step_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
   -- `t` back into `x`.
   refine WP.mono (copyBack_ok hs₄) fun s₅ ⟨hv₅, O₅, K₅⟩ => ?_
   have hm32 : m < 2 ^ (32 * wp len) := Nat.lt_of_le_of_lt (Nat.le_mul_of_pos_right _ hz0) hMw
-  refine ⟨?_, ⟨?_, fun o h1 h2 => ?_, fun o h1 h2 => ?_⟩, K₀₁.trans (K₂.trans (K₃.trans (K₄.trans K₅)))⟩
+  refine ⟨?_, ⟨?_, fun o h1 h2 => ?_, fun o h1 h2 => ?_, ?_⟩, K₀₁.trans (K₂.trans (K₃.trans (K₄.trans K₅)))⟩
   · rw [hv₅, ← hT3, val32_succ]
     have hr : x * 2 ^ 32 % m < 2 ^ (32 * wp len) := Nat.lt_trans (Nat.mod_lt _ (by omega)) hm32
     rw [← hT3, val32_succ] at hr
@@ -217,5 +218,10 @@ theorem step_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
       O₂.w32 (.inl (by omega)) (by omega), O₁.w32 (.inr (by simp only [oMask]; omega)) (by omega)]
   · rw [O₅.w32 (.inr (by omega)) (by omega), O₄.w32 (.inl (by omega)) (by omega), O₃.w32 (.inl (by omega)) (by omega),
       O₂.w32 (.inl (by omega)) (by omega), O₁.w32 (.inr (by simp only [oMask]; omega)) (by omega)]
+
+  · rw [O₅.w32 (.inl (by simp only [oSteps]; omega)) (by simp only [oSteps]; omega),
+      O₄.w32 (.inl (by simp only [oSteps]; omega)) (by simp only [oSteps]; omega),
+      O₃.w32 (.inl (by simp only [oSteps]; omega)) (by simp only [oSteps]; omega),
+      O₂.w32 (.inl (by simp only [oSteps]; omega)) (by simp only [oSteps]; omega), C₁, m₁]
 
 end VG.Proof.Bignum.X86.R2Words
