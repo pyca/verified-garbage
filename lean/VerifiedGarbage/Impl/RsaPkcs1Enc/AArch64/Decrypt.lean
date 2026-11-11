@@ -312,14 +312,32 @@ def selPart : Prog isa :=
 
 /-! ## The function -/
 
-/-- The inner frame's body, with the private-key operation `priv` (by its
-name `privN`). -/
-def body (privN : String) (priv : Prog isa) : Prog isa :=
-  .seq (.block setup) (.seq (.call privN priv) (.seq dBuild (.seq (hashD H) (.seq (kdkMac H) (.seq (clLoop H)
-    (.seq (amLoop H) (.seq maskPart (.seq alPart (.seq scanPart selPart)))))))))
+/-- What follows the private-key operation. -/
+def rest : Prog isa :=
+  .seq dBuild (.seq (hashD H) (.seq (kdkMac H) (.seq (clLoop H)
+    (.seq (amLoop H) (.seq maskPart (.seq alPart (.seq scanPart selPart)))))))
+
+/-- The inner frame's body, with the block `stage` setting up the call of the
+private-key operation `priv` (by its name `privN`). -/
+def bodyWith (stage : List Instr) (privN : String) (priv : Prog isa) : Prog isa :=
+  .seq (.block stage) (.seq (.call privN priv) (rest H))
+
+/-- The inner frame's body, calling `vg_rsa_private_checked`. -/
+abbrev body (privN : String) (priv : Prog isa) : Prog isa := bodyWith H setup privN priv
+
+/-- The frames around `bodyWith`. -/
+def codeWith (stage : List Instr) (privN : String) (priv : Prog isa) : Prog isa :=
+  .frame (.push .x30) (.frame (.alloc frameBytes) (bodyWith H stage privN priv) (.free frameBytes)) (.pop .x30)
 
 /-- `vg_rsa_pkcs1_decrypt`. -/
-def code (privN : String) (priv : Prog isa) : Prog isa :=
-  .frame (.push .x30) (.frame (.alloc frameBytes) (body H privN priv) (.free frameBytes)) (.pop .x30)
+abbrev code (privN : String) (priv : Prog isa) : Prog isa := codeWith H setup privN priv
+
+/-- Our stack arguments `pre` and `pre_len` (15 and 16) as the private-key
+operation's 12 and 13, after `setup`. -/
+def extraMoves : List Instr := mvArg 15 96 ++ mvArg 16 104
+
+/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling
+`vg_rsa_private_checked_precomputed`. -/
+abbrev codeP (privN : String) (priv : Prog isa) : Prog isa := codeWith H (setup ++ extraMoves) privN priv
 
 end VG.Impl.RsaPkcs1Enc.AArch64.Decrypt

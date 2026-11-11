@@ -57,6 +57,14 @@ structure Lay where
   sl : BitVec 64
   Q : Addr
   P : Nat
+  /-- Further regions the function may read: none for
+  `vg_rsa_pkcs1_decrypt`; for `vg_rsa_pkcs1_decrypt_precomputed`, its last
+  stack arguments and `pre`. -/
+  X : List Region
+  /-- `vg_rsa_pkcs1_decrypt_precomputed`'s `pre` and `pre_len`, our stack
+  arguments 15 and 16. -/
+  pre : Addr
+  prl : BitVec 64
 
 namespace Lay
 
@@ -209,7 +217,8 @@ structure Kept (L : Lay) (lr : BitVec 64) (m : Mem) : Prop where
   args : ∀ j < 15, m.readW (L.Q + BitVec.ofNat 64 (240 + 8 * j)) 64 = ourArg L j
 
 /-- The offsets of the kept words. -/
-def keptOff (d : Nat) : Prop := (d + 8 ≤ 192) ∨ (224 ≤ d ∧ d + 8 ≤ 240) ∨ (240 ≤ d ∧ d + 8 ≤ 360)
+def keptOff (d : Nat) : Prop :=
+  (d + 8 ≤ 96) ∨ (112 ≤ d ∧ d + 8 ≤ 192) ∨ (224 ≤ d ∧ d + 8 ≤ 240) ∨ (240 ≤ d ∧ d + 8 ≤ 360)
 
 /-- The kept words survive changes to memory that miss them. -/
 theorem Kept.frame {L : Lay} {lr : BitVec 64} {m m' : Mem} {rs : List Region} (hk : Kept L lr m)
@@ -231,7 +240,8 @@ theorem Kept.frame {L : Lay} {lr : BitVec 64} {m m' : Mem} {rs : List Region} (h
 theorem Lay.Ok.kept_buf {L : Lay} (h : L.Ok) {d : Nat} (hd : keptOff d) {R : Region} (hR : InW L R) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, 8⟩ R := by
   unfold keptOff at hd
-  rcases hd with hd | hd | hd
+  rcases hd with hd | hd | hd | hd
+  · exact h.stk_buf (by omega) hR
   · exact h.stk_buf (by omega) hR
   · exact h.stk_buf (by omega) hR
   · exact h.args_buf hd.1 hd.2 hR
@@ -242,7 +252,7 @@ theorem Lay.Ok.kept_buf {L : Lay} (h : L.Ok) {d : Nat} (hd : keptOff d) {R : Reg
 are the registers on entry, `m₀` the memory. -/
 structure Ctx (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (t : State) :
     Prop where
-  rd : t.rd = [L.N, L.E, L.D, L.INP, L.PP, L.QQ, L.DP, L.DQ, L.QI, L.ARGS]
+  rd : t.rd = [L.N, L.E, L.D, L.INP, L.PP, L.QQ, L.DP, L.DQ, L.QI, L.ARGS] ++ L.X
   wr : t.wr = [L.FR, L.LR, L.OUT, L.ML, L.SCR]
   sp : t.sp = L.Q
   cs : ∀ r ∈ preserved, r ≠ .x30 → t.gpr r = g r

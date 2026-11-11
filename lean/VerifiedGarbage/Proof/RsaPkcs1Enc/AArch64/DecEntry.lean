@@ -36,7 +36,12 @@ def lay (P : Nat) (s : State) : Lay :=
   ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.gpr .x4, s.gpr .x5, s.gpr .x6, s.gpr .x7,
     stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4, stackArg s 5, stackArg s 6,
     stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10, stackArg s 11, stackArg s 12, stackArg s 13,
-    stackArg s 14, s.sp - BitVec.ofNat 64 240, P⟩
+    stackArg s 14, s.sp - BitVec.ofNat 64 240, P, [], 0, 0⟩
+
+/-- The layout of a call that may also read `X`. -/
+def layW (P : Nat) (s : State) (X : List Region) : Lay := { lay P s with X := X }
+
+theorem Lay.Ok.withX {L : Lay} (h : L.Ok) (X : List Region) : ({ L with X := X } : Lay).Ok := { h with }
 
 theorem lay_Q (P : Nat) (s : State) : (lay P s).Q + BitVec.ofNat 64 240 = s.sp := BitVec.sub_add_cancel _ _
 
@@ -405,7 +410,7 @@ theorem entry_ok {P : Nat} {s : State} (h : (decSpec P).pre s) :
   have go : ∀ r, r ≠ .x9 → r ≠ .x10 → t₃.gpr r = s.gpr r := fun r h₁ h₂ => by
     rw [hm.other r h₂, hs.gpr]; exact RegUpd.gpr_write_of_ne _ _ _ h₁
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩⟩
-  · rw [urd, hm.rd, hrd₂, hrd]
+  · rw [urd, hm.rd, hrd₂, hrd]; exact (List.append_nil _).symm
   · rw [uwr, hm.wr, hwr₂, entered_wr P, hwr]
   · rw [usp, hsp₃]
   · intro r hr _
