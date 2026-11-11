@@ -192,4 +192,77 @@ theorem ck_bitsM' {k n e d p q dP dQ qI w pL qL : Nat} (hwk : w = (k + 3) / 4) (
         exact shape_bound hs' hwk (by rw [Nat.mul_comm]; exact pq) hnv hpL
       · rw [ite_eq_right h0]
 
+/-- For a balanced key with `p q ≡ n (mod 2^(32 w))`, `n`'s first byte not zero
+and `w = ⌈k / 4⌉`, `p`'s top word (of `w / 4`) is not zero: else `p q` is
+below `2^(32 w)` and `n`. -/
+theorem top_of_L {w k pL qL n p q : Nat} (hs : Shape w pL qL) (hwk : w = (k + 3) / 4)
+    (hn : 256 ^ (k - 1) ≤ n) (hq : q < 2 ^ (8 * qL)) (hL : p * q % 2 ^ (32 * w) = n) :
+    2 ^ (64 * (w / 4 - 1)) ≤ p := by
+  obtain ⟨p8, hpw, hpq', p32⟩ := hs
+  rcases Nat.lt_or_ge p (2 ^ (64 * (w / 4 - 1))) with h | h
+  · exfalso
+    have e1 : 64 * (w / 4 - 1) = 8 * pL - 64 := by omega
+    rw [e1] at h
+    rw [show 8 * qL = 8 * pL by omega] at hq
+    have hpq : p * q < 2 ^ (16 * pL - 64) := by
+      rcases Nat.eq_zero_or_pos q with h0 | h0
+      · rw [h0, Nat.mul_zero]; exact Nat.two_pow_pos _
+      · calc p * q < 2 ^ (8 * pL - 64) * q := Nat.mul_lt_mul_of_pos_right h h0
+          _ ≤ 2 ^ (8 * pL - 64) * 2 ^ (8 * pL) := Nat.mul_le_mul_left _ (Nat.le_of_lt hq)
+          _ = 2 ^ (16 * pL - 64) := by rw [← Nat.pow_add]; congr 1; omega
+    have hW : 2 ^ (16 * pL - 64) ≤ 2 ^ (32 * w) := Nat.pow_le_pow_right (by decide) (by omega)
+    rw [Nat.mod_eq_of_lt (by omega)] at hL
+    have hn' : 2 ^ (16 * pL - 64) ≤ n := by
+      refine Nat.le_trans ?_ hn
+      rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
+      exact Nat.pow_le_pow_right (by decide) (by omega)
+    omega
+  · exact h
+
+/-- The checks' bits but for `M` and the comparison of `q qInv`, which matter
+only once `p` is odd and `L = n`. -/
+theorem keyBitsM_congr' {n d p q dP dQ qI L M M' R₁ R₂ A₁ A₂ A₁' A₂' Y₁ Y₂ : Nat}
+    (h : p % 2 = 1 → L = n → M = M' ∧ A₁ = A₁' ∧ A₂ = A₂') :
+    VG.Proof.Rsa.keyBitsM n d p q dP dQ qI L M R₁ R₂ A₁ A₂ Y₁ Y₂ =
+      VG.Proof.Rsa.keyBitsM n d p q dP dQ qI L M' R₁ R₂ A₁' A₂' Y₁ Y₂ := by
+  unfold VG.Proof.Rsa.keyBitsM VG.Proof.Rsa.crtBitsM
+  by_cases h1 : p % 2 = 1
+  · by_cases h2 : L = n
+    · obtain ⟨e1, e2, e3⟩ := h h1 h2; rw [e1, e2, e3]
+    · simp [h2]
+  · simp [h1]
+
+/-- `ck_bitsM'` with `M` and the comparison of `q qInv` exact, for a balanced
+key, only when `p`'s top word is not zero (the division by words). -/
+theorem ck_bitsM'' {k n e d p q dP dQ qI w pL qL : Nat} (hwk : w = (k + 3) / 4) (hm : modulusValid n k = true)
+    (he : exponentValid e = true) (hn : n < 256 ^ k) (hp : p < 256 ^ (k - 1)) (hq : q < 256 ^ (k - 1))
+    (hk : 1 ≤ k) (hw : 256 ^ k ≤ 2 ^ (32 * w)) (hpL : p < 2 ^ (8 * pL)) (hqL : q < 2 ^ (8 * qL))
+    {L M R₁ R₂ A₁ A₂ Y₁ Y₂ : Nat} (hL : L = p * q % 2 ^ (32 * w))
+    (hM : p % 2 = 1 → 2 ≤ p → (Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ p) → (M = 0 ↔ n % p = 0))
+    (hR₁ : dP < 2 * (p / 2) → 2 * (2 * (p / 2)) ≤ 2 ^ (32 * w) → R₁ = e % 2 ^ 33 * dP % (2 * (p / 2)))
+    (hR₂ : dQ < 2 * (q / 2) → 2 * (2 * (q / 2)) ≤ 2 ^ (32 * w) → R₂ = e % 2 ^ 33 * dQ % (2 * (q / 2)))
+    (hA : qI < p → p % 2 = 1 → 2 ≤ p → (Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ p) →
+      (A₁ = A₂ ↔ q * qI % p = 1))
+    (hY₁ : 0 < 2 * (p / 2) → (Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (p / 2)) →
+      Y₁ = d % (2 * (p / 2)))
+    (hY₂ : 0 < 2 * (q / 2) → (Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (q / 2)) →
+      Y₂ = d % (2 * (q / 2))) :
+    keyValid k n e d p q dP dQ qI = VG.Proof.Rsa.keyBitsM n d p q dP dQ qI L M R₁ R₂ A₁ A₂ Y₁ Y₂ := by
+  have hnv := (VG.Proof.Rsa.modulusValid_facts hm).2
+  -- Where `p` is odd and `L = n`, a balanced key's `p` has its top word.
+  have top : p % 2 = 1 → L = n → Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ p := fun _ h2 hs =>
+    top_of_L hs hwk hnv hqL (by rw [← hL, h2])
+  let M' := if p % 2 = 1 ∧ L = n then M else if n % p = 0 then 0 else 1
+  let A₁' := if p % 2 = 1 ∧ L = n then A₁ else if q * qI % p = 1 then 0 else 1
+  let A₂' := if p % 2 = 1 ∧ L = n then A₂ else 0
+  rw [keyBitsM_congr' (M' := M') (A₁' := A₁') (A₂' := A₂') fun h1 h2 => by
+    simp only [M', A₁', A₂', h1, h2, and_self, ite_true]]
+  refine ck_bitsM' hwk hm he hn hp hq hk hw hpL hqL hL (fun h1 h2 => ?_) hR₁ hR₂ (fun h0 h1 h2 => ?_) hY₁ hY₂
+  · by_cases hc : L = n
+    · simp only [M', h1, hc, and_self, ite_true]; exact hM h1 h2 (top h1 hc)
+    · simp only [M', hc, and_false, ite_false]; split <;> simp_all
+  · by_cases hc : L = n
+    · simp only [A₁', A₂', h1, hc, and_self, ite_true]; exact hA h0 h1 h2 (top h1 hc)
+    · simp only [A₁', A₂', hc, and_false, ite_false]; split <;> simp_all
+
 end VG.Proof.Rsa.PPC64LE.KeyCheck

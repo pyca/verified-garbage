@@ -152,19 +152,6 @@ def cnt33 : List Instr := [.li .r4 33]
 /-- `[a] := [x] [y] 2^(-32 w) mod (p | 1)`, the modulus in `aVD`, `p_len` in `r19`. -/
 def montP (a x y : Nat) : Prog isa := MontKey.montMul a x y aVD aT .r19 MontKey.cntW
 
-/-- `1`, the mask `p` odd, `p q mod 2^(32 w)` in `aVQ`, `p | 1` in `aVD` and
-`n 2^(-32 w) mod (p | 1)` in `aVR`. -/
-def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP), MontKey.mulLo aVQ aP aQ .r19,
-  copy aVD aP, .block (orOne aVD), montP aVR aN aOne]
-
-/-- Then: `p q ≡ n (mod 2^(32 w))`, `n ≡ 0 (mod p)`, `p - 1` and `q - 1`, and
-the checks of `dP`, `dQ` and `qInv`. -/
-def crtChecks : List (Prog isa) := eqA aVQ aN ++ eqA aVR aZ ++
-  [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++
-  ltA aDP aM1 ++ mulA aE aDP aM1 cnt33 ++ eqA aA aOne ++
-  ltA aDQ aM2 ++ mulA aE aDQ aM2 cnt33 ++ eqA aA aOne ++
-  ltA aQI aP ++ [montP aA aQ aQI, montP aY aOne aOne] ++ eqA aA aY
-
 /-- `r0 := 0` exactly for a balanced key of full words: `p_len` (`r19`) a
 multiple of 8 and at least 32, equal to `q_len` (`r21`) and to `2 w` (`r29`),
 so that `n_len` is about twice it. From registers that `KeyDiv.divW` does
@@ -173,6 +160,36 @@ def shape : List Instr :=
   [.li .r0 7, .logic .and .r0 .r19 .r0, .lsl .r3 .r29 1, .logic .xor .r3 .r3 .r19, .logic .or .r0 .r0 .r3,
     .logic .xor .r3 .r19 .r21, .logic .or .r0 .r0 .r3, .lsr .d .r3 .r19 5, .li .r12 0, .sub .r3 .r12 .r3,
     .lsr .d .r3 .r3 63, .li .r12 1, .logic .xor .r3 .r3 .r12, .logic .or .r0 .r0 .r3]
+
+/-- `n mod p` in `aVR` for a balanced key (`shape`), by words (`p`'s top word made
+not zero, `aW` the save area); else Montgomery's `n 2^(-32 w) mod (p | 1)`;
+`p | 1` in `aVD` either way. -/
+def nModP : Prog isa :=
+  .ite (.zero .d .r0)
+    (seqs [copy aVD aP, .block (KeyDiv.fixTop aVD), KeyDiv.divW aN aVR aVD aVT aW, copy aVD aP, .block (orOne aVD)])
+    (seqs [copy aVD aP, .block (orOne aVD), montP aVR aN aOne])
+
+/-- `1`, the mask `p` odd, `p q mod 2^(32 w)` in `aVQ`, `p | 1` in `aVD` and
+`n mod p` (or Montgomery's `n 2^(-32 w) mod (p | 1)`) in `aVR`. -/
+def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP), MontKey.mulLo aVQ aP aQ .r19,
+  .block shape, nModP]
+
+/-- `[aA]` and `[aY]` equal exactly when `q qInv ≡ 1 (mod p)`: for a balanced key
+(`shape`), `q qInv` (`MontKey.mulLo`, exact in `w` digits) by words modulo `p`
+and `1`; else Montgomery's `q qInv` and `1 · 1` modulo `p | 1`. -/
+def qInvMod : Prog isa :=
+  .ite (.zero .d .r0)
+    (seqs [MontKey.mulLo aX aQ aQI .r21, copy aY aP, .block (KeyDiv.fixTop aY), KeyDiv.divW aX aA aY aVT aW,
+      copy aY aOne])
+    (seqs [montP aA aQ aQI, montP aY aOne aOne])
+
+/-- Then: `p q ≡ n (mod 2^(32 w))`, `n ≡ 0 (mod p)`, `p - 1` and `q - 1`, and
+the checks of `dP`, `dQ` and `qInv`. -/
+def crtChecks : List (Prog isa) := eqA aVQ aN ++ eqA aVR aZ ++
+  [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++
+  ltA aDP aM1 ++ mulA aE aDP aM1 cnt33 ++ eqA aA aOne ++
+  ltA aDQ aM2 ++ mulA aE aDQ aM2 cnt33 ++ eqA aA aOne ++
+  ltA aQI aP ++ [.block shape, qInvMod] ++ eqA aA aY
 
 /-- `[a] mod [d]` in `aVR`: for a balanced key (`shape`), by words
 (`KeyDiv.divW`, `[d]` of `w / 4` words copied to `aVD`, its top word made

@@ -154,20 +154,17 @@ theorem ck_valid {s0 s : State} (h0 : ckP.pre s0) (hb : KBase (ckB s0) (ckZ s0) 
   have a7 : Arrs t7.mem g.B g.w (vals v) live0 := l7.arrs.sub (by decide)
   rw [wp_seqs_append (by simp [start]) (by simp [crtChecks, eqA])]
   have wl7 := l7.ws.wle
-  have hpl : ∃ a, 1 ≤ a ∧ a < 2 ^ 32 ∧ v.p < 2 ^ (8 * a) ∧ t7.gpr .r19 = BitVec.ofNat 64 a :=
-    ⟨(s0.gpr .r10).toNat, p1, by omega_arith, lt_pow8_of_len _ (len_bytes _ _ _),
-      ((R6.of_keep k7).r19).trans (CrtValues.ofNat_toNat64 _)⟩
-  have hql : ∃ a, 1 ≤ a ∧ a < 2 ^ 32 ∧ v.q < 2 ^ (8 * a) ∧ t7.gpr .r21 = BitVec.ofNat 64 a :=
-    ⟨(PPC64LE.stackArg s0 1).toNat, q1, by omega_arith, lt_pow8_of_len _ (len_bytes _ _ _),
-      ((R6.of_keep k7).r21).trans (CrtValues.ofNat_toNat64 _)⟩
   have pw : (s0.gpr .r10).toNat ≤ 4 * g.w := by show _ ≤ 4 * ((kK s0 + 3) / 4); omega_arith
-  refine WP.mono (start_ok (g := g) (v := v) l7.ws a7 (l7.top _ (by decide))
-    ⟨(s0.gpr .r10).toNat, p1, pw, lt_pow8_of_len _ (len_bytes _ _ _),
-      ((R6.of_keep k7).r19).trans (CrtValues.ofNat_toNat64 _)⟩) fun t8 ⟨L, M, hL, hM, g8⟩ => ?_
+  have p19 : t7.gpr .r19 = BitVec.ofNat 64 (s0.gpr .r10).toNat :=
+    ((R6.of_keep k7).r19).trans (CrtValues.ofNat_toNat64 _)
+  have q21 : t7.gpr .r21 = BitVec.ofNat 64 (PPC64LE.stackArg s0 1).toNat :=
+    ((R6.of_keep k7).r21).trans (CrtValues.ofNat_toNat64 _)
+  refine WP.mono (start_ok (g := g) (v := v) l7.ws a7 (l7.top _ (by decide)) p1 pw
+    (lt_pow8_of_len _ (len_bytes _ _ _)) p19 (by omega_arith) q21) fun t8 ⟨L, M, hL, hM, g8⟩ => ?_
   rw [wp_seqs_append (by simp [crtChecks, eqA]) (by simp [dChecks, ltA])]
   have wl : (kK s0 + 3) / 4 ≤ 1024 := g8.ws.wle
-  refine WP.mono (crtChecks_ok g8 ⟨(s0.gpr .r10).toNat, p1, pw, lt_pow8_of_len _ (len_bytes _ _ _),
-    lt_pow8_of_len _ (len_bytes _ _ _), ((R6.of_keep k7).r19).trans (CrtValues.ofNat_toNat64 _)⟩)
+  refine WP.mono (crtChecks_ok g8 p1 pw (lt_pow8_of_len _ (len_bytes _ _ _)) (lt_pow8_of_len _ (len_bytes _ _ _))
+    p19 q1 (by omega_arith) (lt_pow8_of_len _ (len_bytes _ _ _)) q21)
     fun t9 ⟨R₁, R₂, A₁, A₂, hR₁, hR₂, hA, g9⟩ => ?_
   rw [wp_seqs_append (by simp [dChecks, ltA]) (by simp)]
   refine WP.mono (dChecks_ok g9 (pA := (s0.gpr .r10).toNat) (qA := (PPC64LE.stackArg s0 1).toNat) p1
@@ -179,7 +176,7 @@ theorem ck_valid {s0 s : State} (h0 : ckP.pre s0) (hb : KBase (ckB s0) (ckZ s0) 
   · exact (g10.base l7.base hp.nowrap).of_regs kt tm
   · rw [t3]
     congr 2
-    have e := ck_bitsM' (k := kK s0) (w := g.w) rfl hmv hev (lt_pow_len _ (len_bytes _ _ _))
+    have e := ck_bitsM'' (k := kK s0) (w := g.w) rfl hmv hev (lt_pow_len _ (len_bytes _ _ _))
       (lt_pow_of_len _ (by rw [len_bytes]; exact p2)) (lt_pow_of_len _ (by rw [len_bytes]; exact q2))
       (by omega_arith) (pow_kw _) (lt_pow8_of_len _ (len_bytes _ _ _)) (lt_pow8_of_len _ (len_bytes _ _ _))
       hL hM hR₁ hR₂ hA hY₁ hY₂
