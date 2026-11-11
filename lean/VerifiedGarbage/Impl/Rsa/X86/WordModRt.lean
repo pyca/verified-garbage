@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
+public import VerifiedGarbage.Impl.Bignum.X86.R2Words
 
 /-! # A remainder by word steps at a width read at run time (i686)
 
@@ -13,7 +14,7 @@ dividend brought down: `r` starts as `x`'s top `W' - 1` words, below `m`,
 then `r := (r 2^32 + xᵢ) mod m` for `x`'s words from `w - W'` down to 0.
 The modulus is already normalized, so there is no shift: `m` may be secret.
 
-The header words 60 to 92 hold the step's scalars: `d` and `d₁`, the top
+The header words 60 to 92 (`R2Words`' scalars from base 56, and the digit) hold the step's scalars: `d` and `d₁`, the top
 two words of `m` (60, 88), the reciprocal `v` (64), the mask of `u₂ = d`
 (68), the steps left (72), `q̂` (76), `u₀` and `u₂` (80, 84) and the digit
 (92). Every branch and address depends only on `n_len` and `m_len`; the
@@ -28,20 +29,23 @@ their top bit set whenever `p q = n`.
 @[expose] public section
 namespace VG.Impl.Rsa.X86.WordModRt
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Rsa.X86.KeyRt
+open VG.Impl.Bignum.X86
 
 def seqs : List (Prog isa) → Prog isa
   | [] => .block []
   | [c] => c
   | c :: cs => .seq c (seqs cs)
 
-def oD : Nat := 60
-def oV : Nat := 64
-def oMask : Nat := 68
-def oSteps : Nat := 72
-def oQ : Nat := 76
-def oU0 : Nat := 80
-def oU2 : Nat := 84
-def oD1 : Nat := 88
+/-- The base of the step's scalars in the header, for `R2Words`' `quot` and `refine3`. -/
+def h0 : Nat := 56
+
+abbrev oD : Nat := R2Words.oD h0
+abbrev oV : Nat := R2Words.oV h0
+abbrev oSteps : Nat := R2Words.oSteps h0
+abbrev oQ : Nat := R2Words.oQ h0
+abbrev oU0 : Nat := R2Words.oU0 h0
+abbrev oU2 : Nat := R2Words.oU2 h0
+abbrev oD1 : Nat := R2Words.oD1 h0
 def oDig : Nat := 92
 
 variable (L : Lay)
@@ -62,16 +66,10 @@ def orTop (ml m : Nat) : List Instr :=
     [.mov .eax (.mem (at_ .ebx 4)), .alu .or .eax (.imm (BitVec.ofNat 32 0x80000000)), .store (at_ .ebx 4) .eax,
       .store (sc oD) .eax, .mov .eax (.mem (at_ .ebx 0)), .store (sc oD1) .eax]
 
-def divBit : List Instr :=
-  [.alu .add .edx (.reg .edx), .alu .sbb .ebp (.reg .ebp), .alu .add .edx (.imm 1),
-    .mov .eax (.reg .edx), .alu .sub .eax (.reg .esi), .alu .sbb .ebx (.reg .ebx), .alu .xor .ebx (.imm (-1)),
-    .alu .or .ebx (.reg .ebp), .mov .eax (.reg .esi), .alu .and .eax (.reg .ebx), .alu .sub .edx (.reg .eax),
-    .alu .add .ecx (.reg .ecx), .alu .sub .ecx (.reg .ebx), .alu .sub .edi (.imm 1)]
-
 def recip : Prog isa := seqs [
   .block [.mov .esi (.mem (sc oD)), .mov .edx (.reg .esi), .alu .xor .edx (.imm (-1)), .mov .ecx (.imm 0),
     .mov .edi (.imm 32)],
-  .loop (.block divBit) .ne,
+  .loop (.block R2Words.divBit) .ne,
   .block (restoreEdi L ++ [.store (sc oV) .ecx])]
 
 /-! ## A step: `r := (r 2^32 + digit) mod m` -/
@@ -80,31 +78,6 @@ def recip : Prog isa := seqs [
 def topWords : List Instr :=
   [.mov .eax (.mem (at_ .ebx 0)), .store (sc oU0) .eax, .mov .ebp (.mem (at_ .ebx 4)),
     .mov .eax (.mem (at_ .ebx 8)), .store (sc oU2) .eax]
-
-def quot : List Instr :=
-  [.mov .ecx (.mem (sc oD)), .alu .sub .ecx (.reg .eax), .alu .cmp .ecx (.imm 1), .alu .sbb .ecx (.reg .ecx),
-    .store (sc oMask) .ecx, .alu .xor .ecx (.imm (-1)), .alu .and .eax (.reg .ecx),
-    .mov .ecx (.reg .eax), .mov .eax (.mem (sc oV)), .mul .ecx, .alu .add .eax (.reg .ebp),
-    .alu .adc .edx (.reg .ecx),
-    .mov .ebx (.reg .edx), .alu .add .ebx (.imm 1), .mov .ecx (.reg .eax), .mov .eax (.reg .ebx),
-    .mov .esi (.mem (sc oD)), .mul .esi, .mov .edx (.reg .ebp), .alu .sub .edx (.reg .eax),
-    .alu .cmp .ecx (.reg .edx), .alu .sbb .eax (.reg .eax), .alu .add .ebx (.reg .eax),
-    .alu .and .eax (.reg .esi), .alu .add .edx (.reg .eax),
-    .mov .eax (.reg .esi), .alu .sub .eax (.imm 1), .alu .cmp .eax (.reg .edx), .alu .adc .ebx (.imm 0),
-    .alu .or .ebx (.mem (sc oMask)), .store (sc oQ) .ebx]
-
-def quot3 : List Instr :=
-  [.mov .ecx (.mem (sc oQ)), .mov .eax (.mem (sc oD1)), .mul .ecx, .mov .ebx (.reg .eax), .mov .esi (.reg .edx),
-    .mov .eax (.mem (sc oD)), .mul .ecx, .alu .add .eax (.reg .esi), .alu .adc .edx (.imm 0),
-    .mov .esi (.mem (sc oU0)), .alu .sub .esi (.reg .ebx), .alu .sbb .ebp (.reg .eax),
-    .mov .eax (.mem (sc oU2)), .alu .sbb .eax (.reg .edx)]
-
-def fix3 : List Instr :=
-  [.mov .edx (.reg .eax), .alu .add .edx (.reg .edx), .alu .sbb .edx (.reg .edx), .alu .add .ecx (.reg .edx),
-    .mov .ebx (.reg .edx), .alu .and .ebx (.mem (sc oD1)), .alu .and .edx (.mem (sc oD)),
-    .alu .add .esi (.reg .ebx), .alu .adc .ebp (.reg .edx), .alu .adc .eax (.imm 0)]
-
-def refine3 : List Instr := quot3 ++ fix3 ++ fix3 ++ [.store (sc oQ) .ecx]
 
 /-- `t = r 2^32 + digit - q̂ m` over `W' + 1` words: `ebx` at `m`, `esi` at `r`, `ebp` at `t`. -/
 def subPtrs (r m t : Nat) : List Instr :=
@@ -116,32 +89,21 @@ def subHead (ml : Nat) : List Instr :=
     .alu .sub .edx (.reg .eax), .store (at_ .ebp 4) .edx] ++ width4 ml .edi ++
   [.alu .sub .edi (.imm 4), .alu .add .ebx (.imm 4), .alu .add .ebp (.imm 4)]
 
-def subBody : List Instr :=
-  [.mov .eax (.mem (at_ .ebx 0)), .mul .ecx, .alu .add .eax (.mem (at_ .ebp 0)), .alu .adc .edx (.imm 0),
-    .store (at_ .ebp 4) .edx, .mov .edx (.mem (at_ .esi 0)), .alu .sub .edx (.reg .eax), .store (at_ .ebp 0) .edx,
-    .alu .sbb .eax (.reg .eax), .mov .edx (.mem (at_ .ebp 4)), .alu .sub .edx (.reg .eax), .store (at_ .ebp 4) .edx,
-    .alu .add .ebx (.imm 4), .alu .add .esi (.imm 4), .alu .add .ebp (.imm 4), .alu .sub .edi (.imm 4)]
-
 def subTop : List Instr :=
   [.mov .edx (.mem (at_ .esi 0)), .alu .sub .edx (.mem (at_ .ebp 0)), .store (at_ .ebp 0) .edx] ++ restoreEdi L
 
 def mulSub (ml r m t : Nat) : Prog isa :=
-  seqs [.block (subPtrs L r m t ++ subHead ml), .loop (.block subBody) .ne, .block (subTop L)]
+  seqs [.block (subPtrs L r m t ++ subHead ml), .loop (.block R2Words.subBody) .ne, .block (subTop L)]
 
 def addHead (ml m t : Nat) : List Instr :=
   arrPtr L .ebx m .edx ++ arrPtr L .ebp t .edx ++ width4 ml .edi ++
   [.mov .eax (.reg .ebp), .alu .add .eax (.reg .edi), .mov .eax (.mem (at_ .eax 0)), .alu .add .eax (.reg .eax),
     .alu .sbb .ecx (.reg .ecx), .mov .esi (.imm 0)]
 
-def addBody : List Instr :=
-  [.mov .eax (.mem (at_ .ebx 0)), .alu .and .eax (.reg .ecx), .alu .add .esi (.reg .esi),
-    .alu .adc .eax (.mem (at_ .ebp 0)), .store (at_ .ebp 0) .eax, .alu .sbb .esi (.reg .esi),
-    .alu .add .ebx (.imm 4), .alu .add .ebp (.imm 4), .alu .sub .edi (.imm 4)]
-
 def addTop : List Instr :=
   [.mov .eax (.mem (at_ .ebp 0)), .alu .sub .eax (.reg .esi), .store (at_ .ebp 0) .eax] ++ restoreEdi L
 
-def addBack (ml m t : Nat) : Prog isa := seqs [.block (addHead L ml m t), .loop (.block addBody) .ne, .block (addTop L)]
+def addBack (ml m t : Nat) : Prog isa := seqs [.block (addHead L ml m t), .loop (.block R2Words.addBody) .ne, .block (addTop L)]
 
 def copyBack (ml r t : Nat) : Prog isa := seqs [
   .block (arrPtr L .esi t .edx ++ arrPtr L .ebp r .edx ++ width4 ml .edi),
@@ -150,7 +112,7 @@ def copyBack (ml r t : Nat) : Prog isa := seqs [
   .block (restoreEdi L)]
 
 def step (ml r m t : Nat) : Prog isa :=
-  seqs [.block (topPtr L ml .ebx r 3 .ecx ++ topWords ++ quot ++ refine3), mulSub L ml r m t, addBack L ml m t,
+  seqs [.block (topPtr L ml .ebx r 3 .ecx ++ topWords ++ R2Words.quot h0 ++ R2Words.refine3 h0), mulSub L ml r m t, addBack L ml m t,
     copyBack L ml r t]
 
 /-! ## The remainder -/

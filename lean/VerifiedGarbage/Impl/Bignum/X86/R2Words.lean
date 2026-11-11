@@ -51,15 +51,18 @@ def seqs : List (Prog isa) → Prog isa
   | [c] => c
   | c :: cs => .seq c (seqs cs)
 
-def oP : Nat := 160
-def oD : Nat := 164
-def oV : Nat := 168
-def oMask : Nat := 172
-def oSteps : Nat := 176
-def oQ : Nat := 180
-def oU0 : Nat := 184
-def oU2 : Nat := 188
-def oD1 : Nat := 192
+/-! The scalars' header words, from a base `h`: `R2Words`' own are at `h = 160`; `quot` and
+`refine3` take the base, so that a working area with another header can run them. -/
+
+def oP (h : Nat := 160) : Nat := h
+def oD (h : Nat := 160) : Nat := h + 4
+def oV (h : Nat := 160) : Nat := h + 8
+def oMask (h : Nat := 160) : Nat := h + 12
+def oSteps (h : Nat := 160) : Nat := h + 16
+def oQ (h : Nat := 160) : Nat := h + 20
+def oU0 (h : Nat := 160) : Nat := h + 24
+def oU2 (h : Nat := 160) : Nat := h + 28
+def oD1 (h : Nat := 160) : Nat := h + 32
 
 /-- A header word. -/
 def hd (o : Nat) : MemOp := at_ .edi o
@@ -135,38 +138,38 @@ def top : List Instr := topPtr .ebx 4 4 .ecx ++ topWords
 = v u₂ + (u₂, u₁)`, the candidate `q₁ + 1` (`ebx`) and its remainder `r =
 u₁ - (q₁ + 1) d mod 2^32` (`edx`); one less and `r + d` if `r > q₀`, one
 more if then `r ≥ d`; and all ones where `u₂ = d`. -/
-def quot : List Instr :=
-  [.mov .ecx (.mem (hd oD)), .alu .sub .ecx (.reg .eax), .alu .cmp .ecx (.imm 1), .alu .sbb .ecx (.reg .ecx),
-    .store (hd oMask) .ecx, .alu .xor .ecx (.imm (-1)), .alu .and .eax (.reg .ecx),
-    .mov .ecx (.reg .eax), .mov .eax (.mem (hd oV)), .mul .ecx, .alu .add .eax (.reg .ebp),
+def quot (h : Nat := 160) : List Instr :=
+  [.mov .ecx (.mem (hd (oD h))), .alu .sub .ecx (.reg .eax), .alu .cmp .ecx (.imm 1), .alu .sbb .ecx (.reg .ecx),
+    .store (hd (oMask h)) .ecx, .alu .xor .ecx (.imm (-1)), .alu .and .eax (.reg .ecx),
+    .mov .ecx (.reg .eax), .mov .eax (.mem (hd (oV h))), .mul .ecx, .alu .add .eax (.reg .ebp),
     .alu .adc .edx (.reg .ecx),
     .mov .ebx (.reg .edx), .alu .add .ebx (.imm 1), .mov .ecx (.reg .eax), .mov .eax (.reg .ebx),
-    .mov .esi (.mem (hd oD)), .mul .esi, .mov .edx (.reg .ebp), .alu .sub .edx (.reg .eax),
+    .mov .esi (.mem (hd (oD h))), .mul .esi, .mov .edx (.reg .ebp), .alu .sub .edx (.reg .eax),
     .alu .cmp .ecx (.reg .edx), .alu .sbb .eax (.reg .eax), .alu .add .ebx (.reg .eax),
     .alu .and .eax (.reg .esi), .alu .add .edx (.reg .eax),
     .mov .eax (.reg .esi), .alu .sub .eax (.imm 1), .alu .cmp .eax (.reg .edx), .alu .adc .ebx (.imm 0),
-    .alu .or .ebx (.mem (hd oMask)), .store (hd oQ) .ebx]
+    .alu .or .ebx (.mem (hd (oMask h))), .store (hd (oQ h)) .ebx]
 
 /-- `t = U - q̂ D` over three words, into `eax`, `ebp`, `esi`, for `q̂` (180)
 into `ecx`, `U = (u₂, u₁, u₀)` (188, `ebp`, 184) and `D = (d, d₁)` (164,
 192): `q̂ D` into `edx`, `eax`, `ebx`, and its subtraction. -/
-def quot3 : List Instr :=
-  [.mov .ecx (.mem (hd oQ)), .mov .eax (.mem (hd oD1)), .mul .ecx, .mov .ebx (.reg .eax), .mov .esi (.reg .edx),
-    .mov .eax (.mem (hd oD)), .mul .ecx, .alu .add .eax (.reg .esi), .alu .adc .edx (.imm 0),
-    .mov .esi (.mem (hd oU0)), .alu .sub .esi (.reg .ebx), .alu .sbb .ebp (.reg .eax),
-    .mov .eax (.mem (hd oU2)), .alu .sbb .eax (.reg .edx)]
+def quot3 (h : Nat := 160) : List Instr :=
+  [.mov .ecx (.mem (hd (oQ h))), .mov .eax (.mem (hd (oD1 h))), .mul .ecx, .mov .ebx (.reg .eax), .mov .esi (.reg .edx),
+    .mov .eax (.mem (hd (oD h))), .mul .ecx, .alu .add .eax (.reg .esi), .alu .adc .edx (.imm 0),
+    .mov .esi (.mem (hd (oU0 h))), .alu .sub .esi (.reg .ebx), .alu .sbb .ebp (.reg .eax),
+    .mov .eax (.mem (hd (oU2 h))), .alu .sbb .eax (.reg .edx)]
 
 /-- If `t` is negative (the top bit of `eax`): `q̂ := q̂ - 1` and `t := t + D`,
 by a mask. -/
-def fix3 : List Instr :=
+def fix3 (h : Nat := 160) : List Instr :=
   [.mov .edx (.reg .eax), .alu .add .edx (.reg .edx), .alu .sbb .edx (.reg .edx), .alu .add .ecx (.reg .edx),
-    .mov .ebx (.reg .edx), .alu .and .ebx (.mem (hd oD1)), .alu .and .edx (.mem (hd oD)),
+    .mov .ebx (.reg .edx), .alu .and .ebx (.mem (hd (oD1 h))), .alu .and .edx (.mem (hd (oD h))),
     .alu .add .esi (.reg .ebx), .alu .adc .ebp (.reg .edx), .alu .adc .eax (.imm 0)]
 
 /-- `q̂` at 180 refined to the 3-by-2 estimate `min(⌊U / D⌋, 2^32 - 1)`, which
 is at least the quotient `q` and at most `q + 1`, by `quot3` and `fix3`
 twice. -/
-def refine3 : List Instr := quot3 ++ fix3 ++ fix3 ++ [.store (hd oQ) .ecx]
+def refine3 (h : Nat := 160) : List Instr := quot3 h ++ fix3 h ++ fix3 h ++ [.store (hd (oQ h)) .ecx]
 
 /-- `mulSub`'s pointers: `ebx` at `M`, `esi` at `x`, `ebp` at `t`, and
 `ecx = q̂`. -/
