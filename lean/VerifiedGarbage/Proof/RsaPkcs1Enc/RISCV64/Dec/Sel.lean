@@ -32,6 +32,8 @@ namespace VG.Proof.RsaPkcs1Enc.RISCV64.Dec
 open VG.RISCV64 VG.Impl.RsaPkcs1Enc.RISCV64.Decrypt VG.Proof.RsaPkcs1Sig.RISCV64
 open VG.Proof.RsaPkcs1Enc (firstZero)
 
+variable {pc : Bool}
+
 /-- A Boolean as a mask. -/
 def bm (b : Bool) : BitVec 64 := if b then BitVec.allOnes 64 else 0
 
@@ -164,7 +166,7 @@ theorem bytes_getD' (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) (d : Byte) :
   simp [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, hi]
 
 section
-variable {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte} {kd : List Byte}
+variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte} {kd : List Byte}
 include h
 
 /-- After the scan. -/
@@ -221,6 +223,8 @@ namespace VG.Proof.RsaPkcs1Enc.RISCV64.Dec
 open VG.RISCV64 VG.Impl.RsaPkcs1Enc.RISCV64.Decrypt VG.Proof.RsaPkcs1Sig.RISCV64
 open VG.Impl.Hmac.Stream.RISCV64 (mov)
 open VG.Proof.RsaPkcs1Enc (firstZero vOf lselOf outByte)
+
+variable {pc : Bool}
 
 /-- `-(x = 0)`, for `x < 2 ^ 63`. -/
 theorem zero_mask64 (x : BitVec 64) (hx : x.toNat < 2 ^ 63) :
