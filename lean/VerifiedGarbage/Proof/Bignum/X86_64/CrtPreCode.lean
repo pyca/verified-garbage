@@ -147,6 +147,83 @@ theorem crtCtxP_of {s : State} (h : crtContractP.pre s) :
   have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega_arith) (by omega_arith)
   exact ⟨out_scr dRs hc, fun j hj he => dRo _ hc (by rw [he]; exact contains_byte _ (by omega_arith) (by omega_arith))⟩
 
+/-- `wordsAt`'s words, `toWords V n`, as the number `V`. -/
+theorem wv_of_toWords {m : Mem} {p : Addr} {c n V : Nat}
+    (h : Spec.Rsa.wordsAt m (p + BitVec.ofNat 64 (8 * c)) n = Spec.Rsa.toWords V n) (hV : V < 2 ^ (64 * n)) :
+    wv m p (8 * c) n = V := by
+  rw [← Nat.mod_eq_of_lt hV]
+  refine wv_of_words fun i hi => ?_
+  have := congrArg (fun l => l[i]?) h
+  simp only [Spec.Rsa.wordsAt, Spec.Rsa.toWords, List.getElem?_map, List.getElem?_range hi, Option.map_some,
+    Option.some.injEq] at this
+  show (m.readW (p + BitVec.ofNat 64 (8 * c + 8 * i)) 64).toNat = _
+  rw [← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc, this, BitVec.toNat_ofNat]
+
+/-- `n` words of `pre` from `k`, of the `L` it has, outside the working space. -/
+theorem preW_of {s : State} {B : Addr} {Z k n V L : Nat}
+    (hargs : (⟨stackArgAddr s 0, 112⟩ : Region) ∈ s.rd ++ s.wr)
+    (hpre : (⟨stackArg s 12, L * 8⟩ : Region) ∈ s.rd ++ s.wr) (wPr : (stackArg s 12).toNat + L * 8 ≤ 2 ^ 64)
+    (hkn : k + n ≤ L) (dprs : (⟨stackArg s 12, L * 8⟩ : Region).Disjoint ⟨B, Z⟩)
+    (dsa : (⟨B, Z⟩ : Region).Disjoint ⟨stackArgAddr s 0, 112⟩)
+    (hv : wv s.mem (stackArg s 12) (8 * k) n = V) : PreW s B Z k n V := by
+  have hoff : ∀ d b : Nat, off (stackArg s 12) d + BitVec.ofNat 64 b = stackArg s 12 + BitVec.ofNat 64 (d + b) := by
+    intro d b; simp only [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  refine ⟨⟨_, hargs, by rw [stackArgAddr_eq s 12]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
+    fun b hb => ?_, fun j hj => ⟨_, hpre, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
+    fun j hj b hb => by rw [hoff]; exact out_scr dprs (contains_byte _ (by omega_arith) (by omega_arith)), hv⟩
+  have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * 12 + b) (len := 112) (by omega_arith) (by omega_arith))
+  rw [← stackArgAddr_add s 12 b] at this; exact this
+
+/-- `R_p² mod p` and `R_q² mod q` in `pre`, after the modulus' values (`PreW`). -/
+theorem crtPrimes_of {s : State} (h : crtContractP.pre s) :
+    PreW s (stackArg s 10) ((stackArg s 11).toNat * 8) (2 * (((s.gpr .rcx).toNat + 7) / 8))
+      (Spec.Rsa.primeWords (stackArg s 1).toNat)
+      (2 ^ (128 * Spec.Rsa.primeWords (stackArg s 1).toNat) %
+        Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)) ∧
+    PreW s (stackArg s 10) ((stackArg s 11).toNat * 8)
+      (2 * (((s.gpr .rcx).toNat + 7) / 8) + Spec.Rsa.primeWords (stackArg s 1).toNat)
+      (Spec.Rsa.primeWords (stackArg s 3).toNat)
+      (2 ^ (128 * Spec.Rsa.primeWords (stackArg s 3).toNat) %
+        Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)) := by
+  obtain ⟨c, hv, -, hpq⟩ := crtCtxP_of h
+  have hk1 := c.hk1
+  simp only [crtContractP] at h
+  sig_split h
+  rename_i hsp hrd hwr dOn dOi dOp dOq dOdp dOdq dOqi dOpr dOs dOa dns dis dps dqs ddps ddqs dqis dprs dsa
+    dRo dRn dRi dRp dRq dRdp dRdq dRqi dRpr dRs dRa wO wN wI wP wQ wDp wDq wQi wS wPr hk hol hil hpl1 hpl2
+    hql1 hql2 hdpl hqil hdql hsl hprl
+  have hargs : (⟨stackArgAddr s 0, 112⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
+  have hpre : (⟨stackArg s 12, (stackArg s 13).toNat * 8⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
+  obtain ⟨eP, eQ⟩ := VG.Proof.Rsa.privatePrecompute_primes (m := s.mem) (pre := stackArg s 12)
+    (nB := Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+    (pB := Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
+    (qB := Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)
+    (by rw [bytesAt_length, bytesAt_length, bytesAt_length, ← hprl]; exact h)
+  unfold Spec.Rsa.primeR2 at eP eQ
+  rw [bytesAt_length, bytesAt_length, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords] at eP eQ
+  rw [bytesAt_length] at eQ
+  have hw : (stackArg s 13).toNat = 2 * (((s.gpr .rcx).toNat + 7) / 8) + Spec.Rsa.primeWords (stackArg s 1).toNat +
+      Spec.Rsa.primeWords (stackArg s 3).toNat := by
+    rw [hprl]; unfold Spec.Rsa.privatePrecomputedWords Spec.Rsa.precomputedWords Spec.Rsa.modulusWords; rfl
+  have hN0 : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) ≠ 0 := by
+    have := (valid_facts hv hk1).2.1; omega_arith
+  clear dOn dOi dOp dOq dOdp dOdq dOqi dOpr dOs dOa dns dis dps dqs ddps ddqs dqis
+    dRo dRn dRi dRp dRq dRdp dRdq dRqi dRpr dRs dRa wO wN wI wP wQ wDp wDq wQi wS hk hol hil hpl1
+    hql1 hdpl hqil hdql hsl hprl h c
+  have hlt : ∀ {l : Nat} (pa : Addr), l < (s.gpr .rcx).toNat → 0 < Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem pa l) →
+      2 ^ (128 * Spec.Rsa.primeWords l) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem pa l) <
+        2 ^ (64 * Spec.Rsa.primeWords l) := fun {l} pa _ h0 => by
+    refine Nat.lt_of_lt_of_le (Nat.mod_lt _ h0) (Nat.le_trans
+      (Nat.le_of_lt (show Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem pa l) < 2 ^ (8 * l) from ?_))
+      (Nat.pow_le_pow_right (by decide) (by unfold Spec.Rsa.primeWords Spec.Rsa.modulusWords; omega)))
+    have := os2ip_lt (Spec.Rsa.bytesAt s.mem pa l)
+    rwa [bytesAt_length, pow256_eq] at this
+  rw [hw] at hpre dprs wPr
+  refine ⟨preW_of hargs hpre wPr (by omega) dprs dsa (wv_of_toWords eP (hlt _ hpl2 ?_)),
+    preW_of hargs hpre wPr (by omega) dprs dsa (wv_of_toWords eQ (hlt _ hql2 ?_))⟩
+  · exact Nat.pos_of_ne_zero fun h0 => hN0 (by rw [← hpq, h0, Nat.zero_mul])
+  · exact Nat.pos_of_ne_zero fun h0 => hN0 (by rw [← hpq, h0, Nat.mul_zero])
+
 /-! ## The code -/
 
 /-- `vg_rsa_private_crt_precomputed` with Montgomery multiplication `M`,

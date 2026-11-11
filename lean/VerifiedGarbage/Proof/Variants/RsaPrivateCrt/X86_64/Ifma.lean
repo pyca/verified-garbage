@@ -297,7 +297,7 @@ def variant : CrtImpl where
   codeP := Impl.Rsa.X86_64.CrtIfma.codeP Impl.Rsa.X86_64.CrtIfma.lay2048 CallMont.adx.mm
   depthP := by lit_decide
   okP := crtP_call_ok (by lit_decide) (Ifma.codeP_correct (.inl rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
-  ctP := crtP_call_ct (by lit_decide) (Ifma.codeP_correct (.inl rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.codeP_constantTime Mont.fnAdx (.inl rfl) (by decide +kernel))
+  ctP := crtP_call_ct (by lit_decide) (Ifma.codeP_correct (.inl rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.codeP_constantTime Mont.fnAdx (.inl rfl) (by decide +kernel) (by decide +kernel))
   nospP := noSp_of (by lit_decide)
   spSafeP := Code.all_of_allInstrs (by lit_decide)
   suffix := "_ifma"
@@ -327,7 +327,7 @@ def variant512 : CrtImpl where
   codeP := Impl.Rsa.X86_64.CrtIfma.codeP Impl.Rsa.X86_64.CrtIfma.lay2048z CallMont.adx.mm
   depthP := by lit_decide
   okP := crtP_call_ok (by lit_decide) (Ifma.codeP_correct (.inr rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
-  ctP := crtP_call_ct (by lit_decide) (Ifma.codeP_correct (.inr rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.codeP_constantTime Mont.fnAdx (.inr rfl) (by decide +kernel))
+  ctP := crtP_call_ct (by lit_decide) (Ifma.codeP_correct (.inr rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.codeP_constantTime Mont.fnAdx (.inr rfl) (by decide +kernel) (by decide +kernel))
   nospP := noSp_of (by lit_decide)
   spSafeP := Code.all_of_allInstrs (by lit_decide)
   suffix := "_ifma512"
