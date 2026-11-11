@@ -90,6 +90,41 @@ def nSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   R2Words.choice mul,
   mul aXm aX aR2]
 
+/-! ### With the key's precomputed values
+
+`vg_rsa_private_crt_precomputed` takes the key's precomputed values `pre`
+(`vg_rsa_private_precompute`'s) after `vg_rsa_private_crt`'s arguments, as
+its stack arguments 12 and 13 (`pre` and `pre_len`), and copies from them
+what `vg_rsa_private_crt` computes from the key alone. Nothing moves the
+stack pointer from where the call left it, so `pre` is read from the stack
+(`[rsp + 104]`) where it is needed. -/
+
+/-- `pre`, stack argument 12 (from 0). -/
+def preArg : MemOp := stk 13
+
+/-- `R² mod n` into `aR2` from `pre`, `w` in `r12`: its words `w` to
+`2 w - 1`, after `n`'s `w` words (what `vg_rsa_public_precompute` writes). -/
+def r2Pre : Prog isa :=
+  .seq (.block (([.mov .rsi (.mem preArg)] : List Instr) ++ eightW ++
+      ([.alu .add .rsi (.reg .rax), .mov .rbx (.mem (hdr (sArr aR2)))] : List Instr)))
+    copyWords
+
+/-- `nSetup`, with `R² mod n` from `pre` (`r2Pre`) rather than computed. -/
+def nSetupP (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
+  .block head,
+  loadBE,
+  .block [.mov .rsi (.mem (hdr sIn)), .mov .rcx (.mem (hdr sK)), .mov .rbx (.mem (hdr (sArr aX)))],
+  loadBE,
+  .block [.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aX))),
+    .mov .r10 (.mem (hdr (sArr aN))), .mov32 .rbp (.imm 0)],
+  wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)),
+    cfToRbp],
+  .block (([.store (hdr sMask) .rbp, .mov .rbx (.mem (at0 .r10))] : List Instr) ++ minv ++
+    ([.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)] : List Instr)),
+  setWord aOne .rcx,
+  r2Pre,
+  mul aXm aX aR2]
+
 /-! ## The prime workspaces -/
 
 /-- `rax := ` the end of the arrays of the workspace at `rdx`: its last
@@ -594,5 +629,15 @@ with AVX2). -/
 def code (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : Prog isa :=
   .seq (.block (entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
     (.ite .ne fail (main mul ex))
+
+/-- `main` with `R² mod n` from `pre` (`nSetupP`). -/
+def mainP (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : Prog isa :=
+  seqs (nSetupP mul ++ primesSetup ++ checks ++ qPhase mul ex ++ pPhase mul ex ++ finish)
+
+/-- `vg_rsa_private_crt_precomputed`: `code`, with `R² mod n` from the key's
+precomputed values `pre` (`mainP`). -/
+def codeP (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : Prog isa :=
+  .seq (.block (entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
+    (.ite .ne fail (mainP mul ex))
 
 end VG.Impl.Rsa.X86_64.Crt
