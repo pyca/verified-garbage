@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.Frame
 public import VerifiedGarbage.Proof.TripleDes.X86_64.CbcVerified
 public import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
 public import VerifiedGarbage.Proof.TripleDes.X86_64.FbFinalVerified
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Batch.Call
 import VerifiedGarbage.Proof.TripleDes.Scratch
 import VerifiedGarbage.Proof.TripleDes.CbcScratch
 import VerifiedGarbage.Proof.TripleDes.FbScratch
@@ -22,6 +23,12 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.FunctionsLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.FbFinalLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Lit
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.SboxLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.SboxLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
 meta import VerifiedGarbage.Spec.TripleDes.Contract
 meta import VerifiedGarbage.Spec.TripleDes.Cbc
 meta import VerifiedGarbage.Spec.TripleDes.Cfb
@@ -36,6 +43,7 @@ meta import VerifiedGarbage.Proof.TripleDes.X86_64.Frame
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.CbcVerified
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.FbFinalVerified
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.Batch.Call
 meta import VerifiedGarbage.Proof.TripleDes.Scratch
 meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
 meta import VerifiedGarbage.Proof.TripleDes.FbScratch
@@ -44,20 +52,28 @@ meta import VerifiedGarbage.Proof.TripleDes.X86_64.FunctionsLit
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.FbFinalLit
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Lit
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.SboxLit
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.SboxLit
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
 
 /-!
 # Triple DES on x86-64, without secret residue
 
-Key expansion and the CBC encryption, CFB64 encryption, CFB8, OFB and final
-functions, each followed by `Impl.Scrub.X86_64.scrubTail`
+Key expansion and the ECB, CBC encryption, CFB64 encryption, CFB8, OFB and
+final functions, each followed by `Impl.Scrub.X86_64.scrubTail`
 (`X86_64.Scrub.withScrub`), which clears the registers and the granules of
 its stack that the residue analysis (`X86_64.RTaint`) finds may hold secrets.
 Their postconditions read the memory on return only within the buffers
 (`X86_64.Scrub.PostOut`), as the frames that keep their working space on the
 stack already show (`X86_64.Verified.stackScratchWiped`'s `hpost`).
 
-The ECB functions are not here: the batched CBC and CFB64 decryption call
-them by name with their code as it is. Nor is that batched decryption
+The batched CBC and CFB64 decryption call the ECB functions' code as
+internal functions of their own (`Batch.EcbImpl.name`,
+`vg_triple_des_ecb_<direction><suffix>_core`). That batched decryption is not
+here
 (`vg_triple_des_cbc_decrypt_chained`, `vg_triple_des_cfb64_decrypt` and their
 variants): the analysis loses every base register across the call of the ECB
 function, and then fails on the XOR that follows it.
@@ -97,6 +113,10 @@ theorem ofbOut : PostOut (Spec.TripleDes.ofbContract X86_64.abi 984) (Spec.Tripl
 
 theorem ofbFinalOut : PostOut (Spec.TripleDes.ofbFinalContract X86_64.abi 984) (Spec.TripleDes.ofbFinalSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Modes.ofbFinalPost_local _)
+
+theorem ecbOut (d : Spec.TripleDes.Direction) :
+    PostOut (Spec.TripleDes.ecbContract X86_64.abi d 1040) (Spec.TripleDes.ecbSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.TripleDes.ecbPostOut_local _ d)
 
 /-! ## The registrations -/
 
@@ -270,5 +290,131 @@ def ofbFinalReg : Registration Spec.TripleDes.ofbFinalApi X86_64.target :=
     code := ofbFinalCode
     stack := 984
     verified := Proof.TripleDes.X86_64.ofbFinal_framed } ofbFinalOut [] (pubOk_nil _) (some ⟨ofbFinalKs, ofbFinalOk⟩)
+
+/-- `vg_triple_des_ecb_encrypt_avx512`'s code. -/
+abbrev ecbEncryptAvx512Code : Prog isa := Batch.avx512.code .encrypt
+
+def ecbEncryptAvx512Ks : List Nat := keep_for% Spec.TripleDes.ecbEncryptApi.sig 1040 ecbEncryptAvx512Code []
+
+theorem ecbEncryptAvx512Ok : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.TripleDes.ecbEncryptApi.sig 1040 []) ecbEncryptAvx512Code
+      h).any (RScrub.resOkB · 1040 ecbEncryptAvx512Ks (Impl.Scrub.X86_64.chunks 1040)) = true :=
+  RScrub.Analysed.ok_of ecbEncryptAvx512Ks (by taint_decide)
+
+open VG.X86_64.RScrub in
+/-- `vg_triple_des_ecb_encrypt_avx512`. -/
+def ecbEncryptAvx512Reg : Registration Spec.TripleDes.ecbEncryptApi X86_64.target :=
+  withScrub {
+    suffix := "_avx512"
+    code := ecbEncryptAvx512Code
+    stack := 1040
+    verified := Batch.avx512.verified .encrypt
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.avx512_sp .encrypt) } (ecbOut .encrypt) [] (pubOk_nil _)
+    (some ⟨ecbEncryptAvx512Ks, ecbEncryptAvx512Ok⟩)
+
+/-- `vg_triple_des_ecb_encrypt_avx2`'s code. -/
+abbrev ecbEncryptAvx2Code : Prog isa := Batch.avx2.code .encrypt
+
+def ecbEncryptAvx2Ks : List Nat := keep_for% Spec.TripleDes.ecbEncryptApi.sig 1040 ecbEncryptAvx2Code []
+
+theorem ecbEncryptAvx2Ok : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.TripleDes.ecbEncryptApi.sig 1040 []) ecbEncryptAvx2Code
+      h).any (RScrub.resOkB · 1040 ecbEncryptAvx2Ks (Impl.Scrub.X86_64.chunks 1040)) = true :=
+  RScrub.Analysed.ok_of ecbEncryptAvx2Ks (by taint_decide)
+
+open VG.X86_64.RScrub in
+/-- `vg_triple_des_ecb_encrypt_avx2`. -/
+def ecbEncryptAvx2Reg : Registration Spec.TripleDes.ecbEncryptApi X86_64.target :=
+  withScrub {
+    suffix := "_avx2"
+    code := ecbEncryptAvx2Code
+    stack := 1040
+    verified := Batch.avx2.verified .encrypt
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.avx2_sp .encrypt) } (ecbOut .encrypt) [] (pubOk_nil _)
+    (some ⟨ecbEncryptAvx2Ks, ecbEncryptAvx2Ok⟩)
+
+/-- `vg_triple_des_ecb_encrypt`'s code. -/
+abbrev ecbEncryptSseCode : Prog isa := Batch.sse.code .encrypt
+
+def ecbEncryptSseKs : List Nat := keep_for% Spec.TripleDes.ecbEncryptApi.sig 1040 ecbEncryptSseCode []
+
+theorem ecbEncryptSseOk : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.TripleDes.ecbEncryptApi.sig 1040 []) ecbEncryptSseCode
+      h).any (RScrub.resOkB · 1040 ecbEncryptSseKs (Impl.Scrub.X86_64.chunks 1040)) = true :=
+  RScrub.Analysed.ok_of ecbEncryptSseKs (by taint_decide)
+
+open VG.X86_64.RScrub in
+/-- `vg_triple_des_ecb_encrypt`. -/
+def ecbEncryptSseReg : Registration Spec.TripleDes.ecbEncryptApi X86_64.target :=
+  withScrub {
+    suffix := ""
+    code := ecbEncryptSseCode
+    stack := 1040
+    verified := Batch.sse.verified .encrypt
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.sse_sp .encrypt) } (ecbOut .encrypt) [] (pubOk_nil _)
+    (some ⟨ecbEncryptSseKs, ecbEncryptSseOk⟩)
+
+/-- `vg_triple_des_ecb_decrypt_avx512`'s code. -/
+abbrev ecbDecryptAvx512Code : Prog isa := Batch.avx512.code .decrypt
+
+def ecbDecryptAvx512Ks : List Nat := keep_for% Spec.TripleDes.ecbDecryptApi.sig 1040 ecbDecryptAvx512Code []
+
+theorem ecbDecryptAvx512Ok : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.TripleDes.ecbDecryptApi.sig 1040 []) ecbDecryptAvx512Code
+      h).any (RScrub.resOkB · 1040 ecbDecryptAvx512Ks (Impl.Scrub.X86_64.chunks 1040)) = true :=
+  RScrub.Analysed.ok_of ecbDecryptAvx512Ks (by taint_decide)
+
+open VG.X86_64.RScrub in
+/-- `vg_triple_des_ecb_decrypt_avx512`. -/
+def ecbDecryptAvx512Reg : Registration Spec.TripleDes.ecbDecryptApi X86_64.target :=
+  withScrub {
+    suffix := "_avx512"
+    code := ecbDecryptAvx512Code
+    stack := 1040
+    verified := Batch.avx512.verified .decrypt
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.avx512_sp .decrypt) } (ecbOut .decrypt) [] (pubOk_nil _)
+    (some ⟨ecbDecryptAvx512Ks, ecbDecryptAvx512Ok⟩)
+
+/-- `vg_triple_des_ecb_decrypt_avx2`'s code. -/
+abbrev ecbDecryptAvx2Code : Prog isa := Batch.avx2.code .decrypt
+
+def ecbDecryptAvx2Ks : List Nat := keep_for% Spec.TripleDes.ecbDecryptApi.sig 1040 ecbDecryptAvx2Code []
+
+theorem ecbDecryptAvx2Ok : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.TripleDes.ecbDecryptApi.sig 1040 []) ecbDecryptAvx2Code
+      h).any (RScrub.resOkB · 1040 ecbDecryptAvx2Ks (Impl.Scrub.X86_64.chunks 1040)) = true :=
+  RScrub.Analysed.ok_of ecbDecryptAvx2Ks (by taint_decide)
+
+open VG.X86_64.RScrub in
+/-- `vg_triple_des_ecb_decrypt_avx2`. -/
+def ecbDecryptAvx2Reg : Registration Spec.TripleDes.ecbDecryptApi X86_64.target :=
+  withScrub {
+    suffix := "_avx2"
+    code := ecbDecryptAvx2Code
+    stack := 1040
+    verified := Batch.avx2.verified .decrypt
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.avx2_sp .decrypt) } (ecbOut .decrypt) [] (pubOk_nil _)
+    (some ⟨ecbDecryptAvx2Ks, ecbDecryptAvx2Ok⟩)
+
+/-- `vg_triple_des_ecb_decrypt`'s code. -/
+abbrev ecbDecryptSseCode : Prog isa := Batch.sse.code .decrypt
+
+def ecbDecryptSseKs : List Nat := keep_for% Spec.TripleDes.ecbDecryptApi.sig 1040 ecbDecryptSseCode []
+
+theorem ecbDecryptSseOk : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.TripleDes.ecbDecryptApi.sig 1040 []) ecbDecryptSseCode
+      h).any (RScrub.resOkB · 1040 ecbDecryptSseKs (Impl.Scrub.X86_64.chunks 1040)) = true :=
+  RScrub.Analysed.ok_of ecbDecryptSseKs (by taint_decide)
+
+open VG.X86_64.RScrub in
+/-- `vg_triple_des_ecb_decrypt`. -/
+def ecbDecryptSseReg : Registration Spec.TripleDes.ecbDecryptApi X86_64.target :=
+  withScrub {
+    suffix := ""
+    code := ecbDecryptSseCode
+    stack := 1040
+    verified := Batch.sse.verified .decrypt
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.sse_sp .decrypt) } (ecbOut .decrypt) [] (pubOk_nil _)
+    (some ⟨ecbDecryptSseKs, ecbDecryptSseOk⟩)
 
 end VG.Proof.TripleDes.X86_64.Scrub
