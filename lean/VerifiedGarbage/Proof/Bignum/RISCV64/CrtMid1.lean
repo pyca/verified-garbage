@@ -436,21 +436,21 @@ theorem stCG_ok {pc q : Bool} {s₀ s t : State} {c : Prog isa} {Q : State → P
     (hL : Mont.word s.mem (cS s₀) oLen = BitVec.ofNat 64 l) (hl1 : 1 ≤ l) (hl : l ≤ 1024)
     (hc : ∀ u, XS s₀ s u → PR s₀ o l u →
       (pc = true → u.gpr .t6 = Mont.word s.mem (cS s₀) oR2 + BitVec.ofNat 64 (if q then 8 * cwP s₀ else 0)) →
-      u.mem = t.mem → WP isa c u Q) :
+      (pc = false → u.gpr .t2 = BitVec.ofNat 64 (wordsOf l)) → u.mem = t.mem → WP isa c u Q) :
     WP isa (.seq (.block (setupP oB oLen ++ r2Ptr pc q)) c) t Q := by
   have hm : oMask = 88 := rfl
   have hZ : 256 ≤ cZ s₀ := by have := hP.room; unfold slot at this; omega_arith
   refine WP.seq (WP.block_append_iff.mpr (WP.mono (setupP_ok (l := l) (Bp := Mont.off (cS s₀) o) (X.scr hF)
     (by rw [X.s6]; exact z0 _) (by omega_arith) hoB.2.2 (by omega_arith) (by omega_arith) hoL.2 (by omega_arith)
     (by rw [X.hdr hP (Or.inr ⟨hoB.1, hoB.2.1⟩)]; exact hB) (by rw [X.hdr hP (Or.inl hoL.1)]; exact hL) hl1 hl)
-    fun u ⟨⟨p7, pra, p5, p0', _, m⟩, k⟩ => ?_))
+    fun u ⟨⟨p7, pra, p5, p0', p2, m⟩, k⟩ => ?_))
   have XU : XS s₀ s u := X.step hP k (by decide) (by decide) (o := cZ s₀) (n := 0)
     (by rw [m]; exact Mont.Outside.refl _ _ _ _) (Or.inr (by have := hP.room; omega_arith)) (by omega_arith)
   cases pc
-  · exact WP.block_nil_iff.mpr (hc u XU ⟨p7, pra, p5, p0'⟩ nofun m)
+  · exact WP.block_nil_iff.mpr (hc u XU ⟨p7, pra, p5, p0'⟩ nofun (fun _ => p2) m)
   · refine WP.mono (r2Src_ok (q := q) (pL := cpL s₀) (XU.scr hF) (by rw [XU.s6]; exact z0 _) hZ
       (fun _ => by rw [XU.hdr hP (Or.inl (by unfold oPLen; omega_arith))]; exact hF.hPL) hP.p1
-      (by have := hP.pk; have := hP.k1024; omega_arith)) fun v ⟨⟨h6v, mv⟩, kv⟩ => hc v ?_ ?_ ?_ (mv.trans m)
+      (by have := hP.pk; have := hP.k1024; omega_arith)) fun v ⟨⟨h6v, mv⟩, kv⟩ => hc v ?_ ?_ ?_ nofun (mv.trans m)
     · exact XU.step hP kv (by decide) (by decide) (o := cZ s₀) (n := 0)
         (by rw [mv]; exact Mont.Outside.refl _ _ _ _) (Or.inr (by have := hP.room; omega_arith)) (by omega_arith)
     · exact ⟨(kv.gpr (by decide)).trans p7, (kv.gpr (by decide)).trans pra, (kv.gpr (by decide)).trans p5,
@@ -619,13 +619,47 @@ theorem R2F.c {s₀ s t : State} {o a w Pv : Nat} (F : R2F s₀) (hP : PF s₀) 
     exact Win.wv_words fun i hi =>
       Pub.Outside.word_apart O F.sep (by omega_arith) (by omega_arith) F.hS
 
+/-- `R2C` for `p`'s working space, after `stCG_ok`. -/
+theorem r2c_p {pc : Bool} {s₀ s t : State} (hP : PF s₀) (hF : Front s₀ s)
+    (hR2 : pc = true → R2F s₀ ∧ Mont.word s.mem (cS s₀) oR2 = s₀.gpr .s1) (X : XS s₀ s t)
+    (c4 : pc = true → t.gpr .t6 = Mont.word s.mem (cS s₀) oR2 + BitVec.ofNat 64 (if false then 8 * cwP s₀ else 0)) :
+    pc = true → ∃ b, Win.R2C t (Mont.off (cS s₀) (oPa s₀)) (cS s₀) (t.gpr .t6) (slot (wordsOf (cpL s₀)) 24)
+      (wordsOf (cpL s₀)) (mP s₀) b := fun hp => ⟨cb s₀, by
+  subst hp
+  have F := (hR2 rfl).1
+  have room : oPa s₀ + slot (cwP s₀) 24 + slot (cwQ s₀) 24 ≤ cZ s₀ := hP.room
+  have hwP2 : 2 ≤ cwP s₀ := two_le_wordsOf
+  have dP : cwP s₀ = wordsOf (cpL s₀) := rfl
+  have eP : slot (wordsOf (cpL s₀)) 24 = slot (cwP s₀) 24 := rfl
+  rw [c4 rfl, (hR2 rfl).2]
+  exact (R2F.c (a := 0) F hP hF X (by omega_arith) (by omega_arith) (by omega_arith)
+    (fun hb => by simp only [mP, hb, ↓reduceIte]; exact (F.val hb).1) (fun hb => by simp [mP, hb]))⟩
+
+/-- `R2C` for `q`'s working space, after `stCG_ok`. -/
+theorem r2c_q {pc : Bool} {s₀ s t : State} (hP : PF s₀) (hF : Front s₀ s)
+    (hR2 : pc = true → R2F s₀ ∧ Mont.word s.mem (cS s₀) oR2 = s₀.gpr .s1) (X : XS s₀ s t)
+    (c6 : pc = true → t.gpr .t6 = Mont.word s.mem (cS s₀) oR2 + BitVec.ofNat 64 (if true then 8 * cwP s₀ else 0)) :
+    pc = true → ∃ b, Win.R2C t (Mont.off (cS s₀) (oQa s₀)) (cS s₀) (t.gpr .t6) (slot (wordsOf (cqL s₀)) 24)
+      (wordsOf (cqL s₀)) (mQ s₀) b := fun hp => ⟨cb s₀, by
+  subst hp
+  have F := (hR2 rfl).1
+  have room : oPa s₀ + slot (cwP s₀) 24 + slot (cwQ s₀) 24 ≤ cZ s₀ := hP.room
+  have doQ : oQa s₀ = oPa s₀ + slot (cwP s₀) 24 := rfl
+  have hwQ2 : 2 ≤ cwQ s₀ := two_le_wordsOf
+  have dQ : cwQ s₀ = wordsOf (cqL s₀) := rfl
+  have eQ : slot (wordsOf (cqL s₀)) 24 = slot (cwQ s₀) 24 := rfl
+  rw [c6 rfl, (hR2 rfl).2]
+  exact (R2F.c (a := cwP s₀) F hP hF X (by omega_arith) (by omega_arith) (by omega_arith)
+    (fun hb => by simp only [mQ, hb, ↓reduceIte]; exact (F.val hb).2) (fun hb => by simp [mQ, hb]))⟩
+
 /-- `power` up to its chunks: the registers. -/
-theorem stD134_ok {s₀ s t : State} {o l xj Pv : Nat} (hP : PF s₀) (hF : Front s₀ s)
+theorem stD134G_ok {pc : Bool} {s₀ s t : State} {o l xj Pv : Nat} (hP : PF s₀) (hF : Front s₀ s)
     (X : XS s₀ s t) (v6 : wordsVal t.mem (cS s₀) (slot (cwX s₀) 6) (cwX s₀) = vC s₀) (R : PR s₀ o l t)
     (hoX : slot (cwX s₀) 8 ≤ o) (hol : o + slot (wordsOf l) 24 ≤ cZ s₀) (ho8 : o % 8 = 0)
     (hxj : xj < 6) (hPv : wordsVal t.mem (cS s₀) (slot (cwX s₀) xj) (cwX s₀) = Pv) (hPb : Pv < 256 ^ l)
-    (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1) (hlk : l < ck s₀) :
-    WP isa (Win.powerP xj (Win.reduceInP (.block []))) t fun u =>
+    (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1) (hlk : l < ck s₀)
+    (hR2 : pc = true → ∃ b, Win.R2C t (Mont.off (cS s₀) o) (cS s₀) (t.gpr .t6) (slot (wordsOf l) 24) (wordsOf l) Pv b) :
+    WP isa (Win.powerPG pc xj (Win.reduceInP (.block []))) t fun u =>
       PR s₀ o l u ∧ u.gpr .s6 = cS s₀ ∧ u.gpr .s11 = BitVec.ofNat 64 (8 * (cwX s₀ + 2)) ∧
       u.gpr .s9 = Mont.off (cS s₀) (slot (cwX s₀) 6 + 8 * (wordsOf l * 0)) ∧
       u.gpr .s10 = BitVec.ofNat 64 ((ck s₀ + 7) / 8) - BitVec.ofNat 64 (wordsOf l * 0) := by
@@ -674,8 +708,8 @@ theorem stD134_ok {s₀ s t : State} {o l xj Pv : Nat} (hP : PF s₀) (hF : Fron
     wordsVal_trunc hPv (Nat.lt_of_lt_of_le hPb (pow256_le hlw)) (by omega_arith)
   have hCw : wordsVal t.mem (cS s₀) (slot (cwX s₀) 6) (wordsOf l * nChunks ((ck s₀ + 7) / 8) (wordsOf l)) = vC s₀ :=
     wordsVal_trunc v6 (Nat.lt_of_lt_of_le hCb (Nat.pow_le_pow_right (by decide) (by omega_arith))) (by omega_arith)
-  refine Win.powerA_ok hS hwl2 (by omega_arith) (Nat.le_refl _) R.a7 R.s5 R.t0 hX hsep X.s6 X.s11
-    (by have := VG.Proof.Bignum.slot_le (w := cwX s₀) (show xj < 8 by omega_arith); omega_arith) hPw hP2 hodd
+  refine Win.powerAG_ok (pc := pc) hS hwl2 (by omega_arith) (Nat.le_refl _) R.a7 R.s5 R.t0 hX hsep X.s6 X.s11
+    (by have := VG.Proof.Bignum.slot_le (w := cwX s₀) (show xj < 8 by omega_arith); omega_arith) hPw hP2 hodd hR2
     fun s₈ c8 r8 F8 k18 => ?_
   refine Win.reduceInA_ok (k := ck s₀) c8 ((k18.gpr (by decide)).trans R.ra) (hX.congr k18.2.2) hsep
     ((k18.gpr (by decide)).trans X.s6) ((k18.gpr (by decide)).trans X.s11)
@@ -688,15 +722,16 @@ theorem stD134_ok {s₀ s t : State} {o l xj Pv : Nat} (hP : PF s₀) (hF : Fron
     I.s9, I.s10⟩
 
 /-- `power` up to the exponentiation: the registers. -/
-theorem stD136_ok {s₀ s t : State} {o l xj oD oLen Pv : Nat} {D : Addr} (hP : PF s₀) (hF : Front s₀ s)
+theorem stD136G_ok {pc : Bool} {s₀ s t : State} {o l xj oD oLen Pv : Nat} {D : Addr} (hP : PF s₀)
+    (hF : Front s₀ s)
     (X : XS s₀ s t) (v6 : wordsVal t.mem (cS s₀) (slot (cwX s₀) 6) (cwX s₀) = vC s₀) (R : PR s₀ o l t)
     (hoX : slot (cwX s₀) 8 ≤ o) (hol : o + slot (wordsOf l) 24 ≤ cZ s₀) (ho8 : o % 8 = 0)
     (hxj : xj < 6) (hPv : wordsVal t.mem (cS s₀) (slot (cwX s₀) xj) (cwX s₀) = Pv) (hPb : Pv < 256 ^ l)
     (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1) (hlk : l < ck s₀)
     (hoD : oD + 8 ≤ oMask ∧ oD % 8 = 0) (hoL : oLen + 8 ≤ oMask ∧ oLen % 8 = 0)
     (hD : Mont.word s.mem (cS s₀) oD = D) (hL : Mont.word s.mem (cS s₀) oLen = BitVec.ofNat 64 l)
- :
-    WP isa (Win.powerP xj (.seq Crt.reduceIn (.block [.load .d .s9 .s6 oD, .load .d .s10 .s6 oLen]))) t fun u =>
+    (hR2 : pc = true → ∃ b, Win.R2C t (Mont.off (cS s₀) o) (cS s₀) (t.gpr .t6) (slot (wordsOf l) 24) (wordsOf l) Pv b) :
+    WP isa (Win.powerPG pc xj (.seq Crt.reduceIn (.block [.load .d .s9 .s6 oD, .load .d .s10 .s6 oLen]))) t fun u =>
       PR s₀ o l u ∧ u.gpr .s6 = cS s₀ ∧ u.gpr .s11 = BitVec.ofNat 64 (8 * (cwX s₀ + 2)) ∧
       u.gpr .s9 = Mont.off D 0 ∧ u.gpr .s10 = BitVec.ofNat 64 l := by
   have hn := hP.nw
@@ -744,8 +779,8 @@ theorem stD136_ok {s₀ s t : State} {o l xj oD oLen Pv : Nat} {D : Addr} (hP : 
     wordsVal_trunc hPv (Nat.lt_of_lt_of_le hPb (pow256_le hlw)) (by omega_arith)
   have hCw : wordsVal t.mem (cS s₀) (slot (cwX s₀) 6) (wordsOf l * nChunks ((ck s₀ + 7) / 8) (wordsOf l)) = vC s₀ :=
     wordsVal_trunc v6 (Nat.lt_of_lt_of_le hCb (Nat.pow_le_pow_right (by decide) (by omega_arith))) (by omega_arith)
-  refine Win.powerA_ok hS hwl2 (by omega_arith) (Nat.le_refl _) R.a7 R.s5 R.t0 hX hsep X.s6 X.s11
-    (by have := VG.Proof.Bignum.slot_le (w := cwX s₀) (show xj < 8 by omega_arith); omega_arith) hPw hP2 hodd
+  refine Win.powerAG_ok (pc := pc) hS hwl2 (by omega_arith) (Nat.le_refl _) R.a7 R.s5 R.t0 hX hsep X.s6 X.s11
+    (by have := VG.Proof.Bignum.slot_le (w := cwX s₀) (show xj < 8 by omega_arith); omega_arith) hPw hP2 hodd hR2
     fun s₈ c8 r8 F8 k18 => ?_
   have hxn := (X.scr hF).nowrap
   refine WP.seq (WP.mono (Win.reduceIn_ok (k := ck s₀) (Cv := vC s₀) c8 ((k18.gpr (by decide)).trans R.ra)
@@ -820,26 +855,16 @@ theorem mid1G_ok {pc : Bool} {s₀ s : State} {c : Prog isa} {Q : State → Prop
   obtain ⟨mP1, mPo, mQ1, mQo, mPb, mQb, mQIP, mQIb⟩ := masked_facts hP
   refine stA_ok hP hF fun t₂ X2 a7 ra s5 t0 => stB_ok hP hF X2 a7 ra s5 t0 fun t₃ X3 v6 _ _ _ _ => ?_
   refine stCG_ok (pc := pc) (q := false) (o := oPa s₀) (l := cpL s₀) hP hF X3 (by decide) (by decide) hF.hBP
-    hF.hPL p1 (by omega_arith) fun t₄ X4 R4 c4 m4 => ?_
+    hF.hPL p1 (by omega_arith) fun t₄ X4 R4 c4 _ m4 => ?_
   refine WP.seq (WP.mono (stDG_ok (pc := pc) (xj := 4) (D := stackArg s₀ 2) hP hF X4 (by rw [m4]; exact v6) R4
     (Nat.le_refl _) (by omega_arith) (slot_al _ _) (by decide) X4.x4 mPb mP1 mPo p1 pk (by decide) (by decide)
-    hF.hDP hF.hPL hP.rDP hP.sDP (fun hp => ⟨cb s₀, by
-      subst hp
-      have F := (hR2 rfl).1
-      rw [c4 rfl, (hR2 rfl).2]
-      exact (R2F.c (a := 0) F hP hF X4 (by omega_arith) (by omega_arith) (by omega_arith)
-        (fun hb => by simp only [mP, hb, ↓reduceIte]; exact (F.val hb).1) (fun hb => by simp [mP, hb]))⟩))
+    hF.hDP hF.hPL hP.rDP hP.sDP (r2c_p hP hF hR2 X4 c4))
     fun t₅ ⟨X5, v6', m1v, p0v, O5, _, _, _, r1P⟩ => ?_)
   refine stCG_ok (pc := pc) (q := true) (o := oQa s₀) (l := cqL s₀) hP hF X5 (by decide) (by decide) hF.hBQ
-    hF.hQL q1 (by omega_arith) fun t₆ X6 R6 c6 m6 => ?_
+    hF.hQL q1 (by omega_arith) fun t₆ X6 R6 c6 _ m6 => ?_
   refine WP.seq (WP.mono (stDG_ok (pc := pc) (xj := 5) (D := stackArg s₀ 4) hP hF X6 (by rw [m6]; exact v6') R6
     (by omega_arith) (by omega_arith) (by have := slot_al (cwX s₀) 8; have := slot_al (cwP s₀) 24; omega_arith)
-    (by decide) X6.x5 mQb mQ1 mQo q1 qk (by decide) (by decide) hF.hDQ hF.hQL hP.rDQ hP.sDQ (fun hp => ⟨cb s₀, by
-      subst hp
-      have F := (hR2 rfl).1
-      rw [c6 rfl, (hR2 rfl).2]
-      exact (R2F.c (a := cwP s₀) F hP hF X6 (by omega_arith) (by omega_arith) (by omega_arith)
-        (fun hb => by simp only [mQ, hb, ↓reduceIte]; exact (F.val hb).2) (fun hb => by simp [mQ, hb]))⟩))
+    (by decide) X6.x5 mQb mQ1 mQo q1 qk (by decide) (by decide) hF.hDQ hF.hQL hP.rDQ hP.sDQ (r2c_q hP hF hR2 X6 c6))
     fun t₇ ⟨X7, _, m2v, _, O7, a7₇, s5₇, _, _⟩ => ?_)
   rw [m6] at O7
   refine hc t₇ ⟨X7.s6, X7.s11, a7₇, s5₇, X7.x0, X7.x5, X7.x7, ?_, ?_, ?_, m2v, X7.msk, X7.F,
