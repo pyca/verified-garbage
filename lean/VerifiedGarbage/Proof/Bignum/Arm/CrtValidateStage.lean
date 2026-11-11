@@ -187,4 +187,35 @@ theorem crt_validateStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List 
     (by simp only [CrtGeometry.words] at two ⊢; omega) (Nat.le_refl _)
     (crt_factor_fit h (i := 2) h.buffers.pShort) (crt_factor_fit h (i := 3) h.buffers.qShort)
 
+/-- The key check without `p q = n` (`CrtFn.validateGiven`), for a key whose
+factors' product is the modulus. -/
+theorem crt_validateGivenStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (pq : Spec.Rsa.os2ip (bs 2) * Spec.Rsa.os2ip (bs 3) = Spec.Rsa.os2ip (bs 0))
+    (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (workspaceWords g.words) g.words s) :
+    WP isa (.seq CrtFn.acceptInput (.seq CrtFn.loadP CrtFn.loadQ)) s fun t => CrtShared g bs t ∧
+      LayoutFrameReady g.base (workspaceWords g.words) g.words t ∧
+      numAt t.mem (State.addr (crtP g.base g.words)) g.words 0 = Spec.Rsa.os2ip (bs 2) ∧
+      numAt t.mem (State.addr (crtQ g.base g.words)) g.words 0 = Spec.Rsa.os2ip (bs 3) ∧
+      t.mem.readW (off (State.addr t.sp) 48) 32 = (if crtAccepted bs then 1 else 0) ∧
+      Frame (crtLiveMutable g s.sp) s.mem t.mem ∧ Rest roundClobbers s t := by
+  rw [WP.seq_iff]
+  refine WP.mono (crt_acceptStage_ok s h ready) ?_
+  rintro u ⟨sharedU, readyU, flagU, frameU, restU⟩
+  rw [WP.seq_iff]
+  refine WP.mono (crt_loadPStage_ok u sharedU readyU) ?_
+  rintro v ⟨sharedV, readyV, pV, _, flagV, frameV, restV⟩
+  refine WP.mono (crt_loadQStage_ok v sharedV readyV) ?_
+  rintro t ⟨sharedT, readyT, pT, qT, flagT, frameT, restT⟩
+  rw [flagV, flagU] at flagT
+  have flag : t.mem.readW (off (State.addr t.sp) 48) 32 = (if crtAccepted bs then 1 else 0) := by
+    rw [flagT]
+    by_cases hx : Spec.Rsa.os2ip (bs 1) < Spec.Rsa.os2ip (bs 0) <;>
+      by_cases hi : Spec.Rsa.os2ip (bs 6) < Spec.Rsa.os2ip (bs 2) <;>
+      simp [crtAccepted, hx, hi, pq]
+  rw [restU.sp] at frameV
+  rw [restV.sp, restU.sp] at frameT
+  exact ⟨sharedT, readyT, pT.trans pV, qT, flag,
+    frameU.trans (frameV.trans frameT), restU.trans (restV.trans restT)⟩
+
+
 end VG.Proof.Bignum.Arm

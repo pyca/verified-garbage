@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecPrecomputed
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
@@ -39,7 +40,12 @@ def artifacts (h : Proof.Sha256.AArch64.Compress) (c : Proof.Rsa.AArch64.CrtImpl
       suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
       code := Impl.RsaPkcs1Enc.AArch64.Decrypt.code (HH h) (privOf c).name (privOf c).code
       stack := decStack (privOf c)
-      verified := dec_verified h (privOf c) (dec_sat c) }]
+      verified := dec_verified h (privOf c) (dec_sat c) },
+    Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact AArch64.target {
+      suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
+      code := Impl.RsaPkcs1Enc.AArch64.Decrypt.code (HH h) (privOf c).name (privOf c).code
+      stack := decStack (privOf c)
+      verified := Proof.RsaPkcs1Enc.AArch64.decryptPrecomputed_verified h c }]
 
 end VG.Artifacts.RsaPkcs1Enc.AArch64.Sha256RsaPrivateCrt
 

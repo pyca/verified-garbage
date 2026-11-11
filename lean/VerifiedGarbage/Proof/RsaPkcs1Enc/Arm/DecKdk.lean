@@ -329,7 +329,7 @@ theorem kdkFinArgs_wp {σ s : State} (h : K4 P σ s) : WP isa (.block kdkFinArgs
       u3.other _ (by decide), r0v]
   · rw [u8.other _ (by decide), u7.gpr, dpVal, u6.gpr]
     apply BitVec.eq_of_toNat_eq
-    simp only [EP.argv, List.getD_eq_getElem?_getD, List.getElem?_cons_succ, List.getElem?_cons_zero,
+    simp only [EP.argv, List.cons_append, List.getD_eq_getElem?_getD, List.getElem?_cons_succ, List.getElem?_cons_zero,
       Option.getD_some, BitVec.toNat_add, BitVec.toNat_ofNat]
     omega
   · exact u8.gpr

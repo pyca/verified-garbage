@@ -228,10 +228,12 @@ structure PpPre (g : CrtGeometry) (s : State) : Prop where
     Region.Disjoint ⟨State.addr (g.source i), g.sourceLength i⟩ ⟨State.addr g.output, 8 * ppPreWords g⟩
   input : g.input = g.output
   qi : g.qi = g.output
+  noR2 : g.r2 = none
 
 theorem PpPre.after {g : CrtGeometry} {s t : State} {rs : List Reg} (h : PpPre g s) (rest : Rest rs s t) :
     PpPre g t :=
-  ⟨h.fit, by rw [rest.wr]; exact h.write, h.workspace, by rw [rest.sp]; exact h.stack, h.sources, h.input, h.qi⟩
+  ⟨h.fit, by rw [rest.wr]; exact h.write, h.workspace, by rw [rest.sp]; exact h.stack, h.sources, h.input, h.qi,
+    h.noR2⟩
 
 theorem PpPre.words_le {g : CrtGeometry} {s : State} (_h : PpPre g s) :
     2 ≤ ppWords g.pLength ∧ 2 ≤ ppWords g.qLength := by
@@ -262,7 +264,7 @@ theorem PpPre.dest {g : CrtGeometry} {s : State} (h : PpPre g s) (lengthLe : g.l
   have below (k : Nat) (hk : k ≤ 8 * g.words) :
       Region.Disjoint ⟨State.addr g.output, k⟩ ⟨State.addr d, n⟩ := by
     rw [addr]; exact (Offset.disjoint_base _ (by omega) (by omega)).symm
-  refine ⟨?_, ?_, h.workspace.sub_right sub, h.stack.sub_right sub, ?_⟩
+  refine ⟨?_, ?_, h.workspace.sub_right sub, h.stack.sub_right sub, ?_, h.noR2⟩
   · have e : d.toNat = g.output.toNat + o := by
       have := congrArg BitVec.toNat addr
       simp only [State.addr, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat] at this
@@ -814,7 +816,7 @@ theorem pp_body_scoped_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
       Frame (crtMutable g s.sp ++ [⟨State.addr g.output, 8 * ppPreWords g⟩]) s.mem t.mem ∧
       Rest roundClobbers s t := by
   have preE : PpPre g (crtExpanded s g.base g.words) :=
-    ⟨pre.fit, (by obtain ⟨r, hr, hc⟩ := pre.write; exact ⟨r, List.mem_append_right _ hr, hc⟩), pre.workspace, pre.stack, pre.sources, pre.input, pre.qi⟩
+    ⟨pre.fit, (by obtain ⟨r, hr, hc⟩ := pre.write; exact ⟨r, List.mem_append_right _ hr, hc⟩), pre.workspace, pre.stack, pre.sources, pre.input, pre.qi, pre.noR2⟩
   obtain ⟨tr, t, run, r0, words, frame, rest⟩ := pp_body_ok _ h.body preE cleared
   obtain ⟨write, read⟩ := crt_expanded_covers h.workspace h.body.buffers.storageFits
   refine ⟨tr, t.withRegions s.rd s.wr, ?_, r0, words, frame, ?_⟩

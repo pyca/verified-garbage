@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.R2X
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
@@ -30,37 +31,62 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 
+/-- `post` after its start: `m_q` into `aChunk`, `m_q R_p`, `h`. -/
+def postRest (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
+  .block [.mov .rax (.mem (hdr sLink)), .mov .rax (.mem (ws .rax sWsQ)),
+      .mov .rsi (.mem (ws .rax (sArr Public.aY))), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aChunk)))] ::
+    copyWords :: mul aChunk aChunk aXc :: (copyArr aXc aChunk ++
+  ((subModArr aT Public.aY aXc ++ loadArr aChunk sQinv sPlen ++ maskArr aChunk ++
+    ([mul Public.aY aT aChunk] : List (Prog isa))) ++ ([.block [leave]] : List (Prog isa))))
+
 theorem post_eq (mul : Nat → Nat → Nat → Prog isa) :
     CrtIfma.post mul = (([.block [.mov .rdi (.mem (hdr sWsP))]] : List (Prog isa)) ++ redc mul Public.aR2) ++
-      (.block [.mov .rax (.mem (hdr sLink)), .mov .rax (.mem (ws .rax sWsQ)),
-          .mov .rsi (.mem (ws .rax (sArr Public.aY))), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aChunk)))] ::
-        copyWords :: mul aChunk aChunk aXc :: (copyArr aXc aChunk ++
-      ((subModArr aT Public.aY aXc ++ loadArr aChunk sQinv sPlen ++ maskArr aChunk ++
-        ([mul Public.aY aT aChunk] : List (Prog isa))) ++ ([.block [leave]] : List (Prog isa))))) := by
-  simp only [CrtIfma.post, enterP, List.append_assoc, List.cons_append, List.nil_append]
+      postRest mul := by
+  simp only [CrtIfma.post, postRest, enterP, List.append_assoc, List.cons_append, List.nil_append]
 
-/-- `post`: with `q`'s result in its `aY`, `p`'s `aY := h` as `pPhase` leaves
-it. Only `p`'s workspace changes. -/
-theorem post_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitVec 64}
-    {N X oq op wx m1 : Nat} {qp : Addr} {qib : List Byte} {c : Bool}
-    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hN : NVals s B w minv N) (hw2 : w = 2 * wx)
+theorem postP_eq (mul : Nat → Nat → Nat → Prog isa) :
+    CrtIfma.postP mul = (([.block [.mov .rdi (.mem (hdr sWsP))]] : List (Prog isa)) ++ CrtIfma.r2X false aXc) ++
+      postRest mul := by
+  simp only [CrtIfma.postP, postRest, enterP, List.append_assoc, List.cons_append, List.nil_append]
+
+/-- What `post`'s start leaves, from `s` in `n`'s workspace: `p`'s workspace
+entered, `R_p²` modulo `p` (when `p ∣ N`) in its `aXc`, its `aY` and mask
+kept. -/
+abbrev PostHead (s : State) (B : Addr) (Z w : Nat) (mx : BitVec 64) (N X op wx : Nat) (s₁ : State) : Prop :=
+  SubCtx s₁ B Z op w wx mx ∧ XVals s₁ B op wx mx X ∧ wv s₁.mem (off B op) (slot wx aXc) wx < X ∧
+    (X ∣ N → wv s₁.mem (off B op) (slot wx aXc) wx % X = 2 ^ (64 * wx * 2) % X) ∧
+    Frm B [xRange op wx] s.mem s₁.mem ∧
+    wv s₁.mem (off B op) (slot wx Public.aY) wx = wv s.mem (off B op) (slot wx Public.aY) wx ∧
+    word s₁.mem (off B op) (8 * sMaskX) = word s.mem (off B op) (8 * sMaskX) ∧
+    Keep (mmRegs ++ ([.rdi] : List Reg)) s s₁
+
+/-- What `post` leaves. -/
+abbrev PostPost (s : State) (B : Addr) (Z w : Nat) (minv mx : BitVec 64) (X oq op wx m1 : Nat) (qib : List Byte)
+    (c : Bool) (t : State) : Prop :=
+  Good t B Z w minv ∧ WsAt t.mem B op wx mx ∧
+    XVals t B op wx mx X ∧ wv t.mem (off B op) (slot wx Public.aY) wx < X ∧
+    (c = true → ∃ a b, a % X = m1 * 2 ^ (64 * wx) % X ∧
+      b % X = wv s.mem (off B oq) (slot wx Public.aY) wx * 2 ^ (64 * wx) % X ∧ b < X ∧
+      wv t.mem (off B op) (slot wx Public.aY) wx * 2 ^ (64 * wx) % X = (a + X - b) % X * Spec.Rsa.os2ip qib % X) ∧
+    Frm B (gRanges w ++ [(slot w Public.aX, 8 * (w + 2)), xRange op wx]) s.mem t.mem ∧ Keep mmRegs s t
+
+/-- `post` with its start `c₀` (`hc₀`): with `q`'s result in its `aY`,
+`p`'s `aY := h` as `pPhase` leaves it. Only `p`'s workspace changes. -/
+theorem postWith_ok (M : Mont) {c₀ : List (Prog isa)} (hc₀ : c₀ ≠ []) {s : State} {B : Addr} {Z w : Nat}
+    {minv mx mq : BitVec 64} {N X oq op wx m1 : Nat} {qp : Addr} {qib : List Byte} {c : Bool}
+    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hw2 : w = 2 * wx)
     (hq : word s.mem B (8 * sWsQ) = off B oq) (hwsq : WsAt s.mem B oq wx mq)
     (hhiq : oq + slot wx 8 + wsTab wx ≤ Z)
     (hlo : slot w 8 ≤ op) (hhi : op + slot wx 8 + wsTab wx ≤ oq) (hwx2 : 2 ≤ wx)
-    (hsp : word s.mem B (8 * sWsP) = off B op) (hws : WsAt s.mem B op wx mx) (hX : XVals s B op wx mx X)
-    (hX1 : 1 < X) (hXodd : X % 2 = 1)
+    (hXodd : X % 2 = 1)
     (hyl : wv s.mem (off B op) (slot wx Public.aY) wx < X)
     (hyc : X ∣ N → wv s.mem (off B op) (slot wx Public.aY) wx % X = m1 * 2 ^ (64 * wx) % X)
     (hmask : word s.mem (off B op) (8 * sMaskX) = mask c) (hc : c = true → X ∣ N)
     (hqp : word s.mem B (8 * sQinv) = qp) (hql : word s.mem B (8 * sPlen) = BitVec.ofNat 64 qib.length)
     (hqs : Src s B Z qp qib) (hq1 : 1 ≤ qib.length) (hq2 : qib.length < 2 ^ 31) (hqw : (qib.length + 7) / 8 ≤ wx)
-    (hqi : c = true → Spec.Rsa.os2ip qib < X) :
-    WP isa (seqs (CrtIfma.post M.mm)) s fun t => Good t B Z w minv ∧ WsAt t.mem B op wx mx ∧
-      XVals t B op wx mx X ∧ wv t.mem (off B op) (slot wx Public.aY) wx < X ∧
-      (c = true → ∃ a b, a % X = m1 * 2 ^ (64 * wx) % X ∧
-        b % X = wv s.mem (off B oq) (slot wx Public.aY) wx * 2 ^ (64 * wx) % X ∧ b < X ∧
-        wv t.mem (off B op) (slot wx Public.aY) wx * 2 ^ (64 * wx) % X = (a + X - b) % X * Spec.Rsa.os2ip qib % X) ∧
-      Frm B (gRanges w ++ [(slot w Public.aX, 8 * (w + 2)), xRange op wx]) s.mem t.mem ∧ Keep mmRegs s t := by
+    (hqi : c = true → Spec.Rsa.os2ip qib < X)
+    (hhead : WP isa (seqs c₀) s (PostHead s B Z w mx N X op wx)) :
+    WP isa (seqs (c₀ ++ postRest M.mm)) s (PostPost s B Z w minv mx X oq op wx m1 qib c) := by
   have hs := hg.scr
   have hn := hs.nowrap
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
@@ -69,24 +95,12 @@ theorem post_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitV
   have ho64 : op < 2 ^ 64 := by omega_using [hhiq, hhi, hn, hX8]
   have hoL : op + slot wx 8 ≤ 2 ^ 64 := by omega_using [hhiq, hhi, hn]
   have hwx : wx ≤ w := by omega_using [hw2]
-  have hK := nChunks_two hw2 (by omega_using [hq1, hqw])
   have hRx : Nat.Coprime (2 ^ (64 * wx)) X := VG.Proof.Bignum.coprime_pow2 hXodd _
-  have hRR : Nat.Coprime (2 ^ (64 * wx * 2)) X := VG.Proof.Bignum.coprime_pow2 hXodd _
-  have e2 : 2 ^ (64 * w) = 2 ^ (64 * wx * 2) := by rw [hw2]; congr 1; omega_using []
   have lY := slot_le (w := wx) (show Public.aY < 8 by decide)
   have lC := slot_le (w := wx) (show aChunk < 8 by decide)
   have hC0 := hdr_lt_slot wx aChunk (show 31 < 32 by decide)
-  have hrm : ∀ r ∈ redcRanges wx, 8 * sMaskX + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * sMaskX := fun r hr => by
-    simp only [redcRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [sMaskX, sSrc, sRem, sFn, slot, hdrBytes] <;>
-      omega_using []
-  have rY := redcRanges_arr wx (j := Public.aY) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide)
-  rw [post_eq]
-  -- `aXc := R_n² R_p^-2 = R_p²`.
-  refine wp_seqs_append (by simp) (by simp [subModArr]) (WP.mono (enterRedc_ok M (j := Public.aR2) (by decide) hg
-    hw28 hlo (by omega_using [hhiq, hhi]) hwx2 hwx (by decide) hsp hws hX hX1) fun s₁ ⟨hc₁, hX₁, hlt₁, hv₁, f₁, r₁, k₁⟩ => ?_)
-  rw [hK] at hv₁
+  -- `aXc := R_p²`.
+  refine wp_seqs_append hc₀ (by simp [postRest]) (WP.mono hhead fun s₁ ⟨hc₁, hX₁, hlt₁, hv₁, f₁, hY₁, hk₁, k₁⟩ => ?_)
   have hb₁ : ∀ d, d + 8 ≤ op → word s₁.mem B d = word s.mem B d := fun d hd => f₁.x_below hd ho64
   have hab₁ : ∀ d, op + slot wx 8 + wsTab wx ≤ d → d + 8 ≤ 2 ^ 64 → word s₁.mem B d = word s.mem B d :=
     fun d hd hd' => f₁.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega_using [lC, hC0, hd]) hd'
@@ -161,12 +175,11 @@ theorem post_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitV
     have := slot_sep (w := wx) (show Public.aY ≠ aXc by decide)
     rw [ho₄c.wv (by omega_using [this]) (by omega_using [lY, hz₄]), ha₄.wv_of_not_mem (by decide) (by decide) hz₄]
     have := slot_sep (w := wx) (show Public.aY ≠ aChunk by decide)
-    rw [ho₃.wv (by omega_using [this]) (by omega_using [lY, hz₄]),
-        r₁.wv_eq (fun r hr => by have := rY r hr; omega_using [this]) (by omega_using [lY, hz₄])]
+    rw [ho₃.wv (by omega_using [this]) (by omega_using [lY, hz₄]), hY₁]
   have hM₄ : word s₄.mem (off B op) (8 * sMaskX) = mask c := by
     have hmx : 8 * sMaskX + 8 ≤ 8 * 31 + 8 := by unfold sMaskX sFn; omega_using []
     rw [ho₄c.word (.inl (by omega_arith)) (by omega_arith), ha₄.hslot (by decide), ho₃.word (.inl (by omega_arith)) (by omega_arith),
-      r₁.word_eq hrm (by omega_arith)]; exact hmask
+      hk₁]; exact hmask
   have hlt₄' : wv s₄.mem (off B op) (slot wx aXc) wx < X := by rw [hv₄c]; exact hlt₄
   have f04 : Frm B [xRange op wx] s.mem s₄.mem := (f₁.trans fx₃).trans fx₄
   have hb₄ : ∀ d, d + 8 ≤ op → word s₄.mem B d = word s.mem B d := fun d hd => f04.x_below hd ho64
@@ -187,14 +200,111 @@ theorem post_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitV
   · refine ⟨wv s.mem (off B op) (slot wx Public.aY) wx, wv s₄.mem (off B op) (slot wx aXc) wx,
       hyc (hc hct), ?_, hlt₄', by rw [hm', hh₅ hct, hY₄]⟩
     -- `aXc₁ = R_p²`, so `aXc₄ R_p ≡ m_q R_p²`.
-    have h1 : wv s₁.mem (off B op) (slot wx aXc) wx % X = 2 ^ (64 * wx * 2) % X :=
-      VG.Proof.Bignum.mont_cancel hRR (by
-        rw [hv₁, ← Nat.mod_mod_of_dvd _ (hc hct), hN.r2, Nat.mod_mod_of_dvd _ (hc hct), e2, ← Nat.pow_add])
+    have h1 := hv₁ (hc hct)
     apply VG.Proof.Bignum.mont_cancel hRx
     rw [hv₄c, hm₄, hC₃, hxc₃, Nat.mul_mod, h1, ← Nat.mul_mod, Nat.mul_assoc _ (2 ^ (64 * wx)), ← Nat.pow_add]
     congr 3; omega_arith
   · by_cases h : r = .rdi
     · subst h; rw [hg'.rdi, hg.rdi]
     · exact kall.1 r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)
+
+/-- `post`: with `q`'s result in its `aY`, `p`'s `aY := h` as `pPhase` leaves
+it. Only `p`'s workspace changes. -/
+theorem post_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitVec 64}
+    {N X oq op wx m1 : Nat} {qp : Addr} {qib : List Byte} {c : Bool}
+    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hN : NVals s B w minv N) (hw2 : w = 2 * wx)
+    (hq : word s.mem B (8 * sWsQ) = off B oq) (hwsq : WsAt s.mem B oq wx mq)
+    (hhiq : oq + slot wx 8 + wsTab wx ≤ Z)
+    (hlo : slot w 8 ≤ op) (hhi : op + slot wx 8 + wsTab wx ≤ oq) (hwx2 : 2 ≤ wx)
+    (hsp : word s.mem B (8 * sWsP) = off B op) (hws : WsAt s.mem B op wx mx) (hX : XVals s B op wx mx X)
+    (hX1 : 1 < X) (hXodd : X % 2 = 1)
+    (hyl : wv s.mem (off B op) (slot wx Public.aY) wx < X)
+    (hyc : X ∣ N → wv s.mem (off B op) (slot wx Public.aY) wx % X = m1 * 2 ^ (64 * wx) % X)
+    (hmask : word s.mem (off B op) (8 * sMaskX) = mask c) (hc : c = true → X ∣ N)
+    (hqp : word s.mem B (8 * sQinv) = qp) (hql : word s.mem B (8 * sPlen) = BitVec.ofNat 64 qib.length)
+    (hqs : Src s B Z qp qib) (hq1 : 1 ≤ qib.length) (hq2 : qib.length < 2 ^ 31) (hqw : (qib.length + 7) / 8 ≤ wx)
+    (hqi : c = true → Spec.Rsa.os2ip qib < X) :
+    WP isa (seqs (CrtIfma.post M.mm)) s (PostPost s B Z w minv mx X oq op wx m1 qib c) := by
+  have hn := hg.scr.nowrap
+  have hoL : op + slot wx 8 ≤ 2 ^ 64 := by omega_using [hhiq, hhi, hn]
+  have hwx : wx ≤ w := by omega_using [hw2]
+  have hK := nChunks_two hw2 (by omega_using [hwx2])
+  have hRR : Nat.Coprime (2 ^ (64 * wx * 2)) X := VG.Proof.Bignum.coprime_pow2 hXodd _
+  have e2 : 2 ^ (64 * w) = 2 ^ (64 * wx * 2) := by rw [hw2]; congr 1; omega_using []
+  have lY := slot_le (w := wx) (show Public.aY < 8 by decide)
+  have hrm : ∀ r ∈ redcRanges wx, 8 * sMaskX + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * sMaskX := fun r hr => by
+    simp only [redcRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [sMaskX, sSrc, sRem, sFn, slot, hdrBytes] <;>
+      omega_using []
+  have rY := redcRanges_arr wx (j := Public.aY) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide)
+  have hmx : 8 * sMaskX + 8 ≤ 8 * 31 + 8 := by unfold sMaskX sFn; omega_using []
+  have hz := hg.scr.nowrap
+  rw [post_eq]
+  refine postWith_ok M (by simp) hg hw28 hw2 hq hwsq hhiq hlo hhi hwx2 hXodd hyl hyc hmask hc hqp hql hqs hq1 hq2 hqw hqi
+    (WP.mono (enterRedc_ok M (j := Public.aR2) (by decide) hg hw28 hlo (by omega_using [hhiq, hhi]) hwx2 hwx (by decide)
+      hsp hws hX hX1) fun s₁ ⟨hc₁, hX₁, hlt₁, hv₁, f₁, r₁, k₁⟩ => ⟨hc₁, hX₁, hlt₁, fun hd => ?_,
+        f₁, r₁.wv_eq (fun r hr => by have := rY r hr; omega_using [this]) (by omega_using [lY, hoL]),
+        r₁.word_eq hrm (by omega_using [hmx, hoL]), k₁⟩)
+  rw [hK] at hv₁
+  exact VG.Proof.Bignum.mont_cancel hRR (by
+    rw [hv₁, ← Nat.mod_mod_of_dvd _ hd, hN.r2, Nat.mod_mod_of_dvd _ hd, e2, ← Nat.pow_add])
+
+/-- `postP`: `post` with `R_p² mod p` from `pre`'s words from `r2XOff false`
+(whose value `V` is it where `n`'s mask `c` is set; where it is clear the
+prime is 3). -/
+theorem postP_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitVec 64}
+    {N X oq op wx m1 V : Nat} {qp : Addr} {qib : List Byte} {c : Bool}
+    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hw2 : w = 2 * wx)
+    (hq : word s.mem B (8 * sWsQ) = off B oq) (hwsq : WsAt s.mem B oq wx mq)
+    (hhiq : oq + slot wx 8 + wsTab wx ≤ Z)
+    (hlo : slot w 8 ≤ op) (hhi : op + slot wx 8 + wsTab wx ≤ oq) (hwx2 : 2 ≤ wx)
+    (hsp : word s.mem B (8 * sWsP) = off B op) (hws : WsAt s.mem B op wx mx) (hX : XVals s B op wx mx X)
+    (hXodd : X % 2 = 1)
+    (hyl : wv s.mem (off B op) (slot wx Public.aY) wx < X)
+    (hyc : X ∣ N → wv s.mem (off B op) (slot wx Public.aY) wx % X = m1 * 2 ^ (64 * wx) % X)
+    (hmask : word s.mem (off B op) (8 * sMaskX) = mask c) (hc : c = true → X ∣ N)
+    (hqp : word s.mem B (8 * sQinv) = qp) (hql : word s.mem B (8 * sPlen) = BitVec.ofNat 64 qib.length)
+    (hqs : Src s B Z qp qib) (hq1 : 1 ≤ qib.length) (hq2 : qib.length < 2 ^ 31) (hqw : (qib.length + 7) / 8 ≤ wx)
+    (hqi : c = true → Spec.Rsa.os2ip qib < X)
+    (hM : word s.mem B (8 * Public.sMask) = mask c) (hp : PreW s B Z (r2XOff false wx) wx V)
+    (hc3 : c = false → X = 3) (hV : c = true → V % X = 2 ^ (64 * wx * 2) % X) (hVl : c = true → V < X) :
+    WP isa (seqs (CrtIfma.postP M.mm)) s (PostPost s B Z w minv mx X oq op wx m1 qib c) := by
+  have hn := hg.scr.nowrap
+  have hoL : op + slot wx 8 ≤ 2 ^ 64 := by omega_using [hhiq, hhi, hn]
+  have hwx : wx ≤ w := by omega_using [hw2]
+  have lY := slot_le (w := wx) (show Public.aY < 8 by decide)
+  have lC := slot_le (w := wx) (show aXc < 8 by decide)
+  have hC0 := hdr_lt_slot wx aXc (show 31 < 32 by decide)
+  have sYC := slot_sep (w := wx) (show Public.aY ≠ aXc by decide)
+  have hmx : 8 * sMaskX + 8 ≤ 8 * 31 + 8 := by unfold sMaskX sFn; omega_using []
+  rw [postP_eq]
+  refine postWith_ok M (by simp) hg hw28 hw2 hq hwsq hhiq hlo hhi hwx2 hXodd hyl hyc hmask hc hqp hql hqs hq1 hq2 hqw hqi ?_
+  refine wp_seqs_append (by simp) (by simp [CrtIfma.r2X, CrtIfma.r2XBlk])
+    (WP.mono (enter_ok hg hlo (by omega_using [hhiq, hhi]) (by decide) hsp hws hX) fun s₁ ⟨hc₁, hX₁, hm₁, k₁⟩ => ?_)
+  have hp₁ : PreW s₁ B Z (r2XOff false wx) wx V :=
+    hp.congr (fun x _ => by rw [hm₁]) (k₁.gpr (by decide)) k₁.2.1 k₁.2.2
+  refine WP.mono (r2X_ok (j := aXc) (c := c) (by decide) hc₁ hwx2 hwx (by omega_using [hw28]) (by rw [hm₁]; exact hM) hp₁)
+    fun s₂ ⟨hc₂, hv₂, f₂, k₂⟩ => ?_
+  have ho₂ : Outside (off B op) (slot wx aXc) (8 * (wx + 2)) s₁.mem s₂.mem := fun x hx =>
+    f₂ x fun r hr => by rw [List.mem_singleton.mp hr]; exact hx
+  rw [hm₁] at f₂ ho₂
+  have hz₁ : (off B op).toNat + slot wx 8 ≤ 2 ^ 64 := by have := hc₁.good.scr.nowrap; omega_using [this]
+  refine ⟨hc₂, hX₁.of_outside (by rw [hm₁]; exact ho₂) (by decide) (by decide) (by decide) (Nat.le_refl _) hz₁,
+    ?_, fun _ => ?_, f₂.to_x (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [lC, hC0]) hoL
+      (List.mem_singleton_self _),
+    ho₂.wv (by omega_using [sYC]) (by omega_using [lY, hz₁]),
+    f₂.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [hC0, hmx]) (by omega_using [hz₁, hmx]),
+    (k₁.trans k₂).mono (by decide)⟩
+  · rw [hv₂]
+    cases c
+    · simp only [Bool.false_eq_true, ↓reduceIte]; rw [hc3 rfl]; decide
+    · simp only [↓reduceIte]; exact hVl rfl
+  · rw [hv₂]
+    cases c
+    · simp only [Bool.false_eq_true, ↓reduceIte]
+      rw [hc3 rfl, two_pow_mod_three]
+    · simp only [↓reduceIte]
+      exact hV rfl
 
 end VG.Proof.Bignum.X86_64

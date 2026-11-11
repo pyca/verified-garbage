@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Precomputed
 import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Main
 import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
@@ -292,6 +293,13 @@ def variant : CrtImpl where
   pcNosp := noSp_of (by decide +kernel)
   pcDepth := by decide +kernel
   pcSpSafe := Code.all_of_allInstrs (by decide +kernel)
+  nameP := "vg_rsa_private_crt_precomputed" ++ "_ifma"
+  codeP := Impl.Rsa.X86_64.CrtIfma.codeP Impl.Rsa.X86_64.CrtIfma.lay2048 CallMont.adx.mm
+  depthP := by lit_decide
+  okP := crtP_call_ok (by lit_decide) (Ifma.codeP_correct (.inl rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
+  ctP := crtP_call_ct (by lit_decide) (Ifma.codeP_correct (.inl rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.codeP_constantTime Mont.fnAdx (.inl rfl) (by decide +kernel) (by decide +kernel))
+  nospP := noSp_of (by lit_decide)
+  spSafeP := Code.all_of_allInstrs (by lit_decide)
   suffix := "_ifma"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
 
@@ -315,6 +323,13 @@ def variant512 : CrtImpl where
   pcNosp := noSp_of (by decide +kernel)
   pcDepth := by decide +kernel
   pcSpSafe := Code.all_of_allInstrs (by decide +kernel)
+  nameP := "vg_rsa_private_crt_precomputed" ++ "_ifma512"
+  codeP := Impl.Rsa.X86_64.CrtIfma.codeP Impl.Rsa.X86_64.CrtIfma.lay2048z CallMont.adx.mm
+  depthP := by lit_decide
+  okP := crtP_call_ok (by lit_decide) (Ifma.codeP_correct (.inr rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
+  ctP := crtP_call_ct (by lit_decide) (Ifma.codeP_correct (.inr rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.codeP_constantTime Mont.fnAdx (.inr rfl) (by decide +kernel) (by decide +kernel))
+  nospP := noSp_of (by lit_decide)
+  spSafeP := Code.all_of_allInstrs (by lit_decide)
   suffix := "_ifma512"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
   extra := ["avx512fp16"]

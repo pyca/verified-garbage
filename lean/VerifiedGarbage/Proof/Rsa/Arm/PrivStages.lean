@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.PrivStatusPreserved
 import VerifiedGarbage.Proof.Rsa.Arm.PrivPdCall
 import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
 import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckFrame
 
 /-! # Intermediate states for composing independent secret executions -/
 
@@ -78,4 +79,25 @@ theorem pdCall_ready (v : CrtImpl) (s : State) {g : PrivGeometry} {bs : Fin 8 �
   refine WP.mono (pd_call v h.context h.slots h.args) ?_
   rintro t ⟨ht, slots, _, _, _⟩
   exact ⟨ht, slots⟩
+
+/-! ## Stages that keep a further fact `Q` -/
+
+theorem crtArgs_readyQ {g : PrivGeometry} {bs : Fin 8 → List Byte} {Q : State → Prop} (kept : Kept g Q)
+    (s : State) (h : PrivateStart g bs s ∧ Q s) : WP isa (.block crtArgs) s fun t => CrtReady g bs t ∧ Q t := by
+  refine WP.mono (crtArgs_ok s h.1.context h.1.output h.1.modulus h.1.count) ?_
+  rintro t ⟨ht, slots, args, frame, rest⟩
+  exact ⟨⟨⟨ht, slots⟩, args⟩, kept h.2 (frame.mono (by simp [bodyWrites])) rest⟩
+
+theorem crtCall_readyQ (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {Q : State → Prop}
+    (kept : Kept g Q) (s : State) (h : CrtReady g bs s ∧ Q s) :
+    WP isa (.call v.name v.code) s fun t => PrivateState g bs t ∧ Q t := by
+  refine WP.mono (crt_call v h.1.context h.1.slots h.1.args) ?_
+  rintro t ⟨ht, slots, frame, rest, _⟩
+  exact ⟨⟨ht, slots⟩, kept h.2 (frame.sub (calleeWrites_sub (crtWrites_sub h.1.context.valid))) rest⟩
+
+theorem pcArgs_readyQ {g : PrivGeometry} {bs : Fin 8 → List Byte} {Q : State → Prop} (kept : Kept g Q)
+    (s : State) (h : PrivateState g bs s ∧ Q s) : WP isa (.block pcArgs) s fun t => PcReady g bs t ∧ Q t := by
+  refine WP.mono (pcArgs_ok s h.1.context h.1.slots) ?_
+  rintro t ⟨ht, slots, args, _, frame, rest⟩
+  exact ⟨⟨⟨ht, slots⟩, args⟩, kept h.2 (frame.sub pcPrefix_sub) rest⟩
 end VG.Proof.Rsa.Arm

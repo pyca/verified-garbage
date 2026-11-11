@@ -24,6 +24,8 @@ namespace VG.Proof.RsaPkcs1Enc.PPC64LE.Dec
 open VG VG.PPC64LE VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 open VG.Proof.RsaPkcs1Enc (outByte)
 
+variable {pc : Bool}
+
 /-- The outcome, on the registers and the stack. -/
 def fnPost (s s' : State) : Prop :=
   Spec.RsaPkcs1Enc.writtenMsg s'.mem (s.gpr .r3) (s.gpr .r5) (s.gpr .r7).toNat ((s'.gpr .r3).setWidth 32)
@@ -59,7 +61,7 @@ def rsadpOf (s : State) (C : List Byte) : Spec.Rsa.Outcome :=
     (Spec.Rsa.bytesAt s.mem (stackArg s 11) (stackArg s 4).toNat)
 
 /-- The outcome, from what the private-key operation gave and the end. -/
-theorem result_ok {s : State} (h : DPre s) {x : BitVec 64} {mc : Mem} {t : State} {kd : List Byte}
+theorem result_ok {s : State} (h : DPre pc s) {x : BitVec 64} {mc : Mem} {t : State} {kd : List Byte}
     (hkd : kd = Spec.RsaPkcs1Enc.kdk (s.gpr .r7).toNat (dOf s) (cOf s))
     (hres : Spec.Rsa.writtenOutcome mc (s.gpr .r3) (s.gpr .r7).toNat (x.setWidth 32) (rsadpOf s (cOf s)))
     (hx : t.gpr .r3 = rOf x)
@@ -129,16 +131,14 @@ theorem result_ok {s : State} (h : DPre s) {x : BitVec 64} {mc : Mem} {t : State
 theorem freed_sp (b : Nat) (s : State) : (freed b s).sp = s.sp + BitVec.ofNat 64 b := rfl
 theorem freed_lr (b : Nat) (s : State) : (freed b s).lr = s.lr := rfl
 theorem freed_gpr (b : Nat) (s : State) : (freed b s).gpr = s.gpr := rfl
-theorem code_correct (s : State) (hpre : (Spec.RsaPkcs1Enc.decryptContract abi stackBytes).pre s) :
-    ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t := by
-  show WP isa code s fun t => abiPreserved s t ∧ fnPost s t
-  have h := dPre_of hpre
+theorem codeG_correct (s : State) (h : DPre pc s) (X : pc = true → PreX s) :
+    WP isa (codeG pc) s fun t => abiPreserved s t ∧ fnPost s t := by
   have hk := h.k2
-  unfold code
+  unfold codeG
   refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega) ?_
   unfold body
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
-  refine WP.seq (call_ok h A fun t₂ A₂ => ?_)
+  refine WP.seq (call_ok h X A fun t₂ A₂ => ?_)
   refine WP.seq (WP.mono (dBuild_ok h A₂) fun t₃ h₃ => ?_)
   refine WP.seq (WP.mono (hashD_ok h h₃) fun t₄ h₄ => ?_)
   refine WP.seq (WP.mono (kdkMac_ok h h₄) fun t₅ h₅ => ?_)
@@ -166,5 +166,9 @@ theorem code_correct (s : State) (hpre : (Spec.RsaPkcs1Enc.decryptContract abi s
         (Spec.Rsa.bytesAt s.mem (stackArg s 11) (stackArg s 4).toNat) := rfl
     rw [e]
     exact A₂.out
+
+theorem code_correct (s : State) (hpre : (Spec.RsaPkcs1Enc.decryptContract abi stackBytes).pre s) :
+    ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t :=
+  codeG_correct s (dPre_of hpre) nofun
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Dec

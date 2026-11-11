@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimePowerInput
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnter
-import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtStages
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowHalf
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowExp
@@ -110,8 +110,9 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
     (pair : (j = 1 ∧ i = 3) ∨ (j = 2 ∧ i = 4))
     (input : CrtPrimePowerInput child g.input (g.source i.succ) (workspaceWords g.words) g.words g.length
       (g.sourceLength i.succ) (56 + 8 * i.val) (bs 1) (bs i.succ) s)
-    (prime : numAt s.mem (State.addr child) g.words 0 = Spec.Rsa.os2ip (bs j.succ)) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa ((narrowPowerWith kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) s fun t =>
+    (prime : numAt s.mem (State.addr child) g.words 0 = Spec.Rsa.os2ip (bs j.succ))
+    (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa ((narrowPowerOf st.prime kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) s fun t =>
       let M := safePrime (s.mem.readW (off (State.addr s.sp) 48) 32).toNat (numAt s.mem (State.addr child) g.words 0)
       CrtShared g bs t ∧
       CrtPoweredState child (workspaceWords g.words) g.words M
@@ -143,7 +144,7 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   let v := narrowWords (g.sourceLength j.succ) g.words
   let M := safePrime (s.mem.readW (off (State.addr s.sp) 48) 32).toNat (numAt s.mem (State.addr child) g.words 0)
   -- The input and the cleared results at the modulus width.
-  rw [narrowPowerWith, WP.seq_iff]
+  rw [narrowPowerOf, WP.seq_iff]
   refine WP.mono (crt_factorInput_ok s h kind i input) ?_
   rintro u ⟨sharedU, memU, flagU, frameU, restU⟩
   -- The narrow workspace.
@@ -161,8 +162,10 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
     · simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega] using sharedZ.savedOperand j sharedZ.narrow_member
     · rw [flagSZ, ← prime]; exact input.accepted.valid
   rw [WP.seq_iff]
-  refine WP.mono (crt_narrowPrime_ok z primeIn (by omega)) ?_
-  rintro y ⟨readyY, modY, oddY, r2Y, flagY, frameY, restY⟩
+  refine WP.mono (st.primeOk j z primeJ hst ⟨sharedZ, primeIn⟩) ?_
+  intro y hy
+  obtain ⟨readyY, modY, oddY, r2Y, flagY, frameY, restY⟩ :
+    NarrowPrimePost (crtN g.base g.words) (workspaceWords g.words) v (bs j.succ) z y := hy
   rw [flagSZ, ← prime] at modY oddY r2Y
   have positive : 1 < M := by have := readyY.modulus; rw [modY] at this; exact this
   have sharedY := sharedZ.after_narrow (frameY.mono (by simp)) restY

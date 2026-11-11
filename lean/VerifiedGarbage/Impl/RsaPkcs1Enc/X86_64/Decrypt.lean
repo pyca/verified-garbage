@@ -313,14 +313,47 @@ def selPart : Prog isa :=
 
 /-! ## The function -/
 
+/-- Everything after the private-key operation. -/
+def afterPriv : Prog isa :=
+  .seq dBuild (.seq (hashD H) (.seq (kdkMac H) (.seq (clLoop H) (.seq (amLoop H) (.seq maskPart (.seq alPart
+    (.seq scanPart selPart)))))))
+
 /-- The body of the frame, with the private-key operation `priv` (by its
 name `privN`). -/
 def body (privN : String) (priv : Prog isa) : Prog isa :=
-  .seq (.block setup) (.seq (.call privN priv) (.seq dBuild (.seq (hashD H) (.seq (kdkMac H) (.seq (clLoop H)
-    (.seq (amLoop H) (.seq maskPart (.seq alPart (.seq scanPart selPart)))))))))
+  .seq (.block setup) (.seq (.call privN priv) (afterPriv H))
 
 /-- `vg_rsa_pkcs1_decrypt`. -/
 def code (privN : String) (priv : Prog isa) : Prog isa :=
   .frame (.alloc frameBytes) (body H privN priv) (.free frameBytes)
+
+/-! ## With the key's precomputed values
+
+`vg_rsa_pkcs1_decrypt_precomputed(…, scratch, scratch_len, pre, pre_len)`
+(`codeP`) calls `vg_rsa_private_checked_precomputed`, which takes the key's
+precomputed values `pre` and `pre_len` as its stack arguments 14 and 15, at
+`rsp + 112`, where the slots of `out` and `msg_len` are: those two are kept
+in the slots `oI` and `oNB` across the call (`stash`), which are first
+written after it, and put back after it (`restore`). -/
+
+/-- The frame's word at `d` to its word at `e`, through `r`. -/
+def mvSlot (r : Reg) (d e : Nat) : List Instr := [.mov r (.mem (sp d)), .store (sp e) r]
+
+/-- `out` and `msg_len` to the slots `oI` and `oNB`, and `pre` and `pre_len`
+(the stack arguments 17 and 18) to the call's stack arguments 14 and 15. -/
+def stash : List Instr := mvSlot .rax oOut oI ++ mvSlot .rax oML oNB ++ mvArg 17 112 ++ mvArg 18 120
+
+/-- `out` and `msg_len` back to their slots, keeping the call's result in
+`rax`. -/
+def restore : List Instr := mvSlot .r11 oI oOut ++ mvSlot .r11 oNB oML
+
+/-- The body of `codeP`'s frame. -/
+def bodyP (privN : String) (priv : Prog isa) : Prog isa :=
+  .seq (.block (setup ++ stash)) (.seq (.seq (.call privN priv) (.block restore)) (afterPriv H))
+
+/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling
+`vg_rsa_private_checked_precomputed` (`priv`) by its name. -/
+def codeP (privN : String) (priv : Prog isa) : Prog isa :=
+  .frame (.alloc frameBytes) (bodyP H privN priv) (.free frameBytes)
 
 end VG.Impl.RsaPkcs1Enc.X86_64.Decrypt

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecPrecomputed
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT5
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
@@ -84,7 +85,16 @@ def artifacts (h : Proof.Sha256.X86_64.Compress) (c : Proof.Rsa.X86_64.CrtImpl) 
       code := Impl.RsaPkcs1Enc.X86_64.Decrypt.code (HH h) (privOf c).name (privOf c).code
       stack := decStack
       verified := dec_verified h (privOf c)
-      spSafe := dec_spSafe h (privOf c) } (VG.Proof.RsaPkcs1Enc.X86_64.Dec.dec_postOut decStack))]
+      spSafe := dec_spSafe h (privOf c) } (VG.Proof.RsaPkcs1Enc.X86_64.Dec.dec_postOut decStack)),
+    Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+      suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
+      extra := c.extra
+      code := Impl.RsaPkcs1Enc.X86_64.Decrypt.codeP (HH h) (VG.Proof.RsaPkcs1Enc.X86_64.Dec.privNameP c)
+        (VG.Proof.RsaPkcs1Enc.X86_64.Dec.privCodeP c)
+      stack := decStack
+      verified := VG.Proof.RsaPkcs1Enc.X86_64.Dec.decryptPrecomputed_verified h c
+      spSafe := VG.Proof.RsaPkcs1Enc.X86_64.Dec.decP_spSafe h c }
+        (VG.Proof.RsaPkcs1Enc.X86_64.Dec.decryptPrecomputed_postOut decStack))]
 
 end VG.Artifacts.RsaPkcs1Enc.X86_64.Sha256RsaPrivateCrt
 

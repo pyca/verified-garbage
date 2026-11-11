@@ -38,17 +38,21 @@ open VG.RISCV64 VG.Impl.RsaPkcs1Enc.RISCV64.Decrypt
 open VG.Impl.Hmac.Stream.RISCV64 (Hash)
 open VG.Proof.Hmac.Stream.RISCV64 (HashOK initK updK finK initG finG)
 
+variable {pc : Bool}
+
 /-- The public data's facts. -/
-structure Same (s₁ s₂ : State) : Prop where
+structure Same (pc : Bool) (s₁ s₂ : State) : Prop where
   gpr : ∀ r ∈ argRegs, s₁.gpr r = s₂.gpr r
-  arg : ∀ i < 15, stackArg s₁ i = stackArg s₂ i
+  arg : ∀ i < nA pc, stackArg s₁ i = stackArg s₂ i
   sp : s₁.sp = s₂.sp
   n : Spec.Rsa.bytesAt s₁.mem (s₁.gpr .a3) (s₁.gpr .a4).toNat = Spec.Rsa.bytesAt s₂.mem (s₂.gpr .a3) (s₂.gpr .a4).toNat
   e : Spec.Rsa.bytesAt s₁.mem (s₁.gpr .a5) (s₁.gpr .a6).toNat = Spec.Rsa.bytesAt s₂.mem (s₂.gpr .a5) (s₂.gpr .a6).toNat
+  leak : pc = true → Spec.Rsa.privatePrecomputedLeak s₁.mem (stackArg s₁ 15) (s₁.gpr .a4).toNat =
+    Spec.Rsa.privatePrecomputedLeak s₂.mem (stackArg s₂ 15) (s₂.gpr .a4).toNat
 
 theorem same_of {s₁ s₂ : State} (h : (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pub s₁ s₂) :
-    Same s₁ s₂ := by
-  have e : stackBytes = 3439 + 1 := rfl
+    Same false s₁ s₂ := by
+  have e : stackBytes = 3455 + 1 := rfl
   rw [e] at h
   sig_pub [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, RISCV64.abi, RISCV64.argRegs,
     stackArgs_fifteen, List.append_eq] at h
@@ -59,25 +63,28 @@ theorem same_of {s₁ s₂ : State} (h : (Spec.RsaPkcs1Enc.decryptContract RISCV
   obtain ⟨hn, he⟩ := List.append_inj hl (by simp [Proof.Rsa.bytesAt_length', h7])
   refine ⟨fun r hr => ?_, fun i hi => ?_, hsp,
     ((List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hn),
-    ((List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 he)⟩
+    ((List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 he), nofun⟩
   · simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h3, h4, h5, h6, h7, h8, h9, h10]
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
+  · simp only [nA, Bool.false_eq_true, ↓reduceIte] at hi
+    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
       i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14]
 
 /-- Two entry states with the same public data. -/
-structure Env where
+structure Env (pc : Bool) where
   s₁ : State
   s₂ : State
-  h₁ : DPre s₁
-  h₂ : DPre s₂
-  S : Same s₁ s₂
+  h₁ : DPre pc s₁
+  h₂ : DPre pc s₂
+  S : Same pc s₁ s₂
+  x₁ : pc = true → PreX s₁
+  x₂ : pc = true → PreX s₂
 
 /-- Run `i` satisfies `P sᵢ`. -/
-def Rel (e : Env) (P : State → State → Prop) (a b : State) : Prop := P e.s₁ a ∧ P e.s₂ b
+def Rel (e : Env pc) (P : State → State → Prop) (a b : State) : Prop := P e.s₁ a ∧ P e.s₂ b
 
 /-- Two runs whose stack pointers and registers `rs` agree. -/
 def AgreeOn (rs : List Reg) (a b : State) : Prop := a.sp = b.sp ∧ ∀ r ∈ rs, a.gpr r = b.gpr r
@@ -89,18 +96,18 @@ theorem rel_of {rs : List Reg} {c : Prog isa} {hc : VG.Taint.Hint VG.RISCV64.Tai
     (hp a b hab).2 r (by simpa [VG.RISCV64.Taint.ofRegs] using hr)⟩) h
 
 section
-variable {e : Env}
+variable {e : Env pc}
 
-theorem Env.r (e : Env) {r : Reg} (hr : r ∈ argRegs := by decide) : e.s₁.gpr r = e.s₂.gpr r := e.S.gpr r hr
-theorem Env.arg (e : Env) {i : Nat} (hi : i < 15 := by decide) : stackArg e.s₁ i = stackArg e.s₂ i := e.S.arg i hi
-theorem Env.fb_eq (e : Env) : fb e.s₁ = fb e.s₂ := by
+theorem Env.r (e : Env pc) {r : Reg} (hr : r ∈ argRegs := by decide) : e.s₁.gpr r = e.s₂.gpr r := e.S.gpr r hr
+theorem Env.arg (e : Env pc) {i : Nat} (hi : i < 15 := by decide) : stackArg e.s₁ i = stackArg e.s₂ i := e.S.arg i (lt_nA hi)
+theorem Env.fb_eq (e : Env pc) : fb e.s₁ = fb e.s₂ := by
   show e.s₁.sp - _ = e.s₂.sp - _; rw [e.S.sp]
-theorem Env.scA_eq (e : Env) (a : Nat) : scA e.s₁ a = scA e.s₂ a := by
+theorem Env.scA_eq (e : Env pc) (a : Nat) : scA e.s₁ a = scA e.s₂ a := by
   show stackArg e.s₁ 13 + _ = stackArg e.s₂ 13 + _; rw [e.arg]
 
 /-- A step, from what correctness gives of each run. -/
 theorem rel_post {P P' : State → State → Prop} {c : Prog isa} (hct : RelCT isa (Rel e P) c fun _ _ => True)
-    (hw : ∀ s u, DPre s → P s u → WP isa c u (P' s)) : RelCT isa (Rel e P) c (Rel e P') := by
+    (hw : ∀ s u, DPre pc s → P s u → WP isa c u (P' s)) : RelCT isa (Rel e P) c (Rel e P') := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   obtain ⟨ht, -⟩ := hct _ _ _ _ _ _ hp e₁ e₂
   obtain ⟨_, u₁, x₁, y₁⟩ := hw _ _ e.h₁ hp.1
@@ -114,7 +121,7 @@ theorem rel_step {P P' : State → State → Prop} {c : Prog isa} (rs : List Reg
     {hc : VG.Taint.Hint VG.RISCV64.Taint.T}
     (h : (taint.check (VG.RISCV64.Taint.ofRegs rs) c hc).isSome = true)
     (hpin : ∀ a b, P e.s₁ a → P e.s₂ b → AgreeOn rs a b)
-    (hw : ∀ s u, DPre s → P s u → WP isa c u (P' s)) : RelCT isa (Rel e P) c (Rel e P') :=
+    (hw : ∀ s u, DPre pc s → P s u → WP isa c u (P' s)) : RelCT isa (Rel e P) c (Rel e P') :=
   rel_post (rel_of h fun a b hab => hpin a b hab.1 hab.2) hw
 
 /-- Two `Post` states agree on the stack pointer and on what `Mid` fixes. -/
@@ -149,7 +156,7 @@ arguments, as functions of the entry state. -/
 def PostAt (s t : State) : Prop := ∃ R EM, Post s R EM t
 
 section
-variable {e : Env}
+variable {e : Env pc}
 
 /-- `init` of the state at `scratch + a`. -/
 theorem shaInit_rel {P : State → State → Prop} {a : Nat} (ha : a + 96 ≤ scrBytes)
@@ -194,7 +201,7 @@ theorem shaUpd_rel {P : State → State → Prop} {a : Nat} (ha : a + 96 ≤ scr
   have U₂ := hp _ _ p₂
   obtain ⟨_, _, P₁⟩ := U₁.post
   obtain ⟨_, _, P₂⟩ := U₂.post
-  have pre : ∀ {s t : State}, DPre s → (P' : ∃ R EM, Post s R EM t) → UpdAt s t a (dat s) (len s) →
+  have pre : ∀ {s t : State}, DPre pc s → (P' : ∃ R EM, Post s R EM t) → UpdAt s t a (dat s) (len s) →
       (updK sha256.S sha256.F hH.SH.Repr).pre (t.callEntry.withRegions [⟨dat s, len s⟩] [scR s a 96]) :=
     fun {s t} h ⟨_, _, P⟩ U => by
       have c0 : t.callEntry.gpr .a0 = t.gpr .a0 := State.callEntry_gpr _ (by decide)
@@ -221,7 +228,7 @@ theorem shaFin_rel {P : State → State → Prop} {a o : Nat} (ha : a + 96 ≤ s
   refine RelCT.callEx hH.fin fin_ct fun t₁ t₂ ⟨p₁, p₂⟩ => ?_
   obtain ⟨⟨_, _, P₁⟩, g₁, k₁, l₁⟩ := hp _ _ p₁
   obtain ⟨⟨_, _, P₂⟩, g₂, k₂, l₂⟩ := hp _ _ p₂
-  have pre : ∀ {s t : State} {R : BitVec 64} {EM : List Byte}, DPre s → Post s R EM t → t.gpr .a0 = scA s a →
+  have pre : ∀ {s t : State} {R : BitVec 64} {EM : List Byte}, DPre pc s → Post s R EM t → t.gpr .a0 = scA s a →
       t.gpr .a2 = scA s o →
       (finK sha256.S sha256.F sha256.D hH.SH.Repr hH.SH.H.hash).pre
         (t.callEntry.withRegions [] [scR s a 96, scR s o 32]) := fun {s t R EM} h P g k => by
@@ -262,7 +269,7 @@ theorem macInit_rel {P : State → State → Prop} {k : Nat} (hk : k + 32 ≤ sc
   obtain ⟨⟨_, _, P₂⟩, a₂, b₂, c₂, d₂⟩ := hp _ _ p₂
   have hi : sSt + 96 ≤ scrBytes := by decide
   have hu : sOuter + 96 ≤ scrBytes := by decide
-  have pre : ∀ {s t : State} {R : BitVec 64} {EM : List Byte}, DPre s → Post s R EM t → t.gpr .a0 = scA s sSt →
+  have pre : ∀ {s t : State} {R : BitVec 64} {EM : List Byte}, DPre pc s → Post s R EM t → t.gpr .a0 = scA s sSt →
       t.gpr .a1 = scA s sOuter → t.gpr .a2 = scA s k → t.gpr .a3 = BitVec.ofNat 64 32 →
       (initG hH.SH (sha256.ibytes + sha256.F)).pre
         (t.callEntry.withRegions [scR s k 32] [scR s sSt 96, scR s sOuter 96]) := fun {s t R EM} h P g0 g1 g2 g3 => by
@@ -275,7 +282,7 @@ theorem macInit_rel {P : State → State → Prop} {k : Nat} (hk : k + 32 ≤ sc
       State.withRegions_sp, State.callEntry_sp, c0, c1, c2, c3, P.sp, hS]
     exact ⟨trivial, trivial, scDisj (.inl (by decide)) hi hu, scDisj (.inr (by unfold sSt sOuter at *; omega)) hk hi,
       scDisj (.inr hk1) hk hu, fb_al h, fb_ge h X, lowSc h X hi, lowSc h X hu, lowSc h X hk⟩
-  have cov : ∀ {s t : State} {R : BitVec 64} {EM : List Byte}, DPre s → Post s R EM t →
+  have cov : ∀ {s t : State} {R : BitVec 64} {EM : List Byte}, DPre pc s → Post s R EM t →
       Covers ([scR s k 32] ++ [scR s sSt 96, scR s sOuter 96]) (t.rd ++ t.wr) ∧
       Covers [scR s sSt 96, scR s sOuter 96] t.wr := fun {s t R EM} h P =>
     ⟨Covers.append_left (Covers.right (scCov h P.wr hk))
@@ -303,7 +310,7 @@ theorem macFin_rel {P : State → State → Prop} {o : Nat} (ho : o + 32 ≤ scr
   obtain ⟨⟨_, _, P₂⟩, a₂, b₂, c₂, d₂⟩ := hp _ _ p₂
   have hi : sSt + 96 ≤ scrBytes := by decide
   have hu : sOuter + 96 ≤ scrBytes := by decide
-  have pre : ∀ {s t : State} {R : BitVec 64} {EM : List Byte}, DPre s → Post s R EM t → t.gpr .a0 = scA s sSt →
+  have pre : ∀ {s t : State} {R : BitVec 64} {EM : List Byte}, DPre pc s → Post s R EM t → t.gpr .a0 = scA s sSt →
       t.gpr .a1 = scA s sOuter → t.gpr .a3 = scA s o →
       (finG hH.SH (sha256.fbytes + sha256.F)).pre
         (t.callEntry.withRegions [scR s sOuter 96] [scR s sSt 96, scR s o 32]) := fun {s t R EM} h P g0 g1 g3 => by
@@ -316,7 +323,7 @@ theorem macFin_rel {P : State → State → Prop} {o : Nat} (ho : o + 32 ≤ scr
       State.withRegions_sp, State.callEntry_sp, c0, c1, c3, P.sp, hS, hD]
     exact ⟨trivial, trivial, scDisj (.inl (by decide)) hi hu, scDisj (.inl (by unfold sSt sOuter at *; omega)) hi ho,
       scDisj (.inl ho1) hu ho, fb_al h, fb_ge h X, lowSc h X hi, lowSc h X hu, lowSc h X ho⟩
-  have cov : ∀ {s t : State} {R : BitVec 64} {EM : List Byte}, DPre s → Post s R EM t →
+  have cov : ∀ {s t : State} {R : BitVec 64} {EM : List Byte}, DPre pc s → Post s R EM t →
       Covers ([scR s sOuter 96] ++ [scR s sSt 96, scR s o 32]) (t.rd ++ t.wr) ∧
       Covers [scR s sSt 96, scR s o 32] t.wr := fun {s t R EM} h P =>
     ⟨Covers.append_left (Covers.right (scCov h P.wr hu))

@@ -462,7 +462,7 @@ include P
 
 theorem out_eq : outR s = oR s := by simp only [outR, oR, kk, P.ok]
 
-theorem preP_at {t : State} {em : List Byte} (A : AtPriv s em t) : Rsa.RISCV64.Priv.PreP (callE s t) := by
+theorem preP_at {t : State} {em : List Byte} (A : AtPriv s em t) : Rsa.RISCV64.Priv.PreP false (callE s t) := by
   have hk : kk s ≤ 1024 := P.k2
   have sa := fun i hi => callE_stackArg A (i := i) hi
   have hsp : (callE s t).sp = pb s := A.sp
@@ -499,7 +499,7 @@ theorem preP_at {t : State} {em : List Byte} (A : AtPriv s em t) : Rsa.RISCV64.P
   have hDQ : Rsa.RISCV64.Priv.dqR (callE s t) = dqR s := by simp only [Rsa.RISCV64.Priv.dqR, s6, s7]
   have hQI : Rsa.RISCV64.Priv.qiR (callE s t) = qiR s := by simp only [Rsa.RISCV64.Priv.qiR, s8, s9]
   have hS : Rsa.RISCV64.Priv.sR (callE s t) = rsR s := by simp only [Rsa.RISCV64.Priv.sR, s10, l11]
-  have hA : Rsa.RISCV64.Priv.aR (callE s t) = PB s := by
+  have hA : Rsa.RISCV64.Priv.aR false (callE s t) = PB s := by
     simp only [Rsa.RISCV64.Priv.aR, stackArgAddr, hsp, Nat.mul_zero, BitVec.add_zero]; rfl
   have hK : Rsa.RISCV64.Priv.kR (callE s t) = pkR s := by
     show Region.mk ((callE s t).sp - BitVec.ofNat 64 Impl.Rsa.RISCV64.Priv.frameBytes) _ = _
@@ -525,7 +525,7 @@ theorem preP_at {t : State} {em : List Byte} (A : AtPriv s em t) : Rsa.RISCV64.P
     sp16 := by rw [hsp]; exact pb_al P
     sp1 := by rw [hsp, pbt]; unfold Impl.Rsa.RISCV64.Priv.frameBytes; omega
     sp2 := by rw [hsp, pbt]; omega
-    hrd := by rw [hN, hE, hI, hP, hQ, hDP, hDQ, hQI, hA]; rfl
+    hrd := by rw [Rsa.RISCV64.Priv.rdL, hN, hE, hI, hP, hQ, hDP, hDQ, hQI, hA]; rfl
     hwr := by rw [hO, hS, ← out_eq P]; rfl
     on := by rw [hO, hN]; exact P.on
     oe := by rw [hO, hE]; exact P.oe

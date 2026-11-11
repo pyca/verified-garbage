@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
+public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.RISCV64.Decrypt
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -10,9 +11,11 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 # `vg_rsa_pkcs1_decrypt` on RISC-V: the precondition
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaPkcs1Enc/PPC64LE/DecPre.lean`): `DPre s`, the shared contract's
-precondition (`decryptContract`, with the stack of the frame and of
-`vg_rsa_private_checked`'s, `stackBytes`), by name (`dPre_of`).
+(`Proof/RsaPkcs1Enc/PPC64LE/DecPre.lean`): `DPre pc s`, the shared
+contract's precondition (`decryptContract`, or with `pc`
+`decryptPrecomputedContract`, with the stack of the frame and of
+`vg_rsa_private_checked`'s, `stackBytes`), by name (`dPre_of`); with `pc`,
+what it says of `pre` (`PreX`).
 -/
 
 @[expose] public section
@@ -43,7 +46,14 @@ abbrev dpR (s : State) : Region := ⟨stackArg s 7, (stackArg s 8).toNat⟩
 abbrev dqR (s : State) : Region := ⟨stackArg s 9, (stackArg s 10).toNat⟩
 abbrev qiR (s : State) : Region := ⟨stackArg s 11, (stackArg s 12).toNat⟩
 abbrev sR (s : State) : Region := ⟨stackArg s 13, (stackArg s 14).toNat * 8⟩
-abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 120⟩
+/-- Our stack arguments: fifteen, or with `pc` seventeen. -/
+abbrev aR (pc : Bool) (s : State) : Region := ⟨stackArgAddr s 0, if pc then 136 else 120⟩
+/-- With `pc`, the key's precomputed values, `pre_len` words. -/
+abbrev preR (s : State) : Region := ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩
+
+/-- The buffers the function reads. -/
+abbrev rdL (pc : Bool) (s : State) : List Region :=
+  [nR s, eR s, dR s, iR s, pR s, qR s, dpR s, dqR s, qiR s] ++ (if pc then [preR s] else []) ++ [aR pc s]
 
 /-- The base of the frame. -/
 abbrev fb (s : State) : Addr := s.sp - BitVec.ofNat 64 Impl.RsaPkcs1Enc.RISCV64.Decrypt.frameBytes
@@ -52,11 +62,11 @@ abbrev fb (s : State) : Addr := s.sp - BitVec.ofNat 64 Impl.RsaPkcs1Enc.RISCV64.
 abbrev kR (s : State) : Region := ⟨s.sp - BitVec.ofNat 64 stackBytes, stackBytes⟩
 
 /-- The precondition, by name. -/
-structure DPre (s : State) : Prop where
+structure DPre (pc : Bool) (s : State) : Prop where
   sp16 : s.sp.toNat % 16 = 0
   sp1 : stackBytes ≤ s.sp.toNat
-  sp2 : s.sp.toNat + 120 ≤ 2 ^ 64
-  hrd : s.rd = [nR s, eR s, dR s, iR s, pR s, qR s, dpR s, dqR s, qiR s, aR s]
+  sp2 : s.sp.toNat + (if pc then 136 else 120) ≤ 2 ^ 64
+  hrd : s.rd = rdL pc s
   hwr : s.wr = [oR s, mlR s, sR s]
   om : (oR s).Disjoint (mlR s)
   on : (oR s).Disjoint (nR s)
@@ -69,7 +79,7 @@ structure DPre (s : State) : Prop where
   odq : (oR s).Disjoint (dqR s)
   oqi : (oR s).Disjoint (qiR s)
   os : (oR s).Disjoint (sR s)
-  oa : (oR s).Disjoint (aR s)
+  oa : (oR s).Disjoint (aR pc s)
   mn : (mlR s).Disjoint (nR s)
   me : (mlR s).Disjoint (eR s)
   md : (mlR s).Disjoint (dR s)
@@ -80,7 +90,7 @@ structure DPre (s : State) : Prop where
   mdq : (mlR s).Disjoint (dqR s)
   mqi : (mlR s).Disjoint (qiR s)
   ms : (mlR s).Disjoint (sR s)
-  ma : (mlR s).Disjoint (aR s)
+  ma : (mlR s).Disjoint (aR pc s)
   ns : (nR s).Disjoint (sR s)
   es : (eR s).Disjoint (sR s)
   ds : (dR s).Disjoint (sR s)
@@ -90,7 +100,7 @@ structure DPre (s : State) : Prop where
   dps : (dpR s).Disjoint (sR s)
   dqs : (dqR s).Disjoint (sR s)
   qis : (qiR s).Disjoint (sR s)
-  sa : (sR s).Disjoint (aR s)
+  sa : (sR s).Disjoint (aR pc s)
   ko : (kR s).Disjoint (oR s)
   km : (kR s).Disjoint (mlR s)
   kn : (kR s).Disjoint (nR s)
@@ -103,7 +113,7 @@ structure DPre (s : State) : Prop where
   kdq : (kR s).Disjoint (dqR s)
   kqi : (kR s).Disjoint (qiR s)
   ks : (kR s).Disjoint (sR s)
-  ka : (kR s).Disjoint (aR s)
+  ka : (kR s).Disjoint (aR pc s)
   wo : (s.gpr .a0).toNat + (s.gpr .a1).toNat ≤ 2 ^ 64
   wm : (s.gpr .a2).toNat + 8 ≤ 2 ^ 64
   wn : (s.gpr .a3).toNat + (s.gpr .a4).toNat ≤ 2 ^ 64
@@ -135,8 +145,28 @@ structure DPre (s : State) : Prop where
   mal : (s.gpr .a2).toNat % 8 = 0
   al : (stackArg s 13).toNat % 8 = 0
 
-theorem dPre_of {s : State} (h : (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pre s) : DPre s := by
-  have e : stackBytes = 3439 + 1 := rfl
+/-- With `pc`, `pre` holds the key's precomputed values. -/
+abbrev HypD (pc : Bool) (s : State) : Prop :=
+  pc = true → Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat)
+      (Spec.Rsa.bytesAt s.mem (stackArg s 3) (stackArg s 4).toNat)
+      (Spec.Rsa.bytesAt s.mem (stackArg s 5) (stackArg s 6).toNat) =
+    some (Spec.Rsa.wordsAt s.mem (stackArg s 15) (stackArg s 16).toNat)
+
+/-- What `vg_rsa_pkcs1_decrypt_precomputed`'s precondition adds: `pre`'s facts. -/
+structure PreX (s : State) : Prop where
+  oP : (oR s).Disjoint (preR s)
+  mP : (mlR s).Disjoint (preR s)
+  sP : (sR s).Disjoint (preR s)
+  kP : (kR s).Disjoint (preR s)
+  wP : (stackArg s 15).toNat + (stackArg s 16).toNat * 8 ≤ 2 ^ 64
+  pl : (stackArg s 16).toNat =
+    Spec.Rsa.privatePrecomputedWords (s.gpr .a4).toNat (stackArg s 4).toNat (stackArg s 6).toNat
+  alP : (stackArg s 15).toNat % 8 = 0
+  hyp : HypD true s
+
+theorem dPre_of {s : State} (h : (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pre s) :
+    DPre false s := by
+  have e : stackBytes = 3455 + 1 := rfl
   rw [e] at h
   sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, RISCV64.abi, RISCV64.argRegs,
     stackArgs_fifteen, List.append_eq, List.range, List.range.loop] at h
@@ -144,7 +174,7 @@ theorem dPre_of {s : State} (h : (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi s
     mdq, mqi, ms, ma, ns, es, ds, is, ps, qs, dps, dqs, qis, sa, ko, km, kn, ke, kd, ki, kp, kq, kdp, kdq, kqi, ks,
     ka, wo, wm, wn, we, wd, wi, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, h1, hi, e1, e2, d1, d2, p1, p2, q1, q2, h8, h12,
     h10, hs, mal, al⟩ := h
-  exact ⟨sp16, sp1, sp2, hrd, hwr, om, on, oe, od, oi, op, oq, odp, odq, oqi, os, oa, mn, me, md, mi, mp, mq, mdp,
+  exact ⟨sp16, sp1, by simp only [Bool.false_eq_true, ↓reduceIte]; omega, hrd, hwr, om, on, oe, od, oi, op, oq, odp, odq, oqi, os, oa, mn, me, md, mi, mp, mq, mdp,
     mdq, mqi, ms, ma, ns, es, ds, is, ps, qs, dps, dqs, qis, sa, ko, km, kn, ke, kd, ki, kp, kq, kdp, kdq, kqi, ks,
     ka, wo, wm, wn, we, wd, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h1, hi, e1, e2, d1, d2, p1, p2, q1, q2, h8, h12,
     h10, hs, mal, al⟩

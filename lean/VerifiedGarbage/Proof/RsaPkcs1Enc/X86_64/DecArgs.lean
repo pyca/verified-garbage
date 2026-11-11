@@ -45,7 +45,7 @@ theorem DataOk.c {s : State} (hp : DPre s) : DataOk s (stackArg s 3) (kOf s) := 
   have hl := hp.hil
   have hk2 := hp.k2
   have hC : (⟨stackArg s 3, kOf s⟩ : Region) = ⟨stackArg s 3, (stackArg s 4).toNat⟩ := by rw [hl]
-  refine ⟨Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr, hC, hp.hrd]; simp),
+  refine ⟨Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr, hC]; exact hp.hrd _ (by simp)),
     fun a n han => ?_, by rw [hC]; exact hp.dKi.sub_left (below_sub s (by decide)), by unfold kOf; omega⟩
   rw [hC]
   exact hp.dis.sub_right (sub_trans (scSub (by unfold sMsg at han; unfold scrBytes; omega)) (Region.sub_prefix hS1))

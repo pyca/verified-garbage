@@ -33,6 +33,8 @@ open VG.RISCV64 VG.Impl.RsaPkcs1Enc.RISCV64.Decrypt VG.Proof.RsaPkcs1Sig.RISCV64
 open VG.Impl.Hmac.Stream.RISCV64 (mov)
 open VG.Proof.RsaPkcs1Enc (firstZero outByte)
 
+variable {pc : Bool}
+
 /-- `AM`. -/
 abbrev amOf (s : State) (kd : List Byte) : List Byte :=
   Spec.RsaPkcs1Enc.irprf kd (Spec.RsaPkcs1Enc.ascii "message") (s.gpr .a4).toNat
@@ -60,7 +62,7 @@ structure Fin (s : State) (R : BitVec 64) (EM AM : List Byte) (v ok : Bool) (len
   ml : u.mem.readW (s.gpr .a2) 64 = BitVec.ofNat 64 len &&& bm ok
 
 section
-variable {s : State} (h : DPre s) {R : BitVec 64}
+variable {s : State} (h : DPre pc s) {R : BitVec 64}
 include h
 
 /-- `*msg_len := len & ok`; then `AM` in `a0` and the index zero. -/
@@ -172,6 +174,8 @@ namespace VG.Proof.RsaPkcs1Enc.RISCV64.Dec
 open VG.RISCV64 VG.Impl.RsaPkcs1Enc.RISCV64.Decrypt VG.Proof.RsaPkcs1Sig.RISCV64
 open VG.Proof.RsaPkcs1Enc (outByte)
 
+variable {pc : Bool}
+
 /-- The outcome, on the registers and the stack. -/
 def fnPost (s s' : State) : Prop :=
   Spec.RsaPkcs1Enc.writtenMsg s'.mem (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat ((s'.gpr .a0).setWidth 32)
@@ -212,7 +216,7 @@ def rsadpOf (s : State) (C : List Byte) : Spec.Rsa.Outcome :=
     (Spec.Rsa.bytesAt s.mem (stackArg s 11) (stackArg s 4).toNat)
 
 /-- The outcome, from what the private-key operation gave and the end. -/
-theorem result_ok {s : State} (h : DPre s) {x : BitVec 64} {mc : Mem} {t : State} {kd : List Byte}
+theorem result_ok {s : State} (h : DPre pc s) {x : BitVec 64} {mc : Mem} {t : State} {kd : List Byte}
     (hkd : kd = Spec.RsaPkcs1Enc.kdk (s.gpr .a4).toNat (dBytes s) (cOf s))
     (hres : Spec.Rsa.writtenOutcome mc (s.gpr .a0) (s.gpr .a4).toNat (x.setWidth 32) (rsadpOf s (cOf s)))
     (hx : t.gpr .a0 = zx x)
@@ -279,16 +283,15 @@ theorem result_ok {s : State} (h : DPre s) {x : BitVec 64} {mc : Mem} {t : State
       rw [List.map_const', List.length_range]
     · rw [hw, hml, hok]; simp [bm]
 
-theorem code_correct (s : State) (hpre : (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pre s) :
-    ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t := by
-  show WP isa code s fun t => abiPreserved s t ∧ fnPost s t
-  have h := dPre_of hpre
+theorem codeG_correct (s : State) (h : DPre pc s) (X : pc = true → PreX s) :
+    ∃ tr t, Exec isa (codeG pc) s tr t ∧ abiPreserved s t ∧ fnPost s t := by
+  show WP isa (codeG pc) s fun t => abiPreserved s t ∧ fnPost s t
   have hk := h.k2
-  unfold code
+  unfold codeG
   refine WP.allocLe ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega) ?_
   unfold body
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
-  refine WP.seq (call_ok h A fun t₂ A₂ => ?_)
+  refine WP.seq (call_ok h X A fun t₂ A₂ => ?_)
   refine WP.seq (WP.mono (dBuild_ok h A₂) fun t₃ h₃ => ?_)
   refine WP.seq (WP.mono (hashD_ok h h₃) fun t₄ h₄ => ?_)
   refine WP.seq (WP.mono (kdkMac_ok h h₄) fun t₅ h₅ => ?_)
@@ -304,5 +307,9 @@ theorem code_correct (s : State) (hpre : (Spec.RsaPkcs1Enc.decryptContract RISCV
   simp only [freed]
   refine result_ok h rfl ?_ hu.a0 hu.out hu.ml hAM
   exact A₂.out
+
+theorem code_correct (s : State) (hpre : (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pre s) :
+    ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t :=
+  codeG_correct s (dPre_of hpre) nofun
 
 end VG.Proof.RsaPkcs1Enc.RISCV64.Dec
