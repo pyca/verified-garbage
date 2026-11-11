@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rsa.X86.WordRt.Loop
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Mul
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Eq
 import VerifiedGarbage.Proof.Rsa.X86.KcOps
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -24,6 +25,9 @@ open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.KeyCheck VG.Impl.Rsa.X86.KeyCheckRt
 open VG.Proof.Rsa.X86.Keys
 open VG.Proof.Rsa.X86.WordRt (MLen wq mw Bal)
+
+/-- `X` has `k` words, the top bit of the top one set. -/
+def Top (k X : Nat) : Prop := 2 ^ (32 * k - 1) ≤ X ∧ X < 2 ^ (32 * k)
 
 theorem wordRegs_body : ∀ x ∈ [.eax, .ebx, .ecx, .edx, .esi, .ebp], x ∈ bodyRegs := by decide
 
@@ -60,6 +64,13 @@ theorem top_iff {m : Mem} {B : Addr} {d k : Nat} (hk : 0 < k) :
       rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hlt
     omega
 
+/-- An argument from where the checks started. -/
+theorem Stg.arg {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g s0 A live c s) {i : Nat} {x : BitVec 32}
+    (a : VG.Proof.Bignum.X86.CallArgument s0 g.B g.Z i x) : VG.Proof.Bignum.X86.CallArgument s g.B g.Z i x :=
+  a.keep h.rest (by decide)
+    (VG.Proof.Rsa.X86.KeyRt.keep_outside h.ws.ws h.keep (fun j hj => List.mem_range.mp hj) (by decide))
+
 /-- `mulWide o a b`: `[a] [b]`, `2 w` words from array `o` on. -/
 theorem Stg.mulWide_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {o a b : Nat} (ho : o + 1 < nArr) (ha : a ∈ live) (hb : b ∈ live)
@@ -81,16 +92,16 @@ theorem val32_two {m : Mem} {B : Addr} {w j : Nat} (hw : 2 ≤ w) (hl : num m B 
 /-- `mulShort o a b`: `[a] [b]`, `[b] < 2^64`, `w + 2` words from array `o` on. -/
 theorem Stg.mulShort_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {o a b : Nat} (ho : o + 1 < nArr) (ha : a ∈ live) (hb : b ∈ live)
-    (hol : ∀ j ∈ live, j ≠ o ∧ j ≠ o + 1) (hv : o ≠ aVD ∧ o + 1 ≠ aVD) (hw2 : 2 ≤ g.w)
-    (hB : A b < 2 ^ 64) :
+    (hol : ∀ j ∈ live, j ≠ o ∧ j ≠ o + 1) (hv : o ≠ aVD ∧ o + 1 ≠ aVD) (hw2 : 2 ≤ g.w) :
     WP isa (VG.Impl.Rsa.X86.WordModRt.mulShort g.L o a b) s fun t => Stg g s0 A live c t ∧
-      val32 t.mem g.B (arr g.w o) (g.w + 2) = A a * A b := by
+      (A b < 2 ^ 64 → val32 t.mem g.B (arr g.w o) (g.w + 2) = A a * A b) := by
   refine WP.mono (VG.Proof.Rsa.X86.WordRt.mulShort_ok h.ws hw2 ho (h.live_lt a ha) (h.live_lt b hb)
     (hol a ha).1 (hol a ha).2 (hol b hb).1 (hol b hb).2) fun t ⟨ht, k, e, r⟩ => ⟨?_, ?_⟩
   · refine h.next ht k (by simp; omega) (by decide) r wordRegs_body
       (h.arrs_keep k (fun j hj => by simp [(hol j hj).1, (hol j hj).2]) (by decide)) h.live_lt
       (h.vd_keep k (by simp [hv.1, hv.2]) (by decide)) (h.mask_keep k (by decide))
-  · have gb := h.arrs.get hb
+  · intro hB
+    have gb := h.arrs.get hb
     rw [e, h.arrs.get ha, val32_two hw2 (by rw [gb]; exact hB), gb]
 
 /-- `eqWide sF o n`: whether the `2 w` words from array `o` on are `[n]`, into `sF`. -/
@@ -149,21 +160,21 @@ on, by word steps, `m` of `p`'s length `W'` words, when the top bit of its `W'` 
 `m` is then left as it was). -/
 theorem Stg.wordMod_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {x r m ap : Nat} {wide : Bool}
-    (hm : MLen s g.B g.Z (pLenArg g.full) ap) (h4 : 4 ≤ wq ap) (hw : wq ap ≤ g.w)
+    (hm : MLen s0 g.B g.Z (pLenArg g.full) ap) (h4 : 4 ≤ wq ap) (hw : wq ap ≤ g.w)
     (hx : x + wide.toNat < nArr) (hr : r < nArr) (hmL : m ∈ live)
     (hl : ∀ j ∈ live, j ≠ r ∧ j ≠ aT) (hrm : r ≠ m) (hrT : r ≠ aT) (hmT : m ≠ aT)
     (hxr : r ≠ x) (hxt : aT ≠ x) (hxm : m ≠ x)
     (hxr1 : wide = true → r ≠ x + 1) (hxt1 : wide = true → aT ≠ x + 1) (hxm1 : wide = true → m ≠ x + 1)
     (hv : m ≠ aVD ∧ r ≠ aVD) :
     WP isa (wordMod g.full x r m wide) s fun t => ∃ M R,
-      (2 ^ (32 * wq ap - 1) ≤ A m → A m < 2 ^ (32 * wq ap) →
+      (Top (wq ap) (A m) →
         M = A m ∧ R = val32 s.mem g.B (arr g.w x) (if wide then 2 * g.w else g.w) % A m) ∧
       Stg g s0 (upd (upd A m M) r R) (r :: live) c t := by
   have hmN := h.live_lt m hmL
   have fm := h.ws.ws.fit64 hmN
-  refine WP.mono (VG.Proof.Rsa.X86.WordRt.wordMod_ok h.ws hm hx hr hmN (by decide) hrT hmT hrm hxr hxt hxm
+  refine WP.mono (VG.Proof.Rsa.X86.WordRt.wordMod_ok h.ws ⟨h.arg hm.arg, hm.le⟩ hx hr hmN (by decide) hrT hmT hrm hxr hxt hxm
     hxr1 hxt1 hxm1 h4 hw) fun t ⟨ht, k, wk, wtop, wr, K⟩ => ⟨num t.mem g.B g.w m, num t.mem g.B g.w r, ?_, ?_⟩
-  · intro lo hi
+  · intro ⟨lo, hi⟩
     have gm := h.arrs.get hmL
     have hpos : 0 < wq ap := by omega
     -- `m`'s words from `W'` on are zero, its word `W' - 1` has its top bit set.

@@ -189,7 +189,7 @@ theorem keyValid_bitsP {k n e d p q dP dQ qInv : Nat} (hm : modulusValid n k = t
     (hR₁ : p * q = n → dP < 2 * (p / 2) → R₁ = e * dP % (2 * (p / 2)))
     (hR₂ : p * q = n → dQ < 2 * (q / 2) → R₂ = e * dQ % (2 * (q / 2)))
     (hR₃ : p * q = n → qInv < p → R₃ = q * qInv % p)
-    (hY₁ : p * q = n → Y₁ = d % (2 * (p / 2))) (hY₂ : p * q = n → Y₂ = d % (2 * (q / 2))) :
+    (hY : p * q = n → 0 < 2 * (p / 2) → 0 < 2 * (q / 2) → Y₁ = d % (2 * (p / 2)) ∧ Y₂ = d % (2 * (q / 2))) :
     keyValid k n e d p q dP dQ qInv = keyBitsP n d p q dP dQ qInv R₁ R₂ R₃ Y₁ Y₂ := by
   rw [keyValid_crt hm hp hq, crtKeyValid_bitsP hm he hp hq hR₁ hR₂ hR₃, keyBitsP]
   by_cases hpq : p * q = n
@@ -199,7 +199,8 @@ theorem keyValid_bitsP {k n e d p q dP dQ qInv : Nat} (hm : modulusValid n k = t
     have q2 := factor_ge_two (n := n) (q := p) (by rw [Nat.mul_comm]; exact hpq) hp hn
     have podd := odd_factor hpq hodd
     have qodd := odd_factor (by rw [Nat.mul_comm]; exact hpq) hodd
-    rw [hY₁ hpq, hY₂ hpq, show 2 * (p / 2) = p - 1 by omega, show 2 * (q / 2) = q - 1 by omega]
+    obtain ⟨e1, e2⟩ := hY hpq (by omega) (by omega)
+    rw [e1, e2, show 2 * (p / 2) = p - 1 by omega, show 2 * (q / 2) = q - 1 by omega]
   · simp [crtBitsP, hpq]
 
 end VG.Proof.Rsa
