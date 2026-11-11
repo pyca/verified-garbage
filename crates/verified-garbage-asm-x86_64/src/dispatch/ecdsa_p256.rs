@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ecdsa_p256_verify_adx` if the CPU supports its features (`VG_ECDSA_P256_VERIFY_ADX_FEATURES`); or else `vg_ecdsa_p256_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ecdsa_p256_verify_ifma` if the CPU supports its features (`VG_ECDSA_P256_VERIFY_IFMA_FEATURES`); `vg_ecdsa_p256_verify_adx` if the CPU supports its features (`VG_ECDSA_P256_VERIFY_ADX_FEATURES`); or else `vg_ecdsa_p256_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -27,6 +27,11 @@ pub unsafe fn vg_ecdsa_p256_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pub
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::ecdsa_p256::VG_ECDSA_P256_VERIFY_IFMA_FEATURES) }
+            || cpu.contains(crate::ecdsa_p256::VG_ECDSA_P256_VERIFY_IFMA_FEATURES)
+        {
+            return crate::ecdsa_p256::vg_ecdsa_p256_verify_ifma;
+        }
         if const { verified_garbage_cpu::target_contains(crate::ecdsa_p256::VG_ECDSA_P256_VERIFY_ADX_FEATURES) }
             || cpu.contains(crate::ecdsa_p256::VG_ECDSA_P256_VERIFY_ADX_FEATURES)
         {
