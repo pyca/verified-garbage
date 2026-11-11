@@ -17,7 +17,7 @@ open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 def normRanges (W : Nat) : List (Nat × Nat) := (slot W aM, 8 * (W + 2)) :: allRanges W
 
 theorem fast_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
-    (hZ : slot W 17 ≤ Z) (hW : 4 ≤ W) :
+    (hZ : slot W 17 ≤ Z) (hW : 6 ≤ W) :
     WP isa (.seq (.block normalize) code) s fun t =>
       (2 ^ 63 ≤ (word s.mem B (slot W aM + 8 * (W / 2 - 1))).toNat →
         wv t.mem B (slot W aR) (W + 1) =

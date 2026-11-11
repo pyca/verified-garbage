@@ -14,7 +14,7 @@ namespace VG.Proof.Rsa.X86_64.WordDivide
 open VG VG.X86_64 VG.Impl.Rsa.X86_64.WordDivide
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
-def FastPre (p : Pub) (s : State) : Prop := Ws s p.B p.Z p.W ∧ slot p.W 17 ≤ p.Z ∧ 4 ≤ p.W
+def FastPre (p : Pub) (s : State) : Prop := Ws s p.B p.Z p.W ∧ slot p.W 17 ≤ p.Z ∧ 6 ≤ p.W
 
 theorem fast_ct : RelCT isa (Two FastPre) (.seq (.block normalize) code) fun _ _ => True := by
   refine RelCT.seq (R := Two Pre) ?_ code_ct

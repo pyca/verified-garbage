@@ -33,7 +33,7 @@ theorem cvWordChoice_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (
         wv t.mem I.B (slot (wk I.k) i) (wk I.k) = wv s.mem I.B (slot (wk I.k) i) (wk I.k)) := by
   have hk1 := L.k1
   have hk2 := L.k2
-  have hW : 4 ≤ wk I.k := by unfold wk; omega_using [hk1]
+  have hW : 6 ≤ wk I.k := by unfold wk; omega_using [hk1]
   have hZ : slot (wk I.k) 17 ≤ I.Z := by
     have hz := L.z
     simp only [slot, Impl.Bignum.hdrBytes, wk]
