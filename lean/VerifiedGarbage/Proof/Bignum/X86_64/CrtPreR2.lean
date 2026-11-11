@@ -29,35 +29,47 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 
-/-- Stack argument 12, `pre`, and its words `w` to `2 w - 1`, `R² mod N`,
+/-- Stack argument 12, `pre`, and its `n` words from `k`, whose value is `V`,
 outside the working space at `B` of `Z` bytes. -/
-structure PreR2 (t : State) (B : Addr) (Z w N : Nat) : Prop where
+structure PreW (t : State) (B : Addr) (Z k n V : Nat) : Prop where
   arg : InRegions (t.rd ++ t.wr) (stackArgAddr t 12) 8
   argOut : ∀ b < 8, Z ≤ ofs B (stackArgAddr t 12 + BitVec.ofNat 64 b)
-  rd : ∀ j < w, InRegions (t.rd ++ t.wr) (off (stackArg t 12) (8 * w + 8 * j)) 8
-  out : ∀ j < w, ∀ b < 8, Z ≤ ofs B (off (stackArg t 12) (8 * w + 8 * j) + BitVec.ofNat 64 b)
-  val : wv t.mem (stackArg t 12) (8 * w) w = 2 ^ (128 * w) % N
+  rd : ∀ j < n, InRegions (t.rd ++ t.wr) (off (stackArg t 12) (8 * k + 8 * j)) 8
+  out : ∀ j < n, ∀ b < 8, Z ≤ ofs B (off (stackArg t 12) (8 * k + 8 * j) + BitVec.ofNat 64 b)
+  val : wv t.mem (stackArg t 12) (8 * k) n = V
 
 /-- `pre`'s address, after a step that changes only the working space and
 keeps the stack pointer. -/
-theorem PreR2.arg_eq {t t' : State} {B : Addr} {Z w N : Nat} (h : PreR2 t B Z w N)
+theorem PreW.arg_eq {t t' : State} {B : Addr} {Z k n V : Nat} (h : PreW t B Z k n V)
     (hi : InScr B Z t.mem t'.mem) (hsp : t'.gpr .rsp = t.gpr .rsp) : stackArg t' 12 = stackArg t 12 := by
   have ha : stackArgAddr t' 12 = stackArgAddr t 12 := by unfold stackArgAddr; rw [hsp]
   unfold stackArg
   rw [ha]
   exact Mem.readW_congr fun b hb => hi _ (h.argOut b hb)
 
-/-- `PreR2` holds after a step that changes only the working space and
+/-- `PreW` holds after a step that changes only the working space and
 keeps the stack pointer and the regions. -/
-theorem PreR2.congr {t t' : State} {B : Addr} {Z w N : Nat} (h : PreR2 t B Z w N)
+theorem PreW.congr {t t' : State} {B : Addr} {Z k n V : Nat} (h : PreW t B Z k n V)
     (hi : InScr B Z t.mem t'.mem) (hsp : t'.gpr .rsp = t.gpr .rsp) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) :
-    PreR2 t' B Z w N := by
+    PreW t' B Z k n V := by
   have ha : stackArgAddr t' 12 = stackArgAddr t 12 := by unfold stackArgAddr; rw [hsp]
   have hv := h.arg_eq hi hsp
   refine ⟨by rw [ha, hrd, hwr]; exact h.arg, fun b hb => by rw [ha]; exact h.argOut b hb,
     fun j hj => by rw [hv, hrd, hwr]; exact h.rd j hj, fun j hj => by rw [hv]; exact h.out j hj, ?_⟩
   rw [hv, ← h.val]
   exact wv_congr fun j hj => Mem.readW_congr fun b hb => hi _ (h.out j hj b hb)
+
+/-- `pre`'s words `w` to `2 w - 1`, `R² mod N`. -/
+abbrev PreR2 (t : State) (B : Addr) (Z w N : Nat) : Prop := PreW t B Z w w (2 ^ (128 * w) % N)
+
+theorem PreR2.arg_eq {t t' : State} {B : Addr} {Z w N : Nat} (h : PreR2 t B Z w N)
+    (hi : InScr B Z t.mem t'.mem) (hsp : t'.gpr .rsp = t.gpr .rsp) : stackArg t' 12 = stackArg t 12 :=
+  PreW.arg_eq h hi hsp
+
+theorem PreR2.congr {t t' : State} {B : Addr} {Z w N : Nat} (h : PreR2 t B Z w N)
+    (hi : InScr B Z t.mem t'.mem) (hsp : t'.gpr .rsp = t.gpr .rsp) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) :
+    PreR2 t' B Z w N :=
+  PreW.congr h hi hsp hrd hwr
 
 /-- `r2Pre`'s block. -/
 abbrev r2PreBlk : List Instr :=
