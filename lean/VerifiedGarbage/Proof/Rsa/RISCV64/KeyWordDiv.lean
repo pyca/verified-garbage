@@ -342,4 +342,57 @@ theorem divW_ok {s : State} {B : Addr} {Z w N a r m t : Nat} (h : Ws s B Z w N) 
     I.top.resolve_left (by omega), I.hi⟩
 
 
+/-- A factor of a balanced modulus: with `p q = n ≥ 2^(64 (w - 1))` and
+`q < 2^(32 w)`, `p > 2^(32 w - 64)`, so that `p` and `p - 1` are numbers of
+exactly `w / 2` words. -/
+theorem balanced_lo {n p q k w : Nat} (hpq : p * q = n) (hn : 256 ^ (k - 1) ≤ n) (hkw : 8 * w ≤ k + 7)
+    (hq : q < 2 ^ (32 * w)) (hw : 2 ≤ w) (hw2 : w % 2 = 0) : 2 ^ (64 * (w / 2 - 1)) < p := by
+  have e1 : 64 * (w / 2 - 1) = 32 * w - 64 := by omega
+  have e2 : (256 : Nat) ^ (k - 1) = 2 ^ (8 * (k - 1)) := by rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
+  have hn' : 2 ^ (32 * w - 64 + 32 * w) ≤ n := by
+    rw [e2] at hn
+    exact Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega)) hn
+  rw [e1]
+  refine Nat.lt_of_not_le fun hp => ?_
+  have := Nat.mul_le_mul hp (Nat.le_of_lt hq)
+  rw [← Nat.pow_add, hpq] at this
+  have : p * q < 2 ^ (32 * w - 64) * 2 ^ (32 * w) := by
+    rcases Nat.eq_zero_or_pos p with h0 | h0
+    · rw [h0, Nat.zero_mul]; exact Nat.mul_pos (Nat.two_pow_pos _) (Nat.two_pow_pos _)
+    · exact Nat.lt_of_le_of_lt (Nat.mul_le_mul_right q hp) (Nat.mul_lt_mul_of_pos_left hq (Nat.two_pow_pos _))
+  rw [← Nat.pow_add, hpq] at this
+  omega
+
+/-- The first `v` of `w` words, for a number below `2^(64 v)`. -/
+theorem words_low {m : Mem} {B : Addr} {d w v X : Nat} (hv : v ≤ w) (h : wordsVal m B d w = X)
+    (hX : X < 2 ^ (64 * v)) : wordsVal m B d v = X := by
+  have e := wordsVal_append m B d v (w - v)
+  rw [show v + (w - v) = w by omega, h] at e
+  have l := wordsVal_lt m B d v
+  rcases Nat.eq_zero_or_pos (wordsVal m B (d + 8 * v) (w - v)) with z | z
+  · rw [z, Nat.mul_zero, Nat.add_zero] at e; exact e.symm
+  · have := Nat.le_mul_of_pos_right (2 ^ (64 * v)) z
+    omega
+
+/-- The top word of a number of `v` words at least `2^(64 (v - 1))` is not zero. -/
+theorem top_pos {m : Mem} {B : Addr} {d v : Nat} (hv : 1 ≤ v) (h : 2 ^ (64 * (v - 1)) ≤ wordsVal m B d v) :
+    0 < (word m B (d + 8 * (v - 1))).toNat := by
+  have e := wordsVal_succ_top m B d (v - 1)
+  rw [show v - 1 + 1 = v by omega] at e
+  have l := wordsVal_lt m B d (v - 1)
+  rcases Nat.eq_zero_or_pos (word m B (d + 8 * (v - 1))).toNat with z | z
+  · rw [z, Nat.mul_zero, Nat.add_zero] at e; omega
+  · exact z
+
+/-- A number of `w` words from its first `v`, word `v` zero and the rest zero. -/
+theorem num_of_low {m : Mem} {B : Addr} {d w v X : Nat} (hv : v < w) (hx : wordsVal m B d v = X)
+    (ht : word m B (d + 8 * v) = 0) (hr : wordsVal m B (d + 8 * (v + 1)) (w - 1 - v) = 0) : wordsVal m B d w = X := by
+  have e1 := wordsVal_append m B d v (w - v)
+  have e2 := wordsVal_append m B (d + 8 * v) 1 (w - 1 - v)
+  rw [show v + (w - v) = w by omega] at e1
+  rw [show 1 + (w - 1 - v) = w - v by omega, show d + 8 * v + 8 * 1 = d + 8 * (v + 1) by omega, hr] at e2
+  have w1 : wordsVal m B (d + 8 * v) 1 = 0 := by simp only [wordsVal, ht]; rfl
+  rw [w1, Nat.mul_zero, Nat.add_zero] at e2
+  rw [e1, e2, Nat.mul_zero, Nat.add_zero, hx]
+
 end VG.Proof.Rsa.RISCV64.Keys

@@ -32,27 +32,6 @@ abbrev aStart (v : Vals) : Nat → Nat := upd (vals v) aOne 1
 abbrev aFin (v : Vals) : Nat → Nat := upd (upd (vals v) aM1 (2 * (v.p / 2))) aM2 (2 * (v.q / 2))
 abbrev liveFin : List Nat := [aZ, aN, aD, aDP, aDQ, aM1, aM2]
 
-/-- The first `v` of `w` words, for a number below `2^(64 v)`. -/
-theorem words_low {m : Mem} {B : Addr} {d w v X : Nat} (hv : v ≤ w) (h : wordsVal m B d w = X)
-    (hX : X < 2 ^ (64 * v)) : wordsVal m B d v = X := by
-  have e := wordsVal_append m B d v (w - v)
-  rw [show v + (w - v) = w by omega, h] at e
-  have l := wordsVal_lt m B d v
-  rcases Nat.eq_zero_or_pos (wordsVal m B (d + 8 * v) (w - v)) with z | z
-  · rw [z, Nat.mul_zero, Nat.add_zero] at e; exact e.symm
-  · have := Nat.le_mul_of_pos_right (2 ^ (64 * v)) z
-    omega
-
-/-- The top word of a number of `v` words at least `2^(64 (v - 1))` is not zero. -/
-theorem top_pos {m : Mem} {B : Addr} {d v : Nat} (hv : 1 ≤ v) (h : 2 ^ (64 * (v - 1)) ≤ wordsVal m B d v) :
-    0 < (word m B (d + 8 * (v - 1))).toNat := by
-  have e := wordsVal_succ_top m B d (v - 1)
-  rw [show v - 1 + 1 = v by omega] at e
-  have l := wordsVal_lt m B d (v - 1)
-  rcases Nat.eq_zero_or_pos (word m B (d + 8 * (v - 1))).toNat with z | z
-  · rw [z, Nat.mul_zero, Nat.add_zero] at e; omega
-  · exact z
-
 /-- `divWA a d`: `[aVR] := [a] mod [d]` by words, exact for `2^(64 (v - 1)) ≤
 [d] < 2^(64 v)`; `aVR` then tracked, `aVD` and `aVT` written. -/
 theorem Stg.divWA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}

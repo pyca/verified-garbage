@@ -373,27 +373,6 @@ theorem keyValid_mont {k n e d p q dP dQ qI w : Nat} (hm : modulusValid n k = tr
   · simp only [Bool.not_eq_true] at hb
     simp only [hb, Bool.false_and]
 
-/-- A factor of a balanced modulus: with `p q = n ≥ 2^(64 (w - 1))` and
-`q < 2^(32 w)`, `p > 2^(32 w - 64)`, so that `p` and `p - 1` are numbers of
-exactly `w / 2` words. -/
-theorem balanced_lo {n p q k w : Nat} (hpq : p * q = n) (hn : 256 ^ (k - 1) ≤ n) (hkw : 8 * w ≤ k + 7)
-    (hq : q < 2 ^ (32 * w)) (hw : 2 ≤ w) (hw2 : w % 2 = 0) : 2 ^ (64 * (w / 2 - 1)) < p := by
-  have e1 : 64 * (w / 2 - 1) = 32 * w - 64 := by omega
-  have e2 : (256 : Nat) ^ (k - 1) = 2 ^ (8 * (k - 1)) := by rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
-  have hn' : 2 ^ (32 * w - 64 + 32 * w) ≤ n := by
-    rw [e2] at hn
-    exact Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega)) hn
-  rw [e1]
-  refine Nat.lt_of_not_le fun hp => ?_
-  have := Nat.mul_le_mul hp (Nat.le_of_lt hq)
-  rw [← Nat.pow_add, hpq] at this
-  have : p * q < 2 ^ (32 * w - 64) * 2 ^ (32 * w) := by
-    rcases Nat.eq_zero_or_pos p with h0 | h0
-    · rw [h0, Nat.zero_mul]; exact Nat.mul_pos (Nat.two_pow_pos _) (Nat.two_pow_pos _)
-    · exact Nat.lt_of_le_of_lt (Nat.mul_le_mul_right q hp) (Nat.mul_lt_mul_of_pos_left hq (Nat.two_pow_pos _))
-  rw [← Nat.pow_add, hpq] at this
-  omega
-
 /-- The checks by words give `keyValid`, for a balanced key: `p`, `q`, `qInv`,
 `dP` and `dQ` below `2^(32 w)`, `w` even. -/
 theorem keyValid_words {k n e d p q dP dQ qI w : Nat} (hm : modulusValid n k = true)

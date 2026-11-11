@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Rsa.RISCV64.Div
 public import VerifiedGarbage.Impl.Rsa.RISCV64.InvBatch
 public import VerifiedGarbage.Impl.Rsa.RISCV64.RecoverDet
 public import VerifiedGarbage.Impl.Bignum.RISCV64.Precompute
+public import VerifiedGarbage.Impl.Rsa.RISCV64.WordDiv
 
 /-!
 # `vg_rsa_crt_values` on RISC-V
@@ -149,7 +150,47 @@ def dParts : Prog isa := seqs [
   copy aDQ aD, copy aDD aP, .block (clrLow aDD), divL aDQ aDR2 aDD .s4,
   copy aDQ aD, copy aDD aQ, .block (clrLow aDD), divL aDQ aDR3 aDD .s6]
 
-def arith : Prog isa := seqs [checks, invPart, dParts]
+/-! ### A balanced key, by words
+
+When `p_len` (`s4`) and `q_len` (`s6`) are equal, a multiple of 8, at least
+32, and four times `w` (`s9`), `p - 1` and `q - 1` are numbers of `v = w / 2`
+words, and the remainders are by words (`WordDiv.divW`), exact for a divisor
+whose top word is not zero, as `p - 1` and `q - 1` are when `p q = n`, which
+the mask requires. The registers `divW` writes that the rest reads are kept
+in `aDQ`, which this path does not use otherwise. -/
+
+/-- `t0 := 0` exactly for a balanced key: `p_len` (`s4`) a multiple of 8 and
+at least 32, equal to `q_len` (`s6`) and to `4 w` (`s9`). -/
+def shape : List Instr :=
+  [.logicImm .and .t0 .s4 7, .shift .sll .d .t1 .s9 2, .logic .xor .t1 .t1 .s4, .logic .or .t0 .t0 .t1,
+    .logic .xor .t1 .s4 .s6, .logic .or .t0 .t0 .t1, .li .t1 32, .sltu .t1 .s4 .t1, .logic .or .t0 .t0 .t1]
+
+/-- The registers kept in `aDQ` around the divisions by words. -/
+def kept : List Reg := [.s1, .s2, .s3, .s4, .a0, .a1, .a2, .a3, .a6]
+
+/-- `kept` into `aDQ`'s first words. -/
+def saveK : List Instr :=
+  ptr .t0 aDQ ++ [.store .d .s1 .t0 0, .store .d .s2 .t0 8, .store .d .s3 .t0 16, .store .d .s4 .t0 24,
+    .store .d .a0 .t0 32, .store .d .a1 .t0 40, .store .d .a2 .t0 48, .store .d .a3 .t0 56, .store .d .a6 .t0 64]
+
+/-- And back. -/
+def restoreK : List Instr :=
+  ptr .t0 aDQ ++ [.load .d .s1 .t0 0, .load .d .s2 .t0 8, .load .d .s3 .t0 16, .load .d .s4 .t0 24,
+    .load .d .a0 .t0 32, .load .d .a1 .t0 40, .load .d .a2 .t0 48, .load .d .a3 .t0 56, .load .d .a6 .t0 64]
+
+/-- `d` divided by `[a]` with its low bit cleared, by words, into `[r]`: `[r]`
+zeroed, `[a]` copied to `aDD`, its low bit cleared and its top word made not
+zero, `aDT` the temporary. -/
+def divWP (a r : Nat) : List (Prog isa) :=
+  [InvBatch.zeroW r, copy aDD a, .block (clrLow aDD), .block (WordDiv.fixTop aDD), WordDiv.divW aD r aDD aDT]
+
+/-- `d` divided by `p - 1` and by `q - 1`, by words. -/
+def dPartsW : Prog isa := seqs ([.block saveK] ++ divWP aP aDR2 ++ divWP aQ aDR3 ++ [.block restoreK])
+
+/-- The divisions of `d`: by words for a balanced key (`shape`), else bit-serial. -/
+def dPartsAll : Prog isa := .seq (.block shape) (.ite (.zero .t0) dPartsW dParts)
+
+def arith : Prog isa := seqs [checks, invPart, dPartsAll]
 
 /-- `dP` and `dQ` written out under the mask, and the mask's bit returned. -/
 def stores : Prog isa := seqs [
