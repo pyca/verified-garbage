@@ -8741,9 +8741,13 @@ vg_rsa_private_precompute:
 	str r1, [r0, #132]
 	ldr r1, [r0, #232]
 	str r1, [r0, #136]
-	ldr r1, [r0, #48]
-	add r1, r1, r1
+	ldr r1, [sp, #68]
+	add r1, r1, #3
+	lsr r1, r1, #2
 	str r1, [r0, #140]
+	ldr r1, [sp, #76]
+	add r1, r1, #3
+	lsr r1, r1, #2
 	str r1, [r0, #144]
 219:
 	ldr r12, [r0, #132]
