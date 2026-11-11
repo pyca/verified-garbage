@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.PowLit
 
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.WordStep
+public import VerifiedGarbage.Proof.Bignum.WordStep
 
 /-!
 # Multiword arithmetic: a step of long division by a normalized estimate
@@ -18,7 +18,10 @@ words of `x P` and `m P` for a power of two `P` (Knuth's normalization), but
 * `qhat_norm`: the estimate from `x P` and `m P` is `q ≤ q̂ ≤ q + 2` for
   `q = ⌊x 2^64 / m⌋` (`WordStep.qhat_ge`, `WordStep.qhat_le`);
 * `wordStepQ_val`: `x 2^64 - q̂ m` in two's complement with `m` added twice
-  while it is negative is `x 2^64 mod m`, for any such `q̂`.
+  while it is negative is `x 2^64 mod m`, for any such `q̂`;
+* `qhat_trunc`: an estimate from the top three words of the dividend and the
+  top two of the divisor (above the same power of two) is `q ≤ q̂ ≤ q + 1`,
+  and `wordStepQ1_val`: then `m` added once if negative is `x 2^64 mod m`.
 -/
 
 @[expose] public section
@@ -131,5 +134,95 @@ theorem qhat_fix {u2 u1 d : Nat} (hd0 : 0 < d) (hu2 : u2 ≤ d) (hu1 : u1 < 2 ^ 
       have := Nat.mul_le_mul_right (2 ^ 64) (show u2 + 1 ≤ d by omega_using [hd])
       rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm d] at this; omega_using [this, hu1]
     omega_using [this]
+
+/-! ## A 3-by-2 estimate, one add-back -/
+
+theorem lt_succ_div_mul (a b : Nat) (hb : 0 < b) : a < (a / b + 1) * b := by
+  have h1 := Nat.div_add_mod a b
+  have h2 := Nat.mod_lt a hb
+  rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm]
+  omega
+
+/-- An estimate of `⌊Y / N⌋ < 2^64` from `Y` and `N` cut at `2^K`, whose top
+`⌊N / 2^K⌋` is at least `2^64`: `q ≤ min(⌊⌊Y / 2^K⌋ / ⌊N / 2^K⌋⌋, 2^64 - 1) ≤ q + 1`. -/
+theorem qhat_trunc {Y N K : Nat} (hq : Y / N < 2 ^ 64) (hD : 2 ^ 64 ≤ N / 2 ^ K) :
+    Y / N ≤ min (Y / 2 ^ K / (N / 2 ^ K)) (2 ^ 64 - 1) ∧
+      min (Y / 2 ^ K / (N / 2 ^ K)) (2 ^ 64 - 1) ≤ Y / N + 1 := by
+  have hK := Nat.two_pow_pos K
+  have hD0 : 0 < N / 2 ^ K := by omega
+  have hN0 : 0 < N := Nat.pos_of_ne_zero fun h => by simp [h] at hD0
+  generalize hq' : Y / N = q at hq
+  generalize hU : Y / 2 ^ K = U
+  generalize hDd : N / 2 ^ K = D at hD hD0
+  have hNd : D * 2 ^ K ≤ N := by rw [← hDd]; exact Nat.div_mul_le_self N _
+  have hN1 : N < (D + 1) * 2 ^ K := by rw [← hDd]; exact lt_succ_div_mul _ _ hK
+  have hUY : U * 2 ^ K ≤ Y := by rw [← hU]; exact Nat.div_mul_le_self Y _
+  have hY1 : Y < (U + 1) * 2 ^ K := by rw [← hU]; exact lt_succ_div_mul _ _ (by omega)
+  have hqN : q * N ≤ Y := by rw [← hq']; exact Nat.div_mul_le_self Y N
+  have hYq : Y < (q + 1) * N := by rw [← hq']; exact lt_succ_div_mul _ _ (by omega)
+  constructor
+  · refine Nat.le_min.mpr ⟨?_, by omega⟩
+    rw [Nat.le_div_iff_mul_le hD0]
+    -- `q D 2^K ≤ q N ≤ Y`, so `q D ≤ U`.
+    have h1 : q * D * 2 ^ K ≤ Y := by
+      rw [Nat.mul_assoc]; exact Nat.le_trans (Nat.mul_le_mul_left q hNd) hqN
+    have h2 : q * D < U + 1 := by
+      have := Nat.lt_of_le_of_lt h1 hY1
+      exact Nat.lt_of_mul_lt_mul_right this
+    omega
+  · refine Nat.le_trans (Nat.min_le_left _ _) ?_
+    -- `q̂ D ≤ U`, `U 2^K ≤ Y < (q + 1) N < (q + 1) (D + 1) 2^K`.
+    refine Nat.le_of_not_lt fun hc => ?_
+    have hge : q + 2 ≤ U / D := by omega
+    have h1 : (q + 2) * D ≤ U := Nat.le_trans (Nat.mul_le_mul_right D hge) (Nat.div_mul_le_self U D)
+    have h2 : U < (q + 1) * (D + 1) := by
+      have h3 : U * 2 ^ K < (q + 1) * (D + 1) * 2 ^ K := by
+        rw [Nat.mul_assoc]
+        exact Nat.lt_of_le_of_lt hUY (Nat.lt_of_lt_of_le hYq (Nat.mul_le_mul_left _ (Nat.le_of_lt hN1)))
+      exact Nat.lt_of_mul_lt_mul_right h3
+    have e1 : (q + 2) * D = (q + 1) * D + D := by rw [Nat.add_mul, Nat.add_mul (q) 1, Nat.one_mul]; omega
+    have e2 : (q + 1) * (D + 1) = (q + 1) * D + (q + 1) := by rw [Nat.mul_add, Nat.mul_one]
+    omega
+
+/-- `y - q̂ m` with `m` added once if it is negative is `y mod m`, for
+`⌊y / m⌋ ≤ q̂ ≤ ⌊y / m⌋ + 1`. -/
+theorem addBack_one {W y m qh : Nat} (hm : 0 < m) (hW : 2 * m < W / 2)
+    (h1 : y / m ≤ qh) (h2 : qh ≤ y / m + 1) :
+    addIfNeg m ((y : Int) - (qh * m : Nat)) = ((y % m : Nat) : Int) ∧
+      -((W : Int) / 2) ≤ (y : Int) - (qh * m : Nat) ∧ (y : Int) - (qh * m : Nat) < (W : Int) / 2 := by
+  have hy := Nat.div_add_mod y m
+  have hr := Nat.mod_lt y hm
+  obtain ⟨c, hc, hqm⟩ : ∃ c, c ≤ 1 ∧ qh * m = y / m * m + c * m :=
+    ⟨qh - y / m, by omega_using [h2], by rw [← Nat.add_mul]; congr 1; omega_using [h1]⟩
+  have hyP : y = y / m * m + y % m := by rw [Nat.mul_comm]; omega_using [hy]
+  rw [hqm]
+  generalize y / m * m = P at *
+  generalize y % m = r at *
+  subst hyP
+  unfold addIfNeg
+  rcases (show c = 0 ∨ c = 1 by omega_using [hc]) with rfl | rfl <;> push_cast <;>
+    (repeat' split) <;> omega_arith
+
+/-- A step of long division over the words, for any estimate `q ≤ q̂ ≤ q + 1`
+of `q = ⌊x 2^64 / m⌋`: `t₁ = x 2^64 - q̂ m` modulo `W > 4 m` (with its borrow
+`b`) and `m` added once to it if its top half is set (with the carry `c`) is
+`x 2^64 mod m`. -/
+theorem wordStepQ1_val {W X M qh T1 T2 b c : Nat} (hM0 : 0 < M) (hMW : 2 * M < W / 2)
+    (hge : X * 2 ^ 64 / M ≤ qh) (hle : qh ≤ X * 2 ^ 64 / M + 1)
+    (hT1 : T1 < W) (hb : b < 2) (h1 : T1 + qh * M = X * 2 ^ 64 + W * b)
+    (hT2 : T2 < W) (hc : c < 2) (h2 : T2 + W * c = T1 + if W / 2 ≤ T1 then M else 0) :
+    T2 = X * 2 ^ 64 % M := by
+  obtain ⟨hfin, hv1, hv2⟩ := addBack_one (W := W) hM0 hMW hge hle
+  have e1 := twos_of_sub hT1 hb (by omega_using [h1]) hv1 hv2
+  have hw1 : -((W : Int) / 2) ≤ addIfNeg M ((X * 2 ^ 64 : Nat) - (qh * M : Nat)) := by
+    rw [hfin]; omega_using []
+  have hw2 : addIfNeg M ((X * 2 ^ 64 : Nat) - (qh * M : Nat)) < (W : Int) / 2 := by
+    rw [hfin]; have := Nat.mod_lt (X * 2 ^ 64) hM0; omega_using [hMW, this]
+  have e2 := twos_of_add hv1 hv2 hw1 hw2 e1 hT2 hc h2
+  rw [e2, hfin]
+  have hr := Nat.mod_lt (X * 2 ^ 64) hM0
+  have hMW' : M < W := Nat.lt_of_lt_of_le (by omega_using [hMW]) (Nat.div_le_self W 2)
+  unfold twos
+  rw [Int.emod_eq_of_lt (Int.natCast_nonneg _) (Int.ofNat_lt.mpr (Nat.lt_trans hr hMW')), Int.toNat_natCast]
 
 end VG.Proof.Bignum.WordStep
