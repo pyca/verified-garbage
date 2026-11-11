@@ -20,6 +20,8 @@ namespace VG.Proof.RsaPkcs1Sig.PPC64LE.Sign
 open VG VG.PPC64LE VG.Impl.RsaPkcs1Sig.PPC64LE.Sign VG.WriteBytes
 open VG.Proof.RsaPkcs1Sig.PPC64LE (wp_stb wp_addi wp_subi wp_nil ofNat_succ')
 
+variable {pc : Bool}
+
 /-- `zeroLoop` writes `n` zeros from `r7 = p`, counted down in `r8`. -/
 theorem zero_ok {s : State} {p : Addr} {n : Nat} (hn : 0 < n) (hn' : n < 2 ^ 64)
     (h7 : s.gpr .r7 = p) (h8 : s.gpr .r8 = BitVec.ofNat 64 n) (h0 : (s.gpr .r0).setWidth 8 = 0)
@@ -48,7 +50,7 @@ theorem zero_ok {s : State} {p : Addr} {n : Nat} (hn : 0 < n) (hn' : n < 2 ^ 64)
 theorem gpr_ofNat (x : BitVec 64) : x = BitVec.ofNat 64 x.toNat := by simp
 
 /-- `out` is in the regions it may write. -/
-theorem out_in {s : State} (h : SPre s) {i : Nat} (hi : i < (s.gpr .r6).toNat) :
+theorem out_in {s : State} (h : SPre pc s) {i : Nat} (hi : i < (s.gpr .r6).toNat) :
     InRegions (fr s :: s.wr) (s.gpr .r3 + BitVec.ofNat 64 i) 1 := by
   rw [h.hwr]
   exact ⟨oR s, by simp, Offset.contains_base _ (by rw [h.h4]; omega) (by have := h.wo; omega)⟩
@@ -58,7 +60,7 @@ theorem Fr.fr2 {s t : State} (F : Fr s t) : Fr2 s t :=
     F.sv, F.ls⟩
 
 /-- Zeros to `out`, once the encoding failed. -/
-theorem zeroOut_ok {s u : State} (h : SPre s) (A : AtAft s u) (h3 : u.gpr .r3 = 0) :
+theorem zeroOut_ok {s u : State} (h : SPre pc s) (A : AtAft s u) (h3 : u.gpr .r3 = 0) :
     WP isa zeroOut u fun v => Fr2 s v ∧ v.gpr .r3 = 0 ∧
       Spec.Rsa.bytesAt v.mem (s.gpr .r3) (s.gpr .r6).toNat = List.replicate (s.gpr .r6).toNat 0 := by
   have hk := h.k2
@@ -95,7 +97,7 @@ theorem wo_congr {m m' : Mem} {out : Addr} {k : Nat} {r : BitVec 32} {o : Spec.R
   cases o <;> simp only [Spec.Rsa.writtenOutcome, hb] at h ⊢ <;> exact h
 
 /-- `EM` overwritten with zeros, after the call. -/
-theorem wipe_ok {s u : State} {em : List Byte} (h : SPre s) (R : AtRet s u em) :
+theorem wipe_ok {s u : State} {em : List Byte} (h : SPre pc s) (R : AtRet s u em) :
     WP isa wipe u fun v => Fr2 s v ∧ privOut s em v := by
   have hk := h.k2
   have hk1 := h.k1

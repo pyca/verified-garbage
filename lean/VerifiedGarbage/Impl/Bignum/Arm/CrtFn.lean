@@ -42,27 +42,40 @@ def validateWith (product : Prog isa) : Prog isa :=
   .seq acceptInput (.seq loadP (.seq loadQ (.seq product (.block mergeAcceptance))))
 def validate : Prog isa := validateWith validateProduct
 
-def powerWith (phase : Prog isa) (slot primeSlot exponentSlot : Nat) : Prog isa :=
-  .seq (selectChild slot) (.seq (narrowPowerWith phase slot primeSlot exponentSlot) selectMain)
+/-! The pipeline, with the factors prepared by `prime` and the key checked by
+`check`: `narrowPrime` and `validate` for `vg_rsa_private_crt`. -/
+
+def powerOf (prime : Nat → Prog isa) (phase : Prog isa) (slot primeSlot exponentSlot : Nat) : Prog isa :=
+  .seq (selectChild slot) (.seq (narrowPowerOf prime phase slot primeSlot exponentSlot) selectMain)
 def qSource : List Instr := [.ldrSp .r1 8, .ldr .r1 .r1 228]
 /-- `m_q` and `qInv` into arrays 1 and 4 of p's full workspace, and array 5 cleared for `h`. -/
 def coefficientInput : Prog isa :=
   .seq (.block qSource) (.seq (transferArray 1 6) (.seq (savedOperand 4 96 100) (clearOperandBuffer 104)))
-def coefficientPhase : Prog isa := .seq (selectChild 224)
-  (.seq coefficientInput (.seq (enterNarrow 68) (.seq (narrowPrime 64) (.seq coefficient selectMain))))
+def coefficientPhaseOf (prime : Nat → Prog isa) : Prog isa := .seq (selectChild 224)
+  (.seq coefficientInput (.seq (enterNarrow 68) (.seq (prime 64) (.seq coefficient selectMain))))
 def outputArgs : List Instr := [.ldr .r1 .r0 232, .ldrSp .r4 4, .ldrSp .r6 12]
 def finish : Prog isa := .seq (.block qSource) (.seq (transferArray 1 6)
   (.seq recombine (.seq (.block outputArgs) exportBufferMasked)))
-def computeWith (phase : Prog isa) : Prog isa := .seq (powerWith phase 224 64 80)
-  (.seq (powerWith phase 228 72 88) (.seq coefficientPhase finish))
+def computeOf (prime : Nat → Prog isa) (phase : Prog isa) : Prog isa := .seq (powerOf prime phase 224 64 80)
+  (.seq (powerOf prime phase 228 72 88) (.seq (coefficientPhaseOf prime) finish))
 
 def prepare : Prog isa := .seq (.block PcFn.head) (.seq setupAll
   (.seq (savedOperand 0 8 12) (.block saveMain)))
-def validWith (phase : Prog isa) : Prog isa := .seq prepare (.seq validate (computeWith phase))
-def bodyWith (phase : Prog isa) : Prog isa := .seq (.block modulusCheck) (.ite .eq (validWith phase) PublicFn.fail)
-def codeWith (phase : Prog isa) : Prog isa :=
+def validOf (check : Prog isa) (prime : Nat → Prog isa) (phase : Prog isa) : Prog isa :=
+  .seq prepare (.seq check (computeOf prime phase))
+def bodyOf (check : Prog isa) (prime : Nat → Prog isa) (phase : Prog isa) : Prog isa :=
+  .seq (.block modulusCheck) (.ite .eq (validOf check prime phase) PublicFn.fail)
+def codeOf (check : Prog isa) (prime : Nat → Prog isa) (phase : Prog isa) : Prog isa :=
   .frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-    (.seq (.block entry) (.seq (bodyWith phase) (.block PcFn.restore))) (.pop .r12 56)
+    (.seq (.block entry) (.seq (bodyOf check prime phase) (.block PcFn.restore))) (.pop .r12 56)
+
+def powerWith (phase : Prog isa) (slot primeSlot exponentSlot : Nat) : Prog isa :=
+  powerOf narrowPrime phase slot primeSlot exponentSlot
+def coefficientPhase : Prog isa := coefficientPhaseOf narrowPrime
+def computeWith (phase : Prog isa) : Prog isa := computeOf narrowPrime phase
+def validWith (phase : Prog isa) : Prog isa := validOf validate narrowPrime phase
+def bodyWith (phase : Prog isa) : Prog isa := bodyOf validate narrowPrime phase
+def codeWith (phase : Prog isa) : Prog isa := codeOf validate narrowPrime phase
 
 def code : Prog isa := codeWith windowExpPhase
 

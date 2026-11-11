@@ -44,17 +44,17 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64
 def frameBytes : Nat := 3240
 
 /-- The slots: `out`, `n`, `n_len`, `e`, `e_len`, `r₁`, `r₃`. -/
-def oOut : Nat := 96
-def oN : Nat := 104
-def oK : Nat := 112
-def oE : Nat := 120
-def oEl : Nat := 128
-def oR1 : Nat := 136
-def oR3 : Nat := 144
+def oOut : Nat := 112
+def oN : Nat := 120
+def oK : Nat := 128
+def oE : Nat := 136
+def oEl : Nat := 144
+def oR1 : Nat := 152
+def oR3 : Nat := 160
 /-- `M`, up to 1024 bytes. -/
-def oM : Nat := 160
+def oM : Nat := 168
 /-- `n`'s values, up to 256 words. -/
-def oPre : Nat := 1184
+def oPre : Nat := 1192
 
 /-- `[rsp + d]`. -/
 def sp (d : Nat) : MemOp := { base := .rsp, disp := (d : Int) }
@@ -141,5 +141,43 @@ operation's `pc` and `pd`, by their names. -/
 def code (crtName : String) (crt : Prog isa) (pcName : String) (pc : Prog isa) (pdName : String)
     (pd : Prog isa) : Prog isa :=
   .frame (.alloc frameBytes) (body crtName crt pcName pc pdName pd) (.free frameBytes)
+
+/-! ## With the key's precomputed values
+
+`vg_rsa_private_checked_precomputed`: `vg_rsa_private_checked`'s arguments,
+then the key's precomputed values `pre` and `pre_len` (stack arguments 14
+and 15). It gives them to the CRT that takes them (as the call's stack
+arguments 12 and 13, at `rsp + 96`), and gives
+`vg_rsa_public_precomputed_checked` `pre` itself, whose first
+`2 ⌈n_len / 8⌉` words are `n`'s values, rather than computing them with
+`vg_rsa_public_precompute`; `r₃` is then 1. -/
+
+/-- `crtArgs`, and `pre` and `pre_len` for the CRT. -/
+def crtArgsP : List Instr :=
+  crtArgs ++ ([.mov .rax (.mem (arg 14)), .store (sp 96) .rax, .mov .rax (.mem (arg 15)), .store (sp 104) .rax] :
+    List Instr)
+
+/-- `r₁` kept, `r₃ := 1`, and the arguments of
+`vg_rsa_public_precomputed_checked`: as `pdArgs`, with `pre` as `n`'s
+values. -/
+def pdArgsP : List Instr :=
+  ([.store (sp oR1) .rax, .mov32 .rax (.imm 1), .store (sp oR3) .rax, .mov .rdi (.mem (sp oOut)),
+    .mov .rsi (.mem (sp oK)), .mov .rdx (.mem (arg 14))] : List Instr) ++ preWords .rcx ++
+  ([.mov .r8 (.mem (sp oE)), .mov .r9 (.mem (sp oEl))] : List Instr) ++ lea .rax oM ++
+  ([.store (sp 0) .rax, .mov .rax (.mem (sp oK)), .store (sp 8) .rax, .mov .rax (.mem (arg 12)),
+    .store (sp 16) .rax, .mov .rax (.mem (arg 13)), .store (sp 24) .rax] : List Instr)
+
+/-- `check`, with `n`'s values from `pre`. -/
+def checkP (pdName : String) (pd : Prog isa) : List (Prog isa) :=
+  [.block pdArgsP, .call pdName pd] ++ tail
+
+/-- The body of the frame. -/
+def bodyP (crtName : String) (crt : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
+  seqs ([.block crtArgsP, .call crtName crt] ++ checkP pdName pd)
+
+/-- `vg_rsa_private_checked_precomputed`, calling the CRT given the key's
+precomputed values `crt` and the public operation's `pd`, by their names. -/
+def codeP (crtName : String) (crt : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
+  .frame (.alloc frameBytes) (bodyP crtName crt pdName pd) (.free frameBytes)
 
 end VG.Impl.Rsa.X86_64.PrivChecked

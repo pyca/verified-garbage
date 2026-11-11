@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivFnInput
-import VerifiedGarbage.Proof.Rsa.Arm.PrivBody
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivBody
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rsa.PrivCheck
 
@@ -11,9 +11,12 @@ import VerifiedGarbage.Proof.Rsa.PrivCheck
 namespace VG.Proof.Rsa.Arm
 open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked VG.Proof.Bignum.Arm VG.Proof.Mont
 
-theorem privateFn_ok (v : CrtImpl) (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte}
-    (h : PrivFnInput g bs s) :
-    WP isa (privCode v) s fun t => abiPreserved s t ∧
+theorem codeWith_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte} {Q : State → Prop}
+    {b : Prog isa}
+    (hb : ∀ s, PrivContext g bs s → s.gpr .r0 = g.output → s.gpr .r2 = g.sources 0 →
+      s.gpr .r3 = BitVec.ofNat 32 g.length → Q s → WP isa b s (BodyPost g bs s))
+    (h : PrivFnInput g bs s) (q : Q (entered s)) :
+    WP isa (codeWith b) s fun t => abiPreserved s t ∧
       Spec.Rsa.writtenOutcome t.mem (State.addr g.output) g.length (t.gpr .r0)
         (Spec.Rsa.privateChecked (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6) (bs 7)) := by
   have stackFit : 56 ≤ s.sp.toNat := by have := h.stackFit; simp only [stackBytes] at this; omega
@@ -23,11 +26,11 @@ theorem privateFn_ok (v : CrtImpl) (s : State) {g : PrivGeometry} {bs : Fin 8 �
     have := h.stackFit
     simp only [stackBytes, frameBytes] at *
     omega
-  unfold privCode code
+  unfold codeWith
   refine WP.frame (by decide) stackFit (by decide) ?_
   rw [WP.seq_iff]
   refine WP.alloc (by decide) allocation ?_
-  refine WP.mono (privateBody_ok v (entered s) h.context h.output h.modulus h.count) ?_
+  refine WP.mono (hb (entered s) h.context h.output h.modulus h.count q) ?_
   rintro u ⟨result, _, frame, rest⟩
   have spU : (freed frameBytes u).sp = (pcPushed s).sp := by
     change u.sp + BitVec.ofNat 32 frameBytes = _
@@ -72,4 +75,11 @@ theorem privateFn_ok (v : CrtImpl) (s : State) {g : PrivGeometry} {bs : Fin 8 �
     exact BitVec.sub_add_cancel _ _
   · simp only [popped_gpr (by decide : Reg.r0 ≠ .r12), popped_mem, memT, ret, freed_mem_eq]
     exact result
+
+theorem privateFn_ok (v : CrtImpl) (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte}
+    (h : PrivFnInput g bs s) :
+    WP isa (privCode v) s fun t => abiPreserved s t ∧
+      Spec.Rsa.writtenOutcome t.mem (State.addr g.output) g.length (t.gpr .r0)
+        (Spec.Rsa.privateChecked (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6) (bs 7)) :=
+  codeWith_ok (Q := fun _ => True) s (fun s h o m c _ => privateBody_ok v s h o m c) h trivial
 end VG.Proof.Rsa.Arm

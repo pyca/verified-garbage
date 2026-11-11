@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Rsa.Contract
+public import VerifiedGarbage.Proof.Rsa.CrtPrecomputedContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 
@@ -21,6 +22,11 @@ structure CrtImpl where
   code : Prog isa
   verified : Verified target code (Proof.Rsa.privateCrtContract abi 56)
   stack : FrameStack.armStack code ≤ 56
+  /-- `vg_rsa_private_crt_precomputed`, of the same arithmetic. -/
+  crtPName : String
+  crtP : Prog isa
+  crtPVerified : Verified target crtP (Proof.Rsa.privateCrtPrecomputedContract abi 56)
+  crtPStack : FrameStack.armStack crtP ≤ 56
   pcName : String
   pc : Prog isa
   pcVerified : Verified target pc (Spec.Rsa.publicPrecomputeContract abi 56)
@@ -34,6 +40,8 @@ structure CrtImpl where
 
 def privName (v : CrtImpl) : String := "vg_rsa_private_checked" ++ v.suffix
 def privCode (v : CrtImpl) : Prog isa := Impl.Rsa.Arm.PrivChecked.code v.name v.code v.pcName v.pc v.pdName v.pd
+def privNameP (v : CrtImpl) : String := "vg_rsa_private_checked_precomputed" ++ v.suffix
+def privCodeP (v : CrtImpl) : Prog isa := Impl.Rsa.Arm.PrivChecked.codeP v.crtPName v.crtP v.pdName v.pd
 /-- Inner frame, register save, and the largest callee frame. -/
 def stackBytes : Nat := 3440
 end VG.Proof.Rsa.Arm

@@ -50,6 +50,31 @@ theorem Env.regs {s t u : State} (he : Env s t) (hsp : u.gpr .rsp = t.gpr .rsp) 
   ⟨hsp.trans he.rsp, hrd.trans he.rd, hwr.trans he.wr, hm ▸ he.mem, hm ▸ he.sOut, hm ▸ he.sOl, hm ▸ he.sN,
     hm ▸ he.sK, hm ▸ he.sE, hm ▸ he.sEl⟩
 
+/-- `EnvC` past changes of the registers but `rsp`, and of memory in the
+frame outside its slots from `n`'s or in `out`. -/
+theorem EnvC.of {s t u : State} (he : EnvC s t) (hp : PreS s) (hsp : u.gpr .rsp = t.gpr .rsp) (hrd : u.rd = t.rd)
+    (hwr : u.wr = t.wr) {rs : List Region} (hf : Frame rs t.mem u.mem)
+    (hs : ∀ r ∈ rs, (∃ d n, r = ⟨off (fb s) d, n⟩ ∧ (d + n ≤ oN ∨ oEM ≤ d) ∧ d + n ≤ frameBytes) ∨
+      r = outR s) : EnvC s u := by
+  have hsl : ∀ {d}, oN ≤ d → d + 8 ≤ oEM → word u.mem (fb s) d = word t.mem (fb s) d := fun hd hd' =>
+    hf.readW (Region.contains_self _ _) (fun r hr => by
+      rcases hs r hr with ⟨d', n, rfl, h₁, h₂⟩ | rfl
+      · exact Offset.disjoint _ (by unfold oN oEM at *; omega_arith) (by unfold frameBytes oEM at *; omega_arith)
+          (by unfold frameBytes at *; omega_arith)
+      · exact (hp.dKo.sub_left (frame_sub s (by unfold oEM frameBytes at *; omega_arith)))) (by decide)
+  refine ⟨hsp.trans he.rsp, hrd.trans he.rd, hwr.trans he.wr, he.mem.trans (hf.sub fun r hr => ?_),
+    (hsl (by decide) (by decide)).trans he.sN, (hsl (by decide) (by decide)).trans he.sK,
+    (hsl (by decide) (by decide)).trans he.sE, (hsl (by decide) (by decide)).trans he.sEl⟩
+  rcases hs r hr with ⟨d, n, rfl, -, h₂⟩ | rfl
+  · exact ⟨_, List.mem_cons_self .., frame_sub s h₂⟩
+  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
+
+/-- `EnvC` past changes of the registers but `rsp`. -/
+theorem EnvC.regs {s t u : State} (he : EnvC s t) (hsp : u.gpr .rsp = t.gpr .rsp) (hm : u.mem = t.mem)
+    (hrd : u.rd = t.rd) (hwr : u.wr = t.wr) : EnvC s u :=
+  ⟨hsp.trans he.rsp, hrd.trans he.rd, hwr.trans he.wr, hm ▸ he.mem, hm ▸ he.sN, hm ▸ he.sK, hm ▸ he.sE,
+    hm ▸ he.sEl⟩
+
 theorem frame_bytes {s : State} {d n : Nat} (hp : PreS s) (h : d + n ≤ frameBytes) :
     ∀ i < n, InRegions (⟨fb s, frameBytes⟩ :: s.wr) (off (fb s) d + BitVec.ofNat 64 i) 1 := by
   have := fb_toNat hp
@@ -131,7 +156,7 @@ theorem encPre {s t : State} (hp : PreS s) (he : Env s t) (h8 : t.gpr .r8 = off 
     rd := fun j hj => by
       rw [hsi, he.rd, he.wr]
       rw [h9] at hj
-      exact ⟨⟨stackArg s 1, (stackArg s 2).toNat⟩, List.mem_append_left _ (by rw [hp.hrd]; simp),
+      exact ⟨⟨stackArg s 1, (stackArg s 2).toNat⟩, List.mem_append_left _ (hp.hrd _ (by simp)),
         Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     sep := fun j hj i hi => by
       rw [hsi, h8]
@@ -270,7 +295,7 @@ theorem callArgs_ok {s t : State} (hp : PreS s) (he : Env s t) :
   | i + 2, hi => exact hw i (by omega_arith)
 
 /-- The count and address of `EM`'s bytes, and the zero byte. -/
-theorem wipeHead_ok {s t : State} (hp : PreS s) (he : Env s t) :
+theorem wipeHead_ok {s t : State} (hp : PreS s) (he : EnvC s t) :
     WP isa (.block (([.mov .r11 (.mem (sp oK)), .mov32 .rdx (.imm 0)] : List Instr) ++ lea .r10 oEM)) t fun u =>
       Keep [.r11, .rdx, .r10] t u ∧ u.mem = t.mem ∧ u.gpr .r11 = BitVec.ofNat 64 (s.gpr .rcx).toNat ∧
       u.gpr .rdx = 0 ∧ u.gpr .r10 = off (fb s) oEM := by
@@ -281,8 +306,8 @@ theorem wipeHead_ok {s t : State} (hp : PreS s) (he : Env s t) :
       sx_ofNat (show oEM < 2 ^ 31 by decide), Rec.ofNat_toNat64]) rfl) fun u ⟨h, k⟩ => ⟨k, h⟩
 
 /-- `EM` overwritten with zeros, keeping `rax`. -/
-theorem wipe_ok {s t : State} (hp : PreS s) (he : Env s t) :
-    WP isa wipe t fun u => Env s u ∧ u.gpr .rax = t.gpr .rax ∧
+theorem wipe_ok {s t : State} (hp : PreS s) (he : EnvC s t) :
+    WP isa wipe t fun u => EnvC s u ∧ u.gpr .rax = t.gpr .rax ∧
       Spec.Rsa.bytesAt u.mem (s.gpr .rdi) (s.gpr .rcx).toNat = Spec.Rsa.bytesAt t.mem (s.gpr .rdi) (s.gpr .rcx).toNat := by
   have hs := he.scr hp
   have hk1 := hp.k1
@@ -290,9 +315,9 @@ theorem wipe_ok {s t : State} (hp : PreS s) (he : Env s t) :
   have hF := fb_toNat hp
   unfold wipe
   refine WP.seq (WP.mono (wipeHead_ok hp he) fun t₁ ⟨k₁, hm₁, h11, hdx, h10⟩ => ?_)
-  have he₁ : Env s t₁ := he.regs (k₁.gpr (by decide)) hm₁ k₁.2.1 k₁.2.2
+  have he₁ : EnvC s t₁ := he.regs (k₁.gpr (by decide)) hm₁ k₁.2.1 k₁.2.2
   refine wp_countdown (cnt := .r11) (N := (s.gpr .rcx).toNat) (by omega_arith) (by omega_arith)
-    (fun i u => Env s u ∧ Keep [.r11, .rdx, .r10] t₁ u ∧ u.gpr .rdx = 0 ∧
+    (fun i u => EnvC s u ∧ Keep [.r11, .rdx, .r10] t₁ u ∧ u.gpr .rdx = 0 ∧
       u.gpr .r10 = off (fb s) (oEM + i) ∧
       u.mem = writeBytes t₁.mem (off (fb s) oEM) (List.replicate i 0)) ?_ (fun u ⟨heu, ku, _, _, hmu⟩ => ?_)
     ⟨he₁, Keep.refl _ _, hdx, by rw [h10]; rfl, by simp only [List.replicate_zero, writeBytes_nil]⟩ h11
@@ -305,7 +330,7 @@ theorem wipe_ok {s t : State} (hp : PreS s) (he : Env s t) :
         u'.gpr .r10 = u.gpr .r10 + 1 ∧ u'.gpr .r11 = u.gpr .r11 - 1 ∧ u'.zf = some (u.gpr .r11 - 1 == 0)) (by
       xrun [ea0, hA, hdxu]; rfl) rfl) fun u' ⟨⟨hm', h10', h11', hz⟩, k'⟩ => ⟨⟨?_, (ku.trans k').mono (by simp),
         by rw [k'.gpr (by decide), hdxu], ?_, ?_⟩, h11', hz⟩
-    · refine Env.of heu hp (k'.gpr (by decide)) k'.2.1 k'.2.2 (hm' ▸ (Frame.refl _ _).writeW
+    · refine EnvC.of heu hp (k'.gpr (by decide)) k'.2.1 k'.2.2 (hm' ▸ (Frame.refl _ _).writeW
         (List.mem_singleton_self _) _ (Region.contains_self _ _)) fun r hr => .inl
         ⟨oEM + i, 1, by rw [List.mem_singleton.mp hr, h10u], .inr (by unfold oEM; omega_arith),
           by unfold oEM frameBytes; omega_arith⟩

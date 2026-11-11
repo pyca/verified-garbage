@@ -65,15 +65,19 @@ structure CCPub where
   m : CrtPub
   sp : Addr
 
-/-- A state the contract allows, with the public data `p`. -/
-def CCRel (p : CCPub) (s : State) : Prop :=
+/-- A state the contract allows, with the public data `p`, for a key whose
+modulus and factors satisfy `G`. -/
+def CCRel (G : Nat → Nat → Nat → Prop) (p : CCPub) (s : State) : Prop :=
   crtA.pre s ∧ s.sp = p.sp ∧ stackArg s 8 = p.m.B ∧ (stackArg s 9).toNat * 8 = p.m.Z ∧
     (s.gpr .x3).toNat = p.m.k ∧ s.gpr .x0 = p.m.op ∧ s.gpr .x2 = p.m.np ∧ s.gpr .x4 = p.m.ip ∧
     s.gpr .x6 = p.m.pp ∧ stackArg s 0 = p.m.qp ∧ stackArg s 2 = p.m.dpp ∧ stackArg s 4 = p.m.dqp ∧
     stackArg s 6 = p.m.qip ∧ (s.gpr .x7).toNat = p.m.pl ∧ (stackArg s 1).toNat = p.m.ql ∧
-    Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat = p.m.nb
+    Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat = p.m.nb ∧
+    G (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat))
+      (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat))
+      (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))
 
-theorem CCRel.x3 {p : CCPub} {s : State} (h : CCRel p s) : s.gpr .x3 = BitVec.ofNat 64 p.m.k := by
+theorem CCRel.x3 {G : Nat → Nat → Nat → Prop} {p : CCPub} {s : State} (h : CCRel G p s) : s.gpr .x3 = BitVec.ofNat 64 p.m.k := by
   rw [← h.2.2.2.2.1, ofNat_toNat64]
 
 /-- After `entry` and the modulus' check, from `s`. -/
@@ -97,27 +101,28 @@ theorem crtHeadChk_ok {s : State} (c : CrtCtx s) : WP isa (.block (entry ++ inva
 theorem head_split : entry ++ invalid = ([.ldrSp .x8 64] : List Instr) ++ (entry.drop 1 ++ invalid) := rfl
 
 /-- After `entry`'s first instruction. -/
-def CC1 (p : CCPub) (t : State) : Prop :=
-  ∃ s, CCRel p s ∧ t.gpr .x8 = p.m.B ∧ t.gpr .x2 = p.m.np ∧ t.gpr .x3 = BitVec.ofNat 64 p.m.k ∧
+def CC1 (G : Nat → Nat → Nat → Prop) (p : CCPub) (t : State) : Prop :=
+  ∃ s, CCRel G p s ∧ t.gpr .x8 = p.m.B ∧ t.gpr .x2 = p.m.np ∧ t.gpr .x3 = BitVec.ofNat 64 p.m.k ∧
     WP isa (.block (entry.drop 1 ++ invalid)) t (HeadPost s)
 
 /-- After `entry` and the modulus' check. -/
-def CC3 (p : CCPub) (t : State) : Prop := ∃ s, CCRel p s ∧ HeadPost s t
+def CC3 (G : Nat → Nat → Nat → Prop) (p : CCPub) (t : State) : Prop := ∃ s, CCRel G p s ∧ HeadPost s t
 
 /-- `main`'s hypotheses after the head and the modulus' check. -/
-theorem cc3_pre {p : CCPub} {t : State} (h : CC3 p t) :
+theorem cc3_pre {G : Nat → Nat → Nat → Prop} {p : CCPub} {t : State} (h : CC3 G p t) :
     ∃ xb pb qb dpb dqb qib, CrtPre t p.m.B p.m.Z p.m.k p.m.op p.m.np p.m.ip p.m.pp p.m.qp p.m.dpp p.m.dqp
-      p.m.qip p.m.pl p.m.ql p.m.nb xb pb qb dpb dqb qib := by
-  obtain ⟨s, ⟨hpre, -, hB, hZ, hk, hop, hnp, hip, hpp, hqp, hdpp, hdqp, hqip, hpl, hql, hnb⟩, t₁, h, -, hm, k⟩ := h
+      p.m.qip p.m.pl p.m.ql p.m.nb xb pb qb dpb dqb qib ∧ G p.m.N (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) := by
+  obtain ⟨s, ⟨hpre, -, hB, hZ, hk, hop, hnp, hip, hpp, hqp, hdpp, hdqp, hqip, hpl, hql, hnb, hg⟩, t₁, h, -, hm, k⟩ := h
   have := crtPre_of (crtCtx_of hpre) h hm k
-  rw [hnb] at this
+  rw [hnb] at this hg
   rw [hB, hZ, hk, hop, hnp, hip, hpp, hqp, hdpp, hdqp, hqip, hpl, hql] at this
-  exact ⟨_, _, _, _, _, _, this⟩
+  rw [hpp, hqp, hpl, hql] at hg
+  exact ⟨_, _, _, _, _, _, this, hg⟩
 
 /-- The validity of `n`, in `x9`. -/
-theorem cc3_x9 {p : CCPub} {t : State} (h : CC3 p t) :
+theorem cc3_x9 {G : Nat → Nat → Nat → Prop} {p : CCPub} {t : State} (h : CC3 G p t) :
     t.gpr .x9 = BitVec.ofNat 64 (Spec.Rsa.modulusValid p.m.N p.m.k).toNat := by
-  obtain ⟨s, ⟨-, -, -, -, hk, -, -, -, -, -, -, -, -, -, -, hnb⟩, t₁, -, hz, -⟩ := h
+  obtain ⟨s, ⟨-, -, -, -, hk, -, -, -, -, -, -, -, -, -, -, hnb, -⟩, t₁, -, hz, -⟩ := h
   rw [hz, hnb, hk]
 
 variable (M : Mont)
