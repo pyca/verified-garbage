@@ -401,4 +401,133 @@ theorem prepB_ok {s : State} {B : Addr} {Z w N a r m t wd : Nat} (h : Ws s B Z w
   · rw [ku.gpr .r10 (by decide), k5.gpr .r10 (by decide), r10]
   · rw [ku.gpr .r11 (by decide), k5.gpr .r11 (by decide), r11]
 
+/-- Two arrays, neither of them `c`. -/
+theorem two_ne {a b c : Nat} (ha : a ≠ c) (hb : b ≠ c) : ∀ x ∈ [a, b], x ≠ c := by
+  intro x hx
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with rfl | rfl
+  · exact ha
+  · exact hb
+
+/-- The registers `divW` changes. -/
+abbrev divRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
+
+/-- The divisor `divW` divides by: `[m]`'s `wd` words with the top bit of
+word `wd - 1` set. -/
+def forcedOf (mem : Mem) (B : Addr) (d wd : Nat) : Nat :=
+  wordsVal mem B d (wd - 1) + 2 ^ (64 * (wd - 1)) * ((word mem B (d + 8 * (wd - 1))).toNat % 2 ^ 63 + 2 ^ 63)
+
+/-- The divisor's top words, from its top word `F`. -/
+theorem forced_top {L L' F x k : Nat} (hk : L = L' + 2 ^ (64 * k) * x) (hL' : L' < 2 ^ (64 * k)) :
+    (L + 2 ^ (64 * (k + 1)) * F) / 2 ^ (64 * k) = F * 2 ^ 64 + x := by
+  rw [hk, show 64 * (k + 1) = 64 * k + 64 by omega, Nat.pow_add, Nat.add_assoc, Nat.mul_assoc,
+    ← Nat.mul_add, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt hL', Nat.zero_add,
+    Nat.add_comm, Nat.mul_comm (2 ^ 64)]
+
+/-- `divW a r m t sv`, for `w = 4 wd`, `wd ≥ 4`: `[r] := [a] mod forcedOf [m]`,
+changing the arrays `r`, `m` (its word `wd - 1`), `t` and `sv`, and the
+registers `divRegs`. -/
+theorem divW_ok {s : State} {B : Addr} {Z w N a r m t sv wd : Nat} (h : Ws s B Z w N)
+    (ha : a < N) (hr : r < N) (hm : m < N) (ht : t < N) (hsv : sv < N)
+    (har : a ≠ r) (ham : a ≠ m) (hat : a ≠ t) (hasv : a ≠ sv) (hrm : r ≠ m) (hrt : r ≠ t) (hrsv : r ≠ sv)
+    (hmt : m ≠ t) (hmsv : m ≠ sv) (htsv : t ≠ sv) (hN : N ≤ 256) (hw : w = 4 * wd) (hwd : 4 ≤ wd) :
+    WP isa (divW a r m t sv) s fun u =>
+      num u.mem B w r = num s.mem B w a % forcedOf s.mem B (arr w m) wd ∧ Ws u B Z w N ∧ Keep divRegs s u ∧
+      KeyWorkspace.Keep B w [r, m, t, sv] [] s.mem u.mem ∧
+      w32 u.mem B (arr w m + 4 * w) = w32 s.mem B (arr w m + 4 * w) := by
+  have := h.wle
+  have fa := h.fit64 ha
+  have fr := h.fit64 hr
+  have fm := h.fit64 hm
+  have fsv := h.fit64 hsv
+  simp only [S] at fa fr fm fsv
+  rw [divW, wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (prepA_ok h hr hsv hrsv hN hw hwd) fun s3 ⟨sv3, z3, ka, h3, k3⟩ => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (prepB_ok h3 ha hr hm ht hmt hN hw hwd)
+    fun s6 ⟨F, hF, tP, tF, tv, tL, wM, wtop, kb, r5, r8, r4, r9, r10, r11, h6, k6⟩ => ?_
+  -- In terms of `s`.
+  have nm : ∀ x ∈ [sv, r], x ≠ m := two_ne (Ne.symm hmsv) hrm
+  have m1 : wordsVal s3.mem B (arr w m) (wd - 1) = wordsVal s.mem B (arr w m) (wd - 1) := by
+    rw [wordsVal_eq_val32, wordsVal_eq_val32]
+    exact VG.Proof.Rsa.PPC64LE.InvBatch.keep_val ka (by omega) nm (fun d hd => absurd hd (by simp)) fm
+  have xm : word s3.mem B (arr w m + 8 * (wd - 1)) = word s.mem B (arr w m + 8 * (wd - 1)) :=
+    keep_word64 ka (by simp only [S]; omega) nm fm
+  have xl : word s3.mem B (arr w m + 8 * (wd - 2)) = word s.mem B (arr w m + 8 * (wd - 2)) :=
+    keep_word64 ka (by simp only [S]; omega) nm fm
+  have hM : wordsVal s6.mem B (arr w m) wd = forcedOf s.mem B (arr w m) wd := by
+    rw [wM, m1, forcedOf, hF, xm]
+  generalize forcedOf s.mem B (arr w m) wd = M at hM ⊢
+  have hlow := wordsVal_lt s.mem B (arr w m) (wd - 1)
+  have hF63 : 2 ^ 63 ≤ F.toNat := by rw [hF]; omega
+  have hMd : M / 2 ^ (64 * (wd - 1)) = F.toNat := by
+    rw [← hM, wM, m1, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt hlow, Nat.zero_add]
+  have hMl : M / 2 ^ (64 * (wd - 2)) = F.toNat * 2 ^ 64 + (word s.mem B (arr w m + 8 * (wd - 2))).toNat := by
+    have e := wordsVal_succ_top s.mem B (arr w m) (wd - 2)
+    rw [show wd - 2 + 1 = wd - 1 by omega] at e
+    rw [← hM, wM, m1, show wd - 1 = wd - 2 + 1 by omega]
+    exact forced_top (by rw [show wd - 2 + 1 = wd - 1 by omega]; exact e) (wordsVal_lt _ _ _ _)
+  have nr : ∀ x ∈ [m, t], x ≠ r := two_ne (Ne.symm hrm) (Ne.symm hrt)
+  have na : ∀ x ∈ [m, t], x ≠ a := two_ne (Ne.symm ham) (Ne.symm hat)
+  have na' : ∀ x ∈ [sv, r], x ≠ a := two_ne (Ne.symm hasv) (Ne.symm har)
+  have hX : wordsVal s6.mem B (arr w a) (2 * wd) = num s.mem B w a := by
+    rw [wordsVal_eq_val32, show 2 * (2 * wd) = w by omega,
+      VG.Proof.Rsa.PPC64LE.InvBatch.keep_val kb (by omega) na (fun d hd => absurd hd (by simp)) fa,
+      VG.Proof.Rsa.PPC64LE.InvBatch.keep_val ka (by omega) na' (fun d hd => absurd hd (by simp)) fa]
+  have zr : ∀ i < 2 * wd, word s6.mem B (arr w r + 8 * i) = 0 := fun i hi => by
+    rw [keep_word64 kb (by simp only [S]; omega) nr fr]; exact z3 i hi
+  have h0 : wordsVal s6.mem B (arr w r) wd = 0 := by
+    have := wordsVal_zero_top (m := s6.mem) (B := B) (d := arr w r) (n := 0) wd fun i _ h2 => zr i (by omega)
+    rw [Nat.zero_add] at this
+    rw [this]; rfl
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (loop_ok h6 ha hr hm ht har hrm hrt hw hwd r5 r8 r9 r10 r11 r4
+    (by rw [tP]; rfl) (by rw [tF, hM, Nat.pow_zero, Nat.mul_one, hMd])
+    (by rw [hM, Nat.pow_zero, Nat.mul_one, hMd]; exact hF63) (by rw [tv, tF])
+    (by rw [tF, tL, xl, hM, Nat.pow_zero, Nat.mul_one, hMl]) h0) fun s7 ⟨q7, top7, o7, k7⟩ => ?_
+  rw [hM, hX] at q7
+  have h7 := h6.of_keep k7
+  rw [show seqs [.block (VG.Impl.Rsa.PPC64LE.KeyDiv.restore sv)] = .block (VG.Impl.Rsa.PPC64LE.KeyDiv.restore sv)
+    from rfl]
+  have kc : KeyWorkspace.Keep B w [r] [] s6.mem s7.mem :=
+    KeyWorkspace.Keep.of_arr (o := r) (d := 0) (n := 8 * (wd + 1)) (by rw [Nat.add_zero]; exact o7)
+      (by simp only [S]; omega) (by simp)
+  refine WP.mono (restore_ok h7 hsv hN (by omega)) fun u ⟨ug, um, uk⟩ => ⟨?_, h7.of_keep uk, ?_, ?_, ?_⟩
+  · -- `[r]`: its first `wd` words, and zeros above.
+    have e1 : num u.mem B w r = wordsVal s7.mem B (arr w r) (wd + wd) := by
+      show val32 u.mem B (arr w r) w = _
+      rw [um, wordsVal_eq_val32]; congr 1; omega
+    rw [e1, wordsVal_zero_top wd fun i h1 h2 => ?_, q7]
+    rcases Nat.eq_or_lt_of_le h1 with e | e
+    · rw [← e]; exact top7
+    · rw [o7.word (by omega) (by omega)]; exact zr i (by omega)
+  · -- The saved registers are restored.
+    have kAll := (((k3.trans k6).trans k7).trans uk)
+    refine ⟨fun x hx => ?_, kAll.rd, kAll.wr, kAll.sp, kAll.lr⟩
+    have sv7 : ∀ i < 7, word s7.mem B (arr w sv + 8 * i) = s.gpr (svReg i) := fun i hi => by
+      have ns : ∀ x ∈ [r], x ≠ sv := fun x hx => by simp only [List.mem_singleton] at hx; subst hx; exact hrsv
+      have ns' : ∀ x ∈ [m, t], x ≠ sv := two_ne hmsv htsv
+      rw [keep_word64 kc (by simp only [S]; omega) ns fsv, keep_word64 kb (by simp only [S]; omega) ns' fsv]
+      exact sv3 i hi
+    by_cases hs : x ∈ [Reg.r14, .r15, .r16, .r17, .r18, .r20, .r22]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hs
+      rcases hs with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact (ug 0 (by decide)).trans (sv7 0 (by decide))
+      · exact (ug 1 (by decide)).trans (sv7 1 (by decide))
+      · exact (ug 2 (by decide)).trans (sv7 2 (by decide))
+      · exact (ug 3 (by decide)).trans (sv7 3 (by decide))
+      · exact (ug 4 (by decide)).trans (sv7 4 (by decide))
+      · exact (ug 5 (by decide)).trans (sv7 5 (by decide))
+      · exact (ug 6 (by decide)).trans (sv7 6 (by decide))
+    · refine kAll.gpr x ?_
+      cases x <;> simp [divRegs, quotRegs] at hx hs ⊢
+  · rw [um]
+    exact ((ka.mono (by simp) (by simp)).trans (kb.mono (by simp) (by simp))).trans (kc.mono (by simp) (by simp))
+  · rw [um]
+    exact ((congrArg BitVec.toNat (VG.Proof.Rsa.PPC64LE.InvBatch.keep_word kc (b := 32) (o := 4 * w)
+      (by simp only [S]; omega) (fun x hx => by simp only [List.mem_singleton] at hx; subst hx; exact hrm)
+      (fun d hd => absurd hd (by simp)) fm)).trans wtop).trans
+      (congrArg BitVec.toNat (VG.Proof.Rsa.PPC64LE.InvBatch.keep_word ka (b := 32) (o := 4 * w)
+      (by simp only [S]; omega) nm (fun d hd => absurd hd (by simp)) fm))
+
 end VG.Proof.Rsa.PPC64LE.KeyDiv
