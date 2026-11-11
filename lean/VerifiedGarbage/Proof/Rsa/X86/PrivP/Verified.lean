@@ -27,7 +27,7 @@ stack-pointer safety, and the `vg_rsa_private_crt_precomputed` it calls
 (`crtPBaseline`).
 -/
 
--- separate module: `vg_rsa_private_checked_precomputed`'s own proof, which its callers' call lemmas (`PrivCallP`) and the PKCS#1 signing wiring build on.
+-- separate module: the wrapper's certificate, which each precomputed caller (PKCS #1 v1.5 signing and decryption) imports without the other.
 
 @[expose] public section
 namespace VG.Proof.Rsa.X86.PrivChecked

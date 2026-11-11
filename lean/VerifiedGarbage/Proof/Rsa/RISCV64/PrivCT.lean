@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCorrect
+public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPreCopy
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -74,8 +74,9 @@ theorem pub_data {s₁ s₂ : State} (h : (Proof.Rsa.privateCheckedContract RISC
   simp only [argRegs, List.map_cons, List.map_nil, stackArgs_twelve, h3, h4, h5, h6, h7, h8, h9, h10, a0,
     a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, hsp]
 
-/-- The public data's facts. -/
-structure Same (s₁ s₂ : State) : Prop where
+/-- The public data's facts, of `vg_rsa_private_checked` or, with `pc`, of
+`vg_rsa_private_checked_precomputed`. -/
+structure Same (pc : Bool) (s₁ s₂ : State) : Prop where
   gpr : ∀ r ∈ argRegs, s₁.gpr r = s₂.gpr r
   arg : ∀ i < 12, stackArg s₁ i = stackArg s₂ i
   sp : s₁.sp = s₂.sp
@@ -83,38 +84,43 @@ structure Same (s₁ s₂ : State) : Prop where
     Spec.Rsa.bytesAt s₂.mem (s₂.gpr .a2) (s₂.gpr .a3).toNat
   e : Spec.Rsa.bytesAt s₁.mem (s₁.gpr .a4) (s₁.gpr .a5).toNat =
     Spec.Rsa.bytesAt s₂.mem (s₂.gpr .a4) (s₂.gpr .a5).toNat
+  arg12 : pc = true → stackArg s₁ 12 = stackArg s₂ 12
+  pv : preVal pc s₁ = preVal pc s₂
 
-theorem same_of {s₁ s₂ : State} (h : dataOf s₁ = dataOf s₂) : Same s₁ s₂ := by
+theorem same_of {s₁ s₂ : State} (h : dataOf s₁ = dataOf s₂) : Same false s₁ s₂ := by
   simp only [dataOf, Prod.mk.injEq] at h
   obtain ⟨hr, ha, hb, hsp⟩ := h
   have gr : ∀ r ∈ argRegs, s₁.gpr r = s₂.gpr r := List.map_inj_left.mp hr
   have h3 : s₁.gpr .a3 = s₂.gpr .a3 := gr _ (by decide)
   rw [List.map_append, List.map_append] at hb
   obtain ⟨hn, he⟩ := List.append_inj hb (by simp [Proof.Rsa.bytesAt_length', h3])
-  exact ⟨gr, fun i hi => List.map_inj_left.mp ha i (List.mem_range.mpr hi), hsp,
-    (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hn,
-    (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 he⟩
+  have hn' := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hn
+  exact ⟨gr, fun i hi => List.map_inj_left.mp ha i (List.mem_range.mpr hi), hsp, hn',
+    (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 he, (fun h => nomatch h),
+    by simp only [preVal, Bool.false_eq_true, ↓reduceIte]; rw [hn', h3]⟩
 
 /-- On entry, with the public data `d`. -/
 def Φ0 (d : List (BitVec 64) × List (BitVec 64) × List Nat × Addr) (s : State) : Prop :=
   (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre s ∧ dataOf s = d
 
 /-- Two states for the same public data. -/
-theorem same {d} {s₁ s₂ : State} (h₁ : Φ0 d s₁) (h₂ : Φ0 d s₂) : Same s₁ s₂ :=
+theorem same {d} {s₁ s₂ : State} (h₁ : Φ0 d s₁) (h₂ : Φ0 d s₂) : Same false s₁ s₂ :=
   same_of (h₁.2.trans h₂.2.symm)
 
-theorem fb_same {s₁ s₂ : State} (S : Same s₁ s₂) : fb s₁ = fb s₂ := by simp only [fb, S.sp]
+theorem fb_same {pc : Bool} {s₁ s₂ : State} (S : Same pc s₁ s₂) : fb s₁ = fb s₂ := by simp only [fb, S.sp]
 
-theorem r_same {s₁ s₂ : State} (S : Same s₁ s₂) {r : Reg} (hr : r ∈ argRegs := by decide) :
+theorem r_same {pc : Bool} {s₁ s₂ : State} (S : Same pc s₁ s₂) {r : Reg} (hr : r ∈ argRegs := by decide) :
     s₁.gpr r = s₂.gpr r := S.gpr r hr
 
 /-! ## The calls -/
 
-theorem crt_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP s₁) (h₂ : PreP s₂) (S : Same s₁ s₂) (A₁ : AtCrt s₁ t₁)
+variable {pc : Bool}
+
+theorem crt_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP pc s₁) (h₂ : PreP pc s₂) (S : Same pc s₁ s₂) (A₁ : AtCrt s₁ t₁)
     (A₂ : AtCrt s₂ t₂) : Proof.Bignum.RISCV64.Crt.fnContract.pub (crtEntry s₁ t₁) (crtEntry s₂ t₂) := by
   have g : ∀ {s t : State}, ∀ r, r ∉ linkRegs → (crtEntry s t).gpr r = t.gpr r :=
     fun r hr => State.callEntry_gpr _ hr
-  have hn : ∀ {s t : State}, PreP s → AtCrt s t →
+  have hn : ∀ {s t : State}, PreP pc s → AtCrt s t →
       Spec.Rsa.bytesAt t.mem (s.gpr .a2) (s.gpr .a3).toNat = Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat :=
     fun h A => bytes_of_frame A.mem (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.kn.symm)
       (by have := h.wn; omega)
@@ -141,12 +147,12 @@ theorem crt_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP s₁) (h₂ : PreP s�
     rw [g .a2 (by decide), g .a3 (by decide), g .a2 (by decide), g .a3 (by decide), A₁.a2, A₁.a3, A₂.a2,
       A₂.a3, hn h₁ A₁, hn h₂ A₂, S.n]
 
-theorem pre_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP s₁) (h₂ : PreP s₂) (S : Same s₁ s₂) (A₁ : AtPre s₁ t₁)
+theorem pre_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP pc s₁) (h₂ : PreP pc s₂) (S : Same pc s₁ s₂) (A₁ : AtPre s₁ t₁)
     (A₂ : AtPre s₂ t₂) : Proof.Bignum.RISCV64.Pre.fnContract.pub (t₁.callEntry.withRegions [nR s₁] (preWr s₁))
       (t₂.callEntry.withRegions [nR s₂] (preWr s₂)) := by
   have g : ∀ {s t : State}, ∀ r, r ∉ linkRegs → (t.callEntry.withRegions [nR s] (preWr s)).gpr r = t.gpr r :=
     fun r hr => State.callEntry_gpr _ hr
-  have hn : ∀ {s t : State}, PreP s → AtPre s t →
+  have hn : ∀ {s t : State}, PreP pc s → AtPre s t →
       Spec.Rsa.bytesAt t.mem (s.gpr .a2) (s.gpr .a3).toNat = Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat :=
     fun h A => bytes_of_frame A.mem (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -161,18 +167,18 @@ theorem pre_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP s₁) (h₂ : PreP s�
     S.arg 11 (by decide)]
   exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
-theorem pubEntry_sa {s t : State} (A : AtPubC s t) :
+theorem pubEntry_sa {s t : State} (A : AtPubC pc s t) :
     stackArg (pubEntry s t) 0 = stackArg s 10 ∧ stackArg (pubEntry s t) 1 = stackArg s 11 := by
   have hsp : (pubEntry s t).sp = fb s := A.sp
   refine ⟨?_, ?_⟩
   · show t.mem.readW ((pubEntry s t).sp + _) 64 = _; rw [hsp]; exact A.psa0
   · show t.mem.readW ((pubEntry s t).sp + _) 64 = _; rw [hsp]; exact A.psa1
 
-theorem pub_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP s₁) (h₂ : PreP s₂) (S : Same s₁ s₂) (A₁ : AtPubC s₁ t₁)
-    (A₂ : AtPubC s₂ t₂) : Proof.Bignum.RISCV64.Pub.fnContract.pub (pubEntry s₁ t₁) (pubEntry s₂ t₂) := by
+theorem pub_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP pc s₁) (h₂ : PreP pc s₂) (S : Same pc s₁ s₂) (A₁ : AtPubC pc s₁ t₁)
+    (A₂ : AtPubC pc s₂ t₂) : Proof.Bignum.RISCV64.Pub.fnContract.pub (pubEntry s₁ t₁) (pubEntry s₂ t₂) := by
   have g : ∀ {s t : State}, ∀ r, r ∉ linkRegs → (pubEntry s t).gpr r = t.gpr r :=
     fun r hr => State.callEntry_gpr _ hr
-  have he : ∀ {s t : State}, PreP s → AtPubC s t →
+  have he : ∀ {s t : State}, PreP pc s → AtPubC pc s t →
       Spec.Rsa.bytesAt t.mem (s.gpr .a4) (s.gpr .a5).toNat = Spec.Rsa.bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat :=
     fun h A => bytes_of_frame A.mem (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -186,7 +192,7 @@ theorem pub_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP s₁) (h₂ : PreP s�
     A₁.a2, A₁.a3, A₁.a4, A₁.a5, A₁.a6, A₁.a7, A₂.a0, A₂.a1, A₂.a2, A₂.a3, A₂.a4, A₂.a5, A₂.a6, A₂.a7, a₁, b₁, a₂,
     b₂, State.withRegions_mem, State.callEntry_mem, State.withRegions_sp, State.callEntry_sp, A₁.sp, A₂.sp,
     pre_toNat h₁, pre_toNat h₂]
-  rw [A₁.pre, A₂.pre, he h₁ A₁, he h₂ A₂, S.n, S.e, fb_same S, r_same S (r := .a0), r_same S (r := .a3),
+  rw [A₁.pre, A₂.pre, S.pv, he h₁ A₁, he h₂ A₂, S.e, fb_same S, r_same S (r := .a0), r_same S (r := .a3),
     r_same S (r := .a4), r_same S (r := .a5), S.arg 10 (by decide), S.arg 11 (by decide)]
   exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
@@ -195,72 +201,119 @@ theorem pub_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP s₁) (h₂ : PreP s�
 /-- The public data. -/
 abbrev Data := List (BitVec 64) × List (BitVec 64) × List Nat × Addr
 
-def Φ1 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ u = allocd frameBytes s
-def Ψ1 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ AtCrt s u
-def Ψ2 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ Mid s u ∧ crtOut s u
-def Ψ3 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ AtPre s u
-def Ψ4 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ AtPub s u
-def Ψ5 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ AtPubC s u
-def Ψ6 (d : Data) (u : State) : Prop := ∃ s, Φ0 d s ∧ AtCmp s u
+/-- What the chain needs of the entry states `E d s` for the public data `d`. -/
+structure EntryOk {D : Type} (pc : Bool) (E : D → State → Prop) : Prop where
+  pre : ∀ d s, E d s → PreP pc s
+  same : ∀ d s₁ s₂, E d s₁ → E d s₂ → Same pc s₁ s₂
 
-theorem crt_rel : RelCT isa (Two Ψ1) crtCall fun _ _ => True := by
+section
+
+variable {D : Type} (E : D → State → Prop)
+
+def Φ1 (d : D) (u : State) : Prop := ∃ s, E d s ∧ u = allocd frameBytes s
+def Ψ1 (d : D) (u : State) : Prop := ∃ s, E d s ∧ AtCrt s u
+def Ψ2 (d : D) (u : State) : Prop := ∃ s, E d s ∧ Mid s u ∧ crtOut s u
+def Ψ3 (d : D) (u : State) : Prop := ∃ s, E d s ∧ AtPre s u
+def ΨC (d : D) (u : State) : Prop := ∃ s, E d s ∧ AtCopy s u
+def Ψ4 (pc : Bool) (d : D) (u : State) : Prop := ∃ s, E d s ∧ AtPub pc s u
+def Ψ5 (pc : Bool) (d : D) (u : State) : Prop := ∃ s, E d s ∧ AtPubC pc s u
+def Ψ6 (pc : Bool) (d : D) (u : State) : Prop := ∃ s, E d s ∧ AtCmp pc s u
+
+variable {E}
+
+theorem crt_rel (hE : EntryOk pc E) : RelCT isa (Two (Ψ1 E)) crtCall fun _ _ => True := by
   unfold crtCall
   refine RelCT.callEx Proof.Bignum.RISCV64.Crt.fn_correct Proof.Bignum.RISCV64.Crt.fn_ct
     fun u₁ u₂ ⟨_, ⟨s₁, φ₁, A₁⟩, ⟨s₂, φ₂, A₂⟩, _⟩ => ?_
-  have h₁ := preP_of φ₁.1
-  have h₂ := preP_of φ₂.1
+  have h₁ := hE.pre _ _ φ₁
+  have h₂ := hE.pre _ _ φ₂
   exact ⟨crtRd s₁, crtWr s₁, crtRd s₂, crtWr s₂, crt_pre h₁ A₁, crt_pre h₂ A₂,
-    crt_pub h₁ h₂ (same φ₁ φ₂) A₁ A₂, (crt_covers h₁ A₁).1, (crt_covers h₁ A₁).2, (crt_covers h₂ A₂).1,
+    crt_pub h₁ h₂ (hE.same _ _ _ φ₁ φ₂) A₁ A₂, (crt_covers h₁ A₁).1, (crt_covers h₁ A₁).2, (crt_covers h₂ A₂).1,
     (crt_covers h₂ A₂).2⟩
 
-theorem pre_rel : RelCT isa (Two Ψ3) preCall fun _ _ => True := by
+theorem pre_rel (hE : EntryOk false E) : RelCT isa (Two (Ψ3 E)) preCall fun _ _ => True := by
   unfold preCall
   refine RelCT.callEx Proof.Bignum.RISCV64.Pre.fn_correct Proof.Bignum.RISCV64.Pre.fn_ct
     fun u₁ u₂ ⟨_, ⟨s₁, φ₁, A₁⟩, ⟨s₂, φ₂, A₂⟩, _⟩ => ?_
-  have h₁ := preP_of φ₁.1
-  have h₂ := preP_of φ₂.1
+  have h₁ := hE.pre _ _ φ₁
+  have h₂ := hE.pre _ _ φ₂
   exact ⟨[nR s₁], preWr s₁, [nR s₂], preWr s₂, pre_pre h₁ A₁, pre_pre h₂ A₂,
-    pre_pub h₁ h₂ (same φ₁ φ₂) A₁ A₂, (pre_covers h₁ A₁).1, (pre_covers h₁ A₁).2, (pre_covers h₂ A₂).1,
+    pre_pub h₁ h₂ (hE.same _ _ _ φ₁ φ₂) A₁ A₂, (pre_covers h₁ A₁).1, (pre_covers h₁ A₁).2, (pre_covers h₂ A₂).1,
     (pre_covers h₂ A₂).2⟩
 
-theorem pub_rel : RelCT isa (Two Ψ5) pubCall fun _ _ => True := by
+theorem pub_rel (hE : EntryOk pc E) : RelCT isa (Two (Ψ5 E pc)) pubCall fun _ _ => True := by
   unfold pubCall
   refine RelCT.callEx Proof.Bignum.RISCV64.Pub.fn_correct Proof.Bignum.RISCV64.Pub.fn_ct
     fun u₁ u₂ ⟨_, ⟨s₁, φ₁, A₁⟩, ⟨s₂, φ₂, A₂⟩, _⟩ => ?_
-  have h₁ := preP_of φ₁.1
-  have h₂ := preP_of φ₂.1
+  have h₁ := hE.pre _ _ φ₁
+  have h₂ := hE.pre _ _ φ₂
   obtain ⟨p₁, c₁, w₁⟩ := pub_pre h₁ A₁
   obtain ⟨p₂, c₂, w₂⟩ := pub_pre h₂ A₂
-  exact ⟨pubRd s₁, pubWr s₁, pubRd s₂, pubWr s₂, p₁, p₂, pub_pub h₁ h₂ (same φ₁ φ₂) A₁ A₂, c₁, w₁, c₂, w₂⟩
+  exact ⟨pubRd s₁, pubWr s₁, pubRd s₂, pubWr s₂, p₁, p₂, pub_pub h₁ h₂ (hE.same _ _ _ φ₁ φ₂) A₁ A₂, c₁, w₁, c₂,
+    w₂⟩
 
-theorem pins_Ψ6 : Pins Ψ6 [.s1, .s3, .s6] := by
+theorem pins_Ψ6 (hE : EntryOk pc E) : Pins (Ψ6 E pc) [.s1, .s3, .s6] := by
   rintro d u₁ u₂ ⟨s₁, φ₁, A₁⟩ ⟨s₂, φ₂, A₂⟩ r hr
-  have S := same φ₁ φ₂
+  have S := hE.same _ _ _ φ₁ φ₂
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · rw [A₁.s1, A₂.s1, r_same S]
   · rw [A₁.s3, A₂.s3, r_same S]
   · rw [A₁.s6, A₂.s6, r_same S]
 
-theorem body_rel : RelCT isa (Two Φ1) body fun _ _ => True := by
-  unfold body
-  refine RelCT.seq (two_post (Ψ := Ψ1) (setup_taint Φ1) fun d u ⟨s, φ, e⟩ =>
-    e ▸ WP.mono (setup_ok (preP_of φ.1)) fun v A => ⟨s, φ, A⟩) ?_
-  refine RelCT.seq (two_post (Ψ := Ψ2) crt_rel fun d u ⟨s, φ, A⟩ =>
-    crtCall_ok (preP_of φ.1) A fun v M C => ⟨s, φ, M, C⟩) ?_
-  refine RelCT.seq (two_post (Ψ := Ψ3) (preArgs_taint Ψ2) fun d u ⟨s, φ, M, C⟩ =>
-    WP.mono (preArgs_ok (preP_of φ.1) M C) fun v A => ⟨s, φ, A⟩) ?_
-  refine RelCT.seq (two_post (Ψ := Ψ4) pre_rel fun d u ⟨s, φ, A⟩ =>
-    preCall_ok (preP_of φ.1) A fun v B => ⟨s, φ, B⟩) ?_
-  refine RelCT.seq (two_post (Ψ := Ψ5) (pubArgs_taint Ψ4) fun d u ⟨s, φ, A⟩ =>
-    WP.mono (pubArgs_ok (preP_of φ.1) A) fun v B => ⟨s, φ, B⟩) ?_
-  refine RelCT.seq (two_post (Ψ := Ψ6) pub_rel fun d u ⟨s, φ, A⟩ =>
-    pubCall_ok (preP_of φ.1) A fun v B => ⟨s, φ, B⟩) ?_
-  exact tail_taint pins_Ψ6
+theorem pins_ΨC (hE : EntryOk true E) : Pins (ΨC E) [.a0, .a1, .a2] := by
+  rintro d u₁ u₂ ⟨s₁, φ₁, A₁⟩ ⟨s₂, φ₂, A₂⟩ r hr
+  have S := hE.same _ _ _ φ₁ φ₂
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · rw [A₁.a0, A₂.a0, S.arg12 rfl]
+  · rw [A₁.a1, A₂.a1, fb_same S]
+  · rw [A₁.a2, A₂.a2, r_same S]
+
+/-- `n`'s values computed. -/
+theorem step_rel_false (hE : EntryOk false E) : RelCT isa (Two (Ψ2 E)) (preStep false) (Two (Ψ4 E false)) :=
+  RelCT.seq (two_post (Ψ := Ψ3 E) (preArgs_taint (Ψ2 E)) fun _ _ ⟨s, φ, M, C⟩ =>
+    WP.mono (preArgs_ok (hE.pre _ _ φ) M C) fun _ A => ⟨s, φ, A⟩)
+    (two_post (pre_rel hE) fun _ _ ⟨s, φ, A⟩ => preCall_ok (hE.pre _ _ φ) A fun _ B => ⟨s, φ, B⟩)
+
+/-- `n`'s values copied from `pre`. -/
+theorem step_rel_true (hE : EntryOk true E) (hX : ∀ d s, E d s → PreX s) :
+    RelCT isa (Two (Ψ2 E)) (preStep true) (Two (Ψ4 E true)) :=
+  RelCT.seq (two_post (Ψ := ΨC E) (preArgsP_taint (Ψ2 E)) fun _ _ ⟨s, φ, M, C⟩ =>
+    WP.mono (preArgsP_ok (hE.pre _ _ φ) (hX _ _ φ) M C) fun _ A => ⟨s, φ, A⟩)
+    (two_post (preCopy_taint (pins_ΨC hE)) fun _ _ ⟨s, φ, A⟩ =>
+      WP.mono (preCopy_ok (hE.pre _ _ φ) (hX _ _ φ) A) fun _ B => ⟨s, φ, B⟩)
+
+/-- `vg_rsa_private_crt`. -/
+theorem crt_step_rel_false (hE : EntryOk false E) : RelCT isa (Two (Ψ1 E)) (crtStep false) (Two (Ψ2 E)) :=
+  two_post (crt_rel hE) fun _ _ ⟨s, φ, A⟩ => crtCall_ok (hE.pre _ _ φ) A fun _ M C => ⟨s, φ, M, C⟩
+
+theorem body_rel (hE : EntryOk pc E) (hcrt : RelCT isa (Two (Ψ1 E)) (crtStep pc) (Two (Ψ2 E)))
+    (hstep : RelCT isa (Two (Ψ2 E)) (preStep pc) (Two (Ψ4 E pc))) :
+    RelCT isa (Two (Φ1 E)) (bodyG pc) fun _ _ => True := by
+  unfold bodyG
+  refine RelCT.seq (two_post (Ψ := Ψ1 E) (setup_taint (Φ1 E)) fun d u ⟨s, φ, e⟩ =>
+    e ▸ WP.mono (setup_ok (hE.pre _ _ φ)) fun v A => ⟨s, φ, A⟩) ?_
+  refine RelCT.seq hcrt ?_
+  refine RelCT.seq hstep ?_
+  refine RelCT.seq (two_post (Ψ := Ψ5 E pc) (pubArgs_taint (Ψ4 E pc)) fun d u ⟨s, φ, A⟩ =>
+    WP.mono (pubArgs_ok (hE.pre _ _ φ) A) fun v B => ⟨s, φ, B⟩) ?_
+  refine RelCT.seq (two_post (Ψ := Ψ6 E pc) (pub_rel hE) fun d u ⟨s, φ, A⟩ =>
+    pubCall_ok (hE.pre _ _ φ) A fun v B => ⟨s, φ, B⟩) ?_
+  exact tail_taint (pins_Ψ6 hE)
+
+theorem codeG_rel (hE : EntryOk pc E) (hcrt : RelCT isa (Two (Ψ1 E)) (crtStep pc) (Two (Ψ2 E)))
+    (hstep : RelCT isa (Two (Ψ2 E)) (preStep pc) (Two (Ψ4 E pc))) :
+    RelCT isa (Two E) (.frame (.alloc frameBytes) (bodyG pc) (.free frameBytes)) fun _ _ => True :=
+  relCT_alloc ((body_rel hE hcrt hstep).mono (fun a b ⟨s, t, ⟨d, φs, φt, hsp⟩, ea, eb⟩ =>
+    ⟨d, ⟨s, φs, ea⟩, ⟨t, φt, eb⟩, by rw [ea, eb]; simp only [allocd, hsp]⟩) fun _ _ h => h)
+
+end
+
+theorem entry_ok : EntryOk false Φ0 := ⟨fun _ _ φ => preP_of φ.1, fun _ _ _ φ₁ φ₂ => same φ₁ φ₂⟩
 
 theorem code_rel : RelCT isa (Two Φ0) code fun _ _ => True :=
-  relCT_alloc (body_rel.mono (fun a b ⟨s, t, ⟨d, φs, φt, hsp⟩, ea, eb⟩ =>
-    ⟨d, ⟨s, φs, ea⟩, ⟨t, φt, eb⟩, by rw [ea, eb]; simp only [allocd, hsp]⟩) fun _ _ h => h)
+  codeG_rel entry_ok (crt_step_rel_false entry_ok) (step_rel_false entry_ok)
 
 theorem code_ct : ConstantTime isa (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre
     (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes).pub code :=

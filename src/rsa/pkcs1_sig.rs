@@ -26,7 +26,7 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use crate::arch::dispatch::rsa_pkcs1_sig::{
-    vg_rsa_pkcs1_recover_precomputed_auto, vg_rsa_pkcs1_sign_auto,
+    vg_rsa_pkcs1_recover_precomputed_auto, vg_rsa_pkcs1_sign_precomputed_auto,
     vg_rsa_pkcs1_verify_precomputed_auto,
 };
 use crate::error::InvalidSignature;
@@ -118,11 +118,13 @@ impl PrivateKey {
         // `scratch` too), and none overlaps another or wraps around, as they are
         // distinct Rust allocations; `PrivateKey::from_crt` gives
         // `64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`,
-        // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len` and `dq_len = q_len`;
-        // `out_len = n_len` and `scratch_len = 16 n_len + 32`; and the
+        // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len` and `dq_len = q_len`,
+        // and `pre`, of `pre_len` words, holds the key's precomputed values
+        // (`PrivateKey::precompute`); `out_len = n_len` and
+        // `scratch_len = 16 n_len + 32`; and the
         // dispatcher calls only an implementation the CPU has the features of.
         let r = unsafe {
-            vg_rsa_pkcs1_sign_auto(
+            vg_rsa_pkcs1_sign_precomputed_auto(
                 dit,
                 out.as_mut_ptr(),
                 k,
@@ -145,6 +147,8 @@ impl PrivateKey {
                 self.qinv.len(),
                 scratch.as_mut_ptr(),
                 scratch.len(),
+                self.pre.as_ptr(),
+                self.pre.len(),
             )
         };
         // `PrivateKey::from_crt` checked the key and the length of `digest` is

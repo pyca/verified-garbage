@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtChk
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtChk
 public import VerifiedGarbage.Proof.Bignum.CrtHdr
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtUnit
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
@@ -410,8 +410,9 @@ theorem checksPart_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
     (hr : PReady s t₄ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :
-    WP isa (seqs checks) t₄ fun t => ∃ mp' mq',
+      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) {C : List (Prog isa)} {G : Nat → Nat → Nat → Prop} (hC : ChecksOk C G)
+    (hG : G (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)) :
+    WP isa (seqs C) t₄ fun t => ∃ mp' mq',
       CrtReady s t B Z ((k + 7) / 8) pl ql minv mp' mq' (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
         (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)
         (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
@@ -427,10 +428,10 @@ theorem checksPart_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
   have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
   have hwp2 : 2 ≤ wsWords pl := by unfold wsWords; omega_using []
   have hwq2 : 2 ≤ wsWords ql := by unfold wsWords; omega_using []
-  refine WP.mono (checks_ok hr.n.good (by omega_using [hk1]) (by omega_using [hk2]) (Nat.le_refl _) (by unfold offQ; omega_using [])
+  refine WP.mono (hC.ok hr.n.good (by omega_using [hk1]) (by omega_using [hk2]) (Nat.le_refl _) (by unfold offQ; omega_using [])
     (by unfold offQ at hZq ⊢; omega_using [hZq]) hwp2 (wsWords_le (by have := h.pl2; omega_using [this]) (by omega_using [hk1])) hwq2
     (wsWords_le (by have := h.ql2; omega_using [this]) (by omega_using [hk1])) hr.wsP hr.wsQ hr.pws hr.qws hr.n.nv.n hr.n.msk hr.pv hr.qv
-    hr.qiv hodd)
+    hr.qiv hodd hG)
     fun t ⟨hg, hMt, hsPt, hsQt, ⟨mp', hwpt, hxpt, hmpt⟩, ⟨mq', hwqt, hxqt⟩, f₅, k₅⟩ => ?_
   have kf₅ : ∀ r ∈ [(slot ((k + 7) / 8) Public.aAcc, 8 * (2 * ((k + 7) / 8) + 2)), (8 * Public.sMask, 8),
       (offP ((k + 7) / 8), slot (wsWords pl) 8), (offQ ((k + 7) / 8) pl, slot (wsWords ql) 8)],
@@ -491,15 +492,16 @@ theorem checksPart_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
 theorem front_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat}
     {nb xb pb qb dpb dqb qib : List Byte}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
-    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) :
-    WP isa (seqs (nSetup M.mm ++ primesSetup ++ checks)) s fun t => ∃ minv mp mq,
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) {C : List (Prog isa)} {G : Nat → Nat → Nat → Prop} (hC : ChecksOk C G)
+    (hG : G (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)) :
+    WP isa (seqs (nSetup M.mm ++ primesSetup ++ C)) s fun t => ∃ minv mp mq,
       CrtReady s t B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
         (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)
         (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
           (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :=
-  wp_seqs_append (by simp [nSetup]) (by simp [checks]) (wp_seqs_append (by simp [nSetup])
+  wp_seqs_append (by simp [nSetup]) hC.ne (wp_seqs_append (by simp [nSetup])
     (by simp [primesSetup]) (WP.mono (nPart_ok M h hv) fun _ ⟨minv, hr⟩ =>
       WP.mono (setupPart_ok h hr) fun _ ⟨_, _, hr'⟩ =>
-        WP.mono (checksPart_ok h hv hr') fun _ ⟨mp', mq', hr''⟩ => ⟨minv, mp', mq', hr''⟩))
+        WP.mono (checksPart_ok h hv hr' hC hG) fun _ ⟨mp', mq', hr''⟩ => ⟨minv, mp', mq', hr''⟩))
 
 end VG.Proof.Bignum.AArch64
