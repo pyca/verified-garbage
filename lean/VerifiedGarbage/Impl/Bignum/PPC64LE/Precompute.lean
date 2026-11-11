@@ -183,10 +183,12 @@ division (Knuth, TAOCP vol. 2, §4.3.1, Algorithm D) whose quotient is
 estimated from the top words of `x P` and `n P` for `P = 2^z`, `z` the
 leading zeros of `n`'s top word (`norm`), so that the divisor's top word
 `d' = ⌊n P / 2^(64 (w - 1))⌋` has its top bit set, for any `n`:
-`q̂ = min(⌊(u₂ 2^64 + u₁) / d'⌋, 2^64 - 1)` by restoring division (`quot`),
-`t = x 2^64 - q̂ n` (`mulRow`, `subPass`), and `n` added to `t` twice while it
-is negative (`addBack`). The arithmetic is branch-free, by masks, and every
-count depends only on `w`. -/
+`min(⌊(u₂ 2^64 + u₁) / d'⌋, 2^64 - 1)` by the reciprocal of `d'`, computed
+once (`recip`, `quot`), corrected by the top three words `U` of `x P` and
+the top two `D` of `n P` to `q̂ = min(⌊U / D⌋, 2^64 - 1)` (`quot3`), at most 1
+more than the quotient, then `t = x 2^64 - q̂ n` in place of `x` (`mulSub`),
+and `n` added to `t` once if it is negative (`addBack`). The arithmetic is
+branch-free, by masks and carries, and every count depends only on `w`. -/
 
 /-- `n`'s top word `T` (`r15`) and the one below (`r16`); `P := 1` (`r6`),
 zero (`r20`), one (`r22`) and 63 (`r17`). -/
@@ -199,22 +201,15 @@ def normStep : List Instr :=
   [.lsr .d .r3 .r15 63, .logic .xor .r3 .r3 .r22, .sub .r3 .r20 .r3, .logic .and .r0 .r15 .r3,
     .add .r15 .r15 .r0, .logic .and .r0 .r6 .r3, .add .r6 .r6 .r0]
 
-/-- `d' := T P + ⌊n_{w-2} P / 2^64⌋`; `P` and `d'` into the temporary's
-words 0 and 1. -/
-def normTail : List Instr :=
-  [.mulhu .r0 .r16 .r6, .add .r15 .r15 .r0, .store .d .r6 .r9 0, .store .d .r15 .r9 8]
-
-/-- `P` and `d'`, from `n`'s top two words: 63 steps of `normStep`. -/
-def norm : Prog isa := .seq (.block normHead) (.seq (countLoop .r17 normStep) (.block normTail))
 
 /-- The top two words `u₂` (`r15`) and `u₁` (`r16`) of `x P` from `x`'s top
-three words, `d'` (`r7`), `e = d' - u₂` (`r22`), `q := 0` (`r18`), zero
-(`r20`) and 64 (`r17`). -/
+three words (at `r14`), `P` (`r6`), `d'` (`r7`), `v` (`r18`), `e = d' - u₂`
+(`r22`) and zero (`r20`). -/
 def quotHead : List Instr :=
   [.lsl .r14 .r11 2, .add .r14 .r14 .r5, .subi .r14 .r14 24, .load .d .r0 .r14 16, .load .d .r3 .r14 8,
-    .load .d .r12 .r14 0, .load .d .r6 .r9 0, .load .d .r7 .r9 8,
+    .load .d .r12 .r14 0, .load .d .r6 .r9 0, .load .d .r7 .r9 8, .load .d .r18 .r9 16,
     .mul .r15 .r0 .r6, .mulhu .r16 .r3 .r6, .add .r15 .r15 .r16, .mul .r16 .r3 .r6, .mulhu .r0 .r12 .r6,
-    .add .r16 .r16 .r0, .sub .r22 .r7 .r15, .li .r18 0, .li .r20 0, .li .r17 64]
+    .add .r16 .r16 .r0, .sub .r22 .r7 .r15, .li .r20 0]
 
 /-- A bit of restoring division by `d'` (`r7`) of the remainder `r`
 (`r15`), the next bit the top of `r16`: `r := 2 r + b`, its carry into `r3`;
@@ -225,42 +220,104 @@ def divBit : List Instr :=
     .subc .r0 .r15 .r7, .addze .r12 .r20, .logic .or .r3 .r3 .r12, .sub .r12 .r20 .r3, .logic .and .r0 .r7 .r12,
     .sub .r15 .r15 .r0, .add .r18 .r18 .r18, .add .r18 .r18 .r3]
 
+/-- `d' := T P + ⌊n_{w-2} P / 2^64⌋` and `d'ₗ := n_{w-2} P + ⌊n_{w-3} P /
+2^64⌋ mod 2^64`, the top two words of `n P`; `P`, `d'` and `d'ₗ` into the
+temporary's words 0, 1 and 3. -/
+def normTail : List Instr :=
+  [.mulhu .r0 .r16 .r6, .add .r15 .r15 .r0, .mul .r16 .r16 .r6, .subi .r3 .r14 8, .load .d .r3 .r3 0,
+    .mulhu .r3 .r3 .r6, .add .r16 .r16 .r3, .store .d .r6 .r9 0, .store .d .r15 .r9 8, .store .d .r16 .r9 24]
+
+/-- `d'` (`r7`, from the temporary's word 1, at `r9`), zero (`r20`) and the
+reciprocal's dividend `2^128 - 1 - d' 2^64`: `r := 2^64 - 1 - d'` (`r15`),
+its low word all ones (`r16`), `q := 0` (`r18`) and 64 (`r17`). -/
+def recipHead : List Instr :=
+  [.load .d .r7 .r9 8, .li .r20 0, .subi .r16 .r20 1, .sub .r15 .r16 .r7, .li .r18 0, .li .r17 64]
+
+/-- `v := ⌊(2^128 - 1) / d'⌋ - 2^64` into the temporary's word 2, by 64 bits
+of restoring division (`divBit`). -/
+def recip : Prog isa :=
+  .seq (.block recipHead) (.seq (countLoop .r17 divBit) (.block [.store .d .r18 .r9 16]))
+
+/-- `P`, `d'` and `d'ₗ`, from `n`'s top three words: 63 steps of `normStep`. -/
+def norm : Prog isa := .seq (.block normHead) (.seq (countLoop .r17 normStep) (.block normTail))
+
 /-- `q̂ := q`, or all ones if `u₂ = d'` (`e = 0`). -/
 def quotFix : List Instr :=
   [.sub .r12 .r20 .r22, .logic .or .r12 .r12 .r22, .lsr .d .r12 .r12 63, .subi .r12 .r12 1,
     .logic .or .r18 .r18 .r12]
 
-/-- `q̂` into `r18`: 64 bits of restoring division of `u₂ 2^64 + u₁` by `d'`. -/
-def quot : Prog isa := .seq (.block quotHead) (.seq (countLoop .r17 divBit) (.block quotFix))
+/-- `q := ⌊(u₂ 2^64 + u₁) / d'⌋` (`r18`), for `u₂ < d'`, by the reciprocal
+`v` (`r18`) (Möller and Granlund, "Improved division by invariant
+integers", Algorithm 4): `(q₁, q₀) := v u₂ + (u₂, u₁)`, `q₁ := q₁ + 1`,
+`r := u₁ - q₁ d'`; `q₁ - 1` and `r + d'` if `r > q₀`, then `q₁ + 1` if
+`r ≥ d'`, by the carry. -/
+def quotMG : List Instr :=
+  [.mul .r0 .r18 .r15, .mulhu .r3 .r18 .r15, .addc .r0 .r0 .r16, .adde .r3 .r3 .r15, .addi .r3 .r3 1,
+    .mul .r12 .r3 .r7, .sub .r12 .r16 .r12, .subc .r17 .r0 .r12, .sube .r17 .r20 .r20, .add .r3 .r3 .r17,
+    .logic .and .r17 .r17 .r7, .add .r12 .r12 .r17, .subc .r17 .r12 .r7, .addze .r18 .r3]
 
-/-- The accumulator's `w + 1` words (`r8`) := `q̂ n` (`n` at `r10`). -/
-def mulRow : Prog isa :=
-  .seq (.block [.addi .r14 .r8 0, .addi .r15 .r10 0, .lsr .d .r17 .r11 1, .li .r3 0])
-    (.seq (countLoop .r17 [.load .d .r0 .r15 0, .mul .r12 .r0 .r18, .mulhu .r0 .r0 .r18, .addc .r12 .r12 .r3,
-        .addze .r3 .r0, .store .d .r12 .r14 0, .addi .r14 .r14 8, .addi .r15 .r15 8])
-      (.block [.store .d .r3 .r14 0]))
+/-- `q̂` into `r18`: `min(⌊(u₂ 2^64 + u₁) / d'⌋, 2^64 - 1)`. -/
+def quot : List Instr := quotHead ++ quotMG ++ quotFix
 
-/-- `t := x 2^64 - t` over the accumulator's `w + 1` words: word 0 is `0 - t₀`,
-word `i ≥ 1` is `x[i - 1] - tᵢ` less the borrow. -/
-def subPass : Prog isa :=
-  .seq (.block [.addi .r14 .r8 0, .addi .r15 .r5 0, .load .d .r0 .r14 0, .subc .r0 .r20 .r0, .store .d .r0 .r14 0,
-      .addi .r14 .r14 8, .lsr .d .r17 .r11 1])
-    (countLoop .r17 [.load .d .r3 .r15 0, .load .d .r0 .r14 0, .sube .r0 .r3 .r0, .store .d .r0 .r14 0,
-      .addi .r14 .r14 8, .addi .r15 .r15 8])
+/-- `u₀ = x₀ P + ⌊x₋₁ P / 2^64⌋ mod 2^64` (`r0`), the third word of `x P`,
+from `x`'s words `x₀` and `x₋₁` below its top two (at `r14`), `d'ₗ` (`r22`)
+and `q̂ D` (`r6`, `r17`, `r12`) for `D = (d', d'ₗ)` (`r7`, `r22`) and `q̂`
+(`r18`). -/
+def quot3Mul : List Instr :=
+  [.load .d .r0 .r14 0, .mul .r0 .r0 .r6, .subi .r3 .r14 8, .load .d .r3 .r3 0, .mulhu .r3 .r3 .r6,
+    .add .r0 .r0 .r3, .load .d .r22 .r9 24, .mul .r12 .r18 .r22, .mulhu .r3 .r18 .r22, .mul .r17 .r18 .r7,
+    .mulhu .r6 .r18 .r7, .addc .r17 .r17 .r3, .addze .r6 .r6]
 
-/-- `t := t + n` if `t` (the accumulator's `w + 1` words) is negative, by a
+/-- `t = U - q̂ D` over three words (`r15`, `r16`, `r0`), for `U = (u₂, u₁, u₀)`,
+with its borrows. -/
+def quot3Sub : List Instr := [.subc .r0 .r0 .r12, .sube .r16 .r16 .r17, .sube .r15 .r15 .r6]
+
+/-- `q̂ := q̂ - 1` and `t := t + D` if `t` is negative (its top word's sign),
+by a mask. -/
+def quot3Fix : List Instr :=
+  [.lsr .d .r3 .r15 63, .sub .r18 .r18 .r3, .sub .r3 .r20 .r3, .logic .and .r12 .r22 .r3,
+    .logic .and .r17 .r7 .r3, .addc .r0 .r0 .r12, .adde .r16 .r16 .r17, .addze .r15 .r15]
+
+/-- `q̂ := min(⌊U / D⌋, 2^64 - 1)` from `quot`'s `min(⌊(u₂ 2^64 + u₁) / d'⌋,
+2^64 - 1)`, at most 2 more (Knuth, TAOCP vol. 2, §4.3.1, Theorem B): `t = U -
+q̂ D`, and `q̂` one less while `t` is negative, twice (the second time only
+`q̂`). -/
+def quot3 : List Instr :=
+  quot3Mul ++ (quot3Sub ++ (quot3Fix ++ [.lsr .d .r3 .r15 63, .sub .r18 .r18 .r3]))
+
+/-- `x`'s pointer (`r14`), `n`'s (`r15`), `w` (`r17`), the carry `c := 0`
+(`r3`), the borrow as a carry `b := 1` (`r22`, no borrow), `x`'s previous
+word `0` (`r16`) and all ones (`r6`). -/
+def mulSubHead : List Instr :=
+  [.addi .r14 .r5 0, .addi .r15 .r10 0, .lsr .d .r17 .r11 1, .li .r3 0, .li .r22 1, .li .r16 0, .subi .r6 .r20 1]
+
+/-- A word of `t := x 2^64 - q̂ n` in place: `(c, l) := n_i q̂ + c` (`r3`,
+`r12`), then `t_i := x_{i-1} - l` less the borrow (the carry `b` restored
+into `CA` by `b + 2^64 - 1`, and the next `b` taken from it), `x_i` kept as
+the next previous word. -/
+def mulSubWord : List Instr :=
+  [.load .d .r0 .r15 0, .mul .r12 .r0 .r18, .mulhu .r0 .r0 .r18, .addc .r12 .r12 .r3, .addze .r3 .r0,
+    .load .d .r7 .r14 0, .addc .r0 .r22 .r6, .sube .r12 .r16 .r12, .addze .r22 .r20, .store .d .r12 .r14 0,
+    .addi .r16 .r7 0, .addi .r14 .r14 8, .addi .r15 .r15 8]
+
+/-- `t`'s top word, `x_{w-1} - c` less the borrow. -/
+def mulSubTop : List Instr := [.addc .r0 .r22 .r6, .sube .r12 .r16 .r3, .store .d .r12 .r14 0]
+
+/-- `x`'s first `w + 1` words := `t = x 2^64 - q̂ n` modulo `2^(64 (w + 1))`
+(`x` at `r5`, `n` at `r10`, `q̂` in `r18`). -/
+def mulSub : Prog isa := .seq (.block mulSubHead) (.seq (countLoop .r17 mulSubWord) (.block mulSubTop))
+
+/-- `t := t + n` if `t` (`x`'s `w + 1` words, at `r5`) is negative, by a
 mask of its sign. -/
 def addBack : Prog isa :=
-  .seq (.block [.lsl .r14 .r11 2, .add .r14 .r14 .r8, .load .d .r0 .r14 0, .lsr .d .r0 .r0 63, .sub .r12 .r20 .r0,
-      .addi .r14 .r8 0, .addi .r15 .r10 0, .lsr .d .r17 .r11 1, .addc .r0 .r20 .r20])
+  .seq (.block [.lsl .r14 .r11 2, .add .r14 .r14 .r5, .load .d .r0 .r14 0, .lsr .d .r0 .r0 63, .sub .r12 .r20 .r0,
+      .addi .r14 .r5 0, .addi .r15 .r10 0, .lsr .d .r17 .r11 1, .addc .r0 .r20 .r20])
     (.seq (countLoop .r17 [.load .d .r0 .r15 0, .logic .and .r0 .r0 .r12, .load .d .r3 .r14 0, .adde .r3 .r3 .r0,
         .store .d .r3 .r14 0, .addi .r14 .r14 8, .addi .r15 .r15 8])
       (.block [.load .d .r3 .r14 0, .adde .r3 .r3 .r20, .store .d .r3 .r14 0]))
 
 /-- `x := x 2^64 mod n`. -/
-def wordStep : Prog isa :=
-  .seq quot (.seq mulRow (.seq subPass (.seq addBack (.seq addBack
-    (.seq (.block [.addi .r14 .r5 0, .addi .r15 .r8 0]) copyWords)))))
+def wordStep : Prog isa := .seq (.block (quot ++ quot3)) (.seq mulSub addBack)
 
 /-- `w + 1` of `wordStep`, counted by `r4`. -/
 def wordSteps : Prog isa :=
@@ -268,9 +325,10 @@ def wordSteps : Prog isa :=
     (.loop (.seq wordStep (.block [.subi .r4 .r4 1])) (.nonzero .d .r4))
 
 /-- `x := R² mod n` in array 1 for `vg_rsa_public_precompute`, for `n` of
-`w ≥ 3` words with its top word not zero: `norm`, `x := 2^(64 (w - 1))`
-(`r2Top`), and `w + 1` word steps: `2^(64 (w - 1) + 64 (w + 1)) = R²`. -/
-def r2Fast : Prog isa := .seq norm (.seq r2Top wordSteps)
+`w ≥ 4` words with its top word not zero: `norm`, the reciprocal (`recip`),
+`x := 2^(64 (w - 1))` (`r2Top`), and `w + 1` word steps:
+`2^(64 (w - 1) + 64 (w + 1)) = R²`. -/
+def r2Fast : Prog isa := .seq norm (.seq recip (.seq r2Top wordSteps))
 
 /-- `x := R² mod n = 2^(128 w) mod n` in array 1, for any odd `n` of `w`
 words, with `-n⁻¹ mod 2³²` in `r12` and the bases of arrays 1–3 in `r5`, `r8`
