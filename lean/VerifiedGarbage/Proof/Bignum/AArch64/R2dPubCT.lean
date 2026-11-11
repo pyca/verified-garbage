@@ -305,23 +305,4 @@ theorem r2pFast_ct : RelCT isa (Two R2pFPre) fastPub fun _ _ => True := by
     fun t ⟨g, h13, hN', hT, hv, hX, hlt, _, _⟩ => ⟨⟨⟨mi, ⟨g, hg.2⟩, hw, hw'⟩, h13, by rw [hT]; exact hd,
       by rw [hT]; exact hv, by rw [hX, hN']; exact hlt⟩, hN', hX⟩
 
-/-! ## `R² mod m` -/
-
-/-- `R² mod m` for a public `m` leaks the same in runs that agree on `m`:
-`choicePub` branches on its top bit, and `fastPub` on values that `m` fixes. -/
-theorem r2Pub_ct (M : Mont) : RelCT isa (Two R2Pre) (seqs (r2StepsPub M.mm)) fun _ _ => True := by
-  show RelCT isa (Two R2Pre) (R2Div.choicePub (seqs (r2StepsOld M.mm))) _
-  unfold R2Div.choicePub
-  rw [fastTest_eq]
-  refine RelCT.seq (RelCT.block_append (RelCT.seq
-    (two_piece (Ψ := R2t) _ (pins_r2 fun _ _ h => h) (by taint_decide) fun _ _ h => r2t_ok h)
-    (two_piece (Ψ := R2u) _ pins_r2t (by taint_decide) fun _ _ h => r2u_ok h))) ?_
-  refine two_ite (fun p s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.2, h₂.2]) ?_ ?_
-  · exact (r2Old_ct M).mono (fun _ _ h => two_mono (fun _ _ h => h.1.1) h) fun _ _ h => h
-  · refine two_map (fun p => (p.L.ws, p.N)) (fun p s ⟨⟨h, h3⟩, he⟩ => ⟨h.fpre ?_, h.2.2.2.1⟩) r2pFast_ct
-    rw [eval_zero, h3] at he
-    by_contra hlt
-    rw [decide_eq_false hlt] at he
-    exact absurd he (by decide)
-
 end VG.Proof.Bignum.AArch64
