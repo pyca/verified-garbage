@@ -170,15 +170,19 @@ theorem ck_valid {s0 s : State} (h0 : ckP.pre s0) (hb : KBase (ckB s0) (ckZ s0) 
     lt_pow8_of_len _ (len_bytes _ _ _), ((R6.of_keep k7).r19).trans (CrtValues.ofNat_toNat64 _)⟩)
     fun t9 ⟨R₁, R₂, A₁, A₂, hR₁, hR₂, hA, g9⟩ => ?_
   rw [wp_seqs_append (by simp [dChecks, ltA]) (by simp)]
-  refine WP.mono (dChecks_ok g9 hpl hql) fun t10 ⟨Y₁, Y₂, hY₁, hY₂, A, live, g10⟩ => ?_
+  refine WP.mono (dChecks_ok g9 (pA := (s0.gpr .r10).toNat) (qA := (PPC64LE.stackArg s0 1).toNat) p1
+    (by omega_arith) (lt_pow8_of_len _ (len_bytes _ _ _)) (((R6.of_keep k7).r19).trans (CrtValues.ofNat_toNat64 _))
+    q1 (by omega_arith) (lt_pow8_of_len _ (len_bytes _ _ _)) (((R6.of_keep k7).r21).trans (CrtValues.ofNat_toNat64 _)))
+    fun t10 ⟨Y₁, Y₂, hY₁, hY₂, A, live, g10⟩ => ?_
   rw [show seqs [.block ret] = .block ret from rfl]
   refine WP.mono (ret_ok g10) fun t ⟨⟨t3, tm⟩, kt⟩ => ⟨?_, ?_, ?_⟩
   · exact (g10.base l7.base hp.nowrap).of_regs kt tm
   · rw [t3]
     congr 2
-    have e := ck_bitsM (k := kK s0) (w := g.w) hmv hev (lt_pow_len _ (len_bytes _ _ _))
+    have e := ck_bitsM' (k := kK s0) (w := g.w) rfl hmv hev (lt_pow_len _ (len_bytes _ _ _))
       (lt_pow_of_len _ (by rw [len_bytes]; exact p2)) (lt_pow_of_len _ (by rw [len_bytes]; exact q2))
-      (by omega_arith) (pow_kw _) hL hM hR₁ hR₂ hA hY₁ hY₂
+      (by omega_arith) (pow_kw _) (lt_pow8_of_len _ (len_bytes _ _ _)) (lt_pow8_of_len _ (len_bytes _ _ _))
+      hL hM hR₁ hR₂ hA hY₁ hY₂
     rw [show ckOk s0 = Spec.Rsa.keyValid (kK s0) _ _ _ _ _ _ _ _ by
       simp only [ckOk, Spec.Rsa.checkKey, len_bytes]; rfl, e]
     rfl

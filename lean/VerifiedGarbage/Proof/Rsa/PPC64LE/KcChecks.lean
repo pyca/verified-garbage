@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Rsa.PPC64LE.IbOps
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcBase
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.MulMod
 public import VerifiedGarbage.Proof.Rsa.MontCheckMath
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcMath
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.MontKey
 
 /-! # The checks of an RSA key on PPC64LE
@@ -300,27 +301,21 @@ theorem crtChecks_ok {g : Geo} {s0 s : State} {v : Vals} {L M : Nat}
 
 theorem aFin_d (v : Vals) : aFin v aD = v.d := rfl
 theorem aFin_n (v : Vals) : aFin v aN = v.n := rfl
-/-- A balanced key of full words: `n_len` a multiple of 16 and at least 64,
-`p_len` and `q_len` half of it. -/
-def Shape (k pL qL : Nat) : Prop := k % 16 = 0 ∧ 2 * pL = k ∧ pL = qL ∧ 64 ≤ k
-
-instance (k pL qL : Nat) : Decidable (Shape k pL qL) := by unfold Shape; infer_instance
-
-theorem shape_bits {k pL qL : Nat} (hk' : k < 2 ^ 32) (hp' : pL < 2 ^ 32) (hq' : qL < 2 ^ 32) :
-    (BitVec.ofNat 64 k &&& 15#64 ||| BitVec.ofNat 64 pL <<< 1 ^^^ BitVec.ofNat 64 k |||
+theorem shape_bits {w pL qL : Nat} (hw' : w < 2 ^ 32) (hp' : pL < 2 ^ 32) (hq' : qL < 2 ^ 32) :
+    (BitVec.ofNat 64 pL &&& 7#64 ||| BitVec.ofNat 64 w <<< 1 ^^^ BitVec.ofNat 64 pL |||
           BitVec.ofNat 64 pL ^^^ BitVec.ofNat 64 qL |||
-        (0#64 - BitVec.ofNat 64 k >>> 6) >>> 63 ^^^ 1#64 = 0) ↔ Shape k pL qL := by
-  have A : (BitVec.ofNat 64 k &&& 15#64 = 0#64) ↔ k % 16 = 0 := by
-    rw [BitVec.toNat_eq, BitVec.toNat_and, BitVec.toNat_ofNat, show (15#64).toNat = 2 ^ 4 - 1 from rfl,
+        (0#64 - BitVec.ofNat 64 pL >>> 5) >>> 63 ^^^ 1#64 = 0) ↔ Shape w pL qL := by
+  have A : (BitVec.ofNat 64 pL &&& 7#64 = 0#64) ↔ pL % 8 = 0 := by
+    rw [BitVec.toNat_eq, BitVec.toNat_and, BitVec.toNat_ofNat, show (7#64).toNat = 2 ^ 3 - 1 from rfl,
       Nat.and_two_pow_sub_one_eq_mod, show (0#64).toNat = 0 from rfl]
     omega
-  have Bq : (BitVec.ofNat 64 pL <<< 1 = BitVec.ofNat 64 k) ↔ 2 * pL = k := by
+  have Bq : (BitVec.ofNat 64 w <<< 1 = BitVec.ofNat 64 pL) ↔ 2 * w = pL := by
     rw [BitVec.toNat_eq, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
     omega
   have C : (BitVec.ofNat 64 pL = BitVec.ofNat 64 qL) ↔ pL = qL := by
     rw [BitVec.toNat_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     omega
-  have D : ((0#64 - BitVec.ofNat 64 k >>> 6) >>> 63 = 1#64) ↔ 64 ≤ k := by
+  have D : ((0#64 - BitVec.ofNat 64 pL >>> 5) >>> 63 = 1#64) ↔ 32 ≤ pL := by
     rw [BitVec.toNat_eq, BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat,
       Nat.shiftRight_eq_div_pow, Nat.shiftRight_eq_div_pow, show (0#64).toNat = 0 from rfl,
       show (1#64).toNat = 1 from rfl]
@@ -329,13 +324,13 @@ theorem shape_bits {k pL qL : Nat} (hk' : k < 2 ^ 32) (hp' : pL < 2 ^ 32) (hq' :
   simp only [BitVec.or_eq_zero_iff, BitVec.xor_eq_zero_iff, A, Bq, C, D, Shape, and_assoc]
 
 /-- `shape`: `r0 = 0` exactly for `Shape`. -/
-theorem shape_ok {s : State} {k pL qL : Nat} (hk : s.gpr .r15 = BitVec.ofNat 64 k) (hp : s.gpr .r19 = BitVec.ofNat 64 pL)
-    (hq : s.gpr .r21 = BitVec.ofNat 64 qL) (hk' : k < 2 ^ 32) (hp' : pL < 2 ^ 32) (hq' : qL < 2 ^ 32) :
-    WP isa (.block shape) s fun t => (t.gpr .r0 = 0 ↔ Shape k pL qL) ∧ t.mem = s.mem ∧ Keep [.r0, .r3, .r12] s t := by
-  refine WP.mono (WP.keep [.r0, .r3, .r12] (Q := fun t => (t.gpr .r0 = 0 ↔ Shape k pL qL) ∧ t.mem = s.mem) (by
+theorem shape_ok {s : State} {w pL qL : Nat} (hw : s.gpr .r29 = BitVec.ofNat 64 w) (hp : s.gpr .r19 = BitVec.ofNat 64 pL)
+    (hq : s.gpr .r21 = BitVec.ofNat 64 qL) (hw' : w < 2 ^ 32) (hp' : pL < 2 ^ 32) (hq' : qL < 2 ^ 32) :
+    WP isa (.block shape) s fun t => (t.gpr .r0 = 0 ↔ Shape w pL qL) ∧ t.mem = s.mem ∧ Keep [.r0, .r3, .r12] s t := by
+  refine WP.mono (WP.keep [.r0, .r3, .r12] (Q := fun t => (t.gpr .r0 = 0 ↔ Shape w pL qL) ∧ t.mem = s.mem) (by
     unfold shape
-    prun [hk, hp, hq]
-    exact shape_bits hk' hp' hq') (by decide)) fun t ⟨⟨h0, hm⟩, k'⟩ => ⟨h0, hm, k'⟩
+    prun [hw, hp, hq]
+    exact shape_bits hw' hp' hq') (by decide)) fun t ⟨⟨h0, hm⟩, k'⟩ => ⟨h0, hm, k'⟩
 
 /-- `divK len a d`: `[a] mod [d]` in `aVR`, for a divisor of `L` bytes (`L`
 in `len`): by words for a balanced key (`Shape`), exact when the divisor's
@@ -344,11 +339,10 @@ theorem Stg.divK_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     (h : Stg g s0 A live c s) {a d : Nat} (ha : a ∈ live) (hd : d ∈ live)
     (hfree : ∀ j ∈ live, j ∉ [aVQ, aVR, aVD, aVT]) {len : Reg} (hlr : len ∉ bodyRegs) (hl12 : len ≠ .r12)
     {L : Nat} (hl : s.gpr len = BitVec.ofNat 64 L) (hL1 : 1 ≤ L) (hL : L < 2 ^ 32) (hlt : A d < 2 ^ (8 * L))
-    {k pL qL : Nat} (hk : s.gpr .r15 = BitVec.ofNat 64 k) (hp : s.gpr .r19 = BitVec.ofNat 64 pL)
-    (hq : s.gpr .r21 = BitVec.ofNat 64 qL) (hk' : k < 2 ^ 32) (hp' : pL < 2 ^ 32) (hq' : qL < 2 ^ 32)
-    (hwk : g.w = (k + 3) / 4) (hLs : Shape k pL qL → L = k / 2) :
+    {pL qL : Nat} (hp : s.gpr .r19 = BitVec.ofNat 64 pL) (hq : s.gpr .r21 = BitVec.ofNat 64 qL)
+    (hp' : pL < 2 ^ 32) (hq' : qL < 2 ^ 32) (hLs : Shape g.w pL qL → L = pL) :
     WP isa (seqs (divK len a d)) s fun t => ∃ Xq Xr,
-      (0 < A d → (Shape k pL qL → 2 ^ (64 * (k / 16 - 1)) ≤ A d) → Xr = A a % A d) ∧
+      (0 < A d → (Shape g.w pL qL → 2 ^ (64 * (g.w / 4 - 1)) ≤ A d) → Xr = A a % A d) ∧
       Stg g s0 (upd (upd A aVQ Xq) aVR Xr) (aVR :: aVQ :: live) c t := by
   have hN : aVR ≠ aVQ := by decide
   have aR : a ≠ aVR := fun e => hfree a ha (by simp [e])
@@ -359,7 +353,8 @@ theorem Stg.divK_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   have dQ : d ≠ aVQ := fun e => hfree d hd (by simp [e])
   unfold divK
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (shape_ok hk hp hq hk' hp' hq') fun s1 ⟨z1, m1, k1⟩ => ?_
+  have := h.ws.wle
+  refine WP.mono (shape_ok h.ws.r29 hp hq (by omega) hp' hq') fun s1 ⟨z1, m1, k1⟩ => ?_
   have h1 : Stg g s0 A live c s1 :=
     h.next (h.ws.of_keep k1) (js := []) (ds := []) (by rw [m1]; exact KeyWorkspace.Keep.refl _ _ _ _ _)
       (by simp) (by simp) k1 (by decide) (by rw [m1]; exact h.arrs) h.live_lt (by rw [m1]; exact h.vdTop)
@@ -367,9 +362,10 @@ theorem Stg.divK_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   rw [show ∀ x : Prog isa, seqs [x] = x from fun _ => rfl]
   refine WP.ite (s1.gpr .r0 == 0) (eval_zero s1 .r0) (fun hz => ?_) (fun hz => ?_)
   · -- By words.
-    have hS : Shape k pL qL := z1.1 (by simpa using hz)
-    obtain ⟨k16, hpk, hpq, k64⟩ := hS
-    have hw : g.w = 4 * (k / 16) := by omega
+    have hS : Shape g.w pL qL := z1.1 (by simpa using hz)
+    have hLp := hLs hS
+    obtain ⟨p8, hpw, hpq, p32⟩ := hS
+    have hw : g.w = 4 * (g.w / 4) := by omega
     have := h.ws.wle
     have hnw := h.ws.nowrap
     have fD := h.ws.fit64 (show aVD < nArr by decide)
@@ -381,16 +377,16 @@ theorem Stg.divK_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     refine WP.mono (VG.Proof.Rsa.PPC64LE.KeyDiv.fixTop_ok h2.ws (m := aVD) (by decide) (by decide) hw (by omega))
       fun s3 ⟨m3, w3, k3⟩ => ?_
     have hd2 : num s2.mem g.B g.w aVD = A d := by rw [h2.arrs.get (by simp), upd_self]
-    have hdv : wordsVal s2.mem g.B (arr g.w aVD) (k / 16) = A d := by
+    have hdv : wordsVal s2.mem g.B (arr g.w aVD) (g.w / 4) = A d := by
       rw [wordsVal_eq_val32]
       refine VG.Proof.Rsa.PPC64LE.MontKey.val32_low hd2 (by omega) ?_
-      rw [hLs ⟨k16, hpk, hpq, k64⟩] at hlt
-      rw [show 32 * (2 * (k / 16)) = 8 * (k / 2) by omega]; exact hlt
+      rw [hLp] at hlt
+      rw [show 32 * (2 * (g.w / 4)) = 8 * pL by omega]; exact hlt
     have ft := VG.Proof.Rsa.PPC64LE.KeyDiv.fixTop_val (mem := s2.mem) (B := g.B) (d := arr g.w aVD)
-      (wd := k / 16) (by omega) (by omega)
+      (wd := g.w / 4) (by omega) (by omega)
     rw [← m3] at ft
     obtain ⟨hT, hfix⟩ := ft
-    have o3 : Outside g.B (arr g.w aVD + 8 * (k / 16 - 1)) 8 s2.mem s3.mem := by
+    have o3 : Outside g.B (arr g.w aVD + 8 * (g.w / 4 - 1)) 8 s2.mem s3.mem := by
       rw [m3]; exact writeW_outside _ g.B _ (by omega)
     have kD : KeyWorkspace.Keep g.B g.w [aVD] [] s2.mem s3.mem :=
       KeyWorkspace.Keep.of_arr (o := aVD) o3 (by simp only [S]; omega) (by simp)
@@ -401,7 +397,7 @@ theorem Stg.divK_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     refine WP.mono (VG.Proof.Rsa.PPC64LE.KeyDiv.divW_ok w3 (h.live_lt a ha) (by decide) (by decide) (by decide)
       (by decide) aR aT aQ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hw
       (by omega) hT) fun t ⟨tr, ht, kt, mt⟩ => ⟨num t.mem g.B g.w aVQ, num t.mem g.B g.w aVR,
-        fun _ hb => by rw [tr, ha3, hfix (by rw [hdv]; exact hb ⟨k16, hpk, hpq, k64⟩), hdv], ?_⟩
+        fun _ hb => by rw [tr, ha3, hfix (by rw [hdv]; exact hb ⟨p8, hpw, hpq, p32⟩), hdv], ?_⟩
     -- The stage, from the copy's.
     have k : KeyWorkspace.Keep g.B g.w [aVD, aVR, aVT, aVQ] [] s2.mem t.mem :=
       (kD.mono (by simp) (by simp)).trans (mt.mono (by simp) (by simp))
@@ -435,26 +431,31 @@ theorem aFin_m1 (v : Vals) : aFin v aM1 = 2 * (v.p / 2) := rfl
 theorem aFin_m2 (v : Vals) : aFin v aM2 = 2 * (v.q / 2) := rfl
 
 /-- The checks of `d`: `d < n`, and its remainders modulo `p - 1` and `q - 1`
-compared with `dP` and `dQ`. -/
+compared with `dP` and `dQ`; the remainders exact but by words for a
+balanced key, where the divisor's top word must not be zero. -/
 theorem dChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 (aFin v) liveFin c s)
-    (hp : ∃ a, 1 ≤ a ∧ a < 2 ^ 32 ∧ v.p < 2 ^ (8 * a) ∧ s0.gpr .r19 = BitVec.ofNat 64 a)
-    (hq : ∃ a, 1 ≤ a ∧ a < 2 ^ 32 ∧ v.q < 2 ^ (8 * a) ∧ s0.gpr .r21 = BitVec.ofNat 64 a) :
+    {pA qA : Nat} (pa1 : 1 ≤ pA) (pa2 : pA < 2 ^ 32) (plt : v.p < 2 ^ (8 * pA))
+    (p19 : s0.gpr .r19 = BitVec.ofNat 64 pA) (qa1 : 1 ≤ qA) (qa2 : qA < 2 ^ 32) (qlt : v.q < 2 ^ (8 * qA))
+    (q21 : s0.gpr .r21 = BitVec.ofNat 64 qA) :
     WP isa (seqs dChecks) s fun t => ∃ Y₁ Y₂,
-      (0 < 2 * (v.p / 2) → Y₁ = v.d % (2 * (v.p / 2))) ∧ (0 < 2 * (v.q / 2) → Y₂ = v.d % (2 * (v.q / 2))) ∧
+      (0 < 2 * (v.p / 2) → (Shape g.w pA qA → 2 ^ (64 * (g.w / 4 - 1)) ≤ 2 * (v.p / 2)) →
+        Y₁ = v.d % (2 * (v.p / 2))) ∧
+      (0 < 2 * (v.q / 2) → (Shape g.w pA qA → 2 ^ (64 * (g.w / 4 - 1)) ≤ 2 * (v.q / 2)) →
+        Y₂ = v.d % (2 * (v.q / 2))) ∧
       ∃ A live, Stg g s0 A live (c && decide (v.d < v.n) && decide (Y₁ = v.dP) && decide (Y₂ = v.dQ)) t := by
   unfold dChecks
   simp only [List.append_assoc]
-  rw [wp_seqs_append (by simp [ltA]) (by simp [divA])]
+  rw [wp_seqs_append (by simp [ltA]) (by simp [divK])]
   refine WP.mono (h.ltA_ok (a := aD) (b := aN) (by decide) (by decide) (by decide)) fun t1 h1 => ?_
   rw [aFin_d, aFin_n] at h1
-  rw [wp_seqs_append (by simp [divA]) (by simp [eqA])]
-  obtain ⟨pa, pa1, pa2, plt, p19⟩ := hp
-  obtain ⟨qa, qa1, qa2, qlt, q21⟩ := hq
-  refine WP.mono (h1.divA_ok (a := aD) (d := aM1) (by decide) (by decide) (by decide) (len := .r19) (by decide)
-    (by decide) ((h1.regs.gpr _ (by decide)).trans p19) pa1 pa2 (by rw [aFin_m1]; omega))
+  rw [wp_seqs_append (by simp [divK]) (by simp [eqA])]
+  have r1 : ∀ x ∈ [Reg.r19, .r21], t1.gpr x = s0.gpr x := fun x hx => h1.regs.gpr x (by revert x hx; decide)
+  refine WP.mono (h1.divK_ok (a := aD) (d := aM1) (by decide) (by decide) (by decide) (len := .r19) (by decide)
+    (by decide) ((r1 .r19 (by decide)).trans p19) pa1 pa2 (by rw [aFin_m1]; omega)
+    ((r1 .r19 (by decide)).trans p19) ((r1 .r21 (by decide)).trans q21) pa2 qa2 (fun _ => rfl))
     fun t2 ⟨Xq, Y₁, hv1, h2⟩ => ?_
   rw [aFin_d, aFin_m1] at hv1
-  rw [wp_seqs_append (by simp [eqA]) (by simp [divA])]
+  rw [wp_seqs_append (by simp [eqA]) (by simp [divK])]
   refine WP.mono (h2.eqA_ok (a := aVR) (b := aDP) (by decide) (by decide)) fun t3 h3 => ?_
   have h3' : Stg g s0 (aFin v) liveFin (c && decide (v.d < v.n) && decide (Y₁ = v.dP)) t3 := by
     have e : upd (upd (aFin v) aVQ Xq) aVR Y₁ aVR = Y₁ := by rw [upd_self]
@@ -463,15 +464,18 @@ theorem dChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 
     exact (h3.sub (live' := liveFin) (by decide)).congr' fun j hj => by
       simp only [liveFin, List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
-  rw [wp_seqs_append (by simp [divA]) (by simp [eqA])]
-  refine WP.mono (h3'.divA_ok (a := aD) (d := aM2) (by decide) (by decide) (by decide) (len := .r21) (by decide)
-    (by decide) ((h3'.regs.gpr _ (by decide)).trans q21) qa1 qa2 (by rw [aFin_m2]; omega))
+  rw [wp_seqs_append (by simp [divK]) (by simp [eqA])]
+  have r3 : ∀ x ∈ [Reg.r19, .r21], t3.gpr x = s0.gpr x := fun x hx => h3'.regs.gpr x (by revert x hx; decide)
+  refine WP.mono (h3'.divK_ok (a := aD) (d := aM2) (by decide) (by decide) (by decide) (len := .r21) (by decide)
+    (by decide) ((r3 .r21 (by decide)).trans q21) qa1 qa2 (by rw [aFin_m2]; omega)
+    ((r3 .r19 (by decide)).trans p19) ((r3 .r21 (by decide)).trans q21) pa2 qa2
+    (fun hs => by obtain ⟨_, _, e, _⟩ := hs; omega))
     fun t4 ⟨Xq', Y₂, hv2, h4⟩ => ?_
   rw [aFin_d, aFin_m2] at hv2
   refine WP.mono (h4.eqA_ok (a := aVR) (b := aDQ) (by decide) (by decide)) fun t h5 => ?_
   have e : upd (upd (aFin v) aVQ Xq') aVR Y₂ aVR = Y₂ := by rw [upd_self]
   have e2 : upd (upd (aFin v) aVQ Xq') aVR Y₂ aDQ = v.dQ := rfl
   rw [e, e2] at h5
-  exact ⟨Y₁, Y₂, fun hp => (hv1 hp).1, fun hq => (hv2 hq).1, _, _, h5⟩
+  exact ⟨Y₁, Y₂, hv1, hv2, _, _, h5⟩
 
 end VG.Proof.Rsa.PPC64LE.KeyCheck

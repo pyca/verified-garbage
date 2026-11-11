@@ -165,12 +165,13 @@ def crtChecks : List (Prog isa) := eqA aVQ aN ++ eqA aVR aZ ++
   ltA aDQ aM2 ++ mulA aE aDQ aM2 cnt33 ++ eqA aA aOne ++
   ltA aQI aP ++ [montP aA aQ aQI, montP aY aOne aOne] ++ eqA aA aY
 
-/-- `r0 := 0` exactly for a balanced key of full words: `n_len` (`r15`) a
-multiple of 16 and at least 64, `p_len` (`r19`) and `q_len` (`r21`) both
-half of it. -/
+/-- `r0 := 0` exactly for a balanced key of full words: `p_len` (`r19`) a
+multiple of 8 and at least 32, equal to `q_len` (`r21`) and to `2 w` (`r29`),
+so that `n_len` is about twice it. From registers that `KeyDiv.divW` does
+not restore from memory. -/
 def shape : List Instr :=
-  [.li .r0 15, .logic .and .r0 .r15 .r0, .lsl .r3 .r19 1, .logic .xor .r3 .r3 .r15, .logic .or .r0 .r0 .r3,
-    .logic .xor .r3 .r19 .r21, .logic .or .r0 .r0 .r3, .lsr .d .r3 .r15 6, .li .r12 0, .sub .r3 .r12 .r3,
+  [.li .r0 7, .logic .and .r0 .r19 .r0, .lsl .r3 .r29 1, .logic .xor .r3 .r3 .r19, .logic .or .r0 .r0 .r3,
+    .logic .xor .r3 .r19 .r21, .logic .or .r0 .r0 .r3, .lsr .d .r3 .r19 5, .li .r12 0, .sub .r3 .r12 .r3,
     .lsr .d .r3 .r3 63, .li .r12 1, .logic .xor .r3 .r3 .r12, .logic .or .r0 .r0 .r3]
 
 /-- `[a] mod [d]` in `aVR`: for a balanced key (`shape`), by words
