@@ -19,7 +19,7 @@ arrays.
 @[expose] public section
 namespace VG.Impl.Rsa.X86.CrtValuesRt
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Rsa.X86.Keys VG.Impl.Rsa.X86.KeyRt
-open VG.Impl.Rsa.X86.CrtValues (sPodd sE1 sE2 sE3 sMask aOne aQ aP aDQ aDR aDD aDT aDR2 aDR3 aD nArr
+open VG.Impl.Rsa.X86.CrtValues (sPodd sE1 sE3 sMask aOne aQ aP aDQ aDR aDD aDT aDR2 aDR3 aD nArr
   entry inputArgs failure)
 
 /-- `n_len` and `scratch`. -/
@@ -66,11 +66,10 @@ def fallback : Prog isa := .seq callSetup inverseCall
 
 def inverseChoice : Prog isa := InvBatchRt.dispatch lay fallback
 
-def checksPrefix : List (Prog isa) := [
-  WordModRt.eqWide lay sE1 aDR2 aDQ, .block [.mov .eax (.imm 1), .store (sc sE2) .eax]] ++ invSetup
+def checksPrefix : List (Prog isa) := [WordModRt.eqWide lay sE1 aDR2 aDQ] ++ invSetup
 
 def checksSuffix : List (Prog isa) := [eqS lay sE3 1 aOne aT1,
-  .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
+  .block (andS sMask sPodd sE1 ++ andS sMask sMask sE3),
   copy lay aDQ aD,copy lay aDD aP,.block (clrLow lay aDD)]
 
 def checks : Prog isa := seqs (checksPrefix ++ inverseChoice::checksSuffix)
