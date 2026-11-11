@@ -57,7 +57,7 @@ def bitChecks : List (Prog isa) :=
 /-- `sMask &= ` the mask of `d mod [aM] = [aX]`: `d` into `WordDivide`'s
 dividend, `[aM]` into its divisor, the remainder compared with `[aX]`. -/
 def wordRem : List (Prog isa) :=
-  [Keys.copyA WordDivide.aM aM] ++ Keys.loadA WordDivide.aD sD sDlen ++
+  [Keys.copyA WordDivide.aM aM] ++ loadNum aT sD sDlen ++
   [.seq (.block WordDivide.normalize) WordDivide.code] ++ Keys.eqA WordDivide.aR aX ++
   [.block Keys.CrtValues.andZero]
 

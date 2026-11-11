@@ -125,6 +125,40 @@ theorem wv_norm {m m' : Mem} (hf : Frm B (WordDivide.normRanges w) m m') (hn : B
     Impl.Rsa.X86_64.WordDivide.aV] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> rcases hj with rfl | rfl <;> simp only [slot_eq] <;> omega_arith
 
+theorem norm_away {w : Nat} (hw : 1 ≤ w) : ∀ r ∈ WordDivide.normRanges w, Away w r := fun r' hr' => by
+  simp only [WordDivide.normRanges, WordDivide.allRanges, List.mem_cons, List.not_mem_nil, or_false,
+    Impl.Rsa.X86_64.WordDivide.aM, Impl.Rsa.X86_64.WordDivide.aR, Impl.Rsa.X86_64.WordDivide.aT,
+    Impl.Rsa.X86_64.WordDivide.aV] at hr'
+  rcases hr' with rfl | rfl | rfl | rfl
+  · exact away_slot w (j := 9) (by decide) (.inr (by decide)) (Nat.le_refl _)
+  · exact away_slot w (j := 3) (by decide) (.inl (by decide)) (Nat.le_refl _)
+  · refine away_slot w (j := 8) (by decide) (.inr (by decide)) ?_; omega_arith
+  · refine away_slot w (j := 16) (by decide) (.inr (by decide)) ?_; omega_arith
+
+theorem norm_bound {w Z : Nat} (hw : 1 ≤ w) (hZ : slot w 17 ≤ Z) : ∀ r ∈ WordDivide.normRanges w, r.1 + r.2 ≤ Z := fun r' hr' => by
+  simp only [WordDivide.normRanges, WordDivide.allRanges, List.mem_cons, List.not_mem_nil, or_false,
+    Impl.Rsa.X86_64.WordDivide.aM, Impl.Rsa.X86_64.WordDivide.aR, Impl.Rsa.X86_64.WordDivide.aT,
+    Impl.Rsa.X86_64.WordDivide.aV] at hr'
+  rcases hr' with rfl | rfl | rfl | rfl
+  · have := slot_lt (w := w) (show 9 < 17 by decide); dsimp only; omega_arith
+  · have := slot_lt (w := w) (show 3 < 17 by decide); dsimp only; omega_arith
+  · have := slot_lt (w := w) (show 8 < 17 by decide); dsimp only; omega_arith
+  · have := slot_lt (w := w) (show 16 < 17 by decide); dsimp only; omega_arith
+
+/-- `andZero` keeps the checks' context, whatever the mask. -/
+theorem andZeroK (h : KCtx s t B Z w minv N) :
+    WP isa (.block Impl.Rsa.X86_64.Keys.CrtValues.andZero) t fun t' => KCtx s t' B Z w minv N := by
+  have hn := h.good.scr.nowrap
+  have hZ := h.hZ
+  have hmz : 8 * sMask + 8 < 2 ^ 64 := by unfold sMask sFn; omega_arith
+  have hl := h.good.scr.ld (d := 8 * sMask) (by have := hdr_lt_slot w 8 (show sMask < 32 by decide); omega_arith)
+  have hst := h.good.scr.st (d := 8 * sMask) (by have := hdr_lt_slot w 8 (show sMask < 32 by decide); omega_arith)
+  refine WP.mono (WP.keep [.rbp] (Q := fun t' => ∃ v : BitVec 64, t'.mem = t.mem.writeW (off B (8 * sMask)) v) (by
+    unfold Impl.Rsa.X86_64.Keys.CrtValues.andZero
+    xrun [State.ea, hdr, h.good.rdi, hdrOff, hl, hst]
+    exact ⟨_, rfl⟩) rfl) fun t' ⟨⟨v, hm⟩, k⟩ =>
+    h.msk (by rw [hm]; exact writeW_outside _ B _ (Nat.le_of_lt hmz)) (k.mono (by decide))
+
 /-- `d mod [aM]`, compared with `[aX]` and and'ed into `sMask`. -/
 theorem wordRemK (h : KCtx s t B Z w minv N) (r : WRoom s B Z w) {b : Bool}
     (hm : word t.mem B (8 * sMask) = mask b) {pd : Addr} {db : List Byte} (hpd : word s.mem B (8 * sD) = pd)
@@ -154,17 +188,14 @@ theorem wordRemK (h : KCtx s t B Z w minv N) (r : WRoom s B Z w) {b : Bool}
     o₁.wv (.inl (by rcases hj with rfl | rfl <;> simp only [slot_eq, Impl.Rsa.X86_64.WordDivide.aM] <;> omega_arith))
       (by have := hZ; rcases hj with rfl | rfl <;> simp only [slot_eq] at * <;> omega_arith)
   -- `[5] := d`
-  refine wsa (by simp [Impl.Rsa.X86_64.Keys.loadA]) (by simp) (WP.mono (loadA_ok (h₁.ws r)
-    (j := Impl.Rsa.X86_64.WordDivide.aD) (sPtr := sD) (sLen := sDlen) (by decide) (by decide) (by decide)
-    (by rw [h₁.hdr _ (by decide) (by decide)]; exact hpd) (by rw [h₁.hdr _ (by decide) (by decide)]; exact hdl)
-    (h₁.src srcD) rfl hd1 hdk) fun t₂ ⟨v₂, o₂, k₂⟩ => ?_)
-  have h₂ := h₁.frm (Frm.of_outside o₂ (List.mem_singleton_self _))
-    (by simp only [List.mem_singleton, forall_eq]; exact away_slot w (by decide) (.inl (by decide)) (Nat.le_refl _))
-    (by simp only [List.mem_singleton, forall_eq]; exact sl 5 (by decide)) (k₂.mono (by decide))
+  refine wsa (by simp [loadNum]) (by simp) (WP.mono (loadK h₁ (j := aT) (by decide) (by decide) (by decide)
+    (show sD < 32 by decide) (show sDlen < 32 by decide) (by decide) (by decide) hpd hdl srcD hd1 hdk)
+    fun t₂ ⟨h₂, v₂, a₂⟩ => ?_)
+  have o₂ : Outside B (slot w 5) (8 * (w + 2)) t₁.mem t₂.mem := fun x hx => a₂ x (by
+    simp only [List.mem_singleton, forall_eq]; exact hx)
   have e₂ : ∀ j, j = 1 ∨ j = 4 ∨ j = 9 → wv t₂.mem B (slot w j) w = wv t₁.mem B (slot w j) w := fun j hj => by
     have := hZ
     refine o₂.wv ?_ (by rcases hj with rfl | rfl | rfl <;> simp only [slot_eq] at * <;> omega_arith)
-    simp only [Impl.Rsa.X86_64.WordDivide.aD]
     rcases hj with rfl | rfl | rfl
     · exact .inl (by simp only [slot_eq]; omega_arith)
     · exact .inl (by simp only [slot_eq]; omega_arith)
@@ -215,8 +246,8 @@ theorem wordRemK (h : KCtx s t B Z w minv N) (r : WRoom s B Z w) {b : Bool}
     have top := WordDivide.top_of_bound (m := t₂.mem) (B := B) (e := slot w 9) (show 1 ≤ w / 2 by omega_arith)
       (by rw [d₂]; exact hb)
     have q := v₃ top
-    simp only [Impl.Rsa.X86_64.WordDivide.aR, Impl.Rsa.X86_64.WordDivide.aD, Impl.Rsa.X86_64.WordDivide.aM] at q v₂
-    rw [v₂, d₂] at q
+    simp only [Impl.Rsa.X86_64.WordDivide.aR, Impl.Rsa.X86_64.WordDivide.aD, Impl.Rsa.X86_64.WordDivide.aM] at q
+    rw [show slot w 5 = slot w aT from rfl, v₂, d₂] at q
     have pos : 0 < wv t.mem B (slot w aM) w := by have := Nat.one_le_two_pow (n := 64 * (w / 2) - 1); omega_arith
     have lt : Spec.Rsa.os2ip db % wv t.mem B (slot w aM) w < 2 ^ (64 * w) :=
       Nat.lt_of_lt_of_le (Nat.mod_lt _ pos)
