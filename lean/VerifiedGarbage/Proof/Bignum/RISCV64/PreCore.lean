@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreCheck
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreWrite
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
+import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2Words
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.ExportEncoding
@@ -185,7 +186,7 @@ theorem core_ok {s : State} {P N S : Addr} {Z k w : Nat} (hs : Scr s S Z) (hp : 
     (hw : w = (k + 7) / 8) (hk : 64 ≤ k) (hk' : k ≤ 1024) (hZ : slot w 8 ≤ Z)
     (h5 : s.gpr .s5 = P) (h8 : s.gpr .s8 = BitVec.ofNat 64 k) (h7 : s.gpr .s7 = N)
     (ha7 : s.gpr .a7 = off S (slot w 0)) (ha2 : s.gpr .a2 = off S (slot w 1))
-    (ha5 : s.gpr .a5 = off S (slot w 2)) (ha6 : s.gpr .a6 = off S (slot w 3))
+    (ha6 : s.gpr .a6 = off S (slot w 3))
     (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
     (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off N i) 1)
     (hNS : ∀ i < k, ∀ x, ofs S x < Z → off N i ≠ x) (hPS : ∀ x, ofs S x < Z → 16 * w ≤ ofs P x) :
@@ -232,11 +233,11 @@ theorem core_ok {s : State} {P N S : Addr} {Z k w : Nat} (hs : Scr s S Z) (hp : 
     have gz : ∀ r ∈ [Reg.a2, .a5, .a6, .a7, .t0], s₂'.gpr r = s₂.gpr r := fun r hr =>
       kz.gpr (by revert r hr; decide)
     rw [← mz] at hN₂
-    refine WP.seq (WP.mono (r2Rest_ok (hs₂.congr kz.2.2) (by rw [gz .a2 (by decide), g .a2 (by decide), ha2])
-      (by rw [gz .a5 (by decide), g .a5 (by decide), ha5]) (by rw [gz .a6 (by decide), g .a6 (by decide), ha6])
+    refine WP.seq (WP.mono (r2Words_ok (hs₂.congr kz.2.2) (by rw [gz .a2 (by decide), g .a2 (by decide), ha2])
+      (by rw [gz .a6 (by decide), g .a6 (by decide), ha6])
       (by rw [gz .a7 (by decide), g .a7 (by decide), ha7]) (by rw [gz .t0 (by decide), g .t0 (by decide), ht0])
       (by rw [hz, mz]) (by omega_arith) hw' (by omega_arith) hN₂
-      (by rw [mz, m₂, hv₁]; exact hf.1)) fun s₃ ⟨hx₃, out₃, k₃⟩ => ?_)
+      (by rw [mz, m₂, hv₁]; exact hf.1)) fun s₃ ⟨⟨hx₃, out₃⟩, k₃⟩ => ?_)
     rw [mz] at hx₃ out₃
     have k13 := (k12.trans kz).trans k₃
     refine WP.seq (WP.mono (write_ok (P := P) (dN := slot w 0) (dX := slot w 1) (hs.congr k13.2.2)
@@ -290,7 +291,7 @@ theorem core_C1 {d : PD} {s : State} (h : C1 d s) :
       (preOut d.nb d.P (2 * d.w) (t.gpr .a0) t.mem ∧ Frame [arrR d.S d.w, ⟨d.P, 16 * d.w⟩] s.mem t.mem) ∧
         Keep coreRegs s t := by
   have hb := h.base
-  have := core_ok hb.scr hb.pre rfl hb.k64 hb.k1024 hb.hZ hb.s5 hb.s8 hb.s7 hb.a7 hb.a2 hb.a5 hb.a6 hb.t0
+  have := core_ok hb.scr hb.pre rfl hb.k64 hb.k1024 hb.hZ hb.s5 hb.s8 hb.s7 hb.a7 hb.a2 hb.a6 hb.t0
     h.rd h.sep hb.hPS
   rwa [h.bytesAt] at this
 

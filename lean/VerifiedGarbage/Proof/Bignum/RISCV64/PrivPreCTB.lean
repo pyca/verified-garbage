@@ -53,10 +53,10 @@ theorem pins107 : Pins (At C0 privF 107) rsN := by
     have e : ∀ w j, slot w j = 256 + j * (8 * (w + 2)) := fun _ _ => rfl
     have eX8 := e (cwX s₀) 8; have eN8 := e (cw s₀) 8
     have hcw : cwX s₀ = 2 * cw s₀ := rfl
-    refine WP.seq (WP.mono (setupN_ok hP hA) fun v ⟨⟨v5, v7, v8, v0, va7, va2, va5, va6, vm⟩, kv⟩ => ?_)
+    refine WP.seq (WP.mono (setupN_ok hP hA) fun v ⟨⟨v5, v7, v8, v0, va7, va2, _, va6, vm⟩, kv⟩ => ?_)
     have kAv := hA.keep.trans kv
     refine WP.seq (WP.mono (Pre.core_ok (hA.scr.congr kv.2.2) (pre16 hP kAv.2.2) dw k64 k1024 (by omega_arith)
-      v5 v8 v7 va7 va2 va5 va6 v0 (by rw [kAv.2.1, kAv.2.2]; exact hP.rN) hP.sN (sep16 hP)) fun t₁ ⟨_, kt⟩ => ?_)
+      v5 v8 v7 va7 va2 va6 v0 (by rw [kAv.2.1, kAv.2.2]; exact hP.rN) hP.sN (sep16 hP)) fun t₁ ⟨_, kt⟩ => ?_)
     have kvt := kv.trans kt
     exact wp_nil (by
       simp only [rsN, List.map_cons, List.map_nil, kt.gpr (r := .t0) (by decide), kt.gpr (r := .s5) (by decide),

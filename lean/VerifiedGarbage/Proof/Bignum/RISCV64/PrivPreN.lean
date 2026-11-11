@@ -299,13 +299,13 @@ theorem partN_ok {s₀ t : State} (hP : PF s₀) (hA : A s₀ t) {c : Prog isa} 
   have eX8 := e (cwX s₀) 8; have eN0 := e (cw s₀) 0; have eN8 := e (cw s₀) 8
   have hh : hdrBytes = 256 := rfl
   have dcZ : cZ s₀ = (stackArg s₀ 1).toNat * 8 := rfl
-  refine WP.seq (WP.mono (setupN_ok hP hA) fun v ⟨⟨v5, v7, v8, v0, va7, va2, va5, va6, vm⟩, kv⟩ => ?_)
+  refine WP.seq (WP.mono (setupN_ok hP hA) fun v ⟨⟨v5, v7, v8, v0, va7, va2, _, va6, vm⟩, kv⟩ => ?_)
   have kAv := hA.keep.trans kv
   have bN : Spec.Rsa.bytesAt v.mem (s₀.gpr .a2) (ck s₀) = nB s₀ := by
     rw [vm]
     exact bytes_frame hA.frame hP.dN (Nat.le_of_lt (BitVec.isLt _))
   refine WP.seq (WP.mono (Pre.core_ok (hA.scr.congr kv.2.2) (pre16 hP kAv.2.2) dw k64 k1024 (by oa) v5 v8
-    v7 va7 va2 va5 va6 v0 (by rw [kAv.2.1, kAv.2.2]; exact hP.rN) hP.sN (sep16 hP)) fun t₁ ⟨⟨tO, tF⟩, kt⟩ => ?_)
+    v7 va7 va2 va6 v0 (by rw [kAv.2.1, kAv.2.2]; exact hP.rN) hP.sN (sep16 hP)) fun t₁ ⟨⟨tO, tF⟩, kt⟩ => ?_)
   rw [bN] at tO
   have kAt := kAv.trans kt
   have kvt := kv.trans kt
