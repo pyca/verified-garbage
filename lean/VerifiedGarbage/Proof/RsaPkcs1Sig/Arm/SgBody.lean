@@ -58,8 +58,9 @@ theorem fail_vp : VP (fun σ s => E3 P σ s ∧ isa.eval .eq s = some true)
     fun _ _ h => zero_wp h).seq
   (VP.taint [] ret0_taint (fun _ _ _ _ _ _ _ h => absurd h List.not_mem_nil) fun _ _ h => ret0_wp h))
 
-theorem callArgs_vp : VP (fun σ s => E3 P σ s ∧ isa.eval .eq s = some false) (.block callArgs) (R1 P) :=
-  VP.stk (code := callArgs.tail) (by decide) (by decide) (fun _ _ _ _ h₁ h₂ => S_sp h₁.1.1.1 h₂.1.1.1)
+theorem callArgs_vp : VP (fun σ s => E3 P σ s ∧ isa.eval .eq s = some false) (.block (callArgs P.pc)) (R1 P) :=
+  VP.stk (code := (callArgs P.pc).tail) (by generalize P.pc = b; cases b <;> decide)
+    (by generalize P.pc = b; cases b <;> decide) (fun _ _ _ _ h₁ h₂ => S_sp h₁.1.1.1 h₂.1.1.1)
     fun _ _ h => callArgs_wp (r0_of h)
 
 theorem wipeArgs_vp : VP (R2 P) (.block wipeArgs) (R3 P) :=
@@ -75,11 +76,11 @@ theorem fin_vp : VP (R4 P) (.block [.mov .r0 (.reg .r3)]) (Fin P) :=
 
 theorem rest_vp (v : Proof.Rsa.Arm.CrtImpl) :
     VP (fun σ s => E3 P σ s ∧ isa.eval .eq s = some false)
-      (rest (Proof.Rsa.Arm.privName v) (Proof.Rsa.Arm.privCode v)) (Fin P) :=
-  callArgs_vp.seq ((call_vp v).seq (wipeArgs_vp.seq (wipe_vp.seq fin_vp)))
+      (rest P.pc (privN P.pc v) (privC P.pc v)) (Fin P) :=
+  callArgs_vp.seq ((call_vpG v).seq (wipeArgs_vp.seq (wipe_vp.seq fin_vp)))
 
 theorem body_vp (v : Proof.Rsa.Arm.CrtImpl) :
-    VP (S P) (body (Proof.Rsa.Arm.privName v) (Proof.Rsa.Arm.privCode v)) (Fin P) :=
+    VP (S P) (body P.pc (privN P.pc v) (privC P.pc v)) (Fin P) :=
   encArgs_vp.seq (encode_vp.seq (cmp_vp.seq (VP.ite (fun σ₁ σ₂ _ _ h₁ h₂ => by
     rw [Proof.X25519.Arm.eval_eq, Proof.X25519.Arm.eval_eq, h₁.2, h₂.2, enc_isNone P σ₁ σ₂]) fail_vp (rest_vp v))))
 

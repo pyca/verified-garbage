@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTSetup
 
 import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTReduce
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyWordCT
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTLoads
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyWide
 import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
@@ -10,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTSetup
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTReduce
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyWordCT
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTLoads
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyWide
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
@@ -93,6 +95,24 @@ theorem modChecks_ct {sX sXlen sDX sYlen : Nat} (hsXl : sXlen < 32) (nXl : sXlen
     (kk_app (by simp [loadNum]) (by simp [decM]) hM decMK_ct) hDX) ltXM) ld_D) mulEWideK_ct) hD) eqOneK_ct) hDX)
     mulEK_ct) hR) eqOneK_ct
 
+/-- The checks with bit-serial remainders. -/
+theorem bitChecks_eq : bitChecks = modChecks sP sPlen sDP sQlen ++ (modChecks sQ sQlen sDQ sPlen ++
+    (loadNum aM sP sPlen ++ loadNum aX sQI sPlen ++ ltMask aX aM ++
+      loadNum aR sQ sQlen ++ mulXR ++ Impl.Rsa.X86_64.CheckCrtKey.reduceTop sPlen Impl.Rsa.X86_64.CheckCrtKey.topQ ++
+      eqOne)) := by
+  simp only [bitChecks, List.append_assoc]
+
+theorem bitChecks_ct : RelCT isa (Two KK) (seqs bitChecks) (Two KK) := by
+  rw [bitChecks_eq]
+  refine RelCT.seqs_append (by simp [modChecks, loadNum]) (by simp [modChecks, loadNum]) (RelCT.seq
+    (modChecks_ct (by decide) (by decide) (·.pl) (fun _ _ h => ⟨h.hPl, h.pl1, h.pl2⟩) ld_PM ld_DP (by decide) (by decide) (·.ql) (fun _ _ h => ⟨h.hQl, h.ql2⟩) (by taint_decide) (by taint_decide)) ?_)
+  refine RelCT.seqs_append (by simp [modChecks, loadNum]) (by simp [loadNum]) (RelCT.seq
+    (modChecks_ct (by decide) (by decide) (·.ql) (fun _ _ h => ⟨h.hQl, h.ql1, h.ql2⟩) ld_QM ld_DQ (by decide) (by decide) (·.pl) (fun _ _ h => ⟨h.hPl, h.pl2⟩) (by taint_decide) (by taint_decide)) ?_)
+  exact kk_app (by simp [loadNum]) (by simp [eqOne]) (kk_app (by simp [loadNum]) (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop])
+      (kk_app (by simp [loadNum]) (by simp [mulXR, VG.Impl.Rsa.X86_64.Crt.zeroAccs])
+      (kk_app (by simp [loadNum]) (by simp [loadNum]) (kk_app (by simp [loadNum]) (by simp [ltMask])
+      (kk_app (by simp [loadNum]) (by simp [loadNum]) ld_PM ld_QI) ltXM) ld_QR) mulXRK_ct) reduceTopQK_ct) eqOneK_ct
+
 /-- `main` is constant time from `M0`. -/
 theorem main_ct : RelCT isa (Two M0) main fun _ _ => True := by
   rw [main_eq]
@@ -100,20 +120,13 @@ theorem main_ct : RelCT isa (Two M0) main fun _ _ => True := by
     ((RelCT.seqs_append (by simp [loadNum]) (by simp [loadNum]) (RelCT.seq
       (kk_app (by simp [loadNum]) (by simp [ltMask]) ld_D ltXN) ?_)).mono
       (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a.kp, h₁, h₂⟩) fun _ _ h => h))
-  refine RelCT.seqs_append (by simp [loadNum]) (by simp [modChecks, loadNum]) (RelCT.seq
+  refine RelCT.seqs_append (by simp [loadNum]) (by simp) (RelCT.seq
     (kk_app (by simp [loadNum]) (by simp [VG.Impl.Rsa.X86_64.Crt.eqCheck]) (kk_app (by simp [loadNum])
       (by simp [mulXR, VG.Impl.Rsa.X86_64.Crt.zeroAccs]) (kk_app (by simp [loadNum]) (by simp [loadNum]) ld_PX ld_QR)
       mulXRK_ct) eqCheckK_ct) ?_)
-  refine RelCT.seqs_append (by simp [modChecks, loadNum]) (by simp [modChecks, loadNum]) (RelCT.seq
-    (modChecks_ct (by decide) (by decide) (·.pl) (fun _ _ h => ⟨h.hPl, h.pl1, h.pl2⟩) ld_PM ld_DP (by decide) (by decide) (·.ql) (fun _ _ h => ⟨h.hQl, h.ql2⟩) (by taint_decide) (by taint_decide)) ?_)
-  refine RelCT.seqs_append (by simp [modChecks, loadNum]) (by simp [loadNum]) (RelCT.seq
-    (modChecks_ct (by decide) (by decide) (·.ql) (fun _ _ h => ⟨h.hQl, h.ql1, h.ql2⟩) ld_QM ld_DQ (by decide) (by decide) (·.pl) (fun _ _ h => ⟨h.hPl, h.pl2⟩) (by taint_decide) (by taint_decide)) ?_)
-  refine RelCT.seqs_append (by simp [loadNum]) (by simp) (RelCT.seq
-    (kk_app (by simp [loadNum]) (by simp [eqOne]) (kk_app (by simp [loadNum]) (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop])
-      (kk_app (by simp [loadNum]) (by simp [mulXR, VG.Impl.Rsa.X86_64.Crt.zeroAccs])
-      (kk_app (by simp [loadNum]) (by simp [loadNum]) (kk_app (by simp [loadNum]) (by simp [ltMask])
-      (kk_app (by simp [loadNum]) (by simp [loadNum]) ld_PM ld_QI) ltXM) ld_QR) mulXRK_ct) reduceTopQK_ct) eqOneK_ct)
-    ?_)
-  exact outK_ct
+  simp only [seqs]
+  refine RelCT.seq (RelCT.seq guard_ct (two_ite (fun p s₁ s₂ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_)) outK_ct
+  · exact wordChecks_ct.mono (fun _ _ h => two_mono (fun _ _ h => h.1.1) h) fun _ _ h => h
+  · exact bitChecks_ct.mono (fun _ _ h => two_mono (fun _ _ h => h.1.1) h) fun _ _ h => h
 
 end VG.Proof.Rsa.X86_64.Key
