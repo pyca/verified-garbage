@@ -580,6 +580,7 @@ theorem pp_call_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
         Region.contains_self _ _⟩
       pointer := ?_
       length := ?_
+      r2 := fun _ ha => by cases ha
       workspaceArg := by rw [slotY .r12 48 (by decide), hx.r12]; rfl
       stackWorkspace := by rw [belowY]; exact wsD.sub_left (Region.sub_prefix (by decide))
       argsWorkspace := by rw [addrY]; exact wsD.sub_left (stackSub 56 (by decide))
@@ -663,7 +664,7 @@ theorem pp_call_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
   have hCall : PpCall (ppGeometry s) y := by
     refine ⟨by rw [hPw]; exact preFit, by rw [hPw]; exact ⟨_, preMem, Region.contains_self _ _⟩,
       by rw [hPw]; exact preWs'.symm, by rw [hPw, belowY]; exact preD.sub_left (Region.sub_prefix (by decide)),
-      by rw [hPw, addrY]; exact preD.sub_left (stackSub 56 (by decide)), ?_, rfl, rfl, ?_⟩
+      by rw [hPw, addrY]; exact preD.sub_left (stackSub 56 (by decide)), ?_, rfl, rfl, ?_, rfl⟩
     · intro i h1 h6
       rw [hPw]
       rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega) with

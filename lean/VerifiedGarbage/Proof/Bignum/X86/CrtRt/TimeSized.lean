@@ -64,7 +64,7 @@ abbrev LoopPost (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp :
 theorem loopStep_ok {n : Nat} {t : State} (R : Run (CrtExtra base bytes len args) base bytes len args sp t)
     (L : LoopSt base bytes len args n t) : WP isa factorStep t (LoopPost base bytes len args sp n) := by
   obtain ⟨h1, h2, m₀, s₀, c, I⟩ := L
-  refine WP.mono (facStep_ok c I.inp.crt.dpLen I.inp.crt.dqLen (by omega_arith) I) fun u ⟨I', Z⟩ => ?_
+  refine WP.mono (facStep_ok c I.inp.crt.dpLen I.inp.crt.dqLen (by omega_arith) I (pc := none) trivial ⟨trivial, fun _ => trivial⟩) fun u ⟨I', Z⟩ => ?_
   have K := Keeps.of_common I.keeps I'.keeps
   refine ⟨⟨I'.inp, R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩, by omega_arith, ?_, fun e => ?_, fun e => ?_⟩
   · rw [Z]; congr 1; apply decide_eq_decide.mpr; omega_arith

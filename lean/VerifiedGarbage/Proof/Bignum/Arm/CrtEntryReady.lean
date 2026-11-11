@@ -14,6 +14,8 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
 public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 
 import VerifiedGarbage.Proof.Bignum.Arm.PublicPush
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtStages
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntryMemory
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -154,11 +156,11 @@ theorem CrtCheckedState.pSelection {s : State} {g : CrtGeometry} {bs : Fin 7 →
     · simp [accepted]
 
 theorem crt_firstPower_qInput (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
-    (h : CrtCheckedState g bs s) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa ((CrtFn.powerWith kernel.code) 224 64 80) s (CrtPowerSelection g bs (crtQ g.base g.words) 228 2) := by
+    (h : CrtCheckedState g bs s) (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa ((CrtFn.powerOf st.prime kernel.code) 224 64 80) s (CrtPowerSelection g bs (crtQ g.base g.words) 228 2) := by
   have input := h.pSelection
   refine WP.mono ((crt_powerStage_ok (kernel := kernel)) s h.selected.1 h.selected.2 input.kind 1 3 (Or.inl ⟨rfl, rfl⟩)
-    input.bit input.valid input.prime) ?_
+    input.bit input.valid input.prime st hst) ?_
   rintro t ⟨sharedT, readyT, _, flag, frame, _⟩
   have eq := h.selected.1.workspace_eq_after_power h.selected.1.buffers.context.q (by simp [crtRegions])
     h.selected.1.buffers.context.sepPQ.symm h.selected.1.buffers.context.sepQN frame
@@ -689,8 +691,8 @@ theorem crt_begin_selected (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   (crt_begin_ok s h.buffers h.stack h.ptr h.count h.saved h.modulusPtr h.valid).mono (fun _ j => ⟨j.1, j.2.1⟩)
 
 theorem crt_validate_checked (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
-    (h : CrtSelected g bs g.base s) : WP isa CrtFn.validate s (CrtCheckedState g bs) :=
-  (crt_validateStage_ok s h.1 h.2).mono (fun _ j => ⟨⟨j.1, j.2.1⟩, j.2.2.1, j.2.2.2.1, j.2.2.2.2.1⟩)
+    (h : CrtSelected g bs g.base s) (st : CrtStages) (hst : st.ok g bs) : WP isa st.check s (CrtCheckedState g bs) :=
+  (st.checkOk s hst h.1 h.2).mono (fun _ j => ⟨⟨j.1, j.2.1⟩, j.2.2.1, j.2.2.2.1, j.2.2.2.2.1⟩)
 
 end VG.Proof.Bignum.Arm
 end
@@ -984,6 +986,19 @@ theorem crt_validateStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
       (by simp only [CrtGeometry.words] at two ⊢; omega) (Nat.le_refl _) crt_productCount_ct'
       s t tr1 tr2 u v h e1 e2
 
+/-- The key check without `p q = n` (`CrtFn.validateGiven`). -/
+theorem crt_validateGivenStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
+    RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
+      (.seq CrtFn.acceptInput (.seq CrtFn.loadP CrtFn.loadQ)) (fun _ _ => True) := by
+  have acceptWP (s : State) {bs : Fin 7 → List Byte} (h : CrtSelected g bs g.base s) :
+      WP isa CrtFn.acceptInput s (CrtSelected g bs g.base) :=
+    (crt_acceptStage_ok s h.1 h.2).mono (fun _ j => ⟨j.1, j.2.1⟩)
+  have pWP (s : State) {bs : Fin 7 → List Byte} (h : CrtSelected g bs g.base s) :
+      WP isa CrtFn.loadP s (CrtSelected g bs g.base) :=
+    (crt_loadPStage_ok s h.1 h.2).mono (fun _ j => ⟨j.1, j.2.1⟩)
+  exact crt_seq_ct crt_acceptStage_ct (fun s h => acceptWP s h) (fun s h => acceptWP s h)
+    (crt_seq_ct crt_loadPStage_ct (fun s h => pWP s h) (fun s h => pWP s h) crt_loadQStage_ct)
+
 end VG.Proof.Bignum.Arm
 end
 
@@ -1023,14 +1038,15 @@ theorem CrtPoweredPair.coefficientSelection {s : State} {g : CrtGeometry} {bs : 
   ⟨h.selected, ⟨_, h.p, h.bound⟩, h.flag⟩
 
 theorem crt_bothPowers_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
-    (h : CrtCheckedState g bs s) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa (.seq ((CrtFn.powerWith kernel.code) 224 64 80) ((CrtFn.powerWith kernel.code) 228 72 88)) s (CrtPoweredPair g bs) :=
-  ((crt_bothPowers_ok (kernel := kernel)) s h.selected.1 h.selected.2 h.p h.q h.flag).mono
+    (h : CrtCheckedState g bs s) (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa (.seq ((CrtFn.powerOf st.prime kernel.code) 224 64 80) ((CrtFn.powerOf st.prime kernel.code) 228 72 88)) s (CrtPoweredPair g bs) :=
+  ((crt_bothPowers_ok (kernel := kernel)) s h.selected.1 h.selected.2 h.p h.q h.flag st hst).mono
     (fun _ j => ⟨⟨j.1, j.2.1⟩, j.2.2.1, j.2.2.2.1, j.2.2.2.2.1⟩)
 
 theorem crt_coefficientFinish_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
-    (h : CrtPoweredPair g bs s) : WP isa CrtFn.coefficientPhase s (CrtFinishSelection g bs) := by
-  refine WP.mono (crt_coefficientStage_ok s h.selected.1 h.selected.2 h.p h.q h.bound h.flag) ?_
+    (h : CrtPoweredPair g bs s) (st : CrtStages) (hst : st.ok g bs) :
+    WP isa (CrtFn.coefficientPhaseOf st.prime) s (CrtFinishSelection g bs) := by
+  refine WP.mono (crt_coefficientStage_ok s h.selected.1 h.selected.2 h.p h.q h.bound h.flag st hst) ?_
   rintro t ⟨sharedT, readyT, coefficient, qT, flagT, _, _⟩
   refine ⟨⟨sharedT, readyT⟩, decide (crtAccepted bs), ?_, ?_⟩
   · rw [flagT, h.flag]
@@ -1062,9 +1078,10 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
 
 theorem crt_powerStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {child : BitVec 32} {slot : Nat}
-    (j i : Fin 6) (pair : (j = 1 ∧ i = 3) ∨ (j = 2 ∧ i = 4)) (kernel : WindowKernel := baselineWindowKernel) :
+    (j i : Fin 6) (pair : (j = 1 ∧ i = 3) ∨ (j = 2 ∧ i = 4))
+    (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtPowerSelection g bs1 child slot j s ∧ CrtPowerSelection g bs2 child slot j t ∧
-      s.sp = t.sp) ((CrtFn.powerWith kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) (fun _ _ => True) := by
+      s.sp = t.sp) ((CrtFn.powerOf st.prime kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) (fun _ _ => True) := by
   have exponent : i = 3 ∨ i = 4 := by rcases pair with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> simp
   have select : RelCT isa (fun s t => CrtPowerSelection g bs1 child slot j s ∧
       CrtPowerSelection g bs2 child slot j t ∧ s.sp = t.sp) (selectChild slot) (fun _ _ => True) :=
@@ -1074,7 +1091,7 @@ theorem crt_powerStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {chi
   have kind := h.1.kind
   exact crt_seq_ct select (fun s h => crt_selectPower_input s h i exponent)
     (fun s h => crt_selectPower_input s h i exponent)
-    ((relCT_keep_sp ((crt_narrowPower_ct (kernel := kernel)) kind j i pair) (fun _ _ h => h.2.2)).seq crt_selectMain_ct)
+    ((relCT_keep_sp ((crt_narrowPower_ct (kernel := kernel)) kind j i pair st hst1 hst2) (fun _ _ h => h.2.2)).seq crt_selectMain_ct)
     s t tr1 tr2 u v h e1 e2
 
 end VG.Proof.Bignum.Arm
@@ -1092,15 +1109,17 @@ section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem crt_bothPowers_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (kernel : WindowKernel := baselineWindowKernel) :
+theorem crt_bothPowers_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte}
+    (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtCheckedState g bs1 s ∧ CrtCheckedState g bs2 t ∧ s.sp = t.sp)
-      (.seq ((CrtFn.powerWith kernel.code) 224 64 80) ((CrtFn.powerWith kernel.code) 228 72 88)) (fun _ _ => True) := by
+      (.seq ((CrtFn.powerOf st.prime kernel.code) 224 64 80) ((CrtFn.powerOf st.prime kernel.code) 228 72 88)) (fun _ _ => True) := by
   have first : RelCT isa (fun s t => CrtCheckedState g bs1 s ∧ CrtCheckedState g bs2 t ∧ s.sp = t.sp)
-      ((CrtFn.powerWith kernel.code) 224 64 80) (fun _ _ => True) :=
-    ((crt_powerStage_ct (kernel := kernel)) 1 3 (Or.inl ⟨rfl, rfl⟩)).mono
+      ((CrtFn.powerOf st.prime kernel.code) 224 64 80) (fun _ _ => True) :=
+    ((crt_powerStage_ct (kernel := kernel)) 1 3 (Or.inl ⟨rfl, rfl⟩) st hst1 hst2).mono
       (fun _ _ h => ⟨h.1.pSelection, h.2.1.pSelection, h.2.2⟩) (fun _ _ _ => trivial)
-  exact crt_seq_ct first (fun s h => (crt_firstPower_qInput (kernel := kernel)) s h) (fun s h => (crt_firstPower_qInput (kernel := kernel)) s h)
-    ((crt_powerStage_ct (kernel := kernel)) 2 4 (Or.inr ⟨rfl, rfl⟩))
+  exact crt_seq_ct first (fun s h => (crt_firstPower_qInput (kernel := kernel)) s h st hst1)
+    (fun s h => (crt_firstPower_qInput (kernel := kernel)) s h st hst2)
+    ((crt_powerStage_ct (kernel := kernel)) 2 4 (Or.inr ⟨rfl, rfl⟩) st hst1 hst2)
 
 end VG.Proof.Bignum.Arm
 end
@@ -1118,9 +1137,10 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
 open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 
-theorem crt_coefficientStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
+theorem crt_coefficientStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte}
+    (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) :
     RelCT isa (fun s t => CrtCoefficientSelection g bs1 g.base s ∧
-      CrtCoefficientSelection g bs2 g.base t ∧ s.sp = t.sp) CrtFn.coefficientPhase (fun _ _ => True) := by
+      CrtCoefficientSelection g bs2 g.base t ∧ s.sp = t.sp) (CrtFn.coefficientPhaseOf st.prime) (fun _ _ => True) := by
   have kind : CrtChild g (crtP g.base g.words) 224 := Or.inl ⟨rfl, rfl⟩
   have memberP : (⟨State.addr (crtP g.base g.words), 8 * workspaceWords g.words⟩ : Region) ∈
       crtRegions g.base (workspaceWords g.words) g.words := by simp [crtRegions]
@@ -1209,16 +1229,14 @@ theorem crt_coefficientStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte
       · simp [accepted]
   have words (s : State) {bs : Fin 7 → List Byte} (h : CA bs s) : g.words ≤ 128 :=
     (crt_width_valid h.1.buffers.lengthValid).2.1
-  have prime : RelCT isa (fun s t => CE bs1 s ∧ CE bs2 t ∧ s.sp = t.sp) (narrowPrime 64) (fun _ _ => True) := by
-    intro s t tr1 tr2 u w h e1 e2
-    obtain ⟨_, le, _, _, _, _, _⟩ := h.1.1.1.narrow_fits 1 (Or.inl rfl)
-    have := words s h.1.1
-    exact (crt_narrowPrime_ct (by omega)) s t tr1 tr2 u w ⟨primeIn s h.1, primeIn t h.2.1, h.2.2⟩ e1 e2
-  have primeWP (s : State) {bs : Fin 7 → List Byte} (h : CE bs s) : WP isa (narrowPrime 64) s (CoeffHalf g bs v) := by
+  have prime : RelCT isa (fun s t => CE bs1 s ∧ CE bs2 t ∧ s.sp = t.sp) (st.prime 64) (fun _ _ => True) :=
+    (st.primeCt 1 (Or.inl rfl) hst1 hst2).mono
+      (fun s t h => ⟨⟨h.1.1.1, primeIn s h.1⟩, ⟨h.2.1.1.1, primeIn t h.2.1⟩, h.2.2⟩) (fun _ _ _ => trivial)
+  have primeWP (s : State) {bs : Fin 7 → List Byte} (h : CE bs s) (hst : st.ok g bs) :
+      WP isa (st.prime 64) s (CoeffHalf g bs v) := by
     have shared := h.1.1
     obtain ⟨_, le, _, _, _, _, half⟩ := shared.narrow_fits 1 (Or.inl rfl)
-    have := words s h.1
-    refine WP.mono (crt_narrowPrime_ok s (primeIn s h) (by omega)) ?_
+    refine WP.mono (st.primeOk 1 s (Or.inl rfl) hst ⟨shared, primeIn s h⟩) ?_
     rintro t ⟨ready, modulus, odd, r2, _, frame, rest⟩
     rw [h.1.2.2] at modulus odd r2
     change numAt _ _ _ 0 = safePrime _ (Spec.Rsa.os2ip (bs 2)) at modulus
@@ -1230,7 +1248,7 @@ theorem crt_coefficientStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte
     exact ⟨crtFactor bs 2, ⟨sharedT.copyCtx kind ready le, modulus, odd, r2, half⟩,
       by rw [eq.number shared.buffers.context.arraysFit (by decide)]; exact h.1.2.1⟩
   have tail := crt_seq_ct enter (fun s h => enterWP s h) (fun s h => enterWP s h)
-    (crt_seq_ct prime (fun s h => primeWP s h) (fun s h => primeWP s h)
+    (crt_seq_ct prime (fun s h => primeWP s h hst1) (fun s h => primeWP s h hst2)
       ((relCT_keep_sp (crt_coefficient_ct (bs1 := bs1) (bs2 := bs2) (v := v)) (fun _ _ h => h.2.2)).seq
         crt_selectMain_ct))
   have input := (crt_seq_ct transfer (fun s h => transferWP s h) (fun s h => transferWP s h)
@@ -1373,15 +1391,19 @@ section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem crt_computeStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (kernel : WindowKernel := baselineWindowKernel) :
+theorem crt_computeStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte}
+    (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtCheckedState g bs1 s ∧ CrtCheckedState g bs2 t ∧ s.sp = t.sp)
-      (CrtFn.computeWith kernel.code) (fun _ _ => True) := by
+      (CrtFn.computeOf st.prime kernel.code) (fun _ _ => True) := by
   have coefficient : RelCT isa (fun s t => CrtPoweredPair g bs1 s ∧ CrtPoweredPair g bs2 t ∧ s.sp = t.sp)
-      CrtFn.coefficientPhase (fun _ _ => True) :=
-    crt_coefficientStage_ct.mono (fun _ _ h => ⟨h.1.coefficientSelection, h.2.1.coefficientSelection, h.2.2⟩)
-      (fun _ _ _ => trivial)
-  exact (crt_seq_ct (crt_bothPowers_ct (kernel := kernel)) (fun s h => (crt_bothPowers_ready (kernel := kernel)) s h) (fun s h => (crt_bothPowers_ready (kernel := kernel)) s h)
-    (crt_seq_ct coefficient (fun s h => crt_coefficientFinish_ready s h) (fun s h => crt_coefficientFinish_ready s h)
+      (CrtFn.coefficientPhaseOf st.prime) (fun _ _ => True) :=
+    (crt_coefficientStage_ct st hst1 hst2).mono
+      (fun _ _ h => ⟨h.1.coefficientSelection, h.2.1.coefficientSelection, h.2.2⟩) (fun _ _ _ => trivial)
+  exact (crt_seq_ct (crt_bothPowers_ct (kernel := kernel) st hst1 hst2)
+    (fun s h => (crt_bothPowers_ready (kernel := kernel)) s h st hst1)
+    (fun s h => (crt_bothPowers_ready (kernel := kernel)) s h st hst2)
+    (crt_seq_ct coefficient (fun s h => crt_coefficientFinish_ready s h st hst1)
+      (fun s h => crt_coefficientFinish_ready s h st hst2)
       crt_finishStage_ct)).assoc
 
 end VG.Proof.Bignum.Arm
@@ -1399,15 +1421,17 @@ section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem crt_valid_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (kernel : WindowKernel := baselineWindowKernel) :
+theorem crt_valid_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte}
+    (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtValidInput g bs1 s ∧ CrtValidInput g bs2 t ∧ s.sp = t.sp)
-      (CrtFn.validWith kernel.code) (fun _ _ => True) := by
+      (CrtFn.validOf st.check st.prime kernel.code) (fun _ _ => True) := by
   have prepare : RelCT isa (fun s t => CrtValidInput g bs1 s ∧ CrtValidInput g bs2 t ∧ s.sp = t.sp)
       CrtFn.prepare (fun _ _ => True) :=
     crt_prepare_ct.mono (fun _ _ h => ⟨h.1.prepare_input, h.2.1.prepare_input, h.2.2⟩) (fun _ _ _ => trivial)
   exact crt_seq_ct prepare (fun s h => crt_begin_selected s h) (fun s h => crt_begin_selected s h)
-    (crt_seq_ct crt_validateStage_ct (fun s h => crt_validate_checked s h) (fun s h => crt_validate_checked s h)
-      (crt_computeStage_ct (kernel := kernel)))
+    (crt_seq_ct (st.checkCt hst1 hst2) (fun s h => crt_validate_checked s h st hst1)
+      (fun s h => crt_validate_checked s h st hst2)
+      (crt_computeStage_ct (kernel := kernel) st hst1 hst2))
 
 end VG.Proof.Bignum.Arm
 end
@@ -1439,9 +1463,10 @@ theorem crt_modulusCheck_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → Lis
   exact ⟨h.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ptr)
     ((rest.gpr .r4 (by simp)).trans h.source) ((rest.gpr .r6 (by simp)).trans h.count), flag⟩
 
-theorem crt_body_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus : bs1 0 = bs2 0) (kernel : WindowKernel := baselineWindowKernel) :
+theorem crt_body_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus : bs1 0 = bs2 0)
+    (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtBodyInput g bs1 s ∧ CrtBodyInput g bs2 t ∧ s.sp = t.sp)
-      (CrtFn.bodyWith kernel.code) (fun _ _ => True) := by
+      (CrtFn.bodyOf st.check st.prime kernel.code) (fun _ _ => True) := by
   have check : RelCT isa (fun s t => CrtBodyInput g bs1 s ∧ CrtBodyInput g bs2 t ∧ s.sp = t.sp)
       (.block modulusCheck) (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
@@ -1453,7 +1478,7 @@ theorem crt_body_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus :
   · intro s t h
     change some s.z = some t.z
     rw [h.2.1.flag, h.2.2.flag, modulus]
-  · apply (crt_valid_ct (kernel := kernel) (g := g) (bs1 := bs1) (bs2 := bs2)).mono ?_ (fun _ _ _ => trivial)
+  · apply (crt_valid_ct (kernel := kernel) (g := g) (bs1 := bs1) (bs2 := bs2) st hst1 hst2).mono ?_ (fun _ _ _ => trivial)
     intro s t h
     have flag : s.z = true := Option.some.inj h.2
     have good := h.1.2.1.flag.symm.trans flag
@@ -1485,21 +1510,22 @@ theorem crt_computeStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List B
     (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (workspaceWords g.words) g.words s)
     (p : numAt s.mem (State.addr (crtP g.base g.words)) g.words 0 = Spec.Rsa.os2ip (bs 2))
     (q : numAt s.mem (State.addr (crtQ g.base g.words)) g.words 0 = Spec.Rsa.os2ip (bs 3))
-    (flag : s.mem.readW (off (State.addr s.sp) 48) 32 = (if crtAccepted bs then 1 else 0)) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa (CrtFn.computeWith kernel.code) s fun t =>
+    (flag : s.mem.readW (off (State.addr s.sp) 48) 32 = (if crtAccepted bs then 1 else 0))
+    (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa (CrtFn.computeOf st.prime kernel.code) s fun t =>
       Spec.Rsa.bytesAt t.mem (State.addr g.output) g.length =
         (if crtAccepted bs then Spec.Rsa.i2osp (crtPrivateValue bs) g.length else List.replicate g.length 0) ∧
       t.gpr .r0 = (if crtAccepted bs then 1 else 0) ∧
       Frame (crtLiveMutable g s.sp ++ [⟨State.addr g.output, g.length⟩]) s.mem t.mem ∧ Rest roundClobbers s t := by
-  unfold CrtFn.computeWith
+  unfold CrtFn.computeOf
   apply WP.assoc
   rw [WP.seq_iff]
-  refine WP.mono ((crt_bothPowers_ok (kernel := kernel)) s h ready p q flag) ?_
+  refine WP.mono ((crt_bothPowers_ok (kernel := kernel)) s h ready p q flag st hst) ?_
   rintro u ⟨sharedU, readyU, poweredP, poweredQ, flagU, frameU, restU⟩
   have bound : Spec.Rsa.powMod (Spec.Rsa.os2ip (bs 1)) (Spec.Rsa.os2ip (bs 4)) (crtFactor bs 2) < crtFactor bs 2 := by
     rw [powMod_eq]; exact Nat.mod_lt _ (by have := poweredP.positive; omega)
   rw [WP.seq_iff]
-  refine WP.mono (crt_coefficientStage_ok u sharedU readyU poweredP poweredQ bound flagU) ?_
+  refine WP.mono (crt_coefficientStage_ok u sharedU readyU poweredP poweredQ bound flagU st hst) ?_
   rintro v ⟨sharedV, readyV, coefficient, qV, flagV, frameV, restV⟩
   have reconstruction (accepted : crtAccepted bs) : crtReconstruction g v.mem = crtPrivateValue bs := by
     unfold crtReconstruction
@@ -1563,15 +1589,16 @@ theorem crt_computed_written {s t : State} {g : CrtGeometry} {bs : Fin 7 → Lis
     exact ⟨trivial, bytes⟩
 
 theorem crt_validatedCompute_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
-    (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (VG.Impl.Bignum.Arm.Crt.workspaceWords g.words) g.words s) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa (.seq CrtFn.validate (CrtFn.computeWith kernel.code)) s fun t =>
+    (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (VG.Impl.Bignum.Arm.Crt.workspaceWords g.words) g.words s)
+    (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa (.seq st.check (CrtFn.computeOf st.prime kernel.code)) s fun t =>
       Spec.Rsa.written t.mem (State.addr g.output) g.length (t.gpr .r0)
         (Spec.Rsa.privateCrt (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6)) ∧
       Frame (crtLiveMutable g s.sp ++ [⟨State.addr g.output, g.length⟩]) s.mem t.mem ∧ Rest roundClobbers s t := by
   rw [WP.seq_iff]
-  refine WP.mono (crt_validateStage_ok s h ready) ?_
+  refine WP.mono (st.checkOk s hst h ready) ?_
   rintro u ⟨sharedU, readyU, p, q, flag, frameU, restU⟩
-  refine WP.mono ((crt_computeStage_ok (kernel := kernel)) u sharedU readyU p q flag) ?_
+  refine WP.mono ((crt_computeStage_ok (kernel := kernel)) u sharedU readyU p q flag st hst) ?_
   rintro t ⟨bytes, status, frameT, restT⟩
   rw [restU.sp] at frameT
   exact ⟨crt_computed_written h bytes status,
@@ -1598,15 +1625,16 @@ theorem crt_valid_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (ptr : s.gpr .r0 = g.base) (count : s.gpr .r6 = BitVec.ofNat 32 g.length)
     (saved : s.mem.readW (State.addr s.sp) 32 = g.base)
     (modulusPtr : s.mem.readW (off (State.addr s.sp) 8) 32 = g.modulus)
-    (valid : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (bs 0)) g.length = true) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa (CrtFn.validWith kernel.code) s fun t =>
+    (valid : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (bs 0)) g.length = true)
+    (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa (CrtFn.validOf st.check st.prime kernel.code) s fun t =>
       Spec.Rsa.written t.mem (State.addr g.output) g.length (t.gpr .r0)
         (Spec.Rsa.privateCrt (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6)) ∧
       Frame (crtMutable g s.sp ++ [⟨State.addr g.output, g.length⟩]) s.mem t.mem ∧ Rest roundClobbers s t := by
-  rw [CrtFn.validWith, WP.seq_iff]
+  rw [CrtFn.validOf, WP.seq_iff]
   refine WP.mono (crt_begin_ok s buffers stack ptr count saved modulusPtr valid) ?_
   rintro u ⟨sharedU, readyU, frameU, restU⟩
-  refine WP.mono ((crt_validatedCompute_ok (kernel := kernel)) u sharedU readyU) ?_
+  refine WP.mono ((crt_validatedCompute_ok (kernel := kernel)) u sharedU readyU st hst) ?_
   rintro t ⟨written, frameT, restT⟩
   rw [restU.sp] at frameT
   refine ⟨written, (frameU.mono (fun _ hr => List.mem_append_left _ hr)).trans (frameT.mono ?_), restU.trans restT⟩
@@ -1630,12 +1658,13 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 open VG.Proof.X25519.Arm (Rest)
 
-theorem crt_body_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtBodyInput g bs s) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa (CrtFn.bodyWith kernel.code) s fun t =>
+theorem crt_body_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtBodyInput g bs s)
+    (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa (CrtFn.bodyOf st.check st.prime kernel.code) s fun t =>
       Spec.Rsa.written t.mem (State.addr g.output) g.length (t.gpr .r0)
         (Spec.Rsa.privateCrt (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6)) ∧
       Frame (crtMutable g s.sp ++ [⟨State.addr g.output, g.length⟩]) s.mem t.mem ∧ Rest roundClobbers s t := by
-  rw [CrtFn.bodyWith, WP.seq_iff]
+  rw [CrtFn.bodyOf, WP.seq_iff]
   refine WP.mono (modulusCheck_ok s h.buffers.lengthValid.1 h.buffers.lengthValid.2
     (h.buffers.source 0).fits (h.buffers.source 0).read h.source h.count) ?_
   rintro u ⟨flag, mem, rest⟩
@@ -1646,7 +1675,8 @@ theorem crt_body_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h 
     ((rest.gpr .r4 (by decide)).trans h.source) ((rest.gpr .r6 (by decide)).trans h.count)
   refine WP.ite (Spec.Rsa.modulusValid (Spec.Rsa.os2ip (bs 0)) g.length) (by change some u.z = _; rw [flag]) ?_ ?_
   · intro valid
-    refine WP.mono ((crt_valid_ok (kernel := kernel)) u hu.buffers hu.stack hu.ptr hu.count hu.saved hu.modulusPtr valid) ?_
+    refine WP.mono ((crt_valid_ok (kernel := kernel)) u hu.buffers hu.stack hu.ptr hu.count hu.saved hu.modulusPtr valid
+      st hst) ?_
     rintro t ⟨written, frame, restT⟩
     rw [mem, rest.sp] at frame
     exact ⟨written, frame, (rest.mono (by decide)).trans restT⟩
@@ -1680,30 +1710,32 @@ structure CrtScopedInput (g : CrtGeometry) (bs : Fin 7 → List Byte) (s : State
   workspace : Workspace s g.base g.size
   body : CrtBodyInput g bs (crtExpanded s g.base g.words)
 
-theorem crt_body_scoped_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtScopedInput g bs s) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa (CrtFn.bodyWith kernel.code) s fun t =>
+theorem crt_body_scoped_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtScopedInput g bs s)
+    (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa (CrtFn.bodyOf st.check st.prime kernel.code) s fun t =>
       Spec.Rsa.written t.mem (State.addr g.output) g.length (t.gpr .r0)
         (Spec.Rsa.privateCrt (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6)) ∧
       Frame (crtMutable g s.sp ++ [⟨State.addr g.output, g.length⟩]) s.mem t.mem ∧ Rest roundClobbers s t := by
-  obtain ⟨tr, t, run, written, frame, rest⟩ := (crt_body_ok (kernel := kernel)) _ h.body
+  obtain ⟨tr, t, run, written, frame, rest⟩ := (crt_body_ok (kernel := kernel)) _ h.body st hst
   obtain ⟨write, read⟩ := crt_expanded_covers h.workspace h.body.buffers.storageFits
   refine ⟨tr, t.withRegions s.rd s.wr, ?_, written, frame, ?_⟩
   · simpa only [crtExpanded, State.withRegions_withRegions, State.withRegions_self] using VG.Arm.Exec.widen run read write
   · exact ⟨rest.gpr, rfl, rfl, rest.sp⟩
 
-theorem crt_body_scoped_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus : bs1 0 = bs2 0) (kernel : WindowKernel := baselineWindowKernel) :
+theorem crt_body_scoped_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus : bs1 0 = bs2 0)
+    (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtScopedInput g bs1 s ∧ CrtScopedInput g bs2 t ∧ s.sp = t.sp)
-      (CrtFn.bodyWith kernel.code) (fun _ _ => True) := by
+      (CrtFn.bodyOf st.check st.prime kernel.code) (fun _ _ => True) := by
   intro s t tr1 tr2 u v h e1 e2
-  obtain ⟨trS, uS, runS, _⟩ := (crt_body_ok (kernel := kernel)) _ h.1.body
-  obtain ⟨trT, uT, runT, _⟩ := (crt_body_ok (kernel := kernel)) _ h.2.1.body
+  obtain ⟨trS, uS, runS, _⟩ := (crt_body_ok (kernel := kernel)) _ h.1.body st hst1
+  obtain ⟨trT, uT, runT, _⟩ := (crt_body_ok (kernel := kernel)) _ h.2.1.body st hst2
   obtain ⟨writeS, readS⟩ := crt_expanded_covers h.1.workspace h.1.body.buffers.storageFits
   obtain ⟨writeT, readT⟩ := crt_expanded_covers h.2.1.workspace h.2.1.body.buffers.storageFits
-  have wideS : Exec isa (CrtFn.bodyWith kernel.code) s trS (uS.withRegions s.rd s.wr) := by
+  have wideS : Exec isa (CrtFn.bodyOf st.check st.prime kernel.code) s trS (uS.withRegions s.rd s.wr) := by
     simpa only [crtExpanded, State.withRegions_withRegions, State.withRegions_self] using VG.Arm.Exec.widen runS readS writeS
-  have wideT : Exec isa (CrtFn.bodyWith kernel.code) t trT (uT.withRegions t.rd t.wr) := by
+  have wideT : Exec isa (CrtFn.bodyOf st.check st.prime kernel.code) t trT (uT.withRegions t.rd t.wr) := by
     simpa only [crtExpanded, State.withRegions_withRegions, State.withRegions_self] using VG.Arm.Exec.widen runT readT writeT
-  have trace := (crt_body_ct (kernel := kernel)) modulus _ _ _ _ _ _ ⟨h.1.body, h.2.1.body, h.2.2⟩ runS runT
+  have trace := (crt_body_ct (kernel := kernel)) modulus st hst1 hst2 _ _ _ _ _ _ ⟨h.1.body, h.2.1.body, h.2.2⟩ runS runT
   exact ⟨(Exec.det e1 wideS).1.trans (trace.1.trans (Exec.det e2 wideT).1.symm), trivial⟩
 
 end VG.Proof.Bignum.Arm
@@ -1804,7 +1836,7 @@ theorem crt_entry_buffers {s t : State} {g : CrtGeometry} {bs : Fin 7 → List B
   refine ⟨⟨ws.nowrap, List.mem_append_right _ ws.writable⟩,
     crt_expanded_context ws h.storageFits width.1 (by have := width.2.1; change Spec.Rsa.modulusWords g.length < _; omega), h.lengthValid,
     h.storageFits, h.pPositive, h.pShort, h.qPositive, h.qShort, source, h.sourceSeparate,
-    ?_, h.outputFits, crtExpanded_write ?_, h.outputSeparate, ?_⟩
+    ?_, h.outputFits, crtExpanded_write ?_, h.outputSeparate, ?_, ?_⟩
   · intro i
     change Region.Disjoint _ ⟨State.addr t.sp, 56⟩
     rw [rest.sp]; exact (h.stackSource i).symm
@@ -1813,6 +1845,33 @@ theorem crt_entry_buffers {s t : State} {g : CrtGeometry} {bs : Fin 7 → List B
     exact ⟨r, List.mem_cons_of_mem _ hr, hc⟩
   · change Region.Disjoint _ ⟨State.addr t.sp, 56⟩
     rw [rest.sp]; exact h.stackOutput.symm
+  · intro a ha
+    have r := h.r2 a ha
+    have spT : t.sp = (pcPushed s).sp := rest.sp
+    have slotAddr : off (State.addr t.sp) 112 = off (State.addr s.sp) 56 := by
+      have e : off (State.addr (pcPushed s).sp) 112 = off (off (State.addr (pcPushed s).sp) 56) 56 :=
+        (Offset.add_add _ 56 56).symm
+      rw [spT, e, public_push_argAddr h.stackFit]
+    have spNat : t.sp.toNat = s.sp.toNat - 56 := by rw [spT]; exact FrameStack.sub_toNat' h.stackFit
+    have below : FrameStack.belowA s.sp 56 = ⟨State.addr t.sp, 56⟩ := by rw [spT]; rfl
+    refine ⟨?_, ?_, ?_, ?_, ?_, r.fit, ?_, r.separate, ?_, r.output, ?_⟩
+    · change t.sp.toNat + 116 ≤ _; rw [spNat]; have := r.slotFit; have := h.stackFit; omega
+    · change InRegions _ (off (State.addr t.sp) 112) 4
+      rw [slotAddr]; refine crtExpanded_read ?_; rw [rest.rd, rest.wr]
+      exact InRegions_append_cons.mpr (Or.inr r.slotRead)
+    · change t.mem.readW (off (State.addr t.sp) 112) 32 = a
+      rw [slotAddr, frame.readW (r := ⟨off (State.addr s.sp) 56, 4⟩) (Region.contains_self _ _)
+        (fun x hx => by simp only [List.mem_singleton] at hx; subst x; exact r.slotStack.symm) (by decide)]
+      exact r.slot
+    · change Region.Disjoint ⟨off (State.addr t.sp) 112, 4⟩ _; rw [slotAddr]; exact r.slotSeparate
+    · change Region.Disjoint ⟨off (State.addr t.sp) 112, 4⟩ _; rw [slotAddr]; exact r.slotOutput
+    · refine crtExpanded_read ?_; rw [rest.rd, rest.wr]
+      exact InRegions_append_cons.mpr (Or.inr r.read)
+    · change Region.Disjoint _ ⟨State.addr t.sp, 56⟩; rw [← below]; exact r.stack.symm
+    · change Spec.Rsa.wordsAt t.mem (State.addr a) g.r2Words = _
+      rw [Proof.Rsa.wordsAt_frame frame (by have := r.fit; omega)
+        (fun x hx => by simp only [List.mem_singleton] at hx; subst x; exact r.stack.symm)]
+      exact r.words
 
 end VG.Proof.Bignum.Arm
 end

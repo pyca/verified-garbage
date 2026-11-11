@@ -494,7 +494,7 @@ theorem callE_stackArg {s t : State} (A : AtCall s t) {i : Nat} (hi : i < 12) :
   rw [stackArgAddr, show (callE s t).sp = fb s from A.sp]
   exact A.psa i hi
 
-theorem preP_entry {s t : State} (h : DPre s) (A : AtCall s t) : Rsa.RISCV64.Priv.PreP (callE s t) := by
+theorem preP_entry {s t : State} (h : DPre s) (A : AtCall s t) : Rsa.RISCV64.Priv.PreP false (callE s t) := by
   have hk := h.k2
   have fbt := fb_toNat h
   have kbt := kb_toNat h
@@ -537,8 +537,9 @@ theorem preP_entry {s t : State} (h : DPre s) (A : AtCall s t) : Rsa.RISCV64.Pri
     simp only [Rsa.RISCV64.Priv.qiR, sa 8 (by decide), sa 9 (by decide)]
   have hS : Rsa.RISCV64.Priv.sR (callE s t) = sR s := by
     simp only [Rsa.RISCV64.Priv.sR, sa 10 (by decide), sa 11 (by decide)]
-  have hA : Rsa.RISCV64.Priv.aR (callE s t) = psaR s := by
-    simp only [Rsa.RISCV64.Priv.aR, stackArgAddr, hsp, Nat.mul_zero, BitVec.add_zero]
+  have hA : Rsa.RISCV64.Priv.aR false (callE s t) = psaR s := by
+    simp only [Rsa.RISCV64.Priv.aR, stackArgAddr, hsp, Nat.mul_zero, BitVec.add_zero, Bool.false_eq_true,
+      ↓reduceIte]
   have s0 := sa 0 (by decide)
   have s1 := sa 1 (by decide)
   have s2 := sa 2 (by decide)
@@ -558,7 +559,7 @@ theorem preP_entry {s t : State} (h : DPre s) (A : AtCall s t) : Rsa.RISCV64.Pri
     by rw [hsp]; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [hN, hE, hI, hP, hQ, hDP, hDQ, hQI, hA]; rfl
+  · rw [Rsa.RISCV64.Priv.rdL, hN, hE, hI, hP, hQ, hDP, hDQ, hQI, hA]; rfl
   · rw [hO, hS]; rfl
   · rw [hO, hN]; exact h.on
   · rw [hO, hE]; exact h.oe

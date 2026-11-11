@@ -16,9 +16,11 @@ import VerifiedGarbage.Proof.Framework.Lit
 `vg_rsa_private_checked` calls `vg_rsa_private_crt`,
 `vg_rsa_public_precompute` and `vg_rsa_public_precomputed_checked`, each
 verified against its shared contract (with no stack: none of them has a
-frame). Its proof works with those contracts spelt out on the registers and
-the stack (`crtA`, `pcA`, `pdA`), and moves to them from the shared ones
-(`crt_pre`, `crt_post`, `crt_pub`, …).
+frame), and `vg_rsa_private_checked_precomputed` calls
+`vg_rsa_private_crt_precomputed` (`privateCrtProductContract`). Its proof
+works with those contracts spelt out on the registers and the stack (`crtA`,
+`crtPA`, `pcA`, `pdA`), and moves to them from the shared ones (`crt_pre`,
+`crt_post`, `crt_pub`, …).
 -/
 
 @[expose] public section
@@ -115,6 +117,30 @@ theorem crt_pub {s₁ s₂ : State} (h : crtA.pub s₁ s₂) : (Proof.Rsa.privat
   rw [hn]
   simp only [List.getD_cons_succ, List.getD_cons_zero, hsp, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1,
     a2, a3, a4, a5, a6, a7, a8, a9, and_self]
+
+/-! ## `vg_rsa_private_crt_precomputed` -/
+
+/-- The factors' product is the modulus: `p q = n`, for `vg_rsa_private_crt`'s
+arguments. -/
+def KeyProduct (s : State) : Prop :=
+  Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat) *
+      Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat) =
+    Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
+
+/-- The contract of `vg_rsa_private_crt_precomputed`, an internal function
+that only `vg_rsa_private_checked_precomputed` calls: `vg_rsa_private_crt`'s,
+for a key whose factors' product is the modulus, which the key's precomputed
+values imply (`Spec.Rsa.privatePrecompute`). It takes `vg_rsa_private_crt`'s
+arguments: AArch64's `vg_rsa_private_crt` computes no `R² mod p`. -/
+def privateCrtProductContract : Contract isa :=
+  { Proof.Rsa.privateCrtContract abi 0 with
+    pre := fun s => (Proof.Rsa.privateCrtContract abi 0).pre s ∧ KeyProduct s }
+
+/-- `crtA` for states with `K`. -/
+def crtKA (K : State → Prop) : Contract isa := { crtA with pre := fun s => crtA.pre s ∧ K s }
+
+/-- `privateCrtProductContract` on the registers and the stack. -/
+abbrev crtPA : Contract isa := crtKA KeyProduct
 
 /-! ## `vg_rsa_public_precompute` -/
 

@@ -20,6 +20,8 @@ of the CRT.
 
 namespace VG.Proof.Rsa.X86_64
 
+variable {X : List Region}
+
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
@@ -48,7 +50,7 @@ theorem body_eq (crtName : String) (crt : Prog isa) (pcName : String) (pc : Prog
       .seq (.block crtArgs) (.seq (.call crtName crt) (seqs (check pcName pc pdName pd))) := rfl
 
 /-- The return address is outside everything the function writes. -/
-theorem ret_frame {s : State} (hp : PreF s) {m : Mem} (h : Frame [stkR s, outR s, scrR s] s.mem m) :
+theorem ret_frame {s : State} (hp : PreF X s) {m : Mem} (h : Frame [stkR s, outR s, scrR s] s.mem m) :
     m.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64 := by
   have hsp2 := hp.sp2
   refine h.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
