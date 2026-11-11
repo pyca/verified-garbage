@@ -533,8 +533,8 @@ vg_sha384_digest_shani:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-1600]
-	movdqu XMMWORD PTR [rsp+208], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	vmovdqu XMMWORD PTR [rsp+208], xmm0
+	vmovdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+1600]
 	xor eax, eax
 	xor ecx, ecx
@@ -2061,8 +2061,8 @@ vg_sha512_digest_shani:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-1600]
-	movdqu XMMWORD PTR [rsp+208], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	vmovdqu XMMWORD PTR [rsp+208], xmm0
+	vmovdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+1600]
 	xor eax, eax
 	xor ecx, ecx
@@ -3744,8 +3744,8 @@ vg_sha512_224_digest_shani:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-1600]
-	movdqu XMMWORD PTR [rsp+208], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	vmovdqu XMMWORD PTR [rsp+208], xmm0
+	vmovdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+1600]
 	xor eax, eax
 	xor ecx, ecx
@@ -5040,8 +5040,8 @@ vg_sha512_256_digest_shani:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-1600]
-	movdqu XMMWORD PTR [rsp+208], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	vmovdqu XMMWORD PTR [rsp+208], xmm0
+	vmovdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+1600]
 	xor eax, eax
 	xor ecx, ecx

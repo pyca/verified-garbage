@@ -876,13 +876,10 @@ vg_hmac_sha1_finalize_avx_bmi:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-472]
-	movdqu XMMWORD PTR [rsp+248], xmm0
-	movdqu XMMWORD PTR [rsp+232], xmm0
-	movdqu XMMWORD PTR [rsp+72], xmm0
-	movdqu XMMWORD PTR [rsp+56], xmm0
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	vmovdqu YMMWORD PTR [rsp+232], ymm0
+	vmovdqu YMMWORD PTR [rsp+56], ymm0
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	vmovdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+472]
 	xor eax, eax
 	xor ecx, ecx

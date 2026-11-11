@@ -794,12 +794,9 @@ vg_sha1_update_avx_bmi:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-176]
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	vmovdqu YMMWORD PTR [rsp+64], ymm0
+	vmovdqu YMMWORD PTR [rsp+32], ymm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+176]
 	xor eax, eax
 	xor ecx, ecx
@@ -976,11 +973,9 @@ vg_sha1_finalize_avx_bmi:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-176]
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	vmovdqu YMMWORD PTR [rsp+48], ymm0
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	vmovdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+176]
 	xor eax, eax
 	xor ecx, ecx
@@ -1222,11 +1217,9 @@ vg_sha1_digest_avx_bmi:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-288]
-	movdqu XMMWORD PTR [rsp+160], xmm0
-	movdqu XMMWORD PTR [rsp+144], xmm0
-	movdqu XMMWORD PTR [rsp+128], xmm0
-	movdqu XMMWORD PTR [rsp+112], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	vmovdqu YMMWORD PTR [rsp+144], ymm0
+	vmovdqu YMMWORD PTR [rsp+112], ymm0
+	vmovdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+288]
 	xor eax, eax
 	xor ecx, ecx
