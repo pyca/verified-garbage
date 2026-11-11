@@ -211,13 +211,13 @@ theorem partC1_ok {s₀ u : State} (hP : PF s₀) (hB : B s₀ u) {c : Prog isa}
   have room := hP.room
   have k64 := hP.k64; have k1024 := hP.k1024
   have dw : cw s₀ = (ck s₀ + 7) / 8 := rfl
-  refine WP.seq (WP.mono (setupN_ok hP hB) fun v ⟨⟨v19, v12, v6, v21, v11, v10, v5, v8, v9, vm⟩, kv⟩ => ?_)
+  refine WP.seq (WP.mono (setupN_ok hP hB) fun v ⟨⟨v19, v12, v6, _, v11, v10, v5, v8, v9, vm⟩, kv⟩ => ?_)
   have kBv := hB.keep.trans kv
   have bN : Spec.Rsa.bytesAt v.mem (s₀.gpr .r5) (ck s₀) = nB s₀ := by
     rw [vm]
     exact bytes_frame hB.frame hP.dN (Nat.le_of_lt (BitVec.isLt _))
   refine WP.seq (WP.mono (Pre.core_ok (hB.scr.congr kv.wr) (pre16 hP kBv.wr) dw k64 k1024 (by oa) v19 v6 v12 v10
-    v5 v8 v9 v11 v21 (by rw [kBv.rd, kBv.wr]; exact hP.rN) hP.sN (sep16 hP)) fun t ⟨⟨tO, tF⟩, kt⟩ =>
+    v5 v8 v9 v11 (by rw [kBv.rd, kBv.wr]; exact hP.rN) hP.sN (sep16 hP)) fun t ⟨⟨tO, tF⟩, kt⟩ =>
     hc t ⟨by rw [bN] at tO; exact tO, by rw [vm] at tF; exact tF, kv.trans kt⟩)
 
 /-- `maskN`'s first block: `pre` and `2 w` from the header. -/
