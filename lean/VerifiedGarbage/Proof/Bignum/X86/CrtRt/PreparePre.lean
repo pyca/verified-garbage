@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
 public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Copy
 
 /-! # A context prepared from a cached `R² mod p` (i686)
@@ -115,6 +116,8 @@ theorem loadR2_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx} {p : Nat
   have fits := P.fits
   have hi := P.hi
   have pw2 : 2 ≤ preW args i := by simp only [preW, Spec.Rsa.primeWords]; omega
+  have fitsW : 8 * Spec.Rsa.primeWords (args (7 + 2 * i)).toNat ≤ bc len c := P.fits
+  have pw2' : 2 ≤ Spec.Rsa.primeWords (args (7 + 2 * i)).toNat := pw2
   unfold loadR2
   refine WP.seq (WP.mono (zero_ok h (x := .slot c 4) (one_ok c) (by rw [cb1]; omega)) fun u₁ ⟨O₁, Z₁, K₁⟩ => ?_)
   rw [cb1] at O₁
@@ -184,7 +187,57 @@ theorem loadR2_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx} {p : Nat
     (by rw [PtrAt, Kw.1 _ (by decide)]; exact pv)
     (by rw [Kw.1 _ (by decide), cv, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega))
     fun t₁ ⟨Ot, Vt, Kt⟩ => ?_)
-  sorry
+  have Ot₀ : Outside base 0 bytes w.mem t₁.mem := Ot.mono (Nat.zero_le _) (by omega)
+  have ht₁ := hw.keep Kt (by decide) (by decide) Ot₀
+  refine wp_movS (ht₁.arg (i := 7 + 2 * i) (by omega)) fun t₂ T₂ _ => ?_
+  refine primeBytes_ok (r := .edx) (t := .eax) (by decide) (l := (args (7 + 2 * i)).toNat)
+    (by rw [T₂.gpr, BitVec.ofNat_toNat, BitVec.setWidth_eq]) pos (by omega) fun t₃ K₃' m₃' e₃' => ?_
+  have K₃'' : Keeps [.eax, .edx] t₁ t₃ := (T₂.keeps.mono (by decide)).trans (K₃'.mono (by decide))
+  have ht₃ := ht₁.regs K₃'' (by rw [m₃', T₂.mem])
+  refine widthC_ok ht₃.width h.upper' fun t₄ K₄' m₄' e₄' => ?_
+  refine wp_subS rfl fun t₅ T₅ _ => wp_addS rfl fun t₆ T₆ _ => wp_addS rfl fun t₇ T₇ _ =>
+    wp_addS rfl fun t₈ T₈ _ => wp_addZ rfl fun u U z => WP.block_nil ?_
+  have Ku : Keeps [.eax, .edx, .esi] t₃ u := (K₄'.mono (by decide)).trans ((((T₅.keeps.mono (by decide)).trans
+    (T₆.keeps.mono (by decide))).trans ((T₇.keeps.mono (by decide)).trans (T₈.keeps.mono (by decide)))).trans
+    (U.keeps.mono (by decide)))
+  have mu : u.mem = t₁.mem := by rw [U.mem, T₈.mem, T₇.mem, T₆.mem, T₅.mem, m₄', m₃', T₂.mem]
+  -- The count.
+  have hd : (t₄.gpr .edx).toNat = 8 * preW args i := by
+    rw [K₄'.1 _ (by decide), e₃', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  have h5 : (t₅.gpr .esi).toNat = bc len c - 8 * preW args i := by
+    rw [T₅.gpr, BitVec.toNat_sub, hd, e₄', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := bc len c) (by omega)]; omega
+  have h8 : (t₈.gpr .esi).toNat = 8 * (bc len c - 8 * preW args i) := by
+    rw [T₈.gpr, BitVec.toNat_add, T₇.gpr, BitVec.toNat_add, T₆.gpr, BitVec.toNat_add, h5]; omega
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact ht₃.regs Ku (by rw [mu, m₃', T₂.mem])
+  · -- The value: the copy, and zero above it.
+    have mw₁ : w.mem = u₁.mem := by rw [mw, mv, m₄]
+    have tail : val32 t₁.mem base (lo len (.slot c 4) + 4 * (2 * preW args i)) (cwc len c - 2 * preW args i) = 0 := by
+      rw [Ot.val32 (.inr (Nat.le_refl _)) (by omega), mw₁]
+      have Zs := Z₁
+      rw [show cwc len c = 2 * preW args i + (cwc len c - 2 * preW args i) by omega, val32_append] at Zs
+      simp only [Nat.add_eq_zero_iff, Nat.mul_eq_zero, Nat.pos_iff_ne_zero.mp (Nat.two_pow_pos _), false_or] at Zs
+      exact Zs.2
+    have src : val32 w.mem (byteAddr (args preArg)) (preOff args i) (2 * preW args i) =
+        val32 s.mem (byteAddr (args preArg)) (preOff args i) (2 * preW args i) := by
+      rw [mw₁]
+      refine val32_congr fun j hj => congrArg BitVec.toNat (Mem.readW_congr fun k hk =>
+        VG.Proof.Bignum.X86.PrecomputedRt.outside_apart O₁ (L := bytes) (by omega) ?_)
+      intro hc
+      refine P.apart _ ?_ hc
+      rw [Offset.add_add]
+      exact Region.contains_ofNat _ (by omega)
+    simp only [sv]
+    rw [mu, show cwc len c = 2 * preW args i + (cwc len c - 2 * preW args i) by omega, val32_append, tail,
+      Nat.mul_zero, Nat.add_zero, Vt, src, P.val]
+  · rw [U.gpr, BitVec.toNat_add, h8]; omega
+  · rw [z, U.gpr]
+  · rw [mu]
+    have O' := Ot.mono (o' := lo len (.slot c 4)) (n' := bc len c) (Nat.le_refl _) (by omega)
+    rw [mw, mv, m₄] at O'
+    exact O₁.trans O'
+  · exact (K₁.mono (by decide)).trans (((K₄.mono (by decide)).trans (Kv.mono (by decide))).trans
+      ((Kw.mono (by decide)).trans ((Kt.mono (by decide)).trans ((K₃''.mono (by decide)).trans (Ku.mono (by decide))))))
 
 end
 
