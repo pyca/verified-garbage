@@ -1540,8 +1540,8 @@ theorem wordStepU_ok {s : State} {B : Addr} {Z dX dN dT dU w z : Nat} (hs : Scr 
       wordsVal s.mem B dN w * 2 ^ z / 2 ^ (64 * (w - 2)))
     (hx : wordsVal s.mem B dX w < wordsVal s.mem B dN w) :
     WP isa wordStepU s fun t =>
-      wordsVal t.mem B dX w = (wordsVal s.mem B dX w * 2 ^ 64 + (Mont.word s.mem B dU).toNat) %
-        wordsVal s.mem B dN w ∧
+      (wordsVal t.mem B dX w = (wordsVal s.mem B dX w * 2 ^ 64 + (Mont.word s.mem B dU).toNat) %
+        wordsVal s.mem B dN w ∧ Mont.word t.mem B (dX + 8 * w) = 0) ∧
       Mont.Outside B dX (8 * (w + 1)) s.mem t.mem ∧ Keep quotRegs s t := by
   have hnw := hs.nowrap
   generalize hX : wordsVal s.mem B dX w = X at hx ⊢
@@ -1615,10 +1615,14 @@ theorem wordStepU_ok {s : State} {B : Addr} {Z dX dN dT dU w z : Nat} (hs : Scr 
     have e5 := wordsVal_succ_top t.mem B dX w
     have hr := Nat.mod_lt (X * 2 ^ 64 + u) hN0
     rw [hT] at e5
-    rcases Nat.eq_zero_or_pos (Mont.word t.mem B (dX + 8 * w)).toNat with h | h
-    · rw [h, Nat.mul_zero, Nat.add_zero] at e5; exact e5.symm
-    · have := Nat.le_mul_of_pos_right (2 ^ (64 * w)) h
-      omega
+    have top : (Mont.word t.mem B (dX + 8 * w)).toNat = 0 := by
+      rcases Nat.eq_zero_or_pos (Mont.word t.mem B (dX + 8 * w)).toNat with h | h
+      · exact h
+      · have := Nat.le_mul_of_pos_right (2 ^ (64 * w)) h
+        have := wordsVal_lt t.mem B dX w
+        omega
+    rw [top, Nat.mul_zero, Nat.add_zero] at e5
+    exact ⟨e5.symm, BitVec.eq_of_toNat_eq top⟩
   · rw [m1] at o2
     exact o2.trans o3
 
