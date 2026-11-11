@@ -36,19 +36,19 @@ open VG.Proof.Bignum.RISCV64 (wp_countdown)
 open VG.Proof.RsaOaep (accG)
 
 section
-variable {s : State} (P : PreD s) {m : Mem} {rc : Nat}
+variable {pc : Bool} {s : State} (P : PreD pc s) {m : Mem} {rc : Nat}
 include P
 
 /-- A load of our stack argument `j` through `t6`, the entry stack pointer,
 in the decoding, whose memory is that after the private operation, `m`. -/
-theorem wp_argB (hm : Frame [kD s, scR s] s.mem m) {u : State} {r : Reg} {j : Nat} {is : List Instr}
+theorem wp_argB (hm : Frame [kD pc s, scR s] s.mem m) {u : State} {r : Reg} {j : Nat} {is : List Instr}
     {Q : State → Prop} (hj : j < 17) (h6 : u.gpr .t6 = s.sp) (hrd : u.rd = s.rd)
     (hmu : Frame [Proof.RsaOaep.RISCV64.kR s, SC (SD s) s] m u.mem)
     (k : ∀ u', Only [r] u u' → u'.gpr r = stackArg s j → WP isa (.block is) u' Q)
     (ho : 8 * j < 2048 := by decide) :
     WP isa (.block (.load .d r .t6 (8 * j) :: is)) u Q := by
   refine wp_ld (a := stackArgAddr s j) (by rw [h6]; rfl) (arg_al P hj) ?_ (fun u' o e => k u' o ?_) ho
-  · rw [hrd, P.hrd]; exact ⟨aR s, by simp, in_aR hj⟩
+  · rw [hrd, P.hrd]; exact ⟨aR pc s, by simp, in_aR hj⟩
   · rw [e, stackArg, hmu.readW (in_aR hj) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
@@ -60,7 +60,7 @@ theorem wp_argB (hm : Frame [kD s, scR s] s.mem m) {u : State} {r : Reg} {j : Na
         · exact P.ka.symm
         · exact P.sa.symm) (by decide)]
 
-theorem hashLabelT_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) (hm : Frame [kD s, scR s] s.mem m) {f : Fns}
+theorem hashLabelT_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) (hm : Frame [kD pc s, scR s] s.mem m) {f : Fns}
     {p : Addr} (T : TabS H f 15 (SD s) (withMem s m) p) {t : State}
     (h : Base (SD s) (VD s rc) (withMem s m) t) (sy : t.syms = s.syms) :
     WP isa (hashLabelT f 15 Dec.labU Dec.labF) t fun t' => (Base (SD s) (VD s rc) (withMem s m) t' ∧
