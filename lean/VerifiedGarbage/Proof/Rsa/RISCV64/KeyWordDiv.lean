@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 (`w` words, `w` even, `v = w / 2` the divisor's words):
 
 * `fixTop_ok`: `[m]`'s top word (`v - 1`) plus 1 if it is zero;
-* `prep_ok`: the divisor normalized and its reciprocal in the temporary
+* `wdPrep_ok`: the divisor normalized and its reciprocal in the temporary
   (`Precompute.lz`, `normTail`, `recip`, at the arrays' offsets);
 * `divW_ok`: `[r]`'s first `v` words `:=` `[a] mod [m]`'s, for `[r]`'s first
   `v + 1` words zero and `[m]`'s top word not zero, by `w` word steps
@@ -45,7 +45,7 @@ theorem kwd_exec_li_one {s : State} {d : Reg} : exec (.li d 1) s = some (s.write
   rw [exec_li (by decide)]; rfl
 
 /-- `x + [x = 0]`: never zero. -/
-theorem fix_val (x : BitVec 64) : (x + if x < 1#64 then 1 else 0).toNat = x.toNat + if x.toNat = 0 then 1 else 0 := by
+theorem wdFix_val (x : BitVec 64) : (x + if x < 1#64 then 1 else 0).toNat = x.toNat + if x.toNat = 0 then 1 else 0 := by
   by_cases h : x.toNat = 0
   · have : x = 0 := BitVec.eq_of_toNat_eq h
     subst this; decide
@@ -54,7 +54,7 @@ theorem fix_val (x : BitVec 64) : (x + if x < 1#64 then 1 else 0).toNat = x.toNa
     rw [show (0 : BitVec 64) = 0#64 from rfl, BitVec.add_zero]
 
 /-- The registers `fixTop` writes. -/
-abbrev fixRegs : List Reg := [.a7, .t0, .t3, .t5, .t6]
+abbrev wdFixRegs : List Reg := [.a7, .t0, .t3, .t5, .t6]
 
 /-- `fixTop m`: `[m]`'s word `v - 1` (`v = w / 2`) plus 1 if it is zero. -/
 theorem fixTop_ok {s : State} {B : Addr} {Z w N m : Nat} (h : Ws s B Z w N) (hm : m < N) (hN : N ≤ 2048)
@@ -63,7 +63,8 @@ theorem fixTop_ok {s : State} {B : Addr} {Z w N m : Nat} (h : Ws s B Z w N) (hm 
       wordsVal t.mem B (arr w m) (w / 2) = wordsVal s.mem B (arr w m) (w / 2) +
         (if (word s.mem B (arr w m + 8 * (w / 2 - 1))).toNat = 0 then 2 ^ (64 * (w / 2 - 1)) else 0) ∧
       0 < (word t.mem B (arr w m + 8 * (w / 2 - 1))).toNat ∧
-      t.gpr .a7 = off B (arr w m) ∧ t.gpr .t0 = BitVec.ofNat 64 (w / 2) ∧ Keep fixRegs s t := by
+      t.gpr .a7 = off B (arr w m) ∧ t.gpr .t0 = BitVec.ofNat 64 (w / 2) ∧ Keep wdFixRegs s t ∧
+      Outside B (arr w m + 8 * (w / 2 - 1)) 8 s.mem t.mem := by
   have fit := h.arr_fit hm
   have nw := h.nowrap
   have hS : S w = 8 * (w + 2) := rfl
@@ -73,7 +74,7 @@ theorem fixTop_ok {s : State} {B : Addr} {Z w N m : Nat} (h : Ws s B Z w N) (hm 
   rw [show arr w m + 8 * (w / 2) - 8 = arr w m + 8 * (w / 2 - 1) by omega] at ea
   generalize hT : word s.mem B (arr w m + 8 * (w / 2 - 1)) = T
   have rT : s.mem.readW (off B (arr w m + 8 * (w / 2 - 1))) 64 = T := hT
-  refine WP.mono (WP.keep fixRegs (Q := fun t => t.gpr .a7 = off B (arr w m) ∧
+  refine WP.mono (WP.keep wdFixRegs (Q := fun t => t.gpr .a7 = off B (arr w m) ∧
       t.gpr .t0 = BitVec.ofNat 64 (w / 2) ∧
       t.mem = s.mem.writeW (off B (arr w m + 8 * (w / 2 - 1))) (T + if T < 1#64 then 1 else 0)) (by
     unfold halfW
@@ -82,16 +83,16 @@ theorem fixTop_ok {s : State} {B : Addr} {Z w N m : Nat} (h : Ws s B Z w N) (hm 
       h.scr.al8 (show arr w m + 8 * (w / 2 - 1) + 8 ≤ Z by omega) (by have := arr_al w m; omega),
       h.scr.st (show arr w m + 8 * (w / 2 - 1) + 8 ≤ Z by omega)])
     (by rfl) (by rfl)) fun t ⟨⟨t7, t0, tm⟩, k⟩ => ?_
-  have kk : Keep fixRegs s t := ((Keep.write _ _ _).trans k).mono (by decide)
-  refine ⟨h.of_keep kk, ?_, ?_, ?_, t7, t0, kk⟩
+  have kk : Keep wdFixRegs s t := ((Keep.write _ _ _).trans k).mono (by decide)
+  refine ⟨h.of_keep kk, ?_, ?_, ?_, t7, t0, kk, by rw [tm]; exact writeW_outside _ B _ (by omega)⟩
   · rw [tm]
     exact Frame.of_arr (writeW_outside _ B _ (by omega)) (by omega) (by simp)
   · have e1 := fin64_wordsVal_write_top s.mem B (arr w m) (w / 2 - 1) (T + if T < 1#64 then 1 else 0) (by omega)
     have e2 := wordsVal_succ_top s.mem B (arr w m) (w / 2 - 1)
     rw [show w / 2 - 1 + 1 = w / 2 by omega] at e1 e2
-    rw [tm, e1, e2, fix_val, ← hT]
+    rw [tm, e1, e2, wdFix_val, ← hT]
     split <;> simp only [Nat.mul_add, Nat.mul_one, Nat.add_zero, Nat.add_assoc] <;> omega
-  · rw [tm, word_writeW_self, fix_val]
+  · rw [tm, word_writeW_self, wdFix_val]
     split <;> omega
 
 /-- The registers `prep` writes. -/
@@ -118,7 +119,7 @@ theorem Norm.congr {m m' : Mem} {B : Addr} {dT M v z : Nat} (h : Norm m B dT M v
 /-- `prep m t`: the divisor `[m]` (`v = w / 2` words, its top word not zero)
 normalized and its reciprocal, in `[t]`'s first four words; `a7`, `a6` and
 `t0` its address, the temporary's and `v`, and `a4` zero. -/
-theorem prep_ok {s : State} {B : Addr} {Z w N m t : Nat} (h : Ws s B Z w N) (hm : m < N) (ht : t < N)
+theorem wdPrep_ok {s : State} {B : Addr} {Z w N m t : Nat} (h : Ws s B Z w N) (hm : m < N) (ht : t < N)
     (hN : N ≤ 2048) (hmt : m ≠ t) (hw : 8 ≤ w)
     (hT : 0 < (word s.mem B (arr w m + 8 * (w / 2 - 1))).toNat) :
     WP isa (prep m t) s fun u => Ws u B Z w N ∧ Frame B w [t] [] s.mem u.mem ∧ Keep prepRegs s u ∧
@@ -232,14 +233,14 @@ structure DivI (s : State) (B : Addr) (Z w N a r m t z : Nat) (i : Nat) (u : Sta
   nm : Norm u.mem B (arr w t) (wordsVal s.mem B (arr w m) (w / 2)) (w / 2) z
   x : wordsVal u.mem B (arr w r) (w / 2) =
     num s.mem B w a / 2 ^ (64 * (w - i)) % wordsVal s.mem B (arr w m) (w / 2)
-  hi : wordsVal u.mem B (arr w r + 8 * (w / 2 + 1)) (w + 1 - w / 2) =
-    wordsVal s.mem B (arr w r + 8 * (w / 2 + 1)) (w + 1 - w / 2)
+  hi : wordsVal u.mem B (arr w r + 8 * (w / 2 + 1)) (w - 1 - w / 2) =
+    wordsVal s.mem B (arr w r + 8 * (w / 2 + 1)) (w - 1 - w / 2)
   top : i = 0 ∨ word u.mem B (arr w r + 8 * (w / 2)) = 0
 
 theorem off_sub8 (B : Addr) {d : Nat} (h : 8 ≤ d) : off B d - BitVec.ofNat 64 8 = off B (d - 8) := off_sub B h
 
 /-- A step of `divW`. -/
-theorem step_ok {s : State} {B : Addr} {Z w N a r m t z : Nat} (ha : a < N) (hr : r < N)
+theorem wdStep_ok {s : State} {B : Addr} {Z w N a r m t z : Nat} (ha : a < N) (hr : r < N)
     (hm : m < N) (ht : t < N) (hra : r ≠ a) (hrm : r ≠ m) (hrt : r ≠ t) (hmt : m ≠ t) (hat : a ≠ t)
     (hw : 8 ≤ w) (hw2 : w % 2 = 0) {i : Nat} (hi : i < w) {u : State} (I : DivI s B Z w N a r m t z i u) :
     WP isa step u fun u' => DivI s B Z w N a r m t z (i + 1) u' ∧ u'.gpr .a1 = u.gpr .a1 - BitVec.ofNat 64 1 := by
@@ -309,8 +310,8 @@ theorem divW_ok {s : State} {B : Addr} {Z w N a r m t : Nat} (h : Ws s B Z w N) 
     WP isa (divW a r m t) s fun u => Ws u B Z w N ∧ Frame B w [r, t] [] s.mem u.mem ∧ Keep divWRegs s u ∧
       wordsVal u.mem B (arr w r) (w / 2) = num s.mem B w a % wordsVal s.mem B (arr w m) (w / 2) ∧
       word u.mem B (arr w r + 8 * (w / 2)) = 0 ∧
-      wordsVal u.mem B (arr w r + 8 * (w / 2 + 1)) (w + 1 - w / 2) =
-        wordsVal s.mem B (arr w r + 8 * (w / 2 + 1)) (w + 1 - w / 2) := by
+      wordsVal u.mem B (arr w r + 8 * (w / 2 + 1)) (w - 1 - w / 2) =
+        wordsVal s.mem B (arr w r + 8 * (w / 2 + 1)) (w - 1 - w / 2) := by
   have fitr := h.arr_fit hr
   have fitt := h.arr_fit ht
   have nw := h.nowrap
@@ -318,7 +319,7 @@ theorem divW_ok {s : State} {B : Addr} {Z w N a r m t : Nat} (h : Ws s B Z w N) 
   have hwl := h.wle
   unfold divW
   simp only [VG.Impl.Rsa.RISCV64.Keys.seqs]
-  refine WP.seq (WP.mono (prep_ok h hm ht hN hmt (by omega) hT) fun u₁ ⟨h1, f1, k1, a7, a6, t0, a4, z, nm⟩ => ?_)
+  refine WP.seq (WP.mono (wdPrep_ok h hm ht hN hmt (by omega) hT) fun u₁ ⟨h1, f1, k1, a7, a6, t0, a4, z, nm⟩ => ?_)
   refine WP.seq (WP.mono (stepsSetup_ok h1 ha hr hN) fun u₂ ⟨a2, t2, a1, m2, k2⟩ => ?_)
   have g2 : ∀ q ∈ [Reg.a6, .a7, .t0, .a4], u₂.gpr q = u₁.gpr q := fun q hq => k2.gpr (by revert q hq; decide)
   have hX : num s.mem B w a < 2 ^ (64 * w) := wordsVal_lt _ _ _ _
@@ -336,7 +337,7 @@ theorem divW_ok {s : State} {B : Addr} {Z w N a r m t : Nat} (h : Ws s B Z w N) 
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
         rw [hk]; have := arr_disj (w := w) hrt; omega) (by simp) (by omega)
   refine WP.mono (wp_countdown (cnt := .a1) (N := w) (by omega) (by omega) (DivI s B Z w N a r m t z)
-    (fun i hi u I _ => step_ok ha hr hm ht hra hrm hrt hmt hat hw hw2 hi I) I0 a1) fun u I => ?_
+    (fun i hi u I _ => wdStep_ok ha hr hm ht hra hrm hrt hmt hat hw hw2 hi I) I0 a1) fun u I => ?_
   refine ⟨I.ws, I.fr, I.k, by rw [I.x, Nat.sub_self, Nat.mul_zero, Nat.pow_zero, Nat.div_one],
     I.top.resolve_left (by omega), I.hi⟩
 
