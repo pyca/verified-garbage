@@ -59,6 +59,17 @@ structure CrtImpl where
   /-- The CPU features its code and that of the public operation require,
   which `vg_rsa_private_checked` requires too. -/
   features : List String
+  /-- `vg_rsa_private_crt_precomputed`'s instance with the same code but
+  for `R² mod n`, which it copies from the key's precomputed values: its
+  symbol and code, proven against `crtContractP` as `code` is against
+  `crtContract`. -/
+  nameP : String
+  codeP : Prog isa
+  depthP : codeP.depth = 1
+  okP : ∀ s, crtContractP.clear.pre s → ∃ t s', Exec isa codeP s t s' ∧ abiPreserved s s' ∧ crtContractP.post s s'
+  ctP : ConstantTime isa crtContractP.clear.pre crtContractP.pub codeP
+  nospP : NoSp codeP
+  spSafeP : codeP.all (fun i => !isa.writesSp i) = true
   /-- The CPU features it is chosen only with, besides those its code
   requires (`Registration.extra` of the functions that call it). -/
   extra : List String := []

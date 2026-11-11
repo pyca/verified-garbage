@@ -142,4 +142,42 @@ def code (crtName : String) (crt : Prog isa) (pcName : String) (pc : Prog isa) (
     (pd : Prog isa) : Prog isa :=
   .frame (.alloc frameBytes) (body crtName crt pcName pc pdName pd) (.free frameBytes)
 
+/-! ## With the key's precomputed values
+
+`vg_rsa_private_checked_precomputed`: `vg_rsa_private_checked`'s arguments,
+then the key's precomputed values `pre` and `pre_len` (stack arguments 14
+and 15). It gives them to the CRT that takes them (as the call's stack
+arguments 12 and 13, at `rsp + 96`), and gives
+`vg_rsa_public_precomputed_checked` `pre` itself, whose first
+`2 ⌈n_len / 8⌉` words are `n`'s values, rather than computing them with
+`vg_rsa_public_precompute`; `r₃` is then 1. -/
+
+/-- `crtArgs`, and `pre` and `pre_len` for the CRT. -/
+def crtArgsP : List Instr :=
+  crtArgs ++ ([.mov .rax (.mem (arg 14)), .store (sp 96) .rax, .mov .rax (.mem (arg 15)), .store (sp 104) .rax] :
+    List Instr)
+
+/-- `r₁` kept, `r₃ := 1`, and the arguments of
+`vg_rsa_public_precomputed_checked`: as `pdArgs`, with `pre` as `n`'s
+values. -/
+def pdArgsP : List Instr :=
+  ([.store (sp oR1) .rax, .mov32 .rax (.imm 1), .store (sp oR3) .rax, .mov .rdi (.mem (sp oOut)),
+    .mov .rsi (.mem (sp oK)), .mov .rdx (.mem (arg 14))] : List Instr) ++ preWords .rcx ++
+  ([.mov .r8 (.mem (sp oE)), .mov .r9 (.mem (sp oEl))] : List Instr) ++ lea .rax oM ++
+  ([.store (sp 0) .rax, .mov .rax (.mem (sp oK)), .store (sp 8) .rax, .mov .rax (.mem (arg 12)),
+    .store (sp 16) .rax, .mov .rax (.mem (arg 13)), .store (sp 24) .rax] : List Instr)
+
+/-- `check`, with `n`'s values from `pre`. -/
+def checkP (pdName : String) (pd : Prog isa) : List (Prog isa) :=
+  [.block pdArgsP, .call pdName pd] ++ tail
+
+/-- The body of the frame. -/
+def bodyP (crtName : String) (crt : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
+  seqs ([.block crtArgsP, .call crtName crt] ++ checkP pdName pd)
+
+/-- `vg_rsa_private_checked_precomputed`, calling the CRT given the key's
+precomputed values `crt` and the public operation's `pd`, by their names. -/
+def codeP (crtName : String) (crt : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
+  .frame (.alloc frameBytes) (bodyP crtName crt pdName pd) (.free frameBytes)
+
 end VG.Impl.Rsa.X86_64.PrivChecked

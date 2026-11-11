@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64.Base
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPreCT
 import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
@@ -281,6 +282,17 @@ def variant : CrtImpl where
   pcNosp := noSp_of (by decide +kernel)
   pcDepth := by decide +kernel
   pcSpSafe := Code.all_of_allInstrs (by decide +kernel)
+  nameP := "vg_rsa_private_crt_precomputed"
+  codeP := Impl.Rsa.X86_64.Crt.codeP CallMont.base.mm
+    (Impl.Rsa.X86_64.Crt.expLoopS CallMont.lazyBase CallMont.base.mm Impl.Rsa.X86_64.Crt.tabSelect)
+  depthP := by decide +kernel
+  okP := crtP_call_ok (by decide +kernel)
+    (crtCodeP_correct Mont.fnBase (CrtExpL.w4S Mont.fnBase MontS.fnLazy) (by decide +kernel))
+  ctP := crtP_call_ct (by decide +kernel)
+    (crtCodeP_correct Mont.fnBase (CrtExpL.w4S Mont.fnBase MontS.fnLazy) (by decide +kernel))
+    (crtCodeP_constantTime Mont.fnBase (CrtExpL.w4S Mont.fnBase MontS.fnLazy) (CrtExpL.w4S_ct Mont.fnBase MontS.fnLazy))
+  nospP := noSp_of (by decide +kernel)
+  spSafeP := Code.all_of_allInstrs (by decide +kernel)
   suffix := ""
   features := []
 
