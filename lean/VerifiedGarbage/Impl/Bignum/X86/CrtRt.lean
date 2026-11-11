@@ -58,6 +58,10 @@ the count of factors left. -/
 def lenOff : Nat := 16
 def otherLenOff : Nat := 20
 def leftOff : Nat := 24
+/-- In `vg_rsa_private_crt_precomputed`, the header words holding the
+addresses of the current factor's `R² mod p` in `pre` and the other's. -/
+def r2Off : Nat := 52
+def otherR2Off : Nat := 56
 /-- The header word holding a product row's multiplier. -/
 def multOff : Nat := 48
 /-- The product of two numbers: `2 B + 4` bytes. -/
@@ -70,6 +74,9 @@ def numBase : Nat := 3336
 /-- The arguments holding the working space and its length. -/
 def wsArg : Nat := 16
 def wsLenArg : Nat := 17
+/-- In `vg_rsa_private_crt_precomputed`, the argument after `vg_rsa_private_crt`'s:
+the address of the factors' `R² mod p` and `R² mod q` in `pre`. -/
+def preArg : Nat := 18
 
 /-- `r = Bc`, the bytes of a number of the context, with `k` words pushed. -/
 def widthC (k : Nat) : Ctx → Reg → List Instr
@@ -279,6 +286,44 @@ the shared squaring loop, each taking `2^(8 Bc + d) mod M` to
 alone. -/
 def prepare (c : Ctx) : Prog isa := .seq (prepBase c) (VG.Impl.Mont.X86.Dynamic.repeatSquaresWith (mul c 4 4 4) 6)
 
+/-- `prepBase` but `2^(8 Bc + Bc / 8) mod M`: the modulus replaced by three
+unless it is an odd number above one, one in slot 3 and `-M⁻¹ mod 2³²`. -/
+def prepBasePre (c : Ctx) : Prog isa :=
+  .seq (setSmall (.slot c 3) (one c) 1) <|
+  .seq (setSmall (.slot c 7) (one c) 3) <|
+  .seq (lessThan (.slot c 3) (.slot c 0) (one c)) <|
+  .seq (.block [.mov .edx (.mem (sc numBase)), .alu .and .edx (.imm 1), .mov .eax (.imm 0),
+    .alu .sub .eax (.reg .edx), .alu .and .ecx (.reg .eax), .alu .xor .ecx (.imm (BitVec.allOnes 32))]) <|
+  .seq (select (.slot c 7) (.slot c 0) (one c)) (.block (VG.Impl.Mont.X86.Dynamic.setupInverse numBase invOff))
+
+/-- `r = 8 max(2, ⌈l / 8⌉)`, the bytes of a factor's `R² mod p` in `pre`, for
+the factor's length `l ≥ 1` in `r`; `t` changes. -/
+def primeBytes (r t : Reg) : List Instr :=
+  [.alu .add r (.imm 7), .shift .shr r 3, .mov t (.reg r), .alu .sub t (.imm 2), .alu .sbb t (.reg t),
+    .alu .and t (.imm 1), .alu .add r (.reg t), .alu .add r (.reg r), .alu .add r (.reg r), .alu .add r (.reg r)]
+
+/-- The current factor's `R_pre² mod p` (`R_pre = 2^(64 w)`, `8 w` bytes at the
+header word `r2Off`) into slot 4, zero above, and `esi` the doublings that
+take it to `R² mod p` for the context's `R = 2^(8 Bc)`: `16 (Bc - 8 w)`, ZF
+when there are none. -/
+def loadR2 (c : Ctx) : Prog isa :=
+  .seq (zero (.slot c 4) (one c)) <|
+  .seq (.block ([.mov .edx (.mem (sc lenOff))] ++ primeBytes .edx .eax ++ [.mov .ebp (.mem (sc r2Off))] ++
+      ptrTo (.slot c 4) .ebx .eax)) <|
+  .seq (.loop (.block [.mov .eax (.mem (at_ .ebp 0)), .store (at_ .ebx 0) .eax, .alu .add .ebp (.imm 4),
+      .alu .add .ebx (.imm 4), .alu .sub .edx (.imm 4)]) .ne) <|
+  .block ([.mov .edx (.mem (sc lenOff))] ++ primeBytes .edx .eax ++ widthC 0 c .esi ++
+    [.alu .sub .esi (.reg .edx), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi),
+      .alu .add .esi (.reg .esi)])
+
+/-- The context set up from the cached `R² mod p`: `prepBasePre`, the cached
+value and its doublings to the context's radix. -/
+def preparePre (c : Ctx) : Prog isa :=
+  .seq (prepBasePre c) (.seq (loadR2 c) (.ite .e (.block []) (.loop (doubleStep c) .ne)))
+
+/-- `prepare`, or `preparePre` with `pre`. -/
+def prepareG (pc : Bool) (c : Ctx) : Prog isa := if pc then preparePre c else prepare c
+
 /-- `[o] = [a] - [b] mod M` for `a` and `b` below `M`, through slot 1. -/
 def subMod (c : Ctx) (o a b : Nat) : Prog isa :=
   .seq (chain .sbb (.slot c o) (.slot c a) (.slot c b) (one c)) <|
@@ -421,31 +466,31 @@ def reduceHalf (j : Nat) : Prog isa :=
 /-- The input modulo the factor in slot `f`, the exponent in slot `e`, into
 slot `o`, at half the width: the input (`2 Bh` bytes) reduced modulo the
 factor and raised at half the width. -/
-def narrowPower (f e o : Nat) : Prog isa :=
+def narrowPower (f e o : Nat) (pc : Bool := false) : Prog isa :=
   .seq (copy (.slot .wide f) (.slot .half 0) (one .half)) <|
   .seq (copy (.slot .wide e) (.slot .half 8) (one .half)) <|
-  .seq (prepare .half) <|
+  .seq (prepareG pc .half) <|
   .seq (reduceHalf 15) <|
   .seq (windowPower .half) (saveResult .half o)
 
 /-- The same at the modulus's width. -/
-def widePower (f e o : Nat) : Prog isa :=
+def widePower (f e o : Nat) (pc : Bool := false) : Prog isa :=
   .seq (copy (.slot .wide f) (.slot .wide 0) (one .wide)) <|
   .seq (copy (.slot .wide 15) (.slot .wide 5) (one .wide)) <|
   .seq (copy (.slot .wide e) (.slot .wide 8) (one .wide)) <|
-  .seq (prepare .wide) <|
+  .seq (prepareG pc .wide) <|
   .seq (windowPower .wide) (saveResult .wide o)
 
 /-- The factor's power, at half the width if its length (the header word at `lenOff`) fits it. -/
-def power (f e o : Nat) : Prog isa :=
+def power (f e o : Nat) (pc : Bool := false) : Prog isa :=
   .seq (.block ([.mov .eax (.mem (sc lenOff))] ++ widthC 0 .half .edx ++
     [.alu .add .edx (.imm 1), .alu .cmp .eax (.reg .edx)]))
-    (.ite .b (narrowPower f e o) (widePower f e o))
+    (.ite .b (narrowPower f e o pc) (widePower f e o pc))
 
 /-- `h = (m_p - m_q) qInv mod p` into slot 7, in the context of `p`. -/
-def wideCoefficient : Prog isa :=
+def wideCoefficient (pc : Bool := false) : Prog isa :=
   .seq (copy (.slot .wide 10) (.slot .wide 0) (one .wide)) <|
-  .seq (prepare .wide) <|
+  .seq (prepareG pc .wide) <|
   .seq (copy (.slot .wide 16) (.slot .wide 6) (one .wide)) <|
   .seq (copy (.slot .wide 17) (.slot .wide 5) (one .wide)) <|
   .seq (copy (.slot .wide 14) (.slot .wide 8) (one .wide)) <|
@@ -456,9 +501,9 @@ def wideCoefficient : Prog isa :=
 
 /-- The same at half the width, into the wide slot 7: `qInv` (`2 Bh` bytes) reduced modulo `p`, in
 Montgomery form in slot 8, then `m_q` (`2 Bh` bytes) reduced, subtracted from `m_p`, and multiplied by it. -/
-def narrowCoefficient : Prog isa :=
+def narrowCoefficient (pc : Bool := false) : Prog isa :=
   .seq (copy (.slot .wide 10) (.slot .half 0) (one .half)) <|
-  .seq (prepare .half) <|
+  .seq (prepareG pc .half) <|
   .seq (reduceHalf 14) <|
   .seq (mul .half 8 5 4) <|
   .seq (reduceHalf 17) <|
@@ -467,10 +512,10 @@ def narrowCoefficient : Prog isa :=
   .seq (mul .half 6 7 8) (saveResult .half 7)
 
 /-- The coefficient, at half the width if `p`'s length (the header word at `lenOff`) fits it. -/
-def coefficient : Prog isa :=
+def coefficient (pc : Bool := false) : Prog isa :=
   .seq (.block ([.mov .eax (.mem (sc lenOff))] ++ widthC 0 .half .edx ++
     [.alu .add .edx (.imm 1), .alu .cmp .eax (.reg .edx)]))
-    (.ite .b narrowCoefficient wideCoefficient)
+    (.ite .b (narrowCoefficient pc) (wideCoefficient pc))
 
 /-- `m = m_q + q h` into the wide slot 19. -/
 def recombine : Prog isa :=
@@ -499,21 +544,32 @@ def factorNext : List Instr :=
   [.mov .eax (.mem (sc lenOff)), .mov .ecx (.mem (sc otherLenOff)), .store (sc lenOff) .ecx,
     .store (sc otherLenOff) .eax, .mov .eax (.mem (sc leftOff)), .alu .sub .eax (.imm 1), .store (sc leftOff) .eax]
 
+/-- `factorsInit`, and the factors' `R² mod p` addresses in `pre` (argument
+18, then `8 max(2, ⌈p_len / 8⌉)` bytes on) into the header. -/
+def factorsInitPre : List Instr :=
+  factorsInit ++ [.mov .eax (.mem (argAt 0 preArg)), .store (sc r2Off) .eax, .mov .edx (.mem (argAt 0 7))] ++
+    primeBytes .edx .ecx ++ [.alu .add .eax (.reg .edx), .store (sc otherR2Off) .eax]
+
+/-- `factorNext`, and the addresses exchanged. -/
+def factorNextPre : List Instr :=
+  [.mov .eax (.mem (sc r2Off)), .mov .ecx (.mem (sc otherR2Off)), .store (sc r2Off) .ecx,
+    .store (sc otherR2Off) .eax] ++ factorNext
+
 /-- The power of the factor in the wide slot 10 into 16, then the factors (10
 and 11), their exponents (12 and 13), their powers (16 and 17) and their lengths
 exchanged: after two steps, `m_p` in 16 and `m_q` in 17, the rest as it was. -/
-def factorStep : Prog isa :=
-  .seq (power 10 12 16) <|
+def factorStep (pc : Bool := false) : Prog isa :=
+  .seq (power 10 12 16 pc) <|
   .seq (swap 10 11 (one .wide)) <|
   .seq (swap 12 13 (one .wide)) <|
-  .seq (swap 16 17 (two .wide)) (.block factorNext)
+  .seq (swap 16 17 (two .wide)) (.block (if pc then factorNextPre else factorNext))
 
-def sized : Prog isa :=
+def sized (pc : Bool := false) : Prog isa :=
   .seq importComponents <|
   .seq validate <|
-  .seq (.block factorsInit) <|
-  .seq (.loop factorStep .ne) <|
-  .seq coefficient <|
+  .seq (.block (if pc then factorsInitPre else factorsInit)) <|
+  .seq (.loop (factorStep pc) .ne) <|
+  .seq (coefficient pc) <|
   .seq recombine exportResult
 
 def save : List Instr := savedRegisters.map fun (r, d) => .store (at_ .eax d) r
@@ -521,9 +577,9 @@ def restore : List Instr := savedRegisters.map fun (r, d) => .mov r (.mem (sc d)
 
 def entry : List Instr := [.mov .eax (.mem (argAt 0 wsArg))] ++ save ++ [.mov .edi (.reg .eax)]
 
-def body : Prog isa :=
-  .seq (.block PublicFn.modulusArgs) (.seq (.block modulusCheck) (.ite .e sized PublicFn.failure))
+def body (pc : Bool := false) : Prog isa :=
+  .seq (.block PublicFn.modulusArgs) (.seq (.block modulusCheck) (.ite .e (sized pc) PublicFn.failure))
 
-def code : Prog isa := .seq (.block entry) (.seq body (.block restore))
+def code (pc : Bool := false) : Prog isa := .seq (.block entry) (.seq (body pc) (.block restore))
 
 end VG.Impl.Bignum.X86.CrtRt
