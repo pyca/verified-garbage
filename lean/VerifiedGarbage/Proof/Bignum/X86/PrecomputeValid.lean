@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Bignum.X86.PrecomputeFn
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeRt.In
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeRt.Power
+public import VerifiedGarbage.Proof.Bignum.X86.R2Words.Main
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeRt.Mul
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeRt.Copy
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -111,7 +112,52 @@ structure PcStarted (s : State) (base : Addr) (bytes len : Nat) (args : Nat → 
   mod : val32 t.mem base numOff (nw len) = M
   inv : (M * w32 t.mem base invOff + 1) % 2 ^ 32 = 0
   lt : val32 t.mem base (numAt len 4) (nw len) < M
-  val : val32 t.mem base (numAt len 4) (nw len) % M = 2 ^ Spec.Rsa.modulusWords len * 2 ^ (32 * nw len) % M
+  val : val32 t.mem base (numAt len 4) (nw len) % M = 2 ^ (16 * Spec.Rsa.modulusWords len) * 2 ^ (32 * nw len) % M
+
+/-- What `load` and the inverse leave for `run`. -/
+structure PcLoaded (s : State) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (M : Nat) (t : State) :
+    Prop where
+  pi : PcIn base bytes len args t
+  keep : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t
+  frame : Frame [⟨off base 16, bytes - 16⟩] s.mem t.mem
+  mod : R2Words.ModIn t base len M
+  inv : (M * w32 t.mem base invOff + 1) % 2 ^ 32 = 0
+
+theorem frame16 {base : Addr} {bytes : Nat} (nw' : base.toNat + bytes ≤ 2 ^ 32) {m m' : Mem} {d n : Nat}
+    (O : Outside base d n m m') (h1 : 16 ≤ d) (h2 : d + n ≤ bytes) : Frame [⟨off base 16, bytes - 16⟩] m m' :=
+  (outside_frame O (by omega)).sub fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., sub_off h1 (by omega)⟩
+
+theorem pcLoad_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
+    (h : PcIn base bytes len args s)
+    (valid : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len)) len = true) :
+    WP isa (.seq (load 0 2 3) (.block (VG.Impl.Mont.X86.Dynamic.setupInverse numOff invOff))) s
+      (PcLoaded s base bytes len args (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len))) := by
+  have dims := h.dimensions
+  have facts := valid_facts valid h.lower
+  have nw' := h.scratch.nowrap
+  have hfit : ∀ j ≤ 7, numAt len j + wb len ≤ bytes := fun j hj => (h.fits hj).1
+  have e0 : numAt len 0 = 256 := by simp [numAt, numOff]
+  have f0 := hfit 0 (by decide)
+  have wbe := wb_eq len
+  have n0 : numOff = numAt len 0 := by simp [numAt]
+  set M := Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len) with hMdef
+  have hlo : 2 ^ (8 * (len - 1)) ≤ M := by
+    have hv := valid
+    rw [Spec.Rsa.modulusValid, Bool.and_eq_true, Bool.and_eq_true, Bool.and_eq_true] at hv
+    rw [← pow256_eq]; exact of_decide_eq_true hv.2
+  have hhi : M < 2 ^ (8 * len) := by
+    have := os2ip_lt (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len)
+    rwa [bytesAt_length, pow256_eq] at this
+  refine WP.seq (WP.mono (load_ok h (j := 0) (by decide)) fun u₁ ⟨V₁, O₁, K₁⟩ => ?_)
+  have P₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by have := hfit 0 (by decide); omega))
+  refine WP.mono (inverse_ok P₁ (by rw [n0, V₁]; exact facts.1)) fun u₂ ⟨I₂, O₂, K₂⟩ => ?_
+  rw [n0, V₁] at I₂
+  have P₂ := P₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by simp only [invOff]; omega))
+  refine ⟨P₂, (K₁.mono (by decide)).trans (K₂.mono (by decide)),
+    (frame16 nw' O₁ (by rw [e0]; omega) (hfit 0 (by decide))).trans
+      (frame16 nw' O₂ (by simp only [invOff]; omega) (by simp only [invOff]; omega)),
+    ⟨by rw [O₂.val32 (.inr (by simp [invOff, numAt, numOff])) (by omega), V₁], hlo, hhi, facts.1⟩, I₂⟩
 
 theorem pcStart_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
     (h : PcIn base bytes len args s)
@@ -119,69 +165,21 @@ theorem pcStart_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
     WP isa PrecomputeFn.start s
       (PcStarted s base bytes len args (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len))) := by
   have dims := h.dimensions
-  have facts := valid_facts valid h.lower
   have nw' := h.scratch.nowrap
-  have wbe := wb_eq len
-  have hfit : ∀ j ≤ 7, numAt len j + wb len ≤ bytes := fun j hj => (h.fits hj).1
-  have f5 : numAt len 5 + (3 * wb len + 56) ≤ bytes := (h.fits (j := 0) (by decide)).2
-  have e0 : numAt len 0 = 256 := by simp [numAt, numOff]
   have n0 : numOff = numAt len 0 := by simp [numAt]
-  have e4 : numAt len 4 = 256 + 4 * wb len := by simp only [numAt, numOff] <;> omega
-  have e5 : numAt len 5 = 256 + 5 * wb len := by simp only [numAt, numOff] <;> omega
-  have wbg := wb_ge h.lower
-  set M := Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len) with hMdef
-  have frS : ∀ {m m' : Mem} {d n : Nat}, Outside base d n m m' → 16 ≤ d → d + n ≤ bytes →
-      Frame [⟨off base 16, bytes - 16⟩] m m' :=
-    fun O h1 h2 => (outside_frame O (by omega)).sub fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., sub_off h1 (by omega)⟩
+  have f0 := (h.fits (j := 0) (by decide)).1
+  have e0 : numAt len 0 = 256 := by simp [numAt, numOff]
   unfold PrecomputeFn.start
-  -- The modulus, and its inverse.
-  refine WP.seq (WP.mono (load_ok h (j := 0) (by decide)) fun u₁ ⟨V₁, O₁, K₁⟩ => ?_)
-  have P₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by have := hfit 0 (by decide); omega))
-  refine WP.seq (WP.mono (inverse_ok P₁ (by rw [n0, V₁]; exact facts.1)) fun u₂ ⟨I₂, O₂, K₂⟩ => ?_)
-  rw [n0, V₁] at I₂
-  have P₂ := P₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by simp only [invOff]; omega))
-  have M₂ : val32 u₂.mem base numOff (nw len) = M := by
-    rw [O₂.val32 (.inr (by simp [invOff, numOff])) (by omega), n0, V₁]
-  -- The seed and the doublings.
-  refine WP.seq (WP.mono (seed_ok P₂) fun u₃ ⟨O₃, V₃, K₃⟩ => ?_)
-  have P₃ := P₂.keep K₃ (by decide) (by decide) (O₃.mono (Nat.zero_le _) (by have := hfit 4 (by decide); omega))
-  have M₃ : val32 u₃.mem base numOff (nw len) = M := by
-    rw [O₃.val32 (.inl (by rw [e4]; simp only [numOff]; omega)) (by omega), M₂]
-  have I₃ : w32 u₃.mem base invOff = w32 u₂.mem base invOff :=
-    O₃.w32 (.inl (by rw [e4]; simp only [invOff]; omega)) (by decide)
-  refine WP.seq (WP.mono (count_ok P₃) fun u₄ ⟨C₄, m₄, K₄⟩ => ?_)
-  have P₄ := P₃.keep K₄ (by decide) (by decide) (by rw [m₄]; exact Outside.refl _ _ _ _)
-  have seedLt : 2 ^ (8 * (len - 1)) < M := by
-    have hv := valid
-    rw [Spec.Rsa.modulusValid, Bool.and_eq_true, Bool.and_eq_true, Bool.and_eq_true] at hv
-    have hk := of_decide_eq_true hv.2
-    rw [Nat.lt_iff_le_and_ne]
-    refine ⟨by rw [← pow256_eq]; exact hk, fun e => ?_⟩
-    have odd := facts.1
-    rw [← e, show 8 * (len - 1) = (8 * (len - 1) - 1) + 1 by have := h.lower; omega, Nat.pow_succ] at odd
-    simp at odd
-  have hN : 0 < 65 * Spec.Rsa.modulusWords len + 8 - 8 * len := by have := dims.2.2; omega
-  refine WP.mono (doublings_ok P₄ hN C₄ (by rw [m₄, V₃, ← n0, M₃]; exact seedLt))
-    fun u₅ ⟨O₅, V₅, d₅, K₅⟩ => ?_
-  rw [m₄, V₃, ← n0, M₃, ← Nat.pow_add] at V₅
-  have K₅' := Keeps.drop_edi (rs := [.eax, .ebx, .ecx, .edx, .ebp, .esi]) K₅ d₅
-  have P₅ := P₄.keep K₅' (by decide) (by decide) (O₅.mono (Nat.zero_le _) (by omega))
-  refine ⟨P₅, ((((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (K₃.mono (by decide))).trans
-    (K₄.mono (by decide))).trans K₅', ?_, ?_, ?_, ?_, ?_⟩
-  · have H₅ : Frame [⟨off base 16, bytes - 16⟩] u₄.mem u₅.mem := frS O₅ (by rw [e4]; omega) (by omega)
-    rw [m₄] at H₅
-    exact (((frS O₁ (by rw [e0]; omega) (hfit 0 (by decide))).trans
-      (frS O₂ (by simp only [invOff]; omega) (by simp only [invOff]; omega))).trans
-      (frS O₃ (by rw [e4]; omega) (hfit 4 (by decide)))).trans H₅
-  · rw [O₅.val32 (.inl (by rw [e4]; simp only [numOff]; omega)) (by omega), m₄, M₃]
-  · rw [O₅.w32 (.inl (by rw [e4]; simp only [invOff]; omega)) (by decide), m₄, I₃]; exact I₂
-  · rw [V₅]; exact Nat.mod_lt _ (by omega)
-  · rw [V₅, Nat.mod_mod, ← Nat.pow_add]
+  refine WP.seq (WP.mono (pcLoad_ok h valid) fun u L => ?_)
+  refine WP.mono (VG.Proof.Bignum.X86.R2Words.run_ok L.pi L.mod) fun t ⟨V, Mt, O, K⟩ => ?_
+  refine ⟨L.pi.keep K (by decide) (by decide) (O.mono (Nat.zero_le _) (by simp only [R2Words.oP]; omega)),
+    L.keep.trans K, L.frame.trans (frame16 nw' O (by simp only [R2Words.oP]; omega) (by simp only [R2Words.oP]; omega)),
+    by rw [n0]; exact Mt, ?_, ?_, ?_⟩
+  · rw [O.w32 (.inl (by simp only [invOff, R2Words.oP]; omega)) (by decide)]; exact L.inv
+  · rw [V]; exact Nat.mod_lt _ (by have := L.mod.odd; omega)
+  · rw [V, Nat.mod_mod, ← Nat.pow_add]
     congr 2
     simp only [nw]
-    have := dims.2.2
-    have := h.lower
     omega
 
 theorem pcFinish_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
