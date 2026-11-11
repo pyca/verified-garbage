@@ -59,21 +59,23 @@ end State
 /-- `EVEX.256` instructions `vop ymm1, ymm2, ymm3` that act on each 128-bit
 lane as the legacy SSE instruction does on its destination (`src1`) and
 source (`src2`); see `EBinOp.sse`. -/
-inductive EBinOp | vpaddq | vpxorq | vpandq | vporq
+inductive EBinOp | vpaddq | vpsubq | vpxorq | vpandq | vporq
   deriving DecidableEq, Repr
 
 /-- The legacy SSE instruction whose operation `op` applies to each lane:
 SDM Vol. 2, each instruction's "EVEX encoded versions" pseudocode with
 `(KL, VL) = (4, 256)`, no write mask and a register `SRC2`: VPADDQ
 ("PADDB/PADDW/PADDD/PADDQ", `EVEX.256.66.0F.W1 D4 /r`): `DEST[i+63:i] :=
-SRC1[i+63:i] + SRC2[i+63:i]`; VPXORQ ("PXOR", `EVEX.256.66.0F.W1 EF /r`):
+SRC1[i+63:i] + SRC2[i+63:i]`; VPSUBQ ("PSUBB/PSUBW/PSUBD/PSUBQ",
+`EVEX.256.66.0F.W1 FB /r`): `DEST[i+63:i] := SRC1[i+63:i] - SRC2[i+63:i]`;
+VPXORQ ("PXOR", `EVEX.256.66.0F.W1 EF /r`):
 `DEST[i+63:i] := SRC1[i+63:i] BITWISE XOR SRC2[i+63:i]`; VPANDQ ("PAND",
 `EVEX.256.66.0F.W1 DB /r`): `... BITWISE AND ...`; VPORQ ("POR",
 `EVEX.256.66.0F.W1 EB /r`): `... BITWISE OR ...`; for each quadword `j` from
-0 to 3 (`i := j * 64`), which on each 128-bit lane is what PADDQ, PXOR, PAND
-and POR compute. -/
+0 to 3 (`i := j * 64`), which on each 128-bit lane is what PADDQ, PSUBQ,
+PXOR, PAND and POR compute. -/
 def EBinOp.sse : EBinOp → XBinOp
-  | .vpaddq => .paddq | .vpxorq => .pxor | .vpandq => .pand | .vporq => .por
+  | .vpaddq => .paddq | .vpsubq => .psubq | .vpxorq => .pxor | .vpandq => .pand | .vporq => .por
 
 /-- Lane `i` (bits `128i+127:128i`, `i` 0 or 1) of a 256-bit value. -/
 def lane256 (x : BitVec 256) (i : Nat) : BitVec 128 := x.extractLsb' (128 * i) 128
@@ -115,6 +117,10 @@ inductive EOp
   | vpternlogq (dst src1 src2 : VReg) (imm : BitVec 8)
   /-- `vprorq ymm1, ymm2, imm8` (`EVEX.256.66.0F.W1 72 /0 ib`) -/
   | vprorq (dst src : VReg) (count : BitVec 8)
+  /-- `vpsraq ymm1, ymm2, imm8` (`EVEX.256.66.0F.W1 72 /4 ib`) -/
+  | vpsraq (dst src : VReg) (count : BitVec 8)
+  /-- `vmovdqa64 ymm1, ymm2` (`EVEX.256.66.0F.W1 6F /r`) -/
+  | vmovdqa64 (dst src : VReg)
   deriving DecidableEq, Repr
 
 /-- Semantics of the `EVEX.256` instructions (see the module doc for the
@@ -151,7 +157,16 @@ zeroing of the bits above the vector length, `State.setVy`):
 * `vprorq`: SDM Vol. 2, "VPRORD/VPRORVD/VPRORQ/VPRORVQ—Bit Rotate Right",
   "VPRORQ (EVEX encoded versions, imm8)" with `(KL, VL) = (4, 256)`, no write
   mask and a register source: `DEST[i+63:i] := RIGHT_ROTATE_QWORDS(SRC1[i+63:i],
-  imm8)` for each quadword, so `rorQwords` on each lane. -/
+  imm8)` for each quadword, so `rorQwords` on each lane.
+* `vpsraq`: SDM Vol. 2, "PSRAW/PSRAD/PSRAQ—Shift Packed Data Right
+  Arithmetic", "VPSRAQ (EVEX versions, imm8)" with `(KL, VL) = (4, 256)`, no
+  write mask and a register source: `DEST[i+63:i] :=
+  ARITHMETIC_RIGHT_SHIFT_QWORDS1(SRC1[i+63:i], imm8)` for each quadword, so
+  `sraQwords` on each lane.
+* `vmovdqa64`: SDM Vol. 2, "MOVDQA,VMOVDQA32/64—Move Aligned Packed Integer
+  Values", "VMOVDQA64 (EVEX encoded versions, register-copy form)" with
+  `(KL, VL) = (4, 256)` and no write mask: `DEST[i+63:i] := SRC[i+63:i]` for
+  each quadword, and `DEST[MAXVL-1:VL] := 0`. -/
 def EOp.exec : EOp → State → State
   | .bin op d a b, s => s.setVy d (lanes256 op.sse.eval (s.vy a) (s.vy b))
   | .shift op d a n, s =>
@@ -176,6 +191,8 @@ def EOp.exec : EOp → State → State
     s.setVy d (ternlog (lane256 dv 1) (lane256 av 1) (lane256 bv 1) n ++
       ternlog (lane256 dv 0) (lane256 av 0) (lane256 bv 0) n)
   | .vprorq d a n, s => s.setVy d (lanes256 (fun x _ => rorQwords x n) (s.vy a) (s.vy a))
+  | .vpsraq d a n, s => s.setVy d (lanes256 (fun x _ => sraQwords x n) (s.vy a) (s.vy a))
+  | .vmovdqa64 d a, s => s.setVy d (s.vy a)
 
 /-! ## `EVEX.512` forms, on `zmm0`–`zmm31`
 

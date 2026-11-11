@@ -114,7 +114,24 @@ structure Chk (S : Addr) (w : Nat) (b : Bool) (s t : State) : Prop where
 /-- The registers `checks` writes. -/
 def chkRegs : List Reg := [.s9, .s0, .s7, .s8, .t2, .t3, .t4, .t5] ++ pqRegs
 
-theorem checks_ok {s : State} {S Na : Addr} {Z w k : Nat} {nb : List Byte}
+/-- The registers the checks before `p q = n` write. -/
+def chk3Regs : List Reg := [.s0, .s7, .s8, .s9, .t2, .t3, .t4, .t5] ++ cmpRegs
+
+/-- What `checksWith` needs of its check `pq` of `p q = n`, run after the
+checks of `n`, the input and `qInv` from `s`: from any state `t` with the
+working space's registers, the registers that those checks keep as in `s`, and
+memory as in `s` but in array 3, `s9 &=` all ones if `p q = n`, changing only
+arrays 2, 3 and 6. -/
+def PQOk (pq : Prog isa) (S : Addr) (Z w : Nat) (s : State) : Prop :=
+  ∀ t, Scr t S Z → t.gpr .a7 = Mont.off S (slot w 0) → t.gpr .ra = Mont.off S (slot w 0) →
+    t.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)) → t.gpr .t0 = BitVec.ofNat 64 w → Keep chk3Regs s t →
+    Mont.Outside S (slot w 3) (8 * w) s.mem t.mem →
+    WP isa pq t fun u =>
+      (u.gpr .s9 = t.gpr .s9 &&& (if wordsVal s.mem S (slot w 4) w * wordsVal s.mem S (slot w 5) w =
+          wordsVal s.mem S (slot w 1) w then BitVec.allOnes 64 else 0) ∧
+        Arrays S w [2, 3, 6] t.mem u.mem ∧ u.gpr .a7 = Mont.off S (slot w 0)) ∧ Keep pqRegs t u
+
+theorem checksWith_ok {pq : Prog isa} {s : State} {S Na : Addr} {Z w k : Nat} {nb : List Byte}
     (hs : Scr s S Z) (hZ : slot w 8 ≤ Z) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
     (h6 : s.gpr .s6 = S) (h7 : s.gpr .a7 = Mont.off S (slot w 0)) (hra : s.gpr .ra = Mont.off S (slot w 0))
     (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2))) (h0 : s.gpr .t0 = BitVec.ofNat 64 w)
@@ -122,14 +139,10 @@ theorem checks_ok {s : State} {S Na : Addr} {Z w k : Nat} {nb : List Byte}
     (hk : 64 ≤ k) (hk' : k ≤ 1024) (hlen : nb.length = k)
     (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (Mont.off Na i) 1)
     (hb : ∀ i (h : i < k), s.mem (Mont.off Na i) = nb[i]'(by omega_arith))
-    (hM : wordsVal s.mem S (slot w 0) w = 2 ^ (64 * w) - 1)
-    (hM0 : Mont.word s.mem S (slot w 0) = BitVec.allOnes 64)
     (hn1 : wordsVal s.mem S (slot w 1) w = Spec.Rsa.os2ip nb)
-    (h1top : Mont.word s.mem S (slot w 1 + 8 * w) = 0) (h6top : Mont.word s.mem S (slot w 6 + 8 * w) = 0)
-    (h7top : Mont.word s.mem S (slot w 7 + 8 * w) = 0)
-    (hq : wordsVal s.mem S (slot w 5) w < 2 ^ (64 * w) - 1)
-    (hpq : wordsVal s.mem S (slot w 4) w * wordsVal s.mem S (slot w 5) w < 2 ^ (64 * w) - 1) :
-    WP isa checks s fun t =>
+    (h6top : Mont.word s.mem S (slot w 6 + 8 * w) = 0) (h7top : Mont.word s.mem S (slot w 7 + 8 * w) = 0)
+    (hPQ : PQOk pq S Z w s) :
+    WP isa (checksWith pq) s fun t =>
       Chk S w (crtMask (Spec.Rsa.os2ip nb) k (wordsVal s.mem S (slot w 6) w) (wordsVal s.mem S (slot w 4) w)
         (wordsVal s.mem S (slot w 5) w) (wordsVal s.mem S (slot w 7) w)) s t ∧ Keep chkRegs s t := by
   have hn := hs.nowrap
@@ -137,7 +150,7 @@ theorem checks_ok {s : State} {S Na : Addr} {Z w k : Nat} {nb : List Byte}
   have e0 := e 0; have e1 := e 1; have e2 := e 2; have e3 := e 3; have e4 := e 4; have e5 := e 5; have e6 := e 6
   have e7 := e 7; have e8 := e 8
   have hn8 : S.toNat + slot w 8 ≤ 2 ^ 64 := by omega_arith
-  unfold checks
+  unfold checksWith
   -- `n`.
   refine WP.seq (WP.mono (checkN_ok (nb := nb) hs (by omega_arith) (by rw [h6]; exact z0 _) hN hNL hk hk' hlen hrd hb)
     fun s₁ ⟨⟨a9, m1⟩, k1⟩ => ?_)
@@ -170,12 +183,9 @@ theorem checks_ok {s : State} {S Na : Addr} {Z w k : Nat} {nb : List Byte}
       Mont.word s₃.mem S d = Mont.word s.mem S d := fun d hd hd' => by
     rw [Mont.Outside.word o3 hd hd', Mont.Outside.word o2 hd hd']
   -- `p q = n`.
-  refine WP.seq (WP.mono (checkPQ_ok hs₃ hw2 hw' hZ c7 ((k3.gpr (by decide)).trans ((k2.gpr (by decide)).trans rra))
+  refine WP.seq (WP.mono (hPQ s₃ hs₃ c7 ((k3.gpr (by decide)).trans ((k2.gpr (by decide)).trans rra))
     ((k3.gpr (by decide)).trans ((k2.gpr (by decide)).trans r5)) ((k3.gpr (by decide)).trans ((k2.gpr (by decide)).trans r0))
-    (by rw [wv3 (by decide) (by decide)]; exact hM) (by rw [w3 (slot w 0) (by omega_arith) (by omega_arith)]; exact hM0)
-    (by rw [wv3 (by decide) (by decide)]; exact hq)
-    (by rw [wv3 (by decide) (by decide), wv3 (by decide) (by decide)]; exact hpq)
-    (by rw [w3 (slot w 1 + 8 * w) (by omega_arith) (by omega_arith)]; exact h1top))
+    (k13.mono (by decide)) (fun x hx => (o3 x hx).trans (o2 x hx)))
     fun s₄ ⟨⟨d9, o4, d7⟩, k4⟩ => ?_)
   have k14 := k13.trans k4
   have hs₄ := hs.congr k14.2.2
@@ -186,8 +196,7 @@ theorem checks_ok {s : State} {S Na : Addr} {Z w k : Nat} {nb : List Byte}
   -- The mask.
   have hmask : s₄.gpr .s9 = cmask (crtMask (Spec.Rsa.os2ip nb) k (wordsVal s.mem S (slot w 6) w)
       (wordsVal s.mem S (slot w 4) w) (wordsVal s.mem S (slot w 5) w) (wordsVal s.mem S (slot w 7) w)) := by
-    rw [d9, c9, b9, a9, wv2 (by decide) (by decide), wv2 (by decide) (by decide), wv3 (by decide) (by decide),
-      wv3 (by decide) (by decide), wv3 (by decide) (by decide), hn1, ite_cmask, ite_cmask, ite_cmask, ite_cmask,
+    rw [d9, c9, b9, a9, wv2 (by decide) (by decide), wv2 (by decide) (by decide), hn1, ite_cmask, ite_cmask, ite_cmask, ite_cmask,
       Bool.decide_eq_true, cmask_and, cmask_and, cmask_and]
     rfl
   generalize hB : crtMask (Spec.Rsa.os2ip nb) k (wordsVal s.mem S (slot w 6) w) (wordsVal s.mem S (slot w 4) w)
@@ -250,5 +259,39 @@ theorem checks_ok {s : State} {S Na : Addr} {Z w k : Nat} {nb : List Byte}
   · rw [tm]; exact (Mont.word_writeW_self _ _ _ _).trans (cmask_sub b)
   · exact (k9.gpr (by decide)).trans ((k8.gpr (by decide)).trans ((k7.gpr (by decide)).trans
       ((k6.gpr (by decide)).trans r7')))
+
+/-- `checksWith checkPQ`, with `M = 2^(64 w) - 1` in array 0, `n`'s word `w`
+zero, `q < M` and `p q < M`. -/
+theorem checks_ok {s : State} {S Na : Addr} {Z w k : Nat} {nb : List Byte}
+    (hs : Scr s S Z) (hZ : slot w 8 ≤ Z) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
+    (h6 : s.gpr .s6 = S) (h7 : s.gpr .a7 = Mont.off S (slot w 0)) (hra : s.gpr .ra = Mont.off S (slot w 0))
+    (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2))) (h0 : s.gpr .t0 = BitVec.ofNat 64 w)
+    (hN : Mont.word s.mem S oN = Mont.off Na 0) (hNL : Mont.word s.mem S oNLen = BitVec.ofNat 64 k)
+    (hk : 64 ≤ k) (hk' : k ≤ 1024) (hlen : nb.length = k)
+    (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (Mont.off Na i) 1)
+    (hb : ∀ i (h : i < k), s.mem (Mont.off Na i) = nb[i]'(by omega_arith))
+    (hM : wordsVal s.mem S (slot w 0) w = 2 ^ (64 * w) - 1)
+    (hM0 : Mont.word s.mem S (slot w 0) = BitVec.allOnes 64)
+    (hn1 : wordsVal s.mem S (slot w 1) w = Spec.Rsa.os2ip nb)
+    (h1top : Mont.word s.mem S (slot w 1 + 8 * w) = 0) (h6top : Mont.word s.mem S (slot w 6 + 8 * w) = 0)
+    (h7top : Mont.word s.mem S (slot w 7 + 8 * w) = 0)
+    (hq : wordsVal s.mem S (slot w 5) w < 2 ^ (64 * w) - 1)
+    (hpq : wordsVal s.mem S (slot w 4) w * wordsVal s.mem S (slot w 5) w < 2 ^ (64 * w) - 1) :
+    WP isa checks s fun t =>
+      Chk S w (crtMask (Spec.Rsa.os2ip nb) k (wordsVal s.mem S (slot w 6) w) (wordsVal s.mem S (slot w 4) w)
+        (wordsVal s.mem S (slot w 5) w) (wordsVal s.mem S (slot w 7) w)) s t ∧ Keep chkRegs s t := by
+  have hn := hs.nowrap
+  have e : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  have e0 := e 0; have e1 := e 1; have e3 := e 3; have e4 := e 4; have e5 := e 5; have e8 := e 8
+  refine checksWith_ok hs hZ hw2 hw' h6 h7 hra h5 h0 hN hNL hk hk' hlen hrd hb hn1 h6top h7top
+    fun t ht t7 tra t5 t0 _ to => ?_
+  have wv : ∀ {j}, j ≠ 3 → j < 8 → wordsVal t.mem S (slot w j) w = wordsVal s.mem S (slot w j) w :=
+    fun hj hj' => Mont.Outside.wordsVal to (by have := VG.Proof.Bignum.slot_sep (w := w) hj; omega_arith)
+      (by have := VG.Proof.Bignum.slot_le (w := w) hj'; omega_arith)
+  refine WP.mono (checkPQ_ok ht hw2 hw' hZ t7 tra t5 t0 (by rw [wv (by decide) (by decide)]; exact hM)
+    (by rw [to.word (by omega_arith) (by omega_arith)]; exact hM0) (by rw [wv (by decide) (by decide)]; exact hq)
+    (by rw [wv (by decide) (by decide), wv (by decide) (by decide)]; exact hpq)
+    (by rw [to.word (by omega_arith) (by omega_arith)]; exact h1top)) fun u ⟨⟨u9, uo, u7⟩, uk⟩ => ⟨⟨?_, uo, u7⟩, uk⟩
+  rw [u9, wv (by decide) (by decide), wv (by decide) (by decide), wv (by decide) (by decide)]
 
 end VG.Proof.Bignum.RISCV64.Crt

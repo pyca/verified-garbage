@@ -117,19 +117,44 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 
-theorem crt_productArgs_ok (s : State) {base p q out : BitVec 32} {size cp cq w : Nat} {coefficient : Bool}
-    (ws : Workspace s base size) (fit : 236 ≤ size) (hq : 256 ≤ cq)
+/-- `count` sets the product's counts, `m` rows of `n` words (header words 140
+and 144), from any state with `r0 = base` that keeps `s`'s memory outside the
+workspace and its word 48, and its stack pointer and permissions. -/
+@[expose] public def CountFrom (count : List Instr) (base : BitVec 32) (size m n : Nat) (s : State) : Prop :=
+  ∀ z : State, Workspace z base size → z.gpr .r0 = base → z.sp = s.sp → z.rd = s.rd → z.wr = s.wr →
+    Frame [⟨State.addr base, size⟩] s.mem z.mem →
+    z.mem.readW (off (State.addr base) 48) 32 = s.mem.readW (off (State.addr base) 48) 32 →
+    WP isa (.block count) z fun t =>
+      t.mem = (z.mem.writeW (off (State.addr base) 140) (BitVec.ofNat 32 m)).writeW
+        (off (State.addr base) 144) (BitVec.ofNat 32 n) ∧ Rest [.r1] z t
+
+public theorem CountFrom.after {count : List Instr} {base : BitVec 32} {size m n : Nat} {s u : State}
+    (h : CountFrom count base size m n s) (sp : u.sp = s.sp) (rd : u.rd = s.rd) (wr : u.wr = s.wr)
+    (F : Frame [⟨State.addr base, size⟩] s.mem u.mem)
+    (w48 : u.mem.readW (off (State.addr base) 48) 32 = s.mem.readW (off (State.addr base) 48) 32) :
+    CountFrom count base size m n u :=
+  fun z ws ptr zsp zrd zwr zF z48 =>
+    h z ws ptr (zsp.trans sp) (zrd.trans rd) (zwr.trans wr) (F.trans zF) (z48.trans w48)
+
+/-- `productCount`: the modulus's `2 w` words, both counts. -/
+public theorem countFrom_productCount {s : State} {base : BitVec 32} {size w : Nat} (fit : 148 ≤ size)
+    (count : s.mem.readW (off (State.addr base) 48) 32 = BitVec.ofNat 32 w) :
+    CountFrom productCount base size (2 * w) (2 * w) s :=
+  fun z ws ptr _ _ _ _ z48 => crt_productCount_ok z ws fit ptr (z48.trans count)
+
+theorem crt_productArgsWith_ok (s : State) {base p q out : BitVec 32} {size cp cq m n : Nat} {coefficient : Bool}
+    {count : List Instr} (ws : Workspace s base size) (fit : 236 ≤ size) (hq : 256 ≤ cq)
     (pFit : cp + productOperandSlot coefficient + 4 ≤ size) (qFit : cq + 68 ≤ size) (ptr : s.gpr .r0 = base)
     (pLink : s.mem.readW (off (State.addr base) 224) 32 = base + BitVec.ofNat 32 cp)
     (qLink : s.mem.readW (off (State.addr base) 228) 32 = base + BitVec.ofNat 32 cq)
     (pArray : s.mem.readW (off (State.addr base) (cp + productOperandSlot coefficient)) 32 = p)
     (qArray : s.mem.readW (off (State.addr base) (cq + 64)) 32 = q)
     (product : s.mem.readW (off (State.addr base) 232) 32 = out)
-    (count : s.mem.readW (off (State.addr base) 48) 32 = BitVec.ofNat 32 w) :
-    WP isa (productArgs coefficient) s fun t =>
-      t.mem = crtProductMem s.mem (State.addr base) p q out (BitVec.ofNat 32 (2 * w)) (BitVec.ofNat 32 (2 * w)) ∧
+    (hc : CountFrom count base size m n s) :
+    WP isa (productArgsWith coefficient count) s fun t =>
+      t.mem = crtProductMem s.mem (State.addr base) p q out (BitVec.ofNat 32 m) (BitVec.ofNat 32 n) ∧
       Rest [.r1] s t := by
-  rw [productArgs, WP.seq_iff]
+  rw [productArgsWith, WP.seq_iff]
   refine WP.mono (crt_copyChildPointer_ok s ws (by omega : 224 + 4 ≤ size) (by omega : 128 + 4 ≤ size)
     (by decide) (by decide) (by cases coefficient <;> decide) pFit ptr pLink pArray) ?_
   rintro u ⟨memU, restU⟩
@@ -153,14 +178,32 @@ theorem crt_productArgs_ok (s : State) {base p q out : BitVec 32} {size cp cq w 
   have outsideZ := writeW32_outside v.mem (State.addr base) (d := 136) out (by decide)
   rw [← memZ] at outsideZ
   have restSZ := restSV.trans restZ
-  refine WP.mono (crt_productCount_ok (w := w) z (ws.congr restSZ.wr) (by omega) ((restSZ.gpr .r0 (by simp)).trans ptr)
-    (by rw [outside_read32 outsideZ (d := 48) (by decide) (by decide),
+  have frameZ : Frame [⟨State.addr base, size⟩] s.mem z.mem :=
+    (outside_workspace outsideU (by omega)).trans ((outside_workspace outsideV (by omega)).trans
+      (outside_workspace outsideZ (by omega)))
+  refine WP.mono (hc z (ws.congr restSZ.wr) ((restSZ.gpr .r0 (by simp)).trans ptr) restSZ.sp restSZ.rd restSZ.wr
+    frameZ (by rw [outside_read32 outsideZ (d := 48) (by decide) (by decide),
             outside_read32 outsideV (d := 48) (by decide) (by decide),
-            outside_read32 outsideU (d := 48) (by decide) (by decide)]; exact count)) ?_
+            outside_read32 outsideU (d := 48) (by decide) (by decide)])) ?_
   rintro t ⟨memT, restT⟩
   refine ⟨?_, restSZ.trans restT⟩
   rw [memT, memZ, memV, memU]
   rfl
+
+theorem crt_productArgs_ok (s : State) {base p q out : BitVec 32} {size cp cq w : Nat} {coefficient : Bool}
+    (ws : Workspace s base size) (fit : 236 ≤ size) (hq : 256 ≤ cq)
+    (pFit : cp + productOperandSlot coefficient + 4 ≤ size) (qFit : cq + 68 ≤ size) (ptr : s.gpr .r0 = base)
+    (pLink : s.mem.readW (off (State.addr base) 224) 32 = base + BitVec.ofNat 32 cp)
+    (qLink : s.mem.readW (off (State.addr base) 228) 32 = base + BitVec.ofNat 32 cq)
+    (pArray : s.mem.readW (off (State.addr base) (cp + productOperandSlot coefficient)) 32 = p)
+    (qArray : s.mem.readW (off (State.addr base) (cq + 64)) 32 = q)
+    (product : s.mem.readW (off (State.addr base) 232) 32 = out)
+    (count : s.mem.readW (off (State.addr base) 48) 32 = BitVec.ofNat 32 w) :
+    WP isa (productArgs coefficient) s fun t =>
+      t.mem = crtProductMem s.mem (State.addr base) p q out (BitVec.ofNat 32 (2 * w)) (BitVec.ofNat 32 (2 * w)) ∧
+      Rest [.r1] s t :=
+  crt_productArgsWith_ok s ws fit hq pFit qFit ptr pLink qLink pArray qArray product
+    (countFrom_productCount (by omega) count)
 
 end VG.Proof.Bignum.Arm
 end
@@ -173,31 +216,40 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 
-structure CrtProductStart (base : BitVec 32) (size o a b w : Nat) (s : State) : Prop where
-  context : WideProductCtx s base size o a b (2 * w) (2 * w)
-  initial : WideProductInv s base o a b (2 * w) (2 * w) 0 s
+structure CrtProductStart (base : BitVec 32) (size o a b m n : Nat) (s : State) : Prop where
+  context : WideProductCtx s base size o a b m n
+  initial : WideProductInv s base o a b m n 0 s
 
-theorem crt_productArgs_ready (s : State) {base : BitVec 32} {size o a b cp cq w : Nat} {coefficient : Bool}
-    (h : CrtProductInput base size o a b cp cq w s coefficient)
-    (zero : val32 s.mem (State.addr base) o (2 * w + 2 * w + 2) = 0) :
-    WP isa (productArgs coefficient) s fun t => CrtProductStart base size o a b w t ∧
+/-- The context of a product of fewer words. -/
+theorem WideProductCtx.narrow {s : State} {base : BitVec 32} {size o a b M N m n : Nat}
+    (h : WideProductCtx s base size o a b M N) (hm : 0 < m) (hm' : m ≤ M) (hn : 0 < n) (hn' : n ≤ N) :
+    WideProductCtx s base size o a b m n :=
+  ⟨h.workspace, hm, hn, h.headerFit, h.aHeader, h.bHeader, h.oHeader, by have := h.aFits; omega,
+    by have := h.bFits; omega, by have := h.outFits; omega, by have := h.separateA; omega,
+    by have := h.separateB; omega, h.stackRead, h.stackSep, h.saved⟩
+
+theorem crt_productArgsWith_ready (s : State) {base : BitVec 32} {size o a b cp cq w m n : Nat} {coefficient : Bool}
+    {count : List Instr} (h : CrtProductInput base size o a b cp cq w s coefficient)
+    (hc : CountFrom count base size m n s) (hm : 0 < m) (hm' : m ≤ 2 * w) (hn : 0 < n) (hn' : n ≤ 2 * w)
+    (zero : val32 s.mem (State.addr base) o (m + n + 2) = 0) :
+    WP isa (productArgsWith coefficient count) s fun t => CrtProductStart base size o a b m n t ∧
       Outside (State.addr base) 128 20 s.mem t.mem ∧
       Frame [⟨State.addr base, size⟩] s.mem t.mem ∧ Rest [.r1] s t := by
   have outFit := h.outFits
   have beforeP := h.pBeforeOut
   have beforeQ := h.qBeforeOut
-  refine WP.mono (crt_productArgs_ok s h.workspace h.parentFit h.qHeader (by omega) (by omega)
-    h.ptr h.pLink h.qLink h.pArray h.qArray h.product h.count) ?_
+  refine WP.mono (crt_productArgsWith_ok s h.workspace h.parentFit h.qHeader (by omega) (by omega)
+    h.ptr h.pLink h.qLink h.pArray h.qArray h.product hc) ?_
   rintro t ⟨memT, rest⟩
   have result := crtProductMem_ok s.mem (State.addr base)
     (base + BitVec.ofNat 32 a) (base + BitVec.ofNat 32 b) (base + BitVec.ofNat 32 o)
-    (BitVec.ofNat 32 (2 * w)) (BitVec.ofNat 32 (2 * w))
+    (BitVec.ofNat 32 m) (BitVec.ofNat 32 n)
   dsimp only at result
   rw [← memT] at result
   obtain ⟨p, q, out, count, width, outside⟩ := result
   have frame := outside_workspace outside (size := size) h.headerFit
-  have ctx := h.toWideProductCtx.after_frame rest frame
-  have zeroT : val32 t.mem (State.addr base) o (2 * w + 2 * w + 2) = 0 := by
+  have ctx := (h.toWideProductCtx.narrow hm hm' hn hn').after_frame rest frame
+  have zeroT : val32 t.mem (State.addr base) o (m + n + 2) = 0 := by
     rw [outside.val32 (by have := h.oHeader; omega) (by have := h.workspace.nowrap; omega), zero]
   refine ⟨⟨ctx, ?_⟩, outside, frame, rest⟩
   refine ⟨by omega, (rest.gpr .r0 (by simp)).trans h.ptr, ?_, q, ?_, ?_, width,
@@ -206,5 +258,14 @@ theorem crt_productArgs_ready (s : State) {base : BitVec 32} {size o a b cp cq w
   · simpa only [Nat.mul_zero, Nat.add_zero] using out
   · simpa only [Nat.sub_zero] using count
   · simp only [val32, Nat.zero_mul]; exact zeroT
+
+theorem crt_productArgs_ready (s : State) {base : BitVec 32} {size o a b cp cq w : Nat} {coefficient : Bool}
+    (h : CrtProductInput base size o a b cp cq w s coefficient)
+    (zero : val32 s.mem (State.addr base) o (2 * w + 2 * w + 2) = 0) :
+    WP isa (productArgs coefficient) s fun t => CrtProductStart base size o a b (2 * w) (2 * w) t ∧
+      Outside (State.addr base) 128 20 s.mem t.mem ∧
+      Frame [⟨State.addr base, size⟩] s.mem t.mem ∧ Rest [.r1] s t :=
+  crt_productArgsWith_ready s h (countFrom_productCount h.headerFit h.count) h.positiveA (Nat.le_refl _)
+    h.positiveB (Nat.le_refl _) zero
 
 end VG.Proof.Bignum.Arm
