@@ -99,9 +99,9 @@ def redI (t : List Int) (i : Nat) : List Int :=
   let m := ti % 2 ^ 52
   let t := t.set (i + 1) (t.getD (i + 1) 0 + ti / 2 ^ 52 + ti * 2 ^ 56 % 2 ^ 64 / 2 ^ 12)
   let t := t.set (i + 2) (t.getD (i + 2) 0 + m / 2 ^ 8)
-  let t := t.set (i + 3) (t.getD (i + 3) 0 + lo52 m (2 ^ 36))
-  let t := t.set (i + 4) (t.getD (i + 4) 0 + hi52 m (2 ^ 36) + lo52 m (2 ^ 48 - 2 ^ 16))
-  t.set (i + 5) (t.getD (i + 5) 0 + hi52 m (2 ^ 48 - 2 ^ 16))
+  let t := t.set (i + 3) (t.getD (i + 3) 0 + lo52 ti (2 ^ 36))
+  let t := t.set (i + 4) (t.getD (i + 4) 0 + hi52 ti (2 ^ 36) + lo52 ti (2 ^ 48 - 2 ^ 16))
+  t.set (i + 5) (t.getD (i + 5) 0 + hi52 ti (2 ^ 48 - 2 ^ 16))
 
 /-- The number ten columns stand for. -/
 def val10 (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) : Int :=
@@ -119,8 +119,8 @@ theorem red0 (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
     ∃ m u1 u2 u3 u4 u5, 0 ≤ m ∧ m < 2 ^ 52 ∧ redI [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9] 0 = [t0, u1, u2, u3, u4, u5, t6, t7, t8, t9] ∧
       (u1 + u2 * 2 ^ 52 + u3 * 2 ^ 104 + u4 * 2 ^ 156 + u5 * 2 ^ 208) * 2 ^ 52 = t0 + t1 * 2 ^ 52 + t2 * 2 ^ 104 + t3 * 2 ^ 156 + t4 * 2 ^ 208 + t5 * 2 ^ 260 + m * pI := by
   refine ⟨t0 % 2 ^ 52, t1 + t0 / 2 ^ 52 + t0 * 2 ^ 56 % 2 ^ 64 / 2 ^ 12, t2 + t0 % 2 ^ 52 / 2 ^ 8,
-    t3 + lo52 (t0 % 2 ^ 52) (2 ^ 36), t4 + hi52 (t0 % 2 ^ 52) (2 ^ 36) + lo52 (t0 % 2 ^ 52) (2 ^ 48 - 2 ^ 16),
-    t5 + hi52 (t0 % 2 ^ 52) (2 ^ 48 - 2 ^ 16), Int.emod_nonneg _ (by decide), Int.emod_lt_of_pos _ (by decide), ?_, ?_⟩
+    t3 + lo52 t0 (2 ^ 36), t4 + hi52 t0 (2 ^ 36) + lo52 t0 (2 ^ 48 - 2 ^ 16),
+    t5 + hi52 t0 (2 ^ 48 - 2 ^ 16), Int.emod_nonneg _ (by decide), Int.emod_lt_of_pos _ (by decide), ?_, ?_⟩
   · simp only [redI, List.getD_cons_zero, List.getD_cons_succ, List.set_cons_zero, List.set_cons_succ]
   · simp only [lo52, hi52, pI]
     omega
@@ -129,8 +129,8 @@ theorem red1 (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
     ∃ m u1 u2 u3 u4 u5, 0 ≤ m ∧ m < 2 ^ 52 ∧ redI [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9] 1 = [t0, t1, u1, u2, u3, u4, u5, t7, t8, t9] ∧
       (u1 + u2 * 2 ^ 52 + u3 * 2 ^ 104 + u4 * 2 ^ 156 + u5 * 2 ^ 208) * 2 ^ 52 = t1 + t2 * 2 ^ 52 + t3 * 2 ^ 104 + t4 * 2 ^ 156 + t5 * 2 ^ 208 + t6 * 2 ^ 260 + m * pI := by
   refine ⟨t1 % 2 ^ 52, t2 + t1 / 2 ^ 52 + t1 * 2 ^ 56 % 2 ^ 64 / 2 ^ 12, t3 + t1 % 2 ^ 52 / 2 ^ 8,
-    t4 + lo52 (t1 % 2 ^ 52) (2 ^ 36), t5 + hi52 (t1 % 2 ^ 52) (2 ^ 36) + lo52 (t1 % 2 ^ 52) (2 ^ 48 - 2 ^ 16),
-    t6 + hi52 (t1 % 2 ^ 52) (2 ^ 48 - 2 ^ 16), Int.emod_nonneg _ (by decide), Int.emod_lt_of_pos _ (by decide), ?_, ?_⟩
+    t4 + lo52 t1 (2 ^ 36), t5 + hi52 t1 (2 ^ 36) + lo52 t1 (2 ^ 48 - 2 ^ 16),
+    t6 + hi52 t1 (2 ^ 48 - 2 ^ 16), Int.emod_nonneg _ (by decide), Int.emod_lt_of_pos _ (by decide), ?_, ?_⟩
   · simp only [redI, List.getD_cons_zero, List.getD_cons_succ, List.set_cons_zero, List.set_cons_succ]
   · simp only [lo52, hi52, pI]
     omega
@@ -139,8 +139,8 @@ theorem red2 (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
     ∃ m u1 u2 u3 u4 u5, 0 ≤ m ∧ m < 2 ^ 52 ∧ redI [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9] 2 = [t0, t1, t2, u1, u2, u3, u4, u5, t8, t9] ∧
       (u1 + u2 * 2 ^ 52 + u3 * 2 ^ 104 + u4 * 2 ^ 156 + u5 * 2 ^ 208) * 2 ^ 52 = t2 + t3 * 2 ^ 52 + t4 * 2 ^ 104 + t5 * 2 ^ 156 + t6 * 2 ^ 208 + t7 * 2 ^ 260 + m * pI := by
   refine ⟨t2 % 2 ^ 52, t3 + t2 / 2 ^ 52 + t2 * 2 ^ 56 % 2 ^ 64 / 2 ^ 12, t4 + t2 % 2 ^ 52 / 2 ^ 8,
-    t5 + lo52 (t2 % 2 ^ 52) (2 ^ 36), t6 + hi52 (t2 % 2 ^ 52) (2 ^ 36) + lo52 (t2 % 2 ^ 52) (2 ^ 48 - 2 ^ 16),
-    t7 + hi52 (t2 % 2 ^ 52) (2 ^ 48 - 2 ^ 16), Int.emod_nonneg _ (by decide), Int.emod_lt_of_pos _ (by decide), ?_, ?_⟩
+    t5 + lo52 t2 (2 ^ 36), t6 + hi52 t2 (2 ^ 36) + lo52 t2 (2 ^ 48 - 2 ^ 16),
+    t7 + hi52 t2 (2 ^ 48 - 2 ^ 16), Int.emod_nonneg _ (by decide), Int.emod_lt_of_pos _ (by decide), ?_, ?_⟩
   · simp only [redI, List.getD_cons_zero, List.getD_cons_succ, List.set_cons_zero, List.set_cons_succ]
   · simp only [lo52, hi52, pI]
     omega
@@ -149,8 +149,8 @@ theorem red3 (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
     ∃ m u1 u2 u3 u4 u5, 0 ≤ m ∧ m < 2 ^ 52 ∧ redI [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9] 3 = [t0, t1, t2, t3, u1, u2, u3, u4, u5, t9] ∧
       (u1 + u2 * 2 ^ 52 + u3 * 2 ^ 104 + u4 * 2 ^ 156 + u5 * 2 ^ 208) * 2 ^ 52 = t3 + t4 * 2 ^ 52 + t5 * 2 ^ 104 + t6 * 2 ^ 156 + t7 * 2 ^ 208 + t8 * 2 ^ 260 + m * pI := by
   refine ⟨t3 % 2 ^ 52, t4 + t3 / 2 ^ 52 + t3 * 2 ^ 56 % 2 ^ 64 / 2 ^ 12, t5 + t3 % 2 ^ 52 / 2 ^ 8,
-    t6 + lo52 (t3 % 2 ^ 52) (2 ^ 36), t7 + hi52 (t3 % 2 ^ 52) (2 ^ 36) + lo52 (t3 % 2 ^ 52) (2 ^ 48 - 2 ^ 16),
-    t8 + hi52 (t3 % 2 ^ 52) (2 ^ 48 - 2 ^ 16), Int.emod_nonneg _ (by decide), Int.emod_lt_of_pos _ (by decide), ?_, ?_⟩
+    t6 + lo52 t3 (2 ^ 36), t7 + hi52 t3 (2 ^ 36) + lo52 t3 (2 ^ 48 - 2 ^ 16),
+    t8 + hi52 t3 (2 ^ 48 - 2 ^ 16), Int.emod_nonneg _ (by decide), Int.emod_lt_of_pos _ (by decide), ?_, ?_⟩
   · simp only [redI, List.getD_cons_zero, List.getD_cons_succ, List.set_cons_zero, List.set_cons_succ]
   · simp only [lo52, hi52, pI]
     omega
@@ -159,8 +159,8 @@ theorem red4 (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
     ∃ m u1 u2 u3 u4 u5, 0 ≤ m ∧ m < 2 ^ 52 ∧ redI [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9] 4 = [t0, t1, t2, t3, t4, u1, u2, u3, u4, u5] ∧
       (u1 + u2 * 2 ^ 52 + u3 * 2 ^ 104 + u4 * 2 ^ 156 + u5 * 2 ^ 208) * 2 ^ 52 = t4 + t5 * 2 ^ 52 + t6 * 2 ^ 104 + t7 * 2 ^ 156 + t8 * 2 ^ 208 + t9 * 2 ^ 260 + m * pI := by
   refine ⟨t4 % 2 ^ 52, t5 + t4 / 2 ^ 52 + t4 * 2 ^ 56 % 2 ^ 64 / 2 ^ 12, t6 + t4 % 2 ^ 52 / 2 ^ 8,
-    t7 + lo52 (t4 % 2 ^ 52) (2 ^ 36), t8 + hi52 (t4 % 2 ^ 52) (2 ^ 36) + lo52 (t4 % 2 ^ 52) (2 ^ 48 - 2 ^ 16),
-    t9 + hi52 (t4 % 2 ^ 52) (2 ^ 48 - 2 ^ 16), Int.emod_nonneg _ (by decide), Int.emod_lt_of_pos _ (by decide), ?_, ?_⟩
+    t7 + lo52 t4 (2 ^ 36), t8 + hi52 t4 (2 ^ 36) + lo52 t4 (2 ^ 48 - 2 ^ 16),
+    t9 + hi52 t4 (2 ^ 48 - 2 ^ 16), Int.emod_nonneg _ (by decide), Int.emod_lt_of_pos _ (by decide), ?_, ?_⟩
   · simp only [redI, List.getD_cons_zero, List.getD_cons_succ, List.set_cons_zero, List.set_cons_succ]
   · simp only [lo52, hi52, pI]
     omega
@@ -183,27 +183,27 @@ theorem reduceI_val (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
 /-- The columns of a product, as integers. -/
 def mulColsI (a0 a1 a2 a3 a4 b0 b1 b2 b3 b4 : Int) : List Int :=
   [0 + lo52 a0 b0,
-    ((0 + lo52 a0 b1) + lo52 a1 b0) + (0 + hi52 a0 b0),
-    (((0 + lo52 a0 b2) + lo52 a1 b1) + lo52 a2 b0) + ((0 + hi52 a0 b1) + hi52 a1 b0),
-    ((((0 + lo52 a0 b3) + lo52 a1 b2) + lo52 a2 b1) + lo52 a3 b0) + (((0 + hi52 a0 b2) + hi52 a1 b1) + hi52 a2 b0),
-    (((((0 + lo52 a0 b4) + lo52 a1 b3) + lo52 a2 b2) + lo52 a3 b1) + lo52 a4 b0) + ((((0 + hi52 a0 b3) + hi52 a1 b2) + hi52 a2 b1) + hi52 a3 b0),
-    ((((0 + lo52 a1 b4) + lo52 a2 b3) + lo52 a3 b2) + lo52 a4 b1) + (((((0 + hi52 a0 b4) + hi52 a1 b3) + hi52 a2 b2) + hi52 a3 b1) + hi52 a4 b0),
-    (((0 + lo52 a2 b4) + lo52 a3 b3) + lo52 a4 b2) + ((((0 + hi52 a1 b4) + hi52 a2 b3) + hi52 a3 b2) + hi52 a4 b1),
-    ((0 + lo52 a3 b4) + lo52 a4 b3) + (((0 + hi52 a2 b4) + hi52 a3 b3) + hi52 a4 b2),
-    (0 + lo52 a4 b4) + ((0 + hi52 a3 b4) + hi52 a4 b3),
+    ((0 + hi52 a0 b0) + lo52 a1 b0) + lo52 a0 b1,
+    (((0 + hi52 a1 b0) + lo52 a1 b1) + lo52 a0 b2) + ((0 + hi52 a0 b1) + lo52 a2 b0),
+    ((((0 + hi52 a1 b1) + lo52 a2 b1) + lo52 a0 b3) + ((0 + hi52 a2 b0) + lo52 a1 b2)) + ((0 + hi52 a0 b2) + lo52 a3 b0),
+    ((((0 + hi52 a2 b1) + hi52 a3 b0) + lo52 a1 b3) + (((0 + hi52 a1 b2) + hi52 a0 b3) + lo52 a4 b0)) + (((0 + lo52 a2 b2) + lo52 a3 b1) + lo52 a0 b4),
+    ((((0 + hi52 a2 b2) + lo52 a3 b2) + hi52 a0 b4) + (((0 + hi52 a3 b1) + lo52 a2 b3) + lo52 a4 b1)) + (((0 + hi52 a1 b3) + hi52 a4 b0) + lo52 a1 b4),
+    ((((0 + hi52 a3 b2) + hi52 a4 b1) + lo52 a2 b4) + ((0 + hi52 a2 b3) + hi52 a1 b4)) + ((0 + lo52 a3 b3) + lo52 a4 b2),
+    (((0 + hi52 a3 b3) + hi52 a2 b4) + lo52 a3 b4) + ((0 + hi52 a4 b2) + lo52 a4 b3),
+    ((0 + hi52 a4 b3) + hi52 a3 b4) + lo52 a4 b4,
     0 + hi52 a4 b4]
 
 /-- The columns of a square, as integers. -/
 def sqrColsI (a0 a1 a2 a3 a4 : Int) : List Int :=
   [0 + lo52 a0 a0,
-    (0 + lo52 a0 a1) + (0 + lo52 a0 a1) + hi52 a0 a0,
-    ((0 + lo52 a0 a2) + hi52 a0 a1) + ((0 + lo52 a0 a2) + hi52 a0 a1) + lo52 a1 a1,
-    (((0 + lo52 a0 a3) + lo52 a1 a2) + hi52 a0 a2) + (((0 + lo52 a0 a3) + lo52 a1 a2) + hi52 a0 a2) + hi52 a1 a1,
-    ((((0 + lo52 a0 a4) + lo52 a1 a3) + hi52 a0 a3) + hi52 a1 a2) + ((((0 + lo52 a0 a4) + lo52 a1 a3) + hi52 a0 a3) + hi52 a1 a2) + lo52 a2 a2,
-    ((((0 + lo52 a1 a4) + lo52 a2 a3) + hi52 a0 a4) + hi52 a1 a3) + ((((0 + lo52 a1 a4) + lo52 a2 a3) + hi52 a0 a4) + hi52 a1 a3) + hi52 a2 a2,
-    (((0 + lo52 a2 a4) + hi52 a1 a4) + hi52 a2 a3) + (((0 + lo52 a2 a4) + hi52 a1 a4) + hi52 a2 a3) + lo52 a3 a3,
-    ((0 + lo52 a3 a4) + hi52 a2 a4) + ((0 + lo52 a3 a4) + hi52 a2 a4) + hi52 a3 a3,
-    (0 + hi52 a3 a4) + (0 + hi52 a3 a4) + lo52 a4 a4,
+    ((0 + lo52 a0 a1) + (0 + lo52 a0 a1)) + hi52 a0 a0,
+    (((0 + hi52 a0 a1) + lo52 a0 a2) + ((0 + hi52 a0 a1) + lo52 a0 a2)) + lo52 a1 a1,
+    ((((0 + hi52 a0 a2) + lo52 a1 a2) + lo52 a0 a3) + (((0 + hi52 a0 a2) + lo52 a1 a2) + lo52 a0 a3)) + hi52 a1 a1,
+    ((((0 + hi52 a1 a2) + lo52 a1 a3) + ((0 + hi52 a0 a3) + lo52 a0 a4)) + (((0 + hi52 a1 a2) + lo52 a1 a3) + ((0 + hi52 a0 a3) + lo52 a0 a4))) + lo52 a2 a2,
+    ((((0 + hi52 a1 a3) + hi52 a0 a4) + ((0 + lo52 a2 a3) + lo52 a1 a4)) + (((0 + hi52 a1 a3) + hi52 a0 a4) + ((0 + lo52 a2 a3) + lo52 a1 a4))) + hi52 a2 a2,
+    ((((0 + hi52 a2 a3) + hi52 a1 a4) + lo52 a2 a4) + (((0 + hi52 a2 a3) + hi52 a1 a4) + lo52 a2 a4)) + lo52 a3 a3,
+    (((0 + hi52 a2 a4) + lo52 a3 a4) + ((0 + hi52 a2 a4) + lo52 a3 a4)) + hi52 a3 a3,
+    ((0 + hi52 a3 a4) + (0 + hi52 a3 a4)) + lo52 a4 a4,
     0 + hi52 a4 a4]
 
 /-- The number the ten columns of a list stand for. -/

@@ -136,7 +136,8 @@ def norm (o : Ops m α) (v : F5 α) : m (F5 α) := do
   let v4 ← o.add v4 c
   pure ⟨v0, v1, v2, v3, v4⟩
 
-/-- A step of the reduction, at column `i` of the columns `t` (`d` stands for a missing one). -/
+/-- A step of the reduction, at column `i` of the columns `t` (`d` stands for a missing one): the
+products are of the low 52 bits of the column. -/
 def redStep (o : Ops m α) (d : α) (t : List α) (i : Nat) : m (List α) := do
   let ti := t.getD i d
   let mm ← o.andc ti kMask
@@ -149,12 +150,12 @@ def redStep (o : Ops m α) (d : α) (t : List α) (i : Nat) : m (List α) := do
   let y ← o.srl mm 8
   let y ← o.add (t.getD (i + 2) d) y
   let t := t.set (i + 2) y
-  let z ← o.maddc false (some (t.getD (i + 3) d)) mm k36
+  let z ← o.maddc false (some (t.getD (i + 3) d)) ti k36
   let t := t.set (i + 3) z
-  let w ← o.maddc true (some (t.getD (i + 4) d)) mm k36
-  let w ← o.maddc false (some w) mm kP4
+  let w ← o.maddc true (some (t.getD (i + 4) d)) ti k36
+  let w ← o.maddc false (some w) ti kP4
   let t := t.set (i + 4) w
-  let v ← o.maddc true (some (t.getD (i + 5) d)) mm kP4
+  let v ← o.maddc true (some (t.getD (i + 5) d)) ti kP4
   pure (t.set (i + 5) v)
 
 /-- The reduction of ten columns: the columns 5 to 9 after five steps. -/
@@ -166,49 +167,62 @@ def reduce (o : Ops m α) (d : α) (t : List α) : m (F5 α) := do
   let t ← redStep o d t 4
   pure ⟨t.getD 5 d, t.getD 6 d, t.getD 7 d, t.getD 8 d, t.getD 9 d⟩
 
-/-- The ten columns of the products of the limbs of `a` and `b`. -/
-def mulCols (o : Ops m α) (a b : F5 α) : m (List α) := do
-  let none10 : List (Option α) := List.replicate 10 none
-  let (lo, hi) ← (List.range 5).foldlM (fun st i =>
-    (List.range 5).foldlM (fun (st : List (Option α) × List (Option α)) j => do
-      let l ← o.madd false (st.1.getD (i + j) none) (a.get i) (b.get j)
-      let h ← o.madd true (st.2.getD (i + j + 1) none) (a.get i) (b.get j)
-      pure (st.1.set (i + j) (some l), st.2.set (i + j + 1) (some h))) st) (none10, none10)
-  (List.range 10).mapM fun k =>
-    match lo.getD k none, hi.getD k none with
-    | some x, some y => o.add x y
-    | some x, none => pure x
-    | none, some y => pure y
-    | none, none => pure a.l0
+/-- A half (the high one if `h`) of the product of the limbs `i` of one operand and `j` of the other. -/
+structure Half where
+  h : Bool
+  i : Nat
+  j : Nat
+
+/-- `t` in `ts`, kept in the order of the later limb of each: limb `i` of a carried value is ready
+after limb `i - 1`. -/
+def Half.ins (t : Half) : List Half → List Half
+  | [] => [t]
+  | u :: us => if max t.i t.j < max u.i u.j then t :: u :: us else u :: t.ins us
+
+/-- `xs` dealt into `n` lists, in turn. -/
+def deal {β : Type} (n : Nat) (xs : List β) : List (List β) :=
+  (List.range n).map fun r => (xs.zipIdx.filter fun p => p.2 % n = r).map (·.1)
+
+/-- The sum of the halves `ts` of products of limbs of `a` and `b` (none if there is none): the
+halves whose limbs are ready first are added first, in chains of three at most, which are then added. -/
+def colSum (o : Ops m α) (a b : F5 α) (ts : List Half) : m (Option α) := do
+  let ts := ts.foldr Half.ins []
+  let accs ← (deal ((ts.length + 2) / 3) ts).mapM fun g =>
+    g.foldlM (fun (acc : Option α) (t : Half) => do
+      let x ← o.madd t.h acc (a.get t.i) (b.get t.j)
+      pure (some x)) none
+  accs.foldlM (fun (s : Option α) (x : Option α) =>
+    match s, x with
+    | some s, some x => do let y ← o.add s x; pure (some y)
+    | none, x => pure x
+    | s, none => pure s) none
+
+/-- The ten columns of the products of the limbs of `a` and `b`: column `k` has the low halves of
+those of limbs `i` and `k - i`, and the high halves of those of limbs `i` and `k - 1 - i`. -/
+def mulCols (o : Ops m α) (a b : F5 α) : m (List α) :=
+  (List.range 10).mapM fun k => do
+    let lo := ((List.range 5).filter fun i => i ≤ k ∧ k - i ≤ 4).map fun i => Half.mk false i (k - i)
+    let hi := ((List.range 5).filter fun i => i + 1 ≤ k ∧ k - 1 - i ≤ 4).map fun i => Half.mk true i (k - 1 - i)
+    let x ← colSum o a b (lo ++ hi)
+    pure (x.getD a.l0)
 
 /-- The Montgomery product of the lanes of `a` and `b`. -/
 def mulCore (o : Ops m α) (a b : F5 α) : m (F5 α) := do
   let t ← mulCols o a b
   reduce o a.l0 t
 
-/-- The ten columns of the square of `a`: the products of two different limbs once, doubled. -/
-def sqrCols (o : Ops m α) (a : F5 α) : m (List α) := do
-  let none9 : List (Option α) := List.replicate 9 none
-  -- column `k` of the products `a_i a_j`, `i < j`: the low halves of those with
-  -- `i + j = k`, then the high halves of those with `i + j + 1 = k`
-  let cr ← (List.range' 1 7).foldlM (fun (cr : List (Option α)) k => do
-    let cr ← (List.range 5).foldlM (fun (cr : List (Option α)) i =>
-      if i < k - i ∧ k - i ≤ 4 ∧ i ≤ k then do
-        let x ← o.madd false (cr.getD k none) (a.get i) (a.get (k - i))
-        pure (cr.set k (some x))
-      else pure cr) cr
-    (List.range 5).foldlM (fun (cr : List (Option α)) i =>
-      if i < k - 1 - i ∧ k - 1 - i ≤ 4 ∧ i + 1 ≤ k then do
-        let x ← o.madd true (cr.getD k none) (a.get i) (a.get (k - 1 - i))
-        pure (cr.set k (some x))
-      else pure cr) cr) none9
-  let c8 ← o.madd true none a.l3 a.l4
-  let cr := cr.set 8 (some c8)
+/-- The ten columns of the square of `a`: the products of two different limbs once, doubled, then
+the square of a limb. -/
+def sqrCols (o : Ops m α) (a : F5 α) : m (List α) :=
   (List.range 10).mapM fun k => do
-    let x ← match cr.getD k none with
+    let lo := ((List.range 5).filter fun i => i < k - i ∧ k - i ≤ 4).map fun i => Half.mk false i (k - i)
+    let hi := ((List.range 5).filter fun i => i + 1 ≤ k ∧ i < k - 1 - i ∧ k - 1 - i ≤ 4).map fun i =>
+      Half.mk true i (k - 1 - i)
+    let cr ← colSum o a a (lo ++ hi)
+    let cr ← match cr with
       | some c => do let y ← o.add c c; pure (some y)
       | none => pure none
-    o.madd (k % 2 == 1) x (a.get (k / 2)) (a.get (k / 2))
+    o.madd (k % 2 == 1) cr (a.get (k / 2)) (a.get (k / 2))
 
 /-- The Montgomery square of the lanes of `a`. -/
 def sqrCore (o : Ops m α) (a : F5 α) : m (F5 α) := do
