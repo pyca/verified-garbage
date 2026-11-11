@@ -25,6 +25,10 @@ def variant : Proof.Rsa.Arm.CrtImpl where
   code := CrtFn.code
   verified := crt_verified
   stack := by decide +kernel
+  crtPName := "vg_rsa_private_crt_precomputed"
+  crtP := CrtFn.codeGiven baselineWindowKernel.code
+  crtPVerified := crt_verifiedP
+  crtPStack := by decide +kernel
   pcName := Spec.Rsa.publicPrecomputeApi.name
   pc := PcFn.codeWith normalizedPublicPrecomputeKernel.code
   pcVerified := precompute_verified (kernel := normalizedPublicPrecomputeKernel)

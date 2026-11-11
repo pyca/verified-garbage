@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgBody
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgCall
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgBase
@@ -32,7 +33,7 @@ theorem spec_sp {s : State} (h : spec.pre s) : stackBytes ≤ s.sp.toNat := by
 
 /-- The code, calling `vg_rsa_private_checked` over `v`. -/
 abbrev signCode (v : Proof.Rsa.Arm.CrtImpl) : Prog isa :=
-  code (Proof.Rsa.Arm.privName v) (Proof.Rsa.Arm.privCode v)
+  code false (privN false v) (privC false v)
 
 theorem code_ok (v : Proof.Rsa.Arm.CrtImpl) {s : State} (h : spec.pre s) :
     WP isa (signCode v) s fun t => abiPreserved s t ∧ spec.post s t := by
@@ -81,7 +82,7 @@ theorem ep_eq {s₁ s₂ : State} (hp : spec.pub s₁ s₂) : ep s₁ = ep s₂ 
     argRegs, reduceClassify, Loc.val] at hp
   obtain ⟨hsp, hl, h0, h1, h2, h3, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16⟩ := hp
   obtain ⟨hn, he⟩ := List.append_inj (map_toNat_inj hl) (by simp [bytesAt_length, h3])
-  simp only [ep]
+  simp only [ep, Bool.false_eq_true, ↓reduceIte]
   rw [hsp, h0, h2, h3, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a11, a13, a15, a16]
   rw [h2, h3] at hn
   rw [a0, a1] at he

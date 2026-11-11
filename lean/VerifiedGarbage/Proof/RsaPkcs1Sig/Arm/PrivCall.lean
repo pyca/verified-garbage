@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
 import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Bignum.Arm.PublicStack
 public import VerifiedGarbage.Proof.Rsa.Contract
+import VerifiedGarbage.Proof.Rsa.Arm.PrivPrecomputed
 
 /-!
 # The ARMv7 PKCS #1 v1.5 functions: their callee `vg_rsa_private_checked`
@@ -27,7 +28,8 @@ theorem privCode_stack (v : Proof.Rsa.Arm.CrtImpl) :
   have := v.stack
   have := v.pcStack
   have := v.pdStack
-  simp only [Proof.Rsa.Arm.privCode, Impl.Rsa.Arm.PrivChecked.code, Impl.Rsa.Arm.PrivChecked.body,
+  simp only [Proof.Rsa.Arm.privCode, Impl.Rsa.Arm.PrivChecked.code, Impl.Rsa.Arm.PrivChecked.codeWith, Impl.Rsa.Arm.PrivChecked.body,
+    Impl.Rsa.Arm.PrivChecked.bodyWith, Impl.Rsa.Arm.PrivChecked.checkWith,
     Impl.Rsa.Arm.PrivChecked.check, Impl.Rsa.Arm.PrivChecked.tail, Impl.Rsa.Arm.PrivChecked.releaseTail,
     Impl.Rsa.Arm.PrivChecked.release, Impl.Bignum.Arm.compareBytes, FrameStack.armStack, List.length_cons,
     List.length_nil, Impl.Rsa.Arm.PrivChecked.frameBytes, Proof.Rsa.Arm.stackBytes]
@@ -162,6 +164,121 @@ theorem priv_post {s t : State} (h : PrivArgs s out n e inp p q dp dq qinv scr K
   have ql32 : ql < 2 ^ 32 := by have := h.qlK; omega_arith
   sig_post [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs,
     reduceClassify, Loc.val] at hp
+  simp only [stackArg_call, h.r0, h.r2, h.r3, h.a0, h.a1, h.a2, h.a4, h.a5, h.a6, h.a7, h.a8,
+    h.a10, h.a12, BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32, Nat.mod_eq_of_lt el32,
+    Nat.mod_eq_of_lt pl32, Nat.mod_eq_of_lt ql32] at hp
+  rw [BitVec.setWidth_append_eq_right] at hp
+  exact hp
+
+
+/-! ## `vg_rsa_private_checked_precomputed` -/
+
+theorem privCodeP_stack (v : Proof.Rsa.Arm.CrtImpl) :
+    FrameStack.armStack (Proof.Rsa.Arm.privCodeP v) ≤ Proof.Rsa.Arm.stackBytes :=
+  Proof.Rsa.Arm.privCodeP_stack v
+
+/-- The callee's buffers, given `pre` too. -/
+abbrev privRdP (sp n e inp p q dp dq qinv pre : BitVec 32) (K el pl ql prl : Nat) : List Region :=
+  [⟨State.addr n, K⟩, ⟨State.addr e, el⟩, ⟨State.addr inp, K⟩, ⟨State.addr p, pl⟩, ⟨State.addr q, ql⟩,
+    ⟨State.addr dp, pl⟩, ⟨State.addr dq, ql⟩, ⟨State.addr qinv, pl⟩, ⟨State.addr pre, prl * 8⟩,
+    ⟨State.addr sp, 72⟩]
+
+theorem priv_preP {sp pre : BitVec 32} {prl : Nat} (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
+    (a16 : stackArg s 16 = pre) (a17 : stackArg s 17 = BitVec.ofNat 32 prl) (prl32 : prl < 2 ^ 32)
+    (hspE : s.sp = sp)
+    (hsp : 3440 ≤ sp.toNat) (hsa : sp.toNat + 72 ≤ 2 ^ 32)
+    (dW : ∀ w ∈ privWr out scr K sl, ∀ r ∈ privRdP sp n e inp p q dp dq qinv pre K el pl ql prl, w.Disjoint r)
+    (dWW : Region.Disjoint ⟨State.addr out, K⟩ ⟨State.addr scr, sl * 8⟩)
+    (dLow : ∀ r ∈ privWr out scr K sl ++ privRdP sp n e inp p q dp dq qinv pre K el pl ql prl,
+      Region.Disjoint ⟨State.addr sp - BitVec.ofNat 64 3440, 3440⟩ r)
+    (fit : ∀ r ∈ privBufs out n e inp p q dp dq qinv scr K el pl ql sl ++ [⟨State.addr pre, prl * 8⟩],
+      r.base.toNat + r.len ≤ 2 ^ 32)
+    (len : prl = Spec.Rsa.privatePrecomputedWords K pl ql)
+    (key : Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt s.mem (State.addr n) K)
+      (Spec.Rsa.bytesAt s.mem (State.addr p) pl) (Spec.Rsa.bytesAt s.mem (State.addr q) ql) =
+        some (Spec.Rsa.wordsAt s.mem (State.addr pre) prl)) :
+    (Proof.Rsa.privateCheckedPrecomputedContract abi Proof.Rsa.Arm.stackBytes).pre
+      (s.callEntry.withRegions (privRdP sp n e inp p q dp dq qinv pre K el pl ql prl) (privWr out scr K sl)) := by
+  subst hspE
+  have k32 := h.k32
+  have el32 : el < 2 ^ 32 := by have := h.elK; omega_arith
+  have pl32 : pl < 2 ^ 32 := by have := h.plK; omega_arith
+  have ql32 : ql < 2 ^ 32 := by have := h.qlK; omega_arith
+  sig_pre [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
+    Proof.Rsa.privateCheckedSig, abi, argRegs, reduceClassify, Loc.val]
+  simp only [stackArg_call, stackArgAddr_call, h.r0, h.r1, h.r2, h.r3, h.a0, h.a1, h.a2, h.a3, h.a4, h.a5,
+    h.a6, h.a7, h.a8, h.a9, h.a10, h.a11, h.a12, h.a13, h.a14, h.a15, a16, a17, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt k32, Nat.mod_eq_of_lt el32, Nat.mod_eq_of_lt pl32, Nat.mod_eq_of_lt ql32,
+    Nat.mod_eq_of_lt h.sl32, Nat.mod_eq_of_lt prl32]
+  have a0 : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
+  rw [a0]
+  have wo := fun {r : Region} (hr : r ∈ privRdP s.sp n e inp p q dp dq qinv pre K el pl ql prl) =>
+    dW _ (List.mem_cons_self ..) r hr
+  have ws := fun {r : Region} (hr : r ∈ privRdP s.sp n e inp p q dp dq qinv pre K el pl ql prl) =>
+    (dW _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)) r hr).symm
+  have lo := fun {r : Region}
+      (hr : r ∈ privWr out scr K sl ++ privRdP s.sp n e inp p q dp dq qinv pre K el pl ql prl) => dLow r hr
+  simp only [privBufs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Proof.X25519.Arm.addr_toNat] at fit
+  obtain ⟨fO, fN, fE, fI, fP, fQ, fDP, fDQ, fQI, fS, fPre⟩ := fit
+  exact ⟨hsp, hsa, rfl, rfl, wo (by simp [State.addr]), wo (by simp [State.addr]), wo (by simp [State.addr]),
+    wo (by simp [State.addr]), wo (by simp [State.addr]), wo (by simp [State.addr]),
+    wo (by simp [State.addr]), wo (by simp [State.addr]), dWW, wo (by simp [State.addr]), wo (by simp [State.addr]),
+    ws (by simp [State.addr]), ws (by simp [State.addr]), ws (by simp [State.addr]), ws (by simp [State.addr]),
+    ws (by simp [State.addr]), ws (by simp [State.addr]), ws (by simp [State.addr]), ws (by simp [State.addr]),
+    (ws (by simp [State.addr])).symm, (ws (by simp [State.addr])).symm,
+    lo (by simp [State.addr]), lo (by simp [State.addr]), lo (by simp [State.addr]), lo (by simp [State.addr]),
+    lo (by simp [State.addr]), lo (by simp [State.addr]), lo (by simp [State.addr]), lo (by simp [State.addr]),
+    lo (by simp [State.addr]), lo (by simp [State.addr]), lo (by simp [State.addr]), lo (by simp [State.addr]),
+    fO, fN, fE, fI, fP, fQ, fDP, fDQ, fQI, fS, fPre, h.kv, trivial, trivial, h.el1, h.elK,
+    h.pl1, h.plK, h.ql1, h.qlK, trivial, trivial, trivial, h.slK, len, key⟩
+
+theorem priv_pubP {s₁ s₂ : State} {pre : BitVec 32} {prl : Nat}
+    (h₁ : PrivArgs s₁ out n e inp p q dp dq qinv scr K el pl ql sl)
+    (h₂ : PrivArgs s₂ out n e inp p q dp dq qinv scr K el pl ql sl) (hsp : s₁.sp = s₂.sp)
+    (p16 : stackArg s₁ 16 = pre) (q16 : stackArg s₂ 16 = pre)
+    (p17 : stackArg s₁ 17 = BitVec.ofNat 32 prl) (q17 : stackArg s₂ 17 = BitVec.ofNat 32 prl)
+    (hn : Spec.Rsa.bytesAt s₁.mem (State.addr n) K = Spec.Rsa.bytesAt s₂.mem (State.addr n) K)
+    (he : Spec.Rsa.bytesAt s₁.mem (State.addr e) el = Spec.Rsa.bytesAt s₂.mem (State.addr e) el)
+    (hl : Spec.Rsa.privatePrecomputedLeak s₁.mem (State.addr pre) K =
+      Spec.Rsa.privatePrecomputedLeak s₂.mem (State.addr pre) K)
+    (rd wr : List Region) :
+    (Proof.Rsa.privateCheckedPrecomputedContract abi Proof.Rsa.Arm.stackBytes).pub (s₁.callEntry.withRegions rd wr)
+      (s₂.callEntry.withRegions rd wr) := by
+  have k32 := h₁.k32
+  have el32 : el < 2 ^ 32 := by have := h₁.elK; omega_arith
+  sig_pub [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
+    Proof.Rsa.privateCheckedSig, abi, argRegs, reduceClassify, Loc.val]
+  simp only [stackArg_call, h₁.r0, h₁.r1, h₁.r2, h₁.r3, h₁.a0, h₁.a1, h₁.a2, h₁.a3, h₁.a4, h₁.a5, h₁.a6, h₁.a7,
+    h₁.a8, h₁.a9, h₁.a10, h₁.a11, h₁.a12, h₁.a13, h₁.a14, h₁.a15, p16, p17,
+    h₂.r0, h₂.r1, h₂.r2, h₂.r3, h₂.a0, h₂.a1, h₂.a2, h₂.a3, h₂.a4, h₂.a5, h₂.a6, h₂.a7,
+    h₂.a8, h₂.a9, h₂.a10, h₂.a11, h₂.a12, h₂.a13, h₂.a14, h₂.a15, q16, q17,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32, Nat.mod_eq_of_lt el32]
+  have hn' : Spec.Rsa.bytesAt s₁.mem (n.setWidth 64) K = Spec.Rsa.bytesAt s₂.mem (n.setWidth 64) K := hn
+  have he' : Spec.Rsa.bytesAt s₁.mem (e.setWidth 64) el = Spec.Rsa.bytesAt s₂.mem (e.setWidth 64) el := he
+  have hl' : Spec.Rsa.privatePrecomputedLeak s₁.mem (pre.setWidth 64) K =
+      Spec.Rsa.privatePrecomputedLeak s₂.mem (pre.setWidth 64) K := hl
+  rw [hn', he', hl']
+  exact ⟨hsp, rfl, trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial,
+    trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+/-- The call's result, given `pre` too. -/
+theorem priv_postP {s t : State} (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
+    {rd wr : List Region}
+    (hp : (Proof.Rsa.privateCheckedPrecomputedContract abi Proof.Rsa.Arm.stackBytes).post
+      (s.callEntry.withRegions rd wr) (t.withRegions rd wr)) :
+    Spec.Rsa.writtenOutcome t.mem (State.addr out) K (t.gpr .r0)
+      (Spec.Rsa.privateChecked (Spec.Rsa.bytesAt s.mem (State.addr n) K)
+        (Spec.Rsa.bytesAt s.mem (State.addr e) el) (Spec.Rsa.bytesAt s.mem (State.addr inp) K)
+        (Spec.Rsa.bytesAt s.mem (State.addr p) pl) (Spec.Rsa.bytesAt s.mem (State.addr q) ql)
+        (Spec.Rsa.bytesAt s.mem (State.addr dp) pl) (Spec.Rsa.bytesAt s.mem (State.addr dq) ql)
+        (Spec.Rsa.bytesAt s.mem (State.addr qinv) pl)) := by
+  have k32 := h.k32
+  have el32 : el < 2 ^ 32 := by have := h.elK; omega_arith
+  have pl32 : pl < 2 ^ 32 := by have := h.plK; omega_arith
+  have ql32 : ql < 2 ^ 32 := by have := h.qlK; omega_arith
+  sig_post [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
+    Proof.Rsa.privateCheckedSig, abi, argRegs, reduceClassify, Loc.val] at hp
   simp only [stackArg_call, h.r0, h.r2, h.r3, h.a0, h.a1, h.a2, h.a4, h.a5, h.a6, h.a7, h.a8,
     h.a10, h.a12, BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32, Nat.mod_eq_of_lt el32,
     Nat.mod_eq_of_lt pl32, Nat.mod_eq_of_lt ql32] at hp

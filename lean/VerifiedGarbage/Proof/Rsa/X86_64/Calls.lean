@@ -70,4 +70,17 @@ theorem crt_call_ct {c : Prog isa} (hc : c.InlineOk = true)
     ConstantTime isa crtContract.clear.pre crtContract.pub c :=
   ct_of_inline hc (fun s h => let ⟨t, s', e, _⟩ := hcor s h; ⟨t, s', e⟩) (fun _ _ h => h.1 .rsp (by simp)) hct
 
+/-! ## `vg_rsa_private_crt_precomputed` -/
+
+theorem crtP_call_ok {c : Prog isa} (hc : c.InlineOk = true)
+    (hcor : ∀ s, crtContractP.pre s → ∃ t s', Exec isa c.inline s t s' ∧ abiPreserved s s' ∧ crtContractP.post s s') :
+    ∀ s, crtContractP.clear.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ crtContractP.post s s' :=
+  ok_of_inline hc hcor crtP_patch
+
+theorem crtP_call_ct {c : Prog isa} (hc : c.InlineOk = true)
+    (hcor : ∀ s, crtContractP.pre s → ∃ t s', Exec isa c.inline s t s' ∧ abiPreserved s s' ∧ crtContractP.post s s')
+    (hct : ConstantTime isa crtContractP.pre crtContractP.pub c.inline) :
+    ConstantTime isa crtContractP.clear.pre crtContractP.pub c :=
+  ct_of_inline hc (fun s h => let ⟨t, s', e, _⟩ := hcor s h; ⟨t, s', e⟩) (fun _ _ h => h.1.1 .rsp (by simp)) hct
+
 end VG.Proof.Rsa.X86_64
