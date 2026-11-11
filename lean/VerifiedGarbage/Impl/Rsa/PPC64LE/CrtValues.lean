@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.Div
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.KeyArrays
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.InvBatch
+public import VerifiedGarbage.Impl.Rsa.PPC64LE.MontKey
 
 /-!
 # `vg_rsa_crt_values` on PPC64LE
@@ -15,9 +16,10 @@ them (`p` is the 0th). As on ARMv7 (`Impl/Rsa/Arm/CrtValues.lean`):
 `n` is checked as `vg_rsa_public_precompute` checks it (it is public, and the
 only branch on data). Then, with `w = ⌈n_len / 4⌉` digits of 32 bits:
 
-* `n`, `p`, `q` and `d` are read into arrays, and `n` divided by `p`
-  (`Div.lean`, `divP`: at the divisor's width): `p q = n` is `p` odd, `n / p = q` and `n mod p = 0` (as `n`
-  is odd).
+* `n`, `p`, `q` and `d` are read into arrays: `p q = n` is `p` odd,
+  `p q ≡ n (mod 2^(32 w))` (`MontKey.mulLo`) and `n ≡ 0 (mod p)`, as
+  Montgomery's `n 2^(-32 w) mod (p | 1)` (`MontKey.montMul`) is 0
+  (`Proof/Rsa/MontCheckMath.lean`'s `pq_eq_iff`).
 * `qInv` is the inverse of `q` modulo `p | 1` (`InvBatch.lean`), which exists
   if the gcd it computes is 1, at the primes' width: `⌈max(p_len, q_len) / 4⌉`
   digits.
@@ -158,11 +160,13 @@ def nCalc : List Instr :=
 digits in `r11`. -/
 def invSetup : List (Prog isa) := [copy 0 aQ, copy aM aP, .block (orOne aM ++ setOne aOne ++ nCalc)]
 
-/-- `p` odd, `n` divided by `p`, the checks of `p q = n` and of the inverse,
-`qInv` computed, and `d` divided by `p - 1` and by `q - 1`. -/
+/-- `p` odd, `p q mod 2^(32 w)` compared with `n`, Montgomery's `n` modulo
+`p | 1` (with 1 in `aDR3`) compared with 0, the check of the inverse, `qInv`
+computed, and `d` divided by `p - 1` and by `q - 1`. -/
 def arith : Prog isa := seqs ([
-  copy aDD aP, .block (bitOf sPodd aP ++ [.addi .r12 .r20 0]), divP aDQ aDR aDD aDT,
-  eqS sE1 aDQ aQ, eqS sE2 aDR aZero] ++ invSetup ++ [
+  .block (bitOf sPodd aP), MontKey.mulLo aDR aP aQ .r20, eqS sE1 aDR aDQ, copy aDD aP,
+  .block (orOne aDD ++ setOne aDR3), MontKey.montMul aDT aDQ aDR3 aDD aDR2 .r20 MontKey.cntW,
+  eqS sE2 aDT aZero] ++ invSetup ++ [
   VG.Impl.Rsa.PPC64LE.InvBatch.inverse, eqS sE3 1 aOne,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
   copy aDQ aD, copy aDD aP, .block (clrLow aDD ++ [.addi .r12 .r20 0]), divP aDQ aDR2 aDD aDT,

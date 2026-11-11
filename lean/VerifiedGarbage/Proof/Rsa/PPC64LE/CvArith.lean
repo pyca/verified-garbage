@@ -5,12 +5,14 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithB
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithC
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rsa.MontCheckMath
 
 /-!
 # `vg_rsa_crt_values` on PPC64LE: the arithmetic
 
 `arith_ok`: from `ArInit`, the mask of the checks is `maskOf p q X₁ X₂ V`
-for the quotient and remainder `X₁`, `X₂` of `n` by `p` (when `p > 0`) and
+for the quotient and remainder `X₁`, `X₂` of `n` by `p` (when `p > 0`:
+`partA` checks `p q = n` by products, `MontCheckMath.maskM_iff`) and
 the gcd `V` of `q` and `m = p | 1` (when `m > 1`), with `qInv` in array 3
 and the remainders of `d` by `p - 1` and `q - 1` (with their low bits
 cleared) in `aDR2` and `aDR3`: what `Proof/Rsa/CrtValuesMath.lean`'s
@@ -31,7 +33,7 @@ open VG.Proof.Rsa.CrtValues (maskOf)
 theorem arith_eq : arith = seqs (partA ++ (partB ++ (divD .r20 aP aDR2 ++ divD .r22 aQ aDR3))) := rfl
 
 /-- The arrays and slots `arith` writes. -/
-abbrev arithArrs : List Nat := partAArrs ++ partBArrs ++ [aDR2, aDR3]
+abbrev arithArrs : List Nat := partAArrs ++ partBArrs ++ [aDR2, aDR3, aDQ]
 abbrev arithSlots : List Nat := partASlots ++ partBSlots
 
 /-- The registers `arith` changes. -/
@@ -40,7 +42,7 @@ abbrev arithRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r
 theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B Z w nArr)
     (hi : ArInit s.mem B w Nv P Q Dd) (hw : 10 ≤ w) (h20 : s.gpr .r20 = BitVec.ofNat 64 pL)
     (h22 : s.gpr .r22 = BitVec.ofNat 64 qL) (hpL : 1 ≤ pL) (hqL : 1 ≤ qL) (hpw : pL ≤ 4 * w) (hqw : qL ≤ 4 * w)
-    (hP : P < 2 ^ (8 * pL)) (hQ : Q < 2 ^ (8 * qL)) :
+    (hP : P < 2 ^ (8 * pL)) (hQ : Q < 2 ^ (8 * qL)) (hQN : Q < Nv) :
     WP isa arith s fun t => Ws t B Z w nArr ∧ KeyWorkspace.Keep B w arithArrs arithSlots s.mem t.mem ∧
       (∃ X₁ X₂ V, slot t.mem B sMask = (if maskOf P Q X₁ X₂ V then 1 else 0) ∧
         (0 < P → X₁ = Nv / P ∧ X₂ = Nv % P) ∧
@@ -55,7 +57,7 @@ theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h 
   rw [arith_eq, wp_seqs_append (by unfold partA; exact List.cons_ne_nil _ _)
     (by unfold partB; exact List.cons_ne_nil _ _)]
   have hpw' : pL < 2 ^ 32 := by have := h.wle; omega_arith
-  refine WP.mono (partA_ok h hi h20 hpL hpw' hP) fun t1 ⟨h1, k1, o1, v1, e1, e2, top1, r1⟩ => ?_
+  refine WP.mono (partA_ok h hi h20 hpL hpw hP) fun t1 ⟨h1, k1, o1, e1, b2, hM, top1, r1⟩ => ?_
   have keepA : ∀ j, j < nArr → j ∉ partAArrs → num t1.mem B w j = num s.mem B w j := fun j hj hn =>
     k1.num (fun x hx e => hn (by subst e; exact hx)) (by decide) (fit _ hj)
   rw [wp_seqs_append (by unfold partB; exact List.cons_ne_nil _ _)
@@ -69,7 +71,6 @@ theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h 
     rw [keepA j a f, hi.zero j a b c d e]
   have bo : slot t1.mem B sPodd ≤ 1 := by rw [o1]; omega_arith
   have b1 : slot t1.mem B sE1 ≤ 1 := by rw [e1]; split <;> omega_arith
-  have b2 : slot t1.mem B sE2 ≤ 1 := by rw [e2]; split <;> omega_arith
   refine WP.mono (partB_ok (P := P) (Q := Q) h1 hw (by rw [keepA _ (by decide) (by decide), hi.q])
     (by rw [keepA _ (by decide) (by decide), hi.p]) z1 bo b1 b2 (by rw [r1.gpr _ (by decide), h20])
     (by rw [r1.gpr _ (by decide), h22]) hpL hpw hqw hP hQ) fun t2 ⟨h2, k2, m2, v2, r2⟩ => ?_
@@ -101,14 +102,29 @@ theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h 
     rw [n3 _ (by decide) (by decide), n2 _ (by decide) (by decide), keepA _ (by decide) (by decide), hi.q]
   have d2 : num t2.mem B w aD = Dd := by rw [n2 _ (by decide) (by decide), keepA _ (by decide) (by decide), hi.d]
   have d3 : num t3.mem B w aD = Dd := by rw [n3 _ (by decide) (by decide), d2]
-  refine ⟨h4, ?_, ⟨num t1.mem B w aDQ, num t1.mem B w aDR, num t2.mem B w 1, ?_, v1, fun hm => ?_⟩, ?_, ?_,
+  refine ⟨h4, ?_, ⟨Nv / P, Nv % P, num t2.mem B w 1, ?_, fun _ => ⟨rfl, rfl⟩, fun hm => ?_⟩, ?_, ?_,
     ((r1.trans r2).trans (r3.trans r4)).mono⟩
   · exact k1.mono.trans (k2.mono.trans (k3.mono.trans k4.mono))
-  · rw [KeyWorkspace.Keep.slot k4 (by decide) (by simp), KeyWorkspace.Keep.slot k3 (by decide) (by simp), m2,
-      o1, e1, e2]
-    by_cases a : P % 2 = 1 <;> by_cases b : num t1.mem B w aDQ = Q <;>
-      by_cases c : num t1.mem B w aDR = 0 <;> by_cases d : num t2.mem B w 1 = 1 <;>
-      simp [maskOf, a, b, c, d]
+  · have hqW : Q < 2 ^ (32 * w) := by rw [← hi.q]; exact val32_lt _ _ _ _
+    have hnW : Nv < 2 ^ (32 * w) := by rw [← hi.n]; exact val32_lt _ _ _ _
+    have key := VG.Proof.Rsa.maskM_iff (P := P) (Q := Q) (N := Nv) (L := P * Q % 2 ^ (32 * w))
+      (M := if slot t1.mem B sE2 = 1 then 0 else 1) (V := num t2.mem B w 1) (j := 32 * w) hQN hqW hnW rfl
+      (fun podd p2 => by rw [← hM podd p2]; split <;> simp_all)
+    have iff : (slot t1.mem B sPodd = 1 ∧ slot t1.mem B sE1 = 1 ∧ slot t1.mem B sE2 = 1 ∧
+        num t2.mem B w 1 = 1) ↔ maskOf P Q (Nv / P) (Nv % P) (num t2.mem B w 1) = true := by
+      simp only [maskOf, decide_eq_true_eq]
+      rw [← key, o1, e1]
+      constructor
+      · rintro ⟨a, b, c, d⟩
+        refine ⟨a, ?_, by simp [c], d⟩
+        by_contra hne; simp [hne] at b
+      · rintro ⟨a, b, c, d⟩
+        refine ⟨a, by simp [b], ?_, d⟩
+        by_contra hne; simp [hne] at c
+    rw [KeyWorkspace.Keep.slot k4 (by decide) (by simp), KeyWorkspace.Keep.slot k3 (by decide) (by simp), m2]
+    by_cases hc : maskOf P Q (Nv / P) (Nv % P) (num t2.mem B w 1) = true
+    · rw [ite_eq_left (iff.2 hc), ite_eq_left hc]
+    · rw [ite_eq_right (fun x => hc (iff.1 x)), ite_eq_right hc]
   · obtain ⟨g, dv, lt⟩ := v2 hm
     rw [n4 3 (by decide) (by decide), n3 3 (by decide) (by decide)]
     exact ⟨g, dv, lt⟩
