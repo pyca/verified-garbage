@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.PreparePre
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The ranges a factor's power changes
