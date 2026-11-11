@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPreFront
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseA
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPrePQ
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreFn
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtSetup
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtFront
@@ -18,7 +19,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # An RSA private key's precomputed values on PPC64LE: the checks
 
 `partA_ok`: from the entry, `save`, `args`, `zeroIn`, `setupX` and
-`vg_rsa_private_crt`'s `loadX` and `checks`, with `pre` (its first words
+`vg_rsa_private_crt`'s `loadX` and `checksWith`, with `p q = n` checked at
+the factors' widths (`pqLens`, `checkPQs`: `pqLens_ok`), with `pre` (its first words
 zero) as the input and `qInv`: the mask of `n` valid and `p q = n`
 (`privMask`, `crtMask_zero`) in `r26`, and `p` and `q` (or 3) in `X`'s arrays
 4 and 5 (`A`).
@@ -334,11 +336,22 @@ theorem partA0_ok {s₀ : State} (h : fnContract.pre s₀) {c : Prog isa} {Q : S
     simp only [ofs, cS, cZ] at this ⊢
     omega_arith
 
+/-- Two programs then two more, regrouped. -/
+theorem wp_reassoc3 {a b c d : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa (.seq (.seq a (.seq b c)) d) s Q) : WP isa (.seq a (.seq b (.seq c d))) s Q := by
+  obtain ⟨t, s', hx, hq⟩ := h
+  cases hx with
+  | seq h1 h2 =>
+    cases h1 with
+    | seq ha hbc =>
+      cases hbc with
+      | seq hb hc => exact ⟨_, _, .seq ha (.seq hb (.seq hc h2)), hq⟩
+
 /-- From the entry to the checks. -/
 theorem partA_ok {s₀ : State} (h : fnContract.pre s₀) {c : Prog isa} {Q : State → Prop}
     (hc : ∀ t, A s₀ t → WP isa c t Q) :
     WP isa (.seq (.block (PrivPre.save ++ PrivPre.args)) (.seq PrivPre.zeroIn (.seq (.block setupX)
-      (.seq Crt.loadX (.seq Crt.checks c))))) s₀ Q := by
+      (.seq Crt.loadX (.seq (.block PrivPre.pqLens) (.seq (Crt.checksWith PrivPre.checkPQs) c)))))) s₀ Q := by
   have hpre0 := h
   obtain ⟨hsp, hrd, hwr, dPN, dPP, dPQ, dPS, dPA, dNS, dpS, dqS, dSA, nwPre, nwN, nwP, nwQ, nwS, ⟨hk, hk'⟩,
     hp1, hpk, hq1, hqk, hpl, hsl⟩ := h
@@ -350,7 +363,7 @@ theorem partA_ok {s₀ : State} (h : fnContract.pre s₀) {c : Prog isa} {Q : St
   have e6 : s₀.gpr .r6 = BitVec.ofNat 64 (ck s₀) := (ofNat_toNat64 _).symm
   have e8 : s₀.gpr .r8 = BitVec.ofNat 64 (cpL s₀) := (ofNat_toNat64 _).symm
   have e10 : s₀.gpr .r10 = BitVec.ofNat 64 (cqL s₀) := (ofNat_toNat64 _).symm
-  refine Crt.wp_reassoc2 (WP.seq (WP.mono (Crt.phaseA_ok (Na := s₀.gpr .r5) (Pa := s₀.gpr .r7) (Qa := s₀.gpr .r9)
+  refine wp_reassoc3 (WP.seq (WP.mono (Crt.phaseAWith_ok (pre := PrivPre.pqLens) (pq := PrivPre.checkPQs) (Na := s₀.gpr .r5) (Pa := s₀.gpr .r7) (Qa := s₀.gpr .r9)
     (Ia := s₀.gpr .r3) (QIa := s₀.gpr .r3) (k := ck s₀) (pL := cpL s₀) (qL := cqL s₀)
     X.scr (by have := hP.room; simp only [cwX, cw] at this; omega_arith) hP.k64 hP.k1024
     X.r23 X.r10 X.r21 X.r29 X.r11
@@ -359,7 +372,15 @@ theorem partA_ok {s₀ : State} (h : fnContract.pre s₀) {c : Prog isa} {Q : St
     hP.p1 hP.pk hP.q1 hP.qk
     (by rw [rd0]; exact hP.rN) hP.sN (by rw [rd0]; exact hP.rP) hP.sP (by rw [rd0]; exact hP.rQ) hP.sQ
     (by rw [rd0]; exact hP.rPre) hP.sPre (fun i hi => by rw [rd0]; exact hP.rPre i (by have := hP.pk; omega_arith))
-    (fun i hi => hP.sPre i (by have := hP.pk; omega_arith)))
+    (fun i hi => hP.sPre i (by have := hP.pk; omega_arith))
+    fun s₁ hs₁ h23₁ hd _ _ v4 v5 t1 t6 => pqLens_ok hs₁
+      (by have := hP.room; simp (config := { failIfUnchanged := false }) only [cwX, cw, slot, hdrBytes] at this ⊢
+          omega_arith)
+      (by have := hP.k1024; omega_arith) h23₁ ((hd _ (by decide)).trans (X.hPL.trans e8))
+      ((hd _ (by decide)).trans (X.hQL.trans e10)) hP.p1 hP.q1 (by have := hP.pk; have := hP.k1024; omega_arith)
+      (by have := hP.qk; have := hP.k1024; omega_arith)
+      (by have := hP.pk; have := hP.qk; have := hP.k1024; omega_arith)
+      (VG.Proof.Bignum.bytesAt_length _ _ _) (VG.Proof.Bignum.bytesAt_length _ _ _) v4 v5 t1 t6)
     fun y ⟨⟨t26, _, _, v4, v5, _, O1, _⟩, kT⟩ => ?_))
   have room := hP.room
   simp only [cwX, cw] at room

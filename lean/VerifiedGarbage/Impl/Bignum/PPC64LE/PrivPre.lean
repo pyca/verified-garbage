@@ -14,7 +14,8 @@ each), then `R_p² mod p` (`w_p = max(2, ⌈p_len / 8⌉)` words) and
 otherwise writes zeros and returns 0.
 
 * The checks, in `vg_rsa_private_crt`'s working space `X` with its header
-  (`Crt.lean`), by its own code (`Crt.loadX`, `Crt.checks`), with `pre` as
+  (`Crt.lean`), by its own code (`Crt.loadX`, `Crt.checksWith`) but for
+  `p q = n`, at the factors' widths (`checkPQs`), with `pre` as
   the input and as `qInv`, its first `⌈k / 8⌉` words zeroed first
   (`zeroIn`): the mask `r26` of `n` valid, `0 < n`, `0 < p` and `p q = n`,
   which is that of `n` valid and `p q = n`; `p` and `q` kept under the mask,
@@ -172,13 +173,58 @@ def maskN : Prog isa :=
         .addi .r14 .r14 8])
       (.block [.li .r3 1, .logic .and .r3 .r3 .r26]))
 
+/-! ## `p q = n` at the factors' widths
+
+`vg_rsa_private_crt`'s `Crt.checkPQ` multiplies `p` and `q` at `X`'s width
+`W` (a Montgomery multiplication modulo `2^(64 W) - 1`). Here `p q` is a
+schoolbook product of `p`'s `w_p = ⌈p_len / 8⌉` words by `q`'s
+`w_q = ⌈q_len / 8⌉` (`w_p + w_q ≤ W`, as `p_len, q_len < k`) into array 6,
+zeroed first, then compared with `n` as `checkPQ` compares its product
+(`Crt.pqEq`). The lengths are loaded before the checks (`pqLens`), into
+registers that `Crt.checkN` and `Crt.checkLt` keep. -/
+
+/-- `w_p` into `r5` and `w_q` into `r7`, from the header. -/
+def pqLens : List Instr :=
+  [.load .d .r5 .r23 oPLen, .addi .r5 .r5 7, .lsr .d .r5 .r5 3, .load .d .r7 .r23 oQLen, .addi .r7 .r7 7,
+    .lsr .d .r7 .r7 3]
+
+/-- A row's start: `p_i` (at `r8`) into `r12`, the pointers at the product's
+word `i` (`r9`) and `q`'s word 0, `w_q` words to go (`r16`), and the carry
+`r3 := 0`. -/
+def rowHead : List Instr :=
+  [.load .d .r12 .r8 0, .addi .r14 .r9 0] ++ PublicChecked.base .r15 5 ++ [.addi .r16 .r7 0, .li .r3 0]
+
+/-- A word of a row: `t_j + p_i q_j + c` (`t_j` at `r14`, `q_j` at `r15`,
+the carry `c` in `r3`), its low word to `t_j` and its high word the next
+carry. -/
+def rowWord : List Instr :=
+  [.load .d .r0 .r15 0, .mul .r4 .r0 .r12, .mulhu .r0 .r0 .r12, .load .d .r6 .r14 0, .addc .r4 .r4 .r6,
+    .addze .r0 .r0, .addc .r4 .r4 .r3, .addze .r3 .r0, .store .d .r4 .r14 0, .addi .r14 .r14 8,
+    .addi .r15 .r15 8]
+
+/-- A row's end: the carry into the product's word `i + w_q`, which no row
+has written yet; the next row. -/
+def rowTail : List Instr := [.store .d .r3 .r14 0, .addi .r8 .r8 8, .addi .r9 .r9 8, .subi .r5 .r5 1]
+
+/-- The product's rows: `t += p_i q 2^(64 i)` for each of `p`'s `w_p` words
+(`r5`). -/
+def rows : Prog isa :=
+  .loop (.seq (.block rowHead) (.seq (Precompute.countLoop .r16 rowWord) (.block rowTail))) (.nonzero .d .r5)
+
+/-- `r26 &=` all ones if `p q = n`: array 6 zeroed, `p q` into it by `rows`,
+compared with `n` (`Crt.pqEq`). -/
+def checkPQs : Prog isa :=
+  .seq (.block (PublicChecked.base .r14 6)) (.seq Precompute.zeroWords
+    (.seq (.block (PublicChecked.base .r8 4 ++ PublicChecked.base .r9 6)) (.seq rows Crt.pqEq)))
+
 /-- `vg_rsa_private_precompute`. -/
 def code : Prog isa :=
-  .seq (.block (save ++ args)) (.seq zeroIn (.seq (.block setupX) (.seq Crt.loadX (.seq Crt.checks
+  .seq (.block (save ++ args)) (.seq zeroIn (.seq (.block setupX) (.seq Crt.loadX (.seq (.block pqLens)
+  (.seq (Crt.checksWith checkPQs)
   (.seq (.block setupN) (.seq Precompute.core (.seq xIn
   (.seq (.block ([.load .d .r30 .r23 oOut, .load .d .r3 .r23 oNLen, .addi .r3 .r3 7, .lsr .d .r3 .r3 3,
       .lsl .r3 .r3 4, .add .r30 .r30 .r3] ++ setupP oBP oPLen)) (.seq (prime 4)
   (.seq (.block (setupP oBQ oQLen)) (.seq (prime 5)
-  (.seq maskN (.block restore)))))))))))))
+  (.seq maskN (.block restore))))))))))))))
 
 end VG.Impl.Bignum.PPC64LE.PrivPre
