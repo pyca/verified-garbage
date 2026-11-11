@@ -42,15 +42,15 @@ structure APre (s₀ : State) (St D S : Addr) (L : Nat) : Prop where
   rcx : (s₀.gpr .rcx).toNat = L
   r8 : s₀.gpr .r8 = S
   rd : s₀.rd = [⟨D, L⟩]
-  wr : s₀.wr = [⟨St, 416⟩, ⟨S, 688⟩]
+  wr : s₀.wr = [⟨St, 416⟩, ⟨S, 160⟩]
   st_d : (⟨St, 416⟩ : Region).Disjoint ⟨D, L⟩
-  st_s : (⟨St, 416⟩ : Region).Disjoint ⟨S, 688⟩
-  d_s : (⟨D, L⟩ : Region).Disjoint ⟨S, 688⟩
+  st_s : (⟨St, 416⟩ : Region).Disjoint ⟨S, 160⟩
+  d_s : (⟨D, L⟩ : Region).Disjoint ⟨S, 160⟩
   ret_st : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨St, 416⟩
-  ret_s : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨S, 688⟩
+  ret_s : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨S, 160⟩
   wSt : St.toNat + 416 ≤ 2 ^ 64
   wD : D.toNat + L ≤ 2 ^ 64
-  wS : S.toNat + 688 ≤ 2 ^ 64
+  wS : S.toNat + 160 ≤ 2 ^ 64
 
 theorem APre.of {s₀ : State} (h : absorbX86_64.pre s₀) :
     APre s₀ (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .r8) (s₀.gpr .rcx).toNat :=
@@ -69,8 +69,8 @@ theorem APre.rcx' : s₀.gpr .rcx = BitVec.ofNat 64 L :=
 theorem APre.inSt {d n : Nat} (h : d + n ≤ 416) : InRegions s₀.wr (St + BitVec.ofNat 64 d) n := by
   rw [hp.wr]; exact ⟨⟨St, 416⟩, by simp, Offset.contains_base _ h (by have := hp.wSt; omega_using [h])⟩
 
-theorem APre.inS {d n : Nat} (h : d + n ≤ 688) : InRegions s₀.wr (S + BitVec.ofNat 64 d) n := by
-  rw [hp.wr]; exact ⟨⟨S, 688⟩, by simp, Offset.contains_base _ h (by have := hp.wS; omega_using [h])⟩
+theorem APre.inS {d n : Nat} (h : d + n ≤ 160) : InRegions s₀.wr (S + BitVec.ofNat 64 d) n := by
+  rw [hp.wr]; exact ⟨⟨S, 160⟩, by simp, Offset.contains_base _ h (by have := hp.wS; omega_using [h])⟩
 
 theorem APre.inD {d n : Nat} (h : d + n ≤ L) : InRegions (s₀.rd ++ s₀.wr) (D + BitVec.ofNat 64 d) n := by
   rw [hp.rd]; exact ⟨⟨D, L⟩, by simp, Offset.contains_base _ h (by have := hp.lt; omega_using [h, this])⟩
@@ -82,21 +82,21 @@ theorem APre.uargs {s : State} {Dd : Addr} {n : Nat} (hrdi : s.gpr .rdi = St)
     (hrcx : s.gpr .rcx = BitVec.ofNat 64 n) (hr8 : s.gpr .r8 = S) (hsp : s.gpr .rsp = s₀.gpr .rsp)
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hn : 8 * n < 2 ^ 64)
     (hdc : (⟨Dd, 8 * n⟩ : Region).Disjoint ⟨St + BitVec.ofNat 64 400, 8⟩)
-    (hds : (⟨Dd, 8 * n⟩ : Region).Disjoint ⟨S, 640⟩) (hwrap : Dd.toNat + 8 * n ≤ 2 ^ 64)
-    (hcov : ∃ r' ∈ ([⟨D, L⟩, ⟨St, 416⟩, ⟨S, 688⟩] : List Region), ∃ off, Dd = r'.base + BitVec.ofNat 64 off ∧
+    (hds : (⟨Dd, 8 * n⟩ : Region).Disjoint ⟨S, 120⟩) (hwrap : Dd.toNat + 8 * n ≤ 2 ^ 64)
+    (hcov : ∃ r' ∈ ([⟨D, L⟩, ⟨St, 416⟩, ⟨S, 160⟩] : List Region), ∃ off, Dd = r'.base + BitVec.ofNat 64 off ∧
       off + 8 * n ≤ r'.len) :
     UArgs s St (St + BitVec.ofNat 64 400) Dd S n := by
   have hw := hp.wSt
   have c400 : Region.Sub ⟨St + BitVec.ofNat 64 400, 8⟩ ⟨St, 416⟩ := Offset.sub_base St (by decide)
-  have s640 : Region.Sub ⟨S, 640⟩ ⟨S, 688⟩ := Region.sub_prefix (by decide)
+  have s120 : Region.Sub ⟨S, 120⟩ ⟨S, 160⟩ := Region.sub_prefix (by decide)
   exact
   { rdi := hrdi, rsi := hrsi, rdx := hrdx, rcx := hrcx, r8 := hr8, hn := hn
     wc := Offset.base_disjoint St (by decide) (by omega_using [])
-    ws := (hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right s640
+    ws := (hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right s120
     dc := hdc, ds := hds
-    cs := (hp.st_s.sub_left c400).sub_right s640
+    cs := (hp.st_s.sub_left c400).sub_right s120
     retC := by rw [hsp]; exact hp.ret_st.sub_right c400
-    retS := by rw [hsp]; exact hp.ret_s.sub_right s640
+    retS := by rw [hsp]; exact hp.ret_s.sub_right s120
     wrapC := by rw [toNat_add_lt St hw (by decide)]; omega_using [hw]
     wrapD := hwrap
     wrapS := by have := hp.wS; omega_using [this]
@@ -108,14 +108,14 @@ theorem APre.uargs {s : State} {Dd : Addr} {n : Nat} (hrdi : s.gpr .rdi = St)
       · exact ⟨⟨St, 416⟩, by simp, 0, by simp, by simp⟩
       · exact hcov
       · exact ⟨⟨St, 416⟩, by simp, 400, rfl, by simp⟩
-      · exact ⟨⟨S, 688⟩, by simp, 0, by simp, by simp⟩
+      · exact ⟨⟨S, 160⟩, by simp, 0, by simp, by simp⟩
     writes := by
       rw [hwr, hp.wr]
       refine Covers.of_sub fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨⟨St, 416⟩, by simp, 400, rfl, by simp⟩
-      · exact ⟨⟨S, 688⟩, by simp, 0, by simp, by simp⟩ }
+      · exact ⟨⟨S, 160⟩, by simp, 0, by simp, by simp⟩ }
 
 end
 
@@ -322,17 +322,17 @@ theorem absorb_wp {s₀ : State} (h0 : absorbX86_64.pre s₀) :
     Proof.Cmac.bytesAt_length _ _ _
   have hlr : (Spec.Aes.bytesAt s₉.mem (D + BitVec.ofNat 64 (fOf c L + 8 * nbOf c L)) (restOf c L)).length =
     restOf c L := Proof.Cmac.bytesAt_length _ _ _
-  have fS : Frame [⟨S + BitVec.ofNat 64 640, 40⟩] s₀.mem (absSavedMem s₀ S) := absSavedMem_frame _ _
+  have fS : Frame [⟨S + BitVec.ofNat 64 120, 40⟩] s₀.mem (absSavedMem s₀ S) := absSavedMem_frame _ _
   have fC1 : Frame [⟨St + BitVec.ofNat 64 (408 + held c), fOf c L⟩] (absSavedMem s₀ S) s₅.mem := by
     rw [m₅, m4]; exact writeBytes_frame _ _ _ (by rw [hlf]; exact Region.contains_self _ _)
-  have f6 : Frame [⟨St + BitVec.ofNat 64 400, 8⟩, ⟨S, 640⟩] s₅.mem s₆.mem := h₆.frame
-  have f8 : Frame [⟨St + BitVec.ofNat 64 400, 8⟩, ⟨S, 640⟩] s₆.mem s₈.mem := by
+  have f6 : Frame [⟨St + BitVec.ofNat 64 400, 8⟩, ⟨S, 120⟩] s₅.mem s₆.mem := h₆.frame
+  have f8 : Frame [⟨St + BitVec.ofNat 64 400, 8⟩, ⟨S, 120⟩] s₆.mem s₈.mem := by
     rw [← m₇]; exact h₈.frame
   have fC2 : Frame [⟨St + BitVec.ofNat 64 408, restOf c L⟩] s₈.mem s₁₁.mem := by
     rw [m₁₁, h₁₀.mem, m₉]
     exact writeBytes_frame _ _ _ (by rw [← m₉, hlr]; exact Region.contains_self _ _)
-  let K : List Region := [⟨S + BitVec.ofNat 64 640, 40⟩, ⟨St + BitVec.ofNat 64 (408 + held c), fOf c L⟩,
-    ⟨St + BitVec.ofNat 64 400, 8⟩, ⟨S, 640⟩, ⟨St + BitVec.ofNat 64 408, restOf c L⟩]
+  let K : List Region := [⟨S + BitVec.ofNat 64 120, 40⟩, ⟨St + BitVec.ofNat 64 (408 + held c), fOf c L⟩,
+    ⟨St + BitVec.ofNat 64 400, 8⟩, ⟨S, 120⟩, ⟨St + BitVec.ofNat 64 408, restOf c L⟩]
   have F5 : Frame K s₀.mem s₅.mem := (fS.mono (by simp [K])).trans (fC1.mono (by simp [K]))
   have F6 : Frame K s₀.mem s₆.mem := F5.trans (f6.mono (by simp [K]))
   have F8 : Frame K s₀.mem s₈.mem := F6.trans (f8.mono (by simp [K]))
@@ -371,10 +371,10 @@ theorem absorb_wp {s₀ : State} (h0 : absorbX86_64.pre s₀) :
     have Fp : Frame K.tail (absSavedMem s₀ S) s₁₁.mem :=
       ((fC1.mono (by simp [K])).trans (f6.mono (by simp [K]))).trans
         ((f8.mono (by simp [K])).trans (fC2.mono (by simp [K])))
-    have slot (d : Nat) (h₁ : 640 ≤ d) (h₂ : d + 8 ≤ 680) :
+    have slot (d : Nat) (h₁ : 120 ≤ d) (h₂ : d + 8 ≤ 160) :
         s₁₀.mem.readW (S + BitVec.ofNat 64 d) 64 = (absSavedMem s₀ S).readW (S + BitVec.ofNat 64 d) 64 := by
       rw [← m₁₁]
-      have sub : Region.Sub ⟨S + BitVec.ofNat 64 d, 8⟩ ⟨S, 688⟩ := Offset.sub_base S (by omega_using [h₂])
+      have sub : Region.Sub ⟨S + BitVec.ofNat 64 d, 8⟩ ⟨S, 160⟩ := Offset.sub_base S (by omega_using [h₂])
       refine Fp.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
       simp only [K, List.tail_cons, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -391,13 +391,13 @@ theorem absorb_wp {s₀ : State} (h0 : absorbX86_64.pre s₀) :
         k₈ _ (by simp [calleeSaved]), k₇ _ (by simp [calleeSaved]) (by decide), rbp₅]
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · rw [rbx₁₁, slot 640 (by decide) (by decide), a₁]
+    · rw [rbx₁₁, slot 120 (by decide) (by decide), a₁]
     · rw [g₁₁ _ (by decide) (by decide) (by decide) (by decide) (by decide), hbp]
     · rw [g₁₁ _ (by decide) (by decide) (by decide) (by decide) (by decide), hsp₁₀]
-    · rw [r12₁₁, slot 648 (by decide) (by decide), a₃]
-    · rw [r13₁₁, slot 656 (by decide) (by decide), a₄]
-    · rw [r14₁₁, slot 664 (by decide) (by decide), a₅]
-    · rw [r15₁₁, slot 672 (by decide) (by decide), a₆]
+    · rw [r12₁₁, slot 128 (by decide) (by decide), a₃]
+    · rw [r13₁₁, slot 136 (by decide) (by decide), a₄]
+    · rw [r14₁₁, slot 144 (by decide) (by decide), a₅]
+    · rw [r15₁₁, slot 152 (by decide) (by decide), a₆]
   · intro key msg hr hcnt hlen
     rw [hp.rdi] at hr ⊢
     rw [hp.rdx, hp.rcx]
@@ -474,7 +474,7 @@ theorem absorb_wp {s₀ : State} (h0 : absorbX86_64.pre s₀) :
       · show Spec.Aes.bytesAt _ (St + BitVec.ofNat 64 408) _ = Spec.Aes.bytesAt _ (St + BitVec.ofNat 64 408) _ ++ _
         have sub : Region.Sub ⟨St + BitVec.ofNat 64 408, held msg.length + L⟩ ⟨St, 416⟩ :=
           Offset.sub_base St (by omega_using [hfh, hfL'])
-        have dj : ∀ r ∈ [⟨St + BitVec.ofNat 64 400, 8⟩, ⟨S, 640⟩],
+        have dj : ∀ r ∈ [⟨St + BitVec.ofNat 64 400, 8⟩, ⟨S, 120⟩],
             (⟨St + BitVec.ofNat 64 408, held msg.length + L⟩ : Region).Disjoint r := by
           intro r hr
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

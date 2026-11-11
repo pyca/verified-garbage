@@ -41,15 +41,15 @@ structure IPre (s₀ : State) (St Kp S : Addr) (KL : Nat) : Prop where
   rdx : (s₀.gpr .rdx).toNat = KL
   rcx : s₀.gpr .rcx = S
   rd : s₀.rd = [⟨Kp, KL⟩]
-  wr : s₀.wr = [⟨St, 416⟩, ⟨S, 640⟩]
+  wr : s₀.wr = [⟨St, 416⟩, ⟨S, 120⟩]
   st_k : (⟨St, 416⟩ : Region).Disjoint ⟨Kp, KL⟩
-  st_s : (⟨St, 416⟩ : Region).Disjoint ⟨S, 640⟩
-  k_s : (⟨Kp, KL⟩ : Region).Disjoint ⟨S, 640⟩
+  st_s : (⟨St, 416⟩ : Region).Disjoint ⟨S, 120⟩
+  k_s : (⟨Kp, KL⟩ : Region).Disjoint ⟨S, 120⟩
   ret_st : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨St, 416⟩
-  ret_s : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨S, 640⟩
+  ret_s : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨S, 120⟩
   wSt : St.toNat + 416 ≤ 2 ^ 64
   wK : Kp.toNat + KL ≤ 2 ^ 64
-  wS : S.toNat + 640 ≤ 2 ^ 64
+  wS : S.toNat + 120 ≤ 2 ^ 64
   klen : Spec.TripleDes.validKey KL
 
 theorem IPre.of {s₀ : State} (h : initX86_64.pre s₀) :
@@ -114,14 +114,14 @@ theorem init_wp {s₀ : State} (h0 : initX86_64.pre s₀) :
         rcases hr with rfl | rfl | rfl
         · exact ⟨⟨Kp, KL⟩, by simp, 0, by simp, by simp⟩
         · exact ⟨⟨St, 416⟩, by simp, 0, by simp, by simp⟩
-        · exact ⟨⟨S, 640⟩, by simp, 0, by simp, by simp⟩
+        · exact ⟨⟨S, 120⟩, by simp, 0, by simp, by simp⟩
       writes := by
         rw [wr₁, hp.wr]
         refine Covers.of_sub fun r hr => ?_
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact ⟨⟨St, 416⟩, by simp, 0, by simp, by simp⟩
-        · exact ⟨⟨S, 640⟩, by simp, 0, by simp, by simp⟩ }
+        · exact ⟨⟨S, 120⟩, by simp, 0, by simp, by simp⟩ }
   refine WP.mono (init_inline_wp args) fun s₂ h₂ => ?_
   have f₁ : Frame [⟨St + BitVec.ofNat 64 400, 8⟩] s₀.mem s₁.mem := by rw [m₁]; exact zeroCv_frame _ _
   refine ⟨⟨fun r hr => by rw [h₂.saved r hr, sv₁ r hr], ?_⟩, ?_⟩

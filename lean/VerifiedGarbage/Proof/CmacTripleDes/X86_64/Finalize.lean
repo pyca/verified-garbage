@@ -35,18 +35,18 @@ structure FPre (s₀ : State) (W St P S : Addr) (L : Nat) : Prop where
   rcx : (s₀.gpr .rcx).toNat = L
   r8 : s₀.gpr .r8 = S
   rd : s₀.rd = [⟨W, 400⟩, ⟨P, L⟩]
-  wr : s₀.wr = [⟨St, 8⟩, ⟨S, 640⟩]
+  wr : s₀.wr = [⟨St, 8⟩, ⟨S, 120⟩]
   key_st : (⟨W, 400⟩ : Region).Disjoint ⟨St, 8⟩
-  key_scr : (⟨W, 400⟩ : Region).Disjoint ⟨S, 640⟩
+  key_scr : (⟨W, 400⟩ : Region).Disjoint ⟨S, 120⟩
   last_st : (⟨P, L⟩ : Region).Disjoint ⟨St, 8⟩
-  last_scr : (⟨P, L⟩ : Region).Disjoint ⟨S, 640⟩
-  st_scr : (⟨St, 8⟩ : Region).Disjoint ⟨S, 640⟩
+  last_scr : (⟨P, L⟩ : Region).Disjoint ⟨S, 120⟩
+  st_scr : (⟨St, 8⟩ : Region).Disjoint ⟨S, 120⟩
   ret_st : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨St, 8⟩
-  ret_scr : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨S, 640⟩
+  ret_scr : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨S, 120⟩
   key_wrap : W.toNat + 400 ≤ 2 ^ 64
   st_wrap : St.toNat + 8 ≤ 2 ^ 64
   last_wrap : P.toNat + L ≤ 2 ^ 64
-  scr_wrap : S.toNat + 640 ≤ 2 ^ 64
+  scr_wrap : S.toNat + 120 ≤ 2 ^ 64
   len : L ≤ 8
 
 theorem FPre.of {s₀ : State} (h : finalizeX86_64.pre s₀) :
@@ -77,8 +77,8 @@ section
 variable {s₀ : State} {W St P S : Addr} {L : Nat} (hp : FPre s₀ W St P S L)
 include hp
 
-theorem FPre.inScr {d n : Nat} (h : d + n ≤ 640) : InRegions s₀.wr (S + BitVec.ofNat 64 d) n := by
-  rw [hp.wr]; exact in_rw (r := ⟨S, 640⟩) (by simp) (Offset.contains_base _ h (by have := hp.scr_wrap; omega))
+theorem FPre.inScr {d n : Nat} (h : d + n ≤ 120) : InRegions s₀.wr (S + BitVec.ofNat 64 d) n := by
+  rw [hp.wr]; exact in_rw (r := ⟨S, 120⟩) (by simp) (Offset.contains_base _ h (by have := hp.scr_wrap; omega))
 
 theorem FPre.inKey {d n : Nat} (h : d + n ≤ 400) : InRegions (s₀.rd ++ s₀.wr) (W + BitVec.ofNat 64 d) n := by
   rw [hp.rd]; exact in_rw (r := ⟨W, 400⟩) (by simp) (Offset.contains_base _ h (by have := hp.key_wrap; omega))
@@ -88,7 +88,7 @@ theorem FPre.inLast {d n : Nat} (h : d + n ≤ L) : InRegions (s₀.rd ++ s₀.w
 
 end
 
-theorem FPre.scrD {S : Addr} {d n : Nat} (h : d + n ≤ 640) : Region.Sub ⟨S + BitVec.ofNat 64 d, n⟩ ⟨S, 640⟩ :=
+theorem FPre.scrD {S : Addr} {d n : Nat} (h : d + n ≤ 120) : Region.Sub ⟨S + BitVec.ofNat 64 d, n⟩ ⟨S, 120⟩ :=
   Offset.sub_base _ h
 
 theorem wr_in {s : State} {a : Addr} {n : Nat} (h : InRegions s.wr a n) : InRegions (s.rd ++ s.wr) a n := by

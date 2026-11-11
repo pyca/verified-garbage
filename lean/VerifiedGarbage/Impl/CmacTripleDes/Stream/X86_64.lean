@@ -12,14 +12,15 @@ and `vg_cmac_triple_des_finish(state = rdi, count = rsi, out = rdx, scratch = rc
 code of `vg_cmac_triple_des_init`, `vg_cmac_triple_des_update` and
 `vg_cmac_triple_des_finalize` (`Impl/CmacTripleDes/X86_64.lean`), inline:
 each takes its arguments in the registers of its own signature and its
-640-byte working space in `scratch`, and keeps our caller's callee-saved
+120-byte working space in `scratch`, and keeps our caller's callee-saved
 registers.
 
 The state (`VG.Spec.Cmac.tdesRepr`) is the key schedule (bytes 0–383), the
 subkeys (384–399), the chaining value (400–407) and the bytes held back
 (408–415), so bytes 0–399 are `finalize`'s `key`, as `init` writes them.
-The scratch buffer: `[0, 640)` is the working space of the code inlined,
-and `absorb` keeps our caller's callee-saved registers in `[640, 680)`.
+The scratch buffer: `[0, 120)` is the working space of the code inlined
+(its slots 0–14), and `absorb` keeps our caller's callee-saved registers in
+`[120, 160)`.
 
 * `stream_init` zeroes the chaining value, and runs `init` with the state
   as its `out`.
@@ -77,7 +78,7 @@ def copy : Prog isa :=
 
 /-- Our caller's callee-saved registers that `absorb` uses, and their
 offsets in the scratch buffer. -/
-def saved : List (Reg × Nat) := [(.rbx, 640), (.r12, 648), (.r13, 656), (.r14, 664), (.r15, 672)]
+def saved : List (Reg × Nat) := [(.rbx, 120), (.r12, 128), (.r13, 136), (.r14, 144), (.r15, 152)]
 
 /-- Saves the registers and keeps the arguments in them; ZF is set if
 `count` is 0. -/

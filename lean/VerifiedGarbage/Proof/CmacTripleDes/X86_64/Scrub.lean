@@ -75,7 +75,7 @@ end
 
 /-! ## Postconditions -/
 
-theorem initOut : PostOut (Spec.Cmac.tdesStreamInitContract X86_64.abi 648) (Spec.Cmac.tdesStreamInitSig.retBits 64) :=
+theorem initOut : PostOut (Spec.Cmac.tdesStreamInitContract X86_64.abi 128) (Spec.Cmac.tdesStreamInitSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
     obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
     replace hlen := Nat.succ.inj hlen
@@ -88,7 +88,7 @@ theorem initOut : PostOut (Spec.Cmac.tdesStreamInitContract X86_64.abi 648) (Spe
     show Spec.Cmac.tdesRepr m₂ st _ _
     exact repr_congr (agree_of hb.1 (by decide)) h
 
-theorem absorbOut : PostOut (Spec.Cmac.tdesAbsorbContract X86_64.abi 696) (Spec.Cmac.tdesAbsorbSig.retBits 64) :=
+theorem absorbOut : PostOut (Spec.Cmac.tdesAbsorbContract X86_64.abi 168) (Spec.Cmac.tdesAbsorbSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
     obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
     replace hlen := Nat.succ.inj hlen
@@ -104,7 +104,7 @@ theorem absorbOut : PostOut (Spec.Cmac.tdesAbsorbContract X86_64.abi 696) (Spec.
     intro key msg hr hc hl
     exact repr_congr (agree_of hb.1 (by decide)) (h key msg hr hc hl)
 
-theorem finishOut : PostOut (Spec.Cmac.tdesFinishContract X86_64.abi 648) (Spec.Cmac.tdesFinishSig.retBits 64) :=
+theorem finishOut : PostOut (Spec.Cmac.tdesFinishContract X86_64.abi 128) (Spec.Cmac.tdesFinishSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
     obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
     replace hlen := Nat.succ.inj hlen
@@ -123,13 +123,13 @@ theorem finishOut : PostOut (Spec.Cmac.tdesFinishContract X86_64.abi 648) (Spec.
 
 /-- `vg_cmac_triple_des_stream_init`'s code. -/
 abbrev initCode : Prog isa :=
-  Impl.StackScratch.X86_64.withStackScratch 648 .rcx Impl.CmacTripleDes.Stream.X86_64.streamInit
+  Impl.StackScratch.X86_64.withStackScratch 128 .rcx Impl.CmacTripleDes.Stream.X86_64.streamInit
 
-def initKs : List Nat := keep_for% Spec.Cmac.tdesStreamInitApi.sig 648 initCode []
+def initKs : List Nat := keep_for% Spec.Cmac.tdesStreamInitApi.sig 128 initCode []
 
 theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Cmac.tdesStreamInitApi.sig 648 []) initCode
-      h).any (RScrub.resOkB · 648 initKs (Impl.Scrub.X86_64.chunks 648)) = true :=
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Cmac.tdesStreamInitApi.sig 128 []) initCode
+      h).any (RScrub.resOkB · 128 initKs (Impl.Scrub.X86_64.chunks 128)) = true :=
   RScrub.Analysed.ok_of initKs (by taint_decide)
 
 open VG.X86_64.RScrub in
@@ -137,18 +137,18 @@ open VG.X86_64.RScrub in
 def initReg : Registration Spec.Cmac.tdesStreamInitApi X86_64.target :=
   withScrub {
     code := initCode
-    stack := 648
+    stack := 128
     verified := Proof.CmacTripleDes.Stream.X86_64.init_framed } initOut [] (pubOk_nil _) (some ⟨initKs, initOk⟩)
 
 /-- `vg_cmac_triple_des_absorb`'s code. -/
 abbrev absorbCode : Prog isa :=
-  Impl.StackScratch.X86_64.withStackScratch 696 .r8 Impl.CmacTripleDes.Stream.X86_64.absorb
+  Impl.StackScratch.X86_64.withStackScratch 168 .r8 Impl.CmacTripleDes.Stream.X86_64.absorb
 
-def absorbKs : List Nat := keep_for% Spec.Cmac.tdesAbsorbApi.sig 696 absorbCode []
+def absorbKs : List Nat := keep_for% Spec.Cmac.tdesAbsorbApi.sig 168 absorbCode []
 
 theorem absorbOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Cmac.tdesAbsorbApi.sig 696 []) absorbCode
-      h).any (RScrub.resOkB · 696 absorbKs (Impl.Scrub.X86_64.chunks 696)) = true :=
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Cmac.tdesAbsorbApi.sig 168 []) absorbCode
+      h).any (RScrub.resOkB · 168 absorbKs (Impl.Scrub.X86_64.chunks 168)) = true :=
   RScrub.Analysed.ok_of absorbKs (by taint_decide)
 
 open VG.X86_64.RScrub in
@@ -156,18 +156,18 @@ open VG.X86_64.RScrub in
 def absorbReg : Registration Spec.Cmac.tdesAbsorbApi X86_64.target :=
   withScrub {
     code := absorbCode
-    stack := 696
+    stack := 168
     verified := Proof.CmacTripleDes.Stream.X86_64.absorb_framed } absorbOut [] (pubOk_nil _) (some ⟨absorbKs, absorbOk⟩)
 
 /-- `vg_cmac_triple_des_finish`'s code. -/
 abbrev finishCode : Prog isa :=
-  Impl.StackScratch.X86_64.withStackScratch 648 .rcx Impl.CmacTripleDes.Stream.X86_64.finish
+  Impl.StackScratch.X86_64.withStackScratch 128 .rcx Impl.CmacTripleDes.Stream.X86_64.finish
 
-def finishKs : List Nat := keep_for% Spec.Cmac.tdesFinishApi.sig 648 finishCode []
+def finishKs : List Nat := keep_for% Spec.Cmac.tdesFinishApi.sig 128 finishCode []
 
 theorem finishOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Cmac.tdesFinishApi.sig 648 []) finishCode
-      h).any (RScrub.resOkB · 648 finishKs (Impl.Scrub.X86_64.chunks 648)) = true :=
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Cmac.tdesFinishApi.sig 128 []) finishCode
+      h).any (RScrub.resOkB · 128 finishKs (Impl.Scrub.X86_64.chunks 128)) = true :=
   RScrub.Analysed.ok_of finishKs (by taint_decide)
 
 open VG.X86_64.RScrub in
@@ -175,7 +175,7 @@ open VG.X86_64.RScrub in
 def finishReg : Registration Spec.Cmac.tdesFinishApi X86_64.target :=
   withScrub {
     code := finishCode
-    stack := 648
+    stack := 128
     verified := Proof.CmacTripleDes.Stream.X86_64.finish_framed } finishOut [] (pubOk_nil _) (some ⟨finishKs, finishOk⟩)
 
 end VG.Proof.CmacTripleDes.X86_64.Scrub

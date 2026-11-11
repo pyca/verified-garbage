@@ -4,9 +4,8 @@ import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Init
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Finish
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.AbsorbCorrect
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.CT
-import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Implies
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Implies
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Lit
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
 import VerifiedGarbage.Proof.Framework.Offset
@@ -18,7 +17,7 @@ import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 Correctness, constant time and satisfiability under this target's contracts
 (`Contract.lean`), and the shared contracts with the working space as an
-argument (`Proof/CmacTripleDes/StreamScratch.lean`), which imply them, with
+argument (`Implies.lean`), which imply them, with
 no stack: the functions call nothing.
 
 `absorb` is constant time in two parts: the taint analysis covers each
@@ -39,7 +38,7 @@ theorem absorb₂_agree {s₀ s₀' a b : State} {St D S : Addr} {L : Nat} (hp :
     (h₁ : AAfter₁ s₀ St D S L a) (h₂ : AAfter₁ s₀' St D S L b) : X86_64.Taint.Agree τAbsorb₂ a b := by
   have wf : ∀ (σ t : State), APre σ St D S L → AAfter₁ σ St D S L t → X86_64.Taint.Wf τAbsorb₂ t := by
     intro σ t hσ ht
-    have hw : t.wr = [⟨St, 416⟩, ⟨S, 688⟩] := by rw [ht.wr, hσ.wr]
+    have hw : t.wr = [⟨St, 416⟩, ⟨S, 160⟩] := by rw [ht.wr, hσ.wr]
     refine ⟨fun _ => ⟨by simp [hw, τAbsorb₂], by simp [hw, hσ.st_s], by simp [hw]⟩, fun p hp => ?_⟩
     simp only [τAbsorb₂, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl <;> simp [X86_64.Taint.region, hw, ht.rbx, ht.r15]
@@ -103,13 +102,13 @@ theorem finish_correct (s : State) (hs : finishX86_64.pre s) :
   obtain ⟨t, s', he, hg, hp⟩ := finish_wp hs
   exact ⟨t, s', he, abiPreserved_of_exec finish_mx he hg, hp⟩
 
-theorem init_verified : Verified X86_64.target streamInit (streamInitScratchContract X86_64.abi 0) :=
+theorem init_verified : Verified X86_64.target streamInit (streamInitScratchContract15 X86_64.abi 0) :=
   Verified.of_correct init_correct init_ct init_implies
 
-theorem absorb_verified : Verified X86_64.target absorb (absorbScratchContract X86_64.abi 0) :=
+theorem absorb_verified : Verified X86_64.target absorb (absorbScratchContract20 X86_64.abi 0) :=
   Verified.of_correct absorb_correct absorb_ct absorb_implies
 
-theorem finish_verified : Verified X86_64.target finish (finishScratchContract X86_64.abi 0) :=
+theorem finish_verified : Verified X86_64.target finish (finishScratchContract15 X86_64.abi 0) :=
   Verified.of_correct finish_correct finish_ct finish_implies
 
 end VG.Proof.CmacTripleDes.Stream.X86_64

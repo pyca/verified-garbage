@@ -30,12 +30,12 @@ def initX86_64 : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
     let out : Region := ⟨s.gpr .rdx, 400⟩
-    let scr : Region := ⟨s.gpr .rcx, 640⟩
+    let scr : Region := ⟨s.gpr .rcx, 120⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     s.rd = [key] ∧ s.wr = [out, scr] ∧ key.Disjoint out ∧ key.Disjoint scr ∧ out.Disjoint scr ∧
       ret.Disjoint out ∧ ret.Disjoint scr ∧
       (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 400 ≤ 2 ^ 64 ∧
-      (s.gpr .rcx).toNat + 640 ≤ 2 ^ 64 ∧ Spec.TripleDes.validKey (s.gpr .rsi).toNat
+      (s.gpr .rcx).toNat + 120 ≤ 2 ^ 64 ∧ Spec.TripleDes.validKey (s.gpr .rsi).toNat
   post s s' :=
     let k := Spec.TripleDes.expandKey (Spec.TripleDes.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
     let ks := Spec.Cmac.subkeys (Spec.Cmac.tdesWith k) 8
@@ -51,13 +51,13 @@ def updateX86_64 : Contract isa where
     let sched : Region := ⟨s.gpr .rdi, 384⟩
     let state : Region := ⟨s.gpr .rsi, 8⟩
     let data : Region := ⟨s.gpr .rdx, 8 * (s.gpr .rcx).toNat⟩
-    let scr : Region := ⟨s.gpr .r8, 640⟩
+    let scr : Region := ⟨s.gpr .r8, 120⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     s.rd = [sched, data] ∧ s.wr = [state, scr] ∧
       sched.Disjoint state ∧ sched.Disjoint scr ∧ data.Disjoint state ∧ data.Disjoint scr ∧
       state.Disjoint scr ∧ ret.Disjoint state ∧ ret.Disjoint scr ∧
       (s.gpr .rsi).toNat + 8 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 8 * (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .r8).toNat + 640 ≤ 2 ^ 64
+      (s.gpr .r8).toNat + 120 ≤ 2 ^ 64
   post s s' :=
     Spec.Aes.bytesAt s'.mem (s.gpr .rsi) 8 =
       Spec.Cmac.chain (ciphAt s.mem (s.gpr .rdi)) (Spec.Aes.bytesAt s.mem (s.gpr .rsi) 8)
@@ -72,13 +72,13 @@ def finalizeX86_64 : Contract isa where
     let key : Region := ⟨s.gpr .rdi, 400⟩
     let state : Region := ⟨s.gpr .rsi, 8⟩
     let last : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
-    let scr : Region := ⟨s.gpr .r8, 640⟩
+    let scr : Region := ⟨s.gpr .r8, 120⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     s.rd = [key, last] ∧ s.wr = [state, scr] ∧
       key.Disjoint state ∧ key.Disjoint scr ∧ last.Disjoint state ∧ last.Disjoint scr ∧
       state.Disjoint scr ∧ ret.Disjoint state ∧ ret.Disjoint scr ∧
       (s.gpr .rdi).toNat + 400 ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + 8 ≤ 2 ^ 64 ∧
-      (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 640 ≤ 2 ^ 64 ∧
+      (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 120 ≤ 2 ^ 64 ∧
       (s.gpr .rcx).toNat ≤ 8
   post s s' :=
     let ciph := ciphAt s.mem (s.gpr .rdi)
