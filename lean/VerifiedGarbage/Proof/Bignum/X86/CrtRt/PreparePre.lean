@@ -81,8 +81,8 @@ abbrev preOff (args : Nat → BitVec 32) (i : Nat) : Nat :=
 abbrev preW (args : Nat → BitVec 32) (i : Nat) : Nat := Spec.Rsa.primeWords (args (7 + 2 * i)).toNat
 
 /-- Factor `i`'s cached `R_pre² mod p` in `pre`, readable, apart from the
-working space, and fitting the context `c`. -/
-structure PreR2 (s : State) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (i : Nat) (c : Ctx) (p : Nat) :
+working space. -/
+structure PreR2 (s : State) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (i : Nat) (p : Nat) :
     Prop where
   arg : CallArgument s base bytes preArg (args preArg)
   hi : i ≤ 1
@@ -90,7 +90,6 @@ structure PreR2 (s : State) (base : Addr) (bytes len : Nat) (args : Nat → BitV
   lt : (args (7 + 2 * i)).toNat < 1024
   lt7 : (args 7).toNat < 1024
   pos7 : 1 ≤ (args 7).toNat
-  fits : 8 * preW args i ≤ bc len c
   read : InRegions (s.rd ++ s.wr) (byteAddr (args preArg)) (preOff args i + 8 * preW args i)
   fit : (args preArg).toNat + (preOff args i + 8 * preW args i) ≤ 2 ^ 32
   apart : Region.Disjoint ⟨byteAddr (args preArg), preOff args i + 8 * preW args i⟩ ⟨base, bytes⟩
@@ -99,18 +98,18 @@ structure PreR2 (s : State) (base : Addr) (bytes len : Nat) (args : Nat → BitV
   apartSp : Region.Disjoint ⟨byteAddr (args preArg), preOff args i + 8 * preW args i⟩ (below (s.gpr .esp) 96)
 
 section
-variable {s t : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {i : Nat} {c : Ctx} {p : Nat}
+variable {s t : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {i : Nat} {p : Nat}
 
 /-- The cached value holds after a stage that changes registers but `esp`, and memory in its ranges. -/
-theorem PreR2.keepF (P : PreR2 s base bytes len args i c p)
+theorem PreR2.keepF (P : PreR2 s base bytes len args i p)
     (room : CallRoom (s.gpr .esp) base bytes) {regs : List Reg} (K : Keeps regs s t) (sp : .esp ∉ regs)
     {ws : List (Nat × Nat)} (F : Frame (frameR base (s.gpr .esp) ws) s.mem t.mem)
-    (hfit : ∀ q ∈ ws, q.1 + q.2 ≤ bytes) : PreR2 t base bytes len args i c p := by
+    (hfit : ∀ q ∈ ws, q.1 + q.2 ≤ bytes) : PreR2 t base bytes len args i p := by
   have esp : t.gpr .esp = s.gpr .esp := K.1 _ sp
   have low := room.low
   have top := P.top
   have fit := P.fit
-  refine ⟨⟨P.arg.stack.keep K sp, ?_⟩, P.hi, P.pos, P.lt, P.lt7, P.pos7, P.fits, by rw [K.2.1, K.2.2]; exact P.read,
+  refine ⟨⟨P.arg.stack.keep K sp, ?_⟩, P.hi, P.pos, P.lt, P.lt7, P.pos7, by rw [K.2.1, K.2.2]; exact P.read,
     P.fit, P.apart, ?_, by rw [esp]; exact P.top, by rw [esp]; exact P.apartSp⟩
   · rw [← P.arg.value]
     unfold VG.Proof.Dsa.X86.stackValue
@@ -154,7 +153,8 @@ end
 variable {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
 /-- `loadR2`: factor `i`'s cached value in slot 4, and `esi` its doublings to the context's radix. -/
-theorem loadR2_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx} {p : Nat} (P : PreR2 s base bytes len args i c p) :
+theorem loadR2_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx} {p : Nat} (P : PreR2 s base bytes len args i p)
+    (fits : 8 * preW args i ≤ bc len c) :
     WP isa (loadR2 c i) s fun u => In Ex base bytes len args u ∧
       sv u.mem base len c 4 = 2 ^ (128 * preW args i) % p ∧
       (u.gpr .esi).toNat = 16 * (bc len c - 8 * preW args i) ∧
@@ -169,10 +169,9 @@ theorem loadR2_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx} {p : Nat
   have hb := bc_le h.upper' c
   have cb1 : cb len (one c) = bc len c := by simp [cb, one]
   have cw1 : cw len (one c) = cwc len c := by simp [cw, cwc, cb, one]
-  have fits := P.fits
   have hi := P.hi
   have pw2 : 2 ≤ preW args i := by simp only [preW, Spec.Rsa.primeWords]; omega
-  have fitsW : 8 * Spec.Rsa.primeWords (args (7 + 2 * i)).toNat ≤ bc len c := P.fits
+  have fitsW : 8 * Spec.Rsa.primeWords (args (7 + 2 * i)).toNat ≤ bc len c := fits
   have pw2' : 2 ≤ Spec.Rsa.primeWords (args (7 + 2 * i)).toNat := pw2
   unfold loadR2
   refine WP.seq (WP.mono (zero_ok h (x := .slot c 4) (one_ok c) (by rw [cb1]; omega)) fun u₁ ⟨O₁, Z₁, K₁⟩ => ?_)
@@ -299,7 +298,8 @@ theorem loadR2_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx} {p : Nat
 /-- `preparePre`: what `prepare` leaves (`prepCtx_ok`), from factor `i`'s cached `R_pre² mod M`
 doubled to the context's radix. -/
 theorem preparePre_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx}
-    (P : PreR2 s base bytes len args i c (safeM (sv s.mem base len c 0))) :
+    (P : PreR2 s base bytes len args i (safeM (sv s.mem base len c 0)))
+    (fits : 8 * preW args i ≤ bc len c) :
     WP isa (preparePre c i) s fun u =>
       CtxOk Ex base bytes len args c (safeM (sv s.mem base len c 0)) u ∧ sv u.mem base len c 3 = 1 ∧
       sv u.mem base len c 4 = 2 ^ (16 * bc len c) % safeM (sv s.mem base len c 0) ∧
@@ -317,7 +317,6 @@ theorem preparePre_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx}
   have z0 : lo len (.slot c 0) = numBase := sl_zero len c
   have nb : numBase = 3336 := rfl
   have io : invOff = 0 := rfl
-  have fits : 8 * preW args i ≤ bc len c := P.fits
   have fitW : ∀ p ∈ powR len c, p.1 + p.2 ≤ bytes := by
     intro p hp
     simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -372,7 +371,7 @@ theorem preparePre_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx}
       sv t.mem base len c 0 = safeM (sv s.mem base len c 0) := fun t Ft => by
     simp only [sv] at M₈ ⊢
     rw [frameR_val32 Ft h.room nw (by omega_arith) (hws (.inl (by omega_arith)) (.inl (by omega_arith))) fitW, M₈]
-  refine WP.seq (WP.mono (loadR2_ok h₈ P₈) fun u₉ ⟨h₉, V₉, esi₉, z₉, O₉, K₉⟩ => ?_)
+  refine WP.seq (WP.mono (loadR2_ok h₈ P₈ fits) fun u₉ ⟨h₉, V₉, esi₉, z₉, O₉, K₉⟩ => ?_)
   have sp₉ : u₉.gpr .esp = s.gpr .esp := by rw [K₉.1 _ (by decide), sp₈]
   have F₉ : Frame (frameR base (s.gpr .esp) (powR len c)) u₈.mem u₉.mem :=
     frameR_of_outside O₉ (by omega_arith) (by simp [powR])
@@ -404,6 +403,36 @@ theorem preparePre_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx}
       rw [Vu, Vt, Mt, ← Nat.add_mod, ← Nat.two_mul, Nat.mul_comm, ← Nat.pow_succ]; rfl
     · refine rest t (F₉.trans Ft) (K₉'.trans Kt) ?_
       rw [Vt, show 128 * preW args i + 16 * (bc len c - 8 * preW args i) = 16 * bc len c by omega]
+
+/-- With `some i`, factor `i`'s cached value (`PreR2`); with `none`, nothing. -/
+def PreG (s : State) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) : Option Nat → Nat → Prop
+  | none, _ => True
+  | some i, p => PreR2 s base bytes len args i p
+
+/-- With `some i`, factor `i`'s cached value fits the context `c`. -/
+def FitG (len : Nat) (args : Nat → BitVec 32) : Option Nat → Ctx → Prop
+  | none, _ => True
+  | some i, c => 8 * preW args i ≤ bc len c
+
+theorem PreG.keepF {t : State} {p : Nat} {pc : Option Nat} (P : PreG s base bytes len args pc p) (room : CallRoom (s.gpr .esp) base bytes)
+    {regs : List Reg} (K : Keeps regs s t) (sp : .esp ∉ regs) {ws : List (Nat × Nat)}
+    (F : Frame (frameR base (s.gpr .esp) ws) s.mem t.mem) (hfit : ∀ q ∈ ws, q.1 + q.2 ≤ bytes) :
+    PreG t base bytes len args pc p := by
+  cases pc with
+  | none => trivial
+  | some i => exact PreR2.keepF P room K sp F hfit
+
+/-- `prepareG`: what `prepare` leaves (`prepCtx_ok`), either way. -/
+theorem prepareG_ok (h : In Ex base bytes len args s) (c : Ctx) {pc : Option Nat}
+    (P : PreG s base bytes len args pc (safeM (sv s.mem base len c 0))) (fits : FitG len args pc c) :
+    WP isa (prepareG pc c) s fun u =>
+      CtxOk Ex base bytes len args c (safeM (sv s.mem base len c 0)) u ∧ sv u.mem base len c 3 = 1 ∧
+      sv u.mem base len c 4 = 2 ^ (16 * bc len c) % safeM (sv s.mem base len c 0) ∧
+      Frame (frameR base (s.gpr .esp) (prepR len c)) s.mem u.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
+  cases pc with
+  | none => exact prepCtx_ok h c
+  | some i => exact preparePre_ok h P fits
 
 end
 
