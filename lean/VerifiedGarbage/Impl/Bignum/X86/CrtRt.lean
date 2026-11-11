@@ -442,6 +442,13 @@ def validate : Prog isa :=
   .seq (.block accept) <|
   .seq (lessThan (.slot .wide 14) (.slot .wide 10) (one .wide)) (.block accept)
 
+/-- With `pre`, which holds only for `p q = n`: the input below `n`, and
+`qInv` below `p`. -/
+def validatePre : Prog isa :=
+  .seq (lessThan (.slot .wide 15) (.slot .wide 9) (one .wide)) <|
+  .seq (.block [.store (sc accOff) .ecx]) <|
+  .seq (lessThan (.slot .wide 14) (.slot .wide 10) (one .wide)) (.block accept)
+
 /-- The result (slot 6 of the context `c`) into the wide slot `o`, zero-extended to `2 B` bytes. -/
 def saveResult (c : Ctx) (o : Nat) : Prog isa :=
   .seq (zero (.slot .wide o) (two .wide)) (copy (.slot c 6) (.slot .wide o) (one c))
@@ -562,7 +569,7 @@ def powers : Bool → Prog isa
 
 def sized (pc : Bool := false) : Prog isa :=
   .seq importComponents <|
-  .seq validate <|
+  .seq (if pc then validatePre else validate) <|
   .seq (.block factorsInit) <|
   .seq (powers pc) <|
   .seq (coefficient (if pc then some 0 else none)) <|
