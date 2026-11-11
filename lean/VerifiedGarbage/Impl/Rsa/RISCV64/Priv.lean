@@ -22,6 +22,12 @@ As on PPC64LE (`Impl/Rsa/PPC64LE/Priv.lean`), BoringSSL's
    overwritten with `m` under a mask of the first case, or with zeros;
 5. the frame's `m` is overwritten with zeros.
 
+`vg_rsa_private_checked_precomputed` (`codeP`) takes the key's precomputed
+values `pre` too (stack arguments 12 and 13): it calls
+`vg_rsa_private_crt_precomputed` with the primes' values in `s1` (`out` kept
+in the frame meanwhile, `oS1`), and copies `n`'s values from `pre` in place
+of calling `vg_rsa_public_precompute`.
+
 Nothing branches on the statuses or on the comparison. Across the calls,
 `out`, `n`, `k = n_len`, `e`, `e_len` and the input are kept in `s1`–`s6`,
 which the callees preserve.
@@ -136,13 +142,60 @@ def restore : List Instr :=
     .load .d .s3 .t0 (oSave + 16), .load .d .s4 .t0 (oSave + 24), .load .d .s5 .t0 (oSave + 32),
     .load .d .s6 .t0 (oSave + 40)]
 
+/-- Our `out`, kept in `s1` across the calls, while `s1` holds the primes'
+values for `vg_rsa_private_crt_precomputed`. -/
+def oS1 : Nat := 168
+
+/-- `vg_rsa_private_crt_precomputed`. -/
+def crtCallP : Prog isa := .call "vg_rsa_private_crt_precomputed" Impl.Bignum.RISCV64.Crt.crtP
+
+/-- With the key's precomputed values `pre` (our stack argument 12): `out`
+into the frame, and `s1 :=` the primes' values, after `n`'s `2 ⌈k / 8⌉`
+words. -/
+def crtPtr : List Instr :=
+  [.addSp .t0 0, .store .d .s1 .t0 oS1] ++ argBase ++
+    [.load .d .s1 .t6 96, .addi .t1 .s3 7, .shift .srl .d .t1 .t1 3, .shift .sll .d .t1 .t1 4, .add .s1 .s1 .t1]
+
+/-- `out` back into `s1`. -/
+def crtRestore : List Instr := [.addSp .t0 0, .load .d .s1 .t0 oS1]
+
+/-- `vg_rsa_private_crt`, or with `pc` `vg_rsa_private_crt_precomputed`
+given the primes' values. -/
+def crtStep : Bool → Prog isa
+  | false => crtCall
+  | true => .seq (.block crtPtr) (.seq crtCallP (.block crtRestore))
+
+/-- With the key's precomputed values `pre`: the status kept, and `a0 :=
+pre`, `a1 :=` `n`'s values in the frame, `a2 := 2 ⌈k / 8⌉`. -/
+def preArgsP : List Instr :=
+  [.addSp .t0 0, .store .d .a0 .t0 oSt] ++ argBase ++ [.load .d .a0 .t6 96, .addi .a1 .t0 oPre] ++ preLen .a2
+
+/-- `pre`'s first `a2` words, `n`'s values, to the frame. -/
+def preCopy : Prog isa :=
+  Impl.Bignum.RISCV64.countLoop .a2 [.load .d .t1 .a0 0, .store .d .t1 .a1 0, .addi .a0 .a0 8, .addi .a1 .a1 8]
+
+/-- `n`'s values into the frame: computed (`vg_rsa_public_precompute`), or,
+with `pc`, copied from `pre`. -/
+def preStep : Bool → Prog isa
+  | false => .seq (.block preArgs) preCall
+  | true => .seq (.block preArgsP) preCopy
+
 /-- The body of the frame. -/
-def body : Prog isa :=
-  .seq (.block (save ++ crtArgs)) (.seq crtCall (.seq (.block preArgs) (.seq preCall (.seq (.block pubArgs)
+def bodyG (pc : Bool) : Prog isa :=
+  .seq (.block (save ++ crtArgs)) (.seq (crtStep pc) (.seq (preStep pc) (.seq (.block pubArgs)
     (.seq pubCall (.seq (.block cmpArgs) (.seq compare (.seq (.block result) (.seq release
-      (.block restore))))))))))
+      (.block restore)))))))))
+
+/-- The body of `vg_rsa_private_checked`'s frame. -/
+abbrev body : Prog isa := bodyG false
 
 /-- `vg_rsa_private_checked`. -/
 def code : Prog isa := .frame (.alloc frameBytes) body (.free frameBytes)
+
+/-- `vg_rsa_private_checked_precomputed`: `vg_rsa_private_checked` with the
+key's precomputed values `pre` (stack arguments 12 and 13, `pre_len`), whose
+first `2 ⌈k / 8⌉` words are `n`'s values and the next the primes'
+`R² mod p` and `R² mod q`. -/
+def codeP : Prog isa := .frame (.alloc frameBytes) (bodyG true) (.free frameBytes)
 
 end VG.Impl.Rsa.RISCV64.Priv
