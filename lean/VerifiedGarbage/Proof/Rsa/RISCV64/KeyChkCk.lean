@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkPre
 public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkOps
+public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkWord
 public import VerifiedGarbage.Proof.Rsa.KeyCheckMath
 public import VerifiedGarbage.Spec.Rsa
 public import VerifiedGarbage.Impl.Rsa.RISCV64.CheckKey
@@ -40,16 +41,6 @@ open VG.Impl.Rsa.RISCV64.Keys (seqs setOne bitOf sOdd sB sC)
 open VG.Impl.Rsa.RISCV64.KeyCheck
 open VG.Proof.Rsa.KeyWorkspace (upd upd_ne upd_self)
 open VG.Spec.Rsa (modulusValid exponentValid keyValid crtKeyValid)
-
-/-- The arrays the checks start from. -/
-abbrev live0 : List Nat := [aZ, aOne, aN, aE, aP, aQ, aDP, aDQ, aQI, aD]
-
-/-- The arrays after `start`. -/
-abbrev aStart (v : Vals) : Nat → Nat := upd (vals v) aOne 1
-
-/-- The arrays the checks of `d` use. -/
-abbrev aFin (v : Vals) : Nat → Nat := upd (upd (vals v) aM1 (2 * (v.p / 2))) aM2 (2 * (v.q / 2))
-abbrev liveFin : List Nat := [aZ, aN, aD, aDP, aDQ, aM1, aM2]
 
 theorem mulIdx_m1 : MulIdx nArr aZ aY aX aA aM1 aT := by decide
 theorem mulIdx_m2 : MulIdx nArr aZ aY aX aA aM2 aT := by decide
@@ -382,6 +373,73 @@ theorem keyValid_mont {k n e d p q dP dQ qI w : Nat} (hm : modulusValid n k = tr
   · simp only [Bool.not_eq_true] at hb
     simp only [hb, Bool.false_and]
 
+/-- A factor of a balanced modulus: with `p q = n ≥ 2^(64 (w - 1))` and
+`q < 2^(32 w)`, `p > 2^(32 w - 64)`, so that `p` and `p - 1` are numbers of
+exactly `w / 2` words. -/
+theorem balanced_lo {n p q k w : Nat} (hpq : p * q = n) (hn : 256 ^ (k - 1) ≤ n) (hkw : 8 * w ≤ k + 7)
+    (hq : q < 2 ^ (32 * w)) (hw : 2 ≤ w) (hw2 : w % 2 = 0) : 2 ^ (64 * (w / 2 - 1)) < p := by
+  have e1 : 64 * (w / 2 - 1) = 32 * w - 64 := by omega
+  have e2 : (256 : Nat) ^ (k - 1) = 2 ^ (8 * (k - 1)) := by rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
+  have hn' : 2 ^ (32 * w - 64 + 32 * w) ≤ n := by
+    rw [e2] at hn
+    exact Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega)) hn
+  rw [e1]
+  refine Nat.lt_of_not_le fun hp => ?_
+  have := Nat.mul_le_mul hp (Nat.le_of_lt hq)
+  rw [← Nat.pow_add, hpq] at this
+  have : p * q < 2 ^ (32 * w - 64) * 2 ^ (32 * w) := by
+    rcases Nat.eq_zero_or_pos p with h0 | h0
+    · rw [h0, Nat.zero_mul]; exact Nat.mul_pos (Nat.two_pow_pos _) (Nat.two_pow_pos _)
+    · exact Nat.lt_of_le_of_lt (Nat.mul_le_mul_right q hp) (Nat.mul_lt_mul_of_pos_left hq (Nat.two_pow_pos _))
+  rw [← Nat.pow_add, hpq] at this
+  omega
+
+/-- The checks by words give `keyValid`, for a balanced key: `p`, `q`, `qInv`,
+`dP` and `dQ` below `2^(32 w)`, `w` even. -/
+theorem keyValid_words {k n e d p q dP dQ qI w : Nat} (hm : modulusValid n k = true)
+    (he : exponentValid e = true) (hp : p < 256 ^ (k - 1)) (hq : q < 256 ^ (k - 1)) (hkw : 8 * w ≤ k + 7)
+    (hw : 8 ≤ w) (hw2 : w % 2 = 0) (pv : p < 2 ^ (32 * w)) (qv : q < 2 ^ (32 * w)) (qIv : qI < 2 ^ (32 * w))
+    (dPv : dP < 2 ^ (32 * w)) (dQv : dQ < 2 ^ (32 * w)) {Xq X₁ X₂ Y₁ Y₂ : Nat}
+    (hXq : InW w p → Xq = q * qI % 2 ^ (64 * w) % p)
+    (hX₁ : InW w (2 * (p / 2)) → X₁ = e * dP % 2 ^ (64 * w) % (2 * (p / 2)))
+    (hX₂ : InW w (2 * (q / 2)) → X₂ = e * dQ % 2 ^ (64 * w) % (2 * (q / 2)))
+    (hY₁ : InW w (2 * (p / 2)) → Y₁ = d % (2 * (p / 2))) (hY₂ : InW w (2 * (q / 2)) → Y₂ = d % (2 * (q / 2))) :
+    keyValid k n e d p q dP dQ qI = (crtBitsW n p q dP dQ qI (p * q % 2 ^ (64 * w)) Xq X₁ X₂ && decide (d < n) &&
+      decide (Y₁ = dP) && decide (Y₂ = dQ)) := by
+  have hR : (2 : Nat) ^ (64 * w) = 2 ^ (32 * w) * 2 ^ (32 * w) := by rw [← Nat.pow_add]; congr 1; omega
+  have lt2 : ∀ {x y : Nat}, x < 2 ^ (32 * w) → y < 2 ^ (32 * w) → x * y < 2 ^ (64 * w) := fun {x y} hx hy => by
+    rw [hR]
+    rcases Nat.eq_zero_or_pos y with h0 | h0
+    · rw [h0, Nat.mul_zero]; exact Nat.mul_pos (Nat.two_pow_pos _) (Nat.two_pow_pos _)
+    · exact Nat.lt_of_le_of_lt (Nat.mul_le_mul_right y (Nat.le_of_lt hx))
+        (Nat.mul_lt_mul_of_pos_left hy (Nat.two_pow_pos _))
+  have he' : e < 2 ^ 33 := by
+    simp only [exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he; exact he.2
+  have ev : e < 2 ^ (32 * w) := Nat.lt_of_lt_of_le he' (Nat.pow_le_pow_right (by decide) (by omega))
+  rw [VG.Proof.Rsa.keyValid_crt hm hp hq, Nat.mod_eq_of_lt (lt2 pv qv)]
+  by_cases hpq : p * q = n
+  · obtain ⟨hodd, hn⟩ := VG.Proof.Rsa.modulusValid_facts hm
+    have p2 := VG.Proof.Rsa.factor_ge_two hpq hq hn
+    have q2 := VG.Proof.Rsa.factor_ge_two (n := n) (q := p) (by rw [Nat.mul_comm]; exact hpq) hp hn
+    have podd := VG.Proof.Rsa.odd_factor hpq hodd
+    have qodd := VG.Proof.Rsa.odd_factor (by rw [Nat.mul_comm]; exact hpq) hodd
+    have plo := balanced_lo hpq hn hkw qv (by omega) hw2
+    have qlo := balanced_lo (p := q) (q := p) (by rw [Nat.mul_comm]; exact hpq) hn hkw pv (by omega) hw2
+    have e64 : 64 * (w / 2) = 32 * w := by omega
+    have mp : 2 * (p / 2) = p - 1 := by omega
+    have mq : 2 * (q / 2) = q - 1 := by omega
+    have ip : InW w p := ⟨by omega, by rw [e64]; exact pv⟩
+    have ip1 : InW w (2 * (p / 2)) := ⟨by omega, by rw [e64]; omega⟩
+    have iq1 : InW w (2 * (q / 2)) := ⟨by omega, by rw [e64]; omega⟩
+    rw [hXq ip, hX₁ ip1, hX₂ iq1, hY₁ ip1, hY₂ iq1, mp, mq, Nat.mod_eq_of_lt (lt2 ev dPv),
+      Nat.mod_eq_of_lt (lt2 ev dQv), Nat.mod_eq_of_lt (lt2 qv qIv)]
+    simp only [crtKeyValid, crtBitsW, hm, he, hpq, podd, mp, mq, Bool.true_and, beq_self_eq_true,
+      decide_true, Bool.and_true, Bool.and_assoc]
+    by_cases a1 : dP < p - 1 <;> by_cases a2 : e * dP % (p - 1) = 1 <;> by_cases a3 : dQ < q - 1 <;>
+      by_cases a4 : e * dQ % (q - 1) = 1 <;> by_cases a5 : qI < p <;> by_cases a6 : q * qI % p = 1 <;>
+      simp [a1, a2, a3, a4, a5, a6]
+  · simp [crtKeyValid, crtBitsW, hpq]
+
 /-- A number of `l < k` bytes is below `256^(k - 1)`. -/
 theorem lt_pow_of_len (bs : List VG.Byte) {k : Nat} (h : bs.length < k) : Spec.Rsa.os2ip bs < 256 ^ (k - 1) :=
   Nat.lt_of_lt_of_le (VG.Proof.Rsa.lt_of_os2ip bs) (Nat.pow_le_pow_right (by decide) (by omega))
@@ -520,7 +578,7 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
     (hmv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a0) (s0.gpr .a1).toNat))
       (s0.gpr .a1).toNat = true) :
     WP isa (seqs (([setup, .block eArr] : List (Prog isa)) ++ VG.Impl.Rsa.RISCV64.CheckKey.loads ++
-        (.block keepLen :: start ++ crtChecks ++ dChecks) ++ ([.block ret] : List (Prog isa)))) t fun u =>
+        (.block keepLen :: start ++ checks) ++ ([.block ret] : List (Prog isa)))) t fun u =>
       KBase (stackArg s0 8) ((stackArg s0 9).toNat * 8) s0 u ∧
         u.gpr .a0 = BitVec.ofNat 64 (if ckOk s0 then 1 else 0) := by
   have hp := ck_kpre h0
@@ -608,33 +666,71 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
     Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a4) (s0.gpr .a5).toNat)⟩
   have a9 : Arrs t9'.mem g.B g.w (vals v) live0 := by rw [m9]; exact l9.arrs.sub (by decide)
   have hw2 : 2 ≤ g.w := by have := hp.k64; show 2 ≤ ((s0.gpr .a1).toNat + 7) / 8; omega
-  rw [kc_seqs_append (l₁ := start) (by simp [start]) (by simp [crtChecks, pqChecks, setM])]
+  rw [kc_seqs_append (l₁ := start) (by simp [start]) (by simp [checks])]
   refine WP.mono (start_ok (g := g) (v := v) (l9.ws.of_keep k9') a9 (by rw [m9]; exact l9.top _ (by decide)))
     fun t10 g10 => ?_
-  rw [kc_seqs_append (l₁ := crtChecks) (by simp [crtChecks, pqChecks, setM]) (by simp [dChecks, ltA])]
-  refine WP.mono (crtChecks_ok g10 hw2) fun t11 ⟨Z, L, M₁, M₂, R₁, R₂, hZ, hL, hM₁, hM₂, hR₁, hR₂, g11⟩ => ?_
-  rw [kc_seqs_append (l₁ := dChecks) (by simp [dChecks, ltA]) (by simp)]
   have hpv : v.p < 2 ^ (8 * (s0.gpr .a7).toNat) := by
     have := VG.Proof.Rsa.lt_of_os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a6) (s0.gpr .a7).toNat)
     rw [len_bytes] at this; rw [Nat.pow_mul]; exact this
   have hqv : v.q < 2 ^ (8 * (stackArg s0 1).toNat) := by
     have := VG.Proof.Rsa.lt_of_os2ip (Spec.Rsa.bytesAt s0.mem (stackArg s0 0) (stackArg s0 1).toNat)
     rw [len_bytes] at this; rw [Nat.pow_mul]; exact this
-  refine WP.mono (dChecks_ok g11 h5 h6 p1 (show _ ≤ 8 * (((s0.gpr .a1).toNat + 7) / 8) by omega) hpv
-    q1 (show _ ≤ 8 * (((s0.gpr .a1).toNat + 7) / 8) by omega) hqv)
-    fun t12 ⟨Y₁, Y₂, hY₁, hY₂, A, live, g12⟩ => ?_
-  rw [show seqs [.block ret] = .block ret from rfl]
-  refine WP.mono (ret_ok g12) fun t ⟨⟨t3, tm⟩, kt⟩ => ⟨(g12.base (l9.base.of_regs k9' m9)).of_regs kt tm, ?_⟩
-  rw [t3]
-  congr 2
   have hnk : v.n < 256 ^ (s0.gpr .a1).toNat := by
     have := VG.Proof.Rsa.lt_of_os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a0) (s0.gpr .a1).toNat)
     rwa [len_bytes] at this
-  have e := keyValid_mont (k := (s0.gpr .a1).toNat) (w := g.w) hmv hev
-    (lt_pow_of_len _ (by rw [len_bytes]; exact p2)) (lt_pow_of_len _ (by rw [len_bytes]; exact q2)) hnk
-    (by have := hp.k64; omega) (pow_kw _) hZ hL hM₁ hM₂ hR₁ hR₂ hY₁ hY₂
-  rw [show ckOk s0 = Spec.Rsa.keyValid (s0.gpr .a1).toNat _ _ _ _ _ _ _ _ by
-    simp only [ckOk, Spec.Rsa.checkKey, len_bytes]; rfl, e]
+  have eck : ckOk s0 = Spec.Rsa.keyValid (s0.gpr .a1).toNat v.n v.e v.d v.p v.q v.dP v.dQ v.qI := by
+    simp only [ckOk, Spec.Rsa.checkKey, len_bytes]; rfl
+  -- The shape of the key, then the checks by words or as above.
+  simp only [checks, List.cons_append, List.nil_append]
+  rw [kc_seqs_cons (by simp)]
+  have hwl := g10.ws.wle
+  refine WP.mono (shape_ok (pl := (s0.gpr .a7).toNat) (ql := (stackArg s0 1).toNat) (w := g.w)
+    ((g10.regs.gpr (by decide)).trans h5) ((g10.regs.gpr (by decide)).trans h6) g10.ws.s9 (by omega) (by omega)
+    hwl) fun t11 ⟨⟨hiff, m11⟩, k11⟩ => ?_
+  have fr : Keys.Frame g.B g.w [] [] t10.mem t11.mem := by rw [m11]; exact Keys.Frame.refl _ _ _ _ _
+  have g11 := g10.next (g10.ws.of_keep k11) fr (by simp) (by simp) k11 (by decide)
+    (g10.arrs_keep fr (by simp) (by simp)) g10.live_lt (g10.vd_keep fr (by simp) (by simp)) (g10.mask_keep fr (by simp))
+  rw [kc_seqs_cons (by simp)]
+  suffices H : WP isa (.ite (.zero .t0) (seqs (crtChecksW ++ dChecksW)) (seqs (crtChecks ++ dChecks))) t11
+      (fun u => ∃ A live, Stg g t9' A live (ckOk s0) u) by
+    refine WP.mono H fun u ⟨A, live, gu⟩ => ?_
+    rw [show seqs [.block ret] = .block ret from rfl]
+    exact WP.mono (ret_ok gu) fun t ⟨⟨t3, tm⟩, kt⟩ => ⟨(gu.base (l9.base.of_regs k9' m9)).of_regs kt tm, t3⟩
+  refine WP.ite _ (Steps.eval_zero t11 .t0) (fun hz => ?_) (fun hz => ?_)
+  · -- A balanced key: by words.
+    obtain ⟨gp8, gpw, gpq, gp32⟩ := hiff.mp (by simpa using hz)
+    have hw8 : 8 ≤ g.w := by omega
+    have hw2 : g.w % 2 = 0 := by omega
+    rw [kc_seqs_append (l₁ := crtChecksW) (by simp [crtChecksW, mulQ]) (by simp [dChecksW, ltA])]
+    refine WP.mono (crtChecksW_ok g11 hw8 hw2) fun t12 ⟨Xq, X₁, X₂, hXq, hX₁, hX₂, g12⟩ => ?_
+    refine WP.mono (dChecksW_ok g12 hw8 hw2) fun t ⟨Y₁, Y₂, hY₁, hY₂, A, live, g13⟩ => ⟨A, live, ?_⟩
+    have b32 : ∀ {x l : Nat}, x < 2 ^ (8 * l) → l = 4 * g.w → x < 2 ^ (32 * g.w) := fun hx hl => by
+      rw [hl, ← Nat.mul_assoc] at hx; exact hx
+    have hqIv : v.qI < 2 ^ (8 * (s0.gpr .a7).toNat) := by
+      have := VG.Proof.Rsa.lt_of_os2ip (Spec.Rsa.bytesAt s0.mem (stackArg s0 6) (s0.gpr .a7).toNat)
+      rw [len_bytes] at this; rw [Nat.pow_mul]; exact this
+    have hdPv : v.dP < 2 ^ (8 * (s0.gpr .a7).toNat) := by
+      have := VG.Proof.Rsa.lt_of_os2ip (Spec.Rsa.bytesAt s0.mem (stackArg s0 2) (s0.gpr .a7).toNat)
+      rw [len_bytes] at this; rw [Nat.pow_mul]; exact this
+    have hdQv : v.dQ < 2 ^ (8 * (stackArg s0 1).toNat) := by
+      have := VG.Proof.Rsa.lt_of_os2ip (Spec.Rsa.bytesAt s0.mem (stackArg s0 4) (stackArg s0 1).toNat)
+      rw [len_bytes] at this; rw [Nat.pow_mul]; exact this
+    have e := keyValid_words (k := (s0.gpr .a1).toNat) (w := g.w) hmv hev
+      (lt_pow_of_len _ (by rw [len_bytes]; exact p2)) (lt_pow_of_len _ (by rw [len_bytes]; exact q2))
+      (by show 8 * (((s0.gpr .a1).toNat + 7) / 8) ≤ _; omega) hw8 hw2 (b32 hpv gpw.symm)
+      (b32 hqv (by omega)) (b32 hqIv gpw.symm) (b32 hdPv gpw.symm) (b32 hdQv (by omega)) hXq hX₁ hX₂ hY₁ hY₂
+    rw [eck, e]; exact g13
+  · -- Any other key.
+    have hw2 : 2 ≤ g.w := by have := hp.k64; show 2 ≤ ((s0.gpr .a1).toNat + 7) / 8; omega
+    rw [kc_seqs_append (l₁ := crtChecks) (by simp [crtChecks, pqChecks, setM]) (by simp [dChecks, ltA])]
+    refine WP.mono (crtChecks_ok g11 hw2) fun t12 ⟨Z, L, M₁, M₂, R₁, R₂, hZ, hL, hM₁, hM₂, hR₁, hR₂, g12⟩ => ?_
+    refine WP.mono (dChecks_ok g12 h5 h6 p1 (show _ ≤ 8 * (((s0.gpr .a1).toNat + 7) / 8) by omega) hpv
+      q1 (show _ ≤ 8 * (((s0.gpr .a1).toNat + 7) / 8) by omega) hqv)
+      fun t ⟨Y₁, Y₂, hY₁, hY₂, A, live, g13⟩ => ⟨A, live, ?_⟩
+    have e := keyValid_mont (k := (s0.gpr .a1).toNat) (w := g.w) hmv hev
+      (lt_pow_of_len _ (by rw [len_bytes]; exact p2)) (lt_pow_of_len _ (by rw [len_bytes]; exact q2)) hnk
+      (by have := hp.k64; omega) (pow_kw _) hZ hL hM₁ hM₂ hR₁ hR₂ hY₁ hY₂
+    rw [eck, e]; exact g13
 
 theorem ckOk_valid {s0 : State} (h : ckOk s0 = true) :
     Spec.Rsa.exponentValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a2) (s0.gpr .a3).toNat)) = true ∧
