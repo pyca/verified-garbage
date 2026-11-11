@@ -62,6 +62,25 @@ def initX86_64 : Contract isa where
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsp = s₂.gpr .rsp
 
+/-- What `vg_aes_gcm_init` needs when the functions it calls use no working
+space (`AesGcm.X86_64.InitFree`): of `scratch`, only the 176 bytes it writes
+itself, the block `T` at 96 and our caller's registers at 128. -/
+def initPreF (s : State) : Prop :=
+  let key : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
+  let ctx : Region := ⟨s.gpr .rdx, 256⟩
+  let scr : Region := ⟨s.gpr .rcx, 176⟩
+  s.rd = [key] ∧ s.wr = [ctx, scr] ∧
+    key.Disjoint ctx ∧ key.Disjoint scr ∧ ctx.Disjoint scr ∧ (ret s).Disjoint ctx ∧ (ret s).Disjoint scr ∧
+    (stk s).Disjoint key ∧ (stk s).Disjoint ctx ∧ (stk s).Disjoint scr ∧
+    (s.gpr .rdx).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .rcx).toNat + 176 ≤ 2 ^ 64 ∧
+    ((s.gpr .rsi).toNat = 16 ∨ (s.gpr .rsi).toNat = 24 ∨ (s.gpr .rsi).toNat = 32)
+
+/-- `initX86_64`, with `scratch` of 176 bytes (`initPreF`). -/
+def initX86_64F : Contract isa where
+  pre := initPreF
+  post := initX86_64.post
+  pub := initX86_64.pub
+
 /-- `vg_aes_gcm_stream_init(ctx = rdi, nonce = rsi, nonce_len = rdx, state = rcx, scratch = r8)`. -/
 def streamInitX86_64 : Contract isa where
   pre s :=

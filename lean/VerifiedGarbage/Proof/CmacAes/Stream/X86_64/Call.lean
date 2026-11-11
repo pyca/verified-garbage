@@ -97,6 +97,26 @@ def finishX86_64 : Contract isa where
     s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
       s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8
 
+
+/-- `finishX86_64` over an implementation of `vg_aes_ctr32` that needs no
+working space: `scratch` is the 16 bytes of `vg_cmac_aes_finalize`'s counter
+block (`finishF`). -/
+def finishX86_64F : Contract isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .rdi, 304⟩
+    let out : Region := ⟨s.gpr .rcx, 16⟩
+    let scr : Region := ⟨s.gpr .r8, 16⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stack := below (s.gpr .rsp) 16
+    16 ≤ (s.gpr .rsp).toNat ∧ s.rd = [] ∧ s.wr = [state, out, scr] ∧
+      state.Disjoint out ∧ state.Disjoint scr ∧ out.Disjoint scr ∧
+      ret.Disjoint state ∧ ret.Disjoint out ∧ ret.Disjoint scr ∧
+      stack.Disjoint state ∧ stack.Disjoint out ∧ stack.Disjoint scr ∧
+      (s.gpr .rdi).toNat + 304 ≤ 2 ^ 64 ∧ (s.gpr .rcx).toNat + 16 ≤ 2 ^ 64 ∧
+      (s.gpr .r8).toNat + 16 ≤ 2 ^ 64 ∧
+      ((s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14)
+  post := finishX86_64.post
+  pub := finishX86_64.pub
 end VG.Proof.CmacAes.Stream.X86_64
 
 end
@@ -118,7 +138,7 @@ namespace VG.Proof.CmacAes.Stream.X86_64
 
 open VG VG.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
-open VG.Proof.CmacAes.X86_64 (UpdateImpl updateX86_64 subkeysX86_64 finalizeX86_64 subkeys_correct
+open VG.Proof.CmacAes.X86_64 (UpdateImpl updateX86_64 subkeysX86_64 finalizeX86_64 finalizeX86_64F finalizeF_correct finalizeF_ct subkeys_correct
   finalize_correct subkeys_ct finalize_ct callEntry_frame bytesAt_frame toNat_rounds)
 
 /-! ## The stack -/
@@ -418,6 +438,102 @@ theorem fin_rel (v : Ctr32Impl) (nm : String) {P : State → State → Prop}
   obtain ⟨K, St, Q, S, L, R, h₁, h₂, hsp⟩ := h s₁ s₂ hp
   refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
   simp only [finalizeX86_64, State.withRegions_gpr, State.callEntry_rsp,
+    State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
+    State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.r9 ≠ .rsp),
+    h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₁.r9, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, h₂.r9, hsp]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+/-! ## `vg_cmac_aes_finalize` without working space for `vg_aes_ctr32` -/
+
+/-- `FArgs`, when `vg_aes_ctr32` needs no working space: of the scratch
+buffer, only the counter block at `S + 2048` is given. -/
+structure FArgsF (s : State) (K St P S : Addr) (L R : Nat) : Prop where
+  rdi : s.gpr .rdi = K
+  rsi : s.gpr .rsi = BitVec.ofNat 64 R
+  rdx : s.gpr .rdx = St
+  rcx : s.gpr .rcx = P
+  r8 : s.gpr .r8 = BitVec.ofNat 64 L
+  r9 : s.gpr .r9 = S
+  rounds : R = 10 ∨ R = 12 ∨ R = 14
+  len : L ≤ 16
+  kst : (⟨K, 272⟩ : Region).Disjoint ⟨St, 16⟩
+  ks : (⟨K, 272⟩ : Region).Disjoint ⟨S + BitVec.ofNat 64 2048, 16⟩
+  pst : (⟨P, L⟩ : Region).Disjoint ⟨St, 16⟩
+  ps : (⟨P, L⟩ : Region).Disjoint ⟨S + BitVec.ofNat 64 2048, 16⟩
+  sts : (⟨St, 16⟩ : Region).Disjoint ⟨S + BitVec.ofNat 64 2048, 16⟩
+  stkK : (below (s.gpr .rsp) 16).Disjoint ⟨K, 272⟩
+  stkP : (below (s.gpr .rsp) 16).Disjoint ⟨P, L⟩
+  stkSt : (below (s.gpr .rsp) 16).Disjoint ⟨St, 16⟩
+  stkS : (below (s.gpr .rsp) 16).Disjoint ⟨S + BitVec.ofNat 64 2048, 16⟩
+  wrapK : K.toNat + 272 ≤ 2 ^ 64
+  wrapSt : St.toNat + 16 ≤ 2 ^ 64
+  wrapP : P.toNat + L ≤ 2 ^ 64
+  wrapS : (S + BitVec.ofNat 64 2048).toNat + 16 ≤ 2 ^ 64
+  reads : Covers ([⟨K, 272⟩, ⟨P, L⟩] ++ [⟨St, 16⟩, ⟨S + BitVec.ofNat 64 2048, 16⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨St, 16⟩, ⟨S + BitVec.ofNat 64 2048, 16⟩] s.wr
+
+/-- What a call of `vg_cmac_aes_finalize` leaves. -/
+structure FPostF (s : State) (K St P S : Addr) (L R : Nat) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
+  frame : Frame [⟨St, 16⟩, ⟨S + BitVec.ofNat 64 2048, 16⟩, below (s.gpr .rsp) 16] s.mem s'.mem
+  out : let ciph := Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem K (16 * (R + 1)))
+    let ks := Spec.Cmac.subkeys ciph 16
+    Spec.Aes.bytesAt s.mem (K + 240) 32 = ks.1 ++ ks.2 →
+    ∀ msg : List Byte, msg.length % 16 = 0 → (msg = [] ∨ 0 < L) →
+      Spec.Aes.bytesAt s.mem St 16 = Spec.Cmac.chain ciph (Spec.Cmac.zeros 16) (Spec.Cmac.blocks 16 msg) →
+      Spec.Aes.bytesAt s'.mem St 16 = Spec.Cmac.macFull ciph 16 (msg ++ Spec.Aes.bytesAt s.mem P L)
+
+theorem FArgsF.pre {s : State} {K St P S : Addr} {L R : Nat} (h : FArgsF s K St P S L R) :
+    finalizeX86_64F.pre (s.callEntry.withRegions [⟨K, 272⟩, ⟨P, L⟩] [⟨St, 16⟩, ⟨S + BitVec.ofNat 64 2048, 16⟩]) := by
+  have hR := toNat_rounds h.rounds
+  have hL := toNat_ofNat (n := L) (by have := h.len; omega_arith)
+  simp only [finalizeX86_64F, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.r9 ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, hR, hL]
+  exact ⟨trivial, trivial, h.kst, h.ks, h.pst, h.ps, h.sts, h.stkSt.sub_left (ret_sub _),
+    h.stkS.sub_left (ret_sub _), h.stkK.sub_left (stk_sub _), h.stkP.sub_left (stk_sub _),
+    h.stkSt.sub_left (stk_sub _), h.stkS.sub_left (stk_sub _), h.wrapK, h.wrapSt, h.wrapP, h.wrapS,
+    h.rounds, h.len⟩
+
+theorem fin_callF (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) (nm : String) {s : State}
+    {K St P S : Addr} {L R : Nat} (h : FArgsF s K St P S L R) :
+    WP isa (.call nm (Impl.CmacAes.X86_64.finalize v.callee)) s (FPostF s K St P S L R) := by
+  have hR := toNat_rounds h.rounds
+  have hL := toNat_ofNat (n := L) (by have := h.len; omega_arith)
+  refine WP.call (k := finalizeX86_64F) (finalizeF_correct v f) (finalize_nosp v)
+    (by rw [finalize_depth]; decide) h.pre h.reads h.writes ?_
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
+  rw [finalize_depth] at hf
+  refine ⟨hrd, hwr, hcs, by simpa using hf, ?_⟩
+  simp only [finalizeX86_64F, finalizeX86_64, State.withRegions_gpr, State.withRegions_mem,
+    State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, h.r8, hR, hL] at hpost
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_arith
+  have eK : Spec.Aes.bytesAt s.callEntry.mem K (16 * (R + 1)) = Spec.Aes.bytesAt s.mem K (16 * (R + 1)) :=
+    callEntry_bytes s (h.stkK.sub_right (Region.sub_prefix (by omega_arith))) (by omega_arith)
+  have eK2 : Spec.Aes.bytesAt s.callEntry.mem (K + 240) 32 = Spec.Aes.bytesAt s.mem (K + 240) 32 :=
+    callEntry_bytes s (h.stkK.sub_right (Offset.sub_base K (d := 240) (n := 32) (by decide))) (by decide)
+  have eSt := callEntry_bytes s h.stkSt (by decide)
+  have eP := callEntry_bytes s h.stkP (by omega_arith)
+  intro _ _ hk msg hm hne hst
+  simp only [X86_64.ciphAt, eK, eK2, eSt, eP] at hpost
+  rw [← hm₂]
+  exact hpost hk msg hm hne hst
+
+theorem fin_relF (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) (nm : String) {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K St Q S : Addr, ∃ L R : Nat,
+      FArgsF s₁ K St Q S L R ∧ FArgsF s₂ K St Q S L R ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+    RelCT isa P (.call nm (Impl.CmacAes.X86_64.finalize v.callee)) fun _ _ => True := by
+  refine RelCT.callEx (finalizeF_correct v f) (finalizeF_ct v f) fun s₁ s₂ hp => ?_
+  obtain ⟨K, St, Q, S, L, R, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+  refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
+  simp only [finalizeX86_64F, finalizeX86_64, State.withRegions_gpr, State.callEntry_rsp,
     State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
     State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.r9 ≠ .rsp),

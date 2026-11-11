@@ -113,6 +113,23 @@ theorem seal_verified (v : BlocksImpl) :
       Proof.AesOcb.ret, Proof.AesOcb.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range,
       List.range.loop, VG.X86_64.below, X86_64.argRegs] [sealSat] using sealSat)
 
+theorem initF_correct (v : BlocksImpl) (f : Proof.Aes.X86_64.BlocksFree v.enc v.expand) (s : State)
+    (hs : initX86_64F.pre s) :
+    ∃ t s', Exec isa (init (callees v)) s t s' ∧ abiPreserved s s' ∧ initX86_64F.post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := initF_wp v f hs
+  exact ⟨t, s', he, abiPreserved_of_exec (init_mx v) he hg, hp⟩
+
+/-- A state satisfying the precondition of `vg_aes_ocb_init` with 24 bytes of
+working space. -/
+def initSatF : State := { initSat with wr := [⟨0x2000, 256⟩, ⟨0x4000, 24⟩] }
+
+theorem initF_verified (v : BlocksImpl) (f : Proof.Aes.X86_64.BlocksFree v.enc v.expand) :
+    Verified X86_64.target (init (callees v)) (Proof.AesOcb.initScratchContractF X86_64.abi 8) :=
+  Verified.of_correct (initF_correct v f) (initF_ct v f) (by
+    sig_implies [Proof.AesOcb.initScratchContractF, Proof.AesOcb.initScratchSigF, Spec.Ocb.initPre,
+      Spec.Ocb.initPost, Proof.AesOcb.initX86_64F, Proof.AesOcb.initX86_64, Proof.AesOcb.stk8, Proof.AesOcb.ret,
+      X86_64.abi, X86_64.argRegs, VG.X86_64.below] [initSatF, initSat] using initSatF)
+
 theorem init_verified (v : BlocksImpl) :
     Verified X86_64.target (init (callees v)) (Proof.AesOcb.initScratchContract X86_64.abi 8) :=
   Verified.of_correct (init_correct v) (init_ct v) (by

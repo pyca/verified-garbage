@@ -6,6 +6,9 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Spec.Cfb8.Contract
 public import VerifiedGarbage.Spec.AesEcb.Contract
 public import VerifiedGarbage.Impl.AesCfb8.X86_64
+public import VerifiedGarbage.Spec.Ocb.Contract
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+public import VerifiedGarbage.Impl.AesOcb.X86_64
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
@@ -29,6 +32,9 @@ that also expand the key, proven against `Proof.Aes.expandKeyX86_64`.
 An implementation also gives the residue analyses of the functions over it
 that the analysis handles (`cfb8EncRes`, `cfb8DecRes`, `ecbEncRes`): those
 instances then return without secret residue (`X86_64.RScrub.withScrub`).
+One whose encryption and key expansion never touch their scratch buffers
+gives their contracts without them (`free`), and the analysis of
+`vg_aes_ocb_init` over it with no working space for them (`ocbInitRes`).
 -/
 
 @[expose] public section
@@ -36,6 +42,25 @@ instances then return without secret residue (`X86_64.RScrub.withScrub`).
 namespace VG.Proof.Aes.X86_64
 
 open VG.X86_64
+
+/-- What an implementation whose encryption and key expansion never touch
+their scratch buffers gives: their contracts without them
+(`Proof.Aes.blocksX86_64F`, `AesNi.Key.expandKey3X86_64`), so that a caller
+of those alone needs no working space for them. -/
+structure BlocksFree (enc : Impl.Aes.X86_64.Blocks) (expand : Impl.Aes.X86_64.ExpandKey) : Type where
+  encOk : ∀ s, (Proof.Aes.blocksX86_64F Spec.Aes.cipher).pre s →
+    ∃ t s', Exec isa enc.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86_64F Spec.Aes.cipher).post s s'
+  encCt : ConstantTime isa (Proof.Aes.blocksX86_64F Spec.Aes.cipher).pre
+    (Proof.Aes.blocksX86_64F Spec.Aes.cipher).pub enc.code
+  expandOk : ∀ s, AesNi.Key.expandKey3X86_64.pre s →
+    ∃ t s', Exec isa expand.code s t s' ∧ abiPreserved s s' ∧ AesNi.Key.expandKey3X86_64.post s s'
+  expandCt : ConstantTime isa AesNi.Key.expandKey3X86_64.pre AesNi.Key.expandKey3X86_64.pub expand.code
+
+/-- `vg_aes_ocb_init`'s code over `enc`, `dec` and `expand` when encryption
+and the key expansion need no working space (`BlocksFree`): a frame of only
+the 24 bytes `init` writes itself. -/
+def ocbInitCodeF (enc dec : Impl.Aes.X86_64.Blocks) (expand : Impl.Aes.X86_64.ExpandKey) : Prog isa :=
+  Impl.StackScratch.X86_64.withStackScratch 32 .rcx (Impl.AesOcb.X86_64.init ⟨enc, dec, expand⟩)
 
 /-- An implementation of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`
 on x86-64, and of `vg_aes_expand_key`. -/
@@ -102,6 +127,12 @@ structure BlocksImpl where
   /-- The residue analysis of `vg_aes_ecb_encrypt` as its `enc` alone, if
   the analysis handles it. -/
   ecbEncRes : Option (RScrub.Analysed Spec.AesEcb.encryptApi.sig 0 [] enc.code) := none
+  /-- The contracts of encryption and the key expansion without a scratch
+  buffer, if they never touch one. -/
+  free : Option (BlocksFree enc expand) := none
+  /-- The residue analysis of `vg_aes_ocb_init` over it, without working
+  space for it (`free`), if the analysis handles it. -/
+  ocbInitRes : Option (RScrub.Analysed Spec.Ocb.initApi.sig 40 [] (ocbInitCodeF enc dec expand)) := none
 
 namespace BlocksImpl
 
@@ -178,6 +209,8 @@ def aesni : BlocksImpl where
   decWritten := 224
   decWrittenLe := by decide
   decWrittenOk := AesNi.decryptBlocks_written
+  free := some ⟨AesNi.encryptBlocksF_correct, AesNi.encryptBlocks_ctP, AesNi.Key.expandKey3_correct,
+    AesNi.Key.expandKey3_ct⟩
   suffix := "_aesni"
   features := ["aes"]
   expand := .aesni
@@ -215,6 +248,8 @@ def vaes : BlocksImpl where
   decWritten := 224
   decWrittenLe := by decide
   decWrittenOk := VaesBlocks.decryptBlocks_written
+  free := some ⟨VaesBlocks.encryptBlocksF_correct, VaesBlocks.encryptBlocks_ctP,
+    AesNi.Key.expandKey3_correct, AesNi.Key.expandKey3_ct⟩
   suffix := "_vaes"
   features := ["aes", "avx", "avx2", "vaes"]
   expand := .aesni

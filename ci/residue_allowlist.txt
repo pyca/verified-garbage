@@ -43,8 +43,6 @@ x86_64 vg_aes_ecb_decrypt_vaes
 x86_64 vg_aes_ecb_encrypt
 x86_64 vg_aes_ecb_encrypt_avx
 x86_64 vg_aes_gcm_init
-x86_64 vg_aes_gcm_init_aesni
-x86_64 vg_aes_gcm_init_vaes
 x86_64 vg_aes_gcm_open_prepared
 x86_64 vg_aes_gcm_open_prepared_aesni
 x86_64 vg_aes_gcm_open_prepared_aesni_pclmul
@@ -126,8 +124,6 @@ x86_64 vg_aes_gcm_stream_verify_vaes_vpclmul
 x86_64 vg_aes_gcm_wipe_prepared
 x86_64 vg_aes_gcm_wipe_prepared_avx
 x86_64 vg_aes_ocb_init
-x86_64 vg_aes_ocb_init_aesni
-x86_64 vg_aes_ocb_init_vaes
 x86_64 vg_aes_ocb_open
 x86_64 vg_aes_ocb_open_aesni
 x86_64 vg_aes_ocb_open_vaes
@@ -216,8 +212,6 @@ x86_64 vg_chacha20_poly1305_seal_ssse3
 x86_64 vg_cmac_aes_absorb
 x86_64 vg_cmac_aes_absorb_aesni
 x86_64 vg_cmac_aes_finish
-x86_64 vg_cmac_aes_finish_aesni
-x86_64 vg_cmac_aes_finish_vaes
 x86_64 vg_cmac_aes_init
 x86_64 vg_cmac_aes_init_aesni
 x86_64 vg_cmac_aes_init_vaes

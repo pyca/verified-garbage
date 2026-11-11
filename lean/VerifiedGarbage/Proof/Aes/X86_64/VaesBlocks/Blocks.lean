@@ -53,8 +53,8 @@ open VG.Impl.Aes.X86_64.Vaes (regs8)
 open VG.Proof.Aes.X86_64.AesNi (st ea_at ofInt_natCast stateAt_eq inRegions_wr contains_offset
   imcKeys_ok dKeys_of_imc)
 open VG.Proof.Aes.X86_64.Vaes (load256_lo load256_hi extract_lo extract_hi)
-open VG.Proof.Aes.X86_64.AesNi.Ecb (Pre Inv Stable sp nr dp nb dR scrR bAddr orig sch KPe KPd run_in run_sep
-  beq_ofNat_zero' tail_ok post_of keys₀ kpe_stable kpd_stable aes_blkOk aesDec_blkOk keys_congr dkeys_congr
+open VG.Proof.Aes.X86_64.AesNi.Ecb (Pre PreS Inv Stable sp nr dp nb dR scrR bAddr orig sch KPe KPd run_in run_sep
+  beq_ofNat_zero' tail_ok post_of ret_dR ret_dS keys₀ kpe_stable kpd_stable aes_blkOk aesDec_blkOk keys_congr dkeys_congr
   pre_of)
 
 /-! ## Two blocks in each register -/
@@ -248,7 +248,7 @@ theorem body16_ok {c : Nat} (hc : c + 16 ≤ nb s₀) {s : State} (hI : Inv KP F
       rw [hI.rdx, bAddr, bAddr, BitVec.add_assoc, ← BitVec.ofNat_add,
         show 16 * c + 16 * (2 * (0 + k) + l) = 16 * (c + (2 * k + l)) by omega_arith]
   have hout : ∀ k, k < 8 → InRegions s.wr (bAddr s₀ (c + 2 * k)) 32 := fun k hk =>
-    ⟨dR s₀, by simp [hI.wr, hp.wr], by
+    ⟨dR s₀, by obtain ⟨_, hw⟩ := hp.wr; simp [hI.wr, hw], by
       rw [bAddr]; exact contains_offset (by omega_arith) (by omega_arith)⟩
   refine WP.seq (WP.mono (loadData_ok regs8 0 s hnd fun k hk => by
       rw [addr s rfl]; obtain ⟨r, hr, h⟩ := hout k hk
@@ -415,17 +415,17 @@ theorem encrypt_correct {s₀ : State} (hp : Pre s₀) :
       wr := wr₁ }
   exact WP.mono (loops_ok hp (kpe_stable hp).frame ((aes16_blkOk hp).frame s₀) ((aes_blkOk hp).frame s₀)
       hI₁ (by simpa using cf₁))
-    fun s hI => ⟨(post_of hp hI).1, (post_of hp hI).2, hI.kp.2⟩
+    fun s hI => ⟨(post_of hI hI.kp.2 (ret_dR hp)).1, (post_of hI hI.kp.2 (ret_dR hp)).2, hI.kp.2⟩
 
-theorem decrypt_correct {s₀ : State} (hp : Pre s₀) :
+theorem decrypt_correct {s₀ : State} (hp : Pre s₀) (hs : PreS s₀) :
     WP isa Impl.Aes.X86_64.VaesBlocks.decryptBlocks s₀ fun s' =>
       gprPreserved s₀ s' ∧ (Proof.Aes.blocksX86_64 Spec.Aes.invCipher).post s₀ s' ∧
         Frame [dR s₀, ⟨s₀.gpr .r8, 224⟩] s₀.mem s'.mem := by
-  have hscr : (scrR s₀) ∈ s₀.wr := by rw [hp.wr]; simp
+  have hscr : (scrR s₀) ∈ s₀.wr := by rw [hs.wr]; simp
   have hsch : (AesNi.Ecb.sR s₀) ∈ s₀.rd ++ s₀.wr := List.mem_append_left _ (by rw [hp.rd]; simp)
-  refine WP.seq (WP.mono (imcKeys_ok hp.rounds (by simp) ⟨_, hscr, Region.contains_self _ _⟩ hsch hp.s_scr)
+  refine WP.seq (WP.mono (imcKeys_ok hp.rounds (by simp) ⟨_, hscr, Region.contains_self _ _⟩ hsch hs.s_scr)
     fun s₁ ⟨S, hS₁, hcov⟩ => ?_)
-  have hK₁ := dKeys_of_imc (keys₀ hp) ⟨_, hscr, Region.contains_self _ _⟩ hp.s_scr hS₁ hcov
+  have hK₁ := dKeys_of_imc (keys₀ hp) ⟨_, hscr, Region.contains_self _ _⟩ hs.s_scr hS₁ hcov
   refine WP.seq (WP.mono (blocksLoad_ok s₁) fun s₂ ⟨r10₂, g₂, m₂, rd₂, wr₂, cf₂⟩ => ?_)
   have g : ∀ r, r ≠ .r10 → s₂.gpr r = s₀.gpr r := fun r h => by rw [g₂ r h, hS₁.gpr]
   have hI₂ : Inv (AesNi.Ecb.KPw ⟨s₀.gpr .r8, 224⟩ (KPd s₀) s₀) (Spec.Aes.invCipher (nr s₀) (sch s₀)) s₀ 0 0
@@ -447,14 +447,14 @@ theorem decrypt_correct {s₀ : State} (hp : Pre s₀) :
         exact congrArg st <| hS₁.frame.readW (r := ⟨bAddr s₀ k, 16⟩) (w := 128)
           (Region.contains_self _ _) (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
-            exact hp.d_scr.sub_left (Offset.sub_base _ (by omega_arith))) (by decide)
+            exact hs.d_scr.sub_left (Offset.sub_base _ (by omega_arith))) (by decide)
       rd := by rw [rd₂, hS₁.rd]
       wr := by rw [wr₂, hS₁.wr] }
   have hcf : s₂.cf = some (decide (nb s₀ < 16)) := by
     rw [cf₂, hS₁.gpr]
-  exact WP.mono (loops_ok hp ((kpd_stable hp).frameW _) ((aesDec16_blkOk hp).frameW _ s₀)
+  exact WP.mono (loops_ok hp ((kpd_stable hp hs).frameW _) ((aesDec16_blkOk hp).frameW _ s₀)
       ((aesDec_blkOk hp).frameW _ s₀) hI₂ hcf)
-    fun s hI => ⟨(post_of hp hI).1, (post_of hp hI).2, hI.kp.2⟩
+    fun s hI => ⟨(post_of hI hI.frame (ret_dS hp hs)).1, (post_of hI hI.frame (ret_dS hp hs)).2, hI.kp.2⟩
 
 theorem encryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksX86_64 Spec.Aes.cipher).pre s) :
     ∃ t s', Exec isa Impl.Aes.X86_64.VaesBlocks.encryptBlocks s t s' ∧ abiPreserved s s' ∧
@@ -462,20 +462,30 @@ theorem encryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksX86_64 Spec.Aes
   obtain ⟨t, s', he, h⟩ := encrypt_correct (pre_of s hs)
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2.1⟩
 
+theorem encryptBlocksF_correct (s : State) (hs : (Proof.Aes.blocksX86_64F Spec.Aes.cipher).pre s) :
+    ∃ t s', Exec isa Impl.Aes.X86_64.VaesBlocks.encryptBlocks s t s' ∧ abiPreserved s s' ∧
+      (Proof.Aes.blocksX86_64F Spec.Aes.cipher).post s s' := by
+  obtain ⟨t, s', he, h⟩ := encrypt_correct (AesNi.Ecb.preF_of s hs)
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2.1⟩
+
 theorem decryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksX86_64 Spec.Aes.invCipher).pre s) :
     ∃ t s', Exec isa Impl.Aes.X86_64.VaesBlocks.decryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksX86_64 Spec.Aes.invCipher).post s s' := by
-  obtain ⟨t, s', he, h⟩ := decrypt_correct (pre_of s hs)
+  obtain ⟨t, s', he, h⟩ := decrypt_correct (pre_of s hs) (AesNi.Ecb.preS_of s hs)
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2.1⟩
 
-theorem encryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksX86_64 Spec.Aes.cipher).pre
-    (Proof.Aes.blocksX86_64 Spec.Aes.cipher).pub Impl.Aes.X86_64.VaesBlocks.encryptBlocks := by
+/-- Whatever the precondition: the public registers alone fix the trace. -/
+theorem encryptBlocks_ctP {P : State → Prop} :
+    ConstantTime isa P (Proof.Aes.blocksX86_64 Spec.Aes.cipher).pub Impl.Aes.X86_64.VaesBlocks.encryptBlocks := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8])
     ?_ (by taint_decide)
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, _⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem encryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksX86_64 Spec.Aes.cipher).pre
+    (Proof.Aes.blocksX86_64 Spec.Aes.cipher).pub Impl.Aes.X86_64.VaesBlocks.encryptBlocks := encryptBlocks_ctP
 
 theorem decryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksX86_64 Spec.Aes.invCipher).pre
     (Proof.Aes.blocksX86_64 Spec.Aes.invCipher).pub Impl.Aes.X86_64.VaesBlocks.decryptBlocks := by
@@ -498,7 +508,7 @@ theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
   have hp := pre_of s (AesNi.encryptBlocks_implies.pre s hs)
   obtain ⟨t', s'', he', h⟩ := encrypt_correct hp
   obtain ⟨-, rfl⟩ := Exec.det he he'
-  exact AesNi.written_of_frame hp h.2.2
+  exact AesNi.written_of_frame (AesNi.Ecb.preS_of s (AesNi.encryptBlocks_implies.pre s hs)) h.2.2
 
 theorem decryptBlocks_verified :
     Verified X86_64.target Impl.Aes.X86_64.VaesBlocks.decryptBlocks
@@ -510,8 +520,8 @@ theorem decryptBlocks_written (s : State) (t : List Leak) (s' : State)
     (he : Exec isa Impl.Aes.X86_64.VaesBlocks.decryptBlocks s t s') :
     Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 224)] s s' := by
   have hp := pre_of s (AesNi.decryptBlocks_implies.pre s hs)
-  obtain ⟨t', s'', he', h⟩ := decrypt_correct hp
+  obtain ⟨t', s'', he', h⟩ := decrypt_correct hp (AesNi.Ecb.preS_of s (AesNi.decryptBlocks_implies.pre s hs))
   obtain ⟨-, rfl⟩ := Exec.det he he'
-  exact AesNi.written_of_frameKeys hp h.2.2
+  exact AesNi.written_of_frameKeys (AesNi.Ecb.preS_of s (AesNi.decryptBlocks_implies.pre s hs)) h.2.2
 
 end VG.Proof.Aes.X86_64.VaesBlocks

@@ -240,6 +240,24 @@ def ctr32X86_64 : Contract X86_64.isa where
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9
 
 open VG.X86_64 in
+/-- `ctr32X86_64` without the scratch buffer, for the implementations that
+never touch it (`vg_aes_ctr32_aesni`, `vg_aes_ctr32_vaes`): their callers
+need not set aside its 2048 bytes. `r9` is still public. -/
+def ctr32X86_64F : Contract X86_64.isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .rdi, 240⟩
+    let counter : Region := ⟨s.gpr .rdx, 16⟩
+    let data : Region := ⟨s.gpr .rcx, 16 * (s.gpr .r8).toNat⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [sched] ∧ s.wr = [counter, data] ∧
+    sched.Disjoint counter ∧ sched.Disjoint data ∧ counter.Disjoint data ∧
+    ret.Disjoint counter ∧ ret.Disjoint data ∧
+    (s.gpr .rcx).toNat + 16 * (s.gpr .r8).toNat ≤ 2 ^ 64 ∧
+    ((s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14)
+  post := ctr32X86_64.post
+  pub := ctr32X86_64.pub
+
+open VG.X86_64 in
 /-- `ctr32X86_64` out of place, for `vg_aes_ctr32_to_aesni` and
 `vg_aes_ctr32_to` (`schedule = rdi, rounds = rsi, counter = rdx, src = rcx,
 n = r8, scratch = r9, dst = r11`): the `n` blocks at `src` XORed with the

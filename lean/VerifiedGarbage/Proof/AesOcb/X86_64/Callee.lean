@@ -237,4 +237,152 @@ theorem key_rel (v : BlocksImpl) {P : State → State → Prop}
     h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial⟩
 
+/-! ## Without scratch buffers
+
+The calls of encryption and of the key expansion of an implementation that
+never touches their scratch buffers (`BlocksFree`), given none: `BCall` and
+`KCall` without them (the pointers in `r8` and `rcx` are never used). -/
+
+/-- What a call of `vg_aes_encrypt_blocks` without a scratch buffer needs. -/
+structure BCallF (s : State) (K D S : Addr) (R n : Nat) : Prop where
+  rdi : s.gpr .rdi = K
+  rsi : s.gpr .rsi = BitVec.ofNat 64 R
+  rdx : s.gpr .rdx = D
+  rcx : s.gpr .rcx = BitVec.ofNat 64 n
+  r8 : s.gpr .r8 = S
+  rounds : R = 10 ∨ R = 12 ∨ R = 14
+  wrap : D.toNat + 16 * n ≤ 2 ^ 64
+  kd : (⟨K, 240⟩ : Region).Disjoint ⟨D, 16 * n⟩
+  stkK : (below (s.gpr .rsp) 8).Disjoint ⟨K, 240⟩
+  stkD : (below (s.gpr .rsp) 8).Disjoint ⟨D, 16 * n⟩
+  reads : Covers ([⟨K, 240⟩] ++ [⟨D, 16 * n⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨D, 16 * n⟩] s.wr
+
+/-- What a call of `vg_aes_encrypt_blocks` without a scratch buffer leaves. -/
+structure BPostF (s : State) (K D : Addr) (R n : Nat) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
+  frame : Frame [⟨D, 16 * n⟩, below (s.gpr .rsp) 8] s.mem s'.mem
+  out : Spec.Aes.statesAt s'.mem D n = (Spec.Aes.statesAt s.mem D n).map
+    (Spec.Aes.cipher R (bytesAt s.mem K (16 * (R + 1))))
+
+theorem BCallF.pre {s : State} {K D S : Addr} {R n : Nat} (h : BCallF s K D S R n) :
+    (Proof.Aes.blocksX86_64F Spec.Aes.cipher).pre (s.callEntry.withRegions [⟨K, 240⟩] [⟨D, 16 * n⟩]) := by
+  have hR := toNat_rounds h.rounds
+  have hn := toNat_ofNat_of_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  simp only [Proof.Aes.blocksX86_64F, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, hR, hn]
+  exact ⟨trivial, trivial, h.kd, h.stkD, h.wrap, h.rounds⟩
+
+theorem enc_callF (v : BlocksImpl) (f : Proof.Aes.X86_64.BlocksFree v.enc v.expand) {s : State} {K D S : Addr}
+    {R n : Nat} (h : BCallF s K D S R n) :
+    WP isa (.call v.enc.name v.enc.code) s (BPostF s K D R n) := by
+  have hR := toNat_rounds h.rounds
+  have hn := toNat_ofNat_of_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  refine WP.call (k := Proof.Aes.blocksX86_64F Spec.Aes.cipher) f.encOk v.encNosp (by rw [v.encDepth]; decide)
+    (rd := [⟨K, 240⟩]) (wr := [⟨D, 16 * n⟩]) h.pre h.reads h.writes ?_
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
+  rw [v.encDepth] at hf
+  simp only [Proof.Aes.blocksX86_64F, Proof.Aes.blocksX86_64, State.withRegions_gpr, State.withRegions_mem,
+    State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp),
+    h.rdi, h.rsi, h.rdx, h.rcx, hR, hn, hm₂] at hpost
+  have fE := callEntry_frame s
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with rfl | rfl | rfl <;> decide
+  have eK := bytesAt_frame fE (p := K) (n := 16 * (R + 1))
+    (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.stkK.sub_right (Region.sub_prefix hRb)).symm) (by omega)
+  have eD : Spec.Aes.statesAt s.callEntry.mem D n = Spec.Aes.statesAt s.mem D n := by
+    simp only [Spec.Aes.statesAt]
+    refine List.map_congr_left fun i hi => ?_
+    have hi := List.mem_range.mp hi
+    simp only [Spec.Aes.stateAt]
+    apply Vector.ext
+    intro j hj
+    simp only [Vector.getElem_ofFn]
+    rw [Offset.add_add]
+    exact fE.bytes (R := ⟨D, 16 * n⟩) (disj_below h.stkD) (by show 16 * n ≤ 2 ^ 64; have := h.wrap; omega) (by show 16 * i + j < 16 * n; omega)
+  rw [eK, eD] at hpost
+  exact ⟨hrd, hwr, hcs, by simpa using hf, hpost⟩
+
+/-- Block `i` after `vg_aes_encrypt_blocks`. -/
+theorem BPostF.enc {s s' : State} {K D : Addr} {R n : Nat} (h : BPostF s K D R n s') {i : Nat} (hi : i < n) :
+    blockAtMem s'.mem (D + BitVec.ofNat 64 (16 * i)) =
+      aesWith R (bytesAt s.mem K (16 * (R + 1))) (blockAtMem s.mem (D + BitVec.ofNat 64 (16 * i))) :=
+  blockAtMem_of_state _ (stateAt_of_statesAt h.out hi)
+
+theorem enc_relF (v : BlocksImpl) (f : Proof.Aes.X86_64.BlocksFree v.enc v.expand) {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K D S : Addr, ∃ R n : Nat,
+      BCallF s₁ K D S R n ∧ BCallF s₂ K D S R n ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+    RelCT isa P (.call v.enc.name v.enc.code) fun _ _ => True := by
+  refine RelCT.callEx f.encOk f.encCt fun s₁ s₂ hp => ?_
+  obtain ⟨K, D, S, R, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+  refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
+  simp only [Proof.Aes.blocksX86_64F, Proof.Aes.blocksX86_64, State.withRegions_gpr, State.callEntry_rsp,
+    State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
+    State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp),
+    h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, hsp]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+/-- What a call of `vg_aes_expand_key_scratch` without a scratch buffer needs. -/
+structure KCallF (s : State) (Kp C : Addr) (KL : Nat) : Prop where
+  rdi : s.gpr .rdi = Kp
+  rsi : s.gpr .rsi = BitVec.ofNat 64 KL
+  rdx : s.gpr .rdx = C
+  klen : KL = 16 ∨ KL = 24 ∨ KL = 32
+  kc : (⟨Kp, KL⟩ : Region).Disjoint ⟨C, 240⟩
+  stkK : (below (s.gpr .rsp) 8).Disjoint ⟨Kp, KL⟩
+  stkC : (below (s.gpr .rsp) 8).Disjoint ⟨C, 240⟩
+  reads : Covers ([⟨Kp, KL⟩] ++ [⟨C, 240⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨C, 240⟩] s.wr
+
+/-- What a call of `vg_aes_expand_key_scratch` without a scratch buffer leaves. -/
+structure KPostF (s : State) (Kp C : Addr) (KL : Nat) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
+  frame : Frame [⟨C, 240⟩, below (s.gpr .rsp) 8] s.mem s'.mem
+  out : bytesAt s'.mem C (16 * (Spec.Aes.rounds (KL / 4) + 1)) = Spec.Aes.expandKey (bytesAt s.mem Kp KL)
+
+theorem KCallF.pre {s : State} {Kp C : Addr} {KL : Nat} (h : KCallF s Kp C KL) :
+    Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64.pre (s.callEntry.withRegions [⟨Kp, KL⟩] [⟨C, 240⟩]) := by
+  have hK := toNat_ofNat_of_lt (n := KL) (by rcases h.klen with h | h | h <;> omega)
+  simp only [Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
+    h.rdi, h.rsi, h.rdx, hK]
+  exact ⟨trivial, trivial, h.stkC, h.klen⟩
+
+theorem key_callF (v : BlocksImpl) (f : Proof.Aes.X86_64.BlocksFree v.enc v.expand) {s : State} {Kp C : Addr}
+    {KL : Nat} (h : KCallF s Kp C KL) : WP isa (.call v.expand.name v.expand.code) s (KPostF s Kp C KL) := by
+  have hK := toNat_ofNat_of_lt (n := KL) (by rcases h.klen with h | h | h <;> omega)
+  refine WP.call (k := Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64) f.expandOk v.expandNosp
+    (by rw [v.expandDepth]; decide) (rd := [⟨Kp, KL⟩]) (wr := [⟨C, 240⟩]) h.pre h.reads h.writes ?_
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
+  rw [v.expandDepth] at hf
+  refine ⟨hrd, hwr, hcs, by simpa using hf, ?_⟩
+  simp only [Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64, Proof.Aes.X86_64.AesNi.expandKeyX86_64,
+    State.withRegions_gpr, State.withRegions_mem,
+    State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), h.rdi, h.rsi, h.rdx, hK] at hpost
+  rw [← hm₂, hpost, bytesAt_frame (callEntry_frame s) (disj_below h.stkK)
+    (by rcases h.klen with h | h | h <;> omega)]
+
+theorem key_relF (v : BlocksImpl) (f : Proof.Aes.X86_64.BlocksFree v.enc v.expand) {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ Kp C : Addr, ∃ KL : Nat,
+      KCallF s₁ Kp C KL ∧ KCallF s₂ Kp C KL ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+    RelCT isa P (.call v.expand.name v.expand.code) fun _ _ => True := by
+  refine RelCT.callEx f.expandOk f.expandCt fun s₁ s₂ hp => ?_
+  obtain ⟨Kp, C, KL, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+  refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
+  simp only [Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64, State.withRegions_gpr,
+    State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), h₁.rdi, h₁.rsi, h₁.rdx, h₂.rdi, h₂.rsi, h₂.rdx]
+  exact ⟨trivial, trivial, trivial⟩
+
 end VG.Proof.AesOcb.X86_64
