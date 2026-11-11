@@ -6,6 +6,12 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 import VerifiedGarbage.Proof.Rsa.KeyMath
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Rsa.AArch64.WDiv
+import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import Mathlib.Algebra.Group.Nat.Defs
 
 /-!
@@ -55,9 +61,9 @@ structure CvPre (I : CvIn) (s : State) : Prop where
 theorem main_eq : main = seqs (([.block head] : List (Prog isa)) ++
     ((loadA aN Public.sN Public.sK ++
       (loadA aP sP sPl ++ (loadA aQ sQ sQl ++ loadA aD sD sDl))) ++
-    (pqCheck ++ (invPart ++ ((divisor aP ++ ([divmod aU aV aC aT] : List (Prog isa))) ++
+    (pqCheck ++ (invPart ++ (([wordChoice aP] : List (Prog isa)) ++
     (([zeroA aX₁, copyA aX₁ aV] : List (Prog isa)) ++
-    ((divisor aQ ++ ([divmod aU aV aC aT] : List (Prog isa))) ++
+    (([wordChoice aQ] : List (Prog isa)) ++
     (storeA aX₂ sQi sPl Public.sMask ++
       (storeA aX₁ sDp sPl Public.sMask ++
         (storeA aV sDq sQl Public.sMask ++ ([.block retMask] : List (Prog isa)))))))))))) := by
@@ -116,6 +122,151 @@ theorem cvHeadS_ok {I : CvIn} {s : State} (h : CvPre I s) :
       rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith) (by unfold argSlot at hi; omega_arith),
     h.n.congrK hi₁ k₁, h.p.congrK hi₁ k₁, h.q.congrK hi₁ k₁, h.d.congrK hi₁ k₁, hi₁, k₁.wr.trans h.wr⟩
 
+/-- `⌊w / 2⌋`, as `lsr 1` computes it. -/
+theorem lsr1_ofNat {w : Nat} (hw : w < 2 ^ 64) : BitVec.ofNat 64 w >>> 1 = BitVec.ofNat 64 (w / 2) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt hw]
+  rw [Nat.mod_eq_of_lt (by omega_arith)]
+
+/-- `wdiv`'s `w_m = w / 2` in `vg_rsa_crt_values`. -/
+theorem cvWm_ok (w : Nat) (hw : w < 2 ^ 24) : WmOk [.lsr .x .x12 .x12 1] w (w / 2) := fun t h12 =>
+  WP.keep [.x12] (Q := fun t' => t'.gpr .x12 = BitVec.ofNat 64 (w / 2) ∧ t'.mem = t.mem)
+    (by brun [h12, lsr1_ofNat (show w < 2 ^ 64 by omega_arith)]) (by decide) (by decide) (by decide +kernel)
+
+/-- `wdiv`'s `L = w` in `vg_rsa_crt_values`. -/
+theorem cvLen_ok (w : Nat) : LenOk [mov .x13 .x12] w w := fun t h12 =>
+  WP.keep [.x13] (Q := fun t' => t'.gpr .x13 = BitVec.ofNat 64 w ∧ t'.mem = t.mem)
+    (by brun [h12]) (by decide) (by decide) (by decide +kernel)
+
+/-- `wdiv`'s dividend `d` in `vg_rsa_crt_values`: two arrays above `[aV]`,
+`2 · 8 (w + 2) = 32 w_m + 32` bytes for an even `w`. -/
+theorem cvXb_ok (B : Addr) (w : Nat) (hw : w % 2 = 0) (hw' : w < 2 ^ 24) :
+    XbOk [.lsl .x .x16 .x12 5, .addImm .x .x16 .x16 24, .add .x .x16 .x11 .x16] B (slot w aV) (slot w aD)
+      (w / 2) := fun t h11 h12 => by
+  have e : off B (slot w aV) + BitVec.ofNat 64 (32 * (w / 2) + 24) = off B (slot w aD - 8) := by
+    rw [off_add]; congr 1; simp only [slot, aV, aD]; omega_arith
+  refine WP.keep [.x16] (Q := fun t' => t'.gpr .x16 = off B (slot w aD - 8) ∧ t'.mem = t.mem)
+    ?_ (by decide) (by decide) (by decide +kernel)
+  brun [h11, h12, shl5_ofNat (show w / 2 < 2 ^ 58 by omega_arith)]
+  rw [← e, BitVec.ofNat_add, BitVec.add_comm]
+
+/-- `wordChoice j`: `[aV] := d mod ([j] - 1)` when `p q = n`, by `wdiv` if the
+guard passes, by `divmod` otherwise. -/
+theorem cvWordChoice_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {j : Nat}
+    (hj : j = aP ∨ j = aQ) (hP : wv s.mem I.B (slot (wk I.k) aP) (wk I.k) = I.P)
+    (hQ : wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) = I.Q)
+    (hf : I.P * I.Q = I.N → I.P % 2 = 1 ∧ 1 < I.P ∧ I.Q % 2 = 1 ∧ 1 < I.Q) :
+    WP isa (wordChoice j) s fun t =>
+      CvS I m₀ t ∧ mword t.mem I.B = mword s.mem I.B ∧
+      (I.P * I.Q = I.N → wv t.mem I.B (slot (wk I.k) aV) (wk I.k + 1) =
+          wv s.mem I.B (slot (wk I.k) aD) (wk I.k) % (wv s.mem I.B (slot (wk I.k) j) (wk I.k) - 1)) ∧
+      ∀ i, i = aP ∨ i = aQ ∨ i = aD ∨ i = aX₁ ∨ i = aX₂ →
+        wv t.mem I.B (slot (wk I.k) i) (wk I.k) = wv s.mem I.B (slot (wk I.k) i) (wk I.k) := by
+  have hk1 := L.k1
+  have hk2 := L.k2
+  have hpl := L.pl2
+  have hql := L.ql2
+  have hn := h.ws.scr.nowrap
+  have hZ := h.ws.hZ
+  have h256 := h.ws.h256
+  have hn0 : 0 < I.nb.length := by rw [L.nl]; omega_arith
+  have hX : wv s.mem I.B (slot (wk I.k) j) (wk I.k) = I.P ∨ wv s.mem I.B (slot (wk I.k) j) (wk I.k) = I.Q := by
+    rcases hj with rfl | rfl
+    exacts [.inl hP, .inr hQ]
+  have hXo : I.P * I.Q = I.N → wv s.mem I.B (slot (wk I.k) j) (wk I.k) % 2 = 1 ∧
+      1 < wv s.mem I.B (slot (wk I.k) j) (wk I.k) := fun he => by
+    have := hf he
+    rcases hX with e | e <;> rw [e] <;> omega_arith
+  unfold wordChoice
+  refine WP.seq (WP.mono (wordGuard_ok (b := s.mem.read I.pN 1) h.ws.scr h.ws.x0 h256 (by decide) (by decide)
+    h.args.k h.args.pl h.args.ql h.args.n rfl (by simpa using h.n.rd 0 hn0)) fun s₁ ⟨⟨h9, m₁⟩, k₁⟩ => ?_)
+  have h₁ := h.step (rs := []) (by rw [m₁]; exact Frm.refl _ _ _) (by simp) (by simp) k₁ (by decide)
+  have e₁ : ∀ i, wv s₁.mem I.B (slot (wk I.k) i) (wk I.k) = wv s.mem I.B (slot (wk I.k) i) (wk I.k) := fun i => by
+    rw [m₁]
+  refine WP.ite (s₁.gpr .x9 == 0) (VG.Proof.MlKem.AArch64.eval_zero _ _) (fun hb => ?_) (fun _ => ?_)
+  · -- The guard passes: `wdiv`.
+    have hg : guardVal I.k I.pl I.ql (s.mem.read I.pN 1) = 0 := by
+      rw [← h9]; simpa using hb
+    obtain ⟨g16, g2, gpq, gb⟩ := guard_zero (by omega_arith) (by omega_arith) (by omega_arith) hg
+    have hb0 : 128 ≤ (I.nb[0]'hn0).toNat := by
+      rw [read_one, show I.pN = I.pN + BitVec.ofNat 64 0 by simp, h.n.val 0 hn0] at gb; exact gb
+    have hw8 : 8 ≤ wk I.k := by unfold wk; omega_arith
+    have hwk : wk I.k = I.k / 8 := by unfold wk; omega_arith
+    refine wp_seqs_append (by simp [divisor]) (by simp) (WP.mono (cvDivisor_ok h₁ L hj) fun s₂ ⟨h₂, m₂, c₂, _, f₂⟩ => ?_)
+    simp only [seqs]
+    have hwm := cvWm_ok (wk I.k) (by unfold wk; omega_arith)
+    have hL := cvLen_ok (wk I.k)
+    have hxb := cvXb_ok I.B (wk I.k) (by unfold wk; omega_arith) (by unfold wk; omega_arith)
+    refine WP.mono (wdiv_ok h₂.ws (iX := aD) (iM := aC) (iR := aV) (iT := aT) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hwm hL hxb (by omega_arith)
+      (by omega_arith) (by omega_arith) (by omega_arith)) fun t ⟨_, ft, kt, hval⟩ => ?_
+    have ht := h₂.step ft (fun r hr => by
+      simp only [ar, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> exact Mut.ofSlot _ _ _) (fun r hr => by
+      simp only [ar, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> dsimp only <;> exact h.ws.sl (by decide)) kt (by decide)
+    have fA : ∀ i, i < 16 → i ≠ aC → i ≠ aV → i ≠ aT → i ≠ aU →
+        wv t.mem I.B (slot (wk I.k) i) (wk I.k) = wv s.mem I.B (slot (wk I.k) i) (wk I.k) := fun i hi h1 h2 h3 h4 => by
+      rw [ft.wv_eq (fun r hr => by
+        simp only [ar, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> dsimp only
+        · have := slot_sep (w := wk I.k) h2; omega_arith
+        · have := slot_sep (w := wk I.k) h3; omega_arith) (by have := h.ws.sl hi; omega_arith),
+        f₂.wv_eq (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> dsimp only
+        · have := slot_sep (w := wk I.k) h1; omega_arith
+        · have := slot_sep (w := wk I.k) h4; omega_arith) (by have := h.ws.sl hi; omega_arith), e₁]
+    refine ⟨ht, ?_, fun he => ?_, fun i hi => ?_⟩
+    · show word t.mem I.B (8 * Public.sMask) = word s.mem I.B (8 * Public.sMask)
+      rw [ft.word_eq (fun r hr => by
+        simp only [ar, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> dsimp only <;>
+          exact .inl (hdr_lt_slot _ _ (show Public.sMask < 32 by decide))) (by unfold Public.sMask sFn; omega_arith),
+        ← m₁]
+      exact m₂
+    · -- `[aC] = X - 1` with its top bit set.
+      obtain ⟨fp, fq⟩ := guard_factors L.nl (by omega_arith) L.pbl L.qbl g16 g2 gpq hb0 he
+      have hXf : 2 ^ (64 * (wk I.k / 2) - 1) ≤ wv s.mem I.B (slot (wk I.k) j) (wk I.k) - 1 ∧
+          wv s.mem I.B (slot (wk I.k) j) (wk I.k) < 2 ^ (64 * (wk I.k / 2)) := by
+        rcases hX with e | e <;> rw [e]
+        exacts [fp, fq]
+      have hC₂ := c₂ (by rw [e₁]; exact (hXo he).1)
+      rw [e₁] at hC₂
+      have hC₂m : wv s₂.mem I.B (slot (wk I.k) aC) (wk I.k / 2) = wv s.mem I.B (slot (wk I.k) j) (wk I.k) - 1 := by
+        have hb : wv s₂.mem I.B (slot (wk I.k) aC) (wk I.k) < 2 ^ (64 * (wk I.k / 2)) := by
+          rw [hC₂]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) hXf.2
+        rw [wv_low_of_lt (by omega_arith) hb, hC₂]
+      have htop : 2 ^ 63 ≤ (word s₂.mem I.B (slot (wk I.k) aC + 8 * (wk I.k / 2 - 1))).toNat := by
+        rw [word_of_wv _ _ _ (wk I.k / 2) (by omega_arith), hC₂m]
+        exact top_word_of (by omega_arith) hXf.1 (by omega_arith)
+      have hval := hval htop
+      rw [hC₂m] at hval
+      have pDC := slot_sep (w := wk I.k) (show aD ≠ aC by decide)
+      have pDU := slot_sep (w := wk I.k) (show aD ≠ aU by decide)
+      have sD := h.ws.sl (j := aD) (by decide)
+      have hD₂ : wv s₂.mem I.B (slot (wk I.k) aD) (wk I.k) = wv s.mem I.B (slot (wk I.k) aD) (wk I.k) := by
+        rw [f₂.wv_eq (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith), e₁]
+      rw [hD₂] at hval
+      have hX0 : 0 < wv s.mem I.B (slot (wk I.k) j) (wk I.k) - 1 := by
+        have := Nat.two_pow_pos (64 * (wk I.k / 2) - 1); omega_arith
+      have hle : 2 ^ (64 * (wk I.k / 2)) ≤ 2 ^ (64 * (wk I.k + 1)) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+      have hlt : wv t.mem I.B (slot (wk I.k) aV) (wk I.k + 2) < 2 ^ (64 * (wk I.k + 1)) := by
+        rw [hval]
+        exact Nat.lt_of_lt_of_le (Nat.mod_lt _ hX0) (Nat.le_trans (Nat.le_of_lt (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hXf.2)) hle)
+      rw [wv_low_of_lt (by omega_arith) hlt, hval]
+    · have hi16 : i < 16 := by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide
+      exact fA i hi16 (by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide)
+        (by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide) (by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide)
+        (by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide)
+  · -- `divmod`.
+    refine WP.mono (cvDivPart_ok h₁ L hj) fun t ⟨ht, mt, vt, pt⟩ => ⟨ht, by rw [mt, m₁], fun he => ?_, fun i hi => by
+      rw [pt i hi, e₁]⟩
+    obtain ⟨o, g⟩ := hXo he
+    rw [vt (by rw [e₁]; exact o) (by rw [e₁]; exact g), e₁, e₁]
+
 /-- `main`, from a valid modulus. -/
 theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa.modulusValid I.N I.k = true) :
     WP isa main s fun t => ∃ X : Nat, (I.ok = true → Spec.Rsa.inverse I.Q I.P = some X) ∧
@@ -148,8 +299,8 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
     fun s₂ ⟨h₂, m₂, vN, vP, vQ, vD⟩ => ?_)
   -- `p q = n`.
   refine wp_seqs_append (by simp [pqCheck]) (by simp [invPart]) (WP.mono (cvCheck_ok h₂ L (c := true)
-    (by rw [m₂]; exact hm₁)) fun s₃ ⟨h₃, ⟨c₃, m₃, e₃⟩, p₃⟩ => ?_)
-  rw [e₃ (by rw [vN]; exact hNo)] at m₃
+    (by rw [m₂]; exact hm₁) (by rw [vP]; exact hPl) (by rw [vQ]; exact hQl)) fun s₃ ⟨h₃, ⟨c₃, m₃, e₃⟩, p₃⟩ => ?_)
+  rw [e₃] at m₃
   rw [vP, vQ, vN, Bool.true_and] at m₃
   have vP₃ : wv s₃.mem I.B (slot (wk I.k) aP) (wk I.k) = I.P := by rw [p₃ aP (.inl rfl), vP]
   have vQ₃ : wv s₃.mem I.B (slot (wk I.k) aQ) (wk I.k) = I.Q := by rw [p₃ aQ (.inr (.inl rfl)), vQ]
@@ -157,7 +308,7 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
   have hf : I.P * I.Q = I.N → I.P % 2 = 1 ∧ 1 < I.P ∧ I.Q % 2 = 1 ∧ 1 < I.Q :=
     factors_of hNo hlo hPl hQl L.pl2 L.ql2
   -- `qInv` and `gcd(q, p) = 1`.
-  refine wp_seqs_append (by simp [invPart]) (by simp [divisor]) (WP.mono (cvInv_ok h₃ L m₃ (fun hc => by
+  refine wp_seqs_append (by simp [invPart]) (by simp) (WP.mono (cvInv_ok h₃ L m₃ (fun hc => by
     rw [vP₃]; have := hf (of_decide_eq_true hc); exact ⟨this.1, this.2.1⟩) (by rw [vP₃]; exact hPl)
     (by rw [vQ₃]; exact hQl)) fun s₄ ⟨h₄, m₄, i₄, p₄⟩ => ?_)
   rw [vP₃, vQ₃] at m₄ i₄
@@ -169,13 +320,13 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
   rw [hok] at m₄
   have hokP : I.ok = true → I.P * I.Q = I.N ∧ Nat.gcd I.Q I.P = 1 := fun hc => of_decide_eq_true hc
   -- `dP` into `aV`.
-  refine wp_seqs_append (by simp [divisor]) (by simp) (WP.mono (cvDivPart_ok h₄ L (j := aP) (.inl rfl))
+  refine wp_seqs_append (by simp) (by simp) (WP.mono (cvWordChoice_ok h₄ L (j := aP) (.inl rfl) vP₄ vQ₄ hf)
     fun s₅ ⟨h₅, m₅, d₅, p₅⟩ => ?_)
   rw [vP₄, vD₄] at d₅
   -- `dP` into `aX₁`.
   have hZ' := h₅.ws.hZ
   have hn' := h₅.ws.scr.nowrap
-  refine wp_seqs_append (by simp) (by simp [divisor]) ?_
+  refine wp_seqs_append (by simp) (by simp) ?_
   simp only [seqs]
   refine WP.seq (WP.mono (zeroA_ok h₅.ws (j := aX₁) (by decide)) fun s₆ ⟨_, o₆, _, _, _, k₆⟩ => ?_)
   have h₆ := h₅.arr (by decide) (Nat.le_refl _) o₆ k₆ (by decide)
@@ -198,7 +349,7 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
   have dP₇ : I.ok = true → wv s₇.mem I.B (slot (wk I.k) aX₁) (wk I.k) = I.D % (I.P - 1) := fun hc => by
     obtain ⟨hpq, -⟩ := hokP hc
     have hfp := hf hpq
-    have e := d₅ hfp.1 hfp.2.1
+    have e := d₅ hpq
     rw [c₇, ot o₆ (Nat.le_refl _) (by decide) (by decide)]
     rw [← e]
     refine wv_low_of_lt (by omega_arith) ?_
@@ -208,7 +359,8 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
   -- `dQ` into `aV`.
   have vQ₇ : wv s₇.mem I.B (slot (wk I.k) aQ) (wk I.k) = I.Q := by rw [pr₇ aQ (by simp), vQ₄]
   have vD₇ : wv s₇.mem I.B (slot (wk I.k) aD) (wk I.k) = I.D := by rw [pr₇ aD (by simp), vD₄]
-  refine wp_seqs_append (by simp [divisor]) (by simp [storeA]) (WP.mono (cvDivPart_ok h₇ L (j := aQ) (.inr rfl))
+  have vP₇ : wv s₇.mem I.B (slot (wk I.k) aP) (wk I.k) = I.P := by rw [pr₇ aP (by simp), vP₄]
+  refine wp_seqs_append (by simp) (by simp [storeA]) (WP.mono (cvWordChoice_ok h₇ L (j := aQ) (.inr rfl) vP₇ vQ₇ hf)
     fun s₈ ⟨h₈, m₈, d₈, p₈⟩ => ?_)
   rw [vQ₇, vD₇] at d₈
   rw [m₇] at m₈
@@ -256,7 +408,7 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
     · rfl
     · obtain ⟨hpq, -⟩ := hokP hc
       have hfp := hf hpq
-      have e := d₈ hfp.2.2.1 hfp.2.2.2
+      have e := d₈ hpq
       have := pow256_le_wk I.ql
       have : I.D % (I.Q - 1) < I.Q - 1 := Nat.mod_lt _ (by omega_arith)
       simp only [ite_true]

@@ -507,4 +507,96 @@ theorem r2dStepPub_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D
       Arrays B w [aAcc, aR2] t.mem t'.mem ∧ Keep mmRegs t t' :=
   r2dStepWith_ok addBackPub_spec hg hZ hw hw' hM hD hd hv hX
 
+/-! ## A step with a word below `x` -/
+
+/-- `r2dQ X M w` is within one of the quotient of `x 2^64 + u`, `u` a word,
+for `w ≥ 3`: `u` is below the three words of `x 2^64 + u` it is estimated
+from (`WordStep.shift_u`, `WordStep.qhat3_div` with `P = 2^64`). -/
+theorem r2dQ_div {X M w u : Nat} (hw : 3 ≤ w) (hu : u < 2 ^ 64) (hXM : X < M)
+    (hd : 2 ^ 63 ≤ M / 2 ^ (64 * (w - 1))) :
+    (X * 2 ^ 64 + u) / M ≤ r2dQ X M w ∧ r2dQ X M w ≤ (X * 2 ^ 64 + u) / M + 1 := by
+  have e1 : 64 * (w - 2) + 64 = 64 * (w - 3) + 128 := by omega_arith
+  have e2 : 64 * (w - 3) + 64 = 64 * (w - 2) := by omega_arith
+  have e3 : 64 * (w - 2) + 64 = 64 * (w - 1) := by omega_arith
+  have hYM : X * 2 ^ 64 + u < M * 2 ^ 64 := by
+    have := Nat.mul_le_mul_right (2 ^ 64) (Nat.succ_le_of_lt hXM)
+    rw [Nat.succ_mul] at this
+    omega_arith
+  have hd' : 2 ^ 63 ≤ M * 2 ^ 64 / 2 ^ (64 * (w - 2) + 64) / 2 ^ 64 := by
+    rw [e3, Nat.div_div_eq_div_mul, ← Nat.pow_add, show 64 * (w - 1) + 64 = 64 * (w - 1) + 64 from rfl,
+      Nat.pow_add, Nat.mul_div_mul_right _ _ (Nat.two_pow_pos 64)]
+    exact hd
+  obtain ⟨-, -, -, hge, hle⟩ := WordStep.qhat3_div (Y := X * 2 ^ 64 + u) (M := M) (P := 2 ^ 64)
+    (K := 64 * (w - 2)) (Nat.two_pow_pos 64) hYM hd'
+  have hs := WordStep.shift_u (X := X) (u := u) (z := 64) (K := 64 * (w - 3)) (Nat.le_refl _) hu
+  have e4 : 64 * (w - 3) + 128 = 64 * (w - 1) := by omega_arith
+  rw [e1, hs, e2, e4] at hge hle
+  exact ⟨hge, hle⟩
+
+/-- `stepU`: `x := (x 2^64 + u) mod m` for `u` in `x10`, `x < m` the `w ≥ 3`
+words at `x11` (its word `w` overwritten), `m` the `w` words at `x9` with
+its top word `D ≥ 2^63`, and `v` for `D` at `x6`. -/
+theorem r2dStepU_ok {t : State} {B : Addr} {Z w eX eM eV : Nat} (hs : Scr t B Z)
+    (h11 : t.gpr .x11 = off B eX) (h9 : t.gpr .x9 = off B eM) (h12 : t.gpr .x12 = BitVec.ofNat 64 w)
+    (h6 : t.gpr .x6 = off B eV) (h7 : t.gpr .x7 = 0) (hw : 3 ≤ w) (hw' : w < 2 ^ 31) (hX8 : 8 ≤ eX) (hM8 : 8 ≤ eM)
+    (hX : eX + 8 * (w + 1) ≤ Z) (hM : eM + 8 * w ≤ Z) (hV : eV + 8 ≤ Z)
+    (sXM : eX + 8 * (w + 1) ≤ eM ∨ eM + 8 * w ≤ eX)
+    (hd : 2 ^ 63 ≤ (word t.mem B (eM + 8 * (w - 1))).toNat)
+    (hv : (word t.mem B eV).toNat = (2 ^ 128 - 1) / (word t.mem B (eM + 8 * (w - 1))).toNat - 2 ^ 64)
+    (hXM : wv t.mem B eX w < wv t.mem B eM w) :
+    WP isa stepU t fun t' =>
+      wv t'.mem B eX (w + 1) = (wv t.mem B eX w * 2 ^ 64 + (t.gpr .x10).toNat) % wv t.mem B eM w ∧
+      Outside B eX (8 * (w + 1)) t.mem t'.mem ∧
+      Keep [.x1, .x2, .x3, .x4, .x5, .x13, .x14, .x15, .x16, .x17] t t' := by
+  have hn := hs.nowrap
+  have hu := r2d_top_le (m := t.mem) (B := B) (by omega_arith : 1 ≤ w) hXM
+  have hd' : 2 ^ 63 ≤ wv t.mem B eM w / 2 ^ (64 * (w - 1)) := by
+    rw [wv_top1 t.mem B eM (by omega_arith)]; exact hd
+  generalize hXv : wv t.mem B eX w = X at hXM
+  generalize hMv : wv t.mem B eM w = M at hXM hd'
+  generalize hUv : t.gpr .x10 = U
+  obtain ⟨hge, hle⟩ := r2dQ_div (u := U.toNat) hw U.isLt hXM hd'
+  unfold stepU
+  simp only [seqs]
+  refine WP.seq (WP.mono (r2dQuot_ok hs h11 h9 h12 h6 h7 (by omega_arith) hw' (by omega_arith) hM hV hu hd hv)
+    fun t₁ ⟨h1, h2, h5, hm₁, k₁⟩ => ?_)
+  have hs₁ := hs.congr k₁.wr
+  rw [← hm₁] at h1 h2 h5
+  refine WP.seq (WP.mono (r2dQuot3_ok hs₁ ((k₁.gpr .x11 (by decide)).trans h11) ((k₁.gpr .x9 (by decide)).trans h9)
+    ((k₁.gpr .x12 (by decide)).trans h12) ((k₁.gpr .x7 (by decide)).trans h7) (by omega_arith) hw' hX8 hM8
+    (by omega_arith) hM h1 h2 h5 (by rw [hm₁, hXv, hMv]; exact hXM) (by rw [hm₁]; exact hd))
+    fun t₂ ⟨⟨hq₂, hm₂⟩, k₂⟩ => ?_)
+  rw [hm₁, hXv, hMv] at hq₂
+  have k₁₂ := k₁.trans k₂
+  have hs₂ := hs.congr k₁₂.wr
+  generalize hQ : r2dQ X M w = q at hq₂ hge hle
+  have hqB : q < 2 ^ 64 := by rw [← hQ]; exact Nat.lt_of_le_of_lt (Nat.min_le_right _ _) (by decide)
+  refine WP.seq (WP.mono (mulSubU_ok hs₂ ((k₁₂.gpr .x11 (by decide)).trans h11)
+    ((k₁₂.gpr .x9 (by decide)).trans h9) ((k₁₂.gpr .x12 (by decide)).trans h12)
+    ((k₁₂.gpr .x7 (by decide)).trans h7) (by rw [← hq₂, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hqB
+    (by omega_arith) hw' hX hM sXM) fun t₃ ⟨b, hv₃, o₃, k₃⟩ => ?_)
+  rw [hm₂, hm₁, hXv, hMv, k₁₂.gpr .x10 (by decide), hUv] at hv₃
+  have k₁₃ := k₁₂.trans k₃
+  have hs₃ := hs.congr k₁₃.wr
+  refine WP.mono (r2dAddBack_ok hs₃ ((k₁₃.gpr .x11 (by decide)).trans h11) ((k₁₃.gpr .x9 (by decide)).trans h9)
+    ((k₁₃.gpr .x12 (by decide)).trans h12) ((k₁₃.gpr .x7 (by decide)).trans h7) (by omega_arith) hw' hX hM sXM)
+    fun t' ⟨c, hv', o', k'⟩ => ?_
+  have hM₃ : wv t₃.mem B eM w = M := by
+    rw [o₃.wv (by omega_arith) (by omega_arith), hm₂, hm₁, hMv]
+  rw [hM₃] at hv'
+  have hM0 : 0 < M := Nat.lt_of_le_of_lt (Nat.zero_le _) hXM
+  have hMB : M < 2 ^ (64 * w) := hMv ▸ wv_lt _ _ _ _
+  have hW : 2 * M < 2 ^ (64 * (w + 1)) / 2 := by
+    rw [pow64_succ, show (2 : Nat) ^ 64 = 2 * 2 ^ 63 from rfl, ← Nat.mul_assoc, Nat.mul_comm _ 2, Nat.mul_assoc,
+      Nat.mul_div_cancel_left _ (by decide)]
+    have : 2 ^ (64 * w) ≤ 2 ^ (64 * w) * 2 ^ 62 := Nat.le_mul_of_pos_right _ (Nat.two_pow_pos _)
+    rw [show (2 : Nat) ^ 63 = 2 * 2 ^ 62 from rfl]
+    omega_arith
+  have h1' : wv t₃.mem B eX (w + 1) + q * M = X * 2 ^ 64 + U.toNat + 2 ^ (64 * (w + 1)) * b.toNat := by
+    rw [hv₃, Nat.mul_comm (2 ^ 64) X]
+  refine ⟨WordStep.wordStepQ1_div (W := 2 ^ (64 * (w + 1))) hM0 hW hge hle (wv_lt _ _ _ _) (Bool.toNat_lt b)
+    h1' (wv_lt _ _ _ _) (Bool.toNat_lt c) hv', ?_, (k₁₃.trans k').mono (by decide)⟩
+  rw [hm₂, hm₁] at o₃
+  exact o₃.trans o'
+
 end VG.Proof.Bignum.AArch64
