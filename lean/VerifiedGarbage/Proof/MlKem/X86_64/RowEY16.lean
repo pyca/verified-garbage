@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.RowEY
-public import VerifiedGarbage.Proof.MlKem.X86_64.Deint16
 public import VerifiedGarbage.Proof.MlKem.PolyW
 import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
 import VerifiedGarbage.Proof.Framework.CallLay
@@ -11,10 +10,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 # ML-KEM on x86-64: a row of products of polynomials of `u16`s (`rowEY16`)
 
 `rowLdY16` loads the 32 coefficients of a block of a polynomial of `u16`s
-(`PolyIsW 16`) as `rowLdY` loads those of `u32`s: two loads, `vpermq` with
-`0xD8`, which brings quadwords `0, 2` of the block to lane 0 and `1, 3` to
-lane 1, and `de16Y`, the low and high words of each lane's doublewords
-(`de16_words`). So `rowEY16` is `rowEg` of `FRep.u16` (`rowEY16_wo`).
+(`PolyIsW 16`) as `rowLdY` loads those of `u32`s, as pairs: two loads, and
+`vpermq` with `0xD8`, which brings quadwords `0, 2` of the block to lane 0
+and `1, 3` to lane 1 (`word_permD8`), each doubleword a pair of
+coefficients already. So `rowEY16` is `rowEg` of `FRep.u16` (`rowEY16_wo`).
 -/
 
 @[expose] public section
@@ -23,23 +22,6 @@ namespace VG.Proof.MlKem.X86_64
 
 open VG VG.X86_64 VG.Impl.MlKem.X86_64
 open VG.Proof.MlKem VG.Spec.MlKem
-
-/-- What `de16Y` does to each lane. -/
-def de16S : List Instr :=
-  [.xop (.bin .movdqa .xmm4 .xmm0), .xop (.shift .psrld .xmm4 16), .xop (.bin .movdqa .xmm5 .xmm1),
-    .xop (.shift .psrld .xmm5 16), .xop (.shift .pslld .xmm0 16), .xop (.shift .psrld .xmm0 16),
-    .xop (.shift .pslld .xmm1 16), .xop (.shift .psrld .xmm1 16), .xop (.bin .packssdw .xmm0 .xmm1),
-    .xop (.bin .packssdw .xmm4 .xmm5)]
-
-theorem lane_de16Y : laneSseBlock de16Y = some de16S := by decide +kernel
-
-theorem de16S_ok (s : State) :
-    WP isa (.block de16S) s fun s' =>
-      (s'.xmm .xmm0 = de16E (s.xmm .xmm0) (s.xmm .xmm1) ∧ s'.xmm .xmm4 = de16O (s.xmm .xmm0) (s.xmm .xmm1)) ∧
-      XOnly [.xmm0, .xmm1, .xmm4, .xmm5] s s' := by
-  simp only [de16S]
-  vrunm [eval_movdqa]
-  exact ⟨⟨rfl, rfl⟩, by xonly⟩
 
 /-- Word `i` of lane `l` after `vpermq` with `0xD8` of the 32 bytes at `a`:
 word `8 (i / 4) + 4 l + i % 4` of them. -/
@@ -63,15 +45,15 @@ theorem word_permD8 (m : Mem) (a : Addr) {l i : Nat} (hl : l < 2) (hi : i < 8) :
     · rw [e 0 (4 + i) (by omega)]; exact congrArg (fun x => m.readW (a + BitVec.ofNat 64 x) 16) (by omega)
     · rw [e 1 i hi]; exact congrArg (fun x => m.readW (a + BitVec.ofNat 64 x) 16) (by omega)
 
-/-- `rowLdY16`: the even and the odd coefficients of block `b` of `F`
-(`u16`s at `fB + o j`), in `vbase`'s order. -/
+/-- `rowLdY16`: the coefficients of block `b` of `F` (`u16`s at `fB + o j`),
+as pairs in `vbase`'s order. -/
 theorem ld16_ok {o : Nat} {fB : Addr} {F : Poly} {b j : Nat} {s : State} (hb : b < 8)
     (hrsi : s.gpr .rsi = fB + BitVec.ofNat 64 (64 * b)) (hF : PolyIsW 16 s.mem (fB + BitVec.ofNat 64 (o * j)) F)
     (rF : InRegions (s.rd ++ s.wr) (fB + BitVec.ofNat 64 (o * j)) 512) :
     WP isa (.block (rowLdY16 o j)) s fun s' =>
-      (∀ l < 2, Lanes (s'.lane .xmm0 l) (fun e => F[2 * pairY b l e]!) ∧
-        Lanes (s'.lane .xmm4 l) (fun e => F[2 * pairY b l e + 1]!)) ∧
-      YOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5] s s' := by
+      (∀ l < 2, PLanes (s'.lane .xmm0 l) (fun i => F[2 * pairY b l i]!) (fun i => F[2 * pairY b l i + 1]!) ∧
+        PLanes (s'.lane .xmm1 l) (fun i => F[2 * pairY b l (4 + i)]!) (fun i => F[2 * pairY b l (4 + i) + 1]!)) ∧
+      YOnly [.xmm0, .xmm1, .xmm8, .xmm9] s s' := by
   have ad : ∀ t, s.gpr .rsi + BitVec.ofNat 64 (o * j + 32 * t) =
       fB + BitVec.ofNat 64 (o * j) + BitVec.ofNat 64 (64 * b + 32 * t) := fun t => by
     rw [hrsi]; simp only [BitVec.add_assoc, ← BitVec.ofNat_add]
@@ -79,8 +61,7 @@ theorem ld16_ok {o : Nat} {fB : Addr} {F : Poly} {b j : Nat} {s : State} (hb : b
   have r : ∀ t < 2, InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 (o * j + 32 * t)) 32 := fun t ht => by
     rw [ad]; exact CallLay.inRegions_sub rF (by omega) (by omega)
   simp only [rowLdY16]
-  rw [show ∀ (a b c d : Instr) (r : List Instr), [a, b, c, d] ++ r = [a] ++ ([b] ++ ([c] ++ ([d] ++ r)))
-    from fun _ _ _ _ _ => rfl]
+  rw [show ∀ (a b c d : Instr), [a, b, c, d] = [a] ++ ([b] ++ ([c] ++ [d])) from fun _ _ _ _ => rfl]
   rw [WP.block_append_iff]
   refine WP.mono (yld_ok (p := .rsi) (off := o * j) (d := .xmm0) (by simpa using r 0 (by decide)))
     fun s1 ⟨L1, o1⟩ => ?_
@@ -89,13 +70,8 @@ theorem ld16_ok {o : Nat} {fB : Addr} {F : Poly} {b j : Nat} {s : State} (hb : b
     (by rw [o1.rd, o1.wr, o1.gpr]; simpa using r 1 (by decide))) fun s2 ⟨L2, o2⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (ypermq_ok (d := .xmm0) (r := .xmm0) s2) fun s3 ⟨P3a, P3b, o3⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (ypermq_ok (d := .xmm1) (r := .xmm1) s3) fun s4 ⟨P4a, P4b, o4⟩ => ?_
-  refine WP.mono (ylanes lane_de16Y (P := fun l t =>
-      t.xmm .xmm0 = de16E (s4.lane .xmm0 l) (s4.lane .xmm1 l) ∧
-      t.xmm .xmm4 = de16O (s4.lane .xmm0 l) (s4.lane .xmm1 l))
-    fun l _ => de16S_ok (s4.proj l)) fun s5 ⟨D5, o5⟩ =>
-      ⟨fun l hl => ?_, ((((o1.trans o2).trans o3).trans o4).trans o5).mono (by simp)⟩
+  refine WP.mono (ypermq_ok (d := .xmm1) (r := .xmm1) s3) fun s4 ⟨P4a, P4b, o4⟩ =>
+    ⟨fun l hl => ?_, ((((o1.trans o2).trans o3).trans o4)).mono (by simp)⟩
   -- the bytes of the block, in the memory the loads read
   have m1 : s1.mem = s.mem := o1.mem
   have lane0 : ∀ l' < 2, s2.lane .xmm0 l' =
@@ -128,25 +104,16 @@ theorem ld16_ok {o : Nat} {fB : Addr} {F : Poly} {b j : Nat} {s : State} (hb : b
       show 64 * b + 32 * t + 2 * (8 * (i / 4) + 4 * l + i % 4) =
         2 * (32 * b + 8 * ((8 * t + i) / 4) + 4 * l + (8 * t + i) % 4) by omega,
       ← coeffAtW16_eq, polyIsW_toNat hF (by rw [n_eq]; omega)]
-  have d := de16_words (x := s4.lane .xmm0 l) (y := s4.lane .xmm1 l)
-    (c := fun k => (F[32 * b + 8 * (k / 4) + 4 * l + k % 4]!).val)
-    (fun i hi => by
-      rw [X, lane0 0 (by decide), lane0 1 (by decide)]
-      have := cw 0 (by decide) i hi
-      rwa [Nat.mul_zero, Nat.zero_add] at this)
-    (fun i hi => by
-      rw [Y, lane1 0 (by decide), lane1 1 (by decide)]
-      have := cw 1 (by decide) i hi
-      rwa [Nat.mul_one] at this)
-    (fun k _ => by have := val_lt (F[32 * b + 8 * (k / 4) + 4 * l + k % 4]!); omega)
-  have idx : ∀ e < 8, 32 * b + 8 * (2 * e / 4) + 4 * l + 2 * e % 4 = 2 * pairY b l e ∧
-      32 * b + 8 * ((2 * e + 1) / 4) + 4 * l + (2 * e + 1) % 4 = 2 * pairY b l e + 1 := fun e _ => by
+  rw [X, Y, lane0 0 (by decide), lane0 1 (by decide), lane1 0 (by decide), lane1 1 (by decide)]
+  refine ⟨fun i hi => ⟨?_, ?_⟩, fun i hi => ⟨?_, ?_⟩⟩
+  · refine (cw 0 (by decide) (2 * i) (by omega)).trans (congrArg (fun k : Nat => (F[k]!).val) ?_)
     unfold pairY; omega
-  have e0 : s5.lane .xmm0 l = _ := (D5 l hl).1
-  have e4 : s5.lane .xmm4 l = _ := (D5 l hl).2
-  refine ⟨fun e he => ?_, fun e he => ?_⟩
-  · rw [e0, d.1 e he, (idx e he).1]
-  · rw [e4, d.2 e he, (idx e he).2]
+  · refine (cw 0 (by decide) (2 * i + 1) (by omega)).trans (congrArg (fun k : Nat => (F[k]!).val) ?_)
+    unfold pairY; omega
+  · refine (cw 1 (by decide) (2 * i) (by omega)).trans (congrArg (fun k : Nat => (F[k]!).val) ?_)
+    unfold pairY; omega
+  · refine (cw 1 (by decide) (2 * i + 1) (by omega)).trans (congrArg (fun k : Nat => (F[k]!).val) ?_)
+    unfold pairY; omega
 
 /-- The polynomials of `u16`s (`PolyIsW 16`), `o` bytes apart. -/
 def FRep.u16 (o : Nat) : FRep o where

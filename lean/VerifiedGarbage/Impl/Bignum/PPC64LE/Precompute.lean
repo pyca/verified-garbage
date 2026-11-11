@@ -16,13 +16,15 @@ The working space (`scratch`) is laid out as `vg_rsa_mont_mul`'s, with `n`
 in array 0, the accumulator in array 2, the temporary in array 3 and `x` in
 array 1; the nonvolatile registers are saved in its header's words 16–24.
 `R² mod n = 2^(128 w) mod n` (`r2Fast`) is computed from `x = 2^(64 (w - 1))`,
-which is below a valid `n`, by `64 + w` modular doublings to `2^w R mod n`
-(the double into the accumulator, `n + 1` digits of 32 bits, as
-`vg_rsa_mont_mul` reads numbers, then `MontMul.lean`'s `subMod` and
-`selectAcc` into `x`), then six Montgomery squares (`MontMul.tail`). For
-moduli whose top word may be zero, `r2Prime` starts from 1, with `64 w + w`
-doublings (the private key's primes), and `r2`, `128 w` doublings from 1,
-needs no `-n⁻¹ mod 2³²` (other callers).
+which is below a valid `n`, by `w + 1` word steps of long division, each
+`x := x 2^64 mod n`, for any top word of `n`. `r2Hi` instead makes `64 + w`
+modular doublings of it to `2^w R mod n` (the double into the accumulator,
+`n + 1` digits of 32 bits, as `vg_rsa_mont_mul` reads numbers, then
+`MontMul.lean`'s `subMod` and `selectAcc` into `x`), then six Montgomery
+squares (`MontMul.tail`) (other callers). For moduli whose top word may be
+zero, `r2Prime` starts from 1, with `64 w + w` doublings (the private key's
+primes), and `r2`, `128 w` doublings from 1, needs no `-n⁻¹ mod 2³²` (other
+callers).
 
 `n` is public: timing may depend on it, and the code branches on its
 validity.
@@ -168,29 +170,117 @@ top word not zero, `-n⁻¹ mod 2³²` in `r12` and the bases of arrays 1–3 in
 `r5`, `r8` and `r9`: `r2HiDbl`, then `r2Squares`. -/
 def r2Hi : Prog isa := .seq r2HiDbl r2Squares
 
-/-- `r2Hi` for `vg_rsa_public_precompute`, which computes `-n⁻¹ mod 2³²` after
-the doublings and keeps `pre` (`r19`) in `r21` across the squares, which
-`tail` does not write; then the working space's address back in `r21`
-(array 0's less the header) and the bases of arrays 1–3. -/
-def r2Fast : Prog isa :=
-  .seq r2HiDbl (.seq (.block (r2Minv ++ [.addi .r21 .r19 0])) (.seq r2Squares
-    (.block ([.addi .r19 .r21 0, .subi .r21 .r10 hdrBytes] ++ r2Stride ++ r2Base .r5 1 ++ r2Base .r8 2 ++
-      r2Base .r9 3))))
+/-- `w` words from `r15` to `r14`, both advanced past them. -/
+def copyWords : Prog isa :=
+  .seq (.block [.lsr .d .r17 .r11 1])
+    (countLoop .r17 [.load .d .r0 .r15 0, .store .d .r0 .r14 0, .addi .r14 .r14 8, .addi .r15 .r15 8])
+
+/-! ## `R² mod n` by word steps of long division
+
+For `vg_rsa_public_precompute`: `x := 2^(64 (w - 1))` (`r2Top`), below a
+valid `n`, then `w + 1` steps `x := x 2^64 mod n`, each a step of long
+division (Knuth, TAOCP vol. 2, §4.3.1, Algorithm D) whose quotient is
+estimated from the top words of `x P` and `n P` for `P = 2^z`, `z` the
+leading zeros of `n`'s top word (`norm`), so that the divisor's top word
+`d' = ⌊n P / 2^(64 (w - 1))⌋` has its top bit set, for any `n`:
+`q̂ = min(⌊(u₂ 2^64 + u₁) / d'⌋, 2^64 - 1)` by restoring division (`quot`),
+`t = x 2^64 - q̂ n` (`mulRow`, `subPass`), and `n` added to `t` twice while it
+is negative (`addBack`). The arithmetic is branch-free, by masks, and every
+count depends only on `w`. -/
+
+/-- `n`'s top word `T` (`r15`) and the one below (`r16`); `P := 1` (`r6`),
+zero (`r20`), one (`r22`) and 63 (`r17`). -/
+def normHead : List Instr :=
+  [.lsl .r14 .r11 2, .add .r14 .r14 .r10, .subi .r14 .r14 16, .load .d .r15 .r14 8, .load .d .r16 .r14 0,
+    .li .r6 1, .li .r20 0, .li .r22 1, .li .r17 63]
+
+/-- `r15` and `P` doubled if `r15`'s top bit is clear, by a mask. -/
+def normStep : List Instr :=
+  [.lsr .d .r3 .r15 63, .logic .xor .r3 .r3 .r22, .sub .r3 .r20 .r3, .logic .and .r0 .r15 .r3,
+    .add .r15 .r15 .r0, .logic .and .r0 .r6 .r3, .add .r6 .r6 .r0]
+
+/-- `d' := T P + ⌊n_{w-2} P / 2^64⌋`; `P` and `d'` into the temporary's
+words 0 and 1. -/
+def normTail : List Instr :=
+  [.mulhu .r0 .r16 .r6, .add .r15 .r15 .r0, .store .d .r6 .r9 0, .store .d .r15 .r9 8]
+
+/-- `P` and `d'`, from `n`'s top two words: 63 steps of `normStep`. -/
+def norm : Prog isa := .seq (.block normHead) (.seq (countLoop .r17 normStep) (.block normTail))
+
+/-- The top two words `u₂` (`r15`) and `u₁` (`r16`) of `x P` from `x`'s top
+three words, `d'` (`r7`), `e = d' - u₂` (`r22`), `q := 0` (`r18`), zero
+(`r20`) and 64 (`r17`). -/
+def quotHead : List Instr :=
+  [.lsl .r14 .r11 2, .add .r14 .r14 .r5, .subi .r14 .r14 24, .load .d .r0 .r14 16, .load .d .r3 .r14 8,
+    .load .d .r12 .r14 0, .load .d .r6 .r9 0, .load .d .r7 .r9 8,
+    .mul .r15 .r0 .r6, .mulhu .r16 .r3 .r6, .add .r15 .r15 .r16, .mul .r16 .r3 .r6, .mulhu .r0 .r12 .r6,
+    .add .r16 .r16 .r0, .sub .r22 .r7 .r15, .li .r18 0, .li .r20 0, .li .r17 64]
+
+/-- A bit of restoring division by `d'` (`r7`) of the remainder `r`
+(`r15`), the next bit the top of `r16`: `r := 2 r + b`, its carry into `r3`;
+`d'` subtracted if the carry is set or `r ≥ d'`, by a mask; `q := 2 q +`
+that bit. -/
+def divBit : List Instr :=
+  [.lsr .d .r3 .r15 63, .add .r15 .r15 .r15, .lsr .d .r0 .r16 63, .add .r15 .r15 .r0, .add .r16 .r16 .r16,
+    .subc .r0 .r15 .r7, .addze .r12 .r20, .logic .or .r3 .r3 .r12, .sub .r12 .r20 .r3, .logic .and .r0 .r7 .r12,
+    .sub .r15 .r15 .r0, .add .r18 .r18 .r18, .add .r18 .r18 .r3]
+
+/-- `q̂ := q`, or all ones if `u₂ = d'` (`e = 0`). -/
+def quotFix : List Instr :=
+  [.sub .r12 .r20 .r22, .logic .or .r12 .r12 .r22, .lsr .d .r12 .r12 63, .subi .r12 .r12 1,
+    .logic .or .r18 .r18 .r12]
+
+/-- `q̂` into `r18`: 64 bits of restoring division of `u₂ 2^64 + u₁` by `d'`. -/
+def quot : Prog isa := .seq (.block quotHead) (.seq (countLoop .r17 divBit) (.block quotFix))
+
+/-- The accumulator's `w + 1` words (`r8`) := `q̂ n` (`n` at `r10`). -/
+def mulRow : Prog isa :=
+  .seq (.block [.addi .r14 .r8 0, .addi .r15 .r10 0, .lsr .d .r17 .r11 1, .li .r3 0])
+    (.seq (countLoop .r17 [.load .d .r0 .r15 0, .mul .r12 .r0 .r18, .mulhu .r0 .r0 .r18, .addc .r12 .r12 .r3,
+        .addze .r3 .r0, .store .d .r12 .r14 0, .addi .r14 .r14 8, .addi .r15 .r15 8])
+      (.block [.store .d .r3 .r14 0]))
+
+/-- `t := x 2^64 - t` over the accumulator's `w + 1` words: word 0 is `0 - t₀`,
+word `i ≥ 1` is `x[i - 1] - tᵢ` less the borrow. -/
+def subPass : Prog isa :=
+  .seq (.block [.addi .r14 .r8 0, .addi .r15 .r5 0, .load .d .r0 .r14 0, .subc .r0 .r20 .r0, .store .d .r0 .r14 0,
+      .addi .r14 .r14 8, .lsr .d .r17 .r11 1])
+    (countLoop .r17 [.load .d .r3 .r15 0, .load .d .r0 .r14 0, .sube .r0 .r3 .r0, .store .d .r0 .r14 0,
+      .addi .r14 .r14 8, .addi .r15 .r15 8])
+
+/-- `t := t + n` if `t` (the accumulator's `w + 1` words) is negative, by a
+mask of its sign. -/
+def addBack : Prog isa :=
+  .seq (.block [.lsl .r14 .r11 2, .add .r14 .r14 .r8, .load .d .r0 .r14 0, .lsr .d .r0 .r0 63, .sub .r12 .r20 .r0,
+      .addi .r14 .r8 0, .addi .r15 .r10 0, .lsr .d .r17 .r11 1, .addc .r0 .r20 .r20])
+    (.seq (countLoop .r17 [.load .d .r0 .r15 0, .logic .and .r0 .r0 .r12, .load .d .r3 .r14 0, .adde .r3 .r3 .r0,
+        .store .d .r3 .r14 0, .addi .r14 .r14 8, .addi .r15 .r15 8])
+      (.block [.load .d .r3 .r14 0, .adde .r3 .r3 .r20, .store .d .r3 .r14 0]))
+
+/-- `x := x 2^64 mod n`. -/
+def wordStep : Prog isa :=
+  .seq quot (.seq mulRow (.seq subPass (.seq addBack (.seq addBack
+    (.seq (.block [.addi .r14 .r5 0, .addi .r15 .r8 0]) copyWords)))))
+
+/-- `w + 1` of `wordStep`, counted by `r4`. -/
+def wordSteps : Prog isa :=
+  .seq (.block [.lsr .d .r4 .r11 1, .addi .r4 .r4 1])
+    (.loop (.seq wordStep (.block [.subi .r4 .r4 1])) (.nonzero .d .r4))
+
+/-- `x := R² mod n` in array 1 for `vg_rsa_public_precompute`, for `n` of
+`w ≥ 3` words with its top word not zero: `norm`, `x := 2^(64 (w - 1))`
+(`r2Top`), and `w + 1` word steps: `2^(64 (w - 1) + 64 (w + 1)) = R²`. -/
+def r2Fast : Prog isa := .seq norm (.seq r2Top wordSteps)
 
 /-- `x := R² mod n = 2^(128 w) mod n` in array 1, for any odd `n` of `w`
 words, with `-n⁻¹ mod 2³²` in `r12` and the bases of arrays 1–3 in `r5`, `r8`
 and `r9`: `x := 1`; `64 w + w` doublings to `2^w R mod n` (`doubleMod64`);
-then six Montgomery squares to `2^(64 w) R mod n`, as in `r2Fast`, counted by
+then six Montgomery squares to `2^(64 w) R mod n`, as in `r2Hi`, counted by
 `r24`. -/
 def r2Prime : Prog isa :=
   .seq one (.seq (.block [.lsl .r4 .r11 5, .lsr .d .r3 .r11 1, .add .r4 .r4 .r3])
     (.seq (.loop (.seq doubleMod64 (.block [.subi .r4 .r4 1])) (.nonzero .d .r4))
       (.seq (.block [.li .r24 6]) (.loop (.seq r2Sq (.block [.subi .r24 .r24 1])) (.nonzero .d .r24)))))
-
-/-- `w` words from `r15` to `r14`, both advanced past them. -/
-def copyWords : Prog isa :=
-  .seq (.block [.lsr .d .r17 .r11 1])
-    (countLoop .r17 [.load .d .r0 .r15 0, .store .d .r0 .r14 0, .addi .r14 .r14 8, .addi .r15 .r15 8])
 
 /-- `n` and `x` into `pre`. -/
 def write : Prog isa :=
