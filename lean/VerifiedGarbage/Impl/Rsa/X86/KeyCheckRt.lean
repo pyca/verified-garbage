@@ -79,16 +79,35 @@ def productsTo (last : Nat) : Prog isa := .seq (.block [.mov .esi (.imm 3)]) (.l
 /-- The cdecl argument holding `p`'s length in bytes. -/
 def pLenArg : Nat := if full then 7 else 5
 
+/-- The header word holding the guard (`WordModRt.balanced`), which the word steps need. -/
+def sG : Nat := 144
+
+/-- `[m] = [x] mod [m']` by word steps, `m'` of `p`'s length (under the guard, `q`'s too). -/
+def wordMod (x r m : Nat) (wide : Bool := false) : Prog isa :=
+  WordModRt.wordMod (lay full) (pLenArg full) x r m aT wide
+
+/-- `[x] < [m]` and `e [x] ≡ 1 (mod [m])`: the product `e x` (`e`'s two words) by word steps. -/
+def eWord (x m : Nat) : List (Prog isa) :=
+  ltA full x m ++ [WordModRt.mulShort (lay full) aY x aE, wordMod full aY aA m] ++ eqA full aA aOne
+
 /-- `qInv < p` and `q qInv mod p = 1`: the product `q qInv` (`2 w` words in `aY` and `aX`)
 reduced by word steps into `aA`. -/
-def qInvWord : Prog isa := seqs (ltA full aQI aP ++
-  [WordModRt.mulWide (lay full) aY aQ aQI, WordModRt.wordMod (lay full) (pLenArg full) aY aA aP aT true] ++
-  eqA full aA aOne)
+def qInvWord : List (Prog isa) := ltA full aQI aP ++
+  [WordModRt.mulWide (lay full) aY aQ aQI, wordMod full aY aA aP true] ++ eqA full aA aOne
 
-/-- The three product checks; `q qInv` by word steps where `p_len ≥ 13`. -/
-def products : Prog isa :=
-  .seq (.block [.mov .eax (.mem (argOp (pLenArg full))), .alu .cmp .eax (.imm 13)])
-    (.ite .b (productsTo full 0) (.seq (productsTo full 1) (qInvWord full)))
+/-- `d mod [m] = [x]` by word steps. -/
+def dWord (x m : Nat) : List (Prog isa) := [wordMod full aD aVR m] ++ eqA full aVR x
+
+/-- The checks by word steps, under the guard. -/
+def wordChecks : Prog isa := seqs (eWord full aDP aM1 ++ eWord full aDQ aM2 ++ qInvWord full ++
+  (if full then dWord full aDP aM1 ++ dWord full aDQ aM2 else []))
+
+/-- `d mod [m] = [x]` by `KeyRt.div`. -/
+def dBit (x m : Nat) : List (Prog isa) := divSet full aD m ++ [division full] ++ eqA full aVR x
+
+/-- The checks bit by bit, outside the guard. -/
+def bitChecks : Prog isa := seqs ([productsTo full 0] ++
+  (if full then dBit full aDP aM1 ++ dBit full aDQ aM2 else []))
 
 /-- `p q = n`: the product (`2 w` words in `aVQ` and `aVR`) compared with `n`. -/
 def start : Prog isa :=
@@ -96,17 +115,12 @@ def start : Prog isa :=
     WordModRt.mulWide (lay full) aVQ aP aQ, WordModRt.eqWide (lay full) sF aVQ aN, .block acc]
 
 def crtChecks : Prog isa := seqs (
-  [copy (lay full) aM1 aP, .block (clrLow (lay full) aM1), copy (lay full) aM2 aQ, .block (clrLow (lay full) aM2)] ++
-  [products full])
+  [copy (lay full) aM1 aP, .block (clrLow (lay full) aM1), copy (lay full) aM2 aQ, .block (clrLow (lay full) aM2),
+    .block (WordModRt.balanced (lay full) 1 (pLenArg full) (qLenArg full) aN (sG))] ++
+  (if full then ltA full aD aN else []) ++
+  [WordModRt.ifBalanced sG (wordChecks full) (bitChecks full)])
 
-def crtBody : Prog isa := seqs [start full, crtChecks full]
-
-/-- `[aVR] = d mod [m]` by word steps, `m` of the length in argument `ml`. -/
-def wordRem (ml m : Nat) : Prog isa :=
-  WordModRt.wordModOr (lay full) ml aD aVR m aVT (.seq (seqs (divSet full aD m)) (division full))
-
-def keyBody : Prog isa := seqs [crtBody full, seqs (ltA full aD aN), wordRem full (pLenArg full) aM1,
-  seqs (eqA full aVR aDP), wordRem full (qLenArg full) aM2, seqs (eqA full aVR aDQ)]
+def keyBody : Prog isa := seqs [start full, crtChecks full]
 
 def loadInputs : List (Nat × Nat) → Prog isa
   | [] => .block []
@@ -115,7 +129,7 @@ def loadInputs : List (Nat × Nat) → Prog isa
 def loads : Prog isa := .seq (zeroArrays (lay full) nArr) (loadInputs full (inputs full))
 
 def sized : Prog isa := seqs [loads full,
-  (if full then keyBody full else crtBody full), .block [.mov .eax (.mem (sc sMask))]]
+  keyBody full, .block [.mov .eax (.mem (sc sMask))]]
 
 def checkExponent : Prog isa :=
   .seq (.seq (.block (CrtValues.inputArgs 2)) exponentCheck)

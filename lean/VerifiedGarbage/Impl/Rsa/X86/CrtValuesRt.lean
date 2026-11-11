@@ -75,12 +75,17 @@ def checksSuffix : List (Prog isa) := [eqS lay sE3 1 aOne aT1,
 
 def checks : Prog isa := seqs (checksPrefix ++ inverseChoice::checksSuffix)
 
+/-- The header word holding the guard (`WordModRt.balanced`), which the word steps need. -/
+def sG : Nat := 144
+
 /-- The product `p q` (`2 w` words in `aDR2` and `aDR3`), compared with `n` (`aDQ`) by the checks. -/
 def firstDiv : Prog isa := seqs [
-  .block (bitOf lay sPodd aP), WordModRt.mulWide lay aDR2 aP aQ]
+  .block (bitOf lay sPodd aP ++ WordModRt.balanced lay 7 9 11 aDQ sG), WordModRt.mulWide lay aDR2 aP aQ]
 
-/-- `[r] = [aDQ] mod [aDD]` by word steps, `aDD` of the length in argument `ml`. -/
-def wordRem (ml r : Nat) : Prog isa := WordModRt.wordModOr lay ml aDQ r aDD aDT (div r)
+/-- `[r] = [aDQ] mod [aDD]`: by word steps under the guard (`aDD` of the length in argument
+`ml`), else by `KeyRt.div`. -/
+def wordRem (ml r : Nat) : Prog isa :=
+  WordModRt.ifBalanced sG (WordModRt.wordMod lay ml aDQ r aDD aDT) (div r)
 
 def divQ : Prog isa := seqs [
   copy lay aDQ aD, copy lay aDD aQ, .block (clrLow lay aDD), wordRem 11 aDR3]
