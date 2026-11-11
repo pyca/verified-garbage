@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Hmac.AnyKey
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.AnyKeyEntry
 
 -- separate module: generic over the hash functions, of which SHA-256 is the first to use it
 
@@ -23,6 +25,19 @@ import VerifiedGarbage.Proof.Framework.Offset
 `scrubTail` where the variant gives the residue analysis of its code
 (`MdHash.hmacFinRes`). Its postcondition reads the memory on return only
 within `out` (`hmacFinOut`).
+
+`scrubAllCode`: code followed by the clearing with every granule of its stack
+wiped, as `Scrub.scrubRegAll` does of a registered function, for code that
+is part of one (`scrubAllCode_ok`).
+
+`InitImpl`: an implementation of HMAC's `init` for a key of any length, as a
+registration file states it. `MdHash.init` is a variant's, and
+`MdHash.initScrubbed` the same with the clearing after each of its two
+branches, every granule of the branch's own frame wiped (`initCodeS`),
+which returns without secret residue: the residue analysis does not follow
+`init` precisely (its key loop stores through an index it cannot bound), and
+one clearing after both would wipe the larger frame of the branch for long
+keys for every key.
 -/
 
 @[expose] public section
@@ -96,5 +111,136 @@ def MdHash.hmacFinReg (v : MdHash) : Registration v.I.finalizeApi target :=
   if hD : v.I.S.digestBytes < 2 ^ 64 then
     withScrub r (hmacFinOut v.I hD _) [] (pubOk_nil _) v.hmacFinRes
   else r
+
+/-- `c` followed by the clearing (`scrub`) at the level `v`, with every granule
+of its `stack` bytes of stack wiped: for code that is part of a function (a
+branch of it, verified against a contract of its own). -/
+def scrubAllCode (v : VecLevel) (rb stack : Nat) (c : Prog isa) : Prog isa :=
+  scrub v rb (xsOf c (allKs (chunks stack))) (psOf (allKs (chunks stack))) (gsOf Taint.clobbers c)
+    (allKs (chunks stack)) (chunks stack) c
+
+/-- `scrubAllCode` is verified against the contract of its code, and returns
+without secret residue, below the level `evex`. -/
+theorem scrubAllCode_ok {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
+    {pre : Curry (sig.words A.ptrBits) (Mem → Prop)} {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa} {v : VecLevel}
+    (hne : v ≠ .evex) (h : Verified target c (sig.contract A pre post wa stack leak))
+    (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ stack) (hst : stack + 8 < 2 ^ 64)
+    (h8 : stack % 8 = 0) (hlv : c.all (fun i => decide (i.vecLevel ≤ v.level)) = true)
+    (hrb : sig.retBits A.ptrBits ≤ 32 ∨ sig.retBits A.ptrBits = 64)
+    (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :
+    Verified target (scrubAllCode v (sig.retBits A.ptrBits) stack c) (sig.contract A pre post wa stack leak) ∧
+      NoResidue (scrubAllCode v (sig.retBits A.ptrBits) stack c) (sig.contract A pre post wa stack leak)
+        (sig.retBits A.ptrBits) :=
+  have he := evexReg_of_ne (c := c) (ks := allKs (chunks stack)) (stack := stack) hne
+  Verified.scrub hA h (SpSafe.of_all hsp) hd (chunks_sum stack) hst (chunks_valid h8)
+    (fun i hi => by simpa using Code.all_instrs hlv i hi) hrb hpost (resOk_all _ _ h8) (tailOk_of _ _ _)
+    (xs_of _ _) he.1 he.2 (gs_of _ _)
+
+theorem scrubAllCode_spSafe (v : VecLevel) (rb stack : Nat) {c : Prog isa}
+    (h : c.all (fun i => !isa.writesSp i) = true) :
+    (scrubAllCode v rb stack c).all (fun i => !isa.writesSp i) = true :=
+  scrub_spSafe v _ _ _ _ _ _ (tailOk_of 0 c (allKs (chunks stack))).psOk
+    (tailOk_of 0 c (allKs (chunks stack))).gsOk h
+
+/-- HMAC's `init`'s postcondition reads the memory on return only within
+its two states, for a key of at most a block and of any length. -/
+theorem hmacInitOut (I : Spec.Hmac.Instance) (hR : Proof.Hmac.ReprLocal I.S) (hS : I.S.stateBytes < 2 ^ 64)
+    (stack : Nat) : PostOut (I.initContract abi stack) ((Spec.Hmac.initSig I.S).retBits 64) := by
+  unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+  exact postOut_of_local (leak := none) ScrubAbi.plain (Proof.Hmac.initPostOut_local I.S _ hR hS)
+
+theorem hmacInitAnyOut (I : Spec.Hmac.Instance) (hR : Proof.Hmac.ReprLocal I.S) (hS : I.S.stateBytes < 2 ^ 64)
+    (stack : Nat) : PostOut (I.initAnyKeyContract abi stack) ((Spec.Hmac.initSig I.S).retBits 64) := by
+  unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
+  exact postOut_of_local (leak := none) ScrubAbi.plain (Proof.Hmac.initPostOut_local I.S _ hR hS)
+
+/-- `initCode`, each of its two branches followed by the clearing at the
+level `lv`, with every granule of the branch's frame wiped. -/
+def initCodeS (lv : VecLevel) (H : Impl.Pbkdf2.Md.X86_64.Hash) (I : Spec.Hmac.Instance) : Prog isa :=
+  Impl.Pbkdf2.Md.X86_64.initEntry I.S.H.blockSize
+    (scrubAllCode lv ((Spec.Hmac.initSig I.S).retBits 64) (16 + hmacFrame I)
+      (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacInit))
+    (scrubAllCode lv ((Spec.Hmac.initSig I.S).retBits 64) (24 + anyFrame I)
+      (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame I) .r8 I.initAnyKeyScratch H.hmacInitAny))
+
+/-- `initCodeS` is verified, and returns without secret residue, if `scrub`'s
+side conditions hold of its two branches. -/
+theorem initCodeS_ok (v : MdHash) {lv : VecLevel} (hne : lv ≠ .evex) (hS : v.I.S.stateBytes < 2 ^ 64)
+    (hd₁ : (Impl.StackScratch.X86_64.withStackScratch (hmacFrame v.I) .r8 v.H.hmacInit).x86_64Depth ≤
+      16 + hmacFrame v.I)
+    (hd₂ : (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame v.I) .r8 v.I.initAnyKeyScratch
+      v.H.hmacInitAny).x86_64Depth ≤ 24 + anyFrame v.I)
+    (hst : 24 + anyFrame v.I + 8 < 2 ^ 64) (hn : 16 + hmacFrame v.I ≤ 24 + anyFrame v.I)
+    (h8₁ : (16 + hmacFrame v.I) % 8 = 0) (h8₂ : (24 + anyFrame v.I) % 8 = 0)
+    (hl₁ : (Impl.StackScratch.X86_64.withStackScratch (hmacFrame v.I) .r8 v.H.hmacInit).all
+      (fun i => decide (i.vecLevel ≤ lv.level)) = true)
+    (hl₂ : (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame v.I) .r8 v.I.initAnyKeyScratch
+      v.H.hmacInitAny).all (fun i => decide (i.vecLevel ≤ lv.level)) = true)
+    (hrb : (Spec.Hmac.initSig v.I.S).retBits 64 ≤ 32 ∨ (Spec.Hmac.initSig v.I.S).retBits 64 = 64) :
+    Verified target (initCodeS lv v.H v.I) (v.I.initAnyKeyContract abi (24 + anyFrame v.I)) ∧
+      NoResidue (initCodeS lv v.H v.I) (v.I.initAnyKeyContract abi (24 + anyFrame v.I))
+        ((Spec.Hmac.initSig v.I.S).retBits 64) := by
+  have s := scrubAllCode_ok (A := abi) ScrubAbi.plain (sig := Spec.Hmac.initSig v.I.S)
+    (pre := Spec.Hmac.initPre v.I.S abi.ptrBits) (post := Spec.Hmac.initPost v.I.S abi.ptrBits) (wa := true)
+    (leak := none) hne v.hmacShortF v.hmacShortFSp hd₁ (by omega) h8₁ hl₁ hrb (hmacInitOut v.I v.reprLocal hS _)
+  have l := scrubAllCode_ok (A := abi) ScrubAbi.plain (sig := Spec.Hmac.initSig v.I.S)
+    (post := Spec.Hmac.initPost v.I.S abi.ptrBits) (wa := true)
+    (leak := none) hne v.hmacAnyF v.hmacAnyFSp hd₂ hst h8₂ hl₂ hrb (hmacInitAnyOut v.I v.reprLocal hS _)
+  exact ⟨initEntry_verified s.1 l.1 (by omega) hn v.hBlock v.hmacInitF.2.2,
+    initEntry_noResidue s.2 l.2 (by omega) hn v.hBlock⟩
+
+theorem initCodeS_spSafe (v : MdHash) (lv : VecLevel) :
+    (initCodeS lv v.H v.I).all (fun i => !isa.writesSp i) = true := by
+  simp only [initCodeS, Impl.Pbkdf2.Md.X86_64.initEntry, Code.iteCold, Code.all,
+    scrubAllCode_spSafe lv _ _ v.hmacShortFSp, scrubAllCode_spSafe lv _ _ v.hmacAnyFSp, Bool.and_true]
+  rfl
+
+/-- An implementation of HMAC's `init` for a key of any length, of instance
+`I` (`vg_hmac_<hash>_init`): what its registration states. -/
+structure InitImpl (I : Spec.Hmac.Instance) where
+  /-- What follows the function's name. -/
+  suffix : String
+  /-- CPU features it is chosen only with, beyond those its code needs
+  (`Registration.extra`): for an `init` that is faster only on some of the
+  CPUs that can run it, which a feature its code does not use tells apart. -/
+  extra : List String := []
+  code : Prog isa
+  verified : Verified target code (I.initAnyKeyContract abi (24 + anyFrame I))
+  spSafe : code.all (fun i => !isa.writesSp i) = true
+  /-- That it returns without secret residue, if it does. -/
+  residue : Option (PLift (NoResidue code (I.initAnyKeyContract abi (24 + anyFrame I))
+    ((Spec.Hmac.initSig I.S).retBits 64))) := none
+
+/-- HMAC's `init` over the variant `v`: `initCode`. -/
+def MdHash.init (v : MdHash) : InitImpl v.I where
+  suffix := v.suffix
+  code := initCode v.H v.I
+  verified := v.hmacInitF
+  spSafe := v.hmacInitFSp
+
+/-- HMAC's `init` over the variant `v`, with the clearing after each of its
+two branches (`initCodeS`) at the level `lv`, chosen only with the features
+`extra` too: it returns without secret residue. -/
+def MdHash.initScrubbed (v : MdHash) (lv : VecLevel) (extra : List String) (hne : lv ≠ .evex)
+    (hS : v.I.S.stateBytes < 2 ^ 64)
+    (hd₁ : (Impl.StackScratch.X86_64.withStackScratch (hmacFrame v.I) .r8 v.H.hmacInit).x86_64Depth ≤
+      16 + hmacFrame v.I)
+    (hd₂ : (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame v.I) .r8 v.I.initAnyKeyScratch
+      v.H.hmacInitAny).x86_64Depth ≤ 24 + anyFrame v.I)
+    (hst : 24 + anyFrame v.I + 8 < 2 ^ 64) (hn : 16 + hmacFrame v.I ≤ 24 + anyFrame v.I)
+    (h8₁ : (16 + hmacFrame v.I) % 8 = 0) (h8₂ : (24 + anyFrame v.I) % 8 = 0)
+    (hl₁ : (Impl.StackScratch.X86_64.withStackScratch (hmacFrame v.I) .r8 v.H.hmacInit).all
+      (fun i => decide (i.vecLevel ≤ lv.level)) = true)
+    (hl₂ : (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame v.I) .r8 v.I.initAnyKeyScratch
+      v.H.hmacInitAny).all (fun i => decide (i.vecLevel ≤ lv.level)) = true)
+    (hrb : (Spec.Hmac.initSig v.I.S).retBits 64 ≤ 32 ∨ (Spec.Hmac.initSig v.I.S).retBits 64 = 64) :
+    InitImpl v.I where
+  suffix := v.suffix
+  extra := extra
+  code := initCodeS lv v.H v.I
+  verified := (initCodeS_ok v hne hS hd₁ hd₂ hst hn h8₁ h8₂ hl₁ hl₂ hrb).1
+  spSafe := initCodeS_spSafe v lv
+  residue := some ⟨(initCodeS_ok v hne hS hd₁ hd₂ hst hn h8₁ h8₂ hl₁ hl₂ hrb).2⟩
 
 end VG.Proof.Pbkdf2.Md.X86_64

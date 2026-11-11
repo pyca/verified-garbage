@@ -97,3 +97,7 @@ pub use vg_sha256_shani_k::VG_SHA256_SHANI_K;
 #[rustfmt::skip]
 mod vg_sha512_k;
 pub use vg_sha512_k::VG_SHA512_K;
+
+#[rustfmt::skip]
+mod vg_sha512_k2;
+pub use vg_sha512_k2::VG_SHA512_K2;

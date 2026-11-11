@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256ShaNi
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha512
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512ShaNi
+public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512Avx512
 
 /-! # The implementations of `MdHash` on x86-64 -/
 
@@ -98,5 +99,25 @@ dispatcher tries them in this order. -/
 def variants :=
   md5Variants ++ sha1Variants ++ sha224Variants ++ sha256Variants ++ sha384Variants ++
     sha512Variants ++ sha512_224Variants ++ sha512_256Variants
+
+/-! ## HMAC's `init`
+
+The implementations of `vg_hmac_<hash>_init` over the SHA-512 family, best
+first: each variant's above, and one more, AVX2's with its two padded keys
+compressed at once with AVX-512VL (`Sha512Avx512`). -/
+
+open Proof.Pbkdf2.Md.X86_64 (InitImpl)
+
+def sha384Inits : List (InitImpl Spec.Hmac.sha384I) :=
+  [sha384ShaNi.init, Sha512Avx512.init384, sha384Avx2.init, sha384.init]
+
+def sha512Inits : List (InitImpl Spec.Hmac.sha512I) :=
+  [sha512ShaNi.init, Sha512Avx512.init512, sha512Avx2.init, sha512.init]
+
+def sha512_224Inits : List (InitImpl Spec.Hmac.sha512_224I) :=
+  [sha512_224ShaNi.init, Sha512Avx512.init512_224, sha512_224Avx2.init, sha512_224.init]
+
+def sha512_256Inits : List (InitImpl Spec.Hmac.sha512_256I) :=
+  [sha512_256ShaNi.init, Sha512Avx512.init512_256, sha512_256Avx2.init, sha512_256.init]
 
 end VG.Proof.Variants.MdHash.X86_64

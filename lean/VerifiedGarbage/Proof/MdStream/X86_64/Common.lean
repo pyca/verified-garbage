@@ -411,6 +411,39 @@ structure CalleeOk {P : Params} (H : Md P.B P.N P.L) (code : Prog isa) : Prop wh
   keeps_rdi : ∀ i ∈ instrs code, Taint.clobbers i .rdi = false
   keeps_rcx : ∀ i ∈ instrs code, Taint.clobbers i .rcx = false
 
+/-- The contract of a function compressing two blocks into two hash values
+at once: the hash values at `rdi` and `rdx`, each with the block at `rsi`
+and `rcx`, with scratch space `r8` (`so` bytes). -/
+def compress2K {P : Params} (H : Md P.B P.N P.L) : Contract isa where
+  pre s :=
+    let st₀ : Region := ⟨s.gpr .rdi, P.N⟩
+    let b₀ : Region := ⟨s.gpr .rsi, P.B⟩
+    let st₁ : Region := ⟨s.gpr .rdx, P.N⟩
+    let b₁ : Region := ⟨s.gpr .rcx, P.B⟩
+    let scratch : Region := ⟨s.gpr .r8, P.so⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [b₀, b₁] ∧ s.wr = [st₀, st₁, scratch] ∧
+    st₀.Disjoint st₁ ∧ st₀.Disjoint scratch ∧ st₁.Disjoint scratch ∧
+    b₀.Disjoint st₀ ∧ b₀.Disjoint st₁ ∧ b₀.Disjoint scratch ∧
+    b₁.Disjoint st₀ ∧ b₁.Disjoint st₁ ∧ b₁.Disjoint scratch ∧
+    ret.Disjoint st₀ ∧ ret.Disjoint st₁ ∧ ret.Disjoint scratch
+  post s s' :=
+    H.stateAt s'.mem (s.gpr .rdi) = H.compress (H.stateAt s.mem (s.gpr .rdi)) (H.blockAt s.mem (s.gpr .rsi)) ∧
+    H.stateAt s'.mem (s.gpr .rdx) = H.compress (H.stateAt s.mem (s.gpr .rdx)) (H.blockAt s.mem (s.gpr .rcx))
+  pub s₁ s₂ :=
+    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8
+
+/-- What a caller needs of a function that compresses two blocks at once:
+that it is correct and constant time, does not touch `rsp` or the stack,
+and calls nothing. -/
+structure PairOk {P : Params} (H : Md P.B P.N P.L) (code : Prog isa) : Prop where
+  verified : ∀ s, (compress2K H).pre s →
+    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (compress2K H).post s s'
+  ct : ConstantTime isa (compress2K H).pre (compress2K H).pub code
+  nosp : NoSp code
+  depth : code.depth = 0
+
 /-- `CalleeOk` does not depend on the length field or the digest. -/
 theorem CalleeOk.withOut {P : Params} {H : Md P.B P.N P.L} {code : Prog isa} (hf : CalleeOk H code)
     (o : List Instr) : CalleeOk (P := { P with out := o }) H code :=

@@ -457,7 +457,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA512, AVX2, BMI1, BMI2</td>
+<td>✅ SHA512, AVX-512F, AVX-512VL, AVX2, BMI1, BMI2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -477,7 +477,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA512, AVX2, BMI1, BMI2</td>
+<td>✅ SHA512, AVX-512F, AVX-512VL, AVX2, BMI1, BMI2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -497,7 +497,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA512, AVX2, BMI1, BMI2</td>
+<td>✅ SHA512, AVX-512F, AVX-512VL, AVX2, BMI1, BMI2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -517,7 +517,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA512, AVX2, BMI1, BMI2</td>
+<td>✅ SHA512, AVX-512F, AVX-512VL, AVX2, BMI1, BMI2</td>
 
 <td>✅ SHA extensions</td>
 

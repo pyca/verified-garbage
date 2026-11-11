@@ -37,8 +37,12 @@ theorem nosp_of {c : Prog isa} (h : c.allInstrs (fun i => !Taint.clobbers i .rsp
     have h' := List.all_eq_true.mp ((Code.allInstrs_eq _ c) ▸ h) i hi
     revert h'; cases Taint.clobbers i .rsp <;> simp
 
+/-- What stands for `compBoth` in `core`: a call, as `compBoth` is but for
+the instructions that set up its arguments. -/
+def coreBoth : Prog isa := .call "" (.block [])
+
 /-- `H` without the functions it calls: its own code. -/
-def core (H : Hash) : Hash := ⟨H.P, H.D, H.W, "", .block [], "", .block [], "", "", "", "", ""⟩
+def core (H : Hash) : Hash := ⟨H.P, H.D, H.W, "", .block [], "", .block [], "", "", "", "", "", coreBoth⟩
 
 /-! ## Every instruction, from the own code and the callees' -/
 
@@ -46,7 +50,8 @@ section
 variable {H : Hash} {p : Instr → Bool} (hc : H.compC.allInstrs p = true) (hi : H.initC.allInstrs p = true)
 include hc hi
 
-theorem core_pbkdf2 (h : (core H).pbkdf2.allInstrs p = true) : H.pbkdf2.allInstrs p = true := by
+theorem core_pbkdf2 (hb : H.compBoth.allInstrs p = true) (h : (core H).pbkdf2.allInstrs p = true) :
+    H.pbkdf2.allInstrs p = true := by
   simp only [Hash.pbkdf2, Hash.key, Hash.hashKey, Hash.setup, Hash.block, Hash.outLen, Hash.outLoop,
     Hash.hmacInit, Hash.initKeys, Hash.hmacFin, Hash.iterate, Impl.Pbkdf2.X86_64.iterate, Impl.Pbkdf2.X86_64.body,
     Impl.Pbkdf2.X86_64.compressBlock, Hash.updC, Hash.finC, Hash.stream,
@@ -54,13 +59,14 @@ theorem core_pbkdf2 (h : (core H).pbkdf2.allInstrs p = true) : H.pbkdf2.allInstr
     Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody, Impl.MdStream.X86_64.updateTail,
     Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
     Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
-    core, Code.allInstrs, hc, hi, Bool.and_true, Bool.true_and] at h ⊢
+    core, coreBoth, Code.allInstrs, hc, hi, hb, Bool.and_true, Bool.true_and] at h ⊢
   exact h
 
-theorem core_hmacInit (h : (core H).hmacInit.allInstrs p = true) : H.hmacInit.allInstrs p = true := by
+omit hc in
+theorem core_hmacInit (hb : H.compBoth.allInstrs p = true) (h : (core H).hmacInit.allInstrs p = true) :
+    H.hmacInit.allInstrs p = true := by
   simp only [Hash.hmacInit, Hash.initKeys, Hash.stream, Impl.Pbkdf2.Md.X86_64.Stream.callInit,
-    Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
-    core, Code.allInstrs, hc, hi, Bool.and_true, Bool.true_and] at h ⊢
+    core, coreBoth, Code.allInstrs, hi, hb, Bool.and_true, Bool.true_and] at h ⊢
   exact h
 
 omit hi in
@@ -101,10 +107,11 @@ section
 variable {H : Hash} (hc : H.compC.depth = 0) (hi : H.initC.depth = 0)
 include hc hi
 
-theorem core_hmacInit_depth (h : (core H).hmacInit.depth ≤ 2) : H.hmacInit.depth ≤ 2 := by
+omit hc in
+theorem core_hmacInit_depth (hb : H.compBoth.depth = 1) (h : (core H).hmacInit.depth ≤ 2) :
+    H.hmacInit.depth ≤ 2 := by
   simp only [Hash.hmacInit, Hash.initKeys, Hash.stream, Impl.Pbkdf2.Md.X86_64.Stream.callInit,
-    Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
-    core, Code.depth, hc, hi] at h ⊢
+    core, coreBoth, Code.depth, hi, hb] at h ⊢
   exact h
 
 omit hi in
@@ -146,13 +153,15 @@ section
 variable {H : Hash} (hc : H.compC.x86_64Depth = 0) (hi : H.initC.x86_64Depth = 0)
 include hc hi
 
-theorem core_hmacInit_xdepth (h : (core H).hmacInit.x86_64Depth ≤ 16) : H.hmacInit.x86_64Depth ≤ 16 := by
+omit hc in
+theorem core_hmacInit_xdepth (hb : H.compBoth.x86_64Depth = 8) (h : (core H).hmacInit.x86_64Depth ≤ 16) :
+    H.hmacInit.x86_64Depth ≤ 16 := by
   simp only [Hash.hmacInit, Hash.initKeys, Hash.stream, Impl.Pbkdf2.Md.X86_64.Stream.callInit,
-    Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
-    core, Code.x86_64Depth, hc, hi] at h ⊢
+    core, coreBoth, Code.x86_64Depth, hi, hb] at h ⊢
   exact h
 
-theorem core_pbkdf2_xdepth (h : (core H).pbkdf2.x86_64Depth ≤ 24) : H.pbkdf2.x86_64Depth ≤ 24 := by
+theorem core_pbkdf2_xdepth (hb : H.compBoth.x86_64Depth = 8) (h : (core H).pbkdf2.x86_64Depth ≤ 24) :
+    H.pbkdf2.x86_64Depth ≤ 24 := by
   simp only [Hash.pbkdf2, Hash.key, Hash.hashKey, Hash.setup, Hash.block, Hash.outLen, Hash.outLoop,
     Hash.hmacInit, Hash.initKeys, Hash.hmacFin, Hash.iterate, Impl.Pbkdf2.X86_64.iterate, Impl.Pbkdf2.X86_64.body,
     Impl.Pbkdf2.X86_64.compressBlock, Hash.updC, Hash.finC, Hash.stream,
@@ -160,7 +169,7 @@ theorem core_pbkdf2_xdepth (h : (core H).pbkdf2.x86_64Depth ≤ 24) : H.pbkdf2.x
     Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody, Impl.MdStream.X86_64.updateTail,
     Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
     Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
-    core, Code.x86_64Depth, hc, hi] at h ⊢
+    core, coreBoth, Code.x86_64Depth, hc, hi, hb] at h ⊢
   exact h
 
 omit hi in
@@ -223,6 +232,79 @@ structure CoreOK (C : Hash) : Prop where
   fitI : C.stream.buf ≤ 8 * C.W
   fitF : C.stream.buf + C.stream.F ≤ 8 * C.W
 
+/-- What the kernel checks of `compBoth`, the code of HMAC's `init` that
+compresses the blocks of its two states: its instructions, and that it is
+one level of calls using no stack. -/
+structure BothFacts (H : Hash) : Prop where
+  bMx : H.compBoth.allInstrs (fun i => !loadsMxcsr i) = true
+  bSp : H.compBoth.allInstrs (fun i => !isa.writesSp i) = true
+  bNs : H.compBoth.allInstrs (fun i => !Taint.clobbers i .rsp) = true
+  bD : H.compBoth.depth = 1
+  bXD : H.compBoth.x86_64Depth = 8
+
+/-- `compBoth` as the compression function twice (`compTwice`), from the
+checks of the compression function. -/
+theorem BothFacts.twice {H : Hash}
+    (h : H.compBoth = Impl.Pbkdf2.Md.X86_64.compTwice H.P.N H.compN H.compC)
+    (cMx : H.compC.allInstrs (fun i => !loadsMxcsr i) = true)
+    (cSp : H.compC.allInstrs (fun i => !isa.writesSp i) = true)
+    (cNs : H.compC.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
+    (cD : H.compC.depth = 0) (cXD : H.compC.x86_64Depth = 0) : BothFacts H where
+  bMx := by
+    rw [h]
+    simp only [Impl.Pbkdf2.Md.X86_64.compTwice, Impl.Pbkdf2.Md.X86_64.outerArgs, Impl.MdStream.X86_64.compressAt,
+      Impl.MdStream.X86_64.compressWith, Code.allInstrs, cMx, Bool.and_true, Bool.true_and]
+    rfl
+  bSp := by
+    rw [h]
+    simp only [Impl.Pbkdf2.Md.X86_64.compTwice, Impl.Pbkdf2.Md.X86_64.outerArgs, Impl.MdStream.X86_64.compressAt,
+      Impl.MdStream.X86_64.compressWith, Code.allInstrs, cSp, Bool.and_true, Bool.true_and]
+    rfl
+  bNs := by
+    rw [h]
+    simp only [Impl.Pbkdf2.Md.X86_64.compTwice, Impl.Pbkdf2.Md.X86_64.outerArgs, Impl.MdStream.X86_64.compressAt,
+      Impl.MdStream.X86_64.compressWith, Code.allInstrs, cNs, Bool.and_true, Bool.true_and]
+    rfl
+  bD := by
+    rw [h]
+    simp only [Impl.Pbkdf2.Md.X86_64.compTwice, Impl.MdStream.X86_64.compressAt,
+      Impl.MdStream.X86_64.compressWith, Code.depth, cD]
+    rfl
+  bXD := by
+    rw [h]
+    simp only [Impl.Pbkdf2.Md.X86_64.compTwice, Impl.MdStream.X86_64.compressAt,
+      Impl.MdStream.X86_64.compressWith, Code.x86_64Depth, cXD]
+    rfl
+
+/-- `compBoth` as one call of a function that compresses two blocks at once
+(`compPair`), from the checks of that function. -/
+theorem BothFacts.pair {H : Hash} {name : String} {code : Prog isa}
+    (h : H.compBoth = Impl.Pbkdf2.Md.X86_64.compPair H.P.N name code)
+    (pMx : code.allInstrs (fun i => !loadsMxcsr i) = true)
+    (pSp : code.allInstrs (fun i => !isa.writesSp i) = true)
+    (pNs : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
+    (pD : code.depth = 0) (pXD : code.x86_64Depth = 0) : BothFacts H where
+  bMx := by
+    rw [h]
+    simp only [Impl.Pbkdf2.Md.X86_64.compPair, Impl.Pbkdf2.Md.X86_64.pairArgs, Code.allInstrs, pMx, Bool.and_true]
+    rfl
+  bSp := by
+    rw [h]
+    simp only [Impl.Pbkdf2.Md.X86_64.compPair, Impl.Pbkdf2.Md.X86_64.pairArgs, Code.allInstrs, pSp, Bool.and_true]
+    rfl
+  bNs := by
+    rw [h]
+    simp only [Impl.Pbkdf2.Md.X86_64.compPair, Impl.Pbkdf2.Md.X86_64.pairArgs, Code.allInstrs, pNs, Bool.and_true]
+    rfl
+  bD := by
+    rw [h]
+    simp only [Impl.Pbkdf2.Md.X86_64.compPair, Impl.Pbkdf2.Md.X86_64.pairArgs, Code.depth, pD]
+    rfl
+  bXD := by
+    rw [h]
+    simp only [Impl.Pbkdf2.Md.X86_64.compPair, Impl.Pbkdf2.Md.X86_64.pairArgs, Code.x86_64Depth, pXD]
+    rfl
+
 /-- What the kernel checks of the functions a hash function's code calls:
 its compression function and its streaming `init`. -/
 structure Callees (H : Hash) : Prop where
@@ -237,6 +319,23 @@ structure Callees (H : Hash) : Prop where
   /-- Neither uses any stack. -/
   cXD : H.compC.x86_64Depth = 0
   iXD : H.initC.x86_64Depth = 0
+  /-- The same of `compBoth`, and what `init` needs of it. -/
+  b : BothFacts H
+
+/-- `Callees` of a hash function whose `compBoth` is its compression
+function twice. -/
+theorem Callees.ofTwice {H : Hash}
+    (h : H.compBoth = Impl.Pbkdf2.Md.X86_64.compTwice H.P.N H.compN H.compC)
+    (cMx : H.compC.allInstrs (fun i => !loadsMxcsr i) = true)
+    (cSp : H.compC.allInstrs (fun i => !isa.writesSp i) = true)
+    (cNs : H.compC.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
+    (cD : H.compC.depth = 0)
+    (iMx : H.initC.allInstrs (fun i => !loadsMxcsr i) = true)
+    (iSp : H.initC.allInstrs (fun i => !isa.writesSp i) = true)
+    (iNs : H.initC.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
+    (iD : H.initC.depth = 0)
+    (cXD : H.compC.x86_64Depth = 0) (iXD : H.initC.x86_64Depth = 0) : Callees H :=
+  ⟨cMx, cSp, cNs, cD, iMx, iSp, iNs, iD, cXD, iXD, .twice h cMx cSp cNs cD cXD⟩
 
 namespace Callees
 
@@ -249,9 +348,9 @@ theorem updSp : NoSp H.updC := nosp_of (core_updC K.cNs C.updNs)
 theorem finSp : NoSp H.finC := nosp_of (core_finC K.cNs C.finNs)
 theorem updD : H.updC.depth ≤ 1 := core_updC_depth K.cD C.updD
 theorem finD : H.finC.depth ≤ 1 := core_finC_depth K.cD C.finD
-theorem hmacInitXD : H.hmacInit.x86_64Depth ≤ 16 := core_hmacInit_xdepth K.cXD K.iXD C.hinitXD
+theorem hmacInitXD : H.hmacInit.x86_64Depth ≤ 16 := core_hmacInit_xdepth K.iXD K.b.bXD C.hinitXD
 theorem hmacFinXD : H.hmacFin.x86_64Depth ≤ 16 := core_hmacFin_xdepth K.cXD C.hfinXD
-theorem pbkdf2XD : H.pbkdf2.x86_64Depth ≤ 24 := core_pbkdf2_xdepth K.cXD K.iXD C.pbkXD
+theorem pbkdf2XD : H.pbkdf2.x86_64Depth ≤ 24 := core_pbkdf2_xdepth K.cXD K.iXD K.b.bXD C.pbkXD
 
 end Callees
 
@@ -285,7 +384,8 @@ include hH C K
 
 theorem hmacInit_ok (hsat : ∃ s, (Proof.Hmac.initScratchContract hH.SH H.W X86_64.abi 16).pre s) :
     Verified X86_64.target H.hmacInit (initG hH.SH H.W) :=
-  HmacInit.verified hH (HmacInit.Checks.of_core C.hinit) C.fitI (core_hmacInit K.cMx K.iMx C.hinitMx)
+  HmacInit.verified hH (HmacInit.bothOk hH (HmacInit.Checks.of_core C.hinit)) (HmacInit.Checks.of_core C.hinit) C.fitI
+    (core_hmacInit K.iMx K.b.bMx C.hinitMx)
     (initImp _ _ hsat).sat_left
 
 theorem hmacFin_ok (hsat : ∃ s, (Proof.Hmac.finalizeScratchContract hH.SH H.W X86_64.abi 16).pre s) :
@@ -322,14 +422,15 @@ theorem pbkdf2_verified
     (hsat : ∃ s, (Proof.Pbkdf2.pbkdf2ScratchContract hH.SH (H.W + H.S) X86_64.abi 24).pre s) :
     Verified X86_64.target H.pbkdf2 (Proof.Pbkdf2.pbkdf2ScratchContract hH.SH (H.W + H.S) X86_64.abi 24) :=
   (Pbk.verified hH hH.psizes (Pbk.Checks.of_core C.pbk)
-    (hmacInit_ok hH C K hsI) (nosp_of (core_hmacInit K.cNs K.iNs C.hinitNs)) (core_hmacInit_depth K.cD K.iD C.hinitD)
+    (hmacInit_ok hH C K hsI) (nosp_of (core_hmacInit K.iNs K.b.bNs C.hinitNs))
+    (core_hmacInit_depth K.iD K.b.bD C.hinitD)
     (hmacFin_ok hH C K hsF) (nosp_of (core_hmacFin K.cNs C.hfinNs)) (core_hmacFin_depth K.cD C.hfinD)
     (iterate_ok hH C hsT K.cMx) (nosp_of (core_iterate K.cNs C.iterNs)) (core_iterate_depth K.cD C.iterD)
-    (core_pbkdf2 K.cMx K.iMx C.pbkMx) (pbkImp _ _ hsat).sat_left).of_implies (pbkImp _ _ hsat)
+    (core_pbkdf2 K.cMx K.iMx K.b.bMx C.pbkMx) (pbkImp _ _ hsat).sat_left).of_implies (pbkImp _ _ hsat)
 
 omit hH in
 theorem hmacInit_sp : H.hmacInit.all (fun i => !isa.writesSp i) = true :=
-  Code.all_of_allInstrs (core_hmacInit K.cSp K.iSp C.hinitSp)
+  Code.all_of_allInstrs (core_hmacInit K.iSp K.b.bSp C.hinitSp)
 
 omit hH in
 theorem hmacFin_sp : H.hmacFin.all (fun i => !isa.writesSp i) = true :=
@@ -341,7 +442,7 @@ theorem iterate_sp : H.iterate.all (fun i => !isa.writesSp i) = true :=
 
 omit hH in
 theorem pbkdf2_sp : H.pbkdf2.all (fun i => !isa.writesSp i) = true :=
-  Code.all_of_allInstrs (core_pbkdf2 K.cSp K.iSp C.pbkSp)
+  Code.all_of_allInstrs (core_pbkdf2 K.cSp K.iSp K.b.bSp C.pbkSp)
 
 end
 

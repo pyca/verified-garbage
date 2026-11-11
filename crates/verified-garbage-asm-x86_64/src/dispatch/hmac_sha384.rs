@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_hmac_sha384_init_shani` if the CPU supports its features (`VG_HMAC_SHA384_INIT_SHANI_FEATURES`); `vg_hmac_sha384_init_avx2` if the CPU supports its features (`VG_HMAC_SHA384_INIT_AVX2_FEATURES`); or else `vg_hmac_sha384_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_hmac_sha384_init_shani` if the CPU supports its features (`VG_HMAC_SHA384_INIT_SHANI_FEATURES`); `vg_hmac_sha384_init_avx512` if the CPU supports its features (`VG_HMAC_SHA384_INIT_AVX512_FEATURES`) and it also supports `avx512fp16`; `vg_hmac_sha384_init_avx2` if the CPU supports its features (`VG_HMAC_SHA384_INIT_AVX2_FEATURES`); or else `vg_hmac_sha384_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -29,6 +29,11 @@ pub unsafe fn vg_hmac_sha384_init_auto(_dit: verified_garbage_cpu::Dit<'_>, inne
             || cpu.contains(crate::hmac_sha384::VG_HMAC_SHA384_INIT_SHANI_FEATURES)
         {
             return crate::hmac_sha384::vg_hmac_sha384_init_shani;
+        }
+        if const { verified_garbage_cpu::target_contains(verified_garbage_cpu::Features(crate::hmac_sha384::VG_HMAC_SHA384_INIT_AVX512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16)) }
+            || cpu.contains(verified_garbage_cpu::Features(crate::hmac_sha384::VG_HMAC_SHA384_INIT_AVX512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16))
+        {
+            return crate::hmac_sha384::vg_hmac_sha384_init_avx512;
         }
         if const { verified_garbage_cpu::target_contains(crate::hmac_sha384::VG_HMAC_SHA384_INIT_AVX2_FEATURES) }
             || cpu.contains(crate::hmac_sha384::VG_HMAC_SHA384_INIT_AVX2_FEATURES)

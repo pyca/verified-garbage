@@ -35,11 +35,11 @@ theorem hI : Verified X86_64.target (HH v).hmacInit (initG (OK v).SH (HH v).W) :
     Proof.Pbkdf2.Md.X86_64.Sha256.satI
 
 theorem hIsp : NoSp (HH v).hmacInit :=
-  nosp_of (core_hmacInit (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).cNs
-    (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).iNs Proof.Pbkdf2.Md.X86_64.Sha256.coreOK.hinitNs)
+  nosp_of (core_hmacInit (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).iNs
+    (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).b.bNs Proof.Pbkdf2.Md.X86_64.Sha256.coreOK.hinitNs)
 
 theorem hId : (HH v).hmacInit.depth ≤ 2 :=
-  core_hmacInit_depth (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).cD (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).iD
+  core_hmacInit_depth (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).iD (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).b.bD
     Proof.Pbkdf2.Md.X86_64.Sha256.coreOK.hinitD
 
 theorem hF : Verified X86_64.target (HH v).hmacFin (finG (OK v).SH (HH v).W) :=
