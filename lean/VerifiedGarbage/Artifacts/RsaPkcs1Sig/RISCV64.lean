@@ -27,8 +27,8 @@ def artifacts : List Artifact := [
     stack := Proof.RsaPkcs1Sig.RISCV64.Sign.stackBytes
     verified := Proof.RsaPkcs1Sig.RISCV64.Sign.code_verified },
   Spec.RsaPkcs1Sig.signPrecomputedApi.artifact RISCV64.target {
-    code := Impl.RsaPkcs1Sig.RISCV64.Sign.code
+    code := Impl.RsaPkcs1Sig.RISCV64.Sign.codeP
     stack := Proof.RsaPkcs1Sig.RISCV64.Sign.stackBytes
-    verified := Proof.RsaPkcs1Sig.RISCV64.Sign.signPrecomputed_verified }]
+    verified := Proof.RsaPkcs1Sig.RISCV64.Sign.codeP_verified }]
 
 end VG.Artifacts.RsaPkcs1Sig.RISCV64
