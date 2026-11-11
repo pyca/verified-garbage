@@ -122,7 +122,7 @@ theorem head_ct (ts : List FnTable) {S : Nat} (hS : 15 ≤ S) :
     ⟨⟨hT₁, hd₁⟩, ⟨by rw [show (lay (S + 1) s₁).tab = stackArg s₂ 16 from a16]; exact hT₂, hd₂⟩, hsy',
       fun T hT => htab _ _ rfl a16.symm T hT⟩
   refine ⟨ht, ⟨lay (S + 1) s₁, s₁.gpr, s₂.gpr, s₁.v, s₂.v, s₁.mem, s₂.mem⟩, lay_ok h₁, rfl,
-    ⟨⟨?_, ?_⟩, htaL.congr (by rw [Exec.syms e₁]; rfl) (by rw [Exec.syms e₂]; rfl),
+    ⟨⟨?_, ?_, rfl⟩, htaL.congr (by rw [Exec.syms e₁]; rfl) (by rw [Exec.syms e₂]; rfl),
       hta.congr (by rw [Exec.syms e₁]; rfl) (by rw [Exec.syms e₂]; rfl)⟩, y₁, e ▸ y₂⟩
   · show Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x3) (s₁.gpr .x4).toNat = Spec.Rsa.bytesAt s₂.mem (s₁.gpr .x3) (s₁.gpr .x4).toNat
     rw [hn, h3, h4]
@@ -160,7 +160,7 @@ theorem priv_pub' {L : DLay} {S : Nat} {g₁ g₂ : Reg → BitVec 64} {v₁ v�
     hb.2.1.x2, hb.2.1.x3, hb.2.1.x4, hb.2.1.x5, hb.2.1.x6, hb.2.1.x7, ha.1.sp, hb.1.sp, true_and]
   refine ⟨fun i hi => (aa i hi).trans (ab i hi).symm, ?_, ?_⟩
   · rw [ha.1.bytes_ro hL (ro_N L), hb.1.bytes_ro hL (ro_N L)]; exact hk.1
-  · rw [ha.1.bytes_ro hL (ro_E L), hb.1.bytes_ro hL (ro_E L)]; exact hk.2
+  · rw [ha.1.bytes_ro hL (ro_E L), hb.1.bytes_ro hL (ro_E L)]; exact hk.2.1
 
 /-- After the call. -/
 abbrev CalledI : Inv := fun L g vv m₀ t => ∃ W, Called L g vv m₀ W t ∧ Slots L W

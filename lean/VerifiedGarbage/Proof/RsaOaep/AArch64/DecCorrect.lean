@@ -114,21 +114,21 @@ theorem decTail_D {G G' : Hash} (h : G.D = G'.D) (f : Fns) : decTail G f = decTa
   simp only [decTail, decMain, chkK, seedArgs, dbArgs, accLh, scan, tArgs, copyT, decRet, h]
 
 include hH hG in
-theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
+/-- After the private-key operation, with the frame's words `W` (our
+arguments in their slots): the table of the label's hash function to its
+slot, its digest length, the check of `k`, and the decoding or the failure. -/
+theorem after_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
     (hHv : Proof.Mgf1.Valid Hs) (hHm : Hs ∈ Proof.Pbkdf2.Md.AArch64.mdHashes)
     (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D)
-    (hGv : Proof.Mgf1.Valid Gs) (pv : PrivImpl) {L : DLay} (hL : L.Ok) (hP : L.P = pv.S + 1)
-    {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State} (hc : Ctx L g vv m₀ t)
-    (h9 : t.gpr .x9 = L.Q) (hpw : Prologued L (fun j => word t.mem L.Q (8 * j)))
-    (okL : Table.TabOK Hl.stream f t.syms) (hmL : Table.TabMem Hl.stream t.syms L.tabL m₀)
+    (hGv : Proof.Mgf1.Valid Gs) {L : DLay} (hL : L.Ok) (hP16 : 16 ≤ L.P)
+    {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {W : Nat → BitVec 64} {u3 : State}
+    (hS1 : Slots L W) (hcl : Called L g vv m₀ W u3)
+    (okL : Table.TabOK Hl.stream f u3.syms) (hmL : Table.TabMem Hl.stream u3.syms L.tabL m₀)
     (hDL : m₀.readW (L.tabL + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 Hl.stream.D)
-    (ok : Table.TabOK Gm f t.syms) (hm : Table.TabMem Gm t.syms L.tab m₀)
+    (ok : Table.TabOK Gm f u3.syms) (hm : Table.TabMem Gm u3.syms L.tab m₀)
     (hD : m₀.readW (L.tab + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 Gm.D) :
-    WP isa (.block privArgs) t fun u => WP isa (.seq (.call pv.name pv.code)
-      (.seq (.block (tabSlot 15)) (.seq (.block lenLoad) (byLen (fun d => decTail (ofLen d) f) lens)))) u
-        (Fin Hs Gs L g vv m₀) := by
-  have hS15 := pv.S15
-  have hP16 : 16 ≤ L.P := by omega_arith
+    WP isa (.seq (.block (tabSlot 15)) (.seq (.block lenLoad) (byLen (fun d => decTail (ofLen d) f) lens))) u3
+      (Fin Hs Gs L g vv m₀) := by
   obtain ⟨-, hzF, -, hzDF, hD0⟩ := sizes hH
   have hD64 : Hl.D ≤ 64 := Nat.le_trans hzDF hzF
   have hk64 := hL.k64
@@ -136,24 +136,9 @@ theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
   have hDl : Hl.stream.D ∈ lens := by
     show Hl.D ∈ lens
     rw [← hHl]; exact mem_lens hHm
-  rw [privArgs_eq, WP.block_append_iff]
-  have R₀ : Rep t.mem L.Q L.scr (fun o => t.mem (off L.scr o)) (fun j => word t.mem L.Q (8 * j)) :=
-    ⟨fun _ _ => rfl, fun _ _ => rfl⟩
-  refine WP.mono (Table.wp_sy (privW_ok hL hP16 hc h9 R₀ hpw.slots)) fun u1 ⟨⟨hc1, _, R1⟩, sy1⟩ => ?_
-  have hS1 : Slots L (privW L fun j => word t.mem L.Q (8 * j)) :=
-    hpw.slots.of fun j _ _ h3 => by simp only [privW, upd]; rw [ifn (by omega_arith), ifn (by omega_arith)]
-  refine WP.mono (Table.wp_sy (privR_ok hL hP16 hc1 R1 hS1)) fun u2 ⟨⟨hc2, hm2, hr2⟩, sy2⟩ => ?_
-  have R2 : Rep u2.mem L.Q L.scr (fun o => t.mem (off L.scr o)) (privW L fun j => word t.mem L.Q (8 * j)) :=
-    hm2 ▸ R1
-  have hA : CallArgs L (privW L fun j => word t.mem L.Q (8 * j)) :=
-    ⟨by simp only [privW, upd]; exact hpw.p, fun j hj => by
-      simp only [privW, upd]; rw [ifn (by omega_arith), ifn (by omega_arith)]; exact hpw.args j hj,
-      by simp [privW, upd], by simp [privW, upd]⟩
-  refine WP.seq (WP.mono (Table.wp_sy (priv_call pv hL hP hc2 hr2 R2 hA)) fun u3 ⟨hcl, sy3⟩ => ?_)
   have Ly3 := hcl.ctx.lay hL hP16 hcl.rep hS1.scr
-  have sy03 : u3.syms = t.syms := sy3.trans (sy2.trans sy1)
   -- The table of the label's hash function to its slot, and its digest length to `x16`.
-  have TL3 := hcl.ctx.tabL hL hP16 (sy03 ▸ okL) (sy03 ▸ hmL) hDL
+  have TL3 := hcl.ctx.tabL hL hP16 okL hmL hDL
   refine WP.seq (WP.mono (Table.wp_sy (tabSlot_ok (by decide) Ly3 hcl.rep TL3)) fun ua ⟨⟨La, Sa, Ra, x0a⟩, sya⟩ => ?_)
   have TLa := TL3.step Sa sya
   have hDa : ua.mem.readW (L.tabL + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 Hl.stream.D :=
@@ -168,10 +153,10 @@ theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
   have Rc := hmc' ▸ Ra
   have x0c : uc.gpr .x0 = u3.gpr .x0 := ((hgc _ (by decide)).trans x0b).trans x0a
   have Sac := Sa.trans (Sb.trans Sc)
-  have syc' : uc.syms = t.syms := syc.trans (syb.trans (sya.trans sy03))
-  have hS2 : Slots L (upd (privW L fun j => word t.mem L.Q (8 * j)) 32 L.tabL) :=
+  have syc' : uc.syms = u3.syms := syc.trans (syb.trans sya)
+  have hS2 : Slots L (upd W 32 L.tabL) :=
     hS1.of fun j _ h2 _ => by simp only [upd]; rw [ifn (by omega_arith)]
-  have hk3 : (upd (privW L fun j => word t.mem L.Q (8 * j)) 32 L.tabL) 21 = BitVec.ofNat 64 L.k.toNat := by
+  have hk3 : (upd W 32 L.tabL) 21 = BitVec.ofNat 64 L.k.toNat := by
     rw [hS2.k, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   unfold decTail Impl.RsaOaep.AArch64.Mgf1.seqs
   refine WP.seq (WP.mono (Table.wp_sy (resK_ok (H := Hl) Lc Rc hk3 hk1024 (by omega_arith)))
@@ -179,7 +164,7 @@ theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
   have hc4 := (hcl.ctx.step hL hP16 Sac fun r h => absurd h List.not_mem_nil).step hL hP16 S4
     fun r h => absurd h List.not_mem_nil
   rw [x0c] at R4
-  generalize hW4 : upd (upd (privW L fun j => word t.mem L.Q (8 * j)) 32 L.tabL) 28
+  generalize hW4 : upd (upd W 32 L.tabL) 28
     (((u3.gpr .x0).setWidth 32).setWidth 64) = W4 at R4
   have hres : ResD (fun o => u3.mem (off L.scr o)) W4 L.k.toNat (privOut L m₀) := by
     rw [← hW4]; exact resD_of hcl.out
@@ -204,7 +189,7 @@ theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
   · -- The decoding.
     have hkD : 2 * Hl.D + 2 ≤ L.k.toNat := by
       by_contra hc; rw [x11, ifn (by omega_arith)] at hb; exact absurd hb (by decide)
-    have sy : u4.syms = t.syms := sy4.trans syc'
+    have sy : u4.syms = u3.syms := sy4.trans syc'
     have T4 := hc4.tab hL hP16 (sy ▸ ok) (sy ▸ hm) hD
     have TL4 := hc4.tabL hL hP16 (sy ▸ okL) (sy ▸ hmL) hDL
     refine WP.mono (decMain_ok hH hG hHh hHl hHv hGh hGl hGv TL4 T4 Ly4 R4 h32 hk4 hkD hk1024
@@ -214,6 +199,40 @@ theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
     simp only at hlab
     rw [hlab] at hw5
     exact hw5
+
+include hH hG in
+theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
+    (hHv : Proof.Mgf1.Valid Hs) (hHm : Hs ∈ Proof.Pbkdf2.Md.AArch64.mdHashes)
+    (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D)
+    (hGv : Proof.Mgf1.Valid Gs) (pv : PrivImpl) {L : DLay} (hL : L.Ok) (hP : L.P = pv.S + 1)
+    {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State} (hc : Ctx L g vv m₀ t)
+    (h9 : t.gpr .x9 = L.Q) (hpw : Prologued L (fun j => word t.mem L.Q (8 * j)))
+    (okL : Table.TabOK Hl.stream f t.syms) (hmL : Table.TabMem Hl.stream t.syms L.tabL m₀)
+    (hDL : m₀.readW (L.tabL + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 Hl.stream.D)
+    (ok : Table.TabOK Gm f t.syms) (hm : Table.TabMem Gm t.syms L.tab m₀)
+    (hD : m₀.readW (L.tab + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 Gm.D) :
+    WP isa (.block privArgs) t fun u => WP isa (.seq (.call pv.name pv.code)
+      (.seq (.block (tabSlot 15)) (.seq (.block lenLoad) (byLen (fun d => decTail (ofLen d) f) lens)))) u
+        (Fin Hs Gs L g vv m₀) := by
+  have hS15 := pv.S15
+  have hP16 : 16 ≤ L.P := by omega_arith
+  rw [privArgs_eq, WP.block_append_iff]
+  have R₀ : Rep t.mem L.Q L.scr (fun o => t.mem (off L.scr o)) (fun j => word t.mem L.Q (8 * j)) :=
+    ⟨fun _ _ => rfl, fun _ _ => rfl⟩
+  refine WP.mono (Table.wp_sy (privW_ok hL hP16 hc h9 R₀ hpw.slots)) fun u1 ⟨⟨hc1, _, R1⟩, sy1⟩ => ?_
+  have hS1 : Slots L (privW L fun j => word t.mem L.Q (8 * j)) :=
+    hpw.slots.of fun j _ _ h3 => by simp only [privW, upd]; rw [ifn (by omega_arith), ifn (by omega_arith)]
+  refine WP.mono (Table.wp_sy (privR_ok hL hP16 hc1 R1 hS1)) fun u2 ⟨⟨hc2, hm2, hr2⟩, sy2⟩ => ?_
+  have R2 : Rep u2.mem L.Q L.scr (fun o => t.mem (off L.scr o)) (privW L fun j => word t.mem L.Q (8 * j)) :=
+    hm2 ▸ R1
+  have hA : CallArgs L (privW L fun j => word t.mem L.Q (8 * j)) :=
+    ⟨by simp only [privW, upd]; exact hpw.p, fun j hj => by
+      simp only [privW, upd]; rw [ifn (by omega_arith), ifn (by omega_arith)]; exact hpw.args j hj,
+      by simp [privW, upd], by simp [privW, upd]⟩
+  refine WP.seq (WP.mono (Table.wp_sy (priv_call pv hL hP hc2 hr2 R2 hA)) fun u3 ⟨hcl, sy3⟩ => ?_)
+  have sy03 : u3.syms = t.syms := sy3.trans (sy2.trans sy1)
+  exact after_ok hH hG hHh hHl hHv hHm hGh hGl hGv hL hP16 hS1 hcl (sy03 ▸ okL) (sy03 ▸ hmL) hDL (sy03 ▸ ok)
+    (sy03 ▸ hm) hD
 
 /-! ## The whole function -/
 
