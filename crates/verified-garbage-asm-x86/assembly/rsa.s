@@ -23385,3 +23385,208 @@ vg_rsa_public_precompute:
 	mov edi, DWORD PTR [edi+12]
 	ret
 	.p2align 6
+
+vg_rsa_private_precompute:
+	lea esp, [esp-96]
+	mov eax, DWORD PTR [esp+100]
+	mov DWORD PTR [esp], eax
+	mov eax, DWORD PTR [esp+112]
+	add eax, 7
+	shr eax, 3
+	add eax, eax
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+108]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+112]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+132]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+136]
+	mov DWORD PTR [esp+20], eax
+	call {vg_rsa_public_precompute}
+	mov DWORD PTR [esp+80], eax
+	mov eax, DWORD PTR [esp+100]
+	mov DWORD PTR [esp], eax
+	mov eax, DWORD PTR [esp+112]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+108]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+112]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+112]
+	mov DWORD PTR [esp+20], eax
+	mov eax, DWORD PTR [esp+116]
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+120]
+	mov DWORD PTR [esp+28], eax
+	mov eax, DWORD PTR [esp+124]
+	mov DWORD PTR [esp+32], eax
+	mov eax, DWORD PTR [esp+128]
+	mov DWORD PTR [esp+36], eax
+	mov eax, DWORD PTR [esp+116]
+	mov DWORD PTR [esp+40], eax
+	mov eax, DWORD PTR [esp+120]
+	mov DWORD PTR [esp+44], eax
+	mov eax, DWORD PTR [esp+124]
+	mov DWORD PTR [esp+48], eax
+	mov eax, DWORD PTR [esp+128]
+	mov DWORD PTR [esp+52], eax
+	mov eax, DWORD PTR [esp+116]
+	mov DWORD PTR [esp+56], eax
+	mov eax, DWORD PTR [esp+120]
+	mov DWORD PTR [esp+60], eax
+	mov eax, DWORD PTR [esp+132]
+	mov DWORD PTR [esp+64], eax
+	mov eax, DWORD PTR [esp+136]
+	mov DWORD PTR [esp+68], eax
+	mov eax, DWORD PTR [esp+112]
+	add eax, 7
+	shr eax, 3
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, DWORD PTR [esp+100]
+	mov DWORD PTR [esp+16], eax
+	call {vg_rsa_private_precompute_primes}
+	and eax, DWORD PTR [esp+80]
+	and eax, 1
+	mov DWORD PTR [esp+80], eax
+	mov DWORD PTR [esp+88], esi
+	mov DWORD PTR [esp+92], ebp
+	mov ebp, DWORD PTR [esp+112]
+	add ebp, 7
+	shr ebp, 3
+	add ebp, ebp
+	add ebp, ebp
+	add ebp, ebp
+	add ebp, ebp
+	add ebp, DWORD PTR [esp+100]
+	mov ecx, DWORD PTR [esp+112]
+	add ecx, 7
+	shr ecx, 3
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, 32
+	mov esi, DWORD PTR [esp+132]
+	add esi, 3336
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	mov ecx, DWORD PTR [esp+120]
+	add ecx, 7
+	shr ecx, 3
+	mov eax, ecx
+	sub eax, 2
+	shr eax, 31
+	add ecx, eax
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+20:
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [ebp], eax
+	add esi, 4
+	add ebp, 4
+	sub ecx, 4
+	jne 20b
+	mov ebp, DWORD PTR [esp+112]
+	add ebp, 7
+	shr ebp, 3
+	add ebp, ebp
+	add ebp, ebp
+	add ebp, ebp
+	add ebp, ebp
+	add ebp, DWORD PTR [esp+100]
+	mov eax, DWORD PTR [esp+120]
+	add eax, 7
+	shr eax, 3
+	mov ecx, eax
+	sub ecx, 2
+	shr ecx, 31
+	add eax, ecx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add ebp, eax
+	mov ecx, DWORD PTR [esp+112]
+	add ecx, 7
+	shr ecx, 3
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, 32
+	mov esi, DWORD PTR [esp+132]
+	add esi, 3336
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	add esi, ecx
+	mov ecx, DWORD PTR [esp+128]
+	add ecx, 7
+	shr ecx, 3
+	mov eax, ecx
+	sub eax, 2
+	shr eax, 31
+	add ecx, eax
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+21:
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [ebp], eax
+	add esi, 4
+	add ebp, 4
+	sub ecx, 4
+	jne 21b
+	mov esi, DWORD PTR [esp+88]
+	mov ebp, DWORD PTR [esp+92]
+	mov eax, DWORD PTR [esp+80]
+	mov ecx, 0
+	sub ecx, eax
+	mov DWORD PTR [esp+84], ecx
+	mov edx, DWORD PTR [esp+100]
+	mov ecx, DWORD PTR [esp+104]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+22:
+	movzx eax, BYTE PTR [edx]
+	and eax, DWORD PTR [esp+84]
+	mov BYTE PTR [edx], al
+	add edx, 1
+	sub ecx, 1
+	cmp ecx, 0
+	jne 22b
+	mov eax, DWORD PTR [esp+80]
+	lea esp, [esp+96]
+	ret
+	.p2align 6

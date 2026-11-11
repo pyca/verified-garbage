@@ -21,7 +21,6 @@
 ))]
 
 use alloc::vec;
-#[cfg(target_arch = "powerpc64")]
 use alloc::vec::Vec;
 use core::fmt;
 
@@ -195,7 +194,6 @@ fn key_from(
         dp,
         dq,
         qinv,
-        #[cfg(target_arch = "powerpc64")]
         pre: Vec::new(),
     };
     // A valid key's modulus is valid and `p q = n`, which is all
