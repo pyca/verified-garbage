@@ -11,6 +11,21 @@ public import VerifiedGarbage.Proof.Framework.Arm.CallF
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
 
+/-- At entry: `R² mod p` and `R² mod q` at `a`, the incoming argument 14. -/
+structure CrtR2In (g : CrtGeometry) (bs : Fin 7 → List Byte) (a : BitVec 32) (s : State) : Prop where
+  slotFit : s.sp.toNat + 60 ≤ 2 ^ 32
+  slotRead : InRegions (s.rd ++ s.wr) (off (State.addr s.sp) 56) 4
+  slot : s.mem.readW (off (State.addr s.sp) 56) 32 = a
+  slotSeparate : Region.Disjoint ⟨off (State.addr s.sp) 56, 4⟩ ⟨State.addr g.base, g.size⟩
+  slotOutput : Region.Disjoint ⟨off (State.addr s.sp) 56, 4⟩ ⟨State.addr g.output, g.length⟩
+  slotStack : (FrameStack.belowA s.sp 56).Disjoint ⟨off (State.addr s.sp) 56, 4⟩
+  fit : a.toNat + 8 * g.r2Words ≤ 2 ^ 32
+  read : InRegions (s.rd ++ s.wr) (State.addr a) (8 * g.r2Words)
+  separate : Region.Disjoint ⟨State.addr a, 8 * g.r2Words⟩ ⟨State.addr g.base, g.size⟩
+  stack : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr a, 8 * g.r2Words⟩
+  output : Region.Disjoint ⟨State.addr a, 8 * g.r2Words⟩ ⟨State.addr g.output, g.length⟩
+  words : Spec.Rsa.wordsAt s.mem (State.addr a) g.r2Words = Spec.Rsa.primeR2 (bs 2) ++ Spec.Rsa.primeR2 (bs 3)
+
 structure CrtFnInput (g : CrtGeometry) (bs : Fin 7 → List Byte) (s : State) : Prop where
   workspace : Workspace s g.base g.size
   lengthValid : Spec.Rsa.lenValid g.length
@@ -38,5 +53,6 @@ structure CrtFnInput (g : CrtGeometry) (bs : Fin 7 → List Byte) (s : State) : 
   stackSource : ∀ i, (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr (g.source i), g.sourceLength i⟩
   stackOutput : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr g.output, g.length⟩
   stackArgs : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr s.sp, 56⟩
+  r2 : ∀ a, g.r2 = some a → CrtR2In g bs a s
 
 end VG.Proof.Bignum.Arm

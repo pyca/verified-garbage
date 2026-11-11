@@ -3,8 +3,8 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContractGeometry
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignFnInput
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
 
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignABI
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEntryReady
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignABI
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEntryReady
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.Offset
@@ -17,19 +17,21 @@ namespace VG.Proof.RsaPkcs1Sig.X86.Sgn
 open VG VG.X86 VG.Proof.Bignum.X86
 open VG.Proof.Dsa.X86 (argumentPointer)
 
-theorem sign_contract_pre (s : State) (h : (Spec.RsaPkcs1Sig.signContract abi sigStack).pre s) :
-    FnInput (signGeometry s) (signBytes s) s := by
-  obtain ⟨stackFit, argFit, rd, wr, outN, outE, outI, outP, outQ, outDP, outDQ, outQI, outWs, outArgs,
+/-- The wrapper's inputs from the facts of `SignABI`, which the contracts of both
+`vg_rsa_pkcs1_sign` and `vg_rsa_pkcs1_sign_precomputed` give. -/
+theorem sign_abi_entry (s : State) (A : SignABI s) :
+    EntryInput (signGeometry s) (signBytes s) s := by
+  obtain ⟨stackFit, argFit, rd, outW, wsW, argsW, outN, outE, outI, outP, outQ, outDP, outDQ, outQI, outWs, outArgs,
     nWs, eWs, iWs, pWs, qWs, dpWs, dqWs, qiWs, wsArgs,
     stackOut, stackN, stackE, stackI, stackP, stackQ, stackDP, stackDQ, stackQI, stackWs, stackArgs,
     retOut, retWs, outFit, nFit, eFit, iFit, pFit, qFit, dpFit, dqFit, qiFit, wsFit,
-    valid, outLen, ePositive, eFits, pPositive, pShort, qPositive, qShort, dpLen, qiLen, dqLen, space⟩ := signABI_of h
-  rw [outLen] at wr outN outE outI outP outQ outDP outDQ outQI outWs outArgs stackOut outFit retOut
+    valid, outLen, ePositive, eFits, pPositive, pShort, qPositive, qShort, dpLen, qiLen, dqLen, space⟩ := A
+  rw [outLen] at outW outN outE outI outP outQ outDP outDQ outQI outWs outArgs stackOut outFit retOut
   rw [dpLen] at rd outDP dpWs stackDP dpFit
   rw [dqLen] at rd outDQ dqWs stackDQ dqFit
   rw [qiLen] at rd outQI qiWs stackQI qiFit
   rw [show (arg s 20).toNat * 8 = 8 * (arg s 20).toNat from Nat.mul_comm _ _]
-    at wr outWs nWs eWs iWs pWs qWs dpWs dqWs qiWs wsArgs stackWs wsFit retWs
+    at wsW outWs nWs eWs iWs pWs qWs dpWs dqWs qiWs wsArgs stackWs wsFit retWs
   have sourceFit : ∀ i, ((signGeometry s).sources i).toNat + (signGeometry s).sourceLength i ≤ 2 ^ 32 := by
     intro i
     rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
@@ -60,12 +62,10 @@ theorem sign_contract_pre (s : State) (h : (Spec.RsaPkcs1Sig.signContract abi si
       exacts [stackN, stackE, stackI, stackP, stackQ, stackDP, stackDQ, stackQI]
     · rw [signGeometry_wholeStack s stackFit]; exact stackWs
     · rw [signGeometry_wholeStack s stackFit, signGeometry_arguments s stackFit argFit]; exact stackArgs
-  apply EntryInput.ready
   refine ⟨geometry, stackFit, rfl, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro i
     refine ⟨sourceFit i, ?_, rfl⟩
-    refine ⟨(signGeometry s).sourceRegion i, List.mem_append_left _ ?_, Region.contains_self _ _⟩
-    rw [rd]
+    refine ⟨(signGeometry s).sourceRegion i, List.mem_append_left _ (rd _ ?_), Region.contains_self _ _⟩
     rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact List.mem_cons_self
@@ -76,12 +76,11 @@ theorem sign_contract_pre (s : State) (h : (Spec.RsaPkcs1Sig.signContract abi si
     · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self)))))
     · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self))))))
     · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self)))))))
-  · rw [wr]
-    exact ⟨_, by simp [signGeometry, byteAddr, argumentPointer], Region.contains_self _ _⟩
-  · rw [wr]
-    exact ⟨_, by simp [signGeometry, byteAddr, argumentPointer], Region.contains_self _ _⟩
+  · exact ⟨_, outW, Region.contains_self _ _⟩
+  · exact ⟨_, wsW, Region.contains_self _ _⟩
   · rw [signGeometry_arguments s stackFit argFit]
-    exact ⟨_, List.mem_append_right _ (by rw [wr]; simp), Region.contains_self _ _⟩
+    obtain ⟨r, hr, hc⟩ := argsW
+    exact ⟨r, List.mem_append_right _ hr, hc⟩
   · intro j hj
     have address : byteAddr (signGeometry s).stack + BitVec.ofNat 64 (VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes + 20 + 4 * j) = argAddr s j := by
       rw [← Offset.add_add]
@@ -117,4 +116,8 @@ theorem sign_contract_pre (s : State) (h : (Spec.RsaPkcs1Sig.signContract abi si
     · exact belowRet.sub_right geometry.calleeSub
     · exact retOut
     · exact retWs
+
+theorem sign_contract_pre (s : State) (h : (Spec.RsaPkcs1Sig.signContract abi sigStack).pre s) :
+    FnInput (signGeometry s) (signBytes s) s :=
+  (sign_abi_entry s (signABI_of h)).ready
 end VG.Proof.RsaPkcs1Sig.X86.Sgn

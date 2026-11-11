@@ -30,6 +30,8 @@ namespace VG.Proof.RsaPkcs1Sig.RISCV64.Sign
 
 open VG VG.RISCV64 VG.Impl.RsaPkcs1Sig.RISCV64.Sign
 
+variable {pc : Bool}
+
 /-! ## Addresses -/
 
 /-- The base of the stack the function and its callee use. -/
@@ -48,20 +50,20 @@ theorem fb_off (s : State) (d : Nat) :
     fb s + BitVec.ofNat 64 d = kb s + BitVec.ofNat 64 (Impl.Rsa.RISCV64.Priv.frameBytes + d) := by
   rw [fb_eq, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
-theorem fb_toNat {s : State} (h : SPre s) : (fb s).toNat + frameBytes = s.sp.toNat := by
+theorem fb_toNat {s : State} (h : SPre pc s) : (fb s).toNat + frameBytes = s.sp.toNat := by
   have := h.sp1
   simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stackBytes frameBytes at *
   unfold Impl.Rsa.RISCV64.Priv.frameBytes at *; omega
 
-theorem kb_toNat {s : State} (h : SPre s) : (kb s).toNat + stackBytes = s.sp.toNat := by
+theorem kb_toNat {s : State} (h : SPre pc s) : (kb s).toNat + stackBytes = s.sp.toNat := by
   have := h.sp1
   simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stackBytes frameBytes at *
   unfold Impl.Rsa.RISCV64.Priv.frameBytes at *; omega
 
-theorem fb_al {s : State} (h : SPre s) : (fb s).toNat % 16 = 0 := by
+theorem fb_al {s : State} (h : SPre pc s) : (fb s).toNat % 16 = 0 := by
   have := fb_toNat h; have := h.sp16; unfold frameBytes at *; omega
 
-theorem fb_al8 {s : State} (h : SPre s) {d : Nat} (hd : d % 8 = 0) : (fb s + BitVec.ofNat 64 d).toNat % 8 = 0 :=
+theorem fb_al8 {s : State} (h : SPre pc s) {d : Nat} (hd : d % 8 = 0) : (fb s + BitVec.ofNat 64 d).toNat % 8 = 0 :=
   Spill.al8 (by have := fb_al h; omega) hd
 
 /-- A region of our frame is in the stack the function uses. -/
@@ -108,8 +110,16 @@ theorem stackArgAddr_eq (s : State) (j : Nat) :
     stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
   simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
 
-theorem in_aR {s : State} {j : Nat} (hj : j < 13) : (aR s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+/-- Our stack arguments: thirteen, or with `pc` fifteen. -/
+abbrev nA (pc : Bool) : Nat := if pc then 15 else 13
+
+theorem nA_le (pc : Bool) {j : Nat} (h : j < 13) : j < nA pc := by
+  cases pc <;> simp only [nA, Bool.false_eq_true, ↓reduceIte] <;> omega
+
+theorem in_aR {s : State} {j : Nat} (hj : j < nA pc) : (aR pc s).Contains (stackArgAddr s j) 8 := by
+  rw [stackArgAddr_eq s j]
+  cases pc <;> simp only [nA, Bool.false_eq_true, ↓reduceIte] at hj <;>
+    exact Offset.contains_base _ (by simp only [Bool.false_eq_true, ↓reduceIte]; omega) (by omega)
 
 /-! ## The saves -/
 
@@ -253,7 +263,7 @@ theorem Mid.saves {S : List Region} {s t : State} {a b c d e : BitVec 64} (h : M
 
 /-- The restores: the caller's registers and return address are back, and
 `a0` and memory are kept. -/
-theorem restore_ok {s w : State} (h : SPre s) (hm : Saves s w) :
+theorem restore_ok {s w : State} (h : SPre pc s) (hm : Saves s w) :
     WP isa (.block restore) w fun w' =>
       abiPreserved s (freed frameBytes w') ∧ w'.gpr .a0 = w.gpr .a0 ∧ w'.mem = w.mem := by
   rw [restore_eq]

@@ -38,6 +38,7 @@ structure PpCall (g : CrtGeometry) (s : State) : Prop where
   input : g.input = g.output
   qi : g.qi = g.output
   cleared : Spec.Rsa.wordsAt s.mem (State.addr g.output) (ppPreWords g) = List.replicate (ppPreWords g) 0
+  noR2 : g.r2 = none
 
 /-- The CRT's frame and arguments together, `112` bytes from the pushed stack pointer. -/
 theorem pp_push_separate {s : State} {r : Region} (fit : 56 ≤ s.sp.toNat)
@@ -107,7 +108,7 @@ theorem pp_crtFrame_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
   rintro u ⟨ready, frameU, savedU, restU⟩
   have spU : u.sp = (pcPushed s).sp := restU.sp
   have preU : PpPre g u := by
-    refine ⟨pre.fit, ?_, pre.workspace, ?_, pre.sources, pre.input, pre.qi⟩
+    refine ⟨pre.fit, ?_, pre.workspace, ?_, pre.sources, pre.input, pre.qi, pre.noR2⟩
     · rw [restU.wr]; obtain ⟨r, hr, hc⟩ := pre.write; exact ⟨r, List.mem_cons_of_mem _ hr, hc⟩
     · rw [spU]; exact pp_push_separate h.stackFit pre.below pre.args
   have clearedU : Spec.Rsa.wordsAt u.mem (State.addr g.output) (ppPreWords g) = List.replicate (ppPreWords g) 0 := by

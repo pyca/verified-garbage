@@ -462,7 +462,7 @@ theorem ppCode_correct (M : Mont) (s : State) (h : ppA.pre s) :
     simp only [main]
     rw [show nSetup M.mm ++ primesSetup ++ checks ++ primes M.mm ++ outN =
       (nSetup M.mm ++ primesSetup ++ checks) ++ (primes M.mm ++ outN) by simp only [List.append_assoc]]
-    refine wp_seqs_append (by simp [nSetup]) (by simp [primes]) (WP.mono (front_ok M hcp hv)
+    refine wp_seqs_append (by simp [nSetup]) (by simp [primes]) (WP.mono (front_ok M hcp hv checks_okG trivial)
       fun t₅ ⟨minv, mp, mq, hr⟩ => ?_)
     rw [hC, hQI, keyMask_zero hN1] at hr
     have hpl := c.hpl2

@@ -25,7 +25,7 @@ theorem CrtBodyInput.of_mem {s t : State} {g : CrtGeometry} {bs : Fin 7 → List
     (ptr : t.gpr .r0 = g.base) (source : t.gpr .r4 = g.modulus) (count : t.gpr .r6 = BitVec.ofNat 32 g.length) :
     CrtBodyInput g bs t := by
   have frame : Frame [] s.mem t.mem := by rw [mem]; exact Frame.refl _ _
-  exact ⟨h.buffers.after_frame frame rest (by simp), h.stack.after_frame (frame.mono (by simp)) rest,
+  exact ⟨h.buffers.after_frame frame rest (by simp) (fun _ _ r hr => by simp at hr), h.stack.after_frame (frame.mono (by simp)) rest,
     ptr, source, count, by rw [mem, rest.sp]; exact h.saved, by rw [mem, rest.sp]; exact h.modulusPtr⟩
 
 end VG.Proof.Bignum.Arm
