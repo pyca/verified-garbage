@@ -13,13 +13,15 @@ meta import VerifiedGarbage.Proof.Rsa.Contract
 # `vg_rsa_private_checked` on RISC-V: correctness
 
 The restores (`restore_ok`), then the blocks and calls in order
-(`code_correct`), from the frame's `alloc` to its `free`, to the outcome
+(`codeG_correct`, for `code` `code_correct`), from the frame's `alloc` to its `free`, to the outcome
 (`final_ok`), on the registers and the stack (`fnPost`).
 -/
 
 @[expose] public section
 
 namespace VG.Proof.Rsa.RISCV64.Priv
+
+variable {pc : Bool}
 
 open VG VG.RISCV64 VG.Impl.Rsa.RISCV64.Priv VG.RISCV64.RegUpd
 
@@ -32,14 +34,14 @@ theorem Late.keep {s t u : State} (L : Late s t) {rs : List Reg} (k : Keep rs t 
     fun r hr => (k.gpr (hrs r (by revert r; decide))).trans (L.hi r hr), hm ▸ L.mem, hm ▸ L.sv⟩
 
 /-- The frame's words are apart from `out` and `m`. -/
-theorem slot_apart {s : State} (h : PreP s) {d : Nat} (hd : d + 8 ≤ oM) {r : Region} (hr : r ∈ [oR s, mR s]) :
+theorem slot_apart {s : State} (h : PreP pc s) {d : Nat} (hd : d + 8 ≤ oM) {r : Region} (hr : r ∈ [oR s, mR s]) :
     Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, 8⟩ r := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact h.ko.sub_left (frame_sub s (by unfold oM frameBytes at *; omega))
   · exact Offset.disjoint _ (.inl hd) (by unfold oM at hd; omega) (by have := h.k2; unfold oM; omega)
 
-theorem Late.release {s t u : State} (h : PreP s) (L : Late s t) (k : Keep [.a1, .a2, .t2, .t3, .t5] t u)
+theorem Late.release {s t u : State} (h : PreP pc s) (L : Late s t) (k : Keep [.a1, .a2, .t2, .t3, .t5] t u)
     (hsp : u.sp = t.sp) (hf : Frame [oR s, mR s] t.mem u.mem) : Late s u := by
   refine ⟨hsp.trans L.sp, k.2.1.trans L.rd, k.2.2.trans L.wr, (k.gpr (by decide)).trans L.s1,
     (k.gpr (by decide)).trans L.s2, (k.gpr (by decide)).trans L.s3, (k.gpr (by decide)).trans L.s4,
@@ -52,7 +54,7 @@ theorem Late.release {s t u : State} (h : PreP s) (L : Late s t) (k : Keep [.a1,
   · exact ⟨_, List.mem_cons_self .., mR_sub h⟩
 
 /-- The restores. -/
-theorem restore_ok {s w : State} (h : PreP s) (L : Late s w) :
+theorem restore_ok {s w : State} (h : PreP pc s) (L : Late s w) :
     WP isa (.block restore) w fun v =>
       (∀ r ∈ preserved, v.gpr r = s.gpr r) ∧ v.gpr .ra = s.gpr .ra ∧ v.sp = fb s ∧ v.mem = w.mem ∧
         v.gpr .a0 = w.gpr .a0 := by
@@ -90,18 +92,29 @@ def fnPost (s s' : State) : Prop :=
       (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 3).toNat)
       (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 1).toNat))
 
-theorem code_correct (s : State) (hpre : (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre s) :
-    ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t := by
-  show WP isa code s fun t => abiPreserved s t ∧ fnPost s t
-  have h := preP_of hpre
+/-- The CRT's result in the frame, from the state after the setup. -/
+def CrtOk (pc : Bool) (s : State) : Prop :=
+  ∀ t (Q : State → Prop), AtCrt s t → (∀ u, Mid s u → crtOut s u → Q u) → WP isa (crtStep pc) t Q
+
+/-- `n`'s values put in the frame, from the state after `vg_rsa_private_crt`. -/
+def StepOk (pc : Bool) (s : State) : Prop :=
+  ∀ t (c : Prog isa) (Q : State → Prop), Mid s t → crtOut s t → (∀ u, AtPub pc s u → WP isa c u Q) →
+    WP isa (.seq (preStep pc) c) t Q
+
+/-- `n`'s values in the frame are its precomputed values, if they are valid. -/
+abbrev PreValOk (pc : Bool) (s : State) : Prop :=
+  ∀ ws, Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) = some ws →
+    preVal pc s = ws
+
+theorem codeG_correct (s : State) (h : PreP pc s) (hcrt : CrtOk pc s) (hstep : StepOk pc s) :
+    WP isa (.frame (.alloc frameBytes) (bodyG pc) (.free frameBytes)) s fun t =>
+      abiPreserved s t ∧ (PreValOk pc s → fnPost s t) := by
   have hk := h.k2
-  unfold code
   refine WP.allocLe ⟨by decide, by decide, by decide⟩ h.sp1 ?_
-  unfold body
+  unfold bodyG
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
-  refine WP.seq (crtCall_ok h A fun t₂ M C => ?_)
-  refine WP.seq (WP.mono (preArgs_ok h M C) fun t₃ P => ?_)
-  refine WP.seq (preCall_ok h P fun t₄ Q4 => ?_)
+  refine WP.seq (hcrt t₁ _ A fun t₂ M C => ?_)
+  refine hstep t₂ _ _ M C fun t₄ Q4 => ?_
   refine WP.seq (WP.mono (pubArgs_ok h Q4) fun t₅ R => ?_)
   refine WP.seq (pubCall_ok h R fun t₆ C6 => ?_)
   refine WP.seq (WP.mono (cmpArgs_ok h C6) fun t₇ L => ?_)
@@ -123,7 +136,7 @@ theorem code_correct (s : State) (hpre : (Proof.Rsa.privateCheckedContract RISCV
   have fs : (freed frameBytes v).sp = v.sp + BitVec.ofNat 64 frameBytes := by simp only [freed]
   have fg : (freed frameBytes v).gpr = v.gpr := by simp only [freed]
   have fm : (freed frameBytes v).mem = v.mem := by simp only [freed]
-  refine ⟨⟨fun r hr => by rw [fg]; exact vp r hr, ?_, by rw [fg]; exact vra⟩, ?_⟩
+  refine ⟨⟨fun r hr => by rw [fg]; exact vp r hr, ?_, by rw [fg]; exact vra⟩, fun hv => ?_⟩
   · rw [fs, vs]; exact BitVec.sub_add_cancel _ _
   · unfold fnPost
     rw [fm, fg, vm, v0, k10.gpr (by decide), r0]
@@ -138,7 +151,16 @@ theorem code_correct (s : State) (hpre : (Proof.Rsa.privateCheckedContract RISCV
         · exact h.ki.symm
         · exact h.oi.symm
         · exact h.is) (by have := h.wi; rw [h.h7] at this; omega)
-    refine final_ok (Proof.Rsa.bytesAt_length' _ _ _) (Proof.Rsa.bytesAt_length' _ _ _) L.crt L.pub ?_ hout
+    refine final_ok (Proof.Rsa.bytesAt_length' _ _ _) (Proof.Rsa.bytesAt_length' _ _ _) L.crt (fun ws hw => L.pub ws hw (hv ws hw)) ?_ hout
     rw [cmpAcc_eq_zero, ← hx, Proof.Rsa.bytesAt_eq_iff]
+
+theorem step_false (s : State) (h : PreP false s) : StepOk false s := fun _ _ _ M C hc =>
+  WP.seq (WP.seq (WP.mono (preArgs_ok h M C) fun _ P => preCall_ok h P hc))
+
+theorem code_correct (s : State) (hpre : (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre s) :
+    ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t := by
+  have h := preP_of hpre
+  exact WP.mono (codeG_correct s h (fun _ _ A hQ => crtCall_ok h A hQ) (step_false s h)) fun t ⟨ha, hf⟩ =>
+    ⟨ha, hf fun ws hw => by simp only [preVal, Bool.false_eq_true, ↓reduceIte, hw, Option.getD_some]⟩
 
 end VG.Proof.Rsa.RISCV64.Priv

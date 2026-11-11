@@ -329,8 +329,9 @@ theorem wideCoefficient_ok (h : In Ex base bytes len args s) {p mp mq qi : Nat}
     (hp : val32 s.mem base (lo len (.slot .wide 10)) (cwc len .wide) = p)
     (hmp : val32 s.mem base (lo len (.slot .wide 16)) (cwc len .wide) = mp) (hmpl : mp < safeM p)
     (hmq : val32 s.mem base (lo len (.slot .wide 17)) (cwc len .wide) = mq)
-    (hqi : val32 s.mem base (lo len (.slot .wide 14)) (cwc len .wide) = qi) :
-    WP isa wideCoefficient s fun u =>
+    (hqi : val32 s.mem base (lo len (.slot .wide 14)) (cwc len .wide) = qi) {pc : Option Nat}
+    (P : PreG s base bytes len args pc (safeM p)) (pfit : FitG len args pc .wide) :
+    WP isa (wideCoefficient pc) s fun u =>
       Frame (frameR base (s.gpr .esp) (coR len)) s.mem u.mem ∧
       sv u.mem base len .wide 7 = ((mp + safeM p - mq % safeM p) % safeM p * qi) % safeM p ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
@@ -365,7 +366,8 @@ theorem wideCoefficient_ok (h : In Ex base bytes len args s) {p mp mq qi : Nat}
     fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
   have F₁ : Frame (frameR base (s.gpr .esp) (coR len)) s.mem u₁.mem := co_of_outside h O₁ (cs (by decide))
   have h₁ := h.keepF K₁ (by decide) (by decide) F₁ (coR_fit h)
-  refine WP.seq (WP.mono (prepCtx_ok h₁ .wide) fun u₂ ⟨C₂, one₂, R₂, F₂, K₂⟩ => ?_)
+  have P₁ := P.keepF h.room K₁ (by decide) F₁ (coR_fit h)
+  refine WP.seq (WP.mono (prepareG_ok h₁ .wide (by rw [V₁, hp]; exact P₁) pfit) fun u₂ ⟨C₂, one₂, R₂, F₂, K₂⟩ => ?_)
   rw [V₁, hp] at C₂ R₂
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   rw [sp₁] at F₂
@@ -425,8 +427,9 @@ theorem narrowCoefficient_ok (h : In Ex base bytes len args s) {p mp mq qi : Nat
     (hp : val32 s.mem base (lo len (.slot .wide 10)) (cwc len .wide) = p) (hpn : p < 2 ^ (32 * cwc len .half))
     (hmp : val32 s.mem base (lo len (.slot .wide 16)) (cwc len .half) = mp) (hmpl : mp < safeM p)
     (hmq : val32 s.mem base (lo len (.slot .wide 17)) (2 * cwc len .half) = mq)
-    (hqi : val32 s.mem base (lo len (.slot .wide 14)) (2 * cwc len .half) = qi) :
-    WP isa narrowCoefficient s fun u =>
+    (hqi : val32 s.mem base (lo len (.slot .wide 14)) (2 * cwc len .half) = qi) {pc : Option Nat}
+    (P : PreG s base bytes len args pc (safeM p)) (pfit : FitG len args pc .half) :
+    WP isa (narrowCoefficient pc) s fun u =>
       Frame (frameR base (s.gpr .esp) (coR len)) s.mem u.mem ∧
       val32 u.mem base (lo len (.slot .wide 7)) (2 * cwc len .wide) =
         ((mp + safeM p - mq % safeM p) % safeM p * qi) % safeM p ∧
@@ -473,7 +476,9 @@ theorem narrowCoefficient_ok (h : In Ex base bytes len args s) {p mp mq qi : Nat
   rw [cw1, P₀] at V₁
   have F₁ : Frame (frameR base (s.gpr .esp) (coR len)) s.mem u₁.mem := co_of_outside h O₁ (slot_in h .half (by decide))
   have h₁ := h.keepF K₁ (by decide) (by decide) F₁ (coR_fit h)
-  refine WP.seq (WP.mono (prepCtx_ok h₁ .half) fun u₂ ⟨C₂, one₂, R₂, F₂, K₂⟩ => ?_)
+  have P₁ := P.keepF h.room K₁ (by decide) F₁ (coR_fit h)
+  refine WP.seq (WP.mono (prepareG_ok h₁ .half (by rw [show sv u₁.mem base len .half 0 = p from V₁]; exact P₁) pfit)
+    fun u₂ ⟨C₂, one₂, R₂, F₂, K₂⟩ => ?_)
   rw [show sv u₁.mem base len .half 0 = p from V₁] at C₂ R₂
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   rw [sp₁] at F₂
@@ -554,8 +559,10 @@ theorem coefficient_ok (h : In Ex base bytes len args s) {p mp mq qi : Nat}
     (hmq : val32 s.mem base (lo len (.slot .wide 17)) (2 * cwc len .wide) = mq) (hmqb : mq < 2 ^ (32 * cwc len .wide))
     (hqi : val32 s.mem base (lo len (.slot .wide 14)) (2 * cwc len .wide) = qi) (hqib : qi < 2 ^ (32 * cwc len .wide))
     (hpw : p < 2 ^ (32 * cwc len .wide))
-    (fits : w32 s.mem base lenOff ≤ bc len .half → p < 2 ^ (32 * cwc len .half)) :
-    WP isa coefficient s fun u =>
+    (fits : w32 s.mem base lenOff ≤ bc len .half → p < 2 ^ (32 * cwc len .half))
+    {pc : Option Nat} (P : PreG s base bytes len args pc (safeM p))
+    (pfit : FitG len args pc .wide ∧ (w32 s.mem base lenOff ≤ bc len .half → FitG len args pc .half)) :
+    WP isa (coefficient pc) s fun u =>
       Frame (frameR base (s.gpr .esp) (coR len)) s.mem u.mem ∧
       sv u.mem base len .wide 7 = ((mp + safeM p - mq % safeM p) % safeM p * qi) % safeM p ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
@@ -597,21 +604,23 @@ theorem coefficient_ok (h : In Ex base bytes len args s) {p mp mq qi : Nat}
   rw [← m₄] at hp hmp hmq hqi
   obtain ⟨Q1, Q2⟩ := two hqi hqib
   obtain ⟨N1, N2⟩ := two hmq hmqb
+  have P₄ := P.keepF h.room K₄ (by decide) (ws := []) (by rw [m₄]; exact Frame.refl _ _) (by simp)
   refine WP.ite _ c₄ (fun nar => ?_) (fun _ => ?_)
-  · have hpn := fits (by have := of_decide_eq_true nar; omega_arith)
+  · have nar' : w32 s.mem base lenOff ≤ bc len .half := by have := of_decide_eq_true nar; omega_arith
+    have hpn := fits nar'
     have sph := safeM_lt hpn (by omega_arith)
     have mpn : mp < 2 ^ (32 * cwc len .half) := by omega_arith
     have P1 : val32 u₄.mem base (lo len (.slot .wide 16)) (cwc len .half) = mp :=
       val32_low (b := 2 * cwc len .wide - cwc len .half)
         (by rw [show cwc len .half + (2 * cwc len .wide - cwc len .half) = 2 * cwc len .wide by omega_arith, hmp]) mpn
-    refine WP.mono (narrowCoefficient_ok h₄ hp hpn P1 hmpl N2 Q2) fun u ⟨Fu, Vu, Ku⟩ =>
+    refine WP.mono (narrowCoefficient_ok h₄ hp hpn P1 hmpl N2 Q2 P₄ (pfit.2 nar')) fun u ⟨Fu, Vu, Ku⟩ =>
       ⟨by rw [sp, m₄] at Fu; exact Fu, ?_, (K₄.mono (by decide)).trans Ku⟩
     simp only [sv]
     exact val32_low (b := cwc len .wide) (by rw [← Nat.two_mul, Vu])
       (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_arith)) (by omega_arith))
   · have P1 : val32 u₄.mem base (lo len (.slot .wide 16)) (cwc len .wide) = mp :=
       val32_low (b := cwc len .wide) (by rw [← Nat.two_mul, hmp]) (by omega_arith)
-    refine WP.mono (wideCoefficient_ok h₄ hp P1 hmpl N1 Q1) fun u ⟨Fu, Vu, Ku⟩ =>
+    refine WP.mono (wideCoefficient_ok h₄ hp P1 hmpl N1 Q1 P₄ pfit.1) fun u ⟨Fu, Vu, Ku⟩ =>
       ⟨by rw [sp, m₄] at Fu; exact Fu, Vu, (K₄.mono (by decide)).trans Ku⟩
 
 end

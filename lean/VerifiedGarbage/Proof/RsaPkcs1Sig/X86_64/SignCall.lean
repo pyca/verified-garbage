@@ -3,7 +3,8 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.PrivChecked
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignBlocks
 
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
@@ -51,36 +52,42 @@ theorem privCode_depth (v : CrtImpl) : (privCode v).x86_64Depth = 3256 := by
     Impl.Rsa.X86_64.PrivChecked.releaseLoop]
   rfl
 
-/-- The call of `vg_rsa_private_checked`: `out` holds the signature of
-`EM`, or zeros. -/
-theorem priv_call (v : CrtImpl) {s t : State} (hp : PreS s) (he : Env s t)
+/-- What a call of the private operation on `EM` gives, from `t`: `out`
+holds the signature of `EM`, or zeros; the frame is kept. -/
+def PrivPost (s t t' : State) : Prop :=
+  EnvC s t' ∧
+    Spec.Rsa.writtenOutcome t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t'.gpr .rax).setWidth 32)
+      (Spec.Rsa.privateChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+        (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
+        (Spec.Rsa.bytesAt t.mem (off (fb s) oEM) (s.gpr .rcx).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 3) (stackArg s 4).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 5) (stackArg s 6).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 7) (stackArg s 4).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 9) (stackArg s 6).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 11) (stackArg s 4).toNat)) ∧
+    (∀ d n, d + n ≤ frameBytes → ∀ i < n,
+      t'.mem (off (fb s) d + BitVec.ofNat 64 i) = t.mem (off (fb s) d + BitVec.ofNat 64 i)) ∧
+    (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10
+
+/-- A call of code that does what `vg_rsa_private_checked` does (`k`, with
+its postcondition), given what it reads (`rds`, `privRd` and more). -/
+theorem privWith_call {name : String} {code : Prog isa} {k : Contract isa}
+    (hcorr : ∀ s, k.pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hk : ∀ a b, k.post a b → chkContract.post a b) (hsp : code.all (fun i => !isa.writesSp i) = true)
+    (hd : code.x86_64Depth = 3256) {s t : State} (hp : PreS s) (he : EnvC s t) {rds : List Region}
     (hw : ∀ i < 14, word t.mem (fb s) (8 * i) = callArg s i)
-    (hdi : t.gpr .rdi = s.gpr .rdi) (hsi : t.gpr .rsi = s.gpr .rsi) (hdx : t.gpr .rdx = s.gpr .rdx)
-    (hcx : t.gpr .rcx = s.gpr .rcx) (h8 : t.gpr .r8 = s.gpr .r8) (h9 : t.gpr .r9 = s.gpr .r9) :
-    WP isa (.call (privName v) (privCode v)) t fun t' => Env s t' ∧
-      Spec.Rsa.writtenOutcome t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t'.gpr .rax).setWidth 32)
-        (Spec.Rsa.privateChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
-          (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
-          (Spec.Rsa.bytesAt t.mem (off (fb s) oEM) (s.gpr .rcx).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 3) (stackArg s 4).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 5) (stackArg s 6).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 7) (stackArg s 4).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 9) (stackArg s 6).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 11) (stackArg s 4).toNat)) ∧
-      (∀ d n, d + n ≤ frameBytes → ∀ i < n,
-        t'.mem (off (fb s) d + BitVec.ofNat 64 i) = t.mem (off (fb s) d + BitVec.ofNat 64 i)) ∧
-      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
-  obtain ⟨hc, hcw⟩ := priv_covers hp he
-  have hd := privCode_depth v
-  unfold privCode at hd
-  refine WP.call_sp_mx (k := chkContract) (code_correct v (pcName v) (pdName v))
-    (SpSafe.of_all (code_spSafe v _ _)) (by rw [hd]; decide)
-    (priv_pre hp he.rsp hw hdi hsi hdx hcx h8 h9) hc hcw ?_
+    (hdi : t.gpr .rdi = s.gpr .rdi) (hdx : t.gpr .rdx = s.gpr .rdx)
+    (hcx : t.gpr .rcx = s.gpr .rcx) (h8 : t.gpr .r8 = s.gpr .r8) (h9 : t.gpr .r9 = s.gpr .r9)
+    (hpre : k.pre (t.callEntry.withRegions rds (privWr s)))
+    (hc : Covers (rds ++ privWr s) (t.rd ++ t.wr)) (hcw : Covers (privWr s) t.wr) :
+    WP isa (.call name code) t (PrivPost s t) := by
+  refine WP.call_sp_mx (k := k) hcorr (SpSafe.of_all hsp) (by rw [hd]; decide) hpre hc hcw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
+  replace hpost := hk _ _ hpost
   rw [hd, he.rsp] at hf
-  have hE : ∀ i, i < 14 → stackArg (t.callEntry.withRegions (privRd s) (privWr s)) i = callArg s i :=
+  have hE : ∀ i, i < 14 → stackArg (t.callEntry.withRegions rds (privWr s)) i = callArg s i :=
     fun i hi => (stackArg_entry he.rsp _ _ (by omega)).trans (hw i hi)
-  have hE2 : ∀ j, j < 12 → stackArg (t.callEntry.withRegions (privRd s) (privWr s)) (j + 2) = stackArg s (j + 3) :=
+  have hE2 : ∀ j, j < 12 → stackArg (t.callEntry.withRegions rds (privWr s)) (j + 2) = stackArg s (j + 3) :=
     fun j hj => hE (j + 2) (by omega)
   have hfE : Frame [stkR s, outR s, scrR s] s.mem t.callEntry.mem :=
     frame_call he.mem (callEntry_frame he.rsp) fun r hr => by
@@ -113,19 +120,40 @@ theorem priv_call (v : CrtImpl) {s t : State} (hp : PreS s) (he : Env s t)
     ← hp.hdql, b hp.dKdq hp.dOdq hp.ddqs.symm (by have := hp.wDq; omega), hp.hdql,
     ← hp.hqil, b hp.dKqi hp.dOqi hp.dqis.symm (by have := hp.wQi; omega), hp.hqil] at hpost
   refine ⟨⟨(hcs .rsp (by decide)).trans he.rsp, hrd.trans he.rd, hwr.trans he.wr,
-    frame_call he.mem hf fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, hpost, fun d n hd i hi => ?_, hcs, hmx⟩
+    frame_call he.mem hf fun r hr => ?_, ?_, ?_, ?_, ?_⟩, hpost, fun d n hd i hi => ?_, hcs, hmx⟩
   · simp only [privWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact .inr (.inl (Ver.sub_refl _))
     · exact .inr (.inr (Ver.sub_refl _))
     · rw [below_kb]; exact .inl (Region.sub_prefix (by decide))
-  · rw [slot_keep hf (frame_apart hp (by decide))]; exact he.sOut
-  · rw [slot_keep hf (frame_apart hp (by decide))]; exact he.sOl
   · rw [slot_keep hf (frame_apart hp (by decide))]; exact he.sN
   · rw [slot_keep hf (frame_apart hp (by decide))]; exact he.sK
   · rw [slot_keep hf (frame_apart hp (by decide))]; exact he.sE
   · rw [slot_keep hf (frame_apart hp (by decide))]; exact he.sEl
   · have := (fb_toNat hp).1
     exact hf.bytes (R := ⟨off (fb s) d, n⟩) (frame_apart hp hd) (by dsimp only; unfold frameBytes at hd; omega) hi
+
+/-- A slot kept by a call that keeps the frame's bytes. -/
+theorem slot_of_bytes {s t t' : State} {d : Nat} (hd : d + 8 ≤ frameBytes)
+    (h : ∀ d n, d + n ≤ frameBytes → ∀ i < n,
+      t'.mem (off (fb s) d + BitVec.ofNat 64 i) = t.mem (off (fb s) d + BitVec.ofNat 64 i)) :
+    word t'.mem (fb s) d = word t.mem (fb s) d :=
+  Mem.readW_congr fun b hb => h d 8 hd b (by omega)
+
+/-- The call of `vg_rsa_private_checked`: `out` holds the signature of
+`EM`, or zeros. -/
+theorem priv_call (v : CrtImpl) {s t : State} (hp : PreS s) (he : Env s t)
+    (hw : ∀ i < 14, word t.mem (fb s) (8 * i) = callArg s i)
+    (hdi : t.gpr .rdi = s.gpr .rdi) (hsi : t.gpr .rsi = s.gpr .rsi) (hdx : t.gpr .rdx = s.gpr .rdx)
+    (hcx : t.gpr .rcx = s.gpr .rcx) (h8 : t.gpr .r8 = s.gpr .r8) (h9 : t.gpr .r9 = s.gpr .r9) :
+    WP isa (.call (privName v) (privCode v)) t fun t' => Env s t' ∧ PrivPost s t t' := by
+  obtain ⟨hc, hcw⟩ := priv_covers hp he
+  have hd := privCode_depth v
+  unfold privCode at hd
+  refine WP.mono (privWith_call (code_correct v (pcName v) (pdName v)) (fun _ _ h => h) (code_spSafe v _ _) hd hp
+    he.core hw hdi hdx hcx h8 h9 (priv_pre hp he.rsp hw hdi hsi hdx hcx h8 h9) hc hcw) fun t' h => ⟨?_, h⟩
+  obtain ⟨hc', -, hb, -⟩ := h
+  exact ⟨hc'.rsp, hc'.rd, hc'.wr, hc'.mem, (slot_of_bytes (by decide) hb).trans he.sOut,
+    (slot_of_bytes (by decide) hb).trans he.sOl, hc'.sN, hc'.sK, hc'.sE, hc'.sEl⟩
 
 end VG.Proof.RsaPkcs1Sig.X86_64.Sgn
