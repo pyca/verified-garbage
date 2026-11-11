@@ -166,7 +166,7 @@ theorem emT_of {k D sl lo db : Nat} (salt h mk : List Byte) (c : Byte) (hh : h.l
 /-! ## The writes -/
 
 section
-variable {D : Nat} {s : State} (P : PreS D s)
+variable {pc : Bool} {D : Nat} {s : State} (P : PreS pc D s)
 include P
 
 theorem scR_contains {o n : Nat} (h : o + n ≤ oRsa) : (scR s).Contains (off (Ss s) o) n :=
@@ -437,7 +437,7 @@ theorem and_mask (b : Byte) (x : BitVec 64) : ((b.setWidth 64 &&& x).setWidth 8 
   exact BitVec.setWidth_setWidth_of_le _ (by decide)
 
 section
-variable {D : Nat} {s : State} (P : PreS D s)
+variable {pc : Bool} {D : Nat} {s : State} (P : PreS pc D s)
 include P
 
 /-- MGF1's registers. -/
@@ -492,7 +492,7 @@ theorem clearTop_ok {t : State} (h : Base Ss vS s t) (sp : Spilled s t.mem) (h0 
 end
 
 section
-variable {Hs Gs : Spec.Mgf1.Hash} {s : State} (P : PreS Hs.len s) {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208)
+variable {pc : Bool} {Hs Gs : Spec.Mgf1.Hash} {s : State} (P : PreS pc Hs.len s) {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208)
   {M : MdL H hH} {dg : String} {f : MdFns} {p : Addr} (T : TabM M dg f 14 Ss s p)
   (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = H.D) (hHv : Proof.Mgf1.Valid Hs)
   {G : Hash} (hG : HashOK G) (hGF : G.F ≤ 208) {g : Impl.RsaOaep.RISCV64.Fns} {pg : Addr}
@@ -505,8 +505,8 @@ arguments. -/
 theorem signEnc_ok {t : State} (E : Entered s t) (sy : t.syms = s.syms) (h0 : s.mem (s.gpr .a2) ≠ 0)
     (hfit : Hs.len + (stackArg s 11).toNat + 2 ≤ kk s - loN s) {Q : State → Prop}
     (k : ∀ t', Base Ss vS s t' → Spilled s t'.mem → t'.syms = s.syms →
-      Spec.Rsa.bytesAt t'.mem (off (Ss s) 0) (kk s) = encEm Hs Gs s → WP isa priv t' Q) :
-    WP isa (signMain H M.be f g) t Q := by
+      Spec.Rsa.bytesAt t'.mem (off (Ss s) 0) (kk s) = encEm Hs Gs s → WP isa (priv pc) t' Q) :
+    WP isa (signMain H M.be f g pc) t Q := by
   have F := fits P
   have hD0 : 0 < Hs.len := hHl ▸ hH.hD0
   have hD64 : Hs.len ≤ 64 := hHl ▸ hH.hD64
