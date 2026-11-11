@@ -188,4 +188,49 @@ theorem preR2Args_ok (s : State) (h : PrivContext g bs s) (H : PreCtx g bs P L s
 
 end
 
+section
+variable {g : PrivGeometry} {bs : Fin 8 → List Byte} {P : BitVec 32} {L : Nat}
+
+theorem crtArgsP_ok (s : State) (h : PrivContext g bs s) (H : PreCtx g bs P L s) :
+    WP isa (.block (crtArgs ++ preR2Args)) s fun t => PrivContext g bs t ∧ PreCtx g bs P L t ∧
+      CrtArgsP g P L t ∧ Frame [⟨byteAddr g.stack, 80⟩] s.mem t.mem ∧ Keeps [.eax, .ecx] s t := by
+  rw [WP.block_append_iff]
+  refine WP.mono (crtArgs_ok s h) fun u ⟨hu, A, F, K⟩ => ?_
+  have sub72 : ∀ r ∈ [(⟨byteAddr g.stack, 72⟩ : Region)], ∃ R ∈ bodyWrites g, r.Sub R := by
+    intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    exact ⟨g.innerRegion, by simp [bodyWrites], Region.sub_prefix (by decide : 72 ≤ VG.Impl.Rsa.X86.PrivChecked.frameBytes)⟩
+  have Hu := H.after (F.sub sub72) K
+  refine WP.mono (preR2Args_ok u hu Hu) fun t ⟨ht, Ht, M, F', K'⟩ => ⟨ht, Ht, ?_, ?_, (K.mono (by decide)).trans K'⟩
+  · intro j hj
+    rcases Nat.lt_or_ge j 18 with lt | ge
+    · rw [F'.readW (r := ⟨byteAddr g.stack + BitVec.ofNat 64 (4 * j), 4⟩) (Region.contains_self _ _) (fun r hr => by
+          obtain rfl := List.mem_singleton.mp hr
+          exact Offset.disjoint _ (.inl (by omega)) (by omega) (by decide)) (by decide), A j lt]
+      simp only [crtArgumentP, lt, ite_true]
+    · rw [M]
+      rcases (by omega : j = 18 ∨ j = 19) with rfl | rfl
+      · rw [show 4 * 18 = 72 from rfl, Mem.readW_writeW_self32]
+        simp only [crtArgumentP]; rfl
+      · rw [show 4 * 19 = 76 from rfl]
+        have F72 : Frame [⟨byteAddr g.stack + BitVec.ofNat 64 72, 4⟩]
+            (u.mem.writeW (byteAddr g.stack + BitVec.ofNat 64 76) (BitVec.ofNat 32 (L - 2 * Spec.Rsa.modulusWords g.length)))
+            ((u.mem.writeW (byteAddr g.stack + BitVec.ofNat 64 76)
+              (BitVec.ofNat 32 (L - 2 * Spec.Rsa.modulusWords g.length))).writeW (byteAddr g.stack + BitVec.ofNat 64 72)
+              (P + BitVec.ofNat 32 (16 * Spec.Rsa.modulusWords g.length))) :=
+          (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+        rw [F72.readW (r := ⟨byteAddr g.stack + BitVec.ofNat 64 76, 4⟩) (Region.contains_self _ _) (fun r hr => by
+          obtain rfl := List.mem_singleton.mp hr
+          exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)) (by decide), Mem.readW_writeW_self32]
+        simp only [crtArgumentP]; rfl
+  · refine (F.sub ?_).trans (F'.sub ?_)
+    · intro r hr
+      obtain rfl := List.mem_singleton.mp hr
+      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide : 72 ≤ 80)⟩
+    · intro r hr
+      obtain rfl := List.mem_singleton.mp hr
+      exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by decide : 72 + 8 ≤ 80)⟩
+
+end
+
 end VG.Proof.Rsa.X86.PrivChecked
