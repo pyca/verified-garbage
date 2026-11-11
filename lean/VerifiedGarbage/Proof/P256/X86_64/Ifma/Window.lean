@@ -573,53 +573,58 @@ theorem val5_nat (w0 w1 w2 w3 w4 : Nat) : val5 w0 w1 w2 w3 w4 =
   simp only [val5]
   omega
 
-theorem packLane_eq (M : Mod) (l dst : Nat) : packLane M l dst =
-    packCode (SL + 32 * 0 + 8 * l) (SL + 32 * 1 + 8 * l) (SL + 32 * 2 + 8 * l) (SL + 32 * 3 + 8 * l)
-      (SL + 32 * 4 + 8 * l) ++ (csubC M [.r8, .r9, .r10, .r11] .r12 ++
+theorem packLaneAt_eq (sl : Nat) (M : Mod) (l dst : Nat) : packLaneAt sl M l dst =
+    packCode (sl + 32 * 0 + 8 * l) (sl + 32 * 1 + 8 * l) (sl + 32 * 2 + 8 * l) (sl + 32 * 3 + 8 * l)
+      (sl + 32 * 4 + 8 * l) ++ (csubC M [.r8, .r9, .r10, .r11] .r12 ++
         VG.Impl.Mont.X86_64.stores [.r8, .r9, .r10, .r11] dst) := by
-  unfold packLane
+  unfold packLaneAt
   rw [List.append_assoc]
   rfl
 
-/-- A lane of the slots, carried and below `2 p`, reduced into the words at `dst`. -/
-theorem packLane_ok {M : Mod} {s : State} {base : Addr} {size m : Nat} (hs : Scr s base size) (hbig : 5408 ≤ size)
-    (hn : M.n = 4) (hmo : M.mo + 8 * M.n ≤ size) (hm : wordsVal s.mem base M.mo M.n = m) (hm2 : Nb ≤ 2 * (m : Int))
-    {l dst : Nat} (hl : l < 4) (hdst : dst + 32 ≤ size) {x : Fin pN} (hc : Car (envOf s) l sl5 x) :
-    WP isa (.block (packLane M l dst)) s fun t =>
-      wordsVal t.mem base dst 4 = (vI (envOf s) l sl5).toNat % m ∧
+/-- Five words at `sl`, `32` bytes apart, as limbs below `2⁵²` of a number below `2 p`, reduced into the
+words at `dst`. -/
+theorem packLaneAt_ok {M : Mod} {s : State} {base : Addr} {size m sl : Nat} (hs : Scr s base size)
+    (hbig : sl + 160 ≤ size) (hn : M.n = 4) (hmo : M.mo + 8 * M.n ≤ size) (hm : wordsVal s.mem base M.mo M.n = m)
+    (hm2 : Nb ≤ 2 * (m : Int)) {l dst : Nat} (hl : l < 4) (hdst : dst + 32 ≤ size)
+    (hw : ∀ i, i < 5 → 0 ≤ (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * i + 8 * l)) 64).toInt ∧
+      (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * i + 8 * l)) 64).toInt < 2 ^ 52)
+    (hlt : val5 (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 0 + 8 * l)) 64).toInt
+      (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 1 + 8 * l)) 64).toInt
+      (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 2 + 8 * l)) 64).toInt
+      (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 3 + 8 * l)) 64).toInt
+      (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 4 + 8 * l)) 64).toInt < Nb) :
+    WP isa (.block (packLaneAt sl M l dst)) s fun t =>
+      wordsVal t.mem base dst 4 = (val5 (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 0 + 8 * l)) 64).toInt
+        (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 1 + 8 * l)) 64).toInt
+        (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 2 + 8 * l)) 64).toInt
+        (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 3 + 8 * l)) 64).toInt
+        (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 4 + 8 * l)) 64).toInt).toNat % m ∧
       KeepRegs [.rax, .rcx, .rdx, .rbp, .r8, .r9, .r10, .r11, .r12] s t ∧ Outside base dst 32 s.mem t.mem := by
   have hdi := hs.rdi
-  have key (i : Nat) (hi : i < 5) :
-      (((s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * i + 8 * l)) 64).toNat : Int) =
-        (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * i + 8 * l)) 64).toInt ∧
-        (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * i + 8 * l)) 64).toNat < 2 ^ 52) ∧
-      (sl5.get i).int (envOf s) l = (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * i + 8 * l)) 64).toInt := by
-    have e := sl5_limb s l i hi
-    have b := hc.c.get hi
-    rw [hdi] at e
-    rw [e] at b
-    exact ⟨toNat_of_toInt _ b.1 b.2, e⟩
-  obtain ⟨⟨c0, b0⟩, e0⟩ := key 0 (by decide)
-  obtain ⟨⟨c1, b1⟩, e1⟩ := key 1 (by decide)
-  obtain ⟨⟨c2, b2⟩, e2⟩ := key 2 (by decide)
-  obtain ⟨⟨c3, b3⟩, e3⟩ := key 3 (by decide)
-  obtain ⟨⟨c4, -⟩, e4⟩ := key 4 (by decide)
+  obtain ⟨c0, b0⟩ := toNat_of_toInt _ (hw 0 (by decide)).1 (hw 0 (by decide)).2
+  obtain ⟨c1, b1⟩ := toNat_of_toInt _ (hw 1 (by decide)).1 (hw 1 (by decide)).2
+  obtain ⟨c2, b2⟩ := toNat_of_toInt _ (hw 2 (by decide)).1 (hw 2 (by decide)).2
+  obtain ⟨c3, b3⟩ := toNat_of_toInt _ (hw 3 (by decide)).1 (hw 3 (by decide)).2
+  obtain ⟨c4, -⟩ := toNat_of_toInt _ (hw 4 (by decide)).1 (hw 4 (by decide)).2
   obtain ⟨N, hN, hv'⟩ : ∃ N : Nat, N =
-      (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * 0 + 8 * l)) 64).toNat +
-      2 ^ 52 * (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * 1 + 8 * l)) 64).toNat +
-      2 ^ 104 * (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * 2 + 8 * l)) 64).toNat +
-      2 ^ 156 * (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * 3 + 8 * l)) 64).toNat +
-      2 ^ 208 * (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * 4 + 8 * l)) 64).toNat ∧
-      vI (envOf s) l sl5 = (N : Int) := by
+      (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 0 + 8 * l)) 64).toNat +
+      2 ^ 52 * (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 1 + 8 * l)) 64).toNat +
+      2 ^ 104 * (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 2 + 8 * l)) 64).toNat +
+      2 ^ 156 * (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 3 + 8 * l)) 64).toNat +
+      2 ^ 208 * (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 4 + 8 * l)) 64).toNat ∧
+      val5 (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 0 + 8 * l)) 64).toInt
+        (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 1 + 8 * l)) 64).toInt
+        (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 2 + 8 * l)) 64).toInt
+        (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 3 + 8 * l)) 64).toInt
+        (s.mem.readW (base + BitVec.ofNat 64 (sl + 32 * 4 + 8 * l)) 64).toInt = (N : Int) := by
     refine ⟨_, rfl, ?_⟩
-    rw [vI_get, e0, e1, e2, e3, e4, ← c0, ← c1, ← c2, ← c3, ← c4, val5_nat]
-  have hlt := hc.hi
+    rw [← c0, ← c1, ← c2, ← c3, ← c4, val5_nat]
   rw [hv'] at hlt ⊢
   rw [Int.toNat_natCast]
   have hN2 : N < 2 * m := by omega
-  rw [packLane_eq, WP.block_append_iff]
-  refine WP.mono (packCode_ok hs (by simp only [SL]; omega) (by simp only [SL]; omega) (by simp only [SL]; omega)
-    (by simp only [SL]; omega) (by simp only [SL]; omega) b0 b1 b2 b3) fun a ⟨⟨hv, hmem⟩, ka⟩ => ?_
+  rw [packLaneAt_eq, WP.block_append_iff]
+  refine WP.mono (packCode_ok hs (by omega) (by omega) (by omega) (by omega) (by omega) b0 b1 b2 b3)
+    fun a ⟨⟨hv, hmem⟩, ka⟩ => ?_
   rw [← hN] at hv
   have hsa : Scr a base size := ⟨(ka.1 .rdi (by decide)).trans hdi, ka.2.2 ▸ hs.wr, hs.nowrap⟩
   rw [WP.block_append_iff]
@@ -639,6 +644,34 @@ theorem packLane_ok {M : Mod} {s : State} {base : Addr} {size m : Nat} (hs : Scr
     rw [kt.gpr r List.not_mem_nil, kb.1 r (by simp [hr]), ka.1 r (by simp [hr])]
   · intro z hz
     rw [ot z hz, kb.2.1, hmem]
+
+/-- A lane of the slots, carried and below `2 p`, reduced into the words at `dst`. -/
+theorem packLane_ok {M : Mod} {s : State} {base : Addr} {size m : Nat} (hs : Scr s base size) (hbig : 5408 ≤ size)
+    (hn : M.n = 4) (hmo : M.mo + 8 * M.n ≤ size) (hm : wordsVal s.mem base M.mo M.n = m) (hm2 : Nb ≤ 2 * (m : Int))
+    {l dst : Nat} (hl : l < 4) (hdst : dst + 32 ≤ size) {x : Fin pN} (hc : Car (envOf s) l sl5 x) :
+    WP isa (.block (packLane M l dst)) s fun t =>
+      wordsVal t.mem base dst 4 = (vI (envOf s) l sl5).toNat % m ∧
+      KeepRegs [.rax, .rcx, .rdx, .rbp, .r8, .r9, .r10, .r11, .r12] s t ∧ Outside base dst 32 s.mem t.mem := by
+  have hdi := hs.rdi
+  have key (i : Nat) (hi : i < 5) :
+      (0 ≤ (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * i + 8 * l)) 64).toInt ∧
+        (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * i + 8 * l)) 64).toInt < 2 ^ 52) ∧
+      (sl5.get i).int (envOf s) l = (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * i + 8 * l)) 64).toInt := by
+    have e := sl5_limb s l i hi
+    have b := hc.c.get hi
+    rw [hdi] at e
+    rw [e] at b
+    exact ⟨b, e⟩
+  have ev : vI (envOf s) l sl5 = val5 (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * 0 + 8 * l)) 64).toInt
+      (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * 1 + 8 * l)) 64).toInt
+      (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * 2 + 8 * l)) 64).toInt
+      (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * 3 + 8 * l)) 64).toInt
+      (s.mem.readW (base + BitVec.ofNat 64 (SL + 32 * 4 + 8 * l)) 64).toInt := by
+    rw [vI_get, (key 0 (by decide)).2, (key 1 (by decide)).2, (key 2 (by decide)).2, (key 3 (by decide)).2,
+      (key 4 (by decide)).2]
+  rw [ev]
+  exact packLaneAt_ok hs (by simp only [SL]; omega) hn hmo hm hm2 hl hdst (fun i hi => (key i hi).1)
+    (by rw [← ev]; exact hc.hi)
 
 
 /-- A lane of the slots depends only on the slots' words. -/
