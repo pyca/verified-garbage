@@ -13,7 +13,9 @@ scratch_len). The first frame saves the caller's registers and `pre` is
 cleared. A second frame, pushed from registers, then holds the stack
 arguments of a private CRT call (`CrtFn`): the input and the coefficient are the cleared
 `pre`, the exponents are the factors themselves, so that the CRT's validation
-accepts exactly when `p q = n` for a valid `n`. Inside the CRT's own frame,
+accepts exactly when `p q = n` for a valid `n`, with the product of `p` and
+`q` at the factors' own widths (`CrtFn.validateWith`, `Crt.lengthCount`)
+rather than the modulus's. Inside the CRT's own frame,
 after the validation, `R² mod n` is computed in p's full workspace, which
 nothing uses after the validation, from `n` copied from the main workspace,
 as the public precomputation computes it (`r2Public`: from a normalized seed
@@ -89,7 +91,8 @@ def modulusPart : Prog isa :=
   .seq selectP (.seq (.block [.ldrSp .r4 4]) (.seq precomputeOut (.seq (.block maskArgs) maskOutput)))
 
 def valid : Prog isa :=
-  .seq CrtFn.prepare (.seq CrtFn.validate (.seq modulusR2 (.seq (phase 64 pDest) (.seq (phase 72 qDest) modulusPart))))
+  .seq CrtFn.prepare (.seq (CrtFn.validateWith (validateProductWith lengthCount))
+    (.seq modulusR2 (.seq (phase 64 pDest) (.seq (phase 72 qDest) modulusPart))))
 def body : Prog isa := .seq (.block modulusCheck) (.ite .eq valid (.block [.mov .r0 (.imm 0)]))
 def crtFrame : Prog isa :=
   .frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])

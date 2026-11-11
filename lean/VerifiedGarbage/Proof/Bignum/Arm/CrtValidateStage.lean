@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptStage
 import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPStage
 import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadQStage
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.Bignum.Arm.CrtValidateProduct
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtValidateProduct
 import VerifiedGarbage.Impl.Bignum.Arm.MergeAcceptance
 import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationPreserved
 import VerifiedGarbage.Proof.Bignum.Arm.CrtProductValues
@@ -18,6 +18,9 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationGeometry
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductStart
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
 /-! # Exact acceptance and imported factors for the private RSA computation -/
 
 -- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtProductStage.lean`, which only this module imported.
@@ -32,9 +35,25 @@ open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
 open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
-theorem crt_productStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
-    (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (workspaceWords g.words) g.words s) :
-    WP isa (.seq validateProduct (.block mergeAcceptance)) s fun t => CrtShared g bs t ∧
+/-- A number of `n` words below `2^(32 k)`, `k ≤ n`, is its first `k`. -/
+theorem val32_prefix {m : Mem} {B : Addr} {d n k v : Nat} (hv : val32 m B d n = v) (hk : k ≤ n)
+    (hlt : v < 2 ^ (32 * k)) : val32 m B d k = v := by
+  have a := val32_append m B d k (n - k)
+  rw [show k + (n - k) = n by omega, hv] at a
+  have hpos := Nat.two_pow_pos (32 * k)
+  rcases Nat.eq_zero_or_pos (val32 m B (d + 4 * k) (n - k)) with h | h
+  · rw [h, Nat.mul_zero, Nat.add_zero] at a; exact a.symm
+  · have := Nat.le_mul_of_pos_right (2 ^ (32 * k)) h; omega
+
+/-- The product stage, its product of `p`'s first `m` words by `q`'s first `n`
+(`count`'s counts), which hold them. -/
+theorem crt_productStageWith_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {count : List Instr}
+    {m n : Nat} (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (workspaceWords g.words) g.words s)
+    (hc : CountFrom count g.base g.size m n s) (hm : 0 < m) (hm' : m ≤ 2 * g.words) (hn : 0 < n)
+    (hn' : n ≤ 2 * g.words)
+    (fitP : numAt s.mem (State.addr (crtP g.base g.words)) g.words 0 < 2 ^ (32 * m))
+    (fitQ : numAt s.mem (State.addr (crtQ g.base g.words)) g.words 0 < 2 ^ (32 * n)) :
+    WP isa (.seq (validateProductWith count) (.block mergeAcceptance)) s fun t => CrtShared g bs t ∧
       LayoutFrameReady g.base (workspaceWords g.words) g.words t ∧
       numAt t.mem (State.addr (crtP g.base g.words)) g.words 0 = numAt s.mem (State.addr (crtP g.base g.words)) g.words 0 ∧
       numAt t.mem (State.addr (crtQ g.base g.words)) g.words 0 = numAt s.mem (State.addr (crtQ g.base g.words)) g.words 0 ∧
@@ -44,7 +63,7 @@ theorem crt_productStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List B
         s.mem.readW (off (State.addr s.sp) 48) 32 ∧
       Frame (crtLiveMutable g s.sp) s.mem t.mem ∧ Rest roundClobbers s t := by
   rw [WP.seq_iff]
-  refine WP.mono (crt_validateProduct_ok s (h.validate_input ready)) ?_
+  refine WP.mono (crt_validateProductWith_ok s (h.validate_input ready) hc hm hm' hn hn') ?_
   rintro u ⟨value, outside, frame, ptr, rest⟩
   have sharedU := h.after_validation outside frame rest
   have readyU : LayoutFrameReady g.base (workspaceWords g.words) g.words u :=
@@ -58,7 +77,7 @@ theorem crt_productStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List B
     rw [rest.sp]; exact stackEq.word (by decide)
   obtain ⟨pEq, qEq⟩ := h.validation_child_eq outside
   obtain ⟨pValue, qValue⟩ := h.product_values false
-  rw [pValue, qValue, h.modulus] at value
+  rw [val32_prefix pValue hm' fitP, val32_prefix qValue hn' fitQ, h.modulus] at value
   refine WP.mono (mergeAcceptanceLayout_ready u readyU (by have := sharedU.stack.nowrap; omega)
     (sharedU.stack.write (by decide))
     ((sharedU.stack.separate.symm.sub_left (crt_region_sub_workspace sharedU.buffers.workspace sharedU.buffers.storageFits
@@ -102,15 +121,20 @@ def crtAccepted (bs : Fin 7 → List Byte) : Prop :=
   Spec.Rsa.os2ip (bs 2) * Spec.Rsa.os2ip (bs 3) = Spec.Rsa.os2ip (bs 0)
 instance (bs : Fin 7 → List Byte) : Decidable (crtAccepted bs) := inferInstanceAs (Decidable (_ ∧ _ ∧ _))
 
-theorem crt_validateStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
-    (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (workspaceWords g.words) g.words s) :
-    WP isa CrtFn.validate s fun t => CrtShared g bs t ∧
+/-- The checks, with the product of `p`'s first `m` words by `q`'s first `n`
+(`count`'s counts), which hold them. -/
+theorem crt_validateStageWith_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {count : List Instr}
+    {m n : Nat} (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (workspaceWords g.words) g.words s)
+    (hc : ∀ x, CrtShared g bs x → CountFrom count g.base g.size m n x) (hm : 0 < m) (hm' : m ≤ 2 * g.words)
+    (hn : 0 < n) (hn' : n ≤ 2 * g.words) (fitP : Spec.Rsa.os2ip (bs 2) < 2 ^ (32 * m))
+    (fitQ : Spec.Rsa.os2ip (bs 3) < 2 ^ (32 * n)) :
+    WP isa (CrtFn.validateWith (validateProductWith count)) s fun t => CrtShared g bs t ∧
       LayoutFrameReady g.base (workspaceWords g.words) g.words t ∧
       numAt t.mem (State.addr (crtP g.base g.words)) g.words 0 = Spec.Rsa.os2ip (bs 2) ∧
       numAt t.mem (State.addr (crtQ g.base g.words)) g.words 0 = Spec.Rsa.os2ip (bs 3) ∧
       t.mem.readW (off (State.addr t.sp) 48) 32 = (if crtAccepted bs then 1 else 0) ∧
       Frame (crtLiveMutable g s.sp) s.mem t.mem ∧ Rest roundClobbers s t := by
-  rw [CrtFn.validate, WP.seq_iff]
+  rw [CrtFn.validateWith, WP.seq_iff]
   refine WP.mono (crt_acceptStage_ok s h ready) ?_
   rintro u ⟨sharedU, readyU, flagU, frameU, restU⟩
   rw [WP.seq_iff]
@@ -119,7 +143,8 @@ theorem crt_validateStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List 
   rw [WP.seq_iff]
   refine WP.mono (crt_loadQStage_ok v sharedV readyV) ?_
   rintro x ⟨sharedX, readyX, pX, qX, flagX, frameX, restX⟩
-  refine WP.mono (crt_productStage_ok x sharedX readyX) ?_
+  refine WP.mono (crt_productStageWith_ok x sharedX readyX (hc x sharedX) hm hm' hn hn'
+    (by rw [pX, pV]; exact fitP) (by rw [qX]; exact fitQ)) ?_
   rintro t ⟨sharedT, readyT, pT, qT, flagT, frameT, restT⟩
   rw [pX, pV, qX, flagX, flagV, flagU] at flagT
   have flag : t.mem.readW (off (State.addr t.sp) 48) 32 = (if crtAccepted bs then 1 else 0) := by
@@ -133,5 +158,33 @@ theorem crt_validateStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List 
   rw [restX.sp, restV.sp, restU.sp] at frameT
   exact ⟨sharedT, readyT, pT.trans (pX.trans pV), qT.trans qX, flag,
     frameU.trans (frameV.trans (frameX.trans frameT)), restU.trans (restV.trans (restX.trans restT))⟩
+
+/-- A factor of the CRT holds in the modulus's `2 W` words. -/
+theorem crt_factor_fit {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtShared g bs s) {i : Fin 7}
+    (hi : g.sourceLength i < g.length) : Spec.Rsa.os2ip (bs i) < 2 ^ (32 * (2 * g.words)) := by
+  have len := (h.buffers.source i).length
+  have w := (crt_width_valid h.buffers.lengthValid).2.2
+  have := VG.Proof.Bignum.os2ip_lt (bs i)
+  rw [len, VG.Proof.Bignum.pow256_eq] at this
+  exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by simp only [CrtGeometry.words]; omega))
+
+theorem crt_validateStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (workspaceWords g.words) g.words s) :
+    WP isa CrtFn.validate s fun t => CrtShared g bs t ∧
+      LayoutFrameReady g.base (workspaceWords g.words) g.words t ∧
+      numAt t.mem (State.addr (crtP g.base g.words)) g.words 0 = Spec.Rsa.os2ip (bs 2) ∧
+      numAt t.mem (State.addr (crtQ g.base g.words)) g.words 0 = Spec.Rsa.os2ip (bs 3) ∧
+      t.mem.readW (off (State.addr t.sp) 48) 32 = (if crtAccepted bs then 1 else 0) ∧
+      Frame (crtLiveMutable g s.sp) s.mem t.mem ∧ Rest roundClobbers s t := by
+  have two := (crt_width_valid h.buffers.lengthValid).1
+  exact crt_validateStageWith_ok s h ready (fun x hx => countFrom_productCount
+      (by have := hx.buffers.storageFits
+          simp only [totalBytes, narrowOffset, modulusOffset, compareOffset, productOffset, stride,
+            workspaceWords] at this
+          omega)
+      (hx.main.toCrtLayoutState.nativeCount hx.buffers.context.main))
+    (by simp only [CrtGeometry.words] at two ⊢; omega) (Nat.le_refl _)
+    (by simp only [CrtGeometry.words] at two ⊢; omega) (Nat.le_refl _)
+    (crt_factor_fit h (i := 2) h.buffers.pShort) (crt_factor_fit h (i := 3) h.buffers.qShort)
 
 end VG.Proof.Bignum.Arm

@@ -37,8 +37,10 @@ def loadPBody : Prog isa := .seq (savedOperand 0 64 68) (.seq (savedOperand 1 96
   (.seq inputCompare (.block mergeAcceptance)))
 def loadP : Prog isa := .seq (selectChild 224) (.seq loadPBody selectMain)
 def loadQ : Prog isa := .seq (selectChild 228) (.seq (savedOperand 0 72 76) selectMain)
-def validate : Prog isa :=
-  .seq acceptInput (.seq loadP (.seq loadQ (.seq validateProduct (.block mergeAcceptance))))
+/-- The checks, `p q = n` by `product`. -/
+def validateWith (product : Prog isa) : Prog isa :=
+  .seq acceptInput (.seq loadP (.seq loadQ (.seq product (.block mergeAcceptance))))
+def validate : Prog isa := validateWith validateProduct
 
 def powerWith (phase : Prog isa) (slot primeSlot exponentSlot : Nat) : Prog isa :=
   .seq (selectChild slot) (.seq (narrowPowerWith phase slot primeSlot exponentSlot) selectMain)

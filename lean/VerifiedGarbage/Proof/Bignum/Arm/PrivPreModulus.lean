@@ -19,6 +19,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.CallLay
@@ -214,7 +215,7 @@ end VG.Proof.Bignum.Arm
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Impl.Bignum.Arm.PrivPreFn VG.Proof.Mont
 open VG.Proof.Rsa.Mont (numAt arrAt)
-open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
+open VG.Proof.X25519.Arm (Rest wp_mov op2_imm wp_dp wp_str op2_lsr dpVal)
 
 /-- `pre`: writable, apart from the CRT's storage, frame and sources but
 the input and the coefficient, which are its first bytes. -/
@@ -517,6 +518,90 @@ structure PpValidInput (g : CrtGeometry) (bs : Fin 7 → List Byte) (s : State) 
   modulusPtr : s.mem.readW (off (State.addr s.sp) 8) 32 = g.modulus
   valid : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (bs 0)) g.length = true
 
+/-- `Crt.lengthCount`: `⌈p_len / 4⌉` rows of `⌈q_len / 4⌉` words, from the
+private CRT frame's lengths of `p` and `q`. -/
+theorem countFrom_lengthCount {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtShared g bs s) :
+    CountFrom lengthCount g.base g.size ((g.pLength + 3) / 4) ((g.qLength + 3) / 4) s := by
+  intro z ws ptr zsp zrd zwr zF _
+  have nowrap := h.stack.nowrap
+  have wsNowrap := ws.nowrap
+  have fit : 148 ≤ g.size := by
+    have := h.buffers.storageFits
+    simp only [totalBytes, narrowOffset, modulusOffset, compareOffset, productOffset, stride,
+      workspaceWords, productBytes, productWords] at this
+    omega
+  have small := (crt_width_valid h.buffers.lengthValid).2.2
+  have two := (crt_width_valid h.buffers.lengthValid).2.1
+  have pk := h.buffers.pShort
+  have qk := h.buffers.qShort
+  have stackEq : WorkspaceEq (State.addr s.sp) 112 s.mem z.mem := WorkspaceEq.of_frame (by decide) zF (by
+    intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.stack.separate)
+  have lenP : z.mem.readW (off (State.addr z.sp) 68) 32 = BitVec.ofNat 32 g.pLength := by
+    rw [zsp, stackEq.word (by decide)]; exact h.stack.length 1
+  have lenQ : z.mem.readW (off (State.addr z.sp) 76) 32 = BitVec.ofNat 32 g.qLength := by
+    rw [zsp, stackEq.word (by decide)]; exact h.stack.length 2
+  have rd68 : InRegions (z.rd ++ z.wr) (off (State.addr z.sp) 68) 4 := by
+    rw [zrd, zwr, zsp]; exact h.stack.read (by decide)
+  have rd76 : InRegions (z.rd ++ z.wr) (off (State.addr z.sp) 76) 4 := by
+    rw [zrd, zwr, zsp]; exact h.stack.read (by decide)
+  have addr (d : Nat) (hd : d + 4 ≤ g.size) : State.addr (z.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr g.base) d := by
+    rw [ptr]; exact addr_add (by omega)
+  have quarter : ∀ k : Nat, k < 2 ^ 28 → (BitVec.ofNat 32 k + 3) >>> 2 = BitVec.ofNat 32 ((k + 3) / 4) := fun k hk => by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.ofNat_eq_ofNat, BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat,
+      Nat.shiftRight_eq_div_pow]
+    omega
+  unfold lengthCount
+  refine wp_loadStack (a := off (State.addr z.sp) 68) (by decide) (addr_add (by rw [zsp]; omega)) rd68 fun u a => ?_
+  refine wp_dp (op2_imm (by decide)) fun v b => ?_
+  refine wp_mov (op2_lsr ⟨by decide, by decide⟩) fun x c => ?_
+  have rP : x.gpr .r1 = BitVec.ofNat 32 ((g.pLength + 3) / 4) := by
+    rw [c.gpr, b.gpr, dpVal, a.gpr, lenP]; exact quarter _ (by omega)
+  refine wp_str (a := off (State.addr g.base) 140) (by decide)
+    (by rw [c.other .r0 (by decide), b.other .r0 (by decide), a.other .r0 (by decide)]; exact addr 140 (by omega))
+    (by rw [c.wr, b.wr, a.wr]; exact ws.write (by omega)) fun y d => ?_
+  have restD : Rest [] x y := d.rest []
+  refine wp_loadStack (a := off (State.addr z.sp) 76) (by decide)
+    (by rw [restD.sp, c.sp, b.sp, a.sp]; exact addr_add (by rw [zsp]; omega))
+    (by rw [restD.rd, restD.wr, c.rd, c.wr, b.rd, b.wr, a.rd, a.wr]; exact rd76) fun u' a' => ?_
+  refine wp_dp (op2_imm (by decide)) fun v' b' => ?_
+  refine wp_mov (op2_lsr ⟨by decide, by decide⟩) fun x' c' => ?_
+  have memX : y.mem = (z.mem.writeW (off (State.addr g.base) 140) (BitVec.ofNat 32 ((g.pLength + 3) / 4))) := by
+    rw [d.mem, rP, c.mem, b.mem, a.mem]
+  have stackY : WorkspaceEq (State.addr s.sp) 112 z.mem y.mem := WorkspaceEq.of_frame (by decide)
+    (by rw [memX]; exact outside_workspace (size := g.size) (writeW32_outside z.mem _ (d := 140) _ (by omega)) (by omega))
+    (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.stack.separate)
+  have lenQ' : z.mem.readW (off (State.addr s.sp) 76) 32 = BitVec.ofNat 32 g.qLength := by
+    rw [stackEq.word (by decide)]; exact h.stack.length 2
+  have rQ : x'.gpr .r1 = BitVec.ofNat 32 ((g.qLength + 3) / 4) := by
+    rw [c'.gpr, b'.gpr, dpVal, a'.gpr, zsp, stackY.word (by decide), lenQ']
+    exact quarter _ (by omega)
+  refine wp_str (a := off (State.addr g.base) 144) (by decide)
+    (by rw [c'.other .r0 (by decide), b'.other .r0 (by decide), a'.other .r0 (by decide), restD.gpr .r0 (by simp),
+      c.other .r0 (by decide), b.other .r0 (by decide), a.other .r0 (by decide)]; exact addr 144 (by omega))
+    (by rw [c'.wr, b'.wr, a'.wr, restD.wr, c.wr, b.wr, a.wr]; exact ws.write (by omega)) fun t e => WP.block_nil ?_
+  refine ⟨?_, (a.rest (by simp)).trans ((b.rest (by simp)).trans ((c.rest (by simp)).trans ((restD.mono (by simp)).trans
+    ((a'.rest (by simp)).trans ((b'.rest (by simp)).trans ((c'.rest (by simp)).trans (e.rest _)))))))⟩
+  rw [e.mem, rQ, c'.mem, b'.mem, a'.mem, memX]
+
+/-- The counts of `Crt.lengthCount` and the factors' bounds by them. -/
+theorem pp_lengthCounts {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtShared g bs s) :
+    0 < (g.pLength + 3) / 4 ∧ (g.pLength + 3) / 4 ≤ 2 * g.words ∧
+      0 < (g.qLength + 3) / 4 ∧ (g.qLength + 3) / 4 ≤ 2 * g.words ∧
+      Spec.Rsa.os2ip (bs 2) < 2 ^ (32 * ((g.pLength + 3) / 4)) ∧
+      Spec.Rsa.os2ip (bs 3) < 2 ^ (32 * ((g.qLength + 3) / 4)) := by
+  have small := (crt_width_valid h.buffers.lengthValid).2.2
+  have pk := h.buffers.pShort; have qk := h.buffers.qShort
+  have p0 := h.buffers.pPositive; have q0 := h.buffers.qPositive
+  have fit : ∀ i : Fin 7, ∀ L, g.sourceLength i = L → Spec.Rsa.os2ip (bs i) < 2 ^ (32 * ((L + 3) / 4)) := by
+    intro i L hL
+    have len := (h.buffers.source i).length
+    have := VG.Proof.Bignum.os2ip_lt (bs i)
+    rw [len, hL, VG.Proof.Bignum.pow256_eq] at this
+    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
+  simp only [CrtGeometry.words] at small ⊢
+  exact ⟨by omega, by omega, by omega, by omega, fit 2 _ rfl, fit 3 _ rfl⟩
+
 theorem pp_valid_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : PpValidInput g bs s)
     (pre : PpPre g s) :
     WP isa valid s fun t =>
@@ -542,7 +627,9 @@ theorem pp_valid_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h 
   refine WP.mono (crt_begin_ok s h.buffers h.stack h.ptr h.count h.saved h.modulusPtr h.valid) ?_
   rintro u ⟨sharedU, readyU, frameU, restU⟩
   rw [WP.seq_iff]
-  refine WP.mono (crt_validateStage_ok u sharedU readyU) ?_
+  obtain ⟨p0, pLe, q0, qLe, pFit, qFit⟩ := pp_lengthCounts sharedU
+  refine WP.mono (crt_validateStageWith_ok u sharedU readyU (fun x hx => countFrom_lengthCount hx) p0 pLe q0 qLe
+    pFit qFit) ?_
   rintro v ⟨sharedV, _, _, _, flagV, frameV, restV⟩
   have restSV : Rest roundClobbers s v := (restU.mono (by decide)).trans restV
   have bitV : ppFlag v ≤ 1 := by unfold ppFlag; rw [flagV]; split <;> decide

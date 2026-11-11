@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductStart
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtInput
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
@@ -108,7 +109,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.WideProductState
 import VerifiedGarbage.Proof.Bignum.Arm.WideProductBodyCT
 import VerifiedGarbage.Proof.Bignum.Arm.WideProductBody
 import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWideCT
-import VerifiedGarbage.Proof.Bignum.Arm.CrtProductStart
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
 import VerifiedGarbage.Proof.Bignum.Arm.CrtImportQResidue
 import VerifiedGarbage.Proof.Bignum.Arm.CrtOutputArgs
@@ -337,6 +337,52 @@ theorem crt_productArgs_ct {base : BitVec 32} {size o a b cp cq w : Nat} {coeffi
     (fun _ _ h => h.1.ptr.trans h.2.ptr.symm) (fun _ _ _ => trivial)
   exact (pair_posts first firstWP).seq ((pair_posts second secondWP).seq ((pair_posts third thirdWP).seq last))
 
+
+/-- `productArgsWith`, with `count` constant time from equal `r0` and `sp`. -/
+theorem crt_productArgsWith_ct {base : BitVec 32} {size o a b cp cq w : Nat} {coefficient : Bool}
+    {count : List Instr} (fit : 236 ≤ size)
+    (hcCT : RelCT isa (fun s t => s.gpr .r0 = t.gpr .r0 ∧ s.sp = t.sp) (.block count) (fun _ _ => True)) :
+    RelCT isa (fun s t => CrtProductInput base size o a b cp cq w s coefficient ∧
+      CrtProductInput base size o a b cp cq w t coefficient ∧ s.sp = t.sp)
+      (productArgsWith coefficient count) (fun _ _ => True) := by
+  intro s₀ t₀ tr₁ tr₂ u₀ v₀ h₀ e₁ e₂
+  let P := fun s => CrtProductInput base size o a b cp cq w s coefficient ∧ s.sp = s₀.sp
+  have first : RelCT isa (fun s t => P s ∧ P t) (.block (copyChildPointer 224 128 (productOperandSlot coefficient))) (fun _ _ => True) := by
+    intro s t tr1 tr2 u v h e1 e2
+    exact crt_copyChildPointer_ct (base := base) (child := base + BitVec.ofNat 32 cp)
+      (size := size) (src := 224) (dst := 128) (by omega) (by decide) s t tr1 tr2 u v
+      ⟨⟨h.1.1.workspace, h.1.1.ptr, h.1.1.pLink⟩, ⟨h.2.1.workspace, h.2.1.ptr, h.2.1.pLink⟩⟩ e1 e2
+  have firstWP (s : State) (h : P s) : WP isa (.block (copyChildPointer 224 128 (productOperandSlot coefficient))) s P := by
+    have before := h.1.pBeforeOut
+    have outFit := h.1.outFits
+    refine WP.mono (crt_copyChildPointer_ok s h.1.workspace (by omega) (by omega) (by decide) (by decide)
+      (by cases coefficient <;> decide) (by omega) h.1.ptr h.1.pLink h.1.pArray) ?_
+    rintro t ⟨mem, rest⟩
+    exact ⟨h.1.after_control (by decide) (by decide) mem rest, rest.sp.trans h.2⟩
+  have second : RelCT isa (fun s t => P s ∧ P t) (.block (copyChildPointer 228 132)) (fun _ _ => True) := by
+    intro s t tr1 tr2 u v h e1 e2
+    exact crt_copyChildPointer_ct (base := base) (child := base + BitVec.ofNat 32 cq)
+      (size := size) (src := 228) (dst := 132) (by omega) (by decide) s t tr1 tr2 u v
+      ⟨⟨h.1.1.workspace, h.1.1.ptr, h.1.1.qLink⟩, ⟨h.2.1.workspace, h.2.1.ptr, h.2.1.qLink⟩⟩ e1 e2
+  have secondWP (s : State) (h : P s) : WP isa (.block (copyChildPointer 228 132)) s P := by
+    have before := h.1.qBeforeOut
+    have outFit := h.1.outFits
+    refine WP.mono (crt_copyChildPointer_ok s h.1.workspace (by omega) (by omega) (by decide) (by decide)
+      (by decide) (by omega) h.1.ptr h.1.qLink h.1.qArray) ?_
+    rintro t ⟨mem, rest⟩
+    exact ⟨h.1.after_control (by decide) (by decide) mem rest, rest.sp.trans h.2⟩
+  have third := (crt_copyHeaderPointer_ct 232 136).mono (P' := fun s t => P s ∧ P t)
+    (fun _ _ h => h.1.1.ptr.trans h.2.1.ptr.symm) (fun _ _ _ => trivial)
+  have thirdWP (s : State) (h : P s) : WP isa (.block (copyHeaderPointer 232 136)) s P := by
+    refine WP.mono (crt_copyHeaderPointer_ok s h.1.workspace (by omega) (by omega) (by decide) (by decide) h.1.ptr
+      h.1.product) ?_
+    rintro t ⟨mem, rest⟩
+    exact ⟨h.1.after_control (by decide) (by decide) mem rest, rest.sp.trans h.2⟩
+  have last := hcCT.mono (P' := fun s t => P s ∧ P t)
+    (fun _ _ h => ⟨h.1.1.ptr.trans h.2.1.ptr.symm, h.1.2.trans h.2.2.symm⟩) (fun _ _ _ => trivial)
+  exact ((pair_posts first firstWP).seq ((pair_posts second secondWP).seq ((pair_posts third thirdWP).seq last)))
+    s₀ t₀ tr₁ tr₂ u₀ v₀ ⟨⟨h₀.1, rfl⟩, ⟨h₀.2.1, h₀.2.2.symm⟩⟩ e₁ e₂
+
 end VG.Proof.Bignum.Arm
 end
 
@@ -397,32 +443,55 @@ section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
 
-theorem crt_factorProduct_ct {base : BitVec 32} {size o a b cp cq w : Nat} {coefficient : Bool} (fit : 236 ≤ size) :
-    RelCT isa (fun s t => CrtProductInput base size o a b cp cq w s coefficient ∧
-      CrtProductInput base size o a b cp cq w t coefficient ∧ s.sp = t.sp) (factorProduct coefficient) (fun _ _ => True) := by
-  let P := fun s => CrtProductInput base size o a b cp cq w s coefficient
-  let R := fun s : State => P s ∧ val32 s.mem (State.addr base) o (2 * w + 2 * w + 2) = 0
+theorem crt_factorProductWith_ct {base : BitVec 32} {size o a b cp cq w m n : Nat} {coefficient : Bool}
+    {count : List Instr} (fit : 236 ≤ size) (hm : 0 < m) (hm' : m ≤ 2 * w) (hn : 0 < n) (hn' : n ≤ 2 * w)
+    (hcCT : RelCT isa (fun s t => s.gpr .r0 = t.gpr .r0 ∧ s.sp = t.sp) (.block count) (fun _ _ => True)) :
+    RelCT isa (fun s t => (CrtProductInput base size o a b cp cq w s coefficient ∧ CountFrom count base size m n s) ∧
+      (CrtProductInput base size o a b cp cq w t coefficient ∧ CountFrom count base size m n t) ∧ s.sp = t.sp)
+      (factorProductWith coefficient count) (fun _ _ => True) := by
+  let P := fun s => CrtProductInput base size o a b cp cq w s coefficient ∧ CountFrom count base size m n s
+  let R := fun s : State => P s ∧ val32 s.mem (State.addr base) o (m + n + 2) = 0
   have clear := (crt_clearWide_ct (base := base) (dst := base + BitVec.ofNat 32 o) (size := size) (slot := 232) (w := w)
     (by omega) (by omega) (by decide)).mono (P' := fun (s t : State) => P s ∧ P t ∧ s.sp = t.sp)
-    (fun _ _ h => ⟨⟨h.1.workspace, h.1.ptr, h.1.count, h.1.product⟩,
-      ⟨h.2.1.workspace, h.2.1.ptr, h.2.1.count, h.2.1.product⟩, h.2.2⟩) (fun _ _ _ => trivial)
-  have clearWP (s : State) (h : P s) : WP isa (clearWide 232) s R :=
-    WP.mono (crt_productClear_ready s h) (fun _ j => ⟨j.1, j.2.1⟩)
+    (fun _ _ h => ⟨⟨h.1.1.workspace, h.1.1.ptr, h.1.1.count, h.1.1.product⟩,
+      ⟨h.2.1.1.workspace, h.2.1.1.ptr, h.2.1.1.count, h.2.1.1.product⟩, h.2.2⟩) (fun _ _ _ => trivial)
+  have clearWP (s : State) (h : P s) : WP isa (clearWide 232) s R := by
+    have oHeader := h.1.oHeader
+    have nowrap := h.1.workspace.nowrap
+    refine WP.mono (crt_productClear_ready s h.1) fun u ⟨inputU, zeroU, outsideU, frameU, restU⟩ =>
+      ⟨⟨inputU, h.2.after restU.sp restU.rd restU.wr frameU
+        (outside_read32 outsideU (d := 48) (by omega) (by omega))⟩, val32_zero_prefix zeroU (by omega)⟩
   have first := (relCT_keep_sp clear (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨clearWP s h.1, clearWP t h.2.1⟩)
-  have args := (crt_productArgs_ct (base := base) (o := o) (a := a) (b := b) (cp := cp) (cq := cq) (w := w) (coefficient := coefficient) fit).mono
+  have args := (crt_productArgsWith_ct (base := base) (o := o) (a := a) (b := b) (cp := cp) (cq := cq) (w := w)
+    (coefficient := coefficient) fit hcCT).mono
     (P' := fun (s t : State) => s.sp = t.sp ∧ R s ∧ R t)
-    (fun _ _ h => ⟨h.2.1.1, h.2.2.1⟩) (fun _ _ _ => trivial)
-  have argsWP (s : State) (h : R s) : WP isa (productArgs coefficient) s (CrtProductStart base size o a b w) :=
-    WP.mono (crt_productArgs_ready s h.1 h.2) (fun _ j => j.1)
+    (fun _ _ h => ⟨h.2.1.1.1, h.2.2.1.1, h.1⟩) (fun _ _ _ => trivial)
+  have argsWP (s : State) (h : R s) : WP isa (productArgsWith coefficient count) s (CrtProductStart base size o a b m n) :=
+    WP.mono (crt_productArgsWith_ready s h.1.1 h.1.2 hm hm' hn hn' h.2) (fun _ j => j.1)
   have second := (relCT_keep_sp args (fun _ _ h => h.1)).wp
     (fun s t h => ⟨argsWP s h.2.1, argsWP t h.2.2⟩)
-  have mul : RelCT isa (fun s t => s.sp = t.sp ∧ CrtProductStart base size o a b w s ∧
-      CrtProductStart base size o a b w t) wideProduct (fun _ _ => True) := by
+  have mul : RelCT isa (fun s t => s.sp = t.sp ∧ CrtProductStart base size o a b m n s ∧
+      CrtProductStart base size o a b m n t) wideProduct (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     exact wideProduct_ct h.2.1.context h.2.2.context s t tr1 tr2 u v
       ⟨h.2.1.initial, h.2.2.initial, h.1⟩ e1 e2
   exact first.seq (second.seq mul)
+
+/-- `productCount` is constant time from equal `r0`. -/
+theorem crt_productCount_ct' :
+    RelCT isa (fun s t => s.gpr .r0 = t.gpr .r0 ∧ s.sp = t.sp) (.block productCount) (fun _ _ => True) :=
+  crt_productCount_ct.mono (fun _ _ h => h.1) (fun _ _ _ => trivial)
+
+theorem crt_factorProduct_ct {base : BitVec 32} {size o a b cp cq w : Nat} {coefficient : Bool} (fit : 236 ≤ size) :
+    RelCT isa (fun s t => CrtProductInput base size o a b cp cq w s coefficient ∧
+      CrtProductInput base size o a b cp cq w t coefficient ∧ s.sp = t.sp) (factorProduct coefficient) (fun _ _ => True) :=
+  fun s t tr1 tr2 u v h e1 e2 =>
+    have pos := h.1.positiveA
+    crt_factorProductWith_ct (m := 2 * w) (n := 2 * w) fit pos (Nat.le_refl _) pos (Nat.le_refl _)
+      crt_productCount_ct' s t tr1 tr2 u v
+      ⟨⟨h.1, countFrom_productCount h.1.headerFit h.1.count⟩, ⟨h.2.1, countFrom_productCount h.2.1.headerFit h.2.1.count⟩,
+        h.2.2⟩ e1 e2
 
 end VG.Proof.Bignum.Arm
 end
@@ -819,21 +888,36 @@ section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm.Crt
 
+theorem crt_validateProductWith_ct {base : BitVec 32} {size len product cmp pad a b cp cq w m n : Nat}
+    {count : List Instr} (fit : 244 ≤ size) (hm : 0 < m) (hm' : m ≤ 2 * w) (hn : 0 < n) (hn' : n ≤ 2 * w)
+    (hcCT : RelCT isa (fun s t => s.gpr .r0 = t.gpr .r0 ∧ s.sp = t.sp) (.block count) (fun _ _ => True)) :
+    RelCT isa (fun s t => (CrtValidateInput base size len product cmp pad a b cp cq w s ∧
+      CountFrom count base size m n s) ∧ (CrtValidateInput base size len product cmp pad a b cp cq w t ∧
+      CountFrom count base size m n t) ∧ s.sp = t.sp)
+      (validateProductWith count) (fun _ _ => True) := by
+  let P := fun s => CrtValidateInput base size len product cmp pad a b cp cq w s ∧ CountFrom count base size m n s
+  have multiply : RelCT isa (fun (s t : State) => P s ∧ P t ∧ s.sp = t.sp)
+      (factorProductWith false count) (fun _ _ => True) :=
+    (crt_factorProductWith_ct (size := size) (by omega) hm hm' hn hn' hcCT).mono
+      (fun _ _ h => ⟨⟨h.1.1.multiplication, h.1.2⟩, ⟨h.2.1.1.multiplication, h.2.1.2⟩, h.2.2⟩)
+      (fun _ _ _ => trivial)
+  have ready := (relCT_keep_sp multiply (fun _ _ h => h.2.2)).wp (fun s t h =>
+    ⟨(crt_validationProductWith_ready s h.1.1 h.1.2 hm hm' hn hn').mono (fun _ j => j.1),
+      (crt_validationProductWith_ready t h.2.1.1 h.2.1.2 hm hm' hn hn').mono (fun _ j => j.1)⟩)
+  exact ready.seq ((crt_checkProduct_ct fit).mono
+    (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ _ => trivial))
+
 theorem crt_validateProduct_ct {base : BitVec 32} {size len product cmp pad a b cp cq w : Nat}
     (fit : 244 ≤ size) :
     RelCT isa (fun s t => CrtValidateInput base size len product cmp pad a b cp cq w s ∧
       CrtValidateInput base size len product cmp pad a b cp cq w t ∧ s.sp = t.sp)
-      validateProduct (fun _ _ => True) := by
-  let P := CrtValidateInput base size len product cmp pad a b cp cq w
-  have multiply : RelCT isa (fun (s t : State) => P s ∧ P t ∧ s.sp = t.sp)
-      factorProduct (fun _ _ => True) :=
-    (crt_factorProduct_ct (size := size) (by omega)).mono (fun _ _ h => ⟨h.1.multiplication, h.2.1.multiplication, h.2.2⟩)
-      (fun _ _ _ => trivial)
-  have ready := (relCT_keep_sp multiply (fun _ _ h => h.2.2)).wp (fun s t h =>
-    ⟨(crt_validationProduct_ready s h.1).mono (fun _ j => j.1),
-      (crt_validationProduct_ready t h.2.1).mono (fun _ j => j.1)⟩)
-  exact ready.seq ((crt_checkProduct_ct fit).mono
-    (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ _ => trivial))
+      validateProduct (fun _ _ => True) :=
+  fun s t tr1 tr2 u v h e1 e2 =>
+    have pos := h.1.multiplication.positiveA
+    crt_validateProductWith_ct (m := 2 * w) (n := 2 * w) fit pos (Nat.le_refl _) pos (Nat.le_refl _)
+      crt_productCount_ct' s t tr1 tr2 u v
+      ⟨⟨h.1, countFrom_productCount h.1.multiplication.headerFit h.1.multiplication.count⟩,
+        ⟨h.2.1, countFrom_productCount h.2.1.multiplication.headerFit h.2.1.multiplication.count⟩, h.2.2⟩ e1 e2
 
 end VG.Proof.Bignum.Arm
 end
@@ -850,20 +934,26 @@ section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
 
-theorem crt_productStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
+theorem crt_productStageWith_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {count : List Instr} {m n : Nat}
+    (hc : ∀ {bs : Fin 7 → List Byte} x, CrtShared g bs x → CountFrom count g.base g.size m n x)
+    (hm : 0 < m) (hm' : m ≤ 2 * g.words) (hn : 0 < n) (hn' : n ≤ 2 * g.words)
+    (hcCT : RelCT isa (fun s t => s.gpr .r0 = t.gpr .r0 ∧ s.sp = t.sp) (.block count) (fun _ _ => True)) :
     RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
-      (.seq validateProduct (.block mergeAcceptance)) (fun _ _ => True) := by
+      (.seq (validateProductWith count) (.block mergeAcceptance)) (fun _ _ => True) := by
   have product : RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
-      validateProduct (fun _ _ => True) := by
+      (validateProductWith count) (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     have fit := (h.1.1.compare_input h.1.2).fit
-    exact crt_validateProduct_ct fit s t tr1 tr2 u v
-      ⟨h.1.1.validate_input h.1.2, h.2.1.1.validate_input h.2.1.2, h.2.2⟩ e1 e2
+    exact crt_validateProductWith_ct fit hm hm' hn hn' hcCT s t tr1 tr2 u v
+      ⟨⟨h.1.1.validate_input h.1.2, hc s h.1.1⟩, ⟨h.2.1.1.validate_input h.2.1.2, hc t h.2.1.1⟩, h.2.2⟩ e1 e2
   exact (relCT_keep_sp product (fun _ _ h => h.2.2)).seq mergeAcceptance_ct
 
-theorem crt_validateStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
+theorem crt_validateStageWith_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {count : List Instr} {m n : Nat}
+    (hc : ∀ {bs : Fin 7 → List Byte} x, CrtShared g bs x → CountFrom count g.base g.size m n x)
+    (hm : 0 < m) (hm' : m ≤ 2 * g.words) (hn : 0 < n) (hn' : n ≤ 2 * g.words)
+    (hcCT : RelCT isa (fun s t => s.gpr .r0 = t.gpr .r0 ∧ s.sp = t.sp) (.block count) (fun _ _ => True)) :
     RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
-      CrtFn.validate (fun _ _ => True) := by
+      (CrtFn.validateWith (validateProductWith count)) (fun _ _ => True) := by
   have acceptWP (s : State) {bs : Fin 7 → List Byte} (h : CrtSelected g bs g.base s) :
       WP isa CrtFn.acceptInput s (CrtSelected g bs g.base) :=
     (crt_acceptStage_ok s h.1 h.2).mono (fun _ j => ⟨j.1, j.2.1⟩)
@@ -875,7 +965,24 @@ theorem crt_validateStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
     (crt_loadQStage_ok s h.1 h.2).mono (fun _ j => ⟨j.1, j.2.1⟩)
   exact crt_seq_ct crt_acceptStage_ct (fun s h => acceptWP s h) (fun s h => acceptWP s h)
     (crt_seq_ct crt_loadPStage_ct (fun s h => pWP s h) (fun s h => pWP s h)
-      (crt_seq_ct crt_loadQStage_ct (fun s h => qWP s h) (fun s h => qWP s h) crt_productStage_ct))
+      (crt_seq_ct crt_loadQStage_ct (fun s h => qWP s h) (fun s h => qWP s h)
+        (crt_productStageWith_ct hc hm hm' hn hn' hcCT)))
+
+theorem crt_validateStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
+    RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
+      CrtFn.validate (fun _ _ => True) :=
+  fun s t tr1 tr2 u v h e1 e2 =>
+    have two := (crt_width_valid h.1.1.buffers.lengthValid).1
+    crt_validateStageWith_ct (m := 2 * g.words) (n := 2 * g.words)
+      (fun x hx => countFrom_productCount (base := g.base) (size := g.size)
+        (by have := hx.buffers.storageFits
+            simp only [totalBytes, narrowOffset, modulusOffset, compareOffset, productOffset, stride,
+              workspaceWords, productBytes, productWords] at this
+            omega)
+        (hx.main.toCrtLayoutState.nativeCount hx.buffers.context.main))
+      (by simp only [CrtGeometry.words] at two ⊢; omega) (Nat.le_refl _)
+      (by simp only [CrtGeometry.words] at two ⊢; omega) (Nat.le_refl _) crt_productCount_ct'
+      s t tr1 tr2 u v h e1 e2
 
 end VG.Proof.Bignum.Arm
 end

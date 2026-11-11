@@ -22,6 +22,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtHeaderCopiesCT
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
@@ -395,10 +396,17 @@ theorem pp_valid_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte}
   have prepareCT : RelCT isa (fun s t => (PpValidInput g bs1 s ∧ PpPre g s) ∧ (PpValidInput g bs2 t ∧ PpPre g t) ∧
       s.sp = t.sp) CrtFn.prepare (fun _ _ => True) :=
     crt_prepare_ct.mono (fun _ _ h => ⟨h.1.1.prepare_input, h.2.1.1.prepare_input, h.2.2⟩) (fun _ _ _ => trivial)
-  have validateWP (s : State) {bs : Fin 7 → List Byte} (h : V1 bs s) : WP isa CrtFn.validate s (PpChecked g bs) :=
-    (crt_validateStage_ok s h.1.1 h.1.2).mono fun _ j => ⟨j.1, h.2.after j.2.2.2.2.2.2, j.2.2.2.2.1⟩
-  have validateCT : RelCT isa (fun s t => V1 bs1 s ∧ V1 bs2 t ∧ s.sp = t.sp) CrtFn.validate (fun _ _ => True) :=
-    crt_validateStage_ct.mono (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ _ => trivial)
+  have validateWP (s : State) {bs : Fin 7 → List Byte} (h : V1 bs s) :
+      WP isa (CrtFn.validateWith (validateProductWith lengthCount)) s (PpChecked g bs) := by
+    obtain ⟨p0, pLe, q0, qLe, pFit, qFit⟩ := pp_lengthCounts h.1.1
+    exact (crt_validateStageWith_ok s h.1.1 h.1.2 (fun x hx => countFrom_lengthCount hx) p0 pLe q0 qLe pFit
+      qFit).mono fun _ j => ⟨j.1, h.2.after j.2.2.2.2.2.2, j.2.2.2.2.1⟩
+  have validateCT : RelCT isa (fun s t => V1 bs1 s ∧ V1 bs2 t ∧ s.sp = t.sp)
+      (CrtFn.validateWith (validateProductWith lengthCount)) (fun _ _ => True) := by
+    intro s t tr1 tr2 u v h e1 e2
+    obtain ⟨p0, pLe, q0, qLe, -, -⟩ := pp_lengthCounts h.1.1.1
+    exact crt_validateStageWith_ct (fun x hx => countFrom_lengthCount hx) p0 pLe q0 qLe lengthCount_ct
+      s t tr1 tr2 u v ⟨h.1.1, h.2.1.1, h.2.2⟩ e1 e2
   have modR2CT : RelCT isa (fun s t => PpChecked g bs1 s ∧ PpChecked g bs2 t ∧ s.sp = t.sp) modulusR2
       (fun _ _ => True) :=
     (pp_modulusR2_ct hn).mono (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ _ => trivial)
