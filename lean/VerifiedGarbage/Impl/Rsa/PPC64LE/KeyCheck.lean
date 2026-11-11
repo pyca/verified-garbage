@@ -152,6 +152,9 @@ def cnt33 : List Instr := [.li .r4 33]
 /-- `[a] := [x] [y] 2^(-32 w) mod (p | 1)`, the modulus in `aVD`, `p_len` in `r19`. -/
 def montP (a x y : Nat) : Prog isa := MontKey.montMul a x y aVD aT .r19 MontKey.cntW
 
+/-- `montP`, `⌈q_len / 4⌉` steps: for `[x]` of `q_len` bytes. -/
+def montPq (a x y : Nat) : Prog isa := MontKey.montMul a x y aVD aT .r19 (MontKey.cntLen .r21)
+
 /-- `r0 := 0` exactly for a balanced key of full words: `p_len` (`r19`) a
 multiple of 8 and at least 32, equal to `q_len` (`r21`) and to `2 w` (`r29`),
 so that `n_len` is about twice it. From registers that `KeyDiv.divW` does
@@ -176,12 +179,13 @@ def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP), MontKey.
 
 /-- `[aA]` and `[aY]` equal exactly when `q qInv ≡ 1 (mod p)`: for a balanced key
 (`shape`), `q qInv` (`MontKey.mulLo`, exact in `w` digits) by words modulo `p`
-and `1`; else Montgomery's `q qInv` and `1 · 1` modulo `p | 1`. -/
+and `1`; else Montgomery's `q qInv` and `1 · 1` modulo `p | 1`, over `⌈q_len / 4⌉`
+steps. -/
 def qInvMod : Prog isa :=
   .ite (.zero .d .r0)
     (seqs [MontKey.mulLo aX aQ aQI .r21, copy aY aP, .block (KeyDiv.fixTop aY), KeyDiv.divW aX aA aY aVT aW,
       copy aY aOne])
-    (seqs [montP aA aQ aQI, montP aY aOne aOne])
+    (seqs [montPq aA aQ aQI, montPq aY aOne aOne])
 
 /-- Then: `p q ≡ n (mod 2^(32 w))`, `n ≡ 0 (mod p)`, `p - 1` and `q - 1`, and
 the checks of `dP`, `dQ` and `qInv`. -/

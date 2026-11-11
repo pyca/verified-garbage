@@ -10253,7 +10253,8 @@ vg_rsa_check_key:
 	addi %r8, %r8, -1
 	cmpldi %cr0, %r8, 0
 	bne %cr0, 2191b
-	addi %r4, %r29, 0
+	addi %r4, %r21, 3
+	rldicl %r4, %r4, 62, 2
 2192:
 	lwz %r11, 0(%r10)
 	li %r5, 18
@@ -10473,7 +10474,8 @@ vg_rsa_check_key:
 	addi %r8, %r8, -1
 	cmpldi %cr0, %r8, 0
 	bne %cr0, 2198b
-	addi %r4, %r29, 0
+	addi %r4, %r21, 3
+	rldicl %r4, %r4, 62, 2
 2199:
 	lwz %r11, 0(%r10)
 	li %r5, 16

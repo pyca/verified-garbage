@@ -115,4 +115,7 @@ def montMul (a x y m t : Nat) (len : Reg) (cnt : List Instr) : Prog isa :=
 /-- `w` steps, for `[x] < 2^(32 w)`. -/
 def cntW : List Instr := [.addi .r4 .r29 0]
 
+/-- `⌈len / 4⌉` steps, for `[x]` of `len` bytes. -/
+def cntLen (len : Reg) : List Instr := [.addi .r4 len 3, .lsr .d .r4 .r4 2]
+
 end VG.Impl.Rsa.PPC64LE.MontKey

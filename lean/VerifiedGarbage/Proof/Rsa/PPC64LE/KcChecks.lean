@@ -31,7 +31,7 @@ open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Ke
 open VG.Impl.Rsa.PPC64LE.Keys (seqs setOne bitOf sOdd sB sC copy orOne)
 open VG.Impl.Rsa.PPC64LE.KeyCheck
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot Arrs upd upd_ne upd_self arr_disj)
-open VG.Proof.Rsa.PPC64LE.MontKey (mulLo_ok montMul_ok mkRegs val32_low)
+open VG.Proof.Rsa.PPC64LE.MontKey (mulLo_ok montMul_ok montMulC_ok cntLen_ok mkRegs val32_low)
 
 /-! ## The products
 
@@ -111,6 +111,57 @@ theorem Stg.montP_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
   have hty : aT ≠ y := fun e => (hfree y hy).2 e.symm
   refine WP.mono (montMul_ok h.ws (by decide) ha nx ny nm (by decide) hax hay ham haT
     htx hty (by decide) hyVD hl hL1 hLw (by decide) (by decide) (h.arrs.get hVD) hmt hodd (h.arrs.get hy) hYt)
+    fun t ⟨ht, k, nmv, nY, top, cg, r⟩ => ⟨num t.mem g.B g.w a, fun hlt => by
+      have := cg hlt; rw [h.arrs.get hx] at this; exact this, ?_⟩
+  have hnl : ∀ j ∈ [a, aT, aVD, y], j < nArr := by
+    intro j hj; simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl | rfl | rfl
+    · exact ha
+    · decide
+    · exact nm
+    · exact ny
+  refine h.next ht k hnl (by simp) r mkRegs_body ?_ ?_ top (h.mask_keep k (by simp))
+  · intro j hj
+    rcases List.mem_cons.mp hj with rfl | hj'
+    · rw [upd_self]
+    · obtain ⟨hja, hjt⟩ := hfree j hj'
+      rw [upd_ne _ _ hja]
+      by_cases e1 : j = aVD
+      · subst e1; exact nmv
+      · by_cases e2 : j = y
+        · subst e2; exact nY
+        · rw [k.num (by
+            intro z hz; simp only [List.mem_cons, List.not_mem_nil, or_false] at hz
+            rcases hz with rfl | rfl | rfl | rfl <;> omega) (by simp) (h.ws.fit64 (h.live_lt j hj')),
+            h.arrs.get hj']
+  · intro j hj
+    rcases List.mem_cons.mp hj with rfl | hj'
+    · exact ha
+    · exact h.live_lt j hj'
+
+/-- `montPq a x y`: `[a] := [x] [y] 2^(-32 c) mod (p | 1)`, `c = ⌈Q / 4⌉`
+for `Q` in `r21`, `[x] < 2^(32 c)`: for `[y] < (p | 1)`, below it and
+congruent. -/
+theorem Stg.montPq_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g s0 A live c s) {a x y : Nat} (ha : a < nArr) (hx : x ∈ live) (hy : y ∈ live) (hVD : aVD ∈ live)
+    (hfree : ∀ j ∈ live, j ≠ a ∧ j ≠ aT) (haT : a ≠ aT) (hyVD : aVD ≠ y) {L : Nat} (hl : s.gpr .r19 = BitVec.ofNat 64 L)
+    (hL1 : 1 ≤ L) (hLw : (L + 3) / 4 ≤ g.w) (hodd : A aVD % 2 = 1) (hmt : A aVD < 2 ^ (32 * ((L + 3) / 4)))
+    (hYt : A y < 2 ^ (32 * ((L + 3) / 4))) {Q : Nat} (hq : s.gpr .r21 = BitVec.ofNat 64 Q) (hQ1 : 1 ≤ Q)
+    (hQw : (Q + 3) / 4 ≤ g.w) (hQ32 : Q < 2 ^ 32) (hX : A x < 2 ^ (32 * ((Q + 3) / 4))) :
+    WP isa (montPq a x y) s fun t => ∃ R, (A y < A aVD → R < A aVD ∧
+      R * 2 ^ (32 * ((Q + 3) / 4)) % A aVD = A x * A y % A aVD) ∧ Stg g s0 (upd A a R) (a :: live) c t := by
+  have nx := h.live_lt x hx
+  have ny := h.live_lt y hy
+  have nm := h.live_lt aVD hVD
+  have hax : a ≠ x := fun e => (hfree x hx).1 e.symm
+  have hay : a ≠ y := fun e => (hfree y hy).1 e.symm
+  have ham : a ≠ aVD := fun e => (hfree aVD hVD).1 e.symm
+  have htx : aT ≠ x := fun e => (hfree x hx).2 e.symm
+  have hty : aT ≠ y := fun e => (hfree y hy).2 e.symm
+  refine WP.mono (montMulC_ok h.ws (by decide) ha nx ny nm (by decide) hax hay ham haT
+    htx hty (by decide) hyVD hl hL1 hLw (by decide) (by decide) (h.arrs.get hVD) hmt hodd (h.arrs.get hy) hYt
+    (c := (Q + 3) / 4) (by omega) hQw (by rw [h.arrs.get hx]; exact hX)
+    fun u ku _ => cntLen_ok (by decide) ((ku.gpr _ (by decide)).trans hq) hQ32)
     fun t ⟨ht, k, nmv, nY, top, cg, r⟩ => ⟨num t.mem g.B g.w a, fun hlt => by
       have := cg hlt; rw [h.arrs.get hx] at this; exact this, ?_⟩
   have hnl : ∀ j ∈ [a, aT, aVD, y], j < nArr := by
@@ -373,7 +424,7 @@ theorem Stg.qInv_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     (h : Stg g s0 A live c s) (hQ : aQ ∈ live) (hQI : aQI ∈ live) (hP : aP ∈ live) (hO : aOne ∈ live)
     (hV : aVD ∈ live) (hfree : ∀ j ∈ live, j ∉ [aA, aY, aX, aVT, aW, aT])
     (o1 : A aOne = 1) (vd : A aVD = 2 * (A aP / 2) + 1)
-    {pa qa : Nat} (pa1 : 1 ≤ pa) (paw : pa ≤ 4 * g.w) (qa1 : 1 ≤ qa) (qa2 : qa < 2 ^ 32)
+    {pa qa : Nat} (pa1 : 1 ≤ pa) (paw : pa ≤ 4 * g.w) (qa1 : 1 ≤ qa) (qaw : qa ≤ 4 * g.w) (qa2 : qa < 2 ^ 32)
     (p19 : s0.gpr .r19 = BitVec.ofNat 64 pa) (q21 : s0.gpr .r21 = BitVec.ofNat 64 qa)
     (plt : A aP < 2 ^ (8 * pa)) (qlt : A aQ < 2 ^ (8 * qa)) (ilt : A aQI < 2 ^ (8 * pa)) :
     WP isa (seqs [.block shape, qInvMod]) s fun t => ∃ A₁ A₂,
@@ -442,13 +493,14 @@ theorem Stg.qInv_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   · -- Montgomery's `q qInv` and `1 · 1` modulo `p | 1`.
     have hm := or1_lt plt pa1
     rw [wp_seqs_cons (by simp)]
-    refine WP.mono (h1.montP_ok (a := aA) (x := aQ) (y := aQI) (by decide) hQ hQI hV
+    refine WP.mono (h1.montPq_ok (a := aA) (x := aQ) (y := aQI) (by decide) hQ hQI hV
       (fun j hj => ⟨fun e => nf aA (by simp) (e ▸ hj), fun e => nf aT (by simp) (e ▸ hj)⟩) (by decide)
       (by decide) (r19 h1) pa1 (by omega) (by rw [vd]; omega)
       (by rw [vd]; exact Nat.lt_of_lt_of_le hm (pow8_le pa))
-      (by exact Nat.lt_of_lt_of_le ilt (pow8_le pa))) fun t14 ⟨A₁, hA₁, h14⟩ => ?_
+      (by exact Nat.lt_of_lt_of_le ilt (pow8_le pa)) (r21 h1) qa1 (by omega) qa2
+      (Nat.lt_of_lt_of_le qlt (pow8_le qa))) fun t14 ⟨A₁, hA₁, h14⟩ => ?_
     rw [show ∀ x : Prog isa, seqs [x] = x from fun _ => rfl]
-    refine WP.mono (h14.montP_ok (a := aY) (x := aOne) (y := aOne) (by decide) (by simp [hO]) (by simp [hO])
+    refine WP.mono (h14.montPq_ok (a := aY) (x := aOne) (y := aOne) (by decide) (by simp [hO]) (by simp [hO])
       (by simp [hV]) (fun j hj => by
         rcases List.mem_cons.mp hj with rfl | hj
         · exact ⟨by decide, by decide⟩
@@ -456,6 +508,7 @@ theorem Stg.qInv_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
       (by decide) (r19 h14) pa1 (by omega)
       (by rw [upd_ne _ _ (by decide), vd]; omega)
       (by rw [upd_ne _ _ (by decide), vd]; exact Nat.lt_of_lt_of_le hm (pow8_le pa))
+      (by rw [upd_ne _ _ (by decide), o1]; exact Nat.one_lt_two_pow (by omega)) (r21 h14) qa1 (by omega) qa2
       (by rw [upd_ne _ _ (by decide), o1]; exact Nat.one_lt_two_pow (by omega))) fun t ⟨A₂, hA₂, h15⟩ =>
         ⟨A₁, A₂, fun hlt podd p2 _ => ?_, ?_⟩
     · rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide), vd, o1] at hA₂
@@ -473,7 +526,7 @@ theorem Stg.qInv_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
 theorem crtChecks_ok {g : Geo} {s0 s : State} {v : Vals} {L M : Nat}
     (h : Stg g s0 (aStart v L M) liveS (decide (v.p % 2 = 1)) s)
     {pa qa : Nat} (pa1 : 1 ≤ pa) (paw : pa ≤ 4 * g.w) (plt : v.p < 2 ^ (8 * pa)) (qlt : v.qI < 2 ^ (8 * pa))
-    (p19 : s0.gpr .r19 = BitVec.ofNat 64 pa) (qa1 : 1 ≤ qa) (qa2 : qa < 2 ^ 32) (qqlt : v.q < 2 ^ (8 * qa))
+    (p19 : s0.gpr .r19 = BitVec.ofNat 64 pa) (qa1 : 1 ≤ qa) (qaw : qa ≤ 4 * g.w) (qa2 : qa < 2 ^ 32) (qqlt : v.q < 2 ^ (8 * qa))
     (q21 : s0.gpr .r21 = BitVec.ofNat 64 qa) :
     WP isa (seqs crtChecks) s fun t => ∃ R₁ R₂ A₁ A₂ : Nat,
       (v.dP < 2 * (v.p / 2) → 2 * (2 * (v.p / 2)) ≤ 2 ^ (32 * g.w) →
@@ -528,7 +581,7 @@ theorem crtChecks_ok {g : Geo} {s0 s : State} {v : Vals} {L M : Nat}
   rw [show (Code.block shape :: qInvMod :: eqA aA aY : List (Prog isa)) = [Code.block shape, qInvMod] ++ eqA aA aY
     from rfl, wp_seqs_append (by simp) (by simp [eqA])]
   refine WP.mono (h13'.qInv_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) rfl rfl
-    pa1 paw qa1 qa2 p19 q21 plt qqlt qlt) fun t15 ⟨A₁, A₂, hA, h15⟩ => ?_
+    pa1 paw qa1 qaw qa2 p19 q21 plt qqlt qlt) fun t15 ⟨A₁, A₂, hA, h15⟩ => ?_
   refine WP.mono (h15.eqA_ok (a := aA) (b := aY) (by decide) (by decide)) fun t h16 => ?_
   refine ⟨R₁, R₂, A₁, A₂, hR₁, hR₂, hA, (h16.sub (live' := liveFin) (by decide)).congr' fun j hj => ?_⟩
   · simp only [liveFin, List.mem_cons, List.not_mem_nil, or_false] at hj
