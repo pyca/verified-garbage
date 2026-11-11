@@ -167,7 +167,7 @@ theorem digest224_noResidue :
 
 end Scrub
 
-/-- `variant` before the residue analysis of HMAC's `init` and `finalize`. -/
+/-- `variant` before the residue analysis of HMAC's `finalize`. -/
 def unscrubbed : Proof.Pbkdf2.Md.X86_64.MdHash :=
   { Proof.Pbkdf2.Md.X86_64.Sha256.variant compress with stream := [update, finalize, digest] }
 
@@ -185,24 +185,10 @@ theorem hmacFinOk : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
       (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) hmacFinKs (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I))) = true :=
   VG.X86_64.RScrub.Analysed.ok_of hmacFinKs (by taint_decide)
 
-/-- HMAC's `init` over `unscrubbed`, followed by `Impl.Scrub.X86_64.scrubTail`,
-which wipes the registers and the granules of its stack that the residue
-analysis of its code finds may hold secrets (`MdHash.hmacInitReg`). -/
-def hmacInitKs : List Nat := keep_for% unscrubbed.I.initAnyKeyApi.sig (24 + Proof.Pbkdf2.Md.X86_64.anyFrame unscrubbed.I)
-  (Proof.Pbkdf2.Md.X86_64.initCode unscrubbed.H unscrubbed.I) []
-
-theorem hmacInitOk : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
-    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed.I.initAnyKeyApi.sig (24 + Proof.Pbkdf2.Md.X86_64.anyFrame unscrubbed.I) [])
-      (Proof.Pbkdf2.Md.X86_64.initCode unscrubbed.H unscrubbed.I) h).any
-      (VG.X86_64.RScrub.resOkB · (24 + Proof.Pbkdf2.Md.X86_64.anyFrame unscrubbed.I) hmacInitKs (Impl.Scrub.X86_64.chunks (24 + Proof.Pbkdf2.Md.X86_64.anyFrame unscrubbed.I))) = true :=
-  VG.X86_64.RScrub.Analysed.ok_of hmacInitKs (by taint_decide)
-
 def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { unscrubbed with
-    hmacFinRes := some ⟨hmacFinKs, hmacFinOk⟩
-    hmacInitRes := some ⟨hmacInitKs, hmacInitOk⟩ }
+  { unscrubbed with hmacFinRes := some ⟨hmacFinKs, hmacFinOk⟩ }
 
-/-- `variant224` before the residue analysis of HMAC's `init` and `finalize`. -/
+/-- `variant224` before the residue analysis of HMAC's `finalize`. -/
 def unscrubbed224 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   { Proof.Pbkdf2.Md.X86_64.Sha224.variant compress with stream := [finalize224, digest224] }
 
@@ -220,23 +206,9 @@ theorem hmacFin224Ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
       (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed224.I) hmacFin224Ks (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed224.I))) = true :=
   VG.X86_64.RScrub.Analysed.ok_of hmacFin224Ks (by taint_decide)
 
-/-- HMAC's `init` over `unscrubbed224`, followed by `Impl.Scrub.X86_64.scrubTail`,
-which wipes the registers and the granules of its stack that the residue
-analysis of its code finds may hold secrets (`MdHash.hmacInitReg`). -/
-def hmacInit224Ks : List Nat := keep_for% unscrubbed224.I.initAnyKeyApi.sig (24 + Proof.Pbkdf2.Md.X86_64.anyFrame unscrubbed224.I)
-  (Proof.Pbkdf2.Md.X86_64.initCode unscrubbed224.H unscrubbed224.I) []
-
-theorem hmacInit224Ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
-    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed224.I.initAnyKeyApi.sig (24 + Proof.Pbkdf2.Md.X86_64.anyFrame unscrubbed224.I) [])
-      (Proof.Pbkdf2.Md.X86_64.initCode unscrubbed224.H unscrubbed224.I) h).any
-      (VG.X86_64.RScrub.resOkB · (24 + Proof.Pbkdf2.Md.X86_64.anyFrame unscrubbed224.I) hmacInit224Ks (Impl.Scrub.X86_64.chunks (24 + Proof.Pbkdf2.Md.X86_64.anyFrame unscrubbed224.I))) = true :=
-  VG.X86_64.RScrub.Analysed.ok_of hmacInit224Ks (by taint_decide)
-
 /-- SHA-224 with this compression function, its `finalize` and `digest`
 without secret residue. -/
 def variant224 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { unscrubbed224 with
-    hmacFinRes := some ⟨hmacFin224Ks, hmacFin224Ok⟩
-    hmacInitRes := some ⟨hmacInit224Ks, hmacInit224Ok⟩ }
+  { unscrubbed224 with hmacFinRes := some ⟨hmacFin224Ks, hmacFin224Ok⟩ }
 
 end VG.Proof.Variants.MdHash.X86_64.Sha256Avx2

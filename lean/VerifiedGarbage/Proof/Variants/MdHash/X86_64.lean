@@ -8,10 +8,13 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha1ShaNi
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha224
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256Avx2
+public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256Avx2Init
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256ShaNi
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha512
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512
+public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512Init
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512ShaNi
+public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512ShaNiInit
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512Avx512
 
 /-! # The implementations of `MdHash` on x86-64 -/
@@ -30,44 +33,54 @@ def sha1ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sh
 
 def sha224 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha256.variant224
 
-def sha224Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha256Avx2.variant224
+def sha224Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  { Sha256Avx2.variant224 with hmacInitRes := some Sha256Avx2Init.init224 }
 
 def sha224ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha256ShaNi.variant224
 
 def sha256 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha256.variant
 
 open VG.Impl.Sha256.X86_64.Stream (Callee) in
-def sha256Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha256Avx2.variant
+def sha256Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  { Sha256Avx2.variant with hmacInitRes := some Sha256Avx2Init.init }
 
 def sha256ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha256ShaNi.variant
 
-def sha384 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant384
+def sha384 : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  { Sha512.variant384 with hmacInitRes := some Sha512Init.init384 }
 
 def sha384Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha384 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream384 .avx2)
 
-def sha384ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant384
+def sha384ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  { Sha512ShaNi.variant384 with hmacInitRes := some Sha512ShaNiInit.init384 }
 
-def sha512 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant512
+def sha512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  { Sha512.variant512 with hmacInitRes := some Sha512Init.init512 }
 
 def sha512Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream .avx2)
 
-def sha512ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512
+def sha512ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  { Sha512ShaNi.variant512 with hmacInitRes := some Sha512ShaNiInit.init512 }
 
-def sha512_224 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant512_224
+def sha512_224 : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  { Sha512.variant512_224 with hmacInitRes := some Sha512Init.init512_224 }
 
 def sha512_224Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream512_224 .avx2)
 
-def sha512_224ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512_224
+def sha512_224ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  { Sha512ShaNi.variant512_224 with hmacInitRes := some Sha512ShaNiInit.init512_224 }
 
-def sha512_256 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant512_256
+def sha512_256 : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  { Sha512.variant512_256 with hmacInitRes := some Sha512Init.init512_256 }
 
 def sha512_256Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream512_256 .avx2)
 
-def sha512_256ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512_256
+def sha512_256ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  { Sha512ShaNi.variant512_256 with hmacInitRes := some Sha512ShaNiInit.init512_256 }
 
 /-- The implementations of MD5, best first. -/
 def md5Variants := [md5]

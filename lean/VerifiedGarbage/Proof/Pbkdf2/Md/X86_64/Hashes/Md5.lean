@@ -225,16 +225,16 @@ analysis of its code finds may hold secrets (`MdHash.hmacInitReg`). -/
 def hmacInitKs : List Nat := keep_for% unscrubbed.I.initAnyKeyApi.sig (24 + Proof.Pbkdf2.Md.X86_64.anyFrame unscrubbed.I)
   (Proof.Pbkdf2.Md.X86_64.initCode unscrubbed.H unscrubbed.I) []
 
-theorem hmacInitOk : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
-    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed.I.initAnyKeyApi.sig (24 + Proof.Pbkdf2.Md.X86_64.anyFrame unscrubbed.I) [])
-      (Proof.Pbkdf2.Md.X86_64.initCode unscrubbed.H unscrubbed.I) h).any
-      (VG.X86_64.RScrub.resOkB · (24 + Proof.Pbkdf2.Md.X86_64.anyFrame unscrubbed.I) hmacInitKs (Impl.Scrub.X86_64.chunks (24 + Proof.Pbkdf2.Md.X86_64.anyFrame unscrubbed.I))) = true :=
-  VG.X86_64.RScrub.Analysed.ok_of hmacInitKs (by taint_decide)
+theorem hmacInitLong : Proof.Pbkdf2.Md.X86_64.InitLongOk unscrubbed.H unscrubbed.I hmacInitKs :=
+  ⟨_, by taint_decide_weak (Proof.Pbkdf2.Md.X86_64.initHintWeak unscrubbed.I)⟩
+
+theorem hmacInitShort : Proof.Pbkdf2.Md.X86_64.InitShortOk unscrubbed.H unscrubbed.I hmacInitKs :=
+  ⟨by decide, _, by taint_decide⟩
 
 /-- MD5, as a variant of `MdHash`. -/
 def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=
   { unscrubbed with
     hmacFinRes := some ⟨hmacFinKs, hmacFinOk⟩
-    hmacInitRes := some ⟨hmacInitKs, hmacInitOk⟩ }
+    hmacInitRes := some ⟨hmacInitKs, Proof.Pbkdf2.Md.X86_64.initRes_ok hmacInitLong hmacInitShort⟩ }
 
 end VG.Proof.Pbkdf2.Md.X86_64.Md5
