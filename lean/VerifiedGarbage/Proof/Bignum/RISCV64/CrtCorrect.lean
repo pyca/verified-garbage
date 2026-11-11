@@ -127,7 +127,7 @@ theorem r2F_of {s : State} (h : fnContractP.pre s) : R2F s where
         omega_arith) (by omega_arith)⟩
   sep x hx := Pub.sep_of_disjoint h.2.2.1 x hx
   val hb := by
-    have hw := h.2.2.2.2.2
+    have hw := h.2.2.2.2.2.1
     simp only [Spec.Rsa.primeR2, VG.Proof.Bignum.bytesAt_length, primeWords_eq] at hw
     have hP := pre_factsG h.1
     obtain ⟨mP1, _, mQ1, _, mPb, mQb, _, _⟩ := masked_facts hP
@@ -141,6 +141,7 @@ theorem r2F_of {s : State} (h : fnContractP.pre s) : R2F s where
     exact cache_words hw
       (Nat.lt_trans (Nat.mod_lt _ (Nat.lt_trans Nat.zero_lt_one mP1)) (Nat.lt_of_lt_of_le mPb (pow256_le hpw)))
       (Nat.lt_trans (Nat.mod_lt _ (Nat.lt_trans Nat.zero_lt_one mQ1)) (Nat.lt_of_lt_of_le mQb (pow256_le hqw)))
+  pq := h.2.2.2.2.2.2
 
 theorem fn_correct (s : State) (h : fnContract.pre s) :
     ∃ tr t, Exec isa crt s tr t ∧ abiPreserved s t ∧ fnContract.post s t :=

@@ -40,7 +40,7 @@ theorem c0_r2 {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ s : 
 
 /-- The front, `loadX` and `checks`, then `c`. -/
 abbrev NA (pc : Bool) (c : Prog isa) : Prog isa :=
-  .seq (.block (Crt.save ++ argsG pc ++ setupX)) (.seq loadX (.seq checks c))
+  .seq (.block (Crt.save ++ argsG pc ++ setupX)) (.seq loadX (.seq (checksG pc) c))
 
 theorem na_ok {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ : State} {c : Prog isa}
     {Q : State → Prop} (h : C0 pc d s₀)
@@ -49,10 +49,11 @@ theorem na_ok {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ : St
       t.gpr .ra = Mont.off (cS s₀) (slot (cwX s₀) 0) → t.gpr .s5 = BitVec.ofNat 64 (8 * (cwX s₀ + 2)) →
       t.gpr .t0 = BitVec.ofNat 64 (cwX s₀) → WP isa c t Q) :
     WP isa (NA pc c) s₀ Q :=
-  WP.seq (WP.mono (front_okG (pc := pc) s₀ (preG_core h.1)) fun s ⟨F, hd⟩ => stA_ok h.pf F fun t X a7 ra s5 t0 =>
+  WP.seq (WP.mono (front_okG (pc := pc) s₀ (preG_core h.1)) fun s ⟨F, hd⟩ =>
+    stA_ok (pc := pc) h.pf F (fun hp => (c0_r2 h hd hp).1.pq) fun t X a7 ra s5 t0 =>
     hc s t h.pf F hd X a7 ra s5 t0)
 
-theorem pins98 : Pins (At (C0 pc) (crtF pc) 98) (rsX ++ ([.s7, .s8] : List Reg)) := by
+theorem pins98 : Pins (At (C0 pc) (crtF pc) (ix pc 98 75)) (rsX ++ ([.s7, .s8] : List Reg)) := by
   refine pins_at_list (fun s₀ => valsX s₀ ++ [Mont.off (s₀.gpr .a4) 0, BitVec.ofNat 64 (ck s₀)])
     (fun _ s₀ h => WP.of_flat (c := NA pc (LD oIn oNLen)) (by cases pc <;> rfl)
       (na_ok h fun s t hP F _ X a7 ra s5 t0 => ?_))
@@ -92,7 +93,7 @@ theorem valsPG_map {s₀ s t : State} {o l : Nat} {c : Addr} (X : XS s₀ s t) (
   · exact valsP_map X R (h2 rfl)
   · simp only [rsPG, valsPG, ↓reduceIte, List.map_cons, List.map_nil, R.a7, R.ra, R.s5, R.t0, X.s6, X.s11, h6 rfl]
 
-theorem pins106 : Pins (At (C0 pc) (crtF pc) 106) (rsPG pc) := by
+theorem pins106 : Pins (At (C0 pc) (crtF pc) (ix pc 106 83)) (rsPG pc) := by
   refine pins_at_list (fun s₀ => valsPG pc s₀ (oPa s₀) (cpL s₀) (s₀.gpr .s1))
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NA pc (.seq loadIn (.seq (.block (setupP oBP oPLen ++ r2Ptr pc false))
       (.block [])))) (by cases pc <;> rfl) (na_ok h fun s t hP F hd X a7 ra s5 t0 => ?_))) fun _ _ _ h h' => ?_
@@ -136,7 +137,7 @@ theorem np0_ok {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ : S
     stCG_ok (q := false) hP F X' (by decide) (by decide) F.hBP F.hPL hP.p1
       (by have := hP.k1024; have := hP.pk; omega_arith) fun u Xu R c4 _ m => hc s u hP F hd Xu (by rw [m]; exact v6) R c4
 
-theorem pins134 : Pins (At (C0 pc) (crtF pc) (ix pc 134 129)) rsC := by
+theorem pins134 : Pins (At (C0 pc) (crtF pc) (ix pc 134 106)) rsC := by
   refine pins_at_list (fun s₀ => valsC s₀ (oPa s₀) (cpL s₀))
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NP0 pc (Win.powerPG pc 4 (Win.reduceInP (.block []))))
       (by cases pc <;> rfl) (np0_ok h fun s t hP F hd X v6 R c4 => ?_))) fun _ _ _ h h' => ?_
@@ -149,7 +150,7 @@ theorem pins134 : Pins (At (C0 pc) (crtF pc) (ix pc 134 129)) rsC := by
   · obtain ⟨eS, ek, ep, -⟩ := data_vals h h'
     simp only [valsC, oPa, cwX, eS, ek, ep]
 
-theorem pins136 : Pins (At (C0 pc) (crtF pc) (ix pc 136 131)) rsC := by
+theorem pins136 : Pins (At (C0 pc) (crtF pc) (ix pc 136 108)) rsC := by
   refine pins_at_list (fun s₀ => valsE s₀ (oPa s₀) (cpL s₀) (stackArg s₀ 2))
     (fun _ s₀ h => WP.of_flat (c := NP0 pc (Win.powerPG pc 4 (.seq Crt.reduceIn
       (.block [.load .d .s9 .s6 oDP, .load .d .s10 .s6 oPLen])))) (by cases pc <;> rfl)
@@ -184,7 +185,7 @@ theorem nq0_ok {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ : S
     (by have := hP.k1024; have := hP.qk; omega_arith)
     fun u Xu R' c6 h2 m => hc s u hP F hd Xu (by rw [m]; exact v6') R' c6 h2
 
-theorem pins177 : Pins (At (C0 pc) (crtF pc) (ix pc 177 172)) (rsPG pc) := by
+theorem pins177 : Pins (At (C0 pc) (crtF pc) (ix pc 177 149)) (rsPG pc) := by
   refine pins_at_list (fun s₀ => valsPG pc s₀ (oQa s₀) (cqL s₀) (s₀.gpr .s1 + BitVec.ofNat 64 (8 * cwP s₀)))
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NQ0 pc (.block [])) (by cases pc <;> decide +kernel)
       (nq0_ok h fun s t hP F hd X _ R c6 h2 => wp_nil (valsPG_map X R (fun hp => by
@@ -199,7 +200,7 @@ theorem oQa_al (s₀ : State) : oQa s₀ % 8 = 0 := by
   have := slot_al (cwX s₀) 8; have := slot_al (cwP s₀) 24; show (slot (cwX s₀) 8 + slot (cwP s₀) 24) % 8 = 0
   omega_arith
 
-theorem pins205 : Pins (At (C0 pc) (crtF pc) (ix pc 205 195)) rsC := by
+theorem pins205 : Pins (At (C0 pc) (crtF pc) (ix pc 205 172)) rsC := by
   refine pins_at_list (fun s₀ => valsC s₀ (oQa s₀) (cqL s₀))
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NQ0 pc (Win.powerPG pc 5 (Win.reduceInP (.block []))))
       (by cases pc <;> decide +kernel) (nq0_ok h fun s t hP F hd X v6 R c6 _ => ?_))) fun _ _ _ h h' => ?_
@@ -212,7 +213,7 @@ theorem pins205 : Pins (At (C0 pc) (crtF pc) (ix pc 205 195)) rsC := by
   · obtain ⟨eS, ek, ep, eq, -⟩ := data_vals h h'
     simp only [valsC, oQa, cwP, cwX, eS, ek, ep, eq]
 
-theorem pins207 : Pins (At (C0 pc) (crtF pc) (ix pc 207 197)) rsC := by
+theorem pins207 : Pins (At (C0 pc) (crtF pc) (ix pc 207 174)) rsC := by
   refine pins_at_list (fun s₀ => valsE s₀ (oQa s₀) (cqL s₀) (stackArg s₀ 4))
     (fun _ s₀ h => WP.of_flat (c := NQ0 pc (Win.powerPG pc 5 (.seq Crt.reduceIn
       (.block [.load .d .s9 .s6 oDQ, .load .d .s10 .s6 oQLen])))) (by cases pc <;> decide +kernel)
@@ -241,7 +242,7 @@ theorem nm_ok {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ : St
 abbrev NR (pc : Bool) (c : Prog isa) : Prog isa :=
   NM pc (.seq (widen oBQ oQLen 6) (.seq (.block (setupP oBP oPLen)) c))
 
-theorem pins254 : Pins (At (C0 pc) (crtF pc) (ix pc 254 244)) rsP := by
+theorem pins254 : Pins (At (C0 pc) (crtF pc) (ix pc 254 221)) rsP := by
   refine pins_at_list (fun s₀ => valsP s₀ (oPa s₀) (cpL s₀))
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NR pc (.block [])) (by cases pc <;> decide +kernel)
       (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y h2 => wp_nil ?_)))
@@ -250,7 +251,7 @@ theorem pins254 : Pins (At (C0 pc) (crtF pc) (ix pc 254 244)) rsP := by
   · obtain ⟨eS, ek, ep, -⟩ := data_vals h h'
     simp only [valsP, oPa, cwX, eS, ek, ep]
 
-theorem pins275 : Pins (At (C0 pc) (crtF pc) (ix pc 275 265)) rsC := by
+theorem pins275 : Pins (At (C0 pc) (crtF pc) (ix pc 275 242)) rsC := by
   refine pins_at_list (fun s₀ => valsC s₀ (oPa s₀) (cpL s₀))
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NR pc (recPA (Win.reduceInP (.block [])))) (by cases pc <;> decide +kernel)
       (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y _ => ?_))) fun _ _ _ h h' => ?_
@@ -315,7 +316,7 @@ theorem valsW_eq {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ s
   obtain ⟨eS, ek, -⟩ := data_vals h h'
   simp only [valsW, cwX, eS, ek, ho, hl]
 
-theorem pins248 : Pins (At (C0 pc) (crtF pc) (ix pc 248 238)) rsW := by
+theorem pins248 : Pins (At (C0 pc) (crtF pc) (ix pc 248 215)) rsW := by
   refine pins_at_list (fun s₀ => valsW s₀ (oQa s₀) (cqL s₀) 6)
     (fun _ s₀ h => WP.of_flat (c := NM pc (.block (WD1 oBQ oQLen 6))) (by cases pc <;> decide +kernel)
       (nm_ok h fun s t hP F M => ?_)) fun _ _ _ h h' => ?_
@@ -328,7 +329,7 @@ theorem pins248 : Pins (At (C0 pc) (crtF pc) (ix pc 248 238)) rsW := by
   · obtain ⟨eS, ek, ep, eq, -⟩ := data_vals h h'
     exact valsW_eq h h' 6 (by simp only [oQa, cwP, cwX, ek, ep]) eq
 
-theorem pins305 : Pins (At (C0 pc) (crtF pc) (ix pc 305 295)) rsW := by
+theorem pins305 : Pins (At (C0 pc) (crtF pc) (ix pc 305 272)) rsW := by
   refine pins_at_list (fun s₀ => valsW s₀ (oPa s₀) (cpL s₀) 7)
     (fun _ s₀ h => WP.of_flat (c := NR pc (.seq recombineP
       (.block (WD1 oBP oPLen 7)))) (by cases pc <;> decide +kernel)
@@ -343,7 +344,7 @@ theorem pins305 : Pins (At (C0 pc) (crtF pc) (ix pc 305 295)) rsW := by
   · obtain ⟨eS, ek, ep, -⟩ := data_vals h h'
     exact valsW_eq h h' 7 (by simp only [oPa, cwX, ek]) ep
 
-theorem pins311 : Pins (At (C0 pc) (crtF pc) (ix pc 311 301)) rsW := by
+theorem pins311 : Pins (At (C0 pc) (crtF pc) (ix pc 311 278)) rsW := by
   refine pins_at_list (fun s₀ => valsW s₀ (oQa s₀) (cqL s₀) 6)
     (fun _ s₀ h => WP.of_flat (c := NR pc (.seq recombineP
       (.seq (widen oBP oPLen 7) (.block (WD1 oBQ oQLen 6))))) (by cases pc <;> decide +kernel)
@@ -376,7 +377,7 @@ theorem pins311 : Pins (At (C0 pc) (crtF pc) (ix pc 311 301)) rsW := by
   · obtain ⟨eS, ek, ep, eq, -⟩ := data_vals h h'
     exact valsW_eq h h' 6 (by simp only [oQa, cwP, cwX, ek, ep]) eq
 
-theorem pins330 : Pins (At (C0 pc) (crtF pc) (ix pc 330 320)) [.a7, .s5, .s6, .s10, .s11] := by
+theorem pins330 : Pins (At (C0 pc) (crtF pc) (ix pc 330 297)) [.a7, .s5, .s6, .s10, .s11] := by
   refine pins_at_list (fun s₀ => [Mont.off (cS s₀) (slot (cwX s₀) 0), BitVec.ofNat 64 (8 * (cwX s₀ + 2)), cS s₀,
       Mont.off (s₀.gpr .a0) 0, BitVec.ofNat 64 (ck s₀)])
     (fun _ s₀ h => WP.of_flat (c := NR pc (.seq recombineP

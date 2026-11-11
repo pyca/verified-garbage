@@ -281,11 +281,12 @@ theorem XS.step {s₀ s t u : State} (hP : PF s₀) (X : XS s₀ s t) {rs : List
   · rw [Mont.Outside.word O (Or.inl (by omega_arith)) (by omega_arith)]; exact X.msk
 
 /-- `loadX` and `checks`, after the front. -/
-theorem stA_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀) (hF : Front s₀ s)
+theorem stA_ok {pc : Bool} {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀) (hF : Front s₀ s)
+    (hPQ : pc = true → vP s₀ * vQ s₀ = vN s₀)
     (hc : ∀ t, XS s₀ s t → t.gpr .a7 = Mont.off (cS s₀) (slot (cwX s₀) 0) →
       t.gpr .ra = Mont.off (cS s₀) (slot (cwX s₀) 0) → t.gpr .s5 = BitVec.ofNat 64 (8 * (cwX s₀ + 2)) →
       t.gpr .t0 = BitVec.ofNat 64 (cwX s₀) → WP isa c t Q) :
-    WP isa (.seq loadX (.seq checks c)) s Q := by
+    WP isa (.seq loadX (.seq (checksG pc) c)) s Q := by
   have hn := hP.nw
   have room := hP.room
   have k64 := hP.k64; have k1024 := hP.k1024; have p1 := hP.p1; have pk := hP.pk; have q1 := hP.q1
@@ -333,7 +334,7 @@ theorem stA_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s�
   have hPb := os2ip_lt' (Spec.Rsa.bytesAt s₀.mem (s₀.gpr .a6) (cpL s₀)) (VG.Proof.Bignum.bytesAt_length _ _ _)
   have hw16 : 16 * ck s₀ ≤ 64 * cwX s₀ := by omega_arith
   -- The checks.
-  refine WP.seq (WP.mono (checks_ok (Na := s₀.gpr .a2) (k := ck s₀) (nb := Spec.Rsa.bytesAt s₀.mem (s₀.gpr .a2) (ck s₀))
+  refine WP.seq (WP.mono (checksG_ok (pc := pc) (Na := s₀.gpr .a2) (k := ck s₀) (nb := Spec.Rsa.bytesAt s₀.mem (s₀.gpr .a2) (ck s₀))
     (hF.scr.congr k1.2.2) (by omega_arith) (by omega_arith) hwX ((k1.gpr (by decide)).trans hF.s6) a7₁
     ((k1.gpr (by decide)).trans hF.ra) ((k1.gpr (by decide)).trans hF.s5) ((k1.gpr (by decide)).trans hF.t0)
     (by rw [hd1 _ (by unfold oN oMask; omega_arith)]; exact hF.hN)
@@ -346,7 +347,7 @@ theorem stA_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s�
     (by rw [v5]; have := pq_lt (P := 1) (pL := 1) (by
         rw [VG.Proof.Bignum.pow256_eq]; exact Nat.one_lt_two_pow (by omega_arith)) hQb (by omega_arith) qk hw16
         omega_arith)
-    (by rw [v4, v5]; exact pq_lt hPb hQb pk qk hw16))
+    (by rw [v4, v5]; exact pq_lt hPb hQb pk qk hw16) (fun hp => by rw [v4, v5]; exact hPQ hp))
     fun t₂ ⟨X2, k2⟩ => ?_)
   rw [v6, v4, v5, v7] at X2
   have k12 := k1.trans k2
@@ -564,7 +565,7 @@ theorem stD_ok {s₀ s t : State} {o l xj oD oLen Pv : Nat} {D : Addr} (hP : PF 
 
 /-- What `fnContractP`'s precondition says of the cache at `s1`: its
 `cwP + cwQ` words, readable, aligned, apart from the scratch, and under the
-mask `R² mod p` then `R² mod q`. -/
+mask `R² mod p` then `R² mod q`; and `p q = n`. -/
 structure R2F (s₀ : State) : Prop where
   hS : (s₀.gpr .s1).toNat + 8 * (cwP s₀ + cwQ s₀) ≤ 2 ^ 64
   al : (s₀.gpr .s1).toNat % 8 = 0
@@ -572,6 +573,7 @@ structure R2F (s₀ : State) : Prop where
   sep : ∀ x, ofs (s₀.gpr .s1) x < 8 * (cwP s₀ + cwQ s₀) → cZ s₀ ≤ ofs (cS s₀) x
   val : cb s₀ = true → wordsVal s₀.mem (s₀.gpr .s1) 0 (cwP s₀) = 2 ^ (128 * cwP s₀) % vP s₀ ∧
     wordsVal s₀.mem (s₀.gpr .s1) (8 * cwP s₀) (cwQ s₀) = 2 ^ (128 * cwQ s₀) % vQ s₀
+  pq : vP s₀ * vQ s₀ = vN s₀
 
 theorem toNat_moff (S : Addr) {d : Nat} (h : S.toNat + d < 2 ^ 64) : (Mont.off S d).toNat = S.toNat + d := by
   simp only [Mont.off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
@@ -820,7 +822,7 @@ theorem keep_crt {s t : State} (h6 : t.gpr .s6 = s.gpr .s6) (h11 : t.gpr .s11 = 
 
 /-- The powers' code, then `c`; with `pc`, from the cached `R²`. -/
 abbrev mid1CG (pc : Bool) (c : Prog isa) : Prog isa :=
-  .seq loadX (.seq checks (.seq loadIn (.seq (.block (setupP oBP oPLen ++ r2Ptr pc false))
+  .seq loadX (.seq (checksG pc) (.seq loadIn (.seq (.block (setupP oBP oPLen ++ r2Ptr pc false))
     (.seq (powerG pc 4 oDP oPLen)
     (.seq (.block (setupP oBQ oQLen ++ r2Ptr pc true)) (.seq (powerG pc 5 oDQ oQLen) c))))))
 
@@ -853,7 +855,7 @@ theorem mid1G_ok {pc : Bool} {s₀ s : State} {c : Prog isa} {Q : State → Prop
   have hS256 : (cS s₀).toNat + 256 ≤ 2 ^ 64 := by omega_arith
   have hm : oMask = 88 := rfl
   obtain ⟨mP1, mPo, mQ1, mQo, mPb, mQb, mQIP, mQIb⟩ := masked_facts hP
-  refine stA_ok hP hF fun t₂ X2 a7 ra s5 t0 => stB_ok hP hF X2 a7 ra s5 t0 fun t₃ X3 v6 _ _ _ _ => ?_
+  refine stA_ok (pc := pc) hP hF (fun hp => (hR2 hp).1.pq) fun t₂ X2 a7 ra s5 t0 => stB_ok hP hF X2 a7 ra s5 t0 fun t₃ X3 v6 _ _ _ _ => ?_
   refine stCG_ok (pc := pc) (q := false) (o := oPa s₀) (l := cpL s₀) hP hF X3 (by decide) (by decide) hF.hBP
     hF.hPL p1 (by omega_arith) fun t₄ X4 R4 c4 _ m4 => ?_
   refine WP.seq (WP.mono (stDG_ok (pc := pc) (xj := 4) (D := stackArg s₀ 2) hP hF X4 (by rw [m4]; exact v6) R4

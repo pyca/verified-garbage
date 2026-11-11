@@ -102,7 +102,8 @@ abbrev r2R (s : State) : Region :=
   ⟨s.gpr .s1, 8 * (wordsOf (s.gpr .a7).toNat + wordsOf (stackArg s 1).toNat)⟩
 
 /-- `vg_rsa_private_crt_precomputed`, which takes in `s1` the address of the
-primes' `R² mod p` and `R² mod q` (`Spec.Rsa.primeR2`), and computes what
+primes' `R² mod p` and `R² mod q` (`Spec.Rsa.primeR2`), given `p q = n`
+(as its caller's `Spec.Rsa.privatePrecompute` gives), and computes what
 `vg_rsa_private_crt` does. -/
 def fnContractP : Contract isa where
   pre s := preCore (baseRd s ++ [r2R s]) s ∧ (⟨s.gpr .a0, (s.gpr .a1).toNat⟩ : Region).Disjoint (r2R s) ∧
@@ -110,7 +111,10 @@ def fnContractP : Contract isa where
     (s.gpr .s1).toNat % 8 = 0 ∧
     Spec.Rsa.wordsAt s.mem (s.gpr .s1) (wordsOf (s.gpr .a7).toNat + wordsOf (stackArg s 1).toNat) =
       Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (s.gpr .a6) (s.gpr .a7).toNat) ++
-        Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
+        Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat) ∧
+    Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .a6) (s.gpr .a7).toNat) *
+        Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat) =
+      Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
   post := postCore
   pub s₁ s₂ := pubCore s₁ s₂ ∧ s₁.gpr .s1 = s₂.gpr .s1
 
