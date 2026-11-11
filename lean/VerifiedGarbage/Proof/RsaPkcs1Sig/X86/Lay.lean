@@ -58,8 +58,9 @@ abbrev argA (j : Nat) : Addr := L.fr (Impl.RsaPkcs1Sig.X86.argOff L.F j)
 
 structure Ok (σ : State) : Prop where
   sp : σ.gpr .esp = L.B
-  rd : σ.rd = L.ro
-  wr : σ.wr = L.FR :: L.SAVE :: (L.rw ++ [L.ARGS])
+  rd : ∀ r ∈ L.ro, r ∈ σ.rd
+  wr : ∀ r ∈ L.FR :: L.SAVE :: L.rw, r ∈ σ.wr
+  argsW : ∃ k, L.A ≤ k ∧ (⟨L.fr (L.F + 20), k⟩ : Region) ∈ σ.wr
   BC : L.C ≤ L.B.toNat
   fit : L.B.toNat + L.F + 20 + L.A ≤ 2 ^ 32
   stk : ∀ r ∈ L.ro ++ L.rw, L.STK.Disjoint r
@@ -146,9 +147,44 @@ theorem Ok.arg_read {σ : State} (h : L.Ok σ) {j : Nat} (hj : j < L.argv.length
     InRegions (σ.rd ++ σ.wr) (L.argA j) 4 := by
   have := h.fit
   simp only [A] at this
-  refine ⟨L.ARGS, List.mem_append_right _ (by rw [h.wr]; simp), ?_⟩
-  simp only [argA, Impl.RsaPkcs1Sig.X86.argOff, ARGS, A]
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  obtain ⟨k, hk, hm⟩ := h.argsW
+  refine ⟨_, List.mem_append_right _ hm, ?_⟩
+  have c : L.ARGS.Contains (L.argA j) 4 := by
+    simp only [argA, Impl.RsaPkcs1Sig.X86.argOff, ARGS, A]
+    exact Offset.contains _ (by omega) (by omega) (by omega)
+  exact Nat.le_trans c hk
+
+/-- A layout with more arguments and more buffers only read gives the
+layout without them: the state a wider function's body starts from is one
+the narrower one's may start from. -/
+theorem Ok.prefix {σ : State} (xs : List (BitVec 32)) (rs : List Region)
+    (h : ({ L with argv := L.argv ++ xs, ro := L.ro ++ rs } : Lay).Ok σ) : L.Ok σ := by
+  have hA : L.A ≤ ({ L with argv := L.argv ++ xs, ro := L.ro ++ rs } : Lay).A := by
+    simp only [A, List.length_append]; omega
+  have hARGS : Region.Sub L.ARGS ({ L with argv := L.argv ++ xs, ro := L.ro ++ rs } : Lay).ARGS :=
+    Region.sub_prefix hA
+  refine
+    { sp := h.sp, rd := fun r hr => h.rd r (List.mem_append_left _ hr), wr := h.wr, argsW := ?_,
+      BC := h.BC, fit := ?_, stk := fun r hr => h.stk r ?_, ret := h.ret, wro := fun w hw r hr => ?_,
+      wrw := h.wrw, fits := fun r hr => h.fits r ?_, args := fun j hj => ?_ }
+  · obtain ⟨k, hk, hm⟩ := h.argsW
+    exact ⟨k, Nat.le_trans hA hk, hm⟩
+  · have := h.fit
+    change L.B.toNat + L.F + 20 + _ ≤ _ at this
+    omega
+  · rcases List.mem_append.mp hr with hr | hr
+    · exact List.mem_append_left _ (List.mem_append_left _ hr)
+    · exact List.mem_append_right _ hr
+  · rcases List.mem_append.mp hr with hr | hr
+    · exact h.wro w hw r (List.mem_append_left _ (List.mem_append_left _ hr))
+    · obtain rfl := List.mem_singleton.mp hr
+      exact (h.wro w hw _ (List.mem_append_right _ (List.mem_singleton_self _))).sub_right hARGS
+  · rcases List.mem_append.mp hr with hr | hr
+    · exact List.mem_append_left _ (List.mem_append_left _ hr)
+    · exact List.mem_append_right _ hr
+  · have := h.args j (by simp only [List.length_append]; omega)
+    simp only [List.getD_eq_getElem?_getD, List.getElem?_append_left hj] at this ⊢
+    exact this
 
 namespace Ok
 
@@ -249,7 +285,7 @@ theorem frameW (h : L.St σ s) {d n : Nat} (hd : d + n ≤ L.F) (hf : Frame [⟨
 
 /-- A range of the frame may be written. -/
 theorem inFr (h : L.St σ s) {d n : Nat} (hd : d + n ≤ L.F) : InRegions s.wr (L.fr d) n :=
-  ⟨L.FR, by rw [h.wr, h.ok.wr]; simp, Offset.contains_base _ hd (by have := h.ok.fit; omega)⟩
+  ⟨L.FR, by rw [h.wr]; exact h.ok.wr _ List.mem_cons_self, Offset.contains_base _ hd (by have := h.ok.fit; omega)⟩
 
 theorem inFrR (h : L.St σ s) {d n : Nat} (hd : d + n ≤ L.F) : InRegions (s.rd ++ s.wr) (L.fr d) n :=
   let ⟨r, hr, hc⟩ := h.inFr hd
@@ -257,11 +293,11 @@ theorem inFrR (h : L.St σ s) {d n : Nat} (hd : d + n ≤ L.F) : InRegions (s.rd
 
 /-- A buffer we write may be written. -/
 theorem inRw (h : L.St σ s) {R : Region} (hR : R ∈ L.rw) : R ∈ s.wr := by
-  rw [h.wr, h.ok.wr]; simp [hR]
+  rw [h.wr]; exact h.ok.wr _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hR))
 
 /-- A buffer we read may be read. -/
 theorem inRo (h : L.St σ s) {R : Region} (hR : R ∈ L.ro) : R ∈ s.rd ++ s.wr := by
-  rw [h.rd, h.ok.rd]; exact List.mem_append_left _ hR
+  rw [h.rd]; exact List.mem_append_left _ (h.ok.rd _ hR)
 
 /-- `mov r, [esp + off]` of argument `j`. -/
 theorem wp_arg (h : L.St σ s) {j : Nat} (hj : j < L.argv.length) {r : Reg} (hr : r ≠ .esp)

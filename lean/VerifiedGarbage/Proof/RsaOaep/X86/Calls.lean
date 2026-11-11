@@ -87,12 +87,12 @@ theorem rbufCov {p : BitVec 32} {n : Nat} (hb : RBuf L p n) {σ s : State} (hs :
     Covers [⟨p.setWidth 64, n⟩] (s.rd ++ s.wr) := by
   obtain ⟨R, hR, hc⟩ := hb.r
   refine Covers.one ⟨R, ?_, hc⟩
-  rw [hs.rd, hs.wr, hs.ok.rd, hs.ok.wr]
+  rw [hs.rd, hs.wr]
   rcases List.mem_append.mp hR with hR | hR
-  · exact List.mem_append_left _ hR
+  · exact List.mem_append_left _ (hs.ok.rd _ hR)
   · rcases List.mem_cons.mp hR with rfl | hR
-    · exact List.mem_append_right _ List.mem_cons_self
-    · exact List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_left _ hR)))
+    · exact List.mem_append_right _ (hs.ok.wr _ List.mem_cons_self)
+    · exact List.mem_append_right _ (hs.ok.wr _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hR)))
 
 /-! ## `init` -/
 
