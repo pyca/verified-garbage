@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.RdTop
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
+public import VerifiedGarbage.Proof.Bignum.Arm.PrivPreVerified
 
 /-! # RSA (RFC 8017) on ARMv7 -/
 
@@ -31,7 +32,11 @@ def direct : List Artifact := [
   Spec.Rsa.recoverPrimesDetApi.artifact Arm.target {
     code := Impl.Rsa.Arm.RecoverDet.code
     stack := 56
-    verified := Proof.Rsa.Arm.Recover.recover_primes_det_verified }]
+    verified := Proof.Rsa.Arm.Recover.recover_primes_det_verified },
+  Spec.Rsa.privatePrecomputeApi.artifact Arm.target {
+    code := Impl.Bignum.Arm.PrivPreFn.code
+    stack := 168
+    verified := Proof.Bignum.Arm.privPre_verified }]
 
 end VG.Artifacts.Rsa.Arm
 

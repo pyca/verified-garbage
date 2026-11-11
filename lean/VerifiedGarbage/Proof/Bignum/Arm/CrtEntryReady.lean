@@ -8,13 +8,15 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtBodyInput
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 
 import VerifiedGarbage.Proof.Bignum.Arm.PublicPush
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntryMemory
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareState
-import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptInput
 import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPBody
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
@@ -178,7 +180,7 @@ section
 
 /-! # Enter private CRT computation with immutable arguments and three valid layouts -/
 
-section
+@[expose] public section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
@@ -843,7 +845,7 @@ section
 
 /-! # The complete private key validation leaks no secret validation result -/
 
-section
+@[expose] public section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
