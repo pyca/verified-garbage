@@ -303,9 +303,22 @@ def mulSubWord : List Instr :=
 /-- `t`'s top word, `x_{w-1} - c` less the borrow. -/
 def mulSubTop : List Instr := [.addc .r0 .r22 .r6, .sube .r12 .r16 .r3, .store .d .r12 .r14 0]
 
+/-- `mulSub` after its head: the `w` words and the top word. -/
+def mulSubRest : Prog isa := .seq (countLoop .r17 mulSubWord) (.block mulSubTop)
+
 /-- `x`'s first `w + 1` words := `t = x 2^64 - q̂ n` modulo `2^(64 (w + 1))`
 (`x` at `r5`, `n` at `r10`, `q̂` in `r18`). -/
-def mulSub : Prog isa := .seq (.block mulSubHead) (.seq (countLoop .r17 mulSubWord) (.block mulSubTop))
+def mulSub : Prog isa := .seq (.block mulSubHead) mulSubRest
+
+/-- `mulSubHead`, but `x`'s previous word `u` loaded from `r8`: the word
+below `x` in a division. -/
+def mulSubHeadU : List Instr :=
+  [.addi .r14 .r5 0, .addi .r15 .r10 0, .lsr .d .r17 .r11 1, .li .r3 0, .li .r22 1, .load .d .r16 .r8 0,
+    .subi .r6 .r20 1]
+
+/-- `x`'s first `w + 1` words := `t = x 2^64 + u - q̂ n` modulo `2^(64 (w + 1))`,
+`u` the word at `r8`. -/
+def mulSubU : Prog isa := .seq (.block mulSubHeadU) mulSubRest
 
 /-- `t := t + n` if `t` (`x`'s `w + 1` words, at `r5`) is negative, by a
 mask of its sign. -/
@@ -318,6 +331,10 @@ def addBack : Prog isa :=
 
 /-- `x := x 2^64 mod n`. -/
 def wordStep : Prog isa := .seq (.block (quot ++ quot3)) (.seq mulSub addBack)
+
+/-- `x := (x 2^64 + u) mod n`, for `u` the word at `r8`: a step of long
+division, `wordStep` with the word below `x` in place of zero. -/
+def wordStepU : Prog isa := .seq (.block (quot ++ quot3)) (.seq mulSubU addBack)
 
 /-- `w + 1` of `wordStep`, counted by `r4`. -/
 def wordSteps : Prog isa :=
