@@ -284,7 +284,7 @@ theorem MEnv.rd {s t : State} {B : Addr} {Z w N a x y m tt K iv mv Y : Nat}
     (e : MEnv s B Z w N a x y m tt K iv mv Y) (hw : Ws t B Z w N)
     (k : KeyWorkspace.Keep B w [a, tt] [] s.mem t.mem) {j : Nat} (hj : j < N) (hja : a ≠ j) (hjt : tt ≠ j)
     {n : Nat} (hn : n ≤ w + 2) : val32 t.mem B (arr w j) n = val32 s.mem B (arr w j) n :=
-  keep_val k hn (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro _ (rfl | rfl) <;> assumption)
+  keep_val k hn (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro _ (rfl | rfl) <;> with_reducible assumption)
     (by simp) (hw.fit64 hj)
 
 theorem pow_K {K : Nat} (h : 1 ≤ K) : 2 ^ (32 * K) = 2 ^ 32 * 2 ^ (32 * (K - 1)) := by

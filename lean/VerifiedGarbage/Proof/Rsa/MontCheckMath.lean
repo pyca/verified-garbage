@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.KeyCheckMath
 import VerifiedGarbage.Proof.Rsa.KeyParts
-import Mathlib.Data.Nat.ModEq
 
 /-!
 # RSA: the key checks from products
@@ -52,11 +51,10 @@ theorem mulLo_row {P Q L H H' c x Y Y' : Nat} (hP : 0 < P) (hL : L < P) (hH' : H
 /-- `k` makes `T = S + k m` a multiple of `2^32`, for `m iv ≡ -1 (mod 2^32)`. -/
 theorem mont_div {m iv S : Nat} (hinv : (m % 2 ^ 32 * iv + 1) % 2 ^ 32 = 0) :
     (S + S % 2 ^ 32 * iv % 2 ^ 32 * m) % 2 ^ 32 = 0 := by
-  have h : S + S % 2 ^ 32 * iv % 2 ^ 32 * m ≡ S % 2 ^ 32 + S % 2 ^ 32 * iv * (m % 2 ^ 32) [MOD 2 ^ 32] :=
-    (Nat.mod_modEq S _).symm.add ((Nat.mod_modEq _ _).mul (Nat.mod_modEq m _).symm)
   have e : S % 2 ^ 32 + S % 2 ^ 32 * iv * (m % 2 ^ 32) = S % 2 ^ 32 * (m % 2 ^ 32 * iv + 1) := by
     rw [Nat.mul_add, Nat.mul_one, Nat.mul_assoc, Nat.mul_comm iv, Nat.add_comm]
-  rw [h, e, Nat.mul_mod, hinv, Nat.mul_zero, Nat.zero_mod]
+  rw [Nat.add_mod, Nat.mul_mod (S % 2 ^ 32 * iv % 2 ^ 32), Nat.mod_mod, Nat.mod_mul_mod, Nat.add_mod_mod, e,
+    Nat.mul_mod, hinv, Nat.mul_zero, Nat.zero_mod]
 
 /-- The bounds of a step: below `3 M`, and below `2 m` from `A < 2 m` and `Y < m`. -/
 theorem mont_bound {M m A Y x k : Nat} (hm : m < M) (hY : Y < M) (hA : A < 3 * M)
@@ -101,13 +99,15 @@ theorem pq_eq_iff {p q n j : Nat} (hp : p % 2 = 1) (hq : q < 2 ^ j) (hn : n < 2 
   · rintro ⟨h1, h2⟩
     obtain ⟨k, rfl⟩ := Nat.dvd_of_mod_eq_zero h2
     have hk : k < 2 ^ j := Nat.lt_of_le_of_lt (Nat.le_mul_of_pos_left _ (by omega)) hn
-    have : q ≡ k [MOD 2 ^ j] := by
-      refine Nat.ModEq.cancel_left_of_coprime (c := p) ?_ ?_
-      · exact (coprime_pow2 hp).symm.gcd_eq_one
-      · show p * q % 2 ^ j = p * k % 2 ^ j
-        rw [h1, Nat.mod_eq_of_lt hn]
-    rw [Nat.ModEq, Nat.mod_eq_of_lt hq, Nat.mod_eq_of_lt hk] at this
-    rw [this]
+    have e : p * q % 2 ^ j = p * k % 2 ^ j := by rw [h1, Nat.mod_eq_of_lt hn]
+    have cp := (coprime_pow2 (j := j) hp).symm
+    have d1 : 2 ^ j ∣ q - k := cp.dvd_of_dvd_mul_left (by
+      rw [Nat.mul_sub]; exact Nat.dvd_of_mod_eq_zero (Nat.sub_mod_eq_zero_of_mod_eq e))
+    have d2 : 2 ^ j ∣ k - q := cp.dvd_of_dvd_mul_left (by
+      rw [Nat.mul_sub]; exact Nat.dvd_of_mod_eq_zero (Nat.sub_mod_eq_zero_of_mod_eq e.symm))
+    have z1 := Nat.eq_zero_of_dvd_of_lt d1 (by omega)
+    have z2 := Nat.eq_zero_of_dvd_of_lt d2 (by omega)
+    rw [show q = k by omega]
 
 /-- Montgomery's result `M < m` with `M 2^j ≡ n` is zero exactly when `m ∣ n`. -/
 theorem mont_zero_iff {m M n j : Nat} (hm : m % 2 = 1) (hM : M < m) (h : M * 2 ^ j % m = n % m) :
@@ -129,12 +129,15 @@ theorem mont_eq_iff {m M₁ M₂ a j : Nat} (hm : m % 2 = 1) (hm2 : 2 ≤ m) (h�
   constructor
   · rintro rfl; rw [← e₁, e₂]
   · intro ha
-    have : M₁ ≡ M₂ [MOD m] := by
-      refine Nat.ModEq.cancel_right_of_coprime (c := 2 ^ j) ?_ ?_
-      · exact (coprime_pow2 hm).gcd_eq_one
-      · show M₁ * 2 ^ j % m = M₂ * 2 ^ j % m
-        rw [e₁, e₂, ha]
-    rwa [Nat.ModEq, Nat.mod_eq_of_lt h₁, Nat.mod_eq_of_lt h₂] at this
+    have e : M₁ * 2 ^ j % m = M₂ * 2 ^ j % m := by rw [e₁, e₂, ha]
+    have cp := coprime_pow2 (j := j) hm
+    have d1 : m ∣ M₁ - M₂ := cp.dvd_of_dvd_mul_right (by
+      rw [Nat.sub_mul]; exact Nat.dvd_of_mod_eq_zero (Nat.sub_mod_eq_zero_of_mod_eq e))
+    have d2 : m ∣ M₂ - M₁ := cp.dvd_of_dvd_mul_right (by
+      rw [Nat.sub_mul]; exact Nat.dvd_of_mod_eq_zero (Nat.sub_mod_eq_zero_of_mod_eq e.symm))
+    have z1 := Nat.eq_zero_of_dvd_of_lt d1 (by omega)
+    have z2 := Nat.eq_zero_of_dvd_of_lt d2 (by omega)
+    omega
 
 /-- With `L = p q mod W` and `M` Montgomery's `n` (zero exactly when `p ∣ n`
 for an odd `p ≥ 2`), the checks `p` odd, `L = n`, `M = 0` are those of
@@ -153,8 +156,10 @@ theorem maskM_iff {P Q N L M V j : Nat} (hQN : Q < N) (hqj : Q < 2 ^ j) (hnj : N
   · rintro ⟨podd, h1, h2, h3⟩
     have hpq : P * Q = N := mul_of_div h1 h2
     have p2 : 2 ≤ P := by
-      by_contra hp; have p1 : P = 1 := by omega
-      subst p1; rw [Nat.one_mul] at hpq; omega
+      rcases Nat.lt_or_ge P 2 with hp | hp
+      · have p1 : P = 1 := by omega
+        subst p1; rw [Nat.one_mul] at hpq; omega
+      · exact hp
     exact ⟨podd, by rw [hL, hpq, Nat.mod_eq_of_lt hnj], (hM podd p2).2 h2, h3⟩
 
 /-! ## The checks -/
