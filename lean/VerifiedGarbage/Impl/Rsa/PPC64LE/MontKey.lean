@@ -76,7 +76,7 @@ def montAddX (a y : Nat) : Prog isa :=
 added to digit `K`. -/
 def montAddM (a m t : Nat) : Prog isa :=
   .seq (.block (ptr .r5 t ++ [.load .w .r3 .r5 0] ++ ptr .r5 a ++ [.load .w .r0 .r5 0, .mul .r11 .r0 .r3,
-      .lsr .w .r11 .r11 0] ++ ptr .r6 a ++ ptr .r7 m ++ [.addi .r8 .r12 0, .li .r9 0]))
+      .lsr .w .r11 .r11 0] ++ (ptr .r5 a ++ ptr .r6 a ++ ptr .r7 m ++ [.addi .r8 .r12 0, .li .r9 0])))
     (.seq (countLoop .r8 macBody) (.block [.load .w .r0 .r5 0, .add .r0 .r0 .r9, .store .w .r0 .r5 0]))
 
 /-- `[a] := [a] / 2^32`: its digits `1 … K` moved down, digit `K` zeroed;
