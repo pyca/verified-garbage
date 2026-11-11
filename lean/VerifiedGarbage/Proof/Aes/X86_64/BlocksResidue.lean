@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Spec.Cfb8.Contract
 public import VerifiedGarbage.Impl.AesCfb8.X86_64
+public import VerifiedGarbage.Spec.Cfb.Contract
+public import VerifiedGarbage.Impl.AesCfb.X86_64
+public import VerifiedGarbage.Spec.Ofb.Contract
+public import VerifiedGarbage.Impl.AesOfb.X86_64
 public import VerifiedGarbage.Impl.Aes.X86_64.Callee
 public import VerifiedGarbage.Spec.AesEcb.Contract
 public import VerifiedGarbage.Spec.Ocb.Contract
@@ -14,6 +18,10 @@ public import VerifiedGarbage.Proof.Framework.Lit
 public meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public meta import VerifiedGarbage.Spec.Cfb8.Contract
 public meta import VerifiedGarbage.Impl.AesCfb8.X86_64
+public meta import VerifiedGarbage.Spec.Cfb.Contract
+public meta import VerifiedGarbage.Impl.AesCfb.X86_64
+public meta import VerifiedGarbage.Spec.Ofb.Contract
+public meta import VerifiedGarbage.Impl.AesOfb.X86_64
 public meta import VerifiedGarbage.Impl.Aes.X86_64.Callee
 public meta import VerifiedGarbage.Spec.AesEcb.Contract
 public meta import VerifiedGarbage.Spec.Ocb.Contract
@@ -34,11 +42,14 @@ The functions generic over the implementations of `vg_aes_encrypt_blocks`
 and `vg_aes_decrypt_blocks` (`Aes.X86_64.BlocksImpl`) that the residue
 analysis handles over the AES-NI and VAES implementations, analysed for what
 they may leave of secrets (`X86_64.RScrub.Analysed`): AES-CFB8's
-`vg_aes_cfb8_encrypt` and `vg_aes_cfb8_decrypt`, `vg_aes_ecb_encrypt` (the
+`vg_aes_cfb8_encrypt` and `vg_aes_cfb8_decrypt`, AES-CFB128's
+`vg_aes_cfb128_encrypt` and `vg_aes_cfb128_decrypt`, `vg_aes_ofb`,
+`vg_aes_ecb_encrypt` (the
 code of `vg_aes_encrypt_blocks` itself) and `vg_aes_ocb_init`, with no
 working space for the functions it calls (`Aes.X86_64.ocbInitCodeF`).
 `Variants/AesBlocks/X86_64.lean` gives them to those implementations
-(`BlocksImpl.cfb8EncRes`, `BlocksImpl.cfb8DecRes`, `BlocksImpl.ecbEncRes`,
+(`BlocksImpl.cfb8EncRes`, `BlocksImpl.cfb8DecRes`, `BlocksImpl.cfbEncRes`,
+`BlocksImpl.cfbDecRes`, `BlocksImpl.ofbRes`, `BlocksImpl.ecbEncRes`,
 `BlocksImpl.ocbInitRes`).
 -/
 
@@ -120,6 +131,74 @@ def ecbAesni : RScrub.Analysed Spec.AesEcb.encryptApi.sig 0 [] Blocks.encAesni.c
 
 /-- The analysis of `vg_aes_ecb_encrypt_vaes`. -/
 def ecbVaes : RScrub.Analysed Spec.AesEcb.encryptApi.sig 0 [] Blocks.encVaes.code := ⟨ecbVaesKs, ecbVaes_ok⟩
+
+/-! ## AES-CFB128 and AES-OFB -/
+
+def cfbEncAesniKs : List Nat := keep_for% Spec.Cfb.aesEncryptApi.sig 8 (Impl.AesCfb.X86_64.encrypt Blocks.encAesni) []
+
+theorem cfbEncAesni_ok : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Cfb.aesEncryptApi.sig 8 [])
+      (Impl.AesCfb.X86_64.encrypt Blocks.encAesni) h).any
+      (RScrub.resOkB · 8 cfbEncAesniKs (Impl.Scrub.X86_64.chunks 8)) = true :=
+  RScrub.Analysed.ok_of cfbEncAesniKs (by taint_decide)
+
+/-- `cfbEncAesniKs`, with its analysis. -/
+def cfbEncAesni : RScrub.Analysed Spec.Cfb.aesEncryptApi.sig 8 [] (Impl.AesCfb.X86_64.encrypt Blocks.encAesni) := ⟨cfbEncAesniKs, cfbEncAesni_ok⟩
+
+def cfbEncVaesKs : List Nat := keep_for% Spec.Cfb.aesEncryptApi.sig 8 (Impl.AesCfb.X86_64.encrypt Blocks.encVaes) []
+
+theorem cfbEncVaes_ok : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Cfb.aesEncryptApi.sig 8 [])
+      (Impl.AesCfb.X86_64.encrypt Blocks.encVaes) h).any
+      (RScrub.resOkB · 8 cfbEncVaesKs (Impl.Scrub.X86_64.chunks 8)) = true :=
+  RScrub.Analysed.ok_of cfbEncVaesKs (by taint_decide)
+
+/-- `cfbEncVaesKs`, with its analysis. -/
+def cfbEncVaes : RScrub.Analysed Spec.Cfb.aesEncryptApi.sig 8 [] (Impl.AesCfb.X86_64.encrypt Blocks.encVaes) := ⟨cfbEncVaesKs, cfbEncVaes_ok⟩
+
+def cfbDecAesniKs : List Nat := keep_for% Spec.Cfb.aesDecryptApi.sig 8 (Impl.AesCfb.X86_64.decrypt Blocks.encAesni) []
+
+theorem cfbDecAesni_ok : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Cfb.aesDecryptApi.sig 8 [])
+      (Impl.AesCfb.X86_64.decrypt Blocks.encAesni) h).any
+      (RScrub.resOkB · 8 cfbDecAesniKs (Impl.Scrub.X86_64.chunks 8)) = true :=
+  RScrub.Analysed.ok_of cfbDecAesniKs (by taint_decide)
+
+/-- `cfbDecAesniKs`, with its analysis. -/
+def cfbDecAesni : RScrub.Analysed Spec.Cfb.aesDecryptApi.sig 8 [] (Impl.AesCfb.X86_64.decrypt Blocks.encAesni) := ⟨cfbDecAesniKs, cfbDecAesni_ok⟩
+
+def cfbDecVaesKs : List Nat := keep_for% Spec.Cfb.aesDecryptApi.sig 8 (Impl.AesCfb.X86_64.decrypt Blocks.encVaes) []
+
+theorem cfbDecVaes_ok : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Cfb.aesDecryptApi.sig 8 [])
+      (Impl.AesCfb.X86_64.decrypt Blocks.encVaes) h).any
+      (RScrub.resOkB · 8 cfbDecVaesKs (Impl.Scrub.X86_64.chunks 8)) = true :=
+  RScrub.Analysed.ok_of cfbDecVaesKs (by taint_decide)
+
+/-- `cfbDecVaesKs`, with its analysis. -/
+def cfbDecVaes : RScrub.Analysed Spec.Cfb.aesDecryptApi.sig 8 [] (Impl.AesCfb.X86_64.decrypt Blocks.encVaes) := ⟨cfbDecVaesKs, cfbDecVaes_ok⟩
+
+def ofbAesniKs : List Nat := keep_for% Spec.Ofb.aesApi.sig 8 (Impl.AesOfb.X86_64.crypt Blocks.encAesni) []
+
+theorem ofbAesni_ok : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ofb.aesApi.sig 8 [])
+      (Impl.AesOfb.X86_64.crypt Blocks.encAesni) h).any
+      (RScrub.resOkB · 8 ofbAesniKs (Impl.Scrub.X86_64.chunks 8)) = true :=
+  RScrub.Analysed.ok_of ofbAesniKs (by taint_decide)
+
+/-- `ofbAesniKs`, with its analysis. -/
+def ofbAesni : RScrub.Analysed Spec.Ofb.aesApi.sig 8 [] (Impl.AesOfb.X86_64.crypt Blocks.encAesni) := ⟨ofbAesniKs, ofbAesni_ok⟩
+
+def ofbVaesKs : List Nat := keep_for% Spec.Ofb.aesApi.sig 8 (Impl.AesOfb.X86_64.crypt Blocks.encVaes) []
+
+theorem ofbVaes_ok : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ofb.aesApi.sig 8 [])
+      (Impl.AesOfb.X86_64.crypt Blocks.encVaes) h).any
+      (RScrub.resOkB · 8 ofbVaesKs (Impl.Scrub.X86_64.chunks 8)) = true :=
+  RScrub.Analysed.ok_of ofbVaesKs (by taint_decide)
+
+/-- `ofbVaesKs`, with its analysis. -/
+def ofbVaes : RScrub.Analysed Spec.Ofb.aesApi.sig 8 [] (Impl.AesOfb.X86_64.crypt Blocks.encVaes) := ⟨ofbVaesKs, ofbVaes_ok⟩
 
 end VG.Proof.Aes.X86_64.BlocksResidue
 
