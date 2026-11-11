@@ -40,7 +40,7 @@ vg_rsa_private_checked_precomputed:
 	add x5, x3, #0
 	ldr x6, [sp, #3248]
 	ldr x7, [sp, #3256]
-	bl {vg_rsa_private_crt}
+	bl {vg_rsa_private_crt_precomputed}
 	add x15, sp, #0
 	str x0, [x15, #128]
 	add x0, sp, #1184
