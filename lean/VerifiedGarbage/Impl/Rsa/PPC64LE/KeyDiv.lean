@@ -56,7 +56,7 @@ def force (m t : Nat) : List Instr :=
 /-- `r5 := [r]`'s address, `r8 :=` the address of `[a]`'s top word (`w / 2 -
 1`), `r4 := w / 2` steps. -/
 def stepsSetup (a r : Nat) : List Instr :=
-  ptr .r5 r ++ ptr .r8 a ++ [.lsl .r0 .r11 2, .add .r8 .r8 .r0, .subi .r8 .r8 8, .addi .r4 .r11 0]
+  ptr .r5 r ++ ptr .r8 a ++ [.lsl .r0 .r11 3, .add .r8 .r8 .r0, .subi .r8 .r8 8, .addi .r4 .r11 0]
 
 /-- A step, then `u`'s address a word down and a step less. -/
 def step : Prog isa := .seq wordStepU (.block [.subi .r8 .r8 8, .subi .r4 .r4 1])

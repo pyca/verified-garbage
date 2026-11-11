@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Rsa.PPC64LE.KeyDiv
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyOps
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Words
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Bignum.WordDiv
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Block
@@ -91,5 +92,68 @@ theorem restore_ok {s : State} {B : Addr} {Z w N sv : Nat} (h : Ws s B Z w N) (h
       rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 by omega) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) (by decide))
     fun t ⟨⟨tg, tm⟩, tk⟩ => ⟨tg, by rw [tm], ((Keep.write _ .r5 _).trans tk).mono (by decide)⟩
+
+/-- A word with its top bit set. -/
+theorem or_top_toNat (x : BitVec 64) : (x ||| BitVec.ofNat 64 1 <<< 63).toNat = x.toNat % 2 ^ 63 + 2 ^ 63 := by
+  have e : BitVec.ofNat 64 1 <<< 63 = BitVec.ofNat 64 (2 ^ 63) := by decide
+  rw [e, BitVec.toNat_or, BitVec.toNat_ofNat, show 2 ^ 63 % 2 ^ 64 = 2 ^ 63 from rfl]
+  have hx := x.isLt
+  have hl := Nat.or_two_pow_eq_add_of_lt (Nat.mod_lt x.toNat (show 0 < 2 ^ 63 by decide))
+  rcases (show x.toNat < 2 ^ 63 ∨ 2 ^ 63 ≤ x.toNat by omega) with h | h
+  · rw [Nat.mod_eq_of_lt h] at hl ⊢; exact hl
+  · have ex : x.toNat = x.toNat % 2 ^ 63 ||| 2 ^ 63 := by rw [hl]; omega
+    rw [ex, Nat.or_assoc, Nat.or_self, ← ex]
+    omega
+
+/-- `force m t` for `w = 4 wd`: `[m]`'s word `wd - 1` with its top bit set (`F`),
+and the temporary's words 0, 1 and 3 := `1`, `F` and `[m]`'s word `wd - 2`. -/
+theorem force_ok {s : State} {B : Addr} {Z w N m t wd : Nat} (h : Ws s B Z w N) (hm : m < N) (ht : t < N)
+    (hmt : m ≠ t) (hN : N ≤ 256) (hw : w = 4 * wd) (hwd : 4 ≤ wd) :
+    WP isa (.block (force m t)) s fun u => ∃ F : BitVec 64,
+      F.toNat = (word s.mem B (arr w m + 8 * (wd - 1))).toNat % 2 ^ 63 + 2 ^ 63 ∧
+      u.mem = (((s.mem.writeW (off B (arr w m + 8 * (wd - 1))) F).writeW (off B (arr w t)) (BitVec.ofNat 64 1)).writeW
+        (off B (arr w t + 8)) F).writeW (off B (arr w t + 24)) (word s.mem B (arr w m + 8 * (wd - 2))) ∧
+      u.gpr .r9 = off B (arr w t) ∧ u.gpr .r10 = off B (arr w m) ∧ u.gpr .r11 = BitVec.ofNat 64 (2 * wd) ∧
+      Keep [.r0, .r3, .r9, .r10, .r11, .r14] s u := by
+  have := h.wle
+  have hnw := h.nowrap
+  have fm := h.arr_fit hm
+  have ft := h.arr_fit ht
+  have dmt := arr_disj (w := w) hmt
+  simp only [S] at fm ft dmt
+  have e11 : BitVec.ofNat 64 w >>> 1 = BitVec.ofNat 64 (2 * wd) := by
+    rw [hw, show 4 * wd = 2 * (2 * wd) by omega]; exact mont_ofNat_shr1 (by omega)
+  have ea := ea_top B (d := arr w m) (w := wd) (c := 8) (by omega)
+  have ea2 : off B (arr w m + 8 * wd - 8) - BitVec.ofNat 64 8 = off B (arr w m + 8 * (wd - 2)) := by
+    rw [BitVec.sub_eq_iff_eq_add, off_add, show arr w m + 8 * (wd - 2) + 8 = arr w m + 8 * wd - 8 by omega]
+  rw [show arr w m + 8 * wd - 8 = arr w m + 8 * (wd - 1) by omega] at ea ea2
+  simp only [force, List.append_assoc]
+  refine ptr_ok h (r := .r10) (by decide) (by decide) (by decide) (show m < 2 ^ 15 by omega) ?_
+  refine ptr_ok (h.of_keep (Keep.write _ .r10 _)) (r := .r9) (by decide) (by decide) (by decide)
+    (show t < 2 ^ 15 by omega) ?_
+  have rT : ((s.write .r10 (off B (arr w m))).write .r9 (off B (arr w t))).mem.readW
+      (off B (arr w m + 8 * (wd - 1))) 64 = word s.mem B (arr w m + 8 * (wd - 1)) := rfl
+  refine WP.mono (WP.keep [.r0, .r3, .r11, .r14] (Q := fun u => ∃ F : BitVec 64,
+      F = word s.mem B (arr w m + 8 * (wd - 1)) ||| BitVec.ofNat 64 1 <<< 63 ∧
+      u.mem = (((s.mem.writeW (off B (arr w m + 8 * (wd - 1))) F).writeW (off B (arr w t)) (BitVec.ofNat 64 1)).writeW
+        (off B (arr w t + 8)) F).writeW (off B (arr w t + 24)) (word s.mem B (arr w m + 8 * (wd - 2))) ∧
+      u.gpr .r11 = BitVec.ofNat 64 (2 * wd)) (by
+      prun [gpr_write, mem_write, h.r29, e11, ea, ea2, off_add, rT,
+        h.scr.ld (show arr w m + 8 * (wd - 1) + 8 ≤ Z by omega), h.scr.st (show arr w m + 8 * (wd - 1) + 8 ≤ Z by omega),
+        h.scr.st (show arr w t + 8 ≤ Z by omega), h.scr.st (show arr w t + 8 + 8 ≤ Z by omega),
+        h.scr.ld (show arr w m + 8 * (wd - 2) + 8 ≤ Z by omega), h.scr.st (show arr w t + 24 + 8 ≤ Z by omega)]
+      refine ⟨_, rfl, ?_⟩
+      have r2 := word_write_ne (m := ((s.mem.writeW (off B (arr w m + 8 * (wd - 1)))
+        (word s.mem B (arr w m + 8 * (wd - 1)) ||| 1#64 <<< 63)).writeW (off B (arr w t)) 1#64))
+        (B := B) (d := arr w t + 8) (d' := arr w m + 8 * (wd - 2))
+        (word s.mem B (arr w m + 8 * (wd - 1)) ||| 1#64 <<< 63) (by omega) (by omega) (by omega)
+      rw [word_write_ne (B := B) (d := arr w t) (d' := arr w m + 8 * (wd - 2)) _ (by omega) (by omega) (by omega),
+        word_write_ne (B := B) (d := arr w m + 8 * (wd - 1)) (d' := arr w m + 8 * (wd - 2)) _ (by omega) (by omega)
+          (by omega)] at r2
+      exact congrArg _ r2) (by decide))
+    fun u ⟨⟨F, hF, um, u11⟩, uk⟩ => ⟨F, by rw [hF]; exact or_top_toNat _, um, ?_, ?_, u11, ?_⟩
+  · rw [uk.gpr .r9 (by decide), gpr_write]; rfl
+  · rw [uk.gpr .r10 (by decide), gpr_write, gpr_write]; rfl
+  · exact ((Keep.write _ .r10 _).trans ((Keep.write _ .r9 _).trans uk)).mono (by decide)
 
 end VG.Proof.Rsa.PPC64LE.KeyDiv
