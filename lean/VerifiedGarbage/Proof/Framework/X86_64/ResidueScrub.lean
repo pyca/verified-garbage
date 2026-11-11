@@ -326,6 +326,35 @@ def resOkB (τ : FT) (stack : Nat) (ks cs : List Nat) : Bool :=
   τ.ok && τ.room == stack && τ.depth == 0 &&
     (List.range stack).all fun j => cov ks cs j || !τ.sec.any fun p => decide (p.1 ≤ j ∧ j < p.1 + p.2)
 
+/-- `resOkB`, checking only the bytes that `sec` lists (usually a few
+intervals) rather than every byte of the window (`stack` of them, a few
+seconds in the kernel for thousands). -/
+def resOkF (τ : FT) (stack : Nat) (ks cs : List Nat) : Bool :=
+  τ.ok && τ.room == stack && τ.depth == 0 &&
+    τ.sec.all fun p => (List.range' p.1 p.2).all fun j => !decide (j < stack) || cov ks cs j
+
+theorem resOkB_of_resOkF {τ : FT} {stack : Nat} {ks cs : List Nat} (h : resOkF τ stack ks cs = true) :
+    resOkB τ stack ks cs = true := by
+  simp only [resOkF, Bool.and_eq_true, List.all_eq_true, List.mem_range'_1, Bool.or_eq_true,
+    Bool.not_eq_true', decide_eq_false_iff_not, Nat.not_lt] at h
+  obtain ⟨⟨⟨ho, hr⟩, hd⟩, hs⟩ := h
+  simp only [resOkB, ho, hr, hd, Bool.true_and, List.all_eq_true, List.mem_range, Bool.or_eq_true,
+    Bool.not_eq_true', List.any_eq_false, decide_eq_true_eq]
+  intro j hj
+  by_cases hc : cov ks cs j = true
+  · exact .inl hc
+  · refine .inr fun p hp hin => hc ?_
+    rcases hs p hp j hin with h | h
+    · omega
+    · exact h
+
+/-- `(o.any (resOkF · stack ks cs))` gives `resOkB`'s. -/
+theorem any_resOkB {o : Option FT} {stack : Nat} {ks cs : List Nat}
+    (h : o.any (resOkF · stack ks cs) = true) : o.any (resOkB · stack ks cs) = true := by
+  cases o with
+  | none => cases h
+  | some τ => exact resOkB_of_resOkF h
+
 /-- The analysis of the code, from `init`, proves the bytes of the window
 outside the granules `ks` the same in both runs. -/
 theorem resOk_of_check {c : Prog isa} {ks cs : List Nat} {pubs : List (Nat × Nat × Nat)} (hA : ScrubAbi A)
@@ -440,13 +469,14 @@ structure Analysed (sig : Sig) (stack : Nat) (pubs : List (Nat × Nat × Nat)) (
   ok : ∃ h : VG.Taint.Hint FT,
     (VG.Taint.check rtaint (init sig stack pubs) code h).any (resOkB · stack ks (chunks stack)) = true
 
-/-- `Analysed.ok`, from the analysis with a hint `taint_decide` finds. -/
+/-- `Analysed.ok`, from the analysis with a hint `taint_decide` finds, ending
+as `resOkF` checks (which the kernel evaluates faster than `resOkB`). -/
 theorem Analysed.ok_of {sig : Sig} {stack : Nat} {pubs : List (Nat × Nat × Nat)} {code : Prog isa}
     (ks : List Nat) {h : VG.Taint.Hint FT}
-    (hc : (VG.Taint.check rtaint (init sig stack pubs) code h).any (resOkB · stack ks (chunks stack)) = true) :
+    (hc : (VG.Taint.check rtaint (init sig stack pubs) code h).any (resOkF · stack ks (chunks stack)) = true) :
     ∃ h : VG.Taint.Hint FT,
       (VG.Taint.check rtaint (init sig stack pubs) code h).any (resOkB · stack ks (chunks stack)) = true :=
-  ⟨h, hc⟩
+  ⟨h, any_resOkB hc⟩
 
 /-- `r`, returning without secret residue (`scrubReg`), given the residue
 analysis of its code (`Analysed`) and if `scrub`'s side conditions hold;

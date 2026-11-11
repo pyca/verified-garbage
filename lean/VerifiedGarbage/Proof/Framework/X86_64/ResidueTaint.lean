@@ -289,6 +289,11 @@ def baseStep (τ : FT) (i : Instr) : Option Taint.T :=
   | some t' => some t'
   | none => (X86_64.taint.step τ.t i).map (post τ i)
 
+/-- The flags after `i`: those of `cmp a, b` (64-bit), or nothing known. -/
+def flOf : Instr → Option (Reg × Reg)
+  | .alu .cmp a (.reg b) => some (a, b)
+  | _ => none
+
 def step (τ : FT) (i : Instr) : Option FT :=
   if τ.ok && !isa.writesSp i then
     match baseStep τ i with
@@ -297,9 +302,7 @@ def step (τ : FT) (i : Instr) : Option FT :=
         some { τ with
           t := t'
           ub := (ubNew τ i).toList ++ ubKill τ.ub i
-          fl := match i with
-            | .alu .cmp a (.reg b) => some (a, b)
-            | _ => none
+          fl := flOf i
           mb := mbAfter τ i }
       else none
     | none => none
@@ -397,5 +400,185 @@ def popF (τ : FT) : Instr → Option FT
         τ.ub.filter (·.1 != .rsp), none, mb', τ.fw.tail⟩
     else none
   | _ => none
+
+/-! ## Evaluation by the kernel
+
+The kernel evaluates `step`, `le` and `meet` at every instruction, hint and
+join of a check (`VG.Taint.check`). `stepF`, `leF` and `meetF` are the same
+functions (`ResidueTaintSound.lean` proves each equal to its model, so the
+analysis and its results are the same) written for the kernel:
+
+* `stepFn i` classifies the instruction `i` before the taint is substituted,
+  as the base analysis's `Taint.stepKDFn` does, so that the kernel unfolds
+  the matches on `i` once per instruction rather than once per check of it.
+  Most instructions (`isPlain`) need none of what the analysis adds to the
+  base analysis: their step is the base step (`fastFn`), with the bounds of
+  the register they write dropped. Stores without an index register only
+  need the pointers in slots (`fastStore`).
+* `leF` compares lists of slots in one pass when one is a sublist of the
+  other in order (`subl`), as a hint's taints usually are of the analysis's,
+  and compares numbers with `Nat.beq`.
+* `meetF` keeps the slots as they are when both sides have the same
+  (`eqs3`), as the two branches of an `ite` often do.
+
+As in `VG.KList`, the functions written with `List.rec`, which Lean's
+compiler does not compile, are `@[implemented_by]` the library's functions
+they equal, for the hints computed in compiled code (`keep_for%`,
+`taint_decide`); the kernel checks what those compute. -/
+
+/-- An instruction's transfer function, independent of the incoming taint
+(`Taint.Step` for the residue analysis). -/
+structure RStep where
+  run : FT → Option FT
+
+/-- Instructions whose step is the base analysis's alone: no store, no load
+of a pointer from a slot (`post`), no bound (`ubNew`) or flags (`flOf`), no
+zeroing idiom, and no write of registers other than `Taint.dstOf`'s. -/
+def isPlain : Instr → Bool
+  | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquStore .. | .vmovdquStore ..
+  | .vmovdqu32Store .. | .evStore .. | .e5ExtractStore .. | .stmxcsr _ | .kStore .. | .kStore8 .. => false
+  | .mov _ (.mem _) | .mov _ (.imm _) | .mov32 _ (.imm _) => false
+  | .alu .and _ (.imm _) | .alu32 .and _ (.imm _) => false
+  | .alu .xor d (.reg d') | .alu32 .xor d (.reg d') => d != d'
+  | .alu .cmp _ (.reg _) => false
+  | .xop (.bin .pxor _ _) => false
+  | .cmov .. | .mul _ | .mulx .. => false
+  | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => false
+  | _ => true
+
+/-- `ubKill ub i`, for an `i` that writes the register `d` alone. -/
+def ubDrop (d : Option Reg) (ub : List (Reg × Nat)) : List (Reg × Nat) :=
+  match ub, d with
+  | [], _ => []
+  | ub, some d => KList.filter (fun p => !regEq p.1 d) ub
+  | ub, none => ub
+
+def natsEqC (a b : List Nat) : Bool := a == b
+
+/-- `a == b`, with `List.rec` and `Nat.beq`. -/
+@[implemented_by natsEqC] def natsEq (a b : List Nat) : Bool :=
+  List.rec (motive := fun _ => List Nat → Bool)
+    (fun b => List.casesOn (motive := fun _ => Bool) b true fun _ _ => false)
+    (fun x _ ih b => List.casesOn (motive := fun _ => Bool) b false fun y b' => Nat.beq x y && ih b') a b
+
+/-- `step` of an instruction `isPlain` says is, whose base step is `b` and
+which writes the register `d`. -/
+def fastFn (b : Taint.Step) (d : Option Reg) : RStep := ⟨fun τ =>
+  match τ with
+  | ⟨ok, t, nfr, depth, room, sec, ras, ub, _, mb, fw⟩ =>
+    bif ok then
+      match b.run t with
+      | some t' =>
+        bif natsEq t'.lens t.lens then some ⟨true, t', nfr, depth, room, sec, ras, ubDrop d ub, none, mb, fw⟩
+        else none
+      | none => none
+    else none⟩
+
+/-- `mbAfter` of a store of `w` bytes at `m`, from the register `src` if a
+64-bit store. -/
+def mbStore (τ : FT) (m : MemOp) (w : Nat) (src : Option Reg) : List (Nat × Nat × Nat × Nat) :=
+  match storeRange τ m w with
+  | some (ri, lo, hi) =>
+    match src with
+    | some r =>
+      match τ.t.bases.find? (·.1 == r), addrOf τ.t m with
+      | some (_, pj, pk), some _ => (ri, lo, pj, pk) :: mbKill τ.mb ri lo hi
+      | _, _ => mbKill τ.mb ri lo hi
+    | none => mbKill τ.mb ri lo hi
+  | none => []
+
+/-- `step` of a store without an index register, whose base step is `b`. -/
+def fastStore (b : Taint.Step) (m : MemOp) (w : Nat) (src : Option Reg) : RStep := ⟨fun τ =>
+  match τ with
+  | ⟨ok, t, nfr, depth, room, sec, ras, ub, _, _, fw⟩ =>
+    bif ok then
+      match b.run t with
+      | some t' =>
+        bif natsEq t'.lens t.lens then some ⟨true, t', nfr, depth, room, sec, ras, ub, none, mbStore τ m w src, fw⟩
+        else none
+      | none => none
+    else none⟩
+
+/-- `step · i`, classifying `i` first. -/
+def stepFn (i : Instr) : RStep :=
+  bif isa.writesSp i then ⟨fun _ => none⟩
+  else bif isPlain i then fastFn (Taint.stepKDFn i) (Taint.dstOf i)
+  else match i with
+    | .store m r => bif m.index.isNone then fastStore (Taint.stepKDFn i) m 8 (some r) else ⟨(step · i)⟩
+    | .store32 m _ => bif m.index.isNone then fastStore (Taint.stepKDFn i) m 4 none else ⟨(step · i)⟩
+    | .store8 m _ => bif m.index.isNone then fastStore (Taint.stepKDFn i) m 1 none else ⟨(step · i)⟩
+    | .store16 m _ => bif m.index.isNone then fastStore (Taint.stepKDFn i) m 2 none else ⟨(step · i)⟩
+    | _ => ⟨(step · i)⟩
+
+/-- `step`, for the kernel (`stepF_eq`). -/
+def stepF (τ : FT) (i : Instr) : Option FT := (stepFn i).run τ
+
+/-- `a = b`, for pairs, slots and pointers in slots. -/
+def eq2 (a b : Nat × Nat) : Bool := Nat.beq a.1 b.1 && Nat.beq a.2 b.2
+
+def eq3 (a b : Nat × Nat × Nat) : Bool := Nat.beq a.1 b.1 && Nat.beq a.2.1 b.2.1 && Nat.beq a.2.2 b.2.2
+
+def eq4 (a b : Nat × Nat × Nat × Nat) : Bool :=
+  Nat.beq a.1 b.1 && Nat.beq a.2.1 b.2.1 && Nat.beq a.2.2.1 b.2.2.1 && Nat.beq a.2.2.2 b.2.2.2
+
+def sublC : List (Nat × Nat × Nat) → List (Nat × Nat × Nat) → Bool
+  | [], _ => true
+  | _ :: _, [] => false
+  | a :: as, b :: bs => if eq3 a b then sublC as bs else sublC (a :: as) bs
+
+/-- `as` is a sublist of `bs` (in order), in one pass over both. -/
+@[implemented_by sublC] def subl (as bs : List (Nat × Nat × Nat)) : Bool :=
+  List.rec (motive := fun _ => List (Nat × Nat × Nat) → Bool)
+    (fun as => List.casesOn (motive := fun _ => Bool) as true fun _ _ => false)
+    (fun b _ ih as => List.casesOn (motive := fun _ => Bool) as true fun a as' =>
+      bif eq3 a b then ih as' else ih as) bs as
+
+/-- `as.all (bs.contains ·)`, in one pass if `as` is a sublist of `bs`. -/
+def slotsLe (as bs : List (Nat × Nat × Nat)) : Bool := subl as bs || KList.all as (mem3 · bs)
+
+/-- `Taint.leK`, with `slotsLe`. -/
+def leKF (τ σ : Taint.T) : Bool :=
+  τ.regs.subset σ.regs && (!τ.flags || σ.flags) && natsEq τ.lens σ.lens &&
+    KList.all τ.bases (memB · σ.bases) && slotsLe τ.slots σ.slots && τ.lo.subset σ.lo &&
+    τ.xregs.subset σ.xregs
+
+/-- `ubOf`, with `KList` and `regEq`. -/
+def ubOfK (l : List (Reg × Nat)) (r : Reg) : Option Nat := (KList.find? (fun p => regEq p.1 r) l).map (·.2)
+
+/-- `le`, for the kernel (`leF_eq`). -/
+def leF (τ σ : FT) : Bool :=
+  !τ.ok || (σ.ok && Nat.beq τ.nfr σ.nfr && Nat.beq τ.depth σ.depth && Nat.beq τ.room σ.room &&
+    natsEq τ.ras σ.ras && leKF τ.t σ.t && KList.all σ.sec (fun p => KList.any τ.sec (eq2 p)) &&
+    KList.all τ.ub (fun p => (ubOfK σ.ub p.1).any (Nat.ble · p.2)) &&
+    (τ.fl.isNone || τ.fl == σ.fl) && KList.all τ.mb (fun e => KList.any σ.mb (eq4 e)) && natsEq τ.fw σ.fw)
+
+def eqs3C (as bs : List (Nat × Nat × Nat)) : Bool := as == bs
+
+/-- `as = bs`, for slots. -/
+@[implemented_by eqs3C] def eqs3 (as bs : List (Nat × Nat × Nat)) : Bool :=
+  List.rec (motive := fun _ => List (Nat × Nat × Nat) → Bool)
+    (fun bs => List.casesOn (motive := fun _ => Bool) bs true fun _ _ => false)
+    (fun a _ ih bs => List.casesOn (motive := fun _ => Bool) bs false fun b bs' => eq3 a b && ih bs') as bs
+
+/-- `Taint.meet`, keeping the slots as they are when both sides have the same. -/
+def meetT (τ₁ τ₂ : Taint.T) : Taint.T :=
+  match τ₁, τ₂ with
+  | ⟨r₁, f₁, l₁, b₁, s₁, lo₁, x₁⟩, ⟨r₂, f₂, l₂, b₂, s₂, lo₂, x₂⟩ =>
+    bif natsEq l₁ l₂ then
+      ⟨r₁.inter r₂, f₁ && f₂, l₁, KList.filter (memB · b₂) b₁,
+        bif eqs3 s₁ s₂ then s₁ else KList.filter (mem3 · s₂) s₁, lo₁.inter lo₂, x₁.inter x₂⟩
+    else ⟨r₁.inter r₂, f₁ && f₂, [], KList.filter (memB · b₂) b₁, [], lo₁.inter lo₂, x₁.inter x₂⟩
+
+/-- `meet`, for the kernel (`meetF_eq`). -/
+def meetF (τ₁ τ₂ : FT) : FT :=
+  bif τ₁.ok && τ₂.ok && Nat.beq τ₁.nfr τ₂.nfr && Nat.beq τ₁.depth τ₂.depth && Nat.beq τ₁.room τ₂.room &&
+      natsEq τ₁.ras τ₂.ras && natsEq τ₁.t.lens τ₂.t.lens && natsEq τ₁.fw τ₂.fw then
+    { τ₁ with
+      t := meetT τ₁.t τ₂.t
+      sec := τ₁.sec ++ τ₂.sec
+      ub := τ₁.ub.filterMap fun p => (ubOfK τ₂.ub p.1).map fun n => (p.1, max p.2 n)
+      fl := if τ₁.fl == τ₂.fl then τ₁.fl else none
+      mb := KList.filter (fun e => KList.any τ₂.mb (eq4 e)) τ₁.mb }
+  else none'
 
 end VG.X86_64.RTaint
