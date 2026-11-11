@@ -765,17 +765,17 @@ theorem val32_drop_top {m : Mem} {B : Addr} {d n R : Nat} (h : val32 m B d (n + 
   · have : 2 ^ (32 * n) ≤ 2 ^ (32 * n) * w32 m B (d + 4 * n) := Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero hz)
     omega
 
-/-- `montMul a x y m tt len cntW`, `len` holding `L` (`m`'s length in bytes,
+/-- `montCore a x y m tt len cntW`, `len` holding `L` (`m`'s length in bytes,
 `1 ≤ ⌈L / 4⌉ ≤ w`), for an odd `mv = [m]` and `Y = [y]` below
 `2^(32 ⌈L / 4⌉)`: for `Y < mv`, `[a] < mv` and `[a] 2^(32 w) ≡ [x] Y (mod mv)`. -/
-theorem montMul_ok {s : State} {B : Addr} {Z w N a x y m tt L mv Y : Nat} (hw : Ws s B Z w N) (hN : N ≤ 256)
+theorem montCore_ok {s : State} {B : Addr} {Z w N a x y m tt L mv Y : Nat} (hw : Ws s B Z w N) (hN : N ≤ 256)
     (ha : a < N) (hx : x < N) (hy : y < N) (hm : m < N) (ht : tt < N) (hax : a ≠ x) (hay : a ≠ y)
     (ham : a ≠ m) (hat : a ≠ tt) (htx : tt ≠ x) (hty : tt ≠ y) (htm : tt ≠ m) {len : Reg}
     (hlen : s.gpr len = BitVec.ofNat 64 L) (hL1 : 1 ≤ L) (hLw : (L + 3) / 4 ≤ w) (hr : len ∉ mkRegs)
     (hl0 : len ≠ .r0) (hmv : val32 s.mem B (arr w m) ((L + 3) / 4 + 1) = mv)
     (hmt : mv < 2 ^ (32 * ((L + 3) / 4))) (hodd : mv % 2 = 1)
     (hY : val32 s.mem B (arr w y) ((L + 3) / 4 + 1) = Y) (hYt : Y < 2 ^ (32 * ((L + 3) / 4))) :
-    WP isa (montMul a x y m tt len cntW) s fun t => Ws t B Z w N ∧ KeyWorkspace.Keep B w [a, tt] [] s.mem t.mem ∧
+    WP isa (montCore a x y m tt len cntW) s fun t => Ws t B Z w N ∧ KeyWorkspace.Keep B w [a, tt] [] s.mem t.mem ∧
       (Y < mv → num t.mem B w a < mv ∧ num t.mem B w a * 2 ^ (32 * w) % mv = num s.mem B w x * Y % mv) ∧
       Keep mkRegs s t := by
   have := hw.wle
@@ -795,7 +795,7 @@ theorem montMul_ok {s : State} {B : Addr} {Z w N a x y m tt L mv Y : Nat} (hw : 
     obtain ⟨k, rfl⟩ : ∃ k, K = k + 1 := ⟨K - 1, by omega⟩
     rw [← hmv]; show _ = (w32 s.mem B (arr w m) + 2 ^ 32 * val32 s.mem B (arr w m + 4) k) % 2 ^ 32
     rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (BitVec.isLt _)]
-  rw [montMul]; simp only [seqs]; rw [WP.seq_iff]
+  rw [montCore]; simp only [seqs]; rw [WP.seq_iff]
   refine WP.mono (init_ok hw hN ha hx hm ht (by rw [m0]; omega) hlen (by omega) hr hl0)
     fun u ⟨iv, ivl, inv, hu, u12, u10, u5, u8, u0, um, ku⟩ => ?_
   rw [hK] at u12
@@ -865,5 +865,111 @@ theorem montMul_ok {s : State} {B : Addr} {Z w N a x y m tt L mv Y : Nat} (hw : 
   have nm : num t.mem B w a = A % mv := val32_drop_top vW Rw
   refine ⟨by rw [nm]; exact Rlt, ?_⟩
   rw [nm, Nat.mod_mul_mod, cg]
+
+/-- The low `K` digits of a number below `2^(32 K)`. -/
+theorem val32_low {m : Mem} {B : Addr} {d n K R : Nat} (h : val32 m B d n = R) (hK : K ≤ n)
+    (hR : R < 2 ^ (32 * K)) : val32 m B d K = R := by
+  have := val32_append m B d K (n - K)
+  rw [show K + (n - K) = n by omega, h] at this
+  have hl := val32_lt m B d K
+  by_cases hz : val32 m B (d + 4 * K) (n - K) = 0
+  · rw [hz, Nat.mul_zero, Nat.add_zero] at this; exact this.symm
+  · have : 2 ^ (32 * K) ≤ 2 ^ (32 * K) * val32 m B (d + 4 * K) (n - K) :=
+      Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero hz)
+    omega
+
+theorem off_add (B : Addr) (a b : Nat) : off B a + BitVec.ofNat 64 b = off B (a + b) := by
+  simp only [off, BitVec.add_assoc, ← BitVec.ofNat_add]
+
+/-- `montTops`: digit `w` of `[m]` and of `[y]` zeroed. -/
+theorem tops_ok {s : State} {B : Addr} {Z w N m y : Nat} (hw : Ws s B Z w N) (hN : N ≤ 256) (hm : m < N)
+    (hy : y < N) (hmy : m ≠ y) :
+    WP isa (.block (montTops m y)) s fun u => Ws u B Z w N ∧ Keep [.r0, .r3, .r5] s u ∧
+      KeyWorkspace.Keep B w [m, y] [] s.mem u.mem ∧ num u.mem B w m = num s.mem B w m ∧
+      num u.mem B w y = num s.mem B w y ∧ w32 u.mem B (arr w m + 4 * w) = 0 ∧
+      w32 u.mem B (arr w y + 4 * w) = 0 := by
+  have := hw.wle
+  have hnw := hw.nowrap
+  have hS : S w = 4 * (w + 2) := rfl
+  have fm := hw.arr_fit hm
+  have fy := hw.arr_fit hy
+  have dmy := arr_disj (w := w) hmy
+  simp only [S] at dmy
+  have e4 : BitVec.ofNat 64 w <<< 2 = BitVec.ofNat 64 (4 * w) := shl2_ofNat w
+  simp only [montTops, List.append_assoc]
+  refine ptr_ok hw (r := .r5) (by decide) (by decide) (by decide) (show m < 2 ^ 15 by omega) ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.r0, .r3, .r5] (Q := fun u => u.mem = s.mem.writeW (off B (arr w m + 4 * w)) 0#32 ∧
+      u.gpr .r0 = BitVec.ofNat 64 (4 * w) ∧ u.gpr .r3 = 0) (by
+        prun [gpr_write, mem_write, hw.r29, e4, off_add, hw.scr.st (show arr w m + 4 * w + 4 ≤ Z by omega)]
+        exact ⟨rfl, rfl⟩) (by decide))
+    fun u1 ⟨⟨m1, r0, r3⟩, k1⟩ => ?_
+  have h1 := (hw.of_keep (Keep.write _ .r5 _)).of_keep k1
+  refine ptr_ok h1 (r := .r5) (by decide) (by decide) (by decide) (show y < 2 ^ 15 by omega) ?_
+  refine WP.mono (WP.keep [.r5] (Q := fun u => u.mem = u1.mem.writeW (off B (arr w y + 4 * w)) 0#32) (by
+      prun [gpr_write, mem_write, r0, r3, off_add, h1.scr.st (show arr w y + 4 * w + 4 ≤ Z by omega)]; rfl)
+      (by decide))
+    fun u ⟨mu, ku⟩ => ?_
+  have o1 : Outside B (arr w m + 4 * w) 4 s.mem u1.mem := by rw [m1]; exact writeW32_outside _ B _ (by omega)
+  have o2 : Outside B (arr w y + 4 * w) 4 u1.mem u.mem := by rw [mu]; exact writeW32_outside _ B _ (by omega)
+  refine ⟨(h1.of_keep (Keep.write _ .r5 _)).of_keep ku, (((Keep.write _ .r5 _).trans k1).trans
+    ((Keep.write _ .r5 _).trans ku)).mono (by decide), ?_, ?_, ?_, ?_, ?_⟩
+  · exact (KeyWorkspace.Keep.of_arr (o := m) (d := 4 * w) o1 (by simp only [S]; omega) (by simp)).trans
+      (KeyWorkspace.Keep.of_arr (o := y) (d := 4 * w) o2 (by simp only [S]; omega) (by simp))
+  · show val32 u.mem B (arr w m) w = val32 s.mem B (arr w m) w
+    rw [o2.val32 (by omega) (by omega), o1.val32 (by omega) (by omega)]
+  · show val32 u.mem B (arr w y) w = val32 s.mem B (arr w y) w
+    rw [o2.val32 (by omega) (by omega), o1.val32 (by omega) (by omega)]
+  · rw [o2.w32 (by omega) (by omega), m1, w32_write_self]; rfl
+  · rw [mu, w32_write_self]; rfl
+
+/-- `montMul a x y m tt len cntW`, `len` holding `L` (`m`'s length in bytes,
+`1 ≤ ⌈L / 4⌉ ≤ w`), for an odd `mv = [m]` and `Y = [y]` below
+`2^(32 ⌈L / 4⌉)`: for `Y < mv`, `[a] < mv` and `[a] 2^(32 w) ≡ [x] Y (mod mv)`;
+`[m]` and `[y]` keep their values (their digit `w` is zeroed). -/
+theorem montMul_ok {s : State} {B : Addr} {Z w N a x y m tt L mv Y : Nat} (hw : Ws s B Z w N) (hN : N ≤ 256)
+    (ha : a < N) (hx : x < N) (hy : y < N) (hm : m < N) (ht : tt < N) (hax : a ≠ x) (hay : a ≠ y)
+    (ham : a ≠ m) (hat : a ≠ tt) (htx : tt ≠ x) (hty : tt ≠ y) (htm : tt ≠ m) (hmy : m ≠ y) {len : Reg}
+    (hlen : s.gpr len = BitVec.ofNat 64 L) (hL1 : 1 ≤ L) (hLw : (L + 3) / 4 ≤ w) (hr : len ∉ mkRegs)
+    (hl0 : len ≠ .r0) (hmv : num s.mem B w m = mv) (hmt : mv < 2 ^ (32 * ((L + 3) / 4))) (hodd : mv % 2 = 1)
+    (hY : num s.mem B w y = Y) (hYt : Y < 2 ^ (32 * ((L + 3) / 4))) :
+    WP isa (montMul a x y m tt len cntW) s fun t => Ws t B Z w N ∧
+      KeyWorkspace.Keep B w [a, tt, m, y] [] s.mem t.mem ∧ num t.mem B w m = mv ∧ num t.mem B w y = Y ∧
+      (Y < mv → num t.mem B w a < mv ∧ num t.mem B w a * 2 ^ (32 * w) % mv = num s.mem B w x * Y % mv) ∧
+      Keep mkRegs s t := by
+  have := hw.wle
+  have hS : S w = 4 * (w + 2) := rfl
+  rw [montMul, WP.seq_iff]
+  refine WP.mono (tops_ok hw hN hm hy hmy) fun u ⟨hu, ku, Ku, num_m, num_y, tm, ty⟩ => ?_
+  have K1 : (L + 3) / 4 + 1 ≤ w + 1 := by omega
+  have toK : ∀ {j R : Nat}, num u.mem B w j = R → w32 u.mem B (arr w j + 4 * w) = 0 →
+      R < 2 ^ (32 * ((L + 3) / 4)) → val32 u.mem B (arr w j) ((L + 3) / 4 + 1) = R := fun {j R} e z lt => by
+    have e1 : val32 u.mem B (arr w j) (w + 1) = R := by rw [val32_succ, z, Nat.mul_zero, Nat.add_zero]; exact e
+    exact val32_low e1 K1 (Nat.lt_of_lt_of_le lt (Nat.pow_le_pow_right (by decide) (by omega)))
+  have n3 : len ∉ [.r0, .r3, .r5] := fun hm' => hr (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hm' ⊢; rcases hm' with e | e | e <;> simp [e])
+  have ul : u.gpr len = BitVec.ofNat 64 L := by rw [ku.gpr _ n3]; exact hlen
+  have hx' : num u.mem B w x = num s.mem B w x := by
+    by_cases e1 : x = m
+    · rw [e1, num_m, hmv, ← hmv, ← e1]
+    · by_cases e2 : x = y
+      · rw [e2, num_y]
+      · exact keep_val Ku (by omega) (by
+          intro z hz; simp only [List.mem_cons, List.not_mem_nil, or_false] at hz; rcases hz with rfl | rfl <;> omega)
+          (by simp) (hw.fit64 hx)
+  refine WP.mono (montCore_ok hu hN ha hx hy hm ht hax hay ham hat htx hty htm ul hL1 hLw hr hl0
+    (toK (num_m.trans hmv) tm hmt) hmt hodd (toK (num_y.trans hY) ty hYt) hYt)
+    fun t ⟨ht', Kt, cg, kt⟩ => ⟨ht', ?_, ?_, ?_, fun hYm => by rw [← hx']; exact cg hYm, (ku.trans kt).mono (by decide)⟩
+  · exact (Ku.mono (by simp)).trans (Kt.mono (by simp))
+  · show val32 t.mem B (arr w m) w = mv
+    rw [keep_val Kt (by omega) (by
+      intro z hz; simp only [List.mem_cons, List.not_mem_nil, or_false] at hz; rcases hz with rfl | rfl <;> omega)
+      (by simp) (hw.fit64 hm)]
+    exact num_m.trans hmv
+  · show val32 t.mem B (arr w y) w = Y
+    rw [keep_val Kt (by omega) (by
+      intro z hz; simp only [List.mem_cons, List.not_mem_nil, or_false] at hz; rcases hz with rfl | rfl <;> omega)
+      (by simp) (hw.fit64 hy)]
+    exact num_y.trans hY
 
 end VG.Proof.Rsa.PPC64LE.MontKey

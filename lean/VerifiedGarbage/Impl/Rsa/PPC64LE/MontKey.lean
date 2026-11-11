@@ -96,10 +96,21 @@ def montFinal (a m t : Nat) : Prog isa := seqs [
   .block (ptr .r5 a ++ ptr .r6 t ++ ptr .r7 a ++ [.addi .r8 .r12 0, .li .r0 0, .sub .r9 .r0 .r9]),
   countLoop .r8 selBody]
 
-/-- `[a] := [x] [y] 2^(-32 c) mod [m]`, `c` steps set into `r4` by `cnt`. -/
-def montMul (a x y m t : Nat) (len : Reg) (cnt : List Instr) : Prog isa := seqs [
+/-- Digit `w` of `[m]` and of `[y]` zeroed (their `w` digits unchanged), so
+that their `K ≤ w + 1` digits are their values. -/
+def montTops (m y : Nat) : List Instr :=
+  ptr .r5 m ++ [.lsl .r0 .r29 2, .add .r5 .r5 .r0, .li .r3 0, .store .w .r3 .r5 0] ++
+  ptr .r5 y ++ [.add .r5 .r5 .r0, .store .w .r3 .r5 0]
+
+/-- `[a] := [x] [y] 2^(-32 c) mod [m]`, `c` steps set into `r4` by `cnt`, from
+`[m]` and `[y]` with digit `w` zero. -/
+def montCore (a x y m t : Nat) (len : Reg) (cnt : List Instr) : Prog isa := seqs [
   .block (montInit a x m t len), countLoop .r8 [.store .w .r0 .r5 0, .addi .r5 .r5 4],
   .block cnt, .loop (montStep a y m t) (.nonzero .d .r4), montFinal a m t]
+
+/-- `[a] := [x] [y] 2^(-32 c) mod [m]`, `c` steps set into `r4` by `cnt`. -/
+def montMul (a x y m t : Nat) (len : Reg) (cnt : List Instr) : Prog isa :=
+  .seq (.block (montTops m y)) (montCore a x y m t len cnt)
 
 /-- `w` steps, for `[x] < 2^(32 w)`. -/
 def cntW : List Instr := [.addi .r4 .r29 0]
