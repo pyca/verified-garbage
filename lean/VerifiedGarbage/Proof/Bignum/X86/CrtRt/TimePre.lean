@@ -355,6 +355,105 @@ theorem powerP_relCT {f e o i : Nat} (hi : i ≤ 1) (fitsW : 8 * preW args i ≤
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨W, h⟩
   exact powerP_relCT_W hi fitsW (fun hW => ((h.1.2.2 hW).2)) hc hr hf9 hf he9 he ho16 ho _ _ _ _ _ _ h
 
+
+/-! ## The coefficient with `pre` -/
+
+theorem wideCoefficientP_eq : wideCoefficient (some 0) = .seq (copy (.slot .wide 10) (.slot .wide 0) (one .wide))
+    (.seq (preparePre .wide 0) (Prog.chain coHead (.seq (CrtRt.mul .wide 5 5 4) (.seq (CrtRt.mul .wide 5 5 3)
+      (.seq (subMod .wide 7 6 5) (.seq (CrtRt.mul .wide 8 8 4) (CrtRt.mul .wide 7 7 8))))))) := rfl
+
+theorem coCopyP_wide (X : HeadP Ex base bytes len args sp 10 (cwc len .wide) 0 s) :
+    WP isa (copy (.slot .wide 10) (.slot .wide 0) (one .wide)) s (PrepP Ex base bytes len args sp .wide 0) := by
+  obtain ⟨R, P, W⟩ := X
+  have h := R.1
+  have bl := h.bytes_lt
+  have f8 := h.slot_fit .wide (j := 8) (by decide)
+  have est : st len .wide = 2 * bc len .wide + 32 := rfl
+  have bw := bc_eq_cwc len .wide
+  have nb : numBase = 3336 := rfl
+  have l0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
+  have l8 : lo len (.slot .wide 8) = numBase + 8 * st len .wide := rfl
+  refine WP.mono (copyDown_ok h (j := 10) (d := 0) (by decide) (by decide) (by decide)) fun u ⟨O, V, K⟩ =>
+    ⟨R.keep K (O.mono (Nat.zero_le _) (by omega_arith)), ?_, W.keep K⟩
+  rw [V]
+  exact P.keepO K (by decide) (O.mono (Nat.zero_le _) (by omega_arith)) (by omega_arith)
+
+theorem wideCoefficientP_relCT (hc : CoChecks) (fits : 8 * preW args 0 ≤ bc len .wide) :
+    RelCT isa (Both (HeadP Ex base bytes len args sp 10 (cwc len .wide) 0)) (wideCoefficient (some 0))
+      (Both (Run Ex base bytes len args sp)) := by
+  rw [wideCoefficientP_eq]
+  refine VG.RelCT.seq (taint_both (fun _ _ X₁ X₂ => X₁.1.agree X₂.1) _ hc.copy fun _ X => coCopyP_wide X) ?_
+  refine VG.RelCT.seq (preparePre_relCT (by decide) fits) ?_
+  refine VG.RelCT.chain (VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.agree W₂) _ hc.head
+    fun _ W => coHead_wst W) ?_)
+  refine VG.RelCT.seq (mul_wst_relCT0 (o := 5) (a := 5) (b := 4) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) hc.m554 (ks' := [3, 4, 5]) (by decide) (by decide) (by decide)) ?_
+  refine VG.RelCT.seq (mul_wst_relCT0 (o := 5) (a := 5) (b := 3) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) hc.m553 (ks' := [3, 4, 5]) (by decide) (by decide) (by decide)) ?_
+  refine VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.agree W₂) _ hc.sub fun _ W => subMod_wst W) ?_
+  refine VG.RelCT.seq (mul_wst_relCT0 (o := 8) (a := 8) (b := 4) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) hc.m884 (ks' := [8]) (by decide) (by decide) (by decide)) ?_
+  exact (mul_wst_relCT0 (o := 7) (a := 7) (b := 8) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) hc.m778 (ks' := []) (by decide) (by decide) (by decide)).mono (fun _ _ h => h)
+    fun _ _ h => ⟨h.1.run, h.2.run⟩
+
+theorem coCopyP_half (X : HeadP Ex base bytes len args sp 10 (cwc len .half) 0 s) :
+    WP isa (copy (.slot .wide 10) (.slot .half 0) (one .half)) s (PrepP Ex base bytes len args sp .half 0) := by
+  obtain ⟨R, P, W⟩ := X
+  have bl := R.1.bytes_lt
+  refine WP.mono (toHalf_val (j := 10) (d := 0) (by decide) (by decide) (by decide) R) fun u ⟨R₁, _, V, K, B⟩ =>
+    ⟨R₁, ?_, W.keep K⟩
+  rw [V]
+  exact P.keepO K (by decide) B (by omega_arith)
+
+theorem narrowCoefficientP_relCT (hc : CoChecks) (h14 : RHChecks 14) (h17 : RHChecks 17)
+    (fits : 8 * preW args 0 ≤ bc len .half) :
+    RelCT isa (Both (HeadP Ex base bytes len args sp 10 (cwc len .half) 0)) (narrowCoefficient (some 0))
+      (Both (Run Ex base bytes len args sp)) := by
+  unfold narrowCoefficient
+  refine VG.RelCT.seq (taint_both (fun _ _ X₁ X₂ => X₁.1.agree X₂.1) _ hc.copyP fun _ X => coCopyP_half X) ?_
+  refine VG.RelCT.seq (preparePre_relCT (by decide) fits) ?_
+  refine VG.RelCT.seq (reduceHalf_relCT h14 (by decide) (by decide) (ks := [3, 4]) (by decide) (by decide)
+    (by decide)) ?_
+  refine VG.RelCT.seq (mul_wst_relCT0 (o := 8) (a := 5) (b := 4) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) hc.m854 (ks' := [8, 3, 4]) (by decide) (by decide) (by decide)) ?_
+  refine VG.RelCT.seq (reduceHalf_relCT h17 (by decide) (by decide) (ks := [8, 3, 4]) (by decide) (by decide)
+    (by decide)) ?_
+  refine VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.agree W₂) _ hc.copyMp
+    fun _ W => toHalf_wst (by decide) (by decide) (by decide) (by decide) (by decide) W) ?_
+  refine VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.agree W₂) _ hc.subH fun _ W => subModH_wst W) ?_
+  refine VG.RelCT.seq (mul_wst_relCT0 (o := 6) (a := 7) (b := 8) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) hc.m678 (ks' := []) (by decide) (by decide) (by decide)) ?_
+  exact taint_both (fun _ _ W₁ W₂ => W₁.agree W₂) _ hc.saveH fun _ W => saveResult7_run W
+
+/-- After the test of the coefficient: a run, what the test read, and the state it started from. -/
+theorem coefficientP_relCT_W {W : Nat} (fitsW : 8 * preW args 0 ≤ bc len .wide)
+    (fitsH : W ≤ bc len .half → 8 * preW args 0 ≤ bc len .half)
+    (hc : CoChecks) (h14 : RHChecks 14) (h17 : RHChecks 17) :
+    RelCT isa (Both (PowP Ex base bytes len args sp 10 0 W)) (coefficient (some 0))
+      (Both (Run Ex base bytes len args sp)) := by
+  unfold coefficient
+  refine VG.RelCT.seq (PublicRt.relCT_both (F := TestP Ex base bytes len args sp 10 0 W)
+    (VG.RelCT.taint (A := taint) τA (fun _ _ h => h.1.1.1.agree h.2.1.1) hc.test)
+    fun x X => WP.mono (powerTestP_run X.1.1 X.2.1) fun u ⟨R, e, m, K⟩ => ⟨x, X, R, e, m, K⟩) ?_
+  refine VG.RelCT.ite (fun _ _ h => by
+    obtain ⟨_, _, _, e₁, _⟩ := h.1
+    obtain ⟨_, _, _, e₂, _⟩ := h.2
+    exact e₁.trans e₂.symm) ?_ ?_
+  · by_cases hW : W ≤ bc len .half
+    · have narrow : ∀ {u}, TestP Ex base bytes len args sp 10 0 W u → HeadP Ex base bytes len args sp 10 (cwc len .half) 0 u :=
+        fun {u} T => T.head _ (by
+          obtain ⟨v, ⟨_, _, N⟩, _, _, m, _⟩ := T
+          rw [m]; exact (N hW).1)
+      exact (narrowCoefficientP_relCT hc h14 h17 (fitsH hW)).mono
+        (fun _ _ h => ⟨narrow h.1.1, narrow h.1.2⟩) fun _ _ h => h
+    · intro s₁ s₂ t₁ t₂ s₁' s₂' h
+      obtain ⟨⟨⟨_, _, _, e₁, _⟩, _⟩, b⟩ := h
+      have : decide (W < bc len .half + 1) = true := Option.some.inj (e₁.symm.trans b)
+      exact absurd (of_decide_eq_true this) (by omega_arith)
+  · exact (wideCoefficientP_relCT hc fitsW).mono
+      (fun _ _ h => ⟨h.1.1.head _ rfl, h.1.2.head _ rfl⟩) fun _ _ h => h
+
 end
 
 end VG.Proof.Bignum.X86.CrtRt
