@@ -85,9 +85,9 @@ abbrev mac (K text : List Byte) : List Byte := Spec.Hmac.hmac P.ok.SH.H K text
 
 theorem hI : Verified X86_64.target P.H.hmacInit (initG P.ok.SH P.H.W) := hmacInit_ok P.ok P.C P.K P.satI
 
-theorem hIsp : NoSp P.H.hmacInit := nosp_of (core_hmacInit P.K.cNs P.K.iNs P.C.hinitNs)
+theorem hIsp : NoSp P.H.hmacInit := nosp_of (core_hmacInit P.K.iNs P.K.b.bNs P.C.hinitNs)
 
-theorem hId : P.H.hmacInit.depth ≤ 2 := core_hmacInit_depth P.K.cD P.K.iD P.C.hinitD
+theorem hId : P.H.hmacInit.depth ≤ 2 := core_hmacInit_depth P.K.iD P.K.b.bD P.C.hinitD
 
 theorem hF : Verified X86_64.target P.H.hmacFin (finG P.ok.SH P.H.W) := hmacFin_ok P.ok P.C P.K P.satF
 

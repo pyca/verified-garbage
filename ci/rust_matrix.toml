@@ -364,7 +364,11 @@ aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
 # RSAES-PKCS1-v1_5 decryption with SHA-256's other implementations (its
 # AVX2 code with BMI1, its baseline code without). The line without
 # AVX512_FP16 keeps vg_rsa_private_checked_ifma with the SHA512 extension;
-# that arithmetic runs in full on icx.
+# that arithmetic runs in full on icx. The line with AVX512_FP16 and BMI1
+# and without the SHA512 extension also runs HMAC over the SHA-512 family
+# with its `_avx512` `init` (vg_sha512_compress2_avx512), which is chosen
+# only with AVX512_FP16 and after the SHA512 extension's (`sha384` and
+# `sha512`; skx and hsw run AVX2's `init`).
 [[cpu]]
 chip = "dmr"
 shards = 2
@@ -372,7 +376,7 @@ runs = """
 - | ed25519 rsa rsa_pss_hashes rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx2,sha512,avx512f,bmi2,adx,avx512ifma,avx512vl | rsa_oaep_pairs cpu
 avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl,avx512fp16 | rsa_pkcs1_hashes cpu
-avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl,avx512fp16 | rsa_pkcs1_hashes cpu
+avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl,avx512fp16 | rsa_pkcs1_hashes sha384 sha512 cpu
 """
 
 # The `rust` job runs every test with the runner's features, detected at

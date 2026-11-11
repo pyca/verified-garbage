@@ -2314,6 +2314,10 @@ pub(crate) mod vg_sha512_256_init_core;
 pub(crate) mod vg_sha512_compress;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sha512_compress2_avx512.rs"]
+pub(crate) mod vg_sha512_compress2_avx512;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sha512_compress_avx2.rs"]
 pub(crate) mod vg_sha512_compress_avx2;
 

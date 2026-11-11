@@ -67,7 +67,7 @@ def hash (v : Compress) : Hash where
 
 /-- `hash v` without the functions it calls, the same for every `v`. -/
 def coreH : Hash := ⟨Impl.Sha1.X86_64.Stream.params, 20, 56, "", .block [], "", .block [], "", "", "", "",
-  ""⟩
+  "", Proof.Pbkdf2.Md.X86_64.coreBoth⟩
 
 theorem coreOK : CoreOK coreH := by
   refine {
@@ -117,17 +117,18 @@ theorem anyOK : Any.AnyOK coreH := by
 
 variable (v : Compress)
 
-theorem callees : Callees (hash v) where
-  cMx := v.mxcsr
-  cSp := allInstrs_of_all v.spSafe
-  cNs := v.callee_nosp
-  cD := v.ok.depth
-  iMx := by simp only [hash] <;> decide +kernel
-  iSp := by simp only [hash] <;> decide +kernel
-  iNs := by simp only [hash] <;> decide +kernel
-  iD := by simp only [hash] <;> decide +kernel
-  cXD := v.noStack
-  iXD := by simp only [hash] <;> decide +kernel
+theorem callees : Callees (hash v) :=
+  .ofTwice rfl
+    (cMx := v.mxcsr)
+    (cSp := allInstrs_of_all v.spSafe)
+    (cNs := v.callee_nosp)
+    (cD := v.ok.depth)
+    (iMx := by simp only [hash] <;> decide +kernel)
+    (iSp := by simp only [hash] <;> decide +kernel)
+    (iNs := by simp only [hash] <;> decide +kernel)
+    (iD := by simp only [hash] <;> decide +kernel)
+    (cXD := v.noStack)
+    (iXD := by simp only [hash] <;> decide +kernel)
 
 def ok : HashOK (hash v) where
   md := Proof.Sha1.md

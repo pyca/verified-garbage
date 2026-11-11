@@ -41,7 +41,7 @@ def pT (n : Nat) (ks : List Nat) (rs : List Reg) : X86_64.Taint.T :=
 
 /-- A hash function with the parameters `P` and the digest size `D`, and no
 functions to call. -/
-def ckH (P : Params) (D : Nat) : Hash := ⟨P, D, 0, "", .block [], "", .block [], "", "", "", "", ""⟩
+def ckH (P : Params) (D : Nat) : Hash := ⟨P, D, 0, "", .block [], "", .block [], "", "", "", "", "", .block []⟩
 
 /-- The pieces of `ctHash` and `mgfXor` that depend on the hash function,
 with `n` writable regions after the frame. -/
