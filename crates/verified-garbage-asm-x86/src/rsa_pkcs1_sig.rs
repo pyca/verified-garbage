@@ -869,8 +869,8 @@ jmp 225f
 225:
 .base64 "g/gA"
 je 254f
-.base64 "i4QkdAQAAIkEJIuEJHgEAACJRCQEi4QkfAQAAIlEJAiLhCSABAAAiUQkDIuEJIQEAACJRCQQi4QkiAQAAIlEJBSJ4IPAYIlEJBiLhCSABAAAiUQkHIuEJJgEAACJRCQgi4QknAQAAIlEJCSLhCSgBAAAiUQkKIuEJKQEAACJRCQsi4QkqAQAAIlEJDCLhCSsBAAAiUQkNIuEJLAEAACJRCQ4i4QktAQAAIlEJDyLhCS4BAAAiUQkQIuEJLwEAACJRCREi4QkwAQAAIlEJEiLhCTEBAAAiUQkTA=="
-call {vg_rsa_private_checked}
+.base64 "i4QkdAQAAIkEJIuEJHgEAACJRCQEi4QkfAQAAIlEJAiLhCSABAAAiUQkDIuEJIQEAACJRCQQi4QkiAQAAIlEJBSJ4IPAYIlEJBiLhCSABAAAiUQkHIuEJJgEAACJRCQgi4QknAQAAIlEJCSLhCSgBAAAiUQkKIuEJKQEAACJRCQsi4QkqAQAAIlEJDCLhCSsBAAAiUQkNIuEJLAEAACJRCQ4i4QktAQAAIlEJDyLhCS4BAAAiUQkQIuEJLwEAACJRCREi4QkwAQAAIlEJEiLhCTEBAAAiUQkTIuEJMgEAACJRCRQi4QkzAQAAIlEJFQ="
+call {vg_rsa_private_checked_precomputed}
 .base64 "icO4AAAAAInmg8Zgi4wkgAQAAA=="
 256:
 .base64 "iAaDxgGD6QE="
@@ -885,6 +885,6 @@ jne 257b
 255:
 .base64 "jaQkYAQAAIs8JItsJAiLdCQEW1tbW8M="
 .p2align 6"#,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
 }

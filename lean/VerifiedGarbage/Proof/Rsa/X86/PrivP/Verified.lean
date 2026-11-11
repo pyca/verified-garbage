@@ -27,6 +27,8 @@ stack-pointer safety, and the `vg_rsa_private_crt_precomputed` it calls
 (`crtPBaseline`).
 -/
 
+-- separate module: the wrapper's certificate, which each precomputed caller (PKCS #1 v1.5 signing and decryption) imports without the other.
+
 @[expose] public section
 namespace VG.Proof.Rsa.X86.PrivChecked
 open VG VG.X86

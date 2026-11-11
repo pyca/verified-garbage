@@ -3774,7 +3774,11 @@ vg_rsa_pkcs1_sign_precomputed:
 	mov DWORD PTR [esp+72], eax
 	mov eax, DWORD PTR [esp+1220]
 	mov DWORD PTR [esp+76], eax
-	call {vg_rsa_private_checked}
+	mov eax, DWORD PTR [esp+1224]
+	mov DWORD PTR [esp+80], eax
+	mov eax, DWORD PTR [esp+1228]
+	mov DWORD PTR [esp+84], eax
+	call {vg_rsa_private_checked_precomputed}
 	mov ebx, eax
 	mov eax, 0
 	mov esi, esp

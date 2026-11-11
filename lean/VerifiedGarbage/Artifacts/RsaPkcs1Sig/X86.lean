@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyVerified
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignStackSafety
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignVerified
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrecomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignP.Verified
 public import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 public import VerifiedGarbage.Proof.Bignum.FrameOutside
 public import VerifiedGarbage.Proof.Bignum.MemoryFrame
@@ -173,7 +173,7 @@ end VG.Artifacts.RsaPkcs1Sig.X86
 
 namespace VG.Artifacts.RsaPkcs1Sig.X86
 
-open VG.Proof.Rsa.X86.PrivChecked (CrtImpl privCode)
+open VG.Proof.Rsa.X86.PrivChecked (CrtImpl privCode privCodeP crtPBaseline)
 open VG.Proof.RsaPkcs1Sig.X86.Sgn
 
 def artifacts : List Artifact :=
@@ -187,9 +187,10 @@ def artifacts : List Artifact :=
       spSafe := code_sp v },
     Spec.RsaPkcs1Sig.signPrecomputedApi.artifact X86.target {
       suffix := v.suffix
-      code := Impl.RsaPkcs1Sig.X86.Sign.code (privName v) (privCode v)
+      code := Impl.RsaPkcs1Sig.X86.Sign.code (privNameP v) (privCodeP v crtPBaseline)
+        Impl.RsaPkcs1Sig.X86.Sign.callArgsP
       stack := sigStack
       verified := signPrecomputed_verified v
-      spSafe := code_sp v }])
+      spSafe := codeP_sp v crtPBaseline }])
 
 end VG.Artifacts.RsaPkcs1Sig.X86

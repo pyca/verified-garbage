@@ -15,8 +15,10 @@ open VG.Proof.Dsa.X86 (argumentPointer)
 structure SignABI (s : State) : Prop where
   stackLow : sigStack ≤ (s.gpr .esp).toNat
   stackBound : (s.gpr .esp).toNat + 88 ≤ 2 ^ 32
-  rd : s.rd = [⟨argumentPointer s 2, (arg s 3).toNat⟩, ⟨argumentPointer s 4, (arg s 5).toNat⟩, ⟨argumentPointer s 7, (arg s 8).toNat⟩, ⟨argumentPointer s 9, (arg s 10).toNat⟩, ⟨argumentPointer s 11, (arg s 12).toNat⟩, ⟨argumentPointer s 13, (arg s 14).toNat⟩, ⟨argumentPointer s 15, (arg s 16).toNat⟩, ⟨argumentPointer s 17, (arg s 18).toNat⟩]
-  wr : s.wr = [⟨argumentPointer s 0, (arg s 1).toNat⟩, ⟨argumentPointer s 19, (arg s 20).toNat * 8⟩, ⟨argAddr s 0, 84⟩]
+  rd : ∀ r, r ∈ ([⟨argumentPointer s 2, (arg s 3).toNat⟩, ⟨argumentPointer s 4, (arg s 5).toNat⟩, ⟨argumentPointer s 7, (arg s 8).toNat⟩, ⟨argumentPointer s 9, (arg s 10).toNat⟩, ⟨argumentPointer s 11, (arg s 12).toNat⟩, ⟨argumentPointer s 13, (arg s 14).toNat⟩, ⟨argumentPointer s 15, (arg s 16).toNat⟩, ⟨argumentPointer s 17, (arg s 18).toNat⟩] : List Region) → r ∈ s.rd
+  outW : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region) ∈ s.wr
+  wsW : (⟨argumentPointer s 19, (arg s 20).toNat * 8⟩ : Region) ∈ s.wr
+  argsW : InRegions s.wr (argAddr s 0) 84
   outN : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 2, (arg s 3).toNat⟩
   outE : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 4, (arg s 5).toNat⟩
   outI : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat⟩
@@ -75,5 +77,10 @@ structure SignABI (s : State) : Prop where
 theorem signABI_of {s : State} (h : (Spec.RsaPkcs1Sig.signContract abi sigStack).pre s) : SignABI s := by
   sig_pre [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
-  constructor <;> simp only [sigStack] at * <;> with_reducible assumption
+  constructor <;> simp only [sigStack] at *
+  all_goals first
+    | with_reducible assumption
+    | (intro r hr; rw [‹s.rd = _›]; exact hr)
+    | (rw [‹s.wr = _›]; simp)
+    | (rw [‹s.wr = _›]; exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), Region.contains_self _ _⟩)
 end VG.Proof.RsaPkcs1Sig.X86.Sgn
