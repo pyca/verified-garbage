@@ -16,8 +16,8 @@ import VerifiedGarbage.Proof.Framework.Taint
 The function's buffers and its stack, from the inner frame's base `Q`
 (`Lay`): below it the `P` bytes the calls use (`LOW`), from it the inner
 frame (`FR`: the private-key operation's stack arguments, then the slots),
-the frame holding our return address (`LR`, from `Q + 208`) and our stack
-arguments (`ARGS`, from `Q + 224`). `lay_ok` reads what the shared contract
+the frame holding our return address (`LR`, from `Q + 224`) and our stack
+arguments (`ARGS`, from `Q + 240`). `lay_ok` reads what the shared contract
 says of them (`Lay.Ok`). `Ctx` is what holds between the frames' pushes and
 pops once the slots are written, and `Kept` the words in the frames that
 no step changes.
@@ -75,10 +75,10 @@ abbrev DQ : Region := ⟨L.dq, L.ql.toNat⟩
 abbrev QI : Region := ⟨L.qi, L.pl.toNat⟩
 abbrev SCR : Region := ⟨L.scr, L.sl.toNat * 8⟩
 abbrev FR : Region := ⟨L.Q, frameBytes⟩
-abbrev LR : Region := ⟨L.Q + BitVec.ofNat 64 208, 16⟩
-abbrev ARGS : Region := ⟨L.Q + BitVec.ofNat 64 224, 120⟩
+abbrev LR : Region := ⟨L.Q + BitVec.ofNat 64 224, 16⟩
+abbrev ARGS : Region := ⟨L.Q + BitVec.ofNat 64 240, 120⟩
 abbrev LOW : Region := ⟨L.Q - BitVec.ofNat 64 L.P, L.P⟩
-abbrev STK : Region := ⟨L.Q - BitVec.ofNat 64 L.P, L.P + 224⟩
+abbrev STK : Region := ⟨L.Q - BitVec.ofNat 64 L.P, L.P + 240⟩
 
 /-- The buffers the function only reads. -/
 def ro : List Region := [L.N, L.E, L.D, L.INP, L.PP, L.QQ, L.DP, L.DQ, L.QI]
@@ -106,7 +106,7 @@ structure Ok : Prop where
   bM : L.ml.toNat + 8 ≤ 2 ^ 64
   bS : L.scr.toNat + L.sl.toNat * 8 ≤ 2 ^ 64
   bR : ∀ R ∈ L.ro, R.base.toNat + R.len ≤ 2 ^ 64
-  nQ : L.Q.toNat + 344 ≤ 2 ^ 64
+  nQ : L.Q.toNat + 360 ≤ 2 ^ 64
   pQ : L.P ≤ L.Q.toNat
   /-- The lengths. -/
   kv : Spec.Rsa.lenValid L.k.toNat
@@ -147,23 +147,23 @@ theorem s8192 : 8192 ≤ L.sl.toNat * 8 := by
 
 omit h in
 /-- A range in our stack is in `STK`. -/
-theorem sub_stk {d n : Nat} (hd : d + n ≤ 224) : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.STK := by
+theorem sub_stk {d n : Nat} (hd : d + n ≤ 240) : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.STK := by
   rw [Enc.q_add L.Q L.P d]; exact Offset.sub_base _ (by omega)
 
 omit h in
 theorem low_stk : Region.Sub L.LOW L.STK := Region.sub_prefix (by omega)
 
 /-- A range in our frames misses the stack the calls use. -/
-theorem fr_low {d n : Nat} (hd : d + n ≤ 344) : Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.LOW :=
+theorem fr_low {d n : Nat} (hd : d + n ≤ 360) : Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.LOW :=
   Offset.disjoint_below _ (by have := h.nQ; have := h.pQ; omega)
 
 /-- Two ranges in our frames and arguments, apart. -/
-theorem fr_sep {d n d' n' : Nat} (hs : d + n ≤ d' ∨ d' + n' ≤ d) (h₁ : d + n ≤ 344) (h₂ : d' + n' ≤ 344) :
+theorem fr_sep {d n d' n' : Nat} (hs : d + n ≤ d' ∨ d' + n' ≤ d) (h₁ : d + n ≤ 360) (h₂ : d' + n' ≤ 360) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ ⟨L.Q + BitVec.ofNat 64 d', n'⟩ :=
   Offset.disjoint _ hs (by have := h.nQ; omega) (by have := h.nQ; omega)
 
 /-- A range in our frames misses the writable buffers. -/
-theorem stk_buf {d n : Nat} (hd : d + n ≤ 224) {R : Region} (hR : InW L R) :
+theorem stk_buf {d n : Nat} (hd : d + n ≤ 240) {R : Region} (hR : InW L R) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ R := by
   have hs := Lay.Ok.sub_stk (L := L) hd
   rcases hR with hR | hR | hR
@@ -172,7 +172,7 @@ theorem stk_buf {d n : Nat} (hd : d + n ≤ 224) {R : Region} (hR : InW L R) :
   · exact (h.kS.sub_left hs).sub_right hR
 
 /-- A range in our stack arguments misses the writable buffers. -/
-theorem args_buf {d n : Nat} (h₁ : 224 ≤ d) (h₂ : d + n ≤ 344) {R : Region} (hR : InW L R) :
+theorem args_buf {d n : Nat} (h₁ : 240 ≤ d) (h₂ : d + n ≤ 360) {R : Region} (hR : InW L R) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ R := by
   have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by omega)
   rcases hR with hR | hR | hR
@@ -205,11 +205,11 @@ structure Kept (L : Lay) (lr : BitVec 64) (m : Mem) : Prop where
   dl : m.readW (L.Q + BitVec.ofNat 64 oDl) 64 = L.dl
   inp : m.readW (L.Q + BitVec.ofNat 64 oIn) 64 = L.inp
   scr : m.readW (L.Q + BitVec.ofNat 64 oScr) 64 = L.scr
-  lr : m.readW (L.Q + BitVec.ofNat 64 208) 64 = lr
-  args : ∀ j < 15, m.readW (L.Q + BitVec.ofNat 64 (224 + 8 * j)) 64 = ourArg L j
+  lr : m.readW (L.Q + BitVec.ofNat 64 224) 64 = lr
+  args : ∀ j < 15, m.readW (L.Q + BitVec.ofNat 64 (240 + 8 * j)) 64 = ourArg L j
 
 /-- The offsets of the kept words. -/
-def keptOff (d : Nat) : Prop := (d + 8 ≤ 176) ∨ (208 ≤ d ∧ d + 8 ≤ 224) ∨ (224 ≤ d ∧ d + 8 ≤ 344)
+def keptOff (d : Nat) : Prop := (d + 8 ≤ 192) ∨ (224 ≤ d ∧ d + 8 ≤ 240) ∨ (240 ≤ d ∧ d + 8 ≤ 360)
 
 /-- The kept words survive changes to memory that miss them. -/
 theorem Kept.frame {L : Lay} {lr : BitVec 64} {m m' : Mem} {rs : List Region} (hk : Kept L lr m)
@@ -219,7 +219,7 @@ theorem Kept.frame {L : Lay} {lr : BitVec 64} {m m' : Mem} {rs : List Region} (h
       m'.readW (L.Q + BitVec.ofNat 64 d) 64 = m.readW (L.Q + BitVec.ofNat 64 d) 64 :=
     fun d hdd => hf.readW (Region.contains_self _ _) (hd d hdd) (by decide)
   refine ⟨fun j hj => (k _ (by unfold keptOff; omega)).trans (hk.call j hj), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    ?_, (k 208 (by unfold keptOff; omega)).trans hk.lr,
+    ?_, (k 224 (by unfold keptOff; omega)).trans hk.lr,
     fun j hj => (k _ (by unfold keptOff; omega)).trans (hk.args j hj)⟩
   exacts [(k oOut (by unfold keptOff oOut; omega)).trans hk.out, (k oML (by unfold keptOff oML; omega)).trans hk.ml,
     (k oN (by unfold keptOff oN; omega)).trans hk.n, (k oK (by unfold keptOff oK; omega)).trans hk.k,

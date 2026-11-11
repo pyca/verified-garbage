@@ -93,18 +93,18 @@ theorem validBlock_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q)
           BitVec.ofNat 64 k - BitVec.ofNat 64 sep - 1 else BitVec.ofNat 64 al) &&& bm (decide (slot t Q oR = 1)) ∧
       u.gpr .x16 = BitVec.ofNat 64 k - (if vOf (t.mem (slot t Q oOut)) (t.mem (slot t Q oOut + BitVec.ofNat 64 1))
           f sep then BitVec.ofNat 64 k - BitVec.ofNat 64 sep - 1 else BitVec.ofNat 64 al) := by
-  have h96 := h 96 (by decide)
-  have h120 := h 120 (by decide)
-  have h176 := h 176 (by decide)
-  have h0' : InRegions (t.rd ++ t.wr) (t.mem.read (Q + BitVec.ofNat 64 96) 8 + BitVec.ofNat 64 0) 1 := h0
-  have h1' : InRegions (t.rd ++ t.wr) (t.mem.read (Q + BitVec.ofNat 64 96) 8 + BitVec.ofNat 64 1) 1 := h1
-  have hK' : t.mem.read (Q + BitVec.ofNat 64 120) 8 = BitVec.ofNat 64 k := hK
+  have h112 := h 112 (by decide)
+  have h136 := h 136 (by decide)
+  have h192 := h 192 (by decide)
+  have h0' : InRegions (t.rd ++ t.wr) (t.mem.read (Q + BitVec.ofNat 64 112) 8 + BitVec.ofNat 64 0) 1 := h0
+  have h1' : InRegions (t.rd ++ t.wr) (t.mem.read (Q + BitVec.ofNat 64 112) 8 + BitVec.ofNat 64 1) 1 := h1
+  have hK' : t.mem.read (Q + BitVec.ofNat 64 136) 8 = BitVec.ofNat 64 k := hK
   apply WP.of_runBlock
   simp only [validBlock, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.read, State.load,
     State.addWithCarry, Size.bits, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self,
     ite_true, hsp, oOut, oK, oR, Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left',
     RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, RegUpd.v_write,
-    reduceCtorEq, ite_false, h96, h120, h176, h0', h1', h17, h13, h15, h16, hK']
+    reduceCtorEq, ite_false, h112, h136, h192, h0', h1', h17, h13, h15, h16, hK']
   refine ⟨⟨rfl, rfl, hsp.symm, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_⟩
   all_goals try simp only [BitVec.add_zero, Bytes.read_one, Bytes.byte64, sbc_self, zero_mask, two_mask,

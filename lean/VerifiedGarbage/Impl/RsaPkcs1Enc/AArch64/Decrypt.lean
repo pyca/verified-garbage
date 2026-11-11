@@ -53,22 +53,23 @@ namespace VG.Impl.RsaPkcs1Enc.AArch64.Decrypt
 open VG VG.AArch64
 
 /-- The size of the inner frame. -/
-def frameBytes : Nat := 208
+def frameBytes : Nat := 224
 
-/-! The slots. -/
-def oOut : Nat := 96
-def oML : Nat := 104
-def oN : Nat := 112
-def oK : Nat := 120
-def oE : Nat := 128
-def oEl : Nat := 136
-def oD : Nat := 144
-def oDl : Nat := 152
-def oIn : Nat := 160
-def oScr : Nat := 168
-def oR : Nat := 176
-def oI : Nat := 184
-def oNB : Nat := 192
+/-! The slots, above the 14 words the private-key operation's stack arguments
+may take. -/
+def oOut : Nat := 112
+def oML : Nat := 120
+def oN : Nat := 128
+def oK : Nat := 136
+def oE : Nat := 144
+def oEl : Nat := 152
+def oD : Nat := 160
+def oDl : Nat := 168
+def oIn : Nat := 176
+def oScr : Nat := 184
+def oR : Nat := 192
+def oI : Nat := 200
+def oNB : Nat := 208
 
 /-! Where things are in `scratch`. -/
 def sSt : Nat := 0

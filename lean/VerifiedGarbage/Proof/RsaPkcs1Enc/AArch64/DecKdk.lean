@@ -27,14 +27,14 @@ theorem kdkUpdArgs_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
     WP isa (.block kdkUpdArgs) t fun u => Same t u ∧ u.gpr .x0 = slot t Q oScr + BitVec.ofNat 64 sSt ∧
       u.gpr .x1 = BitVec.ofNat 64 64 ∧ u.gpr .x2 = slot t Q oIn ∧ u.gpr .x3 = slot t Q oK ∧
       u.gpr .x4 = slot t Q oScr + BitVec.ofNat 64 sWork := by
-  have h168 := h 168 (by decide)
-  have h160 := h 160 (by decide)
-  have h120 := h 120 (by decide)
+  have h184 := h 184 (by decide)
+  have h176 := h 176 (by decide)
+  have h136 := h 136 (by decide)
   apply WP.of_runBlock
   simp only [kdkUpdArgs, scr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.read, State.load, Size.bits, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self,
     ite_true, hsp, oScr, oIn, oK, sSt, sWork, Option.map_some, Option.some.injEq, exists_eq_left',
-    RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h168, h160, h120]
+    RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h184, h176, h136]
   exact ⟨⟨rfl, rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl, rfl,
     rfl, rfl⟩
 
@@ -42,13 +42,13 @@ theorem kdkFinArgs_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
     WP isa (.block kdkFinArgs) t fun u => Same t u ∧ u.gpr .x0 = slot t Q oScr + BitVec.ofNat 64 sSt ∧
       u.gpr .x1 = slot t Q oScr + BitVec.ofNat 64 sOuter ∧ u.gpr .x2 = slot t Q oK + BitVec.ofNat 64 64 ∧
       u.gpr .x3 = slot t Q oScr + BitVec.ofNat 64 sKDK ∧ u.gpr .x4 = slot t Q oScr + BitVec.ofNat 64 sWork := by
-  have h168 := h 168 (by decide)
-  have h120 := h 120 (by decide)
+  have h184 := h 184 (by decide)
+  have h136 := h 136 (by decide)
   apply WP.of_runBlock
   simp only [kdkFinArgs, scr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.read, State.load, Size.bits, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self,
     ite_true, hsp, oScr, oK, sSt, sOuter, sKDK, sWork, Option.map_some, Option.some.injEq, exists_eq_left',
-    RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h168, h120]
+    RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h184, h136]
   exact ⟨⟨rfl, rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl, rfl,
     rfl, rfl⟩
 

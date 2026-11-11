@@ -50,7 +50,7 @@ def rsadpOf (L : Lay) (m : Mem) (C : List Byte) : Spec.Rsa.Outcome :=
     (Spec.Rsa.bytesAt m L.dq L.ql.toNat) (Spec.Rsa.bytesAt m L.qi L.pl.toNat)
 
 /-- The stack the contract gives. -/
-theorem spec_sp {P : Nat} {s : State} (h : (decSpec P).pre s) : P + 224 ≤ s.sp.toNat := by
+theorem spec_sp {P : Nat} {s : State} (h : (decSpec P).pre s) : P + 240 ≤ s.sp.toNat := by
   sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq] at h
   exact h.1
@@ -144,9 +144,9 @@ theorem dec_ok (v : Compress) (pv : PrivImpl) {s : State} (h : (decSpec (pv.S + 
   have hsp := spec_sp h
   have hP16 : 16 ≤ (lay (pv.S + 1) s).P := by show 16 ≤ pv.S + 1; omega
   refine WP.frame (by omega) (WP.alloc (by decide) ?_ ?_)
-  · show 208 ≤ (s.sp - 16).toNat
+  · show 224 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega)]
-    show 208 ≤ s.sp.toNat - 16
+    show 224 ≤ s.sp.toNat - 16
     omega
   · show WP isa (body (HH v) pv.name pv.code) (entered s) _
     rw [body_eq]
@@ -165,7 +165,7 @@ theorem dec_ok (v : Compress) (pv : PrivImpl) {s : State} (h : (decSpec (pv.S + 
     refine WP.seq (WP.mono (scanPart_ok hL h₈) fun t₉ h₉ => ?_)
     refine WP.mono (selPart_ok hL h₉) fun u hu => ?_
     have hc := hu.ctx
-    have hsp' : (freed frameBytes u).sp = (lay (pv.S + 1) s).Q + BitVec.ofNat 64 208 := by
+    have hsp' : (freed frameBytes u).sp = (lay (pv.S + 1) s).Q + BitVec.ofNat 64 224 := by
       rw [freed_sp, hc.sp]; rfl
     refine ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, ?_⟩
     · by_cases h30 : r = .x30
@@ -174,7 +174,7 @@ theorem dec_ok (v : Compress) (pv : PrivImpl) {s : State} (h : (decSpec (pv.S + 
       · rw [popped_gpr_ne _ h30, freed_gpr]
         exact hc.cs r hr h30
     · rw [popped_sp, hsp']
-      show (lay (pv.S + 1) s).Q + BitVec.ofNat 64 208 + BitVec.ofNat 64 16 = s.sp
+      show (lay (pv.S + 1) s).Q + BitVec.ofNat 64 224 + BitVec.ofNat 64 16 = s.sp
       rw [add_add]; exact lay_Q _ s
     · rw [popped_v, freed_v]
       exact hc.vs r hr

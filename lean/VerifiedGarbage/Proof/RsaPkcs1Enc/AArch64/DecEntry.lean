@@ -28,25 +28,25 @@ namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 open VG VG.AArch64 VG.Impl.RsaPkcs1Enc.AArch64.Decrypt
 open VG.Proof.RsaPkcs1Enc.AArch64.Enc (add_add read8 write8 toNat_sub_k)
 
-/-- The shared contract, with `P + 224` bytes of stack. -/
-abbrev decSpec (P : Nat) : Contract isa := Spec.RsaPkcs1Enc.decryptContract AArch64.abi (P + 224)
+/-- The shared contract, with `P + 240` bytes of stack. -/
+abbrev decSpec (P : Nat) : Contract isa := Spec.RsaPkcs1Enc.decryptContract AArch64.abi (P + 240)
 
 /-- The layout of a call from `s`, with `P` bytes of stack for the calls. -/
 def lay (P : Nat) (s : State) : Lay :=
   ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.gpr .x4, s.gpr .x5, s.gpr .x6, s.gpr .x7,
     stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4, stackArg s 5, stackArg s 6,
     stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10, stackArg s 11, stackArg s 12, stackArg s 13,
-    stackArg s 14, s.sp - BitVec.ofNat 64 224, P⟩
+    stackArg s 14, s.sp - BitVec.ofNat 64 240, P⟩
 
-theorem lay_Q (P : Nat) (s : State) : (lay P s).Q + BitVec.ofNat 64 224 = s.sp := BitVec.sub_add_cancel _ _
+theorem lay_Q (P : Nat) (s : State) : (lay P s).Q + BitVec.ofNat 64 240 = s.sp := BitVec.sub_add_cancel _ _
 
-theorem lay_args (P : Nat) (s : State) : (lay P s).Q + BitVec.ofNat 64 224 = stackArgAddr s 0 := by
+theorem lay_args (P : Nat) (s : State) : (lay P s).Q + BitVec.ofNat 64 240 = stackArgAddr s 0 := by
   rw [lay_Q, stackArgAddr]; exact (BitVec.add_zero _).symm
 
 theorem lay_stk (P : Nat) (s : State) :
-    (lay P s).Q - BitVec.ofNat 64 P = s.sp - BitVec.ofNat 64 (P + 224) := by
+    (lay P s).Q - BitVec.ofNat 64 P = s.sp - BitVec.ofNat 64 (P + 240) := by
   simp only [lay]
-  rw [BitVec.sub_sub, BitVec.ofNat_add_ofNat, Nat.add_comm 224 P]
+  rw [BitVec.sub_sub, BitVec.ofNat_add_ofNat, Nat.add_comm 240 P]
 
 theorem forall_ro {L : Lay} {F : Region → Prop}
     (h : F L.N ∧ F L.E ∧ F L.D ∧ F L.INP ∧ F L.PP ∧ F L.QQ ∧ F L.DP ∧ F L.DQ ∧ F L.QI) : ∀ R ∈ L.ro, F R := by
@@ -65,10 +65,10 @@ theorem lay_ok {P : Nat} {s : State} (h : (decSpec P).pre s) : (lay P s).Ok := b
   simp only [hk1, hk2, hdp, hqi, hdq] at oA oN oE oD oI oP oQ oDP oDQ oQI oS oM mI mDP mDQ mQI iS dpS dqS qiS
   simp only [hk1, hk2, hdp, hqi, hdq] at kO kI kDP kDQ kQI bO bI bDP bDQ bQI
   have eA : (lay P s).ARGS = ⟨stackArgAddr s 0, 120⟩ := by simp only [Lay.ARGS, lay_args]
-  have eK : (lay P s).STK = ⟨s.sp - BitVec.ofNat 64 (P + 224), P + 224⟩ := by
-    show (⟨(lay P s).Q - BitVec.ofNat 64 P, P + 224⟩ : Region) = _
+  have eK : (lay P s).STK = ⟨s.sp - BitVec.ofNat 64 (P + 240), P + 240⟩ := by
+    show (⟨(lay P s).Q - BitVec.ofNat 64 P, P + 240⟩ : Region) = _
     rw [lay_stk]
-  have hQ : (lay P s).Q.toNat = s.sp.toNat - 224 := toNat_sub_k (by omega_arith)
+  have hQ : (lay P s).Q.toNat = s.sp.toNat - 240 := toNat_sub_k (by omega_arith)
   refine ⟨oM, oS, mS, forall_ro ⟨oN, oE, oD, oI, oP, oQ, oDP, oDQ, oQI⟩,
     forall_ro ⟨mN, mE, mD, mI, mP, mQ, mDP, mDQ, mQI⟩,
     forall_ro ⟨nS.symm, eS.symm, dS.symm, iS.symm, pS.symm, qS.symm, dpS.symm, dqS.symm, qiS.symm⟩, eA ▸ oA, eA ▸ mA,
@@ -99,11 +99,11 @@ theorem moveMem_frame {l : List (Nat × Nat)} (hl : MoveOk l) {B : Addr} (m m₀
     obtain ⟨j, d⟩ := p
     intro m' h
     have hd := hl (j, d) List.mem_cons_self
-    have hd2 : d + 8 ≤ 208 := hd.2.1
+    have hd2 : d + 8 ≤ 224 := hd.2.1
     exact ih (fun q hq => hl q (List.mem_cons_of_mem _ hq)) _
       (h.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by unfold frameBytes; omega_arith) (by omega_arith)))
 
-theorem moveMem_read {l : List (Nat × Nat)} (hl : MoveOk l) {B : Addr} (m m₀ : Mem) {a : Nat} (ha : ∀ p ∈ l, p.2 + 8 ≤ a ∨ a + 8 ≤ p.2) (ha' : a + 8 ≤ 344) :
+theorem moveMem_read {l : List (Nat × Nat)} (hl : MoveOk l) {B : Addr} (m m₀ : Mem) {a : Nat} (ha : ∀ p ∈ l, p.2 + 8 ≤ a ∨ a + 8 ≤ p.2) (ha' : a + 8 ≤ 360) :
     (moveMem m B m₀ l).readW (B + BitVec.ofNat 64 a) 64 = m.readW (B + BitVec.ofNat 64 a) 64 := by
   induction l generalizing m with
   | nil => rfl
@@ -209,21 +209,21 @@ def entered (s : State) : State := allocated frameBytes (pushed .x30 s)
 @[simp] theorem entered_v (s : State) : (entered s).v = s.v := rfl
 
 theorem entered_sp (P : Nat) (s : State) : (entered s).sp = (lay P s).Q := by
-  show s.sp - 16 - BitVec.ofNat 64 208 = s.sp - BitVec.ofNat 64 224
+  show s.sp - 16 - BitVec.ofNat 64 224 = s.sp - BitVec.ofNat 64 240
   rw [BitVec.sub_sub]; rfl
 
-theorem lr_slot (P : Nat) (s : State) : s.sp - 16 = (lay P s).Q + BitVec.ofNat 64 208 := by
-  show s.sp - 16 = s.sp - BitVec.ofNat 64 224 + BitVec.ofNat 64 208
+theorem lr_slot (P : Nat) (s : State) : s.sp - 16 = (lay P s).Q + BitVec.ofNat 64 224 := by
+  show s.sp - 16 = s.sp - BitVec.ofNat 64 240 + BitVec.ofNat 64 224
   bv_omega
 
 theorem entered_wr (P : Nat) (s : State) :
     (entered s).wr = (lay P s).FR :: (lay P s).LR :: s.wr := by
-  show (⟨s.sp - 16 - BitVec.ofNat 64 208, 208⟩ : Region) :: ⟨s.sp - 16, 16⟩ :: s.wr = _
-  rw [show s.sp - 16 - BitVec.ofNat 64 208 = (lay P s).Q from entered_sp P s, lr_slot P]
+  show (⟨s.sp - 16 - BitVec.ofNat 64 224, 224⟩ : Region) :: ⟨s.sp - 16, 16⟩ :: s.wr = _
+  rw [show s.sp - 16 - BitVec.ofNat 64 224 = (lay P s).Q from entered_sp P s, lr_slot P]
   rfl
 
 theorem entered_mem (P : Nat) (s : State) :
-    (entered s).mem = s.mem.writeW ((lay P s).Q + BitVec.ofNat 64 208) (s.gpr .x30) := by
+    (entered s).mem = s.mem.writeW ((lay P s).Q + BitVec.ofNat 64 224) (s.gpr .x30) := by
   show s.mem.write (s.sp - 16) 8 (s.gpr .x30) = _
   rw [lr_slot P, write8]
 
@@ -251,10 +251,10 @@ theorem privRegs_ok {t : State} (ha : InRegions (t.rd ++ t.wr) (t.sp + BitVec.of
       u.gpr .x0 = t.gpr .x0 ∧ u.gpr .x1 = t.gpr .x4 ∧ u.gpr .x2 = t.gpr .x3 ∧ u.gpr .x3 = t.gpr .x4 ∧
       u.gpr .x4 = t.gpr .x5 ∧ u.gpr .x5 = t.gpr .x6 ∧ u.gpr .x6 = t.mem.readW (t.sp + BitVec.ofNat 64 (arg 1)) 64 ∧
       u.gpr .x7 = t.gpr .x4 ∧ ∀ r ∈ preserved, u.gpr r = t.gpr r := by
-  have ha' : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 232) 8 := ha
+  have ha' : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 248) 8 := ha
   show WP isa (.block privRegs) t fun u => u.rd = t.rd ∧ u.wr = t.wr ∧ u.sp = t.sp ∧ u.v = t.v ∧ u.mem = t.mem ∧
       u.gpr .x0 = t.gpr .x0 ∧ u.gpr .x1 = t.gpr .x4 ∧ u.gpr .x2 = t.gpr .x3 ∧ u.gpr .x3 = t.gpr .x4 ∧
-      u.gpr .x4 = t.gpr .x5 ∧ u.gpr .x5 = t.gpr .x6 ∧ u.gpr .x6 = t.mem.readW (t.sp + BitVec.ofNat 64 232) 64 ∧
+      u.gpr .x4 = t.gpr .x5 ∧ u.gpr .x5 = t.gpr .x6 ∧ u.gpr .x6 = t.mem.readW (t.sp + BitVec.ofNat 64 248) 64 ∧
       u.gpr .x7 = t.gpr .x4 ∧ ∀ r ∈ preserved, u.gpr r = t.gpr r
   apply WP.of_runBlock
   simp only [privRegs, mov, arg, frameBytes, runBlock_cons, runStep_some, runBlock_nil, exec, State.read, State.load,
@@ -308,12 +308,12 @@ theorem entry_ok {P : Nat} {s : State} (h : (decSpec P).pre s) :
       InRegions u.wr ((lay P s).Q + BitVec.ofNat 64 d) n :=
     fun u d n hu hd => ⟨(lay P s).FR, by rw [hu, entered_wr P]; simp,
       Offset.contains_base _ hd (by unfold frameBytes at hd; omega_arith)⟩
-  have harg : ∀ (u : State) d, u.rd = s.rd → 224 ≤ d → d + 8 ≤ 344 →
+  have harg : ∀ (u : State) d, u.rd = s.rd → 240 ≤ d → d + 8 ≤ 360 →
       InRegions (u.rd ++ u.wr) ((lay P s).Q + BitVec.ofNat 64 d) 8 :=
     fun u d hu h₁ h₂ => ⟨(lay P s).ARGS, by rw [hu, hrd]; simp, Offset.contains _ h₁ (by omega_arith) (by omega_arith)⟩
-  have eLr : (entered s).mem.readW ((lay P s).Q + BitVec.ofNat 64 208) 64 = s.gpr .x30 := by
+  have eLr : (entered s).mem.readW ((lay P s).Q + BitVec.ofNat 64 224) 64 = s.gpr .x30 := by
     rw [entered_mem P, Mem.readW_writeW_self64]
-  have eArg : ∀ j, j < 15 → (entered s).mem.readW ((lay P s).Q + BitVec.ofNat 64 (224 + 8 * j)) 64 =
+  have eArg : ∀ j, j < 15 → (entered s).mem.readW ((lay P s).Q + BitVec.ofNat 64 (240 + 8 * j)) 64 =
       stackArg s j := by
     intro j hj
     rw [entered_mem P, Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
@@ -321,9 +321,9 @@ theorem entry_ok {P : Nat} {s : State} (h : (decSpec P).pre s) :
   have eFr : Frame [(lay P s).STK] s.mem (entered s).mem := by
     rw [entered_mem P]
     refine (Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_
-    show (⟨(lay P s).Q - BitVec.ofNat 64 P, P + 224⟩ : Region).Contains
-      ((lay P s).Q + BitVec.ofNat 64 208) (64 / 8)
-    rw [Enc.q_add (lay P s).Q P 208]
+    show (⟨(lay P s).Q - BitVec.ofNat 64 P, P + 240⟩ : Region).Contains
+      ((lay P s).Q + BitVec.ofNat 64 224) (64 / 8)
+    rw [Enc.q_add (lay P s).Q P 224]
     exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   rw [setup, saves_eq, List.append_assoc, WP.block_append_iff]
   -- `x9 = sp`.
@@ -360,7 +360,7 @@ theorem entry_ok {P : Nat} {s : State} (h : (decSpec P).pre s) :
   have M2 : t₂.mem = Spill.saveMem (entered s).mem (lay P s).Q ((entered s).write .x .x9 (lay P s).Q).gpr
       [(.x0, oOut), (.x2, oML), (.x3, oN), (.x4, oK), (.x5, oE), (.x6, oEl), (.x7, oD)] := by
     rw [hs.mem, h9, RegUpd.mem_write]
-  have F2 : Frame [⟨(lay P s).Q, 152⟩] (entered s).mem t₂.mem := by
+  have F2 : Frame [⟨(lay P s).Q, 168⟩] (entered s).mem t₂.mem := by
     rw [M2]
     exact Spill.saveMem_frame_base (fun p hp => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -369,13 +369,13 @@ theorem entry_ok {P : Nat} {s : State} (h : (decSpec P).pre s) :
       [(.x0, oOut), (.x2, oML), (.x3, oN), (.x4, oK), (.x5, oE), (.x6, oEl), (.x7, oD)] t₂.mem := by
     rw [M2]; exact Spill.saveMem_saved (by decide) _ _ _
   have U : u.mem = moveMem t₂.mem (lay P s).Q t₂.mem argMoves := by rw [um, hm.mem, hsp₂]
-  have hi₂ : ∀ d, 152 ≤ d → d + 8 ≤ 344 → t₂.mem.readW ((lay P s).Q + BitVec.ofNat 64 d) 64 =
+  have hi₂ : ∀ d, 168 ≤ d → d + 8 ≤ 360 → t₂.mem.readW ((lay P s).Q + BitVec.ofNat 64 d) 64 =
       (entered s).mem.readW ((lay P s).Q + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
     F2.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)) (by decide)
   -- Our stack arguments, unchanged.
-  have uArg : ∀ j, j < 15 → u.mem.readW ((lay P s).Q + BitVec.ofNat 64 (224 + 8 * j)) 64 = stackArg s j := by
+  have uArg : ∀ j, j < 15 → u.mem.readW ((lay P s).Q + BitVec.ofNat 64 (240 + 8 * j)) 64 = stackArg s j := by
     intro j hj
     rw [U, moveMem_read argMoves_ok _ _ (fun p hp => by
       have := (argMoves_ok p hp).2.1; unfold frameBytes at this; omega_arith) (by omega_arith),
@@ -383,7 +383,7 @@ theorem entry_ok {P : Nat} {s : State} (h : (decSpec P).pre s) :
   have uMv : ∀ p ∈ argMoves, u.mem.readW ((lay P s).Q + BitVec.ofNat 64 p.2) 64 = stackArg s p.1 := by
     intro p hp
     have := (argMoves_ok p hp).2.2
-    rw [U, moveMem_moved argMoves_ok argMoves_nodup _ _ p hp, show arg p.1 = 224 + 8 * p.1 from rfl,
+    rw [U, moveMem_moved argMoves_ok argMoves_nodup _ _ p hp, show arg p.1 = 240 + 8 * p.1 from rfl,
       hi₂ _ (by omega_arith) (by omega_arith), eArg _ this]
   have uSv : ∀ r d, (r, d) ∈ [(Reg.x0, oOut), (.x2, oML), (.x3, oN), (.x4, oK), (.x5, oE), (.x6, oEl), (.x7, oD)] →
       u.mem.readW ((lay P s).Q + BitVec.ofNat 64 d) 64 = s.gpr r := by
@@ -395,7 +395,7 @@ theorem entry_ok {P : Nat} {s : State} (h : (decSpec P).pre s) :
     simp only [List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hrd
     rcases hrd with ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ <;>
       exact RegUpd.gpr_write_of_ne _ _ _ (by dsimp only; decide)
-  have F : Frame [⟨(lay P s).Q, 208⟩] (entered s).mem u.mem := by
+  have F : Frame [⟨(lay P s).Q, 224⟩] (entered s).mem u.mem := by
     rw [U]
     refine Frame.trans (F2.sub fun r hr => ?_) ((moveMem_frame argMoves_ok _ _).sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
@@ -424,15 +424,15 @@ theorem entry_ok {P : Nat} {s : State} (h : (decSpec P).pre s) :
   · exact uMv (0, oDl) (by decide)
   · exact uMv (1, oIn) (by decide)
   · exact uMv (13, oScr) (by decide)
-  · rw [U, moveMem_read argMoves_ok _ _ (by decide) (by omega_arith), hi₂ 208 (by omega_arith) (by omega_arith), eLr]
+  · rw [U, moveMem_read argMoves_ok _ _ (by decide) (by omega_arith), hi₂ 224 (by omega_arith) (by omega_arith), eLr]
   · intro j hj
     rw [uArg j hj, ourArg_lay P s j hj]
   · have hk : (lay P s).STK ∈ [(lay P s).OUT, (lay P s).ML, (lay P s).SCR, (lay P s).STK] := by simp
     refine Frame.trans (eFr.mono fun r hr => by rw [List.mem_singleton.mp hr]; exact hk) (F.sub fun r hr => ?_)
     rw [List.mem_singleton.mp hr]
-    have h208 := Lay.Ok.sub_stk (L := lay P s) (d := 0) (n := 208) (by omega_arith)
-    rw [show (lay P s).Q + BitVec.ofNat 64 0 = (lay P s).Q from BitVec.add_zero _] at h208
-    exact ⟨(lay P s).STK, hk, h208⟩
+    have h224 := Lay.Ok.sub_stk (L := lay P s) (d := 0) (n := 224) (by omega_arith)
+    rw [show (lay P s).Q + BitVec.ofNat 64 0 = (lay P s).Q from BitVec.add_zero _] at h224
+    exact ⟨(lay P s).STK, hk, h224⟩
   · rw [u0]; exact go .x0 (by decide) (by decide)
   · rw [u1]; exact go .x4 (by decide) (by decide)
   · rw [u2]; exact go .x3 (by decide) (by decide)
