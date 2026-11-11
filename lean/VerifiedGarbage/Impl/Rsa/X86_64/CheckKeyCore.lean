@@ -53,7 +53,7 @@ def sPlen : Nat := sFn 8
 def sQ : Nat := sFn 9
 def sQlen : Nat := sFn 10
 def sDP : Nat := sFn 11
-def sDQ : Nat := sFn 12
+def sDQ : Nat := sFn 15
 def sQI : Nat := sFn 13
 def sEv : Nat := sFn 14
 
