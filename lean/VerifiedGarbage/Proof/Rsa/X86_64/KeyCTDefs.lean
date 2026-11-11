@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
+public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
 
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
@@ -45,6 +46,10 @@ structure KPub where
   dl : Nat
   pl : Nat
   ql : Nat
+  /-- `n`'s length and bytes, which the word-level checks' guard reads. -/
+  k : Nat
+  np : Addr
+  nb : List Byte
 
 /-- What the checks read of the entry state `s`: the private values'
 pointers and lengths in the header, and their bytes. -/
@@ -73,6 +78,11 @@ structure KS (p : KPub) (s : State) : Prop where
   word_w1 : 4 ≤ p.w
   word_w2 : p.w < 2 ^ 24
   word_room : slot p.w 8 + slot p.w 17 ≤ p.Z
+  hS : word s.mem p.B (8 * Impl.Rsa.X86_64.Keys.sStride) = BitVec.ofNat 64 (8 * (p.w + 2))
+  hK : word s.mem p.B (8 * Impl.Bignum.X86_64.Public.sK) = BitVec.ofNat 64 p.k
+  hN : word s.mem p.B (8 * Impl.Bignum.X86_64.Public.sN) = p.np
+  srN : Src s p.B p.Z p.np p.nb
+  nl : 0 < p.nb.length
 
 /-- In the checks' context, from some entry state. -/
 def KK (p : KPub) (t : State) : Prop := ∃ s minv N, KCtx s t p.B p.Z p.w minv N ∧ KS p s

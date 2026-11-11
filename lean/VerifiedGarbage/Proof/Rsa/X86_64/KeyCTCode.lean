@@ -47,7 +47,7 @@ def KRel (p : KCPub) (s : State) : Prop :=
     s.gpr .r8 = p.m.kp.pd ∧ (s.gpr .r9).toNat = p.m.kp.dl ∧ stackArg s 0 = p.m.kp.pp ∧
     (stackArg s 1).toNat = p.m.kp.pl ∧ stackArg s 2 = p.m.kp.pq ∧ (stackArg s 3).toNat = p.m.kp.ql ∧
     stackArg s 4 = p.m.kp.pdp ∧ stackArg s 6 = p.m.kp.pdq ∧ stackArg s 8 = p.m.kp.pqi ∧ keyN s = p.nb ∧
-    keyE s = p.eb ∧ p.m.kp.w = (p.m.k + 7) / 8
+    keyE s = p.eb ∧ (p.m.kp.w = (p.m.k + 7) / 8 ∧ p.m.kp.k = p.m.k ∧ p.m.kp.np = p.m.np ∧ p.m.kp.nb = p.nb)
 
 theorem KRel.B {p : KCPub} {s : State} (h : KRel p s) : stackArg s 10 = p.m.kp.B := h.2.2.1
 
@@ -147,26 +147,27 @@ theorem keyCode_ct : RelCT isa (Two KRel) code fun _ _ => True := by
       rw [← heb] at hv
       have := h.mainPre c hv hm
       rw [hB, hZ, hk, hnp, hpd, hpp, hpq, hpdp, hpdq, hpqi] at this
-      exact ⟨_, _, _, _, _, _, _, _, this, hw, by rw [bytesAt_length, hdl], by rw [bytesAt_length, hpl],
-        by rw [bytesAt_length, hql]⟩
+      exact ⟨_, _, _, _, _, _, _, _, this, hw.1, by rw [bytesAt_length, hdl], by rw [bytesAt_length, hpl],
+        by rw [bytesAt_length, hql], hw.2.1, hw.2.2.1, hw.2.2.2.trans hnb.symm⟩
     exact main_ct.mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ => ⟨p.m, toM p t₁ h₁, toM p t₂ h₂⟩) h)
       fun _ _ h => h
 
 /-- The public data of a state. -/
 def kcpubOf (s : State) : KCPub :=
   ⟨⟨⟨stackArg s 10, (stackArg s 11).toNat * 8, ((s.gpr .rsi).toNat + 7) / 8, s.gpr .r8, stackArg s 0, stackArg s 2,
-    stackArg s 4, stackArg s 6, stackArg s 8, (s.gpr .r9).toNat, (stackArg s 1).toNat, (stackArg s 3).toNat⟩,
+    stackArg s 4, stackArg s 6, stackArg s 8, (s.gpr .r9).toNat, (stackArg s 1).toNat, (stackArg s 3).toNat,
+    (s.gpr .rsi).toNat, s.gpr .rdi, keyN s⟩,
     s.gpr .rdi, (s.gpr .rsi).toNat⟩, s.gpr .rsp, s.gpr .rdx, s.gpr .rcx, keyN s, keyE s⟩
 
 /-- `vg_rsa_check_key` is constant time but for `n` and `e`. -/
 theorem keyCode_constantTime : ConstantTime isa keyContract.pre keyContract.pub code := by
   refine RelCT.constantTime (keyCode_ct.mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨kcpubOf s₁, ?_, ?_⟩) fun _ _ h => h)
-  · exact ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  · exact ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
   · obtain ⟨hr, a0, a1, a2, a3, a4, -, a6, -, a8, -, a10, a11, hn, he⟩ := hp
     have r : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], s₂.gpr r = s₁.gpr r := fun r h => (hr r h).symm
     exact ⟨h₂, r .rsp (by decide), a10.symm, congrArg (·.toNat * 8) a11.symm, congrArg BitVec.toNat (r .rsi (by decide)),
       r .rdi (by decide), r .rdx (by decide), r .rcx (by decide), r .r8 (by decide),
       congrArg BitVec.toNat (r .r9 (by decide)), a0.symm, congrArg BitVec.toNat a1.symm, a2.symm,
-      congrArg BitVec.toNat a3.symm, a4.symm, a6.symm, a8.symm, hn.symm, he.symm, rfl⟩
+      congrArg BitVec.toNat a3.symm, a4.symm, a6.symm, a8.symm, hn.symm, he.symm, rfl, rfl, r .rdi (by decide), hn⟩
 
 end VG.Proof.Rsa.X86_64.Key

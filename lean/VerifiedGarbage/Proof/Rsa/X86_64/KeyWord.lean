@@ -428,7 +428,7 @@ theorem guardK (h : KCtx s t B Z w minv N) {k pl ql : Nat} {np : Addr} {nb : Lis
   have sr := h.src srN
   refine WP.mono (WP.keep [.r12, .rdx, .rax, .rcx] (Q := fun t' => t'.mem = t.mem ∧
     t'.zf = some (WordDivide.guardVal w k pl ql (nb[0]'hnl) == 0)) (by
-    xrun [Impl.Rsa.X86_64.CheckKey.guard, State.ea, hdr, h.good.rdi, hdrOff, hl sW (by decide), hl Impl.Bignum.X86_64.Public.sN (by decide),
+    xrun [Impl.Rsa.X86_64.CheckKey.guard, guardHead, guardTail, List.cons_append, List.nil_append, State.ea, hdr, h.good.rdi, hdrOff, hl sW (by decide), hl Impl.Bignum.X86_64.Public.sN (by decide),
       hl Impl.Bignum.X86_64.Public.sK (by decide), hl sPlen (by decide), hl sQlen (by decide), h.good.hdr.hw,
       h.hdr _ (show Impl.Bignum.X86_64.Public.sN < 32 by decide) (by decide), hnp,
       h.hdr _ (show Impl.Bignum.X86_64.Public.sK < 32 by decide) (by decide), hk,

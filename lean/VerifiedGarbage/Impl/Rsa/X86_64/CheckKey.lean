@@ -84,13 +84,16 @@ def wordChecks : List (Prog isa) :=
 /-- `ZF` set iff `w` is even, `n_len = 8 w = 2 p_len`, `p_len = q_len` and
 `n`'s top bit is set (`vg_rsa_crt_values`'s guard, from this header's
 slots): all public. -/
-def guard : List Instr :=
-  [.mov .r12 (.mem (hdr sW)), .mov .rdx (.mem (hdr sN)),
-    .mov .rax (.reg .r12), .alu .and .rax (.imm 1),
+def guardHead : List Instr := [.mov .r12 (.mem (hdr sW)), .mov .rdx (.mem (hdr sN))]
+
+def guardTail : List Instr :=
+  [.mov .rax (.reg .r12), .alu .and .rax (.imm 1),
     .mov .rcx (.reg .r12), .shift .shl .rcx 3, .alu .xor .rcx (.mem (hdr sK)), .alu .or .rax (.reg .rcx),
     .mov .rcx (.mem (hdr sPlen)), .shift .shl .rcx 1, .alu .xor .rcx (.mem (hdr sK)), .alu .or .rax (.reg .rcx),
     .mov .rcx (.mem (hdr sPlen)), .alu .xor .rcx (.mem (hdr sQlen)), .alu .or .rax (.reg .rcx),
     .movzx8 .rcx { base := .rdx }, .shift .shr .rcx 7, .alu .xor .rcx (.imm 1), .alu .or .rax (.reg .rcx)]
+
+def guard : List Instr := guardHead ++ guardTail
 
 /-- The computation, once `n` and `e` are known valid. -/
 def main : Prog isa := seqs (
