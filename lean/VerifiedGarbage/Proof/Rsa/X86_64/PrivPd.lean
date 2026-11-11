@@ -19,14 +19,15 @@ whatever `M` holds.
 
 namespace VG.Proof.Rsa.X86_64
 
+variable {X : List Region}
+
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
-theorem arg_in {s t : State} (hp : PreF s) (he : Env s t) {j : Nat} (hj : j < 14) :
+theorem arg_in {s t : State} (hp : PreF X s) (he : Env s t) {j : Nat} (hj : j < 14) :
     InRegions (t.rd ++ t.wr) (stackArgAddr s j) 8 :=
   ⟨⟨stackArgAddr s 0, 112⟩, List.mem_append_left _ (by
-    rw [he.rd, hp.hrd]; simp only [List.mem_cons]
-    exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl trivial))))))))),
+    rw [he.rd, hp.hrd]; simp),
     by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 theorem word_wo0 (m : Mem) (base : Addr) (v : BitVec 64) {d' : Nat} (h : 8 ≤ d') (hd' : d' + 8 ≤ 4096) :
@@ -40,7 +41,7 @@ theorem arg_wo0 {s : State} (m : Mem) (v : BitVec 64) {j : Nat} (hj : j < 14) :
   simpa only [off, BitVec.add_zero] using this
 
 /-- `r₃` kept, and the arguments of `vg_rsa_public_precomputed_checked`. -/
-theorem pdArgs_ok {s t : State} (hp : PreF s) (he : Env s t) :
+theorem pdArgs_ok {s t : State} (hp : PreF X s) (he : Env s t) :
     WP isa (.block pdArgs) t fun t' => Env s t' ∧
       t'.mem = (((((t.mem.writeW (off (fb s) oR3) (t.gpr .rax)).writeW (fb s) (off (fb s) oM)).writeW
         (off (fb s) 8) (s.gpr .rcx)).writeW (off (fb s) 16) (stackArg s 12)).writeW (off (fb s) 24) (stackArg s 13)) ∧
@@ -94,7 +95,7 @@ theorem pdArgs_ok {s t : State} (hp : PreF s) (he : Env s t) :
 /-- `M` in the frame, `k` bytes. -/
 def mR (s : State) : Region := ⟨off (fb s) oM, (s.gpr .rcx).toNat⟩
 
-theorem mR_sub {s : State} (hp : PreF s) : Region.Sub (mR s) (stkR s) :=
+theorem mR_sub {s : State} (hp : PreF X s) : Region.Sub (mR s) (stkR s) :=
   frame_sub s (by have := hp.k2; unfold oM frameBytes; omega_arith)
 
 /-- What the call reads: `n`'s values, `e`, `M` and its stack arguments. -/
@@ -108,7 +109,7 @@ theorem word_self0 (m : Mem) (base : Addr) (v : BitVec 64) : word (m.writeW base
   have := word_writeW_self m base 0 v
   simpa only [off, BitVec.add_zero] using this
 
-theorem pd_pre {s t : State} (hp : PreF s) (he : Env s t)
+theorem pd_pre {s t : State} (hp : PreF X s) (he : Env s t)
     (hw0 : word t.mem (fb s) 0 = off (fb s) oM) (hw1 : word t.mem (fb s) 8 = s.gpr .rcx)
     (hw2 : word t.mem (fb s) 16 = stackArg s 12) (hw3 : word t.mem (fb s) 24 = stackArg s 13)
     (hdi : t.gpr .rdi = s.gpr .rdi) (hsi : t.gpr .rsi = s.gpr .rcx) (hdx : t.gpr .rdx = off (fb s) oPre)
@@ -180,7 +181,7 @@ theorem entry_words {s t : State} (hsp : t.gpr .rsp = fb s) {d n : Nat} (h : d +
     rw [List.mem_singleton.mp hr]; exact (ret_disjoint s (by unfold frameBytes at *; omega_arith)).symm) (by decide)
 
 /-- The regions `vg_rsa_public_precomputed_checked` is given. -/
-theorem pd_covers {s t : State} (hp : PreF s) (he : Env s t) :
+theorem pd_covers {s t : State} (hp : PreF X s) (he : Env s t) :
     Covers (pdRd s) (t.rd ++ t.wr) ∧ Covers (pdWr s) t.wr := by
   have hpw := preWords_le hp
   have hk2 := hp.k2
@@ -207,7 +208,7 @@ theorem pd_covers {s t : State} (hp : PreF s) (he : Env s t) :
 for whatever modulus `n`'s values in the frame are of. `M` and the slots of
 `r₁` and `r₃` are kept. -/
 theorem pd_call (P : PublicImpl) (name : String)
-    {s t : State} (hp : PreF s) (he : Env s t)
+    {s t : State} (hp : PreF X s) (he : Env s t)
     (hw0 : word t.mem (fb s) 0 = off (fb s) oM) (hw1 : word t.mem (fb s) 8 = s.gpr .rcx)
     (hw2 : word t.mem (fb s) 16 = stackArg s 12) (hw3 : word t.mem (fb s) 24 = stackArg s 13)
     (hdi : t.gpr .rdi = s.gpr .rdi) (hsi : t.gpr .rsi = s.gpr .rcx) (hdx : t.gpr .rdx = off (fb s) oPre)

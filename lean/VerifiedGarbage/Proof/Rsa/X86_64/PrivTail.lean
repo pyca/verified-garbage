@@ -23,12 +23,14 @@ and zeroed (`releaseLoop_ok`), whatever `M` and `out` hold (`tail_ok`).
 
 namespace VG.Proof.Rsa.X86_64
 
+variable {X : List Region}
+
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.WriteBytes (writeW8_apply)
 
 /-- The comparison's registers. -/
-theorem cmpArgs_ok {s t : State} (hp : PreF s) (he : Env s t) :
+theorem cmpArgs_ok {s t : State} (hp : PreF X s) (he : Env s t) :
     WP isa (.block cmpArgs) t fun t' => t'.mem = t.mem ∧
       t'.gpr .r11 = gOf (t.gpr .rax) (word t.mem (fb s) oR1) (word t.mem (fb s) oR3) ∧
       t'.gpr .rdi = s.gpr .rdi ∧ t'.gpr .rsi = stackArg s 0 ∧ t'.gpr .rcx = s.gpr .rcx ∧
@@ -169,7 +171,7 @@ theorem contains_of_byte {r : Region} {p : Addr} {n : Nat} (h : r = ⟨p, n⟩) 
 
 /-- The check and the release, after the calls, from `t`: whatever `M`,
 `out` and the values returned hold. -/
-theorem tail_ok {s t : State} (hp : PreF s) (he : Env s t) :
+theorem tail_ok {s t : State} (hp : PreF X s) (he : Env s t) :
     WP isa (seqs PrivChecked.tail) t fun t' =>
       t'.gpr .rax = result (gOf (t.gpr .rax) (word t.mem (fb s) oR1) (word t.mem (fb s) oR3))
         (decide (Spec.Rsa.bytesAt t.mem (s.gpr .rdi) (s.gpr .rcx).toNat =
