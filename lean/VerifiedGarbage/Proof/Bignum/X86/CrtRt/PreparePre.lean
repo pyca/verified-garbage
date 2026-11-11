@@ -26,6 +26,7 @@ variable {Ex : List Region → List Region → Prop}
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Impl.Bignum.X86.PublicRt (argAt)
+open VG.Proof.Bignum.X86.PublicRt (count1_zf countLoop)
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
@@ -293,6 +294,116 @@ theorem loadR2_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx} {p : Nat
     exact O₁.trans O'
   · exact (K₁.mono (by decide)).trans (((K₄.mono (by decide)).trans (Kv.mono (by decide))).trans
       ((Kw.mono (by decide)).trans ((Kt.mono (by decide)).trans ((K₃''.mono (by decide)).trans (Ku.mono (by decide))))))
+
+
+/-- `preparePre`: what `prepare` leaves (`prepCtx_ok`), from factor `i`'s cached `R_pre² mod M`
+doubled to the context's radix. -/
+theorem preparePre_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx}
+    (P : PreR2 s base bytes len args i c (safeM (sv s.mem base len c 0))) :
+    WP isa (preparePre c i) s fun u =>
+      CtxOk Ex base bytes len args c (safeM (sv s.mem base len c 0)) u ∧ sv u.mem base len c 3 = 1 ∧
+      sv u.mem base len c 4 = 2 ^ (16 * bc len c) % safeM (sv s.mem base len c 0) ∧
+      Frame (frameR base (s.gpr .esp) (prepR len c)) s.mem u.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
+  have nw := h.scratch.nowrap
+  have fit := prepR_fit2 h c
+  have f8 := h.slot_fit c (j := 8) (by decide)
+  have bw := bc_eq_cwc len c
+  have est : st len c = 2 * bc len c + 32 := rfl
+  have s01 : lo len (.slot c 0) + st len c ≤ lo len (.slot c 1) := sl_le (len := len) c (by decide)
+  have s13 : lo len (.slot c 1) + st len c ≤ lo len (.slot c 3) := sl_le (len := len) c (by decide)
+  have s34 : lo len (.slot c 3) + st len c ≤ lo len (.slot c 4) := sl_le (len := len) c (by decide)
+  have s48 : lo len (.slot c 4) + st len c ≤ lo len (.slot c 8) := sl_le (len := len) c (by decide)
+  have z0 : lo len (.slot c 0) = numBase := sl_zero len c
+  have nb : numBase = 3336 := rfl
+  have io : invOff = 0 := rfl
+  have fits : 8 * preW args i ≤ bc len c := P.fits
+  have fitW : ∀ p ∈ powR len c, p.1 + p.2 ≤ bytes := by
+    intro p hp
+    simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
+  have hws : ∀ {d k : Nat}, d + 4 * k ≤ lo len (.slot c 1) ∨ lo len (.slot c 1) + (bc len c + 4) ≤ d →
+      d + 4 * k ≤ lo len (.slot c 4) ∨ lo len (.slot c 4) + bc len c ≤ d →
+      ∀ q ∈ powR len c, d + 4 * k ≤ q.1 ∨ q.1 + q.2 ≤ d := by
+    intro d k hd hd' q hq
+    simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl <;> dsimp only <;> omega_arith
+  unfold preparePre
+  refine WP.seq (WP.mono (prepBasePre_ok h c) fun u₈ ⟨h₈, F₈, M₈, one₈, I₈, K₈⟩ => ?_)
+  have P₈ := P.keepF h.room K₈ (by decide) F₈ fit.2
+  have sp₈ : u₈.gpr .esp = s.gpr .esp := K₈.1 _ (by decide)
+  -- What `prepBasePre` leaves stays: the rest changes only slots 1 and 4.
+  have rest : ∀ t : State, Frame (frameR base (s.gpr .esp) (powR len c)) u₈.mem t.mem →
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] u₈ t →
+      sv t.mem base len c 4 = 2 ^ (16 * bc len c) % safeM (sv s.mem base len c 0) →
+      CtxOk Ex base bytes len args c (safeM (sv s.mem base len c 0)) t ∧ sv t.mem base len c 3 = 1 ∧
+      sv t.mem base len c 4 = 2 ^ (16 * bc len c) % safeM (sv s.mem base len c 0) ∧
+      Frame (frameR base (s.gpr .esp) (prepR len c)) s.mem t.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+    intro t Ft Kt Vt
+    have W : Frame (frameR base (s.gpr .esp) (prepR len c)) s.mem t.mem := by
+      refine (frameR_widen F₈ fun p hp => ?_).trans (frameR_widen Ft fun p hp => ?_)
+      · simp only [baseR, List.mem_cons, List.not_mem_nil, or_false] at hp
+        rcases hp with rfl | rfl | rfl | rfl | rfl | rfl
+        · exact ⟨(invOff, 4), by simp, Nat.le_refl _, Nat.le_refl _⟩
+        · exact ⟨(lo len (.slot c 0), bc len c), by simp, Nat.le_refl _, Nat.le_refl _⟩
+        · exact ⟨(lo len (.slot c 1), 3 * bc len c + 56), by simp, Nat.le_refl _, by dsimp only; omega⟩
+        · exact ⟨(lo len (.slot c 3), bc len c), by simp, Nat.le_refl _, Nat.le_refl _⟩
+        · exact ⟨(lo len (.slot c 4), bc len c), by simp, Nat.le_refl _, Nat.le_refl _⟩
+        · exact ⟨(lo len (.slot c 7), bc len c), by simp, Nat.le_refl _, Nat.le_refl _⟩
+      · simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
+        rcases hp with rfl | rfl
+        · exact ⟨(lo len (.slot c 1), 3 * bc len c + 56), by simp, Nat.le_refl _, by dsimp only; omega⟩
+        · exact ⟨(lo len (.slot c 4), bc len c), by simp, Nat.le_refl _, Nat.le_refl _⟩
+    have K : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := K₈.trans Kt
+    have v0 : val32 t.mem base (lo len (.slot c 0)) (cwc len c) = val32 u₈.mem base (lo len (.slot c 0)) (cwc len c) :=
+      frameR_val32 Ft h.room nw (by omega_arith) (hws (.inl (by omega_arith)) (.inl (by omega_arith))) fitW
+    have v3 : val32 t.mem base (lo len (.slot c 3)) (cwc len c) = val32 u₈.mem base (lo len (.slot c 3)) (cwc len c) :=
+      frameR_val32 Ft h.room nw (by omega_arith) (hws (.inr (by omega_arith)) (.inl (by omega_arith))) fitW
+    have vi : val32 t.mem base invOff 1 = val32 u₈.mem base invOff 1 :=
+      frameR_val32 Ft h.room nw (by omega_arith) (hws (.inl (by omega_arith)) (.inl (by omega_arith))) fitW
+    simp only [sv] at M₈ one₈ Vt ⊢
+    rw [w32_val32_one] at vi
+    rw [w32_val32_one] at vi
+    refine ⟨⟨h.keepF K (by decide) (by decide) W fit.1, by simp only [sv]; rw [v0, M₈], safeM_gt _, safeM_odd _, ?_⟩,
+      by rw [v3, one₈], Vt, W, K⟩
+    rw [vi]; exact I₈
+  have keep0 : ∀ t : State, Frame (frameR base (s.gpr .esp) (powR len c)) u₈.mem t.mem →
+      sv t.mem base len c 0 = safeM (sv s.mem base len c 0) := fun t Ft => by
+    simp only [sv] at M₈ ⊢
+    rw [frameR_val32 Ft h.room nw (by omega_arith) (hws (.inl (by omega_arith)) (.inl (by omega_arith))) fitW, M₈]
+  refine WP.seq (WP.mono (loadR2_ok h₈ P₈) fun u₉ ⟨h₉, V₉, esi₉, z₉, O₉, K₉⟩ => ?_)
+  have sp₉ : u₉.gpr .esp = s.gpr .esp := by rw [K₉.1 _ (by decide), sp₈]
+  have F₉ : Frame (frameR base (s.gpr .esp) (powR len c)) u₈.mem u₉.mem :=
+    frameR_of_outside O₉ (by omega_arith) (by simp [powR])
+  have K₉' : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] u₈ u₉ := K₉.mono (by decide)
+  refine WP.ite (u₉.gpr .esi == 0) z₉ (fun hz => WP.block_nil ?_) (fun hz => ?_)
+  · have e : (u₉.gpr .esi).toNat = 0 := by rw [beq_iff_eq.mp hz]; rfl
+    refine rest u₉ F₉ K₉' ?_
+    rw [V₉, show 16 * bc len c = 128 * preW args i by omega]
+  · have hN : 0 < 16 * (bc len c - 8 * preW args i) := by
+      rw [← esi₉]
+      refine Nat.pos_of_ne_zero fun e => ?_
+      have : u₉.gpr .esi = 0 := BitVec.eq_of_toNat_eq (by rw [e]; rfl)
+      simp [this] at hz
+    let M := safeM (sv s.mem base len c 0)
+    have hM : 0 < M := Nat.lt_trans Nat.zero_lt_one (safeM_gt _)
+    let I : Nat → State → Prop := fun j t =>
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] u₉ t ∧
+        Frame (frameR base (s.gpr .esp) (powR len c)) u₉.mem t.mem ∧
+        sv t.mem base len c 4 = 2 ^ (128 * preW args i + j) % M ∧
+        (t.gpr .esi).toNat = 16 * (bc len c - 8 * preW args i) - j
+    refine WP.mono (countLoop hN I ?_ ⟨Keeps.refl _ _, Frame.refl _ _, V₉, esi₉⟩) fun t ⟨Kt, Ft, Vt, _⟩ => ?_
+    · rintro j t hj ⟨Kt, Ft, Vt, esit⟩
+      have ht := h₉.keepF Kt (by decide) (by decide) (by rw [sp₉]; exact Ft) fitW
+      have Mt : sv t.mem base len c 0 = M := keep0 t (F₉.trans Ft)
+      refine WP.mono (doubleStep_ok ht c (by rw [Vt, Mt]; exact Nat.mod_lt _ hM)) fun u ⟨Fu, Vu, esiu, zu, Ku⟩ => ?_
+      obtain ⟨c₁, c₂⟩ := count1_zf esit hj
+      have spt : t.gpr .esp = s.gpr .esp := by rw [Kt.1 _ (by decide), sp₉]
+      refine ⟨⟨Kt.trans Ku, Ft.trans (by rw [← spt]; exact Fu), ?_, by rw [esiu]; exact c₁⟩, by rw [zu, c₂]⟩
+      rw [Vu, Vt, Mt, ← Nat.add_mod, ← Nat.two_mul, Nat.mul_comm, ← Nat.pow_succ]; rfl
+    · refine rest t (F₉.trans Ft) (K₉'.trans Kt) ?_
+      rw [Vt, show 128 * preW args i + 16 * (bc len c - 8 * preW args i) = 16 * bc len c by omega]
 
 end
 
