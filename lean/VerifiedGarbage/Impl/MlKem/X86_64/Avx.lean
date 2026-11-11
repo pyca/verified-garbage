@@ -30,7 +30,7 @@ def vexOf : XBinOp → Option VBinOp
   | .punpcklqdq => some .vpunpcklqdq | .punpckhqdq => some .vpunpckhqdq
   | .paddw => some .vpaddw | .psubw => some .vpsubw | .psubd => some .vpsubd | .pmullw => some .vpmullw
   | .pmulhw => some .vpmulhw | .packssdw => some .vpackssdw | .punpcklwd => some .vpunpcklwd
-  | .punpckhwd => some .vpunpckhwd | .psubq => some .vpsubq
+  | .punpckhwd => some .vpunpckhwd | .psubq => some .vpsubq | .pmaddwd => some .vpmaddwd
   | _ => none
 
 /-- `op d, b` in VEX.256 form on `a` (`vop d, a, b`), if it has one. -/
