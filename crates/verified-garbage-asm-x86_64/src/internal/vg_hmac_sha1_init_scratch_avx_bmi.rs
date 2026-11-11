@@ -15,15 +15,23 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_scratch_avx_bmi() {
 call {vg_sha1_init_core}
 .base64 "TInn"
 call {vg_sha1_init_core}
-.base64 "uDY2NjaJQxSJQxiJQxyJQyCJQySJQyiJQyyJQzCJQzSJQziJQzyJQ0CJQ0SJQ0iJQ0yJQ1BBvgAAAABNhe0="
+.base64 "SLg2NjY2NjY2NmZID27AZg9swPMPf0MU8w9/QyTzD39DNPMPf0NEQb4AAAAATInpSMHpBEiFyQ=="
 je 20f
 22:
-.base64 "Qg+2RDUAg/A2QohEMxRJg8YBTTnu"
+.base64 "80IPb0w1AGYP78hNifJJg+Iw80IPf0wTFEmDxhBIg+kB"
 jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0MUNWpqampBiUQkFItDGDVqampqQYlEJBiLQxw1ampqakGJRCQci0MgNWpqampBiUQkIItDJDVqampqQYlEJCSLQyg1ampqakGJRCQoi0MsNWpqampBiUQkLItDMDVqampqQYlEJDCLQzQ1ampqakGJRCQ0i0M4NWpqampBiUQkOItDPDVqampqQYlEJDyLQ0A1ampqakGJRCRAi0NENWpqampBiUQkRItDSDVqampqQYlEJEiLQ0w1ampqakGJRCRMi0NQNWpqampBiUQkUEiJ3kiDxhRIid+6AQAAAEyJ+Q=="
+.base64 "TTnu"
+je 23f
+25:
+.base64 "Qg+2RDUAg/A2TYnySYPiP0KIRBMUSYPGAU057g=="
+jne 25b
+jmp 24f
+23:
+24:
+.base64 "SLhqampqampqamZID27IZg9syfMPb1MUZg/v0fNBD39UJBTzD29TJGYP79HzQQ9/VCQk8w9vUzRmD+/R80EPf1QkNPMPb1NEZg/v0fNBD39UJERIid5Ig8YUSInfugEAAABMifk="
 call {vg_sha1_compress_avx_bmi}
 .base64 "SIn7SYnPTInjTInmSIPGFEiJ37oBAAAATIn5"
 call {vg_sha1_compress_avx_bmi}

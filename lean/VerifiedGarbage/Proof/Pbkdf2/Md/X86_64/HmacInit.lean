@@ -19,9 +19,10 @@ import VerifiedGarbage.Proof.Sha256.Stream
 HMAC's `init` (`Impl/Pbkdf2/Md/X86_64.lean`) saves our caller's registers
 (`pro_ok`), sets each state's hash value with the streaming `init`
 (`callInit_ok`), writes `K₀ ⊕ ipad` into the inner state's buffer and
-`K₀ ⊕ opad` into the outer one's (`keys_ok`: `ipad` a word at a time, the
-key's bytes XORed in, then the outer buffer from the inner one a word at a
-time), compresses each buffer into its state's hash value, and loads our
+`K₀ ⊕ opad` into the outer one's (`keys_ok`: `ipad` sixteen bytes at a
+time, `fill_ok`; the key XORed in, its whole 16-byte words, `key16_ok`, then
+its other bytes, `key_ok`; then the outer buffer from the inner one sixteen
+bytes at a time, `opad_ok`), compresses each buffer into its state's hash value, and loads our
 caller's registers back. The compressions are `Hash.compBoth`, of which
 `init` needs `BothOk`: the compression function on each buffer in turn
 (`BothOk.twice`, from `cmp_ok`), or one call of a function that compresses
@@ -41,7 +42,7 @@ open VG.X86_64 VG.Proof.MdStream
 open VG.Proof.MdStream.X86_64 (add_ofNat sx_ofNat zx_ofNat wp_mov wp_mov32i wp_addi wp_andi
   wp_store8 wp_movzx8 wp_cmp Upd CallOk compressAt_ok compressAt_rel ea_at ofInt_natCast
   ofNat_succ ofNat_pred ofNat_beq_zero sub_beq and_mask vbytes vbytes_length vbytes_getElem wp_movqx wp_xbin
-  wp_movImm64' wp_movdquStoreX WP.cons)
+  wp_movImm64' wp_movdquStoreX wp_shrX wp_testX WP.cons)
 open VG.Impl.MdStream.X86_64 (compressAt at_)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash byteAt pairArgs)
 open VG.Proof.Pbkdf2.X86_64 (ea_off)
@@ -440,16 +441,6 @@ theorem wp_subiX {d : Reg} {v : BitVec 32}
     WP isa (.block (.alu .sub d (.imm v) :: is)) s Q :=
   WP.cons rfl (k _ (Upd.flags _ _ _ _ _ _) rfl rfl)
 
-theorem wp_shrZX {d : Reg} {n : Nat} (hn : 1 ≤ n ∧ n ≤ 63)
-    (k : ∀ s', Upd s s' d (s.gpr d >>> n) → s'.xmm = s.xmm → s'.zf = some (s.gpr d >>> n == 0) →
-      WP isa (.block is) s' Q) :
-    WP isa (.block (.shift .shr d n :: is)) s Q := by
-  refine WP.cons (s' := (s.setFlags (some ((s.gpr d).getLsbD (n - 1)))
-    (if n = 1 then some (s.gpr d).msb else none) (some (s.gpr d >>> n == 0))
-    (some (s.gpr d >>> n).msb)).setReg d (s.gpr d >>> n)) ?_ (k _ ?_ rfl rfl)
-  · simp [exec, execShift, hn]
-  · exact ⟨by simp [State.setReg], fun r h => by simp [State.setReg, State.setFlags, h], rfl, rfl, rfl⟩
-
 /-- Sixteen bytes loaded into `d` and XORed with `c`. -/
 theorem wp_loadXor {d c : XReg} {m : MemOp} {a : Addr} (hdc : ¬c = d) (ha : s.ea m = a)
     (hin : InRegions (s.rd ++ s.wr) a 16)
@@ -721,11 +712,12 @@ theorem keys_ok {s : State} (hk : KR H s₀ (inn s₀) s) :
   refine fill_ok (o := H.P.N) (p := bufOf H (inn s₀)) (H.P.B / 16) _ s₁ _ (by rw [g₁ _ (by decide), hk.rbx])
     (by rw [x₁]; exact vbytes_ipad) (fun k hk' => by rw [wr₁, hk.wr]; exact inI _ 16 (by omega_using [hk', eB]))
     (by omega_using [hB]) fun s₂ g₂ rd₂ wr₂ x₂ m₂ => ?_
-  refine wp_mov32iX fun s₃ u₃ x₃ => wp_movX fun s₄ u₄ x₄ => wp_shrZX (by decide) fun s₅ u₅ x₅ z₅ => WP.block_nil ?_
+  refine wp_mov32iX fun s₃ u₃ x₃ => wp_movX fun s₄ u₄ x₄ => wp_shrX (by decide) fun s₆ u₅ x₆ =>
+    wp_testX fun s₅ g₆ m₆ rd₆ wr₆ xt₆ z₅ => WP.block_nil ?_
   have G₅ : ∀ r, r ≠ .rax → r ≠ .r14 → r ≠ .rcx → s₅.gpr r = s.gpr r := fun r h1 h2 h3 => by
-    rw [u₅.other r h3, u₄.other r h3, u₃.other r h2, g₂, g₁ r h1]
-  have rd₅ : s₅.rd = s₀.rd := by rw [u₅.rd, u₄.rd, u₃.rd, rd₂, rd₁, hk.rd]
-  have wr₅ : s₅.wr = s₀.wr := by rw [u₅.wr, u₄.wr, u₃.wr, wr₂, wr₁, hk.wr]
+    rw [g₆, u₅.other r h3, u₄.other r h3, u₃.other r h2, g₂, g₁ r h1]
+  have rd₅ : s₅.rd = s₀.rd := by rw [rd₆, u₅.rd, u₄.rd, u₃.rd, rd₂, rd₁, hk.rd]
+  have wr₅ : s₅.wr = s₀.wr := by rw [wr₆, u₅.wr, u₄.wr, u₃.wr, wr₂, wr₁, hk.wr]
   have r13₄ : s₃.gpr .r13 = s₀.gpr .rcx := by
     rw [u₃.other _ (by decide), g₂, g₁ _ (by decide), hk.r13]
   have hr : KeyRegs H s₅ s.mem s₀.mem (bufOf H (inn s₀)) (kp s₀) (kl s₀) :=
@@ -741,13 +733,13 @@ theorem keys_ok {s : State} (hk : KR H s₀ (inn s₀) s) :
       bout := fun i n hi => by rw [wr₅]; exact inI i n hi
       disj := hp.k_i.sub_right bI }
   have hx0 : vbytes (s₅.xmm .xmm0) = List.replicate 16 ipad := by
-    rw [x₅, x₄, x₃, x₂, x₁]; exact vbytes_ipad
-  have h14 : s₅.gpr .r14 = BitVec.ofNat 64 0 := by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr]; rfl
-  have hc : s₅.gpr .rcx = BitVec.ofNat 64 (kl s₀ / 16) := by rw [u₅.gpr, u₄.gpr, r13₄, shr4]
+    rw [xt₆, x₆, x₄, x₃, x₂, x₁]; exact vbytes_ipad
+  have h14 : s₅.gpr .r14 = BitVec.ofNat 64 0 := by rw [g₆, u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr]; rfl
+  have hc : s₅.gpr .rcx = BitVec.ofNat 64 (kl s₀ / 16) := by rw [g₆, u₅.gpr, u₄.gpr, r13₄, shr4]
   have hz : s₅.zf = some (decide (kl s₀ / 16 = 0)) := by
-    rw [z₅, u₄.gpr, r13₄, shr4, ofNat_beq_zero (by omega_using [hkl, hB])]
+    rw [z₅, BitVec.and_self, u₅.gpr, u₄.gpr, r13₄, shr4, ofNat_beq_zero (by omega_using [hkl, hB])]
   have hm : s₅.mem = writeBytes s.mem (bufOf H (inn s₀)) (ipadBlk s₀.mem (kp s₀) H.P.B 0) := by
-    rw [u₅.mem, u₄.mem, u₃.mem, m₂, m₁, ipadBlk_zero, eB]
+    rw [m₆, u₅.mem, u₄.mem, u₃.mem, m₂, m₁, ipadBlk_zero, eB]
   refine WP.seq (WP.mono (key16_ok hr hx0 h14 hc hz hm) fun t₆ h₆ => ?_)
   refine WP.seq (wp_cmp fun t₇ g₇ m₇ rd₇ wr₇ _ z₇ => WP.block_nil ?_)
   have h₇ : KeyInv s₅ s.mem s₀.mem (bufOf H (inn s₀)) (kp s₀) H.P.B (16 * (kl s₀ / 16)) t₇ :=

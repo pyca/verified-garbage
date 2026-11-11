@@ -16,9 +16,10 @@ call them, are a `Stream` (`Hash.stream`).
 
 * HMAC's `init(inner = rdi, outer = rsi, key = rdx, key_len = rcx,
   scratch = r8)` sets each state's hash value with the streaming `init`,
-  writes `K₀ ⊕ ipad` into the inner state's buffer (`ipad` a 32-bit word at
-  a time, then the key's bytes XORed in) and `K₀ ⊕ opad` into the outer
-  one's (from the inner one, a word at a time, XORed with `ipad ⊕ opad`), and
+  writes `K₀ ⊕ ipad` into the inner state's buffer (`ipad` sixteen bytes at
+  a time, then the key XORed in, its whole 16-byte words and then its other
+  bytes) and `K₀ ⊕ opad` into the outer one's (from the inner one, sixteen
+  bytes at a time, XORed with `ipad ⊕ opad`), and
   compresses each buffer into its state's hash value: each state then
   represents its block, as after `update` with it.
 * Its `finalize(inner = rdi, outer = rsi, count = rdx, out = rcx,
@@ -241,7 +242,7 @@ words of the key, in `rcx`, whose flags say whether there is one. -/
 def ipadFill : List Instr :=
   padConst .xmm0 0x3636363636363636 ++
     (List.range (H.P.B / 16)).map (fun k => .movdquStore (at_ .rbx (H.P.N + 16 * k)) .xmm0) ++
-    ([.mov32 .r14 (.imm 0), .mov .rcx (.reg .r13), .shift .shr .rcx 4] : List Instr)
+    ([.mov32 .r14 (.imm 0), .mov .rcx (.reg .r13), .shift .shr .rcx 4, .alu .test .rcx (.reg .rcx)] : List Instr)
 
 /-- Where the key loops store: `[rbx + r10 + N]`, with `r10` the index
 `r14` under a mask that leaves it as it is. The residue analysis cannot
