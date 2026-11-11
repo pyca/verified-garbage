@@ -154,7 +154,7 @@ theorem callE_stackArg {s t : State} {em : List Byte} (A : AtCall s t em) {i : N
   exact A.psa i hi
 
 theorem preP_entry {s t : State} {em : List Byte} (h : SPre s) (A : AtCall s t em) :
-    Rsa.RISCV64.Priv.PreP (callE s t) := by
+    Rsa.RISCV64.Priv.PreP false (callE s t) := by
   have hk := h.k2
   have fbt := fb_toNat h
   have kbt := kb_toNat h
@@ -204,8 +204,9 @@ theorem preP_entry {s t : State} {em : List Byte} (h : SPre s) (A : AtCall s t e
     simp only [Rsa.RISCV64.Priv.qiR, sa 8 (by decide), sa 9 (by decide)]
   have hS : Rsa.RISCV64.Priv.sR (callE s t) = sR s := by
     simp only [Rsa.RISCV64.Priv.sR, sa 10 (by decide), sa 11 (by decide)]
-  have hA : Rsa.RISCV64.Priv.aR (callE s t) = psaR s := by
-    simp only [Rsa.RISCV64.Priv.aR, stackArgAddr, hsp, Nat.mul_zero, BitVec.add_zero]
+  have hA : Rsa.RISCV64.Priv.aR false (callE s t) = psaR s := by
+    simp only [Rsa.RISCV64.Priv.aR, stackArgAddr, hsp, Nat.mul_zero, BitVec.add_zero, Bool.false_eq_true,
+      ↓reduceIte]
   have s1 := sa 1 (by decide)
   have s3 := sa 3 (by decide)
   have s5 := sa 5 (by decide)
@@ -219,7 +220,7 @@ theorem preP_entry {s t : State} {em : List Byte} (h : SPre s) (A : AtCall s t e
     by rw [hsp]; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [hN, hE, hI, hP, hQ, hDP, hDQ, hQI, hA]; rfl
+  · rw [Rsa.RISCV64.Priv.rdL, hN, hE, hI, hP, hQ, hDP, hDQ, hQI, hA]; rfl
   · rw [hO, hS]; rfl
   · rw [hO, hN]; exact h.on
   · rw [hO, hE]; exact h.oe
