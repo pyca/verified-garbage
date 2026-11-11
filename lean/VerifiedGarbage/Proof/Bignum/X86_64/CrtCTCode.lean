@@ -31,62 +31,83 @@ structure CCPub where
   m : CrtPub
   rsp : Addr
 
-/-- A state the contract allows, with the public data `p`. -/
-def CCRel (p : CCPub) (s : State) : Prop :=
-  crtContract.pre s ∧ s.gpr .rsp = p.rsp ∧ stackArg s 10 = p.m.B ∧ (stackArg s 11).toNat * 8 = p.m.Z ∧
+/-- The arguments of a state with the public data `p`. -/
+abbrev CCEq (p : CCPub) (s : State) : Prop :=
+  s.gpr .rsp = p.rsp ∧ stackArg s 10 = p.m.B ∧ (stackArg s 11).toNat * 8 = p.m.Z ∧
     (s.gpr .rcx).toNat = p.m.k ∧ s.gpr .rdi = p.m.op ∧ s.gpr .rdx = p.m.np ∧ s.gpr .r8 = p.m.ip ∧
     stackArg s 0 = p.m.pp ∧ stackArg s 2 = p.m.qp ∧ stackArg s 4 = p.m.dpp ∧ stackArg s 6 = p.m.dqp ∧
     stackArg s 8 = p.m.qip ∧ (stackArg s 1).toNat = p.m.pl ∧ (stackArg s 3).toNat = p.m.ql ∧
     Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat = p.m.nb
 
+/-- A state the contract allows, with the public data `p`. -/
+def CCRel (p : CCPub) (s : State) : Prop := crtContract.pre s ∧ CCEq p s
+
+/-- What the entry and the modulus' check use of a relation `Rel` between
+the public data and the states it allows (`crtEntryWith_ct`). -/
+abbrev CCOk {α : Type} (f : α → CCPub) (Rel : α → State → Prop) : Prop := ∀ p s, Rel p s → CrtCtx s ∧ CCEq (f p) s
+
+theorem ccRel_ok : CCOk id CCRel := fun _ _ h => ⟨crtCtx_of h.1, h.2⟩
+
 theorem crtEntry_split : Crt.entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) =
     ([.mov .r11 (.mem { base := .rsp, disp := 88 })] : List Instr) ++
       ((Crt.entry.drop 1) ++ [.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))]) := rfl
 
-/-- After `entry`'s first instruction. -/
-def CC1 (p : CCPub) (t : State) : Prop :=
-  ∃ s, CCRel p s ∧ t.gpr .r11 = p.m.B ∧ t.gpr .rsp = p.rsp ∧
+/-- After `entry`'s first instruction, from a state `Rel` allows. -/
+def CC1W {α : Type} (f : α → CCPub) (Rel : α → State → Prop) (p : α) (t : State) : Prop :=
+  ∃ s, Rel p s ∧ t.gpr .r11 = (f p).m.B ∧ t.gpr .rsp = (f p).rsp ∧
     WP isa (.block ((Crt.entry.drop 1) ++ [.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))])) t
       (CrtHeadPost s)
 
 /-- After `entry` and the reloads. -/
-def CC2 (p : CCPub) (t : State) : Prop := ∃ s, CCRel p s ∧ CrtHeadPost s t
+def CC2W {α : Type} (Rel : α → State → Prop) (p : α) (t : State) : Prop := ∃ s, Rel p s ∧ CrtHeadPost s t
 
 /-- After the modulus' check. -/
-def CC3 (p : CCPub) (t : State) : Prop :=
-  ∃ s t₁, CCRel p s ∧ CrtHeadPost s t₁ ∧ t.mem = t₁.mem ∧ Keep [.rax, .rbp, .rsi] t₁ t ∧
-    t.zf = some (Spec.Rsa.modulusValid p.m.N p.m.k)
+def CC3W {α : Type} (f : α → CCPub) (Rel : α → State → Prop) (p : α) (t : State) : Prop :=
+  ∃ s t₁, Rel p s ∧ CrtHeadPost s t₁ ∧ t.mem = t₁.mem ∧ Keep [.rax, .rbp, .rsi] t₁ t ∧
+    t.zf = some (Spec.Rsa.modulusValid (f p).m.N (f p).m.k)
+
+abbrev CC1 := CC1W id CCRel
+abbrev CC2 := CC2W CCRel
+abbrev CC3 := CC3W id CCRel
 
 /-- `main`'s hypotheses after the head and the modulus' check. -/
-theorem cc3_pre {p : CCPub} {t : State} (h : CC3 p t) :
-    ∃ xb pb qb dpb dqb qib, CrtPre t p.m.B p.m.Z p.m.k p.m.op p.m.np p.m.ip p.m.pp p.m.qp p.m.dpp p.m.dqp
-      p.m.qip p.m.pl p.m.ql p.m.nb xb pb qb dpb dqb qib := by
-  obtain ⟨s, t₁, ⟨hpre, -, hB, hZ, hk, hop, hnp, hip, hpp, hqp, hdpp, hdqp, hqip, hpl, hql, hnb⟩, h, hm, k, -⟩ := h
-  have := crtPre_of (crtCtx_of hpre) h hm k
+theorem cc3W_pre {α : Type} {f : α → CCPub} {Rel : α → State → Prop} (hR : CCOk f Rel) {p : α} {t : State} (h : CC3W f Rel p t) :
+    ∃ xb pb qb dpb dqb qib, CrtPre t (f p).m.B (f p).m.Z (f p).m.k (f p).m.op (f p).m.np (f p).m.ip (f p).m.pp (f p).m.qp (f p).m.dpp (f p).m.dqp
+      (f p).m.qip (f p).m.pl (f p).m.ql (f p).m.nb xb pb qb dpb dqb qib := by
+  obtain ⟨s, t₁, hs, h, hm, k, -⟩ := h
+  obtain ⟨c, -, hB, hZ, hk, hop, hnp, hip, hpp, hqp, hdpp, hdqp, hqip, hpl, hql, hnb⟩ := hR p s hs
+  have := crtPre_of c h hm k
   rw [hB, hZ, hk, hop, hnp, hip, hpp, hqp, hdpp, hdqp, hqip, hpl, hql] at this
   rw [hnp, hk] at hnb
   rw [hnb] at this
   exact ⟨_, _, _, _, _, _, this⟩
 
+theorem cc3_pre {p : CCPub} {t : State} (h : CC3 p t) :
+    ∃ xb pb qb dpb dqb qib, CrtPre t p.m.B p.m.Z p.m.k p.m.op p.m.np p.m.ip p.m.pp p.m.qp p.m.dpp p.m.dqp
+      p.m.qip p.m.pl p.m.ql p.m.nb xb pb qb dpb dqb qib :=
+  cc3W_pre ccRel_ok h
+
 variable (M : Mont) (E : CrtExpL M)
 
-/-- `vg_rsa_private_crt` leaks the same in runs that agree on the public data,
-given that `main`'s parts do. -/
-theorem crtCode_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M E) (hP : PPhaseCT M E)
-    (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) :
-    RelCT isa (Two CCRel) (Crt.code M.mm E.code) fun _ _ => True := by
-  unfold Crt.code
-  refine RelCT.seq (R := Two CC3) (RelCT.block_append (RelCT.seq (R := Two CC2) ?_ ?_)) ?_
+/-- The entry and the modulus' check leak the same in runs from states that
+`Rel` allows with the same public data, and so does the rest if `fail` and
+`main` do: `vg_rsa_private_crt` and its variants with the key's precomputed
+values, by their `main` and the relation of their contract. -/
+theorem crtEntryWith_ct {α : Type} {f : α → CCPub} {Rel : α → State → Prop} (hR : CCOk f Rel) (main : Prog isa)
+    (hM : RelCT isa (Two fun p t => CC3W f Rel p t ∧ isa.eval .ne t = some false) main fun _ _ => True) :
+    RelCT isa (Two Rel) (.seq (.block (Crt.entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] :
+      List Instr) ++ invalid)) (.ite .ne fail main)) fun _ _ => True := by
+  refine RelCT.seq (R := Two (CC3W f Rel)) (RelCT.block_append (RelCT.seq (R := Two (CC2W Rel)) ?_ ?_)) ?_
   · rw [crtEntry_split]
-    refine RelCT.block_append (RelCT.seq (two_piece (Ψ := CC1) [.rsp] (fun p s₁ s₂ h₁ h₂ r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.1, h₂.2.1]) (by taint_decide) ?_)
+    refine RelCT.block_append (RelCT.seq (two_piece (Ψ := CC1W f Rel) [.rsp] (fun p s₁ s₂ h₁ h₂ r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [(hR p s₁ h₁).2.1, (hR p s₂ h₂).2.1]) (by taint_decide) ?_)
       (two_piece [.r11, .rsp] (fun p s₁ s₂ ⟨_, _, a₁, b₁, _⟩ ⟨_, _, a₂, b₂, _⟩ r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · rw [a₁, a₂]
         · rw [b₁, b₂]) (by taint_decide) fun p t ⟨s, hs, _, _, hw⟩ => WP.mono hw fun t' h => ⟨s, hs, h⟩))
     intro p s hs
-    have c := crtCtx_of hs.1
+    obtain ⟨c, hq⟩ := hR p s hs
     have hh : WP isa (.block (([.mov .r11 (.mem { base := .rsp, disp := 88 })] : List Instr) ++
         ((Crt.entry.drop 1) ++ [.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))]))) s (CrtHeadPost s) := by
       rw [← crtEntry_split]; exact crtHead_ok c
@@ -94,17 +115,18 @@ theorem crtCode_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M E) (hP : PPha
     have hB' : s.mem.readW (stackArgAddr s 10) 64 = stackArg s 10 := rfl
     refine WP.mono (WP.and (WP.block_append_iff.mp hh) (WP.keep [.r11] (Q := fun t => t.gpr .r11 = stackArg s 10)
       (by xrun [State.ea, e10, c.ha 10 (by decide), hB']) rfl)) fun t ⟨hw, h11, k⟩ =>
-        ⟨s, hs, h11.trans hs.2.2.1, (k.gpr (by decide)).trans hs.2.1, hw⟩
+        ⟨s, hs, h11.trans hq.2.1, (k.gpr (by decide)).trans hq.1, hw⟩
   -- The modulus' check.
   · refine two_piece [.rdx, .rcx] (fun p s₁ s₂ ⟨σ₁, c₁, h₁⟩ ⟨σ₂, c₂, h₂⟩ r hr => by
+      have c₁ := (hR p σ₁ c₁).2
+      have c₂ := (hR p σ₂ c₂).2
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · rw [h₁.rdx, h₂.rdx, c₁.2.2.2.2.2.2.1, c₂.2.2.2.2.2.2.1]
-      · rw [h₁.rcx, h₂.rcx, c₁.2.2.2.2.1, c₂.2.2.2.2.1]) (by taint_decide) ?_
+      · rw [h₁.rdx, h₂.rdx, c₁.2.2.2.2.2.1, c₂.2.2.2.2.2.1]
+      · rw [h₁.rcx, h₂.rcx, c₁.2.2.2.1, c₂.2.2.2.1]) (by taint_decide) ?_
     rintro p t ⟨s, hs, h⟩
-    have c := crtCtx_of hs.1
+    obtain ⟨c, -, -, -, hk, -, -, -, -, -, -, -, -, -, -, hn⟩ := hR p s hs
     have hnb := c.hnb.congrK h.inScr h.keep
-    obtain ⟨-, -, -, -, hk, -, -, -, -, -, -, -, -, -, -, hn⟩ := id hs
     refine WP.mono (invalid_ok h.rdx h.rcx c.hk1 c.hk2 (bytesAt_length _ _ _) (fun i hi => hnb.rd i (by
       rw [bytesAt_length]; exact hi)) (fun i hi => hnb.val i _)) fun t' ⟨hz, hm, k⟩ =>
         ⟨s, t, hs, h, hm, k, ?_⟩
@@ -114,11 +136,11 @@ theorem crtCode_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M E) (hP : PPha
     simp only [eval, z₁, z₂]) ?_ ?_
   · -- `fail`.
     unfold fail
-    have pin : ∀ p t, (CC3 p t ∧ isa.eval .ne t = some true) → t.gpr .rdi = p.m.B := fun p t ⟨h, _⟩ => by
-      obtain ⟨_, _, _, _, _, _, hpre⟩ := cc3_pre h
+    have pin : ∀ p t, (CC3W f Rel p t ∧ isa.eval .ne t = some true) → t.gpr .rdi = (f p).m.B := fun p t ⟨h, _⟩ => by
+      obtain ⟨_, _, _, _, _, _, hpre⟩ := cc3W_pre hR h
       exact hpre.rdi
-    refine RelCT.seq (two_piece (Ψ := fun (p : CCPub) t => t.gpr .rsi = p.m.op ∧
-        t.gpr .rcx = BitVec.ofNat 64 p.m.k ∧ t.gpr .rdi = p.m.B) [.rdi]
+    refine RelCT.seq (two_piece (Ψ := fun (p : α) t => t.gpr .rsi = (f p).m.op ∧
+        t.gpr .rcx = BitVec.ofNat 64 (f p).m.k ∧ t.gpr .rdi = (f p).m.B) [.rdi]
       (fun p s₁ s₂ h₁ h₂ r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [pin p s₁ h₁, pin p s₂ h₂]) (by taint_decide) ?_)
       (two_taint [.rsi, .rcx, .rdi] (fun p s₁ s₂ h₁ h₂ r hr => by
@@ -128,28 +150,36 @@ theorem crtCode_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M E) (hP : PPha
         · rw [h₁.2.1, h₂.2.1]
         · rw [h₁.2.2, h₂.2.2]) (by taint_decide))
     rintro p t ⟨h, -⟩
-    obtain ⟨_, _, _, _, _, _, hpre⟩ := cc3_pre h
+    obtain ⟨_, _, _, _, _, _, hpre⟩ := cc3W_pre hR h
     have hn := hpre.scr.nowrap
     have hk1 := hpre.k1
     have hk2 := hpre.k2
     have hZq := hpre.z
-    have h8 := hdr_lt_slot ((p.m.k + 7) / 8) 8 (show 31 < 32 by decide)
-    have hZ : 8 * 32 ≤ p.m.Z := by unfold offQ at hZq; omega
-    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off p.m.B (8 * i)) 8 := fun i hi => hpre.scr.ld (by omega)
-    refine WP.mono (WP.keep [.rsi, .rcx, .rax] (Q := fun t' => t'.gpr .rsi = p.m.op ∧
-        t'.gpr .rcx = BitVec.ofNat 64 p.m.k) (by
+    have h8 := hdr_lt_slot (((f p).m.k + 7) / 8) 8 (show 31 < 32 by decide)
+    have hZ : 8 * 32 ≤ (f p).m.Z := by unfold offQ at hZq; omega
+    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off (f p).m.B (8 * i)) 8 := fun i hi => hpre.scr.ld (by omega)
+    refine WP.mono (WP.keep [.rsi, .rcx, .rax] (Q := fun t' => t'.gpr .rsi = (f p).m.op ∧
+        t'.gpr .rcx = BitVec.ofNat 64 (f p).m.k) (by
       xrun [State.ea, hdr, hpre.rdi, hdrOff, hl sOut (by decide), hl sK (by decide), hpre.hO, hpre.hK]) rfl)
       fun t' ⟨⟨hsi, hcx⟩, k'⟩ => ⟨hsi, hcx, (k'.gpr (by decide)).trans hpre.rdi⟩
-  · -- `main`.
-    have toM : ∀ p t, CC3 p t ∧ isa.eval .ne t = some false → Stage R0 p.m t := by
-      rintro p t ⟨h, he⟩
-      obtain ⟨xb, pb, qb, dpb, dqb, qib, hpre⟩ := cc3_pre h
-      obtain ⟨_, _, _, _, _, _, hz⟩ := h
-      have hv : Spec.Rsa.modulusValid p.m.N p.m.k = true := by
-        simp only [eval, hz] at he; simpa using he
-      exact ⟨t, xb, pb, qb, dpb, dqb, qib, hpre, hv, rfl⟩
-    exact (crtMain_ct M E hS hC hQ hP hF).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ =>
-      ⟨p.m, toM p t₁ h₁, toM p t₂ h₂⟩) h) fun _ _ h => h
+  · exact hM
+
+/-- `vg_rsa_private_crt` leaks the same in runs that agree on the public data,
+given that `main`'s parts do. -/
+theorem crtCode_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M E) (hP : PPhaseCT M E)
+    (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) :
+    RelCT isa (Two CCRel) (Crt.code M.mm E.code) fun _ _ => True := by
+  unfold Crt.code
+  refine crtEntryWith_ct ccRel_ok _ ?_
+  have toM : ∀ p t, CC3 p t ∧ isa.eval .ne t = some false → Stage R0 p.m t := by
+    rintro p t ⟨h, he⟩
+    obtain ⟨xb, pb, qb, dpb, dqb, qib, hpre⟩ := cc3_pre h
+    obtain ⟨_, _, _, _, _, _, hz⟩ := h
+    have hv : Spec.Rsa.modulusValid p.m.N p.m.k = true := by
+      simp only [eval, hz] at he; simpa using he
+    exact ⟨t, xb, pb, qb, dpb, dqb, qib, hpre, hv, rfl⟩
+  exact (crtMain_ct M E hS hC hQ hP hF).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ =>
+    ⟨p.m, toM p t₁ h₁, toM p t₂ h₂⟩) h) fun _ _ h => h
 
 /-- The public data of a state. -/
 def ccPubOf (s : State) : CCPub :=

@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 public import VerifiedGarbage.TCB.X86_64.Target
 
 import VerifiedGarbage.Proof.Framework.InstancePriority
@@ -78,6 +79,58 @@ def crtContract : Contract isa where
       stackArg s₁ 9 = stackArg s₂ 9 ∧ stackArg s₁ 10 = stackArg s₂ 10 ∧ stackArg s₁ 11 = stackArg s₂ 11 ∧
       Spec.Rsa.bytesAt s₁.mem (s₁.gpr .rdx) (s₁.gpr .rcx).toNat =
         Spec.Rsa.bytesAt s₂.mem (s₂.gpr .rdx) (s₂.gpr .rcx).toNat
+
+/-- `vg_rsa_private_crt_precomputed`: `vg_rsa_private_crt`'s arguments, then
+the key's precomputed values `pre = [rsp + 104]` (`pre_len = [rsp + 112]`
+words), which it requires to be `privatePrecompute`'s for `n`, `p` and `q`
+(`vg_rsa_private_precompute`'s): `crtContract`, with `pre` read-only, and
+public but for its words after the modulus' values. -/
+def crtContractP : Contract isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
+    let n : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
+    let inp : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
+    let p : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
+    let q : Region := ⟨stackArg s 2, (stackArg s 3).toNat⟩
+    let dp : Region := ⟨stackArg s 4, (stackArg s 5).toNat⟩
+    let dq : Region := ⟨stackArg s 6, (stackArg s 7).toNat⟩
+    let qi : Region := ⟨stackArg s 8, (stackArg s 9).toNat⟩
+    let scr : Region := ⟨stackArg s 10, (stackArg s 11).toNat * 8⟩
+    let pr : Region := ⟨stackArg s 12, (stackArg s 13).toNat * 8⟩
+    let args : Region := ⟨stackArgAddr s 0, 112⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    (s.gpr .rsp).toNat + 120 ≤ 2 ^ 64 ∧
+      s.rd = [n, inp, p, q, dp, dq, qi, pr, args] ∧ s.wr = [out, scr] ∧
+      out.Disjoint n ∧ out.Disjoint inp ∧ out.Disjoint p ∧ out.Disjoint q ∧ out.Disjoint dp ∧
+      out.Disjoint dq ∧ out.Disjoint qi ∧ out.Disjoint pr ∧ out.Disjoint scr ∧ out.Disjoint args ∧
+      n.Disjoint scr ∧ inp.Disjoint scr ∧ p.Disjoint scr ∧ q.Disjoint scr ∧ dp.Disjoint scr ∧
+      dq.Disjoint scr ∧ qi.Disjoint scr ∧ pr.Disjoint scr ∧ scr.Disjoint args ∧
+      ret.Disjoint out ∧ ret.Disjoint n ∧ ret.Disjoint inp ∧ ret.Disjoint p ∧ ret.Disjoint q ∧
+      ret.Disjoint dp ∧ ret.Disjoint dq ∧ ret.Disjoint qi ∧ ret.Disjoint pr ∧ ret.Disjoint scr ∧
+      ret.Disjoint args ∧
+      (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧
+      (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧
+      (stackArg s 2).toNat + (stackArg s 3).toNat ≤ 2 ^ 64 ∧ (stackArg s 4).toNat + (stackArg s 5).toNat ≤ 2 ^ 64 ∧
+      (stackArg s 6).toNat + (stackArg s 7).toNat ≤ 2 ^ 64 ∧ (stackArg s 8).toNat + (stackArg s 9).toNat ≤ 2 ^ 64 ∧
+      (stackArg s 10).toNat + (stackArg s 11).toNat * 8 ≤ 2 ^ 64 ∧
+      (stackArg s 12).toNat + (stackArg s 13).toNat * 8 ≤ 2 ^ 64 ∧
+      Spec.Rsa.lenValid (s.gpr .rcx).toNat ∧ (s.gpr .rsi).toNat = (s.gpr .rcx).toNat ∧
+      (s.gpr .r9).toNat = (s.gpr .rcx).toNat ∧ 1 ≤ (stackArg s 1).toNat ∧
+      (stackArg s 1).toNat < (s.gpr .rcx).toNat ∧ 1 ≤ (stackArg s 3).toNat ∧
+      (stackArg s 3).toNat < (s.gpr .rcx).toNat ∧ (stackArg s 5).toNat = (stackArg s 1).toNat ∧
+      (stackArg s 9).toNat = (stackArg s 1).toNat ∧ (stackArg s 7).toNat = (stackArg s 3).toNat ∧
+      Spec.Rsa.scratchWords (s.gpr .rcx).toNat ≤ (stackArg s 11).toNat ∧
+      (stackArg s 13).toNat = Spec.Rsa.privatePrecomputedWords (s.gpr .rcx).toNat (stackArg s 1).toNat
+        (stackArg s 3).toNat ∧
+      Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat) =
+        some (Spec.Rsa.wordsAt s.mem (stackArg s 12) (stackArg s 13).toNat)
+  post := crtContract.post
+  pub s₁ s₂ :=
+    crtContract.pub s₁ s₂ ∧ stackArg s₁ 12 = stackArg s₂ 12 ∧ stackArg s₁ 13 = stackArg s₂ 13 ∧
+      Spec.Rsa.privatePrecomputedLeak s₁.mem (stackArg s₁ 12) (s₁.gpr .rcx).toNat =
+        Spec.Rsa.privatePrecomputedLeak s₂.mem (stackArg s₂ 12) (s₂.gpr .rcx).toNat
 
 /-- Stack argument `j` is `8 j` bytes after the first. -/
 theorem stackArgAddr_eq (s : State) (j : Nat) : stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by

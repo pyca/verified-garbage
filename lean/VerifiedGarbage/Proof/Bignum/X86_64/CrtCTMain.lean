@@ -138,49 +138,57 @@ def RA : StageRel := fun p _ xb _ _ _ _ _ t => ∃ minv, SetupOut t p.B p.Z p.w 
 /-- After `R² mod n`. -/
 def RB : StageRel := fun p _ _ _ _ _ _ _ t => ∃ minv, Good t p.B p.Z p.w minv
 
-/-- `n`'s setup leaks the same in runs that agree on `n`. -/
-theorem nSetup_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) fun _ _ => True := by
-  rw [nSetup_eq]
-  refine RelCT.seqs_append (by simp [loadSteps]) (by simp) (RelCT.seq (R := Two (Stage RA)) ?_ ?_)
-  · refine stage_step (((RelCT.seqs_append (by simp [loadSteps]) (by simp [restSteps, restStepsWith])
+/-- The setup of `n` and the input leaks the same in runs that agree on `n`. -/
+theorem setupA_ct : RelCT isa (Two (Stage R0)) (seqs (loadSteps ++ restSteps)) (Two (Stage RA)) := by
+  refine stage_step (((RelCT.seqs_append (by simp [loadSteps]) (by simp [restSteps, restStepsWith])
       (RelCT.seq setupLoad_ct (two_map (fun p : SPub => (⟨p.B, p.Z, p.w⟩ : RPub)) (fun _ _ h => h.sr)
         setupRest_ct))).mono (fun _ _ h => two_bind (fun (p : CrtPub) _ _ h₁ h₂ =>
           ⟨(⟨p.B, p.Z, p.k, p.np, p.ip, p.nb⟩ : SPub), stage0_sh h₁, stage0_sh h₂⟩) h)
         fun _ _ h => h)) ?_
-    rintro p σ xb _ _ _ _ _ t h hv rfl
-    obtain ⟨hodd, -, -⟩ := valid_facts hv h.k1
+  rintro p σ xb _ _ _ _ _ t h hv rfl
+  obtain ⟨hodd, -, -⟩ := valid_facts hv h.k1
+  have := h.k1
+  have := h.k2
+  have hZq := h.z
+  exact WP.mono (setup_ok h.scr h.rdi (by unfold offQ at hZq; omega_arith) (by omega_arith) (by omega_arith) h.hK h.hN h.hIn
+    h.n h.x h.nl h.xl hodd) fun t ⟨minv, so, _⟩ => ⟨minv, so⟩
+
+/-- `R² mod n` leaks the same in runs that agree on `n`. -/
+theorem r2B_ct (M : Mont) : RelCT isa (Two (Stage RA)) (R2Words.choice M.mm) (Two (Stage RB)) := by
+  refine stage_step ((R2w.choice_ct M).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ => ?_) h) fun _ _ h => h) ?_
+  · obtain ⟨σ₁, xb₁, _, _, _, _, _, h₁, hv, mi₁, so₁⟩ := h₁
+    obtain ⟨σ₂, xb₂, _, _, _, _, _, _, _, mi₂, so₂⟩ := h₂
+    obtain ⟨hodd, -, hlo⟩ := valid_facts hv h₁.k1
+    have := h₁.k1
+    have := h₁.k2
+    have hZq := h₁.z
+    have hZ : slot ((p.k + 7) / 8) 8 ≤ p.Z := by unfold offQ at hZq; omega_arith
+    obtain rfl := so_minv so₁ so₂ hodd (show 1 ≤ p.w by unfold CrtPub.w; omega_arith)
+    exact ⟨⟨⟨p.B, p.Z, p.w, mi₁⟩, p.N⟩,
+      ⟨⟨so₁.good, hZ⟩, show 2 ≤ p.w by unfold CrtPub.w; omega_arith, show p.w < 2 ^ 30 by unfold CrtPub.w; omega_arith, so₁.n, so₁.inv, so₁.r12, so₁.r10,
+        hodd, hlo⟩,
+      ⟨⟨so₂.good, hZ⟩, show 2 ≤ p.w by unfold CrtPub.w; omega_arith, show p.w < 2 ^ 30 by unfold CrtPub.w; omega_arith, so₂.n, so₂.inv, so₂.r12, so₂.r10,
+        hodd, hlo⟩⟩
+  · rintro p _ xb _ _ _ _ _ t h hv ⟨minv, so⟩
+    obtain ⟨hodd, -, hlo⟩ := valid_facts hv h.k1
     have := h.k1
     have := h.k2
     have hZq := h.z
-    exact WP.mono (setup_ok h.scr h.rdi (by unfold offQ at hZq; omega_arith) (by omega_arith) (by omega_arith) h.hK h.hN h.hIn
-      h.n h.x h.nl h.xl hodd) fun t ⟨minv, so, _⟩ => ⟨minv, so⟩
-  refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (R := Two (Stage RB)) ?_ ?_)
-  · refine stage_step ((R2w.choice_ct M).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ => ?_) h) fun _ _ h => h) ?_
-    · obtain ⟨σ₁, xb₁, _, _, _, _, _, h₁, hv, mi₁, so₁⟩ := h₁
-      obtain ⟨σ₂, xb₂, _, _, _, _, _, _, _, mi₂, so₂⟩ := h₂
-      obtain ⟨hodd, -, hlo⟩ := valid_facts hv h₁.k1
-      have := h₁.k1
-      have := h₁.k2
-      have hZq := h₁.z
-      have hZ : slot ((p.k + 7) / 8) 8 ≤ p.Z := by unfold offQ at hZq; omega_arith
-      obtain rfl := so_minv so₁ so₂ hodd (show 1 ≤ p.w by unfold CrtPub.w; omega_arith)
-      exact ⟨⟨⟨p.B, p.Z, p.w, mi₁⟩, p.N⟩,
-        ⟨⟨so₁.good, hZ⟩, show 2 ≤ p.w by unfold CrtPub.w; omega_arith, show p.w < 2 ^ 30 by unfold CrtPub.w; omega_arith, so₁.n, so₁.inv, so₁.r12, so₁.r10,
-          hodd, hlo⟩,
-        ⟨⟨so₂.good, hZ⟩, show 2 ≤ p.w by unfold CrtPub.w; omega_arith, show p.w < 2 ^ 30 by unfold CrtPub.w; omega_arith, so₂.n, so₂.inv, so₂.r12, so₂.r10,
-          hodd, hlo⟩⟩
-    · rintro p _ xb _ _ _ _ _ t h hv ⟨minv, so⟩
-      obtain ⟨hodd, -, hlo⟩ := valid_facts hv h.k1
-      have := h.k1
-      have := h.k2
-      have hZq := h.z
-      exact WP.mono (R2w.choice_ok M so.good (by unfold CrtPub.w; unfold offQ at hZq; omega_arith) (by unfold CrtPub.w; omega_arith)
-        (by unfold CrtPub.w; omega_arith) so.n so.inv so.r12 so.r10 hodd hlo) fun t' ⟨hg, _⟩ => ⟨minv, hg⟩
-  simp only [seqs]
-  exact two_map (fun p : CrtPub => (⟨p.B, p.Z, p.w⟩ : Ws)) (fun p t ⟨_, _, _, _, _, _, _, h, _, minv, hg⟩ => by
+    exact WP.mono (R2w.choice_ok M so.good (by unfold CrtPub.w; unfold offQ at hZq; omega_arith) (by unfold CrtPub.w; omega_arith)
+      (by unfold CrtPub.w; omega_arith) so.n so.inv so.r12 so.r10 hodd hlo) fun t' ⟨hg, _⟩ => ⟨minv, hg⟩
+
+/-- `c R mod n` leaks the same in runs that agree on `n`. -/
+theorem nTail_ct (M : Mont) : RelCT isa (Two (Stage RB)) (M.mm Public.aXm Public.aX Public.aR2) fun _ _ => True :=
+  two_map (fun p : CrtPub => (⟨p.B, p.Z, p.w⟩ : Ws)) (fun p t ⟨_, _, _, _, _, _, _, h, _, minv, hg⟩ => by
     have hZq := h.z
     exact ⟨minv, hg, show slot ((p.k + 7) / 8) 8 ≤ p.Z by unfold offQ at hZq; omega_arith⟩)
     (M.ct (by unfold MmUse; decide))
+
+/-- `n`'s setup leaks the same in runs that agree on `n`. -/
+theorem nSetup_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) fun _ _ => True := by
+  rw [nSetup_eq]
+  refine RelCT.seqs_append (by simp [loadSteps]) (by simp) (RelCT.seq setupA_ct ?_)
+  exact RelCT.seqs_append (by simp) (by simp) (RelCT.seq (r2B_ct M) (nTail_ct M))
 
 /-! ## From the stages to the parts' claims -/
 
