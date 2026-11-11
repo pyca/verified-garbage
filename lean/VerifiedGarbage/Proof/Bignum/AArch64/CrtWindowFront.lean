@@ -72,14 +72,15 @@ theorem checksPart_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
     (_hwide : offQ32 ((k + 7) / 8) pl + slot (wsWords ql) 8 + tabBytes32 (wsWords ql) ≤ Z)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
     (hr : PReady s t₄ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :
-    WP isa (seqs checks) t₄ fun t => ∃ mp' mq',
+      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) {C : List (Prog isa)} {G : Nat → Nat → Nat → Prop} (hC : ChecksOk C G)
+    (hG : G (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)) :
+    WP isa (seqs C) t₄ fun t => ∃ mp' mq',
       CrtReady s t B Z ((k + 7) / 8) pl ql minv mp' mq' (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
         (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)
         (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
           (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :=
   -- The checks' proof: the same code, and `offQ32` is `offQ`.
-  WP.mono (VG.Proof.Bignum.AArch64.checksPart_ok h hv ⟨hr.n, hr.wsP, hr.wsQ, hr.pws, hr.qws, hr.pv, hr.qiv, hr.qv⟩)
+  WP.mono (VG.Proof.Bignum.AArch64.checksPart_ok h hv ⟨hr.n, hr.wsP, hr.wsQ, hr.pws, hr.qws, hr.pv, hr.qiv, hr.qv⟩ hC hG)
     fun _ ⟨mp', mq', r⟩ => ⟨mp', mq', r.good, r.nv, r.xm, r.msk, r.wsP, r.wsQ, r.pws, r.pxv, r.pmask, r.qws, r.qxv,
       r.hfix, r.iscr, r.keep⟩
 
@@ -89,15 +90,16 @@ theorem front_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp d
     {nb xb pb qb dpb dqb qib : List Byte}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hwide : offQ32 ((k + 7) / 8) pl + slot (wsWords ql) 8 + tabBytes32 (wsWords ql) ≤ Z)
-    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) :
-    WP isa (seqs (nSetup M.mm ++ VG.Impl.Rsa.AArch64.WindowFive.primesSetup ++ checks)) s fun t => ∃ minv mp mq,
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) {C : List (Prog isa)} {G : Nat → Nat → Nat → Prop} (hC : ChecksOk C G)
+    (hG : G (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)) :
+    WP isa (seqs (nSetup M.mm ++ VG.Impl.Rsa.AArch64.WindowFive.primesSetup ++ C)) s fun t => ∃ minv mp mq,
       CrtReady s t B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
         (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)
         (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
           (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :=
-  wp_seqs_append (by simp [nSetup]) (by simp [checks]) (wp_seqs_append (by simp [nSetup])
+  wp_seqs_append (by simp [nSetup]) hC.ne (wp_seqs_append (by simp [nSetup])
     (by decide) (WP.mono (nPart_ok M h hv) fun _ ⟨minv, hr⟩ =>
       WP.mono (setupPart_ok h hwide hr) fun _ ⟨_, _, hr'⟩ =>
-        WP.mono (checksPart_ok h hwide hv hr') fun _ ⟨mp', mq', hr''⟩ => ⟨minv, mp', mq', hr''⟩))
+        WP.mono (checksPart_ok h hwide hv hr' hC hG) fun _ ⟨mp', mq', hr''⟩ => ⟨minv, mp', mq', hr''⟩))
 
 end VG.Proof.Bignum.AArch64.WindowFive
