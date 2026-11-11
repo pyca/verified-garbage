@@ -58,10 +58,6 @@ the count of factors left. -/
 def lenOff : Nat := 16
 def otherLenOff : Nat := 20
 def leftOff : Nat := 24
-/-- In `vg_rsa_private_crt_precomputed`, the header words holding the
-addresses of the current factor's `R² mod p` in `pre` and the other's. -/
-def r2Off : Nat := 52
-def otherR2Off : Nat := 56
 /-- The header word holding a product row's multiplier. -/
 def multOff : Nat := 48
 /-- The product of two numbers: `2 B + 4` bytes. -/
@@ -302,27 +298,32 @@ def primeBytes (r t : Reg) : List Instr :=
   [.alu .add r (.imm 7), .shift .shr r 3, .mov t (.reg r), .alu .sub t (.imm 2), .alu .sbb t (.reg t),
     .alu .and t (.imm 1), .alu .add r (.reg t), .alu .add r (.reg r), .alu .add r (.reg r), .alu .add r (.reg r)]
 
-/-- The current factor's `R_pre² mod p` (`R_pre = 2^(64 w)`, `8 w` bytes at the
-header word `r2Off`) into slot 4, zero above, and `esi` the doublings that
-take it to `R² mod p` for the context's `R = 2^(8 Bc)`: `16 (Bc - 8 w)`, ZF
-when there are none. -/
-def loadR2 (c : Ctx) : Prog isa :=
+/-- Factor `i`'s `R_pre² mod p` (`R_pre = 2^(64 w)`, `8 w` bytes in `pre`, from
+argument 18, after factor 0's for factor 1) into slot 4, zero above, and
+`esi` the doublings that take it to `R² mod p` for the context's
+`R = 2^(8 Bc)`: `16 (Bc - 8 w)`, ZF when there are none. Every address and
+count comes from the arguments. -/
+def loadR2 (c : Ctx) (i : Nat) : Prog isa :=
   .seq (zero (.slot c 4) (one c)) <|
-  .seq (.block ([.mov .edx (.mem (sc lenOff))] ++ primeBytes .edx .eax ++ [.mov .ebp (.mem (sc r2Off))] ++
+  .seq (.block ([.mov .edx (.mem (argAt 0 (7 + 2 * i)))] ++ primeBytes .edx .eax ++
+      [.mov .ebp (.mem (argAt 0 preArg))] ++
+      (if i = 0 then [] else [.mov .ecx (.mem (argAt 0 7))] ++ primeBytes .ecx .eax ++ [.alu .add .ebp (.reg .ecx)]) ++
       ptrTo (.slot c 4) .ebx .eax)) <|
   .seq (.loop (.block [.mov .eax (.mem (at_ .ebp 0)), .store (at_ .ebx 0) .eax, .alu .add .ebp (.imm 4),
       .alu .add .ebx (.imm 4), .alu .sub .edx (.imm 4)]) .ne) <|
-  .block ([.mov .edx (.mem (sc lenOff))] ++ primeBytes .edx .eax ++ widthC 0 c .esi ++
+  .block ([.mov .edx (.mem (argAt 0 (7 + 2 * i)))] ++ primeBytes .edx .eax ++ widthC 0 c .esi ++
     [.alu .sub .esi (.reg .edx), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi),
       .alu .add .esi (.reg .esi)])
 
-/-- The context set up from the cached `R² mod p`: `prepBasePre`, the cached
-value and its doublings to the context's radix. -/
-def preparePre (c : Ctx) : Prog isa :=
-  .seq (prepBasePre c) (.seq (loadR2 c) (.ite .e (.block []) (.loop (doubleStep c) .ne)))
+/-- The context set up from factor `i`'s cached `R² mod p`: `prepBasePre`, the
+cached value and its doublings to the context's radix. -/
+def preparePre (c : Ctx) (i : Nat) : Prog isa :=
+  .seq (prepBasePre c) (.seq (loadR2 c i) (.ite .e (.block []) (.loop (doubleStep c) .ne)))
 
-/-- `prepare`, or `preparePre` with `pre`. -/
-def prepareG (pc : Bool) (c : Ctx) : Prog isa := if pc then preparePre c else prepare c
+/-- `prepare`, or with `some i`, `preparePre` from factor `i`'s cached value. -/
+def prepareG : Option Nat → Ctx → Prog isa
+  | none, c => prepare c
+  | some i, c => preparePre c i
 
 /-- `[o] = [a] - [b] mod M` for `a` and `b` below `M`, through slot 1. -/
 def subMod (c : Ctx) (o a b : Nat) : Prog isa :=
@@ -466,7 +467,7 @@ def reduceHalf (j : Nat) : Prog isa :=
 /-- The input modulo the factor in slot `f`, the exponent in slot `e`, into
 slot `o`, at half the width: the input (`2 Bh` bytes) reduced modulo the
 factor and raised at half the width. -/
-def narrowPower (f e o : Nat) (pc : Bool := false) : Prog isa :=
+def narrowPower (f e o : Nat) (pc : Option Nat := none) : Prog isa :=
   .seq (copy (.slot .wide f) (.slot .half 0) (one .half)) <|
   .seq (copy (.slot .wide e) (.slot .half 8) (one .half)) <|
   .seq (prepareG pc .half) <|
@@ -474,7 +475,7 @@ def narrowPower (f e o : Nat) (pc : Bool := false) : Prog isa :=
   .seq (windowPower .half) (saveResult .half o)
 
 /-- The same at the modulus's width. -/
-def widePower (f e o : Nat) (pc : Bool := false) : Prog isa :=
+def widePower (f e o : Nat) (pc : Option Nat := none) : Prog isa :=
   .seq (copy (.slot .wide f) (.slot .wide 0) (one .wide)) <|
   .seq (copy (.slot .wide 15) (.slot .wide 5) (one .wide)) <|
   .seq (copy (.slot .wide e) (.slot .wide 8) (one .wide)) <|
@@ -482,13 +483,13 @@ def widePower (f e o : Nat) (pc : Bool := false) : Prog isa :=
   .seq (windowPower .wide) (saveResult .wide o)
 
 /-- The factor's power, at half the width if its length (the header word at `lenOff`) fits it. -/
-def power (f e o : Nat) (pc : Bool := false) : Prog isa :=
+def power (f e o : Nat) (pc : Option Nat := none) : Prog isa :=
   .seq (.block ([.mov .eax (.mem (sc lenOff))] ++ widthC 0 .half .edx ++
     [.alu .add .edx (.imm 1), .alu .cmp .eax (.reg .edx)]))
     (.ite .b (narrowPower f e o pc) (widePower f e o pc))
 
 /-- `h = (m_p - m_q) qInv mod p` into slot 7, in the context of `p`. -/
-def wideCoefficient (pc : Bool := false) : Prog isa :=
+def wideCoefficient (pc : Option Nat := none) : Prog isa :=
   .seq (copy (.slot .wide 10) (.slot .wide 0) (one .wide)) <|
   .seq (prepareG pc .wide) <|
   .seq (copy (.slot .wide 16) (.slot .wide 6) (one .wide)) <|
@@ -501,7 +502,7 @@ def wideCoefficient (pc : Bool := false) : Prog isa :=
 
 /-- The same at half the width, into the wide slot 7: `qInv` (`2 Bh` bytes) reduced modulo `p`, in
 Montgomery form in slot 8, then `m_q` (`2 Bh` bytes) reduced, subtracted from `m_p`, and multiplied by it. -/
-def narrowCoefficient (pc : Bool := false) : Prog isa :=
+def narrowCoefficient (pc : Option Nat := none) : Prog isa :=
   .seq (copy (.slot .wide 10) (.slot .half 0) (one .half)) <|
   .seq (prepareG pc .half) <|
   .seq (reduceHalf 14) <|
@@ -512,7 +513,7 @@ def narrowCoefficient (pc : Bool := false) : Prog isa :=
   .seq (mul .half 6 7 8) (saveResult .half 7)
 
 /-- The coefficient, at half the width if `p`'s length (the header word at `lenOff`) fits it. -/
-def coefficient (pc : Bool := false) : Prog isa :=
+def coefficient (pc : Option Nat := none) : Prog isa :=
   .seq (.block ([.mov .eax (.mem (sc lenOff))] ++ widthC 0 .half .edx ++
     [.alu .add .edx (.imm 1), .alu .cmp .eax (.reg .edx)]))
     (.ite .b (narrowCoefficient pc) (wideCoefficient pc))
@@ -544,32 +545,27 @@ def factorNext : List Instr :=
   [.mov .eax (.mem (sc lenOff)), .mov .ecx (.mem (sc otherLenOff)), .store (sc lenOff) .ecx,
     .store (sc otherLenOff) .eax, .mov .eax (.mem (sc leftOff)), .alu .sub .eax (.imm 1), .store (sc leftOff) .eax]
 
-/-- `factorsInit`, and the factors' `R² mod p` addresses in `pre` (argument
-18, then `8 max(2, ⌈p_len / 8⌉)` bytes on) into the header. -/
-def factorsInitPre : List Instr :=
-  factorsInit ++ [.mov .eax (.mem (argAt 0 preArg)), .store (sc r2Off) .eax, .mov .edx (.mem (argAt 0 7))] ++
-    primeBytes .edx .ecx ++ [.alu .add .eax (.reg .edx), .store (sc otherR2Off) .eax]
-
-/-- `factorNext`, and the addresses exchanged. -/
-def factorNextPre : List Instr :=
-  [.mov .eax (.mem (sc r2Off)), .mov .ecx (.mem (sc otherR2Off)), .store (sc r2Off) .ecx,
-    .store (sc otherR2Off) .eax] ++ factorNext
-
 /-- The power of the factor in the wide slot 10 into 16, then the factors (10
 and 11), their exponents (12 and 13), their powers (16 and 17) and their lengths
 exchanged: after two steps, `m_p` in 16 and `m_q` in 17, the rest as it was. -/
-def factorStep (pc : Bool := false) : Prog isa :=
+def factorStep (pc : Option Nat := none) : Prog isa :=
   .seq (power 10 12 16 pc) <|
   .seq (swap 10 11 (one .wide)) <|
   .seq (swap 12 13 (one .wide)) <|
-  .seq (swap 16 17 (two .wide)) (.block (if pc then factorNextPre else factorNext))
+  .seq (swap 16 17 (two .wide)) (.block factorNext)
+
+/-- The factors' powers: the loop of two `factorStep`s; with `pre`, the two
+steps in turn, each from its factor's cached `R² mod p`. -/
+def powers : Bool → Prog isa
+  | false => .loop factorStep .ne
+  | true => .seq (factorStep (some 0)) (factorStep (some 1))
 
 def sized (pc : Bool := false) : Prog isa :=
   .seq importComponents <|
   .seq validate <|
-  .seq (.block (if pc then factorsInitPre else factorsInit)) <|
-  .seq (.loop (factorStep pc) .ne) <|
-  .seq (coefficient pc) <|
+  .seq (.block factorsInit) <|
+  .seq (powers pc) <|
+  .seq (coefficient (if pc then some 0 else none)) <|
   .seq recombine exportResult
 
 def save : List Instr := savedRegisters.map fun (r, d) => .store (at_ .eax d) r
