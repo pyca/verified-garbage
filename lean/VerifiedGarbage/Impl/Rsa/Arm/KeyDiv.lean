@@ -71,16 +71,18 @@ def normBit : List Instr :=
     .dp .add .r1 .r1 (.reg .r4), .dp .and .r4 .r2 (.reg .r3), .dp .add .r2 .r2 (.reg .r4),
     .subs .lr .lr (.imm 1)]
 
-/-- `P` (136) by 31 doublings of `[m]`'s top word under a mask, `d = top P +
-hi(m[dw - 2] P)` (140) and `d₁ = lo(m[dw - 2] P) + hi(m[dw - 3] P)` (148).
-The base is kept in `r12` around `wideMul`, which uses `r8`. -/
+/-- `P` (136) by 31 doublings of `[m]`'s top word `T` under a mask, `d = T P +
+hi(U P)` (140) and `d₁ = lo(U P) + hi(V P)` (148), for the two words `U`
+and `V` below `T`, all three read first (`r1`, `r10`, `r11`). The base is
+kept in `r12` and `w` in `lr` around `wideMul`, which uses `r7`–`r9`. -/
 def norm (m : Nat) : Prog isa := seqs [
-  .block (topPtr .r0 m 3 .r1 ++ [.ldr .r1 .r0 8, .mov .r2 (.imm 1), .mov .lr (.imm 31)]),
+  .block (topPtr .r0 m 3 .r1 ++ [.ldr .r11 .r0 0, .ldr .r10 .r0 4, .ldr .r1 .r0 8, .mov .r2 (.imm 1),
+    .mov .lr (.imm 31)]),
   .loop (.block normBit) .ne,
-  .block ([.str .r2 .r8 sP, .mov .r11 (.reg .r1), .mov .r12 (.reg .r8), .mov .r10 (.reg .r0),
-    .ldr .r1 .r10 4] ++ wideMul ++
-    [.dp .add .r11 .r11 (.reg .r4), .str .r11 .r12 sD, .mov .r11 (.reg .r3), .ldr .r1 .r10 0] ++ wideMul ++
-    [.dp .add .r11 .r11 (.reg .r4), .str .r11 .r12 sD1, .mov .r8 (.reg .r12)] ++ ctx)]
+  .block ([.str .r2 .r8 sP, .mov .r12 (.reg .r8), .mov .lr (.reg .r9), .mov .r0 (.reg .r1), .mov .r1 (.reg .r10)] ++
+    wideMul ++ [.dp .add .r0 .r0 (.reg .r4), .str .r0 .r12 sD, .mov .r0 (.reg .r3), .mov .r1 (.reg .r11)] ++
+    wideMul ++ [.dp .add .r0 .r0 (.reg .r4), .str .r0 .r12 sD1, .mov .r8 (.reg .r12), .mov .r9 (.reg .lr)] ++
+    stride)]
 
 /-! ## `v` -/
 
@@ -103,14 +105,16 @@ def recip : Prog isa := seqs [
 /-! ## A step's estimate -/
 
 /-- From `r10` at word `j + dw - 3` of `[r]` (the window's word `dw - 3`):
-the words of `2^z Y` at `dw`, `dw - 1` and `dw - 2`: `u₂` (68), `u₁` (`r11`)
-and `u₀` (64), by products of the window's top four words with `P`. The
+the window's top four words read first (`r0`, `r11`, `lr`, `r10`), then the
+words of `2^z Y` at `dw - 2`, `dw - 1` and `dw`: `u₀` (64), `u₁` (`r11`) and
+`u₂` (68), by products with `P` (`r2`), each high word carried in `r0`. The
 base is kept in `r12`. -/
 def topWords : List Instr :=
-  [.mov .r12 (.reg .r8), .ldr .r2 .r12 sP, .ldr .r1 .r10 0] ++ wideMul ++ [.mov .r0 (.reg .r4),
-    .ldr .r1 .r10 4] ++ wideMul ++ [.dp .add .r3 .r3 (.reg .r0), .str .r3 .r12 sU0, .mov .r0 (.reg .r4),
-    .ldr .r1 .r10 8] ++ wideMul ++ [.dp .add .r11 .r3 (.reg .r0), .mov .r0 (.reg .r4),
-    .ldr .r1 .r10 12] ++ wideMul ++ [.dp .add .r3 .r3 (.reg .r0), .str .r3 .r12 sU2]
+  [.mov .r12 (.reg .r8), .ldr .r0 .r10 0, .ldr .r11 .r10 4, .ldr .lr .r10 8, .ldr .r10 .r10 12,
+    .ldr .r2 .r12 sP, .mov .r1 (.reg .r0)] ++ wideMul ++ [.mov .r0 (.reg .r4), .mov .r1 (.reg .r11)] ++ wideMul ++
+  [.dp .add .r3 .r3 (.reg .r0), .str .r3 .r12 sU0, .mov .r0 (.reg .r4), .mov .r1 (.reg .lr)] ++ wideMul ++
+  [.dp .add .r11 .r3 (.reg .r0), .mov .r0 (.reg .r4), .mov .r1 (.reg .r10)] ++ wideMul ++
+  [.dp .add .r3 .r3 (.reg .r0), .str .r3 .r12 sU2]
 
 /-- `q̂` (156) from `u₂` (68) and `u₁` (`r11`): the mask of `u₂ = d` (152)
 and `u₂` cleared under it; `(q₁, q₀) = v u₂ + (u₂, u₁)`, the candidate
