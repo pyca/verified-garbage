@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.Rsa.KeyCheckMath
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyBits
 import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyDiv
+import VerifiedGarbage.Proof.Rsa.PPC64LE.IbOps
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcBase
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.MulMod
 public import VerifiedGarbage.Proof.Rsa.MontCheckMath
@@ -361,28 +364,68 @@ theorem Stg.divK_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     h.next (h.ws.of_keep k1) (js := []) (ds := []) (by rw [m1]; exact KeyWorkspace.Keep.refl _ _ _ _ _)
       (by simp) (by simp) k1 (by decide) (by rw [m1]; exact h.arrs) h.live_lt (by rw [m1]; exact h.vdTop)
       (by rw [m1]; exact h.mask)
-  rw [show seqs [Code.ite (.zero .d .r0) (VG.Impl.Rsa.PPC64LE.KeyDiv.divW a aVR d aVT aVQ) (seqs (divA len a d))] =
-    Code.ite (.zero .d .r0) (VG.Impl.Rsa.PPC64LE.KeyDiv.divW a aVR d aVT aVQ) (seqs (divA len a d)) from rfl]
+  rw [show ∀ x : Prog isa, seqs [x] = x from fun _ => rfl]
   refine WP.ite (s1.gpr .r0 == 0) (eval_zero s1 .r0) (fun hz => ?_) (fun hz => ?_)
   · -- By words.
     have hS : Shape k pL qL := z1.1 (by simpa using hz)
     obtain ⟨k16, hpk, hpq, k64⟩ := hS
     have hw : g.w = 4 * (k / 16) := by omega
-    have fit := h.arrs.get hd
-    have hdv : wordsVal s1.mem g.B (arr g.w d) (k / 16) = A d := by
+    have := h.ws.wle
+    have hnw := h.ws.nowrap
+    have fD := h.ws.fit64 (show aVD < nArr by decide)
+    simp only [S] at fD
+    rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+    refine WP.mono (h1.copy_ok (o := aVD) (a := d) (by decide) hd (fun e => hfree d hd (by simp [e])))
+      fun s2 h2 => ?_
+    rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+    refine WP.mono (VG.Proof.Rsa.PPC64LE.KeyDiv.fixTop_ok h2.ws (m := aVD) (by decide) (by decide) hw (by omega))
+      fun s3 ⟨m3, w3, k3⟩ => ?_
+    have hd2 : num s2.mem g.B g.w aVD = A d := by rw [h2.arrs.get (by simp), upd_self]
+    have hdv : wordsVal s2.mem g.B (arr g.w aVD) (k / 16) = A d := by
       rw [wordsVal_eq_val32]
-      refine VG.Proof.Rsa.PPC64LE.MontKey.val32_low fit (by omega) ?_
+      refine VG.Proof.Rsa.PPC64LE.MontKey.val32_low hd2 (by omega) ?_
       rw [hLs ⟨k16, hpk, hpq, k64⟩] at hlt
       rw [show 32 * (2 * (k / 16)) = 8 * (k / 2) by omega]; exact hlt
-    refine WP.mono (VG.Proof.Rsa.PPC64LE.KeyDiv.divW_ok h1.ws (h1.live_lt a ha) (by decide) (h1.live_lt d hd)
-      (by decide) (by decide) aR aT aQ (Ne.symm dR) (by decide) (by decide) (Ne.symm dT) (Ne.symm dQ) (by decide)
-      (by decide) hw (by omega) ?_) fun t ⟨tr, ht, kt, mt⟩ => ⟨num t.mem g.B g.w aVQ, num t.mem g.B g.w aVR,
-        fun _ hb => by rw [tr, hdv, h1.arrs.get ha], ?_⟩
-    · rw [hdv]
-      rcases (show A d = 0 ∨ 0 < A d by omega) with e | e
-      · exact absurd e (by sorry)
-      · sorry
-    · sorry
+    have ft := VG.Proof.Rsa.PPC64LE.KeyDiv.fixTop_val (mem := s2.mem) (B := g.B) (d := arr g.w aVD)
+      (wd := k / 16) (by omega) (by omega)
+    rw [← m3] at ft
+    obtain ⟨hT, hfix⟩ := ft
+    have o3 : Outside g.B (arr g.w aVD + 8 * (k / 16 - 1)) 8 s2.mem s3.mem := by
+      rw [m3]; exact writeW_outside _ g.B _ (by omega)
+    have kD : KeyWorkspace.Keep g.B g.w [aVD] [] s2.mem s3.mem :=
+      KeyWorkspace.Keep.of_arr (o := aVD) o3 (by simp only [S]; omega) (by simp)
+    have ha3 : num s3.mem g.B g.w a = A a := by
+      rw [kD.num (fun x hx => by simp only [List.mem_singleton] at hx; subst hx; exact fun e => hfree a ha (by simp [e]))
+        (by simp) (h.ws.fit64 (h.live_lt a ha)), h2.arrs.get (by simp [ha]), upd_ne _ _ (fun e => hfree a ha (by simp [e]))]
+    rw [show ∀ x : Prog isa, seqs [x] = x from fun _ => rfl]
+    refine WP.mono (VG.Proof.Rsa.PPC64LE.KeyDiv.divW_ok w3 (h.live_lt a ha) (by decide) (by decide) (by decide)
+      (by decide) aR aT aQ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hw
+      (by omega) hT) fun t ⟨tr, ht, kt, mt⟩ => ⟨num t.mem g.B g.w aVQ, num t.mem g.B g.w aVR,
+        fun _ hb => by rw [tr, ha3, hfix (by rw [hdv]; exact hb ⟨k16, hpk, hpq, k64⟩), hdv], ?_⟩
+    -- The stage, from the copy's.
+    have k : KeyWorkspace.Keep g.B g.w [aVD, aVR, aVT, aVQ] [] s2.mem t.mem :=
+      (kD.mono (by simp) (by simp)).trans (mt.mono (by simp) (by simp))
+    refine h2.next ht k (by decide) (by simp) (k3.trans kt) (by decide) ?_ ?_ ?_ (h2.mask_keep k (by simp))
+    · intro j hj
+      rcases List.mem_cons.mp hj with rfl | hj
+      · rw [upd_self]
+      rcases List.mem_cons.mp hj with rfl | hj
+      · rw [upd_ne _ _ (by decide), upd_self]
+      have hn := hfree j hj
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+      rw [upd_ne _ _ hn.2.1, upd_ne _ _ hn.1, k.num (by simp; omega_arith) (by simp)
+        (h.ws.fit64 (h.live_lt j hj)), h2.arrs.get (by simp [hj]), upd_ne _ _ hn.2.2.1]
+    · intro j hj
+      rcases List.mem_cons.mp hj with rfl | hj
+      · decide
+      rcases List.mem_cons.mp hj with rfl | hj
+      · decide
+      exact h.live_lt j hj
+    · have v3 : w32 s3.mem g.B (arr g.w aVD + 4 * g.w) = 0 := by
+        rw [o3.w32 (by omega) (by omega)]; exact h2.vdTop
+      rw [← v3]
+      exact congrArg BitVec.toNat (VG.Proof.Rsa.PPC64LE.InvBatch.keep_word mt (b := 32) (o := 4 * g.w)
+        (by simp only [S]; omega) (by decide) (fun d hd => absurd hd (by simp)) fD)
   · -- Bit-serial.
     refine WP.mono (h1.divA_ok ha hd hfree hlr hl12 ((k1.gpr len (fun hm => hlr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hm; rcases hm with rfl | rfl | rfl <;> decide))).trans hl)
