@@ -180,7 +180,8 @@ def decK : Contract isa where
 structure DPre (s : State) : Prop where
   sp1 : decStack ≤ (s.gpr .rsp).toNat
   sp2 : (s.gpr .rsp).toNat + 160 ≤ 2 ^ 64
-  hrd : s.rd = [⟨s.gpr .rcx, (s.gpr .r8).toNat⟩, ⟨s.gpr .r9, (stackArg s 0).toNat⟩, ⟨stackArg s 1, (stackArg s 2).toNat⟩, ⟨stackArg s 3, (stackArg s 4).toNat⟩, ⟨stackArg s 5, (stackArg s 6).toNat⟩, ⟨stackArg s 7, (stackArg s 8).toNat⟩, ⟨stackArg s 9, (stackArg s 10).toNat⟩, ⟨stackArg s 11, (stackArg s 12).toNat⟩, ⟨stackArg s 13, (stackArg s 14).toNat⟩, tabL s, tabR s, ⟨stackArgAddr s 0, 152⟩]
+  hrd : ∀ r ∈ ([⟨s.gpr .rcx, (s.gpr .r8).toNat⟩, ⟨s.gpr .r9, (stackArg s 0).toNat⟩, ⟨stackArg s 1, (stackArg s 2).toNat⟩, ⟨stackArg s 3, (stackArg s 4).toNat⟩, ⟨stackArg s 5, (stackArg s 6).toNat⟩, ⟨stackArg s 7, (stackArg s 8).toNat⟩, ⟨stackArg s 9, (stackArg s 10).toNat⟩, ⟨stackArg s 11, (stackArg s 12).toNat⟩, ⟨stackArg s 13, (stackArg s 14).toNat⟩, tabL s, tabR s] : List Region), r ∈ s.rd
+  hra : ∃ A, 152 ≤ A ∧ (⟨stackArgAddr s 0, A⟩ : Region) ∈ s.rd
   hwr : s.wr = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨s.gpr .rdx, 8⟩, ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩]
   dOM : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rdx, 8⟩
   dOn : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩
@@ -275,7 +276,8 @@ theorem DPre.of {s : State} (h : (decK ts).pre s) : DPre s := by
     dKdq dKqi dKlb dKct dKs dKa wO wM wN wE wP wQ wDp wDq wQi wL wC wS lv hsi hcl el1 el2 pl1 pl2 ql1 ql2 hdpl
     hqil hdql hsw dOt dMt dst dKt wT dOtL dMtL dstL dKtL wTL _ _
   clear h
-  exact ⟨sp1, sp2, hrd, hwr, dOM, dOn, dOe, dOp, dOq, dOdp, dOdq, dOqi, dOlb, dOct, dOs, dOa, dMn, dMe, dMp, dMq, dMdp, dMdq, dMqi, dMlb, dMct, dMs, dMa, dns, des, dps, dqs, ddps, ddqs, dqis, dlbs, dcts, dsa, dRO, dRM, dRs, dKO, dKM, dKn, dKe, dKp, dKq, dKdp, dKdq, dKqi, dKlb, dKct, dKs, dKa, wO, wM, wN, wE, wP, wQ, wDp, wDq, wQi, wL, wC, wS, lv, hsi, hcl, el1, el2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsw, dOt, dMt, dst, dKt, wT, dOtL, dMtL, dstL, dKtL, wTL⟩
+  exact ⟨sp1, sp2, fun r hr => by rw [hrd]; exact List.mem_append_left _ hr, ⟨152, Nat.le_refl _, by rw [hrd]; simp⟩,
+    hwr, dOM, dOn, dOe, dOp, dOq, dOdp, dOdq, dOqi, dOlb, dOct, dOs, dOa, dMn, dMe, dMp, dMq, dMdp, dMdq, dMqi, dMlb, dMct, dMs, dMa, dns, des, dps, dqs, ddps, ddqs, dqis, dlbs, dcts, dsa, dRO, dRM, dRs, dKO, dKM, dKn, dKe, dKp, dKq, dKdp, dKdq, dKqi, dKlb, dKct, dKs, dKa, wO, wM, wN, wE, wP, wQ, wDp, wDq, wQi, wL, wC, wS, lv, hsi, hcl, el1, el2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsw, dOt, dMt, dst, dKt, wT, dOtL, dMtL, dstL, dKtL, wTL⟩
 
 /-- The tables: each one of `ts`, the label's hash function's at the stack
 argument 17 and MGF1's at 18. -/

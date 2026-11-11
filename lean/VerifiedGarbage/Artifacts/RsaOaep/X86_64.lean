@@ -34,6 +34,7 @@ public import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Verified
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecPrecomputed
 public import VerifiedGarbage.Proof.HashTable.X86_64
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
@@ -100,8 +101,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
 
 namespace VG.Artifacts.RsaOaep.X86_64.RsaPrivateCrtAllMdHash
 
-open VG.Proof.RsaOaep.X86_64 (decStack dec_ok dec_spSafe OK)
-open VG.Proof.RsaPkcs1Enc.X86_64 (privOf)
+open VG.Proof.RsaOaep.X86_64 (decStack dec_ok dec_spSafe decPrecomputed_ok decP_spSafe OK)
+open VG.Proof.RsaPkcs1Enc.X86_64 (privOf privNameP privCodeP)
 open VG.Proof.MdHashTable.X86_64 (tables)
 open VG.Proof.HashTable.X86_64 (fnsOf)
 
@@ -114,7 +115,15 @@ def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.M
       code := Impl.RsaOaep.X86_64.decrypt (fnsOf vs) (privOf c).name (privOf c).code
       stack := decStack
       verified := dec_ok vs h (privOf c)
-      spSafe := dec_spSafe vs (privOf c) } (VG.Proof.RsaOaep.X86_64.dec_postOut _))]
+      spSafe := dec_spSafe vs (privOf c) } (VG.Proof.RsaOaep.X86_64.dec_postOut _)),
+    Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
+      suffix := qualifiedName "" [("crt", c.suffix)]
+      extra := c.extra
+      tables := [("hash", tables vs), ("mgf1", tables vs)]
+      code := Impl.RsaOaep.X86_64.decryptP (fnsOf vs) (privNameP c) (privCodeP c)
+      stack := decStack
+      verified := decPrecomputed_ok vs h c
+      spSafe := decP_spSafe vs c } (VG.Proof.RsaOaep.X86_64.decPrecomputed_postOut _))]
   else []
 
 end VG.Artifacts.RsaOaep.X86_64.RsaPrivateCrtAllMdHash
