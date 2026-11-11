@@ -620,12 +620,6 @@ def nPQ : List Instr :=
   [.mov .r13 (.mem (hdr sPl)), .mov .rax (.mem (hdr sQl)), .alu .cmp .r13 (.reg .rax), .cmov .b .r13 (.reg .rax),
     .alu .add .r13 (.imm 7), .shift .shr .r13 3]
 
-/-- `qInv = q⁻¹ mod p` by the inverse at the primes' width, and the mask of
-`gcd(q, p) = 1`. -/
-def invPart : List (Prog isa) :=
-  ([.seq (.block (ws ++ nPQ)) (inverseN aQ aV aX₂ aP), zeroA aC, .block (setOneA aC)] ++
-    (eqA aV aC ++ [.block andZero]))
-
 /-- `[aC] := [j] - 1` (for an odd `[j]`, whose low word is not zero), then `[aU] := d`. -/
 def divisor (j : Nat) : List (Prog isa) :=
   [zeroA aC, copyA aC j, .block (decA aC), zeroA aU, copyA aU aD]
@@ -685,16 +679,19 @@ def qTail : List (Prog isa) := [
   zeroA aC, copyA aC aP, .seq (.block WordDivide.normalize) WordDivide.code,
   zeroA aX₂, copyA aX₂ aV, copyA aD aSv]
 
-/-- `invPart` with the inverse's doublings replaced by `qTail` on the
-guarded path: the same `inverseN` elsewhere. -/
-def invPartW : List (Prog isa) :=
-  [guarded (.seq (.block (ws ++ nPQ)) (inverseNS aQ aV aX₂ aP)) (.seq (.block (ws ++ nPQ)) (inverseN aQ aV aX₂ aP)),
-    zeroA aC, .block (setOneA aC)] ++
-    (eqA aV aC ++ [.block andZero, guarded (seqs qTail) (.block [])])
+/-- The mask of `gcd(q, p) = 1`, from the inverse's `[v]`, and'ed into the mask. -/
+def gcdPart : List (Prog isa) := [zeroA aC, .block (setOneA aC)] ++ (eqA aV aC ++ [.block andZero])
+
+/-- `qInv = q⁻¹ mod p` by the inverse at the primes' width, and the mask of
+`gcd(q, p) = 1`: where the public guard holds, by `inverseNS` and `qTail`
+(the inverse's `2^K` by `WordDivide`), else by `inverseN`. -/
+def invPart : List (Prog isa) :=
+  [guarded (.seq (.block (ws ++ nPQ)) (inverseNS aQ aV aX₂ aP)) (.seq (.block (ws ++ nPQ)) (inverseN aQ aV aX₂ aP))] ++
+    gcdPart ++ [guarded (seqs qTail) (.block [])]
 
 /-- The computation, once `n` is known valid. -/
 def main : Prog isa := seqs ([
-  .block head] ++ loadA aN sN sK ++ loadA aP sP sPl ++ loadA aQ sQ sQl ++ loadA aD sD sDl ++ pqCheck ++ invPartW ++
+  .block head] ++ loadA aN sN sK ++ loadA aP sP sPl ++ loadA aQ sQ sQl ++ loadA aD sD sDl ++ pqCheck ++ invPart ++
   -- `dP = d mod (p - 1)` into `aX₁` and `dQ = d mod (q - 1)` in `aV`.
   [wordChoice aP, zeroA aX₁, copyA aX₁ aV, wordChoice aQ] ++
   storeA aX₂ sQi sPl sMask ++ storeA aX₁ sDp sPl sMask ++ storeA aV sDq sQl sMask ++
