@@ -69,18 +69,27 @@ structure MainPre (s : State) (B : Addr) (Z k : Nat) (np pd pp pq pdp pdq pqi : 
 
 /-- The header slots `main`'s setup writes: `w`, the arrays' bases and
 `sMask`. -/
-def setupSlot (i : Nat) : Bool := i == sW || (8 ≤ i && i < 16) || i == sMask
+def setupSlot (i : Nat) : Bool := i == sW || (8 ≤ i && i < 16) || i == sMask || i == Impl.Rsa.X86_64.Keys.sStride
 
-theorem setupSlot_false : ∀ i < 32, setupSlot i = false → i ≠ 6 ∧ (i < 8 ∨ 16 ≤ i) ∧ i ≠ 22 := by
+theorem setupSlot_false : ∀ i < 32, setupSlot i = false → i ≠ 6 ∧ (i < 8 ∨ 16 ≤ i) ∧ i ≠ 22 ∧ i ≠ 28 := by
   decide
+
+theorem stride_bv (w : Nat) :
+    BitVec.ofNat 64 w + 2#64 + (BitVec.ofNat 64 w + 2#64) + (BitVec.ofNat 64 w + 2#64 + (BitVec.ofNat 64 w + 2#64)) +
+      (BitVec.ofNat 64 w + 2#64 + (BitVec.ofNat 64 w + 2#64) + (BitVec.ofNat 64 w + 2#64 + (BitVec.ofNat 64 w + 2#64))) =
+      BitVec.ofNat 64 (8 * (w + 2)) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+  omega_arith
 
 /-- The setup: `w`, the bases, `n`, the number 1 and `sMask` all ones. -/
 theorem setupK_ok {s : State} {B : Addr} {Z k : Nat} {np pd pp pq pdp pdq pqi : Addr}
     {nb db pb qb dpb dqb qib : List Byte} {ev : Nat}
     (hp : MainPre s B Z k np pd pp pq pdp pdq pqi nb db pb qb dpb dqb qib ev) :
     WP isa (seqs [.block VG.Impl.Rsa.X86_64.head, loadBE, .block [.mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)], setWord aOne .rcx,
-        .block [.mov32 .rax (.imm 0), .alu .sub .rax (.imm 1), .store (hdr sMask) .rax]]) s fun t =>
+        .block maskInit]) s fun t =>
       ∃ minv, KCtx t t B Z ((k + 7) / 8) minv (Spec.Rsa.os2ip nb) ∧ word t.mem B (8 * sMask) = mask true ∧
+        word t.mem B (8 * Impl.Rsa.X86_64.Keys.sStride) = BitVec.ofNat 64 (8 * ((k + 7) / 8 + 2)) ∧
         (∀ i < 32, setupSlot i = false → word t.mem B (8 * i) = word s.mem B (8 * i)) ∧
         InScr B Z s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ Keep mmRegs s t := by
   have hs := hp.scr
@@ -125,26 +134,49 @@ theorem setupK_ok {s : State} {B : Addr} {Z k : Nat} {np pd pp pq pdp pdq pqi : 
     (ri := .rcx) (by decide) (i := 0) (by omega_arith) hcx₃) fun t₄ ⟨hone, ho₄, k₄⟩ => ?_)
   have hs₄ := hs₃.congr k₄.2.2
   have hdi₄ : t₄.gpr .rdi = B := (k₄.gpr (by decide)).trans hdi₃
-  refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = t₄.mem.writeW (off B (8 * sMask)) (mask true)) (by
-    xrun [State.ea, hdr, hdi₄, hdrOff, hs₄.st (d := 8 * sMask) (by omega_arith)]
-    exact congrArg _ (by decide)) rfl) fun t ⟨hm, k₅⟩ => ?_
   have ha₄ : Arrays B ((k + 7) / 8) [aOne] t₃.mem t₄.mem :=
     Arrays.of_outside (List.mem_singleton_self _) ho₄ (Nat.le_refl _) (Nat.le_refl _)
+  have hW₄ : word t₄.mem B (8 * sW) = BitVec.ofNat 64 ((k + 7) / 8) := (ha₄.hdr hH).hw
+  have eS : Impl.Rsa.X86_64.Keys.sStride = 28 := rfl
+  rw [show maskInit = strideInit ++ maskSet from rfl]
+  refine WP.block_append_iff.mpr (WP.mono (WP.keep [.rax] (Q := fun t => t.mem =
+      t₄.mem.writeW (off B (8 * Impl.Rsa.X86_64.Keys.sStride)) (BitVec.ofNat 64 (8 * ((k + 7) / 8 + 2)))) (by
+    xrun [strideInit, State.ea, hdr, hdi₄, hdrOff, hs₄.ld (d := 8 * sW) (by omega_arith), hW₄,
+      hs₄.st (d := 8 * Impl.Rsa.X86_64.Keys.sStride) (by rw [eS]; omega_arith)]
+    exact congrArg _ (stride_bv _)) rfl) fun t₅ ⟨hm₅, k₅'⟩ => ?_)
+  have hs₅ := hs₄.congr k₅'.2.2
+  have hdi₅ : t₅.gpr .rdi = B := (k₅'.gpr (by decide)).trans hdi₄
+  refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = t₅.mem.writeW (off B (8 * sMask)) (mask true)) (by
+    xrun [maskSet, State.ea, hdr, hdi₅, hdrOff, hs₅.st (d := 8 * sMask) (by omega_arith)]
+    exact congrArg _ (by decide)) rfl) fun t ⟨hm, k₅⟩ => ?_
   have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_arith
-  have ho₅ : Outside B (8 * sMask) 8 t₄.mem t.mem := by rw [hm]; exact writeW_outside _ B _ (by omega_arith)
-  have kk : Keep mmRegs s t := ((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).mono (by decide)
-  refine ⟨word s.mem B (8 * sMinv), ⟨⟨hs₄.congr k₅.2.2, (k₅.gpr (by decide)).trans hdi₄,
-      by rw [hm]; exact Hdr.store (ha₄.hdr hH) (i := sMask) (by decide) (by decide) _⟩,
+  have hoS : Outside B (8 * Impl.Rsa.X86_64.Keys.sStride) 8 t₄.mem t₅.mem := by
+    rw [hm₅]; exact writeW_outside _ B _ (by rw [eS]; omega_arith)
+  have ho₅ : Outside B (8 * sMask) 8 t₅.mem t.mem := by rw [hm]; exact writeW_outside _ B _ (by omega_arith)
+  have kk : Keep mmRegs s t := (((((k₁.trans k₂).trans k₃).trans k₄).trans k₅').trans k₅).mono (by decide)
+  have hSl : ∀ j < 8, ∀ k' ≤ (k + 7) / 8 + 2, wv t₅.mem B (slot ((k + 7) / 8) j) k' = wv t₄.mem B (slot ((k + 7) / 8) j) k' :=
+    fun j hj k' hk' => hoS.wv (Or.inr (by have := hdr_lt_slot ((k + 7) / 8) j (show 28 < 32 by decide); rw [eS]; omega_arith))
+      (by have := slot_le (w := (k + 7) / 8) hj; omega_arith)
+  have hH₅ : Hdr t.mem B ((k + 7) / 8) (word s.mem B (8 * sMinv)) := by
+    rw [hm, hm₅]
+    exact Hdr.store (Hdr.store (ha₄.hdr hH) (i := Impl.Rsa.X86_64.Keys.sStride) (by decide) (by decide) _)
+      (i := sMask) (by decide) (by decide) _
+  refine ⟨word s.mem B (8 * sMinv), ⟨⟨hs₅.congr k₅.2.2, (k₅.gpr (by decide)).trans hdi₅, hH₅⟩,
     hZ, by omega_arith, by omega_arith, fun _ _ _ => rfl, InScr.refl _ _ _, rfl, rfl, ?_, ?_, Keep.refl _ _⟩,
-    by rw [hm, word_writeW_self], fun i hi hsi => ?_,
-    ((in₁.trans (InScr.of_arrays ha₂ hZ (by decide))).trans (by rw [hm₃]; exact InScr.refl _ _ _)).trans
-      ((InScr.of_arrays ha₄ hZ (by decide)).trans (InScr.of_outside ho₅ (by omega_arith))),
+    by rw [hm, word_writeW_self],
+    by rw [hm, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), hm₅, word_writeW_self],
+    fun i hi hsi => ?_,
+    ((((in₁.trans (InScr.of_arrays ha₂ hZ (by decide))).trans (by rw [hm₃]; exact InScr.refl _ _ _)).trans
+      (InScr.of_arrays ha₄ hZ (by decide))).trans (InScr.of_outside hoS (by rw [eS]; omega_arith))).trans
+      (InScr.of_outside ho₅ (by omega_arith)),
     kk.2.1, kk.2.2, kk⟩
-  · rw [Outside.wv_arr ho₅ (by decide) hZ hn (by omega_arith), ha₄.wv_of_not_mem (by decide) (by decide) hn', hm₃]
+  · rw [Outside.wv_arr ho₅ (by decide) hZ hn (by omega_arith), hSl _ (by decide) _ (by omega_arith),
+      ha₄.wv_of_not_mem (by decide) (by decide) hn', hm₃]
     exact hv₂
-  · rw [Outside.wv_arr ho₅ (by decide) hZ hn (by omega_arith), hone, hdx₃]; rfl
-  · obtain ⟨h6, hr, h22⟩ := setupSlot_false i hi hsi
-    rw [hm, hdrStore_hdr _ _ _ (by decide) hi (by rw [eM]; omega_arith), ha₄.hslot hi, hm₃, ha₂.hslot hi,
+  · rw [Outside.wv_arr ho₅ (by decide) hZ hn (by omega_arith), hSl _ (by decide) _ (by omega_arith), hone, hdx₃]; rfl
+  · obtain ⟨h6, hr, h22, h28⟩ := setupSlot_false i hi hsi
+    rw [hm, hdrStore_hdr _ _ _ (by decide) hi (by rw [eM]; omega_arith), hm₅,
+      hdrStore_hdr _ _ _ (by decide) hi (by rw [eS]; omega_arith), ha₄.hslot hi, hm₃, ha₂.hslot hi,
       hf₁.word_eq (hfw i h6 hr) (by omega_arith)]
 
 /-- The result: `sMask`'s low bit, and the saved registers restored. -/
