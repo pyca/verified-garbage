@@ -182,11 +182,18 @@ theorem tail_ct : RelCT isa (Two G fun L _ t => Slots L t.mem) (seqs tail) fun _
 theorem ce_stackArg (t : State) (rd wr : List Region) (i : Nat) :
     stackArg (t.callEntry.withRegions rd wr) i = t.mem.readW (t.sp + BitVec.ofNat 64 (8 * i)) 64 := rfl
 
-theorem crt_ct (v : CrtImpl) :
-    RelCT isa (Two G fun L _ t => Slots L t.mem ∧ CrtArgs L t) (.call v.name v.code)
+/-- The CRT `C` gets `C.K` at its call from what `H` says of the layout and
+the memory on entry. -/
+def KOk (C : CrtCallee) (H : Lay → Mem → Prop) : Prop :=
+  ∀ (L : Lay) g vv m₀ (t : State), L.Ok → ArgsAt L m₀ → Ctx L g vv m₀ t → CrtArgs L t → H L m₀ →
+    C.K (t.callEntry.withRegions (crtRd L) (crtWr L))
+
+theorem crt_ct (C : CrtCallee) {H : Lay → Mem → Prop} (hK : KOk C H) :
+    RelCT isa (Two G fun L m₀ t => (Slots L t.mem ∧ CrtArgs L t) ∧ H L m₀) (.call C.name C.code)
       (Two G fun L _ t => Slots L t.mem) :=
-  two_call v.crt_ok v.crt_ct crtRd crtWr (fun _ _ _ _ _ hL _ hc ⟨_, ha⟩ => crtCall_pre hL hc ha)
-    (fun L t₁ t₂ _ _ _ _ m₁ m₂ hL hk c₁ c₂ ⟨_, a₁⟩ ⟨_, a₂⟩ => by
+  two_call C.ok C.ct crtRd crtWr
+    (fun _ _ _ _ _ hL a hc ⟨⟨_, ha⟩, hH⟩ => ⟨crtCall_pre hL hc ha, hK _ _ _ _ _ hL a hc ha hH⟩)
+    (fun L t₁ t₂ _ _ _ _ m₁ m₂ hL hk c₁ c₂ ⟨⟨_, a₁⟩, _⟩ ⟨⟨_, a₂⟩, _⟩ => by
       have st : ∀ i < 10, stackArg (t₁.callEntry.withRegions (crtRd L) (crtWr L)) i =
           stackArg (t₂.callEntry.withRegions (crtRd L) (crtWr L)) i := fun i hi => by
         rw [ce_stackArg, ce_stackArg, c₁.sp, c₂.sp, a₁.stk i hi, a₂.stk i hi]
@@ -208,7 +215,8 @@ theorem crt_ct (v : CrtImpl) :
           a₁.x2, a₁.x3, a₂.x2, a₂.x3, c₁.n_bytes hL, c₂.n_bytes hL]
         exact hk.1)
     (fun _ hL => crt_sub hL) (fun _ hL => crt_wsub hL)
-    (fun _ _ _ _ _ hL _ hc ⟨hs, ha⟩ => WP.mono (crt_call v hL hc hs ha) fun _ ⟨hc', hs', _⟩ => ⟨hc', hs'⟩)
+    (fun _ _ _ _ _ hL a hc ⟨⟨hs, ha⟩, hH⟩ => WP.mono (crt_call C hL hc hs ha (hK _ _ _ _ _ hL a hc ha hH))
+      fun _ ⟨hc', hs', _⟩ => ⟨hc', hs'⟩)
 
 /-- `n`'s values, as `vg_rsa_public_precompute` writes them for `n`. -/
 def preVal (L : Lay) (nB : List Byte) : List (BitVec 64) :=
@@ -338,28 +346,34 @@ theorem crtArgs_ct : RelCT isa (EnteredW G) (.block crtArgs) (Two G fun L _ t =>
   · show Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x4) (s₁.gpr .x5).toNat = Spec.Rsa.bytesAt s₂.mem (s₁.gpr .x4) (s₁.gpr .x5).toNat
     exact he.trans (by rw [← r4, ← r5])
 
-/-- The frames, the CRT and the check, whatever `stage` writes `n`'s values
-with: constant time for calls that agree on `pub` and enter as `EnteredW`. -/
-theorem codeWith_constantTime (v : CrtImpl) (stage : Prog isa)
+/-- The frames, the CRT `C` and the check, whatever `stage` writes `n`'s
+values with: constant time for calls that agree on `pub` and enter as
+`EnteredW`, given that `G` gives the CRT's calls `C.K`. -/
+theorem codeWith_constantTime (C : CrtCallee) (v : CrtImpl) (stage : Prog isa) {H : Lay → Mem → Prop}
+    (hGH : ∀ e, G e → H e.L e.m₁ ∧ H e.L e.m₂) (hK : KOk C H)
     (hstage : RelCT isa (Two G fun L _ t => Slots L t.mem ∧ PcArgs L t) stage
       (Two G fun L m₀ t => Slots L t.mem ∧ PreW L m₀ t))
     {pre : State → Prop} {pub : State → State → Prop}
     (hsp : ∀ s₁ s₂, pre s₁ → pre s₂ → pub s₁ s₂ → s₁.sp = s₂.sp)
     (hent : ∀ s₁ s₂, pre s₁ → pre s₂ → pub s₁ s₂ → EnteredW G (entered s₁) (entered s₂)) :
-    ConstantTime isa pre pub (codeWith v stage) := by
+    ConstantTime isa pre pub (codeWith C v stage) := by
   refine RelCT.constantTime (RelCT.pushFrame (fun _ _ h => hsp _ _ h.1 h.2.1 h.2.2)
     (RelCT.alloc (R := fun _ _ => True) ?_))
   show RelCT isa _ (seqs _) _
-  rw [show seqs ([.block crtArgs, .call v.name v.code] ++ checkWith stage v.pdName v.pd) =
-    .seq (.block crtArgs) (.seq (.call v.name v.code) (seqs (checkWith stage v.pdName v.pd))) from rfl,
+  rw [show seqs ([.block crtArgs, .call C.name C.code] ++ checkWith stage v.pdName v.pd) =
+    .seq (.block crtArgs) (.seq (.call C.name C.code) (seqs (checkWith stage v.pdName v.pd))) from rfl,
     checkWith_eq]
-  refine (crtArgs_ct.seq ((crt_ct v).seq (pcArgs_ct.seq (hstage.seq (pdArgs_ct.seq
+  have hA := crtArgs_ct (G := G).mono (fun _ _ h => h) fun _ _ ⟨e, hG, hL, a₁, a₂, hk, c₁, c₂, f₁, f₂⟩ =>
+    (⟨e, hG, hL, a₁, a₂, hk, c₁, c₂, ⟨f₁, (hGH e hG).1⟩, ⟨f₂, (hGH e hG).2⟩⟩ :
+      Two G (fun L m₀ t => (Slots L t.mem ∧ CrtArgs L t) ∧ H L m₀) _ _)
+  refine (hA.seq ((crt_ct C hK).seq (pcArgs_ct.seq (hstage.seq (pdArgs_ct.seq
     ((pd_ct v).seq tail_ct)))))).mono ?_ fun _ _ _ => trivial
   rintro _ _ ⟨_, _, ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩, rfl, rfl⟩
   exact hent s₁ s₂ h₁ h₂ hp
 
 theorem code_constantTime (v : CrtImpl) : ConstantTime isa chkA.pre chkA.pub (privCodeOf v) :=
-  codeWith_constantTime (G := fun _ => True) v _ (pc_ct v) (fun _ _ _ _ hp => hp.2.1)
+  codeWith_constantTime (G := fun _ => True) v.callee v _ (H := fun _ _ => True) (fun _ _ => ⟨trivial, trivial⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ => trivial) (pc_ct v) (fun _ _ _ _ hp => hp.2.1)
     fun s₁ s₂ h₁ h₂ hp => ⟨s₁, s₂, s₁.rd, s₂.rd, [], h₁, h₂, (List.append_nil _).symm,
       (List.append_nil _).symm, hp, trivial, rfl, rfl⟩
 

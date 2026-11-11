@@ -24,6 +24,8 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.PreWords
+meta import VerifiedGarbage.Proof.Rsa.PreWords
 
 /-!
 # `vg_rsa_private_checked_precomputed` on AArch64
@@ -215,6 +217,9 @@ structure PreIn (L : Lay) (m₀ : Mem) : Prop where
   psc : L.SC.Disjoint ⟨L.preA, L.pw * 8⟩
   pk : L.STK.Disjoint ⟨L.preA, L.pw * 8⟩
   pc : Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt m₀ L.n L.k.toNat) = some (Spec.Rsa.wordsAt m₀ L.preA L.pw)
+  /-- The key's factors' product is its modulus, which `pre` implies. -/
+  pq : Spec.Rsa.os2ip (Spec.Rsa.bytesAt m₀ L.p L.pl.toNat) * Spec.Rsa.os2ip (Spec.Rsa.bytesAt m₀ L.q L.ql.toNat) =
+    Spec.Rsa.os2ip (Spec.Rsa.bytesAt m₀ L.n L.k.toNat)
 
 section
 variable {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem}
@@ -399,7 +404,7 @@ theorem preIn {s : State} (h : chkPA.pre s) : PreIn (layW s (XP s)) s.mem := by
   have hpw' : (layW s (XP s)).pw ≤ (stackArg s 13).toNat := hpw
   have hpw2 : 2 * Spec.Rsa.modulusWords (s.gpr .x3).toNat ≤ (stackArg s 13).toNat := hpw
   have e12 := arg_slot12 s
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · show XP s = [⟨(lay s).B + BitVec.ofNat 64 (arg 12), 8⟩, ⟨stackArg s 12, (lay s).pw * 8⟩]
     rw [← e12]; rfl
   · show s.mem.readW ((lay s).B + BitVec.ofNat 64 (arg 12)) 64 = stackArg s 12
@@ -417,6 +422,24 @@ theorem preIn {s : State} (h : chkPA.pre s) : PreIn (layW s (XP s)) s.mem := by
       some (Spec.Rsa.wordsAt s.mem (stackArg s 12) (lay s).pw)
     rw [publicPrecompute_of_private hk, Proof.Rsa.bytesAt_length', wordsAt_take _ _ hpw2]
     rfl
+  · exact Proof.Rsa.privatePrecompute_mul hk
+
+/-- At the CRT's call, the key's factors' product is its modulus. -/
+theorem keyProduct_call {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} (hL : L.Ok)
+    {t : State} (hc : Ctx L g vv m₀ t) (ha : CrtArgs L t) (hP : PreIn L m₀) :
+    KeyProduct (t.callEntry.withRegions (crtRd L) (crtWr L)) := by
+  have sa : ∀ i < 10, stackArg (t.callEntry.withRegions (crtRd L) (crtWr L)) i = L.argv (i + 2) := by
+    intro i hi
+    simp only [stackArg, stackArgAddr, State.withRegions_mem, State.callEntry_mem, State.withRegions_sp,
+      State.callEntry_sp, hc.sp]
+    exact ha.stk i hi
+  obtain ⟨kp, kq, -, -, -⟩ := hc.key_bytes hL
+  simp only [KeyProduct, State.withRegions_mem, State.callEntry_mem,
+    gpr_ce _ _ _ (by decide : Reg.x2 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x3 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.x6 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x7 ∉ linkRegs),
+    ha.x2, ha.x3, ha.x6, ha.x7, sa 0 (by decide), sa 1 (by decide), Lay.argv]
+  rw [kp, kq, hc.n_bytes hL]
+  exact hP.pq
 
 theorem narrowP_widen (s : State) : (narrowP s).withRegions s.rd s.wr = s := by
   simp only [narrowP, State.withRegions_withRegions, State.withRegions_self]
@@ -446,12 +469,13 @@ theorem narrowP_covers {s : State} (h : chkPA.pre s) :
 
 /-- The code, from the narrowed call. -/
 theorem codeP_wp (v : CrtImpl) {s : State} (h : chkPA.pre s) :
-    WP isa (codeWith v pcCopy) (narrowP s) fun s' => abiPreserved s s' ∧ chkA.post s s' :=
-  codeWith_correct v pcCopy (s := narrowP s) (R₀ := rd0 s) (X := XP s) h.1 rfl
+    WP isa (codeWith v.calleeP v pcCopy) (narrowP s) fun s' => abiPreserved s s' ∧ chkA.post s s' :=
+  codeWith_correct v.calleeP v pcCopy (s := narrowP s) (R₀ := rd0 s) (X := XP s) h.1 rfl
     (pcCopy_ok ((lay_ok h.1).withX _) (preIn (s := s) h))
+    fun _ hc ha => keyProduct_call ((lay_ok h.1).withX _) hc ha (preIn (s := s) h)
 
 theorem codeP_correct (v : CrtImpl) (s : State) (h : chkPA.pre s) :
-    ∃ t s', Exec isa (codeWith v pcCopy) s t s' ∧ abiPreserved s s' ∧ chkPA.post s s' := by
+    ∃ t s', Exec isa (codeWith v.calleeP v pcCopy) s t s' ∧ abiPreserved s s' ∧ chkPA.post s s' := by
   obtain ⟨t, s', he, ha, hp⟩ := codeP_wp v h
   have hw := Exec.widen he (narrowP_covers h) (Covers.refl _)
   rw [narrowP_widen] at hw
@@ -514,11 +538,13 @@ theorem pcCopy_ct :
   rw [pcCopy_eq]
   exact (pcHead_ct.seq pcBody_ct).mono (fun _ _ h => two_addG (Ψ := PreIn) (fun _ g => g) h) fun _ _ h => h
 
-theorem codeP_constantTime (v : CrtImpl) : ConstantTime isa chkPA.pre chkPA.pub (codeWith v pcCopy) := by
+theorem codeP_constantTime (v : CrtImpl) :
+    ConstantTime isa chkPA.pre chkPA.pub (codeWith v.calleeP v pcCopy) := by
   refine ct_of_narrow narrowP (fun s h => ⟨?_, narrowP_covers h, Covers.refl _, narrowP_widen s⟩) ?_
   · obtain ⟨t, s', he, -⟩ := codeP_wp v h
     exact ⟨t, s', he⟩
-  refine codeWith_constantTime (G := GP) v pcCopy pcCopy_ct ?_ ?_
+  refine codeWith_constantTime (G := GP) v.calleeP v pcCopy (H := PreIn) (fun _ g => g)
+    (fun _ _ _ _ _ hL _ hc ha hP => keyProduct_call hL hc ha hP) pcCopy_ct ?_ ?_
   · rintro _ _ - - ⟨s₁, s₂, -, -, hp, rfl, rfl⟩
     exact hp.1.2.1
   · rintro _ _ - - ⟨s₁, s₂, h₁, h₂, hp, rfl, rfl⟩
@@ -537,9 +563,9 @@ theorem codeP_constantTime (v : CrtImpl) : ConstantTime isa chkPA.pre chkPA.pub 
 def privPName (v : CrtImpl) : String := "vg_rsa_private_checked_precomputed" ++ v.suffix
 
 /-- Its code. -/
-abbrev privPCode (v : CrtImpl) : Prog isa := codeP v.name v.code v.pdName v.pd
+abbrev privPCode (v : CrtImpl) : Prog isa := codeP v.crtPName v.crtP v.pdName v.pd
 
-theorem privPCode_eq (v : CrtImpl) : privPCode v = codeWith v pcCopy := rfl
+theorem privPCode_eq (v : CrtImpl) : privPCode v = codeWith v.calleeP v pcCopy := rfl
 
 theorem codeP_verified (v : CrtImpl) :
     Verified AArch64.target (privPCode v)
@@ -550,7 +576,7 @@ theorem codeP_verified (v : CrtImpl) :
 /-- Its frames, as `vg_rsa_private_checked`'s. -/
 theorem privPCode_depth (v : CrtImpl) : (privPCode v).aarch64Depth = stackBytes / 16 := by
   simp only [privPCode, codeP, bodyP, checkWith, pcCopy, tail, seqs, List.cons_append, List.nil_append,
-    Code.aarch64Depth, aarch64Depth_of_noFrames v.noFrames, aarch64Depth_of_noFrames v.pdNoFrames,
+    Code.aarch64Depth, aarch64Depth_of_noFrames v.crtPNoFrames, aarch64Depth_of_noFrames v.pdNoFrames,
     VG.Impl.Bignum.AArch64.copyWords, VG.Impl.Bignum.AArch64.countLoop, cmpLoop, releaseLoop,
     Instr.frameUnits, frameBytes, stackBytes]
   decide

@@ -136,8 +136,11 @@ def privateCrtProductContract : Contract isa :=
   { Proof.Rsa.privateCrtContract abi 0 with
     pre := fun s => (Proof.Rsa.privateCrtContract abi 0).pre s ∧ KeyProduct s }
 
+/-- `crtA` for states with `K`. -/
+def crtKA (K : State → Prop) : Contract isa := { crtA with pre := fun s => crtA.pre s ∧ K s }
+
 /-- `privateCrtProductContract` on the registers and the stack. -/
-def crtPA : Contract isa := { crtA with pre := fun s => crtA.pre s ∧ KeyProduct s }
+abbrev crtPA : Contract isa := crtKA KeyProduct
 
 /-! ## `vg_rsa_public_precompute` -/
 
