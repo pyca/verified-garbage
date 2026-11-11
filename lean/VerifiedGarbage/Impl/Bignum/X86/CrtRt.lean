@@ -298,12 +298,12 @@ argument 18, after factor 0's for factor 1) into slot 4, zero above, and
 count comes from the arguments. -/
 def loadR2 (c : Ctx) (i : Nat) : Prog isa :=
   .seq (zero (.slot c 4) (one c)) <|
-  .seq (.block ([.mov .edx (.mem (argAt 0 (7 + 2 * i)))] ++ primeBytes .edx .eax ++
-      [.mov .ebp (.mem (argAt 0 preArg))] ++
-      (if i = 0 then [] else [.mov .ecx (.mem (argAt 0 7))] ++ primeBytes .ecx .eax ++ [.alu .add .ebp (.reg .ecx)]) ++
-      ptrTo (.slot c 4) .ebx .eax)) <|
-  .seq (.loop (.block [.mov .eax (.mem (at_ .ebp 0)), .store (at_ .ebx 0) .eax, .alu .add .ebp (.imm 4),
-      .alu .add .ebx (.imm 4), .alu .sub .edx (.imm 4)]) .ne) <|
+  .seq (.block ([.mov .ecx (.mem (argAt 0 (7 + 2 * i)))] ++ primeBytes .ecx .eax ++
+      [.mov .esi (.mem (argAt 0 preArg))] ++
+      (if i = 0 then [] else [.mov .edx (.mem (argAt 0 7))] ++ primeBytes .edx .eax ++ [.alu .add .esi (.reg .edx)]) ++
+      ptrTo (.slot c 4) .ebp .eax)) <|
+  .seq (.loop (.block [.mov .eax (.mem (at_ .esi 0)), .store (at_ .ebp 0) .eax, .alu .add .esi (.imm 4),
+      .alu .add .ebp (.imm 4), .alu .sub .ecx (.imm 4)]) .ne) <|
   .block ([.mov .edx (.mem (argAt 0 (7 + 2 * i)))] ++ primeBytes .edx .eax ++ widthC 0 c .esi ++
     [.alu .sub .esi (.reg .edx), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi),
       .alu .add .esi (.reg .esi)])
