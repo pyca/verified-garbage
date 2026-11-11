@@ -6,10 +6,12 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivPd
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
+public import VerifiedGarbage.Proof.Rsa.PrivCheck
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
 import VerifiedGarbage.Proof.Rsa.PreWords
 import VerifiedGarbage.Proof.Rsa.Scratch
+import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import VerifiedGarbage.Proof.Framework.Omega
@@ -31,7 +33,7 @@ itself as `n`'s values (its first `2 ⌈n_len / 8⌉` words are
 
 namespace VG.Proof.Rsa.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
 open VG.Proof.MlKem.X86_64
 
 variable {X : List Region}
@@ -618,5 +620,139 @@ theorem pdP_call (P : PublicImpl) (name : String)
       (List.mem_range.mp hi)
   · exact slot_keep hf (hapart (by decide) (by decide))
   · exact slot_keep hf (hapart (by decide) (by decide))
+
+/-! ## After the CRT -/
+
+theorem checkP_eq (pdName : String) (pd : Prog isa) :
+    seqs (checkP pdName pd) = .seq (.block pdArgsP) (.seq (.call pdName pd) (seqs PrivChecked.tail)) := rfl
+
+/-- Everything after the CRT given `pre`, from any state the frame allows:
+as `check_ok`, with `r₃ = 1`. -/
+theorem check_okP (P : PublicImpl) (pdName : String)
+    {s t : State} (hp : PreF (xP s) s) (hf : PFacts s) (he : Env s t) :
+    WP isa (seqs (checkP pdName (P.code))) t fun t' =>
+      Env s t' ∧
+      t'.gpr .rax = checkResult (t.gpr .rax) (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+        (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rcx).toNat)
+        (Spec.Rsa.bytesAt t.mem (off (fb s) oM) (s.gpr .rcx).toNat) ∧
+      Spec.Rsa.bytesAt t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat =
+        (if released (t.gpr .rax) (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+            (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
+            (Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rcx).toNat)
+            (Spec.Rsa.bytesAt t.mem (off (fb s) oM) (s.gpr .rcx).toNat)
+          then Spec.Rsa.bytesAt t.mem (off (fb s) oM) (s.gpr .rcx).toNat
+          else List.replicate (s.gpr .rcx).toNat 0) ∧
+      Spec.Rsa.bytesAt t'.mem (off (fb s) oM) (s.gpr .rcx).toNat = List.replicate (s.gpr .rcx).toNat 0 ∧
+      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
+  have hk2 := hp.k2
+  have hpw := preWords_le hp
+  have csk : ∀ {rs : List Reg} {a b : State}, Keep rs a b → (∀ r ∈ calleeSaved, r ∉ rs) →
+      ∀ r ∈ calleeSaved, b.gpr r = a.gpr r := fun k h r hr => k.gpr (h r hr)
+  rw [checkP_eq]
+  refine WP.seq (WP.mono_mx (by decide +kernel)
+    (WP.keep [.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9] (pdArgsP_ok hp hf he) rfl)
+    fun t₃ ⟨⟨he₃, hm₃, hdi₃, hsi₃, hdx₃, hcx₃, h8₃, h9₃⟩, k₃⟩ hmx₃ => ?_)
+  have hw : ∀ {d : Nat}, d < 4 → word t₃.mem (fb s) (8 * d) =
+      [off (fb s) oM, s.gpr .rcx, stackArg s 12, stackArg s 13].getD d 0 := fun {d} hd => by
+    rw [hm₃]
+    rcases (show d = 0 ∨ d = 1 ∨ d = 2 ∨ d = 3 by omega_arith) with rfl | rfl | rfl | rfl
+    · simp (disch := decide) only [word_wo, word_self0, Nat.mul_zero]
+      rfl
+    · simp (disch := decide) only [word_wo, word_writeW_self, Nat.mul_one]; rfl
+    · simp (disch := decide) only [word_wo, word_writeW_self]; rfl
+    · simp (disch := decide) only [word_writeW_self]; rfl
+  refine WP.seq (WP.mono (pdP_call P pdName hp hf he₃ (hw (d := 0) (by decide))
+    (hw (d := 1) (by decide)) (hw (d := 2) (by decide)) (hw (d := 3) (by decide)) hdi₃ hsi₃ hdx₃ hcx₃ h8₃ h9₃)
+    fun t₄ ⟨he₄, hpd, hM₄, hR1₄, hR3₄, hcs₄, hmx₄⟩ => ?_)
+  refine WP.mono_mx (by decide +kernel)
+    (WP.keep [.rax, .r11, .rdi, .rsi, .rcx, .r10, .rdx, .r9, .r8] (tail_ok hp he₄) (by decide +kernel))
+    fun t' ⟨⟨hax, hout, hM', he'⟩, k₅⟩ hmx₅ => ⟨he', ?_, ?_, hM',
+      fun r hr => by rw [csk k₅ (by decide) r hr, hcs₄ r hr, csk k₃ (by decide) r hr],
+      by rw [hmx₅, hmx₄, hmx₃]⟩ <;> clear hM'
+  all_goals
+    -- The values the tail reads.
+    have hr1 : word t₄.mem (fb s) oR1 = t.gpr .rax := by
+      rw [hR1₄, hm₃]
+      simp (disch := decide) only [word_wo, word_wo0, word_writeW_self]
+    have hr3 : word t₄.mem (fb s) oR3 = 1 := by
+      rw [hR3₄, hm₃]
+      simp (disch := decide) only [word_wo, word_wo0, word_writeW_self]
+    have hmb : Spec.Rsa.bytesAt t₃.mem (off (fb s) oM) (s.gpr .rcx).toNat =
+        Spec.Rsa.bytesAt t.mem (off (fb s) oM) (s.gpr .rcx).toNat := by
+      rw [hm₃]
+      simp (disch := first | decide | (simp only [oM, oR3, oR1]; omega_arith)) only [bytes_wo, bytes_wo0]
+    have sP := preRp_sub hf
+    have hpre : Spec.Rsa.wordsAt t₃.mem (stackArg s 14) (Spec.Rsa.precomputedWords (s.gpr .rcx).toNat) =
+        Spec.Rsa.wordsAt s.mem (stackArg s 14) (Spec.Rsa.precomputedWords (s.gpr .rcx).toNat) := by
+      have hl := hf.wPr
+      have hpl := hf.hpl
+      exact words_of_frame he₃.mem (hf.dKp.symm.sub_left sP).symm (hf.dOp.symm.sub_left sP).symm
+        (hf.dSp.symm.sub_left sP).symm (by unfold Spec.Rsa.privatePrecomputedWords at hpl; omega_arith)
+    have hpub := VG.Proof.Rsa.privatePrecompute_public hf.hpp
+    rw [bytesAt_length'] at hpub
+    rw [hr1, hr3] at hax hout
+    rw [hM₄, hmb] at hout
+    simp only [hmb] at hpd
+    have h3 : match Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) with
+        | some _ => (1 : BitVec 64).setWidth 32 = 1
+        | none => (1 : BitVec 64).setWidth 32 = 0 := by
+      rw [hpub]; rfl
+    have hl := check_logic (r₁ := t.gpr .rax) (r₂ := t₄.gpr .rax) (r₃ := 1)
+      (eB := Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
+      (mB := Spec.Rsa.bytesAt t.mem (off (fb s) oM) (s.gpr .rcx).toNat)
+      (outB := Spec.Rsa.bytesAt t₄.mem (s.gpr .rdi) (s.gpr .rcx).toNat)
+      (xB := Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rcx).toNat) h3 (fun hs => by
+        have := hpd _ (bytesAt_length' _ _ _) (by rw [hpre]; exact hpub)
+        cases hpo : Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+            (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
+            (Spec.Rsa.bytesAt t.mem (off (fb s) oM) (s.gpr .rcx).toNat) <;>
+          simp only [hpo, Spec.Rsa.written] at this ⊢
+        · exact this.1
+        · exact this)
+    first | (rw [hax]; exact hl.1) | (rw [hout]; exact if_congr hl.2 rfl rfl)
+
+/-! ## The function -/
+
+theorem bodyP_eq (crtName : String) (crt : Prog isa) (pdName : String) (pd : Prog isa) :
+    bodyP crtName crt pdName pd =
+      .seq (.block crtArgsP) (.seq (.call crtName crt) (seqs (checkP pdName pd))) := rfl
+
+/-- `vg_rsa_private_checked_precomputed`, calling the CRT given `pre` of the
+implementation `v`. -/
+theorem codeP_correct (v : CrtImpl) (pdName : String) (s : State) (h : chkContractP.pre s) :
+    ∃ t s', Exec isa (codeP v.nameP v.codeP pdName (v.pubOp.code)) s t s' ∧ abiPreserved s s' ∧
+      chkContractP.post s s' := by
+  obtain ⟨hp, hf⟩ := preFP_of h
+  have hk2 := hp.k2
+  suffices hw : WP isa (codeP v.nameP v.codeP pdName (v.pubOp.code)) s fun s' =>
+      abiPreserved s s' ∧ chkContract.post s s' by
+    obtain ⟨t, s', he, hq⟩ := hw
+    exact ⟨t, s', he, hq⟩
+  refine wp_alloc (by have := hp.sp1; unfold stackBytes at this; unfold frameBytes; omega) ?_
+  rw [bodyP_eq]
+  refine WP.seq (WP.mono_mx (by decide +kernel)
+    (WP.keep [.rax, .rdi, .rsi, .r8, .r9] (crtArgsP_ok hp hf) (by decide +kernel))
+    fun t₁ ⟨⟨he₁, _, hargs, h96, h104, hdi, hsi, hdx, hcx, h8, h9⟩, k₁⟩ hmx₁ => ?_)
+  refine WP.seq (WP.mono (crtP_call v hp hf he₁ hargs h96 h104 hdi hsi hdx hcx h8 h9) fun t₂ ⟨he₂, hcrt, hcs₂, hmx₂⟩ => ?_)
+  refine WP.mono (check_okP v.pubOp pdName hp hf he₂)
+    fun t₃ ⟨he₃, hrax, hout, _, hcs₃, hmx₃⟩ => ?_
+  refine ⟨he₃.rsp, by rw [he₃.wr]; rfl, ⟨fun r hr => ?_, ret_frame hp he₃.mem, ?_⟩, ?_⟩
+  · by_cases hr' : r = .rsp
+    · subst hr'
+      show t₃.gpr .rsp + BitVec.ofNat 64 frameBytes = s.gpr .rsp
+      rw [he₃.rsp, BitVec.sub_add_cancel]
+    · show (if r = .rsp then _ else t₃.gpr r) = s.gpr r
+      simp only [hr', ↓reduceIte]
+      rw [hcs₃ r hr, hcs₂ r hr, k₁.gpr (by
+        simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all)]
+      simp only [allocState_gpr, hr', ↓reduceIte]
+  · show t₃.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
+    rw [hmx₃, hmx₂, hmx₁]; rfl
+  · have hfr : (freed frameBytes t₃).gpr .rax = t₃.gpr .rax := rfl
+    have hfm : (freed frameBytes t₃).mem = t₃.mem := rfl
+    simp only [chkContract, hfr, hfm]
+    exact outcome_eq (bytesAt_length' _ _ _) (by rw [bytesAt_length']) hcrt hrax hout
 
 end VG.Proof.Rsa.X86_64
