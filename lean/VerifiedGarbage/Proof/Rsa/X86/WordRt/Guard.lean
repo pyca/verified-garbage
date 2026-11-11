@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Prep
-import VerifiedGarbage.Proof.Rsa.X86.WordRt.Loop
+public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Loop
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
@@ -164,5 +164,71 @@ theorem balanced_ok {s : State} (h : RtWs L s B Z len N) {nl pl ql n sl an ap aq
   constructor
   · rintro ⟨⟨⟨⟨a, b⟩, c⟩, d⟩, e⟩; exact ⟨a, b, c, d, e⟩
   · rintro ⟨a, b, c, d, e⟩; exact ⟨⟨⟨⟨a, b⟩, c⟩, d⟩, e⟩
+
+
+/-! ## What the guard gives -/
+
+/-- A factor of a number of `2 K` bits, the other below `2^K`, is above `2^(K - 1)`. -/
+theorem factor_top {K p q n : Nat} (hn : 2 ^ (2 * K - 1) ≤ n) (hq : q < 2 ^ K)
+    (hpq : p * q = n) : 2 ^ (K - 1) < p := by
+  refine Nat.lt_of_not_le fun hle => ?_
+  have e : 2 ^ (2 * K - 1) = 2 ^ (K - 1) * 2 ^ K := by rw [← Nat.pow_add]; congr 1; omega
+  have : p * q < 2 ^ (K - 1) * 2 ^ K :=
+    Nat.lt_of_le_of_lt (Nat.mul_le_mul_right q hle) (Nat.mul_lt_mul_of_pos_left hq (Nat.two_pow_pos _))
+  omega
+
+theorem top_factor {K p : Nat} (lo : 2 ^ (K - 1) < p) (hi : p < 2 ^ K) :
+    (2 ^ (K - 1) ≤ p ∧ p < 2 ^ K) ∧ (2 ^ (K - 1) ≤ 2 * (p / 2) ∧ 2 * (p / 2) < 2 ^ K) :=
+  ⟨⟨Nat.le_of_lt lo, hi⟩, ⟨by omega, by omega⟩⟩
+
+/-- Under the guard: `p`'s width is a sound divisor's, and where `p q = n`, `p`, `p - 1` and
+`q - 1` have their top bits set. -/
+theorem bal_top {an ap aq top w P Q N : Nat} (bal : Bal an ap aq top) (hkw : kw an = w)
+    (htop : 2 ^ 31 ≤ top ↔ 2 ^ (32 * w - 1) ≤ N) (hp : P < 2 ^ (8 * ap)) (hq : Q < 2 ^ (8 * aq)) :
+    4 ≤ wq ap ∧ wq ap + 2 ≤ w ∧
+      (P * Q = N → Top (wq ap) P ∧ Top (wq ap) (2 * (P / 2)) ∧ Top (wq ap) (2 * (Q / 2))) := by
+  obtain ⟨h8, hpa, hqa, h128, ht⟩ := bal
+  have hw : w = an / 4 := by
+    rw [← hkw]; simp only [kw, Spec.Rsa.modulusWords]; omega
+  have hwq : wq ap = ap / 4 := by simp only [wq]; omega
+  have hK : 32 * wq ap = 8 * ap := by rw [hwq]; omega
+  have hn : 2 ^ (2 * (8 * ap) - 1) ≤ N := by
+    have := htop.mp ht
+    rwa [show 32 * w = 2 * (8 * ap) by rw [hw]; omega] at this
+  have hq' : Q < 2 ^ (8 * ap) := by rwa [show 8 * aq = 8 * ap by omega] at hq
+  refine ⟨by omega, by omega, fun hpq => ?_⟩
+  simp only [Top, hK]
+  have pt := top_factor (factor_top hn hq' hpq) hp
+  have qt := top_factor (factor_top hn hp (by rw [Nat.mul_comm]; exact hpq)) hq'
+  exact ⟨pt.1, pt.2, qt.2⟩
+
+theorem sub0_beq (x : BitVec 32) : (x - 0 == 0) = decide (x.toNat = 0) := by
+  rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff, ← BitVec.toNat_inj, BitVec.toNat_sub]
+  have := x.isLt
+  show (2 ^ 32 - 0 + x.toNat) % 2 ^ 32 = 0 ↔ _
+  constructor <;> intro h <;> omega
+
+/-- `ifBalanced sl word other`: `word` where `sl` is zero, else `other`, each from a state that only
+`eax` and the flags tell apart. -/
+theorem ifBalanced_ok {s : State} (h : RtWs L s B Z len N) {sl : Nat} (hsl : sl + 4 ≤ VG.Impl.Rsa.X86.Keys.hdr)
+    {P : Prop} (hg : slot s.mem B sl = 0 ↔ P) {W O : Prog isa} {Q : State → Prop}
+    (hW : P → ∀ u, RtWs L u B Z len N → Keeps [.eax] s u → u.mem = s.mem → WP isa W u Q)
+    (hO : ¬P → ∀ u, RtWs L u B Z len N → Keeps [.eax] s u → u.mem = s.mem → WP isa O u Q) :
+    WP isa (VG.Impl.Rsa.X86.WordModRt.ifBalanced sl W O) s Q := by
+  unfold VG.Impl.Rsa.X86.WordModRt.ifBalanced
+  have hz := h.ws.hdr_le
+  simp only [VG.Impl.Rsa.X86.Keys.hdr] at hsl hz
+  refine WP.seq (wp_movS (readSrc_sc h.ws.workspace (by omega))
+    fun u U _ => wp_cmpi fun t T _ z => WP.block_nil ?_)
+  have K : Keeps [.eax] s t := U.keeps.trans (T.keeps [.eax])
+  have M : t.mem = s.mem := T.mem.trans U.mem
+  have ht := h.keep K (by decide) (by decide) (by rw [M]; exact Outside.refl _ _ _ _)
+  have ev : u.gpr .eax = s.mem.readW (off B sl) 32 := U.gpr
+  have sv : slot s.mem B sl = (s.mem.readW (off B sl) 32).toNat := rfl
+  refine WP.ite _ (by change t.zf = _; exact z) (fun hb => hW (hg.mp ?_) t ht K M) (fun hb => hO (fun p => ?_) t ht K M)
+  · rw [ev, sub0_beq, decide_eq_true_iff] at hb
+    rw [sv, hb]
+  · rw [ev, sub0_beq, decide_eq_false_iff_not] at hb
+    exact hb (by rw [← sv]; exact hg.mpr p)
 
 end VG.Proof.Rsa.X86.WordRt

@@ -81,16 +81,20 @@ def sG : Nat := 144
 def firstDiv : Prog isa := seqs [
   .block (bitOf lay sPodd aP ++ WordModRt.balanced lay 7 9 11 aDQ sG), WordModRt.mulWide lay aDR2 aP aQ]
 
-/-- `[r] = [aDQ] mod [aDD]`: by word steps under the guard (`aDD` of the length in argument
-`ml`), else by `KeyRt.div`. -/
-def wordRem (ml r : Nat) : Prog isa :=
-  WordModRt.ifBalanced sG (WordModRt.wordMod lay ml aDQ r aDD aDT) (div r)
+/-- `d mod (p - 1)` into `aDR2` and `d mod (q - 1)` into `aDR3`, `rem` the remainder of
+`[aDQ]` (`d`) by `[aDD]` into an array. -/
+def rems (rem : Nat → Prog isa) : Prog isa := seqs [
+  rem aDR2, copy lay aDQ aD, copy lay aDD aQ, .block (clrLow lay aDD), rem aDR3]
 
-def divQ : Prog isa := seqs [
-  copy lay aDQ aD, copy lay aDD aQ, .block (clrLow lay aDD), wordRem 11 aDR3]
+/-- The remainders by word steps (`aDD` of `p`'s length, argument 9; under the guard, `q`'s too). -/
+def wordRems : Prog isa := rems fun r => WordModRt.wordMod lay 9 aDQ r aDD aDT
 
+/-- The remainders by `KeyRt.div`. -/
+def divRems : Prog isa := rems div
+
+/-- The checks, then the remainders: by word steps under the guard (read once), else bit by bit. -/
 def core : Prog isa :=
-  .seq firstDiv (.seq checks (.seq (wordRem 9 aDR2) divQ))
+  .seq firstDiv (.seq checks (WordModRt.ifBalanced sG wordRems divRems))
 
 /-- Array `j` from the big-endian bytes at argument `arg`, as many as argument `arg + 1`. -/
 def load (arg j : Nat) : Prog isa :=

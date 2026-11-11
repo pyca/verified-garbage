@@ -23,7 +23,7 @@ open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.KeyCheck VG.Impl.Rsa.X86.KeyCheckRt
 open VG.Proof.Rsa.X86.Keys
-open VG.Proof.Rsa.X86.WordRt (MLen wq mw Bal)
+open VG.Proof.Rsa.X86.WordRt (MLen wq mw Bal Top top_iff val32_low)
 
 /-! ## The guard -/
 

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KcBase
 public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Guard
-import VerifiedGarbage.Proof.Rsa.X86.WordRt.Loop
+public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Loop
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Mul
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Eq
 import VerifiedGarbage.Proof.Rsa.X86.KcOps
@@ -24,45 +24,9 @@ open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.KeyCheck VG.Impl.Rsa.X86.KeyCheckRt
 open VG.Proof.Rsa.X86.Keys
-open VG.Proof.Rsa.X86.WordRt (MLen wq mw Bal)
-
-/-- `X` has `k` words, the top bit of the top one set. -/
-def Top (k X : Nat) : Prop := 2 ^ (32 * k - 1) ≤ X ∧ X < 2 ^ (32 * k)
+open VG.Proof.Rsa.X86.WordRt (MLen wq mw Bal Top val32_low top_iff)
 
 theorem wordRegs_body : ∀ x ∈ [.eax, .ebx, .ecx, .edx, .esi, .ebp], x ∈ bodyRegs := by decide
-
-/-- The low `k` words of a number below `2^(32 k)`: the number. -/
-theorem val32_low {m : Mem} {B : Addr} {d w k : Nat} (hk : k ≤ w) (hl : val32 m B d w < 2 ^ (32 * k)) :
-    val32 m B d k = val32 m B d w := by
-  have e := val32_append m B d k (w - k)
-  rw [show k + (w - k) = w by omega] at e
-  generalize val32 m B (d + 4 * k) (w - k) = R at e
-  rcases Nat.eq_zero_or_pos R with h0 | hp
-  · rw [h0, Nat.mul_zero, Nat.add_zero] at e; exact e.symm
-  · have : 2 ^ (32 * k) * 1 ≤ 2 ^ (32 * k) * R := Nat.mul_le_mul_left _ hp
-    omega
-
-/-- The top word of a number of `k` words: whether it is at least `2^(32 k - 1)`. -/
-theorem top_iff {m : Mem} {B : Addr} {d k : Nat} (hk : 0 < k) :
-    2 ^ 31 ≤ w32 m B (d + 4 * (k - 1)) ↔ 2 ^ (32 * k - 1) ≤ val32 m B d k := by
-  have e := val32_succ m B d (k - 1)
-  rw [show k - 1 + 1 = k by omega] at e
-  have lo := val32_lt m B d (k - 1)
-  have hp : 2 ^ (32 * k - 1) = 2 ^ (32 * (k - 1)) * 2 ^ 31 := by
-    rw [← Nat.pow_add]; congr 1; omega
-  rw [hp, e]
-  generalize w32 m B (d + 4 * (k - 1)) = T
-  generalize val32 m B d (k - 1) = L at lo ⊢
-  generalize (2 : Nat) ^ (32 * (k - 1)) = P at lo ⊢
-  constructor
-  · intro hT
-    calc P * 2 ^ 31 ≤ P * T := Nat.mul_le_mul_left _ hT
-      _ ≤ L + P * T := Nat.le_add_left _ _
-  · intro hT
-    refine Nat.le_of_not_lt fun hlt => ?_
-    have : P * T + P ≤ P * 2 ^ 31 := by
-      rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hlt
-    omega
 
 /-- An argument from where the checks started. -/
 theorem Stg.arg {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}

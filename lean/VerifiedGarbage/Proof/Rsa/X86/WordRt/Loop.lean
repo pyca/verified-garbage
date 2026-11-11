@@ -579,4 +579,69 @@ theorem wordMod_ok {s : State} (h : RtWs L s B Z len N) {ml a x r m t : Nat} {wi
   · exact .inr ⟨by simp only [eval, z, e, decide_false, Option.map_some, Bool.not_false], Sc - (i + 1), by omega,
       i + 1, rfl, by omega, I'⟩
 
+/-- `X` has `k` words, the top bit of the top one set. -/
+def Top (k X : Nat) : Prop := 2 ^ (32 * k - 1) ≤ X ∧ X < 2 ^ (32 * k)
+
+/-- The low `k` words of a number below `2^(32 k)`: the number. -/
+theorem val32_low {m : Mem} {B : Addr} {d w k : Nat} (hk : k ≤ w) (hl : val32 m B d w < 2 ^ (32 * k)) :
+    val32 m B d k = val32 m B d w := by
+  have e := val32_append m B d k (w - k)
+  rw [show k + (w - k) = w by omega] at e
+  generalize val32 m B (d + 4 * k) (w - k) = R at e
+  rcases Nat.eq_zero_or_pos R with h0 | hp
+  · rw [h0, Nat.mul_zero, Nat.add_zero] at e; exact e.symm
+  · have : 2 ^ (32 * k) * 1 ≤ 2 ^ (32 * k) * R := Nat.mul_le_mul_left _ hp
+    omega
+
+/-- The top word of a number of `k` words: whether it is at least `2^(32 k - 1)`. -/
+theorem top_iff {m : Mem} {B : Addr} {d k : Nat} (hk : 0 < k) :
+    2 ^ 31 ≤ w32 m B (d + 4 * (k - 1)) ↔ 2 ^ (32 * k - 1) ≤ val32 m B d k := by
+  have e := val32_succ m B d (k - 1)
+  rw [show k - 1 + 1 = k by omega] at e
+  have lo := val32_lt m B d (k - 1)
+  have hp : 2 ^ (32 * k - 1) = 2 ^ (32 * (k - 1)) * 2 ^ 31 := by
+    rw [← Nat.pow_add]; congr 1; omega
+  rw [hp, e]
+  generalize w32 m B (d + 4 * (k - 1)) = T
+  generalize val32 m B d (k - 1) = L at lo ⊢
+  generalize (2 : Nat) ^ (32 * (k - 1)) = P at lo ⊢
+  constructor
+  · intro hT
+    calc P * 2 ^ 31 ≤ P * T := Nat.mul_le_mul_left _ hT
+      _ ≤ L + P * T := Nat.le_add_left _ _
+  · intro hT
+    refine Nat.le_of_not_lt fun hlt => ?_
+    have : P * T + P ≤ P * 2 ^ 31 := by
+      rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hlt
+    omega
+
+/-- `wordMod`: where the divisor's top bit is already set, the divisor left as it was and the
+remainder. -/
+theorem wordMod_cond_ok {s : State} (h : RtWs L s B Z len N) {ml a x r m t : Nat} {wide : Bool}
+    (hm : MLen s B Z ml a) (hx : x + wide.toNat < N) (hr : r < N) (hmN : m < N) (ht : t < N)
+    (hrt : r ≠ t) (hmt : m ≠ t) (hrm : r ≠ m) (hxr : r ≠ x) (hxt : t ≠ x) (hxm : m ≠ x)
+    (hxr1 : wide = true → r ≠ x + 1) (hxt1 : wide = true → t ≠ x + 1) (hxm1 : wide = true → m ≠ x + 1)
+    (h4 : 4 ≤ wq a) (hw : wq a ≤ kw len) :
+    WP isa (VG.Impl.Rsa.X86.WordModRt.wordMod L ml x r m t wide) s fun v => RtWs L v B Z len N ∧
+      Keep B (kw len) [m, r, t] [oD, oD1, oV, oMask, oSteps, oQ, oU0, oU2, oDig] s.mem v.mem ∧
+      (Top (wq a) (num s.mem B (kw len) m) → num v.mem B (kw len) m = num s.mem B (kw len) m ∧
+        num v.mem B (kw len) r = val32 s.mem B (arr (kw len) x) (xw len wide) % num s.mem B (kw len) m) ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .esi, .ebp] s v := by
+  refine WP.mono (wordMod_ok h hm hx hr hmN ht hrt hmt hrm hxr hxt hxm hxr1 hxt1 hxm1 h4 hw)
+    fun v ⟨hv, k, wk, wtop, wr, K⟩ => ⟨hv, k, fun top => ?_, K⟩
+  obtain ⟨lo, hi⟩ := top
+  have hpos : 0 < wq a := by omega
+  have low : val32 s.mem B (arr (kw len) m) (wq a) = num s.mem B (kw len) m := val32_low hw hi
+  have topw : 2 ^ 31 ≤ mw s.mem B (kw len) m (wq a - 1) := (top_iff hpos).mpr (by rw [low]; exact lo)
+  have tlt : mw s.mem B (kw len) m (wq a - 1) < 2 ^ 32 := (s.mem.readW _ 32).isLt
+  have same : ∀ i, i < kw len + 2 → mw v.mem B (kw len) m i = mw s.mem B (kw len) m i := fun i hi' => by
+    by_cases e : i = wq a - 1
+    · subst e
+      have key : ∀ T : Nat, 2 ^ 31 ≤ T → T < 2 ^ 32 → T % 2 ^ 31 + 2 ^ 31 = T := fun T a b => by omega
+      rw [wtop]; exact key _ topw tlt
+    · exact wk i hi' e
+  have numEq : ∀ n, n ≤ kw len → val32 v.mem B (arr (kw len) m) n = val32 s.mem B (arr (kw len) m) n :=
+    fun n hn => val32_congr (k := n) fun i (hi' : i < n) => same i (by omega)
+  exact ⟨numEq _ (Nat.le_refl _), by rw [wr, numEq _ hw, low]⟩
+
 end VG.Proof.Rsa.X86.WordRt
