@@ -17,6 +17,8 @@ public import VerifiedGarbage.Proof.Rsa.Contract
 wrapper's inputs and `PreCtx` where its body starts (`private_contractP_pre`).
 -/
 
+-- separate module: the precondition builds in parallel with the body's proof (`PrivP.Fn`).
+
 @[expose] public section
 namespace VG.Proof.Rsa.X86.PrivChecked
 open VG VG.X86 VG.Proof.Bignum.X86
