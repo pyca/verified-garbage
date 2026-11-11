@@ -1468,7 +1468,7 @@ jne 283b
 jne 284b
 .base64 "SYkITItnMEyLj+AAAABMic1IAe1IAe1IAe1IAe1IAf1IgcUAAQAATIngSIlFEA=="
 285:
-.base64 "TItnMEyLj+AAAABMic1IAe1IAe1IAe1IAe1IAf1IgcUAAQAATYnLTQHbTQHbTQHLSQH7SYHDAAEAAEiLTRBIg+kBSYsUy0iJVQhMictIAdtMActIAftIgcMAAQAATYnKTQHSTQHSTQHSTQHKSQH6SYHCAAEAAE2JyE0BwE0BwE0BwEkB+EmBwAABAABJ0exLi3Ti+EqLVOP4SotE4/BJifFJKdFJg/kBTRnJTYnLSYPz/0wh2kmJxkmJ1UiLRQBJ9+VMAfBMEepIidFIg8EBSYnFSInISPfmSSnGTTn1TRn/TAH5SSH3TQH+SYn3SYPvAU0590iD0QBMCclJiwJI9+FJidFIi1UISCnCSYkQSBntScfGAQAAAA=="
+.base64 "TItnMEyLj+AAAABMic1IAe1IAe1IAe1IAe1IAf1IgcUAAQAATYnLTQHbTQHbTQHLSQH7SYHDAAEAAEiLTRBIg+kBSYsUy0iJVQhMictIAdtMActIAftIgcMAAQAATYnKTQHSTQHSTQHSTQHKSQH6SYHCAAEAAE2JyE0BwE0BwE0BwEkB+EmBwAABAABJ0exLi3Ti+EqLVOP4SotE4/BJifFJKdFJg/kBTRnJTYnLSYPz/0wh2kmJxkmJ1UiLRQBJ9+VMAfBMEepIidFIg8EBSYnFSInISPfmSSnGTTn1TRn/TAH5SSH3TQH+SYn3SYPvAU0590iD0QBMCclLi0Ti8Ej34UmJwUmJ00uLROL4SPfhTAHYSIPSAE6LbOPoTSnNTot04/BJGcZOi3zj+EkZ102J+00B200Z20wB2UuLROLwTCHYS4tU4vhMIdpJAcVJEdZJg9cATYn7TQHbTRnbTAHZS4tE4vBMIdhLi1Ti+Ewh2kkBxUkR1kmD1wBJiwJI9+FJidFIi1UISCnCSYkQSBntScfGAQAAAA=="
 286:
 .base64 "S4sE8kj34UwByEiD0gBJidFKi1Tz+EgB7UgZwkgZ7UuJFPBJg8YBTTnm"
 jne 286b
@@ -1476,159 +1476,151 @@ jne 286b
 287:
 .base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
 jne 287b
-.base64 "S4sE4EgB7UiD0ABLiQTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
-288:
-.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
-jne 288b
 .base64 "S4sE4EgB7UiD0ABLiQTgTInGScfGAAAAAA=="
-289:
+288:
 .base64 "SosE9kqJBPNJg8YBTTnm"
-jne 289b
+jne 288b
 .base64 "TItnMEyLj+AAAABMic1IAe1IAe1IAe1IAe1IAf1IgcUAAQAASItFEEiD6AFIiUUQ"
 jne 285b
 268:
 .base64 "TItnMEyLj+AAAABNichNAcBNAchNAcBJAfhJgcAAAQAAuAAAAABJx8YAAAAA"
-290:
+289:
 .base64 "S4kE8EmDxgFNOeY="
-jne 290b
+jne 289b
 .base64 "S4kE4EuJROAITItnMEyLj+AAAABMic5IAfZMAc5IAf5IgcYAAQAATInLSAHbTAHLSAHbSAH7SIHDAAEAAEnHxgAAAAA="
-291:
+290:
 .base64 "SosE9kqJBPNJg8YBTTnm"
-jne 291b
+jne 290b
 .base64 "TItnMEyLj+AAAABIi5eIAAAATIngSIPgAUyJ4UjB4QNIM4+QAAAASAnISIuPqAAAAEjR4Ugzj5AAAABICchIi4+oAAAASDOPuAAAAEgJyA+2CkjB6QdIg/EBSAnI"
-je 292f
+je 291f
 .base64 "TItnMEyLj+AAAABNichNAcBNAcBNAcBNAchJAfhJgcAAAQAAuAAAAABJx8YAAAAA"
-294:
+293:
 .base64 "S4kE8EmDxgFNOeY="
-jne 294b
+jne 293b
 .base64 "S4kE4EuJROAITItnMEyLj+AAAABMic5IAfZIAfZIAf5IgcYAAQAATInLSAHbSAHbSAHbTAHLSAH7SIHDAAEAAEnHxgAAAAA="
-295:
+294:
 .base64 "SosE9kqJBPNJg8YBTTnm"
-jne 295b
+jne 294b
 .base64 "TItnMEyLj+AAAABMictIAdtIAdtIAdtMActIAftIgcMAAQAASIsDSIPoAUiJA0yLZzBMi4/gAAAATYnITQHASQH4SYHAAAEAALgAAAAAScfGAAAAAA=="
-296:
+295:
 .base64 "S4kE8EmDxgFNOeY="
-jne 296b
+jne 295b
 .base64 "S4kE4EuJROAITItnMEyLj+AAAABMic5IAfZIAfZMAc5IAf5IgcYAAQAATInLSAHbSAH7SIHDAAEAAEnHxgAAAAA="
-297:
+296:
 .base64 "SosE9kqJBPNJg8YBTTnm"
-jne 297b
+jne 296b
 .base64 "TItnMEyLj+AAAABNichNAcBNAchJAfhJgcAAAQAATYnjTQHbTQHbTQHbTQHbTQHbTQHbQb0AAAAAuAAAAABJx8YAAAAA"
-298:
+297:
 .base64 "S4kE8EmDxgFNOeY="
-jne 298b
+jne 297b
 .base64 "S4kE4EuJROAI"
-299:
+298:
 .base64 "vQAAAABMictIAdtIAftIgcMAAQAAScfGAAAAAA=="
+299:
+.base64 "SAHtSosE80gRwEqJBPNIGe1Jg8YBTTnm"
+jne 299b
+.base64 "TInLSAHbTAHLSAH7SIHDAAEAAEmDxAFJx8YAAAAA"
 2100:
 .base64 "SAHtSosE80gRwEqJBPNIGe1Jg8YBTTnm"
 jne 2100b
-.base64 "TInLSAHbTAHLSAH7SIHDAAEAAEmDxAFJx8YAAAAA"
-2101:
-.base64 "SAHtSosE80gRwEqJBPNIGe1Jg8YBTTnm"
-jne 2101b
 .base64 "SYPsAb0AAAAATYnITQHATQHISQH4SYHAAAEAAE2Jyk0B0k0B0k0B0k0BykkB+kmBwgABAABMic5IAfZIAfZIAfZIAf5IgcYAAQAAScfGAAAAAA=="
-2102:
+2101:
 .base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
-jne 2102b
+jne 2101b
 .base64 "S4sE4EgB7UiD2ABKiQTmSBntSYPEAUnHxgAAAAA="
-2103:
+2102:
 .base64 "S4sE8EqLFPZIMdBIIehIMdBLiQTwSYPGAU055g=="
-jne 2103b
+jne 2102b
 .base64 "SYPsAUiJ6EiDwAFMictIAdtIAftIgcMAAQAASIsTSAHCSIkTSYPFAU053Q=="
-jne 299b
-jmp 293f
-292:
+jne 298b
+jmp 292f
+291:
 .base64 "TItnMEyLj+AAAABNichNAcBNAcBNAcBNAchJAfhJgcAAAQAAuAAAAABJx8YAAAAA"
-2104:
+2103:
 .base64 "S4kE8EmDxgFNOeY="
-jne 2104b
+jne 2103b
 .base64 "S4kE4EuJROAITItnMEyLj+AAAABMic5IAfZIAfZIAf5IgcYAAQAATInLSAHbSAHbSAHbTAHLSAH7SIHDAAEAAEnHxgAAAAA="
-2105:
+2104:
 .base64 "SosE9kqJBPNJg8YBTTnm"
-jne 2105b
+jne 2104b
 .base64 "TItnMEyLj+AAAABMictIAdtIAdtIAdtMActIAftIgcMAAQAASIsDSIPoAUiJA0yLZzBMi4/gAAAATYnITQHASQH4SYHAAAEAALgAAAAAScfGAAAAAA=="
-2106:
+2105:
 .base64 "S4kE8EmDxgFNOeY="
-jne 2106b
+jne 2105b
 .base64 "S4kE4EuJROAITItnMEyLj+AAAABMic5IAfZIAfZMAc5IAf5IgcYAAQAATInLSAHbSAH7SIHDAAEAAEnHxgAAAAA="
-2107:
+2106:
 .base64 "SosE9kqJBPNJg8YBTTnm"
-jne 2107b
+jne 2106b
 .base64 "TItnMEyLj+AAAABNicpNAdJNAdJNAdJNAcpJAfpJgcIAAQAASdHsS4tE4vhIugAAAAAAAACASAnQS4lE4vhMi2cwTIuP4AAAAE2JyE0BwE0ByEkB+EmBwAABAAC4AAAAAEnHxgAAAAA="
-2108:
+2107:
 .base64 "S4kE8EmDxgFNOeY="
-jne 2108b
+jne 2107b
 .base64 "S4kE4EuJROAITItnMEyLj+AAAABNicpNAdJNAdJNAdJNAcpJAfpJgcIAAQAATYnITQHATQHATQHATQHASQH4SYHAAAEAAEnR7EuLdOL4SInySIPy/0jHwP////+5AAAAAEG9QAAAAA=="
-2109:
+2108:
 .base64 "SAHASBHSTRnbSYnWSSn2TRn/SYP3/00J302F/0kPRdZIAclMKflJg+0B"
-jne 2109b
+jne 2108b
 .base64 "SYkITItnMEyLj+AAAABMic1IAe1IAe1IAe1IAe1IAf1IgcUAAQAATIngSIlFEA=="
+2109:
+.base64 "TItnMEyLj+AAAABMic1IAe1IAe1IAe1IAe1IAf1IgcUAAQAATYnLTQHbTQHbTQHLSQH7SYHDAAEAAEiLTRBIg+kBSYsUy0iJVQhMictIAdtMActIAftIgcMAAQAATYnKTQHSTQHSTQHSTQHKSQH6SYHCAAEAAE2JyE0BwE0BwE0BwEkB+EmBwAABAABJ0exLi3Ti+EqLVOP4SotE4/BJifFJKdFJg/kBTRnJTYnLSYPz/0wh2kmJxkmJ1UiLRQBJ9+VMAfBMEepIidFIg8EBSYnFSInISPfmSSnGTTn1TRn/TAH5SSH3TQH+SYn3SYPvAU0590iD0QBMCclLi0Ti8Ej34UmJwUmJ00uLROL4SPfhTAHYSIPSAE6LbOPoTSnNTot04/BJGcZOi3zj+EkZ102J+00B200Z20wB2UuLROLwTCHYS4tU4vhMIdpJAcVJEdZJg9cATYn7TQHbTRnbTAHZS4tE4vBMIdhLi1Ti+Ewh2kkBxUkR1kmD1wBJiwJI9+FJidFIi1UISCnCSYkQSBntScfGAQAAAA=="
 2110:
-.base64 "TItnMEyLj+AAAABMic1IAe1IAe1IAe1IAe1IAf1IgcUAAQAATYnLTQHbTQHbTQHLSQH7SYHDAAEAAEiLTRBIg+kBSYsUy0iJVQhMictIAdtMActIAftIgcMAAQAATYnKTQHSTQHSTQHSTQHKSQH6SYHCAAEAAE2JyE0BwE0BwE0BwEkB+EmBwAABAABJ0exLi3Ti+EqLVOP4SotE4/BJifFJKdFJg/kBTRnJTYnLSYPz/0wh2kmJxkmJ1UiLRQBJ9+VMAfBMEepIidFIg8EBSYnFSInISPfmSSnGTTn1TRn/TAH5SSH3TQH+SYn3SYPvAU0590iD0QBMCclJiwJI9+FJidFIi1UISCnCSYkQSBntScfGAQAAAA=="
-2111:
 .base64 "S4sE8kj34UwByEiD0gBJidFKi1Tz+EgB7UgZwkgZ7UuJFPBJg8YBTTnm"
-jne 2111b
-.base64 "SotU4/hIAe1MGcpLiRTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
-2112:
-.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
-jne 2112b
-.base64 "S4sE4EgB7UiD0ABLiQTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
-2113:
-.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
-jne 2113b
-.base64 "S4sE4EgB7UiD0ABLiQTgTInGScfGAAAAAA=="
-2114:
-.base64 "SosE9kqJBPNJg8YBTTnm"
-jne 2114b
-.base64 "TItnMEyLj+AAAABMic1IAe1IAe1IAe1IAe1IAf1IgcUAAQAASItFEEiD6AFIiUUQ"
 jne 2110b
-293:
+.base64 "SotU4/hIAe1MGcpLiRTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+2111:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 2111b
+.base64 "S4sE4EgB7UiD0ABLiQTgTInGScfGAAAAAA=="
+2112:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2112b
+.base64 "TItnMEyLj+AAAABMic1IAe1IAe1IAe1IAe1IAf1IgcUAAQAASItFEEiD6AFIiUUQ"
+jne 2109b
+292:
 .base64 "TItnMEyLj+AAAABMictIAdtMActIAdtMActIAftIgcMAAQAASIu3oAAAAEiLj6gAAABMi7+wAAAAugAAAABJifZJAc4="
+2113:
+.base64 "SInVSIPlBw=="
+je 2114f
+jmp 2115f
+2114:
+.base64 "SInVSMHtA0iLBOtMIfg="
 2115:
-.base64 "SInVSIPlBw=="
-je 2116f
-jmp 2117f
-2116:
-.base64 "SInVSMHtA0iLBOtMIfg="
-2117:
 .base64 "SYPuAUGIBkjB6AhIg8IBSDnK"
-jne 2115b
+jne 2113b
 .base64 "TItnMEyLj+AAAABMictIAdtMActIAdtIAftIgcMAAQAASIu3gAAAAEiLj6gAAABMi7+wAAAAugAAAABJifZJAc4="
+2116:
+.base64 "SInVSIPlBw=="
+je 2117f
+jmp 2118f
+2117:
+.base64 "SInVSMHtA0iLBOtMIfg="
 2118:
-.base64 "SInVSIPlBw=="
-je 2119f
-jmp 2120f
-2119:
-.base64 "SInVSMHtA0iLBOtMIfg="
-2120:
 .base64 "SYPuAUGIBkjB6AhIg8IBSDnK"
-jne 2118b
+jne 2116b
 .base64 "TItnMEyLj+AAAABMictIAdtMActIAftIgcMAAQAASIu3mAAAAEiLj7gAAABMi7+wAAAAugAAAABJifZJAc4="
-2121:
+2119:
 .base64 "SInVSIPlBw=="
-je 2122f
-jmp 2123f
-2122:
+je 2120f
+jmp 2121f
+2120:
 .base64 "SInVSMHtA0iLBOtMIfg="
-2123:
+2121:
 .base64 "SYPuAUGIBkjB6AhIg8IBSDnK"
-jne 2121b
+jne 2119b
 .base64 "SIuHsAAAAEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KA=="
 jmp 21f
 20:
 .base64 "SIu3gAAAAEiLj6gAAAC4AAAAAA=="
+2122:
+.base64 "iAZIg8YBSIPpAQ=="
+jne 2122b
+.base64 "SIu3mAAAAEiLj7gAAAC4AAAAAA=="
+2123:
+.base64 "iAZIg8YBSIPpAQ=="
+jne 2123b
+.base64 "SIu3oAAAAEiLj6gAAAC4AAAAAA=="
 2124:
 .base64 "iAZIg8YBSIPpAQ=="
 jne 2124b
-.base64 "SIu3mAAAAEiLj7gAAAC4AAAAAA=="
-2125:
-.base64 "iAZIg8YBSIPpAQ=="
-jne 2125b
-.base64 "SIu3oAAAAEiLj6gAAAC4AAAAAA=="
-2126:
-.base64 "iAZIg8YBSIPpAQ=="
-jne 2126b
 .base64 "uAAAAABIix9Ii28ITItnEEyLbxhMi3cgTIt/KA=="
 21:
 .base64 "ww=="
@@ -2728,9 +2720,85 @@ jmp 22f
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_lazy_mont_mul.rs"]
+pub(crate) mod vg_rsa_lazy_mont_mul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_lazy_mont_mul_adx.rs"]
+pub(crate) mod vg_rsa_lazy_mont_mul_adx;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_mont_mul.rs"]
 pub(crate) mod vg_rsa_mont_mul;
 
 #[rustfmt::skip]
 #[path = "internal/vg_rsa_mont_mul_adx.rs"]
 pub(crate) mod vg_rsa_mont_mul_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_encrypt_precomputed.rs"]
+pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_encrypt_precomputed_adx.rs"]
+pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_encrypt_precomputed_ifma.rs"]
+pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed_ifma;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_prime_search.rs"]
+pub(crate) mod vg_rsa_prime_search;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_prime_search_adx.rs"]
+pub(crate) mod vg_rsa_prime_search_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_prime_search_ifma.rs"]
+pub(crate) mod vg_rsa_prime_search_ifma;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_checked.rs"]
+pub(crate) mod vg_rsa_private_checked;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_checked_adx.rs"]
+pub(crate) mod vg_rsa_private_checked_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_checked_ifma.rs"]
+pub(crate) mod vg_rsa_private_checked_ifma;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_checked_ifma512.rs"]
+pub(crate) mod vg_rsa_private_checked_ifma512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_crt.rs"]
+pub(crate) mod vg_rsa_private_crt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_crt_adx.rs"]
+pub(crate) mod vg_rsa_private_crt_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_crt_ifma.rs"]
+pub(crate) mod vg_rsa_private_crt_ifma;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_crt_ifma512.rs"]
+pub(crate) mod vg_rsa_private_crt_ifma512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_public_precomputed_checked.rs"]
+pub(crate) mod vg_rsa_public_precomputed_checked;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_public_precomputed_checked_adx.rs"]
+pub(crate) mod vg_rsa_public_precomputed_checked_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_public_precomputed_checked_ifma.rs"]
+pub(crate) mod vg_rsa_public_precomputed_checked_ifma;
