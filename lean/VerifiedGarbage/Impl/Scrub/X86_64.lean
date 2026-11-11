@@ -104,13 +104,31 @@ def clearGpr (retBits : Nat) : List Instr := retFix retBits ++ scratchRegs.map z
 /-- `movdqu [rsp + off], xmm0`. -/
 def zero16 (off : Nat) : Instr := .movdquStore { base := .rsp, disp := (off : Int) } .xmm0
 
-/-- `zero16` at `base + 16 * (k - 1)`, …, `base + 16`, `base`, but those
-whose offset from the bottom of the wiped stack (`off` plus their offset in
-the frame) is not in `ks`. -/
-def stores16 (ks : List Nat) (off base : Nat) : Nat → List Instr
+/-- `vmovdqu [rsp + off], ymm0`. -/
+def zero32 (off : Nat) : Instr := .vmovdquStore .l256 { base := .rsp, disp := (off : Int) } .xmm0
+
+/-- Whether the wipe may store 32 bytes at a time, from `ymm0`: at every
+level but `sse`, whose zeroing of `xmm0` (`zeroX`) zeroes `ymm0`. -/
+def VecLevel.wide : VecLevel → Bool
+  | .sse => false
+  | _ => true
+
+/-- `zero16` at `base + 16 * k`, unless its offset from the bottom of the
+wiped stack (`off` plus its offset in the frame) is not in `ks`. -/
+def store1 (ks : List Nat) (off base k : Nat) : List Instr :=
+  if ks.contains (off + base + 16 * k) then [zero16 (base + 16 * k)] else []
+
+/-- The 16-byte granules at `base + 16 * (k - 1)`, …, `base + 16`, `base`
+zeroed, from the top down, but those whose offset from the bottom of the
+wiped stack is not in `ks`: each with `zero16`, or, if `w`, a granule and the
+one below it, both in `ks`, with one `zero32`. -/
+def stores16 (w : Bool) (ks : List Nat) (off base : Nat) : Nat → List Instr
   | 0 => []
-  | k + 1 => (if ks.contains (off + base + 16 * k) then [zero16 (base + 16 * k)] else []) ++
-    stores16 ks off base k
+  | 1 => store1 ks off base 0
+  | k + 2 =>
+    if w && ks.contains (off + base + 16 * (k + 1)) && ks.contains (off + base + 16 * k) then
+      zero32 (base + 16 * k) :: stores16 w ks off base k
+    else store1 ks off base (k + 1) ++ stores16 w ks off base (k + 1)
 
 /-- The 8-byte store at `rsp` of a chunk whose size is not a multiple of 16,
 if its offset `off` from the bottom of the wiped stack is in `ks`. -/
@@ -120,14 +138,14 @@ def store8s (ks : List Nat) (off b : Nat) : List Instr :=
 /-- Zero the `b` bytes at `rsp` (offset `off` from the bottom of the wiped
 stack) from the top down, in 16-byte granules (and one 8-byte one at the
 bottom, if `b` is not a multiple of 16), those whose offset is in `ks`. -/
-def chunkStores (ks : List Nat) (off b : Nat) : List Instr :=
-  stores16 ks off (b % 16) (b / 16) ++ store8s ks off b
+def chunkStores (w : Bool) (ks : List Nat) (off b : Nat) : List Instr :=
+  stores16 w ks off (b % 16) (b / 16) ++ store8s ks off b
 
 /-- Zero the granules `ks` of the stack below `rsp`, in nested frames of the
 sizes `cs`. -/
-def wipe (ks : List Nat) : List Nat → Prog isa
+def wipe (w : Bool) (ks : List Nat) : List Nat → Prog isa
   | [] => .block []
-  | b :: bs => .frame (.alloc b) (.seq (.block (chunkStores ks bs.sum b)) (wipe ks bs)) (.free b)
+  | b :: bs => .frame (.alloc b) (.seq (.block (chunkStores w ks bs.sum b)) (wipe w ks bs)) (.free b)
 
 /-- Chunks of at most 4080 bytes (`fuel` of them at most) summing to `n`. -/
 def chunksAux : Nat → Nat → List Nat
@@ -145,7 +163,7 @@ then the result's upper bits and the general-purpose registers `gs`. -/
 def scrubTail (v : VecLevel) (retBits : Nat) (xs : List XReg) (ps gs : List Reg) (ks cs : List Nat) :
     Prog isa :=
   .seq (.block (xs.map (zeroX v) ++ clearHigh v ++ ps.map zeroR))
-    (.seq (mxFix v) (.seq (wipe ks cs) (.block (retFix retBits ++ gs.map zeroR))))
+    (.seq (mxFix v) (.seq (wipe v.wide ks cs) (.block (retFix retBits ++ gs.map zeroR))))
 
 /-- `c`, then the clearing. -/
 def scrub (v : VecLevel) (retBits : Nat) (xs : List XReg) (ps gs : List Reg) (ks cs : List Nat) (c : Prog isa) :

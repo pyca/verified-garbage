@@ -208,7 +208,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize_avx_bmi(inner: *mut [
 call {vg_sha1_finalize_scratch_avx_bmi}
 .base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi4fQAAAAiUMUQYuH1AAAAIlDGEGLh9gAAACJQxxBi4fcAAAAiUMgQYuH4AAAAIlDJEiJ3UiDxRS4gAAAAIlFFLgAAAAAiUUYiUUciUUgiUUkiUUoiUUsiUUwiUU0QbxUAAAATIngSAHASAHASAHASA/ISIlDTEiJ7kiJ37oBAAAATIn5"
 call {vg_sha1_compress_avx_bmi}
-.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkKP7///MPf4Qk+AAAAPMPf4Qk6AAAAPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEiNpCTYAQAAMcAxyTHSMfYx/0UxwEUxyUUx0sM="
+.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkKP7//8X+f4Qk6AAAAMX+f0QkOMX+f0QkGPMPf0QkCEiNpCTYAQAAMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_sha1_finalize_scratch_avx_bmi = sym super::sha1::vg_sha1_finalize_scratch_avx_bmi::vg_sha1_finalize_scratch_avx_bmi,
         vg_sha1_compress_avx_bmi = sym super::sha1::vg_sha1_compress_avx_bmi::vg_sha1_compress_avx_bmi,
