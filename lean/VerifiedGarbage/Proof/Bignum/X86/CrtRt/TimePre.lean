@@ -454,6 +454,87 @@ theorem coefficientP_relCT_W {W : Nat} (fitsW : 8 * preW args 0 ≤ bc len .wide
   · exact (wideCoefficientP_relCT hc fitsW).mono
       (fun _ _ h => ⟨h.1.1.head _ rfl, h.1.2.head _ rfl⟩) fun _ _ h => h
 
+
+end
+
+/-! ## `sized true` -/
+
+section
+variable {s t : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {sp : BitVec 32}
+open VG.Proof.Bignum.X86.Crt (componentValue)
+
+/-- Both factors' cached values of the components `m₀` holds, and argument 18 apart. -/
+structure PreAll (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (m₀ : Mem) (s : State) : Prop where
+  p0 : PreR2 s base bytes len args 0 (safeM (componentValue m₀ args 6))
+  p1 : PreR2 s base bytes len args 1 (safeM (componentValue m₀ args 8))
+  o0 : PreOut s args len 0
+  o1 : PreOut s args len 1
+  w : ArgWr s
+
+theorem PreAll.keepBody {m₀ : Mem} (h : RIn base bytes len args s) (A : PreAll base bytes len args m₀ s)
+    {regs : List Reg} (K : Keeps regs s t) (sp : .esp ∉ regs)
+    (F : Frame (rtBody base (byteAddr (args 0)) bytes len (s.gpr .esp)) s.mem t.mem) :
+    PreAll base bytes len args m₀ t :=
+  ⟨A.p0.keepBody h A.o0 K sp F, A.p1.keepBody h A.o1 K sp F, A.o0.keep K sp, A.o1.keep K sp, A.w.keep K sp⟩
+
+theorem PreAll.get {m₀ : Mem} (A : PreAll base bytes len args m₀ s) {j : Nat} (hj : j < 2) :
+    PreR2 s base bytes len args j (safeM (componentValue m₀ args (6 + 2 * j))) ∧ PreOut s args len j := by
+  rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl
+  exacts [⟨A.p0, A.o0⟩, ⟨A.p1, A.o1⟩]
+
+/-- The factors' steps with `pre` after `j` of them. -/
+def StP (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (j : Nat) (t : State) : Prop :=
+  Run (CrtExtra base bytes len args) base bytes len args sp t ∧ ∃ m₀ s₀, RIn base bytes len args s₀ ∧
+    Comps base len args m₀ s₀.mem ∧ FacInv base bytes len args m₀ s₀ j t ∧ PreAll base bytes len args m₀ s₀
+
+theorem powP_of {i j k W : Nat} {m₀ : Mem} {s₀ : State} (R : Run (CrtExtra base bytes len args) base bytes len args sp t)
+    (h₀ : RIn base bytes len args s₀) (I : FacInv base bytes len args m₀ s₀ j t)
+    (P : PreR2 s₀ base bytes len args i (safeM (componentValue m₀ args k))) (O : PreOut s₀ args len i)
+    (Aw : ArgWr s₀) (hf : val32 t.mem base (lo len (.slot .wide 10)) (cwc len .wide) = componentValue m₀ args k)
+    (hW : w32 t.mem base lenOff = W) (hk : W = (args (k + 1)).toNat)
+    (hfit : W ≤ bc len .half → 8 * preW args i ≤ bc len .half) :
+    PowP (CrtExtra base bytes len args) base bytes len args sp 10 i W t := by
+  refine ⟨⟨R, by rw [hf]; exact P.keepBody h₀ O I.keeps (by decide) I.frame, Aw.keep I.keeps⟩, hW, fun hle => ⟨?_, hfit hle⟩⟩
+  have bhw := bc_le_wide len .half
+  have cwh := bc_eq_cwc len .half
+  have cww := bc_eq_cwc len .wide
+  refine val32_low (b := cwc len .wide - cwc len .half)
+    (by rw [show cwc len .half + (cwc len .wide - cwc len .half) = cwc len .wide by omega_arith]) ?_
+  rw [hf]
+  exact fits_half (i := k) (by rw [← hk]; exact hle)
+
+theorem stepP_relCT {j : Nat} (hj : j < 2) (hc : SizedChecks) (hlo : 64 ≤ len)
+    (hl : (args (7 + 2 * j)).toNat < len) :
+    RelCT isa (Both (StP base bytes len args sp j)) (factorStep (some j)) (Both (StP base bytes len args sp (j + 1))) := by
+  have lb := len_le_bc len
+  have e6 : (if j = 1 then 8 else 6) = 6 + 2 * j := by rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
+  have e7 : (if j = 1 then 9 else 7) = 7 + 2 * j := by rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
+  have fitW : 8 * preW args j ≤ bc len .wide := fitG_of (i := j) (c := .wide) hlo (by omega)
+  have conv : ∀ {t}, StP base bytes len args sp j t →
+      PowP (CrtExtra base bytes len args) base bytes len args sp 10 j (args (7 + 2 * j)).toNat t := by
+    intro t ⟨R, m₀, s₀, h₀, c, I, A⟩
+    have G := A.get hj
+    refine powP_of R h₀ I G.1 G.2 A.w (k := 6 + 2 * j) ?_ ?_ (by rw [show 6 + 2 * j + 1 = 7 + 2 * j by omega]) ?_
+    · rw [I.f₁, e6]
+    · rw [I.l₁, e7]
+    · exact fun hle => fitG_of (i := j) (c := .half) hlo hle
+  have tr : RelCT isa (Both (StP base bytes len args sp j)) (factorStep (some j)) fun _ _ => True := by
+    unfold factorStep
+    exact VG.RelCT.seq ((powerP_relCT (Ex := CrtExtra base bytes len args) (base := base) (bytes := bytes)
+      (len := len) (args := args) (sp := sp) (by omega) fitW hc.p rhChecks.1 (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide)).mono (fun _ _ h => ⟨_, conv h.1, conv h.2⟩) fun _ _ h => h)
+      (VG.RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) hc.swaps)
+  have step : ∀ {t}, StP base bytes len args sp j t → WP isa (factorStep (some j)) t (StP base bytes len args sp (j + 1)) := by
+    intro t ⟨R, m₀, s₀, h₀, c, I, A⟩
+    have G := A.get hj
+    refine WP.mono (facStep_ok c I.inp.crt.dpLen I.inp.crt.dqLen hj I (pc := some j)
+      (by show PreR2 _ _ _ _ _ _ _; rw [e6]; exact G.1.keepBody h₀ G.2 I.keeps (by decide) I.frame)
+      ⟨fitW, fun hle => fitG_of (i := j) (c := .half) hlo (by rw [e7] at hle; exact hle)⟩) fun u ⟨I', _⟩ => ?_
+    have K := Keeps.of_common I.keeps I'.keeps
+    exact ⟨⟨I'.inp, R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩, m₀, s₀, h₀, c, I', A⟩
+  exact (tr.wp (F₁ := StP base bytes len args sp (j + 1)) (F₂ := StP base bytes len args sp (j + 1))
+    fun _ _ h => ⟨step h.1, step h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+
 end
 
 end VG.Proof.Bignum.X86.CrtRt
