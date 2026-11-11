@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PublicRt
+public import VerifiedGarbage.Impl.Bignum.X86.R2Words
 
 /-! # Public RSA modulus precomputation on i686, at a width read at run time
 
@@ -11,10 +12,9 @@ every number, so that its pieces serve here: the numbers are at `256 + j B`
 in the working space (`edi`), the modulus `M` number 0 and the power of two
 number 4, and the range of `vg_rsa_mont_mul_at` from `256 + 5 B`.
 
-`R² mod M`, for `R = 2^(8 B)`: number 4 starts at `2^(8 (n_len - 1))`, below
-`M` (whose first byte is not zero, and which is odd), and is doubled modulo
-`M` up to `2^(9 B + B / 8) = R 2^(B / 8)`; six Montgomery squares, by calls
-of `vg_rsa_mont_mul_at`, double the exponent of two above `R` each time, to
+`R² mod M`, for `R = 2^(8 B)`: number 4 set to `2^(10 B) mod M` by word
+steps (`R2Words.run`), then two Montgomery squares, by calls of
+`vg_rsa_mont_mul_at`, double the exponent of two above `R` each time, to
 `R 2^(8 B) = R²`. Then `M` and `R² mod M` are copied to `pre`. Only the
 public modulus and its length choose branches.
 -/
@@ -22,7 +22,7 @@ public modulus and its length choose branches.
 @[expose] public section
 namespace VG.Impl.Bignum.X86.PrecomputeFn
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86.PublicContext
-open VG.Impl.Bignum.X86.PublicRt (argAt widthB slotPtr zero load double invOff numOff)
+open VG.Impl.Bignum.X86.PublicRt (argAt widthB slotPtr zero load invOff numOff)
 
 def entry : List Instr :=
   [.mov .eax (.mem (PublicFn.argument 4))] ++ PublicFn.save ++ [.mov .edi (.reg .eax)]
@@ -35,21 +35,9 @@ def failure : Prog isa :=
 /-- Argument 1 set to `n_len`. -/
 def setWidth : List Instr := [.mov .eax (.mem (argAt 0 3)), .store (argAt 0 1) .eax]
 
-/-- Number 4 set to `2^(8 (n_len - 1))`: zeroed, then its byte `n_len - 1` one. -/
-def seed : Prog isa :=
-  .seq (zero 4) (.block (slotPtr .ebp 4 .ecx ++ [.mov .ecx (.mem (argAt 0 1)), .alu .add .ebp (.reg .ecx),
-    .alu .sub .ebp (.imm 1), .mov .eax (.imm 1), .store8 (at_ .ebp 0) .al]))
-
-/-- `esi = 65 W + 8 - 8 n_len` for `W = ⌈n_len / 8⌉`: the doublings from the seed to `2^(65 W)`. -/
-def count : List Instr :=
-  [.mov .esi (.mem (argAt 0 1)), .alu .add .esi (.imm 7), .shift .shr .esi 3, .mov .eax (.reg .esi)] ++
-    List.replicate 6 (.alu .add .eax (.reg .eax)) ++
-    [.alu .add .esi (.reg .eax), .alu .add .esi (.imm 8), .mov .eax (.mem (argAt 0 1))] ++
-    List.replicate 3 (.alu .add .eax (.reg .eax)) ++ [.alu .sub .esi (.reg .eax)]
-
-/-- Six Montgomery squares of number 4, `esi` counting them. -/
+/-- Two Montgomery squares of number 4, `esi` counting them. -/
 def squares : Prog isa :=
-  .seq (.block [.mov .esi (.imm 6)])
+  .seq (.block [.mov .esi (.imm 2)])
     (.loop (.seq (PublicRt.mul 4 4 4 5) (.block [.alu .sub .esi (.imm 1)])) .ne)
 
 /-- Number `j` to the words at `pre` (argument 0), `B` bytes into it when `hi`. -/
@@ -59,12 +47,10 @@ def copyOut (j : Nat) (hi : Bool) : Prog isa :=
     (.loop (.block [.mov .eax (.mem (at_ .esi 0)), .store (at_ .ebp 0) .eax, .alu .add .esi (.imm 4),
       .alu .add .ebp (.imm 4), .alu .sub .ecx (.imm 4)]) .ne)
 
-/-- The modulus read, `-M⁻¹ mod 2³²` at 152, and number 4 doubled from the seed to `2^(65 W) mod M`. -/
+/-- The modulus read, `-M⁻¹ mod 2³²` at 152, and number 4 set to `2^(10 B) mod M`. -/
 def start : Prog isa :=
   .seq (load 0 2 3) <|
-  .seq (.block (VG.Impl.Mont.X86.Dynamic.setupInverse numOff invOff)) <|
-  .seq seed <|
-  .seq (.block count) (.loop (PublicRt.doubleStep 4) .ne)
+  .seq (.block (VG.Impl.Mont.X86.Dynamic.setupInverse numOff invOff)) R2Words.run
 
 /-- `M` and `R² mod M` to `pre`, and 1 returned. -/
 def finish : Prog isa :=
