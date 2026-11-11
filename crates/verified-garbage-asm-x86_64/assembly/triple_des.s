@@ -1368,6 +1368,15 @@ vg_triple_des_expand_key:
 	mov QWORD PTR [rsp+504], r11
 	mov QWORD PTR [rsp+512], r11
 	lea rsp, [rsp+520]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-520]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+520]
+	xor eax, eax
+	xor ecx, ecx
+	xor esi, esi
+	xor r11d, r11d
 	ret
 	.p2align 6
 

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.Frame
 public import VerifiedGarbage.Proof.TripleDes.X86_64.SpSafe
 public import VerifiedGarbage.Proof.TripleDes.X86_64.EcbCall.Verified
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Lit
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Verified
@@ -50,10 +51,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 namespace VG.Artifacts.TripleDes.X86_64
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.expandKeyApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 520 .rcx 64 Impl.TripleDes.X86_64.Key.expandKey
-    stack := 520
-    verified := Proof.TripleDes.X86_64.expandKey_framed },
+  Spec.TripleDes.expandKeyApi.artifact X86_64.target Proof.TripleDes.X86_64.Scrub.expandKeyReg,
   Spec.TripleDes.ecbEncryptApi.artifact X86_64.target {
     suffix := "_avx512"
     code := Impl.StackScratch.X86_64.withStackScratchWiped 1032 .rcx 128
