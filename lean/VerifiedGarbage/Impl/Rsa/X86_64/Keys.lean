@@ -424,11 +424,33 @@ def finish (iV iX₂ : Nat) : List (Prog isa) := [
   .block (nonNeg aF ++ base aA .r8 ++ base aS .rsi), wordLoop 0 selBody,
   copyI iV aA, copyI iX₂ aT]
 
+/-- `finish` without the doublings: `t := a mod m`, `t := m - t` if `f < 0`
+and a last subtraction (so `t < m`, `t ≡ ±a`), `[v] = |f|` and `[x₂] = t`,
+for a caller that scales `t` by `2^(5 B)` itself. -/
+def finishS (iV iX₂ : Nat) : List (Prog isa) := [
+  .block unwin, zeroI aT,
+  .block (countN ++ base aA .r8 ++ ([.mov .rax (.mem (ix .r8 .r13)), .shift .shr .rax 63, .mov32 .r15 (.imm 0),
+    .alu .sub .r15 (.reg .rax), .mov32 .rbp (.imm 0)] : List Instr) ++ base aT .rbx ++ base aP .r10),
+  wordLoop 0 addMBody] ++ csubT ++ [
+  .block (([.mov32 .rbp (.imm 0)] : List Instr) ++ base aP .r8 ++ base aT .r10 ++ base aS .rsi), wordLoop 0 subBody,
+  .block (nonNeg aF ++ base aT .r8 ++ base aS .rsi), wordLoop 0 selBody] ++ csubT ++ [
+  zeroI aA,
+  .block (countN ++ ([.mov32 .rbp (.imm 0)] : List Instr) ++ base aA .r8 ++ base aF .r10 ++ base aS .rsi),
+  wordLoop 0 subBody,
+  .block (isNeg aF ++ base aA .r8 ++ base aF .rsi), wordLoop 0 selBody,
+  .block (nonNeg aF ++ base aA .r8 ++ base aS .rsi), wordLoop 0 selBody,
+  copyI iV aA, copyI iX₂ aT]
+
 end Inv
 
 /-- The inverse at the width `n` in `r13`. -/
 def inverseN (iU iV iX₂ iM : Nat) : Prog isa :=
   seqs (Inv.start iU iM ++ [.loop Inv.batch .ne] ++ Inv.finish iV iX₂)
+
+/-- `inverseN` without the final doublings (`Inv.finishS`): `[x₂] ≤ m` with
+`[x₂] 2^(5 B) a ≡ [v] (mod m)`, `B = 3 n + 2`. -/
+def inverseNS (iU iV iX₂ iM : Nat) : Prog isa :=
+  seqs (Inv.start iU iM ++ [.loop Inv.batch .ne] ++ Inv.finishS iV iX₂)
 
 /-- The inverse at the width `w`. -/
 def inverse (iU iV iX₂ iM : Nat) : Prog isa :=
@@ -624,9 +646,55 @@ def wordChoice (j : Nat) : Prog isa := .seq (.block wordGuardHead) (.seq (.block
   (.ite .e (.seq (seqs (divisor j)) (.seq (.block WordDivide.normalize) WordDivide.code))
     (seqs (divisor j ++ [divmod aU aV aC aT]))))
 
+/-- `a` where the public guard of `wordChoice` holds, else `b`. -/
+def guarded (a b : Prog isa) : Prog isa := .seq (.block wordGuardHead) (.seq (.block wordGuardTail) (.ite .e a b))
+
+/-- The array that keeps `d` while `qTail` uses `WordDivide`'s dividend. -/
+def aSv : Nat := 10
+
+/-- `r13 := n = w / 2` and `rax := K - 1` for the inverse's `K = 5 B = 15 n + 10`,
+from `w` in `r12`. -/
+def tailK : List Instr :=
+  [.mov .r13 (.reg .r12), .shift .shr .r13 1, .mov .rax (.reg .r13), .shift .shl .rax 4,
+    .alu .sub .rax (.reg .r13), .alu .add .rax (.imm 9)]
+
+/-- `r11 := (K - 1) mod 64 + 1`, the doublings (`1` to `64`), and `r12 := n + 1`. -/
+def dblSetup : List Instr :=
+  ws ++ tailK ++ [.mov .r11 (.reg .rax), .alu .and .r11 (.imm 63), .alu .add .r11 (.imm 1),
+    .mov .r12 (.reg .r13), .alu .add .r12 (.imm 1)]
+
+/-- `[x₂] := 2 [x₂]` over its low `r12 = n + 1` words, and `r11` less one. -/
+def tailDbl : Prog isa :=
+  seqs [.block (([.mov32 .rbp (.imm 0)] : List Instr) ++ base aX₂ .rbx), wordLoop 0 shlBody,
+    .block [.alu .sub .r11 (.imm 1)]]
+
+/-- `r13 := ⌊(K - 1) / 64⌋`, `r12 := w - r13`, `rsi` at `[x₂]` and `rbx` at
+word `r13` of `[d]`: `copyWords` then puts `[x₂] 2^(64 r13)` into `[d]`. -/
+def place : List Instr :=
+  ws ++ tailK ++ [.shift .shr .rax 6, .mov .r13 (.reg .rax), .alu .sub .r12 (.reg .r13), .shift .shl .r13 3] ++
+    base aX₂ .rsi ++ base aD .rbx ++ [.alu .add .rbx (.reg .r13)]
+
+/-- On the guarded path, `[x₂] := [x₂] 2^K mod p` for the inverse's
+`K = 5 B = 15 n + 10`: `[x₂]` doubled `(K - 1) mod 64 + 1` times, placed
+`⌊(K - 1) / 64⌋` words up in `WordDivide`'s dividend `[d]` (kept in
+`[aSv]`), and reduced by `WordDivide` modulo `p` (normalized). -/
+def qTail : List (Prog isa) := [
+  zeroA aSv, copyA aSv aD,
+  .seq (.block dblSetup) (.loop tailDbl .ne),
+  zeroA aD, .seq (.block place) copyWords,
+  zeroA aC, copyA aC aP, .seq (.block WordDivide.normalize) WordDivide.code,
+  zeroA aX₂, copyA aX₂ aV, copyA aD aSv]
+
+/-- `invPart` with the inverse's doublings replaced by `qTail` on the
+guarded path: the same `inverseN` elsewhere. -/
+def invPartW : List (Prog isa) :=
+  [guarded (.seq (.block (ws ++ nPQ)) (inverseNS aQ aV aX₂ aP)) (.seq (.block (ws ++ nPQ)) (inverseN aQ aV aX₂ aP)),
+    zeroA aC, .block (setOneA aC)] ++
+    (eqA aV aC ++ [.block andZero, guarded (seqs qTail) (.block [])])
+
 /-- The computation, once `n` is known valid. -/
 def main : Prog isa := seqs ([
-  .block head] ++ loadA aN sN sK ++ loadA aP sP sPl ++ loadA aQ sQ sQl ++ loadA aD sD sDl ++ pqCheck ++ invPart ++
+  .block head] ++ loadA aN sN sK ++ loadA aP sP sPl ++ loadA aQ sQ sQl ++ loadA aD sD sDl ++ pqCheck ++ invPartW ++
   -- `dP = d mod (p - 1)` into `aX₁` and `dQ = d mod (q - 1)` in `aV`.
   [wordChoice aP, zeroA aX₁, copyA aX₁ aV, wordChoice aQ] ++
   storeA aX₂ sQi sPl sMask ++ storeA aX₁ sDp sPl sMask ++ storeA aV sDq sQl sMask ++
