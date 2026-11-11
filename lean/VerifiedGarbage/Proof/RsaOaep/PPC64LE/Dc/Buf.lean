@@ -58,7 +58,7 @@ theorem offs' : oEm = 0 ∧ oSt = 1024 ∧ oDig = 1280 ∧ oW = 1352 ∧ oBuf = 
   ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 section
-variable {s : State} (P : PreD s) {m : Mem} {rc : Nat}
+variable {pc : Bool} {s : State} (P : PreD pc s) {m : Mem} {rc : Nat}
 include P
 
 /-- The buffer cleared. -/

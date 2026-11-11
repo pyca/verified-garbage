@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Verified
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Verified
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.VerifiedP
 
 /-!
 # RSAES-OAEP on PPC64LE: the instances emitted
@@ -9,7 +10,7 @@ public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Verified
 Untrusted: everything here is checked by Lean. What the registration checks
 of the hash functions whose tables a function takes (`OK`), and the
 instances' proofs against the contracts it states: encryption (`enc_ok`)
-and decryption (`dec_ok`), with both hash functions any of `vs`' tables.
+and decryption (`dec_ok`, and with the key's precomputed values `decP_ok`), with both hash functions any of `vs`' tables.
 -/
 
 @[expose] public section
@@ -38,5 +39,10 @@ theorem enc_ok (vs : List MVar) (hok : OK vs) :
 theorem dec_ok (vs : List MVar) (hok : OK vs) :
     Verified PPC64LE.target (Impl.RsaOaep.PPC64LE.Dec.decrypt (fns3 vs)) (Dec.decSpec (tables vs)) :=
   Dec.dec_verified hok.1 (let ⟨_, hw⟩ := hok.mem; Dec.dec_sat hw hok.2.1)
+
+/-- `vg_rsa_oaep_decrypt_precomputed`, with the tables of `vs`. -/
+theorem decP_ok (vs : List MVar) (hok : OK vs) :
+    Verified PPC64LE.target (Impl.RsaOaep.PPC64LE.Dec.decryptP (fns3 vs)) (Dec.decSpecP (tables vs)) :=
+  Dec.decP_verified hok.1 (let ⟨_, hw⟩ := hok.mem; Dec.decP_sat hw hok.2.1)
 
 end VG.Proof.RsaOaep.PPC64LE

@@ -50,7 +50,7 @@ theorem writeBytes_at (m : Mem) (q : Addr) (xs : List Byte) {i : Nat} (hi : i < 
   rw [ifp hi]
 
 section
-variable {s : State} (P : PreD s)
+variable {pc : Bool} {s : State} (P : PreD pc s)
 include P
 
 theorem labB_eq {m : Mem} (hm : Frame [kD s, scR s] s.mem m) :
