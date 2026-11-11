@@ -686,6 +686,42 @@ vg_dsa_derive_key_checked:
 	cmp r15, r14
 	adc rcx, 0
 	or rcx, r9
+	mov rax, QWORD PTR [r10+r12*8-16]
+	mul rcx
+	mov r9, rax
+	mov r11, rdx
+	mov rax, QWORD PTR [r10+r12*8-8]
+	mul rcx
+	add rax, r11
+	adc rdx, 0
+	mov r13, QWORD PTR [rbx+r12*8-24]
+	sub r13, r9
+	mov r14, QWORD PTR [rbx+r12*8-16]
+	sbb r14, rax
+	mov r15, QWORD PTR [rbx+r12*8-8]
+	sbb r15, rdx
+	mov r11, r15
+	add r11, r11
+	sbb r11, r11
+	add rcx, r11
+	mov rax, QWORD PTR [r10+r12*8-16]
+	and rax, r11
+	mov rdx, QWORD PTR [r10+r12*8-8]
+	and rdx, r11
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov r11, r15
+	add r11, r11
+	sbb r11, r11
+	add rcx, r11
+	mov rax, QWORD PTR [r10+r12*8-16]
+	and rax, r11
+	mov rdx, QWORD PTR [r10+r12*8-8]
+	and rdx, r11
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
 	mov rax, QWORD PTR [r10]
 	mul rcx
 	mov r9, rdx
@@ -731,40 +767,21 @@ vg_dsa_derive_key_checked:
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
-	mov rax, QWORD PTR [r8+r12*8]
-	add rax, rax
-	sbb r11, r11
-	mov ebp, 0
-	mov r14, 0
-251:
-	mov rax, QWORD PTR [r10+r14*8]
-	and rax, r11
-	add rbp, rbp
-	adc rax, QWORD PTR [r8+r14*8]
-	sbb rbp, rbp
-	mov QWORD PTR [r8+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 251b
-	mov rax, QWORD PTR [r8+r12*8]
-	add rbp, rbp
-	adc rax, 0
-	mov QWORD PTR [r8+r12*8], rax
 	mov rsi, r8
 	mov r14, 0
-252:
+251:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 252b
+	jne 251b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
 	jne 248b
 	mov eax, 2
 	mov QWORD PTR [rdi+208], rax
-253:
+252:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -772,7 +789,7 @@ vg_dsa_derive_key_checked:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 253b
+	jne 252b
 236:
 	jmp 234f
 233:
@@ -782,11 +799,11 @@ vg_dsa_derive_key_checked:
 	mov r8, QWORD PTR [rdi+96]
 	mov eax, 0
 	mov r14, 0
-254:
+253:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 254b
+	jne 253b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
@@ -799,7 +816,7 @@ vg_dsa_derive_key_checked:
 	add rcx, rcx
 	add rcx, rcx
 	mov QWORD PTR [rdi+208], rcx
-255:
+254:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -807,7 +824,7 @@ vg_dsa_derive_key_checked:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-256:
+255:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -815,14 +832,14 @@ vg_dsa_derive_key_checked:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 256b
+	jne 255b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-257:
+256:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -830,13 +847,13 @@ vg_dsa_derive_key_checked:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 257b
+	jne 256b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-258:
+257:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -845,21 +862,21 @@ vg_dsa_derive_key_checked:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 258b
+	jne 257b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 255b
+	jne 254b
 234:
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-259:
+258:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 259b
+	jne 258b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -869,7 +886,7 @@ vg_dsa_derive_key_checked:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-260:
+259:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -877,16 +894,16 @@ vg_dsa_derive_key_checked:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 261f
-	jmp 262f
-261:
+	je 260f
+	jmp 261f
+260:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-262:
+261:
 	test rdx, rdx
-	jne 260b
+	jne 259b
 	mov edx, 6
 	mov ecx, 4
 	mov r8d, 7
@@ -899,12 +916,12 @@ vg_dsa_derive_key_checked:
 	mov rsi, QWORD PTR [rdi+104]
 	mov rbx, QWORD PTR [rdi+96]
 	mov r14, 0
-263:
+262:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 263b
+	jne 262b
 	mov rax, QWORD PTR [rdi+128]
 	mov rdx, QWORD PTR [rax+144]
 	mov QWORD PTR [rdi+136], rdx
@@ -925,12 +942,12 @@ vg_dsa_derive_key_checked:
 	mov rsi, QWORD PTR [rdi+112]
 	mov rbx, QWORD PTR [rdi+208]
 	mov r14, 0
-264:
+263:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 264b
+	jne 263b
 	mov rax, QWORD PTR [rdi+208]
 	mov rdx, QWORD PTR [rdi+48]
 	add rdx, 2
@@ -943,25 +960,25 @@ vg_dsa_derive_key_checked:
 	mov rsi, QWORD PTR [rdi+96]
 	mov rbx, QWORD PTR [rdi+208]
 	mov r14, 0
+264:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov QWORD PTR [rbx+r14*8], rax
+	add r14, 1
+	cmp r14, r12
+	jne 264b
+	mov r12, QWORD PTR [rdi+48]
+	mov rsi, QWORD PTR [rdi+96]
+	mov rbx, QWORD PTR [rdi+104]
+	mov r14, 0
 265:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
 	jne 265b
-	mov r12, QWORD PTR [rdi+48]
-	mov rsi, QWORD PTR [rdi+96]
-	mov rbx, QWORD PTR [rdi+104]
-	mov r14, 0
-266:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov QWORD PTR [rbx+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 266b
 	mov eax, 14
 	mov QWORD PTR [rdi+160], rax
-267:
+266:
 	mov edx, 5
 	mov ecx, 5
 	mov r8d, 4
@@ -978,24 +995,24 @@ vg_dsa_derive_key_checked:
 	mov rsi, QWORD PTR [rdi+104]
 	mov rbx, QWORD PTR [rdi+208]
 	mov r14, 0
-268:
+267:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 268b
+	jne 267b
 	mov rax, QWORD PTR [rdi+160]
 	sub rax, 1
 	mov QWORD PTR [rdi+160], rax
-	jne 267b
-269:
+	jne 266b
+268:
 	mov rax, QWORD PTR [rdi+136]
 	mov rcx, QWORD PTR [rdi+152]
 	movzx eax, BYTE PTR [rax+rcx*1]
 	mov QWORD PTR [rdi+168], rax
 	mov eax, 2
 	mov QWORD PTR [rdi+160], rax
-270:
+269:
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 6
@@ -1026,7 +1043,7 @@ vg_dsa_derive_key_checked:
 	mov QWORD PTR [rdi+208], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-271:
+270:
 	mov r15, QWORD PTR [rdi+224]
 	mov rcx, QWORD PTR [rdi+208]
 	mov r12, QWORD PTR [rdi+48]
@@ -1118,7 +1135,7 @@ vg_dsa_derive_key_checked:
 	mov rax, r10
 	add rax, r11
 	mov r14d, 0
-272:
+271:
 	movdqu xmm0, XMMWORD PTR [rcx+r14*8]
 	pand xmm0, xmm8
 	movdqu xmm1, XMMWORD PTR [rdx+r14*8]
@@ -1148,14 +1165,14 @@ vg_dsa_derive_key_checked:
 	movdqu XMMWORD PTR [rbx+r14*8], xmm0
 	add r14, 2
 	cmp r14, r13
-	jne 272b
+	jne 271b
 	add rax, r11
 	mov QWORD PTR [rdi+208], rax
 	mov rax, r15
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, 16
-	jne 271b
+	jne 270b
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 5
@@ -1163,12 +1180,12 @@ vg_dsa_derive_key_checked:
 	mov rax, QWORD PTR [rdi+160]
 	sub rax, 1
 	mov QWORD PTR [rdi+160], rax
-	jne 270b
+	jne 269b
 	mov rax, QWORD PTR [rdi+152]
 	add rax, 1
 	mov QWORD PTR [rdi+152], rax
 	cmp rax, QWORD PTR [rdi+144]
-	jne 269b
+	jne 268b
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 7
@@ -1181,23 +1198,23 @@ vg_dsa_derive_key_checked:
 	mov edx, 0
 	mov r14, rsi
 	add r14, rcx
-273:
+272:
 	mov rbp, rdx
 	and rbp, 7
-	je 274f
-	jmp 275f
-274:
+	je 273f
+	jmp 274f
+273:
 	mov rbp, rdx
 	shr rbp, 3
 	mov rax, QWORD PTR [rbx+rbp*8]
 	and rax, r15
-275:
+274:
 	sub r14, 1
 	mov BYTE PTR [r14], al
 	shr rax, 8
 	add rdx, 1
 	cmp rdx, rcx
-	jne 273b
+	jne 272b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rsi, rdi
 	add rsi, 15328
@@ -1205,14 +1222,14 @@ vg_dsa_derive_key_checked:
 	add rdx, 15712
 	mov rcx, QWORD PTR [rdi+328]
 	mov r8, -1
-276:
+275:
 	movzx eax, BYTE PTR [rsi]
 	and rax, r8
 	mov BYTE PTR [rdx], al
 	add rsi, 1
 	add rdx, 1
 	sub rcx, 1
-	jne 276b
+	jne 275b
 	mov rax, QWORD PTR [rdi+272]
 	mov QWORD PTR [rdi+128], rax
 	mov rax, QWORD PTR [rdi+328]
@@ -1222,11 +1239,11 @@ vg_dsa_derive_key_checked:
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-277:
+276:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 277b
+	jne 276b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -1236,7 +1253,7 @@ vg_dsa_derive_key_checked:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-278:
+277:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -1244,38 +1261,38 @@ vg_dsa_derive_key_checked:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 279f
-	jmp 280f
-279:
+	je 278f
+	jmp 279f
+278:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-280:
+279:
 	test rdx, rdx
-	jne 278b
+	jne 277b
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r10, QWORD PTR [rdi+64]
 	mov ebp, 0
 	mov r14, 0
-281:
+280:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 281b
+	jne 280b
 	mov r15, QWORD PTR [rbx]
 	shr r15, 1
 	mov r14, 1
-282:
+281:
 	mov rax, QWORD PTR [rbx+r14*8]
 	or r15, rax
 	add r14, 1
 	cmp r14, r12
-	jne 282b
+	jne 281b
 	cmp r15, 1
 	sbb rax, rax
 	xor rax, -1
@@ -1292,11 +1309,11 @@ vg_dsa_derive_key_checked:
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-283:
+282:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 283b
+	jne 282b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -1306,7 +1323,7 @@ vg_dsa_derive_key_checked:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-284:
+283:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -1314,38 +1331,38 @@ vg_dsa_derive_key_checked:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 285f
-	jmp 286f
-285:
+	je 284f
+	jmp 285f
+284:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-286:
+285:
 	test rdx, rdx
-	jne 284b
+	jne 283b
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r10, QWORD PTR [rdi+64]
 	mov ebp, 0
 	mov r14, 0
-287:
+286:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 287b
+	jne 286b
 	mov r15, QWORD PTR [rbx]
 	shr r15, 1
 	mov r14, 1
-288:
+287:
 	mov rax, QWORD PTR [rbx+r14*8]
 	or r15, rax
 	add r14, 1
 	cmp r14, r12
-	jne 288b
+	jne 287b
 	cmp r15, 1
 	sbb rax, rax
 	xor rax, -1
@@ -1367,7 +1384,7 @@ vg_dsa_derive_key_checked:
 	mov QWORD PTR [rbx], rax
 	sbb rbp, rbp
 	mov r14, 1
-289:
+288:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	sbb rax, 0
@@ -1375,7 +1392,7 @@ vg_dsa_derive_key_checked:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 289b
+	jne 288b
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+160]
 	mov rcx, QWORD PTR [rax+168]
@@ -1384,23 +1401,23 @@ vg_dsa_derive_key_checked:
 	mov edx, 0
 	mov r14, rsi
 	add r14, rcx
-290:
+289:
 	mov rbp, rdx
 	and rbp, 7
-	je 291f
-	jmp 292f
-291:
+	je 290f
+	jmp 291f
+290:
 	mov rbp, rdx
 	shr rbp, 3
 	mov rax, QWORD PTR [rbx+rbp*8]
 	and rax, r15
-292:
+291:
 	sub r14, 1
 	mov BYTE PTR [r14], al
 	shr rax, 8
 	add rdx, 1
 	cmp rdx, rcx
-	jne 290b
+	jne 289b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rax, rdi
 	add rax, 14944
@@ -1419,11 +1436,11 @@ vg_dsa_derive_key_checked:
 	mov r8, QWORD PTR [rdi+120]
 	mov eax, 0
 	mov r14, 0
-293:
+292:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 293b
+	jne 292b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
@@ -1431,46 +1448,46 @@ vg_dsa_derive_key_checked:
 	mov r10, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [r10+r12*8-8]
 	test rax, rax
-	je 294f
+	je 293f
 	mov rax, QWORD PTR [r10+r12*8-8]
 	shr rax, 63
 	xor rax, 1
 	mov rcx, r12
 	and rcx, 3
 	or rax, rcx
-	je 296f
+	je 295f
 	mov rax, QWORD PTR [r10+r12*8-8]
 	mov edx, 1
 	mov ecx, 64
 	cmp rax, 1
-	je 298f
-2100:
+	je 297f
+299:
 	shr rax, 1
 	add rdx, rdx
 	sub rcx, 1
 	cmp rax, 1
-	jne 2100b
-	jmp 299f
+	jne 299b
+	jmp 298f
+297:
 298:
-299:
 	mov QWORD PTR [rdi+208], rcx
 	mov rcx, r12
 	sub rcx, 1
 	mov r8, QWORD PTR [rdi+96]
 	mov eax, 0
 	mov r14, 0
-2101:
+2100:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2101b
+	jne 2100b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
 	mov rcx, QWORD PTR [rdi+208]
 	add rcx, QWORD PTR [rdi+48]
 	mov QWORD PTR [rdi+208], rcx
-2102:
+2101:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -1478,7 +1495,7 @@ vg_dsa_derive_key_checked:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2103:
+2102:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -1486,14 +1503,14 @@ vg_dsa_derive_key_checked:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2103b
+	jne 2102b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2104:
+2103:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1501,13 +1518,13 @@ vg_dsa_derive_key_checked:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2104b
+	jne 2103b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2105:
+2104:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1516,14 +1533,14 @@ vg_dsa_derive_key_checked:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2105b
+	jne 2104b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2102b
+	jne 2101b
 	mov eax, 6
 	mov QWORD PTR [rdi+208], rax
-2106:
+2105:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -1531,16 +1548,16 @@ vg_dsa_derive_key_checked:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2106b
-	jmp 297f
-296:
+	jne 2105b
+	jmp 296f
+295:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2107:
+2106:
 	mov eax, 0
 	add rbp, rbp
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1548,14 +1565,14 @@ vg_dsa_derive_key_checked:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2107b
+	jne 2106b
 	mov rsi, QWORD PTR [r10+r12*8-8]
 	mov rdx, rsi
 	xor rdx, -1
 	mov rax, -1
 	mov ecx, 0
 	mov r13d, 64
-2108:
+2107:
 	add rax, rax
 	adc rdx, rdx
 	sbb r11, r11
@@ -1569,12 +1586,12 @@ vg_dsa_derive_key_checked:
 	add rcx, rcx
 	sub rcx, r15
 	sub r13, 1
-	jne 2108b
+	jne 2107b
 	mov QWORD PTR [r8], rcx
 	mov rcx, QWORD PTR [rdi+48]
 	shr rcx, 2
 	mov QWORD PTR [rdi+208], rcx
-2109:
+2108:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -1612,6 +1629,42 @@ vg_dsa_derive_key_checked:
 	cmp r15, r14
 	adc rcx, 0
 	or rcx, r9
+	mov rax, QWORD PTR [r10+r12*8-16]
+	mul rcx
+	mov r9, rax
+	mov r11, rdx
+	mov rax, QWORD PTR [r10+r12*8-8]
+	mul rcx
+	add rax, r11
+	adc rdx, 0
+	mov r13, QWORD PTR [rbx+r12*8-24]
+	sub r13, r9
+	mov r14, QWORD PTR [rbx+r12*8-16]
+	sbb r14, rax
+	mov r15, QWORD PTR [rbx+r12*8-8]
+	sbb r15, rdx
+	mov r11, r15
+	add r11, r11
+	sbb r11, r11
+	add rcx, r11
+	mov rax, QWORD PTR [r10+r12*8-16]
+	and rax, r11
+	mov rdx, QWORD PTR [r10+r12*8-8]
+	and rdx, r11
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov r11, r15
+	add r11, r11
+	sbb r11, r11
+	add rcx, r11
+	mov rax, QWORD PTR [r10+r12*8-16]
+	and rax, r11
+	mov rdx, QWORD PTR [r10+r12*8-8]
+	and rdx, r11
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
 	mov rax, QWORD PTR [r10]
 	mul rcx
 	mov r9, rdx
@@ -1620,7 +1673,7 @@ vg_dsa_derive_key_checked:
 	mov QWORD PTR [r8], rdx
 	sbb rbp, rbp
 	mov r14, 1
-2110:
+2109:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, r9
@@ -1633,7 +1686,7 @@ vg_dsa_derive_key_checked:
 	mov QWORD PTR [r8+r14*8], rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2110b
+	jne 2109b
 	mov rdx, QWORD PTR [rbx+r12*8-8]
 	add rbp, rbp
 	sbb rdx, r9
@@ -1643,7 +1696,7 @@ vg_dsa_derive_key_checked:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2111:
+2110:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -1652,45 +1705,26 @@ vg_dsa_derive_key_checked:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2111b
-	mov rax, QWORD PTR [r8+r12*8]
-	add rbp, rbp
-	adc rax, 0
-	mov QWORD PTR [r8+r12*8], rax
-	mov rax, QWORD PTR [r8+r12*8]
-	add rax, rax
-	sbb r11, r11
-	mov ebp, 0
-	mov r14, 0
-2112:
-	mov rax, QWORD PTR [r10+r14*8]
-	and rax, r11
-	add rbp, rbp
-	adc rax, QWORD PTR [r8+r14*8]
-	sbb rbp, rbp
-	mov QWORD PTR [r8+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 2112b
+	jne 2110b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov rsi, r8
 	mov r14, 0
-2113:
+2111:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2113b
+	jne 2111b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2109b
+	jne 2108b
 	mov eax, 2
 	mov QWORD PTR [rdi+208], rax
-2114:
+2112:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -1698,21 +1732,21 @@ vg_dsa_derive_key_checked:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2114b
-297:
-	jmp 295f
-294:
+	jne 2112b
+296:
+	jmp 294f
+293:
 	mov r12, QWORD PTR [rdi+48]
 	mov edx, 1
 	mov ecx, 0
 	mov r8, QWORD PTR [rdi+96]
 	mov eax, 0
 	mov r14, 0
-2115:
+2113:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2115b
+	jne 2113b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
@@ -1725,7 +1759,7 @@ vg_dsa_derive_key_checked:
 	add rcx, rcx
 	add rcx, rcx
 	mov QWORD PTR [rdi+208], rcx
-2116:
+2114:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -1733,7 +1767,7 @@ vg_dsa_derive_key_checked:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2117:
+2115:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -1741,14 +1775,14 @@ vg_dsa_derive_key_checked:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2117b
+	jne 2115b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2118:
+2116:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1756,13 +1790,13 @@ vg_dsa_derive_key_checked:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2118b
+	jne 2116b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2119:
+2117:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1771,19 +1805,19 @@ vg_dsa_derive_key_checked:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2119b
+	jne 2117b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2116b
-295:
+	jne 2114b
+294:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 7
 	call {vg_rsa_mont_mul}
 	mov ecx, 8
 	mov QWORD PTR [rdi+208], rcx
-2120:
+2118:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -1791,7 +1825,7 @@ vg_dsa_derive_key_checked:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2121:
+2119:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -1799,14 +1833,14 @@ vg_dsa_derive_key_checked:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2121b
+	jne 2119b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2122:
+2120:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1814,13 +1848,13 @@ vg_dsa_derive_key_checked:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2122b
+	jne 2120b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2123:
+2121:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1829,31 +1863,31 @@ vg_dsa_derive_key_checked:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2123b
+	jne 2121b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2120b
+	jne 2118b
 	mov r8, QWORD PTR [rdi+112]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2124:
+2122:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2124b
+	jne 2122b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2125:
+2123:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2125b
+	jne 2123b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -1862,8 +1896,8 @@ vg_dsa_derive_key_checked:
 	mov QWORD PTR [rdi+184], rsi
 	mov QWORD PTR [rdi+176], rcx
 	test rcx, rcx
-	je 2126f
-2128:
+	je 2124f
+2126:
 	mov rsi, QWORD PTR [rdi+184]
 	movzx eax, BYTE PTR [rsi]
 	mov rbx, QWORD PTR [rdi+72]
@@ -1882,7 +1916,7 @@ vg_dsa_derive_key_checked:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2129:
+2127:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, QWORD PTR [r9+r14*8]
@@ -1890,7 +1924,7 @@ vg_dsa_derive_key_checked:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2129b
+	jne 2127b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
@@ -1898,7 +1932,7 @@ vg_dsa_derive_key_checked:
 	mov rbx, QWORD PTR [rdi+112]
 	mov ebp, 0
 	mov r14, 0
-2130:
+2128:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1906,13 +1940,13 @@ vg_dsa_derive_key_checked:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2130b
+	jne 2128b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2131:
+2129:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1921,14 +1955,14 @@ vg_dsa_derive_key_checked:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2131b
+	jne 2129b
 	mov rax, QWORD PTR [rdi+176]
 	sub rax, 1
 	mov QWORD PTR [rdi+176], rax
-	jne 2128b
-	jmp 2127f
-2126:
-2127:
+	jne 2126b
+	jmp 2125f
+2124:
+2125:
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+160]
 	mov rcx, QWORD PTR [rax+168]
@@ -1937,35 +1971,35 @@ vg_dsa_derive_key_checked:
 	mov edx, 0
 	mov r14, rsi
 	add r14, rcx
-2132:
+2130:
 	mov rbp, rdx
 	and rbp, 7
-	je 2133f
-	jmp 2134f
-2133:
+	je 2131f
+	jmp 2132f
+2131:
 	mov rbp, rdx
 	shr rbp, 3
 	mov rax, QWORD PTR [rbx+rbp*8]
 	and rax, r15
-2134:
+2132:
 	sub r14, 1
 	mov BYTE PTR [r14], al
 	shr rax, 8
 	add rdx, 1
 	cmp rdx, rcx
-	jne 2132b
+	jne 2130b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rax, rdi
 	add rax, 14816
 	mov rsi, rax
 	mov rcx, QWORD PTR [rdi+336]
 	mov r8d, 0
-2135:
+2133:
 	movzx eax, BYTE PTR [rsi]
 	or r8, rax
 	add rsi, 1
 	sub rcx, 1
-	jne 2135b
+	jne 2133b
 	cmp r8, 1
 	sbb rax, rax
 	and rax, QWORD PTR [rdi+360]
@@ -1984,7 +2018,7 @@ vg_dsa_derive_key_checked:
 	mov QWORD PTR [rbx], rax
 	sbb rbp, rbp
 	mov r14, 1
-2136:
+2134:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	sbb rax, 0
@@ -1992,7 +2026,7 @@ vg_dsa_derive_key_checked:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2136b
+	jne 2134b
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+160]
 	mov rcx, QWORD PTR [rax+168]
@@ -2001,23 +2035,23 @@ vg_dsa_derive_key_checked:
 	mov edx, 0
 	mov r14, rsi
 	add r14, rcx
-2137:
+2135:
 	mov rbp, rdx
 	and rbp, 7
-	je 2138f
-	jmp 2139f
-2138:
+	je 2136f
+	jmp 2137f
+2136:
 	mov rbp, rdx
 	shr rbp, 3
 	mov rax, QWORD PTR [rbx+rbp*8]
 	and rax, r15
-2139:
+2137:
 	sub r14, 1
 	mov BYTE PTR [r14], al
 	shr rax, 8
 	add rdx, 1
 	cmp rdx, rcx
-	jne 2137b
+	jne 2135b
 	mov rdi, QWORD PTR [rdi+128]
 	mov r8, QWORD PTR [rdi+360]
 	mov r13, QWORD PTR [rdi+320]
@@ -2030,6 +2064,35 @@ vg_dsa_derive_key_checked:
 	mov rcx, r11
 	add rcx, rcx
 	add rcx, r12
+2138:
+	movzx eax, BYTE PTR [rsi]
+	and rax, r8
+	mov BYTE PTR [rdx], al
+	add rsi, 1
+	add rdx, 1
+	sub rcx, 1
+	jne 2138b
+	mov rdx, r13
+	add rdx, r11
+	add rdx, r11
+	add rdx, r12
+	mov rsi, r9
+	mov rcx, r11
+2139:
+	movzx eax, BYTE PTR [rsi]
+	and rax, r8
+	mov BYTE PTR [rdx], al
+	add rsi, 1
+	add rdx, 1
+	sub rcx, 1
+	jne 2139b
+	mov rdx, r13
+	add rdx, r11
+	add rdx, r11
+	add rdx, r11
+	add rdx, r12
+	mov rsi, r10
+	mov rcx, r12
 2140:
 	movzx eax, BYTE PTR [rsi]
 	and rax, r8
@@ -2038,35 +2101,6 @@ vg_dsa_derive_key_checked:
 	add rdx, 1
 	sub rcx, 1
 	jne 2140b
-	mov rdx, r13
-	add rdx, r11
-	add rdx, r11
-	add rdx, r12
-	mov rsi, r9
-	mov rcx, r11
-2141:
-	movzx eax, BYTE PTR [rsi]
-	and rax, r8
-	mov BYTE PTR [rdx], al
-	add rsi, 1
-	add rdx, 1
-	sub rcx, 1
-	jne 2141b
-	mov rdx, r13
-	add rdx, r11
-	add rdx, r11
-	add rdx, r11
-	add rdx, r12
-	mov rsi, r10
-	mov rcx, r12
-2142:
-	movzx eax, BYTE PTR [rsi]
-	and rax, r8
-	mov BYTE PTR [rdx], al
-	add rsi, 1
-	add rdx, 1
-	sub rcx, 1
-	jne 2142b
 	mov rax, QWORD PTR [rdi+360]
 	and rax, 1
 	mov rbx, QWORD PTR [rdi]
@@ -2084,11 +2118,11 @@ vg_dsa_derive_key_checked:
 	add rcx, QWORD PTR [rdi+336]
 	add rcx, QWORD PTR [rdi+336]
 	mov eax, 0
-2143:
+2141:
 	mov BYTE PTR [rsi], al
 	add rsi, 1
 	sub rcx, 1
-	jne 2143b
+	jne 2141b
 	mov rbx, QWORD PTR [rdi]
 	mov rbp, QWORD PTR [rdi+8]
 	mov r12, QWORD PTR [rdi+16]

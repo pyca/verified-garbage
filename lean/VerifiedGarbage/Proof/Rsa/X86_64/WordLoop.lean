@@ -27,7 +27,7 @@ theorem prefix_step (m : Mem) (B : Addr) {W j : Nat} (hj : 1 ≤ j) (hjW : j ≤
   rw [show slot W aD + 8 * (j - 1) + 8 * 1 = slot W aD + 8 * j by omega_using [hj]]
 
 theorem core_ok {s : State} {B : Addr} {Z W j : Nat} (h : Ws s B Z W)
-    (hZ : slot W 17 ≤ Z) (hW : 4 ≤ W) (hj : 1 ≤ j) (hjW : j ≤ W)
+    (hZ : slot W 17 ≤ Z) (hW : 6 ≤ W) (hj : 1 ≤ j) (hjW : j ≤ W)
     (hc : word s.mem B (slot W aV + 16) = BitVec.ofNat 64 j)
     (hd : 2 ^ 63 ≤ (word s.mem B (slot W aM + 8 * (W / 2 - 1))).toNat)
     (hv : (word s.mem B (slot W aV)).toNat =
@@ -79,7 +79,7 @@ theorem core_ok {s : State} {B : Addr} {Z W j : Nat} (h : Ws s B Z W)
   exact ⟨by rw [v₂, X₁, M₁, hm₁, word_writeW_self], c₂, f02, k02.mono (by simp)⟩
 
 theorem body_ok {s : State} {B : Addr} {Z W j : Nat} (h : Ws s B Z W)
-    (hZ : slot W 17 ≤ Z) (hW : 4 ≤ W) (hj : 1 ≤ j) (hjW : j ≤ W)
+    (hZ : slot W 17 ≤ Z) (hW : 6 ≤ W) (hj : 1 ≤ j) (hjW : j ≤ W)
     (hc : word s.mem B (slot W aV + 16) = BitVec.ofNat 64 j)
     (hd : 2 ^ 63 ≤ (word s.mem B (slot W aM + 8 * (W / 2 - 1))).toNat)
     (hv : (word s.mem B (slot W aV)).toNat =
@@ -143,7 +143,7 @@ theorem body_ok {s : State} {B : Addr} {Z W j : Nat} (h : Ws s B Z W)
 
 /-- The fixed word-count loop computes the entire dividend's remainder. -/
 theorem loop_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
-    (hZ : slot W 17 ≤ Z) (hW : 4 ≤ W)
+    (hZ : slot W 17 ≤ Z) (hW : 6 ≤ W)
     (hc : word s.mem B (slot W aV + 16) = BitVec.ofNat 64 W)
     (ha : s.gpr .rax = BitVec.ofNat 64 W)
     (hd : 2 ^ 63 ≤ (word s.mem B (slot W aM + 8 * (W / 2 - 1))).toNat)

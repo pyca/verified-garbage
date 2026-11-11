@@ -23,7 +23,9 @@ words of `x P` and `m P` for a power of two `P` (Knuth's normalization), but
   top two of the divisor (above the same power of two) is `q ≤ q̂ ≤ q + 1`,
   and `wordStepQ1_val`: then `m` added once if negative is `x 2^64 mod m`;
 * `qhat3_norm`, `quot3_val`: that estimate from `qhat_norm`'s, corrected by
-  `U - q̂ D` over three words (Knuth's step D3).
+  `U - q̂ D` over three words (Knuth's step D3);
+* `norm_inv_step`, `norm_unique`: the shift `P` of a word's normalization,
+  a step at a time, and that it is unique.
 -/
 
 @[expose] public section
@@ -146,6 +148,42 @@ theorem qhat_fix {u2 u1 d : Nat} (hd0 : 0 < d) (hu2 : u2 ≤ d) (hu1 : u1 < 2 ^ 
       have := Nat.mul_le_mul_right (2 ^ 64) (show u2 + 1 ≤ d by omega_using [hd])
       rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm d] at this; omega_using [this, hu1]
     omega_using [this]
+
+/-- A step of normalization on `x = T 2^j`, `p = 2^j`: `j` grows while `x`'s top
+bit is clear: the shift `P = 2^j` of a word `T`'s normalization. -/
+theorem norm_inv_step {x p : BitVec 64} {T j i : Nat} (hj : j ≤ i) (hi : i < 63) (hp : p.toNat = 2 ^ j)
+    (hx : x.toNat = T * 2 ^ j) (hc : j = i ∨ 2 ^ 63 ≤ T * 2 ^ j) :
+    ∃ j' ≤ i + 1, (if x.toNat < 2 ^ 63 then p + p else p).toNat = 2 ^ j' ∧
+      (if x.toNat < 2 ^ 63 then x + x else x).toNat = T * 2 ^ j' ∧ (j' = i + 1 ∨ 2 ^ 63 ≤ T * 2 ^ j') := by
+  by_cases h : x.toNat < 2 ^ 63
+  · simp only [h, ite_true]
+    have hji : j = i := by omega_using [hc, h, hx]
+    have hpj : 2 ^ j ≤ 2 ^ 62 := Nat.pow_le_pow_right (by decide) (by omega_using [hji, hi])
+    refine ⟨j + 1, by omega_using [hj], ?_, ?_, Or.inl (by omega_using [hji])⟩
+    · have e2 : 2 ^ (j + 1) = 2 ^ j + 2 ^ j := by rw [Nat.pow_succ, Nat.mul_two]
+      rw [BitVec.toNat_add, hp, e2]
+      generalize 2 ^ j = a at hpj ⊢
+      omega_using [hpj]
+    · have e2 : T * 2 ^ (j + 1) = T * 2 ^ j + T * 2 ^ j := by rw [Nat.pow_succ, ← Nat.mul_assoc, Nat.mul_two]
+      rw [BitVec.toNat_add, hx, e2]
+      rw [hx] at h
+      generalize T * 2 ^ j = a at h ⊢
+      omega_using [h]
+  · simp only [h, ite_false]
+    exact ⟨j, by omega_using [hj], hp, hx, Or.inr (by omega_using [h, hx])⟩
+
+/-- The normalization shift is unique: at most one `z` puts `⌊M 2^z / B⌋` in
+`[2^63, 2^64)`. -/
+theorem norm_unique {M B a b : Nat} (ha : 2 ^ 63 ≤ M * 2 ^ a / B) (ha' : M * 2 ^ a / B < 2 ^ 64)
+    (hb : 2 ^ 63 ≤ M * 2 ^ b / B) (hb' : M * 2 ^ b / B < 2 ^ 64) : a = b := by
+  have key : ∀ {a b : Nat}, a < b → 2 * (M * 2 ^ a / B) ≤ M * 2 ^ b / B := fun {a b} h => by
+    refine Nat.le_trans (Nat.mul_div_le_mul_div_assoc 2 _ B) (Nat.div_le_div_right ?_)
+    rw [← Nat.mul_assoc, Nat.mul_comm 2 M, Nat.mul_assoc, Nat.mul_comm 2, ← Nat.pow_succ]
+    exact Nat.mul_le_mul_left M (Nat.pow_le_pow_right (by decide) h)
+  rcases Nat.lt_trichotomy a b with h | h | h
+  · have := key h; omega_using [this, ha, hb']
+  · exact h
+  · have := key h; omega_using [this, hb, ha']
 
 /-! ## A 3-by-2 estimate, one add-back -/
 

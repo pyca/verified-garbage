@@ -56,7 +56,7 @@ theorem pins_stepB : Pins StepB [.rbx, .r10, .r8, .r12, .rbp] := by
   · rw [h₁.2.2.2.2.2, h₂.2.2.2.2.2]
 
 theorem step_eq : step =
-    .seq (.block R2Words.bases) (.seq (.block quot) (.seq mulSub (.seq addBack (.seq addBack copyBack)))) := rfl
+    .seq (.block R2Words.bases) (.seq (.block quot) (.seq (.block refine3) (.seq mulSub (.seq addBack copyBack)))) := rfl
 
 /-- A step leaks the same in runs with the same working space. -/
 theorem step_ct : RelCT isa (Two GoodL) step fun _ _ => True := by
@@ -76,14 +76,14 @@ structure StPub where
 /-- What `steps` keeps, after `j` steps. -/
 def StepsAt (p : StPub) (j : Nat) (t : State) : Prop :=
   ∃ (σ : State) (X M T : Nat), StepsInv σ p.L.B p.L.Z p.L.w p.L.minv p.c X M T j t ∧
-    slot p.L.w 8 ≤ p.L.Z ∧ 2 ≤ p.L.w ∧ p.L.w < 2 ^ 30 ∧ p.c < 2 ^ 31 ∧ 0 < M ∧ 2 ^ 63 ≤ T
+    slot p.L.w 8 ≤ p.L.Z ∧ 3 ≤ p.L.w ∧ p.L.w < 2 ^ 30 ∧ p.c < 2 ^ 31 ∧ 0 < M ∧ 2 ^ 63 ≤ T
 
 theorem stepsAt_good {p : StPub} {j : Nat} {t : State} (h : StepsAt p j t) : GoodL p.L t :=
   let ⟨_, _, _, _, hI, hZ, _⟩ := h; ⟨⟨hI.scr, hI.rdi, hI.hdr⟩, hZ⟩
 
 /-- `steps`' hypotheses. -/
 def StepsPre (p : StPub) (s : State) : Prop :=
-  GoodL p.L s ∧ 2 ≤ p.L.w ∧ p.L.w < 2 ^ 30 ∧ 1 ≤ p.c ∧ p.c < 2 ^ 31 ∧ s.gpr .rcx = BitVec.ofNat 64 p.c ∧
+  GoodL p.L s ∧ 3 ≤ p.L.w ∧ p.L.w < 2 ^ 30 ∧ 1 ≤ p.c ∧ p.c < 2 ^ 31 ∧ s.gpr .rcx = BitVec.ofNat 64 p.c ∧
     2 ^ 63 ≤ (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1))).toNat ∧
     (word s.mem p.L.B (slot p.L.w aTmp)).toNat =
       (2 ^ 128 - 1) / (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1))).toNat - 2 ^ 64 ∧
@@ -256,7 +256,7 @@ theorem fast_ct (M : Mont) : RelCT isa (Two FPre) (fast M.mm) fun _ _ => True :=
   · obtain ⟨⟨⟨hg, hw, hw', h4, hN, -, hT, hx⟩, hv⟩, hcx⟩ := h
     have hc1 : 1 ≤ p.L.w / 4 := by omega_arith
     have hc2 : p.L.w / 4 < 2 ^ 31 := by omega_arith
-    exact ⟨hg, hw, hw', hc1, hc2, hcx, hT, hv, by rw [hN]; exact hx⟩
+    exact ⟨hg, show 3 ≤ p.L.w by omega_using [hw, h4], hw', hc1, hc2, hcx, hT, hv, by rw [hN]; exact hx⟩
   · intro p s h
     obtain ⟨⟨⟨hg, hw, hw', h4, hN, hinv, hT, hx⟩, hv⟩, hcx⟩ := h
     have hc1 : 1 ≤ p.L.w / 4 := by omega_arith
@@ -264,7 +264,7 @@ theorem fast_ct (M : Mont) : RelCT isa (Two FPre) (fast M.mm) fun _ _ => True :=
     have hw31 : p.L.w < 2 ^ 31 := by omega_arith
     have hx2 : wv s.mem p.L.B (slot p.L.w aR2) p.L.w < wv s.mem p.L.B (slot p.L.w aN) p.L.w := by
       rw [hN]; exact hx
-    have hsk := steps_ok hg.1.scr hg.1.rdi hg.1.hdr hg.2 hw hw' (c := p.L.w / 4) hc1 hc2 hcx hT hv hx2
+    have hsk := steps_ok hg.1.scr hg.1.rdi hg.1.hdr hg.2 (by omega_using [hw, h4]) hw' (c := p.L.w / 4) hc1 hc2 hcx hT hv hx2
     refine WP.mono hsk fun t ht => ?_
     obtain ⟨hx', hn', hw0, -, hg', k⟩ := ht
     refine ⟨⟨hg', hg.2⟩, hw, hw31, ?_, ?_⟩

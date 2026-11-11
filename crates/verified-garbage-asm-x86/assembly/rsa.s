@@ -22767,8 +22767,8 @@ vg_rsa_public_precompute:
 	add ecx, ecx
 	add ecx, ecx
 	add ebx, ecx
-	sub ebx, 8
-	mov eax, DWORD PTR [ebx+4]
+	sub ebx, 12
+	mov eax, DWORD PTR [ebx+8]
 	mov esi, 1
 	mov edx, 31
 25:
@@ -22785,10 +22785,15 @@ vg_rsa_public_precompute:
 	jne 25b
 	mov DWORD PTR [edi+160], esi
 	mov ecx, eax
-	mov eax, DWORD PTR [ebx]
+	mov eax, DWORD PTR [ebx+4]
 	mul esi
 	add ecx, edx
 	mov DWORD PTR [edi+164], ecx
+	mov ebp, eax
+	mov eax, DWORD PTR [ebx]
+	mul esi
+	add ebp, edx
+	mov DWORD PTR [edi+192], ebp
 	mov esi, DWORD PTR [edi+164]
 	mov edx, esi
 	xor edx, -1
@@ -22890,7 +22895,7 @@ vg_rsa_public_precompute:
 	add ecx, ecx
 	add ecx, ecx
 	add ebx, ecx
-	sub ebx, 12
+	sub ebx, 16
 	mov esi, DWORD PTR [edi+160]
 	mov eax, DWORD PTR [ebx]
 	mul esi
@@ -22903,6 +22908,14 @@ vg_rsa_public_precompute:
 	mov eax, DWORD PTR [ebx+8]
 	mul esi
 	add eax, ecx
+	mov ecx, edx
+	mov ebx, DWORD PTR [ebx+12]
+	mov DWORD PTR [edi+184], ebp
+	mov ebp, eax
+	mov eax, ebx
+	mul esi
+	add eax, ecx
+	mov DWORD PTR [edi+188], eax
 	mov ecx, DWORD PTR [edi+164]
 	sub ecx, eax
 	cmp ecx, 1
@@ -22934,6 +22947,41 @@ vg_rsa_public_precompute:
 	adc ebx, 0
 	or ebx, DWORD PTR [edi+172]
 	mov DWORD PTR [edi+180], ebx
+	mov ecx, DWORD PTR [edi+180]
+	mov eax, DWORD PTR [edi+192]
+	mul ecx
+	mov ebx, eax
+	mov esi, edx
+	mov eax, DWORD PTR [edi+164]
+	mul ecx
+	add eax, esi
+	adc edx, 0
+	mov esi, DWORD PTR [edi+184]
+	sub esi, ebx
+	sbb ebp, eax
+	mov eax, DWORD PTR [edi+188]
+	sbb eax, edx
+	mov edx, eax
+	add edx, edx
+	sbb edx, edx
+	add ecx, edx
+	mov ebx, edx
+	and ebx, DWORD PTR [edi+192]
+	and edx, DWORD PTR [edi+164]
+	add esi, ebx
+	adc ebp, edx
+	adc eax, 0
+	mov edx, eax
+	add edx, edx
+	sbb edx, edx
+	add ecx, edx
+	mov ebx, edx
+	and ebx, DWORD PTR [edi+192]
+	and edx, DWORD PTR [edi+164]
+	add esi, ebx
+	adc ebp, edx
+	adc eax, 0
+	mov DWORD PTR [edi+180], ecx
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
 	shr edx, 3
@@ -23061,53 +23109,6 @@ vg_rsa_public_precompute:
 	add edx, edx
 	add edx, edx
 	add edx, edx
-	mov ebx, edi
-	add ebx, 256
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov ebp, edi
-	add ebp, 256
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edi, DWORD PTR [esp+8]
-	add edi, 3
-	shr edi, 2
-	add edi, edi
-	add edi, edi
-	mov eax, ebp
-	add eax, edi
-	mov eax, DWORD PTR [eax]
-	add eax, eax
-	sbb ecx, ecx
-	mov esi, 0
-211:
-	mov eax, DWORD PTR [ebx]
-	and eax, ecx
-	add esi, esi
-	adc eax, DWORD PTR [ebp]
-	mov DWORD PTR [ebp], eax
-	sbb esi, esi
-	add ebx, 4
-	add ebp, 4
-	sub edi, 4
-	jne 211b
-	mov eax, DWORD PTR [ebp]
-	sub eax, esi
-	mov DWORD PTR [ebp], eax
-	mov edi, DWORD PTR [esp+20]
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
 	mov esi, edi
 	add esi, 256
 	add esi, edx
@@ -23132,13 +23133,13 @@ vg_rsa_public_precompute:
 	shr edi, 2
 	add edi, edi
 	add edi, edi
-212:
+211:
 	mov eax, DWORD PTR [esi]
 	mov DWORD PTR [ebp], eax
 	add esi, 4
 	add ebp, 4
 	sub edi, 4
-	jne 212b
+	jne 211b
 	mov edi, DWORD PTR [esp+20]
 	mov eax, DWORD PTR [edi+176]
 	sub eax, 1
@@ -23156,8 +23157,8 @@ vg_rsa_public_precompute:
 	add esi, esi
 	add esi, esi
 	add esi, esi
-	je 213f
-215:
+	je 212f
+214:
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
 	shr edx, 3
@@ -23184,7 +23185,7 @@ vg_rsa_public_precompute:
 	add ebx, edx
 	add ebx, edx
 	mov ecx, 0
-216:
+215:
 	mov eax, DWORD PTR [ebx]
 	add ecx, ecx
 	adc eax, eax
@@ -23193,7 +23194,7 @@ vg_rsa_public_precompute:
 	add ebx, 4
 	add ebp, 4
 	sub edx, 4
-	jne 216b
+	jne 215b
 	mov eax, 0
 	sub eax, ecx
 	mov DWORD PTR [ebp], eax
@@ -23232,7 +23233,7 @@ vg_rsa_public_precompute:
 	add ebx, 256
 	mov edi, eax
 	mov ecx, 0
-217:
+216:
 	mov eax, DWORD PTR [ebp]
 	add ecx, ecx
 	sbb eax, DWORD PTR [ebx]
@@ -23242,7 +23243,7 @@ vg_rsa_public_precompute:
 	add ebx, 4
 	add edi, 4
 	sub edx, 4
-	jne 217b
+	jne 216b
 	mov eax, DWORD PTR [ebp]
 	add ecx, ecx
 	sbb eax, 0
@@ -23275,7 +23276,7 @@ vg_rsa_public_precompute:
 	add ebx, edx
 	add ebx, edx
 	mov edi, edx
-218:
+217:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -23285,15 +23286,15 @@ vg_rsa_public_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 218b
+	jne 217b
 	mov edi, DWORD PTR [esp+20]
 	sub esi, 1
-	jne 215b
-	jmp 214f
+	jne 214b
+	jmp 213f
+212:
 213:
-214:
 	mov esi, 2
-219:
+218:
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -23339,7 +23340,7 @@ vg_rsa_public_precompute:
 	call {vg_rsa_mont_mul_at}
 	lea esp, [esp+36]
 	sub esi, 1
-	jne 219b
+	jne 218b
 	mov ecx, DWORD PTR [esp+8]
 	add ecx, 7
 	shr ecx, 3
@@ -23349,13 +23350,13 @@ vg_rsa_public_precompute:
 	mov esi, edi
 	add esi, 256
 	mov ebp, DWORD PTR [esp+4]
-220:
+219:
 	mov eax, DWORD PTR [esi]
 	mov DWORD PTR [ebp], eax
 	add esi, 4
 	add ebp, 4
 	sub ecx, 4
-	jne 220b
+	jne 219b
 	mov ecx, DWORD PTR [esp+8]
 	add ecx, 7
 	shr ecx, 3
@@ -23370,13 +23371,13 @@ vg_rsa_public_precompute:
 	add esi, ecx
 	mov ebp, DWORD PTR [esp+4]
 	add ebp, ecx
-221:
+220:
 	mov eax, DWORD PTR [esi]
 	mov DWORD PTR [ebp], eax
 	add esi, 4
 	add ebp, 4
 	sub ecx, 4
-	jne 221b
+	jne 220b
 	mov eax, 1
 21:
 	mov ebx, DWORD PTR [edi]
