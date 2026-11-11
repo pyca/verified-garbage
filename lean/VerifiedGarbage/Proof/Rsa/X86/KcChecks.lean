@@ -273,16 +273,6 @@ theorem qBitsHi_ok {full : Bool} {u : State} {B : Addr} {Z a : Nat}
   have e2 : t2.gpr .esi = u.gpr .esi := by rw [u2.other _ (by decide), u1.other _ (by decide)]
   rw [u3.gpr, e1, e2]
 
-/-- A step from `Stg` that writes no memory and only the registers `rs`. -/
-theorem Stg.regs {g : Geo} {s0 s t : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
-    (h : Stg g s0 A live c s) {rs : List Reg} (K : Keeps rs s t) (mem : t.mem = s.mem)
-    (hrs : ∀ x ∈ rs, x ∈ bodyRegs) : Stg g s0 A live c t := by
-  have k : Keep g.B g.w [] [] s.mem t.mem := by rw [mem]; exact Keep.refl _ _ _ _ _
-  exact h.next (h.ws.keep K (by intro e; have := hrs _ e; simp [bodyRegs] at this)
-      (by intro e; have := hrs _ e; simp [bodyRegs] at this) (by rw [mem]; exact fun _ _ => rfl))
-    k (by simp) (by simp) K hrs (h.arrs_keep k (by simp) (by simp)) h.live_lt
-    (h.vd_keep k (by simp) (by simp)) (h.mask_keep k (by simp))
-
 /-- `operands y x m cnt`: `[aY] := [y]`, `[aX] := [x]`, `[aVD] := [m]`, then `esi` up by `2^16 k`. -/
 theorem Stg.operands_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {y x m k : Nat} {cnt : List Instr}

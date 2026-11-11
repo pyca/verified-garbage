@@ -103,14 +103,14 @@ def start : Prog isa :=
   seqs [.block (setOne (lay full) aOne), .block (bitOf (lay full) sMask aP),
     WordModRt.mulWide (lay full) aVQ aP aQ, WordModRt.eqWide (lay full) sF aVQ aN, .block acc]
 
-/-- `p - 1` and `q - 1`, the guard, then the three product checks: by word steps under the
-guard, else bit by bit. -/
-def crtChecks : Prog isa := seqs (
+/-- `p - 1` and `q - 1`, the guard, then `word` under the guard, else `other`. -/
+def crtChecks (word other : Prog isa) : Prog isa := seqs (
   [copy (lay full) aM1 aP, .block (clrLow (lay full) aM1), copy (lay full) aM2 aQ, .block (clrLow (lay full) aM2),
     .block (WordModRt.balanced (lay full) 1 (pLenArg full) (qLenArg full) aN sG),
-    WordModRt.ifBalanced sG (wordProducts full) (products full)])
+    WordModRt.ifBalanced sG word other])
 
-def crtBody : Prog isa := seqs [start full, crtChecks full]
+/-- The three product checks: by word steps under the guard, else bit by bit. -/
+def crtBody : Prog isa := seqs [start full, crtChecks full (wordProducts full) (products full)]
 
 def dChecks1 : Prog isa := seqs (ltA full aD aN ++ divSet full aD aM1)
 def dChecks2 : Prog isa := seqs (eqA full aVR aDP ++ divSet full aD aM2)
@@ -123,7 +123,10 @@ def dWords : Prog isa := seqs (ltA full aD aN ++ [wordMod full aD aVR aM1] ++ eq
 /-- The same by `KeyRt.div`. -/
 def dBits : Prog isa := seqs [dChecks1 full, division full, dChecks2 full, division full, dChecks3 full]
 
-def keyBody : Prog isa := seqs [crtBody full, WordModRt.ifBalanced sG (dWords full) (dBits full)]
+/-- The product checks then those of `d`, by word steps under the guard (read once), else bit
+by bit. -/
+def keyBody : Prog isa := seqs [start full,
+  crtChecks full (seqs [wordProducts full, dWords full]) (seqs [products full, dBits full])]
 
 def loadInputs : List (Nat × Nat) → Prog isa
   | [] => .block []
