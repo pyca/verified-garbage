@@ -127,8 +127,8 @@ theorem pd_pre {s t : State} (hp : PreF s) (he : Env s t)
     hdi, hsi, hdx, hcx, h8, h9, he.rsp, hcxN, stackArgAddr_entry he.rsp, hE 0 (by decide), hE 1 (by decide),
     hE 2 (by decide), hE 3 (by decide), Nat.reduceMul, hw0, hw1, hw2, hw3, fb_sub8]
   have ⟨hK1, _, _⟩ := kb_toNat hp
-  have e2 : oPre = 1184 := rfl
-  have e3 : oM = 160 := rfl
+  have e2 : oPre = 1192 := rfl
+  have e3 : oM = 168 := rfl
   have hk2 := hp.k2
   have hsi' := hp.hsi
   have hfb : fb s = kb s + BitVec.ofNat 64 8 := fb_kb s

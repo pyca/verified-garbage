@@ -84,7 +84,7 @@ theorem crt_pre {s t : State} (hp : PreF s) (he : Env s t)
     hE 8 (by decide), hE 9 (by decide), hE 10 (by decide), hE 11 (by decide), Nat.reduceAdd, fb_sub8]
   have ⟨hK1, hK2, _⟩ := kb_toNat hp
   have e1 : stackBytes = 3256 := rfl
-  have e2 : oM = 160 := rfl
+  have e2 : oM = 168 := rfl
   have e3 : frameBytes = 3240 := rfl
   have hk1 := hp.k1
   have hk2 := hp.k2
@@ -136,7 +136,7 @@ theorem crt_clear {s t : State} (hp : PreF s) (he : Env s t) :
   have sH := hole_sub s
   have hil := hp.hil
   have hk2 := hp.k2
-  have e2 : oM = 160 := rfl
+  have e2 : oM = 168 := rfl
   intro r hr
   simp only [State.withRegions_rd, State.withRegions_wr, crtRd, crtWr, List.cons_append, List.nil_append,
     List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -199,7 +199,7 @@ theorem slot_keep {s : State} {m m' : Mem} {rs : List Region} (hf : Frame rs m m
 /-- The slots are apart from `M`, the working space and the return address. -/
 theorem slot_apart {s : State} (hp : PreF s) {d : Nat} (hd' : d + 8 ≤ oM) :
     ∀ r ∈ crtWr s ++ [below (fb s) 16], (⟨off (fb s) d, 8⟩ : Region).Disjoint r := by
-  have e2 : oM = 160 := rfl
+  have e2 : oM = 168 := rfl
   have hk2 := hp.k2
   intro r hr
   simp only [crtWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -212,7 +212,7 @@ theorem crt_covers {s t : State} (hp : PreF s) (he : Env s t) :
     Covers (crtRd s ++ crtWr s) (t.rd ++ t.wr) ∧ Covers (crtWr s) t.wr := by
   have hk2 := hp.k2
   have hil := hp.hil
-  have e2 : oM = 160 := rfl
+  have e2 : oM = 168 := rfl
   have e3 : frameBytes = 3240 := rfl
   have hfr : (⟨fb s, frameBytes⟩ : Region) ∈ t.wr := by rw [he.wr]; exact List.mem_cons_self ..
   have hscr : (⟨stackArg s 12, (stackArg s 13).toNat * 8⟩ : Region) ∈ t.wr := by
