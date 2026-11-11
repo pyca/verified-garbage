@@ -164,16 +164,16 @@ def shape : List Instr :=
     .logic .xor .r3 .r19 .r21, .logic .or .r0 .r0 .r3, .lsr .d .r3 .r19 5, .li .r12 0, .sub .r3 .r12 .r3,
     .lsr .d .r3 .r3 63, .li .r12 1, .logic .xor .r3 .r3 .r12, .logic .or .r0 .r0 .r3]
 
-/-- `n mod p` in `aVR` for a balanced key (`shape`), by words (`p`'s top word made
-not zero, `aW` the save area); else Montgomery's `n 2^(-32 w) mod (p | 1)`;
-`p | 1` in `aVD` either way. -/
+/-- For a balanced key (`shape`), `0` in `aVR`: there `p q` is exact in `w`
+digits, so `p q mod 2^(32 w) = n` already gives `n mod p = 0`; else
+Montgomery's `n 2^(-32 w) mod (p | 1)`; `p | 1` in `aVD` either way. -/
 def nModP : Prog isa :=
   .ite (.zero .d .r0)
-    (seqs [copy aVD aP, .block (KeyDiv.fixTop aVD), KeyDiv.divW aN aVR aVD aVT aW, copy aVD aP, .block (orOne aVD)])
+    (seqs [copy aVR aZ, copy aVD aP, .block (orOne aVD)])
     (seqs [copy aVD aP, .block (orOne aVD), montP aVR aN aOne])
 
 /-- `1`, the mask `p` odd, `p q mod 2^(32 w)` in `aVQ`, `p | 1` in `aVD` and
-`n mod p` (or Montgomery's `n 2^(-32 w) mod (p | 1)`) in `aVR`. -/
+`0` (or Montgomery's `n 2^(-32 w) mod (p | 1)`) in `aVR`. -/
 def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP), MontKey.mulLo aVQ aP aQ .r19,
   .block shape, nModP]
 

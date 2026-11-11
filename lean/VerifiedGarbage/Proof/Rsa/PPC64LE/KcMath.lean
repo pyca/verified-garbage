@@ -238,7 +238,8 @@ theorem ck_bitsM'' {k n e d p q dP dQ qI w pL qL : Nat} (hwk : w = (k + 3) / 4) 
     (he : exponentValid e = true) (hn : n < 256 ^ k) (hp : p < 256 ^ (k - 1)) (hq : q < 256 ^ (k - 1))
     (hk : 1 ≤ k) (hw : 256 ^ k ≤ 2 ^ (32 * w)) (hpL : p < 2 ^ (8 * pL)) (hqL : q < 2 ^ (8 * qL))
     {L M R₁ R₂ A₁ A₂ Y₁ Y₂ : Nat} (hL : L = p * q % 2 ^ (32 * w))
-    (hM : p % 2 = 1 → 2 ≤ p → (Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ p) → (M = 0 ↔ n % p = 0))
+    (hM : p % 2 = 1 → 2 ≤ p → L = n → (Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ p) →
+      (M = 0 ↔ n % p = 0))
     (hR₁ : dP < 2 * (p / 2) → 2 * (2 * (p / 2)) ≤ 2 ^ (32 * w) → R₁ = e % 2 ^ 33 * dP % (2 * (p / 2)))
     (hR₂ : dQ < 2 * (q / 2) → 2 * (2 * (q / 2)) ≤ 2 ^ (32 * w) → R₂ = e % 2 ^ 33 * dQ % (2 * (q / 2)))
     (hA : qI < p → p % 2 = 1 → 2 ≤ p → (Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ p) →
@@ -259,7 +260,7 @@ theorem ck_bitsM'' {k n e d p q dP dQ qI w pL qL : Nat} (hwk : w = (k + 3) / 4) 
     simp only [M', A₁', A₂', h1, h2, and_self, ite_true]]
   refine ck_bitsM' hwk hm he hn hp hq hk hw hpL hqL hL (fun h1 h2 => ?_) hR₁ hR₂ (fun h0 h1 h2 => ?_) hY₁ hY₂
   · by_cases hc : L = n
-    · simp only [M', h1, hc, and_self, ite_true]; exact hM h1 h2 (top h1 hc)
+    · simp only [M', h1, hc, and_self, ite_true]; exact hM h1 h2 hc (top h1 hc)
     · simp only [M', hc, and_false, ite_false]; split <;> simp_all
   · by_cases hc : L = n
     · simp only [A₁', A₂', h1, hc, and_self, ite_true]; exact hA h0 h1 h2 (top h1 hc)

@@ -18,7 +18,7 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.MontKey
 
 As on ARMv7 (`Proof/Rsa/Arm/KcStart.lean`, `KcChecks.lean`, `KcBody.lean`):
 from the arrays read (`vals`), `start_ok`: `1`, the mask of `p` odd, `p q mod
-2^(32 w)`, `p | 1` and Montgomery's `n 2^(-32 w) mod (p | 1)`; `crtChecks_ok`:
+2^(32 w)`, `p | 1` and `0` or Montgomery's `n 2^(-32 w) mod (p | 1)`; `crtChecks_ok`:
 the checks of `vg_rsa_check_crt_key` and'ed into the mask (`crtBitsM`);
 `dChecks_ok`: those of `d` (`keyBitsM`).
 -/
@@ -321,14 +321,17 @@ theorem Stg.divCopy_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List N
         rcases hx with rfl | rfl | rfl
         exacts [hrV, htV, hsvV]) (fun d hd => absurd hd (by simp)) fD)
 
-/-- `start`: `1`, the mask of `p` odd, `p q mod 2^(32 w)`, `p | 1` and
-Montgomery's `n` modulo it. -/
+/-- `start`: `1`, the mask of `p` odd, `p q mod 2^(32 w)`, `p | 1` and, for
+a balanced key, `0`, else Montgomery's `n` modulo `p | 1`: either is `0`
+exactly when `p ∣ n`, where `p q mod 2^(32 w) = n`. -/
 theorem start_ok {g : Geo} {s0 : State} {v : Vals} (hw : Ws s0 g.B g.Z g.w nArr)
     (ha : Arrs s0.mem g.B g.w (vals v) live0) (vd : w32 s0.mem g.B (arr g.w aVD + 4 * g.w) = 0)
     {pa qa : Nat} (pa1 : 1 ≤ pa) (paw : pa ≤ 4 * g.w) (plt : v.p < 2 ^ (8 * pa))
-    (p19 : s0.gpr .r19 = BitVec.ofNat 64 pa) (qa2 : qa < 2 ^ 32) (q21 : s0.gpr .r21 = BitVec.ofNat 64 qa) :
+    (p19 : s0.gpr .r19 = BitVec.ofNat 64 pa) (qa2 : qa < 2 ^ 32) (qlt : v.q < 2 ^ (8 * qa))
+    (q21 : s0.gpr .r21 = BitVec.ofNat 64 qa) :
     WP isa (seqs start) s0 fun t => ∃ L M, L = v.p * v.q % 2 ^ (32 * g.w) ∧
-      (v.p % 2 = 1 → 2 ≤ v.p → (Shape g.w pa qa → 2 ^ (64 * (g.w / 4 - 1)) ≤ v.p) → (M = 0 ↔ v.n % v.p = 0)) ∧
+      (v.p % 2 = 1 → 2 ≤ v.p → L = v.n → (Shape g.w pa qa → 2 ^ (64 * (g.w / 4 - 1)) ≤ v.p) →
+        (M = 0 ↔ v.n % v.p = 0)) ∧
       Stg g s0 (aStart v L M) liveS (decide (v.p % 2 = 1)) t := by
   have fit : ∀ j < nArr, arr g.w j + S g.w ≤ 2 ^ 64 := fun j hj => hw.fit64 hj
   rw [start, wp_seqs_cons (by simp)]
@@ -374,27 +377,20 @@ theorem start_ok {g : Geo} {s0 : State} {v : Vals} (hw : Ws s0 g.B g.Z g.w nArr)
     (by rw [m4]; exact g3.mask)
   rw [show ∀ x : Prog isa, seqs [x] = x from fun _ => rfl]
   refine WP.ite (s4.gpr .r0 == 0) (eval_zero s4 .r0) (fun hz => ?_) (fun hz => ?_)
-  · -- By words: `n mod p`.
+  · -- `0`: with `p q` exact, `p q mod 2^(32 w) = n` gives `n mod p = 0`.
     obtain ⟨p8, hpw, hpq, p32⟩ := z4.1 (by simpa using hz)
-    rw [show [copy aVD aP, Code.block (VG.Impl.Rsa.PPC64LE.KeyDiv.fixTop aVD),
-        VG.Impl.Rsa.PPC64LE.KeyDiv.divW aN aVR aVD aVT aW, copy aVD aP, Code.block (orOne aVD)] =
-      [copy aVD aP, Code.block (VG.Impl.Rsa.PPC64LE.KeyDiv.fixTop aVD),
-        VG.Impl.Rsa.PPC64LE.KeyDiv.divW aN aVR aVD aVT aW] ++ [copy aVD aP, Code.block (orOne aVD)] from rfl,
-      wp_seqs_append (by simp) (by simp)]
-    refine WP.mono (g4.divCopy_ok (a := aN) (d := aP) (r := aVR) (m := aVD) (t := aVT) (sv := aW) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by omega) (by omega)
-      (by rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide), show 64 * (g.w / 4) = 8 * pa by omega]; exact plt))
-      fun s5 ⟨M, hM, g5⟩ => ?_
+    rw [wp_seqs_cons (by simp)]
+    refine WP.mono (g4.copy_ok (o := aVR) (a := aZ) (by decide) (by decide) (by decide)) fun s5 g5 => ?_
     rw [wp_seqs_cons (by simp)]
     refine WP.mono (g5.copy_ok (o := aVD) (a := aP) (by decide) (by decide) (by decide)) fun s6 g6 => ?_
-    refine WP.mono (g6.orOne_ok (j := aVD) (by decide)) fun t g7 => ⟨v.p * v.q % 2 ^ (32 * g.w), M, rfl,
-      fun _ _ ht => by
-        have e := hM (by
-          rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide)]
-          exact ht ⟨p8, hpw, hpq, p32⟩)
-        rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide), upd_ne _ _ (by decide), upd_ne _ _ (by decide)] at e
-        rw [e]; exact ⟨fun h => h, fun h => h⟩, ?_⟩
+    rw [show ∀ x : Prog isa, seqs [x] = x from fun _ => rfl]
+    refine WP.mono (g6.orOne_ok (j := aVD) (by decide)) fun t g7 => ⟨v.p * v.q % 2 ^ (32 * g.w), 0, rfl,
+      fun _ _ hL _ => ?_, ?_⟩
+    · have hlt : v.p * v.q < 2 ^ (32 * g.w) :=
+        calc v.p * v.q < 2 ^ (8 * pa) * 2 ^ (8 * qa) := Nat.mul_lt_mul'' plt qlt
+          _ = 2 ^ (32 * g.w) := by rw [← Nat.pow_add]; congr 1; omega
+      rw [Nat.mod_eq_of_lt hlt] at hL
+      rw [← hL, Nat.mul_mod_right]
     refine (g7.sub (live' := liveS) (by decide)).congr' fun j hj => ?_
     simp only [liveS, live0, List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
@@ -408,7 +404,7 @@ theorem start_ok {g : Geo} {s0 : State} {v : Vals} (hw : Ws s0 g.B g.Z g.w nArr)
       (by decide) (by decide) (by decide) (r19 g5) pa1 (by omega) (by show (2 * (v.p / 2) + 1) % 2 = 1; omega)
       (by show 2 * (v.p / 2) + 1 < _; exact Nat.lt_of_lt_of_le hm (pow8_le pa))
       (by show 1 < _; exact Nat.one_lt_two_pow (by omega))) fun t ⟨M, hM, g6⟩ => ?_
-    refine ⟨v.p * v.q % 2 ^ (32 * g.w), M, rfl, fun podd p2 _ => ?_, g6.congr' fun j hj => ?_⟩
+    refine ⟨v.p * v.q % 2 ^ (32 * g.w), M, rfl, fun podd p2 _ _ => ?_, g6.congr' fun j hj => ?_⟩
     · have hM' : 1 < 2 * (v.p / 2) + 1 → M < 2 * (v.p / 2) + 1 ∧
           M * 2 ^ (32 * g.w) % (2 * (v.p / 2) + 1) = v.n * 1 % (2 * (v.p / 2) + 1) := hM
       have e1 : 2 * (v.p / 2) + 1 = v.p := or1_odd podd

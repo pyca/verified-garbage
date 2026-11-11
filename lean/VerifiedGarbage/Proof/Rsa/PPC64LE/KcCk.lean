@@ -161,7 +161,8 @@ theorem ck_valid {s0 s : State} (h0 : ckP.pre s0) (hb : KBase (ckB s0) (ckZ s0) 
   have q21 : t7.gpr .r21 = BitVec.ofNat 64 (PPC64LE.stackArg s0 1).toNat :=
     ((R6.of_keep k7).r21).trans (CrtValues.ofNat_toNat64 _)
   refine WP.mono (start_ok (g := g) (v := v) l7.ws a7 (l7.top _ (by decide)) p1 pw
-    (lt_pow8_of_len _ (len_bytes _ _ _)) p19 (by omega_arith) q21) fun t8 ⟨L, M, hL, hM, g8⟩ => ?_
+    (lt_pow8_of_len _ (len_bytes _ _ _)) p19 (by omega_arith)
+    (lt_pow8_of_len _ (len_bytes _ _ _)) q21) fun t8 ⟨L, M, hL, hM, g8⟩ => ?_
   rw [wp_seqs_append (by simp [crtChecks, eqA]) (by simp [dChecks, ltA])]
   have wl : (kK s0 + 3) / 4 ≤ 1024 := g8.ws.wle
   refine WP.mono (crtChecks_ok g8 p1 pw (lt_pow8_of_len _ (len_bytes _ _ _)) (lt_pow8_of_len _ (len_bytes _ _ _))
