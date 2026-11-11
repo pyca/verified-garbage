@@ -51,7 +51,7 @@ theorem firstDiv_ok {g : Geometry} {len : Nat} {s : State} (h : Start g len s) {
     WP isa firstDiv s fun t => StC g len t ∧
       Keep g.base (kw len) [aDR2, aDR3] [sPodd, sG, VG.Impl.Rsa.X86.WordModRt.oJ] s.mem t.mem ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t ∧
-      ∃ an, kw an = kw len ∧
+      ∃ an, an ≤ 1024 ∧ VG.Proof.Bignum.X86.CallArgument s g.base g.size 7 (BitVec.ofNat 32 an) ∧ kw an = kw len ∧
         (slot t.mem g.base sG = 0 ↔ Bal an ap aq (mw s.mem g.base (kw len) aDQ (kw len - 1))) := by
   have fit := fun j (hj : j < nArr) => h.ws.ws.fit64 (j := j) hj
   obtain ⟨an, han, hkw, cn⟩ := h.ws.lenArg
@@ -75,7 +75,7 @@ theorem firstDiv_ok {g : Geometry} {len : Nat} {s : State} (h : Start g len s) {
     rw [ku.num (by simp) (by decide) (fit _ (by decide)), kv.num (by simp) (by decide) (fit _ (by decide)), h.p]
   have qu : num u.mem g.base (kw len) aQ = g.Q := by
     rw [ku.num (by simp) (by decide) (fit _ (by decide)), kv.num (by simp) (by decide) (fit _ (by decide)), h.q]
-  refine ⟨⟨ht, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, K, R, an, hkw, ?_⟩
+  refine ⟨⟨ht, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, K, R, an, han, cn, hkw, ?_⟩
   · rw [kt.slot (by decide) (by decide), ku.slot (by decide) (by decide), vv, h.p]
   · rw [same _ (by decide) (by decide), h.p]
   · rw [same _ (by decide) (by decide), h.q]
@@ -270,7 +270,7 @@ theorem core_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : Stat
   have cq : VG.Proof.Bignum.X86.CallArgument s g.base g.size 11 (BitVec.ofNat 32 (args 11).toNat) := by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]; exact gate.qArg
   unfold VG.Impl.Rsa.X86.CrtValuesRt.core
-  refine WP.seq (WP.mono (firstDiv_ok h cp cq lens.1 lens.2) fun a ⟨ha, ka, ra, an, hkw, hg⟩ => ?_)
+  refine WP.seq (WP.mono (firstDiv_ok h cp cq lens.1 lens.2) fun a ⟨ha, ka, ra, an, _, _, hkw, hg⟩ => ?_)
   refine WP.seq ?_
   change WP isa (seqs (checksA ++ checksB)) a _
   rw [wp_seqs_append (by unfold checksA; exact List.cons_ne_nil _ _) (by unfold checksB; exact List.cons_ne_nil _ _)]

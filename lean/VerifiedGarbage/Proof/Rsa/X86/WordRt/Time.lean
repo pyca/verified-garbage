@@ -117,6 +117,59 @@ theorem relCT_head {α : Type} {J : α → State → Prop} {l₁ l₂ : List Ins
     (fun t₁ t₂ h => ⟨hw p₁ t₁ h.1, hw p₂ t₂ h.2⟩)).mono (fun _ _ h => h)
     fun m₁ m₂ ⟨_, g₁, g₂⟩ => hag' p₁ p₂ m₁ m₂ g₁ g₂
 
+/-! ## Sequences -/
+
+theorem exec_seqs_append {l₁ l₂ : List (Prog isa)} (h₁ : l₁ ≠ []) (h₂ : l₂ ≠ []) {s s' : State} {tr : List Leak}
+    (e : Exec isa (VG.Impl.Rsa.X86.Keys.seqs (l₁ ++ l₂)) s tr s') : Exec isa (.seq (VG.Impl.Rsa.X86.Keys.seqs l₁) (VG.Impl.Rsa.X86.Keys.seqs l₂)) s tr s' := by
+  induction l₁ generalizing s tr with
+  | nil => exact absurd rfl h₁
+  | cons c l ih =>
+    rcases l with _ | ⟨d, l⟩
+    · match l₂, h₂ with
+      | _ :: _, _ => exact e
+    · rw [List.cons_append] at e
+      change Exec isa (.seq c (VG.Impl.Rsa.X86.Keys.seqs ((d :: l) ++ l₂))) s tr s' at e
+      cases e with
+      | seq e₁ e₂ =>
+        cases ih (by simp) e₂ with
+        | seq a b =>
+          rw [← List.append_assoc]
+          exact .seq (.seq e₁ a) b
+
+theorem RelCT.seqs_append {P Q : State → State → Prop} {l₁ l₂ : List (Prog isa)} (h₁ : l₁ ≠ []) (h₂ : l₂ ≠ [])
+    (h : RelCT isa P (.seq (VG.Impl.Rsa.X86.Keys.seqs l₁) (VG.Impl.Rsa.X86.Keys.seqs l₂)) Q) : RelCT isa P (VG.Impl.Rsa.X86.Keys.seqs (l₁ ++ l₂)) Q :=
+  fun _ _ _ _ _ _ hp e₁ e₂ => h _ _ _ _ _ _ hp (exec_seqs_append h₁ h₂ e₁) (exec_seqs_append h₁ h₂ e₂)
+
+theorem RelCT.seqs_cons {P R Q : State → State → Prop} {c : Prog isa} {l : List (Prog isa)} (hl : l ≠ [])
+    (h₁ : RelCT isa P c R) (h₂ : RelCT isa R (VG.Impl.Rsa.X86.Keys.seqs l) Q) : RelCT isa P (VG.Impl.Rsa.X86.Keys.seqs (c :: l)) Q := by
+  match l, hl with
+  | _ :: _, _ => exact VG.RelCT.seq h₁ h₂
+
+/-- The same relation through every element of a sequence. -/
+theorem RelCT.seqs_all {P : State → State → Prop} :
+    ∀ {l : List (Prog isa)}, l ≠ [] → (∀ c ∈ l, RelCT isa P c P) → RelCT isa P (VG.Impl.Rsa.X86.Keys.seqs l) P
+  | [c], _, h => h c (by simp)
+  | c :: d :: l, _, h => RelCT.seqs_cons (by simp) (h c (by simp))
+      (RelCT.seqs_all (l := d :: l) (by simp) fun x hx => h x (List.mem_cons_of_mem _ hx))
+
+/-! ## Lifting the relations of pieces -/
+
+/-- A piece related from the states of both runs, each from its own start `u`, run by each from
+what it knows of its run. -/
+theorem relLift {α : Type} {c : Prog isa} {P Q : α → State → Prop} {Rel : α → α → Prop}
+    (hrel : RelCT isa (fun t₁ t₂ => ∃ u₁ u₂, Rel u₁ u₂ ∧ P u₁ t₁ ∧ P u₂ t₂) c fun _ _ => True)
+    (hw : ∀ u t, P u t → WP isa c t (Q u)) :
+    RelCT isa (fun t₁ t₂ => ∃ u₁ u₂, Rel u₁ u₂ ∧ P u₁ t₁ ∧ P u₂ t₂) c
+      (fun t₁ t₂ => ∃ u₁ u₂, Rel u₁ u₂ ∧ Q u₁ t₁ ∧ Q u₂ t₂) := by
+  refine (VG.RelCT.exists_ (P := fun (x : α × α) t₁ t₂ => Rel x.1 x.2 ∧ P x.1 t₁ ∧ P x.2 t₂)
+    fun ⟨u₁, u₂⟩ => ?_).mono (fun t₁ t₂ ⟨u₁, u₂, r, h₁, h₂⟩ => ⟨⟨u₁, u₂⟩, r, h₁, h₂⟩) fun _ _ h => h
+  rcases Classical.em (Rel u₁ u₂) with hr | hr
+  · exact (VG.RelCT.wp (F₁ := Q u₁) (F₂ := Q u₂)
+      (hrel.mono (fun t₁ t₂ h => ⟨u₁, u₂, h⟩) fun _ _ h => h)
+      fun t₁ t₂ h => ⟨hw u₁ t₁ h.2.1, hw u₂ t₂ h.2.2⟩).mono (fun _ _ h => h)
+      fun _ _ ⟨_, q₁, q₂⟩ => ⟨u₁, u₂, hr, q₁, q₂⟩
+  · exact VG.RelCT.of_false fun _ _ h => hr h.1
+
 /-! ## `mulRows` -/
 
 variable {L : Lay} {B : Addr} {Z len N : Nat}

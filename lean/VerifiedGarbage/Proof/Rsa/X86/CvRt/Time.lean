@@ -20,6 +20,14 @@ import VerifiedGarbage.Proof.Rsa.X86.InvChoose
 import VerifiedGarbage.Proof.Rsa.X86.InvTimeChoose
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Rsa.X86.CvInverseCall
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
+import VerifiedGarbage.Proof.Rsa.X86.WordRt.Guard
+import VerifiedGarbage.Proof.Rsa.X86.WordRt.Time
+import VerifiedGarbage.Proof.Rsa.X86.CvRt.Core
 import VerifiedGarbage.Proof.Rsa.X86.CvRt.Sized
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
@@ -37,74 +45,12 @@ arguments (`ArgsOk`); runs of `sized` from the states themselves leak the
 same traces (`sizedNarrow_relCT`).
 -/
 
--- Formerly `VerifiedGarbage/Proof/Rsa/X86/CvRt/TimeSplit.lean`, which only this module imported.
-section
-
-/-! # Isolating the inverse in the CRT import trace -/
-
-section
-namespace VG.Proof.Rsa.X86.CrtValuesRt
-open VG VG.X86 VG.Impl.Rsa.X86.Keys VG.Impl.Rsa.X86.CrtValuesRt
-
- theorem exec_seqs_split {l₁ l₂ : List (Prog isa)} (h₁ : l₁≠[]) (h₂ : l₂≠[])
-    {s t : State} {tr : List Leak} (E : Exec isa (seqs (l₁++l₂)) s tr t) :
-    ∃ a b u,tr=a++b ∧ Exec isa (seqs l₁) s a u ∧ Exec isa (seqs l₂) u b t := by
-  induction l₁ generalizing s tr with
-  | nil => exact absurd rfl h₁
-  | cons c l ih =>
-    cases l with
-    | nil =>
-      have shape : seqs ([c]++l₂)=.seq c (seqs l₂) := by cases l₂ <;> simp_all [seqs]
-      rw [shape] at E
-      cases E with
-      | seq ec er => exact ⟨_,_,_,rfl,ec,er⟩
-    | cons d l =>
-      change Exec isa (.seq c (seqs ((d::l)++l₂))) s tr t at E
-      cases E with
-      | seq ec er =>
-        obtain ⟨a,b,u,eq,ea,eb⟩ := ih (by simp) er
-        refine ⟨_,b,u,?_,.seq ec ea,eb⟩
-        rw [eq,List.append_assoc]
-
- theorem exec_split {s t : State} {tr : List Leak} (E : Exec isa sized s tr t) :
-    Exec isa (.seq beforeInverse (.seq inverseChoice afterInverse)) s tr t := by
-  change Exec isa (.seq loads (.seq core stores)) s tr t at E
-  cases E with
-  | seq el er =>
-    cases er with
-    | seq ec es =>
-      change Exec isa (.seq firstDiv (.seq checks (.seq (VG.Impl.Rsa.X86.CrtValuesRt.div VG.Impl.Rsa.X86.CrtValues.aDR2) divQ))) _ _ _ at ec
-      cases ec with
-      | seq ef er =>
-        cases er with
-        | seq ech ed =>
-          cases ed with
-          | seq ep eq =>
-            change Exec isa (seqs (checksA++checksB)) _ _ _ at ech
-            obtain ⟨a,b,u,eab,ea,eb⟩ := exec_seqs_split (by unfold checksA; exact List.cons_ne_nil _ _) (by unfold checksB; exact List.cons_ne_nil _ _) ech
-            change Exec isa (.seq inverseChoice (seqs checksB.tail)) _ _ _ at eb
-            cases eb with
-            | seq ei et =>
-              have out := Exec.seq (Exec.seq el (Exec.seq ef ea)) (Exec.seq ei (Exec.seq et (Exec.seq ep (Exec.seq eq es))))
-              simp only [List.append_assoc] at eab ⊢
-              rw [eab]
-              simpa only [beforeInverse,afterInverse,checksA,checksPrefix,checksB,checksSuffix,List.tail_cons,List.append_assoc] using out
-
- theorem split_relCT {P Q : State → State → Prop}
-    (h : RelCT isa P (.seq beforeInverse (.seq inverseChoice afterInverse)) Q) : RelCT isa P sized Q :=
-  fun s t tr ur sf tf hp es et => h s t tr ur sf tf hp (exec_split es) (exec_split et)
-
-end VG.Proof.Rsa.X86.CrtValuesRt
-end
-
-end
-
 @[expose] public section
 namespace VG.Proof.Rsa.X86.CrtValuesRt
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum.X86 VG.Proof.Dsa.X86
 open VG.Impl.Rsa.X86.CrtValuesRt
-open VG.Proof.Rsa.X86.CrtValues (CallGeometry Inputs bodyWrites)
+open VG.Proof.Rsa.X86.CrtValues (CallGeometry Inputs bodyWrites inputBytes)
 open VG.Proof.Bignum.X86.PublicRt (Both relCT_narrow)
 
 /-- The return address and the arguments lie apart from every writable region. -/
@@ -136,72 +82,324 @@ theorem agreeV {g : CallGeometry} {s₁ s₂ : State} (h₁ : Inputs g s₁) (h�
 def Run (g : CallGeometry) (sp : BitVec 32) (s : State) : Prop :=
   Inputs g s ∧ ArgsOk s ∧ s.gpr .esp = sp
 
-def Ready (g : CallGeometry) (m : Mem) (sp : BitVec 32) (s : State) : Prop :=
-  Inputs g s ∧ InvTiming.Public g.args g.base g.size sp s ∧
-    InvInput g.args g.base g.size (g.args 7).toNat (arithmeticGeometry g m).P (arithmeticGeometry g m).Q s
+theorem Run.agree {g : CallGeometry} {sp : BitVec 32} {t₁ t₂ : State} (h₁ : Run g sp t₁) (h₂ : Run g sp t₂) :
+    VG.X86.Taint.Agree τV t₁ t₂ :=
+  agreeV h₁.1 h₂.1 h₁.2.1 h₂.2.1 (h₁.2.2.trans h₂.2.2.symm)
 
-theorem before_ready {g : CallGeometry} {sp : BitVec 32} {s : State} (h : Run g sp s) (len : Lengths g) :
-    WP isa beforeInverse s (Ready g s.mem sp) := by
-  have nw := h.1.ws.workspace.nowrap
-  have header := h.1.ws.hdr_le
-  change 160≤g.size at header
-  have pub0 : InvTiming.Public g.args g.base g.size sp s := ⟨h.2.1,h.2.2,h.1.arguments⟩
-  unfold beforeInverse
-  refine WP.seq (WP.mono (loads_ok h.1 len) fun u ⟨hu,start,ou,ru⟩ => ?_)
-  refine WP.seq (WP.mono (firstDiv_ok start) fun a ⟨ha,ka,ra⟩ => ?_)
-  have oa := VG.Proof.Rsa.X86.KeyRt.keep_outside start.ws.ws ka (by decide) (by decide)
-  change Outside g.base 0 g.size u.mem a.mem at oa
-  have pa := hu.after ra (by decide) (by decide) (scratchFrame hu oa)
-  refine WP.mono (checksA_ok ha) fun b ⟨hb,kb,rb⟩ => ?_
-  have ob := VG.Proof.Rsa.X86.KeyRt.keep_outside ha.ws.ws kb (by decide) (by decide)
-  change Outside g.base 0 g.size a.mem b.mem at ob
-  have pb := pa.after rb (by decide) (by decide) (scratchFrame pa ob)
-  have rest : Keeps [.eax,.ecx,.edx,.ebp,.ebx,.esi] s b :=
-    (ru.mono (by decide)).trans ((ra.mono (by decide)).trans (rb.mono (by decide)))
-  have frame : Outside g.base 0 g.size s.mem b.mem :=
-    ((ou.mono (Nat.zero_le _) (by omega)).trans oa).trans ob
-  refine ⟨pb,pub0.keep rest (by decide) frame,?_⟩
-  exact ⟨hb.ws,inputsGate pb s.mem,hb.u,hb.m,hb.nm,hb.zero,
-    by exact Prod.ext hb.u (Prod.ext hb.v (Prod.ext hb.x₁ hb.x₂))⟩
+theorem ArgsOk.keep {s t : State} (A : ArgsOk s) {rs : List Reg} (K : Keeps rs s t) (spn : .esp ∉ rs) : ArgsOk t :=
+  ⟨by rw [K.1 _ spn]; exact A.1, by rw [K.2.2, K.1 _ spn]; exact A.2⟩
 
-theorem after_inverse {g : CallGeometry} {m : Mem} {sp : BitVec 32} {s t : State}
-    (h : Ready g m sp s) (post : InvPost g.base g.size (g.args 7).toNat (arithmeticGeometry g m).P (arithmeticGeometry g m).Q s t) :
-    Inputs g t ∧ InvTiming.Public g.args g.base g.size sp t := by
-  have F : Frame (g.writes ++ [below (s.gpr .esp) 52]) s.mem t.mem :=
-    VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS.toFrame (fun _ _ o => scratchFrame h.1
-      (VG.Proof.Rsa.X86.KeyRt.keep_outside h.2.2.ws.ws o (by decide) (by decide))) post.2.1
-  have K := post.2.2.1
-  have it := h.1.afterBelow K (by decide) (by decide) F
-  have esp : t.gpr .esp = s.gpr .esp := K.1 .esp (by decide)
-  refine ⟨it, ⟨⟨?_, ?_⟩, esp.trans h.2.1.stack, it.arguments⟩⟩
-  · rw [esp]; exact h.2.1.argsOk.1
-  · intro r hr; rw [esp]; exact h.2.1.argsOk.2 r (K.2.2 ▸ hr)
+theorem Run.frame {g : CallGeometry} {sp : BitVec 32} {u t : State} (h : Run g sp u) {rs : List Reg}
+    (K : Keeps rs u t) (di : .edi ∉ rs) (spn : .esp ∉ rs) (O : Outside g.base 0 g.size u.mem t.mem) : Run g sp t :=
+  ⟨h.1.after K di spn (scratchFrame h.1 O), h.2.1.keep K spn, (K.1 _ spn).trans h.2.2⟩
 
+theorem Run.frameBelow {g : CallGeometry} {sp : BitVec 32} {u t : State} (h : Run g sp u) {rs : List Reg}
+    (K : Keeps rs u t) (di : .edi ∉ rs) (spn : .esp ∉ rs)
+    (F : Frame (g.writes ++ [below (u.gpr .esp) 52]) u.mem t.mem) : Run g sp t :=
+  ⟨h.1.afterBelow K di spn F, h.2.1.keep K spn, (K.1 _ spn).trans h.2.2⟩
+
+/-! ## The pieces -/
+
+open VG.Impl.Rsa.X86.CrtValues (sPodd sE1 sE3 sMask aOne aQ aP aDQ aDR aDD aDT aDR2 aDR3 aD nArr)
+open VG.Proof.Rsa.X86.Keys (Keep num slot arr S wp_seqs_cons)
+open VG.Proof.Rsa.X86.KeyRt (RtWs kw keep_outside)
+open VG.Proof.Rsa.X86.WordRt (MLen wq mw Bal relLift RelCT.seqs_cons RelCT.seqs_append)
+open VG.X86.Wp (wp_cmpi)
+
+/-- The guard, of the arguments and `n`. -/
+def GuardC (g : CallGeometry) (N : Nat) : Prop :=
+  (g.args 7).toNat % 8 = 0 ∧ 2 * (g.args 9).toNat = (g.args 7).toNat ∧ 2 * (g.args 11).toNat = (g.args 7).toNat ∧
+    128 ≤ (g.args 7).toNat ∧ 2 ^ (32 * kw (g.args 7).toNat - 1) ≤ N
+
+/-- Both runs, each from its own start `x`, the two with the same `n`. -/
+def Both₃ (g : CallGeometry) (P : State → State → Prop) (t₁ t₂ : State) : Prop :=
+  ∃ x₁ x₂, (fun x₁ x₂ : State => inputBytes g x₁.mem 0 = inputBytes g x₂.mem 0) x₁ x₂ ∧ P x₁ t₁ ∧ P x₂ t₂
+
+theorem taintLift {g : CallGeometry} {sp : BitVec 32} {c : Prog isa} {P Q : State → State → Prop}
+    (hc : Ck τV c) (hr : ∀ x t, P x t → Run g sp t) (hw : ∀ x t, P x t → WP isa c t (Q x)) :
+    RelCT isa (Both₃ g P) c (Both₃ g Q) := by
+  obtain ⟨_, hc⟩ := hc
+  exact relLift (Rel := fun x₁ x₂ : State => inputBytes g x₁.mem 0 = inputBytes g x₂.mem 0)
+    (VG.RelCT.taint (A := sseTaint) τV (fun t₁ t₂ ⟨x₁, x₂, _, h₁, h₂⟩ => (hr x₁ t₁ h₁).agree (hr x₂ t₂ h₂)) hc) hw
+
+/-- An argument, at its length's value. -/
+theorem _root_.VG.Proof.Rsa.X86.CrtValues.Inputs.argNat {g : CallGeometry} {s : State} (h : Inputs g s) {i : Nat} (hi : i < 16) :
+    VG.Proof.Bignum.X86.CallArgument s g.base g.size i (BitVec.ofNat 32 (g.args i).toNat) := by
+  rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]; exact h.arguments i hi
+
+theorem _root_.VG.Proof.Rsa.X86.CrtValues.Inputs.lens {g : CallGeometry} {s : State} (h : Inputs g s) :
+    (g.args 7).toNat ≤ 1024 ∧ (g.args 9).toNat ≤ 1024 ∧ (g.args 11).toNat ≤ 1024 := by
+  have b0 : (g.args 7).toNat ≤ 8 * g.n := h.inputBound 0
+  have b1 : (g.args 9).toNat ≤ 8 * g.n := h.inputBound 1
+  have b2 : (g.args 11).toNat ≤ 8 * g.n := h.inputBound 2
+  have up := h.upper
+  omega
+
+abbrev ar (g : CallGeometry) (x : State) : Geometry := arithmeticGeometry g x.mem
+
+def S1 (g : CallGeometry) (sp : BitVec 32) (x t : State) : Prop :=
+  Run g sp t ∧ Start (ar g x) (g.args 7).toNat t
+def S2 (g : CallGeometry) (sp : BitVec 32) (x t : State) : Prop :=
+  Run g sp t ∧ StC (ar g x) (g.args 7).toNat t ∧ (slot t.mem g.base sG = 0 ↔ GuardC g (ar g x).N)
+def S3 (g : CallGeometry) (sp : BitVec 32) (x t : State) : Prop :=
+  Run g sp t ∧ StI (ar g x) (g.args 7).toNat t ∧ (slot t.mem g.base sG = 0 ↔ GuardC g (ar g x).N)
+def S4 (g : CallGeometry) (sp : BitVec 32) (x t : State) : Prop :=
+  Run g sp t ∧ StD (ar g x) (g.args 7).toNat t ∧ (slot t.mem g.base sG = 0 ↔ GuardC g (ar g x).N)
+def S5 (g : CallGeometry) (sp : BitVec 32) (x t : State) : Prop :=
+  S4 g sp x t ∧ t.zf = some (decide (slot t.mem g.base sG = 0))
+
+theorem firstBlock_frame {g : CallGeometry} {sp : BitVec 32} {t : State}
+    (h : RtWs lay t g.base g.size (g.args 7).toNat nArr) (r : Run g sp t) :
+    WP isa (.block (VG.Impl.Rsa.X86.KeyRt.bitOf lay sPodd aP ++
+      VG.Impl.Rsa.X86.WordModRt.balanced lay 7 9 11 aDQ sG)) t fun t' =>
+      RtWs lay t' g.base g.size (g.args 7).toNat nArr ∧ Run g sp t' := by
+  have ls := r.1.lens
+  refine WP.block_append (WP.mono (VG.Proof.Rsa.X86.KeyRt.bitOf_ok h (j := aP) (sl := sPodd) (by decide) (by decide))
+    fun v ⟨hv, kv, _, rv⟩ => ?_)
+  have Ov := keep_outside h.ws kv (by simp) (by decide)
+  have rv' := r.frame rv (by decide) (by decide) Ov
+  refine WP.mono (VG.Proof.Rsa.X86.WordRt.balanced_ok hv (rv'.1.argNat (by decide)) (rv'.1.argNat (by decide))
+    (rv'.1.argNat (by decide)) ls.1 ls.2.1 ls.2.2 (n := aDQ) (sl := sG) (by decide) (by decide))
+    fun t' ⟨ht, kt, _, rt⟩ => ⟨ht, rv'.frame rt (by decide) (by decide) (keep_outside hv.ws kt (by simp) (by decide))⟩
+
+theorem firstDiv_relCT {g : CallGeometry} {sp : BitVec 32} (ck : CvCk) :
+    RelCT isa (Both₃ g (S1 g sp)) firstDiv (Both₃ g (S2 g sp)) := by
+  refine relLift (Rel := fun x₁ x₂ : State => inputBytes g x₁.mem 0 = inputBytes g x₂.mem 0) ?_ fun x t h => ?_
+  · -- The trace: the block, then the product.
+    unfold firstDiv
+    simp only [VG.Impl.Rsa.X86.Keys.seqs]
+    obtain ⟨_, cb⟩ := ck.block
+    refine VG.RelCT.seq (R := fun t₁ t₂ => (RtWs lay t₁ g.base g.size (g.args 7).toNat nArr ∧ Run g sp t₁) ∧
+      (RtWs lay t₂ g.base g.size (g.args 7).toNat nArr ∧ Run g sp t₂))
+      ((VG.RelCT.wp (VG.RelCT.taint (A := sseTaint) τV
+        (fun t₁ t₂ ⟨_, _, _, h₁, h₂⟩ => h₁.1.agree h₂.1) cb)
+        (F₁ := fun t => RtWs lay t g.base g.size (g.args 7).toNat nArr ∧ Run g sp t)
+        (F₂ := fun t => RtWs lay t g.base g.size (g.args 7).toNat nArr ∧ Run g sp t)
+        fun t₁ t₂ ⟨_, _, _, h₁, h₂⟩ => ⟨firstBlock_frame h₁.2.ws h₁.1, firstBlock_frame h₂.2.ws h₂.1⟩).mono
+        (fun _ _ h => h) fun _ _ ⟨_, f₁, f₂⟩ => ⟨f₁, f₂⟩) ?_
+    intro t₁ t₂ t₁' t₂' s₁ s₂ hp e₁ e₂
+    obtain ⟨⟨w₁, r₁⟩, ⟨w₂, r₂⟩⟩ := hp
+    have ls := r₁.1.lens
+    exact VG.Proof.Rsa.X86.WordRt.mulRows_relCT (τ := τV) (Fr := Run g sp) (B := g.base) (Z := g.size)
+      (fun _ _ a b => a.agree b) (fun f K d e O => f.frame K d e O)
+      (by intro r hr; change r ∈ RegSet.ofList [Reg.edi, .esp]; simpa only [RegSet.mem_ofList] using hr)
+      (rows := none) (by show 1 ≤ kw _; exact w₁.kw_pos) (Nat.le_refl _) (fun k hk => by cases hk)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) ck.r₀ ck.r₁ ck.r₂
+      _ _ _ _ _ _ ⟨⟨w₁, r₁⟩, ⟨w₂, r₂⟩⟩ e₁ e₂
+  · -- What each run computes.
+    obtain ⟨r, st⟩ := h
+    have ls := r.1.lens
+    refine WP.mono (firstDiv_ok st (r.1.argNat (by decide)) (r.1.argNat (by decide)) ls.2.1 ls.2.2)
+      fun t' ⟨hc, k, R, an, han, cn, _, hg⟩ => ⟨r.frame R (by decide) (by decide) (keep_outside st.ws.ws k
+        (by decide) (by decide)), hc, ?_⟩
+    have ea : an = (g.args 7).toNat := by
+      have e := cn.value.symm.trans (r.1.arguments 7 (by decide)).value
+      rw [← e, BitVec.toNat_ofNat]; omega
+    subst ea
+    refine hg.trans ?_
+    have tp : 2 ^ 31 ≤ mw x.mem g.base (kw (g.args 7).toNat) aDQ (kw (g.args 7).toNat - 1) ∨ True := .inr trivial
+    have nv := st.n
+    have top : 2 ^ 31 ≤ mw t.mem g.base (kw (g.args 7).toNat) aDQ (kw (g.args 7).toNat - 1) ↔
+        2 ^ (32 * kw (g.args 7).toNat - 1) ≤ (ar g x).N := by
+      rw [← nv]; exact VG.Proof.Rsa.X86.WordRt.top_iff st.ws.kw_pos
+    exact ⟨fun ⟨a, b, c, d, e⟩ => ⟨a, b, c, d, top.mp e⟩, fun ⟨a, b, c, d, e⟩ => ⟨a, b, c, d, top.mpr e⟩⟩
+
+theorem checksA_relCT {g : CallGeometry} {sp : BitVec 32} (ck : CvCk) :
+    RelCT isa (Both₃ g (S2 g sp)) (VG.Impl.Rsa.X86.Keys.seqs checksPrefix) (Both₃ g (S3 g sp)) :=
+  taintLift ck.checksA (fun _ _ h => h.1) fun x t ⟨r, hc, hg⟩ =>
+    WP.mono (checksA_ok hc) fun t' ⟨hi, k, R⟩ =>
+      ⟨r.frame R (by decide) (by decide) (keep_outside hc.ws.ws k (by decide) (by decide)), hi, by
+        have e : slot t'.mem g.base sG = slot t.mem g.base sG := k.slot (e := sG) (by decide) (by decide)
+        rw [e]; exact hg⟩
+
+theorem inverse_relCT [VG.Proof.Rsa.X86.BatchLaw] {g : CallGeometry} {sp : BitVec 32} :
+    RelCT isa (Both₃ g (S3 g sp)) inverseChoice fun t₁ t₂ => Run g sp t₁ ∧ Run g sp t₂ := by
+  refine (VG.RelCT.exists_ (P := fun (x : State × State) t₁ t₂ =>
+    inputBytes g x.1.mem 0 = inputBytes g x.2.mem 0 ∧ S3 g sp x.1 t₁ ∧ S3 g sp x.2 t₂) fun ⟨x₁, x₂⟩ => ?_).mono
+    (fun t₁ t₂ ⟨x₁, x₂, e, h₁, h₂⟩ => ⟨⟨x₁, x₂⟩, e, h₁, h₂⟩) fun _ _ h => h
+  have inp : ∀ {x t : State}, S3 g sp x t →
+      InvInput g.args g.base g.size (g.args 7).toNat (ar g x).P (ar g x).Q t ∧
+        InvTiming.Public g.args g.base g.size sp t := fun {x t} ⟨r, hb, _⟩ =>
+    ⟨⟨hb.ws, inputsGate r.1 x.mem, hb.u, hb.m, hb.nm, hb.zero,
+      by exact Prod.ext hb.u (Prod.ext hb.v (Prod.ext hb.x₁ hb.x₂))⟩, ⟨r.2.1, r.2.2, r.1.arguments⟩⟩
+  have post : ∀ {x t t' : State}, S3 g sp x t →
+      InvPost g.base g.size (g.args 7).toNat (ar g x).P (ar g x).Q t t' → Run g sp t' := fun {x t t'} h p => by
+    obtain ⟨r, hb, _⟩ := h
+    have F : Frame (g.writes ++ [below (t.gpr .esp) 52]) t.mem t'.mem :=
+      VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS.toFrame (fun _ _ o => scratchFrame r.1
+        (keep_outside hb.ws.ws o (by decide) (by decide))) p.2.1
+    exact r.frameBelow p.2.2.1 (by decide) (by decide) F
+  exact (VG.RelCT.wp (F₁ := fun t' => ∃ t, S3 g sp x₁ t ∧ InvPost g.base g.size (g.args 7).toNat (ar g x₁).P (ar g x₁).Q t t')
+    (F₂ := fun t' => ∃ t, S3 g sp x₂ t ∧ InvPost g.base g.size (g.args 7).toNat (ar g x₂).P (ar g x₂).Q t t')
+    ((InvTiming.dispatch_relCT (args := g.args) (base := g.base) (size := g.size) (len := (g.args 7).toNat)
+      (P := (ar g x₁).P) (Q := (ar g x₁).Q) (P' := (ar g x₂).P) (Q' := (ar g x₂).Q) (sp := sp)).mono
+      (fun t₁ t₂ h => ⟨inp h.2.1, inp h.2.2⟩) fun _ _ h => h)
+    fun t₁ t₂ h => ⟨WP.mono (inverseDispatch_ok (inp h.2.1).1) fun t' p => ⟨t₁, h.2.1, p⟩,
+      WP.mono (inverseDispatch_ok (inp h.2.2).1) fun t' p => ⟨t₂, h.2.2, p⟩⟩).mono (fun _ _ h => h)
+    fun _ _ ⟨_, ⟨_, a₁, p₁⟩, ⟨_, a₂, p₂⟩⟩ => ⟨post a₁ p₁, post a₂ p₂⟩
+
+theorem checksB_relCT [VG.Proof.Rsa.X86.BatchLaw] {g : CallGeometry} {sp : BitVec 32} (ck : CvCk) :
+    RelCT isa (Both₃ g (S3 g sp)) (VG.Impl.Rsa.X86.Keys.seqs (inverseChoice :: checksSuffix)) (Both₃ g (S4 g sp)) := by
+  obtain ⟨_, cs⟩ := ck.suffix
+  refine relLift (Rel := fun x₁ x₂ : State => inputBytes g x₁.mem 0 = inputBytes g x₂.mem 0)
+    (RelCT.seqs_cons (by simp [checksSuffix]) inverse_relCT
+      (VG.RelCT.taint (A := sseTaint) τV (fun t₁ t₂ h => h.1.agree h.2) cs)) fun x t ⟨r, hb, hg⟩ => ?_
+  have gate := inputsGate r.1 x.mem
+  refine WP.mono (checksB_ok hb gate) fun t' ⟨hd, K, R⟩ => ⟨?_, hd, ?_⟩
+  · exact r.frameBelow R (by decide) (by decide) (VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS.toFrame
+      (fun _ _ o => scratchFrame r.1 (keep_outside hb.ws.ws o (by decide) (by decide))) K)
+  · have e : slot t'.mem g.base sG = slot t.mem g.base sG :=
+      outsS_slot K gate.room (e := sG) (by decide) hb.ws.ws.hdr_le (by decide)
+    rw [e]; exact hg
+
+theorem guard_relCT {g : CallGeometry} {sp : BitVec 32} (ck : CvCk) :
+    RelCT isa (Both₃ g (S4 g sp)) (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc sG)), .alu .cmp .eax (.imm 0)])
+      (Both₃ g (S5 g sp)) :=
+  taintLift ck.guard (fun _ _ h => h.1) fun x t ⟨r, hd, hg⟩ => by
+    refine wp_movS (readSrc_sc hd.ws.ws.workspace (by have := hd.ws.ws.hdr_le; unfold sG VG.Impl.Rsa.X86.Keys.hdr at *; omega))
+      fun u U _ => wp_cmpi fun t' T _ z => WP.block_nil ?_
+    have K : Keeps [.eax] t t' := U.keeps.trans (T.keeps [.eax])
+    have M : t'.mem = t.mem := T.mem.trans U.mem
+    have hw := hd.ws.keep K (by decide) (by decide) (by rw [M]; exact Outside.refl _ _ _ _)
+    have sl : slot t'.mem g.base sG = slot t.mem g.base sG := by rw [M]
+    refine ⟨⟨r.frame K (by decide) (by decide) (by rw [M]; exact Outside.refl _ _ _ _), hd.mem hw M,
+      by rw [sl]; exact hg⟩, ?_⟩
+    rw [z, U.gpr, VG.Proof.Rsa.X86.WordRt.sub0_beq, sl]; rfl
+
+/-- Each run in the word steps: `p`'s length `ap`, which the guard admits. -/
+def FW (g : CallGeometry) (sp : BitVec 32) (t : State) : Prop :=
+  Run g sp t ∧ RtWs lay t g.base g.size (g.args 7).toNat nArr ∧
+    MLen t g.base g.size 9 (g.args 9).toNat ∧ 4 ≤ wq (g.args 9).toNat ∧ wq (g.args 9).toNat ≤ kw (g.args 7).toNat
+
+theorem fwStep {g : CallGeometry} {sp : BitVec 32} {c : Prog isa}
+    (hrel : RelCT isa (fun t₁ t₂ => FW g sp t₁ ∧ FW g sp t₂) c fun _ _ => True)
+    (hw : ∀ t, FW g sp t → WP isa c t (FW g sp)) :
+    RelCT isa (fun t₁ t₂ => FW g sp t₁ ∧ FW g sp t₂) c (fun t₁ t₂ => FW g sp t₁ ∧ FW g sp t₂) :=
+  (VG.RelCT.wp hrel fun t₁ t₂ h => ⟨hw t₁ h.1, hw t₂ h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+
+theorem FW.next {g : CallGeometry} {sp : BitVec 32} {t t' : State} (h : FW g sp t) {js ds : List Nat}
+    {rs : List Reg} (hw : RtWs lay t' g.base g.size (g.args 7).toNat nArr)
+    (k : Keep g.base (kw (g.args 7).toNat) js ds t.mem t'.mem) (hjs : ∀ j ∈ js, j < nArr)
+    (hds : ∀ d ∈ ds, d + 4 ≤ VG.Impl.Rsa.X86.Keys.hdr) (K : Keeps rs t t') (di : .edi ∉ rs) (spn : .esp ∉ rs) :
+    FW g sp t' :=
+  have O := keep_outside h.2.1.ws k hjs hds
+  ⟨h.1.frame K di spn O, hw, h.2.2.1.keep K spn O, h.2.2.2⟩
+
+theorem fwTaint {g : CallGeometry} {sp : BitVec 32} {c : Prog isa} (hc : Ck τV c)
+    (hw : ∀ t, FW g sp t → WP isa c t (FW g sp)) :
+    RelCT isa (fun t₁ t₂ => FW g sp t₁ ∧ FW g sp t₂) c (fun t₁ t₂ => FW g sp t₁ ∧ FW g sp t₂) := by
+  obtain ⟨_, hc⟩ := hc
+  exact fwStep (VG.RelCT.taint (A := sseTaint) τV (fun t₁ t₂ h => h.1.1.agree h.2.1) hc) hw
+
+theorem fwWordMod {g : CallGeometry} {sp : BitVec 32} {r : Nat} (hr : r = aDR2 ∨ r = aDR3)
+    (c₀ : Ck τV (.seq (.seq (.block (VG.Impl.Rsa.X86.WordModRt.orTop lay 9 aDD)) (VG.Impl.Rsa.X86.WordModRt.recip lay))
+      (VG.Impl.Rsa.X86.WordModRt.seed lay 9 aDQ r false)))
+    (c₁ : Ck τV (.block (VG.Proof.Rsa.X86.WordRt.digitHead lay aDQ)))
+    (c₂ : Ck τV₂ (.seq (.block VG.Proof.Rsa.X86.WordRt.digitH₂) (VG.Proof.Rsa.X86.WordRt.digitTail lay 9 aDQ r aDD aDT))) :
+    RelCT isa (fun t₁ t₂ => FW g sp t₁ ∧ FW g sp t₂) (VG.Impl.Rsa.X86.WordModRt.wordMod lay 9 aDQ r aDD aDT)
+      (fun t₁ t₂ => FW g sp t₁ ∧ FW g sp t₂) := by
+  have hrN : r < nArr := by rcases hr with rfl | rfl <;> decide
+  have d1 : r ≠ aDT := by rcases hr with rfl | rfl <;> decide
+  have d2 : r ≠ aDD := by rcases hr with rfl | rfl <;> decide
+  have d3 : r ≠ aDQ := by rcases hr with rfl | rfl <;> decide
+  refine fwStep ?_ fun t h => WP.mono (VG.Proof.Rsa.X86.WordRt.wordMod_ok h.2.1 h.2.2.1 (x := aDQ) (r := r) (m := aDD)
+    (t := aDT) (wide := false) (by decide) hrN (by decide) (by decide) d1 (by decide) d2 d3 (by decide) (by decide)
+    (fun e => absurd e (by decide)) (fun e => absurd e (by decide)) (fun e => absurd e (by decide)) h.2.2.2.1
+    h.2.2.2.2) fun t' ⟨hw, k, _, _, _, K⟩ => h.next hw k (by
+      intro j hj; simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+      rcases hj with rfl | rfl | rfl
+      · decide
+      · exact hrN
+      · decide) (by decide) K (by decide) (by decide)
+  intro t₁ t₂ t₁' t₂' s₁ s₂ hp e₁ e₂
+  exact VG.Proof.Rsa.X86.WordRt.wordMod_relCT (τ := τV) (Fr := Run g sp) (B := g.base) (Z := g.size)
+    (fun _ _ a b => a.agree b) (fun f K d e O => f.frame K d e O)
+    (by intro r hr; change r ∈ RegSet.ofList [Reg.edi, .esp]; simpa only [RegSet.mem_ofList] using hr)
+    (by decide) hrN (by decide) (by decide) d1 (by decide) d2 d3 (by decide) (by decide)
+    (fun e => absurd e (by decide)) (fun e => absurd e (by decide)) (fun e => absurd e (by decide))
+    hp.1.2.2.2.1 hp.1.2.2.2.2 c₀ c₁ c₂ _ _ _ _ _ _
+    ⟨⟨hp.1.2.1, hp.1.1, hp.1.2.2.1⟩, ⟨hp.2.2.1, hp.2.1, hp.2.2.2.1⟩⟩ e₁ e₂
+
+theorem wordRems_relCT {g : CallGeometry} {sp : BitVec 32} (ck : CvCk) :
+    RelCT isa (fun t₁ t₂ => FW g sp t₁ ∧ FW g sp t₂) wordRems (fun t₁ t₂ => FW g sp t₁ ∧ FW g sp t₂) := by
+  unfold wordRems rems
+  refine RelCT.seqs_cons (by simp) (fwWordMod (.inl rfl) ck.m₀ ck.m₁ ck.m₂) ?_
+  refine RelCT.seqs_cons (by simp) (fwTaint ck.copyD fun t h => WP.mono (VG.Proof.Rsa.X86.KeyRt.copy_ok h.2.1
+    (o := aDQ) (a := aD) (by decide) (by decide) (by decide)) fun t' ⟨hw, k, _, K, _⟩ =>
+      h.next hw k (by decide) (by simp) K (by decide) (by decide)) ?_
+  refine RelCT.seqs_cons (by simp) (fwTaint ck.copyQ fun t h => WP.mono (VG.Proof.Rsa.X86.KeyRt.copy_ok h.2.1
+    (o := aDD) (a := aQ) (by decide) (by decide) (by decide)) fun t' ⟨hw, k, _, K, _⟩ =>
+      h.next hw k (by decide) (by simp) K (by decide) (by decide)) ?_
+  refine RelCT.seqs_cons (by simp) (fwTaint ck.clr fun t h => WP.mono (VG.Proof.Rsa.X86.KeyRt.clrLow_ok h.2.1
+    (j := aDD) (by decide)) fun t' ⟨hw, k, _, K, _⟩ =>
+      h.next hw k (by decide) (by simp) K (by decide) (by decide)) ?_
+  exact fwWordMod (.inr rfl) ck.m₀' ck.m₁ ck.m₂'
+
+theorem branch_relCT {g : CallGeometry} {sp : BitVec 32} (ck : CvCk) :
+    RelCT isa (Both₃ g (S5 g sp)) (.ite .e wordRems divRems) fun t₁ t₂ => Run g sp t₁ ∧ Run g sp t₂ := by
+  have zEq : ∀ {t₁ t₂ : State}, Both₃ g (S5 g sp) t₁ t₂ → t₁.zf = t₂.zf := fun {t₁ t₂} ⟨x₁, x₂, hn, ⟨g₁, z₁⟩, ⟨g₂, z₂⟩⟩ => by
+    rw [z₁, z₂]
+    have hN : (ar g x₁).N = (ar g x₂).N := by
+      show Spec.Rsa.os2ip (inputBytes g x₁.mem 0) = Spec.Rsa.os2ip (inputBytes g x₂.mem 0)
+      rw [hn]
+    have : (slot t₁.mem g.base sG = 0) ↔ (slot t₂.mem g.base sG = 0) := by
+      rw [g₁.2.2, g₂.2.2, hN]
+    simp only [this]
+  refine VG.RelCT.ite (M := isa) (c := .e) (fun t₁ t₂ h => zEq h) ?_ ?_
+  · refine (wordRems_relCT ck).mono ?_ fun _ _ h => ⟨h.1.1, h.2.1⟩
+    rintro t₁ t₂ ⟨hb, et⟩
+    have et₂ : isa.eval .e t₂ = some true := (zEq hb).symm.trans et
+    obtain ⟨x₁, x₂, _, ⟨g₁, z₁⟩, ⟨g₂, z₂⟩⟩ := hb
+    have fw : ∀ {x t : State}, S4 g sp x t → t.zf = some (decide (slot t.mem g.base sG = 0)) →
+        isa.eval .e t = some true → FW g sp t := fun {x t} ⟨r, hd, hg⟩ z e => by
+      have bal : GuardC g (ar g x).N := hg.mp (by change t.zf = _ at e; rw [z] at e; simpa using e)
+      obtain ⟨h8, hp, -, h128, -⟩ := bal
+      refine ⟨r, hd.ws, ⟨r.1.argNat (by decide), r.1.lens.2.1⟩, ?_, ?_⟩
+      · simp only [wq]; omega
+      · simp only [wq, kw, Spec.Rsa.modulusWords]; omega
+    exact ⟨fw g₁ z₁ et, fw g₂ z₂ et₂⟩
+  · obtain ⟨_, cb⟩ := ck.bits
+    refine (VG.RelCT.wp (F₁ := Run g sp) (F₂ := Run g sp)
+      ((VG.RelCT.taint (A := sseTaint) τV (P := fun t₁ t₂ => Run g sp t₁ ∧ Run g sp t₂)
+        (fun t₁ t₂ h => h.1.agree h.2) cb).mono
+        (fun t₁ t₂ ⟨⟨_, _, _, ⟨g₁, _⟩, ⟨g₂, _⟩⟩, _⟩ => ⟨g₁.1, g₂.1⟩) fun _ _ h => h) ?_).mono (fun _ _ h => h)
+      fun _ _ h => h.2
+    rintro t₁ t₂ ⟨⟨x₁, x₂, _, ⟨⟨r₁, d₁, _⟩, _⟩, ⟨⟨r₂, d₂, _⟩, _⟩⟩, _⟩
+    exact ⟨WP.mono (divRems_ok d₁) fun t' ⟨_, k, K⟩ =>
+        r₁.frame K (by decide) (by decide) (keep_outside d₁.ws.ws k (by decide) (by decide)),
+      WP.mono (divRems_ok d₂) fun t' ⟨_, k, K⟩ =>
+        r₂.frame K (by decide) (by decide) (keep_outside d₂.ws.ws k (by decide) (by decide))⟩
+
+/-- Two runs of `sized` with the same `n` leak the same trace. -/
 theorem sized_relCT [VG.Proof.Rsa.X86.BatchLaw] (g : CallGeometry) (len : Lengths g) (sp : BitVec 32) :
-    RelCT isa (Both (Run g sp)) sized fun _ _ => True := by
-  apply split_relCT
-  intro s t tr ur sf tf ⟨hs,ht⟩ es et
-  cases es with
-  | seq ebs ers =>
-    cases ers with
-    | seq eis eas =>
-      cases et with
-      | seq ebt ert =>
-        cases ert with
-        | seq eit eat =>
-          have initial := agreeV hs.1 ht.1 hs.2.1 ht.2.1 (hs.2.2.trans ht.2.2.symm)
-          have first := (RelCT.taint (A:=sseTaint) τV (fun _ _ h => h) beforeCheck.choose_spec _ _ _ _ _ _ initial ebs ebt).1
-          have rs := wp_result (before_ready hs len) ebs
-          have rt := wp_result (before_ready ht len) ebt
-          have middle := (InvTiming.dispatch_relCT _ _ _ _ _ _
-            ⟨⟨rs.2.2,rs.2.1⟩,⟨rt.2.2,rt.2.1⟩⟩ eis eit).1
-          have is := wp_result (inverseDispatch_ok rs.2.2) eis
-          have it := wp_result (inverseDispatch_ok rt.2.2) eit
-          have fs := after_inverse rs is
-          have ft := after_inverse rt it
-          have finalAgree := agreeV fs.1 ft.1 fs.2.argsOk ft.2.argsOk (fs.2.stack.trans ft.2.stack.symm)
-          have last := (RelCT.taint (A:=sseTaint) τV (fun _ _ h => h) afterCheck.choose_spec _ _ _ _ _ _ finalAgree eas eat).1
-          exact ⟨by rw [first,middle,last],trivial⟩
+    RelCT isa (fun s₁ s₂ => (Run g sp s₁ ∧ Run g sp s₂) ∧ inputBytes g s₁.mem 0 = inputBytes g s₂.mem 0)
+      sized fun _ _ => True := by
+  have ck := cvCk
+  unfold sized
+  simp only [VG.Impl.Rsa.X86.Keys.seqs]
+  refine VG.RelCT.seq (R := Both₃ g (S1 g sp)) ?_ (VG.RelCT.seq (R := fun t₁ t₂ => Run g sp t₁ ∧ Run g sp t₂) ?_ ?_)
+  · obtain ⟨_, hc⟩ := ck.loads
+    have T := VG.RelCT.wpDep
+      (P := fun (s₁ s₂ : State) => (Run g sp s₁ ∧ Run g sp s₂) ∧ inputBytes g s₁.mem 0 = inputBytes g s₂.mem 0)
+      (VG.RelCT.taint (A := sseTaint) τV
+      (P := fun (s₁ s₂ : State) => (Run g sp s₁ ∧ Run g sp s₂) ∧ inputBytes g s₁.mem 0 = inputBytes g s₂.mem 0)
+      (fun t₁ t₂ h => h.1.1.agree h.1.2) hc)
+      (F := fun (σ t : State) => S1 g sp σ t) fun s₁ s₂ h =>
+        ⟨WP.mono (loads_ok h.1.1.1 len) fun t ⟨it, st, _, K⟩ => ⟨⟨it, h.1.1.2.1.keep K (by decide),
+          (K.1 _ (by decide)).trans h.1.1.2.2⟩, st⟩,
+          WP.mono (loads_ok h.1.2.1 len) fun t ⟨it, st, _, K⟩ => ⟨⟨it, h.1.2.2.1.keep K (by decide),
+          (K.1 _ (by decide)).trans h.1.2.2.2⟩, st⟩⟩
+    refine T.mono (fun _ _ h => h) ?_
+    rintro t₁ t₂ ⟨_, σ₁, σ₂, hp, h₁, h₂⟩
+    exact ⟨σ₁, σ₂, hp.2, h₁, h₂⟩
+  · unfold core
+    refine VG.RelCT.seq (firstDiv_relCT ck) (VG.RelCT.seq (R := Both₃ g (S4 g sp)) ?_ ?_)
+    · show RelCT isa _ (VG.Impl.Rsa.X86.Keys.seqs (checksPrefix ++ inverseChoice :: checksSuffix)) _
+      exact RelCT.seqs_append (by simp [checksPrefix]) (by simp) (VG.RelCT.seq (checksA_relCT ck) (checksB_relCT ck))
+    · unfold VG.Impl.Rsa.X86.WordModRt.ifBalanced
+      exact VG.RelCT.seq (guard_relCT ck) (branch_relCT ck)
+  · obtain ⟨_, hc⟩ := ck.stores
+    exact VG.RelCT.taint (A := sseTaint) τV (fun t₁ t₂ h => h.1.agree h.2) hc
 
 /-- What the runs of `sized` from the states themselves need: the inputs, `esp`, and the arguments apart
 from what the body writes. -/
@@ -232,9 +430,10 @@ theorem narrow_run {g : CallGeometry} {sp : BitVec 32} {s : State} (S : SizedAt 
   · show Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 68⟩ r; rw [esp]; exact apart r hr
 
 theorem sizedNarrow_relCT [VG.Proof.Rsa.X86.BatchLaw] (g : CallGeometry) (len : Lengths g) (sp : BitVec 32) :
-    RelCT isa (Both (SizedAt g sp)) sized fun _ _ => True := by
-  refine relCT_narrow (Pn := Both (Run g sp)) (fun s => s.rd ++ s.wr)
-    (fun _ => g.writes) (fun s₁ s₂ ⟨S₁, S₂⟩ => ?_) (sized_relCT g len sp)
+    RelCT isa (fun s₁ s₂ => Both (SizedAt g sp) s₁ s₂ ∧ inputBytes g s₁.mem 0 = inputBytes g s₂.mem 0)
+      sized fun _ _ => True := by
+  refine relCT_narrow (Pn := fun s₁ s₂ => (Run g sp s₁ ∧ Run g sp s₂) ∧ inputBytes g s₁.mem 0 = inputBytes g s₂.mem 0)
+    (fun s => s.rd ++ s.wr) (fun _ => g.writes) (fun s₁ s₂ ⟨⟨S₁, S₂⟩, hn⟩ => ?_) (sized_relCT g len sp)
   have cov : ∀ {s : State}, SizedAt g sp s → Covers g.writes s.wr := by
     intro s S
     apply Covers.of_forall
@@ -250,6 +449,6 @@ theorem sizedNarrow_relCT [VG.Proof.Rsa.X86.BatchLaw] (g : CallGeometry) (len : 
     fun S => ⟨_, sized_ok (narrow_inputs S.1) len⟩
   exact ⟨Covers.append_left (Covers.refl _) (Covers.right (cov S₁)), cov S₁,
     Covers.append_left (Covers.refl _) (Covers.right (cov S₂)), cov S₂, wp S₁, wp S₂,
-    narrow_run S₁, narrow_run S₂⟩
+    ⟨narrow_run S₁, narrow_run S₂⟩, hn⟩
 
 end VG.Proof.Rsa.X86.CrtValuesRt

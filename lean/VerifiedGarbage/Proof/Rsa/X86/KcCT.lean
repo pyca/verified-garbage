@@ -35,7 +35,7 @@ open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.KeyCheck VG.Impl.Rsa.X86.KeyCheckRt
 open VG.Proof.Rsa.X86.Keys
-open VG.Proof.Rsa.X86.WordRt (MLen wq mw Bal Top top_iff val32_low)
+open VG.Proof.Rsa.X86.WordRt (MLen wq mw Bal Top top_iff val32_low exec_seqs_append RelCT.seqs_append RelCT.seqs_cons RelCT.seqs_all relLift)
 
 /-! ## Runs -/
 
@@ -80,59 +80,6 @@ theorem Run.frame {g : CallGeometry} {sp : BitVec 32} {u t : State} (h : Run g s
 theorem Run.agree {g : CallGeometry} {sp : BitVec 32} {t₁ t₂ : State} (h₁ : Run g sp t₁) (h₂ : Run g sp t₂) :
     VG.X86.Taint.Agree (τV g.full) t₁ t₂ :=
   agreeV h₁.1 h₂.1 h₁.2.1 h₂.2.1 (h₁.2.2.trans h₂.2.2.symm)
-
-/-! ## Sequences -/
-
-theorem exec_seqs_append {l₁ l₂ : List (Prog isa)} (h₁ : l₁ ≠ []) (h₂ : l₂ ≠ []) {s s' : State} {tr : List Leak}
-    (e : Exec isa (seqs (l₁ ++ l₂)) s tr s') : Exec isa (.seq (seqs l₁) (seqs l₂)) s tr s' := by
-  induction l₁ generalizing s tr with
-  | nil => exact absurd rfl h₁
-  | cons c l ih =>
-    rcases l with _ | ⟨d, l⟩
-    · match l₂, h₂ with
-      | _ :: _, _ => exact e
-    · rw [List.cons_append] at e
-      change Exec isa (.seq c (seqs ((d :: l) ++ l₂))) s tr s' at e
-      cases e with
-      | seq e₁ e₂ =>
-        cases ih (by simp) e₂ with
-        | seq a b =>
-          rw [← List.append_assoc]
-          exact .seq (.seq e₁ a) b
-
-theorem RelCT.seqs_append {P Q : State → State → Prop} {l₁ l₂ : List (Prog isa)} (h₁ : l₁ ≠ []) (h₂ : l₂ ≠ [])
-    (h : RelCT isa P (.seq (seqs l₁) (seqs l₂)) Q) : RelCT isa P (seqs (l₁ ++ l₂)) Q :=
-  fun _ _ _ _ _ _ hp e₁ e₂ => h _ _ _ _ _ _ hp (exec_seqs_append h₁ h₂ e₁) (exec_seqs_append h₁ h₂ e₂)
-
-theorem RelCT.seqs_cons {P R Q : State → State → Prop} {c : Prog isa} {l : List (Prog isa)} (hl : l ≠ [])
-    (h₁ : RelCT isa P c R) (h₂ : RelCT isa R (seqs l) Q) : RelCT isa P (seqs (c :: l)) Q := by
-  match l, hl with
-  | _ :: _, _ => exact VG.RelCT.seq h₁ h₂
-
-/-- The same relation through every element of a sequence. -/
-theorem RelCT.seqs_all {P : State → State → Prop} :
-    ∀ {l : List (Prog isa)}, l ≠ [] → (∀ c ∈ l, RelCT isa P c P) → RelCT isa P (seqs l) P
-  | [c], _, h => h c (by simp)
-  | c :: d :: l, _, h => RelCT.seqs_cons (by simp) (h c (by simp))
-      (RelCT.seqs_all (l := d :: l) (by simp) fun x hx => h x (List.mem_cons_of_mem _ hx))
-
-/-! ## Lifting the relations of pieces -/
-
-/-- A piece related from the states of both runs, each from its own start `u`, run by each from
-what it knows of its run. -/
-theorem relLift {α : Type} {c : Prog isa} {P Q : α → State → Prop} {Rel : α → α → Prop}
-    (hrel : RelCT isa (fun t₁ t₂ => ∃ u₁ u₂, Rel u₁ u₂ ∧ P u₁ t₁ ∧ P u₂ t₂) c fun _ _ => True)
-    (hw : ∀ u t, P u t → WP isa c t (Q u)) :
-    RelCT isa (fun t₁ t₂ => ∃ u₁ u₂, Rel u₁ u₂ ∧ P u₁ t₁ ∧ P u₂ t₂) c
-      (fun t₁ t₂ => ∃ u₁ u₂, Rel u₁ u₂ ∧ Q u₁ t₁ ∧ Q u₂ t₂) := by
-  refine (VG.RelCT.exists_ (P := fun (x : α × α) t₁ t₂ => Rel x.1 x.2 ∧ P x.1 t₁ ∧ P x.2 t₂)
-    fun ⟨u₁, u₂⟩ => ?_).mono (fun t₁ t₂ ⟨u₁, u₂, r, h₁, h₂⟩ => ⟨⟨u₁, u₂⟩, r, h₁, h₂⟩) fun _ _ h => h
-  rcases Classical.em (Rel u₁ u₂) with hr | hr
-  · exact (VG.RelCT.wp (F₁ := Q u₁) (F₂ := Q u₂)
-      (hrel.mono (fun t₁ t₂ h => ⟨u₁, u₂, h⟩) fun _ _ h => h)
-      fun t₁ t₂ h => ⟨hw u₁ t₁ h.2.1, hw u₂ t₂ h.2.2⟩).mono (fun _ _ h => h)
-      fun _ _ ⟨_, q₁, q₂⟩ => ⟨u₁, u₂, hr, q₁, q₂⟩
-  · exact VG.RelCT.of_false fun _ _ h => hr h.1
 
 /-! ## The frame -/
 
