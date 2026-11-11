@@ -21,9 +21,15 @@ words of `x P` and `m P` for a power of two `P` (Knuth's normalization), but
   while it is negative is `x 2^64 mod m`, for any such `q̂`;
 * `qhat_trunc`: an estimate from the top three words of the dividend and the
   top two of the divisor (above the same power of two) is `q ≤ q̂ ≤ q + 1`,
-  and `wordStepQ1_val`: then `m` added once if negative is `x 2^64 mod m`;
-* `qhat3_norm`, `quot3_val`: that estimate from `qhat_norm`'s, corrected by
-  `U - q̂ D` over three words (Knuth's step D3).
+  and `wordStepQ1_div`: then `m` added once if negative is `y mod m`, for any
+  dividend `y < 2^64 m` (`wordStepQ1_val` for `y = x 2^64`);
+* `qhat3_div`, `quot3_val`: that estimate from `qhat_norm`'s, corrected by
+  `U - q̂ D` over three words (Knuth's step D3), for any dividend
+  `y < 2^64 m` (`qhat3_norm` for `y = x 2^64`), and `shift_u`: a word `u`
+  below `x` in `y = x 2^64 + u` changes none of `U`'s words when they are
+  above it;
+* `norm_inv_step`, `norm_unique`: the shift `P` of a word's normalization,
+  a step at a time, and that it is unique.
 -/
 
 @[expose] public section
@@ -147,6 +153,42 @@ theorem qhat_fix {u2 u1 d : Nat} (hd0 : 0 < d) (hu2 : u2 ≤ d) (hu1 : u1 < 2 ^ 
       rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm d] at this; omega_using [this, hu1]
     omega_using [this]
 
+/-- A step of normalization on `x = T 2^j`, `p = 2^j`: `j` grows while `x`'s top
+bit is clear: the shift `P = 2^j` of a word `T`'s normalization. -/
+theorem norm_inv_step {x p : BitVec 64} {T j i : Nat} (hj : j ≤ i) (hi : i < 63) (hp : p.toNat = 2 ^ j)
+    (hx : x.toNat = T * 2 ^ j) (hc : j = i ∨ 2 ^ 63 ≤ T * 2 ^ j) :
+    ∃ j' ≤ i + 1, (if x.toNat < 2 ^ 63 then p + p else p).toNat = 2 ^ j' ∧
+      (if x.toNat < 2 ^ 63 then x + x else x).toNat = T * 2 ^ j' ∧ (j' = i + 1 ∨ 2 ^ 63 ≤ T * 2 ^ j') := by
+  by_cases h : x.toNat < 2 ^ 63
+  · simp only [h, ite_true]
+    have hji : j = i := by omega_using [hc, h, hx]
+    have hpj : 2 ^ j ≤ 2 ^ 62 := Nat.pow_le_pow_right (by decide) (by omega_using [hji, hi])
+    refine ⟨j + 1, by omega_using [hj], ?_, ?_, Or.inl (by omega_using [hji])⟩
+    · have e2 : 2 ^ (j + 1) = 2 ^ j + 2 ^ j := by rw [Nat.pow_succ, Nat.mul_two]
+      rw [BitVec.toNat_add, hp, e2]
+      generalize 2 ^ j = a at hpj ⊢
+      omega_using [hpj]
+    · have e2 : T * 2 ^ (j + 1) = T * 2 ^ j + T * 2 ^ j := by rw [Nat.pow_succ, ← Nat.mul_assoc, Nat.mul_two]
+      rw [BitVec.toNat_add, hx, e2]
+      rw [hx] at h
+      generalize T * 2 ^ j = a at h ⊢
+      omega_using [h]
+  · simp only [h, ite_false]
+    exact ⟨j, by omega_using [hj], hp, hx, Or.inr (by omega_using [h, hx])⟩
+
+/-- The normalization shift is unique: at most one `z` puts `⌊M 2^z / B⌋` in
+`[2^63, 2^64)`. -/
+theorem norm_unique {M B a b : Nat} (ha : 2 ^ 63 ≤ M * 2 ^ a / B) (ha' : M * 2 ^ a / B < 2 ^ 64)
+    (hb : 2 ^ 63 ≤ M * 2 ^ b / B) (hb' : M * 2 ^ b / B < 2 ^ 64) : a = b := by
+  have key : ∀ {a b : Nat}, a < b → 2 * (M * 2 ^ a / B) ≤ M * 2 ^ b / B := fun {a b} h => by
+    refine Nat.le_trans (Nat.mul_div_le_mul_div_assoc 2 _ B) (Nat.div_le_div_right ?_)
+    rw [← Nat.mul_assoc, Nat.mul_comm 2 M, Nat.mul_assoc, Nat.mul_comm 2, ← Nat.pow_succ]
+    exact Nat.mul_le_mul_left M (Nat.pow_le_pow_right (by decide) h)
+  rcases Nat.lt_trichotomy a b with h | h | h
+  · have := key h; omega_using [this, ha, hb']
+  · exact h
+  · have := key h; omega_using [this, hb, ha']
+
 /-! ## A 3-by-2 estimate, one add-back -/
 
 theorem lt_succ_div_mul (a b : Nat) (hb : 0 < b) : a < (a / b + 1) * b := by
@@ -215,70 +257,76 @@ theorem addBack_one {W y m qh : Nat} (hm : 0 < m) (hW : 2 * m < W / 2)
   rcases (show c = 0 ∨ c = 1 by omega_using [hc]) with rfl | rfl <;> push_cast <;>
     (repeat' split) <;> omega_arith
 
-/-- A step of long division over the words, for any estimate `q ≤ q̂ ≤ q + 1`
-of `q = ⌊x 2^64 / m⌋`: `t₁ = x 2^64 - q̂ m` modulo `W > 4 m` (with its borrow
-`b`) and `m` added once to it if its top half is set (with the carry `c`) is
-`x 2^64 mod m`. -/
-theorem wordStepQ1_val {W X M qh T1 T2 b c : Nat} (hM0 : 0 < M) (hMW : 2 * M < W / 2)
-    (hge : X * 2 ^ 64 / M ≤ qh) (hle : qh ≤ X * 2 ^ 64 / M + 1)
-    (hT1 : T1 < W) (hb : b < 2) (h1 : T1 + qh * M = X * 2 ^ 64 + W * b)
+/-- A step of long division over the words of a dividend `y < 2^64 m`, for
+any estimate `q ≤ q̂ ≤ q + 1` of `q = ⌊y / m⌋`: `t₁ = y - q̂ m` modulo
+`W > 4 m` (with its borrow `b`) and `m` added once to it if its top half is
+set (with the carry `c`) is `y mod m`. -/
+theorem wordStepQ1_div {W Y M qh T1 T2 b c : Nat} (hM0 : 0 < M) (hMW : 2 * M < W / 2)
+    (hge : Y / M ≤ qh) (hle : qh ≤ Y / M + 1)
+    (hT1 : T1 < W) (hb : b < 2) (h1 : T1 + qh * M = Y + W * b)
     (hT2 : T2 < W) (hc : c < 2) (h2 : T2 + W * c = T1 + if W / 2 ≤ T1 then M else 0) :
-    T2 = X * 2 ^ 64 % M := by
+    T2 = Y % M := by
   obtain ⟨hfin, hv1, hv2⟩ := addBack_one (W := W) hM0 hMW hge hle
   have e1 := twos_of_sub hT1 hb (by omega_using [h1]) hv1 hv2
-  have hw1 : -((W : Int) / 2) ≤ addIfNeg M ((X * 2 ^ 64 : Nat) - (qh * M : Nat)) := by
+  have hw1 : -((W : Int) / 2) ≤ addIfNeg M ((Y : Nat) - (qh * M : Nat)) := by
     rw [hfin]; omega_using []
-  have hw2 : addIfNeg M ((X * 2 ^ 64 : Nat) - (qh * M : Nat)) < (W : Int) / 2 := by
-    rw [hfin]; have := Nat.mod_lt (X * 2 ^ 64) hM0; omega_using [hMW, this]
+  have hw2 : addIfNeg M ((Y : Nat) - (qh * M : Nat)) < (W : Int) / 2 := by
+    rw [hfin]; have := Nat.mod_lt Y hM0; omega_using [hMW, this]
   have e2 := twos_of_add hv1 hv2 hw1 hw2 e1 hT2 hc h2
   rw [e2, hfin]
-  have hr := Nat.mod_lt (X * 2 ^ 64) hM0
+  have hr := Nat.mod_lt Y hM0
   have hMW' : M < W := Nat.lt_of_lt_of_le (by omega_using [hMW]) (Nat.div_le_self W 2)
   unfold twos
   rw [Int.emod_eq_of_lt (Int.natCast_nonneg _) (Int.ofNat_lt.mpr (Nat.lt_trans hr hMW')), Int.toNat_natCast]
 
-/-- The estimates of a 3-by-2 step, for the top three words `U = ⌊x P / 2^K⌋`
-of `x P` and the top two `D = ⌊m P / 2^(K + 64)⌋ ≥ 2^127` of `m P`, `x < m`:
-`U < (2^64 + 1) D`; `quot`'s 2-by-1 estimate `min(⌊⌊U / 2^64⌋ / ⌊D / 2^64⌋⌋, 2^64 - 1)`
-is within 2 above `Q = min(⌊U / D⌋, 2^64 - 1)` (`WordStep.quot_le_div`,
-`WordStep.div_le_quot`); and `q ≤ Q ≤ q + 1` for `q = ⌊x 2^64 / m⌋`
-(`qhat_trunc`). -/
-theorem qhat3_norm {X M P K : Nat} (hP : 0 < P) (hXM : X < M)
+/-- `wordStepQ1_div` for the dividend `y = x 2^64`. -/
+theorem wordStepQ1_val {W X M qh T1 T2 b c : Nat} (hM0 : 0 < M) (hMW : 2 * M < W / 2)
+    (hge : X * 2 ^ 64 / M ≤ qh) (hle : qh ≤ X * 2 ^ 64 / M + 1)
+    (hT1 : T1 < W) (hb : b < 2) (h1 : T1 + qh * M = X * 2 ^ 64 + W * b)
+    (hT2 : T2 < W) (hc : c < 2) (h2 : T2 + W * c = T1 + if W / 2 ≤ T1 then M else 0) :
+    T2 = X * 2 ^ 64 % M :=
+  wordStepQ1_div hM0 hMW hge hle hT1 hb h1 hT2 hc h2
+
+/-- The estimates of a 3-by-2 step of a dividend `y < 2^64 m`, for the top
+three words `U = ⌊y P / 2^(K + 64)⌋` of `y P` and the top two
+`D = ⌊m P / 2^(K + 64)⌋ ≥ 2^127` of `m P`: `U < (2^64 + 1) D`; `quot`'s 2-by-1
+estimate `min(⌊⌊U / 2^64⌋ / ⌊D / 2^64⌋⌋, 2^64 - 1)` is within 2 above
+`Q = min(⌊U / D⌋, 2^64 - 1)` (`WordStep.quot_le_div`, `WordStep.div_le_quot`);
+and `q ≤ Q ≤ q + 1` for `q = ⌊y / m⌋` (`qhat_trunc`). -/
+theorem qhat3_div {Y M P K : Nat} (hP : 0 < P) (hYM : Y < M * 2 ^ 64)
     (hd : 2 ^ 63 ≤ M * P / 2 ^ (K + 64) / 2 ^ 64) :
-    X * P / 2 ^ K < (2 ^ 64 + 1) * (M * P / 2 ^ (K + 64)) ∧
-      min (X * P / 2 ^ K / (M * P / 2 ^ (K + 64))) (2 ^ 64 - 1) ≤
-        min (X * P / 2 ^ K / 2 ^ 64 / (M * P / 2 ^ (K + 64) / 2 ^ 64)) (2 ^ 64 - 1) ∧
-      min (X * P / 2 ^ K / 2 ^ 64 / (M * P / 2 ^ (K + 64) / 2 ^ 64)) (2 ^ 64 - 1) ≤
-        min (X * P / 2 ^ K / (M * P / 2 ^ (K + 64))) (2 ^ 64 - 1) + 2 ∧
-      X * 2 ^ 64 / M ≤ min (X * P / 2 ^ K / (M * P / 2 ^ (K + 64))) (2 ^ 64 - 1) ∧
-      min (X * P / 2 ^ K / (M * P / 2 ^ (K + 64))) (2 ^ 64 - 1) ≤ X * 2 ^ 64 / M + 1 := by
-  have hM0 : 0 < M := by omega_using [hXM]
+    Y * P / 2 ^ (K + 64) < (2 ^ 64 + 1) * (M * P / 2 ^ (K + 64)) ∧
+      min (Y * P / 2 ^ (K + 64) / (M * P / 2 ^ (K + 64))) (2 ^ 64 - 1) ≤
+        min (Y * P / 2 ^ (K + 64) / 2 ^ 64 / (M * P / 2 ^ (K + 64) / 2 ^ 64)) (2 ^ 64 - 1) ∧
+      min (Y * P / 2 ^ (K + 64) / 2 ^ 64 / (M * P / 2 ^ (K + 64) / 2 ^ 64)) (2 ^ 64 - 1) ≤
+        min (Y * P / 2 ^ (K + 64) / (M * P / 2 ^ (K + 64))) (2 ^ 64 - 1) + 2 ∧
+      Y / M ≤ min (Y * P / 2 ^ (K + 64) / (M * P / 2 ^ (K + 64))) (2 ^ 64 - 1) ∧
+      min (Y * P / 2 ^ (K + 64) / (M * P / 2 ^ (K + 64))) (2 ^ 64 - 1) ≤ Y / M + 1 := by
+  have hM0 : 0 < M := Nat.pos_of_ne_zero fun h => by rw [h, Nat.zero_mul] at hYM; exact Nat.not_lt_zero _ hYM
   have hBK : (2 : Nat) ^ (K + 64) = 2 ^ K * 2 ^ 64 := Nat.pow_add _ _ _
-  have hq0 : X * P * 2 ^ 64 / (M * P) = X * 2 ^ 64 / M := by
-    rw [Nat.mul_assoc, Nat.mul_comm P, ← Nat.mul_assoc, Nat.mul_div_mul_right _ _ hP]
-  have hq : X * P * 2 ^ 64 / (M * P) < 2 ^ 64 := by
-    rw [hq0, Nat.div_lt_iff_lt_mul hM0, Nat.mul_comm (2 ^ 64) M]
-    exact Nat.mul_lt_mul_of_pos_right hXM (Nat.two_pow_pos 64)
-  have hYU : X * P * 2 ^ 64 / 2 ^ (K + 64) = X * P / 2 ^ K := by
-    rw [hBK, Nat.mul_div_mul_right _ _ (Nat.two_pow_pos 64)]
+  have hq0 : Y * P / (M * P) = Y / M := Nat.mul_div_mul_right _ _ hP
+  have hq : Y * P / (M * P) < 2 ^ 64 := by
+    rw [hq0, Nat.div_lt_iff_lt_mul hM0, Nat.mul_comm (2 ^ 64) M]; exact hYM
   generalize hD : M * P / 2 ^ (K + 64) = D at hd ⊢
   have hD64 : 2 ^ 64 ≤ D := by
     have := Nat.mul_le_mul_right (2 ^ 64) hd
     have h2 := Nat.div_mul_le_self D (2 ^ 64)
     have h3 : 2 ^ 63 * 2 ^ 64 = 2 ^ 127 := by rw [← Nat.pow_add]
     omega_using [this, h2, h3]
-  have tr := qhat_trunc (Y := X * P * 2 ^ 64) (N := M * P) (K := K + 64) hq
-    (by rw [hD]; exact hD64)
-  rw [hYU, hD, hq0] at tr
-  generalize hU : X * P / 2 ^ K = U at tr ⊢
-  -- `x P < m P < (D + 1) 2^(K + 64)`, so `U < (D + 1) 2^64 ≤ (2^64 + 1) D`.
+  have tr := qhat_trunc (Y := Y * P) (N := M * P) (K := K + 64) hq (by rw [hD]; exact hD64)
+  rw [hD, hq0] at tr
+  generalize hU : Y * P / 2 ^ (K + 64) = U at tr ⊢
+  -- `y P < 2^64 m P < 2^64 (D + 1) 2^(K + 64)`, so `U < (D + 1) 2^64 ≤ (2^64 + 1) D`.
   have hUD : U < (2 ^ 64 + 1) * D := by
-    have h1 : X * P < (D + 1) * 2 ^ (K + 64) := by
+    have h1 : Y * P < (D + 1) * 2 ^ (K + 64) * 2 ^ 64 := by
       have := lt_succ_div_mul (M * P) (2 ^ (K + 64)) (Nat.two_pow_pos _)
       rw [hD] at this
-      exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_pos_right hXM hP) (Nat.le_of_lt this)
+      have h3 : Y * P < M * P * 2 ^ 64 := by
+        rw [Nat.mul_assoc, Nat.mul_comm P, ← Nat.mul_assoc]; exact Nat.mul_lt_mul_of_pos_right hYM hP
+      exact Nat.lt_of_lt_of_le h3 (Nat.mul_le_mul_right _ (Nat.le_of_lt this))
     have h2 : U < (D + 1) * 2 ^ 64 := by
-      rw [← hU, Nat.div_lt_iff_lt_mul (Nat.two_pow_pos K), Nat.mul_assoc, Nat.mul_comm (2 ^ 64), ← hBK]; exact h1
+      rw [← hU, Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _), Nat.mul_assoc, Nat.mul_comm (2 ^ 64),
+        ← Nat.mul_assoc]; exact h1
     have e1 : (D + 1) * 2 ^ 64 = D * 2 ^ 64 + 2 ^ 64 := by rw [Nat.add_mul, Nat.one_mul]
     have e2 : (2 ^ 64 + 1) * D = D * 2 ^ 64 + D := by rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm]
     omega_using [h2, e1, e2, hD64]
@@ -295,6 +343,32 @@ theorem qhat3_norm {X M P K : Nat} (hP : 0 < P) (hXM : X < M)
     rw [← hUe, ← hDe] at this
     omega_using [this, hlt]
   · omega_using [hge]
+
+/-- `qhat3_div` for the dividend `y = x 2^64`, `x < m`, and the top three
+words `U = ⌊x P / 2^K⌋` of `x P`. -/
+theorem qhat3_norm {X M P K : Nat} (hP : 0 < P) (hXM : X < M)
+    (hd : 2 ^ 63 ≤ M * P / 2 ^ (K + 64) / 2 ^ 64) :
+    X * P / 2 ^ K < (2 ^ 64 + 1) * (M * P / 2 ^ (K + 64)) ∧
+      min (X * P / 2 ^ K / (M * P / 2 ^ (K + 64))) (2 ^ 64 - 1) ≤
+        min (X * P / 2 ^ K / 2 ^ 64 / (M * P / 2 ^ (K + 64) / 2 ^ 64)) (2 ^ 64 - 1) ∧
+      min (X * P / 2 ^ K / 2 ^ 64 / (M * P / 2 ^ (K + 64) / 2 ^ 64)) (2 ^ 64 - 1) ≤
+        min (X * P / 2 ^ K / (M * P / 2 ^ (K + 64))) (2 ^ 64 - 1) + 2 ∧
+      X * 2 ^ 64 / M ≤ min (X * P / 2 ^ K / (M * P / 2 ^ (K + 64))) (2 ^ 64 - 1) ∧
+      min (X * P / 2 ^ K / (M * P / 2 ^ (K + 64))) (2 ^ 64 - 1) ≤ X * 2 ^ 64 / M + 1 := by
+  have hYU : X * 2 ^ 64 * P / 2 ^ (K + 64) = X * P / 2 ^ K := by
+    rw [Nat.pow_add, Nat.mul_assoc, Nat.mul_comm (2 ^ 64) P, ← Nat.mul_assoc,
+      Nat.mul_div_mul_right _ _ (Nat.two_pow_pos 64)]
+  have h := qhat3_div (Y := X * 2 ^ 64) hP (Nat.mul_lt_mul_of_pos_right hXM (Nat.two_pow_pos 64)) hd
+  rw [hYU] at h
+  exact h
+
+/-- The top three words of `(x 2^64 + u) P`, `u < 2^64`, `P = 2^z ≤ 2^64`,
+from `2^(K + 128)` up, are those of `x P` from `2^(K + 64)` up: the word `u`
+below `x` changes none of them (`shift_floor`). -/
+theorem shift_u {X u z K : Nat} (hz : z ≤ 64) (hu : u < 2 ^ 64) :
+    (X * 2 ^ 64 + u) * 2 ^ z / 2 ^ (K + 128) = X * 2 ^ z / 2 ^ (K + 64) := by
+  rw [show K + 128 = 64 + 64 + K by omega, Nat.pow_add, ← Nat.div_div_eq_div_mul, shift_floor hz hu,
+    Nat.div_div_eq_div_mul, ← Nat.pow_add, Nat.add_comm 64 K]
 
 /-- The corrections of a 3-by-2 estimate `q̂₀` of `Q = min(⌊U / D⌋, 2^64 - 1)`,
 `Q ≤ q̂₀ ≤ Q + 2`, for `U < (2^64 + 1) D`: `t₁ = U - q̂₀ D` modulo `W > 8 D`
