@@ -240,8 +240,8 @@ pub const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_FEATURES: verified_garba
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed_sha256_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "U1VWV41kJJiLRCR8iQQki4QkjAAAAIlEJASLhCSIAAAAiUQkCIuEJIwAAACJRCQMi4QkkAAAAIlEJBCLhCSUAAAAiUQkFIuEJKAAAACJRCQYi4QkjAAAAIlEJByLhCSoAAAAiUQkIIuEJKwAAACJRCQki4QksAAAAIlEJCiLhCS0AAAAiUQkLIuEJLgAAACJRCQwi4QkvAAAAIlEJDSLhCTAAAAAiUQkOIuEJMQAAACJRCQ8i4QkyAAAAIlEJECLhCTMAAAAiUQkRIuEJNAAAACJRCRIi4Qk1AAAAIlEJEw="
-call {vg_rsa_private_checked}
+        r#".base64 "U1VWV41kJJiLRCR8iQQki4QkjAAAAIlEJASLhCSIAAAAiUQkCIuEJIwAAACJRCQMi4QkkAAAAIlEJBCLhCSUAAAAiUQkFIuEJKAAAACJRCQYi4QkjAAAAIlEJByLhCSoAAAAiUQkIIuEJKwAAACJRCQki4QksAAAAIlEJCiLhCS0AAAAiUQkLIuEJLgAAACJRCQwi4QkvAAAAIlEJDSLhCTAAAAAiUQkOIuEJMQAAACJRCQ8i4QkyAAAAIlEJECLhCTMAAAAiUQkRIuEJNAAAACJRCRIi4Qk1AAAAIlEJEyLhCTYAAAAiUQkUIuEJNwAAACJRCRU"
+call {vg_rsa_private_checked_precomputed}
 .base64 "iUQkUIu0JNAAAACBxhAGAACLjCSMAAAAuAAAAAA="
 20:
 .base64 "iAaDxgGD6QE="
@@ -300,7 +300,7 @@ jne 26b
 jne 27b
 .base64 "i0QkUI1kJGiLPCSLdCQEi2wkCFtbW1vD"
 .p2align 6"#,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
@@ -445,8 +445,8 @@ jne 27b
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "U1VWV41kJJiLRCR8iQQki4QkjAAAAIlEJASLhCSIAAAAiUQkCIuEJIwAAACJRCQMi4QkkAAAAIlEJBCLhCSUAAAAiUQkFIuEJKAAAACJRCQYi4QkjAAAAIlEJByLhCSoAAAAiUQkIIuEJKwAAACJRCQki4QksAAAAIlEJCiLhCS0AAAAiUQkLIuEJLgAAACJRCQwi4QkvAAAAIlEJDSLhCTAAAAAiUQkOIuEJMQAAACJRCQ8i4QkyAAAAIlEJECLhCTMAAAAiUQkRIuEJNAAAACJRCRIi4Qk1AAAAIlEJEw="
-call {vg_rsa_private_checked}
+        r#".base64 "U1VWV41kJJiLRCR8iQQki4QkjAAAAIlEJASLhCSIAAAAiUQkCIuEJIwAAACJRCQMi4QkkAAAAIlEJBCLhCSUAAAAiUQkFIuEJKAAAACJRCQYi4QkjAAAAIlEJByLhCSoAAAAiUQkIIuEJKwAAACJRCQki4QksAAAAIlEJCiLhCS0AAAAiUQkLIuEJLgAAACJRCQwi4QkvAAAAIlEJDSLhCTAAAAAiUQkOIuEJMQAAACJRCQ8i4QkyAAAAIlEJECLhCTMAAAAiUQkRIuEJNAAAACJRCRIi4Qk1AAAAIlEJEyLhCTYAAAAiUQkUIuEJNwAAACJRCRU"
+call {vg_rsa_private_checked_precomputed}
 .base64 "iUQkUIu0JNAAAACBxhAGAACLjCSMAAAAuAAAAAA="
 20:
 .base64 "iAaDxgGD6QE="
@@ -505,7 +505,7 @@ jne 26b
 jne 27b
 .base64 "i0QkUI1kJGiLPCSLdCQEi2wkCFtbW1vD"
 .p2align 6"#,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,

@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndVerified
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecVerified
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecPrecomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecP.Verified
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86
 public import VerifiedGarbage.Proof.Framework.QualifiedName
@@ -43,10 +43,10 @@ def artifacts (v : Backend) (c : CrtImpl) : List Artifact := [
     spSafe := Proof.RsaPkcs1Enc.X86.Dec.code_sp v c },
   Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact X86.target {
     suffix := qualifiedName "" [("sha256", v.stream.suffix), ("crt", c.suffix)]
-    code := Proof.RsaPkcs1Enc.X86.Dec.decryptCode v c
+    code := Proof.RsaPkcs1Enc.X86.Dec.decryptCodeP v c Proof.Rsa.X86.PrivChecked.crtPBaseline
     stack := Proof.RsaPkcs1Enc.X86.Dec.stackBytes
     verified := Proof.RsaPkcs1Enc.X86.Dec.decryptPrecomputed_verified v c
-    spSafe := Proof.RsaPkcs1Enc.X86.Dec.code_sp v c }]
+    spSafe := Proof.RsaPkcs1Enc.X86.Dec.codeP_sp v c Proof.Rsa.X86.PrivChecked.crtPBaseline }]
 
 end VG.Artifacts.RsaPkcs1Enc.X86.Sha256RsaPrivateCrt
 
