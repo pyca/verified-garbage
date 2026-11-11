@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.WideMul
 /-!
 # Division by words for the RSA key checks on ARMv7
 
-`divW a r m t nm`: `[r] := [a] mod [m]`, for a divisor `[m]` of `dw = w / 2`
+`divW a r m t nm u`: `[r] := [a] mod [m]`, for a divisor `[m]` of `dw = w / 2`
 words of 32 bits whose top word is not zero, by long division a word at a
 time (Knuth, TAOCP vol. 2, §4.3.1, Algorithm D), in place: `[a]` is copied to
 `[r]` (word `w` zero), and for `j = w - dw, …, 0` the window `Y` of `dw + 1`
@@ -25,9 +25,9 @@ word zero:
   division a bit at a time (`recip`), then refined by `U - q̂ D` over three
   words and two corrections (`refine3`);
 * `Y - q̂ [m]` by a row of `q̂ [m]` into `[t]` (`Bignum.Arm.row`) and its
-  subtraction (`subRow`), whose borrow says whether it is negative; then
-  `-[m]` (`[nm]`, set once) subtracted under that borrow (`selectRow`,
-  `subRow`), which adds `[m]` back once.
+  subtraction into `[u]` (`subRow`), whose borrow says whether it is
+  negative; then `[u]` less `-[m]` (`[nm]`, set once) under that borrow back
+  into the window (`selectRow`, `subRow`), which adds `[m]` back once.
 
 Every product is `wideMul`'s, from 16-bit halves with `mul` alone: no
 long multiply, so the ARMv7 baseline. Every address and count depends only
@@ -172,11 +172,19 @@ def prodT (m t : Nat) : Prog isa :=
   .seq (.block (ptr .r0 t ++ ptr .r12 m ++ [.mov .lr (.shifted .r9 .lsr 1), .ldr .r1 .r8 sQ, .mov .r11 (.imm 0)]))
     (.seq row (.block ([.str .r11 .r0 0] ++ ctx)))
 
-/-- `Y := Y - [t]` over `dw + 1` words at the window, the borrow into `sC`. -/
-def subT (r t : Nat) : Prog isa :=
-  .seq (.block (ptr .r0 r ++ [.ldr .r1 .r8 sJ, .dp .add .r0 .r0 (.reg .r1), .mov .r10 (.reg .r0)] ++ ptr .r12 t ++
+/-- The window's address (word `j` of `[r]`) into `r`, through `t`. -/
+def winPtr (r : Reg) (j : Nat) (t : Reg) : List Instr := ptr r j ++ [.ldr t .r8 sJ, .dp .add r r (.reg t)]
+
+/-- `[u] := Y - [t]` over `dw + 1` words, the borrow into `sC`. -/
+def subT (r t u : Nat) : Prog isa :=
+  .seq (.block (ptr .r0 u ++ winPtr .r10 r .r1 ++ ptr .r12 t ++
     [.mov .lr (.shifted .r9 .lsr 1), .dp .add .lr .lr (.imm 1), .mov .r11 (.imm 0)]))
     (.seq subRow (.block [.str .r11 .r8 sC]))
+
+/-- `Y := [u] - [t]` over `dw + 1` words. -/
+def subBack (r t u : Nat) : Prog isa :=
+  .seq (.block (winPtr .r0 r .r1 ++ ptr .r10 u ++ ptr .r12 t ++
+    [.mov .lr (.shifted .r9 .lsr 1), .dp .add .lr .lr (.imm 1), .mov .r11 (.imm 0)])) subRow
 
 /-- `[t] := [nm]` if the borrow (`sC`) is set, else zero, over `dw + 1` words. -/
 def selT (t nm : Nat) : Prog isa :=
@@ -185,8 +193,8 @@ def selT (t nm : Nat) : Prog isa :=
 
 /-- A step: the estimate, `Y - q̂ [m]`, `[m]` added back where negative, and
 the window a word down. -/
-def step (r m t nm : Nat) : Prog isa := seqs [.block (estimate r), clearT t, prodT m t, subT r t, selT t nm,
-  subT r t, .block [.ldr .r0 .r8 sJ, .subs .r0 .r0 (.imm 4), .str .r0 .r8 sJ]]
+def step (r m t nm u : Nat) : Prog isa := seqs [.block (estimate r), clearT t, prodT m t, subT r t u, selT t nm,
+  subBack r t u, .block [.ldr .r0 .r8 sJ, .subs .r0 .r0 (.imm 4), .str .r0 .r8 sJ]]
 
 /-- `[r] := [a]`, word `w` of `[r]` zero, `[nm] := -[m]`, `P`, `d`, `d₁`, `v`,
 and the window at word `w - dw`. -/
@@ -198,11 +206,11 @@ def prep (a r m nm : Nat) : Prog isa := seqs [
     .str .r0 .r8 sJ]]
 
 /-- `[r] := [a] mod [m]`, for `[m]` of `w / 2` words, its top word not zero,
-through `[t]` and `[nm]`. The steps run while the window's offset, counted
+through `[t]`, `[nm]` and `[u]`. The steps run while the window's offset, counted
 down, does not underflow. -/
-def divW (a r m t nm : Nat) : Prog isa :=
-  seqs [prep a r m nm, .loop (.seq (step r m t nm) (.block [.ldr .r0 .r8 sJ, .cmp .r0 (.imm 0)])) .ne,
-    step r m t nm]
+def divW (a r m t nm u : Nat) : Prog isa :=
+  seqs [prep a r m nm, .loop (.seq (step r m t nm u) (.block [.ldr .r0 .r8 sJ, .cmp .r0 (.imm 0)])) .ne,
+    step r m t nm u]
 
 /-! ## Products -/
 
