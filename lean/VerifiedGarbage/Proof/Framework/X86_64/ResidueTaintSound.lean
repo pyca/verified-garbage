@@ -516,10 +516,9 @@ theorem ub_step {τ : FT} {i : Instr} {s s' : State} (o : One τ s) (e : exec i 
     exact o.ub p hp.1
 
 theorem fl_step {i : Instr} {s s' : State} (e : exec i s = some s') :
-    ∀ a b, (match i with
-      | .alu .cmp a (.reg b) => some (a, b)
-      | _ => none) = some (a, b) → s'.cf = some (decide ((s'.gpr a).toNat < (s'.gpr b).toNat)) := by
+    ∀ a b, flOf i = some (a, b) → s'.cf = some (decide ((s'.gpr a).toNat < (s'.gpr b).toNat)) := by
   intro a b h
+  unfold flOf at h
   split at h
   · rename_i a' b'
     simp only [Option.some.injEq, Prod.mk.injEq] at h
@@ -1609,21 +1608,199 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
     rw [hsh₁, List.getElem_tail]
     exact inv.fw (i + 1) (by simp only [List.length_tail] at hi; omega)
 
+/-! ## The functions the kernel evaluates are the analysis's -/
+
+theorem natsEq_eq (a b : List Nat) : natsEq a b = (a == b) := by
+  induction a generalizing b with
+  | nil => cases b <;> rfl
+  | cons x a ih =>
+    cases b with
+    | nil => rfl
+    | cons y b =>
+      show (Nat.beq x y && natsEq a b) = _
+      rw [ih, KList.beq_eq]; simp [List.cons_beq_cons]
+
+/-- What `step` adds to the base step is nothing for an instruction `isPlain` says is. -/
+theorem plain_facts {i : Instr} (h : isPlain i = true) (τ : FT) :
+    special τ i = none ∧ (∀ t, post τ i t = t) ∧ ubNew τ i = none ∧ flOf i = none ∧
+    mbAfter τ i = τ.mb ∧ ∀ r, Taint.clobbers i r = (Taint.dstOf i == some r) := by
+  cases i
+  case alu op d src | alu32 op d src =>
+    cases op <;> cases src <;>
+      simp_all [isPlain, flOf, special, post, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+  case mov d src | mov32 d src =>
+    cases src <;> simp_all [isPlain, flOf, special, post, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+  case xop op =>
+    cases op
+    case bin op x x' =>
+      cases op <;> simp_all [isPlain, flOf, special, post, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+    all_goals simp_all [isPlain, flOf, special, post, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+  case vmovdquStore l _ _ => cases l <;> simp_all [isPlain]
+  all_goals simp_all [isPlain, flOf, special, post, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+
+theorem ubDrop_eq {i : Instr} (hc : ∀ r, Taint.clobbers i r = (Taint.dstOf i == some r)) (ub : List (Reg × Nat)) :
+    ubDrop (Taint.dstOf i) ub = ubKill ub i := by
+  simp only [ubKill, hc]
+  cases ub with
+  | nil => cases Taint.dstOf i <;> rfl
+  | cons p ub =>
+    cases hd : Taint.dstOf i with
+    | none => exact (List.filter_eq_self.mpr fun _ _ => rfl).symm
+    | some d =>
+      simp only [ubDrop, KList.filter_eq, regEq_eq]
+      congr 1; funext q; rw [Bool.eq_iff_iff]
+      simp only [Bool.not_eq_true', beq_eq_false_iff_ne, ne_eq, Option.some.injEq]
+      exact ⟨fun h h' => h h'.symm, fun h h' => h h'.symm⟩
+
+theorem fastFn_eq {i : Instr} (h : isPlain i = true) (hsp : isa.writesSp i = false) (τ : FT) :
+    (fastFn (Taint.stepKDFn i) (Taint.dstOf i)).run τ = step τ i := by
+  obtain ⟨hs, hp, hu, hf, hm, hc⟩ := plain_facts h τ
+  have hb : baseStep τ i = (Taint.stepKDFn i).run τ.t := by
+    rw [baseStep, hs, show post τ i = id from funext hp, Option.map_id]; rfl
+  unfold step
+  rw [hb, hu, hf, hm, hsp]
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw⟩ := τ
+  cases ok
+  · rfl
+  · simp only [fastFn, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
+    cases (Taint.stepKDFn i).run t with
+    | none => rfl
+    | some t' => simp only [Bool.cond_eq_ite, Option.toList, List.nil_append, ubDrop_eq hc]
+
+theorem fastStore_eq {i : Instr} {m : MemOp} {w : Nat} {src : Option Reg}
+    (hsp : isa.writesSp i = false) (hs : ∀ τ, special τ i = none) (hp : ∀ τ t, post τ i t = t)
+    (hu : ∀ τ, ubNew τ i = none) (hf : flOf i = none) (hc : ∀ r, Taint.clobbers i r = false)
+    (hm : ∀ τ, mbAfter τ i = mbStore τ m w src) (τ : FT) :
+    (fastStore (Taint.stepKDFn i) m w src).run τ = step τ i := by
+  have hb : baseStep τ i = (Taint.stepKDFn i).run τ.t := by
+    rw [baseStep, hs, show post τ i = id from funext (hp τ), Option.map_id]; rfl
+  have hk : ubKill τ.ub i = τ.ub := by
+    simp only [ubKill, hc, Bool.not_false]; exact List.filter_eq_self.mpr fun _ _ => rfl
+  unfold step
+  rw [hb, hu, hf, hm, hsp, hk]
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw⟩ := τ
+  cases ok
+  · rfl
+  · simp only [fastStore, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
+    cases (Taint.stepKDFn i).run t with
+    | none => rfl
+    | some t' => simp only [Bool.cond_eq_ite, Option.toList, List.nil_append]
+
+theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
+  unfold stepFn
+  cases hsp : isa.writesSp i
+  · cases hpl : isPlain i
+    · simp only [Bool.cond_false]
+      cases i
+      case store m r | store32 m r | store8 m r | store16 m r =>
+        cases hx : m.index
+        · simp only [hx, Option.isNone_none, Bool.cond_true]
+          refine fastStore_eq hsp (fun τ => ?_) (fun _ _ => rfl) (fun _ => rfl) rfl (fun _ => rfl) (fun τ => ?_) τ
+          · simp only [special, hx, storeW]
+          · unfold mbAfter mbStore; simp only [storeW]
+        · simp only [hx, Option.isNone_some, Bool.cond_false]
+      all_goals rfl
+    · exact fastFn_eq hpl hsp τ
+  · show none = _
+    unfold step; rw [hsp]; simp only [Bool.not_true, Bool.and_false, Bool.false_eq_true, ↓reduceIte]
+
+theorem stepF_eq : stepF = step := by
+  funext τ i; exact stepFn_eq i τ
+
+theorem eq2_iff {a b : Nat × Nat} : eq2 a b = true ↔ a = b := by
+  obtain ⟨a1, a2⟩ := a; obtain ⟨b1, b2⟩ := b
+  simp [eq2]
+
+theorem eq3_iff {a b : Nat × Nat × Nat} : eq3 a b = true ↔ a = b := by
+  obtain ⟨a1, a2, a3⟩ := a; obtain ⟨b1, b2, b3⟩ := b
+  simp [eq3, and_assoc]
+
+theorem eq4_iff {a b : Nat × Nat × Nat × Nat} : eq4 a b = true ↔ a = b := by
+  obtain ⟨a1, a2, a3, a4⟩ := a; obtain ⟨b1, b2, b3, b4⟩ := b
+  simp [eq4, and_assoc]
+
+theorem subl_sublist : ∀ {as bs : List (Nat × Nat × Nat)}, subl as bs = true → as.Sublist bs
+  | [], _, _ => List.nil_sublist _
+  | _ :: _, [], h => by cases h
+  | a :: as, b :: bs, h => by
+    change (bif eq3 a b then subl as bs else subl (a :: as) bs) = true at h
+    cases he : eq3 a b
+    · rw [he] at h; exact (subl_sublist h).cons b
+    · rw [he] at h; rw [eq3_iff.mp he]; exact (subl_sublist h).cons_cons b
+
+theorem slotsLe_eq (as bs : List (Nat × Nat × Nat)) : slotsLe as bs = as.all (bs.contains ·) := by
+  unfold slotsLe
+  cases h : subl as bs
+  · simp only [Bool.false_or, KList.all_eq, mem3_eq]
+  · simp only [Bool.true_or]
+    symm
+    simp only [List.all_eq_true, List.contains_iff_mem]
+    exact fun x hx => (subl_sublist h).subset hx
+
+theorem leKF_eq : leKF = Taint.le := by
+  funext τ σ
+  rw [← leK_eq]
+  simp only [leKF, leK, natsEq_eq, slotsLe_eq, mem3_eq, KList.all_eq]
+
+theorem ubOfK_eq : ubOfK = ubOf := by
+  funext l r; simp only [ubOfK, ubOf, KList.find?_eq, regEq_eq]
+
+theorem any_eq2 (l : List (Nat × Nat)) (p : Nat × Nat) : KList.any l (eq2 p) = l.contains p := by
+  rw [KList.any_eq, Bool.eq_iff_iff, List.any_eq_true, List.contains_iff_mem]
+  exact ⟨fun ⟨x, hx, h⟩ => (eq2_iff.mp h) ▸ hx, fun h => ⟨p, h, eq2_iff.mpr rfl⟩⟩
+
+theorem any_eq4 (l : List (Nat × Nat × Nat × Nat)) (p : Nat × Nat × Nat × Nat) :
+    KList.any l (eq4 p) = l.contains p := by
+  rw [KList.any_eq, Bool.eq_iff_iff, List.any_eq_true, List.contains_iff_mem]
+  exact ⟨fun ⟨x, hx, h⟩ => (eq4_iff.mp h) ▸ hx, fun h => ⟨p, h, eq4_iff.mpr rfl⟩⟩
+
+theorem leF_eq : leF = le := by
+  funext τ σ
+  simp only [leF, le, KList.beq_eq, natsEq_eq, leKF_eq, ← leK_eq, any_eq2, any_eq4, KList.all_eq, ubOfK_eq,
+    KList.ble_eq]
+
+theorem eqs3_eq : ∀ {as bs : List (Nat × Nat × Nat)}, eqs3 as bs = true → as = bs
+  | [], [], _ => rfl
+  | [], _ :: _, h => by cases h
+  | _ :: _, [], h => by cases h
+  | a :: as, b :: bs, h => by
+    change (eq3 a b && eqs3 as bs) = true at h
+    rw [Bool.and_eq_true] at h
+    rw [eq3_iff.mp h.1, eqs3_eq h.2]
+
+theorem meetT_eq : meetT = Taint.meet := by
+  funext τ₁ τ₂
+  obtain ⟨r₁, f₁, l₁, b₁, s₁, lo₁, x₁⟩ := τ₁
+  obtain ⟨r₂, f₂, l₂, b₂, s₂, lo₂, x₂⟩ := τ₂
+  have hb : KList.filter (memB · b₂) b₁ = b₁.filter (b₂.contains ·) := by
+    simp only [KList.filter_eq, memB_eq]
+  have hs : (bif eqs3 s₁ s₂ then s₁ else KList.filter (mem3 · s₂) s₁) = s₁.filter (s₂.contains ·) := by
+    cases h : eqs3 s₁ s₂
+    · simp only [Bool.cond_false, KList.filter_eq, mem3_eq]
+    · rw [Bool.cond_true, ← eqs3_eq h]
+      exact (List.filter_eq_self.mpr fun x hx => List.contains_iff_mem.mpr hx).symm
+  simp only [meetT, Taint.meet, natsEq_eq, hb, hs]
+  cases h : (l₁ == l₂) <;> simp_all
+
+theorem meetF_eq : meetF = meet := by
+  funext τ₁ τ₂
+  simp only [meetF, meet, KList.beq_eq, natsEq_eq, meetT_eq, ubOfK_eq, KList.filter_eq, any_eq4, Bool.cond_eq_ite]
+
 /-! ## The analysis -/
 
 /-- The residue analysis, as a `VG.Taint`. -/
 def rtaint : VG.Taint isa where
   T := FT
   Agree := Agree
-  step := step
-  step_sound := step_sound
+  step := stepF
+  step_sound ha hs := step_sound ha (stepF_eq ▸ hs)
   condPub τ _ := τ.ok && τ.t.flags
   cond_sound := cond_sound
-  meet := meet
-  meet_left := meet_left
-  meet_right := meet_right
-  le := le
-  le_sound := le_sound
+  meet := meetF
+  meet_left h := meetF_eq ▸ meet_left h
+  meet_right h := meetF_eq ▸ meet_right h
+  le := leF
+  le_sound hle := le_sound (leF_eq ▸ hle)
   call := callF
   call_sound := call_sound
   ret := retF
