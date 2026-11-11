@@ -431,7 +431,7 @@ theorem stC_ok {s₀ s t : State} {c : Prog isa} {Q : State → Prop} {oB oLen o
 /-- A prime's `power` in its working space at `o` (`l` bytes, from `X`'s
 array `xj`), the exponent at `oD` (`D`, `l` bytes): `c^d mod p` in its array
 4, `p` in its array 0, `X` kept. -/
-theorem stD_ok {s₀ s t : State} {o l xj oD oLen Pv : Nat} {D : Addr} (hP : PF s₀) (hF : Front s₀ s)
+theorem stDG_ok {pc : Bool} {s₀ s t : State} {o l xj oD oLen Pv : Nat} {D : Addr} (hP : PF s₀) (hF : Front s₀ s)
     (X : XS s₀ s t) (v6 : wordsVal t.mem (cS s₀) (slot (cwX s₀) 6) (cwX s₀) = vC s₀) (R : PR s₀ o l t)
     (hoX : slot (cwX s₀) 8 ≤ o) (hol : o + slot (wordsOf l) 24 ≤ cZ s₀) (ho8 : o % 8 = 0)
     (hxj : xj < 6) (hPv : wordsVal t.mem (cS s₀) (slot (cwX s₀) xj) (cwX s₀) = Pv) (hPb : Pv < 256 ^ l)
@@ -439,8 +439,9 @@ theorem stD_ok {s₀ s t : State} {o l xj oD oLen Pv : Nat} {D : Addr} (hP : PF 
     (hoD : oD + 8 ≤ oMask ∧ oD % 8 = 0) (hoL : oLen + 8 ≤ oMask ∧ oLen % 8 = 0)
     (hD : Mont.word s.mem (cS s₀) oD = D) (hL : Mont.word s.mem (cS s₀) oLen = BitVec.ofNat 64 l)
     (rD : ∀ i < l, InRegions (s₀.rd ++ s₀.wr) (Mont.off D i) 1)
-    (sD : ∀ i < l, ∀ x, ofs (cS s₀) x < cZ s₀ → Mont.off D i ≠ x) :
-    WP isa (power xj oD oLen) t fun u => XS s₀ s u ∧ wordsVal u.mem (cS s₀) (slot (cwX s₀) 6) (cwX s₀) = vC s₀ ∧
+    (sD : ∀ i < l, ∀ x, ofs (cS s₀) x < cZ s₀ → Mont.off D i ≠ x)
+    (hR2 : pc = true → ∃ b, Win.R2C t (Mont.off (cS s₀) o) (cS s₀) (t.gpr .t6) (slot (wordsOf l) 24) (wordsOf l) Pv b) :
+    WP isa (powerG pc xj oD oLen) t fun u => XS s₀ s u ∧ wordsVal u.mem (cS s₀) (slot (cwX s₀) 6) (cwX s₀) = vC s₀ ∧
       wordsVal u.mem (Mont.off (cS s₀) o) (slot (wordsOf l) 4) (wordsOf l) =
         vC s₀ ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₀.mem D l) % Pv ∧
       wordsVal u.mem (Mont.off (cS s₀) o) (slot (wordsOf l) 0) (wordsOf l) = Pv ∧
@@ -495,12 +496,12 @@ theorem stD_ok {s₀ s t : State} {o l xj oD oLen Pv : Nat} {D : Addr} (hP : PF 
     wordsVal_trunc v6 (Nat.lt_of_lt_of_le hCb (Nat.pow_le_pow_right (by decide) (by omega_arith))) (by omega_arith)
   have hDsep : ∀ i < l, ∀ x, ofs (Mont.off (cS s₀) o) x < slot (wordsOf l) 24 → Mont.off D i ≠ x :=
     fun i hi x hx => sD i hi x (sepIn hol (by omega_arith) (by omega_arith) x hx)
-  refine WP.mono (power_ok (xj := xj) (k := ck s₀) (L := l) (Pv := Pv) (Cv := vC s₀) (D := D) hS hwl2 (by omega_arith) (Nat.le_refl _)
+  refine WP.mono (Win.powerG_ok (pc := pc) (xj := xj) (k := ck s₀) (L := l) (Pv := Pv) (Cv := vC s₀) (D := D) hS hwl2 (by omega_arith) (Nat.le_refl _)
     R.a7 R.ra R.s5 R.t0 hX hsep X.s6 X.s11 (by have := VG.Proof.Bignum.slot_le (w := cwX s₀) (show xj < 8 by omega_arith); omega_arith)
     hPw hP2 hodd (by rw [X.hdr hP (by unfold oNLen; omega_arith)]; exact hF.hNL) (by omega_arith) (by omega_arith)
     (by omega_arith) hCw (by omega_arith) hoD.2 (by omega_arith) (by omega_arith) hoL.2 (by omega_arith)
     (by rw [X.hdr hP (Or.inl hoD.1)]; exact hD) (by rw [X.hdr hP (Or.inl hoL.1)]; exact hL) hl1 (by omega_arith)
-    (by rw [rd0]; exact rD) hDsep) fun u ⟨⟨mv, p0v, PF, a7u, r1v⟩, k⟩ => ?_
+    (by rw [rd0]; exact rD) hDsep hR2) fun u ⟨⟨mv, p0v, PF, a7u, r1v⟩, k⟩ => ?_
   rw [inscr_bytes (inscr_of hF X.F hZ256) sD] at mv
   have O : Mont.Outside (cS s₀) (o + slot (wordsOf l) 0) (24 * (8 * (wordsOf l + 2))) t.mem u.mem :=
     out_reb PF (by omega_using [hol, el24, el0, hn]) (by omega_using [])
@@ -508,6 +509,26 @@ theorem stD_ok {s₀ s t : State} {o l xj oD oLen Pv : Nat} {D : Addr} (hP : PF 
     by rw [Mont.Outside.wordsVal O (Or.inl (by omega_using [hoX, eX6, eX8])) (by omega_using [eX6, eX8, room', doP, hn])]
        exact v6, mv, p0v, O, a7u,
     (k.gpr (by decide)).trans R.s5, k, r1v⟩
+
+/-- `stDG_ok` computing `R² mod p`. -/
+theorem stD_ok {s₀ s t : State} {o l xj oD oLen Pv : Nat} {D : Addr} (hP : PF s₀) (hF : Front s₀ s)
+    (X : XS s₀ s t) (v6 : wordsVal t.mem (cS s₀) (slot (cwX s₀) 6) (cwX s₀) = vC s₀) (R : PR s₀ o l t)
+    (hoX : slot (cwX s₀) 8 ≤ o) (hol : o + slot (wordsOf l) 24 ≤ cZ s₀) (ho8 : o % 8 = 0)
+    (hxj : xj < 6) (hPv : wordsVal t.mem (cS s₀) (slot (cwX s₀) xj) (cwX s₀) = Pv) (hPb : Pv < 256 ^ l)
+    (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1) (hl1 : 1 ≤ l) (hlk : l < ck s₀)
+    (hoD : oD + 8 ≤ oMask ∧ oD % 8 = 0) (hoL : oLen + 8 ≤ oMask ∧ oLen % 8 = 0)
+    (hD : Mont.word s.mem (cS s₀) oD = D) (hL : Mont.word s.mem (cS s₀) oLen = BitVec.ofNat 64 l)
+    (rD : ∀ i < l, InRegions (s₀.rd ++ s₀.wr) (Mont.off D i) 1)
+    (sD : ∀ i < l, ∀ x, ofs (cS s₀) x < cZ s₀ → Mont.off D i ≠ x) :
+    WP isa (power xj oD oLen) t fun u => XS s₀ s u ∧ wordsVal u.mem (cS s₀) (slot (cwX s₀) 6) (cwX s₀) = vC s₀ ∧
+      wordsVal u.mem (Mont.off (cS s₀) o) (slot (wordsOf l) 4) (wordsOf l) =
+        vC s₀ ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₀.mem D l) % Pv ∧
+      wordsVal u.mem (Mont.off (cS s₀) o) (slot (wordsOf l) 0) (wordsOf l) = Pv ∧
+      Mont.Outside (cS s₀) (o + slot (wordsOf l) 0) (24 * (8 * (wordsOf l + 2))) t.mem u.mem ∧
+      u.gpr .a7 = Mont.off (Mont.off (cS s₀) o) (slot (wordsOf l) 0) ∧
+      u.gpr .s5 = BitVec.ofNat 64 (8 * (wordsOf l + 2)) ∧ Keep Win.powerRegs t u ∧
+      wordsVal u.mem (Mont.off (cS s₀) o) (slot (wordsOf l) 1) (wordsOf l) = 2 ^ (128 * wordsOf l) % Pv :=
+  stDG_ok (pc := false) hP hF X v6 R hoX hol ho8 hxj hPv hPb hP2 hodd hl1 hlk hoD hoL hD hL rD sD nofun
 
 /-- `power` up to its chunks: the registers. -/
 theorem stD134_ok {s₀ s t : State} {o l xj Pv : Nat} (hP : PF s₀) (hF : Front s₀ s)
