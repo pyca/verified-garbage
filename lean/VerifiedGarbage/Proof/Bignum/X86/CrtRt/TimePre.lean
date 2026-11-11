@@ -535,6 +535,49 @@ theorem stepP_relCT {j : Nat} (hj : j < 2) (hc : SizedChecks) (hlo : 64 ≤ len)
   exact (tr.wp (F₁ := StP base bytes len args sp (j + 1)) (F₂ := StP base bytes len args sp (j + 1))
     fun _ _ h => ⟨step h.1, step h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
 
+
+theorem frontPCheck : ACheck (Prog.chain [importComponents, validatePre] (.block [])) := by
+  dsimp only [ACheck]; taint_decide
+
+theorem frontP_run (R : Run (CrtExtra base bytes len args) base bytes len args sp s)
+    (A : PreAll base bytes len args s.mem s) :
+    WP isa (Prog.chain [importComponents, validatePre] (.block [])) s fun u =>
+      Run (CrtExtra base bytes len args) base bytes len args sp u ∧
+        ∃ m₀, Comps base len args m₀ u.mem ∧ PreAll base bytes len args m₀ u :=
+  frontPre_ok R.1 fun u hu F c _ K => WP.block_nil ⟨⟨hu, R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩, _, c,
+    A.keepBody R.1 K (by decide) F⟩
+
+theorem sizedP_relCT' (sp : BitVec 32) (hlo : 64 ≤ len) (h7 : (args 7).toNat < len) (h9 : (args 9).toNat < len) :
+    RelCT isa (Both fun s => Run (CrtExtra base bytes len args) base bytes len args sp s ∧
+      PreAll base bytes len args s.mem s) (CrtRt.sized true) fun _ _ => True := by
+  have hc := sizedChecks
+  have lb := len_le_bc len
+  have fitW : 8 * preW args 0 ≤ bc len .wide := fitG_of (i := 0) (c := .wide) hlo (by show (args 7).toNat ≤ _; omega)
+  have conv2 : ∀ {t}, StP base bytes len args sp 2 t →
+      PowP (CrtExtra base bytes len args) base bytes len args sp 10 0 (args 7).toNat t := by
+    intro t ⟨R, m₀, s₀, h₀, c, I, A⟩
+    exact powP_of R h₀ I A.p0 A.o0 A.w (k := 6) I.f₁ I.l₁ rfl fun hle => fitG_of (i := 0) (c := .half) hlo hle
+  show RelCT isa _ (Prog.chain [importComponents, validatePre] (.seq (.block factorsInit)
+    (.seq (.seq (factorStep (some 0)) (factorStep (some 1))) (.seq (coefficient (some 0)) (.seq recombine exportResult))))) _
+  refine VG.RelCT.chain (VG.RelCT.seq (taint_both (fun _ _ X₁ X₂ => X₁.1.agree X₂.1) _ frontPCheck
+    fun _ X => frontP_run X.1 X.2) ?_)
+  refine VG.RelCT.seq (taint_both (F := StP base bytes len args sp 0) (fun _ _ X₁ X₂ => X₁.1.agree X₂.1) _ hc.init
+    fun t ⟨R, m₀, c, A⟩ => WP.mono (factorsInit_ok R.1 c) fun u I =>
+      ⟨⟨I.inp, R.2.1.keep I.keeps, (I.keeps.1 _ (by decide)).trans R.2.2⟩, m₀, t, R.1, c, I, A⟩) ?_
+  refine VG.RelCT.seq (VG.RelCT.seq (stepP_relCT (j := 0) (by decide) hc hlo h7)
+    (stepP_relCT (j := 1) (by decide) hc hlo h9)) ?_
+  refine VG.RelCT.seq ((coefficientP_relCT_W (W := (args 7).toNat) fitW
+    (fun hle => fitG_of (i := 0) (c := .half) hlo hle) hc.co rhChecks.2.1 rhChecks.2.2).mono
+    (fun _ _ h => ⟨conv2 h.1, conv2 h.2⟩) fun _ _ h => h) ?_
+  exact VG.RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) hc.back
+
+theorem sizedP_relCT (sp : BitVec 32) :
+    RelCT isa (Both fun s => Run (CrtExtra base bytes len args) base bytes len args sp s ∧
+      PreAll base bytes len args s.mem s) (CrtRt.sized true) fun _ _ => True := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' H
+  have h := H.1.1.1
+  exact sizedP_relCT' sp h.lower h.crt.pShort h.crt.qShort s₁ s₂ t₁ t₂ s₁' s₂' H
+
 end
 
 end VG.Proof.Bignum.X86.CrtRt
