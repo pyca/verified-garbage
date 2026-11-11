@@ -413,7 +413,10 @@ theorem check_run (R : Run (CrtExtra base bytes len args) base bytes len args sp
   unfold check
   refine WP.seq (WP.mono (importComponents_ok h) fun u₁ ⟨O₁, n₁, _, p₁, q₁, _, _, _, K₁⟩ => ?_)
   have R₁ := R.keep K₁ (O₁.mono (Nat.zero_le _) (by omega_arith))
-  exact WP.mono (pqCheck_ok R₁.1 n₁ p₁ q₁) fun _ ⟨F₂, _, K₂⟩ => runKeepF R₁ K₂ F₂ (valR_fit R₁.1)
+  exact WP.mono (pqCheck_ok R₁.1 n₁ p₁ q₁ (h.extra.positive 6 (by simp [componentArguments]))
+    (h.extra.bounded 6 (by simp [componentArguments])) (h.extra.positive 8 (by simp [componentArguments]))
+    (h.extra.bounded 8 (by simp [componentArguments])) (component_lt _ _ 6) (component_lt _ _ 8))
+    fun _ ⟨F₂, _, K₂⟩ => runKeepF R₁ K₂ F₂ (valR_fit R₁.1)
 
 /-- `primesBody`, from runs that agree. -/
 theorem primesBody_relCT :
