@@ -61,6 +61,10 @@ theorem initFrameSat_pre : ∃ s, (Spec.Gcm.initContract X86_64.abi 2576).pre s 
   implies_sat [Spec.Gcm.initContract, Spec.Gcm.initSig, Spec.Gcm.initPre, Spec.Gcm.initPost,
     X86_64.abi, X86_64.argRegs] [initFrameSat, initSat] using initFrameSat
 
+theorem initFrameSatF_pre : ∃ s, (Spec.Gcm.initContract X86_64.abi 192).pre s := by
+  implies_sat [Spec.Gcm.initContract, Spec.Gcm.initSig, Spec.Gcm.initPre, Spec.Gcm.initPost,
+    X86_64.abi, X86_64.argRegs] [initFrameSat, initSat] using initFrameSat
+
 theorem init_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (init v.callees))
       (Spec.Gcm.initContract X86_64.abi 2576) :=
@@ -68,6 +72,16 @@ theorem init_framed :
     (pre := Spec.Gcm.initPre X86_64.abi.ptrBits) (post := Spec.Gcm.initPost X86_64.abi.ptrBits)
     (wa := true) (stack := 8) (bytes := 2568) (init_verified v) (by decide) (by decide)
     (by decide) (init_spSafe v) (init_xdepth v) initFrameSat_pre
+
+/-- `init_framed`, over callees that need no working space: a frame of the
+176 bytes `init` writes itself. -/
+theorem initF_framed (fk : KeyFree v.key.fn.code) (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 184 .rcx (init v.callees))
+      (Spec.Gcm.initContract X86_64.abi 192) :=
+  X86_64.Verified.stackScratch (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 22)
+    (pre := Spec.Gcm.initPre X86_64.abi.ptrBits) (post := Spec.Gcm.initPost X86_64.abi.ptrBits)
+    (wa := true) (stack := 8) (bytes := 184) (initF_verified v fk fc) (by decide) (by decide)
+    (by decide) (init_spSafe v) (init_xdepth v) initFrameSatF_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_init`'s precondition, without the
 working space. -/

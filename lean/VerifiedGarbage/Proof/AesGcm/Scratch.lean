@@ -43,6 +43,19 @@ def initScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (post := fun key keyLen ctx _scratch => initPost A.ptrBits key keyLen ctx)
     (writeArgs := true) (stack := stack)
 
+/-- `vg_aes_gcm_init` with `scratch: *mut [u64; 22]`, for the implementations
+whose callees need no working space (x86-64's AES-NI and VAES ones). -/
+def initScratchSigF : Sig where
+  params := [("key", .slice false .u8 "key_len"), ("ctx", .array true .u64 32),
+    ("scratch", .array true .u64 22)]
+
+/-- `initContract`, whatever `scratch` is (of 22 words). -/
+def initScratchContractF {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  initScratchSigF.contract A
+    (pre := fun key keyLen ctx _scratch => initPre A.ptrBits key keyLen ctx)
+    (post := fun key keyLen ctx _scratch => initPost A.ptrBits key keyLen ctx)
+    (writeArgs := true) (stack := stack)
+
 /-- `vg_aes_gcm_stream_init` with `scratch: *mut [u64; 320]`. -/
 def streamInitScratchSig : Sig where
   params := [("ctx", .array false .u64 32), ("nonce", .slice false .u8 "nonce_len"),

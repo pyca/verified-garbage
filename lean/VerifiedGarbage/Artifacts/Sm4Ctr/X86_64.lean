@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.CtrVerified
 public import VerifiedGarbage.Proof.Sm4.X86_64.CtrFinal
+public import VerifiedGarbage.Proof.Sm4.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
@@ -13,10 +14,7 @@ import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
 namespace VG.Artifacts.Sm4Ctr.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Sm4.ctrApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 3208 .r8 400 Impl.Sm4.X86_64.ctr
-    stack := 3216
-    verified := Proof.Sm4.X86_64.ctr_framed },
+  Spec.Sm4.ctrApi.artifact X86_64.target Proof.Sm4.X86_64.Scrub.ctrReg,
   Spec.Sm4.ctrFinalApi.artifact X86_64.target {
     code := Impl.StackScratch.X86_64.withStackScratchWiped 72 .r8 8 Impl.Sm4.X86_64.ctrFinal
     stack := 3296

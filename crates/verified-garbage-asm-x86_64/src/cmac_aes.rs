@@ -167,11 +167,13 @@ call {vg_cmac_aes_subkeys_vaes}
 }
 
 /// The CPU features `vg_cmac_aes_finish_vaes` requires (`Artifact.features`).
-pub const VG_CMAC_AES_FINISH_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
+pub const VG_CMAC_AES_FINISH_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
 
 /// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under an AES key with `rounds` rounds (as `vg_cmac_aes_init` and `vg_cmac_aes_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
 ///
 /// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -180,19 +182,19 @@ pub const VG_CMAC_AES_FINISH_VAES_FEATURES: verified_garbage_cpu::Features = ver
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `aes`, `avx`, `avx2` and `vaes` target features.
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `ssse3`, `aes`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_finish_vaes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPj2//9JieBJg8AISIuHEAEAAEiJAUiLhxgBAABIiUEITYnBSYnQSInKSIn5SIHBIAEAAE2FwA=="
+        r#".base64 "SI1kJOhJieBJg8AISIuHEAEAAEiJAUiLhxgBAABIiUEITYnBSYHpAAgAAEmJ0EiJykiJ+UiBwSABAABNhcA="
 je 20f
 .base64 "SYPoAUmD4A9Jg8AB"
 jmp 21f
 20:
 21:
 call {vg_cmac_aes_finalize_vaes}
-.base64 "SI2kJAgJAADD"
+.base64 "SI1kJBjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk2MX+f0QkCEiNZCQoMcAxyTHSMfZFMcBFMclFMdLD"
 .p2align 6"#,
         vg_cmac_aes_finalize_vaes = sym super::cmac_aes::vg_cmac_aes_finalize_vaes::vg_cmac_aes_finalize_vaes,
     )
@@ -234,6 +236,8 @@ pub const VG_CMAC_AES_FINISH_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 ///
 /// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
@@ -241,19 +245,19 @@ pub const VG_CMAC_AES_FINISH_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_finish_aesni(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPj2//9JieBJg8AISIuHEAEAAEiJAUiLhxgBAABIiUEITYnBSYnQSInKSIn5SIHBIAEAAE2FwA=="
+        r#".base64 "SI1kJOhJieBJg8AISIuHEAEAAEiJAUiLhxgBAABIiUEITYnBSYHpAAgAAEmJ0EiJykiJ+UiBwSABAABNhcA="
 je 20f
 .base64 "SYPoAUmD4A9Jg8AB"
 jmp 21f
 20:
 21:
 call {vg_cmac_aes_finalize_aesni}
-.base64 "SI2kJAgJAADD"
+.base64 "SI1kJBhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk2PMPf0QkGPMPf0QkCEiNZCQoMcAxyTHSMfZFMcBFMclFMdLD"
 .p2align 6"#,
         vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
     )

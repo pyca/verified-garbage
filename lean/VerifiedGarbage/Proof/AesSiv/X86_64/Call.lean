@@ -42,26 +42,27 @@ theorem finalize_raw_wp (v : Ctr32Impl) {s₀ : State} (h0 : finalizeX86_64.pre 
     WP isa (Impl.CmacAes.X86_64.finalize v.callee) s₀
       fun s' => gprPreserved s₀ s' ∧ finalizeRawX86_64.post s₀ s' := by
   have hp := FPre.of h0
+  have sw := FPre.scr_wrap_of h0
   generalize hW : s₀.gpr .rdi = W at hp
   generalize hSt : s₀.gpr .rdx = St at hp
   generalize hP : s₀.gpr .rcx = P at hp
-  generalize s₀.gpr .r9 = S at hp
+  generalize s₀.gpr .r9 = S at hp sw
   generalize hL : (s₀.gpr .r8).toNat = L at hp
   generalize hR' : (s₀.gpr .rsi).toNat = R at hp
   have hR := hp.rounds
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> omega
-  refine WP.seq (WP.mono (finPre_wp hp) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono (finPre_wp hp sw) fun s₁ h₁ => ?_)
   refine WP.mono (ctr_call v h₁.pre) fun s₂ h₂ => ?_
   have rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := h₁.saved _ (by simp [calleeSaved])
   have big : Frame [⟨St, 16⟩, ⟨S, 2176⟩, below (s₀.gpr .rsp) 8] s₀.mem s₂.mem := by
     refine (h₁.frame.sub fun r hr => ?_).trans (h₂.frame.sub fun r hr => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨⟨S, 2176⟩, by simp, FPre.scrD (by decide)⟩
+      · exact ⟨⟨S, 2176⟩, by simp, hp.cD (by decide)⟩
       · exact ⟨⟨St, 16⟩, by simp, fun _ h => h⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      · exact ⟨⟨S, 2176⟩, by simp, FPre.scrD (by decide)⟩
+      · exact ⟨⟨S, 2176⟩, by simp, hp.cD (by decide)⟩
       · exact ⟨⟨St, 16⟩, by simp, fun _ h => h⟩
       · exact ⟨⟨S, 2176⟩, by simp, Region.sub_prefix (by decide)⟩
       · exact ⟨below (s₀.gpr .rsp) 8, by simp, by rw [rsp₁]; exact fun _ h => h⟩
@@ -69,7 +70,7 @@ theorem finalize_raw_wp (v : Ctr32Impl) {s₀ : State} (h0 : finalizeX86_64.pre 
     bytesAt_frame h₁.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact (hp.key_scr.sub_left (Region.sub_prefix (by omega))).sub_right (FPre.scrD (by decide))
+      · exact (hp.key_scr.sub_left (Region.sub_prefix (by omega))).sub_right (hp.cD (by decide))
       · exact hp.key_st.sub_left (Region.sub_prefix (by omega))) (by omega)
   refine ⟨⟨fun r hr => by rw [h₂.saved r hr, h₁.saved r hr], ?_⟩, ?_⟩
   · refine big.readW (r := ⟨s₀.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)

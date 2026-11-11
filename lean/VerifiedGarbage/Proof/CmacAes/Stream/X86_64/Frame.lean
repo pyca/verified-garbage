@@ -38,6 +38,10 @@ theorem finish_xdepth (v : Ctr32Impl) : (finish v.callee v.suffix).x86_64Depth �
   simp only [finish, finPre, lastLen, Impl.CmacAes.X86_64.finalize, Code.x86_64Depth, v.noStack]
   decide +kernel
 
+theorem finishF_xdepth (v : Ctr32Impl) : (finishF v.callee v.suffix).x86_64Depth ≤ 16 := by
+  simp only [finishF, finPreF, lastLen, Impl.CmacAes.X86_64.finalize, Code.x86_64Depth, v.noStack]
+  decide +kernel
+
 /-- A state satisfying `vg_cmac_aes_init`'s precondition, without the
 working space. -/
 def initFrameSat : State := { initSat with wr := [⟨0x1000, 304⟩] }
@@ -60,6 +64,11 @@ working space. -/
 def finishFrameSat : State := { finishSat with wr := [⟨0x1000, 304⟩, ⟨0x2000, 16⟩] }
 
 theorem finishFrameSat_pre : ∃ s, (Spec.Cmac.aesFinishContract X86_64.abi 2328).pre s := by
+  implies_sat [Spec.Cmac.aesFinishContract, Spec.Cmac.aesFinishSig, Spec.Cmac.aesFinishPre,
+    Spec.Cmac.aesFinishPost, X86_64.abi, X86_64.argRegs] [finishFrameSat, finishSat]
+    using finishFrameSat
+
+theorem finishFrameSatF_pre : ∃ s, (Spec.Cmac.aesFinishContract X86_64.abi 40).pre s := by
   implies_sat [Spec.Cmac.aesFinishContract, Spec.Cmac.aesFinishSig, Spec.Cmac.aesFinishPre,
     Spec.Cmac.aesFinishPost, X86_64.abi, X86_64.argRegs] [finishFrameSat, finishSat]
     using finishFrameSat
@@ -93,5 +102,18 @@ theorem finish_framed (v : Ctr32Impl) :
     (post := Spec.Cmac.aesFinishPost X86_64.abi.ptrBits) (wa := false) (stack := 16)
     (bytes := 2312) (finish_verified v) (by decide) (by decide) (by decide) (finish_spSafe v)
     (finish_xdepth v) finishFrameSat_pre
+
+/-- `finish_framed`, over an implementation of `vg_aes_ctr32` that needs no
+working space: a frame of the 16 bytes of `vg_cmac_aes_finalize`'s counter
+block, after the 8 that stand for the return address. -/
+theorem finishF_framed (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackScratch 24 .r8 (finishF v.callee v.suffix))
+      (Spec.Cmac.aesFinishContract X86_64.abi 40) :=
+  X86_64.Verified.stackScratch (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
+    (n := 2) (pre := Spec.Cmac.aesFinishPre X86_64.abi.ptrBits)
+    (post := Spec.Cmac.aesFinishPost X86_64.abi.ptrBits) (wa := false) (stack := 16)
+    (bytes := 24) (finishF_verified v f) (by decide) (by decide) (by decide) (finishF_spSafe v)
+    (finishF_xdepth v) finishFrameSatF_pre
 
 end VG.Proof.CmacAes.Stream.X86_64

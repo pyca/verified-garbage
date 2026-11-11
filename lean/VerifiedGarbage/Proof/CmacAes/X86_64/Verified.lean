@@ -324,9 +324,11 @@ theorem finalize_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : finalizeX86_64.p
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (finalize v.callee) fun _ _ => True := by
   obtain ⟨q1, q2, q3, q4, q5, q6, q7⟩ := hq
   have hp := FPre.of h0
+  have sw := FPre.scr_wrap_of h0
   have hp' : FPre s₀' (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .r9) (s₀.gpr .r8).toNat
-      (s₀.gpr .rsi).toNat := by
+      (s₀.gpr .rsi).toNat ⟨s₀.gpr .r9, 2176⟩ := by
     rw [q1, q2, q3, q4, q5, q6]; exact FPre.of h0'
+  have sw' : (s₀.gpr .r9).toNat + 2176 ≤ 2 ^ 64 := by rw [q6]; exact FPre.scr_wrap_of h0'
   obtain ⟨_, hA⟩ : ∃ h, (taint.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp]) finPre h).isSome =
       true := ⟨_, by taint_decide⟩
   have a := (RelCT.taint (A := taint) (P := fun a b => a = s₀ ∧ b = s₀') _
@@ -336,13 +338,42 @@ theorem finalize_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : finalizeX86_64.p
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption) hA).wp
     (F₁ := FMid s₀ _ _ _ _ _ _) (F₂ := FMid s₀' _ _ _ _ _ _) fun a b h => by
-      obtain ⟨rfl, rfl⟩ := h; exact ⟨finPre_wp hp, finPre_wp hp'⟩
+      obtain ⟨rfl, rfl⟩ := h; exact ⟨finPre_wp hp sw, finPre_wp hp' sw'⟩
   have c := ctr_rel v (P := fun s₁ s₂ =>
       FMid s₀ (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .r9) (s₀.gpr .r8).toNat (s₀.gpr .rsi).toNat s₁ ∧
       FMid s₀' (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .r9) (s₀.gpr .r8).toNat (s₀.gpr .rsi).toNat s₂)
     fun s₁ s₂ h => ⟨_, _, _, _, _, h.1.pre, h.2.pre, by
       rw [h.1.saved _ (by simp [calleeSaved]), h.2.saved _ (by simp [calleeSaved]), q7]⟩
   exact (a.mono (fun _ _ h => h) fun _ _ h => h.2).seq c
+
+theorem finalizeF_rel (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) {s₀ s₀' : State}
+    (h0 : finalizeX86_64F.pre s₀) (h0' : finalizeX86_64F.pre s₀') (hq : finalizeX86_64F.pub s₀ s₀') :
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (finalize v.callee) fun _ _ => True := by
+  obtain ⟨q1, q2, q3, q4, q5, q6, q7⟩ := hq
+  have hp := FPre.ofF h0
+  have hp' : FPre s₀' (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .r9) (s₀.gpr .r8).toNat
+      (s₀.gpr .rsi).toNat ⟨s₀.gpr .r9 + BitVec.ofNat 64 2048, 16⟩ := by
+    rw [q1, q2, q3, q4, q5, q6]; exact FPre.ofF h0'
+  obtain ⟨_, hA⟩ : ∃ h, (taint.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp]) finPre h).isSome =
+      true := ⟨_, by taint_decide⟩
+  have a := (RelCT.taint (A := taint) (P := fun a b => a = s₀ ∧ b = s₀') _
+    (fun a b h => by
+      obtain ⟨rfl, rfl⟩ := h
+      refine Taint.agree_ofRegs fun r hr => ?_
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption) hA).wp
+    (F₁ := FMidF s₀ _ _ _ _ _ _) (F₂ := FMidF s₀' _ _ _ _ _ _) fun a b h => by
+      obtain ⟨rfl, rfl⟩ := h; exact ⟨finPreF_wp hp, finPreF_wp hp'⟩
+  have c := ctr_relF v f (P := fun s₁ s₂ =>
+      FMidF s₀ (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .r9) (s₀.gpr .r8).toNat (s₀.gpr .rsi).toNat s₁ ∧
+      FMidF s₀' (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .r9) (s₀.gpr .r8).toNat (s₀.gpr .rsi).toNat s₂)
+    fun s₁ s₂ h => ⟨_, _, _, _, _, h.1.pre, h.2.pre, by
+      rw [h.1.saved _ (by simp [calleeSaved]), h.2.saved _ (by simp [calleeSaved]), q7]⟩
+  exact (a.mono (fun _ _ h => h) fun _ _ h => h.2).seq c
+
+theorem finalizeF_ct (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) :
+    ConstantTime isa finalizeX86_64F.pre finalizeX86_64F.pub (finalize v.callee) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (finalizeF_rel v f h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 theorem finalize_ct (v : Ctr32Impl) :
     ConstantTime isa finalizeX86_64.pre finalizeX86_64.pub (finalize v.callee) :=
@@ -393,6 +424,12 @@ theorem subkeys_correct (v : Ctr32Impl) (s : State) (hs : subkeysX86_64.pre s) :
     ∃ t s', Exec isa (subkeys v.callee) s t s' ∧ abiPreserved s s' ∧ subkeysX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := subkeys_wp v hs
   exact ⟨t, s', he, abiPreserved_of_exec (subkeys_mx v) he hg, hp⟩
+
+theorem finalizeF_correct (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) (s : State)
+    (hs : finalizeX86_64F.pre s) :
+    ∃ t s', Exec isa (finalize v.callee) s t s' ∧ abiPreserved s s' ∧ finalizeX86_64F.post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := finalizeF_wp v f hs
+  exact ⟨t, s', he, abiPreserved_of_exec (finalize_mx v) he hg, hp⟩
 
 theorem finalize_correct (v : Ctr32Impl) (s : State) (hs : finalizeX86_64.pre s) :
     ∃ t s', Exec isa (finalize v.callee) s t s' ∧ abiPreserved s s' ∧ finalizeX86_64.post s s' := by

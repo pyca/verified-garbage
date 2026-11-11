@@ -1064,6 +1064,20 @@ vg_sm4_ctr:
 	mov QWORD PTR [rsp+3192], r11
 	mov QWORD PTR [rsp+3200], r11
 	lea rsp, [rsp+3208]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-3216]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+3216]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1087,7 +1101,7 @@ vg_sm4_ctr_final:
 	sub r13, r14
 	add r13, rdx
 	shr rcx, 4
-	call {vg_sm4_ctr}
+	call {vg_sm4_ctr_core}
 	test r14, r14
 	je 20f
 	mov rax, r15
@@ -1099,7 +1113,7 @@ vg_sm4_ctr_final:
 	mov rdx, rax
 	add rdx, 48
 	mov ecx, 1
-	call {vg_sm4_ctr}
+	call {vg_sm4_ctr_core}
 	mov rax, r15
 	add rax, 48
 22:

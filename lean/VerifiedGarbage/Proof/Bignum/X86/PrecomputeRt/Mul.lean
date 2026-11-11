@@ -11,11 +11,11 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputeFn
 
-/-! # The six squares of the precomputation at a run-time width
+/-! # The two squares of the precomputation at a run-time width
 
 `mul 4 4 4 5` (`PublicRt.mul`, `ws_len` from argument 5) squares number 4
-by a call of `vg_rsa_mont_mul_at` (`sq_ok`, from `RtCall.call_ok`); six of
-them take `x R` for `x = 2^W` to `x^64 R = R²` modulo `M` (`squares_ok`).
+by a call of `vg_rsa_mont_mul_at` (`sq_ok`, from `RtCall.call_ok`); two of
+them take `x R` for `x = 2^(16 W)` to `x^4 R = R²` modulo `M` (`squares_ok`).
 -/
 
 @[expose] public section
@@ -117,7 +117,7 @@ theorem squares_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
     (h : PcIn base bytes len args s) (R : CallRoom (s.gpr .esp) base bytes) (top : (s.gpr .esp).toNat + 28 ≤ 2 ^ 32)
     {M : Nat} (hM : val32 s.mem base numOff (nw len) = M) (hinv : (M * w32 s.mem base invOff + 1) % 2 ^ 32 = 0)
     (hB : val32 s.mem base (numAt len 4) (nw len) < M)
-    (hX : val32 s.mem base (numAt len 4) (nw len) % M = 2 ^ Spec.Rsa.modulusWords len * 2 ^ (32 * nw len) % M) :
+    (hX : val32 s.mem base (numAt len 4) (nw len) % M = 2 ^ (16 * Spec.Rsa.modulusWords len) * 2 ^ (32 * nw len) % M) :
     WP isa PrecomputeFn.squares s fun t =>
       val32 t.mem base (numAt len 4) (nw len) = 2 ^ (128 * Spec.Rsa.modulusWords len) % M ∧
       Frame [⟨off base (numAt len 4), wb len⟩, ⟨off base (numAt len 5), 3 * wb len + 56⟩, below (s.gpr .esp) 96]
@@ -136,12 +136,12 @@ theorem squares_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
   unfold PrecomputeFn.squares
   refine WP.seq (wp_movS rfl fun s₀ u₀ _ => WP.block_nil ?_)
   have K₀ : Keeps [.esi] s s₀ := u₀.keeps
-  let x : Nat → Nat := fun j => 2 ^ (Spec.Rsa.modulusWords len * 2 ^ j)
-  have I₀ : SqInv s base bytes len args M (x 0) 6 s₀ := by
+  let x : Nat → Nat := fun j => 2 ^ (16 * Spec.Rsa.modulusWords len * 2 ^ j)
+  have I₀ : SqInv s base bytes len args M (x 0) 2 s₀ := by
     refine ⟨h.keep K₀ (by decide) (by decide) (by rw [u₀.mem]; exact Outside.refl _ _ _ _), K₀.mono (by decide),
       by rw [u₀.mem]; exact Frame.refl _ _, by rw [u₀.mem]; exact hM, by rw [u₀.mem]; exact hinv,
       by rw [u₀.mem]; exact hB, by rw [u₀.mem, hX]; simp only [x, Nat.pow_zero, Nat.mul_one], by rw [u₀.gpr]; rfl⟩
-  have fin : ∀ t, SqInv s base bytes len args M (x 6) (6 - 6) t →
+  have fin : ∀ t, SqInv s base bytes len args M (x 2) (2 - 2) t →
       val32 t.mem base (numAt len 4) (nw len) = 2 ^ (128 * Spec.Rsa.modulusWords len) % M := fun t I => by
     have V := I.val
     rw [Nat.mod_eq_of_lt I.lt] at V
@@ -150,7 +150,7 @@ theorem squares_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
     simp only [x, nw, ← Nat.pow_add]
     congr 1
     omega
-  refine WP.mono (countLoop (N := 6) (by decide) (fun j t => SqInv s base bytes len args M (x j) (6 - j) t) ?_ I₀)
+  refine WP.mono (countLoop (N := 2) (by decide) (fun j t => SqInv s base bytes len args M (x j) (2 - j) t) ?_ I₀)
     fun t I => ⟨fin t I, I.frame, I.keep⟩
   rintro j t hj I
   have sp : t.gpr .esp = s.gpr .esp := I.keep.1 _ (by decide)
@@ -178,7 +178,7 @@ theorem squares_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base base (by omega)⟩
     · exact ⟨_, by simp, fun _ h => h⟩
   have piu := I.pi.keepF Ku (by decide) (by decide) Rt (by rw [sp]; exact top) (by rw [sp]; exact Fs)
-  obtain ⟨c₁, c₂⟩ := count1_zf (N := 6) (x := t.gpr .esi) (by rw [I.esi]) hj
+  obtain ⟨c₁, c₂⟩ := count1_zf (N := 2) (x := t.gpr .esi) (by rw [I.esi]) hj
   have esiu : u.gpr .esi = t.gpr .esi := Ku.1 _ (by decide)
   refine ⟨⟨piu.keep e.keeps (by decide) (by decide) (by rw [e.mem]; exact Outside.refl _ _ _ _),
     ((I.keep.trans (Ku.mono (by decide))).trans (e.keeps.mono (by decide))), ?_, by rw [e.mem, Mu],

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.EncBase
 public import VerifiedGarbage.Proof.MlKem.X86_64.InlinePrim
 
 import VerifiedGarbage.Proof.MlKem.X86_64.Widen
+public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 import VerifiedGarbage.Proof.MlKem.X86_64.Add16
 import VerifiedGarbage.Proof.MlKem.X86_64.DcDec
 import VerifiedGarbage.Proof.MlKem.PolyW
@@ -18,7 +19,9 @@ and the steps: the prologue, each polynomial primitive inline (`KT.step`
 keeps `KT` across one that writes only below the saved registers or to
 `ct`), the product (the code of `vg_mlkem*_encrypt_mul` reading `Â` as
 `u16`s, inline), and the epilogue. `y` becomes `u32`s with `vunpack`
-(`widenIn_ok`); `e₁` and `e₂` are added as `u16`s (`add16In_ok`).
+(`widenIn_ok`); `e₁` and `e₂` are added as `u16`s (`add16In_ok`). `u` and `v`
+are compressed by code that multiplies (`EncCE`), in an MXCSR region of
+their own (`post_wp`, with `withMxcsr_ok'`).
 -/
 
 @[expose] public section
@@ -585,14 +588,26 @@ theorem mul_ok (W : KeWf L) {mul : Nat → Prog isa}
 
 /-! ## `u` and `v` -/
 
+/-- The compressions `vg_mlkem*_kpke_encrypt` runs in its MXCSR region,
+verified for widths `wu` and `wv` that include `d_u` and `d_v`. -/
+structure EncCE (L : Kem) (wu wv : List Nat) : Prop where
+  u : CEImpl "" L.ceU wu
+  v : CEImpl "" L.ceV wv
+  du : L.du ∈ wu
+  dv : L.dv ∈ wv
+
+/-- The registers the code in the MXCSR region writes. -/
+abbrev postRegs : List Reg := [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10]
+
+
 omit E in
 omit E in
 theorem pa_r15 {s : State} (h : KT L σ s) (o : Nat) : pa s (.r15, o) = σ.gpr .rdi + BitVec.ofNat 64 o := by
   simp only [pa, h.r15]
 
-theorem u_ok {A : Prims} {wc wd : List Nat} (K : KemCalls L wc wd) (W : KeWf L)
-    (hnC : (L.ce A.codecs).noCalls = true) {i : Nat} (hi : i < L.k) {s : State}
-    (h : EU L σ i s) : WP isa (uE L A i) s (EU L σ (i + 1)) := by
+theorem u_ok {wu wv : List Nat} (K : EncCE L wu wv) (W : KeWf L)
+    (hnC : L.ceU.noCalls = true) {i : Nat} (hi : i < L.k) {s : State}
+    (h : EU L σ i s) : WP isa (uE L i) s (EU L σ (i + 1)) := by
   have hkt := h.kt
   have hk4 : L.k ≤ 4 := by rcases W.k34 with e | e <;> omega_arith
   have hct := W.ct
@@ -623,9 +638,9 @@ theorem u_ok {A : Prims} {wc wd : List Nat} (K : KemCalls L wc wd) (W : KeWf L)
   -- to `ct`
   have eQ := pa_q kt2 (2 * L.k + i)
   have eO := pa_r15 kt2 (32 * L.du * i)
-  have HC : CEHi wc (qP (2 * L.k + i)) (.r15, 32 * L.du * i) L.du s2 :=
+  have HC : CEHi wu (qP (2 * L.k + i)) (.r15, 32 * L.du * i) L.du s2 :=
     { off := ⟨by simp only [oQ]; omega_arith, by omega_arith⟩
-      dw := K.du.1
+      dw := K.du
       red := by rw [eQ]; exact hq2.1
       dj := by rw [eQ, eO]; exact (E.cS.symm.sub_left (qScr (by omega_arith))).sub_right (Offset.sub_base _ bnd)
       rF := by rw [retR_eq kt2, eQ]; exact E.xS.sub_right (qScr (by omega_arith))
@@ -635,7 +650,7 @@ theorem u_ok {A : Prims} {wc wd : List Nat} (K : KemCalls L wc wd) (W : KeWf L)
         exact covers_append (covers_one (inS' E kt2 (by simp only [oQ, kScrE]; omega_arith)))
           (covers_one (inCt' E kt2 bnd (by omega_arith)))
       w := by rw [eO]; exact covers_one (inCt E kt2 bnd (by omega_arith)) }
-  refine WP.mono (ceIn_ok (K.ce A.codecs) hnC (by simp [NA, argRegs]) HC) fun s3 ⟨hP3, hq3⟩ => ?_
+  refine WP.mono (ceIn_ok K.u hnC (by simp [NA, argRegs]) HC) fun s3 ⟨hP3, hq3⟩ => ?_
   rw [eO] at hP3 hq3
   rw [eQ, hq2.2] at hq3
   have kt3 := kt2.step E hP3 fun r hr => by
@@ -713,8 +728,8 @@ theorem ct_eq {m : Mem}
   · rw [hP i (List.mem_range.mp hi), rW, off_add, show 512 * L.k + 32 * 16 * i = 512 * (L.k + i) by omega_arith]
   · rw [rW, show 512 * (2 * L.k) = 1024 * L.k by omega_arith]
 
-theorem v_ok {A : Prims} (hA : PrimsOk A) {wc wd : List Nat} (K : KemCalls L wc wd) (W : KeWf L)
-    (hnA : A.add.noCalls = true) (hnC : (L.ce A.codecs).noCalls = true) (hnD : A.codecs.dd.noCalls = true)
+theorem v_ok {A : Prims} (hA : PrimsOk A) {wu wv : List Nat} (K : EncCE L wu wv) (W : KeWf L)
+    (hnA : A.add.noCalls = true) (hnC : L.ceV.noCalls = true) (hnD : A.codecs.dd.noCalls = true)
     {s : State} (h : EU L σ L.k s) :
     WP isa (vE L A) s fun s' => KT L σ s' ∧
       bytesAt s'.mem (σ.gpr .rdi) L.ctLen = encCt L σ.mem (σ.gpr .rsi) (σ.gpr .rdx) (σ.gpr .rcx) (σ.gpr .r8) := by
@@ -808,9 +823,9 @@ theorem v_ok {A : Prims} (hA : PrimsOk A) {wc wd : List Nat} (K : KemCalls L wc 
   -- to `ct`
   have eQ := pa_q kt4 (3 * L.k)
   have eO := pa_r15 kt4 (32 * L.du * L.k)
-  have HC : CEHi wc (qP (3 * L.k)) (.r15, 32 * L.du * L.k) L.dv s4 :=
+  have HC : CEHi wv (qP (3 * L.k)) (.r15, 32 * L.du * L.k) L.dv s4 :=
     { off := ⟨by simp only [oQ]; omega_arith, by omega_arith⟩
-      dw := K.dv.1
+      dw := K.dv
       red := by rw [eQ]; exact hq4.1
       dj := by rw [eQ, eO]; exact (E.cS.symm.sub_left (qScr (by omega_arith))).sub_right (Offset.sub_base _ bnd)
       rF := by rw [retR_eq kt4, eQ]; exact E.xS.sub_right (qScr (by omega_arith))
@@ -820,7 +835,7 @@ theorem v_ok {A : Prims} (hA : PrimsOk A) {wc wd : List Nat} (K : KemCalls L wc 
         exact covers_append (covers_one (inS' E kt4 (by simp only [oQ, kScrE]; omega_arith)))
           (covers_one (inCt' E kt4 bnd (by omega_arith)))
       w := by rw [eO]; exact covers_one (inCt E kt4 bnd (by omega_arith)) }
-  refine WP.mono (ceIn_ok (K.ce A.codecs) hnC (by simp [NA, argRegs]) HC) fun s5 ⟨hP5, hq5⟩ => ?_
+  refine WP.mono (ceIn_ok K.v hnC (by simp [NA, argRegs]) HC) fun s5 ⟨hP5, hq5⟩ => ?_
   rw [eO] at hP5 hq5
   rw [eQ, hq4.2] at hq5
   refine ⟨kt4.step E hP5 fun r hr => by
@@ -850,36 +865,64 @@ theorem pre_wp {L : Kem} {A : Prims} (hA : PrimsOk A) (W : KeWf L) {mul : Nat �
   exact mul_ok E W hv hn h₂
 
 /-- `u`, `v` and the epilogue. -/
-theorem post_wp {L : Kem} {A : Prims} (hA : PrimsOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
-    (W : KeWf L) (hnA : A.add.noCalls = true) (hnC : (L.ce A.codecs).noCalls = true)
-    (hnD : A.codecs.dd.noCalls = true) {σ : State} (hp : (kpkeEncK L).pre σ) {s : State} (h : EU L σ 0 s) :
+theorem post_wp {L : Kem} {A : Prims} (hA : PrimsOk A) {wu wv : List Nat} (K : EncCE L wu wv)
+    (W : KeWf L) (hnA : A.add.noCalls = true) (hnU : L.ceU.noCalls = true) (hnV : L.ceV.noCalls = true)
+    (hnD : A.codecs.dd.noCalls = true)
+    (hwo : writesOnly postRegs (.seq (seqR (uE L) 0 L.k) (vE L A)) = true)
+    {σ : State} (hp : (kpkeEncK L).pre σ) {s : State} (h : EU L σ 0 s) :
     WP isa (kpkeEncPost L A) s fun s' => gprPreserved σ s' ∧ (kpkeEncK L).post σ s' := by
   have E := ep hp
-  refine WP.seq (WP.mono (seqR_ok (I := fun i s => EU L σ i s) L.k 0
-    (fun i _ hi s h => u_ok E K W hnC (by omega_arith) h) s h) fun s₅ h₅ => ?_)
-  rw [Nat.zero_add] at h₅
-  exact WP.seq (WP.mono (v_ok E hA K W hnA hnC hnD h₅) fun s₆ ⟨kt₆, hm₆⟩ =>
-    WP.mono (epi_ok E kt₆) fun s₇ ⟨hg, hm⟩ => ⟨hg, by show bytesAt _ _ _ = _; rw [hm]; exact hm₆⟩)
+  have hkt := h.kt
+  have hk4 : L.k ≤ 4 := by rcases W.k34 with e | e <;> omega_arith
+  have wM : ∀ r ∈ [mxR (σ.gpr .r9)], WOk L σ r := fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr; exact .inl (Offset.sub_base _ (by decide))
+  have dM : ∀ r ∈ [mxR (σ.gpr .r9)], Region.Disjoint ⟨σ.gpr .rdi, L.ctLen⟩ r := fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr; exact E.cS.sub_right (Offset.sub_base _ (by decide))
+  unfold kpkeEncPost
+  refine WP.seq (WP.mono (withMxcsr_ok' (r := .rbx) (by decide) postRegs (by decide) hkt.rbx
+    (inS E hkt (by decide)) (inS E hkt (by decide)) hwo
+    (Q := fun s' => KT L σ s' ∧
+      bytesAt s'.mem (σ.gpr .rdi) L.ctLen = encCt L σ.mem (σ.gpr .rsi) (σ.gpr .rdx) (σ.gpr .rcx) (σ.gpr .r8))
+    (fun s₁ k₁ f₁ => ?_)) fun s₃ ⟨s₂, ⟨kt₂, hm₂⟩, f₃, k₃⟩ => ?_)
+  · have h₁ : EU L σ 0 s₁ :=
+      ⟨hkt.stepF E k₁.2.1 k₁.2.2 (k₁.gpr (by decide)) (fun r hr => k₁.gpr (by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) f₁ wM,
+        fun i hi hn => polyIs_frame f₁ (fun r hr => by
+          rw [List.mem_singleton] at hr; subst hr
+          exact Offset.disjoint _ (.inr (by simp only [oQ]; omega_arith)) (by simp only [oQ]; omega_arith)
+            (by decide)) (h.w i hi hn),
+        fun i hi => absurd hi (Nat.not_lt_zero _)⟩
+    refine WP.seq (WP.mono (seqR_ok (I := fun i s => EU L σ i s) L.k 0
+      (fun i _ hi s h => u_ok E K W hnU (by omega_arith) h) s₁ h₁) fun s₅ h₅ => ?_)
+    rw [Nat.zero_add] at h₅
+    exact v_ok E hA K W hnA hnV hnD h₅
+  · have kt₃ : KT L σ s₃ := kt₂.stepF E k₃.2.1 k₃.2.2 (k₃.gpr (by simp)) (fun r _ => k₃.gpr (by simp)) f₃ wM
+    exact WP.mono (epi_ok E kt₃) fun s₇ ⟨hg, hm⟩ => ⟨hg, by
+      show bytesAt _ _ _ = _
+      rw [hm, bytesAt_frame f₃ dM (by have := E.nC; omega_arith)]; exact hm₂⟩
 
-theorem kpkeEnc_wp {L : Kem} {A : Prims} (hA : PrimsOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
+theorem kpkeEnc_wp {L : Kem} {A : Prims} (hA : PrimsOk A) {wu wv : List Nat} (K : EncCE L wu wv)
     (W : KeWf L) {mul : Nat → Prog isa}
     (hv : ∀ s, (encMulK16 L.k).pre s → ∃ t s', Exec isa (mul L.k) s t s' ∧ abiPreserved s s' ∧
       (encMulK16 L.k).post s s')
     (hn : (mul L.k).noCalls = true) (hn12 : A.dec12.noCalls = true) (hnA : A.add.noCalls = true)
-    (hnC : (L.ce A.codecs).noCalls = true) (hnD : A.codecs.dd.noCalls = true)
+    (hnU : L.ceU.noCalls = true) (hnV : L.ceV.noCalls = true) (hnD : A.codecs.dd.noCalls = true)
+    (hwo : writesOnly postRegs (.seq (seqR (uE L) 0 L.k) (vE L A)) = true)
     {σ : State} (hp : (kpkeEncK L).pre σ) :
     WP isa (kpkeEnc L A mul) σ fun s' => gprPreserved σ s' ∧ (kpkeEncK L).post σ s' :=
-  WP.seq (WP.mono (pre_wp hA W hv hn hn12 hp) fun _ h => post_wp hA K W hnA hnC hnD hp h)
+  WP.seq (WP.mono (pre_wp hA W hv hn hn12 hp) fun _ h => post_wp hA K W hnA hnU hnV hnD hwo hp h)
 
-theorem kpkeEnc_correct {L : Kem} {A : Prims} (hA : PrimsOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
+theorem kpkeEnc_correct {L : Kem} {A : Prims} (hA : PrimsOk A) {wu wv : List Nat} (K : EncCE L wu wv)
     (W : KeWf L) {mul : Nat → Prog isa}
     (hv : ∀ s, (encMulK16 L.k).pre s → ∃ t s', Exec isa (mul L.k) s t s' ∧ abiPreserved s s' ∧
       (encMulK16 L.k).post s s')
     (hn : (mul L.k).noCalls = true) (hn12 : A.dec12.noCalls = true) (hnA : A.add.noCalls = true)
-    (hnC : (L.ce A.codecs).noCalls = true) (hnD : A.codecs.dd.noCalls = true)
+    (hnU : L.ceU.noCalls = true) (hnV : L.ceV.noCalls = true) (hnD : A.codecs.dd.noCalls = true)
+    (hwo : writesOnly postRegs (.seq (seqR (uE L) 0 L.k) (vE L A)) = true)
     (hctl : ctlOk (kpkeEnc L A mul) = true) (σ : State) (hp : (kpkeEncK L).pre σ) :
     ∃ t s', Exec isa (kpkeEnc L A mul) σ t s' ∧ abiPreserved σ s' ∧ (kpkeEncK L).post σ s' := by
-  obtain ⟨t, s', he, hg, hq⟩ := kpkeEnc_wp hA K W hv hn hn12 hnA hnC hnD hp
+  obtain ⟨t, s', he, hg, hq⟩ := kpkeEnc_wp hA K W hv hn hn12 hnA hnU hnV hnD hwo hp
   exact ⟨t, s', he, abiPreserved_of_ctl hctl he hg, hq⟩
 
 end KpkeEnc

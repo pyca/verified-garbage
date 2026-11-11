@@ -66,6 +66,21 @@ theorem init_framed :
     (wa := true) (stack := 8) (bytes := 2568) (init_verified v) (by decide) (by decide)
     (by decide) (init_spSafe v) (init_xdepth v) initFrameSat_pre
 
+theorem initFrameSatF_pre : ∃ s, (Spec.Ocb.initContract X86_64.abi 40).pre s := by
+  implies_sat [Spec.Ocb.initContract, Spec.Ocb.initSig, Spec.Ocb.initPre, Spec.Ocb.initPost,
+    X86_64.abi, X86_64.argRegs] [initFrameSat, initSat] using initFrameSat
+
+/-- `init_framed`, over functions that need no working space: a frame of the
+24 bytes `init` writes itself, after the 8 that stand for the return
+address. -/
+theorem initF_framed (f : Proof.Aes.X86_64.BlocksFree v.enc v.expand) :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 32 .rcx (init (callees v)))
+      (Spec.Ocb.initContract X86_64.abi 40) :=
+  X86_64.Verified.stackScratch (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 3)
+    (pre := Spec.Ocb.initPre X86_64.abi.ptrBits) (post := Spec.Ocb.initPost X86_64.abi.ptrBits)
+    (wa := true) (stack := 8) (bytes := 32) (initF_verified v f) (by decide) (by decide)
+    (by decide) (init_spSafe v) (init_xdepth v) initFrameSatF_pre
+
 /-- A state satisfying `vg_aes_ocb_seal`'s precondition, without the working
 space. -/
 def sealFrameSat : State :=

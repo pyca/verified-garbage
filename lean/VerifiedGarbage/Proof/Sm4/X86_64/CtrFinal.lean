@@ -470,7 +470,7 @@ theorem entry_frame {s₀ s : State} (h : KSetup s₀ s) : Frame [kSv s₀, kStk
   exact f₁.trans f₂
 
 theorem whole_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KSetup s₀ s) :
-    WP isa (.call "vg_sm4_ctr" ctrFramed) s (KWhole s₀) := by
+    WP isa (.call "vg_sm4_ctr_core" ctrFramed) s (KWhole s₀) := by
   have ef := entry_frame h
   have dS : ∀ r ∈ [kSv s₀, kStk s₀], (kSch s₀).Disjoint r := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -669,7 +669,7 @@ theorem KTArgs.entry {s₀ : State} (hp : KPre s₀) {s : State} (h : KTArgs s�
     exact h.zero
 
 theorem tail_call_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KTArgs s₀ s) :
-    WP isa (.call "vg_sm4_ctr" ctrFramed) s (KTCall s₀) := by
+    WP isa (.call "vg_sm4_ctr_core" ctrFramed) s (KTCall s₀) := by
   obtain ⟨hpre, hc, hw⟩ := tail_regions hp h
   obtain ⟨eK, eT, eZ⟩ := h.entry hp
   refine WP.callF (k := calleeK) ctrFramed_ok.1 ctrFramed_spSafe (by rw [ctrFramed_depth]; decide) hpre hc hw ?_
@@ -916,7 +916,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre s₀) (h0' : ctr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;>
         simp only [gpr_setReg, reduceCtorEq, ↓reduceIte, qW, qIv, qD, qL, qSp, kV, qV])
     fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨setup_wp hp, setup_wp hp'⟩
-  have r₃ := (RelCT.callEx (k := calleeK) (n := "vg_sm4_ctr") ctrFramed_ok.1 ctrFramed_ok.2.1
+  have r₃ := (RelCT.callEx (k := calleeK) (n := "vg_sm4_ctr_core") ctrFramed_ok.1 ctrFramed_ok.2.1
     (P := fun a b => KSetup s₀ a ∧ KSetup s₀' b) fun a b ⟨ha, hb⟩ => by
       obtain ⟨pa, ca, wa⟩ := whole_regions hp ha
       obtain ⟨pb, cb, wb⟩ := whole_regions hp' hb
@@ -953,7 +953,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre s₀) (h0' : ctr
       fun a b h => by
         obtain ⟨⟨w, hw, rfl⟩, ⟨w', hw', rfl⟩⟩ := h
         exact ⟨tail_args_wp hp hw, tail_args_wp hp' hw'⟩
-    have a₃ := (RelCT.callEx (k := calleeK) (n := "vg_sm4_ctr") ctrFramed_ok.1 ctrFramed_ok.2.1
+    have a₃ := (RelCT.callEx (k := calleeK) (n := "vg_sm4_ctr_core") ctrFramed_ok.1 ctrFramed_ok.2.1
       (P := fun a b => KTArgs s₀ a ∧ KTArgs s₀' b) fun a b ⟨ha, hb⟩ => by
         obtain ⟨pa, ca, wa⟩ := tail_regions hp ha
         obtain ⟨pb, cb, wb⟩ := tail_regions hp' hb
