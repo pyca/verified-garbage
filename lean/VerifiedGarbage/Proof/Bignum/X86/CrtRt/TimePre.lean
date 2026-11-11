@@ -24,7 +24,7 @@ variable {Ex : List Region → List Region → Prop}
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
-open VG.Proof.Bignum.X86.PublicRt (Both)
+open VG.Proof.Bignum.X86.PublicRt (Both relCT_narrow)
 
 /-- `τA` with argument 18 public too. -/
 def τP : VG.X86.Taint.T := { regs := .ofList [.edi, .esp], flags := false, argLen := 80 }
@@ -577,6 +577,56 @@ theorem sizedP_relCT (sp : BitVec 32) :
   intro s₁ s₂ t₁ t₂ s₁' s₂' H
   have h := H.1.1.1
   exact sizedP_relCT' sp h.lower h.crt.pShort h.crt.qShort s₁ s₂ t₁ t₂ s₁' s₂' H
+
+
+/-- Factor `i`'s cached value holds in `sized`'s narrowed runs too. -/
+theorem PreR2.narrow {i p : Nat} (P : PreR2 s base bytes len args i p) :
+    PreR2 (s.withRegions (s.rd ++ s.wr) (narrowW base bytes len args)) base bytes len args i p := by
+  obtain ⟨r, hr, hc⟩ := P.arg.stack.read
+  obtain ⟨r', hr', hc'⟩ := P.read
+  exact ⟨⟨⟨⟨r, List.mem_append_left _ hr, hc⟩, P.arg.stack.apart⟩, P.arg.value⟩, P.hi, P.pos, P.lt, P.lt7, P.pos7,
+    ⟨r', List.mem_append_left _ hr', hc'⟩, P.fit, P.apart, P.val, P.top, P.apartSp⟩
+
+theorem PreOut.narrow {i : Nat} (O : PreOut s args len i) {R W : List Region} :
+    PreOut (s.withRegions R W) args len i :=
+  ⟨O.arg, O.val⟩
+
+/-- What the runs of `sized true` from the states themselves need: `SizedAt`'s, `p q = n`, and both
+factors' cached values. -/
+def SizedAtP (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (s : State) : Prop :=
+  SizedAt base bytes len args sp s ∧
+    componentValue s.mem args 6 * componentValue s.mem args 8 = componentValue s.mem args 2 ∧
+    PreR2 s base bytes len args 0 (safeM (componentValue s.mem args 6)) ∧
+    PreR2 s base bytes len args 1 (safeM (componentValue s.mem args 8)) ∧
+    PreOut s args len 0 ∧ PreOut s args len 1
+
+theorem sizedNarrowP_relCT (sp : BitVec 32) :
+    RelCT isa (Both (SizedAtP base bytes len args sp)) (CrtRt.sized true) fun _ _ => True := by
+  refine relCT_narrow (Pn := Both fun s => Run (CrtExtra base bytes len args) base bytes len args sp s ∧
+      PreAll base bytes len args s.mem s) (fun s => s.rd ++ s.wr)
+    (fun _ => narrowW base bytes len args) (fun s₁ s₂ ⟨S₁, S₂⟩ => ?_) (sizedP_relCT sp)
+  have cov : ∀ {s : State}, SizedAt base bytes len args sp s → Covers (narrowW base bytes len args) s.wr := by
+    intro s S
+    rintro a n ⟨r, hr, hc⟩
+    simp only [narrowW, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact Covers.one S.1.crt.outWrite a n ⟨_, List.mem_singleton_self _, hc⟩
+    · exact ⟨_, S.1.scratch.wr, hc⟩
+  have wp : ∀ {s : State}, SizedAtP base bytes len args sp s →
+      ∃ F, WP isa (CrtRt.sized true) (s.withRegions (s.rd ++ s.wr) (narrowW base bytes len args)) F :=
+    fun S => ⟨_, sizedPre_ok (narrow_in S.1) S.1.2.2.1 S.2.1 S.2.2.1.narrow S.2.2.2.2.1.narrow S.2.2.2.1.narrow
+      S.2.2.2.2.2.narrow⟩
+  have pre : ∀ {s : State}, SizedAtP base bytes len args sp s →
+      PreAll base bytes len args s.mem (s.withRegions (s.rd ++ s.wr) (narrowW base bytes len args)) := by
+    intro s S
+    refine ⟨S.2.2.1.narrow, S.2.2.2.1.narrow, S.2.2.2.2.1.narrow, S.2.2.2.2.2.narrow, fun r hr => ?_⟩
+    simp only [State.withRegions, narrowW, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact S.2.2.2.2.1.arg
+    · exact S.2.2.1.arg.stack.apart
+  exact ⟨Covers.append_left (Covers.refl _) (Covers.right (cov S₁.1)), cov S₁.1,
+    Covers.append_left (Covers.refl _) (Covers.right (cov S₂.1)), cov S₂.1, wp S₁, wp S₂,
+    ⟨narrow_run S₁.1, pre S₁⟩, ⟨narrow_run S₂.1, pre S₂⟩⟩
 
 end
 
