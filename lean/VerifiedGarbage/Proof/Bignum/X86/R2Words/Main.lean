@@ -254,13 +254,32 @@ theorem prep_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
     rcases Nat.lt_or_eq_of_le hlo' with e | e
     · exact e
     · exfalso; rw [← e, show 32 * (wp len - 1) = 32 * (wp len - 1) - 1 + 1 by omega, Nat.pow_succ] at hodd; omega
-  -- `p` and `d`, then `v`.
+  -- `d₁`, from `M`'s third word `V`.
+  obtain ⟨V, hV⟩ : ∃ V, V = w32 s.mem base (numAt len 0 + 4 * (k - 1)) := ⟨_, rfl⟩
+  have hd1eq : U * 2 ^ z % 2 ^ 32 + V * 2 ^ z / 2 ^ 32 = M * 2 ^ z / 2 ^ (32 * (wp len - 2)) % 2 ^ 32 := by
+    have hV' : V < 2 ^ 32 := hV ▸ (s.mem.readW _ 32).isLt
+    obtain ⟨k', rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+    have h3 := val32_top3 s.mem base (numAt len 0) k'
+    rw [show k' + 1 + 1 = k' + 2 from rfl] at hT
+    rw [show k' + 1 - 1 = k' by omega] at hV
+    rw [show k' + 3 = wp len by omega, hMv, ← hT, ← hU, ← hV] at h3
+    rw [h3, show 32 * (wp len - 2) = 32 * k' + 32 by omega, Nat.pow_add,
+      VG.Proof.Bignum.WordStep32.shl_div (by omega) (val32_lt _ _ _ _)]
+    have hlo := VG.Proof.Bignum.WordStep32.lohi_lt (a := V) (b := U) (z := z) (by omega) hV'
+    rw [Nat.add_mul, Nat.mul_assoc]
+    generalize V * 2 ^ z / 2 ^ 32 = hv at hlo ⊢
+    generalize U * 2 ^ z = A at hlo ⊢
+    generalize T * 2 ^ z = B
+    omega
+  -- `p`, `d` and `d₁`, then `v`.
   unfold prep
   simp only [seqs]
-  refine WP.seq (WP.mono (norm_ok h (T := T) (U := U)
-    (by rw [hT]; congr 1; omega) (by rw [hU]; congr 1; omega) hT0) fun u₁ ⟨P₁, D₁, O₁, K₁⟩ => ?_)
-  rw [← hz] at P₁ D₁
+  refine WP.seq (WP.mono (norm_ok h (T := T) (U := U) (V := V)
+    (by rw [hT]; congr 1; omega) (by rw [hU]; congr 1; omega) (by rw [hV]; congr 1; omega) hT0)
+    fun u₁ ⟨P₁, D₁, D1₁, O₁, K₁⟩ => ?_)
+  rw [← hz] at P₁ D₁ D1₁
   rw [hdeq] at D₁
+  rw [hd1eq] at D1₁
   have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (by omega) (by simp only [oP]; omega))
   refine WP.seq (WP.mono (recip_ok h₁ D₁ hd1 hd2) fun u₂ ⟨V₂, O₂, K₂⟩ => ?_)
   have h₂ := h₁.keep K₂ (by decide) (by decide) (O₂.mono (by omega) (by simp only [oV]; omega))
@@ -278,6 +297,7 @@ theorem prep_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
     rw [hdr₃ _ (by simp only [oP]; omega), O₂.w32 (.inl (by decide)) (by decide)]; exact P₁
   have L : LoopPre u₃ base bytes len args M z := ⟨h₃, hz31, P₃, hMw,
     by rw [hdr₃ _ (by simp only [oD]; omega), O₂.w32 (.inl (by decide)) (by decide)]; exact D₁, hd1,
+    by rw [hdr₃ _ (by simp only [oD1]; omega), O₂.w32 (.inr (by decide)) (by decide)]; exact D1₁,
     by rw [hdr₃ _ (by simp only [oV]; omega)]; exact V₂, M₃, X₃, hxm⟩
   refine WP.mono (count_start L) fun u I₀ => ⟨u₃, z, L, I₀, N₃, Z₃, ?_, ?_⟩
   · exact ((O₁.mono (by omega) (by simp only [oP]; omega)).trans (O₂.mono (by simp only [oP, oV]; omega)
@@ -307,7 +327,7 @@ theorem fin_ok {s₃ u₄ : State} {base : Addr} {bytes len : Nat} {args : Nat �
   have e5 : numAt len 5 = 256 + 5 * wb len := by simp [numAt, numOff]
   -- `x` and `M` over all their words.
   have M₄ : val32 u₄.mem base (numAt len 0) (nw len) = M := by
-    rw [← hM₃]; exact val32_congr fun j hj => I₄.mid _ (by simp only [oQ]; omega) (by omega)
+    rw [← hM₃]; exact val32_congr fun j hj => I₄.mid _ (by simp only [oU2]; omega) (by omega)
   have X₄ : val32 u₄.mem base (numAt len 4) (nw len) = val32 u₄.mem base (numAt len 4) (wp len) := by
     rw [show nw len = wp len + (nw len - wp len) by omega, val32_append,
       val32_eq_zero (d := numAt len 4 + 4 * wp len) (k := nw len - wp len) (fun j hj => by

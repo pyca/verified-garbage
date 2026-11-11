@@ -25,7 +25,7 @@ structure Pub where
 structure Ready (p : Pub) (s : State) : Prop where
   ws : Ws s p.B p.Z p.W
   z : slot p.W 17 ≤ p.Z
-  w : 4 ≤ p.W
+  w : 6 ≤ p.W
   j : p.j ≤ p.W
   counter : word s.mem p.B (slot p.W aV + 16) = BitVec.ofNat 64 p.j
   top : 2 ^ 63 ≤ (word s.mem p.B (slot p.W aM + 8 * (p.W / 2 - 1))).toNat

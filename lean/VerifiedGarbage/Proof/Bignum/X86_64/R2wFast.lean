@@ -50,7 +50,7 @@ structure StepsInv (s : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (c X M 
   keep : Keep mmRegs s t
 
 theorem stepIter_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {c X M T j : Nat}
-    (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 30) (hc : c < 2 ^ 31) (hM : 0 < M) (hT : 2 ^ 63 ≤ T)
+    (hZ : slot w 8 ≤ Z) (hw : 3 ≤ w) (hw' : w < 2 ^ 30) (hc : c < 2 ^ 31) (hM : 0 < M) (hT : 2 ^ 63 ≤ T)
     (hj : j < c) {t : State} (hI : StepsInv s B Z w minv c X M T j t) :
     WP isa (.seq step (.block (dblCount sCnt))) t fun t' =>
       t'.zf = some (decide (j + 1 = c)) ∧ StepsInv s B Z w minv c X M T (j + 1) t' := by
@@ -155,7 +155,7 @@ theorem StepsInv.post {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {c X
 
 /-- `steps`: `c ≥ 1` word steps (the count in `rcx`), `x := x 2^(64 c) mod m`. -/
 theorem steps_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
-    (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 30)
+    (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) (hw : 3 ≤ w) (hw' : w < 2 ^ 30)
     {c : Nat} (hc : 1 ≤ c) (hc' : c < 2 ^ 31) (hcx : s.gpr .rcx = BitVec.ofNat 64 c)
     (hT : 2 ^ 63 ≤ (word s.mem B (slot w aN + 8 * (w - 1))).toNat)
     (hv : (word s.mem B (slot w aTmp)).toNat =
@@ -350,7 +350,7 @@ theorem fast_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       BitVec.toNat_ofNat, Nat.mod_eq_of_lt hvlt]
   have hO₃ : wv t₃.mem B (slot w aR2) w < wv t₃.mem B (slot w aN) w := by
     rw [hN₃, hm₃, o₂'.wv (by omega_using [sXV]) (by omega_using [hn', hsx]), hx₂]; omega_using [hNR, hhalf]
-  have hsp := steps_ok (hs₂'.congr k₃.2.2) ((k₃.gpr (by decide)).trans hdi₂) (hm₃ ▸ hH₂) hZ hw hw30
+  have hsp := steps_ok (hs₂'.congr k₃.2.2) ((k₃.gpr (by decide)).trans hdi₂) (hm₃ ▸ hH₂) hZ (by omega_using [hw, h4]) hw30
     (c := w / 4) (by omega_using [hw, h4]) (by omega_using [hw']) h3cx hT₃ hV₃ hO₃
   refine WP.seq (WP.mono hsp fun t₄ ⟨hx₄, hn₄, hw₄, hf₄, hg₄, k₄⟩ => ?_)
   rw [hN₃, hm₃, o₂'.wv (by omega_using [sXV]) (by omega_using [hn', hsx]), hx₂, sub_mul_mod (Nat.le_of_lt hNR),
