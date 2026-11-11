@@ -5,17 +5,17 @@
 // gives.
 
 vg_rsa_pkcs1_sign:
-	sub sp, sp, #1136
+	sub sp, sp, #1152
 	add x16, sp, #0
-	str x19, [x16, #96]
-	str x30, [x16, #104]
+	str x19, [x16, #112]
+	str x30, [x16, #120]
 	add x19, x3, #0
 	add x17, x0, #0
-	add x8, sp, #112
+	add x8, sp, #128
 	add x9, x3, #0
 	add w10, w6, #0
 	add x11, x7, #0
-	ldr x12, [sp, #1136]
+	ldr x12, [sp, #1152]
 	sub w0, w10, #0
 	cbz w0, 20f
 	sub w0, w10, #1
@@ -872,35 +872,35 @@ vg_rsa_pkcs1_sign:
 	movz x0, #0, lsl #0
 225:
 	cbz x0, 254f
-	ldr x15, [sp, #1144]
-	str x15, [x16, #0]
-	ldr x15, [sp, #1152]
-	str x15, [x16, #8]
 	ldr x15, [sp, #1160]
-	str x15, [x16, #16]
+	str x15, [x16, #0]
 	ldr x15, [sp, #1168]
-	str x15, [x16, #24]
+	str x15, [x16, #8]
 	ldr x15, [sp, #1176]
-	str x15, [x16, #32]
+	str x15, [x16, #16]
 	ldr x15, [sp, #1184]
-	str x15, [x16, #40]
+	str x15, [x16, #24]
 	ldr x15, [sp, #1192]
-	str x15, [x16, #48]
+	str x15, [x16, #32]
 	ldr x15, [sp, #1200]
-	str x15, [x16, #56]
+	str x15, [x16, #40]
 	ldr x15, [sp, #1208]
-	str x15, [x16, #64]
+	str x15, [x16, #48]
 	ldr x15, [sp, #1216]
-	str x15, [x16, #72]
+	str x15, [x16, #56]
 	ldr x15, [sp, #1224]
-	str x15, [x16, #80]
+	str x15, [x16, #64]
 	ldr x15, [sp, #1232]
+	str x15, [x16, #72]
+	ldr x15, [sp, #1240]
+	str x15, [x16, #80]
+	ldr x15, [sp, #1248]
 	str x15, [x16, #88]
 	add x0, x17, #0
 	add x6, x8, #0
 	add x7, x19, #0
 	bl {vg_rsa_private_checked}
-	add x14, sp, #112
+	add x14, sp, #128
 	add x13, x19, #0
 	movz x15, #0, lsl #0
 256:
@@ -921,24 +921,24 @@ vg_rsa_pkcs1_sign:
 	movz x0, #0, lsl #0
 255:
 	add x16, sp, #0
-	ldr x19, [x16, #96]
-	ldr x30, [x16, #104]
-	add sp, sp, #1136
+	ldr x19, [x16, #112]
+	ldr x30, [x16, #120]
+	add sp, sp, #1152
 	ret
 	.p2align 6
 
 vg_rsa_pkcs1_sign_precomputed:
-	sub sp, sp, #1136
+	sub sp, sp, #1152
 	add x16, sp, #0
-	str x19, [x16, #96]
-	str x30, [x16, #104]
+	str x19, [x16, #112]
+	str x30, [x16, #120]
 	add x19, x3, #0
 	add x17, x0, #0
-	add x8, sp, #112
+	add x8, sp, #128
 	add x9, x3, #0
 	add w10, w6, #0
 	add x11, x7, #0
-	ldr x12, [sp, #1136]
+	ldr x12, [sp, #1152]
 	sub w0, w10, #0
 	cbz w0, 20f
 	sub w0, w10, #1
@@ -1795,35 +1795,39 @@ vg_rsa_pkcs1_sign_precomputed:
 	movz x0, #0, lsl #0
 225:
 	cbz x0, 254f
-	ldr x15, [sp, #1144]
-	str x15, [x16, #0]
-	ldr x15, [sp, #1152]
-	str x15, [x16, #8]
 	ldr x15, [sp, #1160]
-	str x15, [x16, #16]
+	str x15, [x16, #0]
 	ldr x15, [sp, #1168]
-	str x15, [x16, #24]
+	str x15, [x16, #8]
 	ldr x15, [sp, #1176]
-	str x15, [x16, #32]
+	str x15, [x16, #16]
 	ldr x15, [sp, #1184]
-	str x15, [x16, #40]
+	str x15, [x16, #24]
 	ldr x15, [sp, #1192]
-	str x15, [x16, #48]
+	str x15, [x16, #32]
 	ldr x15, [sp, #1200]
-	str x15, [x16, #56]
+	str x15, [x16, #40]
 	ldr x15, [sp, #1208]
-	str x15, [x16, #64]
+	str x15, [x16, #48]
 	ldr x15, [sp, #1216]
-	str x15, [x16, #72]
+	str x15, [x16, #56]
 	ldr x15, [sp, #1224]
-	str x15, [x16, #80]
+	str x15, [x16, #64]
 	ldr x15, [sp, #1232]
+	str x15, [x16, #72]
+	ldr x15, [sp, #1240]
+	str x15, [x16, #80]
+	ldr x15, [sp, #1248]
 	str x15, [x16, #88]
+	ldr x15, [sp, #1256]
+	str x15, [x16, #96]
+	ldr x15, [sp, #1264]
+	str x15, [x16, #104]
 	add x0, x17, #0
 	add x6, x8, #0
 	add x7, x19, #0
-	bl {vg_rsa_private_checked}
-	add x14, sp, #112
+	bl {vg_rsa_private_checked_precomputed}
+	add x14, sp, #128
 	add x13, x19, #0
 	movz x15, #0, lsl #0
 256:
@@ -1844,9 +1848,9 @@ vg_rsa_pkcs1_sign_precomputed:
 	movz x0, #0, lsl #0
 255:
 	add x16, sp, #0
-	ldr x19, [x16, #96]
-	ldr x30, [x16, #104]
-	add sp, sp, #1136
+	ldr x19, [x16, #112]
+	ldr x30, [x16, #120]
+	add sp, sp, #1152
 	ret
 	.p2align 6
 

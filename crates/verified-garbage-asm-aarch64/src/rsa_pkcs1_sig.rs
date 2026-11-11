@@ -27,12 +27,12 @@
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 4384 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 4400 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd111c3ff,0x910003f0,0xf9003213,0xf900361e,0x91000073,0x91000011,0x9101c3e8,0x91000069
-.inst 0x110000ca,0x910000eb,0xf9423bec,0x51000140
+        r".inst 0xd11203ff,0x910003f0,0xf9003a13,0xf9003e1e,0x91000073,0x91000011,0x910203e8,0x91000069
+.inst 0x110000ca,0x910000eb,0xf94243ec,0x51000140
 cbz w0, 20f
 .inst 0x51000540
 cbz w0, 22f
@@ -280,12 +280,12 @@ b 225f
 .inst 0xd2800000
 225:
 cbz x0, 254f
-.inst 0xf9423fef,0xf900020f,0xf94243ef,0xf900060f,0xf94247ef,0xf9000a0f,0xf9424bef,0xf9000e0f
-.inst 0xf9424fef,0xf900120f,0xf94253ef,0xf900160f,0xf94257ef,0xf9001a0f,0xf9425bef,0xf9001e0f
-.inst 0xf9425fef,0xf900220f,0xf94263ef,0xf900260f,0xf94267ef,0xf9002a0f,0xf9426bef,0xf9002e0f
+.inst 0xf94247ef,0xf900020f,0xf9424bef,0xf900060f,0xf9424fef,0xf9000a0f,0xf94253ef,0xf9000e0f
+.inst 0xf94257ef,0xf900120f,0xf9425bef,0xf900160f,0xf9425fef,0xf9001a0f,0xf94263ef,0xf9001e0f
+.inst 0xf94267ef,0xf900220f,0xf9426bef,0xf900260f,0xf9426fef,0xf9002a0f,0xf94273ef,0xf9002e0f
 .inst 0x91000220,0x91000106,0x91000267
 bl {vg_rsa_private_checked}
-.inst 0x9101c3ee,0x9100026d,0xd280000f
+.inst 0x910203ee,0x9100026d,0xd280000f
 256:
 .inst 0x390001cf,0x910005ce,0xd10005ad
 cbnz x13, 256b
@@ -297,7 +297,7 @@ b 255f
 cbnz x13, 257b
 .inst 0xd2800000
 255:
-.inst 0x910003f0,0xf9403213,0xf940361e,0x9111c3ff,0xd65f03c0
+.inst 0x910003f0,0xf9403a13,0xf9403e1e,0x911203ff,0xd65f03c0
 .p2align 6",
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
     )
@@ -330,12 +330,12 @@ cbnz x13, 257b
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
 /// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 4384 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 4400 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_sign_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd111c3ff,0x910003f0,0xf9003213,0xf900361e,0x91000073,0x91000011,0x9101c3e8,0x91000069
-.inst 0x110000ca,0x910000eb,0xf9423bec,0x51000140
+        r".inst 0xd11203ff,0x910003f0,0xf9003a13,0xf9003e1e,0x91000073,0x91000011,0x910203e8,0x91000069
+.inst 0x110000ca,0x910000eb,0xf94243ec,0x51000140
 cbz w0, 20f
 .inst 0x51000540
 cbz w0, 22f
@@ -583,12 +583,12 @@ b 225f
 .inst 0xd2800000
 225:
 cbz x0, 254f
-.inst 0xf9423fef,0xf900020f,0xf94243ef,0xf900060f,0xf94247ef,0xf9000a0f,0xf9424bef,0xf9000e0f
-.inst 0xf9424fef,0xf900120f,0xf94253ef,0xf900160f,0xf94257ef,0xf9001a0f,0xf9425bef,0xf9001e0f
-.inst 0xf9425fef,0xf900220f,0xf94263ef,0xf900260f,0xf94267ef,0xf9002a0f,0xf9426bef,0xf9002e0f
-.inst 0x91000220,0x91000106,0x91000267
-bl {vg_rsa_private_checked}
-.inst 0x9101c3ee,0x9100026d,0xd280000f
+.inst 0xf94247ef,0xf900020f,0xf9424bef,0xf900060f,0xf9424fef,0xf9000a0f,0xf94253ef,0xf9000e0f
+.inst 0xf94257ef,0xf900120f,0xf9425bef,0xf900160f,0xf9425fef,0xf9001a0f,0xf94263ef,0xf9001e0f
+.inst 0xf94267ef,0xf900220f,0xf9426bef,0xf900260f,0xf9426fef,0xf9002a0f,0xf94273ef,0xf9002e0f
+.inst 0xf94277ef,0xf900320f,0xf9427bef,0xf900360f,0x91000220,0x91000106,0x91000267
+bl {vg_rsa_private_checked_precomputed}
+.inst 0x910203ee,0x9100026d,0xd280000f
 256:
 .inst 0x390001cf,0x910005ce,0xd10005ad
 cbnz x13, 256b
@@ -600,9 +600,9 @@ b 255f
 cbnz x13, 257b
 .inst 0xd2800000
 255:
-.inst 0x910003f0,0xf9403213,0xf940361e,0x9111c3ff,0xd65f03c0
+.inst 0x910003f0,0xf9403a13,0xf9403e1e,0x911203ff,0xd65f03c0
 .p2align 6",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
 }
 
