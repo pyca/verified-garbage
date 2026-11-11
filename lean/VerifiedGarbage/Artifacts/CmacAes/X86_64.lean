@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacAes.X86_64.AesNi
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Frame
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 public import VerifiedGarbage.Impl.Gcm.X86_64
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
@@ -55,12 +56,6 @@ def artifacts : List Artifact :=
       stack := 2328
       verified := Proof.CmacAes.Stream.X86_64.init_framed v
       spSafe := X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.init_spSafe v) },
-    Spec.Cmac.aesFinishApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackScratch 2312 .r8
-        (Impl.CmacAes.Stream.X86_64.finish v.callee v.suffix)
-      stack := 2328
-      verified := Proof.CmacAes.Stream.X86_64.finish_framed v
-      spSafe := X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.finish_spSafe v) }])
+    Spec.Cmac.aesFinishApi.artifact X86_64.target (Proof.CmacAes.Stream.X86_64.Scrub.finishReg v)])
 
 end VG.Artifacts.CmacAes.X86_64

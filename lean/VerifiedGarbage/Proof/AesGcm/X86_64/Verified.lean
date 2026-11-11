@@ -230,6 +230,27 @@ theorem init_verified (v : GcmImpl) :
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [initSat] using initSat)
 
+/-- `init_correct`, over callees that need no working space. -/
+theorem initF_correct (v : GcmImpl) (fk : KeyFree v.key.fn.code) (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee)
+    (s : State) (hs : Proof.AesGcm.initX86_64F.pre s) :
+    ∃ t s', Exec isa (init v.callees) s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.initX86_64F.post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := initF_wp v fk fc hs
+  exact ⟨t, s', he, abiPreserved_of_exec (init_mx v) he hg, hp⟩
+
+/-- A state satisfying `vg_aes_gcm_init`'s precondition, with 176 bytes of
+working space. -/
+def initSatF : State := { initSat with wr := [⟨0x2000, 256⟩, ⟨0x3000, 176⟩] }
+
+theorem initF_verified (v : GcmImpl) (fk : KeyFree v.key.fn.code) (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
+    Verified X86_64.target (init v.callees) (Proof.AesGcm.initScratchContractF X86_64.abi 8) :=
+  Verified.of_correct (initF_correct v fk fc) (initF_ct v fk fc) (by
+    sig_implies [Proof.AesGcm.initScratchContractF, Proof.AesGcm.initScratchSigF, Spec.Gcm.initPre, Spec.Gcm.initPost,
+      Proof.AesGcm.initX86_64F, Proof.AesGcm.initX86_64, Proof.AesGcm.initPreF, X86_64.abi, Proof.AesGcm.arg,
+      Proof.AesGcm.args, Proof.AesGcm.stk,
+      Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
+      List.getD, List.range, List.range.loop, VG.X86_64.below,
+      X86_64.argRegs] [initSatF, initSat] using initSatF)
+
 /-- A state satisfying `vg_aes_gcm_stream_init`'s precondition (with no nonce). -/
 def siSat : State where
   gpr r := match r with

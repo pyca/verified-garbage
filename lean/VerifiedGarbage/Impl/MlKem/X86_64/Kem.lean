@@ -50,6 +50,10 @@ structure Kem where
   ce : Codecs → Prog isa
   ddN : Codecs → String
   dd : Codecs → Prog isa
+  /-- The compressions to `d_u` and to `d_v` of `vg_mlkem*_kpke_encrypt`, which
+  runs them in an MXCSR region. -/
+  ceU : Prog isa
+  ceV : Prog isa
 
 namespace Kem
 
@@ -134,5 +138,7 @@ def kem768 : Kem where
   ce := Codecs.ce
   ddN := Codecs.ddN
   dd := Codecs.dd
+  ceU := cm10
+  ceV := cm4
 
 end VG.Impl.MlKem.X86_64

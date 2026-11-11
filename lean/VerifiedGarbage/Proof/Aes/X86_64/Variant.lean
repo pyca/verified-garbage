@@ -5,6 +5,12 @@ public import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 public import VerifiedGarbage.Impl.Aes.X86_64.Callee
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Spec.Cmac.Contract
+public import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
+public import VerifiedGarbage.Impl.AesGcm.X86_64
+public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
@@ -22,7 +28,11 @@ interface `AesCtr32` on x86-64 (`Variants/AesCtr32/X86_64/`), and each caller
 `Proof.Aes.ctr32X86_64`, and makes no calls. It comes with the
 implementation of `vg_aes_expand_key` that goes with it (with the same
 suffix and CPU features), for the callers that also expand the key, proven
-against `Proof.Aes.expandKeyX86_64`.
+against `Proof.Aes.expandKeyX86_64`. One that never touches its scratch
+buffer also gives its contract without one (`free`), so that a caller of
+it alone needs no working space for it, and the residue analyses of the
+functions over it that the analysis handles (`gcmInitRes`, `cmacFinishRes`): those instances
+then return without secret residue (`X86_64.RScrub.withScrub`).
 -/
 
 @[expose] public section
@@ -49,6 +59,24 @@ structure Ctr32ToImpl where
   spSafe : callee.code.all (fun i => !isa.writesSp i) = true
   /-- It uses no stack. -/
   noStack : callee.code.x86_64Depth = 0 := by lit_decide
+
+/-- What an implementation of `vg_aes_ctr32` that never touches its scratch
+buffer gives: its contract without one (`AesNi.ctr32X86_64F`), so that its
+callers need not set aside one. -/
+structure Ctr32Free (callee : Impl.Aes.X86_64.Ctr32) : Type where
+  ok : ∀ s, AesNi.ctr32X86_64F.pre s →
+    ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ AesNi.ctr32X86_64F.post s s'
+  ct : ConstantTime isa AesNi.ctr32X86_64F.pre AesNi.ctr32X86_64F.pub callee.code
+
+/-- `vg_aes_gcm_init`'s code over `callee` and `vg_aes_expand_key_scratch_aesni`
+when neither needs working space (`Ctr32Free`): a frame of only the 176
+bytes `init` writes itself. It calls only those two, so the other functions
+of its callees are left empty. -/
+def gcmInitCodeF (callee : Impl.Aes.X86_64.Ctr32) : Prog isa :=
+  Impl.StackScratch.X86_64.withStackScratch 184 .rcx
+    (Impl.AesGcm.X86_64.init ⟨⟨callee.name, callee.code⟩,
+      ⟨"vg_aes_expand_key_scratch_aesni", Impl.Aes.X86_64.AesNi.expandKey⟩, ⟨"", .block []⟩,
+      ⟨"", .block []⟩, ⟨"", .block []⟩⟩)
 
 /-- An implementation of `vg_aes_ctr32` on x86-64. -/
 structure Ctr32Impl where
@@ -85,6 +113,17 @@ structure Ctr32Impl where
   /-- Its form out of place (`vg_aes_ctr32_to`), with the same CPU features:
   AES-GCM's `open_to` decrypts with it in one pass. -/
   ctrTo : Ctr32ToImpl
+  /-- Its contract without a scratch buffer, if it never touches one. -/
+  free : Option (Ctr32Free callee) := none
+  /-- The residue analysis of `vg_aes_gcm_init` over it, without working
+  space for it (`free`), if the analysis handles it. -/
+  gcmInitRes : Option (RScrub.Analysed Spec.Gcm.initApi.sig 192 [] (gcmInitCodeF callee)) := none
+  /-- The residue analysis of `vg_cmac_aes_finish` over it, without working
+  space for it (`free`, `Impl.CmacAes.Stream.X86_64.finishF`), if the analysis
+  handles it. -/
+  cmacFinishRes : Option (RScrub.Analysed Spec.Cmac.aesFinishApi.sig 40 []
+    (Impl.StackScratch.X86_64.withStackScratch 24 .r8 (Impl.CmacAes.Stream.X86_64.finishF callee suffix))) :=
+    none
 
 namespace Ctr32Impl
 
@@ -189,6 +228,7 @@ def aesni : Ctr32Impl where
   suffix := "_aesni"
   features := ["aes", "ssse3"]
   ctrTo := aesniTo
+  free := some ⟨AesNi.ctr32F_correct, AesNi.ctr32_ctP⟩
   expand := .aesni
   expandDepth := by lit_decide
   expandOk := aesni_expandKey_ok
@@ -236,6 +276,7 @@ def vaes : Ctr32Impl where
   suffix := "_vaes"
   features := ["aes", "avx", "avx2", "ssse3", "vaes"]
   ctrTo := vaesTo
+  free := some ⟨Vaes.ctr32F_correct, Vaes.ctr32_ctP⟩
   expand := .aesni
   expandDepth := by lit_decide
   expandOk := aesni_expandKey_ok

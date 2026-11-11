@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPreA
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPowerA
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseP
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtSetup
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Prime
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPreR2
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.CrtFrame
@@ -22,8 +22,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 `primeA_ok`: as `vg_rsa_private_crt`'s `power` starts (`Crt.powerA_ok`), the
 factor from `X`'s array `xj` into its working space's array 0,
-`-p⁻¹ mod 2³²` and `R² mod p` into array 1; `phasePrime_ok`: with
-`setupP` first.
+`-p⁻¹ mod 2³²` and `R² mod p` into array 1 (`r2Fast_ok`).
 -/
 
 @[expose] public section
@@ -35,27 +34,27 @@ open VG.Proof.Bignum.PPC64LE VG.Proof.Bignum.PPC64LE.Crt
 
 /-- The registers `prime`'s head writes. -/
 def primeRegs : List Reg :=
-  [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22, .r24]
+  [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22, .r24, .r25, .r31]
 
-/-- `prime`'s head: `power`'s, without its input. -/
-theorem primeA_ok {s : State} {BX : Addr} {Z oA wA wX xj Pv : Nat} {c : Prog isa}
+/-- `prime`'s head: the factor into array 0, `-p⁻¹ mod 2³²`, and `R² mod p` from
+`X`'s array 6 (`r2Fast`) under `G`. -/
+theorem primeA_ok {s : State} {BX : Addr} {Z oA wA wX xj Pv W : Nat} {G : Prop} {c : Prog isa}
     {Q : State → Prop}
     (hs : Scr s BX Z) (hA : oA + slot wA 24 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wA) (hw' : wA < 2 ^ 31)
-    (hwx : wA ≤ wX) (hxj : xj < 8)
-    (h10 : s.gpr .r10 = off (off BX oA) (slot wA 0))
+    (hwx : wA ≤ wX) (hxj : xj < 8) (hwW : wA ≤ W) (hW' : W < 2 ^ 31) (hWX : wX = 2 * W)
+    (h10 : s.gpr .r10 = off (off BX oA) (slot wA 0)) (h21 : s.gpr .r21 = off (off BX oA) (slot wA 0))
     (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wA + 2)))
     (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wA))
     (h27 : s.gpr .r27 = off BX (slot wX 0)) (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))
     (hP : wv s.mem BX (slot wX xj) wA = Pv) (hP2 : 2 ≤ Pv) (hPodd : Pv % 2 = 1)
-    (hc : ∀ t, val32 t.mem (off BX oA) (slot wA 0) (2 * wA) = Pv →
-      val32 t.mem (off BX oA) (slot wA 1) (2 * wA) = 2 ^ (128 * wA) % Pv →
-      (t.gpr .r12).toNat < 2 ^ 32 → (w32 t.mem (off BX oA) (slot wA 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 →
+    (hG : G → wv s.mem BX (slot wX 6) (wA * nChunks W wA) % Pv = 2 ^ (128 * W) % Pv)
+    (hc : ∀ t, (G → val32 t.mem (off BX oA) (slot wA 1) (2 * wA) = 2 ^ (128 * wA) % Pv) →
       Outside BX oA (slot wA 24) s.mem t.mem → t.gpr .r10 = off (off BX oA) (slot wA 0) →
       t.gpr .r29 = BitVec.ofNat 64 (8 * (wA + 2)) → t.gpr .r11 = BitVec.ofNat 64 (2 * wA) →
       Keep primeRegs s t → WP isa c t Q) :
     WP isa (.seq (.block (([.addi .r14 .r10 0] : List Instr) ++ xb .r15 xj)) (.seq copyN
       (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
-        PublicChecked.base .r9 3)) (.seq Precompute.r2Prime c)))) s Q := by
+        PublicChecked.base .r9 3)) (.seq PrivPre.r2Fast c)))) s Q := by
   have hn' := hs.nowrap
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl
@@ -103,56 +102,19 @@ theorem primeA_ok {s : State} {BX : Addr} {Z oA wA wX xj Pv : Nat} {c : Prog isa
   have g12 : s₇.gpr .r12 = s₄.gpr .r12 := by
     rw [k7.gpr .r12 (by decide), k6.gpr .r12 (by decide), k5.gpr .r12 (by decide)]
   -- `R² mod p`.
-  refine WP.seq (WP.mono (Pre.r2Prime_ok (hsA.congr k17.wr) ((k7.gpr _ (by decide)).trans a8) a9
-    ((k17.gpr _ (by decide)).trans h10) ((k7.gpr _ (by decide)).trans ((k6.gpr _ (by decide)).trans a5))
-    ((k17.gpr _ (by decide)).trans h11) hw2 hw' (by simp only [e]; omega_arith) (by rw [g12]; exact i12)
-    (by rw [g12, hm7]; exact iinv) (by rw [hm7, v0]; exact hP2) (by rw [hm7, v0]; exact hPodd))
-    fun s₈ ⟨h1, out8, k8⟩ => ?_)
-  have k18 := k17.trans k8
-  rw [hm7, v0] at h1
-  rw [hm7] at out8
-  have v0' : val32 s₈.mem (off BX oA) (slot wA 0) (2 * wA) = Pv := by
-    rw [out8.val32 (Or.inl (by omega_arith)) (by omega_arith), v0]
-  have w8 : w32 s₈.mem (off BX oA) (slot wA 0) = w32 s₃.mem (off BX oA) (slot wA 0) := by
-    have := out8.val32 (d := slot wA 0) (k := 1) (Or.inl (by omega_arith)) (by omega_arith)
-    simpa [val32] using this
-  have out38 : Outside BX oA (slot wA 24) s.mem s₈.mem :=
-    (out3.mono (by omega_arith) (by omega_arith)).trans
-      (out_sub (fun y hy => out8 y hy) (by omega_arith) (by omega_arith) (by omega_arith))
-  have g12' : s₈.gpr .r12 = s₄.gpr .r12 := (k8.gpr .r12 (by decide)).trans g12
-  exact hc s₈ v0' h1 (by rw [g12']; exact i12) (by rw [g12', w8]; exact iinv) out38
-    ((k18.gpr _ (by decide)).trans h10) ((k18.gpr _ (by decide)).trans h29) ((k18.gpr _ (by decide)).trans h11)
-    k18.mono
-
-/-- `setupP oB oLen` and `prime`'s head (`primeA_ok`), then `c`. -/
-theorem phasePrime_ok {s : State} {BX : Addr} {Z oA wX xj L Pv oB oLen : Nat} {c : Prog isa}
-    {Q : State → Prop}
-    (hs : Scr s BX Z) (hA : oA + slot (wsWords L) 24 ≤ Z) (hXA : slot wX 8 ≤ oA)
-    (hwL : wsWords L ≤ wX) (hwX : wX < 2 ^ 31) (hxj : xj < 8)
-    (h23 : s.gpr .r23 = BX) (h27 : s.gpr .r27 = off BX (slot wX 0))
-    (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))
-    (hoB : oB + 8 ≤ 256 ∧ oB % 8 = 0) (hoL : oLen + 8 ≤ 256 ∧ oLen % 8 = 0)
-    (hB : word s.mem BX oB = off BX oA) (hLw : word s.mem BX oLen = BitVec.ofNat 64 L)
-    (hL : 1 ≤ L) (hL' : L < 2 ^ 60)
-    (hP : Mont.val32 s.mem BX (slot wX xj) (2 * wX) = Pv) (hPb : Pv < 2 ^ (64 * wsWords L)) (hP2 : 2 ≤ Pv)
-    (hPodd : Pv % 2 = 1)
-    (hc : ∀ t, val32 t.mem (off BX oA) (slot (wsWords L) 1) (2 * wsWords L) = 2 ^ (128 * wsWords L) % Pv →
-      Outside BX oA (slot (wsWords L) 24) s.mem t.mem →
-      t.gpr .r10 = off (off BX oA) (slot (wsWords L) 0) → t.gpr .r11 = BitVec.ofNat 64 (2 * wsWords L) →
-      t.gpr .r29 = BitVec.ofNat 64 (8 * (wsWords L + 2)) →
-      Keep (([.r0, .r3, .r4, .r10, .r11, .r21, .r29] : List Reg) ++ primeRegs) s t → WP isa c t Q) :
-    WP isa (.seq (.block (setupP oB oLen)) (.seq (.block (([.addi .r14 .r10 0] : List Instr) ++
-      xb .r15 xj)) (.seq copyN (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++
-      PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3)) (.seq Precompute.r2Prime c))))) s Q := by
-  have hn := hs.nowrap
-  have e8 : slot wX 8 = 256 + 8 * (8 * (wX + 2)) := rfl
-  have hw2 : 2 ≤ wsWords L := by unfold wsWords; omega_arith
-  refine WP.seq (WP.mono (setupP_ok hs h23 hoB hoL (by omega_arith) hB hLw hL hL')
-    fun s₁ ⟨⟨a10, a21, a29, a11, _, m1⟩, k1⟩ => ?_)
-  refine primeA_ok (hs.congr k1.wr) hA hXA hw2 (by omega_arith) hwL hxj a10 a29
-    a11 ((k1.gpr _ (by decide)).trans h27) ((k1.gpr _ (by decide)).trans h28)
-    (by rw [m1]; exact wv_low (by rw [← Pre.val32_eq_wv]; exact hP) hPb hwL) hP2 hPodd
-    fun t _ h1 _ _ out t10 t29 t11 k => hc t h1 (by rw [← m1]; exact out) t10 t11 t29 ((k1.trans k).mono)
+  have hK := nChunks_mul_lt (K := W) (w := wA) (by omega_arith) (by omega_arith)
+  have hKw : wA * nChunks W wA < W + wA := by rw [Nat.mul_comm]; exact hK
+  have out3' : Outside BX oA (slot wA 24) s.mem s₇.mem := by
+    rw [hm7]; exact out3.mono (by omega_arith) (by omega_arith)
+  refine WP.seq (WP.mono (r2Fast_ok (G := G) (W := W) (hs.congr k17.wr) hA hXA hw2 hw' hwW hW' hWX
+    ((k17.gpr _ (by decide)).trans h10) ((k17.gpr _ (by decide)).trans h21) ((k17.gpr _ (by decide)).trans h29)
+    ((k17.gpr _ (by decide)).trans h11) (by rw [g12]; exact i12) (by rw [g12, hm7]; exact iinv)
+    ((k7.gpr _ (by decide)).trans ((k6.gpr _ (by decide)).trans a5))
+    ((k17.gpr _ (by decide)).trans h27) ((k17.gpr _ (by decide)).trans h28)
+    (by rw [hm7, v0]) hP2 hPodd
+    (fun g => by rw [out3'.wv (Or.inl (by omega_arith)) (by omega_arith)]; exact hG g))
+    fun s₈ ⟨⟨_, h1, out8, t10, t29, t11, _⟩, k8⟩ => ?_)
+  exact hc s₈ (fun g => by rw [h1 g]) (out3'.trans out8) t10 t29 t11 ((k17.trans k8).mono (by decide))
 
 theorem and_bmask (x : BitVec 64) (b : Bool) : x &&& Crt.bmask b = if b then x else 0 := by
   cases b
@@ -240,16 +202,17 @@ def primeAllRegs : List Reg := primeRegs ++ [.r0, .r15, .r17, .r30]
 at `off BX oA` (set up), the mask of `b` in `r26`: `R² mod Pv`'s `w_A` words,
 or zeros, to `pre` at `P + o` (`r30`), which is advanced past them; only
 those words and the working space changed. -/
-theorem prime_ok {s : State} {BX P : Addr} {Z L oA wA wX xj Pv o : Nat} {b : Bool}
+theorem prime_ok {s : State} {BX P : Addr} {Z L oA wA wX xj Pv o W : Nat} {b : Bool}
     (hs : Scr s BX Z) (hp : Scr s P L) (hsep : ∀ x, ofs P x < L → Z ≤ ofs BX x)
     (hA : oA + slot wA 24 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wA) (hw' : wA < 2 ^ 31)
-    (hwx : wA ≤ wX) (hxj : xj < 8)
-    (h10 : s.gpr .r10 = off (off BX oA) (slot wA 0))
+    (hwx : wA ≤ wX) (hxj : xj < 8) (hwW : wA ≤ W) (hW' : W < 2 ^ 31) (hWX : wX = 2 * W)
+    (h10 : s.gpr .r10 = off (off BX oA) (slot wA 0)) (h21 : s.gpr .r21 = off (off BX oA) (slot wA 0))
     (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wA + 2)))
     (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wA))
     (h27 : s.gpr .r27 = off BX (slot wX 0)) (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))
     (h30 : s.gpr .r30 = off P o) (h26 : s.gpr .r26 = Crt.bmask b) (ho : o + 8 * wA ≤ L)
-    (hP : wv s.mem BX (slot wX xj) wA = Pv) (hP2 : 2 ≤ Pv) (hPodd : Pv % 2 = 1) :
+    (hP : wv s.mem BX (slot wX xj) wA = Pv) (hP2 : 2 ≤ Pv) (hPodd : Pv % 2 = 1)
+    (hG : b = true → wv s.mem BX (slot wX 6) (wA * nChunks W wA) % Pv = 2 ^ (128 * W) % Pv) :
     WP isa (PrivPre.prime xj) s fun t =>
       ((∀ i < wA, word t.mem P (o + 8 * i) = r2Word b wA Pv i) ∧ t.gpr .r30 = off P (o + 8 * wA) ∧
         Frame [⟨off P o, 8 * wA⟩, ⟨off BX oA, slot wA 24⟩] s.mem t.mem) ∧
@@ -260,8 +223,8 @@ theorem prime_ok {s : State} {BX P : Addr} {Z L oA wA wX xj Pv o : Nat} {b : Boo
   have hh : hdrBytes = 256 := rfl
   have eA1 := e wA 1; have eA24 := e wA 24
   unfold PrivPre.prime
-  refine primeA_ok hs hA hXA hw2 hw' hwx hxj h10 h29 h11 h27 h28 hP hP2 hPodd
-    fun t _ h1 _ _ out t10 t29 t11 kt => ?_
+  refine primeA_ok (G := b = true) hs hA hXA hw2 hw' hwx hxj hwW hW' hWX h10 h21 h29 h11 h27 h28 hP hP2 hPodd hG
+    fun t h1 out t10 t29 t11 kt => ?_
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (Pub.base_ok (rd := .r15) (by decide) (by decide) t10 t29 1) fun u ⟨⟨u15, um⟩, uk⟩ => ?_
@@ -278,14 +241,15 @@ theorem prime_ok {s : State} {BX P : Addr} {Z L oA wA wX xj Pv o : Nat} {b : Boo
   · rw [xw i hi, hm]
     unfold r2Word
     split
-    · apply BitVec.eq_of_toNat_eq
+    next hb =>
+      apply BitVec.eq_of_toNat_eq
       have hw := word_of_wv t.mem (off BX oA) (slot wA 1) wA hi
-      rw [← Pre.val32_eq_wv, h1] at hw
+      rw [← Pre.val32_eq_wv, h1 hb] at hw
       rw [show oA + slot wA 1 + 8 * i = oA + (slot wA 1 + 8 * i) by omega_arith,
         show word t.mem BX (oA + (slot wA 1 + 8 * i)) = word t.mem (off BX oA) (slot wA 1 + 8 * i) by
           simp only [word]; rw [off_off], BitVec.toNat_ofNat]
       exact hw
-    · rfl
+    next => rfl
   · have y1 := out_of_not (hy _ (List.mem_cons_self ..)) (by omega_arith)
     have y2 := out_of_not (hy _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))) (by omega_arith)
     rw [xo y y1, hm, out y y2]

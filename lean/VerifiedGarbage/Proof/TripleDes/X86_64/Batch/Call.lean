@@ -62,10 +62,13 @@ structure EcbImpl where
   depth : ∀ d, (code d).x86_64Depth ≤ 1040
   noMxcsr : ∀ d, (code d).allInstrs (fun i => !loadsMxcsr i) = true
 
-/-- The name of the function of the direction `d`. -/
+/-- The name the modes call the function of the direction `d` by: its code
+as registered before the clearing of what it leaves
+(`Proof.TripleDes.X86_64.Scrub.ecbReg`), as an internal function of its own,
+`vg_triple_des_ecb_<direction><suffix>_core`. -/
 def EcbImpl.name (v : EcbImpl) : Direction → String
-  | .encrypt => "vg_triple_des_ecb_encrypt" ++ v.suffix
-  | .decrypt => "vg_triple_des_ecb_decrypt" ++ v.suffix
+  | .encrypt => "vg_triple_des_ecb_encrypt" ++ v.suffix ++ "_core"
+  | .decrypt => "vg_triple_des_ecb_decrypt" ++ v.suffix ++ "_core"
 
 /-- The registered code around the ECB code `c` of either direction. -/
 abbrev framed (c : Prog isa) : Prog isa := Impl.StackScratch.X86_64.withStackScratchWiped 1032 .rcx 128 c

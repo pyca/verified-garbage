@@ -67,15 +67,24 @@ def SavedAt (m : Mem) (W : Addr) (s₀ : State) : Prop :=
 /-- The saved registers' slots. -/
 abbrev savedR (W : Addr) : Region := ⟨W + BitVec.ofNat 64 128, 48⟩
 
-theorem save_ok (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Covers [⟨W, 2560⟩] s.wr) :
+theorem covers_prefix {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨p, k⟩] rs) (hn : n ≤ k) :
+    Covers [⟨p, n⟩] rs := by
+  intro a m ⟨r, hr, hc⟩
+  simp only [List.mem_singleton] at hr; subst hr
+  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
+
+/-- `save`, into a working space of at least the 176 bytes it reaches. -/
+theorem save_ok (s : State) (b : Reg) {W : Addr} {N : Nat} (hb : s.gpr b = W) (hw₀ : Covers [⟨W, N⟩] s.wr)
+    (hN : 176 ≤ N := by decide) :
     ∃ s', runBlock isa (save b) s = some s' ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       SavedAt s'.mem W s ∧ Frame [savedR W] s.mem s'.mem := by
-  have w₁ := in_off hw (show 128 + 8 ≤ 2560 by decide) (by decide)
-  have w₂ := in_off hw (show 136 + 8 ≤ 2560 by decide) (by decide)
-  have w₃ := in_off hw (show 144 + 8 ≤ 2560 by decide) (by decide)
-  have w₄ := in_off hw (show 152 + 8 ≤ 2560 by decide) (by decide)
-  have w₅ := in_off hw (show 160 + 8 ≤ 2560 by decide) (by decide)
-  have w₆ := in_off hw (show 168 + 8 ≤ 2560 by decide) (by decide)
+  have hw := covers_prefix hw₀ hN
+  have w₁ := in_off hw (show 128 + 8 ≤ 176 by decide) (by decide)
+  have w₂ := in_off hw (show 136 + 8 ≤ 176 by decide) (by decide)
+  have w₃ := in_off hw (show 144 + 8 ≤ 176 by decide) (by decide)
+  have w₄ := in_off hw (show 152 + 8 ≤ 176 by decide) (by decide)
+  have w₅ := in_off hw (show 160 + 8 ≤ 176 by decide) (by decide)
+  have w₆ := in_off hw (show 168 + 8 ≤ 176 by decide) (by decide)
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2560 → d + 8 ≤ 2560 →
       Mem.Sep (W + BitVec.ofNat 64 a) (64 / 8) (W + BitVec.ofNat 64 d) (64 / 8) :=
     fun a d h ha hd => Offset.sep W h (by omega) (by omega)
@@ -111,16 +120,17 @@ theorem save_ok (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Covers
       (List.mem_singleton_self _) _ (c 168 (by decide) (by decide))
   all_goals rfl
 
-theorem restore_ok (s : State) {W : Addr} (h15 : s.gpr .r15 = W) (hr : Covers [⟨W, 2560⟩] (s.rd ++ s.wr))
-    {s₀ : State} (hs : SavedAt s.mem W s₀) :
+theorem restore_ok (s : State) {W : Addr} {N : Nat} (h15 : s.gpr .r15 = W)
+    (hr₀ : Covers [⟨W, N⟩] (s.rd ++ s.wr)) {s₀ : State} (hs : SavedAt s.mem W s₀) (hN : 176 ≤ N := by decide) :
     ∃ s', runBlock isa restore s = some s' ∧ (∀ p ∈ saved, s'.gpr p.1 = s₀.gpr p.1) ∧
       (∀ r, r ∉ saved.map (·.1) → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have r₁ := in_off hr (show 128 + 8 ≤ 2560 by decide) (by decide)
-  have r₂ := in_off hr (show 136 + 8 ≤ 2560 by decide) (by decide)
-  have r₃ := in_off hr (show 144 + 8 ≤ 2560 by decide) (by decide)
-  have r₄ := in_off hr (show 152 + 8 ≤ 2560 by decide) (by decide)
-  have r₅ := in_off hr (show 160 + 8 ≤ 2560 by decide) (by decide)
-  have r₆ := in_off hr (show 168 + 8 ≤ 2560 by decide) (by decide)
+  have hr := covers_prefix hr₀ hN
+  have r₁ := in_off hr (show 128 + 8 ≤ 176 by decide) (by decide)
+  have r₂ := in_off hr (show 136 + 8 ≤ 176 by decide) (by decide)
+  have r₃ := in_off hr (show 144 + 8 ≤ 176 by decide) (by decide)
+  have r₄ := in_off hr (show 152 + 8 ≤ 176 by decide) (by decide)
+  have r₅ := in_off hr (show 160 + 8 ≤ 176 by decide) (by decide)
+  have r₆ := in_off hr (show 168 + 8 ≤ 176 by decide) (by decide)
   have e₁ := hs (.rbx, 128) (by simp [saved])
   have e₂ := hs (.rbp, 136) (by simp [saved])
   have e₃ := hs (.r12, 144) (by simp [saved])
@@ -158,11 +168,11 @@ theorem ret_kept {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {SP : Addr
   hf.readW (r := ⟨SP, 8⟩) (Region.contains_self _ _) hd (by decide)
 
 /-- The end of every function: our caller's registers restored. -/
-theorem exit_ok {s s₀ : State} {W : Addr} (h15 : s.gpr .r15 = W) (hsp : s.gpr .rsp = s₀.gpr .rsp)
-    (hr : Covers [⟨W, 2560⟩] (s.rd ++ s.wr)) (hs : SavedAt s.mem W s₀)
-    (hret : s.mem.readW (s₀.gpr .rsp) 64 = s₀.mem.readW (s₀.gpr .rsp) 64) :
+theorem exit_ok {s s₀ : State} {W : Addr} {N : Nat} (h15 : s.gpr .r15 = W) (hsp : s.gpr .rsp = s₀.gpr .rsp)
+    (hr : Covers [⟨W, N⟩] (s.rd ++ s.wr)) (hs : SavedAt s.mem W s₀)
+    (hret : s.mem.readW (s₀.gpr .rsp) 64 = s₀.mem.readW (s₀.gpr .rsp) 64) (hN : 176 ≤ N := by decide) :
     WP isa (.block restore) s fun s' => gprPreserved s₀ s' ∧ s'.mem = s.mem ∧ s'.gpr .rax = s.gpr .rax := by
-  obtain ⟨s', run, hsv, hother, hm, -, -⟩ := restore_ok s h15 hr hs
+  obtain ⟨s', run, hsv, hother, hm, -, -⟩ := restore_ok s h15 hr hs hN
   refine WP.of_runBlock ⟨s', run, ⟨fun r hr => ?_, by rw [hm, hret]⟩, hm, hother .rax (by simp [saved])⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
