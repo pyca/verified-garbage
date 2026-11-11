@@ -285,4 +285,103 @@ theorem addBack_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
     · have e' : r = .esp := by revert hr e; cases r <;> decide
       subst e'; rw [U₄.other _ (by decide), K₃.1 _ (by decide), I.keep.1 _ (by decide)]
 
+/-! ## `copyBack` -/
+
+/-- After words `0, …, j - 1` of `copyBack` from `s`. -/
+structure CopyI (s : State) (base : Addr) (len j : Nat) (u : State) : Prop where
+  si : PtrAt u base .esi (numAt len 5 + 4 * j)
+  bp : PtrAt u base .ebp (numAt len 4 + 4 * j)
+  di : u.gpr .edi = BitVec.ofNat 32 (4 * (wp len - j))
+  keep : Keeps [.eax, .ebx, .ecx, .edx, .esi, .ebp, .edi] s u
+  out : Outside base (numAt len 4) (4 * j) s.mem u.mem
+  val : val32 u.mem base (numAt len 4) j = val32 s.mem base (numAt len 5) j
+
+theorem copyStep_ok {s u : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {j : Nat}
+    (h : PcIn base bytes len args s) (hj : j < wp len) (I : CopyI s base len j u) :
+    WP isa (.block [.mov .eax (.mem (at_ .esi 0)), .store (at_ .ebp 0) .eax, .alu .add .esi (.imm 4),
+      .alu .add .ebp (.imm 4), .alu .sub .edi (.imm 4)]) u fun u' =>
+      u'.zf = some (decide (j + 1 = wp len)) ∧ CopyI s base len (j + 1) u' := by
+  have nw := h.scratch.nowrap
+  have dims := h.dimensions
+  have f5 := (h.fits (j := 5) (by decide)).2
+  have hwp := wp_le_nw (len := len)
+  have e4 : numAt len 4 = 256 + 4 * wb len := by simp [numAt, numOff]
+  have e5 : numAt len 5 = 256 + 5 * wb len := by simp [numAt, numOff]
+  have ws : Ws u base bytes := h.ws.of_wr I.keep.2.2
+  refine wp_movS (readSrc_ptr ws I.si (d := 0) (by omega)) fun u₁ U₁ _ => ?_
+  have ws₁ := ws.of_wr U₁.wr
+  have pp₁ : PtrAt u₁ base .ebp (numAt len 4 + 4 * j) := by rw [PtrAt, U₁.other _ (by decide)]; exact I.bp
+  refine wp_storeS (ea_ptr ws₁ pp₁ (d := 0) (by omega)) (ws_write ws₁ (by omega)) fun u₂ M₂ => ?_
+  refine wp_addS rfl fun u₃ U₃ _ => wp_addS rfl fun u₄ U₄ _ => wp_subZ rfl fun u₅ U₅ z₅ => WP.block_nil ?_
+  have hc := VG.Proof.Mont.X86.Rt.count_zf (N := wp len) (x := u.gpr .edi)
+    (by rw [I.di, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]) hj
+  have di₄ : u₄.gpr .edi = u.gpr .edi := by
+    rw [U₄.other _ (by decide), U₃.other _ (by decide), M₂.gpr, U₁.other _ (by decide)]
+  have m₅ : u₅.mem = u.mem.writeW (off base (numAt len 4 + 4 * j)) (u.mem.readW (off base (numAt len 5 + 4 * j)) 32) := by
+    rw [U₅.mem, U₄.mem, U₃.mem, M₂.mem, U₁.mem, U₁.gpr, Nat.add_zero, Nat.add_zero]
+  have O := writeW32_outside u.mem base (d := numAt len 4 + 4 * j) (u.mem.readW (off base (numAt len 5 + 4 * j)) 32)
+    (by omega)
+  rw [← m₅] at O
+  refine ⟨by rw [z₅, di₄, hc.2], ⟨?_, ?_, ?_, ?_, ?_, ?_⟩⟩
+  · rw [PtrAt, U₅.other _ (by decide), U₄.other _ (by decide), U₃.gpr, ptr_add (s := u₂) (x := numAt len 5 + 4 * j)
+      (by rw [PtrAt, M₂.gpr, U₁.other _ (by decide)]; exact I.si)]
+    congr 2
+  · rw [PtrAt, U₅.other _ (by decide), U₄.gpr, U₃.other _ (by decide), ptr_add (s := u₂) (x := numAt len 4 + 4 * j)
+      (by rw [PtrAt, M₂.gpr]; exact pp₁)]
+    congr 2
+  · apply BitVec.eq_of_toNat_eq
+    rw [U₅.gpr, di₄, hc.1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  · exact I.keep.trans (((U₁.keeps.mono (by decide)).trans (M₂.keeps _)).trans
+      (((U₃.keeps.mono (by decide)).trans (U₄.keeps.mono (by decide))).trans (U₅.keeps.mono (by decide))))
+  · exact (I.out.mono (by omega) (by omega)).trans (O.mono (by omega) (by omega))
+  · rw [val32_succ, val32_succ, O.val32 (.inl (by omega)) (by omega), I.val, m₅, w32_write_self]
+    congr 2
+    exact I.out.w32 (.inr (by omega)) (by omega)
+
+/-- `copyBack`: `t`'s `W'` words into `x`. -/
+theorem copyBack_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
+    (h : PcIn base bytes len args s) :
+    WP isa copyBack s fun t => val32 t.mem base (numAt len 4) (wp len) = val32 s.mem base (numAt len 5) (wp len) ∧
+      Outside base (numAt len 4) (4 * wp len) s.mem t.mem ∧ Keeps k6 s t := by
+  have nw := h.scratch.nowrap
+  have dims := h.dimensions
+  have hl := h.lower
+  have hw : 1 ≤ wp len := by simp only [wp]; omega
+  have hwp := wp_le_nw (len := len)
+  have f5 := (h.fits (j := 5) (by decide)).2
+  have e4 : numAt len 4 = 256 + 4 * wb len := by simp [numAt, numOff]
+  have e5 : numAt len 5 = 256 + 5 * wb len := by simp [numAt, numOff]
+  unfold copyBack
+  simp only [seqs, List.append_assoc]
+  refine WP.seq (slotPtr_ok (r := .esi) (j := 5) (t := .edx) (by decide) (by decide) h.edi h.width h.upper
+    (by decide) fun u₁ K₁ m₁ p₁ _ => ?_)
+  refine slotPtr_ok (r := .ebp) (j := 4) (t := .edx) (by decide) (by decide) (by rw [K₁.1 _ (by decide)]; exact h.edi)
+      ((h.stack 1 (by decide)).keep K₁ (by decide) (by rw [m₁]; exact Outside.refl _ _ _ _) |>.readSrc |>.trans
+        (by rw [h.wLen])) h.upper (by decide) fun u₂ K₂ m₂ p₂ _ => ?_
+  have K₁₂ : Keeps [.edx, .esi, .ebp] s u₂ := (K₁.mono (by decide)).trans (K₂.mono (by decide))
+  rw [← List.append_nil (width4 .edi)]
+  refine width4_ok ((h.stack 1 (by decide)).keep K₁₂ (by decide) (by rw [m₂, m₁]; exact Outside.refl _ _ _ _)
+    |>.readSrc |>.trans (by rw [h.wLen])) h.upper fun u₃ K₃ m₃ e₃ => WP.block_nil ?_
+  have I₀ : CopyI s base len 0 u₃ :=
+    ⟨(by rw [Nat.mul_zero, Nat.add_zero, PtrAt, K₃.1 _ (by decide), K₂.1 _ (by decide)]; exact p₁),
+    (by rw [Nat.mul_zero, Nat.add_zero, PtrAt, K₃.1 _ (by decide)]; exact p₂),
+    by rw [Nat.sub_zero, e₃], (K₁₂.mono (by decide)).trans (K₃.mono (by decide)),
+    by rw [m₃, m₂, m₁]; exact Outside.refl _ _ _ _, by simp [val32]⟩
+  refine WP.seq (WP.mono (WP.loop (M := isa) (Q := fun u => CopyI s base len (wp len) u)
+    (fun n u => ∃ j, n = wp len - j ∧ j < wp len ∧ CopyI s base len j u) ?_ _ u₃ ⟨0, rfl, by omega, I₀⟩)
+    fun u I => ?_)
+  · rintro n u ⟨j, rfl, hj, I⟩
+    refine WP.mono (copyStep_ok h hj I) fun u' ⟨z, I'⟩ => ?_
+    by_cases e : j + 1 = wp len
+    · exact .inl ⟨by simp only [eval, z, e, decide_true, Option.map_some, Bool.not_true], e ▸ I'⟩
+    · exact .inr ⟨by simp only [eval, z, e, decide_false, Option.map_some, Bool.not_false], wp len - (j + 1),
+        by omega, j + 1, rfl, by omega, I'⟩
+  have ca := (h.stack 4 (by decide)).keep I.keep (by decide) (I.out.mono (by omega) (by omega))
+  refine wp_movS ca.readSrc fun t U _ => WP.block_nil ⟨by rw [U.mem]; exact I.val, by rw [U.mem]; exact I.out, ?_⟩
+  refine ⟨fun r hr => ?_, by rw [U.rd, I.keep.2.1], by rw [U.wr, I.keep.2.2]⟩
+  by_cases e : r = .edi
+  · subst e; rw [U.gpr, h.edi_eq]
+  · have e' : r = .esp := by revert hr e; cases r <;> decide
+    subst e'; rw [U.other _ (by decide), I.keep.1 _ (by decide)]
+
 end VG.Proof.Bignum.X86.R2Words
