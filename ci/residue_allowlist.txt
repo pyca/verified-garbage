@@ -578,12 +578,6 @@ x86_64 vg_triple_des_cbc_decrypt_chained_avx512
 x86_64 vg_triple_des_cfb64_decrypt
 x86_64 vg_triple_des_cfb64_decrypt_avx2
 x86_64 vg_triple_des_cfb64_decrypt_avx512
-x86_64 vg_triple_des_ecb_decrypt
-x86_64 vg_triple_des_ecb_decrypt_avx2
-x86_64 vg_triple_des_ecb_decrypt_avx512
-x86_64 vg_triple_des_ecb_encrypt
-x86_64 vg_triple_des_ecb_encrypt_avx2
-x86_64 vg_triple_des_ecb_encrypt_avx512
 x86_64 vg_x25519_base
 x86_64 vg_x25519_base_adx
 x86_64 vg_x25519_base_ifma
