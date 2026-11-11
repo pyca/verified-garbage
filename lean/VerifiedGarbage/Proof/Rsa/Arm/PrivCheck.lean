@@ -17,9 +17,8 @@ namespace VG.Proof.Rsa.Arm
 open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked VG.Proof.Bignum.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 
-theorem check_ok (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} (s : State)
-    (h : PrivContext g bs s) (slots : PrivSlots g s.mem) :
-    WP isa (check v.pcName v.pc v.pdName v.pd) s fun t => PrivContext g bs t ∧
+/-- What checking the CRT result in the temporary guarantees. -/
+def CheckPost (g : PrivGeometry) (bs : Fin 8 → List Byte) (s t : State) : Prop := PrivContext g bs t ∧
       t.gpr .r0 = (Rsa.checkResult ((s.gpr .r0).setWidth 64) (bs 0) (bs 1) (bs 2)
         (Spec.Rsa.bytesAt s.mem (State.addr g.temporary) g.length)).setWidth 32 ∧
       Spec.Rsa.bytesAt t.mem (State.addr g.output) g.length =
@@ -27,11 +26,17 @@ theorem check_ok (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} (s 
             (Spec.Rsa.bytesAt s.mem (State.addr g.temporary) g.length)
           then Spec.Rsa.bytesAt s.mem (State.addr g.temporary) g.length else List.replicate g.length 0) ∧
       Spec.Rsa.bytesAt t.mem (State.addr g.temporary) g.length = List.replicate g.length 0 ∧
-      Frame (bodyWrites g) s.mem t.mem ∧ Rest [.r0, .r1, .r2, .r3, .r4, .r12, .lr] s t := by
-  unfold check
+      Frame (bodyWrites g) s.mem t.mem ∧ Rest [.r0, .r1, .r2, .r3, .r4, .r12, .lr] s t
+
+theorem checkWith_ok (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {Q : State → Prop}
+    (kept : Kept g Q) {stage : Prog isa}
+    (hstage : ∀ s, PrivContext g bs s → PrivSlots g s.mem → PcArgs g s → Q s → WP isa stage s (PcPost g bs s))
+    (s : State) (h : PrivContext g bs s) (slots : PrivSlots g s.mem) (q : Q s) :
+    WP isa (checkWith stage v.pdName v.pd) s (CheckPost g bs s) := by
+  unfold checkWith
   refine WP.seq (WP.mono (pcArgs_ok s h slots) ?_)
   rintro s1 ⟨h1, slots1, args1, status1, frame1, rest1⟩
-  refine WP.seq (WP.mono (pc_call v h1 slots1 args1) ?_)
+  refine WP.seq (WP.mono (hstage s1 h1 slots1 args1 (kept q (frame1.sub pcPrefix_sub) rest1)) ?_)
   rintro s2 ⟨h2, slots2, frame2, rest2, pc⟩
   refine WP.seq (WP.mono (pdArgs_ok s2 h2 slots2) ?_)
   rintro s3 ⟨h3, slots3, args3, status3, frame3, rest3⟩
@@ -93,10 +98,16 @@ theorem check_ok (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} (s 
     ((frame2.sub (calleeWrites_sub (pcWrites_sub h.valid))).trans
       ((frame3.sub pdPrefix_sub).trans ((frame4.sub (calleeWrites_sub pdWrites_sub)).trans
         (frame5.sub (tailWrites_sub h.valid)))))
+  unfold CheckPost
   refine ⟨h4.after (frame5.sub (tailWrites_sub h.valid)) rest5, ?_, ?_, cleared, bodyFrame,
     (rest1.mono (by simp)).trans ((rest2.mono (by simp [callClobbers])).trans
       ((rest3.mono (by simp)).trans ((rest4.mono (by simp [callClobbers])).trans rest5)))⟩
   · rw [status, accepted, equal]; exact logic.1
   · rw [output, accepted, equal, m4]
     simp only [Bool.and_eq_true, decide_eq_true_eq, logic.2]
+
+theorem check_ok (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} (s : State)
+    (h : PrivContext g bs s) (slots : PrivSlots g s.mem) :
+    WP isa (check v.pcName v.pc v.pdName v.pd) s (CheckPost g bs s) :=
+  checkWith_ok v (kept_true g) (fun _ h sl a _ => pc_call v h sl a) s h slots trivial
 end VG.Proof.Rsa.Arm

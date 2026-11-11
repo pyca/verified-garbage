@@ -47,6 +47,12 @@ structure EP where
   sl : Nat
   nB : List Byte
   eB : List Byte
+  /-- `vg_rsa_pkcs1_sign_precomputed`, given the key's precomputed values
+  `pre` (`prl` words), of which it may leak `preL`. -/
+  pc : Bool
+  pre : BitVec 32
+  prl : Nat
+  preL : List Nat
 
 namespace EP
 
@@ -62,21 +68,29 @@ abbrev DP : Region := ⟨State.addr P.dp, P.pl⟩
 abbrev DQ : Region := ⟨State.addr P.dq, P.ql⟩
 abbrev QI : Region := ⟨State.addr P.qinv, P.pl⟩
 abbrev SCR : Region := ⟨State.addr P.scr, P.sl * 8⟩
+abbrev PRE : Region := ⟨State.addr P.pre, P.prl * 8⟩
 
 /-- The arguments, in order. -/
 abbrev argv : List (BitVec 32) :=
   [P.out, BitVec.ofNat 32 P.K, P.n, BitVec.ofNat 32 P.K, P.e, BitVec.ofNat 32 P.el, P.hash, P.dig,
     BitVec.ofNat 32 P.dl, P.p, BitVec.ofNat 32 P.pl, P.q, BitVec.ofNat 32 P.ql, P.dp, BitVec.ofNat 32 P.pl,
-    P.dq, BitVec.ofNat 32 P.ql, P.qinv, BitVec.ofNat 32 P.pl, P.scr, BitVec.ofNat 32 P.sl]
+    P.dq, BitVec.ofNat 32 P.ql, P.qinv, BitVec.ofNat 32 P.pl, P.scr, BitVec.ofNat 32 P.sl] ++
+    if P.pc then [P.pre, BitVec.ofNat 32 P.prl] else []
+
+/-- The buffers it reads. -/
+abbrev ro : List Region := [P.N, P.E, P.DIG, P.PP, P.QQ, P.DP, P.DQ, P.QI] ++ if P.pc then [P.PRE] else []
 
 abbrev lay : Lay where
   B := P.B
   F := frameBytes
-  A := 68
+  A := if P.pc then 76 else 68
   argv := P.argv
-  ro := [P.N, P.E, P.DIG, P.PP, P.QQ, P.DP, P.DQ, P.QI]
+  ro := P.ro
   rw := [P.OUT, P.SCR]
   C := 3440
+
+theorem lt_lay {d : Nat} (h : d < frameBytes + 56 + 68) : d < P.lay.F + 56 + P.lay.A := by
+  show d < frameBytes + 56 + (if P.pc then 76 else 68); split <;> omega
 
 end EP
 
@@ -94,6 +108,11 @@ structure In (P : EP) (σ : State) : Prop where
   dl32 : P.dl < 2 ^ 32
   nB : Spec.Rsa.bytesAt σ.mem (State.addr P.n) P.K = P.nB
   eB : Spec.Rsa.bytesAt σ.mem (State.addr P.e) P.el = P.eB
+  prl : P.pc → P.prl = Spec.Rsa.privatePrecomputedWords P.K P.pl P.ql
+  pre : P.pc → Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt σ.mem (State.addr P.n) P.K)
+    (Spec.Rsa.bytesAt σ.mem (State.addr P.p) P.pl) (Spec.Rsa.bytesAt σ.mem (State.addr P.q) P.ql) =
+      some (Spec.Rsa.wordsAt σ.mem (State.addr P.pre) P.prl)
+  preL : P.pc → Spec.Rsa.privatePrecomputedLeak σ.mem (State.addr P.pre) P.K = P.preL
 
 /-- A state of the body. -/
 abbrev S (P : EP) (σ s : State) : Prop := In P σ ∧ P.lay.St σ s
@@ -116,8 +135,9 @@ abbrev stackBytes : Nat := 56 + frameBytes + 3440
 /-- The shared contract, with that stack. -/
 abbrev spec : Contract isa := Spec.RsaPkcs1Sig.signContract abi stackBytes
 
-/-- The public parameters of an entry state. -/
-def ep (s : State) : EP where
+/-- The public parameters of an entry state (with `pc`, of
+`vg_rsa_pkcs1_sign_precomputed`). -/
+def ep (s : State) (pc : Bool := false) : EP where
   B := s.sp - BitVec.ofNat 32 56 - BitVec.ofNat 32 frameBytes
   out := s.gpr .r0
   n := s.gpr .r2
@@ -138,10 +158,15 @@ def ep (s : State) : EP where
   sl := (stackArg s 16).toNat
   nB := Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat
   eB := Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat
+  pc := pc
+  pre := if pc then stackArg s 17 else 0
+  prl := if pc then (stackArg s 18).toNat else 0
+  preL := if pc then Spec.Rsa.privatePrecomputedLeak s.mem (State.addr (stackArg s 17)) (s.gpr .r3).toNat else []
 
 theorem ep_lay (s : State) :
     (ep s).lay = layOf frameBytes 68 (ep s).argv [(ep s).N, (ep s).E, (ep s).DIG, (ep s).PP, (ep s).QQ,
-      (ep s).DP, (ep s).DQ, (ep s).QI] [(ep s).OUT, (ep s).SCR] s 3440 := rfl
+      (ep s).DP, (ep s).DQ, (ep s).QI] [(ep s).OUT, (ep s).SCR] s 3440 := by
+  simp [ep, EP.lay, EP.argv, EP.ro, layOf]
 
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
   sig_pre [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi,
@@ -150,7 +175,7 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
   rename_i hsp hsa hrd hwr oN oE oD oP oQ oDP oDQ oQI oS oA nS eS dS pS qS dpS dqS qiS sA kO kN kE kD kP kQ
     kDP kDQ kQI kS kA fO fN fE fD fP fQ fDP fDQ fQI fS kv olk el1 elK pl1 plK ql1 qlK dpl qil dql
   have slK := h
-  have h4584 : 4584 ≤ s.sp.toNat := hsp
+  have h4616 : 4616 ≤ s.sp.toNat := hsp
   have r1 : s.gpr .r1 = s.gpr .r3 := BitVec.eq_of_toNat_eq olk
   have a10 : stackArg s 10 = stackArg s 6 := BitVec.eq_of_toNat_eq dpl
   have a14 : stackArg s 14 = stackArg s 6 := BitVec.eq_of_toNat_eq qil
@@ -162,7 +187,7 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
     FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
   have below : Region.Sub (FrameStack.belowA s.sp 56)
-      ⟨State.addr s.sp - BitVec.ofNat 64 4584, 4584⟩ := by
+      ⟨State.addr s.sp - BitVec.ofNat 64 4616, 4616⟩ := by
     show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ _
     rw [FrameStack.addr_sub' (by omega_arith)]
     exact Offset.sub_below _ (by omega_arith) (by omega_arith)
@@ -175,7 +200,10 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
         (by show (s.gpr .r3).toNat ≤ 2 ^ 64; omega_arith)
       eB := bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kE.sub_left below).symm)
-        (by show (stackArg s 1).toNat ≤ 2 ^ 64; omega_arith) }
+        (by show (stackArg s 1).toNat ≤ 2 ^ 64; omega_arith)
+      prl := fun h => by cases h
+      pre := fun h => by cases h
+      preL := fun h => by cases h }
   rw [ep_lay]
   refine ok_entered (by decide) (by decide) rfl hsp hsa hrd hwr ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr

@@ -36,7 +36,7 @@ theorem write8 (m : Mem) (a : Addr) (v : BitVec 64) : m.write a 8 v = m.writeW a
 registers on entry, `m₀` the memory. -/
 structure Ctx (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (t : State) :
     Prop where
-  rd : t.rd = [L.N, L.E, L.IN, L.P, L.Q, L.DP, L.DQ, L.QI, L.ARGS]
+  rd : t.rd = [L.N, L.E, L.IN, L.P, L.Q, L.DP, L.DQ, L.QI, L.ARGS] ++ L.X
   wr : t.wr = [L.FR, L.LR, L.OUT, L.SC]
   sp : t.sp = L.B
   cs : ∀ r ∈ preserved, r ≠ .x30 → t.gpr r = g r
@@ -173,6 +173,29 @@ theorem entered_ctx {s : State} (h : chkA.pre s) : Ctx (lay s) s.gpr s.v s.mem (
   · rw [entered_mem]; exact Mem.readW_writeW_self64 _ _ _
   · rw [entered_mem]
     exact Frame.writeW (Frame.refl _ _) (r := (lay s).STK) (by simp) _
+      (Offset.contains_base _ (by simp only [frameBytes, stackBytes]; omega) (by decide))
+
+/-- The layout of a call from `s` that may also read `X`. -/
+def layW (s : State) (X : List Region) : Lay := { lay s with X := X }
+
+theorem Lay.Ok.withX {L : Lay} (h : L.Ok) (X : List Region) : ({ L with X := X } : Lay).Ok := { h with }
+
+/-- `Ctx` on entry to the inner frame's body, for a call that may also read
+`X`: `chkA` holds of the call reading the rest, `R₀`. -/
+theorem entered_ctxW {s : State} {R₀ X : List Region} (h : chkA.pre (s.withRegions R₀ s.wr))
+    (hX : s.rd = R₀ ++ X) : Ctx (layW s X) s.gpr s.v s.mem (entered s) := by
+  have hL := lay_ok h
+  have hnB := hL.nB
+  refine ⟨?_, ?_, entered_sp s, fun _ _ _ => rfl, fun _ _ => rfl, ?_, ?_⟩
+  · simp only [entered_rd]
+    rw [hX, show R₀ = (s.withRegions R₀ s.wr).rd from rfl, h.2.2.1,
+      show stackArgAddr (s.withRegions R₀ s.wr) 0 = (layW s X).B + BitVec.ofNat 64 stackBytes from
+        (lay_args s).symm]
+    rfl
+  · rw [entered_wr, show s.wr = (s.withRegions R₀ s.wr).wr from rfl, h.2.2.2.1]; rfl
+  · rw [entered_mem]; exact Mem.readW_writeW_self64 _ _ _
+  · rw [entered_mem]
+    exact Frame.writeW (Frame.refl _ _) (r := (lay s).STK) (by simp only [List.mem_cons]; right; right; left; rfl) _
       (Offset.contains_base _ (by simp only [frameBytes, stackBytes]; omega) (by decide))
 
 /-- The stack arguments on entry, at their place above the frames. -/

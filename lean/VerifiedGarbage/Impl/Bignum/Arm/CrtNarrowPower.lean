@@ -96,8 +96,13 @@ def narrowExpWith (phase : Prog isa) (exponentSlot : Nat) : Prog isa :=
 def factorInput : Prog isa :=
   .seq (savedOperand 1 56 12) (.seq (clearOperandBuffer 64) (clearOperandBuffer 112))
 
-def narrowPowerWith (phase : Prog isa) (slot primeSlot exponentSlot : Nat) : Prog isa :=
-  .seq factorInput (.seq (enterNarrow (primeSlot + 4)) (.seq (narrowPrime primeSlot) (.seq (copyOut slot 0 0)
+/-- `narrowPowerWith`, with the factor prepared by `prime` (`narrowPrime`, or
+one given its `R² mod p`). -/
+def narrowPowerOf (prime : Nat → Prog isa) (phase : Prog isa) (slot primeSlot exponentSlot : Nat) : Prog isa :=
+  .seq factorInput (.seq (enterNarrow (primeSlot + 4)) (.seq (prime primeSlot) (.seq (copyOut slot 0 0)
     (.seq (reduceHalf slot 1) (.seq (narrowExpWith phase exponentSlot) (copyOut slot 6 6))))))
+
+def narrowPowerWith (phase : Prog isa) (slot primeSlot exponentSlot : Nat) : Prog isa :=
+  narrowPowerOf narrowPrime phase slot primeSlot exponentSlot
 
 end VG.Impl.Bignum.Arm.Crt

@@ -19,6 +19,8 @@ namespace VG.Proof.RsaPkcs1Sig.PPC64LE.Sign
 
 open VG VG.PPC64LE VG.Impl.RsaPkcs1Sig.PPC64LE.Sign
 
+variable {pc : Bool}
+
 /-- The outcome, on the registers and the stack. -/
 def fnPost (s s' : State) : Prop :=
   Spec.Rsa.writtenOutcome s'.mem (s.gpr .r3) (s.gpr .r6).toNat ((s'.gpr .r3).setWidth 32)
@@ -63,8 +65,8 @@ theorem freed_mem (b : Nat) (s : State) : (freed b s).mem = s.mem := rfl
 
 /-- After the encoding: zeros and 0 if it failed, else the signature, and `EM`
 overwritten. -/
-theorem afterEnc_ok {s u : State} (h : SPre s) (B : AtAft s u) :
-    WP isa afterEnc u fun v => Fr2 s v ∧ fnPost s v := by
+theorem afterEnc_ok {s u : State} (h : SPre pc s) (X : pc = true → PreX s) (B : AtAft s u) :
+    WP isa (afterEnc pc) u fun v => Fr2 s v ∧ fnPost s v := by
   unfold afterEnc fnPost
   rw [signId_eq]
   have he := B.enc
@@ -78,26 +80,28 @@ theorem afterEnc_ok {s u : State} (h : SPre s) (B : AtAft s u) :
     intro ⟨h3, hb⟩
     refine WP.ite false (by rw [eval_zero, h3]; rfl) (fun h => absurd h (by decide)) fun _ => ?_
     refine WP.seq (WP.mono (callArgs_ok h B hb) fun t₃ C => ?_)
-    refine WP.seq (call_ok h C fun t₄ R => WP.mono (wipe_ok h R) fun v ⟨F, o⟩ => ⟨F, o⟩)
+    refine WP.seq (call_ok h X C fun t₄ R => WP.mono (wipe_ok h R) fun v ⟨F, o⟩ => ⟨F, o⟩)
 
-theorem code_correct (s : State) (hpre : (Spec.RsaPkcs1Sig.signContract abi stackBytes).pre s) :
-    ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t := by
-  show WP isa code s fun t => abiPreserved s t ∧ fnPost s t
-  have h := sPre_of hpre
+theorem codeG_correct (s : State) (h : SPre pc s) (X : pc = true → PreX s) :
+    WP isa (codeG pc) s fun t => abiPreserved s t ∧ fnPost s t := by
   have hk := h.k2
-  unfold code
+  unfold codeG
   refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega) ?_
   unfold body
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
   refine WP.seq (WP.mono (enc_ok h A) fun t₂ B => ?_)
   refine WP.seq (Q := fun _ => _) (WP.mono (Q := fun v => Fr2 s v ∧ fnPost s v) ?_ fun v ⟨F, hp⟩ =>
     WP.mono (restore_ok F) fun w ⟨wp, wl, ws, wm, w3⟩ => ?_)
-  · exact afterEnc_ok h B
+  · exact afterEnc_ok h X B
   · refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
     · rw [freed_gpr]; exact wp r hr
     · rw [freed_sp, ws]; exact BitVec.sub_add_cancel _ _
     · rw [freed_lr]; exact wl
     · unfold fnPost at hp ⊢
       rw [freed_mem, freed_gpr, wm, w3]; exact hp
+
+theorem code_correct (s : State) (hpre : (Spec.RsaPkcs1Sig.signContract abi stackBytes).pre s) :
+    ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t :=
+  codeG_correct s (sPre_of hpre) nofun
 
 end VG.Proof.RsaPkcs1Sig.PPC64LE.Sign

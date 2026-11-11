@@ -50,6 +50,9 @@ theorem zeroSlots_taint (h : Pins Φ [.x17, .x19]) : RelCT isa (Two Φ) zeroSlot
 theorem callArgs_taint (h : Pins Φ [.x16]) : RelCT isa (Two Φ) (.block callArgs) fun _ _ => True :=
   two_taint [.x16] h (by taint_decide)
 
+theorem callArgsP_taint (h : Pins Φ [.x16]) : RelCT isa (Two Φ) (.block (callArgsN 14)) fun _ _ => True :=
+  two_taint [.x16] h (by taint_decide)
+
 theorem wipe_taint (h : Pins Φ [.x19]) : RelCT isa (Two Φ) wipe fun _ _ => True :=
   two_taint [.x19] h (by taint_decide)
 
@@ -95,14 +98,18 @@ theorem pubS_of {S : Nat} {s₁ s₂ : State} (h : (Spec.RsaPkcs1Sig.signContrac
 
 /-! ## The points of the code -/
 
-/-- An entry state with the anchor's public data. -/
-def E (K : Nat) (a s : State) : Prop := PreS K s ∧ PubS a s
+/-- An entry state with the anchor's public data, and `X`, what the call
+needs besides. -/
+def E (K : Nat) (X : State → State → Prop) (a s : State) : Prop := PreS K s ∧ PubS a s ∧ X a s
 
-theorem E.fb {K : Nat} {a s : State} (h : E K a s) : fb s = fb a := by
-  show s.sp - _ = a.sp - _; rw [h.2.sp]
+section
+variable {X : State → State → Prop}
 
-theorem E.gpr {K : Nat} {a s : State} (h : E K a s) {r : Reg} (hr : r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x7]) :
-    s.gpr r = a.gpr r := h.2.g r hr
+theorem E.fb {K : Nat} {a s : State} (h : E K X a s) : fb s = fb a := by
+  show s.sp - _ = a.sp - _; rw [h.2.1.sp]
+
+theorem E.gpr {K : Nat} {a s : State} (h : E K X a s) {r : Reg} (hr : r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x7]) :
+    s.gpr r = a.gpr r := h.2.1.g r hr
 
 /-- Whether an encoding succeeds depends only on the hash value's length. -/
 theorem encodeId_isSome (x : BitVec 32) {H H' : List Byte} (hl : H.length = H'.length) (k : Nat) :
@@ -114,25 +121,26 @@ theorem encodeId_isSome (x : BitVec 32) {H H' : List Byte} (hl : H.length = H'.l
     simp only [Spec.RsaPkcs1Sig.encode, Spec.RsaPkcs1Sig.digestInfo, List.length_append, hl]
     split <;> rfl
 
-theorem encOut_isSome {K : Nat} {a s : State} (h : E K a s) : (encOut s).isSome = (encOut a).isSome := by
+theorem encOut_isSome {K : Nat} {a s : State} (h : E K X a s) : (encOut s).isSome = (encOut a).isSome := by
   unfold encOut
-  rw [h.2.h6, h.gpr (r := .x3) (by decide)]
-  exact encodeId_isSome _ (by rw [bytesAt_length, bytesAt_length, h.2.args 0 (by decide)]) _
+  rw [h.2.1.h6, h.gpr (r := .x3) (by decide)]
+  exact encodeId_isSome _ (by rw [bytesAt_length, bytesAt_length, h.2.1.args 0 (by decide)]) _
 
 /-- `J a` at a point of the code, from an entry state with the anchor `a`'s
 public data. -/
-def At (K : Nat) (J : State → State → State → Prop) (a t : State) : Prop := ∃ s, E K a s ∧ J a s t
+def At (K : Nat) (X' : State → State → Prop) (J : State → State → State → Prop) (a t : State) : Prop :=
+  ∃ s, E K X' a s ∧ J a s t
 
 def JE (_ : State) : State → State → Prop := AtEnc
 def JW (_ : State) (s w : State) : Prop := ∃ u, AtEnc s u ∧ Keep clob u w ∧ EOut u w (encOut s)
-def JC (_ : State) (s t : State) : Prop := ∃ em, AtCall s em t
+def JC (n : Nat) (_ : State) (s t : State) : Prop := ∃ em, AtCall s em t ∧ ∀ i < n, stackArg t i = stackArg s (i + 1)
 def JA (_ : State) (s t : State) : Prop := ∃ em, AfterCall s em t
 def JM (_ : State) : State → State → Prop := Mid
 
 theorem pins_and {α : Type} {Φ : α → State → Prop} {P : State → Prop} {rs : List Reg} (h : Pins Φ rs) :
     Pins (fun a s => Φ a s ∧ P s) rs := fun a s₁ s₂ h₁ h₂ => h a s₁ s₂ h₁.1 h₂.1
 
-theorem pinsW {K : Nat} : Pins (At K JW) [.x17, .x19] := fun a w₁ w₂ ⟨s₁, h₁, u₁, j₁, k₁, _⟩
+theorem pinsW {K : Nat} : Pins (At K X JW) [.x17, .x19] := fun a w₁ w₂ ⟨s₁, h₁, u₁, j₁, k₁, _⟩
     ⟨s₂, h₂, u₂, j₂, k₂, _⟩ => by
   refine ⟨by rw [k₁.sp, k₂.sp, j₁.sp, j₂.sp, h₁.fb, h₂.fb], fun r hr => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -141,17 +149,17 @@ theorem pinsW {K : Nat} : Pins (At K JW) [.x17, .x19] := fun a w₁ w₂ ⟨s₁
   · rw [k₁.get .x19, k₂.get .x19, j₁.x19, j₂.x19, h₁.gpr (by decide), h₂.gpr (by decide)]
 
 theorem pinsM {K : Nat} {J : State → State → State → Prop} (hJ : ∀ a s t, J a s t → Mid s t) :
-    Pins (At K J) [.x19] := fun a t₁ t₂ ⟨s₁, h₁, j₁⟩ ⟨s₂, h₂, j₂⟩ => by
+    Pins (At K X J) [.x19] := fun a t₁ t₂ ⟨s₁, h₁, j₁⟩ ⟨s₂, h₂, j₂⟩ => by
   have m₁ := hJ _ _ _ j₁; have m₂ := hJ _ _ _ j₂
   refine ⟨by rw [m₁.sp, m₂.sp, h₁.fb, h₂.fb], fun r hr => ?_⟩
   rw [List.mem_singleton.mp hr, m₁.x19, m₂.x19, h₁.gpr (by decide), h₂.gpr (by decide)]
 
-theorem pinsA {K : Nat} : Pins (At K JA) [.x19] := pinsM fun _ _ _ ⟨_, j⟩ => j.toMid
+theorem pinsA {K : Nat} : Pins (At K X JA) [.x19] := pinsM fun _ _ _ ⟨_, j⟩ => j.toMid
 /-! ## The call -/
 
 theorem call_ct (c : PrivChecked) :
-    RelCT isa (Two (At c.stack JC)) (.call c.name c.code) fun _ _ => True := by
-  refine privCallCT c fun t₁ t₂ ⟨a, ⟨s₁, h₁, em₁, c₁⟩, ⟨s₂, h₂, em₂, c₂⟩⟩ => ?_
+    RelCT isa (Two (At c.stack X (JC 12))) (.call c.name c.code) fun _ _ => True := by
+  refine privCallCT c fun t₁ t₂ ⟨a, ⟨s₁, h₁, em₁, c₁, _⟩, ⟨s₂, h₂, em₂, c₂, _⟩⟩ => ?_
   refine ⟨privOk_of c h₁.1 c₁, privOk_of c h₂.1 c₂, ⟨?_, fun r hr => ?_, fun i hi => ?_⟩, ?_, ?_⟩
   · rw [c₁.sp, c₂.sp, h₁.fb, h₂.fb]
   · have e : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x7], s₁.gpr r = s₂.gpr r :=
@@ -166,18 +174,23 @@ theorem call_ct (c : PrivChecked) :
     · rw [c₁.x5, c₂.x5, e .x5 (by decide)]
     · rw [c₁.x6, c₂.x6, h₁.fb, h₂.fb]
     · rw [c₁.x7, c₂.x7, e .x3 (by decide)]
-  · rw [c₁.args i hi, c₂.args i hi, h₁.2.args (i + 1) (by omega), h₂.2.args (i + 1) (by omega)]
+  · rw [c₁.args i hi, c₂.args i hi, h₁.2.1.args (i + 1) (by omega), h₂.2.1.args (i + 1) (by omega)]
   · rw [c₁.x2, c₁.x3, c₂.x2, c₂.x3, bytes_frame c₁.mem h₁.1.kn (by have := h₁.1.wn; omega),
-      bytes_frame c₂.mem h₂.1.kn (by have := h₂.1.wn; omega), h₁.2.bn, h₂.2.bn]
+      bytes_frame c₂.mem h₂.1.kn (by have := h₂.1.wn; omega), h₁.2.1.bn, h₂.2.1.bn]
   · rw [c₁.x4, c₁.x5, c₂.x4, c₂.x5, bytes_frame c₁.mem h₁.1.ke (by have := h₁.1.we; omega),
-      bytes_frame c₂.mem h₂.1.ke (by have := h₂.1.we; omega), h₁.2.be, h₂.2.be]
+      bytes_frame c₂.mem h₂.1.ke (by have := h₂.1.we; omega), h₁.2.1.be, h₂.2.1.be]
 
 /-! ## After the encoding -/
 
-theorem afterEnc_ct (c : PrivChecked) :
-    RelCT isa (Two (At c.stack JW)) (afterEnc c.name c.code) (Two (At c.stack JM)) := by
-  unfold afterEnc
-  have res : ∀ {a s w}, E c.stack a s → JW a s w →
+theorem afterEncN_ct {K n : Nat} {name : String} {priv : Prog isa}
+    (hA : ∀ a s, E K X a s → ArgsOk K s (n + 1)) (hn₁ : 12 ≤ n) (hn₂ : n ≤ 14)
+    (hc : ∀ a s, E K X a s → CallOk s n name priv)
+    (htaint : ∀ {Φ : State → State → Prop}, Pins Φ [.x16] →
+      RelCT isa (Two Φ) (.block (callArgsN n)) fun _ _ => True)
+    (hct : RelCT isa (Two (At K X (JC n))) (.call name priv) fun _ _ => True) :
+    RelCT isa (Two (At K X JW)) (afterEncN n name priv) (Two (At K X JM)) := by
+  unfold afterEncN
+  have res : ∀ {a s w}, E K X a s → JW a s w →
       isa.eval (.zero .x .x0) w = some (encOut a).isNone := fun {a s w} h ⟨u, _, _, hout⟩ => by
     rw [eval_zero']
     have hs := encOut_isSome h
@@ -204,8 +217,8 @@ theorem afterEnc_ct (c : PrivChecked) :
       | some _ => rw [he] at this; cases ha : encOut a <;> simp_all
     rw [hn] at hout
     exact WP.mono (zeroSlots_ok h.1 hu hK hout.2) fun w' hw' => ⟨s, h, hw'.1⟩
-  refine RelCT.seq (two_post (Ψ := At c.stack JC)
-    (callArgs_taint fun a w₁ w₂ ⟨⟨s₁, h₁, u₁, j₁, k₁, _⟩, _⟩ ⟨⟨s₂, h₂, u₂, j₂, k₂, _⟩, _⟩ =>
+  refine RelCT.seq (two_post (Ψ := At K X (JC n))
+    (htaint fun a w₁ w₂ ⟨⟨s₁, h₁, u₁, j₁, k₁, _⟩, _⟩ ⟨⟨s₂, h₂, u₂, j₂, k₂, _⟩, _⟩ =>
       ⟨by rw [k₁.sp, k₂.sp, j₁.sp, j₂.sp, h₁.fb, h₂.fb], fun r hr => by
         rw [List.mem_singleton.mp hr, k₁.get .x16, k₂.get .x16, j₁.x16, j₂.x16, h₁.fb, h₂.fb]⟩)
     fun a w ⟨⟨s, h, u, hu, hK, hout⟩, hb⟩ => ?_) ?_
@@ -218,26 +231,31 @@ theorem afterEnc_ct (c : PrivChecked) :
       cases ha : encOut a <;> simp_all
     | some em =>
       rw [he] at hout
-      exact WP.mono (callArgs_ok h.1 hu hK hout.2 (encodeId_length he)) fun t ht => ⟨s, h, em, ht⟩
-  refine RelCT.seq (two_post (Ψ := At c.stack JA) (call_ct c) fun a t ⟨s, h, em, ht⟩ =>
-    WP.mono (call_ok c h.1 ht) fun t' ht' => ⟨s, h, em, ht'⟩) ?_
+      exact WP.mono (callArgsN_ok h.1 (hA a s h) hn₁ hn₂ hu hK hout.2 (encodeId_length he)) fun t ht => ⟨s, h, em, ht⟩
+  refine RelCT.seq (two_post (Ψ := At K X JA) hct fun a t ⟨s, h, em, ht, hx⟩ =>
+    WP.mono (hc a s h em t ht hx) fun t' ht' => ⟨s, h, em, ht'⟩) ?_
   exact two_post (wipe_taint pinsA) fun a t ⟨s, h, em, ht⟩ =>
     WP.mono (wipe_ok h.1 ht.toMid) fun w hw => ⟨s, h, hw.1⟩
 
-theorem code_ct (c : PrivChecked) :
-    RelCT isa (Two (E c.stack)) (code c.name c.code) fun _ _ => True := by
-  unfold code
+theorem codeN_ct {K n : Nat} {name : String} {priv : Prog isa}
+    (hA : ∀ a s, E K X a s → ArgsOk K s (n + 1)) (hn₁ : 12 ≤ n) (hn₂ : n ≤ 14)
+    (hc : ∀ a s, E K X a s → CallOk s n name priv)
+    (htaint : ∀ {Φ : State → State → Prop}, Pins Φ [.x16] →
+      RelCT isa (Two Φ) (.block (callArgsN n)) fun _ _ => True)
+    (hct : RelCT isa (Two (At K X (JC n))) (.call name priv) fun _ _ => True) :
+    RelCT isa (Two (E K X)) (codeN n name priv) fun _ _ => True := by
+  unfold codeN
   refine two_alloc (R := fun _ _ => True) ?_
-  unfold body
-  refine RelCT.seq (two_post (Ψ := At c.stack JE)
+  unfold bodyN
+  refine RelCT.seq (two_post (Ψ := At K X JE)
     (encArgs_taint fun _ _ _ ⟨s₁, h₁, e₁⟩ ⟨s₂, h₂, e₂⟩ =>
-      ⟨by rw [e₁, e₂]; simp only [allocated, h₁.2.sp, h₂.2.sp], fun _ h => absurd h List.not_mem_nil⟩)
+      ⟨by rw [e₁, e₂]; simp only [allocated, h₁.2.1.sp, h₂.2.1.sp], fun _ h => absurd h List.not_mem_nil⟩)
     fun a u ⟨s, h, hu⟩ => ?_) ?_
   · subst hu
     exact WP.mono (encArgs_ok h.1 (by simp [allocated]) (by simp [allocated]) (by simp [allocated])
       (by simp [allocated]) (fun r => by simp [allocated]) (fun r _ => by simp [allocated]))
       fun t ht => ⟨s, h, ht⟩
-  refine RelCT.seq (two_post (Ψ := At c.stack JW)
+  refine RelCT.seq (two_post (Ψ := At K X JW)
     (encode_taint fun a u₁ u₂ ⟨s₁, h₁, j₁⟩ ⟨s₂, h₂, j₂⟩ => ⟨by rw [j₁.sp, j₂.sp, h₁.fb, h₂.fb], fun r hr => ?_⟩)
     fun a u ⟨s, h, hu⟩ => WP.mono (enc_ok h.1 hu) fun w ⟨hK, hout⟩ => ⟨s, h, u, hu, hK, hout⟩) ?_
   · change AtEnc s₁ u₁ at j₁
@@ -246,11 +264,18 @@ theorem code_ct (c : PrivChecked) :
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · rw [j₁.x8, j₂.x8, h₁.fb, h₂.fb]
     · rw [j₁.x9, j₂.x9, h₁.gpr (r := .x3) (by decide), h₂.gpr (r := .x3) (by decide)]
-    · rw [j₁.x10, j₂.x10, h₁.2.h6, h₂.2.h6]
+    · rw [j₁.x10, j₂.x10, h₁.2.1.h6, h₂.2.1.h6]
     · rw [j₁.x11, j₂.x11, h₁.gpr (r := .x7) (by decide), h₂.gpr (r := .x7) (by decide)]
-    · rw [j₁.x12, j₂.x12, h₁.2.args 0 (by decide), h₂.2.args 0 (by decide)]
-  refine RelCT.seq (afterEnc_ct c) ?_
+    · rw [j₁.x12, j₂.x12, h₁.2.1.args 0 (by decide), h₂.2.1.args 0 (by decide)]
+  refine RelCT.seq (afterEncN_ct hA hn₁ hn₂ hc htaint hct) ?_
   exact restore_taint fun a t₁ t₂ ⟨s₁, h₁, m₁⟩ ⟨s₂, h₂, m₂⟩ =>
     ⟨by rw [m₁.sp, m₂.sp, h₁.fb, h₂.fb], fun _ h => absurd h List.not_mem_nil⟩
+
+end
+
+theorem code_ct (c : PrivChecked) :
+    RelCT isa (Two (E c.stack fun _ _ => True)) (code c.name c.code) fun _ _ => True :=
+  codeN_ct (fun _ _ h => h.1.argsOk) (by decide) (by decide) (fun _ _ h _ _ ht _ => call_ok c h.1 ht)
+    callArgs_taint (call_ct c)
 
 end VG.Proof.RsaPkcs1Sig.AArch64.Sgn

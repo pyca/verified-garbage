@@ -19,6 +19,8 @@ OR of their bytes' XORs (`cmpAcc`), zero exactly if they are equal.
 
 namespace VG.Proof.Rsa.RISCV64.Priv
 
+variable {pc : Bool}
+
 open VG VG.RISCV64 VG.Impl.Rsa.RISCV64.Priv VG.RISCV64.RegUpd
 
 /-- `Late` is kept by a write of a word of the frame apart from the slots. -/
@@ -43,8 +45,8 @@ theorem Late.store {s t : State} (M : Late s t) {d : Nat} (hd : oRa + 8 ≤ d �
 
 /-- `m^e mod n` in `out` and the public operation's status kept in the
 frame, if `n`'s values are valid. -/
-abbrev pubOutM (s u : State) : Prop :=
-  ∀ ws, Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) = some ws →
+abbrev pubOutM (pc : Bool) (s u : State) : Prop :=
+  ∀ ws, Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) = some ws → preVal pc s = ws →
     Spec.Rsa.written u.mem (s.gpr .a0) (s.gpr .a3).toNat
       ((u.mem.readW (fb s + BitVec.ofNat 64 oEs) 64).setWidth 32)
       (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
@@ -52,16 +54,16 @@ abbrev pubOutM (s u : State) : Prop :=
         (Spec.Rsa.bytesAt u.mem (fb s + BitVec.ofNat 64 oM) (s.gpr .a3).toNat))
 
 /-- At the comparison. -/
-structure AtLoop (s u : State) : Prop extends Late s u where
+structure AtLoop (pc : Bool) (s u : State) : Prop extends Late s u where
   crt : crtOutM s u
-  pub : pubOutM s u
+  pub : pubOutM pc s u
   t2 : u.gpr .t2 = s.gpr .a0
   t3 : u.gpr .t3 = s.gpr .a6
   t4 : u.gpr .t4 = 0
   t5 : u.gpr .t5 = s.gpr .a3
 
-theorem cmpArgs_ok {s t : State} (h : PreP s) (A : AtCmp s t) :
-    WP isa (.block cmpArgs) t (AtLoop s) := by
+theorem cmpArgs_ok {s t : State} (h : PreP pc s) (A : AtCmp pc s t) :
+    WP isa (.block cmpArgs) t (AtLoop pc s) := by
   have hk := h.k2
   have ho : InRegions t.wr (fb s + BitVec.ofNat 64 160) 8 := by
     rw [A.wr]; exact in_fr s _ (by decide)
@@ -92,8 +94,8 @@ theorem cmpArgs_ok {s t : State} (h : PreP s) (A : AtCmp s t) :
     · show Spec.Rsa.written _ _ _ _ _
       rw [fw.readW (Region.contains_self _ _) (ap (.inl (by decide)) (by decide)) (by decide)]
       exact written_congr hm A.crt
-    · intro ws hw
-      have := A.pub ws hw
+    · intro ws hw hv
+      have := A.pub ws hw hv
       rw [← hm] at this
       rw [um, Mem.readW_writeW_self64, ← um]
       exact written_congr ho' this
@@ -147,7 +149,7 @@ theorem add_ofNat_one (p : Addr) (j : Nat) :
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 /-- The comparison: the OR of the XORs of `out`'s bytes and the input's in `t4`. -/
-theorem compare_ok {s t : State} (h : PreP s) (A : AtLoop s t) :
+theorem compare_ok {s t : State} (h : PreP pc s) (A : AtLoop pc s t) :
     WP isa compare t fun u => u.gpr .t4 = cmpAcc t.mem (s.gpr .a0) (s.gpr .a6) (s.gpr .a3).toNat ∧
       u.mem = t.mem ∧ Keep [.a1, .a2, .t2, .t3, .t4, .t5] t u := by
   have hk := h.k2

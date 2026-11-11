@@ -18,7 +18,7 @@ public import VerifiedGarbage.Proof.Rsa.Contract
 namespace VG.Proof.Bignum.AArch64
 
 open VG VG.AArch64
-open VG.Proof.Rsa.AArch64 (crtA stackArgs_ten)
+open VG.Proof.Rsa.AArch64 (crtA crtPA KeyProduct privateCrtProductContract stackArgs_ten)
 
 /-- A state meeting `crtA.pre`: a 64-byte modulus and input, one-byte
 primes, exponents and `qInv`, and the stack arguments at `0x10000`. -/
@@ -35,6 +35,10 @@ def crtSatState : State where
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 64⟩, ⟨0x4000, 1⟩, ⟨0x4100, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩,
     ⟨0x10000, 80⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x20000, 8448⟩]
+
+theorem crtSat_pre : (Proof.Rsa.privateCrtContract abi 0).pre crtSatState := by
+  sig_sat_check [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, crtA, stackArgs_ten,
+    List.append_eq]
 
 theorem crt_implies : crtA.Implies (Proof.Rsa.privateCrtContract abi 0) where
   pre := by
@@ -62,9 +66,17 @@ theorem crt_implies : crtA.Implies (Proof.Rsa.privateCrtContract abi 0) where
       (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hl⟩
     simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
-  sat := by
-    sig_implies_sat [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, crtA,
-      stackArgs_ten, List.append_eq] [crtSatState, stackArg, stackArgAddr, Mem.readW,
-      Mem.read] using crtSatState
+  sat := ⟨_, crtSat_pre⟩
+
+/-- The key of `crtSatState` is zeros, whose product is the modulus. -/
+theorem crtSat_product : KeyProduct crtSatState := by
+  unfold KeyProduct
+  decide
+
+theorem crtP_implies : crtPA.Implies privateCrtProductContract where
+  pre := fun s ⟨h, hk⟩ => ⟨crt_implies.pre s h, hk⟩
+  post := fun s s' ⟨h, _⟩ hp => crt_implies.post s s' h hp
+  pub := fun s₁ s₂ ⟨h₁, _⟩ ⟨h₂, _⟩ hp => crt_implies.pub s₁ s₂ h₁ h₂ hp
+  sat := ⟨_, crtSat_pre, crtSat_product⟩
 
 end VG.Proof.Bignum.AArch64

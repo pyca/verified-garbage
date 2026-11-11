@@ -53,14 +53,24 @@ def PcOut (g : PrivGeometry) (bs : Fin 8 → List Byte) (s : State) : Prop :=
   | none => s.gpr .r0 = 0 ∧ Spec.Rsa.wordsAt s.mem (State.addr g.precomputation) (2 * Spec.Rsa.modulusWords g.length) =
       List.replicate (2 * Spec.Rsa.modulusWords g.length) 0
 
+/-- What a stage leaving the public precomputation in the frame guarantees. -/
+def PcPost (g : PrivGeometry) (bs : Fin 8 → List Byte) (s t : State) : Prop :=
+  PrivContext g bs t ∧ PrivSlots g t.mem ∧ Frame (pcWr g ++ [g.calleeRegion]) s.mem t.mem ∧
+    Rest callClobbers s t ∧ PcOut g bs t
+
+/-- A fact about the state that the body's writes and stages keep. -/
+def Kept (g : PrivGeometry) (Q : State → Prop) : Prop :=
+  ∀ {s t : State} {rs : List Reg}, Q s → Frame (bodyWrites g) s.mem t.mem → Rest rs s t → Q t
+
+theorem kept_true (g : PrivGeometry) : Kept g fun _ => True := fun _ _ _ => trivial
+
 theorem pc_call (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) (slots : PrivSlots g s.mem) (args : PcArgs g s) :
-    WP isa (.call v.pcName v.pc) s fun t => PrivContext g bs t ∧ PrivSlots g t.mem ∧
-      Frame (pcWr g ++ [g.calleeRegion]) s.mem t.mem ∧ Rest callClobbers s t ∧
-      PcOut g bs t := by
+    WP isa (.call v.pcName v.pc) s (PcPost g bs s) := by
   refine WP.mono (private_call_ok h slots v.pcVerified v.pcStack (pcCall_pre h args)
     (pcCovers h).1 (pcCovers h).2 (pcWrites_sub h.valid) (pcWrites_slots h.valid)) ?_
   rintro t ⟨ht, slotsT, frame, rest, post⟩
+  unfold PcPost
   refine ⟨ht, slotsT, frame, rest, ?_⟩
   sig_post [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at post
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega

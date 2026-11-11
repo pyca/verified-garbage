@@ -193,7 +193,7 @@ theorem in_frame (s : State) (rs : List Region) {d n : Nat} (h : d + n ≤ frame
     InRegions (⟨fb s, frameBytes⟩ :: rs) (fb s + BitVec.ofNat 64 d) n :=
   ⟨_, List.mem_cons_self .., Offset.contains_base _ h (by unfold frameBytes at h; omega)⟩
 
-theorem saved_offs : ∀ p ∈ saved, 96 ≤ p.2 ∧ p.2 + 8 ≤ 96 + 16 := by decide
+theorem saved_offs : ∀ p ∈ saved, 112 ≤ p.2 ∧ p.2 + 8 ≤ 112 + 16 := by decide
 
 theorem saved_ho : ∀ p ∈ saved, p.2 % 8 = 0 ∧ p.2 < 32768 := by decide
 
