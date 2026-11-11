@@ -73,46 +73,32 @@ theorem reduce_int (d t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : T) (h0 : shrOf t0 52 = .sh
 /-- The columns of a product. -/
 def mulColsT (a b : F5 T) : List T :=
   [.mad false (.lit 0 0 0 0) a.l0 b.l0,
-    .add (.mad false (.mad false (.lit 0 0 0 0) a.l0 b.l1) a.l1 b.l0) (.mad true (.lit 0 0 0 0) a.l0 b.l0),
-    .add (.mad false (.mad false (.mad false (.lit 0 0 0 0) a.l0 b.l2) a.l1 b.l1) a.l2 b.l0) (.mad true (.mad true (.lit 0 0 0 0) a.l0 b.l1) a.l1 b.l0),
-    .add (.mad false (.mad false (.mad false (.mad false (.lit 0 0 0 0) a.l0 b.l3) a.l1 b.l2) a.l2 b.l1) a.l3 b.l0) (.mad true (.mad true (.mad true (.lit 0 0 0 0) a.l0 b.l2) a.l1 b.l1) a.l2 b.l0),
-    .add (.mad false (.mad false (.mad false (.mad false (.mad false (.lit 0 0 0 0) a.l0 b.l4) a.l1 b.l3) a.l2 b.l2) a.l3 b.l1) a.l4 b.l0) (.mad true (.mad true (.mad true (.mad true (.lit 0 0 0 0) a.l0 b.l3) a.l1 b.l2) a.l2 b.l1) a.l3 b.l0),
-    .add (.mad false (.mad false (.mad false (.mad false (.lit 0 0 0 0) a.l1 b.l4) a.l2 b.l3) a.l3 b.l2) a.l4 b.l1) (.mad true (.mad true (.mad true (.mad true (.mad true (.lit 0 0 0 0) a.l0 b.l4) a.l1 b.l3) a.l2 b.l2) a.l3 b.l1) a.l4 b.l0),
-    .add (.mad false (.mad false (.mad false (.lit 0 0 0 0) a.l2 b.l4) a.l3 b.l3) a.l4 b.l2) (.mad true (.mad true (.mad true (.mad true (.lit 0 0 0 0) a.l1 b.l4) a.l2 b.l3) a.l3 b.l2) a.l4 b.l1),
-    .add (.mad false (.mad false (.lit 0 0 0 0) a.l3 b.l4) a.l4 b.l3) (.mad true (.mad true (.mad true (.lit 0 0 0 0) a.l2 b.l4) a.l3 b.l3) a.l4 b.l2),
-    .add (.mad false (.lit 0 0 0 0) a.l4 b.l4) (.mad true (.mad true (.lit 0 0 0 0) a.l3 b.l4) a.l4 b.l3),
+    .mad false (.mad false (.mad true (.lit 0 0 0 0) a.l0 b.l0) a.l1 b.l0) a.l0 b.l1,
+    .add (.mad false (.mad false (.mad true (.lit 0 0 0 0) a.l1 b.l0) a.l1 b.l1) a.l0 b.l2) (.mad false (.mad true (.lit 0 0 0 0) a.l0 b.l1) a.l2 b.l0),
+    .add (.add (.mad false (.mad false (.mad true (.lit 0 0 0 0) a.l1 b.l1) a.l2 b.l1) a.l0 b.l3) (.mad false (.mad true (.lit 0 0 0 0) a.l2 b.l0) a.l1 b.l2)) (.mad false (.mad true (.lit 0 0 0 0) a.l0 b.l2) a.l3 b.l0),
+    .add (.add (.mad false (.mad true (.mad true (.lit 0 0 0 0) a.l2 b.l1) a.l3 b.l0) a.l1 b.l3) (.mad false (.mad true (.mad true (.lit 0 0 0 0) a.l1 b.l2) a.l0 b.l3) a.l4 b.l0)) (.mad false (.mad false (.mad false (.lit 0 0 0 0) a.l2 b.l2) a.l3 b.l1) a.l0 b.l4),
+    .add (.add (.mad true (.mad false (.mad true (.lit 0 0 0 0) a.l2 b.l2) a.l3 b.l2) a.l0 b.l4) (.mad false (.mad false (.mad true (.lit 0 0 0 0) a.l3 b.l1) a.l2 b.l3) a.l4 b.l1)) (.mad false (.mad true (.mad true (.lit 0 0 0 0) a.l1 b.l3) a.l4 b.l0) a.l1 b.l4),
+    .add (.add (.mad false (.mad true (.mad true (.lit 0 0 0 0) a.l3 b.l2) a.l4 b.l1) a.l2 b.l4) (.mad true (.mad true (.lit 0 0 0 0) a.l2 b.l3) a.l1 b.l4)) (.mad false (.mad false (.lit 0 0 0 0) a.l3 b.l3) a.l4 b.l2),
+    .add (.mad false (.mad true (.mad true (.lit 0 0 0 0) a.l3 b.l3) a.l2 b.l4) a.l3 b.l4) (.mad false (.mad true (.lit 0 0 0 0) a.l4 b.l2) a.l4 b.l3),
+    .mad false (.mad true (.mad true (.lit 0 0 0 0) a.l4 b.l3) a.l3 b.l4) a.l4 b.l4,
     .mad true (.lit 0 0 0 0) a.l4 b.l4]
 
-theorem range5 : List.range 5 = [0, 1, 2, 3, 4] := by decide
-theorem range10 : List.range 10 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] := by decide
-
-theorem mulCols_eq (a b : F5 T) : Id.run (mulCols tops a b) = mulColsT a b := by
-  have rep : List.replicate 10 (none : Option T) = [none, none, none, none, none, none, none, none, none, none] := rfl
-  simp only [mulCols, range5, range10, rep, Id.run, bind, pure, List.foldlM_cons, List.foldlM_nil, List.mapM_cons,
-    List.mapM_nil, List.getD_cons_zero, List.getD_cons_succ, List.set_cons_zero, List.set_cons_succ, Nat.reduceAdd,
-    F5.get, tops, Option.getD_some, Option.getD_none, mulColsT]
+theorem mulCols_eq (a b : F5 T) : Id.run (mulCols tops a b) = mulColsT a b := rfl
 
 /-- The columns of a square. -/
 def sqrColsT (a : F5 T) : List T :=
   [.mad false (.lit 0 0 0 0) a.l0 a.l0,
     .mad true (.add (.mad false (.lit 0 0 0 0) a.l0 a.l1) (.mad false (.lit 0 0 0 0) a.l0 a.l1)) a.l0 a.l0,
-    .mad false (.add (.mad true (.mad false (.lit 0 0 0 0) a.l0 a.l2) a.l0 a.l1) (.mad true (.mad false (.lit 0 0 0 0) a.l0 a.l2) a.l0 a.l1)) a.l1 a.l1,
-    .mad true (.add (.mad true (.mad false (.mad false (.lit 0 0 0 0) a.l0 a.l3) a.l1 a.l2) a.l0 a.l2) (.mad true (.mad false (.mad false (.lit 0 0 0 0) a.l0 a.l3) a.l1 a.l2) a.l0 a.l2)) a.l1 a.l1,
-    .mad false (.add (.mad true (.mad true (.mad false (.mad false (.lit 0 0 0 0) a.l0 a.l4) a.l1 a.l3) a.l0 a.l3) a.l1 a.l2) (.mad true (.mad true (.mad false (.mad false (.lit 0 0 0 0) a.l0 a.l4) a.l1 a.l3) a.l0 a.l3) a.l1 a.l2)) a.l2 a.l2,
-    .mad true (.add (.mad true (.mad true (.mad false (.mad false (.lit 0 0 0 0) a.l1 a.l4) a.l2 a.l3) a.l0 a.l4) a.l1 a.l3) (.mad true (.mad true (.mad false (.mad false (.lit 0 0 0 0) a.l1 a.l4) a.l2 a.l3) a.l0 a.l4) a.l1 a.l3)) a.l2 a.l2,
-    .mad false (.add (.mad true (.mad true (.mad false (.lit 0 0 0 0) a.l2 a.l4) a.l1 a.l4) a.l2 a.l3) (.mad true (.mad true (.mad false (.lit 0 0 0 0) a.l2 a.l4) a.l1 a.l4) a.l2 a.l3)) a.l3 a.l3,
-    .mad true (.add (.mad true (.mad false (.lit 0 0 0 0) a.l3 a.l4) a.l2 a.l4) (.mad true (.mad false (.lit 0 0 0 0) a.l3 a.l4) a.l2 a.l4)) a.l3 a.l3,
+    .mad false (.add (.mad false (.mad true (.lit 0 0 0 0) a.l0 a.l1) a.l0 a.l2) (.mad false (.mad true (.lit 0 0 0 0) a.l0 a.l1) a.l0 a.l2)) a.l1 a.l1,
+    .mad true (.add (.mad false (.mad false (.mad true (.lit 0 0 0 0) a.l0 a.l2) a.l1 a.l2) a.l0 a.l3) (.mad false (.mad false (.mad true (.lit 0 0 0 0) a.l0 a.l2) a.l1 a.l2) a.l0 a.l3)) a.l1 a.l1,
+    .mad false (.add (.add (.mad false (.mad true (.lit 0 0 0 0) a.l1 a.l2) a.l1 a.l3) (.mad false (.mad true (.lit 0 0 0 0) a.l0 a.l3) a.l0 a.l4)) (.add (.mad false (.mad true (.lit 0 0 0 0) a.l1 a.l2) a.l1 a.l3) (.mad false (.mad true (.lit 0 0 0 0) a.l0 a.l3) a.l0 a.l4))) a.l2 a.l2,
+    .mad true (.add (.add (.mad true (.mad true (.lit 0 0 0 0) a.l1 a.l3) a.l0 a.l4) (.mad false (.mad false (.lit 0 0 0 0) a.l2 a.l3) a.l1 a.l4)) (.add (.mad true (.mad true (.lit 0 0 0 0) a.l1 a.l3) a.l0 a.l4) (.mad false (.mad false (.lit 0 0 0 0) a.l2 a.l3) a.l1 a.l4))) a.l2 a.l2,
+    .mad false (.add (.mad false (.mad true (.mad true (.lit 0 0 0 0) a.l2 a.l3) a.l1 a.l4) a.l2 a.l4) (.mad false (.mad true (.mad true (.lit 0 0 0 0) a.l2 a.l3) a.l1 a.l4) a.l2 a.l4)) a.l3 a.l3,
+    .mad true (.add (.mad false (.mad true (.lit 0 0 0 0) a.l2 a.l4) a.l3 a.l4) (.mad false (.mad true (.lit 0 0 0 0) a.l2 a.l4) a.l3 a.l4)) a.l3 a.l3,
     .mad false (.add (.mad true (.lit 0 0 0 0) a.l3 a.l4) (.mad true (.lit 0 0 0 0) a.l3 a.l4)) a.l4 a.l4,
     .mad true (.lit 0 0 0 0) a.l4 a.l4]
 
-theorem sqrCols_eq (a : F5 T) : Id.run (sqrCols tops a) = sqrColsT a := by
-  have rep : List.replicate 9 (none : Option T) = [none, none, none, none, none, none, none, none, none] := rfl
-  have r17 : List.range' 1 7 = [1, 2, 3, 4, 5, 6, 7] := by decide
-  simp only [sqrCols, range5, range10, r17, rep, Id.run, bind, pure, List.foldlM_cons, List.foldlM_nil, List.mapM_cons,
-    List.mapM_nil, List.getD_cons_zero, List.getD_cons_succ, List.set_cons_zero, List.set_cons_succ, Nat.reduceAdd,
-    Nat.reduceSub, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceMod, Nat.reduceDiv, Nat.reduceBEq,
-    F5.get, tops, Option.getD_some, Option.getD_none, sqrColsT, and_self, and_true, and_false, ↓reduceIte,
-    List.getD_nil]
+theorem sqrCols_eq (a : F5 T) : Id.run (sqrCols tops a) = sqrColsT a := rfl
 
 theorem mulCols_int (a b : F5 T) (E : Env) (k : Nat) :
     (mulColsT a b).map (fun t => t.int E k) = mulColsI (a.l0.int E k) (a.l1.int E k) (a.l2.int E k) (a.l3.int E k) (a.l4.int E k) (b.l0.int E k) (b.l1.int E k) (b.l2.int E k) (b.l3.int E k) (b.l4.int E k) := by
