@@ -382,6 +382,232 @@ vg_ffdh_generate_key_precompute:
 	b 216f
 215:
 	ldr x12, [x0, #48]
+	sub x13, x12, #2
+	cbz x13, 230f
+	ldr x11, [x0, #96]
+	ldr x9, [x0, #64]
+	ldr x6, [x0, #88]
+	ldr x12, [x0, #48]
+	movz x7, #0, lsl #0
+	lsl x13, x12, #3
+	sub x13, x13, #16
+	add x13, x9, x13
+	ldr x15, [x13, #8]
+	ldr x3, [x13, #0]
+	movz x10, #1, lsl #0
+	movz x13, #63, lsl #0
+232:
+	add x16, x15, x15
+	add x17, x10, x10
+	tst x15, x15
+	csel x15, x16, x15, pl
+	csel x10, x17, x10, pl
+	sub x13, x13, #1
+	cbnz x13, 232b
+	umulh x3, x3, x10
+	add x15, x15, x3
+	str x10, [x6, #8]
+	str x15, [x6, #16]
+	ldr x5, [x6, #16]
+	sub x2, x7, x5
+	sub x2, x2, #1
+	movz x10, #0, lsl #0
+	movz x4, #1, lsl #0
+	movz x13, #64, lsl #0
+233:
+	lsr x3, x2, #63
+	lsl x2, x2, #1
+	orr x2, x2, x4
+	subs x15, x2, x5
+	adc x16, x7, x7
+	orr x16, x16, x3
+	tst x16, x16
+	csel x2, x15, x2, ne
+	add x10, x10, x10
+	add x10, x10, x16
+	sub x13, x13, #1
+	cbnz x13, 233b
+	str x10, [x6, #0]
+	add x8, x11, #0
+	movz x9, #1, lsl #0
+	sub x13, x12, #1
+	add x16, x8, #0
+	add x14, x12, #2
+234:
+	str x7, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 234b
+	lsl x16, x13, #3
+	add x16, x8, x16
+	str x9, [x16, #0]
+	add x13, x12, #1
+	str x13, [x0, #208]
+235:
+	ldr x8, [x0, #80]
+	ldr x9, [x0, #64]
+	ldr x11, [x0, #96]
+	ldr x6, [x0, #88]
+	ldr x12, [x0, #48]
+	movz x7, #0, lsl #0
+	lsl x13, x12, #3
+	sub x13, x13, #24
+	add x16, x11, x13
+	ldr x2, [x16, #16]
+	ldr x3, [x16, #8]
+	ldr x4, [x16, #0]
+	ldr x17, [x6, #8]
+	ldr x5, [x6, #16]
+	mul x2, x2, x17
+	umulh x15, x3, x17
+	add x2, x2, x15
+	mul x3, x3, x17
+	umulh x15, x4, x17
+	add x3, x3, x15
+	sub x4, x5, x2
+	ldr x17, [x6, #0]
+	mul x13, x17, x2
+	umulh x14, x17, x2
+	adds x13, x13, x3
+	adc x14, x14, x2
+	add x14, x14, #1
+	mul x15, x14, x5
+	sub x15, x3, x15
+	sub x16, x14, #1
+	add x17, x15, x5
+	subs x3, x13, x15
+	csel x14, x16, x14, lo
+	csel x15, x17, x15, lo
+	subs x3, x15, x5
+	adc x14, x14, x7
+	movz x16, #0, lsl #0
+	sub x16, x16, #1
+	tst x4, x4
+	csel x1, x16, x14, eq
+	add x16, x8, #0
+	add x14, x12, #2
+236:
+	str x7, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 236b
+	add x16, x8, #0
+	add x17, x9, #0
+	add x14, x12, #0
+	adds x2, x7, x7
+237:
+	ldr x3, [x17, #0]
+	mul x4, x1, x3
+	umulh x3, x1, x3
+	adcs x4, x4, x2
+	adc x2, x3, x7
+	ldr x3, [x16, #0]
+	adds x4, x4, x3
+	str x4, [x16, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 237b
+	adc x2, x2, x7
+	ldr x3, [x16, #0]
+	adds x3, x3, x2
+	str x3, [x16, #0]
+	ldr x3, [x16, #8]
+	adc x3, x3, x7
+	str x3, [x16, #8]
+	add x16, x8, #0
+	add x17, x11, #0
+	add x14, x12, #0
+	ldr x3, [x16, #0]
+	subs x3, x7, x3
+	str x3, [x16, #0]
+	add x16, x16, #8
+238:
+	ldr x4, [x17, #0]
+	ldr x3, [x16, #0]
+	sbcs x3, x4, x3
+	str x3, [x16, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 238b
+	lsl x13, x12, #3
+	add x13, x8, x13
+	ldr x3, [x13, #0]
+	lsr x3, x3, #63
+	cbz x3, 239f
+	lsl x13, x12, #3
+	add x13, x8, x13
+	ldr x3, [x13, #0]
+	lsr x3, x3, #63
+	sub x15, x7, x3
+	add x16, x8, #0
+	add x17, x9, #0
+	add x14, x12, #0
+	adds x3, x7, x7
+241:
+	ldr x4, [x17, #0]
+	and x4, x4, x15
+	ldr x3, [x16, #0]
+	adcs x3, x3, x4
+	str x3, [x16, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 241b
+	ldr x3, [x16, #0]
+	adc x3, x3, x7
+	str x3, [x16, #0]
+	b 240f
+239:
+240:
+	lsl x13, x12, #3
+	add x13, x8, x13
+	ldr x3, [x13, #0]
+	lsr x3, x3, #63
+	cbz x3, 242f
+	lsl x13, x12, #3
+	add x13, x8, x13
+	ldr x3, [x13, #0]
+	lsr x3, x3, #63
+	sub x15, x7, x3
+	add x16, x8, #0
+	add x17, x9, #0
+	add x14, x12, #0
+	adds x3, x7, x7
+244:
+	ldr x4, [x17, #0]
+	and x4, x4, x15
+	ldr x3, [x16, #0]
+	adcs x3, x3, x4
+	str x3, [x16, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 244b
+	ldr x3, [x16, #0]
+	adc x3, x3, x7
+	str x3, [x16, #0]
+	b 243f
+242:
+243:
+	add x16, x8, #0
+	add x17, x11, #0
+	add x14, x12, #0
+245:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 245b
+	ldr x13, [x0, #208]
+	sub x13, x13, #1
+	str x13, [x0, #208]
+	cbnz x13, 235b
+	b 231f
+230:
+	ldr x12, [x0, #48]
 	ldr x8, [x0, #64]
 	sub x4, x12, #1
 	lsl x4, x4, #3
@@ -390,27 +616,27 @@ vg_ffdh_generate_key_precompute:
 	movz x9, #1, lsl #0
 	movz x13, #64, lsl #0
 	sub x6, x3, #1
-	cbz x6, 230f
-232:
+	cbz x6, 246f
+248:
 	lsr x3, x3, #1
 	add x9, x9, x9
 	sub x13, x13, #1
 	sub x6, x3, #1
-	cbnz x6, 232b
-	b 231f
-230:
-231:
+	cbnz x6, 248b
+	b 247f
+246:
+247:
 	str x13, [x0, #208]
 	sub x13, x12, #1
 	ldr x8, [x0, #96]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-233:
+249:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 233b
+	cbnz x14, 249b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -418,7 +644,7 @@ vg_ffdh_generate_key_precompute:
 	ldr x12, [x0, #48]
 	add x13, x13, x12
 	str x13, [x0, #208]
-234:
+250:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -429,14 +655,14 @@ vg_ffdh_generate_key_precompute:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-235:
+251:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 235b
+	cbnz x14, 251b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -444,7 +670,7 @@ vg_ffdh_generate_key_precompute:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-236:
+252:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -453,12 +679,12 @@ vg_ffdh_generate_key_precompute:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 236b
+	cbnz x14, 252b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-237:
+253:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -467,44 +693,45 @@ vg_ffdh_generate_key_precompute:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 237b
+	cbnz x14, 253b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 234b
+	cbnz x13, 250b
 	movz x13, #6, lsl #0
 	str x13, [x0, #208]
-238:
+254:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_4_4}
 	umov x30, v31.d[0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 238b
+	cbnz x13, 254b
+231:
 216:
 	ldr x17, [x0, #128]
 	add x17, x17, #24
 	ldr x16, [x0, #64]
 	ldr x12, [x0, #48]
 	add x14, x12, #0
-239:
+255:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 239b
+	cbnz x14, 255b
 	ldr x16, [x0, #96]
 	ldr x12, [x0, #48]
 	add x14, x12, #0
-240:
+256:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 240b
+	cbnz x14, 256b
 	ldr x12, [x0, #48]
 	movz x9, #1, lsl #0
 	movz x13, #0, lsl #0
@@ -512,11 +739,11 @@ vg_ffdh_generate_key_precompute:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-241:
+257:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 241b
+	cbnz x14, 257b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -524,7 +751,7 @@ vg_ffdh_generate_key_precompute:
 	lsr x3, x12, #4
 	movz x4, #7, lsl #0
 	and x4, x12, x4
-	cbnz x3, 242f
+	cbnz x3, 258f
 	ldr x8, [x0, #80]
 	ldr x9, [x0, #120]
 	ldr x10, [x0, #64]
@@ -536,20 +763,20 @@ vg_ffdh_generate_key_precompute:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-244:
+260:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 244b
+	cbnz x14, 260b
 	add x13, x12, #0
-245:
+261:
 	ldr x1, [x11, #0]
 	add x11, x11, #8
 	add x16, x8, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-246:
+262:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -561,7 +788,7 @@ vg_ffdh_generate_key_precompute:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 246b
+	cbnz x14, 262b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -580,7 +807,7 @@ vg_ffdh_generate_key_precompute:
 	add x17, x10, #8
 	sub x14, x12, #1
 	adds x3, x7, x7
-247:
+263:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -592,7 +819,7 @@ vg_ffdh_generate_key_precompute:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 247b
+	cbnz x14, 263b
 	adc x2, x2, x7
 	ldr x3, [x16, #8]
 	adds x3, x3, x2
@@ -602,13 +829,13 @@ vg_ffdh_generate_key_precompute:
 	str x3, [x16, #8]
 	str x7, [x16, #16]
 	sub x13, x13, #1
-	cbnz x13, 245b
+	cbnz x13, 261b
 	add x16, x8, #0
 	add x17, x10, #0
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-248:
+264:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -617,12 +844,12 @@ vg_ffdh_generate_key_precompute:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 248b
+	cbnz x14, 264b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-249:
+265:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -631,10 +858,10 @@ vg_ffdh_generate_key_precompute:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 249b
-	b 243f
-242:
-	cbz x4, 250f
+	cbnz x14, 265b
+	b 259f
+258:
+	cbz x4, 266f
 	ldr x8, [x0, #80]
 	ldr x9, [x0, #120]
 	ldr x10, [x0, #64]
@@ -646,20 +873,20 @@ vg_ffdh_generate_key_precompute:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-252:
+268:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 252b
+	cbnz x14, 268b
 	add x13, x12, #0
-253:
+269:
 	ldr x1, [x11, #0]
 	add x11, x11, #8
 	add x16, x8, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-254:
+270:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -671,7 +898,7 @@ vg_ffdh_generate_key_precompute:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 254b
+	cbnz x14, 270b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -690,7 +917,7 @@ vg_ffdh_generate_key_precompute:
 	add x17, x10, #8
 	sub x14, x12, #1
 	adds x3, x7, x7
-255:
+271:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -702,7 +929,7 @@ vg_ffdh_generate_key_precompute:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 255b
+	cbnz x14, 271b
 	adc x2, x2, x7
 	ldr x3, [x16, #8]
 	adds x3, x3, x2
@@ -712,13 +939,13 @@ vg_ffdh_generate_key_precompute:
 	str x3, [x16, #8]
 	str x7, [x16, #16]
 	sub x13, x13, #1
-	cbnz x13, 253b
+	cbnz x13, 269b
 	add x16, x8, #0
 	add x17, x10, #0
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-256:
+272:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -727,12 +954,12 @@ vg_ffdh_generate_key_precompute:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 256b
+	cbnz x14, 272b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-257:
+273:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -741,9 +968,9 @@ vg_ffdh_generate_key_precompute:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 257b
-	b 251f
-250:
+	cbnz x14, 273b
+	b 267f
+266:
 	ldr x8, [x0, #80]
 	add x8, x8, #16
 	ldr x9, [x0, #96]
@@ -754,7 +981,7 @@ vg_ffdh_generate_key_precompute:
 	add x16, x8, #0
 	add x14, x12, x12
 	lsr x14, x14, #3
-258:
+274:
 	str x7, [x16, #0]
 	str x7, [x16, #8]
 	str x7, [x16, #16]
@@ -765,7 +992,7 @@ vg_ffdh_generate_key_precompute:
 	str x7, [x16, #56]
 	add x16, x16, #64
 	sub x14, x14, #1
-	cbnz x14, 258b
+	cbnz x14, 274b
 	str x7, [x16, #0]
 	str x7, [x16, #8]
 	mov v16.d[0], x19
@@ -781,7 +1008,7 @@ vg_ffdh_generate_key_precompute:
 	mov v26.d[0], x30
 	ldr x8, [x0, #96]
 	lsr x12, x12, #3
-259:
+275:
 	ldr x17, [x0, #96]
 	sub x16, x8, x17
 	ldr x13, [x0, #80]
@@ -791,7 +1018,7 @@ vg_ffdh_generate_key_precompute:
 	ldr x15, [x0, #48]
 	lsr x15, x15, #3
 	movz x10, #0, lsl #0
-260:
+276:
 	ldr x19, [x16, #0]
 	ldr x20, [x16, #8]
 	ldr x21, [x16, #16]
@@ -1149,10 +1376,10 @@ vg_ffdh_generate_key_precompute:
 	str x26, [x16, #56]
 	add x17, x17, #64
 	sub x15, x15, #1
-	cbnz x15, 260b
+	cbnz x15, 276b
 	add x8, x8, #64
 	sub x12, x12, #1
-	cbnz x12, 259b
+	cbnz x12, 275b
 	umov x19, v16.d[0]
 	umov x20, v17.d[0]
 	umov x21, v18.d[0]
@@ -1185,7 +1412,7 @@ vg_ffdh_generate_key_precompute:
 	str x30, [x16, #80]
 	lsr x12, x12, #3
 	movz x10, #0, lsl #0
-261:
+277:
 	ldr x19, [x8, #0]
 	ldr x20, [x8, #8]
 	ldr x21, [x8, #16]
@@ -1504,7 +1731,7 @@ vg_ffdh_generate_key_precompute:
 	ldr x15, [x0, #48]
 	lsr x15, x15, #3
 	sub x15, x15, #1
-262:
+278:
 	ldr x13, [x16, #0]
 	adds x19, x19, x13
 	ldr x13, [x16, #8]
@@ -1842,7 +2069,7 @@ vg_ffdh_generate_key_precompute:
 	adcs x26, x1, x30
 	add x17, x17, #64
 	sub x15, x15, #1
-	cbnz x15, 262b
+	cbnz x15, 278b
 	movz x1, #1, lsl #0
 	subs x1, x10, x1
 	ldr x13, [x16, #0]
@@ -1872,7 +2099,7 @@ vg_ffdh_generate_key_precompute:
 	str x26, [x16, #56]
 	add x8, x8, #64
 	sub x12, x12, #1
-	cbnz x12, 261b
+	cbnz x12, 277b
 	ldr x12, [x0, #48]
 	lsl x16, x12, #3
 	add x16, x8, x16
@@ -1898,7 +2125,7 @@ vg_ffdh_generate_key_precompute:
 	add x13, x6, #0
 	lsr x14, x12, #2
 	subs x3, x7, x7
-263:
+279:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -1919,12 +2146,12 @@ vg_ffdh_generate_key_precompute:
 	add x17, x17, #32
 	add x13, x13, #32
 	sub x14, x14, #1
-	cbnz x14, 263b
+	cbnz x14, 279b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	lsr x14, x12, #2
-264:
+280:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -1945,9 +2172,9 @@ vg_ffdh_generate_key_precompute:
 	add x6, x6, #32
 	add x5, x5, #32
 	sub x14, x14, #1
-	cbnz x14, 264b
-251:
-243:
+	cbnz x14, 280b
+267:
+259:
 	movz x3, #0, lsl #0
 	ldr x17, [x0, #128]
 	ldr x12, [x0, #48]
@@ -1958,13 +2185,13 @@ vg_ffdh_generate_key_precompute:
 	add x17, x17, #24
 	ldr x16, [x0, #112]
 	add x14, x12, #0
-265:
+281:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 265b
+	cbnz x14, 281b
 	ldr x1, [x0, #136]
 	ldr x2, [x0, #144]
 	add x1, x1, x2
@@ -1972,26 +2199,26 @@ vg_ffdh_generate_key_precompute:
 	ldr x12, [x0, #48]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-266:
+282:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 267f
-	b 268f
-267:
+	cbz x5, 283f
+	b 284f
+283:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-268:
-	cbnz x2, 266b
+284:
+	cbnz x2, 282b
 	ldr x12, [x0, #48]
 	lsr x3, x12, #4
 	movz x4, #7, lsl #0
 	and x4, x12, x4
-	cbnz x3, 269f
+	cbnz x3, 285f
 	ldr x8, [x0, #80]
 	ldr x9, [x0, #96]
 	ldr x10, [x0, #64]
@@ -2003,20 +2230,20 @@ vg_ffdh_generate_key_precompute:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-271:
+287:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 271b
+	cbnz x14, 287b
 	add x13, x12, #0
-272:
+288:
 	ldr x1, [x11, #0]
 	add x11, x11, #8
 	add x16, x8, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-273:
+289:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -2028,7 +2255,7 @@ vg_ffdh_generate_key_precompute:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 273b
+	cbnz x14, 289b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -2047,7 +2274,7 @@ vg_ffdh_generate_key_precompute:
 	add x17, x10, #8
 	sub x14, x12, #1
 	adds x3, x7, x7
-274:
+290:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -2059,7 +2286,7 @@ vg_ffdh_generate_key_precompute:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 274b
+	cbnz x14, 290b
 	adc x2, x2, x7
 	ldr x3, [x16, #8]
 	adds x3, x3, x2
@@ -2069,13 +2296,13 @@ vg_ffdh_generate_key_precompute:
 	str x3, [x16, #8]
 	str x7, [x16, #16]
 	sub x13, x13, #1
-	cbnz x13, 272b
+	cbnz x13, 288b
 	add x16, x8, #0
 	add x17, x10, #0
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-275:
+291:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -2084,12 +2311,12 @@ vg_ffdh_generate_key_precompute:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 275b
+	cbnz x14, 291b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-276:
+292:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -2098,10 +2325,10 @@ vg_ffdh_generate_key_precompute:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 276b
-	b 270f
-269:
-	cbz x4, 277f
+	cbnz x14, 292b
+	b 286f
+285:
+	cbz x4, 293f
 	ldr x8, [x0, #80]
 	ldr x9, [x0, #96]
 	ldr x10, [x0, #64]
@@ -2113,20 +2340,20 @@ vg_ffdh_generate_key_precompute:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-279:
+295:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 279b
+	cbnz x14, 295b
 	add x13, x12, #0
-280:
+296:
 	ldr x1, [x11, #0]
 	add x11, x11, #8
 	add x16, x8, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-281:
+297:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -2138,7 +2365,7 @@ vg_ffdh_generate_key_precompute:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 281b
+	cbnz x14, 297b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -2157,7 +2384,7 @@ vg_ffdh_generate_key_precompute:
 	add x17, x10, #8
 	sub x14, x12, #1
 	adds x3, x7, x7
-282:
+298:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -2169,7 +2396,7 @@ vg_ffdh_generate_key_precompute:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 282b
+	cbnz x14, 298b
 	adc x2, x2, x7
 	ldr x3, [x16, #8]
 	adds x3, x3, x2
@@ -2179,13 +2406,13 @@ vg_ffdh_generate_key_precompute:
 	str x3, [x16, #8]
 	str x7, [x16, #16]
 	sub x13, x13, #1
-	cbnz x13, 280b
+	cbnz x13, 296b
 	add x16, x8, #0
 	add x17, x10, #0
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-283:
+299:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -2194,12 +2421,12 @@ vg_ffdh_generate_key_precompute:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 283b
+	cbnz x14, 299b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-284:
+2100:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -2208,9 +2435,9 @@ vg_ffdh_generate_key_precompute:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 284b
-	b 278f
-277:
+	cbnz x14, 2100b
+	b 294f
+293:
 	ldr x8, [x0, #80]
 	add x8, x8, #16
 	ldr x9, [x0, #72]
@@ -2221,7 +2448,7 @@ vg_ffdh_generate_key_precompute:
 	add x16, x8, #0
 	add x14, x12, x12
 	lsr x14, x14, #3
-285:
+2101:
 	str x7, [x16, #0]
 	str x7, [x16, #8]
 	str x7, [x16, #16]
@@ -2232,7 +2459,7 @@ vg_ffdh_generate_key_precompute:
 	str x7, [x16, #56]
 	add x16, x16, #64
 	sub x14, x14, #1
-	cbnz x14, 285b
+	cbnz x14, 2101b
 	str x7, [x16, #0]
 	str x7, [x16, #8]
 	mov v16.d[0], x19
@@ -2248,7 +2475,7 @@ vg_ffdh_generate_key_precompute:
 	mov v26.d[0], x30
 	ldr x8, [x0, #72]
 	lsr x12, x12, #3
-286:
+2102:
 	ldr x17, [x0, #72]
 	sub x16, x8, x17
 	ldr x13, [x0, #80]
@@ -2258,7 +2485,7 @@ vg_ffdh_generate_key_precompute:
 	ldr x15, [x0, #48]
 	lsr x15, x15, #3
 	movz x10, #0, lsl #0
-287:
+2103:
 	ldr x19, [x16, #0]
 	ldr x20, [x16, #8]
 	ldr x21, [x16, #16]
@@ -2616,10 +2843,10 @@ vg_ffdh_generate_key_precompute:
 	str x26, [x16, #56]
 	add x17, x17, #64
 	sub x15, x15, #1
-	cbnz x15, 287b
+	cbnz x15, 2103b
 	add x8, x8, #64
 	sub x12, x12, #1
-	cbnz x12, 286b
+	cbnz x12, 2102b
 	umov x19, v16.d[0]
 	umov x20, v17.d[0]
 	umov x21, v18.d[0]
@@ -2652,7 +2879,7 @@ vg_ffdh_generate_key_precompute:
 	str x30, [x16, #80]
 	lsr x12, x12, #3
 	movz x10, #0, lsl #0
-288:
+2104:
 	ldr x19, [x8, #0]
 	ldr x20, [x8, #8]
 	ldr x21, [x8, #16]
@@ -2971,7 +3198,7 @@ vg_ffdh_generate_key_precompute:
 	ldr x15, [x0, #48]
 	lsr x15, x15, #3
 	sub x15, x15, #1
-289:
+2105:
 	ldr x13, [x16, #0]
 	adds x19, x19, x13
 	ldr x13, [x16, #8]
@@ -3309,7 +3536,7 @@ vg_ffdh_generate_key_precompute:
 	adcs x26, x1, x30
 	add x17, x17, #64
 	sub x15, x15, #1
-	cbnz x15, 289b
+	cbnz x15, 2105b
 	movz x1, #1, lsl #0
 	subs x1, x10, x1
 	ldr x13, [x16, #0]
@@ -3339,7 +3566,7 @@ vg_ffdh_generate_key_precompute:
 	str x26, [x16, #56]
 	add x8, x8, #64
 	sub x12, x12, #1
-	cbnz x12, 288b
+	cbnz x12, 2104b
 	ldr x12, [x0, #48]
 	lsl x16, x12, #3
 	add x16, x8, x16
@@ -3365,7 +3592,7 @@ vg_ffdh_generate_key_precompute:
 	add x13, x6, #0
 	lsr x14, x12, #2
 	subs x3, x7, x7
-290:
+2106:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -3386,12 +3613,12 @@ vg_ffdh_generate_key_precompute:
 	add x17, x17, #32
 	add x13, x13, #32
 	sub x14, x14, #1
-	cbnz x14, 290b
+	cbnz x14, 2106b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	lsr x14, x12, #2
-291:
+2107:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -3412,9 +3639,9 @@ vg_ffdh_generate_key_precompute:
 	add x6, x6, #32
 	add x5, x5, #32
 	sub x14, x14, #1
-	cbnz x14, 291b
-278:
-270:
+	cbnz x14, 2107b
+294:
+286:
 	movz x3, #1, lsl #0
 	ldr x17, [x0, #128]
 	ldr x12, [x0, #48]
@@ -3425,48 +3652,48 @@ vg_ffdh_generate_key_precompute:
 	add x17, x17, #24
 	ldr x16, [x0, #104]
 	add x14, x12, #0
-292:
+2108:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 292b
+	cbnz x14, 2108b
 	movz x3, #2, lsl #0
 	str x3, [x0, #216]
-293:
+2109:
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #104]
 	ldr x17, [x0, #112]
 	add x14, x12, #0
-294:
+2110:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 294b
+	cbnz x14, 2110b
 	ldr x3, [x0, #176]
 	str x3, [x0, #208]
-295:
+2111:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_6_6}
 	umov x30, v31.d[0]
 	ldr x3, [x0, #208]
 	sub x3, x3, #1
 	str x3, [x0, #208]
-	cbnz x3, 295b
+	cbnz x3, 2111b
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #112]
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-296:
+2112:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 296b
+	cbnz x14, 2112b
 	ldr x3, [x0, #216]
 	ldr x17, [x0, #128]
 	ldr x12, [x0, #48]
@@ -3477,16 +3704,16 @@ vg_ffdh_generate_key_precompute:
 	add x17, x17, #24
 	ldr x16, [x0, #104]
 	add x14, x12, #0
-297:
+2113:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 297b
+	cbnz x14, 2113b
 	movz x3, #1, lsl #0
 	str x3, [x0, #232]
-298:
+2114:
 	ldr x3, [x0, #232]
 	ldr x17, [x0, #128]
 	ldr x12, [x0, #48]
@@ -3498,18 +3725,18 @@ vg_ffdh_generate_key_precompute:
 	add x16, x17, #0
 	ldr x17, [x0, #72]
 	add x14, x12, #0
-299:
+2115:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 299b
+	cbnz x14, 2115b
 	ldr x12, [x0, #48]
 	lsr x3, x12, #4
 	movz x4, #7, lsl #0
 	and x4, x12, x4
-	cbnz x3, 2100f
+	cbnz x3, 2116f
 	ldr x8, [x0, #80]
 	ldr x9, [x0, #72]
 	ldr x10, [x0, #64]
@@ -3521,20 +3748,20 @@ vg_ffdh_generate_key_precompute:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2102:
+2118:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2102b
+	cbnz x14, 2118b
 	add x13, x12, #0
-2103:
+2119:
 	ldr x1, [x11, #0]
 	add x11, x11, #8
 	add x16, x8, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-2104:
+2120:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -3546,7 +3773,7 @@ vg_ffdh_generate_key_precompute:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2104b
+	cbnz x14, 2120b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -3565,7 +3792,7 @@ vg_ffdh_generate_key_precompute:
 	add x17, x10, #8
 	sub x14, x12, #1
 	adds x3, x7, x7
-2105:
+2121:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -3577,7 +3804,7 @@ vg_ffdh_generate_key_precompute:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2105b
+	cbnz x14, 2121b
 	adc x2, x2, x7
 	ldr x3, [x16, #8]
 	adds x3, x3, x2
@@ -3587,13 +3814,13 @@ vg_ffdh_generate_key_precompute:
 	str x3, [x16, #8]
 	str x7, [x16, #16]
 	sub x13, x13, #1
-	cbnz x13, 2103b
+	cbnz x13, 2119b
 	add x16, x8, #0
 	add x17, x10, #0
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2106:
+2122:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -3602,12 +3829,12 @@ vg_ffdh_generate_key_precompute:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2106b
+	cbnz x14, 2122b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2107:
+2123:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -3616,10 +3843,10 @@ vg_ffdh_generate_key_precompute:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2107b
-	b 2101f
-2100:
-	cbz x4, 2108f
+	cbnz x14, 2123b
+	b 2117f
+2116:
+	cbz x4, 2124f
 	ldr x8, [x0, #80]
 	ldr x9, [x0, #72]
 	ldr x10, [x0, #64]
@@ -3631,20 +3858,20 @@ vg_ffdh_generate_key_precompute:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2110:
+2126:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2110b
+	cbnz x14, 2126b
 	add x13, x12, #0
-2111:
+2127:
 	ldr x1, [x11, #0]
 	add x11, x11, #8
 	add x16, x8, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-2112:
+2128:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -3656,7 +3883,7 @@ vg_ffdh_generate_key_precompute:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2112b
+	cbnz x14, 2128b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -3675,7 +3902,7 @@ vg_ffdh_generate_key_precompute:
 	add x17, x10, #8
 	sub x14, x12, #1
 	adds x3, x7, x7
-2113:
+2129:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -3687,7 +3914,7 @@ vg_ffdh_generate_key_precompute:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2113b
+	cbnz x14, 2129b
 	adc x2, x2, x7
 	ldr x3, [x16, #8]
 	adds x3, x3, x2
@@ -3697,13 +3924,13 @@ vg_ffdh_generate_key_precompute:
 	str x3, [x16, #8]
 	str x7, [x16, #16]
 	sub x13, x13, #1
-	cbnz x13, 2111b
+	cbnz x13, 2127b
 	add x16, x8, #0
 	add x17, x10, #0
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2114:
+2130:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -3712,12 +3939,12 @@ vg_ffdh_generate_key_precompute:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2114b
+	cbnz x14, 2130b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2115:
+2131:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -3726,9 +3953,9 @@ vg_ffdh_generate_key_precompute:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2115b
-	b 2109f
-2108:
+	cbnz x14, 2131b
+	b 2125f
+2124:
 	ldr x8, [x0, #80]
 	add x8, x8, #16
 	ldr x9, [x0, #104]
@@ -3739,7 +3966,7 @@ vg_ffdh_generate_key_precompute:
 	add x16, x8, #0
 	add x14, x12, x12
 	lsr x14, x14, #3
-2116:
+2132:
 	str x7, [x16, #0]
 	str x7, [x16, #8]
 	str x7, [x16, #16]
@@ -3750,7 +3977,7 @@ vg_ffdh_generate_key_precompute:
 	str x7, [x16, #56]
 	add x16, x16, #64
 	sub x14, x14, #1
-	cbnz x14, 2116b
+	cbnz x14, 2132b
 	str x7, [x16, #0]
 	str x7, [x16, #8]
 	mov v16.d[0], x19
@@ -3766,7 +3993,7 @@ vg_ffdh_generate_key_precompute:
 	mov v26.d[0], x30
 	ldr x8, [x0, #104]
 	lsr x12, x12, #3
-2117:
+2133:
 	ldr x17, [x0, #104]
 	sub x16, x8, x17
 	ldr x13, [x0, #80]
@@ -3776,7 +4003,7 @@ vg_ffdh_generate_key_precompute:
 	ldr x15, [x0, #48]
 	lsr x15, x15, #3
 	movz x10, #0, lsl #0
-2118:
+2134:
 	ldr x19, [x16, #0]
 	ldr x20, [x16, #8]
 	ldr x21, [x16, #16]
@@ -4134,10 +4361,10 @@ vg_ffdh_generate_key_precompute:
 	str x26, [x16, #56]
 	add x17, x17, #64
 	sub x15, x15, #1
-	cbnz x15, 2118b
+	cbnz x15, 2134b
 	add x8, x8, #64
 	sub x12, x12, #1
-	cbnz x12, 2117b
+	cbnz x12, 2133b
 	umov x19, v16.d[0]
 	umov x20, v17.d[0]
 	umov x21, v18.d[0]
@@ -4170,7 +4397,7 @@ vg_ffdh_generate_key_precompute:
 	str x30, [x16, #80]
 	lsr x12, x12, #3
 	movz x10, #0, lsl #0
-2119:
+2135:
 	ldr x19, [x8, #0]
 	ldr x20, [x8, #8]
 	ldr x21, [x8, #16]
@@ -4489,7 +4716,7 @@ vg_ffdh_generate_key_precompute:
 	ldr x15, [x0, #48]
 	lsr x15, x15, #3
 	sub x15, x15, #1
-2120:
+2136:
 	ldr x13, [x16, #0]
 	adds x19, x19, x13
 	ldr x13, [x16, #8]
@@ -4827,7 +5054,7 @@ vg_ffdh_generate_key_precompute:
 	adcs x26, x1, x30
 	add x17, x17, #64
 	sub x15, x15, #1
-	cbnz x15, 2120b
+	cbnz x15, 2136b
 	movz x1, #1, lsl #0
 	subs x1, x10, x1
 	ldr x13, [x16, #0]
@@ -4857,7 +5084,7 @@ vg_ffdh_generate_key_precompute:
 	str x26, [x16, #56]
 	add x8, x8, #64
 	sub x12, x12, #1
-	cbnz x12, 2119b
+	cbnz x12, 2135b
 	ldr x12, [x0, #48]
 	lsl x16, x12, #3
 	add x16, x8, x16
@@ -4883,7 +5110,7 @@ vg_ffdh_generate_key_precompute:
 	add x13, x6, #0
 	lsr x14, x12, #2
 	subs x3, x7, x7
-2121:
+2137:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -4904,12 +5131,12 @@ vg_ffdh_generate_key_precompute:
 	add x17, x17, #32
 	add x13, x13, #32
 	sub x14, x14, #1
-	cbnz x14, 2121b
+	cbnz x14, 2137b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	lsr x14, x12, #2
-2122:
+2138:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -4930,9 +5157,9 @@ vg_ffdh_generate_key_precompute:
 	add x6, x6, #32
 	add x5, x5, #32
 	sub x14, x14, #1
-	cbnz x14, 2122b
-2109:
-2101:
+	cbnz x14, 2138b
+2125:
+2117:
 	ldr x3, [x0, #232]
 	ldr x4, [x0, #216]
 	add x3, x3, x4
@@ -4945,24 +5172,24 @@ vg_ffdh_generate_key_precompute:
 	add x17, x17, #24
 	ldr x16, [x0, #112]
 	add x14, x12, #0
-2123:
+2139:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2123b
+	cbnz x14, 2139b
 	ldr x3, [x0, #232]
 	add x3, x3, #1
 	str x3, [x0, #232]
 	ldr x4, [x0, #216]
 	sub x3, x3, x4
-	cbnz x3, 298b
+	cbnz x3, 2114b
 	ldr x3, [x0, #216]
 	lsl x3, x3, #1
 	str x3, [x0, #216]
 	sub x3, x3, #32
-	cbnz x3, 293b
+	cbnz x3, 2109b
 	movz x0, #1, lsl #0
 	ret
 	.p2align 6

@@ -32,7 +32,7 @@ def SetupPre (B : Addr) (Z W : Nat) (s : State) : Prop :=
   Ws s B Z W ∧ WP isa (.block recipSetup) s (RecipPre B Z W)
 
 theorem stages_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
-    (hZ : slot W 17 ≤ Z) (hW : 4 ≤ W)
+    (hZ : slot W 17 ≤ Z) (hW : 6 ≤ W)
     (hd : 2 ^ 63 ≤ (word s.mem B (slot W aM + 8 * (W / 2 - 1))).toNat) :
     WP isa (VG.Impl.Rsa.X86_64.Keys.zeroA aR) s (SetupPre B Z W) := by
   have hMpos := modulus_pos (n := W / 2) (by omega_using [hW]) hd
@@ -109,7 +109,7 @@ theorem stages_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
   · rw [zlo, eqM]; exact hMpos
 
 /-- Public workspace, with a normalized secret divisor. -/
-def Pre (p : Pub) (s : State) : Prop := Ws s p.B p.Z p.W ∧ slot p.W 17 ≤ p.Z ∧ 4 ≤ p.W ∧
+def Pre (p : Pub) (s : State) : Prop := Ws s p.B p.Z p.W ∧ slot p.W 17 ≤ p.Z ∧ 6 ≤ p.W ∧
   2 ^ 63 ≤ (word s.mem p.B (slot p.W aM + 8 * (p.W / 2 - 1))).toNat
 
 /-- Initialization pins each workspace reload before the next arithmetic piece. -/
@@ -137,7 +137,7 @@ theorem code_ct : RelCT isa (Two Pre) code fun _ _ => True := by
   · unfold countSetup
     rw [List.append_assoc]
     exact ws_block_ct Pub.B Pub.Z Pub.W (fun _ _ h => h.1) (by taint_decide) (fun _ _ h => h.2)
-  exact (two_map (fun p : Pub => p) (fun p s h => ⟨by have hw : 4 ≤ p.W := h.w; omega_using [hw], h⟩) loop_ct).mono
+  exact (two_map (fun p : Pub => p) (fun p s h => ⟨by have hw : 6 ≤ p.W := h.w; omega_using [hw], h⟩) loop_ct).mono
     (fun _ _ h => h) (fun _ _ _ => trivial)
 
 end VG.Proof.Rsa.X86_64.WordDivide
