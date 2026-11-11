@@ -213,8 +213,8 @@ theorem main_eq : main = seqs (([.block VG.Impl.Rsa.X86_64.head, loadBE,
     .block [.mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)], setWord aOne .rcx, .block maskInit] : List (Prog isa)) ++
     ((loadNum aX sD sDlen ++ ltMask aX aN) ++
     ((loadNum aX sP sPlen ++ loadNum aR sQ sQlen ++ mulXR ++ VG.Impl.Rsa.X86_64.Crt.eqCheck) ++
-    [.seq (.block guard) (.ite .e (seqs wordChecks) (seqs bitChecks)),
-      .block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)]))) := by
+    ([.seq (.block guard) (.ite .e (seqs wordChecks) (seqs bitChecks)),
+      .block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)] : List (Prog isa))))) := by
   simp only [main, List.append_assoc]
 
 /-- The checks after `p q = n`, with bit-serial remainders: `keyValid`

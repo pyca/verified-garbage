@@ -168,6 +168,6 @@ theorem keyCode_constantTime : ConstantTime isa keyContract.pre keyContract.pub 
     exact ⟨h₂, r .rsp (by decide), a10.symm, congrArg (·.toNat * 8) a11.symm, congrArg BitVec.toNat (r .rsi (by decide)),
       r .rdi (by decide), r .rdx (by decide), r .rcx (by decide), r .r8 (by decide),
       congrArg BitVec.toNat (r .r9 (by decide)), a0.symm, congrArg BitVec.toNat a1.symm, a2.symm,
-      congrArg BitVec.toNat a3.symm, a4.symm, a6.symm, a8.symm, hn.symm, he.symm, rfl, rfl, r .rdi (by decide), hn⟩
+      congrArg BitVec.toNat a3.symm, a4.symm, a6.symm, a8.symm, hn.symm, he.symm, rfl, rfl, rfl, rfl⟩
 
 end VG.Proof.Rsa.X86_64.Key
