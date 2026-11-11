@@ -145,11 +145,11 @@ theorem zero_sub_and_one (w : BitVec 32) : (0 : BitVec 32) - (w &&& 1) = cmask (
   rw [e]
   rcases Nat.mod_two_eq_zero_or_one w.toNat with h | h <;> rw [h] <;> rfl
 
-theorem prepBase_ok (h : In Ex base bytes len args s) (c : Ctx) :
-    WP isa (prepBase c) s fun u =>
+/-- `prepBasePre`: the modulus made safe, one in slot 3 and the inverse. -/
+theorem prepBasePre_ok (h : In Ex base bytes len args s) (c : Ctx) :
+    WP isa (prepBasePre c) s fun u => In Ex base bytes len args u ∧
       Frame (frameR base (s.gpr .esp) (baseR len c)) s.mem u.mem ∧
       sv u.mem base len c 0 = safeM (sv s.mem base len c 0) ∧ sv u.mem base len c 3 = 1 ∧
-      sv u.mem base len c 4 = 2 ^ twoExp len c % safeM (sv s.mem base len c 0) ∧
       (safeM (sv s.mem base len c 0) * w32 u.mem base invOff + 1) % 2 ^ 32 = 0 ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
   have nw' := h.scratch.nowrap
@@ -173,7 +173,7 @@ theorem prepBase_ok (h : In Ex base bytes len args s) (c : Ctx) :
     simp only [baseR, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> (try simp only [invOff]) <;> omega_arith
   let M₀ := sv s.mem base len c 0
-  unfold prepBase
+  unfold prepBasePre
   -- One in slot 3, three in slot 7.
   refine WP.seq (WP.mono (setSmall_ok (x := .slot c 3) h (one_ok c) (by rw [cb1]; omega_arith) (v := 1) (by decide))
     fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
@@ -237,15 +237,51 @@ theorem prepBase_ok (h : In Ex base bytes len args s) (c : Ctx) :
   -- The inverse.
   have odd₇ : w32 u₇.mem base numBase % 2 = 1 := by
     rw [← VG.Proof.Mont.X86.Dynamic.val32_parity u₇.mem base numBase k, ← ek, safe₇]; exact safeM_odd _
-  refine WP.seq (WP.mono (VG.Proof.Mont.X86.Dynamic.setupInverse_ok h₇.scratch (mo := numBase) (inv := invOff) (by omega_arith)
-    (by simp only [invOff]; omega_arith) odd₇) fun u₈ ⟨I₈, O₈, K₈⟩ => ?_)
+  refine WP.mono (VG.Proof.Mont.X86.Dynamic.setupInverse_ok h₇.scratch (mo := numBase) (inv := invOff) (by omega_arith)
+    (by simp only [invOff]; omega_arith) odd₇) fun u₈ ⟨I₈, O₈, K₈⟩ => ?_
   have h₈ := h₇.keep K₈ (by decide) (by decide) (O₈.mono (Nat.zero_le _) (by simp only [invOff]; omega_arith))
   have M₈ : val32 u₈.mem base numBase (cwc len c) = safeM M₀ := by
     rw [O₈.val32 (by simp only [invOff]; omega_arith) (by omega_arith), safe₇]
+  refine ⟨h₈, ?_, by simp only [sv, z0]; rw [M₈]; simp only [M₀, sv, z0], ?_, ?_, K₆.trans ((K₇.mono (by decide)).trans (K₈.mono (by decide)))⟩
+  · have F₁ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₁ (by omega_arith) (by simp)
+    have F₂ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₂ (by omega_arith) (by simp)
+    have F₇ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₇ (by omega_arith) (by simp)
+    have F₈ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₈ (by simp only [invOff]; omega_arith) (by simp)
+    rw [mem₆] at F₇
+    exact ((F₁.trans F₂).trans F₇).trans F₈
+  · simp only [sv]
+    rw [O₈.val32 (by simp only [invOff]; omega_arith) (by omega_arith), O₇.val32 (by omega_arith) (by omega_arith), mem₆,
+      one₂]
+  · rw [← safe₇, ek, val32, Nat.add_mul, Nat.mul_assoc, Nat.add_right_comm, Nat.add_mul_mod_self_left]
+    exact I₈
+
+theorem prepBase_ok (h : In Ex base bytes len args s) (c : Ctx) :
+    WP isa (prepBase c) s fun u =>
+      Frame (frameR base (s.gpr .esp) (baseR len c)) s.mem u.mem ∧
+      sv u.mem base len c 0 = safeM (sv s.mem base len c 0) ∧ sv u.mem base len c 3 = 1 ∧
+      sv u.mem base len c 4 = 2 ^ twoExp len c % safeM (sv s.mem base len c 0) ∧
+      (safeM (sv s.mem base len c 0) * w32 u.mem base invOff + 1) % 2 ^ 32 = 0 ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
+  have nw' := h.scratch.nowrap
+  have f8 := h.slot_fit c (j := 8) (by decide)
+  have bw := bc_eq_cwc len c
+  have s01 : lo len (.slot c 0) + st len c ≤ lo len (.slot c 1) := sl_le (len := len) c (by decide)
+  have s13 : lo len (.slot c 1) + st len c ≤ lo len (.slot c 3) := sl_le (len := len) c (by decide)
+  have s34 : lo len (.slot c 3) + st len c ≤ lo len (.slot c 4) := sl_le (len := len) c (by decide)
+  have z0 : lo len (.slot c 0) = numBase := sl_zero len c
+  have est : st len c = 2 * bc len c + 32 := rfl
+  have nb : numBase = 3336 := rfl
+  have g := bc_ge h.lower' c
+  have s47 : lo len (.slot c 4) + st len c ≤ lo len (.slot c 7) := sl_le (len := len) c (by decide)
+  have s78 : lo len (.slot c 7) + st len c ≤ lo len (.slot c 8) := sl_le (len := len) c (by decide)
+  have hk : ∃ k, cwc len c = k + 1 := ⟨cwc len c - 1, by omega_arith⟩
+  obtain ⟨k, ek⟩ := hk
+  unfold prepBase
+  refine WP.seq (WP.mono (prepBasePre_ok h c) fun u₈ ⟨h₈, F₈, M₈, one₈, I₈, K₈⟩ => ?_)
+  simp only [sv, z0] at M₈
   -- `R² mod M`.
   refine WP.mono (powerTwo_ok h₈ c (by simp only [sv, z0]; rw [M₈]; exact safeM_gt _)) fun u ⟨F₉, V₉, K₉⟩ => ?_
-  have sp₈ : u₈.gpr .esp = s.gpr .esp := by
-    rw [K₈.1 _ (by decide), K₇.1 _ (by decide), K₆.1 _ (by decide)]
+  have sp₈ : u₈.gpr .esp = s.gpr .esp := K₈.1 _ (by decide)
   rw [sp₈] at F₉
   have fitW : ∀ p ∈ powR len c, p.1 + p.2 ≤ bytes := by
     intro p hp
@@ -258,18 +294,12 @@ theorem prepBase_ok (h : In Ex base bytes len args s) (c : Ctx) :
       intro p hp
       simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl <;> dsimp only <;> omega_arith) fitW
-  refine ⟨?_, ?_, ?_, ?_, ?_, (K₆.trans ((K₇.mono (by decide)).trans (K₈.mono (by decide)))).trans K₉⟩
-  · have F₁ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₁ (by omega_arith) (by simp)
-    have F₂ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₂ (by omega_arith) (by simp)
-    have F₇ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₇ (by omega_arith) (by simp)
-    have F₈ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₈ (by simp only [invOff]; omega_arith) (by simp)
-    rw [mem₆] at F₇
-    exact (((F₁.trans F₂).trans F₇).trans F₈).trans (frameR_mono F₉ (by simp))
-  · simp only [sv, z0]; rw [keepVal _ (by omega_arith) (by omega_arith) (by omega_arith), M₈]; simp only [M₀, sv, z0]
-  · simp only [sv]
-    rw [keepVal _ (by omega_arith) (by omega_arith) (by omega_arith), O₈.val32 (by simp only [invOff]; omega_arith) (by omega_arith),
-      O₇.val32 (by omega_arith) (by omega_arith), mem₆, one₂]
-  · simp only [sv] at V₉ ⊢; rw [V₉]; simp only [z0]; rw [M₈]; simp only [M₀, sv, z0]
+  refine ⟨?_, ?_, ?_, ?_, ?_, K₈.trans K₉⟩
+  · exact F₈.trans (frameR_mono F₉ (by simp))
+  · simp only [sv, z0]; rw [keepVal _ (by omega_arith) (by omega_arith) (by omega_arith), M₈]
+  · simp only [sv] at one₈ ⊢
+    rw [keepVal _ (by omega_arith) (by omega_arith) (by omega_arith), one₈]
+  · simp only [sv] at V₉ ⊢; rw [V₉]; simp only [z0]; rw [M₈]
   · have W : w32 u.mem base invOff = w32 u₈.mem base invOff := by
       rw [← w32_val32_one, ← w32_val32_one]
       exact frameR_val32 F₉ h.room nw' (by simp only [invOff]; omega_arith) (by
@@ -277,7 +307,6 @@ theorem prepBase_ok (h : In Ex base bytes len args s) (c : Ctx) :
         simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
         rcases hp with rfl | rfl <;> dsimp only <;> simp only [invOff] <;> omega_arith) fitW
     rw [W]
-    rw [← safe₇, ek, val32, Nat.add_mul, Nat.mul_assoc, Nat.add_right_comm, Nat.add_mul_mod_self_left]
     exact I₈
 
 end
