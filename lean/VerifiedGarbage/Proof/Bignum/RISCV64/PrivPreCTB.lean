@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 After the checks, the code is cut before `Precompute.core`, where the state
 satisfies `vg_rsa_public_precompute`'s `Pre.C1` for data that the public data
-fixes (`at_C1`), after it (`pins112`), and after each block that loads
+fixes (`at_C1`), after it (`pins107`), and after each block that loads
 values of the header (`pins*`): the factors' working spaces (`partBv_ok`,
 `partBy_ok`), the blocks of `prime` that load `pre`'s cursor and the mask
 (`primeHead_ok`), and `maskN`'s first block.
@@ -30,7 +30,8 @@ open VG.Proof.Bignum (slot)
 open VG.Proof.Bignum.RISCV64.Crt (wordsOf wp_nil wp_seqL_nil)
 
 /-- The front and the checks, then `c`. -/
-abbrev NC (c : Prog isa) : Prog isa := NF (.seq Crt.loadX (.seq Crt.checks c))
+abbrev NC (c : Prog isa) : Prog isa :=
+  NF (.seq Crt.loadX (.seq (.block PrivPre.pqLens) (.seq (Crt.checksWith PrivPre.checkPQs) c)))
 
 /-- The front, the checks, `n`'s values and `R² mod n` into `X`'s array 6, then `c`. -/
 abbrev NA (c : Prog isa) : Prog isa :=
@@ -39,7 +40,7 @@ abbrev NA (c : Prog isa) : Prog isa :=
 /-- The registers `xIn` starts from. -/
 abbrev rsN : List Reg := [.t0, .s5, .s6, .s11]
 
-theorem pins112 : Pins (At C0 privF 112) rsN := by
+theorem pins107 : Pins (At C0 privF 107) rsN := by
   refine pins_at_list (fun s₀ => [BitVec.ofNat 64 (cw s₀), s₀.gpr .a0, cS s₀, BitVec.ofNat 64 (8 * (cwX s₀ + 2))])
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NC (.seq (.block PrivPre.setupN) (.seq Precompute.core (.block []))))
       (by decide +kernel)
@@ -82,7 +83,7 @@ theorem pargs_vals {s BX P Z L oA wA wX xj Pv o k b} (H : PArgs s BX P Z L oA wA
       BitVec.ofNat 64 (8 * (wX + 2)), Mont.off (Mont.off BX oA) (slot wA 0)] := by
   simp only [rsP, List.map_cons, List.map_nil, H.h7, H.h5, H.ht0, H.h6, H.h11, H.hra]
 
-theorem pins119 : Pins (At C0 privF 119) rsP := by
+theorem pins114 : Pins (At C0 privF 114) rsP := by
   refine pins_at_list (fun s₀ => valsP s₀ (slot (cwX s₀) 8) (cwP s₀))
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NA (.seq (.block (curBlock ++ setupP oBP oPLen)) (.block [])))
       (by decide +kernel)
@@ -91,7 +92,7 @@ theorem pins119 : Pins (At C0 privF 119) rsP := by
   obtain ⟨eS, -, ek, ep, -⟩ := data_vals h h'
   simp only [valsP, cwX, cw, cwP, eS, ek, ep]
 
-theorem pins158 : Pins (At C0 privF 158) rsP := by
+theorem pins153 : Pins (At C0 privF 153) rsP := by
   refine pins_at_list (fun s₀ => valsP s₀ (oAQ s₀) (cwQ s₀))
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NQ (.block [])) (by decide +kernel)
       (partA_ok h.1 fun _ hA => partN_ok (pre_facts h.1) hA fun t hN => partBy_ok (pre_facts h.1) hN fun y Y => wp_nil (pargs_vals Y.pa))))
@@ -109,7 +110,7 @@ theorem phead_vals {s BX P Z L oA wA wX xj Pv o k b} (H : PArgs s BX P Z L oA wA
   simp only [rsM, List.map_cons, List.map_nil, V.t3, V.t4, V.t5, V.keep.gpr (r := .s6) (by decide),
     V.keep.gpr (r := .s11) (by decide), H.h6, H.h11]
 
-theorem pins155 : Pins (At C0 privF 155) rsM := by
+theorem pins150 : Pins (At C0 privF 150) rsM := by
   refine pins_at_list (fun s₀ => [Mont.off (s₀.gpr .a0) (16 * cw s₀),
       Mont.off (Mont.off (cS s₀) (slot (cwX s₀) 8)) (slot (cwP s₀) 1), BitVec.ofNat 64 (cwP s₀), cS s₀,
       BitVec.ofNat 64 (8 * (cwX s₀ + 2))])
@@ -121,7 +122,7 @@ theorem pins155 : Pins (At C0 privF 155) rsM := by
   obtain ⟨eS, -, ek, ep, -, e0, -⟩ := data_vals h h'
   simp only [cwX, cw, cwP, eS, ek, ep, e0]
 
-theorem pins194 : Pins (At C0 privF 194) rsM := by
+theorem pins189 : Pins (At C0 privF 189) rsM := by
   refine pins_at_list (fun s₀ => [Mont.off (s₀.gpr .a0) (16 * cw s₀ + 8 * cwP s₀),
       Mont.off (Mont.off (cS s₀) (oAQ s₀)) (slot (cwQ s₀) 1), BitVec.ofNat 64 (cwQ s₀), cS s₀,
       BitVec.ofNat 64 (8 * (cwX s₀ + 2))])
@@ -171,12 +172,12 @@ theorem at_wp {α : Type} {Φ : α → State → Prop} {F : List (Prog isa)} {n 
   obtain ⟨-, rfl⟩ := Exec.det e x
   exact ⟨s₀, h₀, y⟩
 
-theorem at_C1 {d : PDat} {u : State} (h : At C0 privF 102 d u) : ∃ s₀, C0 d s₀ ∧ Pre.C1 (pdOf s₀) u :=
+theorem at_C1 {d : PDat} {u : State} (h : At C0 privF 97 d u) : ∃ s₀, C0 d s₀ ∧ Pre.C1 (pdOf s₀) u :=
   at_wp (P := fun s₀ => Pre.C1 (pdOf s₀))
     (fun _ _ h => wp_seqL_nil (WP.of_flat (c := NC (.seq (.block PrivPre.setupN) (.block []))) (by decide +kernel)
       (partA_ok h.1 fun _ hA => WP.seq (WP.mono (setupN_C1 (pre_facts h.1) hA) fun _ h1 => wp_nil h1)))) h
 
-theorem pins197 : Pins (At C0 privF 197) [.t3, .t5, .s6] := by
+theorem pins192 : Pins (At C0 privF 192) [.t3, .t5, .s6] := by
   refine pins_at_list (fun s₀ => [s₀.gpr .a0, BitVec.ofNat 64 (2 * cw s₀), cS s₀])
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NB (.seq (.block maskBlk) (.block []))) (by decide +kernel)
       (partA_ok h.1 fun _ hA => partN_ok (pre_facts h.1) hA fun _ hN => partB_ok (pre_facts h.1) hN fun _ hB =>
