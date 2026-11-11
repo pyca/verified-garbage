@@ -2004,27 +2004,27 @@ bnez t5, 262b
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 4416 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 4432 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 4, 0xb7010113
+.insn 4, 0xb6010113
 .insn 2, 0x828a
-.insn 4, 0x0692b023
-.insn 4, 0x0722b423
-.insn 4, 0x0732b823
-.insn 4, 0x0742bc23
-.insn 4, 0x0952b023
-.insn 4, 0x0812b423
+.insn 4, 0x0692b823
+.insn 4, 0x0722bc23
+.insn 4, 0x0932b023
+.insn 4, 0x0942b423
+.insn 4, 0x0952b823
+.insn 4, 0x0812bc23
 .insn 2, 0x84aa
 .insn 2, 0x8932
 .insn 2, 0x89b6
 .insn 2, 0x8a3a
 .insn 2, 0x8abe
-.insn 4, 0x49010f93
-.insn 4, 0x09028593
+.insn 4, 0x4a010f93
+.insn 4, 0x0a028593
 .insn 2, 0x864e
 .insn 4, 0x02081693
 .insn 2, 0x9281
@@ -2886,7 +2886,7 @@ j 225f
 225:
 beqz a0, 254f
 .insn 2, 0x828a
-.insn 4, 0x49010f93
+.insn 4, 0x4a010f93
 .insn 4, 0x008fb303
 .insn 4, 0x0062b023
 .insn 4, 0x010fb303
@@ -2917,11 +2917,11 @@ beqz a0, 254f
 .insn 2, 0x86ce
 .insn 2, 0x8752
 .insn 2, 0x87d6
-.insn 4, 0x09028813
+.insn 4, 0x0a028813
 .insn 2, 0x88ce
 call {vg_rsa_private_checked}
 .insn 2, 0x828a
-.insn 4, 0x09028593
+.insn 4, 0x0a028593
 .insn 2, 0x8f4e
 .insn 2, 0x4281
 256:
@@ -2941,13 +2941,13 @@ j 255f
 bnez t5, 257b
 255:
 .insn 2, 0x828a
-.insn 4, 0x0602b483
-.insn 4, 0x0682b903
-.insn 4, 0x0702b983
-.insn 4, 0x0782ba03
-.insn 4, 0x0802ba83
-.insn 4, 0x0882b083
-.insn 4, 0x49010113
+.insn 4, 0x0702b483
+.insn 4, 0x0782b903
+.insn 4, 0x0802b983
+.insn 4, 0x0882ba03
+.insn 4, 0x0902ba83
+.insn 4, 0x0982b083
+.insn 4, 0x4a010113
 .insn 2, 0x8082
 .option pop",
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
@@ -2981,27 +2981,27 @@ bnez t5, 257b
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
 /// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 4416 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 4432 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_sign_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 4, 0xb7010113
+.insn 4, 0xb6010113
 .insn 2, 0x828a
-.insn 4, 0x0692b023
-.insn 4, 0x0722b423
-.insn 4, 0x0732b823
-.insn 4, 0x0742bc23
-.insn 4, 0x0952b023
-.insn 4, 0x0812b423
+.insn 4, 0x0692b823
+.insn 4, 0x0722bc23
+.insn 4, 0x0932b023
+.insn 4, 0x0942b423
+.insn 4, 0x0952b823
+.insn 4, 0x0812bc23
 .insn 2, 0x84aa
 .insn 2, 0x8932
 .insn 2, 0x89b6
 .insn 2, 0x8a3a
 .insn 2, 0x8abe
-.insn 4, 0x49010f93
-.insn 4, 0x09028593
+.insn 4, 0x4a010f93
+.insn 4, 0x0a028593
 .insn 2, 0x864e
 .insn 4, 0x02081693
 .insn 2, 0x9281
@@ -3863,7 +3863,7 @@ j 225f
 225:
 beqz a0, 254f
 .insn 2, 0x828a
-.insn 4, 0x49010f93
+.insn 4, 0x4a010f93
 .insn 4, 0x008fb303
 .insn 4, 0x0062b023
 .insn 4, 0x010fb303
@@ -3888,17 +3888,21 @@ beqz a0, 254f
 .insn 4, 0x0462b823
 .insn 4, 0x060fb303
 .insn 4, 0x0462bc23
+.insn 4, 0x068fb303
+.insn 4, 0x0662b023
+.insn 4, 0x070fb303
+.insn 4, 0x0662b423
 .insn 2, 0x8526
 .insn 2, 0x85ce
 .insn 2, 0x864a
 .insn 2, 0x86ce
 .insn 2, 0x8752
 .insn 2, 0x87d6
-.insn 4, 0x09028813
+.insn 4, 0x0a028813
 .insn 2, 0x88ce
-call {vg_rsa_private_checked}
+call {vg_rsa_private_checked_precomputed}
 .insn 2, 0x828a
-.insn 4, 0x09028593
+.insn 4, 0x0a028593
 .insn 2, 0x8f4e
 .insn 2, 0x4281
 256:
@@ -3918,15 +3922,15 @@ j 255f
 bnez t5, 257b
 255:
 .insn 2, 0x828a
-.insn 4, 0x0602b483
-.insn 4, 0x0682b903
-.insn 4, 0x0702b983
-.insn 4, 0x0782ba03
-.insn 4, 0x0802ba83
-.insn 4, 0x0882b083
-.insn 4, 0x49010113
+.insn 4, 0x0702b483
+.insn 4, 0x0782b903
+.insn 4, 0x0802b983
+.insn 4, 0x0882ba03
+.insn 4, 0x0902ba83
+.insn 4, 0x0982b083
+.insn 4, 0x4a010113
 .insn 2, 0x8082
 .option pop",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
 }

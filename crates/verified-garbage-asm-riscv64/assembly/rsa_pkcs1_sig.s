@@ -1925,21 +1925,21 @@ vg_rsa_pkcs1_recover_precomputed:
 vg_rsa_pkcs1_sign:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -1168
+	addi sp, sp, -1184
 	addi t0, sp, 0
-	sd s1, 96(t0)
-	sd s2, 104(t0)
-	sd s3, 112(t0)
-	sd s4, 120(t0)
-	sd s5, 128(t0)
-	sd ra, 136(t0)
+	sd s1, 112(t0)
+	sd s2, 120(t0)
+	sd s3, 128(t0)
+	sd s4, 136(t0)
+	sd s5, 144(t0)
+	sd ra, 152(t0)
 	addi s1, a0, 0
 	addi s2, a2, 0
 	addi s3, a3, 0
 	addi s4, a4, 0
 	addi s5, a5, 0
-	addi t6, sp, 1168
-	addi a1, t0, 144
+	addi t6, sp, 1184
+	addi a1, t0, 160
 	addi a2, s3, 0
 	slli a3, a6, 32
 	srli a3, a3, 32
@@ -2801,7 +2801,7 @@ vg_rsa_pkcs1_sign:
 225:
 	beqz a0, 254f
 	addi t0, sp, 0
-	addi t6, sp, 1168
+	addi t6, sp, 1184
 	ld t1, 8(t6)
 	sd t1, 0(t0)
 	ld t1, 16(t6)
@@ -2832,11 +2832,11 @@ vg_rsa_pkcs1_sign:
 	addi a3, s3, 0
 	addi a4, s4, 0
 	addi a5, s5, 0
-	addi a6, t0, 144
+	addi a6, t0, 160
 	addi a7, s3, 0
 	call {vg_rsa_private_checked}
 	addi t0, sp, 0
-	addi a1, t0, 144
+	addi a1, t0, 160
 	addi t5, s3, 0
 	addi t0, zero, 0
 256:
@@ -2856,34 +2856,34 @@ vg_rsa_pkcs1_sign:
 	bnez t5, 257b
 255:
 	addi t0, sp, 0
-	ld s1, 96(t0)
-	ld s2, 104(t0)
-	ld s3, 112(t0)
-	ld s4, 120(t0)
-	ld s5, 128(t0)
-	ld ra, 136(t0)
-	addi sp, sp, 1168
+	ld s1, 112(t0)
+	ld s2, 120(t0)
+	ld s3, 128(t0)
+	ld s4, 136(t0)
+	ld s5, 144(t0)
+	ld ra, 152(t0)
+	addi sp, sp, 1184
 	ret
 	.option pop
 
 vg_rsa_pkcs1_sign_precomputed:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -1168
+	addi sp, sp, -1184
 	addi t0, sp, 0
-	sd s1, 96(t0)
-	sd s2, 104(t0)
-	sd s3, 112(t0)
-	sd s4, 120(t0)
-	sd s5, 128(t0)
-	sd ra, 136(t0)
+	sd s1, 112(t0)
+	sd s2, 120(t0)
+	sd s3, 128(t0)
+	sd s4, 136(t0)
+	sd s5, 144(t0)
+	sd ra, 152(t0)
 	addi s1, a0, 0
 	addi s2, a2, 0
 	addi s3, a3, 0
 	addi s4, a4, 0
 	addi s5, a5, 0
-	addi t6, sp, 1168
-	addi a1, t0, 144
+	addi t6, sp, 1184
+	addi a1, t0, 160
 	addi a2, s3, 0
 	slli a3, a6, 32
 	srli a3, a3, 32
@@ -3745,7 +3745,7 @@ vg_rsa_pkcs1_sign_precomputed:
 225:
 	beqz a0, 254f
 	addi t0, sp, 0
-	addi t6, sp, 1168
+	addi t6, sp, 1184
 	ld t1, 8(t6)
 	sd t1, 0(t0)
 	ld t1, 16(t6)
@@ -3770,17 +3770,21 @@ vg_rsa_pkcs1_sign_precomputed:
 	sd t1, 80(t0)
 	ld t1, 96(t6)
 	sd t1, 88(t0)
+	ld t1, 104(t6)
+	sd t1, 96(t0)
+	ld t1, 112(t6)
+	sd t1, 104(t0)
 	addi a0, s1, 0
 	addi a1, s3, 0
 	addi a2, s2, 0
 	addi a3, s3, 0
 	addi a4, s4, 0
 	addi a5, s5, 0
-	addi a6, t0, 144
+	addi a6, t0, 160
 	addi a7, s3, 0
-	call {vg_rsa_private_checked}
+	call {vg_rsa_private_checked_precomputed}
 	addi t0, sp, 0
-	addi a1, t0, 144
+	addi a1, t0, 160
 	addi t5, s3, 0
 	addi t0, zero, 0
 256:
@@ -3800,12 +3804,12 @@ vg_rsa_pkcs1_sign_precomputed:
 	bnez t5, 257b
 255:
 	addi t0, sp, 0
-	ld s1, 96(t0)
-	ld s2, 104(t0)
-	ld s3, 112(t0)
-	ld s4, 120(t0)
-	ld s5, 128(t0)
-	ld ra, 136(t0)
-	addi sp, sp, 1168
+	ld s1, 112(t0)
+	ld s2, 120(t0)
+	ld s3, 128(t0)
+	ld s4, 136(t0)
+	ld s5, 144(t0)
+	ld ra, 152(t0)
+	addi sp, sp, 1184
 	ret
 	.option pop
