@@ -528,4 +528,34 @@ theorem top_word_of {V m : Nat} (hm : 1 ≤ m) (lo : 2 ^ (64 * m - 1) ≤ V) (hi
   have h2 : V / 2 ^ (64 * (m - 1)) < 2 ^ 64 := (Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _)).mpr (by rw [← e2]; exact hi)
   rw [Nat.mod_eq_of_lt h2]; exact h1
 
+/-- `⌊w / 2⌋`, as `lsr 1` computes it. -/
+theorem lsr1_ofNat {w : Nat} (hw : w < 2 ^ 64) : BitVec.ofNat 64 w >>> 1 = BitVec.ofNat 64 (w / 2) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt hw]
+  rw [Nat.mod_eq_of_lt (by omega_arith)]
+
+/-! ## `vg_rsa_crt_values`'s registers for `wdiv` -/
+
+/-- `wdiv`'s `w_m = w / 2` in `vg_rsa_crt_values`. -/
+theorem cvWm_ok (w : Nat) (hw : w < 2 ^ 24) : WmOk [.lsr .x .x12 .x12 1] w (w / 2) := fun t h12 =>
+  WP.keep [.x12] (Q := fun t' => t'.gpr .x12 = BitVec.ofNat 64 (w / 2) ∧ t'.mem = t.mem)
+    (by brun [h12, lsr1_ofNat (show w < 2 ^ 64 by omega_arith)]) (by decide) (by decide) (by decide +kernel)
+
+/-- `wdiv`'s `L = w` in `vg_rsa_crt_values`. -/
+theorem cvLen_ok (w : Nat) : LenOk [mov .x13 .x12] w w := fun t h12 =>
+  WP.keep [.x13] (Q := fun t' => t'.gpr .x13 = BitVec.ofNat 64 w ∧ t'.mem = t.mem)
+    (by brun [h12]) (by decide) (by decide) (by decide +kernel)
+
+/-- `wdiv`'s dividend `d` in `vg_rsa_crt_values`: two arrays above `[aV]`,
+`2 · 8 (w + 2) = 32 w_m + 32` bytes for an even `w`. -/
+theorem cvXb_ok (B : Addr) (w : Nat) (hw : w % 2 = 0) (hw' : w < 2 ^ 24) :
+    XbOk [.lsl .x .x16 .x12 5, .addImm .x .x16 .x16 24, .add .x .x16 .x11 .x16] B (slot w CrtValues.aV) (slot w CrtValues.aD)
+      (w / 2) := fun t h11 h12 => by
+  have e : off B (slot w CrtValues.aV) + BitVec.ofNat 64 (32 * (w / 2) + 24) = off B (slot w CrtValues.aD - 8) := by
+    rw [off_add]; congr 1; simp only [slot, CrtValues.aV, CrtValues.aD]; omega_arith
+  refine WP.keep [.x16] (Q := fun t' => t'.gpr .x16 = off B (slot w CrtValues.aD - 8) ∧ t'.mem = t.mem)
+    ?_ (by decide) (by decide) (by decide +kernel)
+  brun [h11, h12, shl5_ofNat (show w / 2 < 2 ^ 58 by omega_arith)]
+  rw [← e, BitVec.ofNat_add, BitVec.add_comm]
+
 end VG.Proof.Rsa.AArch64

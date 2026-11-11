@@ -13,11 +13,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
 import VerifiedGarbage.Proof.Rsa.AArch64.WDivCT
 public import VerifiedGarbage.Proof.Rsa.AArch64.WDiv
 import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
-meta import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
 meta import VerifiedGarbage.Proof.Rsa.AArch64.WDivCT
 meta import VerifiedGarbage.Proof.Rsa.AArch64.WDiv
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
