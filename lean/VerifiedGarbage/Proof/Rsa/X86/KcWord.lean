@@ -24,7 +24,7 @@ open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.KeyCheck VG.Impl.Rsa.X86.KeyCheckRt
 open VG.Proof.Rsa.X86.Keys
-open VG.Proof.Rsa.X86.WordRt (MLen wq mw Bal Top val32_low top_iff)
+open VG.Proof.Rsa.X86.WordRt (MLen wq mw Bal Top val32_low top_iff sub0_beq)
 
 theorem wordRegs_body : ∀ x ∈ [.eax, .ebx, .ecx, .edx, .esi, .ebp], x ∈ bodyRegs := by decide
 
@@ -95,12 +95,6 @@ theorem Stg.balanced_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List 
     fun t ⟨ht, k, e, r⟩ => ⟨?_, an, han, cn, hkw, e⟩
   refine h.next ht k (by simp) (by decide) r (by decide)
     (h.arrs_keep k (by simp) (by decide)) h.live_lt (h.vd_keep k (by simp) (by decide)) (h.mask_keep k (by decide))
-
-theorem sub0_beq (x : BitVec 32) : (x - 0 == 0) = decide (x.toNat = 0) := by
-  rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff, ← BitVec.toNat_inj, BitVec.toNat_sub]
-  have := x.isLt
-  show (2 ^ 32 - 0 + x.toNat) % 2 ^ 32 = 0 ↔ _
-  constructor <;> intro h <;> omega
 
 /-- `ifBalanced sG word other`: `word` where `sG` is zero, else `other`. -/
 theorem Stg.ifBalanced_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}

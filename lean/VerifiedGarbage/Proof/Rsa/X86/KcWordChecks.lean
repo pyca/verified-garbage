@@ -23,7 +23,7 @@ open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.KeyCheck VG.Impl.Rsa.X86.KeyCheckRt
 open VG.Proof.Rsa.X86.Keys
-open VG.Proof.Rsa.X86.WordRt (MLen wq mw Bal Top top_iff val32_low)
+open VG.Proof.Rsa.X86.WordRt (MLen wq mw Bal Top top_iff val32_low factor_top top_factor)
 
 /-! ## The guard -/
 
@@ -33,19 +33,6 @@ structure WordOk (g : Geo) (s0 : State) (v : Vals) (ap : Nat) : Prop where
   four : 4 ≤ wq ap
   room : wq ap + 2 ≤ g.w
   top : v.p * v.q = v.n → Top (wq ap) v.p ∧ Top (wq ap) (2 * (v.p / 2)) ∧ Top (wq ap) (2 * (v.q / 2))
-
-/-- A factor of a number of `2 K` bits, the other below `2^K`, is above `2^(K - 1)`. -/
-theorem factor_top {K p q n : Nat} (hn : 2 ^ (2 * K - 1) ≤ n) (hq : q < 2 ^ K)
-    (hpq : p * q = n) : 2 ^ (K - 1) < p := by
-  refine Nat.lt_of_not_le fun hle => ?_
-  have e : 2 ^ (2 * K - 1) = 2 ^ (K - 1) * 2 ^ K := by rw [← Nat.pow_add]; congr 1; omega
-  have : p * q < 2 ^ (K - 1) * 2 ^ K :=
-    Nat.lt_of_le_of_lt (Nat.mul_le_mul_right q hle) (Nat.mul_lt_mul_of_pos_left hq (Nat.two_pow_pos _))
-  omega
-
-theorem top_factor {K p : Nat} (lo : 2 ^ (K - 1) < p) (hi : p < 2 ^ K) :
-    (2 ^ (K - 1) ≤ p ∧ p < 2 ^ K) ∧ (2 ^ (K - 1) ≤ 2 * (p / 2) ∧ 2 * (p / 2) < 2 ^ K) :=
-  ⟨⟨Nat.le_of_lt lo, hi⟩, ⟨by omega, by omega⟩⟩
 
 theorem wordOk_of {g : Geo} {s0 : State} {v : Vals} {an ap aq top : Nat}
     (hm : MLen s0 g.B g.Z (pLenArg g.full) ap) (hp : v.p < 2 ^ (8 * ap)) (hq : v.q < 2 ^ (8 * aq))

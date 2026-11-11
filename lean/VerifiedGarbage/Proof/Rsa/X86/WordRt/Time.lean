@@ -197,7 +197,7 @@ theorem mulRow_eq (L : Lay) (o a b : Nat) (rows : Option Nat) :
 /-- `ebx` at `[b]`, header word `d` in `eax`. -/
 theorem loadHead_ok {t : State} (h : RtWs L t B Z len N) {b d j : Nat} (hb : b < N) (hd : d + 4 ≤ 160)
     (hj : slot t.mem B d = j) :
-    WP isa (.block (arrPtr L .ebx b .edx ++ [.mov .eax (.mem (sc d))])) t fun m => Keeps [.ebx, .edx, .eax] t m ∧
+    WP isa (.block (arrPtr L .ebx b .edx ++ ([.mov .eax (.mem (sc d))] : List Instr))) t fun m => Keeps [.ebx, .edx, .eax] t m ∧
       m.mem = t.mem ∧ PtrAt m B .ebx (arr (kw len) b) ∧ (m.gpr .eax).toNat = j := by
   have nw := h.ws.workspace.nowrap
   have fb := h.ws.arr_fit hb
