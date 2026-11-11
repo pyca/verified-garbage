@@ -263,26 +263,7 @@ def powerTwo (c : Ctx) : Prog isa :=
   .seq (.block (widthC 0 c .esi ++ [.mov .eax (.reg .esi), .shift .shr .eax 3, .alu .add .esi (.reg .esi),
     .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .eax)])) (.loop (doubleStep c) .ne)
 
-/-- The context's modulus (slot 0) replaced by three unless it is an odd
-number above one; one in slot 3, `-M⁻¹ mod 2³²`, and `2^(8 Bc + Bc / 8) mod M`
-in slot 4. -/
-def prepBase (c : Ctx) : Prog isa :=
-  .seq (setSmall (.slot c 3) (one c) 1) <|
-  .seq (setSmall (.slot c 7) (one c) 3) <|
-  .seq (lessThan (.slot c 3) (.slot c 0) (one c)) <|
-  .seq (.block [.mov .edx (.mem (sc numBase)), .alu .and .edx (.imm 1), .mov .eax (.imm 0),
-    .alu .sub .eax (.reg .edx), .alu .and .ecx (.reg .eax), .alu .xor .ecx (.imm (BitVec.allOnes 32))]) <|
-  .seq (select (.slot c 7) (.slot c 0) (one c)) <|
-  .seq (.block (VG.Impl.Mont.X86.Dynamic.setupInverse numBase invOff)) (powerTwo c)
-
-/-- The context set up: `prepBase`, and six Montgomery squares of slot 4 by
-the shared squaring loop, each taking `2^(8 Bc + d) mod M` to
-`2^(16 Bc + 2 d) R⁻¹ = 2^(8 Bc + 2 d) mod M`: `2^(8 Bc + 64 (Bc / 8)) =
-2^(16 Bc) = R² mod M`, with half the doublings of computing it by doubling
-alone. -/
-def prepare (c : Ctx) : Prog isa := .seq (prepBase c) (VG.Impl.Mont.X86.Dynamic.repeatSquaresWith (mul c 4 4 4) 6)
-
-/-- `prepBase` but `2^(8 Bc + Bc / 8) mod M`: the modulus replaced by three
+/-- The modulus replaced by three
 unless it is an odd number above one, one in slot 3 and `-M⁻¹ mod 2³²`. -/
 def prepBasePre (c : Ctx) : Prog isa :=
   .seq (setSmall (.slot c 3) (one c) 1) <|
@@ -291,6 +272,18 @@ def prepBasePre (c : Ctx) : Prog isa :=
   .seq (.block [.mov .edx (.mem (sc numBase)), .alu .and .edx (.imm 1), .mov .eax (.imm 0),
     .alu .sub .eax (.reg .edx), .alu .and .ecx (.reg .eax), .alu .xor .ecx (.imm (BitVec.allOnes 32))]) <|
   .seq (select (.slot c 7) (.slot c 0) (one c)) (.block (VG.Impl.Mont.X86.Dynamic.setupInverse numBase invOff))
+
+/-- The context's modulus (slot 0) replaced by three unless it is an odd
+number above one; one in slot 3, `-M⁻¹ mod 2³²`, and `2^(8 Bc + Bc / 8) mod M`
+in slot 4. -/
+def prepBase (c : Ctx) : Prog isa := .seq (prepBasePre c) (powerTwo c)
+
+/-- The context set up: `prepBase`, and six Montgomery squares of slot 4 by
+the shared squaring loop, each taking `2^(8 Bc + d) mod M` to
+`2^(16 Bc + 2 d) R⁻¹ = 2^(8 Bc + 2 d) mod M`: `2^(8 Bc + 64 (Bc / 8)) =
+2^(16 Bc) = R² mod M`, with half the doublings of computing it by doubling
+alone. -/
+def prepare (c : Ctx) : Prog isa := .seq (prepBase c) (VG.Impl.Mont.X86.Dynamic.repeatSquaresWith (mul c 4 4 4) 6)
 
 /-- `r = 8 max(2, ⌈l / 8⌉)`, the bytes of a factor's `R² mod p` in `pre`, for
 the factor's length `l ≥ 1` in `r`; `t` changes. -/
