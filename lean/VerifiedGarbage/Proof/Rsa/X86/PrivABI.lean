@@ -17,8 +17,10 @@ open VG.Proof.Dsa.X86 (argumentPointer)
 structure PrivABI (s : State) : Prop where
   stackLow : stackBytes ≤ (s.gpr .esp).toNat
   stackBound : (s.gpr .esp).toNat + 84 ≤ 2 ^ 32
-  rd : s.rd = [⟨argumentPointer s 2, (arg s 3).toNat⟩, ⟨argumentPointer s 4, (arg s 5).toNat⟩, ⟨argumentPointer s 6, (arg s 7).toNat⟩, ⟨argumentPointer s 8, (arg s 9).toNat⟩, ⟨argumentPointer s 10, (arg s 11).toNat⟩, ⟨argumentPointer s 12, (arg s 13).toNat⟩, ⟨argumentPointer s 14, (arg s 15).toNat⟩, ⟨argumentPointer s 16, (arg s 17).toNat⟩]
-  wr : s.wr = [⟨argumentPointer s 0, (arg s 1).toNat⟩, ⟨argumentPointer s 18, (arg s 19).toNat * 8⟩, ⟨argAddr s 0, 80⟩]
+  rd : ∀ r, r ∈ ([⟨argumentPointer s 2, (arg s 3).toNat⟩, ⟨argumentPointer s 4, (arg s 5).toNat⟩, ⟨argumentPointer s 6, (arg s 7).toNat⟩, ⟨argumentPointer s 8, (arg s 9).toNat⟩, ⟨argumentPointer s 10, (arg s 11).toNat⟩, ⟨argumentPointer s 12, (arg s 13).toNat⟩, ⟨argumentPointer s 14, (arg s 15).toNat⟩, ⟨argumentPointer s 16, (arg s 17).toNat⟩] : List Region) → r ∈ s.rd
+  outW : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region) ∈ s.wr
+  wsW : (⟨argumentPointer s 18, (arg s 19).toNat * 8⟩ : Region) ∈ s.wr
+  argsW : InRegions s.wr (argAddr s 0) 80
   outN : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 2, (arg s 3).toNat⟩
   outE : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 4, (arg s 5).toNat⟩
   outI : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 6, (arg s 7).toNat⟩
@@ -78,5 +80,10 @@ structure PrivABI (s : State) : Prop where
 theorem privateABI_of {s : State} (h : (Proof.Rsa.privateCheckedContract abi stackBytes).pre s) : PrivABI s := by
   sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
-  constructor <;> simp only [stackBytes] at * <;> with_reducible assumption
+  constructor <;> simp only [stackBytes] at *
+  all_goals first
+    | with_reducible assumption
+    | (intro r hr; rw [‹s.rd = _›]; exact hr)
+    | (rw [‹s.wr = _›]; simp)
+    | (rw [‹s.wr = _›]; exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), Region.contains_self _ _⟩)
 end VG.Proof.Rsa.X86.PrivChecked
