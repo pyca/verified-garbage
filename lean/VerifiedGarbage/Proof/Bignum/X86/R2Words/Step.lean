@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Bignum.X86.R2Words.Add
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.WordStep32
 
+-- separate module: the word steps' proof is split in a chain of modules, so that a change rebuilds only the modules after it
+
 /-!
 # `R2Words` on x86: a step `x := x 2^32 mod M`
 

@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 public import VerifiedGarbage.Proof.Bignum.X86.R2Words.Ptr
 
+-- separate module: its proofs build in parallel with those of the steps (`Quot` to `Loop`), which `Main` also imports
+
 /-!
 # `R2Words` on x86: `p = 2^z` and `d`
 

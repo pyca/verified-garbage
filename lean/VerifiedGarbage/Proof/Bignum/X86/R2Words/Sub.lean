@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Mont.X86.Rt.Step
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 
+-- separate module: the word steps' proof is split in a chain of modules, so that a change rebuilds only the modules after it
+
 /-!
 # `R2Words` on x86: `t = x 2^32 - q̂ M`
 

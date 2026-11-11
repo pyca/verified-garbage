@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.R2Words.Sub
 import VerifiedGarbage.Proof.Framework.Omega
 
+-- separate module: the word steps' proof is split in a chain of modules, so that a change rebuilds only the modules after it
+
 /-!
 # `R2Words` on x86: `t := t + M` if `t` is negative
 

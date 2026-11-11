@@ -60,12 +60,13 @@ macro_rules
   | `(tactic| xrun [$ls,*]) => `(tactic| plain_simp_names (
                        apply WP.of_runBlock
                        set_option linter.unusedSimpArgs false in
-                       simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+                       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
                          execAlu, execShift, arithFlags_eq, ea_at, State.load32, State.store32,
                          setReg_gpr, setReg_mem, setReg_rd, setReg_wr, setReg_cf, setReg_zf,
                          setFlags_gpr, setFlags_mem, setFlags_rd, setFlags_wr, setFlags_cf, setFlags_zf,
                          Option.bind_some, Option.map_some, Option.map, Option.some.injEq, exists_eq_left', ite_true,
-                         ite_false, reduceCtorEq, BitVec.sub_self, true_and, and_true, $ls,*]))
+                         ite_false, reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, BitVec.sub_self,
+                         true_and, and_true, $ls,*]))
 
 /-! ## What a block keeps -/
 

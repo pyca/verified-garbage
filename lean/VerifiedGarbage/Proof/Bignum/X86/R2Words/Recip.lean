@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Bignum.WordStep32
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeRt.In
 
+-- separate module: its proofs build in parallel with those of the steps (`Quot` to `Loop`), which `Main` also imports
+
 /-!
 # `R2Words` on x86: the reciprocal
 
@@ -155,7 +157,7 @@ theorem recip_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bit
   refine WP.seq (WP.mono (WP.keeps [.esi, .edx, .ecx, .edi] (Q := fun t => t.gpr .esi = BitVec.ofNat 32 d ∧
       t.gpr .edx = BitVec.ofNat 32 (2 ^ 32 - 1 - d) ∧ t.gpr .ecx = BitVec.ofNat 32 0 ∧
       t.gpr .edi = BitVec.ofNat 32 32 ∧ t.mem = s.mem) (by
-    xrun [hd, hdi, ha, hin, hv, xor_m1 d hd2]; done) rfl) fun u ⟨⟨h1, h2, h3, h4, hm⟩, K⟩ => ?_)
+    xrun [hd, hdi, ha, hin, hv, xor_m1 d hd2]; exact ⟨rfl, rfl⟩) rfl) fun u ⟨⟨h1, h2, h3, h4, hm⟩, K⟩ => ?_)
   refine WP.seq (WP.mono (recipLoop_ok hd1 hd2 h2 h1 h3 h4) fun t ⟨hcx, hmt, Kt⟩ => ?_)
   have Kst : Keeps [.esi, .edx, .ecx, .edi, .eax, .ebx, .ebp] s t := (K.mono (by decide)).trans (Kt.mono (by decide))
   have A4 := (h.stack 4 (by decide)).keep Kst (by decide) (by rw [hmt, hm]; exact Outside.refl _ _ _ _)
