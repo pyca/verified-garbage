@@ -125,7 +125,7 @@ theorem pins105 : Pins (At C0 privF 105) [.r11, .r19, .r23, .r27, .r28] := by
     refine WP.seq (WP.mono (setupN_ok hP hA) fun v ⟨⟨v19, v12, v6, v21, v11, v10, v5, v8, v9, vm⟩, kv⟩ => ?_)
     have kAv := hA.keep.trans kv
     refine WP.seq (WP.mono (Pre.core_ok (hA.scr.congr kv.wr) (pre16 hP kAv.wr) dw k64 k1024 (by oa) v19 v6 v12 v10
-      v5 v8 v9 v11 v21 (by rw [kAv.rd, kAv.wr]; exact hP.rN) hP.sN (sep16 hP)) fun t₁ ⟨_, kt⟩ => wp_skip ?_)
+      v5 v8 v9 v11 (by rw [kAv.rd, kAv.wr]; exact hP.rN) hP.sN (sep16 hP)) fun t₁ ⟨_, kt⟩ => wp_skip ?_)
     have kvt := kv.trans kt
     simp only [List.map_cons, List.map_nil, kt.gpr .r11 (by decide), v11, kt.gpr .r19 (by decide), v19,
       kvt.gpr .r23 (by decide), kvt.gpr .r27 (by decide), kvt.gpr .r28 (by decide), hA.r23, hA.r27, hA.r28]

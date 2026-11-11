@@ -160,7 +160,7 @@ theorem TA {d : PD} {s : State} (h : C4 d s ∧ s.gpr .r0 = 0) :
   have e0 := e 0; have e1 := e 1; have e4 := e 4; have e8 := e 8
   have hZ := hb.hZ
   rw [← hwd] at hf
-  refine WP.seq (WP.mono (r2Fast_ok hb.scr hb.r8 hb.r9 hb.r10 hb.r5 hb.r11 hb.r21 (by omega) hw' hZ
+  refine WP.seq (WP.mono (r2Fast_ok hb.scr hb.r8 hb.r9 hb.r10 hb.r5 hb.r11 (by omega) hw' hZ
     (by rw [hv]; exact hf.2.2) (by rw [hv]; exact hf.1)) fun s₃ ⟨_, _, k₃⟩ => ?_)
   have g : ∀ r ∈ [Reg.r19, .r10, .r5, .r11, .r21], s₃.gpr r = s.gpr r := fun r hr =>
     k₃.gpr r (by revert r hr; decide)
