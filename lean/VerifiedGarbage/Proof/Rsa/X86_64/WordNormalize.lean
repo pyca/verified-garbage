@@ -33,7 +33,7 @@ theorem high_or_self (x : BitVec 64) (h : 2 ^ 63 ≤ x.toNat) : x ||| BitVec.ofN
     simp only [ht, decide_true, Bool.or_true]
   · simp only [hi, decide_false, Bool.or_false]
 
-theorem normalize_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W) (hW : 4 ≤ W) :
+theorem normalize_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W) (hW : 6 ≤ W) :
     WP isa (.block normalize) s fun t =>
       t.mem = s.mem.writeW (off B (slot W aM + 8 * (W / 2 - 1)))
         (word s.mem B (slot W aM + 8 * (W / 2 - 1)) ||| BitVec.ofNat 64 (2 ^ 63)) ∧ Keep mmRegs s t := by

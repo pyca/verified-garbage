@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.R2SquaresCT
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2aFast
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2aD3
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
 import VerifiedGarbage.Proof.Bignum.X86_64.R2aStep
 import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
@@ -17,7 +16,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aFast
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aD3
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aStep
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
@@ -42,8 +40,9 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 # `R² mod m` by word steps with ADX: constant time but for `m`
 
 A step's addresses depend only on the working space and `w`, and its
-branches, `fix`'s, on the sign of `t`, a function of `x` and `m` (as `q̂`
-is, refined by `refine`'s masks: `SPub.qr`): in the
+branches, `fix3`'s and `fix`'s, on the signs of `t` over three words and
+over all, functions of `x` and `m` (as `q̂` is, refined by `fix3`:
+`SPub.qr`): in the
 steps, `x` is `(R - m) 2^(64 j) mod m` after `j` of them, a function of `m`,
 which is public (`SPub`, `step_ct`). The steps' count is `w` (`steps_ct`),
 and `choice` branches on the top bit of `m` and on `w` (`choice_ct`).
@@ -77,16 +76,27 @@ def SPub.q (p : SPub) : Nat :=
 def SPub.u (p : SPub) (i : Nat) : Nat := p.X / 2 ^ (64 * (p.L.w - i)) % 2 ^ 64
 def SPub.d (p : SPub) (i : Nat) : Nat := p.M / 2 ^ (64 * (p.L.w - i)) % 2 ^ 64
 
-/-- `q̂` refined once, and twice (`refine`). -/
-def SPub.q1 (p : SPub) : Nat := d3 p.q (p.u 1) (p.u 2) (p.u 3) (p.d 1) (p.d 2)
-def SPub.qr (p : SPub) : Nat := d3 p.q1 (p.u 1) (p.u 2) (p.u 3) (p.d 1) (p.d 2)
+/-- The top three words of `x`, and the top two of `m`. -/
+def SPub.U (p : SPub) : Nat := p.u 1 * 2 ^ 128 + p.u 2 * 2 ^ 64 + p.u 3
+def SPub.D (p : SPub) : Nat := p.d 1 * 2 ^ 64 + p.d 2
+
+/-- `fix3` on `q̂` and `t` (over three words). -/
+def fixQ (T q : Nat) : Nat := if 2 ^ 192 / 2 ≤ T then (q + (2 ^ 64 - 1)) % 2 ^ 64 else q
+def fixT (D T : Nat) : Nat := if 2 ^ 192 / 2 ≤ T then (T + D) % 2 ^ 192 else T
+
+/-- `t = U - q̂ D` (`R2Words.quot3`); `q̂` and `t` after one `fix3`; `q̂` after
+two (`refine3`). -/
+def SPub.T1 (p : SPub) : Nat := (p.U + (2 ^ 192 - p.q * p.D)) % 2 ^ 192
+def SPub.q1 (p : SPub) : Nat := fixQ p.T1 p.q
+def SPub.T2 (p : SPub) : Nat := fixT p.D p.T1
+def SPub.qr (p : SPub) : Nat := fixQ p.T2 p.q1
 
 theorem SPub.q_lt (p : SPub) : p.q < 2 ^ 64 := Nat.lt_of_le_of_lt (Nat.min_le_right _ _) (by decide)
-theorem SPub.q1_lt (p : SPub) : p.q1 < 2 ^ 64 := Nat.lt_of_le_of_lt (d3_le _ _ _ _ _ _) p.q_lt
-theorem SPub.qr_lt (p : SPub) : p.qr < 2 ^ 64 := Nat.lt_of_le_of_lt (d3_le _ _ _ _ _ _) p.q1_lt
-
-theorem SPub.q_mul_le (p : SPub) : p.q * p.d 1 ≤ p.u 1 * 2 ^ 64 + p.u 2 :=
-  Nat.le_trans (Nat.mul_le_mul_right _ (Nat.min_le_left _ _)) (Nat.div_mul_le_self _ _)
+theorem fixQ_lt {T q : Nat} (h : q < 2 ^ 64) : fixQ T q < 2 ^ 64 := by
+  unfold fixQ; split
+  · exact Nat.mod_lt _ (by decide)
+  · exact h
+theorem SPub.qr_lt (p : SPub) : p.qr < 2 ^ 64 := fixQ_lt (fixQ_lt p.q_lt)
 
 /-- `t = x 2^64 - q̂ m` modulo `2^64 R`. -/
 def SPub.t1 (p : SPub) : Nat := (p.X * 2 ^ 64 + p.qr * (p.R - p.M) + p.qr * (p.W - p.R)) % p.W
@@ -171,27 +181,110 @@ def SH (p : SPub) (t : State) : Prop :=
     t.gpr .r12 = BitVec.ofNat 64 p.L.w ∧ t.gpr .rsi = off p.L.B (slot p.L.w aAcc) ∧
     t.gpr .rdx = BitVec.ofNat 64 p.qr ∧ t.gpr .r8 = 0 ∧ t.gpr .r9 = 0 ∧ t.gpr .r14 = 0 ∧ t.gpr .r15 = 0
 
-/-- Knuth's test on the estimate `V`, with the words of `x` and `m`. -/
-theorem sr_ok {p : SPub} {V : Nat} {s : State} (h : SQ V p s) (hV : V < 2 ^ 64)
-    (hle : V * p.d 1 ≤ p.u 1 * 2 ^ 64 + p.u 2) :
-    WP isa (.block refine) s (SQ (d3 V (p.u 1) (p.u 2) (p.u 3) (p.d 1) (p.d 2)) p) := by
+/-- A sum's low part from its carry. -/
+theorem mod_of_carry {R A W c : Nat} (hR : R < W) (hc : c < 2) (h : R + W * c = A) : R = A % W := by
+  rcases (show c = 0 ∨ c = 1 by omega_using [hc]) with rfl | rfl
+  · rw [Nat.mul_zero, Nat.add_zero] at h; rw [← h, Nat.mod_eq_of_lt hR]
+  · rw [Nat.mul_one] at h; rw [← h, Nat.add_mod_right, Nat.mod_eq_of_lt hR]
+
+/-- A difference's low part from its borrow. -/
+theorem mod_of_borrow {T P U W b : Nat} (hT : T < W) (hP : P ≤ W) (hb : b < 2) (h : T + P = U + W * b) :
+    T = (U + (W - P)) % W := by
+  rcases (show b = 0 ∨ b = 1 by omega_using [hb]) with rfl | rfl
+  · rw [Nat.mul_zero, Nat.add_zero] at h
+    rw [show U + (W - P) = T + W by omega_using [h, hP], Nat.add_mod_right, Nat.mod_eq_of_lt hT]
+  · rw [Nat.mul_one] at h
+    rw [show U + (W - P) = T by omega_using [h, hP], Nat.mod_eq_of_lt hT]
+
+/-- The words `w - i` of `x` and `m`. -/
+theorem SPre.words {p : SPub} {s : State} (h : SPre p s) :
+    (∀ i, 1 ≤ i → i ≤ 3 → (word s.mem p.L.B (slot p.L.w aR2 + 8 * (p.L.w - i))).toNat = p.u i) ∧
+    (∀ i, 1 ≤ i → i ≤ 2 → (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - i))).toNat = p.d i) := by
+  obtain ⟨_, hw, _, _, _, _, hX, hM, _, _⟩ := h
+  exact ⟨fun i h1 _ => by rw [word_of_wv s.mem p.L.B _ p.L.w (show p.L.w - i < p.L.w by omega_using [hw, h1]), hX]; rfl,
+    fun i h1 _ => by rw [word_of_wv s.mem p.L.B _ p.L.w (show p.L.w - i < p.L.w by omega_using [hw, h1]), hM]; rfl⟩
+
+/-- With `t = T` in `r15`, `r14`, `r13`. -/
+def S3 (T V : Nat) (p : SPub) (t : State) : Prop :=
+  SQ V p t ∧ (t.gpr .r15).toNat * 2 ^ 128 + (t.gpr .r14).toNat * 2 ^ 64 + (t.gpr .r13).toNat = T
+
+theorem pins_S3 (T V : SPub → Nat) : Pins (fun p => S3 (T p) (V p) p) [.rbx, .r10, .r12] :=
+  fun p s₁ s₂ h₁ h₂ => pins_SQ V p s₁ s₂ h₁.1 h₂.1
+
+theorem s3_ok {p : SPub} {s : State} (h : SQ p.q p s) : WP isa (.block R2Words.quot3) s (S3 p.T1 p.q p) := by
   obtain ⟨hp, hbx, h10, h12, hcx⟩ := h
   have hp' := hp
-  obtain ⟨hg, hw, _, _, _, _, hX, hM, _, _⟩ := hp'
+  obtain ⟨hg, hw, _, _, _, _, _, _, _, _⟩ := hp'
+  obtain ⟨hu, hd⟩ := hp.words
   have hs := hg.1.scr
   have hZ := hg.2
   have hsx := slot_le (w := p.L.w) (show aR2 < 8 by decide)
   have hsm := slot_le (w := p.L.w) (show aN < 8 by decide)
-  have hu : ∀ i, 1 ≤ i → i ≤ 3 → (word s.mem p.L.B (slot p.L.w aR2 + 8 * (p.L.w - i))).toNat = p.u i :=
-    fun i h1 h3 => by rw [word_of_wv s.mem p.L.B _ p.L.w (show p.L.w - i < p.L.w by omega_using [hw, h1]), hX]; rfl
-  have hd : ∀ i, 1 ≤ i → i ≤ 2 → (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - i))).toNat = p.d i :=
-    fun i h1 h3 => by rw [word_of_wv s.mem p.L.B _ p.L.w (show p.L.w - i < p.L.w by omega_using [hw, h1]), hM]; rfl
-  refine WP.mono (refine_ok hs hbx h10 h12 hcx (by omega_using [hw]) (by omega_using [hZ, hsx]) (by omega_using [hZ, hsm]) hV (by
-    rw [hu 1 (by omega_using []) (by omega_using []), hu 2 (by omega_using []) (by omega_using []), hd 1 (by omega_using []) (by omega_using [])]; exact hle))
-    fun t ⟨hcx', hm, k⟩ => ⟨SPre.congr hp hm k.2.2 (k.gpr (by decide)), (k.gpr (by decide)).trans hbx,
-      (k.gpr (by decide)).trans h10, (k.gpr (by decide)).trans h12, ?_⟩
-  rw [hcx', hu 1 (by omega_using []) (by omega_using []), hu 2 (by omega_using []) (by omega_using []), hu 3 (by omega_using []) (by omega_using []),
-    hd 1 (by omega_using []) (by omega_using []), hd 2 (by omega_using []) (by omega_using [])]
+  refine WP.mono (R2w.quot3_ok hs hbx h10 h12 (by omega_using [hw]) (by omega_using [hZ, hsx]) (by omega_using [hZ, hsm]))
+    fun t ⟨⟨b, hb, hv⟩, hm, k⟩ => ⟨⟨SPre.congr hp hm k.2.2 (k.gpr (by decide)), (k.gpr (by decide)).trans hbx,
+      (k.gpr (by decide)).trans h10, (k.gpr (by decide)).trans h12, (k.gpr (by decide)).trans hcx⟩, ?_⟩
+  rw [hu 1 (by omega_using []) (by omega_using []), hu 2 (by omega_using []) (by omega_using []),
+    hu 3 (by omega_using []) (by omega_using []), hd 1 (by omega_using []) (by omega_using []),
+    hd 2 (by omega_using []) (by omega_using []), hcx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt p.q_lt] at hv
+  have hq := p.q_lt
+  have hD : p.D < 2 ^ 128 := by
+    have := Nat.mod_lt (p.M / 2 ^ (64 * (p.L.w - 1))) (show 0 < 2 ^ 64 by decide)
+    have := Nat.mod_lt (p.M / 2 ^ (64 * (p.L.w - 2))) (show 0 < 2 ^ 64 by decide)
+    unfold SPub.D SPub.d; omega_using []
+  have hqD : p.q * p.D ≤ 2 ^ 192 := Nat.le_trans (Nat.mul_le_mul (Nat.le_of_lt hq) (Nat.le_of_lt hD)) (by decide)
+  have hT : (t.gpr .r15).toNat * 2 ^ 128 + (t.gpr .r14).toNat * 2 ^ 64 + (t.gpr .r13).toNat < 2 ^ 192 := by
+    have := (t.gpr .r15).isLt; have := (t.gpr .r14).isLt; have := (t.gpr .r13).isLt; omega_using []
+  exact mod_of_borrow hT hqD hb hv
+
+/-- `rcx - 1` as `fixQ` gives it. -/
+theorem ofNat_sub_one (V : Nat) : BitVec.ofNat 64 V - 1 = BitVec.ofNat 64 ((V + (2 ^ 64 - 1)) % 2 ^ 64) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
+  omega_using []
+
+/-- With the sign of `t` in `CF`. -/
+def S3c (T V : SPub → Nat) (p : SPub) (t : State) : Prop :=
+  S3 (T p) (V p) p t ∧ t.cf = some (decide (2 ^ 192 / 2 ≤ T p))
+
+/-- `fix3` leaks the same in runs with the same `t`. -/
+theorem fix3_ct (T V : SPub → Nat) :
+    RelCT isa (Two fun p => S3 (T p) (V p) p) fix3 (Two fun p => S3 (fixT p.D (T p)) (fixQ (T p) (V p)) p) := by
+  unfold fix3
+  refine RelCT.seq (two_piece (Ψ := S3c T V) _ (pins_S3 T V) (by taint_decide) fun p s h => ?_) ?_
+  · obtain ⟨⟨hp, hbx, h10, h12, hcx⟩, hT⟩ := h
+    refine WP.mono (WP.keep [.r11] (Q := fun t => t.cf = some (decide (2 ^ 63 ≤ (s.gpr .r15).toNat)) ∧
+        t.mem = s.mem) (by xrun [top_cf]) rfl) fun t ⟨⟨hc, hm⟩, k⟩ =>
+      ⟨⟨⟨SPre.congr hp hm k.2.2 (k.gpr (by decide)), (k.gpr (by decide)).trans hbx, (k.gpr (by decide)).trans h10,
+        (k.gpr (by decide)).trans h12, (k.gpr (by decide)).trans hcx⟩, ?_⟩, ?_⟩
+    · rw [k.gpr (by decide), k.gpr (by decide), k.gpr (by decide)]; exact hT
+    · rw [hc, ← hT]
+      have := (s.gpr .r15).isLt; have := (s.gpr .r14).isLt; have := (s.gpr .r13).isLt
+      exact congrArg some (decide_eq_decide.mpr (by omega_using []))
+  refine two_ite (fun p s₁ s₂ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_
+  · refine (two_piece (Ψ := fun p => S3 (fixT p.D (T p)) (fixQ (T p) (V p)) p) _
+      (fun p s₁ s₂ h₁ h₂ => pins_S3 T V p s₁ s₂ h₁.1.1 h₂.1.1) (by taint_decide) fun p s ⟨⟨h, hc⟩, hb⟩ => ?_).mono
+      (fun _ _ h => h) fun _ _ h => h
+    simp only [eval, hc, Option.some.injEq, decide_eq_true_eq] at hb
+    obtain ⟨⟨hp, hbx, h10, h12, hcx⟩, hT⟩ := h
+    have hp' := hp
+    obtain ⟨hg, hw, _, _, _, _, _, _, _, _⟩ := hp'
+    obtain ⟨_, hd⟩ := hp.words
+    have hZ := hg.2
+    have hsm := slot_le (w := p.L.w) (show aN < 8 by decide)
+    refine WP.mono (fix3Body_ok hg.1.scr h10 h12 (by omega_using [hw]) (by omega_using [hZ, hsm]))
+      fun t ⟨hcx', ⟨c, hc', hv⟩, hm, k⟩ => ⟨⟨SPre.congr hp hm k.2.2 (k.gpr (by decide)), (k.gpr (by decide)).trans hbx,
+        (k.gpr (by decide)).trans h10, (k.gpr (by decide)).trans h12, ?_⟩, ?_⟩
+    · rw [hcx', hcx, ofNat_sub_one]; unfold fixQ; simp only [hb, ↓reduceIte]
+    · rw [hT, hd 1 (by omega_using []) (by omega_using []), hd 2 (by omega_using []) (by omega_using [])] at hv
+      unfold fixT; simp only [hb, ↓reduceIte]
+      have := (t.gpr .r15).isLt; have := (t.gpr .r14).isLt; have := (t.gpr .r13).isLt
+      exact mod_of_carry (by omega_using []) hc' hv
+  · refine (two_piece (Ψ := fun p => S3 (fixT p.D (T p)) (fixQ (T p) (V p)) p) [] (fun _ _ _ _ _ _ h => nomatch h)
+      (by taint_decide) fun p s ⟨⟨h, hc⟩, hb⟩ => WP.block_nil ?_).mono (fun _ _ h => h) fun _ _ h => h
+    simp only [eval, hc, Option.some.injEq, decide_eq_false_iff_not] at hb
+    unfold fixT fixQ
+    simp only [hb, ↓reduceIte]
+    exact h
 
 theorem sh_ok {p : SPub} {s : State} (h : SQ p.qr p s) : WP isa (.block mulHead) s (SH p) := by
   obtain ⟨hp, hbx, h10, h12, hcx⟩ := h
@@ -334,17 +427,18 @@ theorem mulSub_ct : RelCT isa (Two fun p => SQ p.qr p) mulSub (Two (fun p => SF 
 
 /-- A step leaks the same in runs with the same working space, `x` and `m`. -/
 theorem step_ct : RelCT isa (Two SPre) step fun _ _ => True := by
-  rw [show step = .seq (.block R2Words.bases) (.seq (.block R2Words.quot) (.seq (.block refine) (.seq (.block refine)
-    (.seq mulSub (.seq fix fix))))) from rfl]
+  rw [show step = .seq (.block R2Words.bases) (.seq (.block R2Words.quot) (.seq refine3 (.seq mulSub fix))) from rfl]
   refine RelCT.seq (two_piece (Ψ := SB) [.rdi] (pins_rdi_of (·.L) fun _ _ h => h.1) (by taint_decide)
     fun _ _ h => sb_ok h) ?_
   refine RelCT.seq (two_piece (Ψ := fun p => SQ p.q p) _ pins_SB (by taint_decide) fun _ _ h => sq_ok h) ?_
-  refine RelCT.seq (two_piece (Ψ := fun p => SQ p.q1 p) _ (pins_SQ SPub.q) (by taint_decide)
-    fun p _ h => sr_ok h p.q_lt p.q_mul_le) ?_
-  refine RelCT.seq (two_piece (Ψ := fun p => SQ p.qr p) _ (pins_SQ SPub.q1) (by taint_decide)
-    fun p _ h => sr_ok h p.q1_lt (d3_mul_le p.q_mul_le)) ?_
-  refine RelCT.seq mulSub_ct (RelCT.seq (fix_ct (fun p => p.t1)) ?_)
-  exact (fix_ct (fun p => fixV p.W p.M p.t1)).mono (fun _ _ h => h) fun _ _ _ => trivial
+  have hr : RelCT isa (Two fun p => SQ p.q p) refine3 (Two fun p => SQ p.qr p) := by
+    unfold refine3
+    refine RelCT.seq (two_piece (Ψ := fun p => S3 p.T1 p.q p) _ (pins_SQ SPub.q) (by taint_decide)
+      fun _ _ h => s3_ok h) (RelCT.seq (fix3_ct SPub.T1 SPub.q) ((fix3_ct SPub.T2 SPub.q1).mono (fun _ _ h => h)
+        fun _ _ h => ?_))
+    obtain ⟨p, h₁, h₂⟩ := h
+    exact ⟨p, h₁.1, h₂.1⟩
+  exact RelCT.seq hr (RelCT.seq mulSub_ct ((fix_ct (fun p => p.t1)).mono (fun _ _ h => h) fun _ _ _ => trivial))
 
 /-! ## The steps -/
 
