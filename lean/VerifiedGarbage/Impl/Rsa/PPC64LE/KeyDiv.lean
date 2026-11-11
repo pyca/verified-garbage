@@ -61,10 +61,16 @@ def stepsSetup (a r : Nat) : List Instr :=
 /-- A step, then `u`'s address a word down and a step less. -/
 def step : Prog isa := .seq wordStepU (.block [.subi .r8 .r8 8, .subi .r4 .r4 1])
 
+/-- The registers saved and `[r]` zeroed. -/
+def prepA (r sv : Nat) : Prog isa :=
+  seqs [.block (save sv), .block (ptr .r14 r ++ [.addi .r11 .r29 0]), zeroWords]
+
+/-- The divisor and the temporary, and the steps' registers. -/
+def prepB (a r m t : Nat) : Prog isa := seqs [.block (force m t), recip, .block (stepsSetup a r)]
+
 /-- `[r] := [a] mod [m]`, `[m]`'s top bit set, through `[t]` and the save
 area `sv`. -/
-def divW (a r m t sv : Nat) : Prog isa := seqs [
-  .block (save sv), .block (ptr .r14 r ++ [.addi .r11 .r29 0]), zeroWords, .block (force m t), recip,
-  .block (stepsSetup a r), .loop step (.nonzero .d .r4), .block (restore sv)]
+def divW (a r m t sv : Nat) : Prog isa := seqs [prepA r sv, prepB a r m t, .loop step (.nonzero .d .r4),
+  .block (restore sv)]
 
 end VG.Impl.Rsa.PPC64LE.KeyDiv

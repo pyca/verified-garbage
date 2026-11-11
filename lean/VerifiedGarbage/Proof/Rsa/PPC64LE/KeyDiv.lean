@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Bignum.WordDiv
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
+import VerifiedGarbage.Proof.Rsa.PPC64LE.IbOps
 
 /-!
 # Division by words for the RSA key checks on PPC64LE: correct
@@ -248,5 +250,155 @@ theorem loop_ok {s : State} {B : Addr} {Z w N a r m t wd : Nat} (h : Ws s B Z w 
   · exact ((uk.trans k1).trans ((Keep.write _ .r8 _).trans (Keep.write _ .r4 _))).mono (by decide)
   · simp only [gpr_write, ite_true]
     rw [k1.gpr .r4 (by decide)]
+
+/-- Words above `n` that are zero add nothing. -/
+theorem wordsVal_zero_top {m : Mem} {B : Addr} {d n : Nat} :
+    ∀ k, (∀ i, n ≤ i → i < n + k → word m B (d + 8 * i) = 0) → wordsVal m B d (n + k) = wordsVal m B d n
+  | 0, _ => rfl
+  | k + 1, hz => by
+    rw [← Nat.add_assoc, wordsVal_succ_top, hz (n + k) (by omega) (by omega),
+      wordsVal_zero_top k fun i h1 h2 => hz i h1 (by omega)]
+    rfl
+
+/-- `ptr r14 r`, `r11 := w`. -/
+theorem zeroSetup_ok {s : State} {B : Addr} {Z w N r : Nat} (h : Ws s B Z w N) (hr : r < N) (hN : N ≤ 256) :
+    WP isa (.block (ptr .r14 r ++ [.addi .r11 .r29 0])) s fun u =>
+      u.gpr .r14 = off B (arr w r) ∧ u.gpr .r11 = BitVec.ofNat 64 w ∧ u.mem = s.mem ∧ Keep [.r11, .r14] s u := by
+  refine ptr_ok h (r := .r14) (by decide) (by decide) (by decide) (show r < 2 ^ 15 by omega) ?_
+  refine WP.mono (WP.keep [.r11] (Q := fun u => u.gpr .r11 = BitVec.ofNat 64 w ∧ u.mem = s.mem) (by
+    prun [gpr_write, mem_write, h.r29, BitVec.add_zero]) (by decide)) fun u ⟨⟨u11, um⟩, uk⟩ =>
+    ⟨by rw [uk.gpr .r14 (by decide), gpr_write]; rfl, u11, um, ((Keep.write _ .r14 _).trans uk).mono (by decide)⟩
+
+/-- `stepsSetup a r`, from `r11 = 2 wd`: `r5 := [r]`'s address, `r8 :=` that
+of `[a]`'s word `2 wd - 1`, `r4 := 2 wd`. -/
+theorem stepsSetup_ok {s : State} {B : Addr} {Z w N a r wd : Nat} (h : Ws s B Z w N) (ha : a < N) (hr : r < N)
+    (hN : N ≤ 256) (hw : w = 4 * wd) (hwd : 1 ≤ wd) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wd)) :
+    WP isa (.block (stepsSetup a r)) s fun u =>
+      u.gpr .r5 = off B (arr w r) ∧ u.gpr .r8 = off B (arr w a + 16 * wd - 8) ∧
+      u.gpr .r4 = BitVec.ofNat 64 (2 * wd) ∧ u.mem = s.mem ∧ Keep [.r0, .r4, .r5, .r8] s u := by
+  have := h.wle
+  have a8 : 8 ≤ arr w a := Nat.le_trans (by decide) (Nat.le_add_right VG.Proof.Rsa.KeyWorkspace.hdr (a * S w))
+  have e3 : BitVec.ofNat 64 (2 * wd) <<< 3 = BitVec.ofNat 64 (16 * wd) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+    omega
+  have ea : off B (arr w a) + BitVec.ofNat 64 (16 * wd) - BitVec.ofNat 64 8 = off B (arr w a + 16 * wd - 8) := by
+    rw [off_add]
+    exact BitVec.sub_eq_iff_eq_add.mpr (by rw [off_add, Nat.sub_add_cancel (by omega)])
+  have ea' : off B (arr w a + 16 * wd) - BitVec.ofNat 64 8 = off B (arr w a + 16 * wd - 8) :=
+    BitVec.sub_eq_iff_eq_add.mpr (by rw [off_add, Nat.sub_add_cancel (by omega)])
+  simp only [stepsSetup, List.append_assoc]
+  refine ptr_ok h (r := .r5) (by decide) (by decide) (by decide) (show r < 2 ^ 15 by omega) ?_
+  refine ptr_ok (h.of_keep (Keep.write _ .r5 _)) (r := .r8) (by decide) (by decide) (by decide)
+    (show a < 2 ^ 15 by omega) ?_
+  refine WP.mono (WP.keep [.r0, .r4, .r8] (Q := fun u => u.gpr .r8 = off B (arr w a + 16 * wd - 8) ∧
+      u.gpr .r4 = BitVec.ofNat 64 (2 * wd) ∧ u.mem = s.mem) (by
+    prun [gpr_write, mem_write, h11, e3, ea, ea', BitVec.add_zero]) (by decide)) fun u ⟨⟨u8, u4, um⟩, uk⟩ =>
+    ⟨by rw [uk.gpr .r5 (by decide), gpr_write]; simp [gpr_write], u8, u4, um,
+      ((Keep.write _ .r5 _).trans ((Keep.write _ .r8 _).trans uk)).mono (by decide)⟩
+
+
+/-- A 64-bit word of an array outside a frame. -/
+theorem keep_word64 {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem}
+    (h : KeyWorkspace.Keep B w js [] m m') {j o : Nat} (ho : o + 8 ≤ S w) (hj : ∀ x ∈ js, x ≠ j)
+    (fit : arr w j + S w ≤ 2 ^ 64) : word m' B (arr w j + o) = word m B (arr w j + o) :=
+  VG.Proof.Rsa.PPC64LE.InvBatch.keep_word h (b := 64) (by omega) hj (fun d hd => absurd hd (by simp)) fit
+
+/-- `prepA r sv`: the registers saved in `sv`, `[r]`'s `w` digits zeroed. -/
+theorem prepA_ok {s : State} {B : Addr} {Z w N r sv wd : Nat} (h : Ws s B Z w N) (hr : r < N) (hsv : sv < N)
+    (hrsv : r ≠ sv) (hN : N ≤ 256) (hw : w = 4 * wd) (hwd : 4 ≤ wd) :
+    WP isa (prepA r sv) s fun u =>
+      (∀ i < 7, word u.mem B (arr w sv + 8 * i) = s.gpr (svReg i)) ∧ (∀ i < 2 * wd, word u.mem B (arr w r + 8 * i) = 0) ∧
+      KeyWorkspace.Keep B w [sv, r] [] s.mem u.mem ∧ Ws u B Z w N ∧ Keep [.r0, .r5, .r11, .r14, .r17] s u := by
+  have := h.wle
+  have hnw := h.nowrap
+  have fr := h.arr_fit hr
+  have fsv := h.arr_fit hsv
+  have d := arr_disj (w := w) hrsv
+  simp only [S] at fr fsv d
+  rw [prepA, wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (save_ok h hsv hN (by omega)) fun s1 ⟨sv1, o1, k1⟩ => ?_
+  have h1 := h.of_keep k1
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (zeroSetup_ok h1 hr hN) fun s2 ⟨r14, r11, m2, k2⟩ => ?_
+  have h2 := h1.of_keep k2
+  refine WP.mono (zeroWords_ok (w := 2 * wd) h2.scr r14 (by rw [r11, hw]; congr 1; omega) (by omega) (by omega)
+    (by omega)) fun s3 ⟨⟨_, z3, o3⟩, k3⟩ => ⟨fun i hi => ?_, z3, ?_, h2.of_keep k3,
+      ((k1.trans k2).trans k3).mono (by decide)⟩
+  · rw [o3.word (by omega) (by omega), m2]; exact sv1 i hi
+  · refine (KeyWorkspace.Keep.of_arr (o := sv) (d := 0) (n := 56) (by rw [Nat.add_zero]; exact o1)
+      (by simp only [S]; omega) (by simp)).trans ?_
+    rw [← m2]
+    exact KeyWorkspace.Keep.of_arr (o := r) (d := 0) (n := 8 * (2 * wd)) (by rw [Nat.add_zero]; exact o3)
+      (by simp only [S]; omega) (by simp)
+
+/-- `prepB a r m t`, from `force`: the temporary for the divisor `[m]` with
+its top bit set, `F` its top word, and the steps' registers. -/
+theorem prepB_ok {s : State} {B : Addr} {Z w N a r m t wd : Nat} (h : Ws s B Z w N) (ha : a < N) (hr : r < N)
+    (hm : m < N) (ht : t < N) (hmt : m ≠ t) (hN : N ≤ 256) (hw : w = 4 * wd) (hwd : 4 ≤ wd) :
+    WP isa (prepB a r m t) s fun u => ∃ F : BitVec 64,
+      F.toNat = (word s.mem B (arr w m + 8 * (wd - 1))).toNat % 2 ^ 63 + 2 ^ 63 ∧
+      word u.mem B (arr w t) = BitVec.ofNat 64 1 ∧ word u.mem B (arr w t + 8) = F ∧
+      (word u.mem B (arr w t + 16)).toNat = (2 ^ 128 - 1) / F.toNat - 2 ^ 64 ∧
+      word u.mem B (arr w t + 24) = word s.mem B (arr w m + 8 * (wd - 2)) ∧
+      wordsVal u.mem B (arr w m) wd = wordsVal s.mem B (arr w m) (wd - 1) + 2 ^ (64 * (wd - 1)) * F.toNat ∧
+      w32 u.mem B (arr w m + 4 * w) = w32 s.mem B (arr w m + 4 * w) ∧
+      KeyWorkspace.Keep B w [m, t] [] s.mem u.mem ∧
+      u.gpr .r5 = off B (arr w r) ∧ u.gpr .r8 = off B (arr w a + 16 * wd - 8) ∧
+      u.gpr .r4 = BitVec.ofNat 64 (2 * wd) ∧ u.gpr .r9 = off B (arr w t) ∧ u.gpr .r10 = off B (arr w m) ∧
+      u.gpr .r11 = BitVec.ofNat 64 (2 * wd) ∧ Ws u B Z w N ∧
+      Keep [.r0, .r3, .r4, .r5, .r7, .r8, .r9, .r10, .r11, .r12, .r14, .r15, .r16, .r17, .r18, .r20] s u := by
+  have := h.wle
+  have hnw := h.nowrap
+  have fm := h.arr_fit hm
+  have ft := h.arr_fit ht
+  have d := arr_disj (w := w) hmt
+  simp only [S] at fm ft d
+  rw [prepB, wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (force_ok h hm ht hmt hN hw hwd) fun s4 ⟨F, hF, m4, r9, r10, r11, k4⟩ => ?_
+  have h4 := h.of_keep k4
+  have tP : word s4.mem B (arr w t) = BitVec.ofNat 64 1 := by
+    rw [m4, word_write_ne _ (by omega) (by omega) (by omega), word_write_ne _ (by omega) (by omega) (by omega),
+      word_writeW_self]
+  have tF : word s4.mem B (arr w t + 8) = F := by
+    rw [m4, word_write_ne _ (by omega) (by omega) (by omega), word_writeW_self]
+  have tL : word s4.mem B (arr w t + 24) = word s.mem B (arr w m + 8 * (wd - 2)) := by
+    rw [m4, word_writeW_self]
+  have hF63 : 2 ^ 63 ≤ F.toNat := by rw [hF]; omega
+  -- `[m]` and the temporary's frame.
+  have o4 : Outside B (arr w t) 32 (s.mem.writeW (off B (arr w m + 8 * (wd - 1))) F) s4.mem := by
+    rw [m4]
+    exact (((writeW_outside _ B _ (by omega)).mono (by omega) (by omega)).trans
+      ((writeW_outside _ B _ (by omega)).mono (by omega) (by omega))).trans
+      ((writeW_outside _ B _ (by omega)).mono (by omega) (by omega))
+  have om : Outside B (arr w m + 8 * (wd - 1)) 8 s.mem (s.mem.writeW (off B (arr w m + 8 * (wd - 1))) F) :=
+    writeW_outside _ B _ (by omega)
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (recipAt_ok (dT := arr w t) h4.scr r9 (by omega) (by rw [tF]; exact hF63))
+    fun s5 ⟨⟨v5, o5⟩, k5⟩ => ?_
+  have h5 := h4.of_keep k5
+  rw [show seqs [.block (VG.Impl.Rsa.PPC64LE.KeyDiv.stepsSetup a r)] =
+    .block (VG.Impl.Rsa.PPC64LE.KeyDiv.stepsSetup a r) from rfl]
+  refine WP.mono (stepsSetup_ok h5 ha hr hN hw (by omega) ((k5.gpr .r11 (by decide)).trans r11))
+    fun u ⟨r5, r8, r4, mu, ku⟩ => ⟨F, hF, ?_, ?_, ?_, ?_, ?_, ?_, ?_, r5, r8, r4, ?_, ?_, ?_, h5.of_keep ku,
+      ((k4.trans k5).trans ku).mono (by decide)⟩
+  · rw [mu, o5.word (by omega) (by omega), tP]
+  · rw [mu, o5.word (by omega) (by omega), tF]
+  · rw [mu, v5, tF]
+  · rw [mu, o5.word (by omega) (by omega), tL]
+  · rw [mu, o5.wordsVal (by omega) (by omega), o4.wordsVal (by omega) (by omega),
+      show wordsVal (s.mem.writeW (off B (arr w m + 8 * (wd - 1))) F) B (arr w m) wd =
+        wordsVal (s.mem.writeW (off B (arr w m + 8 * (wd - 1))) F) B (arr w m) (wd - 1 + 1) by
+          rw [Nat.sub_add_cancel (by omega)],
+      fios_wordsVal_write_top _ _ _ _ _ (by omega)]
+  · rw [mu, o5.w32 (by omega) (by omega), o4.w32 (by omega) (by omega), om.w32 (by omega) (by omega)]
+  · rw [mu]
+    refine (KeyWorkspace.Keep.of_arr (o := m) (d := 8 * (wd - 1)) (n := 8) om (by simp only [S]; omega)
+      (by simp)).trans ((KeyWorkspace.Keep.of_arr (o := t) (d := 0) (n := 32) (by rw [Nat.add_zero]; exact o4)
+      (by simp only [S]; omega) (by simp)).trans (KeyWorkspace.Keep.of_arr (o := t) (d := 16) (n := 8) o5
+      (by simp only [S]; omega) (by simp)))
+  · rw [ku.gpr .r9 (by decide), k5.gpr .r9 (by decide), r9]
+  · rw [ku.gpr .r10 (by decide), k5.gpr .r10 (by decide), r10]
+  · rw [ku.gpr .r11 (by decide), k5.gpr .r11 (by decide), r11]
 
 end VG.Proof.Rsa.PPC64LE.KeyDiv
