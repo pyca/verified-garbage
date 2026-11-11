@@ -15,7 +15,9 @@ public import VerifiedGarbage.Proof.Bignum.WordStep32
   top two of the divisor (above the same power of two) is `q ≤ q̂ ≤ q + 1`,
   and `wordStepQ1_val`: then `m` added once if negative is `x 2^32 mod m`;
 * `qhat3_norm`, `quot3_val`: that estimate from the 2-by-1 estimate,
-  corrected by `U - q̂ D` over three words (Knuth's step D3).
+  corrected by `U - q̂ D` over three words (Knuth's step D3);
+* `qhat3_div`, `wordStepQ1_div`: the same for any dividend `y < 2^32 m`, as
+  a step that brings down a word of the dividend has (`WordStepNorm`'s).
 -/
 
 @[expose] public section
@@ -88,6 +90,28 @@ theorem addBack_one {W y m qh : Nat} (hm : 0 < m) (hW : 2 * m < W / 2)
   rcases (show c = 0 ∨ c = 1 by omega_using [hc]) with rfl | rfl <;> push_cast <;>
     (repeat' split) <;> omega_arith
 
+/-- A step of long division over the words of a dividend `y < 2^32 m`, for
+any estimate `q ≤ q̂ ≤ q + 1` of `q = ⌊y / m⌋`: `t₁ = y - q̂ m` modulo
+`W > 4 m` (with its borrow `b`) and `m` added once to it if its top half is
+set (with the carry `c`) is `y mod m`. -/
+theorem wordStepQ1_div {W Y M qh T1 T2 b c : Nat} (hM0 : 0 < M) (hMW : 2 * M < W / 2)
+    (hge : Y / M ≤ qh) (hle : qh ≤ Y / M + 1)
+    (hT1 : T1 < W) (hb : b < 2) (h1 : T1 + qh * M = Y + W * b)
+    (hT2 : T2 < W) (hc : c < 2) (h2 : T2 + W * c = T1 + if W / 2 ≤ T1 then M else 0) :
+    T2 = Y % M := by
+  obtain ⟨hfin, hv1, hv2⟩ := addBack_one (W := W) hM0 hMW hge hle
+  have e1 := twos_of_sub hT1 hb (by omega_using [h1]) hv1 hv2
+  have hw1 : -((W : Int) / 2) ≤ addIfNeg M ((Y : Nat) - (qh * M : Nat)) := by
+    rw [hfin]; omega_using []
+  have hw2 : addIfNeg M ((Y : Nat) - (qh * M : Nat)) < (W : Int) / 2 := by
+    rw [hfin]; have := Nat.mod_lt Y hM0; omega_using [hMW, this]
+  have e2 := twos_of_add hv1 hv2 hw1 hw2 e1 hT2 hc h2
+  rw [e2, hfin]
+  have hr := Nat.mod_lt Y hM0
+  have hMW' : M < W := Nat.lt_of_lt_of_le (by omega_using [hMW]) (Nat.div_le_self W 2)
+  unfold twos
+  rw [Int.emod_eq_of_lt (Int.natCast_nonneg _) (Int.ofNat_lt.mpr (Nat.lt_trans hr hMW')), Int.toNat_natCast]
+
 /-- A step of long division over the words, for any estimate `q ≤ q̂ ≤ q + 1`
 of `q = ⌊x 2^32 / m⌋`: `t₁ = x 2^32 - q̂ m` modulo `W > 4 m` (with its borrow
 `b`) and `m` added once to it if its top half is set (with the carry `c`) is
@@ -109,6 +133,63 @@ theorem wordStepQ1_val {W X M qh T1 T2 b c : Nat} (hM0 : 0 < M) (hMW : 2 * M < W
   have hMW' : M < W := Nat.lt_of_lt_of_le (by omega_using [hMW]) (Nat.div_le_self W 2)
   unfold twos
   rw [Int.emod_eq_of_lt (Int.natCast_nonneg _) (Int.ofNat_lt.mpr (Nat.lt_trans hr hMW')), Int.toNat_natCast]
+
+/-- The estimates of a 3-by-2 step of a dividend `y < 2^32 m`, for the top
+three words `U = ⌊y P / 2^(K + 32)⌋` of `y P` and the top two
+`D = ⌊m P / 2^(K + 32)⌋ ≥ 2^31` of `m P`: `U < (2^32 + 1) D`; `quot`'s 2-by-1
+estimate `min(⌊⌊U / 2^32⌋ / ⌊D / 2^32⌋⌋, 2^32 - 1)` is within 2 above
+`Q = min(⌊U / D⌋, 2^32 - 1)` (`WordStep32.quot_le_div`, `WordStep32.div_le_quot`);
+and `q ≤ Q ≤ q + 1` for `q = ⌊y / m⌋` (`qhat_trunc`). -/
+theorem qhat3_div {Y M P K : Nat} (hP : 0 < P) (hYM : Y < M * 2 ^ 32)
+    (hd : 2 ^ 31 ≤ M * P / 2 ^ (K + 32) / 2 ^ 32) :
+    Y * P / 2 ^ (K + 32) < (2 ^ 32 + 1) * (M * P / 2 ^ (K + 32)) ∧
+      min (Y * P / 2 ^ (K + 32) / (M * P / 2 ^ (K + 32))) (2 ^ 32 - 1) ≤
+        min (Y * P / 2 ^ (K + 32) / 2 ^ 32 / (M * P / 2 ^ (K + 32) / 2 ^ 32)) (2 ^ 32 - 1) ∧
+      min (Y * P / 2 ^ (K + 32) / 2 ^ 32 / (M * P / 2 ^ (K + 32) / 2 ^ 32)) (2 ^ 32 - 1) ≤
+        min (Y * P / 2 ^ (K + 32) / (M * P / 2 ^ (K + 32))) (2 ^ 32 - 1) + 2 ∧
+      Y / M ≤ min (Y * P / 2 ^ (K + 32) / (M * P / 2 ^ (K + 32))) (2 ^ 32 - 1) ∧
+      min (Y * P / 2 ^ (K + 32) / (M * P / 2 ^ (K + 32))) (2 ^ 32 - 1) ≤ Y / M + 1 := by
+  have hM0 : 0 < M := Nat.pos_of_ne_zero fun h => by rw [h, Nat.zero_mul] at hYM; exact Nat.not_lt_zero _ hYM
+  have hBK : (2 : Nat) ^ (K + 32) = 2 ^ K * 2 ^ 32 := Nat.pow_add _ _ _
+  have hq0 : Y * P / (M * P) = Y / M := Nat.mul_div_mul_right _ _ hP
+  have hq : Y * P / (M * P) < 2 ^ 32 := by
+    rw [hq0, Nat.div_lt_iff_lt_mul hM0, Nat.mul_comm (2 ^ 32) M]; exact hYM
+  generalize hD : M * P / 2 ^ (K + 32) = D at hd ⊢
+  have hD32 : 2 ^ 32 ≤ D := by
+    have := Nat.mul_le_mul_right (2 ^ 32) hd
+    have h2 := Nat.div_mul_le_self D (2 ^ 32)
+    have h3 : 2 ^ 31 * 2 ^ 32 = 2 ^ 63 := by rw [← Nat.pow_add]
+    omega_using [this, h2, h3]
+  have tr := qhat_trunc (Y := Y * P) (N := M * P) (K := K + 32) hq (by rw [hD]; exact hD32)
+  rw [hD, hq0] at tr
+  generalize hU : Y * P / 2 ^ (K + 32) = U at tr ⊢
+  -- `y P < 2^32 m P < 2^32 (D + 1) 2^(K + 32)`, so `U < (D + 1) 2^32 ≤ (2^32 + 1) D`.
+  have hUD : U < (2 ^ 32 + 1) * D := by
+    have h1 : Y * P < (D + 1) * 2 ^ (K + 32) * 2 ^ 32 := by
+      have := lt_succ_div_mul (M * P) (2 ^ (K + 32)) (Nat.two_pow_pos _)
+      rw [hD] at this
+      have h3 : Y * P < M * P * 2 ^ 32 := by
+        rw [Nat.mul_assoc, Nat.mul_comm P, ← Nat.mul_assoc]; exact Nat.mul_lt_mul_of_pos_right hYM hP
+      exact Nat.lt_of_lt_of_le h3 (Nat.mul_le_mul_right _ (Nat.le_of_lt this))
+    have h2 : U < (D + 1) * 2 ^ 32 := by
+      rw [← hU, Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _), Nat.mul_assoc, Nat.mul_comm (2 ^ 32),
+        ← Nat.mul_assoc]; exact h1
+    have e1 : (D + 1) * 2 ^ 32 = D * 2 ^ 32 + 2 ^ 32 := by rw [Nat.add_mul, Nat.one_mul]
+    have e2 : (2 ^ 32 + 1) * D = D * 2 ^ 32 + D := by rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm]
+    omega_using [h2, e1, e2, hD32]
+  have hd0 : 0 < D / 2 ^ 32 := by omega_using [hd]
+  have hUe : U = U / 2 ^ 32 * 2 ^ 32 + U % 2 ^ 32 := by rw [Nat.mul_comm, Nat.div_add_mod]
+  have hDe : D = D / 2 ^ 32 * 2 ^ 32 + D % 2 ^ 32 := by rw [Nat.mul_comm, Nat.div_add_mod]
+  have hle1 : U / D ≤ U / 2 ^ 32 / (D / 2 ^ 32) := by
+    have := quot_le_div (N := U / 2 ^ 32) (ml := D % 2 ^ 32) (Nat.mod_lt U (Nat.two_pow_pos 32)) hd0
+    rwa [← hUe, ← hDe] at this
+  refine ⟨hUD, Nat.le_min.mpr ⟨Nat.le_trans (Nat.min_le_left _ _) hle1, Nat.min_le_right _ _⟩, ?_, tr.1, tr.2⟩
+  rcases Nat.lt_or_ge (U / D) (2 ^ 32) with hlt | hge
+  · have := div_le_quot (N := U / 2 ^ 32) (yl := U % 2 ^ 32) (Nat.mod_lt D (Nat.two_pow_pos 32)) hd
+      (by rwa [← hUe, ← hDe])
+    rw [← hUe, ← hDe] at this
+    omega_using [this, hlt]
+  · omega_using [hge]
 
 /-- The estimates of a 3-by-2 step, for the top three words `U = ⌊x P / 2^K⌋`
 of `x P` and the top two `D = ⌊m P / 2^(K + 32)⌋ ≥ 2^63` of `m P`, `x < m`:
