@@ -126,6 +126,19 @@ def signTab : Prog isa := .seq (.block (idxLoad 22)) (byLen (fun i => signBody f
 /-- `vg_rsa_pss_sign`, calling a checked private operation by its name. -/
 def sign : Prog isa := wrap frameBytes (signTab f g privN privC)
 
+/-- `signBody`, calling `vg_rsa_private_checked_precomputed` with `pre`. -/
+def signBodyP : Prog isa :=
+  seqs [.block (signChk H), .block (params ++ saltFits),
+    .ite .ne signFail (seqs [signEnc f g H, .block privArgsP, .call privN privC])]
+
+/-- `signTab`, calling `vg_rsa_private_checked_precomputed`. -/
+def signTabP : Prog isa := .seq (.block (idxLoad 22)) (byLen (fun i => signBodyP f g (ofIdx i) privN privC) idxs)
+
+/-- `vg_rsa_pss_sign_precomputed`: `sign`, with the key's precomputed values
+`pre` and `pre_len` (after `mgf1`), which it passes to
+`vg_rsa_private_checked_precomputed`. -/
+def signP : Prog isa := wrap frameBytes (signTabP f g privN privC)
+
 /-! ## Verifying -/
 
 /-- A salt of the expected length: copied from the end of `DB`. -/
