@@ -4,6 +4,7 @@ module
 import VerifiedGarbage.Proof.Bignum.CrtGPow
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.ModArith
 
 /-!
 # `R_X² mod X` from `R² mod n`, for a factor `X` of `n`
@@ -128,5 +129,35 @@ theorem odd_of_dvd {N X : Nat} (hN : N % 2 = 1) (hX : X ∣ N) : X % 2 = 1 := by
   rcases Nat.mod_two_eq_zero_or_one X with h | h
   · rw [Nat.mul_mod, h, Nat.zero_mul] at hN; exact absurd hN (by decide)
   · exact h
+
+/-- Two chunks folded: `a R ≡ h`, `b R ≡ l` and `c R ≡ b` give
+`(c + a) R² ≡ l + h R`. -/
+theorem fold_mont {X R a b c l h : Nat} (h1 : a * R % X = h % X) (h2 : b * R % X = l % X)
+    (h3 : c * R % X = b % X) : (c + a) % X * R * R % X = (l + h * R) % X := by
+  rw [Nat.mul_assoc, Nat.mod_mul_mod]
+  apply ModArith.mod_eq_of_dvd_sub
+  obtain ⟨k₁, e₁⟩ := ModArith.dvd_sub_of_mod_eq h1
+  obtain ⟨k₂, e₂⟩ := ModArith.dvd_sub_of_mod_eq h2
+  obtain ⟨k₃, e₃⟩ := ModArith.dvd_sub_of_mod_eq h3
+  refine ⟨k₂ + k₃ * R + k₁ * R, ?_⟩
+  push_cast at e₁ e₂ e₃ ⊢
+  grind
+
+/-- After the fold, `A R^2 ≡ 2^(128 w)` gives `A ≡ 2^(64 · 2 (w - v))`, for
+`v ≤ w` and an odd `X`. -/
+theorem fold_reduced {X A w v : Nat} (hv : v ≤ w) (hX : X % 2 = 1)
+    (hA : A * 2 ^ (64 * v) * 2 ^ (64 * v) % X = 2 ^ (128 * w) % X) :
+    A % X = 2 ^ (64 * (2 * (w - v))) % X := by
+  refine mont_cancel (coprime_pow2 hX (128 * v)) ?_
+  rw [show 2 ^ (128 * v) = 2 ^ (64 * v) * 2 ^ (64 * v) by rw [← Nat.pow_add]; congr 1; omega, ← Nat.mul_assoc,
+    hA, ← Nat.pow_add, ← Nat.pow_add]
+  congr 2
+  omega
+
+/-- The fold's doublings: `2^(64 e + c)` for `e = 2 (w - v)`, as `r2_doubled`. -/
+theorem fold_doubled {w v : Nat} (hv : v ≤ w) (hw : w ≤ 2 * v) :
+    64 * (2 * (w - v)) + (if 2 * (w - v) ≤ v then 64 * (v - 2 * (w - v)) + v else 64 * (2 * v - 2 * (w - v))) =
+      if 2 * (w - v) ≤ v then 64 * v + v else 128 * v := by
+  split <;> omega
 
 end VG.Proof.Bignum

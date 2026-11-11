@@ -301,6 +301,834 @@ jne 239b
     )
 }
 
+/// The values of an RSA private key that its operations need and that do not depend on their input, so that they are computed once per key rather than once per operation: what the `_precomputed` private-key operations take. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) of `w = ⌈n_len / 8⌉` words of 64 bits, and the factors `p` (`p_len` bytes) and `q` (`q_len` bytes), most significant first, writes to `pre`, least significant word first: `n` and `R² mod n` for `R = 2^(64 w)` (`w` words each, what `vg_rsa_public_precompute` writes), then `R_p² mod p` for `R_p = 2^(64 w_p)` and `w_p = max(2, ⌈p_len / 8⌉)` (`w_p` words), then the same for `q`; and returns 1. Writes zeros and returns 0 if `n` is not such a modulus or `p q ≠ n`. The rest of the key is checked when it is loaded (`vg_rsa_check_key`).
+///
+/// Contract: `VG.Spec.Rsa.privatePrecomputeContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on `p` or `q`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `pre` must be valid for reads and writes of `8 * pre_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * The contents of `pre` are secret (they are values of `p` and `q`); the caller must destroy them after use.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre` and `scratch` must not overlap each other, `n`, `p`, `q` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `pre`, `n`, `p`, `q` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_private_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "TItcJBhMi1QkCEiLRCQQSYkbSYlrCE2JYxBNiWsYTYlzIE2JeyhJibuAAAAASYmTiAAAAEmJi5AAAABJibuoAAAATYmDmAAAAE2Ji6AAAABNiYPIAAAASYm74AAAAE2Jk7gAAABNiZPYAAAASYmDwAAAAEyJ30iJ8UgByUgByUgByUiLt4AAAAC4AAAAAA=="
+20:
+.base64 "iAZIg8YBSIPpAQ=="
+jne 20b
+.base64 "SIuXiAAAAEiLj5AAAAAPtgJIg/gBSBntD7ZECv9Ig+ABSIP4AUgZ9kgJ9UiJzkiD7kBIwc44D7YCSAHGSIH+gAAAAEgZ9kgJ9UiF7Q=="
+jne 21f
+.base64 "SIuPkAAAAEmJzEmDxAdJwewDTIlnMEyJ4EiDwAJIAcBIAcBIAcBIifpIgcIAAQAASIlXQEgBwkiJV0hIAcJIiVdQSAHCSIlXWEgBwkiJV2BIAcJIiVdoSAHCSIlXcEgBwkiJV3hIAcJIi7eIAAAASItfQLgAAAAASInKSYn2"
+23:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 24f
+jmp 25f
+24:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+25:
+.base64 "SIXS"
+jne 23b
+.base64 "SIu3qAAAAEiLj5AAAABIi19IuAAAAABIicpJifY="
+26:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 27f
+jmp 28f
+27:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+28:
+.base64 "SIXS"
+jne 26b
+.base64 "TItnMEiLX0hMi1dAvQAAAABJx8YAAAAA"
+29:
+.base64 "SAHtSosE80sbBPJIGe1Jg8YBTTnm"
+jne 29b
+.base64 "SImvsAAAAEmLGkiJ2UiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFIidhI9+G+AgAAAEgpxkiJyEj35kiJwUiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFBvwAAAABJKc9MiX84ugEAAAC5AAAAAEyLR3i4AAAAAEnHxgAAAAA="
+210:
+.base64 "S4kE8EmDxgFNOeY="
+jne 210b
+.base64 "S4kE4EuJROAISYkUyEuLROL4SMHoP0iD8AFMieFIg+EDSAnI"
+je 211f
+.base64 "S4tE4vi6AQAAALlAAAAASIP4AQ=="
+je 213f
+215:
+.base64 "SNHoSAHSSIPpAUiD+AE="
+jne 215b
+jmp 214f
+213:
+214:
+.base64 "SImP0AAAAEyJ4UiD6QFMi0dguAAAAABJx8YAAAAA"
+216:
+.base64 "S4kE8EmDxgFNOeY="
+jne 216b
+.base64 "S4kE4EuJROAISYkUyEiLj9AAAABIA08wSImP0AAAAA=="
+217:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+218:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 218b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+219:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 219b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+220:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 220b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 217b
+.base64 "uAYAAABIiYfQAAAA"
+221:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 221b
+jmp 212f
+211:
+.base64 "SItfYEyLV0BMi2cwTItHWL0AAAAAScfGAAAAAA=="
+222:
+.base64 "uAAAAABIAe1LGwTySBntSokE80mDxgFNOeY="
+jne 222b
+.base64 "S4t04vhIifJIg/L/SMfA/////7kAAAAAQb1AAAAA"
+223:
+.base64 "SAHASBHSTRnbSYnWSSn2TRn/SYP3/00J302F/0kPRdZIAclMKflJg+0B"
+jne 223b
+.base64 "SYkISItPMEjB6QJIiY/QAAAA"
+224:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLb1hLi3Ti+EqLVOP4SotE4/BJifFJKdFJg/kBTRnJTYnLSYPz/0wh2kmJxkmJ1UiLRQBJ9+VMAfBMEepIidFIg8EBSYnFSInISPfmSSnGTTn1TRn/TAH5SSH3TQH+SYn3SYPvAU0590iD0QBMCclJiwJI9+FJidG6AAAAAEgpwkmJEEgZ7UnHxgEAAAA="
+225:
+.base64 "S4sE8kj34UwByEiD0gBJidFKi1Tz+EgB7UgZwkgZ7UuJFPBJg8YBTTnm"
+jne 225b
+.base64 "SotU4/hIAe1MGcpLiRTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+226:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 226b
+.base64 "S4sE4EgB7UiD0ABLiQTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+227:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 227b
+.base64 "S4sE4EgB7UiD0ABLiQTgTInGScfGAAAAAA=="
+228:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 228b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 224b
+.base64 "uAIAAABIiYfQAAAA"
+229:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 229b
+212:
+.base64 "ugUAAAC5AQAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SIn6SItCeEiLUjBIg8ICSAHSSAHSSAHSSAHQSImH6AAAAEyLp6AAAABJg8QHScHsA0mD/AI="
+jb 230f
+jmp 231f
+230:
+.base64 "QbwCAAAA"
+231:
+.base64 "SIn+SInHSIm3gAAAAEyJZzBMieBIg8ACSAHASAHASAHASIn6SIHCAAEAAEiJV0BIAcJIiVdISAHCSIlXUEgBwkiJV1hIAcJIiVdgSAHCSIlXaEgBwkiJV3BIAcJIiVd4SAHCSIn3SIuX6AAAAEiLQnhIi1IwSIPCAkgB0kgB0kgB0kgB0EgB0kgB0kgB0kgB0kgB0kgB0EiJh/AAAABMi6fAAAAASYPEB0nB7ANJg/wC"
+jb 232f
+jmp 233f
+232:
+.base64 "QbwCAAAA"
+233:
+.base64 "SIn+SInHSIm3gAAAAEyJZzBMieBIg8ACSAHASAHASAHASIn6SIHCAAEAAEiJV0BIAcJIiVdISAHCSIlXUEgBwkiJV1hIAcJIiVdgSAHCSIlXaEgBwkiJV3BIAcJIiVd4SAHCSIn3SIu/6AAAAEyLR0BMi2cwuAAAAABJx8YAAAAA"
+234:
+.base64 "S4kE8EmDxgFNOeY="
+jne 234b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsJgAAABIi4igAAAASItfQLgAAAAASInKSYn2"
+235:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 236f
+jmp 237f
+236:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+237:
+.base64 "SIXS"
+jne 235b
+.base64 "TItHSEyLZzC4AAAAAEnHxgAAAAA="
+238:
+.base64 "S4kE8EmDxgFNOeY="
+jne 238b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsOAAAABIi4igAAAASItfSLgAAAAASInKSYn2"
+239:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 240f
+jmp 241f
+240:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+241:
+.base64 "SIXS"
+jne 239b
+.base64 "SIu/gAAAAEiLv/AAAABMi0dATItnMLgAAAAAScfGAAAAAA=="
+242:
+.base64 "S4kE8EmDxgFNOeY="
+jne 242b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsLgAAABIi4jAAAAASItfQLgAAAAASInKSYn2"
+243:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 244f
+jmp 245f
+244:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+245:
+.base64 "SIXS"
+jne 243b
+.base64 "SIu/gAAAAEyLR1BIi18wuAAAAABIidlIAclIg8ECQb4AAAAA"
+246:
+.base64 "S4kE8EmDxgFJOc4="
+jne 246b
+.base64 "SIuH6AAAAEyLWEBMi1AwSIuH8AAAAEyLSEBMi2AwTItHUEG9AAAAAA=="
+247:
+.base64 "S4sM670AAAAAScfGAAAAAA=="
+248:
+.base64 "S4sE8Uj34UsDBPBIg9IASAHoSIPSAEuJBPBIidVJg8YBTTnm"
+jne 248b
+.base64 "S4sE4EgB6EuJBOBLi0TgCEiD0ABLiUTgCEmDwAhJg8UBTTnV"
+jne 247b
+.base64 "TItnMEiLX1BMi1dAvQAAAABJx8YAAAAA"
+249:
+.base64 "SosE80szBPJICcVJg8YBTTnm"
+jne 249b
+.base64 "TIngSAHASAHASAHASAHDSYPEAknHxgAAAAA="
+250:
+.base64 "SosE80gJxUmDxgFNOeY="
+jne 250b
+.base64 "SIP9AUgZ7Ugjr7AAAABIia+wAAAASIu/6AAAAEyLZzBIi19ITItXQL0AAAAAScfGAAAAAA=="
+251:
+.base64 "SAHtSosE80sbBPJIGe1Jg8YBTTnm"
+jne 251b
+.base64 "SIuHgAAAAEgjqLAAAABIiaiwAAAASIuHgAAAAEiLgLAAAABIiYfAAAAATIu/wAAAAEyLZzBIi19AScfGAAAAAA=="
+252:
+.base64 "SosE80wh+EqJBPNJg8YBTTnm"
+jne 252b
+.base64 "TIn4SIPw/0iD4ANICwNIiQNIicNIidlIidhI9+G+AgAAAEgpxkiJyEj35kiJwUiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFIidhI9+G+AgAAAEgpxkiJyEj35kiJwUiJ2Ej34b4CAAAASCnGSInISPfmSInBQb8AAAAASSnPTIl/OLoBAAAAuQAAAABMi0d4uAAAAABJx8YAAAAA"
+253:
+.base64 "S4kE8EmDxgFNOeY="
+jne 253b
+.base64 "S4kE4EuJROAISYkUyEiLv4AAAABIi7/wAAAASIuHgAAAAEiLgLAAAABIiYfAAAAATIu/wAAAAEyLZzBIi19AScfGAAAAAA=="
+254:
+.base64 "SosE80wh+EqJBPNJg8YBTTnm"
+jne 254b
+.base64 "TIn4SIPw/0iD4ANICwNIiQNIicNIidlIidhI9+G+AgAAAEgpxkiJyEj35kiJwUiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFIidhI9+G+AgAAAEgpxkiJyEj35kiJwUiJ2Ej34b4CAAAASCnGSInISPfmSInBQb8AAAAASSnPTIl/OLoBAAAAuQAAAABMi0d4uAAAAABJx8YAAAAA"
+255:
+.base64 "S4kE8EmDxgFNOeY="
+jne 255b
+.base64 "S4kE4EuJROAISYkUyEiLv4AAAABIi7/oAAAATItHYEyLZzC4AAAAAEnHxgAAAAA="
+256:
+.base64 "S4kE8EmDxgFNOeY="
+jne 256b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLUGBIiZe4AAAASItQMEiJl7AAAAA="
+257:
+.base64 "TItHSEyLZzC4AAAAAEnHxgAAAAA="
+258:
+.base64 "S4kE8EmDxgFNOeY="
+jne 258b
+.base64 "S4kE4EuJROAITIunsAAAAEw7ZzA="
+jb 259f
+.base64 "TItnMA=="
+jmp 260f
+259:
+260:
+.base64 "SIu3uAAAAEiLX0hJx8YAAAAA"
+261:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 261b
+.base64 "SIuHsAAAAEwp4EiJh7AAAABNAeRNAeRNAeRMA6e4AAAATImnuAAAALoEAAAAuQQAAABBuAcAAAA="
+call {vg_rsa_mont_mul}
+.base64 "ugUAAAC5AQAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SItfYEyLT2hMi1dATItHUEyLZzBIi3dYvQAAAABJx8YAAAAA"
+262:
+.base64 "SAHtSosE80sTBPFLiQTwSBntSYPGAU055g=="
+jne 262b
+.base64 "uAAAAABIAe1Ig9AAS4kE4EiLX2C9AAAAAEnHxgAAAAA="
+263:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 263b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+264:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 264b
+.base64 "SIuHsAAAAEiFwA=="
+jne 257b
+.base64 "TItnMEiLd2BIi19wScfGAAAAAA=="
+265:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 265b
+.base64 "SItHMEyLp4AAAABNi2QkMLkAAAAA"
+266:
+.base64 "SAHBTDnh"
+jb 266b
+.base64 "SAHJSAHJSAHJSAHJSAHJSAHJSAHASAHASAHASAHASAHASAHASAHASAHBTIungAAAAE2LZCQwTQHkTQHkTQHkTQHkTQHkTQHkTQHkSImP+AAAAEw54Q=="
+jb 267f
+jmp 268f
+267:
+269:
+.base64 "ugYAAAC5BgAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "TIungAAAAE2LZCQwTQHkTQHkTQHkTQHkTQHkTQHkTQHkSItPMEgByUgByUgByUgByUgByUgByUgDj/gAAABIiY/4AAAATDnh"
+jb 269b
+268:
+.base64 "SIuP+AAAAEyLp4AAAABNi2QkME0B5E0B5E0B5E0B5E0B5E0B5E0B5Ewp4Q=="
+je 270f
+.base64 "SImPsAAAAA=="
+272:
+.base64 "SItfcEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+273:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 273b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+274:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 274b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+275:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 275b
+.base64 "SIuPsAAAAEiD6QFIiY+wAAAA"
+jne 272b
+jmp 271f
+270:
+271:
+.base64 "SIu/gAAAAEiLv/AAAABMi0dgTItnMLgAAAAAScfGAAAAAA=="
+276:
+.base64 "S4kE8EmDxgFNOeY="
+jne 276b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLUGBIiZe4AAAASItQMEiJl7AAAAA="
+277:
+.base64 "TItHSEyLZzC4AAAAAEnHxgAAAAA="
+278:
+.base64 "S4kE8EmDxgFNOeY="
+jne 278b
+.base64 "S4kE4EuJROAITIunsAAAAEw7ZzA="
+jb 279f
+.base64 "TItnMA=="
+jmp 280f
+279:
+280:
+.base64 "SIu3uAAAAEiLX0hJx8YAAAAA"
+281:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 281b
+.base64 "SIuHsAAAAEwp4EiJh7AAAABNAeRNAeRNAeRMA6e4AAAATImnuAAAALoEAAAAuQQAAABBuAcAAAA="
+call {vg_rsa_mont_mul}
+.base64 "ugUAAAC5AQAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SItfYEyLT2hMi1dATItHUEyLZzBIi3dYvQAAAABJx8YAAAAA"
+282:
+.base64 "SAHtSosE80sTBPFLiQTwSBntSYPGAU055g=="
+jne 282b
+.base64 "uAAAAABIAe1Ig9AAS4kE4EiLX2C9AAAAAEnHxgAAAAA="
+283:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 283b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+284:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 284b
+.base64 "SIuHsAAAAEiFwA=="
+jne 277b
+.base64 "TItnMEiLd2BIi19wScfGAAAAAA=="
+285:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 285b
+.base64 "SItHMEyLp4AAAABNi2QkMLkAAAAA"
+286:
+.base64 "SAHBTDnh"
+jb 286b
+.base64 "SAHJSAHJSAHJSAHJSAHJSAHJSAHASAHASAHASAHASAHASAHASAHASAHBTIungAAAAE2LZCQwTQHkTQHkTQHkTQHkTQHkTQHkTQHkSImP+AAAAEw54Q=="
+jb 287f
+jmp 288f
+287:
+289:
+.base64 "ugYAAAC5BgAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "TIungAAAAE2LZCQwTQHkTQHkTQHkTQHkTQHkTQHkTQHkSItPMEgByUgByUgByUgByUgByUgByUgDj/gAAABIiY/4AAAATDnh"
+jb 289b
+288:
+.base64 "SIuP+AAAAEyLp4AAAABNi2QkME0B5E0B5E0B5E0B5E0B5E0B5E0B5Ewp4Q=="
+je 290f
+.base64 "SImPsAAAAA=="
+292:
+.base64 "SItfcEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+293:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 293b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+294:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 294b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+295:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 295b
+.base64 "SIuPsAAAAEiD6QFIiY+wAAAA"
+jne 292b
+jmp 291f
+290:
+291:
+.base64 "SIu/gAAAAEiLn4AAAABMi7+wAAAATItnMEiLd0BJx8YAAAAA"
+296:
+.base64 "SosE9kwh+EqJBPNJg8YBTTnm"
+jne 296b
+.base64 "TIngSAHASAHASAHASAHDTItnMEiLd2BJx8YAAAAA"
+297:
+.base64 "SosE9kwh+EqJBPNJg8YBTTnm"
+jne 297b
+.base64 "TIngSAHASAHASAHASAHDSIu/6AAAAEyLZzBIi3dwScfGAAAAAA=="
+298:
+.base64 "SosE9kwh+EqJBPNJg8YBTTnm"
+jne 298b
+.base64 "TIngSAHASAHASAHASAHDSIu/gAAAAEiLv/AAAABMi2cwSIt3cEnHxgAAAAA="
+299:
+.base64 "SosE9kwh+EqJBPNJg8YBTTnm"
+jne 299b
+.base64 "TIngSAHASAHASAHASAHDSIu/gAAAAEiLh7AAAABIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyg="
+jmp 22f
+21:
+.base64 "SIu3gAAAAEiLj5AAAAC4AAAAAA=="
+2100:
+.base64 "iAZIg8YBSIPpAQ=="
+jne 2100b
+.base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyg="
+22:
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.p2align 6"#,
+        vg_rsa_mont_mul = sym super::rsa::vg_rsa_mont_mul::vg_rsa_mont_mul,
+    )
+}
+
+/// The CPU features `vg_rsa_private_precompute_adx` requires (`Artifact.features`).
+pub const VG_RSA_PRIVATE_PRECOMPUTE_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// The values of an RSA private key that its operations need and that do not depend on their input, so that they are computed once per key rather than once per operation: what the `_precomputed` private-key operations take. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) of `w = ⌈n_len / 8⌉` words of 64 bits, and the factors `p` (`p_len` bytes) and `q` (`q_len` bytes), most significant first, writes to `pre`, least significant word first: `n` and `R² mod n` for `R = 2^(64 w)` (`w` words each, what `vg_rsa_public_precompute` writes), then `R_p² mod p` for `R_p = 2^(64 w_p)` and `w_p = max(2, ⌈p_len / 8⌉)` (`w_p` words), then the same for `q`; and returns 1. Writes zeros and returns 0 if `n` is not such a modulus or `p q ≠ n`. The rest of the key is checked when it is loaded (`vg_rsa_check_key`).
+///
+/// Contract: `VG.Spec.Rsa.privatePrecomputeContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on `p` or `q`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `pre` must be valid for reads and writes of `8 * pre_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * The contents of `pre` are secret (they are values of `p` and `q`); the caller must destroy them after use.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre` and `scratch` must not overlap each other, `n`, `p`, `q` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `pre`, `n`, `p`, `q` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_private_precompute_adx(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "TItcJBhMi1QkCEiLRCQQSYkbSYlrCE2JYxBNiWsYTYlzIE2JeyhJibuAAAAASYmTiAAAAEmJi5AAAABJibuoAAAATYmDmAAAAE2Ji6AAAABNiYPIAAAASYm74AAAAE2Jk7gAAABNiZPYAAAASYmDwAAAAEyJ30iJ8UgByUgByUgByUiLt4AAAAC4AAAAAA=="
+20:
+.base64 "iAZIg8YBSIPpAQ=="
+jne 20b
+.base64 "SIuXiAAAAEiLj5AAAAAPtgJIg/gBSBntD7ZECv9Ig+ABSIP4AUgZ9kgJ9UiJzkiD7kBIwc44D7YCSAHGSIH+gAAAAEgZ9kgJ9UiF7Q=="
+jne 21f
+.base64 "SIuPkAAAAEmJzEmDxAdJwewDTIlnMEyJ4EiDwAJIAcBIAcBIAcBIifpIgcIAAQAASIlXQEgBwkiJV0hIAcJIiVdQSAHCSIlXWEgBwkiJV2BIAcJIiVdoSAHCSIlXcEgBwkiJV3hIAcJIi7eIAAAASItfQLgAAAAASInKSYn2"
+23:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 24f
+jmp 25f
+24:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+25:
+.base64 "SIXS"
+jne 23b
+.base64 "SIu3qAAAAEiLj5AAAABIi19IuAAAAABIicpJifY="
+26:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 27f
+jmp 28f
+27:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+28:
+.base64 "SIXS"
+jne 26b
+.base64 "TItnMEiLX0hMi1dAvQAAAABJx8YAAAAA"
+29:
+.base64 "SAHtSosE80sbBPJIGe1Jg8YBTTnm"
+jne 29b
+.base64 "SImvsAAAAEmLGkiJ2UiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFIidhI9+G+AgAAAEgpxkiJyEj35kiJwUiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFBvwAAAABJKc9MiX84ugEAAAC5AAAAAEyLR3i4AAAAAEnHxgAAAAA="
+210:
+.base64 "S4kE8EmDxgFNOeY="
+jne 210b
+.base64 "S4kE4EuJROAISYkUyEuLROL4SMHoP0iD8AFMieFIg+EDSAnI"
+je 211f
+.base64 "S4tE4vi6AQAAALlAAAAASIP4AQ=="
+je 213f
+215:
+.base64 "SNHoSAHSSIPpAUiD+AE="
+jne 215b
+jmp 214f
+213:
+214:
+.base64 "SImP0AAAAEyJ4UiD6QFMi0dguAAAAABJx8YAAAAA"
+216:
+.base64 "S4kE8EmDxgFNOeY="
+jne 216b
+.base64 "S4kE4EuJROAISYkUyEiLj9AAAABIA08wSImP0AAAAA=="
+217:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+218:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 218b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+219:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 219b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+220:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 220b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 217b
+.base64 "uAYAAABIiYfQAAAA"
+221:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 221b
+jmp 212f
+211:
+.base64 "SItfYEyLV0BMi2cwTItHWL0AAAAAScfGAAAAAA=="
+222:
+.base64 "uAAAAABIAe1LGwTySBntSokE80mDxgFNOeY="
+jne 222b
+.base64 "S4t04vhIifJIg/L/SMfA/////7kAAAAAQb1AAAAA"
+223:
+.base64 "SAHASBHSTRnbSYnWSSn2TRn/SYP3/00J302F/0kPRdZIAclMKflJg+0B"
+jne 223b
+.base64 "SYkISItPMEjB6QJIiY/QAAAA"
+224:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLb1hLi3Ti+EqLVOP4SotE4/BJifFJKdFJg/kBTRnJTYnLSYPz/0wh2kmJxkmJ1UiLRQBJ9+VMAfBMEepIidFIg8EBSYnFSInISPfmSSnGTTn1TRn/TAH5SSH3TQH+SYn3SYPvAU0590iD0QBMCclJiwJI9+FJidG6AAAAAEgpwkmJEEgZ7UnHxgEAAAA="
+225:
+.base64 "S4sE8kj34UwByEiD0gBJidFKi1Tz+EgB7UgZwkgZ7UuJFPBJg8YBTTnm"
+jne 225b
+.base64 "SotU4/hIAe1MGcpLiRTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+226:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 226b
+.base64 "S4sE4EgB7UiD0ABLiQTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+227:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 227b
+.base64 "S4sE4EgB7UiD0ABLiQTgTInGScfGAAAAAA=="
+228:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 228b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 224b
+.base64 "uAIAAABIiYfQAAAA"
+229:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 229b
+212:
+.base64 "ugUAAAC5AQAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SIn6SItCeEiLUjBIg8ICSAHSSAHSSAHSSAHQSImH6AAAAEyLp6AAAABJg8QHScHsA0mD/AI="
+jb 230f
+jmp 231f
+230:
+.base64 "QbwCAAAA"
+231:
+.base64 "SIn+SInHSIm3gAAAAEyJZzBMieBIg8ACSAHASAHASAHASIn6SIHCAAEAAEiJV0BIAcJIiVdISAHCSIlXUEgBwkiJV1hIAcJIiVdgSAHCSIlXaEgBwkiJV3BIAcJIiVd4SAHCSIn3SIuX6AAAAEiLQnhIi1IwSIPCAkgB0kgB0kgB0kgB0EgB0kgB0kgB0kgB0kgB0kgB0EiJh/AAAABMi6fAAAAASYPEB0nB7ANJg/wC"
+jb 232f
+jmp 233f
+232:
+.base64 "QbwCAAAA"
+233:
+.base64 "SIn+SInHSIm3gAAAAEyJZzBMieBIg8ACSAHASAHASAHASIn6SIHCAAEAAEiJV0BIAcJIiVdISAHCSIlXUEgBwkiJV1hIAcJIiVdgSAHCSIlXaEgBwkiJV3BIAcJIiVd4SAHCSIn3SIu/6AAAAEyLR0BMi2cwuAAAAABJx8YAAAAA"
+234:
+.base64 "S4kE8EmDxgFNOeY="
+jne 234b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsJgAAABIi4igAAAASItfQLgAAAAASInKSYn2"
+235:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 236f
+jmp 237f
+236:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+237:
+.base64 "SIXS"
+jne 235b
+.base64 "TItHSEyLZzC4AAAAAEnHxgAAAAA="
+238:
+.base64 "S4kE8EmDxgFNOeY="
+jne 238b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsOAAAABIi4igAAAASItfSLgAAAAASInKSYn2"
+239:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 240f
+jmp 241f
+240:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+241:
+.base64 "SIXS"
+jne 239b
+.base64 "SIu/gAAAAEiLv/AAAABMi0dATItnMLgAAAAAScfGAAAAAA=="
+242:
+.base64 "S4kE8EmDxgFNOeY="
+jne 242b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsLgAAABIi4jAAAAASItfQLgAAAAASInKSYn2"
+243:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 244f
+jmp 245f
+244:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+245:
+.base64 "SIXS"
+jne 243b
+.base64 "SIu/gAAAAEyLR1BIi18wuAAAAABIidlIAclIg8ECQb4AAAAA"
+246:
+.base64 "S4kE8EmDxgFJOc4="
+jne 246b
+.base64 "SIuH6AAAAEyLWEBMi1AwSIuH8AAAAEyLSEBMi2AwTItHUEG9AAAAAA=="
+247:
+.base64 "S4sM670AAAAAScfGAAAAAA=="
+248:
+.base64 "S4sE8Uj34UsDBPBIg9IASAHoSIPSAEuJBPBIidVJg8YBTTnm"
+jne 248b
+.base64 "S4sE4EgB6EuJBOBLi0TgCEiD0ABLiUTgCEmDwAhJg8UBTTnV"
+jne 247b
+.base64 "TItnMEiLX1BMi1dAvQAAAABJx8YAAAAA"
+249:
+.base64 "SosE80szBPJICcVJg8YBTTnm"
+jne 249b
+.base64 "TIngSAHASAHASAHASAHDSYPEAknHxgAAAAA="
+250:
+.base64 "SosE80gJxUmDxgFNOeY="
+jne 250b
+.base64 "SIP9AUgZ7Ugjr7AAAABIia+wAAAASIu/6AAAAEyLZzBIi19ITItXQL0AAAAAScfGAAAAAA=="
+251:
+.base64 "SAHtSosE80sbBPJIGe1Jg8YBTTnm"
+jne 251b
+.base64 "SIuHgAAAAEgjqLAAAABIiaiwAAAASIuHgAAAAEiLgLAAAABIiYfAAAAATIu/wAAAAEyLZzBIi19AScfGAAAAAA=="
+252:
+.base64 "SosE80wh+EqJBPNJg8YBTTnm"
+jne 252b
+.base64 "TIn4SIPw/0iD4ANICwNIiQNIicNIidlIidhI9+G+AgAAAEgpxkiJyEj35kiJwUiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFIidhI9+G+AgAAAEgpxkiJyEj35kiJwUiJ2Ej34b4CAAAASCnGSInISPfmSInBQb8AAAAASSnPTIl/OLoBAAAAuQAAAABMi0d4uAAAAABJx8YAAAAA"
+253:
+.base64 "S4kE8EmDxgFNOeY="
+jne 253b
+.base64 "S4kE4EuJROAISYkUyEiLv4AAAABIi7/wAAAASIuHgAAAAEiLgLAAAABIiYfAAAAATIu/wAAAAEyLZzBIi19AScfGAAAAAA=="
+254:
+.base64 "SosE80wh+EqJBPNJg8YBTTnm"
+jne 254b
+.base64 "TIn4SIPw/0iD4ANICwNIiQNIicNIidlIidhI9+G+AgAAAEgpxkiJyEj35kiJwUiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFIidhI9+G+AgAAAEgpxkiJyEj35kiJwUiJ2Ej34b4CAAAASCnGSInISPfmSInBQb8AAAAASSnPTIl/OLoBAAAAuQAAAABMi0d4uAAAAABJx8YAAAAA"
+255:
+.base64 "S4kE8EmDxgFNOeY="
+jne 255b
+.base64 "S4kE4EuJROAISYkUyEiLv4AAAABIi7/oAAAATItHYEyLZzC4AAAAAEnHxgAAAAA="
+256:
+.base64 "S4kE8EmDxgFNOeY="
+jne 256b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLUGBIiZe4AAAASItQMEiJl7AAAAA="
+257:
+.base64 "TItHSEyLZzC4AAAAAEnHxgAAAAA="
+258:
+.base64 "S4kE8EmDxgFNOeY="
+jne 258b
+.base64 "S4kE4EuJROAITIunsAAAAEw7ZzA="
+jb 259f
+.base64 "TItnMA=="
+jmp 260f
+259:
+260:
+.base64 "SIu3uAAAAEiLX0hJx8YAAAAA"
+261:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 261b
+.base64 "SIuHsAAAAEwp4EiJh7AAAABNAeRNAeRNAeRMA6e4AAAATImnuAAAALoEAAAAuQQAAABBuAcAAAA="
+call {vg_rsa_mont_mul_adx}
+.base64 "ugUAAAC5AQAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SItfYEyLT2hMi1dATItHUEyLZzBIi3dYvQAAAABJx8YAAAAA"
+262:
+.base64 "SAHtSosE80sTBPFLiQTwSBntSYPGAU055g=="
+jne 262b
+.base64 "uAAAAABIAe1Ig9AAS4kE4EiLX2C9AAAAAEnHxgAAAAA="
+263:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 263b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+264:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 264b
+.base64 "SIuHsAAAAEiFwA=="
+jne 257b
+.base64 "TItnMEiLd2BIi19wScfGAAAAAA=="
+265:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 265b
+.base64 "SItHMEyLp4AAAABNi2QkMLkAAAAA"
+266:
+.base64 "SAHBTDnh"
+jb 266b
+.base64 "SAHJSAHJSAHJSAHJSAHJSAHJSAHASAHASAHASAHASAHASAHASAHASAHBTIungAAAAE2LZCQwTQHkTQHkTQHkTQHkTQHkTQHkTQHkSImP+AAAAEw54Q=="
+jb 267f
+jmp 268f
+267:
+269:
+.base64 "ugYAAAC5BgAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "TIungAAAAE2LZCQwTQHkTQHkTQHkTQHkTQHkTQHkTQHkSItPMEgByUgByUgByUgByUgByUgByUgDj/gAAABIiY/4AAAATDnh"
+jb 269b
+268:
+.base64 "SIuP+AAAAEyLp4AAAABNi2QkME0B5E0B5E0B5E0B5E0B5E0B5E0B5Ewp4Q=="
+je 270f
+.base64 "SImPsAAAAA=="
+272:
+.base64 "SItfcEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+273:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 273b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+274:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 274b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+275:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 275b
+.base64 "SIuPsAAAAEiD6QFIiY+wAAAA"
+jne 272b
+jmp 271f
+270:
+271:
+.base64 "SIu/gAAAAEiLv/AAAABMi0dgTItnMLgAAAAAScfGAAAAAA=="
+276:
+.base64 "S4kE8EmDxgFNOeY="
+jne 276b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLUGBIiZe4AAAASItQMEiJl7AAAAA="
+277:
+.base64 "TItHSEyLZzC4AAAAAEnHxgAAAAA="
+278:
+.base64 "S4kE8EmDxgFNOeY="
+jne 278b
+.base64 "S4kE4EuJROAITIunsAAAAEw7ZzA="
+jb 279f
+.base64 "TItnMA=="
+jmp 280f
+279:
+280:
+.base64 "SIu3uAAAAEiLX0hJx8YAAAAA"
+281:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 281b
+.base64 "SIuHsAAAAEwp4EiJh7AAAABNAeRNAeRNAeRMA6e4AAAATImnuAAAALoEAAAAuQQAAABBuAcAAAA="
+call {vg_rsa_mont_mul_adx}
+.base64 "ugUAAAC5AQAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SItfYEyLT2hMi1dATItHUEyLZzBIi3dYvQAAAABJx8YAAAAA"
+282:
+.base64 "SAHtSosE80sTBPFLiQTwSBntSYPGAU055g=="
+jne 282b
+.base64 "uAAAAABIAe1Ig9AAS4kE4EiLX2C9AAAAAEnHxgAAAAA="
+283:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 283b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+284:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 284b
+.base64 "SIuHsAAAAEiFwA=="
+jne 277b
+.base64 "TItnMEiLd2BIi19wScfGAAAAAA=="
+285:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 285b
+.base64 "SItHMEyLp4AAAABNi2QkMLkAAAAA"
+286:
+.base64 "SAHBTDnh"
+jb 286b
+.base64 "SAHJSAHJSAHJSAHJSAHJSAHJSAHASAHASAHASAHASAHASAHASAHASAHBTIungAAAAE2LZCQwTQHkTQHkTQHkTQHkTQHkTQHkTQHkSImP+AAAAEw54Q=="
+jb 287f
+jmp 288f
+287:
+289:
+.base64 "ugYAAAC5BgAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "TIungAAAAE2LZCQwTQHkTQHkTQHkTQHkTQHkTQHkTQHkSItPMEgByUgByUgByUgByUgByUgByUgDj/gAAABIiY/4AAAATDnh"
+jb 289b
+288:
+.base64 "SIuP+AAAAEyLp4AAAABNi2QkME0B5E0B5E0B5E0B5E0B5E0B5E0B5Ewp4Q=="
+je 290f
+.base64 "SImPsAAAAA=="
+292:
+.base64 "SItfcEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+293:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 293b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+294:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 294b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+295:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 295b
+.base64 "SIuPsAAAAEiD6QFIiY+wAAAA"
+jne 292b
+jmp 291f
+290:
+291:
+.base64 "SIu/gAAAAEiLn4AAAABMi7+wAAAATItnMEiLd0BJx8YAAAAA"
+296:
+.base64 "SosE9kwh+EqJBPNJg8YBTTnm"
+jne 296b
+.base64 "TIngSAHASAHASAHASAHDTItnMEiLd2BJx8YAAAAA"
+297:
+.base64 "SosE9kwh+EqJBPNJg8YBTTnm"
+jne 297b
+.base64 "TIngSAHASAHASAHASAHDSIu/6AAAAEyLZzBIi3dwScfGAAAAAA=="
+298:
+.base64 "SosE9kwh+EqJBPNJg8YBTTnm"
+jne 298b
+.base64 "TIngSAHASAHASAHASAHDSIu/gAAAAEiLv/AAAABMi2cwSIt3cEnHxgAAAAA="
+299:
+.base64 "SosE9kwh+EqJBPNJg8YBTTnm"
+jne 299b
+.base64 "TIngSAHASAHASAHASAHDSIu/gAAAAEiLh7AAAABIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyg="
+jmp 22f
+21:
+.base64 "SIu3gAAAAEiLj5AAAAC4AAAAAA=="
+2100:
+.base64 "iAZIg8YBSIPpAQ=="
+jne 2100b
+.base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyg="
+22:
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.p2align 6"#,
+        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+    )
+}
+
 /// The CRT values of an RSA private key `(p, q, d)` (SP 800-56B Rev. 2 §6.2.2's prime-factor format), which bring it to the CRT format `(p, q, dP, dQ, qInv)` that `vg_rsa_private_checked` takes: `dP = d mod (p - 1)`, `dQ = d mod (q - 1)` and `qInv = q⁻¹ mod p` (§6.2.2's CRT format). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), `p` (`p_len` bytes), `q` (`q_len` bytes) and `d` (`d_len` bytes), all most significant first, writes `dP` to `dp` and `qInv` to `qinv` (`p_len` bytes each) and `dQ` to `dq` (`q_len` bytes), most significant first, and returns 1; or writes zeros to all three and returns 0 if `n` is not such a modulus, `p q ≠ n`, or `q` has no inverse modulo `p`. Nothing checks that `p` and `q` are prime or that `d` is the key's private exponent.
 ///
 /// Contract: `VG.Spec.Rsa.crtValuesContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the private key.

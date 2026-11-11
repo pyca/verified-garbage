@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtLoadX
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtLoad
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPrePQ
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -353,25 +354,56 @@ theorem xj_loadX {d : PDat} {s₀ : State} {c : Prog isa} {Q : State → Prop} (
       (fun i hi => hP.rPre i (Nat.lt_trans hi hP.pk)) (fun i hi => hP.sPre i (Nat.lt_trans hi hP.pk))
       fun t X => hc x t hP F X
 
-theorem pins49 : Pins (At C0 privF 49) [.r6, .r12] :=
-  pins_at_list (fun s₀ => [BitVec.ofNat 64 (ck s₀), off (s₀.gpr .r5) 0])
-    (fun _ s₀ h => WP.of_flat (c := NX (LD oN oNLen)) rfl (xj_loadX h fun _ _ hP F X =>
-      WP.mono (xj_ld2 (A := s₀.gpr .r5) (L := ck s₀) hP X (by decide) (by decide) (by rw [F.hN]; exact z0 _)
-        (by rw [F.hNL]; exact (ofNat_toNat64 _).symm)) fun u ⟨⟨a12, a6, _⟩, _⟩ => by
-        simp only [List.map_cons, List.map_nil, a12, a6]))
+/-- `p`'s and `q`'s widths in words, as `PrivPre.pqLens` computes them. -/
+abbrev vP (s₀ : State) : BitVec 64 := BitVec.ofNat 64 ((cpL s₀ + 7) / 8)
+abbrev vQ (s₀ : State) : BitVec 64 := BitVec.ofNat 64 ((cqL s₀ + 7) / 8)
+
+/-- `PrivPre.pqLens`: the factors' widths, from the header's lengths. -/
+theorem xj_lens {s₀ x t : State} (hP : PF s₀) (F : A0 s₀ x) (X : XJ s₀ x t) :
+    WP isa (.block PrivPre.pqLens) t fun u =>
+      (u.gpr .r5 = vP s₀ ∧ u.gpr .r7 = vQ s₀ ∧ XJ s₀ x u) ∧ Keep [.r5, .r7] t u := by
+  have room := hP.room; have pk := hP.pk; have qk := hP.qk; have k1024 := hP.k1024
+  have e8 : slot (cwX s₀) 8 = 256 + 8 * (8 * (cwX s₀ + 2)) := rfl
+  have hPL : t.mem.readW (off (cS s₀) oPLen) 64 = BitVec.ofNat 64 (cpL s₀) := by
+    rw [show t.mem.readW (off (cS s₀) oPLen) 64 = word t.mem (cS s₀) oPLen from rfl, X.hdr hP (by decide), F.hPL]
+    exact (ofNat_toNat64 _).symm
+  have hQL : t.mem.readW (off (cS s₀) oQLen) 64 = BitVec.ofNat 64 (cqL s₀) := by
+    rw [show t.mem.readW (off (cS s₀) oQLen) 64 = word t.mem (cS s₀) oQLen from rfl, X.hdr hP (by decide), F.hQL]
+    exact (ofNat_toNat64 _).symm
+  refine WP.mono (WP.keep [.r5, .r7] (Q := fun u => u.gpr .r5 = vP s₀ ∧ u.gpr .r7 = vQ s₀ ∧ u.mem = t.mem) (by
+    unfold PrivPre.pqLens
+    prun [X.r23, exec_load_d (show Reg.r23 ≠ .r0 by decide) (show oPLen < 2 ^ 15 ∧ oPLen % 4 = 0 by decide),
+      exec_load_d (show Reg.r23 ≠ .r0 by decide) (show oQLen < 2 ^ 15 ∧ oQLen % 4 = 0 by decide),
+      X.scr.ld (show oPLen + 8 ≤ cZ s₀ by unfold oPLen; omega_arith),
+      X.scr.ld (show oQLen + 8 ≤ cZ s₀ by unfold oQLen; omega_arith), hPL, hQL,
+      len_words (cpL s₀) (by omega_arith), len_words (cqL s₀) (by omega_arith)]) rfl)
+    fun u ⟨⟨u5, u7, um⟩, k⟩ => ⟨⟨u5, u7, ⟨X.scr.congr k.wr, (k.gpr .r23 (by decide)).trans X.r23,
+      (k.gpr .r10 (by decide)).trans X.r10, (k.gpr .r21 (by decide)).trans X.r21,
+      (k.gpr .r29 (by decide)).trans X.r29, (k.gpr .r11 (by decide)).trans X.r11,
+      (k.gpr .r27 (by decide)).trans X.r27, (k.gpr .r28 (by decide)).trans X.r28,
+      by rw [um]; exact X.out, by rw [k.rd, k.wr]; exact X.rd⟩⟩, k⟩
+
+theorem pins50 : Pins (At C0 privF 50) [.r5, .r6, .r7, .r12] :=
+  pins_at_list (fun s₀ => [vP s₀, BitVec.ofNat 64 (ck s₀), vQ s₀, off (s₀.gpr .r5) 0])
+    (fun _ s₀ h => WP.of_flat (c := NX (.seq (.block PrivPre.pqLens) (LD oN oNLen))) rfl
+      (xj_loadX h fun _ _ hP F X => WP.seq (WP.mono (xj_lens hP F X) fun u ⟨⟨u5, u7, U⟩, _⟩ =>
+      WP.mono (xj_ld2 (A := s₀.gpr .r5) (L := ck s₀) hP U (by decide) (by decide) (by rw [F.hN]; exact z0 _)
+        (by rw [F.hNL]; exact (ofNat_toNat64 _).symm)) fun v ⟨⟨a12, a6, _⟩, kv⟩ => by
+        simp only [List.map_cons, List.map_nil, a12, a6, kv.gpr .r5 (by decide), kv.gpr .r7 (by decide), u5, u7])))
     fun _ _ _ h h' => by
-      obtain ⟨-, -, ek, -, -, -, e5, -⟩ := data_vals h h'
-      rw [ek, e5]
+      obtain ⟨-, -, ek, ep, eq, -, e5, -⟩ := data_vals h h'
+      simp only [vP, vQ]; rw [ek, ep, eq, e5]
 
 /-- `n`'s first byte. -/
 abbrev nb0 (s₀ : State) : BitVec 64 := BitVec.ofNat 64 ((nB s₀).getD 0 0).toNat
 
-theorem pins50 : Pins (At C0 privF 50) [.r6, .r10, .r11, .r15, .r21, .r23, .r27, .r28, .r29] := by
+theorem pins51 : Pins (At C0 privF 51) [.r6, .r10, .r11, .r15, .r21, .r23, .r27, .r28, .r29, .r5, .r7] := by
   refine pins_at_list (fun s₀ => [BitVec.ofNat 64 (ck s₀), off (cS s₀) (slot (cwX s₀) 0),
       BitVec.ofNat 64 (2 * cwX s₀), nb0 s₀, off (cS s₀) (slot (cwX s₀) 0), cS s₀,
-      off (cS s₀) (slot (cwX s₀) 0), BitVec.ofNat 64 (8 * (cwX s₀ + 2)), BitVec.ofNat 64 (8 * (cwX s₀ + 2))])
-    (fun _ s₀ h => WP.of_flat (c := NX (.seq (LD oN oNLen) (.block Precompute.check1))) rfl
-      (xj_loadX h fun x t hP F X => ?_))
+      off (cS s₀) (slot (cwX s₀) 0), BitVec.ofNat 64 (8 * (cwX s₀ + 2)), BitVec.ofNat 64 (8 * (cwX s₀ + 2)),
+      vP s₀, vQ s₀])
+    (fun _ s₀ h => WP.of_flat (c := NX (.seq (.block PrivPre.pqLens) (.seq (LD oN oNLen) (.block Precompute.check1))))
+      rfl (xj_loadX h fun x t₀ hP F X₀ => WP.seq (WP.mono (xj_lens hP F X₀) fun t ⟨⟨t5, t7, X⟩, kl⟩ => ?_)))
     fun _ _ _ h h' => ?_
   · have hn := hP.nw; have room := hP.room; have k64 := hP.k64
     have e8 : slot (cwX s₀) 8 = 256 + 8 * (8 * (cwX s₀ + 2)) := rfl
@@ -395,9 +427,10 @@ theorem pins50 : Pins (At C0 privF 50) [.r6, .r10, .r11, .r15, .r21, .r23, .r27,
       simp only [List.map_cons, List.map_nil, v15, k2.gpr .r6 (by decide), a6, k12.gpr .r10 (by decide),
         k12.gpr .r11 (by decide), k12.gpr .r21 (by decide), k12.gpr .r23 (by decide), k12.gpr .r27 (by decide),
         k12.gpr .r28 (by decide), k12.gpr .r29 (by decide), X.r10, X.r11, X.r21, X.r23, X.r27, X.r28, X.r29,
+        k12.gpr .r5 (by decide), k12.gpr .r7 (by decide), t5, t7,
         nb0, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show 0 < (nB s₀).length by omega_arith),
         Option.getD_some]
-  · obtain ⟨eS, -, ek, -, -, -, -, -, -, en⟩ := data_vals h h'
-    simp only [nb0, cwX, cw]; rw [en, eS, ek]
+  · obtain ⟨eS, -, ek, ep, eq, -, -, -, -, en⟩ := data_vals h h'
+    simp only [nb0, cwX, cw, vP, vQ]; rw [en, eS, ek, ep, eq]
 
 end VG.Proof.Bignum.PPC64LE.PrivPre

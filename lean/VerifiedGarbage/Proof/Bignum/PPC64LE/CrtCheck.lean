@@ -195,6 +195,51 @@ theorem outs_word {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Mont.
     have := hd r hr; simp only [Mont.ofs]; rw [show (_ - base).toNat = ofs base _ from rfl, ofs_off base (by omega_arith)]
     omega_arith).symm).symm
 
+/-- The registers `pqEq` writes. -/
+def pqEqRegs : List Reg := [.r0, .r3, .r8, .r9, .r10, .r14, .r15, .r16, .r17, .r20, .r24, .r26]
+
+/-- `pqEq`, with the top words (digits `2 w`, `2 w + 1`) of arrays 6 and 1
+zero: `r26 &=` all ones if arrays 6 and 1 are equal, else 0, changing only
+array 3. -/
+theorem pqEq_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw1 : 1 ≤ w) (hw' : w < 2 ^ 31)
+    (hZ : slot w 8 ≤ Z) (h10 : s.gpr .r10 = off B (slot w 0)) (h21 : s.gpr .r21 = off B (slot w 0))
+    (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (t6 : word s.mem B (slot w 6 + 8 * w) = 0) (t1 : word s.mem B (slot w 1 + 8 * w) = 0) :
+    WP isa pqEq s fun t =>
+      (t.gpr .r26 = s.gpr .r26 &&& (BitVec.ofNat 64 0 - BitVec.ofNat 64
+          (if Mont.val32 s.mem B (slot w 6) (2 * w) = Mont.val32 s.mem B (slot w 1) (2 * w) then 1 else 0)) ∧
+        Mont.Outside B (slot w 3) (8 * w) s.mem t.mem ∧ t.gpr .r10 = off B (slot w 0)) ∧
+      Keep pqEqRegs s t := by
+  have hnw := hs.nowrap
+  have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
+  have e1 := e 1; have e3 := e 3; have e6 := e 6; have e8 := e 8
+  have hh : hdrBytes = 256 := rfl
+  unfold pqEq
+  -- `a6 < n`?
+  refine WP.seq (WP.mono (cmpLt_ok (a := 6) (m := 1) hs (by decide) (by decide) (by decide)
+    (by decide) hw1 hw' hZ h10 h21 h29 h11 t6) fun s₅ ⟨⟨a20, o5, a10⟩, k5⟩ => ?_)
+  refine WP.seq (WP.mono (WP.keep [.r24] (Q := fun t => t.gpr .r24 = s₅.gpr .r20 ∧ t.mem = s₅.mem)
+    (by prun [BitVec.add_zero])
+    (by decide)) fun s₆ ⟨⟨a24, m6⟩, k6⟩ => ?_)
+  have k16 := k5.trans k6
+  -- `n < a6`?
+  refine WP.seq (WP.mono (cmpLt_ok (a := 1) (m := 6) (hs.congr k16.wr) (by decide) (by decide) (by decide)
+    (by decide) hw1 hw' hZ (by rw [k6.gpr .r10 (by decide)]; exact a10)
+    ((k16.gpr _ (by decide)).trans h21)
+    ((k16.gpr _ (by decide)).trans h29) ((k16.gpr _ (by decide)).trans h11)
+    (by rw [m6, (show Outside B (slot w 3) (8 * w) s.mem s₅.mem from fun x hx => o5 x hx).word (by omega_arith)
+      (by omega_arith)]; exact t1))
+    fun s₇ ⟨⟨b20, o7, b10⟩, k7⟩ => ?_)
+  rw [m6, o5.val32 (by omega_arith) (by omega_arith), o5.val32 (by omega_arith) (by omega_arith)] at b20
+  refine WP.mono (WP.keep [.r0, .r3, .r26] (Q := fun t => t.gpr .r26 = s₇.gpr .r26 &&&
+    ((s₇.gpr .r24 ||| s₇.gpr .r20) ^^^ (BitVec.ofNat 64 0 - 1#64)) ∧ t.mem = s₇.mem) (by prun) (by decide))
+    fun t ⟨⟨t26, tm⟩, k8⟩ => ⟨⟨?_, ?_, by rw [k8.gpr .r10 (by decide)]; exact b10⟩,
+      (k16.trans (k7.trans k8)).mono⟩
+  · rw [t26, b20, k7.gpr .r24 (by decide), a24, a20, eq_masks, k7.gpr .r26 (by decide),
+      k16.gpr .r26 (by decide)]
+  · intro x hx
+    rw [tm, o7 x hx, m6, o5 x hx]
+
 /-- The registers `checkPQ` writes. -/
 def pqRegs : List Reg :=
   [.r12, .r24, .r26] ++ Pub.montRegs ++ [.r0, .r3, .r8, .r9, .r10, .r14, .r15, .r16, .r17, .r20]
@@ -269,39 +314,18 @@ theorem checkPQ_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw2 : 2 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
     rw [hw1]; exact h1top
-  -- `p q < n`?
-  refine WP.seq (WP.mono (cmpLt_ok (a := 6) (m := 1) (hs.congr k14.wr) (by decide) (by decide) (by decide)
-    (by decide) (by omega_arith) hw' hZ ((k14.gpr _ (by decide)).trans h10) ((k14.gpr _ (by decide)).trans h21)
-    ((k14.gpr _ (by decide)).trans h29) ((k14.gpr _ (by decide)).trans h11) t46)
-    fun s₅ ⟨⟨a20, o5, a10⟩, k5⟩ => ?_)
-  rw [v46, v41] at a20
-  refine WP.seq (WP.mono (WP.keep [.r24] (Q := fun t => t.gpr .r24 = s₅.gpr .r20 ∧ t.mem = s₅.mem)
-    (by prun [BitVec.add_zero])
-    (by decide)) fun s₆ ⟨⟨a24, m6⟩, k6⟩ => ?_)
-  have k16 := (k14.trans k5).trans k6
-  -- `n < p q`?
-  refine WP.seq (WP.mono (cmpLt_ok (a := 1) (m := 6) (hs.congr k16.wr) (by decide) (by decide) (by decide)
-    (by decide) (by omega_arith) hw' hZ (by rw [k6.gpr .r10 (by decide)]; exact a10)
-    ((k16.gpr _ (by decide)).trans h21)
-    ((k16.gpr _ (by decide)).trans h29) ((k16.gpr _ (by decide)).trans h11)
-    (by rw [m6, (show Outside B (slot w 3) (8 * w) s₄.mem s₅.mem from fun x hx => o5 x hx).word (by omega_arith)
-      (by omega_arith)]; exact t41))
-    fun s₇ ⟨⟨b20, o7, b10⟩, k7⟩ => ?_)
-  rw [m6, o5.val32 (by omega_arith) (by omega_arith), o5.val32 (by omega_arith) (by omega_arith), v46, v41] at b20
-  refine WP.mono (WP.keep [.r0, .r3, .r26] (Q := fun t => t.gpr .r26 = s₇.gpr .r26 &&&
-    ((s₇.gpr .r24 ||| s₇.gpr .r20) ^^^ (BitVec.ofNat 64 0 - 1#64)) ∧ t.mem = s₇.mem) (by prun) (by decide))
-    fun t ⟨⟨t26, tm⟩, k8⟩ => ⟨⟨?_, ?_, by rw [k8.gpr .r10 (by decide)]; exact b10⟩, ?_⟩
-  · rw [t26, b20, k7.gpr .r24 (by decide), a24, a20, eq_masks, k7.gpr .r26 (by decide),
-      k16.gpr .r26 (by decide)]
+  refine WP.mono (pqEq_ok (hs.congr k14.wr) (by omega_arith) hw' hZ ((k14.gpr _ (by decide)).trans h10)
+    ((k14.gpr _ (by decide)).trans h21) ((k14.gpr _ (by decide)).trans h29)
+    ((k14.gpr _ (by decide)).trans h11) t46 t41) fun t ⟨⟨t26, o7, b10⟩, k8⟩ => ⟨⟨?_, ?_, b10⟩, ?_⟩
+  · rw [t26, v46, v41, k14.gpr .r26 (by decide)]
   · intro x hx
-    rw [tm]
     have hx3 : Mont.ofs B x < slot w 3 ∨ slot w 3 + 8 * w ≤ Mont.ofs B x := by
       have := hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)); simp only at this; omega_arith
     have hx6 : Mont.ofs B x < slot w 6 + 8 * w ∨ slot w 6 + 8 * w + 8 ≤ Mont.ofs B x := by
       have := hx _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
       simp only at this; omega_arith
-    rw [o7 x hx3, m6, o5 x hx3, m4, ow x (by simp only [Mont.ofs, ofs] at hx6 ⊢; omega_arith)]
+    rw [o7 x hx3, m4, ow x (by simp only [Mont.ofs, ofs] at hx6 ⊢; omega_arith)]
     exact o2' x hx
-  · exact (k16.trans (k7.trans k8)).mono
+  · exact (k14.trans k8).mono
 
 end VG.Proof.Bignum.PPC64LE.Crt

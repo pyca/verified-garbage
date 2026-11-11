@@ -249,7 +249,7 @@ theorem partN_ok {s₀ t : State} (hP : PF s₀) (hA : A s₀ t) {c : Prog isa} 
     rw [vm]
     exact bytes_frame hA.frame hP.dN (Nat.le_of_lt (BitVec.isLt _))
   refine WP.seq (WP.mono (Pre.core_ok (hA.scr.congr kv.wr) (pre16 hP kAv.wr) dw k64 k1024 (by oa) v19 v6 v12 v10
-    v5 v8 v9 v11 (by rw [kAv.rd, kAv.wr]; exact hP.rN) hP.sN (sep16 hP)) fun t₁ ⟨⟨tO, tF⟩, kt⟩ => ?_)
+    v5 v9 v11 (by rw [kAv.rd, kAv.wr]; exact hP.rN) hP.sN (sep16 hP)) fun t₁ ⟨⟨tO, tF⟩, kt⟩ => ?_)
   rw [bN] at tO
   have kAt := kAv.trans kt
   have th : ∀ d, d + 8 ≤ 256 → word t₁.mem (cS s₀) d = word t.mem (cS s₀) d := fun d hd => by

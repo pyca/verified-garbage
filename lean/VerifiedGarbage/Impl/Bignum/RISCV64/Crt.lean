@@ -159,14 +159,18 @@ def cmpLt (a m : Nat) : Prog isa :=
 def checkLt (a m : Nat) : Prog isa :=
   .seq (cmpLt a m) (.block [.logic .and .s9 .s9 .s4])
 
+/-- `s9 &=` all ones if array 6 equals `n` (array 1): neither is below the
+other. -/
+def pqEq : Prog isa :=
+  .seq (cmpLt 6 1) (.seq (.block [.addi .s7 .s4 0]) (.seq (cmpLt 1 6)
+    (.block [.logic .or .t2 .s7 .s4, .logicImm .xor .t2 .t2 (-1), .logic .and .s9 .s9 .t2])))
+
 /-- `p q` into array 6 (Montgomery multiplication modulo `M`, `-M⁻¹ = 1`),
-its word `W` := 0; then `s9 &=` all ones if it equals `n` (array 1): neither
-is below the other. -/
+its word `W` := 0; then `s9 &=` all ones if it equals `n` (`pqEq`). -/
 def checkPQ : Prog isa :=
   .seq (.block [.li .t1 1]) (.seq (montOp 6 4 5)
     (.seq (.block (base .t3 6 ++ [.add .t3 .t3 .s5, .addi .t3 .t3 (-16), .li .s0 0, .store .d .s0 .t3 0]))
-      (.seq (cmpLt 6 1) (.seq (.block [.addi .s7 .s4 0]) (.seq (cmpLt 1 6)
-        (.block [.logic .or .t2 .s7 .s4, .logicImm .xor .t2 .t2 (-1), .logic .and .s9 .s9 .t2]))))))
+      pqEq))
 
 /-- The `w` words at `t3` `&= s9`. -/
 def maskWords : Prog isa :=
@@ -179,12 +183,15 @@ def orThree (j : Nat) : Prog isa :=
     (.block (base .t3 j ++ [.load .d .s0 .t3 0, .logicImm .xor .t2 .s9 (-1), .logicImm .and .t2 .t2 3,
       .logic .or .s0 .s0 .t2, .store .d .s0 .t3 0])))
 
-/-- `X`'s checks into `s9`, `p`, `q`, `qInv` masked, and the mask into the
-header. -/
-def checks : Prog isa :=
-  .seq checkN (.seq (checkLt 6 1) (.seq (checkLt 7 4) (.seq checkPQ
+/-- `X`'s checks into `s9`, with `pq` the check of `p q = n`; `p`, `q`,
+`qInv` masked, and the mask into the header. -/
+def checksWith (pq : Prog isa) : Prog isa :=
+  .seq checkN (.seq (checkLt 6 1) (.seq (checkLt 7 4) (.seq pq
     (.seq (orThree 4) (.seq (orThree 5) (.seq (.block (base .t3 7)) (.seq maskWords
       (.block [.store .d .s9 .s6 oMask]))))))))
+
+/-- `X`'s checks, `p q = n` by `checkPQ`. -/
+def checks : Prog isa := checksWith checkPQ
 
 /-- `w` words from `t4` to `t3`. -/
 def copyN : Prog isa := Precompute.copyWords

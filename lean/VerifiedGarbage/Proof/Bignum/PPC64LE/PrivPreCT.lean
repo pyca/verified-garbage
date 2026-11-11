@@ -51,8 +51,8 @@ theorem relCT_to_flat {P Q : State → State → Prop} {c : Prog isa} (h : RelCT
   fun _ _ _ _ _ _ hp e₁ e₂ => h _ _ _ _ _ _ hp (exec_flat.mpr e₁) (exec_flat.mpr e₂)
 
 /-- `Precompute.core`, as `vg_rsa_public_precompute`'s. -/
-theorem core_seg : RelCT isa (Two (At C0 privF 95)) (seg privF 95 105) fun _ _ => True := by
-  rw [show seg privF 95 105 = Code.seqL (Code.flat Precompute.core) from rfl]
+theorem core_seg : RelCT isa (Two (At C0 privF 96)) (seg privF 96 106) fun _ _ => True := by
+  rw [show seg privF 96 106 = Code.seqL (Code.flat Precompute.core) from rfl]
   refine RelCT.mono (relCT_to_flat Pre.core_rel) (fun s₁ s₂ ⟨d, h₁, h₂, hsp⟩ => ?_) fun _ _ _ => trivial
   obtain ⟨s₀, c0, c1⟩ := at_C1 h₁
   obtain ⟨s₀', c0', c1'⟩ := at_C1 h₂
@@ -68,14 +68,14 @@ theorem fn_rel : RelCT isa (Two C0) PrivPre.code fun _ _ => True := by
   refine chain_cons priv_run (m := 25) (by decide) (two_taint _ pins17 (by taint_decide)) ?_
   refine chain_cons priv_run (m := 33) (by decide) (two_taint _ pins25 (by taint_decide)) ?_
   refine chain_cons priv_run (m := 41) (by decide) (two_taint _ pins33 (by taint_decide)) ?_
-  refine chain_cons priv_run (m := 49) (by decide) (two_taint _ pins41 (by taint_decide)) ?_
-  refine chain_cons priv_run (m := 50) (by decide) (two_taint _ pins49 (by taint_decide)) ?_
-  refine chain_cons priv_run (m := 95) (by decide) (two_taintR _ pins50 (by taint_decide_rel)) ?_
-  refine chain_cons priv_run (m := 105) (by decide) core_seg ?_
-  refine chain_cons priv_run (m := 112) (by decide) (two_taint _ pins105 (by taint_decide)) ?_
-  refine chain_cons priv_run (m := 151) (by decide) (two_taintR _ pins112 (by taint_decide_rel)) ?_
-  refine chain_cons priv_run (m := 190) (by decide) (two_taintR _ pins151 (by taint_decide_rel)) ?_
-  exact two_taint _ pins190 (by taint_decide)
+  refine chain_cons priv_run (m := 50) (by decide) (two_taint _ pins41 (by taint_decide)) ?_
+  refine chain_cons priv_run (m := 51) (by decide) (two_taint _ pins50 (by taint_decide)) ?_
+  refine chain_cons priv_run (m := 96) (by decide) (two_taintR _ pins51 (by taint_decide_rel)) ?_
+  refine chain_cons priv_run (m := 106) (by decide) core_seg ?_
+  refine chain_cons priv_run (m := 113) (by decide) (two_taint _ pins106 (by taint_decide)) ?_
+  refine chain_cons priv_run (m := 152) (by decide) (two_taintR _ pins113 (by taint_decide_rel)) ?_
+  refine chain_cons priv_run (m := 191) (by decide) (two_taintR _ pins152 (by taint_decide_rel)) ?_
+  exact two_taint _ pins191 (by taint_decide)
 
 theorem fn_ct : ConstantTime isa fnContract.pre fnContract.pub PrivPre.code :=
   RelCT.constantTime (fn_rel.mono (fun s t ⟨hs, ht, ⟨hr, hsp, ha, hn⟩⟩ =>

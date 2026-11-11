@@ -371,16 +371,22 @@ def importComponents : Prog isa :=
   .seq (load (.slot .wide 12) (one .wide) 10 11) <|
   .seq (load (.slot .wide 13) (one .wide) 12 13) (load (.slot .wide 14) (two .wide) 14 15)
 
-/-- The product of `mulA` and `b` (`B` bytes each) into `prod`. -/
-def wideProduct (b : Loc) : Prog isa :=
+/-- The product of the first words of `mulA` and of `b` into `prod` (`2 B + 4`
+bytes, zeroed first), a row for each of `mulA`'s: `cols r` sets `r` to the
+bytes of `b`'s words, and `rowsEnd`, from `eax` so set, `eax` to the bytes of
+`mulA`'s. -/
+def productBy (cols : Reg → List Instr) (rowsEnd : List Instr) (b : Loc) : Prog isa :=
   .seq (zero prod { c := .wide, two := true, extra := 4 }) <|
   .seq (.block (ptrTo prod .ebp .edx))
     (.loop (.seq (.block ([.mov .eax (.mem (at_ .ebp (mulAOff - prodOff))), .store (sc multOff) .eax] ++
-        ptrTo b .ecx .edx ++ widthC 0 .wide .esi ++ [.mov .ebx (.imm 0)])) <|
+        ptrTo b .ecx .edx ++ cols .esi ++ [.mov .ebx (.imm 0)])) <|
       .seq rowLoop
-        (.block ([.store (at_ .ebp 0) .ebx] ++ widthC 0 .wide .eax ++
-          [.alu .sub .ebp (.reg .eax), .alu .add .ebp (.imm 4), .alu .add .eax (.reg .edi),
+        (.block ([.store (at_ .ebp 0) .ebx] ++ cols .eax ++
+          [.alu .sub .ebp (.reg .eax), .alu .add .ebp (.imm 4)] ++ rowsEnd ++ [.alu .add .eax (.reg .edi),
             .alu .add .eax (.imm (BitVec.ofNat 32 prodOff)), .alu .cmp .ebp (.reg .eax)]))) .ne)
+
+/-- The product of `mulA` and `b` (`B` bytes each) into `prod`. -/
+def wideProduct (b : Loc) : Prog isa := productBy (widthC 0 .wide) [] b
 
 /-- `ecx` and-ed into the acceptance mask. -/
 def accept : List Instr :=
