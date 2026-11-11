@@ -51,8 +51,7 @@ def oDig : Nat := 92
 variable (L : Lay)
 
 /-- `r = 4 W' = 4 ⌈m_len / 4⌉`, for `m_len` argument `ml`. -/
-def width4 (ml : Nat) (r : Reg) : List Instr :=
-  [.mov r (.mem (argOp ml)), .alu .add r (.imm 3), .shift .shr r 2, .alu .add r (.reg r), .alu .add r (.reg r)]
+def width4 (ml : Nat) (r : Reg) : List Instr := R2Words.width4 r (argOp ml)
 
 /-- `r` at word `W' - i` of array `j`, through `t`. -/
 def topPtr (ml : Nat) (r : Reg) (j i : Nat) (t : Reg) : List Instr :=

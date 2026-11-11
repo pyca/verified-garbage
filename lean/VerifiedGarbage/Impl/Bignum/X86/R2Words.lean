@@ -67,9 +67,9 @@ def oD1 (h : Nat := 160) : Nat := h + 32
 /-- A header word. -/
 def hd (o : Nat) : MemOp := at_ .edi o
 
-/-- `r = 4 W' = 4 ⌈n_len / 4⌉`. -/
-def width4 (r : Reg) : List Instr :=
-  [.mov r (.mem (argAt 0 1)), .alu .add r (.imm 3), .shift .shr r 2, .alu .add r (.reg r), .alu .add r (.reg r)]
+/-- `r = 4 W' = 4 ⌈n_len / 4⌉`, for `n_len` at `op` (`R2Words`' own: argument 1). -/
+def width4 (r : Reg) (op : MemOp := argAt 0 1) : List Instr :=
+  [.mov r (.mem op), .alu .add r (.imm 3), .shift .shr r 2, .alu .add r (.reg r), .alu .add r (.reg r)]
 
 /-- `r = edi + 256 + j B + 4 W' - 4 i`, a pointer to word `W' - i` of number
 `j`, and `t = 4 W'`. -/
