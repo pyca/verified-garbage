@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86.SgSat
 public import VerifiedGarbage.Proof.RsaPss.X86.SgPSat
+public import VerifiedGarbage.Proof.RsaPss.X86.SgPVerified
 public import VerifiedGarbage.Proof.RsaPss.X86.VfSat
 public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Md5
 public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha1

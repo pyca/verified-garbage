@@ -22,6 +22,8 @@ two runs share (`code_ctP`): `vg_rsa_pss_sign_precomputed`, calling
 (`signP_verified`), given a state that meets the contract (`SgPSat.lean`).
 -/
 
+-- separate module: builds in parallel with the satisfying state (`SgPSat`), which needs only the contract.
+
 @[expose] public section
 
 namespace VG.Proof.RsaPss.X86.Sg
@@ -32,23 +34,6 @@ open VG.Proof.Rsa.X86.PrivChecked (CrtImpl CrtPImpl privCodeP)
 open VG.Proof.RsaOaep.X86 (OHash TabFacts)
 open VG.Proof.MdHashTable.X86 (MVar)
 open VG.Proof.HashTable.X86 (TVar)
-
-/-- The precomputed contract, with the hash function's table one of `tsH`
-and MGF1's one of `ts`, and `vg_rsa_pss_sign`'s stack. -/
-abbrev specP (tsH ts : List FnTable) : Contract isa :=
-  Spec.RsaPss.signPrecomputedMdTableContract
-    (abi.withTables Spec.RsaPss.signPrecomputedMdTableSig [("hash", tsH), ("mgf1", ts)]) stackBytes
-
-/-- Unfolds the contract's precondition at `h`. -/
-macro "signP_pre" " at " h:ident : tactic => `(tactic| (
-  sig_pre [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig,
-    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-    Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes, stackBelow] at $h:ident
-  sig_pre [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig,
-    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-    Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes, stackBelow] at $h:ident
-  simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
-    exists_eq_left'] at $h:ident))
 
 variable {hai hac had : BitVec 32} {TH : State → Prop} {ai au af : BitVec 32} {T : State → Prop}
 
@@ -241,16 +226,6 @@ theorem in_of_preP {tsH ts : List FnTable} {s : State} (h : (specP tsH ts).pre s
 
 
 variable {vs : List MVar} {gs : List TVar}
-
-/-- The code, calling `vg_rsa_private_checked_precomputed` over `c` and `w`,
-with the hash function any of the tables of `vs` and MGF1's any of `gs`. -/
-abbrev signCodeP (vs : List MVar) (gs : List TVar) (c : CrtImpl) (w : CrtPImpl) : Prog isa :=
-  sign (Proof.MdHashTable.X86.fnsOf vs) (Proof.HashTable.X86.fnsOf gs) (privNameP c) (privCodeP c w) privArgsP
-
-/-- The contract, with those tables. -/
-abbrev sspecP (vs : List MVar) (gs : List TVar) : Contract isa :=
-  specP (Proof.MdHashTable.X86.tables vs) (Proof.HashTable.X86.tables gs)
-
 theorem code_noSpP (hok : OK vs gs) (c : CrtImpl) (w : CrtPImpl) : NoSp (signCodeP vs gs c w) :=
   noSp_frame rfl rfl (noSp_seq (noSp_frame rfl rfl (body_noSpP (fnsSp vs gs) (hall_of hok) c w)) restore_noSp)
 

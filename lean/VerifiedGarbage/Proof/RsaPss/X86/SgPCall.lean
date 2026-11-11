@@ -465,4 +465,35 @@ theorem body_noSpP {f : MdFns} {fG : Fns} (hf : FnsSp f fG)
   rw [tail_eq h' hs privArgsP]
   exact tail_noSpP h' hf.hi hf.hc hf.hd hf.gi hf.gu hf.gf c w
 
+/-! ## The contract -/
+
+/-- The precomputed contract, with the hash function's table one of `tsH`
+and MGF1's one of `ts`, and `vg_rsa_pss_sign`'s stack. -/
+abbrev specP (tsH ts : List FnTable) : Contract isa :=
+  Spec.RsaPss.signPrecomputedMdTableContract
+    (abi.withTables Spec.RsaPss.signPrecomputedMdTableSig [("hash", tsH), ("mgf1", ts)]) stackBytes
+
+/-- Unfolds the contract's precondition at `h`. -/
+macro "signP_pre" " at " h:ident : tactic => `(tactic| (
+  sig_pre [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes, stackBelow] at $h:ident
+  sig_pre [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes, stackBelow] at $h:ident
+  simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
+    exists_eq_left'] at $h:ident))
+
+open VG.Proof.MdHashTable.X86 (MVar)
+open VG.Proof.HashTable.X86 (TVar)
+
+/-- The code, calling `vg_rsa_private_checked_precomputed` over `c` and `w`,
+with the hash function any of the tables of `vs` and MGF1's any of `gs`. -/
+abbrev signCodeP (vs : List MVar) (gs : List TVar) (c : CrtImpl) (w : CrtPImpl) : Prog isa :=
+  sign (Proof.MdHashTable.X86.fnsOf vs) (Proof.HashTable.X86.fnsOf gs) (privNameP c) (privCodeP c w) privArgsP
+
+/-- The contract, with those tables. -/
+abbrev sspecP (vs : List MVar) (gs : List TVar) : Contract isa :=
+  specP (Proof.MdHashTable.X86.tables vs) (Proof.HashTable.X86.tables gs)
+
 end VG.Proof.RsaPss.X86.Sg

@@ -23,6 +23,8 @@ proven of a function's stages keeps a fact of the entry (`VP.keep`), such
 as what a wider entry adds.
 -/
 
+-- separate module: every x86 caller of `vg_rsa_private_checked_precomputed` (PKCS#1 decryption, PSS signing, OAEP decryption) shares it.
+
 @[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86

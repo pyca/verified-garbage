@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.X86.SgPVerified
+public import VerifiedGarbage.Proof.RsaPss.X86.SgPCall
 public import VerifiedGarbage.Proof.RsaPss.X86.SgSat
 public import VerifiedGarbage.Proof.Rsa.PreKey
 import VerifiedGarbage.Proof.Framework.Contract
@@ -13,6 +13,8 @@ modulus of 64 bytes at `0x2000`, `p` and `q` of 32 at `0x4200` and
 `0x4300`, `dP`, `dQ` and `qInv` of 32, and `pre` (24 words) at `0x4800`
 (`satStateP`); the tables are written above all of it (`putWs_byte`).
 -/
+
+-- separate module: builds in parallel with the proof (`SgPVerified`), which it does not need.
 
 @[expose] public section
 
