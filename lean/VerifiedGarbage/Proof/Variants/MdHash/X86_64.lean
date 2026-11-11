@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha224
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256Avx2
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256Avx2Init
+public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256Init
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256ShaNi
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha512
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512
@@ -31,14 +32,16 @@ def sha1AvxBmi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.S
 
 def sha1ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha1ShaNi.variant
 
-def sha224 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha256.variant224
+def sha224 : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  { Sha256.variant224 with hmacInitRes := some Sha256Init.init224 }
 
 def sha224Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   { Sha256Avx2.variant224 with hmacInitRes := some Sha256Avx2Init.init224 }
 
 def sha224ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha256ShaNi.variant224
 
-def sha256 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha256.variant
+def sha256 : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  { Sha256.variant with hmacInitRes := some Sha256Init.init }
 
 open VG.Impl.Sha256.X86_64.Stream (Callee) in
 def sha256Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=

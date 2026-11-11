@@ -306,8 +306,6 @@ x86_64 vg_ffdh_generate_key_search_cached_adx
 x86_64 vg_ffdh_generate_parameters
 x86_64 vg_ffdh_generate_parameters_adx
 x86_64 vg_ffdh_generate_parameters_ifma
-x86_64 vg_hmac_sha224_init
-x86_64 vg_hmac_sha256_init
 x86_64 vg_hmac_sha384_finalize_avx2
 x86_64 vg_hmac_sha384_init_avx2
 x86_64 vg_hmac_sha512_224_finalize_avx2

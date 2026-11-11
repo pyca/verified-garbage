@@ -223,6 +223,8 @@ call {vg_sha256_compress_avx2}
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 96 bytes.
@@ -261,7 +263,7 @@ call {vg_sha256_compress}
 call {vg_sha256_compress}
 .base64 "SIn7SYnPSYufYAIAAEmLr2gCAABNi6dwAgAATYuveAIAAE2Lt4ACAABNi7+IAgAASI2kJEgDAAA="
 21:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJKD5///zD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD39EJBBIjaQkYAYAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 20:
 .base64 "SI2kJLj5//9JieBJg8AISYmYQAMAAEmJqEgDAABNiaBQAwAATYmoWAMAAE2JsGADAABNibhoAwAATYnHSInTSInNSYn8SYn1SIP9QQ=="
 jae 28f
