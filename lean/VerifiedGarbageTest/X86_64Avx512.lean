@@ -609,6 +609,10 @@ def x5 (r : VReg) (imm : BitVec 8) : Option (BitVec 256) :=
 -- `vpbroadcastq` with `{evex}`, as the model's is the EVEX form of every
 -- register).
 #guard Instr.encode (.e5op (.bin .vpaddq h20 h16 h17)) == some [[0x62, 0xa1, 0xfd, 0x40, 0xd4, 0xe1]]
+#guard Instr.encode (.e5op (.bin .vpsubq h20 h16 h17)) == some [[0x62, 0xa1, 0xfd, 0x40, 0xfb, 0xe1]]
+#guard Instr.encode (.e5op (.bin .vpsubq (.lo .xmm1) (.lo .xmm2) (.lo .xmm3))) ==
+  some [[0x62, 0xf1, 0xed, 0x48, 0xfb, 0xcb]]
+#guard Instr.asm (.e5op (.bin .vpsubq h20 h16 h17)) == ["vpsubq zmm20, zmm16, zmm17"]
 #guard Instr.encode (.e5op (.bin .vpaddq (.lo .xmm1) (.lo .xmm2) (.lo .xmm3))) ==
   some [[0x62, 0xf1, 0xed, 0x48, 0xd4, 0xcb]]
 #guard Instr.encode (.e5op (.bin .vpxorq (.lo .xmm0) (.lo .xmm0) (.lo .xmm0))) ==

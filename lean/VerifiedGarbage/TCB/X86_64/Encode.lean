@@ -55,9 +55,9 @@ assembler's for the printed text, so that the bytes are those it produced:
   8–15 take their store forms (`66 0F 7F /r`, `66 0F D6 /r`), with the
   source in ModR/M's `reg` field;
 * the mnemonics of `Evex.lean` with every operand in `xmm0`–`xmm15`
-  (`.lo`) that have a VEX form (`vpaddq`, the shifts, `vpermq`,
-  `vpbroadcastq`, `vmovq`) are encoded with VEX, as `Print.lean`'s docs of
-  `EOp.asm` say.
+  (`.lo`) that have a VEX form (`vpaddq`, `vpsubq`, the logical shifts,
+  `vpermq`, `vpbroadcastq`, `vmovq`) are encoded with VEX, as `Print.lean`'s
+  docs of `EOp.asm` say.
 
 `encode` is `none` for an instruction whose operand does not fit its field
 (a displacement outside `-2³¹ … 2³¹ - 1`, an immediate count of 256 or
@@ -453,7 +453,8 @@ def VReg.isLo : VReg → Bool
 registers are in `xmm0`–`xmm15` and it has a VEX form (see the module
 docs), else with EVEX (`EVEX.256`, `EVEX.128` for `vmovq`). -/
 def EOp.encode : EOp → Option (List Nat)
-  -- "PADDQ" (`VEX.256.66.0F.WIG D4 /r`, `EVEX.256.66.0F.W1 D4 /r`), "PXOR"
+  -- "PADDQ" (`VEX.256.66.0F.WIG D4 /r`, `EVEX.256.66.0F.W1 D4 /r`), "PSUBQ"
+  -- (`VEX.256.66.0F.WIG FB /r`, `EVEX.256.66.0F.W1 FB /r`), "PXOR"
   -- (`EVEX.256.66.0F.W1 EF /r`, VPXORQ), "PAND" (`DB`, VPANDQ), "POR" (`EB`,
   -- VPORQ).
   | .bin op d a b =>
@@ -461,6 +462,9 @@ def EOp.encode : EOp → Option (List Nat)
     | .vpaddq =>
       if d.isLo && a.isLo && b.isLo then vexBin 1 1 0xD4 true 1 (vreg d) (vreg a) (vreg b)
       else evex 1 1 true 1 (vreg a) 0xD4 (vreg d) (.reg (vreg b))
+    | .vpsubq =>
+      if d.isLo && a.isLo && b.isLo then vexBin 1 1 0xFB false 1 (vreg d) (vreg a) (vreg b)
+      else evex 1 1 true 1 (vreg a) 0xFB (vreg d) (.reg (vreg b))
     | .vpxorq => evex 1 1 true 1 (vreg a) 0xEF (vreg d) (.reg (vreg b))
     | .vpandq => evex 1 1 true 1 (vreg a) 0xDB (vreg d) (.reg (vreg b))
     | .vporq => evex 1 1 true 1 (vreg a) 0xEB (vreg d) (.reg (vreg b))
@@ -493,13 +497,18 @@ def EOp.encode : EOp → Option (List Nat)
   | .vpmadd52 hi d a b => evex 1 2 true 1 (vreg a) (if hi then 0xB5 else 0xB4) (vreg d) (.reg (vreg b))
   | .vpternlogq d a b n => evex 1 3 true 1 (vreg a) 0x25 (vreg d) (.reg (vreg b)) (imm := [n.toNat])
   | .vprorq d s n => evex 1 1 true 1 (vreg d) 0x72 0 (.reg (vreg s)) (imm := [n.toNat])
+  -- "VPSRAQ" (`EVEX.256.66.0F.W1 72 /4 ib`), "VMOVDQA64"
+  -- (`EVEX.256.66.0F.W1 6F /r`).
+  | .vpsraq d s n => evex 1 1 true 1 (vreg d) 0x72 4 (.reg (vreg s)) (imm := [n.toNat])
+  | .vmovdqa64 d s => evex 1 1 true 1 0 0x6F (vreg d) (.reg (vreg s))
 
 /-- The bytes of an `EVEX.512` instruction (`EVEX.L'L = 10`). -/
 def E5Op.encode : E5Op → Option (List Nat)
-  -- "PADDQ" (`EVEX.512.66.0F.W1 D4 /r`), "PXOR" (`EVEX.512.66.0F.W1 EF /r`,
+  -- "PADDQ" (`EVEX.512.66.0F.W1 D4 /r`), "PSUBQ" (`EVEX.512.66.0F.W1 FB
+  -- /r`), "PXOR" (`EVEX.512.66.0F.W1 EF /r`,
   -- VPXORQ), "PAND" (`DB`, VPANDQ), "POR" (`EB`, VPORQ).
   | .bin op d a b =>
-    let o := match op with | .vpaddq => 0xD4 | .vpxorq => 0xEF | .vpandq => 0xDB | .vporq => 0xEB
+    let o := match op with | .vpaddq => 0xD4 | .vpsubq => 0xFB | .vpxorq => 0xEF | .vpandq => 0xDB | .vporq => 0xEB
     evex 1 1 true 2 (vreg a) o (vreg d) (.reg (vreg b))
   -- "PSLLQ"/"PSRLQ" (`EVEX.512.66.0F.W1 73 /6`, `/2 ib`).
   | .shift op d s n =>
