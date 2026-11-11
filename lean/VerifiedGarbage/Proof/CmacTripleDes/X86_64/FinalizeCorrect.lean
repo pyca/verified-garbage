@@ -49,7 +49,7 @@ theorem FPre.save_frame : ∀ r ∈ [(⟨S + BitVec.ofNat 64 48, 48⟩ : Region)
   intro r hr; simp only [List.mem_singleton] at hr; subst hr
   exact hp.last_scr.sub_right (FPre.scrD (by decide))
 
-theorem FPre.keyD {d n : Nat} (h : d + n ≤ 400) {r : Region} (hr : Region.Sub r ⟨S, 640⟩) :
+theorem FPre.keyD {d n : Nat} (h : d + n ≤ 400) {r : Region} (hr : Region.Sub r ⟨S, 120⟩) :
     (⟨W + BitVec.ofNat 64 d, n⟩ : Region).Disjoint r :=
   (hp.key_scr.sub_left (Offset.sub_base _ h)).sub_right hr
 
@@ -212,15 +212,15 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeX86_64.pre s₀) :
   have kw := hp.key_wrap
   have tw := hp.st_wrap
   refine WP.seq (WP.mono (finPre_wp hp) fun s₁ h₁ => ?_)
-  have rdwr₁ : s₁.rd ++ s₁.wr = [⟨W, 400⟩, ⟨P, L⟩, ⟨St, 8⟩, ⟨S, 640⟩] := by rw [h₁.rd, h₁.wr, hp.rd, hp.wr]; rfl
+  have rdwr₁ : s₁.rd ++ s₁.wr = [⟨W, 400⟩, ⟨P, L⟩, ⟨St, 8⟩, ⟨S, 120⟩] := by rw [h₁.rd, h₁.wr, hp.rd, hp.wr]; rfl
   obtain ⟨s₂, run₂, ax₂, g₂, m₂, rd₂, wr₂⟩ := xorSt_ok s₁ h₁.rbp
     (by rw [rdwr₁]; exact in_rw (r := ⟨St, 8⟩) (by simp) (Region.contains_self _ _))
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
   have bp : BlockPre s₂ :=
     { sched := ⟨⟨W, 400⟩, by rw [rd₂, h₁.rd, hp.rd]; simp, by rw [g₂ _ (by decide), h₁.r14],
         by show 384 ≤ 400; decide, by show 400 < 2 ^ 64; decide⟩
-      scr := ⟨⟨S, 640⟩, by rw [wr₂, h₁.wr, hp.wr]; simp, by rw [g₂ _ (by decide), h₁.r15],
-        by show 48 ≤ 640; decide, by show 640 < 2 ^ 64; decide⟩
+      scr := ⟨⟨S, 120⟩, by rw [wr₂, h₁.wr, hp.wr]; simp, by rw [g₂ _ (by decide), h₁.r15],
+        by show 48 ≤ 120; decide, by show 120 < 2 ^ 64; decide⟩
       disj := by
         rw [g₂ _ (by decide), g₂ _ (by decide), h₁.r14, h₁.r15]
         exact (hp.key_scr.symm.sub_left (Region.sub_prefix (by decide))).sub_right
@@ -231,10 +231,10 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeX86_64.pre s₀) :
   have r15₃ : s₃.gpr .r15 = S := by rw [same₃.r15, g₂ _ (by decide), h₁.r15]
   obtain ⟨s₄, run₄, m₄, g₄, rd₄, wr₄⟩ := storeSt_ok s₃ rbp₃
     (by rw [same₃.wr, wr₂, h₁.wr, hp.wr]; exact in_rw (r := ⟨St, 8⟩) (by simp) (Region.contains_self _ _))
-  have rdwr₄ : s₄.rd ++ s₄.wr = [⟨W, 400⟩, ⟨P, L⟩, ⟨St, 8⟩, ⟨S, 640⟩] := by
+  have rdwr₄ : s₄.rd ++ s₄.wr = [⟨W, 400⟩, ⟨P, L⟩, ⟨St, 8⟩, ⟨S, 120⟩] := by
     rw [rd₄, wr₄, same₃.rd, same₃.wr, rd₂, wr₂, rdwr₁]
   obtain ⟨s₅, run₅, b, c, d, e, f, g, rsp₅, m₅⟩ := restore_ok s₄ (by rw [g₄ _ (by decide), r15₃]) fun d _ h₂' => by
-    rw [rdwr₄]; exact in_rw (r := ⟨S, 640⟩) (by simp) (Offset.contains_base _ (by omega) (by omega))
+    rw [rdwr₄]; exact in_rw (r := ⟨S, 120⟩) (by simp) (Offset.contains_base _ (by omega) (by omega))
   refine WP.of_runBlock ⟨s₄, run₄, WP.of_runBlock ⟨s₅, run₅, ?_⟩⟩
   -- Memory.
   have xR₂ : xR s₂ = ⟨S, 48⟩ := by rw [xR, g₂ _ (by decide), h₁.r15]
@@ -245,14 +245,14 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeX86_64.pre s₀) :
     rw [m₅]
     exact ((h₁.frame.mono fun r hr => by simp at hr; simp [hr]).trans (f₃.mono fun r hr => by
       simp at hr; simp [hr])).trans (f₄.mono fun r hr => by simp at hr; simp [hr])
-  have big : Frame [⟨S, 640⟩, ⟨St, 8⟩] s₀.mem s₅.mem :=
+  have big : Frame [⟨S, 120⟩, ⟨St, 8⟩] s₀.mem s₅.mem :=
     ((savedMem_frame s₀ S).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨S, 640⟩, by simp, FPre.scrD (by decide)⟩).trans (fAll.sub fun r hr => by
+      exact ⟨⟨S, 120⟩, by simp, FPre.scrD (by decide)⟩).trans (fAll.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨⟨S, 640⟩, by simp, FPre.scrD (by decide)⟩
-      · exact ⟨⟨S, 640⟩, by simp, Region.sub_prefix (by decide)⟩
+      · exact ⟨⟨S, 120⟩, by simp, FPre.scrD (by decide)⟩
+      · exact ⟨⟨S, 120⟩, by simp, Region.sub_prefix (by decide)⟩
       · exact ⟨⟨St, 8⟩, by simp, fun _ h => h⟩)
   have hm : ∀ d, 48 ≤ d → d + 8 ≤ 96 →
       s₄.mem.readW (S + BitVec.ofNat 64 d) 64 = (savedMem s₀ S).readW (S + BitVec.ofNat 64 d) 64 := by
@@ -273,7 +273,7 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeX86_64.pre s₀) :
     · exact hp.ret_st
   · intro hk msg hml hne hst
     rw [hW, hSt, hP, hL] at *
-    have keyD (r : Region) (hr : Region.Sub r ⟨S, 640⟩) : (⟨W, 384⟩ : Region).Disjoint r :=
+    have keyD (r : Region) (hr : Region.Sub r ⟨S, 120⟩) : (⟨W, 384⟩ : Region).Disjoint r :=
       (hp.key_scr.sub_left (Region.sub_prefix (by decide))).sub_right hr
     have f₁ : Frame [⟨S + BitVec.ofNat 64 48, 48⟩, slot12 S] s₀.mem s₁.mem :=
       ((savedMem_frame s₀ S).mono fun r hr => by simp at hr; simp [hr]).trans

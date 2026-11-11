@@ -54,7 +54,7 @@ abbrev S : Addr := s₀.gpr .r8
 abbrev schR : Region := ⟨W s₀, 384⟩
 abbrev stR : Region := ⟨St s₀, 8⟩
 abbrev dataR : Region := ⟨Dp s₀, 8 * N s₀⟩
-abbrev scrR : Region := ⟨S s₀, 640⟩
+abbrev scrR : Region := ⟨S s₀, 120⟩
 
 /-- The cipher. -/
 abbrev ciph : Spec.Cmac.Cipher := ciphAt s₀.mem (W s₀)
@@ -80,7 +80,7 @@ structure UPre (s₀ : State) : Prop where
   ret_scr : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint (scrR s₀)
   st_wrap : (St s₀).toNat + 8 ≤ 2 ^ 64
   data_wrap : (Dp s₀).toNat + 8 * N s₀ ≤ 2 ^ 64
-  scr_wrap : (S s₀).toNat + 640 ≤ 2 ^ 64
+  scr_wrap : (S s₀).toNat + 120 ≤ 2 ^ 64
 
 theorem UPre.of {s₀ : State} (h : updateX86_64.pre s₀) : UPre s₀ :=
   let ⟨a, b, c, d, e, f, g, h, i, j, k, l⟩ := h
@@ -184,7 +184,7 @@ theorem chainOut_ok (s : State) {P : Addr} (hp : s.gpr .rbp = P)
 section
 variable {s₀ : State}
 
-theorem UPre.scr_sub {d n : Nat} (h : d + n ≤ 640) : Region.Sub ⟨S s₀ + BitVec.ofNat 64 d, n⟩ (scrR s₀) :=
+theorem UPre.scr_sub {d n : Nat} (h : d + n ≤ 120) : Region.Sub ⟨S s₀ + BitVec.ofNat 64 d, n⟩ (scrR s₀) :=
   Offset.sub_base _ h
 
 theorem UPre.data_sub {k : Nat} (hk : k < N s₀) :
@@ -226,7 +226,7 @@ theorem UPre.data {hp : UPre s₀} {m : Mem} (hf : Frame (chg s₀) (savedMem s�
 theorem UPre.block {hp : UPre s₀} {s : State} (h14 : s.gpr .r14 = W s₀) (h15 : s.gpr .r15 = S s₀)
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) : BlockPre s where
   sched := ⟨schR s₀, by rw [hrd, hp.rd]; simp, by rw [h14], Nat.le_refl _, by show 384 < 2 ^ 64; decide⟩
-  scr := ⟨scrR s₀, by rw [hwr, hp.wr]; simp, by rw [h15], by show 48 ≤ 640; decide, by show 640 < 2 ^ 64; decide⟩
+  scr := ⟨scrR s₀, by rw [hwr, hp.wr]; simp, by rw [h15], by show 48 ≤ 120; decide, by show 120 < 2 ^ 64; decide⟩
   disj := by
     rw [h14, h15]
     exact hp.sch_scr.symm.sub_left (Region.sub_prefix (by decide))
@@ -265,7 +265,7 @@ theorem body_ok {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s :
   have xR₁ : xR s₁ = ⟨S s₀, 48⟩ := by rw [xR, r15₁]
   have f₂ : Frame [⟨S s₀, 48⟩] s.mem s₂.mem := by rw [← m₁, ← xR₁]; exact same₂.frame
   have r15₂ : s₂.gpr .r15 = S s₀ := by rw [same₂.r15, r15₁]
-  have slot₂ : ∀ d, 48 ≤ d → d + 8 ≤ 640 →
+  have slot₂ : ∀ d, 48 ≤ d → d + 8 ≤ 120 →
       s₂.mem.readW (S s₀ + BitVec.ofNat 64 d) 64 = s.mem.readW (S s₀ + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => f₂.readW (r := ⟨S s₀ + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
       (fun r hr => by

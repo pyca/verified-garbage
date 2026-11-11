@@ -49,15 +49,15 @@ end
 /-- The precondition, by name. -/
 structure IPre (s₀ : State) : Prop where
   rd : s₀.rd = [⟨K s₀, Kl s₀⟩]
-  wr : s₀.wr = [⟨O s₀, 400⟩, ⟨Sc s₀, 640⟩]
+  wr : s₀.wr = [⟨O s₀, 400⟩, ⟨Sc s₀, 120⟩]
   key_out : (⟨K s₀, Kl s₀⟩ : Region).Disjoint ⟨O s₀, 400⟩
-  key_scr : (⟨K s₀, Kl s₀⟩ : Region).Disjoint ⟨Sc s₀, 640⟩
-  out_scr : (⟨O s₀, 400⟩ : Region).Disjoint ⟨Sc s₀, 640⟩
+  key_scr : (⟨K s₀, Kl s₀⟩ : Region).Disjoint ⟨Sc s₀, 120⟩
+  out_scr : (⟨O s₀, 400⟩ : Region).Disjoint ⟨Sc s₀, 120⟩
   ret_out : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨O s₀, 400⟩
-  ret_scr : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨Sc s₀, 640⟩
+  ret_scr : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨Sc s₀, 120⟩
   key_wrap : (K s₀).toNat + Kl s₀ ≤ 2 ^ 64
   out_wrap : (O s₀).toNat + 400 ≤ 2 ^ 64
-  scr_wrap : (Sc s₀).toNat + 640 ≤ 2 ^ 64
+  scr_wrap : (Sc s₀).toNat + 120 ≤ 2 ^ 64
   valid : Kl s₀ = 16 ∨ Kl s₀ = 24
 
 theorem IPre.of {s₀ : State} (h : initX86_64.pre s₀) : IPre s₀ :=
@@ -144,8 +144,8 @@ section
 variable {s₀ : State} (hp : IPre s₀)
 include hp
 
-theorem IPre.inScr {d n : Nat} (h : d + n ≤ 640) : InRegions s₀.wr (Sc s₀ + BitVec.ofNat 64 d) n := by
-  rw [hp.wr]; exact in_rw (r := ⟨Sc s₀, 640⟩) (by simp) (Offset.contains_base _ h (by have := hp.scr_wrap; omega_arith))
+theorem IPre.inScr {d n : Nat} (h : d + n ≤ 120) : InRegions s₀.wr (Sc s₀ + BitVec.ofNat 64 d) n := by
+  rw [hp.wr]; exact in_rw (r := ⟨Sc s₀, 120⟩) (by simp) (Offset.contains_base _ h (by have := hp.scr_wrap; omega_arith))
 
 theorem IPre.inOut {d n : Nat} (h : d + n ≤ 400) : InRegions s₀.wr (O s₀ + BitVec.ofNat 64 d) n := by
   rw [hp.wr]; exact in_rw (r := ⟨O s₀, 400⟩) (by simp) (Offset.contains_base _ h (by have := hp.out_wrap; omega_arith))
@@ -155,7 +155,7 @@ theorem IPre.inKey {d n : Nat} (h : d + n ≤ Kl s₀) (hn : 0 < n) :
   rw [hp.rd]; exact in_rw (r := ⟨K s₀, Kl s₀⟩) (by simp) (Offset.contains_base _ h (by have := hp.key_wrap; omega_arith))
 
 /-- The key is unchanged while only the scratch buffer changes. -/
-theorem IPre.keyRead {m : Mem} (hf : Frame [⟨Sc s₀, 640⟩] s₀.mem m) {d : Nat} (hd : d + 8 ≤ Kl s₀) :
+theorem IPre.keyRead {m : Mem} (hf : Frame [⟨Sc s₀, 120⟩] s₀.mem m) {d : Nat} (hd : d + 8 ≤ Kl s₀) :
     m.readW (K s₀ + BitVec.ofNat 64 d) 64 = s₀.mem.readW (K s₀ + BitVec.ofNat 64 d) 64 :=
   hf.readW (r := ⟨K s₀ + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
@@ -163,7 +163,7 @@ theorem IPre.keyRead {m : Mem} (hf : Frame [⟨Sc s₀, 640⟩] s₀.mem m) {d :
 
 end
 
-theorem scrSub {S : Addr} {d n : Nat} (h : d + n ≤ 640) : Region.Sub ⟨S + BitVec.ofNat 64 d, n⟩ ⟨S, 640⟩ :=
+theorem scrSub {S : Addr} {d n : Nat} (h : d + n ≤ 120) : Region.Sub ⟨S + BitVec.ofNat 64 d, n⟩ ⟨S, 120⟩ :=
   Offset.sub_base _ h
 
 theorem initPre_wp {s₀ : State} (hp : IPre s₀) : WP isa initPre s₀ (KInv s₀ 0) := by
@@ -174,7 +174,7 @@ theorem initPre_wp {s₀ : State} (hp : IPre s₀) : WP isa initPre s₀ (KInv s
     (hp.inKey (d := 8) (n := 8) (by omega_arith) (by decide))
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   -- The memory so far.
-  have fS : Frame [⟨Sc s₀, 640⟩] s₀.mem (savedMem s₀ (Sc s₀)) := (savedMem_frame s₀ (Sc s₀)).sub fun r hr => by
+  have fS : Frame [⟨Sc s₀, 120⟩] s₀.mem (savedMem s₀ (Sc s₀)) := (savedMem_frame s₀ (Sc s₀)).sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, scrSub (by decide)⟩
   have c96 : (⟨Sc s₀ + BitVec.ofNat 64 96, 24⟩ : Region).Contains (Sc s₀ + BitVec.ofNat 64 96) (64 / 8) := by
     simpa using Offset.contains_base (Sc s₀ + BitVec.ofNat 64 96) (d := 0) (n := 8) (k := 24) (by decide) (by decide)
@@ -187,9 +187,9 @@ theorem initPre_wp {s₀ : State} (hp : IPre s₀) : WP isa initPre s₀ (KInv s
     rw [m₁]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c96).writeW (List.mem_singleton_self _) _
       (cAt 104 (by decide) (by decide))
-  have fA : Frame [⟨Sc s₀, 640⟩] s₀.mem s₁.mem := fS.trans (f₁.sub fun r hr => by
+  have fA : Frame [⟨Sc s₀, 120⟩] s₀.mem s₁.mem := fS.trans (f₁.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, scrSub (by decide)⟩)
-  have cS (d : Nat) (h : d + 8 ≤ 640) : (⟨Sc s₀, 640⟩ : Region).Contains (Sc s₀ + BitVec.ofNat 64 d) (64 / 8) :=
+  have cS (d : Nat) (h : d + 8 ≤ 120) : (⟨Sc s₀, 120⟩ : Region).Contains (Sc s₀ + BitVec.ofNat 64 d) (64 / 8) :=
     Offset.contains_base _ (by omega_arith) (by omega_arith)
   have kr0 := hp.keyRead fS (d := 0) (by omega_arith)
   have kr8 := hp.keyRead (fS.trans ((Frame.refl _ _).writeW (List.mem_singleton_self _)
@@ -284,10 +284,10 @@ theorem keyStep_ok {s₀ : State} (hp : IPre s₀) {i : Nat} (hi : i < 3) {s : S
     WP isa (.block keysBody) s fun s' => s'.zf = some (decide (i + 1 = 3)) ∧ KInv s₀ (i + 1) s' := by
   have sw := hp.scr_wrap
   have ow := hp.out_wrap
-  have rdwr : s.rd ++ s.wr = [⟨K s₀, Kl s₀⟩, ⟨O s₀, 400⟩, ⟨Sc s₀, 640⟩] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
+  have rdwr : s.rd ++ s.wr = [⟨K s₀, Kl s₀⟩, ⟨O s₀, 400⟩, ⟨Sc s₀, 120⟩] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   rw [keysBody, List.append_assoc, WP.block_append_iff]
   obtain ⟨s₁, run₁, ax₁, g₁, m₁, rd₁, wr₁⟩ := loadRbx_ok s (by
-    rw [rdwr, h.rbx]; exact in_rw (r := ⟨Sc s₀, 640⟩) (by simp) (Offset.contains_base _ (by omega_arith) (by omega_arith)))
+    rw [rdwr, h.rbx]; exact in_rw (r := ⟨Sc s₀, 120⟩) (by simp) (Offset.contains_base _ (by omega_arith) (by omega_arith)))
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   rw [WP.block_append_iff]
   have rbp₁ : s₁.gpr .rbp = O s₀ + BitVec.ofNat 64 (128 * i) := by rw [g₁ _ (by decide), h.rbp]
@@ -401,8 +401,8 @@ theorem init_wp {s₀ : State} (h0 : initX86_64.pre s₀) :
   have bp : BlockPre s₃ :=
     { sched := ⟨⟨O s₀, 400⟩, by rw [rd₃, wr₃, h₂.rd, h₂.wr, hp.rd, hp.wr]; simp, by rw [r14₃'],
         by show 384 ≤ 400; decide, by show 400 < 2 ^ 64; decide⟩
-      scr := ⟨⟨Sc s₀, 640⟩, by rw [wr₃, h₂.wr, hp.wr]; simp, by rw [r15₃], by show 48 ≤ 640; decide,
-        by show 640 < 2 ^ 64; decide⟩
+      scr := ⟨⟨Sc s₀, 120⟩, by rw [wr₃, h₂.wr, hp.wr]; simp, by rw [r15₃], by show 48 ≤ 120; decide,
+        by show 120 < 2 ^ 64; decide⟩
       disj := by
         rw [r14₃', r15₃]
         exact (hp.out_scr.symm.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide)) }
@@ -430,10 +430,10 @@ theorem init_wp {s₀ : State} (h0 : initX86_64.pre s₀) :
     rw [wr₅, same₄.wr, wr₃, h₂.wr, rbp₅, Offset.add_add]; exact hp.inOut (by decide))
   refine WP.of_runBlock ⟨s₆, run₆, ?_⟩
   have r15₆ : s₆.gpr .r15 = Sc s₀ := by rw [g₆ _ (by decide), g₅ _ (by decide), same₄.r15, r15₃]
-  have rdwr₆ : s₆.rd ++ s₆.wr = [⟨K s₀, Kl s₀⟩, ⟨O s₀, 400⟩, ⟨Sc s₀, 640⟩] := by
+  have rdwr₆ : s₆.rd ++ s₆.wr = [⟨K s₀, Kl s₀⟩, ⟨O s₀, 400⟩, ⟨Sc s₀, 120⟩] := by
     rw [rd₆, wr₆, rd₅, wr₅, same₄.rd, same₄.wr, rd₃, wr₃, h₂.rd, h₂.wr, hp.rd, hp.wr]; rfl
   obtain ⟨s₇, run₇, b, c, d, e, f, g, rsp₇, m₇⟩ := restore_ok s₆ r15₆ fun d _ h₂' => by
-    rw [rdwr₆]; exact in_rw (r := ⟨Sc s₀, 640⟩) (by simp) (Offset.contains_base _ (by omega_arith) (by omega_arith))
+    rw [rdwr₆]; exact in_rw (r := ⟨Sc s₀, 120⟩) (by simp) (Offset.contains_base _ (by omega_arith) (by omega_arith))
   refine WP.of_runBlock ⟨s₇, run₇, ?_⟩
   -- Memory.
   have sub384 : Region.Sub ⟨O s₀ + BitVec.ofNat 64 384, 16⟩ ⟨O s₀, 400⟩ := Offset.sub_base _ (by decide)
@@ -466,15 +466,15 @@ theorem init_wp {s₀ : State} (h0 : initX86_64.pre s₀) :
     · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
   refine ⟨⟨restored hm ⟨b, c, d, e, f, g⟩ (by rw [rsp₇, g₆ _ (by decide), g₅ _ (by decide), same₄.rsp,
     g₃ _ (by decide), h₂.rsp]), ?_⟩, ?_, ?_⟩
-  · have big : Frame [⟨Sc s₀, 640⟩, ⟨O s₀, 400⟩] s₀.mem s₇.mem :=
+  · have big : Frame [⟨Sc s₀, 120⟩, ⟨O s₀, 400⟩] s₀.mem s₇.mem :=
       ((savedMem_frame s₀ (Sc s₀)).sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨⟨Sc s₀, 640⟩, by simp, scrSub (by decide)⟩).trans (fAll.sub fun r hr => by
+        exact ⟨⟨Sc s₀, 120⟩, by simp, scrSub (by decide)⟩).trans (fAll.sub fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
-        · exact ⟨⟨Sc s₀, 640⟩, by simp, scrSub (by decide)⟩
+        · exact ⟨⟨Sc s₀, 120⟩, by simp, scrSub (by decide)⟩
         · exact ⟨⟨O s₀, 400⟩, by simp, fun _ h => h⟩
-        · exact ⟨⟨Sc s₀, 640⟩, by simp, Region.sub_prefix (by decide)⟩)
+        · exact ⟨⟨Sc s₀, 120⟩, by simp, Region.sub_prefix (by decide)⟩)
     refine big.readW (r := ⟨s₀.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

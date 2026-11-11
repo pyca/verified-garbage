@@ -42,16 +42,16 @@ structure HPre (s₀ : State) (St O S : Addr) : Prop where
   rdx : s₀.gpr .rdx = O
   rcx : s₀.gpr .rcx = S
   rd : s₀.rd = []
-  wr : s₀.wr = [⟨St, 416⟩, ⟨O, 8⟩, ⟨S, 640⟩]
+  wr : s₀.wr = [⟨St, 416⟩, ⟨O, 8⟩, ⟨S, 120⟩]
   st_o : (⟨St, 416⟩ : Region).Disjoint ⟨O, 8⟩
-  st_s : (⟨St, 416⟩ : Region).Disjoint ⟨S, 640⟩
-  o_s : (⟨O, 8⟩ : Region).Disjoint ⟨S, 640⟩
+  st_s : (⟨St, 416⟩ : Region).Disjoint ⟨S, 120⟩
+  o_s : (⟨O, 8⟩ : Region).Disjoint ⟨S, 120⟩
   ret_st : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨St, 416⟩
   ret_o : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨O, 8⟩
-  ret_s : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨S, 640⟩
+  ret_s : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨S, 120⟩
   wSt : St.toNat + 416 ≤ 2 ^ 64
   wO : O.toNat + 8 ≤ 2 ^ 64
-  wS : S.toNat + 640 ≤ 2 ^ 64
+  wS : S.toNat + 120 ≤ 2 ^ 64
 
 theorem HPre.of {s₀ : State} (h : finishX86_64.pre s₀) : HPre s₀ (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) :=
   let ⟨a, b, c, d, e, f, g, h, i, j, k⟩ := h
@@ -124,14 +124,14 @@ theorem HPre.fargs {s₀ s : State} {St O S : Addr} {L : Nat} (hp : HPre s₀ St
       · exact ⟨⟨St, 416⟩, by simp, 0, by simp, by simp⟩
       · exact ⟨⟨St, 416⟩, by simp, 408, rfl, by simp; omega⟩
       · exact ⟨⟨O, 8⟩, by simp, 0, by simp, by simp⟩
-      · exact ⟨⟨S, 640⟩, by simp, 0, by simp, by simp⟩
+      · exact ⟨⟨S, 120⟩, by simp, 0, by simp, by simp⟩
     writes := by
       rw [wr, hp.wr]
       refine Covers.of_sub fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨⟨O, 8⟩, by simp, 0, by simp, by simp⟩
-      · exact ⟨⟨S, 640⟩, by simp, 0, by simp, by simp⟩ }
+      · exact ⟨⟨S, 120⟩, by simp, 0, by simp, by simp⟩ }
 
 theorem finPre_wp {s₀ : State} {St O S : Addr} (hp : HPre s₀ St O S) :
     WP isa finPre s₀ (HMid s₀ St O S) := by
@@ -165,7 +165,7 @@ theorem finish_wp {s₀ : State} (h0 : finishX86_64.pre s₀) :
   refine WP.mono (fin_wp h₁.args) fun s₂ h₂ => ?_
   have f₁ : Frame [⟨O, 8⟩] s₀.mem s₁.mem := by rw [h₁.mem]; exact copyCv_frame _ _ _
   refine ⟨⟨fun r hr => by rw [h₂.saved r hr, h₁.saved r hr], ?_⟩, ?_⟩
-  · have big : Frame [⟨O, 8⟩, ⟨S, 640⟩] s₀.mem s₂.mem := (f₁.mono (by simp)).trans h₂.frame
+  · have big : Frame [⟨O, 8⟩, ⟨S, 120⟩] s₀.mem s₂.mem := (f₁.mono (by simp)).trans h₂.frame
     refine big.readW (r := ⟨s₀.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

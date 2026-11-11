@@ -23,7 +23,7 @@ section
 /-!
 # Streaming TDEA-CMAC on x86-64: `vg_cmac_triple_des_absorb`'s saved registers
 
-`absorb` saves the five callee-saved registers it uses at `scratch + 640`,
+`absorb` saves the five callee-saved registers it uses at `scratch + 120`,
 where the code it runs does not write, and restores them at the end.
 -/
 
@@ -33,16 +33,16 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.CmacTripleDes.Stream.X86_64
 open VG.Impl.CmacTripleDes.X86_64 (at_)
 open VG.Proof.CmacTripleDes.X86_64 (offset_nat readW_writeW_other)
 
-/-- The memory after saving the registers at `S + 640`. -/
+/-- The memory after saving the registers at `S + 120`. -/
 def absSavedMem (s : State) (S : Addr) : Mem :=
   saved.foldl (fun m (r, d) => m.writeW (S + BitVec.ofNat 64 d) (s.gpr r)) s.mem
 
 theorem absSaved_read (s : State) (S : Addr) :
-    (absSavedMem s S).readW (S + BitVec.ofNat 64 640) 64 = s.gpr .rbx ∧
-    (absSavedMem s S).readW (S + BitVec.ofNat 64 648) 64 = s.gpr .r12 ∧
-    (absSavedMem s S).readW (S + BitVec.ofNat 64 656) 64 = s.gpr .r13 ∧
-    (absSavedMem s S).readW (S + BitVec.ofNat 64 664) 64 = s.gpr .r14 ∧
-    (absSavedMem s S).readW (S + BitVec.ofNat 64 672) 64 = s.gpr .r15 := by
+    (absSavedMem s S).readW (S + BitVec.ofNat 64 120) 64 = s.gpr .rbx ∧
+    (absSavedMem s S).readW (S + BitVec.ofNat 64 128) 64 = s.gpr .r12 ∧
+    (absSavedMem s S).readW (S + BitVec.ofNat 64 136) 64 = s.gpr .r13 ∧
+    (absSavedMem s S).readW (S + BitVec.ofNat 64 144) 64 = s.gpr .r14 ∧
+    (absSavedMem s S).readW (S + BitVec.ofNat 64 152) 64 = s.gpr .r15 := by
   simp only [absSavedMem, saved, List.foldl]
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · rw [readW_writeW_other _ _ _ (by decide) (by decide) (by decide),
@@ -57,15 +57,15 @@ theorem absSaved_read (s : State) (S : Addr) :
   · rw [readW_writeW_other _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self64]
   · rw [Mem.readW_writeW_self64]
 
-theorem slot_contains (b : Addr) {d : Nat} (h₁ : 640 ≤ d) (h₂ : d + 8 ≤ 680) :
-    (⟨b + BitVec.ofNat 64 640, 40⟩ : Region).Contains (b + BitVec.ofNat 64 d) 8 := by
-  rw [show b + BitVec.ofNat 64 d = (b + BitVec.ofNat 64 640) + BitVec.ofNat 64 (d - 640) from
+theorem slot_contains (b : Addr) {d : Nat} (h₁ : 120 ≤ d) (h₂ : d + 8 ≤ 160) :
+    (⟨b + BitVec.ofNat 64 120, 40⟩ : Region).Contains (b + BitVec.ofNat 64 d) 8 := by
+  rw [show b + BitVec.ofNat 64 d = (b + BitVec.ofNat 64 120) + BitVec.ofNat 64 (d - 120) from
     (Offset.add_add_eq b (by omega)).symm]
   exact Offset.contains_base _ (by omega) (by omega)
 
 /-- Saving the registers changes only their slots. -/
 theorem absSavedMem_frame (s : State) (S : Addr) :
-    Frame [⟨S + BitVec.ofNat 64 640, 40⟩] s.mem (absSavedMem s S) := by
+    Frame [⟨S + BitVec.ofNat 64 120, 40⟩] s.mem (absSavedMem s S) := by
   simp only [absSavedMem, saved, List.foldl]
   exact ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _
     (slot_contains _ (by decide) (by decide))).writeW
@@ -75,7 +75,7 @@ theorem absSavedMem_frame (s : State) (S : Addr) :
     (List.mem_singleton_self _) _ (slot_contains _ (by decide) (by decide)))
 
 theorem save_ok (s : State) {S : Addr} (hS : s.gpr .r8 = S)
-    (hw : ∀ d, 640 ≤ d → d + 8 ≤ 680 → InRegions s.wr (S + BitVec.ofNat 64 d) 8) :
+    (hw : ∀ d, 120 ≤ d → d + 8 ≤ 160 → InRegions s.wr (S + BitVec.ofNat 64 d) 8) :
     ∃ s', runBlock isa save s = some s' ∧
       s'.gpr .rbx = s.gpr .rdi ∧ s'.gpr .r13 = s.gpr .rdx ∧ s'.gpr .r14 = s.gpr .rcx ∧
       s'.gpr .r15 = S ∧ s'.gpr .rsi = s.gpr .rsi ∧
@@ -84,8 +84,8 @@ theorem save_ok (s : State) {S : Addr} (hS : s.gpr .r8 = S)
   refine ⟨_, by
     simp only [save, saved, List.map, List.cons_append, List.nil_append, runBlock_cons,
       runStep_some, runBlock_nil, at_, exec, readSrc, State.store64, State.ea, offset_nat, hS,
-      hw 640 (by decide) (by decide), hw 648 (by decide) (by decide), hw 656 (by decide) (by decide),
-      hw 664 (by decide) (by decide), hw 672 (by decide) (by decide),
+      hw 120 (by decide) (by decide), hw 128 (by decide) (by decide), hw 136 (by decide) (by decide),
+      hw 144 (by decide) (by decide), hw 152 (by decide) (by decide),
       ite_true, Option.map_some, execAlu, Option.bind_some]
     rfl, ?_⟩
   simp only [reduceCtorEq, ↓reduceIte, and_self, gpr_setReg, gpr_arithFlags, zf_arithFlags, mem_setReg,
@@ -94,21 +94,21 @@ theorem save_ok (s : State) {S : Addr} (hS : s.gpr .r8 = S)
   simp only [absSavedMem, saved, List.foldl]
 
 theorem restore_ok (s : State) {B : Addr} (hb : s.gpr .r15 = B)
-    (hr : ∀ d, 640 ≤ d → d + 8 ≤ 680 → InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 d) 8) :
+    (hr : ∀ d, 120 ≤ d → d + 8 ≤ 160 → InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 d) 8) :
     ∃ s', runBlock isa restore s = some s' ∧
-      s'.gpr .rbx = s.mem.readW (B + BitVec.ofNat 64 640) 64 ∧
-      s'.gpr .r12 = s.mem.readW (B + BitVec.ofNat 64 648) 64 ∧
-      s'.gpr .r13 = s.mem.readW (B + BitVec.ofNat 64 656) 64 ∧
-      s'.gpr .r14 = s.mem.readW (B + BitVec.ofNat 64 664) 64 ∧
-      s'.gpr .r15 = s.mem.readW (B + BitVec.ofNat 64 672) 64 ∧
+      s'.gpr .rbx = s.mem.readW (B + BitVec.ofNat 64 120) 64 ∧
+      s'.gpr .r12 = s.mem.readW (B + BitVec.ofNat 64 128) 64 ∧
+      s'.gpr .r13 = s.mem.readW (B + BitVec.ofNat 64 136) 64 ∧
+      s'.gpr .r14 = s.mem.readW (B + BitVec.ofNat 64 144) 64 ∧
+      s'.gpr .r15 = s.mem.readW (B + BitVec.ofNat 64 152) 64 ∧
       (∀ r, r ≠ .rbx → r ≠ .r12 → r ≠ .r13 → r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem := by
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, restore, saved, List.map, runBlock_cons, runStep_some,
       runBlock_nil, at_, exec, readSrc, State.load64, State.ea, offset_nat, gpr_setReg, mem_setReg,
       rd_setReg, wr_setReg, Option.map_some, hb,
-      hr 640 (by decide) (by decide), hr 648 (by decide) (by decide), hr 656 (by decide) (by decide),
-      hr 664 (by decide) (by decide), hr 672 (by decide) (by decide)]
+      hr 120 (by decide) (by decide), hr 128 (by decide) (by decide), hr 136 (by decide) (by decide),
+      hr 144 (by decide) (by decide), hr 152 (by decide) (by decide)]
     rfl, ?_⟩
   simp only [reduceCtorEq, ↓reduceIte, gpr_setReg, mem_setReg]
   refine ⟨trivial, trivial, trivial, trivial, trivial, fun r a b c d e => ?_, trivial⟩
