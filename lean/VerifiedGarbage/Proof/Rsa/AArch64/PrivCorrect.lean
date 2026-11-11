@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.PrivPub
 
 import VerifiedGarbage.Proof.Rsa.AArch64.PrivCheckOk
 import VerifiedGarbage.Proof.Rsa.AArch64.PrivTail
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
@@ -88,11 +88,11 @@ theorem body_eq (crtName : String) (crt : Prog isa) (pcName : String) (pc : Prog
 /-- `vg_rsa_private_checked`, calling the CRT `v` and its public operation. -/
 abbrev privCodeOf (v : CrtImpl) : Prog isa := code v.name v.code v.pcName v.pc v.pdName v.pd
 
-/-- `vg_rsa_private_checked`'s frames and calls, with `stage` writing `n`'s
-values. -/
-abbrev codeWith (v : CrtImpl) (stage : Prog isa) : Prog isa :=
+/-- `vg_rsa_private_checked`'s frames and calls, calling the CRT `C`, with
+`stage` writing `n`'s values. -/
+abbrev codeWith (C : CrtCallee) (v : CrtImpl) (stage : Prog isa) : Prog isa :=
   .frame (.push .x30) (.frame (.alloc frameBytes)
-    (seqs ([.block crtArgs, .call v.name v.code] ++ checkWith stage v.pdName v.pd)) (.free frameBytes))
+    (seqs ([.block crtArgs, .call C.name C.code] ++ checkWith stage v.pdName v.pd)) (.free frameBytes))
     (.pop .x30)
 
 /-- What `stage` does in place of calling `vg_rsa_public_precompute`. -/
@@ -101,13 +101,15 @@ abbrev StageOk (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m�
     WP isa stage t fun t' => Ctx L g vv m₀ t' ∧ Slots L t'.mem ∧ Frame (pcWr L) t.mem t'.mem ∧
       PcOut L t.mem t'.mem (t'.gpr .x0)
 
-/-- The frames, the CRT and the check, for a call that may also read `X`
+/-- The frames, the CRT `C` and the check, for a call that may also read `X`
 (`chkA` holding of it reading the rest, `R₀`), whatever `stage` writes `n`'s
-values. -/
-theorem codeWith_correct (v : CrtImpl) (stage : Prog isa) {s : State} {R₀ X : List Region}
+values, given that the CRT's call states have `C.K`. -/
+theorem codeWith_correct (C : CrtCallee) (v : CrtImpl) (stage : Prog isa) {s : State} {R₀ X : List Region}
     (h : chkA.pre (s.withRegions R₀ s.wr)) (hX : s.rd = R₀ ++ X)
-    (hst : StageOk (layW s X) s.gpr s.v s.mem stage) :
-    WP isa (codeWith v stage) s fun s' => abiPreserved s s' ∧ chkA.post s s' := by
+    (hst : StageOk (layW s X) s.gpr s.v s.mem stage)
+    (hK : ∀ t, Ctx (layW s X) s.gpr s.v s.mem t → CrtArgs (layW s X) t →
+      C.K (t.callEntry.withRegions (crtRd (layW s X)) (crtWr (layW s X)))) :
+    WP isa (codeWith C v stage) s fun s' => abiPreserved s s' ∧ chkA.post s s' := by
   have hL : (layW s X).Ok := (lay_ok h).withX X
   have hst0 : stackBytes ≤ s.sp.toNat := h.1
   have hnB := hL.nB
@@ -121,7 +123,7 @@ theorem codeWith_correct (v : CrtImpl) (stage : Prog isa) {s : State} {R₀ X : 
   have ha : ArgsAt (layW s X) s.mem := argsAt_entry s
   refine WP.seq (WP.mono (crtArgs_ok hL ha (entered_ctxW h hX) ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩)
     fun t₁ ⟨hc₁, hs₁, a₁⟩ => ?_)
-  refine WP.seq (WP.mono (crt_call v hL hc₁ hs₁ a₁) fun t₂ ⟨hc₂, hs₂, _, hcrt⟩ => ?_)
+  refine WP.seq (WP.mono (crt_call C hL hc₁ hs₁ a₁ (hK t₁ hc₁ a₁)) fun t₂ ⟨hc₂, hs₂, _, hcrt⟩ => ?_)
   refine WP.mono (checkWith_ok v stage hL ha hst hc₂ hs₂) fun t₃ ⟨hc₃, hax, hout, _⟩ => ?_
   have hsp₃ : (freed frameBytes t₃).sp = (layW s X).B + BitVec.ofNat 64 frameBytes := by
     rw [freed_sp, hc₃.sp]
@@ -145,8 +147,9 @@ theorem codeWith_correct (v : CrtImpl) (stage : Prog isa) {s : State} {R₀ X : 
 theorem code_correct (v : CrtImpl) (s : State) (h : chkA.pre s) :
     ∃ t s', Exec isa (privCodeOf v) s t s' ∧ abiPreserved s s' ∧ chkA.post s s' := by
   have hL := lay_ok h
-  obtain ⟨t, s', he, hq⟩ := codeWith_correct v (.call v.pcName v.pc) (R₀ := s.rd) (X := [])
+  obtain ⟨t, s', he, hq⟩ := codeWith_correct v.callee v (.call v.pcName v.pc) (R₀ := s.rd) (X := [])
     (by exact h) (List.append_nil _).symm (fun _ hc hs pa => pc_call v ((lay_ok h).withX []) hc hs pa)
+    fun _ _ _ => trivial
   exact ⟨t, s', he, hq⟩
 
 end
