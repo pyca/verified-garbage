@@ -14,6 +14,8 @@ for the modulus and the pointer to `pre` (`constantTimeP`), and with
 `correctP`, `verifiedP`.
 -/
 
+-- separate module: `vg_rsa_private_crt_precomputed`'s constant time builds in parallel with the wrapper's correctness (`PrivP.Fn`).
+
 @[expose] public section
 
 namespace VG.Proof.Bignum.X86.CrtRt
