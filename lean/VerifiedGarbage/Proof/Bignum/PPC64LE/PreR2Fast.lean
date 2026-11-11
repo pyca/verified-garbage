@@ -350,14 +350,14 @@ theorem r2Hi_ok {s : State} {B : Addr} {Z w N : Nat} (hs : Scr s B Z)
 /-- The registers `r2Fast` changes. -/
 def r2ChgRegs : List Reg := [.r0, .r3, .r4, .r6, .r7, .r12, .r14, .r15, .r16, .r17, .r18, .r20, .r22]
 
-/-- `r2Fast`, with `n` (odd, above `2^(64 (w - 1))`, `w ≥ 3`) in array 0 and
+/-- `r2Fast`, with `n` (odd, above `2^(64 (w - 1))`, `w ≥ 4`) in array 0 and
 the bases of arrays 1–3 in `r5`, `r8`, `r9`: `x := 2^(128 w) mod n` in array
-1, changing only arrays 1–3, by `norm`, `x := 2^(64 (w - 1))` and `w + 1`
-word steps (`PreR2Words.lean`). -/
+1, changing only arrays 1–3, by `norm`, the reciprocal (`recip`), `x :=
+2^(64 (w - 1))` and `w + 1` word steps (`PreR2Words.lean`). -/
 theorem r2Fast_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
-    (h8 : s.gpr .r8 = off B (slot w 2)) (h9 : s.gpr .r9 = off B (slot w 3))
+    (h9 : s.gpr .r9 = off B (slot w 3))
     (h10 : s.gpr .r10 = off B (slot w 0)) (h5 : s.gpr .r5 = off B (slot w 1))
-    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hw : 3 ≤ w) (hw' : w < 2 ^ 31)
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hw : 4 ≤ w) (hw' : w < 2 ^ 31)
     (hZ : slot w 8 ≤ Z) (hN : 2 ^ (64 * (w - 1)) ≤ val32 s.mem B (slot w 0) (2 * w))
     (hodd : val32 s.mem B (slot w 0) (2 * w) % 2 = 1) :
     WP isa r2Fast s fun t =>
@@ -373,30 +373,49 @@ theorem r2Fast_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     exact absurd hodd (by decide)
   have hNw : Mont.wordsVal s.mem B (slot w 0) w = N := by rw [Mont.wordsVal_eq_val32, hNd]
   unfold r2Fast
-  -- `P` and `d'`.
+  -- `P`, `d'` and `d'ₗ`.
   refine WP.seq (WP.mono (norm_ok hs h9 h10 h11 (by omega) hw' (by omega) (by rw [hNw]; omega))
-    fun s₁ ⟨⟨z, hz, hP, hd, hd63⟩, o1, k1⟩ => ?_)
-  rw [hNw] at hd hd63
+    fun s₁ ⟨⟨z, hz, hP, hd, hd63, hdl⟩, o1, k1⟩ => ?_)
+  rw [hNw] at hd hd63 hdl
   have g1 : ∀ r ∈ [Reg.r5, .r8, .r9, .r10, .r11], s₁.gpr r = s.gpr r := fun r hr => k1.gpr r (by revert r hr; decide)
+  -- `v`.
+  refine WP.seq (WP.mono (recip_ok (hs.congr k1.wr) ((g1 .r9 (by decide)).trans h9) (by omega)
+    (by rw [hd]; exact hd63)) fun s₁' ⟨⟨hv, o1'⟩, k1'⟩ => ?_)
+  have k11 := k1.trans k1'
+  have g1' : ∀ r ∈ [Reg.r5, .r8, .r9, .r10, .r11], s₁'.gpr r = s.gpr r :=
+    fun r hr => k11.gpr r (by revert r hr; decide)
+  have w0 : Mont.word s₁'.mem B (slot w 3) = Mont.word s₁.mem B (slot w 3) := o1'.word (by omega) (by omega)
+  have w8 : Mont.word s₁'.mem B (slot w 3 + 8) = Mont.word s₁.mem B (slot w 3 + 8) := o1'.word (by omega) (by omega)
+  have w24 : Mont.word s₁'.mem B (slot w 3 + 24) = Mont.word s₁.mem B (slot w 3 + 24) :=
+    o1'.word (by omega) (by omega)
+  rw [← w8] at hv
   -- `x := 2^(64 (w - 1))`.
-  refine WP.seq (WP.mono (r2Top_ok (hs.congr k1.wr) ((g1 .r5 (by decide)).trans h5)
-    ((g1 .r11 (by decide)).trans h11) (by omega) hw' (by omega)) fun s₂ ⟨⟨x2, o2⟩, k2⟩ => ?_)
-  have k12 := k1.trans k2
+  refine WP.seq (WP.mono (r2Top_ok (hs.congr k11.wr) ((g1' .r5 (by decide)).trans h5)
+    ((g1' .r11 (by decide)).trans h11) (by omega) hw' (by omega)) fun s₂ ⟨⟨x2, o2⟩, k2⟩ => ?_)
+  have k12 := k11.trans k2
   have g2 : ∀ r ∈ [Reg.r5, .r8, .r9, .r10, .r11], s₂.gpr r = s.gpr r :=
     fun r hr => k12.gpr r (by revert r hr; decide)
   have n2 : Mont.wordsVal s₂.mem B (slot w 0) w = N := by
-    rw [o2.wordsVal (by omega) (by omega), o1.wordsVal (by omega) (by omega), hNw]
+    rw [o2.wordsVal (by omega) (by omega), o1'.wordsVal (by omega) (by omega), o1.wordsVal (by omega) (by omega), hNw]
   have x2' : Mont.wordsVal s₂.mem B (slot w 1) w = 2 ^ (64 * (w - 1)) := by
     rw [Mont.wordsVal_eq_val32, ← VG.Proof.Bignum.read_eq_val32, show 4 * (2 * w) = 8 * w by omega,
       VG.Proof.Bignum.read_eq_wv, x2]
+  have v0 : Mont.word s₂.mem B (slot w 3) = Mont.word s₁.mem B (slot w 3) := by
+    rw [o2.word (by omega) (by omega), w0]
+  have v8 : Mont.word s₂.mem B (slot w 3 + 8) = Mont.word s₁.mem B (slot w 3 + 8) := by
+    rw [o2.word (by omega) (by omega), w8]
+  have v16 : Mont.word s₂.mem B (slot w 3 + 16) = Mont.word s₁'.mem B (slot w 3 + 16) := o2.word (by omega) (by omega)
+  have v24 : Mont.word s₂.mem B (slot w 3 + 24) = Mont.word s₁.mem B (slot w 3 + 24) := by
+    rw [o2.word (by omega) (by omega), w24]
   -- `w + 1` word steps.
-  refine WP.mono (wordSteps_ok (z := z) (hs.congr k12.wr) ((g2 .r8 (by decide)).trans h8)
+  refine WP.mono (wordSteps_ok (z := z) (hs.congr k12.wr)
     ((g2 .r9 (by decide)).trans h9) ((g2 .r10 (by decide)).trans h10) ((g2 .r5 (by decide)).trans h5)
     ((g2 .r11 (by decide)).trans h11) hw hw' (by omega)
-    (by rw [o2.word (by omega) (by omega)]; exact hP) hz
-    (by rw [o2.word (by omega) (by omega), n2]; exact hd) (by rw [n2]; exact hd63) x2' (by rw [n2]; exact hN))
+    (by rw [v0]; exact hP) hz (by rw [v8, n2]; exact hd) (by rw [n2]; exact hd63)
+    (by rw [v16, v8, ← w8]; exact hv) (by rw [v8, v24, n2]; exact hdl) x2' (by rw [n2]; exact hN))
     fun t ⟨tx, to, tk⟩ => ⟨?_, ?_, (k12.trans tk).mono (by decide)⟩
   · rw [← Mont.wordsVal_eq_val32, tx, n2]
-  · exact ((o1.mono (by omega) (by omega)).trans (o2.mono (by omega) (by omega))).trans (to.mono (by omega) (by omega))
+  · exact (((o1.mono (by omega) (by omega)).trans (o1'.mono (by omega) (by omega))).trans
+      (o2.mono (by omega) (by omega))).trans (to.mono (by omega) (by omega))
 
 end VG.Proof.Bignum.PPC64LE.Pre
