@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 After the checks, the code is cut before `Precompute.core`, where the state
 satisfies `vg_rsa_public_precompute`'s `Pre.C1` for data that the public data
-fixes (`at_C1`), after it (`pins105`), and after each block that loads values
+fixes (`at_C1`), after it (`pins106`), and after each block that loads values
 of the header (`pins*`).
 -/
 
@@ -28,7 +28,8 @@ abbrev B1blk : List Instr :=
     .lsl .r3 .r3 4, .add .r30 .r30 .r3] : List Instr) ++ setupP oBP oPLen
 
 /-- The front and the checks, then `c`. -/
-abbrev NC (c : Prog isa) : Prog isa := NF (.seq Crt.loadX (.seq Crt.checks c))
+abbrev NC (c : Prog isa) : Prog isa :=
+  NF (.seq Crt.loadX (.seq (.block PrivPre.pqLens) (.seq (Crt.checksWith PrivPre.checkPQs) c)))
 
 /-- The front, the checks and `n`'s values with `R² mod n` into `X`'s array 6, then `c`. -/
 abbrev NA (c : Prog isa) : Prog isa := NC (.seq (.block PrivPre.setupN) (.seq Precompute.core (.seq PrivPre.xIn c)))
@@ -39,7 +40,7 @@ abbrev pVals (s₀ : State) (oA w : Nat) (o : Nat) : List (BitVec 64) :=
     off (cS s₀) (slot (cwX s₀) 0), BitVec.ofNat 64 (8 * (cwX s₀ + 2)), BitVec.ofNat 64 (8 * (w + 2)),
     off (s₀.gpr .r3) o]
 
-theorem pins112 : Pins (At C0 privF 112) [.r10, .r11, .r21, .r23, .r27, .r28, .r29, .r30] := by
+theorem pins113 : Pins (At C0 privF 113) [.r10, .r11, .r21, .r23, .r27, .r28, .r29, .r30] := by
   refine pins_at_list (fun s₀ => pVals s₀ (slot (cwX s₀) 8) (cwP s₀) (16 * cw s₀))
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NA (.seq (.block B1blk) (.block []))) rfl
       (partA_ok h.1 fun _ hA0 => partN_ok (pre_facts h.1) hA0 fun t hA => partB1_ok (pre_facts h.1) hA fun v V => wp_skip ?_)))
@@ -49,7 +50,7 @@ theorem pins112 : Pins (At C0 privF 112) [.r10, .r11, .r21, .r23, .r27, .r28, .r
   · obtain ⟨eS, -, ek, ep, -, e3, -⟩ := data_vals h h'
     simp only [pVals, cwX, cw, cwP, eS, ek, ep, e3]
 
-theorem pins151 : Pins (At C0 privF 151) [.r10, .r11, .r21, .r23, .r27, .r28, .r29, .r30] := by
+theorem pins152 : Pins (At C0 privF 152) [.r10, .r11, .r21, .r23, .r27, .r28, .r29, .r30] := by
   refine pins_at_list (fun s₀ => pVals s₀ (slot (cwX s₀) 8 + slot (cwP s₀) 24) (cwQ s₀)
       (16 * cw s₀ + 8 * cwP s₀))
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NA (.seq (.block B1blk) (.seq (PrivPre.prime 4)
@@ -104,14 +105,14 @@ theorem at_wp {α : Type} {Φ : α → State → Prop} {F : List (Prog isa)} {n 
   obtain ⟨-, rfl⟩ := Exec.det e x
   exact ⟨s₀, h₀, y⟩
 
-theorem at_C1 {d : PDat} {u : State} (h : At C0 privF 95 d u) : ∃ s₀, C0 d s₀ ∧ Pre.C1 (pdOf s₀) u :=
+theorem at_C1 {d : PDat} {u : State} (h : At C0 privF 96 d u) : ∃ s₀, C0 d s₀ ∧ Pre.C1 (pdOf s₀) u :=
   at_wp (P := fun s₀ => Pre.C1 (pdOf s₀))
     (fun _ _ h => wp_seqL_nil (WP.of_flat (c := NC (.seq (.block PrivPre.setupN) (.block []))) rfl
       (partA_ok h.1 fun _ hA =>
         WP.seq (WP.mono (setupN_C1 (pre_facts h.1) hA) fun _ h1 => wp_skip h1)))) h
 
 /-- The registers after `core`, for `xIn` and the factors' first block. -/
-theorem pins105 : Pins (At C0 privF 105) [.r11, .r19, .r23, .r27, .r28] := by
+theorem pins106 : Pins (At C0 privF 106) [.r11, .r19, .r23, .r27, .r28] := by
   refine pins_at_list (fun s₀ => [BitVec.ofNat 64 (2 * cw s₀), s₀.gpr .r3, cS s₀, off (cS s₀) (slot (cwX s₀) 0),
       BitVec.ofNat 64 (8 * (cwX s₀ + 2))])
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NC (.seq (.block PrivPre.setupN) (.seq Precompute.core
@@ -132,7 +133,7 @@ theorem pins105 : Pins (At C0 privF 105) [.r11, .r19, .r23, .r27, .r28] := by
   · obtain ⟨eS, -, ek, -, -, e3, -⟩ := data_vals h h'
     simp only [cwX, cw, eS, ek, e3]
 
-theorem pins190 : Pins (At C0 privF 190) [.r14, .r17, .r23] := by
+theorem pins191 : Pins (At C0 privF 191) [.r14, .r17, .r23] := by
   refine pins_at_list (fun s₀ => [off (s₀.gpr .r3) 0, BitVec.ofNat 64 (2 * cw s₀), cS s₀])
     (fun _ s₀ h => WP.of_flat (c := NB (.block [.load .d .r14 .r23 oOut, .load .d .r17 .r23 oNLen, .addi .r17 .r17 7,
         .lsr .d .r17 .r17 3, .lsl .r17 .r17 1])) (by decide +kernel)

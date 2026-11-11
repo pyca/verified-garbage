@@ -163,16 +163,20 @@ def cmpLt (a m : Nat) : Prog isa :=
 def checkLt (a m : Nat) : Prog isa :=
   .seq (cmpLt a m) (.block [.logic .and .r26 .r26 .r20])
 
+/-- `r26 &=` all ones if array 6 equals `n` (array 1): neither is below the
+other. -/
+def pqEq : Prog isa :=
+  .seq (cmpLt 6 1) (.seq (.block [.addi .r24 .r20 0]) (.seq (cmpLt 1 6)
+    (.block [.logic .or .r0 .r24 .r20, .li .r3 0, .subi .r3 .r3 1, .logic .xor .r0 .r0 .r3,
+      .logic .and .r26 .r26 .r0])))
+
 /-- `p q` into array 6 (Montgomery multiplication modulo `M`, `-M⁻¹ = 1`),
-its word `W` := 0; then `r26 &=` all ones if it equals `n` (array 1): neither
-is below the other. -/
+its word `W` := 0; then `r26 &=` all ones if it equals `n` (`pqEq`). -/
 def checkPQ : Prog isa :=
   .seq (.block [.li .r12 1]) (.seq (PublicChecked.montOp 6 4 5)
     (.seq (.block (PublicChecked.base .r14 6 ++ [.add .r14 .r14 .r29, .subi .r14 .r14 16, .li .r0 0,
         .store .d .r0 .r14 0]))
-      (.seq (cmpLt 6 1) (.seq (.block [.addi .r24 .r20 0]) (.seq (cmpLt 1 6)
-        (.block [.logic .or .r0 .r24 .r20, .li .r3 0, .subi .r3 .r3 1, .logic .xor .r0 .r0 .r3,
-          .logic .and .r26 .r26 .r0]))))))
+      pqEq))
 
 /-- The `r11 / 2` words at `r14` `&= r26`. -/
 def maskWords : Prog isa :=
@@ -187,10 +191,14 @@ def orThree (j : Nat) : Prog isa :=
       .logic .xor .r3 .r3 .r26, .li .r4 3, .logic .and .r3 .r3 .r4, .logic .or .r0 .r0 .r3,
       .store .d .r0 .r14 0])))
 
-/-- `X`'s checks into `r26`, and `p`, `q`, `qInv` masked. -/
-def checks : Prog isa :=
-  .seq checkN (.seq (checkLt 6 1) (.seq (checkLt 7 4) (.seq checkPQ
+/-- `X`'s checks into `r26`, with `pq` the check of `p q = n`, and `p`, `q`,
+`qInv` masked. -/
+def checksWith (pq : Prog isa) : Prog isa :=
+  .seq checkN (.seq (checkLt 6 1) (.seq (checkLt 7 4) (.seq pq
     (.seq (orThree 4) (.seq (orThree 5) (.seq (.block (PublicChecked.base .r14 7)) maskWords))))))
+
+/-- `X`'s checks, `p q = n` by `checkPQ`. -/
+def checks : Prog isa := checksWith checkPQ
 
 /-- `w` words (`r11 / 2`) from `r15` to `r14`. -/
 def copyN : Prog isa := Precompute.copyWords
