@@ -19,7 +19,8 @@ returns 0.
 * The factors' values: `primes`, an internal function with
   `vg_rsa_private_crt`'s arguments and working space (`CrtRt`), with `R² mod n`
   (in `pre`, after `n`) as its input, which loads `n`, `p` and `q`, accepts
-  `p q = n` (as `CrtRt.validate` does, by `CrtRt.wideProduct`), loads
+  `p q = n` (as `CrtRt.validate` does, but at the factors' widths:
+  `CrtRt.productBy`, `p`'s `⌈p_len / 4⌉` words by `q`'s `⌈q_len / 4⌉`), loads
   `x = R² mod n` (`loadX`), and for each factor, in the context of its width
   (at half the modulus's if its length fits, as `CrtRt.power` chooses), the
   factor made safe and its constants (`prepCore`), then `x R⁻ᴷ mod p` for the
@@ -137,11 +138,16 @@ def factor (f i o : Nat) : Prog isa :=
   .seq (.block (factorTest i)) <|
   .ite .b (primeIn f i o .half) (primeIn f i o .wide)
 
+/-- `r = 4 ⌈L / 4⌉`, the bytes of the words of the length `L`, argument `i`. -/
+def lenW (i : Nat) (r : Reg) : List Instr :=
+  [.mov r (.mem (argAt 0 i)), .alu .add r (.imm 3), .shift .shr r 2, .alu .add r (.reg r), .alu .add r (.reg r)]
+
 /-- `p q = n` for the factor `p` in the wide slot 10, `q` in 11 and `n` in 9 (`two .wide`
-words): its mask at `accOff`. -/
+words): its mask at `accOff`. The product is of `p`'s `⌈p_len / 4⌉` words by
+`q`'s `⌈q_len / 4⌉` (arguments 7 and 9), not of all `B` bytes of each. -/
 def pqCheck : Prog isa :=
   .seq (copy (.slot .wide 10) mulA (one .wide)) <|
-  .seq (wideProduct (.slot .wide 11)) <|
+  .seq (productBy (lenW 9) (lenW 7 .eax) (.slot .wide 11)) <|
   .seq (equal prod (.slot .wide 9) (two .wide)) (.block [.store (sc accOff) .ecx])
 
 /-- The components (as `vg_rsa_private_crt` loads them: `n` in the wide slot

@@ -18,7 +18,8 @@ import VerifiedGarbage.Proof.Mont.Read
 /-! # An RSA private key's precomputed values on x86: the factors' values
 
 `pqCheck_ok`: the mask at `accOff` all ones exactly when `p q = n` (as the
-first half of `CrtRt.validate`).
+first half of `CrtRt.validate`, but with the product of `p`'s `⌈p_len / 4⌉`
+words by `q`'s `⌈q_len / 4⌉`: `counts_lenW`, `CrtRt.productBy_ok`).
 -/
 
 @[expose] public section
@@ -29,17 +30,50 @@ variable {Ex : List Region → List Region → Prop}
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt
-open VG.Impl.Bignum.X86.PrivPre (pqCheck primesBody check factor loadX)
+open VG.Impl.Bignum.X86.PrivPre (pqCheck primesBody check factor loadX lenW)
 open VG.Proof.Bignum.X86.PublicRt (byteAddr_ptr)
 open VG.Proof.Bignum.X86.Crt (componentValue componentArguments)
 
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
+/-- `lenW i`: the bytes of the words of the length argument `i`. -/
+theorem counts_lenW {len : Nat} {args : Nat → BitVec 32} {i : Nat} (hi : i < 18) (hL : (args i).toNat ≤ 1024) :
+    Counts (lenW i) len args (((args i).toNat + 3) / 4) := by
+  intro Ex base bytes s is Q r h kk
+  simp only [lenW, List.cons_append, List.nil_append]
+  refine wp_movS (h.arg hi) fun s₁ u₁ _ => wp_addS rfl fun s₂ u₂ _ => wp_shr (by decide) fun s₃ u₃ _ => ?_
+  refine wp_addS (src := .reg r) rfl fun s₄ u₄ _ => wp_addS (src := .reg r) rfl fun s₅ u₅ _ => ?_
+  have w : ∀ {a b c : State}, Keeps [r] a b → Keeps [r] b c → Keeps [r] a c := fun h₁ h₂ => h₁.trans h₂
+  refine kk s₅ (w (w (w (w u₁.keeps u₂.keeps) u₃.keeps) u₄.keeps) u₅.keeps)
+    (by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]) ?_
+  rw [u₅.gpr, u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]
+  apply BitVec.eq_of_toNat_eq
+  have h3 : (args i + 3).toNat = (args i).toNat + 3 := by
+    rw [BitVec.toNat_add, show (3 : BitVec 32).toNat = 3 from rfl, Nat.mod_eq_of_lt (by omega_arith)]
+  simp only [BitVec.toNat_add, BitVec.toNat_ushiftRight, h3, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  omega_arith
+
+/-- A number of `n` words below `2^(32 k)`, `k ≤ n`, is its first `k`. -/
+theorem val32_fit {m : Mem} {B : Addr} {d n k v : Nat} (hv : val32 m B d n = v) (hk : k ≤ n)
+    (hlt : v < 2 ^ (32 * k)) : val32 m B d k = v := by
+  have a := val32_append m B d k (n - k)
+  rw [show k + (n - k) = n by omega_arith, hv] at a
+  have hpos := Nat.two_pow_pos (32 * k)
+  rcases Nat.eq_zero_or_pos (val32 m B (d + 4 * k) (n - k)) with h | h
+  · rw [h, Nat.mul_zero, Nat.add_zero] at a; exact a.symm
+  · have := Nat.le_mul_of_pos_right (2 ^ (32 * k)) h; omega_arith
+
+/-- A length's words hold a number of as many bytes. -/
+theorem lt_words {v L : Nat} (h : v < 2 ^ (8 * L)) : v < 2 ^ (32 * ((L + 3) / 4)) :=
+  Nat.lt_of_lt_of_le h (Nat.pow_le_pow_right (by decide) (by omega_arith))
+
 theorem pqCheck_ok (h : In Ex base bytes len args s) {n p q : Nat}
     (hn : val32 s.mem base (lo len (.slot .wide 9)) (2 * cwc len .wide) = n)
     (hp : val32 s.mem base (lo len (.slot .wide 10)) (cwc len .wide) = p)
-    (hq : val32 s.mem base (lo len (.slot .wide 11)) (cwc len .wide) = q) :
+    (hq : val32 s.mem base (lo len (.slot .wide 11)) (cwc len .wide) = q)
+    (p1 : 1 ≤ (args 7).toNat) (pL : (args 7).toNat ≤ len) (q1 : 1 ≤ (args 9).toNat) (qL : (args 9).toNat ≤ len)
+    (hpL : p < 2 ^ (8 * (args 7).toNat)) (hqL : q < 2 ^ (8 * (args 9).toNat)) :
     WP isa pqCheck s fun u =>
       Frame (frameR base (s.gpr .esp) (valR len)) s.mem u.mem ∧
       w32 u.mem base accOff = (cmask (decide (p * q = n))).toNat ∧
@@ -77,9 +111,15 @@ theorem pqCheck_ok (h : In Ex base bytes len args s) {n p q : Nat}
   have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
   have k₁ : ∀ {d k}, numBase ≤ d → d + 4 * k ≤ bytes → val32 u₁.mem base d k = val32 s.mem base d k :=
     fun hd hk => O₁.val32 (.inr (by omega_using [pf.2.1, hd])) (by omega_using [hk, h.bytes_lt])
-  refine WP.seq (WP.mono (wideProduct_ok h₁ (b := .slot .wide 11) (by omega_arith) (by simp only [lo]; omega_arith))
+  have lw := len_le_bc len
+  have Np : ((args 7).toNat + 3) / 4 ≤ cn := by simp only [cn, cwc]; omega_arith
+  have Nq : ((args 9).toNat + 3) / 4 ≤ cn := by simp only [cn, cwc]; omega_arith
+  refine WP.seq (WP.mono (productBy_ok h₁ (counts_lenW (i := 9) (by decide) (by omega_arith))
+    (fun h' he' kk => counts_lenW (i := 7) (by decide) (by omega_arith) .eax h' kk) (by omega_arith) (by omega_arith)
+    Nq Np (b := .slot .wide 11) (by omega_arith) (by simp only [lo]; omega_arith))
     fun u₂ ⟨F₂, V₂, K₂⟩ => ?_)
-  rw [V₁, k₁ (d := lo len (.slot .wide 11)) (k := cwc len .wide) (by omega_arith) (by omega_arith), hq] at V₂
+  rw [val32_fit V₁ Np (lt_words hpL), k₁ (d := lo len (.slot .wide 11)) (k := ((args 9).toNat + 3) / 4)
+    (by omega_arith) (by omega_arith), val32_fit hq Nq (lt_words hqL)] at V₂
   have h₂ := h₁.keepF K₂ (by decide) (by decide) F₂ (prodR_fit h₁)
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   rw [sp₁] at F₂
@@ -312,7 +352,8 @@ theorem bodyRest_ok (h : RIn base bytes len args s) (hX : xv s.mem base len < 2 
   have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   -- `p q = n`.
-  refine WP.mono (pqCheck_ok h₁ n₁ p₁ q₁) fun u₂ ⟨F₂, A₂, K₂⟩ => ?_
+  refine WP.mono (pqCheck_ok h₁ n₁ p₁ q₁ p7 b7 p9 b9 (component_lt _ _ 6) (component_lt _ _ 8))
+    fun u₂ ⟨F₂, A₂, K₂⟩ => ?_
   have h₂ := h₁.keepF K₂ (by decide) (by decide) F₂ (valR_fit h₁)
   have sp₂ : u₂.gpr .esp = s.gpr .esp := (K₂.1 _ (by decide)).trans sp₁
   have k₂ : ∀ {d k}, numBase ≤ d → d + 4 * k ≤ bytes → val32 u₂.mem base d k = val32 u₁.mem base d k :=

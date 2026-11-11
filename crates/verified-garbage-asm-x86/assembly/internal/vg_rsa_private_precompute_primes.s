@@ -652,10 +652,9 @@ vg_rsa_private_precompute_primes:
 	add ecx, edx
 	add ecx, edx
 	add ecx, edx
-	mov esi, DWORD PTR [esp+8]
-	add esi, 7
-	shr esi, 3
-	add esi, esi
+	mov esi, DWORD PTR [esp+40]
+	add esi, 3
+	shr esi, 2
 	add esi, esi
 	add esi, esi
 	mov ebx, 0
@@ -674,14 +673,18 @@ vg_rsa_private_precompute_primes:
 	sub esi, 4
 	jne 219b
 	mov DWORD PTR [ebp], ebx
-	mov eax, DWORD PTR [esp+8]
-	add eax, 7
-	shr eax, 3
-	add eax, eax
+	mov eax, DWORD PTR [esp+40]
+	add eax, 3
+	shr eax, 2
 	add eax, eax
 	add eax, eax
 	sub ebp, eax
 	add ebp, 4
+	mov eax, DWORD PTR [esp+32]
+	add eax, 3
+	shr eax, 2
+	add eax, eax
+	add eax, eax
 	add eax, edi
 	add eax, 256
 	cmp ebp, eax
