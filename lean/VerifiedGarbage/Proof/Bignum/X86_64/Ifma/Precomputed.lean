@@ -55,7 +55,7 @@ open VG.Proof.MlKem.X86_64
 open VG.Proof.Bignum.X86_64
 
 theorem mainP_eq (l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (mul : Nat → Nat → Nat → Prog isa) : CrtIfma.mainP l2 mul =
-    seqs ((nSetupP mul ++ primesSetup ++ checks) ++
+    seqs ((nSetupP mul ++ primesSetup ++ checksP) ++
       (([.seq CrtIfma.anySizes (.ite .e (seqs (CrtIfma.pre mul ++ ([CrtIfma.ifmaAny l2] : List (Prog isa)) ++
         CrtIfma.post mul)) (seqs (qPhase mul (Crt.expLoop mul Crt.tabSelect) ++
           pPhase mul (Crt.expLoop mul Crt.tabSelect))))] : List (Prog isa)) ++ finish)) := by
@@ -68,26 +68,27 @@ theorem mainP_ok {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (M : Mont)
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
     (hp : PreR2 s B Z ((k + 7) / 8) (Spec.Rsa.os2ip nb))
-    (hfront : (seqs (nSetupP M.mm ++ primesSetup ++ checks)).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hpq : Spec.Rsa.os2ip pb * Spec.Rsa.os2ip qb = Spec.Rsa.os2ip nb)
+    (hfront : (seqs (nSetupP M.mm ++ primesSetup ++ checksP)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hpre : (seqs (CrtIfma.pre M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hcrt : (seqs (qPhase M.mm (CrtExpL.w4 M).code ++ pPhase M.mm (CrtExpL.w4 M).code)).allInstrs (fun i => !loadsMxcsr i) = true) :
     WP isa (CrtIfma.mainP l2 M.mm) s (MainOut s B Z k op nb xb pb qb dpb dqb qib) := by
   rw [mainP_eq]
-  exact wp_seqs_append (by simp [nSetupP]) (by simp) (WP.mono_mx hfront (frontP_ok M h hv hp)
+  exact wp_seqs_append (by simp [nSetupP]) (by simp) (WP.mono_mx hfront (frontP_ok M h hv hp hpq)
     fun t₀ ⟨minv, mp, mq, hr⟩ mx₀ => mainBack_ok h2 M h hv hr mx₀ hpre hpost hcrt)
 
 /-- `vg_rsa_private_crt_ifma_precomputed` with Montgomery multiplication `M`,
 given that the parts of its code outside the vector code never load MXCSR
 (which the registration file evaluates). -/
 theorem codeP_correct {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (M : Mont)
-    (hfront : (seqs (nSetupP M.mm ++ primesSetup ++ checks)).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hfront : (seqs (nSetupP M.mm ++ primesSetup ++ checksP)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hpre : (seqs (CrtIfma.pre M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hcrt : (seqs (qPhase M.mm (CrtExpL.w4 M).code ++ pPhase M.mm (CrtExpL.w4 M).code)).allInstrs (fun i => !loadsMxcsr i) = true)
     (s : State) (h : crtContractP.pre s) :
     ∃ t s', Exec isa (CrtIfma.codeP l2 M.mm) s t s' ∧ abiPreserved s s' ∧ crtContractP.post s s' := by
-  obtain ⟨c, hv, hp⟩ := crtCtxP_of h
+  obtain ⟨c, hv, hp, hpq⟩ := crtCtxP_of h
   clear h
   have hZ' := c.hZ
   have hk1 := c.hk1
@@ -111,7 +112,7 @@ theorem codeP_correct {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (M : 
   refine WP.ite (!Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
     (s.gpr .rcx).toNat) (by simp [eval, hz₂]) (fun hb => ?_) (fun _ => ?_)
   · exact absurd hb (by rw [hv]; decide)
-  · exact WP.mono (mainP_ok h2 M hpre' hv hp₂ hfront hpre hpost hcrt) fun t ⟨⟨Mk, hp, hiff⟩, mx⟩ =>
+  · exact WP.mono (mainP_ok h2 M hpre' hv hp₂ hpq hfront hpre hpost hcrt) fun t ⟨⟨Mk, hp, hiff⟩, mx⟩ =>
       ⟨crtCode_fin c h₁ hm₂ k₂ hp (fun _ => ⟨hiff, rfl⟩) fun h => absurd h (by rw [hv]; decide),
         by rw [mx, mx₂, mx₁]⟩
 
@@ -119,23 +120,14 @@ theorem codeP_correct {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (M : 
 
 /-- `mainP` leaks the same in runs that agree on the public data, the stack
 pointer and `pre`'s address, given that its parts do. -/
-theorem mainP_ct {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (M : Mont) (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M (CrtExpL.w4 M))
+theorem mainP_ct {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (M : Mont) (hS : SetupCT) (hC : ChecksPCT) (hQ : QPhaseCT M (CrtExpL.w4 M))
     (hP : PPhaseCT M (CrtExpL.w4 M))
     (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hR2 : RedcCT M Public.aR2)
     (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
     RelCT isa (Two (StageP R0)) (CrtIfma.mainP l2 M.mm) fun _ _ => True := by
   rw [mainP_eq]
-  refine RelCT.seqs_append (by simp [nSetupP]) (by simp) (RelCT.seq (R := Two (Stage R3)) ?_ ?_)
-  · refine RelCT.seqs_append (by simp [nSetupP]) (by simp [checks])
-      (RelCT.seq (R := Two (Stage R2)) ?_ (checksS_ct hC))
-    refine RelCT.seqs_append (by simp [nSetupP]) (by simp [primesSetup])
-      (RelCT.seq (R := Two (Stage R1)) ?_ (setupS_ct hS))
-    refine (two_post (Ψ := fun (q : CrtPub × Addr × Addr) t => Stage R1 q.1 t) (nSetupP_ct M) ?_).mono
-      (fun _ _ h => h) (fun _ _ h => two_bind (fun q _ _ h₁ h₂ => ⟨q.1, h₁, h₂⟩) h)
-    rintro q σ ⟨⟨σ', xb, pb, qb, dpb, dqb, qib, h, hv, he⟩, -, -, hp⟩
-    subst he
-    exact WP.mono (nPartP_ok M h hv hp) fun _ ⟨minv, hr⟩ => ⟨σ, xb, pb, qb, dpb, dqb, qib, h, hv, minv, hr⟩
+  refine RelCT.seqs_append (by simp [nSetupP]) (by simp) (RelCT.seq (frontP_ct M hS hC) ?_)
   refine RelCT.seqs_append (by simp) (by simp [finish]) (RelCT.seq ?_ hF)
   exact dispatch_ct h2 M hQ hP hR2 hXm hL hpost
 
@@ -143,7 +135,7 @@ variable (M : Mont)
 
 /-- `vg_rsa_private_crt_ifma_precomputed` leaks the same in runs that agree
 on the public data and `pre`'s address, given that `main`'s parts do. -/
-theorem codeP_ct {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M (CrtExpL.w4 M))
+theorem codeP_ct {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (hS : SetupCT) (hC : ChecksPCT) (hQ : QPhaseCT M (CrtExpL.w4 M))
     (hP : PPhaseCT M (CrtExpL.w4 M))
     (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hR2 : RedcCT M Public.aR2)
     (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
@@ -159,7 +151,7 @@ theorem codeP_ct {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (hS : Setu
 theorem codeP_constantTime {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
     ConstantTime isa crtContractP.pre crtContractP.pub (CrtIfma.codeP l2 M.mm) := by
-  have hct := codeP_ct M h2 setup_ct checks_ct
+  have hct := codeP_ct M h2 setup_ct checksP_ct
     (qPhase_ct M (CrtExpL.w4 M) (unit_ct M (gPow_ct_Q M) (redc_ct_Y M) (by taint_decide))
       (pow_ct M (CrtExpL.w4 M) (redc_ct_Y M) (CrtExpL.w4_ct M).2 (by taint_decide)))
     (pPhase_ct M (CrtExpL.w4 M) (unit_ct M (gPow_ct_P M) (redc_ct_Y M) (by taint_decide))

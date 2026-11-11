@@ -225,13 +225,21 @@ theorem setupS_ct (hS : SetupCT) : RelCT isa (Two (Stage R1)) (seqs primesSetup)
   · have := h.pl2; simp only [CrtPub.w]; omega_arith
   · have := h.ql2; simp only [CrtPub.w]; omega_arith
 
-/-- The checks leak the same in runs that agree on the public data. -/
-theorem checksS_ct (hC : ChecksCT) : RelCT isa (Two (Stage R2)) (seqs checks) (Two (Stage R3)) := by
+/-- Checks `c` as constant time as `checks` (`hC`) and as correct (`hw`),
+from a stage `R` that implies `R2`, leak the same in runs that agree on the
+public data. -/
+theorem checksSWith_ct {R : StageRel} {c : List (Prog isa)}
+    (hR : ∀ p σ xb pb qb dpb dqb qib t, R p σ xb pb qb dpb dqb qib t → R2 p σ xb pb qb dpb dqb qib t)
+    (hC : RelCT isa (Two ChecksPre) (seqs c) fun _ _ => True)
+    (hw : ∀ p σ xb pb qb dpb dqb qib t,
+      CrtPre σ p.B p.Z p.k p.op p.np p.ip p.pp p.qp p.dpp p.dqp p.qip p.pl p.ql p.nb xb pb qb dpb dqb qib →
+      Spec.Rsa.modulusValid p.N p.k = true → R p σ xb pb qb dpb dqb qib t →
+      WP isa (seqs c) t (R3 p σ xb pb qb dpb dqb qib)) :
+    RelCT isa (Two (Stage R)) (seqs c) (Two (Stage R3)) := by
   refine stage_step (hC.mono (fun _ _ h => two_stage (fun p minv => (⟨p.B, p.Z, p.w, minv, p.N, offP p.w,
-    offQ p.w p.pl, wsWords p.pl, wsWords p.ql⟩ : ChecksPub)) (fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ =>
-      ?_) h) fun _ _ h => h)
-    fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => WP.mono (checksPart_ok h hv hr) fun _ ⟨mp', mq', h'⟩ =>
-      ⟨minv, mp', mq', h'⟩
+    offQ p.w p.pl, wsWords p.pl, wsWords p.ql⟩ : ChecksPub)) (fun p σ xb pb qb dpb dqb qib t h hv hR' => ?_) h)
+      fun _ _ h => h) hw
+  obtain ⟨minv, mp, mq, hr⟩ := hR _ _ _ _ _ _ _ _ _ hR'
   obtain ⟨hodd, -, -⟩ := valid_facts hv h.k1
   have hk1 := h.k1
   have hk2 := h.k2
@@ -247,6 +255,11 @@ theorem checksS_ct (hC : ChecksCT) : RelCT isa (Two (Stage R2)) (seqs checks) (T
     show slot ((p.k + 7) / 8) 8 ≤ offP ((p.k + 7) / 8) from Nat.le_refl _, by unfold offQ offP; omega_arith, hZq, hwp2,
     wsWords_le (by have := h.pl2; omega_arith) (by omega_arith), hwq2, wsWords_le (by have := h.ql2; omega_arith) (by omega_arith),
     hr.wsP, hr.wsQ, hr.pws, hr.qws, hr.n.nv.n, hr.n.msk, hr.pv, hr.qv, hr.qiv, hodd⟩
+
+/-- The checks leak the same in runs that agree on the public data. -/
+theorem checksS_ct (hC : ChecksCT) : RelCT isa (Two (Stage R2)) (seqs checks) (Two (Stage R3)) :=
+  checksSWith_ct (fun _ _ _ _ _ _ _ _ _ h => h) hC fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, _, _, hr⟩ =>
+    WP.mono (checksPart_ok h hv hr) fun _ ⟨mp', mq', h'⟩ => ⟨minv, mp', mq', h'⟩
 
 /-- `q`'s phase leaks the same in runs that agree on the public data. -/
 theorem qS_ct (M : Mont) (E : CrtExpL M) (hQ : QPhaseCT M E) : RelCT isa (Two (Stage R3)) (seqs (qPhase M.mm E.code)) (Two (Stage R4)) := by

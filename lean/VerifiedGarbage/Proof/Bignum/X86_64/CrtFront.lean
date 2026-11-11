@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
 public import VerifiedGarbage.Proof.Bignum.CrtHdr
 public import VerifiedGarbage.Proof.Bignum.CrtKey
@@ -287,14 +287,18 @@ theorem setupPart_ok {s t₃ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp
   · exact hr.iscr.trans (InScr.of_frm f₄ fun r hr => (kf₄ r hr).2.1)
   · exact (hr.keep.trans k₄).mono (by decide)
 
-/-- The checks, from the primes' workspaces. -/
-theorem checksPart_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat}
+/-- Checks `c` that give what `checks` gives (`hc`), from the primes'
+workspaces. -/
+theorem checksPartWith_ok {c : List (Prog isa)} {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat}
     {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
     (hr : PReady s t₄ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :
-    WP isa (seqs checks) t₄ fun t => ∃ mp' mq',
+      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
+    (hc : WP isa (seqs c) t₄ (ChecksPost t₄ B Z ((k + 7) / 8) minv (slot ((k + 7) / 8) 8) (offQ ((k + 7) / 8) pl)
+      (wsWords pl) (wsWords ql) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)
+      (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)))) :
+    WP isa (seqs c) t₄ fun t => ∃ mp' mq',
       CrtReady s t B Z ((k + 7) / 8) pl ql minv mp' mq' (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
         (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)
         (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
@@ -310,10 +314,7 @@ theorem checksPart_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
   have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
   have hwp2 : 2 ≤ wsWords pl := by unfold wsWords; omega_arith
   have hwq2 : 2 ≤ wsWords ql := by unfold wsWords; omega_arith
-  refine WP.mono (checks_ok hr.n.good (by omega_arith) (by omega_arith) (le_refl _) (by unfold offQ; omega_arith)
-    (by unfold offQ at hZq ⊢; omega_arith) hwp2 (wsWords_le (by have := h.pl2; omega_arith) (by omega_arith)) hwq2
-    (wsWords_le (by have := h.ql2; omega_arith) (by omega_arith)) hr.wsP hr.wsQ hr.pws hr.qws hr.n.nv.n hr.n.msk hr.pv hr.qv
-    hr.qiv hodd)
+  refine WP.mono hc
     fun t ⟨hg, hMt, hsPt, hsQt, ⟨mp', hwpt, hxpt, hmpt⟩, ⟨mq', hwqt, hxqt⟩, f₅, k₅⟩ => ?_
   have kf₅ : ∀ r ∈ [(slot ((k + 7) / 8) Public.aAcc, 8 * (2 * ((k + 7) / 8) + 2)), (8 * Public.sMask, 8),
       (offP ((k + 7) / 8), slot (wsWords pl) 8), (offQ ((k + 7) / 8) pl, slot (wsWords ql) 8)],
@@ -369,6 +370,53 @@ theorem checksPart_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
   · rw [hnv₅ _ (by decide) (by decide) (by decide)]; exact hr.n.xm
   · exact hr.n.hfix.trans (HFix.of_frm f₅ fun r hr => (kf₅ r hr).1)
   · exact hr.n.iscr.trans (InScr.of_frm f₅ fun r hr => (kf₅ r hr).2)
+
+/-- The checks, from the primes' workspaces. -/
+theorem checksPart_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat}
+    {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64}
+    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
+    (hr : PReady s t₄ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :
+    WP isa (seqs checks) t₄ fun t => ∃ mp' mq',
+      CrtReady s t B Z ((k + 7) / 8) pl ql minv mp' mq' (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+        (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)
+        (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
+          (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) := by
+  obtain ⟨hodd, -, -⟩ := valid_facts hv h.k1
+  have hk1 := h.k1
+  have hk2 := h.k2
+  have hZq := h.z
+  have hwp2 : 2 ≤ wsWords pl := by unfold wsWords; omega_arith
+  have hwq2 : 2 ≤ wsWords ql := by unfold wsWords; omega_arith
+  exact checksPartWith_ok h hv hr (checks_ok hr.n.good (by omega_arith) (by omega_arith) (le_refl _) (by unfold offQ; omega_arith)
+    (by unfold offQ at hZq ⊢; omega_arith) hwp2 (wsWords_le (by have := h.pl2; omega_arith) (by omega_arith)) hwq2
+    (wsWords_le (by have := h.ql2; omega_arith) (by omega_arith)) hr.wsP hr.wsQ hr.pws hr.qws hr.n.nv.n hr.n.msk hr.pv hr.qv
+    hr.qiv hodd)
+
+/-- `checksP`, from the primes' workspaces, for `p q = n`: as `checksPart_ok`. -/
+theorem checksPartP_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat}
+    {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64}
+    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
+    (hr : PReady s t₄ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
+    (hpq : Spec.Rsa.os2ip pb * Spec.Rsa.os2ip qb = Spec.Rsa.os2ip nb) :
+    WP isa (seqs checksP) t₄ fun t => ∃ mp' mq',
+      CrtReady s t B Z ((k + 7) / 8) pl ql minv mp' mq' (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+        (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)
+        (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
+          (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) := by
+  obtain ⟨hodd, -, -⟩ := valid_facts hv h.k1
+  have hk1 := h.k1
+  have hk2 := h.k2
+  have hZq := h.z
+  have hwp2 : 2 ≤ wsWords pl := by unfold wsWords; omega_arith
+  have hwq2 : 2 ≤ wsWords ql := by unfold wsWords; omega_arith
+  exact checksPartWith_ok h hv hr (checksP_ok hr.n.good (by omega_arith) (by omega_arith) (le_refl _) (by unfold offQ; omega_arith)
+    (by unfold offQ at hZq ⊢; omega_arith) hwp2 (wsWords_le (by have := h.pl2; omega_arith) (by omega_arith)) hwq2
+    (wsWords_le (by have := h.ql2; omega_arith) (by omega_arith)) hr.wsP hr.wsQ hr.pws hr.qws hr.n.msk hr.pv hr.qv
+    hr.qiv hodd hpq)
 
 /-- Up to the checks, for a valid modulus. -/
 theorem front_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat}

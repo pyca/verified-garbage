@@ -266,6 +266,9 @@ def ChecksPre (p : ChecksPub) (s : State) : Prop :=
 /-- `checks` is constant time. -/
 def ChecksCT : Prop := RelCT isa (Two ChecksPre) (seqs checks) fun _ _ => True
 
+/-- `checksP` is constant time. -/
+def ChecksPCT : Prop := RelCT isa (Two ChecksPre) (seqs checksP) fun _ _ => True
+
 /-- The public data of the phases' parts: `n`'s workspace, `-n⁻¹`, `n`, the
 prime's workspace (its base in slot `sl`). -/
 structure UPub where
