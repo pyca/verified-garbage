@@ -41,7 +41,10 @@ open VG.Impl.AesCfb.X86_64 (finalSave finalRestore)
 open VG.Impl.AesCtr.X86_64 (zeroSlots tailKey)
 open VG.Impl.Modes.X86_64 (xorByte)
 
-/-- `vg_camellia_ctr`, with its working space on the stack. -/
+/-- `vg_camellia_ctr`'s code, with its working space on the stack: called as an
+internal function of its own, `vg_camellia_ctr_core`, rather than as
+`vg_camellia_ctr`, which also clears what it leaves
+(`Proof.Camellia.X86_64.Scrub.ctrReg`). -/
 def ctrFramed : Prog isa := Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 ctr
 
 /-- The arguments to their registers, `r13` and `r14` the data after the
@@ -73,12 +76,12 @@ def ctrFinalTailArgs : List Instr :=
 /-- The partial last block: the output block `CIPH_K(Tₙ₊₁)` in the block of
 `save`, and its first `u` bytes XORed into the data. -/
 def ctrFinalTail : Prog isa :=
-  .seq (.block ctrFinalLoad) (.seq (.block ctrFinalTailArgs) (.seq (.call "vg_camellia_ctr" ctrFramed)
+  .seq (.block ctrFinalLoad) (.seq (.block ctrFinalTailArgs) (.seq (.call "vg_camellia_ctr_core" ctrFramed)
     (.seq (.block ctrFinalLoad) (.seq (.block tailKey) (.loop (.block (xorByte .r13 .r14)) .ne)))))
 
 /-- `vg_camellia_ctr_final`. -/
 def ctrFinal : Prog isa :=
-  .seq (.block [.mov .rax (.reg .r9)]) (.seq (.block ctrFinalSetup) (.seq (.call "vg_camellia_ctr" ctrFramed)
+  .seq (.block [.mov .rax (.reg .r9)]) (.seq (.block ctrFinalSetup) (.seq (.call "vg_camellia_ctr_core" ctrFramed)
     (.seq (.block [.alu .test .r14 (.reg .r14)]) (.seq (.ite .e (.block []) ctrFinalTail)
       (.seq (.block ctrFinalLoad) (.block finalRestore))))))
 

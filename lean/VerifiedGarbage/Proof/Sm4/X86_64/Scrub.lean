@@ -6,6 +6,7 @@ public import VerifiedGarbage.Spec.Sm4.Cfb
 public import VerifiedGarbage.Spec.Sm4.CfbFinal
 public import VerifiedGarbage.Spec.Sm4.Ofb
 public import VerifiedGarbage.Spec.Sm4.OfbFinal
+public import VerifiedGarbage.Spec.Sm4.Ctr
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -13,6 +14,7 @@ public import VerifiedGarbage.Proof.Sm4.X86_64.Verified
 public import VerifiedGarbage.Proof.Sm4.X86_64.CbcVerified
 public import VerifiedGarbage.Proof.Sm4.X86_64.FbVerified
 public import VerifiedGarbage.Proof.Sm4.X86_64.FbFinalVerified
+public import VerifiedGarbage.Proof.Sm4.X86_64.CtrVerified
 import VerifiedGarbage.Proof.Sm4.Scratch
 import VerifiedGarbage.Proof.Sm4.CbcScratch
 import VerifiedGarbage.Proof.Sm4.FbScratch
@@ -26,6 +28,7 @@ meta import VerifiedGarbage.Spec.Sm4.Cfb
 meta import VerifiedGarbage.Spec.Sm4.CfbFinal
 meta import VerifiedGarbage.Spec.Sm4.Ofb
 meta import VerifiedGarbage.Spec.Sm4.OfbFinal
+meta import VerifiedGarbage.Spec.Sm4.Ctr
 meta import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 meta import VerifiedGarbage.Proof.Framework.Registration
@@ -33,6 +36,7 @@ meta import VerifiedGarbage.Proof.Sm4.X86_64.Verified
 meta import VerifiedGarbage.Proof.Sm4.X86_64.CbcVerified
 meta import VerifiedGarbage.Proof.Sm4.X86_64.FbVerified
 meta import VerifiedGarbage.Proof.Sm4.X86_64.FbFinalVerified
+meta import VerifiedGarbage.Proof.Sm4.X86_64.CtrVerified
 meta import VerifiedGarbage.Proof.Sm4.Scratch
 meta import VerifiedGarbage.Proof.Sm4.CbcScratch
 meta import VerifiedGarbage.Proof.Sm4.FbScratch
@@ -44,7 +48,7 @@ meta import VerifiedGarbage.Proof.Sm4.X86_64.FbFinalLit
 /-!
 # SM4 on x86-64, without secret residue
 
-The ECB, CBC, CFB128 and OFB functions, each followed by
+The ECB, CBC, CFB128, OFB and CTR functions, each followed by
 `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
 registers and the granules of its stack that the residue analysis
 (`X86_64.RTaint`) finds may hold secrets. Their postconditions read the
@@ -52,9 +56,10 @@ memory on return only within the buffers (`X86_64.Scrub.PostOut`), as the
 frames that keep their working space on the stack already show
 (`X86_64.Verified.stackScratchWiped`'s `hpost`).
 
-CTR is not here: `vg_sm4_ctr_final` calls `vg_sm4_ctr` by name with its code
-as it is, and the analysis of `vg_sm4_ctr_final` does not succeed. Nor is key
-expansion: SM4-GCM calls `vg_sm4_expand_key` by name with its code as it is.
+`vg_sm4_ctr_final` is not here: its analysis does not succeed. It calls
+`vg_sm4_ctr`'s code as the internal `vg_sm4_ctr_core`
+(`Impl.Sm4.X86_64.ctrFramed`). Nor is key expansion: SM4-GCM calls
+`vg_sm4_expand_key` by name with its code as it is.
 -/
 
 @[expose] public section
@@ -94,6 +99,9 @@ theorem ofbOut : PostOut (Spec.Sm4.ofbContract X86_64.abi 3216) (Spec.Sm4.ofbSig
 
 theorem ofbFinalOut : PostOut (Spec.Sm4.ofbFinalContract X86_64.abi 3216) (Spec.Sm4.ofbFinalSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Modes.ofbFinalPost_local _)
+
+theorem ctrOut : PostOut (Spec.Sm4.ctrContract X86_64.abi 3216) (Spec.Sm4.ctrSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.ctrPostOut_local _)
 
 /-! ## The registrations -/
 
@@ -286,6 +294,25 @@ def ofbFinalReg : Registration Spec.Sm4.ofbFinalApi X86_64.target :=
     code := ofbFinalCode
     stack := 3216
     verified := Proof.Sm4.X86_64.ofbFinal_framed } ofbFinalOut [] (pubOk_nil _) (some ⟨ofbFinalKs, ofbFinalOk⟩)
+
+/-- `vg_sm4_ctr`'s code. -/
+abbrev ctrCode : Prog isa :=
+  Impl.StackScratch.X86_64.withStackScratchWiped 3208 .r8 400 Impl.Sm4.X86_64.ctr
+
+def ctrKs : List Nat := keep_for% Spec.Sm4.ctrApi.sig 3216 ctrCode []
+
+theorem ctrOk : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sm4.ctrApi.sig 3216 []) ctrCode
+      h).any (RScrub.resOkB · 3216 ctrKs (Impl.Scrub.X86_64.chunks 3216)) = true :=
+  RScrub.Analysed.ok_of ctrKs (by taint_decide)
+
+open VG.X86_64.RScrub in
+/-- `vg_sm4_ctr`. -/
+def ctrReg : Registration Spec.Sm4.ctrApi X86_64.target :=
+  withScrub {
+    code := ctrCode
+    stack := 3216
+    verified := Proof.Sm4.X86_64.ctr_framed } ctrOut [] (pubOk_nil _) (some ⟨ctrKs, ctrOk⟩)
 
 end VG.Proof.Sm4.X86_64.Scrub
 

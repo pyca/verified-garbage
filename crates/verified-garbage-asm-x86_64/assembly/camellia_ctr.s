@@ -1035,6 +1035,20 @@ vg_camellia_ctr:
 	mov QWORD PTR [rsp+3264], r11
 	mov QWORD PTR [rsp+3272], r11
 	lea rsp, [rsp+3280]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-3288]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+3288]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1059,7 +1073,7 @@ vg_camellia_ctr_final:
 	sub r13, r14
 	add r13, rcx
 	shr r8, 4
-	call {vg_camellia_ctr}
+	call {vg_camellia_ctr_core}
 	test r14, r14
 	je 20f
 	mov rax, r15
@@ -1072,7 +1086,7 @@ vg_camellia_ctr_final:
 	mov rcx, rax
 	add rcx, 48
 	mov r8d, 1
-	call {vg_camellia_ctr}
+	call {vg_camellia_ctr_core}
 	mov rax, r15
 	add rax, 48
 22:
