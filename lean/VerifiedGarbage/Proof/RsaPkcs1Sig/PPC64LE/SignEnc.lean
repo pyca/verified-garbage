@@ -23,10 +23,12 @@ namespace VG.Proof.RsaPkcs1Sig.PPC64LE.Sign
 open VG VG.PPC64LE VG.Impl.RsaPkcs1Sig.PPC64LE.Sign
 open VG.Proof.RsaPkcs1Sig.PPC64LE (EPre EPost EOut encodeId encode_ok)
 
+variable {pc : Bool}
+
 /-- `EM`, in the frame. -/
 abbrev emR (s : State) : Region := ⟨fb s + BitVec.ofNat 64 oEM, (s.gpr .r6).toNat⟩
 
-theorem em_sub {s : State} (h : SPre s) : Region.Sub (emR s) (kR s) :=
+theorem em_sub {s : State} (h : SPre pc s) : Region.Sub (emR s) (kR s) :=
   frame_sub s (by have := h.k2; unfold oEM frameBytes; omega)
 
 /-- The hash value. -/
@@ -37,7 +39,7 @@ abbrev encOut (s : State) : Option (List Byte) :=
   encodeId ((s.gpr .r9).setWidth 32) (hashOf s) (s.gpr .r6).toNat
 
 /-- A byte of `EM` is in the local variable space. -/
-theorem em_in {s : State} (h : SPre s) (rs : List Region) {i : Nat} (hi : i < (s.gpr .r6).toNat) :
+theorem em_in {s : State} (h : SPre pc s) (rs : List Region) {i : Nat} (hi : i < (s.gpr .r6).toNat) :
     InRegions (fr s :: rs) (fb s + BitVec.ofNat 64 oEM + BitVec.ofNat 64 i) 1 := by
   rw [Offset.add_add]; exact in_fr s rs (by unfold oEM; omega) (by have := h.k2; unfold oEM frameBytes; omega)
 
@@ -47,7 +49,7 @@ theorem bytes_of_frame {s : State} {rs : List Region} {m : Mem} (hf : Frame rs s
   simp only [Spec.Rsa.bytesAt]
   exact List.map_congr_left fun i hi => hf.bytes (R := ⟨p, len⟩) hd hl (List.mem_range.mp hi)
 
-theorem AtEnc.epre {s t : State} (h : SPre s) (A : AtEnc s t) :
+theorem AtEnc.epre {s t : State} (h : SPre pc s) (A : AtEnc s t) :
     EPre t ((s.gpr .r9).setWidth 32) (s.gpr .r6).toNat := by
   refine ⟨by rw [A.r6, BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq], by rw [A.r5], h.k2, fun i hi => ?_, fun j hj => ?_, fun j hj i hi e => ?_⟩
   · rw [A.r4, A.wr]; exact em_in h _ hi
@@ -82,12 +84,12 @@ structure AtAft (s u : State) : Prop extends Fr s u where
     | none => u.gpr .r3 = 0
 
 /-- The frame's words below `EM` are apart from it. -/
-theorem below_em {s : State} (h : SPre s) {d : Nat} (hd : d + 8 ≤ oEM) {r : Region} (hr : r ∈ [emR s]) :
+theorem below_em {s : State} (h : SPre pc s) {d : Nat} (hd : d + 8 ≤ oEM) {r : Region} (hr : r ∈ [emR s]) :
     Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, 8⟩ r := by
   rw [List.mem_singleton.mp hr]
   exact Offset.disjoint _ (.inl hd) (by unfold oEM at hd; omega) (by have := h.k2; unfold oEM; omega)
 
-theorem enc_ok {s t : State} (h : SPre s) (A : AtEnc s t) :
+theorem enc_ok {s t : State} (h : SPre pc s) (A : AtEnc s t) :
     WP isa Impl.RsaPkcs1Sig.PPC64LE.encode t (AtAft s) := by
   have hk := h.k2
   have hH : Spec.Rsa.bytesAt t.mem (t.gpr .r7) (t.gpr .r8).toNat = hashOf s := by

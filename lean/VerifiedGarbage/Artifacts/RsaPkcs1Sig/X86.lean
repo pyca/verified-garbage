@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyVerified
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignStackSafety
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrecomputed
 public import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 public import VerifiedGarbage.Proof.Bignum.FrameOutside
 public import VerifiedGarbage.Proof.Bignum.MemoryFrame
@@ -183,6 +184,12 @@ def artifacts : List Artifact :=
       code := Impl.RsaPkcs1Sig.X86.Sign.code (privName v) (privCode v)
       stack := sigStack
       verified := sign_verified v
+      spSafe := code_sp v },
+    Spec.RsaPkcs1Sig.signPrecomputedApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.RsaPkcs1Sig.X86.Sign.code (privName v) (privCode v)
+      stack := sigStack
+      verified := signPrecomputed_verified v
       spSafe := code_sp v }])
 
 end VG.Artifacts.RsaPkcs1Sig.X86
