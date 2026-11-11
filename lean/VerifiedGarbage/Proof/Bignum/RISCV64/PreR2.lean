@@ -451,34 +451,32 @@ theorem zOf_eq {T z : Nat} (hT : 0 < T) (h1 : 2 ^ 63 ≤ T * 2 ^ z) (h2 : T * 2 
   exact ⟨by unfold zOf; omega, l1, l2, by omega⟩
 
 /-- `lz`: `a1 := zOf T` for `n`'s top word `T > 0` (word `w - 1` of array 0). -/
-theorem lz_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (h7 : s.gpr .a7 = off B (slot w 0))
-    (ht0 : s.gpr .t0 = BitVec.ofNat 64 w) (hw : 1 ≤ w) (hZ : slot w 0 + 8 * w ≤ Z)
-    (hT : 0 < (Mont.word s.mem B (slot w 0 + 8 * (w - 1))).toNat) :
+theorem lz_ok {s : State} {B : Addr} {Z dN w : Nat} (hs : Scr s B Z) (h7 : s.gpr .a7 = off B dN)
+    (ht0 : s.gpr .t0 = BitVec.ofNat 64 w) (hw : 1 ≤ w) (hN8 : dN % 8 = 0) (hZ : dN + 8 * w ≤ Z)
+    (hT : 0 < (Mont.word s.mem B (dN + 8 * (w - 1))).toNat) :
     WP isa lz s fun t =>
-      (t.gpr .a1 = BitVec.ofNat 64 (zOf (Mont.word s.mem B (slot w 0 + 8 * (w - 1))).toNat) ∧
-        2 ^ 63 ≤ (Mont.word s.mem B (slot w 0 + 8 * (w - 1))).toNat *
-          2 ^ zOf (Mont.word s.mem B (slot w 0 + 8 * (w - 1))).toNat ∧
-        (Mont.word s.mem B (slot w 0 + 8 * (w - 1))).toNat *
-          2 ^ zOf (Mont.word s.mem B (slot w 0 + 8 * (w - 1))).toNat < 2 ^ 64 ∧ t.mem = s.mem) ∧
+      (t.gpr .a1 = BitVec.ofNat 64 (zOf (Mont.word s.mem B (dN + 8 * (w - 1))).toNat) ∧
+        2 ^ 63 ≤ (Mont.word s.mem B (dN + 8 * (w - 1))).toNat *
+          2 ^ zOf (Mont.word s.mem B (dN + 8 * (w - 1))).toNat ∧
+        (Mont.word s.mem B (dN + 8 * (w - 1))).toNat *
+          2 ^ zOf (Mont.word s.mem B (dN + 8 * (w - 1))).toNat < 2 ^ 64 ∧ t.mem = s.mem) ∧
         Keep [.t3, .s0, .s1, .a1, .t5] s t := by
   have hnw := hs.nowrap
-  have al := slot_al8 w
-  generalize hTd : (Mont.word s.mem B (slot w 0 + 8 * (w - 1))).toNat = T at hT ⊢
-  have ea : BitVec.ofNat 64 w <<< 3 + off B (slot w 0) - BitVec.ofNat 64 8 = off B (slot w 0 + 8 * (w - 1)) := by
+  generalize hTd : (Mont.word s.mem B (dN + 8 * (w - 1))).toNat = T at hT ⊢
+  have ea : BitVec.ofNat 64 w <<< 3 + off B dN - BitVec.ofNat 64 8 = off B (dN + 8 * (w - 1)) := by
     simp only [off]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat]
     have := B.isLt
-    unfold slot hdrBytes at hZ ⊢
     omega
-  have a0 := al 0
+  have a0 := hN8
   unfold lz
   refine WP.seq (WP.mono (WP.keep [.t3, .s0, .a1, .t5] (Q := fun t => (t.gpr .s0).toNat = T ∧
       t.gpr .a1 = BitVec.ofNat 64 0 ∧ t.gpr .t5 = BitVec.ofNat 64 63 ∧ t.mem = s.mem)
     (by
       brun [exec_li_zero', exec_li_63, h7, ht0, ea, BitVec.add_zero,
-        hs.ld (show slot w 0 + 8 * (w - 1) + 8 ≤ Z by omega),
-        hs.al8 (show slot w 0 + 8 * (w - 1) + 8 ≤ Z by omega) (by omega)]
+        hs.ld (show dN + 8 * (w - 1) + 8 ≤ Z by omega),
+        hs.al8 (show dN + 8 * (w - 1) + 8 ≤ Z by omega) (by omega)]
       exact hTd) (by rfl) (by rfl)) fun s₁ ⟨⟨i0, i1, i5, m1⟩, k1⟩ => ?_)
   refine WP.mono (wp_countdown (cnt := .t5) (N := 63) (by decide) (by decide) (LzI s₁ T)
     (fun j _ t h _ => lzStep_ok h) ⟨0, by rw [i0, Nat.pow_zero, Nat.mul_one], i1, Nat.le_refl _,

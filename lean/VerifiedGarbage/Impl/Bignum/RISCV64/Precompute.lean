@@ -271,10 +271,20 @@ def mulSubWord : List Instr :=
 def mulSubTop : List Instr :=
   [.sltu .s2 .t6 .s0, .sub .s3 .t6 .s0, .sltu .a3 .s3 .s4, .sub .s3 .s3 .s4, .store .d .s3 .t3 0]
 
+/-- `mulSub` after its head: the `w` words and the top word. -/
+def mulSubRest : Prog isa := .seq (countLoop .t5 mulSubWord) (.block mulSubTop)
+
 /-- `t := x 2^64 - q̂ n` modulo `2^(64 (w + 1))`, in `x`'s first `w + 1` words,
 for `q̂` in `s1`. -/
-def mulSub : Prog isa :=
-  .seq (.block mulSubHead) (.seq (countLoop .t5 mulSubWord) (.block mulSubTop))
+def mulSub : Prog isa := .seq (.block mulSubHead) mulSubRest
+
+/-- `mulSubHead`, but `x`'s previous word `u` loaded from `t2`: the word
+below `x` in a division. -/
+def mulSubHeadU : List Instr :=
+  [.addi .t3 .a2 0, .addi .t4 .a7 0, .addi .t5 .t0 0, .li .s0 0, .li .s4 0, .load .d .t6 .t2 0]
+
+/-- `t := x 2^64 + u - q̂ n` modulo `2^(64 (w + 1))`, `u` the word at `t2`. -/
+def mulSubU : Prog isa := .seq (.block mulSubHeadU) mulSubRest
 
 /-- The mask of `t`'s sign (its word `w`) into `s4`, and the pointers into
 `t` (`t3`) and `n` (`t4`). -/
@@ -298,6 +308,10 @@ def addBack : Prog isa :=
 
 /-- `x := x 2^64 mod n`. -/
 def wordStep : Prog isa := .seq (.block (quot ++ quot3)) (.seq mulSub addBack)
+
+/-- `x := (x 2^64 + u) mod n`, for `u` the word at `t2`: a step of long
+division, `wordStep` with the word below `x` in place of zero. -/
+def wordStepU : Prog isa := .seq (.block (quot ++ quot3)) (.seq mulSubU addBack)
 
 /-- `w + 1` of `wordStep`, counted by `a1`. -/
 def wordSteps : Prog isa :=

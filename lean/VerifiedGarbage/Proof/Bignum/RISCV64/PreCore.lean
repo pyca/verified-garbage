@@ -228,8 +228,8 @@ theorem core_ok {s : State} {P N S : Addr} {Z k w : Nat} (hs : Scr s S Z) (hp : 
     have hf := VG.Proof.Bignum.valid_facts hv hk
     rw [← hw] at hf
     have hN₂ : 2 ^ (64 * (w - 1)) ≤ wordsVal s₂.mem S (slot w 0) w := by rw [m₂, hv₁]; exact hf.2.2
-    refine WP.seq (WP.mono (lz_ok hs₂ (by rw [g .a7 (by decide), ha7]) (by rw [g .t0 (by decide), ht0])
-      (by omega_arith) (by omega_arith) (topW_pos (by omega_arith) hN₂)) fun s₂' ⟨⟨hz, _, _, mz⟩, kz⟩ => ?_)
+    refine WP.seq (WP.mono (lz_ok (dN := slot w 0) hs₂ (by rw [g .a7 (by decide), ha7])
+      (by rw [g .t0 (by decide), ht0]) (by omega_arith) (slot_al8 w 0) (by omega_arith) (topW_pos (by omega_arith) hN₂)) fun s₂' ⟨⟨hz, _, _, mz⟩, kz⟩ => ?_)
     have gz : ∀ r ∈ [Reg.a2, .a5, .a6, .a7, .t0], s₂'.gpr r = s₂.gpr r := fun r hr =>
       kz.gpr (by revert r hr; decide)
     rw [← mz] at hN₂
