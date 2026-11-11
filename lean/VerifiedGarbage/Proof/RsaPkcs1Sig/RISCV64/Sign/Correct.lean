@@ -20,13 +20,15 @@ namespace VG.Proof.RsaPkcs1Sig.RISCV64.Sign
 open VG VG.RISCV64 VG.Impl.RsaPkcs1Sig.RISCV64.Sign VG.WriteBytes
 open VG.Proof.RsaPkcs1Sig.RISCV64 (W Buf fillLoop_ok)
 
+variable {pc : Bool}
+
 theorem gpr_ofNat (x : BitVec 64) : x = BitVec.ofNat 64 x.toNat := by simp
 
 theorem W_nil (s : State) : W s [] s :=
   ⟨Kept.refl _ _, (writeBytes_nil _ _).symm, by rw [List.length_nil, BitVec.add_zero]⟩
 
 /-- Zeros to `out`, once the encoding failed. -/
-theorem zeroOut_ok {s u : State} (h : SPre s) (A : AtAft s u) (h0 : u.gpr .a0 = 0) :
+theorem zeroOut_ok {s u : State} (h : SPre pc s) (A : AtAft s u) (h0 : u.gpr .a0 = 0) :
     WP isa zeroOut u fun v => SMid [oR s, sR s] s v ∧ v.gpr .a0 = 0 ∧
       Spec.Rsa.bytesAt v.mem (s.gpr .a0) (s.gpr .a3).toNat = List.replicate (s.gpr .a3).toNat 0 := by
   have hk := h.k2
@@ -64,7 +66,7 @@ theorem wo_congr {m m' : Mem} {out : Addr} {k : Nat} {r : BitVec 32} {o : Spec.R
   cases o <;> simp only [Spec.Rsa.writtenOutcome, hb] at h ⊢ <;> exact h
 
 /-- `EM` overwritten with zeros, after the call. -/
-theorem wipe_ok {s u : State} {em : List Byte} (h : SPre s) (R : AtRet s u em) :
+theorem wipe_ok {s u : State} {em : List Byte} (h : SPre pc s) (R : AtRet s u em) :
     WP isa wipe u fun v => SMid [oR s, sR s] s v ∧ privOut s em v := by
   have hk := h.k2
   have hk1 := h.k1
@@ -133,7 +135,7 @@ theorem signId_eq (s : State) :
 
 /-- After the encoding: zeros and 0 if it failed, else the signature, and `EM`
 overwritten. -/
-theorem afterEnc_ok {s u : State} (h : SPre s) (B : AtAft s u) :
+theorem afterEnc_ok {s u : State} (h : SPre pc s) (B : AtAft s u) :
     WP isa afterEnc u fun v => SMid [oR s, sR s] s v ∧ fnPost s v := by
   unfold afterEnc fnPost
   rw [signId_eq]
