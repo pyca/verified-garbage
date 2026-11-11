@@ -822,4 +822,17 @@ def code (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (.block (Crt.entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
     (.ite .ne fail (main l2 mul))
 
+/-- `main` with `R² mod n` from the key's precomputed values (`nSetupP`). -/
+def mainP (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  seqs (nSetupP mul ++ primesSetup ++ checks ++
+    [.seq anySizes (.ite .e (seqs (pre mul ++ [ifmaAny l2] ++ post mul))
+      (seqs (qPhase mul (Crt.expLoop mul tabSelect) ++ pPhase mul (Crt.expLoop mul tabSelect))))] ++
+    finish)
+
+/-- `vg_rsa_private_crt_ifma_precomputed` and
+`vg_rsa_private_crt_ifma512_precomputed`: `code` with `mainP`. -/
+def codeP (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (.block (Crt.entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
+    (.ite .ne fail (mainP l2 mul))
+
 end VG.Impl.Rsa.X86_64.CrtIfma
