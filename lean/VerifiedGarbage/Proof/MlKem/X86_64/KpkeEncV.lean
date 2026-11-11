@@ -6,12 +6,14 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEnc
 import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDecV
 import VerifiedGarbage.Proof.MlKem.X86_64.Mul16V
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressMul
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEnc
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDecV
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Mul16V
+meta import VerifiedGarbage.Proof.MlKem.X86_64.CompressMul
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -70,9 +72,17 @@ theorem kpkeEnc768Y_ct :
   · exact RelCT.mono (RelCT.taintRegs (τ := X86_64.Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp])
       (fun x y h => X86_64.Taint.agree_ofRegs h) [] (by taint_decide)) (fun _ _ h => h) fun _ _ _ => trivial
 
+/-- The compressions of `vg_mlkem768_kpke_encrypt`: `cm10` and `cm4`. -/
+theorem encCE768 : KpkeEnc.EncCE kem768 [10] [4] :=
+  ⟨⟨fun d hd => by have := List.mem_singleton.mp hd; omega_arith, CMY.correct10, cm10_ct, nosp_of (by decide +kernel),
+      by decide +kernel⟩,
+    ⟨fun d hd => by have := List.mem_singleton.mp hd; omega_arith, CMY.correct4, cm4_ct, nosp_of (by decide +kernel),
+      by decide +kernel⟩,
+    List.mem_singleton_self _, List.mem_singleton_self _⟩
+
 theorem kpkeEnc768Y_correct : ∀ s, (kpkeEncK kem768).pre s →
     ∃ t s', Exec isa (kpkeEnc kem768 .avx2 encryptMul16Y) s t s' ∧ abiPreserved s s' ∧ (kpkeEncK kem768).post s s' :=
-  KpkeEnc.kpkeEnc_correct PrimsOk.avx2 kdCalls768 keWf768 encMul16Y3_correct (by lit_decide) (by lit_decide)
-    (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)
+  KpkeEnc.kpkeEnc_correct PrimsOk.avx2 encCE768 keWf768 encMul16Y3_correct (by lit_decide) (by lit_decide)
+    (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)
 
 end VG.Proof.MlKem.X86_64
