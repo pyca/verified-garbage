@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.KeyCheckMath
+public import VerifiedGarbage.Proof.Rsa.MontCheckMath
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.PowLit
@@ -41,9 +42,34 @@ theorem ck_bits {k n e d p q dP dQ qI w : Nat} (hm : modulusValid n k = true) (h
   · rw [hR₂ h (Nat.le_trans (by omega : 2 * (2 * (q / 2)) ≤ 2 * q) fq), Nat.mod_eq_of_lt he']
   · rw [hR₃ h fp]
 
+/-- `ck_bits` for the checks by products: `p q mod 2^(32 w)`, Montgomery's
+`n` modulo `p`, and Montgomery's `q qInv` and `1` compared. -/
+theorem ck_bitsM {k n e d p q dP dQ qI w : Nat} (hm : modulusValid n k = true) (he : exponentValid e = true)
+    (hn : n < 256 ^ k) (hp : p < 256 ^ (k - 1)) (hq : q < 256 ^ (k - 1)) (hk : 1 ≤ k) (hw : 256 ^ k ≤ 2 ^ (32 * w))
+    {L M R₁ R₂ A₁ A₂ Y₁ Y₂ : Nat} (hL : L = p * q % 2 ^ (32 * w))
+    (hM : p % 2 = 1 → 2 ≤ p → (M = 0 ↔ n % p = 0))
+    (hR₁ : dP < 2 * (p / 2) → 2 * (2 * (p / 2)) ≤ 2 ^ (32 * w) → R₁ = e % 2 ^ 33 * dP % (2 * (p / 2)))
+    (hR₂ : dQ < 2 * (q / 2) → 2 * (2 * (q / 2)) ≤ 2 ^ (32 * w) → R₂ = e % 2 ^ 33 * dQ % (2 * (q / 2)))
+    (hA : qI < p → p % 2 = 1 → 2 ≤ p → (A₁ = A₂ ↔ q * qI % p = 1))
+    (hY₁ : 0 < 2 * (p / 2) → Y₁ = d % (2 * (p / 2))) (hY₂ : 0 < 2 * (q / 2) → Y₂ = d % (2 * (q / 2))) :
+    keyValid k n e d p q dP dQ qI = VG.Proof.Rsa.keyBitsM n d p q dP dQ qI L M R₁ R₂ A₁ A₂ Y₁ Y₂ := by
+  have he' : e < 2 ^ 33 := by
+    simp only [exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he; exact he.2
+  have fp := fit_two hk hw hp
+  have fq := fit_two hk hw hq
+  have hk1 : 256 ^ (k - 1) ≤ 256 ^ k := Nat.pow_le_pow_right (by decide) (by omega)
+  refine VG.Proof.Rsa.keyValid_bitsM (j := 32 * w) hm he hp hq (by omega) (by omega) hL hM (fun h => ?_)
+    (fun h => ?_) hA hY₁ hY₂
+  · rw [hR₁ h (Nat.le_trans (by omega : 2 * (2 * (p / 2)) ≤ 2 * p) fp), Nat.mod_eq_of_lt he']
+  · rw [hR₂ h (Nat.le_trans (by omega : 2 * (2 * (q / 2)) ≤ 2 * q) fq), Nat.mod_eq_of_lt he']
+
 /-- A number of `l < k` bytes is below `256^(k - 1)`. -/
 theorem lt_pow_of_len (bs : List Byte) {k : Nat} (h : bs.length < k) : os2ip bs < 256 ^ (k - 1) :=
   Nat.lt_of_lt_of_le (VG.Proof.Rsa.lt_of_os2ip bs) (Nat.pow_le_pow_right (by decide) (by omega))
+
+/-- A number of `k` bytes is below `256^k`. -/
+theorem lt_pow_len (bs : List Byte) {k : Nat} (h : bs.length = k) : os2ip bs < 256 ^ k := by
+  rw [← h]; exact VG.Proof.Rsa.lt_of_os2ip bs
 
 /-- A number of `a` bytes is below `2^(8 a)`. -/
 theorem lt_pow8_of_len (bs : List Byte) {a : Nat} (h : bs.length = a) : os2ip bs < 2 ^ (8 * a) := by

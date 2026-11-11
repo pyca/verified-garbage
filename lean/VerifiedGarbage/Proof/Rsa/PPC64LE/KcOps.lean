@@ -134,18 +134,6 @@ theorem cnt33_ok (u : State) :
   refine WP.keep _ ?_ (by decide)
   prun [cnt33]
 
-/-- `8 a` steps, from `q_len = a` in `r21`. -/
-theorem cntQ_ok {u : State} {a : Nat} (h : u.gpr .r21 = BitVec.ofNat 64 a) (ha : a < 2 ^ 61) :
-    WP isa (.block cntQ) u fun u' =>
-      (u'.gpr .r4 = BitVec.ofNat 64 (8 * a) ∧ u'.mem = u.mem) ∧ Keep [.r4] u u' := by
-  refine WP.keep _ ?_ (by decide)
-  have := ha
-  have e : BitVec.ofNat 64 a <<< 3 = BitVec.ofNat 64 (8 * a) := by
-    apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega_arith
-  prun [cntQ, h, e]
-
 /-- `mulA y x m cnt`: `[aA] := ([y] mod 2^k) [x] mod [m]`, `k` the count `cnt` sets. -/
 theorem Stg.mulA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {y x m : Nat} {cnt : List Instr} {k : Nat}

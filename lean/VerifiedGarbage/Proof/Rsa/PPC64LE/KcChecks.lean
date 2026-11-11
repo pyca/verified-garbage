@@ -7,13 +7,16 @@ import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcBase
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.MulMod
+public import VerifiedGarbage.Proof.Rsa.MontCheckMath
+import VerifiedGarbage.Proof.Rsa.PPC64LE.KcMont
 
 /-! # The checks of an RSA key on PPC64LE
 
 As on ARMv7 (`Proof/Rsa/Arm/KcStart.lean`, `KcChecks.lean`, `KcBody.lean`):
-from the arrays read (`vals`), `start_ok`: `1`, the mask of `p` odd, and the
-division of `n` by `p`; `crtChecks_ok`: the checks of `vg_rsa_check_crt_key`
-and'ed into the mask (`crtBits`); `dChecks_ok`: those of `d` (`keyBits'`).
+from the arrays read (`vals`), `start_ok`: `1`, the mask of `p` odd, `p q mod
+2^(32 w)`, `p | 1` and Montgomery's `n 2^(-32 w) mod (p | 1)`; `crtChecks_ok`:
+the checks of `vg_rsa_check_crt_key` and'ed into the mask (`crtBitsM`);
+`dChecks_ok`: those of `d` (`keyBitsM`).
 -/
 
 @[expose] public section
@@ -28,8 +31,11 @@ open VG.Proof.Rsa.KeyWorkspace (arr S num slot Arrs upd upd_ne upd_self)
 /-- The arrays the checks start from. -/
 abbrev live0 : List Nat := [aZ, aOne, aN, aE, aP, aQ, aDP, aDQ, aQI, aD]
 
-/-- The arrays after the division of `n` by `p`. -/
-abbrev aDivN (v : Vals) (X₁ X₂ : Nat) : Nat → Nat := upd (upd (upd (vals v) aOne 1) aVQ X₁) aVR X₂
+/-- The arrays after `start`: `p q mod 2^(32 w)` in `aVQ`, `p | 1` in `aVD` and
+Montgomery's `n` in `aVR`. -/
+abbrev aStart (v : Vals) (L M : Nat) : Nat → Nat :=
+  upd (upd (upd (upd (vals v) aOne 1) aVQ L) aVD (2 * (v.p / 2) + 1)) aVR M
+abbrev liveS : List Nat := aVR :: aVD :: aVQ :: live0
 
 /-- The arrays the checks of `d` use. -/
 abbrev aFin (v : Vals) : Nat → Nat := upd (upd (vals v) aM1 (2 * (v.p / 2))) aM2 (2 * (v.q / 2))
@@ -42,14 +48,28 @@ theorem mulIdx_p : MulIdx nArr aZ aY aX aA aP aT := by decide
 theorem mask_mod2 (x : Nat) : x % 2 = if decide (x % 2 = 1) then 1 else 0 := by
   rcases Nat.mod_two_eq_zero_or_one x with e | e <;> simp [e]
 
-/-- `start`: `1`, the mask of `p` odd, and `n / p` and `n mod p`. -/
+/-- `p | 1` is odd, and below `2^(8 a)` with `p`. -/
+theorem or1_lt {p a : Nat} (h : p < 2 ^ (8 * a)) (ha : 1 ≤ a) : 2 * (p / 2) + 1 < 2 ^ (8 * a) := by
+  have : 2 ^ (8 * a) = 2 * 2 ^ (8 * a - 1) := by rw [← Nat.pow_succ']; congr 1; omega
+  omega
+
+theorem pow8_le (a : Nat) : 2 ^ (8 * a) ≤ 2 ^ (32 * ((a + 3) / 4)) :=
+  Nat.pow_le_pow_right (by decide) (by omega)
+
+/-- `p | 1` is `p` for an odd `p`. -/
+theorem or1_odd {p : Nat} (h : p % 2 = 1) : 2 * (p / 2) + 1 = p := by omega
+
+/-- `start`: `1`, the mask of `p` odd, `p q mod 2^(32 w)`, `p | 1` and
+Montgomery's `n` modulo it. -/
 theorem start_ok {g : Geo} {s0 : State} {v : Vals} (hw : Ws s0 g.B g.Z g.w nArr)
     (ha : Arrs s0.mem g.B g.w (vals v) live0) (vd : w32 s0.mem g.B (arr g.w aVD + 4 * g.w) = 0)
-    (hp : ∃ a, 1 ≤ a ∧ a < 2 ^ 32 ∧ v.p < 2 ^ (8 * a) ∧ s0.gpr .r19 = BitVec.ofNat 64 a) :
-    WP isa (seqs start) s0 fun t => ∃ X₁ X₂, (0 < v.p → X₁ = v.n / v.p ∧ X₂ = v.n % v.p) ∧
-      Stg g s0 (aDivN v X₁ X₂) (aVR :: aVQ :: live0) (decide (v.p % 2 = 1)) t := by
+    (hp : ∃ a, 1 ≤ a ∧ a ≤ 4 * g.w ∧ v.p < 2 ^ (8 * a) ∧ s0.gpr .r19 = BitVec.ofNat 64 a) :
+    WP isa (seqs start) s0 fun t => ∃ L M, L = v.p * v.q % 2 ^ (32 * g.w) ∧
+      (v.p % 2 = 1 → 2 ≤ v.p → (M = 0 ↔ v.n % v.p = 0)) ∧
+      Stg g s0 (aStart v L M) liveS (decide (v.p % 2 = 1)) t := by
   have fit : ∀ j < nArr, arr g.w j + S g.w ≤ 2 ^ 64 := fun j hj => hw.fit64 hj
-  rw [start, List.singleton_append, wp_seqs_cons (by simp [divA])]
+  obtain ⟨pa, pa1, paw, plt, p19⟩ := hp
+  rw [start, wp_seqs_cons (by simp)]
   refine setOne_ok hw (j := aOne) (by decide) (by decide) fun t1 h1 k1 e1 r1 => ?_
   rw [← List.append_nil (bitOf sMask aP)]
   refine bitOf_ok h1 (j := aP) (sl := sMask) (by decide) (by decide) (by decide)
@@ -75,33 +95,55 @@ theorem start_ok {g : Geo} {s0 : State} {v : Vals} (hw : Ws s0 g.B g.Z g.w nArr)
     · rw [k2.word (by simp only [S]; omega) (by simp) (by simp; decide) (fit _ (by decide)),
         k1.word (by simp only [S]; omega) (by simp; decide) (by simp) (fit _ (by decide)), vd]
     · rw [e2, p1]; exact mask_mod2 v.p
-  obtain ⟨pa, pa1, pa2, plt, p19⟩ := hp
-  refine WP.mono (g2.divA_ok (a := aN) (d := aP) (by decide) (by decide) (by decide) (len := .r19) (by decide)
-    (by decide) ((g2.regs.gpr _ (by decide)).trans p19) pa1 pa2 (by rw [upd_ne _ _ (by decide)]; exact plt))
-    fun t ⟨Xq, Xr, hv, ht⟩ => ⟨Xq, Xr, fun hp => ?_, ht⟩
-  have e := hv (by simp only [upd_ne _ _ (show aP ≠ aOne by decide)]; exact hp)
-  simp only [upd_ne _ _ (show aP ≠ aOne by decide), upd_ne _ _ (show aN ≠ aOne by decide)] at e
-  exact ⟨e.2, e.1⟩
+  have r19 : ∀ {t : State} {A live c}, Stg g s0 A live c t → t.gpr .r19 = BitVec.ofNat 64 pa :=
+    fun h => (h.regs.gpr _ (by decide)).trans p19
+  -- `p q mod 2^(32 w)`.
+  rw [wp_seqs_cons (by simp)]
+  refine WP.mono (g2.mulLo_ok (o := aVQ) (x := aP) (y := aQ) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (r19 g2) pa1 paw (by rw [upd_ne _ _ (by decide)]; exact plt)) fun t3 g3 => ?_
+  -- `p | 1`.
+  rw [wp_seqs_cons (by simp)]
+  refine WP.mono (g3.copy_ok (o := aVD) (a := aP) (by decide) (by decide) (by decide)) fun t4 g4 => ?_
+  rw [wp_seqs_cons (by simp)]
+  refine WP.mono (g4.orOne_ok (j := aVD) (by decide)) fun t5 g5 => ?_
+  -- Montgomery's `n`.
+  have hm := or1_lt plt pa1
+  refine WP.mono (g5.montP_ok (a := aVR) (x := aN) (y := aOne) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (r19 g5) pa1 (by omega) (by show (2 * (v.p / 2) + 1) % 2 = 1; omega)
+    (by show 2 * (v.p / 2) + 1 < _; exact Nat.lt_of_lt_of_le hm (pow8_le pa))
+    (by show 1 < _; exact Nat.one_lt_two_pow (by omega))) fun t ⟨M, hM, g6⟩ => ?_
+  refine ⟨v.p * v.q % 2 ^ (32 * g.w), M, rfl, fun podd p2 => ?_, g6.congr' fun j hj => ?_⟩
+  · have hM' : 1 < 2 * (v.p / 2) + 1 → M < 2 * (v.p / 2) + 1 ∧
+        M * 2 ^ (32 * g.w) % (2 * (v.p / 2) + 1) = v.n * 1 % (2 * (v.p / 2) + 1) := hM
+    have e1 : 2 * (v.p / 2) + 1 = v.p := or1_odd podd
+    rw [e1, Nat.mul_one] at hM'
+    obtain ⟨Mlt, Mc⟩ := hM' (by omega)
+    exact VG.Proof.Rsa.mont_zero_iff podd Mlt Mc
+  · simp only [live0, List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 /-- The checks of `vg_rsa_check_crt_key`. -/
-theorem crtChecks_ok {g : Geo} {s0 s : State} {v : Vals} {X₁ X₂ : Nat}
-    (h : Stg g s0 (aDivN v X₁ X₂) (aVR :: aVQ :: live0) (decide (v.p % 2 = 1)) s)
-    (hq : ∃ a, 1 ≤ a ∧ a < 2 ^ 61 ∧ v.q < 2 ^ (8 * a) ∧ s0.gpr .r21 = BitVec.ofNat 64 a) :
-    WP isa (seqs crtChecks) s fun t => ∃ R₁ R₂ R₃ : Nat,
+theorem crtChecks_ok {g : Geo} {s0 s : State} {v : Vals} {L M : Nat}
+    (h : Stg g s0 (aStart v L M) liveS (decide (v.p % 2 = 1)) s)
+    (hp : ∃ a, 1 ≤ a ∧ a ≤ 4 * g.w ∧ v.p < 2 ^ (8 * a) ∧ v.qI < 2 ^ (8 * a) ∧
+      s0.gpr .r19 = BitVec.ofNat 64 a) :
+    WP isa (seqs crtChecks) s fun t => ∃ R₁ R₂ A₁ A₂ : Nat,
       (v.dP < 2 * (v.p / 2) → 2 * (2 * (v.p / 2)) ≤ 2 ^ (32 * g.w) →
         R₁ = v.e % 2 ^ 33 * v.dP % (2 * (v.p / 2))) ∧
       (v.dQ < 2 * (v.q / 2) → 2 * (2 * (v.q / 2)) ≤ 2 ^ (32 * g.w) →
         R₂ = v.e % 2 ^ 33 * v.dQ % (2 * (v.q / 2))) ∧
-      (v.qI < v.p → 2 * v.p ≤ 2 ^ (32 * g.w) → R₃ = v.q * v.qI % v.p) ∧
+      (v.qI < v.p → v.p % 2 = 1 → 2 ≤ v.p → (A₁ = A₂ ↔ v.q * v.qI % v.p = 1)) ∧
       Stg g s0 (aFin v) liveFin
-        (VG.Proof.Rsa.crtBits v.p v.q v.dP v.dQ v.qI X₁ X₂ R₁ R₂ R₃) t := by
-  obtain ⟨qa, qa1, qa2, qlt, q21⟩ := hq
+        (VG.Proof.Rsa.crtBitsM v.n v.p v.q v.dP v.dQ v.qI L M R₁ R₂ A₁ A₂) t := by
+  obtain ⟨pa, pa1, paw, plt, qlt, p19⟩ := hp
   have wpos := h.ws.wpos
   have wle := h.ws.wle
+  have r19 : ∀ {t : State} {A live c}, Stg g s0 A live c t → t.gpr .r19 = BitVec.ofNat 64 pa :=
+    fun h => (h.regs.gpr _ (by decide)).trans p19
   unfold crtChecks
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   rw [wp_seqs_append (by simp [eqA]) (by simp [eqA])]
-  refine WP.mono (h.eqA_ok (a := aVQ) (b := aQ) (by decide) (by decide)) fun t1 h1 => ?_
+  refine WP.mono (h.eqA_ok (a := aVQ) (b := aN) (by decide) (by decide)) fun t1 h1 => ?_
   rw [wp_seqs_append (by simp [eqA]) (by simp)]
   refine WP.mono (h1.eqA_ok (a := aVR) (b := aZ) (by decide) (by decide)) fun t2 h2 => ?_
   rw [wp_seqs_cons (by simp)]
@@ -130,21 +172,37 @@ theorem crtChecks_ok {g : Geo} {s0 s : State} {v : Vals} {X₁ X₂ : Nat}
     fun t11 ⟨R₂, hR₂, h11⟩ => ?_
   rw [wp_seqs_append (by simp [eqA]) (by simp [ltA])]
   refine WP.mono (h11.eqA_ok (a := aA) (b := aOne) (by decide) (by decide)) fun t12 h12 => ?_
-  -- `qInv`.
-  rw [wp_seqs_append (by simp [ltA]) (by simp [mulA])]
+  -- `qInv`: Montgomery's `q qInv` and `1 · 1` compared.
+  rw [wp_seqs_append (by simp [ltA]) (by simp)]
   refine WP.mono (h12.ltA_ok (a := aQI) (b := aP) (by decide) (by decide) (by decide)) fun t13 h13 => ?_
-  rw [wp_seqs_append (by simp [mulA]) (by simp [eqA])]
-  refine WP.mono (h13.mulA_ok (y := aQ) (x := aQI) (m := aP) (k := 8 * qa) (by decide) (by decide)
-    (by decide) (by decide) rfl mulIdx_p (by decide) (by decide) (by omega) (by omega)
-    fun u _ K => cntQ_ok ((K.gpr _ (by decide)).trans q21) qa2)
-    fun t14 ⟨R₃, hR₃, h14⟩ => ?_
-  refine WP.mono (h14.eqA_ok (a := aA) (b := aOne) (by decide) (by decide)) fun t h15 => ?_
-  refine ⟨R₁, R₂, R₃, hR₁, hR₂, fun hlt hM => ?_, (h15.sub (live' := liveFin) (by decide)).congr' fun j hj => by
-    simp only [liveFin, List.mem_cons, List.not_mem_nil, or_false] at hj
-    rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl⟩
-  refine (hR₃ hlt hM).trans ?_
-  show v.q % 2 ^ (8 * qa) * v.qI % v.p = _
-  rw [Nat.mod_eq_of_lt qlt]
+  have h13' := h13.sub (live' := aVD :: aOne :: aQ :: aQI :: aN :: aZ :: aD :: aDP :: aDQ :: aM1 :: aM2 :: aP :: [])
+    (by decide)
+  have hm := or1_lt plt pa1
+  rw [wp_seqs_cons (by simp)]
+  refine WP.mono (h13'.montP_ok (a := aA) (x := aQ) (y := aQI) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (r19 h13') pa1 (by omega) (by show (2 * (v.p / 2) + 1) % 2 = 1; omega)
+    (by show 2 * (v.p / 2) + 1 < _; exact Nat.lt_of_lt_of_le hm (pow8_le pa))
+    (by show v.qI < _; exact Nat.lt_of_lt_of_le qlt (pow8_le pa))) fun t14 ⟨A₁, hA₁, h14⟩ => ?_
+  rw [wp_seqs_cons (by simp [eqA])]
+  refine WP.mono (h14.montP_ok (a := aY) (x := aOne) (y := aOne) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (r19 h14) pa1 (by omega) (by show (2 * (v.p / 2) + 1) % 2 = 1; omega)
+    (by show 2 * (v.p / 2) + 1 < _; exact Nat.lt_of_lt_of_le hm (pow8_le pa))
+    (by show 1 < _; exact Nat.one_lt_two_pow (by omega))) fun t15 ⟨A₂, hA₂, h15⟩ => ?_
+  refine WP.mono (h15.eqA_ok (a := aA) (b := aY) (by decide) (by decide)) fun t h16 => ?_
+  refine ⟨R₁, R₂, A₁, A₂, hR₁, hR₂, fun hlt podd p2 => ?_,
+    (h16.sub (live' := liveFin) (by decide)).congr' fun j hj => ?_⟩
+  · have hA₁' : v.qI < 2 * (v.p / 2) + 1 → A₁ < 2 * (v.p / 2) + 1 ∧
+        A₁ * 2 ^ (32 * g.w) % (2 * (v.p / 2) + 1) = v.q * v.qI % (2 * (v.p / 2) + 1) := hA₁
+    have hA₂' : 1 < 2 * (v.p / 2) + 1 → A₂ < 2 * (v.p / 2) + 1 ∧
+        A₂ * 2 ^ (32 * g.w) % (2 * (v.p / 2) + 1) = 1 * 1 % (2 * (v.p / 2) + 1) := hA₂
+    have e1 : 2 * (v.p / 2) + 1 = v.p := or1_odd podd
+    rw [e1] at hA₁' hA₂'
+    obtain ⟨l1, c1⟩ := hA₁' hlt
+    obtain ⟨l2, c2⟩ := hA₂' (by omega)
+    rw [Nat.one_mul] at c2
+    exact VG.Proof.Rsa.mont_eq_iff podd p2 l1 l2 c1 c2
+  · simp only [liveFin, List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 theorem aFin_d (v : Vals) : aFin v aD = v.d := rfl
 theorem aFin_n (v : Vals) : aFin v aN = v.n := rfl

@@ -935,6 +935,7 @@ theorem montMul_ok {s : State} {B : Addr} {Z w N a x y m tt L mv Y : Nat} (hw : 
     (hY : num s.mem B w y = Y) (hYt : Y < 2 ^ (32 * ((L + 3) / 4))) :
     WP isa (montMul a x y m tt len cntW) s fun t => Ws t B Z w N ∧
       KeyWorkspace.Keep B w [a, tt, m, y] [] s.mem t.mem ∧ num t.mem B w m = mv ∧ num t.mem B w y = Y ∧
+      w32 t.mem B (arr w m + 4 * w) = 0 ∧
       (Y < mv → num t.mem B w a < mv ∧ num t.mem B w a * 2 ^ (32 * w) % mv = num s.mem B w x * Y % mv) ∧
       Keep mkRegs s t := by
   have := hw.wle
@@ -959,7 +960,8 @@ theorem montMul_ok {s : State} {B : Addr} {Z w N a x y m tt L mv Y : Nat} (hw : 
           (by simp) (hw.fit64 hx)
   refine WP.mono (montCore_ok hu hN ha hx hy hm ht hax hay ham hat htx hty htm ul hL1 hLw hr hl0
     (toK (num_m.trans hmv) tm hmt) hmt hodd (toK (num_y.trans hY) ty hYt) hYt)
-    fun t ⟨ht', Kt, cg, kt⟩ => ⟨ht', ?_, ?_, ?_, fun hYm => by rw [← hx']; exact cg hYm, (ku.trans kt).mono (by decide)⟩
+    fun t ⟨ht', Kt, cg, kt⟩ => ⟨ht', ?_, ?_, ?_, ?_, fun hYm => by rw [← hx']; exact cg hYm,
+      (ku.trans kt).mono (by decide)⟩
   · exact (Ku.mono (by simp)).trans (Kt.mono (by simp))
   · show val32 t.mem B (arr w m) w = mv
     rw [keep_val Kt (by omega) (by
@@ -971,5 +973,9 @@ theorem montMul_ok {s : State} {B : Addr} {Z w N a x y m tt L mv Y : Nat} (hw : 
       intro z hz; simp only [List.mem_cons, List.not_mem_nil, or_false] at hz; rcases hz with rfl | rfl <;> omega)
       (by simp) (hw.fit64 hy)]
     exact num_y.trans hY
+  · have := keep_word (b := 32) (o := 4 * w) Kt (j := m) (by simp only [S]; omega) (by
+      intro z hz; simp only [List.mem_cons, List.not_mem_nil, or_false] at hz; rcases hz with rfl | rfl <;> omega)
+      (by simp) (hw.fit64 hm)
+    rw [show w32 t.mem B (arr w m + 4 * w) = w32 u.mem B (arr w m + 4 * w) from congrArg BitVec.toNat this, tm]
 
 end VG.Proof.Rsa.PPC64LE.MontKey

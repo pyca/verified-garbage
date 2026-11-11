@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.MulMod
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.CrtValues
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.PublicChecked
+public import VerifiedGarbage.Impl.Rsa.PPC64LE.MontKey
 
 /-! # The checks of an RSA private key on PPC64LE
 
@@ -22,14 +23,16 @@ then written to its array from the register.
 Then every check is computed whatever its outcome, and and'ed into the
 header's `sMask`, which is returned:
 
-* `p q = n`: `p` odd, `n / p = q` and `n mod p = 0`, by the fixed-iteration
-  division (`Impl/Rsa/PPC64LE/Div.lean`, `divP`: at the divisor's width,
-  from its length). Then `p` and `q` are odd, and
-  clearing their low bits gives `p - 1` and `q - 1`.
+* `p q = n`: `p` odd, `p q ≡ n (mod 2^(32 w))` (`MontKey.mulLo`) and
+  `n ≡ 0 (mod p)`, as Montgomery's `n 2^(-32 w) mod p` (`MontKey.montMul`)
+  is 0: for an odd `p` they are `p q = n` (`Proof/Rsa/MontCheckMath.lean`).
+  Montgomery's modulus is `p | 1`, in the division's divisor array, so it
+  is odd whatever `p`. Then `p` and `q` are odd, and clearing their low bits
+  gives `p - 1` and `q - 1`.
 * `dP < p - 1`, `dQ < q - 1` and `qInv < p`: the borrow of a subtraction.
 * `e dP ≡ 1 (mod p - 1)`, `e dQ ≡ 1 (mod q - 1)`: `mulMod` over the 33 bits
-  of `e`, compared with 1; `q qInv ≡ 1 (mod p)`: `mulMod` over the
-  `8 q_len` bits of `q`.
+  of `e`, compared with 1; `q qInv ≡ 1 (mod p)`: Montgomery's `q qInv` and
+  `1 · 1` compared.
 
 `vg_rsa_check_key` then checks `d < n` (a borrow), and `d ≡ 1/e` modulo
 `p - 1` and `q - 1` by comparing `d mod (p - 1)` and `d mod (q - 1)` (two
@@ -141,19 +144,22 @@ def mulA (y x m : Nat) (cnt : List Instr) : List (Prog isa) :=
 
 /-- `33` steps, for `e < 2^33`. -/
 def cnt33 : List Instr := [.li .r4 33]
-/-- `8 q_len` steps, for `q < 2^(8 q_len)`. -/
-def cntQ : List Instr := [.lsl .r4 .r21 3]
 
-/-- `1`, the mask `p` odd, and `n` divided by `p`. -/
-def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP)] ++ divA .r19 aN aP
+/-- `[a] := [x] [y] 2^(-32 w) mod (p | 1)`, the modulus in `aVD`, `p_len` in `r19`. -/
+def montP (a x y : Nat) : Prog isa := MontKey.montMul a x y aVD aT .r19 MontKey.cntW
 
-/-- After the division: `n / p = q`, `n mod p = 0`, `p - 1` and `q - 1`, and
+/-- `1`, the mask `p` odd, `p q mod 2^(32 w)` in `aVQ`, `p | 1` in `aVD` and
+`n 2^(-32 w) mod (p | 1)` in `aVR`. -/
+def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP), MontKey.mulLo aVQ aP aQ .r19,
+  copy aVD aP, .block (orOne aVD), montP aVR aN aOne]
+
+/-- Then: `p q ≡ n (mod 2^(32 w))`, `n ≡ 0 (mod p)`, `p - 1` and `q - 1`, and
 the checks of `dP`, `dQ` and `qInv`. -/
-def crtChecks : List (Prog isa) := eqA aVQ aQ ++ eqA aVR aZ ++
+def crtChecks : List (Prog isa) := eqA aVQ aN ++ eqA aVR aZ ++
   [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++
   ltA aDP aM1 ++ mulA aE aDP aM1 cnt33 ++ eqA aA aOne ++
   ltA aDQ aM2 ++ mulA aE aDQ aM2 cnt33 ++ eqA aA aOne ++
-  ltA aQI aP ++ mulA aQ aQI aP cntQ ++ eqA aA aOne
+  ltA aQI aP ++ [montP aA aQ aQI, montP aY aOne aOne] ++ eqA aA aY
 
 /-- The checks of `d`: `d < n`, `d mod (p - 1) = dP` and `d mod (q - 1) = dQ`. -/
 def dChecks : List (Prog isa) :=
