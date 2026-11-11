@@ -373,6 +373,42 @@ vg_rsa_private_crt_ifma:
 	cmp r15, r14
 	adc rcx, 0
 	or rcx, r9
+	mov rax, QWORD PTR [r10+r12*8-16]
+	mul rcx
+	mov r9, rax
+	mov r11, rdx
+	mov rax, QWORD PTR [r10+r12*8-8]
+	mul rcx
+	add rax, r11
+	adc rdx, 0
+	mov r13, QWORD PTR [rbx+r12*8-24]
+	sub r13, r9
+	mov r14, QWORD PTR [rbx+r12*8-16]
+	sbb r14, rax
+	mov r15, QWORD PTR [rbx+r12*8-8]
+	sbb r15, rdx
+	mov r11, r15
+	add r11, r11
+	sbb r11, r11
+	add rcx, r11
+	mov rax, QWORD PTR [r10+r12*8-16]
+	and rax, r11
+	mov rdx, QWORD PTR [r10+r12*8-8]
+	and rdx, r11
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov r11, r15
+	add r11, r11
+	sbb r11, r11
+	add rcx, r11
+	mov rax, QWORD PTR [r10+r12*8-16]
+	and rax, r11
+	mov rdx, QWORD PTR [r10+r12*8-8]
+	and rdx, r11
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
 	mov rax, QWORD PTR [r10]
 	mul rcx
 	mov r9, rdx
@@ -418,40 +454,21 @@ vg_rsa_private_crt_ifma:
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
-	mov rax, QWORD PTR [r8+r12*8]
-	add rax, rax
-	sbb r11, r11
-	mov ebp, 0
-	mov r14, 0
-226:
-	mov rax, QWORD PTR [r10+r14*8]
-	and rax, r11
-	add rbp, rbp
-	adc rax, QWORD PTR [r8+r14*8]
-	sbb rbp, rbp
-	mov QWORD PTR [r8+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 226b
-	mov rax, QWORD PTR [r8+r12*8]
-	add rbp, rbp
-	adc rax, 0
-	mov QWORD PTR [r8+r12*8], rax
 	mov rsi, r8
 	mov r14, 0
-227:
+226:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 227b
+	jne 226b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
 	jne 223b
 	mov eax, 2
 	mov QWORD PTR [rdi+208], rax
-228:
+227:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -459,7 +476,7 @@ vg_rsa_private_crt_ifma:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 228b
+	jne 227b
 211:
 	mov edx, 5
 	mov ecx, 1
@@ -478,11 +495,11 @@ vg_rsa_private_crt_ifma:
 	add r12, 7
 	shr r12, 3
 	cmp r12, 2
-	jb 229f
-	jmp 230f
-229:
+	jb 228f
+	jmp 229f
+228:
 	mov r12d, 2
-230:
+229:
 	mov rsi, rdi
 	mov rdi, rax
 	mov QWORD PTR [rdi+128], rsi
@@ -530,11 +547,11 @@ vg_rsa_private_crt_ifma:
 	add r12, 7
 	shr r12, 3
 	cmp r12, 2
-	jb 231f
-	jmp 232f
-231:
+	jb 230f
+	jmp 231f
+230:
 	mov r12d, 2
-232:
+231:
 	mov rsi, rdi
 	mov rdi, rax
 	mov QWORD PTR [rdi+128], rsi
@@ -568,11 +585,11 @@ vg_rsa_private_crt_ifma:
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-233:
+232:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 233b
+	jne 232b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -582,7 +599,7 @@ vg_rsa_private_crt_ifma:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-234:
+233:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -590,25 +607,25 @@ vg_rsa_private_crt_ifma:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 235f
-	jmp 236f
-235:
+	je 234f
+	jmp 235f
+234:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-236:
+235:
 	test rdx, rdx
-	jne 234b
+	jne 233b
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-237:
+236:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 237b
+	jne 236b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -618,7 +635,7 @@ vg_rsa_private_crt_ifma:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-238:
+237:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -626,27 +643,27 @@ vg_rsa_private_crt_ifma:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 239f
-	jmp 240f
-239:
+	je 238f
+	jmp 239f
+238:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-240:
+239:
 	test rdx, rdx
-	jne 238b
+	jne 237b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rdi, QWORD PTR [rdi+240]
 	mov r8, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-241:
+240:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 241b
+	jne 240b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -656,7 +673,7 @@ vg_rsa_private_crt_ifma:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-242:
+241:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -664,16 +681,16 @@ vg_rsa_private_crt_ifma:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 243f
-	jmp 244f
-243:
+	je 242f
+	jmp 243f
+242:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-244:
+243:
 	test rdx, rdx
-	jne 242b
+	jne 241b
 	mov rdi, QWORD PTR [rdi+128]
 	mov r8, QWORD PTR [rdi+80]
 	mov rbx, QWORD PTR [rdi+48]
@@ -682,11 +699,11 @@ vg_rsa_private_crt_ifma:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-245:
+244:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 245b
+	jne 244b
 	mov rax, QWORD PTR [rdi+232]
 	mov r11, QWORD PTR [rax+64]
 	mov r10, QWORD PTR [rax+48]
@@ -695,11 +712,11 @@ vg_rsa_private_crt_ifma:
 	mov r12, QWORD PTR [rax+48]
 	mov r8, QWORD PTR [rdi+80]
 	mov r13d, 0
-246:
+245:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-247:
+246:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -710,7 +727,7 @@ vg_rsa_private_crt_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 247b
+	jne 246b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -720,19 +737,19 @@ vg_rsa_private_crt_ifma:
 	add r8, 8
 	add r13, 1
 	cmp r13, r10
-	jne 246b
+	jne 245b
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+80]
 	mov r10, QWORD PTR [rdi+64]
 	mov ebp, 0
 	mov r14, 0
-248:
+247:
 	mov rax, QWORD PTR [rbx+r14*8]
 	xor rax, QWORD PTR [r10+r14*8]
 	or rbp, rax
 	add r14, 1
 	cmp r14, r12
-	jne 248b
+	jne 247b
 	mov rax, r12
 	add rax, rax
 	add rax, rax
@@ -740,12 +757,12 @@ vg_rsa_private_crt_ifma:
 	add rbx, rax
 	add r12, 2
 	mov r14, 0
-249:
+248:
 	mov rax, QWORD PTR [rbx+r14*8]
 	or rbp, rax
 	add r14, 1
 	cmp r14, r12
-	jne 249b
+	jne 248b
 	cmp rbp, 1
 	sbb rbp, rbp
 	and rbp, QWORD PTR [rdi+176]
@@ -756,14 +773,14 @@ vg_rsa_private_crt_ifma:
 	mov r10, QWORD PTR [rdi+64]
 	mov ebp, 0
 	mov r14, 0
-250:
+249:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 250b
+	jne 249b
 	mov rax, QWORD PTR [rdi+128]
 	and rbp, QWORD PTR [rax+176]
 	mov QWORD PTR [rax+176], rbp
@@ -774,13 +791,13 @@ vg_rsa_private_crt_ifma:
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+64]
 	mov r14, 0
-251:
+250:
 	mov rax, QWORD PTR [rbx+r14*8]
 	and rax, r15
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 251b
+	jne 250b
 	mov rax, r15
 	xor rax, -1
 	and rax, 3
@@ -831,11 +848,11 @@ vg_rsa_private_crt_ifma:
 	mov r8, QWORD PTR [rdi+120]
 	mov eax, 0
 	mov r14, 0
-252:
+251:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 252b
+	jne 251b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
@@ -848,13 +865,13 @@ vg_rsa_private_crt_ifma:
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+64]
 	mov r14, 0
-253:
+252:
 	mov rax, QWORD PTR [rbx+r14*8]
 	and rax, r15
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 253b
+	jne 252b
 	mov rax, r15
 	xor rax, -1
 	and rax, 3
@@ -905,11 +922,11 @@ vg_rsa_private_crt_ifma:
 	mov r8, QWORD PTR [rdi+120]
 	mov eax, 0
 	mov r14, 0
-254:
+253:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 254b
+	jne 253b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
@@ -926,7 +943,7 @@ vg_rsa_private_crt_ifma:
 	shr rdx, 3
 	xor rdx, 16
 	or rax, rdx
-	je 255f
+	je 254f
 	mov rax, QWORD PTR [rdi+48]
 	xor rax, 48
 	mov rdx, QWORD PTR [rdi+160]
@@ -939,7 +956,7 @@ vg_rsa_private_crt_ifma:
 	shr rdx, 3
 	xor rdx, 24
 	or rax, rdx
-	je 257f
+	je 256f
 	mov rax, QWORD PTR [rdi+48]
 	xor rax, 64
 	mov rdx, QWORD PTR [rdi+160]
@@ -952,21 +969,21 @@ vg_rsa_private_crt_ifma:
 	shr rdx, 3
 	xor rdx, 32
 	or rax, rdx
-	jmp 258f
-257:
-258:
-	jmp 256f
-255:
+	jmp 257f
 256:
-	je 259f
+257:
+	jmp 255f
+254:
+255:
+	je 258f
 	mov rax, QWORD PTR [rdi+240]
 	mov rax, QWORD PTR [rax+48]
 	mov r12, QWORD PTR [rdi+48]
 	mov ecx, 0
-261:
+260:
 	add rcx, rax
 	cmp rcx, r12
-	jb 261b
+	jb 260b
 	add rcx, rax
 	sub rcx, r12
 	add rcx, rcx
@@ -981,36 +998,36 @@ vg_rsa_private_crt_ifma:
 	mov r10, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [r10+r12*8-8]
 	test rax, rax
-	jne 262f
+	jne 261f
 	mov rax, QWORD PTR [rdi+248]
 	mov edx, 1
 	mov ecx, 64
 	cmp rax, 1
-	je 264f
-266:
+	je 263f
+265:
 	shr rax, 1
 	add rdx, rdx
 	sub rcx, 1
 	cmp rax, 1
-	jne 266b
-	jmp 265f
+	jne 265b
+	jmp 264f
+263:
 264:
-265:
 	mov QWORD PTR [rdi+208], rdx
 	mov edx, 6
 	mov ecx, 4
 	mov r8d, 7
 	call {vg_rsa_mont_mul_adx}
-267:
+266:
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 6
 	call {vg_rsa_mont_mul_adx}
 	mov rax, QWORD PTR [rdi+248]
 	and rax, QWORD PTR [rdi+208]
-	jne 268f
-	jmp 269f
-268:
+	jne 267f
+	jmp 268f
+267:
 	mov rbx, QWORD PTR [rdi+112]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -1018,7 +1035,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-270:
+269:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -1026,14 +1043,14 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 270b
+	jne 269b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-271:
+270:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1041,13 +1058,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 271b
+	jne 270b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-272:
+271:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1056,50 +1073,50 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 272b
-269:
+	jne 271b
+268:
 	mov rax, QWORD PTR [rdi+208]
 	shr rax, 1
 	mov QWORD PTR [rdi+208], rax
 	test rax, rax
-	jne 267b
-	jmp 263f
-262:
+	jne 266b
+	jmp 262f
+261:
 	mov rcx, QWORD PTR [rdi+248]
 	shr rcx, 6
 	mov rdx, r12
 	sub rdx, 1
 	cmp rcx, rdx
-	jb 273f
+	jb 272f
 	mov rax, QWORD PTR [rdi+248]
 	mov edx, 1
 	mov ecx, 64
 	cmp rax, 1
-	je 275f
-277:
+	je 274f
+276:
 	shr rax, 1
 	add rdx, rdx
 	sub rcx, 1
 	cmp rax, 1
-	jne 277b
-	jmp 276f
+	jne 276b
+	jmp 275f
+274:
 275:
-276:
 	mov QWORD PTR [rdi+208], rdx
 	mov edx, 6
 	mov ecx, 4
 	mov r8d, 7
 	call {vg_rsa_mont_mul_adx}
-278:
+277:
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 6
 	call {vg_rsa_mont_mul_adx}
 	mov rax, QWORD PTR [rdi+248]
 	and rax, QWORD PTR [rdi+208]
-	jne 279f
-	jmp 280f
-279:
+	jne 278f
+	jmp 279f
+278:
 	mov rbx, QWORD PTR [rdi+112]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -1107,7 +1124,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-281:
+280:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -1115,14 +1132,14 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 281b
+	jne 280b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-282:
+281:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1130,13 +1147,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 282b
+	jne 281b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-283:
+282:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1145,17 +1162,36 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 283b
-280:
+	jne 282b
+279:
 	mov rax, QWORD PTR [rdi+208]
 	shr rax, 1
 	mov QWORD PTR [rdi+208], rax
 	test rax, rax
-	jne 278b
-	jmp 274f
-273:
+	jne 277b
+	jmp 273f
+272:
 	mov edx, 1
 	mov r8, QWORD PTR [rdi+112]
+	mov eax, 0
+	mov r14, 0
+283:
+	mov QWORD PTR [r8+r14*8], rax
+	add r14, 1
+	cmp r14, r12
+	jne 283b
+	mov QWORD PTR [r8+r12*8], rax
+	mov QWORD PTR [r8+r12*8+8], rax
+	mov QWORD PTR [r8+rcx*8], rdx
+	mov edx, 6
+	mov ecx, 4
+	mov r8d, 6
+	call {vg_rsa_mont_mul_adx}
+273:
+262:
+	mov rdi, QWORD PTR [rdi+240]
+	mov r8, QWORD PTR [rdi+96]
+	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
 284:
@@ -1165,58 +1201,39 @@ vg_rsa_private_crt_ifma:
 	jne 284b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
-	mov QWORD PTR [r8+rcx*8], rdx
-	mov edx, 6
-	mov ecx, 4
-	mov r8d, 6
-	call {vg_rsa_mont_mul_adx}
-274:
-263:
-	mov rdi, QWORD PTR [rdi+240]
-	mov r8, QWORD PTR [rdi+96]
-	mov r12, QWORD PTR [rdi+48]
-	mov eax, 0
-	mov r14, 0
-285:
-	mov QWORD PTR [r8+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 285b
-	mov QWORD PTR [r8+r12*8], rax
-	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
 	mov rdx, QWORD PTR [rax+112]
 	mov QWORD PTR [rdi+184], rdx
 	mov rdx, QWORD PTR [rax+48]
 	mov QWORD PTR [rdi+176], rdx
-286:
+285:
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-287:
+286:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 287b
+	jne 286b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r12, QWORD PTR [rdi+176]
 	cmp r12, QWORD PTR [rdi+48]
-	jb 288f
+	jb 287f
 	mov r12, QWORD PTR [rdi+48]
-	jmp 289f
+	jmp 288f
+287:
 288:
-289:
 	mov rsi, QWORD PTR [rdi+184]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r14, 0
-290:
+289:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 290b
+	jne 289b
 	mov rax, QWORD PTR [rdi+176]
 	sub rax, r12
 	mov QWORD PTR [rdi+176], rax
@@ -1241,7 +1258,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-291:
+290:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, QWORD PTR [r9+r14*8]
@@ -1249,7 +1266,7 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 291b
+	jne 290b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
@@ -1257,7 +1274,7 @@ vg_rsa_private_crt_ifma:
 	mov rbx, QWORD PTR [rdi+96]
 	mov ebp, 0
 	mov r14, 0
-292:
+291:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1265,13 +1282,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 292b
+	jne 291b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-293:
+292:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1280,20 +1297,20 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 293b
+	jne 292b
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	jne 286b
+	jne 285b
 	mov r12, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+96]
 	mov rbx, QWORD PTR [rdi+112]
 	mov r14, 0
-294:
+293:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 294b
+	jne 293b
 	mov rdi, QWORD PTR [rdi+128]
 	mov edx, 6
 	mov ecx, 5
@@ -1304,11 +1321,11 @@ vg_rsa_private_crt_ifma:
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-295:
+294:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 295b
+	jne 294b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -1316,34 +1333,34 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rdi+184], rdx
 	mov rdx, QWORD PTR [rax+48]
 	mov QWORD PTR [rdi+176], rdx
-296:
+295:
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-297:
+296:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 297b
+	jne 296b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r12, QWORD PTR [rdi+176]
 	cmp r12, QWORD PTR [rdi+48]
-	jb 298f
+	jb 297f
 	mov r12, QWORD PTR [rdi+48]
-	jmp 299f
+	jmp 298f
+297:
 298:
-299:
 	mov rsi, QWORD PTR [rdi+184]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r14, 0
-2100:
+299:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2100b
+	jne 299b
 	mov rax, QWORD PTR [rdi+176]
 	sub rax, r12
 	mov QWORD PTR [rdi+176], rax
@@ -1368,7 +1385,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2101:
+2100:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, QWORD PTR [r9+r14*8]
@@ -1376,7 +1393,7 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2101b
+	jne 2100b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
@@ -1384,7 +1401,7 @@ vg_rsa_private_crt_ifma:
 	mov rbx, QWORD PTR [rdi+96]
 	mov ebp, 0
 	mov r14, 0
-2102:
+2101:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1392,13 +1409,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2102b
+	jne 2101b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2103:
+2102:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1407,10 +1424,10 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2103b
+	jne 2102b
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	jne 296b
+	jne 295b
 	mov rax, QWORD PTR [rdi+128]
 	mov rdx, QWORD PTR [rax+216]
 	mov QWORD PTR [rdi+136], rdx
@@ -1431,12 +1448,12 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+112]
 	mov rbx, QWORD PTR [rdi+208]
 	mov r14, 0
-2104:
+2103:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2104b
+	jne 2103b
 	mov rax, QWORD PTR [rdi+208]
 	mov rdx, QWORD PTR [rdi+48]
 	add rdx, 2
@@ -1449,25 +1466,25 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+96]
 	mov rbx, QWORD PTR [rdi+208]
 	mov r14, 0
+2104:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov QWORD PTR [rbx+r14*8], rax
+	add r14, 1
+	cmp r14, r12
+	jne 2104b
+	mov r12, QWORD PTR [rdi+48]
+	mov rsi, QWORD PTR [rdi+96]
+	mov rbx, QWORD PTR [rdi+104]
+	mov r14, 0
 2105:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
 	jne 2105b
-	mov r12, QWORD PTR [rdi+48]
-	mov rsi, QWORD PTR [rdi+96]
-	mov rbx, QWORD PTR [rdi+104]
-	mov r14, 0
-2106:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov QWORD PTR [rbx+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 2106b
 	mov eax, 14
 	mov QWORD PTR [rdi+160], rax
-2107:
+2106:
 	mov edx, 5
 	mov ecx, 5
 	mov r8d, 4
@@ -1484,24 +1501,24 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+104]
 	mov rbx, QWORD PTR [rdi+208]
 	mov r14, 0
-2108:
+2107:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2108b
+	jne 2107b
 	mov rax, QWORD PTR [rdi+160]
 	sub rax, 1
 	mov QWORD PTR [rdi+160], rax
-	jne 2107b
-2109:
+	jne 2106b
+2108:
 	mov rax, QWORD PTR [rdi+136]
 	mov rcx, QWORD PTR [rdi+152]
 	movzx eax, BYTE PTR [rax+rcx*1]
 	mov QWORD PTR [rdi+168], rax
 	mov eax, 2
 	mov QWORD PTR [rdi+160], rax
-2110:
+2109:
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 6
@@ -1532,7 +1549,7 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rdi+208], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2111:
+2110:
 	mov r15, QWORD PTR [rdi+224]
 	mov rcx, QWORD PTR [rdi+208]
 	mov r12, QWORD PTR [rdi+48]
@@ -1624,7 +1641,7 @@ vg_rsa_private_crt_ifma:
 	mov rax, r10
 	add rax, r11
 	mov r14d, 0
-2112:
+2111:
 	movdqu xmm0, XMMWORD PTR [rcx+r14*8]
 	pand xmm0, xmm8
 	movdqu xmm1, XMMWORD PTR [rdx+r14*8]
@@ -1654,14 +1671,14 @@ vg_rsa_private_crt_ifma:
 	movdqu XMMWORD PTR [rbx+r14*8], xmm0
 	add r14, 2
 	cmp r14, r13
-	jne 2112b
+	jne 2111b
 	add rax, r11
 	mov QWORD PTR [rdi+208], rax
 	mov rax, r15
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, 16
-	jne 2111b
+	jne 2110b
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 5
@@ -1669,12 +1686,12 @@ vg_rsa_private_crt_ifma:
 	mov rax, QWORD PTR [rdi+160]
 	sub rax, 1
 	mov QWORD PTR [rdi+160], rax
-	jne 2110b
+	jne 2109b
 	mov rax, QWORD PTR [rdi+152]
 	add rax, 1
 	mov QWORD PTR [rdi+152], rax
 	cmp rax, QWORD PTR [rdi+144]
-	jne 2109b
+	jne 2108b
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 7
@@ -1684,10 +1701,10 @@ vg_rsa_private_crt_ifma:
 	mov rax, QWORD PTR [rax+48]
 	mov r12, QWORD PTR [rdi+48]
 	mov ecx, 0
-2113:
+2112:
 	add rcx, rax
 	cmp rcx, r12
-	jb 2113b
+	jb 2112b
 	add rcx, rax
 	sub rcx, r12
 	add rcx, rcx
@@ -1702,36 +1719,36 @@ vg_rsa_private_crt_ifma:
 	mov r10, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [r10+r12*8-8]
 	test rax, rax
-	jne 2114f
+	jne 2113f
 	mov rax, QWORD PTR [rdi+248]
 	mov edx, 1
 	mov ecx, 64
 	cmp rax, 1
-	je 2116f
-2118:
+	je 2115f
+2117:
 	shr rax, 1
 	add rdx, rdx
 	sub rcx, 1
 	cmp rax, 1
-	jne 2118b
-	jmp 2117f
+	jne 2117b
+	jmp 2116f
+2115:
 2116:
-2117:
 	mov QWORD PTR [rdi+208], rdx
 	mov edx, 6
 	mov ecx, 4
 	mov r8d, 7
 	call {vg_rsa_mont_mul_adx}
-2119:
+2118:
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 6
 	call {vg_rsa_mont_mul_adx}
 	mov rax, QWORD PTR [rdi+248]
 	and rax, QWORD PTR [rdi+208]
-	jne 2120f
-	jmp 2121f
-2120:
+	jne 2119f
+	jmp 2120f
+2119:
 	mov rbx, QWORD PTR [rdi+112]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -1739,7 +1756,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2122:
+2121:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -1747,14 +1764,14 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2122b
+	jne 2121b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2123:
+2122:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1762,13 +1779,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2123b
+	jne 2122b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2124:
+2123:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1777,50 +1794,50 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2124b
-2121:
+	jne 2123b
+2120:
 	mov rax, QWORD PTR [rdi+208]
 	shr rax, 1
 	mov QWORD PTR [rdi+208], rax
 	test rax, rax
-	jne 2119b
-	jmp 2115f
-2114:
+	jne 2118b
+	jmp 2114f
+2113:
 	mov rcx, QWORD PTR [rdi+248]
 	shr rcx, 6
 	mov rdx, r12
 	sub rdx, 1
 	cmp rcx, rdx
-	jb 2125f
+	jb 2124f
 	mov rax, QWORD PTR [rdi+248]
 	mov edx, 1
 	mov ecx, 64
 	cmp rax, 1
-	je 2127f
-2129:
+	je 2126f
+2128:
 	shr rax, 1
 	add rdx, rdx
 	sub rcx, 1
 	cmp rax, 1
-	jne 2129b
-	jmp 2128f
+	jne 2128b
+	jmp 2127f
+2126:
 2127:
-2128:
 	mov QWORD PTR [rdi+208], rdx
 	mov edx, 6
 	mov ecx, 4
 	mov r8d, 7
 	call {vg_rsa_mont_mul_adx}
-2130:
+2129:
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 6
 	call {vg_rsa_mont_mul_adx}
 	mov rax, QWORD PTR [rdi+248]
 	and rax, QWORD PTR [rdi+208]
-	jne 2131f
-	jmp 2132f
-2131:
+	jne 2130f
+	jmp 2131f
+2130:
 	mov rbx, QWORD PTR [rdi+112]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -1828,7 +1845,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2133:
+2132:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -1836,14 +1853,14 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2133b
+	jne 2132b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2134:
+2133:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1851,13 +1868,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2134b
+	jne 2133b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2135:
+2134:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1866,17 +1883,36 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2135b
-2132:
+	jne 2134b
+2131:
 	mov rax, QWORD PTR [rdi+208]
 	shr rax, 1
 	mov QWORD PTR [rdi+208], rax
 	test rax, rax
-	jne 2130b
-	jmp 2126f
-2125:
+	jne 2129b
+	jmp 2125f
+2124:
 	mov edx, 1
 	mov r8, QWORD PTR [rdi+112]
+	mov eax, 0
+	mov r14, 0
+2135:
+	mov QWORD PTR [r8+r14*8], rax
+	add r14, 1
+	cmp r14, r12
+	jne 2135b
+	mov QWORD PTR [r8+r12*8], rax
+	mov QWORD PTR [r8+r12*8+8], rax
+	mov QWORD PTR [r8+rcx*8], rdx
+	mov edx, 6
+	mov ecx, 4
+	mov r8d, 6
+	call {vg_rsa_mont_mul_adx}
+2125:
+2114:
+	mov rdi, QWORD PTR [rdi+232]
+	mov r8, QWORD PTR [rdi+96]
+	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
 2136:
@@ -1886,58 +1922,39 @@ vg_rsa_private_crt_ifma:
 	jne 2136b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
-	mov QWORD PTR [r8+rcx*8], rdx
-	mov edx, 6
-	mov ecx, 4
-	mov r8d, 6
-	call {vg_rsa_mont_mul_adx}
-2126:
-2115:
-	mov rdi, QWORD PTR [rdi+232]
-	mov r8, QWORD PTR [rdi+96]
-	mov r12, QWORD PTR [rdi+48]
-	mov eax, 0
-	mov r14, 0
-2137:
-	mov QWORD PTR [r8+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 2137b
-	mov QWORD PTR [r8+r12*8], rax
-	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
 	mov rdx, QWORD PTR [rax+112]
 	mov QWORD PTR [rdi+184], rdx
 	mov rdx, QWORD PTR [rax+48]
 	mov QWORD PTR [rdi+176], rdx
-2138:
+2137:
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2139:
+2138:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2139b
+	jne 2138b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r12, QWORD PTR [rdi+176]
 	cmp r12, QWORD PTR [rdi+48]
-	jb 2140f
+	jb 2139f
 	mov r12, QWORD PTR [rdi+48]
-	jmp 2141f
+	jmp 2140f
+2139:
 2140:
-2141:
 	mov rsi, QWORD PTR [rdi+184]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r14, 0
-2142:
+2141:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2142b
+	jne 2141b
 	mov rax, QWORD PTR [rdi+176]
 	sub rax, r12
 	mov QWORD PTR [rdi+176], rax
@@ -1962,7 +1979,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2143:
+2142:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, QWORD PTR [r9+r14*8]
@@ -1970,7 +1987,7 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2143b
+	jne 2142b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
@@ -1978,7 +1995,7 @@ vg_rsa_private_crt_ifma:
 	mov rbx, QWORD PTR [rdi+96]
 	mov ebp, 0
 	mov r14, 0
-2144:
+2143:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1986,13 +2003,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2144b
+	jne 2143b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2145:
+2144:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -2001,30 +2018,30 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2145b
+	jne 2144b
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	jne 2138b
+	jne 2137b
 	mov r12, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+96]
 	mov rbx, QWORD PTR [rdi+112]
 	mov r14, 0
-2146:
+2145:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2146b
+	jne 2145b
 	mov rdi, QWORD PTR [rdi+128]
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2147:
+2146:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2147b
+	jne 2146b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+240]
@@ -2032,12 +2049,12 @@ vg_rsa_private_crt_ifma:
 	mov r12, QWORD PTR [rax+48]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r14, 0
-2148:
+2147:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2148b
+	jne 2147b
 	mov edx, 1
 	mov ecx, 1
 	mov r8d, 4
@@ -2055,11 +2072,11 @@ vg_rsa_private_crt_ifma:
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2149:
+2148:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2149b
+	jne 2148b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -2067,34 +2084,34 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rdi+184], rdx
 	mov rdx, QWORD PTR [rax+48]
 	mov QWORD PTR [rdi+176], rdx
-2150:
+2149:
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2151:
+2150:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2151b
+	jne 2150b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r12, QWORD PTR [rdi+176]
 	cmp r12, QWORD PTR [rdi+48]
-	jb 2152f
+	jb 2151f
 	mov r12, QWORD PTR [rdi+48]
-	jmp 2153f
+	jmp 2152f
+2151:
 2152:
-2153:
 	mov rsi, QWORD PTR [rdi+184]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r14, 0
-2154:
+2153:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2154b
+	jne 2153b
 	mov rax, QWORD PTR [rdi+176]
 	sub rax, r12
 	mov QWORD PTR [rdi+176], rax
@@ -2119,7 +2136,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2155:
+2154:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, QWORD PTR [r9+r14*8]
@@ -2127,7 +2144,7 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2155b
+	jne 2154b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
@@ -2135,7 +2152,7 @@ vg_rsa_private_crt_ifma:
 	mov rbx, QWORD PTR [rdi+96]
 	mov ebp, 0
 	mov r14, 0
-2156:
+2155:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -2143,13 +2160,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2156b
+	jne 2155b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2157:
+2156:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -2158,10 +2175,10 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2157b
+	jne 2156b
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	jne 2150b
+	jne 2149b
 	mov rax, QWORD PTR [rdi+128]
 	mov rdx, QWORD PTR [rax+200]
 	mov QWORD PTR [rdi+136], rdx
@@ -2182,12 +2199,12 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+112]
 	mov rbx, QWORD PTR [rdi+208]
 	mov r14, 0
-2158:
+2157:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2158b
+	jne 2157b
 	mov rax, QWORD PTR [rdi+208]
 	mov rdx, QWORD PTR [rdi+48]
 	add rdx, 2
@@ -2200,25 +2217,25 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+96]
 	mov rbx, QWORD PTR [rdi+208]
 	mov r14, 0
+2158:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov QWORD PTR [rbx+r14*8], rax
+	add r14, 1
+	cmp r14, r12
+	jne 2158b
+	mov r12, QWORD PTR [rdi+48]
+	mov rsi, QWORD PTR [rdi+96]
+	mov rbx, QWORD PTR [rdi+104]
+	mov r14, 0
 2159:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
 	jne 2159b
-	mov r12, QWORD PTR [rdi+48]
-	mov rsi, QWORD PTR [rdi+96]
-	mov rbx, QWORD PTR [rdi+104]
-	mov r14, 0
-2160:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov QWORD PTR [rbx+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 2160b
 	mov eax, 14
 	mov QWORD PTR [rdi+160], rax
-2161:
+2160:
 	mov edx, 5
 	mov ecx, 5
 	mov r8d, 4
@@ -2235,24 +2252,24 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+104]
 	mov rbx, QWORD PTR [rdi+208]
 	mov r14, 0
-2162:
+2161:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2162b
+	jne 2161b
 	mov rax, QWORD PTR [rdi+160]
 	sub rax, 1
 	mov QWORD PTR [rdi+160], rax
-	jne 2161b
-2163:
+	jne 2160b
+2162:
 	mov rax, QWORD PTR [rdi+136]
 	mov rcx, QWORD PTR [rdi+152]
 	movzx eax, BYTE PTR [rax+rcx*1]
 	mov QWORD PTR [rdi+168], rax
 	mov eax, 2
 	mov QWORD PTR [rdi+160], rax
-2164:
+2163:
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 6
@@ -2283,7 +2300,7 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rdi+208], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2165:
+2164:
 	mov r15, QWORD PTR [rdi+224]
 	mov rcx, QWORD PTR [rdi+208]
 	mov r12, QWORD PTR [rdi+48]
@@ -2375,7 +2392,7 @@ vg_rsa_private_crt_ifma:
 	mov rax, r10
 	add rax, r11
 	mov r14d, 0
-2166:
+2165:
 	movdqu xmm0, XMMWORD PTR [rcx+r14*8]
 	pand xmm0, xmm8
 	movdqu xmm1, XMMWORD PTR [rdx+r14*8]
@@ -2405,14 +2422,14 @@ vg_rsa_private_crt_ifma:
 	movdqu XMMWORD PTR [rbx+r14*8], xmm0
 	add r14, 2
 	cmp r14, r13
-	jne 2166b
+	jne 2165b
 	add rax, r11
 	mov QWORD PTR [rdi+208], rax
 	mov rax, r15
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, 16
-	jne 2165b
+	jne 2164b
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 5
@@ -2420,23 +2437,23 @@ vg_rsa_private_crt_ifma:
 	mov rax, QWORD PTR [rdi+160]
 	sub rax, 1
 	mov QWORD PTR [rdi+160], rax
-	jne 2164b
+	jne 2163b
 	mov rax, QWORD PTR [rdi+152]
 	add rax, 1
 	mov QWORD PTR [rdi+152], rax
 	cmp rax, QWORD PTR [rdi+144]
-	jne 2163b
+	jne 2162b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rdi, QWORD PTR [rdi+232]
 	mov r8, QWORD PTR [rdi+96]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2167:
+2166:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2167b
+	jne 2166b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -2444,34 +2461,34 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rdi+184], rdx
 	mov rdx, QWORD PTR [rax+48]
 	mov QWORD PTR [rdi+176], rdx
-2168:
+2167:
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2169:
+2168:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2169b
+	jne 2168b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r12, QWORD PTR [rdi+176]
 	cmp r12, QWORD PTR [rdi+48]
-	jb 2170f
+	jb 2169f
 	mov r12, QWORD PTR [rdi+48]
-	jmp 2171f
+	jmp 2170f
+2169:
 2170:
-2171:
 	mov rsi, QWORD PTR [rdi+184]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r14, 0
-2172:
+2171:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2172b
+	jne 2171b
 	mov rax, QWORD PTR [rdi+176]
 	sub rax, r12
 	mov QWORD PTR [rdi+176], rax
@@ -2496,7 +2513,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2173:
+2172:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, QWORD PTR [r9+r14*8]
@@ -2504,7 +2521,7 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2173b
+	jne 2172b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
@@ -2512,7 +2529,7 @@ vg_rsa_private_crt_ifma:
 	mov rbx, QWORD PTR [rdi+96]
 	mov ebp, 0
 	mov r14, 0
-2174:
+2173:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -2520,13 +2537,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2174b
+	jne 2173b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2175:
+2174:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -2535,17 +2552,17 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2175b
+	jne 2174b
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	jne 2168b
+	jne 2167b
 	mov r8, QWORD PTR [rdi+112]
 	mov r10, QWORD PTR [rdi+96]
 	mov rsi, QWORD PTR [rdi+80]
 	mov r12, QWORD PTR [rdi+48]
 	mov ebp, 0
 	mov r14, 0
-2176:
+2175:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -2553,14 +2570,14 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2176b
+	jne 2175b
 	mov r15, rbp
 	mov ebp, 0
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
 	mov rbx, QWORD PTR [rdi+104]
 	mov r14, 0
-2177:
+2176:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r15
 	add rbp, rbp
@@ -2569,16 +2586,16 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2177b
+	jne 2176b
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2178:
+2177:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2178b
+	jne 2177b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -2588,7 +2605,7 @@ vg_rsa_private_crt_ifma:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2179:
+2178:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -2596,44 +2613,44 @@ vg_rsa_private_crt_ifma:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2180f
-	jmp 2181f
-2180:
+	je 2179f
+	jmp 2180f
+2179:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2181:
+2180:
 	test rdx, rdx
-	jne 2179b
+	jne 2178b
 	mov r15, QWORD PTR [rdi+192]
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r14, 0
-2182:
+2181:
 	mov rax, QWORD PTR [rbx+r14*8]
 	and rax, r15
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2182b
+	jne 2181b
 	mov edx, 6
 	mov ecx, 5
 	mov r8d, 1
 	call {vg_rsa_mont_mul_adx}
 	mov rdi, QWORD PTR [rdi+128]
-	jmp 260f
-259:
+	jmp 259f
+258:
 	mov rdi, QWORD PTR [rdi+240]
 	mov r8, QWORD PTR [rdi+96]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2183:
+2182:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2183b
+	jne 2182b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -2641,34 +2658,34 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rdi+184], rdx
 	mov rdx, QWORD PTR [rax+48]
 	mov QWORD PTR [rdi+176], rdx
-2184:
+2183:
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2185:
+2184:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2185b
+	jne 2184b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r12, QWORD PTR [rdi+176]
 	cmp r12, QWORD PTR [rdi+48]
-	jb 2186f
+	jb 2185f
 	mov r12, QWORD PTR [rdi+48]
-	jmp 2187f
+	jmp 2186f
+2185:
 2186:
-2187:
 	mov rsi, QWORD PTR [rdi+184]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r14, 0
-2188:
+2187:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2188b
+	jne 2187b
 	mov rax, QWORD PTR [rdi+176]
 	sub rax, r12
 	mov QWORD PTR [rdi+176], rax
@@ -2693,7 +2710,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2189:
+2188:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, QWORD PTR [r9+r14*8]
@@ -2701,7 +2718,7 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2189b
+	jne 2188b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
@@ -2709,7 +2726,7 @@ vg_rsa_private_crt_ifma:
 	mov rbx, QWORD PTR [rdi+96]
 	mov ebp, 0
 	mov r14, 0
-2190:
+2189:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -2717,13 +2734,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2190b
+	jne 2189b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2191:
+2190:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -2732,29 +2749,29 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2191b
+	jne 2190b
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	jne 2184b
+	jne 2183b
 	mov r12, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+96]
 	mov rbx, QWORD PTR [rdi+112]
 	mov r14, 0
-2192:
+2191:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2192b
+	jne 2191b
 	mov r8, QWORD PTR [rdi+96]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2193:
+2192:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2193b
+	jne 2192b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -2762,34 +2779,34 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rdi+184], rdx
 	mov rdx, QWORD PTR [rax+48]
 	mov QWORD PTR [rdi+176], rdx
-2194:
+2193:
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2195:
+2194:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2195b
+	jne 2194b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r12, QWORD PTR [rdi+176]
 	cmp r12, QWORD PTR [rdi+48]
-	jb 2196f
+	jb 2195f
 	mov r12, QWORD PTR [rdi+48]
-	jmp 2197f
+	jmp 2196f
+2195:
 2196:
-2197:
 	mov rsi, QWORD PTR [rdi+184]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r14, 0
-2198:
+2197:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2198b
+	jne 2197b
 	mov rax, QWORD PTR [rdi+176]
 	sub rax, r12
 	mov QWORD PTR [rdi+176], rax
@@ -2814,7 +2831,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2199:
+2198:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, QWORD PTR [r9+r14*8]
@@ -2822,7 +2839,7 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2199b
+	jne 2198b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
@@ -2830,7 +2847,7 @@ vg_rsa_private_crt_ifma:
 	mov rbx, QWORD PTR [rdi+96]
 	mov ebp, 0
 	mov r14, 0
-2200:
+2199:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -2838,13 +2855,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2200b
+	jne 2199b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2201:
+2200:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -2853,10 +2870,10 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2201b
+	jne 2200b
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	jne 2194b
+	jne 2193b
 	mov edx, 5
 	mov ecx, 6
 	mov r8d, 4
@@ -2865,12 +2882,12 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+104]
 	mov rbx, QWORD PTR [rdi+96]
 	mov r14, 0
-2202:
+2201:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2202b
+	jne 2201b
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 7
@@ -2881,11 +2898,11 @@ vg_rsa_private_crt_ifma:
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2203:
+2202:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2203b
+	jne 2202b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -2893,34 +2910,34 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rdi+184], rdx
 	mov rdx, QWORD PTR [rax+48]
 	mov QWORD PTR [rdi+176], rdx
-2204:
+2203:
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2205:
+2204:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2205b
+	jne 2204b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r12, QWORD PTR [rdi+176]
 	cmp r12, QWORD PTR [rdi+48]
-	jb 2206f
+	jb 2205f
 	mov r12, QWORD PTR [rdi+48]
-	jmp 2207f
+	jmp 2206f
+2205:
 2206:
-2207:
 	mov rsi, QWORD PTR [rdi+184]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r14, 0
-2208:
+2207:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2208b
+	jne 2207b
 	mov rax, QWORD PTR [rdi+176]
 	sub rax, r12
 	mov QWORD PTR [rdi+176], rax
@@ -2945,7 +2962,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2209:
+2208:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, QWORD PTR [r9+r14*8]
@@ -2953,7 +2970,7 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2209b
+	jne 2208b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
@@ -2961,7 +2978,7 @@ vg_rsa_private_crt_ifma:
 	mov rbx, QWORD PTR [rdi+96]
 	mov ebp, 0
 	mov r14, 0
-2210:
+2209:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -2969,13 +2986,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2210b
+	jne 2209b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2211:
+2210:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -2984,29 +3001,29 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2211b
+	jne 2210b
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	jne 2204b
+	jne 2203b
 	mov r12, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+96]
 	mov rbx, QWORD PTR [rdi+112]
 	mov r14, 0
-2212:
+2211:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2212b
+	jne 2211b
 	mov r8, QWORD PTR [rdi+96]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2213:
+2212:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2213b
+	jne 2212b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -3014,34 +3031,34 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rdi+184], rdx
 	mov rdx, QWORD PTR [rax+48]
 	mov QWORD PTR [rdi+176], rdx
-2214:
+2213:
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2215:
+2214:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2215b
+	jne 2214b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r12, QWORD PTR [rdi+176]
 	cmp r12, QWORD PTR [rdi+48]
-	jb 2216f
+	jb 2215f
 	mov r12, QWORD PTR [rdi+48]
-	jmp 2217f
+	jmp 2216f
+2215:
 2216:
-2217:
 	mov rsi, QWORD PTR [rdi+184]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r14, 0
-2218:
+2217:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2218b
+	jne 2217b
 	mov rax, QWORD PTR [rdi+176]
 	sub rax, r12
 	mov QWORD PTR [rdi+176], rax
@@ -3066,7 +3083,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2219:
+2218:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, QWORD PTR [r9+r14*8]
@@ -3074,7 +3091,7 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2219b
+	jne 2218b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
@@ -3082,7 +3099,7 @@ vg_rsa_private_crt_ifma:
 	mov rbx, QWORD PTR [rdi+96]
 	mov ebp, 0
 	mov r14, 0
-2220:
+2219:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -3090,13 +3107,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2220b
+	jne 2219b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2221:
+2220:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -3105,10 +3122,10 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2221b
+	jne 2220b
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	jne 2214b
+	jne 2213b
 	mov edx, 5
 	mov ecx, 6
 	mov r8d, 4
@@ -3117,12 +3134,12 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+104]
 	mov rbx, QWORD PTR [rdi+96]
 	mov r14, 0
-2222:
+2221:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2222b
+	jne 2221b
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 7
@@ -3140,7 +3157,7 @@ vg_rsa_private_crt_ifma:
 	shr rdx, 3
 	xor rdx, 16
 	or rax, rdx
-	je 2223f
+	je 2222f
 	mov rax, QWORD PTR [rdi+48]
 	xor rax, 48
 	mov rdx, QWORD PTR [rdi+160]
@@ -3153,7 +3170,7 @@ vg_rsa_private_crt_ifma:
 	shr rdx, 3
 	xor rdx, 24
 	or rax, rdx
-	je 2225f
+	je 2224f
 	mov rdx, QWORD PTR [rdi+240]
 	mov rax, QWORD PTR [rdx+120]
 	mov rdx, QWORD PTR [rdx+48]
@@ -3177,15 +3194,15 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+112]
 	mov rbx, QWORD PTR [rdi+104]
 	mov r14, 0
-2227:
+2226:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2227b
+	jne 2226b
 	mov ecx, 64
 	mov QWORD PTR [rdi+240], rcx
-2228:
+2227:
 	mov rbx, QWORD PTR [rdi+104]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -3193,7 +3210,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2229:
+2228:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -3201,14 +3218,14 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2229b
+	jne 2228b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2230:
+2229:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -3216,13 +3233,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2230b
+	jne 2229b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2231:
+2230:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -3231,53 +3248,53 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2231b
+	jne 2230b
 	mov rcx, QWORD PTR [rdi+240]
 	sub rcx, 1
 	mov QWORD PTR [rdi+240], rcx
-	jne 2228b
+	jne 2227b
 	mov r8d, 5
-2232:
+2231:
 	cmp r8, 5
-	je 2233f
+	je 2232f
 	cmp r8, 4
-	je 2235f
+	je 2234f
 	cmp r8, 3
-	je 2237f
+	je 2236f
 	cmp r8, 2
-	je 2239f
+	je 2238f
 	mov rsi, QWORD PTR [rdi+112]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 12608
 	movabs r12, 4503599627370495
-	jmp 2240f
-2239:
+	jmp 2239f
+2238:
 	mov rsi, QWORD PTR [rdi+112]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 352
 	movabs r12, 4503599627370495
-2240:
-	jmp 2238f
-2237:
+2239:
+	jmp 2237f
+2236:
 	mov rsi, QWORD PTR [rdi+96]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 672
 	movabs r12, 4503599627370495
-2238:
-	jmp 2236f
-2235:
+2237:
+	jmp 2235f
+2234:
 	mov rsi, QWORD PTR [rdi+104]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 12256
 	movabs r12, 4503599627370495
-2236:
-	jmp 2234f
-2233:
+2235:
+	jmp 2233f
+2232:
 	mov rsi, QWORD PTR [rdi+64]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 0
 	movabs r12, 4503599627370495
-2234:
+2233:
 	mov rax, QWORD PTR [rsi]
 	and rax, r12
 	mov QWORD PTR [r11], rax
@@ -3581,7 +3598,7 @@ vg_rsa_private_crt_ifma:
 	and rax, r12
 	mov QWORD PTR [r11+312], rax
 	sub r8, 1
-	jne 2232b
+	jne 2231b
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 0
 	mov rax, QWORD PTR [rdi+56]
@@ -3629,19 +3646,19 @@ vg_rsa_private_crt_ifma:
 	mov rcx, QWORD PTR [rax+160]
 	add r11, 11812
 	sub r11, rcx
-2241:
+2240:
 	movzx eax, BYTE PTR [rsi]
 	mov BYTE PTR [r11], al
 	add rsi, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2241b
+	jne 2240b
 	mov r8, QWORD PTR [rdi+232]
 	add r8, 11552
 	mov r9, QWORD PTR [rdi+232]
 	add r9, 11840
 	mov ecx, 52
-2242:
+2241:
 	mov eax, 0
 	shl rax, 8
 	movzx edx, BYTE PTR [r8]
@@ -3692,22 +3709,22 @@ vg_rsa_private_crt_ifma:
 	add r8, 5
 	add r9, 8
 	sub rcx, 1
-	jne 2242b
+	jne 2241b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rdi, QWORD PTR [rdi+240]
 	mov r12, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+112]
 	mov rbx, QWORD PTR [rdi+104]
 	mov r14, 0
-2243:
+2242:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2243b
+	jne 2242b
 	mov ecx, 64
 	mov QWORD PTR [rdi+240], rcx
-2244:
+2243:
 	mov rbx, QWORD PTR [rdi+104]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -3715,7 +3732,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2245:
+2244:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -3723,14 +3740,14 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2245b
+	jne 2244b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2246:
+2245:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -3738,13 +3755,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2246b
+	jne 2245b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2247:
+2246:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -3753,53 +3770,53 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2247b
+	jne 2246b
 	mov rcx, QWORD PTR [rdi+240]
 	sub rcx, 1
 	mov QWORD PTR [rdi+240], rcx
-	jne 2244b
+	jne 2243b
 	mov r8d, 5
-2248:
+2247:
 	cmp r8, 5
-	je 2249f
+	je 2248f
 	cmp r8, 4
-	je 2251f
+	je 2250f
 	cmp r8, 3
-	je 2253f
+	je 2252f
 	cmp r8, 2
-	je 2255f
+	je 2254f
 	mov rsi, QWORD PTR [rdi+112]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 25536
 	movabs r12, 4503599627370495
-	jmp 2256f
-2255:
+	jmp 2255f
+2254:
 	mov rsi, QWORD PTR [rdi+112]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 13280
 	movabs r12, 4503599627370495
-2256:
-	jmp 2254f
-2253:
+2255:
+	jmp 2253f
+2252:
 	mov rsi, QWORD PTR [rdi+96]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 13600
 	movabs r12, 4503599627370495
-2254:
-	jmp 2252f
-2251:
+2253:
+	jmp 2251f
+2250:
 	mov rsi, QWORD PTR [rdi+104]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 25184
 	movabs r12, 4503599627370495
-2252:
-	jmp 2250f
-2249:
+2251:
+	jmp 2249f
+2248:
 	mov rsi, QWORD PTR [rdi+64]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 12928
 	movabs r12, 4503599627370495
-2250:
+2249:
 	mov rax, QWORD PTR [rsi]
 	and rax, r12
 	mov QWORD PTR [r11], rax
@@ -4103,7 +4120,7 @@ vg_rsa_private_crt_ifma:
 	and rax, r12
 	mov QWORD PTR [r11+312], rax
 	sub r8, 1
-	jne 2248b
+	jne 2247b
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 12928
 	mov rax, QWORD PTR [rdi+56]
@@ -4193,19 +4210,19 @@ vg_rsa_private_crt_ifma:
 	mov rcx, QWORD PTR [rax+192]
 	add r11, 11812
 	sub r11, rcx
-2257:
+2256:
 	movzx eax, BYTE PTR [rsi]
 	mov BYTE PTR [r11], al
 	add rsi, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2257b
+	jne 2256b
 	mov r8, QWORD PTR [rdi+232]
 	add r8, 24480
 	mov r9, QWORD PTR [rdi+232]
 	add r9, 24768
 	mov ecx, 52
-2258:
+2257:
 	mov eax, 0
 	shl rax, 8
 	movzx edx, BYTE PTR [r8]
@@ -4256,7 +4273,7 @@ vg_rsa_private_crt_ifma:
 	add r8, 5
 	add r9, 8
 	sub rcx, 1
-	jne 2258b
+	jne 2257b
 	mov rbx, QWORD PTR [rdi+232]
 	stmxcsr DWORD PTR [rbx+25856]
 	mov r11d, DWORD PTR [rbx+25856]
@@ -4267,9 +4284,9 @@ vg_rsa_private_crt_ifma:
 	ldmxcsr DWORD PTR [rbx+25860]
 	lfence
 	mov r13d, 1312
-2259:
+2258:
 	cmp r13, 1952
-	jb 2260f
+	jb 2259f
 	mov r8, rbx
 	add r8, r13
 	sub r8, 320
@@ -4277,15 +4294,15 @@ vg_rsa_private_crt_ifma:
 	add r9, 672
 	mov r11, rbx
 	add r11, r13
-	jmp 2261f
-2260:
+	jmp 2260f
+2259:
 	mov r8, rbx
 	add r8, r13
 	sub r8, 960
 	mov r9, rbx
 	add r9, 12256
 	mov r11, r8
-2261:
+2260:
 	mov r10, rbx
 	mov ecx, 4
 	vpxorq ymm0, ymm0, ymm0
@@ -4313,7 +4330,7 @@ vg_rsa_private_crt_ifma:
 	vpxorq ymm22, ymm22, ymm22
 	vpxorq ymm23, ymm23, ymm23
 	vpxorq ymm24, ymm24, ymm24
-2262:
+2261:
 	mov rax, QWORD PTR [r9]
 	vmovq xmm20, rax
 	vpbroadcastq ymm20, xmm20
@@ -5316,7 +5333,7 @@ vg_rsa_private_crt_ifma:
 	vpmadd52huq ymm19, ymm23, YMMWORD PTR [r10+13216]
 	add r9, 8
 	sub rcx, 1
-	jne 2262b
+	jne 2261b
 	vmovdqu64 YMMWORD PTR [r11], ymm0
 	vmovdqu64 YMMWORD PTR [r11+32], ymm1
 	vmovdqu64 YMMWORD PTR [r11+64], ymm2
@@ -5741,9 +5758,9 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [r11+13240], rcx
 	shr rsi, 52
 	cmp r13, 1632
-	je 2263f
-	jmp 2264f
-2263:
+	je 2262f
+	jmp 2263f
+2262:
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+352]
 	vmovdqu64 YMMWORD PTR [rbx+1312], ymm0
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+384]
@@ -5824,14 +5841,14 @@ vg_rsa_private_crt_ifma:
 	vmovdqu64 YMMWORD PTR [rbx+14816], ymm0
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+13888]
 	vmovdqu64 YMMWORD PTR [rbx+14848], ymm0
-2264:
+2263:
 	add r13, 320
 	cmp r13, 11552
-	jne 2259b
+	jne 2258b
 	mov r13d, 6
-2265:
+2264:
 	cmp r13, 416
-	je 2266f
+	je 2265f
 	movzx eax, BYTE PTR [rbx+r13*1+11840]
 	mov QWORD PTR [rbx+12576], rax
 	movzx eax, BYTE PTR [rbx+r13*1+24768]
@@ -5839,6 +5856,61 @@ vg_rsa_private_crt_ifma:
 	mov r8, rbx
 	add r8, 1312
 	mov rdx, QWORD PTR [rbx+12576]
+	mov ecx, 0
+	vpxorq ymm0, ymm0, ymm0
+	vpxorq ymm1, ymm1, ymm1
+	vpxorq ymm2, ymm2, ymm2
+	vpxorq ymm3, ymm3, ymm3
+	vpxorq ymm4, ymm4, ymm4
+	vpxorq ymm5, ymm5, ymm5
+	vpxorq ymm6, ymm6, ymm6
+	vpxorq ymm7, ymm7, ymm7
+	vpxorq ymm8, ymm8, ymm8
+	vpxorq ymm9, ymm9, ymm9
+2267:
+	mov rax, rcx
+	xor rax, rdx
+	cmp rax, 1
+	sbb rax, rax
+	vmovq xmm10, rax
+	vpbroadcastq ymm10, xmm10
+	vmovdqu64 ymm11, YMMWORD PTR [r8]
+	vpternlogq ymm0, ymm11, ymm10, 248
+	vmovdqu64 ymm11, YMMWORD PTR [r8+32]
+	vpternlogq ymm1, ymm11, ymm10, 248
+	vmovdqu64 ymm11, YMMWORD PTR [r8+64]
+	vpternlogq ymm2, ymm11, ymm10, 248
+	vmovdqu64 ymm11, YMMWORD PTR [r8+96]
+	vpternlogq ymm3, ymm11, ymm10, 248
+	vmovdqu64 ymm11, YMMWORD PTR [r8+128]
+	vpternlogq ymm4, ymm11, ymm10, 248
+	vmovdqu64 ymm11, YMMWORD PTR [r8+160]
+	vpternlogq ymm5, ymm11, ymm10, 248
+	vmovdqu64 ymm11, YMMWORD PTR [r8+192]
+	vpternlogq ymm6, ymm11, ymm10, 248
+	vmovdqu64 ymm11, YMMWORD PTR [r8+224]
+	vpternlogq ymm7, ymm11, ymm10, 248
+	vmovdqu64 ymm11, YMMWORD PTR [r8+256]
+	vpternlogq ymm8, ymm11, ymm10, 248
+	vmovdqu64 ymm11, YMMWORD PTR [r8+288]
+	vpternlogq ymm9, ymm11, ymm10, 248
+	add r8, 320
+	add rcx, 1
+	cmp rcx, 32
+	jne 2267b
+	vmovdqu64 YMMWORD PTR [rbx+992], ymm0
+	vmovdqu64 YMMWORD PTR [rbx+1024], ymm1
+	vmovdqu64 YMMWORD PTR [rbx+1056], ymm2
+	vmovdqu64 YMMWORD PTR [rbx+1088], ymm3
+	vmovdqu64 YMMWORD PTR [rbx+1120], ymm4
+	vmovdqu64 YMMWORD PTR [rbx+1152], ymm5
+	vmovdqu64 YMMWORD PTR [rbx+1184], ymm6
+	vmovdqu64 YMMWORD PTR [rbx+1216], ymm7
+	vmovdqu64 YMMWORD PTR [rbx+1248], ymm8
+	vmovdqu64 YMMWORD PTR [rbx+1280], ymm9
+	mov r8, rbx
+	add r8, 14240
+	mov rdx, QWORD PTR [rbx+25504]
 	mov ecx, 0
 	vpxorq ymm0, ymm0, ymm0
 	vpxorq ymm1, ymm1, ymm1
@@ -5881,61 +5953,6 @@ vg_rsa_private_crt_ifma:
 	add rcx, 1
 	cmp rcx, 32
 	jne 2268b
-	vmovdqu64 YMMWORD PTR [rbx+992], ymm0
-	vmovdqu64 YMMWORD PTR [rbx+1024], ymm1
-	vmovdqu64 YMMWORD PTR [rbx+1056], ymm2
-	vmovdqu64 YMMWORD PTR [rbx+1088], ymm3
-	vmovdqu64 YMMWORD PTR [rbx+1120], ymm4
-	vmovdqu64 YMMWORD PTR [rbx+1152], ymm5
-	vmovdqu64 YMMWORD PTR [rbx+1184], ymm6
-	vmovdqu64 YMMWORD PTR [rbx+1216], ymm7
-	vmovdqu64 YMMWORD PTR [rbx+1248], ymm8
-	vmovdqu64 YMMWORD PTR [rbx+1280], ymm9
-	mov r8, rbx
-	add r8, 14240
-	mov rdx, QWORD PTR [rbx+25504]
-	mov ecx, 0
-	vpxorq ymm0, ymm0, ymm0
-	vpxorq ymm1, ymm1, ymm1
-	vpxorq ymm2, ymm2, ymm2
-	vpxorq ymm3, ymm3, ymm3
-	vpxorq ymm4, ymm4, ymm4
-	vpxorq ymm5, ymm5, ymm5
-	vpxorq ymm6, ymm6, ymm6
-	vpxorq ymm7, ymm7, ymm7
-	vpxorq ymm8, ymm8, ymm8
-	vpxorq ymm9, ymm9, ymm9
-2269:
-	mov rax, rcx
-	xor rax, rdx
-	cmp rax, 1
-	sbb rax, rax
-	vmovq xmm10, rax
-	vpbroadcastq ymm10, xmm10
-	vmovdqu64 ymm11, YMMWORD PTR [r8]
-	vpternlogq ymm0, ymm11, ymm10, 248
-	vmovdqu64 ymm11, YMMWORD PTR [r8+32]
-	vpternlogq ymm1, ymm11, ymm10, 248
-	vmovdqu64 ymm11, YMMWORD PTR [r8+64]
-	vpternlogq ymm2, ymm11, ymm10, 248
-	vmovdqu64 ymm11, YMMWORD PTR [r8+96]
-	vpternlogq ymm3, ymm11, ymm10, 248
-	vmovdqu64 ymm11, YMMWORD PTR [r8+128]
-	vpternlogq ymm4, ymm11, ymm10, 248
-	vmovdqu64 ymm11, YMMWORD PTR [r8+160]
-	vpternlogq ymm5, ymm11, ymm10, 248
-	vmovdqu64 ymm11, YMMWORD PTR [r8+192]
-	vpternlogq ymm6, ymm11, ymm10, 248
-	vmovdqu64 ymm11, YMMWORD PTR [r8+224]
-	vpternlogq ymm7, ymm11, ymm10, 248
-	vmovdqu64 ymm11, YMMWORD PTR [r8+256]
-	vpternlogq ymm8, ymm11, ymm10, 248
-	vmovdqu64 ymm11, YMMWORD PTR [r8+288]
-	vpternlogq ymm9, ymm11, ymm10, 248
-	add r8, 320
-	add rcx, 1
-	cmp rcx, 32
-	jne 2269b
 	vmovdqu64 YMMWORD PTR [rbx+13920], ymm0
 	vmovdqu64 YMMWORD PTR [rbx+13952], ymm1
 	vmovdqu64 YMMWORD PTR [rbx+13984], ymm2
@@ -5947,8 +5964,8 @@ vg_rsa_private_crt_ifma:
 	vmovdqu64 YMMWORD PTR [rbx+14176], ymm8
 	vmovdqu64 YMMWORD PTR [rbx+14208], ymm9
 	mov r15d, 6
-	jmp 2267f
-2266:
+	jmp 2266f
+2265:
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+12608]
 	vmovdqu64 YMMWORD PTR [rbx+992], ymm0
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+12640]
@@ -5990,25 +6007,25 @@ vg_rsa_private_crt_ifma:
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+25824]
 	vmovdqu64 YMMWORD PTR [rbx+14208], ymm0
 	mov r15d, 1
-2267:
-2270:
+2266:
+2269:
 	cmp r15, 1
-	je 2271f
+	je 2270f
 	mov r8, rbx
 	add r8, 352
 	mov r9, rbx
 	add r9, 352
 	mov r11, rbx
 	add r11, 352
-	jmp 2272f
-2271:
+	jmp 2271f
+2270:
 	mov r8, rbx
 	add r8, 352
 	mov r9, rbx
 	add r9, 992
 	mov r11, rbx
 	add r11, 352
-2272:
+2271:
 	mov r10, rbx
 	mov ecx, 4
 	vpxorq ymm0, ymm0, ymm0
@@ -6036,7 +6053,7 @@ vg_rsa_private_crt_ifma:
 	vpxorq ymm22, ymm22, ymm22
 	vpxorq ymm23, ymm23, ymm23
 	vpxorq ymm24, ymm24, ymm24
-2273:
+2272:
 	mov rax, QWORD PTR [r9]
 	vmovq xmm20, rax
 	vpbroadcastq ymm20, xmm20
@@ -7039,7 +7056,7 @@ vg_rsa_private_crt_ifma:
 	vpmadd52huq ymm19, ymm23, YMMWORD PTR [r10+13216]
 	add r9, 8
 	sub rcx, 1
-	jne 2273b
+	jne 2272b
 	vmovdqu64 YMMWORD PTR [r11], ymm0
 	vmovdqu64 YMMWORD PTR [r11+32], ymm1
 	vmovdqu64 YMMWORD PTR [r11+64], ymm2
@@ -7464,10 +7481,10 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [r11+13240], rcx
 	shr rsi, 52
 	sub r15, 1
-	jne 2270b
+	jne 2269b
 	add r13, 1
 	cmp r13, 417
-	jne 2265b
+	jne 2264b
 	lfence
 	ldmxcsr DWORD PTR [rbx+25856]
 	vzeroupper
@@ -7827,7 +7844,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2274:
+2273:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -7835,13 +7852,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2274b
+	jne 2273b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2275:
+2274:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -7850,7 +7867,7 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2275b
+	jne 2274b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rdi, QWORD PTR [rdi+232]
 	mov r11, QWORD PTR [rdi+232]
@@ -8209,7 +8226,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2276:
+2275:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -8217,13 +8234,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2276b
+	jne 2275b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2277:
+2276:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -8232,10 +8249,10 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2277b
+	jne 2276b
 	mov rdi, QWORD PTR [rdi+128]
-	jmp 2226f
-2225:
+	jmp 2225f
+2224:
 	mov rdx, QWORD PTR [rdi+240]
 	mov rax, QWORD PTR [rdx+120]
 	mov rdx, QWORD PTR [rdx+48]
@@ -8259,15 +8276,15 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+112]
 	mov rbx, QWORD PTR [rdi+104]
 	mov r14, 0
-2278:
+2277:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2278b
+	jne 2277b
 	mov ecx, 48
 	mov QWORD PTR [rdi+240], rcx
-2279:
+2278:
 	mov rbx, QWORD PTR [rdi+104]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -8275,7 +8292,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2280:
+2279:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -8283,14 +8300,14 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2280b
+	jne 2279b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2281:
+2280:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -8298,13 +8315,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2281b
+	jne 2280b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2282:
+2281:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -8313,53 +8330,53 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2282b
+	jne 2281b
 	mov rcx, QWORD PTR [rdi+240]
 	sub rcx, 1
 	mov QWORD PTR [rdi+240], rcx
-	jne 2279b
+	jne 2278b
 	mov r8d, 5
-2283:
+2282:
 	cmp r8, 5
-	je 2284f
+	je 2283f
 	cmp r8, 4
-	je 2286f
+	je 2285f
 	cmp r8, 3
-	je 2288f
+	je 2287f
 	cmp r8, 2
-	je 2290f
+	je 2289f
 	mov rsi, QWORD PTR [rdi+112]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 10080
 	movabs r12, 4503599627370495
-	jmp 2291f
-2290:
+	jmp 2290f
+2289:
 	mov rsi, QWORD PTR [rdi+112]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 288
 	movabs r12, 4503599627370495
-2291:
-	jmp 2289f
-2288:
+2290:
+	jmp 2288f
+2287:
 	mov rsi, QWORD PTR [rdi+96]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 544
 	movabs r12, 4503599627370495
-2289:
-	jmp 2287f
-2286:
+2288:
+	jmp 2286f
+2285:
 	mov rsi, QWORD PTR [rdi+104]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 9792
 	movabs r12, 4503599627370495
-2287:
-	jmp 2285f
-2284:
+2286:
+	jmp 2284f
+2283:
 	mov rsi, QWORD PTR [rdi+64]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 0
 	movabs r12, 4503599627370495
-2285:
+2284:
 	mov rax, QWORD PTR [rsi]
 	and rax, r12
 	mov QWORD PTR [r11], rax
@@ -8593,7 +8610,7 @@ vg_rsa_private_crt_ifma:
 	mov eax, 0
 	mov QWORD PTR [r11+248], rax
 	sub r8, 1
-	jne 2283b
+	jne 2282b
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 0
 	mov rax, QWORD PTR [rdi+56]
@@ -8633,19 +8650,19 @@ vg_rsa_private_crt_ifma:
 	mov rcx, QWORD PTR [rax+160]
 	add r11, 9443
 	sub r11, rcx
-2292:
+2291:
 	movzx eax, BYTE PTR [rsi]
 	mov BYTE PTR [r11], al
 	add rsi, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2292b
+	jne 2291b
 	mov r8, QWORD PTR [rdi+232]
 	add r8, 9248
 	mov r9, QWORD PTR [rdi+232]
 	add r9, 9472
 	mov ecx, 39
-2293:
+2292:
 	mov eax, 0
 	shl rax, 8
 	movzx edx, BYTE PTR [r8]
@@ -8696,22 +8713,22 @@ vg_rsa_private_crt_ifma:
 	add r8, 5
 	add r9, 8
 	sub rcx, 1
-	jne 2293b
+	jne 2292b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rdi, QWORD PTR [rdi+240]
 	mov r12, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+112]
 	mov rbx, QWORD PTR [rdi+104]
 	mov r14, 0
-2294:
+2293:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2294b
+	jne 2293b
 	mov ecx, 48
 	mov QWORD PTR [rdi+240], rcx
-2295:
+2294:
 	mov rbx, QWORD PTR [rdi+104]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -8719,7 +8736,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2296:
+2295:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -8727,14 +8744,14 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2296b
+	jne 2295b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2297:
+2296:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -8742,13 +8759,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2297b
+	jne 2296b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2298:
+2297:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -8757,53 +8774,53 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2298b
+	jne 2297b
 	mov rcx, QWORD PTR [rdi+240]
 	sub rcx, 1
 	mov QWORD PTR [rdi+240], rcx
-	jne 2295b
+	jne 2294b
 	mov r8d, 5
-2299:
+2298:
 	cmp r8, 5
-	je 2300f
+	je 2299f
 	cmp r8, 4
-	je 2302f
+	je 2301f
 	cmp r8, 3
-	je 2304f
+	je 2303f
 	cmp r8, 2
-	je 2306f
+	je 2305f
 	mov rsi, QWORD PTR [rdi+112]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 20416
 	movabs r12, 4503599627370495
-	jmp 2307f
-2306:
+	jmp 2306f
+2305:
 	mov rsi, QWORD PTR [rdi+112]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 10624
 	movabs r12, 4503599627370495
-2307:
-	jmp 2305f
-2304:
+2306:
+	jmp 2304f
+2303:
 	mov rsi, QWORD PTR [rdi+96]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 10880
 	movabs r12, 4503599627370495
-2305:
-	jmp 2303f
-2302:
+2304:
+	jmp 2302f
+2301:
 	mov rsi, QWORD PTR [rdi+104]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 20128
 	movabs r12, 4503599627370495
-2303:
-	jmp 2301f
-2300:
+2302:
+	jmp 2300f
+2299:
 	mov rsi, QWORD PTR [rdi+64]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 10336
 	movabs r12, 4503599627370495
-2301:
+2300:
 	mov rax, QWORD PTR [rsi]
 	and rax, r12
 	mov QWORD PTR [r11], rax
@@ -9037,7 +9054,7 @@ vg_rsa_private_crt_ifma:
 	mov eax, 0
 	mov QWORD PTR [r11+248], rax
 	sub r8, 1
-	jne 2299b
+	jne 2298b
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 10336
 	mov rax, QWORD PTR [rdi+56]
@@ -9111,19 +9128,19 @@ vg_rsa_private_crt_ifma:
 	mov rcx, QWORD PTR [rax+192]
 	add r11, 9443
 	sub r11, rcx
-2308:
+2307:
 	movzx eax, BYTE PTR [rsi]
 	mov BYTE PTR [r11], al
 	add rsi, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2308b
+	jne 2307b
 	mov r8, QWORD PTR [rdi+232]
 	add r8, 19584
 	mov r9, QWORD PTR [rdi+232]
 	add r9, 19808
 	mov ecx, 39
-2309:
+2308:
 	mov eax, 0
 	shl rax, 8
 	movzx edx, BYTE PTR [r8]
@@ -9174,7 +9191,7 @@ vg_rsa_private_crt_ifma:
 	add r8, 5
 	add r9, 8
 	sub rcx, 1
-	jne 2309b
+	jne 2308b
 	mov rbx, QWORD PTR [rdi+232]
 	stmxcsr DWORD PTR [rbx+20672]
 	mov r11d, DWORD PTR [rbx+20672]
@@ -9185,9 +9202,9 @@ vg_rsa_private_crt_ifma:
 	ldmxcsr DWORD PTR [rbx+20676]
 	lfence
 	mov r13d, 1056
-2310:
+2309:
 	cmp r13, 1568
-	jb 2311f
+	jb 2310f
 	mov r8, rbx
 	add r8, r13
 	sub r8, 256
@@ -9195,15 +9212,15 @@ vg_rsa_private_crt_ifma:
 	add r9, 544
 	mov r11, rbx
 	add r11, r13
-	jmp 2312f
-2311:
+	jmp 2311f
+2310:
 	mov r8, rbx
 	add r8, r13
 	sub r8, 768
 	mov r9, rbx
 	add r9, 9792
 	mov r11, r8
-2312:
+2311:
 	mov r10, rbx
 	mov ecx, 3
 	vpxorq ymm0, ymm0, ymm0
@@ -9227,7 +9244,7 @@ vg_rsa_private_crt_ifma:
 	vpxorq ymm18, ymm18, ymm18
 	vpxorq ymm19, ymm19, ymm19
 	vpxorq ymm20, ymm20, ymm20
-2313:
+2312:
 	mov rax, QWORD PTR [r9]
 	vmovq xmm16, rax
 	vpbroadcastq ymm16, xmm16
@@ -9902,7 +9919,7 @@ vg_rsa_private_crt_ifma:
 	vpmadd52huq ymm15, ymm19, YMMWORD PTR [r10+10560]
 	add r9, 8
 	sub rcx, 1
-	jne 2313b
+	jne 2312b
 	mov rax, QWORD PTR [r9]
 	vmovq xmm16, rax
 	vpbroadcastq ymm16, xmm16
@@ -10747,9 +10764,9 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [r11+10584], rcx
 	shr rsi, 52
 	cmp r13, 1312
-	je 2314f
-	jmp 2315f
-2314:
+	je 2313f
+	jmp 2314f
+2313:
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+288]
 	vmovdqu64 YMMWORD PTR [rbx+1056], ymm0
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+320]
@@ -10814,14 +10831,14 @@ vg_rsa_private_crt_ifma:
 	vmovdqu64 YMMWORD PTR [rbx+11840], ymm0
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+11104]
 	vmovdqu64 YMMWORD PTR [rbx+11872], ymm0
-2315:
+2314:
 	add r13, 256
 	cmp r13, 9248
-	jne 2310b
+	jne 2309b
 	mov r13d, 4
-2316:
+2315:
 	cmp r13, 312
-	je 2317f
+	je 2316f
 	movzx eax, BYTE PTR [rbx+r13*1+9472]
 	mov QWORD PTR [rbx+10048], rax
 	movzx eax, BYTE PTR [rbx+r13*1+19808]
@@ -10829,6 +10846,53 @@ vg_rsa_private_crt_ifma:
 	mov r8, rbx
 	add r8, 1056
 	mov rdx, QWORD PTR [rbx+10048]
+	mov ecx, 0
+	vpxorq ymm0, ymm0, ymm0
+	vpxorq ymm1, ymm1, ymm1
+	vpxorq ymm2, ymm2, ymm2
+	vpxorq ymm3, ymm3, ymm3
+	vpxorq ymm4, ymm4, ymm4
+	vpxorq ymm5, ymm5, ymm5
+	vpxorq ymm6, ymm6, ymm6
+	vpxorq ymm7, ymm7, ymm7
+2318:
+	mov rax, rcx
+	xor rax, rdx
+	cmp rax, 1
+	sbb rax, rax
+	vmovq xmm8, rax
+	vpbroadcastq ymm8, xmm8
+	vmovdqu64 ymm9, YMMWORD PTR [r8]
+	vpternlogq ymm0, ymm9, ymm8, 248
+	vmovdqu64 ymm9, YMMWORD PTR [r8+32]
+	vpternlogq ymm1, ymm9, ymm8, 248
+	vmovdqu64 ymm9, YMMWORD PTR [r8+64]
+	vpternlogq ymm2, ymm9, ymm8, 248
+	vmovdqu64 ymm9, YMMWORD PTR [r8+96]
+	vpternlogq ymm3, ymm9, ymm8, 248
+	vmovdqu64 ymm9, YMMWORD PTR [r8+128]
+	vpternlogq ymm4, ymm9, ymm8, 248
+	vmovdqu64 ymm9, YMMWORD PTR [r8+160]
+	vpternlogq ymm5, ymm9, ymm8, 248
+	vmovdqu64 ymm9, YMMWORD PTR [r8+192]
+	vpternlogq ymm6, ymm9, ymm8, 248
+	vmovdqu64 ymm9, YMMWORD PTR [r8+224]
+	vpternlogq ymm7, ymm9, ymm8, 248
+	add r8, 256
+	add rcx, 1
+	cmp rcx, 32
+	jne 2318b
+	vmovdqu64 YMMWORD PTR [rbx+800], ymm0
+	vmovdqu64 YMMWORD PTR [rbx+832], ymm1
+	vmovdqu64 YMMWORD PTR [rbx+864], ymm2
+	vmovdqu64 YMMWORD PTR [rbx+896], ymm3
+	vmovdqu64 YMMWORD PTR [rbx+928], ymm4
+	vmovdqu64 YMMWORD PTR [rbx+960], ymm5
+	vmovdqu64 YMMWORD PTR [rbx+992], ymm6
+	vmovdqu64 YMMWORD PTR [rbx+1024], ymm7
+	mov r8, rbx
+	add r8, 11392
+	mov rdx, QWORD PTR [rbx+20384]
 	mov ecx, 0
 	vpxorq ymm0, ymm0, ymm0
 	vpxorq ymm1, ymm1, ymm1
@@ -10865,53 +10929,6 @@ vg_rsa_private_crt_ifma:
 	add rcx, 1
 	cmp rcx, 32
 	jne 2319b
-	vmovdqu64 YMMWORD PTR [rbx+800], ymm0
-	vmovdqu64 YMMWORD PTR [rbx+832], ymm1
-	vmovdqu64 YMMWORD PTR [rbx+864], ymm2
-	vmovdqu64 YMMWORD PTR [rbx+896], ymm3
-	vmovdqu64 YMMWORD PTR [rbx+928], ymm4
-	vmovdqu64 YMMWORD PTR [rbx+960], ymm5
-	vmovdqu64 YMMWORD PTR [rbx+992], ymm6
-	vmovdqu64 YMMWORD PTR [rbx+1024], ymm7
-	mov r8, rbx
-	add r8, 11392
-	mov rdx, QWORD PTR [rbx+20384]
-	mov ecx, 0
-	vpxorq ymm0, ymm0, ymm0
-	vpxorq ymm1, ymm1, ymm1
-	vpxorq ymm2, ymm2, ymm2
-	vpxorq ymm3, ymm3, ymm3
-	vpxorq ymm4, ymm4, ymm4
-	vpxorq ymm5, ymm5, ymm5
-	vpxorq ymm6, ymm6, ymm6
-	vpxorq ymm7, ymm7, ymm7
-2320:
-	mov rax, rcx
-	xor rax, rdx
-	cmp rax, 1
-	sbb rax, rax
-	vmovq xmm8, rax
-	vpbroadcastq ymm8, xmm8
-	vmovdqu64 ymm9, YMMWORD PTR [r8]
-	vpternlogq ymm0, ymm9, ymm8, 248
-	vmovdqu64 ymm9, YMMWORD PTR [r8+32]
-	vpternlogq ymm1, ymm9, ymm8, 248
-	vmovdqu64 ymm9, YMMWORD PTR [r8+64]
-	vpternlogq ymm2, ymm9, ymm8, 248
-	vmovdqu64 ymm9, YMMWORD PTR [r8+96]
-	vpternlogq ymm3, ymm9, ymm8, 248
-	vmovdqu64 ymm9, YMMWORD PTR [r8+128]
-	vpternlogq ymm4, ymm9, ymm8, 248
-	vmovdqu64 ymm9, YMMWORD PTR [r8+160]
-	vpternlogq ymm5, ymm9, ymm8, 248
-	vmovdqu64 ymm9, YMMWORD PTR [r8+192]
-	vpternlogq ymm6, ymm9, ymm8, 248
-	vmovdqu64 ymm9, YMMWORD PTR [r8+224]
-	vpternlogq ymm7, ymm9, ymm8, 248
-	add r8, 256
-	add rcx, 1
-	cmp rcx, 32
-	jne 2320b
 	vmovdqu64 YMMWORD PTR [rbx+11136], ymm0
 	vmovdqu64 YMMWORD PTR [rbx+11168], ymm1
 	vmovdqu64 YMMWORD PTR [rbx+11200], ymm2
@@ -10921,8 +10938,8 @@ vg_rsa_private_crt_ifma:
 	vmovdqu64 YMMWORD PTR [rbx+11328], ymm6
 	vmovdqu64 YMMWORD PTR [rbx+11360], ymm7
 	mov r15d, 6
-	jmp 2318f
-2317:
+	jmp 2317f
+2316:
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+10080]
 	vmovdqu64 YMMWORD PTR [rbx+800], ymm0
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+10112]
@@ -10956,25 +10973,25 @@ vg_rsa_private_crt_ifma:
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+20640]
 	vmovdqu64 YMMWORD PTR [rbx+11360], ymm0
 	mov r15d, 1
-2318:
-2321:
+2317:
+2320:
 	cmp r15, 1
-	je 2322f
+	je 2321f
 	mov r8, rbx
 	add r8, 288
 	mov r9, rbx
 	add r9, 288
 	mov r11, rbx
 	add r11, 288
-	jmp 2323f
-2322:
+	jmp 2322f
+2321:
 	mov r8, rbx
 	add r8, 288
 	mov r9, rbx
 	add r9, 800
 	mov r11, rbx
 	add r11, 288
-2323:
+2322:
 	mov r10, rbx
 	mov ecx, 3
 	vpxorq ymm0, ymm0, ymm0
@@ -10998,7 +11015,7 @@ vg_rsa_private_crt_ifma:
 	vpxorq ymm18, ymm18, ymm18
 	vpxorq ymm19, ymm19, ymm19
 	vpxorq ymm20, ymm20, ymm20
-2324:
+2323:
 	mov rax, QWORD PTR [r9]
 	vmovq xmm16, rax
 	vpbroadcastq ymm16, xmm16
@@ -11673,7 +11690,7 @@ vg_rsa_private_crt_ifma:
 	vpmadd52huq ymm15, ymm19, YMMWORD PTR [r10+10560]
 	add r9, 8
 	sub rcx, 1
-	jne 2324b
+	jne 2323b
 	mov rax, QWORD PTR [r9]
 	vmovq xmm16, rax
 	vpbroadcastq ymm16, xmm16
@@ -12518,10 +12535,10 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [r11+10584], rcx
 	shr rsi, 52
 	sub r15, 1
-	jne 2321b
+	jne 2320b
 	add r13, 1
 	cmp r13, 313
-	jne 2316b
+	jne 2315b
 	lfence
 	ldmxcsr DWORD PTR [rbx+20672]
 	vzeroupper
@@ -12802,7 +12819,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2325:
+2324:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -12810,13 +12827,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2325b
+	jne 2324b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2326:
+2325:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -12825,7 +12842,7 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2326b
+	jne 2325b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rdi, QWORD PTR [rdi+232]
 	mov r11, QWORD PTR [rdi+232]
@@ -13105,7 +13122,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2327:
+2326:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -13113,13 +13130,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2327b
+	jne 2326b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2328:
+2327:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -13128,11 +13145,11 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2328b
+	jne 2327b
 	mov rdi, QWORD PTR [rdi+128]
-2226:
-	jmp 2224f
-2223:
+2225:
+	jmp 2223f
+2222:
 	mov rdx, QWORD PTR [rdi+240]
 	mov rax, QWORD PTR [rdx+120]
 	mov rdx, QWORD PTR [rdx+48]
@@ -13156,15 +13173,15 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+112]
 	mov rbx, QWORD PTR [rdi+104]
 	mov r14, 0
-2329:
+2328:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2329b
+	jne 2328b
 	mov ecx, 32
 	mov QWORD PTR [rdi+240], rcx
-2330:
+2329:
 	mov rbx, QWORD PTR [rdi+104]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -13172,7 +13189,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2331:
+2330:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -13180,14 +13197,14 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2331b
+	jne 2330b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2332:
+2331:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -13195,13 +13212,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2332b
+	jne 2331b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2333:
+2332:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -13210,53 +13227,53 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2333b
+	jne 2332b
 	mov rcx, QWORD PTR [rdi+240]
 	sub rcx, 1
 	mov QWORD PTR [rdi+240], rcx
-	jne 2330b
+	jne 2329b
 	mov r8d, 5
-2334:
+2333:
 	cmp r8, 5
-	je 2335f
+	je 2334f
 	cmp r8, 4
-	je 2337f
+	je 2336f
 	cmp r8, 3
-	je 2339f
+	je 2338f
 	cmp r8, 2
-	je 2341f
+	je 2340f
 	mov rsi, QWORD PTR [rdi+112]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 3552
 	movabs r12, 4503599627370495
-	jmp 2342f
-2341:
+	jmp 2341f
+2340:
 	mov rsi, QWORD PTR [rdi+112]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 192
 	movabs r12, 4503599627370495
-2342:
-	jmp 2340f
-2339:
+2341:
+	jmp 2339f
+2338:
 	mov rsi, QWORD PTR [rdi+96]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 352
 	movabs r12, 4503599627370495
-2340:
-	jmp 2338f
-2337:
+2339:
+	jmp 2337f
+2336:
 	mov rsi, QWORD PTR [rdi+104]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 3360
 	movabs r12, 4503599627370495
-2338:
-	jmp 2336f
-2335:
+2337:
+	jmp 2335f
+2334:
 	mov rsi, QWORD PTR [rdi+64]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 0
 	movabs r12, 4503599627370495
-2336:
+2335:
 	mov rax, QWORD PTR [rsi]
 	and rax, r12
 	mov QWORD PTR [r11], rax
@@ -13406,7 +13423,7 @@ vg_rsa_private_crt_ifma:
 	and rax, r12
 	mov QWORD PTR [r11+152], rax
 	sub r8, 1
-	jne 2334b
+	jne 2333b
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 0
 	mov rax, QWORD PTR [rdi+56]
@@ -13437,28 +13454,28 @@ vg_rsa_private_crt_ifma:
 	mov rcx, QWORD PTR [rax+160]
 	add r11, 3360
 	sub r11, rcx
-2343:
+2342:
 	movzx eax, BYTE PTR [rsi]
 	mov BYTE PTR [r11], al
 	add rsi, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2343b
+	jne 2342b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rdi, QWORD PTR [rdi+240]
 	mov r12, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+112]
 	mov rbx, QWORD PTR [rdi+104]
 	mov r14, 0
-2344:
+2343:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2344b
+	jne 2343b
 	mov ecx, 32
 	mov QWORD PTR [rdi+240], rcx
-2345:
+2344:
 	mov rbx, QWORD PTR [rdi+104]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -13466,7 +13483,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2346:
+2345:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -13474,14 +13491,14 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2346b
+	jne 2345b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2347:
+2346:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -13489,13 +13506,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2347b
+	jne 2346b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2348:
+2347:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -13504,53 +13521,53 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2348b
+	jne 2347b
 	mov rcx, QWORD PTR [rdi+240]
 	sub rcx, 1
 	mov QWORD PTR [rdi+240], rcx
-	jne 2345b
+	jne 2344b
 	mov r8d, 5
-2349:
+2348:
 	cmp r8, 5
-	je 2350f
+	je 2349f
 	cmp r8, 4
-	je 2352f
+	je 2351f
 	cmp r8, 3
-	je 2354f
+	je 2353f
 	cmp r8, 2
-	je 2356f
+	je 2355f
 	mov rsi, QWORD PTR [rdi+112]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 7264
 	movabs r12, 4503599627370495
-	jmp 2357f
-2356:
+	jmp 2356f
+2355:
 	mov rsi, QWORD PTR [rdi+112]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 3904
 	movabs r12, 4503599627370495
-2357:
-	jmp 2355f
-2354:
+2356:
+	jmp 2354f
+2353:
 	mov rsi, QWORD PTR [rdi+96]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 4064
 	movabs r12, 4503599627370495
-2355:
-	jmp 2353f
-2352:
+2354:
+	jmp 2352f
+2351:
 	mov rsi, QWORD PTR [rdi+104]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 7072
 	movabs r12, 4503599627370495
-2353:
-	jmp 2351f
-2350:
+2352:
+	jmp 2350f
+2349:
 	mov rsi, QWORD PTR [rdi+64]
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 3712
 	movabs r12, 4503599627370495
-2351:
+2350:
 	mov rax, QWORD PTR [rsi]
 	and rax, r12
 	mov QWORD PTR [r11], rax
@@ -13700,7 +13717,7 @@ vg_rsa_private_crt_ifma:
 	and rax, r12
 	mov QWORD PTR [r11+152], rax
 	sub r8, 1
-	jne 2349b
+	jne 2348b
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 3712
 	mov rax, QWORD PTR [rdi+56]
@@ -13753,13 +13770,13 @@ vg_rsa_private_crt_ifma:
 	mov rcx, QWORD PTR [rax+192]
 	add r11, 3360
 	sub r11, rcx
-2358:
+2357:
 	movzx eax, BYTE PTR [rsi]
 	mov BYTE PTR [r11], al
 	add rsi, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2358b
+	jne 2357b
 	mov rbx, QWORD PTR [rdi+232]
 	stmxcsr DWORD PTR [rbx+7424]
 	mov r11d, DWORD PTR [rbx+7424]
@@ -13770,9 +13787,9 @@ vg_rsa_private_crt_ifma:
 	ldmxcsr DWORD PTR [rbx+7428]
 	lfence
 	mov r13d, 672
-2359:
+2358:
 	cmp r13, 992
-	jb 2360f
+	jb 2359f
 	mov r8, rbx
 	add r8, r13
 	sub r8, 160
@@ -13780,15 +13797,15 @@ vg_rsa_private_crt_ifma:
 	add r9, 352
 	mov r11, rbx
 	add r11, r13
-	jmp 2361f
-2360:
+	jmp 2360f
+2359:
 	mov r8, rbx
 	add r8, r13
 	sub r8, 480
 	mov r9, rbx
 	add r9, 3360
 	mov r11, r8
-2361:
+2360:
 	mov r10, rbx
 	vpxorq ymm0, ymm0, ymm0
 	vpxorq ymm1, ymm1, ymm1
@@ -15451,9 +15468,9 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [r11+3864], rcx
 	shr rsi, 52
 	cmp r13, 832
-	je 2362f
-	jmp 2363f
-2362:
+	je 2361f
+	jmp 2362f
+2361:
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+192]
 	vmovdqu64 YMMWORD PTR [rbx+672], ymm0
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+224]
@@ -15494,14 +15511,14 @@ vg_rsa_private_crt_ifma:
 	vmovdqu64 YMMWORD PTR [rbx+4640], ymm0
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+4192]
 	vmovdqu64 YMMWORD PTR [rbx+4672], ymm0
-2363:
+2362:
 	add r13, 160
 	cmp r13, 3232
-	jne 2359b
+	jne 2358b
 	mov r13d, 0
-2364:
+2363:
 	cmp r13, 256
-	je 2365f
+	je 2364f
 	mov r8, r13
 	shr r8, 1
 	mov rdx, r13
@@ -15532,6 +15549,41 @@ vg_rsa_private_crt_ifma:
 	vpxorq ymm2, ymm2, ymm2
 	vpxorq ymm3, ymm3, ymm3
 	vpxorq ymm4, ymm4, ymm4
+2366:
+	mov rax, rcx
+	xor rax, rdx
+	cmp rax, 1
+	sbb rax, rax
+	vmovq xmm5, rax
+	vpbroadcastq ymm5, xmm5
+	vmovdqu64 ymm6, YMMWORD PTR [r8]
+	vpternlogq ymm0, ymm6, ymm5, 248
+	vmovdqu64 ymm6, YMMWORD PTR [r8+32]
+	vpternlogq ymm1, ymm6, ymm5, 248
+	vmovdqu64 ymm6, YMMWORD PTR [r8+64]
+	vpternlogq ymm2, ymm6, ymm5, 248
+	vmovdqu64 ymm6, YMMWORD PTR [r8+96]
+	vpternlogq ymm3, ymm6, ymm5, 248
+	vmovdqu64 ymm6, YMMWORD PTR [r8+128]
+	vpternlogq ymm4, ymm6, ymm5, 248
+	add r8, 160
+	add rcx, 1
+	cmp rcx, 16
+	jne 2366b
+	vmovdqu64 YMMWORD PTR [rbx+512], ymm0
+	vmovdqu64 YMMWORD PTR [rbx+544], ymm1
+	vmovdqu64 YMMWORD PTR [rbx+576], ymm2
+	vmovdqu64 YMMWORD PTR [rbx+608], ymm3
+	vmovdqu64 YMMWORD PTR [rbx+640], ymm4
+	mov r8, rbx
+	add r8, 4384
+	mov rdx, QWORD PTR [rbx+7232]
+	mov ecx, 0
+	vpxorq ymm0, ymm0, ymm0
+	vpxorq ymm1, ymm1, ymm1
+	vpxorq ymm2, ymm2, ymm2
+	vpxorq ymm3, ymm3, ymm3
+	vpxorq ymm4, ymm4, ymm4
 2367:
 	mov rax, rcx
 	xor rax, rdx
@@ -15553,49 +15605,14 @@ vg_rsa_private_crt_ifma:
 	add rcx, 1
 	cmp rcx, 16
 	jne 2367b
-	vmovdqu64 YMMWORD PTR [rbx+512], ymm0
-	vmovdqu64 YMMWORD PTR [rbx+544], ymm1
-	vmovdqu64 YMMWORD PTR [rbx+576], ymm2
-	vmovdqu64 YMMWORD PTR [rbx+608], ymm3
-	vmovdqu64 YMMWORD PTR [rbx+640], ymm4
-	mov r8, rbx
-	add r8, 4384
-	mov rdx, QWORD PTR [rbx+7232]
-	mov ecx, 0
-	vpxorq ymm0, ymm0, ymm0
-	vpxorq ymm1, ymm1, ymm1
-	vpxorq ymm2, ymm2, ymm2
-	vpxorq ymm3, ymm3, ymm3
-	vpxorq ymm4, ymm4, ymm4
-2368:
-	mov rax, rcx
-	xor rax, rdx
-	cmp rax, 1
-	sbb rax, rax
-	vmovq xmm5, rax
-	vpbroadcastq ymm5, xmm5
-	vmovdqu64 ymm6, YMMWORD PTR [r8]
-	vpternlogq ymm0, ymm6, ymm5, 248
-	vmovdqu64 ymm6, YMMWORD PTR [r8+32]
-	vpternlogq ymm1, ymm6, ymm5, 248
-	vmovdqu64 ymm6, YMMWORD PTR [r8+64]
-	vpternlogq ymm2, ymm6, ymm5, 248
-	vmovdqu64 ymm6, YMMWORD PTR [r8+96]
-	vpternlogq ymm3, ymm6, ymm5, 248
-	vmovdqu64 ymm6, YMMWORD PTR [r8+128]
-	vpternlogq ymm4, ymm6, ymm5, 248
-	add r8, 160
-	add rcx, 1
-	cmp rcx, 16
-	jne 2368b
 	vmovdqu64 YMMWORD PTR [rbx+4224], ymm0
 	vmovdqu64 YMMWORD PTR [rbx+4256], ymm1
 	vmovdqu64 YMMWORD PTR [rbx+4288], ymm2
 	vmovdqu64 YMMWORD PTR [rbx+4320], ymm3
 	vmovdqu64 YMMWORD PTR [rbx+4352], ymm4
 	mov r15d, 5
-	jmp 2366f
-2365:
+	jmp 2365f
+2364:
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+3552]
 	vmovdqu64 YMMWORD PTR [rbx+512], ymm0
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+3584]
@@ -15617,25 +15634,25 @@ vg_rsa_private_crt_ifma:
 	vmovdqu64 ymm0, YMMWORD PTR [rbx+7392]
 	vmovdqu64 YMMWORD PTR [rbx+4352], ymm0
 	mov r15d, 1
-2366:
-2369:
+2365:
+2368:
 	cmp r15, 1
-	je 2370f
+	je 2369f
 	mov r8, rbx
 	add r8, 192
 	mov r9, rbx
 	add r9, 192
 	mov r11, rbx
 	add r11, 192
-	jmp 2371f
-2370:
+	jmp 2370f
+2369:
 	mov r8, rbx
 	add r8, 192
 	mov r9, rbx
 	add r9, 512
 	mov r11, rbx
 	add r11, 192
-2371:
+2370:
 	mov r10, rbx
 	vpxorq ymm0, ymm0, ymm0
 	vpxorq ymm1, ymm1, ymm1
@@ -17298,10 +17315,10 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [r11+3864], rcx
 	shr rsi, 52
 	sub r15, 1
-	jne 2369b
+	jne 2368b
 	add r13, 1
 	cmp r13, 257
-	jne 2364b
+	jne 2363b
 	lfence
 	ldmxcsr DWORD PTR [rbx+7424]
 	vzeroupper
@@ -17487,7 +17504,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2372:
+2371:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -17495,13 +17512,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2372b
+	jne 2371b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2373:
+2372:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -17510,7 +17527,7 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2373b
+	jne 2372b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rdi, QWORD PTR [rdi+232]
 	mov r11, QWORD PTR [rdi+232]
@@ -17695,7 +17712,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2374:
+2373:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -17703,13 +17720,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2374b
+	jne 2373b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2375:
+2374:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -17718,19 +17735,19 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2375b
+	jne 2374b
 	mov rdi, QWORD PTR [rdi+128]
-2224:
+2223:
 	mov rdi, QWORD PTR [rdi+232]
 	mov r8, QWORD PTR [rdi+96]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2376:
+2375:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2376b
+	jne 2375b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -17738,34 +17755,34 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rdi+184], rdx
 	mov rdx, QWORD PTR [rax+48]
 	mov QWORD PTR [rdi+176], rdx
-2377:
+2376:
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2378:
+2377:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2378b
+	jne 2377b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r12, QWORD PTR [rdi+176]
 	cmp r12, QWORD PTR [rdi+48]
-	jb 2379f
+	jb 2378f
 	mov r12, QWORD PTR [rdi+48]
-	jmp 2380f
+	jmp 2379f
+2378:
 2379:
-2380:
 	mov rsi, QWORD PTR [rdi+184]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r14, 0
-2381:
+2380:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2381b
+	jne 2380b
 	mov rax, QWORD PTR [rdi+176]
 	sub rax, r12
 	mov QWORD PTR [rdi+176], rax
@@ -17790,7 +17807,7 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2382:
+2381:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, QWORD PTR [r9+r14*8]
@@ -17798,7 +17815,7 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2382b
+	jne 2381b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
@@ -17806,7 +17823,7 @@ vg_rsa_private_crt_ifma:
 	mov rbx, QWORD PTR [rdi+96]
 	mov ebp, 0
 	mov r14, 0
-2383:
+2382:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -17814,13 +17831,13 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2383b
+	jne 2382b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2384:
+2383:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -17829,22 +17846,22 @@ vg_rsa_private_crt_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2384b
+	jne 2383b
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	jne 2377b
+	jne 2376b
 	mov rax, QWORD PTR [rdi+128]
 	mov rax, QWORD PTR [rax+240]
 	mov rsi, QWORD PTR [rax+112]
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r14, 0
-2385:
+2384:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2385b
+	jne 2384b
 	mov edx, 1
 	mov ecx, 1
 	mov r8d, 4
@@ -17853,19 +17870,19 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+72]
 	mov rbx, QWORD PTR [rdi+96]
 	mov r14, 0
-2386:
+2385:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2386b
+	jne 2385b
 	mov r8, QWORD PTR [rdi+112]
 	mov r10, QWORD PTR [rdi+96]
 	mov rsi, QWORD PTR [rdi+80]
 	mov r12, QWORD PTR [rdi+48]
 	mov ebp, 0
 	mov r14, 0
-2387:
+2386:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -17873,14 +17890,14 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2387b
+	jne 2386b
 	mov r15, rbp
 	mov ebp, 0
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
 	mov rbx, QWORD PTR [rdi+104]
 	mov r14, 0
-2388:
+2387:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r15
 	add rbp, rbp
@@ -17889,16 +17906,16 @@ vg_rsa_private_crt_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2388b
+	jne 2387b
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2389:
+2388:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2389b
+	jne 2388b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -17908,7 +17925,7 @@ vg_rsa_private_crt_ifma:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2390:
+2389:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -17916,33 +17933,33 @@ vg_rsa_private_crt_ifma:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2391f
-	jmp 2392f
-2391:
+	je 2390f
+	jmp 2391f
+2390:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2392:
+2391:
 	test rdx, rdx
-	jne 2390b
+	jne 2389b
 	mov r15, QWORD PTR [rdi+192]
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r14, 0
-2393:
+2392:
 	mov rax, QWORD PTR [rbx+r14*8]
 	and rax, r15
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2393b
+	jne 2392b
 	mov edx, 6
 	mov ecx, 5
 	mov r8d, 1
 	call {vg_rsa_mont_mul_adx}
 	mov rdi, QWORD PTR [rdi+128]
-260:
+259:
 	mov r8, QWORD PTR [rdi+80]
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
@@ -17950,22 +17967,22 @@ vg_rsa_private_crt_ifma:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2394:
+2393:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2394b
+	jne 2393b
 	mov rax, QWORD PTR [rdi+240]
 	mov rsi, QWORD PTR [rax+112]
 	mov r12, QWORD PTR [rax+48]
 	mov rbx, QWORD PTR [rdi+80]
 	mov r14, 0
-2395:
+2394:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2395b
+	jne 2394b
 	mov rax, QWORD PTR [rdi+232]
 	mov r11, QWORD PTR [rax+112]
 	mov r10, QWORD PTR [rax+48]
@@ -17974,11 +17991,11 @@ vg_rsa_private_crt_ifma:
 	mov r12, QWORD PTR [rax+48]
 	mov r8, QWORD PTR [rdi+80]
 	mov r13d, 0
-2396:
+2395:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2397:
+2396:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -17989,7 +18006,7 @@ vg_rsa_private_crt_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2397b
+	jne 2396b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -17999,7 +18016,7 @@ vg_rsa_private_crt_ifma:
 	add r8, 8
 	add r13, 1
 	cmp r13, r10
-	jne 2396b
+	jne 2395b
 	mov rbx, QWORD PTR [rdi+80]
 	mov rsi, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rdi+144]
@@ -18007,23 +18024,23 @@ vg_rsa_private_crt_ifma:
 	mov edx, 0
 	mov r14, rsi
 	add r14, rcx
-2398:
+2397:
 	mov rbp, rdx
 	and rbp, 7
-	je 2399f
-	jmp 2400f
-2399:
+	je 2398f
+	jmp 2399f
+2398:
 	mov rbp, rdx
 	shr rbp, 3
 	mov rax, QWORD PTR [rbx+rbp*8]
 	and rax, r15
-2400:
+2399:
 	sub r14, 1
 	mov BYTE PTR [r14], al
 	shr rax, 8
 	add rdx, 1
 	cmp rdx, rcx
-	jne 2398b
+	jne 2397b
 	mov rax, QWORD PTR [rdi+176]
 	and rax, 1
 	mov rbx, QWORD PTR [rdi]
@@ -18037,11 +18054,11 @@ vg_rsa_private_crt_ifma:
 	mov rsi, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rdi+144]
 	mov eax, 0
-2401:
+2400:
 	mov BYTE PTR [rsi], al
 	add rsi, 1
 	sub rcx, 1
-	jne 2401b
+	jne 2400b
 	mov rbx, QWORD PTR [rdi]
 	mov rbp, QWORD PTR [rdi+8]
 	mov r12, QWORD PTR [rdi+16]

@@ -46,7 +46,7 @@ theorem reciprocal_lt {d : Nat} (hd : 2 ^ 63 ≤ d) : (2 ^ 128 - 1) / d - 2 ^ 64
 
 /-- Setup, reciprocal, public counter and the word loop compute the remainder. -/
 theorem code_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
-    (hZ : slot W 17 ≤ Z) (hW : 4 ≤ W)
+    (hZ : slot W 17 ≤ Z) (hW : 6 ≤ W)
     (hd : 2 ^ 63 ≤ (word s.mem B (slot W aM + 8 * (W / 2 - 1))).toNat)
     (hMpos : 0 < wv s.mem B (slot W aM) (W / 2)) :
     WP isa code s fun t =>
