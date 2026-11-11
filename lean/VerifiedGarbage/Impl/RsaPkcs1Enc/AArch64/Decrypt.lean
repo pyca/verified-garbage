@@ -334,7 +334,7 @@ abbrev code (privN : String) (priv : Prog isa) : Prog isa := codeWith H setup pr
 
 /-- Our stack arguments `pre` and `pre_len` (15 and 16) as the private-key
 operation's 12 and 13, after `setup`. -/
-def extraMoves : List Instr := mvArg 15 96 ++ mvArg 16 104
+def extraMoves : List Instr := [.addSp .x9 0] ++ mvArg 15 96 ++ mvArg 16 104
 
 /-- `vg_rsa_pkcs1_decrypt_precomputed`, calling
 `vg_rsa_private_checked_precomputed`. -/

@@ -38,10 +38,12 @@ def lay (P : Nat) (s : State) : Lay :=
     stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10, stackArg s 11, stackArg s 12, stackArg s 13,
     stackArg s 14, s.sp - BitVec.ofNat 64 240, P, [], 0, 0⟩
 
-/-- The layout of a call that may also read `X`. -/
-def layW (P : Nat) (s : State) (X : List Region) : Lay := { lay P s with X := X }
+/-- The layout of a call that may also read `X`, with `pre` and `pre_len`. -/
+def layW (P : Nat) (s : State) (X : List Region) (pre : Addr := 0) (prl : BitVec 64 := 0) : Lay :=
+  { lay P s with X := X, pre := pre, prl := prl }
 
-theorem Lay.Ok.withX {L : Lay} (h : L.Ok) (X : List Region) : ({ L with X := X } : Lay).Ok := { h with }
+theorem Lay.Ok.withX {L : Lay} (h : L.Ok) (X : List Region) (pre : Addr) (prl : BitVec 64) :
+    ({ L with X := X, pre := pre, prl := prl } : Lay).Ok := { h with }
 
 theorem lay_Q (P : Nat) (s : State) : (lay P s).Q + BitVec.ofNat 64 240 = s.sp := BitVec.sub_add_cancel _ _
 

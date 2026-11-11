@@ -135,17 +135,18 @@ theorem result_ok {P : Nat} {s : State} (h : (decSpec P).pre s) {x0c : BitVec 64
     · rw [hw, hml, hok]; simp [bm]
 
 /-- `vg_rsa_pkcs1_decrypt` meets the shared contract and the calling convention. -/
-theorem decW_ok (v : Compress) {P : Nat} (hP : 16 ≤ P) {s : State} {R₀ X : List Region}
+theorem decW_ok (v : Compress) {P : Nat} (hP : 16 ≤ P) {s : State} {R₀ X : List Region} {pre : Addr}
+    {prl : BitVec 64}
     (h : (decSpec P).pre (s.withRegions R₀ s.wr)) (stage : List Instr) (name : String) (priv : Prog isa)
     (hcall : WP isa (.block stage) (entered s) fun t =>
-      WP isa (.call name priv) t (Called (layW P s X) s.gpr s.v s.mem)) :
+      WP isa (.call name priv) t (Called (layW P s X pre prl) s.gpr s.v s.mem)) :
     WP isa (codeWith (HH v) stage name priv) s fun s' =>
       abiPreserved s s' ∧ (decSpec P).post (s.withRegions R₀ s.wr) s' := by
-  have hL : (layW P s X).Ok := (lay_ok h).withX X
+  have hL : (layW P s X pre prl).Ok := (lay_ok h).withX X pre prl
   have hnQ := hL.nQ
   have hpQ := hL.pQ
   have hsp : P + 240 ≤ s.sp.toNat := spec_sp (s := s.withRegions R₀ s.wr) h
-  have hP16 : 16 ≤ (layW P s X).P := hP
+  have hP16 : 16 ≤ (layW P s X pre prl).P := hP
   refine WP.frame (by omega) (WP.alloc (by decide) ?_ ?_)
   · show 224 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega)]
@@ -160,15 +161,15 @@ theorem decW_ok (v : Compress) {P : Nat} (hP : 16 ≤ P) {s : State} {R₀ X : L
     refine WP.seq (WP.mono (kdkMac_ok hL hP16 h₃) fun t₄ h₄ => ?_)
     refine WP.seq (WP.mono (clLoop_ok hL hP16 h₄.post h₄.kdk) fun t₅ h₅ => ?_)
     refine WP.seq (WP.mono (amLoop_ok hL hP16 h₅) fun t₆ h₆ => ?_)
-    have hAM : Spec.Rsa.bytesAt t₆.mem (scA (layW P s X) sAM) (layW P s X).k.toNat =
-        amOf (layW P s X) (Spec.RsaPkcs1Enc.kdk (layW P s X).k.toNat (dOf (layW P s X) s.mem)
-          (cOf (layW P s X) s.mem)) := h₆.am
+    have hAM : Spec.Rsa.bytesAt t₆.mem (scA (layW P s X pre prl) sAM) (layW P s X pre prl).k.toNat =
+        amOf (layW P s X pre prl) (Spec.RsaPkcs1Enc.kdk (layW P s X pre prl).k.toNat (dOf (layW P s X pre prl) s.mem)
+          (cOf (layW P s X pre prl) s.mem)) := h₆.am
     refine WP.seq (WP.mono (maskPart_ok hL h₆) fun t₇ h₇ => ?_)
     refine WP.seq (WP.mono (alPart_ok hL h₇) fun t₈ h₈ => ?_)
     refine WP.seq (WP.mono (scanPart_ok hL h₈) fun t₉ h₉ => ?_)
     refine WP.mono (selPart_ok hL h₉) fun u hu => ?_
     have hc := hu.ctx
-    have hsp' : (freed frameBytes u).sp = (layW P s X).Q + BitVec.ofNat 64 224 := by
+    have hsp' : (freed frameBytes u).sp = (layW P s X pre prl).Q + BitVec.ofNat 64 224 := by
       rw [freed_sp, hc.sp]; rfl
     refine ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, ?_⟩
     · by_cases h30 : r = .x30
@@ -177,12 +178,12 @@ theorem decW_ok (v : Compress) {P : Nat} (hP : 16 ≤ P) {s : State} {R₀ X : L
       · rw [popped_gpr_ne _ h30, freed_gpr]
         exact hc.cs r hr h30
     · rw [popped_sp, hsp']
-      show (layW P s X).Q + BitVec.ofNat 64 224 + BitVec.ofNat 64 16 = s.sp
+      show (layW P s X pre prl).Q + BitVec.ofNat 64 224 + BitVec.ofNat 64 16 = s.sp
       rw [add_add]; exact lay_Q P s
     · rw [popped_v, freed_v]
       exact hc.vs r hr
     · refine result_ok h rfl h₁.out ?_ (fun i hi => ?_) ?_ (by
-        have := bytesAt_length t₆.mem (scA (layW P s X) sAM) (layW P s X).k.toNat
+        have := bytesAt_length t₆.mem (scA (layW P s X pre prl) sAM) (layW P s X pre prl).k.toNat
         rw [hAM] at this; exact this)
       · rw [popped_gpr_ne _ (by decide), freed_gpr]; exact hu.x0
       · rw [popped_mem, freed_mem]; exact hu.out i hi
