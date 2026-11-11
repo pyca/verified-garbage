@@ -44,17 +44,17 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64
 def frameBytes : Nat := 3240
 
 /-- The slots: `out`, `n`, `n_len`, `e`, `e_len`, `r₁`, `r₃`. -/
-def oOut : Nat := 96
-def oN : Nat := 104
-def oK : Nat := 112
-def oE : Nat := 120
-def oEl : Nat := 128
-def oR1 : Nat := 136
-def oR3 : Nat := 144
+def oOut : Nat := 112
+def oN : Nat := 120
+def oK : Nat := 128
+def oE : Nat := 136
+def oEl : Nat := 144
+def oR1 : Nat := 152
+def oR3 : Nat := 160
 /-- `M`, up to 1024 bytes. -/
-def oM : Nat := 160
+def oM : Nat := 168
 /-- `n`'s values, up to 256 words. -/
-def oPre : Nat := 1184
+def oPre : Nat := 1192
 
 /-- `[rsp + d]`. -/
 def sp (d : Nat) : MemOp := { base := .rsp, disp := (d : Int) }

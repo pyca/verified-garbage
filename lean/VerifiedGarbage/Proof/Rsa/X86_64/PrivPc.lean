@@ -127,7 +127,7 @@ theorem pc_pre {s t : State} (hp : PreF s) (he : Env s t) (hdi : t.gpr .rdi = of
     State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide),
     hdi, hsi, hdx, hcx, h8, h9, he.rsp, hsiN, fb_sub8]
   have ⟨hK1, _, _⟩ := kb_toNat hp
-  have e2 : oPre = 1184 := rfl
+  have e2 : oPre = 1192 := rfl
   have hfb : fb s = kb s + BitVec.ofNat 64 8 := fb_kb s
   have sP := preR_sub hp
   have sR : Region.Sub ⟨kb s, 8⟩ (stkR s) := by
@@ -202,7 +202,7 @@ theorem pc_call (pc : Prog isa) (name : String)
     bytes_of_frame hfE hp.dKn hp.dOn hp.dns.symm (by have := hp.wN; omega)] at hpost
   have hapart : ∀ {d n : Nat}, d + n ≤ oPre → ∀ r ∈ [preR s, scrR s] ++ [below (fb s) 16],
       (⟨off (fb s) d, n⟩ : Region).Disjoint r := fun {d n} hdn r hr => by
-    have := (show oPre = 1184 from rfl)
+    have := (show oPre = 1192 from rfl)
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact Offset.disjoint _ (.inl hdn) (by omega) (by unfold oPre at *; omega)
