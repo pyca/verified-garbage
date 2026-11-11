@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.R2Words.Run
 public import VerifiedGarbage.Impl.Bignum.X86.R2Words
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
+import VerifiedGarbage.Proof.Bignum.WordStep32
 public import VerifiedGarbage.Proof.Bignum.X86.R2Words.Ptr
 
 -- separate module: its proofs build in parallel with those of the steps (`Quot` to `Loop`), which `Main` also imports
@@ -117,13 +118,16 @@ theorem normLoop_ok {s : State} {T : Nat} (hT : 0 < T) (hT' : T < 2 ^ 32) (hax :
     · rw [h1, hax', e1]
     · rw [h2, hsi', hax', e2]
 
-/-- `norm`: `p = 2^z` at 160 and `d = T 2^z + ⌊U 2^z / 2^32⌋` at 164, for `M`'s top
-word `T ≠ 0` and the one below it `U`. -/
-theorem norm_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {T U : Nat}
+/-- `norm`: `p = 2^z` at 160, `d = T 2^z + ⌊U 2^z / 2^32⌋` at 164 and `d₁ = U 2^z
+mod 2^32 + ⌊V 2^z / 2^32⌋` at 192, for `M`'s top word `T ≠ 0` and the two
+below it `U`, `V`. -/
+theorem norm_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {T U V : Nat}
     (h : PcIn base bytes len args s) (hT : w32 s.mem base (numAt len 0 + 4 * wp len - 4) = T)
-    (hU : w32 s.mem base (numAt len 0 + 4 * wp len - 8) = U) (hT0 : 0 < T) :
+    (hU : w32 s.mem base (numAt len 0 + 4 * wp len - 8) = U)
+    (hV : w32 s.mem base (numAt len 0 + 4 * wp len - 12) = V) (hT0 : 0 < T) :
     WP isa norm s fun t => w32 t.mem base oP = 2 ^ lz T ∧
-      w32 t.mem base oD = T * 2 ^ lz T + U * 2 ^ lz T / 2 ^ 32 ∧ Outside base oP 8 s.mem t.mem ∧
+      w32 t.mem base oD = T * 2 ^ lz T + U * 2 ^ lz T / 2 ^ 32 ∧
+      w32 t.mem base oD1 = U * 2 ^ lz T % 2 ^ 32 + V * 2 ^ lz T / 2 ^ 32 ∧ Outside base oP 36 s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .esi, .ebp] s t := by
   have dims := h.dimensions
   have nw' := h.scratch.nowrap
@@ -134,12 +138,13 @@ theorem norm_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
   have e0 : numAt len 0 = 256 := by simp [numAt, numOff]
   have hT' : T < 2 ^ 32 := hT ▸ BitVec.isLt _
   have hU' : U < 2 ^ 32 := hU ▸ BitVec.isLt _
+  have hV' : V < 2 ^ 32 := hV ▸ BitVec.isLt _
   unfold norm
   simp only [seqs]
-  refine WP.seq (topPtr_ok h (r := .ebx) (t := .ecx) (j := 0) (i := 2) (by decide) (by decide) (by decide)
+  refine WP.seq (topPtr_ok h (r := .ebx) (t := .ecx) (j := 0) (i := 3) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by omega) fun u K m p _ => ?_)
   have hu := h.keep K (by decide) (by decide) (by rw [m]; exact Outside.refl _ _ _ _)
-  refine wp_movS (readSrc_ptr hu.ws p (d := 4) (by rw [e0]; omega)) fun u₁ U₁ _ => ?_
+  refine wp_movS (readSrc_ptr hu.ws p (d := 8) (by rw [e0]; omega)) fun u₁ U₁ _ => ?_
   refine wp_movS rfl fun u₂ U₂ _ => wp_movS rfl fun u₃ U₃ _ => WP.block_nil ?_
   have K₃ : Keeps [.ebx, .ecx, .eax, .esi, .edx] s u₃ :=
     ((K.mono (by decide)).trans (U₁.keeps.mono (by decide))).trans
@@ -153,7 +158,7 @@ theorem norm_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
     fun t ⟨ax, si, mt, Kt⟩ => ?_)
   have Kall : Keeps [.eax, .ebx, .ecx, .edx, .esi, .ebp] s t := (K₃.mono (by decide)).trans (Kt.mono (by decide))
   have ht := h.keep Kall (by decide) (by decide) (by rw [mt, m₃]; exact Outside.refl _ _ _ _)
-  have bx : PtrAt t base .ebx (numAt len 0 + 4 * wp len - 4 * 2) := by
+  have bx : PtrAt t base .ebx (numAt len 0 + 4 * wp len - 4 * 3) := by
     rw [PtrAt, Kt.1 _ (by decide), U₃.other _ (by decide), U₂.other _ (by decide), U₁.other _ (by decide)]; exact p
   have di : PtrAt t base .edi 0 := by rw [PtrAt, Nat.add_zero, Nat.mod_eq_of_lt (by omega)]; exact ht.edi
   have hz := (shifted_bounds hT0 hT' (Nat.le_refl (lz T))).1
@@ -162,14 +167,29 @@ theorem norm_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
     fun t₁ M₁ => ?_
   refine wp_movS rfl fun t₂ U₂' _ => ?_
   refine wp_movS (readSrc_ptr (ht.ws.of_wr (U₂'.wr.trans M₁.wr)) (by rw [PtrAt, U₂'.other _ (by decide), M₁.gpr]; exact bx)
-    (d := 0) (by rw [e0]; omega)) fun t₃ U₃' _ => ?_
+    (d := 4) (by rw [e0]; omega)) fun t₃ U₃' _ => ?_
   refine wp_mul fun t₄ U₄ => wp_addS rfl fun t₅ U₅ _ => ?_
   refine wp_storeS (ea_ptr (ht.ws.of_wr (U₅.wr.trans (U₄.wr.trans (U₃'.wr.trans (U₂'.wr.trans M₁.wr)))))
     (by rw [PtrAt, U₅.other _ (by decide), U₄.other _ (by decide) (by decide), U₃'.other _ (by decide),
       U₂'.other _ (by decide), M₁.gpr]; exact di) (d := oD) (by simp only [oD]; omega))
     (ws_write (ht.ws.of_wr (U₅.wr.trans (U₄.wr.trans (U₃'.wr.trans (U₂'.wr.trans M₁.wr))))) (by simp only [oD]; omega))
-    fun t₆ M₆ => WP.block_nil ?_
+    fun t₆ M₆ => ?_
+  have ws₆ := ht.ws.of_wr (M₆.wr.trans (U₅.wr.trans (U₄.wr.trans (U₃'.wr.trans (U₂'.wr.trans M₁.wr)))))
+  refine wp_movS rfl fun t₇ U₇ _ => ?_
+  have bx₇ : PtrAt t₇ base .ebx (numAt len 0 + 4 * wp len - 4 * 3) := by
+    rw [PtrAt, U₇.other _ (by decide), M₆.gpr, U₅.other _ (by decide), U₄.other _ (by decide) (by decide),
+      U₃'.other _ (by decide), U₂'.other _ (by decide), M₁.gpr]; exact bx
+  refine wp_movS (readSrc_ptr (ws₆.of_wr U₇.wr) bx₇ (d := 0) (by rw [e0]; omega)) fun t₈ U₈ _ => ?_
+  refine wp_mul fun t₉ U₉ => wp_addS rfl fun t₁₀ U₁₀ _ => ?_
+  have ws₁₀ := ws₆.of_wr (U₁₀.wr.trans (U₉.wr.trans (U₈.wr.trans U₇.wr)))
+  have di₁₀ : PtrAt t₁₀ base .edi 0 := by
+    rw [PtrAt, U₁₀.other _ (by decide), U₉.other _ (by decide) (by decide), U₈.other _ (by decide),
+      U₇.other _ (by decide), M₆.gpr, U₅.other _ (by decide), U₄.other _ (by decide) (by decide),
+      U₃'.other _ (by decide), U₂'.other _ (by decide), M₁.gpr]; exact di
+  refine wp_storeS (ea_ptr ws₁₀ di₁₀ (d := oD1) (by simp only [oD1]; omega)) (ws_write ws₁₀ (by simp only [oD1]; omega))
+    fun t₁₁ M₁₁ => WP.block_nil ?_
   have hz31 : lz T ≤ 31 := by unfold lz; omega
+  have hz32 : lz T ≤ 32 := by omega
   have hp32 : 2 ^ lz T < 2 ^ 32 := Nat.pow_lt_pow_right (by decide) (by omega)
   have hpm : 2 ^ lz T ∣ T * 2 ^ lz T := Nat.dvd_mul_left _ _
   have hdz : U * 2 ^ lz T / 2 ^ 32 < 2 ^ lz T := by
@@ -185,7 +205,7 @@ theorem norm_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
   have m₅ : t₅.mem = t₁.mem := by rw [U₅.mem, U₄.mem, U₃'.mem, U₂'.mem]
   have uv : (t₃.gpr .eax).toNat = U := by
     rw [U₃'.gpr, U₂'.mem, m₁]
-    change w32 (s.mem.writeW (off base oP) _) base (numAt len 0 + 4 * wp len - 4 * 2 + 0) = U
+    change w32 (s.mem.writeW (off base oP) _) base (numAt len 0 + 4 * wp len - 4 * 3 + 4) = U
     rw [(writeW32_outside _ base _ (d := oP) (by simp only [oP]; omega)).w32 (by simp only [oP]; rw [e0]; omega)
       (by omega), ← hU]
     exact congrArg (fun d => (s.mem.readW (off base d) 32).toNat) (by rw [e0]; omega)
@@ -196,14 +216,42 @@ theorem norm_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
       Nat.mod_eq_of_lt (a := U * 2 ^ lz T / 2 ^ 32) (by omega)]
     exact Nat.mod_eq_of_lt (by omega)
   have m₆ : t₆.mem = t₁.mem.writeW (off base oD) (t₅.gpr .ecx) := by rw [M₆.mem, m₅, Nat.zero_add]
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [m₆, (writeW32_outside _ base _ (d := oD) (by simp only [oD]; omega)).w32 (d := oP) (.inl (by simp only [oP, oD]; omega)) (by simp only [oP]; omega), m₁,
+  -- `d₁`.
+  have m₁₀ : t₁₀.mem = t₆.mem := by rw [U₁₀.mem, U₉.mem, U₈.mem, U₇.mem]
+  have vv : (t₈.gpr .eax).toNat = V := by
+    rw [U₈.gpr, U₇.mem, m₆, m₁]
+    change w32 ((s.mem.writeW (off base oP) _).writeW (off base oD) _) base (numAt len 0 + 4 * wp len - 4 * 3 + 0) = V
+    rw [(writeW32_outside _ base _ (d := oD) (by simp only [oD]; omega)).w32 (by simp only [oD]; rw [e0]; omega)
+      (by omega), (writeW32_outside _ base _ (d := oP) (by simp only [oP]; omega)).w32 (by simp only [oP]; rw [e0]; omega)
+      (by omega), ← hV]
+    exact congrArg (fun d => (s.mem.readW (off base d) 32).toNat) (by rw [e0]; omega)
+  have si₈ : (t₈.gpr .esi).toNat = 2 ^ lz T := by
+    rw [U₈.other _ (by decide), U₇.other _ (by decide), M₆.gpr, U₅.other _ (by decide),
+      U₄.other _ (by decide) (by decide), U₃'.other _ (by decide), U₂'.other _ (by decide), M₁.gpr, si,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt hp32]
+  have lo₄ : (t₄.gpr .eax).toNat = U * 2 ^ lz T % 2 ^ 32 := by
+    rw [U₄.eax, uv, U₃'.other .esi (by decide), U₂'.other .esi (by decide), M₁.gpr, si, BitVec.toNat_ofNat,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt hp32]
+  have bp : (t₁₀.gpr .ebp).toNat = U * 2 ^ lz T % 2 ^ 32 + V * 2 ^ lz T / 2 ^ 32 := by
+    rw [U₁₀.gpr, U₉.other .ebp (by decide) (by decide), U₉.edx, vv, si₈, U₈.other _ (by decide), U₇.gpr, M₆.gpr,
+      U₅.other _ (by decide), BitVec.toNat_add, lo₄, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (a := V * 2 ^ lz T / 2 ^ 32) (by have := WordStep32.lohi_lt (a := V) (b := U) hz32 hV'; omega)]
+    exact Nat.mod_eq_of_lt (WordStep32.lohi_lt hz32 hV')
+  have m₁₁ : t₁₁.mem = t₆.mem.writeW (off base oD1) (t₁₀.gpr .ebp) := by rw [M₁₁.mem, m₁₀, Nat.zero_add]
+  have o₁₁ := writeW32_outside t₆.mem base (t₁₀.gpr .ebp) (d := oD1) (by simp only [oD1]; omega)
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · rw [m₁₁, o₁₁.w32 (d := oP) (.inl (by simp only [oP, oD1]; omega)) (by simp only [oP]; omega), m₆,
+      (writeW32_outside _ base _ (d := oD) (by simp only [oD]; omega)).w32 (d := oP) (.inl (by simp only [oP, oD]; omega)) (by simp only [oP]; omega), m₁,
       w32_write_self, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hp32]
-  · rw [m₆, w32_write_self, cx]
-  · rw [m₆, m₁]
-    exact ((writeW32_outside _ base _ (d := oP) (by simp only [oP]; omega)).mono (by simp only [oP]; omega) (by simp only [oP]; omega)).trans
-      ((writeW32_outside _ base _ (d := oD) (by simp only [oD]; omega)).mono (by simp only [oP, oD]; omega) (by simp only [oP, oD]; omega))
-  · exact Kall.trans (((M₁.keeps _).trans (((U₂'.keeps.mono (by decide)).trans (U₃'.keeps.mono (by decide))).trans
-      ((U₄.keeps.mono (by decide)).trans (U₅.keeps.mono (by decide))))).trans (M₆.keeps _))
+  · rw [m₁₁, o₁₁.w32 (d := oD) (.inl (by simp only [oD, oD1]; omega)) (by simp only [oD]; omega), m₆, w32_write_self, cx]
+  · rw [m₁₁, w32_write_self, bp]
+  · rw [m₁₁, m₆, m₁]
+    exact (((writeW32_outside _ base _ (d := oP) (by simp only [oP]; omega)).mono (by simp only [oP]; omega) (by simp only [oP]; omega)).trans
+      ((writeW32_outside _ base _ (d := oD) (by simp only [oD]; omega)).mono (by simp only [oP, oD]; omega) (by simp only [oP, oD]; omega))).trans
+      ((writeW32_outside _ base _ (d := oD1) (by simp only [oD1]; omega)).mono (by simp only [oP, oD1]; omega) (by simp only [oP, oD1]; omega))
+  · exact Kall.trans ((((M₁.keeps _).trans (((U₂'.keeps.mono (by decide)).trans (U₃'.keeps.mono (by decide))).trans
+      ((U₄.keeps.mono (by decide)).trans (U₅.keeps.mono (by decide))))).trans (M₆.keeps _)).trans
+      ((((U₇.keeps.mono (by decide)).trans (U₈.keeps.mono (by decide))).trans
+        ((U₉.keeps.mono (by decide)).trans (U₁₀.keeps.mono (by decide)))).trans (M₁₁.keeps _)))
 
 end VG.Proof.Bignum.X86.R2Words

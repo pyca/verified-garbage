@@ -2260,6 +2260,42 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	cmp r15, r14
 	adc rcx, 0
 	or rcx, r9
+	mov rax, QWORD PTR [r10+r12*8-16]
+	mul rcx
+	mov r9, rax
+	mov r11, rdx
+	mov rax, QWORD PTR [r10+r12*8-8]
+	mul rcx
+	add rax, r11
+	adc rdx, 0
+	mov r13, QWORD PTR [rbx+r12*8-24]
+	sub r13, r9
+	mov r14, QWORD PTR [rbx+r12*8-16]
+	sbb r14, rax
+	mov r15, QWORD PTR [rbx+r12*8-8]
+	sbb r15, rdx
+	mov r11, r15
+	add r11, r11
+	sbb r11, r11
+	add rcx, r11
+	mov rax, QWORD PTR [r10+r12*8-16]
+	and rax, r11
+	mov rdx, QWORD PTR [r10+r12*8-8]
+	and rdx, r11
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov r11, r15
+	add r11, r11
+	sbb r11, r11
+	add rcx, r11
+	mov rax, QWORD PTR [r10+r12*8-16]
+	and rax, r11
+	mov rdx, QWORD PTR [r10+r12*8-8]
+	and rdx, r11
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
 	mov rax, QWORD PTR [r10]
 	mul rcx
 	mov r9, rdx
@@ -2305,40 +2341,21 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
-	mov rax, QWORD PTR [r8+r12*8]
-	add rax, rax
-	sbb r11, r11
-	mov ebp, 0
-	mov r14, 0
-2118:
-	mov rax, QWORD PTR [r10+r14*8]
-	and rax, r11
-	add rbp, rbp
-	adc rax, QWORD PTR [r8+r14*8]
-	sbb rbp, rbp
-	mov QWORD PTR [r8+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 2118b
-	mov rax, QWORD PTR [r8+r12*8]
-	add rbp, rbp
-	adc rax, 0
-	mov QWORD PTR [r8+r12*8], rax
 	mov rsi, r8
 	mov r14, 0
-2119:
+2118:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2119b
+	jne 2118b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
 	jne 2115b
 	mov eax, 2
 	mov QWORD PTR [rdi+208], rax
-2120:
+2119:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -2360,22 +2377,22 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2121f
+	je 2120f
 	mov eax, 0
 	mov r14, 0
-2123:
+2122:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2123b
+	jne 2122b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2124:
+2123:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2125:
+2124:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -2386,7 +2403,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2125b
+	jne 2124b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -2402,7 +2419,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2126:
+2125:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -2413,7 +2430,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2126b
+	jne 2125b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -2424,10 +2441,10 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2124b
+	jne 2123b
 	mov ebp, 0
 	mov r14, 0
-2127:
+2126:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -2435,13 +2452,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2127b
+	jne 2126b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2128:
+2127:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -2450,9 +2467,9 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2128b
-	jmp 2122f
-2121:
+	jne 2127b
+	jmp 2121f
+2120:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -2466,20 +2483,20 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2129:
+2128:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2129b
+	jne 2128b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2130:
+2129:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2131:
+2130:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -2490,20 +2507,20 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2131b
+	jne 2130b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2130b
+	jne 2129b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2132:
+2131:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -2527,18 +2544,18 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2132b
+	jne 2131b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2133:
+2132:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2134:
+2133:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -2549,7 +2566,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2134b
+	jne 2133b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -2562,7 +2579,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2133b
+	jne 2132b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -2572,7 +2589,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2135:
+2134:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -2580,13 +2597,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2135b
+	jne 2134b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2136:
+2135:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -2595,8 +2612,8 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2136b
-2122:
+	jne 2135b
+2121:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -2606,7 +2623,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2120b
+	jne 2119b
 287:
 	jmp 285f
 284:
@@ -2616,11 +2633,11 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov r8, QWORD PTR [rdi+96]
 	mov eax, 0
 	mov r14, 0
-2137:
+2136:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2137b
+	jne 2136b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
@@ -2633,7 +2650,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rcx, rcx
 	add rcx, rcx
 	mov QWORD PTR [rdi+208], rcx
-2138:
+2137:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -2641,7 +2658,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2139:
+2138:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -2649,14 +2666,14 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2139b
+	jne 2138b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2140:
+2139:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -2664,13 +2681,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2140b
+	jne 2139b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2141:
+2140:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -2679,21 +2696,21 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2141b
+	jne 2140b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2138b
+	jne 2137b
 285:
 	mov r8, QWORD PTR [rdi+72]
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2142:
+2141:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2142b
+	jne 2141b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rax, QWORD PTR [rdi+128]
@@ -2703,7 +2720,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2143:
+2142:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -2711,16 +2728,16 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2144f
-	jmp 2145f
-2144:
+	je 2143f
+	jmp 2144f
+2143:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2145:
+2144:
 	test rdx, rdx
-	jne 2143b
+	jne 2142b
 	mov edx, 6
 	mov ecx, 4
 	mov r8d, 7
@@ -2742,22 +2759,22 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2146f
+	je 2145f
 	mov eax, 0
 	mov r14, 0
-2148:
+2147:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2148b
+	jne 2147b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2149:
+2148:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2150:
+2149:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -2768,7 +2785,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2150b
+	jne 2149b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -2784,7 +2801,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2151:
+2150:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -2795,7 +2812,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2151b
+	jne 2150b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -2806,10 +2823,10 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2149b
+	jne 2148b
 	mov ebp, 0
 	mov r14, 0
-2152:
+2151:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -2817,13 +2834,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2152b
+	jne 2151b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2153:
+2152:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -2832,9 +2849,9 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2153b
-	jmp 2147f
-2146:
+	jne 2152b
+	jmp 2146f
+2145:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -2848,20 +2865,20 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2154:
+2153:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2154b
+	jne 2153b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2155:
+2154:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2156:
+2155:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -2872,20 +2889,20 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2156b
+	jne 2155b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2155b
+	jne 2154b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2157:
+2156:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -2909,18 +2926,18 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2157b
+	jne 2156b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2158:
+2157:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2159:
+2158:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -2931,7 +2948,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2159b
+	jne 2158b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -2944,7 +2961,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2158b
+	jne 2157b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -2954,7 +2971,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2160:
+2159:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -2962,13 +2979,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2160b
+	jne 2159b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2161:
+2160:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -2977,8 +2994,8 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2161b
-2147:
+	jne 2160b
+2146:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -3006,22 +3023,22 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2162f
+	je 2161f
 	mov eax, 0
 	mov r14, 0
-2164:
+2163:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2164b
+	jne 2163b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2165:
+2164:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2166:
+2165:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -3032,7 +3049,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2166b
+	jne 2165b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -3048,7 +3065,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2167:
+2166:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -3059,7 +3076,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2167b
+	jne 2166b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -3070,10 +3087,10 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2165b
+	jne 2164b
 	mov ebp, 0
 	mov r14, 0
-2168:
+2167:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -3081,13 +3098,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2168b
+	jne 2167b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2169:
+2168:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -3096,9 +3113,9 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2169b
-	jmp 2163f
-2162:
+	jne 2168b
+	jmp 2162f
+2161:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -3112,20 +3129,20 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2170:
+2169:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2170b
+	jne 2169b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2171:
+2170:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2172:
+2171:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -3136,20 +3153,20 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2172b
+	jne 2171b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2171b
+	jne 2170b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2173:
+2172:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -3173,18 +3190,18 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2173b
+	jne 2172b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2174:
+2173:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2175:
+2174:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -3195,7 +3212,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2175b
+	jne 2174b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -3208,7 +3225,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2174b
+	jne 2173b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -3218,7 +3235,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2176:
+2175:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -3226,13 +3243,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2176b
+	jne 2175b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2177:
+2176:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -3241,8 +3258,8 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2177b
-2163:
+	jne 2176b
+2162:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -3253,12 +3270,12 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rsi, QWORD PTR [rdi+104]
 	mov rbx, QWORD PTR [rdi+96]
 	mov r14, 0
-2178:
+2177:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2178b
+	jne 2177b
 	mov rax, QWORD PTR [rdi+128]
 	mov rdx, QWORD PTR [rax+144]
 	mov QWORD PTR [rdi+136], rdx
@@ -3279,12 +3296,12 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rsi, QWORD PTR [rdi+112]
 	mov rbx, QWORD PTR [rdi+208]
 	mov r14, 0
-2179:
+2178:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2179b
+	jne 2178b
 	mov rax, QWORD PTR [rdi+208]
 	mov rdx, QWORD PTR [rdi+48]
 	add rdx, 2
@@ -3297,25 +3314,25 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rsi, QWORD PTR [rdi+96]
 	mov rbx, QWORD PTR [rdi+208]
 	mov r14, 0
+2179:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov QWORD PTR [rbx+r14*8], rax
+	add r14, 1
+	cmp r14, r12
+	jne 2179b
+	mov r12, QWORD PTR [rdi+48]
+	mov rsi, QWORD PTR [rdi+96]
+	mov rbx, QWORD PTR [rdi+104]
+	mov r14, 0
 2180:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
 	jne 2180b
-	mov r12, QWORD PTR [rdi+48]
-	mov rsi, QWORD PTR [rdi+96]
-	mov rbx, QWORD PTR [rdi+104]
-	mov r14, 0
-2181:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov QWORD PTR [rbx+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 2181b
 	mov eax, 14
 	mov QWORD PTR [rdi+160], rax
-2182:
+2181:
 	mov edx, 5
 	mov ecx, 5
 	mov r8d, 4
@@ -3337,22 +3354,22 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2183f
+	je 2182f
 	mov eax, 0
 	mov r14, 0
-2185:
+2184:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2185b
+	jne 2184b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2186:
+2185:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2187:
+2186:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -3363,7 +3380,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2187b
+	jne 2186b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -3379,7 +3396,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2188:
+2187:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -3390,7 +3407,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2188b
+	jne 2187b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -3401,10 +3418,10 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2186b
+	jne 2185b
 	mov ebp, 0
 	mov r14, 0
-2189:
+2188:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -3412,13 +3429,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2189b
+	jne 2188b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2190:
+2189:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -3427,9 +3444,9 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2190b
-	jmp 2184f
-2183:
+	jne 2189b
+	jmp 2183f
+2182:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -3443,20 +3460,20 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2191:
+2190:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2191b
+	jne 2190b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2192:
+2191:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2193:
+2192:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -3467,20 +3484,20 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2193b
+	jne 2192b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2192b
+	jne 2191b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2194:
+2193:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -3504,18 +3521,18 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2194b
+	jne 2193b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2195:
+2194:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2196:
+2195:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -3526,7 +3543,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2196b
+	jne 2195b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -3539,7 +3556,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2195b
+	jne 2194b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -3549,7 +3566,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2197:
+2196:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -3557,13 +3574,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2197b
+	jne 2196b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2198:
+2197:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -3572,8 +3589,8 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2198b
-2184:
+	jne 2197b
+2183:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -3592,27 +3609,27 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rsi, QWORD PTR [rdi+104]
 	mov rbx, QWORD PTR [rdi+208]
 	mov r14, 0
-2199:
+2198:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2199b
+	jne 2198b
 	mov rax, QWORD PTR [rdi+160]
 	sub rax, 1
 	mov QWORD PTR [rdi+160], rax
-	jne 2182b
-2200:
+	jne 2181b
+2199:
 	mov rax, QWORD PTR [rdi+136]
 	mov rcx, QWORD PTR [rdi+152]
 	movzx eax, BYTE PTR [rax+rcx*1]
 	mov QWORD PTR [rdi+168], rax
 	mov eax, 2
 	mov QWORD PTR [rdi+160], rax
-2201:
+2200:
 	mov eax, 4
 	mov QWORD PTR [rdi+216], rax
-2202:
+2201:
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 6
@@ -3634,22 +3651,22 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2203f
+	je 2202f
 	mov eax, 0
 	mov r14, 0
-2205:
+2204:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2205b
+	jne 2204b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2206:
+2205:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2207:
+2206:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -3660,7 +3677,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2207b
+	jne 2206b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -3676,7 +3693,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2208:
+2207:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -3687,7 +3704,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2208b
+	jne 2207b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -3698,10 +3715,10 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2206b
+	jne 2205b
 	mov ebp, 0
 	mov r14, 0
-2209:
+2208:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -3709,13 +3726,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2209b
+	jne 2208b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2210:
+2209:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -3724,9 +3741,9 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2210b
-	jmp 2204f
-2203:
+	jne 2209b
+	jmp 2203f
+2202:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -3740,20 +3757,20 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2211:
+2210:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2211b
+	jne 2210b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2212:
+2211:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2213:
+2212:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -3764,20 +3781,20 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2213b
+	jne 2212b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2212b
+	jne 2211b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2214:
+2213:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -3801,18 +3818,18 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2214b
+	jne 2213b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2215:
+2214:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2216:
+2215:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -3823,7 +3840,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2216b
+	jne 2215b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -3836,7 +3853,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2215b
+	jne 2214b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -3846,7 +3863,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2217:
+2216:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -3854,13 +3871,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2217b
+	jne 2216b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2218:
+2217:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -3869,8 +3886,8 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2218b
-2204:
+	jne 2217b
+2203:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -3880,7 +3897,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rax, QWORD PTR [rdi+216]
 	sub rax, 1
 	mov QWORD PTR [rdi+216], rax
-	jne 2202b
+	jne 2201b
 	mov rdx, QWORD PTR [rdi+168]
 	mov rax, rdx
 	add rax, rax
@@ -3893,7 +3910,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rdi+216], rdx
 	mov rax, QWORD PTR [rdi+216]
 	test rax, rax
-	je 2219f
+	je 2218f
 	mov r12, QWORD PTR [rdi+48]
 	mov rax, r12
 	add rax, 2
@@ -3906,12 +3923,12 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rsi, rax
 	mov rbx, QWORD PTR [rdi+104]
 	mov r14, 0
-2221:
+2220:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2221b
+	jne 2220b
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 5
@@ -3933,22 +3950,22 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2222f
+	je 2221f
 	mov eax, 0
 	mov r14, 0
-2224:
+2223:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2224b
+	jne 2223b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2225:
+2224:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2226:
+2225:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -3959,7 +3976,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2226b
+	jne 2225b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -3975,7 +3992,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2227:
+2226:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -3986,7 +4003,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2227b
+	jne 2226b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -3997,10 +4014,10 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2225b
+	jne 2224b
 	mov ebp, 0
 	mov r14, 0
-2228:
+2227:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -4008,13 +4025,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2228b
+	jne 2227b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2229:
+2228:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -4023,9 +4040,9 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2229b
-	jmp 2223f
-2222:
+	jne 2228b
+	jmp 2222f
+2221:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -4039,20 +4056,20 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2230:
+2229:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2230b
+	jne 2229b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2231:
+2230:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2232:
+2231:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -4063,20 +4080,20 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2232b
+	jne 2231b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2231b
+	jne 2230b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2233:
+2232:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -4100,18 +4117,18 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2233b
+	jne 2232b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2234:
+2233:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2235:
+2234:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -4122,7 +4139,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2235b
+	jne 2234b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -4135,7 +4152,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2234b
+	jne 2233b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -4145,7 +4162,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2236:
+2235:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -4153,13 +4170,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2236b
+	jne 2235b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2237:
+2236:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -4168,26 +4185,26 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2237b
-2223:
+	jne 2236b
+2222:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
 	movq r13, xmm11
 	movq r14, xmm12
 	movq r15, xmm13
-	jmp 2220f
+	jmp 2219f
+2218:
 2219:
-2220:
 	mov rax, QWORD PTR [rdi+160]
 	sub rax, 1
 	mov QWORD PTR [rdi+160], rax
-	jne 2201b
+	jne 2200b
 	mov rax, QWORD PTR [rdi+152]
 	add rax, 1
 	mov QWORD PTR [rdi+152], rax
 	cmp rax, QWORD PTR [rdi+144]
-	jne 2200b
+	jne 2199b
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 7
@@ -4209,22 +4226,22 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2238f
+	je 2237f
 	mov eax, 0
 	mov r14, 0
-2240:
+2239:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2240b
+	jne 2239b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2241:
+2240:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2242:
+2241:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -4235,7 +4252,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2242b
+	jne 2241b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -4251,7 +4268,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2243:
+2242:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -4262,7 +4279,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2243b
+	jne 2242b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -4273,10 +4290,10 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2241b
+	jne 2240b
 	mov ebp, 0
 	mov r14, 0
-2244:
+2243:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -4284,13 +4301,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2244b
+	jne 2243b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2245:
+2244:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -4299,9 +4316,9 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2245b
-	jmp 2239f
-2238:
+	jne 2244b
+	jmp 2238f
+2237:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -4315,20 +4332,20 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2246:
+2245:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2246b
+	jne 2245b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2247:
+2246:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2248:
+2247:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -4339,20 +4356,20 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2248b
+	jne 2247b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2247b
+	jne 2246b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2249:
+2248:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -4376,18 +4393,18 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2249b
+	jne 2248b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2250:
+2249:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2251:
+2250:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -4398,7 +4415,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2251b
+	jne 2250b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -4411,7 +4428,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2250b
+	jne 2249b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -4421,7 +4438,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2252:
+2251:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -4429,13 +4446,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2252b
+	jne 2251b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2253:
+2252:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -4444,8 +4461,8 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2253b
-2239:
+	jne 2252b
+2238:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -4460,23 +4477,23 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov edx, 0
 	mov r14, rsi
 	add r14, rcx
-2254:
+2253:
 	mov rbp, rdx
 	and rbp, 7
-	je 2255f
-	jmp 2256f
-2255:
+	je 2254f
+	jmp 2255f
+2254:
 	mov rbp, rdx
 	shr rbp, 3
 	mov rax, QWORD PTR [rbx+rbp*8]
 	and rax, r15
-2256:
+2255:
 	sub r14, 1
 	mov BYTE PTR [r14], al
 	shr rax, 8
 	add rdx, 1
 	cmp rdx, rcx
-	jne 2254b
+	jne 2253b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rdi, QWORD PTR [rsp+40]
 	add rdi, 28672
@@ -4525,11 +4542,11 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add r8, 256
 	mov eax, 0
 	mov r14, 0
-2257:
+2256:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2257b
+	jne 2256b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r12, QWORD PTR [rdi+48]
@@ -4541,7 +4558,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2258:
+2257:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -4549,16 +4566,16 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2259f
-	jmp 2260f
-2259:
+	je 2258f
+	jmp 2259f
+2258:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2260:
+2259:
 	test rdx, rdx
-	jne 2258b
+	jne 2257b
 	mov r12, QWORD PTR [rdi+48]
 	mov r9, QWORD PTR [rdi+224]
 	mov r8, r9
@@ -4566,11 +4583,11 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add r8, 256
 	mov eax, 0
 	mov r14, 0
-2261:
+2260:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2261b
+	jne 2260b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r12, QWORD PTR [rdi+48]
@@ -4583,7 +4600,7 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2262:
+2261:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -4591,51 +4608,51 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2263f
-	jmp 2264f
-2263:
+	je 2262f
+	jmp 2263f
+2262:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2264:
+2263:
 	test rdx, rdx
-	jne 2262b
+	jne 2261b
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+72]
 	mov r10, QWORD PTR [rdi+64]
 	mov ebp, 0
 	mov r14, 0
-2265:
+2264:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2265b
+	jne 2264b
 	mov r15, QWORD PTR [rbx]
 	shr r15, 1
 	mov r14, 1
-2266:
+2265:
 	mov rax, QWORD PTR [rbx+r14*8]
 	or r15, rax
 	add r14, 1
 	cmp r14, r12
-	jne 2266b
+	jne 2265b
 	cmp r15, 1
 	sbb rax, rax
 	xor rax, -1
 	and rax, rbp
 	test rax, rax
-	je 2267f
+	je 2266f
 	mov eax, 1
 	mov QWORD PTR [rsp+152], rax
-	jmp 2268f
-2267:
+	jmp 2267f
+2266:
 	mov eax, 3
 	mov QWORD PTR [rsp+152], rax
-2268:
+2267:
 	jmp 278f
 277:
 	mov eax, 3
@@ -4656,29 +4673,92 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov QWORD PTR [rsp+128], rax
 	mov rax, QWORD PTR [rsp+152]
 	cmp rax, 1
-	je 2269f
+	je 2268f
 	mov rax, QWORD PTR [rsp+96]
 	cmp rax, 32768
-	jb 2271f
-	jmp 2272f
-2271:
+	jb 2270f
+	jmp 2271f
+2270:
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
-2272:
-	jmp 2270f
+2271:
+	jmp 2269f
+2268:
 2269:
-2270:
 	mov rax, QWORD PTR [rsp+152]
 	cmp rax, 1
-	je 2273f
-	jmp 2274f
-2273:
+	je 2272f
+	jmp 2273f
+2272:
 	mov rsi, QWORD PTR [rsp+40]
 	mov rdi, rsi
 	add rsi, 25472
 	add rdi, 27008
 	mov ecx, 256
 	mov edx, 2048
+	sub rdx, 1
+	and rdx, 7
+	mov r8d, 127
+	mov r9d, 128
+	cmp rdx, 0
+	mov r10d, 0
+	cmove r8, r10
+	mov r10d, 1
+	cmove r9, r10
+	cmp rdx, 1
+	mov r10d, 1
+	cmove r8, r10
+	mov r10d, 2
+	cmove r9, r10
+	cmp rdx, 2
+	mov r10d, 3
+	cmove r8, r10
+	mov r10d, 4
+	cmove r9, r10
+	cmp rdx, 3
+	mov r10d, 7
+	cmove r8, r10
+	mov r10d, 8
+	cmove r9, r10
+	cmp rdx, 4
+	mov r10d, 15
+	cmove r8, r10
+	mov r10d, 16
+	cmove r9, r10
+	cmp rdx, 5
+	mov r10d, 31
+	cmove r8, r10
+	mov r10d, 32
+	cmove r9, r10
+	cmp rdx, 6
+	mov r10d, 63
+	cmove r8, r10
+	mov r10d, 64
+	cmove r9, r10
+	or r8, r9
+	mov r9d, 0
+	mov r10, rsi
+	mov r11, rdi
+	movzx eax, BYTE PTR [r10]
+	and rax, r8
+	or rax, r9
+	mov BYTE PTR [r11], al
+	add r10, 1
+	add r11, 1
+	sub rcx, 1
+2274:
+	movzx eax, BYTE PTR [r10]
+	mov BYTE PTR [r11], al
+	add r10, 1
+	add r11, 1
+	sub rcx, 1
+	jne 2274b
+	mov rsi, QWORD PTR [rsp+40]
+	mov rdi, rsi
+	add rsi, 25408
+	add rdi, 27264
+	mov ecx, 32
+	mov edx, 256
 	sub rdx, 1
 	and rdx, 7
 	mov r8d, 127
@@ -4738,10 +4818,10 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	jne 2275b
 	mov rsi, QWORD PTR [rsp+40]
 	mov rdi, rsi
-	add rsi, 25408
-	add rdi, 27264
-	mov ecx, 32
-	mov edx, 256
+	add rsi, 26240
+	add rdi, 27296
+	mov ecx, 256
+	mov edx, 2048
 	sub rdx, 1
 	and rdx, 7
 	mov r8d, 127
@@ -4799,69 +4879,6 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add r11, 1
 	sub rcx, 1
 	jne 2276b
-	mov rsi, QWORD PTR [rsp+40]
-	mov rdi, rsi
-	add rsi, 26240
-	add rdi, 27296
-	mov ecx, 256
-	mov edx, 2048
-	sub rdx, 1
-	and rdx, 7
-	mov r8d, 127
-	mov r9d, 128
-	cmp rdx, 0
-	mov r10d, 0
-	cmove r8, r10
-	mov r10d, 1
-	cmove r9, r10
-	cmp rdx, 1
-	mov r10d, 1
-	cmove r8, r10
-	mov r10d, 2
-	cmove r9, r10
-	cmp rdx, 2
-	mov r10d, 3
-	cmove r8, r10
-	mov r10d, 4
-	cmove r9, r10
-	cmp rdx, 3
-	mov r10d, 7
-	cmove r8, r10
-	mov r10d, 8
-	cmove r9, r10
-	cmp rdx, 4
-	mov r10d, 15
-	cmove r8, r10
-	mov r10d, 16
-	cmove r9, r10
-	cmp rdx, 5
-	mov r10d, 31
-	cmove r8, r10
-	mov r10d, 32
-	cmove r9, r10
-	cmp rdx, 6
-	mov r10d, 63
-	cmove r8, r10
-	mov r10d, 64
-	cmove r9, r10
-	or r8, r9
-	mov r9d, 0
-	mov r10, rsi
-	mov r11, rdi
-	movzx eax, BYTE PTR [r10]
-	and rax, r8
-	or rax, r9
-	mov BYTE PTR [r11], al
-	add r10, 1
-	add r11, 1
-	sub rcx, 1
-2277:
-	movzx eax, BYTE PTR [r10]
-	mov BYTE PTR [r11], al
-	add r10, 1
-	add r11, 1
-	sub rcx, 1
-	jne 2277b
 	mov rdi, QWORD PTR [rsp+40]
 	mov r8, rdi
 	add rdi, 27008
@@ -4872,26 +4889,26 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov r9d, 4096
 	call {vg_dsa_generation_check_parameters}
 	test rax, rax
-	je 2278f
+	je 2277f
 	mov eax, 1
 	mov QWORD PTR [rsp+152], rax
-	jmp 2279f
-2278:
+	jmp 2278f
+2277:
 	mov eax, 3
 	mov QWORD PTR [rsp+152], rax
-2279:
-2274:
+2278:
+2273:
 261:
 29:
 	mov rax, QWORD PTR [rsp+152]
 	cmp rax, 3
-	je 2280f
-	jmp 2281f
-2280:
+	je 2279f
+	jmp 2280f
+2279:
 	mov rax, QWORD PTR [rsp+312]
 	sub rax, 1
 	mov QWORD PTR [rsp+312], rax
-2281:
+2280:
 	jmp 24f
 23:
 	mov eax, 0
@@ -4907,52 +4924,52 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	je 20b
 	mov rax, QWORD PTR [rsp+152]
 	test rax, rax
-	je 2282f
+	je 2281f
 	mov rcx, QWORD PTR [rsp+304]
 	mov eax, 0
 	mov QWORD PTR [rcx], rax
 	mov QWORD PTR [rcx+24], rax
 	mov rax, QWORD PTR [rsp+152]
 	cmp rax, 1
-	je 2284f
+	je 2283f
 	mov rax, QWORD PTR [rsp+320]
 	mov rcx, QWORD PTR [rsp+296]
 	mov QWORD PTR [rcx], rax
-	jmp 2285f
-2284:
+	jmp 2284f
+2283:
 	mov rax, QWORD PTR [rsp+128]
 	mov rcx, QWORD PTR [rsp+296]
 	mov QWORD PTR [rcx], rax
-2285:
-	jmp 2283f
-2282:
+2284:
+	jmp 2282f
+2281:
 	mov rcx, QWORD PTR [rsp+120]
 	sub rcx, QWORD PTR [rsp+320]
 	mov edx, 8388864
 	cmp rcx, rdx
-	jb 2286f
+	jb 2285f
 	mov eax, 2
 	mov QWORD PTR [rsp+152], rax
-	jmp 2287f
-2286:
+	jmp 2286f
+2285:
 	mov eax, 65536
 	cmp rcx, rax
-	jb 2288f
+	jb 2287f
 	mov rax, rcx
-	jmp 2289f
+	jmp 2288f
+2287:
 2288:
-2289:
 	add rax, rax
 	cmp rax, rdx
-	jb 2290f
-	jmp 2291f
-2290:
+	jb 2289f
+	jmp 2290f
+2289:
 	mov rdx, rax
-2291:
-2287:
+2290:
+2286:
 	mov rax, QWORD PTR [rsp+152]
 	test rax, rax
-	je 2292f
+	je 2291f
 	mov rcx, QWORD PTR [rsp+304]
 	mov eax, 0
 	mov QWORD PTR [rcx], rax
@@ -4960,8 +4977,8 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rax, QWORD PTR [rsp+320]
 	mov rcx, QWORD PTR [rsp+296]
 	mov QWORD PTR [rcx], rax
-	jmp 2293f
-2292:
+	jmp 2292f
+2291:
 	mov rcx, QWORD PTR [rsp+304]
 	mov rax, QWORD PTR [rsp+312]
 	mov QWORD PTR [rcx], rax
@@ -4969,11 +4986,11 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov rax, QWORD PTR [rsp+320]
 	mov rcx, QWORD PTR [rsp+296]
 	mov QWORD PTR [rcx], rax
-2293:
-2283:
+2292:
+2282:
 	mov rax, QWORD PTR [rsp+152]
 	cmp rax, 1
-	je 2294f
+	je 2293f
 	mov rax, QWORD PTR [rsp+48]
 	mov QWORD PTR [rsp+168], rax
 	mov rax, QWORD PTR [rsp+56]
@@ -4982,13 +4999,13 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	mov r10, QWORD PTR [rsp+184]
 	mov eax, 0
 	mov r8d, 0
-2296:
+2295:
 	mov BYTE PTR [rdi+r8*1], al
 	add r8, 1
 	cmp r8, r10
-	jne 2296b
-	jmp 2295f
-2294:
+	jne 2295b
+	jmp 2294f
+2293:
 	mov rsi, QWORD PTR [rsp+40]
 	add rsi, 27008
 	mov rdi, QWORD PTR [rsp+48]
@@ -5045,22 +5062,22 @@ vg_dsa_parameter_search_2048_sha256_shani:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2297:
+2296:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2297b
+	jne 2296b
 	mov eax, 1
-2295:
+2294:
 	mov rax, QWORD PTR [rsp+152]
 	cmp rax, 2
-	je 2298f
-	jmp 2299f
-2298:
+	je 2297f
+	jmp 2298f
+2297:
 	mov eax, 3
-2299:
+2298:
 	lea rsp, [rsp+296]
 	lea rsp, [rsp+32]
 	mov rbx, QWORD PTR [rsp]

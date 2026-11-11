@@ -847,6 +847,42 @@ vg_ffdh_generate_key_cached:
 	cmp r15, r14
 	adc rcx, 0
 	or rcx, r9
+	mov rax, QWORD PTR [r10+r12*8-16]
+	mul rcx
+	mov r9, rax
+	mov r11, rdx
+	mov rax, QWORD PTR [r10+r12*8-8]
+	mul rcx
+	add rax, r11
+	adc rdx, 0
+	mov r13, QWORD PTR [rbx+r12*8-24]
+	sub r13, r9
+	mov r14, QWORD PTR [rbx+r12*8-16]
+	sbb r14, rax
+	mov r15, QWORD PTR [rbx+r12*8-8]
+	sbb r15, rdx
+	mov r11, r15
+	add r11, r11
+	sbb r11, r11
+	add rcx, r11
+	mov rax, QWORD PTR [r10+r12*8-16]
+	and rax, r11
+	mov rdx, QWORD PTR [r10+r12*8-8]
+	and rdx, r11
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov r11, r15
+	add r11, r11
+	sbb r11, r11
+	add rcx, r11
+	mov rax, QWORD PTR [r10+r12*8-16]
+	and rax, r11
+	mov rdx, QWORD PTR [r10+r12*8-8]
+	and rdx, r11
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
 	mov rax, QWORD PTR [r10]
 	mul rcx
 	mov r9, rdx
@@ -892,40 +928,21 @@ vg_ffdh_generate_key_cached:
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
-	mov rax, QWORD PTR [r8+r12*8]
-	add rax, rax
-	sbb r11, r11
-	mov ebp, 0
-	mov r14, 0
-259:
-	mov rax, QWORD PTR [r10+r14*8]
-	and rax, r11
-	add rbp, rbp
-	adc rax, QWORD PTR [r8+r14*8]
-	sbb rbp, rbp
-	mov QWORD PTR [r8+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 259b
-	mov rax, QWORD PTR [r8+r12*8]
-	add rbp, rbp
-	adc rax, 0
-	mov QWORD PTR [r8+r12*8], rax
 	mov rsi, r8
 	mov r14, 0
-260:
+259:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 260b
+	jne 259b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
 	jne 256b
 	mov eax, 2
 	mov QWORD PTR [rdi+208], rax
-261:
+260:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -947,22 +964,22 @@ vg_ffdh_generate_key_cached:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 262f
+	je 261f
 	mov eax, 0
 	mov r14, 0
-264:
+263:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 264b
+	jne 263b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-265:
+264:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-266:
+265:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -973,7 +990,7 @@ vg_ffdh_generate_key_cached:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 266b
+	jne 265b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -989,7 +1006,7 @@ vg_ffdh_generate_key_cached:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-267:
+266:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -1000,7 +1017,7 @@ vg_ffdh_generate_key_cached:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 267b
+	jne 266b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -1011,10 +1028,10 @@ vg_ffdh_generate_key_cached:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 265b
+	jne 264b
 	mov ebp, 0
 	mov r14, 0
-268:
+267:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1022,13 +1039,13 @@ vg_ffdh_generate_key_cached:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 268b
+	jne 267b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-269:
+268:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1037,9 +1054,9 @@ vg_ffdh_generate_key_cached:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 269b
-	jmp 263f
-262:
+	jne 268b
+	jmp 262f
+261:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -1053,20 +1070,20 @@ vg_ffdh_generate_key_cached:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-270:
+269:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 270b
+	jne 269b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-271:
+270:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-272:
+271:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -1077,20 +1094,20 @@ vg_ffdh_generate_key_cached:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 272b
+	jne 271b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 271b
+	jne 270b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-273:
+272:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -1114,18 +1131,18 @@ vg_ffdh_generate_key_cached:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 273b
+	jne 272b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-274:
+273:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-275:
+274:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -1136,7 +1153,7 @@ vg_ffdh_generate_key_cached:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 275b
+	jne 274b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -1149,7 +1166,7 @@ vg_ffdh_generate_key_cached:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 274b
+	jne 273b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -1159,7 +1176,7 @@ vg_ffdh_generate_key_cached:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-276:
+275:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1167,13 +1184,13 @@ vg_ffdh_generate_key_cached:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 276b
+	jne 275b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-277:
+276:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1182,8 +1199,8 @@ vg_ffdh_generate_key_cached:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 277b
-263:
+	jne 276b
+262:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -1193,7 +1210,7 @@ vg_ffdh_generate_key_cached:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 261b
+	jne 260b
 228:
 	mov edx, 6
 	mov ecx, 4
@@ -1216,22 +1233,22 @@ vg_ffdh_generate_key_cached:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 278f
+	je 277f
 	mov eax, 0
 	mov r14, 0
-280:
+279:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 280b
+	jne 279b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-281:
+280:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-282:
+281:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -1242,7 +1259,7 @@ vg_ffdh_generate_key_cached:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 282b
+	jne 281b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -1258,7 +1275,7 @@ vg_ffdh_generate_key_cached:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-283:
+282:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -1269,7 +1286,7 @@ vg_ffdh_generate_key_cached:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 283b
+	jne 282b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -1280,10 +1297,10 @@ vg_ffdh_generate_key_cached:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 281b
+	jne 280b
 	mov ebp, 0
 	mov r14, 0
-284:
+283:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1291,13 +1308,13 @@ vg_ffdh_generate_key_cached:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 284b
+	jne 283b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-285:
+284:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1306,9 +1323,9 @@ vg_ffdh_generate_key_cached:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 285b
-	jmp 279f
-278:
+	jne 284b
+	jmp 278f
+277:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -1322,20 +1339,20 @@ vg_ffdh_generate_key_cached:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-286:
+285:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 286b
+	jne 285b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-287:
+286:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-288:
+287:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -1346,20 +1363,20 @@ vg_ffdh_generate_key_cached:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 288b
+	jne 287b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 287b
+	jne 286b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-289:
+288:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -1383,18 +1400,18 @@ vg_ffdh_generate_key_cached:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 289b
+	jne 288b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-290:
+289:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-291:
+290:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -1405,7 +1422,7 @@ vg_ffdh_generate_key_cached:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 291b
+	jne 290b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -1418,7 +1435,7 @@ vg_ffdh_generate_key_cached:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 290b
+	jne 289b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -1428,7 +1445,7 @@ vg_ffdh_generate_key_cached:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-292:
+291:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1436,13 +1453,13 @@ vg_ffdh_generate_key_cached:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 292b
+	jne 291b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-293:
+292:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1451,8 +1468,8 @@ vg_ffdh_generate_key_cached:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 293b
-279:
+	jne 292b
+278:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -1470,7 +1487,7 @@ vg_ffdh_generate_key_cached:
 	mov rax, QWORD PTR [rdi+128]
 	mov rdx, QWORD PTR [rax+168]
 	mov QWORD PTR [rdi+192], rdx
-294:
+293:
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 6
@@ -1492,22 +1509,22 @@ vg_ffdh_generate_key_cached:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 295f
+	je 294f
 	mov eax, 0
 	mov r14, 0
-297:
+296:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 297b
+	jne 296b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-298:
+297:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-299:
+298:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -1518,7 +1535,7 @@ vg_ffdh_generate_key_cached:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 299b
+	jne 298b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -1534,7 +1551,7 @@ vg_ffdh_generate_key_cached:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2100:
+299:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -1545,7 +1562,7 @@ vg_ffdh_generate_key_cached:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2100b
+	jne 299b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -1556,10 +1573,10 @@ vg_ffdh_generate_key_cached:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 298b
+	jne 297b
 	mov ebp, 0
 	mov r14, 0
-2101:
+2100:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1567,13 +1584,13 @@ vg_ffdh_generate_key_cached:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2101b
+	jne 2100b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2102:
+2101:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1582,9 +1599,9 @@ vg_ffdh_generate_key_cached:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2102b
-	jmp 296f
-295:
+	jne 2101b
+	jmp 295f
+294:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -1598,20 +1615,20 @@ vg_ffdh_generate_key_cached:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2103:
+2102:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2103b
+	jne 2102b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2104:
+2103:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2105:
+2104:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -1622,20 +1639,20 @@ vg_ffdh_generate_key_cached:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2105b
+	jne 2104b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2104b
+	jne 2103b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2106:
+2105:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -1659,18 +1676,18 @@ vg_ffdh_generate_key_cached:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2106b
+	jne 2105b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2107:
+2106:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2108:
+2107:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -1681,7 +1698,7 @@ vg_ffdh_generate_key_cached:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2108b
+	jne 2107b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -1694,7 +1711,7 @@ vg_ffdh_generate_key_cached:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2107b
+	jne 2106b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -1704,7 +1721,7 @@ vg_ffdh_generate_key_cached:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2109:
+2108:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1712,13 +1729,13 @@ vg_ffdh_generate_key_cached:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2109b
+	jne 2108b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2110:
+2109:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -1727,8 +1744,8 @@ vg_ffdh_generate_key_cached:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2110b
-296:
+	jne 2109b
+295:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -1739,11 +1756,11 @@ vg_ffdh_generate_key_cached:
 	mov r12, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov r14, 0
-2111:
+2110:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2111b
+	jne 2110b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov rsi, QWORD PTR [rdi+184]
@@ -1757,10 +1774,10 @@ vg_ffdh_generate_key_cached:
 	mov rdx, r9
 	shl rdx, 3
 	cmp rax, rdx
-	jb 2112f
+	jb 2111f
 	mov edx, 0
-	jmp 2113f
-2112:
+	jmp 2112f
+2111:
 	mov r8, rax
 	shr r8, 3
 	mov r10, r9
@@ -1770,7 +1787,7 @@ vg_ffdh_generate_key_cached:
 	and rcx, 7
 	shr rdx, cl
 	and rdx, 1
-2113:
+2112:
 	or r13, rdx
 	mov rax, QWORD PTR [rdi+168]
 	sub rax, 1
@@ -1780,10 +1797,10 @@ vg_ffdh_generate_key_cached:
 	mov rdx, r9
 	shl rdx, 3
 	cmp rax, rdx
-	jb 2114f
+	jb 2113f
 	mov edx, 0
-	jmp 2115f
-2114:
+	jmp 2114f
+2113:
 	mov r8, rax
 	shr r8, 3
 	mov r10, r9
@@ -1793,7 +1810,7 @@ vg_ffdh_generate_key_cached:
 	and rcx, 7
 	shr rdx, cl
 	and rdx, 1
-2115:
+2114:
 	shl rdx, 1
 	or r13, rdx
 	mov rax, QWORD PTR [rdi+168]
@@ -1804,10 +1821,10 @@ vg_ffdh_generate_key_cached:
 	mov rdx, r9
 	shl rdx, 3
 	cmp rax, rdx
-	jb 2116f
+	jb 2115f
 	mov edx, 0
-	jmp 2117f
-2116:
+	jmp 2116f
+2115:
 	mov r8, rax
 	shr r8, 3
 	mov r10, r9
@@ -1817,7 +1834,7 @@ vg_ffdh_generate_key_cached:
 	and rcx, 7
 	shr rdx, cl
 	and rdx, 1
-2117:
+2116:
 	shl rdx, 2
 	or r13, rdx
 	mov rax, QWORD PTR [rdi+168]
@@ -1828,10 +1845,10 @@ vg_ffdh_generate_key_cached:
 	mov rdx, r9
 	shl rdx, 3
 	cmp rax, rdx
-	jb 2118f
+	jb 2117f
 	mov edx, 0
-	jmp 2119f
-2118:
+	jmp 2118f
+2117:
 	mov r8, rax
 	shr r8, 3
 	mov r10, r9
@@ -1841,7 +1858,7 @@ vg_ffdh_generate_key_cached:
 	and rcx, 7
 	shr rdx, cl
 	and rdx, 1
-2119:
+2118:
 	shl rdx, 3
 	or r13, rdx
 	mov rax, QWORD PTR [rdi+168]
@@ -1852,10 +1869,10 @@ vg_ffdh_generate_key_cached:
 	mov rdx, r9
 	shl rdx, 3
 	cmp rax, rdx
-	jb 2120f
+	jb 2119f
 	mov edx, 0
-	jmp 2121f
-2120:
+	jmp 2120f
+2119:
 	mov r8, rax
 	shr r8, 3
 	mov r10, r9
@@ -1865,12 +1882,12 @@ vg_ffdh_generate_key_cached:
 	and rcx, 7
 	shr rdx, cl
 	and rdx, 1
-2121:
+2120:
 	shl rdx, 4
 	or r13, rdx
 	mov eax, 0
 	mov QWORD PTR [rdi+176], rax
-2122:
+2121:
 	mov rax, QWORD PTR [rdi+176]
 	xor rax, r13
 	cmp rax, 1
@@ -1886,19 +1903,19 @@ vg_ffdh_generate_key_cached:
 	mov rsi, rbx
 	mov rbx, QWORD PTR [rdi+104]
 	mov r14, 0
-2123:
+2122:
 	mov rax, QWORD PTR [rsi+r14*8]
 	and rax, rdx
 	or rax, QWORD PTR [rbx+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2123b
+	jne 2122b
 	mov rax, QWORD PTR [rdi+176]
 	add rax, 1
 	mov QWORD PTR [rdi+176], rax
 	cmp rax, 32
-	jne 2122b
+	jne 2121b
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 5
@@ -1920,22 +1937,22 @@ vg_ffdh_generate_key_cached:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2124f
+	je 2123f
 	mov eax, 0
 	mov r14, 0
-2126:
+2125:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2126b
+	jne 2125b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2127:
+2126:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2128:
+2127:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -1946,7 +1963,7 @@ vg_ffdh_generate_key_cached:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2128b
+	jne 2127b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -1962,7 +1979,7 @@ vg_ffdh_generate_key_cached:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2129:
+2128:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -1973,7 +1990,7 @@ vg_ffdh_generate_key_cached:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2129b
+	jne 2128b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -1984,10 +2001,10 @@ vg_ffdh_generate_key_cached:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2127b
+	jne 2126b
 	mov ebp, 0
 	mov r14, 0
-2130:
+2129:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -1995,13 +2012,13 @@ vg_ffdh_generate_key_cached:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2130b
+	jne 2129b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2131:
+2130:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -2010,9 +2027,9 @@ vg_ffdh_generate_key_cached:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2131b
-	jmp 2125f
-2124:
+	jne 2130b
+	jmp 2124f
+2123:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -2026,20 +2043,20 @@ vg_ffdh_generate_key_cached:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2132:
+2131:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2132b
+	jne 2131b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2133:
+2132:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2134:
+2133:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -2050,20 +2067,20 @@ vg_ffdh_generate_key_cached:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2134b
+	jne 2133b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2133b
+	jne 2132b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2135:
+2134:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -2087,18 +2104,18 @@ vg_ffdh_generate_key_cached:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2135b
+	jne 2134b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2136:
+2135:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2137:
+2136:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -2109,7 +2126,7 @@ vg_ffdh_generate_key_cached:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2137b
+	jne 2136b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -2122,7 +2139,7 @@ vg_ffdh_generate_key_cached:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2136b
+	jne 2135b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -2132,7 +2149,7 @@ vg_ffdh_generate_key_cached:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2138:
+2137:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -2140,13 +2157,13 @@ vg_ffdh_generate_key_cached:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2138b
+	jne 2137b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2139:
+2138:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -2155,8 +2172,8 @@ vg_ffdh_generate_key_cached:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2139b
-2125:
+	jne 2138b
+2124:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -2166,7 +2183,7 @@ vg_ffdh_generate_key_cached:
 	mov rax, QWORD PTR [rdi+168]
 	sub rax, 1
 	mov QWORD PTR [rdi+168], rax
-	jne 294b
+	jne 293b
 	mov edx, 6
 	mov ecx, 6
 	mov r8d, 7
@@ -2188,22 +2205,22 @@ vg_ffdh_generate_key_cached:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2140f
+	je 2139f
 	mov eax, 0
 	mov r14, 0
-2142:
+2141:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2142b
+	jne 2141b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2143:
+2142:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2144:
+2143:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -2214,7 +2231,7 @@ vg_ffdh_generate_key_cached:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2144b
+	jne 2143b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -2230,7 +2247,7 @@ vg_ffdh_generate_key_cached:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2145:
+2144:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -2241,7 +2258,7 @@ vg_ffdh_generate_key_cached:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2145b
+	jne 2144b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -2252,10 +2269,10 @@ vg_ffdh_generate_key_cached:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2143b
+	jne 2142b
 	mov ebp, 0
 	mov r14, 0
-2146:
+2145:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -2263,13 +2280,13 @@ vg_ffdh_generate_key_cached:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2146b
+	jne 2145b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2147:
+2146:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -2278,9 +2295,9 @@ vg_ffdh_generate_key_cached:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2147b
-	jmp 2141f
-2140:
+	jne 2146b
+	jmp 2140f
+2139:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -2294,20 +2311,20 @@ vg_ffdh_generate_key_cached:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2148:
+2147:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2148b
+	jne 2147b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2149:
+2148:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2150:
+2149:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -2318,20 +2335,20 @@ vg_ffdh_generate_key_cached:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2150b
+	jne 2149b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2149b
+	jne 2148b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2151:
+2150:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -2355,18 +2372,18 @@ vg_ffdh_generate_key_cached:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2151b
+	jne 2150b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2152:
+2151:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2153:
+2152:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -2377,7 +2394,7 @@ vg_ffdh_generate_key_cached:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2153b
+	jne 2152b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -2390,7 +2407,7 @@ vg_ffdh_generate_key_cached:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2152b
+	jne 2151b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -2400,7 +2417,7 @@ vg_ffdh_generate_key_cached:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2154:
+2153:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -2408,13 +2425,13 @@ vg_ffdh_generate_key_cached:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2154b
+	jne 2153b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2155:
+2154:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -2423,8 +2440,8 @@ vg_ffdh_generate_key_cached:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2155b
-2141:
+	jne 2154b
+2140:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -2441,14 +2458,14 @@ vg_ffdh_generate_key_cached:
 	mov r10, QWORD PTR [rdi+112]
 	mov ebp, 0
 	mov r14, 0
-2156:
+2155:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2156b
+	jne 2155b
 	mov rax, rbp
 	and rax, 1
 	mov QWORD PTR [rdi+240], rax
@@ -2456,12 +2473,12 @@ vg_ffdh_generate_key_cached:
 	mov rsi, QWORD PTR [rdi+112]
 	mov rbx, QWORD PTR [rdi+88]
 	mov r14, 0
-2157:
+2156:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2157b
+	jne 2156b
 	mov rbx, QWORD PTR [rdi+88]
 	mov rax, QWORD PTR [rbx]
 	or rax, 1
@@ -2471,14 +2488,14 @@ vg_ffdh_generate_key_cached:
 	mov r10, QWORD PTR [rdi+64]
 	mov ebp, 0
 	mov r14, 0
-2158:
+2157:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2158b
+	jne 2157b
 	mov rax, rbp
 	and rax, 1
 	and rax, QWORD PTR [rdi+240]
@@ -2492,23 +2509,23 @@ vg_ffdh_generate_key_cached:
 	mov edx, 0
 	mov r14, rsi
 	add r14, rcx
-2159:
+2158:
 	mov rbp, rdx
 	and rbp, 7
-	je 2160f
-	jmp 2161f
-2160:
+	je 2159f
+	jmp 2160f
+2159:
 	mov rbp, rdx
 	shr rbp, 3
 	mov rax, QWORD PTR [rbx+rbp*8]
 	and rax, r15
-2161:
+2160:
 	sub r14, 1
 	mov BYTE PTR [r14], al
 	shr rax, 8
 	add rdx, 1
 	cmp rdx, rcx
-	jne 2159b
+	jne 2158b
 	mov rax, QWORD PTR [rdi+240]
 	mov rdi, QWORD PTR [rdi+128]
 	mov QWORD PTR [rdi+240], rax
@@ -2519,13 +2536,13 @@ vg_ffdh_generate_key_cached:
 	sub rdx, QWORD PTR [rdi+168]
 	sub r11, rdx
 	mov rcx, QWORD PTR [rdi+144]
-2162:
+2161:
 	movzx eax, BYTE PTR [r11]
 	and rax, r15
 	mov BYTE PTR [r11], al
 	add r11, 1
 	sub rcx, 1
-	jne 2162b
+	jne 2161b
 	mov rax, QWORD PTR [rdi+240]
 	shl rax, 1
 	mov edx, 3
@@ -2542,13 +2559,13 @@ vg_ffdh_generate_key_cached:
 	sub rdx, QWORD PTR [rdi+168]
 	sub r11, rdx
 	mov rcx, QWORD PTR [rdi+144]
-2163:
+2162:
 	movzx eax, BYTE PTR [r11]
 	and rax, r15
 	mov BYTE PTR [r11], al
 	add r11, 1
 	sub rcx, 1
-	jne 2163b
+	jne 2162b
 	mov eax, 2
 226:
 	jmp 21f

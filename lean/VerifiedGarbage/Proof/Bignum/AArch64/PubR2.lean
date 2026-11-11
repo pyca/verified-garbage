@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dFast
+import VerifiedGarbage.Proof.Bignum.AArch64.R2dNorm
 public import VerifiedGarbage.Impl.Rsa.AArch64
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Proof.Bignum.AArch64.R2
@@ -255,10 +256,13 @@ theorem r2Pub_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat}
     WP isa (seqs (r2StepsPub M.mm)) s fun t => Good t B Z w minv ∧
       wv t.mem B (slot w aR2) w < N ∧ wv t.mem B (slot w aR2) w % N = 2 ^ (64 * w) * 2 ^ (64 * w) % N ∧
       Frm B (r2Ranges w) s.mem t.mem ∧ Keep mmRegs s t := by
-  show WP isa (R2Div.choicePub (seqs (r2StepsOld M.mm))) s _
+  show WP isa (R2Div.choicePub (R2Div.choiceW (seqs (r2StepsOld M.mm)) R2Div.fastN)) s _
   refine r2dChoicePub_ok hg hZ (by omega_arith) (by omega_arith) (fun t g ht k _ => ?_) (fun t g ht k hd => ?_)
-  · refine WP.mono (r2Old_ok M g hZ hw hw30 (by rw [ht]; exact hn) (by rw [ht]; exact hinv) hodd hlo)
-      fun t' ⟨h1, h2, h3, h4, h5⟩ => ⟨h1, h2, h3, by rw [← ht]; exact h4, (k.trans h5).mono (by decide)⟩
+  · refine r2dChoiceW_ok g hZ hw (by omega_arith) (fun u g' hu k' _ => ?_) (fun u g' hu k' hw3 => ?_)
+    · refine WP.mono (r2Old_ok M g' hZ hw hw30 (by rw [hu, ht]; exact hn) (by rw [hu, ht]; exact hinv) hodd hlo)
+        fun t' ⟨h1, h2, h3, h4, h5⟩ => ⟨h1, h2, h3, by rw [hu, ht] at h4; exact h4, ((k.trans k').trans h5).mono (by decide)⟩
+    · refine WP.mono (r2dFastN_ok g' hZ hw3 hw30 (by rw [hu, ht]; exact hn) hodd hlo)
+        fun t' ⟨h1, h2, h3, h4, h5⟩ => ⟨h1, h2, h3, by rw [hu, ht] at h4; exact h4, ((k.trans k').trans h5).mono (by decide)⟩
   · refine WP.mono (r2dFastPub_ok g hZ hw (by omega_arith) (by rw [ht]; exact hn) hodd (by rw [ht]; exact hd))
       fun t' ⟨h1, h2, h3, h4, h5⟩ => ⟨h1, h2, h3, by rw [← ht]; exact h4, (k.trans h5).mono (by decide)⟩
 
