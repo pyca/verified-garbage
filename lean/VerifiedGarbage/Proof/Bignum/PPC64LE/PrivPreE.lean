@@ -33,7 +33,7 @@ theorem wordsAt_three (m : Mem) (P : Addr) (a b c : Nat) :
   simp only [Spec.Rsa.wordsAt, List.range_add, List.map_append, List.map_map, Function.comp_def, e1, e2]
 
 theorem pres_cases : ∀ r ∈ preserved, (∀ i < 18, r ≠ Crt.saved i) →
-    r ∉ bRegs ++ nRegs ++ Pre.coreRegs ++ ([.r14, .r17, .r0, .r3] : List Reg) := by
+    r ∉ bRegs ++ ([.r14, .r17, .r0, .r3] : List Reg) := by
   decide
 
 theorem toWords_r2 (w P : Nat) :
@@ -50,7 +50,7 @@ theorem fn_correct (s₀ : State) (h : fnContract.pre s₀) :
   have hn := hP.nw
   have hpl := hP.preLen
   unfold PrivPre.code
-  refine partA_ok h fun t hA => partB_ok hP hA fun u hB => partC_ok hP hB fun v hC => ?_
+  refine partA_ok h fun t hA => partN_ok hP hA fun t' hN => partB_ok hP hN fun u hB => partC_ok hP hB fun v hC => ?_
   have hin : ∀ i < 18, InRegions v.wr (off (Crt.savW (cS s₀)) (8 * i)) 8 := fun i hi => by
     rw [hC.keep.wr, hwr]
     show InRegions _ (cS s₀ + BitVec.ofNat 64 112 + BitVec.ofNat 64 (8 * i)) 8
