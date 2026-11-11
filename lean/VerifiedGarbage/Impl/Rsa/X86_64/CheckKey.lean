@@ -73,8 +73,8 @@ def wordMod (sX sXlen sDX : Nat) : List (Prog isa) :=
 def wordQInv : List (Prog isa) :=
   loadNum aM sP sPlen ++ loadNum aX sQI sPlen ++ ltMask aX aM ++
   loadNum aR sQ sQlen ++ mulXR ++
-  [Keys.copyA WordDivide.aD aAcc, Keys.copyA WordDivide.aM aM,
-    .seq (.block WordDivide.normalize) WordDivide.code] ++ Keys.eqA WordDivide.aR aOne ++
+  [Keys.copyA WordDivide.aD aAcc] ++ [Keys.copyA WordDivide.aM aM] ++
+    [.seq (.block WordDivide.normalize) WordDivide.code] ++ Keys.eqA WordDivide.aR aOne ++
   [.block Keys.CrtValues.andZero]
 
 /-- The checks with word-level remainders, under `guard`. -/
