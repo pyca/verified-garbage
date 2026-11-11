@@ -53,25 +53,28 @@ structure Env where
   m₁ : Mem
   m₂ : Mem
 
-/-- Two runs with the same layout, each satisfying `Ctx` and `Φ`. -/
-def Two (Φ : Lay → Mem → State → Prop) (a b : State) : Prop :=
-  ∃ e : Env, e.L.Ok ∧ ArgsAt e.L e.m₁ ∧ ArgsAt e.L e.m₂ ∧ PubEq e.L e.m₁ e.m₂ ∧
+/-- Two runs with the same layout, each satisfying `Ctx` and `Φ`, with `G`
+holding of their layout and memories on entry. -/
+def Two (G : Env → Prop) (Φ : Lay → Mem → State → Prop) (a b : State) : Prop :=
+  ∃ e : Env, G e ∧ e.L.Ok ∧ ArgsAt e.L e.m₁ ∧ ArgsAt e.L e.m₂ ∧ PubEq e.L e.m₁ e.m₂ ∧
     Ctx e.L e.g₁ e.v₁ e.m₁ a ∧ Ctx e.L e.g₂ e.v₂ e.m₂ b ∧ Φ e.L e.m₁ a ∧ Φ e.L e.m₂ b
+
+variable {G : Env → Prop}
 
 /-- Code whose runs leak the same, and which keeps `Ctx` and establishes `Ψ`. -/
 theorem two_wp {c : Prog isa} {Φ Ψ : Lay → Mem → State → Prop}
-    (hct : RelCT isa (Two Φ) c fun _ _ => True)
+    (hct : RelCT isa (Two G Φ) c fun _ _ => True)
     (hw : ∀ (L : Lay) g vv m₀ (t : State), L.Ok → ArgsAt L m₀ → Ctx L g vv m₀ t → Φ L m₀ t →
       WP isa c t fun t' => Ctx L g vv m₀ t' ∧ Ψ L m₀ t') :
-    RelCT isa (Two Φ) c (Two Ψ) := by
+    RelCT isa (Two G Φ) c (Two G Ψ) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   obtain ⟨ht, -⟩ := hct _ _ _ _ _ _ hp e₁ e₂
-  obtain ⟨e, hL, a₁, a₂, hk, c₁, c₂, f₁, f₂⟩ := hp
+  obtain ⟨e, hG, hL, a₁, a₂, hk, c₁, c₂, f₁, f₂⟩ := hp
   obtain ⟨_, u₁, x₁, y₁⟩ := hw _ _ _ _ s₁ hL a₁ c₁ f₁
   obtain ⟨_, u₂, x₂, y₂⟩ := hw _ _ _ _ s₂ hL a₂ c₂ f₂
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  exact ⟨ht, e, hL, a₁, a₂, hk, y₁.1, y₂.1, y₁.2, y₂.2⟩
+  exact ⟨ht, e, hG, hL, a₁, a₂, hk, y₁.1, y₂.1, y₁.2, y₂.2⟩
 
 /-- A block whose addresses and branches depend only on `sp` and the
 registers `rs`, which `Φ` fixes as functions `f` of the layout. -/
@@ -81,9 +84,9 @@ theorem two_blk {c : Prog isa} {Φ Ψ : Lay → Mem → State → Prop} (rs : Li
     (h : (taint.check (Taint.ofRegs rs) c hc).isSome = true)
     (hw : ∀ (L : Lay) g vv m₀ (t : State), L.Ok → ArgsAt L m₀ → Ctx L g vv m₀ t → Φ L m₀ t →
       WP isa c t fun t' => Ctx L g vv m₀ t' ∧ Ψ L m₀ t') :
-    RelCT isa (Two Φ) c (Two Ψ) :=
+    RelCT isa (Two G Φ) c (Two G Ψ) :=
   two_wp (RelCT.taint (A := taint) (Taint.ofRegs rs)
-    (fun _ _ ⟨_, _, _, _, _, c₁, c₂, f₁, f₂⟩ => ⟨c₁.sp.trans c₂.sp.symm, fun r hr => by
+    (fun _ _ ⟨_, _, _, _, _, _, c₁, c₂, f₁, f₂⟩ => ⟨c₁.sp.trans c₂.sp.symm, fun r hr => by
       rw [Taint.mem_ofRegs] at hr
       rw [hf _ _ _ f₁ r hr, hf _ _ _ f₂ r hr]⟩) h) hw
 
@@ -101,9 +104,9 @@ theorem two_call {n : String} {c : Prog isa} {k : Contract isa} {Φ Ψ : Lay →
     (hwsub : ∀ (L : Lay), L.Ok → ∀ r ∈ wr L, InW L r)
     (hw : ∀ (L : Lay) g vv m₀ (t : State), L.Ok → ArgsAt L m₀ → Ctx L g vv m₀ t → Φ L m₀ t →
       WP isa (.call n c) t fun t' => Ctx L g vv m₀ t' ∧ Ψ L m₀ t') :
-    RelCT isa (Two Φ) (.call n c) (Two Ψ) :=
+    RelCT isa (Two G Φ) (.call n c) (Two G Ψ) :=
   two_wp (fun s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂ => by
-    obtain ⟨e, hL, a₁, a₂, hk, c₁, c₂, f₁, f₂⟩ := hp
+    obtain ⟨e, hG, hL, a₁, a₂, hk, c₁, c₂, f₁, f₂⟩ := hp
     have w₁ := covers c₁ (hsub _ hL) (hwsub _ hL)
     have w₂ := covers c₂ (hsub _ hL) (hwsub _ hL)
     exact RelCT.call (n := n) hv hct (P := fun a b => a = s₁ ∧ b = s₂) (rd e.L) (wr e.L)
@@ -131,13 +134,13 @@ abbrev PhiD (L : Lay) (_ : Mem) (t : State) : Prop :=
 def fixB (L : Lay) : Reg → BitVec 64
   | .x11 => L.out | .x12 => L.inp | .x13 => L.k | _ => 0
 
-theorem cmpArgs_ct : RelCT isa (Two fun L _ t => Slots L t.mem) (.block cmpArgs) (Two PhiB) :=
+theorem cmpArgs_ct : RelCT isa (Two G fun L _ t => Slots L t.mem) (.block cmpArgs) (Two G PhiB) :=
   two_blk [] (fun _ _ => 0) (fun _ _ _ _ _ h => absurd h (by simp)) (by taint_decide)
     fun L _ _ _ t hL _ hc hs => WP.mono (cmpArgs_ok hL hc hs rfl rfl)
       fun t' ⟨hm, hk, x9, x11, x12, x13, x14⟩ =>
         ⟨hc.keep hk hm, by rw [hm]; exact hs, x11, x12, x13, x14, x9 ▸ Proof.Rsa.gOf_cases _ _ _⟩
 
-theorem cmpLoop_ct : RelCT isa (Two PhiB) cmpLoop (Two PhiC) := by
+theorem cmpLoop_ct : RelCT isa (Two G PhiB) cmpLoop (Two G PhiC) := by
   refine two_blk [.x11, .x12, .x13] fixB (fun L _ t ⟨_, x11, x12, x13, _⟩ r hr => ?_) (by taint_decide)
     fun L _ _ _ t hL _ hc ⟨hs, x11, x12, x13, x14, x9⟩ => ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -154,15 +157,15 @@ theorem cmpLoop_ct : RelCT isa (Two PhiB) cmpLoop (Two PhiC) := by
       fun t' hI => ⟨hc.keep (hI.keep.mono (by decide)) hI.mem, by rw [hI.mem]; exact hs, ?_⟩
     rw [hI.keep.gpr _ (by decide)]; exact x9
 
-theorem masks_ct : RelCT isa (Two PhiC) (.block masks) (Two PhiD) :=
+theorem masks_ct : RelCT isa (Two G PhiC) (.block masks) (Two G PhiD) :=
   two_blk [] (fun _ _ => 0) (fun _ _ _ _ _ h => absurd h (by simp)) (by taint_decide)
     fun L _ _ _ t hL _ hc ⟨hs, x9⟩ => WP.mono (masks_ok (eq := decide (t.gpr .x14 = 0)) hL hc hs rfl x9
       (by simp)) fun t' ⟨hm, hk, _, _, _, x11, x14, x15⟩ => ⟨hc.keep hk hm, x11, x14, x15⟩
 
 theorem release_ct :
-    RelCT isa (Two PhiD) (.seq releaseLoop (.block [.addImm .x .x0 .x13 0])) fun _ _ => True :=
+    RelCT isa (Two G PhiD) (.seq releaseLoop (.block [.addImm .x .x0 .x13 0])) fun _ _ => True :=
   RelCT.taint (A := taint) (Taint.ofRegs [.x11, .x14, .x15])
-    (fun _ _ ⟨_, _, _, _, _, c₁, c₂, f₁, f₂⟩ => ⟨c₁.sp.trans c₂.sp.symm, fun r hr => by
+    (fun _ _ ⟨_, _, _, _, _, _, c₁, c₂, f₁, f₂⟩ => ⟨c₁.sp.trans c₂.sp.symm, fun r hr => by
       rw [Taint.mem_ofRegs] at hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -170,7 +173,7 @@ theorem release_ct :
       · rw [f₁.2.1, f₂.2.1]
       · rw [f₁.2.2, f₂.2.2]⟩) (by taint_decide)
 
-theorem tail_ct : RelCT isa (Two fun L _ t => Slots L t.mem) (seqs tail) fun _ _ => True := by
+theorem tail_ct : RelCT isa (Two G fun L _ t => Slots L t.mem) (seqs tail) fun _ _ => True := by
   rw [tail_eq]
   exact cmpArgs_ct.seq (cmpLoop_ct.seq (masks_ct.seq release_ct))
 
@@ -180,8 +183,8 @@ theorem ce_stackArg (t : State) (rd wr : List Region) (i : Nat) :
     stackArg (t.callEntry.withRegions rd wr) i = t.mem.readW (t.sp + BitVec.ofNat 64 (8 * i)) 64 := rfl
 
 theorem crt_ct (v : CrtImpl) :
-    RelCT isa (Two fun L _ t => Slots L t.mem ∧ CrtArgs L t) (.call v.name v.code)
-      (Two fun L _ t => Slots L t.mem) :=
+    RelCT isa (Two G fun L _ t => Slots L t.mem ∧ CrtArgs L t) (.call v.name v.code)
+      (Two G fun L _ t => Slots L t.mem) :=
   two_call v.crt_ok v.crt_ct crtRd crtWr (fun _ _ _ _ _ hL _ hc ⟨_, ha⟩ => crtCall_pre hL hc ha)
     (fun L t₁ t₂ _ _ _ _ m₁ m₂ hL hk c₁ c₂ ⟨_, a₁⟩ ⟨_, a₂⟩ => by
       have st : ∀ i < 10, stackArg (t₁.callEntry.withRegions (crtRd L) (crtWr L)) i =
@@ -217,14 +220,14 @@ def preVal (L : Lay) (nB : List Byte) : List (BitVec 64) :=
 abbrev PreW (L : Lay) (m₀ : Mem) (t : State) : Prop :=
   Spec.Rsa.wordsAt t.mem (L.B + BitVec.ofNat 64 oPre) L.pw = preVal L (Spec.Rsa.bytesAt m₀ L.n L.k.toNat)
 
-theorem pcArgs_ct : RelCT isa (Two fun L _ t => Slots L t.mem) (.block pcArgs)
-    (Two fun L _ t => Slots L t.mem ∧ PcArgs L t) :=
+theorem pcArgs_ct : RelCT isa (Two G fun L _ t => Slots L t.mem) (.block pcArgs)
+    (Two G fun L _ t => Slots L t.mem ∧ PcArgs L t) :=
   two_blk [] (fun _ _ => 0) (fun _ _ _ _ _ h => absurd h (by simp)) (by taint_decide)
     fun _ _ _ _ _ hL ha hc hs => WP.mono (pcArgs_ok hL ha hc hs) fun _ ⟨hc', hs', pa, _⟩ => ⟨hc', hs', pa⟩
 
 theorem pc_ct (v : CrtImpl) :
-    RelCT isa (Two fun L _ t => Slots L t.mem ∧ PcArgs L t) (.call v.pcName v.pc)
-      (Two fun L m₀ t => Slots L t.mem ∧ PreW L m₀ t) :=
+    RelCT isa (Two G fun L _ t => Slots L t.mem ∧ PcArgs L t) (.call v.pcName v.pc)
+      (Two G fun L m₀ t => Slots L t.mem ∧ PreW L m₀ t) :=
   two_call v.pc_ok v.pc_ct pcRd pcWr (fun _ _ _ _ _ hL _ hc ⟨_, ha⟩ => pcCall_pre hL hc ha)
     (fun L t₁ t₂ _ _ _ _ m₁ m₂ hL hk c₁ c₂ ⟨_, a₁⟩ ⟨_, a₂⟩ => by
       refine ⟨fun r hr => ?_, by simp only [State.withRegions_sp, State.callEntry_sp, c₁.sp, c₂.sp], ?_⟩
@@ -244,8 +247,8 @@ theorem pc_ct (v : CrtImpl) :
       simp only [PreW, preVal]
       split <;> rename_i h <;> simp only [h] at hpc <;> exact hpc.2)
 
-theorem pdArgs_ct : RelCT isa (Two fun L m₀ t => Slots L t.mem ∧ PreW L m₀ t) (.block pdArgs)
-    (Two fun L m₀ t => Slots L t.mem ∧ PdArgs L t ∧ PreW L m₀ t) :=
+theorem pdArgs_ct : RelCT isa (Two G fun L m₀ t => Slots L t.mem ∧ PreW L m₀ t) (.block pdArgs)
+    (Two G fun L m₀ t => Slots L t.mem ∧ PdArgs L t ∧ PreW L m₀ t) :=
   two_blk [] (fun _ _ => 0) (fun _ _ _ _ _ h => absurd h (by simp)) (by taint_decide)
     fun L _ _ _ _ hL ha hc ⟨hs, hp⟩ => WP.mono (pdArgs_ok hL ha hc hs) fun _ ⟨hc', hs', pda, _, f₃⟩ => by
       refine ⟨hc', hs', pda, ?_⟩
@@ -262,8 +265,8 @@ theorem pdArgs_ct : RelCT isa (Two fun L m₀ t => Slots L t.mem ∧ PreW L m₀
         · exact (by rw [Nat.mul_comm]; exact hP16)
 
 theorem pd_ct (v : CrtImpl) :
-    RelCT isa (Two fun L m₀ t => Slots L t.mem ∧ PdArgs L t ∧ PreW L m₀ t) (.call v.pdName v.pd)
-      (Two fun L _ t => Slots L t.mem) :=
+    RelCT isa (Two G fun L m₀ t => Slots L t.mem ∧ PdArgs L t ∧ PreW L m₀ t) (.call v.pdName v.pd)
+      (Two G fun L _ t => Slots L t.mem) :=
   two_call v.pd_ok v.pd_ct pdRd pdWr (fun _ _ _ _ _ hL _ hc ⟨_, ha, _⟩ => pdCall_pre hL hc ha)
     (fun L t₁ t₂ _ _ _ _ m₁ m₂ hL hk c₁ c₂ ⟨_, a₁, p₁⟩ ⟨_, a₂, p₂⟩ => by
       refine ⟨fun r hr => ?_, by simp only [State.withRegions_sp, State.callEntry_sp, c₁.sp, c₂.sp], ?_, ?_,
@@ -292,10 +295,6 @@ theorem pd_ct (v : CrtImpl) :
 
 /-! ## The whole function -/
 
-/-- Two calls whose public data agree, in the inner frame. -/
-def Entered (a b : State) : Prop :=
-  ∃ s₁ s₂, chkA.pre s₁ ∧ chkA.pre s₂ ∧ chkA.pub s₁ s₂ ∧ a = entered s₁ ∧ b = entered s₂
-
 theorem lay_eq {s₁ s₂ : State} (hp : chkA.pub s₁ s₂) : lay s₂ = lay s₁ := by
   obtain ⟨hr, hsp, ha, -⟩ := hp
   simp only [stackArgs_twelve, List.cons.injEq, and_true] at ha
@@ -304,21 +303,32 @@ theorem lay_eq {s₁ s₂ : State} (hp : chkA.pub s₁ s₂) : lay s₂ = lay s�
   obtain ⟨r0, r1, r2, r3, r4, r5, r6, r7⟩ := hr
   simp only [lay, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, hsp]
 
-theorem crtArgs_ct : RelCT isa Entered (.block crtArgs) (Two fun L _ t => Slots L t.mem ∧ CrtArgs L t) := by
-  intro a b ta tb a' b' ⟨s₁, s₂, h₁, h₂, hp, ea, eb⟩ e₁ e₂
+/-- Two calls whose public data agree, in the inner frame, each meeting
+`chkA` but for reading also `X`, with `G` of their layout and memories. -/
+def EnteredW (G : Env → Prop) (a b : State) : Prop :=
+  ∃ s₁ s₂ R₁ R₂ X, chkA.pre (s₁.withRegions R₁ s₁.wr) ∧ chkA.pre (s₂.withRegions R₂ s₂.wr) ∧
+    s₁.rd = R₁ ++ X ∧ s₂.rd = R₂ ++ X ∧ chkA.pub s₁ s₂ ∧
+    G ⟨layW s₁ X, s₁.gpr, s₂.gpr, s₁.v, s₂.v, s₁.mem, s₂.mem⟩ ∧ a = entered s₁ ∧ b = entered s₂
+
+theorem crtArgs_ct : RelCT isa (EnteredW G) (.block crtArgs) (Two G fun L _ t => Slots L t.mem ∧ CrtArgs L t) := by
+  intro a b ta tb a' b' ⟨s₁, s₂, R₁, R₂, X, h₁, h₂, x₁, x₂, hp, hG, ea, eb⟩ e₁ e₂
   subst ea eb
   have e := lay_eq hp
+  have eW : layW s₂ X = layW s₁ X := by simp only [layW, e]
   have ht := (RelCT.taint (A := taint) (P := fun x y => x.sp = y.sp) (Taint.ofRegs [])
     (fun _ _ h => ⟨h, fun _ hr => False.elim (by simp at hr)⟩) (by taint_decide)
     _ _ _ _ _ _ (by show (entered s₁).sp = (entered s₂).sp; rw [entered_sp, entered_sp, e]) e₁ e₂).1
-  obtain ⟨_, u₁, x₁, y₁⟩ := crtArgs_ok (lay_ok h₁) (argsAt_entry s₁) (entered_ctx h₁)
+  obtain ⟨_, u₁, x₁', y₁⟩ := crtArgs_ok ((lay_ok h₁).withX X) (argsAt_entry s₁) (entered_ctxW (s := s₁) h₁ x₁)
     ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
-  obtain ⟨_, u₂, x₂, y₂⟩ := crtArgs_ok (lay_ok h₂) (argsAt_entry s₂) (entered_ctx h₂)
+  obtain ⟨_, u₂, x₂', y₂⟩ := crtArgs_ok ((lay_ok h₂).withX X) (argsAt_entry s₂) (entered_ctxW (s := s₂) h₂ x₂)
     ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
-  obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
-  obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  refine ⟨ht, ⟨lay s₁, s₁.gpr, s₂.gpr, s₁.v, s₂.v, s₁.mem, s₂.mem⟩, lay_ok h₁, argsAt_entry s₁,
-    e ▸ argsAt_entry s₂, ?_, y₁.1, e ▸ y₂.1, y₁.2, e ▸ y₂.2⟩
+  obtain ⟨-, rfl⟩ := Exec.det e₁ x₁'
+  obtain ⟨-, rfl⟩ := Exec.det e₂ x₂'
+  have y₂' : Ctx (layW s₁ X) s₂.gpr s₂.v s₂.mem b' ∧ Slots (layW s₁ X) b'.mem ∧ CrtArgs (layW s₁ X) b' :=
+    eW ▸ y₂
+  have a₂ : ArgsAt (layW s₁ X) s₂.mem := eW ▸ (argsAt_entry s₂ : ArgsAt (layW s₂ X) s₂.mem)
+  refine ⟨ht, ⟨layW s₁ X, s₁.gpr, s₂.gpr, s₁.v, s₂.v, s₁.mem, s₂.mem⟩, hG, (lay_ok h₁).withX X,
+    argsAt_entry s₁, a₂, ?_, y₁.1, y₂'.1, y₁.2, y₂'.2⟩
   obtain ⟨hr, -, -, hn, he⟩ := hp
   simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hr
   obtain ⟨-, -, r2, r3, r4, r5, -, -⟩ := hr
@@ -328,14 +338,29 @@ theorem crtArgs_ct : RelCT isa Entered (.block crtArgs) (Two fun L _ t => Slots 
   · show Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x4) (s₁.gpr .x5).toNat = Spec.Rsa.bytesAt s₂.mem (s₁.gpr .x4) (s₁.gpr .x5).toNat
     exact he.trans (by rw [← r4, ← r5])
 
-theorem code_constantTime (v : CrtImpl) : ConstantTime isa chkA.pre chkA.pub (privCodeOf v) := by
-  refine RelCT.constantTime (RelCT.pushFrame (fun _ _ h => h.2.2.2.1)
+/-- The frames, the CRT and the check, whatever `stage` writes `n`'s values
+with: constant time for calls that agree on `pub` and enter as `EnteredW`. -/
+theorem codeWith_constantTime (v : CrtImpl) (stage : Prog isa)
+    (hstage : RelCT isa (Two G fun L _ t => Slots L t.mem ∧ PcArgs L t) stage
+      (Two G fun L m₀ t => Slots L t.mem ∧ PreW L m₀ t))
+    {pre : State → Prop} {pub : State → State → Prop}
+    (hsp : ∀ s₁ s₂, pre s₁ → pre s₂ → pub s₁ s₂ → s₁.sp = s₂.sp)
+    (hent : ∀ s₁ s₂, pre s₁ → pre s₂ → pub s₁ s₂ → EnteredW G (entered s₁) (entered s₂)) :
+    ConstantTime isa pre pub (codeWith v stage) := by
+  refine RelCT.constantTime (RelCT.pushFrame (fun _ _ h => hsp _ _ h.1 h.2.1 h.2.2)
     (RelCT.alloc (R := fun _ _ => True) ?_))
-  show RelCT isa _ (body _ _ _ _ _ _) _
-  rw [body_eq, check_eq]
-  refine (crtArgs_ct.seq ((crt_ct v).seq (pcArgs_ct.seq ((pc_ct v).seq (pdArgs_ct.seq
+  show RelCT isa _ (seqs _) _
+  rw [show seqs ([.block crtArgs, .call v.name v.code] ++ checkWith stage v.pdName v.pd) =
+    .seq (.block crtArgs) (.seq (.call v.name v.code) (seqs (checkWith stage v.pdName v.pd))) from rfl,
+    checkWith_eq]
+  refine (crtArgs_ct.seq ((crt_ct v).seq (pcArgs_ct.seq (hstage.seq (pdArgs_ct.seq
     ((pd_ct v).seq tail_ct)))))).mono ?_ fun _ _ _ => trivial
   rintro _ _ ⟨_, _, ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩, rfl, rfl⟩
-  exact ⟨s₁, s₂, h₁, h₂, hp, rfl, rfl⟩
+  exact hent s₁ s₂ h₁ h₂ hp
+
+theorem code_constantTime (v : CrtImpl) : ConstantTime isa chkA.pre chkA.pub (privCodeOf v) :=
+  codeWith_constantTime (G := fun _ => True) v _ (pc_ct v) (fun _ _ _ _ hp => hp.2.1)
+    fun s₁ s₂ h₁ h₂ hp => ⟨s₁, s₂, s₁.rd, s₂.rd, [], h₁, h₂, (List.append_nil _).symm,
+      (List.append_nil _).symm, hp, trivial, rfl, rfl⟩
 
 end VG.Proof.Rsa.AArch64
