@@ -441,4 +441,135 @@ theorem crt_preP {s t u : State} (h : PreP true s) (X : PreX s) (A : AtCrt s t) 
     rw [hb h.kp.symm (by have := h.wp; omega), hb h.kq.symm (by have := h.wq; omega)]
     exact primes_of_hyp X hw
 
+theorem crtP_noFrames : Impl.Bignum.RISCV64.Crt.crtP.noFrames = true := by decide +kernel
+
+/-- The slot of `out` is apart from what the call writes. -/
+theorem s1_apart {s : State} (h : PreP true s) {r : Region} (hr : r ∈ crtWr s) :
+    Region.Disjoint ⟨fb s + BitVec.ofNat 64 oS1, 8⟩ r := by
+  have hk := h.k2
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact Offset.disjoint _ (.inl (by decide)) (by decide) (by unfold oM; omega)
+  · exact h.ks.sub_left (frame_sub s (by decide))
+
+/-- The regions of the call of `vg_rsa_private_crt_precomputed`. -/
+theorem coversP {s t u : State} (h : PreP true s) (X : PreX s) (A : AtCrt s t)
+    (k : Keep [.t0, .s1, .t6, .t1] t u) :
+    Covers (crtRd s ++ [r2Rs s] ++ crtWr s) (u.rd ++ u.wr) ∧ Covers (crtWr s) u.wr := by
+  obtain ⟨hc0, hw0⟩ := crt_covers h A
+  refine ⟨?_, by rw [k.2.2]; exact hw0⟩
+  rw [k.2.1, k.2.2]
+  refine Covers.append_left (Covers.append_left (fun a n ⟨r, hr, c⟩ => hc0 a n ⟨r, List.mem_append_left _ hr, c⟩)
+    (Covers.left (Covers.of_sub fun r hr => ?_))) (Covers.right hw0)
+  rw [List.mem_singleton.mp hr]
+  refine ⟨preR s, by rw [A.rd, h.hrd]; simp [rdL], 8 * Spec.Rsa.precomputedWords (s.gpr .a3).toNat, rfl, ?_⟩
+  have := r2Rs_len X
+  simp only
+  omega
+
+/-- After `vg_rsa_private_crt_precomputed`, called from the state `u` after
+`crtPtr`, from the state `t` at the call of the CRT. -/
+def AfterP (s v : State) : Prop :=
+  ∃ t u, AtCrt s t ∧ Keep [.t0, .s1, .t6, .t1] t u ∧
+    u.mem = t.mem.writeW (fb s + BitVec.ofNat 64 oS1) (s.gpr .a0) ∧
+    u.sp = t.sp ∧ v.rd = u.rd ∧ v.wr = u.wr ∧ v.sp = u.sp ∧ Frame (crtWr s) u.mem v.mem ∧
+    (∀ r ∈ preserved, v.gpr r = u.gpr r) ∧
+    Proof.Bignum.RISCV64.Crt.fnContractP.post (crtEntryG s u [r2Rs s])
+      (v.withRegions (crtRd s ++ [r2Rs s]) (crtWr s))
+
+theorem callP_ok {s t u : State} (h : PreP true s) (X : PreX s) (A : AtCrt s t)
+    (k : Keep [.t0, .s1, .t6, .t1] t u)
+    (hm : u.mem = t.mem.writeW (fb s + BitVec.ofNat 64 oS1) (s.gpr .a0)) (hsp : u.sp = t.sp)
+    (h1 : u.gpr .s1 = stackArg s 12 + BitVec.ofNat 64 (8 * Spec.Rsa.precomputedWords (s.gpr .a3).toNat)) :
+    WP isa crtCallP u (AfterP s) := by
+  obtain ⟨hc, hw⟩ := coversP h X A k
+  unfold crtCallP
+  exact WP.call (k := Proof.Bignum.RISCV64.Crt.fnContractP) Proof.Bignum.RISCV64.Crt.fn_correctP
+    (crt_preP h X A k hm hsp h1) hc hw (fun v hrd hwr hsp' hf hpres _ hpost =>
+      ⟨t, u, A, k, hm, hsp, hrd, hwr, hsp', hf, hpres, hpost⟩) crtP_noFrames
+
+/-- `out` back into `s1`, after `vg_rsa_private_crt_precomputed`: what
+`vg_rsa_private_crt` gives. -/
+theorem restoreP_ok {s v : State} (h : PreP true s) (hv : AfterP s v) :
+    WP isa (.block crtRestore) v fun w => Mid s w ∧ crtOut s w := by
+  obtain ⟨t, u, A, k, hm, hsp, hrd, hwr, hsp', hf, hp, hpost⟩ := hv
+  have hk := h.k2
+  have mk := mR_sub h
+  have hfu : Frame [kR s] s.mem u.mem := by
+    rw [hm]
+    exact A.mem.writeW (List.mem_singleton_self _) _ (frame_contains s (by unfold oS1 frameBytes; omega))
+  have s1v : v.mem.readW (fb s + BitVec.ofNat 64 168) 64 = s.gpr .a0 := by
+    rw [hf.readW (Region.contains_self _ _) (fun r hr => s1_apart h hr) (by decide), hm]
+    exact Mem.readW_writeW_self64 _ _ _
+  have i1 : InRegions (v.rd ++ v.wr) (fb s + BitVec.ofNat 64 168) 8 := by
+    rw [hrd, hwr, k.2.1, k.2.2, A.wr]
+    exact ⟨kR s, List.mem_append_right _ (List.mem_cons_self ..), frame_contains s (by decide)⟩
+  have l1 : (fb s + BitVec.ofNat 64 168).toNat % 8 = 0 := fb_al8 h (by decide)
+  have vsp : v.sp = fb s := hsp'.trans (hsp.trans A.sp)
+  refine WP.mono (WP.rdwr (WP.keep [.t0, .s1] (Q := fun w => w.gpr .s1 = s.gpr .a0 ∧ w.mem = v.mem)
+    (by brun [crtRestore, exec_addSp, vsp, BitVec.add_zero, i1, l1, s1v, oS1]) (by rfl) (by rfl)))
+    fun w ⟨⟨⟨w1, wm⟩, kw⟩, wrd, wwr, wsp⟩ => ⟨?_, ?_⟩
+  · have g : ∀ r, r ∉ [Reg.t0, .s1] → r ∉ [Reg.t0, .s1, .t6, .t1] → r ∈ preserved → w.gpr r = t.gpr r :=
+      fun r h1 h1' h2 => by rw [kw.gpr h1, hp r h2, k.gpr h1']
+    refine ⟨wsp.trans vsp, by rw [wrd, hrd, k.2.1, A.rd], by rw [wwr, hwr, k.2.2, A.wr], w1,
+      (g _ (by decide) (by decide) (by decide)).trans A.s2, (g _ (by decide) (by decide) (by decide)).trans A.s3,
+      (g _ (by decide) (by decide) (by decide)).trans A.s4, (g _ (by decide) (by decide) (by decide)).trans A.s5,
+      (g _ (by decide) (by decide) (by decide)).trans A.s6,
+      fun r hr => (g r (by revert r; decide) (by revert r; decide) (by revert r; decide)).trans (A.hi r hr), ?_, ?_⟩
+    · rw [wm]
+      refine (hfu.mono fun r hr => ?_).trans (hf.sub fun r hr => ?_)
+      · rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..
+      · simp only [crtWr, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact ⟨_, List.mem_cons_self .., mk⟩
+        · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
+    · rw [wm]
+      refine (A.sv.frame (rs := [⟨fb s + BitVec.ofNat 64 oS1, 8⟩]) (by
+          rw [hm]; exact Frame.writeW (Frame.refl _ t.mem) (List.mem_singleton_self _) _ (Region.contains_self _ _))
+        fun p hp' r hr => ?_).frame hf fun p hp' r hr => below_apart h (by
+          have := saved_offs p hp'; unfold oSave oM at *; omega) hr
+      rw [List.mem_singleton.mp hr]
+      have := saved_offs p hp'
+      exact Offset.disjoint _ (.inl (by unfold oSave oS1 at *; omega)) (by unfold oSave at *; omega)
+        (by decide)
+  · have g : ∀ r, r ∉ linkRegs → r ∈ [Reg.a0, .a2, .a3, .a4, .a6, .a7] →
+        (crtEntryG s u [r2Rs s]).gpr r = t.gpr r := fun r h1 h2 =>
+      (State.callEntry_gpr u h1).trans (k.gpr (by clear h1; revert h2; revert r; decide))
+    have hpsa : ∀ i < 10, u.mem.readW (fb s + BitVec.ofNat 64 (8 * i)) 64 = stackArg s (2 + i) := fun i hi => by
+      rw [hm, Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oS1; omega)) (by omega) (by unfold oS1; omega))
+        (by decide)]
+      exact A.psa i hi
+    have sa := fun i hi => crtEntryG_stackArg A hpsa hsp (X := [r2Rs s]) (i := i) hi
+    simp only [Proof.Bignum.RISCV64.Crt.fnContractP, Proof.Bignum.RISCV64.Crt.postCore,
+      g .a0 (by decide) (by decide), g .a2 (by decide) (by decide), g .a3 (by decide) (by decide),
+      g .a4 (by decide) (by decide), g .a6 (by decide) (by decide), g .a7 (by decide) (by decide),
+      A.a0, A.a2, A.a3, A.a4, A.a6, A.a7,
+      sa 0 (by decide), sa 1 (by decide), sa 2 (by decide), sa 4 (by decide), sa 6 (by decide),
+      State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem, Nat.reduceAdd] at hpost
+    have hb := fun {p : Addr} {len : Nat} (hd : Region.Disjoint ⟨p, len⟩ (kR s)) (hl : len ≤ 2 ^ 64) =>
+      bytes_of_frame (s := s) (rs := [kR s]) hfu (p := p) (len := len)
+        (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) hl
+    rw [hb h.kn.symm (by have := h.wn; omega), hb (iR_eq h ▸ h.ki.symm) (by have := h.k2; omega),
+      hb h.kp.symm (by have := h.wp; omega), hb h.kq.symm (by have := h.wq; omega),
+      hb (h.h5 ▸ h.kdp.symm) (by have := h.wdp; omega), hb (h.h7' ▸ h.kdq.symm) (by have := h.wdq; omega),
+      hb (h.h9 ▸ h.kqi.symm) (by have := h.wqi; omega)] at hpost
+    show Spec.Rsa.written w.mem _ _ ((w.gpr .a0).setWidth 32) _
+    rw [wm, kw.gpr (by decide)]
+    exact hpost
+
+/-- With the key's precomputed values: `vg_rsa_private_crt_precomputed`, given
+the primes' values in `s1`, `out` kept in the frame. -/
+theorem crt_true (s : State) (h : PreP true s) (X : PreX s) : CrtOk true s := fun t Q A hQ => by
+  unfold crtStep
+  refine WP.seq (WP.mono (crtPtr_ok h X A) fun u ⟨⟨h1, hm, hsp⟩, k⟩ => ?_)
+  exact WP.seq (WP.mono (callP_ok h X A k hm hsp h1) fun v hv =>
+    WP.mono (restoreP_ok h hv) fun w ⟨M, C⟩ => hQ w M C)
+
+theorem codeP_correct (s : State)
+    (hpre : (Proof.Rsa.privateCheckedPrecomputedContract RISCV64.abi frameBytes).pre s) :
+    ∃ tr t, Exec isa codeP s tr t ∧ abiPreserved s t ∧ fnPost s t := by
+  obtain ⟨h, X⟩ := preP_ofP hpre
+  exact WP.mono (codeG_correct s h (crt_true s h X) (step_true s h X)) fun t ⟨ha, hf⟩ =>
+    ⟨ha, hf (preValOk_of X X.hyp)⟩
+
 end VG.Proof.Rsa.RISCV64.Priv
