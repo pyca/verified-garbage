@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.BatchInstance
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTop
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
+public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Instance
 public import VerifiedGarbage.Proof.Rsa.X86.CvVerified
 public import VerifiedGarbage.Proof.Rsa.X86.KcVerified
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Timing
@@ -34,6 +35,11 @@ def artifacts : List Artifact := [
   Spec.Rsa.publicPrecomputeApi.artifact X86.target {
     code := Impl.Bignum.X86.PrecomputeFn.code
     verified := Proof.Bignum.X86.precompute_verified
-    stack := 96 }]
+    stack := 96 },
+  Spec.Rsa.privatePrecomputeApi.artifact X86.target {
+    code := Proof.Bignum.X86.PrivPre.ppCode
+    verified := Proof.Bignum.X86.PrivPre.pp_verified
+    spSafe := Proof.Bignum.X86.PrivPre.pp_spSafe
+    stack := 196 }]
 
 end VG.Artifacts.Rsa.X86

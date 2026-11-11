@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.CrtProduct
 meta import VerifiedGarbage.Proof.Bignum.Arm.Workspace
@@ -18,6 +20,8 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+meta import VerifiedGarbage.Proof.Framework.Arm.Inline
 
 /-! # Product-header copies use only public workspace addresses -/
 
@@ -83,5 +87,40 @@ theorem crt_productCount_ct : RelCT isa (fun s t => s.gpr .r0 = t.gpr .r0) (.blo
   simp only [List.mem_singleton] at hr
   subst r
   exact h
+
+/-- Code that writes neither `r0` nor `sp`: constant time from equal `r0` and
+`sp`, and still equal after. -/
+theorem relCT_keep_r0 {P : State → State → Prop} {c : Prog isa} (ct : RelCT isa P c (fun _ _ => True))
+    (hc : ∀ i ∈ instrs c, clobbers i .r0 = false) (hp : ∀ s t, P s t → s.gpr .r0 = t.gpr .r0 ∧ s.sp = t.sp) :
+    RelCT isa P c (fun s t => s.gpr .r0 = t.gpr .r0 ∧ s.sp = t.sp) := by
+  intro s t tr1 tr2 u v h e1 e2
+  exact ⟨(ct s t tr1 tr2 u v h e1 e2).1, (Exec.gpr hc e1).trans ((hp s t h).1.trans (Exec.gpr hc e2).symm),
+    (Exec.rdwr e1).2.2.trans ((hp s t h).2.trans (Exec.rdwr e2).2.2.symm)⟩
+
+/-- `Crt.lengthCount` is constant time from equal `r0` and `sp`: its loads are
+at `sp`, its stores at `r0`. -/
+theorem lengthCount_ct :
+    RelCT isa (fun s t => s.gpr .r0 = t.gpr .r0 ∧ s.sp = t.sp) (.block lengthCount) (fun _ _ => True) := by
+  let P := fun (s t : State) => s.gpr .r0 = t.gpr .r0 ∧ s.sp = t.sp
+  have load68 : RelCT isa P (.block [.ldrSp .r1 68]) P :=
+    relCT_keep_r0 ((loadStack_ct .r1 68).mono (fun _ _ h => h.2) (fun _ _ _ => trivial)) (by decide) (fun _ _ h => h)
+  have load76 : RelCT isa P (.block [.ldrSp .r1 76]) P :=
+    relCT_keep_r0 ((loadStack_ct .r1 76).mono (fun _ _ h => h.2) (fun _ _ _ => trivial)) (by decide) (fun _ _ h => h)
+  have store140 : RelCT isa P
+      (.block [.dp .add .r1 .r1 (.imm 3), .mov .r1 (.shifted .r1 .lsr 2), .str .r1 .r0 140]) P := by
+    refine relCT_keep_r0 ?_ (by decide) (fun _ _ h => h)
+    apply RelCT.taint (A := taint) (Taint.ofRegs [.r0]) _ (by taint_decide)
+    intro s t h
+    exact Taint.agree_ofRegs (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.1)
+  have store144 : RelCT isa P
+      (.block [.dp .add .r1 .r1 (.imm 3), .mov .r1 (.shifted .r1 .lsr 2), .str .r1 .r0 144]) P := by
+    refine relCT_keep_r0 ?_ (by decide) (fun _ _ h => h)
+    apply RelCT.taint (A := taint) (Taint.ofRegs [.r0]) _ (by taint_decide)
+    intro s t h
+    exact Taint.agree_ofRegs (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.1)
+  exact (RelCT.block_append (M := isa) (l₁ := [.ldrSp .r1 68]) (load68.seq
+    (RelCT.block_append (M := isa) (l₁ := [.dp .add .r1 .r1 (.imm 3), .mov .r1 (.shifted .r1 .lsr 2), .str .r1 .r0 140])
+      (store140.seq (RelCT.block_append (M := isa) (l₁ := [.ldrSp .r1 76]) (load76.seq store144)))))).mono
+    (fun _ _ h => h) (fun _ _ _ => trivial)
 
 end VG.Proof.Bignum.Arm

@@ -10,6 +10,8 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CrtCheckProduct
 namespace VG.Impl.Bignum.Arm.Crt
 open VG VG.Arm
 
-def validateProduct : Prog isa := .seq factorProduct checkProduct
+/-- The product, with the counts `count` sets, compared with `n`. -/
+def validateProductWith (count : List Instr) : Prog isa := .seq (factorProductWith false count) checkProduct
+def validateProduct : Prog isa := validateProductWith productCount
 
 end VG.Impl.Bignum.Arm.Crt
