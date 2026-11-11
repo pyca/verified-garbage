@@ -269,6 +269,81 @@ theorem prepA_ok {s : State} {B : Addr} {Z w N r sv wd : Nat} (h : Ws s B Z w N)
     exact KeyWorkspace.Keep.of_arr (o := r) (d := 0) (n := 8 * (2 * wd)) (by rw [Nat.add_zero]; exact o3)
       (by simp only [S]; omega) (by simp)
 
+/-- `x`, plus 1 if it is zero. -/
+def fixW (x : BitVec 64) : BitVec 64 := x + ((0#64 - x ||| x) >>> 63 ^^^ 1#64)
+
+theorem shr63_ofNat (y : BitVec 64) : y >>> 63 = BitVec.ofNat 64 (y.toNat / 2 ^ 63) :=
+  BitVec.eq_of_toNat_eq (by
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+    have := y.isLt; omega)
+
+theorem fixW_toNat (x : BitVec 64) : (fixW x).toNat = x.toNat + if x.toNat = 0 then 1 else 0 := by
+  by_cases hx : x = 0#64
+  · subst hx; decide
+  · have hx' : x.toNat ≠ 0 := fun e => hx (BitVec.eq_of_toNat_eq e)
+    have e : (0#64 - x ||| x) >>> 63 = 1#64 := by
+      rw [BitVec.ushiftRight_or_distrib, shr63_ofNat, shr63_ofNat (y := x), BitVec.toNat_sub,
+        show (0#64).toNat = 0 from rfl, Nat.add_zero]
+      have hl := x.isLt
+      generalize x.toNat = b at hl hx'
+      rcases (show b < 2 ^ 63 ∨ 2 ^ 63 ≤ b by omega) with h | h
+      · rw [show (2 ^ 64 - b) % 2 ^ 64 / 2 ^ 63 = 1 by omega, show b / 2 ^ 63 = 0 by omega]; decide
+      · rw [show b / 2 ^ 63 = 1 by omega]
+        rcases (show (2 ^ 64 - b) % 2 ^ 64 / 2 ^ 63 = 0 ∨ (2 ^ 64 - b) % 2 ^ 64 / 2 ^ 63 = 1 by omega) with
+          e | e <;> rw [e] <;> decide
+    rw [fixW, e, show (1#64 ^^^ 1#64) = 0#64 from rfl, BitVec.add_zero, ite_eq_right hx', Nat.add_zero]
+
+/-- `fixTop m`, `w = 4 wd`: `[m]`'s word `wd - 1` plus 1 if it is zero. -/
+theorem fixTop_ok {s : State} {B : Addr} {Z w N m wd : Nat} (h : Ws s B Z w N) (hm : m < N) (hN : N ≤ 256)
+    (hw : w = 4 * wd) (hwd : 4 ≤ wd) :
+    WP isa (.block (fixTop m)) s fun u =>
+      u.mem = s.mem.writeW (off B (arr w m + 8 * (wd - 1))) (fixW (word s.mem B (arr w m + 8 * (wd - 1)))) ∧
+      Ws u B Z w N ∧ Keep [.r0, .r3, .r6, .r10, .r11, .r12] s u := by
+  have := h.wle
+  have hnw := h.nowrap
+  have fm := h.arr_fit hm
+  simp only [S] at fm
+  have e11 : BitVec.ofNat 64 w >>> 1 = BitVec.ofNat 64 (2 * wd) := by
+    rw [hw, show 4 * wd = 2 * (2 * wd) by omega]; exact mont_ofNat_shr1 (by omega)
+  have ea := ea_top B (d := arr w m) (w := wd) (c := 8) (by omega)
+  rw [show arr w m + 8 * wd - 8 = arr w m + 8 * (wd - 1) by omega] at ea
+  have rT : (s.write .r10 (off B (arr w m))).mem.readW (off B (arr w m + 8 * (wd - 1))) 64 =
+      word s.mem B (arr w m + 8 * (wd - 1)) := rfl
+  simp only [fixTop]
+  refine ptr_ok h (r := .r10) (by decide) (by decide) (by decide) (show m < 2 ^ 15 by omega) ?_
+  refine WP.mono (WP.keep [.r0, .r3, .r6, .r11, .r12] (Q := fun u =>
+      u.mem = s.mem.writeW (off B (arr w m + 8 * (wd - 1))) (fixW (word s.mem B (arr w m + 8 * (wd - 1))))) (by
+    prun [gpr_write, mem_write, h.r29, e11, ea, rT, h.scr.ld (show arr w m + 8 * (wd - 1) + 8 ≤ Z by omega),
+      h.scr.st (show arr w m + 8 * (wd - 1) + 8 ≤ Z by omega)]
+    rfl) (by decide)) fun u ⟨um, uk⟩ =>
+    ⟨um, (h.of_keep (Keep.write _ .r10 _)).of_keep uk, ((Keep.write _ .r10 _).trans uk).mono (by decide)⟩
+
+/-- The divisor after `fixTop`: its top word not zero, and unchanged if it was not. -/
+theorem fixTop_val {mem : Mem} {B : Addr} {d wd : Nat} (hwd : 1 ≤ wd) (hd : d + 8 * wd ≤ 2 ^ 64) :
+    let mem' := mem.writeW (off B (d + 8 * (wd - 1))) (fixW (word mem B (d + 8 * (wd - 1))))
+    2 ^ (64 * (wd - 1)) ≤ wordsVal mem' B d wd ∧
+      (2 ^ (64 * (wd - 1)) ≤ wordsVal mem B d wd → wordsVal mem' B d wd = wordsVal mem B d wd) := by
+  intro mem'
+  have e' : wordsVal mem' B d wd = wordsVal mem B d (wd - 1) +
+      2 ^ (64 * (wd - 1)) * (fixW (word mem B (d + 8 * (wd - 1)))).toNat := by
+    show wordsVal (mem.writeW _ _) B d wd = _
+    rw [show wordsVal (mem.writeW (off B (d + 8 * (wd - 1))) (fixW (word mem B (d + 8 * (wd - 1))))) B d wd =
+      wordsVal (mem.writeW (off B (d + 8 * (wd - 1))) (fixW (word mem B (d + 8 * (wd - 1))))) B d (wd - 1 + 1) by
+        rw [Nat.sub_add_cancel hwd], fios_wordsVal_write_top _ _ _ _ _ (by omega)]
+  have e0 := wordsVal_succ_top mem B d (wd - 1)
+  rw [Nat.sub_add_cancel hwd] at e0
+  have hlow := wordsVal_lt mem B d (wd - 1)
+  rw [e', fixW_toNat]
+  generalize (word mem B (d + 8 * (wd - 1))).toNat = T at e0 ⊢
+  constructor
+  · have : 1 ≤ T + (if T = 0 then 1 else 0) := by split <;> omega
+    have := Nat.mul_le_mul_left (2 ^ (64 * (wd - 1))) this
+    omega
+  · intro hT
+    rcases Nat.eq_zero_or_pos T with h0 | h0
+    · rw [h0, Nat.mul_zero, Nat.add_zero] at e0; omega
+    · rw [ite_eq_right (by omega), Nat.add_zero, e0]
+
 /-- `normSetup m t`: the addresses of `[m]` and `[t]`, `r11 := w / 2`. -/
 theorem normSetup_ok {s : State} {B : Addr} {Z w N m t wd : Nat} (h : Ws s B Z w N) (hm : m < N) (ht : t < N)
     (hN : N ≤ 256) (hw : w = 4 * wd) (hwd : 1 ≤ wd) :

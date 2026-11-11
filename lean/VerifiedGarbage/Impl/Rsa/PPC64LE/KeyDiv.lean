@@ -44,6 +44,14 @@ def restore (sv : Nat) : List Instr :=
   ptr .r5 sv ++ [.load .d .r14 .r5 0, .load .d .r15 .r5 8, .load .d .r16 .r5 16, .load .d .r17 .r5 24,
     .load .d .r18 .r5 32, .load .d .r20 .r5 40, .load .d .r22 .r5 48]
 
+/-- `[m]`'s top word (`w / 4 - 1`) plus 1 if it is zero (`(x | -x)`'s top
+bit is set exactly for `x ≠ 0`), so that it never is: the divisor is
+unchanged unless its top word is zero. -/
+def fixTop (m : Nat) : List Instr :=
+  ptr .r10 m ++ [.lsr .d .r11 .r29 1, .lsl .r12 .r11 2, .add .r12 .r12 .r10, .subi .r12 .r12 8, .load .d .r0 .r12 0,
+    .li .r3 0, .sub .r3 .r3 .r0, .logic .or .r3 .r3 .r0, .lsr .d .r3 .r3 63, .li .r6 1, .logic .xor .r3 .r3 .r6,
+    .add .r0 .r0 .r3, .store .d .r0 .r12 0]
+
 /-- `r10 :=` `[m]`'s address, `r9 :=` `[t]`'s, `r11 := w / 2`. -/
 def normSetup (m t : Nat) : List Instr := ptr .r10 m ++ ptr .r9 t ++ [.lsr .d .r11 .r29 1]
 

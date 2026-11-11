@@ -297,6 +297,97 @@ theorem crtChecks_ok {g : Geo} {s0 s : State} {v : Vals} {L M : Nat}
 
 theorem aFin_d (v : Vals) : aFin v aD = v.d := rfl
 theorem aFin_n (v : Vals) : aFin v aN = v.n := rfl
+/-- A balanced key of full words: `n_len` a multiple of 16 and at least 64,
+`p_len` and `q_len` half of it. -/
+def Shape (k pL qL : Nat) : Prop := k % 16 = 0 ∧ 2 * pL = k ∧ pL = qL ∧ 64 ≤ k
+
+instance (k pL qL : Nat) : Decidable (Shape k pL qL) := by unfold Shape; infer_instance
+
+theorem shape_bits {k pL qL : Nat} (hk' : k < 2 ^ 32) (hp' : pL < 2 ^ 32) (hq' : qL < 2 ^ 32) :
+    (BitVec.ofNat 64 k &&& 15#64 ||| BitVec.ofNat 64 pL <<< 1 ^^^ BitVec.ofNat 64 k |||
+          BitVec.ofNat 64 pL ^^^ BitVec.ofNat 64 qL |||
+        (0#64 - BitVec.ofNat 64 k >>> 6) >>> 63 ^^^ 1#64 = 0) ↔ Shape k pL qL := by
+  have A : (BitVec.ofNat 64 k &&& 15#64 = 0#64) ↔ k % 16 = 0 := by
+    rw [BitVec.toNat_eq, BitVec.toNat_and, BitVec.toNat_ofNat, show (15#64).toNat = 2 ^ 4 - 1 from rfl,
+      Nat.and_two_pow_sub_one_eq_mod, show (0#64).toNat = 0 from rfl]
+    omega
+  have Bq : (BitVec.ofNat 64 pL <<< 1 = BitVec.ofNat 64 k) ↔ 2 * pL = k := by
+    rw [BitVec.toNat_eq, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+    omega
+  have C : (BitVec.ofNat 64 pL = BitVec.ofNat 64 qL) ↔ pL = qL := by
+    rw [BitVec.toNat_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    omega
+  have D : ((0#64 - BitVec.ofNat 64 k >>> 6) >>> 63 = 1#64) ↔ 64 ≤ k := by
+    rw [BitVec.toNat_eq, BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat,
+      Nat.shiftRight_eq_div_pow, Nat.shiftRight_eq_div_pow, show (0#64).toNat = 0 from rfl,
+      show (1#64).toNat = 1 from rfl]
+    omega
+  rw [show (0 : BitVec 64) = 0#64 from rfl]
+  simp only [BitVec.or_eq_zero_iff, BitVec.xor_eq_zero_iff, A, Bq, C, D, Shape, and_assoc]
+
+/-- `shape`: `r0 = 0` exactly for `Shape`. -/
+theorem shape_ok {s : State} {k pL qL : Nat} (hk : s.gpr .r15 = BitVec.ofNat 64 k) (hp : s.gpr .r19 = BitVec.ofNat 64 pL)
+    (hq : s.gpr .r21 = BitVec.ofNat 64 qL) (hk' : k < 2 ^ 32) (hp' : pL < 2 ^ 32) (hq' : qL < 2 ^ 32) :
+    WP isa (.block shape) s fun t => (t.gpr .r0 = 0 ↔ Shape k pL qL) ∧ t.mem = s.mem ∧ Keep [.r0, .r3, .r12] s t := by
+  refine WP.mono (WP.keep [.r0, .r3, .r12] (Q := fun t => (t.gpr .r0 = 0 ↔ Shape k pL qL) ∧ t.mem = s.mem) (by
+    unfold shape
+    prun [hk, hp, hq]
+    exact shape_bits hk' hp' hq') (by decide)) fun t ⟨⟨h0, hm⟩, k'⟩ => ⟨h0, hm, k'⟩
+
+/-- `divK len a d`: `[a] mod [d]` in `aVR`, for a divisor of `L` bytes (`L`
+in `len`): by words for a balanced key (`Shape`), exact when the divisor's
+top word is not zero; else bit-serial, exact. -/
+theorem Stg.divK_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g s0 A live c s) {a d : Nat} (ha : a ∈ live) (hd : d ∈ live)
+    (hfree : ∀ j ∈ live, j ∉ [aVQ, aVR, aVD, aVT]) {len : Reg} (hlr : len ∉ bodyRegs) (hl12 : len ≠ .r12)
+    {L : Nat} (hl : s.gpr len = BitVec.ofNat 64 L) (hL1 : 1 ≤ L) (hL : L < 2 ^ 32) (hlt : A d < 2 ^ (8 * L))
+    {k pL qL : Nat} (hk : s.gpr .r15 = BitVec.ofNat 64 k) (hp : s.gpr .r19 = BitVec.ofNat 64 pL)
+    (hq : s.gpr .r21 = BitVec.ofNat 64 qL) (hk' : k < 2 ^ 32) (hp' : pL < 2 ^ 32) (hq' : qL < 2 ^ 32)
+    (hwk : g.w = (k + 3) / 4) (hLs : Shape k pL qL → L = k / 2) :
+    WP isa (seqs (divK len a d)) s fun t => ∃ Xq Xr,
+      (0 < A d → (Shape k pL qL → 2 ^ (64 * (k / 16 - 1)) ≤ A d) → Xr = A a % A d) ∧
+      Stg g s0 (upd (upd A aVQ Xq) aVR Xr) (aVR :: aVQ :: live) c t := by
+  have hN : aVR ≠ aVQ := by decide
+  have aR : a ≠ aVR := fun e => hfree a ha (by simp [e])
+  have aT : a ≠ aVT := fun e => hfree a ha (by simp [e])
+  have aQ : a ≠ aVQ := fun e => hfree a ha (by simp [e])
+  have dR : d ≠ aVR := fun e => hfree d hd (by simp [e])
+  have dT : d ≠ aVT := fun e => hfree d hd (by simp [e])
+  have dQ : d ≠ aVQ := fun e => hfree d hd (by simp [e])
+  unfold divK
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (shape_ok hk hp hq hk' hp' hq') fun s1 ⟨z1, m1, k1⟩ => ?_
+  have h1 : Stg g s0 A live c s1 :=
+    h.next (h.ws.of_keep k1) (js := []) (ds := []) (by rw [m1]; exact KeyWorkspace.Keep.refl _ _ _ _ _)
+      (by simp) (by simp) k1 (by decide) (by rw [m1]; exact h.arrs) h.live_lt (by rw [m1]; exact h.vdTop)
+      (by rw [m1]; exact h.mask)
+  rw [show seqs [Code.ite (.zero .d .r0) (VG.Impl.Rsa.PPC64LE.KeyDiv.divW a aVR d aVT aVQ) (seqs (divA len a d))] =
+    Code.ite (.zero .d .r0) (VG.Impl.Rsa.PPC64LE.KeyDiv.divW a aVR d aVT aVQ) (seqs (divA len a d)) from rfl]
+  refine WP.ite (s1.gpr .r0 == 0) (eval_zero s1 .r0) (fun hz => ?_) (fun hz => ?_)
+  · -- By words.
+    have hS : Shape k pL qL := z1.1 (by simpa using hz)
+    obtain ⟨k16, hpk, hpq, k64⟩ := hS
+    have hw : g.w = 4 * (k / 16) := by omega
+    have fit := h.arrs.get hd
+    have hdv : wordsVal s1.mem g.B (arr g.w d) (k / 16) = A d := by
+      rw [wordsVal_eq_val32]
+      refine VG.Proof.Rsa.PPC64LE.MontKey.val32_low fit (by omega) ?_
+      rw [hLs ⟨k16, hpk, hpq, k64⟩] at hlt
+      rw [show 32 * (2 * (k / 16)) = 8 * (k / 2) by omega]; exact hlt
+    refine WP.mono (VG.Proof.Rsa.PPC64LE.KeyDiv.divW_ok h1.ws (h1.live_lt a ha) (by decide) (h1.live_lt d hd)
+      (by decide) (by decide) aR aT aQ (Ne.symm dR) (by decide) (by decide) (Ne.symm dT) (Ne.symm dQ) (by decide)
+      (by decide) hw (by omega) ?_) fun t ⟨tr, ht, kt, mt⟩ => ⟨num t.mem g.B g.w aVQ, num t.mem g.B g.w aVR,
+        fun _ hb => by rw [tr, hdv, h1.arrs.get ha], ?_⟩
+    · rw [hdv]
+      rcases (show A d = 0 ∨ 0 < A d by omega) with e | e
+      · exact absurd e (by sorry)
+      · sorry
+    · sorry
+  · -- Bit-serial.
+    refine WP.mono (h1.divA_ok ha hd hfree hlr hl12 ((k1.gpr len (fun hm => hlr (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hm; rcases hm with rfl | rfl | rfl <;> decide))).trans hl)
+      hL1 hL hlt) fun t ⟨Xq, Xr, hv, ht⟩ => ⟨Xq, Xr, fun hp0 _ => (hv hp0).1, ht⟩
+
 theorem aFin_m1 (v : Vals) : aFin v aM1 = 2 * (v.p / 2) := rfl
 theorem aFin_m2 (v : Vals) : aFin v aM2 = 2 * (v.q / 2) := rfl
 

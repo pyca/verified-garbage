@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Rsa.PPC64LE.MulMod
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.CrtValues
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.PublicChecked
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.MontKey
+public import VerifiedGarbage.Impl.Rsa.PPC64LE.KeyDiv
 
 /-! # The checks of an RSA private key on PPC64LE
 
@@ -35,10 +36,13 @@ header's `sMask`, which is returned:
   `1 · 1` compared.
 
 `vg_rsa_check_key` then checks `d < n` (a borrow), and `d ≡ 1/e` modulo
-`p - 1` and `q - 1` by comparing `d mod (p - 1)` and `d mod (q - 1)` (two
-more divisions) with `dP` and `dQ`: once the checks above hold, `dP` is the
-inverse of `e` modulo `p - 1`, and `d e ≡ 1 (mod p - 1)` exactly when
-`d ≡ dP`.
+`p - 1` and `q - 1` by comparing `d mod (p - 1)` and `d mod (q - 1)` with `dP`
+and `dQ`: once the checks above hold, `dP` is the inverse of `e` modulo
+`p - 1`, and `d e ≡ 1 (mod p - 1)` exactly when `d ≡ dP`. For a balanced key
+of full words (`shape`, from the lengths alone) the remainders are by words
+(`KeyDiv.divW`), exact for a divisor whose top word is not zero, as `p - 1`
+and `q - 1` are when `p q = n` (`n`'s first byte is not zero); otherwise
+bit-serial (`Div.divP`).
 
 Addresses and branches depend only on the pointers, the lengths, `n` and `e`.
 -/
@@ -161,9 +165,24 @@ def crtChecks : List (Prog isa) := eqA aVQ aN ++ eqA aVR aZ ++
   ltA aDQ aM2 ++ mulA aE aDQ aM2 cnt33 ++ eqA aA aOne ++
   ltA aQI aP ++ [montP aA aQ aQI, montP aY aOne aOne] ++ eqA aA aY
 
+/-- `r0 := 0` exactly for a balanced key of full words: `n_len` (`r15`) a
+multiple of 16 and at least 64, `p_len` (`r19`) and `q_len` (`r21`) both
+half of it. -/
+def shape : List Instr :=
+  [.li .r0 15, .logic .and .r0 .r15 .r0, .lsl .r3 .r19 1, .logic .xor .r3 .r3 .r15, .logic .or .r0 .r0 .r3,
+    .logic .xor .r3 .r19 .r21, .logic .or .r0 .r0 .r3, .lsr .d .r3 .r15 6, .li .r12 0, .sub .r3 .r12 .r3,
+    .lsr .d .r3 .r3 63, .li .r12 1, .logic .xor .r3 .r3 .r12, .logic .or .r0 .r0 .r3]
+
+/-- `[a] mod [d]` in `aVR`: for a balanced key (`shape`), by words
+(`KeyDiv.divW`, `[d]` of `w / 4` words copied to `aVD`, its top word made
+not zero, `aVQ` the save area); else bit-serial (`divA`). -/
+def divK (len : Reg) (a d : Nat) : List (Prog isa) :=
+  [.block shape, .ite (.zero .d .r0) (seqs [copy aVD d, .block (KeyDiv.fixTop aVD), KeyDiv.divW a aVR aVD aVT aVQ])
+    (seqs (divA len a d))]
+
 /-- The checks of `d`: `d < n`, `d mod (p - 1) = dP` and `d mod (q - 1) = dQ`. -/
 def dChecks : List (Prog isa) :=
-  ltA aD aN ++ divA .r19 aD aM1 ++ eqA aVR aDP ++ divA .r21 aD aM2 ++ eqA aVR aDQ
+  ltA aD aN ++ divK .r19 aD aM1 ++ eqA aVR aDP ++ divK .r21 aD aM2 ++ eqA aVR aDQ
 
 /-! ## Exit -/
 
