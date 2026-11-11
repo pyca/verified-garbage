@@ -38,12 +38,7 @@ namespace VG.Artifacts.HmacMd5.X86_64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.MdHash.X86_64.md5Variants.flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) => [
-    v.I.initAnyKeyApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Proof.Pbkdf2.Md.X86_64.initCode v.H v.I
-      stack := 24 + Proof.Pbkdf2.Md.X86_64.anyFrame v.I
-      verified := v.hmacInitF
-      spSafe := v.hmacInitFSp },
+    v.I.initAnyKeyApi.artifact X86_64.target v.hmacInitReg,
     v.I.finalizeApi.artifact X86_64.target v.hmacFinReg]
 
 end VG.Artifacts.HmacMd5.X86_64

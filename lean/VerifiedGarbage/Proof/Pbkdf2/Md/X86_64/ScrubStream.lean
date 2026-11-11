@@ -30,14 +30,14 @@ within `out` (`hmacFinOut`).
 wiped, as `Scrub.scrubRegAll` does of a registered function, for code that
 is part of one (`scrubAllCode_ok`).
 
-`InitImpl`: an implementation of HMAC's `init` for a key of any length, as a
-registration file states it. `MdHash.init` is a variant's, and
-`MdHash.initScrubbed` the same with the clearing after each of its two
-branches, every granule of the branch's own frame wiped (`initCodeS`),
-which returns without secret residue: the residue analysis does not follow
-`init` precisely (its key loop stores through an index it cannot bound), and
-one clearing after both would wipe the larger frame of the branch for long
-keys for every key.
+`MdHash.hmacInitReg`: HMAC's `init` for a key of any length over a variant,
+followed by `scrubTail` where the variant gives the residue analysis of its
+code (`MdHash.hmacInitRes`). `MdHash.initScrubbed` is the same with the
+clearing after each of its two branches, every granule of the branch's own
+frame wiped (`initCodeS`), which returns without secret residue, for a
+variant whose `init` the residue analysis does not follow precisely (its key
+loop stores through an index it cannot bound): one clearing after both
+would wipe the larger frame of the branch for long keys for every key.
 -/
 
 @[expose] public section
@@ -196,28 +196,19 @@ theorem initCodeS_spSafe (v : MdHash) (lv : VecLevel) :
     scrubAllCode_spSafe lv _ _ v.hmacShortFSp, scrubAllCode_spSafe lv _ _ v.hmacAnyFSp, Bool.and_true]
   rfl
 
-/-- An implementation of HMAC's `init` for a key of any length, of instance
-`I` (`vg_hmac_<hash>_init`): what its registration states. -/
-structure InitImpl (I : Spec.Hmac.Instance) where
-  /-- What follows the function's name. -/
-  suffix : String
-  /-- CPU features it is chosen only with, beyond those its code needs
-  (`Registration.extra`): for an `init` that is faster only on some of the
-  CPUs that can run it, which a feature its code does not use tells apart. -/
-  extra : List String := []
-  code : Prog isa
-  verified : Verified target code (I.initAnyKeyContract abi (24 + anyFrame I))
-  spSafe : code.all (fun i => !isa.writesSp i) = true
-  /-- That it returns without secret residue, if it does. -/
-  residue : Option (PLift (NoResidue code (I.initAnyKeyContract abi (24 + anyFrame I))
-    ((Spec.Hmac.initSig I.S).retBits 64))) := none
-
-/-- HMAC's `init` over the variant `v`: `initCode`. -/
-def MdHash.init (v : MdHash) : InitImpl v.I where
-  suffix := v.suffix
-  code := initCode v.H v.I
-  verified := v.hmacInitF
-  spSafe := v.hmacInitFSp
+open RScrub in
+/-- HMAC's `init` over the variant `v`: `initCode`, followed by `scrubTail`
+where `v` gives the residue analysis of its code (`MdHash.hmacInitRes`). -/
+def MdHash.hmacInitReg (v : MdHash) : Registration v.I.initAnyKeyApi target :=
+  let r : Registration v.I.initAnyKeyApi target := {
+    suffix := v.suffix
+    code := initCode v.H v.I
+    stack := 24 + anyFrame v.I
+    verified := v.hmacInitF
+    spSafe := v.hmacInitFSp }
+  if hS : v.I.S.stateBytes < 2 ^ 64 then
+    withScrub r (hmacInitAnyOut v.I v.reprLocal hS _) [] (pubOk_nil _) v.hmacInitRes
+  else r
 
 /-- HMAC's `init` over the variant `v`, with the clearing after each of its
 two branches (`initCodeS`) at the level `lv`, chosen only with the features
@@ -235,10 +226,11 @@ def MdHash.initScrubbed (v : MdHash) (lv : VecLevel) (extra : List String) (hne 
     (hl₂ : (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame v.I) .r8 v.I.initAnyKeyScratch
       v.H.hmacInitAny).all (fun i => decide (i.vecLevel ≤ lv.level)) = true)
     (hrb : (Spec.Hmac.initSig v.I.S).retBits 64 ≤ 32 ∨ (Spec.Hmac.initSig v.I.S).retBits 64 = 64) :
-    InitImpl v.I where
+    Registration v.I.initAnyKeyApi target where
   suffix := v.suffix
   extra := extra
   code := initCodeS lv v.H v.I
+  stack := 24 + anyFrame v.I
   verified := (initCodeS_ok v hne hS hd₁ hd₂ hst hn h8₁ h8₂ hl₁ hl₂ hrb).1
   spSafe := initCodeS_spSafe v lv
   residue := some ⟨(initCodeS_ok v hne hS hd₁ hd₂ hst hn h8₁ h8₂ hl₁ hl₂ hrb).2⟩

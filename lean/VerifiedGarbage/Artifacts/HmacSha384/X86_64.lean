@@ -37,15 +37,8 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.HmacSha384.X86_64
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.MdHash.X86_64.sha384Inits.map fun v =>
-    Spec.Hmac.sha384I.initAnyKeyApi.artifact X86_64.target {
-      suffix := v.suffix
-      extra := v.extra
-      code := v.code
-      stack := 24 + Proof.Pbkdf2.Md.X86_64.anyFrame Spec.Hmac.sha384I
-      verified := v.verified
-      spSafe := v.spSafe
-      residue := v.residue }) ++
+  (VG.Proof.Variants.MdHash.X86_64.sha384Inits.map
+    (Spec.Hmac.sha384I.initAnyKeyApi.artifact X86_64.target)) ++
   (VG.Proof.Variants.MdHash.X86_64.sha384Variants.map fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
     v.I.finalizeApi.artifact X86_64.target v.hmacFinReg)
 

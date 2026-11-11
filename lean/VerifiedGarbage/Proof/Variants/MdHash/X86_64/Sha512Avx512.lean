@@ -40,19 +40,19 @@ abbrev compress : Proof.Sha512.X86_64.Compress := Proof.Sha512.X86_64.Compress.a
 /-- The CPU feature `init` is chosen with, beyond those of its code. -/
 abbrev extra : List String := ["avx512fp16"]
 
-def init384 : InitImpl Spec.Hmac.sha384I :=
+def init384 : Registration Spec.Hmac.sha384I.initAnyKeyApi X86_64.target :=
   (sha384 compress).initScrubbed .avx extra (by decide) (by decide) (by lit_decide) (by lit_decide) (by decide)
     (by decide) (by decide) (by decide) (by lit_decide) (by lit_decide) (by decide)
 
-def init512 : InitImpl Spec.Hmac.sha512I :=
+def init512 : Registration Spec.Hmac.sha512I.initAnyKeyApi X86_64.target :=
   (sha512 compress).initScrubbed .avx extra (by decide) (by decide) (by lit_decide) (by lit_decide) (by decide)
     (by decide) (by decide) (by decide) (by lit_decide) (by lit_decide) (by decide)
 
-def init512_224 : InitImpl Spec.Hmac.sha512_224I :=
+def init512_224 : Registration Spec.Hmac.sha512_224I.initAnyKeyApi X86_64.target :=
   (sha512_224 compress).initScrubbed .avx extra (by decide) (by decide) (by lit_decide) (by lit_decide)
     (by decide) (by decide) (by decide) (by decide) (by lit_decide) (by lit_decide) (by decide)
 
-def init512_256 : InitImpl Spec.Hmac.sha512_256I :=
+def init512_256 : Registration Spec.Hmac.sha512_256I.initAnyKeyApi X86_64.target :=
   (sha512_256 compress).initScrubbed .avx extra (by decide) (by decide) (by lit_decide) (by lit_decide)
     (by decide) (by decide) (by decide) (by decide) (by lit_decide) (by lit_decide) (by decide)
 

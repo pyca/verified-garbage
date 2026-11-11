@@ -106,18 +106,16 @@ The implementations of `vg_hmac_<hash>_init` over the SHA-512 family, best
 first: each variant's above, and one more, AVX2's with its two padded keys
 compressed at once with AVX-512VL (`Sha512Avx512`). -/
 
-open Proof.Pbkdf2.Md.X86_64 (InitImpl)
+def sha384Inits : List (Registration Spec.Hmac.sha384I.initAnyKeyApi X86_64.target) :=
+  [sha384ShaNi.hmacInitReg, Sha512Avx512.init384, sha384Avx2.hmacInitReg, sha384.hmacInitReg]
 
-def sha384Inits : List (InitImpl Spec.Hmac.sha384I) :=
-  [sha384ShaNi.init, Sha512Avx512.init384, sha384Avx2.init, sha384.init]
+def sha512Inits : List (Registration Spec.Hmac.sha512I.initAnyKeyApi X86_64.target) :=
+  [sha512ShaNi.hmacInitReg, Sha512Avx512.init512, sha512Avx2.hmacInitReg, sha512.hmacInitReg]
 
-def sha512Inits : List (InitImpl Spec.Hmac.sha512I) :=
-  [sha512ShaNi.init, Sha512Avx512.init512, sha512Avx2.init, sha512.init]
+def sha512_224Inits : List (Registration Spec.Hmac.sha512_224I.initAnyKeyApi X86_64.target) :=
+  [sha512_224ShaNi.hmacInitReg, Sha512Avx512.init512_224, sha512_224Avx2.hmacInitReg, sha512_224.hmacInitReg]
 
-def sha512_224Inits : List (InitImpl Spec.Hmac.sha512_224I) :=
-  [sha512_224ShaNi.init, Sha512Avx512.init512_224, sha512_224Avx2.init, sha512_224.init]
-
-def sha512_256Inits : List (InitImpl Spec.Hmac.sha512_256I) :=
-  [sha512_256ShaNi.init, Sha512Avx512.init512_256, sha512_256Avx2.init, sha512_256.init]
+def sha512_256Inits : List (Registration Spec.Hmac.sha512_256I.initAnyKeyApi X86_64.target) :=
+  [sha512_256ShaNi.hmacInitReg, Sha512Avx512.init512_256, sha512_256Avx2.hmacInitReg, sha512_256.hmacInitReg]
 
 end VG.Proof.Variants.MdHash.X86_64

@@ -10,6 +10,8 @@ pub const VG_HMAC_SHA1_INIT_SHANI_FEATURES: verified_garbage_cpu::Features = ver
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.
@@ -49,7 +51,7 @@ call {vg_sha1_compress_shani}
 call {vg_sha1_compress_shani}
 .base64 "SIn7SYnPSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAAA="
 21:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI2kJID7//9IjaQkgAQAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 20:
 .base64 "SI2kJJj7//9JieBJg8AISYmYwAEAAEmJqMgBAABNiaDQAQAATYmo2AEAAE2JsOABAABNibjoAQAATYnHSInTSInNSYn8SYn1SIP9QQ=="
 jae 28f
@@ -116,6 +118,8 @@ pub const VG_HMAC_SHA1_INIT_AVX_BMI_FEATURES: verified_garbage_cpu::Features = v
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.
@@ -155,7 +159,7 @@ call {vg_sha1_compress_avx_bmi}
 call {vg_sha1_compress_avx_bmi}
 .base64 "SIn7SYnPSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJID7///F/n+EJOACAADF/n+EJMACAADzD3+EJLACAADzD39EJBBIjaQkgAQAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 20:
 .base64 "SI2kJJj7//9JieBJg8AISYmYwAEAAEmJqMgBAABNiaDQAQAATYmo2AEAAE2JsOABAABNibjoAQAATYnHSInTSInNSYn8SYn1SIP9QQ=="
 jae 28f
@@ -219,6 +223,8 @@ call {vg_sha1_compress_avx_bmi}
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.
@@ -257,7 +263,7 @@ call {vg_sha1_compress}
 call {vg_sha1_compress}
 .base64 "SIn7SYnPSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAAA="
 21:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJID7///zD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD39EJBBIjaQkgAQAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 20:
 .base64 "SI2kJJj7//9JieBJg8AISYmYwAEAAEmJqMgBAABNiaDQAQAATYmo2AEAAE2JsOABAABNibjoAQAATYnHSInTSInNSYn8SYn1SIP9QQ=="
 jae 28f

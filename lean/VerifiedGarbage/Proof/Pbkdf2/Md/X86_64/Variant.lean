@@ -186,6 +186,10 @@ structure MdHash where
   (`MdHash.hmacFinReg`). -/
   hmacFinRes : Option (RScrub.Analysed I.finalizeApi.sig (16 + hmacFrame I) []
     (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacFin)) := none
+  /-- The residue analysis of HMAC's `init` (`hmacInitF`), if the analysis
+  handles it: that function then returns without secret residue
+  (`MdHash.hmacInitReg`). -/
+  hmacInitRes : Option (RScrub.Analysed I.initAnyKeyApi.sig (24 + anyFrame I) [] (initCode H I)) := none
 
 namespace MdHash
 
