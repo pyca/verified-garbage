@@ -483,4 +483,113 @@ theorem recip_eq {d : Nat} (hd : d < 2 ^ 32) (_hd0 : 0 < d) :
     rw [Nat.mul_comm d]; omega_using [this]
   rw [e, Nat.mul_comm (2 ^ 32) d, Nat.sub_mul_div]
 
+
+/-! ## Normalization -/
+
+/-- `2^z a mod 2^32 ≤ 2^32 - 2^z`: a multiple of `2^z` below `2^32`. -/
+theorem shl_mod_le {a z : Nat} (hz : z ≤ 32) : a * 2 ^ z % 2 ^ 32 + 2 ^ z ≤ 2 ^ 32 := by
+  have e : 2 ^ 32 = 2 ^ z * 2 ^ (32 - z) := by rw [← Nat.pow_add, Nat.add_sub_cancel' hz]
+  rw [e, Nat.mul_comm a, Nat.mul_mod_mul_left]
+  have h := Nat.mod_lt a (Nat.two_pow_pos (32 - z))
+  have := Nat.mul_le_mul_left (2 ^ z) (show a % 2 ^ (32 - z) + 1 ≤ 2 ^ (32 - z) by omega)
+  rw [Nat.mul_add, Nat.mul_one] at this
+  exact this
+
+/-- The words of `2^z a` and `2^z b` that make a word of a shifted number do
+not overlap: `lo(2^z b) + hi(2^z a) < 2^32`. -/
+theorem lohi_lt {a b z : Nat} (hz : z ≤ 32) (ha : a < 2 ^ 32) : b * 2 ^ z % 2 ^ 32 + a * 2 ^ z / 2 ^ 32 < 2 ^ 32 := by
+  have h1 := shl_mod_le (a := b) hz
+  have h2 : a * 2 ^ z / 2 ^ 32 < 2 ^ z := by
+    rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos 32), Nat.mul_comm (2 ^ z)]
+    exact Nat.mul_lt_mul_of_pos_right ha (Nat.two_pow_pos z)
+  omega
+
+/-- The words above word `k` of `2^z x`, for `x = L + K a + K 2^32 H` with
+`L < K`, `a` its word `k`: `H 2^z + hi(2^z a)`. -/
+theorem shl_div {L K a H z : Nat} (hz : z ≤ 32) (hL : L < K) :
+    (L + K * a + K * 2 ^ 32 * H) * 2 ^ z / (K * 2 ^ 32) = H * 2 ^ z + a * 2 ^ z / 2 ^ 32 := by
+  have hK : 0 < K := by omega
+  have hl := shl_mod_le (a := a) hz
+  have hd := Nat.div_add_mod (a * 2 ^ z) (2 ^ 32)
+  generalize a * 2 ^ z / 2 ^ 32 = hi at hd
+  generalize a * 2 ^ z % 2 ^ 32 = lo at hd hl
+  -- `L 2^z + K lo < K 2^32`.
+  have h1 : L * 2 ^ z < K * 2 ^ z := Nat.mul_lt_mul_of_pos_right hL (Nat.two_pow_pos z)
+  have h2 : K * (lo + 2 ^ z) ≤ K * 2 ^ 32 := Nat.mul_le_mul_left K hl
+  rw [Nat.mul_add] at h2
+  have e : (L + K * a + K * 2 ^ 32 * H) * 2 ^ z = K * 2 ^ 32 * (H * 2 ^ z + hi) + (L * 2 ^ z + K * lo) := by
+    have : K * a * 2 ^ z = K * (2 ^ 32 * hi + lo) := by rw [hd, Nat.mul_assoc]
+    rw [Nat.add_mul, Nat.add_mul, this]
+    grind
+  rw [e, Nat.mul_add_div (Nat.mul_pos hK (Nat.two_pow_pos 32)), Nat.div_eq_of_lt (by omega), Nat.add_zero]
+
+/-- A step of long division by the estimate of the normalized numbers
+`X = 2^z x` and `Mₙ = 2^z m`, whose top word is `d ≥ 2^31`, with `m` itself
+in the subtraction and the additions: `x 2^32 mod m`. -/
+theorem wordStepNorm_val {w z x m X Mn u2 u1 d T1 T2 T3 b c1 c2 : Nat} (hw : 2 ≤ w)
+    (hX : X = x * 2 ^ z) (hMn : Mn = m * 2 ^ z)
+    (hu : u2 * 2 ^ 32 + u1 = X / 2 ^ (32 * (w - 2)))
+    (hd : d = Mn / 2 ^ (32 * (w - 1))) (hd1 : 2 ^ 31 ≤ d) (hMw : Mn < 2 ^ (32 * w)) (hxm : x < m)
+    (hT1 : T1 < 2 ^ (32 * (w + 1))) (hb : b < 2)
+    (h1 : T1 + min ((u2 * 2 ^ 32 + u1) / d) (2 ^ 32 - 1) * m = x * 2 ^ 32 + 2 ^ (32 * (w + 1)) * b)
+    (hT2 : T2 < 2 ^ (32 * (w + 1))) (hc1 : c1 < 2)
+    (h2 : T2 + 2 ^ (32 * (w + 1)) * c1 = T1 + if 2 ^ (32 * (w + 1)) / 2 ≤ T1 then m else 0)
+    (hT3 : T3 < 2 ^ (32 * (w + 1))) (hc2 : c2 < 2)
+    (h3 : T3 + 2 ^ (32 * (w + 1)) * c2 = T2 + if 2 ^ (32 * (w + 1)) / 2 ≤ T2 then m else 0) :
+    T3 = x * 2 ^ 32 % m := by
+  have hB : 2 ^ (32 * (w - 1)) = 2 ^ (32 * (w - 2)) * 2 ^ 32 := by
+    rw [show 32 * (w - 1) = 32 * (w - 2) + 32 by omega_using [hw], Nat.pow_add]
+  have hBw : 2 ^ (32 * w) = 2 ^ (32 * (w - 1)) * 2 ^ 32 := by
+    rw [← Nat.pow_add]; congr 1; omega_using [hw]
+  have hm0 : 0 < m := by omega_using [hxm]
+  have hz0 : 0 < 2 ^ z := Nat.two_pow_pos z
+  -- The normalized numbers' words.
+  have hXd := Nat.div_add_mod X (2 ^ (32 * (w - 2)))
+  rw [← hu] at hXd
+  have hXl := Nat.mod_lt X (Nat.two_pow_pos (32 * (w - 2)))
+  generalize X % 2 ^ (32 * (w - 2)) = Xl at hXd hXl
+  have hMd := Nat.div_add_mod Mn (2 ^ (32 * (w - 1)))
+  rw [← hd] at hMd
+  have hml := Nat.mod_lt Mn (Nat.two_pow_pos (32 * (w - 1)))
+  generalize Mn % 2 ^ (32 * (w - 1)) = ml at hMd hml
+  have hd' : d < 2 ^ 32 := by
+    rw [hd, Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _), Nat.mul_comm, ← hBw]; exact hMw
+  have hXM : X < Mn := by rw [hX, hMn]; exact Nat.mul_lt_mul_of_pos_right hxm hz0
+  -- The quotient of the normalized numbers is `m`'s.
+  have hq : X * 2 ^ 32 / Mn = x * 2 ^ 32 / m := by
+    rw [hX, hMn, Nat.mul_right_comm, Nat.mul_comm (x * 2 ^ 32), Nat.mul_comm m, Nat.mul_div_mul_left _ _ hz0]
+  generalize hB' : 2 ^ (32 * (w - 1)) = B at *
+  have hY : X * 2 ^ 32 = (u2 * 2 ^ 32 + u1) * B + Xl * 2 ^ 32 := by
+    rw [← hXd, hB]; grind
+  have hYl : Xl * 2 ^ 32 < B := by rw [hB]; exact Nat.mul_lt_mul_of_pos_right hXl (Nat.two_pow_pos 32)
+  have hqb : X * 2 ^ 32 / Mn < 2 ^ 32 := by
+    rw [Nat.div_lt_iff_lt_mul (by omega_using [hXM]), Nat.mul_comm (2 ^ 32) Mn]
+    exact Nat.mul_lt_mul_of_pos_right hXM (Nat.two_pow_pos 32)
+  have hMn' : Mn = d * B + ml := by rw [← hMd, Nat.mul_comm]
+  rw [hY, hMn'] at hqb
+  have hge := qhat_ge hYl (by omega_using [hd1]) hqb
+  have hle := qhat_le hml hd1 hqb
+  rw [← hY, ← hMn', hq] at hge hle
+  generalize min ((u2 * 2 ^ 32 + u1) / d) (2 ^ 32 - 1) = qh at *
+  generalize hW : 2 ^ (32 * (w + 1)) = W at *
+  -- `4 m < W / 2`.
+  have hMW : 4 * m < W / 2 := by
+    have hmB : m ≤ Mn := by rw [hMn]; exact Nat.le_mul_of_pos_right _ hz0
+    have hWB : W = B * 2 ^ 32 * 2 ^ 32 := by
+      rw [← hW, ← hB', show 32 * (w + 1) = 32 * (w - 1) + 32 + 32 by omega_using [hw], Nat.pow_add, Nat.pow_add]
+    rw [hWB]; omega_using [hmB, hMw, hBw]
+  obtain ⟨hfin, hv1, hv2, hw1, hw2⟩ := addBack_two (W := W) hm0 hMW hge hle
+  have e1 := twos_of_sub hT1 hb (by omega_using [h1]) hv1 hv2
+  have e2 := twos_of_add hv1 hv2 hw1 hw2 e1 hT2 hc1 h2
+  have hv1' : -((W : Int) / 2) ≤ addIfNeg m (addIfNeg m ((x * 2 ^ 32 : Nat) - (qh * m : Nat))) := by
+    rw [hfin]; omega_using []
+  have hv2' : addIfNeg m (addIfNeg m ((x * 2 ^ 32 : Nat) - (qh * m : Nat))) < (W : Int) / 2 := by
+    rw [hfin]; have := Nat.mod_lt (x * 2 ^ 32) hm0; omega_using [hMW, this]
+  have e3 := twos_of_add hw1 hw2 hv1' hv2' e2 hT3 hc2 h3
+  rw [e3, hfin]
+  have hr := Nat.mod_lt (x * 2 ^ 32) hm0
+  have hMW' : m < W := Nat.lt_of_lt_of_le (by omega_using [hMW]) (Nat.div_le_self W 2)
+  unfold twos
+  rw [Int.emod_eq_of_lt (Int.natCast_nonneg _) (Int.ofNat_lt.mpr (Nat.lt_trans hr hMW')), Int.toNat_natCast]
+
 end VG.Proof.Bignum.WordStep32
