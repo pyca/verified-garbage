@@ -17,8 +17,9 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 # RSA with the CRT on x86-64, with the key's precomputed values: correctness
 
 `Crt.codeP` is `Crt.code` with `R² mod n` copied from the key's precomputed
-values `pre` (`r2Pre`), which `crtContractP` requires to be
-`privatePrecompute`'s: from a state that contract allows, it writes
+values `pre` (`r2Pre`) and without the check of `p q = n` (`checksP`),
+which `crtContractP` requires `pre` to be `privatePrecompute`'s, and so
+implies: from a state that contract allows, it writes
 `privateCrt` of its inputs, as `Crt.code` does (`crtCodeP_correct`).
 -/
 
@@ -57,19 +58,20 @@ theorem frontP_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp 
     {nb xb pb qb dpb dqb qib : List Byte}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
-    (hp : PreR2 s B Z ((k + 7) / 8) (Spec.Rsa.os2ip nb)) :
-    WP isa (seqs (nSetupP M.mm ++ primesSetup ++ checks)) s fun t => ∃ minv mp mq,
+    (hp : PreR2 s B Z ((k + 7) / 8) (Spec.Rsa.os2ip nb))
+    (hpq : Spec.Rsa.os2ip pb * Spec.Rsa.os2ip qb = Spec.Rsa.os2ip nb) :
+    WP isa (seqs (nSetupP M.mm ++ primesSetup ++ checksP)) s fun t => ∃ minv mp mq,
       CrtReady s t B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
         (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)
         (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
           (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :=
-  wp_seqs_append (by simp [nSetupP]) (by simp [checks]) (wp_seqs_append (by simp [nSetupP])
+  wp_seqs_append (by simp [nSetupP]) (by simp [checksP]) (wp_seqs_append (by simp [nSetupP])
     (by simp [primesSetup]) (WP.mono (nPartP_ok M h hv hp) fun _ ⟨minv, hr⟩ =>
       WP.mono (setupPart_ok h hr) fun _ ⟨_, _, hr'⟩ =>
-        WP.mono (checksPart_ok h hv hr') fun _ ⟨mp', mq', hr''⟩ => ⟨minv, mp', mq', hr''⟩))
+        WP.mono (checksPartP_ok h hv hr' hpq) fun _ ⟨mp', mq', hr''⟩ => ⟨minv, mp', mq', hr''⟩))
 
 theorem crtMainP_eq (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) :
-    Crt.mainP mul ex = seqs ((nSetupP mul ++ primesSetup ++ checks) ++ (qPhase mul ex ++ pPhase mul ex ++ finish)) := by
+    Crt.mainP mul ex = seqs ((nSetupP mul ++ primesSetup ++ checksP) ++ (qPhase mul ex ++ pPhase mul ex ++ finish)) := by
   simp only [Crt.mainP, List.append_assoc]
 
 /-- `mainP`, for a valid modulus: as `crtMain_ok`. -/
@@ -77,14 +79,15 @@ theorem crtMainP_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z k : Nat
     {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
-    (hp : PreR2 s B Z ((k + 7) / 8) (Spec.Rsa.os2ip nb)) :
+    (hp : PreR2 s B Z ((k + 7) / 8) (Spec.Rsa.os2ip nb))
+    (hpq : Spec.Rsa.os2ip pb * Spec.Rsa.os2ip qb = Spec.Rsa.os2ip nb) :
     WP isa (Crt.mainP M.mm E.code) s fun t => ∃ Mk : Bool, MainPost s t B Z k op
       (if Mk then crtResult (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip dpb) (Spec.Rsa.os2ip dqb)
         (Spec.Rsa.os2ip qib) (Spec.Rsa.os2ip xb) else 0) Mk ∧
       (Mk = true ↔ Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb ∧ Spec.Rsa.os2ip pb * Spec.Rsa.os2ip qb =
         Spec.Rsa.os2ip nb ∧ Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb) := by
   rw [crtMainP_eq]
-  refine wp_seqs_append (by simp [nSetupP]) (by simp [qPhase]) (WP.mono (frontP_ok M h hv hp)
+  refine wp_seqs_append (by simp [nSetupP]) (by simp [qPhase]) (WP.mono (frontP_ok M h hv hp hpq)
     fun t₀ ⟨minv, mp, mq, hr⟩ => WP.mono (back_ok M E h hv hr rfl) fun t ht => ⟨_, ht, ?_⟩)
   simp only [keyMask, Bool.and_eq_true, decide_eq_true_eq, and_assoc]
 
@@ -96,7 +99,10 @@ theorem crtCtxP_of {s : State} (h : crtContractP.pre s) :
     CrtCtx s ∧ Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
       (s.gpr .rcx).toNat = true ∧
     PreR2 s (stackArg s 10) ((stackArg s 11).toNat * 8) (((s.gpr .rcx).toNat + 7) / 8)
-      (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)) := by
+      (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)) ∧
+    Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat) *
+      Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat) =
+      Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) := by
   simp only [crtContractP] at h
   sig_split h
   rename_i hsp hrd hwr dOn dOi dOp dOq dOdp dOdq dOqi dOpr dOs dOa dns dis dps dqs ddps ddqs dqis dprs dsa
@@ -108,6 +114,7 @@ theorem crtCtxP_of {s : State} (h : crtContractP.pre s) :
   have hn := hs.nowrap
   have hargs : (⟨stackArgAddr s 0, 112⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have hpre : (⟨stackArg s 12, (stackArg s 13).toNat * 8⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
+  have hpq := VG.Proof.Rsa.privatePrecompute_mul h
   have hpub := VG.Proof.Rsa.privatePrecompute_public h
   rw [bytesAt_length, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords] at hpub
   obtain ⟨hv, -, hval⟩ := pre_of_some (bytesAt_length _ _ _) hk1 hpub
@@ -136,7 +143,7 @@ theorem crtCtxP_of {s : State} (h : crtContractP.pre s) :
     fun j hj => ⟨_, hpre, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
     fun j hj b hb => by
       rw [hoff]; exact out_scr dprs (contains_byte _ (by omega_arith) (by omega_arith)),
-    by rw [hval]⟩⟩
+    by rw [hval]⟩, hpq⟩
   have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega_arith) (by omega_arith)
   exact ⟨out_scr dRs hc, fun j hj he => dRo _ hc (by rw [he]; exact contains_byte _ (by omega_arith) (by omega_arith))⟩
 
@@ -149,7 +156,7 @@ theorem crtCodeP_correct (M : Mont) (E : CrtExpL M)
     (hmx : (Crt.codeP M.mm E.code).allInstrs (fun i => !loadsMxcsr i) = true)
     (s : State) (h : crtContractP.pre s) :
     ∃ t s', Exec isa (Crt.codeP M.mm E.code) s t s' ∧ abiPreserved s s' ∧ crtContractP.post s s' := by
-  obtain ⟨c, hv, hp⟩ := crtCtxP_of h
+  obtain ⟨c, hv, hp, hpq⟩ := crtCtxP_of h
   clear h
   have hZ' := c.hZ
   have hk1 := c.hk1
@@ -170,7 +177,7 @@ theorem crtCodeP_correct (M : Mont) (E : CrtExpL M)
   refine WP.ite (!Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
     (s.gpr .rcx).toNat) (by simp [eval, hz₂]) (fun hb => ?_) (fun _ => ?_)
   · exact absurd hb (by rw [hv]; decide)
-  · exact WP.mono (crtMainP_ok M E hpre hv hp₂) fun t ⟨Mk, hp, hiff⟩ => crtCode_fin c h₁ hm₂ k₂ hp
+  · exact WP.mono (crtMainP_ok M E hpre hv hp₂ hpq) fun t ⟨Mk, hp, hiff⟩ => crtCode_fin c h₁ hm₂ k₂ hp
       (fun _ => ⟨hiff, rfl⟩) fun h => absurd h (by rw [hv]; decide)
 
 end VG.Proof.Bignum.X86_64

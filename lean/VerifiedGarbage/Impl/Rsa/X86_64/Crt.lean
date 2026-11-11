@@ -233,6 +233,11 @@ def checks : List (Prog isa) :=
   pqProduct ++ eqCheck ++ [.block [enterP]] ++ qinvCheck ++ primeFix ++ [.block [leave, enterQ]] ++ primeFix ++
   [.block [leave]]
 
+/-- The checks but `p q = n`'s, for a key whose `p q = n` is known (as
+`privatePrecompute` gave values for it): the mask is then the same. -/
+def checksP : List (Prog isa) :=
+  [.block [enterP]] ++ qinvCheck ++ primeFix ++ [.block [leave, enterQ]] ++ primeFix ++ [.block [leave]]
+
 /-! ## Arithmetic modulo a prime -/
 
 /-- `[o] = [a] + [b] mod m` for `[a], [b] < m`: the sum into the
@@ -630,9 +635,10 @@ def code (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Pr
   .seq (.block (entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
     (.ite .ne fail (main mul ex))
 
-/-- `main` with `R² mod n` from `pre` (`nSetupP`). -/
+/-- `main` with `R² mod n` from `pre` (`nSetupP`), and without the check of
+`p q = n`, which `pre` implies (`checksP`). -/
 def mainP (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : Prog isa :=
-  seqs (nSetupP mul ++ primesSetup ++ checks ++ qPhase mul ex ++ pPhase mul ex ++ finish)
+  seqs (nSetupP mul ++ primesSetup ++ checksP ++ qPhase mul ex ++ pPhase mul ex ++ finish)
 
 /-- `vg_rsa_private_crt_precomputed`: `code`, with `R² mod n` from the key's
 precomputed values `pre` (`mainP`). -/

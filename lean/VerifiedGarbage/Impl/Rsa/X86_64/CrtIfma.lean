@@ -824,7 +824,7 @@ def code (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
 
 /-- `main` with `R² mod n` from the key's precomputed values (`nSetupP`). -/
 def mainP (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  seqs (nSetupP mul ++ primesSetup ++ checks ++
+  seqs (nSetupP mul ++ primesSetup ++ checksP ++
     [.seq anySizes (.ite .e (seqs (pre mul ++ [ifmaAny l2] ++ post mul))
       (seqs (qPhase mul (Crt.expLoop mul tabSelect) ++ pPhase mul (Crt.expLoop mul tabSelect))))] ++
     finish)

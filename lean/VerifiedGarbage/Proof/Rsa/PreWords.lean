@@ -37,6 +37,14 @@ theorem wordsAt_drop (m : Mem) (p : Addr) (a n : Nat) :
 theorem toWords_length (x w : Nat) : (Spec.Rsa.toWords x w).length = w := by
   simp [Spec.Rsa.toWords]
 
+/-- `privatePrecompute` gives values only for `p q = n`. -/
+theorem privatePrecompute_mul {nB pB qB : List Byte} {ws : List (BitVec 64)}
+    (h : Spec.Rsa.privatePrecompute nB pB qB = some ws) : Spec.Rsa.os2ip pB * Spec.Rsa.os2ip qB = Spec.Rsa.os2ip nB := by
+  unfold Spec.Rsa.privatePrecompute at h
+  split at h
+  · assumption
+  · exact absurd h (by simp)
+
 /-- The modulus' values are `pre`'s first `2 ⌈k / 8⌉` words. -/
 theorem privatePrecompute_public {m : Mem} {pre : Addr} {L : Nat} {nB pB qB : List Byte}
     (h : Spec.Rsa.privatePrecompute nB pB qB = some (Spec.Rsa.wordsAt m pre L)) :
