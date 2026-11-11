@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
 public import VerifiedGarbage.Impl.Rsa.X86.InvBatchRt
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Inverse
+public import VerifiedGarbage.Impl.Rsa.X86.WordModRt
 
 /-! # CRT parameter calculation at a width read at run time (i686)
 
@@ -66,7 +67,7 @@ def fallback : Prog isa := .seq callSetup inverseCall
 def inverseChoice : Prog isa := InvBatchRt.dispatch lay fallback
 
 def checksPrefix : List (Prog isa) := [
-  eqS lay sE1 aDQ aQ aT1,eqS lay sE2 aDR aZero aT1] ++ invSetup
+  WordModRt.eqWide lay sE1 aDR2 aDQ, .block [.mov .eax (.imm 1), .store (sc sE2) .eax]] ++ invSetup
 
 def checksSuffix : List (Prog isa) := [eqS lay sE3 1 aOne aT1,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
@@ -74,14 +75,18 @@ def checksSuffix : List (Prog isa) := [eqS lay sE3 1 aOne aT1,
 
 def checks : Prog isa := seqs (checksPrefix ++ inverseChoice::checksSuffix)
 
+/-- The product `p q` (`2 w` words in `aDR2` and `aDR3`), compared with `n` (`aDQ`) by the checks. -/
 def firstDiv : Prog isa := seqs [
-  copy lay aDD aP, .block (bitOf lay sPodd aP), div aDR]
+  .block (bitOf lay sPodd aP), WordModRt.mulWide lay aDR2 aP aQ]
+
+/-- `[r] = [aDQ] mod [aDD]` by word steps, `aDD` of the length in argument `ml`. -/
+def wordRem (ml r : Nat) : Prog isa := WordModRt.wordModOr lay ml aDQ r aDD aDT (div r)
 
 def divQ : Prog isa := seqs [
-  copy lay aDQ aD, copy lay aDD aQ, .block (clrLow lay aDD), div aDR3]
+  copy lay aDQ aD, copy lay aDD aQ, .block (clrLow lay aDD), wordRem 11 aDR3]
 
 def core : Prog isa :=
-  .seq firstDiv (.seq checks (.seq (div aDR2) divQ))
+  .seq firstDiv (.seq checks (.seq (wordRem 9 aDR2) divQ))
 
 /-- Array `j` from the big-endian bytes at argument `arg`, as many as argument `arg + 1`. -/
 def load (arg j : Nat) : Prog isa :=
