@@ -13,8 +13,9 @@ Montgomery squarings, each step a single pass over the words:
 * the reciprocal of `m`'s top word that `q̂` uses is found by six Newton
   steps from a guess, then corrected one at a time down and up until it is
   exact (`recipN`), rather than by `R2Words.recip`'s 64 steps of division;
-* the quotient `q̂` is `R2Words.quot`'s, `q ≤ q̂ ≤ q + 2`, refined twice by
-  `m`'s second word (`refine`), which keeps it at least `q`;
+* the quotient `q̂` is `R2Words.quot`'s, refined to the 3-by-2 estimate
+  `min(⌊U / D⌋, 2^64 - 1)` from `x`'s top three words `U` and `m`'s top two
+  `D`, `q ≤ q̂ ≤ q + 1`, as `R2Words.refine3` but by branches (`fix3`);
 * `t = x 2^64 - q̂ m = x 2^64 + q̂ (R - m) - q̂ R` is computed in place, into
   `x`'s `w + 1` words, with `R - m` (`mc`, computed once, in the
   accumulator) multiplied by `mulx`, its halves added by `adox` and the sum
@@ -22,8 +23,8 @@ Montgomery squarings, each step a single pass over the words:
   tile, kept in the flags across a group of tiles (eight for `w` a multiple
   of 32, four for 16, else one) and in registers between groups (`tiles`),
   and `q̂` subtracted from the top word;
-* `m` added back while `t` is negative (at most twice), by a branch on the
-  sign of its top word: the modulus is public, and so is every value here.
+* `m` added back if `t` is negative (once), by a branch on the sign of its
+  top word: the modulus is public, and so is every value here.
 
 Other moduli take `vg_rsa_public`'s computation (`R2Words.old`).
 -/
@@ -93,21 +94,23 @@ def fix : Prog isa :=
   .seq (.block [.mov .rax (.mem (ix .rbx .r12)), .alu .add .rax (.reg .rax)])
     (.ite .b (.seq (.block [.mov .r8 (.reg .rbx)]) addBack) (.block []))
 
-/-- Knuth's test with the second words (TAOCP vol. 2, §4.3.1, Algorithm D,
-step D3), for `q̂` in `rcx`: `q̂ := q̂ - 1` if `r̂ = u₂ 2^64 + u₁ - q̂ d < 2^64`
-(`r̂` into `r11:r9`, its high word zero) and `q̂ d₁ > r̂ 2^64 + u₀`, for `m`'s
-second word `d₁` and `x`'s third `u₀`, by a mask; `q̂` stays at least the
-quotient, and is it but rarely after two tests. -/
-def refine : List Instr :=
-  [.mov .rdx (.reg .rcx), .mulx .rax .r13 (.mem (ix .r10 .r12 (-8))),
-    .mov .r9 (.mem (ix .rbx .r12 (-16))), .mov .r11 (.mem (ix .rbx .r12 (-8))),
-    .alu .sub .r9 (.reg .r13), .alu .sbb .r11 (.reg .rax),
-    .mulx .rax .r13 (.mem (ix .r10 .r12 (-16))), .mov .r14 (.mem (ix .rbx .r12 (-24))),
-    .alu .sub .r14 (.reg .r13), .alu .sbb .r9 (.reg .rax), .alu .sbb .r15 (.reg .r15),
-    .mov32 .r13 (.imm 0), .alu .test .r11 (.reg .r11), .cmov .ne .r15 (.reg .r13), .alu .add .rcx (.reg .r15)]
+/-- `q̂ := q̂ - 1` and `t := t + D`, for `t` in `r15`, `r14`, `r13` and `m`'s
+top two words `D`. -/
+def fix3Body : List Instr :=
+  [.alu .sub .rcx (.imm 1), .alu .add .r13 (.mem (ix .r10 .r12 (-16))), .alu .adc .r14 (.mem (ix .r10 .r12 (-8))),
+    .alu .adc .r15 (.imm 0)]
+
+/-- If `t = U - q̂ D` (`R2Words.quot3`, in `r15`, `r14`, `r13`) is negative,
+by a branch on its sign: `q̂ := q̂ - 1` and `t := t + D`, for `m`'s top two
+words `D`. -/
+def fix3 : Prog isa :=
+  .seq (.block [.mov .r11 (.reg .r15), .alu .add .r11 (.reg .r11)]) (.ite .b (.block fix3Body) (.block []))
+
+/-- `q̂` refined to the 3-by-2 estimate: `R2Words.quot3`, then `fix3` twice. -/
+def refine3 : Prog isa := .seq (.block R2Words.quot3) (.seq fix3 fix3)
 
 /-- `x := x 2^64 mod m`. -/
-def step : Prog isa := seqs [.block R2Words.bases, .block quot, .block refine, .block refine, mulSub, fix, fix]
+def step : Prog isa := seqs [.block R2Words.bases, .block quot, refine3, mulSub, fix]
 
 /-- `step` `rcx` times (a public count, at least 1), counted in `sCnt`. -/
 def steps : Prog isa :=

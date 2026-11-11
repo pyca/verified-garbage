@@ -176,13 +176,15 @@ count depends only on `w`.
 Registers: `a7` `n`, `a2` `x`, `a6` the temporary (`P`, `d'` and `v` in its
 words 0–2), `t0` `w`, `a4` zero, `a1` the steps left. -/
 
-/-- After `lz` (`a1 = z`): `P = 2^z` and `d' = T P + ⌊L P / 2^64⌋`, for `n`'s
-top two words `T` and `L`, into the temporary's words 0 and 1, `d'` also in
-`s2`. -/
+/-- After `lz` (`a1 = z`): `P = 2^z`, `d' = T P + ⌊L P / 2^64⌋` and
+`d'ₗ = L P + ⌊L' P / 2^64⌋ mod 2^64`, the top two words of `n P`, for `n`'s top
+three words `T`, `L` and `L'`, into the temporary's words 0, 1 and 3, `d'`
+also in `s2`. -/
 def normTail : List Instr :=
-  [.li .s0 1, .shiftReg .sll .d .s0 .s0 .a1, .shift .sll .d .t3 .t0 3, .add .t3 .t3 .a7, .addi .t3 .t3 (-16),
-    .load .d .s2 .t3 8, .load .d .s3 .t3 0, .shiftReg .sll .d .s2 .s2 .a1, .mulhu .s3 .s3 .s0,
-    .add .s2 .s2 .s3, .store .d .s0 .a6 0, .store .d .s2 .a6 8]
+  [.li .s0 1, .shiftReg .sll .d .s0 .s0 .a1, .shift .sll .d .t3 .t0 3, .add .t3 .t3 .a7, .addi .t3 .t3 (-24),
+    .load .d .s2 .t3 16, .load .d .s3 .t3 8, .shiftReg .sll .d .s2 .s2 .a1, .mulhu .s4 .s3 .s0,
+    .add .s2 .s2 .s4, .mul .s3 .s3 .s0, .load .d .s1 .t3 0, .mulhu .s1 .s1 .s0, .add .s3 .s3 .s1,
+    .store .d .s0 .a6 0, .store .d .s2 .a6 8, .store .d .s3 .a6 24]
 
 /-- `a4 := 0`, the remainder `r := 2^64 - 1 - d'` (`s3`, for `d'` in `s2`),
 the quotient `q := 0` (`s4`) and 64 (`t5`). -/
@@ -225,6 +227,31 @@ def quotFix : List Instr := [.sltu .s4 .a4 .a3, .addi .s4 .s4 (-1), .logic .or .
 
 /-- `q̂` into `s1`. -/
 def quot : List Instr := quotHead ++ quotMG ++ quotFix
+
+/-- `u₀ = x₀ P + ⌊x₋₁ P / 2^64⌋ mod 2^64` (`t6`), the third word of `x P`,
+from `x`'s words `x₀` and `x₋₁` below its top two (at `t3`), and `t = U - q̂ D`
+over three words (`t4`, `t5`, `t6`), for `U = (u₂, u₁, u₀)`, `D = (d', d'ₗ)`
+(`s2`, `a0`) and `q̂` (`s1`): `q̂ D` (`s4`, `s3`, `s0`), then subtracted
+with its borrows. -/
+def quot3Head : List Instr :=
+  [.load .d .s0 .a6 0, .load .d .t6 .t3 0, .addi .a0 .t3 (-8), .load .d .a0 .a0 0, .mul .t6 .t6 .s0,
+    .mulhu .a0 .a0 .s0, .add .t6 .t6 .a0, .load .d .a0 .a6 24, .mul .s0 .s1 .a0, .mulhu .a3 .s1 .a0,
+    .mul .s3 .s1 .s2, .mulhu .s4 .s1 .s2, .add .s3 .s3 .a3, .sltu .a3 .s3 .a3, .add .s4 .s4 .a3,
+    .sltu .a3 .t6 .s0, .sub .t6 .t6 .s0, .sltu .s0 .t5 .s3, .sub .t5 .t5 .s3, .sltu .s3 .t5 .a3,
+    .sub .t5 .t5 .a3, .logic .or .a3 .s0 .s3, .sub .t4 .t4 .s4, .sub .t4 .t4 .a3]
+
+/-- `q̂ := q̂ - 1` and `t := t + D` if `t` is negative (its top word's sign),
+by a mask. -/
+def quot3Fix : List Instr :=
+  [.shift .srl .d .a3 .t4 63, .sub .s1 .s1 .a3, .sub .a3 .a4 .a3, .logic .and .s0 .a0 .a3,
+    .logic .and .s3 .s2 .a3, .add .t6 .t6 .s0, .sltu .s0 .t6 .s0, .add .t5 .t5 .s3, .sltu .s3 .t5 .s3,
+    .add .t5 .t5 .s0, .sltu .s0 .t5 .s0, .logic .or .s3 .s3 .s0, .add .t4 .t4 .s3]
+
+/-- `q̂ := min(⌊U / D⌋, 2^64 - 1)` from `quot`'s `min(⌊(u₂ 2^64 + u₁) / d'⌋,
+2^64 - 1)`, at most 2 more (Knuth, TAOCP vol. 2, §4.3.1, Theorem B): `t = U -
+q̂ D`, and `q̂` one less while `t` is negative, twice (the second time only
+`q̂`). -/
+def quot3 : List Instr := quot3Head ++ quot3Fix ++ [.shift .srl .d .a3 .t4 63, .sub .s1 .s1 .a3]
 
 /-- The pointers into `x` (`t3`) and `n` (`t4`), `w` (`t5`), and the carry
 `c` (`s0`), the borrow `b` (`s4`) and `x`'s previous word (`t6`) := 0. -/
@@ -270,7 +297,7 @@ def addBack : Prog isa :=
     (.block [.load .d .s2 .t3 0, .add .s2 .s2 .s1, .store .d .s2 .t3 0]))
 
 /-- `x := x 2^64 mod n`. -/
-def wordStep : Prog isa := .seq (.block quot) (.seq mulSub (.seq addBack addBack))
+def wordStep : Prog isa := .seq (.block (quot ++ quot3)) (.seq mulSub addBack)
 
 /-- `w + 1` of `wordStep`, counted by `a1`. -/
 def wordSteps : Prog isa :=

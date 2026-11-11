@@ -24,7 +24,11 @@ steps `x := x 2^32 mod M`, each a step of long division (Knuth, TAOCP vol. 2,
 * `t = x 2^32 - q̂ M` over `W' + 1` words in two's complement (`mulSub`),
   whose carry `hi(q̂ Mᵢ + c) + borrow` fits a word and is kept in the next
   word of `t`;
-* `M` added to `t` while it is negative, twice, by a mask (`addBack`);
+* `q̂` refined to the 3-by-2 estimate `min(⌊U / D⌋, 2^32 - 1)` from the top
+  three words `U` of `2^z x` and the top two `D` of `2^z M`, which gives
+  `q ≤ q̂ ≤ q + 1`, by `U - q̂ D` over three words and two corrections by
+  masks (`refine3`);
+* `M` added to `t` if it is negative, once, by a mask (`addBack`);
 * `t` back into `x` (`copyBack`).
 
 Every branch and address depends only on `n_len`: the counts are fixed
@@ -34,7 +38,8 @@ never read back from the working area, so that the taint analysis sees every
 address as public; only the steps' count is, which the proof of constant
 time relates by its value. The working area's header holds `p`
 (160), `d` (164), `v` (168), the mask of `u₂ = d` (172), the steps left
-(176) and `q̂` (180), and `t` is number 5.
+(176), `q̂` (180), `u₀` (184), `u₂` (188) and `d₁` (192), and `t` is
+number 5.
 -/
 
 @[expose] public section
@@ -52,6 +57,9 @@ def oV : Nat := 168
 def oMask : Nat := 172
 def oSteps : Nat := 176
 def oQ : Nat := 180
+def oU0 : Nat := 184
+def oU2 : Nat := 188
+def oD1 : Nat := 192
 
 /-- A header word. -/
 def hd (o : Nat) : MemOp := at_ .edi o
@@ -75,14 +83,16 @@ def normBit : List Instr :=
     .alu .add .esi (.reg .ebp), .alu .sub .edx (.imm 1)]
 
 /-- `p = 2^z` at 160 for the leading zeros `z` of `M`'s top word
-`M[W' - 1]`, by 31 doublings under a mask; and `d = M[W' - 1] p +
-hi(M[W' - 2] p)` at 164. -/
+`M[W' - 1]`, by 31 doublings under a mask; `d = M[W' - 1] p +
+hi(M[W' - 2] p)` at 164; and `d₁ = lo(M[W' - 2] p) + hi(M[W' - 3] p)`, the
+next word of `2^z M`, at 192. -/
 def norm : Prog isa := seqs [
-  .block (topPtr .ebx 0 2 .ecx ++
-    [.mov .eax (.mem (at_ .ebx 4)), .mov .esi (.imm 1), .mov .edx (.imm 31)]),
+  .block (topPtr .ebx 0 3 .ecx ++
+    [.mov .eax (.mem (at_ .ebx 8)), .mov .esi (.imm 1), .mov .edx (.imm 31)]),
   .loop (.block normBit) .ne,
-  .block [.store (hd oP) .esi, .mov .ecx (.reg .eax), .mov .eax (.mem (at_ .ebx 0)), .mul .esi,
-    .alu .add .ecx (.reg .edx), .store (hd oD) .ecx]]
+  .block [.store (hd oP) .esi, .mov .ecx (.reg .eax), .mov .eax (.mem (at_ .ebx 4)), .mul .esi,
+    .alu .add .ecx (.reg .edx), .store (hd oD) .ecx, .mov .ebp (.reg .eax), .mov .eax (.mem (at_ .ebx 0)),
+    .mul .esi, .alu .add .ebp (.reg .edx), .store (hd oD1) .ebp]]
 
 /-! ## `v` -/
 
@@ -106,14 +116,19 @@ def recip : Prog isa := seqs [
 
 /-! ## A step -/
 
-/-- `u₁` into `ebp` and `u₂` into `eax`, the words `W' - 2` and `W' - 1` of
-`2^z x` for `x` number 4: `lo(x[W' - 2] p) + hi(x[W' - 3] p)` and
-`lo(x[W' - 1] p) + hi(x[W' - 2] p)`. -/
-def top : List Instr :=
-  topPtr .ebx 4 3 .ecx ++
+/-- From `ebx` at `x[W' - 4]`: `u₁` into `ebp`, and `u₂` into `eax` and at 188, the words `W' - 2` and
+`W' - 1` of `2^z x` for `x` number 4: `lo(x[W' - 2] p) + hi(x[W' - 3] p)` and
+`lo(x[W' - 1] p) + hi(x[W' - 2] p)`; and the word `W' - 3`, `u₀ =
+lo(x[W' - 3] p) + hi(x[W' - 4] p)`, at 184. -/
+def topWords : List Instr :=
   [.mov .esi (.mem (hd oP)), .mov .eax (.mem (at_ .ebx 0)), .mul .esi, .mov .ecx (.reg .edx),
-    .mov .eax (.mem (at_ .ebx 4)), .mul .esi, .alu .add .eax (.reg .ecx), .mov .ebp (.reg .eax),
-    .mov .ecx (.reg .edx), .mov .eax (.mem (at_ .ebx 8)), .mul .esi, .alu .add .eax (.reg .ecx)]
+    .mov .eax (.mem (at_ .ebx 4)), .mul .esi, .alu .add .eax (.reg .ecx), .mov .ebp (.reg .eax), .mov .ecx (.reg .edx),
+    .mov .eax (.mem (at_ .ebx 8)), .mul .esi, .alu .add .eax (.reg .ecx), .mov .ecx (.reg .edx),
+    .mov .ebx (.mem (at_ .ebx 12)), .store (hd oU0) .ebp, .mov .ebp (.reg .eax),
+    .mov .eax (.reg .ebx), .mul .esi, .alu .add .eax (.reg .ecx), .store (hd oU2) .eax]
+
+/-- `topWords` from a pointer to `x[W' - 4]`. -/
+def top : List Instr := topPtr .ebx 4 4 .ecx ++ topWords
 
 /-- `q̂` at 180 from `u₂` (`eax`) and `u₁` (`ebp`): the mask of `u₂ = d`
 (as `u₂ ≤ d`, of `d - u₂ < 1`) at 172 and `u₂` cleared under it; `(q₁, q₀)
@@ -131,6 +146,27 @@ def quot : List Instr :=
     .alu .and .eax (.reg .esi), .alu .add .edx (.reg .eax),
     .mov .eax (.reg .esi), .alu .sub .eax (.imm 1), .alu .cmp .eax (.reg .edx), .alu .adc .ebx (.imm 0),
     .alu .or .ebx (.mem (hd oMask)), .store (hd oQ) .ebx]
+
+/-- `t = U - q̂ D` over three words, into `eax`, `ebp`, `esi`, for `q̂` (180)
+into `ecx`, `U = (u₂, u₁, u₀)` (188, `ebp`, 184) and `D = (d, d₁)` (164,
+192): `q̂ D` into `edx`, `eax`, `ebx`, and its subtraction. -/
+def quot3 : List Instr :=
+  [.mov .ecx (.mem (hd oQ)), .mov .eax (.mem (hd oD1)), .mul .ecx, .mov .ebx (.reg .eax), .mov .esi (.reg .edx),
+    .mov .eax (.mem (hd oD)), .mul .ecx, .alu .add .eax (.reg .esi), .alu .adc .edx (.imm 0),
+    .mov .esi (.mem (hd oU0)), .alu .sub .esi (.reg .ebx), .alu .sbb .ebp (.reg .eax),
+    .mov .eax (.mem (hd oU2)), .alu .sbb .eax (.reg .edx)]
+
+/-- If `t` is negative (the top bit of `eax`): `q̂ := q̂ - 1` and `t := t + D`,
+by a mask. -/
+def fix3 : List Instr :=
+  [.mov .edx (.reg .eax), .alu .add .edx (.reg .edx), .alu .sbb .edx (.reg .edx), .alu .add .ecx (.reg .edx),
+    .mov .ebx (.reg .edx), .alu .and .ebx (.mem (hd oD1)), .alu .and .edx (.mem (hd oD)),
+    .alu .add .esi (.reg .ebx), .alu .adc .ebp (.reg .edx), .alu .adc .eax (.imm 0)]
+
+/-- `q̂` at 180 refined to the 3-by-2 estimate `min(⌊U / D⌋, 2^32 - 1)`, which
+is at least the quotient `q` and at most `q + 1`, by `quot3` and `fix3`
+twice. -/
+def refine3 : List Instr := quot3 ++ fix3 ++ fix3 ++ [.store (hd oQ) .ecx]
 
 /-- `mulSub`'s pointers: `ebx` at `M`, `esi` at `x`, `ebp` at `t`, and
 `ecx = q̂`. -/
@@ -192,7 +228,7 @@ def copyBack : Prog isa := seqs [
   .block [.mov .edi (.mem (argAt 0 4))]]
 
 /-- `x := x 2^32 mod M`. -/
-def step : Prog isa := seqs [.block (top ++ quot), mulSub, addBack, addBack, copyBack]
+def step : Prog isa := seqs [.block (top ++ quot ++ refine3), mulSub, addBack, copyBack]
 
 /-- The steps' count `⌊5 B / 16⌋ - W' + 1` at 176. -/
 def count : List Instr :=
