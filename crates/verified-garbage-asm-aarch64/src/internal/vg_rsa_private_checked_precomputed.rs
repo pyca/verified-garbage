@@ -16,7 +16,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_private_checked_precomputed() {
 .inst 0xf9000de8,0xf94673e8,0xf90011e8,0xf94677e8,0xf90015e8,0xf9467be8,0xf90019e8,0xf9467fe8
 .inst 0xf9001de8,0xf94683e8,0xf90021e8,0xf94687e8,0xf90025e8,0x910283e0,0x91000061,0x910000c4
 .inst 0x91000065,0xf9465be6,0xf9465fe7
-bl {vg_rsa_private_crt}
+bl {vg_rsa_private_crt_precomputed}
 .inst 0x910003ef,0xf90041e0,0x911283e0,0xf94033e1,0x91001c21,0xd343fc21,0x8b010021,0xf9402fe2
 .inst 0xf94033e3,0xf94683e4,0xf94687e5,0x91000011,0xf9468bf0,0x9100002c,0x9100018e
 20:
@@ -38,7 +38,7 @@ cbnz x13, 21b
 cbnz x15, 22b
 .inst 0x910001a0,0x913283ff,0xf84107fe,0xd65f03c0
 .p2align 6",
-        vg_rsa_private_crt = sym crate::rsa::vg_rsa_private_crt::vg_rsa_private_crt,
+        vg_rsa_private_crt_precomputed = sym crate::rsa::vg_rsa_private_crt_precomputed::vg_rsa_private_crt_precomputed,
         vg_rsa_public_precomputed_checked = sym crate::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }
