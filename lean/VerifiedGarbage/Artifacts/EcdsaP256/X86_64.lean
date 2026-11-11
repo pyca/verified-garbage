@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointVerified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointIfmaVerified
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointIfmaLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
@@ -128,6 +131,14 @@ namespace VG.Artifacts.EcdsaP256.X86_64
 open VG.Proof.P256.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
+  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+    suffix := "_ifma"
+    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
+      Impl.Ecdsa.Verify.X86_64.jointVerifyP256Ifma
+    stack := 96
+    verified := Proof.Ecdsa.Verify.X86_64.verifyHash_verified_ifma hasLaw.law (Proof.P256.gtabOk9 hasLaw.law)
+      hasLaw.inv hasLaw.prime }
+    (Proof.Ecdsa.Verify.X86_64.verifyHashOut_consts Spec.Ecdsa.P256.inst Impl.P256.X86_64.p256v.combConsts 96)),
   Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target {
     code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
       Impl.Ecdsa.Verify.X86_64.jointVerifyP256
