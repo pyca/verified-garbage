@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreVerified
+public import VerifiedGarbage.Proof.Bignum.RISCV64.PrivPreVerified
 public import VerifiedGarbage.Proof.Rsa.RISCV64.CrtValVerified
 public import VerifiedGarbage.Proof.Rsa.RISCV64.Instances
 public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkCkV
@@ -18,6 +19,9 @@ def artifacts : List Artifact := [
   Spec.Rsa.publicPrecomputeApi.artifact RISCV64.target {
     code := Impl.Bignum.RISCV64.Precompute.precompute
     verified := Proof.Bignum.RISCV64.Pre.precompute_verified },
+  Spec.Rsa.privatePrecomputeApi.artifact RISCV64.target {
+    code := Impl.Bignum.RISCV64.PrivPre.code
+    verified := Proof.Bignum.RISCV64.PrivPre.pp_verified },
   Spec.Rsa.crtValuesApi.artifact RISCV64.target {
     code := Impl.Rsa.RISCV64.CrtValues.code
     verified := Proof.Rsa.RISCV64.CrtValues.crtValues_verified },
