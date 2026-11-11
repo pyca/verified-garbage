@@ -68,6 +68,21 @@ def finishScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
     (post := fun state rounds count out _scratch => aesFinishPost A.ptrBits state rounds count out)
     (stack := stack)
 
+/-- `vg_cmac_aes_finish` with `scratch: *mut [u64; 2]`, for the
+implementations whose callees need no working space (x86-64's AES-NI and
+VAES ones). -/
+def finishScratchSigF : Sig where
+  params := [("state", .array true .u64 38), ("rounds", .int .usize true),
+    ("count", .int .u64 true), ("out", .array true .u8 16),
+    ("scratch", .array true .u64 2)]
+
+/-- `aesFinishContract`, whatever `scratch` is (of 2 words). -/
+def finishScratchContractF {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  finishScratchSigF.contract A
+    (pre := fun state rounds count out _scratch => aesFinishPre A.ptrBits state rounds count out)
+    (post := fun state rounds count out _scratch => aesFinishPost A.ptrBits state rounds count out)
+    (stack := stack)
+
 /-! ## Locality -/
 
 private theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}

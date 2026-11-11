@@ -38,7 +38,10 @@ called, and `[2176, 2224)` our caller's callee-saved registers.
   copy copies nothing, so the code has no branch around a call.
 * `finish` copies the chaining value to `out` and calls
   `vg_cmac_aes_finalize` with the state as its key, `out` as its state and
-  the `h` bytes held back as the last bytes.
+  the `h` bytes held back as the last bytes. Over an implementation of
+  `vg_aes_ctr32` that needs no working space (`finishF`), its scratch buffer
+  is only the 16 bytes of `vg_cmac_aes_finalize`'s counter block, which it
+  passes as `scratch - 2048`.
 
 Only the pointers, the key length, `count` and `len` can affect timing: the
 branches are on them, and so are the number of bytes copied and of blocks
@@ -184,5 +187,22 @@ def finPre : Prog isa := .seq (.block finishPre) lastLen
 
 def finish (c : Ctr32) (sfx : String) : Prog isa :=
   .seq finPre (.call ("vg_cmac_aes_finalize" ++ sfx) (Impl.CmacAes.X86_64.finalize c))
+
+/-- `finishPre` over an implementation of `vg_aes_ctr32` that needs no
+working space: `vg_cmac_aes_finalize` then writes only its counter block, at
+`scratch + 2048`, so it is given `scratch - 2048`, and our scratch buffer is
+that block alone (16 bytes). -/
+def finishPreF : List Instr :=
+  [.mov .rax (.mem (at_ .rdi 272)), .store (at_ .rcx 0) .rax, .mov .rax (.mem (at_ .rdi 280)),
+   .store (at_ .rcx 8) .rax, .mov .r9 (.reg .r8), .alu .sub .r9 (.imm 2048), .mov .r8 (.reg .rdx),
+   .mov .rdx (.reg .rcx), .mov .rcx (.reg .rdi), .alu .add .rcx (.imm 288), .alu .test .r8 (.reg .r8)]
+
+/-- Everything before the call, without working space for `vg_aes_ctr32`. -/
+def finPreF : Prog isa := .seq (.block finishPreF) lastLen
+
+/-- `finish` over an implementation of `vg_aes_ctr32` that needs no working
+space. -/
+def finishF (c : Ctr32) (sfx : String) : Prog isa :=
+  .seq finPreF (.call ("vg_cmac_aes_finalize" ++ sfx) (Impl.CmacAes.X86_64.finalize c))
 
 end VG.Impl.CmacAes.Stream.X86_64
