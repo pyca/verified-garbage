@@ -366,4 +366,27 @@ theorem setupP_ok {s : State} {S Bp : Addr} {Z l oB oLen : Nat} (hs : Scr s S Z)
   refine ⟨by rw [e0], by rw [e0], congrArg _ ?_, rfl⟩
   unfold wordsOf; split <;> omega_arith
 
+/-- `r2Src q`: the address of the cached `R² mod p` into `t6`, the header's
+`oR2`, or with `q`, after `p`'s `wordsOf pL` words (`pL` at `oPLen`). -/
+theorem r2Src_ok {q : Bool} {s : State} {S : Addr} {Z pL : Nat} (hs : Scr s S Z) (h6 : s.gpr .s6 = Mont.off S 0)
+    (hZ : 256 ≤ Z) (hpl : q = true → Mont.word s.mem S oPLen = BitVec.ofNat 64 pL) (hp1 : 1 ≤ pL)
+    (hp : pL ≤ 1024) :
+    WP isa (.block (r2Src q)) s fun t =>
+      (t.gpr .t6 = Mont.word s.mem S oR2 + BitVec.ofNat 64 (if q then 8 * wordsOf pL else 0) ∧ t.mem = s.mem) ∧
+      Keep [.t2, .t3, .t6] s t := by
+  have hR : s.mem.readW (Mont.off S 216) 64 = Mont.word s.mem S oR2 := rfl
+  cases q
+  · refine WP.keep _ ?_ (by rfl) (by rfl)
+    simp only [r2Src, Bool.false_eq_true, ↓reduceIte, BitVec.add_zero]
+    brun [h6, oR2, hs.ld (show 216 + 8 ≤ Z by omega_arith), hs.al8 (show 216 + 8 ≤ Z by omega_arith) (by decide), hR]
+  · have wv := words_val (x := (pL + 7) / 8) (by omega_arith) (by omega_arith)
+    have hL : s.mem.readW (Mont.off S 40) 64 = BitVec.ofNat 64 pL := hpl rfl
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    simp only [r2Src, words, ↓reduceIte]
+    brun [h6, oR2, oPLen, BitVec.ofNat_add_ofNat, ofNat_shr3 (pL + 7) (by omega_arith),
+      ofNat_shl _ _ (show 3 < 64 by decide), Nat.reducePow, hs.ld (show 216 + 8 ≤ Z by omega_arith),
+      hs.al8 (show 216 + 8 ≤ Z by omega_arith) (by decide), hs.ld (show 40 + 8 ≤ Z by omega_arith),
+      hs.al8 (show 40 + 8 ≤ Z by omega_arith) (by decide), hR, hL, wv, Nat.zero_add]
+    unfold wordsOf; split <;> rfl
+
 end VG.Proof.Bignum.RISCV64.Crt
