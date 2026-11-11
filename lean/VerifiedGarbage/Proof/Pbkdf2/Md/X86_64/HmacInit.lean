@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.Pbkdf2.MdKeys
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
 import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.MdStream.X86_64.PadExec
+import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
@@ -35,19 +38,20 @@ own proofs.
 namespace VG.Proof.Pbkdf2.Md.X86_64.HmacInit
 
 open VG.X86_64 VG.Proof.MdStream
-open VG.Proof.MdStream.X86_64 (add_ofNat sx_ofNat zx_ofNat wp_mov wp_mov32i wp_addi wp_mov32m wp_store32
-  wp_store8 wp_movzx8 wp_cmp wp_test Upd CallOk compressAt_ok compressAt_rel ea_at ofInt_natCast setWidth32
-  ofNat_succ sub_beq)
+open VG.Proof.MdStream.X86_64 (add_ofNat sx_ofNat zx_ofNat wp_mov wp_mov32i wp_addi wp_andi
+  wp_store8 wp_movzx8 wp_cmp Upd CallOk compressAt_ok compressAt_rel ea_at ofInt_natCast
+  ofNat_succ ofNat_pred ofNat_beq_zero sub_beq and_mask vbytes vbytes_length vbytes_getElem wp_movqx wp_xbin
+  wp_movImm64' wp_movdquStoreX WP.cons)
 open VG.Impl.MdStream.X86_64 (compressAt at_)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash byteAt pairArgs)
 open VG.Proof.Pbkdf2.X86_64 (ea_off)
 open VG.Proof.Pbkdf2.Md.X86_64.Calls (initG rel_taint rel_wp init_call init_rel SavedRegs saveR save_ok
   restore_ok count_loop ea_byteAt sx_one wp_xor32i xor_byte PubEq args repr_keep)
 open VG.Proof.Hmac.Generic.Common (K0 K0_length covers_one InRegions.right' bytes_keep)
-open VG.Proof.Hmac.Common (bytesAt_length bytesAt_getD' bytesAt_writeBytes_sep)
+open VG.Proof.Hmac.Common (bytesAt_length bytesAt_getD' bytesAt_writeBytes_sep bytesAt_add extractLsb'_read)
 open VG.Proof.Hmac.Generic.Common (bytesAt_writeBytes_self')
-open VG.Proof.Pbkdf2.MdKeys (ipadBlk ipadBlk_length ipadBlk_zero ipadBlk_succ ipadBlk_eq writeBytes_set fill_mem
-  xorOpad_mem xorOpad_ipad)
+open VG.Proof.Pbkdf2.MdKeys (ipadBlk ipadBlk_length ipadBlk_zero ipadBlk_succ ipadBlk_eq writeBytes_set
+  xorOpad_ipad)
 open VG.Proof.Sha256.Stream (writeBytes writeBytes_nil writeBytes_frame)
 open Spec.Sha256 (bytesAt)
 open Spec.Hmac (xorPad ipad opad blockKey)
@@ -283,130 +287,407 @@ end
 
 /-! ## The padded keys -/
 
-/-- Stores of `ipad` words (the low 32 bits of `rax`) at `rbx + o + 4 k`, for
-`k < n`, which write `4 n` bytes of `ipad` from `p = rbx + o`. -/
+/-- The 128 bits whose low and high halves are both `c` (`Hash.padConst`). -/
+def rep16 (c : BitVec 64) : BitVec 128 :=
+  XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ c) ((0 : BitVec 64) ++ c)
+
+theorem vbytes_ipad : vbytes (rep16 0x3636363636363636) = List.replicate 16 ipad := by decide
+
+theorem vbytes_x6a : vbytes (rep16 0x6a6a6a6a6a6a6a6a) = List.replicate 16 (0x6a : Byte) := by decide
+
+/-- A 16-byte store writes the register's bytes. -/
+theorem store16 (m : Mem) (a : Addr) (v : BitVec 128) : m.writeW a v = writeBytes m a (vbytes v) :=
+  Pbkdf2.Memory.writeW_bytes m a v _ (by simp only [Nat.reduceDiv, Nat.reduceMul, BitVec.setWidth_eq]; rfl)
+
+/-- The bytes of 16 bytes XORed with one byte repeated. -/
+theorem vbytes_xor (x c : BitVec 128) (b : Byte) (h : vbytes c = List.replicate 16 b) :
+    vbytes (x ^^^ c) = (vbytes x).map (· ^^^ b) := by
+  apply List.ext_getElem (by simp only [vbytes_length, List.length_map])
+  intro i h₁ h₂
+  have hi : i < 16 := by rwa [vbytes_length] at h₁
+  have hc : byte c i = b := by
+    rw [← vbytes_getElem c (i := i) (by rwa [vbytes_length])]
+    simp only [h, List.getElem_replicate]
+  rw [List.getElem_map, vbytes_getElem, vbytes_getElem, ← hc]
+  exact BitVec.extractLsb'_xor
+
+/-- The bytes of 16 bytes loaded from memory. -/
+theorem vbytes_readW (m : Mem) (a : Addr) : vbytes (m.readW a 128) = bytesAt m a 16 := by
+  simp only [vbytes, bytesAt]
+  refine List.map_congr_left fun j hj => ?_
+  have hj := List.mem_range.mp hj
+  simp only [byte, Mem.readW, BitVec.setWidth_eq]
+  exact extractLsb'_read _ _ hj
+
+/-- Bytes written inside bytes written before: those, in place. -/
+theorem writeBytes_over (m : Mem) (q : Addr) (xs ys zs : List Byte) {j : Nat}
+    (hx : xs.length < 2 ^ 63) (hy : j + ys.length ≤ xs.length) (hz : zs.length = xs.length)
+    (h : ∀ i < xs.length, zs.getD i 0 = if j ≤ i ∧ i < j + ys.length then ys.getD (i - j) 0 else xs.getD i 0) :
+    writeBytes (writeBytes m q xs) (q + BitVec.ofNat 64 j) ys = writeBytes m q zs := by
+  funext a
+  have hd := (a - q).isLt
+  simp only [writeBytes, Offset.sub_add_eq, Offset.toNat_sub_ofNat, hz]
+  generalize (a - q).toNat = d at hd ⊢
+  rw [Nat.mod_eq_of_lt (a := j) (by omega)]
+  by_cases hdj : j ≤ d
+  · rw [show 2 ^ 64 - j + d = (d - j) + 2 ^ 64 by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (a := d - j) (by omega)]
+    by_cases hdx : d < xs.length
+    · rw [ite_eq_left hdx, ite_eq_left hdx, h d hdx]
+      by_cases hdy : d - j < ys.length
+      · rw [ite_eq_left hdy, ite_eq_left ⟨hdj, by omega⟩]
+      · rw [ite_eq_right hdy, ite_eq_right (by omega)]
+    · rw [ite_eq_right hdx, ite_eq_right hdx, ite_eq_right (by omega)]
+  · rw [Nat.mod_eq_of_lt (a := 2 ^ 64 - j + d) (by omega), ite_eq_right (by omega)]
+    by_cases hdx : d < xs.length
+    · rw [ite_eq_left hdx, ite_eq_left hdx, h d hdx, ite_eq_right (by omega)]
+    · rw [ite_eq_right hdx, ite_eq_right hdx]
+
+/-- Sixteen more bytes of the key. -/
+theorem ipadBlk_add16 (m mk : Mem) (P K : Addr) {B j : Nat} (v : BitVec 128) (hB : B < 2 ^ 63) (hj : j + 16 ≤ B)
+    (hv : vbytes v = (bytesAt mk (K + BitVec.ofNat 64 j) 16).map (· ^^^ ipad)) :
+    (writeBytes m P (ipadBlk mk K B j)).writeW (P + BitVec.ofNat 64 j) v = writeBytes m P (ipadBlk mk K B (j + 16)) := by
+  have hl : ((bytesAt mk (K + BitVec.ofNat 64 j) 16).map (· ^^^ ipad)).length = 16 := by
+    rw [List.length_map, bytesAt_length]
+  rw [store16, hv]
+  refine writeBytes_over _ _ _ _ _ (by rw [ipadBlk_length]; exact hB) (by rw [ipadBlk_length, hl]; exact hj)
+    (by rw [ipadBlk_length, ipadBlk_length]) fun i hi => ?_
+  rw [ipadBlk_length] at hi
+  rw [hl]
+  simp only [ipadBlk, bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi,
+    Option.map_some, Option.getD_some]
+  by_cases hi' : j ≤ i ∧ i < j + 16
+  · rw [ite_eq_left hi', List.getElem?_range (by omega), ite_eq_left hi'.2]
+    simp only [Option.map_some, Option.getD_some]
+    rw [add_ofNat, show j + (i - j) = i by omega]
+  · rw [ite_eq_right hi']
+    by_cases hij : i < j
+    · rw [ite_eq_left hij, ite_eq_left (by omega)]
+    · rw [ite_eq_right hij, ite_eq_right (by omega)]
+
+/-- One more 16 bytes of the outer buffer, after `16 n` of them: the inner
+buffer's, XORed with `0x6a` in every byte. -/
+theorem xorOpad_mem16 (m : Mem) (A Q : Addr) (n : Nat) (c : BitVec 128) (hc : vbytes c = List.replicate 16 (0x6a : Byte))
+    (hsep : Mem.Sep A (16 * n + 16) Q (16 * n + 16)) (hlt : 16 * n + 16 < 2 ^ 64) :
+    (writeBytes m Q ((bytesAt m A (16 * n)).map (· ^^^ 0x6a))).writeW (Q + BitVec.ofNat 64 (16 * n))
+      ((writeBytes m Q ((bytesAt m A (16 * n)).map (· ^^^ 0x6a))).readW (A + BitVec.ofNat 64 (16 * n)) 128 ^^^ c) =
+      writeBytes m Q ((bytesAt m A (16 * n + 16)).map (· ^^^ 0x6a)) := by
+  have hl : ((bytesAt m A (16 * n)).map (· ^^^ (0x6a : Byte))).length = 16 * n := by
+    rw [List.length_map, bytesAt_length]
+  rw [store16, vbytes_xor _ _ _ hc, vbytes_readW, bytesAt_writeBytes_sep]
+  · rw [bytesAt_add, List.map_append]
+    exact Pbkdf2.Memory.writeBytes_append' _ _ _ (by rw [hl])
+      (by rw [hl, List.length_map, bytesAt_length]; exact hlt)
+  · intro x hx hy
+    rw [hl] at hy
+    apply hsep x _ (by omega)
+    rw [show x - A = (x - (A + BitVec.ofNat 64 (16 * n))) + BitVec.ofNat 64 (16 * n) by
+        rw [← BitVec.sub_sub, BitVec.sub_add_cancel],
+      BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * n) (by omega)]
+    have := Nat.mod_le ((x - (A + BitVec.ofNat 64 (16 * n))).toNat + 16 * n) (2 ^ 64)
+    omega
+  · omega
+
+theorem mask64 : ∀ j < 4, BitVec.ofNat 64 (16 * j) &&& (BitVec.ofNat 32 (64 - 16)).signExtend 64 =
+    BitVec.ofNat 64 (16 * j) := by decide
+
+theorem mask128 : ∀ j < 8, BitVec.ofNat 64 (16 * j) &&& (BitVec.ofNat 32 (128 - 16)).signExtend 64 =
+    BitVec.ofNat 64 (16 * j) := by decide
+
+/-- The 16-byte key loop's index, clamped to the block, is itself. -/
+theorem and_mask16 {B : Nat} (hB : B = 64 ∨ B = 128) {j : Nat} (hj : 16 * j + 16 ≤ B) :
+    BitVec.ofNat 64 (16 * j) &&& (BitVec.ofNat 32 (B - 16)).signExtend 64 = BitVec.ofNat 64 (16 * j) := by
+  rcases hB with rfl | rfl
+  · exact mask64 j (by omega)
+  · exact mask128 j (by omega)
+
+theorem shr4 (x : BitVec 64) : x >>> 4 = BitVec.ofNat 64 (x.toNat / 16) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+    Nat.mod_eq_of_lt (by have := x.isLt; omega)]
+
+theorem ea_keyAt (s : State) : s.ea H.keyAt = s.gpr .rbx + BitVec.ofNat 64 H.P.N + s.gpr .r10 := by
+  simp only [State.ea, Hash.keyAt, ofInt_natCast, show BitVec.ofNat 64 1 = 1 from rfl]
+  ac_rfl
+
+/-! The instructions of the key setup, with what they keep of the SSE
+registers. -/
+
+section
+variable {is : List Instr} {s : State} {Q : State → Prop}
+
+theorem wp_movX {d r : Reg} (k : ∀ s', Upd s s' d (s.gpr r) → s'.xmm = s.xmm → WP isa (.block is) s' Q) :
+    WP isa (.block (.mov d (.reg r) :: is)) s Q :=
+  WP.cons rfl (k _ (Upd.setReg _ _ _) rfl)
+
+theorem wp_mov32iX {d : Reg} {v : BitVec 32}
+    (k : ∀ s', Upd s s' d (v.setWidth 64) → s'.xmm = s.xmm → WP isa (.block is) s' Q) :
+    WP isa (.block (.mov32 d (.imm v) :: is)) s Q :=
+  WP.cons rfl (k _ (Upd.setReg _ _ _) rfl)
+
+theorem wp_andiX {d : Reg} {v : BitVec 32}
+    (k : ∀ s', Upd s s' d (s.gpr d &&& v.signExtend 64) → s'.xmm = s.xmm → WP isa (.block is) s' Q) :
+    WP isa (.block (.alu .and d (.imm v) :: is)) s Q :=
+  WP.cons rfl (k _ (Upd.flags _ _ _ _ _ _) rfl)
+
+theorem wp_addiX {d : Reg} {v : BitVec 32}
+    (k : ∀ s', Upd s s' d (s.gpr d + v.signExtend 64) → s'.xmm = s.xmm → WP isa (.block is) s' Q) :
+    WP isa (.block (.alu .add d (.imm v) :: is)) s Q :=
+  WP.cons rfl (k _ (Upd.flags _ _ _ _ _ _) rfl)
+
+theorem wp_subiX {d : Reg} {v : BitVec 32}
+    (k : ∀ s', Upd s s' d (s.gpr d - v.signExtend 64) → s'.xmm = s.xmm →
+      s'.zf = some (s.gpr d - v.signExtend 64 == 0) → WP isa (.block is) s' Q) :
+    WP isa (.block (.alu .sub d (.imm v) :: is)) s Q :=
+  WP.cons rfl (k _ (Upd.flags _ _ _ _ _ _) rfl rfl)
+
+theorem wp_shrZX {d : Reg} {n : Nat} (hn : 1 ≤ n ∧ n ≤ 63)
+    (k : ∀ s', Upd s s' d (s.gpr d >>> n) → s'.xmm = s.xmm → s'.zf = some (s.gpr d >>> n == 0) →
+      WP isa (.block is) s' Q) :
+    WP isa (.block (.shift .shr d n :: is)) s Q := by
+  refine WP.cons (s' := (s.setFlags (some ((s.gpr d).getLsbD (n - 1)))
+    (if n = 1 then some (s.gpr d).msb else none) (some (s.gpr d >>> n == 0))
+    (some (s.gpr d >>> n).msb)).setReg d (s.gpr d >>> n)) ?_ (k _ ?_ rfl rfl)
+  · simp [exec, execShift, hn]
+  · exact ⟨by simp [State.setReg], fun r h => by simp [State.setReg, State.setFlags, h], rfl, rfl, rfl⟩
+
+/-- Sixteen bytes loaded into `d` and XORed with `c`. -/
+theorem wp_loadXor {d c : XReg} {m : MemOp} {a : Addr} (hdc : ¬c = d) (ha : s.ea m = a)
+    (hin : InRegions (s.rd ++ s.wr) a 16)
+    (k : ∀ s', s'.gpr = s.gpr → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
+      s'.xmm d = s.mem.readW a 128 ^^^ s.xmm c → (∀ y, ¬y = d → s'.xmm y = s.xmm y) → WP isa (.block is) s' Q) :
+    WP isa (.block (.movdquLoad d m :: .xop (.bin .pxor d c) :: is)) s Q := by
+  refine WP.cons (s' := s.setXmm d (s.mem.readW a 128)) (by simp [exec, State.load128, ha, hin])
+    (wp_xbin (k _ rfl rfl rfl rfl ?_ fun y hy => ?_))
+  · rw [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne _ _ hdc]; rfl
+  · rw [RegUpd.xmm_setXmm_of_ne _ _ hy, RegUpd.xmm_setXmm_of_ne _ _ hy]
+
+/-- `Hash.padConst`: `c` in both halves of `x`, through `rax`. -/
+theorem padConst_ok {x : XReg} {c : BitVec 64} {rest : List Instr}
+    (k : ∀ s', (∀ r, ¬r = .rax → s'.gpr r = s.gpr r) → s'.xmm x = rep16 c →
+      (∀ y, ¬y = x → s'.xmm y = s.xmm y) → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
+      WP isa (.block rest) s' Q) :
+    WP isa (.block (Hash.padConst x c ++ rest)) s Q := by
+  simp only [Hash.padConst, List.cons_append, List.nil_append]
+  refine wp_movImm64' (wp_movqx (wp_xbin (k _ (fun r h => ?_) ?_ (fun y h => ?_) rfl rfl rfl)))
+  · rw [RegUpd.gpr_setXmm, RegUpd.gpr_setXmm, RegUpd.gpr_setReg_of_ne _ _ h]
+  · rw [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_self, RegUpd.gpr_setReg_self]; rfl
+  · rw [RegUpd.xmm_setXmm_of_ne _ _ h, RegUpd.xmm_setXmm_of_ne _ _ h]; rfl
+
+end
+
+/-- Stores of `xmm0`, `ipad` in every byte, at `rbx + o + 16 k`, for `k < n`,
+which write `16 n` bytes of `ipad` from `p = rbx + o`. -/
 theorem fill_ok {o : Nat} {p : Addr} : ∀ n (rest : List Instr) (s : State) (Q : State → Prop),
-    s.gpr .rbx + BitVec.ofNat 64 o = p → (s.gpr .rax).setWidth 32 = 0x36363636 →
-    (∀ k < n, InRegions s.wr (p + BitVec.ofNat 64 (4 * k)) 4) → 4 * n + 4 < 2 ^ 64 →
-    (∀ s', s'.gpr = s.gpr → s'.rd = s.rd → s'.wr = s.wr →
-      s'.mem = writeBytes s.mem p (List.replicate (4 * n) ipad) → WP isa (.block rest) s' Q) →
-    WP isa (.block ((List.range n).map (fun k => Instr.store32 (at_ .rbx (o + 4 * k)) .rax) ++ rest)) s Q := by
+    s.gpr .rbx + BitVec.ofNat 64 o = p → vbytes (s.xmm .xmm0) = List.replicate 16 ipad →
+    (∀ k < n, InRegions s.wr (p + BitVec.ofNat 64 (16 * k)) 16) → 16 * n + 16 < 2 ^ 64 →
+    (∀ s', s'.gpr = s.gpr → s'.rd = s.rd → s'.wr = s.wr → s'.xmm = s.xmm →
+      s'.mem = writeBytes s.mem p (List.replicate (16 * n) ipad) → WP isa (.block rest) s' Q) →
+    WP isa (.block ((List.range n).map (fun k => Instr.movdquStore (at_ .rbx (o + 16 * k)) .xmm0) ++ rest)) s Q := by
   intro n
   induction n with
   | zero =>
     intro rest s Q _ _ _ _ k
-    exact k s rfl rfl rfl (by simp [writeBytes_nil])
+    exact k s rfl rfl rfl rfl (by simp [writeBytes_nil])
   | succ n ih =>
-    intro rest s Q hp hax hout hn k
+    intro rest s Q hp hx hout hn k
     rw [List.range_succ, List.map_append, List.map_singleton, List.append_assoc]
-    refine ih _ s Q hp hax (fun j hj => hout j (by omega_using [hj])) (by omega_using [hn]) fun s₁ g₁ rd₁ wr₁ m₁ => ?_
+    refine ih _ s Q hp hx (fun j hj => hout j (by omega_using [hj])) (by omega_using [hn]) fun s₁ g₁ rd₁ wr₁ x₁ m₁ => ?_
     simp only [List.cons_append, List.nil_append]
-    refine wp_store32 (a := p + BitVec.ofNat 64 (4 * n)) (by rw [ea_off, g₁, hp])
-      (by rw [wr₁]; exact hout n (by omega_using [])) fun s₂ g₂ m₂ rd₂ wr₂ =>
-        k s₂ (by rw [g₂, g₁]) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]) ?_
-    rw [m₂, g₁, hax, m₁, fill_mem _ _ _ (by omega_using [hn]), Nat.mul_succ]
+    refine wp_movdquStoreX (a := p + BitVec.ofNat 64 (16 * n)) (by rw [ea_off, g₁, hp])
+      (by rw [wr₁]; exact hout n (by omega_using [])) fun s₂ g₂ m₂ rd₂ wr₂ x₂ =>
+        k s₂ (by rw [g₂, g₁]) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]) (by rw [x₂, x₁]) ?_
+    rw [m₂, m₁, x₁, store16, hx,
+      Pbkdf2.Memory.writeBytes_append' _ _ _ (by rw [List.length_replicate])
+        (by simp only [List.length_replicate]; omega_using [hn]),
+      List.replicate_append_replicate, Nat.mul_succ]
 
 /-- After `j` bytes of the key at `K` (whose bytes are those of `mk`), from the
-state `s` the loop starts in: the buffer at `P` holds `ipadBlk … j` over `m`. -/
+state `s` the loops start in: the buffer at `P` holds `ipadBlk … j` over `m`. -/
 structure KeyInv (s : State) (m mk : Mem) (P K : Addr) (B j : Nat) (t : State) : Prop where
   rd : t.rd = s.rd
   wr : t.wr = s.wr
-  other : ∀ r, r ≠ .rax → r ≠ .r14 → t.gpr r = s.gpr r
+  other : ∀ r, r ≠ .rax → r ≠ .r14 → r ≠ .r10 → r ≠ .rcx → t.gpr r = s.gpr r
   r14 : t.gpr .r14 = BitVec.ofNat 64 j
   mem : t.mem = writeBytes m P (ipadBlk mk K B j)
 
-/-- Where the key loop reads and writes. -/
+/-- Where the key loops read and write. -/
 structure KeyRegs (H : Hash) (s : State) (m mk : Mem) (P K : Addr) (kl : Nat) : Prop where
   kl_le : kl ≤ H.P.B
-  hB : H.P.B ≤ 128
+  hB : H.P.B = 64 ∨ H.P.B = 128
   rbp : s.gpr .rbp = K
   rbx : s.gpr .rbx + BitVec.ofNat 64 H.P.N = P
   r13 : s.gpr .r13 = BitVec.ofNat 64 kl
   key : ∀ i < kl, m (K + BitVec.ofNat 64 i) = mk (K + BitVec.ofNat 64 i)
-  kin : ∀ i < kl, InRegions (s.rd ++ s.wr) (K + BitVec.ofNat 64 i) 1
-  bout : ∀ i < H.P.B, InRegions s.wr (P + BitVec.ofNat 64 i) 1
+  kin : ∀ i n, i + n ≤ kl → InRegions (s.rd ++ s.wr) (K + BitVec.ofNat 64 i) n
+  bout : ∀ i n, i + n ≤ H.P.B → InRegions s.wr (P + BitVec.ofNat 64 i) n
   disj : Region.Disjoint ⟨K, kl⟩ ⟨P, H.P.B⟩
+
+/-- The key's bytes are still where they were. -/
+theorem KeyInv.key {s : State} {m mk : Mem} {P K : Addr} {kl : Nat} (hr : KeyRegs H s m mk P K kl) {j : Nat}
+    {t : State} (h : KeyInv s m mk P K H.P.B j t) {i : Nat} (hi : i < kl) :
+    t.mem (K + BitVec.ofNat 64 i) = mk (K + BitVec.ofNat 64 i) := by
+  have hkl := hr.kl_le
+  have hB : H.P.B ≤ 128 := by rcases hr.hB with h | h <;> omega
+  have hl : (ipadBlk mk K H.P.B j).length = H.P.B := ipadBlk_length _ _ _ _
+  rw [h.mem, ← hr.key i hi]
+  refine (writeBytes_frame m P _ (R := ⟨P, H.P.B⟩) (by rw [hl]; exact Region.contains_self _ _)).bytes
+    (R := ⟨K, kl⟩) ?_ (by show kl ≤ 2 ^ 64; omega_using [hkl, hB]) hi
+  simp only [List.mem_singleton]; rintro r rfl; exact hr.disj
+
+theorem key_step16 {s : State} {m mk : Mem} {P K : Addr} {kl : Nat} (hr : KeyRegs H s m mk P K kl)
+    (hx0 : vbytes (s.xmm .xmm0) = List.replicate 16 ipad) {j : Nat} (hj : j < kl / 16) {t : State}
+    (h : KeyInv s m mk P K H.P.B (16 * j) t) (hx : t.xmm .xmm0 = s.xmm .xmm0)
+    (hc : t.gpr .rcx = BitVec.ofNat 64 (kl / 16 - j)) :
+    WP isa (.block [.movdquLoad .xmm1 (byteAt .rbp 0), .xop (.bin .pxor .xmm1 .xmm0),
+      .mov .r10 (.reg .r14), .alu .and .r10 (.imm (BitVec.ofNat 32 (H.P.B - 16))),
+      .movdquStore H.keyAt .xmm1, .alu .add .r14 (.imm 16), .alu .sub .rcx (.imm 1)]) t
+      fun t' => (KeyInv s m mk P K H.P.B (16 * (j + 1)) t' ∧ t'.xmm .xmm0 = s.xmm .xmm0 ∧
+        t'.gpr .rcx = BitVec.ofNat 64 (kl / 16 - (j + 1))) ∧ t'.zf = some (decide (j + 1 = kl / 16)) := by
+  have hkl := hr.kl_le
+  have hB : H.P.B ≤ 128 := by rcases hr.hB with h | h <;> omega
+  have hj16 : 16 * j + 16 ≤ kl := by omega
+  refine wp_loadXor (a := K + BitVec.ofNat 64 (16 * j)) (by decide)
+    (by rw [ea_byteAt _ _ _ _ h.r14, h.other _ (by decide) (by decide) (by decide) (by decide), hr.rbp,
+      BitVec.add_zero])
+    (by rw [h.rd, h.wr]; exact hr.kin _ 16 hj16) fun t₀ g₀ m₀ rd₀ wr₀ x₀ xo₀ => ?_
+  refine wp_movX fun t₁ u₁ x₁ => wp_andiX fun t₂ u₂ x₂ => ?_
+  have h10 : t₂.gpr .r10 = BitVec.ofNat 64 (16 * j) := by
+    rw [u₂.gpr, u₁.gpr, g₀, h.r14, and_mask16 hr.hB (by omega)]
+  refine wp_movdquStoreX (a := P + BitVec.ofNat 64 (16 * j))
+    (by rw [ea_keyAt, h10, u₂.other _ (by decide), u₁.other _ (by decide), g₀,
+      h.other _ (by decide) (by decide) (by decide) (by decide), hr.rbx])
+    (by rw [u₂.wr, u₁.wr, wr₀, h.wr]; exact hr.bout _ 16 (by omega)) fun t₃ g₃ m₃ rd₃ wr₃ x₃ => ?_
+  refine wp_addiX fun t₄ u₄ x₄ => wp_subiX fun t₅ u₅ x₅ z₅ => WP.block_nil ?_
+  have hv : vbytes (t.mem.readW (K + BitVec.ofNat 64 (16 * j)) 128 ^^^ t.xmm .xmm0) =
+      (bytesAt mk (K + BitVec.ofNat 64 (16 * j)) 16).map (· ^^^ ipad) := by
+    rw [vbytes_xor _ _ _ (by rw [hx]; exact hx0), vbytes_readW]
+    congr 1
+    simp only [bytesAt]
+    refine List.map_congr_left fun i hi => ?_
+    have hi := List.mem_range.mp hi
+    rw [add_ofNat]
+    exact h.key hr (by omega)
+  have c₄ : t₄.gpr .rcx = BitVec.ofNat 64 (kl / 16 - j) := by
+    rw [u₄.other _ (by decide), g₃, u₂.other _ (by decide), u₁.other _ (by decide), g₀, hc]
+  refine ⟨⟨⟨by rw [u₅.rd, u₄.rd, rd₃, u₂.rd, u₁.rd, rd₀, h.rd], by rw [u₅.wr, u₄.wr, wr₃, u₂.wr, u₁.wr, wr₀, h.wr],
+    fun r h1 h2 h3 h4 => by
+      rw [u₅.other r h4, u₄.other r h2, g₃, u₂.other r h3, u₁.other r h3, g₀, h.other r h1 h2 h3 h4],
+    by rw [u₅.other _ (by decide), u₄.gpr, g₃, u₂.other _ (by decide), u₁.other _ (by decide), g₀, h.r14,
+      show (16 : BitVec 32).signExtend 64 = BitVec.ofNat 64 16 from rfl, ← BitVec.ofNat_add, Nat.mul_succ], ?_⟩,
+    by rw [x₅, x₄, x₃, x₂, x₁, xo₀ _ (by decide), hx], ?_⟩, ?_⟩
+  · rw [u₅.mem, u₄.mem, m₃, x₂, x₁, x₀, u₂.mem, u₁.mem, m₀]
+    generalize t.mem.readW (K + BitVec.ofNat 64 (16 * j)) 128 ^^^ t.xmm .xmm0 = v at hv ⊢
+    rw [h.mem, ipadBlk_add16 _ _ _ _ _ (by omega) (by omega) hv, Nat.mul_succ]
+  · rw [u₅.gpr, c₄, sx_one, ofNat_pred (by omega)]; rfl
+  · rw [z₅, c₄, sx_one, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, sub_beq (by omega) (by omega)]
+    exact congrArg some (decide_eq_decide.mpr (by omega))
+
+/-- The 16-byte key loop, skipped for a key shorter than that. -/
+theorem key16_ok {s : State} {m mk : Mem} {P K : Addr} {kl : Nat} (hr : KeyRegs H s m mk P K kl)
+    (hx0 : vbytes (s.xmm .xmm0) = List.replicate 16 ipad) (h14 : s.gpr .r14 = BitVec.ofNat 64 0)
+    (hc : s.gpr .rcx = BitVec.ofNat 64 (kl / 16)) (hz : s.zf = some (decide (kl / 16 = 0)))
+    (hm : s.mem = writeBytes m P (ipadBlk mk K H.P.B 0)) :
+    WP isa (.ite .e (.block []) H.keyLoop16) s (KeyInv s m mk P K H.P.B (16 * (kl / 16))) := by
+  have i0 : KeyInv s m mk P K H.P.B (16 * 0) s := ⟨rfl, rfl, fun _ _ _ _ _ => rfl, h14, hm⟩
+  refine WP.ite (decide (kl / 16 = 0)) (by simp [eval, hz]) (fun h0 => WP.block_nil ?_) fun h0 => ?_
+  · have : kl / 16 = 0 := by simpa using h0
+    rw [this]; exact i0
+  · have : 0 < kl / 16 := by simp at h0; omega_using [h0]
+    exact WP.mono (count_loop this
+      (fun j t => KeyInv s m mk P K H.P.B (16 * j) t ∧ t.xmm .xmm0 = s.xmm .xmm0 ∧
+        t.gpr .rcx = BitVec.ofNat 64 (kl / 16 - j))
+      (fun j hj t h => key_step16 hr hx0 hj h.1 h.2.1 h.2.2) ⟨i0, rfl, hc⟩) fun t ht => ht.1
 
 theorem key_step {s : State} {m mk : Mem} {P K : Addr} {kl : Nat} (hr : KeyRegs H s m mk P K kl) {j : Nat}
     (hj : j < kl) {t : State} (h : KeyInv s m mk P K H.P.B j t) :
     WP isa (.block [.movzx8 .rax (byteAt .rbp 0), .alu32 .xor .rax (.imm 0x36),
-      .store8 (byteAt .rbx H.P.N) .rax, .alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r13)]) t
+      .mov .r10 (.reg .r14), .alu .and .r10 (.imm (BitVec.ofNat 32 (H.P.B - 1))),
+      .store8 H.keyAt .rax, .alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r13)]) t
       fun t' => KeyInv s m mk P K H.P.B (j + 1) t' ∧ t'.zf = some (decide (j + 1 = kl)) := by
   have hkl := hr.kl_le
-  have hB := hr.hB
+  have hB : H.P.B ≤ 128 := by rcases hr.hB with h | h <;> omega
   have hl : (ipadBlk mk K H.P.B j).length = H.P.B := ipadBlk_length _ _ _ _
-  have hbyte : t.mem (K + BitVec.ofNat 64 j) = mk (K + BitVec.ofNat 64 j) := by
-    rw [h.mem, ← hr.key j hj]
-    refine (writeBytes_frame m P _ (R := ⟨P, H.P.B⟩) (by rw [hl]; exact Region.contains_self _ _)).bytes
-      (R := ⟨K, kl⟩) ?_ (by show kl ≤ 2 ^ 64; omega_using [hkl, hB]) hj
-    simp only [List.mem_singleton]; rintro r rfl; exact hr.disj
+  have hbyte : t.mem (K + BitVec.ofNat 64 j) = mk (K + BitVec.ofNat 64 j) := h.key hr hj
   refine wp_movzx8 (a := K + BitVec.ofNat 64 j)
-    (by rw [ea_byteAt _ _ _ _ h.r14, h.other _ (by decide) (by decide), hr.rbp, BitVec.add_zero])
-    (by rw [h.rd, h.wr]; exact hr.kin j hj) fun t₁ u₁ => ?_
-  refine wp_xor32i fun t₂ u₂ => ?_
+    (by rw [ea_byteAt _ _ _ _ h.r14, h.other _ (by decide) (by decide) (by decide) (by decide), hr.rbp,
+      BitVec.add_zero])
+    (by rw [h.rd, h.wr]; exact hr.kin j 1 hj) fun t₁ u₁ => ?_
+  refine wp_xor32i fun t₂ u₂ => wp_mov fun t₃ u₃ _ _ => wp_andi fun t₄ u₄ => ?_
+  have h10 : t₄.gpr .r10 = BitVec.ofNat 64 j := by
+    rw [u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), h.r14, and_mask hr.hB,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := j) (by omega_using [hj, hkl, hB]),
+      Nat.mod_eq_of_lt (by omega_using [hj, hkl])]
   refine wp_store8 (a := P + BitVec.ofNat 64 j)
-    (by rw [ea_byteAt _ _ _ j (by rw [u₂.other _ (by decide), u₁.other _ (by decide), h.r14]),
-      u₂.other _ (by decide), u₁.other _ (by decide), h.other _ (by decide) (by decide), hr.rbx])
-    (by rw [u₂.wr, u₁.wr, h.wr]; exact hr.bout j (by omega_using [hj, hkl])) fun t₃ g₃ m₃ rd₃ wr₃ => ?_
-  refine wp_addi fun t₄ u₄ => wp_cmp fun t₅ g₅ m₅ rd₅ wr₅ _ z₅ => WP.block_nil ?_
-  have h14 : t₄.gpr .r14 = BitVec.ofNat 64 (j + 1) := by
-    rw [u₄.gpr, g₃, u₂.other _ (by decide), u₁.other _ (by decide), h.r14, sx_one, ofNat_succ]
-  refine ⟨⟨by rw [rd₅, u₄.rd, rd₃, u₂.rd, u₁.rd, h.rd], by rw [wr₅, u₄.wr, wr₃, u₂.wr, u₁.wr, h.wr],
-    fun r h1 h2 => by rw [g₅, u₄.other r h2, g₃, u₂.other r h1, u₁.other r h1, h.other r h1 h2],
-    by rw [g₅, h14], ?_⟩, ?_⟩
-  · have v : (t₂.gpr .rax).setWidth 8 = mk (K + BitVec.ofNat 64 j) ^^^ ipad := by
-      rw [u₂.gpr, u₁.gpr, xor_byte, hbyte]; rfl
-    rw [m₅, u₄.mem, m₃, v, u₂.mem, u₁.mem, h.mem, writeBytes_set _ _ _ (by rw [hl]; omega_using [hj, hkl]) (by rw [hl]; omega_using [hB]),
-      ipadBlk_succ]
-  · rw [z₅, h14, show t₄.gpr .r13 = BitVec.ofNat 64 kl by
-      rw [u₄.other _ (by decide), g₃, u₂.other _ (by decide), u₁.other _ (by decide),
-        h.other _ (by decide) (by decide), hr.r13], sub_beq (by omega_using [hj, hkl, hB]) (by omega_using [hkl, hB])]
+    (by rw [ea_keyAt, h10, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
+      u₁.other _ (by decide), h.other _ (by decide) (by decide) (by decide) (by decide), hr.rbx])
+    (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr]; exact hr.bout j 1 (by omega_using [hj, hkl]))
+    fun t₅ g₅ m₅ rd₅ wr₅ => ?_
+  refine wp_addi fun t₆ u₆ => wp_cmp fun t₇ g₇ m₇ rd₇ wr₇ _ z₇ => WP.block_nil ?_
+  have h14 : t₆.gpr .r14 = BitVec.ofNat 64 (j + 1) := by
+    rw [u₆.gpr, g₅, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
+      u₁.other _ (by decide), h.r14, sx_one, ofNat_succ]
+  refine ⟨⟨by rw [rd₇, u₆.rd, rd₅, u₄.rd, u₃.rd, u₂.rd, u₁.rd, h.rd],
+    by rw [wr₇, u₆.wr, wr₅, u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr],
+    fun r h1 h2 h3 h4 => by
+      rw [g₇, u₆.other r h2, g₅, u₄.other r h3, u₃.other r h3, u₂.other r h1, u₁.other r h1,
+        h.other r h1 h2 h3 h4],
+    by rw [g₇, h14], ?_⟩, ?_⟩
+  · have v : (t₄.gpr .rax).setWidth 8 = mk (K + BitVec.ofNat 64 j) ^^^ ipad := by
+      rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.gpr, xor_byte, hbyte]; rfl
+    rw [m₇, u₆.mem, m₅, v, u₄.mem, u₃.mem, u₂.mem, u₁.mem, h.mem,
+      writeBytes_set _ _ _ (by rw [hl]; omega_using [hj, hkl]) (by rw [hl]; omega_using [hB]), ipadBlk_succ]
+  · rw [z₇, h14, show t₆.gpr .r13 = BitVec.ofNat 64 kl by
+      rw [u₆.other _ (by decide), g₅, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
+        u₁.other _ (by decide), h.other _ (by decide) (by decide) (by decide) (by decide), hr.r13],
+      sub_beq (by omega_using [hj, hkl, hB]) (by omega_using [hkl, hB])]
 
-/-- The key loop, skipped for an empty key. -/
-theorem key_ok {s : State} {m mk : Mem} {P K : Addr} {kl : Nat} (hr : KeyRegs H s m mk P K kl)
-    (h14 : s.gpr .r14 = BitVec.ofNat 64 0) (hz : s.zf = some (decide (kl = 0)))
-    (hm : s.mem = writeBytes m P (ipadBlk mk K H.P.B 0)) :
-    WP isa (.ite .e (.block []) H.keyLoop) s (KeyInv s m mk P K H.P.B kl) := by
-  have i0 : KeyInv s m mk P K H.P.B 0 s := ⟨rfl, rfl, fun _ _ _ => rfl, h14, hm⟩
-  refine WP.ite (decide (kl = 0)) (by simp [eval, hz]) (fun h0 => WP.block_nil ?_) fun h0 => ?_
-  · have : kl = 0 := by simpa using h0
-    subst this; exact i0
-  · have : 0 < kl := by simp at h0; omega_using [h0]
-    exact count_loop this (KeyInv s m mk P K H.P.B) (fun j hj t h => key_step hr hj h) i0
+/-- The byte loop over the rest of the key, skipped when there is none. -/
+theorem key_ok {s : State} {m mk : Mem} {P K : Addr} {kl : Nat} (hr : KeyRegs H s m mk P K kl) {j₀ : Nat}
+    (hj₀ : j₀ ≤ kl) {t : State} (h : KeyInv s m mk P K H.P.B j₀ t) (hz : t.zf = some (decide (j₀ = kl))) :
+    WP isa (.ite .e (.block []) H.keyLoop) t (KeyInv s m mk P K H.P.B kl) := by
+  refine WP.ite (decide (j₀ = kl)) (by simp [eval, hz]) (fun h0 => WP.block_nil ?_) fun h0 => ?_
+  · have : j₀ = kl := by simpa using h0
+    rw [← this]; exact h
+  · have hlt : 0 < kl - j₀ := by simp at h0; omega_using [h0, hj₀]
+    have e : j₀ + (kl - j₀) = kl := by omega_using [hj₀]
+    have := count_loop hlt (fun k t => KeyInv s m mk P K H.P.B (j₀ + k) t)
+      (fun k hk t h => WP.mono (key_step hr (j := j₀ + k) (by omega_using [hk, hj₀]) h) fun t' ht' =>
+        ⟨ht'.1, by rw [ht'.2]; exact congrArg some (decide_eq_decide.mpr (by omega_using [hk, hj₀]))⟩) h
+    rwa [e] at this
 
-/-- The words of the outer buffer: `n` words of the inner buffer at
-`rbx + N`, XORed with `ipad ⊕ opad`, to `r12 + N`. -/
+/-- The 16-byte words of the outer buffer: `n` words of the inner buffer at
+`rbx + N`, XORed with `xmm1`, `ipad ⊕ opad` in every byte, to `r12 + N`. -/
 theorem opad_ok : ∀ n (rest : List Instr) (s : State) (Q : State → Prop),
-    (∀ k < n, InRegions (s.rd ++ s.wr) (s.gpr .rbx + BitVec.ofNat 64 H.P.N + BitVec.ofNat 64 (4 * k)) 4) →
-    (∀ k < n, InRegions s.wr (s.gpr .r12 + BitVec.ofNat 64 H.P.N + BitVec.ofNat 64 (4 * k)) 4) →
-    Mem.Sep (s.gpr .rbx + BitVec.ofNat 64 H.P.N) (4 * n) (s.gpr .r12 + BitVec.ofNat 64 H.P.N) (4 * n) →
-    4 * n < 2 ^ 64 →
-    (∀ s', (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr →
+    vbytes (s.xmm .xmm1) = List.replicate 16 (0x6a : Byte) →
+    (∀ k < n, InRegions (s.rd ++ s.wr) (s.gpr .rbx + BitVec.ofNat 64 H.P.N + BitVec.ofNat 64 (16 * k)) 16) →
+    (∀ k < n, InRegions s.wr (s.gpr .r12 + BitVec.ofNat 64 H.P.N + BitVec.ofNat 64 (16 * k)) 16) →
+    Mem.Sep (s.gpr .rbx + BitVec.ofNat 64 H.P.N) (16 * n) (s.gpr .r12 + BitVec.ofNat 64 H.P.N) (16 * n) →
+    16 * n < 2 ^ 64 →
+    (∀ s', s'.gpr = s.gpr → s'.rd = s.rd → s'.wr = s.wr → s'.xmm .xmm1 = s.xmm .xmm1 →
       s'.mem = writeBytes s.mem (s.gpr .r12 + BitVec.ofNat 64 H.P.N)
-        ((bytesAt s.mem (s.gpr .rbx + BitVec.ofNat 64 H.P.N) (4 * n)).map (· ^^^ 0x6a)) →
+        ((bytesAt s.mem (s.gpr .rbx + BitVec.ofNat 64 H.P.N) (16 * n)).map (· ^^^ 0x6a)) →
       WP isa (.block rest) s' Q) →
     WP isa (.block ((List.range n).flatMap H.opadW ++ rest)) s Q := by
   intro n
   induction n with
   | zero =>
-    intro rest s Q _ _ _ _ k
-    exact k s (fun _ _ => rfl) rfl rfl (by simp [bytesAt, writeBytes_nil])
+    intro rest s Q _ _ _ _ _ k
+    exact k s rfl rfl rfl rfl (by simp [bytesAt, writeBytes_nil])
   | succ n ih =>
-    intro rest s Q hin hout hsep hlt k
+    intro rest s Q hx hin hout hsep hlt k
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
-    refine ih _ s Q (fun j hj => hin j (by omega_using [hj])) (fun j hj => hout j (by omega_using [hj]))
-      (fun x hx hy => hsep x (by omega_using [hx]) (by omega_using [hy])) (by omega_using [hlt]) fun s₁ g₁ rd₁ wr₁ m₁ => ?_
+    refine ih _ s Q hx (fun j hj => hin j (by omega_using [hj])) (fun j hj => hout j (by omega_using [hj]))
+      (fun x hx hy => hsep x (by omega_using [hx]) (by omega_using [hy])) (by omega_using [hlt])
+      fun s₁ g₁ rd₁ wr₁ x₁ m₁ => ?_
     simp only [Hash.opadW, List.cons_append, List.nil_append]
-    refine wp_mov32m (a := s.gpr .rbx + BitVec.ofNat 64 H.P.N + BitVec.ofNat 64 (4 * n))
-      (by rw [ea_off, g₁ _ (by decide)]) (by rw [rd₁, wr₁]; exact hin n (by omega_using [])) fun s₂ u₂ => ?_
-    refine wp_xor32i fun s₃ u₃ => ?_
-    refine wp_store32 (a := s.gpr .r12 + BitVec.ofNat 64 H.P.N + BitVec.ofNat 64 (4 * n))
-      (by rw [ea_off, u₃.other _ (by decide), u₂.other _ (by decide), g₁ _ (by decide)])
-      (by rw [u₃.wr, u₂.wr, wr₁]; exact hout n (by omega_using []))
-      fun s₄ g₄ m₄ rd₄ wr₄ => k s₄ (fun r hr => by rw [g₄, u₃.other r hr, u₂.other r hr, g₁ r hr])
-        (by rw [rd₄, u₃.rd, u₂.rd, rd₁]) (by rw [wr₄, u₃.wr, u₂.wr, wr₁]) ?_
-    rw [m₄, u₃.gpr, u₂.gpr, u₃.mem, u₂.mem, setWidth32, setWidth32, m₁, Nat.mul_succ,
-      xorOpad_mem _ _ _ _ (by rwa [← Nat.mul_succ]) (by omega_using [hlt])]
+    refine wp_loadXor (a := s.gpr .rbx + BitVec.ofNat 64 H.P.N + BitVec.ofNat 64 (16 * n)) (by decide)
+      (by rw [ea_off, g₁]) (by rw [rd₁, wr₁]; exact hin n (by omega_using [])) fun s₂ g₂ m₂ rd₂ wr₂ x₂ xo₂ => ?_
+    refine wp_movdquStoreX (a := s.gpr .r12 + BitVec.ofNat 64 H.P.N + BitVec.ofNat 64 (16 * n))
+      (by rw [ea_off, g₂, g₁]) (by rw [wr₂, wr₁]; exact hout n (by omega_using []))
+      fun s₃ g₃ m₃ rd₃ wr₃ x₃ => k s₃ (by rw [g₃, g₂, g₁]) (by rw [rd₃, rd₂, rd₁]) (by rw [wr₃, wr₂, wr₁])
+        (by rw [x₃, xo₂ _ (by decide), x₁]) ?_
+    rw [m₃, x₂, m₂, m₁, x₁, Nat.mul_succ,
+      xorOpad_mem16 _ _ _ _ _ hx (by rwa [← Nat.mul_succ]) (by omega_using [hlt])]
 
 section
 variable {sc : Nat} {s₀ : State} (hp : Pre H sc s₀)
@@ -421,7 +702,8 @@ theorem keys_ok {s : State} (hk : KR H s₀ (inn s₀) s) :
       bytesAt t.mem (bufOf H (out s₀)) H.P.B = xorPad (k0 H s₀) opad := by
   obtain ⟨hN4, hB4, hN, hB0, hB, -⟩ := sizes hH hp
   have hkl := hp.kl_le
-  have eB : 4 * (H.P.B / 4) = H.P.B := by omega_using [hB4]
+  have hd := hH.dims.B
+  have eB : 16 * (H.P.B / 16) = H.P.B := by rcases hd with h | h <;> omega
   have si := stOk_in (H := H) hp
   have so := stOk_out (H := H) hp
   have bI : Region.Sub ⟨bufOf H (inn s₀), H.P.B⟩ ⟨inn s₀, H.S⟩ := Offset.sub_base _ (Nat.le_refl _)
@@ -434,52 +716,68 @@ theorem keys_ok {s : State} (hk : KR H s₀ (inn s₀) s) :
   have dIO : Region.Disjoint ⟨bufOf H (inn s₀), H.P.B⟩ ⟨bufOf H (out s₀), H.P.B⟩ :=
     (hp.i_o.sub_left bI).sub_right bO
   unfold Hash.initKeys Hash.ipadFill
-  simp only [List.cons_append]
-  refine WP.seq (wp_mov32i fun s₁ u₁ _ _ => ?_)
-  refine fill_ok (o := H.P.N) (p := bufOf H (inn s₀)) (H.P.B / 4) _ s₁ _ (by rw [u₁.other _ (by decide), hk.rbx])
-    (by rw [u₁.gpr, setWidth32]) (fun k hk' => by rw [u₁.wr, hk.wr]; exact inI _ 4 (by omega_using [hk'])) (by omega_using [hB])
-    fun s₂ g₂ rd₂ wr₂ m₂ => ?_
-  refine wp_mov32i fun s₃ u₃ _ _ => wp_test fun s₄ g₄ m₄ rd₄ wr₄ z₄ => WP.block_nil ?_
-  have G₄ : ∀ r, r ≠ .rax → r ≠ .r14 → s₄.gpr r = s.gpr r := fun r h1 h2 => by
-    rw [g₄, u₃.other r h2, g₂, u₁.other r h1]
-  have rd₄' : s₄.rd = s₀.rd := by rw [rd₄, u₃.rd, rd₂, u₁.rd, hk.rd]
-  have wr₄' : s₄.wr = s₀.wr := by rw [wr₄, u₃.wr, wr₂, u₁.wr, hk.wr]
-  have hr : KeyRegs H s₄ s.mem s₀.mem (bufOf H (inn s₀)) (kp s₀) (kl s₀) :=
-    { kl_le := hkl, hB := hB
-      rbp := by rw [G₄ _ (by decide) (by decide), hk.rbp]
-      rbx := by rw [G₄ _ (by decide) (by decide), hk.rbx]
-      r13 := by rw [G₄ _ (by decide) (by decide), hk.r13, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  rw [List.append_assoc]
+  refine WP.seq (padConst_ok fun s₁ g₁ x₁ xo₁ m₁ rd₁ wr₁ => ?_)
+  refine fill_ok (o := H.P.N) (p := bufOf H (inn s₀)) (H.P.B / 16) _ s₁ _ (by rw [g₁ _ (by decide), hk.rbx])
+    (by rw [x₁]; exact vbytes_ipad) (fun k hk' => by rw [wr₁, hk.wr]; exact inI _ 16 (by omega_using [hk', eB]))
+    (by omega_using [hB]) fun s₂ g₂ rd₂ wr₂ x₂ m₂ => ?_
+  refine wp_mov32iX fun s₃ u₃ x₃ => wp_movX fun s₄ u₄ x₄ => wp_shrZX (by decide) fun s₅ u₅ x₅ z₅ => WP.block_nil ?_
+  have G₅ : ∀ r, r ≠ .rax → r ≠ .r14 → r ≠ .rcx → s₅.gpr r = s.gpr r := fun r h1 h2 h3 => by
+    rw [u₅.other r h3, u₄.other r h3, u₃.other r h2, g₂, g₁ r h1]
+  have rd₅ : s₅.rd = s₀.rd := by rw [u₅.rd, u₄.rd, u₃.rd, rd₂, rd₁, hk.rd]
+  have wr₅ : s₅.wr = s₀.wr := by rw [u₅.wr, u₄.wr, u₃.wr, wr₂, wr₁, hk.wr]
+  have r13₄ : s₃.gpr .r13 = s₀.gpr .rcx := by
+    rw [u₃.other _ (by decide), g₂, g₁ _ (by decide), hk.r13]
+  have hr : KeyRegs H s₅ s.mem s₀.mem (bufOf H (inn s₀)) (kp s₀) (kl s₀) :=
+    { kl_le := hkl, hB := hd
+      rbp := by rw [G₅ _ (by decide) (by decide) (by decide), hk.rbp]
+      rbx := by rw [G₅ _ (by decide) (by decide) (by decide), hk.rbx]
+      r13 := by rw [G₅ _ (by decide) (by decide) (by decide), hk.r13, BitVec.ofNat_toNat, BitVec.setWidth_eq]
       key := hk.key
-      kin := fun i hi => by
-        rw [rd₄', wr₄', hp.rd]
+      kin := fun i n hi => by
+        rw [rd₅, wr₅, hp.rd]
         exact ⟨_, List.mem_append_left _ (List.mem_singleton_self _),
           Offset.contains_base _ (by omega_using [hi]) (by omega_using [hB, hkl, hi])⟩
-      bout := fun i hi => by rw [wr₄']; exact inI i 1 (by omega_using [hi])
+      bout := fun i n hi => by rw [wr₅]; exact inI i n hi
       disj := hp.k_i.sub_right bI }
-  have h14 : s₄.gpr .r14 = BitVec.ofNat 64 0 := by rw [g₄, u₃.gpr]; rfl
-  have hz : s₄.zf = some (decide (kl s₀ = 0)) := by
-    rw [z₄, u₃.other _ (by decide), g₂, u₁.other _ (by decide), hk.r13, BitVec.and_self]
-    congr 1
-  have hm : s₄.mem = writeBytes s.mem (bufOf H (inn s₀)) (ipadBlk s₀.mem (kp s₀) H.P.B 0) := by
-    rw [m₄, u₃.mem, m₂, u₁.mem, ipadBlk_zero, eB]
-  refine WP.seq (WP.mono (key_ok hr h14 hz hm) fun t ht => ?_)
-  have Gt : ∀ r, r ≠ .rax → r ≠ .r14 → t.gpr r = s.gpr r := fun r h1 h2 => by
-    rw [ht.other r h1 h2, G₄ r h1 h2]
-  have bxt : t.gpr .rbx = inn s₀ := by rw [Gt _ (by decide) (by decide), hk.rbx]
-  have r12t : t.gpr .r12 = out s₀ := by rw [Gt _ (by decide) (by decide), hk.r12]
-  have rdt : t.rd = s₀.rd := by rw [ht.rd, rd₄']
-  have wrt : t.wr = s₀.wr := by rw [ht.wr, wr₄']
+  have hx0 : vbytes (s₅.xmm .xmm0) = List.replicate 16 ipad := by
+    rw [x₅, x₄, x₃, x₂, x₁]; exact vbytes_ipad
+  have h14 : s₅.gpr .r14 = BitVec.ofNat 64 0 := by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr]; rfl
+  have hc : s₅.gpr .rcx = BitVec.ofNat 64 (kl s₀ / 16) := by rw [u₅.gpr, u₄.gpr, r13₄, shr4]
+  have hz : s₅.zf = some (decide (kl s₀ / 16 = 0)) := by
+    rw [z₅, u₄.gpr, r13₄, shr4, ofNat_beq_zero (by omega_using [hkl, hB])]
+  have hm : s₅.mem = writeBytes s.mem (bufOf H (inn s₀)) (ipadBlk s₀.mem (kp s₀) H.P.B 0) := by
+    rw [u₅.mem, u₄.mem, u₃.mem, m₂, m₁, ipadBlk_zero, eB]
+  refine WP.seq (WP.mono (key16_ok hr hx0 h14 hc hz hm) fun t₆ h₆ => ?_)
+  refine WP.seq (wp_cmp fun t₇ g₇ m₇ rd₇ wr₇ _ z₇ => WP.block_nil ?_)
+  have h₇ : KeyInv s₅ s.mem s₀.mem (bufOf H (inn s₀)) (kp s₀) H.P.B (16 * (kl s₀ / 16)) t₇ :=
+    ⟨by rw [rd₇, h₆.rd], by rw [wr₇, h₆.wr], fun r h1 h2 h3 h4 => by rw [g₇, h₆.other r h1 h2 h3 h4],
+      by rw [g₇, h₆.r14], by rw [m₇, h₆.mem]⟩
+  have hz₇ : t₇.zf = some (decide (16 * (kl s₀ / 16) = kl s₀)) := by
+    rw [z₇, h₆.r14, h₆.other _ (by decide) (by decide) (by decide) (by decide), hr.r13,
+      sub_beq (by omega_using [hkl, hB]) (by omega_using [hkl, hB])]
+  refine WP.seq (WP.mono (key_ok hr (by omega) h₇ hz₇) fun t ht => ?_)
+  have Gt : ∀ r, r ≠ .rax → r ≠ .r14 → r ≠ .r10 → r ≠ .rcx → t.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
+    rw [ht.other r h1 h2 h3 h4, G₅ r h1 h2 h4]
+  have bxt : t.gpr .rbx = inn s₀ := by rw [Gt _ (by decide) (by decide) (by decide) (by decide), hk.rbx]
+  have r12t : t.gpr .r12 = out s₀ := by rw [Gt _ (by decide) (by decide) (by decide) (by decide), hk.r12]
+  have rdt : t.rd = s₀.rd := by rw [ht.rd, rd₅]
+  have wrt : t.wr = s₀.wr := by rw [ht.wr, wr₅]
   unfold Hash.opadFill
-  refine opad_ok (H.P.B / 4) _ t _
-    (fun k hk' => by rw [bxt, rdt, wrt]; exact InRegions.right' (inI _ 4 (by omega_using [hk'])))
-    (fun k hk' => by rw [r12t, wrt]; exact inO _ 4 (by omega_using [hk']))
-    (by rw [bxt, r12t, eB]; exact dIO.sep (Region.contains_self _ _) (Region.contains_self _ _)) (by omega_using [hB])
-    fun s₅ g₅ rd₅ wr₅ m₅ => ?_
-  refine wp_mov fun s₆ u₆ _ _ => wp_addi fun s₇ u₇ => WP.block_nil ?_
-  rw [bxt, r12t, eB] at m₅
-  have G : ∀ r, r ≠ .rax → r ≠ .r14 → r ≠ .rsi → s₇.gpr r = s.gpr r := fun r h1 h2 h3 => by
-    rw [u₇.other r h3, u₆.other r h3, g₅ r h1, Gt r h1 h2]
-  have hm₇ : s₇.mem = s₅.mem := by rw [u₇.mem, u₆.mem]
+  rw [List.append_assoc]
+  refine padConst_ok fun s₈ g₈ x₈ xo₈ m₈ rd₈ wr₈ => ?_
+  have bx₈ : s₈.gpr .rbx = inn s₀ := by rw [g₈ _ (by decide), bxt]
+  have r12₈ : s₈.gpr .r12 = out s₀ := by rw [g₈ _ (by decide), r12t]
+  refine opad_ok (H.P.B / 16) _ s₈ _ (by rw [x₈]; exact vbytes_x6a)
+    (fun k hk' => by rw [bx₈, rd₈, wr₈, rdt, wrt]; exact InRegions.right' (inI _ 16 (by omega_using [hk', eB])))
+    (fun k hk' => by rw [r12₈, wr₈, wrt]; exact inO _ 16 (by omega_using [hk', eB]))
+    (by rw [bx₈, r12₈, eB]; exact dIO.sep (Region.contains_self _ _) (Region.contains_self _ _)) (by omega_using [hB])
+    fun s₉ g₉ rd₉ wr₉ _ m₉ => ?_
+  refine wp_mov fun s₁₀ u₁₀ _ _ => wp_addi fun s₁₁ u₁₁ => WP.block_nil ?_
+  rw [bx₈, r12₈, eB, m₈] at m₉
+  have G : ∀ r, r ≠ .rax → r ≠ .r14 → r ≠ .r10 → r ≠ .rcx → r ≠ .rsi → s₁₁.gpr r = s.gpr r :=
+    fun r h1 h2 h3 h4 h5 => by rw [u₁₁.other r h5, u₁₀.other r h5, g₉, g₈ r h1, Gt r h1 h2 h3 h4]
+  have hm' : s₁₁.mem = s₉.mem := by rw [u₁₁.mem, u₁₀.mem]
   have lI : (ipadBlk s₀.mem (kp s₀) H.P.B (kl s₀)).length = H.P.B := ipadBlk_length _ _ _ _
   have bt : bytesAt t.mem (bufOf H (inn s₀)) H.P.B = xorPad (k0 H s₀) ipad := by
     rw [ht.mem, bytesAt_writeBytes_self' lI (by omega_using [hB]), ipadBlk_eq _ _ hkl]
@@ -487,25 +785,26 @@ theorem keys_ok {s : State} (hk : KR H s₀ (inn s₀) s) :
     simp [bytesAt]
   have fT : Frame [⟨bufOf H (inn s₀), H.P.B⟩] s.mem t.mem := by
     rw [ht.mem]; exact writeBytes_frame _ _ _ (by rw [lI]; exact Region.contains_self _ _)
-  have f₅ : Frame [⟨bufOf H (out s₀), H.P.B⟩] t.mem s₅.mem := by
-    rw [m₅]; exact writeBytes_frame _ _ _ (by rw [lO]; exact Region.contains_self _ _)
-  have f : Frame [⟨bufOf H (inn s₀), H.P.B⟩, ⟨bufOf H (out s₀), H.P.B⟩] s.mem s₇.mem := by
-    rw [hm₇]; exact (fT.mono (by simp)).trans (f₅.mono (by simp))
-  refine ⟨hk.keep (by rw [u₇.rd, u₆.rd, rd₅, ht.rd, rd₄, u₃.rd, rd₂, u₁.rd])
-      (by rw [u₇.wr, u₆.wr, wr₅, ht.wr, wr₄, u₃.wr, wr₂, u₁.wr]) (fun r hr => by
+  have f₉ : Frame [⟨bufOf H (out s₀), H.P.B⟩] t.mem s₉.mem := by
+    rw [m₉]; exact writeBytes_frame _ _ _ (by rw [lO]; exact Region.contains_self _ _)
+  have f : Frame [⟨bufOf H (inn s₀), H.P.B⟩, ⟨bufOf H (out s₀), H.P.B⟩] s.mem s₁₁.mem := by
+    rw [hm']; exact (fT.mono (by simp)).trans (f₉.mono (by simp))
+  refine ⟨hk.keep (by rw [u₁₁.rd, u₁₀.rd, rd₉, rd₈, rdt, hk.rd]) (by rw [u₁₁.wr, u₁₀.wr, wr₉, wr₈, wrt, hk.wr])
+      (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> exact G _ (by decide) (by decide) (by decide)) f
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;>
+          exact G _ (by decide) (by decide) (by decide) (by decide) (by decide)) f
       (by
         simp only [List.mem_cons, List.not_mem_nil, or_false]
         rintro r (rfl | rfl)
         · exact away_st hH hp si bI
         · exact away_st hH hp so bO),
-    by rw [u₇.gpr, u₆.gpr, g₅ _ (by decide), bxt, sx_ofNat (by omega_using [hN])], f, ?_, ?_⟩
+    by rw [u₁₁.gpr, u₁₀.gpr, g₉, bx₈, sx_ofNat (by omega_using [hN])], f, ?_, ?_⟩
   · have sIO : Mem.Sep (bufOf H (inn s₀)) H.P.B (bufOf H (out s₀))
         ((bytesAt t.mem (bufOf H (inn s₀)) H.P.B).map (· ^^^ (0x6a : Byte))).length := by
       rw [lO]; exact dIO.sep (Region.contains_self _ _) (Region.contains_self _ _)
-    rw [hm₇, m₅, bytesAt_writeBytes_sep _ _ sIO (by omega_using [hB]), bt]
-  · rw [hm₇, m₅, bytesAt_writeBytes_self' lO (by omega_using [hB]), bt, xorOpad_ipad]
+    rw [hm', m₉, bytesAt_writeBytes_sep _ _ sIO (by omega_using [hB]), bt]
+  · rw [hm', m₉, bytesAt_writeBytes_self' lO (by omega_using [hB]), bt, xorOpad_ipad]
 
 /-! ## The compressions -/
 
