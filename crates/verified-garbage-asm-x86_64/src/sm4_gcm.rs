@@ -17,12 +17,12 @@
 pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_init(key: *const [u8; 16], ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj1//9IieJIg8IISImagAAAAEiJqogAAABMiaKQAAAATImqmAAAAEyJsqAAAABMibqoAAAASYnXSYn1"
-call {vg_sm4_expand_key}
+call {vg_sm4_expand_key_core}
 .base64 "uAAAAABJiYXwAAAASYmF+AAAAEmJR2BJiUdoTInvTIn+SIPGYEyJ6kiBwvAAAAC5AQAAAA=="
 call {vg_sm4_ctr32}
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
 .p2align 6"#,
-        vg_sm4_expand_key = sym super::sm4::vg_sm4_expand_key,
+        vg_sm4_expand_key_core = sym super::sm4::vg_sm4_expand_key_core::vg_sm4_expand_key_core,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
