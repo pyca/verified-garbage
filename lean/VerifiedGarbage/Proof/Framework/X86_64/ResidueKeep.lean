@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 public import VerifiedGarbage.Impl.Scrub.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 
 /-!
 # What code without AVX or AVX-512 instructions keeps (x86-64)
@@ -20,6 +21,11 @@ registers); 2 for the rest (`ldmxcsr`, and the EVEX instructions that may
 write `zmm16`–`zmm31`). Code whose instructions are all at a level `l` of at
 most 1 keeps what that level does not write (`Exec.vecKeep`), through its
 frames and calls.
+
+`Instr.vecLevelR` is the level of the vector registers alone: `vecLevel`, but
+`ldmxcsr`, which writes only MXCSR, at level 0. Code whose instructions are
+all at a `vecLevelR` of at most 1 keeps the vector state that level does not
+write (`Exec.vecKeep0R`, `Exec.vecKeep1R`), whatever it does to MXCSR.
 -/
 
 @[expose] public section
@@ -186,5 +192,89 @@ theorem Exec.xmmKeep {c : Prog isa} (hc : ∀ i ∈ instrs c, Impl.Scrub.X86_64.
 theorem vecLevel_of_writesVec {i : Instr} (hw : Impl.Scrub.X86_64.writesVec i = false) (hl : i.vecLevel ≤ 1) :
     i.vecLevel = 0 := by
   cases i <;> simp_all [Impl.Scrub.X86_64.writesVec, Instr.vecLevel]
+
+/-! ## The vector registers alone -/
+
+/-- See the module docs. -/
+def _root_.VG.X86_64.Instr.vecLevelR (i : Instr) : Nat := if loadsMxcsr i then 0 else i.vecLevel
+
+theorem loadsMxcsr_eq {i : Instr} (h : loadsMxcsr i = true) : ∃ m, i = .ldmxcsr m := by
+  cases i <;> simp_all [loadsMxcsr]
+
+theorem vecLevel_of_loads {i : Instr} (h : loadsMxcsr i = true) : i.vecLevel = 2 := by
+  obtain ⟨m, rfl⟩ := loadsMxcsr_eq h; rfl
+
+theorem vecLevelR_le (i : Instr) : i.vecLevelR ≤ i.vecLevel := by
+  unfold Instr.vecLevelR; split <;> omega
+
+/-- An instruction of level at most 1 does not load MXCSR. -/
+theorem noLoad_of_vecLevel {i : Instr} (h : i.vecLevel ≤ 1) : loadsMxcsr i = false := by
+  cases hl : loadsMxcsr i
+  · rfl
+  · rw [vecLevel_of_loads hl] at h; omega
+
+/-- What an instruction of `vecLevelR` at most 1 keeps. -/
+theorem exec_vkeepR {i : Instr} {s s' : State} (hi : i.vecLevelR ≤ 1) (h : exec i s = some s') :
+    s'.ymmH = s.ymmH ∧ s'.zmmHiH = s.zmmHiH ∧ (i.vecLevelR = 0 → s'.ymmHi = s.ymmHi ∧ s'.zmmHi = s.zmmHi) := by
+  cases hl : loadsMxcsr i
+  · have e : i.vecLevelR = i.vecLevel := by simp only [Instr.vecLevelR, hl, Bool.false_eq_true, ↓reduceIte]
+    rw [e] at hi ⊢
+    have k := exec_vkeep hi h
+    exact ⟨k.1, k.2.1, k.2.2.2⟩
+  · obtain ⟨m, rfl⟩ := loadsMxcsr_eq hl
+    simp only [reduceExec, Option.bind_eq_some_iff] at h
+    obtain ⟨v, -, h⟩ := h
+    split at h
+    · cases h; exact ⟨rfl, rfl, fun _ => ⟨rfl, rfl⟩⟩
+    · cases h
+
+/-- The vector state that code of `vecLevelR` 0 keeps. -/
+def vk0R (s : State) := (s.ymmH, s.zmmHiH, s.ymmHi, s.zmmHi)
+/-- The vector state that code of `vecLevelR` at most 1 keeps. -/
+def vk1R (s : State) := (s.ymmH, s.zmmHiH)
+
+theorem vk0R_of_vk0 {a b : State} (h : vk0 a = vk0 b) : vk0R a = vk0R b := by
+  simp only [vk0, vk0R, Prod.mk.injEq] at h ⊢
+  exact ⟨h.1, h.2.1, h.2.2.2.1, h.2.2.2.2⟩
+
+theorem vk1R_of_vk0 {a b : State} (h : vk0 a = vk0 b) : vk1R a = vk1R b := by
+  simp only [vk0, vk1R, Prod.mk.injEq] at h ⊢
+  exact ⟨h.1, h.2.1⟩
+
+/-- Code of `vecLevelR` 0 keeps bits 511:128 of every vector register. -/
+theorem Exec.vecKeep0R {c : Prog isa} (hc : ∀ i ∈ instrs c, i.vecLevelR = 0) {s s' : State} {t : List Leak}
+    (h : Exec isa c s t s') : vk0R s' = vk0R s :=
+  Exec.keep (fun s : State => vk0R s) (ok := fun i : Instr => i.vecLevelR = 0)
+    (fun {i s s'} hi he => by
+      have k := exec_vkeepR (by omega) he
+      simp only [vk0R, k.1, k.2.1, (k.2.2 hi).1, (k.2.2 hi).2])
+    (fun _ hp hq hb => by rw [vk0R_of_vk0 (pop_vk0 hq), hb, vk0R_of_vk0 (push_vk0 hp)]) hc
+    (.inr fun _ _ _ _ hc hr hb => by
+      simp only [isa, call, Option.some.injEq] at hc; subst hc
+      simp only [isa, ret] at hr; split at hr <;> cases hr
+      exact hb) h
+
+/-- Code of `vecLevelR` at most 1 keeps `zmm16`–`zmm31`. -/
+theorem Exec.vecKeep1R {c : Prog isa} (hc : ∀ i ∈ instrs c, i.vecLevelR ≤ 1) {s s' : State} {t : List Leak}
+    (h : Exec isa c s t s') : vk1R s' = vk1R s :=
+  Exec.keep (fun s : State => vk1R s) (ok := fun i : Instr => i.vecLevelR ≤ 1)
+    (fun {i s s'} hi he => by
+      have k := exec_vkeepR hi he
+      simp only [vk1R, k.1, k.2.1])
+    (fun _ hp hq hb => by rw [vk1R_of_vk0 (pop_vk0 hq), hb, vk1R_of_vk0 (push_vk0 hp)]) hc
+    (.inr fun _ _ _ _ hc hr hb => by
+      simp only [isa, call, Option.some.injEq] at hc; subst hc
+      simp only [isa, ret] at hr; split at hr <;> cases hr
+      exact hb) h
+
+/-- `vecLevel_of_writesVec`, for `vecLevelR`. -/
+theorem vecLevelR_of_writesVec {i : Instr} (hw : Impl.Scrub.X86_64.writesVec i = false) (hl : i.vecLevelR ≤ 1) :
+    i.vecLevelR = 0 := by
+  unfold Instr.vecLevelR at hl ⊢
+  split
+  · rfl
+  · rename_i h
+    simp only [h, Bool.false_eq_true, ↓reduceIte] at hl
+    exact vecLevel_of_writesVec hw hl
 
 end VG.X86_64.Residue

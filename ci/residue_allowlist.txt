@@ -336,10 +336,6 @@ x86_64 vg_mldsa44_keygen
 x86_64 vg_mldsa44_keygen_avx2
 x86_64 vg_mldsa44_keygen_avx512
 x86_64 vg_mldsa44_pk_tr
-x86_64 vg_mldsa44_prepare_signing_key
-x86_64 vg_mldsa44_prepare_signing_key_avx2
-x86_64 vg_mldsa44_prepare_verifying_key
-x86_64 vg_mldsa44_prepare_verifying_key_avx2
 x86_64 vg_mldsa44_sign
 x86_64 vg_mldsa44_sign_avx2
 x86_64 vg_mldsa44_sign_avx512
@@ -368,10 +364,6 @@ x86_64 vg_mldsa65_keygen
 x86_64 vg_mldsa65_keygen_avx2
 x86_64 vg_mldsa65_keygen_avx512
 x86_64 vg_mldsa65_pk_tr
-x86_64 vg_mldsa65_prepare_signing_key
-x86_64 vg_mldsa65_prepare_signing_key_avx2
-x86_64 vg_mldsa65_prepare_verifying_key
-x86_64 vg_mldsa65_prepare_verifying_key_avx2
 x86_64 vg_mldsa65_sign
 x86_64 vg_mldsa65_sign_avx2
 x86_64 vg_mldsa65_sign_avx512
@@ -400,10 +392,6 @@ x86_64 vg_mldsa87_keygen
 x86_64 vg_mldsa87_keygen_avx2
 x86_64 vg_mldsa87_keygen_avx512
 x86_64 vg_mldsa87_pk_tr
-x86_64 vg_mldsa87_prepare_signing_key
-x86_64 vg_mldsa87_prepare_signing_key_avx2
-x86_64 vg_mldsa87_prepare_verifying_key
-x86_64 vg_mldsa87_prepare_verifying_key_avx2
 x86_64 vg_mldsa87_sign
 x86_64 vg_mldsa87_sign_avx2
 x86_64 vg_mldsa87_sign_avx512

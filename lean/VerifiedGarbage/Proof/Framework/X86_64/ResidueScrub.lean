@@ -678,9 +678,11 @@ def keepFor (sig : Sig) (stack : Nat) (code : Prog isa) (pubs : List (Nat × Nat
   | none => []
 
 /-- The level `scrub` clears the vector registers at for `code`: `pxor` if
-nothing in it writes bits 511:128 of a vector register, else `vpxor`. -/
+nothing in it writes bits 511:128 of a vector register, else `vpxor`
+(`Instr.vecLevelR`: whatever it does to MXCSR, which `withScrub` asks of
+separately). -/
 def levelFor (code : Prog isa) : VecLevel :=
-  if code.all (fun i => decide (i.vecLevel ≤ VecLevel.sse.level)) then .sse else .avx
+  if code.all (fun i => decide (i.vecLevelR ≤ VecLevel.sse.level)) then .sse else .avx
 
 theorem levelFor_ne (code : Prog isa) : levelFor code ≠ .evex := by
   unfold levelFor; split <;> exact VecLevel.noConfusion
@@ -703,8 +705,10 @@ theorem Analysed.ok_of {sig : Sig} {stack : Nat} {pubs : List (Nat × Nat × Nat
       (VG.Taint.check rtaint (init sig stack pubs) code h).any (resOkB · stack ks (chunks stack)) = true :=
   ⟨h, any_resOkB hc⟩
 
-/-- `r`, returning without secret residue (`scrubReg`), given the residue
-analysis of its code (`Analysed`) and if `scrub`'s side conditions hold;
+/-- `r`, returning without secret residue (`scrubRegM`), given the residue
+analysis of its code (`Analysed`) and if `scrub`'s side conditions hold (code
+that loads MXCSR leaving in it a function of MXCSR on entry, `mxClass`, as
+Intel's MCDT prologue and epilogue do);
 otherwise `r` itself, which then has no proof (`Registration.residue`), as
 the emitter allows only of what `ci/residue_allowlist.txt` lists. A caller
 generic over the implementations of a function (`Generic/`) takes the
@@ -722,13 +726,14 @@ def withScrub {api : Api} (r : Registration api target)
     if hd : r.code.x86_64Depth ≤ r.stack then
     if hst : r.stack + 8 < 2 ^ 64 then
     if h8 : r.stack % 8 = 0 then
-    if hlv : r.code.all (fun i => decide (i.vecLevel ≤ v.level)) = true then
+    if hlv : r.code.all (fun i => decide (i.vecLevelR ≤ v.level)) = true then
+    if hmx : (mxClass r.code).isSome = true then
     if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
         api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
     if hw : r.written = [] then
-      scrubReg r v a.ks hd hst h8 hlv hrb hpost
+      scrubRegM r v a.ks hd hst h8 hlv hmx hrb hpost
         (by obtain ⟨_, hc⟩ := a.ok; exact resOk_reg r a.ks hfit hpub hc) hw (levelFor_ne _)
-    else r else r else r else r else r else r else r
+    else r else r else r else r else r else r else r else r
 
 end VG.X86_64.RScrub
 
