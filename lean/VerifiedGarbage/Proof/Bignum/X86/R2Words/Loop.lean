@@ -82,13 +82,13 @@ structure StI (s : State) (base : Addr) (bytes len : Nat) (args : Nat → BitVec
   pi : PcIn base bytes len args u
   keep : Keeps k6 s u
   out : Outside base oMask (numAt len 5 + 4 * (wp len + 1) - oMask) s.mem u.mem
-  mid : ∀ o, oQ + 4 ≤ o → o + 4 ≤ numAt len 4 → w32 u.mem base o = w32 s.mem base o
+  mid : ∀ o, oU2 + 4 ≤ o → o + 4 ≤ numAt len 4 → w32 u.mem base o = w32 s.mem base o
   up : ∀ o, numAt len 4 + 4 * wp len ≤ o → o + 4 ≤ numAt len 5 → w32 u.mem base o = w32 s.mem base o
   cnt : w32 u.mem base oSteps = nSteps len - i
   x : val32 u.mem base (numAt len 4) (wp len) = 2 ^ (32 * (wp len - 1 + i)) % m
 
 /-- What the steps need of the state `s` before `count`: the header's `p = 2^z`,
-`d` and `v`, `M` over `W'` words and `x = 2^(32 (W' - 1)) < M`. -/
+`d`, `d₁` and `v`, `M` over `W'` words and `x = 2^(32 (W' - 1)) < M`. -/
 structure LoopPre (s : State) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (m z : Nat) : Prop where
   pi : PcIn base bytes len args s
   hz : z ≤ 31
@@ -96,6 +96,7 @@ structure LoopPre (s : State) (base : Addr) (bytes len : Nat) (args : Nat → Bi
   hMw : m * 2 ^ z < 2 ^ (32 * wp len)
   hD : w32 s.mem base oD = m * 2 ^ z / 2 ^ (32 * (wp len - 1))
   hd1 : 2 ^ 31 ≤ m * 2 ^ z / 2 ^ (32 * (wp len - 1))
+  hD1 : w32 s.mem base oD1 = m * 2 ^ z / 2 ^ (32 * (wp len - 2)) % 2 ^ 32
   hV : w32 s.mem base oV = (2 ^ 64 - 1) / (m * 2 ^ z / 2 ^ (32 * (wp len - 1))) - 2 ^ 32
   hM : val32 s.mem base (numAt len 0) (wp len) = m
   hx : val32 s.mem base (numAt len 4) (wp len) = 2 ^ (32 * (wp len - 1))
@@ -120,7 +121,7 @@ theorem count_start {s : State} {base : Addr} {bytes len : Nat} {args : Nat → 
   rw [← mu] at Ou
   refine ⟨h.keep Ku (by decide) (by decide) (Ou.mono (by omega) (by simp only [oSteps]; omega)), Ku.mono (by decide),
     Ou.mono (by simp only [oMask, oSteps]; omega) (by simp only [oMask, oSteps]; omega),
-    fun o h1 h2 => Ou.w32 (.inr (by simp only [oQ, oSteps] at *; omega)) (by omega),
+    fun o h1 h2 => Ou.w32 (.inr (by simp only [oU2, oSteps] at *; omega)) (by omega),
     fun o h1 h2 => Ou.w32 (.inr (by simp only [oSteps]; omega)) (by omega), ?_, ?_⟩
   · rw [Nat.sub_zero, mu, w32_write_self, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by simp only [nSteps]; omega)]
   · rw [Ou.val32 (.inr (by simp only [oSteps]; omega)) (by omega), L.hx, Nat.add_zero, Nat.mod_eq_of_lt L.hxm]
@@ -143,9 +144,11 @@ theorem stepIter_ok {s u : State} {base : Addr} {bytes len : Nat} {args : Nat �
   have hdr : ∀ o, o + 4 ≤ oMask → w32 u.mem base o = w32 s.mem base o := fun o ho =>
     I.out.w32 (.inl ho) (by simp only [oMask] at ho; omega)
   have hMu : val32 u.mem base (numAt len 0) (wp len) = m := by
-    rw [← L.hM]; exact val32_congr fun j hj => I.mid _ (by simp only [oQ]; omega) (by omega)
+    rw [← L.hM]; exact val32_congr fun j hj => I.mid _ (by simp only [oU2]; omega) (by omega)
   refine WP.seq (WP.mono (step_ok I.pi L.hz (by rw [hdr _ (by decide)]; exact L.hP) L.hMw
-    (by rw [hdr _ (by decide)]; exact L.hD) L.hd1 (by rw [hdr _ (by decide)]; exact L.hV) hMu I.x
+    (by rw [hdr _ (by decide)]; exact L.hD) L.hd1
+    (by rw [I.mid _ (by simp only [oD1, oU2]; omega) (by simp only [oD1]; omega)]; exact L.hD1)
+    (by rw [hdr _ (by decide)]; exact L.hV) hMu I.x
     (Nat.mod_lt _ (Nat.lt_of_le_of_lt (Nat.zero_le _) L.hxm))) fun v ⟨hxv, F, Kv⟩ => ?_)
   have hv := I.pi.keep Kv (by decide) (by decide) (F.out.mono (by omega) (by simp only [oMask]; omega))
   have ws : Ws v base bytes := hv.ws
@@ -169,7 +172,7 @@ theorem stepIter_ok {s u : State} {base : Addr} {bytes len : Nat} {args : Nat �
     I.keep.trans (Kv.trans (K₂.trans (M.keeps _))),
     (I.out.trans F.out).trans (Ot.mono (by simp only [oMask, oSteps]; omega) (by simp only [oMask, oSteps]; omega)),
     fun o h1 h2 => ?_, fun o h1 h2 => ?_, ?_, ?_⟩, ?_⟩
-  · rw [Ot.w32 (.inr (by simp only [oQ, oSteps] at *; omega)) (by omega), F.mid o h1 h2, I.mid o h1 h2]
+  · rw [Ot.w32 (.inr (by simp only [oU2, oSteps] at *; omega)) (by omega), F.mid o h1 h2, I.mid o h1 h2]
   · rw [Ot.w32 (.inr (by simp only [oSteps]; omega)) (by omega), F.up o h1 h2, I.up o h1 h2]
   · rw [mt, w32_write_self, c₁]
   · rw [Ot.val32 (.inr (by simp only [oSteps]; omega)) (by omega), hxv, Nat.mod_mul_mod, ← Nat.pow_add,
