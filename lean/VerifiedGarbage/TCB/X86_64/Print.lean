@@ -232,12 +232,12 @@ def VReg.yname (r : VReg) : String := "y" ++ (r.name.drop 1).toString
 def VReg.zname (r : VReg) : String := "z" ++ (r.name.drop 1).toString
 
 def EBinOp.name : EBinOp → String
-  | .vpaddq => "vpaddq" | .vpxorq => "vpxorq" | .vpandq => "vpandq" | .vporq => "vporq"
+  | .vpaddq => "vpaddq" | .vpsubq => "vpsubq" | .vpxorq => "vpxorq" | .vpandq => "vpandq" | .vporq => "vporq"
 
 /-- The mnemonics of `Evex.lean`, which the assembler encodes with EVEX for
 `ymm16`–`ymm31` and may encode with VEX for the others where a VEX form with
-the same operation exists (`vpaddq`, `vpermq`, `vpbroadcastq`, `vmovq`, the
-shifts): the VEX.256 forms compute the same 256 bits and zero bits
+the same operation exists (`vpaddq`, `vpsubq`, `vpermq`, `vpbroadcastq`,
+`vmovq`, the logical shifts): the VEX.256 forms compute the same 256 bits and zero bits
 `MAXVL-1:256` too (see `State.setV`). -/
 def EOp.asm : EOp → String
   | .bin op d a b => s!"{op.name} {d.yname}, {a.yname}, {b.yname}"
@@ -250,6 +250,8 @@ def EOp.asm : EOp → String
   | .vpmadd52 hi d a b => s!"vpmadd52{if hi then "h" else "l"}uq {d.yname}, {a.yname}, {b.yname}"
   | .vpternlogq d a b n => s!"vpternlogq {d.yname}, {a.yname}, {b.yname}, {n.toNat}"
   | .vprorq d r n => s!"vprorq {d.yname}, {r.yname}, {n.toNat}"
+  | .vpsraq d r n => s!"vpsraq {d.yname}, {r.yname}, {n.toNat}"
+  | .vmovdqa64 d r => s!"vmovdqa64 {d.yname}, {r.yname}"
 
 def E5Op.asm : E5Op → String
   | .bin op d a b => s!"{op.name} {d.zname}, {a.zname}, {b.zname}"
