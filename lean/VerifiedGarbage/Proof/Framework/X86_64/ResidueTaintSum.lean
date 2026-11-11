@@ -40,8 +40,7 @@ family reach the shared code with the same taint.
 `rtaint_site%` computes the taint at code a summary is for (its `pre`),
 `rtaint_summary` proves a summary, and `rtaint_decide_sum` and
 `rtaint_decide_sum_weak` prove an analysis with summaries, all with the
-same hints (`hintW`). `resOkF` checks the end of an analysis faster than
-`RScrub.resOkB`.
+same hints (`hintW`).
 -/
 
 @[expose] public section
@@ -113,48 +112,16 @@ theorem any_of_checkSum {S : List (Summary isa FT)} (hS : VG.Taint.AllOk rtaint 
   rw [hg, ← same_eq hR]
   exact hp
 
-/-! ## The end of an analysis
-
-`RScrub.resOkB` checks every byte of the window (`stack` of them, 3440 for
-HMAC's `init` over SHA-512, a few seconds in the kernel); `resOkF` checks
-only the bytes that `sec` lists, usually a few intervals. -/
-
-/-- `RScrub.resOkB`, by the bytes `sec` lists. -/
-def resOkF (τ : FT) (stack : Nat) (ks cs : List Nat) : Bool :=
-  τ.ok && τ.room == stack && τ.depth == 0 &&
-    τ.sec.all fun p => (List.range' p.1 p.2).all fun j => !decide (j < stack) || Scrub.cov ks cs j
-
-theorem resOkB_of_resOkF {τ : FT} {stack : Nat} {ks cs : List Nat} (h : resOkF τ stack ks cs = true) :
-    RScrub.resOkB τ stack ks cs = true := by
-  simp only [resOkF, Bool.and_eq_true, List.all_eq_true, List.mem_range'_1, Bool.or_eq_true,
-    Bool.not_eq_true', decide_eq_false_iff_not, Nat.not_lt] at h
-  obtain ⟨⟨⟨ho, hr⟩, hd⟩, hs⟩ := h
-  simp only [RScrub.resOkB, ho, hr, hd, Bool.true_and, List.all_eq_true, List.mem_range, Bool.or_eq_true,
-    Bool.not_eq_true', List.any_eq_false, decide_eq_true_eq]
-  intro j hj
-  by_cases hc : Scrub.cov ks cs j = true
-  · exact .inl hc
-  · refine .inr fun p hp hin => hc ?_
-    rcases hs p hp j hin with h | h
-    · omega
-    · exact h
-
-/-- `(o.any (resOkF · stack ks cs))` gives `RScrub.resOkB`'s. -/
-theorem any_resOkB {o : Option FT} {stack : Nat} {ks cs : List Nat}
-    (h : o.any (resOkF · stack ks cs) = true) : o.any (RScrub.resOkB · stack ks cs) = true := by
-  cases o with
-  | none => cases h
-  | some τ => exact resOkB_of_resOkF h
-
-/-- `RScrub.Analysed.ok`, from the analysis ending as `resOkF` says. -/
+/-- `RScrub.Analysed.ok`, from the analysis ending as `RScrub.resOkF` says,
+for a proof of the existence of a hint (`rtaint_decide_sum`). -/
 theorem ok_of_resOkF {sig : Sig} {stack : Nat} {pubs : List (Nat × Nat × Nat)} {code : Prog isa}
     {ks : List Nat}
     (h : ∃ g : VG.Taint.Hint FT,
-      (VG.Taint.check rtaint (RScrub.init sig stack pubs) code g).any (resOkF · stack ks (Impl.Scrub.X86_64.chunks stack)) = true) :
+      (VG.Taint.check rtaint (RScrub.init sig stack pubs) code g).any (RScrub.resOkF · stack ks (Impl.Scrub.X86_64.chunks stack)) = true) :
     ∃ g : VG.Taint.Hint FT,
       (VG.Taint.check rtaint (RScrub.init sig stack pubs) code g).any (RScrub.resOkB · stack ks (Impl.Scrub.X86_64.chunks stack)) = true :=
   let ⟨g, hg⟩ := h
-  ⟨g, any_resOkB hg⟩
+  ⟨g, RScrub.any_resOkB hg⟩
 
 /-! ## Hints
 
