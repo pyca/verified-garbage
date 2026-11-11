@@ -188,12 +188,21 @@ def orThree (j : Nat) : Prog isa :=
     (.block (base .t3 j ++ [.load .d .s0 .t3 0, .logicImm .xor .t2 .s9 (-1), .logicImm .and .t2 .t2 3,
       .logic .or .s0 .s0 .t2, .store .d .s0 .t3 0])))
 
+/-- `checkPQ`, then `c`; with `pc` only `c`: the caller's precondition gives
+`p q = n` (`Spec.Rsa.privatePrecompute`), so the product is not needed. -/
+def pqStep : Bool → Prog isa → Prog isa
+  | false, c => .seq checkPQ c
+  | true, c => c
+
 /-- `X`'s checks into `s9`, `p`, `q`, `qInv` masked, and the mask into the
-header. -/
-def checks : Prog isa :=
-  .seq checkN (.seq (checkLt 6 1) (.seq (checkLt 7 4) (.seq checkPQ
+header; with `pc`, without `p q = n`'s. -/
+def checksG (pc : Bool) : Prog isa :=
+  .seq checkN (.seq (checkLt 6 1) (.seq (checkLt 7 4) (pqStep pc
     (.seq (orThree 4) (.seq (orThree 5) (.seq (.block (base .t3 7)) (.seq maskWords
       (.block [.store .d .s9 .s6 oMask]))))))))
+
+/-- `vg_rsa_private_crt`'s checks. -/
+abbrev checks : Prog isa := checksG false
 
 /-- `w` words from `t4` to `t3`. -/
 def copyN : Prog isa := Precompute.copyWords
@@ -323,7 +332,7 @@ def recombineX : Prog isa :=
 /-- `vg_rsa_private_crt`, or with `pc` `vg_rsa_private_crt_precomputed`,
 which takes in `s1` the address of the cached `R² mod p` and `R² mod q`. -/
 def crtG (pc : Bool) : Prog isa :=
-  .seq (.block (save ++ argsG pc ++ setupX)) (.seq loadX (.seq checks (.seq loadIn
+  .seq (.block (save ++ argsG pc ++ setupX)) (.seq loadX (.seq (checksG pc) (.seq loadIn
   (.seq (.block (setupP oBP oPLen ++ r2Ptr pc false)) (.seq (powerG pc 4 oDP oPLen)
   (.seq (.block (setupP oBQ oQLen ++ r2Ptr pc true)) (.seq (powerG pc 5 oDQ oQLen) (.seq (widen oBQ oQLen 6)
   (.seq (.block (setupP oBP oPLen)) (.seq recombineP (.seq recombineX
@@ -336,7 +345,8 @@ abbrev crt : Prog isa := crtG false
 
 /-- `vg_rsa_private_crt_precomputed`: `vg_rsa_private_crt` with the primes'
 cached `R² mod p` and `R² mod q` (`max(2, ⌈len / 8⌉)` words each, least
-significant first) at `s1`, copied in place of `r2Prime`. -/
+significant first) at `s1`, copied in place of `r2Prime`, and without the
+check of `p q = n`, which its caller's precondition gives. -/
 abbrev crtP : Prog isa := crtG true
 
 end VG.Impl.Bignum.RISCV64.Crt

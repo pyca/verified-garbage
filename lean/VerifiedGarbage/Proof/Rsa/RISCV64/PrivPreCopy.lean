@@ -373,6 +373,17 @@ theorem primes_of_hyp {s : State} (X : PreX s) {m : Mem}
       rw [wordsAt_off, ← hL, hm, ← hpre, List.append_assoc, ← hl, List.drop_left]
   · cases hpre
 
+/-- `p q = n`, from the precomputed values' hypothesis. -/
+theorem pq_of_hyp {s : State} (X : PreX s) :
+    Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat) *
+        Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat) =
+      Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) := by
+  have hpre := X.hyp
+  simp only [PreHyp, Spec.Rsa.privatePrecompute] at hpre
+  split at hpre
+  · assumption
+  · cases hpre
+
 /-- The primes' values in `pre`, after `n`'s. -/
 abbrev r2Rs (s : State) : Region :=
   ⟨stackArg s 12 + BitVec.ofNat 64 (8 * Spec.Rsa.precomputedWords (s.gpr .a3).toNat),
@@ -415,7 +426,13 @@ theorem crt_preP {s t u : State} (h : PreP true s) (X : PreX s) (A : AtCrt s t) 
   have wP := X.wP
   have hl := r2Rs_len X
   have alP := X.alP
-  refine ⟨hr ▸ hc, ?_, ?_, ?_, ?_, ?_⟩
+  have hfu : Frame [kR s] s.mem u.mem := by
+    rw [hm]
+    exact A.mem.writeW (List.mem_singleton_self _) _ (frame_contains s (by unfold oS1 frameBytes; omega))
+  have hb := fun {p : Addr} {len : Nat} (hd : Region.Disjoint ⟨p, len⟩ (kR s)) (hl : len ≤ 2 ^ 64) =>
+    bytes_of_frame (s := s) (rs := [kR s]) hfu (p := p) (len := len)
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) hl
+  refine ⟨hr ▸ hc, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hr]
     simp only [g .a0 (by decide) (by decide), g .a1 (by decide) (by decide), A.a0, A.a1]
     exact (X.kP.sub_left mk).sub_right sub
@@ -425,13 +442,7 @@ theorem crt_preP {s t u : State} (h : PreP true s) (X : PreX s) (A : AtCrt s t) 
     simp only
     rw [Offset.toNat_add_ofNat] <;> omega
   · rw [e1, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  · have hfu : Frame [kR s] s.mem u.mem := by
-      rw [hm]
-      exact A.mem.writeW (List.mem_singleton_self _) _ (frame_contains s (by unfold oS1 frameBytes; omega))
-    have hb := fun {p : Addr} {len : Nat} (hd : Region.Disjoint ⟨p, len⟩ (kR s)) (hl : len ≤ 2 ^ 64) =>
-      bytes_of_frame (s := s) (rs := [kR s]) hfu (p := p) (len := len)
-        (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) hl
-    have hw : Spec.Rsa.wordsAt u.mem (stackArg s 12) (stackArg s 13).toNat =
+  · have hw : Spec.Rsa.wordsAt u.mem (stackArg s 12) (stackArg s 13).toNat =
         Spec.Rsa.wordsAt s.mem (stackArg s 12) (stackArg s 13).toNat :=
       words_of_frame hfu (fun r hr => by
         rw [List.mem_singleton.mp hr, Nat.mul_comm]; exact X.kP.symm) (by omega)
@@ -440,6 +451,12 @@ theorem crt_preP {s t u : State} (h : PreP true s) (X : PreX s) (A : AtCrt s t) 
       ← Proof.Bignum.RISCV64.Crt.primeWords_eq]
     rw [hb h.kp.symm (by have := h.wp; omega), hb h.kq.symm (by have := h.wq; omega)]
     exact primes_of_hyp X hw
+  · simp only [State.withRegions_mem, State.callEntry_mem, g .a2 (by decide) (by decide),
+      g .a3 (by decide) (by decide), g .a6 (by decide) (by decide), g .a7 (by decide) (by decide), A.a2, A.a3,
+      A.a6, A.a7, sa 0 (by decide), sa 1 (by decide)]
+    rw [hb h.kp.symm (by have := h.wp; omega), hb h.kq.symm (by have := h.wq; omega),
+      hb h.kn.symm (by have := h.wn; omega)]
+    exact pq_of_hyp X
 
 theorem crtP_noFrames : Impl.Bignum.RISCV64.Crt.crtP.noFrames = true := by decide +kernel
 
