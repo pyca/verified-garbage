@@ -2,6 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivPrecomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT1
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT2
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT3
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT4
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Rsa.PrivCheck
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
@@ -9,6 +17,24 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecVerified
+meta import VerifiedGarbage.Proof.Rsa.AArch64.PrivPrecomputed
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT1
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT2
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT3
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT4
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Rsa.PrivCheck
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCorrect
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+public meta import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Decrypt
 
 @[expose] public section
 
@@ -442,15 +468,19 @@ theorem narrowD_covers {P : Nat} {s : State} (hx : PreD P s) :
   · exact ⟨_, mp, 0, (BitVec.add_zero _).symm, by dsimp only; omega⟩
   · exact self _ (List.mem_append_right _ hw)
 
+/-- After the setup and the moves of `pre` and `pre_len`. -/
+abbrev CtxReadyP : Inv := fun L g vv m₀ t => Ctx L g vv m₀ t ∧ Ready L t ∧
+  t.mem.readW (L.Q + BitVec.ofNat 64 96) 64 = L.pre ∧ t.mem.readW (L.Q + BitVec.ofNat 64 104) 64 = L.prl ∧
+  PreX L m₀
+
 /-- The setup, the moves of `pre` and `pre_len`, and the call, on the
 narrowed call: `entry_ok` on the call narrowed further to
 `vg_rsa_pkcs1_decrypt`'s regions, widened. -/
-theorem stageP_ok (pv : PrivPImpl) {s : State} (hD : (decSpec (pv.S + 1)).pre (s.withRegions (rdD s) s.wr))
-    (hx : PreD (pv.S + 1) s) :
+theorem blockP_ok {P : Nat} {s : State} (hD : (decSpec P).pre (s.withRegions (rdD s) s.wr))
+    (hx : PreD P s) :
     WP isa (.block (setup ++ extraMoves)) (entered (narrowD s)) fun t =>
-      WP isa (.call pv.name pv.code) t
-        (Called (layW (pv.S + 1) (narrowD s) (XD s) (stackArg s 15) (stackArg s 16)) (narrowD s).gpr
-          (narrowD s).v (narrowD s).mem) := by
+      CtxReadyP (layW P (narrowD s) (XD s) (stackArg s 15) (stackArg s 16)) (narrowD s).gpr
+        (narrowD s).v (narrowD s).mem t := by
   have hL := lay_ok hD
   obtain ⟨hrd, hwr⟩ := spec_rdwr hD
   have eN : entered (narrowD s) =
@@ -463,18 +493,28 @@ theorem stageP_ok (pv : PrivPImpl) {s : State} (hD : (decSpec (pv.S + 1)).pre (s
       · exact List.mem_append_left _ (List.mem_append_left _ h)
       · exact List.mem_append_right _ h) (Covers.refl _)) fun u ⟨t, ⟨hc, hr⟩, hu⟩ => ?_
   subst hu
-  have hL' : (layW (pv.S + 1) (narrowD s) (XD s) (stackArg s 15) (stackArg s 16)).Ok :=
+  have hL' : (layW P (narrowD s) (XD s) (stackArg s 15) (stackArg s 16)).Ok :=
     hL.withX (XD s) (stackArg s 15) (stackArg s 16)
-  have hX : PreX (layW (pv.S + 1) (narrowD s) (XD s) (stackArg s 15) (stackArg s 16)) (narrowD s).mem :=
+  have hX : PreX (layW P (narrowD s) (XD s) (stackArg s 15) (stackArg s 16)) (narrowD s).mem :=
     preX_of (s := s) hD hx
-  have hc' : Ctx (layW (pv.S + 1) (narrowD s) (XD s) (stackArg s 15) (stackArg s 16)) (narrowD s).gpr
+  have hc' : Ctx (layW P (narrowD s) (XD s) (stackArg s 15) (stackArg s 16)) (narrowD s).gpr
       (narrowD s).v (narrowD s).mem (t.withRegions (rdD s ++ XD s) (entered (s.withRegions (rdD s) s.wr)).wr) := by
     refine ⟨?_, ?_, hc.sp, hc.cs, hc.vs, { hc.kept with }, hc.frame⟩
     · show rdD s ++ XD s = _
       rw [show rdD s = (s.withRegions (rdD s) s.wr).rd from rfl, hrd]; rfl
-    · rw [State.withRegions_wr, entered_wr (pv.S + 1), hwr]; rfl
+    · rw [State.withRegions_wr, entered_wr P, hwr]; rfl
   exact WP.mono (extra_ok hL' hX hc' { hr with }) fun u ⟨hc'', hr'', h96, h104⟩ =>
-    privP_call pv hL' rfl hX hc'' hr'' h96 h104
+    ⟨hc'', hr'', h96, h104, hX⟩
+
+theorem stageP_ok (pv : PrivPImpl) {s : State} (hD : (decSpec (pv.S + 1)).pre (s.withRegions (rdD s) s.wr))
+    (hx : PreD (pv.S + 1) s) :
+    WP isa (.block (setup ++ extraMoves)) (entered (narrowD s)) fun t =>
+      WP isa (.call pv.name pv.code) t
+        (Called (layW (pv.S + 1) (narrowD s) (XD s) (stackArg s 15) (stackArg s 16)) (narrowD s).gpr
+          (narrowD s).v (narrowD s).mem) :=
+  WP.mono (blockP_ok hD hx) fun _ ⟨hc, hr, h96, h104, hX⟩ =>
+    privP_call pv ((lay_ok hD).withX (XD s) (stackArg s 15) (stackArg s 16)) rfl hX hc hr h96 h104
+
 
 theorem post_of {P : Nat} {s s' : State} (h : (decSpec P).post (s.withRegions (rdD s) s.wr) s') :
     (Spec.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (P + 240)).post s (s'.withRegions s.rd s.wr) := by
@@ -496,5 +536,244 @@ theorem decP_correct (v : Compress) (pv : PrivPImpl) (s : State)
   have hw := Exec.widen he (narrowD_covers hx) (Covers.refl _)
   rw [narrowD_widen] at hw
   exact ⟨t, _, hw, ha, post_of hp⟩
+
+/-! ## Constant time -/
+
+section
+variable {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem}
+
+/-- `n`'s values, the first `2 w` words of `pre`. -/
+theorem PreX.pub (hx : PreX L m₀) :
+    Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt m₀ L.n L.k.toNat) =
+      some (Spec.Rsa.wordsAt m₀ L.pre (Spec.Rsa.precomputedWords L.k.toNat)) := by
+  have hle : Spec.Rsa.precomputedWords L.k.toNat ≤ L.prl.toNat := by
+    rw [hx.prlv]; unfold Spec.Rsa.privatePrecomputedWords; omega
+  rw [Proof.Rsa.AArch64.publicPrecompute_of_private hx.key, Proof.Rsa.bytesAt_length',
+    show 2 * Spec.Rsa.modulusWords L.k.toNat = Spec.Rsa.precomputedWords L.k.toNat from rfl,
+    Proof.Rsa.AArch64.wordsAt_take _ _ hle]
+
+/-- Words of `pre`, in the frames, as on entry. -/
+theorem PreX.words (hx : PreX L m₀) {t : State} (hc : Ctx L g vv m₀ t) {n : Nat} (hn : n ≤ L.prl.toNat) :
+    Spec.Rsa.wordsAt t.mem L.pre n = Spec.Rsa.wordsAt m₀ L.pre n := by
+  have := hx.wp
+  simp only [Spec.Rsa.wordsAt]
+  refine List.map_congr_left fun i hi => ?_
+  have hi := List.mem_range.mp hi
+  refine hc.frame.readW (r := ⟨L.pre, L.prl.toNat * 8⟩) (Offset.contains_base _ (by omega) (by omega)) ?_
+    (by decide)
+  simp only [List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl | rfl)
+  exacts [hx.po.symm, hx.pm.symm, hx.ps.symm, hx.pk.symm]
+
+end
+
+theorem privP_pub {L : Lay} {S : Nat} {g₁ g₂ : Reg → BitVec 64} {v₁ v₂ : VReg → BitVec 128} {m₁ m₂ : Mem}
+    (hL : L.Ok) (hk : LeakEq L m₁ m₂) {a b : State} (ha : CtxReadyP L g₁ v₁ m₁ a)
+    (hb : CtxReadyP L g₂ v₂ m₂ b) :
+    (Proof.Rsa.privateCheckedPrecomputedContract AArch64.abi S).pub
+      (a.callEntry.withRegions (privRdP L) (privWr L)) (b.callEntry.withRegions (privRdP L) (privWr L)) := by
+  obtain ⟨c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11⟩ := priv_args ha.1 (privRdP L) (privWr L)
+  obtain ⟨d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11⟩ := priv_args hb.1 (privRdP L) (privWr L)
+  have c12 : stackArg (a.callEntry.withRegions (privRdP L) (privWr L)) 12 = L.pre := by
+    rw [VG.Proof.RsaPkcs1Enc.AArch64.Enc.stackArg_ce, ha.1.sp]; exact ha.2.2.1
+  have c13 : stackArg (a.callEntry.withRegions (privRdP L) (privWr L)) 13 = L.prl := by
+    rw [VG.Proof.RsaPkcs1Enc.AArch64.Enc.stackArg_ce, ha.1.sp]; exact ha.2.2.2.1
+  have d12 : stackArg (b.callEntry.withRegions (privRdP L) (privWr L)) 12 = L.pre := by
+    rw [VG.Proof.RsaPkcs1Enc.AArch64.Enc.stackArg_ce, hb.1.sp]; exact hb.2.2.1
+  have d13 : stackArg (b.callEntry.withRegions (privRdP L) (privWr L)) 13 = L.prl := by
+    rw [VG.Proof.RsaPkcs1Enc.AArch64.Enc.stackArg_ce, hb.1.sp]; exact hb.2.2.2.1
+  have hxa := ha.2.2.2.2
+  have hxb := hb.2.2.2.2
+  have hle : Spec.Rsa.precomputedWords L.k.toNat ≤ L.prl.toNat := by
+    rw [hxa.prlv]; unfold Spec.Rsa.privatePrecomputedWords; omega
+  have hw : Spec.Rsa.wordsAt a.mem L.pre (Spec.Rsa.precomputedWords L.k.toNat) =
+      Spec.Rsa.wordsAt b.mem L.pre (Spec.Rsa.precomputedWords L.k.toNat) := by
+    rw [hxa.words ha.1 hle, hxb.words hb.1 hle]
+    exact Option.some.inj (hxa.pub.symm.trans (hk.1 ▸ hxb.pub))
+  sig_pub [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
+    Proof.Rsa.privateCheckedSig, AArch64.abi, AArch64.argRegs, Proof.Rsa.AArch64.stackArgs_fourteen,
+    List.append_eq, _root_.List.range, _root_.List.range.loop]
+  simp only [ha.1.sp, hb.1.sp, ha.2.1.x0, ha.2.1.x1, ha.2.1.x2, ha.2.1.x3, ha.2.1.x4, ha.2.1.x5, ha.2.1.x6,
+    ha.2.1.x7, hb.2.1.x0, hb.2.1.x1, hb.2.1.x2, hb.2.1.x3, hb.2.1.x4, hb.2.1.x5, hb.2.1.x6, hb.2.1.x7,
+    c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11,
+    d12, d13, ha.1.bytes_ro hL (ro_N L), hb.1.bytes_ro hL (ro_N L), ha.1.bytes_ro hL (ro_E L),
+    hb.1.bytes_ro hL (ro_E L), hk.1, hk.2, Spec.Rsa.privatePrecomputedLeak, hw, and_self]
+
+theorem privP_ct (pv : PrivPImpl) : RelCT isa (Two pv.S CtxReadyP) (.call pv.name pv.code) (Two pv.S Called) :=
+  two_wp (fun e => RelCT.call (n := pv.name) pv.verified'.1 pv.verified'.2.1 (privRdP e.L) (privWr e.L)
+    fun _ _ ⟨hL, hP, hk, f₁, f₂⟩ =>
+      ⟨privP_pre hL hP f₁.2.2.2.2 f₁.1 f₁.2.1 f₁.2.2.1 f₁.2.2.2.1,
+        privP_pre hL hP f₂.2.2.2.2 f₂.1 f₂.2.1 f₂.2.2.1 f₂.2.2.2.1, privP_pub hL hk f₁ f₂,
+        (covers_privP f₁.2.2.2.2 f₁.1).1, (covers_privP f₁.2.2.2.2 f₁.1).2,
+        (covers_privP f₂.2.2.2.2 f₂.1).1, (covers_privP f₂.2.2.2.2 f₂.1).2⟩)
+    fun _ _ _ _ _ hL hP h => privP_call pv hL hP h.2.2.2.2 h.1 h.2.1 h.2.2.1 h.2.2.2.1
+
+/-- The precomputed contract, for the callee's `S + 1` bytes of stack. -/
+abbrev decPSpec (S : Nat) : Contract isa := Spec.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (S + 1 + 240)
+
+/-- Two calls whose public data agree, narrowed, in the inner frame. -/
+def EnteredP (S : Nat) (a b : State) : Prop :=
+  ∃ s₁ s₂, (decPSpec S).pre s₁ ∧ (decPSpec S).pre s₂ ∧ (decPSpec S).pub s₁ s₂ ∧
+    a = entered (narrowD s₁) ∧ b = entered (narrowD s₂)
+
+/-- The layout of the narrowed call. -/
+abbrev layP (S : Nat) (s : State) : Lay := layW (S + 1) (narrowD s) (XD s) (stackArg s 15) (stackArg s 16)
+
+theorem setupP_ct (S : Nat) : RelCT isa (EnteredP S) (.block (setup ++ extraMoves)) (Two S CtxReadyP) := by
+  intro a b ta tb a' b' ⟨s₁, s₂, h₁, h₂, hp, ea, eb⟩ e₁ e₂
+  subst ea eb
+  obtain ⟨hD₁, hx₁⟩ := decSpec_of h₁
+  obtain ⟨hD₂, hx₂⟩ := decSpec_of h₂
+  sig_pub [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
+    Spec.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs, stackArgs_seventeen, List.append_eq,
+    _root_.List.range, _root_.List.range.loop] at hp
+  obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
+    a14, a15, a16⟩ := hp
+  have ht := (RelCT.taint (A := taint) (P := fun x y => x.sp = y.sp) (Taint.ofRegs [])
+    (fun _ _ h => ⟨h, fun _ hr => False.elim (by simp at hr)⟩) (by taint_decide)
+    _ _ _ _ _ _ (by
+      show s₁.sp - 16 - BitVec.ofNat 64 frameBytes = s₂.sp - 16 - BitVec.ofNat 64 frameBytes
+      rw [hsp]) e₁ e₂).1
+  obtain ⟨_, u₁, x₁, y₁⟩ := blockP_ok hD₁ hx₁
+  obtain ⟨_, u₂, x₂, y₂⟩ := blockP_ok hD₂ hx₂
+  obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
+  obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
+  have e : layP S s₂ = layP S s₁ := by
+    simp only [layW, lay, narrowD, XD, State.withRegions_gpr, State.withRegions_sp,
+      Proof.Rsa.AArch64.stackArg_withRegions, stackArgAddr, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4,
+      a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, hsp]
+  have hl₁ := (List.append_inj hl (by
+    simp only [List.length_map, List.length_append, Proof.Rsa.bytesAt_length', h4, h6])).1
+  obtain ⟨hn, he⟩ := VG.Proof.RsaPkcs1Enc.AArch64.Enc.leak_split hl₁
+    (by rw [Proof.Rsa.bytesAt_length', Proof.Rsa.bytesAt_length', h4])
+  have y₂' : CtxReadyP (layP S s₁) (narrowD s₂).gpr (narrowD s₂).v (narrowD s₂).mem b' := e ▸ y₂
+  refine ⟨ht, ⟨layP S s₁, (narrowD s₁).gpr, (narrowD s₂).gpr, (narrowD s₁).v, (narrowD s₂).v,
+    (narrowD s₁).mem, (narrowD s₂).mem⟩, (lay_ok hD₁).withX _ _ _, rfl, ⟨?_, ?_⟩, y₁, y₂'⟩
+  · show Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x3) (s₁.gpr .x4).toNat = Spec.Rsa.bytesAt s₂.mem (s₁.gpr .x3) (s₁.gpr .x4).toNat
+    rw [hn, h3, h4]
+  · show Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x5) (s₁.gpr .x6).toNat = Spec.Rsa.bytesAt s₂.mem (s₁.gpr .x5) (s₁.gpr .x6).toNat
+    rw [he, h5, h6]
+
+/-- The narrowed calls are constant time. -/
+theorem decPN_ct (v : Compress) (pv : PrivPImpl) :
+    ConstantTime isa (fun a => ∃ s, (decPSpec pv.S).pre s ∧ a = narrowD s)
+      (fun a b => ∃ s₁ s₂, (decPSpec pv.S).pre s₁ ∧ (decPSpec pv.S).pre s₂ ∧ (decPSpec pv.S).pub s₁ s₂ ∧
+        a = narrowD s₁ ∧ b = narrowD s₂)
+      (codeP (HH v) pv.name pv.code) := by
+  have hS := pv.S15
+  refine RelCT.constantTime (RelCT.pushFrame (fun _ _ ⟨_, _, ⟨s₁, s₂, _, _, hp, e₁, e₂⟩⟩ => by
+      subst e₁ e₂
+      sig_pub [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
+        Spec.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs, stackArgs_seventeen, List.append_eq,
+        _root_.List.range, _root_.List.range.loop] at hp
+      exact hp.1) (RelCT.alloc (R := fun _ _ => True) ?_))
+  show RelCT isa _ (bodyWith (HH v) (setup ++ extraMoves) pv.name pv.code) _
+  rw [body_eq]
+  refine ((setupP_ct pv.S).seq ((privP_ct pv).seq ((dBuild_ct pv.S).seq ((hashD_ct (v := v) hS).seq
+    ((kdkMac_ct hS).seq ((clLoop_ct hS).seq ((amLoop_ct hS).seq (maskPart_ct.seq (alPart_ct.seq
+      (scanPart_ct.seq selPart_ct)))))))))).mono ?_ fun _ _ _ => trivial
+  rintro _ _ ⟨_, _, ⟨_, _, ⟨-, -, ⟨s₁, s₂, h₁, h₂, hp, rfl, rfl⟩⟩, rfl, rfl⟩, rfl, rfl⟩
+  exact ⟨s₁, s₂, h₁, h₂, hp, rfl, rfl⟩
+
+theorem decP_ct (v : Compress) (pv : PrivPImpl) :
+    ConstantTime isa (decPSpec pv.S).pre (decPSpec pv.S).pub (codeP (HH v) pv.name pv.code) := by
+  have hS := pv.S15
+  refine Proof.Rsa.AArch64.ct_of_narrow narrowD (fun s h => ⟨?_, ?_, Covers.refl _, narrowD_widen s⟩)
+    (decPN_ct v pv)
+  · obtain ⟨hD, hx⟩ := decSpec_of h
+    obtain ⟨t, s', he, -⟩ := decW_ok v (by omega) (s := narrowD s) (R₀ := rdD s) (X := XD s)
+      (pre := stackArg s 15) (prl := stackArg s 16) hD (setup ++ extraMoves) pv.name pv.code (stageP_ok pv hD hx)
+    exact ⟨t, s', he⟩
+  · exact narrowD_covers (decSpec_of h).2
+
+/-! ## `Verified` -/
+
+/-- The stack the function uses: the callee's and the frames'. -/
+def decStackP (pv : PrivPImpl) : Nat := pv.stack + 240
+
+theorem decStackP_eq (pv : PrivPImpl) : decStackP pv = pv.S + 1 + 240 := by rw [decStackP, pv.stack_eq]
+
+/-- `vg_rsa_pkcs1_decrypt_precomputed`, with `v` and `pv`. -/
+theorem decP_verified (v : Compress) (pv : PrivPImpl)
+    (hsat : ∃ s, (Spec.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (decStackP pv)).pre s) :
+    Verified AArch64.target (codeP (HH v) pv.name pv.code)
+      (Spec.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (decStackP pv)) := by
+  rw [decStackP_eq] at hsat ⊢
+  exact ⟨decP_correct v pv, decP_ct v pv, hsat⟩
+
+/-! ## A state that meets the contract -/
+
+open VG.Proof.Rsa.PreKey (keyIn keyMem key_pre_of)
+
+/-- The stack arguments of `preStateD`; the key (`keyMem`) has `n` at
+`0x2000`, `p` at `0x4200`, `q` at `0x4300` and `pre` at `0x4800`. -/
+def preArgsD : List Nat :=
+  [1, 0x4100, 64, 0x4200, 32, 0x4300, 32, 0x4400, 32, 0x4500, 32, 0x4600, 32, 0x20000, 0x420, 0x4800, 24]
+
+def preMemD (a : Addr) : Byte :=
+  let i := a.toNat
+  bif Nat.ble 0x10000000000 i && Nat.blt i 0x10000000088 then
+    BitVec.ofNat 8 (preArgsD.getD ((i - 0x10000000000) / 8) 0 / 256 ^ ((i - 0x10000000000) % 8))
+  else bif keyIn i then keyMem a else 0
+
+def preStateD : State where
+  gpr r := match r with
+    | .x0 => 0x5000 | .x1 => 64 | .x2 => 0x1800 | .x3 => 0x2000 | .x4 => 64 | .x5 => 0x3000 | .x6 => 1
+    | .x7 => 0x4000 | _ => 0
+  sp := 0x10000000000
+  mem := preMemD
+  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 1⟩, ⟨0x4100, 64⟩, ⟨0x4200, 32⟩, ⟨0x4300, 32⟩, ⟨0x4400, 32⟩,
+    ⟨0x4500, 32⟩, ⟨0x4600, 32⟩, ⟨0x4800, 192⟩, ⟨0x10000000000, 136⟩]
+  wr := [⟨0x5000, 64⟩, ⟨0x1800, 8⟩, ⟨0x20000, 8448⟩]
+
+theorem preStateD_key : Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt preStateD.mem 0x2000 64)
+    (Spec.Rsa.bytesAt preStateD.mem 0x4200 32) (Spec.Rsa.bytesAt preStateD.mem 0x4300 32) =
+      some (Spec.Rsa.wordsAt preStateD.mem 0x4800 24) :=
+  key_pre_of fun a ha => by
+    have hs : (Nat.ble 0x10000000000 a.toNat && Nat.blt a.toNat 0x10000000088) = false := by
+      simp only [keyIn, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at ha
+      refine Bool.eq_false_iff.mpr fun h => ?_
+      simp only [Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at h
+      omega
+    show (bif _ then _ else _) = _
+    rw [hs, Bool.cond_false, ha, Bool.cond_true]
+
+theorem preD_args : stackArg preStateD 0 = 1 ∧ stackArg preStateD 1 = 0x4100 ∧ stackArg preStateD 2 = 64 ∧
+    stackArg preStateD 3 = 0x4200 ∧ stackArg preStateD 4 = 32 ∧ stackArg preStateD 5 = 0x4300 ∧
+    stackArg preStateD 6 = 32 ∧ stackArg preStateD 7 = 0x4400 ∧ stackArg preStateD 8 = 32 ∧
+    stackArg preStateD 9 = 0x4500 ∧ stackArg preStateD 10 = 32 ∧ stackArg preStateD 11 = 0x4600 ∧
+    stackArg preStateD 12 = 32 ∧ stackArg preStateD 13 = 0x20000 ∧ stackArg preStateD 14 = 0x420 ∧
+    stackArg preStateD 15 = 0x4800 ∧ stackArg preStateD 16 = 24 := by
+  decide
+
+theorem decP_sat (K : Nat) (hK : K ≤ 2 ^ 20) :
+    ∃ s, (Spec.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (K + 240)).pre s := by
+  refine ⟨preStateD, ?_⟩
+  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
+    Spec.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs, stackArgs_seventeen, List.append_eq,
+    _root_.List.range, _root_.List.range.loop]
+  obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16⟩ := preD_args
+  have hsp : (0x10000000000 : BitVec 64).toNat = 2 ^ 40 := by decide
+  have hkb : ((0x10000000000 : BitVec 64) - BitVec.ofNat 64 (K + 239 + 1)).toNat = 2 ^ 40 - (K + 240) := by
+    rw [BitVec.toNat_sub, hsp, BitVec.toNat_ofNat]; omega
+  have ha : stackArgAddr preStateD 0 = 0x10000000000 := by decide
+  simp only [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, ha]
+  have kd : ∀ (b : BitVec 64) (n : Nat), b.toNat + n ≤ 2 ^ 20 →
+      Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 (K + 239 + 1), K + 239 + 1⟩ ⟨b, n⟩ := fun b n h =>
+    Region.disjoint_of_le (.inr (by dsimp only; rw [hkb]; omega)) (by dsimp only; rw [hkb]; omega)
+      (by dsimp only; omega)
+  have kt : Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 (K + 239 + 1), K + 239 + 1⟩ ⟨0x10000000000, 136⟩ :=
+    Region.disjoint_of_le (.inl (by dsimp only; rw [hkb, hsp]; omega))
+      (by dsimp only; rw [hkb]; omega) (by dsimp only; rw [hsp]; omega)
+  sig_and_intros
+  rotate_right
+  · exact preStateD_key
+  all_goals first
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact kd _ _ (by decide)
+    | exact kt
+    | (rw [hsp]; omega)
+    | (simp only [Spec.Rsa.lenValid]; decide)
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Dec

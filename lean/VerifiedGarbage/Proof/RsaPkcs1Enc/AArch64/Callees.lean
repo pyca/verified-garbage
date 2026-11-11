@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecPrecomputed
 public import VerifiedGarbage.Impl.Rsa.AArch64
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -67,5 +68,19 @@ theorem dec_sat (c : Proof.Rsa.AArch64.CrtImpl) :
   rw [show Dec.decStack (privOf c) = 3488 from rfl]
   sig_implies_sat [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs,
     stackArgs_fifteen, List.append_eq, Spec.Rsa.lenValid] [decSatState] using decSatState
+
+/-- `vg_rsa_private_checked_precomputed` calling `c`, as
+`vg_rsa_pkcs1_decrypt_precomputed`'s callee. -/
+def privPOf (c : Proof.Rsa.AArch64.CrtImpl) : Dec.PrivPImpl where
+  name := Proof.Rsa.AArch64.privPName c
+  code := Proof.Rsa.AArch64.privPCode c
+  stack := Proof.Rsa.AArch64.stackBytes
+  verified := Proof.Rsa.AArch64.codeP_verified c
+  pos := by decide
+  depth := by rw [Proof.Rsa.AArch64.privPCode_depth]; decide
+
+theorem decP_sat' (c : Proof.Rsa.AArch64.CrtImpl) :
+    ∃ s, (Spec.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (Dec.decStackP (privPOf c))).pre s :=
+  Dec.decP_sat Proof.Rsa.AArch64.stackBytes (by decide)
 
 end VG.Proof.RsaPkcs1Enc.AArch64

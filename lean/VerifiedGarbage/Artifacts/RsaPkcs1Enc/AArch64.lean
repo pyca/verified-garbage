@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecPrecomputed
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
@@ -31,8 +30,8 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 namespace VG.Artifacts.RsaPkcs1Enc.AArch64.Sha256RsaPrivateCrt
 
-open VG.Proof.RsaPkcs1Enc.AArch64 (privOf dec_sat)
-open VG.Proof.RsaPkcs1Enc.AArch64.Dec (HH decStack dec_verified)
+open VG.Proof.RsaPkcs1Enc.AArch64 (privOf dec_sat privPOf decP_sat')
+open VG.Proof.RsaPkcs1Enc.AArch64.Dec (HH decStack dec_verified decStackP decP_verified)
 
 def artifacts (h : Proof.Sha256.AArch64.Compress) (c : Proof.Rsa.AArch64.CrtImpl) : List Artifact :=
   [
@@ -43,9 +42,9 @@ def artifacts (h : Proof.Sha256.AArch64.Compress) (c : Proof.Rsa.AArch64.CrtImpl
       verified := dec_verified h (privOf c) (dec_sat c) },
     Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact AArch64.target {
       suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
-      code := Impl.RsaPkcs1Enc.AArch64.Decrypt.code (HH h) (privOf c).name (privOf c).code
-      stack := decStack (privOf c)
-      verified := Proof.RsaPkcs1Enc.AArch64.decryptPrecomputed_verified h c }]
+      code := Impl.RsaPkcs1Enc.AArch64.Decrypt.codeP (HH h) (privPOf c).name (privPOf c).code
+      stack := decStackP (privPOf c)
+      verified := decP_verified h (privPOf c) (decP_sat' c) }]
 
 end VG.Artifacts.RsaPkcs1Enc.AArch64.Sha256RsaPrivateCrt
 
