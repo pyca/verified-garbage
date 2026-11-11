@@ -28,7 +28,7 @@ vg_argon2_hprime_avx2:
 	mov rdx, rbx
 	add rdx, 832
 	mov ecx, 0
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	mov esi, 0
 	mov rdx, rbx
 	add rdx, 832
@@ -73,7 +73,7 @@ vg_argon2_hprime_avx2:
 	mov rdx, rbx
 	add rdx, 832
 	mov ecx, 0
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	mov esi, 0
 	mov rdx, rbx
 	add rdx, 768
@@ -110,7 +110,7 @@ vg_argon2_hprime_avx2:
 	mov rdx, rbx
 	add rdx, 832
 	mov ecx, 0
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	mov esi, 0
 	mov rdx, rbx
 	add rdx, 768
