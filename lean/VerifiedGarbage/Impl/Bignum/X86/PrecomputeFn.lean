@@ -49,8 +49,7 @@ def copyOut (j : Nat) (hi : Bool) : Prog isa :=
 
 /-- The modulus read, `-M⁻¹ mod 2³²` at 152, and number 4 set to `2^(10 B) mod M`. -/
 def start : Prog isa :=
-  .seq (load 0 2 3) <|
-  .seq (.block (VG.Impl.Mont.X86.Dynamic.setupInverse numOff invOff)) R2Words.run
+  .seq (.seq (load 0 2 3) (.block (VG.Impl.Mont.X86.Dynamic.setupInverse numOff invOff))) R2Words.run
 
 /-- `M` and `R² mod M` to `pre`, and 1 returned. -/
 def finish : Prog isa :=

@@ -201,9 +201,8 @@ def count : List Instr :=
   [.shift .shr .edx 2, .alu .sub .eax (.reg .edx), .store (hd oSteps) .eax]
 
 /-- The steps, their count at 176. -/
-def steps : Prog isa :=
-  .seq (.block count)
-    (.loop (.seq step (.block [.mov .eax (.mem (hd oSteps)), .alu .sub .eax (.imm 1), .store (hd oSteps) .eax])) .ne)
+def stepLoop : Prog isa :=
+  .loop (.seq step (.block [.mov .eax (.mem (hd oSteps)), .alu .sub .eax (.imm 1), .store (hd oSteps) .eax])) .ne
 
 /-! ## `2^(10 B) mod M` -/
 
@@ -218,7 +217,11 @@ def tail : Prog isa :=
       .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi)]))
     (.ite .e (.block []) (.loop (doubleStep 4) .ne))
 
+/-- What the steps need: `p`, `d`, `v`, `x = 2^(32 (W' - 1))` and the
+steps' count. -/
+def prep : Prog isa := seqs [norm, recip, seedX, .block count]
+
 /-- Number 4 set to `2^(10 B) mod M`. -/
-def run : Prog isa := seqs [norm, recip, seedX, steps, tail]
+def run : Prog isa := .seq prep (.seq stepLoop tail)
 
 end VG.Impl.Bignum.X86.R2Words

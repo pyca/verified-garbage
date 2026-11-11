@@ -85,46 +85,66 @@ structure StI (s : State) (base : Addr) (bytes len : Nat) (args : Nat → BitVec
   cnt : w32 u.mem base oSteps = nSteps len - i
   x : val32 u.mem base (numAt len 4) (wp len) = 2 ^ (32 * (wp len - 1 + i)) % m
 
-/-- `steps`: from `x = 2^(32 (W' - 1)) < M`, `2^(32 (W' - 1 + S)) mod M`. -/
-theorem steps_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {m z : Nat}
-    (h : PcIn base bytes len args s) (hz : z ≤ 31) (hP : w32 s.mem base oP = 2 ^ z)
-    (hMw : m * 2 ^ z < 2 ^ (32 * wp len))
-    (hD : w32 s.mem base oD = m * 2 ^ z / 2 ^ (32 * (wp len - 1)))
-    (hd1 : 2 ^ 31 ≤ m * 2 ^ z / 2 ^ (32 * (wp len - 1)))
-    (hV : w32 s.mem base oV = (2 ^ 64 - 1) / (m * 2 ^ z / 2 ^ (32 * (wp len - 1))) - 2 ^ 32)
-    (hM : val32 s.mem base (numAt len 0) (wp len) = m)
-    (hx : val32 s.mem base (numAt len 4) (wp len) = 2 ^ (32 * (wp len - 1))) (hxm : 2 ^ (32 * (wp len - 1)) < m) :
-    WP isa VG.Impl.Bignum.X86.R2Words.steps s fun t => StI s base bytes len args m (nSteps len) t := by
+/-- What the steps need of the state `s` before `count`: the header's `p = 2^z`,
+`d` and `v`, `M` over `W'` words and `x = 2^(32 (W' - 1)) < M`. -/
+structure LoopPre (s : State) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (m z : Nat) : Prop where
+  pi : PcIn base bytes len args s
+  hz : z ≤ 31
+  hP : w32 s.mem base oP = 2 ^ z
+  hMw : m * 2 ^ z < 2 ^ (32 * wp len)
+  hD : w32 s.mem base oD = m * 2 ^ z / 2 ^ (32 * (wp len - 1))
+  hd1 : 2 ^ 31 ≤ m * 2 ^ z / 2 ^ (32 * (wp len - 1))
+  hV : w32 s.mem base oV = (2 ^ 64 - 1) / (m * 2 ^ z / 2 ^ (32 * (wp len - 1))) - 2 ^ 32
+  hM : val32 s.mem base (numAt len 0) (wp len) = m
+  hx : val32 s.mem base (numAt len 4) (wp len) = 2 ^ (32 * (wp len - 1))
+  hxm : 2 ^ (32 * (wp len - 1)) < m
+
+theorem nSteps_pos {len : Nat} (hl : 64 ≤ len) (hu : len ≤ 1024) : 1 ≤ nSteps len := by
+  simp only [nSteps, wp, wb, Spec.Rsa.modulusWords]; omega
+
+/-- `count`, from `s`: no steps yet. -/
+theorem count_start {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {m z : Nat}
+    (L : LoopPre s base bytes len args m z) :
+    WP isa (.block count) s fun u => StI s base bytes len args m 0 u := by
+  have h := L.pi
+  have nw := h.scratch.nowrap
+  have dims := h.dimensions
+  have f5 := (h.fits (j := 5) (by decide)).2
+  have hwp := wp_le_nw (len := len)
+  have e4 : numAt len 4 = 256 + 4 * wb len := by simp [numAt, numOff]
+  have e5 : numAt len 5 = 256 + 5 * wb len := by simp [numAt, numOff]
+  refine WP.mono (count_ok h) fun u ⟨mu, Ku⟩ => ?_
+  have Ou := writeW32_outside s.mem base (d := oSteps) (BitVec.ofNat 32 (nSteps len)) (by simp only [oSteps]; omega)
+  rw [← mu] at Ou
+  refine ⟨h.keep Ku (by decide) (by decide) (Ou.mono (by omega) (by simp only [oSteps]; omega)), Ku.mono (by decide),
+    Ou.mono (by simp only [oMask, oSteps]; omega) (by simp only [oMask, oSteps]; omega),
+    fun o h1 h2 => Ou.w32 (.inr (by simp only [oQ, oSteps] at *; omega)) (by omega),
+    fun o h1 h2 => Ou.w32 (.inr (by simp only [oSteps]; omega)) (by omega), ?_, ?_⟩
+  · rw [Nat.sub_zero, mu, w32_write_self, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by simp only [nSteps]; omega)]
+  · rw [Ou.val32 (.inr (by simp only [oSteps]; omega)) (by omega), L.hx, Nat.add_zero, Nat.mod_eq_of_lt L.hxm]
+
+/-- A step and the count down. -/
+theorem stepIter_ok {s u : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {m z i : Nat}
+    (L : LoopPre s base bytes len args m z) (hi : i < nSteps len) (I : StI s base bytes len args m i u) :
+    WP isa (.seq step (.block [.mov .eax (.mem (hd oSteps)), .alu .sub .eax (.imm 1), .store (hd oSteps) .eax])) u
+      fun v => StI s base bytes len args m (i + 1) v ∧ v.zf = some (decide (i + 1 = nSteps len)) := by
+  have h := L.pi
   have nw := h.scratch.nowrap
   have dims := h.dimensions
   have f5 := (h.fits (j := 5) (by decide)).2
   have hwp := wp_le_nw (len := len)
   have hl := h.lower
-  have hwp16 : 16 ≤ wp len := by simp only [wp]; omega
   have e0 : numAt len 0 = 256 := by simp [numAt, numOff]
   have e4 : numAt len 4 = 256 + 4 * wb len := by simp [numAt, numOff]
   have e5 : numAt len 5 = 256 + 5 * wb len := by simp [numAt, numOff]
-  have hS : 1 ≤ nSteps len := by simp only [nSteps, wp, wb, Spec.Rsa.modulusWords] at *; omega
-  unfold VG.Impl.Bignum.X86.R2Words.steps
-  refine WP.seq (WP.mono (count_ok h) fun u ⟨mu, Ku⟩ => ?_)
-  have Ou := writeW32_outside s.mem base (d := oSteps) (BitVec.ofNat 32 (nSteps len)) (by simp only [oSteps]; omega)
-  rw [← mu] at Ou
-  have I₀ : StI s base bytes len args m 0 u := by
-    refine ⟨h.keep Ku (by decide) (by decide) (Ou.mono (by omega) (by simp only [oSteps]; omega)), Ku.mono (by decide),
-      Ou.mono (by simp only [oMask, oSteps]; omega) (by simp only [oMask, oSteps]; omega),
-      fun o h1 h2 => Ou.w32 (.inr (by simp only [oQ, oSteps] at *; omega)) (by omega),
-      fun o h1 h2 => Ou.w32 (.inr (by simp only [oSteps]; omega)) (by omega), ?_, ?_⟩
-    · rw [Nat.sub_zero, mu, w32_write_self, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by simp only [nSteps]; omega)]
-    · rw [Ou.val32 (.inr (by simp only [oSteps]; omega)) (by omega), hx, Nat.add_zero, Nat.mod_eq_of_lt hxm]
-  refine countLoop (N := nSteps len) hS (fun i u => StI s base bytes len args m i u) ?_ I₀
-  rintro i u hi I
   -- The header and `M` as in `s`.
   have hdr : ∀ o, o + 4 ≤ oMask → w32 u.mem base o = w32 s.mem base o := fun o ho =>
     I.out.w32 (.inl ho) (by simp only [oMask] at ho; omega)
   have hMu : val32 u.mem base (numAt len 0) (wp len) = m := by
-    rw [← hM]; exact val32_congr fun j hj => I.mid _ (by simp only [oQ]; omega) (by omega)
-  refine WP.seq (WP.mono (step_ok I.pi hz (by rw [hdr _ (by decide)]; exact hP) hMw (by rw [hdr _ (by decide)]; exact hD)
-    hd1 (by rw [hdr _ (by decide)]; exact hV) hMu I.x (Nat.mod_lt _ (by omega))) fun v ⟨hxv, F, Kv⟩ => ?_)
+    rw [← L.hM]; exact val32_congr fun j hj => I.mid _ (by simp only [oQ]; omega) (by omega)
+  refine WP.seq (WP.mono (step_ok I.pi L.hz (by rw [hdr _ (by decide)]; exact L.hP) L.hMw
+    (by rw [hdr _ (by decide)]; exact L.hD) L.hd1 (by rw [hdr _ (by decide)]; exact L.hV) hMu I.x
+    (Nat.mod_lt _ (Nat.lt_of_le_of_lt (Nat.zero_le _) L.hxm))) fun v ⟨hxv, F, Kv⟩ => ?_)
   have hv := I.pi.keep Kv (by decide) (by decide) (F.out.mono (by omega) (by simp only [oMask]; omega))
   have ws : Ws v base bytes := hv.ws
   have di : PtrAt v base .edi 0 := by rw [PtrAt, Nat.add_zero, Nat.mod_eq_of_lt (by omega)]; exact hv.edi
@@ -153,5 +173,12 @@ theorem steps_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bit
   · rw [Ot.val32 (.inr (by simp only [oSteps]; omega)) (by omega), hxv, Nat.mod_mul_mod, ← Nat.pow_add,
       show 32 * (wp len - 1 + i) + 32 = 32 * (wp len - 1 + (i + 1)) by omega]
   · rw [M.zf, z₂, c₂]
+
+/-- The steps' loop: `S` steps. -/
+theorem stepLoop_ok {s u : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {m z : Nat}
+    (L : LoopPre s base bytes len args m z) (I : StI s base bytes len args m 0 u) :
+    WP isa stepLoop u fun t => StI s base bytes len args m (nSteps len) t :=
+  countLoop (nSteps_pos L.pi.lower L.pi.upper) (fun i u => StI s base bytes len args m i u)
+    (fun _ _ hi I => stepIter_ok L hi I) I
 
 end VG.Proof.Bignum.X86.R2Words
