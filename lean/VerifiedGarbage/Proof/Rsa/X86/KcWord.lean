@@ -123,11 +123,12 @@ theorem Stg.balanced_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List 
     (hap : ap ≤ 1024) (haq : aq ≤ 1024) (hn : aN ∈ live) :
     WP isa (.block (VG.Impl.Rsa.X86.WordModRt.balanced g.L 1 (pLenArg g.full) (qLenArg g.full) aN sG)) s
       fun t => Stg g s0 A live c t ∧ ∃ an, an ≤ 1024 ∧
+        VG.Proof.Bignum.X86.CallArgument s g.B g.Z 1 (BitVec.ofNat 32 an) ∧
         VG.Proof.Rsa.X86.KeyRt.kw (g.L.toLen an) = g.w ∧
         (slot t.mem g.B sG = 0 ↔ Bal an ap aq (mw s.mem g.B g.w aN (g.w - 1))) := by
   obtain ⟨an, han, hkw, cn⟩ := h.ws.lenArg
   refine WP.mono (VG.Proof.Rsa.X86.WordRt.balanced_ok h.ws cn cp cq han hap haq (h.live_lt aN hn) (by decide))
-    fun t ⟨ht, k, e, r⟩ => ⟨?_, an, han, hkw, e⟩
+    fun t ⟨ht, k, e, r⟩ => ⟨?_, an, han, cn, hkw, e⟩
   refine h.next ht k (by simp) (by decide) r (by decide)
     (h.arrs_keep k (by simp) (by decide)) h.live_lt (h.vd_keep k (by simp) (by decide)) (h.mask_keep k (by decide))
 

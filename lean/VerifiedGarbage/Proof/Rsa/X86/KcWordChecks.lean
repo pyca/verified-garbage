@@ -96,7 +96,7 @@ theorem Stg.crtChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool}
   have h6' : Stg g s0 (aFin v) liveFin c t6 := h6.congr rfl
   rw [wp_seqs_cons (by simp)]
   refine WP.mono (h6'.balanced_ok (h6'.arg parg) (h6'.arg qarg) hap haq (by decide))
-    fun t7 ⟨h7, an, _, hkw, hg⟩ => ?_
+    fun t7 ⟨h7, an, _, _, hkw, hg⟩ => ?_
   have nv : num t6.mem g.B g.w aN = v.n := h6'.arrs.get (by decide)
   have htop : 2 ^ 31 ≤ mw t6.mem g.B g.w aN (g.w - 1) ↔ 2 ^ (32 * g.w - 1) ≤ v.n := by
     rw [← nv]; exact top_iff h7.ws.ws.wpos
