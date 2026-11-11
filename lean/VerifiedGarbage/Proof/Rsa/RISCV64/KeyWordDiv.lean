@@ -395,4 +395,34 @@ theorem num_of_low {m : Mem} {B : Addr} {d w v X : Nat} (hv : v < w) (hx : words
   rw [w1, Nat.mul_zero, Nat.add_zero] at e2
   rw [e1, e2, Nat.mul_zero, Nat.add_zero, hx]
 
+theorem bv_or0 (x y : BitVec 64) : x ||| y = 0 ↔ x = 0 ∧ y = 0 := by
+  constructor
+  · intro h
+    have hx : x.toNat ||| y.toNat = 0 := by rw [← BitVec.toNat_or, h]; rfl
+    rw [Nat.or_eq_zero_iff] at hx
+    exact ⟨BitVec.eq_of_toNat_eq hx.1, BitVec.eq_of_toNat_eq hx.2⟩
+  · rintro ⟨rfl, rfl⟩; rfl
+
+theorem bv_and7 (x : BitVec 64) : (x &&& 7#64 = 0) ↔ x.toNat % 8 = 0 := by
+  constructor
+  · intro h
+    have : (x &&& 7#64).toNat = 0 := by rw [h]; rfl
+    rw [BitVec.toNat_and, show (7#64).toNat = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod] at this
+    exact this
+  · intro h
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_and, show (7#64).toNat = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]; exact h
+
+theorem bv_xor0 (x y : BitVec 64) : x ^^^ y = 0 ↔ x = y := by
+  constructor
+  · intro h; have := congrArg (· ^^^ y) h; simpa [BitVec.xor_assoc] using this
+  · rintro rfl; simp
+
+theorem bv_lt_ite0 (x y : BitVec 64) : (if x < y then (1 : BitVec 64) else 0) = 0 ↔ ¬ x < y := by
+  by_cases h : x < y <;> simp [h]
+
+/-- `2^(64 (v - 1)) ≤ x < 2^(64 v)`, for `v = w / 2`: what the division by
+words needs of its divisor to be exact. -/
+abbrev InW (w x : Nat) : Prop := 2 ^ (64 * (w / 2 - 1)) ≤ x ∧ x < 2 ^ (64 * (w / 2))
+
 end VG.Proof.Rsa.RISCV64.Keys

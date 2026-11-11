@@ -195,10 +195,6 @@ def crtBitsW (n p q dP dQ qI L Xq X₁ X₂ : Nat) : Bool :=
   decide (p % 2 = 1) && decide (L = n) && decide (qI < p) && decide (Xq = 1) &&
     decide (dP < 2 * (p / 2)) && decide (X₁ = 1) && decide (dQ < 2 * (q / 2)) && decide (X₂ = 1)
 
-/-- `2^(64 (v - 1)) ≤ x < 2^(64 v)`, for `v = w / 2`: what the division by
-words needs of its divisor to be exact. -/
-abbrev InW (w x : Nat) : Prop := 2 ^ (64 * (w / 2 - 1)) ≤ x ∧ x < 2 ^ (64 * (w / 2))
-
 /-- The checks of `vg_rsa_check_crt_key`, by words. -/
 theorem crtChecksW_ok {g : Geo} {s0 s : State} {v : Vals}
     (h : Stg g s0 (aStart v) live0 (decide (v.p % 2 = 1)) s) (hw : 8 ≤ g.w) (hw2 : g.w % 2 = 0) :
@@ -263,32 +259,6 @@ theorem dChecksW_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0
   refine WP.mono (h2.divEq_ok (a := aD) (d := aM2) (b := aDQ) (by decide) (by decide) (by decide) (by decide) rfl ff
     hw hw2) fun t ⟨Y₂, hY₂, h3⟩ => ⟨Y₁, Y₂, fun hi => hY₁ hi.1 hi.2, fun hi => hY₂ hi.1 hi.2, _, _, h3⟩
 
-
-theorem bv_or0 (x y : BitVec 64) : x ||| y = 0 ↔ x = 0 ∧ y = 0 := by
-  constructor
-  · intro h
-    have hx : x.toNat ||| y.toNat = 0 := by rw [← BitVec.toNat_or, h]; rfl
-    rw [Nat.or_eq_zero_iff] at hx
-    exact ⟨BitVec.eq_of_toNat_eq hx.1, BitVec.eq_of_toNat_eq hx.2⟩
-  · rintro ⟨rfl, rfl⟩; rfl
-
-theorem bv_and7 (x : BitVec 64) : (x &&& 7#64 = 0) ↔ x.toNat % 8 = 0 := by
-  constructor
-  · intro h
-    have : (x &&& 7#64).toNat = 0 := by rw [h]; rfl
-    rw [BitVec.toNat_and, show (7#64).toNat = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod] at this
-    exact this
-  · intro h
-    apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_and, show (7#64).toNat = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]; exact h
-
-theorem bv_xor0 (x y : BitVec 64) : x ^^^ y = 0 ↔ x = y := by
-  constructor
-  · intro h; have := congrArg (· ^^^ y) h; simpa [BitVec.xor_assoc] using this
-  · rintro rfl; simp
-
-theorem bv_lt_ite0 (x y : BitVec 64) : (if x < y then (1 : BitVec 64) else 0) = 0 ↔ ¬ x < y := by
-  by_cases h : x < y <;> simp [h]
 
 theorem kc_exec_li32 {s : State} {d : Reg} : exec (.li d 32) s = some (s.write d 32#64) := by
   rw [exec_li (by decide)]; rfl

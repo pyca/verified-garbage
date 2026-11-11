@@ -190,14 +190,16 @@ def dPartsW : Prog isa := seqs ([.block saveK] ++ divWP aP aDR2 ++ divWP aQ aDR3
 /-- The divisions of `d`: by words for a balanced key (`shape`), else bit-serial. -/
 def dPartsAll : Prog isa := .seq (.block shape) (.ite (.zero .t0) dPartsW dParts)
 
-def arith : Prog isa := seqs [checks, invPart, dPartsAll]
+/-- The set-up, the loads, the checks and the inverse: what comes before the
+divisions of `d`. -/
+def front : Prog isa := seqs [setup, loads, checks, invPart]
 
 /-- `dP` and `dQ` written out under the mask, and the mask's bit returned. -/
 def stores : Prog isa := seqs [
   .block mask, storeBytes aDR2 .a2 .s4, storeBytes aDR3 .a3 .s6,
   .block [.load .d .a0 .s11 sMask]]
 
-def valid : Prog isa := seqs [setup, loads, arith, stores]
+def valid : Prog isa := seqs [front, dPartsAll, stores]
 
 /-- `vg_rsa_crt_values`. -/
 def code : Prog isa :=
