@@ -106,28 +106,25 @@ def normRegs : List Reg := [.r0, .r3, .r6, .r14, .r15, .r16, .r17, .r20, .r22]
 /-- `norm`, `n` (`w ≥ 3` words, its top word not zero) at `r10` and the
 temporary at `r9`: `P = 2^z`, `d' = ⌊n P / 2^(64 (w - 1))⌋ ≥ 2^63` and `d'ₗ`,
 `(d', d'ₗ) = ⌊n P / 2^(64 (w - 2))⌋`, in the temporary's words 0, 1 and 3. -/
-theorem norm_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
-    (h9 : s.gpr .r9 = off B (slot w 3)) (h10 : s.gpr .r10 = off B (slot w 0))
-    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hw : 3 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 4 ≤ Z)
-    (hT : 2 ^ (64 * (w - 1)) ≤ wordsVal s.mem B (slot w 0) w) :
-    WP isa norm s fun t => (∃ z ≤ 63, (Mont.word t.mem B (slot w 3)).toNat = 2 ^ z ∧
-      (Mont.word t.mem B (slot w 3 + 8)).toNat = wordsVal s.mem B (slot w 0) w * 2 ^ z / 2 ^ (64 * (w - 1)) ∧
-      2 ^ 63 ≤ wordsVal s.mem B (slot w 0) w * 2 ^ z / 2 ^ (64 * (w - 1)) ∧
-      (Mont.word t.mem B (slot w 3 + 8)).toNat * 2 ^ 64 + (Mont.word t.mem B (slot w 3 + 24)).toNat =
-        wordsVal s.mem B (slot w 0) w * 2 ^ z / 2 ^ (64 * (w - 2))) ∧
-      Mont.Outside B (slot w 3) 32 s.mem t.mem ∧ Keep normRegs s t := by
+theorem normAt_ok {s : State} {B : Addr} {dN dT : Nat} {Z w : Nat} (hs : Scr s B Z)
+    (h9 : s.gpr .r9 = off B (dT)) (h10 : s.gpr .r10 = off B (dN))
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hw : 3 ≤ w) (hw' : w < 2 ^ 31) (hNZ : dN + 8 * w ≤ Z) (hTZ : dT + 32 ≤ Z)
+    (hT : 2 ^ (64 * (w - 1)) ≤ wordsVal s.mem B (dN) w) :
+    WP isa norm s fun t => (∃ z ≤ 63, (Mont.word t.mem B (dT)).toNat = 2 ^ z ∧
+      (Mont.word t.mem B (dT + 8)).toNat = wordsVal s.mem B (dN) w * 2 ^ z / 2 ^ (64 * (w - 1)) ∧
+      2 ^ 63 ≤ wordsVal s.mem B (dN) w * 2 ^ z / 2 ^ (64 * (w - 1)) ∧
+      (Mont.word t.mem B (dT + 8)).toNat * 2 ^ 64 + (Mont.word t.mem B (dT + 24)).toNat =
+        wordsVal s.mem B (dN) w * 2 ^ z / 2 ^ (64 * (w - 2))) ∧
+      Mont.Outside B (dT) 32 s.mem t.mem ∧ Keep normRegs s t := by
   have hnw := hs.nowrap
-  have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
-  have e0 := e 0; have e3 := e 3; have e4 := e 4
-  have hh : hdrBytes = 256 := rfl
   -- `n`'s top two words.
-  generalize hTw : Mont.word s.mem B (slot w 0 + 8 * (w - 1)) = T
-  generalize hLw : Mont.word s.mem B (slot w 0 + 8 * (w - 2)) = L
-  generalize hL'w : Mont.word s.mem B (slot w 0 + 8 * (w - 3)) = L'
-  have hN : wordsVal s.mem B (slot w 0) w =
-      T.toNat * 2 ^ (64 * (w - 2) + 64) + L.toNat * 2 ^ (64 * (w - 2)) + wordsVal s.mem B (slot w 0) (w - 2) := by
-    have e1 := wordsVal_succ_top s.mem B (slot w 0) (w - 1)
-    have e2 := wordsVal_succ_top s.mem B (slot w 0) (w - 2)
+  generalize hTw : Mont.word s.mem B (dN + 8 * (w - 1)) = T
+  generalize hLw : Mont.word s.mem B (dN + 8 * (w - 2)) = L
+  generalize hL'w : Mont.word s.mem B (dN + 8 * (w - 3)) = L'
+  have hN : wordsVal s.mem B (dN) w =
+      T.toNat * 2 ^ (64 * (w - 2) + 64) + L.toNat * 2 ^ (64 * (w - 2)) + wordsVal s.mem B (dN) (w - 2) := by
+    have e1 := wordsVal_succ_top s.mem B (dN) (w - 1)
+    have e2 := wordsVal_succ_top s.mem B (dN) (w - 2)
     rw [show w - 1 + 1 = w by omega, hTw] at e1
     rw [show w - 2 + 1 = w - 1 by omega, hLw] at e2
     rw [e1, e2, show 64 * (w - 1) = 64 * (w - 2) + 64 by omega, Nat.mul_comm T.toNat, Nat.mul_comm L.toNat]
@@ -136,7 +133,7 @@ theorem norm_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     omega_using []
   have hT0 : 0 < T.toNat := by
     rcases Nat.eq_zero_or_pos T.toNat with h | h
-    · have hl := wordsVal_lt s.mem B (slot w 0) (w - 2)
+    · have hl := wordsVal_lt s.mem B (dN) (w - 2)
       have hL := Nat.mul_le_mul_right (2 ^ (64 * (w - 2))) (show L.toNat + 1 ≤ 2 ^ 64 from L.isLt)
       rw [Nat.add_mul, Nat.one_mul, ← Nat.pow_add, show 64 + 64 * (w - 2) = 64 * (w - 2) + 64 by omega] at hL
       rw [hN, h, Nat.zero_mul, Nat.zero_add, show 64 * (w - 1) = 64 * (w - 2) + 64 by omega] at hT
@@ -146,22 +143,22 @@ theorem norm_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
       omega_using [hT, hL, hl]
     · exact h
   unfold norm
-  have ea := ea_top B (d := slot w 0) (w := w) (c := 16) (by omega)
-  rw [show slot w 0 + 8 * w - 16 = slot w 0 + 8 * (w - 2) by omega] at ea
+  have ea := ea_top B (d := dN) (w := w) (c := 16) (by omega)
+  rw [show dN + 8 * w - 16 = dN + 8 * (w - 2) by omega] at ea
   refine WP.seq (WP.mono (WP.keep [.r6, .r14, .r15, .r16, .r17, .r20, .r22] (Q := fun t =>
       t.gpr .r15 = T ∧ t.gpr .r16 = L ∧ t.gpr .r6 = BitVec.ofNat 64 1 ∧ t.gpr .r20 = BitVec.ofNat 64 0 ∧
         t.gpr .r22 = BitVec.ofNat 64 1 ∧ t.gpr .r17 = BitVec.ofNat 64 63 ∧ t.mem = s.mem ∧
-        t.gpr .r14 = off B (slot w 0 + 8 * (w - 2))) (by
+        t.gpr .r14 = off B (dN + 8 * (w - 2))) (by
       unfold normHead
-      prun [h10, h11, ea, hs.ld (show slot w 0 + 8 * (w - 2) + 8 + 8 ≤ Z by omega),
-        hs.ld (show slot w 0 + 8 * (w - 2) + 8 ≤ Z by omega)]
-      exact ⟨by rw [← hTw, show slot w 0 + 8 * (w - 2) + 8 = slot w 0 + 8 * (w - 1) by omega], hLw⟩) (by decide)) fun s₁ ⟨⟨a15, a16, a6, a20, a22, a17, m1, a14⟩, k1⟩ => ?_)
+      prun [h10, h11, ea, hs.ld (show dN + 8 * (w - 2) + 8 + 8 ≤ Z by omega),
+        hs.ld (show dN + 8 * (w - 2) + 8 ≤ Z by omega)]
+      exact ⟨by rw [← hTw, show dN + 8 * (w - 2) + 8 = dN + 8 * (w - 1) by omega], hLw⟩) (by decide)) fun s₁ ⟨⟨a15, a16, a6, a20, a22, a17, m1, a14⟩, k1⟩ => ?_)
   -- 63 steps of `normStep`.
   let Inv : Nat → State → Prop := fun i t =>
     (∃ j ≤ i, (t.gpr .r6).toNat = 2 ^ j ∧ (t.gpr .r15).toNat = T.toNat * 2 ^ j ∧
       (j = i ∨ 2 ^ 63 ≤ T.toNat * 2 ^ j)) ∧ t.gpr .r16 = L ∧ t.gpr .r20 = BitVec.ofNat 64 0 ∧
       t.gpr .r22 = BitVec.ofNat 64 1 ∧ t.mem = s.mem ∧ Keep normRegs s₁ t ∧
-      t.gpr .r14 = off B (slot w 0 + 8 * (w - 2))
+      t.gpr .r14 = off B (dN + 8 * (w - 2))
   refine WP.seq (WP.mono (wp_countdown (body := .block (normStep ++ ([.subi .r17 .r17 1] : List Instr)))
     (cnt := .r17) (N := 63) (by decide) (by decide) Inv (fun i hi t ⟨⟨j, hj, jp, jx, jc⟩, j16, j20, j22, jm, jk, j14⟩ hc => ?_)
     ⟨⟨0, Nat.le_refl _, by rw [a6]; rfl, by rw [a15, Nat.pow_zero, Nat.mul_one], Or.inl rfl⟩, a16, a20, a22, m1,
@@ -187,7 +184,7 @@ theorem norm_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     · exact h
   have hj63 : j ≤ 63 := hj
   have hs₂ := hs.congr (k1.trans jk).wr
-  have t9 : t.gpr .r9 = off B (slot w 3) := ((k1.trans jk).gpr .r9 (by decide)).trans h9
+  have t9 : t.gpr .r9 = off B (dT) := ((k1.trans jk).gpr .r9 (by decide)).trans h9
   have hLP : L.toNat * 2 ^ j / 2 ^ 64 < 2 ^ j := by
     rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos 64), Nat.mul_comm (2 ^ j)]
     exact Nat.mul_lt_mul_of_pos_right L.isLt (Nat.two_pow_pos j)
@@ -195,23 +192,23 @@ theorem norm_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   have hL'P : L'.toNat * 2 ^ j / 2 ^ 64 < 2 ^ j := by
     rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos 64), Nat.mul_comm (2 ^ j)]
     exact Nat.mul_lt_mul_of_pos_right L'.isLt (Nat.two_pow_pos j)
-  have ea8 : off B (slot w 0 + 8 * (w - 2)) - BitVec.ofNat 64 8 = off B (slot w 0 + 8 * (w - 3)) := by
-    rw [show slot w 0 + 8 * (w - 2) = slot w 0 + 8 * (w - 3) + 8 by omega]
+  have ea8 : off B (dN + 8 * (w - 2)) - BitVec.ofNat 64 8 = off B (dN + 8 * (w - 3)) := by
+    rw [show dN + 8 * (w - 2) = dN + 8 * (w - 3) + 8 by omega]
     simp only [off, BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.add_sub_cancel]
-  have rL' : t.mem.readW (off B (slot w 0 + 8 * (w - 3))) 64 = L' := by
+  have rL' : t.mem.readW (off B (dN + 8 * (w - 3))) 64 = L' := by
     rw [jm]; exact hL'w
   generalize hd' : t.gpr .r15 + BitVec.ofNat 64 (L.toNat * (t.gpr .r6).toNat / 2 ^ 64) = D
   generalize hdl : L * t.gpr .r6 + BitVec.ofNat 64 (L'.toNat * (t.gpr .r6).toNat / 2 ^ 64) = Dl
-  refine WP.mono (WP.keep [.r0, .r3, .r15, .r16] (Q := fun u => u.mem = ((t.mem.writeW (off B (slot w 3))
-      (t.gpr .r6)).writeW (off B (slot w 3 + 8)) D).writeW (off B (slot w 3 + 24)) Dl) (by
+  refine WP.mono (WP.keep [.r0, .r3, .r15, .r16] (Q := fun u => u.mem = ((t.mem.writeW (off B (dT))
+      (t.gpr .r6)).writeW (off B (dT + 8)) D).writeW (off B (dT + 24)) Dl) (by
     unfold normTail
-    mcrun [j16, j14, t9, hd', hdl, ea8, rL', hs₂.ld (show slot w 0 + 8 * (w - 3) + 8 ≤ Z by omega),
-      hs₂.st (show slot w 3 + 8 ≤ Z by omega), hs₂.st (show slot w 3 + 8 + 8 ≤ Z by omega),
-      hs₂.st (show slot w 3 + 24 + 8 ≤ Z by omega)])
+    mcrun [j16, j14, t9, hd', hdl, ea8, rL', hs₂.ld (show dN + 8 * (w - 3) + 8 ≤ Z by omega),
+      hs₂.st (show dT + 8 ≤ Z by omega), hs₂.st (show dT + 8 + 8 ≤ Z by omega),
+      hs₂.st (show dT + 24 + 8 ≤ Z by omega)])
     (by decide)) fun u ⟨um, uk⟩ => ⟨⟨j, hj63, ?_, ?_⟩, ?_, (k1.trans (jk.trans uk)).mono (by decide)⟩
   · rw [um, Mont.Outside.word (writeW_outside _ B _ (by omega)) (by omega) (by omega),
       Mont.Outside.word (writeW_outside _ B _ (by omega)) (by omega) (by omega), Mont.word_writeW_self, jp]
-  · have hNv : wordsVal s.mem B (slot w 0) w * 2 ^ j / 2 ^ (64 * (w - 1)) =
+  · have hNv : wordsVal s.mem B (dN) w * 2 ^ j / 2 ^ (64 * (w - 1)) =
         T.toNat * 2 ^ j + L.toNat * 2 ^ j / 2 ^ 64 := by
       rw [hN, show 64 * (w - 1) = 64 * (w - 2) + 64 by omega]
       exact top_shift (by omega) (wordsVal_lt _ _ _ _)
@@ -230,20 +227,20 @@ theorem norm_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
         Nat.mod_eq_of_lt (show L'.toNat * 2 ^ j / 2 ^ 64 < 2 ^ 64 by omega_using [hL'P, hpj]), hLm]
       exact Nat.mod_eq_of_lt (shl_add_lt (by omega) hLm' hL'P)
     -- `n`'s top three words.
-    have hN3 : wordsVal s.mem B (slot w 0) w = T.toNat * 2 ^ (64 * (w - 3) + 64 + 64) +
-        L.toNat * 2 ^ (64 * (w - 3) + 64) + L'.toNat * 2 ^ (64 * (w - 3)) + wordsVal s.mem B (slot w 0) (w - 3) := by
-      have e2 := wordsVal_succ_top s.mem B (slot w 0) (w - 3)
+    have hN3 : wordsVal s.mem B (dN) w = T.toNat * 2 ^ (64 * (w - 3) + 64 + 64) +
+        L.toNat * 2 ^ (64 * (w - 3) + 64) + L'.toNat * 2 ^ (64 * (w - 3)) + wordsVal s.mem B (dN) (w - 3) := by
+      have e2 := wordsVal_succ_top s.mem B (dN) (w - 3)
       rw [show w - 3 + 1 = w - 2 by omega, hL'w] at e2
       rw [hN, e2, show 64 * (w - 2) = 64 * (w - 3) + 64 by omega, Nat.mul_comm (2 ^ (64 * (w - 3)))]
       omega
-    have hNv2 : wordsVal s.mem B (slot w 0) w * 2 ^ j / 2 ^ (64 * (w - 2)) =
+    have hNv2 : wordsVal s.mem B (dN) w * 2 ^ j / 2 ^ (64 * (w - 2)) =
         T.toNat * 2 ^ j * 2 ^ 64 + (L.toNat * 2 ^ j + L'.toNat * 2 ^ j / 2 ^ 64) := by
       rw [hN3, show 64 * (w - 2) = 64 * (w - 3) + 64 by omega]
       exact top3_shift (by omega) (wordsVal_lt _ _ _ _)
     have hLd := Nat.div_add_mod (L.toNat * 2 ^ j) (2 ^ 64)
-    have w8 : Mont.word u.mem B (slot w 3 + 8) = D := by
+    have w8 : Mont.word u.mem B (dT + 8) = D := by
       rw [um, Mont.Outside.word (writeW_outside _ B _ (by omega)) (by omega) (by omega), Mont.word_writeW_self]
-    have w24 : Mont.word u.mem B (slot w 3 + 24) = Dl := by rw [um, Mont.word_writeW_self]
+    have w24 : Mont.word u.mem B (dT + 24) = Dl := by rw [um, Mont.word_writeW_self]
     rw [hNv, w8]
     refine ⟨hD, by omega_using [hTP], ?_⟩
     rw [w24, hD, hDl, hNv2, Nat.add_mul, Nat.mul_comm (L.toNat * 2 ^ j / 2 ^ 64)]
@@ -252,6 +249,19 @@ theorem norm_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     exact (((writeW_outside _ B _ (by omega)).mono (by omega) (by omega)).trans
       ((writeW_outside _ B _ (by omega)).mono (by omega) (by omega))).trans
       ((writeW_outside _ B _ (by omega)).mono (by omega) (by omega))
+
+/-- At the precompute's slots. -/
+theorem norm_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
+    (h9 : s.gpr .r9 = off B (slot w 3)) (h10 : s.gpr .r10 = off B (slot w 0))
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hw : 3 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 4 ≤ Z)
+    (hT : 2 ^ (64 * (w - 1)) ≤ wordsVal s.mem B (slot w 0) w) :
+    WP isa norm s fun t => (∃ z ≤ 63, (Mont.word t.mem B (slot w 3)).toNat = 2 ^ z ∧
+      (Mont.word t.mem B (slot w 3 + 8)).toNat = wordsVal s.mem B (slot w 0) w * 2 ^ z / 2 ^ (64 * (w - 1)) ∧
+      2 ^ 63 ≤ wordsVal s.mem B (slot w 0) w * 2 ^ z / 2 ^ (64 * (w - 1)) ∧
+      (Mont.word t.mem B (slot w 3 + 8)).toNat * 2 ^ 64 + (Mont.word t.mem B (slot w 3 + 24)).toNat =
+        wordsVal s.mem B (slot w 0) w * 2 ^ z / 2 ^ (64 * (w - 2))) ∧
+      Mont.Outside B (slot w 3) 32 s.mem t.mem ∧ Keep normRegs s t :=
+  normAt_ok hs h9 h10 h11 hw hw' (by unfold slot at hZ ⊢; omega) (by unfold slot at hZ ⊢; omega) hT
 
 /-! ## The estimate of the quotient -/
 
