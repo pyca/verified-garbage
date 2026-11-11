@@ -410,26 +410,16 @@ structure RowsI (L : Lay) (s : State) (B : Addr) (Z len N o a b j : Nat) (u : St
   cnt : slot u.mem B oJ = j
   val : val32 u.mem B (arr (kw len) o) (j + kw len) = num s.mem B (kw len) a * val32 s.mem B (arr (kw len) b) j
 
-/-- `zeroWide o`, `zeroWide (o + 1)`, the count zero, and rows up to `rowsN`: `[o]`'s first
-`R + w` words are `A (B mod 2^(32 R))`, across arrays `o` and `o + 1`. -/
-theorem mulRows_ok {s : State} (h : RtWs L s B Z len N) {o a b : Nat} {rows : Option Nat}
-    (hR1 : 1 ≤ rowsN len rows) (hRw : rowsN len rows ≤ kw len) (hRk : ∀ k, rows = some k → k < 2 ^ 32)
-    (ho : o + 1 < N) (ha : a < N) (hb : b < N) (hao : a ≠ o) (hao1 : a ≠ o + 1) (hbo : b ≠ o)
-    (hbo1 : b ≠ o + 1) :
+/-- `zeroWide o`, `zeroWide (o + 1)` and the count zero: `RowsI` of no rows. -/
+theorem rowsInit_ok {s : State} (h : RtWs L s B Z len N) {o a b : Nat} (ho : o + 1 < N) :
     WP isa (VG.Impl.Rsa.X86.WordModRt.seqs [zeroWide L o, zeroWide L (o + 1),
-      .block [.mov .eax (.imm 0), .store (sc oJ) .eax], .loop (VG.Impl.Rsa.X86.WordModRt.mulRow L o a b rows) .ne]) s
-      fun v => RtWs L v B Z len N ∧ Keep B (kw len) [o, o + 1] [oJ] s.mem v.mem ∧
-        val32 v.mem B (arr (kw len) o) (rowsN len rows + kw len) =
-          num s.mem B (kw len) a * val32 s.mem B (arr (kw len) b) (rowsN len rows) ∧
-        Keeps [.eax, .ebx, .ecx, .edx, .esi, .ebp] s v := by
-  have fitb := h.ws.fit64 hb
-  have fita := h.ws.fit64 ha
+      .block [.mov .eax (.imm 0), .store (sc oJ) .eax]]) s (RowsI L s B Z len N o a b 0) := by
   have hdr := h.ws.hdr_le
   simp only [VG.Impl.Rsa.X86.Keys.hdr] at hdr
   simp only [VG.Impl.Rsa.X86.WordModRt.seqs]
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.KeyRt.zeroWide_ok h (j := o) (by omega)) fun u₁ ⟨h₁, k₁, z₁, K₁⟩ => ?_)
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.KeyRt.zeroWide_ok h₁ (j := o + 1) ho) fun u₂ ⟨h₂, k₂, z₂, K₂⟩ => ?_)
-  refine WP.seq (wp_movS rfl fun u₃ U₃ _ => ?_)
+  refine wp_movS rfl fun u₃ U₃ _ => ?_
   have h₃ := h₂.keep U₃.keeps (by decide) (by decide) (by rw [U₃.mem]; exact Outside.refl _ _ _ _)
   refine WP.mono (storeSlotZ_ok h₃ (d := oJ) (by decide) .eax) fun u₄ ⟨h₄, k₄, e₄, K₄, _⟩ => ?_
   have k₀₄ : Keep B (kw len) [o, o + 1] [oJ] s.mem u₄.mem :=
@@ -446,35 +436,64 @@ theorem mulRows_ok {s : State} (h : RtWs L s B Z len N) {o a b : Nat} {rows : Op
     rw [e1]
     have := val32_append u₁.mem B (arr (kw len) o) (kw len) 1
     rw [z₁] at this; omega
-  have I₀ : RowsI L s B Z len N o a b 0 u₄ :=
-    ⟨h₄, k₀₄, K₀₄, by rw [e₄, U₃.gpr]; rfl, by rw [Nat.zero_add, z₀]; simp [val32]⟩
-  refine WP.loop (M := isa) (fun n u => ∃ j, n = rowsN len rows - j ∧ j < rowsN len rows ∧ RowsI L s B Z len N o a b j u)
-    ?_ _ u₄ ⟨0, rfl, by omega, I₀⟩
-  rintro n u ⟨j, rfl, hj, I⟩
+  exact ⟨h₄, k₀₄, K₀₄, by rw [e₄, U₃.gpr]; rfl, by rw [Nat.zero_add, z₀]; simp [val32]⟩
+
+/-- A row: `RowsI` of one more row, and whether it was the last. -/
+theorem rowsStep_ok {s u : State} (h : RtWs L s B Z len N) {o a b j : Nat} {rows : Option Nat}
+    (hRk : ∀ k, rows = some k → k < 2 ^ 32) (hRw : rowsN len rows ≤ kw len)
+    (ho : o + 1 < N) (ha : a < N) (hb : b < N) (hao : a ≠ o) (hao1 : a ≠ o + 1) (hbo : b ≠ o)
+    (hbo1 : b ≠ o + 1) (hj : j < rowsN len rows) (I : RowsI L s B Z len N o a b j u) :
+    WP isa (VG.Impl.Rsa.X86.WordModRt.mulRow L o a b rows) u fun v =>
+      v.zf = some (decide (j + 1 = rowsN len rows)) ∧ RowsI L s B Z len N o a b (j + 1) v := by
+  have fitb := h.ws.fit64 hb
+  have fita := h.ws.fit64 ha
   have fo := h.ws.arr_fit ho
   simp only [S] at fo
   refine WP.mono (mulRow_ok I.ws (rows := rows) ho ha hb hao hao1 I.cnt (by omega) hRk)
-    fun v ⟨hv, kv, ev, wv, cv, zv, Kv⟩ => ?_
+    fun v ⟨hv, kv, ev, wv, cv, zv, Kv⟩ => ⟨zv, ?_⟩
   have Ia : num u.mem B (kw len) a = num s.mem B (kw len) a :=
     I.keep.num (by simp; omega) (by decide) fita
   have Ib : val32 u.mem B (arr (kw len) b) (j + 1) = val32 s.mem B (arr (kw len) b) (j + 1) :=
     val32_congr fun i hi => I.keep.word (j := b) (i := i) (by simp only [S]; omega) (by simp; omega) (by decide) fitb
-  have I' : RowsI L s B Z len N o a b (j + 1) v := by
-    refine ⟨hv, I.keep.trans kv, I.rest.trans Kv, cv, ?_⟩
-    -- The low `j` words kept, and the row.
-    have hlow : val32 v.mem B (arr (kw len) o) j = val32 u.mem B (arr (kw len) o) j :=
-      val32_congr fun i hi => wv i (.inl hi) (by omega)
-    rw [show j + 1 + kw len = j + (kw len + 1) by omega, val32_append, hlow, ev, Ia,
-      show w32 u.mem B (arr (kw len) b + 4 * j) = w32 s.mem B (arr (kw len) b + 4 * j) by
-        have := Ib; rw [val32_succ, val32_succ] at this
-        exact I.keep.word (j := b) (i := j) (by simp only [S]; omega) (by simp; omega) (by decide) fitb]
-    have e := I.val
-    rw [val32_append] at e
-    rw [val32_succ s.mem B (arr (kw len) b) j]
-    have e2 : val32 u.mem B (arr (kw len) o) j + 2 ^ (32 * j) * val32 u.mem B (arr (kw len) o + 4 * j) (kw len) =
-        num s.mem B (kw len) a * val32 s.mem B (arr (kw len) b) j := e
-    generalize num s.mem B (kw len) a = A at *
-    grind
+  refine ⟨hv, I.keep.trans kv, I.rest.trans Kv, cv, ?_⟩
+  -- The low `j` words kept, and the row.
+  have hlow : val32 v.mem B (arr (kw len) o) j = val32 u.mem B (arr (kw len) o) j :=
+    val32_congr fun i hi => wv i (.inl hi) (by omega)
+  rw [show j + 1 + kw len = j + (kw len + 1) by omega, val32_append, hlow, ev, Ia,
+    show w32 u.mem B (arr (kw len) b + 4 * j) = w32 s.mem B (arr (kw len) b + 4 * j) by
+      have := Ib; rw [val32_succ, val32_succ] at this
+      exact I.keep.word (j := b) (i := j) (by simp only [S]; omega) (by simp; omega) (by decide) fitb]
+  have e := I.val
+  rw [val32_append] at e
+  rw [val32_succ s.mem B (arr (kw len) b) j]
+  have e2 : val32 u.mem B (arr (kw len) o) j + 2 ^ (32 * j) * val32 u.mem B (arr (kw len) o + 4 * j) (kw len) =
+      num s.mem B (kw len) a * val32 s.mem B (arr (kw len) b) j := e
+  generalize num s.mem B (kw len) a = A at *
+  grind
+
+/-- `zeroWide o`, `zeroWide (o + 1)`, the count zero, and rows up to `rowsN`: `[o]`'s first
+`R + w` words are `A (B mod 2^(32 R))`, across arrays `o` and `o + 1`. -/
+theorem mulRows_ok {s : State} (h : RtWs L s B Z len N) {o a b : Nat} {rows : Option Nat}
+    (hR1 : 1 ≤ rowsN len rows) (hRw : rowsN len rows ≤ kw len) (hRk : ∀ k, rows = some k → k < 2 ^ 32)
+    (ho : o + 1 < N) (ha : a < N) (hb : b < N) (hao : a ≠ o) (hao1 : a ≠ o + 1) (hbo : b ≠ o)
+    (hbo1 : b ≠ o + 1) :
+    WP isa (VG.Impl.Rsa.X86.WordModRt.seqs [zeroWide L o, zeroWide L (o + 1),
+      .block [.mov .eax (.imm 0), .store (sc oJ) .eax], .loop (VG.Impl.Rsa.X86.WordModRt.mulRow L o a b rows) .ne]) s
+      fun v => RtWs L v B Z len N ∧ Keep B (kw len) [o, o + 1] [oJ] s.mem v.mem ∧
+        val32 v.mem B (arr (kw len) o) (rowsN len rows + kw len) =
+          num s.mem B (kw len) a * val32 s.mem B (arr (kw len) b) (rowsN len rows) ∧
+        Keeps [.eax, .ebx, .ecx, .edx, .esi, .ebp] s v := by
+  have init := rowsInit_ok h (a := a) (b := b) ho
+  simp only [VG.Impl.Rsa.X86.WordModRt.seqs] at init ⊢
+  rw [WP.seq_iff] at init
+  refine WP.seq (WP.mono init fun u₁ w₁ => ?_)
+  rw [WP.seq_iff] at w₁
+  refine WP.seq (WP.mono w₁ fun u₂ w₂ => ?_)
+  refine WP.seq (WP.mono w₂ fun u₄ I₀ => ?_)
+  refine WP.loop (M := isa) (fun n u => ∃ j, n = rowsN len rows - j ∧ j < rowsN len rows ∧ RowsI L s B Z len N o a b j u)
+    ?_ _ u₄ ⟨0, rfl, by omega, I₀⟩
+  rintro n u ⟨j, rfl, hj, I⟩
+  refine WP.mono (rowsStep_ok h hRk hRw ho ha hb hao hao1 hbo hbo1 hj I) fun v ⟨zv, I'⟩ => ?_
   by_cases e : j + 1 = rowsN len rows
   · refine .inl ⟨by simp only [eval, zv, e, decide_true, Option.map_some, Bool.not_true], I'.ws, I'.keep, ?_, I'.rest⟩
     rw [← e]; exact I'.val

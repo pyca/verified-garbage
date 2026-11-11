@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # `WordModRt` on i686: the remainder
 
@@ -423,30 +424,29 @@ theorem val32_zero_of {m : Mem} {d : Nat} : ∀ {n : Nat}, (∀ j < n, w32 m B (
   | 0, _ => rfl
   | n + 1, h => by rw [val32_succ, val32_zero_of fun j hj => h j (by omega), h n (by omega)]; rfl
 
-/-- `wordMod ml x r m t wide`: `r = x mod m'` for the dividend `x` (`X` words) and `m'` the
-divisor's `W'` words with the top bit of its word `W' - 1` set, written back to `m`. -/
-theorem wordMod_ok {s : State} (h : RtWs L s B Z len N) {ml a x r m t : Nat} {wide : Bool}
-    (hm : MLen s B Z ml a) (hx : x + wide.toNat < N) (hr : r < N) (hmN : m < N) (ht : t < N)
-    (hrt : r ≠ t) (hmt : m ≠ t) (hrm : r ≠ m) (hxr : r ≠ x) (hxt : t ≠ x) (hxm : m ≠ x)
-    (hxr1 : wide = true → r ≠ x + 1) (hxt1 : wide = true → t ≠ x + 1) (hxm1 : wide = true → m ≠ x + 1)
+/-- `wordMod`'s start: `orTop`, `recip` and `seed`, to the loop's invariant. -/
+theorem wordModPre_ok {s : State} (h : RtWs L s B Z len N) {ml a x r m t : Nat} {wide : Bool}
+    (hm : MLen s B Z ml a) (hx : x + wide.toNat < N) (hr : r < N) (hmN : m < N)
+    (hrm : r ≠ m) (hxr : r ≠ x) (hxm : m ≠ x)
+    (hxr1 : wide = true → r ≠ x + 1) (hxm1 : wide = true → m ≠ x + 1)
     (h4 : 4 ≤ wq a) (hw : wq a ≤ kw len) :
-    WP isa (VG.Impl.Rsa.X86.WordModRt.wordMod L ml x r m t wide) s fun v => RtWs L v B Z len N ∧
-      Keep B (kw len) [m, r, t] [oD, oD1, oV, oMask, oSteps, oQ, oU0, oU2, oDig] s.mem v.mem ∧
-      (∀ i, i < kw len + 2 → i ≠ wq a - 1 → mw v.mem B (kw len) m i = mw s.mem B (kw len) m i) ∧
-      mw v.mem B (kw len) m (wq a - 1) = mw s.mem B (kw len) m (wq a - 1) % 2 ^ 31 + 2 ^ 31 ∧
-      num v.mem B (kw len) r =
-        val32 s.mem B (arr (kw len) x) (xw len wide) % val32 v.mem B (arr (kw len) m) (wq a) ∧
-      Keeps [.eax, .ebx, .ecx, .edx, .esi, .ebp] s v := by
+    WP isa (.seq (.seq (.block (VG.Impl.Rsa.X86.WordModRt.orTop L ml m)) (VG.Impl.Rsa.X86.WordModRt.recip L))
+      (VG.Impl.Rsa.X86.WordModRt.seed L ml x r wide)) s fun u => ∃ Mn X₀,
+      X₀ = val32 s.mem B (arr (kw len) x) (xw len wide) ∧ val32 u.mem B (arr (kw len) x) (xw len wide) = X₀ ∧
+      val32 u.mem B (arr (kw len) m) (wq a) = Mn ∧ StepHdr u.mem B Mn (wq a) ∧
+      LoopI L u B Z len N ml a r t Mn X₀ (xw len wide - wq a + 1) 0 u ∧
+      Keep B (kw len) [m, r] [oD, oD1, oV, oSteps] s.mem u.mem ∧
+      (∀ i, i < kw len + 2 → i ≠ wq a - 1 → mw u.mem B (kw len) m i = mw s.mem B (kw len) m i) ∧
+      mw u.mem B (kw len) m (wq a - 1) = mw s.mem B (kw len) m (wq a - 1) % 2 ^ 31 + 2 ^ 31 ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .esi, .ebp] s u := by
   have nw := h.ws.workspace.nowrap
   have hkw := VG.Proof.Rsa.X86.KeyRt.kw_bound h.lenLe
   have hXW : wq a ≤ xw len wide := by cases wide <;> simp only [xw, Bool.false_eq_true, ↓reduceIte] <;> omega
   have hXw : xw len wide ≤ 2 * kw len := by cases wide <;> simp only [xw, Bool.false_eq_true, ↓reduceIte] <;> omega
   have fx := h.ws.arr_fit (j := x + wide.toNat) hx
   simp only [S] at fx
-  unfold VG.Impl.Rsa.X86.WordModRt.wordMod
-  simp only [VG.Impl.Rsa.X86.WordModRt.seqs]
   -- The divisor's top bit, `d`, `d₁` and `v`.
-  refine WP.seq (WP.mono (orTop_ok h hm hmN (by omega) hw) fun u₁ ⟨h₁, k₁, w₁, t₁, d₁, d1₁, K₁⟩ => ?_)
+  refine WP.seq (WP.seq (WP.mono (orTop_ok h hm hmN (by omega) hw) fun u₁ ⟨h₁, k₁, w₁, t₁, d₁, d1₁, K₁⟩ => ?_))
   obtain ⟨Mn, hMn⟩ : ∃ Mn, Mn = val32 u₁.mem B (arr (kw len) m) (wq a) := ⟨_, rfl⟩
   have hMsplit : Mn = val32 u₁.mem B (arr (kw len) m) (wq a - 1) +
       2 ^ (32 * (wq a - 1)) * mw u₁.mem B (kw len) m (wq a - 1) := by
@@ -456,7 +456,7 @@ theorem wordMod_ok {s : State} (h : RtWs L s B Z len N) {ml a x r m t : Nat} {wi
     rw [hMsplit, Nat.add_comm, Nat.mul_add_div (Nat.two_pow_pos _), Nat.div_eq_of_lt (val32_lt _ _ _ _),
       Nat.add_zero]
   have hdn : 2 ^ 31 ≤ Mn / 2 ^ (32 * (wq a - 1)) := by rw [hdiv, t₁]; omega
-  refine WP.seq (WP.mono (recip_ok h₁ (d := Mn / 2 ^ (32 * (wq a - 1))) (by rw [hdiv]; exact d₁) hdn
+  refine (WP.mono (recip_ok h₁ (d := Mn / 2 ^ (32 * (wq a - 1))) (by rw [hdiv]; exact d₁) hdn
     (by rw [hdiv]; exact htop)) fun u₂ ⟨h₂, k₂, v₂, K₂⟩ => ?_)
   have Hd : StepHdr u₂.mem B Mn (wq a) := by
     refine ⟨?_, hdn, ?_, v₂, by rw [hMn]; exact val32_lt _ _ _ _⟩
@@ -469,7 +469,7 @@ theorem wordMod_ok {s : State} (h : RtWs L s B Z len N) {ml a x r m t : Nat} {wi
   have Z₀₂ := VG.Proof.Rsa.X86.KeyRt.keep_outside h.ws k₀₂ (by simpa using hmN) (by decide)
   have hm₂ : MLen u₂ B Z ml a := hm.keep K₀₂ (by decide) Z₀₂
   -- `r` seeded with the dividend's top words.
-  refine WP.seq (WP.mono (seed_ok h₂ hm₂ hx hr hxr hxr1 (by omega) hw) fun u₃ ⟨h₃, k₃, v₃, st₃, K₃⟩ => ?_)
+  refine WP.mono (seed_ok h₂ hm₂ hx hr hxr hxr1 (by omega) hw) fun u₃ ⟨h₃, k₃, v₃, st₃, K₃⟩ => ?_
   obtain ⟨X₀, hX₀⟩ : ∃ X₀, X₀ = val32 s.mem B (arr (kw len) x) (xw len wide) := ⟨_, rfl⟩
   have fitx : arr (kw len) (x + wide.toNat) + 4 * (kw len + 2) ≤ 2 ^ 64 := by omega
   have X₂ : val32 u₂.mem B (arr (kw len) x) (xw len wide) = X₀ := by
@@ -510,30 +510,63 @@ theorem wordMod_ok {s : State} (h : RtWs L s B Z len N) {ml a x r m t : Nat} {wi
         Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hseed hMlow)]
     · intro j hj1 hj2; exact hz j (by omega) hj2
     · rw [st₃, hSc, Nat.sub_zero]
+  refine ⟨Mn, X₀, hX₀, X₃, M₃, H₃, by rw [← hSc]; exact I₀,
+    (k₀₂.mono (by simp) (by simp)).trans (k₃.mono (by simp) (by simp)), fun i hi hne => ?_, ?_,
+    (K₀₂.mono (by decide)).trans (K₃.mono (by decide))⟩
+  · rw [mw, ((k₂.mono (js' := [r]) (ds' := [oV, oSteps]) (by simp) (by simp)).trans
+      (k₃.mono (by simp) (by simp))).word (j := m) (i := i) (by simp only [S]; omega) (by simpa using hrm)
+      (by decide) (h.ws.fit64 hmN)]
+    exact w₁ i hi hne
+  · rw [mw, ((k₂.mono (js' := [r]) (ds' := [oV, oSteps]) (by simp) (by simp)).trans
+      (k₃.mono (by simp) (by simp))).word (j := m) (i := wq a - 1) (by simp only [S]; omega) (by simpa using hrm)
+      (by decide) (h.ws.fit64 hmN)]
+    exact t₁
+
+/-- `wordMod ml x r m t wide`: `r = x mod m'` for the dividend `x` (`X` words) and `m'` the
+divisor's `W'` words with the top bit of its word `W' - 1` set, written back to `m`. -/
+theorem wordMod_ok {s : State} (h : RtWs L s B Z len N) {ml a x r m t : Nat} {wide : Bool}
+    (hm : MLen s B Z ml a) (hx : x + wide.toNat < N) (hr : r < N) (hmN : m < N) (ht : t < N)
+    (hrt : r ≠ t) (hmt : m ≠ t) (hrm : r ≠ m) (hxr : r ≠ x) (hxt : t ≠ x) (hxm : m ≠ x)
+    (hxr1 : wide = true → r ≠ x + 1) (hxt1 : wide = true → t ≠ x + 1) (hxm1 : wide = true → m ≠ x + 1)
+    (h4 : 4 ≤ wq a) (hw : wq a ≤ kw len) :
+    WP isa (VG.Impl.Rsa.X86.WordModRt.wordMod L ml x r m t wide) s fun v => RtWs L v B Z len N ∧
+      Keep B (kw len) [m, r, t] [oD, oD1, oV, oMask, oSteps, oQ, oU0, oU2, oDig] s.mem v.mem ∧
+      (∀ i, i < kw len + 2 → i ≠ wq a - 1 → mw v.mem B (kw len) m i = mw s.mem B (kw len) m i) ∧
+      mw v.mem B (kw len) m (wq a - 1) = mw s.mem B (kw len) m (wq a - 1) % 2 ^ 31 + 2 ^ 31 ∧
+      num v.mem B (kw len) r =
+        val32 s.mem B (arr (kw len) x) (xw len wide) % val32 v.mem B (arr (kw len) m) (wq a) ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .esi, .ebp] s v := by
+  have nw := h.ws.workspace.nowrap
+  have hkw := VG.Proof.Rsa.X86.KeyRt.kw_bound h.lenLe
+  have hXW : wq a ≤ xw len wide := by cases wide <;> simp only [xw, Bool.false_eq_true, ↓reduceIte] <;> omega
+  have hXw : xw len wide ≤ 2 * kw len := by cases wide <;> simp only [xw, Bool.false_eq_true, ↓reduceIte] <;> omega
+  have fx := h.ws.arr_fit (j := x + wide.toNat) hx
+  simp only [S] at fx
+  unfold VG.Impl.Rsa.X86.WordModRt.wordMod
+  simp only [VG.Impl.Rsa.X86.WordModRt.seqs]
+  refine WP.assoc (WP.assoc (WP.seq (WP.mono (wordModPre_ok (t := t) h hm hx hr hmN hrm hxr hxm hxr1 hxm1 h4 hw) fun u₃ ⟨Mn, X₀, hX₀, X₃, M₃, H₃, I₀, k₀₃, w₃, t₃, K₀₃⟩ => ?_)))
+  obtain ⟨Sc, hSc⟩ : ∃ Sc, Sc = xw len wide - wq a + 1 := ⟨_, rfl⟩
+  rw [← hSc] at I₀
   -- The steps.
   have fitr := h.ws.fit64 hr
   have fitm := h.ws.fit64 hmN
-  have k₁v : ∀ {v : State}, Keep B (kw len) [r, t] [oMask, oSteps, oQ, oU0, oU2, oDig] u₃.mem v.mem →
-      Keep B (kw len) [r, t] [oV, oMask, oSteps, oQ, oU0, oU2, oDig] u₁.mem v.mem := fun kv =>
-    ((k₂.mono (by simp) (by simp)).trans (k₃.mono (by simp) (by simp))).trans (kv.mono (by simp) (by simp))
   refine WP.loop (M := isa) (fun n u => ∃ i, n = Sc - i ∧ i < Sc ∧ LoopI L u₃ B Z len N ml a r t Mn X₀ Sc i u)
     ?_ Sc u₃ ⟨0, by omega, by omega, I₀⟩
   rintro n u ⟨i, rfl, hi, I⟩
   refine WP.mono (digitStep_ok hx hr hmN ht hrt hmt hrm hxr hxt hxr1 hxt1 h4 hw X₃ M₃ H₃ hSc hi I)
     fun v ⟨I', z⟩ => ?_
+  have km : ∀ j, j < kw len + 2 → mw v.mem B (kw len) m j = mw u₃.mem B (kw len) m j := fun j hj =>
+    I'.keep.word (j := m) (i := j) (by simp only [S]; omega) (by simp; omega) (by decide) fitm
   by_cases e : i + 1 = Sc
   · refine .inl ⟨by simp only [eval, z, e, decide_true, Option.map_some, Bool.not_true], I'.ws, ?_, ?_, ?_, ?_,
-      (K₀₂.mono (by decide)).trans ((K₃.mono (by decide)).trans I'.rest)⟩
-    · exact (k₀₂.mono (by simp) (by simp)).trans ((k₃.mono (by simp) (by simp)).trans (I'.keep.mono (by simp) (by simp)))
+      K₀₃.trans I'.rest⟩
+    · exact (k₀₃.mono (by simp) (by simp)).trans (I'.keep.mono (by simp) (by simp))
     · intro j hj hne
-      rw [mw, (k₁v I'.keep).word (j := m) (i := j) (by simp only [S]; omega) (by simp; omega) (by decide) fitm]
-      exact w₁ j hj hne
-    · rw [mw, (k₁v I'.keep).word (j := m) (i := wq a - 1) (by simp only [S]; omega) (by simp; omega) (by decide) fitm]
-      exact t₁
+      rw [km j hj]; exact w₃ j hj hne
+    · rw [km _ (by omega)]; exact t₃
     · have Mv : val32 v.mem B (arr (kw len) m) (wq a) = Mn := by
-        rw [hMn]
-        exact val32_congr fun j hj => (k₁v I'.keep).word (j := m) (i := j) (by simp only [S]; omega)
-          (by simp; omega) (by decide) fitm
+        rw [← M₃]
+        exact val32_congr fun j hj => km j (by omega)
       rw [Mv, VG.Proof.Rsa.X86.Keys.num, show kw len = wq a + (kw len - wq a) by omega, val32_append,
         val32_zero_of (n := kw len - wq a) fun j hj => by
           rw [show arr (wq a + (kw len - wq a)) r + 4 * wq a + 4 * j = arr (wq a + (kw len - wq a)) r + 4 * (wq a + j)
