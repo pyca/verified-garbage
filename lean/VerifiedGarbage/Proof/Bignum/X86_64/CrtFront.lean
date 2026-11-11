@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
 public import VerifiedGarbage.Proof.Bignum.CrtHdr
 public import VerifiedGarbage.Proof.Bignum.CrtKey

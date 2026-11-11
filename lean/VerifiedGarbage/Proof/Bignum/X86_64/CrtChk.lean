@@ -8,9 +8,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Algebra.GroupWithZero.Nat
 import Mathlib.Tactic.Push
-import Mathlib.Algebra.GroupWithZero.Basic
 import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
@@ -29,19 +27,6 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 
-/-- What the checks give from `s`: the mask `M` of `c < n` (`m0`), `p q = n`
-and `qInv < p`; `p := M ? p : 3`, `q := M ? q : 3`, their `-X⁻¹` and 1. -/
-abbrev ChecksPost (s : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (op oq wp wq N P Q QI : Nat) (m0 : Bool)
-    (t : State) : Prop :=
-  Good t B Z w minv ∧
-      word t.mem B (8 * Public.sMask) = mask (keyMask m0 N P Q QI) ∧
-      word t.mem B (8 * sWsP) = off B op ∧ word t.mem B (8 * sWsQ) = off B oq ∧
-      (∃ mp', WsAt t.mem B op wp mp' ∧ XVals t B op wp mp' (if keyMask m0 N P Q QI then P else 3) ∧
-        word t.mem (off B op) (8 * sMaskX) = mask (keyMask m0 N P Q QI)) ∧
-      (∃ mq', WsAt t.mem B oq wq mq' ∧ XVals t B oq wq mq' (if keyMask m0 N P Q QI then Q else 3)) ∧
-      Frm B [(slot w Public.aAcc, 8 * (2 * w + 2)), (8 * Public.sMask, 8), (op, slot wp 8), (oq, slot wq 8)]
-        s.mem t.mem ∧ Keep mmRegs s t
-
 /-- The checks after `p q = n`'s (`s₁` after `p q`, `s₂` after its mask):
 `qInv < p`, and the primes' fixes. -/
 theorem checksTail_ok {s s₁ s₂ : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {op oq wp wq N P Q QI : Nat}
@@ -54,8 +39,7 @@ theorem checksTail_ok {s s₁ s₂ : State} {B : Addr} {Z w : Nat} {minv mp mq :
     (ho₁ : Outside B (slot w Public.aAcc) (8 * (2 * w + 2)) s.mem s₁.mem)
     (ho₂ : Outside B (8 * Public.sMask) 8 s₁.mem s₂.mem)
     (hM₂ : word s₂.mem B (8 * Public.sMask) = mask (m0 && decide (P * Q = N))) (k₁₂ : Keep mmRegs s s₂) :
-    WP isa (seqs ([.block [enterP]] ++ qinvCheck ++ primeFix ++ [.block [leave, enterQ]] ++ primeFix ++ [.block [leave]]))
-      s₂ (ChecksPost s B Z w minv op oq wp wq N P Q QI m0) := by
+    WP isa (seqs checksP) s₂ (ChecksPost s B Z w minv op oq wp wq N P Q QI m0) := by
   have hs := hg.scr
   have hn := hs.nowrap
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
@@ -84,6 +68,7 @@ theorem checksTail_ok {s s₁ s₂ : State} {B : Addr} {Z w : Nat} {minv mp mq :
     exact hsQ
   have hs₂ := hs.congr k₁₂.2.2
   have hdi₂ : s₂.gpr .rdi = B := (k₁₂.gpr (by decide)).trans hg.rdi
+  unfold checksP
   simp only [List.append_assoc]
   -- Into `p`'s workspace: `qInv < p`.
   refine wp_seqs_append (by simp) (by simp [qinvCheck]) ?_
@@ -290,8 +275,6 @@ theorem checksP_ok {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {
     (hP : wv s.mem (off B op) (slot wp Public.aN) wp = P) (hQ : wv s.mem (off B oq) (slot wq Public.aN) wq = Q)
     (hQI : wv s.mem (off B op) (slot wp aChunk) wp = QI) (hodd : N % 2 = 1) (hpq : P * Q = N) :
     WP isa (seqs checksP) s (ChecksPost s B Z w minv op oq wp wq N P Q QI m0) := by
-  unfold checksP
-  simp only [List.append_assoc]
   exact checksTail_ok (s₁ := s) hg hw hw28 hlo hop hoq hwp hwp' hwq hwq' hsP hsQ hwsP hwsQ hP hQ hQI hodd
     (Outside.refl _ _ _ _) (Outside.refl _ _ _ _) (by rw [hM, hpq]; simp) (Keep.refl _ _)
 
