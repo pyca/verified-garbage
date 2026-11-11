@@ -33,7 +33,11 @@ checks it (it is public); then `p q = n` gives a mask, `qInv` is computed
 by `inverseN` at the primes' width `⌈max(p_len, q_len) / 8⌉` (and'ing
 `gcd(q, p) = 1` into the mask), and `dP` and `dQ` by
 `divmod` (with the divisor `p` or `q` with its low bit cleared: `p - 1` for
-an odd `p`, which `p q = n` implies). Each result is written out masked.
+an odd `p`, which `p q = n` implies). Where the public guard of
+`wordChoice` holds (balanced full-word factors and `n`'s top bit set), the
+remainders are `WordDivide`'s, and the inverse leaves out its `2^(5 B)`
+doublings (`inverseNS`), which `qTail` applies instead by one `WordDivide`
+reduction modulo `p`. Each result is written out masked.
 `p q = n` is checked by multiplying the factors into two contiguous
 arrays and comparing the full product with `n`.
 -/

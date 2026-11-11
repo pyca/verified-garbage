@@ -12,7 +12,10 @@ import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 # `vg_rsa_crt_values` on x86-64: `qInv`
 
 `invPart` (`cvInv_ok`): `qInv = q⁻¹ mod p` by the batched divstep inverse,
-and `gcd(q, p) = 1` and'ed into the mask.
+and `gcd(q, p) = 1` and'ed into the mask (`cvGcd_ok`). Where the public guard
+holds, the inverse is `inverseNS` and `qTail` scales its result by `2^K`
+(`cvInvG_ok`, `CvTail.lean`'s `cvTailG_ok`); `p q = n`, which the mask
+requires, gives `p` the top bit `qTail` needs.
 -/
 
 @[expose] public section
@@ -111,6 +114,22 @@ theorem invQ_ok [InvLaw] {s : State} {B : Addr} {Z w pl ql : Nat} (h : Ws s B Z 
   have eQ := wv_low_of_lt hnw (Nat.lt_of_lt_of_le hQ (pow256_le hqn))
   rw [← eP, ← eQ]
   exact invQ_gen h hZ hw20 hp hq hpl1 hplw hqlw
+
+/-- `invQ_gen` for `inverseNS`. -/
+theorem invQS_gen [InvLaw] {s : State} {B : Addr} {Z w pl ql : Nat} (h : Ws s B Z w) (hZ : slot w 26 ≤ Z)
+    (hw20 : w < 2 ^ 20) (hp : Bignum.word s.mem B (8 * sPl) = BitVec.ofNat 64 pl)
+    (hq : Bignum.word s.mem B (8 * sQl) = BitVec.ofNat 64 ql) (hpl1 : 1 ≤ pl) (hplw : pl ≤ 8 * w)
+    (hqlw : ql ≤ 8 * w) :
+    WP isa (.seq (.block (ws ++ nPQ)) (inverseNS aQ aV aX₂ aP)) s fun t => t.gpr .rdi = B ∧
+      Frm B [(slot w aV, 8 * w), (slot w aX₂, 8 * w), (slot w 16, 80 * (w + 2))] s.mem t.mem ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
+  have hn1 : 1 ≤ nOf pl ql := by unfold nOf; omega
+  have hnw : nOf pl ql ≤ w := by unfold nOf; omega
+  refine WP.seq (WP.mono (nPQ_ok h hp hq (by omega) (by omega)) fun s₁ ⟨_, h9, h13, _, m₁, k₁⟩ => ?_)
+  have h₁ : Ws s₁ B Z w := h.congr (rs := []) (by rw [m₁]; exact Frm.refl _ _ _) (by simp) k₁ (by decide)
+  rw [← m₁]
+  exact WP.mono (InvLaw.inverseNS_ok h₁ hZ h9 h13 hn1 hnw (by omega) (by decide) (by decide) (by decide) (by decide)
+    (by decide)) fun t ⟨dt, ft, kt, _⟩ => ⟨dt, ft, (k₁.trans kt).mono (by decide)⟩
 
 /-- `invQ_ok` for `inverseNS`: `[x₂] 2^(15 n + 10)` for `[x₂]`. -/
 theorem invQS_ok [InvLaw] {s : State} {B : Addr} {Z w pl ql : Nat} (h : Ws s B Z w) (hZ : slot w 26 ≤ Z)
