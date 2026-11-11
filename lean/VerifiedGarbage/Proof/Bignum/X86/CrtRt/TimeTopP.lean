@@ -261,4 +261,84 @@ theorem constantTimeP : ConstantTime isa (privateCrtPrecomputedContract abi 96).
   have Args := argumentsP H
   exact operationP_trace (crtABIP_of S) (crtABIP_of T) Args.2 Args.1 (modulusBytesP H) E F
 
+/-- `satState` with `pre`'s four zero words, the values of the zero factors. -/
+def satStateP : State where
+  gpr r := if r = .esp then 0x20000 else 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem a := if a = 0x20005 then 16
+    else if a = 0x20008 then 64
+    else if a = 0x2000d then 32
+    else if a = 0x20010 then 64
+    else if a = 0x20015 then 48
+    else if a = 0x20018 then 64
+    else if a = 0x2001d then 64
+    else if a = 0x20020 then 1
+    else if a = 0x20025 then 80
+    else if a = 0x20028 then 1
+    else if a = 0x2002d then 96
+    else if a = 0x20030 then 1
+    else if a = 0x20035 then 112
+    else if a = 0x20038 then 1
+    else if a = 0x2003d then 128
+    else if a = 0x20040 then 1
+    else if a = 0x20045 then 144
+    else if a = 0x20048 then 32
+    else if a = 0x20049 then 4
+    else if a = 0x2004d then 0xc0
+    else if a = 0x20050 then 4 else 0
+  rd := [⟨8192, 64⟩, ⟨12288, 64⟩, ⟨16384, 1⟩, ⟨20480, 1⟩, ⟨24576, 1⟩, ⟨28672, 1⟩, ⟨32768, 1⟩, ⟨49152, 32⟩]
+  wr := [⟨4096, 64⟩, ⟨36864, 8448⟩, ⟨0x20004, 80⟩]
+
+/-- The arguments of `satStateP`. -/
+def satArgP (j : Nat) : BitVec 32 :=
+  if j = 0 then 4096 else if j = 1 then 64 else if j = 2 then 8192 else if j = 3 then 64
+  else if j = 4 then 12288 else if j = 5 then 64 else if j = 6 then 16384 else if j = 7 then 1
+  else if j = 8 then 20480 else if j = 9 then 1 else if j = 10 then 24576 else if j = 11 then 1
+  else if j = 12 then 28672 else if j = 13 then 1 else if j = 14 then 32768 else if j = 15 then 1
+  else if j = 16 then 36864 else if j = 17 then 1056 else if j = 18 then 49152 else 4
+
+theorem satP_pre_of {s : State} (hsp : s.gpr .esp = 0x20000) (ha : ∀ j < 20, arg s j = satArgP j)
+    (hrd : s.rd = satStateP.rd) (hwr : s.wr = satStateP.wr)
+    (hk : Spec.Rsa.wordsAt s.mem 49152 4 =
+      Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem 16384 1) ++ Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem 20480 1))
+    (hp : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem 16384 1) * Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem 20480 1) =
+      Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem 8192 64)) :
+    (privateCrtPrecomputedContract abi 96).pre s := by
+  have e : argAddr s 0 = 0x20004 := by simp only [argAddr, hsp]; rfl
+  sig_pre [privateCrtPrecomputedContract, privateCrtPrecomputedSig, Proof.Rsa.privateCrtSig, abi, argSlots,
+      argVal, argBytes, stackBelow]
+  simp only [ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), ha 3 (by decide), ha 4 (by decide),
+    ha 5 (by decide), ha 6 (by decide), ha 7 (by decide), ha 8 (by decide), ha 9 (by decide), ha 10 (by decide),
+    ha 11 (by decide), ha 12 (by decide), ha 13 (by decide), ha 14 (by decide), ha 15 (by decide),
+    ha 16 (by decide), ha 17 (by decide), ha 18 (by decide), ha 19 (by decide), hsp, hrd, hwr, e, satArgP,
+    Nat.reduceEqDiff, ↓reduceIte]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact hk
+    | exact hp
+    | (simp only [Spec.Rsa.lenValid]; decide)
+
+theorem satP_args : ∀ j < 20, arg satStateP j = satArgP j := by decide
+
+theorem satP_words : Spec.Rsa.wordsAt satStateP.mem 49152 4 =
+    Spec.Rsa.primeR2 (Spec.Rsa.bytesAt satStateP.mem 16384 1) ++
+      Spec.Rsa.primeR2 (Spec.Rsa.bytesAt satStateP.mem 20480 1) := by
+  decide +kernel
+
+theorem satP_product : Spec.Rsa.os2ip (Spec.Rsa.bytesAt satStateP.mem 16384 1) *
+    Spec.Rsa.os2ip (Spec.Rsa.bytesAt satStateP.mem 20480 1) = Spec.Rsa.os2ip (Spec.Rsa.bytesAt satStateP.mem 8192 64) := by
+  decide +kernel
+
+theorem satisfiableP : ∃ s, (privateCrtPrecomputedContract abi 96).pre s :=
+  ⟨satStateP, satP_pre_of rfl satP_args rfl rfl satP_words satP_product⟩
+
+theorem verifiedP : Verified target (CrtRt.code true) (privateCrtPrecomputedContract abi 96) :=
+  ⟨correctP, constantTimeP, satisfiableP⟩
+
 end VG.Proof.Bignum.X86.CrtRt
