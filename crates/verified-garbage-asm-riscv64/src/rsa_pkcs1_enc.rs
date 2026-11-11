@@ -29,26 +29,26 @@
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 3440 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 3456 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 2, 0x7131
+.insn 2, 0x7155
 .insn 2, 0x828a
-.insn 4, 0x0682b023
-.insn 4, 0x0692b423
-.insn 4, 0x0722b823
-.insn 4, 0x0732bc23
-.insn 4, 0x0942b023
-.insn 4, 0x0952b423
-.insn 4, 0x0962b823
-.insn 4, 0x0972bc23
-.insn 4, 0x0b82b023
-.insn 4, 0x0b92b423
-.insn 4, 0x0a12b823
-.insn 4, 0x0c010f93
+.insn 4, 0x0682b823
+.insn 4, 0x0692bc23
+.insn 4, 0x0922b023
+.insn 4, 0x0932b423
+.insn 4, 0x0942b823
+.insn 4, 0x0952bc23
+.insn 4, 0x0b62b023
+.insn 4, 0x0b72b423
+.insn 4, 0x0b82b823
+.insn 4, 0x0b92bc23
+.insn 4, 0x0c12b023
+.insn 4, 0x0d010f93
 .insn 2, 0x84ba
 .insn 2, 0x892a
 .insn 2, 0x89b2
@@ -330,18 +330,18 @@ bnez t2, 26b
 bnez t2, 27b
 .insn 2, 0x855e
 .insn 2, 0x828a
-.insn 4, 0x0602b403
-.insn 4, 0x0682b483
-.insn 4, 0x0702b903
-.insn 4, 0x0782b983
-.insn 4, 0x0802ba03
-.insn 4, 0x0882ba83
-.insn 4, 0x0902bb03
-.insn 4, 0x0982bb83
-.insn 4, 0x0a02bc03
-.insn 4, 0x0a82bc83
-.insn 4, 0x0b02b083
-.insn 2, 0x6129
+.insn 4, 0x0702b403
+.insn 4, 0x0782b483
+.insn 4, 0x0802b903
+.insn 4, 0x0882b983
+.insn 4, 0x0902ba03
+.insn 4, 0x0982ba83
+.insn 4, 0x0a02bb03
+.insn 4, 0x0a82bb83
+.insn 4, 0x0b02bc03
+.insn 4, 0x0b82bc83
+.insn 4, 0x0c02b083
+.insn 2, 0x6169
 .insn 2, 0x8082
 .option pop",
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
@@ -382,26 +382,26 @@ bnez t2, 27b
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
 /// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3440 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3456 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 2, 0x7131
+.insn 2, 0x7155
 .insn 2, 0x828a
-.insn 4, 0x0682b023
-.insn 4, 0x0692b423
-.insn 4, 0x0722b823
-.insn 4, 0x0732bc23
-.insn 4, 0x0942b023
-.insn 4, 0x0952b423
-.insn 4, 0x0962b823
-.insn 4, 0x0972bc23
-.insn 4, 0x0b82b023
-.insn 4, 0x0b92b423
-.insn 4, 0x0a12b823
-.insn 4, 0x0c010f93
+.insn 4, 0x0682b823
+.insn 4, 0x0692bc23
+.insn 4, 0x0922b023
+.insn 4, 0x0932b423
+.insn 4, 0x0942b823
+.insn 4, 0x0952bc23
+.insn 4, 0x0b62b023
+.insn 4, 0x0b72b423
+.insn 4, 0x0b82b823
+.insn 4, 0x0b92bc23
+.insn 4, 0x0c12b023
+.insn 4, 0x0d010f93
 .insn 2, 0x84ba
 .insn 2, 0x892a
 .insn 2, 0x89b2
@@ -433,6 +433,10 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed(out: *mut u8, o
 .insn 4, 0x0462b823
 .insn 4, 0x070fb303
 .insn 4, 0x0462bc23
+.insn 4, 0x078fb303
+.insn 4, 0x0662b023
+.insn 4, 0x080fb303
+.insn 4, 0x0662b423
 .insn 2, 0x85a6
 .insn 2, 0x8636
 .insn 2, 0x86a6
@@ -440,7 +444,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed(out: *mut u8, o
 .insn 2, 0x87c2
 .insn 2, 0x885a
 .insn 2, 0x88a6
-call {vg_rsa_private_checked}
+call {vg_rsa_private_checked_precomputed}
 .insn 4, 0x02051b93
 .insn 4, 0x020bdb93
 .insn 4, 0x61040593
@@ -683,21 +687,21 @@ bnez t2, 26b
 bnez t2, 27b
 .insn 2, 0x855e
 .insn 2, 0x828a
-.insn 4, 0x0602b403
-.insn 4, 0x0682b483
-.insn 4, 0x0702b903
-.insn 4, 0x0782b983
-.insn 4, 0x0802ba03
-.insn 4, 0x0882ba83
-.insn 4, 0x0902bb03
-.insn 4, 0x0982bb83
-.insn 4, 0x0a02bc03
-.insn 4, 0x0a82bc83
-.insn 4, 0x0b02b083
-.insn 2, 0x6129
+.insn 4, 0x0702b403
+.insn 4, 0x0782b483
+.insn 4, 0x0802b903
+.insn 4, 0x0882b983
+.insn 4, 0x0902ba03
+.insn 4, 0x0982ba83
+.insn 4, 0x0a02bb03
+.insn 4, 0x0a82bb83
+.insn 4, 0x0b02bc03
+.insn 4, 0x0b82bc83
+.insn 4, 0x0c02b083
+.insn 2, 0x6169
 .insn 2, 0x8082
 .option pop",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update = sym super::sha256::vg_sha256_update,
         vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,

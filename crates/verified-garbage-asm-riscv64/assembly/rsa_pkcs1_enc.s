@@ -7,20 +7,20 @@
 vg_rsa_pkcs1_decrypt:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -192
+	addi sp, sp, -208
 	addi t0, sp, 0
-	sd s0, 96(t0)
-	sd s1, 104(t0)
-	sd s2, 112(t0)
-	sd s3, 120(t0)
-	sd s4, 128(t0)
-	sd s5, 136(t0)
-	sd s6, 144(t0)
-	sd s7, 152(t0)
-	sd s8, 160(t0)
-	sd s9, 168(t0)
-	sd ra, 176(t0)
-	addi t6, sp, 192
+	sd s0, 112(t0)
+	sd s1, 120(t0)
+	sd s2, 128(t0)
+	sd s3, 136(t0)
+	sd s4, 144(t0)
+	sd s5, 152(t0)
+	sd s6, 160(t0)
+	sd s7, 168(t0)
+	sd s8, 176(t0)
+	sd s9, 184(t0)
+	sd ra, 192(t0)
+	addi t6, sp, 208
 	addi s1, a4, 0
 	addi s2, a0, 0
 	addi s3, a2, 0
@@ -302,38 +302,38 @@ vg_rsa_pkcs1_decrypt:
 	bnez t2, 27b
 	addi a0, s7, 0
 	addi t0, sp, 0
-	ld s0, 96(t0)
-	ld s1, 104(t0)
-	ld s2, 112(t0)
-	ld s3, 120(t0)
-	ld s4, 128(t0)
-	ld s5, 136(t0)
-	ld s6, 144(t0)
-	ld s7, 152(t0)
-	ld s8, 160(t0)
-	ld s9, 168(t0)
-	ld ra, 176(t0)
-	addi sp, sp, 192
+	ld s0, 112(t0)
+	ld s1, 120(t0)
+	ld s2, 128(t0)
+	ld s3, 136(t0)
+	ld s4, 144(t0)
+	ld s5, 152(t0)
+	ld s6, 160(t0)
+	ld s7, 168(t0)
+	ld s8, 176(t0)
+	ld s9, 184(t0)
+	ld ra, 192(t0)
+	addi sp, sp, 208
 	ret
 	.option pop
 
 vg_rsa_pkcs1_decrypt_precomputed:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -192
+	addi sp, sp, -208
 	addi t0, sp, 0
-	sd s0, 96(t0)
-	sd s1, 104(t0)
-	sd s2, 112(t0)
-	sd s3, 120(t0)
-	sd s4, 128(t0)
-	sd s5, 136(t0)
-	sd s6, 144(t0)
-	sd s7, 152(t0)
-	sd s8, 160(t0)
-	sd s9, 168(t0)
-	sd ra, 176(t0)
-	addi t6, sp, 192
+	sd s0, 112(t0)
+	sd s1, 120(t0)
+	sd s2, 128(t0)
+	sd s3, 136(t0)
+	sd s4, 144(t0)
+	sd s5, 152(t0)
+	sd s6, 160(t0)
+	sd s7, 168(t0)
+	sd s8, 176(t0)
+	sd s9, 184(t0)
+	sd ra, 192(t0)
+	addi t6, sp, 208
 	addi s1, a4, 0
 	addi s2, a0, 0
 	addi s3, a2, 0
@@ -365,6 +365,10 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	sd t1, 80(t0)
 	ld t1, 112(t6)
 	sd t1, 88(t0)
+	ld t1, 120(t6)
+	sd t1, 96(t0)
+	ld t1, 128(t6)
+	sd t1, 104(t0)
 	addi a1, s1, 0
 	addi a2, a3, 0
 	addi a3, s1, 0
@@ -372,7 +376,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	addi a5, a6, 0
 	addi a6, s6, 0
 	addi a7, s1, 0
-	call {vg_rsa_private_checked}
+	call {vg_rsa_private_checked_precomputed}
 	slli s7, a0, 32
 	srli s7, s7, 32
 	addi a1, s0, 1552
@@ -615,18 +619,18 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	bnez t2, 27b
 	addi a0, s7, 0
 	addi t0, sp, 0
-	ld s0, 96(t0)
-	ld s1, 104(t0)
-	ld s2, 112(t0)
-	ld s3, 120(t0)
-	ld s4, 128(t0)
-	ld s5, 136(t0)
-	ld s6, 144(t0)
-	ld s7, 152(t0)
-	ld s8, 160(t0)
-	ld s9, 168(t0)
-	ld ra, 176(t0)
-	addi sp, sp, 192
+	ld s0, 112(t0)
+	ld s1, 120(t0)
+	ld s2, 128(t0)
+	ld s3, 136(t0)
+	ld s4, 144(t0)
+	ld s5, 152(t0)
+	ld s6, 160(t0)
+	ld s7, 168(t0)
+	ld s8, 176(t0)
+	ld s9, 184(t0)
+	ld ra, 192(t0)
+	addi sp, sp, 208
 	ret
 	.option pop
 
