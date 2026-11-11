@@ -44,9 +44,9 @@ def artifacts : List Artifact :=
       verified := Sgn.code_verified (privOf v) },
     Spec.RsaPkcs1Sig.signPrecomputedApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.RsaPkcs1Sig.AArch64.Sign.code (privOf v).name (privOf v).code
-      stack := Sgn.stk (privOf v).stack
-      verified := Sgn.signPrecomputed_verified (privOf v) }]) ++
+      code := Impl.RsaPkcs1Sig.AArch64.Sign.codeP (privPOf v).name (privPOf v).code
+      stack := Sgn.stk (privPOf v).stack
+      verified := Sgn.signPrecomputed_verified (privPOf v) }]) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.flatMap fun (v : PublicImpl) => [
     Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact AArch64.target {
       suffix := v.suffix
