@@ -1,5 +1,8 @@
 module
 
+-- separate module: its proofs cost more than its imports, and the satisfiability witness's
+-- changes (`Sat`) need not re-check them
+
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCVerified
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPCt
 public import VerifiedGarbage.Spec.RsaPss.MdTable
