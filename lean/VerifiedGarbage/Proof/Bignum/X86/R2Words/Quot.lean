@@ -11,8 +11,11 @@ import VerifiedGarbage.Proof.Bignum.WordStepNorm32
 /-!
 # `R2Words` on x86: the estimate of a step's quotient
 
-`top` leaves the top words `u₁`, `u₂` of `2^z x` in `ebp` and `eax`, from
-the top three words of `x` and `p = 2^z` (`top_ok`).
+`top` leaves the top words `u₁`, `u₂` of `2^z x` in `ebp` and `eax`, and
+`u₀`, `u₂` in the header, from the top four words of `x` and `p = 2^z`
+(`top_ok`); `quot` the 2-by-1 estimate (`quot_ok`); `refine3` corrects it to
+the 3-by-2 estimate (`quot3_ok`, `fix3_ok`, `refine3_ok`,
+`WordStep32.quot3_val`).
 -/
 
 @[expose] public section

@@ -10,10 +10,10 @@ import VerifiedGarbage.Proof.Bignum.WordStepNorm32
 /-!
 # `R2Words` on x86: a step `x := x 2^32 mod M`
 
-From `p = 2^z`, `d`, `v` in the header and `x < M` in number 4, `step`
+From `p = 2^z`, `d`, `d₁`, `v` in the header and `x < M` in number 4, `step`
 leaves `x 2^32 mod M` there (`step_ok`), by Knuth's step of long division
-with the estimate from the normalized numbers `2^z x` and `2^z M`
-(`WordStep32.wordStepNorm_val`).
+with the 3-by-2 estimate from the normalized numbers `2^z x` and `2^z M`
+(`WordStep32.qhat3_norm`) and one add-back (`WordStep32.wordStepQ1_val`).
 -/
 
 @[expose] public section
