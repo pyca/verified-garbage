@@ -33,6 +33,7 @@ import VerifiedGarbage.Proof.Sha256.StateMem
 import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256Scrub
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha224
+import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaintSum
 public meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
 public meta import VerifiedGarbage.Proof.Framework.Lit
 public meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -42,6 +43,7 @@ public meta import VerifiedGarbage.Proof.Framework.Offset
 public meta import VerifiedGarbage.Proof.Framework.OffsetBelow
 public meta import VerifiedGarbage.Proof.Framework.OmegaLit
 public meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+public meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaintSum
 public meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -175,16 +177,49 @@ analysis of its code finds may hold secrets (`MdHash.hmacInitReg`). -/
 def hmacInitKs : List Nat := keep_for% unscrubbed.I.initAnyKeyApi.sig (24 + Proof.Pbkdf2.Md.X86_64.anyFrame unscrubbed.I)
   (Proof.Pbkdf2.Md.X86_64.initCode unscrubbed.H unscrubbed.I) []
 
-theorem hmacInitLong : Proof.Pbkdf2.Md.X86_64.InitLongOk unscrubbed.H unscrubbed.I hmacInitKs :=
-  ⟨_, by taint_decide_weak (Proof.Pbkdf2.Md.X86_64.initHintWeak unscrubbed.I)⟩
+section HmacInit
 
-theorem hmacInitShort : Proof.Pbkdf2.Md.X86_64.InitShortOk unscrubbed.H unscrubbed.I hmacInitKs :=
-  ⟨by decide, _, by taint_decide⟩
+open Proof.Pbkdf2.Md.X86_64
+
+/-! HMAC's `init` over SHA-256 and SHA-224 differ only in the hash's `init`
+and `finalize` that they call and in their constants: the parts of their
+analyses that are the same are analysed once, as summaries
+(`rtaint_summary`), from the same taint in each (`rtaint_site%`, from
+SHA-256's analysis), which the analysis of each uses. -/
+
+def hmacInitUpdPre : VG.X86_64.RTaint.FT := rtaint_site% (initHintWeak unscrubbed.I) (initStart unscrubbed.I)
+  (initCode unscrubbed.H unscrubbed.I) (initUpd unscrubbed.H) 0
+
+rtaint_summary hmacInitUpd : (initHintWeak unscrubbed.I) hmacInitUpdPre (initUpd unscrubbed.H)
+
+def hmacInitTail0Pre : VG.X86_64.RTaint.FT := rtaint_site% (initHintWeak unscrubbed.I) (initStart unscrubbed.I)
+  (initCode unscrubbed.H unscrubbed.I) (initTail unscrubbed.H) 0 using hmacInitUpd
+
+rtaint_summary hmacInitTail0 : (initHintWeak unscrubbed.I) hmacInitTail0Pre (initTail unscrubbed.H)
+
+def hmacInitTail1Pre : VG.X86_64.RTaint.FT := rtaint_site% (initHintWeak unscrubbed.I) (initStart unscrubbed.I)
+  (initCode unscrubbed.H unscrubbed.I) (initTail unscrubbed.H) 1 using hmacInitUpd hmacInitTail0
+
+rtaint_summary hmacInitTail1 : (initHintWeak unscrubbed.I) hmacInitTail1Pre (initTail unscrubbed.H)
+
+def hmacInitWipePre : VG.X86_64.RTaint.FT := rtaint_site% (initHintWeak unscrubbed.I) (initStart unscrubbed.I)
+  (initCode unscrubbed.H unscrubbed.I) (initWipe unscrubbed.I) 0 using hmacInitUpd hmacInitTail0 hmacInitTail1
+
+rtaint_summary hmacInitWiped : (initHintWeak unscrubbed.I) hmacInitWipePre (initWipe unscrubbed.I)
+
+/-- The residue analysis of HMAC's `init` over `unscrubbed`, ending with the bytes
+of its window that may hold secrets within the granules `hmacInitKs`. -/
+def hmacInitRes : VG.X86_64.RScrub.Analysed unscrubbed.I.initAnyKeyApi.sig (24 + anyFrame unscrubbed.I) []
+    (initCode unscrubbed.H unscrubbed.I) :=
+  ⟨hmacInitKs, VG.X86_64.RTaint.ok_of_resOkF (by rtaint_decide_sum_weak (initHintWeak unscrubbed.I)
+    [hmacInitUpd, hmacInitTail0, hmacInitTail1, hmacInitWiped])⟩
+
+end HmacInit
 
 def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=
   { unscrubbed with
     hmacFinRes := some ⟨hmacFinKs, hmacFinOk⟩
-    hmacInitRes := some ⟨hmacInitKs, Proof.Pbkdf2.Md.X86_64.initRes_ok hmacInitLong hmacInitShort⟩ }
+    hmacInitRes := some hmacInitRes }
 
 /-- `variant224` before the residue analysis of HMAC's `init` and `finalize`. -/
 def unscrubbed224 : Proof.Pbkdf2.Md.X86_64.MdHash :=
@@ -210,17 +245,24 @@ analysis of its code finds may hold secrets (`MdHash.hmacInitReg`). -/
 def hmacInit224Ks : List Nat := keep_for% unscrubbed224.I.initAnyKeyApi.sig (24 + Proof.Pbkdf2.Md.X86_64.anyFrame unscrubbed224.I)
   (Proof.Pbkdf2.Md.X86_64.initCode unscrubbed224.H unscrubbed224.I) []
 
-theorem hmacInit224Long : Proof.Pbkdf2.Md.X86_64.InitLongOk unscrubbed224.H unscrubbed224.I hmacInit224Ks :=
-  ⟨_, by taint_decide_weak (Proof.Pbkdf2.Md.X86_64.initHintWeak unscrubbed224.I)⟩
+section HmacInit
 
-theorem hmacInit224Short : Proof.Pbkdf2.Md.X86_64.InitShortOk unscrubbed224.H unscrubbed224.I hmacInit224Ks :=
-  ⟨by decide, _, by taint_decide⟩
+open Proof.Pbkdf2.Md.X86_64
+
+/-- The residue analysis of HMAC's `init` over `unscrubbed224`, ending with the bytes
+of its window that may hold secrets within the granules `hmacInit224Ks`. -/
+def hmacInit224Res : VG.X86_64.RScrub.Analysed unscrubbed224.I.initAnyKeyApi.sig (24 + anyFrame unscrubbed224.I) []
+    (initCode unscrubbed224.H unscrubbed224.I) :=
+  ⟨hmacInit224Ks, VG.X86_64.RTaint.ok_of_resOkF (by rtaint_decide_sum_weak (initHintWeak unscrubbed224.I)
+    [hmacInitUpd, hmacInitTail0, hmacInitTail1, hmacInitWiped])⟩
+
+end HmacInit
 
 /-- SHA-224 with this compression function, its `finalize` and `digest`
 without secret residue. -/
 def variant224 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   { unscrubbed224 with
     hmacFinRes := some ⟨hmacFin224Ks, hmacFin224Ok⟩
-    hmacInitRes := some ⟨hmacInit224Ks, Proof.Pbkdf2.Md.X86_64.initRes_ok hmacInit224Long hmacInit224Short⟩ }
+    hmacInitRes := some hmacInit224Res }
 
 end VG.Proof.Variants.MdHash.X86_64.Sha256ShaNi

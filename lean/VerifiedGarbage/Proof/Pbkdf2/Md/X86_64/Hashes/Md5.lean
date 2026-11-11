@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Md5.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaintSum
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 meta import VerifiedGarbage.Proof.Md5.X86_64.Stream.Md
 meta import VerifiedGarbage.Proof.Md5.X86_64.Stream.Init
@@ -18,6 +19,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Md5.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaintSum
 
 /-!
 # MD5 on x86-64, as a Merkle–Damgård hash function
@@ -225,16 +227,38 @@ analysis of its code finds may hold secrets (`MdHash.hmacInitReg`). -/
 def hmacInitKs : List Nat := keep_for% unscrubbed.I.initAnyKeyApi.sig (24 + Proof.Pbkdf2.Md.X86_64.anyFrame unscrubbed.I)
   (Proof.Pbkdf2.Md.X86_64.initCode unscrubbed.H unscrubbed.I) []
 
-theorem hmacInitLong : Proof.Pbkdf2.Md.X86_64.InitLongOk unscrubbed.H unscrubbed.I hmacInitKs :=
-  ⟨_, by taint_decide_weak (Proof.Pbkdf2.Md.X86_64.initHintWeak unscrubbed.I)⟩
+section HmacInit
 
-theorem hmacInitShort : Proof.Pbkdf2.Md.X86_64.InitShortOk unscrubbed.H unscrubbed.I hmacInitKs :=
-  ⟨by decide, _, by taint_decide⟩
+open Proof.Pbkdf2.Md.X86_64
+
+/-! The code that HMAC's `init` runs after its calls of `init`, at each of
+its two depths, is analysed as a summary of its own (`rtaint_summary`),
+which its analysis uses: each a theorem the kernel checks with less memory
+than all. -/
+
+def hmacInitTail0Pre : VG.X86_64.RTaint.FT := rtaint_site% (initHintWeak unscrubbed.I) (initStart unscrubbed.I)
+  (initCode unscrubbed.H unscrubbed.I) (initTail unscrubbed.H) 0
+
+rtaint_summary hmacInitTail0 : (initHintWeak unscrubbed.I) hmacInitTail0Pre (initTail unscrubbed.H)
+
+def hmacInitTail1Pre : VG.X86_64.RTaint.FT := rtaint_site% (initHintWeak unscrubbed.I) (initStart unscrubbed.I)
+  (initCode unscrubbed.H unscrubbed.I) (initTail unscrubbed.H) 1 using hmacInitTail0
+
+rtaint_summary hmacInitTail1 : (initHintWeak unscrubbed.I) hmacInitTail1Pre (initTail unscrubbed.H)
+
+/-- The residue analysis of HMAC's `init` over `unscrubbed`, ending with the bytes
+of its window that may hold secrets within the granules `hmacInitKs`. -/
+def hmacInitRes : VG.X86_64.RScrub.Analysed unscrubbed.I.initAnyKeyApi.sig (24 + anyFrame unscrubbed.I) []
+    (initCode unscrubbed.H unscrubbed.I) :=
+  ⟨hmacInitKs, VG.X86_64.RTaint.ok_of_resOkF
+    (by rtaint_decide_sum_weak (initHintWeak unscrubbed.I) [hmacInitTail0, hmacInitTail1])⟩
+
+end HmacInit
 
 /-- MD5, as a variant of `MdHash`. -/
 def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=
   { unscrubbed with
     hmacFinRes := some ⟨hmacFinKs, hmacFinOk⟩
-    hmacInitRes := some ⟨hmacInitKs, Proof.Pbkdf2.Md.X86_64.initRes_ok hmacInitLong hmacInitShort⟩ }
+    hmacInitRes := some hmacInitRes }
 
 end VG.Proof.Pbkdf2.Md.X86_64.Md5

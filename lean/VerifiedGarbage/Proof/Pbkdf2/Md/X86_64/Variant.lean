@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
-public meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaint
 public import VerifiedGarbage.Proof.Hmac.Scratch
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
@@ -104,7 +103,7 @@ def initCode (H : Hash) (I : Spec.Hmac.Instance) : Prog isa :=
     (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame I) .r8 I.initAnyKeyScratch H.hmacInitAny)
 
 /-- The taints of the hint of the residue analysis of `initCode` (of instance
-`I`), for `taint_decide_weak`: without the public slots of 16 bytes of the
+`I`), for `rtaint_decide_sum_weak` (`Proof/Framework/X86_64/ResidueTaintSum.lean`): without the public slots of 16 bytes of the
 frame of its branch for long keys (`anyFrame I` bytes, the outermost frame)
 that the clearing of that frame (`withStackScratchWiped`, from its byte 8)
 covers. That branch clears its frame before freeing it, which makes those
@@ -117,209 +116,28 @@ def initHintWeak (I : Spec.Hmac.Instance) (τ : RTaint.FT) : RTaint.FT :=
         !(sl.1 == τ.nfr - 1 && sl.2.2 == 16 && 8 ≤ sl.2.1 && sl.2.1 + 16 ≤ anyFrame I) } }
   else τ
 
-/-! ### The residue analysis of `initCode`, a branch at a time
+/-! ### Parts of `initCode`, for summaries of its residue analysis
 
-`initRes_ok` puts together the residue analysis of `initCode` from those of its
-two branches (`InitLongOk`, `InitShortOk`), each from the comparison of the
-key's length (`initMid`) to the end (`initEndOk`). Each is a theorem of its
-own, which the kernel checks with about two thirds of the memory of the
-whole. -/
+The members of a family of hash functions (SHA-224 and SHA-256, the SHA-512
+family) differ in HMAC's `init` only in the hash's `init` and `finalize`
+that it calls and in their constants: the residue analyses of their
+`initCode` share summaries (`rtaint_summary`) of these parts. -/
 
-/-- The comparison of the key's length with which `initCode` starts. -/
-def initCmp (I : Spec.Hmac.Instance) : Instr :=
-  .alu .cmp .rcx (.imm (BitVec.ofNat 32 (I.S.H.blockSize + 1)))
+/-- Where the residue analysis of `initCode` starts. -/
+abbrev initStart (I : Spec.Hmac.Instance) : RTaint.FT :=
+  RScrub.init I.initAnyKeyApi.sig (24 + anyFrame I) []
 
-/-- The residue analysis of `initCode` (of instance `I`) after `initCmp`. -/
-def initMid (I : Spec.Hmac.Instance) : RTaint.rtaint.T :=
-  (RTaint.rtaint.step (RScrub.init I.initAnyKeyApi.sig (24 + anyFrame I) []) (initCmp I)).getD RTaint.none'
+/-- The call of `update` in `initCode`'s branch for long keys. -/
+abbrev initUpd (H : Hash) : Prog isa := .call H.updN H.updC
 
-/-- The analysis of `initCmp` succeeds (`initMid`), and the branch on its
-flags is public. -/
-def initMidOk (I : Spec.Hmac.Instance) : Bool :=
-  (RTaint.rtaint.step (RScrub.init I.initAnyKeyApi.sig (24 + anyFrame I) []) (initCmp I)).isSome &&
-    RTaint.rtaint.le (initMid I) (initMid I) && RTaint.rtaint.condPub (initMid I) .ae
+/-- HMAC's `init_scratch` after its calls of `init`: the padded keys and
+their compression. -/
+abbrev initTail (H : Hash) : Prog isa :=
+  .seq H.initKeys (.seq H.compBoth (.block H.stream.restore))
 
-/-- What the residue analysis of each branch of `initCode` ends with: the
-bytes of its window that may hold secrets are within the granules `ks`, and
-no frame or call is in progress, as at the end of the other branch. -/
-def initEndOk (I : Spec.Hmac.Instance) (ks : List Nat) (τ : RTaint.FT) : Bool :=
-  RScrub.resOkB τ (24 + anyFrame I) ks (Impl.Scrub.X86_64.chunks (24 + anyFrame I)) && τ.nfr == 0 &&
-    τ.ras == [] && τ.fw == [] && τ.t.lens == (RScrub.init I.initAnyKeyApi.sig (24 + anyFrame I) []).t.lens
-
-/-- The residue analysis of `initCode`'s branch for keys longer than a block,
-from `initMid`. -/
-def InitLongOk (H : Hash) (I : Spec.Hmac.Instance) (ks : List Nat) : Prop :=
-  ∃ h : VG.Taint.Hint RTaint.FT, (VG.Taint.check RTaint.rtaint (initMid I)
-    (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame I) .r8 I.initAnyKeyScratch H.hmacInitAny) h).any
-    (initEndOk I ks) = true
-
-/-- The residue analysis of `initCmp` (`initMidOk`), and of `initCode`'s
-branch for keys of at most a block from `initMid`. -/
-def InitShortOk (H : Hash) (I : Spec.Hmac.Instance) (ks : List Nat) : Prop :=
-  initMidOk I = true ∧ ∃ h : VG.Taint.Hint RTaint.FT, (VG.Taint.check RTaint.rtaint (initMid I)
-    (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacInit) h).any
-    (initEndOk I ks) = true
-
-theorem exists_of_any {α : Type} {p : α → Bool} {o : Option α} (h : o.any p = true) :
-    ∃ a, o = some a ∧ p a = true := by
-  cases o with
-  | none => cases h
-  | some a => exact ⟨a, rfl, h⟩
-
-theorem resOkB_meet {stack : Nat} {ks cs : List Nat} {τ₁ τ₂ : RTaint.FT}
-    (h₁ : RScrub.resOkB τ₁ stack ks cs = true) (h₂ : RScrub.resOkB τ₂ stack ks cs = true)
-    (hn : τ₁.nfr = τ₂.nfr) (hr : τ₁.ras = τ₂.ras) (hf : τ₁.fw = τ₂.fw) (hl : τ₁.t.lens = τ₂.t.lens) :
-    RScrub.resOkB (RTaint.meet τ₁ τ₂) stack ks cs = true := by
-  simp only [RScrub.resOkB, Bool.and_eq_true, beq_iff_eq, List.all_eq_true, Bool.or_eq_true,
-    Bool.not_eq_true', List.any_eq_false] at h₁ h₂ ⊢
-  obtain ⟨⟨⟨o₁, r₁⟩, d₁⟩, a₁⟩ := h₁
-  obtain ⟨⟨⟨o₂, r₂⟩, d₂⟩, a₂⟩ := h₂
-  have hc : (τ₁.ok && τ₂.ok && τ₁.nfr == τ₂.nfr && τ₁.depth == τ₂.depth && τ₁.room == τ₂.room &&
-      τ₁.ras == τ₂.ras && τ₁.t.lens == τ₂.t.lens && τ₁.fw == τ₂.fw) = true := by
-    simp [o₁, o₂, hn, hr, hf, hl, r₁, r₂, d₁, d₂]
-  simp only [RTaint.meet, hc, ↓reduceIte]
-  refine ⟨⟨⟨o₁, r₁⟩, d₁⟩, fun j hj => ?_⟩
-  rcases a₁ j hj with h | h
-  · exact .inl h
-  rcases a₂ j hj with h' | h'
-  · exact .inl h'
-  · exact .inr fun p hp => by
-      rcases List.mem_append.mp hp with hp | hp
-      · exact h p hp
-      · exact h' p hp
-
-theorem initRes_ok {H : Hash} {I : Spec.Hmac.Instance} {ks : List Nat}
-    (hl : InitLongOk H I ks) (hs : InitShortOk H I ks) :
-    ∃ h : VG.Taint.Hint RTaint.FT,
-      (VG.Taint.check RTaint.rtaint (RScrub.init I.initAnyKeyApi.sig (24 + anyFrame I) []) (initCode H I) h).any
-        (RScrub.resOkB · (24 + anyFrame I) ks (Impl.Scrub.X86_64.chunks (24 + anyFrame I))) = true := by
-  obtain ⟨hL, hl⟩ := hl
-  obtain ⟨hm, hS, hs⟩ := hs
-  simp only [initMidOk, Bool.and_eq_true] at hm
-  obtain ⟨⟨hm, hle⟩, hc⟩ := hm
-  refine ⟨.seq (initMid I) (.block [] VG.Taint.chunk) (.ite (.seq (initMid I)
-    (.seq (initMid I) (.block [] VG.Taint.chunk) (.block [] VG.Taint.chunk)) hL) hS), ?_⟩
-  obtain ⟨τL, eL, oL⟩ := exists_of_any hl
-  obtain ⟨τS, eS, oS⟩ := exists_of_any hs
-  have e : VG.Taint.check RTaint.rtaint (RScrub.init I.initAnyKeyApi.sig (24 + anyFrame I) []) (initCode H I)
-      (.seq (initMid I) (.block [] VG.Taint.chunk) (.ite (.seq (initMid I)
-        (.seq (initMid I) (.block [] VG.Taint.chunk) (.block [] VG.Taint.chunk)) hL) hS)) =
-      some (RTaint.rtaint.meet τL τS) := by
-    have hb : ∀ τ, VG.Taint.checkChunks RTaint.rtaint VG.Taint.chunk τ [] [] = some τ := fun _ => rfl
-    have h0 : VG.Taint.checkChunks RTaint.rtaint VG.Taint.chunk (RScrub.init I.initAnyKeyApi.sig (24 + anyFrame I) [])
-        [.alu .cmp .rcx (.imm (BitVec.ofNat 32 (I.S.H.blockSize + 1)))] [] = some (initMid I) := by
-      show (RTaint.rtaint.step _ (initCmp I)).bind some = some ((RTaint.rtaint.step _ (initCmp I)).getD _)
-      revert hm
-      cases RTaint.rtaint.step (RScrub.init I.initAnyKeyApi.sig (24 + anyFrame I) []) (initCmp I) with
-      | none => intro hm; cases hm
-      | some τ => intro _; rfl
-    simp only [initCode, Impl.Pbkdf2.Md.X86_64.initEntry, Code.iteCold, VG.Taint.check]
-    rw [h0]
-    simp only [Option.bind_some, hle, ↓reduceIte, hc, hb, eL, eS]
-    rfl
-  refine (congrArg (Option.any _) e).trans ?_
-  simp only [initEndOk, Bool.and_eq_true, beq_iff_eq] at oL oS
-  exact resOkB_meet oL.1.1.1.1 oS.1.1.1.1 (oL.1.1.1.2.trans oS.1.1.1.2.symm) (oL.1.1.2.trans oS.1.1.2.symm)
-    (oL.1.2.trans oS.1.2.symm) (oL.2.trans oS.2.symm)
-
-/-! ### The branch for long keys, in two parts
-
-The kernel's check of the analysis of `initCode`'s branch for long keys,
-which hashes the key and then calls HMAC's `init`, takes the most memory of
-the two: `initLong_of` puts it together from the analysis of its start, up
-to the call (`initLongPre`), and of the rest (`initLongPost`), from a taint
-`M` between them (`init_long_mid%`). -/
-
-/-- The start of `initCode`'s branch for long keys, in its frame: the
-frame's set-up, the entry, the key and the arguments of HMAC's `init`. -/
-def initLongPre (H : Hash) : Prog isa :=
-  .seq (.block [.mov .r8 (.reg .rsp), .alu .add .r8 (.imm 8)])
-    (.seq (.block H.anyEntry) (.seq H.key (.block Impl.Pbkdf2.Md.X86_64.Hash.anyArgs)))
-
-/-- The rest, in its frame: the call of HMAC's `init`, the exit and the
-clearing of the frame. -/
-def initLongPost (H : Hash) (I : Spec.Hmac.Instance) : Prog isa :=
-  .seq (.seq (.call H.hmacInitN H.hmacInit) (.block H.exit))
-    (.block (Impl.StackScratch.X86_64.wipe I.initAnyKeyScratch))
-
-/-- The residue analysis on entry to the frame of the branch for long keys. -/
-def initLongStart (I : Spec.Hmac.Instance) : RTaint.rtaint.T :=
-  (RTaint.rtaint.push (initMid I) (.alloc (anyFrame I))).getD RTaint.none'
-
-/-- The residue analysis of `initLongPre`, ending with at least `M` public. -/
-def InitLongPre (H : Hash) (I : Spec.Hmac.Instance) (M : RTaint.rtaint.T) : Prop :=
-  ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (initLongStart I) (initLongPre H) h).any (RTaint.rtaint.le M) = true
-
-/-- The residue analysis of `initLongPost` from `M` and of the frame's
-release, ending as `initEndOk` says. -/
-def InitLongPost (H : Hash) (I : Spec.Hmac.Instance) (ks : List Nat) (M : RTaint.rtaint.T) : Prop :=
-  ∃ h : VG.Taint.Hint RTaint.FT, (VG.Taint.check RTaint.rtaint M (initLongPost H I) h).any
-    (fun τ => (RTaint.rtaint.pop τ (.free (anyFrame I))).any (initEndOk I ks)) = true
-
-/-- The taint between `initLongPre` and `initLongPost`: what the analysis of
-`initLongPre` ends with, weakened as `initHintWeak` weakens a hint (for
-`init_long_mid%`, which computes it in compiled code). -/
-def initLongMidOf (H : Hash) (I : Spec.Hmac.Instance) : RTaint.FT :=
-  initHintWeak I (((VG.Taint.hint RTaint.rtaint 1024 (initLongStart I) (initLongPre H)).map (·.1)).getD RTaint.none')
-
-theorem check_seq_some {τ τ'' : RTaint.rtaint.T} {c₁ c₂ : Prog isa} {h : VG.Taint.Hint RTaint.rtaint.T}
-    (e : VG.Taint.check RTaint.rtaint τ (.seq c₁ c₂) h = some τ'') :
-    ∃ m h₁ h₂ τ', h = .seq m h₁ h₂ ∧ VG.Taint.check RTaint.rtaint τ c₁ h₁ = some τ' ∧
-      RTaint.rtaint.le m τ' = true ∧ VG.Taint.check RTaint.rtaint m c₂ h₂ = some τ'' := by
-  cases h with
-  | seq m h₁ h₂ =>
-    simp only [VG.Taint.check, Option.bind_eq_some_iff] at e
-    obtain ⟨τ', e₁, e₂⟩ := e
-    split at e₂
-    · exact ⟨m, h₁, h₂, τ', rfl, e₁, by assumption, e₂⟩
-    · cases e₂
-  | _ => simp [VG.Taint.check] at e
-
-theorem check_seq_of {τ τ' τ'' m : RTaint.rtaint.T} {c₁ c₂ : Prog isa} {h₁ h₂ : VG.Taint.Hint RTaint.rtaint.T}
-    (e₁ : VG.Taint.check RTaint.rtaint τ c₁ h₁ = some τ') (hl : RTaint.rtaint.le m τ' = true)
-    (e₂ : VG.Taint.check RTaint.rtaint m c₂ h₂ = some τ'') :
-    VG.Taint.check RTaint.rtaint τ (.seq c₁ c₂) (.seq m h₁ h₂) = some τ'' := by
-  simp only [VG.Taint.check, e₁, Option.bind_some, hl, ↓reduceIte, e₂]
-
-theorem initLong_of {H : Hash} {I : Spec.Hmac.Instance} {ks : List Nat} {M : RTaint.rtaint.T}
-    (hp : (RTaint.rtaint.push (initMid I) (.alloc (anyFrame I))).isSome = true)
-    (ha : InitLongPre H I M) (hb : InitLongPost H I ks M) : InitLongOk H I ks := by
-  obtain ⟨hA, ha⟩ := ha
-  obtain ⟨hB, hb⟩ := hb
-  obtain ⟨τA, eA, lA⟩ := exists_of_any ha
-  obtain ⟨τW, eW, oW⟩ := exists_of_any hb
-  obtain ⟨τE, eE, oE⟩ := exists_of_any oW
-  obtain ⟨m₁, h₀, _, τ₀, rfl, e₀, l₀, er⟩ := check_seq_some eA
-  obtain ⟨m₃, hE, _, τe, rfl, eE', lE, er'⟩ := check_seq_some er
-  obtain ⟨m₄, hK, hAa, τk, rfl, eK, lK, eAa⟩ := check_seq_some er'
-  obtain ⟨m₂, hCX, hW, τx, rfl, eCX, l₂, eWp⟩ := check_seq_some eW
-  have e₅ := check_seq_of e₀ l₀ (check_seq_of (check_seq_of eE' lE (check_seq_of eK lK
-    (check_seq_of eAa lA eCX))) l₂ eWp)
-  have hs : RTaint.rtaint.push (initMid I) (.alloc (anyFrame I)) = some (initLongStart I) := by
-    unfold initLongStart
-    revert hp
-    cases RTaint.rtaint.push (initMid I) (.alloc (anyFrame I)) with
-    | none => intro hp; cases hp
-    | some τ => intro _; rfl
-  have e : VG.Taint.check RTaint.rtaint (initMid I)
-      (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame I) .r8 I.initAnyKeyScratch H.hmacInitAny)
-      (.frame (.seq m₁ h₀ (.seq m₂ (.seq m₃ hE (.seq m₄ hK (.seq M hAa hCX))) hW))) = some τE := by
-    simp only [Impl.StackScratch.X86_64.withStackScratchWiped, Impl.StackScratch.X86_64.withStackScratch,
-      VG.Taint.check, hs, Option.bind_some]
-    refine (congrArg (fun o => Option.bind o (fun τ => RTaint.rtaint.pop τ (.free (anyFrame I)))) e₅).trans ?_
-    exact eE
-  exact ⟨_, (congrArg (Option.any (initEndOk I ks)) e).trans oE⟩
-
-open Lean Elab Term Meta in
-/-- `init_long_mid% H I`: `initLongMidOf H I`, computed in compiled code, as
-a literal. -/
-elab "init_long_mid% " H:term:max I:term:max : term => do
-  let e ← elabTerm (← `(VG.Proof.Pbkdf2.Md.X86_64.initLongMidOf $H $I)) none
-  synthesizeSyntheticMVarsNoPostponing
-  let e ← instantiateMVars e
-  let v ← unsafe evalExpr RTaint.FT (mkConst ``RTaint.FT) e
-  return toExpr v
+/-- The clearing of the frame of `initCode`'s branch for long keys. -/
+abbrev initWipe (I : Spec.Hmac.Instance) : Prog isa :=
+  .block (Impl.StackScratch.X86_64.wipe I.initAnyKeyScratch)
 
 /-- The bytes of the frame in which PBKDF2's `pbkdf2` (of instance `I`) keeps
 its working space, for its `_scratch` form: a quadword standing for the
