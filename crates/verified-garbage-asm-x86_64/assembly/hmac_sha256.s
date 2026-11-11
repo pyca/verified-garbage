@@ -983,41 +983,24 @@ vg_hmac_sha256_finalize_avx2:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-856]
-	movdqu XMMWORD PTR [rsp+712], xmm0
-	movdqu XMMWORD PTR [rsp+696], xmm0
+	vmovdqu YMMWORD PTR [rsp+696], ymm0
 	movdqu XMMWORD PTR [rsp+680], xmm0
-	movdqu XMMWORD PTR [rsp+520], xmm0
-	movdqu XMMWORD PTR [rsp+504], xmm0
-	movdqu XMMWORD PTR [rsp+488], xmm0
-	movdqu XMMWORD PTR [rsp+472], xmm0
-	movdqu XMMWORD PTR [rsp+456], xmm0
-	movdqu XMMWORD PTR [rsp+440], xmm0
-	movdqu XMMWORD PTR [rsp+424], xmm0
-	movdqu XMMWORD PTR [rsp+408], xmm0
-	movdqu XMMWORD PTR [rsp+392], xmm0
-	movdqu XMMWORD PTR [rsp+376], xmm0
-	movdqu XMMWORD PTR [rsp+360], xmm0
-	movdqu XMMWORD PTR [rsp+344], xmm0
-	movdqu XMMWORD PTR [rsp+328], xmm0
-	movdqu XMMWORD PTR [rsp+312], xmm0
-	movdqu XMMWORD PTR [rsp+296], xmm0
-	movdqu XMMWORD PTR [rsp+280], xmm0
-	movdqu XMMWORD PTR [rsp+264], xmm0
-	movdqu XMMWORD PTR [rsp+248], xmm0
-	movdqu XMMWORD PTR [rsp+232], xmm0
-	movdqu XMMWORD PTR [rsp+216], xmm0
-	movdqu XMMWORD PTR [rsp+200], xmm0
-	movdqu XMMWORD PTR [rsp+184], xmm0
-	movdqu XMMWORD PTR [rsp+168], xmm0
-	movdqu XMMWORD PTR [rsp+152], xmm0
-	movdqu XMMWORD PTR [rsp+136], xmm0
-	movdqu XMMWORD PTR [rsp+120], xmm0
-	movdqu XMMWORD PTR [rsp+104], xmm0
-	movdqu XMMWORD PTR [rsp+88], xmm0
-	movdqu XMMWORD PTR [rsp+72], xmm0
-	movdqu XMMWORD PTR [rsp+56], xmm0
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
+	vmovdqu YMMWORD PTR [rsp+504], ymm0
+	vmovdqu YMMWORD PTR [rsp+472], ymm0
+	vmovdqu YMMWORD PTR [rsp+440], ymm0
+	vmovdqu YMMWORD PTR [rsp+408], ymm0
+	vmovdqu YMMWORD PTR [rsp+376], ymm0
+	vmovdqu YMMWORD PTR [rsp+344], ymm0
+	vmovdqu YMMWORD PTR [rsp+312], ymm0
+	vmovdqu YMMWORD PTR [rsp+280], ymm0
+	vmovdqu YMMWORD PTR [rsp+248], ymm0
+	vmovdqu YMMWORD PTR [rsp+216], ymm0
+	vmovdqu YMMWORD PTR [rsp+184], ymm0
+	vmovdqu YMMWORD PTR [rsp+152], ymm0
+	vmovdqu YMMWORD PTR [rsp+120], ymm0
+	vmovdqu YMMWORD PTR [rsp+88], ymm0
+	vmovdqu YMMWORD PTR [rsp+56], ymm0
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
 	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+856]
 	xor eax, eax
