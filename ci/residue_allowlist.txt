@@ -172,7 +172,6 @@ x86_64 vg_argon2_blake2b_avx2_g_avx2
 x86_64 vg_argon2_blake2b_avx2_g_avx512
 x86_64 vg_argon2_blake2b_avx512_g_avx512
 x86_64 vg_blake2b_init
-x86_64 vg_camellia_ctr
 x86_64 vg_camellia_ctr_final
 x86_64 vg_cast5_cbc_decrypt_chained
 x86_64 vg_cast5_cbc_encrypt_chained
@@ -505,8 +504,6 @@ x86_64 vg_pbkdf2_hmac_sha512_shani
 x86_64 vg_poly1305_update_avx2
 x86_64 vg_poly1305_update_avx512
 x86_64 vg_poly1305_update_ifma
-x86_64 vg_rc2_cbc_decrypt_chained
-x86_64 vg_rc2_cbc_encrypt_chained
 x86_64 vg_rc4_apply
 x86_64 vg_rsa_check_key
 x86_64 vg_rsa_crt_values
@@ -548,7 +545,6 @@ x86_64 vg_sha512_256_finalize_avx2
 x86_64 vg_sha512_digest_avx2
 x86_64 vg_sha512_finalize_avx2
 x86_64 vg_sha512_update_avx2
-x86_64 vg_sm4_ctr
 x86_64 vg_sm4_ctr_final
 x86_64 vg_sm4_expand_key
 x86_64 vg_sm4_gcm_init
@@ -582,12 +578,6 @@ x86_64 vg_triple_des_cbc_decrypt_chained_avx512
 x86_64 vg_triple_des_cfb64_decrypt
 x86_64 vg_triple_des_cfb64_decrypt_avx2
 x86_64 vg_triple_des_cfb64_decrypt_avx512
-x86_64 vg_triple_des_ecb_decrypt
-x86_64 vg_triple_des_ecb_decrypt_avx2
-x86_64 vg_triple_des_ecb_decrypt_avx512
-x86_64 vg_triple_des_ecb_encrypt
-x86_64 vg_triple_des_ecb_encrypt_avx2
-x86_64 vg_triple_des_ecb_encrypt_avx512
 x86_64 vg_x25519_base
 x86_64 vg_x25519_base_adx
 x86_64 vg_x25519_base_ifma

@@ -12,12 +12,15 @@ import VerifiedGarbage.Proof.Framework.Offset
 # ML-KEM on x86-64: a row of `keygen_mul` in registers (`rowY`)
 
 `rowY k` adds to `t[i]` the sum of the `k` products of row `i` of `Â` and
-`ŝ`, 32 coefficients at a time, without the accumulator in memory: each
-product is `vbase` without its last Montgomery multiplications by `R² mod q`
-(`vbaseL`), whose words are only congruent to the product's coefficients
-times `2⁻¹⁶`, within `2q` (`RepR 2`, `baseL_rep`); the `k ≤ 4` products of
-a word add up within `8q` (`RepR.add`), and one Montgomery multiplication by
-`R² mod q` makes the sum congruent to the coefficient within `q`
+`ŝ`, 32 coefficients at a time, without the accumulator in memory. The
+coefficients of `f` are loaded as pairs, a pair to a doubleword (`PLanes`),
+so that `vpmaddwd` with the pairs `(g₀, g₁γ)` and `(g₁, g₀)` gives the two
+coefficients of `BaseCaseMultiply` as doublewords, each congruent to its
+coefficient and less than `2q²` (`RepD 2`, `pmadd_rep`); the `k ≤ 4`
+products of a coefficient add up within `8q²` (`RepD.add`), and one
+Montgomery reduction of the sum leaves a word congruent to the coefficient
+times `2⁻¹⁶`, within `q` (`RepR 1`, `redD_rep`); then one Montgomery
+multiplication by `R² mod q` makes it congruent to the coefficient
 (`red2_rep`), which `vcadd` makes canonical (`cadd_rep`).
 -/
 
@@ -25,8 +28,9 @@ a word add up within `8q` (`RepR.add`), and one Montgomery multiplication by
 
 namespace VG.Proof.MlKem.X86_64
 
+open VG VG.X86_64 VG.Impl.MlKem.X86_64
 open VG.Spec.MlKem
-open W (montW caddW r2W)
+open W (montW caddW r2W qW qinvW)
 
 /-! ## Words congruent to coefficients times `2⁻¹⁶` -/
 
@@ -35,25 +39,45 @@ than `b · q` in magnitude. -/
 def RepR (b : Nat) (w : BitVec 16) (v : Zq) : Prop :=
   -((b : Int) * 3329) < w.toInt ∧ w.toInt < (b : Int) * 3329 ∧ (w.toInt * 65536 - (v.val : Int)) % 3329 = 0
 
-/-- The congruence of the first word of `baseL_rep`, on integers. -/
-theorem baseL_id0 {M1 M2 M3 Gi A0 B0 A1 B1 γ k1 k2 k3 kG : Int} (d1 : M1 * 65536 - A1 * B1 = 3329 * k1)
-    (d2 : M2 * 65536 - M1 * Gi = 3329 * k2) (d3 : M3 * 65536 - A0 * B0 = 3329 * k3)
-    (hG : Gi - γ * 65536 = 3329 * kG) :
-    M3 * 65536 + M2 * 65536 - (A0 * B0 + A1 * B1 * γ) = 3329 * (k3 + k2 + γ * k1 + M1 * kG) := by
+/-- The doubleword `x` is congruent to `v` modulo `q`, and less than
+`b · q²` in magnitude. -/
+def RepD (b : Nat) (x : BitVec 32) (v : Zq) : Prop :=
+  -((b : Int) * 11082241) < x.toInt ∧ x.toInt < (b : Int) * 11082241 ∧ (x.toInt - (v.val : Int)) % 3329 = 0
+
+theorem toInt_add32 {a b : BitVec 32} (h1 : -2147483648 ≤ a.toInt + b.toInt) (h2 : a.toInt + b.toInt < 2147483648) :
+    (a + b).toInt = a.toInt + b.toInt := by
+  rw [BitVec.toInt_add]; exact Int.bmod_eq_of_le (by simpa using h1) (by simpa using h2)
+
+theorem toInt_sub32 {a b : BitVec 32} (h1 : -2147483648 ≤ a.toInt - b.toInt) (h2 : a.toInt - b.toInt < 2147483648) :
+    (a - b).toInt = a.toInt - b.toInt := by
+  rw [BitVec.toInt_sub]; exact Int.bmod_eq_of_le (by simpa using h1) (by simpa using h2)
+
+/-- The product of an integer in `(-q, q)` and one in `[0, q)` is less than
+`q²` in magnitude. -/
+theorem mul_qq {a b : Int} (ha1 : -3329 < a) (ha2 : a < 3329) (hb1 : 0 ≤ b) (hb2 : b < 3329) :
+    -11082241 < a * b ∧ a * b < 11082241 := by
+  have hn : (a * b).natAbs ≤ 3328 * 3328 := by
+    rw [Int.natAbs_mul]; exact Nat.mul_le_mul (by omega_arith) (by omega_arith)
+  have h1 := Int.le_natAbs (a := a * b)
+  have h2 := Int.le_natAbs (a := -(a * b))
+  rw [Int.natAbs_neg] at h2
+  omega_arith
+
+/-- The congruence of the first doubleword of `pmadd_rep`, on integers:
+`2¹⁶ · 169 = 3327 q + 1`. -/
+theorem pmadd_id0 {M A0 A1 B0 B1 G γ k kG : Int} (d : M * 65536 - B1 * G = 3329 * k)
+    (hG : G - γ * 65536 = 3329 * kG) :
+    B0 * A0 + M * A1 - (A0 * B0 + A1 * B1 * γ) =
+      3329 * (A1 * (169 * (B1 * kG + k) - 3327 * (M - B1 * γ))) := by
   grind
 
-/-- The congruence of the second word of `baseL_rep`, on integers. -/
-theorem baseL_id1 {N1 N2 A0 B1 A1 B0 j1 j2 : Int} (e1 : N1 * 65536 - A0 * B1 = 3329 * j1)
-    (e2 : N2 * 65536 - A1 * B0 = 3329 * j2) : N1 * 65536 + N2 * 65536 - (A0 * B1 + A1 * B0) = 3329 * (j1 + j2) := by
-  grind
-
-/-- The two words of `BaseCaseMultiply` before their multiplications by `R²
-mod q` (`vbaseL`), from the words `a₀, a₁, b₀, b₁` and `γ · 2¹⁶ mod q`. -/
-theorem baseL_rep {a0 a1 b0 b1 g : BitVec 16} {x0 x1 y0 y1 γ : Zq} (ha0 : a0.toNat = x0.val)
+/-- The two doublewords of `BaseCaseMultiply` that `pmaddwd` leaves, from the
+words `a₀, a₁, b₀, b₁` and `γ · 2¹⁶ mod q`. -/
+theorem pmadd_rep {a0 a1 b0 b1 g : BitVec 16} {x0 x1 y0 y1 γ : Zq} (ha0 : a0.toNat = x0.val)
     (ha1 : a1.toNat = x1.val) (hb0 : b0.toNat = y0.val) (hb1 : b1.toNat = y1.val)
     (hg : g.toNat = γ.val * 65536 % 3329) :
-    RepR 2 (montW a0 b0 + montW (montW a1 b1) g) (x0 * y0 + x1 * y1 * γ) ∧
-      RepR 2 (montW a0 b1 + montW a1 b0) (x0 * y1 + x1 * y0) := by
+    RepD 2 (mulWordsSigned b0 a0 + mulWordsSigned (montW b1 g) a1) (x0 * y0 + x1 * y1 * γ) ∧
+      RepD 2 (mulWordsSigned b1 a0 + mulWordsSigned b0 a1) (x0 * y1 + x1 * y0) := by
   obtain ⟨A0, A0l, A0h⟩ := W.toInt_lt_q ha0
   obtain ⟨A1, A1l, A1h⟩ := W.toInt_lt_q ha1
   obtain ⟨B0, B0l, B0h⟩ := W.toInt_lt_q hb0
@@ -66,52 +90,102 @@ theorem baseL_rep {a0 a1 b0 b1 g : BitVec 16} {x0 x1 y0 y1 γ : Zq} (ha0 : a0.to
   have kG : ∃ k : Int, g.toInt - (γ.val : Int) * 65536 = 3329 * k :=
     ⟨-((γ.val : Int) * 65536 / 3329), by rw [G]; omega_using []⟩
   obtain ⟨kG, hkG⟩ := kG
-  obtain ⟨m1l, m1h, ⟨k1, d1⟩⟩ := W.mont_small (d := a1) (z := b1) (by omega_using [A1l]) (by omega_using [A1h])
-    (by omega_using [B1l]) (by omega_using [B1h])
-  obtain ⟨m2l, m2h, ⟨k2, d2⟩⟩ := W.mont_small (d := montW a1 b1) (z := g) (by omega_using [m1l])
-    (by omega_using [m1h]) (by omega_using [Gl]) (by omega_using [Gl])
-  obtain ⟨m3l, m3h, ⟨k3, d3⟩⟩ := W.mont_small (d := a0) (z := b0) (by omega_using [A0l]) (by omega_using [A0h])
-    (by omega_using [B0l]) (by omega_using [B0h])
-  obtain ⟨n1l, n1h, ⟨j1, e1⟩⟩ := W.mont_small (d := a0) (z := b1) (by omega_using [A0l]) (by omega_using [A0h])
-    (by omega_using [B1l]) (by omega_using [B1h])
-  obtain ⟨n2l, n2h, ⟨j2, e2⟩⟩ := W.mont_small (d := a1) (z := b0) (by omega_using [A1l]) (by omega_using [A1h])
-    (by omega_using [B0l]) (by omega_using [B0h])
-  have S1 := W.toInt_add16 (a := montW a0 b0) (b := montW (montW a1 b1) g) (by omega_using [m3l, m2l])
-    (by omega_using [m3h, m2h])
-  have S2 := W.toInt_add16 (a := montW a0 b1) (b := montW a1 b0) (by omega_using [n1l, n2l])
-    (by omega_using [n1h, n2h])
-  simp only [A0, A1, B0, B1] at d1 d3 e1 e2
+  obtain ⟨ml, mh, ⟨k, d⟩⟩ := W.mont_small (d := b1) (z := g) (by omega_using [B1l]) (by omega_using [B1h])
+    (by omega_using [Gl]) (by omega_using [Gl])
+  have p1 := mul_qq (a := b0.toInt) (b := a0.toInt) (by omega_using [B0l]) B0h A0l A0h
+  have p2 := mul_qq ml mh A1l A1h
+  have p3 := mul_qq (a := b1.toInt) (b := a0.toInt) (by omega_using [B1l]) B1h A0l A0h
+  have p4 := mul_qq (a := b0.toInt) (b := a1.toInt) (by omega_using [B0l]) B0h A1l A1h
+  have S1 := toInt_add32 (a := mulWordsSigned b0 a0) (b := mulWordsSigned (montW b1 g) a1)
+    (by rw [W.toInt_mulWordsSigned, W.toInt_mulWordsSigned]; omega_using [p1, p2])
+    (by rw [W.toInt_mulWordsSigned, W.toInt_mulWordsSigned]; omega_using [p1, p2])
+  have S2 := toInt_add32 (a := mulWordsSigned b1 a0) (b := mulWordsSigned b0 a1)
+    (by rw [W.toInt_mulWordsSigned, W.toInt_mulWordsSigned]; omega_using [p3, p4])
+    (by rw [W.toInt_mulWordsSigned, W.toInt_mulWordsSigned]; omega_using [p3, p4])
+  rw [W.toInt_mulWordsSigned, W.toInt_mulWordsSigned] at S1 S2
   have v1 : ((x0 * y0 + x1 * y1 * γ).val : Int) = ((x0.val * y0.val + x1.val * y1.val * γ.val : Nat) : Int) % 3329 := by
     rw [val_add', val_mul, val_mul, val_mul, W.mulmod, ← Nat.add_mod]; exact Int.natCast_emod _ _
   have v2 : ((x0 * y1 + x1 * y0).val : Int) = ((x0.val * y1.val + x1.val * y0.val : Nat) : Int) % 3329 := by
     rw [val_add', val_mul, val_mul, ← Nat.add_mod]; exact Int.natCast_emod _ _
-  refine ⟨⟨by rw [S1]; omega_using [m3l, m2l], by rw [S1]; omega_using [m3h, m2h], ?_⟩,
-    ⟨by rw [S2]; omega_using [n1l, n2l], by rw [S2]; omega_using [n1h, n2h], ?_⟩⟩
+  refine ⟨⟨by rw [S1]; omega_using [p1, p2], by rw [S1]; omega_using [p1, p2], ?_⟩,
+    ⟨by rw [S2]; omega_using [p3, p4], by rw [S2]; omega_using [p3, p4], ?_⟩⟩
   · rw [S1, v1]
-    have h := baseL_id0 d1 d2 d3 hkG
+    have h := pmadd_id0 (A0 := a0.toInt) (A1 := a1.toInt) (B0 := b0.toInt) d hkG
+    simp only [A0, A1, B0, B1] at h ⊢
     simp only [Int.natCast_add, Int.natCast_mul] at h ⊢
     generalize (x0.val : Int) * y0.val + x1.val * y1.val * γ.val = X at h ⊢
     omega_using [h]
   · rw [S2, v2]
-    have h := baseL_id1 e1 e2
-    simp only [Int.natCast_add, Int.natCast_mul] at h ⊢
-    generalize (x0.val : Int) * y1.val + x1.val * y0.val = X at h ⊢
-    omega_using [h]
+    simp only [A0, A1, B0, B1]
+    simp only [Int.natCast_add, Int.natCast_mul]
+    have e : (y1.val : Int) * x0.val + (y0.val : Int) * x1.val = (x0.val : Int) * y1.val + (x1.val : Int) * y0.val := by
+      rw [Int.mul_comm, Int.mul_comm (y0.val : Int)]
+    rw [e]
+    omega_using []
 
-/-- The sum of two words keeps their congruences, within the sum of their
-bounds (at most `9q`, so without overflow). -/
-theorem RepR.add {b c : Nat} {w w' : BitVec 16} {v v' : Zq} (h : RepR b w v) (h' : RepR c w' v') (hbc : b + c ≤ 9) :
-    RepR (b + c) (w + w') (v + v') := by
+/-- The sum of two doublewords keeps their congruences, within the sum of
+their bounds (at most `8q²`, so without overflow). -/
+theorem RepD.add {b c : Nat} {x x' : BitVec 32} {v v' : Zq} (h : RepD b x v) (h' : RepD c x' v') (hbc : b + c ≤ 8) :
+    RepD (b + c) (x + x') (v + v') := by
   obtain ⟨h1, h2, h3⟩ := h
   obtain ⟨h1', h2', h3'⟩ := h'
-  have hb : ((b + c : Nat) : Int) * 3329 ≤ 29961 := by
+  have hb : ((b + c : Nat) : Int) * 11082241 ≤ 88657928 := by
     have := Int.ofNat_le.mpr hbc; push_cast at this ⊢; omega_arith
-  have S := W.toInt_add16 (a := w) (b := w') (by push_cast at hb; omega_arith) (by push_cast at hb; omega_arith)
+  have S := toInt_add32 (a := x) (b := x') (by push_cast at hb; omega_arith) (by push_cast at hb; omega_arith)
   have hv : ((v + v').val : Int) = ((v.val + v'.val : Nat) : Int) % 3329 := by
     rw [val_add']; exact Int.natCast_emod _ _
   refine ⟨by rw [S]; push_cast; omega_arith, by rw [S]; push_cast; omega_arith, ?_⟩
   rw [S, hv]
   push_cast
+  omega_arith
+
+/-- A doubleword that fits a signed word, as that word. -/
+theorem toInt_setWidth16 {y : BitVec 32} (h1 : -32768 ≤ y.toInt) (h2 : y.toInt < 32768) :
+    (y.setWidth 16).toInt = y.toInt := by
+  have hy := y.isLt
+  rw [W.toInt16, BitVec.toNat_setWidth, show (2 : Nat) ^ 16 = 65536 from rfl]
+  rw [W.toInt32] at h1 h2 ⊢
+  by_cases c : y.toNat < 2147483648
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true c)] at h1 h2 ⊢
+    by_cases c2 : y.toNat % 65536 < 32768
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true c2)]; omega
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false c2)]; omega
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false c)] at h1 h2 ⊢
+    by_cases c2 : y.toNat % 65536 < 32768
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true c2)]; omega
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false c2)]; omega
+
+/-- The doubleword `predD` leaves of `x`: `(x - (x q⁻¹ mod± 2¹⁶) q) / 2¹⁶`. -/
+def redD (x : BitVec 32) : BitVec 32 :=
+  (x - mulWordsSigned ((mulWordsSigned (x.extractLsb' 0 16) qinvW).extractLsb' 0 16) qW).sshiftRight 16
+
+/-- The word that `packssdw` makes of `redD x` represents `v` times `2⁻¹⁶`
+within `q`, for a doubleword `x ≡ v` less than `8q²` in magnitude. -/
+theorem redD_rep {b : Nat} {x : BitVec 32} {v : Zq} (h : RepD b x v) (hb : b ≤ 8) :
+    RepR 1 (satSignedWord (redD x)) v := by
+  obtain ⟨h1, h2, h3⟩ := h
+  have hb' : (b : Int) * 11082241 ≤ 88657928 := by have := Int.ofNat_le.mpr hb; omega_arith
+  generalize hL : x.extractLsb' 0 16 = L
+  have hL' := W.toInt_lo x
+  rw [hL] at hL'
+  generalize hT : (mulWordsSigned L qinvW).extractLsb' 0 16 = T
+  have hT' := W.toInt_lo (mulWordsSigned L qinvW)
+  rw [hT, W.toInt_mulWordsSigned, W.qinvW_toInt] at hT'
+  have bT := W.toInt16_bounds T
+  have eM : (mulWordsSigned T qW).toInt = T.toInt * 3329 := by rw [W.toInt_mulWordsSigned, W.qW_toInt]
+  have S := toInt_sub32 (a := x) (b := mulWordsSigned T qW) (by rw [eM]; omega_arith) (by rw [eM]; omega_arith)
+  rw [eM] at S
+  have hc : (x.toInt - T.toInt * 3329) % 65536 = 0 := by omega_arith
+  have eR : (redD x).toInt = (x.toInt - T.toInt * 3329) / 65536 := by
+    rw [redD, hL, hT, BitVec.toInt_sshiftRight, S, Int.shiftRight_eq_div_pow,
+      show ((2 ^ 16 : Nat) : Int) = 65536 from rfl]
+  have r1 : -3329 < (redD x).toInt := by rw [eR]; omega_arith
+  have r2 : (redD x).toInt < 3329 := by rw [eR]; omega_arith
+  have eS : (satSignedWord (redD x)).toInt = (redD x).toInt := by
+    rw [satSignedWord, ifn (by omega_using [r2]), ifn (by omega_using [r1])]
+    exact toInt_setWidth16 (by omega_using [r1]) (by omega_using [r2])
+  refine ⟨by rw [eS]; omega_using [r1], by rw [eS]; omega_using [r2], ?_⟩
+  rw [eS, eR]
   omega_arith
 
 /-- `montW w (R² mod q)` represents `v` within `q` for a word `w` with
@@ -133,8 +207,6 @@ theorem red2_rep {b : Nat} {w : BitVec 16} {v : Zq} (h : RepR b w v) (hb : b ≤
 
 /-! ## The SSE2 code of each lane -/
 
-open VG VG.X86_64 VG.Impl.MlKem.X86_64
-
 /-- `deintS` of `g`, with `xmm5` for its temporary (`xmm11` holds a sum). -/
 theorem deintS_ok6' (s : State) :
     WP isa (.block (deintS .xmm6 .xmm7 .xmm8 .xmm9 .xmm10 .xmm5)) s fun s' =>
@@ -145,89 +217,162 @@ theorem deintS_ok6' (s : State) :
   vrunm [eval_movdqa]
   exact ⟨⟨rfl, rfl⟩, by xonly⟩
 
-/-- `vbaseL`: `BaseCaseMultiply` on the eight pairs of lanes, but for the
-multiplications by `R² mod q`. -/
-theorem vbaseL_ok {s : State} (hc : VConsts s) {x0 x1 y0 y1 γ : Nat → Zq}
-    (h0 : Lanes (s.xmm .xmm0) x0) (h4 : Lanes (s.xmm .xmm4) x1) (h6 : Lanes (s.xmm .xmm6) y0)
-    (h10 : Lanes (s.xmm .xmm10) y1) (h13 : ZLanes (s.xmm .xmm13) γ) :
-    WP isa (.block vbaseL) s fun s' => LanesR (RepR 2) (s'.xmm .xmm1) (fun i => x0 i * y0 i + x1 i * y1 i * γ i) ∧
-      LanesR (RepR 2) (s'.xmm .xmm2) (fun i => x0 i * y1 i + x1 i * y0 i) ∧
-      XOnly [.xmm1, .xmm2, .xmm3, .xmm4] s s' := by
-  simp only [vbaseL, List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (movmont_ok (d := .xmm1) (src := .xmm4) (z := .xmm10) (t := .xmm2) (by decide) (by decide)
+theorem dword_pmaddwd (a b : BitVec 128) {i : Nat} (hi : i < 4) :
+    dword (XBinOp.eval .pmaddwd a b) i = mulWordsSigned (word a (2 * i)) (word b (2 * i)) +
+      mulWordsSigned (word a (2 * i + 1)) (word b (2 * i + 1)) := by
+  rcases cases4 hi with rfl | rfl | rfl | rfl <;> simp [XBinOp.eval]
+
+theorem dword_psrad (a : BitVec 128) (n : BitVec 8) {i : Nat} (hi : i < 4) :
+    dword (XShiftOp.eval .psrad a n) i = (dword a i).sshiftRight (min n.toNat 32) := by
+  rcases cases4 hi with rfl | rfl | rfl | rfl <;> simp [XShiftOp.eval]
+
+/-- The doublewords of `x` are pairs of coefficients: `f₀ i` in the low word
+of doubleword `i` and `f₁ i` in the high one. -/
+def PLanes (x : BitVec 128) (f₀ f₁ : Nat → Zq) : Prop :=
+  ∀ i < 4, (word x (2 * i)).toNat = (f₀ i).val ∧ (word x (2 * i + 1)).toNat = (f₁ i).val
+
+/-- The doublewords of `x` are congruent to `f 0, …, f 3`, within `b q²`. -/
+def DLanes (b : Nat) (x : BitVec 128) (f : Nat → Zq) : Prop := ∀ i < 4, RepD b (dword x i) (f i)
+
+theorem word_qD0 {i : Nat} (hi : i < 4) : word qD (2 * i) = qW := by
+  rcases cases4 hi with rfl | rfl | rfl | rfl <;> decide
+
+theorem word_qD1 {i : Nat} (hi : i < 4) : word qD (2 * i + 1) = 0 := by
+  rcases cases4 hi with rfl | rfl | rfl | rfl <;> decide
+
+theorem mulWordsSigned_zero (a : BitVec 16) : mulWordsSigned a 0 = 0 := by
+  rw [mulWordsSigned, show (0 : BitVec 16).signExtend 32 = 0 from by decide]
+  exact BitVec.mul_zero
+
+/-- What `predD` leaves in each doubleword. -/
+theorem dword_predD (x : BitVec 128) {i : Nat} (hi : i < 4) :
+    dword (XShiftOp.eval .psrad (XBinOp.eval .psubd x (XBinOp.eval .pmaddwd (XBinOp.eval .pmullw x qinvV)
+      (XShiftOp.eval .psrld qV 16))) 16) i = redD (dword x i) := by
+  have w0 := word_dword x hi 0 (by decide)
+  rw [Nat.add_zero, Nat.mul_zero] at w0
+  have z : ∀ y : BitVec 32, y + 0 = y := fun y => BitVec.add_zero y
+  rw [dword_psrad _ _ hi, dword_psubd _ _ hi, dword_pmaddwd _ _ hi, word_pmullw _ _ (by omega_arith),
+    word_pmullw _ _ (by omega_arith), show XShiftOp.eval .psrld qV 16 = qD from by decide, word_qD0 hi, word_qD1 hi,
+    mulWordsSigned_zero, z, word_qinvV (by omega_arith), w0]
+  rfl
+
+theorem ptermSet_ok {s : State} (hc : VConsts s) {x0 x1 y0 y1 γ : Nat → Zq}
+    (h0 : PLanes (s.xmm .xmm0) x0 x1) (h1 : PLanes (s.xmm .xmm1) (fun i => x0 (4 + i)) (fun i => x1 (4 + i)))
+    (h6 : Lanes (s.xmm .xmm6) y0) (h10 : Lanes (s.xmm .xmm10) y1) (h13 : ZLanes (s.xmm .xmm13) γ) :
+    WP isa (.block ptermSet) s fun s' =>
+      (DLanes 2 (s'.xmm .xmm11) (fun i => x0 i * y0 i + x1 i * y1 i * γ i) ∧
+        DLanes 2 (s'.xmm .xmm2) (fun i => x0 (4 + i) * y0 (4 + i) + x1 (4 + i) * y1 (4 + i) * γ (4 + i)) ∧
+        DLanes 2 (s'.xmm .xmm12) (fun i => x0 i * y1 i + x1 i * y0 i) ∧
+        DLanes 2 (s'.xmm .xmm3) (fun i => x0 (4 + i) * y1 (4 + i) + x1 (4 + i) * y0 (4 + i))) ∧
+      XOnly [.xmm4, .xmm5, .xmm11, .xmm2, .xmm12, .xmm3] s s' := by
+  rw [ptermSet, pterm, WP.block_append_iff]
+  refine WP.mono (movmont_ok (d := .xmm4) (src := .xmm10) (z := .xmm13) (t := .xmm5) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) hc) fun s1 ⟨l1, o1⟩ => ?_
-  have c1 := o1.consts hc (by decide) (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (vmont_ok (d := .xmm1) (z := .xmm13) (t := .xmm2) (by decide) (by decide) (by decide)
-    (by decide) (by decide) c1) fun s2 ⟨l2, o2⟩ => ?_
-  have c2 := o2.consts c1 (by decide) (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (movmont_ok (d := .xmm2) (src := .xmm0) (z := .xmm6) (t := .xmm3) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) c2) fun s3 ⟨l3, o3⟩ => ?_
-  have c3 := o3.consts c2 (by decide) (by decide)
-  rw [WP.block_append_iff, block_cons_iff]
-  refine WP.mono (paddw_ok (d := .xmm1) (e := .xmm2)) fun s4 ⟨l4, o4⟩ => ?_
-  have c4 := o4.consts c3 (by decide) (by decide)
-  refine WP.mono (movmont_ok (d := .xmm2) (src := .xmm0) (z := .xmm10) (t := .xmm3) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) c4) fun s5 ⟨l5, o5⟩ => ?_
-  have c5 := o5.consts c4 (by decide) (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (vmont_ok (d := .xmm4) (z := .xmm6) (t := .xmm3) (by decide) (by decide) (by decide)
-    (by decide) (by decide) c5) fun s6 ⟨l6, o6⟩ => ?_
-  refine WP.mono (paddw_ok (d := .xmm2) (e := .xmm4)) fun s7 ⟨l7, o7⟩ => ?_
-  -- the registers each step reads
-  have e0 : s4.xmm .xmm0 = s.xmm .xmm0 := by
-    rw [o4.xmm _ (by decide), o3.xmm _ (by decide), o2.xmm _ (by decide), o1.xmm _ (by decide)]
-  have e6 : s5.xmm .xmm6 = s.xmm .xmm6 := by
-    rw [o5.xmm _ (by decide), o4.xmm _ (by decide), o3.xmm _ (by decide), o2.xmm _ (by decide),
-      o1.xmm _ (by decide)]
-  have e10 : s4.xmm .xmm10 = s.xmm .xmm10 := by
-    rw [o4.xmm _ (by decide), o3.xmm _ (by decide), o2.xmm _ (by decide), o1.xmm _ (by decide)]
-  have e4 : s5.xmm .xmm4 = s.xmm .xmm4 := by
-    rw [o5.xmm _ (by decide), o4.xmm _ (by decide), o3.xmm _ (by decide), o2.xmm _ (by decide),
-      o1.xmm _ (by decide)]
-  have v1 : ∀ i < 8, word (s7.xmm .xmm1) i = W.montW (word (s.xmm .xmm0) i) (word (s.xmm .xmm6) i) +
-      W.montW (W.montW (word (s.xmm .xmm4) i) (word (s.xmm .xmm10) i)) (word (s.xmm .xmm13) i) := fun i hi => by
-    rw [o7.xmm _ (by decide), o6.xmm _ (by decide), o5.xmm _ (by decide), l4 i hi, o3.xmm _ (by decide), l2 i hi,
-      l3 i hi]
-    dsimp only
-    rw [l1 i hi, o1.xmm _ (by decide), o2.xmm _ (by decide), o1.xmm _ (by decide), BitVec.add_comm]
-    dsimp only
-    rw [o2.xmm .xmm6 (by decide), o1.xmm .xmm6 (by decide)]
-  have v2 : ∀ i < 8, word (s7.xmm .xmm2) i = W.montW (word (s.xmm .xmm0) i) (word (s.xmm .xmm10) i) +
-      W.montW (word (s.xmm .xmm4) i) (word (s.xmm .xmm6) i) := fun i hi => by
-    rw [l7 i hi, o6.xmm _ (by decide), l6 i hi, l5 i hi]
-    dsimp only
-    rw [e0, e10, e4, e6]
-  refine ⟨fun i hi => ?_, fun i hi => ?_, ?_⟩
-  · rw [v1 i hi]
-    exact (baseL_rep (h0 i hi) (h4 i hi) (h6 i hi) (h10 i hi) (h13 i hi)).1
-  · rw [v2 i hi]
-    exact (baseL_rep (h0 i hi) (h4 i hi) (h6 i hi) (h10 i hi) (h13 i hi)).2
-  · refine ((o1.trans (o2.trans (o3.trans (o4.trans (o5.trans (o6.trans o7)))))).mono ?_)
-    simp
-
-/-- The first product of a row, to the sums. -/
-theorem accSet_ok (s : State) :
-    WP isa (.block [xb .movdqa .xmm11 .xmm1, xb .movdqa .xmm12 .xmm2]) s fun s' =>
-      (s'.xmm .xmm11 = s.xmm .xmm1 ∧ s'.xmm .xmm12 = s.xmm .xmm2) ∧ XOnly [.xmm11, .xmm12] s s' := by
-  simp only [xb]
+  have e0 : s1.xmm .xmm0 = s.xmm .xmm0 := o1.xmm _ (by decide)
+  have e1 : s1.xmm .xmm1 = s.xmm .xmm1 := o1.xmm _ (by decide)
+  have e6 : s1.xmm .xmm6 = s.xmm .xmm6 := o1.xmm _ (by decide)
+  have e10 : s1.xmm .xmm10 = s.xmm .xmm10 := o1.xmm _ (by decide)
+  simp only [xmov, xb]
   vrun [eval_movdqa]
-  exact ⟨trivial, by xonly⟩
+  rw [e0, e1, e6, e10]
+  refine ⟨⟨fun i hi => ?_, fun i hi => ?_, fun i hi => ?_, fun i hi => ?_⟩, ?_⟩
+  · rw [dword_pmaddwd _ _ hi, word_punpcklwd _ _ (by omega_arith), word_punpcklwd _ _ (by omega_arith),
+      ifp (by omega_arith), ifn (by omega_arith), show 2 * i / 2 = i by omega_arith,
+      show (2 * i + 1) / 2 = i by omega_arith, l1 i (by omega_arith)]
+    exact (pmadd_rep (h0 i hi).1 (h0 i hi).2 (h6 i (by omega_arith)) (h10 i (by omega_arith))
+      (h13 i (by omega_arith))).1
+  · rw [dword_pmaddwd _ _ hi, word_punpckhwd _ _ (by omega_arith), word_punpckhwd _ _ (by omega_arith),
+      ifp (by omega_arith), ifn (by omega_arith), show 2 * i / 2 = i by omega_arith,
+      show (2 * i + 1) / 2 = i by omega_arith, l1 (4 + i) (by omega_arith)]
+    exact (pmadd_rep (h1 i hi).1 (h1 i hi).2 (h6 (4 + i) (by omega_arith)) (h10 (4 + i) (by omega_arith))
+      (h13 (4 + i) (by omega_arith))).1
+  · rw [dword_pmaddwd _ _ hi, word_punpcklwd _ _ (by omega_arith), word_punpcklwd _ _ (by omega_arith),
+      ifp (by omega_arith), ifn (by omega_arith), show 2 * i / 2 = i by omega_arith,
+      show (2 * i + 1) / 2 = i by omega_arith]
+    exact (pmadd_rep (g := 0) (γ := 0) (h0 i hi).1 (h0 i hi).2 (h6 i (by omega_arith)) (h10 i (by omega_arith))
+      (by decide)).2
+  · rw [dword_pmaddwd _ _ hi, word_punpckhwd _ _ (by omega_arith), word_punpckhwd _ _ (by omega_arith),
+      ifp (by omega_arith), ifn (by omega_arith), show 2 * i / 2 = i by omega_arith,
+      show (2 * i + 1) / 2 = i by omega_arith]
+    exact (pmadd_rep (g := 0) (γ := 0) (h1 i hi).1 (h1 i hi).2 (h6 (4 + i) (by omega_arith))
+      (h10 (4 + i) (by omega_arith)) (by decide)).2
+  · refine (o1.trans (rs' := [.xmm11, .xmm2, .xmm12, .xmm3]) ?_).mono (by simp)
+    xonly
 
-/-- A product added to the sums, word by word. -/
-theorem accAdd_ok (s : State) :
-    WP isa (.block [xb .paddw .xmm11 .xmm1, xb .paddw .xmm12 .xmm2]) s fun s' =>
-      (∀ i < 8, word (s'.xmm .xmm11) i = word (s.xmm .xmm11) i + word (s.xmm .xmm1) i) ∧
-      (∀ i < 8, word (s'.xmm .xmm12) i = word (s.xmm .xmm12) i + word (s.xmm .xmm2) i) ∧
-      XOnly [.xmm11, .xmm12] s s' := by
-  rw [block_cons_iff]
-  refine WP.mono (paddw_ok (d := .xmm11) (e := .xmm1)) fun s1 ⟨l1, o1⟩ => ?_
-  refine WP.mono (paddw_ok (d := .xmm12) (e := .xmm2)) fun s2 ⟨l2, o2⟩ => ⟨fun i hi => ?_, fun i hi => ?_, ?_⟩
-  · rw [o2.xmm _ (by decide), l1 i hi]
-  · rw [l2 i hi, o1.xmm _ (by decide), o1.xmm _ (by decide)]
-  · exact (o1.trans o2).mono (by simp)
+theorem ptermAdd_ok {s : State} (hc : VConsts s) {x0 x1 y0 y1 γ : Nat → Zq}
+    (h0 : PLanes (s.xmm .xmm0) x0 x1) (h1 : PLanes (s.xmm .xmm1) (fun i => x0 (4 + i)) (fun i => x1 (4 + i)))
+    (h6 : Lanes (s.xmm .xmm6) y0) (h10 : Lanes (s.xmm .xmm10) y1) (h13 : ZLanes (s.xmm .xmm13) γ)
+    {c : Nat} (hc8 : c + 2 ≤ 8) {u0 u1 v0 v1 : Nat → Zq} (h11 : DLanes c (s.xmm .xmm11) u0)
+    (h2 : DLanes c (s.xmm .xmm2) u1) (h12 : DLanes c (s.xmm .xmm12) v0) (h3 : DLanes c (s.xmm .xmm3) v1) :
+    WP isa (.block ptermAdd) s fun s' =>
+      (DLanes (c + 2) (s'.xmm .xmm11) (fun i => u0 i + (x0 i * y0 i + x1 i * y1 i * γ i)) ∧
+        DLanes (c + 2) (s'.xmm .xmm2)
+          (fun i => u1 i + (x0 (4 + i) * y0 (4 + i) + x1 (4 + i) * y1 (4 + i) * γ (4 + i))) ∧
+        DLanes (c + 2) (s'.xmm .xmm12) (fun i => v0 i + (x0 i * y1 i + x1 i * y0 i)) ∧
+        DLanes (c + 2) (s'.xmm .xmm3) (fun i => v1 i + (x0 (4 + i) * y1 (4 + i) + x1 (4 + i) * y0 (4 + i)))) ∧
+      XOnly [.xmm4, .xmm5, .xmm7, .xmm8, .xmm9, .xmm11, .xmm2, .xmm12, .xmm3] s s' := by
+  rw [ptermAdd, pterm, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (movmont_ok (d := .xmm4) (src := .xmm10) (z := .xmm13) (t := .xmm5) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) hc) fun s1 ⟨l1, o1⟩ => ?_
+  have e0 : s1.xmm .xmm0 = s.xmm .xmm0 := o1.xmm _ (by decide)
+  have e1 : s1.xmm .xmm1 = s.xmm .xmm1 := o1.xmm _ (by decide)
+  have e6 : s1.xmm .xmm6 = s.xmm .xmm6 := o1.xmm _ (by decide)
+  have e10 : s1.xmm .xmm10 = s.xmm .xmm10 := o1.xmm _ (by decide)
+  have e11 : s1.xmm .xmm11 = s.xmm .xmm11 := o1.xmm _ (by decide)
+  have e2 : s1.xmm .xmm2 = s.xmm .xmm2 := o1.xmm _ (by decide)
+  have e12 : s1.xmm .xmm12 = s.xmm .xmm12 := o1.xmm _ (by decide)
+  have e3 : s1.xmm .xmm3 = s.xmm .xmm3 := o1.xmm _ (by decide)
+  simp only [xmov, xb, List.cons_append, List.nil_append]
+  vrun [eval_movdqa]
+  rw [e0, e1, e6, e10, e11, e2, e12, e3]
+  refine ⟨⟨fun i hi => ?_, fun i hi => ?_, fun i hi => ?_, fun i hi => ?_⟩, ?_⟩
+  · rw [dword_paddd _ _ hi, dword_pmaddwd _ _ hi, word_punpcklwd _ _ (by omega_arith),
+      word_punpcklwd _ _ (by omega_arith), ifp (by omega_arith), ifn (by omega_arith),
+      show 2 * i / 2 = i by omega_arith, show (2 * i + 1) / 2 = i by omega_arith, l1 i (by omega_arith)]
+    exact (h11 i hi).add (pmadd_rep (h0 i hi).1 (h0 i hi).2 (h6 i (by omega_arith)) (h10 i (by omega_arith))
+      (h13 i (by omega_arith))).1 hc8
+  · rw [dword_paddd _ _ hi, dword_pmaddwd _ _ hi, word_punpckhwd _ _ (by omega_arith),
+      word_punpckhwd _ _ (by omega_arith), ifp (by omega_arith), ifn (by omega_arith),
+      show 2 * i / 2 = i by omega_arith, show (2 * i + 1) / 2 = i by omega_arith, l1 (4 + i) (by omega_arith)]
+    exact (h2 i hi).add (pmadd_rep (h1 i hi).1 (h1 i hi).2 (h6 (4 + i) (by omega_arith))
+      (h10 (4 + i) (by omega_arith)) (h13 (4 + i) (by omega_arith))).1 hc8
+  · rw [dword_paddd _ _ hi, dword_pmaddwd _ _ hi, word_punpcklwd _ _ (by omega_arith),
+      word_punpcklwd _ _ (by omega_arith), ifp (by omega_arith), ifn (by omega_arith),
+      show 2 * i / 2 = i by omega_arith, show (2 * i + 1) / 2 = i by omega_arith]
+    exact (h12 i hi).add (pmadd_rep (g := 0) (γ := 0) (h0 i hi).1 (h0 i hi).2 (h6 i (by omega_arith))
+      (h10 i (by omega_arith)) (by decide)).2 hc8
+  · rw [dword_paddd _ _ hi, dword_pmaddwd _ _ hi, word_punpckhwd _ _ (by omega_arith),
+      word_punpckhwd _ _ (by omega_arith), ifp (by omega_arith), ifn (by omega_arith),
+      show 2 * i / 2 = i by omega_arith, show (2 * i + 1) / 2 = i by omega_arith]
+    exact (h3 i hi).add (pmadd_rep (g := 0) (γ := 0) (h1 i hi).1 (h1 i hi).2 (h6 (4 + i) (by omega_arith))
+      (h10 (4 + i) (by omega_arith)) (by decide)).2 hc8
+  · refine (o1.trans (rs' := [.xmm5, .xmm7, .xmm8, .xmm9, .xmm11, .xmm2, .xmm12, .xmm3]) ?_).mono (by simp)
+    xonly
+
+/-- `pred`: the sums as words, each representing its coefficient times
+`2⁻¹⁶` within `q`: the first coefficients in `xmm11` and the second in
+`xmm12`. -/
+theorem pred_ok {s : State} (hc : VConsts s) {c : Nat} (hc8 : c ≤ 8) {u0 u1 v0 v1 : Nat → Zq}
+    (h11 : DLanes c (s.xmm .xmm11) u0) (h2 : DLanes c (s.xmm .xmm2) u1) (h12 : DLanes c (s.xmm .xmm12) v0)
+    (h3 : DLanes c (s.xmm .xmm3) v1) :
+    WP isa (.block pred) s fun s' =>
+      LanesR (RepR 1) (s'.xmm .xmm11) (fun e => if e < 4 then u0 e else u1 (e - 4)) ∧
+      LanesR (RepR 1) (s'.xmm .xmm12) (fun e => if e < 4 then v0 e else v1 (e - 4)) ∧
+      XOnly [.xmm7, .xmm5, .xmm11, .xmm2, .xmm12, .xmm3] s s' := by
+  simp only [pred, predD, xmov, xb, List.cons_append, List.nil_append]
+  vrun [eval_movdqa]
+  rw [hc.q, hc.qinv]
+  refine ⟨fun e he => ?_, fun e he => ?_, by xonly⟩
+  · rw [word_packssdw _ _ he]
+    dsimp only
+    split
+    · rw [dword_predD _ (by omega_arith)]; exact redD_rep (h11 e (by omega_arith)) hc8
+    · rw [dword_predD _ (by omega_arith)]; exact redD_rep (h2 (e - 4) (by omega_arith)) hc8
+  · rw [word_packssdw _ _ he]
+    dsimp only
+    split
+    · rw [dword_predD _ (by omega_arith)]; exact redD_rep (h12 e (by omega_arith)) hc8
+    · rw [dword_predD _ (by omega_arith)]; exact redD_rep (h3 (e - 4) (by omega_arith)) hc8
 
 /-- The sums, times `R² mod q` (in `xmm13`) and made canonical. -/
 theorem accRed_ok {s : State} (hc : VConsts s) :
@@ -268,11 +413,9 @@ theorem unpkR_ok (t : State) :
 
 theorem lane_deintS6' : laneSseBlock (toY (deintS .xmm6 .xmm7 .xmm8 .xmm9 .xmm10 .xmm5)) =
     some (deintS .xmm6 .xmm7 .xmm8 .xmm9 .xmm10 .xmm5) := by decide +kernel
-theorem lane_vbaseL : laneSseBlock (toY vbaseL) = some vbaseL := by decide +kernel
-theorem lane_accSet : laneSseBlock [.vop (.vmovdqa .l256 .xmm11 .xmm1), .vop (.vmovdqa .l256 .xmm12 .xmm2)] =
-    some [xb .movdqa .xmm11 .xmm1, xb .movdqa .xmm12 .xmm2] := by decide +kernel
-theorem lane_accAdd : laneSseBlock [yb .vpaddw .xmm11 .xmm11 .xmm1, yb .vpaddw .xmm12 .xmm12 .xmm2] =
-    some [xb .paddw .xmm11 .xmm1, xb .paddw .xmm12 .xmm2] := by decide +kernel
+theorem lane_ptermSet : laneSseBlock (toY ptermSet) = some ptermSet := by decide +kernel
+theorem lane_ptermAdd : laneSseBlock (toY ptermAdd) = some ptermAdd := by decide +kernel
+theorem lane_pred : laneSseBlock (toY pred) = some pred := by decide +kernel
 theorem lane_accRed : laneSseBlock (toY (vmont .xmm11 .xmm13 .xmm3 ++ vcadd .xmm11 .xmm3 ++
     vmont .xmm12 .xmm13 .xmm3 ++ vcadd .xmm12 .xmm3)) =
     some (vmont .xmm11 .xmm13 .xmm3 ++ vcadd .xmm11 .xmm3 ++ vmont .xmm12 .xmm13 .xmm3 ++ vcadd .xmm12 .xmm3) := by
@@ -331,7 +474,9 @@ theorem addrBF (p : Addr) (b d t : Nat) :
 /-- How the polynomials `f` of a row are stored, `o` bytes apart: their
 predicate `Is` (with the frame it keeps, of `sz` bytes), the code `ld j` that
 loads the 32 coefficients of a block of polynomial `j` from `rsi + o j` as
-`rowLdY` does, and the bytes `st` (`stv`) of a block, which `rsi` moves on. -/
+`rowLdY` does (as pairs, `PLanes`: those of the pairs `pairY b l 0, …, 3` in
+lane `l` of `ymm0` and of the next four in `ymm1`), and the bytes `st`
+(`stv`) of a block, which `rsi` moves on. -/
 structure FRep (o : Nat) where
   ld : Nat → List Instr
   stv : BitVec 32
@@ -345,45 +490,68 @@ structure FRep (o : Nat) where
     s.gpr .rsi = fB + BitVec.ofNat 64 (st * b) → Is s.mem (fB + BitVec.ofNat 64 (o * j)) F →
     InRegions (s.rd ++ s.wr) (fB + BitVec.ofNat 64 (o * j)) sz →
     WP isa (.block (ld j)) s fun s' =>
-      (∀ l < 2, Lanes (s'.lane .xmm0 l) (fun e => F[2 * pairY b l e]!) ∧
-        Lanes (s'.lane .xmm4 l) (fun e => F[2 * pairY b l e + 1]!)) ∧
-      YOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5] s s'
+      (∀ l < 2, PLanes (s'.lane .xmm0 l) (fun i => F[2 * pairY b l i]!) (fun i => F[2 * pairY b l i + 1]!) ∧
+        PLanes (s'.lane .xmm1 l) (fun i => F[2 * pairY b l (4 + i)]!) (fun i => F[2 * pairY b l (4 + i) + 1]!)) ∧
+      YOnly [.xmm0, .xmm1, .xmm8, .xmm9] s s'
 
-/-- `rowLdY`: the even and the odd coefficients of block `b` of `F`
-(`u32`s at `fB + o j`), in `vbase`'s order. -/
+/-- What `rowLdY`'s `vpackssdw` do to each lane. -/
+theorem packF_ok (s : State) :
+    WP isa (.block [xb .packssdw .xmm0 .xmm1, xb .movdqa .xmm1 .xmm8, xb .packssdw .xmm1 .xmm9]) s fun s' =>
+      (s'.xmm .xmm0 = XBinOp.eval .packssdw (s.xmm .xmm0) (s.xmm .xmm1) ∧
+        s'.xmm .xmm1 = XBinOp.eval .packssdw (s.xmm .xmm8) (s.xmm .xmm9)) ∧ XOnly [.xmm0, .xmm1] s s' := by
+  simp only [xb]
+  vrun [eval_movdqa]
+  exact ⟨trivial, by xonly⟩
+
+theorem lane_packF : laneSseBlock [yb .vpackssdw .xmm0 .xmm0 .xmm1, yb .vpackssdw .xmm1 .xmm8 .xmm9] =
+    some [xb .packssdw .xmm0 .xmm1, xb .movdqa .xmm1 .xmm8, xb .packssdw .xmm1 .xmm9] := by decide +kernel
+
+/-- `rowLdY`: the coefficients of block `b` of `F` (`u32`s at `fB + o j`), as
+pairs in `vbase`'s order. -/
 theorem ld32_ok {o : Nat} {fB : Addr} {F : Poly} {b j : Nat} {s : State} (hb : b < 8)
     (hrsi : s.gpr .rsi = fB + BitVec.ofNat 64 (128 * b)) (hF : PolyIs s.mem (fB + BitVec.ofNat 64 (o * j)) F)
     (rF : InRegions (s.rd ++ s.wr) (fB + BitVec.ofNat 64 (o * j)) 1024) :
     WP isa (.block (rowLdY o j)) s fun s' =>
-      (∀ l < 2, Lanes (s'.lane .xmm0 l) (fun e => F[2 * pairY b l e]!) ∧
-        Lanes (s'.lane .xmm4 l) (fun e => F[2 * pairY b l e + 1]!)) ∧
-      YOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5] s s' := by
-  have hj : 32 * b + 32 ≤ 256 := by omega_arith
+      (∀ l < 2, PLanes (s'.lane .xmm0 l) (fun i => F[2 * pairY b l i]!) (fun i => F[2 * pairY b l i + 1]!) ∧
+        PLanes (s'.lane .xmm1 l) (fun i => F[2 * pairY b l (4 + i)]!) (fun i => F[2 * pairY b l (4 + i) + 1]!)) ∧
+      YOnly [.xmm0, .xmm1, .xmm8, .xmm9] s s' := by
   have hrsi' : s.gpr .rsi = coeffAddr fB (32 * b) := by
     rw [hrsi, coeffAddr]; exact congrArg (fB + ·) (congrArg _ (by omega_arith))
   have rF' : ∀ t < 4, InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 (o * j + 32 * t)) 32 := fun t ht => by
     rw [hrsi', addrBF]; exact CallLay.inRegions_sub rF (by omega_arith) (by omega_arith)
   simp only [rowLdY]
   rw [WP.block_append_iff]
-  refine WP.mono (yload4o_ok (p := .rsi) (a := .xmm0) (b := .xmm1) (c := .xmm2) (d := .xmm3) (by decide) rF')
+  refine WP.mono (yload4o_ok (p := .rsi) (a := .xmm0) (b := .xmm1) (c := .xmm8) (d := .xmm9) (by decide) rF')
     fun s1 ⟨A1, o1⟩ => ?_
-  refine WP.mono (ylanes lane_deintS0 (P := fun l t =>
-      t.xmm .xmm0 = deE (s1.lane .xmm0 l) (s1.lane .xmm1 l) (s1.lane .xmm2 l) (s1.lane .xmm3 l) ∧
-      t.xmm .xmm4 = deO (s1.lane .xmm0 l) (s1.lane .xmm1 l) (s1.lane .xmm2 l) (s1.lane .xmm3 l))
-    fun l _ => deintS_ok0 (s1.proj l)) fun s2 ⟨D2, o2⟩ => ⟨fun l hl => ?_, (o1.trans o2).mono (by simp)⟩
-  have idx : ∀ e < 8, 32 * b + 8 * (2 * e / 4) + 4 * l + 2 * e % 4 = 2 * pairY b l e ∧
-      32 * b + 8 * ((2 * e + 1) / 4) + 4 * l + (2 * e + 1) % 4 = 2 * pairY b l e + 1 := fun e _ => by
-    unfold pairY; omega_arith
-  have ad : ∀ (p : Addr) (t l : Nat), coeffAddr p (32 * b) + BitVec.ofNat 64 (o * j + 32 * t) +
-      BitVec.ofNat 64 (16 * l) = coeffAddr (p + BitVec.ofNat 64 (o * j)) (32 * b) + BitVec.ofNat 64 (32 * t) +
-        BitVec.ofNat 64 (16 * l) := fun p t l => by rw [addrO]
-  have d := deintY_of hF hj hl _ rfl
+  refine WP.mono (ylanes lane_packF (P := fun l t =>
+      t.xmm .xmm0 = XBinOp.eval .packssdw (s1.lane .xmm0 l) (s1.lane .xmm1 l) ∧
+      t.xmm .xmm1 = XBinOp.eval .packssdw (s1.lane .xmm8 l) (s1.lane .xmm9 l))
+    fun l _ => packF_ok (s1.proj l)) fun s2 ⟨D2, o2⟩ => ⟨fun l hl => ?_, (o1.trans o2).mono (by simp)⟩
+  -- the four coefficients of load `t` of the block, in lane `l`
+  have rd : ∀ t, s.mem.readW (coeffAddr fB (32 * b) + BitVec.ofNat 64 (o * j + 32 * t) + BitVec.ofNat 64 (16 * l)) 128 =
+      s.mem.readW (coeffAddr (fB + BitVec.ofNat 64 (o * j)) (32 * b + 8 * t + 4 * l)) 128 := fun t => by
+    rw [addrO, show 32 * t = 4 * (8 * t) by omega_arith, coeffAddr_off, show 16 * l = 4 * (4 * l) by omega_arith,
+      coeffAddr_off]
   have e0 : s2.lane .xmm0 l = _ := (D2 l hl).1
-  have e4 : s2.lane .xmm4 l = _ := (D2 l hl).2
-  rw [e0, e4, (A1 l hl).1, (A1 l hl).2.1, (A1 l hl).2.2.1, (A1 l hl).2.2.2, hrsi', ad, ad, ad, ad]
-  refine ⟨fun e he => ?_, fun e he => ?_⟩
-  · rw [d.1 e he, (idx e he).1]
-  · rw [d.2 e he, (idx e he).2]
+  have e1 : s2.lane .xmm1 l = _ := (D2 l hl).2
+  have L0 := lanes_pack2 hF (j := 32 * b + 8 * 0 + 4 * l) (j' := 32 * b + 8 * 1 + 4 * l) (by omega_arith)
+    (by omega_arith)
+  have L1 := lanes_pack2 hF (j := 32 * b + 8 * 2 + 4 * l) (j' := 32 * b + 8 * 3 + 4 * l) (by omega_arith)
+    (by omega_arith)
+  rw [e0, e1, (A1 l hl).1, (A1 l hl).2.1, (A1 l hl).2.2.1, (A1 l hl).2.2.2, hrsi', rd, rd, rd, rd]
+  refine ⟨fun i hi => ⟨?_, ?_⟩, fun i hi => ⟨?_, ?_⟩⟩
+  · refine (L0 (2 * i) (by omega_arith)).trans (congrArg Fin.val ?_)
+    dsimp only
+    split <;> exact congrArg (F[·]!) (by unfold pairY; omega_arith)
+  · refine (L0 (2 * i + 1) (by omega_arith)).trans (congrArg Fin.val ?_)
+    dsimp only
+    split <;> exact congrArg (F[·]!) (by unfold pairY; omega_arith)
+  · refine (L1 (2 * i) (by omega_arith)).trans (congrArg Fin.val ?_)
+    dsimp only
+    split <;> exact congrArg (F[·]!) (by unfold pairY; omega_arith)
+  · refine (L1 (2 * i + 1) (by omega_arith)).trans (congrArg Fin.val ?_)
+    dsimp only
+    split <;> exact congrArg (F[·]!) (by unfold pairY; omega_arith)
 
 /-- The polynomials of `u32`s (`PolyIs`), `o` bytes apart. -/
 def FRep.u32 (o : Nat) : FRep o where
@@ -403,21 +571,23 @@ theorem addrJ (p : Addr) (b j t : Nat) :
   simp only [coeffAddr, BitVec.add_assoc, ← BitVec.ofNat_add]
   exact congrArg (p + ·) (congrArg _ (by omega_arith))
 
-/-- Product `j` of block `b`, of `F` (stored as `R` says at `fB + o j`) and
-`G` (at `gB + 1024 j`), in `ymm1` and `ymm2`, within `2q`. -/
-theorem mulRg_ok {o : Nat} (R : FRep o) {fB gB : Addr} {F G : Poly} {b j : Nat} (hb : b < 8) {s : State}
+/-- The operands of product `j` of block `b`: the pairs of coefficients of
+`F` (stored as `R` says at `fB + o j`), and the even and the odd
+coefficients of `G` (at `gB + 1024 j`), in `vbase`'s order. -/
+theorem opsRg_ok {o : Nat} (R : FRep o) {fB gB : Addr} {F G : Poly} {b j : Nat} (hb : b < 8) {s : State}
     (hrsi : s.gpr .rsi = fB + BitVec.ofNat 64 (R.st * b)) (hrdx : s.gpr .rdx = coeffAddr gB (32 * b))
     (hF : R.Is s.mem (fB + BitVec.ofNat 64 (o * j)) F) (hG : PolyIs s.mem (gB + BitVec.ofNat 64 (1024 * j)) G)
     (rF : InRegions (s.rd ++ s.wr) (fB + BitVec.ofNat 64 (o * j)) R.sz)
-    (rG : ∀ t < 4, InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (1024 * j + 32 * t)) 32)
-    (hc : YConsts s) (hz : ∀ l < 2, ZLanes (s.lane .xmm13 l) (fun e => gamma (pairY b l e))) :
+    (rG : ∀ t < 4, InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (1024 * j + 32 * t)) 32) :
     WP isa (.block (rowMulYg R.ld j)) s fun s' =>
-      (∀ l < 2, LanesR (RepR 2) ((s'.proj l).xmm .xmm1) (fun e => (multiplyNTTs F G)[2 * pairY b l e]!) ∧
-        LanesR (RepR 2) ((s'.proj l).xmm .xmm2) (fun e => (multiplyNTTs F G)[2 * pairY b l e + 1]!)) ∧
-      YOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7, .xmm8, .xmm9, .xmm10] s s' := by
+      (∀ l < 2, PLanes (s'.lane .xmm0 l) (fun i => F[2 * pairY b l i]!) (fun i => F[2 * pairY b l i + 1]!) ∧
+        PLanes (s'.lane .xmm1 l) (fun i => F[2 * pairY b l (4 + i)]!) (fun i => F[2 * pairY b l (4 + i) + 1]!) ∧
+        Lanes (s'.lane .xmm6 l) (fun e => G[2 * pairY b l e]!) ∧
+        Lanes (s'.lane .xmm10 l) (fun e => G[2 * pairY b l e + 1]!)) ∧
+      YOnly [.xmm0, .xmm1, .xmm8, .xmm9, .xmm6, .xmm7, .xmm10, .xmm5] s s' := by
   have hj : 32 * b + 32 ≤ 256 := by omega_arith
   simp only [rowMulYg, List.append_assoc]
-  -- the loads of `f`, its even and odd coefficients
+  -- the loads of `f`, its pairs of coefficients
   rw [WP.block_append_iff]
   refine WP.mono (R.ok hb hrsi hF rF) fun s2 ⟨D2, o2⟩ => ?_
   -- the loads of `g` and their lanes
@@ -426,52 +596,117 @@ theorem mulRg_ok {o : Nat} (R : FRep o) {fB gB : Addr} {F G : Poly} {b j : Nat} 
   rw [WP.block_append_iff]
   refine WP.mono (yload4o_ok (p := .rdx) (a := .xmm6) (b := .xmm7) (c := .xmm8) (d := .xmm9) (by decide) rG')
     fun s3 ⟨A3, o3⟩ => ?_
-  rw [WP.block_append_iff]
   refine WP.mono (ylanes lane_deintS6' (P := fun l t =>
       t.xmm .xmm6 = deE (s3.lane .xmm6 l) (s3.lane .xmm7 l) (s3.lane .xmm8 l) (s3.lane .xmm9 l) ∧
       t.xmm .xmm10 = deO (s3.lane .xmm6 l) (s3.lane .xmm7 l) (s3.lane .xmm8 l) (s3.lane .xmm9 l))
-    fun l _ => deintS_ok6' (s3.proj l)) fun s4 ⟨D4, o4⟩ => ?_
-  have o14 := (o2.trans o3).trans o4
-  have c4 : YConsts s4 := o14.consts hc (by decide) (by decide)
-  have idx : ∀ l < 2, ∀ e < 8, 32 * b + 8 * (2 * e / 4) + 4 * l + 2 * e % 4 = 2 * pairY b l e ∧
-      32 * b + 8 * ((2 * e + 1) / 4) + 4 * l + (2 * e + 1) % 4 = 2 * pairY b l e + 1 := fun l _ e _ => by
+    fun l _ => deintS_ok6' (s3.proj l)) fun s4 ⟨D4, o4⟩ =>
+      ⟨fun l hl => ?_, ((o2.trans o3).trans o4).mono (by simp)⟩
+  have idx : ∀ e < 8, 32 * b + 8 * (2 * e / 4) + 4 * l + 2 * e % 4 = 2 * pairY b l e ∧
+      32 * b + 8 * ((2 * e + 1) / 4) + 4 * l + (2 * e + 1) % 4 = 2 * pairY b l e + 1 := fun e _ => by
     unfold pairY; omega_arith
   have ad : ∀ (p : Addr) (t l : Nat), coeffAddr p (32 * b) + BitVec.ofNat 64 (1024 * j + 32 * t) +
       BitVec.ofNat 64 (16 * l) = coeffAddr (p + BitVec.ofNat 64 (1024 * j)) (32 * b) + BitVec.ofNat 64 (32 * t) +
         BitVec.ofNat 64 (16 * l) := fun p t l => by rw [addrJ]
-  have LF : ∀ l < 2, Lanes (s4.lane .xmm0 l) (fun e => F[2 * pairY b l e]!) ∧
-      Lanes (s4.lane .xmm4 l) (fun e => F[2 * pairY b l e + 1]!) := fun l hl => by
-    rw [o4.lane _ (by decide) l hl, o3.lane _ (by decide) l hl, o4.lane _ (by decide) l hl,
-      o3.lane _ (by decide) l hl]
-    exact D2 l hl
-  have LG : ∀ l < 2, Lanes (s4.lane .xmm6 l) (fun e => G[2 * pairY b l e]!) ∧
-      Lanes (s4.lane .xmm10 l) (fun e => G[2 * pairY b l e + 1]!) := fun l hl => by
-    have d := deintY_of (m := s2.mem) (by rw [o2.mem]; exact hG) hj hl _ rfl
-    have e6 : s4.lane .xmm6 l = _ := (D4 l hl).1
-    have e10 : s4.lane .xmm10 l = _ := (D4 l hl).2
-    rw [e6, e10, (A3 l hl).1, (A3 l hl).2.1, (A3 l hl).2.2.1, (A3 l hl).2.2.2, o2.gpr, hrdx, ad, ad, ad, ad]
-    refine ⟨fun e he => ?_, fun e he => ?_⟩
-    · rw [d.1 e he, (idx l hl e he).1]
-    · rw [d.2 e he, (idx l hl e he).2]
-  have LZ : ∀ l < 2, ZLanes (s4.lane .xmm13 l) (fun e => gamma (pairY b l e)) := fun l hl => by
-    rw [o14.lane _ (by decide) l hl]; exact hz l hl
-  refine WP.mono (ylanes lane_vbaseL (P := fun l t =>
-      LanesR (RepR 2) (t.xmm .xmm1) (fun e => (multiplyNTTs F G)[2 * pairY b l e]!) ∧
-      LanesR (RepR 2) (t.xmm .xmm2) (fun e => (multiplyNTTs F G)[2 * pairY b l e + 1]!))
-    fun l hl => WP.mono (vbaseL_ok (c4 l hl) (LF l hl).1 (LF l hl).2 (LG l hl).1 (LG l hl).2 (LZ l hl))
-      fun _ ⟨a, b', c⟩ => ⟨⟨fun e he => rel_of_eq (a e he) (prod_even _ _ (by unfold pairY; omega_arith)).symm,
-        fun e he => rel_of_eq (b' e he) (prod_odd _ _ (by unfold pairY; omega_arith)).symm⟩, c⟩)
-    fun s5 ⟨V5, o5⟩ => ⟨V5, (o14.trans o5).mono (by simp)⟩
+  have d := deintY_of (m := s2.mem) (by rw [o2.mem]; exact hG) hj hl _ rfl
+  have e6 : s4.lane .xmm6 l = _ := (D4 l hl).1
+  have e10 : s4.lane .xmm10 l = _ := (D4 l hl).2
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [o4.lane _ (by decide) l hl, o3.lane _ (by decide) l hl]; exact (D2 l hl).1
+  · rw [o4.lane _ (by decide) l hl, o3.lane _ (by decide) l hl]; exact (D2 l hl).2
+  · rw [e6, (A3 l hl).1, (A3 l hl).2.1, (A3 l hl).2.2.1, (A3 l hl).2.2.2, o2.gpr, hrdx, ad, ad, ad, ad]
+    exact fun e he => by rw [d.1 e he, (idx e he).1]
+  · rw [e10, (A3 l hl).1, (A3 l hl).2.1, (A3 l hl).2.2.1, (A3 l hl).2.2.2, o2.gpr, hrdx, ad, ad, ad, ad]
+    exact fun e he => by rw [d.2 e he, (idx e he).2]
 
 /-! ## The products of a block -/
 
-theorem pairY_lt {b l e : Nat} (hb : b < 8) (hl : l < 2) (he : e < 8) : 2 * pairY b l e + 1 < n := by
-  rw [n_eq]; unfold pairY; omega_arith
+/-- The pairs of block `b` are among the 128 of a polynomial. -/
+theorem pairY_lt4 {b l i : Nat} (hb : b < 8) (hl : l < 2) (hi : i < 4) : pairY b l i < 128 ∧ pairY b l (4 + i) < 128 := by
+  unfold pairY; omega_arith
 
-/-- The products `0, …, n` of block `b`, of the polynomials `fs` (from `fB`,
-stored as `R` says, `o` bytes apart) and `gs` (from `gB`), summed in `ymm11` and `ymm12`, within
-`2(n + 1)q`. -/
-theorem prodsRg_ok {o : Nat} (R : FRep o) {fB gB : Addr} {fs gs : List Poly} {b : Nat} (hb : b < 8) {s : State}
+/-- The doublewords of the sums of the products `0, …, n` of a block, of
+`dotP fs gs (n + 1)`: the first coefficients of the pairs in `xmm11` and
+`xmm2`, the second in `xmm12` and `xmm3`, within `2(n + 1)q²`. -/
+def SumsD (fs gs : List Poly) (b n l : Nat) (t : State) : Prop :=
+  DLanes (2 * (n + 1)) (t.xmm .xmm11) (fun i => (dotP fs gs (n + 1))[2 * pairY b l i]!) ∧
+    DLanes (2 * (n + 1)) (t.xmm .xmm2) (fun i => (dotP fs gs (n + 1))[2 * pairY b l (4 + i)]!) ∧
+    DLanes (2 * (n + 1)) (t.xmm .xmm12) (fun i => (dotP fs gs (n + 1))[2 * pairY b l i + 1]!) ∧
+    DLanes (2 * (n + 1)) (t.xmm .xmm3) (fun i => (dotP fs gs (n + 1))[2 * pairY b l (4 + i) + 1]!)
+
+/-- The first product of a block, from its operands (`opsRg_ok`): the sums
+of `dotP fs gs 1`. -/
+theorem sumSet_ok {fs gs : List Poly} {b l : Nat} (hb : b < 8) (hl : l < 2) (hfl : 0 + 1 ≤ fs.length)
+    (hgl : 0 + 1 ≤ gs.length) {t : State} (hc : VConsts t)
+    (h0 : PLanes (t.xmm .xmm0) (fun i => fs[0]![2 * pairY b l i]!) (fun i => fs[0]![2 * pairY b l i + 1]!))
+    (h1 : PLanes (t.xmm .xmm1) (fun i => fs[0]![2 * pairY b l (4 + i)]!) (fun i => fs[0]![2 * pairY b l (4 + i) + 1]!))
+    (h6 : Lanes (t.xmm .xmm6) (fun e => gs[0]![2 * pairY b l e]!))
+    (h10 : Lanes (t.xmm .xmm10) (fun e => gs[0]![2 * pairY b l e + 1]!))
+    (h13 : ZLanes (t.xmm .xmm13) (fun e => gamma (pairY b l e))) :
+    WP isa (.block ptermSet) t fun t' => SumsD fs gs b 0 l t' ∧
+      XOnly [.xmm4, .xmm5, .xmm11, .xmm2, .xmm12, .xmm3] t t' := by
+  have e1 : dotP fs gs (0 + 1) = multiplyNTTs fs[0]! gs[0]! := by
+    rw [dotP_succ (by omega_arith) (by omega_arith), dotP_zero, zero_add_poly]
+  refine WP.mono (ptermSet_ok hc (x0 := fun i => fs[0]![2 * pairY b l i]!)
+    (x1 := fun i => fs[0]![2 * pairY b l i + 1]!) h0 h1 h6 h10 h13) fun _ ⟨⟨a0, a1, a2, a3⟩, c⟩ => ⟨?_, c⟩
+  unfold SumsD
+  rw [e1]
+  exact ⟨fun i hi => rel_of_eq (a0 i hi) (prod_even _ _ (pairY_lt4 hb hl hi).1).symm,
+    fun i hi => rel_of_eq (a1 i hi) (prod_even _ _ (pairY_lt4 hb hl hi).2).symm,
+    fun i hi => rel_of_eq (a2 i hi) (prod_odd _ _ (pairY_lt4 hb hl hi).1).symm,
+    fun i hi => rel_of_eq (a3 i hi) (prod_odd _ _ (pairY_lt4 hb hl hi).2).symm⟩
+
+/-- Product `n + 1` of a block added to the sums of `dotP fs gs (n + 1)`. -/
+theorem sumAdd_ok {fs gs : List Poly} {b l n : Nat} (hb : b < 8) (hl : l < 2) (hn : n + 1 + 1 ≤ 4)
+    (hfl : n + 1 + 1 ≤ fs.length) (hgl : n + 1 + 1 ≤ gs.length) {t : State} (hc : VConsts t)
+    (h0 : PLanes (t.xmm .xmm0) (fun i => fs[n + 1]![2 * pairY b l i]!) (fun i => fs[n + 1]![2 * pairY b l i + 1]!))
+    (h1 : PLanes (t.xmm .xmm1) (fun i => fs[n + 1]![2 * pairY b l (4 + i)]!)
+      (fun i => fs[n + 1]![2 * pairY b l (4 + i) + 1]!))
+    (h6 : Lanes (t.xmm .xmm6) (fun e => gs[n + 1]![2 * pairY b l e]!))
+    (h10 : Lanes (t.xmm .xmm10) (fun e => gs[n + 1]![2 * pairY b l e + 1]!))
+    (h13 : ZLanes (t.xmm .xmm13) (fun e => gamma (pairY b l e))) (hs : SumsD fs gs b n l t) :
+    WP isa (.block ptermAdd) t fun t' => SumsD fs gs b (n + 1) l t' ∧
+      XOnly [.xmm4, .xmm5, .xmm7, .xmm8, .xmm9, .xmm11, .xmm2, .xmm12, .xmm3] t t' := by
+  have e1 : dotP fs gs (n + 1 + 1) = VG.Spec.MlKem.add (dotP fs gs (n + 1)) (multiplyNTTs fs[n + 1]! gs[n + 1]!) :=
+    dotP_succ (by omega_arith) (by omega_arith)
+  refine WP.mono (ptermAdd_ok hc (x0 := fun i => fs[n + 1]![2 * pairY b l i]!)
+    (x1 := fun i => fs[n + 1]![2 * pairY b l i + 1]!) h0 h1 h6 h10 h13 (show 2 * (n + 1) + 2 ≤ 8 by omega_arith)
+    hs.1 hs.2.1 hs.2.2.1 hs.2.2.2) fun _ ⟨⟨a0, a1, a2, a3⟩, c⟩ => ⟨?_, c⟩
+  have lt : ∀ i < 4, 2 * pairY b l i + 1 < Spec.MlKem.n ∧ 2 * pairY b l (4 + i) + 1 < Spec.MlKem.n := fun i hi => by
+    have := pairY_lt4 hb hl hi; rw [n_eq]; omega_arith
+  unfold SumsD
+  rw [e1]
+  refine ⟨fun i hi => ?_, fun i hi => ?_, fun i hi => ?_, fun i hi => ?_⟩
+  · dsimp only
+    rw [add_get _ _ (Nat.lt_of_succ_lt (lt i hi).1), prod_even _ _ (pairY_lt4 hb hl hi).1]; exact a0 i hi
+  · dsimp only
+    rw [add_get _ _ (Nat.lt_of_succ_lt (lt i hi).2), prod_even _ _ (pairY_lt4 hb hl hi).2]; exact a1 i hi
+  · dsimp only
+    rw [add_get _ _ (lt i hi).1, prod_odd _ _ (pairY_lt4 hb hl hi).1]; exact a2 i hi
+  · dsimp only
+    rw [add_get _ _ (lt i hi).2, prod_odd _ _ (pairY_lt4 hb hl hi).2]; exact a3 i hi
+
+/-- The sums as words (`pred`): of `dotP fs gs (n + 1)`, times `2⁻¹⁶`, within `q`. -/
+theorem sumRed_ok {fs gs : List Poly} {b l n : Nat} (hn : n + 1 ≤ 4) {t : State} (hc : VConsts t)
+    (hs : SumsD fs gs b n l t) :
+    WP isa (.block pred) t fun t' =>
+      (LanesR (RepR 1) (t'.xmm .xmm11) (fun e => (dotP fs gs (n + 1))[2 * pairY b l e]!) ∧
+        LanesR (RepR 1) (t'.xmm .xmm12) (fun e => (dotP fs gs (n + 1))[2 * pairY b l e + 1]!)) ∧
+      XOnly [.xmm7, .xmm5, .xmm11, .xmm2, .xmm12, .xmm3] t t' := by
+  refine WP.mono (pred_ok hc (show 2 * (n + 1) ≤ 8 by omega_arith) hs.1 hs.2.1 hs.2.2.1 hs.2.2.2)
+    fun _ ⟨a, b', c⟩ => ⟨⟨fun e he => rel_of_eq (a e he) ?_, fun e he => rel_of_eq (b' e he) ?_⟩, c⟩
+  · dsimp only
+    split
+    · rfl
+    · rw [show 4 + (e - 4) = e by omega_arith]
+  · dsimp only
+    split
+    · rfl
+    · rw [show 4 + (e - 4) = e by omega_arith]
+
+/-- The sums of the products `0, …, n` of block `b`, of the polynomials `fs`
+(from `fB`, stored as `R` says, `o` bytes apart) and `gs` (from `gB`), as
+doublewords (`SumsD`). -/
+theorem sumsRg_ok {o : Nat} (R : FRep o) {fB gB : Addr} {fs gs : List Poly} {b : Nat} (hb : b < 8) {s : State}
     (hrsi : s.gpr .rsi = fB + BitVec.ofNat 64 (R.st * b)) (hrdx : s.gpr .rdx = coeffAddr gB (32 * b))
     (hc : YConsts s) (hz : ∀ l < 2, ZLanes (s.lane .xmm13 l) (fun e => gamma (pairY b l e))) :
     ∀ {n : Nat}, n + 1 ≤ 4 → n + 1 ≤ fs.length → n + 1 ≤ gs.length →
@@ -479,60 +714,70 @@ theorem prodsRg_ok {o : Nat} (R : FRep o) {fB gB : Addr} {fs gs : List Poly} {b 
     (∀ j < n + 1, PolyIs s.mem (gB + BitVec.ofNat 64 (1024 * j)) gs[j]!) →
     (∀ j < n + 1, InRegions (s.rd ++ s.wr) (fB + BitVec.ofNat 64 (o * j)) R.sz) →
     (∀ j < n + 1, ∀ t < 4, InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (1024 * j + 32 * t)) 32) →
-    WP isa (.block (rowSums (rowMulYg R.ld) (n + 1))) s fun s' =>
-      (∀ l < 2, LanesR (RepR (2 * (n + 1))) ((s'.proj l).xmm .xmm11)
-          (fun e => (dotP fs gs (n + 1))[2 * pairY b l e]!) ∧
-        LanesR (RepR (2 * (n + 1))) ((s'.proj l).xmm .xmm12)
-          (fun e => (dotP fs gs (n + 1))[2 * pairY b l e + 1]!)) ∧
+    WP isa (.block (rowSumsAux (rowMulYg R.ld) (n + 1))) s fun s' =>
+      (∀ l < 2, SumsD fs gs b n l (s'.proj l)) ∧
       YOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11, .xmm12] s s' := by
   intro n
   induction n with
   | zero =>
     intro _ hfl hgl hF hG rF rG
-    have e1 : dotP fs gs (0 + 1) = multiplyNTTs fs[0]! gs[0]! := by
-      rw [dotP_succ (by omega_arith) (by omega_arith), dotP_zero, zero_add_poly]
-    rw [e1]
-    simp only [rowSums, rowSum, List.nil_append, ite_true]
+    simp only [rowSumsAux, rowSum, List.nil_append, ite_true]
     rw [WP.block_append_iff]
-    refine WP.mono (mulRg_ok R (j := 0) (F := fs[0]!) (G := gs[0]!) hb hrsi hrdx (hF 0 (by decide)) (hG 0 (by decide)) (rF 0 (by decide))
-      (rG 0 (by decide)) hc hz) fun s1 ⟨V1, o1⟩ => ?_
-    refine WP.mono (ylanes lane_accSet (P := fun l t =>
-        t.xmm .xmm11 = (s1.proj l).xmm .xmm1 ∧ t.xmm .xmm12 = (s1.proj l).xmm .xmm2)
-      fun l _ => accSet_ok (s1.proj l)) fun s2 ⟨S2, o2⟩ => ⟨fun l hl => ?_, (o1.trans o2).mono (by simp)⟩
-    rw [(S2 l hl).1, (S2 l hl).2]
-    exact V1 l hl
+    refine WP.mono (opsRg_ok R (j := 0) (F := fs[0]!) (G := gs[0]!) hb hrsi hrdx (hF 0 (by decide)) (hG 0 (by decide))
+      (rF 0 (by decide)) (rG 0 (by decide))) fun s1 ⟨V1, o1⟩ => ?_
+    have c1 : YConsts s1 := o1.consts hc (by decide) (by decide)
+    refine WP.mono (ylanes lane_ptermSet (P := fun l t => SumsD fs gs b 0 l t)
+      fun l hl => sumSet_ok hb hl hfl hgl (c1 l hl) (V1 l hl).1 (V1 l hl).2.1 (V1 l hl).2.2.1 (V1 l hl).2.2.2
+        (by rw [State.proj_xmm, o1.lane _ (by decide) l hl]; exact hz l hl))
+      fun s2 ⟨S2, o2⟩ => ⟨S2, (o1.trans o2).mono (by simp)⟩
   | succ n ih =>
     intro hn hfl hgl hF hG rF rG
-    have e1 : dotP fs gs (n + 1 + 1) = VG.Spec.MlKem.add (dotP fs gs (n + 1)) (multiplyNTTs fs[n + 1]! gs[n + 1]!) :=
-      dotP_succ (by omega_arith) (by omega_arith)
-    rw [show rowSums (rowMulYg R.ld) (n + 1 + 1) = rowSums (rowMulYg R.ld) (n + 1) ++ rowSum (rowMulYg R.ld) (n + 1)
-      from rfl, WP.block_append_iff]
-    refine WP.mono (ih (by omega_arith) (by omega_arith) (by omega_arith) (fun j hj => hF j (by omega_arith)) (fun j hj => hG j (by omega_arith))
-      (fun j hj => rF j (by omega_arith)) (fun j hj => rG j (by omega_arith))) fun s1 ⟨A1, o1⟩ => ?_
+    rw [show rowSumsAux (rowMulYg R.ld) (n + 1 + 1) =
+        rowSumsAux (rowMulYg R.ld) (n + 1) ++ rowSum (rowMulYg R.ld) (n + 1) from rfl, WP.block_append_iff]
+    refine WP.mono (ih (by omega_arith) (by omega_arith) (by omega_arith) (fun j hj => hF j (by omega_arith))
+      (fun j hj => hG j (by omega_arith)) (fun j hj => rF j (by omega_arith)) (fun j hj => rG j (by omega_arith)))
+      fun s1 ⟨A1, o1⟩ => ?_
     simp only [rowSum, Nat.add_one_ne_zero, ite_false]
     rw [WP.block_append_iff]
-    refine WP.mono (mulRg_ok R (j := n + 1) (F := fs[n + 1]!) (G := gs[n + 1]!) hb (by rw [o1.gpr, hrsi]) (by rw [o1.gpr, hrdx])
-      (by rw [o1.mem]; exact hF (n + 1) (by omega_arith)) (by rw [o1.mem]; exact hG (n + 1) (by omega_arith))
-      (by rw [o1.rd, o1.wr]; exact rF (n + 1) (by omega_arith))
-      (by rw [o1.rd, o1.wr, o1.gpr]; exact rG (n + 1) (by omega_arith)) (o1.consts hc (by decide) (by decide))
-      (fun l hl => by rw [o1.lane _ (by decide) l hl]; exact hz l hl)) fun s2 ⟨V2, o2⟩ => ?_
-    refine WP.mono (ylanes lane_accAdd (P := fun l t =>
-        (∀ i < 8, word (t.xmm .xmm11) i = word ((s2.proj l).xmm .xmm11) i + word ((s2.proj l).xmm .xmm1) i) ∧
-        (∀ i < 8, word (t.xmm .xmm12) i = word ((s2.proj l).xmm .xmm12) i + word ((s2.proj l).xmm .xmm2) i))
-      fun l _ => WP.mono (accAdd_ok (s2.proj l)) fun _ ⟨a, b', c⟩ => ⟨⟨a, b'⟩, c⟩)
-      fun s3 ⟨S3, o3⟩ => ⟨fun l hl => ⟨fun e he => ?_, fun e he => ?_⟩, ((o1.trans o2).trans o3).mono (by simp)⟩
-    · have a11 : (s2.proj l).xmm .xmm11 = (s1.proj l).xmm .xmm11 := by
-        rw [State.proj_xmm, State.proj_xmm, o2.lane _ (by decide) l hl]
-      rw [(S3 l hl).1 e he, a11, e1]
-      dsimp only
-      rw [add_get _ _ (pairY_lt hb hl he |> Nat.lt_of_succ_lt)]
-      exact (RepR.add ((A1 l hl).1 e he) ((V2 l hl).1 e he) (show 2 * (n + 1) + 2 ≤ 9 by omega_arith))
-    · have a12 : (s2.proj l).xmm .xmm12 = (s1.proj l).xmm .xmm12 := by
-        rw [State.proj_xmm, State.proj_xmm, o2.lane _ (by decide) l hl]
-      rw [(S3 l hl).2 e he, a12, e1]
-      dsimp only
-      rw [add_get _ _ (pairY_lt hb hl he)]
-      exact (RepR.add ((A1 l hl).2 e he) ((V2 l hl).2 e he) (show 2 * (n + 1) + 2 ≤ 9 by omega_arith))
+    refine WP.mono (opsRg_ok R (j := n + 1) (F := fs[n + 1]!) (G := gs[n + 1]!) hb (by rw [o1.gpr, hrsi])
+      (by rw [o1.gpr, hrdx]) (by rw [o1.mem]; exact hF (n + 1) (by omega_arith))
+      (by rw [o1.mem]; exact hG (n + 1) (by omega_arith)) (by rw [o1.rd, o1.wr]; exact rF (n + 1) (by omega_arith))
+      (by rw [o1.rd, o1.wr, o1.gpr]; exact rG (n + 1) (by omega_arith))) fun s2 ⟨V2, o2⟩ => ?_
+    have o12 := o1.trans o2
+    have c2 : YConsts s2 := o12.consts hc (by decide) (by decide)
+    have keep : ∀ l < 2, SumsD fs gs b n l (s2.proj l) := fun l hl => by
+      have h := A1 l hl
+      unfold SumsD at h ⊢
+      rw [State.proj_xmm, State.proj_xmm, State.proj_xmm, State.proj_xmm, o2.lane _ (by decide) l hl,
+        o2.lane _ (by decide) l hl, o2.lane _ (by decide) l hl, o2.lane _ (by decide) l hl]
+      exact h
+    refine WP.mono (ylanes lane_ptermAdd (P := fun l t => SumsD fs gs b (n + 1) l t)
+      fun l hl => sumAdd_ok hb hl hn hfl hgl (c2 l hl) (V2 l hl).1 (V2 l hl).2.1 (V2 l hl).2.2.1 (V2 l hl).2.2.2
+        (by rw [State.proj_xmm, o12.lane _ (by decide) l hl]; exact hz l hl) (keep l hl))
+      fun s3 ⟨S3, o3⟩ => ⟨S3, (o12.trans o3).mono (by simp)⟩
+
+/-- The products `0, …, n` of block `b`, of the polynomials `fs` (from `fB`,
+stored as `R` says, `o` bytes apart) and `gs` (from `gB`), summed and reduced: the sums' words in `ymm11`
+and `ymm12`, within `q`. -/
+theorem prodsRg_ok {o : Nat} (R : FRep o) {fB gB : Addr} {fs gs : List Poly} {b : Nat} (hb : b < 8) {s : State}
+    (hrsi : s.gpr .rsi = fB + BitVec.ofNat 64 (R.st * b)) (hrdx : s.gpr .rdx = coeffAddr gB (32 * b))
+    (hc : YConsts s) (hz : ∀ l < 2, ZLanes (s.lane .xmm13 l) (fun e => gamma (pairY b l e))) {n : Nat}
+    (hn : n + 1 ≤ 4) (hfl : n + 1 ≤ fs.length) (hgl : n + 1 ≤ gs.length)
+    (hF : ∀ j < n + 1, R.Is s.mem (fB + BitVec.ofNat 64 (o * j)) fs[j]!)
+    (hG : ∀ j < n + 1, PolyIs s.mem (gB + BitVec.ofNat 64 (1024 * j)) gs[j]!)
+    (rF : ∀ j < n + 1, InRegions (s.rd ++ s.wr) (fB + BitVec.ofNat 64 (o * j)) R.sz)
+    (rG : ∀ j < n + 1, ∀ t < 4, InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (1024 * j + 32 * t)) 32) :
+    WP isa (.block (rowSums (rowMulYg R.ld) (n + 1))) s fun s' =>
+      (∀ l < 2, LanesR (RepR 1) ((s'.proj l).xmm .xmm11) (fun e => (dotP fs gs (n + 1))[2 * pairY b l e]!) ∧
+        LanesR (RepR 1) ((s'.proj l).xmm .xmm12) (fun e => (dotP fs gs (n + 1))[2 * pairY b l e + 1]!)) ∧
+      YOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11, .xmm12] s s' := by
+  rw [rowSums, WP.block_append_iff]
+  refine WP.mono (sumsRg_ok R hb hrsi hrdx hc hz hn hfl hgl hF hG rF rG) fun s1 ⟨A1, o1⟩ => ?_
+  refine WP.mono (ylanes lane_pred (P := fun l t =>
+      LanesR (RepR 1) (t.xmm .xmm11) (fun e => (dotP fs gs (n + 1))[2 * pairY b l e]!) ∧
+      LanesR (RepR 1) (t.xmm .xmm12) (fun e => (dotP fs gs (n + 1))[2 * pairY b l e + 1]!))
+    fun l hl => sumRed_ok hn ((o1.consts hc (by decide) (by decide)) l hl) (A1 l hl))
+    fun s2 ⟨V2, o2⟩ => ⟨V2, (o1.trans o2).mono (by simp)⟩
 
 /-! ## A block of a row -/
 
@@ -644,7 +889,6 @@ theorem step {b : Nat} (hb : b < 8) {s : State} (hI : Inv R k fB gB tP C fs gs m
       (∀ i < 8, word (t.xmm .xmm12) i = W.caddW (W.montW (word ((s3.proj l).xmm .xmm12) i)
         (word ((s3.proj l).xmm .xmm13) i))))
     fun l hl => WP.mono (accRed_ok (c3 l hl)) fun _ ⟨a, b', c⟩ => ⟨⟨a, b'⟩, c⟩) fun s4 ⟨Q4, o4⟩ => ?_
-  have hk9 : 2 * (n + 1) ≤ 9 := by have := hx.k4; omega_arith
   have can : ∀ l < 2, ∀ e < 8, (word (s4.lane .xmm11 l) e).toNat = ((dotP fs gs (n + 1))[2 * pairY b l e]!).val ∧
       (word (s4.lane .xmm12 l) e).toNat = ((dotP fs gs (n + 1))[2 * pairY b l e + 1]!).val := fun l hl e he => by
     have r13 : word ((s3.proj l).xmm .xmm13) e = r2W := by rw [State.proj_xmm, R3 l hl, r2D, word_r2V he]
@@ -654,9 +898,9 @@ theorem step {b : Nat} (hb : b < 8) {s : State} (hI : Inv R k fB gB tP C fs gs m
       rw [State.proj_xmm, State.proj_xmm, lo3 _ (by decide) l hl]
     refine ⟨?_, ?_⟩
     · rw [← State.proj_xmm, (Q4 l hl).1 e he, r13, a11]
-      exact cadd_rep (red2_rep ((A2 l hl).1 e he) hk9)
+      exact cadd_rep (red2_rep ((A2 l hl).1 e he) (by decide))
     · rw [← State.proj_xmm, (Q4 l hl).2 e he, r13, a12]
-      exact cadd_rep (red2_rep ((A2 l hl).2 e he) hk9)
+      exact cadd_rep (red2_rep ((A2 l hl).2 e he) (by decide))
   -- `q` and zero, for the sums
   rw [WP.block_append_iff]
   refine WP.mono (yconst_ok .xmm15 _ s4) fun s5 ⟨lq, k5, m5, x5, lo5⟩ => ?_

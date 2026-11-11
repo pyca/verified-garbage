@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Words
 
 /-!
 # The precomputed values of an RSA modulus on PPC64LE: `R² mod n` by squares
@@ -30,8 +31,9 @@ arrays 2–3 for `tail`), for any caller:
 * `r2HiDbl_ok`, `r2Hi_ok`: for `n` above `2^(64 (w - 1))`, `x := 2^(64 (w - 1))`
   (`r2Top_ok`), `64 + w` doublings, then the squares: `R² mod n`.
 
-`r2Fast_ok` is `r2Hi` for `vg_rsa_public_precompute`, which computes
-`-n⁻¹ mod 2³²` after the doublings and keeps `pre` in `r21`.
+`r2Fast_ok`: `vg_rsa_public_precompute`'s `R² mod n`, for any odd `n` of
+`w ≥ 3` words whose top word is not zero, by word steps of long division
+(`PreR2Words.lean`).
 -/
 
 @[expose] public section
@@ -345,40 +347,17 @@ theorem r2Hi_ok {s : State} {B : Addr} {Z w N : Nat} (hs : Scr s B Z)
     (by rw [x1]; exact Nat.mod_lt _ hN0) (by rw [x1, Nat.mod_mod, Nat.pow_add]))
     fun t ⟨tx, to, tk⟩ => ⟨tx, o1.trans to, k1.trans tk⟩
 
-/-- The registers `r2Fast` writes. -/
-def r2FastRegs : List Reg :=
-  [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22]
-
-/-- The registers `r2Fast` changes: `r5`, `r8`, `r9`, `r19` and `r21` are
-restored. -/
+/-- The registers `r2Fast` changes. -/
 def r2ChgRegs : List Reg := [.r0, .r3, .r4, .r6, .r7, .r12, .r14, .r15, .r16, .r17, .r18, .r20, .r22]
 
-theorem keep_chg {s t : State} (k : Keep r2FastRegs s t) (h5 : t.gpr .r5 = s.gpr .r5) (h8 : t.gpr .r8 = s.gpr .r8)
-    (h9 : t.gpr .r9 = s.gpr .r9) (h19 : t.gpr .r19 = s.gpr .r19) (h21 : t.gpr .r21 = s.gpr .r21) :
-    Keep r2ChgRegs s t := ⟨fun r hr => by
-    by_cases e : r ∈ r2FastRegs
-    · simp only [r2FastRegs, r2ChgRegs, List.mem_cons, List.not_mem_nil, or_false] at e hr
-      rcases e with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-        rfl | rfl <;> simp_all
-    · exact k.gpr r e, k.rd, k.wr, k.sp, k.lr⟩
-
-theorem r2Minv_eq : r2Minv = PublicChecked.minv := rfl
-
-theorem wv_low_mod2' (m : Mem) (p : Addr) (d : Nat) {n : Nat} (hn : 1 ≤ n) :
-    wv m p d n % 2 = (word m p d).toNat % 2 := by
-  obtain ⟨k, rfl⟩ : ∃ k, n = 1 + k := ⟨n - 1, by omega⟩
-  rw [wv_add]
-  simp only [wv, Nat.zero_add, Nat.mul_zero, Nat.add_zero, Nat.pow_zero, Nat.one_mul, Nat.mul_one]
-  rw [show (2 : Nat) ^ 64 = 2 * 2 ^ 63 from rfl, Nat.mul_assoc, Nat.add_mul_mod_self_left]
-
-/-- `r2Fast`, with `n` (odd, above `2^(64 (w - 1))`) in array 0 and the bases
-of arrays 1–3 in `r5`, `r8`, `r9`: `x := 2^(128 w) mod n` in array 1,
-changing only arrays 1–3; `r5`, `r8`, `r9` and `r19` are kept, and `r21` is
-the working space. -/
+/-- `r2Fast`, with `n` (odd, above `2^(64 (w - 1))`, `w ≥ 3`) in array 0 and
+the bases of arrays 1–3 in `r5`, `r8`, `r9`: `x := 2^(128 w) mod n` in array
+1, changing only arrays 1–3, by `norm`, `x := 2^(64 (w - 1))` and `w + 1`
+word steps (`PreR2Words.lean`). -/
 theorem r2Fast_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     (h8 : s.gpr .r8 = off B (slot w 2)) (h9 : s.gpr .r9 = off B (slot w 3))
     (h10 : s.gpr .r10 = off B (slot w 0)) (h5 : s.gpr .r5 = off B (slot w 1))
-    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (h21 : s.gpr .r21 = B) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hw : 3 ≤ w) (hw' : w < 2 ^ 31)
     (hZ : slot w 8 ≤ Z) (hN : 2 ^ (64 * (w - 1)) ≤ val32 s.mem B (slot w 0) (2 * w))
     (hodd : val32 s.mem B (slot w 0) (2 * w) % 2 = 1) :
     WP isa r2Fast s fun t =>
@@ -386,71 +365,38 @@ theorem r2Fast_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
       Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem ∧ Keep r2ChgRegs s t := by
   have hnw := hs.nowrap
   have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
-  have e0 := e 0; have e1 := e 1; have e4 := e 4; have e8 := e 8
+  have e0 := e 0; have e1 := e 1; have e3 := e 3; have e4 := e 4; have e8 := e 8
   have hh : hdrBytes = 256 := rfl
-  have hlow : (Mont.word s.mem B (slot w 0)).toNat % 2 = 1 := by
-    rw [← wv_low_mod2' _ _ _ (show 1 ≤ w by omega), ← VG.Proof.Bignum.read_eq_wv, ← show 4 * (2 * w) = 8 * w by omega,
-      VG.Proof.Bignum.read_eq_val32]
-    exact hodd
   generalize hNd : val32 s.mem B (slot w 0) (2 * w) = N at hN hodd ⊢
   replace hN : 2 ^ (64 * (w - 1)) < N := Nat.lt_of_le_of_ne hN fun h => by
     rw [← h, show 64 * (w - 1) = (64 * (w - 1) - 1) + 1 by omega, Nat.pow_succ, Nat.mul_mod_left] at hodd
     exact absurd hodd (by decide)
-  have hN0 : 0 < N := by omega
+  have hNw : Mont.wordsVal s.mem B (slot w 0) w = N := by rw [Mont.wordsVal_eq_val32, hNd]
   unfold r2Fast
-  -- The doublings.
-  refine WP.seq (WP.mono (r2HiDbl_ok hs h8 h9 h10 h5 h11 hw hw' (by omega) hNd hN) fun s₃ ⟨x3, o3, k3⟩ => ?_)
-  -- `-n⁻¹ mod 2³²`, and `pre` into `r21`.
-  have n3 : val32 s₃.mem B (slot w 0) (2 * w) = N := by rw [o3.val32 (by omega) (by omega), hNd]
-  have w3 : Mont.word s₃.mem B (slot w 0) = Mont.word s.mem B (slot w 0) := o3.word (Or.inl (by omega)) (by omega)
-  refine WP.seq ?_
-  rw [r2Minv_eq, WP.block_append_iff]
-  refine WP.mono (Pub.minv_ok (hs.congr k3.wr) ((k3.gpr _ (by decide)).trans h10) (by omega)
-    (by rw [w3]; exact hlow)) fun s₄ ⟨⟨i12, iinv, m4⟩, k4⟩ => ?_
-  refine WP.mono (WP.keep [.r21] (Q := fun t => t.gpr .r21 = s₄.gpr .r19 ∧ t.mem = s₄.mem)
-    (by prun [BitVec.add_zero]) (by decide)) fun s₅ ⟨⟨a21, m5⟩, k5⟩ => ?_
-  have k35 := (k3.trans k4).trans k5
-  -- Six squares.
-  refine WP.seq (WP.mono (r2Squares_ok (N := N) (hs.congr k35.wr) hw hw' hZ ((k35.gpr _ (by decide)).trans h10)
-    ((k35.gpr _ (by decide)).trans h11) (by rw [k5.gpr .r12 (by decide)]; exact i12)
-    (by rw [k5.gpr .r12 (by decide), m5, m4]; exact iinv) (by rw [m5, m4, n3]) hodd
-    (by rw [m5, m4, x3]; exact Nat.mod_lt _ hN0) (by rw [m5, m4, x3, Nat.mod_mod, Nat.pow_add]))
-    fun u ⟨ux, uo, uk⟩ => ?_)
-  have u21 : u.gpr .r21 = s.gpr .r19 := by
-    rw [uk.gpr .r21 (by decide), a21, k4.gpr .r19 (by decide), k3.gpr .r19 (by decide)]
-  have u10 : u.gpr .r10 = off B (slot w 0) := (uk.gpr _ (by decide)).trans ((k35.gpr _ (by decide)).trans h10)
-  have u11 : u.gpr .r11 = BitVec.ofNat 64 (2 * w) := (uk.gpr _ (by decide)).trans ((k35.gpr _ (by decide)).trans h11)
-  have Ou : Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem u.mem := by
-    rw [m5, m4] at uo; exact o3.trans uo
-  -- `pre` back into `r19`, the working space into `r21`, the bases.
-  simp only [List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.r19, .r21] (Q := fun t => t.gpr .r19 = s.gpr .r19 ∧ t.gpr .r21 = B ∧ t.mem = u.mem)
-    (by
-      prun [BitVec.add_zero, u21, u10, exec_subi (n := .r10) (imm := hdrBytes) (by decide) (by decide)]
-      show B + BitVec.ofNat 64 (hdrBytes + 0 * (8 * (w + 2))) - BitVec.ofNat 64 hdrBytes = B
-      rw [Nat.zero_mul, Nat.add_zero, BitVec.add_sub_cancel]) (by decide)) fun v₁ ⟨⟨b19, b21, mv1⟩, kv1⟩ => ?_
-  have c10 : v₁.gpr .r10 = off B (slot w 0) := (kv1.gpr _ (by decide)).trans u10
-  rw [WP.block_append_iff]
-  refine WP.mono (r2Stride_ok ((kv1.gpr _ (by decide)).trans u11)) fun v₂ ⟨⟨b3, mv2⟩, kv2⟩ => ?_
-  have c10' := (kv2.gpr _ (by decide)).trans c10
-  rw [WP.block_append_iff]
-  refine WP.mono (r2Base_ok (rd := .r5) (by decide) (by decide) c10' b3 1) fun v₃ ⟨⟨b5, mv3⟩, kv3⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (r2Base_ok (rd := .r8) (by decide) (by decide) ((kv3.gpr _ (by decide)).trans c10')
-    ((kv3.gpr _ (by decide)).trans b3) 2) fun v₄ ⟨⟨b8, mv4⟩, kv4⟩ => ?_
-  refine WP.mono (r2Base_ok (rd := .r9) (by decide) (by decide) ((kv4.gpr _ (by decide)).trans
-    ((kv3.gpr _ (by decide)).trans c10')) ((kv4.gpr _ (by decide)).trans ((kv3.gpr _ (by decide)).trans b3)) 3)
-    fun t ⟨⟨b9, mt⟩, kt⟩ => ?_
-  have hm : t.mem = u.mem := by rw [mt, mv4, mv3, mv2, mv1]
-  have kvt := ((kv1.trans kv2).trans (kv3.trans kv4)).trans kt
-  refine ⟨by rw [hm]; exact ux, by rw [hm]; exact Ou,
-    keep_chg (((k35.trans uk).trans kvt).mono (by decide +kernel)) ?_ ?_ ?_ ?_ ?_⟩
-  · rw [kt.gpr .r5 (by decide), kv4.gpr .r5 (by decide), b5, h5]
-  · rw [kt.gpr .r8 (by decide), b8, h8]
-  · rw [b9, h9]
-  · rw [kt.gpr .r19 (by decide), kv4.gpr .r19 (by decide), kv3.gpr .r19 (by decide), kv2.gpr .r19 (by decide), b19]
-  · rw [kt.gpr .r21 (by decide), kv4.gpr .r21 (by decide), kv3.gpr .r21 (by decide), kv2.gpr .r21 (by decide), b21,
-      h21]
+  -- `P` and `d'`.
+  refine WP.seq (WP.mono (norm_ok hs h9 h10 h11 (by omega) hw' (by omega) (by rw [hNw]; omega))
+    fun s₁ ⟨⟨z, hz, hP, hd, hd63⟩, o1, k1⟩ => ?_)
+  rw [hNw] at hd hd63
+  have g1 : ∀ r ∈ [Reg.r5, .r8, .r9, .r10, .r11], s₁.gpr r = s.gpr r := fun r hr => k1.gpr r (by revert r hr; decide)
+  -- `x := 2^(64 (w - 1))`.
+  refine WP.seq (WP.mono (r2Top_ok (hs.congr k1.wr) ((g1 .r5 (by decide)).trans h5)
+    ((g1 .r11 (by decide)).trans h11) (by omega) hw' (by omega)) fun s₂ ⟨⟨x2, o2⟩, k2⟩ => ?_)
+  have k12 := k1.trans k2
+  have g2 : ∀ r ∈ [Reg.r5, .r8, .r9, .r10, .r11], s₂.gpr r = s.gpr r :=
+    fun r hr => k12.gpr r (by revert r hr; decide)
+  have n2 : Mont.wordsVal s₂.mem B (slot w 0) w = N := by
+    rw [o2.wordsVal (by omega) (by omega), o1.wordsVal (by omega) (by omega), hNw]
+  have x2' : Mont.wordsVal s₂.mem B (slot w 1) w = 2 ^ (64 * (w - 1)) := by
+    rw [Mont.wordsVal_eq_val32, ← VG.Proof.Bignum.read_eq_val32, show 4 * (2 * w) = 8 * w by omega,
+      VG.Proof.Bignum.read_eq_wv, x2]
+  -- `w + 1` word steps.
+  refine WP.mono (wordSteps_ok (z := z) (hs.congr k12.wr) ((g2 .r8 (by decide)).trans h8)
+    ((g2 .r9 (by decide)).trans h9) ((g2 .r10 (by decide)).trans h10) ((g2 .r5 (by decide)).trans h5)
+    ((g2 .r11 (by decide)).trans h11) hw hw' (by omega)
+    (by rw [o2.word (by omega) (by omega)]; exact hP) hz
+    (by rw [o2.word (by omega) (by omega), n2]; exact hd) (by rw [n2]; exact hd63) x2' (by rw [n2]; exact hN))
+    fun t ⟨tx, to, tk⟩ => ⟨?_, ?_, (k12.trans tk).mono (by decide)⟩
+  · rw [← Mont.wordsVal_eq_val32, tx, n2]
+  · exact ((o1.mono (by omega) (by omega)).trans (o2.mono (by omega) (by omega))).trans (to.mono (by omega) (by omega))
 
 end VG.Proof.Bignum.PPC64LE.Pre

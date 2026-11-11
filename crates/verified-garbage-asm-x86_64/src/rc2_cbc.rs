@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Rc2.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -27,7 +29,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SIuaCAEAAEiLqhABAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEyJnCS4AAAATImcJMAAAABMiZwkyAAAAEyJnCTQAAAATImcJNgAAABMiZwk4AAAAEyJnCToAAAATImcJPAAAABMiZwk+AAAAEyJnCQAAQAATImcJAgBAABMiZwkEAEAAEyJnCQYAQAATImcJCABAABMiZwkKAEAAEyJnCQwAQAATImcJDgBAABMiZwkQAEAAEyJnCRIAQAATImcJFABAABMiZwkWAEAAEyJnCRgAQAATImcJGgBAABMiZwkcAEAAEyJnCR4AQAATImcJIABAABMiZwkiAEAAEyJnCSQAQAATImcJJgBAABMiZwkoAEAAEyJnCSoAQAATImcJLABAABMiZwkuAEAAEyJnCTAAQAATImcJMgBAABMiZwk0AEAAEyJnCTYAQAATImcJOABAABMiZwk6AEAAEyJnCTwAQAATImcJPgBAABMiZwkAAIAAEiNpCQIAgAAww=="
+.base64 "SIuaCAEAAEiLqhABAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEyJnCS4AAAATImcJMAAAABMiZwkyAAAAEyJnCTQAAAATImcJNgAAABMiZwk4AAAAEyJnCToAAAATImcJPAAAABMiZwk+AAAAEyJnCQAAQAATImcJAgBAABMiZwkEAEAAEyJnCQYAQAATImcJCABAABMiZwkKAEAAEyJnCQwAQAATImcJDgBAABMiZwkQAEAAEyJnCRIAQAATImcJFABAABMiZwkWAEAAEyJnCRgAQAATImcJGgBAABMiZwkcAEAAEyJnCR4AQAATImcJIABAABMiZwkiAEAAEyJnCSQAQAATImcJJgBAABMiZwkoAEAAEyJnCSoAQAATImcJLABAABMiZwkuAEAAEyJnCTAAQAATImcJMgBAABMiZwk0AEAAEyJnCTYAQAATImcJOABAABMiZwk6AEAAEyJnCTwAQAATImcJPgBAABMiZwkAAIAAEiNpCQIAgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJPD9///zD38EJEiNpCQQAgAAMcAxyTHSMfZFMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_rc2_encrypt_block = sym super::rc2::vg_rc2_encrypt_block::vg_rc2_encrypt_block,
     )
@@ -36,6 +38,8 @@ jmp 21f
 /// RC2-CBC decryption (RFC 2268 §§3–4, NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is RC2 decryption under the same 128-byte little-endian schedule as encryption, as written at the start of the context by `vg_rc2_cbc_init`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Rc2.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -57,7 +61,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SIuaCAEAAEiLqhABAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEyJnCS4AAAATImcJMAAAABMiZwkyAAAAEyJnCTQAAAATImcJNgAAABMiZwk4AAAAEyJnCToAAAATImcJPAAAABMiZwk+AAAAEyJnCQAAQAATImcJAgBAABMiZwkEAEAAEyJnCQYAQAATImcJCABAABMiZwkKAEAAEyJnCQwAQAATImcJDgBAABMiZwkQAEAAEyJnCRIAQAATImcJFABAABMiZwkWAEAAEyJnCRgAQAATImcJGgBAABMiZwkcAEAAEyJnCR4AQAATImcJIABAABMiZwkiAEAAEyJnCSQAQAATImcJJgBAABMiZwkoAEAAEyJnCSoAQAATImcJLABAABMiZwkuAEAAEyJnCTAAQAATImcJMgBAABMiZwk0AEAAEyJnCTYAQAATImcJOABAABMiZwk6AEAAEyJnCTwAQAATImcJPgBAABMiZwkAAIAAEiNpCQIAgAAww=="
+.base64 "SIuaCAEAAEiLqhABAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEyJnCS4AAAATImcJMAAAABMiZwkyAAAAEyJnCTQAAAATImcJNgAAABMiZwk4AAAAEyJnCToAAAATImcJPAAAABMiZwk+AAAAEyJnCQAAQAATImcJAgBAABMiZwkEAEAAEyJnCQYAQAATImcJCABAABMiZwkKAEAAEyJnCQwAQAATImcJDgBAABMiZwkQAEAAEyJnCRIAQAATImcJFABAABMiZwkWAEAAEyJnCRgAQAATImcJGgBAABMiZwkcAEAAEyJnCR4AQAATImcJIABAABMiZwkiAEAAEyJnCSQAQAATImcJJgBAABMiZwkoAEAAEyJnCSoAQAATImcJLABAABMiZwkuAEAAEyJnCTAAQAATImcJMgBAABMiZwk0AEAAEyJnCTYAQAATImcJOABAABMiZwk6AEAAEyJnCTwAQAATImcJPgBAABMiZwkAAIAAEiNpCQIAgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJPD9///zD38EJEiNpCQQAgAAMcAxyTHSMfZFMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_rc2_decrypt_block = sym super::rc2::vg_rc2_decrypt_block::vg_rc2_decrypt_block,
     )

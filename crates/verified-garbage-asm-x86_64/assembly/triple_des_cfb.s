@@ -993,7 +993,7 @@ vg_triple_des_cfb64_decrypt_avx512:
 	mov rdi, r15
 	mov rsi, r12
 	mov rdx, r10
-	call {vg_triple_des_ecb_encrypt_avx512}
+	call {vg_triple_des_ecb_encrypt_avx512_core}
 	mov r9, r13
 	movabs rcx, 256
 	cmp r14, 256
@@ -1363,7 +1363,7 @@ vg_triple_des_cfb64_decrypt_avx2:
 	mov rdi, r15
 	mov rsi, r12
 	mov rdx, r10
-	call {vg_triple_des_ecb_encrypt_avx2}
+	call {vg_triple_des_ecb_encrypt_avx2_core}
 	mov r9, r13
 	movabs rcx, 256
 	cmp r14, 256
@@ -1733,7 +1733,7 @@ vg_triple_des_cfb64_decrypt:
 	mov rdi, r15
 	mov rsi, r12
 	mov rdx, r10
-	call {vg_triple_des_ecb_encrypt}
+	call {vg_triple_des_ecb_encrypt_core}
 	mov r9, r13
 	movabs rcx, 256
 	cmp r14, 256
