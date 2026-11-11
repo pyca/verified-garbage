@@ -211,10 +211,11 @@ def steps : Prog isa :=
 def seedX : Prog isa :=
   .seq (zero 4) (.block (topPtr .eax 4 1 .ecx ++ [.mov .edx (.imm 1), .store (at_ .eax 0) .edx]))
 
-/-- `10 B mod 32` doublings of number 4 modulo `M` (none or 16), counted by
-`esi`. -/
+/-- `10 B mod 32 = 16 (B / 8 mod 2)` doublings of number 4 modulo `M`,
+counted by `esi`. -/
 def tail : Prog isa :=
-  .seq (.block (widthB 0 .esi ++ [.alu .and .esi (.imm 8), .alu .add .esi (.reg .esi)]))
+  .seq (.block (widthB 0 .esi ++ [.shift .shr .esi 3, .alu .and .esi (.imm 1), .alu .add .esi (.reg .esi),
+      .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi)]))
     (.ite .e (.block []) (.loop (doubleStep 4) .ne))
 
 /-- Number 4 set to `2^(10 B) mod M`. -/
