@@ -18,6 +18,8 @@ slots kept (`crt_call`).
 
 namespace VG.Proof.Rsa.X86_64
 
+variable {X : List Region}
+
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
@@ -33,7 +35,7 @@ theorem fb_kb (s : State) : fb s = kb s + BitVec.ofNat 64 8 := by
 theorem fb_off (s : State) (d : Nat) : off (fb s) d = kb s + BitVec.ofNat 64 (8 + d) := by
   rw [fb_kb, off, BitVec.add_assoc, ← BitVec.ofNat_add]
 
-theorem kb_toNat {s : State} (hp : PreF s) : (kb s).toNat + (frameBytes + 8) + 8 + 112 ≤ 2 ^ 64 ∧
+theorem kb_toNat {s : State} (hp : PreF X s) : (kb s).toNat + (frameBytes + 8) + 8 + 112 ≤ 2 ^ 64 ∧
     (kb s).toNat + (frameBytes + 8) = (s.gpr .rsp).toNat ∧ 8 ≤ (kb s).toNat := by
   have := hp.sp1; have := hp.sp2
   simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stackBytes frameBytes at *; omega_arith
@@ -68,7 +70,7 @@ def crtRd (s : State) : List Region :=
 def crtWr (s : State) : List Region :=
   [⟨off (fb s) oM, (s.gpr .rcx).toNat⟩, ⟨stackArg s 12, (stackArg s 13).toNat * 8⟩]
 
-theorem crt_pre {s t : State} (hp : PreF s) (he : Env s t)
+theorem crt_pre {s t : State} (hp : PreF X s) (he : Env s t)
     (hargs : ∀ i < 12, word t.mem (fb s) (8 * i) = stackArg s (i + 2)) (hdi : t.gpr .rdi = off (fb s) oM)
     (hsi : t.gpr .rsi = s.gpr .rcx) (hdx : t.gpr .rdx = s.gpr .rdx) (hcx : t.gpr .rcx = s.gpr .rcx)
     (h8 : t.gpr .r8 = stackArg s 0) (h9 : t.gpr .r9 = s.gpr .rcx) :
@@ -123,13 +125,13 @@ theorem hole_sub (s : State) : Region.Sub (hole (kb s)) (stkR s) := by
   exact Region.sub_prefix (by decide)
 
 /-- Frame bytes at `d` are apart from the return address of the CRT's calls. -/
-theorem frame_hole {s : State} (hp : PreF s) {d n : Nat} (h : d + n ≤ frameBytes) :
+theorem frame_hole {s : State} (hp : PreF X s) {d n : Nat} (h : d + n ≤ frameBytes) :
     Region.Disjoint ⟨kb s + BitVec.ofNat 64 (8 + d), n⟩ (hole (kb s)) := by
   have ⟨hK1, _, _⟩ := kb_toNat hp
   exact Offset.disjoint_below (kb s) (n := 8) (by unfold frameBytes at h hK1; omega_arith)
 
 /-- The CRT's buffers are apart from the return address of its calls. -/
-theorem crt_clear {s t : State} (hp : PreF s) (he : Env s t) :
+theorem crt_clear {s t : State} (hp : PreF X s) (he : Env s t) :
     Clear (hole ((t.callEntry.withRegions (crtRd s) (crtWr s)).gpr .rsp))
       (t.callEntry.withRegions (crtRd s) (crtWr s)) := by
   simp only [State.withRegions_gpr, State.callEntry_rsp, he.rsp, fb_sub8]
@@ -197,7 +199,7 @@ theorem slot_keep {s : State} {m m' : Mem} {rs : List Region} (hf : Frame rs m m
 /-! ## The call -/
 
 /-- The slots are apart from `M`, the working space and the return address. -/
-theorem slot_apart {s : State} (hp : PreF s) {d : Nat} (hd' : d + 8 ≤ oM) :
+theorem slot_apart {s : State} (hp : PreF X s) {d : Nat} (hd' : d + 8 ≤ oM) :
     ∀ r ∈ crtWr s ++ [below (fb s) 16], (⟨off (fb s) d, 8⟩ : Region).Disjoint r := by
   have e2 : oM = 168 := rfl
   have hk2 := hp.k2
@@ -208,7 +210,7 @@ theorem slot_apart {s : State} (hp : PreF s) {d : Nat} (hd' : d + 8 ≤ oM) :
   · exact (hp.dKs.sub_left (frame_sub s (by unfold frameBytes; omega_arith)))
   · exact Offset.disjoint_below (fb s) (n := 16) (by omega_arith)
 
-theorem crt_covers {s t : State} (hp : PreF s) (he : Env s t) :
+theorem crt_covers {s t : State} (hp : PreF X s) (he : Env s t) :
     Covers (crtRd s ++ crtWr s) (t.rd ++ t.wr) ∧ Covers (crtWr s) t.wr := by
   have hk2 := hp.k2
   have hil := hp.hil
@@ -244,7 +246,7 @@ theorem crt_covers {s t : State} (hp : PreF s) (he : Env s t) :
     · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; omega_arith⟩
 
 /-- The call of the CRT: `M` holds its result, which it returns. -/
-theorem crt_call (v : CrtImpl) {s t : State} (hp : PreF s) (he : Env s t)
+theorem crt_call (v : CrtImpl) {s t : State} (hp : PreF X s) (he : Env s t)
     (hargs : ∀ i < 12, word t.mem (fb s) (8 * i) = stackArg s (i + 2)) (hdi : t.gpr .rdi = off (fb s) oM)
     (hsi : t.gpr .rsi = s.gpr .rcx) (hdx : t.gpr .rdx = s.gpr .rdx) (hcx : t.gpr .rcx = s.gpr .rcx)
     (h8 : t.gpr .r8 = stackArg s 0) (h9 : t.gpr .r9 = s.gpr .rcx) :

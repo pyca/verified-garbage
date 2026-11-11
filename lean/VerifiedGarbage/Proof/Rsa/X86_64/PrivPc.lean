@@ -22,6 +22,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 namespace VG.Proof.Rsa.X86_64
 
+variable {X : List Region}
+
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
@@ -43,7 +45,7 @@ theorem preWords_val {x : BitVec 64} (hx : x.toNat ≤ 1024) :
   omega
 
 /-- `r₁` kept, and the arguments of `vg_rsa_public_precompute`. -/
-theorem pcArgs_ok {s t : State} (hp : PreF s) (he : Env s t) :
+theorem pcArgs_ok {s t : State} (hp : PreF X s) (he : Env s t) :
     WP isa (.block pcArgs) t fun t' => Env s t' ∧
       t'.mem = t.mem.writeW (off (fb s) oR1) (t.gpr .rax) ∧ t'.gpr .rdi = off (fb s) oPre ∧
       t'.gpr .rsi = BitVec.ofNat 64 (Spec.Rsa.precomputedWords (s.gpr .rcx).toNat) ∧
@@ -53,8 +55,7 @@ theorem pcArgs_ok {s t : State} (hp : PreF s) (he : Env s t) :
   have hk2 := hp.k2
   have harg : ∀ j < 14, InRegions (t.rd ++ t.wr) (stackArgAddr s j) 8 := fun j hj =>
     ⟨⟨stackArgAddr s 0, 112⟩, List.mem_append_left _ (by
-      rw [he.rd, hp.hrd]; simp only [List.mem_cons]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl trivial))))))))),
+      rw [he.rd, hp.hrd]; simp),
       by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
   refine WP.mono (WP.keep [.rdi, .rsi, .rdx, .rcx, .r8, .r9] (Q := fun t' =>
       t'.mem = t.mem.writeW (off (fb s) oR1) (t.gpr .rax) ∧ t'.gpr .rdi = off (fb s) oPre ∧
@@ -91,10 +92,10 @@ theorem pcArgs_ok {s t : State} (hp : PreF s) (he : Env s t) :
 def preR (s : State) : Region :=
   ⟨off (fb s) oPre, Spec.Rsa.precomputedWords (s.gpr .rcx).toNat * 8⟩
 
-theorem preWords_le {s : State} (hp : PreF s) : Spec.Rsa.precomputedWords (s.gpr .rcx).toNat ≤ 256 := by
+theorem preWords_le {s : State} (hp : PreF X s) : Spec.Rsa.precomputedWords (s.gpr .rcx).toNat ≤ 256 := by
   have := hp.k2; unfold Spec.Rsa.precomputedWords Spec.Rsa.modulusWords; omega
 
-theorem preR_sub {s : State} (hp : PreF s) : Region.Sub (preR s) (stkR s) :=
+theorem preR_sub {s : State} (hp : PreF X s) : Region.Sub (preR s) (stkR s) :=
   frame_sub s (by have := preWords_le hp; unfold oPre frameBytes; omega)
 
 /-- A region of the frame at `d`, apart from the return address of a call. -/
@@ -103,7 +104,7 @@ theorem ret_disjoint (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
   rw [show below (fb s) 8 = ⟨kb s, 8⟩ by simp only [below]; rw [← fb_sub8]; rfl, fb_off]
   exact Offset.base_disjoint _ (by omega) (by unfold frameBytes at h; omega)
 
-theorem pc_pre {s t : State} (hp : PreF s) (he : Env s t) (hdi : t.gpr .rdi = off (fb s) oPre)
+theorem pc_pre {s t : State} (hp : PreF X s) (he : Env s t) (hdi : t.gpr .rdi = off (fb s) oPre)
     (hsi : t.gpr .rsi = BitVec.ofNat 64 (Spec.Rsa.precomputedWords (s.gpr .rcx).toNat))
     (hdx : t.gpr .rdx = s.gpr .rdx) (hcx : t.gpr .rcx = s.gpr .rcx) (h8 : t.gpr .r8 = stackArg s 12)
     (h9 : t.gpr .r9 = stackArg s 13) :
@@ -145,7 +146,7 @@ theorem pc_pre {s t : State} (hp : PreF s) (he : Env s t) (hdi : t.gpr .rdi = of
 
 /-- The regions `vg_rsa_public_precompute` is given: `n`, and the precomputed
 values and the working space. -/
-theorem pc_covers {s t : State} (hp : PreF s) (he : Env s t) :
+theorem pc_covers {s t : State} (hp : PreF X s) (he : Env s t) :
     Covers ([⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩] ++ [preR s, scrR s]) (t.rd ++ t.wr) ∧
       Covers [preR s, scrR s] t.wr := by
   have hpw := preWords_le hp
@@ -166,7 +167,7 @@ if `n` is not valid), and whether it is returned. `M` and `r₁`'s slot are
 kept. -/
 theorem pc_call (pc : Prog isa) (name : String)
     (hok : ∀ s, pcContract.clear.pre s → ∃ t s', Exec isa pc s t s' ∧ abiPreserved s s' ∧ pcContract.post s s')
-    (hsp : NoSp pc) (hd : pc.depth = 1) {s t : State} (hp : PreF s)
+    (hsp : NoSp pc) (hd : pc.depth = 1) {s t : State} (hp : PreF X s)
     (he : Env s t) (hdi : t.gpr .rdi = off (fb s) oPre)
     (hsi : t.gpr .rsi = BitVec.ofNat 64 (Spec.Rsa.precomputedWords (s.gpr .rcx).toNat))
     (hdx : t.gpr .rdx = s.gpr .rdx) (hcx : t.gpr .rcx = s.gpr .rcx) (h8 : t.gpr .r8 = stackArg s 12)

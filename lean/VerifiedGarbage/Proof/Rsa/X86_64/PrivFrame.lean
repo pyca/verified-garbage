@@ -25,6 +25,8 @@ that store to its slots and read the function's stack arguments, at
 
 namespace VG.Proof.Rsa.X86_64
 
+variable {X : List Region}
+
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
@@ -43,13 +45,13 @@ theorem ea_arg {t : State} {s : State} (h : t.gpr .rsp = s.gpr .rsp - BitVec.ofN
 /-! ## The precondition, by name -/
 
 /-- `chkContract.pre`, by name. -/
-structure PreF (s : State) : Prop where
+structure PreF (X : List Region) (s : State) : Prop where
   sp1 : stackBytes ≤ (s.gpr .rsp).toNat
   sp2 : (s.gpr .rsp).toNat + 120 ≤ 2 ^ 64
   hrd : s.rd = [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩,
     ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 2, (stackArg s 3).toNat⟩,
     ⟨stackArg s 4, (stackArg s 5).toNat⟩, ⟨stackArg s 6, (stackArg s 7).toNat⟩,
-    ⟨stackArg s 8, (stackArg s 9).toNat⟩, ⟨stackArg s 10, (stackArg s 11).toNat⟩, ⟨stackArgAddr s 0, 112⟩]
+    ⟨stackArg s 8, (stackArg s 9).toNat⟩, ⟨stackArg s 10, (stackArg s 11).toNat⟩, ⟨stackArgAddr s 0, 112⟩] ++ X
   hwr : s.wr = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨stackArg s 12, (stackArg s 13).toNat * 8⟩]
   dOn : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
   dOe : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
@@ -115,7 +117,7 @@ structure PreF (s : State) : Prop where
   hdql : (stackArg s 9).toNat = (stackArg s 5).toNat
   hsl : 16 * (s.gpr .rcx).toNat + 32 ≤ (stackArg s 13).toNat
 
-theorem preF_of {s : State} (h : chkContract.pre s) : PreF s := by
+theorem preF_of {s : State} (h : chkContract.pre s) : PreF [] s := by
   simp only [chkContract] at h
   sig_split h
   rename_i sp1 sp2 hrd hwr dOn dOe dOi dOp dOq dOdp dOdq dOqi dOs dOa dns des dis dps dqs ddps ddqs
@@ -123,7 +125,7 @@ theorem preF_of {s : State} (h : chkContract.pre s) : PreF s := by
     wQ wDp wDq wQi wS _ob1 hsi hil L1 L2 pl1 pl2 ql1 ql2 hdpl hqil hdql
   obtain ⟨k1, k2⟩ := _ob1
   have hsl := h
-  exact ⟨sp1, sp2, hrd, hwr, dOn, dOe, dOi, dOp, dOq, dOdp, dOdq, dOqi, dOs, dOa, dns, des, dis, dps, dqs, ddps,
+  exact ⟨sp1, sp2, by rw [List.append_nil]; exact hrd, hwr, dOn, dOe, dOi, dOp, dOq, dOdp, dOdq, dOqi, dOs, dOa, dns, des, dis, dps, dqs, ddps,
     ddqs, dqis, dsa, dRo, dRs, dKo, dKn, dKe, dKi, dKp, dKq, dKdp, dKdq, dKqi, dKs, dKa, wO, wN, wE, wI, wP, wQ, wDp,
     wDq, wQi, wS, k1, k2, hsi, hil, L1, L2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsl⟩
 
@@ -183,12 +185,12 @@ structure Env (s t : State) : Prop where
   sE : word t.mem (fb s) oE = s.gpr .r8
   sEl : word t.mem (fb s) oEl = s.gpr .r9
 
-theorem Env.scr {s t : State} (h : Env s t) (hp : PreF s) : Scr t (fb s) frameBytes :=
+theorem Env.scr {s t : State} (h : Env s t) (hp : PreF X s) : Scr t (fb s) frameBytes :=
   Scr.of_mem (by rw [h.wr]; exact List.mem_cons_self ..) (by
     have := hp.sp1; simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes stackBytes at *
     omega)
 
-theorem Env.arg {s t : State} (h : Env s t) (hp : PreF s) {j : Nat} (hj : j < 14) :
+theorem Env.arg {s t : State} (h : Env s t) (hp : PreF X s) {j : Nat} (hj : j < 14) :
     t.mem.readW (stackArgAddr s j) 64 = stackArg s j := by
   refine h.mem.readW (r := ⟨stackArgAddr s 0, 112⟩) ?_ (fun r hr => ?_) (by decide)
   · rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
@@ -203,7 +205,7 @@ theorem stackArgAddr_fb (s : State) (j : Nat) : stackArgAddr s j = off (fb s) (f
     ← BitVec.add_assoc, BitVec.sub_add_cancel]
   rfl
 
-theorem fb_toNat {s : State} (hp : PreF s) : (fb s).toNat + frameBytes + 8 + 112 ≤ 2 ^ 64 := by
+theorem fb_toNat {s : State} (hp : PreF X s) : (fb s).toNat + frameBytes + 8 + 112 ≤ 2 ^ 64 := by
   have := hp.sp1; have := hp.sp2
   simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes stackBytes at *; omega
 
@@ -213,7 +215,7 @@ theorem frame_of_outside {s : State} {m : Mem} (h : Outside (fb s) 0 frameBytes 
   fun x hx => h x (.inr (outside_frame s (hx _ (List.mem_cons_self ..))))
 
 /-- A stack argument, past stores to the frame. -/
-theorem arg_outside {s : State} (hp : PreF s) {m : Mem} (h : Outside (fb s) 0 frameBytes s.mem m) {j : Nat}
+theorem arg_outside {s : State} (hp : PreF X s) {m : Mem} (h : Outside (fb s) 0 frameBytes s.mem m) {j : Nat}
     (hj : j < 14) : m.readW (stackArgAddr s j) 64 = stackArg s j := by
   have := fb_toNat hp
   show m.readW _ 64 = s.mem.readW _ 64
@@ -242,7 +244,7 @@ theorem slotStores_ok {s t : State} (hsp : t.gpr .rsp = fb s) (hs : Scr t (fb s)
       hs.st (d := oK) (by decide), hs.st (d := oE) (by decide), hs.st (d := oEl) (by decide)]) rfl
 
 /-- Stack argument `j + 2` to the frame's word `j`. -/
-theorem copyArg_ok {s t : State} (hp : PreF s) (hsp : t.gpr .rsp = fb s) (hs : Scr t (fb s) frameBytes)
+theorem copyArg_ok {s t : State} (hp : PreF X s) (hsp : t.gpr .rsp = fb s) (hs : Scr t (fb s) frameBytes)
     (hrd : t.rd = s.rd) (ho : Outside (fb s) 0 frameBytes s.mem t.mem) {j : Nat} (hj : j < 12) :
     WP isa (.block (copyArg j)) t fun t' => t'.mem = t.mem.writeW (off (fb s) (8 * j)) (stackArg s (j + 2)) ∧
       Keep [.rax] t t' := by
@@ -254,7 +256,7 @@ theorem copyArg_ok {s t : State} (hp : PreF s) (hsp : t.gpr .rsp = fb s) (hs : S
       hs.st (d := 8 * j) (by unfold frameBytes; omega)]) rfl
 
 /-- The first `n` copies. -/
-theorem copies_ok {s : State} (hp : PreF s) : ∀ (n : Nat), n ≤ 12 → ∀ (t : State), t.gpr .rsp = fb s →
+theorem copies_ok {s : State} (hp : PreF X s) : ∀ (n : Nat), n ≤ 12 → ∀ (t : State), t.gpr .rsp = fb s →
     Scr t (fb s) frameBytes → t.rd = s.rd → Outside (fb s) 0 frameBytes s.mem t.mem →
     WP isa (.block ((List.range n).flatMap copyArg)) t fun t' => Outside (fb s) 0 frameBytes s.mem t'.mem ∧
       (∀ i < n, word t'.mem (fb s) (8 * i) = stackArg s (i + 2)) ∧
@@ -290,7 +292,7 @@ theorem allocState_gpr (s : State) (r : Reg) :
 
 /-- The frame's push, and the CRT's arguments: `Env`, the CRT's stack
 arguments in the frame, and its arguments in registers. -/
-theorem crtArgs_ok {s : State} (hp : PreF s) :
+theorem crtArgs_ok {s : State} (hp : PreF X s) :
     WP isa (.block crtArgs) (allocState frameBytes s) fun t => Env s t ∧
       Outside (fb s) 0 frameBytes s.mem t.mem ∧ (∀ i < 12, word t.mem (fb s) (8 * i) = stackArg s (i + 2)) ∧
       t.gpr .rdi = off (fb s) oM ∧ t.gpr .rsi = s.gpr .rcx ∧ t.gpr .rdx = s.gpr .rdx ∧
@@ -323,8 +325,7 @@ theorem crtArgs_ok {s : State} (hp : PreF s) :
   have hrd₂ : InRegions (t₂.rd ++ t₂.wr) (stackArgAddr s 0) 8 :=
     ⟨⟨stackArgAddr s 0, 112⟩, List.mem_append_left _ (by
       rw [k12.2.1, show A.rd = s.rd from rfl, hp.hrd]
-      simp only [List.mem_cons]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl trivial))))))))),
+      simp),
       by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩
   refine WP.mono (WP.keep [.rdi, .rsi, .r8, .r9] (Q := fun t => t.gpr .rdi = off (fb s) oM ∧
       t.gpr .rsi = s.gpr .rcx ∧ t.gpr .r8 = stackArg s 0 ∧ t.gpr .r9 = s.gpr .rcx ∧ t.mem = t₂.mem) (by
