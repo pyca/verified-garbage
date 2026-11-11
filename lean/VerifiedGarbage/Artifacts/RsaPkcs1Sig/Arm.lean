@@ -8,7 +8,9 @@ public import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Precomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
 public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfVerified
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgPrecomputed
 public meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfVerified
+public meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgPrecomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.RcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgVerified
@@ -365,8 +367,13 @@ def artifacts : List Artifact :=
     Spec.RsaPkcs1Sig.signApi.artifact Arm.target {
       suffix := v.suffix
       code := Proof.RsaPkcs1Sig.Arm.Sg.signCode v
-      stack := 4584
+      stack := 4616
       verified := (Proof.RsaPkcs1Sig.Arm.Sg.code_verified v) },
+    Spec.RsaPkcs1Sig.signPrecomputedApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Proof.RsaPkcs1Sig.Arm.Sg.signCodeP v
+      stack := 4616
+      verified := (Proof.RsaPkcs1Sig.Arm.Sg.signPrecomputed_verified v) },
     Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.Arm.Precomputed.code (Proof.Rsa.Arm.pdOfCrt v).name

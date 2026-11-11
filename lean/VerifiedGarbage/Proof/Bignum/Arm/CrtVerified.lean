@@ -8,10 +8,13 @@ public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Rsa.Contract
+public import VerifiedGarbage.Proof.Rsa.CrtPrecomputedContract
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtPrecomputed
 public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.CrtPrecomputedContract
 meta import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Bignum.Words
 
@@ -58,5 +61,48 @@ theorem crt_contract_sat : ∃ s, (Proof.Rsa.privateCrtContract abi 56).pre s :=
 
 theorem crt_verified (kernel : WindowKernel := baselineWindowKernel) : Verified target (CrtFn.codeWith kernel.code) (Proof.Rsa.privateCrtContract abi 56) :=
   ⟨(crt_contract_correct (kernel := kernel)), (crt_contract_ct (kernel := kernel)), crt_contract_sat⟩
+
+theorem os2ip_replicate_zero' (n : Nat) : Spec.Rsa.os2ip (List.replicate n 0) = 0 := by
+  unfold Spec.Rsa.os2ip
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [List.replicate_succ', List.foldl_append, ih]; rfl
+
+/-- `crtSatState`, with factors of one octet, zero (whose product is the zero
+modulus, and whose `R² mod p`, `2^256` of 2 words, is zeros), and their `R²`
+at `0x3600`. -/
+def crtSatStateP : State :=
+  { crtSatState with
+    mem := fun a => if a = 0x8039 then 0x36 else if a = 0x803c then 4 else
+      if a = 0x800c ∨ a = 0x8014 ∨ a = 0x801c ∨ a = 0x8024 ∨ a = 0x802c then 1 else crtSatState.mem a
+    rd := [⟨0x2000, 64⟩, ⟨0x3000, 64⟩, ⟨0x3100, 1⟩, ⟨0x3200, 1⟩,
+      ⟨0x3300, 1⟩, ⟨0x3400, 1⟩, ⟨0x3500, 1⟩, ⟨0x3600, 32⟩, ⟨0x8000, 64⟩] }
+
+theorem crt_contract_satP : ∃ s, (Proof.Rsa.privateCrtPrecomputedContract abi 56).pre s := by
+  refine ⟨crtSatStateP, ?_⟩
+  sig_pre [Proof.Rsa.privateCrtPrecomputedContract, Proof.Rsa.privateCrtPrecomputedSig,
+      Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+  sig_and_intros
+  rotate_right 3
+  · decide
+  · rw [show Spec.Rsa.wordsAt _ _ _ = List.replicate 4 0 by decide,
+      show Spec.Rsa.bytesAt _ _ _ = [0] by decide, show Spec.Rsa.bytesAt _ _ _ = [0] by decide]
+    decide
+  · rw [show Spec.Rsa.bytesAt _ _ _ = [0] by decide, show Spec.Rsa.bytesAt _ _ _ = [0] by decide,
+      show Spec.Rsa.bytesAt _ _ _ = List.replicate 64 0 by decide, os2ip_replicate_zero']
+    rfl
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | (simp only [Spec.Rsa.lenValid]; decide)
+    | (intro a h₁ h₂
+       sig_simp_only [Region.Contains, crtSatStateP, crtSatState, stackArg, stackArgAddr, Mem.readW, Mem.read]
+         at h₁ h₂
+       bv_omega)
+
+theorem crt_verifiedP (kernel : WindowKernel := baselineWindowKernel) :
+    Verified target (CrtFn.codeGiven kernel.code) (Proof.Rsa.privateCrtPrecomputedContract abi 56) :=
+  ⟨(crt_contract_correctP (kernel := kernel)), (crt_contract_ctP (kernel := kernel)), crt_contract_satP⟩
 
 end VG.Proof.Bignum.Arm

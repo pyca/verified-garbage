@@ -16,6 +16,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetup
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowDispatchCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTCode
 meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowDispatch
@@ -30,6 +31,7 @@ meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetup
 
 /-!
 # `vg_rsa_private_crt` on AArch64: constant time
@@ -51,14 +53,15 @@ open VG.Proof.Bignum
 open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 open VG.Proof.Rsa.AArch64 (crtA stackArgs_ten)
 
-/-- `vg_rsa_private_crt` leaks the same in runs that agree on the public data,
-given that `main`'s parts do. -/
-theorem crtCode_ct (W : Window) (M : Mont) (S : Selector) :
-    RelCT isa (Two CCRel) (VG.Impl.Rsa.AArch64.WindowFive.code W.code S.code M.mm) (fun _ _ => True) := by
-  unfold VG.Impl.Rsa.AArch64.WindowFive.code
-  refine RelCT.seq (R := Two CC3) ?_ ?_
+/-- `vg_rsa_private_crt` with the key checks `C` leaks the same in runs that
+agree on the public data, for keys with `G`. -/
+theorem crtCode_ct (W : Window) (M : Mont) (S : Selector) {C : List (Prog isa)} {G : Nat → Nat → Nat → Prop}
+    (hC : ChecksCTOf C) (hok : ChecksOk C G) :
+    RelCT isa (Two (CCRel G)) (VG.Impl.Rsa.AArch64.WindowFive.codeWith C W.code S.code M.mm) (fun _ _ => True) := by
+  unfold VG.Impl.Rsa.AArch64.WindowFive.codeWith
+  refine RelCT.seq (R := Two (CC3 G)) ?_ ?_
   · rw [head_split]
-    refine RelCT.block_append (RelCT.seq (two_piece (Ψ := CC1) [.x2, .x3] (fun p s₁ s₂ h₁ h₂ r hr => by
+    refine RelCT.block_append (RelCT.seq (two_piece (Ψ := CC1 G) [.x2, .x3] (fun p s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · rw [h₁.2.2.2.2.2.2.1, h₂.2.2.2.2.2.2.1]
@@ -84,8 +87,8 @@ theorem crtCode_ct (W : Window) (M : Mont) (S : Selector) :
   refine two_ite (fun p s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, cc3_x9 h₁, cc3_x9 h₂]) ?_ ?_
   · -- `fail`.
     unfold Precomputed.fail
-    have pin : ∀ p t, (CC3 p t ∧ isa.eval (.zero .x .x9) t = some true) → t.gpr .x0 = p.m.B := fun p t ⟨h, _⟩ => by
-      obtain ⟨_, _, _, _, _, _, hpre⟩ := cc3_pre h
+    have pin : ∀ p t, (CC3 G p t ∧ isa.eval (.zero .x .x9) t = some true) → t.gpr .x0 = p.m.B := fun p t ⟨h, _⟩ => by
+      obtain ⟨_, _, _, _, _, _, hpre, -⟩ := cc3_pre h
       exact hpre.x0
     refine RelCT.seq (two_piece (Ψ := fun (p : CCPub) t => t.gpr .x1 = p.m.op + BitVec.ofNat 64 0 ∧
         t.gpr .x2 = BitVec.ofNat 64 p.m.k ∧ t.gpr .x0 = p.m.B) [.x0]
@@ -97,7 +100,7 @@ theorem crtCode_ct (W : Window) (M : Mont) (S : Selector) :
         · rw [h₁.2.1, h₂.2.1]
         · rw [h₁.2.2, h₂.2.2]) (by taint_decide))
     rintro p t ⟨h, -⟩
-    obtain ⟨_, _, _, _, _, _, hpre⟩ := cc3_pre h
+    obtain ⟨_, _, _, _, _, _, hpre, -⟩ := cc3_pre h
     have hn := hpre.scr.nowrap
     have hk1 := hpre.k1
     have hk2 := hpre.k2
@@ -112,30 +115,44 @@ theorem crtCode_ct (W : Window) (M : Mont) (S : Selector) :
       (by decide +kernel))
       fun t' ⟨⟨h1, h2⟩, k'⟩ => ⟨h1, h2, (k'.gpr .x0 (by decide)).trans hpre.x0⟩
   · -- `main`.
-    have toM : ∀ p t, CC3 p t ∧ isa.eval (.zero .x .x9) t = some false → OldStage p.m t := by
+    have toM : ∀ p t, CC3 G p t ∧ isa.eval (.zero .x .x9) t = some false → OldStage G p.m t := by
       rintro p t ⟨h, he⟩
-      obtain ⟨xb, pb, qb, dpb, dqb, qib, hpre⟩ := cc3_pre h
+      obtain ⟨xb, pb, qb, dpb, dqb, qib, hpre, hg⟩ := cc3_pre h
       have hv : Spec.Rsa.modulusValid p.m.N p.m.k = true := by
         rw [eval_zero, cc3_x9 h] at he
         revert he
         cases Spec.Rsa.modulusValid p.m.N p.m.k <;> decide
-      exact ⟨t, xb, pb, qb, dpb, dqb, qib, hpre, hv, rfl⟩
-    exact (dispatch_ct W M S).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ =>
+      exact ⟨t, xb, pb, qb, dpb, dqb, qib, hpre, hv, hg, rfl⟩
+    exact (dispatch_ct W M S hC hok).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ =>
       ⟨p.m, toM p t₁ h₁, toM p t₂ h₂⟩) h) fun _ _ h => h
 
-/-- `vg_rsa_private_crt` is constant time, given that `main`'s parts are. -/
-theorem crtCode_constantTime_of (W : Window) (M : Mont) (S : Selector) :
-    ConstantTime isa crtA.pre crtA.pub (VG.Impl.Rsa.AArch64.WindowFive.code W.code S.code M.mm) := by
-  refine RelCT.constantTime ((crtCode_ct W M S).mono
-    (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨ccPubOf s₁, ?_, ?_, hp.2.1⟩) fun _ _ h => h)
-  · exact ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+/-- The key of a state has `G`. -/
+def KeyG (G : Nat → Nat → Nat → Prop) (s : State) : Prop :=
+  G (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat))
+    (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat))
+    (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))
+
+/-- `vg_rsa_private_crt` with the key checks `C` is constant time for keys
+with `G`. -/
+theorem crtCodeWith_constantTime (W : Window) (M : Mont) (S : Selector) {C : List (Prog isa)}
+    {G : Nat → Nat → Nat → Prop} (hC : ChecksCTOf C) (hok : ChecksOk C G) :
+    ConstantTime isa (fun s => crtA.pre s ∧ KeyG G s) crtA.pub
+      (VG.Impl.Rsa.AArch64.WindowFive.codeWith C W.code S.code M.mm) := by
+  refine RelCT.constantTime ((crtCode_ct W M S hC hok).mono
+    (fun s₁ s₂ ⟨⟨h₁, g₁⟩, ⟨h₂, g₂⟩, hp⟩ => ⟨ccPubOf s₁, ?_, ?_, hp.2.1⟩) fun _ _ h => h)
+  · exact ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, g₁⟩
   · obtain ⟨hr, hsp, ha, hn⟩ := hp
     simp only [stackArgs_ten, List.cons.injEq, and_true] at ha
     obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9⟩ := ha
     have r : ∀ r ∈ argRegs, s₂.gpr r = s₁.gpr r := fun r h => (hr r h).symm
     exact ⟨h₂, hsp.symm, a8.symm, by rw [← a9]; rfl, by rw [r .x3 (by decide)]; rfl, r .x0 (by decide), r .x2 (by decide),
       r .x4 (by decide), r .x6 (by decide), a0.symm, a2.symm, a4.symm, a6.symm, by rw [r .x7 (by decide)]; rfl,
-      by rw [← a1]; rfl, hn.symm⟩
+      by rw [← a1]; rfl, hn.symm, g₂⟩
+
+/-- `vg_rsa_private_crt` is constant time, given that `main`'s parts are. -/
+theorem crtCode_constantTime_of (W : Window) (M : Mont) (S : Selector) :
+    ConstantTime isa crtA.pre crtA.pub (VG.Impl.Rsa.AArch64.WindowFive.code W.code S.code M.mm) :=
+  fun _ _ _ _ _ _ h₁ h₂ => crtCodeWith_constantTime W M S checks_ct checks_okG _ _ _ _ _ _ ⟨h₁, trivial⟩ ⟨h₂, trivial⟩
 
 
 end VG.Proof.Bignum.AArch64.WindowFive

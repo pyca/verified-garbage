@@ -21,6 +21,8 @@ open VG VG.PPC64LE VG.Impl.RsaPkcs1Sig.PPC64LE.Sign
 open VG.Proof.Bignum.PPC64LE (Keep)
 open VG.PPC64LE.RegUpd (gpr_write_self gpr_write_of_ne mem_write)
 
+variable {pc : Bool}
+
 theorem exec_addSp0 {s : State} {d : Reg} : exec (.addSp d 0) s = some (s.write d s.sp) := by
   simp [exec]
 
@@ -125,17 +127,25 @@ theorem save_ok {s : State} {rest : List Instr} {Q : State → Prop}
     rw [gpr_write_of_ne _ _ h0, g₂, ← hu, gpr_write_of_ne _ _ h12]; rfl
 
 /-- Our stack argument `j` is in the arguments' region, apart from the stack. -/
-theorem arg_read {s : State} (h : SPre s) {m : Mem} (hm : Frame [kR s] s.mem m) {j : Nat} (hj : j < 13) :
-    m.readW (fb s + BitVec.ofNat 64 (arg j)) 64 = stackArg s j := by
+theorem arg_readG {s : State} (h : SPre pc s) {m : Mem} (hm : Frame [kR s] s.mem m) {j : Nat}
+    (hj : j < if pc then 15 else 13) : m.readW (fb s + BitVec.ofNat 64 (arg j)) 64 = stackArg s j := by
   rw [← stackArgAddr_fb]
-  exact hm.readW (in_aR hj) (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.ka.symm) (by decide)
+  exact hm.readW (in_aR (pc := pc) hj) (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.ka.symm) (by decide)
 
-theorem arg_in {s t : State} (h : SPre s) (hrd : t.rd = s.rd) {j : Nat} (hj : j < 13) :
+theorem arg_inG {s t : State} (h : SPre pc s) (hrd : t.rd = s.rd) {j : Nat} (hj : j < if pc then 15 else 13) :
     InRegions (t.rd ++ t.wr) (fb s + BitVec.ofNat 64 (arg j)) 8 := by
   rw [← stackArgAddr_fb, hrd, h.hrd]
-  exact ⟨_, List.mem_append_left _ (by simp), in_aR hj⟩
+  exact ⟨aR pc s, List.mem_append_left _ (by simp [rdL]), in_aR hj⟩
 
-theorem setup_ok {s : State} (h : SPre s) :
+theorem arg_read {s : State} (h : SPre pc s) {m : Mem} (hm : Frame [kR s] s.mem m) {j : Nat} (hj : j < 13) :
+    m.readW (fb s + BitVec.ofNat 64 (arg j)) 64 = stackArg s j :=
+  arg_readG h hm (lt_args hj)
+
+theorem arg_in {s t : State} (h : SPre pc s) (hrd : t.rd = s.rd) {j : Nat} (hj : j < 13) :
+    InRegions (t.rd ++ t.wr) (fb s + BitVec.ofNat 64 (arg j)) 8 :=
+  arg_inG h hrd (lt_args hj)
+
+theorem setup_ok {s : State} (h : SPre pc s) :
     WP isa (.block (save ++ encArgs)) (allocated frameBytes s) (AtEnc s) := by
   have e : save ++ encArgs = ([.addSp .r12 0] : List Instr) ++ Spill.saveCode .r12 saved ++
       ([.mflr .r0, .store .d .r0 .r12 oLr] : List Instr) ++

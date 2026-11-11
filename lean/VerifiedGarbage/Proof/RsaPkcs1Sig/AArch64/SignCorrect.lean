@@ -72,7 +72,7 @@ theorem Mid.only {s t w : State} {rs : List Reg} (h : Mid s t) (o : Only rs t w)
   sv := by rw [o.mem]; exact h.sv
 
 theorem Mid.frame {s t w : State} {rs : List Reg} {R : Region} (h : Mid s t) (o : Keep rs t w)
-    (hm : Frame [R] t.mem w.mem) (hd : Region.Disjoint ⟨fb s + BitVec.ofNat 64 96, 16⟩ R)
+    (hm : Frame [R] t.mem w.mem) (hd : Region.Disjoint ⟨fb s + BitVec.ofNat 64 112, 16⟩ R)
     (hrs : ∀ r ∈ rs, r ∉ [Reg.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28] := by decide) :
     Mid s w :=
   have hw : Mid s { t with gpr := w.gpr, v := w.v } :=
@@ -133,7 +133,7 @@ theorem zeroSlots_ok {K : Nat} {s u w : State} (hp : PreS K s) (hu : AtEnc s u) 
       rw [mw]; have := frame_writeBytes u₂.mem (s.gpr .x0) (List.replicate (s.gpr .x3).toNat 0)
       rwa [List.length_replicate] at this
     have ko' : (kR K s).Disjoint ⟨s.gpr .x0, (s.gpr .x3).toNat⟩ := by rw [← hol]; exact hp.ko
-    exact (midw.only O₂).frame k fw (ko'.sub_left (frame_sub K s (d := 96) (n := 16) (by decide)))
+    exact (midw.only O₂).frame k fw (ko'.sub_left (frame_sub K s (d := 112) (n := 16) (by decide)))
   · rw [mw]
     have := bytesAt_writeBytes u₂.mem (s.gpr .x0) (List.replicate (s.gpr .x3).toNat 0) (by simp; omega)
     rwa [List.length_replicate] at this
@@ -167,11 +167,17 @@ theorem writtenOutcome_of {m m' : Mem} {out : Addr} {n : Nat} {r : BitVec 32} {o
     Spec.Rsa.writtenOutcome m' out n r o := by
   cases o <;> exact ⟨h.1, hb.trans h.2⟩
 
-theorem afterEnc_ok (c : PrivChecked) {s u w : State} (hp : PreS c.stack s) (hu : AtEnc s u)
+/-- A call of the private operation from `AtCall` with `n` stack arguments. -/
+abbrev CallOk (s : State) (n : Nat) (name : String) (code : Prog isa) : Prop :=
+  ∀ em t, AtCall s em t → (∀ i < n, stackArg t i = stackArg s (i + 1)) →
+    WP isa (.call name code) t (AfterCall s em)
+
+theorem afterEncN_ok {K n : Nat} {name : String} {priv : Prog isa} {s u w : State} (hp : PreS K s)
+    (hA : ArgsOk K s (n + 1)) (hn₁ : 12 ≤ n) (hn₂ : n ≤ 14) (hc : CallOk s n name priv) (hu : AtEnc s u)
     (hK : Keep clob u w) (hout : EOut u w (encOut s)) :
-    WP isa (afterEnc c.name c.code) w fun w' => Mid s w' ∧
+    WP isa (afterEncN n name priv) w fun w' => Mid s w' ∧
       Spec.Rsa.writtenOutcome w'.mem (s.gpr .x0) (s.gpr .x3).toNat ((w'.gpr .x0).setWidth 32) (sigOut s) := by
-  unfold afterEnc sigOut
+  unfold afterEncN sigOut
   cases heo : encOut s with
   | none =>
     rw [heo] at hout
@@ -181,8 +187,8 @@ theorem afterEnc_ok (c : PrivChecked) {s u w : State} (hp : PreS c.stack s) (hu 
     rw [heo] at hout
     obtain ⟨h1, hme⟩ := hout
     refine WP.ite false ((eval_zero' w .x0).trans (by rw [h1]; rfl)) (by simp) fun _ => ?_
-    refine WP.seq (WP.mono (callArgs_ok hp hu hK hme (encodeId_length heo)) fun t ht => ?_)
-    refine WP.seq (WP.mono (call_ok c hp ht) fun t' ht' => ?_)
+    refine WP.seq (WP.mono (callArgsN_ok hp hA hn₁ hn₂ hu hK hme (encodeId_length heo)) fun t ht => ?_)
+    refine WP.seq (WP.mono (hc em t ht.1 ht.2) fun t' ht' => ?_)
     refine WP.mono (wipe_ok hp ht'.toMid) fun w' ⟨m', x0, hb⟩ => ⟨m', ?_⟩
     rw [x0]; exact writtenOutcome_of hb ht'.res
 
@@ -227,15 +233,20 @@ def Post (s s' : State) : Prop :=
   abiPreserved s s' ∧ Spec.Rsa.writtenOutcome s'.mem (s.gpr .x0) (s.gpr .x3).toNat ((s'.gpr .x0).setWidth 32)
     (sigOut s)
 
-theorem code_ok (c : PrivChecked) {s : State} (hp : PreS c.stack s) :
-    WP isa (code c.name c.code) s (Post s) := by
-  unfold code
+theorem codeN_ok {K n : Nat} {name : String} {priv : Prog isa} {s : State} (hp : PreS K s)
+    (hA : ArgsOk K s (n + 1)) (hn₁ : 12 ≤ n) (hn₂ : n ≤ 14) (hc : CallOk s n name priv) :
+    WP isa (codeN n name priv) s (Post s) := by
+  unfold codeN
   refine WP.alloc (by decide) (by have := hp.sp1; unfold stk at this; omega) ?_
-  unfold body
+  unfold bodyN
   refine WP.seq (WP.mono (encArgs_ok hp (by simp [allocated]) (by simp [allocated]) (by simp [allocated])
     (by simp [allocated]) (fun r => by simp [allocated]) (fun r _ => by simp [allocated])) fun u hu => ?_)
   refine WP.seq (WP.mono (enc_ok hp hu) fun w ⟨hK, hout⟩ => ?_)
-  refine WP.seq (WP.mono (afterEnc_ok c hp hu hK hout) fun t ⟨m, r⟩ => ?_)
+  refine WP.seq (WP.mono (afterEncN_ok hp hA hn₁ hn₂ hc hu hK hout) fun t ⟨m, r⟩ => ?_)
   exact WP.mono (restore_ok m) fun w ⟨habi, hx0, hmem⟩ => ⟨habi, by rw [hx0, hmem]; exact r⟩
+
+theorem code_ok (c : PrivChecked) {s : State} (hp : PreS c.stack s) :
+    WP isa (code c.name c.code) s (Post s) :=
+  codeN_ok hp hp.argsOk (by decide) (by decide) fun _ _ ht _ => call_ok c hp ht
 
 end VG.Proof.RsaPkcs1Sig.AArch64.Sgn

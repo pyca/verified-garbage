@@ -280,16 +280,18 @@ theorem pstage_step {R R' : StageRel} {c : Prog isa} (hct : RelCT isa (Two (Stag
 theorem front_ct (M : Mont) :
     RelCT isa (Two (PStage R0)) (seqs (Impl.Rsa.AArch64.Crt.nSetup M.mm ++ Impl.Rsa.AArch64.Crt.primesSetup ++
       Impl.Rsa.AArch64.Crt.checks)) (Two (PStage R3)) := by
-  refine RelCT.seqs_append (by simp [Impl.Rsa.AArch64.Crt.nSetup]) (by simp [Impl.Rsa.AArch64.Crt.checks])
+  refine RelCT.seqs_append (by simp [Impl.Rsa.AArch64.Crt.nSetup]) checks_okG.ne
     (RelCT.seq (R := Two (PStage R2)) ?_ ?_)
   · refine RelCT.seqs_append (by simp [Impl.Rsa.AArch64.Crt.nSetup]) (by simp [Impl.Rsa.AArch64.Crt.primesSetup])
       (RelCT.seq (R := Two (PStage R1)) ?_ ?_)
     · exact pstage_step (nSetup_ct M) fun p σ xb _ _ _ _ _ t h hv ht => by
         subst ht; exact WP.mono (nPart_ok M h hv) fun _ ⟨minv, hr⟩ => ⟨minv, hr⟩
-    · exact pstage_step ((setupS_ct setup_ct).mono (fun _ _ h => h) fun _ _ _ => trivial)
+    · exact pstage_step (two_map id (fun _ _ h => stage_true h)
+          ((setupS_ct _ setup_ct).mono (fun _ _ h => h) fun _ _ _ => trivial))
         fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, hr⟩ => WP.mono (setupPart_ok h hr) fun _ h' => ⟨minv, h'⟩
-  · exact pstage_step ((checksS_ct checks_ct).mono (fun _ _ h => h) fun _ _ _ => trivial)
-      fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => WP.mono (checksPart_ok h hv hr)
+  · exact pstage_step (two_map id (fun _ _ h => stage_true h)
+        ((checksS_ct checks_ct checks_okG).mono (fun _ _ h => h) fun _ _ _ => trivial))
+      fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => WP.mono (checksPart_ok h hv hr checks_okG trivial)
         fun _ ⟨mp', mq', h'⟩ => ⟨minv, mp', mq', h'⟩
 
 /-! ## `n`'s values -/

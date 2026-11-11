@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
 import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtStages
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowExp
 
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnterCT
@@ -187,12 +188,10 @@ theorem crt_narrowEntered_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
   exact ⟨⟨sharedT, by rw [flag]; exact bit, by rw [flag]; exact valid⟩, selected⟩
 
 theorem crt_narrowPrepared_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
-    {j : Fin 6} (h : NarrowEntered g bs j s) (prime : j = 1 ∨ j = 2) :
-    WP isa (narrowPrime (56 + 8 * j.val)) s (NarrowPrepared g bs j) := by
+    {j : Fin 6} (h : NarrowEntered g bs j s) (prime : j = 1 ∨ j = 2) (st : CrtStages) (hst : st.ok g bs) :
+    WP isa (st.prime (56 + 8 * j.val)) s (NarrowPrepared g bs j) := by
   have shared := h.1.1
-  obtain ⟨_, le, _, _, _, _, _⟩ := shared.narrow_fits j prime
-  have words : g.words ≤ 128 := (crt_width_valid shared.buffers.lengthValid).2.1
-  refine WP.mono (crt_narrowPrime_ok s (h.primeInput prime) (by omega)) ?_
+  refine WP.mono (st.primeOk j s prime hst ⟨shared, h.primeInput prime⟩) ?_
   rintro t ⟨ready, modulus, odd, r2, flag, frame, rest⟩
   have m : narrowM t (bs j.succ) = narrowM s (bs j.succ) := by unfold narrowM; rw [flag]
   unfold NarrowPrepared
@@ -323,7 +322,8 @@ theorem crt_factorInput_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {ch
     (crt_seq_ct (clear 0 (by decide)) (fun s h => clearWP s h) (fun s h => clearWP s h) (clear 6 (by decide)))
 
 theorem crt_narrowPower_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {child : BitVec 32} {slot : Nat}
-    (kind : CrtChild g child slot) (j i : Fin 6) (pair : (j = 1 ∧ i = 3) ∨ (j = 2 ∧ i = 4)) (kernel : WindowKernel := baselineWindowKernel) :
+    (kind : CrtChild g child slot) (j i : Fin 6) (pair : (j = 1 ∧ i = 3) ∨ (j = 2 ∧ i = 4))
+    (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t =>
       (CrtShared g bs1 s ∧ CrtPrimePowerInput child g.input (g.source i.succ) (workspaceWords g.words) g.words
         g.length (g.sourceLength i.succ) (56 + 8 * i.val) (bs1 1) (bs1 i.succ) s ∧
@@ -331,7 +331,7 @@ theorem crt_narrowPower_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {ch
       (CrtShared g bs2 t ∧ CrtPrimePowerInput child g.input (g.source i.succ) (workspaceWords g.words) g.words
         g.length (g.sourceLength i.succ) (56 + 8 * i.val) (bs2 1) (bs2 i.succ) t ∧
         numAt t.mem (State.addr child) g.words 0 = Spec.Rsa.os2ip (bs2 j.succ)) ∧ s.sp = t.sp)
-      ((narrowPowerWith kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) (fun _ _ => True) := by
+      ((narrowPowerOf st.prime kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) (fun _ _ => True) := by
   have primeJ : j = 1 ∨ j = 2 := by rcases pair with ⟨rfl, _⟩ | ⟨rfl, _⟩ <;> simp
   have expI : i = 3 ∨ i = 4 := by rcases pair with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> simp
   intro s t tr1 tr2 u w h e1 e2
@@ -352,9 +352,10 @@ theorem crt_narrowPower_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {ch
   have enterCT := (crt_enterNarrow_ct (g := g) (bs1 := bs1) (bs2 := bs2) j primeJ).mono
     (P' := fun (s t : State) => NarrowAccepted g bs1 j s ∧ NarrowAccepted g bs2 j t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ _ => trivial)
-  have primeCT := (crt_narrowPrime_ct (pb1 := bs1 j.succ) (pb2 := bs2 j.succ) (by omega)).mono
+  have primeCT := (st.primeCt j primeJ hst1 hst2).mono
     (P' := fun (s t : State) => NarrowEntered g bs1 j s ∧ NarrowEntered g bs2 j t ∧ s.sp = t.sp)
-    (fun _ _ h => ⟨h.1.primeInput primeJ, h.2.1.primeInput primeJ, h.2.2⟩) (fun _ _ _ => trivial)
+    (fun _ _ h => ⟨⟨h.1.1.1, h.1.primeInput primeJ⟩, ⟨h.2.1.1.1, h.2.1.primeInput primeJ⟩, h.2.2⟩)
+    (fun _ _ _ => trivial)
   have backCT := (crt_copyOut_ct (bs1 := bs1) (bs2 := bs2) (child := child) (slot := slot)
     (v := narrowWords (g.sourceLength j.succ) g.words) (j := 0) (a := 0) (by decide) (by decide)).mono
     (P' := fun (s t : State) => NarrowPrepared g bs1 j s ∧ NarrowPrepared g bs2 j t ∧ s.sp = t.sp)
@@ -373,13 +374,13 @@ theorem crt_narrowPower_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {ch
     exact (crt_narrowExp_ct (kernel := kernel)) fitV (table_fits le) s t tr1 tr2 u w ⟨h1, h2, sp⟩ e1 e2
   have resultCT := crt_copyOut_ct (g := g) (bs1 := bs1) (bs2 := bs2) (child := child) (slot := slot)
     (v := narrowWords (g.sourceLength j.succ) g.words) (j := 6) (a := 6) (by decide) (by decide)
-  rw [narrowPowerWith] at e1 e2
+  rw [narrowPowerOf] at e1 e2
   exact (crt_seq_ct inputCT (fun s h => crt_narrowAccepted_ready s h.1 kind h.2.1 h.2.2)
       (fun s h => crt_narrowAccepted_ready s h.1 kind h.2.1 h.2.2)
     (crt_seq_ct enterCT (fun s h => crt_narrowEntered_ready s h primeJ)
       (fun s h => crt_narrowEntered_ready s h primeJ)
-    (crt_seq_ct primeCT (fun s h => crt_narrowPrepared_ready s h primeJ)
-      (fun s h => crt_narrowPrepared_ready s h primeJ)
+    (crt_seq_ct primeCT (fun s h => crt_narrowPrepared_ready s h primeJ st hst1)
+      (fun s h => crt_narrowPrepared_ready s h primeJ st hst2)
     (crt_seq_ct backCT (fun s h => crt_narrowCopiedBack_ready s h kind primeJ)
       (fun s h => crt_narrowCopiedBack_ready s h kind primeJ)
     (crt_seq_ct halfCT (fun s h => by obtain ⟨M, h⟩ := h; exact crt_narrowReducedHalf_ready s h expI)

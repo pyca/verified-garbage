@@ -3113,6 +3113,22 @@ pub(crate) mod vg_rsa_private_checked_ifma;
 pub(crate) mod vg_rsa_private_checked_ifma512;
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_private_checked_precomputed.rs"]
+pub(crate) mod vg_rsa_private_checked_precomputed;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_checked_precomputed_adx.rs"]
+pub(crate) mod vg_rsa_private_checked_precomputed_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_checked_precomputed_ifma.rs"]
+pub(crate) mod vg_rsa_private_checked_precomputed_ifma;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_checked_precomputed_ifma512.rs"]
+pub(crate) mod vg_rsa_private_checked_precomputed_ifma512;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_private_crt.rs"]
 pub(crate) mod vg_rsa_private_crt;
 
@@ -3127,6 +3143,22 @@ pub(crate) mod vg_rsa_private_crt_ifma;
 #[rustfmt::skip]
 #[path = "internal/vg_rsa_private_crt_ifma512.rs"]
 pub(crate) mod vg_rsa_private_crt_ifma512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_crt_precomputed.rs"]
+pub(crate) mod vg_rsa_private_crt_precomputed;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_crt_precomputed_adx.rs"]
+pub(crate) mod vg_rsa_private_crt_precomputed_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_crt_precomputed_ifma.rs"]
+pub(crate) mod vg_rsa_private_crt_precomputed_ifma;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_crt_precomputed_ifma512.rs"]
+pub(crate) mod vg_rsa_private_crt_precomputed_ifma512;
 
 #[rustfmt::skip]
 #[path = "internal/vg_rsa_public_precomputed_checked.rs"]

@@ -61,7 +61,8 @@ theorem CrtShared.after_outside {s t : State} {g : CrtGeometry} {bs : Fin 7 → 
     (frame : Frame regions s.mem t.mem) (rest : Rest rs s t)
     (ws : ∀ r ∈ regions, (⟨State.addr g.base, g.size⟩ : Region).Disjoint r)
     (stack : ∀ r ∈ regions, (⟨State.addr s.sp, 112⟩ : Region).Disjoint r)
-    (sources : ∀ i, ∀ r ∈ regions, (⟨State.addr (g.source i), g.sourceLength i⟩ : Region).Disjoint r) :
+    (sources : ∀ i, ∀ r ∈ regions, (⟨State.addr (g.source i), g.sourceLength i⟩ : Region).Disjoint r)
+    (r2 : CrtR2Separate g s.sp regions) :
     CrtShared g bs t := by
   have eq (base : BitVec 32) (wsB : Workspace s base (8 * workspaceWords g.words))
       (member : (⟨State.addr base, 8 * workspaceWords g.words⟩ : Region) ∈ crtRegions g.base (workspaceWords g.words) g.words) :
@@ -69,7 +70,7 @@ theorem CrtShared.after_outside {s t : State} {g : CrtGeometry} {bs : Fin 7 → 
     WorkspaceEq.of_frame (by have := wsB.nowrap; omega) frame
       (fun r hr => (ws r hr).sub_left (crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits member))
   have mainEq := eq g.base h.buffers.context.main (by simp [crtRegions])
-  refine ⟨h.buffers.after_frame frame rest sources, h.stack.after_outside frame rest stack,
+  refine ⟨h.buffers.after_frame frame rest sources r2, h.stack.after_outside frame rest stack,
     h.main.congr mainEq, h.p.congr (eq _ h.buffers.context.p (by simp [crtRegions])),
     h.q.congr (eq _ h.buffers.context.q (by simp [crtRegions])),
     (mainEq.number h.buffers.context.arraysFit (by decide)).trans h.modulus, h.valid, ?_⟩
@@ -87,10 +88,11 @@ structure PpDest (g : CrtGeometry) (d : BitVec 32) (n : Nat) (s : State) : Prop 
   workspace : Region.Disjoint ⟨State.addr g.base, g.size⟩ ⟨State.addr d, n⟩
   stack : Region.Disjoint ⟨State.addr s.sp, 112⟩ ⟨State.addr d, n⟩
   sources : ∀ i, Region.Disjoint ⟨State.addr (g.source i), g.sourceLength i⟩ ⟨State.addr d, n⟩
+  noR2 : g.r2 = none
 
 theorem PpDest.after {g : CrtGeometry} {d : BitVec 32} {n : Nat} {s t : State} {rs : List Reg}
     (h : PpDest g d n s) (rest : Rest rs s t) : PpDest g d n t :=
-  ⟨h.fit, by rw [rest.wr]; exact h.write, h.workspace, by rw [rest.sp]; exact h.stack, h.sources⟩
+  ⟨h.fit, by rw [rest.wr]; exact h.write, h.workspace, by rw [rest.sp]; exact h.stack, h.sources, h.noR2⟩
 
 /-- The flag at slot 48, as the factor's preparation takes it. -/
 def ppFlag (s : State) : Nat := (s.mem.readW (off (State.addr s.sp) 48) 32).toNat
@@ -150,6 +152,7 @@ theorem pp_phase_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h 
     fun r hr => by simp only [List.mem_singleton] at hr; subst r; exact regionX.stack
   have sharedT := (sharedY.of_mem memX restX).after_outside frameT restT dests stacks
     (fun i r hr => by simp only [List.mem_singleton] at hr; subst r; exact region.sources i)
+    (crtR2Separate_none region.noR2 _ _)
   have flagT : ppFlag t = ppFlag x := by
     unfold ppFlag
     rw [restT.sp]
