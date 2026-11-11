@@ -100,14 +100,14 @@ structure PreR2 (s : State) (base : Addr) (bytes len : Nat) (args : Nat → BitV
 section
 variable {s t : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {i : Nat} {p : Nat}
 
-/-- The cached value holds after a stage that changes registers but `esp`, and memory in its ranges. -/
-theorem PreR2.keepF (P : PreR2 s base bytes len args i p)
-    (room : CallRoom (s.gpr .esp) base bytes) {regs : List Reg} (K : Keeps regs s t) (sp : .esp ∉ regs)
-    {ws : List (Nat × Nat)} (F : Frame (frameR base (s.gpr .esp) ws) s.mem t.mem)
-    (hfit : ∀ q ∈ ws, q.1 + q.2 ≤ bytes) : PreR2 t base bytes len args i p := by
+/-- The cached value holds after a stage that changes registers but `esp`, and memory in regions
+apart from argument 18 and from the value. -/
+theorem PreR2.keep (P : PreR2 s base bytes len args i p) {regs : List Reg} (K : Keeps regs s t) (sp : .esp ∉ regs)
+    {rs : List Region} (F : Frame rs s.mem t.mem)
+    (ha : ∀ r ∈ rs, Region.Disjoint ⟨VG.Proof.Dsa.X86.stackAddress s preArg, 4⟩ r)
+    (hv : ∀ r ∈ rs, Region.Disjoint ⟨byteAddr (args preArg), preOff args i + 8 * preW args i⟩ r) :
+    PreR2 t base bytes len args i p := by
   have esp : t.gpr .esp = s.gpr .esp := K.1 _ sp
-  have low := room.low
-  have top := P.top
   have fit := P.fit
   refine ⟨⟨P.arg.stack.keep K sp, ?_⟩, P.hi, P.pos, P.lt, P.lt7, P.pos7, by rw [K.2.1, K.2.2]; exact P.read,
     P.fit, P.apart, ?_, by rw [esp]; exact P.top, by rw [esp]; exact P.apartSp⟩
@@ -115,22 +115,7 @@ theorem PreR2.keepF (P : PreR2 s base bytes len args i p)
     unfold VG.Proof.Dsa.X86.stackValue
     rw [show VG.Proof.Dsa.X86.stackAddress t preArg = VG.Proof.Dsa.X86.stackAddress s preArg by
       simp only [VG.Proof.Dsa.X86.stackAddress, esp]]
-    refine F.readW (r := ⟨VG.Proof.Dsa.X86.stackAddress s preArg, 4⟩) (Region.contains_self _ _) (fun r hr => ?_)
-      (by decide)
-    simp only [frameR, List.mem_cons, List.mem_map] at hr
-    rcases hr with rfl | ⟨q, hq, rfl⟩
-    · have ea : (VG.Proof.Dsa.X86.stackAddress s preArg).toNat = (s.gpr .esp).toNat + (4 + 4 * preArg) := by
-        simp only [VG.Proof.Dsa.X86.stackAddress, addr, PublicRt.setWidth_toNat, BitVec.toNat_add, BitVec.toNat_ofNat,
-          preArg]
-        omega
-      have eb : ((s.gpr .esp - BitVec.ofNat 32 96).setWidth 64).toNat = (s.gpr .esp).toNat - 96 := by
-        rw [PublicRt.setWidth_toNat, VG.X86.sub_toNat (by omega)]
-      exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 96) (.inl (by dsimp only; rw [eb, ea]; omega))
-        (by dsimp only; rw [eb]; omega) (by dsimp only; rw [ea]; simp only [preArg]; omega)).symm
-    · refine P.arg.stack.apart.sub_right ?_
-      have := hfit q hq
-      have := Offset.sub base (d := q.1) (n := q.2) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
-      simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
+    exact F.readW (r := ⟨VG.Proof.Dsa.X86.stackAddress s preArg, 4⟩) (Region.contains_self _ _) ha (by decide)
   · rw [← P.val, ← VG.Proof.Bignum.read_eq_val32, ← VG.Proof.Bignum.read_eq_val32]
     have bA : (byteAddr (args preArg)).toNat = (args preArg).toNat := by
       simp [byteAddr, BitVec.toNat_setWidth]; omega
@@ -139,15 +124,43 @@ theorem PreR2.keepF (P : PreR2 s base bytes len args i p)
       have := Offset.sub (byteAddr (args preArg)) (d := preOff args i) (n := 4 * (2 * preW args i)) (e := 0)
         (k := preOff args i + 8 * preW args i) (Nat.zero_le _) (by omega)
       simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
-    refine congrArg BitVec.toNat (F.read (Region.contains_self _ _) (fun r hr => ?_) (by omega))
-    simp only [frameR, List.mem_cons, List.mem_map] at hr
-    rcases hr with rfl | ⟨q, hq, rfl⟩
-    · exact (P.apartSp.sub_left hsub)
-    · refine (P.apart.sub_left hsub).sub_right ?_
-      have := hfit q hq
-      have := Offset.sub base (d := q.1) (n := q.2) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
-      simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
+    exact congrArg BitVec.toNat (F.read (Region.contains_self _ _) (fun r hr => (hv r hr).sub_left hsub) (by omega))
 
+/-- Argument 18 is apart from the zone below `esp` that calls write. -/
+theorem PreR2.argBelow (P : PreR2 s base bytes len args i p) (room : CallRoom (s.gpr .esp) base bytes) :
+    Region.Disjoint ⟨VG.Proof.Dsa.X86.stackAddress s preArg, 4⟩ (below (s.gpr .esp) 96) := by
+  have low := room.low
+  have top := P.top
+  have ea : (VG.Proof.Dsa.X86.stackAddress s preArg).toNat = (s.gpr .esp).toNat + (4 + 4 * preArg) := by
+    simp only [VG.Proof.Dsa.X86.stackAddress, addr, PublicRt.setWidth_toNat, BitVec.toNat_add, BitVec.toNat_ofNat,
+      preArg]
+    omega
+  have eb : ((s.gpr .esp - BitVec.ofNat 32 96).setWidth 64).toNat = (s.gpr .esp).toNat - 96 := by
+    rw [PublicRt.setWidth_toNat, VG.X86.sub_toNat (by omega)]
+  exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 96) (.inl (by dsimp only; rw [eb, ea]; omega))
+    (by dsimp only; rw [eb]; omega) (by dsimp only; rw [ea]; simp only [preArg]; omega)).symm
+
+/-- Regions within the working space are apart from argument 18 and the value. -/
+theorem PreR2.apart_sub (P : PreR2 s base bytes len args i p) {r : Region} (hr : Region.Sub r ⟨base, bytes⟩) :
+    Region.Disjoint ⟨VG.Proof.Dsa.X86.stackAddress s preArg, 4⟩ r ∧
+      Region.Disjoint ⟨byteAddr (args preArg), preOff args i + 8 * preW args i⟩ r :=
+  ⟨P.arg.stack.apart.sub_right hr, P.apart.sub_right hr⟩
+
+/-- The cached value holds after a stage that changes registers but `esp`, and memory in its ranges. -/
+theorem PreR2.keepF (P : PreR2 s base bytes len args i p)
+    (room : CallRoom (s.gpr .esp) base bytes) {regs : List Reg} (K : Keeps regs s t) (sp : .esp ∉ regs)
+    {ws : List (Nat × Nat)} (F : Frame (frameR base (s.gpr .esp) ws) s.mem t.mem)
+    (hfit : ∀ q ∈ ws, q.1 + q.2 ≤ bytes) : PreR2 t base bytes len args i p := by
+  have inW : ∀ q ∈ ws, Region.Sub ⟨off base q.1, q.2⟩ ⟨base, bytes⟩ := fun q hq => by
+    have := hfit q hq
+    have := Offset.sub base (d := q.1) (n := q.2) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
+    simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
+  refine P.keep K sp F (fun r hr => ?_) (fun r hr => ?_) <;>
+    simp only [frameR, List.mem_cons, List.mem_map] at hr <;> rcases hr with rfl | ⟨q, hq, rfl⟩
+  · exact P.argBelow room
+  · exact (P.apart_sub (inW q hq)).1
+  · exact P.apartSp
+  · exact (P.apart_sub (inW q hq)).2
 end
 
 variable {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
@@ -433,6 +446,15 @@ theorem prepareG_ok (h : In Ex base bytes len args s) (c : Ctx) {pc : Option Nat
   cases pc with
   | none => exact prepCtx_ok h c
   | some i => exact preparePre_ok h P fits
+
+/-- A factor's cached value fits a context its length fits. -/
+theorem fitG_of {i : Nat} {c : Ctx} (hl : 64 ≤ len) (h : (args (7 + 2 * i)).toNat ≤ bc len c) :
+    FitG len args (some i) c := by
+  have := bc_ge hl c
+  have := bc_dvd len c
+  show 8 * Spec.Rsa.primeWords _ ≤ _
+  simp only [Spec.Rsa.primeWords, Spec.Rsa.modulusWords]
+  omega
 
 end
 
