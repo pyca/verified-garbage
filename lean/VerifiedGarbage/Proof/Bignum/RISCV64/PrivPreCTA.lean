@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.RISCV64.PrivPrePQ
 
 /-!
 # An RSA private key's precomputed values on RISC-V: the registers at the cuts of the checks
@@ -368,47 +369,91 @@ theorem xi_loadX {d : PDat} {s₀ : State} {c : Prog isa} {Q : State → Prop} (
       (fun i hi => hP.rPre i (Nat.lt_trans hi hP.pk)) (fun i hi => hP.sPre i (Nat.lt_trans hi hP.pk))
       fun t X => hc s t hP F X
 
-theorem pins49 : Pins (At C0 privF 49) (rsX ++ ([.s7, .s8] : List Reg)) :=
-  pins_at_list (fun s₀ => valsX s₀ ++ [Mont.off (s₀.gpr .a2) 0, BitVec.ofNat 64 (ck s₀)])
-    (fun _ s₀ h => WP.of_flat (c := NX (LD oN oNLen)) rfl (xi_loadX h fun _ _ hP F X =>
-      xi_ld hP X (by decide) (by decide) (hdrN F) (hdrNL F)))
-    fun _ _ _ h h' => let E := data_vals h h'; ldv_eq h h' E.2.2.2.2.2.2.1 E.2.2.1
+/-- `w_p` and `w_q`, as `PrivPre.pqLens` computes them. -/
+abbrev vP (s₀ : State) : BitVec 64 := BitVec.ofNat 64 ((cpL s₀ + 7) / 8)
+abbrev vQ (s₀ : State) : BitVec 64 := BitVec.ofNat 64 ((cqL s₀ + 7) / 8)
+
+/-- `pqLens`, after `loadX`: `w_p` and `w_q` from the header, into `a3` and
+`t1`. -/
+theorem xi_lens {s₀ s t : State} (hP : PF s₀) (F : A0 s₀ s) (X : XI s₀ s t) :
+    WP isa (.block PrivPre.pqLens) t fun u => (XI s₀ s u ∧ u.gpr .a3 = vP s₀ ∧ u.gpr .t1 = vQ s₀) := by
+  have room := hP.room; have pk := hP.pk; have qk := hP.qk; have k1024 := hP.k1024
+  have hZ : 256 ≤ cZ s₀ := by unfold slot at room; omega_arith
+  have rPL : t.mem.readW (off (cS s₀) 40) 64 = BitVec.ofNat 64 (cpL s₀) :=
+    (X.hdr hP (d := oPLen) (by decide)).trans (hdrPL F)
+  have rQL : t.mem.readW (off (cS s₀) 56) 64 = BitVec.ofNat 64 (cqL s₀) :=
+    (X.hdr hP (d := oQLen) (by decide)).trans (hdrQL F)
+  refine WP.mono (WP.keep [.a3, .t1] (Q := fun u => u.gpr .a3 = vP s₀ ∧ u.gpr .t1 = vQ s₀ ∧ u.mem = t.mem) (by
+    unfold PrivPre.pqLens
+    brun [oPLen, oQLen, X.s6, rPL, rQL, len_words (cpL s₀) (Nat.lt_of_lt_of_le pk (by omega_arith)),
+      len_words (cqL s₀) (Nat.lt_of_lt_of_le qk (by omega_arith)),
+      X.scr.ld (show 40 + 8 ≤ cZ s₀ by omega_arith), X.scr.al8 (show 40 + 8 ≤ cZ s₀ by omega_arith) (by decide),
+      X.scr.ld (show 56 + 8 ≤ cZ s₀ by omega_arith), X.scr.al8 (show 56 + 8 ≤ cZ s₀ by omega_arith) (by decide)])
+    (by rfl) (by rfl)) fun u ⟨⟨u3, u1, um⟩, k⟩ => ⟨XI.step hP X k (by decide) ((k.gpr (by decide)).trans X.a7)
+      (o := 256) (n := 0) (by rw [um]; exact Mont.Outside.refl _ _ _ _) (Nat.le_refl _)
+      (by unfold slot hdrBytes; omega_arith), u3, u1⟩
+
+/-- `pqLens`, then a buffer's address and length. -/
+theorem xi_ld4 {s₀ s t : State} {oA oL : Nat} {A : Addr} {L : Nat} (hP : PF s₀) (F : A0 s₀ s) (X : XI s₀ s t)
+    (hoA : oA + 8 ≤ 256 ∧ oA % 8 = 0) (hoL : oL + 8 ≤ 256 ∧ oL % 8 = 0)
+    (hA : Mont.word s.mem (cS s₀) oA = Mont.off A 0) (hLw : Mont.word s.mem (cS s₀) oL = BitVec.ofNat 64 L) :
+    WP isa (.seq (.block PrivPre.pqLens) (.block [.load .d .s7 .s6 oA, .load .d .s8 .s6 oL])) t fun u =>
+      (rsX ++ ([.s7, .s8, .a3, .t1] : List Reg)).map u.gpr =
+        valsX s₀ ++ [Mont.off A 0, BitVec.ofNat 64 L, vP s₀, vQ s₀] := by
+  have room := hP.room
+  refine WP.seq (WP.mono (xi_lens hP F X) fun u ⟨X', l3, l1⟩ => ?_)
+  refine WP.mono (ld2_ok (A := A) (L := L) X'.scr (by unfold slot at room; omega_arith) X'.s6 hoA hoL
+    (by rw [X'.hdr hP hoA.1]; exact hA) (by rw [X'.hdr hP hoL.1]; exact hLw)) fun v ⟨⟨a7, a8, _⟩, k⟩ => ?_
+  simp only [List.cons_append, List.nil_append, List.map_cons, List.map_nil, a7, a8, k.gpr (r := .a7) (by decide),
+    k.gpr (r := .ra) (by decide), k.gpr (r := .s5) (by decide), k.gpr (r := .s11) (by decide),
+    k.gpr (r := .t0) (by decide), k.gpr (r := .s6) (by decide), k.gpr (r := .a3) (by decide),
+    k.gpr (r := .t1) (by decide), X'.a7, X'.ra, X'.s5, X'.s11, X'.t0, X'.s6, l3, l1]
+
+theorem pins50 : Pins (At C0 privF 50) (rsX ++ ([.s7, .s8, .a3, .t1] : List Reg)) :=
+  pins_at_list (fun s₀ => valsX s₀ ++ [Mont.off (s₀.gpr .a2) 0, BitVec.ofNat 64 (ck s₀), vP s₀, vQ s₀])
+    (fun _ s₀ h => WP.of_flat (c := NX (.seq (.block PrivPre.pqLens) (LD oN oNLen))) rfl
+      (xi_loadX h fun _ _ hP F X => xi_ld4 hP F X (by decide) (by decide) (hdrN F) (hdrNL F)))
+    fun _ _ _ h h' => by
+      obtain ⟨-, -, ek, ep, eq, -, e2, -⟩ := data_vals h h'
+      simp only [vP, vQ]; rw [valsX_eq h h', ek, ep, eq, e2]
 
 /-- `n`'s first byte. -/
 abbrev nb0 (s₀ : State) : BitVec 64 := BitVec.ofNat 64 ((nB s₀).getD 0 0).toNat
 
-theorem pins50 : Pins (At C0 privF 50) (rsX ++ ([.s8, .t4] : List Reg)) := by
-  refine pins_at_list (fun s₀ => valsX s₀ ++ [BitVec.ofNat 64 (ck s₀), nb0 s₀])
-    (fun _ s₀ h => WP.of_flat (c := NX (.seq (LD oN oNLen) (.block Precompute.check1))) rfl
-      (xi_loadX h fun s t hP F X => ?_)) fun _ _ _ h h' => ?_
+theorem pins51 : Pins (At C0 privF 51) (rsX ++ ([.s8, .t4, .a3, .t1] : List Reg)) := by
+  refine pins_at_list (fun s₀ => valsX s₀ ++ [BitVec.ofNat 64 (ck s₀), nb0 s₀, vP s₀, vQ s₀])
+    (fun _ s₀ h => WP.of_flat (c := NX (.seq (.block PrivPre.pqLens) (.seq (LD oN oNLen)
+      (.block Precompute.check1)))) rfl (xi_loadX h fun s t hP F X => ?_)) fun _ _ _ h h' => ?_
   · have k64 := hP.k64; have room := hP.room
     have hZ : 256 ≤ cZ s₀ := by unfold slot at room; omega_arith
     have hlen : (nB s₀).length = ck s₀ := VG.Proof.Bignum.bytesAt_length _ _ _
-    refine WP.seq (WP.mono (ld2_ok (A := s₀.gpr .a2) (L := ck s₀) X.scr hZ X.s6 (by decide) (by decide)
-      (by rw [X.hdr hP (by decide)]; exact hdrN F) (by rw [X.hdr hP (by decide)]; exact hdrNL F))
+    refine WP.seq (WP.mono (xi_lens hP F X) fun t' ⟨X', l3, l1⟩ => ?_)
+    refine WP.seq (WP.mono (ld2_ok (A := s₀.gpr .a2) (L := ck s₀) X'.scr hZ X'.s6 (by decide) (by decide)
+      (by rw [X'.hdr hP (by decide)]; exact hdrN F) (by rw [X'.hdr hP (by decide)]; exact hdrNL F))
       fun u ⟨⟨a7, a8, m1⟩, k1⟩ => ?_)
     -- `n`'s bytes, apart from the working space and `pre`, are as on entry.
     have hbt : Spec.Rsa.bytesAt u.mem (s₀.gpr .a2) (ck s₀) = nB s₀ := by
       refine Eq.trans ?_ (bytes_frame F.frame hP.dN (Nat.le_of_lt (BitVec.isLt _)))
       rw [m1]
       simp only [Spec.Rsa.bytesAt]
-      refine List.map_congr_left fun i hi => X.out _ (Or.inr ?_)
+      refine List.map_congr_left fun i hi => X'.out _ (Or.inr ?_)
       have hs := hP.sN i (List.mem_range.mp hi)
       have hx : ¬ Mont.ofs (cS s₀) (Mont.off (s₀.gpr .a2) i) < cZ s₀ := fun hc => hs _ hc rfl
       change ¬ (s₀.gpr .a2 + BitVec.ofNat 64 i - cS s₀).toNat < _ at hx
       change _ ≤ (s₀.gpr .a2 + BitVec.ofNat 64 i - cS s₀).toNat
       omega_arith
     refine WP.mono (VG.Proof.Bignum.RISCV64.check1_ok (nb := nB s₀) a7 a8 k64 hlen
-      (by rw [k1.2.1, k1.2.2, X.rd]; exact hP.rN) fun i hi => ?_) fun v ⟨⟨_, v4, _⟩, k2⟩ => ?_
+      (by rw [k1.2.1, k1.2.2, X'.rd]; exact hP.rN) fun i hi => ?_) fun v ⟨⟨_, v4, _⟩, k2⟩ => ?_
     · rw [← List.getElem_of_eq hbt (by rw [Spec.Rsa.bytesAt, List.length_map, List.length_range]; omega_arith)]
       simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
     · have k12 := k1.trans k2
       simp only [List.cons_append, List.nil_append, List.map_cons, List.map_nil, v4, k2.gpr (r := .s8) (by decide), a8,
         k12.gpr (r := .a7) (by decide), k12.gpr (r := .ra) (by decide), k12.gpr (r := .s5) (by decide),
         k12.gpr (r := .s11) (by decide), k12.gpr (r := .t0) (by decide), k12.gpr (r := .s6) (by decide),
-        X.a7, X.ra, X.s5, X.s11, X.t0, X.s6, nb0, List.getD_eq_getElem?_getD,
+        k12.gpr (r := .a3) (by decide), k12.gpr (r := .t1) (by decide), l3, l1,
+        X'.a7, X'.ra, X'.s5, X'.s11, X'.t0, X'.s6, nb0, List.getD_eq_getElem?_getD,
         List.getElem?_eq_getElem (show 0 < (nB s₀).length by omega_arith), Option.getD_some]
-  · obtain ⟨eS, -, ek, -, -, -, -, -, -, en⟩ := data_vals h h'
-    rw [valsX_eq h h']; simp only [nb0]; rw [en, ek]
+  · obtain ⟨-, -, ek, ep, eq, -, -, -, -, en⟩ := data_vals h h'
+    rw [valsX_eq h h']; simp only [nb0, vP, vQ]; rw [en, ek, ep, eq]
 
 end VG.Proof.Bignum.RISCV64.PrivPre

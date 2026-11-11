@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtMid
 public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtLoad
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
+import VerifiedGarbage.Proof.Bignum.RISCV64.PrivPrePQ
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreSave
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreFn
 import VerifiedGarbage.Proof.Bignum.RISCV64.CrtFn
@@ -34,7 +35,7 @@ open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Impl.Bignum VG.Impl.Bignum
   VG.Impl.Bignum.RISCV64.Crt
 open VG.Proof.Bignum.RISCV64
 open VG.Proof.Bignum (slot Frm)
-open VG.Proof.Bignum.RISCV64.Crt (wordsOf wordsOf_ge wordsOf_le two_le_wordsOf Buf crtMask checks_ok loadX_ok
+open VG.Proof.Bignum.RISCV64.Crt (wordsOf wordsOf_ge wordsOf_le two_le_wordsOf Buf crtMask checksWith_ok loadX_ok
   setupX_ok Chk chkRegs loadXRegs frm_mid bytesAt_out savW)
 
 /-- The mask of `vg_rsa_private_precompute`: `n` valid and `p q = n`. -/
@@ -329,7 +330,7 @@ theorem frame_of_outside {s₀ : State} {o n : Nat} {m m' : Mem} (h : Outside (c
     fun r hr => by rw [List.mem_singleton.mp hr]; exact hZ
 
 /-- The registers written up to the checks. -/
-def aRegs : List Reg := a0Regs ++ loadXRegs ++ chkRegs
+def aRegs : List Reg := a0Regs ++ loadXRegs ++ [.a3, .t1] ++ chkRegs
 
 /-- What holds after the checks, from the entry state `s₀`. -/
 structure A (s₀ s : State) : Prop where
@@ -355,7 +356,7 @@ structure A (s₀ s : State) : Prop where
 theorem partA_ok {s₀ : State} (h : fnContract.pre s₀) {c : Prog isa} {Q : State → Prop}
     (hc : ∀ t, A s₀ t → WP isa c t Q) :
     WP isa (.seq (.block (PrivPre.save ++ PrivPre.args)) (.seq PrivPre.zeroIn (.seq (.block setupX)
-      (.seq Crt.loadX (.seq Crt.checks c))))) s₀ Q := by
+      (.seq Crt.loadX (.seq (.block PrivPre.pqLens) (.seq (Crt.checksWith PrivPre.checkPQs) c)))))) s₀ Q := by
   have hpre0 := h
   obtain ⟨hsp, hrd, hwr, dPN, dPP, dPQ, dPS, dPA, dNS, dpS, dqS, dSA, nwPre, nwN, nwP, nwQ, nwS, ⟨hk, hk'⟩,
     hp1, hpk, hq1, hqk, hpl, hsl, alPre, alS, alSp⟩ := h
@@ -417,38 +418,78 @@ theorem partA_ok {s₀ : State} (h : fnContract.pre s₀) {c : Prog isa} {Q : St
   have hw16 : 16 * ck s₀ ≤ 64 * cwX s₀ := by omega_arith
   have hd1 : ∀ d, d + 8 ≤ 256 → Mont.word t₁.mem (cS s₀) d = Mont.word x.mem (cS s₀) d := fun d hd =>
     O1.word (Or.inl hd) (by omega_arith)
+  -- The factors' widths.
+  have hs₁ := X.scr.congr k1.2.2
+  have r6 : t₁.gpr .s6 = cS s₀ := (k1.gpr (by decide)).trans X.s6
+  have rPL : t₁.mem.readW (off (cS s₀) oPLen) 64 = BitVec.ofNat 64 (cpL s₀) := by
+    rw [show t₁.mem.readW (off (cS s₀) oPLen) 64 = Mont.word t₁.mem (cS s₀) oPLen from rfl,
+      hd1 _ (by unfold oPLen; omega_arith), X.hPL]; exact (Pre.ofNat_toNat64 _).symm
+  have rQL : t₁.mem.readW (off (cS s₀) oQLen) 64 = BitVec.ofNat 64 (cqL s₀) := by
+    rw [show t₁.mem.readW (off (cS s₀) oQLen) 64 = Mont.word t₁.mem (cS s₀) oQLen from rfl,
+      hd1 _ (by unfold oQLen; omega_arith), X.hQL]; exact (Pre.ofNat_toNat64 _).symm
+  refine WP.seq (WP.mono (WP.keep [.a3, .t1] (Q := fun t => t.gpr .a3 = BitVec.ofNat 64 ((cpL s₀ + 7) / 8) ∧
+      t.gpr .t1 = BitVec.ofNat 64 ((cqL s₀ + 7) / 8) ∧ t.mem = t₁.mem) (by
+    unfold PrivPre.pqLens
+    have rPL' : t₁.mem.readW (off (cS s₀) 40) 64 = BitVec.ofNat 64 (cpL s₀) := rPL
+    have rQL' : t₁.mem.readW (off (cS s₀) 56) 64 = BitVec.ofNat 64 (cqL s₀) := rQL
+    brun [oPLen, oQLen, r6, rPL', rQL', len_words (cpL s₀) (by omega_arith), len_words (cqL s₀) (by omega_arith),
+      hs₁.ld (show 40 + 8 ≤ cZ s₀ by omega_arith), hs₁.al8 (show 40 + 8 ≤ cZ s₀ by omega_arith) (by decide),
+      hs₁.ld (show 56 + 8 ≤ cZ s₀ by omega_arith), hs₁.al8 (show 56 + 8 ≤ cZ s₀ by omega_arith) (by decide)])
+    (by rfl) (by rfl))
+    fun t₁' ⟨⟨l3, l1, lm⟩, kl⟩ => ?_)
+  have k1' := k1.trans kl
+  rw [← lm] at v0 w0 v1 v4 v5 v6 v7 t1 t6 t7
+  have hd1' : ∀ d, d + 8 ≤ 256 → Mont.word t₁'.mem (cS s₀) d = Mont.word x.mem (cS s₀) d := fun d hd => by
+    rw [lm]; exact hd1 d hd
+  -- `p` and `q` fit in their widths.
+  have fit : ∀ {j L : Nat} {bs : List Byte}, bs.length = L → 1 ≤ L → L < ck s₀ →
+      wordsVal t₁'.mem (cS s₀) (slot (cwX s₀) j) (cwX s₀) = Spec.Rsa.os2ip bs →
+      wordsVal t₁'.mem (cS s₀) (slot (cwX s₀) j) (cwX s₀) =
+        wordsVal t₁'.mem (cS s₀) (slot (cwX s₀) j) ((L + 7) / 8) := fun {j L bs} hl hL1 hLk hv => by
+    have hlt : Spec.Rsa.os2ip bs < 2 ^ (64 * ((L + 7) / 8)) := by
+      refine Nat.lt_of_lt_of_le (Crt.os2ip_lt' bs hl) ?_
+      rw [VG.Proof.Bignum.pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by omega_arith)
+    have a := wordsVal_app t₁'.mem (cS s₀) (slot (cwX s₀) j) ((L + 7) / 8) (cwX s₀ - (L + 7) / 8)
+    rw [show (L + 7) / 8 + (cwX s₀ - (L + 7) / 8) = cwX s₀ by omega_arith] at a
+    rw [a] at hv ⊢
+    have hpos := Nat.two_pow_pos (64 * ((L + 7) / 8))
+    rcases Nat.eq_zero_or_pos (wordsVal t₁'.mem (cS s₀) (slot (cwX s₀) j + 8 * ((L + 7) / 8))
+      (cwX s₀ - (L + 7) / 8)) with h | h
+    · rw [h, Nat.mul_zero, Nat.add_zero]
+    · have := Nat.le_mul_of_pos_right (2 ^ (64 * ((L + 7) / 8))) h; omega_arith
   -- The checks.
-  refine WP.seq (WP.mono (checks_ok (Na := s₀.gpr .a2) (k := ck s₀) (nb := nB s₀)
-    (X.scr.congr k1.2.2) hZ8 (by omega_arith) hwX ((k1.gpr (by decide)).trans X.s6) a7₁
-    ((k1.gpr (by decide)).trans X.ra) ((k1.gpr (by decide)).trans X.s5) ((k1.gpr (by decide)).trans X.t0)
-    (by rw [hd1 _ (by unfold oN; omega_arith), X.hN]; exact z _)
-    (by rw [hd1 _ (by unfold oNLen; omega_arith), X.hNL]; exact (Pre.ofNat_toNat64 _).symm) hk hk'
-    (VG.Proof.Bignum.bytesAt_length _ _ _) (fun i hi => by rw [k1.2.1, k1.2.2, rd0]; exact hP.rN i hi)
+  refine WP.seq (WP.mono (checksWith_ok (pq := PrivPre.checkPQs) (Na := s₀.gpr .a2) (k := ck s₀) (nb := nB s₀)
+    (hs₁.congr kl.2.2) hZ8 (by omega_arith) hwX ((k1'.gpr (by decide)).trans X.s6)
+    ((kl.gpr (by decide)).trans a7₁)
+    ((k1'.gpr (by decide)).trans X.ra) ((k1'.gpr (by decide)).trans X.s5) ((k1'.gpr (by decide)).trans X.t0)
+    (by rw [hd1' _ (by unfold oN; omega_arith), X.hN]; exact z _)
+    (by rw [hd1' _ (by unfold oNLen; omega_arith), X.hNL]; exact (Pre.ofNat_toNat64 _).symm) hk hk'
+    (VG.Proof.Bignum.bytesAt_length _ _ _) (fun i hi => by rw [k1'.2.1, k1'.2.2, rd0]; exact hP.rN i hi)
     (fun i hi => by
-      rw [F1.bytes (R := ⟨s₀.gpr .a2, ck s₀⟩) (dis dPN dNS) (Nat.le_of_lt (BitVec.isLt _)) hi]
+      rw [lm, F1.bytes (R := ⟨s₀.gpr .a2, ck s₀⟩) (dis dPN dNS) (Nat.le_of_lt (BitVec.isLt _)) hi]
       simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range])
-    v0 w0 v1 t1 t6 t7
-    (by rw [v5]; have := Crt.pq_lt (P := 1) (pL := 1) (by
-        rw [VG.Proof.Bignum.pow256_eq]; exact Nat.one_lt_two_pow (by omega_arith)) hQb (by omega_arith) hqk hw16
-        omega_arith)
-    (by rw [v4, v5]; exact Crt.pq_lt hPb hQb hpk hqk hw16))
+    v1 t6 t7
+    (checkPQs_ok (hs₁.congr kl.2.2) hZ8 hwX l3 l1 (by omega_arith) (by omega_arith) (by omega_arith)
+      (fit (VG.Proof.Bignum.bytesAt_length _ _ _) hp1 hpk v4) (fit (VG.Proof.Bignum.bytesAt_length _ _ _) hq1 hqk v5)
+      t6 t1))
     fun t₂ ⟨X2, k2⟩ => ?_)
   rw [v6, v4, v5, v7, crtMask_zero] at X2
-  have k12 := k1.trans k2
-  have F2 : Frame [preR s₀, scrR s₀] s₀.mem t₂.mem := F1.trans (frame_of_frm X2.fr fun r hr => by
+  have k12 := k1'.trans k2
+  have Xfr : Frm (cS s₀) (Crt.chkR (cwX s₀)) t₁.mem t₂.mem := lm ▸ X2.fr
+  have F2 : Frame [preR s₀, scrR s₀] s₀.mem t₂.mem := F1.trans (frame_of_frm Xfr fun r hr => by
     simp only [Crt.chkR, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> simp only [oMask] <;> omega_arith)
   have hd2 : ∀ d, d + 8 ≤ oMask → Mont.word t₂.mem (cS s₀) d = Mont.word x.mem (cS s₀) d := fun d hd => by
-    exact (Frm.word_eq X2.fr (fun r hr => by
+    exact (Frm.word_eq Xfr (fun r hr => by
       simp only [Crt.chkR, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> simp only [oMask] at hd ⊢ <;> omega_arith) (by unfold oMask at hd; omega_arith)).trans
       (hd1 d (by unfold oMask at hd; omega_arith))
   have hd3 : ∀ d, oMask + 8 ≤ d → d + 8 ≤ 256 → Mont.word t₂.mem (cS s₀) d = Mont.word x.mem (cS s₀) d :=
     fun d hd hd' => by
-      exact (Frm.word_eq X2.fr (fun r hr => by
+      exact (Frm.word_eq Xfr (fun r hr => by
         simp only [Crt.chkR, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl <;> simp only [oMask] at hd ⊢ <;> omega_arith) (by omega_arith)).trans (hd1 d hd')
-  refine hc t₂ ⟨X.scr.congr (k1.trans k2).2.2, ?_, ?_, ?_, ?_, ?_, ?_, ?_, X2.msk,
+  refine hc t₂ ⟨X.scr.congr k12.2.2, ?_, ?_, ?_, ?_, ?_, ?_, ?_, X2.msk,
     (k12.gpr (by decide)).trans X.s6, (k12.gpr (by decide)).trans X.s11, by rw [X2.v4, v4], by rw [X2.v5, v5], (X.keep.trans k12).mono (by decide), fun i hi => ?_, F2⟩
   · rw [hd2 _ (by decide), X.hOut]
   · rw [hd2 _ (by decide), X.hN]

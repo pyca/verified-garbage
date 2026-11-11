@@ -2679,6 +2679,12 @@ vg_rsa_private_precompute:
 	addi s0, zero, 0
 	sd s0, 0(t3)
 	addi a7, ra, 0
+	ld a3, 40(s6)
+	addi a3, a3, 7
+	srli a3, a3, 3
+	ld t1, 56(s6)
+	addi t1, t1, 7
+	srli t1, t1, 3
 	ld s7, 8(s6)
 	ld s8, 16(s6)
 	add t4, s7, s8
@@ -2787,244 +2793,6 @@ vg_rsa_private_precompute:
 	sub s4, s1, s0
 	addi a7, ra, 0
 	and s9, s9, s4
-	addi t1, zero, 1
-	addi a2, a7, 0
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	addi a3, a7, 0
-	add a3, a3, s5
-	add a3, a3, s5
-	add a3, a3, s5
-	add a3, a3, s5
-	addi a4, a7, 0
-	add a4, a4, s5
-	add a4, a4, s5
-	add a4, a4, s5
-	add a4, a4, s5
-	add a4, a4, s5
-	addi a5, a7, 0
-	add a5, a5, s5
-	add a5, a5, s5
-	addi a6, a7, 0
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	addi a1, t0, 0
-	addi t3, a5, 0
-	addi t5, t0, 1
-	addi s0, zero, 0
-	addi a0, a7, 0
-218:
-	sd s0, 0(t3)
-	addi t3, t3, 8
-	addi t5, t5, -1
-	bnez t5, 218b
-219:
-	ld t6, 0(a3)
-	addi a3, a3, 8
-	ld s3, 0(a4)
-	ld s2, 0(a5)
-	ld a6, 8(a4)
-	ld a7, 8(a0)
-	mul s0, t6, s3
-	mulhu s3, t6, s3
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	mul t2, s2, t1
-	ld s3, 0(a0)
-	mul s1, t2, s3
-	mulhu s3, t2, s3
-	add s1, s1, s2
-	sltu s4, s1, s2
-	add s1, s3, s4
-	addi t3, a5, 0
-	addi t4, a4, 0
-	addi t5, t0, -1
-	andi t5, t5, 3
-	beqz t5, 220f
-222:
-	ld s2, 8(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
-	mul s2, t6, a6
-	ld a6, 16(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
-	ld a7, 16(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 0(t3)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 222b
-	j 221f
-220:
-221:
-	addi t5, t0, -1
-	srli t5, t5, 2
-	beqz t5, 223f
-225:
-	ld s2, 8(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
-	mul s2, t6, a6
-	ld a6, 16(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
-	ld a7, 16(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 0(t3)
-	ld s2, 16(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
-	mul s2, t6, a6
-	ld a6, 24(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
-	ld a7, 24(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 8(t3)
-	ld s2, 24(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
-	mul s2, t6, a6
-	ld a6, 32(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
-	ld a7, 32(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 16(t3)
-	ld s2, 32(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
-	mul s2, t6, a6
-	ld a6, 40(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
-	ld a7, 40(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 24(t3)
-	addi t3, t3, 32
-	addi t4, t4, 32
-	addi a0, a0, 32
-	addi t5, t5, -1
-	bnez t5, 225b
-	j 224f
-223:
-224:
-	ld s2, 8(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	add s0, s0, s1
-	sltu s3, s0, s1
-	add s4, s4, s3
-	sd s0, 0(t3)
-	sd s4, 8(t3)
-	slli s2, t0, 3
-	sub a0, a0, s2
-	addi a0, a0, 8
-	addi a1, a1, -1
-	bnez a1, 219b
-	slli s2, t0, 3
-	addi s2, s2, 16
-	add a6, a5, s2
-	slli s3, s2, 1
-	sub a7, a5, s3
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a7, 0
-	addi t5, t0, 0
-	addi s4, zero, 0
-226:
-	ld s2, 0(t3)
-	ld s3, 0(a0)
-	sltu s0, s2, s3
-	sub s2, s2, s3
-	sltu s1, s2, s4
-	sub s2, s2, s4
-	or s4, s0, s1
-	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 226b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-227:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 227b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -3032,10 +2800,57 @@ vg_rsa_private_precompute:
 	add t3, t3, s5
 	add t3, t3, s5
 	add t3, t3, s5
-	add t3, t3, s5
-	addi t3, t3, -16
+	addi t5, t0, 0
 	addi s0, zero, 0
+218:
 	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 218b
+	addi a0, a7, 0
+	add a0, a0, s5
+	add a0, a0, s5
+	add a0, a0, s5
+	add a0, a0, s5
+	addi a1, a7, 0
+	add a1, a1, s5
+	add a1, a1, s5
+	add a1, a1, s5
+	add a1, a1, s5
+	add a1, a1, s5
+	add a1, a1, s5
+219:
+	ld a6, 0(a0)
+	addi t3, a1, 0
+	addi t4, a7, 0
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	addi t5, t1, 0
+	addi s1, zero, 0
+220:
+	ld s2, 0(t4)
+	mul s3, a6, s2
+	mulhu s2, a6, s2
+	ld s0, 0(t3)
+	add s3, s3, s0
+	sltu s0, s3, s0
+	add s2, s2, s0
+	add s3, s3, s1
+	sltu s0, s3, s1
+	add s1, s2, s0
+	sd s3, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 220b
+	sd s1, 0(t3)
+	addi a0, a0, 8
+	addi a1, a1, 8
+	addi a3, a3, -1
+	bnez a3, 219b
 	addi a5, a7, 0
 	add a5, a5, s5
 	add a5, a5, s5
@@ -3054,7 +2869,7 @@ vg_rsa_private_precompute:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-228:
+221:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -3067,7 +2882,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 228b
+	bnez t5, 221b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -3092,7 +2907,7 @@ vg_rsa_private_precompute:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-229:
+222:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -3105,7 +2920,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 229b
+	bnez t5, 222b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -3120,13 +2935,13 @@ vg_rsa_private_precompute:
 	add t3, t3, s5
 	add t3, t3, s5
 	addi t5, t0, 0
-230:
+223:
 	ld s0, 0(t3)
 	and s0, s0, s9
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 230b
+	bnez t5, 223b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -3144,13 +2959,13 @@ vg_rsa_private_precompute:
 	add t3, t3, s5
 	add t3, t3, s5
 	addi t5, t0, 0
-231:
+224:
 	ld s0, 0(t3)
 	and s0, s0, s9
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 231b
+	bnez t5, 224b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -3171,13 +2986,13 @@ vg_rsa_private_precompute:
 	add t3, t3, s5
 	add t3, t3, s5
 	addi t5, t0, 0
-232:
+225:
 	ld s0, 0(t3)
 	and s0, s0, s9
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 232b
+	bnez t5, 225b
 	sd s9, 88(s6)
 	ld s5, 0(s6)
 	ld s7, 8(s6)
@@ -3193,81 +3008,81 @@ vg_rsa_private_precompute:
 	addi t3, a7, 0
 	addi t5, t0, 0
 	addi s0, zero, 0
-233:
+226:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 233b
+	bnez t5, 226b
 	add t4, a7, s8
 	addi t4, t4, -1
 	addi a0, s7, 0
 	addi t5, s8, 0
-234:
+227:
 	lbu s0, 0(a0)
 	sb s0, 0(t4)
 	addi a0, a0, 1
 	addi t4, t4, -1
 	addi t5, t5, -1
-	bnez t5, 234b
+	bnez t5, 227b
 	add t4, s7, s8
 	addi t4, t4, -1
 	lbu s0, 0(t4)
 	andi s0, s0, 1
 	xori s0, s0, 1
 	lbu t4, 0(s7)
-	beqz t4, 235f
-	j 236f
-235:
+	beqz t4, 228f
+	j 229f
+228:
 	addi s0, zero, 1
-236:
+229:
 	addi t5, s8, -64
-	beqz t5, 237f
-	j 238f
-237:
+	beqz t5, 230f
+	j 231f
+230:
 	srli t4, t4, 7
 	xori t4, t4, 1
 	or s0, s0, t4
-238:
-	beqz s0, 239f
+231:
+	beqz s0, 232f
 	addi t3, s5, 0
 	addi t5, t0, 0
 	addi s0, zero, 0
-241:
+234:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 241b
+	bnez t5, 234b
 	addi t5, t0, 0
 	addi s0, zero, 0
-242:
+235:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 242b
+	bnez t5, 235b
 	addi a0, zero, 0
-	j 240f
-239:
+	j 233f
+232:
 	slli t3, t0, 3
 	add t3, t3, a7
 	addi t3, t3, -8
 	ld s0, 0(t3)
 	addi a1, zero, 0
 	addi t5, zero, 63
-243:
+236:
 	srli s1, s0, 63
 	xori s1, s1, 1
 	sll s0, s0, s1
 	add a1, a1, s1
 	addi t5, t5, -1
-	bnez t5, 243b
+	bnez t5, 236b
 	addi t3, a2, 0
 	addi t5, t0, 0
 	addi s0, zero, 0
-244:
+237:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 244b
+	bnez t5, 237b
 	slli t3, t0, 3
 	add t3, t3, a2
 	addi t3, t3, -8
@@ -3278,12 +3093,12 @@ vg_rsa_private_precompute:
 	sd s0, 0(t3)
 	add a1, a1, t0
 	addi a1, a1, 1
-245:
+238:
 	addi t3, a5, 0
 	addi t4, a2, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-246:
+239:
 	ld s2, 0(t4)
 	slli s3, s2, 1
 	add s3, s3, s4
@@ -3292,14 +3107,14 @@ vg_rsa_private_precompute:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 246b
+	bnez t5, 239b
 	sd s4, 0(t3)
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-247:
+240:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -3312,7 +3127,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 247b
+	bnez t5, 240b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -3321,7 +3136,7 @@ vg_rsa_private_precompute:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-248:
+241:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -3332,9 +3147,9 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 248b
+	bnez t5, 241b
 	addi a1, a1, -1
-	bnez a1, 245b
+	bnez a1, 238b
 	ld s3, 0(a7)
 	addi s0, s3, 0
 	mul s1, s3, s0
@@ -3367,15 +3182,15 @@ vg_rsa_private_precompute:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-249:
+242:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 249b
+	bnez t5, 242b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-250:
+243:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -3384,8 +3199,8 @@ vg_rsa_private_precompute:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 251f
-253:
+	beqz t5, 244f
+246:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3477,12 +3292,12 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 253b
-	j 252f
-251:
-252:
-	beqz t6, 254f
-256:
+	bnez t5, 246b
+	j 245f
+244:
+245:
+	beqz t6, 247f
+249:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3497,21 +3312,21 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 256b
-	j 255f
-254:
-255:
+	bnez t6, 249b
+	j 248f
+247:
+248:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 250b
+	bnez a1, 243b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-257:
+250:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -3536,7 +3351,7 @@ vg_rsa_private_precompute:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 257b
+	bnez t5, 250b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -3544,7 +3359,7 @@ vg_rsa_private_precompute:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-258:
+251:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -3553,8 +3368,8 @@ vg_rsa_private_precompute:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 259f
-261:
+	beqz t5, 252f
+254:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3646,119 +3461,119 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 261b
-	j 260f
+	bnez t5, 254b
+	j 253f
+252:
+253:
+	beqz t6, 255f
+257:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 257b
+	j 256f
+255:
+256:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 251b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+258:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 258b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
 259:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 259b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a3, a2, 0
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
 260:
-	beqz t6, 262f
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 260b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+261:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 262f
 264:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
 	ld a7, 8(a0)
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	sd s3, 0(t4)
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t6, t6, -1
-	bnez t6, 264b
-	j 263f
-262:
-263:
-	ld s2, 0(t4)
-	add s1, s1, s2
-	sltu s3, s1, s2
-	add s1, s1, a1
-	sltu s2, s1, a1
-	add a1, s3, s2
-	sd s1, 0(t4)
-	addi t3, t3, 8
-	addi t2, t2, -1
-	slli s2, t0, 3
-	sub a0, a0, s2
-	bnez t2, 258b
-	slli s2, t0, 3
-	addi s2, s2, 16
-	slli s2, s2, 1
-	sub a7, a5, s2
-	slli t3, t0, 3
-	add a5, a5, t3
-	add t4, a5, t3
-	sd a1, 0(t4)
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a7, 0
-	addi t5, t0, 0
-	addi s4, zero, 0
-265:
-	ld s2, 0(t3)
-	ld s3, 0(a0)
-	sltu s0, s2, s3
-	sub s2, s2, s3
-	sltu s1, s2, s4
-	sub s2, s2, s4
-	or s4, s0, s1
-	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 265b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-266:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 266b
-	slli t3, t0, 3
-	sub a5, a5, t3
-	addi a3, a2, 0
-	addi t3, a5, 0
-	add t5, t0, t0
-	addi t5, t5, 2
-	addi s0, zero, 0
-267:
-	sd s0, 0(t3)
-	addi t3, t3, 8
-	addi t5, t5, -1
-	bnez t5, 267b
-	addi t3, a3, 0
-	addi a1, t0, -1
-	addi t2, a5, 8
-268:
-	ld s0, 0(t3)
-	addi s1, zero, 0
-	addi a0, t3, 8
-	addi t4, t2, 0
-	addi t5, a1, 0
-	andi t6, t5, 7
-	srli t5, t5, 3
-	ld a7, 0(a0)
-	beqz t5, 269f
-271:
-	ld s4, 0(t4)
-	mul s3, s0, a7
-	mulhu s2, s0, a7
-	ld a7, 8(a0)
 	mul a4, s0, a7
 	add s3, s3, s4
 	sltu s4, s3, s4
@@ -3846,12 +3661,12 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 271b
-	j 270f
-269:
-270:
-	beqz t6, 272f
-274:
+	bnez t5, 264b
+	j 263f
+262:
+263:
+	beqz t6, 265f
+267:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3866,21 +3681,21 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 274b
-	j 273f
-272:
-273:
+	bnez t6, 267b
+	j 266f
+265:
+266:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 268b
+	bnez a1, 261b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-275:
+268:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -3905,7 +3720,7 @@ vg_rsa_private_precompute:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 275b
+	bnez t5, 268b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -3913,7 +3728,7 @@ vg_rsa_private_precompute:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-276:
+269:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -3922,8 +3737,8 @@ vg_rsa_private_precompute:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 277f
-279:
+	beqz t5, 270f
+272:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -4015,119 +3830,119 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 279b
-	j 278f
+	bnez t5, 272b
+	j 271f
+270:
+271:
+	beqz t6, 273f
+275:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 275b
+	j 274f
+273:
+274:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 269b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+276:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 276b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
 277:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 277b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a3, a2, 0
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
 278:
-	beqz t6, 280f
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 278b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+279:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 280f
 282:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
 	ld a7, 8(a0)
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	sd s3, 0(t4)
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t6, t6, -1
-	bnez t6, 282b
-	j 281f
-280:
-281:
-	ld s2, 0(t4)
-	add s1, s1, s2
-	sltu s3, s1, s2
-	add s1, s1, a1
-	sltu s2, s1, a1
-	add a1, s3, s2
-	sd s1, 0(t4)
-	addi t3, t3, 8
-	addi t2, t2, -1
-	slli s2, t0, 3
-	sub a0, a0, s2
-	bnez t2, 276b
-	slli s2, t0, 3
-	addi s2, s2, 16
-	slli s2, s2, 1
-	sub a7, a5, s2
-	slli t3, t0, 3
-	add a5, a5, t3
-	add t4, a5, t3
-	sd a1, 0(t4)
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a7, 0
-	addi t5, t0, 0
-	addi s4, zero, 0
-283:
-	ld s2, 0(t3)
-	ld s3, 0(a0)
-	sltu s0, s2, s3
-	sub s2, s2, s3
-	sltu s1, s2, s4
-	sub s2, s2, s4
-	or s4, s0, s1
-	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 283b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-284:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 284b
-	slli t3, t0, 3
-	sub a5, a5, t3
-	addi a3, a2, 0
-	addi t3, a5, 0
-	add t5, t0, t0
-	addi t5, t5, 2
-	addi s0, zero, 0
-285:
-	sd s0, 0(t3)
-	addi t3, t3, 8
-	addi t5, t5, -1
-	bnez t5, 285b
-	addi t3, a3, 0
-	addi a1, t0, -1
-	addi t2, a5, 8
-286:
-	ld s0, 0(t3)
-	addi s1, zero, 0
-	addi a0, t3, 8
-	addi t4, t2, 0
-	addi t5, a1, 0
-	andi t6, t5, 7
-	srli t5, t5, 3
-	ld a7, 0(a0)
-	beqz t5, 287f
-289:
-	ld s4, 0(t4)
-	mul s3, s0, a7
-	mulhu s2, s0, a7
-	ld a7, 8(a0)
 	mul a4, s0, a7
 	add s3, s3, s4
 	sltu s4, s3, s4
@@ -4215,12 +4030,12 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 289b
-	j 288f
-287:
-288:
-	beqz t6, 290f
-292:
+	bnez t5, 282b
+	j 281f
+280:
+281:
+	beqz t6, 283f
+285:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -4235,21 +4050,21 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 292b
-	j 291f
-290:
-291:
+	bnez t6, 285b
+	j 284f
+283:
+284:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 286b
+	bnez a1, 279b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-293:
+286:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -4274,7 +4089,7 @@ vg_rsa_private_precompute:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 293b
+	bnez t5, 286b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -4282,7 +4097,7 @@ vg_rsa_private_precompute:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-294:
+287:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -4291,8 +4106,8 @@ vg_rsa_private_precompute:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 295f
-297:
+	beqz t5, 288f
+290:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -4384,119 +4199,119 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 297b
-	j 296f
+	bnez t5, 290b
+	j 289f
+288:
+289:
+	beqz t6, 291f
+293:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 293b
+	j 292f
+291:
+292:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 287b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+294:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 294b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
 295:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 295b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a3, a2, 0
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
 296:
-	beqz t6, 298f
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 296b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+297:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 298f
 2100:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
 	ld a7, 8(a0)
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	sd s3, 0(t4)
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t6, t6, -1
-	bnez t6, 2100b
-	j 299f
-298:
-299:
-	ld s2, 0(t4)
-	add s1, s1, s2
-	sltu s3, s1, s2
-	add s1, s1, a1
-	sltu s2, s1, a1
-	add a1, s3, s2
-	sd s1, 0(t4)
-	addi t3, t3, 8
-	addi t2, t2, -1
-	slli s2, t0, 3
-	sub a0, a0, s2
-	bnez t2, 294b
-	slli s2, t0, 3
-	addi s2, s2, 16
-	slli s2, s2, 1
-	sub a7, a5, s2
-	slli t3, t0, 3
-	add a5, a5, t3
-	add t4, a5, t3
-	sd a1, 0(t4)
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a7, 0
-	addi t5, t0, 0
-	addi s4, zero, 0
-2101:
-	ld s2, 0(t3)
-	ld s3, 0(a0)
-	sltu s0, s2, s3
-	sub s2, s2, s3
-	sltu s1, s2, s4
-	sub s2, s2, s4
-	or s4, s0, s1
-	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2101b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2102:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2102b
-	slli t3, t0, 3
-	sub a5, a5, t3
-	addi a3, a2, 0
-	addi t3, a5, 0
-	add t5, t0, t0
-	addi t5, t5, 2
-	addi s0, zero, 0
-2103:
-	sd s0, 0(t3)
-	addi t3, t3, 8
-	addi t5, t5, -1
-	bnez t5, 2103b
-	addi t3, a3, 0
-	addi a1, t0, -1
-	addi t2, a5, 8
-2104:
-	ld s0, 0(t3)
-	addi s1, zero, 0
-	addi a0, t3, 8
-	addi t4, t2, 0
-	addi t5, a1, 0
-	andi t6, t5, 7
-	srli t5, t5, 3
-	ld a7, 0(a0)
-	beqz t5, 2105f
-2107:
-	ld s4, 0(t4)
-	mul s3, s0, a7
-	mulhu s2, s0, a7
-	ld a7, 8(a0)
 	mul a4, s0, a7
 	add s3, s3, s4
 	sltu s4, s3, s4
@@ -4584,12 +4399,12 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2107b
-	j 2106f
-2105:
-2106:
-	beqz t6, 2108f
-2110:
+	bnez t5, 2100b
+	j 299f
+298:
+299:
+	beqz t6, 2101f
+2103:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -4604,21 +4419,21 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2110b
-	j 2109f
-2108:
-2109:
+	bnez t6, 2103b
+	j 2102f
+2101:
+2102:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2104b
+	bnez a1, 297b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2111:
+2104:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -4643,7 +4458,7 @@ vg_rsa_private_precompute:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2111b
+	bnez t5, 2104b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -4651,7 +4466,7 @@ vg_rsa_private_precompute:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2112:
+2105:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -4660,8 +4475,8 @@ vg_rsa_private_precompute:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2113f
-2115:
+	beqz t5, 2106f
+2108:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -4753,119 +4568,119 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2115b
-	j 2114f
+	bnez t5, 2108b
+	j 2107f
+2106:
+2107:
+	beqz t6, 2109f
+2111:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2111b
+	j 2110f
+2109:
+2110:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2105b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2112:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2112b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
 2113:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2113b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a3, a2, 0
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
 2114:
-	beqz t6, 2116f
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2114b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2115:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2116f
 2118:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
 	ld a7, 8(a0)
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	sd s3, 0(t4)
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t6, t6, -1
-	bnez t6, 2118b
-	j 2117f
-2116:
-2117:
-	ld s2, 0(t4)
-	add s1, s1, s2
-	sltu s3, s1, s2
-	add s1, s1, a1
-	sltu s2, s1, a1
-	add a1, s3, s2
-	sd s1, 0(t4)
-	addi t3, t3, 8
-	addi t2, t2, -1
-	slli s2, t0, 3
-	sub a0, a0, s2
-	bnez t2, 2112b
-	slli s2, t0, 3
-	addi s2, s2, 16
-	slli s2, s2, 1
-	sub a7, a5, s2
-	slli t3, t0, 3
-	add a5, a5, t3
-	add t4, a5, t3
-	sd a1, 0(t4)
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a7, 0
-	addi t5, t0, 0
-	addi s4, zero, 0
-2119:
-	ld s2, 0(t3)
-	ld s3, 0(a0)
-	sltu s0, s2, s3
-	sub s2, s2, s3
-	sltu s1, s2, s4
-	sub s2, s2, s4
-	or s4, s0, s1
-	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2119b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2120:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2120b
-	slli t3, t0, 3
-	sub a5, a5, t3
-	addi a3, a2, 0
-	addi t3, a5, 0
-	add t5, t0, t0
-	addi t5, t5, 2
-	addi s0, zero, 0
-2121:
-	sd s0, 0(t3)
-	addi t3, t3, 8
-	addi t5, t5, -1
-	bnez t5, 2121b
-	addi t3, a3, 0
-	addi a1, t0, -1
-	addi t2, a5, 8
-2122:
-	ld s0, 0(t3)
-	addi s1, zero, 0
-	addi a0, t3, 8
-	addi t4, t2, 0
-	addi t5, a1, 0
-	andi t6, t5, 7
-	srli t5, t5, 3
-	ld a7, 0(a0)
-	beqz t5, 2123f
-2125:
-	ld s4, 0(t4)
-	mul s3, s0, a7
-	mulhu s2, s0, a7
-	ld a7, 8(a0)
 	mul a4, s0, a7
 	add s3, s3, s4
 	sltu s4, s3, s4
@@ -4953,12 +4768,12 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2125b
-	j 2124f
-2123:
-2124:
-	beqz t6, 2126f
-2128:
+	bnez t5, 2118b
+	j 2117f
+2116:
+2117:
+	beqz t6, 2119f
+2121:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -4973,21 +4788,21 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2128b
-	j 2127f
-2126:
-2127:
+	bnez t6, 2121b
+	j 2120f
+2119:
+2120:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2122b
+	bnez a1, 2115b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2129:
+2122:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -5012,7 +4827,7 @@ vg_rsa_private_precompute:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2129b
+	bnez t5, 2122b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -5020,7 +4835,7 @@ vg_rsa_private_precompute:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2130:
+2123:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -5029,8 +4844,8 @@ vg_rsa_private_precompute:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2131f
-2133:
+	beqz t5, 2124f
+2126:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -5122,119 +4937,119 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2133b
-	j 2132f
+	bnez t5, 2126b
+	j 2125f
+2124:
+2125:
+	beqz t6, 2127f
+2129:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2129b
+	j 2128f
+2127:
+2128:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2123b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2130:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2130b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
 2131:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2131b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a3, a2, 0
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
 2132:
-	beqz t6, 2134f
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2132b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2133:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2134f
 2136:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
 	ld a7, 8(a0)
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	sd s3, 0(t4)
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t6, t6, -1
-	bnez t6, 2136b
-	j 2135f
-2134:
-2135:
-	ld s2, 0(t4)
-	add s1, s1, s2
-	sltu s3, s1, s2
-	add s1, s1, a1
-	sltu s2, s1, a1
-	add a1, s3, s2
-	sd s1, 0(t4)
-	addi t3, t3, 8
-	addi t2, t2, -1
-	slli s2, t0, 3
-	sub a0, a0, s2
-	bnez t2, 2130b
-	slli s2, t0, 3
-	addi s2, s2, 16
-	slli s2, s2, 1
-	sub a7, a5, s2
-	slli t3, t0, 3
-	add a5, a5, t3
-	add t4, a5, t3
-	sd a1, 0(t4)
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a7, 0
-	addi t5, t0, 0
-	addi s4, zero, 0
-2137:
-	ld s2, 0(t3)
-	ld s3, 0(a0)
-	sltu s0, s2, s3
-	sub s2, s2, s3
-	sltu s1, s2, s4
-	sub s2, s2, s4
-	or s4, s0, s1
-	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2137b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2138:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2138b
-	slli t3, t0, 3
-	sub a5, a5, t3
-	addi a3, a2, 0
-	addi t3, a5, 0
-	add t5, t0, t0
-	addi t5, t5, 2
-	addi s0, zero, 0
-2139:
-	sd s0, 0(t3)
-	addi t3, t3, 8
-	addi t5, t5, -1
-	bnez t5, 2139b
-	addi t3, a3, 0
-	addi a1, t0, -1
-	addi t2, a5, 8
-2140:
-	ld s0, 0(t3)
-	addi s1, zero, 0
-	addi a0, t3, 8
-	addi t4, t2, 0
-	addi t5, a1, 0
-	andi t6, t5, 7
-	srli t5, t5, 3
-	ld a7, 0(a0)
-	beqz t5, 2141f
-2143:
-	ld s4, 0(t4)
-	mul s3, s0, a7
-	mulhu s2, s0, a7
-	ld a7, 8(a0)
 	mul a4, s0, a7
 	add s3, s3, s4
 	sltu s4, s3, s4
@@ -5322,12 +5137,12 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2143b
-	j 2142f
-2141:
-2142:
-	beqz t6, 2144f
-2146:
+	bnez t5, 2136b
+	j 2135f
+2134:
+2135:
+	beqz t6, 2137f
+2139:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -5342,21 +5157,21 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2146b
-	j 2145f
-2144:
-2145:
+	bnez t6, 2139b
+	j 2138f
+2137:
+2138:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2140b
+	bnez a1, 2133b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2147:
+2140:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -5381,7 +5196,7 @@ vg_rsa_private_precompute:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2147b
+	bnez t5, 2140b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -5389,7 +5204,7 @@ vg_rsa_private_precompute:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2148:
+2141:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -5398,8 +5213,8 @@ vg_rsa_private_precompute:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2149f
-2151:
+	beqz t5, 2142f
+2144:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -5491,12 +5306,12 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2151b
-	j 2150f
-2149:
-2150:
-	beqz t6, 2152f
-2154:
+	bnez t5, 2144b
+	j 2143f
+2142:
+2143:
+	beqz t6, 2145f
+2147:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -5511,10 +5326,10 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2154b
-	j 2153f
-2152:
-2153:
+	bnez t6, 2147b
+	j 2146f
+2145:
+2146:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -5526,7 +5341,7 @@ vg_rsa_private_precompute:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2148b
+	bnez t2, 2141b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -5540,7 +5355,7 @@ vg_rsa_private_precompute:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2155:
+2148:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -5553,7 +5368,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2155b
+	bnez t5, 2148b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -5562,7 +5377,7 @@ vg_rsa_private_precompute:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2156:
+2149:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -5573,30 +5388,30 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2156b
+	bnez t5, 2149b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi t3, s5, 0
 	addi t4, a7, 0
 	addi t5, t0, 0
-2157:
+2150:
 	ld s0, 0(t4)
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2157b
+	bnez t5, 2150b
 	addi t4, a2, 0
 	addi t5, t0, 0
-2158:
+2151:
 	ld s0, 0(t4)
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2158b
+	bnez t5, 2151b
 	addi a0, zero, 1
-240:
+233:
 	addi t3, s6, 256
 	add t3, t3, s11
 	add t3, t3, s11
@@ -5607,11 +5422,11 @@ vg_rsa_private_precompute:
 	slli t0, t0, 1
 	addi t5, t0, 0
 	addi s0, zero, 0
-2159:
+2152:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2159b
+	bnez t5, 2152b
 	srli t0, t0, 1
 	addi t3, s6, 256
 	add t3, t3, s11
@@ -5623,13 +5438,13 @@ vg_rsa_private_precompute:
 	slli t4, t0, 3
 	add t4, s5, t4
 	addi t5, t0, 0
-2160:
+2153:
 	ld s0, 0(t4)
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2160b
+	bnez t5, 2153b
 	ld t3, 0(s6)
 	ld t4, 16(s6)
 	addi t4, t4, 7
@@ -5656,13 +5471,13 @@ vg_rsa_private_precompute:
 	add t4, t4, s11
 	add t4, t4, s11
 	addi t5, t0, 0
-2161:
+2154:
 	ld s0, 0(t4)
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2161b
+	bnez t5, 2154b
 	ld s3, 0(a7)
 	addi s0, s3, 0
 	mul s1, s3, s0
@@ -5699,11 +5514,11 @@ vg_rsa_private_precompute:
 	addi t3, a2, 0
 	addi t5, t0, 0
 	addi s0, zero, 0
-2162:
+2155:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2162b
+	bnez t5, 2155b
 	addi s0, zero, 1
 	sd s0, 0(a2)
 	addi t3, a7, 0
@@ -5713,11 +5528,11 @@ vg_rsa_private_precompute:
 	add t3, t3, s5
 	addi t5, t0, 0
 	addi s0, zero, 0
-2163:
+2156:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2163b
+	bnez t5, 2156b
 	addi s9, s6, 256
 	add s9, s9, s11
 	add s9, s9, s11
@@ -5727,7 +5542,7 @@ vg_rsa_private_precompute:
 	add s9, s9, s11
 	srli s10, s11, 4
 	addi s10, s10, -1
-2164:
+2157:
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -5737,13 +5552,13 @@ vg_rsa_private_precompute:
 	add t3, t3, s5
 	addi t4, s9, 0
 	addi t5, t0, 0
-2165:
+2158:
 	ld s0, 0(t4)
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2165b
+	bnez t5, 2158b
 	addi s9, t4, 0
 	addi a2, a7, 0
 	add a2, a2, s5
@@ -5774,12 +5589,12 @@ vg_rsa_private_precompute:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-2166:
+2159:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2166b
-2167:
+	bnez t5, 2159b
+2160:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -5802,8 +5617,8 @@ vg_rsa_private_precompute:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 2168f
-2170:
+	beqz t5, 2161f
+2163:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -5828,12 +5643,211 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2170b
-	j 2169f
-2168:
-2169:
+	bnez t5, 2163b
+	j 2162f
+2161:
+2162:
 	addi t5, t0, -1
 	srli t5, t5, 2
+	beqz t5, 2164f
+2166:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mulhu s3, t6, a6
+	mul s2, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mulhu s3, t2, a7
+	mul s2, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mulhu s3, t6, a6
+	mul s2, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mulhu s3, t2, a7
+	mul s2, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mulhu s3, t6, a6
+	mul s2, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mulhu s3, t2, a7
+	mul s2, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mulhu s3, t6, a6
+	mul s2, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mulhu s3, t2, a7
+	mul s2, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2166b
+	j 2165f
+2164:
+2165:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2160b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2167:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2167b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2168:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2168b
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2169:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2169b
+2170:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
 	beqz t5, 2171f
 2173:
 	ld s2, 8(t3)
@@ -5856,217 +5870,18 @@ vg_rsa_private_precompute:
 	sltu s4, s2, s1
 	add s1, s3, s4
 	sd s2, 0(t3)
-	ld s2, 16(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
-	mul s2, t6, a6
-	ld a6, 24(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
-	ld a7, 24(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 8(t3)
-	ld s2, 24(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
-	mul s2, t6, a6
-	ld a6, 32(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
-	ld a7, 32(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 16(t3)
-	ld s2, 32(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
-	mul s2, t6, a6
-	ld a6, 40(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
-	ld a7, 40(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 24(t3)
-	addi t3, t3, 32
-	addi t4, t4, 32
-	addi a0, a0, 32
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2173b
 	j 2172f
 2171:
 2172:
-	ld s2, 8(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	add s0, s0, s1
-	sltu s3, s0, s1
-	add s4, s4, s3
-	sd s0, 0(t3)
-	sd s4, 8(t3)
-	slli s2, t0, 3
-	sub a0, a0, s2
-	addi a0, a0, 8
-	addi a1, a1, -1
-	bnez a1, 2167b
-	slli s2, t0, 3
-	addi s2, s2, 16
-	add a6, a5, s2
-	slli s3, s2, 1
-	sub a7, a5, s3
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a7, 0
-	addi t5, t0, 0
-	addi s4, zero, 0
-2174:
-	ld s2, 0(t3)
-	ld s3, 0(a0)
-	sltu s0, s2, s3
-	sub s2, s2, s3
-	sltu s1, s2, s4
-	sub s2, s2, s4
-	or s4, s0, s1
-	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2174b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2175:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2175b
-	addi a2, a7, 0
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	addi a3, a7, 0
-	add a3, a3, s5
-	add a3, a3, s5
-	add a3, a3, s5
-	add a3, a3, s5
-	addi a4, a7, 0
-	add a4, a4, s5
-	addi a5, a7, 0
-	add a5, a5, s5
-	add a5, a5, s5
-	addi a6, a7, 0
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	addi a1, t0, 0
-	addi t3, a5, 0
-	addi t5, t0, 1
-	addi s0, zero, 0
-	addi a0, a7, 0
-2176:
-	sd s0, 0(t3)
-	addi t3, t3, 8
-	addi t5, t5, -1
-	bnez t5, 2176b
-2177:
-	ld t6, 0(a3)
-	addi a3, a3, 8
-	ld s3, 0(a4)
-	ld s2, 0(a5)
-	ld a6, 8(a4)
-	ld a7, 8(a0)
-	mul s0, t6, s3
-	mulhu s3, t6, s3
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	mul t2, s2, t1
-	ld s3, 0(a0)
-	mul s1, t2, s3
-	mulhu s3, t2, s3
-	add s1, s1, s2
-	sltu s4, s1, s2
-	add s1, s3, s4
-	addi t3, a5, 0
-	addi t4, a4, 0
-	addi t5, t0, -1
-	andi t5, t5, 3
-	beqz t5, 2178f
-2180:
-	ld s2, 8(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
-	mul s2, t6, a6
-	ld a6, 16(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
-	ld a7, 16(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 0(t3)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2180b
-	j 2179f
-2178:
-2179:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2181f
-2183:
+	beqz t5, 2174f
+2176:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -6151,10 +5966,10 @@ vg_rsa_private_precompute:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2183b
-	j 2182f
-2181:
-2182:
+	bnez t5, 2176b
+	j 2175f
+2174:
+2175:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -6167,7 +5982,7 @@ vg_rsa_private_precompute:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 2177b
+	bnez a1, 2170b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -6178,7 +5993,7 @@ vg_rsa_private_precompute:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2184:
+2177:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -6191,7 +6006,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2184b
+	bnez t5, 2177b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -6200,7 +6015,7 @@ vg_rsa_private_precompute:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2185:
+2178:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -6211,7 +6026,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2185b
+	bnez t5, 2178b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -6243,7 +6058,7 @@ vg_rsa_private_precompute:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2186:
+2179:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -6256,7 +6071,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2186b
+	bnez t5, 2179b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -6269,7 +6084,7 @@ vg_rsa_private_precompute:
 	addi t4, a7, 0
 	addi t5, t0, 0
 	addi s1, zero, 0
-2187:
+2180:
 	ld s2, 0(t3)
 	ld s3, 0(t4)
 	and s3, s3, s4
@@ -6282,7 +6097,7 @@ vg_rsa_private_precompute:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2187b
+	bnez t5, 2180b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -6293,28 +6108,28 @@ vg_rsa_private_precompute:
 	add t4, t4, s5
 	add t4, t4, s5
 	addi t5, t0, 0
-2188:
+2181:
 	ld s0, 0(t4)
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2188b
+	bnez t5, 2181b
 	sub s10, s10, t0
 	addi t2, s10, -1
 	srli t2, t2, 63
 	xori t2, t2, 1
-	bnez t2, 2164b
+	bnez t2, 2157b
 	srli t2, s11, 4
 	addi t2, t2, -1
 	add s10, s10, t2
 	slli t2, t0, 1
 	sub t2, t2, s10
 	srli t2, t2, 63
-	bnez t2, 2189f
-	j 2190f
-2189:
-2191:
+	bnez t2, 2182f
+	j 2183f
+2182:
+2184:
 	addi a2, a7, 0
 	add a2, a2, s5
 	add a2, a2, s5
@@ -6339,12 +6154,12 @@ vg_rsa_private_precompute:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-2192:
+2185:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2192b
-2193:
+	bnez t5, 2185b
+2186:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -6367,8 +6182,8 @@ vg_rsa_private_precompute:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 2194f
-2196:
+	beqz t5, 2187f
+2189:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -6393,14 +6208,14 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2196b
-	j 2195f
-2194:
-2195:
+	bnez t5, 2189b
+	j 2188f
+2187:
+2188:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2197f
-2199:
+	beqz t5, 2190f
+2192:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -6485,10 +6300,10 @@ vg_rsa_private_precompute:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2199b
-	j 2198f
-2197:
-2198:
+	bnez t5, 2192b
+	j 2191f
+2190:
+2191:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -6501,7 +6316,7 @@ vg_rsa_private_precompute:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 2193b
+	bnez a1, 2186b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -6512,7 +6327,7 @@ vg_rsa_private_precompute:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2200:
+2193:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -6525,7 +6340,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2200b
+	bnez t5, 2193b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -6534,7 +6349,7 @@ vg_rsa_private_precompute:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2201:
+2194:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -6545,13 +6360,13 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2201b
+	bnez t5, 2194b
 	sub s10, s10, t0
 	slli t2, t0, 1
 	sub t2, t2, s10
 	srli t2, t2, 63
-	bnez t2, 2191b
-2190:
+	bnez t2, 2184b
+2183:
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -6566,13 +6381,13 @@ vg_rsa_private_precompute:
 	add t4, t4, s5
 	add t4, t4, s5
 	addi t5, t0, 0
-2202:
+2195:
 	ld s0, 0(t4)
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2202b
+	bnez t5, 2195b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -6580,11 +6395,11 @@ vg_rsa_private_precompute:
 	add t3, t3, s5
 	addi t5, t0, 0
 	addi s0, zero, 0
-2203:
+2196:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2203b
+	bnez t5, 2196b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -6616,7 +6431,7 @@ vg_rsa_private_precompute:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2204:
+2197:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -6629,7 +6444,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2204b
+	bnez t5, 2197b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -6642,7 +6457,7 @@ vg_rsa_private_precompute:
 	addi t4, a7, 0
 	addi t5, t0, 0
 	addi s1, zero, 0
-2205:
+2198:
 	ld s2, 0(t3)
 	ld s3, 0(t4)
 	and s3, s3, s4
@@ -6655,7 +6470,7 @@ vg_rsa_private_precompute:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2205b
+	bnez t5, 2198b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -6666,13 +6481,13 @@ vg_rsa_private_precompute:
 	add t4, t4, s5
 	add t4, t4, s5
 	addi t5, t0, 0
-2206:
+2199:
 	ld s0, 0(t4)
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2206b
+	bnez t5, 2199b
 	addi t3, a7, 0
 	add t3, t3, s5
 	addi t4, a7, 0
@@ -6681,13 +6496,13 @@ vg_rsa_private_precompute:
 	add t4, t4, s5
 	add t4, t4, s5
 	addi t5, t0, 0
-2207:
+2200:
 	ld s0, 0(t4)
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2207b
+	bnez t5, 2200b
 	addi a2, a7, 0
 	add a2, a2, s5
 	addi a5, a7, 0
@@ -6699,16 +6514,16 @@ vg_rsa_private_precompute:
 	add a6, a6, s5
 	sub t2, t0, s10
 	srli t2, t2, 63
-	bnez t2, 2208f
+	bnez t2, 2201f
 	sub a1, t0, s10
 	slli a1, a1, 6
 	add a1, a1, t0
-2210:
+2203:
 	addi t3, a5, 0
 	addi t4, a2, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2211:
+2204:
 	ld s2, 0(t4)
 	slli s3, s2, 1
 	add s3, s3, s4
@@ -6717,14 +6532,14 @@ vg_rsa_private_precompute:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2211b
+	bnez t5, 2204b
 	sd s4, 0(t3)
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2212:
+2205:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -6737,7 +6552,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2212b
+	bnez t5, 2205b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -6746,7 +6561,7 @@ vg_rsa_private_precompute:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2213:
+2206:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -6757,11 +6572,11 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2213b
+	bnez t5, 2206b
 	addi a1, a1, -1
-	bnez a1, 2210b
+	bnez a1, 2203b
 	addi s7, zero, 6
-2214:
+2207:
 	addi a2, a7, 0
 	add a2, a2, s5
 	addi a3, a7, 0
@@ -6778,15 +6593,15 @@ vg_rsa_private_precompute:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2215:
+2208:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2215b
+	bnez t5, 2208b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2216:
+2209:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -6795,8 +6610,8 @@ vg_rsa_private_precompute:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2217f
-2219:
+	beqz t5, 2210f
+2212:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -6888,12 +6703,12 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2219b
-	j 2218f
-2217:
-2218:
-	beqz t6, 2220f
-2222:
+	bnez t5, 2212b
+	j 2211f
+2210:
+2211:
+	beqz t6, 2213f
+2215:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -6908,21 +6723,21 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2222b
-	j 2221f
-2220:
-2221:
+	bnez t6, 2215b
+	j 2214f
+2213:
+2214:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2216b
+	bnez a1, 2209b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2223:
+2216:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -6947,7 +6762,7 @@ vg_rsa_private_precompute:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2223b
+	bnez t5, 2216b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -6955,7 +6770,7 @@ vg_rsa_private_precompute:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2224:
+2217:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -6964,8 +6779,8 @@ vg_rsa_private_precompute:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2225f
-2227:
+	beqz t5, 2218f
+2220:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -7057,12 +6872,12 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2227b
-	j 2226f
-2225:
-2226:
-	beqz t6, 2228f
-2230:
+	bnez t5, 2220b
+	j 2219f
+2218:
+2219:
+	beqz t6, 2221f
+2223:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -7077,10 +6892,10 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2230b
-	j 2229f
-2228:
-2229:
+	bnez t6, 2223b
+	j 2222f
+2221:
+2222:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -7092,7 +6907,7 @@ vg_rsa_private_precompute:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2224b
+	bnez t2, 2217b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -7106,7 +6921,7 @@ vg_rsa_private_precompute:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2231:
+2224:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -7119,7 +6934,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2231b
+	bnez t5, 2224b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -7128,7 +6943,7 @@ vg_rsa_private_precompute:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2232:
+2225:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -7139,25 +6954,25 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2232b
+	bnez t5, 2225b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi s7, s7, -1
-	bnez s7, 2214b
-	j 2209f
-2208:
+	bnez s7, 2207b
+	j 2202f
+2201:
 	slli a1, t0, 1
 	sub a1, a1, s10
 	slli a1, a1, 6
-	bnez a1, 2233f
-	j 2234f
-2233:
-2235:
+	bnez a1, 2226f
+	j 2227f
+2226:
+2228:
 	addi t3, a5, 0
 	addi t4, a2, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2236:
+2229:
 	ld s2, 0(t4)
 	slli s3, s2, 1
 	add s3, s3, s4
@@ -7166,14 +6981,14 @@ vg_rsa_private_precompute:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2236b
+	bnez t5, 2229b
 	sd s4, 0(t3)
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2237:
+2230:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -7186,7 +7001,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2237b
+	bnez t5, 2230b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -7195,7 +7010,7 @@ vg_rsa_private_precompute:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2238:
+2231:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -7206,24 +7021,24 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2238b
+	bnez t5, 2231b
 	addi a1, a1, -1
-	bnez a1, 2235b
-2234:
-2209:
+	bnez a1, 2228b
+2227:
+2202:
 	addi t4, a7, 0
 	add t4, t4, s5
 	ld t3, 64(s6)
 	ld t1, 88(s6)
 	addi t5, t0, 0
-2239:
+2232:
 	ld s0, 0(t4)
 	and s0, s0, t1
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2239b
+	bnez t5, 2232b
 	sd t3, 64(s6)
 	ld t3, 56(s6)
 	addi t2, t3, 7
@@ -7245,13 +7060,13 @@ vg_rsa_private_precompute:
 	add t4, t4, s11
 	add t4, t4, s11
 	addi t5, t0, 0
-2240:
+2233:
 	ld s0, 0(t4)
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2240b
+	bnez t5, 2233b
 	ld s3, 0(a7)
 	addi s0, s3, 0
 	mul s1, s3, s0
@@ -7288,11 +7103,11 @@ vg_rsa_private_precompute:
 	addi t3, a2, 0
 	addi t5, t0, 0
 	addi s0, zero, 0
-2241:
+2234:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2241b
+	bnez t5, 2234b
 	addi s0, zero, 1
 	sd s0, 0(a2)
 	addi t3, a7, 0
@@ -7302,11 +7117,11 @@ vg_rsa_private_precompute:
 	add t3, t3, s5
 	addi t5, t0, 0
 	addi s0, zero, 0
-2242:
+2235:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2242b
+	bnez t5, 2235b
 	addi s9, s6, 256
 	add s9, s9, s11
 	add s9, s9, s11
@@ -7316,7 +7131,7 @@ vg_rsa_private_precompute:
 	add s9, s9, s11
 	srli s10, s11, 4
 	addi s10, s10, -1
-2243:
+2236:
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -7326,13 +7141,13 @@ vg_rsa_private_precompute:
 	add t3, t3, s5
 	addi t4, s9, 0
 	addi t5, t0, 0
-2244:
+2237:
 	ld s0, 0(t4)
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2244b
+	bnez t5, 2237b
 	addi s9, t4, 0
 	addi a2, a7, 0
 	add a2, a2, s5
@@ -7363,12 +7178,12 @@ vg_rsa_private_precompute:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-2245:
+2238:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2245b
-2246:
+	bnez t5, 2238b
+2239:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -7391,8 +7206,8 @@ vg_rsa_private_precompute:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 2247f
-2249:
+	beqz t5, 2240f
+2242:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -7417,12 +7232,211 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2249b
-	j 2248f
-2247:
-2248:
+	bnez t5, 2242b
+	j 2241f
+2240:
+2241:
 	addi t5, t0, -1
 	srli t5, t5, 2
+	beqz t5, 2243f
+2245:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mulhu s3, t6, a6
+	mul s2, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mulhu s3, t2, a7
+	mul s2, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mulhu s3, t6, a6
+	mul s2, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mulhu s3, t2, a7
+	mul s2, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mulhu s3, t6, a6
+	mul s2, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mulhu s3, t2, a7
+	mul s2, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mulhu s3, t6, a6
+	mul s2, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mulhu s3, t2, a7
+	mul s2, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2245b
+	j 2244f
+2243:
+2244:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2239b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2246:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2246b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2247:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2247b
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2248:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2248b
+2249:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
 	beqz t5, 2250f
 2252:
 	ld s2, 8(t3)
@@ -7445,217 +7459,18 @@ vg_rsa_private_precompute:
 	sltu s4, s2, s1
 	add s1, s3, s4
 	sd s2, 0(t3)
-	ld s2, 16(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
-	mul s2, t6, a6
-	ld a6, 24(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
-	ld a7, 24(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 8(t3)
-	ld s2, 24(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
-	mul s2, t6, a6
-	ld a6, 32(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
-	ld a7, 32(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 16(t3)
-	ld s2, 32(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
-	mul s2, t6, a6
-	ld a6, 40(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
-	ld a7, 40(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 24(t3)
-	addi t3, t3, 32
-	addi t4, t4, 32
-	addi a0, a0, 32
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2252b
 	j 2251f
 2250:
 2251:
-	ld s2, 8(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	add s0, s0, s1
-	sltu s3, s0, s1
-	add s4, s4, s3
-	sd s0, 0(t3)
-	sd s4, 8(t3)
-	slli s2, t0, 3
-	sub a0, a0, s2
-	addi a0, a0, 8
-	addi a1, a1, -1
-	bnez a1, 2246b
-	slli s2, t0, 3
-	addi s2, s2, 16
-	add a6, a5, s2
-	slli s3, s2, 1
-	sub a7, a5, s3
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a7, 0
-	addi t5, t0, 0
-	addi s4, zero, 0
-2253:
-	ld s2, 0(t3)
-	ld s3, 0(a0)
-	sltu s0, s2, s3
-	sub s2, s2, s3
-	sltu s1, s2, s4
-	sub s2, s2, s4
-	or s4, s0, s1
-	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2253b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2254:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2254b
-	addi a2, a7, 0
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	addi a3, a7, 0
-	add a3, a3, s5
-	add a3, a3, s5
-	add a3, a3, s5
-	add a3, a3, s5
-	addi a4, a7, 0
-	add a4, a4, s5
-	addi a5, a7, 0
-	add a5, a5, s5
-	add a5, a5, s5
-	addi a6, a7, 0
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	addi a1, t0, 0
-	addi t3, a5, 0
-	addi t5, t0, 1
-	addi s0, zero, 0
-	addi a0, a7, 0
-2255:
-	sd s0, 0(t3)
-	addi t3, t3, 8
-	addi t5, t5, -1
-	bnez t5, 2255b
-2256:
-	ld t6, 0(a3)
-	addi a3, a3, 8
-	ld s3, 0(a4)
-	ld s2, 0(a5)
-	ld a6, 8(a4)
-	ld a7, 8(a0)
-	mul s0, t6, s3
-	mulhu s3, t6, s3
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	mul t2, s2, t1
-	ld s3, 0(a0)
-	mul s1, t2, s3
-	mulhu s3, t2, s3
-	add s1, s1, s2
-	sltu s4, s1, s2
-	add s1, s3, s4
-	addi t3, a5, 0
-	addi t4, a4, 0
-	addi t5, t0, -1
-	andi t5, t5, 3
-	beqz t5, 2257f
-2259:
-	ld s2, 8(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
-	mul s2, t6, a6
-	ld a6, 16(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
-	ld a7, 16(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 0(t3)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2259b
-	j 2258f
-2257:
-2258:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2260f
-2262:
+	beqz t5, 2253f
+2255:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -7740,10 +7555,10 @@ vg_rsa_private_precompute:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2262b
-	j 2261f
-2260:
-2261:
+	bnez t5, 2255b
+	j 2254f
+2253:
+2254:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -7756,7 +7571,7 @@ vg_rsa_private_precompute:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 2256b
+	bnez a1, 2249b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -7767,7 +7582,7 @@ vg_rsa_private_precompute:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2263:
+2256:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -7780,7 +7595,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2263b
+	bnez t5, 2256b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -7789,7 +7604,7 @@ vg_rsa_private_precompute:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2264:
+2257:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -7800,7 +7615,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2264b
+	bnez t5, 2257b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -7832,7 +7647,7 @@ vg_rsa_private_precompute:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2265:
+2258:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -7845,7 +7660,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2265b
+	bnez t5, 2258b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -7858,7 +7673,7 @@ vg_rsa_private_precompute:
 	addi t4, a7, 0
 	addi t5, t0, 0
 	addi s1, zero, 0
-2266:
+2259:
 	ld s2, 0(t3)
 	ld s3, 0(t4)
 	and s3, s3, s4
@@ -7871,7 +7686,7 @@ vg_rsa_private_precompute:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2266b
+	bnez t5, 2259b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -7882,28 +7697,28 @@ vg_rsa_private_precompute:
 	add t4, t4, s5
 	add t4, t4, s5
 	addi t5, t0, 0
-2267:
+2260:
 	ld s0, 0(t4)
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2267b
+	bnez t5, 2260b
 	sub s10, s10, t0
 	addi t2, s10, -1
 	srli t2, t2, 63
 	xori t2, t2, 1
-	bnez t2, 2243b
+	bnez t2, 2236b
 	srli t2, s11, 4
 	addi t2, t2, -1
 	add s10, s10, t2
 	slli t2, t0, 1
 	sub t2, t2, s10
 	srli t2, t2, 63
-	bnez t2, 2268f
-	j 2269f
-2268:
-2270:
+	bnez t2, 2261f
+	j 2262f
+2261:
+2263:
 	addi a2, a7, 0
 	add a2, a2, s5
 	add a2, a2, s5
@@ -7928,12 +7743,12 @@ vg_rsa_private_precompute:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-2271:
+2264:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2271b
-2272:
+	bnez t5, 2264b
+2265:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -7956,8 +7771,8 @@ vg_rsa_private_precompute:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 2273f
-2275:
+	beqz t5, 2266f
+2268:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -7982,14 +7797,14 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2275b
-	j 2274f
-2273:
-2274:
+	bnez t5, 2268b
+	j 2267f
+2266:
+2267:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2276f
-2278:
+	beqz t5, 2269f
+2271:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -8074,10 +7889,10 @@ vg_rsa_private_precompute:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2278b
-	j 2277f
-2276:
-2277:
+	bnez t5, 2271b
+	j 2270f
+2269:
+2270:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -8090,7 +7905,7 @@ vg_rsa_private_precompute:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 2272b
+	bnez a1, 2265b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -8101,7 +7916,7 @@ vg_rsa_private_precompute:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2279:
+2272:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -8114,7 +7929,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2279b
+	bnez t5, 2272b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -8123,7 +7938,7 @@ vg_rsa_private_precompute:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2280:
+2273:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -8134,13 +7949,13 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2280b
+	bnez t5, 2273b
 	sub s10, s10, t0
 	slli t2, t0, 1
 	sub t2, t2, s10
 	srli t2, t2, 63
-	bnez t2, 2270b
-2269:
+	bnez t2, 2263b
+2262:
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -8155,13 +7970,13 @@ vg_rsa_private_precompute:
 	add t4, t4, s5
 	add t4, t4, s5
 	addi t5, t0, 0
-2281:
+2274:
 	ld s0, 0(t4)
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2281b
+	bnez t5, 2274b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -8169,11 +7984,11 @@ vg_rsa_private_precompute:
 	add t3, t3, s5
 	addi t5, t0, 0
 	addi s0, zero, 0
-2282:
+2275:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2282b
+	bnez t5, 2275b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -8205,7 +8020,7 @@ vg_rsa_private_precompute:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2283:
+2276:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -8218,7 +8033,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2283b
+	bnez t5, 2276b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -8231,7 +8046,7 @@ vg_rsa_private_precompute:
 	addi t4, a7, 0
 	addi t5, t0, 0
 	addi s1, zero, 0
-2284:
+2277:
 	ld s2, 0(t3)
 	ld s3, 0(t4)
 	and s3, s3, s4
@@ -8244,7 +8059,7 @@ vg_rsa_private_precompute:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2284b
+	bnez t5, 2277b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -8255,13 +8070,13 @@ vg_rsa_private_precompute:
 	add t4, t4, s5
 	add t4, t4, s5
 	addi t5, t0, 0
-2285:
+2278:
 	ld s0, 0(t4)
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2285b
+	bnez t5, 2278b
 	addi t3, a7, 0
 	add t3, t3, s5
 	addi t4, a7, 0
@@ -8270,13 +8085,13 @@ vg_rsa_private_precompute:
 	add t4, t4, s5
 	add t4, t4, s5
 	addi t5, t0, 0
-2286:
+2279:
 	ld s0, 0(t4)
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2286b
+	bnez t5, 2279b
 	addi a2, a7, 0
 	add a2, a2, s5
 	addi a5, a7, 0
@@ -8288,16 +8103,16 @@ vg_rsa_private_precompute:
 	add a6, a6, s5
 	sub t2, t0, s10
 	srli t2, t2, 63
-	bnez t2, 2287f
+	bnez t2, 2280f
 	sub a1, t0, s10
 	slli a1, a1, 6
 	add a1, a1, t0
-2289:
+2282:
 	addi t3, a5, 0
 	addi t4, a2, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2290:
+2283:
 	ld s2, 0(t4)
 	slli s3, s2, 1
 	add s3, s3, s4
@@ -8306,14 +8121,14 @@ vg_rsa_private_precompute:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2290b
+	bnez t5, 2283b
 	sd s4, 0(t3)
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2291:
+2284:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -8326,7 +8141,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2291b
+	bnez t5, 2284b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -8335,7 +8150,7 @@ vg_rsa_private_precompute:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2292:
+2285:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -8346,11 +8161,11 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2292b
+	bnez t5, 2285b
 	addi a1, a1, -1
-	bnez a1, 2289b
+	bnez a1, 2282b
 	addi s7, zero, 6
-2293:
+2286:
 	addi a2, a7, 0
 	add a2, a2, s5
 	addi a3, a7, 0
@@ -8367,15 +8182,15 @@ vg_rsa_private_precompute:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2294:
+2287:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2294b
+	bnez t5, 2287b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2295:
+2288:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -8384,8 +8199,8 @@ vg_rsa_private_precompute:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2296f
-2298:
+	beqz t5, 2289f
+2291:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -8477,12 +8292,12 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2298b
-	j 2297f
-2296:
-2297:
-	beqz t6, 2299f
-2301:
+	bnez t5, 2291b
+	j 2290f
+2289:
+2290:
+	beqz t6, 2292f
+2294:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -8497,21 +8312,21 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2301b
-	j 2300f
-2299:
-2300:
+	bnez t6, 2294b
+	j 2293f
+2292:
+2293:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2295b
+	bnez a1, 2288b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2302:
+2295:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -8536,7 +8351,7 @@ vg_rsa_private_precompute:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2302b
+	bnez t5, 2295b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -8544,7 +8359,7 @@ vg_rsa_private_precompute:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2303:
+2296:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -8553,8 +8368,8 @@ vg_rsa_private_precompute:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2304f
-2306:
+	beqz t5, 2297f
+2299:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -8646,12 +8461,12 @@ vg_rsa_private_precompute:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2306b
-	j 2305f
-2304:
-2305:
-	beqz t6, 2307f
-2309:
+	bnez t5, 2299b
+	j 2298f
+2297:
+2298:
+	beqz t6, 2300f
+2302:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -8666,10 +8481,10 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2309b
-	j 2308f
-2307:
-2308:
+	bnez t6, 2302b
+	j 2301f
+2300:
+2301:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -8681,7 +8496,7 @@ vg_rsa_private_precompute:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2303b
+	bnez t2, 2296b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -8695,7 +8510,7 @@ vg_rsa_private_precompute:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2310:
+2303:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -8708,7 +8523,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2310b
+	bnez t5, 2303b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -8717,7 +8532,7 @@ vg_rsa_private_precompute:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2311:
+2304:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -8728,25 +8543,25 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2311b
+	bnez t5, 2304b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi s7, s7, -1
-	bnez s7, 2293b
-	j 2288f
-2287:
+	bnez s7, 2286b
+	j 2281f
+2280:
 	slli a1, t0, 1
 	sub a1, a1, s10
 	slli a1, a1, 6
-	bnez a1, 2312f
-	j 2313f
-2312:
-2314:
+	bnez a1, 2305f
+	j 2306f
+2305:
+2307:
 	addi t3, a5, 0
 	addi t4, a2, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2315:
+2308:
 	ld s2, 0(t4)
 	slli s3, s2, 1
 	add s3, s3, s4
@@ -8755,14 +8570,14 @@ vg_rsa_private_precompute:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2315b
+	bnez t5, 2308b
 	sd s4, 0(t3)
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2316:
+2309:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -8775,7 +8590,7 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2316b
+	bnez t5, 2309b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -8784,7 +8599,7 @@ vg_rsa_private_precompute:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2317:
+2310:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -8795,24 +8610,24 @@ vg_rsa_private_precompute:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2317b
+	bnez t5, 2310b
 	addi a1, a1, -1
-	bnez a1, 2314b
-2313:
-2288:
+	bnez a1, 2307b
+2306:
+2281:
 	addi t4, a7, 0
 	add t4, t4, s5
 	ld t3, 64(s6)
 	ld t1, 88(s6)
 	addi t5, t0, 0
-2318:
+2311:
 	ld s0, 0(t4)
 	and s0, s0, t1
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2318b
+	bnez t5, 2311b
 	sd t3, 64(s6)
 	ld t3, 0(s6)
 	ld t5, 16(s6)
@@ -8820,13 +8635,13 @@ vg_rsa_private_precompute:
 	srli t5, t5, 3
 	slli t5, t5, 1
 	ld t1, 88(s6)
-2319:
+2312:
 	ld s0, 0(t3)
 	and s0, s0, t1
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2319b
+	bnez t5, 2312b
 	addi a0, zero, 1
 	and a0, a0, t1
 	ld s0, 112(s6)
