@@ -51,7 +51,7 @@ header of the entry state, room for 17 arrays and `w` from 4. -/
 structure WRoom (s : State) (B : Addr) (Z w : Nat) : Prop where
   hS : word s.mem B (8 * Impl.Rsa.X86_64.Keys.sStride) = BitVec.ofNat 64 (8 * (w + 2))
   hZ : slot w 17 ≤ Z
-  w4 : 4 ≤ w
+  w4 : 6 ≤ w
   w2 : w < 2 ^ 24
 
 theorem KCtx.ws (h : KCtx s t B Z w minv N) (r : WRoom s B Z w) : Ws t B Z w :=

@@ -50,7 +50,7 @@ theorem KK.ws {p : KPub} {t : State} (h : KK p t) : Ws t p.B p.Z p.w :=
 theorem KK.z17 {p : KPub} {t : State} (h : KK p t) : slot p.w 17 ≤ p.Z :=
   let ⟨_, _, _, _, hs⟩ := h; hs.room.hZ
 
-theorem KK.w4 {p : KPub} {t : State} (h : KK p t) : 4 ≤ p.w :=
+theorem KK.w4 {p : KPub} {t : State} (h : KK p t) : 6 ≤ p.w :=
   let ⟨_, _, _, _, hs⟩ := h; hs.word_w1
 
 theorem KK.frm {p : KPub} {t t' : State} (h : KK p t) {rs : List (Nat × Nat)} (hf : Frm p.B rs t.mem t'.mem)
