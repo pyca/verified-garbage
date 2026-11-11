@@ -6,6 +6,7 @@ public import VerifiedGarbage.Spec.Camellia.Cfb
 public import VerifiedGarbage.Spec.Camellia.CfbFinal
 public import VerifiedGarbage.Spec.Camellia.Ofb
 public import VerifiedGarbage.Spec.Camellia.OfbFinal
+public import VerifiedGarbage.Spec.Camellia.Ctr
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -14,6 +15,7 @@ public import VerifiedGarbage.Proof.Camellia.X86_64.Verified
 public import VerifiedGarbage.Proof.Camellia.X86_64.CbcVerified
 public import VerifiedGarbage.Proof.Camellia.X86_64.FbVerified
 public import VerifiedGarbage.Proof.Camellia.X86_64.FbFinalVerified
+public import VerifiedGarbage.Proof.Camellia.X86_64.CtrVerified
 import VerifiedGarbage.Proof.Camellia.Scratch
 import VerifiedGarbage.Proof.Camellia.CbcScratch
 import VerifiedGarbage.Proof.Camellia.FbScratch
@@ -29,6 +31,7 @@ meta import VerifiedGarbage.Spec.Camellia.Cfb
 meta import VerifiedGarbage.Spec.Camellia.CfbFinal
 meta import VerifiedGarbage.Spec.Camellia.Ofb
 meta import VerifiedGarbage.Spec.Camellia.OfbFinal
+meta import VerifiedGarbage.Spec.Camellia.Ctr
 meta import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 meta import VerifiedGarbage.Proof.Framework.Registration
@@ -37,6 +40,7 @@ meta import VerifiedGarbage.Proof.Camellia.X86_64.Verified
 meta import VerifiedGarbage.Proof.Camellia.X86_64.CbcVerified
 meta import VerifiedGarbage.Proof.Camellia.X86_64.FbVerified
 meta import VerifiedGarbage.Proof.Camellia.X86_64.FbFinalVerified
+meta import VerifiedGarbage.Proof.Camellia.X86_64.CtrVerified
 meta import VerifiedGarbage.Proof.Camellia.Scratch
 meta import VerifiedGarbage.Proof.Camellia.CbcScratch
 meta import VerifiedGarbage.Proof.Camellia.FbScratch
@@ -50,7 +54,7 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 /-!
 # Camellia on x86-64, without secret residue
 
-Key expansion and the ECB, CBC, CFB128 and OFB functions, each followed by
+Key expansion and the ECB, CBC, CFB128, OFB and CTR functions, each followed by
 `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
 registers and the granules of its stack that the residue analysis
 (`X86_64.RTaint`) finds may hold secrets. Their postconditions read the
@@ -58,8 +62,9 @@ memory on return only within the buffers (`X86_64.Scrub.PostOut`), as the
 frames that keep their working space on the stack already show
 (`X86_64.Verified.stackScratchWiped`'s `hpost`).
 
-CTR is not here: `vg_camellia_ctr_final` calls `vg_camellia_ctr` by name with its code
-as it is, and the analysis of `vg_camellia_ctr_final` does not succeed.
+`vg_camellia_ctr_final` is not here: its analysis does not succeed. It
+calls `vg_camellia_ctr`'s code as the internal `vg_camellia_ctr_core`
+(`Impl.Camellia.X86_64.ctrFramed`).
 -/
 
 @[expose] public section
@@ -214,6 +219,17 @@ theorem ofbFinalOut (stack : Nat) : PostOut (ofbFinalContract X86_64.abi stack) 
       show ∀ key, KeySchedule m sch _ key → Spec.Aes.bytesAt m₂ dt _ = _ ∧ Spec.Aes.bytesAt m₂ iv 16 = _
       intro key hk
       rw [aesBytesAt_of hb.2.2 (len_le1 ln), aesBytesAt_of (n := 16) hb.2.1 (Nat.le_refl _)]
+      exact h key hk
+
+theorem ctrOut (stack : Nat) : PostOut (ctrContract X86_64.abi stack) (ctrSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [sch, rd, ct, dt, ln], _ =>
+      simp only [ctrSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq] at hb
+      show ∀ key, KeySchedule m sch _ key → Spec.Cbc.blocksAt m₂ dt _ = _ ∧ Spec.Aes.bytesAt m₂ ct 16 = _
+      intro key hk
+      rw [cbcBlocksAt_of hb.2.2 (len_le ln 16), aesBytesAt_of (n := 16) hb.2.1 (Nat.le_refl _)]
       exact h key hk
 
 /-! ## The registrations -/
@@ -426,6 +442,25 @@ def ofbFinalReg : Registration Spec.Camellia.ofbFinalApi X86_64.target :=
     code := ofbFinalCode
     stack := 3288
     verified := Proof.Camellia.X86_64.ofbFinal_framed } (ofbFinalOut _) [] (pubOk_nil _) (some ⟨ofbFinalKs, ofbFinalOk⟩)
+
+/-- `vg_camellia_ctr`'s code. -/
+abbrev ctrCode : Prog isa :=
+  Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 Impl.Camellia.X86_64.ctr
+
+def ctrKs : List Nat := keep_for% Spec.Camellia.ctrApi.sig 3288 ctrCode []
+
+theorem ctrOk : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Camellia.ctrApi.sig 3288 []) ctrCode
+      h).any (RScrub.resOkB · 3288 ctrKs (Impl.Scrub.X86_64.chunks 3288)) = true :=
+  RScrub.Analysed.ok_of ctrKs (by taint_decide)
+
+open VG.X86_64.RScrub in
+/-- `vg_camellia_ctr`. -/
+def ctrReg : Registration Spec.Camellia.ctrApi X86_64.target :=
+  withScrub {
+    code := ctrCode
+    stack := 3288
+    verified := Proof.Camellia.X86_64.ctr_framed } (ctrOut _) [] (pubOk_nil _) (some ⟨ctrKs, ctrOk⟩)
 
 end VG.Proof.Camellia.X86_64.Scrub
 
