@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreCheck
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreWrite
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
+import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2Words
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Inline
@@ -24,6 +25,7 @@ meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreCheck
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreWrite
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
+meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2Words
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Inline
@@ -50,7 +52,7 @@ namespace VG.Proof.Bignum.RISCV64.Pre
 
 open VG VG.RISCV64 VG.Proof.Mont VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Bignum.RISCV64.Precompute
 open VG.Proof.Bignum (slot)
-open VG.Proof.Bignum.RISCV64 (Scr lz_ok r2Rest_ok r2RestRegs topW topW_pos zOf loadN_ok check1_ok check2_ok
+open VG.Proof.Bignum.RISCV64 (Scr lz_ok r2Words_ok topW topW_pos zOf loadN_ok check1_ok check2_ok
   write_ok zeroPre_ok)
 
 /-! ## Relating two runs -/
@@ -231,7 +233,7 @@ theorem TL {d : PD} {s : State} (h : C4 d s ∧ s.gpr .s0 = 0) : WP isa lz s (C6
     topW_eq (by omega), hv]
 
 theorem TA {d : PD} {s : State} (h : C6 d s) :
-    WP isa (.seq r2Rest (.seq write (.block [.li .a0 1]))) s (C5 d) := by
+    WP isa (.seq r2Words (.seq write (.block [.li .a0 1]))) s (C5 d) := by
   obtain ⟨hb, hv, hval, hz⟩ := h
   have hf := VG.Proof.Bignum.valid_facts hval hb.k64
   have hnw := hb.scr.nowrap
@@ -243,9 +245,9 @@ theorem TA {d : PD} {s : State} (h : C6 d s) :
   have hh : hdrBytes = 256 := rfl
   have hZ := hb.hZ
   rw [← hwd] at hf
-  refine WP.seq (WP.mono (r2Rest_ok hb.scr hb.a2 hb.a5 hb.a6 hb.a7 hb.t0
-    (by rw [hz, topW_eq (by omega), hv]) (by omega) hw' hZ
-    (by rw [hv]; exact hf.2.2) (by rw [hv]; exact hf.1)) fun s₃ ⟨_, _, k₃⟩ => ?_)
+  refine WP.seq (WP.mono (r2Words_ok hb.scr hb.a2 hb.a6 hb.a7 hb.t0
+    (by rw [hz, topW_eq (by omega), hv]) (by omega) hw' (by omega)
+    (by rw [hv]; exact hf.2.2) (by rw [hv]; exact hf.1)) fun s₃ ⟨_, k₃⟩ => ?_)
   have g : ∀ r ∈ [Reg.s5, .a7, .a2, .t0, .s6], s₃.gpr r = s.gpr r := fun r hr =>
     k₃.gpr (by revert r hr; decide)
   refine WP.seq (WP.mono (write_ok (P := d.P) (dN := slot d.w 0) (dX := slot d.w 1) (hb.scr.congr k₃.2.2)
