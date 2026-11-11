@@ -301,28 +301,6 @@ theorem crtChecks_ok {g : Geo} {s0 s : State} {v : Vals} {L M : Nat}
 
 theorem aFin_d (v : Vals) : aFin v aD = v.d := rfl
 theorem aFin_n (v : Vals) : aFin v aN = v.n := rfl
-theorem shape_bits {w pL qL : Nat} (hw' : w < 2 ^ 32) (hp' : pL < 2 ^ 32) (hq' : qL < 2 ^ 32) :
-    (BitVec.ofNat 64 pL &&& 7#64 ||| BitVec.ofNat 64 w <<< 1 ^^^ BitVec.ofNat 64 pL |||
-          BitVec.ofNat 64 pL ^^^ BitVec.ofNat 64 qL |||
-        (0#64 - BitVec.ofNat 64 pL >>> 5) >>> 63 ^^^ 1#64 = 0) ↔ Shape w pL qL := by
-  have A : (BitVec.ofNat 64 pL &&& 7#64 = 0#64) ↔ pL % 8 = 0 := by
-    rw [BitVec.toNat_eq, BitVec.toNat_and, BitVec.toNat_ofNat, show (7#64).toNat = 2 ^ 3 - 1 from rfl,
-      Nat.and_two_pow_sub_one_eq_mod, show (0#64).toNat = 0 from rfl]
-    omega
-  have Bq : (BitVec.ofNat 64 w <<< 1 = BitVec.ofNat 64 pL) ↔ 2 * w = pL := by
-    rw [BitVec.toNat_eq, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
-  have C : (BitVec.ofNat 64 pL = BitVec.ofNat 64 qL) ↔ pL = qL := by
-    rw [BitVec.toNat_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
-  have D : ((0#64 - BitVec.ofNat 64 pL >>> 5) >>> 63 = 1#64) ↔ 32 ≤ pL := by
-    rw [BitVec.toNat_eq, BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat,
-      Nat.shiftRight_eq_div_pow, Nat.shiftRight_eq_div_pow, show (0#64).toNat = 0 from rfl,
-      show (1#64).toNat = 1 from rfl]
-    omega
-  rw [show (0 : BitVec 64) = 0#64 from rfl]
-  simp only [BitVec.or_eq_zero_iff, BitVec.xor_eq_zero_iff, A, Bq, C, D, Shape, and_assoc]
-
 /-- `shape`: `r0 = 0` exactly for `Shape`. -/
 theorem shape_ok {s : State} {w pL qL : Nat} (hw : s.gpr .r29 = BitVec.ofNat 64 w) (hp : s.gpr .r19 = BitVec.ofNat 64 pL)
     (hq : s.gpr .r21 = BitVec.ofNat 64 qL) (hw' : w < 2 ^ 32) (hp' : pL < 2 ^ 32) (hq' : qL < 2 ^ 32) :

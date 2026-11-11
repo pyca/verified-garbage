@@ -30,7 +30,7 @@ open VG.Impl.Rsa.PPC64LE.CrtValues (arith sPodd sE1 sE2 sE3 sMask aOne aQ aP aDQ
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 open VG.Proof.Rsa.CrtValues (maskOf)
 
-theorem arith_eq : arith = seqs (partA ++ (partB ++ (divD .r20 aP aDR2 ++ divD .r22 aQ aDR3))) := rfl
+theorem arith_eq : arith = seqs (partA ++ (partB ++ partC)) := rfl
 
 /-- The arrays and slots `arith` writes. -/
 abbrev arithArrs : List Nat := partAArrs ++ partBArrs ++ [aDR2, aDR3, aDQ]
@@ -48,8 +48,10 @@ theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h 
         (0 < P → X₁ = Nv / P ∧ X₂ = Nv % P) ∧
         (1 < modOf P → V = Nat.gcd Q (modOf P) ∧
           ((modOf P : Nat) : Int) ∣ (num t.mem B w 3 : Int) * Q - V ∧ num t.mem B w 3 < modOf P)) ∧
-      (0 < 2 * (P / 2) → num t.mem B w aDR2 = Dd % (2 * (P / 2))) ∧
-      (0 < 2 * (Q / 2) → num t.mem B w aDR3 = Dd % (2 * (Q / 2))) ∧
+      (0 < 2 * (P / 2) → (KeyCheck.Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (P / 2)) →
+        num t.mem B w aDR2 = Dd % (2 * (P / 2))) ∧
+      (0 < 2 * (Q / 2) → (KeyCheck.Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (Q / 2)) →
+        num t.mem B w aDR3 = Dd % (2 * (Q / 2))) ∧
       Keep arithRegs s t := by
   have hS : S w = 4 * (w + 2) := rfl
   have nw := h.nowrap
@@ -61,7 +63,7 @@ theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h 
   have keepA : ∀ j, j < nArr → j ∉ partAArrs → num t1.mem B w j = num s.mem B w j := fun j hj hn =>
     k1.num (fun x hx e => hn (by subst e; exact hx)) (by decide) (fit _ hj)
   rw [wp_seqs_append (by unfold partB; exact List.cons_ne_nil _ _)
-    (by unfold divD; exact List.cons_ne_nil _ _)]
+    (by unfold partC; exact List.cons_ne_nil _ _)]
   have z1 : ∀ j ∈ ([0, 1, 2, 3, aM, aNM, aZero, aOne] : List Nat), num t1.mem B w j = 0 := by
     intro j hj
     have hj' : j < 25 ∧ j ≠ aDQ ∧ j ≠ aP ∧ j ≠ aQ ∧ j ≠ aD ∧ j ∉ partAArrs := by
@@ -74,7 +76,6 @@ theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h 
   refine WP.mono (partB_ok (P := P) (Q := Q) h1 hw (by rw [keepA _ (by decide) (by decide), hi.q])
     (by rw [keepA _ (by decide) (by decide), hi.p]) z1 bo b1 b2 (by rw [r1.gpr _ (by decide), h20])
     (by rw [r1.gpr _ (by decide), h22]) hpL hpw hqw hP hQ) fun t2 ⟨h2, k2, m2, v2, r2⟩ => ?_
-  rw [wp_seqs_append (by unfold divD; exact List.cons_ne_nil _ _) (by unfold divD; exact List.cons_ne_nil _ _)]
   have top2 : w32 t2.mem B (arr w aDD + 4 * w) = 0 := by
     rw [KeyWorkspace.Keep.word k2 (i := w) (by omega_arith) (by decide) (by decide) (fit _ (by decide)), top1]
   have p2' : num t2.mem B w aP = P := by
@@ -82,29 +83,18 @@ theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h 
   have q2' : num t2.mem B w aQ = Q := by
     rw [k2.num (by decide) (by decide) (fit _ (by decide)), keepA _ (by decide) (by decide), hi.q]
   have hqw' : qL < 2 ^ 32 := by have := h.wle; omega_arith
-  refine WP.mono (divD_ok h2 (.inl rfl) (.inl rfl) top2 (len := .r20) (.inl rfl)
-    (by rw [r2.gpr _ (by decide), r1.gpr _ (by decide), h20]) hpL hpw' (by rw [p2']; exact hP))
-    fun t3 ⟨h3, k3, v3, top3, r3⟩ => ?_
-  have q3' : num t3.mem B w aQ = Q := by
-    rw [k3.num (by decide) (by simp) (fit _ (by decide)), q2']
-  refine WP.mono (divD_ok h3 (.inr rfl) (.inr rfl) top3 (len := .r22) (.inr rfl)
-    (by rw [r3.gpr _ (by decide), r2.gpr _ (by decide), r1.gpr _ (by decide), h22]) hqL hqw' (by rw [q3']; exact hQ))
-    fun t ⟨h4, k4, v4, _, r4⟩ => ?_
+  refine WP.mono (partC_ok h2 top2 (by rw [r2.gpr _ (by decide), r1.gpr _ (by decide), h20])
+    (by rw [r2.gpr _ (by decide), r1.gpr _ (by decide), h22]) hpL hqL hpw' hqw' (by rw [p2']; exact hP)
+    (by rw [q2']; exact hQ)) fun t ⟨h4, k4, v3, v4, r4⟩ => ?_
   -- What the later parts keep.
   have n2 : ∀ j, j < nArr → j ∉ partBArrs → num t2.mem B w j = num t1.mem B w j := fun j hj hn =>
     k2.num (fun x hx e => hn (by subst e; exact hx)) (by decide) (fit _ hj)
-  have n3 : ∀ j, j < nArr → j ∉ [aDQ, aDD, aDR2, aDT] → num t3.mem B w j = num t2.mem B w j :=
-    fun j hj hn => k3.num (fun x hx e => hn (by subst e; exact hx)) (by simp) (fit _ hj)
-  have n4 : ∀ j, j < nArr → j ∉ [aDQ, aDD, aDR3, aDT] → num t.mem B w j = num t3.mem B w j :=
+  have n4 : ∀ j, j < nArr → j ∉ [aDQ, aDD, aDR2, aDT, aDR3] → num t.mem B w j = num t2.mem B w j :=
     fun j hj hn => k4.num (fun x hx e => hn (by subst e; exact hx)) (by simp) (fit _ hj)
-  have p2 : num t2.mem B w aP = P := by rw [n2 _ (by decide) (by decide), keepA _ (by decide) (by decide), hi.p]
-  have q3 : num t3.mem B w aQ = Q := by
-    rw [n3 _ (by decide) (by decide), n2 _ (by decide) (by decide), keepA _ (by decide) (by decide), hi.q]
   have d2 : num t2.mem B w aD = Dd := by rw [n2 _ (by decide) (by decide), keepA _ (by decide) (by decide), hi.d]
-  have d3 : num t3.mem B w aD = Dd := by rw [n3 _ (by decide) (by decide), d2]
   refine ⟨h4, ?_, ⟨Nv / P, Nv % P, num t2.mem B w 1, ?_, fun _ => ⟨rfl, rfl⟩, fun hm => ?_⟩, ?_, ?_,
-    ((r1.trans r2).trans (r3.trans r4)).mono⟩
-  · exact k1.mono.trans (k2.mono.trans (k3.mono.trans k4.mono))
+    ((r1.trans r2).trans r4).mono⟩
+  · exact k1.mono.trans (k2.mono.trans k4.mono)
   · have hqW : Q < 2 ^ (32 * w) := by rw [← hi.q]; exact val32_lt _ _ _ _
     have hnW : Nv < 2 ^ (32 * w) := by rw [← hi.n]; exact val32_lt _ _ _ _
     have key := VG.Proof.Rsa.maskM_iff (P := P) (Q := Q) (N := Nv) (L := P * Q % 2 ^ (32 * w))
@@ -121,16 +111,16 @@ theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h 
       · rintro ⟨a, b, c, d⟩
         refine ⟨a, by simp [b], ?_, d⟩
         by_contra hne; simp [hne] at c
-    rw [KeyWorkspace.Keep.slot k4 (by decide) (by simp), KeyWorkspace.Keep.slot k3 (by decide) (by simp), m2]
+    rw [KeyWorkspace.Keep.slot k4 (by decide) (by simp), m2]
     by_cases hc : maskOf P Q (Nv / P) (Nv % P) (num t2.mem B w 1) = true
     · rw [ite_eq_left (iff.2 hc), ite_eq_left hc]
     · rw [ite_eq_right (fun x => hc (iff.1 x)), ite_eq_right hc]
   · obtain ⟨g, dv, lt⟩ := v2 hm
-    rw [n4 3 (by decide) (by decide), n3 3 (by decide) (by decide)]
+    rw [n4 3 (by decide) (by decide)]
     exact ⟨g, dv, lt⟩
-  · intro hP
-    rw [n4 _ (by decide) (by decide), v3 (by rw [p2]; exact hP), d2, p2]
-  · intro hQ
-    rw [v4 (by rw [q3]; exact hQ), d3, q3]
+  · intro hP hb
+    rw [v3 (by rw [p2']; exact hP) (by rw [p2']; exact hb), d2, p2']
+  · intro hQ hb
+    rw [v4 (by rw [q2']; exact hQ) (by rw [q2']; exact hb), d2, q2']
 
 end VG.Proof.Rsa.PPC64LE.CrtValues
