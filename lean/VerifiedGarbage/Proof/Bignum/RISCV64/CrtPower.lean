@@ -764,6 +764,116 @@ theorem low_odd {m : Mem} {B : Addr} {d w : Nat} (hw : 1 ≤ w) (h : wordsVal m 
   simp only [wordsVal] at h
   omega_arith
 
+/-! ## The cached `R² mod p` (`Crt.r2Copy`) -/
+
+/-- `n` words, the lowest 1 and the others 0, are 1. -/
+theorem wordsVal_one_low {m : Mem} {p : Addr} {d : Nat} : ∀ {n : Nat}, 1 ≤ n → Mont.word m p d = 1#64 →
+    (∀ i < n, 1 ≤ i → Mont.word m p (d + 8 * i) = 0#64) → wordsVal m p d n = 1
+  | n + 1, _, h0, h => by
+    rw [wordsVal, wordsVal_zero (k := n) (d := d + 8) fun i hi => by
+      rw [show d + 8 + 8 * i = d + 8 * (i + 1) by omega_arith]; exact h (i + 1) (by omega_arith) (by omega_arith), h0]
+    rfl
+
+/-- The word `r2Copy` writes at index `k`, from the buffer's word `x`, under
+the mask `m`. -/
+abbrev r2Word (m x : BitVec 64) (k : Nat) : BitVec 64 :=
+  (x &&& m) ||| (if k = 0 then (m ^^^ -1#64) &&& 1#64 else 0#64)
+
+/-- What `r2Copy`'s words are, as a number: the buffer's under a set mask,
+else 1. -/
+theorem r2_words {mt ms : Mem} {B P : Addr} {d w : Nat} {b : Bool} (hw : 1 ≤ w)
+    (tc : ∀ k < w, Mont.word mt B (d + 8 * k) =
+      r2Word (if b then BitVec.allOnes 64 else 0#64) (Mont.word ms P (8 * k)) k) :
+    wordsVal mt B d w = (if b then wordsVal ms P 0 w else 1) := by
+  cases b
+  · simp only [Bool.false_eq_true, ↓reduceIte] at tc ⊢
+    refine wordsVal_one_low hw ?_ fun i hi hi1 => ?_
+    · have t0 := tc 0 (by omega_arith)
+      rw [Nat.mul_zero, Nat.add_zero] at t0
+      rw [t0, r2Word, BitVec.and_zero, BitVec.zero_or, ite_eq_left_iff.mpr (fun h => absurd rfl h)]; decide
+    · rw [tc i hi]
+      simp only [r2Word, BitVec.and_zero, BitVec.zero_or, show i ≠ 0 by omega_arith, ↓reduceIte]
+  · simp only [↓reduceIte] at tc ⊢
+    exact wv_words fun i hi => by
+      rw [tc i hi, Nat.zero_add]
+      have h1 : (BitVec.allOnes 64 ^^^ -1#64) &&& 1#64 = 0#64 := by decide
+      simp only [r2Word, BitVec.and_allOnes, h1, ite_self, BitVec.or_zero]
+
+/-- The registers `r2Copy` writes. -/
+def r2CRegs : List Reg := [.t3, .s1, .s2, .t5, .s0, .t6]
+
+/-- `Crt.r2Copy`, in a working space at `B` of `w` words (array 1's base in
+`a2`, `w` in `t0`), from the `w` words at `P` (`t6`), readable and apart
+from it, under the mask of `b` in the header's `oMask` (`X` at `BX`, in
+`s6`): array 1 holds the buffer's number if `b`, else 1. -/
+theorem r2Copy_ok {s : State} {B P BX : Addr} {Z ZX w : Nat} {b : Bool} (hs : Scr s B Z) (hX : Scr s BX ZX)
+    (hP : P.toNat + 8 * w ≤ 2 ^ 64) (hrd : ∀ i < w, InRegions (s.rd ++ s.wr) (off P (8 * i)) 8)
+    (hal : ∀ i < w, (off P (8 * i)).toNat % 8 = 0)
+    (hsep : ∀ x, ofs P x < 8 * w → Z ≤ ofs B x)
+    (h6t : s.gpr .t6 = P) (h2 : s.gpr .a2 = off B (slot w 1)) (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
+    (h6 : s.gpr .s6 = BX) (hZX : Crt.oMask + 8 ≤ ZX)
+    (hm : Mont.word s.mem BX Crt.oMask = if b then BitVec.allOnes 64 else 0#64)
+    (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 2 ≤ Z) :
+    WP isa Crt.r2Copy s fun t =>
+      (wordsVal t.mem B (slot w 1) w = (if b then wordsVal s.mem P 0 w else 1) ∧
+        Outside B (slot w 1) (8 * w) s.mem t.mem) ∧ Keep r2CRegs s t := by
+  have hnw := hs.nowrap
+  have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
+  have e1 := e 1; have e2 := e 2
+  have hh : hdrBytes = 256 := rfl
+  let mk : BitVec 64 := if b then BitVec.allOnes 64 else 0#64
+  unfold Crt.r2Copy
+  refine WP.seq (WP.mono (WP.keep [.t3, .s1, .s2, .t5] (Q := fun u => u.gpr .t3 = off B (slot w 1) ∧
+      u.gpr .s1 = mk ∧ u.gpr .s2 = (mk ^^^ -1#64) &&& 1#64 ∧ u.gpr .t5 = BitVec.ofNat 64 w ∧ u.mem = s.mem)
+    (by
+      have hm' : s.mem.readW (off BX 88) 64 = mk := hm
+      brun [h2, h6, ht0, BitVec.add_zero, Crt.oMask, hX.ld (show 88 + 8 ≤ ZX from hZX),
+        hX.al8 (show 88 + 8 ≤ ZX from hZX) (by decide), hm'])
+    (by rfl) (by rfl)) fun s₁ ⟨⟨a3, a1, a2', a5, m1⟩, k1⟩ => ?_)
+  let Inv : Nat → State → Prop := fun i t =>
+    t.gpr .t3 = off B (slot w 1 + 8 * i) ∧ t.gpr .t6 = off P (8 * i) ∧ t.gpr .s1 = mk ∧
+      t.gpr .s2 = (if i = 0 then (mk ^^^ -1#64) &&& 1#64 else 0#64) ∧
+      Outside B (slot w 1) (8 * i) s.mem t.mem ∧
+      (∀ k < i, Mont.word t.mem B (slot w 1 + 8 * k) = r2Word mk (Mont.word s.mem P (8 * k)) k) ∧
+      Keep r2CRegs s t
+  refine WP.mono (wp_countdown (body := .block ([.load .d .s0 .t6 0, .logic .and .s0 .s0 .s1,
+      .logic .or .s0 .s0 .s2, .store .d .s0 .t3 0, .li .s2 0, .addi .t3 .t3 8, .addi .t6 .t6 8] ++
+      ([.addi .t5 .t5 (-1)] : List Instr))) (cnt := .t5) (N := w) (by omega_arith) (by omega_arith) Inv
+    (fun i hi t ⟨j3, j6, j1, j2, jout, jc, jk⟩ _ => ?_)
+    ⟨by rw [a3]; rfl, by rw [k1.gpr (by decide), h6t]; exact (BitVec.add_zero _).symm, a1,
+      by rw [a2']; rfl, by rw [m1]; exact Outside.refl _ _ _ _, fun _ h => absurd h (Nat.not_lt_zero _),
+      k1.mono (by decide)⟩ a5)
+    fun t ⟨_, _, _, _, tout, tc, tk⟩ => ⟨⟨r2_words hw tc, tout⟩, tk⟩
+  have hsrc : Mont.word t.mem P (8 * i) = Mont.word s.mem P (8 * i) :=
+    Pub.Outside.word_apart jout hsep (by omega_arith) (by omega_arith) hP
+  have ht := hs.congr jk.2.2
+  refine WP.mono (WP.keep [.s0, .s2, .t3, .t6, .t5] (Q := fun u =>
+      u.mem = t.mem.writeW (off B (slot w 1 + 8 * i)) ((Mont.word t.mem P (8 * i) &&& mk) ||| t.gpr .s2) ∧
+      u.gpr .s2 = 0#64 ∧ u.gpr .t3 = off B (slot w 1 + 8 * (i + 1)) ∧ u.gpr .t6 = off P (8 * (i + 1)) ∧
+      u.gpr .t5 = t.gpr .t5 - BitVec.ofNat 64 1)
+    (by
+      brun [j3, j6, j1, add_ofNat_zero, Pub.pub_li0, (by rw [jk.2.1, jk.2.2]; exact hrd i hi :
+          InRegions (t.rd ++ t.wr) (off P (8 * i)) 8), hal i hi,
+        ht.st (show slot w 1 + 8 * i + 8 ≤ Z by omega_arith),
+        ht.al8 (show slot w 1 + 8 * i + 8 ≤ Z by omega_arith) (by have := slot_al w 1; omega_arith)]
+      rw [show slot w 1 + 8 * i + 8 = slot w 1 + 8 * (i + 1) by omega_arith,
+        show 8 * i + 8 = 8 * (i + 1) by omega_arith]
+      exact ⟨rfl, rfl⟩)
+    (by rfl) (by rfl)) fun u ⟨⟨um, u2, u3, u6, u5⟩, ku⟩ => ⟨⟨u3, u6, (ku.gpr (by decide)).trans j1,
+      by rw [u2]; simp only [show i + 1 ≠ 0 by omega_arith, ↓reduceIte], ?_, ?_, ?_⟩, u5⟩
+  · have hw8 := Mont.writeW_outside t.mem B (d := slot w 1 + 8 * i)
+      ((Mont.word t.mem P (8 * i) &&& mk) ||| t.gpr .s2) (by omega_arith)
+    rw [um]; exact (jout.mono (Nat.le_refl _) (by omega_arith)).trans (hw8.mono (by omega_arith) (by omega_arith))
+  · intro k hk
+    have hw8 := Mont.writeW_outside t.mem B (d := slot w 1 + 8 * i)
+      ((Mont.word t.mem P (8 * i) &&& mk) ||| t.gpr .s2) (by omega_arith)
+    rw [um]
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hk | rfl
+    · rw [hw8.word (by omega_arith) (by omega_arith)]; exact jc k hk
+    · rw [Mont.word_writeW_self, hsrc, j2]
+  · exact Keep.trans' jk (ku.mono (by decide))
+
+
 /-- `power` with `c` in place of its reduction and exponentiation. -/
 abbrev powerP (xj : Nat) (c : Prog isa) : Prog isa :=
   .seq (.block ([.addi .t3 .a7 0] ++ Crt.xb .t4 xj)) (.seq Crt.copyN
