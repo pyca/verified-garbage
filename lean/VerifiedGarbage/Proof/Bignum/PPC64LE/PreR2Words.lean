@@ -70,29 +70,6 @@ theorem mask_add (x : BitVec 64) (c : Prop) [Decidable c] :
   · rw [BitVec.and_allOnes]
   · rw [show (0 : BitVec 64) = 0#64 from rfl, BitVec.and_zero, BitVec.add_zero]
 
-/-- A step of `normStep` on `x = T 2^j`, `p = 2^j`: `j` grows while `x`'s top
-bit is clear. -/
-theorem norm_inv_step {x p : BitVec 64} {T j i : Nat} (hj : j ≤ i) (hi : i < 63) (hp : p.toNat = 2 ^ j)
-    (hx : x.toNat = T * 2 ^ j) (hc : j = i ∨ 2 ^ 63 ≤ T * 2 ^ j) :
-    ∃ j' ≤ i + 1, (if x.toNat < 2 ^ 63 then p + p else p).toNat = 2 ^ j' ∧
-      (if x.toNat < 2 ^ 63 then x + x else x).toNat = T * 2 ^ j' ∧ (j' = i + 1 ∨ 2 ^ 63 ≤ T * 2 ^ j') := by
-  by_cases h : x.toNat < 2 ^ 63
-  · simp only [h, ite_true]
-    have hji : j = i := by omega_using [hc, h, hx]
-    have hpj : 2 ^ j ≤ 2 ^ 62 := Nat.pow_le_pow_right (by decide) (by omega_using [hji, hi])
-    refine ⟨j + 1, by omega_using [hj], ?_, ?_, Or.inl (by omega_using [hji])⟩
-    · have e2 : 2 ^ (j + 1) = 2 ^ j + 2 ^ j := by rw [Nat.pow_succ, Nat.mul_two]
-      rw [BitVec.toNat_add, hp, e2]
-      generalize 2 ^ j = a at hpj ⊢
-      omega_using [hpj]
-    · have e2 : T * 2 ^ (j + 1) = T * 2 ^ j + T * 2 ^ j := by rw [Nat.pow_succ, ← Nat.mul_assoc, Nat.mul_two]
-      rw [BitVec.toNat_add, hx, e2]
-      rw [hx] at h
-      generalize T * 2 ^ j = a at h ⊢
-      omega_using [h]
-  · simp only [h, ite_false]
-    exact ⟨j, by omega_using [hj], hp, hx, Or.inr (by omega_using [h, hx])⟩
-
 /-- `4 (2 w) + d - c`: a word near the top of `w` words at `d`. -/
 theorem ea_top (B : Addr) {d w c : Nat} (hc : c ≤ 8 * w) :
     BitVec.ofNat 64 (2 * w) <<< 2 + off B d - BitVec.ofNat 64 c = off B (d + 8 * w - c) := by

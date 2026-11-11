@@ -177,4 +177,75 @@ def choice (old : Prog isa) : Prog isa := .seq (.block fastTest) (.ite (.zero .x
 /-- `choice` by `fastPub`: for a public `m`. -/
 def choicePub (old : Prog isa) : Prog isa := .seq (.block fastTest) (.ite (.zero .x .x3) old fastPub)
 
+/-! ## Any top word, for a public `m`
+
+For `m` whose top bit is clear (`fastTest`), `q̂` is estimated from the top
+words of `x P` and `m P` for `P = 2^z` such that
+`d' = ⌊m P / 2^(64 (w - 1))⌋ ≥ 2^63` (Knuth's normalization), while
+`t = x 2^64 - q̂ m` is computed from `x` and `m` themselves: `normN` puts `P`
+and `d'` into the temporary's words 1 and 2, `recipN` `v` for `d'` into its
+word 0, and `quotN` the top words of `x P`. As `m < 2^(64 w - 1)` here,
+`x` starts at `2^(64 (w - 1))`, below `m` (whose top word is not zero), and
+takes `w + 1` steps. -/
+
+/-- `x15` (`m`'s top word times `P`) and `P` (`x10`) doubled while the
+former's top bit is clear, by `csel`. -/
+def normStep : List Instr :=
+  [.add .x .x16 .x15 .x15, .add .x .x17 .x10 .x10, .tst .x .x15 .x15, .cselc .x .x15 .x16 .x15 .pl,
+    .cselc .x .x10 .x17 .x10 .pl]
+
+/-- `P = 2^z` and `d' = T P + ⌊m[w - 2] P / 2^64⌋` (`T = m[w - 1] ≠ 0`) into
+the temporary's words 1 and 2: 63 of `normStep` from `T`. -/
+def normN : Prog isa :=
+  .seq (.block [.lsl .x .x13 .x12 3, .subImm .x .x13 .x13 16, .add .x .x13 .x9 .x13, ld .x15 .x13 8, ld .x3 .x13,
+      movi .x10 1, movi .x13 63])
+    (.seq (countLoop .x13 normStep) (.block [.umulh .x3 .x3 .x10, .add .x .x15 .x15 .x3, st .x10 .x6 8,
+      st .x15 .x6 16]))
+
+/-- `recip` for `d'` (the temporary's word 2). -/
+def recipN : Prog isa :=
+  .seq (.block [ld .x5 .x6 16, .sub .x .x2 .x7 .x5, .subImm .x .x2 .x2 1, movi .x10 0, movi .x4 1, movi .x13 64])
+    (.seq (countLoop .x13 divBit) (.block [st .x10 .x6]))
+
+/-- `d'` into `x5`, the top two words `u₂`, `u₁` of `x P` into `x2`, `x3` from
+`x`'s top three words, and `x4 = d' - u₂`, zero iff `u₂ = d'`. -/
+def quotHeadN : List Instr :=
+  [.lsl .x .x13 .x12 3, .subImm .x .x13 .x13 24, .add .x .x16 .x11 .x13, ld .x2 .x16 16, ld .x3 .x16 8, ld .x4 .x16,
+    ld .x17 .x6 8, ld .x5 .x6 16, .mul .x .x2 .x2 .x17, .umulh .x15 .x3 .x17, .add .x .x2 .x2 .x15,
+    .mul .x .x3 .x3 .x17, .umulh .x15 .x4 .x17, .add .x .x3 .x3 .x15, .sub .x .x4 .x5 .x2]
+
+/-- `q̂` into `x1`, as `quot`, from `x P` and `d'`. -/
+def quotN : List Instr :=
+  quotHeadN ++ quotMG ++ ([movi .x16 0, .subImm .x .x16 .x16 1, .tst .x .x4 .x4, .cselc .x .x1 .x16 .x14 .eq] : List Instr)
+
+/-- `stepPub` with `quotN`. -/
+def stepN : Prog isa :=
+  seqs [.block (bases ++ quotN), zeroAcc, mulAddRow, subPass, addBackPub, addBackPub, copyBack]
+
+/-- `steps` of `stepN`. -/
+def stepsN : Prog isa :=
+  .seq (.block [sth .x13 sCnt])
+    (.loop (.seq stepN (.block [ldh .x13 sCnt, .subImm .x .x13 .x13 1, sth .x13 sCnt])) (.nonzero .x .x13))
+
+/-- `x := 2^(64 (w - 1))`, from its base in `x11`: `setWord` for one in word
+`w - 1`, but with no load from the header. -/
+def setTop : Prog isa :=
+  .seq (.block [mov .x8 .x11, movi .x9 1, .subImm .x .x13 .x12 1])
+    (.seq zeroAcc (.block [.lsl .x .x16 .x13 3, .add .x .x16 .x8 .x16, st .x9 .x16]))
+
+/-- `R² mod m` for a public `m` whose top word is not zero: `P`, `d'`, `v`,
+`x := 2^(64 (w - 1))` (`setTop`) and `w + 1` steps. -/
+def fastN : Prog isa := seqs [
+  .block [ldh .x11 (sArr aR2), ldh .x9 (sArr aN), ldh .x6 (sArr aTmp), ldh .x12 sW, movi .x7 0],
+  normN,
+  recipN,
+  setTop,
+  .block [.addImm .x .x13 .x12 1],
+  stepsN]
+
+/-- `old` for `w = 2`, whose `x` has no third word for `quotN`, and `f`
+otherwise (`w ≥ 2`, public). -/
+def choiceW (old f : Prog isa) : Prog isa :=
+  .seq (.block [ldh .x12 sW, .subImm .x .x13 .x12 2]) (.ite (.zero .x .x13) old f)
+
 end VG.Impl.Bignum.AArch64.R2Div
