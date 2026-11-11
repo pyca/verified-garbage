@@ -229,7 +229,7 @@ abbrev refineRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r
 
 /-- `refine3`: `q̂` (156), within `Q ≤ q̂ ≤ Q + 2` of `Q = min(⌊U / D⌋, 2^32 - 1)`, refined to
 `Q`, for `U = (u₂, u₁, u₀)` (68, `r11`, 64) and `D = (d, d₁)` (140, 148), `U < (2^32 + 1) D`. -/
-theorem refine3_ok {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) (h12 : s.gpr .r12 = B)
+theorem refine3_ok {s : State} {B : BitVec 32} {Z w N : Nat} (h : WsM s B Z w N) (h12 : s.gpr .r12 = B)
     {q0 u1 : Nat} (hu1 : s.gpr .r11 = BitVec.ofNat 32 u1) (hu1' : u1 < 2 ^ 32) (hQ0 : slot s.mem B sQ = q0)
     {U D : Nat} (hU : U = slot s.mem B sU2 * 2 ^ 64 + u1 * 2 ^ 32 + slot s.mem B sU0)
     (hD : D = slot s.mem B sD * 2 ^ 32 + slot s.mem B sD1) (hD0 : 0 < D) (hUD : U < (2 ^ 32 + 1) * D)

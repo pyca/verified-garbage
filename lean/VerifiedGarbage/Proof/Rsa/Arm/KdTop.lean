@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KdNorm
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The top words of a window of the key checks' division on ARMv7 (`KeyDiv.topWords`) -/
 
@@ -10,6 +11,36 @@ namespace VG.Proof.Rsa.Arm.KeyDiv
 
 open VG VG.Arm VG.Impl.Rsa.Arm.KeyDiv VG.Proof.Rsa.Arm.Keys VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
+
+/-- `Ws` without its registers: what a block that clobbers `r7`–`r9` still has. -/
+structure WsM (s : State) (B : BitVec 32) (Z w N : Nat) : Prop where
+  nowrap : B.toNat + Z ≤ 2 ^ 32
+  writable : (⟨State.addr B, Z⟩ : Region) ∈ s.wr
+  fits : arr w N ≤ Z
+
+theorem _root_.VG.Proof.Rsa.Arm.Keys.Ws.m {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) : WsM s B Z w N :=
+  ⟨h.nowrap, h.writable, h.fits⟩
+
+theorem WsM.of {s t : State} {B : BitVec 32} {Z w N : Nat} (h : WsM s B Z w N) (wr : t.wr = s.wr) :
+    WsM t B Z w N :=
+  ⟨h.nowrap, wr ▸ h.writable, h.fits⟩
+
+theorem WsM.hdr_le {s : State} {B : BitVec 32} {Z w N : Nat} (h : WsM s B Z w N) :
+    VG.Impl.Rsa.Arm.Keys.hdr ≤ Z :=
+  Nat.le_trans (Nat.le_add_right _ _) h.fits
+
+theorem WsM.addr {s : State} {B : BitVec 32} {Z w N d : Nat} (h : WsM s B Z w N) (hd : d < Z) :
+    State.addr (B + BitVec.ofNat 32 d) = off (State.addr B) d :=
+  VG.Arm.addr_add (by have := h.nowrap; omega)
+
+theorem WsM.write {s : State} {B : BitVec 32} {Z w N d : Nat} (h : WsM s B Z w N) (hd : d + 4 ≤ Z) :
+    InRegions s.wr (off (State.addr B) d) 4 :=
+  ⟨_, h.writable, Offset.contains_base _ hd (by have := h.nowrap; omega)⟩
+
+theorem WsM.read {s : State} {B : BitVec 32} {Z w N d : Nat} (h : WsM s B Z w N) (hd : d + 4 ≤ Z) :
+    InRegions (s.rd ++ s.wr) (off (State.addr B) d) 4 := by
+  obtain ⟨R, hR, hsub⟩ := h.write hd
+  exact ⟨R, List.mem_append_right _ hR, hsub⟩
 
 /-- A word of `y P` from two words of `y`: `lo(a P) + hi(b P)`, modulo `2^32`. -/
 abbrev wordP (a b P : Nat) : Nat := (a * P % 2 ^ 32 + b * P / 2 ^ 32) % 2 ^ 32

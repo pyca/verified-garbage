@@ -137,7 +137,7 @@ abbrev quotRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9,
 
 /-- `quot`: `q̂` (156), `min(⌊(u₂ 2^32 + u₁) / d⌋, 2^32 - 1)` for `u₂ ≤ d`,
 from `u₂` (68), `u₁` (`r11`), `d` (140) and `v` (144). -/
-theorem quot_ok {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) (h12 : s.gpr .r12 = B)
+theorem quot_ok {s : State} {B : BitVec 32} {Z w N : Nat} (h : WsM s B Z w N) (h12 : s.gpr .r12 = B)
     {u2 u1 d : Nat} (hu1 : s.gpr .r11 = BitVec.ofNat 32 u1) (hD : slot s.mem B sD = d)
     (hU2 : slot s.mem B sU2 = u2) (hV : slot s.mem B sV = (2 ^ 64 - 1) / d - 2 ^ 32)
     (hd1 : 2 ^ 31 ≤ d) (hd2 : d < 2 ^ 32) (hu2 : u2 ≤ d) (hu1' : u1 < 2 ^ 32) {rest : List Instr}
