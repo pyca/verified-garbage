@@ -11,8 +11,10 @@ import VerifiedGarbage.Proof.Framework.Contract
 # Keccak-f[1600] four times at once, in registers: one instruction at a time
 
 Weakest-precondition rules for the EVEX-encoded instructions of `permute4R`
-(`Impl/Sha3/X86_64/X4Reg.lean`) on the thirty-two `ymm` registers, in terms
-of the four 64-bit elements of each (`qy`), one per state.
+(`Impl/Sha3/X86_64/X4Reg.lean`) on the thirty-two `ymm` registers, and for
+its copies of a register (`wp_ecopy`: `vmovdqa` between two of
+`ymm0`–`ymm15`), in terms of the four 64-bit elements of each (`qy`), one per
+state.
 -/
 
 @[expose] public section
@@ -164,11 +166,26 @@ theorem wp_exor {d a b : VReg} (k : ∀ s', YUpd s s' d (fun i => qy s a i ^^^ q
     rw [qword256_lanes256 _ _ _ hi]
     simp only [EBinOp.sse, XBinOp.eval, qword_xor, qword_lane _ hi]; rfl))
 
-theorem wp_ecopy {d a : VReg} (k : ∀ s', YUpd s s' d (fun i => qy s a i) → WP isa (.block is) s' Q) :
-    WP isa (.block (copy d a :: is)) s Q :=
+/-- `copy` as `vporq` of a register with itself. -/
+theorem wp_eor_self {d a : VReg} (k : ∀ s', YUpd s s' d (fun i => qy s a i) → WP isa (.block is) s' Q) :
+    WP isa (.block (eb .vporq d a a :: is)) s Q :=
   WP.cons rfl (k _ (YUpd.setVy _ _ _ fun i hi => by
     rw [qword256_lanes256 _ _ _ hi]
     simp only [EBinOp.sse, XBinOp.eval, qword_lane _ hi, BitVec.or_self]; rfl))
+
+theorem wp_ecopy {d a : VReg} (k : ∀ s', YUpd s s' d (fun i => qy s a i) → WP isa (.block is) s' Q) :
+    WP isa (.block (copy d a :: is)) s Q := by
+  cases d with
+  | hi d => cases a <;> exact wp_eor_self k
+  | lo d =>
+    cases a with
+    | hi a => exact wp_eor_self k
+    | lo a =>
+      -- `vmovdqa`: the two lanes of `ymm a`.
+      have e : exec (copy (.lo d) (.lo a)) s = some (s.setVy (.lo d) (s.vy (.lo a))) := by
+        simp only [copy, exec, VOp.exec, State.setVy, State.vy, State.ymm, State.lane, lane_app0, lane_app1]
+        rfl
+      exact WP.cons e (k _ (YUpd.setVy _ _ _ fun i _ => rfl))
 
 theorem wp_tern96 {d a b : VReg}
     (k : ∀ s', YUpd s s' d (fun i => qy s d i ^^^ qy s a i ^^^ qy s b i) → WP isa (.block is) s' Q) :
