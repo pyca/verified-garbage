@@ -519,7 +519,6 @@ x86_64 vg_rsa_crt_values
 x86_64 vg_rsa_generate
 x86_64 vg_rsa_generate_adx
 x86_64 vg_rsa_generate_ifma
-x86_64 vg_rsa_oaep_decrypt
 x86_64 vg_rsa_oaep_encrypt_precomputed
 x86_64 vg_rsa_oaep_encrypt_precomputed_rsa_adx
 x86_64 vg_rsa_oaep_encrypt_precomputed_rsa_ifma
@@ -532,7 +531,6 @@ x86_64 vg_rsa_pkcs1_recover_precomputed_ifma
 x86_64 vg_rsa_pkcs1_verify_precomputed
 x86_64 vg_rsa_pkcs1_verify_precomputed_adx
 x86_64 vg_rsa_pkcs1_verify_precomputed_ifma
-x86_64 vg_rsa_pss_sign
 x86_64 vg_rsa_pss_verify_precomputed
 x86_64 vg_rsa_pss_verify_precomputed_rsa_adx
 x86_64 vg_rsa_pss_verify_precomputed_rsa_ifma
