@@ -35,18 +35,35 @@ structure Copied (s v₀ : State) (n : Nat) (v : State) : Prop where
   wr : v.wr = v₀.wr
   g : ∀ r, r ≠ .x15 → v.gpr r = v₀.gpr r
   vc : ∀ r ∈ preservedV, (v.v r).extractLsb' 0 64 = (v₀.v r).extractLsb' 0 64
-  mem : Frame [⟨fb s, 96⟩] v₀.mem v.mem
+  mem : Frame [⟨fb s, 112⟩] v₀.mem v.mem
   args : ∀ i < n, v.mem.readW (fb s + BitVec.ofNat 64 (8 * i)) 64 = stackArg s (i + 1)
 
-theorem copies_ok {K : Nat} {s v₀ : State} (hp : PreS K s) (hsp : v₀.sp = fb s) (h16 : v₀.gpr .x16 = fb s)
-    (hrd : v₀.rd = s.rd) (hwr : v₀.wr = ⟨fb s, frameBytes⟩ :: s.wr) (hm : Frame [⟨fb s, frameBytes⟩] s.mem v₀.mem) :
-    ∀ n ≤ 12, WP isa (.block ((List.range n).flatMap copyArg)) v₀ (Copied s v₀ n) := by
-  intro n hn
+/-- Our first `N` stack arguments can be read, and are apart from the
+stack the function uses. -/
+structure ArgsOk (K : Nat) (s : State) (N : Nat) : Prop where
+  rd : ∀ j < N, InRegions s.rd (stackArgAddr s j) 8
+  kd : ∀ j < N, (kR K s).Disjoint ⟨stackArgAddr s j, 8⟩
+
+theorem PreS.argsOk {K : Nat} {s : State} (hp : PreS K s) : ArgsOk K s 13 :=
+  ⟨fun _ hj => arg_in hp (Covers.refl _) hj, fun j hj => hp.ka.sub_right (by
+    rw [stackArgAddr_eq s j]; exact Offset.sub_base _ (by omega_arith))⟩
+
+theorem ArgsOk.frame {K : Nat} {s : State} {N : Nat} (hA : ArgsOk K s N) {m : Mem}
+    (h : Frame [⟨fb s, frameBytes⟩] s.mem m) {j : Nat} (hj : j < N) :
+    m.readW (stackArgAddr s j) 64 = stackArg s j :=
+  h.readW (r := ⟨stackArgAddr s j, 8⟩) (Region.contains_self _ _) (keep_of_frame (hA.kd j hj)) (by decide)
+
+theorem copies_ok {K N : Nat} {s v₀ : State} (hA : ArgsOk K s N) (hsp : v₀.sp = fb s)
+    (h16 : v₀.gpr .x16 = fb s) (hrd : v₀.rd = s.rd) (hwr : v₀.wr = ⟨fb s, frameBytes⟩ :: s.wr)
+    (hm : Frame [⟨fb s, frameBytes⟩] s.mem v₀.mem) :
+    ∀ n, n + 1 ≤ N → n ≤ 14 → WP isa (.block ((List.range n).flatMap copyArg)) v₀ (Copied s v₀ n) := by
+  intro n
   induction n with
-  | zero => exact wp_nil ⟨rfl, rfl, rfl, fun _ _ => rfl, fun _ _ => rfl, Frame.refl _ _, fun i hi => absurd hi (by omega_arith)⟩
+  | zero => exact fun _ _ => wp_nil ⟨rfl, rfl, rfl, fun _ _ => rfl, fun _ _ => rfl, Frame.refl _ _, fun i hi => absurd hi (by omega_arith)⟩
   | succ n ih =>
+    intro hN hn
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega_arith)) fun v hv => ?_
+    refine WP.mono (ih (by omega_arith) (by omega_arith)) fun v hv => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, copyArg, List.append_nil]
     have a₁ : v.sp + BitVec.ofNat 64 (frameBytes + 8 * (n + 1)) = stackArgAddr s (n + 1) := by
       rw [hv.sp, hsp, stackArgAddr_fb]
@@ -54,8 +71,8 @@ theorem copies_ok {K : Nat} {s v₀ : State} (hp : PreS K s) (hsp : v₀.sp = fb
       rw [List.mem_singleton.mp hr]
       exact ⟨⟨fb s, frameBytes⟩, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩)
     refine wp_ldrSp (by unfold frameBytes; omega_arith) (by
-      rw [a₁, hv.rd, hrd]; exact arg_in hp (Covers.left (Covers.refl _)) (by omega_arith)) fun v₁ o₁ e₁ => ?_
-    rw [a₁, arg_frame hp hmv (by omega_arith)] at e₁
+      rw [a₁, hv.rd, hrd]; exact Covers.left (Covers.refl _) _ _ (hA.rd _ (by omega_arith))) fun v₁ o₁ e₁ => ?_
+    rw [a₁, hA.frame hmv (by omega_arith)] at e₁
     have x16 : v₁.gpr .x16 = fb s := by rw [o₁.get .x16, hv.g .x16 (by decide), h16]
     refine wp_strx (a := fb s + BitVec.ofNat 64 (8 * n)) (by omega_arith) (by rw [x16])
       (by rw [o₁.wr, hv.wr, hwr]; exact in_frame _ _ (by unfold frameBytes; omega_arith)) fun v₂ m₂ => wp_nil ?_
@@ -85,7 +102,7 @@ theorem a96_sub (K : Nat) (s : State) : Region.Sub ⟨fb s, 96⟩ (kR K s) :=
 
 /-- The slots of the saved registers are apart from `EM`. -/
 theorem slots_em {K : Nat} {s : State} (hp : PreS K s) {n : Nat} (hn : n ≤ (s.gpr .x3).toNat) :
-    Region.Disjoint ⟨fb s + BitVec.ofNat 64 96, 16⟩ ⟨fb s + BitVec.ofNat 64 oEM, n⟩ :=
+    Region.Disjoint ⟨fb s + BitVec.ofNat 64 112, 16⟩ ⟨fb s + BitVec.ofNat 64 oEM, n⟩ :=
   Offset.disjoint _ (by unfold oEM; omega_arith) (by decide) (by have := hp.k2; unfold oEM; omega_arith)
 
 /-- At the call: `k` in `x19`, the arguments of `vg_rsa_private_checked`
@@ -110,9 +127,10 @@ structure AtCall (s : State) (em : List Byte) (t : State) : Prop where
   sv : Spill.Saved (fb s) s.gpr saved t.mem
   em : Spec.Rsa.bytesAt t.mem (fb s + BitVec.ofNat 64 oEM) (s.gpr .x3).toNat = em
 
-theorem callArgs_ok {K : Nat} {s u w : State} (hp : PreS K s) (hu : AtEnc s u) (hK : Keep clob u w)
+theorem callArgsN_ok {K : Nat} {s u w : State} (hp : PreS K s) {n : Nat} (hA : ArgsOk K s (n + 1))
+    (hn₁ : 12 ≤ n) (hn₂ : n ≤ 14) (hu : AtEnc s u) (hK : Keep clob u w)
     {em : List Byte} (hme : w.mem = writeBytes u.mem (u.gpr .x8) em) (hl : em.length = (s.gpr .x3).toNat) :
-    WP isa (.block callArgs) w (AtCall s em) := by
+    WP isa (.block (callArgsN n)) w fun t => AtCall s em t ∧ ∀ i < n, stackArg t i = stackArg s (i + 1) := by
   have hk2 := hp.k2
   have g : ∀ r, r ∉ clob → r ∉ [Reg.x8, .x9, .x10, .x11, .x12, .x16, .x17, .x19] → w.gpr r = s.gpr r :=
     fun r h₁ h₂ => by rw [hK.gpr r h₁, hu.g r h₂]
@@ -125,19 +143,22 @@ theorem callArgs_ok {K : Nat} {s u w : State} (hp : PreS K s) (hu : AtEnc s u) (
     rw [List.mem_singleton.mp hr, hl]; exact slots_em hp (Nat.le_refl _)
   have emw : Spec.Rsa.bytesAt w.mem (fb s + BitVec.ofNat 64 oEM) (s.gpr .x3).toNat = em := by
     rw [hme, hu.x8, ← hl, bytesAt_writeBytes _ _ _ (by omega_arith)]
-  unfold callArgs
+  unfold callArgsN
   rw [WP.block_append_iff]
-  refine WP.mono (copies_ok hp (v₀ := w) (by rw [hK.sp, hu.sp]) (by rw [hK.get .x16, hu.x16])
-    (by rw [hK.rd, hu.rd]) (by rw [hK.wr, hu.wr]) hmw 12 (Nat.le_refl _)) fun v hv => ?_
+  refine WP.mono (copies_ok hA (v₀ := w) (by rw [hK.sp, hu.sp]) (by rw [hK.get .x16, hu.x16])
+    (by rw [hK.rd, hu.rd]) (by rw [hK.wr, hu.wr]) hmw n (Nat.le_refl _) hn₂) fun v hv => ?_
   refine wp_mov fun v₁ o₁ e₁ => wp_mov fun v₂ o₂ e₂ => wp_mov fun v₃ o₃ e₃ => wp_nil ?_
   have O₃ : Only [.x0, .x6, .x7] v v₃ := (o₁.trans (o₂.trans o₃)).mono
   have hv15 : ∀ r, r ∉ clob → r ∉ [Reg.x8, .x9, .x10, .x11, .x12, .x16, .x17, .x19] → r ≠ .x15 →
       r ∉ [Reg.x0, .x6, .x7] → v₃.gpr r = s.gpr r := fun r h₁ h₂ h₃ h₄ => by
     rw [O₃.gpr r h₄, hv.g r h₃, g r h₁ h₂]
-  have d96 : ∀ {R : Region}, R.Disjoint ⟨fb s, 96⟩ → R.len ≤ 2 ^ 64 →
+  have d96 : ∀ {R : Region}, R.Disjoint ⟨fb s, 112⟩ → R.len ≤ 2 ^ 64 →
       Spec.Rsa.bytesAt v₃.mem R.base R.len = Spec.Rsa.bytesAt w.mem R.base R.len := fun hd hl' => by
     rw [O₃.mem]; exact bytes_apart hv.mem hd hl'
-  refine ⟨?sp, ?rd, ?wr, ?x0, ?x1, ?x2, ?x3, ?x4, ?x5, ?x6, ?x7, ?x19, ?hi, ?v, ?args, ?mem, ?sv, ?em⟩
+  have hargs : ∀ i < n, stackArg v₃ i = stackArg s (i + 1) := fun i hi => by
+    show v₃.mem.readW (v₃.sp + BitVec.ofNat 64 (8 * i)) 64 = _
+    rw [O₃.mem, O₃.sp, hv.sp, hK.sp, hu.sp, hv.args i hi]
+  refine ⟨⟨?sp, ?rd, ?wr, ?x0, ?x1, ?x2, ?x3, ?x4, ?x5, ?x6, ?x7, ?x19, ?hi, ?v, ?args, ?mem, ?sv, ?em⟩, ?ex⟩
   case sp => rw [O₃.sp, hv.sp, hK.sp, hu.sp]
   case rd => rw [O₃.rd, hv.rd, hK.rd, hu.rd]
   case wr => rw [O₃.wr, hv.wr, hK.wr, hu.wr]
@@ -156,10 +177,7 @@ theorem callArgs_ok {K : Nat} {s u w : State} (hp : PreS K s) (hu : AtEnc s u) (
   case v =>
     intro r hr
     rw [O₃.vcs r hr, hv.vc r hr, hK.vcs r hr, hu.v r hr]
-  case args =>
-    intro i hi
-    show v₃.mem.readW (v₃.sp + BitVec.ofNat 64 (8 * i)) 64 = _
-    rw [O₃.mem, O₃.sp, hv.sp, hK.sp, hu.sp, hv.args i hi]
+  case args => exact fun i hi => hargs i (by omega_arith)
   case mem =>
     rw [O₃.mem]
     exact hmw.trans (hv.mem.sub fun r hr => by
@@ -173,6 +191,12 @@ theorem callArgs_ok {K : Nat} {s u w : State} (hp : PreS K s) (hu : AtEnc s u) (
     rw [← emw]
     exact d96 (R := ⟨fb s + BitVec.ofNat 64 oEM, (s.gpr .x3).toNat⟩)
       (Offset.disjoint_base _ (by unfold oEM; omega_arith) (by unfold oEM; omega_arith)) (by dsimp only; omega_arith)
+  case ex => exact hargs
+
+theorem callArgs_ok {K : Nat} {s u w : State} (hp : PreS K s) (hu : AtEnc s u) (hK : Keep clob u w)
+    {em : List Byte} (hme : w.mem = writeBytes u.mem (u.gpr .x8) em) (hl : em.length = (s.gpr .x3).toNat) :
+    WP isa (.block callArgs) w (AtCall s em) :=
+  WP.mono (callArgsN_ok hp hp.argsOk (by decide) (by decide) hu hK hme hl) fun _ h => h.1
 
 
 /-! ## The call -/
@@ -345,8 +369,8 @@ theorem call_ok (c : PrivChecked) {s t : State} (hp : PreS c.stack s) {em : List
     sv := ha.sv.frame_in saved_offs hf fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact hp.ko.sub_left (frame_sub c.stack s (d := 96) (n := 16) (by decide))
-      · exact hp.ks.sub_left (frame_sub c.stack s (d := 96) (n := 16) (by decide))
+      · exact hp.ko.sub_left (frame_sub c.stack s (d := 112) (n := 16) (by decide))
+      · exact hp.ks.sub_left (frame_sub c.stack s (d := 112) (n := 16) (by decide))
       · exact Offset.disjoint_below (fb s) (by omega_arith)
     res := hpost }
 

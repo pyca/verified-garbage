@@ -76,17 +76,17 @@ theorem satisfiablePre (K : Nat) (hK : K ≤ 2 ^ 20) :
   sig_pre [Spec.RsaPkcs1Sig.signPrecomputedContract, Spec.RsaPkcs1Sig.signPrecomputedSig, Spec.RsaPkcs1Sig.signSig,
     abi, argRegs, stackArgs_fifteen, List.append_eq]
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14⟩ := pre_args
-  have hS : frameBytes + K - 1 + 1 = 1136 + K := by unfold frameBytes; omega
+  have hS : frameBytes + K - 1 + 1 = 1152 + K := by unfold frameBytes; omega
   have hsp : (0x10000000000 : BitVec 64).toNat = 2 ^ 40 := by decide
-  have hkb : ((0x10000000000 : BitVec 64) - BitVec.ofNat 64 (1136 + K)).toNat = 2 ^ 40 - (1136 + K) := by
+  have hkb : ((0x10000000000 : BitVec 64) - BitVec.ofNat 64 (1152 + K)).toNat = 2 ^ 40 - (1152 + K) := by
     rw [BitVec.toNat_sub, hsp, BitVec.toNat_ofNat]; omega
   have ha : stackArgAddr preState 0 = 0x10000000000 := by decide
   simp only [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, hS, ha]
   have kd : ∀ (b : BitVec 64) (n : Nat), b.toNat + n ≤ 2 ^ 20 →
-      Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 (1136 + K), 1136 + K⟩ ⟨b, n⟩ := fun b n h =>
+      Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 (1152 + K), 1152 + K⟩ ⟨b, n⟩ := fun b n h =>
     Region.disjoint_of_le (.inr (by dsimp only; rw [hkb]; omega)) (by dsimp only; rw [hkb]; omega)
       (by dsimp only; omega)
-  have kt : Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 (1136 + K), 1136 + K⟩ ⟨0x10000000000, 120⟩ :=
+  have kt : Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 (1152 + K), 1152 + K⟩ ⟨0x10000000000, 120⟩ :=
     Region.disjoint_of_le (.inl (by dsimp only; rw [hkb, hsp]; omega))
       (by dsimp only; rw [hkb]; omega) (by dsimp only; rw [hsp]; omega)
   sig_and_intros
