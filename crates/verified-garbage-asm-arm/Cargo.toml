@@ -23,3 +23,10 @@ path = "src/lib.rs"
 
 [dependencies]
 verified-garbage-cpu = { path = "../verified-garbage-cpu" }
+
+# Empty: the generated code does not take the workspace's lints
+# (`[workspace.lints]` in the library's `Cargo.toml`), which are the
+# hand-written crates'. Stated, since Cargo warns about a member that
+# neither inherits them nor says so (`cargo::missing_lints_inheritance`,
+# since 1.100).
+[lints]
