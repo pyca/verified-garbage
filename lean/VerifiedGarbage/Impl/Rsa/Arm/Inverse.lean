@@ -151,10 +151,14 @@ Over `(d, e)` each row also adds `md` times `m`, `md` the multiple of `m` that c
 low 30 bits (libsecp256k1's `update_de`: `Proof/Divstep/Libsecp.lean`), so `d` and `e` stay in
 `(-2m, m)` as signed `k + 1`-word numbers and every output is the sum shifted right by 30.
 
-The scratch is array `bT1` (`r12`), which the batches alone use: the spilled `r6`, `r7`, `r9`
-at bytes 0–8; coefficient `t` (`u, v, q, r, md₁, md₂`) at `16 + 12 t` as its sign mask and its
+The scratch is array `bT1` (`r12`), which the batches alone use: coefficient `t` (`u, v, q, r, md₁, md₂`) at `16 + 12 t` as its sign mask and its
 magnitude's low and high halves; the rows' corrections at 88 and 92 and their starting carries at
-100 and 104. It needs `W ≥ 8`: 27 words of the four arrays from `bT1`. -/
+100 and 104. It needs `W ≥ 8`: 27 words of the four arrays from `bT1`.
+
+The terms need every register but `r8`, so a pass keeps nothing public in memory, which the
+constant-time analysis could not follow: `lr` holds the words left below the batches left
+(`r6`), and after the pass `r6` comes back from `lr`, `r7` (the stride) from the rows' pointers,
+which are a stride apart, and `r9` (`k`) from `r0`'s offset in its array. -/
 
 /-- Coefficient `t`'s scratch: its sign mask, then its magnitude's halves at `+ 4` and `+ 8`. -/
 def coefOff (t : Nat) : Nat := 16 + 12 * t
@@ -217,8 +221,19 @@ def rowPrep (x y : Nat) (c₁ c₂ : Coef) (t₁ t₂ row : Nat) : List Instr :=
   topMask y ++ ldCoef c₂ ++ coefStore t₂ ++ corrAdd ++
   [.str .r4 .r12 (corrOff row), .str .r10 .r12 (carryOff row)]
 
-/-- The scratch's address and the spills. -/
-def spill : List Instr := ptr .r12 bT1 ++ [.str .r6 .r12 0, .str .r7 .r12 4, .str .r9 .r12 8]
+/-- The scratch's address, and `lr := (r6 << 11) + k`: the batches left (`r6 / 32`) above the words
+left. -/
+def spill : List Instr := ptr .r12 bT1 ++ [.dp .add .lr .r9 (.shifted .r6 .lsl 11)]
+
+/-- A word done: `lr`'s low half down by one, `z` iff it is `0`, through `r6`. -/
+def wordDone : List Instr := [.dp .sub .lr .lr (.imm 1), .mov .r6 (.shifted .lr .lsl 16), .cmp .r6 (.imm 0)]
+
+/-- `r6`, `r7`, `r9` back from `lr` and the rows' pointers, `r0` at word `k` of array `a` and `r1` of
+array `a + 1`: `r7 = r1 - r0`, `r9 = (r0 - r8 - hdr - a r7) / 4`, `a r7` as the shifts `sh`. -/
+def restore (sh : List Nat) : List Instr :=
+  [.mov .r6 (.shifted .lr .lsr 11), .dp .sub .r7 .r1 (.reg .r0), .dp .sub .r9 .r0 (.reg .r8),
+   .dp .sub .r9 .r9 (.imm 160)] ++ sh.map (fun n => .dp .sub .r9 .r9 (.shifted .r7 .lsl n)) ++
+  [.mov .r9 (.shifted .r9 .lsr 2)]
 
 /-- The two rows' words `0` (`zo = 0`) or `i` (`zo = 4`) over `[r0]`, `[r1]`. -/
 def fgTerms (zo : Nat) : List Instr :=
@@ -228,10 +243,10 @@ def fgTerms (zo : Nat) : List Instr :=
 def fgPass : Prog isa := seqs [
   .block (spill ++ rowPrep bF bG cU cV 0 1 0 ++ rowPrep bF bG cQ cR 2 3 1 ++
     [.ldr .r2 .r12 (carryOff 0), .mov .r3 (.imm 0), .ldr .r4 .r12 (carryOff 1), .mov .r5 (.imm 0)] ++
-    ptr .r0 bF ++ ptr .r1 bG ++ fgTerms 0 ++ out0 .r0 .r2 .r3 ++ out0 .r1 .r4 .r5 ++ [.ldr .lr .r12 8]),
+    ptr .r0 bF ++ ptr .r1 bG ++ fgTerms 0 ++ out0 .r0 .r2 .r3 ++ out0 .r1 .r4 .r5),
   .loop (.block (fgTerms 4 ++ outW .r0 .r2 .r3 ++ outW .r1 .r4 .r5 ++
-    [.dp .add .r0 .r0 (.imm 4), .dp .add .r1 .r1 (.imm 4), .subs .lr .lr (.imm 1)])) .ne,
-  .block (outTop .r0 .r2 0 ++ outTop .r1 .r4 1 ++ [.ldr .r7 .r12 4, .ldr .r9 .r12 8])]
+    [.dp .add .r0 .r0 (.imm 4), .dp .add .r1 .r1 (.imm 4)] ++ wordDone)) .ne,
+  .block (outTop .r0 .r2 0 ++ outTop .r1 .r4 1 ++ restore [2])]
 
 /-- A row's `md` (coefficients `c₁`, `c₂` on `d`, `e`) stored as coefficient `t`, its correction and
 starting carry added to the row's: `md = md₀ - ((md₀ - np (c₁ d₀ + c₂ e₀)) mod 2^30)` for
@@ -250,18 +265,15 @@ def mdPrep (c₁ c₂ : Coef) (t row : Nat) : List Instr :=
 def deTerms (zo : Nat) : List Instr :=
   fgTerms zo ++ term .r11 zo 4 .r2 .r3 ++ term .r11 zo 5 .r4 .r5
 
-/-- `(d, e) := ((u d + v e + md₁ m) / 2^30, (q d + r e + md₂ m) / 2^30)`, then `r6`, `r7`, `r9`
-back. -/
+/-- `(d, e) := ((u d + v e + md₁ m) / 2^30, (q d + r e + md₂ m) / 2^30)`. -/
 def dePass : Prog isa := seqs [
-  .block (ptr .r12 bT1 ++ rowPrep bD bE cU cV 0 1 0 ++ rowPrep bD bE cQ cR 2 3 1 ++
+  .block (spill ++ rowPrep bD bE cU cV 0 1 0 ++ rowPrep bD bE cQ cR 2 3 1 ++
     mdPrep cU cV 4 0 ++ mdPrep cQ cR 5 1 ++
     [.ldr .r2 .r12 (carryOff 0), .mov .r3 (.imm 0), .ldr .r4 .r12 (carryOff 1), .mov .r5 (.imm 0)] ++
-    ptr .r0 bD ++ ptr .r1 bE ++ ptr .r11 bP ++ deTerms 0 ++ out0 .r0 .r2 .r3 ++ out0 .r1 .r4 .r5 ++
-    [.ldr .lr .r12 8]),
+    ptr .r0 bD ++ ptr .r1 bE ++ ptr .r11 bP ++ deTerms 0 ++ out0 .r0 .r2 .r3 ++ out0 .r1 .r4 .r5),
   .loop (.block (deTerms 4 ++ outW .r0 .r2 .r3 ++ outW .r1 .r4 .r5 ++
-    [.dp .add .r0 .r0 (.imm 4), .dp .add .r1 .r1 (.imm 4), .dp .add .r11 .r11 (.imm 4),
-     .subs .lr .lr (.imm 1)])) .ne,
-  .block (outTop .r0 .r2 0 ++ outTop .r1 .r4 1 ++ [.ldr .r6 .r12 0, .ldr .r7 .r12 4, .ldr .r9 .r12 8])]
+    [.dp .add .r0 .r0 (.imm 4), .dp .add .r1 .r1 (.imm 4), .dp .add .r11 .r11 (.imm 4)] ++ wordDone)) .ne,
+  .block (outTop .r0 .r2 0 ++ outTop .r1 .r4 1 ++ restore [2, 1])]
 
 def update : Prog isa := seqs [fgPass, dePass, .block [.subs .r6 .r6 (.imm 32)]]
 

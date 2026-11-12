@@ -15,10 +15,16 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 
+-- separate module: the passes' proofs are most of the inverse's, and `InvLoop.lean` rebuilds without them
+
 /-! # The fused passes of `inverse` on ARMv7
 
-`term_ok`: `term` adds a coefficient's magnitude times a word XORed with its sign mask to a
-64-bit accumulator.
+* `term_ok`: `term` adds a coefficient's magnitude times a word XORed with its sign mask to a
+  64-bit accumulator; `Pass.Ok.word0`, `body_ok`, `loop_ok` and `top_ok` run a pass's rows over
+  its words, and `row_result` gives a row's value.
+* `SG.rowPrep_ok`, `dePrep_ok`: the coefficients, `md`s, corrections and starting carries to the
+  scratch; `spill_ok` and `restore_ok`: `lr`, then `r6`, `r7`, `r9` back from public registers.
+* `fgPass_ok`, `dePass_ok`: the passes over `(f, g)` and `(d, e)`.
 -/
 
 @[expose] public section
@@ -26,7 +32,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 namespace VG.Proof.Rsa.Arm.Inv
 open VG VG.Arm VG.Impl.Rsa.Arm.Keys VG.Proof.Mont
 open VG.Impl.Rsa.Arm.Keys.Inv
-open VG.Proof.X25519.Arm (Rest Upd wp_ldr wp_str wp_dp wp_mov wp_mul wp_subs op2_imm op2_reg op2_lsl op2_lsr
+open VG.Proof.X25519.Arm (Rest Upd wp_ldr wp_str wp_dp wp_mov wp_mul wp_subs wp_cmp op2_imm op2_reg op2_lsl op2_lsr
   dpVal toNat_shr toNat_shl toNat_mul_lt)
 open VG.Proof.Bignum.Arm (wp_adds wp_adc)
 open VG.Proof.Mont.Arm (wp_mla)
@@ -456,6 +462,8 @@ structure Pass where
   L : List TSpec
   srcs : List Reg
   init : Bool → Nat
+  /-- The batches' count above the words' in `lr`. -/
+  c : Nat
 
 namespace Pass
 
@@ -505,7 +513,7 @@ end Pass
 
 /-- What a pass needs at its start `σ`: the workspace (`Gk` but `r9`), its sources pointing at their
 arrays (below the scratch, `r0`'s and `r1`'s apart), the scratch at `r12`, the coefficients' halves
-below `2^16`, the rows' carries, and `k` at scratch byte 8. -/
+below `2^16`, the rows' carries, and `lr` holding `k` below the batches' count `c`. -/
 structure Pass.Ok (p : Pass) (σ : State) (Z N : Nat) : Prop where
   g : Gk σ p.B Z p.W p.k N
   hN : 15 ≤ N
@@ -522,13 +530,14 @@ structure Pass.Ok (p : Pass) (σ : State) (Z N : Nat) : Prop where
   r12 : σ.gpr .r12 = p.B + BitVec.ofNat 32 (arr p.W bT1)
   lo : ∀ row, (σ.gpr (rlo row)).toNat = p.init row
   hi : ∀ row, σ.gpr (rhi row) = 0
-  kw : p.scw 8 = BitVec.ofNat 32 p.k
+  cnt : σ.gpr .lr = BitVec.ofNat 32 (2 ^ 16 * p.c + p.k)
+  cb : p.c < 2 ^ 16
 
 /-- After `i ≥ 1` words of a pass from `σ`. -/
 structure Pass.Inv (p : Pass) (σ : State) (i : Nat) (s : State) : Prop where
   rest : Rest (tClob ++ (.lr :: p.srcs)) σ s
   ptr : ∀ r ∈ p.srcs, s.gpr r = p.B + BitVec.ofNat 32 (arr p.W (p.arrOf r) + 4 * (i - 1))
-  cnt : s.gpr .lr = BitVec.ofNat 32 (p.k + 1 - i)
+  cnt : s.gpr .lr = BitVec.ofNat 32 (2 ^ 16 * p.c + (p.k + 1 - i))
   lo : p.CS → ∀ row, (s.gpr (rlo row)).toNat = p.rs row i / 2 ^ (32 * i)
   hi : ∀ row, s.gpr (rhi row) = 0
   keep : Keep p.B p.W [p.out false, p.out true] [] p.mI s.mem
@@ -692,10 +701,10 @@ theorem out_reg (row : Bool) : (if row then Reg.r1 else Reg.r0) ∉ ([.r6, rlo r
     (if row then Reg.r1 else Reg.r0) ∉ ([.r6, rlo (!row), rhi (!row)] : List Reg) := by
   cases row <;> decide
 
-/-- The pass's first word: the terms at word 0 and the outputs' words 0, then the count. -/
+/-- The pass's first word: the terms at word 0 and the outputs' words 0. -/
 theorem word0 (ok : p.Ok σ Z N) {is : List Instr} {Q : State → Prop}
     (k : ∀ s, p.Inv σ 1 s → WP isa (.block is) s Q) :
-    WP isa (.block (tcode 0 p.L ++ (out0 .r0 .r2 .r3 ++ (out0 .r1 .r4 .r5 ++ (.ldr .lr .r12 8 :: is))))) σ Q := by
+    WP isa (.block (tcode 0 p.L ++ (out0 .r0 .r2 .r3 ++ (out0 .r1 .r4 .r5 ++ is)))) σ Q := by
   have hk := ok.g.kle
   have hk0 := ok.g.kpos
   have hW := ok.hW
@@ -726,21 +735,13 @@ theorem word0 (ok : p.Ok σ Z N) {is : List Instr} {Q : State → Prop}
   have k3 : Keep p.B p.W [p.out false, p.out true] [] p.mI s3.mem := by
     rw [m3, m2, m1, ← ok.mem]
     exact (ok.keep_store _ (Nat.zero_le _) _).trans (ok.keep_store _ (Nat.zero_le _) _)
-  have e12 : s3.gpr .r12 = σ.gpr .r12 := by
-    rw [r3.gpr _ (by decide), r2.gpr _ (by decide), r1.gpr _ (by decide)]
-  refine wp_ldr (a := off (State.addr p.B) (arr p.W bT1 + 8)) (by decide)
-    (by rw [e12, ok.r12]; exact ok.addr_at (by have := ok.scr_fit (d := 8) (by simp only [S]; omega); omega))
-    (by rw [r3.rd, r2.rd, r1.rd, r3.wr, r2.wr, r1.wr]
-        exact ok.g.read (ok.scr_fit (d := 8) (by simp only [S]; omega))) fun s4 u4 => ?_
-  have m4 : s4.mem = s3.mem := u4.mem
-  have rr : Rest (tClob ++ (.lr :: p.srcs)) σ s4 :=
-    (r1.mono fun r h => List.mem_append_left _ h).trans <| (r2.mono (by simp)).trans <|
-      (r3.mono (by simp)).trans (u4.rest (by simp))
+  have rr : Rest (tClob ++ (.lr :: p.srcs)) σ s3 :=
+    (r1.mono fun r h => List.mem_append_left _ h).trans <| (r2.mono (by simp)).trans (r3.mono (by simp))
   -- Words of the outputs.
-  have wv : ∀ row j, j ≤ p.k → w32 s4.mem (State.addr p.B) (arr p.W (p.out row) + 4 * j) =
+  have wv : ∀ row j, j ≤ p.k → w32 s3.mem (State.addr p.B) (arr p.W (p.out row) + 4 * j) =
       if j = 0 then ((s1.gpr (rlo row)) >>> 30).toNat else w32 p.mI (State.addr p.B) (arr p.W (p.out row) + 4 * j) := by
     intro row j hj
-    rw [m4, m3, ok.w32_store _ hj (Nat.zero_le _), m2, ok.w32_store _ hj (Nat.zero_le _), m1, ok.mem]
+    rw [m3, ok.w32_store _ hj (Nat.zero_le _), m2, ok.w32_store _ hj (Nat.zero_le _), m1, ok.mem]
     have l23 : s2.gpr .r4 = s1.gpr .r4 := r2.gpr _ (by decide)
     cases row <;> by_cases e : j = 0 <;> simp [e, l23, rlo]
   have lohi : p.CS → ∀ row, (s1.gpr (rlo row)).toNat = p.rs row 1 % 2 ^ 32 ∧
@@ -749,24 +750,24 @@ theorem word0 (ok : p.Ok σ Z N) {is : List Instr} {Q : State → Prop}
       have := a1 hcs row; simp only [acc, acc64] at this
       have := (s1.gpr (rlo row)).isLt
       omega
-  refine k s4 ⟨rr, fun r hr => ?_, ?_, fun hcs row => ?_, fun row => ?_, m4 ▸ k3, fun row j hj hjk => ?_,
+  refine k s3 ⟨rr, fun r hr => ?_, ?_, fun hcs row => ?_, fun row => ?_, k3, fun row j hj hjk => ?_,
     fun hcs row => ?_⟩
   · have hr3 := (ok.srcs r hr).1
     have e := (ok.srcs r hr).2.2
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr3
     rcases hr3 with rfl | rfl | rfl <;>
-    · rw [u4.other _ (by decide), r3.gpr _ (by decide), r2.gpr _ (by decide), r1.gpr _ (by decide), e]
+    · rw [r3.gpr _ (by decide), r2.gpr _ (by decide), r1.gpr _ (by decide), e]
       simp
-  · rw [u4.gpr, ok.scr_keep k3 (by simp only [S]; omega), ok.kw, Nat.add_sub_cancel]
+  · rw [r3.gpr _ (by decide), r2.gpr _ (by decide), r1.gpr _ (by decide), ok.cnt, Nat.add_sub_cancel]
   · obtain ⟨lf, hf⟩ := lohi hcs false
     obtain ⟨lt, ht⟩ := lohi hcs true
     simp only [rlo, rhi, Bool.false_eq_true, ↓reduceIte] at lf hf lt ht
     cases row <;> simp only [rlo, Bool.false_eq_true, ↓reduceIte, Nat.mul_one]
-    · rw [u4.other _ (by decide), r3.gpr _ (by decide), l2, hf]
-    · rw [u4.other _ (by decide), l3, r2.gpr _ (by decide), ht]
+    · rw [r3.gpr _ (by decide), l2, hf]
+    · rw [l3, r2.gpr _ (by decide), ht]
   · cases row <;> simp only [rhi, Bool.false_eq_true, ↓reduceIte]
-    · rw [u4.other _ (by decide), r3.gpr _ (by decide), h2]
-    · rw [u4.other _ (by decide), h3]
+    · rw [r3.gpr _ (by decide), h2]
+    · rw [h3]
   · simp only [wv row j hjk, show ¬ j = 0 by omega, ↓reduceIte]
   · simp only [val32, Nat.mul_zero, Nat.add_zero, Nat.mul_one]
     have := wv row 0 (Nat.zero_le _)
@@ -816,9 +817,36 @@ theorem incs_ok : ∀ (rs : List Reg), rs.Nodup → ∀ {s : State} {is : List I
     · rw [r'.gpr _ hn.1, u1.gpr]; rfl
     · rw [h' x hx, u1.other _ (fun e => hn.1 (e ▸ hx))]
 
+/-- `wordDone`: `lr` down by one, `z` iff its low half is then `0`. -/
+theorem wordDone_ok {s : State} {is : List Instr} {Q : State → Prop}
+    (k : ∀ t, t.mem = s.mem → Rest [.r6, .lr] s t → t.gpr .lr = s.gpr .lr - 1 →
+      t.z = ((s.gpr .lr - 1) <<< 16 - 0 == 0) → WP isa (.block is) t Q) :
+    WP isa (.block (wordDone ++ is)) s Q := by
+  simp only [wordDone, List.cons_append, List.nil_append]
+  refine wp_dp (op2_imm (by decide)) fun s1 u1 => ?_
+  refine wp_mov (op2_lsl (by decide)) fun s2 u2 => ?_
+  refine wp_cmp (op2_imm (by decide)) fun t u3 z3 => ?_
+  have e2 : s2.gpr .r6 = (s.gpr .lr - 1) <<< 16 := by rw [u2.gpr, u1.gpr]; rfl
+  refine k t (by rw [u3.mem, u2.mem, u1.mem]) ⟨fun r hr => ?_, by rw [u3.rd, u2.rd, u1.rd],
+    by rw [u3.wr, u2.wr, u1.wr], by rw [u3.sp, u2.sp, u1.sp]⟩ ?_ (by rw [z3, e2])
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    rw [u3.gpr, u2.other _ hr.1, u1.other _ hr.2]
+  · rw [u3.gpr, u2.other _ (by decide), u1.gpr]; rfl
+
+/-- `lr`'s low half, `m`, is `0`. -/
+theorem low_zero {c m : Nat} (hm : m < 2 ^ 16) :
+    (BitVec.ofNat 32 (2 ^ 16 * c + m) <<< 16 - 0 == 0) = decide (m = 0) := by
+  have e : (BitVec.ofNat 32 (2 ^ 16 * c + m) <<< 16 - 0).toNat = m * 2 ^ 16 := by
+    simp only [BitVec.toNat_sub, BitVec.toNat_shiftLeft, BitVec.ofNat_eq_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
+      Nat.reducePow]
+    omega
+  rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff, BitVec.toNat_eq, e]
+  simp only [BitVec.ofNat_eq_ofNat, BitVec.toNat_ofNat, Nat.zero_mod]
+  omega
+
 /-- The body of a pass's loop. -/
 def Pass.body (p : Pass) : List Instr :=
-  tcode 4 p.L ++ (outW .r0 .r2 .r3 ++ (outW .r1 .r4 .r5 ++ (incs p.srcs ++ [.subs .lr .lr (.imm 1)])))
+  tcode 4 p.L ++ (outW .r0 .r2 .r3 ++ (outW .r1 .r4 .r5 ++ (incs p.srcs ++ wordDone)))
 
 namespace Pass.Ok
 variable {p : Pass} {σ : State} {Z N : Nat}
@@ -881,7 +909,13 @@ theorem body_ok (ok : p.Ok σ Z N) {s : State} {n : Nat} (I : p.Inv σ (n + 1) s
     (by rw [ea s2 .r1 true 4 (by omega) p2]; rfl)
     (wa _ wr2 true n (by omega)) (wa _ wr2 true (n + 1) hn) fun s3 m3 l3 h3 r3 => ?_
   refine incs_ok p.srcs ok.nodup fun s4 v4 r4 m4 => ?_
-  refine wp_subs (op2_imm (by decide)) fun s5 u5 z5 => WP.block_nil ?_
+  rw [← List.append_nil wordDone]
+  refine wordDone_ok fun s5 m5 r5 l5 z5 => WP.block_nil ?_
+  have r5s : ∀ r ∈ p.srcs, s5.gpr r = s4.gpr r := fun r hr => r5.gpr _ (fun h => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+    rcases h with rfl | rfl
+    · exact (ok.src_reg hr).1 (by decide)
+    · exact (ok.src_reg hr).2.1 rfl)
   have hn' : n ≤ p.k := by omega
   -- The output words.
   have rB : s2.mem.readW (off (State.addr p.B) (arr p.W (p.out true) + 4 * n)) 32 =
@@ -896,7 +930,7 @@ theorem body_ok (ok : p.Ok σ Z N) {s : State} {n : Nat} (I : p.Inv σ (n + 1) s
       else if j = n then (s.mem.readW (off (State.addr p.B) (arr p.W (p.out row) + 4 * n)) 32 ||| s1.gpr (rlo row) <<< 2).toNat
       else w32 s.mem (State.addr p.B) (arr p.W (p.out row) + 4 * j) := by
     intro row j hj
-    rw [u5.mem, m4, m3, ok.w32_store _ hj hn, ok.w32_store _ hj hn', rB, e4, m2, ok.w32_store _ hj hn,
+    rw [m5, m4, m3, ok.w32_store _ hj hn, ok.w32_store _ hj hn', rB, e4, m2, ok.w32_store _ hj hn,
       ok.w32_store _ hj hn', m1]
     cases row <;> by_cases e1 : j = n + 1 <;> by_cases e0 : j = n <;> simp [e1, e0, rlo] <;> omega
   -- The registers.
@@ -906,8 +940,8 @@ theorem body_ok (ok : p.Ok σ Z N) {s : State} {n : Nat} (I : p.Inv σ (n + 1) s
     rcases h3 with rfl | rfl | rfl <;> rw [r3.gpr _ (by decide), r2.gpr _ (by decide), r1.gpr _ (by decide)]
   have lr4 : s4.gpr .lr = s.gpr .lr := by
     rw [r4.gpr _ (ok.src_reg · |>.2.1 rfl), r3.gpr _ (by decide), r2.gpr _ (by decide), r1.gpr _ (by decide)]
-  have rg4 : ∀ r, r ∉ p.srcs → r ≠ .lr → s5.gpr r = s3.gpr r := fun r h1 h2 => by
-    rw [u5.other _ h2, r4.gpr _ h1]
+  have rg4 : ∀ r, r ∉ p.srcs → r ≠ .lr → r ≠ .r6 → s5.gpr r = s3.gpr r := fun r h1 h2 h3 => by
+    rw [r5.gpr _ (by simp [h2, h3]), r4.gpr _ h1]
   have nsrc : ∀ r, r ∉ ([.r0, .r1, .r11] : List Reg) → r ∉ p.srcs := fun r h h' => h (ok.srcs r h').1
   have st : p.CS → ∀ row, val32 s5.mem (State.addr p.B) (arr p.W (p.out row)) (n + 2) =
         p.rs row (n + 2) % 2 ^ (32 * (n + 2)) / 2 ^ 30 ∧
@@ -923,33 +957,34 @@ theorem body_ok (ok : p.Ok σ Z N) {s : State} {n : Nat} (I : p.Inv σ (n + 1) s
   refine ⟨⟨?_, fun r hr => ?_, ?_, fun hcs row => ?_, fun row => ?_, ?_, fun row j hj hjk => ?_,
     fun hcs row => (st hcs row).1⟩, ?_⟩
   · exact I.rest.trans <| (r1.mono fun r h => List.mem_append_left _ h).trans <| (r2.mono (by simp)).trans <|
-      (r3.mono (by simp)).trans <| (r4.mono fun r h => by simp [h]).trans (u5.rest (by simp))
-  · rw [u5.other _ (ok.src_reg hr).2.1, v4 r hr, nc r hr, I.ptr r hr]
+      (r3.mono (by simp)).trans <| (r4.mono fun r h => by simp [h]).trans (r5.mono (by simp))
+  · rw [r5s r hr, v4 r hr, nc r hr, I.ptr r hr]
     show _ + BitVec.ofNat 32 4 = _
     rw [VG.Offset.add_add]; congr 2
-  · rw [u5.gpr, lr4, I.cnt]
-    show BitVec.ofNat 32 (p.k + 1 - (n + 1)) - BitVec.ofNat 32 1 = _
+  · rw [l5, lr4, I.cnt]
+    show BitVec.ofNat 32 (2 ^ 16 * p.c + (p.k + 1 - (n + 1))) - BitVec.ofNat 32 1 = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
-    congr 1
+    congr 1 <;> omega
   · obtain ⟨lf, hf⟩ := lohi hcs false
     obtain ⟨lt, ht⟩ := lohi hcs true
     simp only [rlo, rhi, Bool.false_eq_true, ↓reduceIte] at lf hf lt ht
     rw [(st hcs row).2]
     cases row <;> simp only [rlo, Bool.false_eq_true, ↓reduceIte]
-    · rw [rg4 _ (nsrc _ (by decide)) (by decide), r3.gpr _ (by decide), l2, hf]
-    · rw [rg4 _ (nsrc _ (by decide)) (by decide), l3, r2.gpr _ (by decide), ht]
+    · rw [rg4 _ (nsrc _ (by decide)) (by decide) (by decide), r3.gpr _ (by decide), l2, hf]
+    · rw [rg4 _ (nsrc _ (by decide)) (by decide) (by decide), l3, r2.gpr _ (by decide), ht]
   · cases row <;> simp only [rhi, Bool.false_eq_true, ↓reduceIte]
-    · rw [rg4 _ (nsrc _ (by decide)) (by decide), r3.gpr _ (by decide), h2]
-    · rw [rg4 _ (nsrc _ (by decide)) (by decide), h3]
-  · rw [u5.mem, m4, m3, m2, m1]
+    · rw [rg4 _ (nsrc _ (by decide)) (by decide) (by decide), r3.gpr _ (by decide), h2]
+    · rw [rg4 _ (nsrc _ (by decide)) (by decide) (by decide), h3]
+  · rw [m5, m4, m3, m2, m1]
     exact I.keep.trans ((((ok.keep_store _ hn' _).trans (ok.keep_store _ hn _)).trans
       (ok.keep_store _ hn' _)).trans (ok.keep_store _ hn _))
   · simp only [wv row j hjk, show ¬ j = n + 1 by omega, show ¬ j = n by omega, ↓reduceIte]
     exact I.high row j (by omega) hjk
   · have := ok.g.wle
     rw [z5, lr4, I.cnt]
-    show (BitVec.ofNat 32 (p.k + 1 - (n + 1)) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), VG.Proof.X25519.Arm.ofNat_beq_zero (by omega)]
+    show ((BitVec.ofNat 32 (2 ^ 16 * p.c + (p.k + 1 - (n + 1))) - BitVec.ofNat 32 1) <<< 16 - 0 == 0) = _
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega),
+      show 2 ^ 16 * p.c + (p.k + 1 - (n + 1)) - 1 = 2 ^ 16 * p.c + (p.k - (n + 1)) by omega, low_zero (by omega)]
     simp only [decide_eq_decide]; omega
 
 end Pass.Ok
@@ -974,7 +1009,7 @@ theorem loop_ok (ok : p.Ok σ Z N) {s : State} (I : p.Inv σ 1 s) :
 /-- The rows' top words: the carries less the corrections. -/
 theorem top_ok (ok : p.Ok σ Z N) {s : State} (I : p.Inv σ (p.k + 1) s) {is : List Instr} {Q : State → Prop}
     (k : ∀ t, Rest (tClob ++ (.lr :: p.srcs)) σ t → Keep p.B p.W [p.out false, p.out true] [] p.mI t.mem →
-      (p.CS → ∀ row, val32 t.mem (State.addr p.B) (arr p.W (p.out row)) (p.k + 1) =
+      Rest [.r2, .r4, .r6] s t → (p.CS → ∀ row, val32 t.mem (State.addr p.B) (arr p.W (p.out row)) (p.k + 1) =
         p.rs row (p.k + 1) % 2 ^ (32 * (p.k + 1)) / 2 ^ 30 + 2 ^ (32 * p.k + 2) *
           ((BitVec.ofNat 32 (p.rs row (p.k + 1) / 2 ^ (32 * (p.k + 1))) - p.scw (corrOff (if row then 1 else 0))).toNat
             % 2 ^ 30)) →
@@ -1017,7 +1052,8 @@ theorem top_ok (ok : p.Ok σ Z N) {s : State} (I : p.Inv σ (p.k + 1) s) {is : L
     (wa _ (r1.wr.trans I.rest.wr) true) c1 fun s2 m2 r2 => ?_
   have kp : Keep p.B p.W [p.out false, p.out true] [] p.mI s2.mem := by
     rw [m2, m1]; exact I.keep.trans ((ok.keep_store _ (Nat.le_refl _) _).trans (ok.keep_store _ (Nat.le_refl _) _))
-  refine k s2 (I.rest.trans ((r1.mono (by simp)).trans (r2.mono (by simp)))) kp fun hcs row => ?_
+  refine k s2 (I.rest.trans ((r1.mono (by simp)).trans (r2.mono (by simp)))) kp
+    ((r1.mono (by simp)).trans (r2.mono (by simp))) fun hcs row => ?_
   have sc0 : sw s (corrOff 0) = p.scw (corrOff 0) := by
     simp only [sw]; rw [a0, ok.scr_keep I.keep (by simp only [corrOff, S]; omega)]
   have sc1 : sw s1 (corrOff 1) = p.scw (corrOff 1) := by
@@ -1802,24 +1838,108 @@ end SG
 namespace SG
 variable {s : State} {B : BitVec 32} {Z W k N : Nat}
 
-/-- `spill`: `r12 :=` the scratch, and `r6`, `r7`, `r9` to its bytes 0, 4 and 8. -/
+/-- `spill`: `r12 :=` the scratch, `lr := r9 + (r6 << 11)`. -/
 theorem spill_ok (g : Gk s B Z W k N) (hN : 15 ≤ N) (hW : 8 ≤ W) {is : List Instr} {Q : State → Prop}
-    (kk : ∀ t, SG t B Z W k N → Rest [.r12] s t →
-      t.mem = wr (wr (wr s.mem B W 0 (s.gpr .r6)) B W 4 (s.gpr .r7)) B W 8 (s.gpr .r9) → WP isa (.block is) t Q) :
+    (kk : ∀ t, SG t B Z W k N → Rest [.r12, .lr] s t → t.mem = s.mem →
+      t.gpr .lr = s.gpr .r9 + s.gpr .r6 <<< 11 → WP isa (.block is) t Q) :
     WP isa (.block (spill ++ is)) s Q := by
   simp only [spill, List.append_assoc]
   refine g.ptr_ok (by decide) (by decide) fun t1 p1 r1 m1 g1 => ?_
   have h1 : SG t1 B Z W k N := ⟨g1, hN, hW, p1⟩
   simp only [List.cons_append, List.nil_append]
-  refine h1.str (by omega) fun t2 u2 => ?_
-  have h2 := h1.of (u2.rest [])
-  refine h2.str (by omega) fun t3 u3 => ?_
-  have h3 := h2.of (u3.rest [])
-  refine h3.str (by omega) fun t4 u4 => ?_
-  refine kk t4 (h3.of (u4.rest [])) ((r1.trans (u2.rest _)).trans ((u3.rest _).trans (u4.rest _))) ?_
-  rw [u4.mem, u3.mem, u2.mem, m1, u3.gpr, u2.gpr, r1.gpr _ (by decide), r1.gpr _ (by decide), r1.gpr _ (by decide)]
+  refine wp_dp (op2_lsl (by decide)) fun t2 u2 => ?_
+  refine kk t2 (h1.of (u2.rest (ws := [.lr]) (by simp))) ((r1.mono (by simp)).trans (u2.rest (by simp)))
+    (by rw [u2.mem, m1]) ?_
+  rw [u2.gpr, dpVal, r1.gpr _ (by decide), r1.gpr _ (by decide)]
 
 end SG
+
+/-- `lr` at a pass's start. -/
+theorem lr_init (k b : Nat) :
+    BitVec.ofNat 32 k + BitVec.ofNat 32 (32 * b) <<< 11 = BitVec.ofNat 32 (2 ^ 16 * b + k) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.reducePow]
+  omega
+
+/-- `restore`'s arithmetic: `r7` from the rows' pointers, `r9` from `r0`'s offset in array `a`. -/
+theorem restore_r7 (B : BitVec 32) (x y : Nat) :
+    B + BitVec.ofNat 32 (x + y) - (B + BitVec.ofNat 32 x) = BitVec.ofNat 32 y := by
+  apply BitVec.eq_of_toNat_eq
+  have := B.isLt
+  simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow]
+  omega
+
+/-- `restore`: `r6`, `r7`, `r9` back, `r0` at word `k` of array `a` (`bF` or `bD`), `r1` of array `a + 1`. -/
+theorem restore_ok {s : State} {B : BitVec 32} {W k c a a' : Nat} {sh : List Nat} {is : List Instr}
+    {Q : State → Prop} (hsh : (sh = [2] ∧ a = bF) ∨ (sh = [2, 1] ∧ a = bD)) (ha : a' = a + 1)
+    (h0 : s.gpr .r0 = B + BitVec.ofNat 32 (arr W a + 4 * k))
+    (h1 : s.gpr .r1 = B + BitVec.ofNat 32 (arr W a' + 4 * k))
+    (h8 : s.gpr .r8 = B) (hl : s.gpr .lr = BitVec.ofNat 32 (2 ^ 16 * c + 0)) (hc : c < 2 ^ 16)
+    (hfit : arr W a' + 4 * k < 2 ^ 32)
+    (kk : ∀ t, t.mem = s.mem → Rest [.r6, .r7, .r9] s t → t.gpr .r6 = BitVec.ofNat 32 (32 * c) →
+      t.gpr .r7 = BitVec.ofNat 32 (S W) → t.gpr .r9 = BitVec.ofNat 32 k → WP isa (.block is) t Q) :
+    WP isa (.block (restore sh ++ is)) s Q := by
+  have e6 : ∀ t : State, t.gpr .r6 = s.gpr .lr >>> 11 → t.gpr .r6 = BitVec.ofNat 32 (32 * c) := fun t h => by
+    rw [h, hl]; apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.reducePow]; omega
+  have e7 : s.gpr .r1 - s.gpr .r0 = BitVec.ofNat 32 (S W) := by
+    rw [h0, h1, ha, show arr W (a + 1) + 4 * k = arr W a + 4 * k + S W by simp only [arr]; rw [Nat.add_mul]; omega]
+    exact restore_r7 B _ _
+  have e9 : s.gpr .r0 - s.gpr .r8 = BitVec.ofNat 32 (arr W a + 4 * k) := by
+    rw [h0, h8, BitVec.add_comm, BitVec.add_sub_cancel]
+  have fa : arr W a + 4 * k < 2 ^ 32 := by rw [ha] at hfit; simp only [arr] at hfit ⊢; rw [Nat.add_mul] at hfit; omega
+  rcases hsh with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
+    simp only [restore, List.map, List.cons_append, List.nil_append]
+  · refine wp_mov (op2_lsr (by decide)) fun s1 u1 => ?_
+    refine wp_dp (op2_reg _ _) fun s2 u2 => ?_
+    refine wp_dp (op2_reg _ _) fun s3 u3 => ?_
+    refine wp_dp (op2_imm (by decide)) fun s4 u4 => ?_
+    refine wp_dp (op2_lsl (by decide)) fun s5 u5 => ?_
+    refine wp_mov (op2_lsr (by decide)) fun t u6 => ?_
+    have g72 : s2.gpr .r7 = BitVec.ofNat 32 (S W) := by
+      rw [u2.gpr, dpVal, u1.other _ (by decide), u1.other _ (by decide), e7]
+    have g73 : s3.gpr .r7 = BitVec.ofNat 32 (S W) := by rw [u3.other _ (by decide), g72]
+    have g74 : s4.gpr .r7 = BitVec.ofNat 32 (S W) := by rw [u4.other _ (by decide), g73]
+    have g7 : s5.gpr .r7 = BitVec.ofNat 32 (S W) := by rw [u5.other _ (by decide), g74]
+    refine kk t (by rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem])
+      ((u1.rest (by simp)).trans <| (u2.rest (by simp)).trans <| (u3.rest (by simp)).trans <|
+        (u4.rest (by simp)).trans <| (u5.rest (by simp)).trans (u6.rest (by simp)))
+      (e6 t (by rw [u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide),
+        u2.other _ (by decide), u1.gpr]))
+      (by rw [u6.other _ (by decide), g7]) ?_
+    rw [u6.gpr, u5.gpr, dpVal, u4.gpr, dpVal, u3.gpr, dpVal, u2.other _ (by decide), u2.other _ (by decide),
+      u1.other _ (by decide), u1.other _ (by decide), e9]
+    simp only [g74]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_shiftLeft, BitVec.ofNat_eq_ofNat,
+      BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq, Nat.reducePow, arr, S, hdr, bF] at fa ⊢
+    omega
+  · refine wp_mov (op2_lsr (by decide)) fun s1 u1 => ?_
+    refine wp_dp (op2_reg _ _) fun s2 u2 => ?_
+    refine wp_dp (op2_reg _ _) fun s3 u3 => ?_
+    refine wp_dp (op2_imm (by decide)) fun s4 u4 => ?_
+    refine wp_dp (op2_lsl (by decide)) fun s5 u5 => ?_
+    refine wp_dp (op2_lsl (by decide)) fun s6 u6 => ?_
+    refine wp_mov (op2_lsr (by decide)) fun t u7 => ?_
+    have g72 : s2.gpr .r7 = BitVec.ofNat 32 (S W) := by
+      rw [u2.gpr, dpVal, u1.other _ (by decide), u1.other _ (by decide), e7]
+    have g73 : s3.gpr .r7 = BitVec.ofNat 32 (S W) := by rw [u3.other _ (by decide), g72]
+    have g74 : s4.gpr .r7 = BitVec.ofNat 32 (S W) := by rw [u4.other _ (by decide), g73]
+    have g75 : s5.gpr .r7 = BitVec.ofNat 32 (S W) := by rw [u5.other _ (by decide), g74]
+    have g7 : s6.gpr .r7 = BitVec.ofNat 32 (S W) := by rw [u6.other _ (by decide), g75]
+    refine kk t (by rw [u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem])
+      ((u1.rest (by simp)).trans <| (u2.rest (by simp)).trans <| (u3.rest (by simp)).trans <|
+        (u4.rest (by simp)).trans <| (u5.rest (by simp)).trans <| (u6.rest (by simp)).trans (u7.rest (by simp)))
+      (e6 t (by rw [u7.other _ (by decide), u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide),
+        u3.other _ (by decide), u2.other _ (by decide), u1.gpr]))
+      (by rw [u7.other _ (by decide), g7]) ?_
+    rw [u7.gpr, u6.gpr, dpVal, u5.gpr, dpVal, u4.gpr, dpVal, u3.gpr, dpVal, u2.other _ (by decide),
+      u2.other _ (by decide), u1.other _ (by decide), u1.other _ (by decide), e9]
+    simp only [g74, g75]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_shiftLeft, BitVec.ofNat_eq_ofNat,
+      BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq, Nat.reducePow, arr, S, hdr, bD] at fa ⊢
+    omega
 
 /-- The sign of a two's complement number from its top. -/
 theorem sign_rep {n : Nat} {x : Int} {L : Nat} (h : (n : Int) = x + if x < 0 then 2 ^ (L + 1) else 0)
@@ -1894,8 +2014,8 @@ theorem half_bounds (x : BitVec 32) : (SG.lowh x).toNat < 2 ^ 16 ∧ (x >>> 16).
 abbrev fgL : List TSpec := [⟨.r0, 0, false⟩, ⟨.r0, 2, true⟩, ⟨.r1, 1, false⟩, ⟨.r1, 3, true⟩]
 
 /-- The `f, g` pass from the memory `mI` and the rows' starting carries. -/
-def fgP (B : BitVec 32) (W k : Nat) (mI : Mem) (i₀ i₁ : Nat) : Pass :=
-  ⟨B, W, k, mI, fun r => if r = .r1 then bG else bF, fgL, [.r0, .r1], fun row => if row then i₁ else i₀⟩
+def fgP (B : BitVec 32) (W k : Nat) (mI : Mem) (i₀ i₁ c : Nat) : Pass :=
+  ⟨B, W, k, mI, fun r => if r = .r1 then bG else bF, fgL, [.r0, .r1], fun row => if row then i₁ else i₀, c⟩
 
 theorem fgTerms_eq (zo : Nat) : fgTerms zo = tcode zo fgL := by
   simp only [fgTerms, tcode, rlo, rhi, Bool.false_eq_true, ↓reduceIte, List.append_assoc, List.append_nil]
@@ -1922,9 +2042,9 @@ theorem coef_words {c : Int} (h : c.natAbs ≤ 2 ^ 31 - 1) :
 
 /-- `fgPass`: from the matrix `(u, v; q, r)` of a batch, and `f`, `g` (two's complement in `k + 1` words) with
 `u f + v g = 2^30 f'` and `q f + r g = 2^30 g'`, arrays `bF`, `bG` become `f'`, `g'` (modulo `2^(32 (k + 1))`).
-The spilled `r6`, `r7`, `r9` stay in the scratch. -/
+`r6 = 32 b` (`b < 2^16`), `r7` and `r9` come back. -/
 theorem fgPass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k N) (hN : 15 ≤ N) (hW : 8 ≤ W)
-    {P : Prop} {u v q r f g' f₁ g₁ : Int}
+    {b : Nat} (h6 : s.gpr .r6 = BitVec.ofNat 32 (32 * b)) (hb : b < 2 ^ 16) {P : Prop} {u v q r f g' f₁ g₁ : Int}
     (hval : P → (SG.aword s.mem B W cU.arr cU.off = BitVec.ofInt 32 u ∧
         SG.aword s.mem B W cV.arr cV.off = BitVec.ofInt 32 v ∧
         SG.aword s.mem B W cQ.arr cQ.off = BitVec.ofInt 32 q ∧ SG.aword s.mem B W cR.arr cR.off = BitVec.ofInt 32 r) ∧
@@ -1934,15 +2054,14 @@ theorem fgPass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
       (-2 ^ (32 * k + 31) ≤ f ∧ f < 2 ^ (32 * k + 31)) ∧ (-2 ^ (32 * k + 31) ≤ g' ∧ g' < 2 ^ (32 * k + 31)) ∧
       u * f + v * g' = 2 ^ 30 * f₁ ∧ q * f + r * g' = 2 ^ 30 * g₁) :
     WP isa fgPass s fun t => Gk t B Z W k N ∧ Keep B W [bF, bG, bT1, bT2, bA1] [] s.mem t.mem ∧
-      Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r10, .r11, .r12, .lr] s t ∧
-      scr t.mem B W 0 = s.gpr .r6 ∧ scr t.mem B W 4 = s.gpr .r7 ∧ scr t.mem B W 8 = s.gpr .r9 ∧
+      Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r10, .r11, .r12, .lr] s t ∧
       (P → (val32 t.mem (State.addr B) (arr W bF) (k + 1) : Int) % 2 ^ (32 * (k + 1)) = f₁ % 2 ^ (32 * (k + 1)) ∧
         (val32 t.mem (State.addr B) (arr W bG) (k + 1) : Int) % 2 ^ (32 * (k + 1)) = g₁ % 2 ^ (32 * (k + 1))) := by
   have hk := g.kle
   have hk0 := g.kpos
   simp only [fgPass, seqs, fgTerms_eq, List.append_assoc, List.cons_append, List.nil_append]
   rw [WP.seq_iff]
-  refine SG.spill_ok g hN hW fun s1 h1 r1 m1 => ?_
+  refine SG.spill_ok g hN hW fun s1 h1 r1 m1 l1 => ?_
   refine h1.rowPrep_ok (x := bF) (y := bG) (c₁ := cU) (c₂ := cV) (t₁ := 0) (t₂ := 1) (row := 0)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     fun s2 h2 r2 m2 => ?_
@@ -1962,8 +2081,7 @@ theorem fgPass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
   -- The memory the pass starts from.
   have hS8 : 8 + 4 ≤ S W := by simp only [S]; omega
   have hk4 : 4 * k + 4 ≤ S W := by simp only [S]; omega
-  have k1 : Keep B W [bT1, bT2, bA1] [] s.mem s1.mem := by
-    rw [m1]; exact ((h1.keep _ (by omega) _).trans (h1.keep _ (by omega) _)).trans (h1.keep _ (by omega) _)
+  have k1 : Keep B W [bT1, bT2, bA1] [] s.mem s1.mem := by rw [m1]; exact Outs.refl _ _ _
   have k2 : Keep B W [bT1, bT2, bA1] [] s1.mem s2.mem := by
     rw [m2]; exact ((((h1.keepC _ (by decide) _).trans (h1.keepC _ (by decide) _)).trans
       (h1.keep _ (by simp only [corrOff]; omega) _)).trans (h1.keep _ (by simp only [carryOff]; omega) _))
@@ -2007,10 +2125,13 @@ theorem fgPass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
   have z3 : σ.gpr .r3 = 0 := by
     rw [r9.gpr _ (by decide), r8.gpr _ (by decide), u7.other _ (by decide), u6.other _ (by decide), u5.gpr]
   have z5 : σ.gpr .r5 = 0 := by rw [r9.gpr _ (by decide), r8.gpr _ (by decide), u7.gpr]
-  have ok : (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).Ok σ Z N := by
+  have lσ : σ.gpr .lr = s1.gpr .lr := by
+    rw [r9.gpr _ (by decide), r8.gpr _ (by decide), u7.other _ (by decide), u6.other _ (by decide),
+      u5.other _ (by decide), u4.other _ (by decide), r3.gpr _ (by decide), r2.gpr _ (by decide)]
+  have ok : (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).Ok σ Z N := by
     refine ⟨g9, hN, hW, rfl, ?_, by simp [fgP], by simp [fgP], show [Reg.r0, Reg.r1].Nodup by decide,
       show (if Reg.r0 = Reg.r1 then bG else bF) ≠ (if Reg.r1 = Reg.r1 then bG else bF) by decide, ?_, h9.r12,
-      fun row => by cases row <;> rfl, ?_, ?_⟩
+      fun row => by cases row <;> rfl, ?_, ?_, hb⟩
     · intro x hx
       simp only [fgP, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl
@@ -2026,35 +2147,35 @@ theorem fgPass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
     · intro row; cases row
       · exact z3
       · exact z5
-    · show scr σ.mem B W 8 = BitVec.ofNat 32 k
-      rw [sc]; scr_simp h1; exact g.r9
+    · show σ.gpr .lr = BitVec.ofNat 32 (2 ^ 16 * b + k)
+      rw [lσ, l1, h6, g.r9]; exact lr_init _ _
   refine ok.word0 (is := []) fun s10 I1 => ?_
   rw [WP.block_nil_iff, WP.seq_iff]
   refine WP.mono (ok.loop_ok I1) fun s11 I2 => ?_
-  refine ok.top_ok I2 fun s12 r12 k12 v12 => ?_
-  have e12 : s12.gpr .r12 = σ.gpr .r12 := r12.gpr _ (show ¬ Reg.r12 ∈ tClob ++ Reg.lr :: [Reg.r0, Reg.r1] by decide)
-  have sk : ∀ d, d + 4 ≤ 120 → s12.mem.readW (off (State.addr B) (arr W bT1 + d)) 32 = scr σ.mem B W d :=
-    fun d hd => ok.scr_keep k12 (show d + 4 ≤ 3 * S W by have := hW; simp only [S]; omega)
-  refine wp_ldr (a := off (State.addr B) (arr W bT1 + 4)) (by decide) (by rw [e12]; exact h9.addr (by omega))
-    (by rw [r12.rd, r12.wr]; exact h9.g.read (h9.fit (by omega))) fun s13 u13 => ?_
-  refine wp_ldr (a := off (State.addr B) (arr W bT1 + 8)) (by decide)
-    (by rw [u13.other _ (by decide), e12]; exact h9.addr (by omega))
-    (by rw [u13.rd, u13.wr, r12.rd, r12.wr]; exact h9.g.read (h9.fit (by omega))) fun s14 u14 => WP.block_nil ?_
-  have m14 : s14.mem = s12.mem := by rw [u14.mem, u13.mem]
-  have sp : ∀ d, d = 0 ∨ d = 4 ∨ d = 8 → scr s14.mem B W d = scr σ.mem B W d := fun d hd => by
-    rw [m14]; exact sk d (by omega)
-  have s0 : scr σ.mem B W 0 = s.gpr .r6 := by rw [sc]; scr_simp h1
-  have s4 : scr σ.mem B W 4 = s.gpr .r7 := by rw [sc]; scr_simp h1
-  have s8 : scr σ.mem B W 8 = s.gpr .r9 := by rw [sc]; scr_simp h1
-  have g7 : s14.gpr .r7 = s.gpr .r7 := by rw [u14.other _ (by decide), u13.gpr, sk 4 (by omega), s4]
-  have g9 : s14.gpr .r9 = s.gpr .r9 := by rw [u14.gpr, u13.mem, sk 8 (by omega), s8]
+  refine ok.top_ok I2 fun s12 r12 k12 q12 v12 => ?_
+  have q0 : s12.gpr .r0 = B + BitVec.ofNat 32 (arr W bF + 4 * k) := by
+    rw [q12.gpr _ (by decide), I2.ptr .r0 (by simp [fgP])]; simp [fgP]
+  have q1 : s12.gpr .r1 = B + BitVec.ofNat 32 (arr W bG + 4 * k) := by
+    rw [q12.gpr _ (by decide), I2.ptr .r1 (by simp [fgP])]; simp [fgP]
+  have q8 : s12.gpr .r8 = B := by
+    rw [r12.gpr _ (show ¬ Reg.r8 ∈ tClob ++ Reg.lr :: [Reg.r0, Reg.r1] by decide)]; exact h9.g.r8
+  have ql : s12.gpr .lr = BitVec.ofNat 32 (2 ^ 16 * b + 0) := by
+    rw [q12.gpr _ (by decide), I2.cnt]; simp [fgP]
+  have hfit : arr W bG + 4 * k < 2 ^ 32 := by
+    have := g.arr_fit (j := bG) (by simp only [bG]; omega); have := g.nowrap; simp only [S] at *; omega
+  rw [← List.append_nil (restore [2])]
+  refine restore_ok (a := bF) (a' := bG) (Or.inl ⟨rfl, rfl⟩) rfl q0 q1 q8 ql hb hfit
+    fun s14 m14 R14 g6 g7 g9 => WP.block_nil ?_
+  have g6' : s14.gpr .r6 = s.gpr .r6 := g6.trans h6.symm
+  have g7' : s14.gpr .r7 = s.gpr .r7 := g7.trans g.r7.symm
+  have g9' : s14.gpr .r9 = s.gpr .r9 := g9.trans g.r9.symm
   -- The registers outside the pass.
   have R1 : Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r9, .r10, .r11, .r12, .lr] s s14 :=
     (r1.mono (by simp)).trans <| (r2.mono (by simp)).trans <| (r3.mono (by simp)).trans <|
       (u4.rest (by simp)).trans <| (u5.rest (by simp)).trans <| (u6.rest (by simp)).trans <|
       (u7.rest (by simp)).trans <| (r8.mono (by simp)).trans <| (r9.mono (by simp)).trans <|
       (r12.mono (show ∀ x ∈ tClob ++ Reg.lr :: [Reg.r0, Reg.r1], x ∈ ([.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r9,
-        .r10, .r11, .r12, .lr] : List Reg) by decide)).trans <| (u13.rest (by simp)).trans (u14.rest (by simp))
+        .r10, .r11, .r12, .lr] : List Reg) by decide)).trans (R14.mono (by simp))
   have k3 : Keep B W [bT1, bT2, bA1] [] s2.mem s3.mem := by
     rw [m3]; exact ((((h1.keepC _ (by decide) _).trans (h1.keepC _ (by decide) _)).trans
       (h1.keep _ (by simp only [corrOff]; omega) _)).trans (h1.keep _ (by simp only [carryOff]; omega) _))
@@ -2064,13 +2185,12 @@ theorem fgPass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; simp only [bT1] at hj
       rcases hx with rfl | rfl | rfl <;> simp only [bT1, bT2, bA1] <;> omega) (by simp)
       (g.fit64 (by simp only [bT1] at hj; omega))
-  refine ⟨g.of g7 (R1.gpr _ (by decide)) g9 R1.wr, ?_, ⟨fun x hx => ?_, R1.rd, R1.wr, R1.sp⟩,
-    by rw [sp 0 (by omega), s0], by rw [sp 4 (by omega), s4], by rw [sp 8 (by omega), s8], fun hP => ?_⟩
+  refine ⟨g.of g7' (R1.gpr _ (by decide)) g9' R1.wr, ?_, ⟨fun x hx => ?_, R1.rd, R1.wr, R1.sp⟩, fun hP => ?_⟩
   · rw [m14]
     exact (kσ.mono (by simp)).trans (k12.mono (show ∀ j ∈ [(if Reg.r0 = Reg.r1 then bG else bF),
       (if Reg.r1 = Reg.r1 then bG else bF)], j ∈ [bF, bG, bT1, bT2, bA1] by decide))
   · have := R1.gpr x
-    cases x <;> first | exact g7 | exact g9 | exact this (by decide) | exact absurd (by decide) hx
+    cases x <;> first | exact g6' | exact g7' | exact g9' | exact this (by decide) | exact absurd (by decide) hx
   obtain ⟨⟨hu, hv, hq, hr⟩, huv, hqr, hf, hg, hfb, hgb, zf, zg⟩ := hval hP
   subst hu hv hq hr
   have e31 : 2 ^ 31 * 2 ^ (32 * k) = 2 ^ (32 * k + 31) := by rw [← Nat.pow_add, Nat.add_comm]
@@ -2094,7 +2214,7 @@ theorem fgPass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
   have hq' : q.natAbs ≤ 2 ^ 31 - 1 := by omega
   have hr' : r.natAbs ≤ 2 ^ 31 - 1 := by omega
   have cw := fun (c : Int) (h : c.natAbs ≤ 2 ^ 31 - 1) => coef_words h
-  have hcs : (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).CS := by
+  have hcs : (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).CS := by
     intro row
     have e0 := (cm 0 _ (.inl ⟨rfl, rfl⟩)).2.2.1
     have e1 := (cm 1 _ (.inr (.inl ⟨rfl, rfl⟩))).2.2.1
@@ -2110,13 +2230,13 @@ theorem fgPass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
   -- Coefficients by slot, sources by array.
   let c : Nat → Int := fun t => if t = 0 then u else if t = 1 then v else if t = 2 then q else r
   let X : Nat → Int := fun a => if a = bG then g' else f
-  have hd : ∀ sp ∈ (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).L,
-      (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).scw (coefOff sp.t) =
+  have hd : ∀ sp ∈ (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).L,
+      (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).scw (coefOff sp.t) =
         (if c sp.t < 0 then BitVec.allOnes 32 else 0) ∧
-      (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).cm sp.t = (c sp.t).natAbs ∧
-      (val32 σ.mem (State.addr B) (arr W ((fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).arrOf sp.xs))
-        (k + 1) : Int) = X ((fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).arrOf sp.xs) +
-          if X ((fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).arrOf sp.xs) < 0
+      (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).cm sp.t = (c sp.t).natAbs ∧
+      (val32 σ.mem (State.addr B) (arr W ((fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).arrOf sp.xs))
+        (k + 1) : Int) = X ((fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).arrOf sp.xs) +
+          if X ((fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).arrOf sp.xs) < 0
           then 2 ^ (32 * (k + 1)) else 0 := by
     intro sp hsp
     simp only [fgP, List.mem_cons, List.not_mem_nil, or_false] at hsp
@@ -2161,9 +2281,9 @@ theorem fgPass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
   have hc3 : c 3 = r := rfl
   have hX0 : X bF = f := rfl
   have hX1 : X bG = g' := rfl
-  have ar0 : (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).arrOf .r0 = bF := rfl
-  have ar1 : (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).arrOf .r1 = bG := rfl
-  have rf0 := Pass.row_result (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat) false c X hd ?_ ?_ ?_ ?_
+  have ar0 : (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).arrOf .r0 = bF := rfl
+  have ar1 : (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).arrOf .r1 = bG := rfl
+  have rf0 := Pass.row_result (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b) false c X hd ?_ ?_ ?_ ?_
     (v12 hcs false)
   rotate_left
   · show (σ.gpr .r2).toNat = _
@@ -2185,7 +2305,7 @@ theorem fgPass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
     simp only [fgP, Pass.sval, hc0, hc1, reduceCtorEq, ↓reduceIte, hX0, hX1, Bool.true_eq_false,
       Int.add_zero, Int.zero_add]
     omega
-  have rf1 := Pass.row_result (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat) true c X hd ?_ ?_ ?_ ?_
+  have rf1 := Pass.row_result (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b) true c X hd ?_ ?_ ?_ ?_
     (v12 hcs true)
   rotate_left
   · show (σ.gpr .r4).toNat = _
@@ -2207,17 +2327,17 @@ theorem fgPass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
     simp only [fgP, Pass.sval, hc2, hc3, reduceCtorEq, ↓reduceIte, hX0, hX1, Bool.false_eq_true,
       Int.add_zero, Int.zero_add]
     omega
-  have sv0 : Pass.sval (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat) false c X
-      (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).L / 2 ^ 30 = f₁ := by
-    rw [show Pass.sval (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat) false c X
-      (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).L = 2 ^ 30 * f₁ by
+  have sv0 : Pass.sval (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b) false c X
+      (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).L / 2 ^ 30 = f₁ := by
+    rw [show Pass.sval (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b) false c X
+      (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).L = 2 ^ 30 * f₁ by
         simp only [fgP, Pass.sval, hc0, hc1, reduceCtorEq, ↓reduceIte, hX0, hX1, Bool.true_eq_false,
           Int.add_zero, Int.zero_add]; omega]
     exact Int.mul_ediv_cancel_left _ (by decide)
-  have sv1 : Pass.sval (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat) true c X
-      (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).L / 2 ^ 30 = g₁ := by
-    rw [show Pass.sval (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat) true c X
-      (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).L = 2 ^ 30 * g₁ by
+  have sv1 : Pass.sval (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b) true c X
+      (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).L / 2 ^ 30 = g₁ := by
+    rw [show Pass.sval (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b) true c X
+      (fgP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).L = 2 ^ 30 * g₁ by
         simp only [fgP, Pass.sval, hc2, hc3, reduceCtorEq, ↓reduceIte, hX0, hX1, Bool.false_eq_true,
           Int.add_zero, Int.zero_add]; omega]
     exact Int.mul_ediv_cancel_left _ (by decide)
@@ -2231,9 +2351,9 @@ theorem fgPass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
 abbrev deL : List TSpec := fgL ++ [⟨.r11, 4, false⟩, ⟨.r11, 5, true⟩]
 
 /-- The `d, e` pass from the memory `mI` and the rows' starting carries. -/
-def deP (B : BitVec 32) (W k : Nat) (mI : Mem) (i₀ i₁ : Nat) : Pass :=
+def deP (B : BitVec 32) (W k : Nat) (mI : Mem) (i₀ i₁ c : Nat) : Pass :=
   ⟨B, W, k, mI, fun r => if r = .r1 then bE else if r = .r11 then bP else bD, deL, [.r0, .r1, .r11],
-    fun row => if row then i₁ else i₀⟩
+    fun row => if row then i₁ else i₀, c⟩
 
 theorem deTerms_eq (zo : Nat) : deTerms zo = tcode zo deL := by
   simp only [deTerms, fgTerms, tcode, rlo, rhi, Bool.false_eq_true, ↓reduceIte, List.append_assoc, List.append_nil,
@@ -2307,9 +2427,9 @@ theorem md_val {c1 c2 dt et d0 e0 np : BitVec 32} {u v d e : Int}
   rw [mdW, mw, ofInt_toInt' hm]
 
 /-- What `dePrepCode` leaves for the `d, e` pass: the sources' pointers, zero high words, the rows' carries in
-`r2`, `r4`, and the scratch: each coefficient's mask and halves, the rows' carries and corrections, and the spills. -/
+`r2`, `r4`, `lr`, and the scratch: each coefficient's mask and halves, and the rows' carries and corrections. -/
 structure DeIn (s σ : State) (B : BitVec 32) (W k : Nat) (wU wV wQ wR m1 m2 : BitVec 32) : Prop where
-  rest : Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r10, .r11, .r12] s σ
+  rest : Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r10, .r11, .r12, .lr] s σ
   keep : Keep B W [bT1, bT2, bA1] [] s.mem σ.mem
   p0 : σ.gpr .r0 = B + BitVec.ofNat 32 (arr W bD)
   p1 : σ.gpr .r1 = B + BitVec.ofNat 32 (arr W bE)
@@ -2330,21 +2450,19 @@ structure DeIn (s σ : State) (B : BitVec 32) (W k : Nat) (wU wV wQ wR m1 m2 : B
   co1 : scr σ.mem B W (corrOff 1) =
       0 + ((smask wQ ^^^ smask (SG.aword s.mem B W bD (4 * k))) &&& wabs wQ) +
       ((smask wR ^^^ smask (SG.aword s.mem B W bE (4 * k))) &&& wabs wR) + (wabs m2 &&& smask m2)
-  sp0 : scr σ.mem B W 0 = scr s.mem B W 0
-  sp4 : scr σ.mem B W 4 = scr s.mem B W 4
-  sp8 : scr σ.mem B W 8 = scr s.mem B W 8
+  lr : σ.gpr .lr = s.gpr .r9 + s.gpr .r6 <<< 11
 
 /-- The preparation of `dePass`, up to its terms. -/
 def dePrepCode : List Instr :=
-  ptr .r12 bT1 ++ rowPrep bD bE cU cV 0 1 0 ++ rowPrep bD bE cQ cR 2 3 1 ++ mdPrep cU cV 4 0 ++ mdPrep cQ cR 5 1 ++
+  spill ++ rowPrep bD bE cU cV 0 1 0 ++ rowPrep bD bE cQ cR 2 3 1 ++ mdPrep cU cV 4 0 ++ mdPrep cQ cR 5 1 ++
     [.ldr .r2 .r12 (carryOff 0), .mov .r3 (.imm 0), .ldr .r4 .r12 (carryOff 1), .mov .r5 (.imm 0)] ++
     ptr .r0 bD ++ ptr .r1 bE ++ ptr .r11 bP
 
-theorem dePass_eq : dePass = seqs [.block (dePrepCode ++ (tcode 0 deL ++ (out0 .r0 .r2 .r3 ++ (out0 .r1 .r4 .r5 ++
-      [.ldr .lr .r12 8])))),
+theorem dePass_eq : dePass = seqs [.block (dePrepCode ++ (tcode 0 deL ++ (out0 .r0 .r2 .r3 ++ out0 .r1 .r4 .r5))),
     .loop (.block (tcode 4 deL ++ (outW .r0 .r2 .r3 ++ (outW .r1 .r4 .r5 ++
-      [.dp .add .r0 .r0 (.imm 4), .dp .add .r1 .r1 (.imm 4), .dp .add .r11 .r11 (.imm 4), .subs .lr .lr (.imm 1)])))) .ne,
-    .block (outTop .r0 .r2 0 ++ (outTop .r1 .r4 1 ++ [.ldr .r6 .r12 0, .ldr .r7 .r12 4, .ldr .r9 .r12 8]))] := by
+      (([.dp .add .r0 .r0 (.imm 4), .dp .add .r1 .r1 (.imm 4), .dp .add .r11 .r11 (.imm 4)] : List Instr) ++
+        wordDone))))) .ne,
+    .block (outTop .r0 .r2 0 ++ (outTop .r1 .r4 1 ++ restore [2, 1]))] := by
   simp only [dePass, dePrepCode, deTerms_eq, List.append_assoc]
 
 /-- `dePrepCode`: the `d, e` pass's coefficients, `md`s, corrections and carries to the scratch, and its
@@ -2364,8 +2482,7 @@ theorem dePrep_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
   have hk := g.kle
   have hk0 := g.kpos
   simp only [dePrepCode, List.append_assoc, List.cons_append, List.nil_append]
-  refine g.ptr_ok (by decide) (by decide) fun s1 p1 r1 m1 g1 => ?_
-  have h1 : SG s1 B Z W k N := ⟨g1, hN, hW, p1⟩
+  refine SG.spill_ok g hN hW fun s1 h1 r1 m1 l1 => ?_
   refine h1.rowPrep_ok (x := bD) (y := bE) (c₁ := cU) (c₂ := cV) (t₁ := 0) (t₂ := 1) (row := 0)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     fun s2 h2 r2 m2 => ?_
@@ -2485,22 +2602,24 @@ theorem dePrep_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
         (SG.aword s.mem B W bE 0) (s.mem.readW (off (State.addr B) sB) 32)) &&& smask (mdW (SG.aword s.mem B W cQ.arr cQ.off) (SG.aword s.mem B W cR.arr cR.off)
         (SG.aword s.mem B W bD (4 * k)) (SG.aword s.mem B W bE (4 * k)) (SG.aword s.mem B W bD 0)
         (SG.aword s.mem B W bE 0) (s.mem.readW (off (State.addr B) sB) 32))) := by rw [sc]; simp only [mdW]; scr_simp h1
-  have spx : ∀ d, d = 0 ∨ d = 4 ∨ d = 8 → scr σ.mem B W d = scr s.mem B W d := by
-    intro d hd'; rcases hd' with rfl | rfl | rfl <;> rw [sc] <;> scr_simp h1 <;> rw [m1]
-  have R : Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r10, .r11, .r12] s σ :=
+  have lσ : σ.gpr .lr = s1.gpr .lr := by
+    rw [r12.gpr _ (by decide), r11.gpr _ (by decide), r10.gpr _ (by decide), u9.other _ (by decide),
+      u8.other _ (by decide), u7.other _ (by decide), u6.other _ (by decide), r5.gpr _ (by decide),
+      r4.gpr _ (by decide), r3.gpr _ (by decide), r2.gpr _ (by decide)]
+  have R : Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r10, .r11, .r12, .lr] s σ :=
     (r1.mono (by simp)).trans <| (r2.mono (by simp)).trans <| (r3.mono (by simp)).trans <|
       (r4.mono (by simp)).trans <| (r5.mono (by simp)).trans <|
       (u6.rest (by simp)).trans <| (u7.rest (by simp)).trans <| (u8.rest (by simp)).trans <|
       (u9.rest (by simp)).trans <| (r10.mono (by simp)).trans <| (r11.mono (by simp)).trans (r12.mono (by simp))
-  exact kk σ h12 ⟨R, mσ ▸ k5, p10', p11', p12, z3, z5, i0, i1, cs, ca0, ca1, co0, co1, spx 0 (by simp),
-    spx 4 (by simp), spx 8 (by simp)⟩
+  exact kk σ h12 ⟨R, mσ ▸ k5, p10', p11', p12, z3, z5, i0, i1, cs, ca0, ca1, co0, co1, lσ.trans l1⟩
 
 /-- `dePass`: from the matrix `(u, v; q, r)` of a batch, `d`, `e` (two's complement in `k + 1` words) and `m`
 in array `bP` (`k + 1` words), with `np = -m⁻¹` (mod `2^30`) at header word `sB`, arrays `bD`, `bE` become
 `deUpd 30 m np u v d e` and `deUpd 30 m np q r d e` (modulo `2^(32 (k + 1))`) when `P` gives those values;
-`r6`, `r7` and `r9` come back from the scratch. -/
+`r6 = 32 b` (`b < 2^16`), `r7` and `r9` come back. -/
 theorem dePass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k N) (hN : 15 ≤ N) (hW : 8 ≤ W)
-    {P : Prop} {u v q r d e : Int} {p : Nat} {v6 : BitVec 32}
+    {b : Nat} (h6 : s.gpr .r6 = BitVec.ofNat 32 (32 * b)) (hb : b < 2 ^ 16)
+    {P : Prop} {u v q r d e : Int} {p : Nat}
     (hval : P → (SG.aword s.mem B W cU.arr cU.off = BitVec.ofInt 32 u ∧
         SG.aword s.mem B W cV.arr cV.off = BitVec.ofInt 32 v ∧
         SG.aword s.mem B W cQ.arr cQ.off = BitVec.ofInt 32 q ∧ SG.aword s.mem B W cR.arr cR.off = BitVec.ofInt 32 r) ∧
@@ -2509,10 +2628,9 @@ theorem dePass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
       (val32 s.mem (State.addr B) (arr W bE) (k + 1) : Int) = e + (if e < 0 then 2 ^ (32 * (k + 1)) else 0) ∧
       (-2 ^ (32 * k + 31) ≤ d ∧ d < 2 ^ (32 * k + 31)) ∧ (-2 ^ (32 * k + 31) ≤ e ∧ e < 2 ^ (32 * k + 31)) ∧
       val32 s.mem (State.addr B) (arr W bP) (k + 1) = p ∧
-      ((p : Int) * (s.mem.readW (off (State.addr B) sB) 32).toNat + 1) % 2 ^ 30 = 0)
-    (hs0 : scr s.mem B W 0 = v6) (hs4 : scr s.mem B W 4 = s.gpr .r7) (hs8 : scr s.mem B W 8 = s.gpr .r9) :
+      ((p : Int) * (s.mem.readW (off (State.addr B) sB) 32).toNat + 1) % 2 ^ 30 = 0) :
     WP isa dePass s fun t => Gk t B Z W k N ∧ Keep B W [bD, bE, bT1, bT2, bA1] [] s.mem t.mem ∧
-      Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r10, .r11, .r12, .lr] s t ∧ t.gpr .r6 = v6 ∧
+      Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r10, .r11, .r12, .lr] s t ∧
       (P → (val32 t.mem (State.addr B) (arr W bD) (k + 1) : Int) % 2 ^ (32 * (k + 1)) =
           VG.Proof.Divstep.deUpd 30 p (s.mem.readW (off (State.addr B) sB) 32).toNat u v d e % 2 ^ (32 * (k + 1)) ∧
         (val32 t.mem (State.addr B) (arr W bE) (k + 1) : Int) % 2 ^ (32 * (k + 1)) =
@@ -2550,11 +2668,11 @@ theorem dePass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
     rw [a', b', d']
     exact ⟨b1', b2', b3', rfl⟩
   -- The pass.
-  have ok : (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).Ok σ Z N := by
+  have ok : (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).Ok σ Z N := by
     refine ⟨h12.g, hN, hW, rfl, ?_, by simp [deP], by simp [deP], show [Reg.r0, Reg.r1, Reg.r11].Nodup by decide,
       show (if Reg.r0 = Reg.r1 then bE else if Reg.r0 = Reg.r11 then bP else bD) ≠
         (if Reg.r1 = Reg.r1 then bE else if Reg.r1 = Reg.r11 then bP else bD) by decide, ?_, h12.r12,
-      fun row => by cases row <;> rfl, ?_, ?_⟩
+      fun row => by cases row <;> rfl, ?_, ?_, hb⟩
     · intro x hx
       simp only [deP, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl
@@ -2576,50 +2694,45 @@ theorem dePass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
     · intro row; cases row
       · exact z3
       · exact z5
-    · show scr σ.mem B W 8 = BitVec.ofNat 32 k
-      rw [D.sp8, hs8, g.r9]
+    · show σ.gpr .lr = BitVec.ofNat 32 (2 ^ 16 * b + k)
+      rw [D.lr, h6, g.r9]; exact lr_init _ _
   refine ok.word0 (is := []) fun s13 I1 => ?_
   rw [WP.block_nil_iff, WP.seq_iff]
   refine WP.mono (ok.loop_ok I1) fun s14 I2 => ?_
-  refine ok.top_ok I2 fun s15 r15 k15 v15 => ?_
-  have e15 : s15.gpr .r12 = σ.gpr .r12 :=
-    r15.gpr _ (show ¬ Reg.r12 ∈ tClob ++ Reg.lr :: [Reg.r0, Reg.r1, Reg.r11] by decide)
-  have sk : ∀ d, d + 4 ≤ 120 → s15.mem.readW (off (State.addr B) (arr W bT1 + d)) 32 = scr σ.mem B W d :=
-    fun d hd => ok.scr_keep k15 (show d + 4 ≤ 3 * S W by have := hW; simp only [S]; omega)
-  refine wp_ldr (a := off (State.addr B) (arr W bT1 + 0)) (by decide) (by rw [e15]; exact h12.addr (d := 0) (by omega))
-    (by rw [r15.rd, r15.wr]; exact h12.g.read (h12.fit (d := 0) (by omega))) fun s16 u16 => ?_
-  refine wp_ldr (a := off (State.addr B) (arr W bT1 + 4)) (by decide)
-    (by rw [u16.other _ (by decide), e15]; exact h12.addr (d := 4) (by omega))
-    (by rw [u16.rd, u16.wr, r15.rd, r15.wr]; exact h12.g.read (h12.fit (d := 4) (by omega))) fun s17 u17 => ?_
-  refine wp_ldr (a := off (State.addr B) (arr W bT1 + 8)) (by decide)
-    (by rw [u17.other _ (by decide), u16.other _ (by decide), e15]; exact h12.addr (d := 8) (by omega))
-    (by rw [u17.rd, u17.wr, u16.rd, u16.wr, r15.rd, r15.wr]; exact h12.g.read (h12.fit (d := 8) (by omega)))
-    fun s18 u18 => WP.block_nil ?_
-  have m18 : s18.mem = s15.mem := by rw [u18.mem, u17.mem, u16.mem]
-  have g6 : s18.gpr .r6 = v6 := by
-    rw [u18.other _ (by decide), u17.other _ (by decide), u16.gpr, sk 0 (by omega), D.sp0, hs0]
-  have g7 : s18.gpr .r7 = s.gpr .r7 := by
-    rw [u18.other _ (by decide), u17.gpr, u16.mem, sk 4 (by omega), D.sp4, hs4]
-  have g9 : s18.gpr .r9 = s.gpr .r9 := by
-    rw [u18.gpr, u17.mem, u16.mem, sk 8 (by omega), D.sp8, hs8]
+  refine ok.top_ok I2 fun s15 r15 k15 q15 v15 => ?_
+  have q0 : s15.gpr .r0 = B + BitVec.ofNat 32 (arr W bD + 4 * k) := by
+    rw [q15.gpr _ (by decide), I2.ptr .r0 (by simp [deP])]; simp [deP]
+  have q1 : s15.gpr .r1 = B + BitVec.ofNat 32 (arr W bE + 4 * k) := by
+    rw [q15.gpr _ (by decide), I2.ptr .r1 (by simp [deP])]; simp [deP]
+  have q8 : s15.gpr .r8 = B := by
+    rw [r15.gpr _ (show ¬ Reg.r8 ∈ tClob ++ Reg.lr :: [Reg.r0, Reg.r1, Reg.r11] by decide)]; exact h12.g.r8
+  have ql : s15.gpr .lr = BitVec.ofNat 32 (2 ^ 16 * b + 0) := by
+    rw [q15.gpr _ (by decide), I2.cnt]; simp [deP]
+  have hfit : arr W bE + 4 * k < 2 ^ 32 := by
+    have := g.arr_fit (j := bE) (by simp only [bE]; omega); have := g.nowrap; simp only [S] at *; omega
+  rw [← List.append_nil (restore [2, 1])]
+  refine restore_ok (a := bD) (a' := bE) (Or.inr ⟨rfl, rfl⟩) rfl q0 q1 q8 ql hb hfit
+    fun s18 m18 R18 g6 g7 g9 => WP.block_nil ?_
+  have g6' : s18.gpr .r6 = s.gpr .r6 := g6.trans h6.symm
+  have g7' : s18.gpr .r7 = s.gpr .r7 := g7.trans g.r7.symm
+  have g9' : s18.gpr .r9 = s.gpr .r9 := g9.trans g.r9.symm
   have R1 : Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r9, .r10, .r11, .r12, .lr] s s18 :=
     (D.rest.mono (by simp)).trans <|
       (r15.mono (show ∀ x ∈ tClob ++ Reg.lr :: [Reg.r0, Reg.r1, Reg.r11], x ∈ ([.r0, .r1, .r2, .r3, .r4, .r5, .r6,
-        .r7, .r9, .r10, .r11, .r12, .lr] : List Reg) by decide)).trans <|
-      (u16.rest (by simp)).trans <| (u17.rest (by simp)).trans (u18.rest (by simp))
+        .r7, .r9, .r10, .r11, .r12, .lr] : List Reg) by decide)).trans (R18.mono (by simp))
   have vσ : ∀ j, j < bT1 → val32 σ.mem (State.addr B) (arr W j) (k + 1) = val32 s.mem (State.addr B) (arr W j) (k + 1) :=
     fun j hj => by
       exact Keep.nk D.keep (by omega) (fun x hx => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; simp only [bT1] at hj
         rcases hx with rfl | rfl | rfl <;> simp only [bT1, bT2, bA1] <;> omega) (by simp)
         (g.fit64 (by simp only [bT1] at hj; omega))
-  refine ⟨g.of g7 (R1.gpr _ (by decide)) g9 R1.wr, ?_, ⟨fun x hx => ?_, R1.rd, R1.wr, R1.sp⟩, g6, fun hP => ?_⟩
+  refine ⟨g.of g7' (R1.gpr _ (by decide)) g9' R1.wr, ?_, ⟨fun x hx => ?_, R1.rd, R1.wr, R1.sp⟩, fun hP => ?_⟩
   · rw [m18]
     exact (D.keep.mono (by simp)).trans (k15.mono (show ∀ j ∈ [(if Reg.r0 = Reg.r1 then bE else
       if Reg.r0 = Reg.r11 then bP else bD), (if Reg.r1 = Reg.r1 then bE else if Reg.r1 = Reg.r11 then bP else bD)],
       j ∈ [bD, bE, bT1, bT2, bA1] by decide))
   · have := R1.gpr x
-    cases x <;> first | exact g7 | exact g9 | exact this (by decide) | exact absurd (by decide) hx
+    cases x <;> first | exact g6' | exact g7' | exact g9' | exact this (by decide) | exact absurd (by decide) hx
   obtain ⟨⟨hu, hv, hq, hr⟩, huv, hqr, hd, he, hdb, heb, hp, hnp⟩ := hval hP
   subst hu hv hq hr
   have d0 := word0_rep hd
@@ -2659,7 +2772,7 @@ theorem dePass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
   have hpv : (val32 σ.mem (State.addr B) (arr W bP) (k + 1) : Int) = (p : Int) + if (p : Int) < 0 then
       2 ^ (32 * (k + 1)) else 0 := by
     rw [vσ bP (by decide), hp]; simp only [show ¬ ((p : Int) < 0) by omega, ↓reduceIte, Int.add_zero]
-  have hcs : (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).CS := by
+  have hcs : (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).CS := by
     intro row
     have e0 := (cm 0 (BitVec.ofInt 32 u) (by simp)).2.2.1
     have e1 := (cm 1 (BitVec.ofInt 32 v) (by simp)).2.2.1
@@ -2676,13 +2789,13 @@ theorem dePass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
     simp only [scr] at e0 e1 e2 e3 e4 e5
     cases row <;> simp only [deP, deL, List.cons_append, List.nil_append, Pass.csum, Pass.cm, Pass.scw,
       Bool.false_eq_true, Bool.true_eq_false, ↓reduceIte, Nat.add_zero, Nat.zero_add] <;> omega
-  have hd' : ∀ sp ∈ (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).L,
-      (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).scw (coefOff sp.t) =
+  have hd' : ∀ sp ∈ (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).L,
+      (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).scw (coefOff sp.t) =
         (if c sp.t < 0 then BitVec.allOnes 32 else 0) ∧
-      (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).cm sp.t = (c sp.t).natAbs ∧
-      (val32 σ.mem (State.addr B) (arr W ((deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).arrOf sp.xs))
-        (k + 1) : Int) = X ((deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).arrOf sp.xs) +
-          if X ((deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).arrOf sp.xs) < 0
+      (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).cm sp.t = (c sp.t).natAbs ∧
+      (val32 σ.mem (State.addr B) (arr W ((deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).arrOf sp.xs))
+        (k + 1) : Int) = X ((deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).arrOf sp.xs) +
+          if X ((deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).arrOf sp.xs) < 0
           then 2 ^ (32 * (k + 1)) else 0 := by
     intro sp hsp
     simp only [deP, deL, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hsp
@@ -2714,8 +2827,8 @@ theorem dePass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
   have tD := top_smask hd hdb
   have tE := top_smask he heb
   have hp0 : ¬ ((p : Int) < 0) := by omega
-  have sv : ∀ (row : Bool), Pass.sval (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat) row c X
-      (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat).L =
+  have sv : ∀ (row : Bool), Pass.sval (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b) row c X
+      (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b).L =
         if row then q * d + r * e + M2 * p else u * d + v * e + M1 * p := by
     intro row; cases row <;>
     simp only [deP, deL, List.cons_append, List.nil_append, Pass.sval, hc0, hc1, hc2, hc3, hc4, hc5,
@@ -2725,7 +2838,7 @@ theorem dePass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
   have dv1 := VG.Proof.Divstep.mdOf_dvd (p := (p : Int)) (u := q) (v := r) (d := d) (e := e) hnp
   rw [hM1] at dv0
   rw [hM2] at dv1
-  have rf0 := Pass.row_result (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat) false c X hd' ?_ ?_ ?_
+  have rf0 := Pass.row_result (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b) false c X hd' ?_ ?_ ?_
     (by rw [sv false]; exact dv0) (v15 hcs false)
   rotate_left
   · show (σ.gpr .r2).toNat = _
@@ -2747,7 +2860,7 @@ theorem dePass_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (g : Gk s B Z W k 
       reduceCtorEq, ↓reduceIte, hX0, hX1, hX2, hp0, true_and, Bool.true_eq_false, false_and, Nat.add_zero,
       Nat.zero_add, ne_eq, eq_iff_iff, iff_false, not_not]
     split <;> split <;> split <;> omega
-  have rf1 := Pass.row_result (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat) true c X hd' ?_ ?_ ?_
+  have rf1 := Pass.row_result (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b) true c X hd' ?_ ?_ ?_
     (by rw [sv true]; exact dv1) (v15 hcs true)
   rotate_left
   · show (σ.gpr .r4).toNat = _

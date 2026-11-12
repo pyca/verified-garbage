@@ -202,9 +202,10 @@ theorem batch_ok {σ s : State} {B : BitVec 32} {Z W k N p iv x i : Nat} (hN : 1
     fun G => ⟨⟨(hm G).u, (hm G).v, (hm G).q, (hm G).r⟩, huvN, hqrN,
       rep (by rw [n1 bF (by simp)]; exact I.hf G) (bf G), rep (by rw [n1 bG (by simp)]; exact I.hg G) (bg G),
       bnd _ (bf G), bnd _ (bg G), zf G, zg G⟩
+  have hbB : nB k - i < 2 ^ 16 := by simp only [nB]; omega
   simp only [update, seqs]
   rw [WP.seq_iff]
-  refine WP.mono (fgPass_ok g1 hN hW8 hv1) fun t2 ⟨g2, k2, r2, sp0, sp4, sp8, V2⟩ => ?_
+  refine WP.mono (fgPass_ok g1 hN hW8 c1 hbB hv1) fun t2 ⟨g2, k2, r2, V2⟩ => ?_
   -- The coefficients `d`, `e`.
   have kn2 : ∀ j, j ∈ [bP, bZ, bD, bE] → nk t2.mem B W j (k + 1) = nk t1.mem B W j (k + 1) := by
     intro j hj
@@ -250,11 +251,9 @@ theorem batch_ok {σ s : State} {B : BitVec 32} {Z W k N p iv x i : Nat} (hN : 1
       dbnd _ ((dc G) i).2.2.1, dbnd _ ((dc G) i).2.2.2,
       by rw [show val32 t2.mem (State.addr B) (arr W bP) (k + 1) = nk t2.mem B W bP (k + 1) from rfl,
         kn2 bP (by simp), n1 bP (by simp)]; exact I.hP, hnp G⟩
-  have e7 : t2.gpr .r7 = t1.gpr .r7 := r2.gpr _ (by decide)
-  have e9 : t2.gpr .r9 = t1.gpr .r9 := r2.gpr _ (by decide)
   rw [WP.seq_iff]
-  refine WP.mono (dePass_ok g2 hN hW8 hv2 sp0 (by rw [sp4, e7]) (by rw [sp8, e9]))
-    fun t3 ⟨g3, k3, r3, g6, V3⟩ => ?_
+  refine WP.mono (dePass_ok g2 hN hW8 (by rw [r2.gpr _ (by decide), c1]) hbB hv2)
+    fun t3 ⟨g3, k3, r3, V3⟩ => ?_
   refine wp_subs (op2_imm (by decide)) fun t u4 hz => WP.block_nil ?_
   have k4 : t.mem = t3.mem := u4.mem
   have n3 : ∀ j, j ∈ [bF, bG, bP, bZ] → nk t.mem B W j (k + 1) = nk t2.mem B W j (k + 1) := by
@@ -263,7 +262,8 @@ theorem batch_ok {σ s : State} {B : BitVec 32} {Z W k N p iv x i : Nat} (hN : 1
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl <;> decide
     rw [k4]; exact Keep.nk k3 hL hj'.2 (by simp) (fit _ (by omega))
-  have r6t : t3.gpr .r6 = BitVec.ofNat 32 (32 * (nB k - i)) := g6.trans c1
+  have r6t : t3.gpr .r6 = BitVec.ofNat 32 (32 * (nB k - i)) := by
+    rw [r3.gpr _ (by decide), r2.gpr _ (by decide), c1]
   have hb := nB_le hk
   -- `dL (i + 1)` is the pass's update of `dL i` by the batch's matrix.
   have hT : Good p iv → msteps 30 (MSt.init S.d S.f S.g) =
@@ -1165,8 +1165,12 @@ theorem inverseK_ok {σ : State} {B : BitVec 32} {Z W k N : Nat} (h : Gk σ B Z 
     (by exact_mod_cast G.1) (nB k)).2.1
   change (st m iv a (nB k)).f = _ at hF
   rw [hF] at vc
-  replace vc := vc.trans (show (if (invRun 30 m 0 (oddInput m a) (nB k)).f < 0 then -(dL m iv a (nB k)).1
-      else (dL m iv a (nB k)).1) ≡ _ [ZMOD m] from by split; exact hD.neg; exact hD)
+  replace vc : (nk t.mem B W 3 W : Int) ≡ (if (VG.Proof.Divstep.W32.invRun 30 m 0 (oddInput m a) (nB k)).f < 0
+      then -((VG.Proof.Divstep.W32.deRun m (oddInput m a) (nB k)).1 : Int) else (VG.Proof.Divstep.W32.deRun m (oddInput m a) (nB k)).1) [ZMOD m] := by
+    refine vc.trans ?_
+    by_cases hneg : (VG.Proof.Divstep.W32.invRun 30 m 0 (oddInput m a) (nB k)).f < 0
+    · simp only [hneg, ↓reduceIte]; exact hD.neg
+    · simp only [hneg, ↓reduceIte]; exact hD
   have hm0 : (0 : Int) < m := Int.natCast_pos.mpr (by omega)
   unfold VG.Proof.Rsa.Divstep.inv30
   have e : (nk t.mem B W 3 W : Int) = (nk t.mem B W 3 W : Int) % m :=
