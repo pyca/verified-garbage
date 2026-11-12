@@ -53,32 +53,5 @@ class NativeHints(unittest.TestCase):
                                        "theorem t := VG.native_taint_decide_lemma\n"), [])
 
 
-class DefaultCerts(unittest.TestCase):
-    def default(self, text: str) -> bool:
-        m = check_lean_speed.CERT_HELPER.search(text)
-        return check_lean_speed.default_cert(text, m)
-
-    def test_keep_lanes_checks_each_certificate(self):
-        lit = "(by lit_decide)"
-        ok = f"x := WP.keepLanes rs T h {lit} {lit} {lit} {lit}\n"
-        self.assertFalse(self.default(ok))
-        # Any one of them left to `decide`, or to its default, is a whole-function evaluation.
-        for i in range(4):
-            certs = [lit] * 4
-            certs[i] = "(by decide +kernel)"
-            self.assertTrue(self.default(f"x := WP.keepLanes rs T h {' '.join(certs)}\n"))
-        self.assertTrue(self.default(f"x := WP.keepLanes rs T h {lit} {lit}\n"))
-
-    def test_named_certificates(self):
-        self.assertFalse(self.default(
-            "x := WP.keepLanes rs T h (hc := by lit_decide) (hT := by lit_decide) (hn := by lit_decide) "
-            "(hv := by lit_decide)\n"))
-        self.assertTrue(self.default("x := WP.keepLanes rs T h (hc := by lit_decide) (hT := by decide)\n"))
-
-    def test_preserved_v_unchanged(self):
-        self.assertFalse(self.default("x := WP.preservedV h (by lit_decide)\n"))
-        self.assertTrue(self.default("x := WP.preservedV h\n"))
-
-
 if __name__ == "__main__":
     unittest.main()

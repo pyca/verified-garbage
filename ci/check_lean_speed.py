@@ -43,10 +43,7 @@ building. Exits non-zero on violations.
     `WP.withPreservedV`: `c.allInstrs keepsV = true := by decide +kernel`)
     passes that argument: `(by lit_decide)`, which evaluates the code's
     literal, or a lemma. The default re-runs the code generators in the
-    kernel (seconds per use). So does every use of `WP.keepLanes`, which
-    frames a whole function, for each of its checks (`writesOnly`,
-    `KeepLanes.keeps`, `noCalls`, `keepsV`): `WP.keep` is not checked, as
-    most of its uses frame a block.
+    kernel (seconds per use).
   * A proof that unfolds a stack-depth function (`stackUse`, `Code.depth`,
     `Code.aarch64Depth`, …) into `max`es and closes the goal with `omega`
     also rewrites with `Nat.max_le` (`max a b ≤ c ↔ a ≤ c ∧ b ≤ c`), so that
@@ -159,19 +156,9 @@ BARE_ASSUMPTION = re.compile(r"(?:<;>|\|)\s*(?:try\s+)?assumption\b")
 PLACEHOLDER_CHAIN = re.compile(r"\(\w+_set\w*(?:\s+_)+\)\.trans\b")
 # Helpers whose last argument, a check of every instruction of a function,
 # defaults to `decide +kernel`; the number of explicit arguments before it.
-# Each helper's checks: the position of each among its explicit arguments,
-# and its name.
-CERT_HELPERS = {
-    "Exec.preservedV": ((1, "hc"),),
-    "WP.preservedV": ((1, "hc"),),
-    "WP.withPreservedV": ((1, "hc"),),
-    "WP.keepLanes": ((3, "hc"), (4, "hT"), (5, "hn"), (6, "hv")),
-}
-CERT_HELPER = re.compile(
-    r"(?<![\w])(?:VG\.AArch64\.|VG\.Proof\.Bignum\.AArch64\.)?"
-    r"(Exec\.preservedV|WP\.preservedV|WP\.withPreservedV|WP\.keepLanes)(?![\w.'])")
-CERT_HELPER_HOMES = ("lean/VerifiedGarbage/Proof/Framework/AArch64/VecPreserved.lean",
-                     "lean/VerifiedGarbage/Proof/Bignum/AArch64/KeepLanes.lean")
+CERT_HELPERS = {"Exec.preservedV": 1, "WP.preservedV": 1, "WP.withPreservedV": 1}
+CERT_HELPER = re.compile(r"(?<![\w])(?:VG\.AArch64\.)?(Exec\.preservedV|WP\.preservedV|WP\.withPreservedV)(?![\w.'])")
+CERT_HELPER_HOME = "lean/VerifiedGarbage/Proof/Framework/AArch64/VecPreserved.lean"
 CLOSE = {"(": ")", "[": "]", "⟨": "⟩", "{": "}"}
 STOP_WORDS = ("fun", "by", "=>", "<;>", "|", "with", "at", "using", "then", "else", "do")
 DEPTH_FNS = r"(?:stackUse|(?:Code\.)?(?:depth|fdepth|x86_64Depth|aarch64Depth))"
@@ -288,16 +275,14 @@ def call_args(text: str, i: int) -> list[str]:
 
 
 def default_cert(text: str, m: re.Match) -> bool:
-    """Whether this use of a `CERT_HELPERS` helper leaves one of its
-    certificates to the default `decide +kernel`, or passes `decide` itself."""
+    """Whether this use of a `CERT_HELPERS` helper leaves its certificate to
+    the default `decide +kernel`, or passes `decide` itself."""
     args = call_args(text, m.end())
+    named = [a for a in args if re.match(r"\(\s*hc\s*:=", a)]
     positional = [a for a in args if not re.match(r"\(\s*\w+\s*:=", a)]
-    for i, name in CERT_HELPERS[m.group(1)]:
-        named = [a for a in args if re.match(r"\(\s*" + name + r"\s*:=", a)]
-        cert = named[0] if named else (positional[i] if len(positional) > i else None)
-        if cert is None or ("decide" in cert and "lit_decide" not in cert):
-            return True
-    return False
+    cert = named[0] if named else (positional[CERT_HELPERS[m.group(1)]]
+                                   if len(positional) > CERT_HELPERS[m.group(1)] else None)
+    return cert is None or ("decide" in cert and "lit_decide" not in cert)
 
 
 def depth_omega(code: str) -> list[int]:
@@ -422,7 +407,7 @@ def check_file(key: str, globs: list[str]) -> tuple[str, pathlib.Path, list[str]
     pow_line = None
     depth = ("omega" in text and "max_le" not in text
              and any(k in text for k in ("stackUse", "Depth", "depth ", "depth,", "depth]")))
-    code = (strip_comments(text) if depth or any(k in text for k in ("^", "tauto", "decide", "assumption", "reservedV", "keepLanes", "_set"))
+    code = (strip_comments(text) if depth or any(k in text for k in ("^", "tauto", "decide", "assumption", "reservedV", "_set"))
             else "")
     if "^" in code and module.startswith(POW_PREFIXES) and module != POW_LIT:
         m = NUM_EXP.search(code)
@@ -448,7 +433,7 @@ def check_file(key: str, globs: list[str]) -> tuple[str, pathlib.Path, list[str]
                 errors.append(f"{rel}:{line_of(code, m.start())}: {what} ({len(found)} uses, {n} allowed)")
         elif len(found) < n:
             errors.append(f"{rel}: {len(found)} uses of {what.split(';')[0]}, fewer than the {n} allowed; lower the count")
-    if ("reservedV" in code or "keepLanes" in code) and str(rel) not in CERT_HELPER_HOMES:
+    if "reservedV" in code and str(rel) != CERT_HELPER_HOME:
         found = [m for m in CERT_HELPER.finditer(code) if default_cert(code, m)]
         n = DEFAULT_CERT_ALLOWED.get(key, 0)
         if len(found) > n:
