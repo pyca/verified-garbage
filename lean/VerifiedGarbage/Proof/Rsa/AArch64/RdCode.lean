@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.RdMain
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdEntry
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCode
 import VerifiedGarbage.Proof.Bignum.AArch64.KeepLanes
+import VerifiedGarbage.Proof.Rsa.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -109,7 +111,7 @@ theorem rdCode_correct [InvLaw] (s : State) (h : rdA.pre s) :
     have dpre : DPre (rpIn s) t₂ := ⟨hpre.scr, hpre.x0, hpre.args, hpre.n, hpre.e, hpre.d, hpre.L, hel8, hpre.oP,
       hpre.oQ, hpre.a, hpre.wr⟩
     refine WP.mono (WP.keepLanes (.x0 :: mmRegs) [.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28, .x30]
-      (rdMain_ok dpre hv) (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) fun t ⟨⟨res, hres, b1, b2, hax, _⟩, kt⟩ =>
+      (rdMain_ok dpre hv) (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)) fun t ⟨⟨res, hres, b1, b2, hax, _⟩, kt⟩ =>
       ⟨abiPreserved_of_keep ((kk.trans kt).mono (by decide)), ?_⟩
     have := rdWritten_of (m := t.mem) (pp := s.gpr .x0) (pq := s.gpr .x2) (by rw [hnl]; exact hv) hres
       (by rw [hnl]; exact b1) (by rw [hnl]; exact b2) hax
