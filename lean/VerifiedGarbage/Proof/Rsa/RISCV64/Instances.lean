@@ -14,6 +14,7 @@ namespace VG.Proof.Rsa.RISCV64
 
 instance invLaw : InvLaw where
   inverse_ok := InvBatch.inverse_ok
+  inverseS_ok := InvBatch.inverseS_ok
   gcd_ok := InvBatch.gcd_ok
 
 end VG.Proof.Rsa.RISCV64
