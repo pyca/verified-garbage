@@ -186,10 +186,14 @@ variable (H : Hash)
 abbrev S : Nat := H.P.N + H.P.B
 
 /-- `H` with `so` bytes of working space for the compression function
-(`Params.so`): its code made for an implementation of the compression
-function that uses less working space than the hash function's slowest
-one, whose working space the functions other code calls by name give it. -/
-def withSo (so : Nat) : Hash := { H with P := { H.P with so := so } }
+(`Params.so`) and `W` words for our functions: its code made for an
+implementation of the compression function that uses another amount. -/
+def withWs (so W : Nat) : Hash := { H with P := { H.P with so := so }, W := W }
+
+/-- The words of working space our functions need with the parameters `P`
+(`iterate`'s, the most: the streaming functions' `so + 48` bytes, then a
+streaming state), the working space each variant's functions get. -/
+def wOf (P : Params) : Nat := (P.so + 48 + P.N + P.B + 7) / 8
 
 /-- The streaming `update` and `finalize`. -/
 def updC : Prog isa := MdStream.X86_64.update H.P H.compN H.compC

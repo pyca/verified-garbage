@@ -32,6 +32,10 @@ structure Compress where
   callee : Impl.Sha1.X86_64.Stream.Callee
   /-- It is correct and constant time, and keeps what callers need. -/
   ok : MdStream.X86_64.CalleeOk (P := Stream.params) md callee.code
+  /-- The same with the scratch space it uses (`Callee.so`), which the
+  functions that call it by name give it. -/
+  okS : MdStream.X86_64.CalleeOk (P := { Stream.params with so := callee.so }) md callee.code
+  hso : callee.so = 0 ∨ callee.so = 112 := by decide
   /-- It never loads MXCSR. -/
   mxcsr : callee.code.allInstrs (fun i => !loadsMxcsr i) = true
   /-- It never writes the stack pointer. -/
@@ -52,6 +56,7 @@ namespace Compress
 def scalar : Compress where
   callee := .scalar
   ok := Stream.scalar_ok
+  okS := Stream.scalar_ok
   mxcsr := by decide +kernel
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := ""

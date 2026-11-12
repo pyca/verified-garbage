@@ -5,12 +5,12 @@
 // gives.
 
 vg_sha1_finalize_scratch_shani:
-	mov QWORD PTR [rcx+112], rbx
-	mov QWORD PTR [rcx+120], rbp
-	mov QWORD PTR [rcx+128], r12
-	mov QWORD PTR [rcx+136], r13
-	mov QWORD PTR [rcx+144], r14
-	mov QWORD PTR [rcx+152], r15
+	mov QWORD PTR [rcx], rbx
+	mov QWORD PTR [rcx+8], rbp
+	mov QWORD PTR [rcx+16], r12
+	mov QWORD PTR [rcx+24], r13
+	mov QWORD PTR [rcx+32], r14
+	mov QWORD PTR [rcx+40], r15
 	mov rbx, rdi
 	mov r15, rcx
 	mov rbp, rdx
@@ -140,11 +140,11 @@ vg_sha1_finalize_scratch_shani:
 	mov eax, DWORD PTR [rbx+16]
 	bswap eax
 	mov DWORD PTR [rbp+16], eax
-	mov rbx, QWORD PTR [r15+112]
-	mov rbp, QWORD PTR [r15+120]
-	mov r12, QWORD PTR [r15+128]
-	mov r13, QWORD PTR [r15+136]
-	mov r14, QWORD PTR [r15+144]
-	mov r15, QWORD PTR [r15+152]
+	mov rbx, QWORD PTR [r15]
+	mov rbp, QWORD PTR [r15+8]
+	mov r12, QWORD PTR [r15+16]
+	mov r13, QWORD PTR [r15+24]
+	mov r14, QWORD PTR [r15+32]
+	mov r15, QWORD PTR [r15+40]
 	ret
 	.p2align 6

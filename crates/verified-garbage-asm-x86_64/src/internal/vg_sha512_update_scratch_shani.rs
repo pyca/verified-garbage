@@ -11,7 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_update_scratch_shani() {
     core::arch::naked_asm!(
-        r#".base64 "SYmYMAUAAEmJqDgFAABNiaBABQAATYmoSAUAAE2JsFAFAABNibhYBQAASIn7TYnHSInVSYnMSYn1SYPlfw=="
+        r#".base64 "SYkYSYloCE2JYBBNiWgYTYlwIE2JeChIiftNicdIidVJicxJifVJg+V/"
 20:
 .base64 "TYXt"
 je 21f
@@ -90,7 +90,7 @@ call {vg_sha512_compress_shani}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAAww=="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyjD"
 .p2align 6"#,
         vg_sha512_compress_shani = sym crate::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )

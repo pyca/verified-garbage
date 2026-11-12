@@ -15,7 +15,7 @@
 /// * `out` must be valid for reads and writes of `out_len` bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 28`.
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 3456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 3152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_pbkdf2_hmac_sha512_224_auto(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {

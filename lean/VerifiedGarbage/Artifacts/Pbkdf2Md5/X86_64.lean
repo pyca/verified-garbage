@@ -38,8 +38,8 @@ def artifacts : List Artifact :=
   VG.Proof.Variants.MdHash.X86_64.md5Variants.flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) => [
     v.I.pbkdf2Api.artifact X86_64.target {
       suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackArgScratch (Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.I) 1 v.H.pbkdf2
-      stack := 24 + Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.I
+      code := Impl.StackScratch.X86_64.withStackArgScratch (Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.H) 1 v.H.pbkdf2
+      stack := 24 + Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.H
       verified := v.pbkdf2F
       spSafe := X86_64.withStackArgScratch_spSafe v.pbkdf2Sp }]
 

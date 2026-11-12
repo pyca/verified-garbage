@@ -17,48 +17,48 @@ pub const VG_PBKDF2_HMAC_SHA1_SHANI_FEATURES: verified_garbage_cpu::Features = v
 /// * `out` must be valid for reads and writes of `out_len` bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 20`.
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1168 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJIj7//9Ii4QkgAQAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZjAAQAASYmoyAEAAE2JoNABAABNiajYAQAATYmw4AEAAE2JuOgBAABNicdNiY/wAQAARInQSIPoAUmJh/gBAABIiftIifVJidRJic1Ig/1B"
+        r#".base64 "SI2kJMD8//9Ii4QkSAMAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZiIAAAASYmokAAAAE2JoJgAAABNiaigAAAATYmwqAAAAE2JuLAAAABNicdNiY+4AAAARInQSIPoAUmJh8AAAABIiftIifVJidRJic1Ig/1B"
 jae 20f
 .base64 "SInaSInp"
 jmp 21f
 20:
-.base64 "TIn/SIHH/AIAAA=="
+.base64 "TIn/SIHHxAEAAA=="
 call {vg_sha1_init_core}
-.base64 "TIn/SIHH/AIAAL4AAAAASInaSInpTYn4"
+.base64 "TIn/SIHHxAEAAL4AAAAASInaSInpTYn4"
 call {vg_sha1_update_scratch_shani}
-.base64 "TIn/SIHH/AIAAEiJ7kyJ+kiBwngDAABMifk="
+.base64 "TIn/SIHHxAEAAEiJ7kyJ+kiBwkACAABMifk="
 call {vg_sha1_finalize_scratch_shani}
-.base64 "TIn6SIHCeAMAALkUAAAA"
+.base64 "TIn6SIHCQAIAALkUAAAA"
 21:
-.base64 "TIn/SIHHAAIAAEyJ/kiBxlQCAABNifg="
+.base64 "TIn/SIHHyAAAAEyJ/kiBxhwBAABNifg="
 call {vg_hmac_sha1_init_scratch_shani}
 .base64 "Qb4AAAAA"
 22:
-.base64 "Qw+2hDcAAgAAQ4iEN6gCAABJg8YBSYP+VA=="
+.base64 "Qw+2hDfIAAAAQ4iEN3ABAABJg8YBSYP+VA=="
 jne 22b
-.base64 "TIn/SIHHqAIAAL5AAAAATIniTInpTYn4"
+.base64 "TIn/SIHHcAEAAL5AAAAATIniTInpTYn4"
 call {vg_sha1_update_scratch_shani}
-.base64 "TIntTYuv8AEAAEyLZCQIuwEAAABNheQ="
+.base64 "TIntTYuvuAAAAEyLZCQIuwEAAABNheQ="
 je 23f
 25:
 .base64 "Qb4AAAAA"
 26:
-.base64 "Qw+2hDeoAgAAQ4iEN/wCAABJg8YBSYP+VA=="
+.base64 "Qw+2hDdwAQAAQ4iEN8QBAABJg8YBSYP+VA=="
 jne 26b
-.base64 "idgPyEGJh4wDAABMif9Igcf8AgAASInuSIPGQEyJ+kiBwowDAAC5BAAAAE2J+A=="
+.base64 "idgPyEGJh1QCAABMif9IgcfEAQAASInuSIPGQEyJ+kiBwlQCAAC5BAAAAE2J+A=="
 call {vg_sha1_update_scratch_shani}
-.base64 "TIn/SIHH/AIAAEyJ/kiBxlQCAABIiepIg8JETIn5SIHBUAMAAE2J+A=="
+.base64 "TIn/SIHHxAEAAEyJ/kiBxhwBAABIiepIg8JETIn5SIHBGAIAAE2J+A=="
 call {vg_hmac_sha1_finalize_scratch_shani}
 .base64 "Qb4AAAAA"
 27:
-.base64 "Qw+2hDdQAwAAQ4iEN2QDAABJg8YBSYP+FA=="
+.base64 "Qw+2hDcYAgAAQ4iENywCAABJg8YBSYP+FA=="
 jne 27b
-.base64 "TIn/SIHHAAIAAEyJ/kiBxlADAABJi5f4AQAATIn5SIHBZAMAAE2J+A=="
+.base64 "TIn/SIHHyAAAAEyJ/kiBxhgCAABJi5fAAAAATIn5SIHBLAIAAE2J+A=="
 call {vg_pbkdf2_hmac_sha1_iterate_shani}
 .base64 "uRQAAABJOcw="
 jb 28f
@@ -68,14 +68,14 @@ jmp 29f
 29:
 .base64 "Qb4AAAAA"
 210:
-.base64 "Qw+2hDdkAwAAQ4hENQBJg8YBSTnO"
+.base64 "Qw+2hDcsAgAAQ4hENQBJg8YBSTnO"
 jne 210b
 .base64 "SQHNSIPDAUkpzA=="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "SYufwAEAAEmLr8gBAABNi6fQAQAATYuv2AEAAE2Lt+ABAABNi7/oAQAASI2kJHgEAADD"
+.base64 "SYufiAAAAEmLr5AAAABNi6eYAAAATYuvoAAAAE2Lt6gAAABNi7+wAAAASI2kJEADAADD"
 .p2align 6"#,
         vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
@@ -100,48 +100,48 @@ pub const VG_PBKDF2_HMAC_SHA1_AVX_BMI_FEATURES: verified_garbage_cpu::Features =
 /// * `out` must be valid for reads and writes of `out_len` bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 20`.
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1168 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 968 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1_avx_bmi(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJIj7//9Ii4QkgAQAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZjAAQAASYmoyAEAAE2JoNABAABNiajYAQAATYmw4AEAAE2JuOgBAABNicdNiY/wAQAARInQSIPoAUmJh/gBAABIiftIifVJidRJic1Ig/1B"
+        r#".base64 "SI2kJFD8//9Ii4QkuAMAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZj4AAAASYmoAAEAAE2JoAgBAABNiagQAQAATYmwGAEAAE2JuCABAABNicdNiY8oAQAARInQSIPoAUmJhzABAABIiftIifVJidRJic1Ig/1B"
 jae 20f
 .base64 "SInaSInp"
 jmp 21f
 20:
-.base64 "TIn/SIHH/AIAAA=="
+.base64 "TIn/SIHHNAIAAA=="
 call {vg_sha1_init_core}
-.base64 "TIn/SIHH/AIAAL4AAAAASInaSInpTYn4"
+.base64 "TIn/SIHHNAIAAL4AAAAASInaSInpTYn4"
 call {vg_sha1_update_scratch_avx_bmi}
-.base64 "TIn/SIHH/AIAAEiJ7kyJ+kiBwngDAABMifk="
+.base64 "TIn/SIHHNAIAAEiJ7kyJ+kiBwrACAABMifk="
 call {vg_sha1_finalize_scratch_avx_bmi}
-.base64 "TIn6SIHCeAMAALkUAAAA"
+.base64 "TIn6SIHCsAIAALkUAAAA"
 21:
-.base64 "TIn/SIHHAAIAAEyJ/kiBxlQCAABNifg="
+.base64 "TIn/SIHHOAEAAEyJ/kiBxowBAABNifg="
 call {vg_hmac_sha1_init_scratch_avx_bmi}
 .base64 "Qb4AAAAA"
 22:
-.base64 "Qw+2hDcAAgAAQ4iEN6gCAABJg8YBSYP+VA=="
+.base64 "Qw+2hDc4AQAAQ4iEN+ABAABJg8YBSYP+VA=="
 jne 22b
-.base64 "TIn/SIHHqAIAAL5AAAAATIniTInpTYn4"
+.base64 "TIn/SIHH4AEAAL5AAAAATIniTInpTYn4"
 call {vg_sha1_update_scratch_avx_bmi}
-.base64 "TIntTYuv8AEAAEyLZCQIuwEAAABNheQ="
+.base64 "TIntTYuvKAEAAEyLZCQIuwEAAABNheQ="
 je 23f
 25:
 .base64 "Qb4AAAAA"
 26:
-.base64 "Qw+2hDeoAgAAQ4iEN/wCAABJg8YBSYP+VA=="
+.base64 "Qw+2hDfgAQAAQ4iENzQCAABJg8YBSYP+VA=="
 jne 26b
-.base64 "idgPyEGJh4wDAABMif9Igcf8AgAASInuSIPGQEyJ+kiBwowDAAC5BAAAAE2J+A=="
+.base64 "idgPyEGJh8QCAABMif9Igcc0AgAASInuSIPGQEyJ+kiBwsQCAAC5BAAAAE2J+A=="
 call {vg_sha1_update_scratch_avx_bmi}
-.base64 "TIn/SIHH/AIAAEyJ/kiBxlQCAABIiepIg8JETIn5SIHBUAMAAE2J+A=="
+.base64 "TIn/SIHHNAIAAEyJ/kiBxowBAABIiepIg8JETIn5SIHBiAIAAE2J+A=="
 call {vg_hmac_sha1_finalize_scratch_avx_bmi}
 .base64 "Qb4AAAAA"
 27:
-.base64 "Qw+2hDdQAwAAQ4iEN2QDAABJg8YBSYP+FA=="
+.base64 "Qw+2hDeIAgAAQ4iEN5wCAABJg8YBSYP+FA=="
 jne 27b
-.base64 "TIn/SIHHAAIAAEyJ/kiBxlADAABJi5f4AQAATIn5SIHBZAMAAE2J+A=="
+.base64 "TIn/SIHHOAEAAEyJ/kiBxogCAABJi5cwAQAATIn5SIHBnAIAAE2J+A=="
 call {vg_pbkdf2_hmac_sha1_iterate_avx_bmi}
 .base64 "uRQAAABJOcw="
 jb 28f
@@ -151,14 +151,14 @@ jmp 29f
 29:
 .base64 "Qb4AAAAA"
 210:
-.base64 "Qw+2hDdkAwAAQ4hENQBJg8YBSTnO"
+.base64 "Qw+2hDecAgAAQ4hENQBJg8YBSTnO"
 jne 210b
 .base64 "SQHNSIPDAUkpzA=="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "SYufwAEAAEmLr8gBAABNi6fQAQAATYuv2AEAAE2Lt+ABAABNi7/oAQAASI2kJHgEAADD"
+.base64 "SYuf+AAAAEmLrwABAABNi6cIAQAATYuvEAEAAE2LtxgBAABNi78gAQAASI2kJLADAADD"
 .p2align 6"#,
         vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_update_scratch_avx_bmi = sym super::sha1::vg_sha1_update_scratch_avx_bmi::vg_sha1_update_scratch_avx_bmi,
@@ -180,47 +180,47 @@ jmp 24f
 /// * `out` must be valid for reads and writes of `out_len` bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 20`.
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1168 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 968 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJIj7//9Ii4QkgAQAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZjAAQAASYmoyAEAAE2JoNABAABNiajYAQAATYmw4AEAAE2JuOgBAABNicdNiY/wAQAARInQSIPoAUmJh/gBAABIiftIifVJidRJic1Ig/1B"
+        r#".base64 "SI2kJFD8//9Ii4QkuAMAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZj4AAAASYmoAAEAAE2JoAgBAABNiagQAQAATYmwGAEAAE2JuCABAABNicdNiY8oAQAARInQSIPoAUmJhzABAABIiftIifVJidRJic1Ig/1B"
 jae 20f
 .base64 "SInaSInp"
 jmp 21f
 20:
-.base64 "TIn/SIHH/AIAAA=="
+.base64 "TIn/SIHHNAIAAA=="
 call {vg_sha1_init_core}
-.base64 "TIn/SIHH/AIAAL4AAAAASInaSInpTYn4"
+.base64 "TIn/SIHHNAIAAL4AAAAASInaSInpTYn4"
 call {vg_sha1_update_scratch}
-.base64 "TIn/SIHH/AIAAEiJ7kyJ+kiBwngDAABMifk="
+.base64 "TIn/SIHHNAIAAEiJ7kyJ+kiBwrACAABMifk="
 call {vg_sha1_finalize_scratch}
-.base64 "TIn6SIHCeAMAALkUAAAA"
+.base64 "TIn6SIHCsAIAALkUAAAA"
 21:
-.base64 "TIn/SIHHAAIAAEyJ/kiBxlQCAABNifg="
+.base64 "TIn/SIHHOAEAAEyJ/kiBxowBAABNifg="
 call {vg_hmac_sha1_init_scratch}
 .base64 "Qb4AAAAA"
 22:
-.base64 "Qw+2hDcAAgAAQ4iEN6gCAABJg8YBSYP+VA=="
+.base64 "Qw+2hDc4AQAAQ4iEN+ABAABJg8YBSYP+VA=="
 jne 22b
-.base64 "TIn/SIHHqAIAAL5AAAAATIniTInpTYn4"
+.base64 "TIn/SIHH4AEAAL5AAAAATIniTInpTYn4"
 call {vg_sha1_update_scratch}
-.base64 "TIntTYuv8AEAAEyLZCQIuwEAAABNheQ="
+.base64 "TIntTYuvKAEAAEyLZCQIuwEAAABNheQ="
 je 23f
 25:
 .base64 "Qb4AAAAA"
 26:
-.base64 "Qw+2hDeoAgAAQ4iEN/wCAABJg8YBSYP+VA=="
+.base64 "Qw+2hDfgAQAAQ4iENzQCAABJg8YBSYP+VA=="
 jne 26b
-.base64 "idgPyEGJh4wDAABMif9Igcf8AgAASInuSIPGQEyJ+kiBwowDAAC5BAAAAE2J+A=="
+.base64 "idgPyEGJh8QCAABMif9Igcc0AgAASInuSIPGQEyJ+kiBwsQCAAC5BAAAAE2J+A=="
 call {vg_sha1_update_scratch}
-.base64 "TIn/SIHH/AIAAEyJ/kiBxlQCAABIiepIg8JETIn5SIHBUAMAAE2J+A=="
+.base64 "TIn/SIHHNAIAAEyJ/kiBxowBAABIiepIg8JETIn5SIHBiAIAAE2J+A=="
 call {vg_hmac_sha1_finalize_scratch}
 .base64 "Qb4AAAAA"
 27:
-.base64 "Qw+2hDdQAwAAQ4iEN2QDAABJg8YBSYP+FA=="
+.base64 "Qw+2hDeIAgAAQ4iEN5wCAABJg8YBSYP+FA=="
 jne 27b
-.base64 "TIn/SIHHAAIAAEyJ/kiBxlADAABJi5f4AQAATIn5SIHBZAMAAE2J+A=="
+.base64 "TIn/SIHHOAEAAEyJ/kiBxogCAABJi5cwAQAATIn5SIHBnAIAAE2J+A=="
 call {vg_pbkdf2_hmac_sha1_iterate}
 .base64 "uRQAAABJOcw="
 jb 28f
@@ -230,14 +230,14 @@ jmp 29f
 29:
 .base64 "Qb4AAAAA"
 210:
-.base64 "Qw+2hDdkAwAAQ4hENQBJg8YBSTnO"
+.base64 "Qw+2hDecAgAAQ4hENQBJg8YBSTnO"
 jne 210b
 .base64 "SQHNSIPDAUkpzA=="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "SYufwAEAAEmLr8gBAABNi6fQAQAATYuv2AEAAE2Lt+ABAABNi7/oAQAASI2kJHgEAADD"
+.base64 "SYuf+AAAAEmLrwABAABNi6cIAQAATYuvEAEAAE2LtxgBAABNi78gAQAASI2kJLADAADD"
 .p2align 6"#,
         vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,

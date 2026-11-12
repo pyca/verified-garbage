@@ -28,8 +28,9 @@ variants of `MdHash` (`sha384 v`, …), from which HMAC and PBKDF2 are emitted
 (`Generic/MdHash/X86_64/`): their streaming code is the generic Merkle–Damgård
 code (`Stream.params`), shared by the four, which differ in their initial hash
 value `iv` and the size `D` of their digest, the first `D` bytes of the final
-hash value. The facts about the code HMAC and PBKDF2 add, which do not depend
-on `v`, are checked once for each member (`coreOK`).
+hash value. The facts about the code HMAC and PBKDF2 add, which depend on `v`
+only through the scratch space it uses, are checked once for each member and
+amount (`coreOKS`).
 
 `stream v` are the streaming `update` and `finalize` made with `v`, which
 the four share: SHA-512's variant (`sha512 v`) carries them, and
@@ -59,9 +60,9 @@ function exported as `vg_<alg>_init` also clears what it leaves
 do not need. -/
 def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) (v : Compress) :
     Hash where
-  P := Impl.Sha512.X86_64.Stream.params
+  P := Proof.Sha512.X86_64.Stream.paramsS v.callee.so
   D := D
-  W := I.scratch
+  W := Hash.wOf (Proof.Sha512.X86_64.Stream.paramsS v.callee.so)
   compN := v.callee.name
   compC := v.callee.code
   initN := initN
@@ -75,63 +76,20 @@ def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.H
     | none => Impl.Pbkdf2.Md.X86_64.compTwice Impl.Sha512.X86_64.Stream.params.N v.callee.name v.callee.code
     | some p => Impl.Pbkdf2.Md.X86_64.compPair Impl.Sha512.X86_64.Stream.params.N p.name p.code
 
-/-- A member of the family without the functions it calls, the same for
-every `v`. -/
-def coreH (D : Nat) : Hash :=
-  ⟨Impl.Sha512.X86_64.Stream.params, D, 234, "", .block [], "", .block [], "", "", "", "", "", Proof.Pbkdf2.Md.X86_64.coreBoth⟩
-
-theorem coreOK (D : Nat) (hD : D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64) : CoreOK (coreH D) := by
-  rcases hD with rfl | rfl | rfl | rfl <;> refine {
-      pbk := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
-        ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
-        ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
-        ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
-      iter := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
-        ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
-      hinit := {
-        pro := ⟨?_, ?_⟩
-        argI := List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_nil _⟩⟩
-        keys := ⟨?_, ?_⟩
-        mid := ⟨?_, ?_⟩
-        restore := ⟨?_, ?_⟩ }
-      hfin := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
-      pbkMx := ?_
-      pbkSp := ?_
-      hinitMx := ?_
-      hinitSp := ?_
-      hinitNs := ?_
-      hinitD := ?_
-      hfinMx := ?_
-      hfinSp := ?_
-      hfinNs := ?_
-      hfinD := ?_
-      hinitXD := ?_
-      hfinXD := ?_
-      pbkXD := ?_
-      iterMx := ?_
-      iterSp := ?_
-      iterNs := ?_
-      iterD := ?_
-      updMx := ?_
-      updNs := ?_
-      updD := ?_
-      finMx := ?_
-      finNs := ?_
-      finD := ?_
-      fitI := ?_
-      fitF := ?_
-  }
-  taint_decide_all
-
-/-- `coreH D` with `so` bytes of working space for the compression function
-(`Hash.withSo`), for the implementations that use less than AVX2's. -/
+/-- A member of the family without the functions it calls, for an
+implementation that uses `so` bytes of scratch space. -/
 def coreHS (so D : Nat) : Hash :=
-  ⟨{ Impl.Sha512.X86_64.Stream.params with so := so }, D, 234, "", .block [], "", .block [], "", "", "", "", "",
-    Proof.Pbkdf2.Md.X86_64.coreBoth⟩
+  ⟨Proof.Sha512.X86_64.Stream.paramsS so, D, Hash.wOf (Proof.Sha512.X86_64.Stream.paramsS so), "", .block [], "",
+    .block [], "", "", "", "", "", Proof.Pbkdf2.Md.X86_64.coreBoth⟩
 
-theorem coreOKS (so : Nat) (hso : so = 0 ∨ so = 192) (D : Nat) (hD : D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64) :
-    CoreOK (coreHS so D) := by
-  rcases hso with rfl | rfl <;> rcases hD with rfl | rfl | rfl | rfl <;> refine {
+/-- The scratch space the implementations use. -/
+abbrev SoOk (so : Nat) : Prop := so = 0 ∨ so = 192 ∨ so = 1328
+
+/-- The digest lengths of the family. -/
+abbrev DOk (D : Nat) : Prop := D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64
+
+theorem coreOKS (so : Nat) (hso : SoOk so) (D : Nat) (hD : DOk D) : CoreOK (coreHS so D) := by
+  rcases hso with rfl | rfl | rfl <;> rcases hD with rfl | rfl | rfl | rfl <;> refine {
       pbk := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
         ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
         ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
@@ -173,8 +131,9 @@ theorem coreOKS (so : Nat) (hso : so = 0 ∨ so = 192) (D : Nat) (hD : D = 28 �
   }
   taint_decide_all
 
-theorem anyOK (D : Nat) (hD : D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64) : Any.AnyOK (coreH D) := by
-  rcases hD with rfl | rfl | rfl | rfl <;> refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
+theorem anyOKS (so : Nat) (hso : SoOk so) (D : Nat) (hD : DOk D) : Any.AnyOK (coreHS so D) := by
+  rcases hso with rfl | rfl | rfl <;> rcases hD with rfl | rfl | rfl | rfl <;>
+    refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
   taint_decide_all
 
 /-- The initial hash values of the family. -/
@@ -201,22 +160,34 @@ theorem callees {I : Spec.Hmac.Instance} {D : Nat} {initN : String} {iv : Spec.S
   refine ⟨cMx, cSp, cNs, v.ok.depth, ?_, ?_, ?_, ?_, v.noStack, ?_, b⟩ <;>
     (simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel)
 
+/-- The words of working space of a member's functions with `v`. -/
+theorem hashW {I : Spec.Hmac.Instance} {D : Nat} {initN : String} {iv : Spec.Sha512.HashValue} (v : Compress) :
+    (hash I D initN iv v).W = 30 ∨ (hash I D initN iv v).W = 54 ∨ (hash I D initN iv v).W = 196 := by
+  rcases v.hso with h | h | h <;> simp only [hash, Hash.wOf, Proof.Sha512.X86_64.Stream.paramsS, h] <;> decide
+
+/-- The words of working space of a member's HMAC `init` for a key of at
+most a block with `v`. -/
+theorem hashIW {I : Spec.Hmac.Instance} {D : Nat} {initN : String} {iv : Spec.Sha512.HashValue} (v : Compress) :
+    initWords (hash I D initN iv v) = 12 ∨ initWords (hash I D initN iv v) = 36 ∨
+      initWords (hash I D initN iv v) = 178 := by
+  rcases v.hso with h | h | h <;> simp only [initWords_eq, hash, Proof.Sha512.X86_64.Stream.paramsS, h] <;> decide
+
 /-- `HashOK` for the member of instance `I`, whose specification is the
 family's from `iv`, with its digest the first `D` bytes. -/
 def ok {I : Spec.Hmac.Instance} {D : Nat} {initN : String} {iv : Spec.Sha512.HashValue} {v : Compress}
     (C : CoreOK (core (hash I D initN iv v))) (K : Callees (hash I D initN iv v))
     (hR : I.S.Repr = Spec.Sha512.Repr iv) (hh : ∀ m, I.S.H.hash m = (Proof.Sha512.md.hash iv m).take D)
     (hB : I.S.H.blockSize = 128) (hS : I.S.stateBytes = 192) (hDs : I.S.digestBytes = D)
-    (hD : D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64) (hW : I.scratch = 234) : HashOK (hash I D initN iv v) where
+    (hD : DOk D) : HashOK (hash I D initN iv v) where
   md := Proof.Sha512.md
-  dims := Proof.Sha512.X86_64.Stream.dims
-  shape := Proof.Sha512.X86_64.Stream.shape
-  taints := Proof.Sha512.X86_64.Stream.taints
-  comp := v.ok
+  dims := Proof.Sha512.X86_64.Stream.dimsS _ (by rcases v.hso with h | h | h <;> omega)
+  shape := Proof.Sha512.X86_64.Stream.shapeS _
+  taints := Proof.Sha512.X86_64.Stream.taintsS3 _ v.hso
+  comp := v.okS
   both := by
     cases hv : v.pair with
     | none => exact .inl (by simp only [hash, hv])
-    | some p => exact .inr ⟨p.name, p.code, by simp only [hash, hv], p.ok, pairArgs_taint⟩
+    | some p => exact .inr ⟨p.name, p.code, by simp only [hash, hv], v.pairOk p hv, pairArgs_taint⟩
   reloc m m' p q h := by
     apply Vector.ext
     intro j hj
@@ -238,9 +209,13 @@ def ok {I : Spec.Hmac.Instance} {D : Nat} {initN : String} {iv : Spec.Sha512.Has
   hL4 := by simp only [hash] <;> decide
   hNL := by simp only [hash] <;> decide
   hPad := by show 16 * (D / 16 + 1) + 16 ≤ 128; omega
-  hso := by simp only [hash] <;> decide
-  fits := by show 1328 + 48 + 64 + 128 ≤ 8 * I.scratch; omega
-  hW := by show I.scratch ≤ 256; omega
+  hso := by
+    show v.callee.so % 8 = 0 ∧ v.callee.so + 48 ≤ 8 * 256
+    rcases v.hso with h | h | h <;> rw [h] <;> decide
+  fits := by
+    show v.callee.so + 48 + 64 + 128 ≤ 8 * ((v.callee.so + 48 + 64 + 128 + 7) / 8)
+    omega
+  hW := by rcases hashW v with h | h | h <;> rw [h] <;> decide
   init := hR ▸ Proof.Sha512.X86_64.Stream.init_verified iv
   initDepth := by rw [K.iD]; decide
   initSp := nosp_of K.iNs
@@ -472,358 +447,674 @@ end S
 
 /-! ## SHA-384 -/
 
-theorem sha384_satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha384I X86_64.abi 16).pre s := by
-  inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha384I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
-    Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using initSat 192 234
+section
+variable {w : Nat}
 
-/-- A state satisfying the precondition of `init_scratch` with the working
-space `init` uses (`initWords`). -/
-theorem sha384_satW : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha384I.S 178 X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.sha384I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
-    Spec.Hmac.initPost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using initSat 192 178
+theorem sha384_satI (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha384I.S w X86_64.abi 16).pre s := by
+  refine ⟨initSat 192 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha384I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha384I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha384_satW0 : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha384I.S 12 X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.sha384I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
-    Spec.Hmac.initPost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using initSat 192 12
+theorem sha384_satW (hw : w = 12 ∨ w = 36 ∨ w = 178) :
+    ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha384I.S w X86_64.abi 16).pre s := by
+  refine ⟨initSat 192 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha384I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha384I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha384_satW192 : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha384I.S 36 X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.sha384I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
-    Spec.Hmac.initPost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using initSat 192 36
+theorem sha384_satF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha384I.S w X86_64.abi 16).pre s := by
+  refine ⟨finSat 192 48 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha384I, Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig,
+    Spec.Hmac.finalizePost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha384I, Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig,
+    Spec.Hmac.finalizePost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha384_satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha384I X86_64.abi 16).pre s := by
-  inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha384I, Proof.Hmac.finalizeScratchContract,
-    Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using finSat 192 48 234
+theorem sha384_satT (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Pbkdf2.iterateContract Spec.Hmac.sha384I.S w X86_64.abi 8).pre s := by
+  refine ⟨Pbkdf2.X86_64.iterSat 192 48 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha384I, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Spec.Hmac.sha384S,
+    Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha384I, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Spec.Hmac.sha384S,
+    Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha384_satT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha384I X86_64.abi 8).pre s := by
-  inst_sat [Proof.Pbkdf2.Instance.iterateContract, Spec.Hmac.sha384I, Proof.Pbkdf2.iterateContract,
-    Proof.Pbkdf2.iterateSig, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using
-    Pbkdf2.X86_64.iterSat 192 48 234
+theorem sha384_satA (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Any.anyScratchContract Spec.Hmac.sha384I.S (w + 192)).pre s := by
+  refine ⟨initSat 192 (w + 192), ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Any.anyScratchContract, Spec.Hmac.sha384I, Proof.Hmac.initScratchSig, Spec.Hmac.initPost,
+    Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Any.anyScratchContract, Spec.Hmac.sha384I, Proof.Hmac.initScratchSig, Spec.Hmac.initPost,
+    Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha384_satA : ∃ s, (Any.anyScratchContract Spec.Hmac.sha384I.S Spec.Hmac.sha384I.initAnyKeyScratch).pre s := by
-  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha384I, Proof.Hmac.initScratchSig,
-    Spec.Hmac.initPost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using initSat 192 426
+theorem sha384_satP (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Pbkdf2.pbkdf2ScratchContract Spec.Hmac.sha384I.S (w + 192) X86_64.abi 24).pre s := by
+  refine ⟨pbkSat (w + 192), ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha384I, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig,
+    Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi,
+    X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha384I, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig,
+    Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi,
+    X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha384_satP : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha384I X86_64.abi 24).pre s := by
-  inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha384I,
-    Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi,
-    X86_64.argRegs] using pbkSat 426
+theorem sha384_satPF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Spec.Hmac.sha384I.pbkdf2Contract X86_64.abi (24 + (24 + 8 * (w + 192)))).pre s := by
+  refine ⟨pbkFrameSat, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.sha384I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+    Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs, pbkFrameSat, pbkSat]
+    | (sig_pre [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.sha384I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+    Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs, pbkFrameSat, pbkSat]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha384_satPF :
-    ∃ s, (Spec.Hmac.sha384I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame Spec.Hmac.sha384I)).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, pbkdf2Frame, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha384I,
-    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi,
-    X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
+theorem sha384_satIF (hw : w = 12 ∨ w = 36 ∨ w = 178) :
+    ∃ s, (Spec.Hmac.sha384I.initContract X86_64.abi (16 + (8 + 8 * w))).pre s := by
+  unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+  rcases hw with rfl | rfl | rfl <;>
+  exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)
 
-theorem sha384_coreOK : CoreOK (coreH 48) := coreOK 48 (Or.inr (Or.inr (Or.inl rfl)))
+theorem sha384_satAF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Spec.Hmac.sha384I.initAnyKeyContract X86_64.abi (24 + (8 + 8 * (w + 192)))).pre s := by
+  unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
+  rcases hw with rfl | rfl | rfl <;>
+  exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial)
 
-theorem sha384_anyOK : Any.AnyOK (coreH 48) := anyOK 48 (Or.inr (Or.inr (Or.inl rfl)))
+theorem sha384_satFF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Spec.Hmac.sha384I.finalizeContract X86_64.abi (16 + (8 + 8 * w))).pre s := by
+  unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+  rcases hw with rfl | rfl | rfl <;>
+  exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial)
+
+end
 
 /-- SHA-384's functions, with the implementation `v` of the compression function. -/
 abbrev sha384H (v : Compress) : Hash := hash Spec.Hmac.sha384I 48 "vg_sha384_init_core" H0_384 v
 
 theorem sha384K (v : Compress) : Callees (sha384H v) := callees (Or.inl rfl) v
 
+theorem sha384W (v : Compress) : (sha384H v).W = 30 ∨ (sha384H v).W = 54 ∨ (sha384H v).W = 196 := hashW v
+
+theorem sha384C (v : Compress) : CoreOK (core (sha384H v)) := coreOKS v.callee.so v.hso 48 (Or.inr (Or.inr (Or.inl rfl)))
+
+theorem sha384A (v : Compress) : Any.AnyOK (core (sha384H v)) := anyOKS v.callee.so v.hso 48 (Or.inr (Or.inr (Or.inl rfl)))
+
 /-- What the proofs know of SHA-384's functions. -/
 def sha384OK (v : Compress) : HashOK (sha384H v) :=
-  ok sha384_coreOK (sha384K v) rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inr (Or.inl rfl))) rfl
-
-/-- The working space of HMAC's `init` with the implementation `v` of the
-compression function verified with `so` bytes of scratch space (`hv`), one
-of the sizes HMAC's code is checked with (`coreOKS`): `init` for a key of at
-most a block gives the compression function only that much. -/
-def ownS {I : Spec.Hmac.Instance} {D : Nat} {initN : String} {iv : Spec.Sha512.HashValue} {v : Compress}
-    (hH : HashOK (hash I D initN iv v)) (hmd : hH.md = Proof.Sha512.md) (K : Callees (hash I D initN iv v))
-    (hSH : hH.SH = I.S) (hW : I.scratch = 234) (hno : v.pair = none) (so : Nat) (h : so = 0 ∨ so = 192)
-    (hv : Verified X86_64.target v.callee.code (Proof.Sha512.compressWideX86_64S so))
-    (hD : D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64) (w : Nat)
-    (hsW : ∃ s, (Proof.Hmac.initScratchContract I.S w X86_64.abi 16).pre s)
-    (hw : initWords ((hash I D initN iv v).withSo so) = w := by
-      simp only [VG.Proof.Pbkdf2.Md.X86_64.initWords_eq, VG.Impl.Pbkdf2.Md.X86_64.Hash.withSo,
-        VG.Proof.Pbkdf2.Md.X86_64.Sha512.hash] <;> decide)
-    (hsIF : ∃ s, (I.initContract X86_64.abi (24 + 8 * w)).pre s := by
-      unfold VG.Spec.Hmac.Instance.initContract VG.Spec.Hmac.initContract
-      exact VG.X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)) :
-    OwnWs I :=
-  have C : CoreOK (core ((hash I D initN iv v).withSo so)) := by
-    have := coreOKS so h D hD
-    simp only [coreHS, hW.symm] at this
-    exact this
-  ⟨_, hH.withSo so (by rcases h with rfl | rfl <;> decide) (Proof.Sha512.X86_64.Stream.taintsS so h)
-      (by rw [hmd]; exact Proof.Sha512.X86_64.Stream.calleeS v.ok hv)
-      (by show so + 48 + 64 + 128 ≤ 8 * I.scratch; omega)
-      (by simp only [hash, hno]) K C,
-    C, K.withSo so, hSH, rfl, w, hw, hsW, hsIF⟩
-
-/-- The working space of `sha384`'s code: the hash function's (`OwnWs`). -/
-def own384 (v : Compress) : OwnWs Spec.Hmac.sha384I :=
-  ⟨_, (sha384OK v), sha384_coreOK, (sha384K v), rfl, rfl, 178, by simp only [initWords_eq, hash]; decide, sha384_satW, by
-    unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
-    exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)⟩
+  ok (sha384C v) (sha384K v) rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inr (Or.inl rfl)))
 
 /-- SHA-384 with the implementation `v` of the compression function. -/
-def sha384 (v : Compress) (stream : List StreamFn := []) (o : OwnWs Spec.Hmac.sha384I := own384 v) : MdHash :=
-  MdHash.of (sha384OK v) sha384_coreOK (sha384K v) ⟨Spec.Mgf1.sha384, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl
-      sha384_satI sha384_satF sha384_satT sha384_satP (by decide)
-      sha384_anyOK sha384_satA (by decide) Proof.Hmac.sha384_local
-      (by
-        unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
-        exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-      o
-      (by decide)
-      (by
-        unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
-        exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel)
-          (by rw [Curry.apply_const]; trivial))
-      (by decide) sha384_satPF
-      v.suffix v.features stream
+def sha384 (v : Compress) (stream : List StreamFn := []) : MdHash :=
+  MdHash.of (I := Spec.Hmac.sha384I) (sha384OK v) (sha384C v) (sha384K v)
+    ⟨Spec.Mgf1.sha384, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
+    1328 (sha384OK v.uniform) rfl
+    (sha384_satI (hashW v)) (sha384_satF (hashW v)) (sha384_satT (hashW v)) (sha384_satP (hashW v))
+    (by rcases sha384W v with h | h | h <;> omega)
+    (sha384A v) (sha384_satA (hashW v))
+    (by
+      show (sha384H v).W + 192 < 511
+      rcases sha384W v with h | h | h <;> omega)
+    Proof.Hmac.sha384_local (sha384_satAF (hashW v)) (sha384_satW (hashIW v)) (sha384_satIF (hashIW v))
+    (by decide) (sha384_satFF (hashW v))
+    (by
+      show (sha384H v).W + 192 < 509
+      rcases sha384W v with h | h | h <;> omega)
+    (sha384_satPF (hashW v))
+    v.suffix v.features stream
 
 /-! ## SHA-512 -/
 
-theorem sha512_satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha512I X86_64.abi 16).pre s := by
-  inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha512I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
-    Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using initSat 192 234
+section
+variable {w : Nat}
 
-/-- A state satisfying the precondition of `init_scratch` with the working
-space `init` uses (`initWords`). -/
-theorem sha512_satW : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512I.S 178 X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.sha512I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
-    Spec.Hmac.initPost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using initSat 192 178
+theorem sha512_satI (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512I.S w X86_64.abi 16).pre s := by
+  refine ⟨initSat 192 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha512I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha512I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_satW0 : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512I.S 12 X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.sha512I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
-    Spec.Hmac.initPost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using initSat 192 12
+theorem sha512_satW (hw : w = 12 ∨ w = 36 ∨ w = 178) :
+    ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512I.S w X86_64.abi 16).pre s := by
+  refine ⟨initSat 192 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha512I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha512I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_satW192 : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512I.S 36 X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.sha512I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
-    Spec.Hmac.initPost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using initSat 192 36
+theorem sha512_satF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha512I.S w X86_64.abi 16).pre s := by
+  refine ⟨finSat 192 64 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha512I, Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig,
+    Spec.Hmac.finalizePost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha512I, Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig,
+    Spec.Hmac.finalizePost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha512I X86_64.abi 16).pre s := by
-  inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha512I, Proof.Hmac.finalizeScratchContract,
-    Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using finSat 192 64 234
+theorem sha512_satT (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Pbkdf2.iterateContract Spec.Hmac.sha512I.S w X86_64.abi 8).pre s := by
+  refine ⟨Pbkdf2.X86_64.iterSat 192 64 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha512I, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Spec.Hmac.sha512S,
+    Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha512I, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Spec.Hmac.sha512S,
+    Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_satT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha512I X86_64.abi 8).pre s := by
-  inst_sat [Proof.Pbkdf2.Instance.iterateContract, Spec.Hmac.sha512I, Proof.Pbkdf2.iterateContract,
-    Proof.Pbkdf2.iterateSig, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using
-    Pbkdf2.X86_64.iterSat 192 64 234
+theorem sha512_satA (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Any.anyScratchContract Spec.Hmac.sha512I.S (w + 192)).pre s := by
+  refine ⟨initSat 192 (w + 192), ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Any.anyScratchContract, Spec.Hmac.sha512I, Proof.Hmac.initScratchSig, Spec.Hmac.initPost,
+    Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Any.anyScratchContract, Spec.Hmac.sha512I, Proof.Hmac.initScratchSig, Spec.Hmac.initPost,
+    Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_satA : ∃ s, (Any.anyScratchContract Spec.Hmac.sha512I.S Spec.Hmac.sha512I.initAnyKeyScratch).pre s := by
-  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512I, Proof.Hmac.initScratchSig,
-    Spec.Hmac.initPost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using initSat 192 426
+theorem sha512_satP (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Pbkdf2.pbkdf2ScratchContract Spec.Hmac.sha512I.S (w + 192) X86_64.abi 24).pre s := by
+  refine ⟨pbkSat (w + 192), ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha512I, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig,
+    Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi,
+    X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha512I, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig,
+    Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi,
+    X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_satP : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha512I X86_64.abi 24).pre s := by
-  inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512I,
-    Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi,
-    X86_64.argRegs] using pbkSat 426
+theorem sha512_satPF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Spec.Hmac.sha512I.pbkdf2Contract X86_64.abi (24 + (24 + 8 * (w + 192)))).pre s := by
+  refine ⟨pbkFrameSat, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.sha512I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+    Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs, pbkFrameSat, pbkSat]
+    | (sig_pre [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.sha512I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+    Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs, pbkFrameSat, pbkSat]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_satPF :
-    ∃ s, (Spec.Hmac.sha512I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame Spec.Hmac.sha512I)).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, pbkdf2Frame, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512I,
-    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi,
-    X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
+theorem sha512_satIF (hw : w = 12 ∨ w = 36 ∨ w = 178) :
+    ∃ s, (Spec.Hmac.sha512I.initContract X86_64.abi (16 + (8 + 8 * w))).pre s := by
+  unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+  rcases hw with rfl | rfl | rfl <;>
+  exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)
 
-theorem sha512_coreOK : CoreOK (coreH 64) := coreOK 64 (Or.inr (Or.inr (Or.inr rfl)))
+theorem sha512_satAF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Spec.Hmac.sha512I.initAnyKeyContract X86_64.abi (24 + (8 + 8 * (w + 192)))).pre s := by
+  unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
+  rcases hw with rfl | rfl | rfl <;>
+  exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial)
 
-theorem sha512_anyOK : Any.AnyOK (coreH 64) := anyOK 64 (Or.inr (Or.inr (Or.inr rfl)))
+theorem sha512_satFF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Spec.Hmac.sha512I.finalizeContract X86_64.abi (16 + (8 + 8 * w))).pre s := by
+  unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+  rcases hw with rfl | rfl | rfl <;>
+  exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial)
+
+end
 
 /-- SHA-512's functions, with the implementation `v` of the compression function. -/
 abbrev sha512H (v : Compress) : Hash := hash Spec.Hmac.sha512I 64 "vg_sha512_init_core" H0_512 v
 
 theorem sha512K (v : Compress) : Callees (sha512H v) := callees (Or.inr (Or.inl rfl)) v
 
+theorem sha512W (v : Compress) : (sha512H v).W = 30 ∨ (sha512H v).W = 54 ∨ (sha512H v).W = 196 := hashW v
+
+theorem sha512C (v : Compress) : CoreOK (core (sha512H v)) := coreOKS v.callee.so v.hso 64 (Or.inr (Or.inr (Or.inr rfl)))
+
+theorem sha512A (v : Compress) : Any.AnyOK (core (sha512H v)) := anyOKS v.callee.so v.hso 64 (Or.inr (Or.inr (Or.inr rfl)))
+
 /-- What the proofs know of SHA-512's functions. -/
 def sha512OK (v : Compress) : HashOK (sha512H v) :=
-  ok sha512_coreOK (sha512K v) rfl
-    (fun _ => (List.take_of_length_le (Nat.le_of_eq (Proof.Sha512.md.digest_length _))).symm) rfl rfl rfl
-    (Or.inr (Or.inr (Or.inr rfl))) rfl
-
-/-- The working space of `sha512`'s code: the hash function's (`OwnWs`). -/
-def own512 (v : Compress) : OwnWs Spec.Hmac.sha512I :=
-  ⟨_, (sha512OK v), sha512_coreOK, (sha512K v), rfl, rfl, 178, by simp only [initWords_eq, hash]; decide, sha512_satW, by
-    unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
-    exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)⟩
+  ok (sha512C v) (sha512K v) rfl (fun _ => (List.take_of_length_le (Nat.le_of_eq (Proof.Sha512.md.digest_length _))).symm) rfl rfl rfl (Or.inr (Or.inr (Or.inr rfl)))
 
 /-- SHA-512 with the implementation `v` of the compression function. -/
-def sha512 (v : Compress) (stream : List StreamFn := []) (o : OwnWs Spec.Hmac.sha512I := own512 v) : MdHash :=
-  MdHash.of (sha512OK v) sha512_coreOK (sha512K v) ⟨Spec.Mgf1.sha512, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl
-      sha512_satI sha512_satF sha512_satT sha512_satP (by decide)
-    sha512_anyOK sha512_satA (by decide) Proof.Hmac.sha512_local
+def sha512 (v : Compress) (stream : List StreamFn := []) : MdHash :=
+  MdHash.of (I := Spec.Hmac.sha512I) (sha512OK v) (sha512C v) (sha512K v)
+    ⟨Spec.Mgf1.sha512, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
+    1328 (sha512OK v.uniform) rfl
+    (sha512_satI (hashW v)) (sha512_satF (hashW v)) (sha512_satT (hashW v)) (sha512_satP (hashW v))
+    (by rcases sha512W v with h | h | h <;> omega)
+    (sha512A v) (sha512_satA (hashW v))
     (by
-      unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
-      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-    o
-    (by decide)
+      show (sha512H v).W + 192 < 511
+      rcases sha512W v with h | h | h <;> omega)
+    Proof.Hmac.sha512_local (sha512_satAF (hashW v)) (sha512_satW (hashIW v)) (sha512_satIF (hashIW v))
+    (by decide) (sha512_satFF (hashW v))
     (by
-      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
-      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-    (by decide) sha512_satPF
+      show (sha512H v).W + 192 < 509
+      rcases sha512W v with h | h | h <;> omega)
+    (sha512_satPF (hashW v))
     v.suffix v.features stream
 
 /-! ## SHA-512/224 -/
 
-theorem sha512_224_satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha512_224I X86_64.abi 16).pre s := by
-  inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha512_224I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
-    Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using initSat 192 234
+section
+variable {w : Nat}
 
-/-- A state satisfying the precondition of `init_scratch` with the working
-space `init` uses (`initWords`). -/
-theorem sha512_224_satW : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512_224I.S 178 X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.sha512_224I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
-    Spec.Hmac.initPost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using initSat 192 178
+theorem sha512_224_satI (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512_224I.S w X86_64.abi 16).pre s := by
+  refine ⟨initSat 192 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha512_224I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha512_224I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_224_satW0 : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512_224I.S 12 X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.sha512_224I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
-    Spec.Hmac.initPost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using initSat 192 12
+theorem sha512_224_satW (hw : w = 12 ∨ w = 36 ∨ w = 178) :
+    ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512_224I.S w X86_64.abi 16).pre s := by
+  refine ⟨initSat 192 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha512_224I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha512_224I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_224_satW192 : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512_224I.S 36 X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.sha512_224I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
-    Spec.Hmac.initPost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using initSat 192 36
+theorem sha512_224_satF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha512_224I.S w X86_64.abi 16).pre s := by
+  refine ⟨finSat 192 28 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha512_224I, Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig,
+    Spec.Hmac.finalizePost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha512_224I, Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig,
+    Spec.Hmac.finalizePost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_224_satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha512_224I X86_64.abi 16).pre s := by
-  inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha512_224I, Proof.Hmac.finalizeScratchContract,
-    Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using finSat 192 28 234
+theorem sha512_224_satT (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Pbkdf2.iterateContract Spec.Hmac.sha512_224I.S w X86_64.abi 8).pre s := by
+  refine ⟨Pbkdf2.X86_64.iterSat 192 28 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha512_224I, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Spec.Hmac.sha512_224S,
+    Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha512_224I, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Spec.Hmac.sha512_224S,
+    Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_224_satT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha512_224I X86_64.abi 8).pre s := by
-  inst_sat [Proof.Pbkdf2.Instance.iterateContract, Spec.Hmac.sha512_224I, Proof.Pbkdf2.iterateContract,
-    Proof.Pbkdf2.iterateSig, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using
-    Pbkdf2.X86_64.iterSat 192 28 234
+theorem sha512_224_satA (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Any.anyScratchContract Spec.Hmac.sha512_224I.S (w + 192)).pre s := by
+  refine ⟨initSat 192 (w + 192), ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Any.anyScratchContract, Spec.Hmac.sha512_224I, Proof.Hmac.initScratchSig, Spec.Hmac.initPost,
+    Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Any.anyScratchContract, Spec.Hmac.sha512_224I, Proof.Hmac.initScratchSig, Spec.Hmac.initPost,
+    Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_224_satA : ∃ s, (Any.anyScratchContract Spec.Hmac.sha512_224I.S Spec.Hmac.sha512_224I.initAnyKeyScratch).pre s := by
-  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512_224I, Proof.Hmac.initScratchSig,
-    Spec.Hmac.initPost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using initSat 192 426
+theorem sha512_224_satP (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Pbkdf2.pbkdf2ScratchContract Spec.Hmac.sha512_224I.S (w + 192) X86_64.abi 24).pre s := by
+  refine ⟨pbkSat (w + 192), ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha512_224I, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig,
+    Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi,
+    X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha512_224I, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig,
+    Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi,
+    X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_224_satP : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha512_224I X86_64.abi 24).pre s := by
-  inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_224I,
-    Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi,
-    X86_64.argRegs] using pbkSat 426
+theorem sha512_224_satPF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Spec.Hmac.sha512_224I.pbkdf2Contract X86_64.abi (24 + (24 + 8 * (w + 192)))).pre s := by
+  refine ⟨pbkFrameSat, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.sha512_224I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+    Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs, pbkFrameSat, pbkSat]
+    | (sig_pre [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.sha512_224I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+    Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs, pbkFrameSat, pbkSat]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_224_satPF :
-    ∃ s, (Spec.Hmac.sha512_224I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame Spec.Hmac.sha512_224I)).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, pbkdf2Frame, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_224I,
-    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi,
-    X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
+theorem sha512_224_satIF (hw : w = 12 ∨ w = 36 ∨ w = 178) :
+    ∃ s, (Spec.Hmac.sha512_224I.initContract X86_64.abi (16 + (8 + 8 * w))).pre s := by
+  unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+  rcases hw with rfl | rfl | rfl <;>
+  exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)
 
-theorem sha512_224_coreOK : CoreOK (coreH 28) := coreOK 28 (Or.inl rfl)
+theorem sha512_224_satAF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Spec.Hmac.sha512_224I.initAnyKeyContract X86_64.abi (24 + (8 + 8 * (w + 192)))).pre s := by
+  unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
+  rcases hw with rfl | rfl | rfl <;>
+  exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial)
 
-theorem sha512_224_anyOK : Any.AnyOK (coreH 28) := anyOK 28 (Or.inl rfl)
+theorem sha512_224_satFF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Spec.Hmac.sha512_224I.finalizeContract X86_64.abi (16 + (8 + 8 * w))).pre s := by
+  unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+  rcases hw with rfl | rfl | rfl <;>
+  exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial)
 
-/-- SHA-512/224's functions with the implementation `v` of the compression function. -/
+end
+
+/-- SHA-512/224's functions, with the implementation `v` of the compression function. -/
 abbrev sha512_224H (v : Compress) : Hash := hash Spec.Hmac.sha512_224I 28 "vg_sha512_224_init_core" H0_512_224 v
 
 theorem sha512_224K (v : Compress) : Callees (sha512_224H v) := callees (Or.inr (Or.inr (Or.inl rfl))) v
 
+theorem sha512_224W (v : Compress) : (sha512_224H v).W = 30 ∨ (sha512_224H v).W = 54 ∨ (sha512_224H v).W = 196 := hashW v
+
+theorem sha512_224C (v : Compress) : CoreOK (core (sha512_224H v)) := coreOKS v.callee.so v.hso 28 (Or.inl rfl)
+
+theorem sha512_224A (v : Compress) : Any.AnyOK (core (sha512_224H v)) := anyOKS v.callee.so v.hso 28 (Or.inl rfl)
+
 /-- What the proofs know of SHA-512/224's functions. -/
 def sha512_224OK (v : Compress) : HashOK (sha512_224H v) :=
-  ok sha512_224_coreOK (sha512_224K v) rfl (fun _ => rfl) rfl rfl rfl (Or.inl rfl) rfl
-
-/-- The working space of `sha512_224`'s code: the hash function's (`OwnWs`). -/
-def own512_224 (v : Compress) : OwnWs Spec.Hmac.sha512_224I :=
-  have C : CoreOK (core (hash Spec.Hmac.sha512_224I 28 "vg_sha512_224_init_core" H0_512_224 v)) := sha512_224_coreOK
-  have K : Callees (hash Spec.Hmac.sha512_224I 28 "vg_sha512_224_init_core" H0_512_224 v) := callees (Or.inr (Or.inr (Or.inl rfl))) v
-  ⟨_, ok C K rfl (fun _ => rfl) rfl rfl rfl (Or.inl rfl) rfl, C, K, rfl, rfl, 178,
-    by simp only [initWords_eq, hash]; decide, sha512_224_satW, by
-    unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
-    exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)⟩
+  ok (sha512_224C v) (sha512_224K v) rfl (fun _ => rfl) rfl rfl rfl (Or.inl rfl)
 
 /-- SHA-512/224 with the implementation `v` of the compression function. -/
-def sha512_224 (v : Compress) (stream : List StreamFn := []) (o : OwnWs Spec.Hmac.sha512_224I := own512_224 v) : MdHash :=
-  have C : CoreOK (core (hash Spec.Hmac.sha512_224I 28 "vg_sha512_224_init_core" H0_512_224 v)) := sha512_224_coreOK
-  have K : Callees (hash Spec.Hmac.sha512_224I 28 "vg_sha512_224_init_core" H0_512_224 v) := callees (Or.inr (Or.inr (Or.inl rfl))) v
-  MdHash.of (ok C K rfl (fun _ => rfl) rfl rfl rfl (Or.inl rfl) rfl) C K ⟨Spec.Mgf1.sha512_224, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl
-    sha512_224_satI sha512_224_satF sha512_224_satT sha512_224_satP (by decide)
-    sha512_224_anyOK sha512_224_satA (by decide) Proof.Hmac.sha512_224_local
+def sha512_224 (v : Compress) (stream : List StreamFn := []) : MdHash :=
+  MdHash.of (I := Spec.Hmac.sha512_224I) (sha512_224OK v) (sha512_224C v) (sha512_224K v)
+    ⟨Spec.Mgf1.sha512_224, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
+    1328 (sha512_224OK v.uniform) rfl
+    (sha512_224_satI (hashW v)) (sha512_224_satF (hashW v)) (sha512_224_satT (hashW v)) (sha512_224_satP (hashW v))
+    (by rcases sha512_224W v with h | h | h <;> omega)
+    (sha512_224A v) (sha512_224_satA (hashW v))
     (by
-      unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
-      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-    o
-    (by decide)
+      show (sha512_224H v).W + 192 < 511
+      rcases sha512_224W v with h | h | h <;> omega)
+    Proof.Hmac.sha512_224_local (sha512_224_satAF (hashW v)) (sha512_224_satW (hashIW v)) (sha512_224_satIF (hashIW v))
+    (by decide) (sha512_224_satFF (hashW v))
     (by
-      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
-      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-    (by decide) sha512_224_satPF
+      show (sha512_224H v).W + 192 < 509
+      rcases sha512_224W v with h | h | h <;> omega)
+    (sha512_224_satPF (hashW v))
     v.suffix v.features stream
 
 /-! ## SHA-512/256 -/
 
-theorem sha512_256_satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha512_256I X86_64.abi 16).pre s := by
-  inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha512_256I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
-    Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using initSat 192 234
+section
+variable {w : Nat}
 
-/-- A state satisfying the precondition of `init_scratch` with the working
-space `init` uses (`initWords`). -/
-theorem sha512_256_satW : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512_256I.S 178 X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.sha512_256I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
-    Spec.Hmac.initPost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using initSat 192 178
+theorem sha512_256_satI (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512_256I.S w X86_64.abi 16).pre s := by
+  refine ⟨initSat 192 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha512_256I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha512_256I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_256_satW0 : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512_256I.S 12 X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.sha512_256I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
-    Spec.Hmac.initPost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using initSat 192 12
+theorem sha512_256_satW (hw : w = 12 ∨ w = 36 ∨ w = 178) :
+    ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512_256I.S w X86_64.abi 16).pre s := by
+  refine ⟨initSat 192 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha512_256I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha512_256I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_256_satW192 : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512_256I.S 36 X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.sha512_256I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
-    Spec.Hmac.initPost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using initSat 192 36
+theorem sha512_256_satF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha512_256I.S w X86_64.abi 16).pre s := by
+  refine ⟨finSat 192 32 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha512_256I, Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig,
+    Spec.Hmac.finalizePost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha512_256I, Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig,
+    Spec.Hmac.finalizePost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_256_satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha512_256I X86_64.abi 16).pre s := by
-  inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha512_256I, Proof.Hmac.finalizeScratchContract,
-    Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using finSat 192 32 234
+theorem sha512_256_satT (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Pbkdf2.iterateContract Spec.Hmac.sha512_256I.S w X86_64.abi 8).pre s := by
+  refine ⟨Pbkdf2.X86_64.iterSat 192 32 w, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha512_256I, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Spec.Hmac.sha512_256S,
+    Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha512_256I, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Spec.Hmac.sha512_256S,
+    Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_256_satT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha512_256I X86_64.abi 8).pre s := by
-  inst_sat [Proof.Pbkdf2.Instance.iterateContract, Spec.Hmac.sha512_256I, Proof.Pbkdf2.iterateContract,
-    Proof.Pbkdf2.iterateSig, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using
-    Pbkdf2.X86_64.iterSat 192 32 234
+theorem sha512_256_satA (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Any.anyScratchContract Spec.Hmac.sha512_256I.S (w + 192)).pre s := by
+  refine ⟨initSat 192 (w + 192), ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Any.anyScratchContract, Spec.Hmac.sha512_256I, Proof.Hmac.initScratchSig, Spec.Hmac.initPost,
+    Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Any.anyScratchContract, Spec.Hmac.sha512_256I, Proof.Hmac.initScratchSig, Spec.Hmac.initPost,
+    Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_256_satA : ∃ s, (Any.anyScratchContract Spec.Hmac.sha512_256I.S Spec.Hmac.sha512_256I.initAnyKeyScratch).pre s := by
-  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512_256I, Proof.Hmac.initScratchSig,
-    Spec.Hmac.initPost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using initSat 192 426
+theorem sha512_256_satP (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Proof.Pbkdf2.pbkdf2ScratchContract Spec.Hmac.sha512_256I.S (w + 192) X86_64.abi 24).pre s := by
+  refine ⟨pbkSat (w + 192), ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha512_256I, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig,
+    Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi,
+    X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha512_256I, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig,
+    Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi,
+    X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_256_satP : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha512_256I X86_64.abi 24).pre s := by
-  inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_256I,
-    Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi,
-    X86_64.argRegs] using pbkSat 426
+theorem sha512_256_satPF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Spec.Hmac.sha512_256I.pbkdf2Contract X86_64.abi (24 + (24 + 8 * (w + 192)))).pre s := by
+  refine ⟨pbkFrameSat, ?_⟩
+  rcases hw with rfl | rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.sha512_256I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+    Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs, pbkFrameSat, pbkSat]
+    | (sig_pre [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.sha512_256I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+    Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs, pbkFrameSat, pbkSat]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem sha512_256_satPF :
-    ∃ s, (Spec.Hmac.sha512_256I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame Spec.Hmac.sha512_256I)).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, pbkdf2Frame, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_256I,
-    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi,
-    X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
+theorem sha512_256_satIF (hw : w = 12 ∨ w = 36 ∨ w = 178) :
+    ∃ s, (Spec.Hmac.sha512_256I.initContract X86_64.abi (16 + (8 + 8 * w))).pre s := by
+  unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+  rcases hw with rfl | rfl | rfl <;>
+  exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)
 
-theorem sha512_256_coreOK : CoreOK (coreH 32) := coreOK 32 (Or.inr (Or.inl rfl))
+theorem sha512_256_satAF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Spec.Hmac.sha512_256I.initAnyKeyContract X86_64.abi (24 + (8 + 8 * (w + 192)))).pre s := by
+  unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
+  rcases hw with rfl | rfl | rfl <;>
+  exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial)
 
-theorem sha512_256_anyOK : Any.AnyOK (coreH 32) := anyOK 32 (Or.inr (Or.inl rfl))
+theorem sha512_256_satFF (hw : w = 30 ∨ w = 54 ∨ w = 196) :
+    ∃ s, (Spec.Hmac.sha512_256I.finalizeContract X86_64.abi (16 + (8 + 8 * w))).pre s := by
+  unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+  rcases hw with rfl | rfl | rfl <;>
+  exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial)
 
-/-- SHA-512/256's functions with the implementation `v` of the compression function. -/
+end
+
+/-- SHA-512/256's functions, with the implementation `v` of the compression function. -/
 abbrev sha512_256H (v : Compress) : Hash := hash Spec.Hmac.sha512_256I 32 "vg_sha512_256_init_core" H0_512_256 v
 
 theorem sha512_256K (v : Compress) : Callees (sha512_256H v) := callees (Or.inr (Or.inr (Or.inr rfl))) v
 
+theorem sha512_256W (v : Compress) : (sha512_256H v).W = 30 ∨ (sha512_256H v).W = 54 ∨ (sha512_256H v).W = 196 := hashW v
+
+theorem sha512_256C (v : Compress) : CoreOK (core (sha512_256H v)) := coreOKS v.callee.so v.hso 32 (Or.inr (Or.inl rfl))
+
+theorem sha512_256A (v : Compress) : Any.AnyOK (core (sha512_256H v)) := anyOKS v.callee.so v.hso 32 (Or.inr (Or.inl rfl))
+
 /-- What the proofs know of SHA-512/256's functions. -/
 def sha512_256OK (v : Compress) : HashOK (sha512_256H v) :=
-  ok sha512_256_coreOK (sha512_256K v) rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inl rfl)) rfl
-
-/-- The working space of `sha512_256`'s code: the hash function's (`OwnWs`). -/
-def own512_256 (v : Compress) : OwnWs Spec.Hmac.sha512_256I :=
-  have C : CoreOK (core (hash Spec.Hmac.sha512_256I 32 "vg_sha512_256_init_core" H0_512_256 v)) := sha512_256_coreOK
-  have K : Callees (hash Spec.Hmac.sha512_256I 32 "vg_sha512_256_init_core" H0_512_256 v) := callees (Or.inr (Or.inr (Or.inr rfl))) v
-  ⟨_, ok C K rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inl rfl)) rfl, C, K, rfl, rfl, 178,
-    by simp only [initWords_eq, hash]; decide, sha512_256_satW, by
-    unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
-    exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)⟩
+  ok (sha512_256C v) (sha512_256K v) rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inl rfl))
 
 /-- SHA-512/256 with the implementation `v` of the compression function. -/
-def sha512_256 (v : Compress) (stream : List StreamFn := []) (o : OwnWs Spec.Hmac.sha512_256I := own512_256 v) : MdHash :=
-  have C : CoreOK (core (hash Spec.Hmac.sha512_256I 32 "vg_sha512_256_init_core" H0_512_256 v)) := sha512_256_coreOK
-  have K : Callees (hash Spec.Hmac.sha512_256I 32 "vg_sha512_256_init_core" H0_512_256 v) := callees (Or.inr (Or.inr (Or.inr rfl))) v
-  MdHash.of (ok C K rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inl rfl)) rfl) C K ⟨Spec.Mgf1.sha512_256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl
-    sha512_256_satI sha512_256_satF sha512_256_satT sha512_256_satP (by decide)
-    sha512_256_anyOK sha512_256_satA (by decide) Proof.Hmac.sha512_256_local
+def sha512_256 (v : Compress) (stream : List StreamFn := []) : MdHash :=
+  MdHash.of (I := Spec.Hmac.sha512_256I) (sha512_256OK v) (sha512_256C v) (sha512_256K v)
+    ⟨Spec.Mgf1.sha512_256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
+    1328 (sha512_256OK v.uniform) rfl
+    (sha512_256_satI (hashW v)) (sha512_256_satF (hashW v)) (sha512_256_satT (hashW v)) (sha512_256_satP (hashW v))
+    (by rcases sha512_256W v with h | h | h <;> omega)
+    (sha512_256A v) (sha512_256_satA (hashW v))
     (by
-      unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
-      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-    o
-    (by decide)
+      show (sha512_256H v).W + 192 < 511
+      rcases sha512_256W v with h | h | h <;> omega)
+    Proof.Hmac.sha512_256_local (sha512_256_satAF (hashW v)) (sha512_256_satW (hashIW v)) (sha512_256_satIF (hashIW v))
+    (by decide) (sha512_256_satFF (hashW v))
     (by
-      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
-      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-    (by decide) sha512_256_satPF
+      show (sha512_256H v).W + 192 < 509
+      rcases sha512_256W v with h | h | h <;> omega)
+    (sha512_256_satPF (hashW v))
     v.suffix v.features stream
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha512

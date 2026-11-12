@@ -11,43 +11,43 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha256_scratch() {
     core::arch::naked_asm!(
-        r#".base64 "TYnCTItEJBBJiZhAAwAASYmoSAMAAE2JoFADAABNiahYAwAATYmwYAMAAE2JuGgDAABNicdNiY9wAwAARInQSIPoAUmJh3gDAABIiftIifVJidRJic1Ig/1B"
+        r#".base64 "TYnCTItEJBBJiZgAAQAASYmoCAEAAE2JoBABAABNiagYAQAATYmwIAEAAE2JuCgBAABNicdNiY8wAQAARInQSIPoAUmJhzgBAABIiftIifVJidRJic1Ig/1B"
 jae 20f
 .base64 "SInaSInp"
 jmp 21f
 20:
-.base64 "TIn/SIHHoAQAAA=="
+.base64 "TIn/SIHHYAIAAA=="
 call {vg_sha256_init_core}
-.base64 "TIn/SIHHoAQAAL4AAAAASInaSInpTYn4"
+.base64 "TIn/SIHHYAIAAL4AAAAASInaSInpTYn4"
 call {vg_sha256_update_scratch}
-.base64 "TIn/SIHHoAQAAEiJ7kyJ+kiBwkAFAABMifk="
+.base64 "TIn/SIHHYAIAAEiJ7kyJ+kiBwgADAABMifk="
 call {vg_sha256_finalize_scratch}
-.base64 "TIn6SIHCQAUAALkgAAAA"
+.base64 "TIn6SIHCAAMAALkgAAAA"
 21:
-.base64 "TIn/SIHHgAMAAEyJ/kiBxuADAABNifg="
+.base64 "TIn/SIHHQAEAAEyJ/kiBxqABAABNifg="
 call {vg_hmac_sha256_init_scratch}
 .base64 "Qb4AAAAA"
 22:
-.base64 "Qw+2hDeAAwAAQ4iEN0AEAABJg8YBSYP+YA=="
+.base64 "Qw+2hDdAAQAAQ4iENwACAABJg8YBSYP+YA=="
 jne 22b
-.base64 "TIn/SIHHQAQAAL5AAAAATIniTInpTYn4"
+.base64 "TIn/SIHHAAIAAL5AAAAATIniTInpTYn4"
 call {vg_sha256_update_scratch}
-.base64 "TIntTYuvcAMAAEyLZCQIuwEAAABNheQ="
+.base64 "TIntTYuvMAEAAEyLZCQIuwEAAABNheQ="
 je 23f
 25:
 .base64 "Qb4AAAAA"
 26:
-.base64 "Qw+2hDdABAAAQ4iEN6AEAABJg8YBSYP+YA=="
+.base64 "Qw+2hDcAAgAAQ4iEN2ACAABJg8YBSYP+YA=="
 jne 26b
-.base64 "idgPyEGJh2AFAABMif9IgcegBAAASInuSIPGQEyJ+kiBwmAFAAC5BAAAAE2J+A=="
+.base64 "idgPyEGJhyADAABMif9IgcdgAgAASInuSIPGQEyJ+kiBwiADAAC5BAAAAE2J+A=="
 call {vg_sha256_update_scratch}
-.base64 "TIn/SIHHoAQAAEyJ/kiBxuADAABIiepIg8JETIn5SIHBAAUAAE2J+A=="
+.base64 "TIn/SIHHYAIAAEyJ/kiBxqABAABIiepIg8JETIn5SIHBwAIAAE2J+A=="
 call {vg_hmac_sha256_finalize_scratch}
 .base64 "Qb4AAAAA"
 27:
-.base64 "Qw+2hDcABQAAQ4iENyAFAABJg8YBSYP+IA=="
+.base64 "Qw+2hDfAAgAAQ4iEN+ACAABJg8YBSYP+IA=="
 jne 27b
-.base64 "TIn/SIHHgAMAAEyJ/kiBxgAFAABJi5d4AwAATIn5SIHBIAUAAE2J+A=="
+.base64 "TIn/SIHHQAEAAEyJ/kiBxsACAABJi5c4AQAATIn5SIHB4AIAAE2J+A=="
 call {vg_pbkdf2_hmac_sha256_iterate}
 .base64 "uSAAAABJOcw="
 jb 28f
@@ -57,14 +57,14 @@ jmp 29f
 29:
 .base64 "Qb4AAAAA"
 210:
-.base64 "Qw+2hDcgBQAAQ4hENQBJg8YBSTnO"
+.base64 "Qw+2hDfgAgAAQ4hENQBJg8YBSTnO"
 jne 210b
 .base64 "SQHNSIPDAUkpzA=="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "SYufQAMAAEmLr0gDAABNi6dQAwAATYuvWAMAAE2Lt2ADAABNi79oAwAAww=="
+.base64 "SYufAAEAAEmLrwgBAABNi6cQAQAATYuvGAEAAE2LtyABAABNi78oAQAAww=="
 .p2align 6"#,
         vg_sha256_init_core = sym crate::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch = sym crate::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,

@@ -31,33 +31,53 @@ abbrev HH : Impl.Pbkdf2.Md.X86_64.Hash := Proof.Pbkdf2.Md.X86_64.Sha256.hash v
 abbrev OK : HashOK (HH v) := Proof.Pbkdf2.Md.X86_64.Sha256.ok v
 
 theorem hI : Verified X86_64.target (HH v).hmacInit (initG (OK v).SH (HH v).W) :=
-  hmacInit_ok (OK v) Proof.Pbkdf2.Md.X86_64.Sha256.coreOK (Proof.Pbkdf2.Md.X86_64.Sha256.callees v)
-    Proof.Pbkdf2.Md.X86_64.Sha256.satI
+  hmacInit_ok (OK v) (Proof.Pbkdf2.Md.X86_64.Sha256.coreOK v) (Proof.Pbkdf2.Md.X86_64.Sha256.callees v)
+    (Proof.Pbkdf2.Md.X86_64.Sha256.satI (Proof.Pbkdf2.Md.X86_64.Sha256.hashW v))
 
 theorem hIsp : NoSp (HH v).hmacInit :=
   nosp_of (core_hmacInit (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).iNs
-    (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).b.bNs Proof.Pbkdf2.Md.X86_64.Sha256.coreOK.hinitNs)
+    (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).b.bNs (Proof.Pbkdf2.Md.X86_64.Sha256.coreOK v).hinitNs)
 
 theorem hId : (HH v).hmacInit.depth ≤ 2 :=
   core_hmacInit_depth (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).iD (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).b.bD
-    Proof.Pbkdf2.Md.X86_64.Sha256.coreOK.hinitD
+    (Proof.Pbkdf2.Md.X86_64.Sha256.coreOK v).hinitD
 
 theorem hF : Verified X86_64.target (HH v).hmacFin (finG (OK v).SH (HH v).W) :=
-  hmacFin_ok (OK v) Proof.Pbkdf2.Md.X86_64.Sha256.coreOK (Proof.Pbkdf2.Md.X86_64.Sha256.callees v)
-    Proof.Pbkdf2.Md.X86_64.Sha256.satF
+  hmacFin_ok (OK v) (Proof.Pbkdf2.Md.X86_64.Sha256.coreOK v) (Proof.Pbkdf2.Md.X86_64.Sha256.callees v)
+    (Proof.Pbkdf2.Md.X86_64.Sha256.satF (Proof.Pbkdf2.Md.X86_64.Sha256.hashW v))
 
 theorem hFsp : NoSp (HH v).hmacFin :=
-  nosp_of (core_hmacFin (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).cNs Proof.Pbkdf2.Md.X86_64.Sha256.coreOK.hfinNs)
+  nosp_of (core_hmacFin (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).cNs (Proof.Pbkdf2.Md.X86_64.Sha256.coreOK v).hfinNs)
 
 theorem hFd : (HH v).hmacFin.depth ≤ 2 :=
-  core_hmacFin_depth (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).cD Proof.Pbkdf2.Md.X86_64.Sha256.coreOK.hfinD
+  core_hmacFin_depth (Proof.Pbkdf2.Md.X86_64.Sha256.callees v).cD (Proof.Pbkdf2.Md.X86_64.Sha256.coreOK v).hfinD
 
-/-- The sizes. -/
-theorem sizes : (HH v).S = 96 ∧ (HH v).W = 104 ∧ (HH v).D = 32 ∧ (HH v).P.B = 64 ∧ (HH v).stream.S = 96 ∧
-    (HH v).stream.F = 32 ∧ (HH v).stream.D = 32 ∧ (OK v).stream.Wb = 608 := by
-  refine ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, ?_⟩
-  show Impl.Sha256.X86_64.Stream.params.so + 48 = 608
-  decide
+/-- The sizes: the working space of the functions called with `scratch + sWork`
+is that of `v` (at most AVX2's). -/
+theorem sizes : (HH v).S = 96 ∧ (HH v).W ≤ 104 ∧ (HH v).D = 32 ∧ (HH v).P.B = 64 ∧ (HH v).stream.S = 96 ∧
+    (HH v).stream.F = 32 ∧ (HH v).stream.D = 32 ∧ (OK v).stream.Wb ≤ 608 := by
+  refine ⟨rfl, ?_, rfl, rfl, rfl, rfl, rfl, ?_⟩
+  · show (Proof.Pbkdf2.Md.X86_64.Sha256.hash v).W ≤ 104
+    rcases Proof.Pbkdf2.Md.X86_64.Sha256.hashW v with h | h | h <;> omega
+  · show v.callee.so + 48 ≤ 608
+    rcases v.hso with h | h | h <;> omega
+
+/-- `scratch + sWork` holds the HMAC functions' working space. -/
+theorem wFit : sWork + 8 * (HH v).W ≤ sMsg := by
+  have := (sizes v).2.1; unfold sWork sMsg; omega
+
+/-- `scratch + sWork` holds the streaming functions' working space. -/
+theorem wbFit : sWork + (OK v).stream.Wb ≤ sMsg := by
+  have := (sizes v).2.2.2.2.2.2.2; unfold sWork sMsg; omega
+
+theorem wScr : sWork + 8 * (HH v).W ≤ scrBytes := Nat.le_trans (wFit v) (by decide)
+
+theorem wbScr : sWork + (OK v).stream.Wb ≤ scrBytes := Nat.le_trans (wbFit v) (by decide)
+
+/-- Regions of `scratch` from `sMsg` on lie above the working space. -/
+theorem wbBelow {a : Nat} (h : sMsg ≤ a) : sWork + (OK v).stream.Wb ≤ a := Nat.le_trans (wbFit v) h
+
+theorem wBelow {a : Nat} (h : sMsg ≤ a) : sWork + 8 * (HH v).W ≤ a := Nat.le_trans (wFit v) h
 
 theorem sh_hash : (OK v).SH.H = Spec.Hmac.sha256 := rfl
 /-! ## Regions of `scratch` -/
@@ -161,7 +181,7 @@ theorem hashD_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t
   have hk2 := hp.k2
   have hk1 := hp.k1
   have hkk : kOf s ≤ 1024 := hk2
-  obtain ⟨hW, -, -, -, hS, hF, hD, hWb⟩ := sizes v
+  obtain ⟨hW, -, -, -, hS, hF, hD, -⟩ := sizes v
   have so := (OK v).stream
   -- `init`
   refine WP.seq (WP.mono (shaInitArgs_run hp h.ctx) fun t₁ ⟨hc₁, hm₁, hdi₁⟩ => ?_)
@@ -184,39 +204,39 @@ theorem hashD_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t
   refine WP.seq (Proof.Pbkdf2.Md.X86_64.Calls.upd_call (OK v).stream (len := kOf s)
     { rdi := hdi₃, rdx := hdx₃, rcx := by rw [hcx₃], r8 := h8₃
       cd := Covers.right (scCov hp hc₃ (by unfold sD scrBytes; omega))
-      cw := by rw [hS, hWb]; exact Covers.pair (scCov hp hc₃ (by decide)) (scCov hp hc₃ (by decide))
-      st_sc := by rw [hS, hWb]; exact scD (.inl (by decide)) (by decide) (by decide)
+      cw := by rw [hS]; exact Covers.pair (scCov hp hc₃ (by decide)) (scCov hp hc₃ (wbScr v))
+      st_sc := by rw [hS]; exact scD (.inl (by decide)) (by decide) (wbScr v)
       d_st := by rw [hS]; exact scD (.inr (by decide)) (by unfold sD scrBytes; omega) (by decide)
-      d_sc := by rw [hWb]; exact scD (.inr (by decide)) (by unfold sD scrBytes; omega) (by decide)
+      d_sc := scD (.inr (wbBelow v (by decide))) (by unfold sD scrBytes; omega) (wbScr v)
       stk_st := by rw [below_rsp hc₃, hS]; exact stkD hp (by decide) (by decide)
       stk_d := by rw [below_rsp hc₃]; exact stkD hp (by decide) (by unfold sD scrBytes; omega)
-      stk_sc := by rw [below_rsp hc₃, hWb]; exact stkD hp (by decide) (by decide) } (by omega)
+      stk_sc := by rw [below_rsp hc₃]; exact stkD hp (by decide) (wbScr v) } (by omega)
     fun t₄ a₄ hu₄ => ?_)
   have hc₄ := hc₃.after hp a₄ fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · rw [hS]; exact scS (by decide)
-    · rw [hWb]; exact scS (by decide)
+    · exact scS (wbScr v)
   have hr₄ := hu₄ [] hr₃ (by rw [hsi₃]; rfl)
   -- `finalize`
   refine WP.seq (WP.mono (shaFinArgs_run hp hc₄) fun t₅ ⟨hc₅, hm₅, hdi₅, hsi₅, hdx₅, hcx₅⟩ => ?_)
-  have cw₅ : Covers [⟨scA s 0, 96⟩, ⟨scA s sDH, 32⟩, ⟨scA s sWork, 608⟩] t₅.wr :=
-    (scCov hp hc₅ (by decide)).cons ((scCov hp hc₅ (by decide)).cons ((scCov hp hc₅ (by decide)).cons Covers.nil))
+  have cw₅ : Covers [⟨scA s 0, 96⟩, ⟨scA s sDH, 32⟩, ⟨scA s sWork, (OK v).stream.Wb⟩] t₅.wr :=
+    (scCov hp hc₅ (by decide)).cons ((scCov hp hc₅ (by decide)).cons ((scCov hp hc₅ (wbScr v)).cons Covers.nil))
   refine Proof.Pbkdf2.Md.X86_64.Calls.fin_call (OK v).stream
     { rdi := hdi₅, rdx := hdx₅, rcx := hcx₅
-      cw := by rw [hS, hF, hWb]; exact cw₅
+      cw := by rw [hS, hF]; exact cw₅
       st_o := by rw [hS, hF]; exact scD (.inl (by decide)) (by decide) (by decide)
-      st_sc := by rw [hS, hWb]; exact scD (.inl (by decide)) (by decide) (by decide)
-      o_sc := by rw [hF, hWb]; exact scD (.inr (by decide)) (by decide) (by decide)
+      st_sc := by rw [hS]; exact scD (.inl (by decide)) (by decide) (wbScr v)
+      o_sc := by rw [hF]; exact scD (.inr (wbBelow v (by decide))) (by decide) (wbScr v)
       stk_st := by rw [below_rsp hc₅, hS]; exact stkD hp (by decide) (by decide)
       stk_o := by rw [below_rsp hc₅, hF]; exact stkD hp (by decide) (by decide)
-      stk_sc := by rw [below_rsp hc₅, hWb]; exact stkD hp (by decide) (by decide) } fun t₆ a₆ hf₆ => ?_
+      stk_sc := by rw [below_rsp hc₅]; exact stkD hp (by decide) (wbScr v) } fun t₆ a₆ hf₆ => ?_
   have hc₆ := hc₅.after hp a₆ fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · rw [hS]; exact scS (by decide)
     · rw [hF]; exact scS (by decide)
-    · rw [hWb]; exact scS (by decide)
+    · exact scS (wbScr v)
   refine ⟨hc₆, ?_⟩
   have := hf₆ _ (by rw [hm₅]; exact hr₄) (by simp [Spec.Sha256.bytesAt]; omega)
     (by rw [hsi₅]; simp [Spec.Sha256.bytesAt])

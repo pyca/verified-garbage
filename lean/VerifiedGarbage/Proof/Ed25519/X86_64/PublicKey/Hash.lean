@@ -426,35 +426,37 @@ theorem callees (v : Compress) : Proof.Pbkdf2.Md.X86_64.Callees (hashOf v) :=
   Proof.Pbkdf2.Md.X86_64.Sha512.callees (Or.inr (Or.inl rfl)) v
 
 theorem coreOK (v : Compress) : Proof.Pbkdf2.Md.X86_64.CoreOK (Proof.Pbkdf2.Md.X86_64.core (hashOf v)) :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha512_coreOK
+  Proof.Pbkdf2.Md.X86_64.Sha512.sha512C v
 
 theorem upd_mx (v : Compress) :
-    (Impl.Sha512.X86_64.Stream.update v.callee).allInstrs (fun i => !loadsMxcsr i) = true :=
+    (Impl.Sha512.X86_64.Stream.updateOwn v.callee).allInstrs (fun i => !loadsMxcsr i) = true :=
   (callees v).updMx (coreOK v)
 
 theorem fin_mx (v : Compress) :
-    (Impl.Sha512.X86_64.Stream.finalize v.callee).allInstrs (fun i => !loadsMxcsr i) = true :=
+    (Impl.Sha512.X86_64.Stream.finalizeOwn v.callee).allInstrs (fun i => !loadsMxcsr i) = true :=
   (callees v).finMx (coreOK v)
 
-theorem upd_nosp (v : Compress) : NoSp (Impl.Sha512.X86_64.Stream.update v.callee) :=
+theorem upd_nosp (v : Compress) : NoSp (Impl.Sha512.X86_64.Stream.updateOwn v.callee) :=
   (callees v).updSp (coreOK v)
 
-theorem fin_nosp (v : Compress) : NoSp (Impl.Sha512.X86_64.Stream.finalize v.callee) :=
+theorem fin_nosp (v : Compress) : NoSp (Impl.Sha512.X86_64.Stream.finalizeOwn v.callee) :=
   (callees v).finSp (coreOK v)
 
-theorem upd_depth (v : Compress) : (Impl.Sha512.X86_64.Stream.update v.callee).depth ≤ 1 :=
+theorem upd_depth (v : Compress) : (Impl.Sha512.X86_64.Stream.updateOwn v.callee).depth ≤ 1 :=
   (callees v).updD (coreOK v)
 
-theorem fin_depth (v : Compress) : (Impl.Sha512.X86_64.Stream.finalize v.callee).depth ≤ 1 :=
+theorem fin_depth (v : Compress) : (Impl.Sha512.X86_64.Stream.finalizeOwn v.callee).depth ≤ 1 :=
   (callees v).finD (coreOK v)
 
 theorem upd_verified (v : Compress) :
-    Verified X86_64.target (Impl.Sha512.X86_64.Stream.update v.callee) Proof.Sha512.updateX86_64 :=
-  Proof.Sha512.X86_64.Stream.Update.verified_of v.ok (upd_mx v)
+    Verified X86_64.target (Impl.Sha512.X86_64.Stream.updateOwn v.callee) Proof.Sha512.updateX86_64 :=
+  Proof.Sha512.X86_64.Stream.updateOwn_verified v.hso v.okS (upd_mx v)
+    Proof.Sha512.X86_64.Shared.updateScratchImplies.sat_left
 
 theorem fin_verified (v : Compress) :
-    Verified X86_64.target (Impl.Sha512.X86_64.Stream.finalize v.callee) Proof.Sha512.finalizeX86_64 :=
-  Proof.Sha512.X86_64.Stream.Finalize.verified_of v.ok (fin_mx v)
+    Verified X86_64.target (Impl.Sha512.X86_64.Stream.finalizeOwn v.callee) Proof.Sha512.finalizeX86_64 :=
+  Proof.Sha512.X86_64.Stream.finalizeOwn_verified v.hso v.okS (fin_mx v)
+    Proof.Sha512.X86_64.Shared.finalizeScratchImplies.sat_left
 
 theorem sub88 (B : Addr) : B + BitVec.ofNat 64 8 - 8 = B := by bv_omega
 

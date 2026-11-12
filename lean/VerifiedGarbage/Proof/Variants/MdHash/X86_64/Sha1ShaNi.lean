@@ -87,6 +87,7 @@ namespace VG.Proof.Variants.MdHash.X86_64.Sha1ShaNi
 def compress : Proof.Sha1.X86_64.Compress where
   callee := .shani
   ok := Proof.Sha1.X86_64.Stream.shani_ok
+  okS := Proof.Sha1.X86_64.Stream.shani_ok0
   mxcsr := by decide +kernel
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_shani"
@@ -148,22 +149,20 @@ end Scrub
 
 /-- `variant` before the residue analysis of HMAC's `finalize`. -/
 def unscrubbed : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { Proof.Pbkdf2.Md.X86_64.Sha1.variant compress
-      (Proof.Pbkdf2.Md.X86_64.Sha1.own0 compress Proof.Sha1.X86_64.Stream.shani_ok0) with
-    stream := [update, finalize, digest] }
+  Proof.Pbkdf2.Md.X86_64.Sha1.variant compress [update, finalize, digest]
 
 /-- HMAC's `finalize` over `unscrubbed`, followed by `Impl.Scrub.X86_64.scrubTail`,
 which wipes the registers and the granules of its stack that the residue
 analysis of its code finds may hold secrets (`MdHash.hmacFinReg`). -/
-def hmacFinKs : List Nat := keep_for% unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I)
-  (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) .r8
+def hmacFinKs : List Nat := keep_for% unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H)
+  (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) .r8
       unscrubbed.H.hmacFin) []
 
 theorem hmacFinOk : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
-    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) [])
-      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) .r8
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) [])
+      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) .r8
       unscrubbed.H.hmacFin) h).any
-      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) hmacFinKs (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I))) = true :=
+      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) hmacFinKs (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H))) = true :=
   VG.X86_64.RScrub.Analysed.ok_of hmacFinKs (by taint_decide)
 
 def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=

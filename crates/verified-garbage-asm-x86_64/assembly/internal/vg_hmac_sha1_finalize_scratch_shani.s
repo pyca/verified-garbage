@@ -5,19 +5,19 @@
 // gives.
 
 vg_hmac_sha1_finalize_scratch_shani:
-	mov QWORD PTR [r8+160], rbx
-	mov QWORD PTR [r8+168], rbp
-	mov QWORD PTR [r8+176], r12
-	mov QWORD PTR [r8+184], r13
-	mov QWORD PTR [r8+192], r14
-	mov QWORD PTR [r8+200], r15
+	mov QWORD PTR [r8+48], rbx
+	mov QWORD PTR [r8+56], rbp
+	mov QWORD PTR [r8+64], r12
+	mov QWORD PTR [r8+72], r13
+	mov QWORD PTR [r8+80], r14
+	mov QWORD PTR [r8+88], r15
 	mov rbx, rdi
 	mov r12, rsi
 	mov r13, rcx
 	mov r15, r8
 	mov rsi, rdx
 	mov rdx, r15
-	add rdx, 208
+	add rdx, 96
 	mov rcx, r15
 	call {vg_sha1_finalize_scratch_shani}
 	mov eax, DWORD PTR [r12]
@@ -30,15 +30,15 @@ vg_hmac_sha1_finalize_scratch_shani:
 	mov DWORD PTR [rbx+12], eax
 	mov eax, DWORD PTR [r12+16]
 	mov DWORD PTR [rbx+16], eax
-	mov eax, DWORD PTR [r15+208]
+	mov eax, DWORD PTR [r15+96]
 	mov DWORD PTR [rbx+20], eax
-	mov eax, DWORD PTR [r15+212]
+	mov eax, DWORD PTR [r15+100]
 	mov DWORD PTR [rbx+24], eax
-	mov eax, DWORD PTR [r15+216]
+	mov eax, DWORD PTR [r15+104]
 	mov DWORD PTR [rbx+28], eax
-	mov eax, DWORD PTR [r15+220]
+	mov eax, DWORD PTR [r15+108]
 	mov DWORD PTR [rbx+32], eax
-	mov eax, DWORD PTR [r15+224]
+	mov eax, DWORD PTR [r15+112]
 	mov DWORD PTR [rbx+36], eax
 	mov rbp, rbx
 	add rbp, 20
@@ -83,11 +83,11 @@ vg_hmac_sha1_finalize_scratch_shani:
 	mov eax, DWORD PTR [rbx+16]
 	bswap eax
 	mov DWORD PTR [rbp+16], eax
-	mov rbx, QWORD PTR [r15+160]
-	mov rbp, QWORD PTR [r15+168]
-	mov r12, QWORD PTR [r15+176]
-	mov r13, QWORD PTR [r15+184]
-	mov r14, QWORD PTR [r15+192]
-	mov r15, QWORD PTR [r15+200]
+	mov rbx, QWORD PTR [r15+48]
+	mov rbp, QWORD PTR [r15+56]
+	mov r12, QWORD PTR [r15+64]
+	mov r13, QWORD PTR [r15+72]
+	mov r14, QWORD PTR [r15+80]
+	mov r15, QWORD PTR [r15+88]
 	ret
 	.p2align 6

@@ -5,12 +5,12 @@
 // gives.
 
 vg_hmac_sha256_init_scratch_shani:
-	mov QWORD PTR [r8+608], rbx
-	mov QWORD PTR [r8+616], rbp
-	mov QWORD PTR [r8+624], r12
-	mov QWORD PTR [r8+632], r13
-	mov QWORD PTR [r8+640], r14
-	mov QWORD PTR [r8+648], r15
+	mov QWORD PTR [r8+48], rbx
+	mov QWORD PTR [r8+56], rbp
+	mov QWORD PTR [r8+64], r12
+	mov QWORD PTR [r8+72], r13
+	mov QWORD PTR [r8+80], r14
+	mov QWORD PTR [r8+88], r15
 	mov rbx, rdi
 	mov r12, rsi
 	mov r15, r8
@@ -90,11 +90,11 @@ vg_hmac_sha256_init_scratch_shani:
 	call {vg_sha256_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
-	mov rbx, QWORD PTR [r15+608]
-	mov rbp, QWORD PTR [r15+616]
-	mov r12, QWORD PTR [r15+624]
-	mov r13, QWORD PTR [r15+632]
-	mov r14, QWORD PTR [r15+640]
-	mov r15, QWORD PTR [r15+648]
+	mov rbx, QWORD PTR [r15+48]
+	mov rbp, QWORD PTR [r15+56]
+	mov r12, QWORD PTR [r15+64]
+	mov r13, QWORD PTR [r15+72]
+	mov r14, QWORD PTR [r15+80]
+	mov r15, QWORD PTR [r15+88]
 	ret
 	.p2align 6

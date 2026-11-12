@@ -11,7 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_finalize_scratch() {
     core::arch::naked_asm!(
-        r#".base64 "SImZMAUAAEiJqTgFAABMiaFABQAATImpSAUAAEyJsVAFAABMiblYBQAASIn7SYnPSInVSYn0SYn1SYPlf0G5gAAAAEG+AAAAAEmD/XA="
+        r#".base64 "SImZwAAAAEiJqcgAAABMiaHQAAAATImp2AAAAEyJseAAAABMibnoAAAASIn7SYnPSInVSYn0SYn1SYPlf0G5gAAAAEG+AAAAAEmD/XA="
 jae 20f
 jmp 21f
 20:
@@ -70,7 +70,7 @@ jmp 219f
 call {vg_sha512_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAAww=="
+.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYufwAAAAEmLr8gAAABNi6fQAAAATYuv2AAAAE2Lt+AAAABNi7/oAAAAww=="
 .p2align 6"#,
         vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
