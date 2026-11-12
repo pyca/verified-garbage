@@ -50,7 +50,8 @@ namespace VG.Proof.Rsa.RISCV64.CrtValues
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.RISCV64.Taint VG.Proof.Mont VG.Proof.Bignum.RISCV64
   VG.Proof.Rsa.RISCV64.Keys
 open VG.Impl.Rsa.RISCV64.Keys (saved save restore mov)
-open VG.Impl.Rsa.RISCV64.CrtValues (code entry nCheck valid fail)
+open VG.Impl.Rsa.RISCV64.CrtValues (code entry nCheck valid fail front dPartsAll stores nArr)
+open VG.Proof.Rsa.CrtValues (maskOf)
 open VG.Impl.Bignum.RISCV64.Precompute (check1 check2)
 open VG.Proof.Bignum.RISCV64.Pre (Two Pins two_post two_taint getD_of_lt)
 
@@ -167,7 +168,7 @@ theorem CB.nrd {s0 u : State} (h : PreC s0) (c : CB s0 s0.mem u) :
 /-- The body's public registers. -/
 abbrev bodyRegs : List Reg := [.s1, .s2, .s3, .s4, .s5, .s6, .a0, .a1, .a2, .a3, .a6, .s11]
 
-theorem CB.pins {s0 s1 x y : State} (sm : Same s0 s1) (cx : CB s0 s0.mem x) (cy : CB s1 s1.mem y) :
+theorem CB.pins {s0 s1 x y : State} {M M' : Mem} (sm : Same s0 s1) (cx : CB s0 M x) (cy : CB s1 M' y) :
     ∀ r ∈ bodyRegs, x.gpr r = y.gpr r := by
   intro r hr
   simp only [bodyRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -185,7 +186,34 @@ theorem CB.pins {s0 s1 x y : State} (sm : Same s0 s1) (cx : CB s0 s0.mem x) (cy 
   · rw [cx.a6, cy.a6, sm.regs _ (by decide)]
   · rw [cx.s11, cy.s11, bOf, bOf, sm.args 6 (by decide)]
 
+/-- The public registers of the divisions of `d` and the stores: the body's and
+the working space's sizes. -/
+abbrev pubRegs : List Reg := bodyRegs ++ [.s9, .s10]
+
+theorem pub_pins {s0 s1 x y : State} {M M' : Mem} (sm : Same s0 s1) (cx : CB s0 M x) (cy : CB s1 M' y)
+    (wx : Ws x (bOf s0) (zOf s0) (wOf s0) nArr) (wy : Ws y (bOf s1) (zOf s1) (wOf s1) nArr) :
+    ∀ r ∈ pubRegs, x.gpr r = y.gpr r := by
+  intro r hr
+  rcases List.mem_append.mp hr with hr | hr
+  · exact CB.pins sm cx cy r hr
+  · have hk : kOf s0 = kOf s1 := by simp only [kOf, sm.regs .a7 (by decide)]
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · rw [wx.s9, wy.s9, wOf, wOf, hk]
+    · rw [wx.s10, wy.s10, wOf, wOf, hk]
+
+/-- After `front`, for a valid modulus. -/
+def SA (d : Dt) (t : State) : Prop :=
+  ∃ s0, C0 d s0 ∧ Spec.Rsa.modulusValid (Nv s0) (kOf s0) = true ∧ ∃ X₁ X₂ V X, Iv s0 X₁ X₂ V X t
+/-- After the divisions of `d`. -/
+def SB (d : Dt) (u : State) : Prop :=
+  ∃ s0, C0 d s0 ∧ ∃ X₁ X₂ V X, ∃ Mi : Mem, (Spec.Rsa.bytesAt Mi (s0.gpr .a4) (pL s0) =
+    if maskOf (Pv s0) (Qv s0) X₁ X₂ V then Spec.Rsa.i2osp (X % 256 ^ pL s0) (pL s0)
+    else List.replicate (pL s0) 0) ∧ Dd s0 X₁ X₂ V Mi u
+
 /-! ## The pieces -/
+
+theorem valid_eq : valid = .seq front (.seq dPartsAll stores) := rfl
 
 theorem nCheck_eq : nCheck = .seq (.block [mov .s7 .s1, mov .s8 .s2]) (.seq (.block check1) check2) := rfl
 
@@ -273,14 +301,29 @@ theorem code_rel [InvLaw] : RelCT isa (Two C0) code fun _ _ => True := by
         rw [Steps.eval_zero, Steps.eval_zero]
         congr 1
         rw [Bool.eq_iff_iff, beq_iff_eq, beq_iff_eq, x0, y0, (hx.same hy).mv]
-      · -- A valid modulus.
-        refine RelCT.mono (two_post (Φ := fun a s => S5 a s ∧ s.gpr .s0 = 0)
-          (two_taint bodyRegs ?_ (by taint_decide)) ?_) ?_ fun _ _ h => h
-        · rintro a s₁ s₂ ⟨⟨x, hx, cx, -⟩, -⟩ ⟨⟨y, hy, cy, -⟩, -⟩ r hr
-          exact CB.pins (hx.same hy) cx cy r hr
-        · rintro a t ⟨⟨s0, c0, c, -⟩, -⟩
-          exact WP.mono (valid_ok (preC_of c0.1) c) fun u vp =>
-            ⟨s0, c0, vp.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.1.ce⟩
+      · -- A valid modulus: `front`, the divisions of `d` (whose restored
+        -- registers the taint analysis takes as secret), then the stores, whose
+        -- public registers are those `CB` pins again.
+        rw [valid_eq]
+        refine RelCT.mono (P := Two fun a s => S5 a s ∧ s.gpr .s0 = 0)
+          (RelCT.seq (R := Two SA) ?_ (RelCT.seq (R := Two SB) ?_ ?_)) ?_ fun _ _ h => h
+        · refine two_post (Φ := fun a s => S5 a s ∧ s.gpr .s0 = 0)
+            (two_taint bodyRegs ?_ (by taint_decide)) ?_
+          · rintro a s₁ s₂ ⟨⟨x, hx, cx, -⟩, -⟩ ⟨⟨y, hy, cy, -⟩, -⟩ r hr
+            exact CB.pins (hx.same hy) cx cy r hr
+          · rintro a t ⟨⟨s0, c0, c, x0⟩, z⟩
+            exact WP.mono (front_ok (preC_of c0.1) c) fun u ⟨X₁, X₂, V, X, iv⟩ =>
+              ⟨s0, c0, x0.mp z, X₁, X₂, V, X, iv⟩
+        · refine two_post (two_taint pubRegs ?_ (by taint_decide)) ?_
+          · rintro a s₁ s₂ ⟨x, hx, -, _, _, _, _, ix⟩ ⟨y, hy, -, _, _, _, _, iy⟩ r hr
+            exact pub_pins (hx.same hy) ix.cb iy.cb ix.ws iy.ws r hr
+          · rintro a t ⟨s0, c0, hv, X₁, X₂, V, X, iv⟩
+            exact WP.mono (dPartsAll_ok (preC_of c0.1) hv iv) fun u dd => ⟨s0, c0, X₁, X₂, V, X, _, iv.qi, dd⟩
+        · refine two_post (two_taint pubRegs ?_ (by taint_decide)) ?_
+          · rintro a s₁ s₂ ⟨x, hx, _, _, _, _, _, -, dx⟩ ⟨y, hy, _, _, _, _, _, -, dy⟩ r hr
+            exact pub_pins (hx.same hy) dx.cb dy.cb dx.ws dy.ws r hr
+          · rintro a t ⟨s0, c0, X₁, X₂, V, X, Mi, qi, dd⟩
+            exact WP.mono (stores_ok (preC_of c0.1) dd qi) fun u o => ⟨s0, c0, o.ce⟩
         · rintro s₁ s₂ ⟨⟨a, ⟨x, hx, cx, x0⟩, ⟨y, hy, cy, y0⟩, hsp⟩, hc⟩
           have z1 := zero_of_eval0 hc
           exact ⟨a, ⟨⟨x, hx, cx, x0⟩, z1⟩, ⟨⟨y, hy, cy, y0⟩, y0.mpr ((hx.same hy).mv.mp (x0.mp z1))⟩, hsp⟩

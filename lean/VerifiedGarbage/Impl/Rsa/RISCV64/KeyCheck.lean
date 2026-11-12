@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Rsa.RISCV64.MulMod
 public import VerifiedGarbage.Impl.Rsa.RISCV64.Div
 public import VerifiedGarbage.Impl.Bignum.RISCV64.PublicChecked
 public import VerifiedGarbage.Impl.Rsa.RISCV64.RecoverDet
+public import VerifiedGarbage.Impl.Rsa.RISCV64.WordDiv
 
 /-! # The checks of an RSA private key on RISC-V
 
@@ -192,6 +193,55 @@ def dChecks : List (Prog isa) :=
 /-- `p_len` kept in `s5` (`q`'s pointer, which only the loads read) for the
 division by `p - 1`: `tail` writes `s4`. -/
 def keepLen : List Instr := [mov .s5 .s4]
+
+/-! ## A balanced key, by words
+
+When `p_len` (`s5`) and `q_len` (`s6`) are equal, a multiple of 8, at least
+32, and four times `w` (`s9`), so that `p`, `q`, `p - 1` and `q - 1` are
+numbers of `v = w / 2` words and the products below fit in `w` words, the
+checks are by products (`RecoverDet.mulLow`) and divisions by words
+(`WordDiv.divW`), each remainder exact for a divisor whose top word is not
+zero, as `p`, `p - 1`, `q` and `q - 1` are when `p q = n` (`n` has no leading
+zero byte); a key with `p q ≠ n` fails the mask whatever they give:
+
+* `p q = n`: `p q mod 2^(64 w)` compared with `n`, the whole product;
+* `qInv < p` and `q qInv mod p` compared with 1;
+* `dP < p - 1` and `e dP mod (p - 1)` compared with 1, and the same for `q`;
+* `d < n`, `d mod (p - 1)` and `d mod (q - 1)` compared with `dP` and `dQ`.
+
+Other keys take the checks above. -/
+
+/-- `t0 := 0` exactly for a balanced key: `p_len` (`s5`) a multiple of 8 and
+at least 32, equal to `q_len` (`s6`) and to `4 w` (`s9`). -/
+def shape : List Instr :=
+  [.logicImm .and .t0 .s5 7, .shift .sll .d .t1 .s9 2, .logic .xor .t1 .t1 .s5, .logic .or .t0 .t0 .t1,
+    .logic .xor .t1 .s5 .s6, .logic .or .t0 .t0 .t1, .li .t1 32, .sltu .t1 .s5 .t1, .logic .or .t0 .t0 .t1]
+
+/-- `[aVR] := [a] mod [d]` by words, for `[d]` of `w / 2` words: `aVR`
+zeroed, `[d]` copied to `aVD` and its top word made not zero, `aVT` the
+temporary. -/
+def divWA (a d : Nat) : List (Prog isa) :=
+  [copy aVR aZ, copy aVD d, .block (WordDiv.fixTop aVD), WordDiv.divW a aVR aVD aVT]
+
+/-- `[aVQ] := [y] [x] mod 2^(64 w)`. -/
+def mulQ (y x : Nat) : List (Prog isa) := [copy aVQ aZ, RecoverDet.mulLow aVQ y x]
+
+/-- `[y] [x] mod [d]`, by words, compared with 1. -/
+def mulModOne (y x d : Nat) : List (Prog isa) := mulQ y x ++ divWA aVQ d ++ eqA aVR aOne
+
+/-- The checks of `vg_rsa_check_crt_key`, by words. -/
+def crtChecksW : List (Prog isa) :=
+  mulQ aP aQ ++ eqA aVQ aN ++ ltA aQI aP ++ mulModOne aQ aQI aP ++
+  [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++
+  ltA aDP aM1 ++ mulModOne aE aDP aM1 ++ ltA aDQ aM2 ++ mulModOne aE aDQ aM2
+
+/-- The checks of `d`, by words. -/
+def dChecksW : List (Prog isa) :=
+  ltA aD aN ++ divWA aD aM1 ++ eqA aVR aDP ++ divWA aD aM2 ++ eqA aVR aDQ
+
+/-- Every check: by words for a balanced key (`shape`), else as above. -/
+def checks : List (Prog isa) :=
+  [.block shape, .ite (.zero .t0) (seqs (crtChecksW ++ dChecksW)) (seqs (crtChecks ++ dChecks))]
 
 /-! ## Exit -/
 
