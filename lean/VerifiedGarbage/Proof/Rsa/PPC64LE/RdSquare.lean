@@ -52,29 +52,27 @@ theorem square_ok (h : DS s0 false A dbL V [sExact, sLt, sB1, sB0] s) (z : A tru
     (live' := [(false, 25), (true, 19), (true, 15), (true, 9)]) (by decide)) fun s3 ⟨h3, _, _⟩ => ?_)
   refine WP.seq (WP.mono (h3.copy (o := 8) (a := 15) (by decide) (by decide) (by decide)
     (live' := [(true, 14), (false, 25), (true, 19), (true, 15), (true, 9)]) (by decide)) fun s4 ⟨h4, _, _⟩ => ?_)
-  refine WP.seq (WP.mono (h4.copy (o := 17) (a := 15) (by decide) (by decide) (by decide)
-    (live' := [(true, 8), (true, 14), (false, 25), (true, 19), (true, 15), (true, 9)]) (by decide))
-    fun s5 ⟨h5, _, _⟩ => ?_)
-  refine WP.seq (WP.mono h5.toNB fun s6 ⟨h6, _⟩ => ?_)
+  refine WP.seq (WP.mono h4.toNB fun s6 ⟨h6, _⟩ => ?_)
   refine WP.seq (WP.mono (h6.widen (k := 14) (a := 25) (by decide) (by decide) (by rd_simp [z]) (by decide)
-    (by decide) (live' := [(true, 17), (true, 8), (false, 25), (true, 19), (true, 15), (true, 9)]) (by decide))
+    (by decide) (live' := [(true, 8), (false, 25), (true, 19), (true, 15), (true, 9)]) (by decide))
     fun s7 ⟨h7, _⟩ => ?_)
   refine WP.seq (WP.mono (h7.widen (k := 8) (a := 25) (by decide) (by decide) (by rd_simp [z]) (by decide)
-    (by decide) (live' := [(true, 14), (true, 17), (false, 25), (true, 19), (true, 15), (true, 9)]) (by decide))
+    (by decide) (live' := [(true, 14), (false, 25), (true, 19), (true, 15), (true, 9)]) (by decide))
     fun s8 ⟨h8, _⟩ => ?_)
-  refine WP.seq (WP.block_append (WP.mono h8.countN fun s9 ⟨h9, c9, _⟩ =>
+  refine WP.seq (WP.block_append (WP.mono h8.len4 fun s9 ⟨h9, c9, _⟩ =>
     WP.mono h9.toWB fun s10 ⟨h10, k10⟩ => ?_))
-  have c10 : s10.gpr .r27 = BitVec.ofNat 64 (32 * ww (kK s0)) := by rw [k10.gpr _ (by decide)]; exact c9
-  show WP isa (VG.Impl.Rsa.PPC64LE.RecoverDet.product 8 14 17 11 20 15) s10 _
-  refine WP.mono (product_ok (x := 14) (ls := [sExact, sLt, sB1, sB0]) (.inr rfl) (h10.drop (by decide) (by decide))
-    (by rd_simp [z]) (by decide) c10) fun t ⟨A', V', ht, e, z', r, v⟩ => ⟨A', V', ht, ?_, ?_, z', ?_, ?_, v⟩
-  · rw [r (false, 25) (by decide)]; rd_simp [hb]
-  · have e' := congrArg (fun p => p.2.2) e
-    simp only at e'
-    rw [e']
-    rd_simp [hb, z]
-  · rw [r (true, 9) (by decide)]; rd_simp
-  · rw [r (true, 19) (by decide)]; rd_simp
+  have c10 : s10.gpr .r4 = BitVec.ofNat 64 (ww (kK s0) / 2) := by rw [k10.gpr _ (by decide)]; exact c9
+  refine WP.mono (h10.mulW (o := 17) (x := 8) (y := 14) (by decide) (by decide) (by decide) (by decide)
+    (by decide) c10 (live' := [(true, 8), (true, 14), (false, 25), (true, 19), (true, 15), (true, 9)]) (by decide))
+    fun t ht => ⟨_, V, ht.drop (by decide) (by decide), ?_, ?_, by rd_simp [z], by rd_simp, by rd_simp,
+      fun _ _ => rfl⟩
+  · rd_simp [hb]
+  · have eW : wW (kK s0) = 2 * ww (kK s0) + 2 := by have := vw_wide s0; rw [vw_true, vw_false] at this
+    have lb : (A false 25 + 1) % 2 ^ (32 * ww (kK s0)) < 2 ^ (32 * vw s0 true) :=
+      Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos _))
+        (Nat.pow_le_pow_right (by decide) (by rw [vw_true, eW]; omega))
+    rw [VG.Proof.Rsa.RecoverDet.prod_iter _ _ _ lb]
+    rd_simp [hb]
 
 /-- `minus4n`: `X = b² - 4 n` modulo `2^(32 W)`, and whether `b² < 4 n` and `X < 1`. -/
 theorem minus4n_ok (h : DS s0 true A (pL 14) V [sExact, sLt, sB1, sB0] s) :

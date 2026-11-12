@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 # `vg_rsa_recover_primes_det` on PPC64LE: the GCD
 
 `gcd_ok`: `gcd(u, x)` of the halvings' `u` (odd) and `x`, by the batched
-inverse on the narrow arrays, 1 where `u = 1`, into the zeroed wide `wY`.
+divsteps on the narrow arrays (`InvBatch.gcd`), 1 where `u = 1`, into the zeroed wide `wY`.
 -/
 
 @[expose] public section

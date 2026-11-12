@@ -12,7 +12,9 @@ of 59 divsteps (Bernstein and Yang) on 64-bit words, as RISC-V's
 the working space's digits), `x` in array 0 and `m` in array 8, both below
 `2^(32 n)`; the inverse works on `ν = ⌈n / 2⌉` words. Array 1 ends as
 `gcd(x, m)` and array 3 as `y < m` with `y x ≡ gcd(x, m) (mod m)` (for
-`m > 1`), `ν + 1` words each after `w + 2` digits zeroed.
+`m > 1`), `ν + 1` words each after `w + 2` digits zeroed. `gcd` leaves only
+`gcd(x, m)` in array 1: its batches update `f` and `g` alone (`batchG`), and it
+has neither the reduction of `a` nor its doublings.
 
 The state of `Proof/Divstep/TcS.lean`'s `invRunS 59`: `f` and `g` in arrays 4
 and 5, `ν + 1` words in two's complement; the coefficients `a`, `b` in arrays
@@ -263,6 +265,12 @@ def countDown : List Instr := [.subi .r10 .r10 32768, .lsr .d .r3 .r10 15]
 /-- A batch. -/
 def batch : Prog isa := seqs [.block (start ++ wsteps 59 ++ save), update, .block countDown]
 
+/-- The update of `f` and `g` alone, the borrowed registers saved around it. -/
+def updateGS : Prog isa := seqs [.block spill, updateG, .block restore]
+
+/-- A batch of `f` and `g` alone, for `gcd`. -/
+def batchG : Prog isa := seqs [.block (start ++ wsteps 59 ++ save), updateGS, .block countDown]
+
 /-! ## The start -/
 
 /-- A Newton step of the inverse modulo powers of 2: `x := x (2 - m x)`, `m` in
@@ -338,6 +346,9 @@ def finishY : Prog isa := seqs [
 
 /-- `[1] = |f|` and `[3] = a`. -/
 def finish : Prog isa := .seq finishG finishY
+
+/-- `gcd(x, m)` alone into array 1, `n` in `r11`: the batches of `f` and `g`, and `|f|`. -/
+def gcd : Prog isa := seqs [init, .loop batchG (.nonzero .d .r3), finishG]
 
 /-- The inverse, `n` in `r11`. -/
 def inverse : Prog isa := seqs [init, .loop batch (.nonzero .d .r3), normalize, doublings, finish]

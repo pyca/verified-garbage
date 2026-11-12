@@ -637,13 +637,13 @@ theorem DS.div (h : DS s0 b A live V ls s) {q r d t : Nat} (hq : (b, q) ∈ live
     rw [← vr]
     exact num_of_num1 (by rw [vr]; exact lt)
 
-/-- The batched inverse (narrow): array 1 := `gcd(x, m)` for `x` in array 0 and an odd `m > 1`
+/-- The batched GCD (narrow): array 1 := `gcd(x, m)` for `x` in array 0 and an odd `m > 1`
 in array 8. -/
 theorem DS.inv [VG.Proof.Rsa.PPC64LE.InvLaw] (h : DS s0 false A live V ls s)
     (h11 : s.gpr .r11 = BitVec.ofNat 64 (ww (kK s0))) (hx : (false, 0) ∈ live) (hm : (false, 8) ∈ live)
     (hodd : A false 8 % 2 = 1) {live' : List (Bool × Nat)}
     (hl : ∀ e ∈ live', e ∈ live ∧ ∀ j ∈ VG.Proof.Rsa.PPC64LE.invBatchArrs, Sep (false, j) e) :
-    WP isa VG.Impl.Rsa.PPC64LE.InvBatch.inverse s fun t => ∃ G,
+    WP isa VG.Impl.Rsa.PPC64LE.InvBatch.gcd s fun t => ∃ G,
       DS s0 false (upd A false 1 G) ((false, 1) :: live') V ls t ∧
       (1 < A false 8 → G = Nat.gcd (A false 0) (A false 8)) ∧ Keep VG.Proof.Rsa.PPC64LE.invBatchRegs s t := by
   have w1 := h.base.sz.w1
@@ -654,14 +654,14 @@ theorem DS.inv [VG.Proof.Rsa.PPC64LE.InvLaw] (h : DS s0 false A live V ls s)
   have lm := h.lt hm
   rw [vw_false] at ax am lx lm
   have hw : 10 ≤ ww (kK s0) := by omega
-  have inv := VG.Proof.Rsa.PPC64LE.InvLaw.inverse_ok (n := ww (kK s0)) hws (by decide) (by decide) hw
+  have inv := VG.Proof.Rsa.PPC64LE.InvLaw.gcd_ok (n := ww (kK s0)) hws (by decide) (by decide) hw
     h11 (by omega) (Nat.le_refl _) (by simp only [ww]; omega) ax lx am lm hodd
   refine WP.mono inv fun t ⟨ws, kk, kr, v⟩ => ?_
   have hjs : ∀ j ∈ VG.Proof.Rsa.PPC64LE.invBatchArrs, j < vN false := by decide
   have ht : DS s0 false A live' V ls t := h.wrs ws hjs kk hl kr
   have h1 : (1 : Nat) ∈ VG.Proof.Rsa.PPC64LE.invBatchArrs := by decide
   exact ⟨_, ht.add (b' := false) (o := 1) (by decide) rfl (fun e he => sep_ne ((hl e he).2 1 h1)),
-    fun h1 => (v h1).1, kr⟩
+    fun h1 => v h1, kr⟩
 
 /-- `ctxw`: from the wide view to the narrow. -/
 theorem DS.toN (h : DS s0 true A live V ls s) {rest : List Instr} {Q : State → Prop}
@@ -721,7 +721,7 @@ macro "rd_simp" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
 open VG.Proof.Rsa.PPC64LE.Recover
 open VG.Proof.Rsa (b2n)
-open VG.Impl.Rsa.PPC64LE.RecoverDet (countN countS next twosFlags maskOf sU sX sEven sBoth sB0 sB1 sLt sExact sC1
+open VG.Impl.Rsa.PPC64LE.RecoverDet (countN countS next maskOf sU sX sEven sBoth sB0 sB1 sLt sExact sC1
   sC2 sOk5)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 
@@ -740,7 +740,7 @@ macro "rd_simp_at" h:ident " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
 open VG.Proof.Rsa.PPC64LE.Recover
 open VG.Proof.Rsa (b2n)
-open VG.Impl.Rsa.PPC64LE.RecoverDet (countN countS next twosFlags maskOf sU sX sEven sBoth sB0 sB1 sLt sExact sC1
+open VG.Impl.Rsa.PPC64LE.RecoverDet (countN countS next maskOf sU sX sEven sBoth sB0 sB1 sLt sExact sC1
   sC2 sOk5)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 
@@ -835,41 +835,6 @@ theorem DS.not9' (h : DS s0 b A live V ls s) {d : Nat} (hd : d ∈ ls) (hb : V d
     rcases (show V d = 0 ∨ V d = 1 by omega) with e | e <;> simp [e, b2n]
   refine WP.mono (h.not9 hd e) fun u ⟨hu, r, k⟩ => ⟨hu, ?_, k⟩
   rw [r]; rcases (show V d = 0 ∨ V d = 1 by omega) with e' | e' <;> simp [e', b2n]
-
-/-- `twosFlags`' slots, after the low bits: `even := ¬u₀` and `both := ¬u₀ ∧ ¬x₀`. -/
-theorem DS.twosTail (h : DS s0 b A live V ls s) (hu : sU ∈ ls) (hx : sX ∈ ls) {cu cx : Bool}
-    (vu : V sU = b2n cu) (vx : V sX = b2n cx) {ls' : List Nat}
-    (hl : ∀ e ∈ ls', e ∈ ls ∧ (e + 4 ≤ sEven ∨ sEven + 4 ≤ e) ∧ (e + 4 ≤ sBoth ∨ sBoth + 4 ≤ e)) :
-    WP isa (.block [.load .w .r0 .r31 sU, .load .w .r3 .r31 sX, .li .r5 1, .logic .xor .r0 .r0 .r5,
-      .logic .xor .r3 .r3 .r5, .store .w .r0 .r31 sEven, .logic .and .r3 .r3 .r0, .store .w .r3 .r31 sBoth]) s
-      fun t => DS s0 b A live (updV (updV V sEven (b2n (!cu))) sBoth (b2n (!cx && !cu))) (sBoth :: sEven :: ls') t ∧
-        Keep opRegs s t := by
-  have ws := h.ws
-  have hz := ws.hdr_le
-  have nw := ws.nowrap
-  simp only [KeyWorkspace.hdr] at hz
-  have hb : WP isa (.block [.load .w .r0 .r31 sU, .load .w .r3 .r31 sX, .li .r5 1, .logic .xor .r0 .r0 .r5,
-      .logic .xor .r3 .r3 .r5, .store .w .r0 .r31 sEven, .logic .and .r3 .r3 .r0, .store .w .r3 .r31 sBoth]) s
-      fun u => u.mem = (s.mem.writeW (off (rvB s0) sEven) ((b64 (!cu)).setWidth 32)).writeW (off (rvB s0) sBoth)
-        ((b64 (!cx && !cu)).setWidth 32) := by
-    prun [ws.r31, exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sU < 2 ^ 15 by decide),
-      exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sX < 2 ^ 15 by decide),
-      exec_store_w (show Reg.r31 ≠ .r0 by decide) (show sEven < 2 ^ 15 by decide),
-      exec_store_w (show Reg.r31 ≠ .r0 by decide) (show sBoth < 2 ^ 15 by decide),
-      ws.scr.ld (show sU + 4 ≤ rvZ s0 by simp only [sU]; omega),
-      ws.scr.ld (show sX + 4 ≤ rvZ s0 by simp only [sX]; omega),
-      ws.scr.st (show sEven + 4 ≤ rvZ s0 by simp only [sEven]; omega),
-      ws.scr.st (show sBoth + 4 ≤ rvZ s0 by simp only [sBoth]; omega),
-      exec_li (show 1 < 2 ^ 15 by decide), exec_logic, h.slotRd hu vu, h.slotRd hx vx, b64_eq, b64_xor, b64_and]
-  refine WP.mono (WP.keep opRegs hb (by decide)) fun t ⟨m, k⟩ => ⟨?_, k⟩
-  have sep : sEven + 4 ≤ sBoth := by decide
-  have kk : KeyWorkspace.Keep (rvB s0) (vw s0 b) [] [sEven, sBoth] s.mem t.mem := by
-    rw [m]
-    exact KeyWorkspace.Keep.trans (VG.Proof.Rsa.PPC64LE.Keys.keep_slot _ _ (by simp) (by simp only [sEven]; omega))
-      (VG.Proof.Rsa.PPC64LE.Keys.keep_slot _ _ (by simp) (by simp only [sBoth]; omega))
-  refine h.wrS2 (ws.of_keep k) (by decide) (by decide) sep kk ?_ ?_ hl k
-  · rw [m, slot_wne _ _ _ (by decide) (by simp only [sBoth]; omega) (by simp only [sEven]; omega), VG.Proof.Rsa.PPC64LE.Keys.slot_write_self, b64_toNat]
-  · rw [m, VG.Proof.Rsa.PPC64LE.Keys.slot_write_self, b64_toNat]
 
 /-- `maskOf`: the mask := every check's flag. -/
 theorem DS.mask (h : DS s0 b A live V ls s) {c0 c1 c2 c3 c4 c5 c6 : Bool}

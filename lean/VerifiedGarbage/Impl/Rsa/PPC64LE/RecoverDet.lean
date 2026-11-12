@@ -18,8 +18,8 @@ copied into the low half of a wide array of zeros is that wide number.
 * `x = d e - 1` (wide), and whether `d e ≥ 2`;
 * `32 w` steps that halve `u = n - 1` while it is even, and while `x` is even
   too halve it and double `2^k x` (all wide), then `gcd(u, x)` by the
-  batched divstep inverse (`InvBatch.inverse`, on narrow arrays), with 1
-  where `u = 1`, which the inverse leaves to its caller;
+  batched divsteps without the inverse (`InvBatch.gcd`, on narrow arrays),
+  with 1 where `u = 1`, which the GCD leaves to its caller;
 * `a = (2^k x) gcd(u, x)` modulo `2^(32 W)` by the `32 w` bits of the GCD,
   doubling the multiplicand (`product`), and `m = ⌊a / n⌋`, `r = a mod n`
   (`Div.div`, wide);
@@ -60,14 +60,11 @@ def aZ : Nat := 34
 /-- The number of arrays zeroed; the saved registers are in the next two. -/
 def nArr : Nat := 44
 
-/-- With `W` digits: zero, `e`, `d`, `M`, the modulus of the product, and
-the temporaries 5–8 of `mulMod`. -/
+/-- With `W` digits: zero, `e`, `d` and `M = d e`. -/
 def wZ : Nat := 0
 def wE : Nat := 1
 def wD : Nat := 2
 def wM : Nat := 3
-def wMod : Nat := 4
-def wT : Nat := 5
 
 /-! ## Contexts -/
 
@@ -133,16 +130,24 @@ def loads : Prog isa :=
   seqs ([zeroAll] ++ loadR .r24 .r25 aN ++ [.block ctxW] ++ loadR .r26 .r27 wE ++ loadR .r28 .r22 wD ++
     [.block [.add .r26 .r27 .r22, .lsl .r26 .r26 3]])
 
-/-- The top digit of `[j]` := `2^31`: `[j] = 2^(32 w - 1)` if it was zero. -/
-def setTop (j : Nat) : List Instr :=
-  ptr .r5 j ++ [.lsl .r0 .r29 2, .add .r5 .r5 .r0, .subi .r5 .r5 4, .li .r0 1, .lsl .r0 .r0 31,
-    .store .w .r0 .r5 0]
+/-! ## Products by words -/
 
-/-- With `W`: the modulus `2^(32 W - 1)`, and `8 e_len` steps. -/
-def prodSet : List Instr := setTop wMod ++ [.lsl .r4 .r27 3]
+/-- One row of `mulW`: word `i` of `[x]` (at `r10`) times `[y]`'s `w / 2 - i` low words added at
+word `i` of `[o]`, the carry dropped (`InvBatch.macWBody`). -/
+def mulWRow (o x y : Nat) : Prog isa :=
+  .seq (.block ([.load .d .r11 .r10 0] ++ ptr .r5 o ++ ptr .r6 x ++
+      [.sub .r6 .r10 .r6, .lsr .d .r8 .r29 1, .lsr .d .r3 .r6 3, .sub .r8 .r8 .r3, .add .r5 .r5 .r6,
+        .addi .r6 .r5 0] ++ ptr .r7 y ++ [.li .r9 0]))
+    (.seq (countLoop .r8 InvBatch.macWBody) (.block [.addi .r10 .r10 8, .subi .r4 .r4 1]))
 
-/-- `M := d e`. -/
-def prod : Prog isa := .seq (.block prodSet) (mulMod wZ wE wD wM wMod wT)
+/-- `[o] := [x] [y] mod 2^(32 w)`, `w` even, over the low `R` words of `[x]` (`R` in `r4`, `1 ≤ R ≤ w / 2`):
+`[o]`'s `w / 2` words zeroed, then a row of 64-bit words for each word of `[x]`. -/
+def mulW (o x y : Nat) : Prog isa := seqs [
+  .block (ptr .r5 o ++ [.lsr .d .r8 .r29 1, .li .r0 0]), InvBatch.zerosW,
+  .block (ptr .r10 x), .loop (mulWRow o x y) (.nonzero .d .r4)]
+
+/-- `M := d e`, with `W`: a row for each of `e`'s `⌈e_len / 8⌉` words. -/
+def prod : Prog isa := .seq (.block [.addi .r4 .r27 7, .lsr .d .r4 .r4 3]) (mulW wM wE wD)
 
 /-! ## The factors -/
 
@@ -214,7 +219,7 @@ def wDt : Nat := 21
 def wNg : Nat := 20
 
 /-- Narrow: `n` (`Recover.aN`), the low halves of the wide arrays, one, and
-the inverse's input `x` (array 0), modulus (array 8) and GCD (array 1). -/
+the GCD's input `x` (array 0), modulus (array 8) and result (array 1). -/
 def aN : Nat := 32
 def aX : Nat := 20
 def aX2 : Nat := 26
@@ -275,7 +280,7 @@ def next : List Instr := [.subi .r27 .r27 1]
 /-! ## `d e - 1` (wide) -/
 
 /-- One (`wOne`), `x = d e - 1`, and the borrows of `d e - 1` and `x - 1`;
-the zero `wZero`, which the inverse leaves alone. -/
+the zero `wZero`, which the GCD leaves alone. -/
 def deMinus : Prog isa := seqs [copy wOne wZ, .block (setOne wOne),
   sub3 wX wDE wOne, .block (stBorrow sB0), sub3 wT wX wOne, .block (stBorrow sB1), copy wZero wZ]
 
@@ -287,72 +292,360 @@ def twosInit : Prog isa := seqs [copy wX3 wX, copy wX2 wZero, copy wU wZero, cop
   .block ctxw, copy aX2 aX, copy aOne aZero, .block (setOne aOne), sub3 aTu aN aOne,
   copy aU aTu, .block (countN ++ ctxW)]
 
-/-- The flags of a step: `even := ¬u₀` and `both := ¬u₀ ∧ ¬x₀`. -/
-def twosFlags : List Instr :=
-  bitOf sU wU ++ bitOf sX wX2 ++
-  [.load .w .r0 .r31 sU, .load .w .r3 .r31 sX, .li .r5 1, .logic .xor .r0 .r0 .r5,
-    .logic .xor .r3 .r3 .r5, .store .w .r0 .r31 sEven, .logic .and .r3 .r3 .r0, .store .w .r3 .r31 sBoth]
+/-! ## Shifts by a count, by stages
 
-/-- `[j]` halved if the slot `sl` holds 1, through `wT`. -/
-def halfIf (j sl : Nat) : Prog isa := seqs [copy wT j, .block [.li .r9 0], half wT, sel j j wT sl]
+`shlBy j sw sb bits` and `shrBy j sw sb` shift the wide array `j` (its
+`L = W / 2` words) up (modulo `2^(64 L)`) or down by `64 c_w + c_b` bits, the
+counts in the slots `sw` and `sb`: by `2^k` words where bit `k` of `c_w` is
+set, for each `2^k < L`, then (for `shlBy`, if `bits`) by `2^k` bits where bit
+`k` of `c_b < 64` is set. Each stage runs over every word whatever its bit,
+which only chooses by a mask (`r9`, and its complement `r12`). -/
 
-def twosBody : Prog isa := seqs [.block twosFlags, halfIf wU sEven, halfIf wX2 sBoth,
-  copy wT wX3, shl wT, sel wX3 wX3 wT sBoth, .block next]
+/-- `r7 := L = W / 2`, the words of a wide array. -/
+def lenW : List Instr := [.lsr .d .r7 .r29 1]
 
-def twos : Prog isa := seqs [twosInit, .loop twosBody (.nonzero .d .r27)]
+/-- `r9 :=` all ones if bit `s` (`r11`, a power of two) of the slot `sl` is set, else zero; `r12 := ¬r9`. -/
+def wordMask (sl : Nat) : List Instr :=
+  [.load .w .r10 .r31 sl, .logic .and .r3 .r10 .r11, .li .r0 0, .sub .r0 .r0 .r3, .logic .or .r3 .r3 .r0,
+    .lsr .d .r3 .r3 63, .li .r0 0, .sub .r9 .r0 .r3, .subi .r12 .r3 1]
+
+/-- `[j]`'s `L` words shifted up by `s` (`r11`) words where the mask `r9` is set (`r12` its
+complement), from the top: word `i ≥ s` takes word `i - s`, and words below `s` are cleared. -/
+def shlWords (j : Nat) : Prog isa := seqs [
+  .block (ptr .r5 j ++ lenW ++ [.lsl .r0 .r7 3, .add .r5 .r5 .r0, .subi .r5 .r5 8, .lsl .r0 .r11 3, .sub .r6 .r5 .r0,
+    .sub .r8 .r7 .r11]),
+  countLoop .r8 [.load .d .r0 .r5 0, .load .d .r3 .r6 0, .logic .xor .r3 .r3 .r0, .logic .and .r3 .r3 .r9,
+    .logic .xor .r3 .r3 .r0, .store .d .r3 .r5 0, .subi .r5 .r5 8, .subi .r6 .r6 8],
+  .block [.addi .r8 .r11 0],
+  countLoop .r8 [.load .d .r0 .r5 0, .logic .and .r0 .r0 .r12, .store .d .r0 .r5 0, .subi .r5 .r5 8]]
+
+/-- `[j]`'s `L` words shifted down by `s` (`r11`) words where the mask `r9` is set (`r12` its
+complement), from the bottom: word `i < L - s` takes word `i + s`, and the top `s` are cleared. -/
+def shrWords (j : Nat) : Prog isa := seqs [
+  .block (ptr .r5 j ++ lenW ++ [.lsl .r0 .r11 3, .add .r6 .r5 .r0, .sub .r8 .r7 .r11]),
+  countLoop .r8 [.load .d .r0 .r5 0, .load .d .r3 .r6 0, .logic .xor .r3 .r3 .r0, .logic .and .r3 .r3 .r9,
+    .logic .xor .r3 .r3 .r0, .store .d .r3 .r5 0, .addi .r5 .r5 8, .addi .r6 .r6 8],
+  .block [.addi .r8 .r11 0],
+  countLoop .r8 [.load .d .r0 .r5 0, .logic .and .r0 .r0 .r12, .store .d .r0 .r5 0, .addi .r5 .r5 8]]
+
+/-- The word stages of `sh`: `s = 1, 2, 4, …` (`r11`) while `s < L`, each under bit `s` of the slot `sl`. -/
+def wordStages (sl : Nat) (sh : Prog isa) : Prog isa := .seq (.block [.li .r11 1])
+  (.loop (seqs [.block (wordMask sl), sh, .block (lenW ++ [.lsl .r11 .r11 1, .sub .r0 .r11 .r7, .lsr .d .r0 .r0 63])])
+    (.nonzero .d .r0))
+
+/-- `r9 :=` all ones if bit `b` of the slot `sl` is set, else zero. -/
+def bitMask (sl b : Nat) : List Instr :=
+  [.load .w .r10 .r31 sl, .li .r3 b, .logic .and .r3 .r10 .r3, .li .r0 0, .sub .r0 .r0 .r3, .logic .or .r3 .r3 .r0,
+    .lsr .d .r3 .r3 63, .li .r0 0, .sub .r9 .r0 .r3]
+
+/-- `[j]` shifted down by `b` bits where the mask `r9` is set: word `i` := its high `64 - b`
+bits and the low `b` of word `i + 1` (disjoint, so added). -/
+def shrBits (j b : Nat) : Prog isa := seqs [
+  .block (ptr .r5 j ++ lenW ++ [.subi .r8 .r7 1]),
+  countLoop .r8 [.load .d .r0 .r5 0, .load .d .r3 .r5 8, .lsl .r3 .r3 (64 - b), .lsr .d .r6 .r0 b,
+    .add .r3 .r6 .r3, .logic .xor .r3 .r3 .r0, .logic .and .r3 .r3 .r9, .logic .xor .r3 .r3 .r0,
+    .store .d .r3 .r5 0, .addi .r5 .r5 8],
+  .block [.load .d .r0 .r5 0, .lsr .d .r3 .r0 b, .logic .xor .r3 .r3 .r0, .logic .and .r3 .r3 .r9,
+    .logic .xor .r3 .r3 .r0, .store .d .r3 .r5 0]]
+
+/-- `[j]` shifted up by `b` bits modulo `2^(64 L)` where the mask `r9` is set. -/
+def shlBits (j b : Nat) : Prog isa := seqs [
+  .block (ptr .r5 j ++ lenW ++ [.lsl .r0 .r7 3, .add .r5 .r5 .r0, .subi .r5 .r5 8, .subi .r6 .r5 8,
+    .subi .r8 .r7 1]),
+  countLoop .r8 [.load .d .r0 .r5 0, .load .d .r3 .r6 0, .lsr .d .r3 .r3 (64 - b), .lsl .r10 .r0 b,
+    .add .r3 .r3 .r10, .logic .xor .r3 .r3 .r0, .logic .and .r3 .r3 .r9, .logic .xor .r3 .r3 .r0,
+    .store .d .r3 .r5 0, .subi .r5 .r5 8, .subi .r6 .r6 8],
+  .block [.load .d .r0 .r5 0, .lsl .r3 .r0 b, .logic .xor .r3 .r3 .r0, .logic .and .r3 .r3 .r9,
+    .logic .xor .r3 .r3 .r0, .store .d .r3 .r5 0]]
+
+/-- The bit stages `b = 32, …, 1` of `sh`, each under bit `b` of the slot `sl`. -/
+def bitStages (sl : Nat) (sh : Nat → Prog isa) : List Nat → Prog isa
+  | [] => .block []
+  | b :: bs => seqs [.block (bitMask sl b), sh b, bitStages sl sh bs]
+
+/-- The bit stages' sizes. -/
+def bitSizes : List Nat := [32, 16, 8, 4, 2, 1]
+
+/-- `[j]` shifted up by the counts in the slots `sw` (words) and, if `bits`, `sb` (bits). -/
+def shlBy (j sw sb : Nat) (bits : Bool) : Prog isa :=
+  .seq (wordStages sw (shlWords j)) (if bits then bitStages sb (shlBits j) bitSizes else .block [])
+
+/-- `[j]` shifted down by the counts in the slots `sw` (words) and `sb` (bits). -/
+def shrBy (j sw sb : Nat) : Prog isa := .seq (wordStages sw (shrWords j)) (bitStages sb (shrBits j) bitSizes)
+
+/-! ## Counts of zeros, in constant time -/
+
+/-- `r4 := h = w / 2 - 1`, the words of `n`. -/
+def hW : List Instr := [.lsr .d .r4 .r29 1, .subi .r4 .r4 1]
+
+/-- The slot `sl` := the leading zero words of `[m]`'s low `h` words (narrow): a mask, all
+ones while every word so far from the top is zero. -/
+def clzW (m sl : Nat) : Prog isa := seqs [
+  .block (ptr .r5 m ++ hW ++ [.lsl .r0 .r4 3, .add .r5 .r5 .r0, .subi .r5 .r5 8, .addi .r8 .r4 0, .li .r9 0,
+    .subi .r9 .r9 1, .li .r10 0]),
+  countLoop .r8 [.load .d .r0 .r5 0, .li .r3 0, .sub .r3 .r3 .r0, .logic .or .r3 .r3 .r0, .lsr .d .r3 .r3 63,
+    .subi .r3 .r3 1, .logic .and .r9 .r9 .r3, .li .r3 1, .logic .and .r3 .r9 .r3, .add .r10 .r10 .r3, .subi .r5 .r5 8],
+  .block [.store .w .r10 .r31 sl]]
+
+/-- A stage of a word's trailing zeros (`r11`, their count in `r10`): if its low `b = 2^lg`
+bits are zero, `b` more and the word shifted down by `b`. -/
+def tzStage (b lg : Nat) : List Instr :=
+  [.lsl .r3 .r11 (64 - b), .li .r0 0, .sub .r0 .r0 .r3, .logic .or .r3 .r3 .r0,
+    .lsr .d .r3 .r3 63, .li .r0 1, .logic .xor .r3 .r3 .r0, .lsl .r0 .r3 lg, .add .r10 .r10 .r0, .li .r0 0,
+    .sub .r9 .r0 .r3, .lsr .d .r0 .r11 b, .logic .xor .r0 .r0 .r11, .logic .and .r0 .r0 .r9,
+    .logic .xor .r11 .r11 .r0]
+
+/-- The slots `sw` and `sb` := the trailing zero words of `[a] ∨ [b]` (wide), and the trailing
+zero bits of its lowest word that is not zero: a mask, all ones while every word so far is zero,
+selects that word; then its stages. -/
+def tzW (a b sw sb : Nat) : Prog isa := seqs [
+  .block (ptr .r5 a ++ ptr .r6 b ++ lenW ++ [.addi .r8 .r7 0, .li .r9 0, .subi .r9 .r9 1, .li .r10 0, .li .r11 0]),
+  countLoop .r8 [.load .d .r0 .r5 0, .load .d .r3 .r6 0, .logic .or .r0 .r0 .r3, .logic .and .r3 .r0 .r9,
+    .logic .or .r11 .r11 .r3, .li .r3 0, .sub .r3 .r3 .r0, .logic .or .r3 .r3 .r0, .lsr .d .r3 .r3 63,
+    .subi .r3 .r3 1, .logic .and .r9 .r9 .r3, .li .r3 1, .logic .and .r3 .r9 .r3, .add .r10 .r10 .r3,
+    .addi .r5 .r5 8, .addi .r6 .r6 8],
+  .block ([.store .w .r10 .r31 sw, .li .r10 0] ++ tzStage 32 5 ++ tzStage 16 4 ++ tzStage 8 3 ++ tzStage 4 2 ++
+    tzStage 2 1 ++ tzStage 1 0 ++ [.store .w .r10 .r31 sb])]
+
+/-! ## The halvings, by counts -/
+
+/-- The slots of the trailing zeros: of `u` and of `u ∨ x`, in words and bits. -/
+def sUw : Nat := 60
+def sUb : Nat := 64
+def sTw : Nat := 68
+def sTb : Nat := 72
+
+/-- `t = tz(u ∨ x)`: `u` shifted down by its trailing zeros, `x` (in `wX2`) down by `t` and
+`2^t x` (`wX3`) up. -/
+def twos : Prog isa := seqs [twosInit, tzW wU wU sUw sUb, tzW wU wX2 sTw sTb, shrBy wU sUw sUb,
+  shrBy wX2 sTw sTb, shlBy wX3 sTw sTb true, .block [.li .r27 0]]
 
 /-! ## The GCD (narrow) -/
 
-/-- `gcd(u, x)` into array 1: the inverse's inputs, `n = w`, and 1 where
+/-- `gcd(u, x)` into array 1: the GCD's inputs, `n = w`, and 1 where
 `u = 1`. Then the GCD into the low half of `wY`. -/
 def gcd : Prog isa := seqs [.block ctxw, copy aGx aX2, copy aGm aU, .block [.addi .r11 .r29 0],
-  InvBatch.inverse, eqS sU1 aGm aOne, sel aG aG aOne sU1, copy aY aG]
+  InvBatch.gcd, eqS sU1 aGm aOne, sel aG aG aOne sU1, copy aY aG]
 
-/-! ## Products: `[a] := [y] [x]` modulo `2^(32 W)`, by `r27` bits of `[y]`,
-`[x]` doubled at each, through `[t]` and `[g]`, with `[z]` zero (wide). -/
+/-! ## Products: `[a] := ([y] mod 2^(32 w)) [x]` modulo `2^(32 W)`, by rows of words (`Recover.mulW`) -/
 
-def productStep (y x a t g z : Nat) : Prog isa := seqs [.block (bitOf sY y), sel t z x sY,
-  add a a t z g, shl x, .block [.li .r9 0], half y, .block next]
-
-def product (y x a t g z : Nat) : Prog isa := .loop (productStep y x a t g z) (.nonzero .d .r27)
-
-/-- `a = 2^k x gcd(u, x)`, from the narrow view: `32 w` steps. -/
-def aProduct : Prog isa := seqs [.block (countN ++ ctxW), copy wA wZero, product wY wX3 wA wT wNg wZero]
+/-- `a = 2^k x gcd(u, x)`, from the narrow view: the GCD's `4 w` digits. -/
+def aProduct : Prog isa := seqs [.block ([.lsr .d .r4 .r29 1] ++ ctxW), Recover.mulW wA wY wX3]
 
 /-! ## The divisions -/
 
-/-- `m` and `r` (wide), with `n` wide (its extra digit zero), and whether `m < n`. -/
-def divA : Prog isa := seqs [copy wN wZero, .block ctxw, copy aWN aN, .block ctxW, .block (clrW wN),
-  Div.div wA wR wN wDt, sub3 wNg wA wN, .block (stBorrow sLt)]
+/-- `m` and `r` (wide), with `n` wide, and whether `m < n`: one word division
+(`KeyDiv.divQ`) on the wide view, of `W / 2 = w + 1` words by `n`'s `h = (W - 6) / 4`
+words, through the wide arrays 21 and 20. -/
+def divA : Prog isa := seqs [copy wN wZero, .block ctxw, copy aWN aN, .block ctxW,
+  KeyDiv.divQ wA wR wN wDt wNg [.subi .r11 .r29 6, .lsr .d .r11 .r11 1] [.lsr .d .r4 .r29 1],
+  sub3 wNg wA wN, .block (stBorrow sLt)]
 
-/-- `m + 1` and `n - r` (narrow), their quotient and remainder, and whether it is zero. -/
+/-- The second division (wide): the divisor `m + 1` (4) and dividend `n - r` (5), both shifted
+up by the divisor's leading zero words (slot `sCz`), the remainder (6), the temporary (7) and the
+save area (3). -/
+def wD1 : Nat := 4
+def wNN : Nat := 5
+def wRm : Nat := 6
+def wTq : Nat := 7
+def wSq : Nat := 3
+def aD1 : Nat := 8
+def aNN : Nat := 10
+def sCz : Nat := 56
+
+/-- The divisor's word `h - 1` (wide `j`, `W = 4 h + 6`) or'ed with whether it is zero: a no-op
+where `m < n`, as the word is not zero once shifted, and otherwise what the division needs. -/
+def fixTop (j : Nat) : List Instr := ptr .r5 j ++ [.subi .r11 .r29 6, .lsl .r11 .r11 1, .add .r5 .r5 .r11,
+  .subi .r5 .r5 8, .load .d .r0 .r5 0, .li .r3 0, .sub .r3 .r3 .r0, .logic .or .r3 .r3 .r0, .lsr .d .r3 .r3 63,
+  .li .r9 1, .logic .xor .r3 .r3 .r9, .logic .or .r0 .r0 .r3, .store .d .r0 .r5 0]
+
+/-- `m + 1` and `n - r` (narrow), their quotient (`b - 1`, narrow) and whether the remainder is
+zero: both shifted up by the divisor's leading zero words, and one word division (wide). -/
 def divB : Prog isa := seqs [.block ctxw, copy aOne2 aZero, .block (setOne aOne2), sub3 aNeg1 aZero aOne2,
-  sub3 aM1 aM aNeg1, sub3 aD aN aRlo, .block (clrW aM1), Div.div aD aRem aM1 aDt, eqS sExact aRem aZero]
+  sub3 aM1 aM aNeg1, sub3 aD aN aRlo, clzW aM1 sCz, .block ctxW, copy wD1 wZero, copy wNN wZero, .block ctxw,
+  copy aD1 aM1, copy aNN aD, .block ctxW, shlBy wD1 sCz sCz false, .block (fixTop wD1), shlBy wNN sCz sCz false,
+  KeyDiv.divQ wNN wRm wD1 wTq wSq [.subi .r11 .r29 6, .lsr .d .r11 .r11 1] [.lsr .d .r4 .r29 1],
+  eqS sExact wRm wZero, .block ctxw, copy aD aNN]
 
 /-! ## `b² - 4 n` -/
 
 /-- `b` (narrow in `aD`, and into the zeroed wide `wU` and `wY`) and `b²` in `wA`. -/
 def square : Prog isa := seqs [sub3 aD aD aNeg1, .block ctxW, copy wU wZero, copy wY wZero,
-  copy wA wZero, .block ctxw, copy aU aD, copy aY aD, .block (countN ++ ctxW),
-  product wY wU wA wT wNg wZero]
+  .block ctxw, copy aU aD, copy aY aD, .block ([.lsr .d .r4 .r29 1] ++ ctxW), Recover.mulW wA wY wU]
 
 /-- `b² - 4 n` in `wR`, and whether `b² < 4 n` and `b² - 4 n < 1`. -/
 def minus4n : Prog isa := seqs [shl wN, shl wN, sub3 wR wA wN, .block (stBorrow sC1),
   sub3 wNg wR wOne, .block (stBorrow sC2)]
 
-/-! ## The square root
+/-! ## The square root, by words
 
-`16 W` steps, two bits of `[wR]` at a time from its top: the remainder
-`[aRm]` takes them, and the root `[aSy]` a bit, one if `4 y + 1` fits in the
-remainder (narrow, but for the radicand). -/
+`X` (wide `[wR]`, its low `2 h` words; `1` in place of `0`, the root less
+one at the end) is normalized, `X' = X 2^(2 c)` for `c = ⌊z / 2⌋` and `z` its
+leading zero bits in `2 h` words. The root `s` of `X'` is found a word at a
+time from the top, in `D = 2 s`, kept top-aligned (its top word at `h`): its
+first word `s₀ ≥ 2^63` from `X'`'s top two words (64 steps of two bits, in
+registers), then for `j = 1 … h - 1` the digit `q` into `D`'s word
+`m = h - 1 - j`, from the remainder `r`, kept in place in `X'`, and the next
+two words `P`, `R = r β² + P` (`X'`'s words `2 m … 2 m + j + 2`):
+`q̂ = min(⌊U / (s₀ β + s₁)⌋, β - 1)` for `⌊R / 2⌋`'s top three words `U`
+(`Precompute.quot`, `quot3`, by the reciprocal of `s₀`, computed once), at
+most two more than `q`; `T = R - q̂ (2 s β + q̂)` in place by one multiply and
+subtract with `D`'s word `m` set to `q̂`; two masked corrections `T := T + 2 s β
++ 2 q̂ - 1`, `q̂ := q̂ - 1` where `T < 0`; then `D`'s word `m` and `m + 1` := `2 s'`'s.
+The root of `X` is `D` shifted down by `c + 1`, and `X` is a square exactly
+where the last remainder is zero. -/
 
-def sqrtBody : Prog isa := seqs [.block ctxW, shl wR, .block ctxw, shlC aRm, .block ctxW, shl wR,
-  .block ctxw, shlC aRm, copy aTy aSy, shl aTy, .block [.li .r9 1], shlC aTy,
-  sub3 aDf aRm aTy, .block (stBorrow sBb), sel aRm aDf aRm sBb,
-  .block [.load .w .r9 .r31 sBb, .li .r0 1, .logic .xor .r9 .r9 .r0], shlC aSy, .block next]
+open VG.Impl.Bignum.PPC64LE.Precompute (recip quotMG quotFix quot3)
 
-def sqrt : Prog isa := seqs [.block ctxw, copy aRm aZero, copy aSy aZero, .block countS,
-  .loop sqrtBody (.nonzero .d .r27), eqS sOk5 aRm aZero]
+/-- `D = 2 s` (wide, top-aligned at word `h`) and a temporary (`P = 1` at word 0, `s₀` at 1, its
+reciprocal at 2, `s₁` at 3, `U`'s low word at 5). -/
+def wS : Nat := 2
+def wTmp : Nat := 3
+/-- The slots: `X`'s shift `2 c` (words and bits), `D`'s `c + 1`, and whether `X = 0`. -/
+def sQw : Nat := 76
+def sQb : Nat := 80
+def sRw : Nat := 84
+def sRb : Nat := 88
+def sZ : Nat := 92
+
+/-- `r11 := 2 h` from `W = 4 h + 6`. -/
+def twoH : List Instr := [.subi .r11 .r29 6, .lsr .d .r11 .r11 1]
+
+/-- Whether `X`'s `2 h` words are zero, into `sZ`, and then `X := 1` if so. -/
+def zeroX : Prog isa := seqs [
+  .block (ptr .r5 wR ++ twoH ++ [.addi .r8 .r11 0, .li .r9 0]),
+  countLoop .r8 [.load .d .r0 .r5 0, .logic .or .r9 .r9 .r0, .addi .r5 .r5 8],
+  .block (ptr .r5 wR ++ [.li .r3 0, .sub .r3 .r3 .r9, .logic .or .r3 .r3 .r9, .lsr .d .r3 .r3 63, .li .r0 1,
+    .logic .xor .r3 .r3 .r0, .store .w .r3 .r31 sZ, .load .d .r0 .r5 0, .logic .or .r0 .r0 .r3, .store .d .r0 .r5 0])]
+
+/-- The scan from the top of `X`'s `2 h` words: `r10 :=` the zero words and `r11 :=` the top word
+that is not zero. -/
+def clzX : Prog isa := seqs [
+  .block (ptr .r5 wR ++ twoH ++ [.lsl .r0 .r11 3, .add .r5 .r5 .r0, .subi .r5 .r5 8, .addi .r8 .r11 0, .li .r9 0,
+    .subi .r9 .r9 1, .li .r10 0, .li .r11 0]),
+  countLoop .r8 [.load .d .r0 .r5 0, .logic .and .r3 .r0 .r9, .logic .or .r11 .r11 .r3, .li .r3 0,
+    .sub .r3 .r3 .r0, .logic .or .r3 .r3 .r0, .lsr .d .r3 .r3 63, .subi .r3 .r3 1, .logic .and .r9 .r9 .r3,
+    .li .r3 1, .logic .and .r3 .r9 .r3, .add .r10 .r10 .r3, .subi .r5 .r5 8]]
+
+/-- A stage of a word's leading zeros (`r11`, their count in `r12`): if its top `b = 2^lg`
+bits are zero, `b` more and the word shifted up by `b`. -/
+def clzStage (b lg : Nat) : List Instr :=
+  [.lsr .d .r3 .r11 (64 - b), .li .r0 0, .sub .r0 .r0 .r3, .logic .or .r3 .r3 .r0,
+    .lsr .d .r3 .r3 63, .li .r0 1, .logic .xor .r3 .r3 .r0, .lsl .r0 .r3 lg, .add .r12 .r12 .r0, .li .r0 0,
+    .sub .r6 .r0 .r3, .lsl .r0 .r11 b, .logic .xor .r0 .r0 .r11, .logic .and .r0 .r0 .r6,
+    .logic .xor .r11 .r11 .r0]
+
+/-- The counts into the slots, from the zero words `c_w` (`r10`) and the top word's zero bits `c_b`:
+`X`'s shift `2 c = 64 c_w + c_b - (c_b mod 2)` and `D`'s `c + 1`, in words and bits. -/
+def counts : List Instr :=
+  [.li .r12 0] ++ clzStage 32 5 ++ clzStage 16 4 ++ clzStage 8 3 ++ clzStage 4 2 ++ clzStage 2 1 ++
+    clzStage 1 0 ++
+  [.store .w .r10 .r31 sQw, .lsr .d .r0 .r12 1, .lsl .r3 .r0 1, .store .w .r3 .r31 sQb,
+    .lsl .r4 .r10 6, .add .r4 .r4 .r12, .lsr .d .r4 .r4 1, .addi .r4 .r4 1, .lsr .d .r3 .r4 6,
+    .store .w .r3 .r31 sRw, .li .r3 63, .logic .and .r3 .r4 .r3, .store .w .r3 .r31 sRb]
+
+/-- `X'`'s top two words into `r14`, `r15`; the remainder `r16`, `r17` and root `r18` := 0. -/
+def digit0Head : List Instr :=
+  ptr .r5 wR ++ twoH ++ [.lsl .r0 .r11 3, .add .r5 .r5 .r0, .subi .r5 .r5 16, .load .d .r14 .r5 8,
+    .load .d .r15 .r5 0, .li .r16 0, .li .r17 0, .li .r18 0, .li .r20 0, .li .r8 64]
+
+/-- Two bits of `(r14, r15)` into the remainder `(r16, r17)`; the root `r18` doubled, plus one where
+`4 y + 1` fits, subtracted. -/
+def digit0Step : List Instr :=
+  [.lsr .d .r0 .r17 62, .lsl .r16 .r16 2, .add .r16 .r0 .r16,
+    .lsr .d .r0 .r14 62, .lsl .r17 .r17 2, .add .r17 .r0 .r17,
+    .lsr .d .r0 .r15 62, .lsl .r14 .r14 2, .add .r14 .r0 .r14, .lsl .r15 .r15 2,
+    .lsr .d .r3 .r18 62, .lsl .r12 .r18 2, .addi .r12 .r12 1,
+    .subc .r10 .r17 .r12, .sube .r9 .r16 .r3, .addze .r0 .r20, .sub .r6 .r20 .r0,
+    .logic .xor .r10 .r10 .r17, .logic .and .r10 .r10 .r6, .logic .xor .r17 .r17 .r10,
+    .logic .xor .r9 .r9 .r16, .logic .and .r9 .r9 .r6, .logic .xor .r16 .r16 .r9,
+    .add .r18 .r18 .r18, .add .r18 .r18 .r0]
+
+/-- The remainder back into `X'`'s top two words (`r5`), `2 s₀` into `D`'s words `h - 1` and `h`,
+and `P = 1` and `s₀` into the temporary's words 0 and 1 (`r9`). -/
+def digit0Tail : List Instr :=
+  [.store .d .r17 .r5 0, .store .d .r16 .r5 8] ++ ptr .r6 wS ++ twoH ++
+    [.lsl .r0 .r11 2, .add .r6 .r6 .r0, .subi .r6 .r6 8, .add .r0 .r18 .r18, .store .d .r0 .r6 0,
+      .lsr .d .r0 .r18 63, .store .d .r0 .r6 8] ++ ptr .r9 wTmp ++ [.li .r0 1, .store .d .r0 .r9 0,
+      .store .d .r18 .r9 8]
+
+/-- The root's first word `s₀ = ⌊√T⌋` of `X'`'s top two words `T`, the remainder `T - s₀²` in
+their place, `D = 2 s₀`, and the reciprocal of `s₀`. -/
+def digit0 : Prog isa := seqs [.block digit0Head, countLoop .r8 digit0Step, .block digit0Tail, recip]
+
+/-- The steps' registers: `X'` (`r19`), `D` (`r24`), `j := 1` (`r26`), `h - 1` steps (`r28`). -/
+def stepsHead : List Instr :=
+  ptr .r19 wR ++ ptr .r24 wS ++ twoH ++ [.lsr .d .r28 .r11 1, .subi .r28 .r28 1, .li .r26 1]
+
+/-- `r5 :=` the address of `R`'s word 0, `X'`'s word `2 h - 2 j - 2`, and `r6 :=` `D`'s word
+`m = h - 1 - j` (for `r11 = 2 h`). -/
+def ptrs : List Instr :=
+  [.sub .r5 .r11 .r26, .sub .r5 .r5 .r26, .lsl .r5 .r5 3, .add .r5 .r5 .r19, .subi .r5 .r5 16,
+    .lsr .d .r6 .r11 1, .sub .r6 .r6 .r26, .lsl .r6 .r6 3, .add .r6 .r6 .r24, .subi .r6 .r6 8]
+
+/-- `q̂` (`r18`): `s₁` (from `D`'s words `h - 2` and `h - 1`) into the temporary's word 3, `⌊R / 2⌋`'s
+words `j + 1`, `j` (`r15`, `r16`, and the temporary's words 7 and 6) and `j - 1` (its word 5), and
+`min(⌊U / (s₀ β + s₁)⌋, β - 1)` by `Precompute.quot`'s steps with `P = 1`. -/
+def estimate : List Instr :=
+  twoH ++ ptrs ++ ptr .r9 wTmp ++
+  [.lsl .r0 .r11 2, .add .r3 .r0 .r24, .subi .r3 .r3 16, .load .d .r10 .r3 0, .load .d .r12 .r3 8,
+    .lsr .d .r10 .r10 1, .lsl .r12 .r12 63, .add .r10 .r10 .r12, .store .d .r10 .r9 24,
+    .lsl .r3 .r26 3, .add .r3 .r3 .r5, .subi .r3 .r3 8, .load .d .r17 .r3 0, .load .d .r10 .r3 8,
+    .load .d .r12 .r3 16, .load .d .r0 .r3 24,
+    .lsl .r0 .r0 63, .lsr .d .r15 .r12 1, .add .r15 .r15 .r0,
+    .lsl .r12 .r12 63, .lsr .d .r16 .r10 1, .add .r16 .r16 .r12,
+    .lsl .r10 .r10 63, .lsr .d .r17 .r17 1, .add .r17 .r17 .r10, .store .d .r17 .r9 40,
+    .store .d .r16 .r9 48, .store .d .r15 .r9 56, .addi .r14 .r9 40, .li .r6 1, .load .d .r7 .r9 8, .load .d .r18 .r9 16, .sub .r22 .r7 .r15, .li .r20 0] ++
+  quotMG ++ quotFix ++ quot3
+
+/-- `T := R - q̂ D` in place over `R`'s `j + 3` words, `D`'s word `m` set to `q̂` (`D = 2 s β + q̂`):
+`D`'s `j + 2` words times `q̂` with the carry (`r3`) and the borrow (`r22`, 1 for none), then the
+top word less the carry. -/
+def mulSubD : Prog isa := seqs [
+  .block (twoH ++ ptrs ++ [.store .d .r18 .r6 0, .li .r20 0, .subi .r17 .r20 1, .li .r3 0, .li .r22 1,
+    .addi .r8 .r26 2]),
+  countLoop .r8 [.load .d .r7 .r6 0, .mul .r12 .r7 .r18, .mulhu .r0 .r7 .r18, .addc .r12 .r12 .r3,
+    .addze .r3 .r0, .load .d .r0 .r5 0, .addc .r10 .r22 .r17, .sube .r0 .r0 .r12, .addze .r22 .r20,
+    .store .d .r0 .r5 0, .addi .r5 .r5 8, .addi .r6 .r6 8],
+  .block [.load .d .r0 .r5 0, .addc .r10 .r22 .r17, .sube .r0 .r0 .r3, .store .d .r0 .r5 0]]
+
+/-- A correction: where `T` (its top word's sign) is negative, `T := T + 2 s β + 2 q̂ - 1` and
+`q̂ := q̂ - 1`, by a mask (`r9`): word 0 `2 q̂ - 1`, word 1 `D`'s word `m + 1` (`2 s`'s word 0, even)
+or'ed with that one's carry, then `D`'s words `m + 2 …`. -/
+def correct : Prog isa := seqs [
+  .block (twoH ++ ptrs ++ [.li .r20 0, .lsl .r3 .r26 3, .add .r3 .r3 .r5, .load .d .r0 .r3 16,
+    .lsr .d .r0 .r0 63, .sub .r9 .r20 .r0, .add .r10 .r18 .r18, .subi .r10 .r10 1, .subi .r14 .r18 1,
+    .lsr .d .r14 .r14 63, .load .d .r3 .r5 0, .logic .and .r10 .r10 .r9, .addc .r3 .r3 .r10,
+    .store .d .r3 .r5 0, .load .d .r7 .r6 8, .logic .or .r7 .r7 .r14, .logic .and .r7 .r7 .r9,
+    .load .d .r3 .r5 8, .adde .r3 .r3 .r7, .store .d .r3 .r5 8, .addi .r5 .r5 16, .addi .r6 .r6 16,
+    .add .r18 .r18 .r9, .addi .r8 .r26 0]),
+  countLoop .r8 [.load .d .r7 .r6 0, .logic .and .r7 .r7 .r9, .load .d .r3 .r5 0, .adde .r3 .r3 .r7,
+    .store .d .r3 .r5 0, .addi .r5 .r5 8, .addi .r6 .r6 8],
+  .block [.load .d .r3 .r5 0, .addze .r3 .r3, .store .d .r3 .r5 0]]
+
+/-- `D := 2 s' = 2 s β + 2 q`: its word `m` `2 q`, word `m + 1` plus `q`'s top bit; `j + 1`. -/
+def finishQ : List Instr :=
+  twoH ++ ptrs ++ [.add .r0 .r18 .r18, .store .d .r0 .r6 0, .lsr .d .r3 .r18 63, .load .d .r0 .r6 8,
+    .add .r0 .r0 .r3, .store .d .r0 .r6 8, .addi .r26 .r26 1, .subi .r28 .r28 1]
+
+/-- A step: `q̂`, `T`, two corrections, `D`; `j + 1`. -/
+def sqStep : Prog isa := seqs [.block estimate, mulSubD, correct, correct, .block finishQ]
+
+/-- Whether the remainder (`X'`'s `2 h` words) is zero: into `sOk5`. -/
+def remZero : Prog isa := seqs [
+  .block (ptr .r5 wR ++ twoH ++ [.addi .r8 .r11 0, .li .r9 0]),
+  countLoop .r8 [.load .d .r0 .r5 0, .logic .or .r9 .r9 .r0, .addi .r5 .r5 8],
+  .block [.li .r3 0, .sub .r3 .r3 .r9, .logic .or .r3 .r3 .r9, .lsr .d .r3 .r3 63, .li .r0 1,
+    .logic .xor .r3 .r3 .r0, .store .w .r3 .r31 sOk5]]
+
+/-- The root's word 0 less one if `X = 0` (`X = 1` was rooted instead). -/
+def rootFix : List Instr :=
+  ptr .r5 wS ++ [.load .w .r3 .r31 sZ, .load .d .r0 .r5 0, .sub .r0 .r0 .r3, .store .d .r0 .r5 0]
+
+/-- The root of `X` (`[wR]`, its low `2 h` words) into the narrow `[aSy]` and whether `X` is a square
+into `sOk5`. -/
+def sqrt : Prog isa := seqs [copy wS wZero, zeroX, clzX, .block counts, shlBy wR sQw sQb true, digit0,
+  .block stepsHead, .loop sqStep (.nonzero .d .r28), remZero, shrBy wS sRw sRb, .block rootFix, .block ctxw]
 
 /-! ## The factors -/
 

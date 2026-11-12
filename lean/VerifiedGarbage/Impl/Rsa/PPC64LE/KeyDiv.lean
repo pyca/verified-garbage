@@ -52,27 +52,38 @@ def fixTop (m : Nat) : List Instr :=
     .li .r3 0, .sub .r3 .r3 .r0, .logic .or .r3 .r3 .r0, .lsr .d .r3 .r3 63, .li .r6 1, .logic .xor .r3 .r3 .r6,
     .add .r0 .r0 .r3, .store .d .r0 .r12 0]
 
-/-- `r10 :=` `[m]`'s address, `r9 :=` `[t]`'s, `r11 := w / 2`. -/
-def normSetup (m t : Nat) : List Instr := ptr .r10 m ++ ptr .r9 t ++ [.lsr .d .r11 .r29 1]
+/-- `r10 :=` `[m]`'s address, `r9 :=` `[t]`'s, and `dw` sets `r11 := 2 D`
+for a divisor of `D` words. -/
+def normSetupG (m t : Nat) (dw : List Instr) : List Instr := ptr .r10 m ++ ptr .r9 t ++ dw
 
-/-- `r5 := [r]`'s address, `r8 :=` the address of `[a]`'s top word (`w / 2 -
-1`), `r4 := w / 2` steps. -/
-def stepsSetup (a r : Nat) : List Instr :=
-  ptr .r5 r ++ ptr .r8 a ++ [.lsl .r0 .r11 3, .add .r8 .r8 .r0, .subi .r8 .r8 8, .addi .r4 .r11 0]
+/-- `r5 := [r]`'s address, `aw` sets `r4 :=` the dividend's words `A`, and
+`r8 :=` the address of its top word. -/
+def stepsSetupG (a r : Nat) (aw : List Instr) : List Instr :=
+  ptr .r5 r ++ ptr .r8 a ++ aw ++ [.lsl .r0 .r4 3, .add .r8 .r8 .r0, .subi .r8 .r8 8]
 
-/-- A step, then `u`'s address a word down and a step less. -/
-def step : Prog isa := .seq wordStepU (.block [.subi .r8 .r8 8, .subi .r4 .r4 1])
+/-- A step, then, with the quotient (`q`), its digit `q̂` (`r18`) less the
+add-back's borrow (`r12`, `-1` or `0`) over the dividend's word it brought
+down; then `u`'s address a word down and a step less. -/
+def stepG (q : Bool) : Prog isa :=
+  .seq wordStepU (.block ((if q then [.add .r0 .r18 .r12, .store .d .r0 .r8 0] else []) ++
+    [.subi .r8 .r8 8, .subi .r4 .r4 1]))
 
 /-- The registers saved and `[r]` zeroed. -/
 def prepA (r sv : Nat) : Prog isa :=
   seqs [.block (save sv), .block (ptr .r14 r ++ [.addi .r11 .r29 0]), zeroWords]
 
-/-- The divisor and the temporary, and the steps' registers. -/
-def prepB (a r m t : Nat) : Prog isa := seqs [.block (normSetup m t), norm, recip, .block (stepsSetup a r)]
-
-/-- `[r] := [a] mod [m]`, for `[m]`'s top word not zero, through `[t]` and the
-save area `sv`. -/
-def divW (a r m t sv : Nat) : Prog isa := seqs [prepA r sv, prepB a r m t, .loop step (.nonzero .d .r4),
+/-- `[r] := [a] mod [m]` and, with `q`, `[a] :=` the quotient, for `[m]` of
+`D` words (`dw`: `r11 := 2 D`) whose top word is not zero, `[a]` of `A`
+words (`aw`: `r4 := A`), and `[r]` of `w / 2 ≥ D + 1` words, through `[t]`
+and the save area `sv`. -/
+def divG (q : Bool) (a r m t sv : Nat) (dw aw : List Instr) : Prog isa := seqs [prepA r sv,
+  .block (normSetupG m t dw), norm, recip, .block (stepsSetupG a r aw), .loop (stepG q) (.nonzero .d .r4),
   .block (restore sv)]
+
+/-- `[r] := [a] mod [m]`, for `w = 4 D`, `[m]`'s top word not zero. -/
+def divW (a r m t sv : Nat) : Prog isa := divG false a r m t sv [.lsr .d .r11 .r29 1] [.addi .r4 .r11 0]
+
+/-- `[r] := [a] mod [m]` and `[a] :=` the quotient. -/
+def divQ (a r m t sv : Nat) (dw aw : List Instr) : Prog isa := divG true a r m t sv dw aw
 
 end VG.Impl.Rsa.PPC64LE.KeyDiv
