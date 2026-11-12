@@ -75,6 +75,39 @@ theorem calleeS {f : Callee} (hf : f.Ok) {so : Nat}
     CalleeOk (P := paramsS so) md f.code :=
   ⟨hv.1, hv.2.1, hf.nosp, hf.depth, hf.keeps_rdi, hf.keeps_rcx⟩
 
+theorem dimsS (so : Nat) (h : so ≤ 2048) : Dims (paramsS so) := ⟨dims.B, dims.N, dims.L, h⟩
+
+theorem shapeS (so : Nat) : Shape (P := paramsS so) md := ⟨shape.len, shape.lenV, shape.out⟩
+
+namespace Update
+
+/-- `update` made with `so` bytes of working space for the compression
+function, for an implementation verified with that much (`hv`). -/
+theorem verifiedS {so : Nat} (h : so = 0 ∨ so = 112) {f : Callee} (hf : f.Ok)
+    (hv : Verified X86_64.target f.code (Proof.Sha256.compressX86_64S so))
+    (hm : (Impl.MdStream.X86_64.update (paramsS so) f.name f.code).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified X86_64.target (Impl.MdStream.X86_64.update (paramsS so) f.name f.code)
+      (Proof.Sha256.updateX86_64S (so + 48)) :=
+  have h := MdStream.X86_64.Update.verified (dimsS so (by omega)) (taintsS so h) (calleeS hf hv) hm
+  Verified.of_implies h ⟨fun _ h => h, fun _ _ _ h iv m hr hc => h iv m hr hc, fun _ _ _ _ h => h, h.2.2⟩
+
+end Update
+
+namespace Finalize
+
+/-- `finalize` made with `so` bytes of working space for the compression
+function, for an implementation verified with that much (`hv`). -/
+theorem verifiedS {so : Nat} (h : so = 0 ∨ so = 112) {f : Callee} (hf : f.Ok)
+    (hv : Verified X86_64.target f.code (Proof.Sha256.compressX86_64S so))
+    (hm : (Impl.MdStream.X86_64.finalize (paramsS so) f.name f.code).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified X86_64.target (Impl.MdStream.X86_64.finalize (paramsS so) f.name f.code)
+      (Proof.Sha256.finalizeX86_64S (so + 48)) :=
+  have h := MdStream.X86_64.Finalize.verified (dimsS so (by omega)) (shapeS so) (taintsS so h) (calleeS hf hv) hm
+  Verified.of_implies h
+    ⟨fun _ h => h, fun _ _ _ h iv m hr hc => h iv m hr trivial hc, fun _ _ _ _ h => h, h.2.2⟩
+
+end Finalize
+
 namespace Update
 
 variable {f : Callee} (hf : f.Ok)

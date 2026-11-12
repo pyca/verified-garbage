@@ -288,6 +288,57 @@ def digFn : StreamFn :=
 `digest`. -/
 def stream : List StreamFn := [updFn v, finFn v, digFn v]
 
+/-! ### With the working space the compression function uses
+
+The same functions made for an implementation `v` of the compression
+function verified with `so` bytes of scratch space (`hv`), which give it
+only that much (`Stream.paramsS`): their frames shrink with it. -/
+
+section S
+
+variable {so : Nat} (h : so = 0 ∨ so = 112)
+  (hv : Verified X86_64.target v.callee.code (Proof.Sha256.compressX86_64S so))
+
+/-- The streaming `update` made with `v`, in a frame of `so + 56` bytes. -/
+def updFnS : StreamFn :=
+  { api := Spec.Sha256.updateApi
+    code := Impl.StackScratch.X86_64.withStackScratch (so + 56) .r8
+      (Impl.MdStream.X86_64.update (Proof.Sha256.X86_64.Stream.paramsS so) v.callee.name v.callee.code)
+    contract := Spec.Sha256.updateContract X86_64.abi (8 + (so + 56))
+    stack := 8 + (so + 56)
+    verified := Proof.Sha256.X86_64.Shared.updateS h v.ok hv v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by rcases h with rfl | rfl <;> decide)
+      (Proof.Sha256.X86_64.Shared.updateS_spSafe h v.spSafe) }
+
+/-- The streaming `finalize` made with `v`, likewise. -/
+def finFnS : StreamFn :=
+  { api := Spec.Sha256.finalizeApi
+    code := Impl.StackScratch.X86_64.withStackScratch (so + 56) .rcx
+      (Impl.MdStream.X86_64.finalize (Proof.Sha256.X86_64.Stream.paramsS so) v.callee.name v.callee.code)
+    contract := Spec.Sha256.finalizeContract X86_64.abi (8 + (so + 56))
+    stack := 8 + (so + 56)
+    verified := Proof.Sha256.X86_64.Shared.finalizeS h v.ok hv v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by rcases h with rfl | rfl <;> decide)
+      (Proof.Sha256.X86_64.Shared.finalizeS_spSafe h v.spSafe) }
+
+/-- The one-shot `digest` made with `v`, in a frame holding a buffer of
+`Proof.Sha256.X86_64.OneShot.wordsS so` words. -/
+def digFnS : StreamFn :=
+  { api := Spec.Sha256.digest256Api
+    code := Proof.Sha256.X86_64.OneShot.digestS so (Impl.MdStream.X86_64.out32 8 true) Spec.Sha256.H0 v.callee
+    contract := Spec.Sha256.digestContract X86_64.abi 32 Spec.Sha256.hash (8 + Proof.Sha256.X86_64.OneShot.frameS so)
+    stack := 8 + Proof.Sha256.X86_64.OneShot.frameS so
+    verified := Proof.Sha256.X86_64.OneShot.verifiedS (Proof.Sha256.X86_64.OneShot.code256S h)
+      Proof.Sha256.X86_64.OneShot.init_check256 Proof.Sha256.X86_64.OneShot.hash_take v.ok hv v.mxcsr v.spSafe
+      v.noStack
+    spSafe := Proof.Sha256.X86_64.OneShot.spSafeS (Proof.Sha256.X86_64.OneShot.code256S h) Spec.Sha256.H0
+      v.spSafe }
+
+/-- `stream`, made for `so` bytes of scratch space. -/
+def streamS : List StreamFn := [updFnS v h hv, finFnS v h hv, digFnS v h hv]
+
+end S
+
 /-- A state satisfying the precondition of `init_scratch` with the working
 space `init` uses with 0 bytes of working space for the compression function. -/
 theorem satW0 : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha256I.S 12 X86_64.abi 16).pre s := by

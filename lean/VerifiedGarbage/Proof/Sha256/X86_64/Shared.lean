@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sha256.Contract
 public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
-import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Digest
+public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Digest
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
 import VerifiedGarbage.Proof.Framework.Offset
@@ -310,5 +310,165 @@ theorem finalize224Stack {f : Callee} (hf : f.Ok)
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 8) (bytes := 616)
     (finalize224Scratch hf hm) (by decide) (by decide) (by decide) (finalize224_spSafe hs) (finalize224_depth hd)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+/-! ## With the working space the compression function uses
+
+`update`, `finalize` and `finalize224` made with `so` bytes of working space
+for the compression function (`Stream.paramsS`), for an implementation that
+uses no more than that (`Proof.Sha256.compressX86_64S so`): in a frame of
+`so + 56` bytes, where the code made for every implementation
+(`Stream.params`) takes 616. -/
+
+section S
+
+open VG.Impl.Sha256.X86_64.Stream (Callee)
+open VG.Proof.Sha256.X86_64.Stream (paramsS params224S)
+open Impl.MdStream.X86_64 (updateBody updateTail compressN compressAt compressWith finalizeBody)
+
+variable {so : Nat} (h : so = 0 ∨ so = 112) {f : Callee}
+include h
+
+theorem updateS_mxcsr (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true) :
+    (Impl.MdStream.X86_64.update (paramsS so) f.name f.code).allInstrs (fun i => !X86_64.loadsMxcsr i) = true := by
+  simp only [Impl.MdStream.X86_64.update, updateBody, updateTail, compressN, compressWith, Code.allInstrs, hm, Bool.true_and]
+  rcases h with rfl | rfl <;> decide +kernel
+
+theorem updateS_spSafe (hs : f.code.all (fun i => !X86_64.isa.writesSp i) = true) :
+    (Impl.MdStream.X86_64.update (paramsS so) f.name f.code).all (fun i => !X86_64.isa.writesSp i) = true := by
+  simp only [Impl.MdStream.X86_64.update, updateBody, updateTail, compressN, compressWith, Code.all, hs, Bool.true_and]
+  rcases h with rfl | rfl <;> decide +kernel
+
+theorem updateS_depth (hd : f.code.x86_64Depth = 0) : (Impl.MdStream.X86_64.update (paramsS so) f.name f.code).x86_64Depth ≤ 8 := by
+  simp only [Impl.MdStream.X86_64.update, updateBody, updateTail, compressN, compressWith, Code.x86_64Depth, hd]
+  rcases h with rfl | rfl <;> decide +kernel
+
+theorem finalizeS_mxcsr (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true) :
+    (Impl.MdStream.X86_64.finalize (paramsS so) f.name f.code).allInstrs (fun i => !X86_64.loadsMxcsr i) = true := by
+  simp only [Impl.MdStream.X86_64.finalize, finalizeBody, compressAt, compressWith, Code.allInstrs, hm, Bool.true_and]
+  rcases h with rfl | rfl <;> decide +kernel
+
+theorem finalizeS_spSafe (hs : f.code.all (fun i => !X86_64.isa.writesSp i) = true) :
+    (Impl.MdStream.X86_64.finalize (paramsS so) f.name f.code).all (fun i => !X86_64.isa.writesSp i) = true := by
+  simp only [Impl.MdStream.X86_64.finalize, finalizeBody, compressAt, compressWith, Code.all, hs, Bool.true_and]
+  rcases h with rfl | rfl <;> decide +kernel
+
+theorem finalizeS_depth (hd : f.code.x86_64Depth = 0) :
+    (Impl.MdStream.X86_64.finalize (paramsS so) f.name f.code).x86_64Depth ≤ 8 := by
+  simp only [Impl.MdStream.X86_64.finalize, finalizeBody, compressAt, compressWith, Code.x86_64Depth, hd]
+  rcases h with rfl | rfl <;> decide +kernel
+
+theorem finalize224S_mxcsr (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true) :
+    (Impl.MdStream.X86_64.finalize (params224S so) f.name f.code).allInstrs (fun i => !X86_64.loadsMxcsr i) = true := by
+  simp only [Impl.MdStream.X86_64.finalize, finalizeBody, compressAt, compressWith, Code.allInstrs, hm, Bool.true_and]
+  rcases h with rfl | rfl <;> decide +kernel
+
+theorem finalize224S_spSafe (hs : f.code.all (fun i => !X86_64.isa.writesSp i) = true) :
+    (Impl.MdStream.X86_64.finalize (params224S so) f.name f.code).all (fun i => !X86_64.isa.writesSp i) = true := by
+  simp only [Impl.MdStream.X86_64.finalize, finalizeBody, compressAt, compressWith, Code.all, hs, Bool.true_and]
+  rcases h with rfl | rfl <;> decide +kernel
+
+theorem finalize224S_depth (hd : f.code.x86_64Depth = 0) :
+    (Impl.MdStream.X86_64.finalize (params224S so) f.name f.code).x86_64Depth ≤ 8 := by
+  simp only [Impl.MdStream.X86_64.finalize, finalizeBody, compressAt, compressWith, Code.x86_64Depth, hd]
+  rcases h with rfl | rfl <;> decide +kernel
+
+variable (hf : f.Ok) (hv : Verified X86_64.target f.code (Proof.Sha256.compressX86_64S so))
+  (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true)
+include hf hv hm
+
+/-- `update` made with `so` bytes for the compression function, against the
+shared contract with the `so / 8 + 6` words of working space it uses. -/
+theorem updateScratchS :
+    Verified X86_64.target (Impl.MdStream.X86_64.update (paramsS so) f.name f.code)
+      (Proof.Sha256.updateScratchContractW (so / 8 + 6) X86_64.abi 8) := by
+  have v := Proof.Sha256.X86_64.Stream.Update.verifiedS h hf hv (updateS_mxcsr h hm)
+  rcases h with rfl | rfl
+  · exact v.of_implies (by
+      sig_implies [Proof.Sha256.updateScratchContractW, Proof.Sha256.updateScratchSigW,
+        Proof.Sha256.updateX86_64S, X86_64.abi, X86_64.argRegs]
+        [MdStream.X86_64.Update.sat, Impl.Sha256.X86_64.Stream.params] using MdStream.X86_64.Update.sat (paramsS 0))
+  · exact v.of_implies (by
+      sig_implies [Proof.Sha256.updateScratchContractW, Proof.Sha256.updateScratchSigW,
+        Proof.Sha256.updateX86_64S, X86_64.abi, X86_64.argRegs]
+        [MdStream.X86_64.Update.sat, Impl.Sha256.X86_64.Stream.params] using MdStream.X86_64.Update.sat (paramsS 112))
+
+/-- `finalize` made with `so` bytes for the compression function, likewise. -/
+theorem finalizeScratchS :
+    Verified X86_64.target (Impl.MdStream.X86_64.finalize (paramsS so) f.name f.code)
+      (Proof.Sha256.finalizeScratchContractW (so / 8 + 6) X86_64.abi 8) := by
+  have v := Proof.Sha256.X86_64.Stream.Finalize.verifiedS h hf hv (finalizeS_mxcsr h hm)
+  rcases h with rfl | rfl
+  · exact v.of_implies (by
+      sig_implies [Proof.Sha256.finalizeScratchContractW, Proof.Sha256.finalizeScratchSigW,
+        Proof.Sha256.finalizeX86_64S, X86_64.abi, X86_64.argRegs]
+        [MdStream.X86_64.Finalize.sat, Impl.Sha256.X86_64.Stream.params]
+        using MdStream.X86_64.Finalize.sat (paramsS 0))
+  · exact v.of_implies (by
+      sig_implies [Proof.Sha256.finalizeScratchContractW, Proof.Sha256.finalizeScratchSigW,
+        Proof.Sha256.finalizeX86_64S, X86_64.abi, X86_64.argRegs]
+        [MdStream.X86_64.Finalize.sat, Impl.Sha256.X86_64.Stream.params]
+        using MdStream.X86_64.Finalize.sat (paramsS 112))
+
+/-- `finalize224` made with `so` bytes for the compression function, likewise. -/
+theorem finalize224ScratchS :
+    Verified X86_64.target (Impl.MdStream.X86_64.finalize (params224S so) f.name f.code)
+      (Proof.Sha256.finalize224ScratchContractW (so / 8 + 6) X86_64.abi 8) := by
+  have v := Proof.Sha256.X86_64.Stream.Finalize.verified224S h hf hv (finalize224S_mxcsr h hm)
+  rcases h with rfl | rfl
+  · exact v.of_implies (by
+      contract_implies [Proof.Sha256.finalize224ScratchContractW, Proof.Sha256.finalize224ScratchSigW,
+        Spec.Sha256.finalize224Post, Proof.Sha256.X86_64.Stream.finalize224X86_64S, X86_64.abi, X86_64.argRegs]
+        [MdStream.X86_64.Finalize.satD, Impl.Sha256.X86_64.Stream.params]
+        using MdStream.X86_64.Finalize.satD (paramsS 0) 28)
+  · exact v.of_implies (by
+      contract_implies [Proof.Sha256.finalize224ScratchContractW, Proof.Sha256.finalize224ScratchSigW,
+        Spec.Sha256.finalize224Post, Proof.Sha256.X86_64.Stream.finalize224X86_64S, X86_64.abi, X86_64.argRegs]
+        [MdStream.X86_64.Finalize.satD, Impl.Sha256.X86_64.Stream.params]
+        using MdStream.X86_64.Finalize.satD (paramsS 112) 28)
+
+variable (hs : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (hd : f.code.x86_64Depth = 0)
+include hs hd
+
+/-- `update` made with `so` bytes for the compression function, with its
+working space in a frame of its own. -/
+theorem updateS :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackScratch (so + 56) .r8 (Impl.MdStream.X86_64.update (paramsS so) f.name f.code))
+      (Spec.Sha256.updateContract X86_64.abi (8 + (so + 56))) := by
+  have v := updateScratchS h hf hv hm
+  have sp := updateS_spSafe h hs
+  have dp := updateS_depth h hd
+  rcases h with rfl | rfl <;>
+  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
+    v (by decide) (by decide) (by decide) sp dp
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+/-- `finalize` made with `so` bytes for the compression function, likewise. -/
+theorem finalizeS :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackScratch (so + 56) .rcx (Impl.MdStream.X86_64.finalize (paramsS so) f.name f.code))
+      (Spec.Sha256.finalizeContract X86_64.abi (8 + (so + 56))) := by
+  have v := finalizeScratchS h hf hv hm
+  have sp := finalizeS_spSafe h hs
+  have dp := finalizeS_depth h hd
+  rcases h with rfl | rfl <;>
+  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
+    v (by decide) (by decide) (by decide) sp dp
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+/-- `finalize224` made with `so` bytes for the compression function, likewise. -/
+theorem finalize224S :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackScratch (so + 56) .rcx (Impl.MdStream.X86_64.finalize (params224S so) f.name f.code))
+      (Spec.Sha256.finalize224Contract X86_64.abi (8 + (so + 56))) := by
+  have v := finalize224ScratchS h hf hv hm
+  have sp := finalize224S_spSafe h hs
+  have dp := finalize224S_depth h hd
+  rcases h with rfl | rfl <;>
+  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
+    v (by decide) (by decide) (by decide) sp dp
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+end S
 
 end VG.Proof.Sha256.X86_64.Shared

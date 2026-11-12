@@ -142,4 +142,45 @@ def finalizeX86_64 : Contract X86_64.isa where
     s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsp = s₂.gpr .rsp
 
+open X86_64 in
+/-- `updateX86_64` with `n` bytes of scratch space, for an implementation of
+the compression function that uses `n - 48` (`updateX86_64` is
+`updateX86_64S 608`). -/
+def updateX86_64S (n : Nat) : Contract X86_64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .rdi, 96⟩
+    let data : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
+    let scratch : Region := ⟨s.gpr .r8, n⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stack : Region := ⟨s.gpr .rsp - 8, 8⟩
+    s.rd = [data] ∧ s.wr = [state, scratch] ∧
+    state.Disjoint scratch ∧ data.Disjoint state ∧ data.Disjoint scratch ∧
+    ret.Disjoint state ∧ ret.Disjoint scratch ∧
+    stack.Disjoint state ∧ stack.Disjoint data ∧ stack.Disjoint scratch
+  post s s' := ∀ iv m, ReprFrom iv s.mem (s.gpr .rdi) m → s.gpr .rsi = BitVec.ofNat 64 m.length →
+    ReprFrom iv s'.mem (s.gpr .rdi) (m ++ bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+  pub s₁ s₂ :=
+    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .rsp = s₂.gpr .rsp
+
+open X86_64 in
+/-- `finalizeX86_64` with `n` bytes of scratch space (`finalizeX86_64` is
+`finalizeX86_64S 608`). -/
+def finalizeX86_64S (n : Nat) : Contract X86_64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .rdi, 96⟩
+    let out : Region := ⟨s.gpr .rdx, 32⟩
+    let scratch : Region := ⟨s.gpr .rcx, n⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stack : Region := ⟨s.gpr .rsp - 8, 8⟩
+    s.rd = [] ∧ s.wr = [state, out, scratch] ∧
+    state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch ∧
+    ret.Disjoint state ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
+    stack.Disjoint state ∧ stack.Disjoint out ∧ stack.Disjoint scratch
+  post s s' := ∀ iv m, ReprFrom iv s.mem (s.gpr .rdi) m → s.gpr .rsi = BitVec.ofNat 64 m.length →
+    bytesAt s'.mem (s.gpr .rdx) 32 = Spec.Sha256.finalHash iv m
+  pub s₁ s₂ :=
+    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsp = s₂.gpr .rsp
+
 end VG.Proof.Sha256

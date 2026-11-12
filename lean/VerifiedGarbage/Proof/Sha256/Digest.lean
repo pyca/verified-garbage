@@ -47,6 +47,16 @@ def finalize224ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contra
   finalize224ScratchSig.contract A (post := fun state count out _scratch =>
     Spec.Sha256.finalize224Post A.ptrBits state count out) (stack := stack)
 
+/-- `finalize224ScratchSig` with `w` words of working space. -/
+def finalize224ScratchSigW (w : Nat) : Sig where
+  params := [("state", .array true .u8 96), ("count", .int .u64 true),
+    ("out", .array true .u8 28), ("scratch", .array true .u64 w)]
+
+/-- `finalize224ScratchContract`, with `w` words of working space. -/
+def finalize224ScratchContractW (w : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (finalize224ScratchSigW w).contract A (post := fun state count out _scratch =>
+    Spec.Sha256.finalize224Post A.ptrBits state count out) (stack := stack)
+
 /-- `finalize224Post` reads the memory on entry only within the streaming
 state (see `finalizePost_local`). -/
 theorem finalize224Post_local (pb : Nat) :

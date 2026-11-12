@@ -92,61 +92,72 @@ section Scrub
 
 open Proof.Pbkdf2.Md.X86_64 Proof.Pbkdf2.Md.X86_64.Sha256 VG.X86_64 VG.X86_64.Scrub VG.Impl.Scrub.X86_64
 
+/-! ## The functions with the working space this compression function uses
+
+The compression function uses no scratch space: `update`, `finalize` and
+`digest` give it none (`Sha256.updFnS`). -/
+
+abbrev updF : StreamFn := updFnS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0
+abbrev finF : StreamFn := finFnS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0
+abbrev digF : StreamFn := digFnS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0
+abbrev fin224F : StreamFn := Sha224.finFnS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0
+abbrev dig224F : StreamFn := Sha224.digFnS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0
+
 /-! ## Without secret residue
 
 Each function, followed by `Impl.Scrub.X86_64.scrubTail`, which wipes the
 registers and the granules of its stack that the residue analysis of its
 code (`X86_64.RTaint`) finds may hold secrets. -/
 
-def updKs : List Nat := keep_for% Spec.Sha256.updateApi.sig (updFn compress).stack (updFn compress).code
-def finKs : List Nat := keep_for% Spec.Sha256.finalizeApi.sig (finFn compress).stack (finFn compress).code
-def digKs : List Nat := keep_for% Spec.Sha256.digest256Api.sig (digFn compress).stack (digFn compress).code
+def updKs : List Nat := keep_for% Spec.Sha256.updateApi.sig updF.stack updF.code
+def finKs : List Nat := keep_for% Spec.Sha256.finalizeApi.sig finF.stack finF.code
+def digKs : List Nat := keep_for% Spec.Sha256.digest256Api.sig digF.stack digF.code
 
-theorem updRes : ResOk (updFn compress).code (updFn compress).contract (updFn compress).stack updKs
-    (chunks (updFn compress).stack) := RScrub.resOk_reg0 (updFn compress).reg updKs (by taint_decide)
-theorem finRes : ResOk (finFn compress).code (finFn compress).contract (finFn compress).stack finKs
-    (chunks (finFn compress).stack) := RScrub.resOk_reg0 (finFn compress).reg finKs (by taint_decide)
-theorem digRes : ResOk (digFn compress).code (digFn compress).contract (digFn compress).stack digKs
-    (chunks (digFn compress).stack) := RScrub.resOk_reg0 (digFn compress).reg digKs (by taint_decide)
+theorem updRes : ResOk updF.code updF.contract updF.stack updKs
+    (chunks updF.stack) := RScrub.resOk_reg0 updF.reg updKs (by taint_decide)
+theorem finRes : ResOk finF.code finF.contract finF.stack finKs
+    (chunks finF.stack) := RScrub.resOk_reg0 finF.reg finKs (by taint_decide)
+theorem digRes : ResOk digF.code digF.contract digF.stack digKs
+    (chunks digF.stack) := RScrub.resOk_reg0 digF.reg digKs (by taint_decide)
 
-def update : StreamFn := (updFn compress).scrub .sse updKs (by lit_decide) (by decide) (by decide) (by lit_decide)
-  (by decide) (updOut compress) updRes
-def finalize : StreamFn := (finFn compress).scrub .sse finKs (by lit_decide) (by decide) (by decide) (by lit_decide)
-  (by decide) (finOut compress) finRes
-def digest : StreamFn := (digFn compress).scrub .sse digKs (by lit_decide) (by decide) (by decide) (by lit_decide)
-  (by decide) (digOut compress) digRes
+def update : StreamFn := updF.scrub .sse updKs (by lit_decide) (by decide) (by decide) (by lit_decide)
+  (by decide) (updOutS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0) updRes
+def finalize : StreamFn := finF.scrub .sse finKs (by lit_decide) (by decide) (by decide) (by lit_decide)
+  (by decide) (finOutS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0) finRes
+def digest : StreamFn := digF.scrub .sse digKs (by lit_decide) (by decide) (by decide) (by lit_decide)
+  (by decide) (digOutS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0) digRes
 
-theorem update_noResidue : NoResidue update.code (updFn compress).contract (updFn compress).retBits :=
+theorem update_noResidue : NoResidue update.code updF.contract updF.retBits :=
   StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
-theorem finalize_noResidue : NoResidue finalize.code (finFn compress).contract (finFn compress).retBits :=
+theorem finalize_noResidue : NoResidue finalize.code finF.contract finF.retBits :=
   StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
-theorem digest_noResidue : NoResidue digest.code (digFn compress).contract (digFn compress).retBits :=
+theorem digest_noResidue : NoResidue digest.code digF.contract digF.retBits :=
   StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
 
 /-! SHA-224's `finalize` and `digest`, with the same compression function. -/
 
 def fin224Ks : List Nat :=
-  keep_for% Spec.Sha256.finalize224Api.sig (Sha224.finFn compress).stack (Sha224.finFn compress).code
+  keep_for% Spec.Sha256.finalize224Api.sig fin224F.stack fin224F.code
 def dig224Ks : List Nat :=
-  keep_for% Spec.Sha256.digest224Api.sig (Sha224.digFn compress).stack (Sha224.digFn compress).code
+  keep_for% Spec.Sha256.digest224Api.sig dig224F.stack dig224F.code
 
-theorem fin224Res : ResOk (Sha224.finFn compress).code (Sha224.finFn compress).contract
-    (Sha224.finFn compress).stack fin224Ks (chunks (Sha224.finFn compress).stack) :=
-  RScrub.resOk_reg0 (Sha224.finFn compress).reg fin224Ks (by taint_decide)
-theorem dig224Res : ResOk (Sha224.digFn compress).code (Sha224.digFn compress).contract
-    (Sha224.digFn compress).stack dig224Ks (chunks (Sha224.digFn compress).stack) :=
-  RScrub.resOk_reg0 (Sha224.digFn compress).reg dig224Ks (by taint_decide)
+theorem fin224Res : ResOk fin224F.code fin224F.contract
+    fin224F.stack fin224Ks (chunks fin224F.stack) :=
+  RScrub.resOk_reg0 fin224F.reg fin224Ks (by taint_decide)
+theorem dig224Res : ResOk dig224F.code dig224F.contract
+    dig224F.stack dig224Ks (chunks dig224F.stack) :=
+  RScrub.resOk_reg0 dig224F.reg dig224Ks (by taint_decide)
 
-def finalize224 : StreamFn := (Sha224.finFn compress).scrub .sse fin224Ks (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (Sha224.finOut compress) fin224Res
-def digest224 : StreamFn := (Sha224.digFn compress).scrub .sse dig224Ks (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (Sha224.digOut compress) dig224Res
+def finalize224 : StreamFn := fin224F.scrub .sse fin224Ks (by lit_decide) (by decide) (by decide)
+  (by lit_decide) (by decide) (Sha224.finOutS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0) fin224Res
+def digest224 : StreamFn := dig224F.scrub .sse dig224Ks (by lit_decide) (by decide) (by decide)
+  (by lit_decide) (by decide) (Sha224.digOutS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0) dig224Res
 
 theorem finalize224_noResidue :
-    NoResidue finalize224.code (Sha224.finFn compress).contract (Sha224.finFn compress).retBits :=
+    NoResidue finalize224.code fin224F.contract fin224F.retBits :=
   StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
 theorem digest224_noResidue :
-    NoResidue digest224.code (Sha224.digFn compress).contract (Sha224.digFn compress).retBits :=
+    NoResidue digest224.code dig224F.contract dig224F.retBits :=
   StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
 
 end Scrub
