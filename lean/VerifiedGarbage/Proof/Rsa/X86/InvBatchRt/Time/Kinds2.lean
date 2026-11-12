@@ -42,13 +42,13 @@ theorem inverse_frame (s : State) :
   · exact (((((u₀.keeps.mono (by decide)).trans k₁).trans k₂).trans k₃).trans k₄ |>.widen u₅.keeps).widen u₆.keeps
   · rw [u₆.mem, u₅.mem, m₄, m₃, m₂, m₁, u₀.mem]
 
-variable {L : Lay} {B : Addr} {Z len N : Nat} {args : Nat → BitVec 32} {sp : BitVec 32} {C : Nat → Prop}
+variable {L : Lay} {B : Addr} {Z len N n : Nat} {args : Nat → BitVec 32} {sp : BitVec 32} {C : Nat → Prop}
   {G : (Reg → BitVec 32) → Prop}
 
 theorem relSlots {hc : VG.Taint.Hint VG.X86.Taint.T}
     (h : (VG.Taint.check sseTaint (τ0 L) (.block (slots L)) hc).isSome = true) :
     RelCT isa (fun s t => Pre0 L B Z len N args sp s ∧ Pre0 L B Z len N args sp t) (.block (slots L))
-      (Both L B Z len N args sp (fun _ => True) fun _ => True ∧ True) :=
+      (Both L B Z len N (nw len) args sp (fun _ => True) fun _ => True ∧ True) :=
   leaf0 (fun s ps => by
     rw [show slots L = slots L ++ [] from (List.append_nil _).symm]
     exact slots_ok ps.1 ps.2.1 fun u H K O => WP.block_nil ⟨H, ps.2.2.keep K (by decide)
@@ -58,8 +58,8 @@ theorem relSlots {hc : VG.Taint.Hint VG.X86.Taint.T}
 /-- `delta = 1`. -/
 theorem relWinOne (hG : Stable [.eax] G) (hfit : 160 + 16 * (8 * nw len + 8) ≤ Z) {hc : VG.Taint.Hint VG.X86.Taint.T}
     (h : (VG.Taint.check sseTaint (τS L) (.block [.mov .eax (.imm 1), .store (sc win) .eax]) hc).isSome = true) :
-    RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True) (.block [.mov .eax (.imm 1), .store (sc win) .eax])
-      (Both L B Z len N args sp C fun g => G g ∧ True) :=
+    RelCT isa (Both L B Z len N n args sp C fun g => G g ∧ True) (.block [.mov .eax (.imm 1), .store (sc win) .eax])
+      (Both L B Z len N n args sp C fun g => G g ∧ True) :=
   relOp (ws := [(win, 4)]) (by decide) hG (fun w hw => by
       simp only [List.mem_singleton] at hw; subst w; exact ⟨.inr (by decide), by simp only [win]; omega⟩)
     (fun s hb _ => by
@@ -78,11 +78,11 @@ theorem relInverse (hG : Stable [.eax, .ebx, .ecx, .edx, .ebp] G)
     (hfit : 160 + 16 * (8 * nw len + 8) ≤ Z) {hc : VG.Taint.Hint VG.X86.Taint.T}
     (h : (VG.Taint.check sseTaint (τS L) (.block (ptr L .eax (a 2) .edx ++ ([.mov .ebx (.mem (at_ .eax 0))] : List Instr) ++
       VG.Impl.Mont.X86.Dynamic.inverse ++ ([.store (sc (win + 28)) .eax] : List Instr))) hc).isSome = true) :
-    RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True)
+    RelCT isa (Both L B Z len N n args sp C fun g => G g ∧ True)
       (.block (ptr L .eax (a 2) .edx ++ ([.mov .ebx (.mem (at_ .eax 0))] : List Instr) ++
         VG.Impl.Mont.X86.Dynamic.inverse ++ ([.store (sc (win + 28)) .eax] : List Instr)))
-      (Both L B Z len N args sp C fun g => G g ∧ True) := by
-  have r2 := rv_a len 2
+      (Both L B Z len N n args sp C fun g => G g ∧ True) := by
+  have r2 : rv (kw len) (a 2) n = 160 + 2 * (8 * nw len + 8) := (rv_h0 rfl n (kw len / 2)).trans (rv_a len 2)
   refine relOp (ws := [(win + 28, 4)]) (by decide) hG (fun w hw => by
       simp only [List.mem_singleton] at hw; subst w; exact ⟨.inr (by decide), by simp only [win]; omega⟩)
     (fun s hb _ => ?_) h
@@ -104,19 +104,17 @@ theorem relInverse (hG : Stable [.eax, .ebx, .ecx, .edx, .ebp] G)
     O₁₁.unch, trivial⟩
 
 /-- The batch count, `3 (n + 1)`. -/
-theorem relBatches (hG : Stable [.eax, .ecx] G) {hc : VG.Taint.Hint VG.X86.Taint.T}
+theorem relBatches (hG : Stable [.eax, .ecx] G) (hn4 : 4 * n + 16 < 2 ^ 32) {hc : VG.Taint.Hint VG.X86.Taint.T}
     (h : (VG.Taint.check sseTaint (τS L) (.block batches) hc).isSome = true) :
-    RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True) (.block batches)
-      (Both L B Z len N args sp (· = 3 * (nw len + 1)) fun g => G g ∧ True) :=
+    RelCT isa (Both L B Z len N n args sp C fun g => G g ∧ True) (.block batches)
+      (Both L B Z len N n args sp (· = 3 * (n + 1)) fun g => G g ∧ True) :=
   leafU (fun s ps => by
     have hb := ps.1
     have hn := hb.nowrap
     have hZ := hb.halfZ
-    have hw := kw_bound hb.ws.lenLe
-    have ke := kw_eq len
     have hf16 := hb.fits16
     unfold batches
-    refine nBytes_ok hb.ws.ws.workspace hb.slots hZ (by omega) (e := 1) (by decide) fun u₁₂ K₁₂ m₁₂ c₁₂ => ?_
+    refine nBytes_ok hb.ws.ws.workspace hb.slots hZ hn4 (e := 1) (by decide) fun u₁₂ K₁₂ m₁₂ c₁₂ => ?_
     refine VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun u₁₃ V₁₃ => ?_
     refine wp_movS rfl fun u₁₄ V₁₄ _ => wp_addS rfl fun u₁₅ V₁₅ _ => wp_addS rfl fun u₁₆ V₁₆ _ => ?_
     have K₁₆ : Keeps [.eax, .ecx] s u₁₆ :=
@@ -129,27 +127,27 @@ theorem relBatches (hG : Stable [.eax, .ecx] G) {hc : VG.Taint.Hint VG.X86.Taint
     have Kz := K₁₆.trans (Vz.keeps _)
     refine ⟨hb.keepHigh Kz (by decide) (by decide) Oz (by decide) (by omega),
       ps.2.1.keep Kz (by decide) (Oz.mono (Nat.zero_le _) (by omega)), ?_, hG _ _ Kz.1 ps.2.2.2.1, trivial⟩
-    show w32 z.mem B 100 = 3 * (nw len + 1)
+    show w32 z.mem B 100 = 3 * (n + 1)
     rw [Vz.mem, w32_write_self, V₁₆.gpr, V₁₅.gpr, V₁₅.other .ecx (by decide), V₁₄.gpr, V₁₄.other _ (by decide),
       V₁₃.gpr]
-    have e₁₂ : (u₁₂.gpr .eax).toNat = 4 * (nw len + 1) := by rw [c₁₂]; omega
-    have e₁₃ : (u₁₂.gpr .eax >>> 2).toNat = nw len + 1 := by
+    have e₁₂ : (u₁₂.gpr .eax).toNat = 4 * (n + 1) := by rw [c₁₂]; omega
+    have e₁₃ : (u₁₂.gpr .eax >>> 2).toNat = n + 1 := by
       rw [BitVec.toNat_ushiftRight, e₁₂, Nat.shiftRight_eq_div_pow]; omega
     simp only [BitVec.toNat_add, e₁₃]
     omega) h
 
 theorem relStart (hG : Stable wordClob G) (hfit : 160 + 16 * (8 * nw len + 8) ≤ Z) {hc : VG.Taint.Hint VG.X86.Taint.T}
     (h : (VG.Taint.check sseTaint (τS L) (.block (start L)) hc).isSome = true) :
-    RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True) (.block (start L))
-      (Both L B Z len N args sp C fun g => G g ∧ True) :=
+    RelCT isa (Both L B Z len N (nw len) args sp C fun g => G g ∧ True) (.block (start L))
+      (Both L B Z len N (nw len) args sp C fun g => G g ∧ True) :=
   relOp (ws := [(win + 4, 24)]) (by decide) hG (fun w hw => by
       simp only [List.mem_singleton] at hw; subst w; exact ⟨.inr (by decide), by simp only [win]; omega⟩)
     (fun s hb _ => WP.mono (start_ok hb) fun _ ⟨H, _, K, O⟩ => ⟨H, K, O.unch, trivial⟩) h
 
 theorem relWordSteps (hG : Stable wordClob G) (hfit : 160 + 16 * (8 * nw len + 8) ≤ Z) {hc : VG.Taint.Hint VG.X86.Taint.T}
     (h : (VG.Taint.check sseTaint (τS L) (VG.Impl.Weierstrass.X86.Inv.wordSteps win 30) hc).isSome = true) :
-    RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True) (VG.Impl.Weierstrass.X86.Inv.wordSteps win 30)
-      (Both L B Z len N args sp C fun g => G g ∧ True) :=
+    RelCT isa (Both L B Z len N n args sp C fun g => G g ∧ True) (VG.Impl.Weierstrass.X86.Inv.wordSteps win 30)
+      (Both L B Z len N n args sp C fun g => G g ∧ True) :=
   relOp (ws := [(win, 28)]) (by decide) hG (fun w hw => by
       simp only [List.mem_singleton] at hw; subst w; exact ⟨.inr (by decide), by simp only [win]; omega⟩)
     (fun s hb _ => WP.mono (VG.Proof.Weierstrass.X86.Inv.wordSteps_ok hb.ws.ws.workspace (t := win)
@@ -160,11 +158,11 @@ theorem relWordSteps (hG : Stable wordClob G) (hfit : 160 + 16 * (8 * nw len + 8
 theorem relCountDown {m : Nat} (hm : 1 ≤ m) (hm32 : m < 2 ^ 32) {hc : VG.Taint.Hint VG.X86.Taint.T}
     (h : (VG.Taint.check sseTaint (τS L) (.block [.mov .esi (.mem (sc 100)), decCounter, .store (sc 100) .esi,
       testCounter]) hc).isSome = true) :
-    RelCT isa (Both L B Z len N args sp (· = m) fun _ => True ∧ True)
+    RelCT isa (Both L B Z len N n args sp (· = m) fun _ => True ∧ True)
       (.block [.mov .esi (.mem (sc 100)), decCounter, .store (sc 100) .esi, testCounter])
-      (fun s t => Both L B Z len N args sp (· = m - 1) (fun _ => True ∧ True) s t ∧
+      (fun s t => Both L B Z len N n args sp (· = m - 1) (fun _ => True ∧ True) s t ∧
         s.zf = some (decide (m - 1 = 0)) ∧ t.zf = some (decide (m - 1 = 0))) :=
-  (leafU (Q := fun t => Pre L B Z len N args sp (fun g m' => (· = m - 1) (w32 m' B 100) ∧ True ∧ True) t ∧
+  (leafU (Q := fun t => Pre L B Z len N n args sp (fun g m' => (· = m - 1) (w32 m' B 100) ∧ True ∧ True) t ∧
       t.zf = some (decide (m - 1 = 0))) (fun s ps => by
     have hb := ps.1
     have hZ := hb.halfZ

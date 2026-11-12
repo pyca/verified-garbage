@@ -44,9 +44,9 @@ theorem Bx.keepLow {s t : State} {n : Nat} (h : Bx L s B Z len N n) {rs : List R
     exact h.slots.half
 
 /-- Writes to the header above the slots keep the context. -/
-theorem Bx.keepHigh {s t : State} (h : Bx L s B Z len N) {rs : List Reg} (K : Keeps rs s t)
+theorem Bx.keepHigh {s t : State} {n : Nat} (h : Bx L s B Z len N n) {rs : List Reg} (K : Keeps rs s t)
     (edi : .edi ∉ rs) (esp : .esp ∉ rs) {o c : Nat} (O : Outside B o c s.mem t.mem)
-    (ho : halfSlot + 4 ≤ o) (hc : o + c ≤ Z) : Bx L t B Z len N := by
+    (ho : halfSlot + 4 ≤ o) (hc : o + c ≤ Z) : Bx L t B Z len N n := by
   have nw := h.nowrap
   refine ⟨h.ws.keep K edi esp (O.mono (Nat.zero_le _) (by omega)), ⟨fun j d hd => ?_, ?_, h.slots.small, h.slots.pos⟩, h.room⟩
   · have := slot_le hd

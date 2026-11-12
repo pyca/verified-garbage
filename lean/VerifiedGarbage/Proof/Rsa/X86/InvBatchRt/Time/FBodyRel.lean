@@ -47,7 +47,8 @@ theorem checks₈ : BatchChecks lay 8 0 :=
     ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩⟩
 
 theorem relBatchF (F : Fits Z len) (h : Bool) :
-    RelCT isa (Both lay B Z len N args sp C T2) (batchF lay h) (Both lay B Z len N args sp C T2) := by
+    RelCT isa (Both lay B Z len N (nw len) args sp C T2) (batchF lay h)
+      (Both lay B Z len N (nw len) args sp C T2) := by
   rw [VG.Proof.Rsa.X86.InvBatchRt.F.batchF_eq]
   cases h
   · exact relBatchCodeF F (.inr ⟨rfl, rfl⟩) checks₈
@@ -55,21 +56,21 @@ theorem relBatchF (F : Fits Z len) (h : Bool) :
 
 /-- Two batches, then their count down by one. -/
 theorem relDouble {k : Nat} (F : Fits Z len) (hk : 1 ≤ k) (hk32 : k < 2 ^ 32) :
-    RelCT isa (Both lay B Z len N args sp (· = k) T2)
+    RelCT isa (Both lay B Z len N (nw len) args sp (· = k) T2)
       (seqs [batchF lay true, batchF lay false,
         .block [.mov .esi (.mem (sc 100)), decCounter, .store (sc 100) .esi, testCounter]])
-      (fun s t => Both lay B Z len N args sp (· = k - 1) T2 s t ∧
+      (fun s t => Both lay B Z len N (nw len) args sp (· = k - 1) T2 s t ∧
         s.zf = some (decide (k - 1 = 0)) ∧ t.zf = some (decide (k - 1 = 0))) := by
   simp only [seqs]
   exact RelCT.seq (relBatchF F true) (RelCT.seq (relBatchF F false) (relCountDown hk hk32 (by taint_decide)))
 
 /-- The double batches, from the count `K`. -/
 theorem relLoopF (F : Fits Z len) (K : Nat) :
-    RelCT isa (fun s t => Both lay B Z len N args sp (· = K) T2 s t ∧ 1 ≤ K ∧ K < 2 ^ 32)
+    RelCT isa (fun s t => Both lay B Z len N (nw len) args sp (· = K) T2 s t ∧ 1 ≤ K ∧ K < 2 ^ 32)
       (.loop (seqs [batchF lay true, batchF lay false,
         .block [.mov .esi (.mem (sc 100)), decCounter, .store (sc 100) .esi, testCounter]]) .ne)
-      (Both lay B Z len N args sp (· = 0) T2) := by
-  refine RelCT.loop (M := isa) (fun k s t => Both lay B Z len N args sp (· = k) T2 s t ∧
+      (Both lay B Z len N (nw len) args sp (· = 0) T2) := by
+  refine RelCT.loop (M := isa) (fun k s t => Both lay B Z len N (nw len) args sp (· = k) T2 s t ∧
     1 ≤ k ∧ k < 2 ^ 32) (fun k => ?_) K
   by_cases hk : 1 ≤ k ∧ k < 2 ^ 32
   swap
@@ -88,14 +89,16 @@ theorem relLoopF (F : Fits Z len) (K : Nat) :
 
 theorem relInitF (F : Fits Z len) :
     RelCT isa (fun s t => Pre0 lay B Z len N args sp s ∧ Pre0 lay B Z len N args sp t) (initF lay)
-      (Both lay B Z len N args sp (· = (3 * nw len + 2) / 2) T2) := by
+      (Both lay B Z len N (nw len) args sp (· = (3 * nw len + 2) / 2) T2) := by
   have F1 := F.fit
   have F2 := F.two
-  have r0 := rv_a len 0; have r2 := rv_a len 2; have r3 := rv_a len 3; have r7 := rv_a len 7
-  have r8 := rv_a len 8; have r12 := rv_a len 12
-  have r4 : rv (kw len) { arr := fgArr } = 160 + 4 * (8 * nw len + 8) := rv_a len 4
-  have r11 : rv (kw len) { arr := deArr } = 160 + 11 * (8 * nw len + 8) := rv_a len 11
-  have h21 := rv_half1' len 2; have h71 := rv_half1' len 7
+  have r0 := rv_a len 0 (nw len); have r2 := rv_a len 2 (nw len); have r3 := rv_a len 3 (nw len)
+  have r7 := rv_a len 7 (nw len)
+  have r8 := rv_a len 8 (nw len); have r12 := rv_a len 12 (nw len)
+  have r4 : rv (kw len) { arr := fgArr } (nw len) = 160 + 4 * (8 * nw len + 8) := rv_a len 4 (nw len)
+  have r11 : rv (kw len) { arr := deArr } (nw len) = 160 + 11 * (8 * nw len + 8) := rv_a len 11 (nw len)
+  have h21 : rv (kw len) { arr := 2, half := 1 } (nw len) = rv (kw len) (a 2) (nw len) + 4 * nw len := rv_half1' len 2
+  have h71 : rv (kw len) { arr := 7, half := 1 } (nw len) = rv (kw len) (a 7) (nw len) + 4 * nw len := rv_half1' len 7
   have f1 : fgSz * (nw len + 1) = 16 * (nw len + 1) := rfl
   have f2 : fgSz * (nw len + 2) = 16 * (nw len + 2) := rfl
   have d1 : deSz * (nw len + 1) = 20 * (nw len + 1) := rfl
@@ -126,18 +129,26 @@ theorem relInitF (F : Fits Z len) :
   exact relCountF F ⟨_, by taint_decide⟩
 
 theorem relFinishF (F : Fits Z len) :
-    RelCT isa (Both lay B Z len N args sp C T2) (finishF lay) (Both lay B Z len N args sp C T2) := by
+    RelCT isa (Both lay B Z len N (nw len) args sp C T2) (finishF lay)
+      (Both lay B Z len N (nw len) args sp C T2) := by
   have F1 := F.fit
   have F2 := F.two
   have ke := kw_eq len
-  have r1 := rv_a len 1; have r2 := rv_a len 2; have r3 := rv_a len 3; have r7 := rv_a len 7
-  have r12 := rv_a len 12; have r14 := rv_a len 14
-  have r4 : rv (kw len) { arr := fgArr } = 160 + 4 * (8 * nw len + 8) := rv_a len 4
-  have r11 : rv (kw len) { arr := deArr } = 160 + 11 * (8 * nw len + 8) := rv_a len 11
-  have h71 := rv_half1' len 7; have h141 := rv_half1' len 14
-  have h71' : rv (kw len) { arr := (a 7).arr, half := 1, byte := (a 7).byte } = rv (kw len) (a 7) + 4 * nw len := h71
-  have rt : rv (kw len) tmp = rv (kw len) (a 12) := rfl
-  have rmo : rv (kw len) mo = rv (kw len) (a 2) := rfl
+  have r1 := rv_a len 1 (nw len); have r2 := rv_a len 2 (nw len); have r3 := rv_a len 3 (nw len)
+  have r7 := rv_a len 7 (nw len)
+  have r12 := rv_a len 12 (nw len); have r14 := rv_a len 14 (nw len)
+  have r4 : rv (kw len) { arr := fgArr } (nw len) = 160 + 4 * (8 * nw len + 8) := rv_a len 4 (nw len)
+  have r11 : rv (kw len) { arr := deArr } (nw len) = 160 + 11 * (8 * nw len + 8) := rv_a len 11 (nw len)
+  have h71 : rv (kw len) { arr := 7, half := 1 } (nw len) = rv (kw len) (a 7) (nw len) + 4 * nw len := rv_half1' len 7
+  have h141 : rv (kw len) { arr := 14, half := 1 } (nw len) = rv (kw len) (a 14) (nw len) + 4 * nw len :=
+    rv_half1' len 14
+  have h71' : rv (kw len) { arr := (a 7).arr, half := 1, byte := (a 7).byte } (nw len) =
+      rv (kw len) (a 7) (nw len) + 4 * nw len := h71
+  have rt : rv (kw len) tmp (nw len) = rv (kw len) (a 12) (nw len) := rfl
+  have rmo : rv (kw len) mo (nw len) = rv (kw len) (a 2) (nw len) := rfl
+  -- `csub`'s places, at the default width it is stated at.
+  have r7' := rv_a len 7; have r12' := rv_a len 12
+  have rt' : rv (kw len) tmp = rv (kw len) (a 12) := rfl
   have f1 : fgSz * (nw len + 1) = 16 * (nw len + 1) := rfl
   have f2 : fgSz * (nw len + 2) = 16 * (nw len + 2) := rfl
   have d1 : deSz * (nw len + 1) = 20 * (nw len + 1) := rfl
@@ -172,7 +183,7 @@ theorem relFinishF (F : Fits Z len) :
 
 theorem relBody (F : Fits Z len) :
     RelCT isa (fun s t => Pre0 lay B Z len N args sp s ∧ Pre0 lay B Z len N args sp t) (body lay)
-      (Both lay B Z len N args sp (· = 0) T2) := by
+      (Both lay B Z len N (nw len) args sp (· = 0) T2) := by
   have F2 := F.two
   have F4 := F.small
   unfold body

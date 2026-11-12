@@ -40,11 +40,12 @@ theorem relCorrection {c i : Nat} (F : Room Z len) (hc4 : c + 4 ≤ 160) (hi : i
     (h₁ : Ok L (chain L .sbb tmp { (a 11) with byte := (a 11).byte + 4 } (a i) (nBytes .edx 0)))
     (h₂ : Ok L (.seq (.block (VG.Impl.Weierstrass.X86.Inv.maskOf c))
       (selIn L { (a 11) with byte := (a 11).byte + 4 } tmp (nBytes .edi 0)))) :
-    RelCT isa (Both L B Z len N args sp C T2) (correction L c (a 11) (a i) tmp) (Both L B Z len N args sp C T2) := by
+    RelCT isa (Both L B Z len N (nw len) args sp C T2) (correction L c (a 11) (a i) tmp)
+      (Both L B Z len N (nw len) args sp C T2) := by
   have F1 := F.fit
-  have r11 := rv_a len 11; have ri := rv_a len i; have r12 := rv_a len 12
-  have e4 := rv_byte (kw len) (a 11) 4
-  have rt : rv (kw len) tmp = rv (kw len) (a 12) := rfl
+  have r11 := rv_a len 11 (nw len); have ri := rv_a len i (nw len); have r12 := rv_a len 12 (nw len)
+  have e4 := rv_byte (kw len) (a 11) 4 (nw len)
+  have rt : rv (kw len) tmp (nw len) = rv (kw len) (a 12) (nw len) := rfl
   have hiS : i * (8 * nw len + 8) + (8 * nw len + 8) ≤ 11 * (8 * nw len + 8) :=
     by rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ hi
   obtain ⟨_, h₁⟩ := h₁; obtain ⟨_, h₂⟩ := h₂
@@ -63,8 +64,8 @@ theorem relLinear {u v i j e : Nat} (F : Room Z len) (hu : u + 4 ≤ 160) (hv : 
     (h₅ : Ok L (chain L .sbb tmp { (a 11) with byte := (a 11).byte + 4 } (a j) (nBytes .edx 0)))
     (h₆ : Ok L (.seq (.block (VG.Impl.Weierstrass.X86.Inv.maskOf v))
       (selIn L { (a 11) with byte := (a 11).byte + 4 } tmp (nBytes .edi 0)))) :
-    RelCT isa (Both L B Z len N args sp C T2) (linear L u v (a 11) (a i) (a j) tmp e)
-      (Both L B Z len N args sp C T2) := by
+    RelCT isa (Both L B Z len N (nw len) args sp C T2) (linear L u v (a 11) (a i) (a j) tmp e)
+      (Both L B Z len N (nw len) args sp C T2) := by
   have F1 := F.fit
   have F2 := F.two
   have r11 := rv_a len 11; have ri := rv_a len i; have rj := rv_a len j
@@ -90,13 +91,18 @@ theorem relCsub {G : (Reg → BitVec 32) → Prop} {src o : Ref}
     (h₃ : Ok L (if o = src then selIn L o tmp (nBytes .edi 0)
       else .seq (.block (ptr L .ebp src .edx ++ ptr L .ebx tmp .edx ++ nBytes .edx 0 ++ ptr L .edi o .eax))
         (.seq select3LoopX (.block (restoreEdi L))))) :
-    RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True) (VG.Impl.Rsa.X86.InvBatchRt.csub L src o)
-      (Both L B Z len N args sp C fun g => G g ∧ True) := by
+    RelCT isa (Both L B Z len N (nw len) args sp C fun g => G g ∧ True) (VG.Impl.Rsa.X86.InvBatchRt.csub L src o)
+      (Both L B Z len N (nw len) args sp C fun g => G g ∧ True) := by
   have F1 := F.fit
   have r12 := rv_a len 12; have r2 := rv_a len 2
   have rt : rv (kw len) tmp = rv (kw len) (a 12) := rfl
   have rmo : rv (kw len) mo = rv (kw len) (a 2) := rfl
   have rs := rv_ge (kw len) src
+  -- The parts' statements at rows of `nw len` words, the same places.
+  have qs : rv (kw len) src (nw len) = rv (kw len) src := rfl
+  have qo : rv (kw len) o (nw len) = rv (kw len) o := rfl
+  have qt : rv (kw len) tmp (nw len) = rv (kw len) tmp := rfl
+  have qm : rv (kw len) mo (nw len) = rv (kw len) mo := rfl
   obtain ⟨_, h₁⟩ := h₁; obtain ⟨_, h₂⟩ := h₂; obtain ⟨_, h₃⟩ := h₃
   unfold VG.Impl.Rsa.X86.InvBatchRt.csub
   refine RelCT.seq (relChainSub (X := Mask) hG (fun _ h => h) (by decide) rfl

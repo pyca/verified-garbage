@@ -28,8 +28,8 @@ theorem rv_half1 (w : Nat) (x : Ref) (hx : x.half = 0) (n : Nat := w / 2) :
 theorem rv_byte (w : Nat) (x : Ref) (d : Nat) (n : Nat := w / 2) : rv w { x with byte := x.byte + d } n = rv w x n + d := by
   simp only [rv]; omega
 
-theorem rv_a (len j : Nat) : rv (kw len) (a j) = 160 + j * (8 * nw len + 8) := by
-  have := rv_arr (kw len) j 0
+theorem rv_a (len j : Nat) (n : Nat := kw len / 2) : rv (kw len) (a j) n = 160 + j * (8 * nw len + 8) := by
+  have := rv_arr (kw len) j 0 n
   have ke := kw_eq len
   rw [show 4 * kw len + 8 = 8 * nw len + 8 by omega] at this
   simp only [a]; omega
