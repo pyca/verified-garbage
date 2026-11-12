@@ -222,6 +222,13 @@ def prep (a r m nm : Nat) : Prog isa := seqs [
   .block [.mov .r0 (.shifted .r9 .lsr 1), .dp .sub .r0 .r9 (.reg .r0), .mov .r0 (.shifted .r0 .lsl 2),
     .str .r0 .r8 sJ]]
 
+/-- `[m]`'s top word (`w / 2 - 1`) made not zero, `1` if it is zero: a divisor copied
+from a number that may be shorter than `w / 2` words. -/
+def fixTop (m : Nat) : List Instr :=
+  topPtr .r0 m 1 .r1 ++ [.ldr .r2 .r0 0, .mov .r3 (.imm 0), .dp .sub .r3 .r3 (.reg .r2),
+    .dp .orr .r3 .r3 (.reg .r2), .mov .r3 (.shifted .r3 .lsr 31), .dp .eor .r3 .r3 (.imm 1),
+    .dp .add .r2 .r2 (.reg .r3), .str .r2 .r0 0]
+
 /-- `[r] := [a] mod [m]`, for `[m]` of `w / 2` words, its top word not zero,
 through `[t]`, `[nm]` and `[u]`. The steps run while the window's offset, counted
 down, does not underflow. -/

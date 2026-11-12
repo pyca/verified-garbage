@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.Arm.MulMod
 public import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
 public import VerifiedGarbage.Impl.Bignum.Arm.ExponentCheck
+public import VerifiedGarbage.Impl.Rsa.Arm.KeyDiv
 
 /-! # The checks of an RSA private key on ARMv7
 
@@ -167,6 +168,43 @@ def dChecks3 : Prog isa := seqs (eqA aVR aDQ)
 /-- The checks of `vg_rsa_check_key`. -/
 def keyBody : Prog isa := seqs [crtBody, dChecks1, Rsa.Arm.Div.code, .block ctxDiv, dChecks2,
   Rsa.Arm.Div.code, .block ctxDiv, dChecks3]
+
+/-! ## Balanced keys, by words -/
+
+/-- `Z` exactly for a balanced key: `p_len` and `q_len` (the stack words at `oP`
+and `oQ`) both `2 w` bytes and `w = ⌈n_len / 4⌉` (from `r11`) even, so that `p` and
+`q` have `w / 2` words and `p q` is below `2^(32 w)`. From the lengths alone. -/
+def shape (oP oQ : Nat) : List Instr :=
+  [.dp .add .r3 .r11 (.imm 3), .mov .r3 (.shifted .r3 .lsr 2), .ldrSp .r0 oP, .ldrSp .r1 oQ,
+    .mov .r2 (.shifted .r3 .lsl 1), .dp .eor .r0 .r0 (.reg .r2), .dp .eor .r1 .r1 (.reg .r2),
+    .dp .orr .r0 .r0 (.reg .r1), .dp .and .r2 .r3 (.imm 1), .dp .orr .r0 .r0 (.reg .r2), .cmp .r0 (.imm 0)]
+
+/-- `[aVR] := [a] mod [d]` by words (`KeyDiv.divW`): `[d]`, of `w / 2` words, copied
+to `aVD` with its top word made not zero (as it is for `p`, `p - 1`, `q` and `q - 1`
+when `p q = n`), through `aVT`, `aY` and `aX`. -/
+def divK (a d : Nat) : List (Prog isa) :=
+  [copy aVD d, .block (KeyDiv.fixTop aVD), KeyDiv.divW a aVR aVD aVT aY aX]
+
+/-- `w` again, `1` and the mask `p` odd. -/
+def startW : Prog isa := .block (ctxK ++ setOne aOne ++ bitOf sMask aP)
+
+/-- `crtChecks` for a balanced key: `p q = n` by `p q mod 2^(32 w)` (`KeyDiv.mulLo`,
+exact there), and `q qInv mod p` by words. -/
+def crtChecksW : List (Prog isa) := [KeyDiv.mulLo aVQ aP aQ] ++ eqA aVQ aN ++
+  [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++
+  ltA aDP aM1 ++ mulA aE aDP aM1 cnt33 ++ eqA aA aOne ++
+  ltA aDQ aM2 ++ mulA aE aDQ aM2 cnt33 ++ eqA aA aOne ++
+  ltA aQI aP ++ [KeyDiv.mulLo aT aQ aQI] ++ divK aT aP ++ eqA aVR aOne
+
+/-- The checks of `d` for a balanced key: its remainders by words. -/
+def dChecksW : List (Prog isa) := ltA aD aN ++ divK aD aM1 ++ eqA aVR aDP ++ divK aD aM2 ++ eqA aVR aDQ
+
+/-- `keyBody` for a balanced key. -/
+def keyBodyW : Prog isa := seqs ([startW] ++ crtChecksW ++ dChecksW)
+
+/-- The checks of `vg_rsa_check_key`: by words for a balanced key (`shape`, with
+`p_len` and `q_len` at the stack offsets `oP` and `oQ`), else `keyBody`. -/
+def keyBodyS (oP oQ : Nat) : Prog isa := .seq (.block (shape oP oQ)) (.ite .eq keyBodyW keyBody)
 
 /-! ## Exit -/
 
