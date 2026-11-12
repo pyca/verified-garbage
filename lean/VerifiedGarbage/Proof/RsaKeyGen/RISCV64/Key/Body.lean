@@ -222,4 +222,47 @@ theorem body_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 s : State} (h : PreC s0) (c : 
   · rw [k11.arrs _ (by decide)]; vsimp [o11, o10, vDQ, o8, o7, o6, qm5]
   · rw [k11.arrs _ (by decide)]; vsimp [o11, o10, o9]
 
+/-- The body through `dPart`: `KE` (for the constant-time proof's cut after
+the inverse of `dPart`'s branch). -/
+theorem dFront_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
+    (ha7 : s.gpr .a7 = stackArg s0 7) :
+    WP isa (seqs (setup :: loads :: (consts ++ [primes, lcmPart, dPart]))) s fun t => ∃ V F, KE s0 V F t := by
+  have hel := eIn_lt h
+  rw [show setup :: loads :: (consts ++ [primes, lcmPart, dPart]) =
+      (setup :: loads :: (consts ++ [primes, lcmPart])) ++ [dPart] by simp,
+    wp_seqs_append (List.cons_ne_nil _ _) (List.cons_ne_nil _ _)]
+  refine WP.mono (front_ok h c ha7) fun t5 ⟨c5, dv, one5, two5, three5, zero5, _, _, _, e5, _⟩ => ?_
+  exact WP.mono (dPart_ok h (KE.of_st c5 dv) (by rw [e5]; exact hel) one5 two5 three5 zero5)
+    fun t ⟨V, F, k, _⟩ => ⟨V, F, k⟩
+
+/-- The body through `crtPart`: `KE` (for the constant-time proof's cut after
+the last inverse). -/
+theorem crtFront_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
+    (ha7 : s.gpr .a7 = stackArg s0 7) :
+    WP isa (seqs (setup :: loads :: (consts ++ [primes, lcmPart, dPart, smallPart, qinvPart, crtPart]))) s
+      fun t => ∃ V F, KE s0 V F t := by
+  have hpl := kP_lt s0
+  have hql := kQ_lt s0
+  have hel := eIn_lt h
+  rw [show setup :: loads :: (consts ++ [primes, lcmPart, dPart, smallPart, qinvPart, crtPart]) =
+      (setup :: loads :: (consts ++ [primes, lcmPart])) ++ [dPart, smallPart, qinvPart, crtPart] by simp,
+    wp_seqs_append (List.cons_ne_nil _ _) (List.cons_ne_nil _ _)]
+  refine WP.mono (front_ok h c ha7) fun t5 ⟨c5, dv, one5, two5, three5, zero5, c5', c335, top5, e5, p5, q5, pm5,
+    qm5, l5⟩ => ?_
+  have k5 := KE.of_st c5 dv
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (dPart_ok h k5 (by rw [e5]; exact hel) one5 two5 three5 zero5)
+    fun t6 ⟨V6, F6, k6, o6, p6, x3, x5, x6, vD⟩ => ?_
+  simp only [e5, l5] at x3 x5 x6 vD
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (smallPart_ok k6 (flag_le x6)) fun t7 ⟨V7, F7, k7, o7, p7, x7⟩ => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  have vP7 : V7 aP = kP s0 := by vsimp [o7, o6, p5]
+  have vQ7 : V7 aQ = kQ s0 := by vsimp [o7, o6, q5]
+  refine WP.mono (qinvPart_ok h k7 (by vsimp [o7, o6, one5]) (by vsimp [o7, o6, three5])
+    (by vsimp [o7, o6, zero5]) (by rw [vP7]; exact hpl) (by rw [vQ7]; exact hql))
+    fun t8 ⟨V8, F8, k8, o8, p8, y0, y1, xl, xd⟩ => ?_
+  exact WP.mono (crtPart_ok k8 (by vsimp [o8, o7, o6, one5]) (by vsimp [o8, o7, o6, zero5]))
+    fun t9 ⟨V9, F9, k9, _⟩ => ⟨V9, F9, k9⟩
+
 end VG.Proof.RsaKeyGen.RISCV64.Key

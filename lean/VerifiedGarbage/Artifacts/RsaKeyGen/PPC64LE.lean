@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Backend
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Generate.Verified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.IbInverse
+public import VerifiedGarbage.Proof.Divstep.TcSBounds
 public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 
 /-! # RSA key generation (FIPS 186-5 A.1.3) on PPC64LE -/
