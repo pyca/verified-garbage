@@ -51,9 +51,11 @@ working space in a frame of its own. -/
 def ctrFn : Fn :=
   ⟨"vg_sm4_ctr32", Impl.StackScratch.X86_64.withStackScratchWiped 3208 .r8 400 Impl.Sm4.X86_64.ctr32⟩
 
-/-- `vg_sm4_expand_key`, as registered (`Artifacts/Sm4/X86_64.lean`). -/
+/-- `vg_sm4_expand_key`'s code, as registered (`Artifacts/Sm4/X86_64.lean`)
+before the clearing of what it leaves (`Proof.Sm4.X86_64.Scrub.expandKeyReg`):
+called as an internal function of its own, `vg_sm4_expand_key_core`. -/
 def keyFn : Fn :=
-  ⟨"vg_sm4_expand_key", Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rdx 392 Impl.Sm4.X86_64.expandKey⟩
+  ⟨"vg_sm4_expand_key_core", Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rdx 392 Impl.Sm4.X86_64.expandKey⟩
 
 variable (c : Callees)
 

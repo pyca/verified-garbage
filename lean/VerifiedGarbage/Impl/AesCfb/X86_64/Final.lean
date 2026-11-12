@@ -77,13 +77,16 @@ def final (name : String) (whole : Prog isa) (b : Blocks) : Prog isa :=
     (.seq (.block [.alu .test .r14 (.reg .r14)]) (.seq (.ite .e (.block []) (finalTail b))
       (.seq (.block loadSave) (.block finalRestore))))))
 
-/-- `vg_aes_cfb128_encrypt_final`, calling `vg_aes_cfb128_encrypt` with the
-block function `b`, whose callers' names end in `sfx`. -/
+/-- `vg_aes_cfb128_encrypt_final`, calling `vg_aes_cfb128_encrypt`'s code with
+the block function `b`, whose callers' names end in `sfx`, as an internal
+function of its own, `vg_aes_cfb128_encrypt<sfx>_core`: `vg_aes_cfb128_encrypt`
+may also clear what it leaves (`Proof.Aes.X86_64.ModesScrub.cfbEncryptReg`). -/
 def encryptFinal (b : Blocks) (sfx : String) : Prog isa :=
-  final ("vg_aes_cfb128_encrypt" ++ sfx) (encrypt b) b
+  final ("vg_aes_cfb128_encrypt" ++ sfx ++ "_core") (encrypt b) b
 
-/-- `vg_aes_cfb128_decrypt_final`, calling `vg_aes_cfb128_decrypt`. -/
+/-- `vg_aes_cfb128_decrypt_final`, calling `vg_aes_cfb128_decrypt`'s code as
+`vg_aes_cfb128_decrypt<sfx>_core`. -/
 def decryptFinal (b : Blocks) (sfx : String) : Prog isa :=
-  final ("vg_aes_cfb128_decrypt" ++ sfx) (decrypt b) b
+  final ("vg_aes_cfb128_decrypt" ++ sfx ++ "_core") (decrypt b) b
 
 end VG.Impl.AesCfb.X86_64

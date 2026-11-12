@@ -122,8 +122,8 @@ theorem main_ct : RelCT isa (Two M0) main fun _ _ => True := by
       (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a.kp, h₁, h₂⟩) fun _ _ h => h))
   refine RelCT.seqs_append (by simp [loadNum]) (by simp) (RelCT.seq
     (kk_app (by simp [loadNum]) (by simp [VG.Impl.Rsa.X86_64.Crt.eqCheck]) (kk_app (by simp [loadNum])
-      (by simp [mulXR, VG.Impl.Rsa.X86_64.Crt.zeroAccs]) (kk_app (by simp [loadNum]) (by simp [loadNum]) ld_PX ld_QR)
-      mulXRK_ct) eqCheckK_ct) ?_)
+      (by simp [mulPQ, VG.Impl.Rsa.X86_64.Crt.zeroAccs]) (kk_app (by simp [loadNum]) (by simp [loadNum]) ld_PX ld_QR)
+      mulPQK_ct) eqCheckK_ct) ?_)
   simp only [seqs]
   refine RelCT.seq (RelCT.seq guard_ct (two_ite (fun p s₁ s₂ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_)) outK_ct
   · exact wordChecks_ct.mono (fun _ _ h => two_mono (fun _ _ h => h.1.1) h) fun _ _ h => h

@@ -203,6 +203,18 @@ the `s9` words of `[y]`. -/
 def mulLow (o y x : Nat) : Prog isa :=
   .seq (.block (ptr .a2 y ++ ptr .a3 o ++ [mov .s8 .s9])) (.loop (mulRow x) (.nonzero .s8))
 
+/-- A row of `mulHalf`: `[o] += y_i [x] 2^(64 i)` over the low `w / 2` words of `[x]`, for `y_i` the
+word at `a2` and `a3` the word `i` of `[o]`, the carry stored to word `i + w / 2`; then the next row's. -/
+def mulRowH (x : Nat) : Prog isa :=
+  .seq (.block ([.load .d .a6 .a2 0, mov .t0 .a3] ++ ptr .t1 x ++ [.shift .srl .d .t3 .s9 1, .li .t4 0]))
+    (.seq (countLoop .t3 mulBody)
+      (.block [.store .d .t4 .t0 0, .addi .a2 .a2 8, .addi .a3 .a3 8, .addi .s8 .s8 (-1)]))
+
+/-- `[o] := [y] [x]`, from `[o] = 0`, for `[y]` and `[x]` of `w / 2` words: a row for each of the
+`w / 2` words of `[y]`. -/
+def mulHalf (o y x : Nat) : Prog isa :=
+  .seq (.block (ptr .a2 y ++ ptr .a3 o ++ [.shift .srl .d .s8 .s9 1])) (.loop (mulRowH x) (.nonzero .s8))
+
 /-- A step less. -/
 def next : List Instr := [.addi .s7 .s7 (-1)]
 

@@ -92,6 +92,17 @@ theorem ckMulXR_ok {I : CkIn} {m₀ : Mem} {s : State} (h : CkS I m₀ s) (L : C
     ⟨h.arr (by decide) (Nat.le_refl _) o k (by decide), mword_arr o, hv,
       fun _ hi hij => h.av_out o (Nat.le_refl _) hi hij⟩
 
+/-- `mulPQ`: `[aA] := [aX] [aR]`, for `[aX] < 256^p_len` and `[aR] < 256^q_len`. -/
+theorem ckMulPQ_ok {I : CkIn} {m₀ : Mem} {s : State} (h : CkS I m₀ s) (L : CkLens I)
+    (hX : I.av s.mem aX < 256 ^ I.pl) (hR : I.av s.mem aR < 256 ^ I.ql) :
+    WP isa (seqs mulPQ) s fun t =>
+      CkS I m₀ t ∧ mword t.mem I.B = mword s.mem I.B ∧ I.av t.mem aA = I.av s.mem aX * I.av s.mem aR ∧
+      ∀ i < 16, i ≠ aA → I.av t.mem i = I.av s.mem i :=
+  WP.mono (mulPQ_ok h.ws h.args.pl h.args.ql L.pl1 L.ql1 (by have := L.pcap; simp only [wk]; omega)
+    (by have := L.qcap; simp only [wk]; omega) rfl hX rfl hR) fun _ ⟨hv, o, k⟩ =>
+    ⟨h.arr (by decide) (Nat.le_refl _) o k (by decide), mword_arr o, hv,
+      fun _ hi hij => h.av_out o (Nat.le_refl _) hi hij⟩
+
 /-- `decA aM`: `[aM] - 1`, for an odd `[aM]`. -/
 theorem ckDec_ok {I : CkIn} {m₀ : Mem} {s : State} (h : CkS I m₀ s) :
     WP isa (.block (decA aM)) s fun t =>

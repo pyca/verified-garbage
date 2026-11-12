@@ -15,9 +15,11 @@ import VerifiedGarbage.Proof.Framework.Offset
 a function of signature `sig`: everything in the registers is the same in
 both runs (`Outside 0`), the writable regions are its writable buffers (of
 their lengths, if fixed, and their addresses in the argument registers),
-and its window is the `stack` bytes below the stack pointer, which hold the
-same bytes in both runs (`init_agree`). If the analysis of its code ends
-with the window as it started, the window's bytes the analysis cannot show
+its window is the `stack` bytes below the stack pointer, which hold the
+same bytes in both runs, and of its stack arguments, those the contract
+says are public are the same in both runs (`saOf`), and those that are
+writable buffers hold their addresses (`spAux`) (`init_agree`). If the
+analysis of its code ends with the window as it started, the window's bytes the analysis cannot show
 equal in both runs are those `sec` lists; `scrub` then need wipe only the
 16-byte granules that hold them (`keepOf`), and `resOk_of_check` gives
 `Verified.scrub` the rest (`Scrub.ResOk`).
@@ -53,11 +55,31 @@ def allX : RegSet XReg := RegSet.ofList
   [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7,
    .xmm8, .xmm9, .xmm10, .xmm11, .xmm12, .xmm13, .xmm14, .xmm15]
 
+/-- The widths of the argument words of `sig`. -/
+def widths (sig : Sig) : List Nat := (sig.words 64).map (·.bits 64)
+
+/-- The number of argument words passed on the stack. -/
+def nStack (sig : Sig) : Nat := (widths sig).length - argRegs.length
+
+/-- The bytes of the argument area that are public: those of each public
+argument passed on the stack, as many as its width. -/
+def saOf (sig : Sig) : List (Nat × Nat) :=
+  (List.range (nStack sig)).filterMap fun k =>
+    if (sig.params.flatMap (·.2.pubs)).getD (argRegs.length + k) false then
+      some (8 * k, min 8 ((widths sig).getD (argRegs.length + k) 64 / 8))
+    else none
+
+/-- The stack arguments holding the address of writable buffer `i`, `i + 1`, …. -/
+def spAux : List (Nat × Nat) → Nat → List (Nat × Nat × Nat)
+  | [], _ => []
+  | q :: qs, i =>
+    (if argRegs.length ≤ q.1 then [(8 * (q.1 - argRegs.length), i, 0)] else []) ++ spAux qs (i + 1)
+
 /-- Where the analysis of a function of signature `sig` starts. -/
 def init (sig : Sig) (stack : Nat) (pubs : List (Nat × Nat × Nat) := []) : FT :=
   let ws := wrInfo sig.params 0
   let t : Taint.T := ⟨allRegs, true, ws.map (·.2), basesAux ws 0, pubs, .empty, allX⟩
-  ⟨true, t, 0, 0, stack, [], [], [], none, [], []⟩
+  ⟨true, t, 0, 0, stack, [], [], [], none, [], [], 8 * nStack sig, saOf sig, spAux ws 0⟩
 
 /-- The writable buffers. -/
 def wrOf (ps : List (String × Param)) (vs : List (BitVec 64)) : List Region :=
@@ -210,6 +232,56 @@ theorem abi_vals {ws : List Nat} {f : State → List (BitVec 64)} (h : abi.args 
   · simp [List.getD_eq_getElem?_getD, hw, List.getElem?_eq_getElem hlt]
   · simp [List.getD_eq_getElem?_getD, List.getElem?_append_left, hlt]
 
+/-! ## The argument area at the start -/
+
+theorem spAux_mem : ∀ {qs : List (Nat × Nat)} {i : Nat} {e : Nat × Nat × Nat}, e ∈ spAux qs i →
+    ∃ j, ∃ h : j < qs.length, argRegs.length ≤ qs[j].1 ∧ e = (8 * (qs[j].1 - argRegs.length), i + j, 0)
+  | [], _, _, h => by simp [spAux] at h
+  | q :: qs, i, e, h => by
+    simp only [spAux, List.mem_append] at h
+    rcases h with h | h
+    · split at h
+      · rename_i hq
+        simp only [List.mem_singleton] at h; subst h
+        exact ⟨0, by simp, hq, by simp⟩
+      · cases h
+    · obtain ⟨j, hj, h1, h2⟩ := spAux_mem h
+      exact ⟨j + 1, by simp; omega, by simpa using h1, by
+        rw [h2, List.getElem_cons_succ, Nat.add_assoc, Nat.add_comm 1 j]⟩
+
+/-- The value of a stack argument. -/
+theorem abi_stack_vals {ws : List Nat} {f : State → List (BitVec 64)} (h : abi.args ws = some f) {k : Nat}
+    (hk : argRegs.length + k < ws.length) (s : State) : (f s).getD (argRegs.length + k) 0 = stackArg s k := by
+  simp only [abi] at h
+  split at h
+  · rename_i hl; omega
+  · cases h
+    rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by simp)]
+    simp only [List.length_map, Nat.add_sub_cancel_left, List.getElem?_map, List.getElem?_range (by omega : k < ws.length - argRegs.length), Option.map_some, Option.getD_some]
+
+/-- `aa` at `init`: the stack pointer on entry plus `8 + o`. -/
+theorem aa_init (sig : Sig) (stack : Nat) (pubs : List (Nat × Nat × Nat)) (s : State) (o : Nat) :
+    aa s (init sig stack pubs) o = s.gpr .rsp + BitVec.ofNat 64 (8 + o) := by
+  simp only [aa, wa, wb, init]
+  rw [show stack + 0 + 8 + o = stack + (8 + o) by omega, BitVec.ofNat_add stack (8 + o), ← BitVec.add_assoc,
+    BitVec.sub_add_cancel]
+
+/-- Byte `j` of a 64-bit little-endian word. -/
+theorem readW64_byte (m : Mem) (a : Addr) {j : Nat} (hj : j < 8) :
+    m (a + BitVec.ofNat 64 j) = (m.readW a 64).extractLsb' (8 * j) 8 := by
+  rw [← Mem.extractLsb'_read m a (n := 8) hj]
+  simp only [Mem.readW]
+  rfl
+
+/-- The bytes of two words that agree on their low `w` bits. -/
+theorem byte_of_setWidth {x y : BitVec 64} {w j : Nat} (h : x.setWidth w = y.setWidth w) (hj : 8 * j + 8 ≤ w) :
+    x.extractLsb' (8 * j) 8 = y.extractLsb' (8 * j) 8 := by
+  ext i hi
+  have := congrArg (fun z => z.getLsbD (8 * j + i)) h
+  simp only [BitVec.getLsbD_setWidth, show 8 * j + i < w by omega, decide_true, Bool.true_and] at this
+  simp only [BitVec.getElem_extractLsb']
+  exact this
+
 section
 variable {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
   {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
@@ -264,6 +336,155 @@ theorem init_wf (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} {s : State} 
     rw [← hv, ← hb]
     simp [region, hw, BitVec.add_zero]
 
+theorem widths_eq (hA : ScrubAbi A) (sig : Sig) :
+    (sig.words A.ptrBits).map (·.bits A.ptrBits) = widths sig := by
+  rw [hA.ptrBits]; rfl
+
+theorem nStack_argArea (sig : Sig) (s : State) (hn : 0 < nStack sig) :
+    abi.argArea (widths sig) s = [(⟨stackArgAddr s 0, 8 * nStack sig⟩, false)] := by
+  simp only [nStack] at hn
+  simp only [abi, nStack, show ¬ ((widths sig).length - argRegs.length = 0) by omega, ↓reduceIte]
+
+/-- What the precondition gives of the argument area: it does not wrap, and
+no writable region holds a byte of it. -/
+theorem pre_argArea (hA : ScrubAbi A) {s : State} (h : (sig.contract A pre post wa stack leak).pre s) :
+    (0 < nStack sig → (s.gpr .rsp).toNat + 8 + 8 * nStack sig ≤ 2 ^ 64) ∧
+    ∀ k < 8 * nStack sig, ∀ r ∈ s.wr, ¬ r.Contains (s.gpr .rsp + BitVec.ofNat 64 (8 + k)) 1 := by
+  simp only [Sig.contract] at h
+  split at h
+  · exact h.elim
+  rename_i vals hvals
+  obtain ⟨hwf, -, hwr, hpw, -⟩ := h
+  rw [widths_eq hA] at hwf hwr hpw
+  have h6 : argRegs.length = 6 := rfl
+  have htop : 0 < nStack sig → (s.gpr .rsp).toNat + 8 + 8 * nStack sig ≤ 2 ^ 64 := fun hn => by
+    have := hA.wfAbi _ _ _ hwf
+    simp only [abi] at this
+    split at this
+    · rename_i hl; simp only [nStack] at hn; omega
+    · have := this.2; simp only [nStack] at hn ⊢; omega
+  refine ⟨htop, fun k hk r hr => ?_⟩
+  · have hn : 0 < nStack sig := by omega
+    rw [← hA.wr, hwr, hA.argArea, nStack_argArea sig s hn] at hr
+    rw [hA.argArea, nStack_argArea sig s hn] at hpw
+    simp only [List.map_cons, List.map_nil, Bool.false_and] at hr hpw
+    obtain ⟨a, ha, rfl⟩ := List.mem_map.mp hr
+    obtain ⟨ha, ha2⟩ := List.mem_filter.mp ha
+    rcases List.mem_append.mp ha with ha | ha
+    · have hd := (List.pairwise_append.mp hpw).2.2 a ha _ (List.mem_singleton_self _) (by simp [ha2])
+      intro hc
+      refine hd _ hc ?_
+      simp only [stackArgAddr]
+      rw [show 8 + k = 8 * (0 + 1) + k by omega, ← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc]
+      exact Offset.contains_base _ (by omega) (by have := htop hn; omega)
+    · simp only [List.mem_singleton] at ha; subst ha; simp at ha2
+
+/-- The arguments' values, and the writable regions they give. -/
+theorem pre_vals (hA : ScrubAbi A) {s : State} (h : (sig.contract A pre post wa stack leak).pre s) :
+    ∃ vals, abi.args (widths sig) = some vals ∧ s.wr = wrOf sig.params (vals s) ∧
+      (vals s).length = (sig.params.flatMap (·.2.words 64)).length := by
+  simp only [Sig.contract] at h
+  split at h
+  · exact h.elim
+  rename_i vals hvals
+  obtain ⟨-, -, hwr, -⟩ := h
+  have hl : (vals s).length = (sig.params.flatMap (·.2.words 64)).length := by
+    rw [hA.argsLen _ _ hvals s, List.length_map]
+    show (sig.params.flatMap (·.2.words A.ptrBits)).length = _
+    rw [hA.ptrBits]
+  refine ⟨vals, by rw [← hA.args, ← widths_eq hA]; exact hvals, ?_, hl⟩
+  rw [← hA.wr, hwr]
+  simp only [List.filter_append, List.map_append, wrOf]
+  have e1 : (List.map (fun r => (r, false)) (Sig.lists A.ptrBits (A.mem s) sig.params (vals s))).filter (·.2) = [] := by
+    simp
+  have e2 : ((A.argArea ((sig.words A.ptrBits).map (·.bits A.ptrBits)) s).map
+      (fun (r, w) => (r, w && wa))).filter (·.2) = [] := by
+    rw [List.filter_eq_nil_iff]
+    intro a ha
+    obtain ⟨b, hb, rfl⟩ := List.mem_map.mp ha
+    simp [hA.argRo _ _ b hb]
+  rw [e1, e2]; simp
+
+/-- The stack arguments `init` says hold the addresses of writable buffers do. -/
+theorem init_sp (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} {s : State}
+    (h : (sig.contract A pre post wa stack leak).pre s) :
+    (∀ e ∈ (init sig stack pubs).sp, s.mem.readW (aa s (init sig stack pubs) e.1) 64 =
+      (region s e.2.1).base + BitVec.ofNat 64 e.2.2) ∧
+    ∀ e ∈ (init sig stack pubs).sp, e.1 + 8 ≤ (init sig stack pubs).an := by
+  obtain ⟨vals, hv, hw, hl⟩ := pre_vals hA h
+  have hwl : (widths sig).length = (sig.params.flatMap (·.2.words 64)).length := by
+    simp [widths, Sig.words]
+  have key : ∀ e ∈ (init sig stack pubs).sp, ∃ j, ∃ hj : j < (wrInfo sig.params 0).length,
+      argRegs.length ≤ (wrInfo sig.params 0)[j].1 ∧ (wrInfo sig.params 0)[j].1 < (vals s).length ∧
+      e = (8 * ((wrInfo sig.params 0)[j].1 - argRegs.length), j, 0) := by
+    intro e he
+    simp only [init] at he
+    obtain ⟨j, hj, h6, rfl⟩ := spAux_mem he
+    obtain ⟨-, hlt, -⟩ := (wr_info sig.params (vals s) 0 hl).2 j hj
+    exact ⟨j, hj, h6, by simpa using hlt, by simp⟩
+  refine ⟨fun e he => ?_, fun e he => ?_⟩
+  · obtain ⟨j, hj, h6, hlt, rfl⟩ := key e he
+    obtain ⟨-, -, hb⟩ := (wr_info sig.params (vals s) 0 hl).2 j hj
+    simp only [Nat.sub_zero] at hb
+    have hk : argRegs.length + ((wrInfo sig.params 0)[j].1 - argRegs.length) < (widths sig).length := by
+      omega
+    have hs := abi_stack_vals hv hk s
+    rw [Nat.add_sub_cancel' h6] at hs
+    simp only
+    rw [aa_init, region, hw, hb, hs, BitVec.add_zero, stackArg, stackArgAddr,
+      show 8 + 8 * ((wrInfo sig.params 0)[j].1 - argRegs.length) =
+        8 * ((wrInfo sig.params 0)[j].1 - argRegs.length + 1) by omega]
+  · obtain ⟨j, hj, h6, hlt, rfl⟩ := key e he
+    simp only [init, nStack]
+    omega
+
+/-- The public stack arguments are the same in both runs, in the bits of their width. -/
+theorem pub_stack (hA : ScrubAbi A) {s₁ s₂ : State} (hp : (sig.contract A pre post wa stack leak).pub s₁ s₂)
+    {k : Nat} (hk : k < nStack sig)
+    (hpk : (sig.params.flatMap (·.2.pubs)).getD (argRegs.length + k) false = true) :
+    (stackArg s₁ k).setWidth ((widths sig).getD (argRegs.length + k) 64) =
+      (stackArg s₂ k).setWidth ((widths sig).getD (argRegs.length + k) 64) := by
+  simp only [Sig.contract] at hp
+  split at hp
+  · exact hp.elim
+  rename_i vals hvals
+  have := hp.2.1 _ hpk
+  rw [widths_eq hA] at this hvals
+  rw [hA.args] at hvals
+  simp only [nStack] at hk
+  rwa [abi_stack_vals hvals (by omega), abi_stack_vals hvals (by omega)] at this
+
+/-- The bytes of the argument area that `init` says are public are. -/
+theorem init_sa (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} {s₁ s₂ : State}
+    (hp : (sig.contract A pre post wa stack leak).pub s₁ s₂) :
+    SaEq (init sig stack pubs) s₁ s₂ ∧ ∀ e ∈ (init sig stack pubs).sa, e.1 + e.2 ≤ (init sig stack pubs).an := by
+  have key : ∀ e ∈ (init sig stack pubs).sa, ∃ k < nStack sig,
+      (sig.params.flatMap (·.2.pubs)).getD (argRegs.length + k) false = true ∧
+      e = (8 * k, min 8 ((widths sig).getD (argRegs.length + k) 64 / 8)) := by
+    intro e he
+    simp only [init, saOf, List.mem_filterMap, List.mem_range] at he
+    obtain ⟨k, hk, he⟩ := he
+    split at he
+    · rename_i hpk; cases he; exact ⟨k, hk, hpk, rfl⟩
+    · cases he
+  refine ⟨fun e he j h1 h2 => ?_, fun e he => ?_⟩
+  · obtain ⟨k, hk, hpk, rfl⟩ := key e he
+    simp only at h1 h2
+    have hb := byte_of_setWidth (j := j - 8 * k) (pub_stack hA hp hk hpk) (by
+      have := Nat.min_le_right 8 ((widths sig).getD (argRegs.length + k) 64 / 8)
+      omega)
+    have ha : ∀ s : State, aa s (init sig stack pubs) j = stackArgAddr s k + BitVec.ofNat 64 (j - 8 * k) := by
+      intro s
+      rw [aa_init, stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+      congr 2; omega
+    have hj : j - 8 * k < 8 := by have := Nat.min_le_left 8 ((widths sig).getD (argRegs.length + k) 64 / 8); omega
+    rw [ha, ha, readW64_byte s₁.mem (stackArgAddr s₁ k) hj, readW64_byte s₂.mem (stackArgAddr s₂ k) hj]
+    exact hb
+  · obtain ⟨k, hk, -, rfl⟩ := key e he
+    simp only [init]
+    have := Nat.min_le_left 8 ((widths sig).getD (argRegs.length + k) 64 / 8)
+    omega
+
 /-- The bytes `pubs` lists (`(i, o, n)`: the `n` bytes at offset `o` of writable buffer `i`) are
 the same in two runs whose entry states agree on what the contract says is public. -/
 def PubOk (k : Contract isa) (pubs : List (Nat × Nat × Nat)) : Prop :=
@@ -301,9 +522,12 @@ theorem init_agree (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} (hfit : p
       fun sl h k h1 h2 => hag sl h k h1 h2, noLo, fun r _ => (by rw [hx])⟩,
     hgr .rsp, hu, hwr, ?_, Nat.zero_le _, ?_, (by simp [init]; omega), fun _ h => absurd h (Nat.not_lt_zero _), ?_,
     fun _ h => (by cases h), List.Pairwise.nil, fun _ h => (by cases h), ?_, fun _ h => (by cases h),
-    ⟨fun _ h => (by cases h), fun _ _ h => (by cases h), fun _ h => (by cases h)⟩,
-    ⟨fun _ h => (by cases h), fun _ _ h => (by cases h), fun _ h => (by cases h)⟩,
-    fun _ h => absurd h (Nat.not_lt_zero _)⟩
+    ⟨fun _ h => (by cases h), fun _ _ h => (by cases h), fun _ h => (by cases h), (init_sp hA h₁).1⟩,
+    ⟨fun _ h => (by cases h), fun _ _ h => (by cases h), fun _ h => (by cases h), (init_sp hA h₂).1⟩,
+    fun _ h => absurd h (Nat.not_lt_zero _),
+    fun h => by have := (pre_argArea hA h₁).1 (by simp only [init] at h; omega); simp only [init]; omega,
+    fun k hk r hr => by rw [aa_init]; exact (pre_argArea hA h₁).2 k hk r hr,
+    (init_sa hA hp).2, (init_sa hA hp).1, (init_sp hA h₁).2⟩
   · intro h
     rw [h] at hF
     exact List.eq_nil_of_length_eq_zero (forall₂_length hF)
@@ -438,11 +662,12 @@ theorem resOk_reg {api : Api} (r : Registration api target) (ks : List Nat) {pub
 
 theorem pubOk_nil (k : Contract isa) : PubOk k [] := fun _ _ _ _ _ _ _ h => absurd h List.not_mem_nil
 
-/-- `resOk_reg`, with no bytes of the buffers known public. -/
+/-- `resOk_reg`, with no bytes of the buffers known public, from the analysis
+ending as `resOkF` checks (which the kernel evaluates faster than `resOkB`). -/
 theorem resOk_reg0 {api : Api} (r : Registration api target) (ks : List Nat) {h : VG.Taint.Hint FT}
-    (hc : (VG.Taint.check rtaint (init api.sig r.stack) r.code h).any (resOkB · r.stack ks (chunks r.stack)) = true) :
+    (hc : (VG.Taint.check rtaint (init api.sig r.stack) r.code h).any (resOkF · r.stack ks (chunks r.stack)) = true) :
     ResOk r.code r.contract r.stack ks (chunks r.stack) :=
-  resOk_reg r ks (pubs := []) rfl (pubOk_nil _) hc
+  resOk_reg r ks (pubs := []) rfl (pubOk_nil _) (any_resOkB hc)
 
 /-- The granules of `r.stack` bytes of stack that `scrub` must wipe after
 the code `code` of signature `sig`, from the analysis (none if it fails,

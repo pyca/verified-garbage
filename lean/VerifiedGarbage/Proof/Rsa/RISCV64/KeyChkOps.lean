@@ -632,4 +632,21 @@ theorem Stg.mulLow_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
     (h.arrs_write k e' (fun j _ => (Decidable.em (j = o)).imp_right fun n => by simpa using n) (by simp))
     h.live_lt (h.vd_keep k (by simpa using hov) (by simp)) (h.mask_keep k (by simp))
 
+/-- `mulHalf o y x`: `[o] := [y] [x]`, from `[o] = 0`, for `[y]` and `[x]` below `2^(64 (w / 2))`. -/
+theorem Stg.mulHalf_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g s0 A live c s) {o y x : Nat} (ho : o ∈ live) (hy : y ∈ live) (hx : x ∈ live)
+    (hoy : o ≠ y) (hox : o ≠ x) (hov : o ≠ aVD) (hz : A o = 0) (hw2 : g.w % 2 = 0)
+    (hY : A y < 2 ^ (64 * (g.w / 2))) (hX : A x < 2 ^ (64 * (g.w / 2))) :
+    WP isa (VG.Impl.Rsa.RISCV64.RecoverDet.mulHalf o y x) s
+      (Stg g s0 (upd A o (A y * A x % 2 ^ (64 * g.w))) live c) := by
+  have hon := h.live_lt o ho
+  refine WP.mono (Keys.mulHalf_ok h.ws hon (h.live_lt y hy) (h.live_lt x hx) (by decide) hoy hox hw2
+    (by rw [h.arrs.get ho, hz]) (by rw [h.arrs.get hy]; exact hY) (by rw [h.arrs.get hx]; exact hX))
+    fun t ⟨ht, k, _, e, r⟩ => ?_
+  have e' : num t.mem g.B g.w o = A y * A x % 2 ^ (64 * g.w) := by
+    rw [e, h.arrs.get hy, h.arrs.get hx]
+  exact h.next ht k (by simpa using hon) (by simp) r (by decide)
+    (h.arrs_write k e' (fun j _ => (Decidable.em (j = o)).imp_right fun n => by simpa using n) (by simp))
+    h.live_lt (h.vd_keep k (by simpa using hov) (by simp)) (h.mask_keep k (by simp))
+
 end VG.Proof.Rsa.RISCV64.KeyCheck
