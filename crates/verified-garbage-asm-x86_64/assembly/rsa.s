@@ -4699,7 +4699,12 @@ vg_rsa_crt_values:
 	add r8, rdi
 	add r8, 256
 	mov r9, rax
-	mov r10, r12
+	mov r10, QWORD PTR [rdi+168]
+	add r10, 7
+	shr r10, 3
+	mov r12, QWORD PTR [rdi+184]
+	add r12, 7
+	shr r12, 3
 	mov r13d, 0
 219:
 	mov rcx, QWORD PTR [r11+r13*8]
@@ -16947,9 +16952,13 @@ vg_rsa_check_key:
 	cmp r14, rcx
 	jne 222b
 	mov r11, QWORD PTR [rdi+72]
-	mov r10, QWORD PTR [rdi+48]
+	mov r10, QWORD PTR [rdi+192]
+	add r10, 7
+	shr r10, 3
 	mov r9, QWORD PTR [rdi+112]
-	mov r12, QWORD PTR [rdi+48]
+	mov r12, QWORD PTR [rdi+208]
+	add r12, 7
+	shr r12, 3
 	mov r8, QWORD PTR [rdi+80]
 	mov r13d, 0
 223:
