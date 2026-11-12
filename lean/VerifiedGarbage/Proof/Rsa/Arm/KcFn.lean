@@ -274,7 +274,8 @@ def FnPost (σ u : State) (P : Bool → Prop) : Prop :=
 theorem fn_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096) {body : Prog isa} {v : Vals}
     {P : Bool → Prop} (hv : aEnt ins σ = vals v)
     (hA : ∀ j < nArr, aEnt ins σ j < 2 ^ (32 * (geo iS σ).w))
-    (hbody : ∀ s, BodyIn (geo iS σ) v s →
+    (hbody : ∀ s, Mid nA iS ins σ s (aEnt ins σ) → BodyIn (geo iS σ) v s →
+      Spec.Rsa.modulusValid (nV σ) (fK σ) = true →
       WP isa body s fun t => ∃ A live c, Stg (geo iS σ) s A live c t ∧ P c) :
     WP isa (fn (4 * iS) (ins.map fun p => (4 * p.1, p.2)) body) σ fun u => FnPost σ u P := by
   unfold fn
@@ -294,7 +295,7 @@ theorem fn_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096) {body :
     refine WP.ite s2.z rfl (fun he => ?_) (fun he => ?_)
     · rw [WP.seq_iff]
       have bi := m2.bodyIn v hv hA
-      refine WP.mono (hbody s2 bi) fun t ⟨A, live, c, ht, hP⟩ => ?_
+      refine WP.mono (hbody s2 m2 bi (by rw [← z1]; exact hn)) fun t ⟨A, live, c, ht, hP⟩ => ?_
       have bt : FnBase nA iS ins σ t := m2.base.keep ht.keep (fun j hj => List.mem_range.mp hj) (by decide)
         (by decide) ht.rest.sp ht.rest.rd ht.rest.wr
       refine WP.mono (ret_ok bt ht.ws.r8 ht.mask) fun u ⟨bu, ru⟩ => exit u c bu (fun _ _ => hP) ?_
