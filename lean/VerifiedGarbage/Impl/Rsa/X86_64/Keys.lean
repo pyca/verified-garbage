@@ -25,6 +25,8 @@ depend only on `rdi`, `w` and the stride, all public.
   (mod m)` for `a` in `[u]` and an odd `m` in `[m]`, by batches of divsteps
   at a width `n` read at run time (`inverseN`), in arrays of its own from
   16 on (see "The inverse" below).
+* `gcdW u v m`: `[v] = gcd(a, m)` alone, the inverse's batches without
+  `(a, b)` and its end without `[x₂]` (`gcdN` at the width `n` in `r13`).
 
 `vg_rsa_crt_values(dp, dp_len, dq, dq_len, qinv, qinv_len, n, n_len, p,
 p_len, q, q_len, d, d_len, scratch, scratch_len)`: the first six arguments
@@ -443,6 +445,10 @@ each, and the count less one. -/
 def batch : Prog isa := seqs ([.block (bStart ++ bWords ++ bSave ++ absS oU oMu ++ absS oV oMv ++ absS oQ oMq ++
   absS oR oMr)] ++ fgRow ++ abRow ++ [.block [.alu .sub .rsi (.imm 1)]])
 
+/-- A batch of the GCD alone: `batch` without `(a, b)`. -/
+def batchG : Prog isa := seqs ([.block (bStart ++ bWords ++ bSave ++ absS oU oMu ++ absS oV oMv ++ absS oQ oMq ++
+  absS oR oMr)] ++ fgRow ++ [.block [.alu .sub .rsi (.imm 1)]])
+
 /-! ### The end (`rdi` the working space's base again) -/
 
 /-- `rdi` back to the working space's base, `r13 := n`, `r12 := n + 1`. -/
@@ -511,6 +517,15 @@ def finishS (iV iX₂ : Nat) : List (Prog isa) := [
   .block (nonNeg aF ++ base aA .r8 ++ base aS .rsi), wordLoop 0 selBody,
   copyI iV aA, copyI iX₂ aT]
 
+/-- The end of the GCD alone: `[v] = |f|`. -/
+def finishG (iV : Nat) : List (Prog isa) := [
+  .block unwin, zeroI aA,
+  .block (countN ++ ([.mov32 .rbp (.imm 0)] : List Instr) ++ base aA .r8 ++ base aF .r10 ++ base aS .rsi),
+  wordLoop 0 subBody,
+  .block (isNeg aF ++ base aA .r8 ++ base aF .rsi), wordLoop 0 selBody,
+  .block (nonNeg aF ++ base aA .r8 ++ base aS .rsi), wordLoop 0 selBody,
+  copyI iV aA]
+
 end Inv
 
 /-- The inverse at the width `n` in `r13`. -/
@@ -529,6 +544,15 @@ def inverse (iU iV iX₂ iM : Nat) : Prog isa :=
 /-- The inverse at the width that `k` puts into `r13` after `ws`. -/
 def inverseK (k : List Instr) (iU iV iX₂ iM : Nat) : Prog isa :=
   .seq (.block (ws ++ k)) (inverseN iU iV iX₂ iM)
+
+/-- `[v] = gcd(u, m)` alone, at the width `n` in `r13`: the inverse's batches without `(a, b)`
+(`Inv.batchG`), and no `[x₂]`. -/
+def gcdN (iU iV iM : Nat) : Prog isa :=
+  seqs (Inv.start iU iM ++ [.loop Inv.batchG .ne] ++ Inv.finishG iV)
+
+/-- `gcdN` at the width `w`. -/
+def gcdW (iU iV iM : Nat) : Prog isa :=
+  .seq (.block (ws ++ ([.mov .r13 (.reg .r12)] : List Instr))) (gcdN iU iV iM)
 
 /-- `r13 := w / 2`. -/
 def kHalf : List Instr := [.mov .r13 (.reg .r12), .shift .shr .r13 1]
