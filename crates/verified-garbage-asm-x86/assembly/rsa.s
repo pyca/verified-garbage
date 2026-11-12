@@ -15085,12 +15085,12 @@ vg_rsa_check_key:
 	shr edx, 1
 	shr edx, 1
 	shr edx, 1
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
+	mov ecx, DWORD PTR [esp+32]
+	add ecx, 3
+	shr ecx, 2
 	add ecx, ecx
 	add ecx, ecx
-	add ecx, ecx
+	add ecx, 8
 	add esi, ecx
 	mov ecx, DWORD PTR [esp+32]
 	add ecx, 3
@@ -15136,12 +15136,12 @@ vg_rsa_check_key:
 2240:
 2241:
 	mov edi, DWORD PTR [esp+68]
-	mov eax, DWORD PTR [esp+8]
-	add eax, 7
-	shr eax, 3
+	mov eax, DWORD PTR [esp+32]
+	add eax, 3
+	shr eax, 2
 	add eax, eax
 	add eax, eax
-	add eax, eax
+	add eax, 8
 	shr eax, 2
 	mov ecx, DWORD PTR [esp+32]
 	add ecx, 3
@@ -16078,12 +16078,12 @@ vg_rsa_check_key:
 	shr edx, 1
 	shr edx, 1
 	shr edx, 1
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
+	mov ecx, DWORD PTR [esp+32]
+	add ecx, 3
+	shr ecx, 2
 	add ecx, ecx
 	add ecx, ecx
-	add ecx, ecx
+	add ecx, 8
 	add esi, ecx
 	mov ecx, DWORD PTR [esp+32]
 	add ecx, 3
@@ -16129,12 +16129,12 @@ vg_rsa_check_key:
 2262:
 2263:
 	mov edi, DWORD PTR [esp+68]
-	mov eax, DWORD PTR [esp+8]
-	add eax, 7
-	shr eax, 3
+	mov eax, DWORD PTR [esp+32]
+	add eax, 3
+	shr eax, 2
 	add eax, eax
 	add eax, eax
-	add eax, eax
+	add eax, 8
 	shr eax, 2
 	mov ecx, DWORD PTR [esp+32]
 	add ecx, 3
@@ -16882,6 +16882,33 @@ vg_rsa_check_key:
 	add ebp, 4
 	sub ecx, 4
 	jne 2279b
+	mov edx, DWORD PTR [esp+8]
+	add edx, 7
+	shr edx, 3
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, 8
+	mov eax, edi
+	add eax, 160
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add eax, edx
+	shr edx, 1
+	shr edx, 1
+	shr edx, 1
+	shr edx, 1
+	mov ecx, DWORD PTR [esp+8]
+	add ecx, 7
+	shr ecx, 3
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	add eax, ecx
+	mov ecx, 0
+	mov DWORD PTR [eax+4], ecx
 	mov eax, 0
 	mov DWORD PTR [edi+96], eax
 2280:
@@ -16946,6 +16973,7 @@ vg_rsa_check_key:
 	add edi, edi
 	add edi, edi
 	add edi, edi
+	shr edi, 1
 	mov ebx, 0
 2281:
 	mov eax, DWORD PTR [esi]
@@ -16972,6 +17000,7 @@ vg_rsa_check_key:
 	add ecx, ecx
 	add ecx, ecx
 	shr ecx, 2
+	shr ecx, 1
 	cmp eax, ecx
 	jne 2280b
 	mov ecx, DWORD PTR [esp+8]
@@ -17080,7 +17109,6 @@ vg_rsa_check_key:
 	add ecx, ecx
 	add ecx, ecx
 	add ecx, ecx
-	add ecx, ecx
 	add esi, ecx
 	mov ecx, DWORD PTR [esp+32]
 	add ecx, 3
@@ -17129,7 +17157,6 @@ vg_rsa_check_key:
 	mov eax, DWORD PTR [esp+8]
 	add eax, 7
 	shr eax, 3
-	add eax, eax
 	add eax, eax
 	add eax, eax
 	add eax, eax

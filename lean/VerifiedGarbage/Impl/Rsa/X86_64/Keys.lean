@@ -515,8 +515,23 @@ def normalize : List Instr :=
 def recipSetup : List Instr :=
   ws ++ base aM .r10 ++ base aV .r8 ++ [.shift .shr .r12 1]
 
-def countSetup : List Instr :=
-  ws ++ base aV .rbp ++ [.mov .rax (.reg .r12), .store (wm 16) .rax]
+/-- The first digit's index `j₀ = X - w / 2 + 1` into `rax`, for the dividend's `X` words: `w`
+(`top = none`), or `w / 2 + k` (`top = some k`); `r12` from `w` to `w / 2`. The remainder starts as
+the dividend's `w / 2 - 1` words from `j₀` on, and the steps bring down its words `j₀ - 1` to 0. -/
+def start : Option Nat → List Instr
+  | none => [.mov .rax (.reg .r12), .shift .shr .r12 1, .alu .sub .rax (.reg .r12), .alu .add .rax (.imm 1)]
+  | some k => [.mov32 .rax (.imm (BitVec.ofNat 32 (k + 1))), .shift .shr .r12 1]
+
+/-- `rsi` at the dividend's word `j₀`, `rbx` at the remainder, `r12 = w / 2 - 1`. -/
+def seedSetup (top : Option Nat) : List Instr :=
+  ws ++ start top ++ [.shift .shl .rax 3] ++ base aD .rsi ++ [.alu .add .rsi (.reg .rax)] ++ base aR .rbx ++
+    [.alu .sub .r12 (.imm 1)]
+
+/-- The remainder's low `w / 2 - 1` words the dividend's from `j₀` on. -/
+def seed (top : Option Nat) : Prog isa := .seq (.block (seedSetup top)) copyWords
+
+def countSetup (top : Option Nat := none) : List Instr :=
+  ws ++ base aV .rbp ++ start top ++ [.store (wm 16) .rax]
 
 def stepLoad : List Instr :=
   ws ++ base aV .rbp ++ base aD .r11 ++ [.mov .rcx (.mem (wm 16))]
@@ -533,8 +548,9 @@ def next : List Instr :=
 
 def body : Prog isa := seqs [.block stepSetup, WordReduce.step, .block next]
 
-def code : Prog isa := seqs [
-  zeroA aR, .block recipSetup, R2Words.recip, .block countSetup, .loop body .ne]
+/-- `[aR] = [aD] mod [aM]` (`w / 2` words, its top bit set), for the dividend's words `start`'s. -/
+def code (top : Option Nat := none) : Prog isa := seqs [
+  zeroA aR, seed top, .block recipSetup, R2Words.recip, .block (countSetup top), .loop body .ne]
 
 end VG.Impl.Rsa.X86_64.WordDivide
 

@@ -352,22 +352,21 @@ theorem wordMod_relCT {τ : VG.X86.Taint.T} {Fr : State → Prop}
     (hF : ∀ {u t : State} {rs : List Reg}, Fr u → Keeps rs u t → .edi ∉ rs → .esp ∉ rs →
       Outside B 0 Z u.mem t.mem → Fr t)
     (hτ : ∀ r ∈ [Reg.edi, .esp], τ.regs.mem r = true)
-    {ml a x r m t : Nat} {wide : Bool}
-    (hx : x + wide.toNat < N) (hr : r < N) (hmN : m < N) (ht : t < N)
+    {ml a x r m t : Nat} {top : Option Nat}
+    (hx : x < N) (hr : r < N) (hmN : m < N) (ht : t < N)
     (hrt : r ≠ t) (hmt : m ≠ t) (hrm : r ≠ m) (hxr : r ≠ x) (hxt : t ≠ x) (hxm : m ≠ x)
-    (hxr1 : wide = true → r ≠ x + 1) (hxt1 : wide = true → t ≠ x + 1) (hxm1 : wide = true → m ≠ x + 1)
-    (h4 : 4 ≤ wq a) (hw : wq a ≤ kw len)
+    (h4 : 4 ≤ wq a) (hw : wq a ≤ kw len) (htop : ∀ k, top = some k → wq a + k ≤ kw len)
     (c₀ : ∃ hint, (VG.Taint.check sseTaint τ (.seq (.seq (.block (VG.Impl.Rsa.X86.WordModRt.orTop L ml m))
-      (VG.Impl.Rsa.X86.WordModRt.recip L)) (VG.Impl.Rsa.X86.WordModRt.seed L ml x r wide)) hint).isSome = true)
+      (VG.Impl.Rsa.X86.WordModRt.recip L)) (VG.Impl.Rsa.X86.WordModRt.seed L ml x r top)) hint).isSome = true)
     (c₁ : ∃ hint, (VG.Taint.check sseTaint τ (.block (digitHead L x)) hint).isSome = true)
     (c₂ : ∃ hint, (VG.Taint.check sseTaint { τ with regs := .ofList [.edi, .esp, .eax, .ebx] }
       (.seq (.block digitH₂) (digitTail L ml x r m t)) hint).isSome = true) :
     RelCT isa (fun t₁ t₂ => (RtWs L t₁ B Z len N ∧ Fr t₁ ∧ MLen t₁ B Z ml a) ∧
       (RtWs L t₂ B Z len N ∧ Fr t₂ ∧ MLen t₂ B Z ml a))
-      (VG.Impl.Rsa.X86.WordModRt.wordMod L ml x r m t wide) fun _ _ => True := by
-  let Sc := xw len wide - wq a + 1
+      (VG.Impl.Rsa.X86.WordModRt.wordMod L ml x r m t top) fun _ _ => True := by
+  let Sc := xw len a top - wq a + 1
   let Inv : State × Nat × Nat → Nat → State → Prop := fun p i u =>
-    (Fr p.1 ∧ val32 p.1.mem B (arr (kw len) x) (xw len wide) = p.2.2 ∧
+    (Fr p.1 ∧ val32 p.1.mem B (arr (kw len) x) (xw len a top) = p.2.2 ∧
       val32 p.1.mem B (arr (kw len) m) (wq a) = p.2.1 ∧ StepHdr p.1.mem B p.2.1 (wq a)) ∧
     LoopI L p.1 B Z len N ml a r t p.2.1 p.2.2 Sc i u
   have frAt : ∀ {p i u}, Inv p i u → Fr u := fun {p i u} ⟨⟨fp, _⟩, I⟩ =>
@@ -381,8 +380,8 @@ theorem wordMod_relCT {τ : VG.X86.Taint.T} {Fr : State → Prop}
     obtain ⟨_, c₀⟩ := c₀
     have pre : ∀ u, RtWs L u B Z len N → Fr u → MLen u B Z ml a →
         WP isa (.seq (.seq (.block (VG.Impl.Rsa.X86.WordModRt.orTop L ml m)) (VG.Impl.Rsa.X86.WordModRt.recip L))
-          (VG.Impl.Rsa.X86.WordModRt.seed L ml x r wide)) u (fun v => ∃ p, Inv p 0 v) := fun u hu fu mu =>
-      WP.mono (wordModPre_ok (t := t) hu mu hx hr hmN hrm hxr hxm hxr1 hxm1 h4 hw)
+          (VG.Impl.Rsa.X86.WordModRt.seed L ml x r top)) u (fun v => ∃ p, Inv p 0 v) := fun u hu fu mu =>
+      WP.mono (wordModPre_ok (t := t) hu mu hx hr hmN hrm hxr hxm h4 hw htop)
         fun v ⟨Mn, X₀, _, X₃, M₃, H₃, I₀, k₀, _, _, K₀⟩ =>
           ⟨(v, Mn, X₀), ⟨hF fu K₀ (by decide) (by decide)
             (VG.Proof.Rsa.X86.KeyRt.keep_outside hu.ws k₀ (by simp; omega) (by decide)), X₃, M₃, H₃⟩, I₀⟩
@@ -404,7 +403,7 @@ theorem wordMod_relCT {τ : VG.X86.Taint.T} {Fr : State → Prop}
     · exact G.rf.1 _ (hτ _ (by simp))
     · exact BitVec.eq_of_toNat_eq (e₁.trans e₂.symm)
     · exact ptr_eq b₁ b₂
-  · exact WP.mono (digitStep_ok hx hr hmN ht hrt hmt hrm hxr hxt hxr1 hxt1 h4 hw P.2.1 P.2.2.1 P.2.2.2 rfl hi I)
+  · exact WP.mono (digitStep_ok hx hr hmN ht hrt hmt hrm hxr hxt h4 hw htop P.2.1 P.2.2.1 P.2.2.2 rfl hi I)
       fun _ ⟨I', z⟩ => ⟨z, fun _ => ⟨P, I'⟩⟩
 
 end VG.Proof.Rsa.X86.WordRt
