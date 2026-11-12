@@ -23,10 +23,11 @@ open VG.Impl.Rsa.RISCV64.RecoverDet (setup loads prod det deMinus twos gcd divA 
 
 /-- For the constant-time proof: a valid modulus's run up to the stores ends
 with the body's registers and the working space as on entry (`S7`). -/
-theorem pre_ok [InvLaw] : ∀ d s, S5 d s → s.gpr .s0 = 0 → WP isa (.seq normPrefix mid) s (S7 d) := by
+theorem pre_ok [InvLaw] : ∀ d s, S5 d s → s.gpr .s0 = 0 → WP isa (seqs [setup, loads, prod, det]) s (S7 d) := by
   rintro d s ⟨s0, c0, c, x0⟩ z
   have h := preC_of c0.1
   have three := (nv_facts (x0.mp z)).2
+  have hmv := x0.mp z
   have w : WP isa (seqs [setup, loads, prod, det]) s fun t => ∃ q rem, Det s0 q rem t := by
     rw [wp_seqs_cons (List.cons_ne_nil _ _)]
     refine WP.mono (setup_ok h c) fun t1 ⟨c1, w1, z1⟩ => ?_
@@ -40,9 +41,9 @@ theorem pre_ok [InvLaw] : ∀ d s, S5 d s → s.gpr .s0 = 0 → WP isa (.seq nor
     refine WP.mono (deMinus_ok h p3) fun t4 d4 => ?_
     rw [show [twos, gcd, divA, divB, minus4n, sqrt, factors] =
       [twos, gcd, divA] ++ [divB, minus4n, sqrt, factors] from rfl, wp_seqs_append (by simp) (by simp)]
-    exact WP.mono (stA_ok h three d4) fun t5 s5 => stB_ok h s5
-  obtain ⟨tr, t, e, q, rem, dt⟩ := w
-  exact ⟨tr, t, pre_split e, s0, c0, dt.cb, dt.ws⟩
+    exact WP.mono (stA_ok h three (nv_top hmv (Nat.le_trans (by decide : 1 ≤ 64) h.k1)) d4) fun t5 s5 =>
+      stB_ok h three s5
+  exact WP.mono w fun t ⟨_, _, dt⟩ => ⟨s0, c0, dt.cb, dt.ws⟩
 
 /-- `vg_rsa_recover_primes_det`. -/
 theorem rd_verified [InvLaw] :

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.RISCV64.RdOps
 public import VerifiedGarbage.Proof.Rsa.RecoverDetModel
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Rsa.RISCV64.CrtValFront
-import VerifiedGarbage.Proof.Rsa.RISCV64.KeyMulMod
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -15,8 +14,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 The working space in its two views (`RdOps`): `w = ⌈n_len / 8⌉ + 1` narrow
 words (`nb = 64 w` bits) and `W = 2 w + 2` wide ones (`wb = 64 W`).
 `setup_ok`: the narrow view and every array zero; `loads_ok`: `n`
-(narrow), `e`, `d` and the modulus `2^(wb - 1)` (wide) read (`Ld`);
-`prod_ok`: `d e` (`Pr`); `deMinus_ok`: one, `x = d e - 1` (`deX`) and the
+(narrow), `e` and `d` (wide) read (`Ld`); `prod_ok`: `d e`, one row of
+`e`'s one word (`Pr`); `deMinus_ok`: one, `x = d e - 1` (`deX`) and the
 borrows of `d e - 1` and `x - 1` (`Dm`), what `RecoverDet.okDE` tests. Each
 stage also says which narrow arrays are still zero. `bounds`:
 `RecoverDet.model_correct`'s bounds.
@@ -28,9 +27,9 @@ namespace VG.Proof.Rsa.RISCV64.RecDet
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys
 open VG.Proof.Rsa.RecoverDet (deX wsub wsub_of_le wsub_of_lt)
-open VG.Impl.Rsa.RISCV64.Keys (seqs ptr setOne stBorrow sub3 load zeroArrays sB sC)
-open VG.Impl.Rsa.RISCV64.RecoverDet (setup loads prod deMinus ctxInit ctxW nArr aN wZ wE wD wM wMod wT wX
-  wOne wT2 sB0 sB1)
+open VG.Impl.Rsa.RISCV64.Keys (seqs ptr mov setOne stBorrow sub3 load zeroArrays sB sC)
+open VG.Impl.Rsa.RISCV64.RecoverDet (setup loads prod deMinus ctxInit ctxW nArr aN wZ wE wD wM wX
+  wOne wT2 sB0 sB1 mulRow)
 
 /-! ## The sizes -/
 
@@ -112,7 +111,7 @@ theorem CB.step {s0 s t u : State} {M : Mem} (c : CB s0 M s) {w N : Nat}
   c.of_frame f (fun j hj => ws.arr_fit (hjs j hj)) hds ws.hdr_le k hr
 
 /-- Index side conditions. -/
-macro "rdx" : tactic => `(tactic| ((try simp only [nArr, nWide, aN, wZ, wE, wD, wM, wMod, wT, wX, wOne, wT2,
+macro "rdx" : tactic => `(tactic| ((try simp only [nArr, nWide, aN, wZ, wE, wD, wM, wX, wOne, wT2,
   sB0, sB1, halves, hdr_eq, List.flatMap_cons, List.flatMap_nil, List.cons_append, List.nil_append,
   List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true, true_and, ne_eq]) <;>
   first | decide | omega_arith))
@@ -136,8 +135,8 @@ theorem setup_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) :
 
 /-! ## The reads -/
 
-/-- The narrow arrays the reads write: `n`, and `e`, `d` and the modulus (wide). -/
-abbrev ldUsed : List Nat := [aN, 2, 3, 4, 5, 8, 9]
+/-- The narrow arrays the reads write: `n`, and `e` and `d` (wide). -/
+abbrev ldUsed : List Nat := [aN, 2, 3, 4, 5]
 
 /-- After the reads, in the wide view. -/
 structure Ld (s0 t : State) : Prop where
@@ -146,55 +145,7 @@ structure Ld (s0 t : State) : Prop where
   n : num t.mem (bOf s0) (wOf s0) aN = Nv s0
   e : num t.mem (bOf s0) (WOf s0) wE = Ev s0
   d : num t.mem (bOf s0) (WOf s0) wD = Dv s0
-  m : num t.mem (bOf s0) (WOf s0) wMod = 2 ^ (wbOf s0 - 1)
   free : ∀ j < nArr, j ∉ ldUsed → wordsVal t.mem (bOf s0) (arr (wOf s0) j) (wOf s0 + 2) = 0
-
-/-- `W` words, the top one written, the others zero. -/
-theorem top_val {m : Mem} {B : Addr} {d W : Nat} (hW : 0 < W) (fit : d + 8 * W ≤ 2 ^ 64)
-    (hz : wordsVal m B d W = 0) (v : BitVec 64) :
-    wordsVal (m.writeW (off B (d + 8 * W - 8)) v) B d W = 2 ^ (64 * (W - 1)) * v.toNat := by
-  obtain ⟨k, rfl⟩ : ∃ k, W = k + 1 := ⟨W - 1, by omega_arith⟩
-  have o := writeW_outside m B (d := d + 8 * k) v (by omega_arith)
-  rw [show d + 8 * (k + 1) - 8 = d + 8 * k by omega_arith]
-  rw [wordsVal_append] at hz ⊢
-  rw [o.wordsVal (by omega_arith) (by omega_arith)]
-  have h0 : wordsVal m B d k = 0 := by
-    have := Nat.two_pow_pos (64 * k); generalize wordsVal m B (d + 8 * k) 1 = c at hz; omega_arith
-  rw [h0, Nat.zero_add, Nat.add_sub_cancel]
-  simp only [wordsVal, word_writeW_self, Nat.mul_zero, Nat.add_zero]
-
-theorem top_ok {s : State} {B : Addr} {Z W N j : Nat} (h : Ws s B Z W N) (hj : j < N) (hN : N ≤ 2048)
-    (hz : wordsVal s.mem B (arr W j) W = 0) :
-    WP isa (.block (ptr .t0 j ++ ([.shift .sll .d .t5 .s9 3, .add .t0 .t0 .t5, .addi .t0 .t0 (-8),
-      .li .t5 1, .shift .sll .d .t5 .t5 63, .store .d .t5 .t0 0] : List Instr))) s fun t =>
-      Ws t B Z W N ∧ Keys.Frame B W [j] [] s.mem t.mem ∧ num t.mem B W j = 2 ^ (64 * W - 1) ∧
-        Keep opRegs s t := by
-  have fit := h.arr_fit hj
-  have nw := h.nowrap
-  have hS : S W = 8 * (W + 2) := rfl
-  have hpos := h.wpos
-  have hle := h.wle
-  refine ptr_ok h (by decide) (by decide) (show j < 2048 by omega_arith) ?_
-  have hb : WP isa (.block [.shift .sll .d .t5 .s9 3, .add .t0 .t0 .t5, .addi .t0 .t0 (-8),
-      .li .t5 1, .shift .sll .d .t5 .t5 63, .store .d .t5 .t0 0]) (s.write .t0 (off B (arr W j))) fun u =>
-      (u.mem = s.mem.writeW (off B (arr W j + 8 * W - 8)) (BitVec.ofNat 64 (2 ^ 63))) ∧
-        Keep [.t0, .t5] (s.write .t0 (off B (arr W j))) u := by
-    refine WP.keep _ ?_ (by rfl) (by rfl)
-    brun [h.s9, shl3_ofNat, add_ofNat_zero', off_sub (p := B) (a := arr W j + 8 * W) (b := 8) (by omega_arith),
-      keys_exec_li_one, h.scr.st (d := arr W j + 8 * W - 8) (n := 8) (by omega_arith),
-      h.scr.al8 (d := arr W j + 8 * W - 8) (by omega_arith) (by have := arr_al W j; omega_arith)]
-    rfl
-  refine WP.mono hb fun u ⟨um, ku⟩ => ?_
-  have k₁ : Keep opRegs s u := ((Keep.write _ _ _).trans ku).mono (by decide)
-  have o := writeW_outside s.mem B (d := arr W j + 8 * W - 8) (BitVec.ofNat 64 (2 ^ 63)) (by omega_arith)
-  refine ⟨h.of_keep k₁, ?_, ?_, k₁⟩
-  · rw [um]
-    exact Frame.of_arr (d := 8 * W - 8) (by rw [← Nat.add_sub_assoc (by omega_arith)]; exact o)
-      (by omega_arith) (by simp)
-  · show wordsVal u.mem B (arr W j) W = _
-    rw [um, top_val hpos (by omega_arith) hz]
-    rw [show (BitVec.ofNat 64 (2 ^ 63)).toNat = 2 ^ 63 by rfl, ← Nat.pow_add]
-    congr 1; omega_arith
 
 theorem loads_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) (ws : Ws s (bOf s0) (zOf s0) (wOf s0) nArr)
     (hz : ∀ j < nArr, wordsVal s.mem (bOf s0) (arr (wOf s0) j) (wOf s0 + 2) = 0) :
@@ -247,32 +198,22 @@ theorem loads_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) (ws : Ws s (b
   rw [c2.bytes h.es lE] at v3
   have z3 := free_step (U' := [aN, 2, 3]) fr3.toNarrow (by simp) fit (by rdx) (by rdx) z1
   -- `d`, wide.
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (load_ok w3 (j := wD) (by rdx) (by decide) (by decide) c3.a0
     (by rw [c3.a1, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hd1 (by show _ ≤ 8 * WOf s0; omega_arith)
     (hrd c3.rd mD rfl lD) (CrtValues.bytes_sep h.ds lD)
     (num_zero (wide_zero (z3 _ (by rdx) (by rdx)) (z3 _ (by rdx) (by rdx)))))
-    fun t4 ⟨w4, fr4, v4, k4, _⟩ => ?_
+    fun t ⟨w4, fr4, v4, k4, _⟩ => ?_
   have c4 := c3.step w4 fr4 (by rdx) (by simp) k4
   rw [c3.bytes h.ds lD] at v4
-  have z4 := free_step (U' := [aN, 2, 3, 4, 5]) fr4.toNarrow (by simp) fit (by rdx) (by rdx) z3
-  -- The modulus `2^(wb - 1)`, wide.
-  have zm := wide_zero (z4 (2 * wMod) (by rdx) (by rdx)) (z4 (2 * wMod + 1) (by rdx) (by rdx))
-  refine WP.mono (top_ok w4 (j := wMod) (by rdx) (by decide)
-    (by simpa using wordsVal_zero_part (a := 0) (c := WOf s0) zm (by show 0 + WOf s0 ≤ WOf s0 + 2; omega_arith)))
-    fun t ⟨w5, fr5, v5, k5⟩ => ?_
-  have c5 := c4.step w5 fr5 (by rdx) (by simp) k5
-  have z5 := free_step (U' := ldUsed) fr5.toNarrow (by simp) fit (by rdx) (by rdx) z4
-  refine ⟨c5, w5, ?_, ?_, ?_, v5, z5⟩
-  · rw [fr5.toNarrow.num (by rdx) (by simp) (fit _ (by rdx)), fr4.toNarrow.num (by rdx) (by simp) (fit _ (by rdx)),
-      fr3.toNarrow.num (by rdx) (by simp) (fit _ (by rdx)), v1]
-  · rw [fr5.num (by rdx) (by simp) (w5.fit64 (by rdx)), fr4.num (by rdx) (by simp) (w4.fit64 (by rdx)), v3]
-  · rw [fr5.num (by rdx) (by simp) (w5.fit64 (by rdx)), v4]
+  have z4 := free_step (U' := ldUsed) fr4.toNarrow (by simp) fit (by rdx) (by rdx) z3
+  refine ⟨c4, w4, ?_, ?_, v4, z4⟩
+  · rw [fr4.toNarrow.num (by rdx) (by simp) (fit _ (by rdx)), fr3.toNarrow.num (by rdx) (by simp) (fit _ (by rdx)), v1]
+  · rw [fr4.num (by rdx) (by simp) (w4.fit64 (by rdx)), v3]
 
 /-! ## `d e` -/
 
-/-- The narrow arrays written by now: `n`, and the wide arrays 1–8. -/
-abbrev prUsed : List Nat := [aN, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+/-- The narrow arrays written by now: `n`, `e`, `d` and `d e` (wide). -/
+abbrev prUsed : List Nat := [aN, 2, 3, 4, 5, 6, 7]
 
 /-- After `d e`, in the wide view. -/
 structure Pr (s0 t : State) : Prop where
@@ -282,48 +223,73 @@ structure Pr (s0 t : State) : Prop where
   de : num t.mem (bOf s0) (WOf s0) wM = deOf s0
   free : ∀ j < nArr, j ∉ prUsed → wordsVal t.mem (bOf s0) (arr (wOf s0) j) (wOf s0 + 2) = 0
 
-theorem two_pow_pred {x : Nat} (hx : 1 ≤ x) : 2 * 2 ^ (x - 1) = 2 ^ x := by
-  rw [← Nat.pow_succ']; congr 1; omega_arith
+/-- A number of `W` words, below `2^64`, is its first word. -/
+theorem word0_of_lt {m : Mem} {B : Addr} {d W x : Nat} (hW : 1 ≤ W) (h : wordsVal m B d W = x) (hx : x < 2 ^ 64) :
+    (word m B d).toNat = x := by
+  have e := wordsVal_append m B d 1 (W - 1)
+  rw [show 1 + (W - 1) = W by omega, h] at e
+  simp only [wordsVal, Nat.mul_zero, Nat.add_zero, Nat.mul_one] at e
+  have := Nat.two_pow_pos 64
+  rcases Nat.eq_zero_or_pos (wordsVal m B (d + 8 * 1) (W - 1)) with z | z
+  · rw [z, Nat.mul_zero, Nat.add_zero] at e; exact e.symm
+  · have := Nat.le_mul_of_pos_right (2 ^ (64 * 1)) z; simp only [Nat.mul_one] at this; omega
 
 theorem prod_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) : WP isa prod s (Pr s0) := by
-  have he1 := h.e1
   have he2 := h.e2
-  have hd2 : (stackArg s0 1).toNat ≤ kOf s0 := h.d2
   have ⟨_, hde, hnw, _, _⟩ := bounds h
   have hw := nb_ge s0
   have fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => h.fit64 hj
-  have e6 : s.gpr .s6 = BitVec.ofNat 64 (s0.gpr .a7).toNat := by
-    rw [l.cb.s6, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have ws := l.ws
+  have fW : ∀ j < nWide, arr (WOf s0) j + S (WOf s0) ≤ 2 ^ 64 := fun j hj => ws.fit64 hj
+  have hWp := ws.wpos
   rw [prod, WP.seq_iff]
-  have hb : WP isa (.block [.shift .sll .d .s7 .s6 3]) s fun u =>
-      (u.gpr .s7 = BitVec.ofNat 64 (8 * (s0.gpr .a7).toNat) ∧ u.mem = s.mem) ∧ Keep [.s7] s u := by
+  refine ptr_ok ws (by decide) (by decide) (show wE < 2048 by decide) ?_
+  refine ptr_ok (ws.of_keep (Keep.write _ .a2 _)) (by decide) (by decide) (show wM < 2048 by decide) ?_
+  have hb : WP isa (.block [mov .s8 .s9]) ((s.write .a2 (off (bOf s0) (arr (WOf s0) wE))).write .a3
+      (off (bOf s0) (arr (WOf s0) wM))) fun u =>
+      (u.gpr .a2 = off (bOf s0) (arr (WOf s0) wE + 8 * 0) ∧ u.gpr .a3 = off (bOf s0) (arr (WOf s0) wM + 8 * 0) ∧
+        u.gpr .s8 = BitVec.ofNat 64 (WOf s0 - 0) ∧ u.mem = s.mem) ∧
+      Keep [.s8] ((s.write .a2 (off (bOf s0) (arr (WOf s0) wE))).write .a3 (off (bOf s0) (arr (WOf s0) wM))) u := by
     refine WP.keep _ ?_ (by rfl) (by rfl)
-    brun [e6, shl3_ofNat]
-  refine WP.mono hb fun u ⟨⟨u7, um⟩, ku⟩ => ?_
-  have wu := l.ws.of_keep ku
-  have cu := l.cb.of_keep ku um
-  refine WP.mono (mulMod_ok wu (by decide) (show MulIdx nWide wZ wE wD wM wMod wT by decide)
-    (by omega_arith) (by omega_arith) u7) fun t ⟨wt, ft, kt, _, vt⟩ => ?_
-  have zZ : num u.mem (bOf s0) (WOf s0) wZ = 0 := by
-    rw [um]; exact num_zero (wide_zero (l.free _ (by rdx) (by rdx)) (l.free _ (by rdx) (by rdx)))
-  have zM : num u.mem (bOf s0) (WOf s0) wM = 0 := by
-    rw [um]; exact num_zero (wide_zero (l.free _ (by rdx) (by rdx)) (l.free _ (by rdx) (by rdx)))
-  have mM : num u.mem (bOf s0) (WOf s0) wMod = 2 ^ (wbOf s0 - 1) := by rw [um]; exact l.m
-  have dD : num u.mem (bOf s0) (WOf s0) wD = Dv s0 := by rw [um]; exact l.d
-  have eE : num u.mem (bOf s0) (WOf s0) wE = Ev s0 := by rw [um]; exact l.e
-  have wb1 : 1 ≤ wbOf s0 := by have := W_eq s0; show 1 ≤ 64 * WOf s0; omega_arith
-  have pw : 2 ^ nbOf s0 ≤ 2 ^ (wbOf s0 - 1) := Nat.pow_le_pow_right (by decide) (by omega_arith)
-  have bD : Dv s0 < 2 ^ nbOf s0 := Nat.lt_of_lt_of_le (os2ip_bytes_lt _ _ _)
+    simp only [mov]
+    brun [ws.s9, exec_addi_nat (m := 0) (by decide), BitVec.add_zero]
+    rfl
+  refine WP.mono hb fun u ⟨⟨u2, u3, u8, um⟩, ku⟩ => ?_
+  have ku' : Keep [.a2, .a3, .s8] s u := (((Keep.write _ _ _).trans (Keep.write _ _ _)).trans ku).mono (by decide)
+  have wu := ws.of_keep ku'
+  have cu := l.cb.of_keep ku' um (by decide)
+  refine WP.mono (mulRow_ok wu (o := wM) (y := wE) (x := wD) (i := 0) (by decide) (by decide) (by decide)
+    (by decide) (by decide) hWp u2 u3 u8) fun t ⟨wt, _, _, _, ot, ⟨c, vt⟩, kt⟩ => ?_
+  have zM : wordsVal u.mem (bOf s0) (arr (WOf s0) wM + 8 * 0) (WOf s0 - 0) = 0 := by
+    rw [Nat.mul_zero, Nat.add_zero, Nat.sub_zero, um]
+    exact num_zero (wide_zero (l.free _ (by rdx) (by rdx)) (l.free _ (by rdx) (by rdx)))
+  have bE : Ev s0 < 2 ^ 64 := Nat.lt_of_lt_of_le (os2ip_bytes_lt _ _ _)
     (Nat.pow_le_pow_right (by decide) (by omega_arith))
-  have bE : Ev s0 < 2 ^ (8 * (s0.gpr .a7).toNat) := os2ip_bytes_lt _ _ _
-  have v := vt zZ (by rw [zM, mM]; exact Nat.two_pow_pos _) (by rw [dD, mM]; omega_arith)
-    (by rw [mM, two_pow_pred wb1])
-  rw [zM, eE, dD, mM, Nat.zero_add, Nat.mod_eq_of_lt bE,
-    Nat.mod_eq_of_lt (by rw [Nat.mul_comm]; exact Nat.lt_of_lt_of_le hde pw)] at v
-  refine ⟨cu.step wt ft (by rdx) (by decide) kt, wt, ?_, by rw [v, Nat.mul_comm], ?_⟩
-  · rw [ft.toNarrow.num (by rdx) (by decide) (fit _ (by rdx)), um]; exact l.n
-  · exact free_step (U := ldUsed) (U' := prUsed) (js := halves (mulArrs wE wD wM wT)) ft.toNarrow
-      (by decide) fit (by decide) (by decide) (by rw [um]; exact l.free)
+  have eE : (word u.mem (bOf s0) (arr (WOf s0) wE + 8 * 0)).toNat = Ev s0 := by
+    rw [Nat.mul_zero, Nat.add_zero, um]; exact word0_of_lt hWp l.e bE
+  have dD : wordsVal u.mem (bOf s0) (arr (WOf s0) wD) (WOf s0 - 0) = Dv s0 := by
+    rw [Nat.sub_zero, um]; exact l.d
+  rw [zM, eE, dD, Nat.zero_add] at vt
+  simp only [Nat.mul_zero, Nat.add_zero, Nat.sub_zero] at vt
+  have pw : 2 ^ nbOf s0 ≤ 2 ^ (64 * WOf s0) :=
+    Nat.pow_le_pow_right (by decide) (by show 64 * wOf s0 ≤ 64 * WOf s0; rw [W_eq]; omega)
+  have deb : Ev s0 * Dv s0 < 2 ^ (64 * WOf s0) := by
+    rw [Nat.mul_comm]; exact Nat.lt_of_lt_of_le hde pw
+  have lt := wordsVal_lt t.mem (bOf s0) (arr (WOf s0) wM) (WOf s0)
+  have c0 : c = 0 := by
+    rcases Nat.eq_zero_or_pos c with z | z
+    · exact z
+    · have := Nat.le_mul_of_pos_right (2 ^ (64 * WOf s0)) z; omega
+  rw [c0, Nat.mul_zero, Nat.add_zero] at vt
+  have ft : Keys.Frame (bOf s0) (WOf s0) [wM] [] s.mem t.mem := by
+    rw [← um]; exact Frame.of_arr (d := 0) (by simpa using ot) (by simp only [S]; omega) (by simp)
+  have K : Keep (mulRegs ++ [.a2, .a3, .s8]) s t := Keep.trans' (ku'.mono (by decide)) (kt.mono (by decide))
+  refine ⟨l.cb.step wt ft (by rdx) (by simp) K, wt, ?_, ?_, ?_⟩
+  · rw [ft.toNarrow.num (by rdx) (by decide) (fit _ (by rdx))]; exact l.n
+  · show wordsVal t.mem (bOf s0) (arr (WOf s0) wM) (WOf s0) = deOf s0
+    rw [vt, Nat.mul_comm]
+  · exact free_step (U := ldUsed) (U' := prUsed) (js := halves [wM]) ft.toNarrow
+      (by decide) fit (by decide) (by decide) l.free
 
 /-! ## `d e - 1` -/
 
