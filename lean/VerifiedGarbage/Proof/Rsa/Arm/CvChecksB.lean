@@ -38,6 +38,8 @@ structure StD (s0 : State) (X₁ X₂ : Nat) (s : State) : Prop where
     (1 < cvM s0 → V = Nat.gcd (cvQ s0) (cvM s0) ∧
       (cvM s0 : Int) ∣ (num s.mem (cvB s0) (cvW s0) 3 : Int) * cvQ s0 - V ∧
       num s.mem (cvB s0) (cvW s0) 3 < cvM s0)
+  p : num s.mem (cvB s0) (cvW s0) aP = cvP s0
+  zero : num s.mem (cvB s0) (cvW s0) aZero = 0
 
 /-- `max` of two words below `2^31`, as `primeWidth` computes it. -/
 theorem max_word {x y : BitVec 32} (hx : x.toNat < 2 ^ 31) (hy : y.toNat < 2 ^ 31) :
@@ -234,7 +236,8 @@ theorem checksB_ok [InvLaw] {s0 s : State} {X₁ X₂ : Nat} (h : StI s0 X₁ X�
     KK.num (fun k hk e => hn (by subst e; exact hk)) (by decide) (fit j hj)
   have fDD := fit aDD (by decide)
   have hS : S (cvW s0) = 4 * (cvW s0 + 2) := rfl
-  refine ⟨bt, h7, ?_, ?_, ?_, ?_, ?_, ?_, d7, ?_⟩
+  refine ⟨bt, h7, ?_, ?_, ?_, ?_, ?_, ?_, d7, ?_, by rw [tr _ (by decide) (by decide), h.p],
+    by rw [tr _ (by decide) (by decide), h.zero]⟩
   · rw [← h.count]; refine BitVec.eq_of_toNat_eq ?_
     exact KK.slot (e := 16) (by decide) (by decide)
   · rw [tr _ (by decide) (by decide), h.q]
