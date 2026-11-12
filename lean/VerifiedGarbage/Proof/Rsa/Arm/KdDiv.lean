@@ -242,16 +242,40 @@ theorem Prepped.of_mem {x x' : State} {B : BitVec 32} {w m nm z M : Nat} (p : Pr
   obtain ⟨a, b, c, d, f, g, i, k, l, n⟩ := p
   exact ⟨e ▸ a, e ▸ b, c, e ▸ d, f, e ▸ g, e ▸ i, e ▸ k, e ▸ l, e ▸ n⟩
 
-/-- The loop: the steps at words `j`, …, `1`, while the window's offset, a word down, is not zero. -/
-theorem loop_ok {s0 x : State} {B : BitVec 32} {Z w N r m t nm u z M X j : Nat}
-    (I : DivSt s0 x B Z w N r m t nm u z M X j) (hj1 : 1 ≤ j) (hr : r < N) (hm : m < N) (ht : t < N)
+/-- The window from the invariant. -/
+theorem DivSt.window {s0 x : State} {B : BitVec 32} {Z w N r m t nm u z M X j : Nat}
+    (I : DivSt s0 x B Z w N r m t nm u z M X j) :
+    val32 x.mem (State.addr B) (arr w r + 4 * j) (w / 2 + 1) = winY X M j := by
+  have hj := I.hj
+  have hM0 := I.pre.M_pos
+  have hMl := I.pre.M_lt
+  have hWY : winY X M j < 2 ^ (32 * (w / 2 + 1)) := by
+    have := winY_lt (X := X) (j := j) hM0
+    rw [show 32 * (w / 2 + 1) = 32 * (w / 2) + 32 by omega, Nat.pow_add]
+    exact Nat.lt_of_lt_of_le this (Nat.mul_le_mul_right _ (Nat.le_of_lt hMl))
+  have e1 : w + 1 = j + ((w / 2 + 1) + (w - j - w / 2)) := by omega
+  have dec := I.val
+  rw [e1, val32_append, val32_append] at dec
+  exact (parts_unique (val32_lt _ _ _ _) (Nat.mod_lt _ (Nat.two_pow_pos _)) hWY dec).2.1
+
+/-- The estimate's frame from the invariant: `Ws`, `w` and the offset. -/
+theorem DivSt.est {s0 x : State} {B : BitVec 32} {Z w N r m t nm u z M X j : Nat}
+    (I : DivSt s0 x B Z w N r m t nm u z M X j) (hr : r < N) (hN : N ≤ 256) (hdw : 3 ≤ w / 2) :
+    WP isa (.block (estimate r)) x fun v => Ws v B Z w N ∧ slot v.mem B 16 = w ∧ slot v.mem B sJ = 4 * j := by
+  rw [← List.append_nil (estimate r)]
+  exact estimate_ok I.ws hr hN I.pre.c16 hdw I.J I.hj I.window (winY_lt I.pre.M_pos) I.pre.hz I.pre.hP
+    I.pre.hMP I.pre.hD I.pre.hDn I.pre.hV fun t q _ _ _ _ K W _ => WP.block_nil ⟨W,
+      by rw [K.slot (by decide) (by decide)]; exact I.pre.c16, by rw [K.slot (by decide) (by decide)]; exact I.J⟩
+
+/-- The loop's body: the step, and the condition: not zero unless `j = 1`, then the invariant
+a word down. -/
+theorem body_ok {s0 x : State} {B : BitVec 32} {Z w N r m t nm u z M X n : Nat}
+    (In : DivSt s0 x B Z w N r m t nm u z M X n) (hn : 1 ≤ n) (hr : r < N) (hm : m < N) (ht : t < N)
     (hnm : nm < N) (hu : u < N) (hN : N ≤ 256) (hrt : r ≠ t) (hru : r ≠ u) (htu : t ≠ u) (hmr : m ≠ r)
     (hmt : m ≠ t) (hmu : m ≠ u) (hnr : nm ≠ r) (htn : t ≠ nm) (hnu : nm ≠ u) (hr0 : r ≠ 0) (ht0 : t ≠ 0)
     (hu0 : u ≠ 0) (hdw : 3 ≤ w / 2) :
-    WP isa (.loop (.seq (step r m t nm u) (.block [.ldr .r0 .r8 sJ, .cmp .r0 (.imm 0)])) .ne) x
-      fun y => DivSt s0 y B Z w N r m t nm u z M X 0 := by
-  refine WP.loop (M := isa) (fun n y => DivSt s0 y B Z w N r m t nm u z M X n ∧ 1 ≤ n) ?_ j x ⟨I, hj1⟩
-  rintro n y ⟨In, hn⟩
+    WP isa (.seq (step r m t nm u) (.block [.ldr .r0 .r8 sJ, .cmp .r0 (.imm 0)])) x fun y =>
+      isa.eval .ne y = some (!decide (n = 1)) ∧ DivSt s0 y B Z w N r m t nm u z M X (n - 1) := by
   have := In.ws.wle
   have hjn := In.hj
   rw [WP.seq_iff]
@@ -267,25 +291,35 @@ theorem loop_ok {s0 x : State} {B : BitVec 32} {Z w N r m t nm u z M X j : Nat}
   have W3 : Ws y3 B Z w N := (W1.of_upd u2 (by decide) (by decide) (by decide)).of (by rw [f3.gpr])
     (by rw [f3.gpr]) (by rw [f3.gpr]) f3.wr
   have R3 : Rest divRegs s0 y3 := R1.trans ((u2.rest (by decide)).trans (f3.rest _))
-  have st : ∀ k, n = k + 1 → DivSt s0 y3 B Z w N r m t nm u z M X k := fun k hk => by
-    subst hk
-    refine ⟨W3, P1.of_mem m3, ?_, by omega, ?_, by rw [m3]; exact K1, R3⟩
-    · simp only [slot]; rw [m3]; simp only [slot] at J1; rw [J1, e4]; rfl
-    · rw [m3, V1, fold_next]
-  rcases Nat.lt_or_ge 1 n with h2 | h1
-  · right
-    refine ⟨?_, n - 1, by omega, st (n - 1) (by omega), by omega⟩
-    change some (!y3.z) = some true
-    rw [hz3, r0v, show BitVec.ofNat 32 (4 * n) - 4 - 0 = BitVec.ofNat 32 (4 * n) - 4 from BitVec.sub_zero _]
-    have : BitVec.ofNat 32 (4 * n) - 4 ≠ 0 := fun e => by
-      have := congrArg BitVec.toNat e; rw [e4] at this; simp at this; omega
-    rw [show (BitVec.ofNat 32 (4 * n) - 4 == 0) = false from beq_eq_false_iff_ne.mpr this]; rfl
-  · left
-    have n1 : n = 1 := by omega
-    subst n1
-    refine ⟨?_, st 0 rfl⟩
-    change some (!y3.z) = some false
-    rw [hz3, r0v]; decide
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+  refine ⟨?_, W3, P1.of_mem m3, ?_, by omega, ?_, by rw [m3]; exact K1, R3⟩
+  · change some (!y3.z) = some (!decide (k + 1 = 1))
+    rw [hz3, r0v, show BitVec.ofNat 32 (4 * (k + 1)) - 4 - 0 = BitVec.ofNat 32 (4 * (k + 1)) - 4 from
+      BitVec.sub_zero _]
+    by_cases e : k = 0
+    · subst e; decide
+    · have : BitVec.ofNat 32 (4 * (k + 1)) - 4 ≠ 0 := fun e' => by
+        have := congrArg BitVec.toNat e'; rw [e4] at this; simp at this; omega
+      rw [show (BitVec.ofNat 32 (4 * (k + 1)) - 4 == 0) = false from beq_eq_false_iff_ne.mpr this]
+      simp [e]
+  · simp only [slot]; rw [m3]; simp only [slot] at J1; rw [J1, e4]
+  · rw [m3, V1, Nat.add_sub_cancel, fold_next]
+
+/-- The loop: the steps at words `j`, …, `1`, while the window's offset, a word down, is not zero. -/
+theorem loop_ok {s0 x : State} {B : BitVec 32} {Z w N r m t nm u z M X j : Nat}
+    (I : DivSt s0 x B Z w N r m t nm u z M X j) (hj1 : 1 ≤ j) (hr : r < N) (hm : m < N) (ht : t < N)
+    (hnm : nm < N) (hu : u < N) (hN : N ≤ 256) (hrt : r ≠ t) (hru : r ≠ u) (htu : t ≠ u) (hmr : m ≠ r)
+    (hmt : m ≠ t) (hmu : m ≠ u) (hnr : nm ≠ r) (htn : t ≠ nm) (hnu : nm ≠ u) (hr0 : r ≠ 0) (ht0 : t ≠ 0)
+    (hu0 : u ≠ 0) (hdw : 3 ≤ w / 2) :
+    WP isa (.loop (.seq (step r m t nm u) (.block [.ldr .r0 .r8 sJ, .cmp .r0 (.imm 0)])) .ne) x
+      fun y => DivSt s0 y B Z w N r m t nm u z M X 0 := by
+  refine WP.loop (M := isa) (fun n y => DivSt s0 y B Z w N r m t nm u z M X n ∧ 1 ≤ n) ?_ j x ⟨I, hj1⟩
+  rintro n y ⟨In, hn⟩
+  refine WP.mono (body_ok In hn hr hm ht hnm hu hN hrt hru htu hmr hmt hmu hnr htn hnu hr0 ht0 hu0 hdw)
+    fun y' ⟨c, I'⟩ => ?_
+  by_cases e : n = 1
+  · left; subst e; exact ⟨by rw [c]; rfl, I'⟩
+  · right; exact ⟨by rw [c]; simp [e], n - 1, by omega, I', by omega⟩
 
 /-! ## The preparation -/
 
@@ -522,6 +556,38 @@ theorem prepB_ok {v : State} {B : BitVec 32} {Z w N r m t nm u : Nat} (h : Ws v 
     exact ((K1.mono).trans K2.mono).trans (keep_write _ _ (by simp) (by simp only [sJ]; omega))
   · exact (R1.mono (by decide)).trans ((R2.mono (by decide)).trans (R3.mono (by decide)))
 
+/-- The preparation: the loop's invariant at the window at word `w - w / 2`. -/
+theorem prep_ok {s : State} {B : BitVec 32} {Z w N a r m nm : Nat} (t u : Nat) (h : Ws s B Z w N) (ha : a < N)
+    (hr : r < N) (hm : m < N) (hnm : nm < N) (hN : N ≤ 256) (hra : r ≠ a) (hmr : m ≠ r) (hnm' : nm ≠ m)
+    (hnr : nm ≠ r) (hr0 : r ≠ 0) (hn0 : nm ≠ 0) (hw6 : 6 ≤ w) (h16 : slot s.mem B 16 = w) {M : Nat}
+    (hM : num s.mem B w m = M) (hMl : M < 2 ^ (32 * (w / 2)))
+    (hT0 : 0 < w32 s.mem (State.addr B) (arr w m + 4 * (w / 2 - 1))) (hz : num s.mem B w 0 = 0) :
+    WP isa (prep a r m nm) s fun x0 => (∃ z, DivSt x0 x0 B Z w N r m t nm u z M (num s.mem B w a) (w - w / 2)) ∧
+      Keep B w [r, nm] [sP, sD, sD1, sV, sJ] s.mem x0.mem ∧ Rest divRegs s x0 := by
+  have := h.wle
+  have gm := h.fit64 hm
+  have g0 := h.fit64 (j := 0) (by omega)
+  simp only [S] at gm g0
+  have hM0 : 0 < M := by
+    rw [← hM]; simp only [num]
+    rw [show w = (w / 2 - 1) + 1 + (w - w / 2) by omega, val32_append, val32_succ]
+    have := Nat.mul_le_mul_left (2 ^ (32 * (w / 2 - 1))) hT0
+    have := Nat.two_pow_pos (32 * (w / 2 - 1))
+    have e : w / 2 - 1 + 1 + (w - w / 2) = w := by omega
+    rw [e] at *
+    omega
+  rw [prep]
+  simp only [VG.Impl.Rsa.Arm.Keys.seqs]
+  refine prepA_ok h ha hr hm hnm hN hra hr0 hmr.symm hn0 hnm' hnr hM hM0 hz fun v W V N' K R => ?_
+  have Mv : num v.mem B w m = M := by rw [K.num (by simp; exact ⟨hmr.symm, hnm'⟩) (by simp) gm]; exact hM
+  have Zv : num v.mem B w 0 = 0 := by rw [K.num (by simp; exact ⟨hr0, hn0⟩) (by simp) g0]; exact hz
+  have Tv : 0 < w32 v.mem (State.addr B) (arr w m + 4 * (w / 2 - 1)) := by
+    rw [K.word (by simp only [S]; omega) (by simp; exact ⟨hmr.symm, hnm'⟩) (by simp) gm]; exact hT0
+  have hv16 : slot v.mem B 16 = w := by rw [K.slot (by decide) (by simp)]; exact h16
+  exact WP.mono (prepB_ok (t := t) (u := u) W hr hm hnm hN hw6 hv16 Mv hMl Tv Zv N' V
+    (by simp only [num]; exact val32_lt _ _ _ _)) fun x0 ⟨I0, K0, R0⟩ =>
+      ⟨⟨_, I0⟩, (K.mono).trans K0.mono, (R.mono (by decide)).trans R0⟩
+
 /-! ## The division -/
 
 /-- The header words the division changes. -/
@@ -553,16 +619,10 @@ theorem divW_ok {s : State} {B : BitVec 32} {Z w N a r m t nm u : Nat} (h : Ws s
     rw [e] at *
     omega
   rw [divW]
-  simp only [VG.Impl.Rsa.Arm.Keys.seqs, prep]
+  simp only [VG.Impl.Rsa.Arm.Keys.seqs]
   rw [WP.seq_iff]
-  refine prepA_ok h ha hr hm hnm hN hra hr0 hmr.symm hn0 hnm' hnr hM hM0 hz fun v W V N' K R => ?_
-  have Mv : num v.mem B w m = M := by rw [K.num (by simp; exact ⟨hmr.symm, hnm'⟩) (by simp) gm]; exact hM
-  have Zv : num v.mem B w 0 = 0 := by rw [K.num (by simp; exact ⟨hr0, hn0⟩) (by simp) g0]; exact hz
-  have Tv : 0 < w32 v.mem (State.addr B) (arr w m + 4 * (w / 2 - 1)) := by
-    rw [K.word (by simp only [S]; omega) (by simp; exact ⟨hmr.symm, hnm'⟩) (by simp) gm]; exact hT0
-  have hv16 : slot v.mem B 16 = w := by rw [K.slot (by decide) (by simp)]; exact h16
-  refine WP.mono (prepB_ok (t := t) (u := u) W hr hm hnm hN hw6 hv16 Mv hMl Tv Zv N' V
-    (by simp only [num]; exact val32_lt _ _ _ _)) fun x0 ⟨I0, K0, R0⟩ => ?_
+  refine WP.mono (prep_ok t u h ha hr hm hnm hN hra hmr hnm' hnr hr0 hn0 hw6 h16 hM hMl hT0 hz)
+    fun x0 ⟨⟨_, I0⟩, K, R⟩ => ?_
   rw [WP.seq_iff]
   refine WP.mono (loop_ok I0 (by omega) hr hm ht hnm hu hN hrt hru htu hmr hmt hmu hnr htn hnu hr0 ht0 hu0
     (by omega)) fun x1 I1 => ?_
@@ -581,7 +641,7 @@ theorem divW_ok {s : State} {B : BitVec 32} {Z w N a r m t nm u : Nat} (h : Ws s
     · have := Nat.le_mul_of_pos_right P e; omega
   refine ⟨W2, ?_, hw0, ?_, ?_⟩
   · simp only [num]; rw [hw0, Nat.mul_zero, Nat.add_zero] at V2; exact V2
-  · exact ((K.mono).trans K0.mono).trans K2.mono
-  · exact (R.mono (by decide)).trans (R0.trans R2)
+  · exact K.mono.trans K2.mono
+  · exact R.trans R2
 
 end VG.Proof.Rsa.Arm.KeyDiv

@@ -228,4 +228,97 @@ theorem step_ct {B : BitVec 32} {Z w N a r m t nm u j : Nat} (T : DivTaint a r m
   -- The last block.
   exact piece [.r7, .r8, .r9] T.tail bnd_regs (fun s h => h.2.2.2) (fun s h => h.2.2.2)
 
+/-- What `divW a r m t nm u` needs of each run. -/
+def DivPre (B : BitVec 32) (Z w N m : Nat) (s : State) : Prop :=
+  Ws s B Z w N ∧ slot s.mem B 16 = w ∧ num s.mem B w m < 2 ^ (32 * (w / 2)) ∧
+    0 < w32 s.mem (State.addr B) (arr w m + 4 * (w / 2 - 1)) ∧ num s.mem B w 0 = 0
+
+/-- `divW a r m t nm u` is constant time. -/
+theorem divW_ct {B : BitVec 32} {Z w N a r m t nm u : Nat} (T : DivTaint a r m t nm u) (ha : a < N)
+    (hr : r < N) (hm : m < N) (ht : t < N) (hnm : nm < N) (hu : u < N) (hN : N ≤ 256) (hra : r ≠ a)
+    (hrt : r ≠ t) (hru : r ≠ u) (htu : t ≠ u) (hmr : m ≠ r) (hmt : m ≠ t) (hmu : m ≠ u) (hnr : nm ≠ r)
+    (htn : t ≠ nm) (hnu : nm ≠ u) (hnm' : nm ≠ m) (hr0 : r ≠ 0) (ht0 : t ≠ 0) (hu0 : u ≠ 0) (hn0 : nm ≠ 0)
+    (hw6 : 6 ≤ w) :
+    RelCT isa (fun s t' => DivPre B Z w N m s ∧ DivPre B Z w N m t') (divW a r m t nm u) fun _ _ => True := by
+  have hdw : 3 ≤ w / 2 := by omega
+  refine (RelCT.exists_ (P := fun (p : State × State) s t' => (s = p.1 ∧ DivPre B Z w N m p.1) ∧
+    (t' = p.2 ∧ DivPre B Z w N m p.2)) fun p => ?_).mono (fun s t' h => ⟨(s, t'), ⟨rfl, h.1⟩, rfl, h.2⟩)
+    fun _ _ h => h
+  obtain ⟨σ₁, σ₂⟩ := p
+  let Inv (σ : State) (n : Nat) (y : State) : Prop :=
+    ∃ x0 z, DivSt x0 y B Z w N r m t nm u z (num σ.mem B w m) (num σ.mem B w a) n
+  rw [divW]
+  simp only [VG.Impl.Rsa.Arm.Keys.seqs]
+  -- The preparation.
+  have fP : ∀ σ s, (s = σ ∧ DivPre B Z w N m σ) → WP isa (prep a r m nm) s (Inv σ (w - w / 2)) := by
+    rintro σ s ⟨rfl, W, c16, hMl, hT0, z0⟩
+    exact WP.mono (prep_ok t u W ha hr hm hnm hN hra hmr hnm' hnr hr0 hn0 hw6 c16 rfl hMl hT0 z0)
+      fun x0 ⟨⟨z, I0⟩, _, _⟩ => ⟨x0, z, I0⟩
+  refine RelCT.seq (piece [.r7, .r8, .r9] T.prep (fun s t' h₁ h₂ => by rw [h₁.1, h₂.1]; exact ws_regs' h₁.2.1 h₂.2.1)
+    (fP σ₁) (fP σ₂)) ?_
+  -- The step from the invariant, with any of its correctness `G`.
+  have stepI : ∀ {n : Nat} {x0₁ x0₂ : State} {z₁ z₂ : Nat} {G₁ G₂ : State → Prop},
+      n + w / 2 ≤ w →
+      RelCT isa (fun s t' => (DivSt x0₁ s B Z w N r m t nm u z₁ (num σ₁.mem B w m) (num σ₁.mem B w a) n ∧
+          WP isa (step r m t nm u) s G₁) ∧
+        (DivSt x0₂ t' B Z w N r m t nm u z₂ (num σ₂.mem B w m) (num σ₂.mem B w a) n ∧
+          WP isa (step r m t nm u) t' G₂)) (step r m t nm u) fun s t' => G₁ s ∧ G₂ t' := by
+    intro n x0₁ x0₂ z₁ z₂ G₁ G₂ hj
+    exact (step_ct (a := a) (j := n) T hr hm ht hnm hu hN hru htu hmt htn hrt ht0 hdw hj).mono
+      (fun s t' h => ⟨⟨⟨h.1.1.ws, h.1.1.pre.c16, h.1.1.J, h.1.2⟩, h.1.1.est hr hN hdw⟩,
+        ⟨h.2.1.ws, h.2.1.pre.c16, h.2.1.J, h.2.2⟩, h.2.1.est hr hN hdw⟩) fun _ _ h => h
+  -- The loop.
+  let I (n : Nat) (s t' : State) : Prop := 1 ≤ n ∧ Inv σ₁ n s ∧ Inv σ₂ n t'
+  have body : ∀ n, RelCT isa (I n) (.seq (step r m t nm u) (.block [.ldr .r0 .r8 sJ, .cmp .r0 (.imm 0)]))
+      fun s t' => isa.eval .ne s = isa.eval .ne t' ∧ (isa.eval .ne s = some false → Inv σ₁ 0 s ∧ Inv σ₂ 0 t') ∧
+        (isa.eval .ne s = some true → ∃ k < n, I k s t') := by
+    intro n
+    refine (RelCT.exists_ (P := fun (q : (State × Nat) × (State × Nat)) s t' => 1 ≤ n ∧
+      DivSt q.1.1 s B Z w N r m t nm u q.1.2 (num σ₁.mem B w m) (num σ₁.mem B w a) n ∧
+      DivSt q.2.1 t' B Z w N r m t nm u q.2.2 (num σ₂.mem B w m) (num σ₂.mem B w a) n) fun q => ?_).mono
+      (fun s t' ⟨hn, ⟨x0, z, h₁⟩, ⟨x0', z', h₂⟩⟩ => ⟨((x0, z), (x0', z')), hn, h₁, h₂⟩) fun _ _ h => h
+    obtain ⟨⟨x0₁, z₁⟩, ⟨x0₂, z₂⟩⟩ := q
+    by_cases hn : 1 ≤ n ∧ n + w / 2 ≤ w
+    swap
+    · exact RelCT.of_false fun s t' h => hn ⟨h.1, h.2.1.hj⟩
+    obtain ⟨hn, hj⟩ := hn
+    let Pb (x0 : State) (z : Nat) (σ : State) (y : State) : Prop := isa.eval .ne y = some (!decide (n = 1)) ∧
+      DivSt x0 y B Z w N r m t nm u z (num σ.mem B w m) (num σ.mem B w a) (n - 1)
+    let G (x0 : State) (z : Nat) (σ : State) (y : State) : Prop := Ws y B Z w N ∧
+      WP isa (.block [.ldr .r0 .r8 sJ, .cmp .r0 (.imm 0)]) y (Pb x0 z σ)
+    have fG : ∀ {x0 z σ s}, DivSt x0 s B Z w N r m t nm u z (num σ.mem B w m) (num σ.mem B w a) n →
+        WP isa (step r m t nm u) s (G x0 z σ) := fun {x0 z σ s} h => by
+      have b := body_ok h hn hr hm ht hnm hu hN hrt hru htu hmr hmt hmu hnr htn hnu hr0 ht0 hu0 hdw
+      rw [WP.seq_iff] at b
+      exact WP.mono (wp_and (stepD_ok h hr hm ht hnm hu hN hrt hru htu hmr hmt hmu hnr htn hnu hr0 ht0 hu0 hdw) b)
+        fun y ⟨⟨W, _⟩, c⟩ => ⟨W, c⟩
+    have c := RelCT.seq ((stepI (G₁ := G x0₁ z₁ σ₁) (G₂ := G x0₂ z₂ σ₂) hj).mono
+        (P' := fun s t' => 1 ≤ n ∧
+          DivSt x0₁ s B Z w N r m t nm u z₁ (num σ₁.mem B w m) (num σ₁.mem B w a) n ∧
+          DivSt x0₂ t' B Z w N r m t nm u z₂ (num σ₂.mem B w m) (num σ₂.mem B w a) n)
+        (fun s t' h => ⟨⟨h.2.1, fG h.2.1⟩, h.2.2, fG h.2.2⟩) fun _ _ h => h)
+      (piece (Q₁ := Pb x0₁ z₁ σ₁) (Q₂ := Pb x0₂ z₂ σ₂) [.r7, .r8, .r9] T.cond
+        (fun s t' h₁ h₂ => ws_regs' h₁.1 h₂.1) (fun s h => h.2) (fun s h => h.2))
+    refine c.mono (fun s t' h => h) fun s t' ⟨⟨c₁, I₁⟩, ⟨c₂, I₂⟩⟩ => ⟨by rw [c₁, c₂], fun e => ?_, fun e => ?_⟩
+    · rw [c₁] at e
+      have : n = 1 := by
+        by_contra hne
+        simp [hne] at e
+      subst this
+      exact ⟨⟨x0₁, z₁, I₁⟩, ⟨x0₂, z₂, I₂⟩⟩
+    · rw [c₁] at e
+      have : n ≠ 1 := fun hne => by simp [hne] at e
+      exact ⟨n - 1, by omega, by omega, ⟨x0₁, z₁, I₁⟩, ⟨x0₂, z₂, I₂⟩⟩
+  refine RelCT.seq (RelCT.loop (Q := fun s t' => Inv σ₁ 0 s ∧ Inv σ₂ 0 t') I body (w - w / 2) |>.mono
+    (fun s t' h => ⟨by omega, h.1, h.2⟩) fun _ _ h => h) ?_
+  -- The last step.
+  refine (RelCT.exists_ (P := fun (q : (State × Nat) × (State × Nat)) s t' =>
+      DivSt q.1.1 s B Z w N r m t nm u q.1.2 (num σ₁.mem B w m) (num σ₁.mem B w a) 0 ∧
+      DivSt q.2.1 t' B Z w N r m t nm u q.2.2 (num σ₂.mem B w m) (num σ₂.mem B w a) 0) fun q => ?_).mono
+    (fun s t' ⟨⟨x0, z, h₁⟩, ⟨x0', z', h₂⟩⟩ => ⟨((x0, z), (x0', z')), h₁, h₂⟩) fun _ _ h => h
+  exact (stepI (G₁ := fun _ => True) (G₂ := fun _ => True) (by omega)).mono
+    (fun s t' h => ⟨⟨h.1, WP.mono (stepD_ok h.1 hr hm ht hnm hu hN hrt hru htu hmr hmt hmu hnr htn hnu hr0 ht0 hu0
+      hdw) fun _ _ => trivial⟩, h.2, WP.mono (stepD_ok h.2 hr hm ht hnm hu hN hrt hru htu hmr hmt hmu hnr htn hnu
+      hr0 ht0 hu0 hdw) fun _ _ => trivial⟩) fun _ _ _ => trivial
+
 end VG.Proof.Rsa.Arm.KeyDiv
