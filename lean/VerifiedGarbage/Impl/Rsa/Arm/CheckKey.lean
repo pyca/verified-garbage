@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
+public import VerifiedGarbage.Impl.Bignum.Arm.UmaalArithmetic
 
 /-! # `vg_rsa_check_key` on ARMv7
 
@@ -22,5 +23,8 @@ def args : List (Nat × Nat) := [(0, aD), (8, aP), (16, aQ), (24, aDP), (32, aDQ
 
 /-- `vg_rsa_check_key`. -/
 def code : Prog isa := fn 48 args (keyBodyS 12 20 28 36)
+
+/-- `vg_rsa_check_key_umaal`: `code` with its rows by `umaal`. -/
+def codeU : Prog isa := VG.Impl.Bignum.Arm.umaalArithmetic code
 
 end VG.Impl.Rsa.Arm.CheckKey

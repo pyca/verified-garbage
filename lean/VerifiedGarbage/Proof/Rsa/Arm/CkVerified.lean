@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KcTaintW
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Rsa.Arm.CkCorrect
+import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 import VerifiedGarbage.Proof.Rsa.Arm.CkTaint
 import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.KcFnCT
@@ -495,5 +496,10 @@ theorem ck_contract_sat : ∃ s, (Spec.Rsa.checkKeyContract abi 0).pre s := by
 theorem check_key_verified :
     Verified target VG.Impl.Rsa.Arm.CheckKey.code (Spec.Rsa.checkKeyContract abi 0) :=
   ⟨ck_contract_correct, ck_contract_ct, ck_contract_sat⟩
+
+/-- `vg_rsa_check_key_umaal`. -/
+theorem check_key_umaal_verified :
+    Verified target VG.Impl.Rsa.Arm.CheckKey.codeU (Spec.Rsa.checkKeyContract abi 0) :=
+  VG.Proof.Bignum.Arm.umaalArithmetic_verified check_key_verified
 
 end VG.Proof.Rsa.Arm.CheckKey
