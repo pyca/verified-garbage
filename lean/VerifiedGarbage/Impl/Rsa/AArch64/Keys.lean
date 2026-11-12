@@ -359,6 +359,17 @@ def inverseB (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
   seqs (batchInit iV iU iX₂ iX₁ iM ++ [.loop (batch iV iU iX₂ iX₁ iT iM) (.nonzero .x .x15)] ++
     batchFinish iV iU iX₂ iM iT)
 
+/-- `batchFinish` without the doublings: `v := |f|`, `x₂ := ±a mod m`, and
+`x1`, `x2` restored; the caller multiplies `x₂` by `2^(5 B)`. -/
+def batchFinishS (iF iA iM iT : Nat) : List (Prog isa) :=
+  [.block (signMask iF), cnegP iF, cnegP iA] ++ addIfNeg iA iM ++ addIfNeg iA iM ++ csubP iA iM iT ++
+  [.block [.umov .x .x1 .v19 0, .umov .x .x2 .v19 1]]
+
+/-- `inverseB` without the doublings (`batchFinishS`). -/
+def inverseBS (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
+  seqs (batchInit iV iU iX₂ iX₁ iM ++ [.loop (batch iV iU iX₂ iX₁ iT iM) (.nonzero .x .x15)] ++
+    batchFinishS iV iX₂ iM iT)
+
 /-- `inverse u v x₁ x₂ m t`: `[v] = gcd(a, m)` and `[x₂] a ≡ [v] (mod m)`
 for `[u] = a` and the odd `[m] = [v]`. -/
 def inverse (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
@@ -385,6 +396,10 @@ divsteps run at it, and the words of `[v]` and `[x₂]` above it are cleared,
 so that their `w` words are the result. -/
 def inverseAt (nb : List Instr) (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
   .seq (.block (ws ++ nb)) (seqs ([inverseB iU iV iX₁ iX₂ iM iT] ++ tailZ iV ++ tailZ iX₂))
+
+/-- `inverseAt` without the doublings (`inverseBS`). -/
+def inverseAtS (nb : List Instr) (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
+  .seq (.block (ws ++ nb)) (seqs ([inverseBS iU iV iX₁ iX₂ iM iT] ++ tailZ iV ++ tailZ iX₂))
 
 /-! ## Masks -/
 
@@ -537,12 +552,55 @@ def pqCheck : List (Prog isa) :=
 def invSetup : List (Prog isa) :=
   [zeroA aU, copyA aU aQ, zeroA aV, copyA aV aP, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂]
 
+/-- `a` if `wordGuard` passes, `b` otherwise. -/
+def guarded (a b : Prog isa) : Prog isa := .seq (.block (wordGuard sPl sQl)) (.ite (.zero .x .x9) a b)
+
+/-- From `w` in `x12`, for `n = w / 2` (in `x5`) and the `K = 15 n + 10`
+doublings the batches leave: `x13 := Q = ⌊(K - 1) / 64⌋` and
+`x15 := T = (K - 1) mod 64 + 1`, so that `K = 64 Q + T` with `1 ≤ T ≤ 64`. -/
+def tailK : List Instr :=
+  [.lsr .x .x5 .x12 1, .lsl .x .x6 .x5 4, .sub .x .x6 .x6 .x5, .addImm .x .x6 .x6 9, .lsr .x .x13 .x6 6,
+    movi .x3 63, .logic .and .x .x15 .x6 .x3, .addImm .x .x15 .x15 1]
+
+/-- A doubling's start: `x16 = x17 :=` `[aX₂]`'s base, `x14 := n + 1` and the
+carry cleared. -/
+def dblSetup : List Instr :=
+  base aX₂ .x16 ++ [mov .x17 .x16, .addImm .x .x14 .x5 1, movi .x7 0, .adds .x .x3 .x7 .x7]
+
+/-- `[aX₂] := [aX₂] 2^T` over its low `n + 1` words, by `T` doublings in
+place. -/
+def tailDbl : Prog isa :=
+  .loop (.seq (.block dblSetup) (.seq (countLoop .x14 dblBody) (.block [.subImm .x .x15 .x15 1])))
+    (.nonzero .x .x15)
+
+/-- `[aC] := [aX₂] 2^(64 Q)`: `[aX₂]`'s low `n + 1` words copied to `[aC]`'s
+words from `Q` (`[aC]` zero). -/
+def place : List Instr :=
+  ws ++ tailK ++ base aX₂ .x16 ++ base aC .x17 ++ [.lsl .x .x3 .x13 3, .add .x .x17 .x17 .x3, .addImm .x .x12 .x5 1]
+
+/-- `L = n + Q + 1 = ⌊(79 n + 9) / 64⌋ + 1` words of the dividend, from
+`w = 2 n` in `x12` (`x13` alone). -/
+def tailLen : List Instr :=
+  [.lsl .x .x13 .x12 2, .add .x .x13 .x13 .x12, .lsl .x .x13 .x13 4, .sub .x .x13 .x13 .x12, .lsr .x .x13 .x13 1,
+    .addImm .x .x13 .x13 9, .lsr .x .x13 .x13 6, .addImm .x .x13 .x13 1]
+
+/-- In place of the doublings when `wordGuard` passes: `[aX₂] := [aX₂] 2^K mod p`,
+`2^T` by doublings of `[aX₂] < p` (which fits `n + 1` words), then `2^(64 Q)`
+by its place in `[aC]`, and the remainder by `wdiv` (`[aC]` two arrays
+above `[aX₂]`). -/
+def qTail : List (Prog isa) :=
+  [.block (ws ++ tailK), tailDbl, zeroA aC, .block place, copyWords,
+    wdiv aC aP aX₂ aT [.lsr .x .x12 .x12 1] tailLen
+      [.lsl .x .x16 .x12 5, .addImm .x .x16 .x16 24, .add .x .x16 .x11 .x16]]
+
 /-- `qInv = q⁻¹ mod p` into `aX₂`, at the primes' width
 `⌈max(p_len, q_len) / 8⌉` (`nCalc`), and `gcd(q, p) = 1` and'ed into
-`sMask`. -/
+`sMask`. When `wordGuard` passes, the inverse leaves out its doublings
+(`inverseAtS`) and `qTail` does their work after the check. -/
 def invPart : List (Prog isa) :=
-  invSetup ++ ([inverseAt (nCalc sPl sQl) aU aV aX₁ aX₂ aP aT, zeroA aC, .block (setOneA aC)] ++
-    (eqA aV aC ++ [.block andZero]))
+  invSetup ++ ([guarded (inverseAtS (nCalc sPl sQl) aU aV aX₁ aX₂ aP aT)
+      (inverseAt (nCalc sPl sQl) aU aV aX₁ aX₂ aP aT), zeroA aC, .block (setOneA aC)] ++
+    (eqA aV aC ++ [.block andZero])) ++ [guarded (seqs qTail) (.block [])]
 
 /-- `[aC] := [j] - 1` (for an odd `[j]`, whose low word is not zero), then
 `[aU] := d`. -/
