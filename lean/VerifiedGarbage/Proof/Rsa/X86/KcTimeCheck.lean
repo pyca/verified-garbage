@@ -36,6 +36,16 @@ structure RowsCk (full : Bool) (o a b : Nat) (rows : Option Nat) : Prop where
     (.seq (.block (VG.Proof.Rsa.X86.WordRt.rowH₂ (lay full) o a)) (VG.Proof.Rsa.X86.WordRt.rowTail (lay full) o a b rows))
     hint).isSome = true
 
+/-- The taint checks of `mulHalf` for `o`, `a`, `b`. -/
+structure HalfCk (full : Bool) (o a b : Nat) : Prop where
+  c₀ : ∃ hint, (VG.Taint.check sseTaint (τV full) (.seq (.seq (.seq (VG.Impl.Rsa.X86.KeyRt.zeroWide (lay full) o)
+    (VG.Impl.Rsa.X86.KeyRt.zeroWide (lay full) (o + 1))) (.block (VG.Impl.Rsa.X86.WordModRt.topZero (lay full) o)))
+    (.block [.mov .eax (.imm 0), .store (VG.Impl.Mont.X86.sc VG.Impl.Rsa.X86.WordModRt.oJ) .eax])) hint).isSome = true
+  c₁ : ∃ hint, (VG.Taint.check sseTaint (τV full) (.block (VG.Proof.Rsa.X86.WordRt.rowHead (lay full) b)) hint).isSome = true
+  c₂ : ∃ hint, (VG.Taint.check sseTaint { τV full with regs := .ofList [.edi, .esp, .eax, .ebx] }
+    (.seq (.block (VG.Proof.Rsa.X86.WordRt.rowH₂ (lay full) o a true))
+      (VG.Proof.Rsa.X86.WordRt.rowTail (lay full) o a b none true)) hint).isSome = true
+
 /-- The taint checks of `wordMod` for `x`, `r`, `m`. -/
 structure ModCk (full : Bool) (x r m : Nat) (wide : Bool) : Prop where
   c₀ : ∃ hint, (VG.Taint.check sseTaint (τV full) (.seq (.seq (.block (VG.Impl.Rsa.X86.WordModRt.orTop (lay full) (pLenArg full) m))
@@ -90,15 +100,18 @@ structure KcCk (full : Bool) : Prop where
   bits : ∃ hint, (VG.Taint.check sseTaint (τV full) (bitsBranch full) hint).isSome = true
   word : WCk full
   last : ∃ hint, (VG.Taint.check sseTaint (τV full) (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc sMask))]) hint).isSome = true
+  bal : ∃ hint, (VG.Taint.check sseTaint (τV full)
+    (.block (VG.Impl.Rsa.X86.WordModRt.balanced (lay full) 1 (pLenArg full) (qLenArg full) aN sG)) hint).isSome = true
+  half : HalfCk full aVQ aP aQ
 
 theorem kcCkFull : KcCk true := by
   refine ⟨?_, ?_, ⟨?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩,
-    ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩⟩, ?_⟩
+    ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩⟩, ?_, ?_, ⟨?_, ?_, ?_⟩⟩
   all_goals exact ⟨_, by taint_decide⟩
 
 theorem kcCkCrt : KcCk false := by
   refine ⟨?_, ?_, ⟨?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩,
-    ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩⟩, ?_⟩
+    ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩⟩, ?_, ?_, ⟨?_, ?_, ?_⟩⟩
   all_goals exact ⟨_, by taint_decide⟩
 
 theorem kcCk (full : Bool) : KcCk full := by

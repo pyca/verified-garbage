@@ -2,6 +2,8 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafState
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafOdd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafChoose
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafSubtract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafShift
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafChoose
 import VerifiedGarbage.Proof.Framework.Block
@@ -107,5 +109,118 @@ theorem fastPrepStep_ok {s : State} {base : Addr} {size n bits w k j : Nat} (hn 
       ((VG.Proof.Mont.X86_64.Keeps.regs kt).mono (by simp))
   · rw [kt.2.1,ka.2.1] at *
     exact ob
+
+/-- `fastPrepStep_ok` for the step without branches on the scalar's bits, of width five: the digit is
+zero and the shift one for an even residual. -/
+theorem fastPrepStepB_ok {s : State} {base : Addr} {size n bits k j : Nat} (hn : n=4 ∨ n=6 ∨ n=9)
+    (hI : FastPrepState n base size bits 5 k j s)
+    (hb : bits+64*n+8≤size) (hj : j<64*n+1) (hv : FastNaf.residual 5 k j≤2^(64*n)) :
+    WP isa (Impl.Weierstrass.X86_64.FastNaf.stepB n bits) s fun t =>
+      FastPrepState n base size bits 5 k (j+fastDelta 5 k j) t ∧
+      t.cf=some (decide (j+fastDelta 5 k j<64*n+1)) ∧ KeepRegs (nafPrepClobN n) s t ∧
+      Outside base bits (64*n+8) s.mem t.mem := by
+  have hw : FastNaf.Width 5 := Or.inl rfl
+  have hx : (s.gpr .r8).toNat%2^5=FastNaf.residual 5 k j%2^5 := by
+    have h := hI.value
+    rw [nafValN_r8] at h
+    omega
+  have hp : (s.gpr .r8).toNat%2=FastNaf.residual 5 k j%2 := by omega
+  have hδ : (if (s.gpr .r8).toNat%2=0 then 1 else 1+2^2)=fastDelta 5 k j := by
+    unfold fastDelta
+    rw [hp]
+  have hsft : fastDelta 5 k j=1 ∨ fastDelta 5 k j=5 ∨ fastDelta 5 k j=7 ∨ fastDelta 5 k j=9 := by
+    unfold fastDelta
+    split
+    · exact Or.inl rfl
+    · exact Or.inr (Or.inl rfl)
+  rw [Impl.Weierstrass.X86_64.FastNaf.stepB,WP.block_append_iff]
+  refine WP.mono (digitB_ok s (Or.inl rfl)) fun a ⟨da,ka⟩ => ?_
+  have sa := hI.scr.of_keeps ka (by decide)
+  have va : nafValN n a=FastNaf.residual 5 k j :=
+    (nafValN_keep ka.1 (by decide)).trans hI.value
+  have da' := da.trans (fastSel_eq (Or.inl rfl) hx)
+  rw [WP.block_append_iff]
+  refine WP.mono (fastSubtractN_ok a hn 5 k j da' va hv) fun b ⟨vb,kb⟩ => ?_
+  have nb : ∀ r,r∉[Reg.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp,.rsi] → r≠.rax → r≠.rdx →
+      r∉Reg.rax::Reg.rdx::Naf.sregs n := fun r h1 h2 h3 h => by
+    rcases List.mem_cons.mp h with h|h
+    · exact h2 h
+    rcases List.mem_cons.mp h with h|h
+    · exact h3 h
+    exact notin_sregs h1 h
+  have sb := sa.of_keeps kb (nb _ (by decide) (by decide) (by decide))
+  have cb : b.gpr .rbx=BitVec.ofNat 64 j :=
+    (kb.1 _ (nb _ (by decide) (by decide) (by decide))).trans ((ka.1 _ (by decide)).trans hI.count)
+  have db : b.gpr .rcx=BitVec.ofInt 64 (FastNaf.digit 5 k j) :=
+    (kb.1 _ (nb _ (by decide) (by decide) (by decide))).trans da'
+  rw [WP.block_append_iff]
+  refine WP.mono (fastStore_ok sb (by omega) cb db) fun c ⟨mc,kc⟩ => ?_
+  have sc := sb.of_keepRegs kc (by simp)
+  have dc : c.gpr .rcx &&& 1=s.gpr .r8 &&& 1 := by
+    rw [kc.gpr _ (by simp),db,←fastSel_eq (Or.inl rfl) hx,fastSel_low (Or.inl rfl)]
+  rw [WP.block_append_iff]
+  refine WP.mono (countB_ok c (Or.inl rfl) dc) fun e ⟨ex,ec,ke⟩ => ?_
+  rw [hδ] at ex ec
+  have se := sc.of_keeps ke (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (fastShiftV_ok e hn hsft ex ec) fun d ⟨vd,kd⟩ => ?_
+  have nd : ∀ r,r∉[Reg.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp,.rsi] → r≠.rax →
+      r∉Reg.rax::Naf.sregs n := fun r h1 h2 h => by
+    rcases List.mem_cons.mp h with h|h
+    · exact h2 h
+    exact notin_sregs h1 h
+  have sd := se.of_keeps kd (nd _ (by decide) (by decide))
+  have cd : d.gpr .rbx=BitVec.ofNat 64 j :=
+    (kd.1 _ (nd _ (by decide) (by decide))).trans ((ke.1 _ (by decide)).trans ((kc.gpr _ (by simp)).trans cb))
+  have dd : d.gpr .rdx=BitVec.ofNat 64 (fastDelta 5 k j) := (kd.1 _ (nd _ (by decide) (by decide))).trans ex
+  show WP isa (.block (([.alu .add .rbx (.reg .rdx)] : List Instr)++
+    [.alu .cmp .rbx (.imm (BitVec.ofNat 32 (64*n+1)))])) d _
+  rw [WP.block_append_iff]
+  refine WP.mono (fastAdvanceV_ok d cd dd) fun f ⟨cf',kf⟩ => ?_
+  refine WP.mono (fastCompare_ok f (n:=n) (by omega) (by rcases hsft with h|h|h|h <;> omega) cf')
+    fun t ⟨cf,kt⟩ => ?_
+  have mt : t.mem=s.mem.writeW (off base (bits+j)) (FastNaf.byte 5 k j) := by
+    rw [kt.2.1,kf.2.1,kd.2.1,ke.2.1,mc,kb.2.1,ka.2.1]
+  have O := writeW8_outside s.mem base (FastNaf.byte 5 k j) (d:=bits+j)
+    (by have := hI.scr.nowrap; omega)
+  refine ⟨⟨(sd.of_keeps kf (by decide)).of_keeps kt (by simp),?_,(kt.1 _ (by simp)).trans cf',?_⟩,cf,?_,?_⟩
+  · rw [nafValN_keep kt.1 (by simp),nafValN_keep kf.1 (by decide),vd,nafValN_keep ke.1 (by decide),
+      nafValN_keep kc.gpr (by simp),vb]
+    by_cases ho : FastNaf.residual 5 k j%2=0
+    · simp only [fastDelta,ho,ite_true]
+      omega
+    · simp only [fastDelta,ho,ite_false]
+      rw [FastNaf.residual_succ,FastNaf.next_odd hw _ ho,FastNaf.residual_skip hw k j ho]
+      omega
+  · intro i hi
+    rw [mt]
+    by_cases hij : i=j
+    · subst i
+      rw [writeW8_self,ite_eq_left (show j<j+fastDelta 5 k j by rcases hsft with h|h|h|h <;> omega)]
+    · rw [O _ (by rw [ofs_off0 base (d:=bits+i) (by have:=hI.scr.nowrap; omega)]; omega),hI.digits i hi]
+      by_cases hij' : i<j
+      · simp only [hij',show i<j+fastDelta 5 k j from by omega,ite_true]
+      · by_cases hil : i<j+fastDelta 5 k j
+        · simp only [hij',hil,ite_false,ite_true]
+          have ho : FastNaf.residual 5 k j%2≠0 := fun ho => by
+            simp only [fastDelta,ho,ite_true] at hil
+            omega
+          have hil' : i<j+5 := by simpa only [fastDelta,ho,ite_false] using hil
+          exact (FastNaf.byte_skip_zero hw k j (i-j) ho (by omega) (by omega)).symm.trans
+            (by rw [Nat.add_sub_of_le (by omega)])
+        · simp only [hij',hil,ite_false]
+  · exact ((((((VG.Proof.Mont.X86_64.Keeps.regs ka).mono (fun r hr => mem_clobN (pre:=[.rax,.rcx,.rdx])
+      (by decide) (List.mem_append_left _ hr))).trans
+      ((VG.Proof.Mont.X86_64.Keeps.regs kb).mono (fun r hr => mem_clobN (pre:=[.rax,.rdx])
+        (by decide) hr))).trans (kc.mono (by simp))).trans
+      ((VG.Proof.Mont.X86_64.Keeps.regs ke).mono (fun r hr => mem_clobN (pre:=[.rcx,.rdx])
+        (by decide) (List.mem_append_left _ hr)))).trans
+      ((VG.Proof.Mont.X86_64.Keeps.regs kd).mono (fun r hr => mem_clobN (pre:=[.rax])
+        (by decide) hr))).trans
+      (((VG.Proof.Mont.X86_64.Keeps.regs kf).mono (fun r hr => mem_clobN (pre:=[.rbx])
+        (by decide) (List.mem_append_left _ hr))).trans
+        ((VG.Proof.Mont.X86_64.Keeps.regs kt).mono (by simp)))
+  · rw [mt]
+    exact O.mono (by omega) (by omega)
 
 end VG.Proof.Weierstrass.X86_64

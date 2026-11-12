@@ -393,17 +393,8 @@ def convG (o : Ops m α) : Seg m α
 
 /-! ### An entry kept as limbs -/
 
-/-- An entry as the seven vectors it is kept as: `ta`, and for `tb`, whose first lane alone counts,
-its first four limbs as the lanes of one vector, then its last (in the places of `tb`'s first and
-last rows; the three between are left as they are). -/
-def packT (o : Ops m α) : Seg m α
-  | [u, zn, n3, q3, ta, tb] => do
-    let v ← col o tb.l0 tb.l1 tb.l2 tb.l3 0
-    pure [u, zn, n3, q3, ta, ⟨v, tb.l1, tb.l2, tb.l3, tb.l4⟩]
-  | _ => pure []
-
 /-- An entry from its seven vectors (`raw`: the vector of `tb`'s first four limbs, then that of its
-last): `packT`'s inverse, in `tb`'s first lane. -/
+last): `packT0`'s inverse, in `tb`'s first lane. -/
 def unpackT (o : Ops m α) : Seg m α
   | [u, zn, n3, q3, ta, raw] => do
     let t1 ← o.perm raw.l0 85
@@ -411,6 +402,184 @@ def unpackT (o : Ops m α) : Seg m α
     let t3 ← o.perm raw.l0 255
     pure [u, zn, n3, q3, ta, ⟨raw.l0, t1, t2, t3, raw.l1⟩]
   | _ => pure []
+
+/-! ### `Q`'s odd multiples, in vectors
+
+The table of `Q`, `3 Q`, …, `15 Q` as entries, from `Q`'s affine coordinates: `Q`'s entry (`tabG`),
+`2 Q` and `Q` with one `Z` (`dbluSegs`), then seven times the sum of `2 Q` and the entry before, which
+have one `Z`, with `2 Q` brought to the sum's (`zadduSegs`). Between these the points are `r`, not
+carried, `[x₁, y₁, y₂, _]`, and `c`, carried, `[_, _, z, x₂]`: `(x₁, y₁, z)` is `2 Q` and `(x₂, y₂, z)`
+the entry's point. -/
+
+/-- The entry of the affine point whose words are `raw`'s first two rows: `convG`'s. -/
+def tabG (o : Ops m α) : Seg m α
+  | [raw] => do
+    let t ← convGg o raw.l0 raw.l1
+    let ta ← fblend o t (← fconst o cQuarter 0 cHalf 0) 5
+    let tb ← fconst o cEighth 0 0 0
+    pure [ta, tb]
+  | _ => pure []
+
+/-- An entry as the seven vectors it is kept as: `ta`, and for `tb`, whose first lane alone counts,
+its first four limbs as the lanes of one vector, then its last (in the places of `tb`'s first and
+last rows; the three between are left as they are). -/
+def packT0 (o : Ops m α) : Seg m α
+  | [ta, tb, r, c] => do
+    let v ← col o tb.l0 tb.l1 tb.l2 tb.l3 0
+    pure [ta, ⟨v, tb.l1, tb.l2, tb.l3, tb.l4⟩, r, c]
+  | _ => pure []
+
+/-- The squares of the entry's `[zz, x, z, y']`: `[zz², XX, _, YY]`. -/
+def dblu1 (o : Ops m α) : Seg m α
+  | [ta, tb] => do
+    let sq ← sqrCore o ta
+    pure [sq, ta, tb]
+  | _ => pure []
+
+/-- `[x, YY, M = 6 (XX - zz²), YY]`. -/
+def dblu2g (o : Ops m α) (sq ta : F5 α) : m (F5 α) := do
+  let d ← fsub o (← fperm o sq 1 1 1 1) (← fperm o sq 0 0 0 0)
+  let m6 ← fadd o (← fshl o d 2) (← fshl o d 1)
+  let acc ← fblend o (← fperm o sq 3 3 3 3) (← fperm o ta 1 1 1 1) 1
+  let acc ← fblend o acc m6 4
+  fbias o acc 80 80 80 96
+
+def dblu2 (o : Ops m α) : Seg m α
+  | [sq, ta, tb] => do
+    let n1 ← norm o (← dblu2g o sq ta)
+    pure [n1, ta, tb]
+  | _ => pure []
+
+/-- `[x, YY, M, YY] · [YY, YY, M, YY] = [S, YY², M², YY²]`. -/
+def dblu3 (o : Ops m α) : Seg m α
+  | [n1, ta, tb] => do
+    let q2 ← mulCore o n1 (← fperm o n1 1 1 2 1)
+    pure [q2, n1, ta, tb]
+  | _ => pure []
+
+/-- `[12 S - M², 4 S, _, _]`: `4 S - X₃` for `X₃ = M² - 8 S`, and `2 Q`'s `x`. -/
+def dblu4g (o : Ops m α) (q2 : F5 α) : m (F5 α) := do
+  let ps ← fperm o q2 0 0 0 0
+  let s4 ← fshl o ps 2
+  let s12 ← fadd o (← fshl o ps 3) s4
+  let acc ← fsub o s12 (← fperm o q2 2 2 2 2)
+  let acc ← fblend o acc s4 2
+  fbias o acc 80 80 80 96
+
+def dblu4 (o : Ops m α) : Seg m α
+  | [q2, n1, ta, tb] => do
+    let n2 ← norm o (← dblu4g o q2)
+    pure [n2, q2, n1, ta, tb]
+  | _ => pure []
+
+/-- `[M² - 8 S, M (4 S - X₃) - 4 YY², 4 YY², _]`, for `q3 = [M (4 S - X₃), …]`. -/
+def dblu5r (o : Ops m α) (q3 q2 : F5 α) : m (F5 α) := do
+  let ps ← fperm o q2 0 0 0 0
+  let pyy ← fshl o (← fperm o q2 1 1 1 1) 2
+  let xt ← fsub o (← fperm o q2 2 2 2 2) (← fshl o ps 3)
+  let yt ← fsub o (← fperm o q3 0 0 0 0) pyy
+  let r ← fblend o (← fblend o xt yt 2) pyy 4
+  fbias o r 80 80 80 96
+
+/-- `2 Q = (M² - 8 S, M (4 S - X₃) - 4 YY², y')` and `Q = (4 S, 4 YY², y')`. -/
+def dblu5 (o : Ops m α) : Seg m α
+  | [n2, q2, n1, ta, tb] => do
+    let q3 ← mulCore o (← fperm o n1 2 2 2 2) n2
+    let r ← dblu5r o q3 q2
+    let c ← fblend o (← fperm o ta 3 3 3 3) (← fperm o n2 1 1 1 1) 8
+    pure [ta, tb, r, c]
+  | _ => pure []
+
+def dbluSegs (o : Ops m α) : List (Seg m α) := [dblu1 o, dblu2 o, dblu3 o, dblu4 o, dblu5 o]
+
+/-- `[x₁ - x₂, y₁ - y₂, z, x₁]`. -/
+def zaddu1g (o : Ops m α) (r c : F5 α) : m (F5 α) := do
+  let acc ← fblend o r c 4
+  let acc ← fmsub o acc (← fperm o c 3 3 3 3) 1
+  let acc ← fmsub o acc (← fperm o r 2 2 2 2) 2
+  let acc ← fblend o acc (← fperm o r 0 0 0 0) 8
+  fbias o acc 80 80 80 96
+
+def zaddu1 (o : Ops m α) : Seg m α
+  | [_, _, r, c] => do
+    let o1 ← norm o (← zaddu1g o r c)
+    pure [o1, r, c]
+  | _ => pure []
+
+/-- `[dx, dy, z, x₁] · [dx, dy, dx, x₁] = [C, D, z₃, _]`. -/
+def zaddu2 (o : Ops m α) : Seg m α
+  | [o1, r, c] => do
+    let q1 ← mulCore o o1 (← fperm o o1 0 1 0 3)
+    pure [q1, o1, r, c]
+  | _ => pure []
+
+/-- `[C, D, z₃, y₁]`, carried. -/
+def zaddu3 (o : Ops m α) : Seg m α
+  | [q1, o1, r, c] => do
+    let n1 ← norm o (← fblend o q1 (← fperm o r 1 1 1 1) 8)
+    pure [n1, o1, c]
+  | _ => pure []
+
+/-- `[x₁, x₂, z₃, x₁] · [C, C, z₃, C] = [W₁, W₂, zz₃, _]`. -/
+def zaddu4 (o : Ops m α) : Seg m α
+  | [n1, o1, c] => do
+    let a2 ← fblend o (← fblend o (← fperm o o1 3 3 3 3) (← fperm o c 3 3 3 3) 2) n1 4
+    let q2 ← mulCore o a2 (← fperm o n1 0 0 2 0)
+    pure [q2, n1, o1]
+  | _ => pure []
+
+/-- `[W₁ - W₂, 2 W₁ + W₂ - D, zz₃, x₃ = D - W₁ - W₂]`. -/
+def zaddu5g (o : Ops m α) (q2 n1 : F5 α) : m (F5 α) := do
+  let pw1 ← fperm o q2 0 0 0 0
+  let pw2 ← fperm o q2 1 1 1 1
+  let pdd ← fperm o n1 1 1 1 1
+  let acc ← fmsub o q2 pw2 1
+  let acc ← fmadd o acc (← fshl o pw1 1) 2
+  let acc ← fmsub o acc pdd 2
+  let acc ← fmrsub o acc pdd 8
+  let acc ← fmsub o acc pw2 8
+  fbias o acc 80 80 80 96
+
+def zaddu5 (o : Ops m α) : Seg m α
+  | [q2, n1, o1] => do
+    let n2 ← norm o (← zaddu5g o q2 n1)
+    pure [n2, q2, n1, o1]
+  | _ => pure []
+
+/-- `[y₁, dy, z₃, y₁] · [W₁ - W₂, W₁ - x₃, zz₃, x₃] = [A, E, zzz₃, _]`. -/
+def zaddu6 (o : Ops m α) : Seg m α
+  | [n2, q2, n1, o1] => do
+    let a3 ← fblend o (← fblend o (← fperm o n1 3 3 3 3) o1 2) n1 4
+    let q3 ← mulCore o a3 n2
+    pure [q3, n2, q2, n1]
+  | _ => pure []
+
+/-- `[zzz₃, _, _, 2 (E - A)]`, before the carry (`pa`: `A` in every lane). -/
+def zaddu7v (o : Ops m α) (q3 pa : F5 α) : m (F5 α) := do
+  let v ← fmsub o (← fperm o q3 2 1 2 1) pa 8
+  let v ← fmadd o v v 8
+  fbias o v 80 80 80 96
+
+/-- `[W₁, A, E - A, _]`. -/
+def zaddu7r (o : Ops m α) (q3 q2 pa : F5 α) : m (F5 α) := do
+  let r ← fblend o (← fperm o q3 0 0 1 0) q2 1
+  let r ← fmsub o r pa 4
+  fbias o r 80 80 80 96
+
+/-- The sum's entry, `[zz₃, x₃, z₃, 2 y₃]` and `zzz₃` for `y₃ = E - A`, and the points after it:
+`2 Q = (W₁, A, z₃)` and the sum `(x₃, y₃, z₃)`. -/
+def zaddu7 (o : Ops m α) : Seg m α
+  | [q3, n2, q2, n1] => do
+    let pa ← fperm o q3 0 0 0 0
+    let nv ← norm o (← zaddu7v o q3 pa)
+    let ta ← fblend o (← fblend o (← fperm o n2 2 3 2 3) n1 4) nv 8
+    let r ← zaddu7r o q3 q2 pa
+    let c ← fblend o n1 n2 8
+    pure [ta, nv, r, c]
+  | _ => pure []
+
+def zadduSegs (o : Ops m α) : List (Seg m α) :=
+  [zaddu1 o, zaddu2 o, zaddu3 o, zaddu4 o, zaddu5 o, zaddu6 o, zaddu7 o]
 
 end
 
@@ -490,10 +659,6 @@ def convQBlk : Staged := staged (do let s ← stIn; let r ← rawQ; pure (s ++ [
 /-- The entry of the affine point at `rdx`, into `ymm20`–`ymm29`. -/
 def convGBlk : Staged := staged (do let s ← stIn; let r ← rawG; pure (s ++ [r])) [convG ssa]
 
-/-- An entry's seven vectors, from the entry in `ymm20`–`ymm29`: `ymm20`–`ymm24`, `ymm25` and `ymm29`. -/
-def packTBlk : Staged :=
-  staged (do let s ← stIn; let ta ← regs5 20; let tb ← regs5 25; pure (s ++ [ta, tb])) [packT ssa]
-
 /-- The five rows of `ta` of the entry kept as limbs, three at `rcx` and two at `rdx`, into `ymm20`–`ymm24`. -/
 def loadABlk : Staged :=
   staged (do
@@ -510,6 +675,28 @@ def loadBBlk : Staged :=
     let v ← emit (.ld .rdx 0); let w ← emit (.ld .rdx 32)
     pure (s ++ [ta, ⟨v, w, v, v, v⟩])) [unpackT ssa]
 
+/-- The words of an affine point's `x` at `rcx` and `y` at `rdx`. -/
+def rawP : B (F5 Nat) := do
+  let x ← emit (.ld .rcx 0); let y ← emit (.ld .rdx 0)
+  pure ⟨x, y, x, x, x⟩
+
+/-- The table's blocks keep an entry in `ymm0`–`ymm9` and the points `r` and `c` in `ymm10`–`ymm19`. -/
+def tabIn : B (List (F5 Nat)) := do
+  let ta ← regs5 0; let tb ← regs5 5; let r ← regs5 10; let c ← regs5 15
+  pure [ta, tb, r, c]
+
+/-- `Q`'s entry, from its words. -/
+def tabGBlk : Staged := staged (do let r ← rawP; pure [r]) [tabG ssa]
+
+/-- An entry's seven vectors, from the entry in `ymm0`–`ymm9`: `ymm0`–`ymm4`, `ymm5` and `ymm9`. -/
+def packT0Blk : Staged := staged tabIn [packT0 ssa]
+
+/-- `2 Q` and `Q` with one `Z`, from `Q`'s entry. -/
+def dbluBlk : Staged := staged (do let ta ← regs5 0; let tb ← regs5 5; pure [ta, tb]) (dbluSegs ssa)
+
+/-- The next odd multiple's entry. -/
+def zadduBlk : Staged := staged tabIn (zadduSegs ssa)
+
 /-- The constants of an operation. -/
 def Op.consts : Op → List K4
   | .addc _ c | .andc _ c | .maddc _ _ _ c | .const c => [c]
@@ -518,8 +705,8 @@ def Op.consts : Op → List K4
 
 /-- The constants of the blocks, each once. -/
 def pool : List K4 :=
-  ((dblBlk.ops ++ addBlk.ops ++ setBlk.ops ++ outBlk.ops ++ convQBlk.ops ++ convGBlk.ops ++ packTBlk.ops ++
-      loadABlk.ops ++ loadBBlk.ops).flatMap Op.consts ++
+  ((dblBlk.ops ++ addBlk.ops ++ setBlk.ops ++ outBlk.ops ++ convQBlk.ops ++ convGBlk.ops ++ loadABlk.ops ++ loadBBlk.ops ++ tabGBlk.ops ++ packT0Blk.ops ++ dbluBlk.ops ++ zadduBlk.ops).flatMap
+      Op.consts ++
     [K4.lanes 0, K4.lanes 3]).eraseDups
 
 /-- The code of a block, in the pieces of its stages, and the places of the

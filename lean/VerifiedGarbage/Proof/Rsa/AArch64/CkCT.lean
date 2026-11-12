@@ -299,4 +299,42 @@ theorem mulXR_ckct {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
   exact WP.mono (mulXR_ok h'.ws L.w1 rfl (hb aX (by simp)) rfl (hb aR (by simp))) fun _ ⟨_, o, k⟩ =>
     GK.arr ⟨I, m₀, c, rfl, h', L, hmw⟩ (by decide) (Nat.le_refl _) o k (by decide)
 
+/-- The registers `mulPQ`'s rows need pinned. -/
+def ckPqVal (p : CkP) : Reg → BitVec 64
+  | .x0 => p.B
+  | .x11 => off p.B (slot (wW p.cap) aX)
+  | .x9 => off p.B (slot (wW p.cap) aR)
+  | .x8 => off p.B (slot (wW p.cap) aA)
+  | .x12 => BitVec.ofNat 64 ((p.ql + 7) / 8)
+  | .x13 => BitVec.ofNat 64 ((p.pl + 7) / 8)
+  | _ => 0
+
+theorem mulPQ_ckct {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
+    (ht₁ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block (base aA .x8 ++ [movi .x7 0])) zeroAcc)
+      hc₁).isSome = true) :
+    RelCT isa (Two (GKb [aX, aR])) (seqs mulPQ) (Two GK) := by
+  have e : seqs mulPQ = .seq (zeroA aA) (.seq (.block (ws ++ base aX .x5 ++ base aR .x9 ++ base aA .x8 ++
+      [mov .x11 .x5, ldh .x12 sQlen, .addImm .x .x12 .x12 7, .lsr .x .x12 .x12 3, ldh .x13 sPlen,
+        .addImm .x .x13 .x13 7, .lsr .x .x13 .x13 3, movi .x7 0])) VG.Impl.Rsa.AArch64.Crt.mulRows) := by
+    simp only [mulPQ, seqs]
+  rw [e]
+  refine ct_carry (Θ := GKb [aX, aR]) (Ψ := GK)
+    ((zeroA_ckct (by decide) ht₁).mono (fun _ _ h => two_mono (fun _ _ h => h.1) h) fun _ _ _ => trivial)
+    (fun _ _ h => zeroA_okb (by decide) (by decide) h)
+    ((pin_ct (Ψ := fun _ _ => True) [.x0] [.x0, .x11, .x9, .x8, .x12, .x13, .x7] ckPqVal
+      (fun a s₁ s₂ h₁ h₂ => pins_GK a s₁ s₂ h₁.1.1 h₂.1.1) (by taint_decide) (fun p s h => ?_) (by taint_decide)
+      fun _ _ h => WP.mono h.2 fun _ _ => trivial).mono (fun _ _ h => h) fun _ _ _ => trivial) fun p s h => ?_
+  · obtain ⟨⟨⟨I, m₀, c, rfl, h', L, hmw⟩, _⟩, _⟩ := h
+    have := L.pl2; have := L.ql2; have := L.k2
+    refine WP.mono (pqSetupK_ok h'.ws h'.args.pl h'.args.ql (by omega) (by omega))
+      fun t ⟨a0, a11, a9, a8, a12, a13, a7⟩ r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    all_goals assumption
+  · rw [← e]
+    obtain ⟨⟨I, m₀, c, rfl, h', L, hmw⟩, _⟩ := h
+    exact WP.mono (mulPQ_raw_ok h'.ws h'.args.pl h'.args.ql L.pl1 L.ql1
+      (by have := L.pcap; simp only [wk]; omega) (by have := L.qcap; simp only [wk]; omega)) fun _ ⟨_, o, k⟩ =>
+      GK.arr ⟨I, m₀, c, rfl, h', L, hmw⟩ (by decide) (Nat.le_refl _) o k (by decide)
+
 end VG.Proof.Rsa.AArch64

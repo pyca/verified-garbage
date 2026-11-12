@@ -140,15 +140,15 @@ theorem mont_eq_iff {m M₁ M₂ a j : Nat} (hm : m % 2 = 1) (hm2 : 2 ≤ m) (h�
     omega
 
 /-- With `L = p q mod W` and `M` Montgomery's `n` (zero exactly when `p ∣ n`
-for an odd `p ≥ 2`), the checks `p` odd, `L = n`, `M = 0` are those of
+for an odd `p ≥ 2` with `L = n`), the checks `p` odd, `L = n`, `M = 0` are those of
 `n / p = q` and `n mod p = 0`, for `q < n` and `q, n` below `W`. -/
 theorem maskM_iff {P Q N L M V j : Nat} (hQN : Q < N) (hqj : Q < 2 ^ j) (hnj : N < 2 ^ j)
-    (hL : L = P * Q % 2 ^ j) (hM : P % 2 = 1 → 2 ≤ P → (M = 0 ↔ N % P = 0)) :
+    (hL : L = P * Q % 2 ^ j) (hM : P % 2 = 1 → 2 ≤ P → L = N → (M = 0 ↔ N % P = 0)) :
     (P % 2 = 1 ∧ L = N ∧ M = 0 ∧ V = 1) ↔ (P % 2 = 1 ∧ N / P = Q ∧ N % P = 0 ∧ V = 1) := by
   constructor
   · rintro ⟨podd, h1, h2, h3⟩
     by_cases p2 : 2 ≤ P
-    · have hpq := (pq_eq_iff podd hqj hnj).2 ⟨by rw [← hL, h1], (hM podd p2).1 h2⟩
+    · have hpq := (pq_eq_iff podd hqj hnj).2 ⟨by rw [← hL, h1], (hM podd p2 h1).1 h2⟩
       refine ⟨podd, ?_, by rw [← hpq, Nat.mul_mod_right], h3⟩
       rw [← hpq, Nat.mul_div_cancel_left _ (by omega)]
     · have p1 : P = 1 := by omega
@@ -160,7 +160,7 @@ theorem maskM_iff {P Q N L M V j : Nat} (hQN : Q < N) (hqj : Q < 2 ^ j) (hnj : N
       · have p1 : P = 1 := by omega
         subst p1; rw [Nat.one_mul] at hpq; omega
       · exact hp
-    exact ⟨podd, by rw [hL, hpq, Nat.mod_eq_of_lt hnj], (hM podd p2).2 h2, h3⟩
+    exact ⟨podd, by rw [hL, hpq, Nat.mod_eq_of_lt hnj], (hM podd p2 (by rw [hL, hpq, Nat.mod_eq_of_lt hnj])).2 h2, h3⟩
 
 /-! ## The checks -/
 

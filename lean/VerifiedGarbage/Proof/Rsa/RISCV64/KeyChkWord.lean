@@ -137,6 +137,30 @@ theorem Stg.mulEq_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
   have jQ : j ≠ aVQ := fun e => hf j hj (by simp [e])
   rw [upd_ne _ _ jQ, upd_ne _ _ jQ]
 
+/-- `mulQH y x ++ eqA aVQ b`: the mask and'ed with `[y] [x] mod 2^(64 w) = [b]`, for `[y]` and `[x]`
+below `2^(64 (w / 2))`. -/
+theorem Stg.mulEqH_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g s0 A live c s) {y x b : Nat} (hy : y ∈ live) (hx : x ∈ live) (hb : b ∈ live) (hz : aZ ∈ live)
+    (hA0 : A aZ = 0) (hf : Free live) (hw2 : g.w % 2 = 0)
+    (hY : A y < 2 ^ (64 * (g.w / 2))) (hX : A x < 2 ^ (64 * (g.w / 2))) :
+    WP isa (seqs (mulQH y x ++ eqA aVQ b)) s
+      (Stg g s0 A live (c && decide (A y * A x % 2 ^ (64 * g.w) = A b))) := by
+  have yQ : y ≠ aVQ := fun e => hf y hy (by simp [e])
+  have xQ : x ≠ aVQ := fun e => hf x hx (by simp [e])
+  have bQ : b ≠ aVQ := fun e => hf b hb (by simp [e])
+  unfold mulQH
+  rw [List.cons_append, kc_seqs_cons (by simp [eqA])]
+  refine WP.mono (h.copy_ok (o := aVQ) (a := aZ) (by decide) hz (by decide)) fun t1 h1 => ?_
+  rw [List.cons_append, List.nil_append, kc_seqs_cons (by simp [eqA])]
+  refine WP.mono (h1.mulHalf_ok (o := aVQ) (y := y) (x := x) (by simp) (by simp [hy]) (by simp [hx]) (Ne.symm yQ)
+    (Ne.symm xQ) (by decide) (by rw [upd_self, hA0]) hw2 (by rw [upd_ne _ _ yQ]; exact hY)
+    (by rw [upd_ne _ _ xQ]; exact hX)) fun t2 h2 => ?_
+  refine WP.mono (h2.eqA_ok (a := aVQ) (b := b) (by simp) (by simp [hb])) fun t h3 => ?_
+  simp only [upd_self, upd_ne _ _ bQ, upd_ne _ _ yQ, upd_ne _ _ xQ] at h3
+  refine (h3.sub (live' := live) (fun j hj => by simp [hj])).congr' fun j hj => ?_
+  have jQ : j ≠ aVQ := fun e => hf j hj (by simp [e])
+  rw [upd_ne _ _ jQ, upd_ne _ _ jQ]
+
 /-- `divWA a d ++ eqA aVR b`: the mask and'ed with `Y = [b]`, `Y` `[a] mod [d]`
 for `2^(64 (v - 1)) ≤ [d] < 2^(64 v)`. -/
 theorem Stg.divEq_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
@@ -197,7 +221,8 @@ def crtBitsW (n p q dP dQ qI L Xq X₁ X₂ : Nat) : Bool :=
 
 /-- The checks of `vg_rsa_check_crt_key`, by words. -/
 theorem crtChecksW_ok {g : Geo} {s0 s : State} {v : Vals}
-    (h : Stg g s0 (aStart v) live0 (decide (v.p % 2 = 1)) s) (hw : 8 ≤ g.w) (hwl : g.w ≤ 128) (hw2 : g.w % 2 = 0) :
+    (h : Stg g s0 (aStart v) live0 (decide (v.p % 2 = 1)) s) (hw : 8 ≤ g.w) (hwl : g.w ≤ 128) (hw2 : g.w % 2 = 0)
+    (hpB : v.p < 2 ^ (64 * (g.w / 2))) (hqB : v.q < 2 ^ (64 * (g.w / 2))) :
     WP isa (seqs crtChecksW) s fun t => ∃ Xq X₁ X₂ : Nat,
       (InW g.w v.p → Xq = v.q * v.qI % 2 ^ (64 * g.w) % v.p) ∧
       (InW g.w (2 * (v.p / 2)) → X₁ = v.e * v.dP % 2 ^ (64 * g.w) % (2 * (v.p / 2))) ∧
@@ -207,9 +232,9 @@ theorem crtChecksW_ok {g : Geo} {s0 s : State} {v : Vals}
   unfold crtChecksW
   simp only [List.append_assoc]
   have f0 : Free live0 := by decide
-  rw [← List.append_assoc (mulQ aP aQ), kc_seqs_append (by simp [mulQ]) (by simp [ltA])]
-  refine WP.mono (h.mulEq_ok (y := aP) (x := aQ) (b := aN) (by decide) (by decide) (by decide) (by decide) rfl f0)
-    fun t1 h1 => ?_
+  rw [← List.append_assoc (mulQH aP aQ), kc_seqs_append (by simp [mulQH]) (by simp [ltA])]
+  refine WP.mono (h.mulEqH_ok (y := aP) (x := aQ) (b := aN) (by decide) (by decide) (by decide) (by decide) rfl f0
+    hw2 hpB hqB) fun t1 h1 => ?_
   rw [kc_seqs_append (by simp [ltA]) (by simp [mulModOne, mulQ])]
   refine WP.mono (h1.ltA_ok (a := aQI) (b := aP) (by decide) (by decide) (by decide)) fun t2 h2 => ?_
   rw [kc_seqs_append (by simp [mulModOne, mulQ]) (by simp)]

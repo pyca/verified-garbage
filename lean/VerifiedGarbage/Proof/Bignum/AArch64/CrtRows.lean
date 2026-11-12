@@ -155,4 +155,13 @@ theorem mulRows_ok {s : State} {B : Addr} {Z ea eb eA wa wb : Nat} (hs : Scr s B
     ⟨hs, Keep.refl _ _, by rw [h11]; simp, by rw [h8]; simp, Outside.refl _ _ _ _, by simp [wv]⟩ h13)
     fun t hI => ⟨by rw [hI.val, Nat.mul_comm], hI.out, hI.keep⟩
 
+/-- `⌈a / 8⌉`, as `addImm 7; lsr 3` computes it. -/
+theorem ceil8_bv {a : Nat} (ha : a < 2 ^ 60) :
+    (BitVec.ofNat 64 a + 7#64) >>> 3 = BitVec.ofNat 64 ((a + 7) / 8) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+    show (7#64).toNat = 7 from rfl]
+  rw [Nat.mod_eq_of_lt (by omega : a < 2 ^ 64), Nat.mod_eq_of_lt (by omega : a + 7 < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega : (a + 7) / 8 < 2 ^ 64)]
+
 end VG.Proof.Bignum.AArch64

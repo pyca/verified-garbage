@@ -4,7 +4,10 @@ public import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 
 import VerifiedGarbage.Proof.Rsa.Arm.CvTaint
-import VerifiedGarbage.Proof.Rsa.Arm.CvFinish
+import VerifiedGarbage.Proof.Rsa.Arm.CvTaintW
+public import VerifiedGarbage.Proof.Rsa.Arm.CvWords
+public import VerifiedGarbage.Proof.Rsa.Arm.KdDivCT
+public import VerifiedGarbage.Proof.Rsa.Arm.CvFinish
 import VerifiedGarbage.Proof.Rsa.Arm.CvLoads
 import VerifiedGarbage.Proof.Rsa.Arm.DivCT
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
@@ -113,6 +116,90 @@ theorem ws_regs {σ₁ σ₂ s₁ s₂ : State} (p : PubI σ₁ σ₂) {N₁ N�
   rw [h₁.r7, h₂.r7, h₁.r8, h₂.r8, h₁.r9, h₂.r9, eB, eW]
   exact ⟨rfl, rfl, rfl⟩
 
+/-- A piece constant time from the same geometry in both runs. -/
+theorem gPiece {c : Prog isa} {Pre : State → State → Prop}
+    (hc : ∀ σ₁ σ₂, PubI σ₁ σ₂ → RelCT isa (fun s t => Pre σ₁ s ∧ Pre σ₂ t) c fun _ _ => True)
+    {F G : State → State → Prop} (hpre : ∀ σ s, F σ s → Pre σ s) (hw : ∀ σ s, F σ s → WP isa c s (G σ)) :
+    RelCT isa (Lift F) c (Lift G) :=
+  lift fun σ₁ σ₂ p => (((hc σ₁ σ₂ p).mono (P' := fun s t => F σ₁ s ∧ F σ₂ t)
+    (fun _ _ h => ⟨hpre _ _ h.1, hpre _ _ h.2⟩) fun _ _ h => h).wp (F₁ := G σ₁) (F₂ := G σ₂)
+    fun _ _ h => ⟨hw _ _ h.1, hw _ _ h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+
+/-- The product of a balanced key. -/
+theorem mulPiece {F G : State → State → Prop} (hpre : ∀ σ s, F σ s → SA σ s ∧ BalCv σ)
+    (hw : ∀ σ s, F σ s → WP isa (VG.Impl.Rsa.Arm.KeyDiv.mulLo aDR aP aQ) s (G σ)) :
+    RelCT isa (Lift F) (VG.Impl.Rsa.Arm.KeyDiv.mulLo aDR aP aQ) (Lift G) :=
+  gPiece (Pre := fun σ s => SA σ s ∧ BalCv σ) (fun σ₁ σ₂ p => by
+    obtain ⟨eB, eZ, eW⟩ := p.geom
+    exact RelCT.exists_ (P := fun (_ : 16 ≤ cvW σ₁ ∧ cvW σ₁ % 2 = 0) s t => (SA σ₁ s ∧ BalCv σ₁) ∧
+        (SA σ₂ t ∧ BalCv σ₂)) (fun hw => (VG.Proof.Rsa.Arm.KeyDiv.mulLo_ct mulW_taint (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) hw.2 (by omega)).mono
+      (fun s t h => ⟨h.1.1.mulPre h.1.2, by rw [eB, eZ, eW]; exact h.2.1.mulPre h.2.2⟩) fun _ _ h => h)
+      |>.mono (fun s t h => ⟨⟨h.1.1.base.pre.w16.1, h.1.2.2.2⟩, h⟩) fun _ _ h => h) hpre hw
+
+/-- A division by words of a balanced key. -/
+theorem divPieceW {r : Nat} (T : VG.Proof.Rsa.Arm.KeyDiv.DivTaint aD r aDD aDQ aDT aT1) (hr : r ∈ [aDR2, aDR3])
+    {F G : State → State → Prop} {M : State → Nat}
+    (hpre : ∀ σ s, F σ s → ∃ X₁, SW σ X₁ s ∧
+      num s.mem (cvB σ) (cvW σ) aDD = VG.Proof.Rsa.fixT (cvW σ / 2) (M σ) ∧ M σ < 2 ^ (32 * (cvW σ / 2)))
+    (hw : ∀ σ s, F σ s → WP isa (VG.Impl.Rsa.Arm.KeyDiv.divW aD r aDD aDQ aDT aT1) s (G σ)) :
+    RelCT isa (Lift F) (VG.Impl.Rsa.Arm.KeyDiv.divW aD r aDD aDQ aDT aT1) (Lift G) := by
+  have hr' : r < nArr ∧ r ≠ aD ∧ r ≠ aDQ ∧ r ≠ aT1 ∧ r ≠ aDT ∧ r ≠ aDD ∧ r ≠ 0 := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> decide
+  refine gPiece (Pre := fun σ s => 16 ≤ cvW σ ∧ VG.Proof.Rsa.Arm.KeyDiv.DivPre (cvB σ) (cvZ σ) (cvW σ) nArr aDD s)
+    (fun σ₁ σ₂ p => ?_) (fun σ s h => ?_) hw
+  · obtain ⟨eB, eZ, eW⟩ := p.geom
+    exact RelCT.exists_ (P := fun (_ : 16 ≤ cvW σ₁) s t => (16 ≤ cvW σ₁ ∧
+        VG.Proof.Rsa.Arm.KeyDiv.DivPre (cvB σ₁) (cvZ σ₁) (cvW σ₁) nArr aDD s) ∧
+        (16 ≤ cvW σ₂ ∧ VG.Proof.Rsa.Arm.KeyDiv.DivPre (cvB σ₂) (cvZ σ₂) (cvW σ₂) nArr aDD t))
+      (fun hw => (VG.Proof.Rsa.Arm.KeyDiv.divW_ct T (by decide) hr'.1 (by decide) (by decide) (by decide)
+        (by decide) (by decide) hr'.2.1 hr'.2.2.1 hr'.2.2.2.1 (by decide) (Ne.symm hr'.2.2.2.2.2.1) (by decide)
+        (by decide) (Ne.symm hr'.2.2.2.2.1) (by decide) (by decide) (by decide) hr'.2.2.2.2.2.2 (by decide)
+        (by decide) (by decide) (by omega)).mono
+        (fun s t h => ⟨h.1.2, by rw [eB, eZ, eW]; exact h.2.2⟩) fun _ _ h => h)
+      |>.mono (fun s t h => ⟨h.1.1, h⟩) fun _ _ h => h
+  · obtain ⟨X₁, hs, hM, hMl⟩ := hpre σ s h
+    exact ⟨hs.base.pre.w16.1, hs.divPre hM hMl⟩
+
+/-- The checks and values of a balanced key are constant time. -/
+theorem midW_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] :
+    RelCT isa (Lift fun σ s => StA σ s ∧ BalCv σ) midW (Lift MidW) := by
+  rw [show midW = seqs ([[.block (ctx ++ bitOf sPodd aP)], [VG.Impl.Rsa.Arm.KeyDiv.mulLo aDR aP aQ], chunkW,
+      [VG.Impl.Rsa.Arm.KeyDiv.divW aD aDR2 aDD aDQ aDT aT1],
+      [copy aDD aQ, .block (clrLow aDD ++ VG.Impl.Rsa.Arm.KeyDiv.fixTop aDD)],
+      [VG.Impl.Rsa.Arm.KeyDiv.divW aD aDR3 aDD aDQ aDT aT1]] : List (List (Prog isa))).flatten from rfl]
+  refine RelCT.of_join (fun l hl => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hl
+    rcases hl with rfl | rfl | rfl | rfl | rfl | rfl <;> simp) (List.cons_ne_nil _ _) ?_
+  simp only [List.map_cons, List.map_nil, seqs_single]
+  refine RelCT.seq (piece (G := fun σ s => SA σ s ∧ BalCv σ) [] oddW_taint (fun _ _ h => h.1.base.run)
+    (fun _ _ _ _ _ _ _ _ h => nomatch h) fun _ _ h => WP.mono (oddW_ok h.1) fun _ h' => ⟨h', h.2⟩) ?_
+  refine RelCT.seq (mulPiece (G := fun σ s => (SA σ s ∧
+      num s.mem (cvB σ) (cvW σ) aDR = cvP σ * cvQ σ % 2 ^ (32 * cvW σ)) ∧ BalCv σ) (fun _ _ h => h)
+    fun _ _ h => WP.mono (mulW_ok h.1 h.2) fun _ h' => ⟨h', h.2⟩) ?_
+  refine RelCT.seq (piece (G := fun σ s => (SW σ (xW σ) s ∧ num s.mem (cvB σ) (cvW σ) aDD = fP σ) ∧ BalCv σ)
+    [.r7, .r8, .r9] chunkW_taint (fun _ _ h => h.1.1.base.run)
+    (fun _ _ _ _ p h₁ h₂ => by
+      obtain ⟨e7, e8, e9⟩ := ws_regs p h₁.1.1.ws h₂.1.1.ws
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      rintro r (rfl | rfl | rfl) <;> first | exact e7 | exact e8 | exact e9)
+    fun _ _ h => WP.mono (chunkW_ok h.1.1 h.2 h.1.2) fun _ h' => ⟨h', h.2⟩) ?_
+  refine RelCT.seq (divPieceW (M := fun σ => 2 * (cvP σ / 2)) (G := fun σ s => (SW σ (xW σ) s ∧
+      num s.mem (cvB σ) (cvW σ) aDR2 = cvD σ % fP σ) ∧ BalCv σ) divW2_taint (by decide)
+    (fun _ _ h => ⟨_, h.1.1, h.1.2, Nat.lt_of_le_of_lt (by omega) h.2.p_lt⟩)
+    fun _ _ h => WP.mono (div2W_ok h.1.1 h.2 h.1.2) fun _ h' => ⟨h', h.2⟩) ?_
+  refine RelCT.seq (piece (G := fun σ s => (SW σ (xW σ) s ∧ num s.mem (cvB σ) (cvW σ) aDR2 = cvD σ % fP σ ∧
+      num s.mem (cvB σ) (cvW σ) aDD = fQ σ) ∧ BalCv σ)
+    [.r7, .r8, .r9] setQ_taint (fun _ _ h => h.1.1.base.run)
+    (fun _ _ _ _ p h₁ h₂ => by
+      obtain ⟨e7, e8, e9⟩ := ws_regs p h₁.1.1.ws h₂.1.1.ws
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      rintro r (rfl | rfl | rfl) <;> first | exact e7 | exact e8 | exact e9)
+    fun _ _ h => WP.mono (setQW_ok h.1.1 h.2 h.1.2) fun _ h' => ⟨h', h.2⟩) ?_
+  exact divPieceW (M := fun σ => 2 * (cvQ σ / 2)) divW3_taint (by decide)
+    (fun _ _ h => ⟨_, h.1.1, h.1.2.2, Nat.lt_of_le_of_lt (by omega) h.2.q_lt⟩)
+    fun _ _ h => div3W_ok h.1.1 h.2 h.1.2.1 h.1.2.2
+
 /-- The stages of the valid branch. -/
 abbrev F1 (σ u : State) : Prop :=
   VG.Proof.Rsa.Arm.Div.Context (gN σ) u ∧ WP isa VG.Impl.Rsa.Arm.Div.code u (StC σ)
@@ -122,12 +209,13 @@ abbrev F5 (σ u : State) : Prop :=
   VG.Proof.Rsa.Arm.Div.Context (gQ σ) u ∧ WP isa VG.Impl.Rsa.Arm.Div.code u (fun t => ∃ X₁ X₂, StG σ X₁ X₂ t)
 abbrev F7 (σ u : State) : Prop := Base σ u ∧ Ws u (cvB σ) (cvZ σ) (cvW σ) nArr ∧
   u.gpr .r10 = σ.gpr .r0 ∧ u.gpr .r12 = σ.gpr .r2 ∧ WP isa stores u (Done σ)
+/-- After either branch. -/
+abbrev FJ (σ u : State) : Prop := ∃ X₁ X₂, StM σ X₁ X₂ u
 
-theorem valid_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : RelCT isa (Lift Base) valid (Lift Done) := by
-  unfold valid
+/-- Any key's checks: `n` divided by `p`. -/
+theorem midD_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : RelCT isa (Lift StA) midD (Lift FJ) := by
+  unfold midD
   simp only [seqs]
-  refine RelCT.seq (piece (G := StA) [] loads_taint (fun _ _ h => h.run) (fun _ _ _ _ _ _ _ _ h => nomatch h)
-    fun _ _ h => loads_ok h) ?_
   refine RelCT.seq (piece (G := F1) [.r7, .r8, .r9] divN_taint (fun _ _ h => h.base.run)
     (fun _ _ _ _ p h₁ h₂ => by
       obtain ⟨e7, e8, e9⟩ := ws_regs p h₁.ws h₂.ws
@@ -146,7 +234,31 @@ theorem valid_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : RelCT isa (Lift Base) valid (L
   refine RelCT.seq (piece (G := F5) [] divQ_taint (fun _ _ ⟨_, _, h⟩ => h.base.run)
     (fun _ _ _ _ _ _ _ _ h => nomatch h)
     fun _ _ ⟨_, _, h⟩ => WP.mono (divQ_pre_ok h) fun _ h' => ⟨h'.1, WP.mono h'.2 fun _ h'' => ⟨_, _, h''⟩⟩) ?_
-  refine RelCT.seq (divPiece (g := gQ) fun _ _ p => geom_eq p _ _ _ _) ?_
+  exact (divPiece (g := gQ) fun _ _ p => geom_eq p _ _ _ _).mono (fun _ _ h => h)
+    fun _ _ h => Lift.mono (fun _ _ ⟨_, _, h⟩ => ⟨_, _, h.toM⟩) h
+
+theorem valid_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : RelCT isa (Lift Base) valid (Lift Done) := by
+  unfold valid
+  simp only [seqs]
+  refine RelCT.seq (piece (G := StA) [] loads_taint (fun _ _ h => h.run) (fun _ _ _ _ _ _ _ _ h => nomatch h)
+    fun _ _ h => loads_ok h) ?_
+  refine RelCT.seq (piece (G := fun σ u => StA σ u ∧ u.z = decide (BalCv σ)) [] shapeCv_taint
+    (fun _ _ h => h.base.run) (fun _ _ _ _ _ _ _ _ h => nomatch h) fun _ _ h => shapeCv_ok h) ?_
+  refine RelCT.seq (R := Lift FJ) (RelCT.ite (fun s t ⟨σ₁, σ₂, p, h₁, h₂⟩ => ?_) ?_ ?_) ?_
+  · show some s.z = some t.z
+    rw [h₁.2, h₂.2]
+    simp only [BalCv, cvPl, cvQl, cvW, cvK, p.args 3 (by decide), p.args 5 (by decide), p.args 7 (by decide)]
+  · exact (midW_ct.mono (fun s t ⟨⟨σ₁, σ₂, p, h₁, h₂⟩, hz⟩ => by
+      have z₁ : s.z = true := Option.some.inj hz
+      have b₁ : BalCv σ₁ := of_decide_eq_true (h₁.2 ▸ z₁)
+      have b₂ : BalCv σ₂ := by
+        obtain ⟨l1, l2, l3⟩ := b₁
+        simp only [BalCv, cvPl, cvQl, cvW, cvK, ← p.args 3 (by decide), ← p.args 5 (by decide),
+          ← p.args 7 (by decide)]
+        exact ⟨l1, l2, l3⟩
+      exact ⟨σ₁, σ₂, p, ⟨h₁.1, b₁⟩, ⟨h₂.1, b₂⟩⟩) fun _ _ h => h).mono (fun _ _ h => h)
+      fun _ _ h => Lift.mono (fun _ _ h => ⟨_, _, h.1⟩) h
+  · exact midD_ct.mono (fun _ _ ⟨h, _⟩ => Lift.mono (fun _ _ h => h.1) h) fun _ _ h => h
   refine RelCT.seq (piece (G := F7) [] glue_taint (fun _ _ ⟨_, _, h⟩ => h.base.run)
     (fun _ _ _ _ _ _ _ _ h => nomatch h)
     fun _ _ ⟨_, _, h⟩ => WP.mono (glue_ok h) fun _ ⟨b, w, p10, p12, k⟩ =>

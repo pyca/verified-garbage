@@ -566,11 +566,20 @@ theorem start_ok {s : State} {B : Addr} {Z w n iU iM : Nat} (h : Ws s B Z w) (hZ
       Frm B [(slot w 16, 80 * (w + 2))] m m' := fun ho h1 h2 =>
     fun x hx => ho x (by have := hx _ (List.mem_singleton.mpr rfl); dsimp only at this; omega_arith)
   have eS : slot w aS = 256 + 24 * (8 * (w + 2)) := slot_eq w 24
-  refine ⟨mi.toNat, BS.mk (h₁₃.scr.congr kt.2.2) dit r9t r15t ?cD ?cMi ?cP ?cF ?cG ?cA ?cB, ?hm, ?P1, rsit, ?frm, ?keep⟩
+  refine ⟨mi.toNat, BS.mk (h₁₃.scr.congr kt.2.2) dit r9t r15t ?cD ?cMi ?cP ?cPz ?cF ?cG ?cA ?cB, ?hm, ?P1, rsit, ?frm, ?keep⟩
   case cD => rw [mt, word_writeW_self]; rfl
   case cMi => rw [oW₂.word (Or.inr (by unfold oMi oD; omega_arith)) oMi', word_writeW_self]
   case cP => show wv t.mem B (slot w aP) n = _; rw [Pt n (by omega_arith)]; exact wv_lowK P₉ hp_lt (by omega_arith)
   case P1 => rw [Pt (n + 1) (by omega_arith)]; exact wv_lowK P₉ hp1 (by omega_arith)
+  case cPz =>
+    have e1 : wv t.mem B (slot w aP) (n + 1) = pOf (wv s.mem B (slot w iM) n) := by
+      rw [Pt (n + 1) (by omega_arith)]; exact wv_lowK P₉ hp1 (by omega_arith)
+    have e0 : wv t.mem B (slot w aP) n = pOf (wv s.mem B (slot w iM) n) := by
+      rw [Pt n (by omega_arith)]; exact wv_lowK P₉ hp_lt (by omega_arith)
+    rw [wv, e0] at e1
+    have h0 : 2 ^ (64 * n) * (word t.mem B (slot w aP + 8 * n)).toNat = 0 := by omega
+    have h2 := (Nat.mul_eq_zero.mp h0).resolve_left (Nat.two_pow_pos _).ne'
+    exact BitVec.eq_of_toNat_eq h2
   case cF =>
     show (wv t.mem B (slot w aF) (n + 1) : Int) % _ = _
     rw [wa aF (by decide) (by decide) _ (by omega_arith), tr o₁₃ (by decide) (by omega_arith) (by omega_arith) (by decide),

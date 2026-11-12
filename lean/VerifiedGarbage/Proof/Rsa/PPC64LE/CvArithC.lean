@@ -88,19 +88,6 @@ theorem divD_ok {s : State} {B : Addr} {Z w a r : Nat} (h : Ws s B Z w nArr)
   · rw [KeyWorkspace.Keep.word k4 (i := w) (by omega_arith) (by simp; exact ⟨by decide, r3, by decide⟩) (by simp)
       (fit _ (by decide)), topd]
 
-/-- `shape`: `r0 = 0` exactly for `Shape`, from `p_len` and `q_len` (`r20`,
-`r22`) and `w`. -/
-theorem shape_ok {s : State} {w pL qL : Nat} (hw : s.gpr .r29 = BitVec.ofNat 64 w)
-    (hp : s.gpr .r20 = BitVec.ofNat 64 pL) (hq : s.gpr .r22 = BitVec.ofNat 64 qL) (hw' : w < 2 ^ 32)
-    (hp' : pL < 2 ^ 32) (hq' : qL < 2 ^ 32) :
-    WP isa (.block shape) s fun t => (t.gpr .r0 = 0 ↔ KeyCheck.Shape w pL qL) ∧ t.mem = s.mem ∧
-      Keep [.r0, .r3, .r12] s t := by
-  refine WP.mono (WP.keep [.r0, .r3, .r12] (Q := fun t => (t.gpr .r0 = 0 ↔ KeyCheck.Shape w pL qL) ∧
-      t.mem = s.mem) (by
-    unfold shape
-    prun [hw, hp, hq]
-    exact KeyCheck.shape_bits hw' hp' hq') (by decide)) fun t ⟨⟨h0, hm⟩, k'⟩ => ⟨h0, hm, k'⟩
-
 /-- `d` divided by `[a]` with its low bit cleared, by words, into `[r]`, for
 `w = 4 wd`: exact when the divisor's top word (of `wd`) is not zero. -/
 theorem divWD_ok {s : State} {B : Addr} {Z w a r : Nat} (h : Ws s B Z w nArr)
