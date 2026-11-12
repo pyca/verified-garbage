@@ -42,7 +42,7 @@ namespace VG.Impl.Rsa.X86_64.CheckCrtKey
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64
 open VG.Impl.Rsa.X86_64.CheckKey (sD sDlen sP sPlen sQ sQlen sDP sDQ sQI sEv aM aT aR stk ws fail
-  loadNum ltMask decM mulE mulXR wordStep eqOne)
+  loadNum ltMask decM mulE wordStep eqOne)
 
 
 /-! ## Remainders with a small quotient -/

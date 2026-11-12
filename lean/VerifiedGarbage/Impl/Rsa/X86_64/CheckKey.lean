@@ -52,7 +52,7 @@ def bitChecks : List (Prog isa) :=
   modChecks sP sPlen sDP sQlen ++ modChecks sQ sQlen sDQ sPlen ++
   -- `qInv < p` and `q qInv ≡ 1 (mod p)`
   loadNum aM sP sPlen ++ loadNum aX sQI sPlen ++ ltMask aX aM ++
-  loadNum aR sQ sQlen ++ mulXR ++ CheckCrtKey.reduceTop sPlen CheckCrtKey.topQ ++ eqOne
+  loadNum aR sQ sQlen ++ mulPQ ++ CheckCrtKey.reduceTop sPlen CheckCrtKey.topQ ++ eqOne
 
 /-- `sMask &= ` the mask of `d mod [aM] = [aX]`: `d` into `WordDivide`'s
 dividend, `[aM]` into its divisor, the remainder compared with `[aX]`. -/
