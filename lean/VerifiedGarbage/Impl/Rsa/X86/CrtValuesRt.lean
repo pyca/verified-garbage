@@ -77,9 +77,11 @@ def checks : Prog isa := seqs (checksPrefix ++ inverseChoice::checksSuffix)
 /-- The header word holding the guard (`WordModRt.balanced`), which the word steps need. -/
 def sG : Nat := 144
 
-/-- The product `p q` (`2 w` words in `aDR2` and `aDR3`), compared with `n` (`aDQ`) by the checks. -/
+/-- The product `p q` (`2 w` words in `aDR2` and `aDR3`), compared with `n` (`aDQ`) by the checks: over
+the primes' `w / 2` words where the guard holds. -/
 def firstDiv : Prog isa := seqs [
-  .block (bitOf lay sPodd aP ++ WordModRt.balanced lay 7 9 11 aDQ sG), WordModRt.mulWide lay aDR2 aP aQ]
+  .block (bitOf lay sPodd aP ++ WordModRt.balanced lay 7 9 11 aDQ sG),
+  WordModRt.ifBalanced sG (WordModRt.mulHalf lay aDR2 aP aQ) (WordModRt.mulWide lay aDR2 aP aQ)]
 
 /-- `d mod (p - 1)` into `aDR2` and `d mod (q - 1)` into `aDR3`, `rem` the remainder of
 `[aDQ]` (`d`) by `[aDD]` into an array. -/
