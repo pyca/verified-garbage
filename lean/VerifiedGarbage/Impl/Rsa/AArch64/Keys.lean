@@ -593,14 +593,17 @@ def qTail : List (Prog isa) :=
     wdiv aC aP aX₂ aT [.lsr .x .x12 .x12 1] tailLen
       [.lsl .x .x16 .x12 5, .addImm .x .x16 .x16 24, .add .x .x16 .x11 .x16]]
 
+/-- `invPart`'s inverse and check of `gcd(q, p) = 1`, without `qTail`. -/
+def invGcd : List (Prog isa) :=
+  invSetup ++ ([guarded (inverseAtS (nCalc sPl sQl) aU aV aX₁ aX₂ aP aT)
+      (inverseAt (nCalc sPl sQl) aU aV aX₁ aX₂ aP aT), zeroA aC, .block (setOneA aC)] ++
+    (eqA aV aC ++ [.block andZero]))
+
 /-- `qInv = q⁻¹ mod p` into `aX₂`, at the primes' width
 `⌈max(p_len, q_len) / 8⌉` (`nCalc`), and `gcd(q, p) = 1` and'ed into
 `sMask`. When `wordGuard` passes, the inverse leaves out its doublings
 (`inverseAtS`) and `qTail` does their work after the check. -/
-def invPart : List (Prog isa) :=
-  invSetup ++ ([guarded (inverseAtS (nCalc sPl sQl) aU aV aX₁ aX₂ aP aT)
-      (inverseAt (nCalc sPl sQl) aU aV aX₁ aX₂ aP aT), zeroA aC, .block (setOneA aC)] ++
-    (eqA aV aC ++ [.block andZero])) ++ [guarded (seqs qTail) (.block [])]
+def invPart : List (Prog isa) := invGcd ++ [guarded (seqs qTail) (.block [])]
 
 /-- `[aC] := [j] - 1` (for an odd `[j]`, whose low word is not zero), then
 `[aU] := d`. -/
