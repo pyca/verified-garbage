@@ -860,7 +860,7 @@ theorem batch_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n c p iv : Nat} 
 
 /-- A batch of `f` and `g` alone: the next `d`, `f` and `g`, and the count of the batches left, `c`, in
 `r10` and whether it is zero in `r3`. -/
-theorem batchG_ok {s : State} {B : Addr} {Z w N n c p iv : Nat} {I : Divstep.IState}
+theorem batchG_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n c p iv : Nat} {I : Divstep.IState}
     (h : Ctx s B Z w N n (c + 1)) (hst : BG s B w n I)
     (hN : N ≤ 256) (hd : |I.d| + 2 * 59 < 2 ^ 62) (hodd : I.f % 2 = 1)
     (hF : |I.f| ≤ 2 ^ (64 * nu n) * 2 ^ 3) (hG : |I.g| ≤ 2 ^ (64 * nu n) * 2 ^ 3) :
@@ -976,7 +976,7 @@ def LoopGAt (s₀ : State) (B : Addr) (Z w N n p iv x : Nat) (k : Nat) (t : Stat
   Ctx t B Z w N n (3 * nu n + 2 - k) ∧ BG t B w n (Divstep.invRunS 59 p iv x k) ∧
     KeyWorkspace.Keep B w [aF, aG, aT1, aT2, aT3, aW] [] s₀.mem t.mem ∧ Keep (.r10 :: kRegs) s₀ t
 
-theorem loopG_ok {s : State} {B : Addr} {Z w N n p iv x : Nat} (hN : N ≤ 256)
+theorem loopG_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n p iv x : Nat} (hN : N ≤ 256)
     (h : Ctx s B Z w N n (3 * nu n + 2)) (hst : BG s B w n (Divstep.invRunS 59 p iv x 0))
     (odd : p % 2 = 1) (hinv : (p * iv + 1) % 2 ^ 64 = 0)
     (pc : p < 2 ^ (64 * nu n)) (xc : x < 2 * 2 ^ (64 * nu n)) :
@@ -2003,7 +2003,7 @@ theorem inverseS_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n : Nat} (h :
   exact ⟨Nat.gcd_comm _ _, (scaled_cong c2 hcong).symm.dvd, y2⟩
 
 /-- `gcd(x, m)` alone, by the batches of `f` and `g`. -/
-theorem gcd_ok {s : State} {B : Addr} {Z w N n : Nat} (h : Ws s B Z w N) (hN15 : 15 ≤ N) (hN : N ≤ 256)
+theorem gcd_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n : Nat} (h : Ws s B Z w N) (hN15 : 15 ≤ N) (hN : N ≤ 256)
     (hw : 10 ≤ w) (h11 : s.gpr .r11 = BitVec.ofNat 64 n) (hn1 : 1 ≤ n) (hnw : n ≤ w) (hfit : n + n % 2 ≤ w)
     {x m : Nat} (hx : num s.mem B w aX = x) (hxn : x < 2 ^ (32 * n)) (hm : num s.mem B w aMin = m)
     (hmn : m < 2 ^ (32 * n)) (hodd : m % 2 = 1) :
