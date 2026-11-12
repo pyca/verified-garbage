@@ -50,6 +50,27 @@ theorem JointGenerator.keep_prep {c : Joint.Cfg} {C : Curve} {base T : Addr} {si
   · exact Nat.le_trans hL.generator hz
   · exact Nat.le_trans hL.peer hz
 
+/-- Any code that leaves what the recoders leave (`JointPrepPost`) keeps the fields and the
+generator's table. -/
+theorem jointPrepFieldsOf_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}
+    {G : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {E : Nat → Fe C} {s : State}
+    {p : Prog isa}
+    (hL : JointPrepLayout c size u v) (hF : Lay c.K.M size (·∈nafSlots c.K))
+    (hi : Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s)
+    (he : JointGenerator c C base T size row s)
+    (hp : WP isa p s (JointPrepPost c base size u v s)) :
+    WP isa p s fun t =>
+      Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E t ∧
+      (∀ j<jointGLen c,t.mem (off base (c.gBits+j))=
+        jointGByte c (wordsVal s.mem base u c.K.M.n) j) ∧
+      (∀ j<64*c.K.M.n+1,t.mem (off base (c.K.bits+j))=
+        FastNaf.byte 5 (wordsVal s.mem base v c.K.M.n) j) ∧
+      JointGenerator c C base T size row t ∧ KeepRegs (nafPrepClobN c.K.M.n) s t ∧
+      Unch base (jointPrepRanges c) s.mem t.mem := by
+  refine WP.mono_syms hp fun t ⟨st,dg,dq,hk,hu⟩ sy => ?_
+  exact ⟨hi.of_unch st hu (fun x hx => hF.le x (hi.sl x hx)) hL.field hL.modulus,
+    dg,dq,he.keep_prep hL hk hu sy,hk,hu⟩
+
 theorem jointPrepFields_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}
     {G : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {E : Nat → Fe C} {s : State}
     (hL : JointPrepLayout c size u v) (hF : Lay c.K.M size (·∈nafSlots c.K))
@@ -62,10 +83,8 @@ theorem jointPrepFields_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v
       (∀ j<64*c.K.M.n+1,t.mem (off base (c.K.bits+j))=
         FastNaf.byte 5 (wordsVal s.mem base v c.K.M.n) j) ∧
       JointGenerator c C base T size row t ∧ KeepRegs (nafPrepClobN c.K.M.n) s t ∧
-      Unch base (jointPrepRanges c) s.mem t.mem := by
-  refine WP.mono_syms (jointPrep_ok hL.n hi.scr hL.sourceU hL.sourceV hL.generator hL.peer hL.separate hL.keepV)
-    fun t ⟨st,dg,dq,hk,hu⟩ sy => ?_
-  exact ⟨hi.of_unch st hu (fun x hx => hF.le x (hi.sl x hx)) hL.field hL.modulus,
-    dg,dq,he.keep_prep hL hk hu sy,hk,hu⟩
+      Unch base (jointPrepRanges c) s.mem t.mem :=
+  jointPrepFieldsOf_ok hL hF hi he
+    (jointPrep_ok hL.n hi.scr hL.sourceU hL.sourceV hL.generator hL.peer hL.separate hL.keepV)
 
 end VG.Proof.Weierstrass.X86_64

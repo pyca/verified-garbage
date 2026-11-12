@@ -80,6 +80,31 @@ theorem jointMulWindow_ok {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base 
   exact ⟨(ka.mono (fun _ h => List.mem_append_left _ h)).trans
     ((kb.trans kt).mono (fun _ h => List.mem_append_right _ h)),ct,tb⟩
 
+/-- Any code that leaves what the recoders leave (`JointPrepPost`) leaves the loop's input. -/
+theorem jointMulPrepOf_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size srcU srcV u v : Nat}
+    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)}
+    {E : Nat → Fin C.p} {s : State} {p : Prog isa}
+    (hL : JointPrepLayout c size srcU srcV) (hF : Lay c.K.M size (·∈nafSlots c.K))
+    (hi : Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s)
+    (hp : InvJ C (E c.K.P.x) (E c.K.P.y) (E c.K.P.z) Q) (hp1 : E c.K.P.z=1)
+    (hz : E c.K.zero=0) (he : JointGenerator c C base T size row s)
+    (hu : wordsVal s.mem base srcU c.K.M.n=u) (hv : wordsVal s.mem base srcV c.K.M.n=v)
+    (hP : WP isa p s (JointPrepPost c base size srcU srcV s)) :
+    WP isa p s fun t =>
+      Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E t ∧
+      JointWindowInput c C base T size u v Q row t ∧ KeepRegs (nafPrepClobN c.K.M.n) s t ∧
+      Unch base (jointPrepRanges c) s.mem t.mem := by
+  refine WP.mono (jointPrepFieldsOf_ok (C:=C) hL hF hi he hP)
+    fun t ⟨it,dg,dq,gt,hk,ht⟩ => ?_
+  rw [hu] at dg
+  rw [hv] at dq
+  have pv : ∀ x∈jacCoords c.K.P,x∈winRo c.K := by
+    intro x hx
+    simp only [jacCoords,winRo,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
+    grind
+  exact ⟨it,⟨it.point_tmv pv hp,(it.val _ (by simp [winRo])).trans hp1,
+    (it.val _ (by simp [winRo])).trans hz,dq,dg,gt⟩,hk,ht⟩
+
 theorem jointMulPrep_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size srcU srcV u v : Nat}
     {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)}
     {E : Nat → Fin C.p} {s : State}
@@ -91,17 +116,25 @@ theorem jointMulPrep_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size srcU s
     WP isa (Joint.prep c srcU srcV) s fun t =>
       Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E t ∧
       JointWindowInput c C base T size u v Q row t ∧ KeepRegs (nafPrepClobN c.K.M.n) s t ∧
-      Unch base (jointPrepRanges c) s.mem t.mem := by
-  refine WP.mono (jointPrepFields_ok (C:=C) hL hF hi he)
-    fun t ⟨it,dg,dq,gt,hk,ht⟩ => ?_
-  rw [hu] at dg
-  rw [hv] at dq
-  have pv : ∀ x∈jacCoords c.K.P,x∈winRo c.K := by
-    intro x hx
-    simp only [jacCoords,winRo,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
-    grind
-  exact ⟨it,⟨it.point_tmv pv hp,(it.val _ (by simp [winRo])).trans hp1,
-    (it.val _ (by simp [winRo])).trans hz,dq,dg,gt⟩,hk,ht⟩
+      Unch base (jointPrepRanges c) s.mem t.mem :=
+  jointMulPrepOf_ok hL hF hi hp hp1 hz he hu hv
+    (jointPrep_ok hL.n hi.scr hL.sourceU hL.sourceV hL.generator hL.peer hL.separate hL.keepV)
+
+/-- `jointMulPrep_ok` for the recoders without branches on the scalars' bits. -/
+theorem jointMulPrepB_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size srcU srcV u v : Nat}
+    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)}
+    {E : Nat → Fin C.p} {s : State} (h9 : c.gw=9)
+    (hL : JointPrepLayout c size srcU srcV) (hF : Lay c.K.M size (·∈nafSlots c.K))
+    (hi : Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s)
+    (hp : InvJ C (E c.K.P.x) (E c.K.P.y) (E c.K.P.z) Q) (hp1 : E c.K.P.z=1)
+    (hz : E c.K.zero=0) (he : JointGenerator c C base T size row s)
+    (hu : wordsVal s.mem base srcU c.K.M.n=u) (hv : wordsVal s.mem base srcV c.K.M.n=v) :
+    WP isa (Joint.prepB c srcU srcV) s fun t =>
+      Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E t ∧
+      JointWindowInput c C base T size u v Q row t ∧ KeepRegs (nafPrepClobN c.K.M.n) s t ∧
+      Unch base (jointPrepRanges c) s.mem t.mem :=
+  jointMulPrepOf_ok hL hF hi hp hp1 hz he hu hv
+    (jointPrepB_ok hL.n h9 hi.scr hL.sourceU hL.sourceV hL.generator hL.peer hL.separate hL.keepV)
 
 theorem jointMul_ok {C : Curve} {c : Joint.Cfg} {double : Prog isa} {base T : Addr}
     {size srcU srcV u v : Nat} {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)}
