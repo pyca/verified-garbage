@@ -128,7 +128,6 @@ theorem setWid_ok {s : State} {B : Addr} {Z k : Nat} (hs : Scr s B Z) (h0 : s.gp
     h12₂ (by simp only [Wk, vk]; omega) (by simp only [Wk, vk]; omega) (by simp only [slot, hdrBytes, Wk, vk]; omega)) fun t ⟨hw, f, _, k₃⟩ =>
       ⟨hw, by rw [← m₁, ← m₂]; exact f, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
-
 /-! ## Operations on arrays -/
 
 section Ops
@@ -280,23 +279,6 @@ def CIn (cin : List Instr) (b : Bool) (s : State) : Prop :=
 theorem c0_ok (s : State) (h7 : s.gpr .x7 = 0) : CIn c0 false s :=
   WP.keep [.x3, .x4] (by brun [c0, h7]) (by decide) (by decide) (by decide +kernel)
 
-theorem c1_ok (s : State) (h7 : s.gpr .x7 = 0) : CIn c1 true s :=
-  WP.keep [.x3, .x4] (by brun [c1, h7]) (by decide) (by decide) (by decide +kernel)
-
-theorem cOf_ok (s : State) {r : Reg} (hr : r = .x1 ∨ r = .x2) {b : Bool}
-    (hv : s.gpr r = BitVec.ofNat 64 b.toNat) : CIn (cOf r) b s := by
-  rcases hr with rfl | rfl <;>
-  · refine WP.keep [.x3, .x4] ?_ (by decide) (by decide) (by decide +kernel)
-    unfold cOf
-    brun [hv]
-    cases b <;> decide
-
-theorem cMask_ok (s : State) {c : Bool} (h15 : s.gpr .x15 = mask c) :
-    CIn [.adds .x .x3 .x15 .x15] c s := by
-  refine WP.keep [.x3, .x4] ?_ (by decide) (by decide) (by decide +kernel)
-  brun [h15]
-  cases c <;> decide
-
 /-- `dblA a cin cout`: `[a] := 2 [a] + b` for the carry `b` that `cin`
 sets, `C` the carry out; then `cout`. -/
 theorem dblA_ok (h : Ws s B Z w) {a : Nat} (ha : a < 16) {cin : List Instr} {b : Bool}
@@ -341,28 +323,6 @@ theorem dbl_ok (h : Ws s B Z w) {a : Nat} (ha : a < 16) {cin : List Instr} {b : 
   dblA_ok h ha hc fun t₁ hv h7 o k => WP.block_nil_iff.mpr ⟨by
     have := wv_lt t₁.mem B (slot w a) w
     rw [← hv, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt this], h7, o, k⟩
-
-/-- `dblA a cin (cTo r)`: the carry out into `r`. -/
-theorem dblc_ok (h : Ws s B Z w) {a : Nat} (ha : a < 16) {cin : List Instr} {b : Bool}
-    (hc : ∀ t, t.gpr .x7 = 0 → (∀ r, r ∉ [Reg.x11, .x12, .x7, .x14, .x16] → t.gpr r = s.gpr r) → CIn cin b t) {r : Reg} (hr : r = .x1 ∨ r = .x2) :
-    WP isa (dblA a cin (cTo r)) s fun t =>
-      wv t.mem B (slot w a) w = (2 * wv s.mem B (slot w a) w + b.toNat) % 2 ^ (64 * w) ∧
-      t.gpr r = BitVec.ofNat 64 ((2 * wv s.mem B (slot w a) w + b.toNat) / 2 ^ (64 * w)) ∧ t.gpr .x7 = 0 ∧
-      Outside B (slot w a) (8 * w) s.mem t.mem ∧ Keep [r, .x3, .x4, .x7, .x11, .x12, .x14, .x16] s t :=
-  dblA_ok h ha hc fun t₁ hv' h7 o k => by
-    have lt := wv_lt t₁.mem B (slot w a) w
-    have e1 : (2 * wv s.mem B (slot w a) w + b.toNat) % 2 ^ (64 * w) = wv t₁.mem B (slot w a) w := by
-      rw [← hv', Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt lt]
-    have e2 : (2 * wv s.mem B (slot w a) w + b.toNat) / 2 ^ (64 * w) = t₁.c.toNat := by
-      rw [← hv', Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt lt, Nat.zero_add]
-    have hk : WP isa (.block (cTo r)) t₁ fun t => (t.gpr r = BitVec.ofNat 64 t₁.c.toNat ∧ t.mem = t₁.mem) ∧
-        Keep [r] t₁ t := by
-      rcases hr with rfl | rfl <;>
-      · refine WP.keep _ ?_ (by decide) (by decide) (by decide +kernel)
-        unfold cTo; brun [h7]; cases t₁.c <;> rfl
-    refine WP.mono hk fun t ⟨⟨hr', mt⟩, k'⟩ => ?_
-    have h7' : t.gpr .x7 = 0 := by rw [k'.gpr .x7 (by rcases hr with rfl | rfl <;> decide)]; exact h7
-    exact ⟨by rw [mt, e1], by rw [hr', e2], h7', by rw [mt]; exact o, (k.trans k').mono (by simp)⟩
 
 end Ops
 

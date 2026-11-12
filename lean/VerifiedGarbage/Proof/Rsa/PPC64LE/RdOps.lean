@@ -119,7 +119,7 @@ theorem copyOut_ok {s : State} {B : Addr} {Z w N o a : Nat} (h : Ws s B Z w N)
         lsr1_ofNat (show w < 2 ^ 64 by omega_arith)]) (by decide)) fun x ⟨⟨x5, x6, x8, xm⟩, kx⟩ => ?_
     have hx := hu.of_keep kx
     refine WP.mono (copyWLoop_ok hx.scr x5 x6 x8 (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
-      (aheadW hev (ahead_of_ne hoa))) fun t' ⟨v, out, kt'⟩ => ?_
+      (aheadW hev (ahead_of_ne hoa))) fun t' ⟨v, out, kt', _⟩ => ?_
     have mt : t.mem = s.mem := rfl
     rw [xm, mu, mt] at v out
     exact ⟨hx.of_keep kt', by simpa only [show 8 * (w / 2) = 4 * w by omega_arith] using out,
@@ -655,7 +655,7 @@ theorem DS.inv [VG.Proof.Rsa.PPC64LE.InvLaw] (h : DS s0 false A live V ls s)
   rw [vw_false] at ax am lx lm
   have hw : 10 ≤ ww (kK s0) := by omega
   have inv := VG.Proof.Rsa.PPC64LE.InvLaw.inverse_ok (n := ww (kK s0)) hws (by decide) (by decide) hw
-    h11 (by omega) (Nat.le_refl _) ax lx am lm hodd
+    h11 (by omega) (Nat.le_refl _) (by simp only [ww]; omega) ax lx am lm hodd
   refine WP.mono inv fun t ⟨ws, kk, kr, v⟩ => ?_
   have hjs : ∀ j ∈ VG.Proof.Rsa.PPC64LE.invBatchArrs, j < vN false := by decide
   have ht : DS s0 false A live' V ls t := h.wrs ws hjs kk hl kr

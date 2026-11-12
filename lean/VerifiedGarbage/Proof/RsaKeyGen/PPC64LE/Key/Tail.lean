@@ -71,8 +71,9 @@ theorem qinvPart_eq : qinvPart = seqs (([.block (bitOf X0 aP ++ ([] : List Instr
 
 /-- `qInv` modulo `mL p`, `X0` `p` odd, `X1` `gcd(q, mL p) = 1`. -/
 theorem qinvPart_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1) (three : V aThree = 3)
-    (zero : V aZero = 0) (hw10 : 10 ≤ w) {L : Nat} (h22 : s.gpr .r22 = BitVec.ofNat 64 L) (hL' : 8 * L < 2 ^ 64)
-    (hL4 : L % 4 = 0) (hL1 : 4 ≤ L) (hLw : L ≤ 4 * w) (hp : V aP < 2 ^ (8 * L)) (hq : V aQ < 2 ^ (8 * L)) :
+    (zero : V aZero = 0) (hw10 : 10 ≤ w) (hwe : w % 2 = 0) {L : Nat} (h22 : s.gpr .r22 = BitVec.ofNat 64 L)
+    (hL' : 8 * L < 2 ^ 64) (hL4 : L % 4 = 0) (hL1 : 4 ≤ L) (hLw : L ≤ 4 * w) (hp : V aP < 2 ^ (8 * L))
+    (hq : V aQ < 2 ^ (8 * L)) :
     WP isa qinvPart s fun t => Ws t B Z w nArr ∧
       (∃ V' F', KS t.mem B w V' F' ∧ (∀ j < nArr, j ∉ qinvArrs → V' j = V j) ∧
         (∀ d, d ≠ X0 → d ≠ X1 → d ≠ X2 → F' d = F d) ∧
@@ -112,7 +113,7 @@ theorem qinvPart_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one 
   have K4 : Keep opsRegs s t4 := ((r1.trans' r2).trans' r3).trans' r4
   refine WP.mono (invOfE h4 k4 hw10 (a := aQ) (m := aMq)
     (hk := nP_width (by rw [K4.gpr .r22 (by decide)]; exact h22) (by omega_arith)) (hn1 := by omega_arith)
-    (hnw := by omega_arith) (han := by rw [vQ4, e32]; exact hq)
+    (hnw := by omega_arith) (hfit := by omega_arith) (han := by rw [vQ4, e32]; exact hq)
     (hmn := by
       rw [vMq, e32, mL]; split
       · exact hp

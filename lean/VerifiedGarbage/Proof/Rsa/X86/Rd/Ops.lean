@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Frame
 public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Prep
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Half
@@ -331,5 +332,38 @@ theorem KS.div_W {q r d t : Nat} (h : KS g s0 A live AW liveW V ls s)
     rw [h.arrsW q hq, h.arrsW d hd] at e1 e2
     exact ⟨e1, e2⟩
 
+
+theorem upd_upd (A : Nat → Nat) (j x y : Nat) : upd (upd A j x) j y = upd A j y := by
+  funext i; simp only [upd]; split <;> rfl
+
+/-- `n`'s length, the argument `nl`, at any point of a stage. -/
+theorem KS.mlen (h : KS g s0 A live AW liveW V ls s) {a : Nat}
+    (ha : g.args VG.Impl.Rsa.X86.RecoverDetRt.nl = BitVec.ofNat 32 a) (ha1 : a ≤ 1024) :
+    VG.Proof.Rsa.X86.WordRt.MLen s g.B g.Z VG.Impl.Rsa.X86.RecoverDetRt.nl a :=
+  ⟨by rw [← ha]; exact h.arg (h.start.2 _ (by decide)).1 (by decide), ha1⟩
+
+/-- Halving a wide number, `ebx` zero. -/
+theorem KS.half_W {j : Nat} (h : KS g s0 A live AW liveW V ls s)
+    (hj : j ∈ liveW) (zero : (s.gpr .ebx).toNat = 0) (hl : ∀ i ∈ live, i / 2 ≠ j) :
+    WP isa (half wid j) s fun t =>
+      KS g s0 A live (upd AW j (AW j / 2)) (j :: liveW) V ls t ∧ Keeps opRegs s t := by
+  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.half_ok h.rtW (h.liveW_lt j hj) (by omega)) fun t ⟨_, k, e, r⟩ => ?_
+  rw [kw_wid] at k e
+  exact ⟨h.write_W k (h.liveW_lt j hj) (by simp) (r.mono (by decide))
+    (by rw [e, zero, Nat.mul_zero, Nat.add_zero, h.arrsW j hj]) hl (by simp), r.mono (by decide)⟩
+
 end
+
+theorem seqs_cons_iff (c : Prog isa) (cs : List (Prog isa)) (s : State) (Q : State → Prop) :
+    WP isa (VG.Impl.Rsa.X86.Keys.seqs (c :: cs)) s Q ↔ WP isa c s (fun t => WP isa (VG.Impl.Rsa.X86.Keys.seqs cs) t Q) := by
+  cases cs with
+  | nil => simp only [VG.Impl.Rsa.X86.Keys.seqs, WP.block_nil_iff (M := isa)]
+  | cons d ds => exact WP.seq_iff
+
+theorem seqs_append_iff (cs ds : List (Prog isa)) (s : State) (Q : State → Prop) :
+    WP isa (VG.Impl.Rsa.X86.Keys.seqs (cs ++ ds)) s Q ↔ WP isa (VG.Impl.Rsa.X86.Keys.seqs cs) s (fun t => WP isa (VG.Impl.Rsa.X86.Keys.seqs ds) t Q) := by
+  induction cs generalizing s Q with
+  | nil => simp only [List.nil_append, VG.Impl.Rsa.X86.Keys.seqs, WP.block_nil_iff (M := isa)]
+  | cons c cs ih => simp only [List.cons_append, seqs_cons_iff, ih]
+
 end VG.Proof.Rsa.X86.Recover

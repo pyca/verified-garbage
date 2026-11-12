@@ -70,7 +70,7 @@ theorem rdWritten_of {m : Mem} {pp pq : Addr} {x0 : BitVec 64} {nb eb db : List 
     exact ⟨trivial, by rw [b1, b2]⟩
 
 /-- `vg_rsa_recover_primes_det`. -/
-theorem rdCode_correct [InvLaw] (s : State) (h : rdA.pre s) :
+theorem rdCode_correct [GcdLaw gcdB] (s : State) (h : rdA.pre s) :
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ rdA.post s s' := by
   have c := rpCtx_of h.1
   have hel8 := h.2

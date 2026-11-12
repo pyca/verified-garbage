@@ -196,8 +196,8 @@ theorem gcdUV_eq : gcdUV = seqs (([.block (VG.Impl.Rsa.PPC64LE.Keys.bitOf X0 aV 
 
 /-- `gcdUV`: `v` odd by a swap (if it is even), and `[aG] := gcd(u, v)`, 1 for `v < 2`. -/
 theorem gcdUV_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1) (two : V aTwo = 2)
-    (three : V aThree = 3) (hw10 : 10 ≤ w) {L : Nat} (h22 : s.gpr .r22 = BitVec.ofNat 64 L) (hL' : 8 * L < 2 ^ 64)
-    (hL4 : L % 4 = 0) (hL1 : 4 ≤ L) (hLw : L ≤ 4 * w) (hu : V aU < 2 ^ (8 * L)) (hv : V aV < 2 ^ (8 * L))
+    (three : V aThree = 3) (hw10 : 10 ≤ w) (hwe : w % 2 = 0) {L : Nat} (h22 : s.gpr .r22 = BitVec.ofNat 64 L)
+    (hL' : 8 * L < 2 ^ 64) (hL4 : L % 4 = 0) (hL1 : 4 ≤ L) (hLw : L ≤ 4 * w) (hu : V aU < 2 ^ (8 * L)) (hv : V aV < 2 ^ (8 * L))
     (hodd : 2 ≤ (if V aV % 2 = 0 then V aU else V aV) → (if V aV % 2 = 0 then V aU else V aV) % 2 = 1) :
     WP isa gcdUV s fun t => Ws t B Z w nArr ∧
       (∃ V' F', KS t.mem B w V' F' ∧ (∀ j < nArr, j ∉ gcdArrs → V' j = V j) ∧
@@ -256,7 +256,7 @@ theorem gcdUV_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V
       exact Nat.lt_of_lt_of_le (by decide) (Nat.pow_le_pow_right (by decide) (by omega_arith : 2 ≤ 8 * L))
     · simp only [hl, ↓reduceIte]; split <;> with_reducible assumption
   refine WP.seq (WP.mono (invOfE h6 k6 hw10 (a := aU2) (m := aS) (hk := hw6) (hn1 := by omega_arith)
-    (hnw := by omega_arith) (han := bU2) (hmn := bS) (odd := sO.1) (gt := sO.2)) fun t7 ⟨h7, ⟨V7, k7, fr7, g7, _, _⟩, f7, r7⟩ => ?_)
+    (hnw := by omega_arith) (hfit := by omega_arith) (han := bU2) (hmn := bS) (odd := sO.1) (gt := sO.2)) fun t7 ⟨h7, ⟨V7, k7, fr7, g7, _, _⟩, f7, r7⟩ => ?_)
   refine WP.mono (selE h7 k7 (o := aG) (a := 1) (b := aOne) (sl := X1) (bit := b5)) fun t ⟨ht, kt, ft, rt⟩ => ?_
   obtain ⟨V8, kt, e8, o8⟩ := kt.vx
   refine ⟨ht, ⟨V8, F5, kt, fun j hj hn => ?_, fun d d0 d1 => ?_, ?_⟩,
@@ -313,7 +313,7 @@ theorem lcmPart_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {L : N
   have hb := VG.Proof.RsaKeyGen.halveIter_bounds (8 * L) (st := (V aPm, V aQm, V aPm * V aQm))
     (a := 2 ^ (8 * L)) (b := 2 ^ (8 * L)) (f := V aPm * V aQm + 1) ⟨hpm, hqm, Nat.lt_succ_self _⟩
   rw [hS] at hb
-  refine WP.seq (WP.mono (gcdUV_ok h1 k1 c1 c2 c3 hw10 (by rw [r1.gpr .r22 (by decide)]; exact h22) hL' hL4
+  refine WP.seq (WP.mono (gcdUV_ok h1 k1 c1 c2 c3 hw10 (by omega) (by rw [r1.gpr .r22 (by decide)]; exact h22) hL' hL4
     (by omega_arith) (by omega_arith) (by rw [eu]; exact hb.1) (by rw [ev]; exact hb.2.1) (by rw [eu, ev]; exact LE.1))
     fun t2 ⟨h2, ⟨V2, F2, k2, o2, p2, e2⟩, f2, r2⟩ => ?_)
   refine WP.seq (WP.mono (copyE h2 k2 (o := aL) (a := aF)) fun t3 ⟨h3, k3, f3, r3⟩ => ?_)

@@ -112,26 +112,30 @@ theorem shape_bits {w pL qL : Nat} (hw' : w < 2 ^ 32) (hp' : pL < 2 ^ 32) (hq' :
   simp only [BitVec.or_eq_zero_iff, BitVec.xor_eq_zero_iff, A, Bq, C, D, Shape, and_assoc]
 
 /-- For a balanced key with `p q = n`, `n`'s first byte not zero and
-`w = ⌈k / 4⌉`, `p - 1`'s top word (of `w / 4`) is not zero. -/
-theorem shape_bound {w k pL qL n p q : Nat} (hs : Shape w pL qL) (hwk : w = (k + 3) / 4) (hpq : p * q = n)
+`4 w ≤ k + 7` (`w = ⌈k / 4⌉`, or `2 ⌈k / 8⌉`), `p - 1`'s top word (of
+`w / 4`) is not zero. -/
+theorem shape_bound {w k pL qL n p q : Nat} (hs : Shape w pL qL) (hwk : 4 * w ≤ k + 7) (hpq : p * q = n)
     (hn : 256 ^ (k - 1) ≤ n) (hq : q < 2 ^ (8 * qL)) : 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (p / 2) := by
   obtain ⟨p8, hpw, hpq', p32⟩ := hs
-  have hk : 2 * pL - 4 ≤ k - 1 := by omega
-  have e1 : (2 : Nat) ^ (16 * pL - 32) = 2 ^ (8 * pL - 32) * 2 ^ (8 * pL) := by
-    rw [← Nat.pow_add]; congr 1; omega
-  have hn' : 2 ^ (16 * pL - 32) ≤ n := by
+  have hn' : 2 ^ (16 * pL - 64) ≤ n := by
     refine Nat.le_trans ?_ hn
     rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
     exact Nat.pow_le_pow_right (by decide) (by omega)
   rw [show 8 * qL = 8 * pL by omega] at hq
-  have hp : 2 ^ (8 * pL - 32) < p := by
-    rcases Nat.lt_or_ge (2 ^ (8 * pL - 32)) p with h | h
+  have hp : 2 ^ (8 * pL - 64) < p := by
+    rcases Nat.lt_or_ge (2 ^ (8 * pL - 64)) p with h | h
     · exact h
     · rcases Nat.eq_zero_or_pos p with h0 | h0
-      · subst h0; rw [Nat.zero_mul] at hpq; have := Nat.two_pow_pos (16 * pL - 32); omega
-      · have := Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_pos_left hq h0) (Nat.mul_le_mul_right _ h)
+      · subst h0; rw [Nat.zero_mul] at hpq; have := Nat.two_pow_pos (16 * pL - 64); omega
+      · have e1 : (2 : Nat) ^ (16 * pL - 64) = 2 ^ (8 * pL - 64) * 2 ^ (8 * pL) := by
+          rw [← Nat.pow_add]; congr 1; omega
+        have := Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_pos_left hq h0) (Nat.mul_le_mul_right _ h)
         omega
-  have e3 : 2 ^ (64 * (w / 4 - 1)) ≤ 2 ^ (8 * pL - 32) := Nat.pow_le_pow_right (by decide) (by omega)
+  have e3 : 2 ^ (64 * (w / 4 - 1)) = 2 ^ (8 * pL - 64) := by congr 1; omega
+  have : p % 2 = 1 ∨ p % 2 = 0 := by omega
+  have h2 : 2 ^ 1 ≤ 2 ^ (8 * pL - 64) := Nat.pow_le_pow_right (by decide) (by omega)
+  have h2' : 2 ^ (8 * pL - 64) % 2 = 0 := by
+    rw [show 8 * pL - 64 = (8 * pL - 65) + 1 by omega, Nat.pow_succ, Nat.mul_mod_left]
   omega
 
 /-- The checks' bits but for the remainders, which matter only once `p` is
@@ -186,11 +190,11 @@ theorem ck_bitsM' {k n e d p q dP dQ qI w pL qL : Nat} (hwk : w = (k + 3) / 4) (
       (fun a b => by rw [ite_eq_left ⟨a, b⟩]) hA (fun h => by rw [ite_eq_left h])
       (fun h => by rw [ite_eq_left h])
   · have pq := pq_of_bits hqj hnj hL hM h1 h2 h3
-    have bP : Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (p / 2) := fun hs => shape_bound hs hwk pq hnv hqL
+    have bP : Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (p / 2) := fun hs => shape_bound hs (by omega) pq hnv hqL
     have bQ : Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (q / 2) := fun hs => by
       have hs' : Shape w qL pL := ⟨by have := hs.1; have := hs.2.2.1; omega, by have := hs.2.1; have := hs.2.2.1; omega,
         hs.2.2.1.symm, by have := hs.2.2.2; have := hs.2.2.1; omega⟩
-      exact shape_bound hs' hwk (by rw [Nat.mul_comm]; exact pq) hnv hpL
+      exact shape_bound hs' (by omega) (by rw [Nat.mul_comm]; exact pq) hnv hpL
     refine ⟨?_, ?_, ?_⟩
     · by_cases c : dP < 2 * (p / 2) ∧ 2 * (2 * (p / 2)) ≤ 2 ^ (32 * w)
       · rw [ite_eq_left c]; exact hR₁ c.1 c.2 bP
@@ -207,9 +211,9 @@ theorem ck_bitsM' {k n e d p q dP dQ qI w pL qL : Nat} (hwk : w = (k + 3) / 4) (
       · rw [ite_eq_right h0]
 
 /-- For a balanced key with `p q ≡ n (mod 2^(32 w))`, `n`'s first byte not zero
-and `w = ⌈k / 4⌉`, `p`'s top word (of `w / 4`) is not zero: else `p q` is
+and `4 w ≤ k + 7`, `p`'s top word (of `w / 4`) is not zero: else `p q` is
 below `2^(32 w)` and `n`. -/
-theorem top_of_L {w k pL qL n p q : Nat} (hs : Shape w pL qL) (hwk : w = (k + 3) / 4)
+theorem top_of_L {w k pL qL n p q : Nat} (hs : Shape w pL qL) (hwk : 4 * w ≤ k + 7)
     (hn : 256 ^ (k - 1) ≤ n) (hq : q < 2 ^ (8 * qL)) (hL : p * q % 2 ^ (32 * w) = n) :
     2 ^ (64 * (w / 4 - 1)) ≤ p := by
   obtain ⟨p8, hpw, hpq', p32⟩ := hs
@@ -268,7 +272,7 @@ theorem ck_bitsM'' {k n e d p q dP dQ qI w pL qL : Nat} (hwk : w = (k + 3) / 4) 
   have hnv := (VG.Proof.Rsa.modulusValid_facts hm).2
   -- Where `p` is odd and `L = n`, a balanced key's `p` has its top word.
   have top : p % 2 = 1 → L = n → Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ p := fun _ h2 hs =>
-    top_of_L hs hwk hnv hqL (by rw [← hL, h2])
+    top_of_L hs (by omega) hnv hqL (by rw [← hL, h2])
   let M' := if p % 2 = 1 ∧ L = n then M else if n % p = 0 then 0 else 1
   let A₁' := if p % 2 = 1 ∧ L = n then A₁ else if q * qI % p = 1 then 0 else 1
   let A₂' := if p % 2 = 1 ∧ L = n then A₂ else 0

@@ -176,16 +176,69 @@ theorem prefix_ct : CTW GM (GC vk XT) (seqs (([.block (VG.Impl.Rsa.AArch64.Keys.
 
 /-! ## `main` -/
 
-theorem pieces_ct [InvLaw] : CTW (GC vk XT) (GC vk XT)
+theorem WP.seq_inv {c₁ c₂ : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq c₁ c₂) s Q) :
+    WP isa c₁ s fun t => WP isa c₂ t Q := by
+  obtain ⟨tr, s', e, q⟩ := h
+  cases e with
+  | seq e₁ e₂ => exact ⟨_, _, e₁, _, _, e₂, q⟩
+
+/-- A piece that also carries what the pieces after it run to. -/
+theorem CTW.thread {Φ Ψ : Pub → State → Prop} {c : Prog isa} {l : List (Prog isa)} (hl : l ≠ [])
+    {F : Pub → State → Prop} (h : CTW Φ Ψ c) :
+    CTW (fun a s => Φ a s ∧ WP isa (seqs (c :: l)) s (F a)) (fun a s => Ψ a s ∧ WP isa (seqs l) s (F a)) c := by
+  obtain ⟨d, l', rfl⟩ := List.exists_cons_of_ne_nil hl
+  exact CTW.wp h (fun _ _ h => h.1) fun a s ⟨hΦ, hw⟩ => WP.and (h.2 a s hΦ) (WP.seq_inv hw)
+
+theorem CTW.threadLast {Φ Ψ : Pub → State → Prop} {c : Prog isa} {F : Pub → State → Prop} (h : CTW Φ Ψ c) :
+    CTW (fun a s => Φ a s ∧ WP isa c s (F a)) (fun a s => Ψ a s ∧ F a s) c :=
+  CTW.wp h (fun _ _ h => h.1) fun a s ⟨hΦ, hw⟩ => WP.and (h.2 a s hΦ) hw
+
+/-- The pieces up to `a`. -/
+abbrev mid4 : List (Prog isa) := [deMinus, twos, gcd, aProd]
+
+/-- After the prefix: what the pieces up to `a` run to, for `divA`. -/
+def XP (a : Pub) (s : State) : Prop := WP isa (seqs mid4) s (XA a)
+
+theorem prefix_ct' [GcdLaw gcdB] : CTW GM (fun a s => GC vk XT a s ∧ XP a s) (seqs (([.block (VG.Impl.Rsa.AArch64.Keys.head ++
+    setNar)] : List (Prog isa)) ++ (loadA Public.aN Public.sN Public.sK ++ (loadA aE Public.sE Public.sElen ++
+    (loadA aD sD sDl ++ prod))))) := by
+  refine CTW.wp prefix_ct (fun _ _ h => h) fun ⟨P, i⟩ s hg => WP.and (prefix_ct.2 _ s hg) ?_
+  obtain ⟨I, e, h, hv⟩ := hg
+  subst e
+  have L := h.L
+  have k1 := L.k1
+  have k2 := L.k2
+  obtain ⟨hodd, hlo⟩ := rvalid_lo hv
+  have hNlt : numN I < 2 ^ (8 * I.k) := by have := os2ip_lt I.nb; rw [L.nbl, pow256_eq] at this; exact this
+  have hpv := pow_v I.k
+  have hpk : 2 ^ (8 * I.k + 64) = 2 ^ (8 * I.k) * 2 ^ 64 := Nat.pow_add _ _ _
+  have h3 : 3 ≤ numN I := by
+    have : 2 ^ 8 ≤ 256 ^ (I.k - 1) := by rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by omega)
+    omega
+  have hD : numD I < 2 ^ (8 * I.k) := by
+    have := os2ip_lt I.db; rw [L.dbl, pow256_eq] at this
+    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by have := L.dl2; omega))
+  have hE : numE I < 2 ^ 64 := by
+    have := os2ip_lt I.eb; rw [L.ebl, pow256_eq] at this
+    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by have := h.el8; omega))
+  have hde : numD I * numE I < 2 ^ (64 * vk I.k) :=
+    Nat.lt_of_lt_of_le (by rw [hpk]; exact Nat.mul_lt_mul'' hD hE) hpv
+  exact WP.mono (prefix_ok h) fun t ⟨g₁, n₁, M₁⟩ => WP.mono (mid4_ok g₁ L n₁ hodd h3 (by omega) M₁ hde)
+    fun u ⟨_, _, n, o⟩ => ⟨o, numN I, n, hlo, hNlt⟩
+
+theorem pieces_ct [GcdLaw gcdB] : CTW (fun a s => GC vk XT a s ∧ XP a s) (GC vk XT)
     (seqs [deMinus, twos, gcd, aProd, divA, divB, square, minus4n, sqrt]) :=
-  CTW.cons (by simp) deMinus_ct (CTW.cons (by simp) twos_ct (CTW.cons (by simp) gcd_ct (CTW.cons (by simp) aProd_ct
+  CTW.cons (by simp) (deMinus_ct.thread (l := [twos, gcd, aProd]) (by simp))
+    (CTW.cons (by simp) (twos_ct.thread (l := [gcd, aProd]) (by simp))
+    (CTW.cons (by simp) (gcd_ct.thread (l := [aProd]) (by simp))
+    (CTW.cons (by simp) ((aProd_ct.threadLast (F := XA)).mono (fun _ _ h => h) fun _ _ h => h.1.map fun _ => h.2)
     (CTW.cons (by simp) divA_ct (CTW.cons (by simp) divB_ct (CTW.cons (by simp) square_ct
       (CTW.cons (by simp) minus4n_ct (CTW.one sqrt_ct))))))))
 
 /-- `main` leaks the same in runs from a valid modulus with the same public data. -/
-theorem rdMain_ct [InvLaw] : RelCT isa (Two GM) main fun _ _ => True := by
+theorem rdMain_ct [GcdLaw gcdB] : RelCT isa (Two GM) main fun _ _ => True := by
   rw [main_eq]
-  refine ctr_app (by simp) (by simp) prefix_ct ?_
+  refine ctr_app (by simp) (by simp) prefix_ct' ?_
   refine ctr_app (a := [deMinus, twos, gcd, aProd, divA, divB, square, minus4n, sqrt]) (by simp) (by simp)
     pieces_ct ?_
   exact ctr_app (a := factorsA) (by simp) (by simp [storeA]) factors_ct stores_ct
@@ -303,7 +356,7 @@ theorem failR_ct : RelCT isa (Two GFr) fail fun _ _ => True := by
         fun _ _ => trivial)))).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 /-- `vg_rsa_recover_primes_det` leaks the same in runs with the same public data. -/
-theorem rdCode_ct [InvLaw] : RelCT isa (Two RDRel) code fun _ _ => True := by
+theorem rdCode_ct [GcdLaw gcdB] : RelCT isa (Two RDRel) code fun _ _ => True := by
   unfold code
   refine RelCT.seq (R := Two RD3) (RelCT.block_append (RelCT.seq rdEntry_ct ?_)) ?_
   -- The modulus' check.
@@ -349,7 +402,7 @@ theorem rdCode_ct [InvLaw] : RelCT isa (Two RDRel) code fun _ _ => True := by
 
 /-- `vg_rsa_recover_primes_det` is constant time but for `n`, `e`, the
 pointers and the lengths. -/
-theorem rdCode_constantTime [InvLaw] : ConstantTime isa rdA.pre rdA.pub code := by
+theorem rdCode_constantTime [GcdLaw gcdB] : ConstantTime isa rdA.pre rdA.pub code := by
   refine RelCT.constantTime (rdCode_ct.mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨(dpub (rpIn s₁), 0), ⟨h₁, rfl⟩, ⟨h₂, ?_⟩,
     hp.2.1⟩) fun _ _ h => h)
   obtain ⟨hr, hsp, ha, hn, he⟩ := hp

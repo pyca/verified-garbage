@@ -48,7 +48,7 @@ def Width (k : List Instr) (s : State) (n : Nat) : Prop :=
 theorem invOfE [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 ≤ w) {a m : Nat}
     (ha : a < nArr := by decide) (hm : m < nArr := by decide) (hma : a ∉ invOfArrs := by decide)
     (hmm : m ≠ aM := by decide) {k : List Instr} {n : Nat} (hk : Width k s n) (hn1 : 1 ≤ n)
-    (hnw : n ≤ w) (han : V a < 2 ^ (32 * n)) (hmn : V m < 2 ^ (32 * n))
+    (hnw : n ≤ w) (hfit : n + n % 2 ≤ w) (han : V a < 2 ^ (32 * n)) (hmn : V m < 2 ^ (32 * n))
     (odd : V m % 2 = 1) (gt : 1 < V m) :
     WP isa (invOf a m k) s fun u => Ws u B Z w nArr ∧
       (∃ V', KS u.mem B w V' F ∧ (∀ j < nArr, j ∉ invOfArrs → V' j = V j) ∧
@@ -71,7 +71,7 @@ theorem invOfE [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 �
     simp only [invOfArrs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
     obtain ⟨n0, -, -, -, -, -, -, -, nM, -⟩ := hn
     rw [k3.arrs j hj]; simp [upd, n0, nM]
-  refine WP.mono (InvLaw.inverse_ok h3 (by decide) nArr_le hw e11 hn1 hnw v0 han vM hmn odd) fun u ⟨hu, ku, kr, v⟩ => ⟨hu, ?_, ?_, ?_⟩
+  refine WP.mono (InvLaw.inverse_ok h3 (by decide) nArr_le hw e11 hn1 hnw hfit v0 han vM hmn odd) fun u ⟨hu, ku, kr, v⟩ => ⟨hu, ?_, ?_, ?_⟩
   · obtain ⟨g, dv, lt⟩ := v gt
     refine ⟨fun j => num u.mem B w j, ?_, fun j hj hn => ?_, g, dv, lt⟩
     · refine k3.step ku (fit_of h3) (V' := fun j => num u.mem B w j) (fun j hj hn => ?_) (fun j _ => rfl)

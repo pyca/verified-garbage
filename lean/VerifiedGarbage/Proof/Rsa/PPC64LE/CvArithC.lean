@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Rsa.PPC64LE.IbOps
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rsa.PPC64LE.DivN
+import VerifiedGarbage.Proof.Rsa.PPC64LE.CvTail
 
 /-!
 # `vg_rsa_crt_values` on PPC64LE: the arithmetic, `d` divided by `p - 1` and `q - 1`
@@ -24,7 +25,7 @@ namespace VG.Proof.Rsa.PPC64LE.CrtValues
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
 open VG.Impl.Rsa.PPC64LE.Keys (seqs copy clrLow)
 open VG.Impl.Rsa.PPC64LE.Div (div divP)
-open VG.Impl.Rsa.PPC64LE.CrtValues (aQ aP aDQ aDD aDT aDR2 aDR3 aD nArr divB divW shape)
+open VG.Impl.Rsa.PPC64LE.CrtValues (aQ aP aDQ aDD aDT aDR2 aDR3 aD aDR nArr divB divW shape tail)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 
 /-- `divB len a r`: `d` divided by `[a]` with its low bit cleared, bit-serial, into `[r]`. -/
@@ -150,7 +151,7 @@ theorem divWD_ok {s : State} {B : Addr} {Z w a r : Nat} (h : Ws s B Z w nArr)
 
 /-- The divisions of `arith`: `shape`, then both by words or both bit-serial. -/
 def partC : List (Prog isa) :=
-  [.block shape, .ite (.zero .d .r0) (seqs (divW aP aDR2 ++ divW aQ aDR3))
+  [.block shape, .ite (.zero .d .r0) (seqs (tail :: (divW aP aDR2 ++ divW aQ aDR3)))
     (seqs (divB .r20 aP aDR2 ++ divB .r22 aQ aDR3))]
 
 /-- `partC`: `d mod (p - 1)` in `aDR2` and `d mod (q - 1)` in `aDR3`, exact but by
@@ -160,7 +161,11 @@ theorem partC_ok {s : State} {B : Addr} {Z w pL qL : Nat} (h : Ws s B Z w nArr)
     (h22 : s.gpr .r22 = BitVec.ofNat 64 qL) (hpL : 1 ≤ pL) (hqL : 1 ≤ qL) (hpw : pL < 2 ^ 32) (hqw : qL < 2 ^ 32)
     (hP : num s.mem B w aP < 2 ^ (8 * pL)) (hQ : num s.mem B w aQ < 2 ^ (8 * qL)) :
     WP isa (seqs partC) s fun t => Ws t B Z w nArr ∧
-      KeyWorkspace.Keep B w [aDQ, aDD, aDR2, aDT, aDR3] [] s.mem t.mem ∧
+      KeyWorkspace.Keep B w [aDQ, aDD, aDR2, aDT, aDR3, aDR, 3, 4, 5] [] s.mem t.mem ∧
+      (KeyCheck.Shape w pL qL → num s.mem B w 3 < num s.mem B w 8 → num s.mem B w 8 < 2 ^ (64 * (w / 4)) →
+        2 ^ (64 * (w / 4 - 1)) ≤ num s.mem B w 8 →
+        num t.mem B w 3 = num s.mem B w 3 * 2 ^ (5 * (3 * (w / 4) + 2)) % num s.mem B w 8) ∧
+      (¬ KeyCheck.Shape w pL qL → num t.mem B w 3 = num s.mem B w 3) ∧
       (0 < 2 * (num s.mem B w aP / 2) → (KeyCheck.Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (num s.mem B w aP / 2)) →
         num t.mem B w aDR2 = num s.mem B w aD % (2 * (num s.mem B w aP / 2))) ∧
       (0 < 2 * (num s.mem B w aQ / 2) → (KeyCheck.Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (num s.mem B w aQ / 2)) →
@@ -175,23 +180,35 @@ theorem partC_ok {s : State} {B : Addr} {Z w pL qL : Nat} (h : Ws s B Z w nArr)
   have g1 : ∀ x ∈ [Reg.r20, .r22], s1.gpr x = s.gpr x := fun x hx => k1.gpr x (by revert x hx; decide)
   rw [show ∀ x : Prog isa, seqs [x] = x from fun _ => rfl]
   refine WP.ite (s1.gpr .r0 == 0) (eval_zero s1 .r0) (fun hz => ?_) (fun hz => ?_)
-  · -- By words.
+  · -- By words: the inverse's tail, then the divisions.
     obtain ⟨p8, hpw2, hpq, p32⟩ := z1.1 (by simpa using hz)
     have hw : w = 4 * (w / 4) := by omega
+    have hS : S w = 4 * (w + 2) := rfl
+    rw [wp_seqs_cons (by simp [VG.Impl.Rsa.PPC64LE.CrtValues.divW])]
+    refine WP.mono (tail_ok h1 hw (by omega)) fun t1 ⟨h1', K1, v1, x1⟩ => ?_
+    rw [m1] at K1 v1
+    have kp : ∀ j, j = aP ∨ j = aQ ∨ j = aD → num t1.mem B w j = num s.mem B w j := fun j hj => by
+      rcases hj with rfl | rfl | rfl <;> exact K1.num (by decide) (by simp) (fit _ (by decide))
+    have top1 : w32 t1.mem B (arr w aDD + 4 * w) = 0 := by
+      rw [KeyWorkspace.Keep.word K1 (i := w) (by omega_arith) (by decide) (by simp) (fit _ (by decide)), top]
     rw [wp_seqs_append (by simp [VG.Impl.Rsa.PPC64LE.CrtValues.divW])
       (by simp [VG.Impl.Rsa.PPC64LE.CrtValues.divW])]
-    refine WP.mono (divWD_ok h1 (.inl rfl) (.inl rfl) (by rw [m1]; exact top) hw (by omega)
-      (by rw [m1, show 64 * (w / 4) = 8 * pL by omega]; exact hP)) fun t2 ⟨h2, k2, v2, top2, x2⟩ => ?_
+    refine WP.mono (divWD_ok h1' (.inl rfl) (.inl rfl) top1 hw (by omega)
+      (by rw [kp aP (.inl rfl), show 64 * (w / 4) = 8 * pL by omega]; exact hP)) fun t2 ⟨h2, k2, v2, top2, x2⟩ => ?_
     have q2 : num t2.mem B w aQ = num s.mem B w aQ := by
-      rw [k2.num (by decide) (by simp) (fit _ (by decide)), m1]
+      rw [k2.num (by decide) (by simp) (fit _ (by decide)), kp aQ (.inr (.inl rfl))]
     refine WP.mono (divWD_ok h2 (.inr rfl) (.inr rfl) top2 hw (by omega)
       (by rw [q2, show 64 * (w / 4) = 8 * qL by omega]; exact hQ)) fun t ⟨h3, k3, v3, _, x3⟩ => ?_
     have d2 : num t2.mem B w aD = num s.mem B w aD := by
-      rw [k2.num (by decide) (by simp) (fit _ (by decide)), m1]
+      rw [k2.num (by decide) (by simp) (fit _ (by decide)), kp aD (.inr (.inr rfl))]
     have hs : KeyCheck.Shape w pL qL := ⟨p8, hpw2, hpq, p32⟩
-    refine ⟨h3, ?_, fun h0 hb => ?_, fun h0 hb => ?_, ((k1.trans x2).trans x3).mono (by decide)⟩
-    · rw [← m1]; exact (k2.mono (by simp) (by simp)).trans (k3.mono (by simp) (by simp))
-    · rw [k3.num (by decide) (by simp) (fit _ (by decide)), v2 (by rw [m1]; exact h0) (by rw [m1]; exact hb hs), m1]
+    have y3 : num t.mem B w 3 = num t1.mem B w 3 := by
+      rw [k3.num (by decide) (by simp) (fit _ (by decide)), k2.num (by decide) (by simp) (fit _ (by decide))]
+    refine ⟨h3, ?_, fun _ a b c => by rw [y3]; exact v1 a b c, fun hn => absurd hs hn, fun h0 hb => ?_,
+      fun h0 hb => ?_, (((k1.trans x1).trans x2).trans x3).mono (by decide)⟩
+    · exact (K1.mono (by decide)).trans ((k2.mono (by decide) (by simp)).trans (k3.mono (by decide) (by simp)))
+    · rw [k3.num (by decide) (by simp) (fit _ (by decide)), v2 (by rw [kp aP (.inl rfl)]; exact h0)
+        (by rw [kp aP (.inl rfl)]; exact hb hs), kp aD (.inr (.inr rfl)), kp aP (.inl rfl)]
     · rw [v3 (by rw [q2]; exact h0) (by rw [q2]; exact hb hs), d2, q2]
   · -- Bit-serial.
     rw [wp_seqs_append (by simp [divB]) (by simp [divB])]
@@ -204,8 +221,11 @@ theorem partC_ok {s : State} {B : Addr} {Z w pL qL : Nat} (h : Ws s B Z w nArr)
       fun t ⟨h3, k3, v3, _, x3⟩ => ?_
     have d2 : num t2.mem B w aD = num s.mem B w aD := by
       rw [k2.num (by decide) (by simp) (fit _ (by decide)), m1]
-    refine ⟨h3, ?_, fun h0 _ => ?_, fun h0 _ => ?_, ((k1.trans x2).trans x3).mono (by decide)⟩
-    · rw [← m1]; exact (k2.mono (by simp) (by simp)).trans (k3.mono (by simp) (by simp))
+    have hs : ¬ KeyCheck.Shape w pL qL := fun hs => by simp [z1.2 hs] at hz
+    refine ⟨h3, ?_, fun h' => absurd h' hs, fun _ => ?_, fun h0 _ => ?_, fun h0 _ => ?_,
+      ((k1.trans x2).trans x3).mono (by decide)⟩
+    · rw [← m1]; exact (k2.mono (by decide) (by simp)).trans (k3.mono (by decide) (by simp))
+    · rw [k3.num (by decide) (by simp) (fit _ (by decide)), k2.num (by decide) (by simp) (fit _ (by decide)), m1]
     · rw [k3.num (by decide) (by simp) (fit _ (by decide)), v2 (by rw [m1]; exact h0), m1]
     · rw [v3 (by rw [q2]; exact h0), d2, q2]
 
