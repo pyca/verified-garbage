@@ -573,10 +573,13 @@ def tailDbl : Prog isa :=
   .loop (.seq (.block dblSetup) (.seq (countLoop .x14 dblBody) (.block [.subImm .x .x15 .x15 1])))
     (.nonzero .x .x15)
 
+/-- `place` after `ws`. -/
+def placeRest : List Instr :=
+  tailK ++ base aX₂ .x16 ++ base aC .x17 ++ [.lsl .x .x3 .x13 3, .add .x .x17 .x17 .x3, .addImm .x .x12 .x5 1]
+
 /-- `[aC] := [aX₂] 2^(64 Q)`: `[aX₂]`'s low `n + 1` words copied to `[aC]`'s
 words from `Q` (`[aC]` zero). -/
-def place : List Instr :=
-  ws ++ tailK ++ base aX₂ .x16 ++ base aC .x17 ++ [.lsl .x .x3 .x13 3, .add .x .x17 .x17 .x3, .addImm .x .x12 .x5 1]
+def place : List Instr := ws ++ placeRest
 
 /-- `L = n + Q + 1 = ⌊(79 n + 9) / 64⌋ + 1` words of the dividend, from
 `w = 2 n` in `x12` (`x13` alone). -/

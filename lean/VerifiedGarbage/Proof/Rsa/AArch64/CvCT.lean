@@ -303,6 +303,44 @@ theorem inverseAt_ct [InvLaw] {hc : VG.Taint.Hint VG.AArch64.Taint.T}
         · exact ⟨aX₂, by decide, .inl rfl⟩
         · exact ⟨aT, by decide, .inl rfl⟩) k (by decide)
 
+/-- `inverseAtS`, as `inverseAt_ct`. -/
+theorem inverseAtS_ct [InvLaw] {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11])
+      (seqs ([VG.Impl.Rsa.AArch64.Keys.inverseBS aU aV aX₁ aX₂ aP aT] ++ tailZ aV ++ tailZ aX₂)) hc).isSome = true) :
+    RelCT isa (Two GI) (inverseAtS (nCalc sPl sQl) aU aV aX₁ aX₂ aP aT) (Two GA) := by
+  unfold inverseAtS
+  refine pin_ct [.x0] [.x0, .x12, .x11] niVal (fun a s₁ s₂ h₁ h₂ => pins_GA a s₁ s₂ h₁.1 h₂.1) (by taint_decide)
+    (fun p s h => ?_) ht fun p s h => ?_
+  all_goals
+    obtain ⟨⟨I, m₀, c, rfl, h', L, O, hm⟩, vm, bU, bP⟩ := id h
+    have hL1 := L.pl1; have hL2 := L.pl2; have hL3 := L.ql1; have hL4 := L.ql2; have hk2 := L.k2
+    dsimp only [CvIn.pub] at vm bU bP
+  · refine WP.block_append_iff.mpr (WP.mono h'.ws.ws_ok fun t ⟨⟨_, t11, tm, _⟩, k⟩ => WP.mono
+      (nCalc_ok (h'.ws.scr.congr k.wr) ((k.gpr .x0 (by decide)).trans h'.ws.x0) h'.ws.h256 (la := I.pl) (lb := I.ql)
+        (by omega) (by omega) (by rw [tm]; exact h'.args.pl) (by rw [tm]; exact h'.args.ql))
+      fun u ⟨⟨u12, _, _⟩, ku⟩ => ?_)
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ((ku.gpr .x0 (by decide)).trans (k.gpr .x0 (by decide))).trans h'.ws.x0
+    · exact u12
+    · exact (ku.gpr .x11 (by decide)).trans t11
+  · exact WP.mono (InvLaw.inverseAtS_ok h'.ws (n := (max I.pl I.ql + 7) / 8) (nb := nCalc sPl sQl)
+      (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aP) (iT := aT) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by omega) (by show _ ≤ (I.k + 7) / 8; omega) (by omega)
+      (fun t ht h0 _ _ hm => nCalc_ok ht h0 h'.ws.h256 (by omega) (by omega) (by rw [hm]; exact h'.args.pl)
+        (by rw [hm]; exact h'.args.ql))
+      (fits_nmax bU (by omega)) (fits_nmax bP (by omega)) vm) fun _ ⟨_, f, k, _⟩ => h.1.frm f (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl
+        · exact ⟨aU, by decide, .inl rfl⟩
+        · exact ⟨aV, by decide, .inl rfl⟩
+        · exact ⟨aX₁, by decide, .inl rfl⟩
+        · exact ⟨aX₂, by decide, .inl rfl⟩
+        · exact ⟨aT, by decide, .inl rfl⟩) k (by decide)
+
 /-! ## The loads -/
 
 /-- The registers `loadBE` and `storeBE` need pinned. -/

@@ -209,7 +209,7 @@ theorem placeBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) :
         t.gpr .x12 = BitVec.ofNat 64 (w / 2 + 1) ∧ t.mem = s.mem) ∧
       Keep [.x3, .x5, .x6, .x11, .x12, .x13, .x15, .x16, .x17] s t := by
   have hw := h.w2
-  simp only [place, List.append_assoc]
+  simp only [place, placeRest, List.append_assoc]
   refine WP.block_append_iff.mpr (WP.mono h.ws_ok fun s₁ ⟨⟨h12, h11, m₁, _⟩, k₁⟩ => ?_)
   refine WP.block_append_iff.mpr (WP.mono (tailK_ok h12 hw) fun s₂ ⟨⟨h5, h13, _, m₂⟩, k₂⟩ => ?_)
   have k12 := k₁.trans k₂
