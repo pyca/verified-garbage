@@ -4487,6 +4487,20 @@ vg_sm4_expand_key:
 	mov QWORD PTR [rsp+3128], r11
 	mov QWORD PTR [rsp+3136], r11
 	lea rsp, [rsp+3144]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-3144]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+3144]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 

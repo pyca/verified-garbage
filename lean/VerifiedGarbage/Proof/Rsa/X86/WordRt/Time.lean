@@ -178,19 +178,20 @@ variable {L : Lay} {B : Addr} {Z len N : Nat}
 def rowHead (L : Lay) (b : Nat) : List Instr := arrPtr L .ebx b .edx ++ [.mov .eax (.mem (sc oJ))]
 
 /-- The rest of a row's first block. -/
-def rowH₂ (L : Lay) (o a : Nat) : List Instr :=
+def rowH₂ (L : Lay) (o a : Nat) (half : Bool := false) : List Instr :=
   [.alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .ebx (.reg .eax),
     .mov .ecx (.mem (at_ .ebx 0))] ++ arrPtr L .ebp o .edx ++ [.alu .add .ebp (.reg .eax)] ++
-    arrPtr L .esi a .edx ++ bytesB L .edi ++ [.mov .ebx (.imm 0)]
+    arrPtr L .esi a .edx ++ bytesB L .edi ++ (if half then [.shift .shr .edi 1] else []) ++ [.mov .ebx (.imm 0)]
 
 /-- A row after its first block. -/
-def rowTail (L : Lay) (o a b : Nat) (rows : Option Nat) : Prog isa :=
-  match VG.Impl.Rsa.X86.WordModRt.mulRow L o a b rows with
+def rowTail (L : Lay) (o a b : Nat) (rows : Option Nat) (half : Bool := false) : Prog isa :=
+  match VG.Impl.Rsa.X86.WordModRt.mulRow L o a b rows half with
   | .seq _ x => x
   | _ => .block []
 
-theorem mulRow_eq (L : Lay) (o a b : Nat) (rows : Option Nat) :
-    VG.Impl.Rsa.X86.WordModRt.mulRow L o a b rows = .seq (.block (rowHead L b ++ rowH₂ L o a)) (rowTail L o a b rows) := by
+theorem mulRow_eq (L : Lay) (o a b : Nat) (rows : Option Nat) (half : Bool) :
+    VG.Impl.Rsa.X86.WordModRt.mulRow L o a b rows half =
+      .seq (.block (rowHead L b ++ rowH₂ L o a half)) (rowTail L o a b rows half) := by
   simp only [rowTail, rowHead, rowH₂, VG.Impl.Rsa.X86.WordModRt.mulRow, VG.Impl.Rsa.X86.WordModRt.seqs,
     List.append_assoc, List.cons_append, List.nil_append]
 
@@ -221,6 +222,55 @@ theorem rowHead_ok {t : State} (h : RtWs L t B Z len N) {b j : Nat} (hb : b < N)
 theorem ptr_eq {s₁ s₂ : State} {r : Reg} {x : Nat} (h₁ : PtrAt s₁ B r x) (h₂ : PtrAt s₂ B r x) :
     s₁.gpr r = s₂.gpr r := BitVec.eq_of_toNat_eq (h₁.trans h₂.symm)
 
+/-- The rows' traces from `init`, which starts them: the same from states in the same working space. -/
+theorem rowsFrom_relCT {τ : VG.X86.Taint.T} {Fr : State → Prop}
+    (hA : ∀ t₁ t₂, Fr t₁ → Fr t₂ → VG.X86.Taint.Agree τ t₁ t₂)
+    (hF : ∀ {u t : State} {rs : List Reg}, Fr u → Keeps rs u t → .edi ∉ rs → .esp ∉ rs →
+      Outside B 0 Z u.mem t.mem → Fr t)
+    (hτ : ∀ r ∈ [Reg.edi, .esp], τ.regs.mem r = true)
+    {o a b : Nat} {rows : Option Nat} {half : Bool} {init : Prog isa}
+    (hInit : ∀ t, RtWs L t B Z len N → WP isa init t (RowsI L t B Z len N o a b 0 half))
+    (hR1 : 1 ≤ rowsN len rows half) (hRw : rowsN len rows half ≤ kw len) (hRk : ∀ k, rows = some k → k < 2 ^ 32)
+    (ho : o + 1 < N) (ha : a < N) (hb : b < N) (hao : a ≠ o) (hao1 : a ≠ o + 1) (hbo : b ≠ o)
+    (hbo1 : b ≠ o + 1)
+    (c₀ : ∃ hint, (VG.Taint.check sseTaint τ init hint).isSome = true)
+    (c₁ : ∃ hint, (VG.Taint.check sseTaint τ (.block (rowHead L b)) hint).isSome = true)
+    (c₂ : ∃ hint, (VG.Taint.check sseTaint { τ with regs := .ofList [.edi, .esp, .eax, .ebx] }
+      (.seq (.block (rowH₂ L o a half)) (rowTail L o a b rows half)) hint).isSome = true) :
+    RelCT isa (fun t₁ t₂ => (RtWs L t₁ B Z len N ∧ Fr t₁) ∧ (RtWs L t₂ B Z len N ∧ Fr t₂))
+      (.seq init (.loop (VG.Impl.Rsa.X86.WordModRt.mulRow L o a b rows half) .ne)) fun _ _ => True := by
+  -- The invariant of each run, from its own start.
+  let Inv : State → Nat → State → Prop := fun p j t =>
+    (RtWs L p B Z len N ∧ Fr p) ∧ RowsI L p B Z len N o a b j half t
+  have frAt : ∀ {p j t}, Inv p j t → Fr t := fun {p j t} ⟨⟨_, fp⟩, I⟩ =>
+    hF fp I.rest (by decide) (by decide)
+      (VG.Proof.Rsa.X86.KeyRt.keep_outside I.ws.ws I.keep (by simp; omega) (by decide))
+  refine VG.RelCT.seq (R := fun t₁ t₂ => ∃ p₁ p₂, Inv p₁ 0 t₁ ∧ Inv p₂ 0 t₂) ?_
+    (relCT_counted Inv (rowsN len rows half) (fun j hj => ?_) (fun p j t hj ⟨P, I⟩ => ?_) (n := 0) (by omega))
+  · -- The rows' start, by the taint analysis.
+    obtain ⟨_, c₀⟩ := c₀
+    have init : ∀ t, RtWs L t B Z len N → Fr t → WP isa init t (fun u => Inv t 0 u) := fun t ht ft =>
+      WP.mono (hInit t ht) fun _ I => ⟨⟨ht, ft⟩, I⟩
+    exact (VG.RelCT.wpDep (VG.RelCT.taint (A := sseTaint) τ (fun t₁ t₂ h => hA t₁ t₂ h.1.2 h.2.2) c₀)
+      (F := fun p t => Inv p 0 t) fun t₁ t₂ h => ⟨init t₁ h.1.1 h.1.2, init t₂ h.2.1 h.2.2⟩).mono (fun _ _ h => h)
+      fun _ _ ⟨_, σ₁, σ₂, _, g₁, g₂⟩ => ⟨σ₁, σ₂, g₁, g₂⟩
+  · -- A row: its count in `eax` and `[b]` in `ebx` agree.
+    rw [mulRow_eq _ _ _ _ _ half]
+    refine relCT_head (J := fun p t => Inv p j t) (τ := τ) (τ' := { τ with regs := .ofList [.edi, .esp, .eax, .ebx] })
+      (G := fun _ m => Fr m ∧ PtrAt m B .ebx (arr (kw len) b) ∧ (m.gpr .eax).toNat = j)
+      (fun _ _ t₁ t₂ i₁ i₂ => hA t₁ t₂ (frAt i₁) (frAt i₂)) c₁
+      (fun _ t i => WP.mono (rowHead_ok i.2.ws hb i.2.cnt) fun m ⟨K, mm, pb, ea⟩ =>
+        ⟨hF (frAt i) K (by decide) (by decide) (by rw [mm]; exact Outside.refl _ _ _ _), pb, ea⟩)
+      (fun _ _ m₁ m₂ ⟨f₁, b₁, e₁⟩ ⟨f₂, b₂, e₂⟩ => agree_regs' (hA m₁ m₂ f₁ f₂) fun r hr => ?_) c₂
+    have G := hA m₁ m₂ f₁ f₂
+    simp only [RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact G.rf.1 _ (hτ _ (by simp))
+    · exact G.rf.1 _ (hτ _ (by simp))
+    · exact BitVec.eq_of_toNat_eq (e₁.trans e₂.symm)
+    · exact ptr_eq b₁ b₂
+  · exact WP.mono (rowsStep_ok P.1 hRk hRw ho ha hb hao hao1 hbo hbo1 hj I) fun _ ⟨zv, I'⟩ => ⟨zv, fun _ => ⟨P, I'⟩⟩
+
 /-- `mulRows`' traces: the same from states in the same working space. -/
 theorem mulRows_relCT {τ : VG.X86.Taint.T} {Fr : State → Prop}
     (hA : ∀ t₁ t₂, Fr t₁ → Fr t₂ → VG.X86.Taint.Agree τ t₁ t₂)
@@ -240,41 +290,36 @@ theorem mulRows_relCT {τ : VG.X86.Taint.T} {Fr : State → Prop}
       (VG.Impl.Rsa.X86.WordModRt.seqs [zeroWide L o, zeroWide L (o + 1),
         .block [.mov .eax (.imm 0), .store (sc oJ) .eax], .loop (VG.Impl.Rsa.X86.WordModRt.mulRow L o a b rows) .ne])
       fun _ _ => True := by
-  -- The invariant of each run, from its own start.
-  let Inv : State → Nat → State → Prop := fun p j t =>
-    (RtWs L p B Z len N ∧ Fr p) ∧ RowsI L p B Z len N o a b j t
-  have frAt : ∀ {p j t}, Inv p j t → Fr t := fun {p j t} ⟨⟨_, fp⟩, I⟩ =>
-    hF fp I.rest (by decide) (by decide)
-      (VG.Proof.Rsa.X86.KeyRt.keep_outside I.ws.ws I.keep (by simp; omega) (by decide))
   simp only [VG.Impl.Rsa.X86.WordModRt.seqs]
-  refine VG.RelCT.assoc (VG.RelCT.assoc (VG.RelCT.seq (R := fun t₁ t₂ => ∃ p₁ p₂, Inv p₁ 0 t₁ ∧ Inv p₂ 0 t₂) ?_
-    ((relCT_counted Inv (rowsN len rows) (fun j hj => ?_) (fun p j t hj ⟨P, I⟩ => ?_) (n := 0) (by omega)))))
-  · -- The rows' start, by the taint analysis.
-    obtain ⟨_, c₀⟩ := c₀
-    have init : ∀ t, RtWs L t B Z len N → Fr t →
-        WP isa (.seq (.seq (zeroWide L o) (zeroWide L (o + 1)))
-          (.block [.mov .eax (.imm 0), .store (sc oJ) .eax])) t (fun u => Inv t 0 u) := fun t ht ft =>
-      WP.mono (WP.assoc' (by simpa only [VG.Impl.Rsa.X86.WordModRt.seqs] using rowsInit_ok ht (a := a) (b := b) ho))
-        fun _ I => ⟨⟨ht, ft⟩, I⟩
-    exact (VG.RelCT.wpDep (VG.RelCT.taint (A := sseTaint) τ (fun t₁ t₂ h => hA t₁ t₂ h.1.2 h.2.2) c₀)
-      (F := fun p t => Inv p 0 t) fun t₁ t₂ h => ⟨init t₁ h.1.1 h.1.2, init t₂ h.2.1 h.2.2⟩).mono (fun _ _ h => h)
-      fun _ _ ⟨_, σ₁, σ₂, _, g₁, g₂⟩ => ⟨σ₁, σ₂, g₁, g₂⟩
-  · -- A row: its count in `eax` and `[b]` in `ebx` agree.
-    rw [mulRow_eq]
-    refine relCT_head (J := fun p t => Inv p j t) (τ := τ) (τ' := { τ with regs := .ofList [.edi, .esp, .eax, .ebx] })
-      (G := fun _ m => Fr m ∧ PtrAt m B .ebx (arr (kw len) b) ∧ (m.gpr .eax).toNat = j)
-      (fun _ _ t₁ t₂ i₁ i₂ => hA t₁ t₂ (frAt i₁) (frAt i₂)) c₁
-      (fun _ t i => WP.mono (rowHead_ok i.2.ws hb i.2.cnt) fun m ⟨K, mm, pb, ea⟩ =>
-        ⟨hF (frAt i) K (by decide) (by decide) (by rw [mm]; exact Outside.refl _ _ _ _), pb, ea⟩)
-      (fun _ _ m₁ m₂ ⟨f₁, b₁, e₁⟩ ⟨f₂, b₂, e₂⟩ => agree_regs' (hA m₁ m₂ f₁ f₂) fun r hr => ?_) c₂
-    have G := hA m₁ m₂ f₁ f₂
-    simp only [RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact G.rf.1 _ (hτ _ (by simp))
-    · exact G.rf.1 _ (hτ _ (by simp))
-    · exact BitVec.eq_of_toNat_eq (e₁.trans e₂.symm)
-    · exact ptr_eq b₁ b₂
-  · exact WP.mono (rowsStep_ok P.1 hRk hRw ho ha hb hao hao1 hbo hbo1 hj I) fun _ ⟨zv, I'⟩ => ⟨zv, fun _ => ⟨P, I'⟩⟩
+  exact VG.RelCT.assoc (VG.RelCT.assoc (rowsFrom_relCT hA hF hτ (half := false)
+    (fun t ht => WP.assoc' (by simpa only [VG.Impl.Rsa.X86.WordModRt.seqs] using rowsInit_ok ht (a := a) (b := b) ho))
+    hR1 hRw hRk ho ha hb hao hao1 hbo hbo1 c₀ c₁ c₂))
+
+/-- `mulHalf`'s traces: the same from states in the same working space. -/
+theorem mulHalf_relCT {τ : VG.X86.Taint.T} {Fr : State → Prop}
+    (hA : ∀ t₁ t₂, Fr t₁ → Fr t₂ → VG.X86.Taint.Agree τ t₁ t₂)
+    (hF : ∀ {u t : State} {rs : List Reg}, Fr u → Keeps rs u t → .edi ∉ rs → .esp ∉ rs →
+      Outside B 0 Z u.mem t.mem → Fr t)
+    (hτ : ∀ r ∈ [Reg.edi, .esp], τ.regs.mem r = true)
+    {o a b : Nat} (hw : 1 ≤ kw len)
+    (ho : o + 1 < N) (ha : a < N) (hb : b < N) (hao : a ≠ o) (hao1 : a ≠ o + 1) (hbo : b ≠ o)
+    (hbo1 : b ≠ o + 1)
+    (c₀ : ∃ hint, (VG.Taint.check sseTaint τ (.seq (.seq (.seq (zeroWide L o) (zeroWide L (o + 1)))
+      (.block (VG.Impl.Rsa.X86.WordModRt.topZero L o))) (.block [.mov .eax (.imm 0), .store (sc oJ) .eax]))
+      hint).isSome = true)
+    (c₁ : ∃ hint, (VG.Taint.check sseTaint τ (.block (rowHead L b)) hint).isSome = true)
+    (c₂ : ∃ hint, (VG.Taint.check sseTaint { τ with regs := .ofList [.edi, .esp, .eax, .ebx] }
+      (.seq (.block (rowH₂ L o a true)) (rowTail L o a b none true)) hint).isSome = true) :
+    RelCT isa (fun t₁ t₂ => (RtWs L t₁ B Z len N ∧ Fr t₁) ∧ (RtWs L t₂ B Z len N ∧ Fr t₂))
+      (VG.Impl.Rsa.X86.WordModRt.mulHalf L o a b) fun _ _ => True := by
+  have kwe : kw len = 2 * Spec.Rsa.modulusWords len := rfl
+  unfold VG.Impl.Rsa.X86.WordModRt.mulHalf
+  simp only [VG.Impl.Rsa.X86.WordModRt.seqs]
+  exact VG.RelCT.assoc (VG.RelCT.assoc (VG.RelCT.assoc (rowsFrom_relCT hA hF hτ (half := true) (rows := none)
+    (fun t ht => WP.assoc' (WP.assoc'
+      (by simpa only [VG.Impl.Rsa.X86.WordModRt.seqs] using halfInit_ok ht (a := a) (b := b) ho)))
+    (by simp only [rowsN, rowW]; omega) (by simp only [rowsN, rowW]; omega) (by simp)
+    ho ha hb hao hao1 hbo hbo1 c₀ c₁ c₂)))
 
 /-! ## `wordMod` -/
 

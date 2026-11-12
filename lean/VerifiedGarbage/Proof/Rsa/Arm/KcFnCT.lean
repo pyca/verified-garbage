@@ -90,6 +90,20 @@ theorem pieceF {G H : State → State → Prop} {c : Prog isa} (rs : List Reg)
     s t tr₁ tr₂ s' t' ⟨h₁, h₂⟩ e₁ e₂
   exact ⟨r.1, a₁, σ₁, v₁, a₂, σ₂, v₂, p, r.2.1, r.2.2⟩
 
+/-- As `pieceF`, for pieces whose facts depend on where the checks started and on the numbers. -/
+theorem pieceFB {F G : State → State → Vals → State → Prop} {c : Prog isa} (rs : List Reg)
+    (hc : ∃ hc, (VG.Taint.check taint (argTaint rs (4 * nA)) c hc).isSome = true)
+    (run : ∀ a σ v s, F a σ v s → RunF nA iS ins a s)
+    (regs : ∀ a₁ σ₁ v₁ a₂ σ₂ v₂ s t, PubF nA a₁ a₂ → F a₁ σ₁ v₁ s → F a₂ σ₂ v₂ t → ∀ r ∈ rs, s.gpr r = t.gpr r)
+    (hw : ∀ a σ v s, F a σ v s → WP isa c s (G a σ v)) :
+    RelCT isa (LiftB (PubF nA) F) c (LiftB (PubF nA) G) := by
+  intro s t tr₁ tr₂ s' t' ⟨a₁, σ₁, v₁, a₂, σ₂, v₂, p, h₁, h₂⟩ e₁ e₂
+  have r := rel_agree (F := F a₁ σ₁ v₁) (F' := F a₂ σ₂ v₂) (G := G a₁ σ₁ v₁) (G' := G a₂ σ₂ v₂)
+    (argTaint rs (4 * nA))
+    (fun _ _ h h' => agreeF p (run _ _ _ _ h) (run _ _ _ _ h') (regs _ _ _ _ _ _ _ _ p h h')) hc
+    (hw a₁ σ₁ v₁) (hw a₂ σ₂ v₂) s t tr₁ tr₂ s' t' ⟨h₁, h₂⟩ e₁ e₂
+  exact ⟨r.1, a₁, σ₁, v₁, a₂, σ₂, v₂, p, r.2.1, r.2.2⟩
+
 /-- The registers of two states of `Mid` agree on `r8`. -/
 theorem mid_r8 {a₁ a₂ s t : State} {A₁ A₂ : Nat → Nat} (h : iS + 1 < nA) (p : PubF nA a₁ a₂)
     (h₁ : Mid nA iS ins a₁ s A₁) (h₂ : Mid nA iS ins a₂ t A₂) : ∀ r ∈ [Reg.r8], s.gpr r = t.gpr r := by
@@ -126,7 +140,8 @@ theorem fn_ct {body : Prog isa} {vf : State → Vals} (h4 : 4 * iS < 4096) (hS :
     (hrestore : ∃ hc, (VG.Taint.check taint (argTaint [] (4 * nA)) (.block (restore (4 * iS))) hc).isSome = true)
     (hv : ∀ σ, FnPre nA iS ins σ → aEnt ins σ = vals (vf σ))
     (hA : ∀ σ, FnPre nA iS ins σ → ∀ j < nArr, aEnt ins σ j < 2 ^ (32 * (geo iS σ).w))
-    (hbody : RelCT isa (LiftB (PubF nA) fun a σ v s => s = σ ∧ FnBase nA iS ins a σ ∧ BodyIn (geo iS a) v s)
+    (hbody : RelCT isa (LiftB (PubF nA) fun a σ v s => s = σ ∧ FnBase nA iS ins a σ ∧ BodyIn (geo iS a) v s ∧
+      v = vf a)
       body (LiftB (PubF nA) fun a σ _ t => FnBase nA iS ins a σ ∧ ∃ A live c, Stg (geo iS a) σ A live c t)) :
     RelCT isa (fun s t => FnPre nA iS ins s ∧ FnPre nA iS ins t ∧ PubF nA s t)
       (fn (4 * iS) (ins.map fun p => (4 * p.1, p.2)) body) fun _ _ => True := by
@@ -167,8 +182,8 @@ theorem fn_ct {body : Prog isa} {vf : State → Vals} (h4 : 4 * iS < 4096) (hS :
       rw [z₁, z₂, p.eV]
     · -- Both are valid: the checks, and the mask returned.
       refine RelCT.seq (hbody.mono (fun s t ⟨⟨a₁, σ₁, v₁, a₂, σ₂, v₂, p, ⟨h₁, _⟩, ⟨h₂, _⟩⟩, _⟩ =>
-        ⟨a₁, s, vf a₁, a₂, t, vf a₂, p, ⟨rfl, h₁.base, h₁.bodyIn _ (hv _ h₁.base.pre) (hA _ h₁.base.pre)⟩,
-          ⟨rfl, h₂.base, h₂.bodyIn _ (hv _ h₂.base.pre) (hA _ h₂.base.pre)⟩⟩) fun _ _ h => h) ?_
+        ⟨a₁, s, vf a₁, a₂, t, vf a₂, p, ⟨rfl, h₁.base, h₁.bodyIn _ (hv _ h₁.base.pre) (hA _ h₁.base.pre), rfl⟩,
+          ⟨rfl, h₂.base, h₂.bodyIn _ (hv _ h₂.base.pre) (hA _ h₂.base.pre), rfl⟩⟩) fun _ _ h => h) ?_
       exact pieceB [.r8] ret_taint
         (fun a₁ σ₁ v₁ a₂ σ₂ v₂ s t p ⟨_, _, _, _, h₁⟩ ⟨_, _, _, _, h₂⟩ => by
           simp only [List.mem_cons, List.not_mem_nil, or_false]

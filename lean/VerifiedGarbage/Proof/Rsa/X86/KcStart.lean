@@ -63,8 +63,24 @@ theorem start_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono hu fun t ht => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (ht.mulWide_ok (o := aVQ) (a := aP) (b := aQ) (by decide) (by decide) (by decide) (by decide)
-    (by decide)) fun t1 ⟨h1, e1⟩ => ?_
+  -- The guard, then the product: over the primes' `w / 2` words where it holds.
+  obtain ⟨ap, -, hap, plt, parg⟩ := h.pLen
+  obtain ⟨aq, -, haq, qlt, qarg⟩ := h.qLen
+  refine WP.mono (ht.balanced_ok (ht.arg parg) (ht.arg qarg) hap haq (by decide))
+    fun t7 ⟨h7, an, _, _, hkw, hg⟩ => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (h7.ifBalanced_ok hg (Q := fun t1 => Stg g s (aStart v) live0 (decide (v.p % 2 = 1)) t1 ∧
+      val32 t1.mem g.B (arr g.w aVQ) (2 * g.w) = aStart v aP * aStart v aQ)
+    (fun bal u hu => ?_) fun _ u hu => hu.mulWide_ok (o := aVQ) (a := aP) (b := aQ) (by decide) (by decide)
+      (by decide) (by decide) (by decide)) fun t1 ⟨h1, e1⟩ => ?_
+  · obtain ⟨h8, hpa, hqa, -, -⟩ := bal
+    have hkw' : VG.Proof.Rsa.X86.KeyRt.kw an = g.w := hkw
+    have hw : g.w = an / 4 := by
+      rw [← hkw']
+      simp only [VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords]; omega
+    have e8 : 32 * (g.w / 2) = 8 * ap := by omega
+    exact hu.mulHalf_ok (o := aVQ) (a := aP) (b := aQ) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by show v.p < _; rw [e8]; exact plt) (by show v.q < _; rw [e8, show 8 * ap = 8 * aq by omega]; exact qlt)
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (h1.eqWide_ok (o := aVQ) (n := aN) (by decide) (by decide)) fun t2 ⟨h2, e2⟩ => ?_
   refine h2.acc_ok ?_
