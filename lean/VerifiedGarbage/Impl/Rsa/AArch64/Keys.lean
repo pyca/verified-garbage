@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.AArch64.CarrySelect
+public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
 public import VerifiedGarbage.Impl.Rsa.AArch64.InvBatch
 public import VerifiedGarbage.Impl.Rsa.AArch64
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
@@ -358,6 +359,17 @@ def inverseB (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
   seqs (batchInit iV iU iX₂ iX₁ iM ++ [.loop (batch iV iU iX₂ iX₁ iT iM) (.nonzero .x .x15)] ++
     batchFinish iV iU iX₂ iM iT)
 
+/-- `batchFinish` without the doublings: `v := |f|`, `x₂ := ±a mod m`, and
+`x1`, `x2` restored; the caller multiplies `x₂` by `2^(5 B)`. -/
+def batchFinishS (iF iA iM iT : Nat) : List (Prog isa) :=
+  [.block (signMask iF), cnegP iF, cnegP iA] ++ addIfNeg iA iM ++ addIfNeg iA iM ++ csubP iA iM iT ++
+  [.block [.umov .x .x1 .v19 0, .umov .x .x2 .v19 1]]
+
+/-- `inverseB` without the doublings (`batchFinishS`). -/
+def inverseBS (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
+  seqs (batchInit iV iU iX₂ iX₁ iM ++ [.loop (batch iV iU iX₂ iX₁ iT iM) (.nonzero .x .x15)] ++
+    batchFinishS iV iX₂ iM iT)
+
 /-- `inverse u v x₁ x₂ m t`: `[v] = gcd(a, m)` and `[x₂] a ≡ [v] (mod m)`
 for `[u] = a` and the odd `[m] = [v]`. -/
 def inverse (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
@@ -384,6 +396,10 @@ divsteps run at it, and the words of `[v]` and `[x₂]` above it are cleared,
 so that their `w` words are the result. -/
 def inverseAt (nb : List Instr) (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
   .seq (.block (ws ++ nb)) (seqs ([inverseB iU iV iX₁ iX₂ iM iT] ++ tailZ iV ++ tailZ iX₂))
+
+/-- `inverseAt` without the doublings (`inverseBS`). -/
+def inverseAtS (nb : List Instr) (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
+  .seq (.block (ws ++ nb)) (seqs ([inverseBS iU iV iX₁ iX₂ iM iT] ++ tailZ iV ++ tailZ iX₂))
 
 /-! ## Masks -/
 
@@ -428,6 +444,50 @@ ones. -/
 def head : List Instr :=
   Rsa.AArch64.head ++ ([.addImm .x .x3 .x12 2, .lsl .x .x3 .x3 3, sth .x3 sStride, movi .x7 0,
     .subImm .x .x4 .x7 1, sth .x4 sMask] : List Instr)
+
+/-! ## Division by words
+
+For balanced keys (`wordGuard`), `x mod m` for a divisor `m` of `w_m` words
+whose top bit is set, a word of `x` at a time, by `R2Div`'s step of long
+division (Knuth, TAOCP vol. 2, §4.3.1, Algorithm D): `r := (r 2^64 + u) mod m`
+for each word `u` of `x`, most significant first, from `r` the top `w_m - 1`
+words of `x` (below `m`). -/
+
+/-- Zero exactly for `k = 16 i` (a whole, even number of words), `p_len =
+q_len = k / 2` (lengths in slots `sPl` and `sQl`) and `n`'s top bit set, in
+`x9`: all public. Then `p q = n` implies that `p` and `q` have their top bits
+set. -/
+def wordGuard (sPl sQl : Nat) : List Instr :=
+  [ldh .x13 sK, ldh .x14 sPl, ldh .x15 sQl, ldh .x16 sN, .ldrb .x16 .x16 0, movi .x3 15,
+    .logic .and .x .x9 .x13 .x3, .add .x .x4 .x14 .x14, .logic .eor .x .x4 .x4 .x13, .logic .orr .x .x9 .x9 .x4,
+    .logic .eor .x .x4 .x14 .x15, .logic .orr .x .x9 .x9 .x4, .lsr .x .x16 .x16 7, movi .x3 1,
+    .logic .eor .x .x16 .x16 .x3, .logic .orr .x .x9 .x9 .x16]
+
+/-- The top bit of `m'`'s word `w_m - 1` set (`m'` at `x9`, `x12 = w_m`). -/
+def wdivSet : List Instr :=
+  [.lsl .x .x13 .x12 3, .subImm .x .x13 .x13 8, .add .x .x13 .x9 .x13, ld .x3 .x13, movi .x4 1, .lsl .x .x4 .x4 63,
+    .logic .orr .x .x3 .x3 .x4, st .x3 .x13]
+
+/-- `[iR] := [iX] mod m'`, for `[iX]` of `L` words and `m'` the `w_m` words
+of `[iM]` with the top bit of its top word set, copied to the temporary
+`[iT]`'s words 1 to `w_m` (its word 0 holds `v`): only a divisor that a
+failed check discards changes, and `[iM]` stays. From `x12 = w` (`ws`, once),
+`lenL` puts `L` into `x13` and `wm` `w_m` into `x12`; `xb` puts the address
+of `[iX]`'s word `-1` into `x16` from `[iR]`'s base (`x11`) and `w_m`. Every
+address and count comes from `x0`, `w` and the stride. -/
+def wdiv (iX iM iR iT : Nat) (wm lenL xb : List Instr) : Prog isa := seqs [
+  zeroA iR,
+  .block (base iM .x16 ++ base iT .x6 ++ lenL ++ wm ++
+    ([.sub .x .x8 .x13 .x12, .addImm .x .x8 .x8 1, movi .x7 0, .addImm .x .x9 .x6 8, mov .x17 .x9] : List Instr)),
+  copyWords,
+  .block wdivSet,
+  R2Div.recip,
+  .block (base iX .x16 ++ ([.lsl .x .x3 .x8 3, .add .x .x16 .x16 .x3] : List Instr) ++ base iR .x17 ++
+    ([.subImm .x .x12 .x12 1] : List Instr)),
+  copyWords,
+  .block (base iR .x16 ++ ([mov .x11 .x16, .addImm .x .x12 .x12 1] : List Instr)),
+  .loop (seqs [.block (xb ++ ([.lsl .x .x3 .x8 3, .add .x .x16 .x16 .x3, ld .x10 .x16] : List Instr)),
+    R2Div.stepU, .block [.subImm .x .x8 .x8 1]]) (.nonzero .x .x8)]
 
 /-! ## `vg_rsa_crt_values` -/
 
@@ -476,33 +536,96 @@ def andOdd (j : Nat) : List Instr :=
   ws ++ base j .x16 ++ [movi .x7 0, ld .x3 .x16] ++ oddMask ++
     [ldh .x3 sMask, .logic .and .x .x15 .x15 .x3, sth .x15 sMask]
 
-/-- The mask of `p q = n` and'ed into `sMask`, as `n mod p = 0`,
-`n / p = q` and `p` odd (which `p q = n` implies, `n` being odd). -/
+/-- The mask of `p q = n` and'ed into `sMask`: `p q` (`⌈p_len / 8⌉` rows of
+`⌈q_len / 8⌉` words) into arrays `aU` and `aV` (`2 w + 4` words, from
+zero), then the OR of its words' `XOR` with `n`'s over `w` words and of
+its other `w + 4` words, zero iff `p q = n`. -/
 def pqCheck : List (Prog isa) :=
-  [zeroA aU, copyA aU aN, divmod aU aV aP aT] ++ eqA aU aQ ++ [.block andZero, zeroA aC] ++ eqA aV aC ++
-    [.block andZero, .block (andOdd aP)]
+  [zeroA aU, zeroA aV,
+    .block (ws ++ base aP .x5 ++ base aQ .x9 ++ base aU .x8 ++ [mov .x11 .x5, ldh .x12 sQl, .addImm .x .x12 .x12 7,
+      .lsr .x .x12 .x12 3, ldh .x13 sPl, .addImm .x .x13 .x13 7, .lsr .x .x13 .x13 3, movi .x7 0]), Crt.mulRows] ++
+  eqA aU aN ++
+  [.block [.addImm .x .x14 .x12 4], countLoop .x14 [ld .x3 .x16, .logic .orr .x .x9 .x9 .x3, next .x16],
+    .block andZero]
 
 /-- `inverse`'s start: `(u, v, x₁, x₂) := (q, p, 1, 0)`. -/
 def invSetup : List (Prog isa) :=
   [zeroA aU, copyA aU aQ, zeroA aV, copyA aV aP, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂]
 
+/-- `a` if `wordGuard` passes, `b` otherwise. -/
+def guarded (a b : Prog isa) : Prog isa := .seq (.block (wordGuard sPl sQl)) (.ite (.zero .x .x9) a b)
+
+/-- From `w` in `x12`, for `n = w / 2` (in `x5`) and the `K = 15 n + 10`
+doublings the batches leave: `x13 := Q = ⌊(K - 1) / 64⌋` and
+`x15 := T = (K - 1) mod 64 + 1`, so that `K = 64 Q + T` with `1 ≤ T ≤ 64`. -/
+def tailK : List Instr :=
+  [.lsr .x .x5 .x12 1, .lsl .x .x6 .x5 4, .sub .x .x6 .x6 .x5, .addImm .x .x6 .x6 9, .lsr .x .x13 .x6 6,
+    movi .x3 63, .logic .and .x .x15 .x6 .x3, .addImm .x .x15 .x15 1]
+
+/-- A doubling's start: `x16 = x17 :=` `[aX₂]`'s base, `x14 := n + 1` and the
+carry cleared. -/
+def dblSetup : List Instr :=
+  base aX₂ .x16 ++ [mov .x17 .x16, .addImm .x .x14 .x5 1, movi .x7 0, .adds .x .x3 .x7 .x7]
+
+/-- `[aX₂] := [aX₂] 2^T` over its low `n + 1` words, by `T` doublings in
+place. -/
+def tailDbl : Prog isa :=
+  .loop (.seq (.block dblSetup) (.seq (countLoop .x14 dblBody) (.block [.subImm .x .x15 .x15 1])))
+    (.nonzero .x .x15)
+
+/-- `place` after `ws`. -/
+def placeRest : List Instr :=
+  tailK ++ base aX₂ .x16 ++ base aC .x17 ++ [.lsl .x .x3 .x13 3, .add .x .x17 .x17 .x3, .addImm .x .x12 .x5 1]
+
+/-- `[aC] := [aX₂] 2^(64 Q)`: `[aX₂]`'s low `n + 1` words copied to `[aC]`'s
+words from `Q` (`[aC]` zero). -/
+def place : List Instr := ws ++ placeRest
+
+/-- `L = n + Q + 1 = ⌊(79 n + 9) / 64⌋ + 1` words of the dividend, from
+`w = 2 n` in `x12` (`x13` alone). -/
+def tailLen : List Instr :=
+  [.lsl .x .x13 .x12 2, .add .x .x13 .x13 .x12, .lsl .x .x13 .x13 4, .sub .x .x13 .x13 .x12, .lsr .x .x13 .x13 1,
+    .addImm .x .x13 .x13 9, .lsr .x .x13 .x13 6, .addImm .x .x13 .x13 1]
+
+/-- In place of the doublings when `wordGuard` passes: `[aX₂] := [aX₂] 2^K mod p`,
+`2^T` by doublings of `[aX₂] < p` (which fits `n + 1` words), then `2^(64 Q)`
+by its place in `[aC]`, and the remainder by `wdiv` (`[aC]` two arrays
+above `[aX₂]`). -/
+def qTail : List (Prog isa) :=
+  [.block (ws ++ tailK), tailDbl, zeroA aC, .block place, copyWords,
+    wdiv aC aP aX₂ aT [.lsr .x .x12 .x12 1] tailLen
+      [.lsl .x .x16 .x12 5, .addImm .x .x16 .x16 24, .add .x .x16 .x11 .x16]]
+
+/-- `invPart`'s inverse and check of `gcd(q, p) = 1`, without `qTail`. -/
+def invGcd : List (Prog isa) :=
+  invSetup ++ ([guarded (inverseAtS (nCalc sPl sQl) aU aV aX₁ aX₂ aP aT)
+      (inverseAt (nCalc sPl sQl) aU aV aX₁ aX₂ aP aT), zeroA aC, .block (setOneA aC)] ++
+    (eqA aV aC ++ [.block andZero]))
+
 /-- `qInv = q⁻¹ mod p` into `aX₂`, at the primes' width
 `⌈max(p_len, q_len) / 8⌉` (`nCalc`), and `gcd(q, p) = 1` and'ed into
-`sMask`. -/
-def invPart : List (Prog isa) :=
-  invSetup ++ ([inverseAt (nCalc sPl sQl) aU aV aX₁ aX₂ aP aT, zeroA aC, .block (setOneA aC)] ++
-    (eqA aV aC ++ [.block andZero]))
+`sMask`. When `wordGuard` passes, the inverse leaves out its doublings
+(`inverseAtS`) and `qTail` does their work after the check. -/
+def invPart : List (Prog isa) := invGcd ++ [guarded (seqs qTail) (.block [])]
 
 /-- `[aC] := [j] - 1` (for an odd `[j]`, whose low word is not zero), then
 `[aU] := d`. -/
 def divisor (j : Nat) : List (Prog isa) :=
   [zeroA aC, copyA aC j, .block (decA aC), zeroA aU, copyA aU aD]
 
+/-- `dX = d mod ([j] - 1)` into `aV`: by `wdiv` (with `w / 2` words of
+`[j] - 1` and the `w` of `d`) if `wordGuard` passes, by `divmod` otherwise. -/
+def wordChoice (j : Nat) : Prog isa :=
+  .seq (.block (wordGuard sPl sQl)) (.ite (.zero .x .x9)
+    (seqs (divisor j ++ [wdiv aD aC aV aT [.lsr .x .x12 .x12 1] [mov .x13 .x12]
+      [.lsl .x .x16 .x12 5, .addImm .x .x16 .x16 24, .add .x .x16 .x11 .x16]]))
+    (seqs (divisor j ++ [divmod aU aV aC aT])))
+
 /-- The computation, once `n` is known valid. -/
 def main : Prog isa := seqs ([
   .block head] ++ loadA aN sN sK ++ loadA aP sP sPl ++ loadA aQ sQ sQl ++ loadA aD sD sDl ++ pqCheck ++ invPart ++
   -- `dP = d mod (p - 1)` into `aX₁` and `dQ = d mod (q - 1)` in `aV`.
-  divisor aP ++ [divmod aU aV aC aT, zeroA aX₁, copyA aX₁ aV] ++ divisor aQ ++ [divmod aU aV aC aT] ++
+  [wordChoice aP, zeroA aX₁, copyA aX₁ aV, wordChoice aQ] ++
   storeA aX₂ sQi sPl sMask ++ storeA aX₁ sDp sPl sMask ++ storeA aV sDq sQl sMask ++
   [.block retMask])
 

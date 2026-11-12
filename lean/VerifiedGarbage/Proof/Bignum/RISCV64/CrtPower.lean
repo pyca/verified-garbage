@@ -764,28 +764,205 @@ theorem low_odd {m : Mem} {B : Addr} {d w : Nat} (hw : 1 ≤ w) (h : wordsVal m 
   simp only [wordsVal] at h
   omega_arith
 
-/-- `power` with `c` in place of its reduction and exponentiation. -/
-abbrev powerP (xj : Nat) (c : Prog isa) : Prog isa :=
-  .seq (.block ([.addi .t3 .a7 0] ++ Crt.xb .t4 xj)) (.seq Crt.copyN
-  (.seq (.block (Precompute.minv ++ base .a2 1 ++ base .a5 2 ++ base .a6 3)) (.seq (Crt.r2Prime 4) c)))
+/-! ## The cached `R² mod p` (`Crt.r2Copy`) -/
 
-/-- `power` up to the reduction: `p` in array 0, `-p⁻¹ mod 2⁶⁴` and `R² mod
-p`. -/
-theorem powerA_ok {s : State} {B BX : Addr} {Z ZX w wX xj Pv : Nat} {c : Prog isa} {Q : State → Prop}
+/-- `n` words, the lowest 1 and the others 0, are 1. -/
+theorem wordsVal_one_low {m : Mem} {p : Addr} {d : Nat} : ∀ {n : Nat}, 1 ≤ n → Mont.word m p d = 1#64 →
+    (∀ i < n, 1 ≤ i → Mont.word m p (d + 8 * i) = 0#64) → wordsVal m p d n = 1
+  | n + 1, _, h0, h => by
+    rw [wordsVal, wordsVal_zero (k := n) (d := d + 8) fun i hi => by
+      rw [show d + 8 + 8 * i = d + 8 * (i + 1) by omega_arith]; exact h (i + 1) (by omega_arith) (by omega_arith), h0]
+    rfl
+
+/-- The word `r2Copy` writes at index `k`, from the buffer's word `x`, under
+the mask `m`. -/
+abbrev r2Word (m x : BitVec 64) (k : Nat) : BitVec 64 :=
+  (x &&& m) ||| (if k = 0 then (m ^^^ -1#64) &&& 1#64 else 0#64)
+
+/-- What `r2Copy`'s words are, as a number: the buffer's under a set mask,
+else 1. -/
+theorem r2_words {mt ms : Mem} {B P : Addr} {d w : Nat} {b : Bool} (hw : 1 ≤ w)
+    (tc : ∀ k < w, Mont.word mt B (d + 8 * k) =
+      r2Word (if b then BitVec.allOnes 64 else 0#64) (Mont.word ms P (8 * k)) k) :
+    wordsVal mt B d w = (if b then wordsVal ms P 0 w else 1) := by
+  cases b
+  · simp only [Bool.false_eq_true, ↓reduceIte] at tc ⊢
+    refine wordsVal_one_low hw ?_ fun i hi hi1 => ?_
+    · have t0 := tc 0 (by omega_arith)
+      rw [Nat.mul_zero, Nat.add_zero] at t0
+      rw [t0, r2Word, BitVec.and_zero, BitVec.zero_or, ite_eq_left_iff.mpr (fun h => absurd rfl h)]; decide
+    · rw [tc i hi]
+      simp only [r2Word, BitVec.and_zero, BitVec.zero_or, show i ≠ 0 by omega_arith, ↓reduceIte]
+  · simp only [↓reduceIte] at tc ⊢
+    exact wv_words fun i hi => by
+      rw [tc i hi, Nat.zero_add]
+      have h1 : (BitVec.allOnes 64 ^^^ -1#64) &&& 1#64 = 0#64 := by decide
+      simp only [r2Word, BitVec.and_allOnes, h1, ite_self, BitVec.or_zero]
+
+/-- The registers `r2Copy` writes. -/
+def r2CRegs : List Reg := [.t3, .s1, .s2, .t5, .s0, .t6]
+
+/-- `Crt.r2Copy`, in a working space at `B` of `w` words (array 1's base in
+`a2`, `w` in `t0`), from the `w` words at `P` (`t6`), readable and apart
+from it, under the mask of `b` in the header's `oMask` (`X` at `BX`, in
+`s6`): array 1 holds the buffer's number if `b`, else 1. -/
+theorem r2Copy_ok {s : State} {B P BX : Addr} {Z ZX w : Nat} {b : Bool} (hs : Scr s B Z) (hX : Scr s BX ZX)
+    (hP : P.toNat + 8 * w ≤ 2 ^ 64) (hrd : ∀ i < w, InRegions (s.rd ++ s.wr) (off P (8 * i)) 8)
+    (hal : ∀ i < w, (off P (8 * i)).toNat % 8 = 0)
+    (hsep : ∀ x, ofs P x < 8 * w → Z ≤ ofs B x)
+    (h6t : s.gpr .t6 = P) (h2 : s.gpr .a2 = off B (slot w 1)) (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
+    (h6 : s.gpr .s6 = BX) (hZX : Crt.oMask + 8 ≤ ZX)
+    (hm : Mont.word s.mem BX Crt.oMask = if b then BitVec.allOnes 64 else 0#64)
+    (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 2 ≤ Z) :
+    WP isa Crt.r2Copy s fun t =>
+      (wordsVal t.mem B (slot w 1) w = (if b then wordsVal s.mem P 0 w else 1) ∧
+        Outside B (slot w 1) (8 * w) s.mem t.mem) ∧ Keep r2CRegs s t := by
+  have hnw := hs.nowrap
+  have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
+  have e1 := e 1; have e2 := e 2
+  have hh : hdrBytes = 256 := rfl
+  let mk : BitVec 64 := if b then BitVec.allOnes 64 else 0#64
+  unfold Crt.r2Copy
+  refine WP.seq (WP.mono (WP.keep [.t3, .s1, .s2, .t5] (Q := fun u => u.gpr .t3 = off B (slot w 1) ∧
+      u.gpr .s1 = mk ∧ u.gpr .s2 = (mk ^^^ -1#64) &&& 1#64 ∧ u.gpr .t5 = BitVec.ofNat 64 w ∧ u.mem = s.mem)
+    (by
+      have hm' : s.mem.readW (off BX 88) 64 = mk := hm
+      brun [h2, h6, ht0, BitVec.add_zero, Crt.oMask, hX.ld (show 88 + 8 ≤ ZX from hZX),
+        hX.al8 (show 88 + 8 ≤ ZX from hZX) (by decide), hm'])
+    (by rfl) (by rfl)) fun s₁ ⟨⟨a3, a1, a2', a5, m1⟩, k1⟩ => ?_)
+  let Inv : Nat → State → Prop := fun i t =>
+    t.gpr .t3 = off B (slot w 1 + 8 * i) ∧ t.gpr .t6 = off P (8 * i) ∧ t.gpr .s1 = mk ∧
+      t.gpr .s2 = (if i = 0 then (mk ^^^ -1#64) &&& 1#64 else 0#64) ∧
+      Outside B (slot w 1) (8 * i) s.mem t.mem ∧
+      (∀ k < i, Mont.word t.mem B (slot w 1 + 8 * k) = r2Word mk (Mont.word s.mem P (8 * k)) k) ∧
+      Keep r2CRegs s t
+  refine WP.mono (wp_countdown (body := .block ([.load .d .s0 .t6 0, .logic .and .s0 .s0 .s1,
+      .logic .or .s0 .s0 .s2, .store .d .s0 .t3 0, .li .s2 0, .addi .t3 .t3 8, .addi .t6 .t6 8] ++
+      ([.addi .t5 .t5 (-1)] : List Instr))) (cnt := .t5) (N := w) (by omega_arith) (by omega_arith) Inv
+    (fun i hi t ⟨j3, j6, j1, j2, jout, jc, jk⟩ _ => ?_)
+    ⟨by rw [a3]; rfl, by rw [k1.gpr (by decide), h6t]; exact (BitVec.add_zero _).symm, a1,
+      by rw [a2']; rfl, by rw [m1]; exact Outside.refl _ _ _ _, fun _ h => absurd h (Nat.not_lt_zero _),
+      k1.mono (by decide)⟩ a5)
+    fun t ⟨_, _, _, _, tout, tc, tk⟩ => ⟨⟨r2_words hw tc, tout⟩, tk⟩
+  have hsrc : Mont.word t.mem P (8 * i) = Mont.word s.mem P (8 * i) :=
+    Pub.Outside.word_apart jout hsep (by omega_arith) (by omega_arith) hP
+  have ht := hs.congr jk.2.2
+  refine WP.mono (WP.keep [.s0, .s2, .t3, .t6, .t5] (Q := fun u =>
+      u.mem = t.mem.writeW (off B (slot w 1 + 8 * i)) ((Mont.word t.mem P (8 * i) &&& mk) ||| t.gpr .s2) ∧
+      u.gpr .s2 = 0#64 ∧ u.gpr .t3 = off B (slot w 1 + 8 * (i + 1)) ∧ u.gpr .t6 = off P (8 * (i + 1)) ∧
+      u.gpr .t5 = t.gpr .t5 - BitVec.ofNat 64 1)
+    (by
+      brun [j3, j6, j1, add_ofNat_zero, Pub.pub_li0, (by rw [jk.2.1, jk.2.2]; exact hrd i hi :
+          InRegions (t.rd ++ t.wr) (off P (8 * i)) 8), hal i hi,
+        ht.st (show slot w 1 + 8 * i + 8 ≤ Z by omega_arith),
+        ht.al8 (show slot w 1 + 8 * i + 8 ≤ Z by omega_arith) (by have := slot_al w 1; omega_arith)]
+      rw [show slot w 1 + 8 * i + 8 = slot w 1 + 8 * (i + 1) by omega_arith,
+        show 8 * i + 8 = 8 * (i + 1) by omega_arith]
+      exact ⟨rfl, rfl⟩)
+    (by rfl) (by rfl)) fun u ⟨⟨um, u2, u3, u6, u5⟩, ku⟩ => ⟨⟨u3, u6, (ku.gpr (by decide)).trans j1,
+      by rw [u2]; simp only [show i + 1 ≠ 0 by omega_arith, ↓reduceIte], ?_, ?_, ?_⟩, u5⟩
+  · have hw8 := Mont.writeW_outside t.mem B (d := slot w 1 + 8 * i)
+      ((Mont.word t.mem P (8 * i) &&& mk) ||| t.gpr .s2) (by omega_arith)
+    rw [um]; exact (jout.mono (Nat.le_refl _) (by omega_arith)).trans (hw8.mono (by omega_arith) (by omega_arith))
+  · intro k hk
+    have hw8 := Mont.writeW_outside t.mem B (d := slot w 1 + 8 * i)
+      ((Mont.word t.mem P (8 * i) &&& mk) ||| t.gpr .s2) (by omega_arith)
+    rw [um]
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hk | rfl
+    · rw [hw8.word (by omega_arith) (by omega_arith)]; exact jc k hk
+    · rw [Mont.word_writeW_self, hsrc, j2]
+  · exact Keep.trans' jk (ku.mono (by decide))
+
+
+/-- The cached `R² mod p` that `r2Copy` reads: `w` words at `S`, readable,
+aligned and apart from the working space at `B` (of `Z` bytes), holding
+`R² mod Pv` under the mask of `b` (the header's `oMask`, of `X` at `BX`), and
+with a clear mask `Pv = 3`. -/
+structure R2C (s : State) (B BX S : Addr) (Z w Pv : Nat) (b : Bool) : Prop where
+  hS : S.toNat + 8 * w ≤ 2 ^ 64
+  rd : ∀ i < w, InRegions (s.rd ++ s.wr) (off S (8 * i)) 8
+  al : ∀ i < w, (off S (8 * i)).toNat % 8 = 0
+  sepB : ∀ x, ofs S x < 8 * w → Z ≤ ofs B x
+  mask : Mont.word s.mem BX Crt.oMask = if b then BitVec.allOnes 64 else 0#64
+  val : b = true → wordsVal s.mem S 0 w = 2 ^ (128 * w) % Pv
+  three : b = false → Pv = 3
+
+/-- `R2C` in a state with the same regions whose memory differs only in the
+working space, apart from `X`'s first `ZX` bytes. -/
+theorem R2C.mono {s t : State} {B BX S : Addr} {Z ZX w Pv o n : Nat} {b : Bool} (C : R2C s B BX S Z w Pv b)
+    (ho : Outside B o n s.mem t.mem) (hon : o + n ≤ Z) (hsep : ∀ x, ofs BX x < ZX → Z ≤ ofs B x)
+    (hZX : Crt.oMask + 8 ≤ ZX) (hBX : BX.toNat + ZX ≤ 2 ^ 64) (hrw : t.rd ++ t.wr = s.rd ++ s.wr) :
+    R2C t B BX S Z w Pv b where
+  hS := C.hS
+  rd i hi := by rw [hrw]; exact C.rd i hi
+  al := C.al
+  sepB := C.sepB
+  mask := by rw [Outside.word_sep ho hsep hon hZX hBX]; exact C.mask
+  val hb := by
+    rw [← C.val hb]
+    exact wv_words fun i hi => Pub.Outside.word_apart ho C.sepB hon (by omega_arith) C.hS
+  three := C.three
+
+/-- `R² mod 3 = 1`. -/
+theorem pow128_mod3 (w : Nat) : 2 ^ (128 * w) % 3 = 1 := by
+  rw [Nat.pow_mul, Nat.pow_mod, show 2 ^ 128 % 3 = 1 by decide, Nat.one_pow]
+
+/-- `r2Step pc`: `R² mod p` into array 1, as `r2Prime_ok` gives it, with
+`pc` copied from the cached values at `t6` (`R2C`). -/
+theorem r2Step_ok {pc : Bool} {s : State} {B BX : Addr} {Z ZX w N : Nat} (h : WCtx s B Z w N)
+    (h2 : s.gpr .a2 = off B (slot w 1)) (h5 : s.gpr .a5 = off B (slot w 2))
+    (h6 : s.gpr .a6 = off B (slot w 3)) (hN : 2 ≤ N) (hodd : N % 2 = 1)
+    (hX : Scr s BX ZX) (h6X : s.gpr .s6 = BX) (hZX : Crt.oMask + 8 ≤ ZX)
+    (hC : pc = true → ∃ b, R2C s B BX (s.gpr .t6) Z w N b) :
+    WP isa (Crt.r2Step pc) s fun t =>
+      (WCtx t B Z w N ∧ A t.mem B w 1 = 2 ^ (128 * w) % N ∧
+        (∀ j < 24, j ≠ 1 → j ≠ 2 → j ≠ 3 → j ≠ 4 → A t.mem B w j = A s.mem B w j) ∧
+        WinO B w s.mem t.mem) ∧ Keep (r2CRegs ++ r2PRegs) s t := by
+  cases pc
+  · exact WP.mono (r2Prime_ok (tmp := 4) h h2 h5 h6 (by decide) (by decide) hN hodd) fun t ⟨c, k⟩ =>
+      ⟨c, k.mono fun _ hr => List.mem_append_right _ hr⟩
+  obtain ⟨b, C⟩ := hC rfl
+  have hn := h.nw
+  have hw := h.w2
+  have sl : ∀ j, j < 24 → slot w j + 8 * (w + 2) ≤ Z := fun j hj => h.sl hj
+  refine WP.mono (r2Copy_ok (b := b) h.scr hX C.hS C.rd C.al C.sepB rfl h2 h.t0 h6X hZX C.mask (by omega_arith)
+    h.w31 (by have := sl 1 (by decide); unfold slot at *; omega_arith)) fun t ⟨⟨tv, tout⟩, k⟩ => ?_
+  refine ⟨⟨h.of k (by decide) (arrO tout (by decide) (by decide)), ?_,
+    fun j hj h1 _ _ _ => arr_out tout hj h1 hn, arrO tout (by decide) (by decide)⟩,
+    k.mono fun _ hr => List.mem_append_left _ hr⟩
+  show wordsVal _ _ _ _ = _
+  rw [tv]
+  cases b
+  · simp only [Bool.false_eq_true, ↓reduceIte]; rw [C.three rfl, pow128_mod3]
+  · exact C.val rfl
+
+/-- `powerG pc` with `c` in place of its reduction and exponentiation. -/
+abbrev powerPG (pc : Bool) (xj : Nat) (c : Prog isa) : Prog isa :=
+  .seq (.block ([.addi .t3 .a7 0] ++ Crt.xb .t4 xj)) (.seq Crt.copyN
+  (.seq (.block (Precompute.minv ++ base .a2 1 ++ base .a5 2 ++ base .a6 3)) (.seq (Crt.r2Step pc) c)))
+
+/-- `power` with `c` in place of its reduction and exponentiation. -/
+abbrev powerP (xj : Nat) (c : Prog isa) : Prog isa := powerPG false xj c
+
+/-- `powerG pc` up to the reduction: `p` in array 0, `-p⁻¹ mod 2⁶⁴` and `R²
+mod p`, computed or, with `pc`, from the cached values at `t6` (`R2C`). -/
+theorem powerAG_ok {pc : Bool} {s : State} {B BX : Addr} {Z ZX w wX xj Pv : Nat} {c : Prog isa}
+    {Q : State → Prop}
     (hs : Scr s B Z) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 24 ≤ Z) (h7 : s.gpr .a7 = off B (slot w 0))
     (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)))
     (ht0 : s.gpr .t0 = BitVec.ofNat 64 w) (hx : Scr s BX ZX) (hsep : ∀ x, ofs BX x < ZX → Z ≤ ofs B x)
     (h6 : s.gpr .s6 = BX) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2))) (hxj : slot wX xj + 8 * w ≤ ZX)
     (hP : wordsVal s.mem BX (slot wX xj) w = Pv) (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1)
+    (hC : pc = true → ∃ b, R2C s B BX (s.gpr .t6) Z w Pv b)
     (hc : ∀ u, WCtx u B Z w Pv → A u.mem B w 1 = 2 ^ (128 * w) % Pv → PFr B w s.mem u.mem →
       Keep powerRegs s u → WP isa c u Q) :
-    WP isa (powerP xj c) s Q := by
+    WP isa (powerPG pc xj c) s Q := by
   have hn : B.toNat + slot w 24 ≤ 2 ^ 64 := by have := hs.nowrap; omega_arith
   have hxn := hx.nowrap
   have e24 := slot24' w
   have s01 := slot_lt (w := w) (show 0 < 1 by decide)
   have hR := VG.Proof.Bignum.coprime_pow2 hodd (64 * w)
-  unfold powerP
+  unfold powerPG
   -- The prime into array 0.
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -824,8 +1001,19 @@ theorem powerA_ok {s : State} {B BX : Addr} {Z ZX w wX xj Pv : Nat} {c : Prog is
     (k37.gpr (by decide)).trans h5', (k37.gpr (by decide)).trans ((k13.gpr (by decide)).trans ht0),
     by rw [((k5.trans k6).trans k7).gpr (by decide), hm7]; exact inv4, by rw [hm7]; exact v0⟩
   -- `R² mod p`.
-  refine WP.seq (WP.mono (r2Prime_ok (tmp := 4) c7 (((k6.trans k7).gpr (by decide)).trans a2)
-    ((k7.gpr (by decide)).trans a5) a6 (by decide) (by decide) hP2 hodd) fun s₈ ⟨⟨c8, r8, _, o8⟩, k8⟩ => ?_)
+  have k17' := k13.trans k37
+  have hZX : Crt.oMask + 8 ≤ ZX := by
+    have : 256 ≤ slot wX xj := by unfold slot hdrBytes; omega_arith
+    unfold Crt.oMask; omega_arith
+  refine WP.seq (WP.mono (r2Step_ok (pc := pc) c7 (((k6.trans k7).gpr (by decide)).trans a2)
+    ((k7.gpr (by decide)).trans a5) a6 hP2 hodd (hx.congr k17'.2.2) ((k17'.gpr (by decide)).trans h6) hZX
+    (fun hp => by
+      obtain ⟨b, C⟩ := hC hp
+      refine ⟨b, ?_⟩
+      rw [k17'.gpr (by decide)]
+      refine C.mono (o := slot w 0) (n := 8 * w) (ZX := ZX) (by rw [hm7]; exact o3) (by omega_arith) hsep hZX hxn
+        (by rw [k17'.2.1, k17'.2.2])))
+    fun s₈ ⟨⟨c8, r8, _, o8⟩, k8⟩ => ?_)
   have F8 : PFr B w s.mem s₈.mem := by
     rw [← hm7] at o3
     exact (o3.mono (Nat.le_refl _) (by omega_arith)).trans (PFr.of_win o8)
@@ -833,6 +1021,19 @@ theorem powerA_ok {s : State} {B BX : Addr} {Z ZX w wX xj Pv : Nat} {c : Prog is
   exact hc s₈ c8 r8 F8 (Keep.within (Keep.within (Keep.within (Keep.within (Keep.within (Keep.within
     (Keep.within (Keep.within (Keep.refl powerRegs s) k1 (by decide)) k2 (by decide)) k3 (by decide))
     k4 (by decide)) k5 (by decide)) k6 (by decide)) k7 (by decide)) k8 (by decide))
+
+/-- `power` up to the reduction: `p` in array 0, `-p⁻¹ mod 2⁶⁴` and `R² mod
+p`. -/
+theorem powerA_ok {s : State} {B BX : Addr} {Z ZX w wX xj Pv : Nat} {c : Prog isa} {Q : State → Prop}
+    (hs : Scr s B Z) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 24 ≤ Z) (h7 : s.gpr .a7 = off B (slot w 0))
+    (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)))
+    (ht0 : s.gpr .t0 = BitVec.ofNat 64 w) (hx : Scr s BX ZX) (hsep : ∀ x, ofs BX x < ZX → Z ≤ ofs B x)
+    (h6 : s.gpr .s6 = BX) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2))) (hxj : slot wX xj + 8 * w ≤ ZX)
+    (hP : wordsVal s.mem BX (slot wX xj) w = Pv) (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1)
+    (hc : ∀ u, WCtx u B Z w Pv → A u.mem B w 1 = 2 ^ (128 * w) % Pv → PFr B w s.mem u.mem →
+      Keep powerRegs s u → WP isa c u Q) :
+    WP isa (powerP xj c) s Q :=
+  powerAG_ok (pc := false) hs hw2 hw' hZ h7 h5 ht0 hx hsep h6 h11 hxj hP hP2 hodd nofun hc
 
 /-- `power xj oD oLen`, in a prime's working space at `B` of 24 arrays of `w`
 words (array 0's base in `a7` and `ra`, the arrays' size in `s5`, `w` in
@@ -843,7 +1044,8 @@ words (array 0's base in `a7` and `ra`, the arrays' size in `s5`, `w` in
 header words `oD` and `oLen`: `c^d mod p` in array 4, as a number of the
 exponent's bytes, most significant first, and `R² mod p` left in array 1;
 nothing but the working space written. -/
-theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : Nat} (hs : Scr s B Z)
+theorem powerG_ok {pc : Bool} {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : Nat}
+    (hs : Scr s B Z)
     (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 24 ≤ Z) (h7 : s.gpr .a7 = off B (slot w 0))
     (hra : s.gpr .ra = off B (slot w 0)) (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)))
     (ht0 : s.gpr .t0 = BitVec.ofNat 64 w) (hx : Scr s BX ZX) (hsep : ∀ x, ofs BX x < ZX → Z ≤ ofs B x)
@@ -855,8 +1057,9 @@ theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : N
     (hoD : oD + 8 ≤ ZX) (hoD8 : oD % 8 = 0) (hoD' : oD < 2048) (hoL : oLen + 8 ≤ ZX) (hoL8 : oLen % 8 = 0)
     (hoL' : oLen < 2048) (hDw : Mont.word s.mem BX oD = D) (hLw : Mont.word s.mem BX oLen = BitVec.ofNat 64 L)
     (hL : 1 ≤ L) (hL' : L < 2 ^ 63) (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
-    (hDsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x) :
-    WP isa (Crt.power xj oD oLen) s fun t =>
+    (hDsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x)
+    (hR2 : pc = true → ∃ b, R2C s B BX (s.gpr .t6) Z w Pv b) :
+    WP isa (Crt.powerG pc xj oD oLen) s fun t =>
       (wordsVal t.mem B (slot w 4) w = Cv ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
         wordsVal t.mem B (slot w 0) w = Pv ∧ PFr B w s.mem t.mem ∧ t.gpr .a7 = off B (slot w 0) ∧
         wordsVal t.mem B (slot w 1) w = 2 ^ (128 * w) % Pv) ∧
@@ -864,9 +1067,9 @@ theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : N
   have hn : B.toNat + slot w 24 ≤ 2 ^ 64 := by have := hs.nowrap; omega_arith
   have hxn := hx.nowrap
   have e24 := slot24' w
-  rw [show Crt.power xj oD oLen = powerP xj (.seq Crt.reduceIn (.seq (.block [.load .d .s9 .s6 oD,
+  rw [show Crt.powerG pc xj oD oLen = powerPG pc xj (.seq Crt.reduceIn (.seq (.block [.load .d .s9 .s6 oD,
     .load .d .s10 .s6 oLen]) ModExp.powWin)) from rfl]
-  refine powerA_ok hs hw2 hw' hZ h7 h5 ht0 hx hsep h6 h11 hxj hP hP2 hodd fun s₈ c8 r8 F8 k18 => ?_
+  refine powerAG_ok hs hw2 hw' hZ h7 h5 ht0 hx hsep h6 h11 hxj hP hP2 hodd hR2 fun s₈ c8 r8 F8 k18 => ?_
   -- `c mod p`.
   refine WP.seq (WP.mono (reduceIn_ok (k := k) (Cv := Cv) c8 ((k18.gpr (by decide)).trans hra) (hx.congr k18.2.2) hsep
     ((k18.gpr (by decide)).trans h6) ((k18.gpr (by decide)).trans h11)
@@ -902,5 +1105,27 @@ theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : N
   · exact (kt.gpr (by decide)).trans c10.a7
   · rw [t1, show wordsVal s₁₀.mem B (slot w 1) w = A s₁₀.mem B w 1 from rfl, m10, p9, r8]
   · exact Keep.within (Keep.within (Keep.within k18 k9 (by decide)) k10 (by decide)) kt (by decide)
+
+/-- `powerG_ok` computing `R² mod p`. -/
+theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : Nat}
+    (hs : Scr s B Z)
+    (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 24 ≤ Z) (h7 : s.gpr .a7 = off B (slot w 0))
+    (hra : s.gpr .ra = off B (slot w 0)) (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)))
+    (ht0 : s.gpr .t0 = BitVec.ofNat 64 w) (hx : Scr s BX ZX) (hsep : ∀ x, ofs BX x < ZX → Z ≤ ofs B x)
+    (h6 : s.gpr .s6 = BX) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2))) (hxj : slot wX xj + 8 * w ≤ ZX)
+    (hP : wordsVal s.mem BX (slot wX xj) w = Pv) (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1)
+    (hkw : Mont.word s.mem BX Crt.oNLen = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k < 2 ^ 40)
+    (hXZ : slot wX 6 + 8 * (w * nChunks ((k + 7) / 8) w) ≤ ZX)
+    (hC : wordsVal s.mem BX (slot wX 6) (w * nChunks ((k + 7) / 8) w) = Cv)
+    (hoD : oD + 8 ≤ ZX) (hoD8 : oD % 8 = 0) (hoD' : oD < 2048) (hoL : oLen + 8 ≤ ZX) (hoL8 : oLen % 8 = 0)
+    (hoL' : oLen < 2048) (hDw : Mont.word s.mem BX oD = D) (hLw : Mont.word s.mem BX oLen = BitVec.ofNat 64 L)
+    (hL : 1 ≤ L) (hL' : L < 2 ^ 63) (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
+    (hDsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x) :
+    WP isa (Crt.power xj oD oLen) s fun t =>
+      (wordsVal t.mem B (slot w 4) w = Cv ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
+        wordsVal t.mem B (slot w 0) w = Pv ∧ PFr B w s.mem t.mem ∧ t.gpr .a7 = off B (slot w 0) ∧
+        wordsVal t.mem B (slot w 1) w = 2 ^ (128 * w) % Pv) ∧
+      Keep powerRegs s t :=
+  powerG_ok (pc := false) hs hw2 hw' hZ h7 hra h5 ht0 hx hsep h6 h11 hxj hP hP2 hodd hkw hk hk' hXZ hC hoD hoD8 hoD' hoL hoL8 hoL' hDw hLw hL hL' hrd hDsep nofun
 
 end VG.Proof.Bignum.RISCV64.Win

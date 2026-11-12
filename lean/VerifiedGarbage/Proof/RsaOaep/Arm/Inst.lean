@@ -11,7 +11,8 @@ public import VerifiedGarbage.Proof.RsaOaep.Arm.EncSat
 What the registrations check of the hash functions whose tables a function
 takes (`OK`), and the instances' proofs against the contracts the
 registrations state, with both hash functions any of the tables: decryption
-(`dec_ok`) and encryption (`enc_ok`).
+(`dec_ok`), decryption with the key's precomputed values (`decP_ok`) and
+encryption (`enc_ok`).
 -/
 
 @[expose] public section
@@ -36,6 +37,12 @@ operation over `c`. -/
 theorem dec_ok (vs : List TVar) (hok : OK vs) (c : Proof.Rsa.Arm.CrtImpl) :
     Verified target (Dec.decCode vs c) (Dec.dspec vs) :=
   Dec.dec_verified hok.1 (let ⟨_, hw⟩ := hok.mem; Dec.dec_sat hw hok.2.1) c
+
+/-- `vg_rsa_oaep_decrypt_precomputed`, with the tables of `vs` and
+`vg_rsa_private_checked_precomputed` over `c`. -/
+theorem decP_ok (vs : List TVar) (hok : OK vs) (c : Proof.Rsa.Arm.CrtImpl) :
+    Verified target (Dec.decCodeP vs c) (Dec.dspecP vs) :=
+  Dec.dec_verifiedP hok.1 (let ⟨_, hw⟩ := hok.mem; Dec.dec_satP hw hok.2.1) c
 
 /-- `vg_rsa_oaep_encrypt_precomputed`, with the tables of `vs`, calling `c`. -/
 theorem enc_ok (vs : List TVar) (hok : OK vs) (c : RsaPkcs1Sig.Arm.PdImpl) :

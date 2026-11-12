@@ -3,6 +3,8 @@ public import VerifiedGarbage.Impl.Bignum.AArch64.R2Div
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dSub
+import VerifiedGarbage.Proof.Bignum.AArch64.Csub
+import VerifiedGarbage.Proof.Bignum.WordStepNorm
 import VerifiedGarbage.Proof.Bignum.WordStep
 import VerifiedGarbage.Proof.Poly1305.Limbs64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -147,6 +149,13 @@ theorem mgq_val {v u a d : Nat} (hd : d < 2 ^ 64) (hn : 2 ^ 63 ≤ d) (hu : u < 
   · simp only [h, decide_false, Bool.toNat_false, show ¬ d - 1 < r1.toNat by omega_using [h, hd0], ↓reduceIte]
     omega_using []
 
+theorem shr63_toNat (r : BitVec 64) : (r >>> 63) = BitVec.ofNat 64 (decide (2 ^ 63 ≤ r.toNat)).toNat := by
+  have := r.isLt
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat]
+  by_cases h : 2 ^ 63 ≤ r.toNat <;> simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;>
+    omega
+
 /-! ## `quot` -/
 
 theorem r2d_exec_tst (s : State) (n m : Reg) :
@@ -184,6 +193,7 @@ theorem r2dQuot_ok {t : State} {B : Addr} {Z w eX eM eV : Nat} (hs : Scr t B Z)
     WP isa (.block quot) t fun t' =>
       t'.gpr .x1 = BitVec.ofNat 64 (min (((word t.mem B (eX + 8 * (w - 1))).toNat * 2 ^ 64 +
         (word t.mem B (eX + 8 * (w - 2))).toNat) / (word t.mem B (eM + 8 * (w - 1))).toNat) (2 ^ 64 - 1)) ∧
+      t'.gpr .x2 = word t.mem B (eX + 8 * (w - 1)) ∧ t'.gpr .x5 = word t.mem B (eM + 8 * (w - 1)) ∧
       t'.mem = t.mem ∧ Keep [.x1, .x2, .x3, .x4, .x5, .x13, .x14, .x15, .x16, .x17] t t' := by
   have hn := hs.nowrap
   have e1 : eX + 8 * (w - 1) - 8 = eX + 8 * (w - 2) := by omega_arith
@@ -193,12 +203,13 @@ theorem r2dQuot_ok {t : State} {B : Addr} {Z w eX eM eV : Nat} (hs : Scr t B Z)
   generalize hVw : word t.mem B eV = Vw at hv
   refine WP.mono (WP.keep [.x1, .x2, .x3, .x4, .x5, .x13, .x14, .x15, .x16, .x17] (Q := fun t' =>
       t'.gpr .x1 = (if decide ((D - U2 &&& D - U2) = 0) then (BitVec.ofNat 16 0).setWidth 64 - BitVec.ofNat 64 1
-        else mgq Vw U2 U1 D) ∧ t'.mem = t.mem) (by
+        else mgq Vw U2 U1 D) ∧ t'.gpr .x2 = U2 ∧ t'.gpr .x5 = D ∧ t'.mem = t.mem) (by
     brun [h11, h9, h12, h6, h7, r2d_exec_tst, r2d_exec_cselc, CondCode.holds, shl3_sub8 (show 1 ≤ w by omega_arith)
       (show w < 2 ^ 61 by omega_arith), off_add, off_sub8 B (show 8 ≤ eX + 8 * (w - 1) by omega_arith), e1,
       hs.ld (show eM + 8 * (w - 1) + 8 ≤ Z by omega_arith), hs.ld (show eX + 8 * (w - 1) + 8 ≤ Z by omega_arith),
       hs.ld (show eX + 8 * (w - 2) + 8 ≤ Z by omega_arith), hs.ld hE, hD, hU2, hU1, hVw, quot, quotHead, quotMG]
-    rfl) (by decide) (by decide) (by decide +kernel)) fun t' ⟨⟨h1, hm⟩, k⟩ => ⟨?_, hm, k⟩
+    all_goals rfl) (by decide) (by decide) (by decide +kernel)) fun t' ⟨⟨h1, h2, h5, hm⟩, k⟩ =>
+      ⟨?_, h2, h5, hm, k⟩
   rw [h1]
   have hD' := D.isLt
   have hd0 : 0 < D.toNat := by omega_arith
@@ -230,5 +241,158 @@ theorem r2dQuot_ok {t : State} {B : Addr} {Z w eX eM eV : Nat} (hs : Scr t B Z)
       have := U1.isLt
       rw [Nat.mul_comm (2 ^ 64)]; omega_arith
     rw [Nat.min_eq_left (by omega_arith), ← hq, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+/-- `sbc`, for `simp`. -/
+theorem r2d_exec_sbc (s : State) {d n m : Reg} :
+    exec (.sbc .x d n m) s = some (s.write .x d (s.gpr n + ~~~s.gpr m + BitVec.ofNat 64 s.c.toNat)) := rfl
+
+/-- `tst x x` sets `N` to the top bit of `x`. -/
+theorem tst_msb (x : BitVec 64) : (x &&& x).msb = decide (2 ^ 63 ≤ x.toNat) := by
+  rw [BitVec.and_self, BitVec.msb_eq_decide]
+
+/-! ## The 3-by-2 estimate -/
+
+/-- `quot3Mul`: `q̂₀ D` over three words, for `q̂₀` in `x1` and
+`D = (d, dₗ)` in `x5`, `x15`. -/
+theorem mul3_ok (s : State) (h7 : s.gpr .x7 = 0) : WP isa (.block quot3Mul) s fun t =>
+    ((t.gpr .x17).toNat * 2 ^ 128 + (t.gpr .x14).toNat * 2 ^ 64 + (t.gpr .x13).toNat =
+      (s.gpr .x1).toNat * ((s.gpr .x5).toNat * 2 ^ 64 + (s.gpr .x15).toNat) ∧ t.mem = s.mem) ∧
+    Keep [.x13, .x14, .x16, .x17] s t := by
+  refine WP.keep _ ?_ (by decide) (by decide) (by decide +kernel)
+  brun [quot3Mul, h7]
+  have e := adcs_val (BitVec.ofNat 64 ((s.gpr .x1).toNat * (s.gpr .x15).toNat / 2 ^ 64)) (s.gpr .x1 * s.gpr .x5) false
+  generalize decide (2 ^ 64 ≤ (BitVec.ofNat 64 ((s.gpr .x1).toNat * (s.gpr .x15).toNat / 2 ^ 64)).toNat +
+    (s.gpr .x1 * s.gpr .x5).toNat + (false : Bool).toNat) = c at e ⊢
+  have hq := (s.gpr .x1).isLt; have hd := (s.gpr .x5).isLt; have hl := (s.gpr .x15).isLt
+  simp only [BitVec.toNat_mul, BitVec.toNat_add, BitVec.toNat_ofNat, Bool.toNat_false, Nat.add_zero,
+    show (0 : BitVec 64).toNat = 0 from rfl] at e ⊢
+  generalize (s.gpr .x1).toNat = q at *
+  generalize (s.gpr .x5).toNat = d at *
+  generalize (s.gpr .x15).toNat = l at *
+  have b1 : q * d / 2 ^ 64 ≤ 2 ^ 64 - 2 := Nat.le_trans (Nat.div_le_div_right (c := 2 ^ 64)
+    (Nat.mul_le_mul (show q ≤ 2 ^ 64 - 1 by omega_arith) (show d ≤ 2 ^ 64 - 1 by omega_arith))) (by decide)
+  have b0 : q * l / 2 ^ 64 < 2 ^ 64 := Nat.lt_of_le_of_lt (Nat.div_le_div_right (c := 2 ^ 64)
+    (Nat.mul_le_mul (show q ≤ 2 ^ 64 - 1 by omega_arith) (show l ≤ 2 ^ 64 - 1 by omega_arith))) (by decide)
+  have hc := Bool.toNat_le c
+  simp only [Nat.zero_mod, Nat.add_zero, Nat.mod_mod, Nat.mod_eq_of_lt b0,
+    Nat.mod_eq_of_lt (show q * d / 2 ^ 64 < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show c.toNat < 2 ^ 64 by omega_arith)] at e ⊢
+  rw [Nat.mod_eq_of_lt (show q * d / 2 ^ 64 + c.toNat < 2 ^ 64 by omega_arith)]
+  have hr := Nat.mod_lt (q * l / 2 ^ 64 + q * d % 2 ^ 64) (show 0 < 2 ^ 64 by decide)
+  generalize (q * l / 2 ^ 64 + q * d % 2 ^ 64) % 2 ^ 64 = r at e hr ⊢
+  have A := Nat.div_add_mod (q * d) (2 ^ 64)
+  have C := Nat.div_add_mod (q * l) (2 ^ 64)
+  rw [Nat.mul_add, ← Nat.mul_assoc]
+  generalize q * d = P1 at *
+  generalize q * l = P0 at *
+  generalize P1 / 2 ^ 64 = hi at *
+  generalize P1 % 2 ^ 64 = ml at *
+  generalize P0 / 2 ^ 64 = lh at *
+  generalize P0 % 2 ^ 64 = lo at *
+  omega_arith
+
+/-- `quot3Sub`: `t = U - P` over three words, with its borrow `b`, for `U` in
+`x2`, `x3`, `x4` and `P` in `x17`, `x14`, `x13`. -/
+theorem sub3_ok (s : State) : WP isa (.block quot3Sub) s fun t => ((∃ b < 2,
+      (t.gpr .x2).toNat * 2 ^ 128 + (t.gpr .x3).toNat * 2 ^ 64 + (t.gpr .x4).toNat +
+        ((s.gpr .x17).toNat * 2 ^ 128 + (s.gpr .x14).toNat * 2 ^ 64 + (s.gpr .x13).toNat) =
+      (s.gpr .x2).toNat * 2 ^ 128 + (s.gpr .x3).toNat * 2 ^ 64 + (s.gpr .x4).toNat + 2 ^ 192 * b) ∧
+      t.mem = s.mem) ∧ Keep [.x2, .x3, .x4] s t := by
+  refine WP.keep _ ?_ (by decide) (by decide) (by decide +kernel)
+  brun [quot3Sub, r2d_exec_sbc]
+  have e0 := sbcs_toNat (s.gpr .x4) (s.gpr .x13) true
+  generalize decide (2 ^ 64 ≤ (s.gpr .x4).toNat + (~~~s.gpr .x13).toNat + (true : Bool).toNat) = c1 at e0 ⊢
+  have e1 := sbcs_toNat (s.gpr .x3) (s.gpr .x14) c1
+  generalize decide (2 ^ 64 ≤ (s.gpr .x3).toNat + (~~~s.gpr .x14).toNat + c1.toNat) = c2 at e1 ⊢
+  have e2 := sbcs_toNat (s.gpr .x2) (s.gpr .x17) c2
+  generalize decide (2 ^ 64 ≤ (s.gpr .x2).toNat + (~~~s.gpr .x17).toNat + c2.toNat) = c3 at e2
+  refine ⟨(!c3).toNat, by cases c3 <;> decide, ?_⟩
+  simp only [Bool.not_true, Bool.toNat_false, Nat.add_zero] at e0
+  generalize (s.gpr .x4 + ~~~s.gpr .x13 + BitVec.ofNat 64 (true : Bool).toNat).toNat = r0 at e0 ⊢
+  generalize (s.gpr .x3 + ~~~s.gpr .x14 + BitVec.ofNat 64 c1.toNat).toNat = r1 at e1 ⊢
+  generalize (s.gpr .x2 + ~~~s.gpr .x17 + BitVec.ofNat 64 c2.toNat).toNat = r2 at e2 ⊢
+  omega_arith
+
+/-- `quot3Fix`: `q̂ := q̂ - 1` (`x1`) and `t := t + D` if `t` (`x2`, `x3`,
+`x4`) is negative, `D = (d, dₗ)` in `x5`, `x15`: the new `t` is `T₂`, with
+the carry `c`, and its top word is in `x2`. -/
+theorem fix3_ok (s : State) (h7 : s.gpr .x7 = 0) : WP isa (.block quot3Fix) s fun t =>
+    ((t.gpr .x1 = if 2 ^ 63 ≤ (s.gpr .x2).toNat then s.gpr .x1 - BitVec.ofNat 64 1 else s.gpr .x1) ∧
+      (∃ T₂ c, T₂ < 2 ^ 192 ∧ c < 2 ∧ T₂ / 2 ^ 128 = (t.gpr .x2).toNat ∧
+        T₂ + 2 ^ 192 * c = (s.gpr .x2).toNat * 2 ^ 128 + (s.gpr .x3).toNat * 2 ^ 64 + (s.gpr .x4).toNat +
+          if 2 ^ 63 ≤ (s.gpr .x2).toNat then (s.gpr .x5).toNat * 2 ^ 64 + (s.gpr .x15).toNat else 0) ∧
+      t.mem = s.mem) ∧ Keep [.x1, .x2, .x3, .x4, .x16, .x17] s t := by
+  refine WP.keep _ ?_ (by decide) (by decide) (by decide +kernel)
+  brun [quot3Fix, h7, r2d_exec_tst, r2d_exec_cselc, CondCode.holds, tst_msb, RegUpd.nf_write]
+  have e0 := adcs_val (s.gpr .x4) (s.gpr .x15) false
+  generalize decide (2 ^ 64 ≤ (s.gpr .x4).toNat + (s.gpr .x15).toNat + (false : Bool).toNat) = c1 at e0 ⊢
+  have e1 := adcs_val (s.gpr .x3) (s.gpr .x5) c1
+  generalize decide (2 ^ 64 ≤ (s.gpr .x3).toNat + (s.gpr .x5).toNat + c1.toNat) = c2 at e1 ⊢
+  have e2 := adcs_val (s.gpr .x2) 0 c2
+  generalize decide (2 ^ 64 ≤ (s.gpr .x2).toNat + (0 : BitVec 64).toNat + c2.toNat) = c3 at e2
+  have l0 := (s.gpr .x4 + s.gpr .x15 + BitVec.ofNat 64 (false : Bool).toNat).isLt
+  have l1 := (s.gpr .x3 + s.gpr .x5 + BitVec.ofNat 64 c1.toNat).isLt
+  have l2 := (s.gpr .x2 + 0 + BitVec.ofNat 64 c2.toNat).isLt
+  have m2 := (s.gpr .x2).isLt; have m3 := (s.gpr .x3).isLt; have m4 := (s.gpr .x4).isLt
+  by_cases hn : 2 ^ 63 ≤ (s.gpr .x2).toNat
+  · simp only [hn, decide_true, ↓reduceIte]
+    refine ⟨trivial, (s.gpr .x2 + 0 + BitVec.ofNat 64 c2.toNat).toNat * 2 ^ 128 +
+      (s.gpr .x3 + s.gpr .x5 + BitVec.ofNat 64 c1.toNat).toNat * 2 ^ 64 +
+      (s.gpr .x4 + s.gpr .x15 + BitVec.ofNat 64 (false : Bool).toNat).toNat, c3.toNat, by omega_arith, by cases c3 <;> decide, ?_, ?_⟩
+    · generalize (s.gpr .x2 + 0 + BitVec.ofNat 64 c2.toNat).toNat = r2 at l2 ⊢
+      generalize (s.gpr .x3 + s.gpr .x5 + BitVec.ofNat 64 c1.toNat).toNat = r1 at l1 ⊢
+      generalize (s.gpr .x4 + s.gpr .x15 + BitVec.ofNat 64 (false : Bool).toNat).toNat = r0 at l0 ⊢
+      omega_arith
+    · generalize (s.gpr .x2 + 0 + BitVec.ofNat 64 c2.toNat).toNat = r2 at l2 e2 ⊢
+      generalize (s.gpr .x3 + s.gpr .x5 + BitVec.ofNat 64 c1.toNat).toNat = r1 at l1 e1 ⊢
+      generalize (s.gpr .x4 + s.gpr .x15 + BitVec.ofNat 64 (false : Bool).toNat).toNat = r0 at l0 e0 ⊢
+      simp only [Bool.toNat_false, Nat.add_zero, show (0 : BitVec 64).toNat = 0 from rfl] at e0 e2
+      omega_arith
+  · simp only [hn, decide_false, Bool.false_eq_true, ↓reduceIte]
+    exact ⟨trivial, (s.gpr .x2).toNat * 2 ^ 128 + (s.gpr .x3).toNat * 2 ^ 64 + (s.gpr .x4).toNat, 0, by omega_arith,
+      by decide, by omega_arith, by omega_arith⟩
+
+/-- `quot3Core`: `q̂ = min(⌊U / D⌋, 2^64 - 1)` into `x1` from an estimate
+`q̂₀` (`x1`) at most 2 above it, for `U` in `x2`, `x3`, `x4` and `D` in `x5`,
+`x15` (`WordStep.quot3_val`). -/
+theorem quot3Core_ok (s : State) (h7 : s.gpr .x7 = 0) {U D : Nat}
+    (hU : (s.gpr .x2).toNat * 2 ^ 128 + (s.gpr .x3).toNat * 2 ^ 64 + (s.gpr .x4).toNat = U)
+    (hD : (s.gpr .x5).toNat * 2 ^ 64 + (s.gpr .x15).toNat = D) (hD0 : 0 < D)
+    (hUD : U < (2 ^ 64 + 1) * D) (hge : min (U / D) (2 ^ 64 - 1) ≤ (s.gpr .x1).toNat)
+    (hle : (s.gpr .x1).toNat ≤ min (U / D) (2 ^ 64 - 1) + 2) :
+    WP isa (.block quot3Core) s fun t => ((t.gpr .x1).toNat = min (U / D) (2 ^ 64 - 1) ∧ t.mem = s.mem) ∧
+      Keep [.x1, .x2, .x3, .x4, .x13, .x14, .x16, .x17] s t := by
+  have hDW : 4 * D < 2 ^ 192 / 2 := by
+    rw [← hD]; have := (s.gpr .x5).isLt; have := (s.gpr .x15).isLt; omega_arith
+  unfold quot3Core
+  simp only [List.append_assoc]
+  refine WP.block_append (WP.mono (mul3_ok s h7) fun s₁ ⟨⟨pq, m1⟩, k1⟩ => ?_)
+  refine WP.block_append (WP.mono (sub3_ok s₁) fun s₂ ⟨⟨⟨b, hb, tb⟩, m2⟩, k2⟩ => ?_)
+  have h7' : s₂.gpr .x7 = 0 := (k2.gpr .x7 (by decide)).trans ((k1.gpr .x7 (by decide)).trans h7)
+  refine WP.block_append (WP.mono (fix3_ok s₂ h7') fun s₃ ⟨⟨q3e, ⟨T₂, c, hT₂, hc, hT₂t, tc⟩, m3⟩, k3⟩ => ?_)
+  refine WP.mono (WP.keep [.x1, .x2] (Q := fun t => t.gpr .x1 = s₃.gpr .x1 - s₃.gpr .x2 >>> 63 ∧
+    t.mem = s₃.mem) (by brun []) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨t1, tm⟩, kt⟩ =>
+    ⟨⟨?_, by rw [tm, m3, m2, m1]⟩, (((k1.trans k2).trans k3).trans kt).mono (by decide)⟩
+  have g2 : s₁.gpr .x2 = s.gpr .x2 := k1.gpr .x2 (by decide)
+  have g3 : s₁.gpr .x3 = s.gpr .x3 := k1.gpr .x3 (by decide)
+  have g4 : s₁.gpr .x4 = s.gpr .x4 := k1.gpr .x4 (by decide)
+  have g1 : s₂.gpr .x1 = s.gpr .x1 := (k2.gpr .x1 (by decide)).trans (k1.gpr .x1 (by decide))
+  have g5 : s₂.gpr .x5 = s.gpr .x5 := (k2.gpr .x5 (by decide)).trans (k1.gpr .x5 (by decide))
+  have g15 : s₂.gpr .x15 = s.gpr .x15 := (k2.gpr .x15 (by decide)).trans (k1.gpr .x15 (by decide))
+  rw [g2, g3, g4, hU, pq, hD] at tb
+  rw [g5, g15, hD] at tc
+  have l2 := (s₂.gpr .x2).isLt; have l3 := (s₂.gpr .x3).isLt; have l4 := (s₂.gpr .x4).isLt
+  have hs1 : (2 ^ 192 / 2 ≤ (s₂.gpr .x2).toNat * 2 ^ 128 + (s₂.gpr .x3).toNat * 2 ^ 64 + (s₂.gpr .x4).toNat) ↔
+      2 ^ 63 ≤ (s₂.gpr .x2).toNat := by omega_arith
+  have hs2 : (2 ^ 192 / 2 ≤ T₂) ↔ 2 ^ 63 ≤ (s₃.gpr .x2).toNat := by rw [← hT₂t]; omega_arith
+  have hv := WordStep.quot3_val (W := 2 ^ 192) hD0 hDW hUD hge hle (s.gpr .x1).isLt
+    (by omega_arith) hb tb hT₂ hc (by rw [tc]; simp only [hs1])
+  simp only [hs1, hs2] at hv
+  rw [t1, q3e, g1, shr63_toNat]
+  have q1 := (s.gpr .x1).isLt
+  generalize min (U / D) (2 ^ 64 - 1) = Q at hv ⊢
+  by_cases e1 : 2 ^ 63 ≤ (s₂.gpr .x2).toNat <;> by_cases e2 : 2 ^ 63 ≤ (s₃.gpr .x2).toNat <;>
+    simp only [e1, e2, ite_true, ite_false, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false,
+      BitVec.toNat_sub, BitVec.toNat_ofNat] at hv ⊢ <;> omega_arith
 
 end VG.Proof.Bignum.AArch64

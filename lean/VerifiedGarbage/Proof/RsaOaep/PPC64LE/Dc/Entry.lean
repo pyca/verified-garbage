@@ -23,8 +23,14 @@ open VG VG.PPC64LE VG.Impl.RsaOaep.PPC64LE VG.Impl.RsaOaep.PPC64LE.Dec
 open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep wp_ld wp_mov wp_nil)
 
 /-- The stack arguments are in `aR`. -/
-theorem in_aR {s : State} {j : Nat} (hj : j < 17) : (aR s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+theorem in_aR {pc : Bool} {s : State} {j : Nat} (hj : j < 17) : (aR pc s).Contains (stackArgAddr s j) 8 := by
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by split <;> omega) (by omega)
+
+/-- With `pc`, our stack arguments 17 and 18 too. -/
+theorem in_aRP {s : State} {j : Nat} (hj : j < 19) : (aR true s).Contains (stackArgAddr s j) 8 := by
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by simp only [↓reduceIte]; omega) (by omega)
+
+theorem aR_mem {pc : Bool} {s : State} : aR pc s ∈ rdL pc s := by cases pc <;> simp
 
 /-- After the saves and the prologue. -/
 structure Entered (s t : State) : Prop where
@@ -41,25 +47,43 @@ structure Entered (s t : State) : Prop where
   args : ∀ r ∈ [Reg.r6, .r7, .r8, .r9, .r10, .r20, .r21, .r22, .r23], t.gpr r = s.gpr r
 
 section
-variable {s : State} (P : PreD s)
+variable {pc : Bool} {s : State} (P : PreD pc s)
 include P
 
 omit P in
 theorem toD {m m' : Mem} (h : Frame [kR s] m m') : Frame [kD s] m m' :=
   h.sub fun r hr => ⟨kD s, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact kR_sub⟩
 
+/-- A load of our stack argument `j`, in `aR`, through `r`, which holds `fb s + o`. -/
+theorem wp_argA {t : State} {r b : Reg} {j o : Nat} {is : List Instr} {Q : State → Prop}
+    (hin : (aR pc s).Contains (stackArgAddr s j) 8)
+    (hb : t.gpr b = fb s - BitVec.ofNat 64 o) (hrd : t.rd = s.rd) (hm : Frame [kD s] s.mem t.mem)
+    (k : ∀ t', Only [r] t t' → t'.gpr r = stackArg s j → WP isa (.block is) t' Q)
+    (ho : o + arg j < 2 ^ 15 ∧ (o + arg j) % 4 = 0) (hb0 : b ≠ .r0) :
+    WP isa (.block (.load .d r b (o + arg j) :: is)) t Q := by
+  refine wp_ld (a := stackArgAddr s j) (by
+    rw [hb, stackArgAddr_fb, BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]) ?_
+    (fun t' o' e => k t' o' ?_) hb0 ho
+  · rw [hrd, P.hrd]; exact ⟨aR pc s, List.mem_append_left _ aR_mem, hin⟩
+  · rw [e, stackArg, hm.readW hin (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact P.ka.symm) (by decide)]
+
 /-- A load of our stack argument `j` through `r`, which holds `fb s + o`. -/
 theorem wp_argD {t : State} {r b : Reg} {j o : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 17)
     (hb : t.gpr b = fb s - BitVec.ofNat 64 o) (hrd : t.rd = s.rd) (hm : Frame [kD s] s.mem t.mem)
     (k : ∀ t', Only [r] t t' → t'.gpr r = stackArg s j → WP isa (.block is) t' Q)
     (ho : o + arg j < 2 ^ 15 ∧ (o + arg j) % 4 = 0 := by decide) (hb0 : b ≠ .r0 := by decide) :
-    WP isa (.block (.load .d r b (o + arg j) :: is)) t Q := by
-  refine wp_ld (a := stackArgAddr s j) (by
-    rw [hb, stackArgAddr_fb, BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]) ?_
-    (fun t' o' e => k t' o' ?_) hb0 ho
-  · rw [hrd, P.hrd]; exact ⟨aR s, by simp, in_aR hj⟩
-  · rw [e, stackArg, hm.readW (in_aR hj) (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact P.ka.symm) (by decide)]
+    WP isa (.block (.load .d r b (o + arg j) :: is)) t Q :=
+  wp_argA P (in_aR hj) hb hrd hm k ho hb0
+
+omit P in
+/-- With `pc`, a load of our stack argument `j < 19`. -/
+theorem wp_argP (P : PreD true s) {t : State} {r b : Reg} {j o : Nat} {is : List Instr} {Q : State → Prop}
+    (hj : j < 19) (hb : t.gpr b = fb s - BitVec.ofNat 64 o) (hrd : t.rd = s.rd) (hm : Frame [kD s] s.mem t.mem)
+    (k : ∀ t', Only [r] t t' → t'.gpr r = stackArg s j → WP isa (.block is) t' Q)
+    (ho : o + arg j < 2 ^ 15 ∧ (o + arg j) % 4 = 0 := by decide) (hb0 : b ≠ .r0 := by decide) :
+    WP isa (.block (.load .d r b (o + arg j) :: is)) t Q :=
+  wp_argA P (in_aRP hj) hb hrd hm k ho hb0
 
 theorem entry_ok : WP isa (.block (save ++ Dec.prologue)) (allocated frameBytes s) (Entered s) := by
   have hm0 : Frame [kR s] s.mem (allocated frameBytes s).mem := by

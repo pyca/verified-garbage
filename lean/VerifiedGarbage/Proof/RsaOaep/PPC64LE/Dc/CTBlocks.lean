@@ -34,8 +34,11 @@ variable {α : Type} {Φ : α → State → Prop} (H : Hash)
 theorem entry_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block (save ++ Dec.prologue)) fun _ _ => True :=
   two_taint [] h (by taint_decide)
 
-theorem privArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block privArgs) fun _ _ => True :=
-  two_taint [] h (by taint_decide)
+theorem privArgs_taint (pc : Bool) (h : Pins Φ []) :
+    RelCT isa (Two Φ) (.block (privArgs ++ preArgs pc)) fun _ _ => True := by
+  cases pc
+  · exact two_taint [] h (by taint_decide)
+  · exact two_taint [] h (by taint_decide)
 
 theorem lsr_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block [.lsr .w .r20 .r3 0]) fun _ _ => True :=
   two_taint [] h (by taint_decide)

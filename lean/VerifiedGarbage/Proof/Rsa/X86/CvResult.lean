@@ -32,14 +32,14 @@ theorem written_arithmetic {g : CallGeometry} {m : Mem} {t : State} (h : Arithme
     (dpLen : (g.buffer 0).len = (inputBytes g m 1).length)
     (dqLen : (g.buffer 2).len = (inputBytes g m 2).length)
     (qiLen : (g.buffer 4).len = (inputBytes g m 1).length) : Written g m t := by
-  obtain ⟨X₁, X₂, V, R₂, R₃, X, division, inverse, remP, remQ, dp, dq, qi, status⟩ := h
-  dsimp only [arithmeticGeometry, Geometry.M] at division inverse remP remQ dp dq qi status
-  have key := VG.Proof.Rsa.CrtValues.crtKey_masked valid pl ql division inverse remP remQ
+  obtain ⟨V, R₂, R₃, X, inverse, remP, remQ, dp, dq, qi, status⟩ := h
+  dsimp only [arithmeticGeometry, Geometry.M] at inverse remP remQ dp dq qi status
+  have key := VG.Proof.Rsa.CrtValues.crtKey_maskedP valid pl ql inverse remP remQ
   unfold Written calculated
   rw [key]
   dsimp only [maskOf] at dp dq qi status
-  generalize hc : VG.Proof.Rsa.CrtValues.maskOf (Spec.Rsa.os2ip (inputBytes g m 1))
-    (Spec.Rsa.os2ip (inputBytes g m 2)) X₁ X₂ V = c at *
+  generalize hc : VG.Proof.Rsa.CrtValues.maskOfP (Spec.Rsa.os2ip (inputBytes g m 1))
+    (Spec.Rsa.os2ip (inputBytes g m 2)) (Spec.Rsa.os2ip (inputBytes g m 0)) V = c at *
   cases c with
   | false =>
     simp only [Bool.false_eq_true, ite_false, Option.map_none] at *

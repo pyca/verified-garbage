@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ecdh_p256_adx` if the CPU supports its features (`VG_ECDH_P256_ADX_FEATURES`); or else `vg_ecdh_p256`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ecdh_p256_ifma` if the CPU supports its features (`VG_ECDH_P256_IFMA_FEATURES`); `vg_ecdh_p256_adx` if the CPU supports its features (`VG_ECDH_P256_ADX_FEATURES`); or else `vg_ecdh_p256`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -18,7 +18,7 @@
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
-/// * None of `out`, `d`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `peer` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ecdh_p256_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
@@ -29,6 +29,11 @@ pub unsafe fn vg_ecdh_p256_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::ecdh_p256::VG_ECDH_P256_IFMA_FEATURES) }
+            || cpu.contains(crate::ecdh_p256::VG_ECDH_P256_IFMA_FEATURES)
+        {
+            return crate::ecdh_p256::vg_ecdh_p256_ifma;
+        }
         if const { verified_garbage_cpu::target_contains(crate::ecdh_p256::VG_ECDH_P256_ADX_FEATURES) }
             || cpu.contains(crate::ecdh_p256::VG_ECDH_P256_ADX_FEATURES)
         {

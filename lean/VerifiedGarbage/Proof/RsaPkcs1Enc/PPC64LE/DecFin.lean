@@ -23,6 +23,8 @@ open VG VG.PPC64LE VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 open VG.Proof.Bignum.PPC64LE (Keep)
 open VG.Proof.RsaPkcs1Enc (firstZero outByte)
 
+variable {pc : Bool}
+
 /-- `AM`. -/
 abbrev amOf (s : State) (kd : List Byte) : List Byte :=
   Spec.RsaPkcs1Enc.irprf kd (Spec.RsaPkcs1Enc.ascii "message") (s.gpr .r7).toNat
@@ -51,7 +53,7 @@ structure Fin (s : State) (R : BitVec 64) (EM AM : List Byte) (v ok : Bool) (len
   ml : u.mem.readW (s.gpr .r5) 64 = BitVec.ofNat 64 len &&& bm ok
 
 section
-variable {s : State} (h : DPre s) {R : BitVec 64}
+variable {s : State} (h : DPre pc s) {R : BitVec 64}
 include h
 
 theorem outInit_ok {t : State} (hc : Fr3 s R t) (h12 : t.gpr .r12 = fb s) :

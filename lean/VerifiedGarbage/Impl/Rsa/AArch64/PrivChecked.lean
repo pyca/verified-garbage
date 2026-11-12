@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
 
 /-!
 # RSA's private-key operation checked against `e`, on AArch64
@@ -139,11 +140,17 @@ def releaseLoop : Prog isa :=
 def tail : List (Prog isa) :=
   [.block cmpArgs, cmpLoop, .block masks, releaseLoop, .block [.addImm .x .x0 .x13 0]]
 
+/-- With the stage that leaves `n`'s values at `oPre` and its status in
+`x0` (`stage`), the call of `vg_rsa_public_precomputed_checked` (`pd`), then
+the check and the release: what follows the CRT, whatever it wrote to `M`. -/
+def checkWith (stage : Prog isa) (pdName : String) (pd : Prog isa) : List (Prog isa) :=
+  [.block pcArgs, stage, .block pdArgs, .call pdName pd] ++ tail
+
 /-- The calls of `vg_rsa_public_precompute` (`pc`) and
 `vg_rsa_public_precomputed_checked` (`pd`), then the check and the
 release: what follows the CRT, whatever it wrote to `M`. -/
 def check (pcName : String) (pc : Prog isa) (pdName : String) (pd : Prog isa) : List (Prog isa) :=
-  [.block pcArgs, .call pcName pc, .block pdArgs, .call pdName pd] ++ tail
+  checkWith (.call pcName pc) pdName pd
 
 /-- The body of the inner frame. -/
 def body (crtName : String) (crt : Prog isa) (pcName : String) (pc : Prog isa) (pdName : String)
@@ -155,6 +162,29 @@ operation's `pc` and `pd`, by their names. -/
 def code (crtName : String) (crt : Prog isa) (pcName : String) (pc : Prog isa) (pdName : String)
     (pd : Prog isa) : Prog isa :=
   .frame (.push .x30) (.frame (.alloc frameBytes) (body crtName crt pcName pc pdName pd) (.free frameBytes))
+    (.pop .x30)
+
+/-! ## `vg_rsa_private_checked_precomputed`
+
+`vg_rsa_private_checked`'s arguments, then the key's precomputed values
+`pre` and `pre_len` (our stack arguments 12 and 13). In place of
+`vg_rsa_public_precompute`, its output, the first `2 w` words of `pre`, is
+copied to `oPre`, with its status 1. -/
+
+/-- `pcArgs` leaves `oPre` in `x0` and `2 w` in `x1`: the `2 w` words of the
+incoming `pre` to it, and the status 1. -/
+def pcCopy : Prog isa :=
+  .seq (.block [.addImm .x .x17 .x0 0, .ldrSp .x16 (arg 12), .addImm .x .x12 .x1 0])
+    (.seq Bignum.AArch64.copyWords (.block [.movz .x .x0 1 0]))
+
+/-- The body of the inner frame, given `pre`. -/
+def bodyP (crtName : String) (crt : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
+  seqs ([.block crtArgs, .call crtName crt] ++ checkWith pcCopy pdName pd)
+
+/-- `vg_rsa_private_checked_precomputed`, calling the CRT `crt` and the
+public operation's `pd`, by their names. -/
+def codeP (crtName : String) (crt : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
+  .frame (.push .x30) (.frame (.alloc frameBytes) (bodyP crtName crt pdName pd) (.free frameBytes))
     (.pop .x30)
 
 end VG.Impl.Rsa.AArch64.PrivChecked

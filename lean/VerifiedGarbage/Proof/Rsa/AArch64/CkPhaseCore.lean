@@ -31,6 +31,11 @@ abbrev CkIn.DP (I : CkIn) : Nat := Spec.Rsa.os2ip I.dpb
 abbrev CkIn.DQ (I : CkIn) : Nat := Spec.Rsa.os2ip I.dqb
 abbrev CkIn.QI (I : CkIn) : Nat := Spec.Rsa.os2ip I.qib
 
+/-- What `wordGuard` checks: `16 | k`, `p_len = q_len = k / 2` and `n`'s top
+bit. -/
+def CkIn.Gd (I : CkIn) : Prop :=
+  I.k % 16 = 0 ∧ 2 * I.pl = I.k ∧ I.pl = I.ql ∧ ∃ h : 0 < I.nb.length, 128 ≤ (I.nb[0]'h).toNat
+
 /-- A number of `len ≤ k` bytes fits in `w` words. -/
 theorem lt_w {bs : List Byte} {k : Nat} (hl : bs.length ≤ k) : Spec.Rsa.os2ip bs < 2 ^ (64 * wk k) :=
   Nat.lt_of_lt_of_le (os2ip_lt bs) (Nat.le_trans (Nat.pow_le_pow_right (by decide) hl)

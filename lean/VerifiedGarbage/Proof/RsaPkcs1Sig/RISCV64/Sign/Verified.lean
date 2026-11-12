@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Sign.Correct
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Sign.Call
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Two
 import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCT
+import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPCT
 import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCall
 import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 import VerifiedGarbage.Proof.Framework.Contract
@@ -13,6 +14,8 @@ meta import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Sign.Correct
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Sign.Call
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Two
 meta import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCT
+meta import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPCT
+import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPCT
 meta import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCall
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -32,7 +35,7 @@ blocks by the taint analysis, from the stack pointer and the registers that
 hold public values; the branch on the encoding's result, which only the
 lengths and `hash` decide (`isSome_same`); and the call by
 `vg_rsa_private_checked`'s constant time (`RelCT.callEx`), whose public data
-at the call the correctness facts fix (`priv_pub`, by `Priv.pub_of`).
+at the call the correctness facts fix (`priv_facts`, `pre_leak`, by `Priv.pub_of` or `Priv.pub_ofP`).
 -/
 
 @[expose] public section
@@ -58,8 +61,10 @@ theorem encode_taint (h : Pins Φ [.a1, .a2, .a3, .a4, .a5]) :
 theorem zeroOut_taint (h : Pins Φ [.s1, .s3]) : RelCT isa (Two Φ) zeroOut fun _ _ => True :=
   two_taint _ h (by taint_decide)
 
-theorem callArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block callArgs) fun _ _ => True :=
-  two_taint [] h (by taint_decide)
+theorem callArgs_taint (pc : Bool) (h : Pins Φ []) : RelCT isa (Two Φ) (.block (callArgs pc)) fun _ _ => True := by
+  cases pc
+  · exact two_taint [] h (by taint_decide)
+  · exact two_taint [] h (by taint_decide)
 
 theorem wipe_taint (h : Pins Φ [.s3]) : RelCT isa (Two Φ) wipe fun _ _ => True :=
   two_taint _ h (by taint_decide)
@@ -71,19 +76,24 @@ end
 
 /-! ## The public data -/
 
+variable {pc : Bool}
+
 /-- The public data of an entry state `s` is the anchor `a`'s: the pointers
-and lengths, `hash`, our stack arguments and the bytes of `n` and `e`. -/
-structure PubS (a s : State) : Prop where
+and lengths, `hash`, our stack arguments, the bytes of `n` and `e`, and with
+`pc` what may leak of `pre`. -/
+structure PubS (pc : Bool) (a s : State) : Prop where
   sp : s.sp = a.sp
   g : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a7], s.gpr r = a.gpr r
   h6 : (s.gpr .a6).setWidth 32 = (a.gpr .a6).setWidth 32
-  args : ∀ i < 13, stackArg s i = stackArg a i
+  args : ∀ i < nA pc, stackArg s i = stackArg a i
   n : Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .a2) (a.gpr .a3).toNat
   e : Spec.Rsa.bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .a4) (a.gpr .a5).toNat
+  leak : pc = true → Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 13) (s.gpr .a3).toNat =
+    Spec.Rsa.privatePrecomputedLeak a.mem (stackArg a 13) (a.gpr .a3).toNat
 
 theorem pubS_of {s₁ s₂ : State} (h : (Spec.RsaPkcs1Sig.signContract RISCV64.abi stackBytes).pub s₁ s₂) :
-    PubS s₁ s₂ := by
-  have e : stackBytes = 4415 + 1 := rfl
+    PubS false s₁ s₂ := by
+  have e : stackBytes = 4431 + 1 := rfl
   rw [e] at h
   sig_pub [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, RISCV64.abi, RISCV64.argRegs,
     stackArgs_thirteen, List.append_eq] at h
@@ -93,37 +103,41 @@ theorem pubS_of {s₁ s₂ : State} (h : (Spec.RsaPkcs1Sig.signContract RISCV64.
   obtain ⟨hn, he⟩ := List.append_inj hl (by simp [bytesAt_length, h6])
   refine ⟨hsp.symm, fun r hr => ?_, h9.symm, fun i hi => ?_,
     ((List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hn).symm,
-    ((List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 he).symm⟩
+    ((List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 he).symm, nofun⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h3.symm, h4.symm, h5.symm, h6.symm, h7.symm, h8.symm, h10.symm]
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
+  · simp only [nA, Bool.false_eq_true, ↓reduceIte] at hi
+    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
       i = 10 ∨ i = 11 ∨ i = 12) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm, a8.symm, a9.symm, a10.symm,
       a11.symm, a12.symm]
 
-/-- An entry state with the anchor's public data. -/
-def E (a s : State) : Prop := SPre s ∧ PubS a s
+/-- An entry state with the anchor's public data, and with `pc` `pre`'s facts. -/
+structure E (pc : Bool) (a s : State) : Prop where
+  pre : SPre pc s
+  pub : PubS pc a s
+  px : pc = true → PreX s
 
 section
 variable {a s₁ s₂ : State}
 
-theorem fb_same (h₁ : E a s₁) (h₂ : E a s₂) : fb s₁ = fb s₂ := by simp only [fb, h₁.2.sp, h₂.2.sp]
+theorem fb_same (h₁ : E pc a s₁) (h₂ : E pc a s₂) : fb s₁ = fb s₂ := by simp only [fb, h₁.pub.sp, h₂.pub.sp]
 
-theorem gpr_same (h₁ : E a s₁) (h₂ : E a s₂) {r : Reg}
+theorem gpr_same (h₁ : E pc a s₁) (h₂ : E pc a s₂) {r : Reg}
     (hr : r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a7] := by decide) : s₁.gpr r = s₂.gpr r :=
-  (h₁.2.g r hr).trans (h₂.2.g r hr).symm
+  (h₁.pub.g r hr).trans (h₂.pub.g r hr).symm
 
-theorem arg_same (h₁ : E a s₁) (h₂ : E a s₂) {i : Nat} (hi : i < 13 := by decide) :
+theorem arg_same (h₁ : E pc a s₁) (h₂ : E pc a s₂) {i : Nat} (hi : i < 13 := by decide) :
     stackArg s₁ i = stackArg s₂ i :=
-  (h₁.2.args i hi).trans (h₂.2.args i hi).symm
+  (h₁.pub.args i (nA_le pc hi)).trans (h₂.pub.args i (nA_le pc hi)).symm
 
-theorem hid_same (h₁ : E a s₁) (h₂ : E a s₂) : hid s₁ = hid s₂ := by
-  simp only [hid, h₁.2.h6, h₂.2.h6]
+theorem hid_same (h₁ : E pc a s₁) (h₂ : E pc a s₂) : hid s₁ = hid s₂ := by
+  simp only [hid, h₁.pub.h6, h₂.pub.h6]
 
 /-- Whether the encoding succeeds depends only on `hash`, the lengths of the
 hash value and `k`. -/
-theorem isSome_same (h₁ : E a s₁) (h₂ : E a s₂) : (encOut s₁).isSome = (encOut s₂).isSome := by
+theorem isSome_same (h₁ : E pc a s₁) (h₂ : E pc a s₂) : (encOut s₁).isSome = (encOut s₂).isSome := by
   unfold encOut RsaPkcs1Sig.RISCV64.encodeId
   rw [hid_same h₁ h₂, gpr_same h₁ h₂ (r := .a3)]
   cases Spec.RsaPkcs1Sig.Hash.ofId (hid s₂) with
@@ -144,25 +158,30 @@ theorem AtAft.a0_eq {s u : State} (B : AtAft s u) : u.gpr .a0 = if (encOut s).is
 
 /-! ## The call -/
 
-theorem priv_pub {a s₁ s₂ t₁ t₂ : State} {em₁ em₂ : List Byte} (h₁ : E a s₁) (h₂ : E a s₂)
-    (A₁ : AtCall s₁ t₁ em₁) (A₂ : AtCall s₂ t₂ em₂) :
-    (Proof.Rsa.privateCheckedContract RISCV64.abi Impl.Rsa.RISCV64.Priv.frameBytes).pub (callE s₁ t₁)
-      (callE s₂ t₂) := by
-  have hn : ∀ {s t : State} {em : List Byte}, SPre s → AtCall s t em →
-      Spec.Rsa.bytesAt (callE s t).mem ((callE s t).gpr .a2) ((callE s t).gpr .a3).toNat =
+theorem priv_facts {a s₁ s₂ t₁ t₂ : State} {em₁ em₂ : List Byte} (h₁ : E pc a s₁) (h₂ : E pc a s₂)
+    (A₁ : AtCall pc s₁ t₁ em₁) (A₂ : AtCall pc s₂ t₂ em₂) :
+    (callE pc s₁ t₁).sp = (callE pc s₂ t₂).sp ∧
+    (∀ r ∈ argRegs, (callE pc s₁ t₁).gpr r = (callE pc s₂ t₂).gpr r) ∧
+    (∀ i < nCallArgs pc, stackArg (callE pc s₁ t₁) i = stackArg (callE pc s₂ t₂) i) ∧
+    Spec.Rsa.bytesAt (callE pc s₁ t₁).mem ((callE pc s₁ t₁).gpr .a2) ((callE pc s₁ t₁).gpr .a3).toNat =
+      Spec.Rsa.bytesAt (callE pc s₂ t₂).mem ((callE pc s₂ t₂).gpr .a2) ((callE pc s₂ t₂).gpr .a3).toNat ∧
+    Spec.Rsa.bytesAt (callE pc s₁ t₁).mem ((callE pc s₁ t₁).gpr .a4) ((callE pc s₁ t₁).gpr .a5).toNat =
+      Spec.Rsa.bytesAt (callE pc s₂ t₂).mem ((callE pc s₂ t₂).gpr .a4) ((callE pc s₂ t₂).gpr .a5).toNat := by
+  have hn : ∀ {s t : State} {em : List Byte}, SPre pc s → AtCall pc s t em →
+      Spec.Rsa.bytesAt (callE pc s t).mem ((callE pc s t).gpr .a2) ((callE pc s t).gpr .a3).toNat =
         Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat := fun h A => by
     rw [callE_gpr, callE_gpr, A.a2, A.a3]
     exact bytes_of_frame A.mem (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.kn.symm)
       (by have := h.wn; omega)
-  have he : ∀ {s t : State} {em : List Byte}, SPre s → AtCall s t em →
-      Spec.Rsa.bytesAt (callE s t).mem ((callE s t).gpr .a4) ((callE s t).gpr .a5).toNat =
+  have he : ∀ {s t : State} {em : List Byte}, SPre pc s → AtCall pc s t em →
+      Spec.Rsa.bytesAt (callE pc s t).mem ((callE pc s t).gpr .a4) ((callE pc s t).gpr .a5).toNat =
         Spec.Rsa.bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat := fun h A => by
     rw [callE_gpr, callE_gpr, A.a4, A.a5]
     exact bytes_of_frame A.mem (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.ke.symm)
       (by have := h.we; omega)
-  refine Rsa.RISCV64.Priv.pub_of (by rw [show (callE s₁ t₁).sp = fb s₁ from A₁.sp,
-      show (callE s₂ t₂).sp = fb s₂ from A₂.sp, fb_same h₁ h₂]) (fun r hr => ?_) (fun i hi => ?_)
-    (by rw [hn h₁.1 A₁, hn h₂.1 A₂, h₁.2.n, h₂.2.n]) (by rw [he h₁.1 A₁, he h₂.1 A₂, h₁.2.e, h₂.2.e])
+  refine ⟨by rw [show (callE pc s₁ t₁).sp = fb s₁ from A₁.sp,
+      show (callE pc s₂ t₂).sp = fb s₂ from A₂.sp, fb_same h₁ h₂], fun r hr => ?_, fun i hi => ?_,
+    by rw [hn h₁.pre A₁, hn h₂.pre A₂, h₁.pub.n, h₂.pub.n], by rw [he h₁.pre A₁, he h₂.pre A₂, h₁.pub.e, h₂.pub.e]⟩
   · rw [callE_gpr s₁ t₁ (fun h => by revert r; decide), callE_gpr s₂ t₂ (fun h => by revert r; decide)]
     simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -174,23 +193,55 @@ theorem priv_pub {a s₁ s₂ t₁ t₂ : State} {em₁ em₂ : List Byte} (h₁
     · rw [A₁.a5, A₂.a5, gpr_same h₁ h₂]
     · rw [A₁.a6, A₂.a6, fb_same h₁ h₂]
     · rw [A₁.a7, A₂.a7, gpr_same h₁ h₂]
-  · rw [callE_stackArg A₁ hi, callE_stackArg A₂ hi, arg_same h₁ h₂ (by omega)]
+  · have hi' := nCall_nA hi
+    rw [callE_stackArg A₁ hi, callE_stackArg A₂ hi, (h₁.pub.args _ hi').trans (h₂.pub.args _ hi').symm]
 
-theorem priv_rel : RelCT isa (Two fun a t => ∃ s em, E a s ∧ AtCall s t em) privCall fun _ _ => True := by
-  unfold privCall
-  refine RelCT.callEx (k := Rsa.RISCV64.Priv.fnContract) Rsa.RISCV64.Priv.code_correct
-    Rsa.RISCV64.Priv.code_ct fun u₁ u₂ ⟨_, ⟨s₁, _, h₁, A₁⟩, ⟨s₂, _, h₂, A₂⟩⟩ => ?_
-  exact ⟨callRd s₁, callWr s₁, callRd s₂, callWr s₂, Rsa.RISCV64.Priv.pre_of_preP (preP_entry h₁.1 A₁),
-    Rsa.RISCV64.Priv.pre_of_preP (preP_entry h₂.1 A₂), priv_pub h₁ h₂ A₁ A₂,
-    (call_covers h₁.1 A₁).1, (call_covers h₁.1 A₁).2, (call_covers h₂.1 A₂).1, (call_covers h₂.1 A₂).2⟩
+/-- With `pc`, what the call may leak of `pre`, as on entry. -/
+theorem pre_leak {s t : State} {em : List Byte} (X : PreX s) (A : AtCall true s t em) :
+    Spec.Rsa.privatePrecomputedLeak (callE true s t).mem (stackArg (callE true s t) 12)
+        ((callE true s t).gpr .a3).toNat =
+      Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 13) (s.gpr .a3).toNat := by
+  have pwl : Spec.Rsa.precomputedWords (s.gpr .a3).toNat ≤ (stackArg s 14).toNat := by
+    rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+  simp only [Spec.Rsa.privatePrecomputedLeak, callE_stackArg A (i := 12) (by decide),
+    callE_gpr (pc := true) s t (r := .a3), A.a3]
+  congr 1
+  have subPre : Region.Sub ⟨stackArg s 13, 8 * Spec.Rsa.precomputedWords (s.gpr .a3).toNat⟩ (preR s) :=
+    fun _ hx => by simp only [Region.Contains] at hx ⊢; omega
+  exact VG.Proof.Rsa.RISCV64.Priv.words_of_frame A.mem (fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact X.kP.symm.sub_left subPre) (by have := X.wP; omega)
+
+theorem priv_rel :
+    RelCT isa (Two fun a t => ∃ s em, E pc a s ∧ AtCall pc s t em) (privCall pc) fun _ _ => True := by
+  cases pc with
+  | false =>
+    refine RelCT.callEx (k := Rsa.RISCV64.Priv.fnContract) Rsa.RISCV64.Priv.code_correct
+      Rsa.RISCV64.Priv.code_ct fun u₁ u₂ ⟨_, ⟨s₁, _, h₁, A₁⟩, ⟨s₂, _, h₂, A₂⟩⟩ => ?_
+    obtain ⟨hsp, hr, ha, hn, he⟩ := priv_facts h₁ h₂ A₁ A₂
+    exact ⟨callRd false s₁, callWr s₁, callRd false s₂, callWr s₂,
+      Rsa.RISCV64.Priv.pre_of_preP (preP_entry h₁.pre A₁), Rsa.RISCV64.Priv.pre_of_preP (preP_entry h₂.pre A₂),
+      Rsa.RISCV64.Priv.pub_of hsp hr ha hn he,
+      (call_covers h₁.pre A₁).1, (call_covers h₁.pre A₁).2, (call_covers h₂.pre A₂).1, (call_covers h₂.pre A₂).2⟩
+  | true =>
+    refine RelCT.callEx (k := Rsa.RISCV64.Priv.fnContractP) Rsa.RISCV64.Priv.codeP_correct
+      Rsa.RISCV64.Priv.codeP_ct fun u₁ u₂ ⟨_, ⟨s₁, _, h₁, A₁⟩, ⟨s₂, _, h₂, A₂⟩⟩ => ?_
+    obtain ⟨hsp, hr, ha, hn, he⟩ := priv_facts h₁ h₂ A₁ A₂
+    have X₁ := h₁.px rfl
+    have X₂ := h₂.px rfl
+    exact ⟨callRd true s₁, callWr s₁, callRd true s₂, callWr s₂,
+      Rsa.RISCV64.Priv.pre_of_prePX (preP_entry h₁.pre A₁) (preX_entry h₁.pre X₁ A₁),
+      Rsa.RISCV64.Priv.pre_of_prePX (preP_entry h₂.pre A₂) (preX_entry h₂.pre X₂ A₂),
+      Rsa.RISCV64.Priv.pub_ofP hsp hr ha hn he
+        (by rw [pre_leak X₁ A₁, pre_leak X₂ A₂, h₁.pub.leak rfl, h₂.pub.leak rfl]),
+      (call_covers h₁.pre A₁).1, (call_covers h₁.pre A₁).2, (call_covers h₂.pre A₂).1, (call_covers h₂.pre A₂).2⟩
 
 /-! ## The chain -/
 
 theorem sign_rel :
-    RelCT isa (Two fun a t => (∃ s, E a s ∧ AtAft s t) ∧ isa.eval (.zero .a0) t = some false)
-      (.seq (.block callArgs) (.seq privCall wipe)) fun _ _ => True := by
-  refine RelCT.seq (two_post (Ψ := fun a t => ∃ s em, E a s ∧ AtCall s t em)
-    (callArgs_taint fun _ _ _ ⟨⟨s₁, h₁, B₁⟩, _⟩ ⟨⟨s₂, h₂, B₂⟩, _⟩ =>
+    RelCT isa (Two fun a t => (∃ s, E pc a s ∧ AtAft s t) ∧ isa.eval (.zero .a0) t = some false)
+      (.seq (.block (callArgs pc)) (.seq (privCall pc) wipe)) fun _ _ => True := by
+  refine RelCT.seq (two_post (Ψ := fun a t => ∃ s em, E pc a s ∧ AtCall pc s t em)
+    (callArgs_taint pc fun _ _ _ ⟨⟨s₁, h₁, B₁⟩, _⟩ ⟨⟨s₂, h₂, B₂⟩, _⟩ =>
       ⟨by rw [B₁.sp, B₂.sp, fb_same h₁ h₂], fun _ h => absurd h List.not_mem_nil⟩)
     fun a u ⟨⟨s, h, B⟩, hz⟩ => ?_) ?_
   · have he := B.enc
@@ -198,14 +249,14 @@ theorem sign_rel :
     revert he
     cases hc : encOut s with
     | none => rw [hc] at hz; simp at hz
-    | some em => intro ⟨_, hb⟩; exact WP.mono (callArgs_ok h.1 B hb) fun v C => ⟨s, em, h, C⟩
-  refine RelCT.seq (two_post (Ψ := fun a t => ∃ s em, E a s ∧ AtRet s t em) priv_rel
-    fun a u ⟨s, em, h, C⟩ => call_ok h.1 C fun v R => ⟨s, em, h, R⟩) ?_
+    | some em => intro ⟨_, hb⟩; exact WP.mono (callArgs_ok h.pre B hb) fun v C => ⟨s, em, h, C⟩
+  refine RelCT.seq (two_post (Ψ := fun a t => ∃ s em, E pc a s ∧ AtRet s t em) priv_rel
+    fun a u ⟨s, em, h, C⟩ => call_ok h.pre h.px C fun v R => ⟨s, em, h, R⟩) ?_
   exact wipe_taint fun _ _ _ ⟨s₁, _, h₁, R₁⟩ ⟨s₂, _, h₂, R₂⟩ =>
     ⟨by rw [R₁.sp, R₂.sp, fb_same h₁ h₂], fun r hr => by
       rw [List.mem_singleton.mp hr, R₁.s3, R₂.s3, gpr_same h₁ h₂]⟩
 
-theorem aft_rel : RelCT isa (Two fun a t => ∃ s, E a s ∧ AtAft s t) afterEnc fun _ _ => True := by
+theorem aft_rel : RelCT isa (Two fun a t => ∃ s, E pc a s ∧ AtAft s t) (afterEnc pc) fun _ _ => True := by
   unfold afterEnc
   refine two_ite (fun a u₁ u₂ ⟨s₁, h₁, B₁⟩ ⟨s₂, h₂, B₂⟩ => by
       rw [eval_zero, eval_zero, B₁.a0_eq, B₂.a0_eq, isSome_same h₁ h₂])
@@ -216,15 +267,15 @@ theorem aft_rel : RelCT isa (Two fun a t => ∃ s, E a s ∧ AtAft s t) afterEnc
         · rw [B₁.s1, B₂.s1, gpr_same h₁ h₂]
         · rw [B₁.s3, B₂.s3, gpr_same h₁ h₂]⟩) sign_rel
 
-theorem code_ct : RelCT isa (Two E) code fun _ _ => True := by
-  unfold code
+theorem codeG_rel : RelCT isa (Two (E pc)) (codeG pc) fun _ _ => True := by
+  unfold codeG
   refine two_alloc (R := fun _ _ => True) ?_
   unfold body
-  refine RelCT.seq (two_post (Ψ := fun a t => ∃ s, E a s ∧ AtEnc s t)
+  refine RelCT.seq (two_post (Ψ := fun a t => ∃ s, E pc a s ∧ AtEnc s t)
     (setup_taint fun _ _ _ ⟨s₁, h₁, e₁⟩ ⟨s₂, h₂, e₂⟩ =>
-      ⟨by rw [e₁, e₂]; show s₁.sp - _ = s₂.sp - _; rw [h₁.2.sp, h₂.2.sp], fun _ h => absurd h List.not_mem_nil⟩)
-    fun a u ⟨s, h, hu⟩ => hu ▸ WP.mono (setup_ok h.1) fun t ht => ⟨s, h, ht⟩) ?_
-  refine RelCT.seq (two_post (Ψ := fun a t => ∃ s, E a s ∧ AtAft s t)
+      ⟨by rw [e₁, e₂]; show s₁.sp - _ = s₂.sp - _; rw [h₁.pub.sp, h₂.pub.sp], fun _ h => absurd h List.not_mem_nil⟩)
+    fun a u ⟨s, h, hu⟩ => hu ▸ WP.mono (setup_ok h.pre) fun t ht => ⟨s, h, ht⟩) ?_
+  refine RelCT.seq (two_post (Ψ := fun a t => ∃ s, E pc a s ∧ AtAft s t)
     (encode_taint fun _ _ _ ⟨s₁, h₁, A₁⟩ ⟨s₂, h₂, A₂⟩ => ⟨by rw [A₁.sp, A₂.sp, fb_same h₁ h₂], fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -233,17 +284,19 @@ theorem code_ct : RelCT isa (Two E) code fun _ _ => True := by
       · exact BitVec.eq_of_toNat_eq (by rw [A₁.a3, A₂.a3, hid_same h₁ h₂])
       · rw [A₁.a4, A₂.a4, gpr_same h₁ h₂]
       · rw [A₁.a5, A₂.a5, arg_same h₁ h₂]⟩)
-    fun a t ⟨s, h, A⟩ => WP.mono (enc_ok h.1 A) fun u B => ⟨s, h, B⟩) ?_
-  refine RelCT.seq (two_post (Ψ := fun a t => ∃ s, E a s ∧ SMid [oR s, sR s] s t) aft_rel
-    fun a t ⟨s, h, B⟩ => WP.mono (afterEnc_ok h.1 B) fun v ⟨M, _⟩ => ⟨s, h, M⟩) ?_
+    fun a t ⟨s, h, A⟩ => WP.mono (enc_ok h.pre A) fun u B => ⟨s, h, B⟩) ?_
+  refine RelCT.seq (two_post (Ψ := fun a t => ∃ s, E pc a s ∧ SMid [oR s, sR s] s t) aft_rel
+    fun a t ⟨s, h, B⟩ => WP.mono (afterEnc_ok h.pre h.px B) fun v ⟨M, _⟩ => ⟨s, h, M⟩) ?_
   exact restore_taint fun _ _ _ ⟨s₁, h₁, M₁⟩ ⟨s₂, h₂, M₂⟩ =>
     ⟨by rw [M₁.sp, M₂.sp, fb_same h₁ h₂], fun _ h => absurd h List.not_mem_nil⟩
+
+theorem PubS.refl (s : State) : PubS pc s s := ⟨rfl, fun _ _ => rfl, rfl, fun _ _ => rfl, rfl, rfl, fun _ => rfl⟩
 
 theorem code_constantTime :
     ConstantTime isa (Spec.RsaPkcs1Sig.signContract RISCV64.abi stackBytes).pre
       (Spec.RsaPkcs1Sig.signContract RISCV64.abi stackBytes).pub code :=
-  RelCT.constantTime (code_ct.mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
-    ⟨s₁, ⟨sPre_of h₁, ⟨rfl, fun _ _ => rfl, rfl, fun _ _ => rfl, rfl, rfl⟩⟩, sPre_of h₂, pubS_of hp⟩)
+  RelCT.constantTime ((codeG_rel (pc := false)).mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
+    ⟨s₁, ⟨sPre_of h₁, PubS.refl _, nofun⟩, ⟨sPre_of h₂, pubS_of hp, nofun⟩⟩)
     fun _ _ h => h)
 
 /-! ## A state meeting the precondition -/
@@ -277,7 +330,7 @@ theorem sat_args : stackArg satState 0 = 1 ∧ stackArg satState 1 = 0x4100 ∧ 
 
 theorem sat : ∃ s, (Spec.RsaPkcs1Sig.signContract RISCV64.abi stackBytes).pre s := by
   refine ⟨satState, ?_⟩
-  have e : stackBytes = 4415 + 1 := rfl
+  have e : stackBytes = 4431 + 1 := rfl
   rw [e]
   sig_pre [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, RISCV64.abi, RISCV64.argRegs,
     stackArgs_thirteen, List.append_eq, List.range, List.range.loop]

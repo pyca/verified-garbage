@@ -780,6 +780,57 @@ def post (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
     copyWords, mul aChunk aChunk aXc] ++ copyArr aXc aChunk ++
   subModArr aT aY aXc ++ loadArr aChunk sQinv sPlen ++ maskArr aChunk ++ [mul aY aT aChunk, .block [leave]]
 
+/-! ## With the key's precomputed values
+
+`vg_rsa_private_crt_ifma_precomputed` (`mainP`) copies each prime's `R_X²
+mod X` from the key's precomputed values `pre` (the CRT's stack argument 12)
+rather than reducing `n`'s `R_n² mod n` (`r2X`): `R_p² mod p` is at word
+`2 w_n = 4 w_X` of `pre`, and `R_q² mod q` at `5 w_X`, as `n` has `2 w_X`
+words. It is masked by `n`'s mask, as `p` and `q` are: where the mask is
+clear the prime is 3, and `R_X² mod 3 = 1`. -/
+
+/-- In a prime's workspace: `rsi := pre + 8 (4 w_X)` (`+ 8 w_X` for `q`),
+`r12 := w_X` and `rbx := [j]`. -/
+def r2XBlk (q : Bool) (j : Nat) : List Instr :=
+  [.mov .rsi (.mem Crt.preArg), .mov .rax (.mem (hdr sW)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+    .alu .add .rax (.reg .rax)] ++ (if q then [.alu .add .rsi (.reg .rax)] else []) ++
+  [.alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rsi (.reg .rax), .mov .r12 (.mem (hdr sW)),
+    .mov .rbx (.mem (hdr (sArr j)))]
+
+/-- The low word of `[rbx]`, masked by `r15`, with 1 where the mask is
+clear. -/
+def orOne : List Instr :=
+  [.mov .rax (.reg .r15), .alu .xor .rax (.imm (BitVec.ofInt 32 (-1))), .alu .and .rax (.imm 1),
+    .alu .or .rax (.mem (at0 .rbx)), .store (at0 .rbx) .rax]
+
+/-- `[j]` masked by `n`'s mask, which it leaves in `r15`. -/
+def maskN (j : Nat) : List (Prog isa) := [
+  .block [.mov .rax (.mem (hdr sLink)), .mov .r15 (.mem (ws .rax sMask)), .mov .r12 (.mem (hdr sW)),
+    .mov .rbx (.mem (hdr (sArr j)))],
+  wordLoop 0 [.mov .rax (.mem (ix .rbx .r14)), .alu .and .rax (.reg .r15), .store (ix .rbx .r14) .rax]]
+
+/-- In a prime's workspace, `[j] := mask ? R_X² mod X : 1` from `pre`
+(`q` for `q`'s), with `n`'s mask. -/
+def r2X (q : Bool) (j : Nat) : List (Prog isa) :=
+  [.block (r2XBlk q j), copyWords] ++ maskN j ++ [.block orOne]
+
+/-- `prep`, with `R_X² mod X` from `pre`. -/
+def prepP (mul : Nat → Nat → Nat → Prog isa) (sl : Nat) (q : Bool) : List (Prog isa) :=
+  [.block [.mov .rdi (.mem (hdr sl))]] ++ r2X q aY ++ redc mul aXm ++ [mul aT aY aXc] ++
+    copyArr aXc aT ++ [mul aY aY aOne, .block [leave]]
+
+/-- `pre`, with `R_X² mod X` from `pre`. -/
+def preP (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
+  prepP mul sWsQ true ++ prepP mul sWsP false
+
+/-- `post`, with `R_p² mod p` from `pre`. -/
+def postP (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
+  [.block [enterP]] ++ r2X false aXc ++
+  [.block [.mov .rax (.mem (hdr sLink)), .mov .rax (.mem (ws .rax sWsQ)), .mov .rsi (.mem (ws .rax (sArr aY))),
+      .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aChunk)))],
+    copyWords, mul aChunk aChunk aXc] ++ copyArr aXc aChunk ++
+  subModArr aT aY aXc ++ loadArr aChunk sQinv sPlen ++ maskArr aChunk ++ [mul aY aT aChunk, .block [leave]]
+
 /-- Whether `n` has `2 W` words and `p` and `q` `W` (`(len + 7) / 8` of
 their lengths in bytes): ZF. -/
 def sizes : List Instr :=
@@ -821,5 +872,18 @@ def main (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
 def code (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (.block (Crt.entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
     (.ite .ne fail (main l2 mul))
+
+/-- `main` with `R² mod n` from the key's precomputed values (`nSetupP`). -/
+def mainP (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  seqs (nSetupP mul ++ primesSetup ++ checksP ++
+    [.seq anySizes (.ite .e (seqs (preP mul ++ [ifmaAny l2] ++ postP mul))
+      (seqs (qPhase mul (Crt.expLoop mul tabSelect) ++ pPhase mul (Crt.expLoop mul tabSelect))))] ++
+    finish)
+
+/-- `vg_rsa_private_crt_ifma_precomputed` and
+`vg_rsa_private_crt_ifma512_precomputed`: `code` with `mainP`. -/
+def codeP (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (.block (Crt.entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
+    (.ite .ne fail (mainP l2 mul))
 
 end VG.Impl.Rsa.X86_64.CrtIfma

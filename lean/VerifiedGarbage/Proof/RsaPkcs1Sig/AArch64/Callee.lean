@@ -321,4 +321,115 @@ theorem privCallCT (c : PrivChecked) {P : State → State → Prop}
     he.args 5 (by decide), he.args 6 (by decide), he.args 7 (by decide), he.args 8 (by decide),
     he.args 9 (by decide), he.args 10 (by decide), he.args 11 (by decide)⟩
 
+/-! ## `vg_rsa_private_checked_precomputed` -/
+
+/-- `vg_rsa_private_checked_precomputed` and its variants. -/
+abbrev PrivPChecked := Callee fun K => Proof.Rsa.privateCheckedPrecomputedContract abi K
+
+theorem stackArgs_fourteen (s : State) :
+    List.map (stackArg s) (List.range 14) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
+      stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10,
+      stackArg s 11, stackArg s 12, stackArg s 13] := rfl
+
+/-- `pre`, our stack arguments 12 and 13. -/
+abbrev preR (t : State) : Region := ⟨stackArg t 12, (stackArg t 13).toNat * 8⟩
+
+/-- The regions a call of `vg_rsa_private_checked_precomputed` reads. -/
+abbrev privRdP (t : State) : List Region :=
+  [⟨t.gpr .x2, (t.gpr .x3).toNat⟩, ⟨t.gpr .x4, (t.gpr .x5).toNat⟩, ⟨t.gpr .x6, (t.gpr .x7).toNat⟩,
+    ⟨stackArg t 0, (stackArg t 1).toNat⟩, ⟨stackArg t 2, (stackArg t 3).toNat⟩,
+    ⟨stackArg t 4, (stackArg t 5).toNat⟩, ⟨stackArg t 6, (stackArg t 7).toNat⟩,
+    ⟨stackArg t 8, (stackArg t 9).toNat⟩, preR t, ⟨t.sp, 112⟩]
+
+/-- What a call of `vg_rsa_private_checked_precomputed` needs: what
+`vg_rsa_private_checked` does, and its 14 stack arguments and `pre`. -/
+structure PrivPOk (K : Nat) (t : State) : Prop where
+  ok : PrivOk K t
+  sp3 : t.sp.toNat + 112 ≤ 2 ^ 64
+  oa : (⟨t.gpr .x0, (t.gpr .x1).toNat⟩ : Region).Disjoint ⟨t.sp, 112⟩
+  sa : (⟨stackArg t 10, (stackArg t 11).toNat * 8⟩ : Region).Disjoint ⟨t.sp, 112⟩
+  ka : (⟨t.sp - BitVec.ofNat 64 K, K⟩ : Region).Disjoint ⟨t.sp, 112⟩
+  opr : (⟨t.gpr .x0, (t.gpr .x1).toNat⟩ : Region).Disjoint (preR t)
+  spr : (⟨stackArg t 10, (stackArg t 11).toNat * 8⟩ : Region).Disjoint (preR t)
+  kpr : (⟨t.sp - BitVec.ofNat 64 K, K⟩ : Region).Disjoint (preR t)
+  wpr : (stackArg t 12).toNat + (stackArg t 13).toNat * 8 ≤ 2 ^ 64
+  hrd : Covers [preR t, ⟨t.sp, 112⟩] (t.rd ++ t.wr)
+  prl : (stackArg t 13).toNat =
+    Spec.Rsa.privatePrecomputedWords (t.gpr .x3).toNat (stackArg t 1).toNat (stackArg t 3).toNat
+  key : Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt t.mem (t.gpr .x2) (t.gpr .x3).toNat)
+      (Spec.Rsa.bytesAt t.mem (stackArg t 0) (stackArg t 1).toNat)
+      (Spec.Rsa.bytesAt t.mem (stackArg t 2) (stackArg t 3).toNat) =
+    some (Spec.Rsa.wordsAt t.mem (stackArg t 12) (stackArg t 13).toNat)
+
+theorem PrivPOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PrivPOk K t) :
+    (Proof.Rsa.privateCheckedPrecomputedContract abi K).pre (t.callEntry.withRegions (privRdP t) (privWr t)) := by
+  obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega⟩
+  have hl := h.ok.hl
+  have o := h.ok
+  sig_pre [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
+    Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_fourteen, List.append_eq, List.range, List.range.loop]
+  simp only [sa0]
+  exact ⟨hl.sp1, h.sp3, rfl, rfl, hl.on, hl.oe, hl.oi, hl.op, hl.oq, hl.odp, hl.odq, hl.oqi, hl.os, h.opr,
+    h.oa, hl.ns, hl.es, hl.is, hl.ps, hl.qs, hl.dps, hl.dqs, hl.qis, h.spr, h.sa,
+    hl.ko, hl.kn, hl.ke, hl.ki, hl.kp, hl.kq, hl.kdp, hl.kdq, hl.kqi, hl.ks, h.kpr, h.ka, hl.wo, hl.wn,
+    hl.we, hl.wi, hl.wp, hl.wq, hl.wdp, hl.wdq, hl.wqi, hl.ws, h.wpr, o.hk, o.h1, o.h7, o.he1, o.he2, o.hp1,
+    o.hp2, o.hq1, o.hq2, o.hdp, o.hqi, o.hdq, o.hs, h.prl, h.key⟩
+
+theorem PrivPOk.covers {K : Nat} {t : State} (h : PrivPOk K t) : Covers (privRdP t) (t.rd ++ t.wr) := by
+  have c₈ : Covers ((privRd t).take 8) (t.rd ++ t.wr) :=
+    Covers.trans (Covers.of_mem fun r hr => List.mem_of_mem_take hr) h.ok.hrd
+  exact Covers.append_left c₈ h.hrd
+
+/-- A call of `vg_rsa_private_checked_precomputed`. -/
+theorem privPCall (c : PrivPChecked) {t : State} {Q : State → Prop} (h : PrivPOk c.stack t)
+    (hQ : ∀ s', s'.rd = t.rd → s'.wr = t.wr → s'.sp = t.sp →
+      Frame (privWr t ++ [below t.sp (16 * c.code.aarch64Depth)]) t.mem s'.mem →
+      (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = t.gpr r) →
+      (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (t.v r).extractLsb' 0 64) →
+      Spec.Rsa.writtenOutcome s'.mem (t.gpr .x0) (t.gpr .x3).toNat ((s'.gpr .x0).setWidth 32)
+        (Spec.Rsa.privateChecked (Spec.Rsa.bytesAt t.mem (t.gpr .x2) (t.gpr .x3).toNat)
+          (Spec.Rsa.bytesAt t.mem (t.gpr .x4) (t.gpr .x5).toNat)
+          (Spec.Rsa.bytesAt t.mem (t.gpr .x6) (t.gpr .x3).toNat)
+          (Spec.Rsa.bytesAt t.mem (stackArg t 0) (stackArg t 1).toNat)
+          (Spec.Rsa.bytesAt t.mem (stackArg t 2) (stackArg t 3).toNat)
+          (Spec.Rsa.bytesAt t.mem (stackArg t 4) (stackArg t 1).toNat)
+          (Spec.Rsa.bytesAt t.mem (stackArg t 6) (stackArg t 3).toNat)
+          (Spec.Rsa.bytesAt t.mem (stackArg t 8) (stackArg t 1).toNat)) → Q s') :
+    WP isa (.call c.name c.code) t Q := by
+  refine WP.callFV (k := Proof.Rsa.privateCheckedPrecomputedContract abi c.stack) c.verified.1 (h.pre c.pos)
+    (Covers.append_left (Covers.trans h.covers (Covers.refl _)) (Covers.right h.ok.hwr)) h.ok.hwr ?_ (by have := c.le; have := c.depth; omega)
+  intro s' hrd' hwr' hsp' hf hpres hvs hpost
+  sig_post [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
+    Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_fourteen, List.append_eq, List.range,
+    List.range.loop] at hpost
+  exact hQ s' hrd' hwr' hsp' hf hpres hvs hpost
+
+/-- Two calls of `vg_rsa_private_checked_precomputed` leak alike if their
+arguments, the bytes of `n` and `e`, and `n`'s values in `pre` agree. -/
+theorem privPCallCT (c : PrivPChecked) {P : State → State → Prop}
+    (hP : ∀ t₁ t₂, P t₁ t₂ → PrivPOk c.stack t₁ ∧ PrivPOk c.stack t₂ ∧ ArgsEq 14 t₁ t₂ ∧
+      Spec.Rsa.bytesAt t₁.mem (t₁.gpr .x2) (t₁.gpr .x3).toNat =
+        Spec.Rsa.bytesAt t₂.mem (t₂.gpr .x2) (t₂.gpr .x3).toNat ∧
+      Spec.Rsa.bytesAt t₁.mem (t₁.gpr .x4) (t₁.gpr .x5).toNat =
+        Spec.Rsa.bytesAt t₂.mem (t₂.gpr .x4) (t₂.gpr .x5).toNat ∧
+      Spec.Rsa.wordsAt t₁.mem (stackArg t₁ 12) (Spec.Rsa.precomputedWords (t₁.gpr .x3).toNat) =
+        Spec.Rsa.wordsAt t₂.mem (stackArg t₂ 12) (Spec.Rsa.precomputedWords (t₂.gpr .x3).toNat)) :
+    RelCT isa P (.call c.name c.code) fun _ _ => True := by
+  refine RelCT.callEx c.verified.1 c.verified.2.1 fun t₁ t₂ hp => ?_
+  obtain ⟨h₁, h₂, he, hn, hE, hw⟩ := hP t₁ t₂ hp
+  refine ⟨_, _, _, _, h₁.pre c.pos, h₂.pre c.pos, ?_,
+    Covers.append_left (Covers.trans h₁.covers (Covers.refl _)) (Covers.right h₁.ok.hwr), h₁.ok.hwr,
+    Covers.append_left (Covers.trans h₂.covers (Covers.refl _)) (Covers.right h₂.ok.hwr), h₂.ok.hwr⟩
+  sig_pub [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
+    Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_fourteen, List.append_eq, List.range, List.range.loop]
+  obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := argsEq_regs he
+  refine ⟨he.sp, by
+      rw [hn, hE]
+      exact congrArg (_ ++ ·) (congrArg (List.map _) hw),
+    e0, e1, e2, e3, e4, e5, e6, e7, he.args 0 (by decide),
+    he.args 1 (by decide), he.args 2 (by decide), he.args 3 (by decide), he.args 4 (by decide),
+    he.args 5 (by decide), he.args 6 (by decide), he.args 7 (by decide), he.args 8 (by decide),
+    he.args 9 (by decide), he.args 10 (by decide), he.args 11 (by decide), he.args 12 (by decide),
+    he.args 13 (by decide)⟩
+
 end VG.Proof.RsaPkcs1Sig.AArch64

@@ -28,16 +28,16 @@ open VG.Proof.Hmac.Stream.RISCV64 (HashOK)
 open VG.Proof.RsaOaep.RISCV64 (Base Fits SC off UpdArgs FinArgs)
 
 section
-variable {s : State} (P : PreD s) {m : Mem} (hm : Frame [kD s, scR s] s.mem m) {rc : Nat} (hrc : rc ≤ 2)
+variable {pc : Bool} {s : State} (P : PreD pc s) {m : Mem} (hm : Frame [kD pc s, scR s] s.mem m) {rc : Nat} (hrc : rc ≤ 2)
 include P hm hrc
 
 omit hrc in
-theorem pubX_bx {a : State} (p : PubD a s) : PubX a (bx s m rc) :=
+theorem pubX_bx {a : State} (p : PubD pc a s) : PubX a (bx s m rc) :=
   ⟨p.sp, (stackArg_bx P hm rc (by decide)).trans (p.args 13 (by decide))⟩
 
 end
 
-theorem off13 {a s : State} (p : PubD a s) (o : Nat) : off (stackArg a 13) o = off (Sd s) o := by
+theorem off13 {pc : Bool} {a s : State} (p : PubD pc a s) (o : Nat) : off (stackArg a 13) o = off (Sd s) o := by
   show off (stackArg a 13) o = off (stackArg s 13) o
   rw [p.args 13 (by decide)]
 

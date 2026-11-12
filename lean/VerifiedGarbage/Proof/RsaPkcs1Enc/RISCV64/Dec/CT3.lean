@@ -24,6 +24,8 @@ namespace VG.Proof.RsaPkcs1Enc.RISCV64.Dec
 open VG.RISCV64 VG.Impl.RsaPkcs1Enc.RISCV64.Decrypt VG.Proof.RsaPkcs1Sig.RISCV64
 open VG.Impl.Hmac.Stream.RISCV64 (mov)
 
+variable {pc : Bool}
+
 theorem clTaint : PrfTaint lengthLabel clLen [.li .t1 8] sCL where
   msg := ⟨_, by taint_decide⟩
   ini := ⟨_, by taint_decide⟩
@@ -39,7 +41,7 @@ theorem amTaint : PrfTaint messageLabel amLen [mov .t1 .s9] sAM where
   incr := ⟨_, by taint_decide⟩
 
 section
-variable {e : Env}
+variable {e : Env pc}
 
 theorem clLoop_ct : RelCT isa (Rel e PostAt) clLoop (Rel e fun s u => PostAt s u ∧ u.gpr .s9 = nbOf s) := by
   unfold clLoop
@@ -80,7 +82,7 @@ theorem tail_ct : RelCT isa (Rel e PostAt) (.seq maskPart (.seq alPart (.seq sca
   rel_of (rs := [.s0, .s1, .s2, .s3]) (by taint_decide) fun a b hab =>
     pin_post (fun _ _ h => h) [.s0, .s1, .s2, .s3] (by decide) a b hab.1 hab.2
 
-theorem body_ct : RelCT isa (Rel e PEnt) body fun _ _ => True := by
+theorem body_ct : RelCT isa (Rel e PEnt) (body pc) fun _ _ => True := by
   unfold body
   refine RelCT.seq setup_ct (RelCT.seq priv_ct (RelCT.seq dBuild_ct (RelCT.seq hashD_ct
     (RelCT.seq kdkMac_ct (RelCT.seq clLoop_ct (RelCT.seq amLoop_ct tail_ct))))))
@@ -102,10 +104,15 @@ theorem rel_alloc {P : State → State → Prop} {bytes : Nat} {body : Prog isa}
       rw [ht]
       simp [addrs]
 
+/-- Two entry states of `codeG pc` with the same public data (an `Env`) run in the same time. -/
+theorem codeG_rel : RelCT isa (fun s₁ s₂ => ∃ e : Env pc, e.s₁ = s₁ ∧ e.s₂ = s₂) (codeG pc) fun _ _ => True :=
+  rel_alloc ((RelCT.exists_ fun e : Env pc => body_ct (e := e)).mono
+    (fun _ _ ⟨s₁, s₂, ⟨e, h₁, h₂⟩, ea, eb⟩ => ⟨e, by subst h₁ h₂; exact ⟨ea, eb⟩⟩) fun _ _ h => h)
+
 theorem code_ct : ConstantTime isa (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pre
     (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pub code :=
-  RelCT.constantTime (rel_alloc ((RelCT.exists_ fun e : Env => body_ct (e := e)).mono
-    (fun _ _ ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, ea, eb⟩ => ⟨⟨s₁, s₂, dPre_of h₁, dPre_of h₂, same_of hp⟩, ea, eb⟩)
-    fun _ _ h => h))
+  RelCT.constantTime ((codeG_rel (pc := false)).mono
+    (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨⟨s₁, s₂, dPre_of h₁, dPre_of h₂, same_of hp, nofun, nofun⟩, rfl, rfl⟩)
+    fun _ _ h => h)
 
 end VG.Proof.RsaPkcs1Enc.RISCV64.Dec

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtCoefficient
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowers
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtStages
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowHalfCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopyCT
@@ -374,8 +375,9 @@ theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
     (p : CrtPoweredState (crtP g.base g.words) (workspaceWords g.words) g.words (crtFactor bs 2) v1 s.mem)
     (q : CrtPoweredState (crtQ g.base g.words) (workspaceWords g.words) g.words Q v2 s.mem)
     (bound : v1 < crtFactor bs 2)
-    (flag : s.mem.readW (off (State.addr s.sp) 48) 32 = (if crtAccepted bs then 1 else 0)) :
-    WP isa CrtFn.coefficientPhase s fun t => CrtShared g bs t ∧
+    (flag : s.mem.readW (off (State.addr s.sp) 48) 32 = (if crtAccepted bs then 1 else 0))
+    (st : CrtStages) (hst : st.ok g bs) :
+    WP isa (CrtFn.coefficientPhaseOf st.prime) s fun t => CrtShared g bs t ∧
       LayoutFrameReady g.base (workspaceWords g.words) g.words t ∧
       numAt t.mem (State.addr (crtP g.base g.words)) g.words 5 =
         ((((v1 : Int) - v2) * Spec.Rsa.os2ip (bs 6)) % (crtFactor bs 2 : Int)).toNat ∧
@@ -398,7 +400,7 @@ theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
     have := h.buffers.pShort; have := (crt_width_valid h.buffers.lengthValid).2.2
     change g.pLength ≤ 8 * Spec.Rsa.modulusWords g.length; omega
   -- p's full workspace selected.
-  rw [CrtFn.coefficientPhase, WP.seq_iff]
+  rw [CrtFn.coefficientPhaseOf, WP.seq_iff]
   refine WP.mono (crt_selectLinked_ready s h h.buffers.context.p h.p memberP
     (by have := h.buffers.context.size; omega : 224 + 4 ≤ 8 * workspaceWords g.words)
     (by decide) ready.ptr h.main.p) ?_
@@ -456,8 +458,10 @@ theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
       · intro _; exact (h.accepted_factors accepted).1
       · simp [accepted]
   rw [WP.seq_iff]
-  refine WP.mono (crt_narrowPrime_ok y1 primeIn (by omega)) ?_
-  rintro y ⟨readyY, modY, oddY, r2Y, flagY, frameY, restY⟩
+  refine WP.mono (st.primeOk 1 y1 (Or.inl rfl) hst ⟨sharedY1, primeIn⟩) ?_
+  intro y hy
+  obtain ⟨readyY, modY, oddY, r2Y, flagY, frameY, restY⟩ :
+    NarrowPrimePost (crtN g.base g.words) (workspaceWords g.words) v (bs (1 : Fin 6).succ) y1 y := hy
   rw [flagS] at modY oddY r2Y
   change numAt _ _ _ 0 = safePrime _ (Spec.Rsa.os2ip (bs 2)) at modY
   rw [crt_safeFactor] at modY oddY r2Y

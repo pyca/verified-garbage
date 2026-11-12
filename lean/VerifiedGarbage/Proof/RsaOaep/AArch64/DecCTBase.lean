@@ -33,10 +33,11 @@ namespace VG.Proof.RsaOaep.AArch64.Dec
 open VG VG.AArch64 VG.Impl.RsaOaep.AArch64
 open VG.Proof.HashTable.AArch64 (TabAgree)
 
-/-- `n` and `e` agree in the two runs' memories. -/
+/-- `n` and `e` agree in the two runs' memories, and what else the contract
+lets the function leak. -/
 def LeakEq (L : DLay) (m₁ m₂ : Mem) : Prop :=
   Spec.Rsa.bytesAt m₁ L.n L.k.toNat = Spec.Rsa.bytesAt m₂ L.n L.k.toNat ∧
-    Spec.Rsa.bytesAt m₁ L.e L.el.toNat = Spec.Rsa.bytesAt m₂ L.e L.el.toNat
+    Spec.Rsa.bytesAt m₁ L.e L.el.toNat = Spec.Rsa.bytesAt m₂ L.e L.el.toNat ∧ L.lk m₁ = L.lk m₂
 
 /-- The layout of two runs, and what each has on entry. -/
 structure Env where

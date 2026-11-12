@@ -245,7 +245,7 @@ theorem sign_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : S
     (hsy : (tabFns tsH ++ tabFns tsG).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g)
     (hd : Spec.RsaPss.digestLenOk 64 s.mem 0x300000 (BitVec.ofNat 64 dl)) :
     (Sg.signSpec tsH tsG).pre s := by
-  have e : Sg.stackBytes = 3471 + 1 := rfl
+  have e : Sg.stackBytes false = 3471 + 1 := rfl
   unfold Sg.signSpec
   rw [e]
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,

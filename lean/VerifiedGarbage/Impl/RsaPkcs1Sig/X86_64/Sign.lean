@@ -16,6 +16,9 @@ the stack. It is RFC 8017 §8.2.1, from verified functions:
    into `out`, checked against `e`, and returns its result;
 3. it overwrites `EM` with zeros.
 
+`vg_rsa_pkcs1_sign_precomputed` (`codeP`) is the same, but for its call of
+`vg_rsa_private_checked_precomputed`, which it also gives `pre`.
+
 Only the public key, the lengths and `hash` decide a branch or an address:
 the hash value is only copied into `EM`, which only the private operation
 reads.
@@ -81,9 +84,18 @@ def wipe : Prog isa :=
   .seq (.block ([.mov .r11 (.mem (sp oK)), .mov32 .rdx (.imm 0)] ++ lea .r10 oEM))
     (.loop (.block [.store8 { base := .r10 } .rdx, .alu .add .r10 (.imm 1), .alu .sub .r11 (.imm 1)]) .ne)
 
+/-- The arguments of `vg_rsa_private_checked_precomputed`: `callArgs`, then
+`pre` and `pre_len` (the function's stack arguments 15 and 16) as its stack
+arguments 14 and 15, over the slots of `out` and `out_len`, which nothing
+reads after the call. -/
+def callArgsP : List Instr := callArgs ++ copyArg 12 ++ copyArg 13
+
+/-- After the encoding, with the arguments `args` of the call. -/
+def afterEncWith (args : List Instr) (privName : String) (priv : Prog isa) : Prog isa :=
+  .seq (.block test0) (.ite .e zeroSlots (.seq (.block args) (.seq (.call privName priv) wipe)))
+
 /-- After the encoding. -/
-def afterEnc (privName : String) (priv : Prog isa) : Prog isa :=
-  .seq (.block test0) (.ite .e zeroSlots (.seq (.block callArgs) (.seq (.call privName priv) wipe)))
+def afterEnc (privName : String) (priv : Prog isa) : Prog isa := afterEncWith callArgs privName priv
 
 /-- The body of the frame. -/
 def body (privName : String) (priv : Prog isa) : Prog isa :=
@@ -93,5 +105,15 @@ def body (privName : String) (priv : Prog isa) : Prog isa :=
 name. -/
 def code (privName : String) (priv : Prog isa) : Prog isa :=
   .frame (.alloc frameBytes) (body privName priv) (.free frameBytes)
+
+/-- The body of `codeP`'s frame. -/
+def bodyP (privName : String) (priv : Prog isa) : Prog isa :=
+  .seq (.block (slotStores ++ encArgs)) (.seq encode (afterEncWith callArgsP privName priv))
+
+/-- `vg_rsa_pkcs1_sign_precomputed`: `code`, calling
+`vg_rsa_private_checked_precomputed` (`priv`) by its name with the key's
+precomputed values `pre`. -/
+def codeP (privName : String) (priv : Prog isa) : Prog isa :=
+  .frame (.alloc frameBytes) (bodyP privName priv) (.free frameBytes)
 
 end VG.Impl.RsaPkcs1Sig.X86_64.Sign

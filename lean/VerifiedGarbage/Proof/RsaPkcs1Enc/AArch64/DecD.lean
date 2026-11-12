@@ -29,8 +29,8 @@ open VG.Proof.RsaPkcs1Enc.AArch64.Enc (bytesAt_eq add_add)
 def rOf (x : BitVec 64) : BitVec 64 := (x.setWidth 32).setWidth 64
 
 theorem dPtrs₁_ok {t : State} {Q : Addr} (hsp : t.sp = Q)
-    (hw : InRegions t.wr (Q + BitVec.ofNat 64 176) 8) (h1 : InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 168) 8)
-    (h2 : InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 120) 8) :
+    (hw : InRegions t.wr (Q + BitVec.ofNat 64 192) 8) (h1 : InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 184) 8)
+    (h2 : InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 136) 8) :
     WP isa (.block dPtrs₁) t fun u => u.rd = t.rd ∧ u.wr = t.wr ∧ u.sp = t.sp ∧ u.v = t.v ∧
       u.mem = t.mem.writeW (Q + BitVec.ofNat 64 oR) (rOf (t.gpr .x0)) ∧
       u.gpr .x11 = (t.mem.writeW (Q + BitVec.ofNat 64 oR) (rOf (t.gpr .x0))).readW (Q + BitVec.ofNat 64 oScr) 64 +
@@ -65,9 +65,9 @@ theorem dPtrs₁_inv {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg �
   have hc := h.ctx
   have hnQ := hL.nQ
   have hb := hL.bO
-  refine WP.mono (dPtrs₁_ok hc.sp (hc.inFr (d := 176) (by decide)) (hc.inFrR (d := 168) (by decide))
-    (hc.inFrR (d := 120) (by decide))) fun u ⟨hrd, hwr, hsp, hv, hm, h11, h12, h13, hpr⟩ => ?_
-  have rd : ∀ d, d + 8 ≤ 344 → (d + 8 ≤ oR ∨ oR + 8 ≤ d) →
+  refine WP.mono (dPtrs₁_ok hc.sp (hc.inFr (d := 192) (by decide)) (hc.inFrR (d := 184) (by decide))
+    (hc.inFrR (d := 136) (by decide))) fun u ⟨hrd, hwr, hsp, hv, hm, h11, h12, h13, hpr⟩ => ?_
+  have rd : ∀ d, d + 8 ≤ 360 → (d + 8 ≤ oR ∨ oR + 8 ≤ d) →
       (t.mem.writeW (L.Q + BitVec.ofNat 64 oR) (rOf (t.gpr .x0))).readW (L.Q + BitVec.ofNat 64 d) 64 =
         t.mem.readW (L.Q + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
     unfold oR at h₂ ⊢
@@ -130,9 +130,9 @@ theorem zeroLoop_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg →
     · exact Bytes.write1_self _ _ _
   · rw [hx12]; exact Bytes.counter_ne hj L.k.isLt
 
-theorem dPtrs₂_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h1 : InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 144) 8)
-    (h2 : InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 152) 8) (h3 : InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 168) 8)
-    (h4 : InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 120) 8) :
+theorem dPtrs₂_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h1 : InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 160) 8)
+    (h2 : InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 168) 8) (h3 : InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 184) 8)
+    (h4 : InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 136) 8) :
     WP isa (.block dPtrs₂) t fun u => u.rd = t.rd ∧ u.wr = t.wr ∧ u.sp = t.sp ∧ u.v = t.v ∧ u.mem = t.mem ∧
       u.gpr .x14 = t.mem.readW (Q + BitVec.ofNat 64 oD) 64 ∧ u.gpr .x12 = t.mem.readW (Q + BitVec.ofNat 64 oDl) 64 ∧
       u.gpr .x11 = t.mem.readW (Q + BitVec.ofNat 64 oScr) 64 + BitVec.ofNat 64 sD +
@@ -170,8 +170,8 @@ theorem dPtrs₂_inv {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg �
     {R : BitVec 64} {EM : List Byte} {t : State} (h : ZInv L g vv m₀ R EM L.k.toNat t) :
     WP isa (.block dPtrs₂) t (CInv L g vv m₀ R EM 0) := by
   have hc := h.post.ctx
-  refine WP.mono (dPtrs₂_ok hc.sp (hc.inFrR (d := 144) (by decide)) (hc.inFrR (d := 152) (by decide))
-    (hc.inFrR (d := 168) (by decide)) (hc.inFrR (d := 120) (by decide)))
+  refine WP.mono (dPtrs₂_ok hc.sp (hc.inFrR (d := 160) (by decide)) (hc.inFrR (d := 168) (by decide))
+    (hc.inFrR (d := 184) (by decide)) (hc.inFrR (d := 136) (by decide)))
     fun u ⟨hrd, hwr, hsp, hv, hm, h14, h12, h11, hpr⟩ => ?_
   refine ⟨h.post.regs hrd hwr hsp hm hv fun r hr _ => hpr r hr, ?_, ?_, ?_, fun i hi => ?_, fun i hi => ?_⟩
   · rw [h14, hc.kept.d, BitVec.add_zero]

@@ -22,6 +22,8 @@ check's logic on every target computes them (`Proof.Rsa.result`,
 
 namespace VG.Proof.Rsa.RISCV64.Priv
 
+variable {pc : Bool}
+
 open VG VG.RISCV64 VG.Impl.Rsa.RISCV64.Priv VG.RISCV64.RegUpd
 
 theorem eqBit (acc : BitVec 64) (h : acc.toNat < 2 ^ 8) :
@@ -55,7 +57,7 @@ theorem mask_val (x : BitVec 64) (P : Prop) [Decidable P] :
     simp only [hp, ↓reduceIte, decide_true, decide_false] <;> decide
 
 /-- The result and the release mask. -/
-theorem result_ok {s w : State} {cs es acc : BitVec 64} (h : PreP s) (hsp : w.sp = fb s)
+theorem result_ok {s w : State} {cs es acc : BitVec 64} (h : PreP pc s) (hsp : w.sp = fb s)
     (iSt : InRegions (w.rd ++ w.wr) (fb s + BitVec.ofNat 64 152) 8)
     (iEs : InRegions (w.rd ++ w.wr) (fb s + BitVec.ofNat 64 160) 8)
     (hst : w.mem.readW (fb s + BitVec.ofNat 64 oSt) 64 = cs)
@@ -103,7 +105,7 @@ theorem zb_eq (m : Mem) (a : Addr) : zb m a = (m a).setWidth 64 := by
   omega
 
 /-- The release: `out` := `m` under the mask, `m` := 0. -/
-theorem release_ok {s w : State} (h : PreP s) (L : Late s w) {mask : BitVec 64} {c : Prop} [Decidable c]
+theorem release_ok {s w : State} (h : PreP pc s) (L : Late s w) {mask : BitVec 64} {c : Prop} [Decidable c]
     (hb : ∀ b : Byte, ((b.setWidth 64) &&& mask).setWidth 8 = if c then b else 0)
     (h5 : w.gpr .t5 = s.gpr .a3) (h2 : w.gpr .t2 = s.gpr .a0) (h3 : w.gpr .t3 = fb s + BitVec.ofNat 64 oM)
     (hm : w.gpr .a3 = mask) :

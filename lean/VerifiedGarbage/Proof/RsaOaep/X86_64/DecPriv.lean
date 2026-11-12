@@ -72,19 +72,20 @@ theorem emD_sub {s : State} (hp : DPre s) : Region.Sub ⟨off (stackArg s 15) oE
   exact Offset.sub_base _ (by unfold oEm; omega_arith)
 
 /-- The entry state's stack arguments: the frame's words. -/
-theorem privD_args {s t : State} (hp : DPre s) (h : DSet s t) (rd wr : List Region) {i : Nat} (hi : i < 14) :
+theorem privD_args {s t : State} {W : Nat → BitVec 64} (hp : DPre s) (h : DCall s W t) (rd wr : List Region) {i : Nat}
+    (hi : i < 14) :
     stackArg (t.callEntry.withRegions rd wr) i = privW s i := by
   have hF := fb_toNatD hp
   rw [stackArg_entry h.he.rsp (by have := hp.sp1; unfold decStack privStack frameBytes at *; omega_arith) _ _
     (by have := hp.sp2; unfold frameBytes at *; omega_arith)]
-  exact h.R.rd i rfl (by unfold nW frameBytes; omega_arith)
+  exact (h.R.rd i rfl (by unfold nW frameBytes; omega_arith)).trans (h.hW i hi)
 
 theorem stackArgAddr_entryD {s t : State} (hsp : t.gpr .rsp = fb s) (rd wr : List Region) :
     stackArgAddr (t.callEntry.withRegions rd wr) 0 = fb s := by
   simp only [stackArgAddr, State.withRegions_gpr, State.callEntry_rsp, hsp]
   rw [show 8 * (0 + 1) = 8 from rfl, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, BitVec.sub_add_cancel]
 
-theorem privD_pre {s t : State} (hp : DPre s) (h : DSet s t) :
+theorem privD_pre {s t : State} {W : Nat → BitVec 64} (hp : DPre s) (h : DCall s W t) :
     privK.pre (t.callEntry.withRegions (privRdD s) (privWrD s)) := by
   have e : ∀ {i : Nat}, i < 14 → stackArg (t.callEntry.withRegions (privRdD s) (privWrD s)) i = privW s i :=
     fun hi => privD_args hp h _ _ hi
@@ -146,7 +147,7 @@ theorem privD_pre {s t : State} (hp : DPre s) (h : DSet s t) :
     by rw [r1, r2]; unfold oRsa; omega_arith, hp.lv, trivial, trivial, hp.el1, hp.el2, hp.pl1, hp.pl2, hp.ql1, hp.ql2,
     hp.hdpl, hp.hqil, hp.hdql, by rw [r1]; unfold Spec.Rsa.scratchWords; omega_arith⟩
 
-theorem privD_covers {s t : State} (hp : DPre s) (h : DSet s t) :
+theorem privD_covers {s t : State} {W : Nat → BitVec 64} (hp : DPre s) (h : DCall s W t) :
     Covers (privRdD s ++ privWrD s) (t.rd ++ t.wr) ∧ Covers (privWrD s) t.wr := by
   have hk2 := hp.lv.2; have hsl := hp.hsl; have hcl := hp.hcl
   have ⟨r1, r2⟩ := rsaD_toNat hp
@@ -162,14 +163,14 @@ theorem privD_covers {s t : State} (hp : DPre s) (h : DSet s t) :
   have hrd : ∀ x, x ∈ s.rd → x ∈ t.rd ++ t.wr := fun x hx => List.mem_append_left _ (by rw [h.he.rd]; exact hx)
   simp only [privRdD, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ⟨_, hrd ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
-  · exact ⟨_, hrd ⟨s.gpr .r9, (stackArg s 0).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
-  · exact ⟨_, hrd ⟨stackArg s 13, (stackArg s 14).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
-  · exact ⟨_, hrd ⟨stackArg s 1, (stackArg s 2).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
-  · exact ⟨_, hrd ⟨stackArg s 3, (stackArg s 4).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
-  · exact ⟨_, hrd ⟨stackArg s 5, (stackArg s 6).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
-  · exact ⟨_, hrd ⟨stackArg s 7, (stackArg s 8).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
-  · exact ⟨_, hrd ⟨stackArg s 9, (stackArg s 10).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨s.gpr .r9, (stackArg s 0).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 13, (stackArg s 14).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 1, (stackArg s 2).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 3, (stackArg s 4).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 5, (stackArg s 6).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 7, (stackArg s 8).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 9, (stackArg s 10).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
   · exact ⟨frR s, List.mem_append_right _ (by rw [hwr]; exact List.mem_cons_self ..), 0, z _,
       by show 0 + 112 ≤ frameBytes; decide⟩
 
@@ -201,17 +202,26 @@ theorem frame_apartD {s : State} (hp : DPre s) {k : Nat} (hk : k < nW) :
   · exact (hp.dKs.sub_left sF).sub_right (rsaD_sub hp)
   · exact Offset.disjoint_below _ (by unfold nW frameBytes privStack at *; omega_arith)
 
-theorem privD_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : DSet s t) :
-    WP isa (.call v.name v.code) t fun t' => EnvD s t' ∧ Lay t' (fb s) (stackArg s 15) ∧
-      Rep t'.mem (fb s) (stackArg s 15) (fun o => t'.mem (off (stackArg s 15) o)) (privW s) ∧
+/-- The call of a function that writes what `vg_rsa_private_checked` does
+(`hk`), under its contract `k`, which the call meets (`hpre`, `hc`, `hw`)
+with the regions `rds` read: the frame's words kept, `EM`'s place in the
+working space holding the outcome. -/
+theorem privDW_call {name : String} {code : Prog isa} {k : Contract isa} (hk : ∀ a b, k.post a b → privK.post a b)
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hspC : code.all (fun i => !isa.writesSp i) = true) (hdp : code.x86_64Depth ≤ privStack)
+    {s t : State} {W : Nat → BitVec 64} (hp : DPre s) (h : DCall s W t) {rds : List Region}
+    (hpre : k.pre (t.callEntry.withRegions rds (privWrD s))) (hc : Covers (rds ++ privWrD s) (t.rd ++ t.wr))
+    (hw : Covers (privWrD s) t.wr) :
+    WP isa (.call name code) t fun t' => EnvD s t' ∧
+      (∀ {k : Nat}, k < nW → word t'.mem (fb s) (8 * k) = word t.mem (fb s) (8 * k)) ∧
+      Rep t'.mem (fb s) (stackArg s 15) (fun o => t'.mem (off (stackArg s 15) o)) W ∧
       Spec.Rsa.writtenOutcome t'.mem (off (stackArg s 15) oEm) (s.gpr .r8).toNat ((t'.gpr .rax).setWidth 32)
         (privOutD s) := by
-  obtain ⟨hc, hw⟩ := privD_covers hp h
-  have hdp := v.depth
   have e2 : privStack = 3256 := rfl
   have hF := fb_toNatD hp
-  refine WP.call_sp_mx (k := privK) v.ok (SpSafe.of_all v.spSafe) (by omega_arith) (privD_pre hp h) hc hw ?_
+  refine WP.call_sp_mx (k := k) hv (SpSafe.of_all hspC) (by omega_arith) hpre hc hw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
+  replace hpost := hk _ _ hpost
   rw [h.he.rsp] at hf
   have hf' : Frame (privWrD s ++ [below (fb s) (8 + privStack)]) t.mem s'.mem :=
     Frame.below_mono hf (by omega_arith) (by have := hp.sp2; unfold frameBytes at *; omega_arith)
@@ -220,7 +230,7 @@ theorem privD_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : DSet s t) :
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (below_call _ (by decide) (by decide))
   have hfE : FrD s t.callEntry.mem :=
     h.he.fr.trans (hfe.sub fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., below_subD s (by decide)⟩)
-  have e : ∀ {i : Nat}, i < 14 → stackArg (t.callEntry.withRegions (privRdD s) (privWrD s)) i = privW s i :=
+  have e : ∀ {i : Nat}, i < 14 → stackArg (t.callEntry.withRegions rds (privWrD s)) i = privW s i :=
     fun hi => privD_args hp h _ _ hi
   have bo : ∀ {p : Addr} {len : Nat}, (stkD s).Disjoint ⟨p, len⟩ → (outR s).Disjoint ⟨p, len⟩ →
       (mlR s).Disjoint ⟨p, len⟩ → (⟨p, len⟩ : Region).Disjoint (scrD s) → len ≤ 2 ^ 64 →
@@ -255,8 +265,7 @@ theorem privD_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : DSet s t) :
     hf'.readW (Region.contains_self _ _) (frame_apartD hp hk) (by decide)
   have hsp' : s'.gpr .rsp = fb s := (hcs .rsp (by decide)).trans h.he.rsp
   refine ⟨⟨hsp', hrd.trans h.he.rd, hwr.trans h.he.wr, fun r hr hne => (hcs r hr).trans (h.he.cs r hr hne),
-    hmx.trans h.he.mx, h.he.fr.trans (hf'.sub fun r hr => ?_)⟩,
-    h.L.congr ((hcs .rsp (by decide))) hwr (by rw [slot_eq sScr 14 rfl, slot_eq sScr 14 rfl]; exact hkeep (by decide)),
+    hmx.trans h.he.mx, h.he.fr.trans (hf'.sub fun r hr => ?_)⟩, hkeep,
     ⟨fun _ _ => rfl, fun k hk => (hkeep hk).trans (h.R.fr k hk)⟩, ?_⟩
   · simp only [privWrD, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -267,5 +276,15 @@ theorem privD_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : DSet s t) :
     rw [show (stackArg s 10).toNat = (stackArg s 2).toNat from hp.hqil,
       show (stackArg s 8).toNat = (stackArg s 4).toNat from hp.hdql] at hpost
     exact hpost
+
+theorem privD_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : DSet s t) :
+    WP isa (.call v.name v.code) t fun t' => EnvD s t' ∧ Lay t' (fb s) (stackArg s 15) ∧
+      Rep t'.mem (fb s) (stackArg s 15) (fun o => t'.mem (off (stackArg s 15) o)) (privW s) ∧
+      Spec.Rsa.writtenOutcome t'.mem (off (stackArg s 15) oEm) (s.gpr .r8).toNat ((t'.gpr .rax).setWidth 32)
+        (privOutD s) :=
+  let ⟨hc, hw⟩ := privD_covers hp h.call
+  WP.mono (privDW_call (k := privK) (fun _ _ h => h) v.ok v.spSafe v.depth hp h.call (privD_pre hp h.call) hc hw)
+    fun _ ⟨he, hk, R, o⟩ => ⟨he, h.L.congr (he.rsp.trans h.he.rsp.symm) (he.wr.trans h.he.wr.symm)
+      (by rw [slot_eq sScr 14 rfl, slot_eq sScr 14 rfl]; exact hk (by decide)), R, o⟩
 
 end VG.Proof.RsaOaep.X86_64

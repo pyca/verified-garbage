@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
 public import VerifiedGarbage.Proof.Rsa.AArch64.PublicImpl
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivPrecomputed
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
@@ -67,6 +68,19 @@ def privOf (v : CrtImpl) : PrivChecked where
   stack := stackBytes
   verified := code_verified v
   depth := by rw [privCode_depth]; decide
+  pos := by decide
+  le := by decide
+  suffix := v.suffix
+  features := v.features
+
+/-- `vg_rsa_private_checked_precomputed` calling the implementation `v` of
+`vg_rsa_private_crt`. -/
+def privPOf (v : CrtImpl) : PrivPChecked where
+  name := privPName v
+  code := privPCode v
+  stack := stackBytes
+  verified := codeP_verified v
+  depth := by rw [privPCode_depth]; decide
   pos := by decide
   le := by decide
   suffix := v.suffix

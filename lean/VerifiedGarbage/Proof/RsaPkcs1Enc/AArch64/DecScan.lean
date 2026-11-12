@@ -39,13 +39,13 @@ theorem scanInit_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
     WP isa (.block scanInit) t fun u => Same t u ∧ u.gpr .x11 = slot t Q oOut + BitVec.ofNat 64 2 ∧
       u.gpr .x12 = slot t Q oK - BitVec.ofNat 64 2 ∧ u.gpr .x14 = BitVec.ofNat 64 2 ∧ u.gpr .x15 = 0 ∧
       u.gpr .x16 = 0 ∧ u.gpr .x17 = 1 ∧ u.gpr .x13 = t.gpr .x13 := by
-  have h96 := h 96 (by decide)
-  have h120 := h 120 (by decide)
+  have h112 := h 112 (by decide)
+  have h136 := h 136 (by decide)
   apply WP.of_runBlock
   simp only [scanInit, runBlock_cons, runStep_some, runBlock_nil, exec, State.read, State.load, Size.bits,
     BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, ite_true, hsp, oOut, oK,
     Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write,
-    RegUpd.sp_write, RegUpd.mem_write, reduceCtorEq, ite_false, h96, h120]
+    RegUpd.sp_write, RegUpd.mem_write, reduceCtorEq, ite_false, h112, h136]
   exact ⟨⟨rfl, rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl, rfl, rfl,
     rfl, rfl, trivial⟩
 

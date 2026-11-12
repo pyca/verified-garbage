@@ -25,6 +25,8 @@ open VG VG.PPC64LE VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 open VG.Proof.Bignum.PPC64LE (Keep)
 open VG.PPC64LE.RegUpd (gpr_write_self gpr_write_of_ne mem_write)
 
+variable {pc : Bool}
+
 theorem exec_addSp0 {s : State} {d : Reg} : exec (.addSp d 0) s = some (s.write d s.sp) := by
   simp [exec]
 
@@ -66,7 +68,7 @@ structure Fr (s t : State) : Prop where
   sl : Slots s t.mem
 
 /-- At the call of `vg_rsa_private_checked`. -/
-structure AtPriv (s t : State) : Prop extends Fr s t where
+structure AtPriv (pc : Bool) (s t : State) : Prop extends Fr s t where
   r3 : t.gpr .r3 = s.gpr .r3
   r4 : t.gpr .r4 = s.gpr .r7
   r5 : t.gpr .r5 = s.gpr .r6
@@ -75,7 +77,7 @@ structure AtPriv (s t : State) : Prop extends Fr s t where
   r8 : t.gpr .r8 = s.gpr .r9
   r9 : t.gpr .r9 = stackArg s 1
   r10 : t.gpr .r10 = s.gpr .r7
-  psa : ∀ i < 12, t.mem.readW (fb s + BitVec.ofNat 64 (96 + 8 * i)) 64 = stackArg s (3 + i)
+  psa : ∀ i < nCallArgs pc, t.mem.readW (fb s + BitVec.ofNat 64 (96 + 8 * i)) 64 = stackArg s (3 + i)
 
 /-- The frame's push stores the back chain at its base. -/
 theorem fb_contains (s : State) : (kR s).Contains (fb s) 8 := by
@@ -83,18 +85,34 @@ theorem fb_contains (s : State) : (kR s).Contains (fb s) 8 := by
   rwa [BitVec.add_zero] at this
 
 /-- Our stack argument `j` is in the arguments' region, apart from the stack. -/
-theorem arg_read {s : State} (h : DPre s) {m : Mem} (hm : Frame [kR s] s.mem m) {j : Nat} (hj : j < 15) :
-    m.readW (fb s + BitVec.ofNat 64 (arg j)) 64 = stackArg s j := by
+theorem arg_readG {s : State} (h : DPre pc s) {m : Mem} (hm : Frame [kR s] s.mem m) {j : Nat}
+    (hj : j < if pc then 17 else 15) : m.readW (fb s + BitVec.ofNat 64 (arg j)) 64 = stackArg s j := by
   rw [← stackArgAddr_fb]
-  exact hm.readW (in_aR hj) (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.ka.symm) (by decide)
+  exact hm.readW (in_aR (pc := pc) hj) (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.ka.symm) (by decide)
 
-theorem arg_in {s t : State} (h : DPre s) (hrd : t.rd = s.rd) {j : Nat} (hj : j < 15) :
+theorem arg_inG {s t : State} (h : DPre pc s) (hrd : t.rd = s.rd) {j : Nat} (hj : j < if pc then 17 else 15) :
     InRegions (t.rd ++ t.wr) (fb s + BitVec.ofNat 64 (arg j)) 8 := by
   rw [← stackArgAddr_fb, hrd, h.hrd]
-  exact ⟨_, List.mem_append_left _ (by simp), in_aR hj⟩
+  exact ⟨aR pc s, List.mem_append_left _ (by simp [rdL]), in_aR hj⟩
 
-/-- The Parameter Save Area of the call. -/
-abbrev psaR (s : State) : Region := ⟨fb s + BitVec.ofNat 64 96, 96⟩
+theorem arg_read {s : State} (h : DPre pc s) {m : Mem} (hm : Frame [kR s] s.mem m) {j : Nat} (hj : j < 15) :
+    m.readW (fb s + BitVec.ofNat 64 (arg j)) 64 = stackArg s j :=
+  arg_readG h hm (lt_args hj)
+
+theorem arg_in {s t : State} (h : DPre pc s) (hrd : t.rd = s.rd) {j : Nat} (hj : j < 15) :
+    InRegions (t.rd ++ t.wr) (fb s + BitVec.ofNat 64 (arg j)) 8 :=
+  arg_inG h hrd (lt_args hj)
+
+/-- The Parameter Save Area of the call: its twelve, or with `pc` fourteen,
+stack arguments. -/
+abbrev psaR (pc : Bool) (s : State) : Region := ⟨fb s + BitVec.ofNat 64 96, if pc then 112 else 96⟩
+
+theorem psa_le : (if pc then 112 else 96) ≤ 112 := by cases pc <;> decide
+
+theorem psa_sub (s : State) : Region.Sub (psaR pc s) (kR s) := frame_sub s (by cases pc <;> decide)
+
+theorem nCall_lt {n : Nat} (hn : n < nCallArgs pc) : n < 14 ∧ 3 + n < if pc then 17 else 15 := by
+  cases pc <;> simp only [nCallArgs, Bool.false_eq_true, ↓reduceIte] at hn ⊢ <;> omega
 
 theorem fR_sub (s : State) : Region.Sub ⟨fb s, frameBytes⟩ (kR s) := by
   have := frame_sub s (d := 0) (n := frameBytes) (by omega)
@@ -140,22 +158,22 @@ theorem saves_ok {s : State} {rest : List Instr} {Q : State → Prop}
     exact fun p hp => (Spill.saveMem_saved (by decide) _ _ _ p hp).trans (ug p hp)
 
 /-- After copying the first `n` stack arguments, from `w`. -/
-structure CI (s w : State) (n : Nat) (t : State) : Prop where
+structure CI (pc : Bool) (s w : State) (n : Nat) (t : State) : Prop where
   keep : Keep [.r0] w t
-  mem : Frame [psaR s] w.mem t.mem
+  mem : Frame [psaR pc s] w.mem t.mem
   psa : ∀ i < n, t.mem.readW (fb s + BitVec.ofNat 64 (96 + 8 * i)) 64 = stackArg s (3 + i)
 
-theorem copy_step {s w : State} (h : DPre s) (hw12 : w.gpr .r12 = fb s) (hrd : w.rd = s.rd)
-    (hwr : w.wr = fr s :: s.wr) (hm : Frame [kR s] s.mem w.mem) {n : Nat} (hn : n < 12) {t : State}
-    (hc : CI s w n t) : WP isa (.block (copyArg n)) t (CI s w (n + 1)) := by
+theorem copy_step {s w : State} (h : DPre pc s) (hw12 : w.gpr .r12 = fb s) (hrd : w.rd = s.rd)
+    (hwr : w.wr = fr s :: s.wr) (hm : Frame [kR s] s.mem w.mem) {n : Nat} (hn : n < nCallArgs pc) {t : State}
+    (hc : CI pc s w n t) : WP isa (.block (copyArg n)) t (CI pc s w (n + 1)) := by
+  obtain ⟨hn14, hn'⟩ := nCall_lt hn
   have t12 : t.gpr .r12 = fb s := (hc.keep.gpr _ (by decide)).trans hw12
-  have psa_sub : Region.Sub (psaR s) (kR s) := frame_sub s (by decide)
   have hmt : Frame [kR s] s.mem t.mem := hm.trans (hc.mem.sub fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, psa_sub⟩)
+    rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, psa_sub s⟩)
   have hin : InRegions (t.rd ++ t.wr) (t.gpr .r12 + BitVec.ofNat 64 (arg (3 + n))) 8 := by
-    rw [t12]; exact arg_in h (hc.keep.rd.trans hrd) (by omega)
+    rw [t12]; exact arg_inG h (hc.keep.rd.trans hrd) hn'
   have hv : t.mem.readW (t.gpr .r12 + BitVec.ofNat 64 (arg (3 + n))) 64 = stackArg s (3 + n) := by
-    rw [t12]; exact arg_read h hmt (by omega)
+    rw [t12]; exact arg_readG h hmt hn'
   have ho : InRegions t.wr (t.gpr .r12 + BitVec.ofNat 64 (96 + 8 * n)) 8 := by
     rw [t12, hc.keep.wr, hwr]; exact in_fr s _ (by omega) (by unfold frameBytes; omega)
   have harg : arg (3 + n) < 2 ^ 15 ∧ arg (3 + n) % 4 = 0 := by unfold arg frameBytes; omega
@@ -168,16 +186,19 @@ theorem copy_step {s w : State} (h : DPre s) (hw12 : w.gpr .r12 = fb s) (hrd : w
   refine ⟨⟨fun r hr => ?_, hc.keep.rd, hc.keep.wr, hc.keep.sp, hc.keep.lr⟩, ?_, fun i hi => ?_⟩
   · show (t.write .r0 _).gpr r = w.gpr r
     rw [gpr_write_of_ne _ _ (by simpa using hr)]; exact hc.keep.gpr r hr
-  · exact hc.mem.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by decide))
+  · have := psa_le (pc := pc)
+    exact hc.mem.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega)
+      (by cases pc <;> simp only [nCallArgs, Bool.false_eq_true, ↓reduceIte] at hn ⊢ <;> omega) (by omega))
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
     · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega)) (by omega) (by omega)) (by decide)]
       exact hc.psa i hi
     · rw [Mem.readW_writeW_self64]
 
-theorem copies_ok {s w : State} (h : DPre s) (hw12 : w.gpr .r12 = fb s) (hrd : w.rd = s.rd)
+theorem copies_ok {s w : State} (h : DPre pc s) (hw12 : w.gpr .r12 = fb s) (hrd : w.rd = s.rd)
     (hwr : w.wr = fr s :: s.wr) (hm : Frame [kR s] s.mem w.mem) :
-    WP isa (.block ((List.range 12).flatMap copyArg)) w (CI s w 12) :=
-  wp_range_flatMap (M := isa) (CI s w) (fun _ _ hn hc => copy_step h hw12 hrd hwr hm hn hc) 12 (Nat.le_refl _) w
+    WP isa (.block ((List.range (nCallArgs pc)).flatMap copyArg)) w (CI pc s w (nCallArgs pc)) :=
+  wp_range_flatMap (M := isa) (CI pc s w) (fun _ _ hn hc => copy_step h hw12 hrd hwr hm hn hc) (nCallArgs pc)
+    (Nat.le_refl _) w
     ⟨Keep.refl _ _, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
 
 /-- A word of the frame's slots or Parameter Save Area is writable and in
@@ -185,7 +206,7 @@ the stack the function uses. -/
 theorem slot_in (s : State) {d : Nat} (h₁ : 32 ≤ d) (h₂ : d + 8 ≤ frameBytes) :
     InRegions (fr s :: s.wr) (fb s + BitVec.ofNat 64 d) 8 := in_fr s _ h₁ h₂
 
-theorem slotMoves_ok {s v : State} (h : DPre s) (h12 : v.gpr .r12 = fb s) (hrd : v.rd = s.rd)
+theorem slotMoves_ok {s v : State} (h : DPre pc s) (h12 : v.gpr .r12 = fb s) (hrd : v.rd = s.rd)
     (hwr : v.wr = fr s :: s.wr) (hm : Frame [kR s] s.mem v.mem) :
     WP isa (.block slotMoves) v fun w =>
       (w.mem = ((v.mem.writeW (fb s + BitVec.ofNat 64 oDl) (stackArg s 0)).writeW (fb s + BitVec.ofNat 64 oIn)
@@ -216,8 +237,9 @@ theorem slotMoves_ok {s v : State} (h : DPre s) (h12 : v.gpr .r12 = fb s) (hrd :
   unfold slotMoves mvArg
   prun [h12, c0, c1, c13, d1, d2, d3, d4, d5, d6, i0, i1, i13, o1, o2, o3, a0, a1, a13]
 
-theorem setup_ok {s : State} (h : DPre s) : WP isa (.block setup) (allocated frameBytes s) (AtPriv s) := by
-  rw [show setup = saves ++ (slotMoves ++ ((List.range 12).flatMap copyArg ++ privRegs)) by
+theorem setup_ok {s : State} (h : DPre pc s) :
+    WP isa (.block (setup pc)) (allocated frameBytes s) (AtPriv pc s) := by
+  rw [show setup pc = saves ++ (slotMoves ++ ((List.range (nCallArgs pc)).flatMap copyArg ++ privRegs)) by
     simp only [setup, List.append_assoc]]
   refine saves_ok fun v vsp vrd vwr v12 hg vm vsv => ?_
   rw [WP.block_append_iff]
@@ -252,11 +274,12 @@ theorem setup_ok {s : State} (h : DPre s) : WP isa (.block setup) (allocated fra
   rw [WP.block_append_iff]
   refine WP.mono (copies_ok h w12 (kw.rd.trans vrd) (kw.wr.trans vwr) fm) fun t hc => ?_
   have t12 : t.gpr .r12 = fb s := (hc.keep.gpr _ (by decide)).trans w12
-  have psa_sub : Region.Sub (psaR s) (kR s) := frame_sub s (by decide)
+  have pl := psa_le (pc := pc)
   have tm : Frame [kR s] s.mem t.mem := fm.trans (hc.mem.sub fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, psa_sub⟩)
+    rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, psa_sub s⟩)
   have tsl : Slots s t.mem := sl.frame hc.mem fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
+    rw [List.mem_singleton.mp hr]
+    exact Offset.disjoint _ (.inr (by unfold oOut; omega)) (by unfold oOut frameBytes; omega) (by omega)
   have kt : ∀ r, r ≠ .r12 → r ≠ .r0 → t.gpr r = s.gpr r := fun r h1 h2 =>
     (hc.keep.gpr r (by simpa using h2)).trans ((kw.gpr r (by simpa using h2)).trans (hg r h1 h2))
   have i1 : t.mem.readW (fb s + BitVec.ofNat 64 oIn) 64 = stackArg s 1 := tsl.inp

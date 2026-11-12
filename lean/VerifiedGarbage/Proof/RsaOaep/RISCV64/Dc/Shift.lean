@@ -30,7 +30,7 @@ open VG.Proof.RsaPss.RISCV64 (passV shV mask_odd sel_byte)
 open VG.Proof.Mgf1 (ifp ifn)
 
 section
-variable {s : State} (P : PreD s) {m : Mem} {rc : Nat}
+variable {pc : Bool} {s : State} (P : PreD pc s) {m : Mem} {rc : Nat}
 include P
 
 /-- A pass, by bit 0 of `x` (`s8`) and `d` bytes (`s9`). -/

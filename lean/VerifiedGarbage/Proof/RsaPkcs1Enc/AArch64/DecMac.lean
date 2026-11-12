@@ -88,12 +88,12 @@ theorem macInitArgs_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) (
     WP isa (.block (macInitArgs key)) t fun u => Same t u ∧ u.gpr .x0 = slot t Q oScr + BitVec.ofNat 64 sSt ∧
       u.gpr .x1 = slot t Q oScr + BitVec.ofNat 64 sOuter ∧ u.gpr .x2 = slot t Q oScr + BitVec.ofNat 64 key ∧
       u.gpr .x3 = BitVec.ofNat 64 32 ∧ u.gpr .x4 = slot t Q oScr + BitVec.ofNat 64 sWork := by
-  have h168 := h 168 (by decide)
+  have h184 := h 184 (by decide)
   apply WP.of_runBlock
   simp only [macInitArgs, scr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.read, State.load, Size.bits, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self,
     ite_true, hsp, oScr, sSt, sOuter, sWork, hk, Option.map_some, Option.some.injEq, exists_eq_left',
-    RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h168]
+    RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h184]
   exact ⟨⟨rfl, rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl, rfl,
     rfl, rfl⟩
 

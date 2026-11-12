@@ -53,7 +53,7 @@ theorem enc_calls (hE : ∀ i ∈ idxs, SpSafe (encode f (ofIdx i) g))
 theorem signC_spAll (hE : ∀ i ∈ idxs, SpSafe (encode f (ofIdx i) g))
     (hdE : ∀ i ∈ idxs, (encode f (ofIdx i) g).x86_64Depth ≤ encStack) (hC : SpSafe privC) :
     (Impl.RsaPss.X86_64.signC f g privN privC).allInstrs (fun i => !isa.writesSp i) = true := by
-  simp only [Impl.RsaPss.X86_64.signC, signCBody, seqs, Code.allInstrs, (enc_calls hE hdE).1, spAll_of hC, rec_all,
+  simp only [Impl.RsaPss.X86_64.signC, signCBody, signCBodyWith, seqs, Code.allInstrs, (enc_calls hE hdE).1, spAll_of hC, rec_all,
     List.all_append, signFail, Bool.and_true, Bool.true_and]
   rfl
 
@@ -69,26 +69,20 @@ theorem signC_xd (hdE : ∀ i ∈ idxs, (encode f (ofIdx i) g).x86_64Depth ≤ e
     (hE : ∀ i ∈ idxs, SpSafe (encode f (ofIdx i) g)) (hd : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes) :
     (Impl.RsaPss.X86_64.signC f g privN privC).x86_64Depth ≤ signStack := by
   have := (enc_calls hE hdE).2
-  simp only [Impl.RsaPss.X86_64.signC, signCBody, seqs, Code.x86_64Depth, signFail, byteLoop,
+  simp only [Impl.RsaPss.X86_64.signC, signCBody, signCBodyWith, seqs, Code.x86_64Depth, signFail, byteLoop,
     X86_64.Instr.frameBytes, Nat.zero_max, Nat.max_zero]
   unfold signStack Rsa.X86_64.stackBytes frameBytes encStack at *
   omega
 
-theorem signC_correct
-    (hsel : ∀ s, (signK tsH tsG).pre s → ∃ i T Hs Gs, ESel f g s i T Hs Gs)
-    (hE : ∀ i ∈ idxs, SpSafe (encode f (ofIdx i) g))
-    (hdE : ∀ i ∈ idxs, (encode f (ofIdx i) g).x86_64Depth ≤ encStack)
-    (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ chkContract.post s s')
-    (hC : SpSafe privC) (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes)
-    (s : State) (h : (signK tsH tsG).pre s) :
-    ∃ t s', Exec isa (Impl.RsaPss.X86_64.signC f g privN privC) s t s' ∧ abiPreserved s s' ∧
-      (signK tsH tsG).post s s' := by
-  have hp := SPre.of tsH tsG h
-  have hd := signC_xd (privN := privN) hdE hE hdC
-  obtain ⟨i, T, Hs, Gs, E⟩ := hsel s h
-  have hW := X86_64.WP.stackFrame (signC_sp hE hdE hC)
-    (by unfold signStack Rsa.X86_64.stackBytes at hd; omega)
-    (signC_ok (privN := privN) hE hdE hv hC hdC h E)
+/-- Code that writes `rsp` only in frames and calls, within `signStack`, and
+leaves what `signK` says, the callee-saved registers and MXCSR's control
+bits: it meets `signK` and keeps its return address. -/
+theorem signCode_correct {c : Prog isa} (hsp : SpSafe c) (hd : c.x86_64Depth ≤ signStack) {s : State}
+    (hp : SPre tsH tsG s)
+    (hW : WP isa c s fun s' => (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ (signK tsH tsG).post s s' ∧
+      s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10) :
+    ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (signK tsH tsG).post s s' := by
+  have hW := X86_64.WP.stackFrame hsp (by unfold signStack Rsa.X86_64.stackBytes at hd; omega) hW
   obtain ⟨t, s', he, ⟨hcs, hpost, hmx⟩, hf⟩ := hW
   refine ⟨t, s', he, ⟨hcs, ?_, hmx⟩, hpost⟩
   -- The return address.
@@ -101,7 +95,20 @@ theorem signC_correct
     · exact hp.dRs _ (Offset.contains_base _ (by omega) (by omega)) hc
   · simp only [List.mem_singleton] at hr; subst hr
     have := hp.sp1; have := hp.sp2
-    exact Offset.base_disjoint_below (s.gpr .rsp) (n := (Impl.RsaPss.X86_64.signC f g privN privC).x86_64Depth)
+    exact Offset.base_disjoint_below (s.gpr .rsp) (n := c.x86_64Depth)
       (k := 8) (by unfold signStack at *; omega) _ (Offset.contains_base _ (by omega) (by omega)) hc
+
+theorem signC_correct
+    (hsel : ∀ s, (signK tsH tsG).pre s → ∃ i T Hs Gs, ESel f g s i T Hs Gs)
+    (hE : ∀ i ∈ idxs, SpSafe (encode f (ofIdx i) g))
+    (hdE : ∀ i ∈ idxs, (encode f (ofIdx i) g).x86_64Depth ≤ encStack)
+    (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ chkContract.post s s')
+    (hC : SpSafe privC) (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes)
+    (s : State) (h : (signK tsH tsG).pre s) :
+    ∃ t s', Exec isa (Impl.RsaPss.X86_64.signC f g privN privC) s t s' ∧ abiPreserved s s' ∧
+      (signK tsH tsG).post s s' := by
+  obtain ⟨i, T, Hs, Gs, E⟩ := hsel s h
+  exact signCode_correct (signC_sp hE hdE hC) (signC_xd hdE hE hdC) (SPre.of tsH tsG h)
+    (signC_ok (privN := privN) hE hdE hv hC hdC h E)
 
 end VG.Proof.RsaPss.X86_64

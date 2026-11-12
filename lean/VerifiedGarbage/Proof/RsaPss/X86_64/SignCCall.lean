@@ -110,10 +110,7 @@ theorem encA4_ok {s u : State} (hp : SPre tsH tsG s) {S : Addr} (L : Lay u (fb s
   have := hp.sp2
   have G' := L.geo
   have hin : ∀ j, j < 18 → InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := fun j hj => by
-    refine ⟨⟨stackArgAddr s 0, 144⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
-    rw [argAddr, show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
-      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using []]
-    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
+    rw [argAddr]; exact hp.argIn hrd (by omega_using [hj])
   have hv : ∀ j, j < 18 → u.mem.readW (off (fb s) (frameBytes + 8 + 8 * j)) 64 = stackArg s j := fun j hj => by
     rw [argAddr]; exact hA j hj
   have R1 := R.wf G' (k := 2) (by decide) (stackArg s 16)
@@ -294,10 +291,10 @@ theorem enc_covers {T : Tabs} {s t : State} (hp : SPre tsH tsG s) (hrd : t.rd = 
   have hin : ∀ x, x ∈ s.rd → x ∈ t.rd ++ t.wr := fun x hx => List.mem_append_left _ (by rw [hrd]; exact hx)
   simp only [eRd, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact ⟨⟨stackArg s 10, (stackArg s 11).toNat⟩, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using [hD]⟩
-  · exact ⟨_, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using []⟩
-  · exact ⟨⟨stackArg s 16, 88⟩, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using []⟩
-  · exact ⟨⟨stackArg s 17, 88⟩, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using []⟩
+  · exact ⟨⟨stackArg s 10, (stackArg s 11).toNat⟩, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using [hD]⟩
+  · exact ⟨_, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
+  · exact ⟨⟨stackArg s 16, 88⟩, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
+  · exact ⟨⟨stackArg s 17, 88⟩, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
   · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; decide⟩
 
 /-- `Rep` after a call that writes, of the frame and our working space, only

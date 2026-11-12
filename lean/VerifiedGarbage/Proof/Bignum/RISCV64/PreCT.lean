@@ -227,7 +227,7 @@ theorem TL {d : PD} {s : State} (h : C4 d s ∧ s.gpr .s0 = 0) : WP isa lz s (C6
   have hZ := hb.hZ
   rw [← hwd] at hf
   have hN : 2 ^ (64 * (d.w - 1)) ≤ wordsVal s.mem d.S (slot d.w 0) d.w := by rw [hv]; exact hf.2.2
-  refine WP.mono (lz_ok hb.scr hb.a7 hb.t0 (by omega) (by omega) (topW_pos (by omega) hN))
+  refine WP.mono (lz_ok hb.scr hb.a7 hb.t0 (by omega) (VG.Proof.Bignum.RISCV64.slot_al8 _ 0) (by omega) (topW_pos (by omega) hN))
     fun t ⟨⟨ha, _, _, hm⟩, k⟩ => ⟨hb.keep k, by rw [hm]; exact hv, hval, ?_⟩
   rw [ha, show (Mont.word s.mem d.S (slot d.w 0 + 8 * (d.w - 1))).toNat = topW s.mem d.S d.w from rfl,
     topW_eq (by omega), hv]

@@ -21,6 +21,7 @@ meta import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvStores
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
 
 /-!
 # `vg_rsa_crt_values` on PPC64LE: constant time
@@ -189,10 +190,11 @@ def D (d : CvD) (t : State) : Prop := ∃ s0 m, CVRel d s0 ∧ Fr s0 m t
 /-- The registers both branches start from. -/
 abbrev brRegs : List Reg := [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r31]
 
-theorem pins_br {Φ : CvD → State → Prop} (hΦ : ∀ d s, Φ d s → C2 d s) : Pins Φ brRegs := by
+theorem pins_args {Φ : CvD → State → Prop} (hΦ : ∀ d s, Φ d s → ∃ s0, CVRel d s0 ∧ Base s0 s ∧ Args s0 s) :
+    Pins Φ brRegs := by
   intro d s₁ s₂ h₁ h₂ r hr
-  obtain ⟨a, ha, b₁, a₁, -⟩ := hΦ _ _ h₁
-  obtain ⟨b, hb, b₂, a₂, -⟩ := hΦ _ _ h₂
+  obtain ⟨a, ha, b₁, a₁⟩ := hΦ _ _ h₁
+  obtain ⟨b, hb, b₂, a₂⟩ := hΦ _ _ h₂
   simp only [brRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · rw [a₁.r14, a₂.r14, ha.reg hb (by decide)]
@@ -207,6 +209,48 @@ theorem pins_br {Φ : CvD → State → Prop} (hΦ : ∀ d s, Φ d s → C2 d s)
   · rw [a₁.r23, a₂.r23, ha.arg hb (by decide)]
   · rw [a₁.r24, a₂.r24, ha.arg hb (by decide)]
   · rw [b₁.r31, b₂.r31]; exact ha.arg hb (by decide)
+
+theorem pins_br {Φ : CvD → State → Prop} (hΦ : ∀ d s, Φ d s → C2 d s) : Pins Φ brRegs :=
+  pins_args fun d s h => let ⟨s0, hs, b, a, _⟩ := hΦ d s h; ⟨s0, hs, b, a⟩
+
+/-- Before the stores: the arguments kept, which the division by words
+reloads from memory, and the stores then end the branch. -/
+def A (d : CvD) (t : State) : Prop :=
+  (∃ s0, CVRel d s0 ∧ Base s0 t ∧ Args s0 t ∧
+    VG.Proof.Rsa.PPC64LE.Keys.Ws t (cvB s0) (cvZ s0) (cvW s0) VG.Impl.Rsa.PPC64LE.CrtValues.nArr) ∧
+    WP isa VG.Impl.Rsa.PPC64LE.CrtValues.stores t (D d)
+
+/-- The registers the stores start from: the arguments, the base, `w` and the stride. -/
+abbrev stRegs : List Reg := [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r31, .r29, .r30]
+
+theorem pins_A : Pins A stRegs := by
+  intro d s₁ s₂ h₁ h₂ r hr
+  obtain ⟨⟨a, ha, b₁, a₁, w₁⟩, -⟩ := h₁
+  obtain ⟨⟨b, hb, b₂, a₂, w₂⟩, -⟩ := h₂
+  have ew : cvW a = cvW b := by simp only [cvW]; rw [ha.k hb]
+  by_cases hbr : r ∈ brRegs
+  · exact pins_args (Φ := fun d s => ∃ s0, CVRel d s0 ∧ Base s0 s ∧ Args s0 s) (fun _ _ h => h) d s₁ s₂
+      ⟨a, ha, b₁, a₁⟩ ⟨b, hb, b₂, a₂⟩ r hbr
+  · simp only [stRegs, brRegs, List.mem_cons, List.not_mem_nil, or_false] at hr hbr
+    rcases hr with h | h | h | h | h | h | h | h | h | h | h | h | rfl | rfl
+    all_goals first | exact absurd h (by simp_all) | skip
+    · rw [w₁.r29, w₂.r29, ew]
+    · rw [w₁.r30, w₂.r30, ew]
+
+theorem pre_A [InvLaw] {d : CvD} {s : State} (h : C2 d s ∧ s.gpr .r0 = 0) :
+    WP isa (.seq (.seq VG.Impl.Rsa.PPC64LE.CrtValues.setup VG.Impl.Rsa.PPC64LE.CrtValues.loads)
+      VG.Impl.Rsa.PPC64LE.CrtValues.arith) s (A d) := by
+  obtain ⟨⟨s0, hs, b, a, hv⟩, h0⟩ := h
+  exact WP.assoc' (WP.mono (valid_pre_ok b a (hv.mp h0)) fun t ⟨⟨bt, at', wt⟩, w⟩ =>
+    ⟨⟨s0, hs, bt, at', wt⟩, WP.mono w fun _ ⟨⟨⟨m, f⟩, _⟩, _⟩ => ⟨s0, m, hs, f⟩⟩)
+
+/-- The valid branch, in two: the stores' registers pinned again after
+`arith`. -/
+theorem valid_ct [InvLaw] : RelCT isa (Two fun d s => C2 d s ∧ s.gpr .r0 = 0) valid (Two D) := by
+  unfold valid
+  refine RelCT.assoc (RelCT.assoc (RelCT.seq (two_post (Ψ := A)
+    (two_taint _ (pins_br fun _ _ h => h.1) (by taint_decide)) fun _ _ h => pre_A h)
+    (two_post (two_taint _ pins_A (by taint_decide)) fun _ _ h => h.2)))
 
 theorem valid_D [InvLaw] {d : CvD} {s : State} (h : C2 d s ∧ s.gpr .r0 = 0) : WP isa valid s (D d) := by
   obtain ⟨⟨s0, hs, b, a, hv⟩, h0⟩ := h
@@ -225,9 +269,7 @@ theorem valid_iff {d : CvD} {s₁ s₂ : State} (h₁ : C2 d s₁) (h₂ : C2 d 
 
 theorem branch_ct [InvLaw] : RelCT isa (Two C2) (.ite (.zero .d .r0) valid fail) (Two D) := by
   refine RelCT.ite (fun s₁ s₂ ⟨d, h₁, h₂, _⟩ => ?_)
-    (RelCT.mono (two_post (Φ := fun d s => C2 d s ∧ s.gpr .r0 = 0)
-      (two_taint _ (pins_br fun _ _ h => h.1) (by taint_decide)) fun _ _ h => valid_D h)
-      (fun s₁ s₂ ⟨⟨d, h₁, h₂, hsp⟩, hc⟩ => ?_) fun _ _ h => h)
+    (RelCT.mono valid_ct (fun s₁ s₂ ⟨⟨d, h₁, h₂, hsp⟩, hc⟩ => ?_) fun _ _ h => h)
     (RelCT.mono (two_post (Φ := fun d s => C2 d s ∧ s.gpr .r0 ≠ 0)
       (two_taint _ (pins_br fun _ _ h => h.1) (by taint_decide)) fun _ _ h => fail_D h)
       (fun s₁ s₂ ⟨⟨d, h₁, h₂, hsp⟩, hc⟩ => ?_) fun _ _ h => h)

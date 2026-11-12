@@ -23,6 +23,8 @@ open VG VG.PPC64LE VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
 open VG.Proof.Hmac.Stream.PPC64LE (HashOK initG finG)
 
+variable {pc : Bool}
+
 theorem init_fd : H.init.fdepth ≤ 2 := by
   have := VG.Proof.Hmac.Stream.PPC64LE.Init.initMain_fdepth hH
   simp only [Hash.init, Code.fdepth, Nat.max_le]; omega
@@ -55,7 +57,7 @@ theorem blockKey_length {key : List Byte} (h : key.length ≤ 64) :
   omega
 
 section
-variable {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte}
+variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte}
 include h
 
 /-- HMAC's `init`, keyed with the 32 bytes at `scratch + key`. -/
